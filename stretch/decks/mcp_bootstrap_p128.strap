@@ -1,0 +1,511 @@
+! mcp_bootstrap_p128.strap -- the CHANNEL-SIGNAL / CONCEPTOR interrupt
+! supervisor, printed page 128.  docs/MCP_Mar63_001-249.pdf PDF p.135,
+! header READ and not assumed: "TIME CLOCK 00054041  PUNID 11D11MCP
+!  CARD ID EB000300   DIST. OF 3/01   3/01   PAGE NUMBER  128", and
+! the header's own "LOCATION 216240" names the page's first word.
+!
+! FIFTY-SIX LINES, ALL OF THEM CODE.  Every row emits bits: no DRZ,
+! no reservation, and the only non-instruction is line 23's XW.  The
+! card-serial column runs EB000300 (line 1) to EB000355 (line 56) --
+! fifty-six consecutive serials for fifty-six lines, ONE CARD PER
+! LINE, no semicolon double-statement cards.  Counted off the serial
+! column, nothing fell off the top or the bottom of the render.
+! (This matters: the survey OCR of this page read only lines 2..42
+! and its "32 rows, 216241..216274" is a window, not the page.)
+!
+! ---------------------------------------------------------------
+! THE ORIGIN IS READ, BUT THE BACKWARD JOIN IS NOT CHECKED
+! ---------------------------------------------------------------
+! >>> THE PAGE PRINTS NO SLC. <<<  216240.40 is printed twice -- as
+! line 1's own LOCATION and, as the word, in the header's "LOCATION
+! 216240" field -- so the origin below is a READING.  What it is NOT
+! is a test of contiguity with printed p.127: pp.121-127 are not
+! transcribed, so there is no landed deck to join to, and a hard SLC
+! asserts its value rather than checking it (docs/transcription_
+! workflow.md, "A HARD SLC CANNOT DISAGREE WITH THE ARRIVING
+! COUNTER").  The volume survey OCR'd printed p.127's last readable
+! row at 216226.00 on ITS line 42, with fourteen more lines below
+! that it did not read, so the gap to 216240.40 is consistent with a
+! full page but is NOT measured here.  When p.127 lands, compare by
+! hand.
+!
+! THE FORWARD JOIN, by contrast, has two witnesses that agree.  The
+! counter leaves line 56 at 216305.40 (line 56 is a half word at
+! 216305.00).  The survey OCR of printed p.129 (PDF p.136) reads its
+! line 2 at 216306.40 and does not read its line 1 -- a full word at
+! 216305.40 puts line 2 at exactly 216306.40.  And line 56 of THIS
+! page, "BZXCZ,$+1.32", branches to 216306.40, which is that same
+! second instruction of p.129.  Nothing fell off the bottom.
+!
+! TAIL SCOPE.  printed p.99 line 11's "SLC,(8)215000." moved the
+! origin here and pp.99+ are OUTSIDE the TAIL,(2)G block that printed
+! p.2 opened and printed p.98 line 37 closed.  Every name this page
+! DEFINES is K-prefixed and none collides with anything in pp.2-98.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE CONTAINS
+! ---------------------------------------------------------------
+! Three entry points of the interrupt supervisor, laid end to end.
+!
+! Lines 1-10   the tail of a routine that begins on an earlier page.
+!              Line 1 branches to K Q IN (215762.00) on result-zero;
+!              otherwise line 2 turns off EOP in the copied control
+!              word, and lines 5-10 restore $MR from S T LR, reload
+!              the clock and return control with "BE,$".
+! Lines 3-4    K SUPP and K SUP CS, two NOPs USED AS BRANCH SLOTS.
+!              Each is a "NOP,target" that other rows overwrite:
+!              line 12 is "CM1111(BU,1),K SUPP.19" and lines 39/52
+!              hit K SUP CS at .19 and .32.  Bit 19 of a half word is
+!              the branch-enable bit, so the CM connectives are
+!              turning these two NOPs into branches and back.  THAT
+!              IS THE PAGE'S CENTRAL IDIOM and it recurs at lines 21,
+!              38 and 53.
+! Lines 11-22  K COMM R, the communication-region entry: index the
+!              channel/unit tables through JCNAD and S CHAN S, store
+!              the indicators into S T LR+8.9, reset the K CONCP
+!              branch and hand off to P CON E2.
+! Line 23      K COMCW, an all-zero index word -- "-CONCEPTOR
+!              INTERRUPTS".  It is the page's one data row and the
+!              one place the location counter SKIPS: line 22 leaves
+!              the counter at 216256.40 and an XW must be full-word
+!              aligned, so 216256.40..216257.00 is padding the page
+!              does not print.  strap_asm aligns it the same way --
+!              line 23's !CHECK at 216257.00 is what demonstrates it.
+! Lines 24-35  the CONCEPTOR path: form the CST/UST addresses from
+!              S UNIT N, S CHAN N, S UN A and S FI AAC, read the
+!              owner's priority level into S M, and branch to K NORM
+!              for a PP interrupt or bump the level first for an MCP
+!              interrupt.
+! Lines 36-41  K CS IN, the channel-signal stacker: convert the
+!              channel number in $14 to a bit address, set that bit
+!              in the 64-bit queue K CS REG (216312.00), open the
+!              K SUP CS switch gate, and spin at K ST CS ("B,$").
+! Lines 42-56  K MT CSQ, which empties that queue: C0011 the 64-bit
+!              K CS REG into the accumulator, find the first channel
+!              with $LZC, compute its status-table address, and test
+!              it.  Line 54's CT0001 clears the bit just serviced and
+!              line 55 loops; line 56, K Z CS, asks whether any other
+!              channel signal is still queued.
+!
+! ---------------------------------------------------------------
+! THE NINE NAMES THIS PAGE DEFINES
+! ---------------------------------------------------------------
+! Six of them have an INDEPENDENT WITNESS in the volume OCR -- a
+! reference printed on a page nobody here has opened, at the address
+! this page gives them.  That is a second reading of the spelling,
+! which no !CHECK can supply:
+!   K SUPP   216242.00  many, e.g. "216034.00  216242.34 C0
+!                       BZRZ,KSUPP  -LET IT HAPPEN" and
+!                       "216144.00  216242.01 01  LVI,$0,KSUPP"
+!   K COMM R 216246.40  vol.2 OCR "216246.65 D0  SVA,MXUAT,KCOMMR"
+!   K CONCP  216250.00  vol.2 OCR "216250.23 80 ... ,KCONCP.19"
+!   K COMCW  216257.00  vol.2 OCR "216257.00 80 ... ST(BU),KCOMCW
+!                       MUST BE CONCEPTORS"
+!   K CS IN  216267.00  "221307.00  216267.10 00  B,K CS IN
+!                       -STACK CHANNEL SIGNAL"
+!   K ST CS  216272.40  "215727.00  216272.40 80  SIC,K ST CS"
+! THE THREE WITH NO OFF-PAGE WITNESS are K SUP CS, K MT CSQ and
+! K Z CS.  Each is still referenced from a SECOND row on this page
+! and compiles bit-exactly at every use (K SUP CS from lines 39 and
+! 52, K MT CSQ from lines 4 and 55, K Z CS from line 51), so the
+! LOCATIONS are safe; only the SPELLINGS rest on ink alone.
+! "MT" in K MT CSQ is settled by line 4's own English: "-BRANCH IF
+! CS QUEUE NOT EMTY", i.e. eMpTy.
+!
+! ---------------------------------------------------------------
+! "CONCEPTOR" IS A REAL MCP ROUTINE, NOT A MISREADING
+! ---------------------------------------------------------------
+! Lines 13 and 23 comment "- IF CONCEPTOR,EOP" and "-CONCEPTOR
+! INTERRUPTS", which does not look like English.  It is IBM's own
+! term: C22-6728 MCP System Analysis Guide prints twelve instances,
+! including its table of contents line "F 027  EE  THE CONCEPTOR ,
+! PAGE 0135" and a chart headed "CONCEPTOR-CHART 1".  So K CONCP is
+! CONCePtor and the comment column is right.
+!
+! ---------------------------------------------------------------
+! EXTERNALS.  WHAT IS READ AND WHAT IS CONVENTION
+! ---------------------------------------------------------------
+! >>> EVERY ADDRESS BELOW IS BACK-DERIVED FROM A PRINTED
+! INSTRUCTION, AND A BACK-DERIVED ADDRESS IS PINNED ONLY TO THE HALF
+! WORD. <<<  The printed ".oo" field holds bits 18-23, of which only
+! bit 18 is address (the half-word select); bit offsets 0-31 all
+! encode identically.  Writing ".0" is a CONVENTION and no !CHECK on
+! this page can test it (docs/transcription_workflow.md, "WHAT THE
+! ORACLE CANNOT SEE", item 1).  Nine of the nineteen are also landed
+! in other decks at the same value, which is a real second reading;
+! those are marked LANDED.
+!
+! SCCW    4.0        LANDED, decks/mcp_bootstrap_p102.strap line 282
+!                    ("S CCW SYN(BU,64),4.0 -COPIED CONTROL WORD").
+!                    Line 2 prints "S CCW+.22" as 000004.26 -- 22
+!                    decimal bits = .26 octal -- which checks the
+!                    WORD and the offset arithmetic together.
+SCCW    SYN(BU,64), 4.0
+! SCOMRG  215001.00  LANDED, decks/mcp_bootstrap_p103.strap line 8
+!                    ("S COM RG XW,(8)520000.").  Carried only so
+!                    that S M below can be written the way p.103
+!                    writes it.
+SCOMRG  SYN, (8)215001.0
+! SM      215001.05  LANDED, p.103 line 15 "S M SYN(BU,1),
+!                    S COM RG+0.05 -LEVEL OF INTERRUPT".  THIS ONE
+!                    IS FULLY OBSERVED: line 32 is a VFL store, so
+!                    the printed "215001.05" is a BIT address, and
+!                    bit 5 is read, not conventional.
+SM      SYN(BU,1), SCOMRG+0.05
+! SCHANS  215002.00  LANDED, p.103 line 30 "S CHAN S SYN,S XCHAN"
+!                    with S XCHAN at 215002.00.  Lines 17, 27 and 49
+!                    all print 215002.24 B0.  THE PAGE SPELLS IT TWO
+!                    WAYS -- "SCHANS" on line 17 and "S CHAN S" on
+!                    lines 27 and 49 -- and both compile identically,
+!                    which is STRAP ignoring blanks in a name.
+SCHANS  SYN, (8)215002.0
+! JCNAD   215006.00  >>> NEW HERE, AND IT IS A SECOND NAME FOR A
+!                    WORD ALREADY TRANSCRIBED. <<<  Lines 14 and 15
+!                    print 215006.34 30 and 215006.24 30, and
+!                    decks/mcp_bootstrap_p103.strap puts S YCOCH at
+!                    215006.00 (line 37, "S YCOCH VF,(8)23.40",
+!                    whose own comment is "-CONSOLE CHANNEL NUMBER").
+!                    The volume-2 OCR settles that they are the same
+!                    cell.  THE DECISIVE ROW IS "215006.34 30
+!                    LV,$14,JCNAD" (docs/ocr/MCP_Mar63_250-445.txt
+!                    line 3038), which matches line 14 here half word
+!                    for half word.  Five more rows there reference
+!                    JCNAD at word 215006 with other registers --
+!                    ".06" twice, commented "-CONSOLE CHANNEL
+!                    ADDRESS" and "-GET CONSOLE CHANNEL NUMBER", and
+!                    ".20" twice more -- so the word is JCNAD's and
+!                    the English names the same thing S YCOCH's
+!                    comment does.  tests/check_symbol_spellings
+!                    .py groups them and does NOT flag them, because
+!                    JCNAD/SYCOCH is not a drum confusion; it is two
+!                    deliberate names, like p.99's S UN A / S UN A A.
+JCNAD   SYN, (8)215006.0
+! SPROGS  215021.00  LANDED at this value by the p109, p117 and p118
+!                    decks.  Line 30 prints 215021.23 01.
+SPROGS  SYN, (8)215021.0
+! STLR    215230.00  LANDED by p117 and p118; printed p.117 line 12
+!                    is the defining card ("S T LR DRZ(BU,64),29").
+!                    THREE OFFSETS, ONE BASE, all on this page:
+!                    line 9's "S TLR" prints 215230.00, line 8's
+!                    "STLR+1.0" prints 215231.44 and line 20's
+!                    "STLR+8.9" prints 215240.11 (8 words + 9 decimal
+!                    bits = .11 octal).  Spelled with and without
+!                    blanks on the same page, as S CHAN S is.
+STLR    SYN, (8)215230.0
+! STIC    215265.00  LANDED by p110, p111, p112 and p118.  Named in
+!                    C22-6728's prose -- "the saved IC is stored in
+!                    STIC" -- which is what settles the final letter
+!                    as C and not O.  Line 5 prints 215265.00 30.
+STIC    SYN, (8)215265.0
+! KQIN    215762.00  NEW.  Line 1 prints 215762.34 C0.  The volume
+!                    OCR carries its DEFINING card -- "215762.00
+!                    215021.23 01   K Q IN  LVI,9,S PROG S" -- and
+!                    two more references, "216170.40  215762.10 C0
+!                    B,K Q IN" and "216721.40  215762.10 C0".
+!                    >>> THE THIRD GLYPH IS Q, NOT G OR C. <<<
+!                    tesseract reads it G, which is worthless here;
+!                    what settles it is this page's own ink: line
+!                    41's name "K MT CSQ" prints a Q with the same
+!                    bowl broken by a diagonal stroke at the lower
+!                    right, and line 4's comment "CS QUEUE" prints a
+!                    third.  A G on this drum has a bar on the RIGHT
+!                    at mid-height; this glyph has none.
+KQIN    SYN, (8)215762.0
+! KNORM   215776.00  NEW here, but the volume OCR carries its
+!                    defining card at "215776.00  000036.37 02
+!                    K NORM  LCI,15,30" and about eight references,
+!                    every one of which prints 215776.03/.10/.34 --
+!                    all bit-18-clear, so the word is even and the
+!                    half word is 0.  Lines 33 and 35 here.
+KNORM   SYN, (8)215776.0
+! KCSREG  216312.00  NEW.  Lines 38, 41 and 54 print 216312.00.  The
+!                    volume OCR carries the defining card on a later
+!                    page: "216312.00 *  ...  K CS REG DRZ(BU,64),1"
+!                    -- a one-word reservation, which is exactly what
+!                    a 64-bit channel-signal queue must be.
+KCSREG  SYN, (8)216312.0
+! PCONE2  216644.00  NEW.  Line 22 prints 216644.10 00.  TWO
+!                    INDEPENDENT ROWS IN THE VOLUME OCR give the
+!                    NAME at that address: a card at 216644 whose
+!                    NAME column reads "P CON E2", and a reference
+!                    "216631.40  216644.37 01  LVI,$15,PCONE2".
+!                    Only the name and the location are taken from
+!                    the OCR; that card's STATEMENT text is too
+!                    mangled there to quote and is not relied on.
+PCONE2  SYN, (8)216644.0
+! The remaining six are VFL FIELD DEFINITIONS, not addresses.  Each
+! is copied VERBATIM from the landed deck that defines it, because
+! the SYN's mode and length are part of what the referencing rows
+! compile -- and because a field symbol's value IS fully observable
+! here: it lands in the address field as a bit address.
+! SUNAA/SUNA  0.0   LANDED, decks/mcp_bootstrap_p99.strap lines
+!                   19-20.  p.99 defines S UN A as a second name for
+!                   S UN A A on purpose; this page uses "SUNA" on
+!                   line 18 and "S UN A" on line 28.
+SUNAA   SYN(BU,25), 0.0
+SUNA    SYN, SUNAA
+! SUNITN  0.47  LANDED, decks/mcp_bootstrap_p101.strap line 6.
+!               OBSERVED: bit 47 is in the SECOND half word, so line
+!               24 prints bit 18 SET -- "000000.66", where .26 would
+!               be the same register 11 with bit 18 clear.  Compare
+!               line 18's "000000.26 3A" for SUNA at 0.0.  That one
+!               glyph is a direct reading of the field's offset.
+SUNITN  SYN(BU,3), 0.47
+! SCHANN  0.12  LANDED, p.101 line 5.  Line 25 prints 000000.24 3C.
+SCHANN  SYN(BU,7), 0.12
+! SFIAAC  3.0   LANDED, p.101 line 13.  Line 29 prints 000003.32 3C
+!               -- the WORD 3 is read off the page.
+SFIAAC  SYN(BU,18), 3.0
+! SOWNER  0.32  LANDED, decks/mcp_bootstrap_p99.strap line 30.  Line
+!               31 prints 000000.40 8B, and 0o40 = 32 decimal: the
+!               bit offset is read, not conventional.
+SOWNER  SYN(BU,1), 0.32
+! SCHOP   0.26  LANDED, decks/mcp_bootstrap_p99.strap line 22.  Line
+!               51 prints 000000.32 8A, and 0o32 = 26 decimal.  Read.
+SCHOP   SYN(BU,1), 0.26
+!
+! tests/check_symbol_spellings.py was run with this deck alongside
+! the repository's: 1046 symbol definitions, NO symbol spelled two
+! ways.  It groups this deck's STIC with pp.110/111/112/116/117/118,
+! STLR with pp.116/117/118, SPROGS with pp.109/117/118, SM with
+! p.103, SCCW with p.102, SUNITN/SCHANN/SFIAAC with p.101, and
+! SOWNER/SCHOP/SUNAA with p.99 -- all at the same addresses.
+!
+! ---------------------------------------------------------------
+! THE ONE BYTE THAT WAS READ WRONG, AND HOW IT WAS CAUGHT
+! ---------------------------------------------------------------
+! Line 28's byte is B-A, not 8-A.  At 900 dpi it reads "8A": this
+! drum has worn the TOP-LEFT off the B's vertical stem, which is the
+! exact failure docs/transcription_workflow.md names ("B vs 8 differ
+! mainly in one vertical stroke, which is the first thing a worn
+! drum printer loses").  Re-cropped at 1200 dpi and upscaled, the
+! straight left stem and the two right-hand bowls are unmistakable.
+! Two further arguments point the same way and were checked BEFORE
+! the glyph was re-read, not after: every other V+ on this page
+! prints B0 (lines 16, 26, 48) or B0 with an index (line 17, 27, 49),
+! and the low nibble A is index $10, exactly as line 18's 3A is
+! LV's 30 with the same index.  The correction is recorded here
+! rather than silently applied.
+!
+! ---------------------------------------------------------------
+! WHAT IS RECORDED AND NOT EXPLAINED
+! ---------------------------------------------------------------
+! A BARE "*" AFTER THE LOCATION on lines 6, 23 and 40 -- "216243.40 *",
+! "216257.00 *", "216272.40 *".  The survey's independent OCR of the
+! LOCATION column marks the same three rows, so the marks are on the
+! page and not in the render.  printed pp.3, 37, 103 and 120 carry the
+! same mark and it was left unexplained on each.  It is NOT a DRZ
+! marker (there is no DRZ here) and it is NOT a "$-relative operand"
+! marker either: lines 10 ("BE,$") and 56 ("BZXCZ,$+1.32") use $ and
+! print no star, while line 23's XW does.  It changes no compiled bit
+! and nothing here depends on it.
+!
+! LINE 11's OPERAND IS "0.0" AND THE CHECK DOES TEST IT.  The page
+! prints it as two round glyphs in a STATEMENT operand, where the
+! octal-field calibration gives no help.  Measured rather than
+! assumed: strap_asm REJECTS "LVI,12,0.O" and "LVI,12,O.O" with
+! "undefined symbol 'O'", so the only spelling that assembles at all
+! is the one written, and line 11's !CHECK is not passing by the
+! assembler's leniency.
+!
+! THE IBM TYPOS ARE TRANSCRIBED AS PRINTED.  Line 4's comment reads
+! "-BRANCH IF CS QUEUE NOT EMTY" and line 21's reads "-RESET RRANCH".
+! Both are the listing's own.
+!
+! ---------------------------------------------------------------
+! COVERAGE
+! ---------------------------------------------------------------
+! ALL FIFTY-SIX ROWS CARRY A !CHECK and all nine symbols a !SYM.
+! There is no row on this page that legitimately escapes checking:
+! every one emits bits, including line 23's XW, whose printed form
+! "000000.00+ 000 000000 000000" is a full index word of zeros.
+! ---------------------------------------------------------------
+
+        SLC, (8)216240.40
+
+        BZRZ,KQIN                    ! line  1
+        CM0000(BU,1),SCCW+.22($13)   ! line  2  -IF NOT, TURN OFF EOP IN CCW
+KSUPP   NOP,KCOMMR                   ! line  3
+KSUPCS  NOP,KMTCSQ                   ! line  4  -BRANCH IF CS QUEUE NOT EMTY
+        LV,0,STIC                    ! line  5
+        SV,0,$+2.32                  ! line  6
+        LCI,15,29                    ! line  7
+        LFT(U),STLR+1.0              ! line  8  -RESTORE $MR
+        T,15,STLR,3.0                ! line  9
+        BE,$                         ! line 10  -RETURN CONTROL
+KCOMMR  LVI,12,0.0                   ! line 11
+        CM1111(BU,1),KSUPP.19        ! line 12
+KCONCP  B,KCOMCW+1.0                 ! line 13  - IF CONCEPTOR,EOP
+        LV,$14,JCNAD                 ! line 14  - CA
+        LV,$10,JCNAD                 ! line 15
+        V+,$10,$10                   ! line 16
+        V+,$10,SCHANS                ! line 17  -CST
+        LV,$11,SUNA($10)             ! line 18  -UST
+        L(BU,4),KCOMCW.19,1          ! line 19
+        ST(BU,5),STLR+8.9            ! line 20  -INDICATORS
+        CM0000(BU,1),KCONCP.19       ! line 21  -RESET RRANCH
+        B,PCONE2                     ! line 22
+KCOMCW  XW,                          ! line 23  -CONCEPTOR INTERRUPTS
+        LV,11,SUNITN($12)            ! line 24
+        LV,10,SCHANN($12)            ! line 25
+        V+,10,$10                    ! line 26
+        V+,10,SCHANS                 ! line 27
+        V+,11,SUNA($10)              ! line 28
+        LV,13,SFIAAC($12)            ! line 29  -OBTAIN ACTIVATED FILE AREA ADD
+        LVI,9,SPROGS                 ! line 30
+        C0011(BU,1),SOWNER($11),-19  ! line 31  -LEVEL OF INTERRUPT
+        ST(BU,1),SM,-19              ! line 32
+        BRZ,KNORM                    ! line 33  -BRANCH IF PP INTERRUPT
+        V+I,9,1.0                    ! line 34  -MCP INTERRUPT
+        B,KNORM                      ! line 35
+KCSIN   L(BU,19),$14,-24             ! line 36  -CONVERT CHAN NO TO BIT ADDR
+        LV,15,$L                     ! line 37
+        CM1111(BU,1),KCSREG($15)     ! line 38  -STACK CHAN SIGNAL
+        CM0000(BU,1),KSUPCS.19       ! line 39  -SWITCH GATE OPEN
+KSTCS   B,$                          ! line 40
+KMTCSQ  C0011(BU,64),KCSREG,64       ! line 41
+        LV,11,$LZC                   ! line 42
+        LC,14,$AOC                   ! line 43
+        Z,$R                         ! line 44
+        LF(BU,7),$LZC,45             ! line 45  -FIND CHAN NO
+        LV,10,$R                     ! line 46
+        LV,14,$10                    ! line 47
+        V+,10,$10                    ! line 48
+        V+,10,SCHANS                 ! line 49  -COMPUTE CHAN STATUS T ADDR
+        SX,14,0                      ! line 50
+        BZB,SCHOP($10),KZCS          ! line 51  -CHECK IF CHAN BUSY
+        BXCZ,KSUPCS.32               ! line 52  -IF SO, SEE IF ANY OTHER CS IN Q
+        CM0000(BU,1),$L($11)         ! line 53
+        CT0001(BU,64),KCSREG,64      ! line 54
+        B,KMTCSQ+1.0                 ! line 55  -IF SO, LOOP
+KZCS    BZXCZ,$+1.32                 ! line 56  -TEST IF ANY OTHER CS IN QUEUE
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, read off PDF p.135 (400 dpi for the page,
+! 900 dpi for the BINARY OUTPUT column, 1200 dpi for line 28's byte
+! and for line 1's "Q").
+! ---------------------------------------------------------------
+!  LINE  LOCATION      BINARY OUTPUT                      NAME      STATEMENT                      COMMENT                            CARD
+!   1*   216240.40     215762.34 C0                                 BZRZ,K Q IN                                                       EB000300
+!   2*   216241.00     000004.26 8D  001000.00 F0                   CM0000(BU,1),S CCW+.22($13)    -IF NOT, TURN OFF EOP IN CCW       EB000301
+!   3*   216242.00     216246.70 00                       K SUPP    NOP,K COMM R                                                      EB000302
+!   4*   216242.40     216273.30 00                       K SUP CS  NOP,K MT CSQ                   -BRANCH IF CS QUEUE NOT EMTY       EB000303
+!   5*   216243.00     215265.00 30                                 LV,0,S TIC                                                        EB000304
+!   6*   216243.40 *   216246.01 30                                 SV,0,$+2.32                                                       EB000305
+!   7*   216244.00     000035.37 02                                 LCI,15,29                                                         EB000306
+!   8*   216244.40     215231.44 A0                                 LFT(U),STLR+1.0                -RESTORE $MR                       EB000307
+!   9*   216245.00     215230.00 80  000003.36 20                   T,15,S TLR,3.0                                                    EB000308
+!  10*   216246.00     216246.00 00                                 BE,$                           -RETURN CONTROL                    EB000309
+!  11*   216246.40     000000.31 01                       K COMM R  LVI,12,0.0                                                        EB000310
+!  12*   216247.00     216242.23 80  001000.36 F0                   CM1111(BU,1),K SUPP.19                                            EB000311
+!  13*   216250.00     216260.10 00                       K CONCP   B,KCOMCW+1.0                   - IF CONCEPTOR,EOP                 EB000312
+!  14*   216250.40     215006.34 30                                 LV,$14,JCNAD                   - CA                               EB000313
+!  15*   216251.00     215006.24 30                                 LV,$10,JCNAD                                                      EB000314
+!  16*   216251.40     000032.24 B0                                 V+,$10,$10                                                        EB000315
+!  17*   216252.00     215002.24 B0                                 V+,$10,SCHANS                  -CST                               EB000316
+!  18*   216252.40     000000.26 3A                                 LV,$11,SUNA($10)               -UST                               EB000317
+!  19*   216253.00     216257.23 80  004000.60 50                   L(BU,4),KCOMCW.19,1                                               EB000318
+!  20*   216254.00     215240.11 80  005000.20 D0                   ST(BU,5),STLR+8.9              -INDICATORS                        EB000319
+!  21*   216255.00     216250.23 80  001000.00 F0                   CM0000(BU,1),KCONCP.19         -RESET RRANCH                      EB000320
+!  22*   216256.00     216644.10 00                                 B,PCONE2                                                          EB000321
+!  23*   216257.00 *   000000.00+ 000 000000 000000       K COMCW   XW,                            -CONCEPTOR INTERRUPTS              EB000322
+!  24*   216260.00     000000.66 3C                                 LV,11,S UNIT N($12)                                               EB000323
+!  25*   216260.40     000000.24 3C                                 LV,10,S CHAN N($12)                                               EB000324
+!  26*   216261.00     000032.24 B0                                 V+,10,$10                                                         EB000325
+!  27*   216261.40     215002.24 B0                                 V+,10,S CHAN S                                                    EB000326
+!  28*   216262.00     000000.26 BA                                 V+,11,S UN A($10)                                                 EB000327
+!  29*   216262.40     000003.32 3C                                 LV,13,S FI AAC($12)            -OBTAIN ACTIVATED FILE AREA ADD    EB000328
+!  30*   216263.00     215021.23 01                                 LVI,9,S PROG S                                                    EB000329
+!  31*   216263.40     000000.40 8B  001066.46 70                   C0011(BU,1),S OWNER($11),-19   -LEVEL OF INTERRUPT                EB000330
+!  32*   216264.40     215001.05 80  001066.60 D0                   ST(BU,1),SM,-19                                                   EB000331
+!  33*   216265.40     215776.34 C2                                 BRZ,K NORM                     -BRANCH IF PP INTERRUPT            EB000332
+!  34*   216266.00     000001.23 05                                 V+I,9,1.0                      -MCP INTERRUPT                     EB000333
+!  35*   216266.40     215776.10 00                                 B,K NORM                                                          EB000334
+!  36*   216267.00     000036.00 80  023064.20 50         K CS IN   L(BU,19),$14,-24               -CONVERT CHAN NO TO BIT ADDR       EB000335
+!  37*   216270.00     000010.36 30                                 LV,15,$L                                                          EB000336
+!  38*   216270.40     216312.00 8F  001000.36 F0                   CM1111(BU,1),K CS REG($15)     -STACK CHAN SIGNAL                 EB000337
+!  39*   216271.40     216242.63 80  001000.00 F0                   CM0000(BU,1),K SUP CS.19       -SWITCH GATE OPEN                  EB000338
+!  40*   216272.40 *   216272.50 00                       K ST CS   B,$                                                               EB000339
+!  41*   216273.00     216312.00 80  000040.06 70         K MT CSQ  C0011(BU,64),K CS REG,64                                          EB000340
+!  42*   216274.00     000007.26 30                                 LV,11,$LZC                                                        EB000341
+!  43*   216274.40     000007.74 50                                 LC,14,$AOC                                                        EB000342
+!  44*   216275.00     000011.22 00                                 Z,$R                                                              EB000343
+!  45*   216275.40     000007.21 80  007026.46 70                   LF(BU,7),$LZC,45               -FIND CHAN NO                      EB000344
+!  46*   216276.40     000011.24 30                                 LV,10,$R                                                          EB000345
+!  47*   216277.00     000032.34 30                                 LV,14,$10                                                         EB000346
+!  48*   216277.40     000032.24 B0                                 V+,10,$10                                                         EB000347
+!  49*   216300.00     215002.24 B0                                 V+,10,S CHAN S                 -COMPUTE CHAN STATUS T ADDR        EB000348
+!  50*   216300.40     000000.35 10                                 SX,14,0                                                           EB000349
+!  51*   216301.00     000000.32 8A  216305.34 00                   BZB,S CH OP($10),K Z CS        -CHECK IF CHAN BUSY                EB000350
+!  52*   216302.00     216243.30 42                                 BXCZ,K SUP CS.32               -IF SO, SEE IF ANY OTHER CS IN Q   EB000351
+!  53*   216302.40     000010.00 8B  001000.00 F0                   CM0000(BU,1),$L($11)                                              EB000352
+!  54*   216303.40     216312.00 80  000040.03 70                   CT0001(BU,64),K CS REG,64                                         EB000353
+!  55*   216304.40     216274.10 00                                 B,K MT CSQ+1.0                 -IF SO, LOOP                       EB000354
+!  56*   216305.00     216306.70 40                       K Z CS    BZXCZ,$+1.32                   -TEST IF ANY OTHER CS IN QUEUE     EB000355
+
+!SYM   KSUPP    216242.00
+!SYM   KSUPCS   216242.40
+!SYM   KCOMMR   216246.40
+!SYM   KCONCP   216250.00
+!SYM   KCOMCW   216257.00
+!SYM   KCSIN    216267.00
+!SYM   KSTCS    216272.40
+!SYM   KMTCSQ   216273.00
+!SYM   KZCS     216305.00
+
+!CHECK 216240.40 | 215762.34 C0 | line  1 BZRZ,K Q IN
+!CHECK 216241.00 | 000004.26 8D 001000.00 F0 | line  2 CM0000(BU,1),S CCW+.22($13)
+!CHECK 216242.00 | 216246.70 00 | line  3 K SUPP NOP,K COMM R
+!CHECK 216242.40 | 216273.30 00 | line  4 K SUP CS NOP,K MT CSQ
+!CHECK 216243.00 | 215265.00 30 | line  5 LV,0,S TIC
+!CHECK 216243.40 | 216246.01 30 | line  6 SV,0,$+2.32
+!CHECK 216244.00 | 000035.37 02 | line  7 LCI,15,29
+!CHECK 216244.40 | 215231.44 A0 | line  8 LFT(U),STLR+1.0
+!CHECK 216245.00 | 215230.00 80 000003.36 20 | line  9 T,15,S TLR,3.0
+!CHECK 216246.00 | 216246.00 00 | line 10 BE,$
+!CHECK 216246.40 | 000000.31 01 | line 11 K COMM R LVI,12,0.0
+!CHECK 216247.00 | 216242.23 80 001000.36 F0 | line 12 CM1111(BU,1),K SUPP.19
+!CHECK 216250.00 | 216260.10 00 | line 13 K CONCP B,KCOMCW+1.0
+!CHECK 216250.40 | 215006.34 30 | line 14 LV,$14,JCNAD
+!CHECK 216251.00 | 215006.24 30 | line 15 LV,$10,JCNAD
+!CHECK 216251.40 | 000032.24 B0 | line 16 V+,$10,$10
+!CHECK 216252.00 | 215002.24 B0 | line 17 V+,$10,SCHANS
+!CHECK 216252.40 | 000000.26 3A | line 18 LV,$11,SUNA($10)
+!CHECK 216253.00 | 216257.23 80 004000.60 50 | line 19 L(BU,4),KCOMCW.19,1
+!CHECK 216254.00 | 215240.11 80 005000.20 D0 | line 20 ST(BU,5),STLR+8.9
+!CHECK 216255.00 | 216250.23 80 001000.00 F0 | line 21 CM0000(BU,1),KCONCP.19
+!CHECK 216256.00 | 216644.10 00 | line 22 B,PCONE2
+!CHECK 216257.00 | 000000.00+ 000 000000 000000 | line 23 K COMCW XW,
+!CHECK 216260.00 | 000000.66 3C | line 24 LV,11,S UNIT N($12)
+!CHECK 216260.40 | 000000.24 3C | line 25 LV,10,S CHAN N($12)
+!CHECK 216261.00 | 000032.24 B0 | line 26 V+,10,$10
+!CHECK 216261.40 | 215002.24 B0 | line 27 V+,10,S CHAN S
+!CHECK 216262.00 | 000000.26 BA | line 28 V+,11,S UN A($10)
+!CHECK 216262.40 | 000003.32 3C | line 29 LV,13,S FI AAC($12)
+!CHECK 216263.00 | 215021.23 01 | line 30 LVI,9,S PROG S
+!CHECK 216263.40 | 000000.40 8B 001066.46 70 | line 31 C0011(BU,1),S OWNER($11),-19
+!CHECK 216264.40 | 215001.05 80 001066.60 D0 | line 32 ST(BU,1),SM,-19
+!CHECK 216265.40 | 215776.34 C2 | line 33 BRZ,K NORM
+!CHECK 216266.00 | 000001.23 05 | line 34 V+I,9,1.0
+!CHECK 216266.40 | 215776.10 00 | line 35 B,K NORM
+!CHECK 216267.00 | 000036.00 80 023064.20 50 | line 36 K CS IN L(BU,19),$14,-24
+!CHECK 216270.00 | 000010.36 30 | line 37 LV,15,$L
+!CHECK 216270.40 | 216312.00 8F 001000.36 F0 | line 38 CM1111(BU,1),K CS REG($15)
+!CHECK 216271.40 | 216242.63 80 001000.00 F0 | line 39 CM0000(BU,1),K SUP CS.19
+!CHECK 216272.40 | 216272.50 00 | line 40 K ST CS B,$
+!CHECK 216273.00 | 216312.00 80 000040.06 70 | line 41 K MT CSQ C0011(BU,64),K CS REG,64
+!CHECK 216274.00 | 000007.26 30 | line 42 LV,11,$LZC
+!CHECK 216274.40 | 000007.74 50 | line 43 LC,14,$AOC
+!CHECK 216275.00 | 000011.22 00 | line 44 Z,$R
+!CHECK 216275.40 | 000007.21 80 007026.46 70 | line 45 LF(BU,7),$LZC,45
+!CHECK 216276.40 | 000011.24 30 | line 46 LV,10,$R
+!CHECK 216277.00 | 000032.34 30 | line 47 LV,14,$10
+!CHECK 216277.40 | 000032.24 B0 | line 48 V+,10,$10
+!CHECK 216300.00 | 215002.24 B0 | line 49 V+,10,S CHAN S
+!CHECK 216300.40 | 000000.35 10 | line 50 SX,14,0
+!CHECK 216301.00 | 000000.32 8A 216305.34 00 | line 51 BZB,S CH OP($10),K Z CS
+!CHECK 216302.00 | 216243.30 42 | line 52 BXCZ,K SUP CS.32
+!CHECK 216302.40 | 000010.00 8B 001000.00 F0 | line 53 CM0000(BU,1),$L($11)
+!CHECK 216303.40 | 216312.00 80 000040.03 70 | line 54 CT0001(BU,64),K CS REG,64
+!CHECK 216304.40 | 216274.10 00 | line 55 B,K MT CSQ+1.0
+!CHECK 216305.00 | 216306.70 40 | line 56 K Z CS BZXCZ,$+1.32

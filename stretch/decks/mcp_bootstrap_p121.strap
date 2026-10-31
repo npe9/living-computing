@@ -1,0 +1,464 @@
+! mcp_bootstrap_p121.strap -- "IF ANALYZER TABLE OF TENTACLE
+! ADDRESSES", printed page 121.  docs/MCP_Mar63_001-249.pdf PDF
+! p.128, header read and not assumed: the top line prints "TIME
+! CLOCK 00054041   PUNID 11011MCP   CARD ID EA000163   DIST. OF
+! 3/01   3/01   PAGE NUMBER 121".
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE CONTAINS
+! ---------------------------------------------------------------
+! FORTY-NINE LINES, card serials EA000163 (line 1) through
+! EA000211 (line 49), counted off the serial column -- forty-nine
+! serials for forty-nine lines, so nothing fell off the top or the
+! bottom of the render.
+!
+! Line 4 is a CNOP.  Lines 5-14, 18-27, 31-35 and 39-49 are
+! THIRTY-SIX "VF,<name>" half words: a dense table of tentacle
+! addresses, one entry per IF-analyzer indicator bit.  The other
+! twelve lines (1, 2, 3, 15, 16, 17, 28, 29, 30, 36, 37, 38) are
+! comment cards -- LOCATION and BINARY OUTPUT both empty, the card
+! printing raw from column 2 so the NAME column is empty and the
+! text runs through the STATEMENT column.  They read:
+!    1  (blank)
+!    2  *****  IF ANALYZER TABLE OF TENTACLE ADDRESSES  *****
+!    3  (blank)
+!   15  (blank)
+!   16  *****  RESERVED FOR FUTURE MCP USE  *****
+!   17  (blank)
+!   28  (blank)
+!   29  ****** RESERVED FOR INSTALLATION PSEUDO OPS ******
+!   30  (blank)
+!   36  (blank)
+!   37  ****** SPECIAL MCP PSEUDO OPS ******
+!   38  (blank)
+!
+! ONE SYMBOL IS DEFINED HERE: MIFTTT, at 215666.00, the table's
+! base.  Everything else named on the page is an external.
+!
+! ---------------------------------------------------------------
+! THE JOIN FROM printed p.120, AND WHY THE SLC BELOW IS AN
+! ASSERTION RATHER THAN A CHECK
+! ---------------------------------------------------------------
+! >>> THIS PAGE PRINTS NO SLC. <<<  Line 4 is a CNOP and line 5 is
+! the first row to spend storage.  The SLC written below is
+! therefore a hard origin, and docs/transcription_workflow.md
+! ("WHAT THE ORACLE CANNOT SEE", point 2) is explicit that a hard
+! SLC OVERRIDES the arriving counter silently: move it and all
+! thirty-six !CHECK rows move with it and still pass.  So the
+! thirty-six checks below do NOT test the join.  What supports it:
+!
+!   (a) printed p.120 line 14 is "M PRIM Q DRZ(BU,32),(30)" at
+!       215647.00 and prints 000017.00 -- 0o17 = 15 words -- so the
+!       counter leaves p.120 at 215647 + 15 = 215666.00, and this
+!       page's line 5 PRINTS 215666.00.  Two-sided.
+!   (b) decks/mcp_bootstrap_p117.strap and _p119.strap both SYN
+!       MIFTTT at (8)215666.0, each back-derived from an
+!       "LV,n,MIFTTT-64.0($n)" that prints 215566 -- 215666 less
+!       0o100 words.  Those two are HALF-WORD granular (limitation
+!       1), but they land on the same word, independently, on two
+!       pages transcribed separately.
+!
+! >>> THE !SYM FOR MIFTTT IS CIRCULAR AND IS NOT CORROBORATION.
+! <<<  MIFTTT is the first thing the SLC places, so "!SYM MIFTTT
+! 215666.00" tests the SLC against itself.  It is declared because
+! the page prints that location, not because it proves anything.
+!
+! ---------------------------------------------------------------
+! THE COMMENT COLUMN IS A SECOND, INDEPENDENT READING OF THE
+! LOCATION COLUMN, AND IT CLOSES ALL THIRTY-SIX ROWS
+! ---------------------------------------------------------------
+! Most rows carry a comment of the form "-NN.0" or "-NN.32" -- the
+! IF indicator bit the entry serves.  printed p.117 line 40 and
+! printed p.119 line 2 both index this table as "MIFTTT-64.0", so
+! entry i (0-based from line 5) serves indicator word 64 + i//2,
+! bit .0 or .32, and sits at 0o215666 + i//2 word, .00 or .40.
+!
+! MEASURED OVER ALL THIRTY-SIX ROWS: zero mismatches.  The printed
+! LOCATION and the printed English comment agree on every single
+! row, and the table is DENSE over indicator addresses 64.0
+! through 81.32 -- thirty-six entries, no holes, no duplicates.
+! That is what rules out a row having been dropped or doubled
+! across the three comment-card gaps (lines 15-17, 28-30, 36-38),
+! which no !CHECK can do: a dropped row would shift every later
+! location by a half word and break the correspondence.
+! Lines 9 and 10 print "-RESUME LOAD." and "-DISK FETCH" with no
+! number; the arithmetic puts them at 66.0 and 66.32, between
+! line 8's printed "-65.32" and line 11's printed "-67.0".
+!
+! ---------------------------------------------------------------
+! THE BIT OFFSETS OF THESE SIXTEEN EXTERNALS ARE OBSERVED, NOT
+! CONVENTIONAL -- THIS PAGE IS THE EXCEPTION TO LIMITATION 1
+! ---------------------------------------------------------------
+! An address back-derived from a branch or an LVI is pinned only to
+! the half word, so writing ".00" is a convention.  NOT HERE.  A VF
+! compiles its value as a 24-bit-plus-sign quantity (C22-6531
+! printed p.18, quoted in strap_asm's VF handler), and 24 bits is
+! the whole byte address -- 18 bits of word and 6 of bit offset.
+!
+! MEASURED rather than assumed, by varying one SYN and assembling:
+!
+!   SYN value          the VF row prints
+!   (8)234417.00       234417.00+
+!   (8)234417.03       234417.03+
+!   (8)234417.04       234417.04+
+!   (8)234417.37       234417.37+
+!   (8)234417.40       234417.40+
+!
+! Every offset shows.  So the ".00" on all sixteen SYNs below is a
+! READING off the BINARY OUTPUT column, and the thirty-six !CHECK
+! rows really do test it.
+!
+! ---------------------------------------------------------------
+! THE SIXTEEN EXTERNALS AND WHERE EACH SPELLING COMES FROM
+! ---------------------------------------------------------------
+! The page gives every one of these its address directly, in the
+! BINARY OUTPUT column -- nothing here is back-derived.  What
+! needed outside evidence was the SPELLING, which listing_oracle
+! never checks.  Of the seventeen names on this page (sixteen
+! externals plus MIFTTT): TWELVE are corroborated off this page in
+! BOTH name and address (MIFTTT, PDUMPT, YJC4TT, POLDTT, YRLTT,
+! XTENTB, SASPUT, SCSPRT, VVSCR, SCDRYT, SAEOJT, VVSKM), TWO are
+! corroborated by halves (AEDMPT -- address only; JTENT -- name
+! only), and THREE rest on this page's ink alone (PDBTT, YJC1TT,
+! UNDEF).
+!
+! tests/check_symbol_spellings.py was RUN with this deck beside the
+! ~90 landed ones: "PASS 1076 symbol definitions, no symbol spelled
+! two ways."  So none of the seventeen is spelled differently by any
+! page already transcribed -- which, for the three that rest on ink,
+! means only that no landed deck contradicts them, not that any
+! confirms them.
+!
+!  MIFTTT  215666.00  DEFINED HERE.  Also SYN'd by the landed decks
+!                     for pp.117 and 119, and the typeset manual
+!                     C22-6728-1 says "The IF analyzer operation
+!                     table starts at MIFTTT" -- which is this
+!                     page's own title.
+!  PDUMPT  234417.00  docs/ocr/MCP_Mar63_250-445.txt: a reference
+!                     "BB,PDUMPT.4,APUMPB" printed AT 234417.04.
+!                     Name and address both.
+!  AEDMPT  217460.00  docs/ocr/MCP_Mar63_001-249.txt prints a
+!                     routine block at 2174xx whose labels are
+!                     AEDMP2, AEDMP4, AEDMPI, AEDMP7, and line
+!                     "217463.40 ... LV,$0,AEDMPT+3." -- 217460 + 3
+!                     = 217463, the row's own word.  ADDRESS
+!                     CORROBORATED, spelling only by the AEDMPn
+!                     family and this page's "-ERROR DUMP".
+!  YJC4TT  231136.00  MCP_Mar63_250-445: a defining card "YJC4TT
+!                     DD(BU,12,3),(8)C4C1", and "LVE,$14,YJC4TT+
+!                     2.32" printed at 231140.75 -- 231136 + 2.
+!  POLDTT  232677.00  MCP_Mar63_250-445: "BZB,P OLD TT+.04,P KOLDL"
+!                     printed at 232677.04, and a second reference
+!                     "CT0011(BU,32),POLDTT+1.6".
+!  YRLTT   232555.00  MCP_Mar63_250-445: a defining card "YRLTT
+!                     DD(BU,6),(8)04" and "BZB,YRLTT+2-.50" printed
+!                     at 232557.62 -- 232555 + 2.
+!  XTENTB  233667.00  MCP_Mar63_250-445: a defining card "XTENTB
+!                     DD(BU,45),..." and four references
+!                     "BB,XTENTB+.4,..." printed at 233667.04.
+!                     The final glyph is B, not 8: read at 1800 dpi
+!                     it has a straight vertical LEFT stem with two
+!                     bowls, where an 8 closes on the left.
+!  SASPUT 222111.00   MCP_Mar63_001-249: "BB,SASPUT.4,RNOCKK"
+!                     printed at 222130.40 with 222111.04 in its
+!                     binary.  Manual C22-6728-1: "SCSPRT and
+!                     SASPUT, each four words in length."
+!  SCSPRT 222105.00   MCP_Mar63_001-249: "BB,SCSPRT.4,..." printed
+!                     at 222235.00 with 222105.04 in its binary.
+!                     Same manual sentence.  The third glyph is a
+!                     round C with no left stem, beside the D in
+!                     PDBTT and SCDRYT on the same page.
+!  VVSCR  224105.00   MCP_Mar63_001-249 prints its defining card,
+!                     "224105.00  V VSCR DD(FU,4),3,1"; the manual
+!                     names it too.
+!  SCDRYT 222120.00   >>> THE INK AND THE OCR DISAGREED AND THE
+!                     MANUAL SETTLED IT. <<<  tesseract reads
+!                     "SCERYT" in BOTH places it occurs in the
+!                     volume OCR (this page's line 40 and the
+!                     defining card "222120.00  SCDRYT
+!                     DD(BU,4,8),1  -TENTACLE TABLE FOR -OUTPUT-").
+!                     At 1800 dpi the fourth glyph has a straight
+!                     vertical left stem and a single bowl -- a D
+!                     with the bowl worn through, the shape
+!                     docs/transcription_workflow.md warns about --
+!                     where an E would carry three horizontal bars.
+!                     Decided by one grep, not by the glyph:
+!                     C22-6728 AND C22-6728-1, two revisions of the
+!                     typeset System Analysis Guide, both print
+!                     "receives control at CDRY ... via its
+!                     tentacle table, SCDRYT."  SCDRYT.
+!  SAEOJT 222115.00   MCP_Mar63_001-249 prints its defining card,
+!                     "222115.00  SAEOJT DD(BU,4,8),1  -TENTACLE
+!                     TABLE FOR EOJ"; manual: "package with an
+!                     associated tentacle table (SAEOJT)".
+!  PDBTT  232566.00   NOT CORROBORATED ANYWHERE.  Read at 1800 dpi:
+!                     P, D (left stem), B (left stem, two bowls),
+!                     T, T.  Its comment is "-78.0 DEBUGGER", which
+!                     is consistent with P-DeBug-Tentacle-Table but
+!                     is not a spelling.
+!  VVSKM  224111.00   MCP_Mar63_001-249 prints its defining card,
+!                     "224111.00  V VSKM DD(FU,4),2,91  -2
+!                     PARAMETERS, ENABLED SIC ENTRY"; manual C22-
+!                     6728-1: "the VVSKM tentacle".
+!  JTENT  232715.00   MCP_Mar63_250-445 prints a defining card
+!                     "J TENT DD(BU,4),5  / NUMBER OF PARAMETERS"
+!                     -- the first word of a tentacle table.  NAME
+!                     corroborated, ADDRESS not (that OCR line
+!                     carries no location).  The glyph is J, not S:
+!                     at 1800 dpi it has a bare vertical with a
+!                     bottom-left hook, no upper bowl.
+!  YJC1TT 230747.00   NOT CORROBORATED ANYWHERE.  Read at 1800 dpi
+!                     as YJC1TT beside the page's own thirteen
+!                     clean YJC4TT rows; the only difference is the
+!                     fifth glyph, 1 against 4.  Its comment is
+!                     "-76.32 JC1".
+!  UNDEF  233144.00   NOT a transcription of ink alone: all three
+!                     rows that use it (47, 48, 49) print the same
+!                     address, line 48's D drops its bowl and reads
+!                     C while 47 and 49 print it closed, and the
+!                     word is English.  It is almost certainly the
+!                     assembly's "undefined tentacle" placeholder --
+!                     which is what the three comments "LOGGER 4",
+!                     "LOGGER 2", "LOGGER 1" being pointed at one
+!                     common address says.  NOT corroborated off
+!                     the page; recorded as read.
+!
+! ---------------------------------------------------------------
+! WHAT IS RECORDED AND NOT EXPLAINED
+! ---------------------------------------------------------------
+! (1) LINE 4's CNOP PRINTS NO LOCATION AND NO BINARY.  Contrast
+!     printed p.120 line 5, where the same op prints "215637.40
+!     000000.30 00" because a 24-bit DD had left the counter at
+!     .30.  Here the counter arrives word-aligned at 215666.00 and
+!     the CNOP emits nothing.  THE CARD IS KEPT IN THE DECK rather
+!     than dropped: if strap_asm emitted a no-op unconditionally,
+!     every one of the thirty-six rows below would shift by a half
+!     word and say so.  (It does not; measured.)
+! (2) A BARE "*" AFTER THE LOCATION ON LINE 34 -- "215701.40 *".
+!     Line 34 is a VF identical to lines 33 and 35, which print no
+!     star.  printed pp.3, 37, 103, 116 and 120 all carry this mark
+!     and all leave it unexplained.  It changes no compiled bit.
+! (3) ONE CARD SERIAL IS MISSING AT THE JOIN.  printed p.120's last
+!     line is card EA000161; this page's line 1 is EA000163.  Card
+!     EA000162 produced no listing line on either page.  Recorded,
+!     not explained.
+! (4) THE NEXT PAGE'S ORIGIN IS NOT 215710.00 ON THIS PAGE'S
+!     EVIDENCE ALONE.  Line 49 is a VF at 215707.40, and by the
+!     same C22-6531 sentence quoted above the counter stands at BIT
+!     25 of that half word when the page ends.  MEASURED, by
+!     appending "ZEND SYN,$" to this deck and assembling: the
+!     counter is at 215707.71 -- 0o71 = 0o40 + 25 -- NOT 215710.00.
+!     It becomes 215710.00 only when whatever printed p.122
+!     compiles first rounds it up, which every item except another
+!     VF does.  Compare by hand when p.122 lands; if p.122 prints
+!     an "SLC,$" its printed LOCATION is the free witness.
+!
+! ---------------------------------------------------------------
+! WHAT IS CHECKED
+! ---------------------------------------------------------------
+! ALL THIRTY-SIX location-bearing rows carry a !CHECK, and the one
+! symbol the page defines carries a !SYM.  There is no DRZ, no SYN
+! and no bare-octal DD on this page, so there is no row with a
+! printed value that a check cannot consume.  Only line 4 (the
+! silent CNOP) and the twelve comment cards are unchecked, and
+! neither prints anything to check.
+!
+! ---------------------------------------------------------------
+! TWO THINGS THE NEXT PERSON NEEDS
+! ---------------------------------------------------------------
+! (a) MIFTTT IS NOW DEFINED TWICE OVER THE MERGED IMAGE.  The
+!     landed decks for printed pp.117 and 119 each carry
+!     "MIFTTT SYN,(8)215666.0" as an external; THIS page defines
+!     the label.  All three agree on the word, so nothing is
+!     wrong -- but strap/mcp_image.py will see a duplicate
+!     definition when these three pages merge, and the two SYNs
+!     are the ones to drop, not this definition.
+! (b) THE SURVEY'S OCR OF THIS PAGE UNDER-READS, as its own
+!     calibration says it does.  It reported 26 rows carrying a
+!     LOCATION over 215666.00..215704.00.  Read by eye the page has
+!     THIRTY-SIX, over 215666.00..215707.40.  The start agrees
+!     exactly; the end is three words short because the OCR lost
+!     rows near the bottom.  Its "0 rows with a trailing +" is also
+!     correct and is NOT evidence against this being code: every
+!     "+" on this page is in the BINARY OUTPUT column, where it is
+!     a VF's sign, and the LOCATION column carries none.
+! ---------------------------------------------------------------
+
+PDUMPT  SYN, (8)234417.00            ! line  5, printed value
+AEDMPT  SYN, (8)217460.00            ! line  6, printed value
+YJC4TT  SYN, (8)231136.00            ! line  7, printed value
+POLDTT  SYN, (8)232677.00            ! line  8, printed value
+YRLTT   SYN, (8)232555.00            ! line  9, printed value
+XTENTB  SYN, (8)233667.00            ! line 10, printed value
+SASPUT  SYN, (8)222111.00            ! line 11, printed value
+SCSPRT  SYN, (8)222105.00            ! line 12, printed value
+VVSCR   SYN, (8)224105.00            ! line 14, printed value
+YJC1TT  SYN, (8)230747.00            ! line 39, printed value
+SCDRYT  SYN, (8)222120.00            ! line 40, printed value
+SAEOJT  SYN, (8)222115.00            ! line 41, printed value
+PDBTT   SYN, (8)232566.00            ! line 42, printed value
+VVSKM   SYN, (8)224111.00            ! line 45, printed value
+JTENT   SYN, (8)232715.00            ! line 46, printed value
+UNDEF   SYN, (8)233144.00            ! line 47, printed value
+
+        SLC, (8)215666.              ! NOT printed -- see the note
+
+        CNOP                         ! line  4  emits nothing here
+MIFTTT  VF, PDUMPT                   ! line  5  indicator 64.0
+        VF, AEDMPT                   ! line  6  -ERROR DUMP
+        VF, YJC4TT                   ! line  7  -65.0  END OF JOB
+        VF, POLDTT                   ! line  8  -65.32 HOLD
+        VF, YRLTT                    ! line  9  -RESUME LOAD.
+        VF, XTENTB                   ! line 10  -DISK FETCH
+        VF, SASPUT                   ! line 11  -67.0  SPOOL PUNCH
+        VF, SCSPRT                   ! line 12  -67.32 SPOOL PRINT
+        VF, YJC4TT                   ! line 13  -68.0  ABNORMAL EOJ
+        VF, VVSCR                    ! line 14  -68.32 SPOOL CARD RESD
+        VF, YJC4TT                   ! line 18  -69.0
+        VF, YJC4TT                   ! line 19  -69.32
+        VF, YJC4TT                   ! line 20  -70.0
+        VF, YJC4TT                   ! line 21  -70.32
+        VF, YJC4TT                   ! line 22  -71.0
+        VF, YJC4TT                   ! line 23  -71.32
+        VF, YJC4TT                   ! line 24  -72.0
+        VF, YJC4TT                   ! line 25  -72.32
+        VF, YJC4TT                   ! line 26  -73.0
+        VF, YJC4TT                   ! line 27  -73.32
+        VF, YJC4TT                   ! line 31  -74.0
+        VF, YRLTT                    ! line 32  -74.32 $SCRESLD - TEMPORARY
+        VF, YJC4TT                   ! line 33  -75.0
+        VF, YJC4TT                   ! line 34  -75.32   (location prints "*")
+        VF, YJC4TT                   ! line 35  -76.0
+        VF, YJC1TT                   ! line 39  -76.32 JC1
+        VF, SCDRYT                   ! line 40  -77.0  OUTPUT TAPE SWITCH
+        VF, SAEOJT                   ! line 41  -77.32 OUTPUT EOJ
+        VF, PDBTT                    ! line 42  -78.0  DEBUGGER
+        VF, YJC4TT                   ! line 43  -78.32 IPL ENTRY TO JC4
+        VF, VVSCR                    ! line 44  -79.0  1ST CARD REQUEST
+        VF, VVSKM                    ! line 45  -79.32 INPUT COMMANDS
+        VF, JTENT                    ! line 46  -80.0  SYSTEM COMMANDS
+        VF, UNDEF                    ! line 47  -80.32 LOGGER 4
+        VF, UNDEF                    ! line 48  -81.0  LOGGER 2
+        VF, UNDEF                    ! line 49  -81.32 LOGGER 1
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, read off PDF p.128 at 600 and 1800 dpi
+! ---------------------------------------------------------------
+! LINE  LOCATION      BINARY OUTPUT   NAME     STATEMENT      COMMENT                        CARD
+!   1*                                                                                       EA000163
+!   2*                                         *****  IF ANALYZER TABLE OF TENTACLE ADDRESSES  *****  EA000164
+!   3*                                                                                       EA000165
+!   4*                                         CNOP                                          EA000166
+!   5*  215666.00     234417.00+      MIFTTT   VF,PDUMPT                                     EA000167
+!   6*  215666.40     217460.00+               VF,AEDMPT      -ERROR DUMP                    EA000168
+!   7*  215667.00     231136.00+               VF,YJC4TT      -65.0  END OF JOB              EA000169
+!   8*  215667.40     232677.00+               VF,POLDTT      -65.32 HOLD                    EA000170
+!   9*  215670.00     232555.00+               VF,YRLTT       -RESUME LOAD.                  EA000171
+!  10*  215670.40     233667.00+               VF,XTENTB      -DISK FETCH                    EA000172
+!  11*  215671.00     222111.00+               VF,S ASPUT       -67.0   SPOOL PUNCH          EA000173
+!  12*  215671.40     222105.00+               VF,S CSPRT       -67.32  SPOOL PRINT          EA000174
+!  13*  215672.00     231136.00+               VF,YJC4TT      -68.0  ABNORMAL END OF JOB     EA000175
+!  14*  215672.40     224105.00+               VF,VVSCR       -68.32 SPOOL CARD RESD         EA000176
+!  15*                                                                                       EA000177
+!  16*                                         *****  RESERVED FOR FUTURE MCP USE  *****     EA000178
+!  17*                                                                                       EA000179
+!  18*  215673.00     231136.00+               VF,YJC4TT        -69.0                        EA000180
+!  19*  215673.40     231136.00+               VF,YJC4TT        -69.32                       EA000181
+!  20*  215674.00     231136.00+               VF,YJC4TT        -70.0                        EA000182
+!  21*  215674.40     231136.00+               VF,YJC4TT        -70.32                       EA000183
+!  22*  215675.00     231136.00+               VF,YJC4TT        -71.0                        EA000184
+!  23*  215675.40     231136.00+               VF,YJC4TT        -71.32                       EA000185
+!  24*  215676.00     231136.00+               VF,YJC4TT        -72.0                        EA000186
+!  25*  215676.40     231136.00+               VF,YJC4TT        -72.32                       EA000187
+!  26*  215677.00     231136.00+               VF,YJC4TT        -73.0                        EA000188
+!  27*  215677.40     231136.00+               VF,YJC4TT        -73.32                       EA000189
+!  28*                                                                                       EA000190
+!  29*                                         ****** RESERVED FOR INSTALLATION PSEUDO OPS ******  EA000191
+!  30*                                                                                       EA000192
+!  31*  215700.00     231136.00+               VF,YJC4TT        -74.0                        EA000193
+!  32*  215700.40     232555.00+               VF,YRLTT       -74.32 $SCRESLD - TEMPORARY    EA000194
+!  33*  215701.00     231136.00+               VF,YJC4TT        -75.0                        EA000195
+!  34*  215701.40 *   231136.00+               VF,YJC4TT        -75.32                       EA000196
+!  35*  215702.00     231136.00+               VF,YJC4TT        -76.0                        EA000197
+!  36*                                                                                       EA000198
+!  37*                                         ****** SPECIAL MCP PSEUDO OPS ******          EA000199
+!  38*                                                                                       EA000200
+!  39*  215702.40     230747.00+               VF,YJC1TT        -76.32 JC1                   EA000201
+!  40*  215703.00     222120.00+               VF,SCDRYT        -77.0  OUTPUT TAPE SWITCH    EA000202
+!  41*  215703.40     222115.00+               VF,SAEOJT        -77.32 OUTPUT EOJ            EA000203
+!  42*  215704.00     232566.00+               VF,PDBTT         -78.0  DEBUGGER              EA000204
+!  43*  215704.40     231136.00+               VF,YJC4TT        -78.32 IPL ENTRY TO JC4      EA000205
+!  44*  215705.00     224105.00+               VF,VVSCR         -79.0  1ST CARD REQUEST      EA000206
+!  45*  215705.40     224111.00+               VF,VVSKM         -79.32 INPUT COMMANDS        EA000207
+!  46*  215706.00     232715.00+               VF,JTENT         -80.0  SYSTEM COMMANDS       EA000208
+!  47*  215706.40     233144.00+               VF,UNDEF         -80.32 LOGGER 4              EA000209
+!  48*  215707.00     233144.00+               VF,UNDEF         -81.0  LOGGER 2              EA000210
+!  49*  215707.40     233144.00+               VF,UNDEF         -81.32 LOGGER 1              EA000211
+!
+! >>> LINES 11 AND 12 PUNCH THEIR OPERAND WITH AN EMBEDDED BLANK,
+! AND strap_asm REJECTS THE PRINTED FORM.  TESTED, NOT ASSUMED. <<<
+! The cards read "VF,S ASPUT" and "VF,S CSPRT".  Assembling the
+! printed form verbatim:
+!
+!   SASPUT  SYN, (8)222111.00
+!           SLC, (8)215671.
+!           VF, S ASPUT
+!   -> AssemblerError line 3: undefined symbol 'S'
+!
+! strap_asm takes "S" as the whole operand and stops.  IBM's own
+! assembler did not: C22-6531 printed p.10 limits a symbol to SIX
+! characters, and docs/NEXT.md records fifteen MCP names that are
+! legal ONLY once their blanks are removed, so STRAP ignores
+! embedded blanks in a symbol.  SASPUT and SCSPRT are six
+! characters exactly, which is the same arithmetic.
+!
+! So the deck above substitutes the closed-up spellings -- the ones
+! the typeset manual C22-6728-1 also uses -- and they assemble
+! BIT-IDENTICALLY, as rows 11 and 12 of the !CHECK block show
+! (222111.00+ and 222105.00+, both passing).  The printed form is
+! kept in those two !CHECK notes.  FLAGGED as a strap_asm gap: it
+! is a small one and the whole corpus already follows this
+! convention (printed p.120's "SIC,S DISIC" is written SDISIC, and
+! ~90 decks do the same), but the printed card is legal STRAP input
+! that strap_asm will not take.
+!
+! Lines 40, 41, 42 and 46 punch theirs closed up and need nothing.
+
+!SYM   MIFTTT   215666.00
+
+!CHECK 215666.00 | 234417.00+ | line  5 MIFTTT VF,PDUMPT
+!CHECK 215666.40 | 217460.00+ | line  6 VF,AEDMPT -ERROR DUMP
+!CHECK 215667.00 | 231136.00+ | line  7 VF,YJC4TT -65.0 END OF JOB
+!CHECK 215667.40 | 232677.00+ | line  8 VF,POLDTT -65.32 HOLD
+!CHECK 215670.00 | 232555.00+ | line  9 VF,YRLTT -RESUME LOAD.
+!CHECK 215670.40 | 233667.00+ | line 10 VF,XTENTB -DISK FETCH
+!CHECK 215671.00 | 222111.00+ | line 11 VF,S ASPUT -67.0 SPOOL PUNCH
+!CHECK 215671.40 | 222105.00+ | line 12 VF,S CSPRT -67.32 SPOOL PRINT
+!CHECK 215672.00 | 231136.00+ | line 13 VF,YJC4TT -68.0 ABNORMAL END OF JOB
+!CHECK 215672.40 | 224105.00+ | line 14 VF,VVSCR -68.32 SPOOL CARD RESD
+!CHECK 215673.00 | 231136.00+ | line 18 VF,YJC4TT -69.0
+!CHECK 215673.40 | 231136.00+ | line 19 VF,YJC4TT -69.32
+!CHECK 215674.00 | 231136.00+ | line 20 VF,YJC4TT -70.0
+!CHECK 215674.40 | 231136.00+ | line 21 VF,YJC4TT -70.32
+!CHECK 215675.00 | 231136.00+ | line 22 VF,YJC4TT -71.0
+!CHECK 215675.40 | 231136.00+ | line 23 VF,YJC4TT -71.32
+!CHECK 215676.00 | 231136.00+ | line 24 VF,YJC4TT -72.0
+!CHECK 215676.40 | 231136.00+ | line 25 VF,YJC4TT -72.32
+!CHECK 215677.00 | 231136.00+ | line 26 VF,YJC4TT -73.0
+!CHECK 215677.40 | 231136.00+ | line 27 VF,YJC4TT -73.32
+!CHECK 215700.00 | 231136.00+ | line 31 VF,YJC4TT -74.0
+!CHECK 215700.40 | 232555.00+ | line 32 VF,YRLTT -74.32 $SCRESLD - TEMPORARY
+!CHECK 215701.00 | 231136.00+ | line 33 VF,YJC4TT -75.0
+!CHECK 215701.40 | 231136.00+ | line 34 VF,YJC4TT -75.32 (location prints a bare *)
+!CHECK 215702.00 | 231136.00+ | line 35 VF,YJC4TT -76.0
+!CHECK 215702.40 | 230747.00+ | line 39 VF,YJC1TT -76.32 JC1
+!CHECK 215703.00 | 222120.00+ | line 40 VF,SCDRYT -77.0 OUTPUT TAPE SWITCH
+!CHECK 215703.40 | 222115.00+ | line 41 VF,SAEOJT -77.32 OUTPUT EOJ
+!CHECK 215704.00 | 232566.00+ | line 42 VF,PDBTT -78.0 DEBUGGER
+!CHECK 215704.40 | 231136.00+ | line 43 VF,YJC4TT -78.32 IPL ENTRY TO JC4
+!CHECK 215705.00 | 224105.00+ | line 44 VF,VVSCR -79.0 1ST CARD REQUEST
+!CHECK 215705.40 | 224111.00+ | line 45 VF,VVSKM -79.32 INPUT COMMANDS
+!CHECK 215706.00 | 232715.00+ | line 46 VF,JTENT -80.0 SYSTEM COMMANDS
+!CHECK 215706.40 | 233144.00+ | line 47 VF,UNDEF -80.32 LOGGER 4
+!CHECK 215707.00 | 233144.00+ | line 48 VF,UNDEF -81.0 LOGGER 2
+!CHECK 215707.40 | 233144.00+ | line 49 VF,UNDEF -81.32 LOGGER 1

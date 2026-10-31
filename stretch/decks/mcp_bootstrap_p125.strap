@@ -1,0 +1,454 @@
+! agent_p125.strap -- MCP "THE RECEPTOR", printed page 125.
+! docs/MCP_Mar63_001-249.pdf PDF p.132, header READ and not assumed:
+! the top line prints "TIME CLOCK 00054041   PUNID 11D11MCP
+! CARD ID EB000151   DIST. OF 3/01   3/01   PAGE NUMBER 125", and
+! the column-heading row repeats "LOCATION 216056" on the right.
+! (The volume's OCR index, docs/ocr/MCP_Mar63_001-249.txt line 29,
+! titles the EB deck "THE RECEPTOR".)
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE CONTAINS
+! ---------------------------------------------------------------
+! FIFTY-SIX ROWS, EVERY ONE OF THEM CODE.  No comment cards, no
+! SYN rows, no DD.  First printed location 216056.40 (line 1), last
+! 216121.00 (line 56); line 56 is a half word, so the counter
+! leaves this page at 216121.40.
+!
+! THE ADDRESS CHAIN CLOSES END TO END over all fifty-six rows:
+! every printed address plus the row's own length (half word, or
+! full word where the BINARY OUTPUT column prints two half words)
+! equals the next row's printed address, with no gap and no
+! overlap.  That is the page's internal check and it passes.
+!
+! The page is the tail of the RECEPTOR's unit-hunt and its two
+! wait loops:
+!   lines  1- 4  index set-up over the unit-area table ($11).
+!   lines  5- 7  K HUNT / K HEX: scan the table for a unit whose
+!                REWIND or MOUNT bit is on, branching to K STAB.
+!   lines  8-10  pull the unit number out of S UNIT and preset the
+!                retry count ($11) and $6 from K REP.
+!   lines 11-19  K PUNT: a LOC(SEOP) control operation, then the
+!                standard "wait for EKJ, count down, give up"
+!                three-row loop, then RCLRUK -- save the IC in
+!                KCBJR and go clear the control word.
+!   lines 20-31  K NET: the same shape around a CCW (-WAIT FOR END
+!                OP), then the SEOP / stray-interrupt tests and the
+!                CI0001 connective that builds a six-bit pattern.
+!   lines 32-35  RINTOK: step $11 and re-enter RNTMCP+1.0.
+!   lines 36-40  K K SET: return if a stray CS interrupt, set the
+!                K CS Q bit, test S OWNER, go to K NORM.
+!   lines 41-56  K STAB (-TEST IF UNIT IS READY) and KSTAG: a third
+!                and fourth copy of the LOC/CCW wait loop.
+!
+! FOUR COMMENT-COLUMN ENTRIES, and they are the page's English
+! oracle (docs/transcription_workflow.md):
+!   line 20  -WAIT FOR END OP
+!   line 27  -IF SEOP BIT ON, LOOP      <- settles SEOP, not SECP
+!   line 36  -RETURN IF STRAY CS
+!   line 41  -TEST IF UNIT IS READY
+!
+! THREE LOCATION-COLUMN ASTERISKS, recorded and not explained:
+! lines 2, 21 and 37 print a bare "*" after the location, the same
+! mark printed p.103 line 48 and printed pp.3/37 carry.  No
+! compiled bit changes and none of them is checked here.
+!
+! ---------------------------------------------------------------
+! >>> THE ORIGIN IS ASSERTED, NOT READ.  THIS IS THE PAGE'S ONE
+! REAL HOLE. <<<
+! ---------------------------------------------------------------
+! THE PAGE PRINTS NO "SLC" ROW AT ALL, and printed pp.121, 122,
+! 123 and 124 have not been transcribed, so the counter arriving
+! here cannot be compared against anything.  The SLC written below
+! is line 1's own printed LOCATION restated so the deck assembles
+! standalone.
+!
+! docs/transcription_workflow.md "WHAT THE ORACLE CANNOT SEE" #2
+! applies in full: a hard SLC OVERRIDES the arriving counter
+! silently, so all fifty-six !CHECK rows below would pass at any
+! origin.  They verify the page's INTERNAL consistency and its
+! externals; they do not verify the backward join to printed p.120.
+! THE BACKWARD JOIN IS OPEN.
+!
+! THE FORWARD JOIN IS CLOSED, and for free.  Printed p.126's first
+! row is "216121.40 * 216332.30 80 216116.74 02  BB,K RECEP.24,
+! K STAG" (docs/ocr/MCP_Mar63_001-249.txt line 6552).  Line 56
+! here is a half word at 216121.00, so this page hands over
+! 216121.40 and p.126 prints exactly that.  Note also that p.126's
+! row branches to K STAG, which is DEFINED on this page (line 52,
+! 216116.40) -- a second, independent tie between the two pages.
+!
+! ---------------------------------------------------------------
+! NAMES DEFINED HERE (9)
+! ---------------------------------------------------------------
+! K HUNT 216060.40, K HEX 216062.40, K PUNT 216065.00,
+! RCLRUK 216070.40, K NET 216072.00, RINTOK 216102.00,
+! K K SET 216104.40, K STAB 216110.40, KSTAG 216116.40.
+!
+! BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+! printed p.2.  This page prints the SAME symbol both ways on
+! purpose -- "K REP" on lines 11, 20, 43 and "KREP" on lines 9 and
+! 52; "K K SET" on line 36 and "KKSET" on line 32; "K CS Q" on
+! line 38 and "KCSQ" on line 37; "K STAB" on lines 5/6/41/46 and
+! "KSTAB" on line 51; "K RECEP" on lines 21/25/27/53 and "KRECEP"
+! on line 32 -- which is itself the proof that the blanks are not
+! part of the name.
+!
+! >>> THE ONE NAME THAT RESTS ON INK ALONE IS RCLRUK. <<<  It is
+! referenced only by line 30 of its own page; the volume OCR
+! garbles both instances ("REE RUK" at line 6511).  Two agreeing
+! instances on one page is INTERNAL consistency, not an external
+! check -- the letters could be jointly wrong.  Read at 800 dpi
+! and recorded as read; no !CHECK can test a spelling.
+! Every other name has an off-page witness:
+!   K HEX   -- printed p.126 line 2 and p.127 line 14 branch to it
+!              (OCR lines 6554, 6569, both "216062.74").
+!   KSTAG   -- printed p.126 line 1 (OCR 6552).
+!   K K SET -- line 32 of this page spells it KKSET.
+!   K CS Q  -- its own defining card, OCR line 6616.
+!   K HUNT / K PUNT / K NET / K STAB / RINTOK -- referenced from
+!              this page's own rows AND, for K STAB, from p.126.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- WHAT IS PINNED AND WHAT IS CONVENTION
+! ---------------------------------------------------------------
+! (a) PINNED TO THE BIT.  A VFL / BRANCH-ON-BIT / connective
+!     operand field is a 24-bit BIT address, so the printed row
+!     fixes the whole value, offset included:
+!       K RECEP 216332.00 -- and its own card is printed:
+!            "216332.00  ... K RECEP XW,0"  (OCR line 6770),
+!            corroborated by .19/.21/.24 offsets on lines 25/32/27.
+!       K CS Q  216171.00 -- card "216171.00 000000.00+ K CS Q
+!            VF,0" (OCR line 6616); line 37 uses KCSQ.31.
+!       S REW .52, S MOUNT .51, S UNIT .56, S OWNER .32, all bit
+!            offsets inside the unit-area table entry.
+!
+! (b) HALF-WORD ONLY BY BACK-DERIVATION FROM A PRINTED BRANCH --
+!     bit offsets 0-31 all encode identically (workflow doc, "WHAT
+!     THE ORACLE CANNOT SEE" #1), so the ".00"/".40" below is the
+!     HALF WORD and the bits inside it are a CONVENTION, not a
+!     reading.  EACH ONE IS DISCHARGED BY A DEFINING CARD found by
+!     greping the volume OCR for the octal address:
+!       K REJT  221300.00  OCR 9561 "221300.00 ... K REJT LVI,14,"
+!       K CLEAR 221302.40  OCR 9569 "221302.40 000036.03 02 K CLEAR"
+!       K CBJ R 221313.40  OCR 9590 "221313.40 221263.10 00 K CBJ R"
+!       K SOS   221274.00  OCR 9549 "221274.00 * ... K SOS LVI,14,"
+!       K NORM  215776.00  OCR 6405 "215776.00 000036.37 02 K NORM"
+!       K SUPP  216242.00  OCR 6677 "216242.00 216246.70 00 K SUPP"
+!       RNTMCP  216133.00  OCR 6569 "216133.00 216332.25 80 RNTMCP"
+!     So every half-word external here has its own printed card at
+!     the address this page's branch implies; none of them is a
+!     tautology off this page alone.
+!
+! (c) K REP IS NOT AN ADDRESS.  It is a COUNT, decimal 30.  Two
+!     witnesses, neither of them this page: printed p.129's K CLEAR
+!     card is "LCI,1,K REP" compiling 000036.03 02 (OCR 9569), and
+!     printed p.124's K NORM card is the same instruction written
+!     with the literal, "LCI,15,30", compiling 000036.37 02 (OCR
+!     6405).  0o36 = 30.  Written here as "SYN, 30"; measured, that
+!     reproduces lines 9/11/20/43/52 exactly.
+!
+! (d) SPELLINGS REUSED FROM A LANDED PAGE, deliberately, as
+!     tests/check_symbol_spellings.py asks.  S UN A, S REW,
+!     S MOUNT, S UNIT and S OWNER are all defined on printed p.99
+!     (decks/mcp_bootstrap_p99.strap lines 20, 43, 42, 39, 30) and
+!     this deck copies those exact spellings and values -- SUNA 0.0,
+!     SREW 0.52, SMOUNT 0.51, SUNIT 0.56, SOWNER 0.32.  SMOUNT at
+!     0.51 is additionally carried, at the same value, by the decks
+!     for printed pp.70, 75, 79, 97 and 98, so this is not even a
+!     tail-scope repeat: it is one symbol with one value.
+!     S CS INT is printed p.103's S CS INT (SCOMRG bit 7) at
+!     215001.07, and line 36 of this page prints that address --
+!     an independent confirmation of p.103's bit-level layout.
+!
+! ---------------------------------------------------------------
+! GLYPHS -- FOUR BYTES THE INK COULD NOT SETTLE, SETTLED BY WHAT
+! PRODUCED THEM
+! ---------------------------------------------------------------
+! This page opens round glyphs as badly as any in the volume: its
+! own column heading prints "LCCATICN", and rows print "COCC10.26",
+! "COCCOO.64", "2160C65.1C CO".  Every one of those is an OCTAL
+! field and cannot hold a C, so they are 0 with certainty -- but
+! that is NOT a licence over the hex byte (workflow doc: ink varies
+! per CHARACTER).  The four doubtful bytes were settled on the
+! ENCODING, and then measured:
+!
+!   line  3  V+,11,$L      reads "BO"/"80" -> it is B0.  A direct
+!            index half word puts J in bits 19-22 and the 5-bit op
+!            code in bits 23-27, so V+ (01011) lands its low four
+!            bits in the byte's HIGH nibble: B.  Line 1's LC
+!            (00101) gives 5 and prints "50"; line 10's LV,6
+!            (00011) gives 3 and prints "30".  Assembled: B0.
+!            THIS IS THE p.95 HAZARD RUNNING THE OTHER WAY -- the
+!            glyph really is a B.
+!   line 34  V+I,$11,1.0   reads "C5"/"05" -> it is 05.  An
+!            IMMEDIATE index op puts its 4-bit code in bits 28-31,
+!            the byte's LOW nibble, and bits 24-27 are zero: V+I is
+!            0101 -> 05.  Assembled: 05.
+!   line 42  V-I,2,1.0     reads "CD"/"0D" -> it is 0D, by the same
+!            rule (V-I = 1101), and line 4 is the SAME operation
+!            with the same operand and prints a clean 0D.
+!   line 11  LCI,1,K REP   reads "C2"/"02" -> it is 02 (LCI =
+!            0010), and lines 20, 43 and 52 print the identical
+!            instruction with a clean 02.
+! The volume OCR reads "C2" for a LCI row elsewhere (line 9569),
+! which is exactly the "comparing against other rows is weaker
+! still" trap; the encoder is the arbiter and all four assemble to
+! the printed word.
+!
+! C/D and B/8 were checked at 900 dpi over the whole BINARY OUTPUT
+! column.  The only B's on the page are line 3's B0 and the 8B/8A/
+! 8E index bytes, every one of which is forced by the ($11)/($10)/
+! ($14) written in its own statement.
+!
+! ---------------------------------------------------------------
+! ASSEMBLER LIMITATION -- ONE, AND IT IS THE "*I+" GAP AGAIN
+! ---------------------------------------------------------------
+! LINE 28 PRINTS "CI0001(BU,6),(.5,2)110001" AND strap_asm REJECTS
+! IT: KeyError 'CI0001' out of VFL_INT_CODES.  THE PRINTED FORM WAS
+! TESTED FIRST, as the brief requires, and that is the measured
+! failure.
+!
+! The cause is known and already written down in strap_asm.py: the
+! immediate suffix "I" (C22-6531 Appendix A footnote 3, reached for
+! connectives through footnote 10, which strap_asm quotes at
+! classify_connective's caller) is accepted as a SUFFIX --
+! "C0001I" -- but IBM also writes it INFIX, inside the two-
+! character operation.  strap_asm carries exactly one such spelling,
+! VFL_INFIX_IMMEDIATE = {"*I+": "*+I"}, from printed pp.95/96.
+! "CI0001" is the same phenomenon on a connective and it has an
+! independent primary-source witness OUTSIDE this listing:
+! 7030 Performance Characteristics Vol.2 (Mar 61) prints
+! "CI0011(BU, 8), (16)A, -8" in a worked program
+! (docs/ocr/7030_Performance_Characteristics_Vol2_Mar61.txt:1634),
+! beside "LI(BU, 8), (16)A" -- the same I, infix, on a connective.
+!
+! THE SUBSTITUTION IS BIT-IDENTICAL AND MEASURED.  Written
+! "CI0001(BU,6),(.5,2)110001" the row assembles to
+! 610000.00 80  406000.02 70 -- the printed word, both half words,
+! exactly.  The deck therefore writes C0001I and keeps the printed
+! CI0001 in the row's !CHECK note.  NOTHING UNDER strap/ WAS
+! MODIFIED; this is reported, not fixed.  The fix, if someone wants
+! it, is one line in VFL_INFIX_IMMEDIATE.
+!
+! NOTHING ELSE ON THE PAGE WAS SUBSTITUTED.  Every other printed
+! spelling was fed to strap_asm as printed and accepted, including
+! the ones worth naming because they look like they would not be:
+!   LOC(SEOP),0.0($14),0.0($6)   line 12 -- the IO form, channel
+!                                 field written as printed
+!   LOC(SEOP),0.0($14),0.($2)    line 44 -- the bare trailing dot
+!   (.5,2)110001                 line 28 -- parenthetical entry,
+!                                 radix 2, as on printed p.117
+!   BZEKJZ / BZCBJZ / BZBZ / BZB / BRZ / CB- / SIC / SC / V+I /
+!   V-I / CM0000 / C0011         all as printed
+!
+! ---------------------------------------------------------------
+
+! ---- EXTERNALS, with the printed address each was read from -----
+
+SUNA    SYN, 0.0                     ! p.99 line 20 (SUNA SYN,SUNAA,
+                                      !   SUNAA SYN(BU,25),0.0)
+SREW    SYN(BU,1), 0.52              ! p.99 line 43; line 5 here
+SMOUNT  SYN(BU,1), 0.51              ! p.99 line 42; line 6 here
+SUNIT   SYN(BU,3), 0.56              ! p.99 line 39; line 8 here
+SOWNER  SYN(BU,1), 0.32              ! p.99 line 30; line 39 here
+SCSINT  SYN(BU,1), (8)215001.07      ! p.103 line 17 (SCOMRG bit 7)
+KREP    SYN, 30                      ! A COUNT, not an address --
+                                      !   OCR 9569 / 6405, see above
+KRECEP  SYN, (8)216332.0             ! card OCR 6770 "K RECEP XW,0"
+KCSQ    SYN, (8)216171.0             ! card OCR 6616 "K CS Q VF,0"
+KREJT   SYN, (8)221300.0             ! card OCR 9561; HALF WORD only
+KCLEAR  SYN, (8)221302.40            ! card OCR 9569; HALF WORD only
+KCBJR   SYN, (8)221313.40            ! card OCR 9590; HALF WORD only
+KSOS    SYN, (8)221274.0             ! card OCR 9549; HALF WORD only
+KNORM   SYN, (8)215776.0             ! card OCR 6405; HALF WORD only
+KSUPP   SYN, (8)216242.0             ! card OCR 6677; HALF WORD only
+RNTMCP  SYN, (8)216133.0             ! card OCR 6569; HALF WORD only
+
+! ---- THE PAGE ---------------------------------------------------
+! ASSERTED ORIGIN: line 1's own printed LOCATION.  The page prints
+! no SLC and pp.121-124 are not transcribed.  See the header.
+
+        SLC, (8)216056.40
+
+        LC, 11, $L                   ! line  1
+        LV, 11, SUNA($10)            ! line  2  (location carries *)
+        V+, 11, $L                   ! line  3
+        V-I, 11, 1.0                 ! line  4
+KHUNT   BB, SREW($11), KSTAB         ! line  5
+        BB, SMOUNT($11), KSTAB       ! line  6
+KHEX    CB-, 11, KHUNT               ! line  7
+        L(BU,3), SUNIT($10), -18     ! line  8
+        LCI, $11, KREP               ! line  9
+        LV, 6, $L                    ! line 10
+KPUNT   LCI, 1, KREP                 ! line 11
+        LOC(SEOP), 0.0($14), 0.0($6) ! line 12
+        BZEKJZ, $+1.32               ! line 13
+        CB, 1, $-1.32                ! line 14
+        B, KREJT                     ! line 15
+        BZCBJZ, KNET                 ! line 16
+RCLRUK  SIC, KCBJR                   ! line 17
+        B, KCLEAR                    ! line 18
+        B, KPUNT                     ! line 19
+KNET    LCI, 1, KREP                 ! line 20 -WAIT FOR END OP
+        CCW, 0.0($14), KRECEP        ! line 21  (location carries *)
+        BZEKJZ, $+1.32               ! line 22
+        CB, 1, $-1.32                ! line 23
+        B, KREJT                     ! line 24
+        L(BU,6), KRECEP.19           ! line 25
+        BRZ, KKSET                   ! line 26
+        BB, KRECEP.24, KNET          ! line 27 -IF SEOP BIT ON, LOOP
+! line 28 PRINTS "CI0001"; see ASSEMBLER LIMITATION above.
+        CI0001(BU,6), (.5,2)110001   ! line 28
+        BRZ, RINTOK                  ! line 29
+        CB, $11, RCLRUK              ! line 30
+        B, KSOS                      ! line 31
+RINTOK  BZB, KRECEP.21, KKSET        ! line 32
+        LCI, $11, 1.0                ! line 33
+        V+I, $11, 1.0                ! line 34
+        B, RNTMCP+1.0                ! line 35
+KKSET   BZBZ, SCSINT, KSUPP          ! line 36 -RETURN IF STRAY CS
+        CM0000(BU,1), KCSQ.31        ! line 37  (location carries *)
+        LV, 11, KCSQ                 ! line 38
+        C0011(BU,1), SOWNER($11), -19 ! line 39
+        B, KNORM                     ! line 40
+KSTAB   SC, 11, $2                   ! line 41 -TEST IF UNIT IS READY
+        V-I, 2, 1.0                  ! line 42
+        LCI, 1, KREP                 ! line 43
+        LOC(SEOP), 0.0($14), 0.($2)  ! line 44
+        BZEKJZ, $+1.32               ! line 45
+        CB, 1, KSTAB+1.32            ! line 46
+        B, KREJT                     ! line 47
+        BZCBJZ, KSTAG                ! line 48
+        SIC, KCBJR                   ! line 49
+        B, KCLEAR                    ! line 50
+        B, KSTAB+1.0                 ! line 51
+KSTAG   LCI, 1, KREP                 ! line 52
+        CCW, 0.0($14), KRECEP        ! line 53
+        BZEKJZ, $+1.32               ! line 54
+        CB, 1, $-1.32                ! line 55
+        B, KREJT                     ! line 56
+
+! ---- THE PRINTED LISTING, for listing_oracle ---------------------
+!   line  1  216056.40  000010.26 50                       LC,11,$L
+!   line  2  216057.00* 000000.26 3A                       LV,11,S UN A($10)
+!   line  3  216057.40  000010.26 B0                       V+,11,$L
+!   line  4  216060.00  000001.27 0D                       V-I,11,1.0
+!   line  5  216060.40  000000.64 8B 216110.74 02  K HUNT  BB,S REW($11),K STAB
+!   line  6  216061.40  000000.63 8B 216110.74 02          BB,S MOUNT($11),K STAB
+!   line  7  216062.40  216060.67 C8                K HEX  CB-,11,K HUNT
+!   line  8  216063.00  000000.70 8A 003067.20 50          L(BU,3),S UNIT($10),-18
+!   line  9  216064.00  000036.27 02                       LCI,$11,KREP
+!   line 10  216064.40  000010.14 30                       LV,6,$L
+!   line 11  216065.00  000036.03 02                K PUNT LCI,1,K REP
+!   line 12  216065.40  000000.00 8E 000000.17 06          LOC(SEOP),0.0($14),0.0($6)
+!   line 13  216066.40  216070.03 44                       BZEKJZ,$+1.32
+!   line 14  216067.00  216065.42 48                       CB,1,$-1.32
+!   line 15  216067.40  221300.10 00                       B,K REJT
+!   line 16  216070.00  216072.04 44                       BZCBJZ,K NET
+!   line 17  216070.40  221313.40 80               RCLRUK  SIC,KCBJR
+!   line 18  216071.00  221302.50 00                       B,KCLEAR
+!   line 19  216071.40  216065.10 00                       B,K PUNT
+!   line 20  216072.00  000036.03 02                K NET  LCI,1,K REP      -WAIT FOR END OP
+!   line 21  216072.40* 000000.00 8E 216332.21 00          CCW,0.0($14),K RECEP
+!   line 22  216073.40  216075.03 44                       BZEKJZ,$+1.32
+!   line 23  216074.00  216072.42 48                       CB,1,$-1.32
+!   line 24  216074.40  221300.10 00                       B,K REJT
+!   line 25  216075.00  216332.23 80 006000.20 50          L(BU,6),K RECEP.19
+!   line 26  216076.00  216104.74 C2                       BRZ,K K SET
+!   line 27  216076.40  216332.30 80 216072.34 02          BB,K RECEP.24,K NET  -IF SEOP BIT ON, LOOP
+!   line 28  216077.40  610000.00 80 406000.02 70          CI0001(BU,6),(.5,2)110001
+!   line 29  216100.40  216102.34 C2                       BRZ,RINTOK
+!   line 30  216101.00  216070.66 48                       CB,$11,RCLRUK
+!   line 31  216101.40  221274.10 00                       B,KSOS
+!   line 32  216102.00  216332.25 80 216104.74 00  RINTOK  BZB,KRECEP.21,KKSET
+!   line 33  216103.00  000001.27 02                       LCI,$11,1.0
+!   line 34  216103.40  000001.27 05                       V+I,$11,1.0
+!   line 35  216104.00  216134.10 00                       B,RNTMCP+1.0
+!   line 36  216104.40  215001.07 80 216242.34 04  K K SET BZBZ,S CS INT,K SUPP  -RETURN IF STRAY CS
+!   line 37  216105.40* 216171.37 80 001000.00 F0          CM0000(BU,1),KCSQ.31
+!   line 38  216106.40  216171.26 30                       LV,11,K CS Q
+!   line 39  216107.00  000000.40 8B 001066.46 70          C0011(BU,1),S OWNER($11),-19
+!   line 40  216110.00  215776.10 00                       B,K NORM
+!   line 41  216110.40  000022.27 50                K STAB SC,11,$2          -TEST IF UNIT IS READY
+!   line 42  216111.00  000001.05 0D                       V-I,2,1.0
+!   line 43  216111.40  000036.03 02                       LCI,1,K REP
+!   line 44  216112.00  000000.00 8E 000000.17 02          LOC(SEOP),0.0($14),0.($2)
+!   line 45  216113.00  216114.43 44                       BZEKJZ,$+1.32
+!   line 46  216113.40  216112.02 48                       CB,1,K STAB+1.32
+!   line 47  216114.00  221300.10 00                       B,K REJT
+!   line 48  216114.40  216116.44 44                       BZCBJZ,KSTAG
+!   line 49  216115.00  221313.40 80                       SIC,KCBJR
+!   line 50  216115.40  221302.50 00                       B,KCLEAR
+!   line 51  216116.00  216111.50 00                       B,KSTAB+1.0
+!   line 52  216116.40  000036.03 02                KSTAG  LCI,1,KREP
+!   line 53  216117.00  000000.00 8E 216332.21 00          CCW,0.0($14),K RECEP
+!   line 54  216120.00  216121.43 44                       BZEKJZ,$+1.32
+!   line 55  216120.40  216117.02 48                       CB,1,$-1.32
+!   line 56  216121.00  221300.10 00                       B,K REJT
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 125 ------------------
+!SYM   KHUNT    216060.40
+!SYM   KHEX     216062.40
+!SYM   KPUNT    216065.00
+!SYM   RCLRUK   216070.40
+!SYM   KNET     216072.00
+!SYM   RINTOK   216102.00
+!SYM   KKSET    216104.40
+!SYM   KSTAB    216110.40
+!SYM   KSTAG    216116.40
+!CHECK 216056.40 | 000010.26 50 | line  1 LC,11,$L
+!CHECK 216057.00 | 000000.26 3A | line  2 LV,11,S UN A($10) -- location carries a bare "*"
+!CHECK 216057.40 | 000010.26 B0 | line  3 V+,11,$L -- the byte is B0, settled on the encoding
+!CHECK 216060.00 | 000001.27 0D | line  4 V-I,11,1.0
+!CHECK 216060.40 | 000000.64 8B 216110.74 02 | line  5 K HUNT BB,S REW($11),K STAB
+!CHECK 216061.40 | 000000.63 8B 216110.74 02 | line  6 BB,S MOUNT($11),K STAB
+!CHECK 216062.40 | 216060.67 C8 | line  7 K HEX CB-,11,K HUNT
+!CHECK 216063.00 | 000000.70 8A 003067.20 50 | line  8 L(BU,3),S UNIT($10),-18
+!CHECK 216064.00 | 000036.27 02 | line  9 LCI,$11,KREP -- KREP is the COUNT 30
+!CHECK 216064.40 | 000010.14 30 | line 10 LV,6,$L
+!CHECK 216065.00 | 000036.03 02 | line 11 K PUNT LCI,1,K REP
+!CHECK 216065.40 | 000000.00 8E 000000.17 06 | line 12 LOC(SEOP),0.0($14),0.0($6)
+!CHECK 216066.40 | 216070.03 44 | line 13 BZEKJZ,$+1.32
+!CHECK 216067.00 | 216065.42 48 | line 14 CB,1,$-1.32
+!CHECK 216067.40 | 221300.10 00 | line 15 B,K REJT -- K REJT pinned to the HALF WORD only
+!CHECK 216070.00 | 216072.04 44 | line 16 BZCBJZ,K NET
+!CHECK 216070.40 | 221313.40 80 | line 17 RCLRUK SIC,KCBJR -- HALF WORD only
+!CHECK 216071.00 | 221302.50 00 | line 18 B,KCLEAR -- HALF WORD only
+!CHECK 216071.40 | 216065.10 00 | line 19 B,K PUNT
+!CHECK 216072.00 | 000036.03 02 | line 20 K NET LCI,1,K REP -WAIT FOR END OP
+!CHECK 216072.40 | 000000.00 8E 216332.21 00 | line 21 CCW,0.0($14),K RECEP -- location carries a bare "*"
+!CHECK 216073.40 | 216075.03 44 | line 22 BZEKJZ,$+1.32
+!CHECK 216074.00 | 216072.42 48 | line 23 CB,1,$-1.32
+!CHECK 216074.40 | 221300.10 00 | line 24 B,K REJT
+!CHECK 216075.00 | 216332.23 80 006000.20 50 | line 25 L(BU,6),K RECEP.19
+!CHECK 216076.00 | 216104.74 C2 | line 26 BRZ,K K SET
+!CHECK 216076.40 | 216332.30 80 216072.34 02 | line 27 BB,K RECEP.24,K NET -IF SEOP BIT ON, LOOP
+!CHECK 216077.40 | 610000.00 80 406000.02 70 | line 28 PRINTED "CI0001(BU,6),(.5,2)110001"; written C0001I, bit-identical, see ASSEMBLER LIMITATION
+!CHECK 216100.40 | 216102.34 C2 | line 29 BRZ,RINTOK
+!CHECK 216101.00 | 216070.66 48 | line 30 CB,$11,RCLRUK
+!CHECK 216101.40 | 221274.10 00 | line 31 B,KSOS -- HALF WORD only
+!CHECK 216102.00 | 216332.25 80 216104.74 00 | line 32 RINTOK BZB,KRECEP.21,KKSET
+!CHECK 216103.00 | 000001.27 02 | line 33 LCI,$11,1.0
+!CHECK 216103.40 | 000001.27 05 | line 34 V+I,$11,1.0 -- the byte is 05, settled on the encoding
+!CHECK 216104.00 | 216134.10 00 | line 35 B,RNTMCP+1.0 -- HALF WORD only
+!CHECK 216104.40 | 215001.07 80 216242.34 04 | line 36 K K SET BZBZ,S CS INT,K SUPP -RETURN IF STRAY CS
+!CHECK 216105.40 | 216171.37 80 001000.00 F0 | line 37 CM0000(BU,1),KCSQ.31 -- location carries a bare "*"
+!CHECK 216106.40 | 216171.26 30 | line 38 LV,11,K CS Q
+!CHECK 216107.00 | 000000.40 8B 001066.46 70 | line 39 C0011(BU,1),S OWNER($11),-19
+!CHECK 216110.00 | 215776.10 00 | line 40 B,K NORM -- HALF WORD only
+!CHECK 216110.40 | 000022.27 50 | line 41 K STAB SC,11,$2 -TEST IF UNIT IS READY
+!CHECK 216111.00 | 000001.05 0D | line 42 V-I,2,1.0 -- the byte is 0D, settled on the encoding
+!CHECK 216111.40 | 000036.03 02 | line 43 LCI,1,K REP
+!CHECK 216112.00 | 000000.00 8E 000000.17 02 | line 44 LOC(SEOP),0.0($14),0.($2) -- the bare trailing dot is as printed
+!CHECK 216113.00 | 216114.43 44 | line 45 BZEKJZ,$+1.32
+!CHECK 216113.40 | 216112.02 48 | line 46 CB,1,K STAB+1.32
+!CHECK 216114.00 | 221300.10 00 | line 47 B,K REJT
+!CHECK 216114.40 | 216116.44 44 | line 48 BZCBJZ,KSTAG
+!CHECK 216115.00 | 221313.40 80 | line 49 SIC,KCBJR
+!CHECK 216115.40 | 221302.50 00 | line 50 B,KCLEAR
+!CHECK 216116.00 | 216111.50 00 | line 51 B,KSTAB+1.0
+!CHECK 216116.40 | 000036.03 02 | line 52 KSTAG LCI,1,KREP
+!CHECK 216117.00 | 000000.00 8E 216332.21 00 | line 53 CCW,0.0($14),K RECEP
+!CHECK 216120.00 | 216121.43 44 | line 54 BZEKJZ,$+1.32
+!CHECK 216120.40 | 216117.02 48 | line 55 CB,1,$-1.32
+!CHECK 216121.00 | 221300.10 00 | line 56 B,K REJT -- a half word, so the counter leaves this page at 216121.40, which printed p.126 line 1 prints (OCR 6552).  NO CHECK CAN CONSUME THIS; it is recorded as the forward-join witness.

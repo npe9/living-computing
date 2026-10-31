@@ -1605,6 +1605,29 @@ def classify_vfl_or_fp(stmt):
             return 'VFL', base_op, invert, immediate, p_progressive, dds_mods, None
         raise AssemblerError(f"unknown data-description mode {mode!r}", stmt.lineno)
 
+    # >>> A WRITTEN-MINUS VFL FORM NEED NOT CARRY A DATA DESCRIPTION.
+    # <<<  The rewrite above lives inside the dds branch on purpose --
+    # see its note: by that point the FP modes have returned, so "M-"
+    # cannot be mistaken for the floating-point operation that
+    # strip_fp_sign owns.  With NO dds there is no mode to separate
+    # them, which is why it was not done here.
+    #
+    # MCP printed p.127 line 22 is bare "M-1,S FILE K($12)", exactly as
+    # its line 20 is bare "M+1,S FILE K($12)" -- the row inherits the
+    # SYMBOL's own SYN(BU,12), and it compiles to 000007.46 8C
+    # 014000.32 B0, the printed word.  So the gap is real and it is
+    # narrower than "M-1 is supported".
+    #
+    # THE AMBIGUITY IS AVOIDED RATHER THAN IGNORED: rewrite only when
+    # the base is a VFL operation and NOT also a floating-point one.
+    # "M+1" is in VFL_INT_CODES alone, so "M-1" is safe here; "+MG" is
+    # in BOTH tables, so "-MG" is left to strip_fp_sign exactly as
+    # before and this path does not touch it.
+    if base_op in VFL_INT_WRITTEN_MINUS:
+        _wm = VFL_INT_WRITTEN_MINUS[base_op]
+        if _wm in VFL_INT_CODES and _wm not in FP_CODES:
+            base_op, invert = _wm, 1
+
     in_vfl, in_fp = base_op in VFL_INT_CODES, base_op in FP_CODES
     if not in_vfl and not in_fp and strip_fp_sign(base_op) is not None:
         return 'FP', base_op, invert, immediate, p_progressive, dds_mods, None
@@ -3147,7 +3170,16 @@ def emit_statement(stmt, symtab, image):
             raise AssemblerError(
                 f"{op} takes J, A1(I1) and A2(I2) fields "
                 "(pocket card: OP, J, A1(I1), A2(I2))", stmt.lineno)
-        j = eval_expr(stmt.fields[0], symtab, loc, lineno=stmt.lineno)
+        # >>> J IS A REGISTER NUMBER, SO IT MAY BE WRITTEN "$12". <<<
+        # MCP printed p.124 line 40 is "T,$12,S LR PP,S TLR" and
+        # eval_expr turned the "$12" into X12's BIT ADDRESS, 1792,
+        # which the four-bit check then rightly refused.  eval_reg is
+        # what the other J fields in this file already use -- see the
+        # count-branch and branch-on-indicator paths above -- and it
+        # takes a bare number too, so "T,12,..." still works.  The
+        # page is the witness: both spellings compile to
+        # 215266.00 80 215230.30 20, which is what line 40 prints.
+        j = eval_reg(stmt.fields[0], symtab, stmt.lineno)
         # J is FOUR bits (51-54).  With the immediate-count modifier it
         # IS the count, so a count that does not fit has to be refused
         # rather than truncated -- every numeric field this project has

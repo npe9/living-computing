@@ -6369,6 +6369,31 @@ run "the IF analyzer, printed p.117" python3 verify_mcp_page.py 117
 run "transfer control and enter pseudo-op, printed p.118" python3 verify_mcp_page.py 118
 run "PRIME and the dispatcher error exits, printed p.119" python3 verify_mcp_page.py 119
 run "the prime queue control words, printed p.120" python3 verify_mcp_page.py 120
+
+# >>> pp.121-128: THE IF ANALYZER'S TENTACLE TABLE, THE RECEPTOR AND
+# THE CHANNEL-SIGNAL SUPERVISOR. <<<
+# p.121 is a table of 36 VF tentacle addresses -- the one page whose
+# externals are NOT pinned only to the half word, because a VF
+# compiles the full 24-bit value.  p.122 is the RECEPTOR (K STORE,
+# the landing site of p.112's five interrupt vectors), pp.123-124 the
+# unit-status gate and channel/unit handler, pp.125-127 the receptor's
+# unit hunt and the console-request paths, p.128 the CONCEPTOR and
+# channel-signal queue.
+#
+# FIVE PRINTED FORMS THIS BLOCK TURNED OUT TO ACCEPT once tested, all
+# now in strap_asm with their citations: blanks inside a symbol, the
+# infix-I connective (C/CM/CT), an omitted address before an index,
+# Transmit's J as a register name, and a bare written-minus VFL with
+# no data description.  A sixth was never a gap at all -- a deck
+# substituted a parenthetical entry the assembler already handled.
+run "the IF analyzer's tentacle table, printed p.121" python3 verify_mcp_page.py 121
+run "the RECEPTOR, printed p.122" python3 verify_mcp_page.py 122
+run "the unit-status gate and interrupt queue, printed p.123" python3 verify_mcp_page.py 123
+run "the channel and unit interrupt handler, printed p.124" python3 verify_mcp_page.py 124
+run "the receptor's unit hunt, printed p.125" python3 verify_mcp_page.py 125
+run "the console-request handler, printed p.126" python3 verify_mcp_page.py 126
+run "the tape mount and release exits, printed p.127" python3 verify_mcp_page.py 127
+run "the CONCEPTOR and channel-signal queue, printed p.128" python3 verify_mcp_page.py 128
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
 run "the program status table, printed p.109" python3 verify_mcp_page.py 109
 run "the interrupt table, printed p.110" python3 verify_mcp_page.py 110

@@ -1,0 +1,471 @@
+! mcp_bootstrap_p124.strap -- MCP printed page 124, PDF p.131 of
+! docs/MCP_Mar63_001-249.pdf.  THE HEADER WAS READ, NOT ASSUMED: the
+! top line prints "TIME CLOCK 00054041   PUNID 11011MCP   CARD ID
+! EB000100   DIST. OF 3/01   3/01   PAGE NUMBER 124", and the
+! right-hand column heading prints "LOCATION 216013".
+!
+! >>> THE PAGE IS FIFTY-SIX ROWS OF CODE AND NOTHING ELSE. <<<
+! Every one of the 56 lines carries a LOCATION and BINARY OUTPUT.
+! There are NO comment cards, NO SYN rows, NO DD/DRZ reservations and
+! NO row whose location ends in "+".  The card-serial column runs
+! EB000100 (line 1) to EB000150 (line 56) with no restart and no gap
+! -- two statements share a card where the SIC/branch pair is one
+! 64-bit instruction (lines 42/43 = EB000137) and where two index
+! operations were punched together (lines 7/8 = EB000106, 9/10 =
+! EB000107, 11/12 = EB000108, 28/29 = EB000124).  printed p.120's
+! deck was still punching EA0001xx serials, so the EB deck opened
+! somewhere in the three pages (121-123) that are not transcribed yet.
+!
+! WHAT THE PAGE DOES.  It is the channel/unit interrupt handler of
+! the MCP supervisor: it sets the MCP and PP storage boundaries
+! (lines 1-12), walks the channel and unit tables (13-26), decodes
+! the four I/O indicator bits into four exit values (27-38), does a
+! range check on the T.O.E. (39-41), returns through SIC/B,S DISP
+! (42-43), and then handles the cancel / single-unit / malfunction /
+! console-signal cases (44-56).
+!
+! ---------------------------------------------------------------
+! >>> THE ORIGIN IS ASSERTED, NOT CHECKED. <<<
+! ---------------------------------------------------------------
+! THERE IS NO SLC ROW ON THIS PAGE.  The "SLC,(8)216013." written
+! below is a HARD origin, and docs/transcription_workflow.md's
+! "WHAT THE ORACLE CANNOT SEE" item 2 applies in full: a hard SLC
+! OVERRIDES the arriving counter silently, so every !CHECK below
+! would still pass if the origin were wrong.  Nothing in this deck
+! tests it.  What DOES support it, by hand:
+!
+!   (a) THE PAGE'S OWN HEADER prints "LOCATION 216013" in the
+!       right-hand column heading -- IBM's own assembler stating
+!       where the page starts.  That is a second, independent
+!       reading of the origin, printed on the page itself, and it
+!       is the nearest thing to a printed "SLC,$" this page offers.
+!   (b) BACKWARD JOIN.  docs/ocr/MCP_Mar63_001-249.txt's block for
+!       PDF p.130 (printed p.123) ends "5C# 216012.4C 215021.23 CD
+!       V-I,9,S PROG S" -- a half word at 216012.40, so the counter
+!       arrives at 216013.00, which is this page's line 1.
+!   (c) FORWARD JOIN.  Line 56 is a full word at 216055.40, so the
+!       counter leaves at 216056.40; the OCR block for PDF p.132
+!       (printed p.125) opens "1# 216056.40 COCC10.26 50 LC,L,$L".
+!
+!   BOTH JOINS REST ON THE GARBLED FULL-VOLUME OCR, NOT ON A LANDED
+!   DECK, because printed pp.121, 122 and 123 have not been
+!   transcribed.  They are hand comparisons and no test consumes
+!   them.  When p.123 and p.125 land, compare them against (b) and
+!   (c) above.
+!
+! THE ADDRESS CHAIN CLOSES END TO END INSIDE THE PAGE.  First
+! printed address 216013.00 (line 1), last 216055.40 (line 56);
+! every row's printed address plus its own length equals the next
+! row's printed address, with no gap and no overlap, across all
+! fifty-six.  Twenty rows are full words (two printed half-words)
+! and thirty-six are half words.
+!
+! THREE ROWS CARRY A "*" IN THE ONE-CHARACTER FLAG COLUMN AFTER THE
+! LOCATION: lines 3, 22 and 38.  Recorded, not explained -- p.103
+! and p.120 both carry listing marks nobody has accounted for.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- WHERE EACH SPELLING AND ADDRESS CAME FROM
+! ---------------------------------------------------------------
+! FOURTEEN OF THE TWENTY-THREE ARE INHERITED FROM LANDED DECKS, and
+! that is why the deck does not have to back-derive them:
+!
+!   SBAMCP  215003.00   p.103 !SYM (line 31 of that page)
+!   SBAPP   215005.00   p.103 !SYM
+!   SCHANS  215002.00   p.103 !SYM (SYN,SXCHAN there)
+!   SBNDRS  215224.00   p.116 !SYM; p.117 writes SYN,(8)215224.0
+!   SLRBU   215324.00   p.116 !SYM; p.117 writes SYN,(8)215324.0
+!   SLRMCP  215362.00   p.116 !SYM; p.117 writes SYN,(8)215362.0
+!   SLRPP   215266.00   p.116 !SYM
+!   STLR    215230.00   p.116 !SYM; p.117/p.118 write SYN,(8)215230.0
+!   SCHANN  SYN(BU,7),0.12    p.101 line 5  -CHANNEL NUMBER
+!   SCCW    SYN(BU,64),4.0    p.102 line 15 -COPIED CONTROL WORD
+!   SIOIND  SYN(BU,5),1.09    p.102 line 7  -IO INDICATORS
+!   SMULTI  SYN(BU,1),0.27    p.99  line 24 -MULTI-UNIT CHAN
+!   SUNSUP  SYN(BU,1),0.30    p.99  line 28 -UNIT SUPPRESSION
+!   SUNASG  SYN(BU,1),0.29    p.99  line 27 -UNIT ASSIGNMENT
+!   SUNITK  SYN(BU,4),0.59    p.99  line 40 -UNIT COUNT
+!   SPPTNG  SYN,(16)1005.0    p.107 line 10 - 5 ILLEGAL PP T.O.E.
+!       (line 41's LVI prints the WORD 010005; see the note below --
+!        it does NOT corroborate the bit offset)
+!   SDISIC  (8)217451.40      p.103/p.119/p.120
+!   SDISP   (8)217372.00      p.119/p.120
+!
+! tests/check_symbol_spellings.py was run with this deck added to the
+! deck set: 1047 symbol definitions, no symbol spelled two ways.
+!
+! THE FIVE THIS PAGE INTRODUCES, and how far each is pinned:
+!
+!   KSUPP   216242.00  Corroborated OFF THE PAGE.  The full-volume
+!       OCR's block for PDF p.135 (printed p.128) prints "2% 216242.CC
+!       216246.7C CO  K SUPP  NOP,K COMM R" -- the defining card, at
+!       216242.00, spelled "K SUPP".  This page prints it closed up,
+!       "KSUPP", on lines 27 and 47; blanks are not part of a STRAP
+!       name, so the two are the same symbol.  Lines 27 and 47 are
+!       both branch-family rows, whose printed offset DOES carry bit
+!       32 (that is how PCONE1 was caught at .40 below), and both
+!       print 216242.34 with no 0o40 -- so the LOW half word is a
+!       reading here, not a convention; bits 0-31 are not.  The
+!       OCR'd defining row agrees.
+!   KKK     215730.00  Corroborated: the OCR's block for PDF p.129
+!       (printed p.122)
+!       prints "2S% 215730.CCG ... KKK --L(BU,3)S UNIT($1C),-18" at
+!       215730.00.  Line 52's "B,K KK" prints 215730.10, i.e. no
+!       half-word bit, so .00 is a reading and not a convention here.
+!   KDOCL   215732.00  Defining card on printed p.122 (PDF p.129),
+!       "K DOCL  LV,12,S UN A($11)   -OBTAIN UNIT AREA TABLE".  See
+!       the GLYPHS note below -- the fourth character is a C and not
+!       an O, read at 1800 dpi against the closed O beside it.
+!   PCONE1  216620.40  >>> ITS HALF WORD IS OBSERVABLE AND IT IS THE
+!       UPPER ONE. <<<  Line 51 prints "216620.72 C2"; the same
+!       instruction with the symbol at 216620.00 assembles .32, so
+!       the printed 0o40 is the half-word select.  Confirmed
+!       independently: the OCR's block for PDF p.142 (printed p.135)
+!       prints an SLC row at 216620.40 and then "216620.4C ...
+!       P CON 1  CM0000(BU,3),
+!       S UNIT($10)", and the comment cards above it read "P CON E1
+!       IS THE ENTRY PT FROM RECEPTOR IF CS INTERRUPT ON..." and
+!       "P CON E2 IS THE ENTRY PT IF...".  THE COMMENT COLUMN IS THE
+!       ORACLE FOR THE NAME: it is P CON E1, with an E, even though
+!       the NAME column OCRs as "P CON 1".
+!   KSINGL 216050.00 and KSIGNL 216054.00 are DEFINED ON THIS PAGE,
+!       and both are corroborated by references from printed p.122
+!       (OCR block for PDF p.129): the OCR there prints "...216050.34 OC BZB,S MULTI($10),
+!       K SINGL" and "...216054.34 C2 BRZ,K SIGNL".  Two
+!       near-identical names on one page, each confirmed by a
+!       different caller at the right address.
+!
+! >>> WHERE A BIT OFFSET IS AND IS NOT OBSERVABLE HERE. <<<  For the
+! plain branches (B, lines 4/45/49/52/43) and the branch-on-bit rows,
+! the printed offset carries bit 32 of the target, so .00 vs .40 IS
+! read, not assumed -- that is how PCONE1 was caught at .40.  What is
+! NOT observable is bits 0-31: every value from .00 to .37 encodes
+! identically, so KSUPP, KKK, KDOCL, SDISP and the rest are pinned to
+! the HALF WORD and their ".00" is a convention.  The index-arithmetic
+! rows (LV/V+/KV/LC/...) print a WORD address and a field that is the
+! J register doubled, so they pin nothing below the word.
+!
+! ---------------------------------------------------------------
+! GLYPHS -- FIVE READINGS THAT CHANGED ON THE SECOND LOOK
+! ---------------------------------------------------------------
+! 1. RNGTOE, NOT RNGTCE.  Lines 8, 12 and 39 print this name.  Line
+!    12 and line 39 print the fifth character OPEN, which is what
+!    tesseract and a 600-dpi eye both call a C.  LINE 8 PRINTS IT
+!    CLOSED at 1800 dpi ("BXL,RNGTOE").  Ink dropout can open a
+!    closed glyph but never closes an open one, so one closed
+!    instance settles all three: the letter is O.  The name then
+!    reads as "RaNGe T.O.E.", and printed p.107 line 10's comment
+!    for SPPTNG is "- 5 ILLEGAL PP T.O.E.", which is the same table.
+! 2. THE V+ ROWS PRINT B0, NOT 80.  Lines 2, 5, 16 and 17 were first
+!    read "80" at 600 dpi.  At 1800 dpi all four show the straight
+!    left stem of a B, and line 20's "BC" (V+ with an index of 12)
+!    is the same first nibble beside an unambiguous C.  The
+!    assembler agrees.  B and 8 differ by one stroke and this page
+!    is why mcp_crop.sh renders the code column at 900 dpi.
+! 3. LINES 27, 51 AND 55 END IN C0/C2, NOT 00/02.  These were read
+!    correctly at 900 dpi and then WRONGLY "corrected" to 00 by
+!    reasoning from the neighbouring BZB rows.  At 1800 dpi the
+!    first byte glyph has a wide right-hand opening where line 52's
+!    "00" and line 53's "02" in the same column are closed.  The
+!    lesson is the one docs/transcription_workflow.md already
+!    states: settle the byte on what produced it, and an argument
+!    from a DIFFERENT instruction is not that.
+! 4. K DOCL vs K DODO.  Both names contain a round glyph with a gap.
+!    They are different letters, and the discriminator is the SIZE
+!    of the gap, read at 1800 dpi against the closed O in the same
+!    name: K DODO's fourth character has a hairline break and
+!    matches its own second character (a closed O); K DOCL's fourth
+!    character has an opening spanning a third of the circle and is
+!    plainly wider than the closed O two places before it.  Both
+!    names rest on ink alone -- nothing on this page or any landed
+!    deck references either -- so this is the weakest reading in the
+!    deck and is flagged as such.  K DOCL's defining card on printed
+!    p.122 prints the same shapes, which is a second printing but
+!    NOT a second drum, so it is corroboration of a weak kind.
+!    >>> K DODO IS THE ONE SYMBOL IN THIS DECK THAT NOTHING
+!    CORROBORATES AT ALL. <<<  K DOCL and K KK have defining cards on
+!    printed p.122, K SUPP has one on printed p.128, K SINGL and
+!    K SIGNL have callers on printed p.122, and every S-prefixed
+!    external is a landed deck's spelling.  K DODO is defined here,
+!    referenced only here (line 18), and rests on ink alone.
+! 5. "C ERROR" REALLY DOES BEGIN WITH C, on a page where every other
+!    label begins with K or R.  The glyph's opening is as wide as
+!    the C in "K C SIGL" on the line below and much wider than the
+!    closed O's in the word ERROR beside it.  It is printed the same
+!    way in lines 31 and 32's operands.
+! Also settled by zoom: line 15's index is ($13), not the ($12) the
+! full-volume OCR reads; the assembled word agrees with ($13).
+! Lines 31-34 are ONE symbol, S IO IND, indexed +.0/+.1/+.2/+.3.
+! Line 34 prints it "S IC IND" to the eye; the other three print the
+! O, and p.102's deck already defines S IO IND at 000001.11.
+!
+! ---------------------------------------------------------------
+! ASSEMBLER LIMITATIONS -- THREE, ALL REPORTED AND NOT FIXED
+! ---------------------------------------------------------------
+! NOTHING UNDER strap/ WAS MODIFIED.  Each printed form below WAS
+! TESTED first and really is rejected; each substitute assembles
+! BIT-IDENTICALLY (its row's !CHECK passes against the printed
+! binary) and the printed form is kept in the row's note.
+!
+! (1) AN ADDRESS FIELD THAT IS NOTHING BUT A PARENTHETICAL INDEX.
+!     Line 13 prints "LV,$12,($2)".  strap_asm raises
+!     "empty expression" -- eval_addr_field is handed "" and
+!     tokenize_expr refuses it.  The deck writes "LV, $12, ($2)",
+!     which prints the same 000000.30 32.  This is NOT the
+!     "(CC*)DD" parenthetical-entry gap and not the ".55(.63)21"
+!     case the brief mentions (that one assembles fine); it is a
+!     one-line gap in the address-field parser, where an omitted
+!     base should default to 0.
+!
+! (2) A CONNECTIVE WITH THE IMMEDIATE "I" INFIXED, NOT SUFFIXED.
+!     Line 26 prints "CTI0001(BU,5),(2)11101".  classify_connective
+!     accepts C/CM/CT plus exactly four binary digits, and the
+!     immediate-suffix retry at strap_asm.py:1459 only strips a
+!     TRAILING "I", so "CTI0001" matches neither and raises a bare
+!     KeyError 'CTI0001'.  "CT0001I" -- the same operation with the
+!     I at the end -- assembles and prints the identical
+!     720000.00 80 405000.03 70, so the encoder is complete and only
+!     the mnemonic grammar is short.  C22-6531 Appendix A footnote 3
+!     ("may be suffixed by the letter I") is already cited in that
+!     function; MCP's own listing shows IBM's assembler ALSO took it
+!     infixed, between the connective's letters and its four bits.
+!
+! (3) TRANSMIT'S J FIELD WILL NOT TAKE A REGISTER NAME.
+!     Line 40 prints "T,$12,SLRPP,STLR".  strap_asm evaluates T's J
+!     with eval_expr, which turns "$12" into index register 12's BIT
+!     ADDRESS (1792) and then refuses it: "T's J field is 4 bits
+!     (pocket card, bits 51-54); 1792 does not fit".  Written "T, 12,
+!     SLRPP, STLR" it assembles to the printed 215266.00 80
+!     215230.30 20, so the J really is the register NUMBER and the
+!     fix is one call -- eval_reg, as the count-branch and
+!     branch-on-indicator paths a few lines above already use.
+!     A REFUSAL, NOT A WRONG ANSWER, which is the safe failure.
+!
+! ---------------------------------------------------------------
+! WHAT THIS DECK DOES NOT ESTABLISH
+! ---------------------------------------------------------------
+! * The origin (see above) -- a hard SLC cannot disagree with the
+!   counter it replaces.
+! * Bits 0-31 of every external SYN'd off a branch.
+! * The spellings K DODO and K DOCL, which nothing references.
+! * $MASK, $IND and $15 are strap_asm's own register names; the page
+!   prints them that way and the rows assemble bit-exactly, but no
+!   primary source was consulted for them in this transcription.
+! ---------------------------------------------------------------
+
+SBAMCP  SYN, (8)215003.               ! p.103 !SYM SBAMCP 215003.00
+SBNDRS  SYN, (8)215224.               ! p.116 !SYM; p.117 SYN
+SBAPP   SYN, (8)215005.               ! p.103 !SYM SBAPP 215005.00
+SLRBU   SYN, (8)215324.               ! p.116 !SYM; p.117 SYN
+SCHANN  SYN(BU,7), 0.12               ! p.101 line 5  -CHANNEL NUMBER
+SCCW    SYN(BU,64), 4.0               ! p.102 line 15 -COPIED CONTROL WORD
+SMULTI  SYN(BU,1), 0.27               ! p.99  line 24
+SUNSUP  SYN(BU,1), 0.30               ! p.99  line 28
+SCHANS  SYN, (8)215002.               ! p.103 !SYM SCHANS 215002.00
+SLRMCP  SYN, (8)215362.               ! p.116 !SYM; p.117 SYN
+SIOIND  SYN(BU,5), 1.09               ! p.102 line 7  -IO INDICATORS
+SLRPP   SYN, (8)215266.               ! p.116 !SYM SLRPP 215266.00
+STLR    SYN, (8)215230.               ! p.116 !SYM; p.117/118 SYN
+SPPTNG  SYN, (16)1005.0               ! p.107 line 10; line 41 corroborates the WORD only
+SDISIC  SYN, (8)217451.40             ! p.103/119/120
+SDISP   SYN, (8)217372.               ! p.119/120
+SUNASG  SYN(BU,1), 0.29               ! p.99  line 27
+SUNITK  SYN(BU,4), 0.59               ! p.99  line 40
+KDOCL   SYN, (8)215732.               ! defined printed p.122; half word only
+PCONE1  SYN, (8)216620.40             ! printed p.135 (PDF p.142); the .40 IS observed
+KKK     SYN, (8)215730.               ! defined printed p.122
+KSUPP   SYN, (8)216242.               ! defined printed p.128 "K SUPP NOP,K COMM R"
+
+        SLC, (8)216013.               ! ASSERTED -- no SLC prints on this page
+
+        BXVZ, KPPINT                        ! line  1
+        V+, 2, SBAMCP                       ! line  2
+        TI, 1, SBNDRS, 3.0                  ! line  3   -SET MCP BOUNDARY
+        B, RSKBND                           ! line  4
+KPPINT  V+, 2, SBAPP                        ! line  5
+        TI, 1, SLRBU, 3.0                   ! line  6   -SET PP BOUNDARY
+        KV, $1, SLRBU.32                    ! line  7
+        BXL, RNGTOE                         ! line  8
+        LV, $12, $1                         ! line  9
+        V+I, $12, 5.0                       ! line 10
+        KV, $12, SLRBU                      ! line 11
+        BZXL, RNGTOE                        ! line 12
+RSKBND  LV, $12, ($2)                      ! line 13   printed "LV,$12,($2)" -- see (1)
+        LV, 10, SCHANN($12)                 ! line 14
+        CM0000(BU,5), SCCW+.19($13)         ! line 15
+        V+, 10, $10                         ! line 16
+        V+, 10, SCHANS                      ! line 17
+        BZB, SMULTI($10), KDODO             ! line 18
+        LV, 11, 0.0($10)                    ! line 19
+        V+, 11, .32($12)                    ! line 20
+KCANCL  CM0000(BU,1), SUNSUP($11)           ! line 21
+        TI, 2, 0.0($13), 0.0($1)            ! line 22
+        LWF(U), SLRMCP+9.0                  ! line 23
+        ST(U), $MASK                        ! line 24
+        LF(BU,5), $IND+.15                  ! line 25   -IF AD,OP,USA OR DS
+        CTI0001(BU,5), (2)11101             ! line 26   printed "CTI0001" -- see (2)
+        BZRZ, KSUPP                         ! line 27   -LET IT HAPPEN
+        Z, $IND                             ! line 28
+        Z, $15                              ! line 29
+        BEXEZ, $+.32                        ! line 30
+        BB, SIOIND($13), CERROR             ! line 31   -TEST INTERRUPT TYPE - EPGK
+        BB, SIOIND+.1($13), CERROR          ! line 32   - UK
+        BB, SIOIND+.2($13), KENDE           ! line 33   - EE
+        BZB, SIOIND+.3($13), KCSIGL         ! line 34   -CS
+        BE, 5.0($1)                         ! line 35
+CERROR  BE, 2.0($1)                         ! line 36
+KENDE   BE, 3.0($1)                         ! line 37
+KCSIGL  BE, 4.0($1)                         ! line 38
+RNGTOE  LCI, $12, 30.0                      ! line 39
+        T, $12, SLRPP, STLR                  ! line 40   printed "T,$12,..." -- see (3)
+        LVI, $14, SPPTNG                    ! line 41
+        SIC, SDISIC                         ! line 42
+        B, SDISP                            ! line 43
+KDODO   LV, 11, $10                         ! line 44
+        B, KCANCL                           ! line 45
+KSINGL  LV, 11, $10                         ! line 46
+        BB, SUNASG($11), KSUPP              ! line 47
+        LC, 7, STLR+8.0                     ! line 48
+        B, KDOCL                            ! line 49
+KMAL    KVI, 4, 1.0                         ! line 50   -IS EQUIP CONSOLE
+        BXE, PCONE1                         ! line 51
+        B, KKK                              ! line 52
+KSIGNL  LCI, 7, 16                          ! line 53   -CS IND TO CF($7)
+        KVI, 4, 4.0                         ! line 54
+        BZXE, KMAL                          ! line 55
+        L(BU,4), SUNITK($10), -18           ! line 56
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, read off PDF p.131 (location + binary at
+! 700-1800 dpi, name + statement + comment + card at 600-1800 dpi)
+! ---------------------------------------------------------------
+! LINE  LOCATION      BINARY OUTPUT                  NAME      STATEMENT                      COMMENT                      CARD
+!   1*  216013.00     216015.71 42                             BXVZ,K PP INT                                               EB000100
+!   2*  216013.40     215003.04 B0                             V+,2,S BA MCP                                               EB000101
+!   3*  216014.00 *   215224.00 80  000003.02 A0               TI,1,S BNDRS,3.0               -SET MCP BOUNDARY            EB000102
+!   4*  216015.00     216022.10 00                             B,RSKBND                                                    EB000103
+!   5*  216015.40     215005.04 B0                 K PP INT    V+,2,S BA PP                                                EB000104
+!   6*  216016.00     215324.00 80  000003.02 A0               TI,1,S LR BU,3.0               -SET PP BOUNDARY             EB000105
+!   7*  216017.00     215324.42 90                             KV,$1,SLRBU.32                                              EB000106
+!   8*  216017.40     216044.32 42                             BXL,RNGTOE                                                  EB000106
+!   9*  216020.00     000021.30 30                             LV,$12,$1                                                   EB000107
+!  10*  216020.40     000005.31 05                             V+I,$12,5.0                                                 EB000107
+!  11*  216021.00     215324.30 90                             KV,$12,SLRBU                                                EB000108
+!  12*  216021.40     216044.32 40                             BZXL,RNGTOE                                                 EB000108
+!  13*  216022.00     000000.30 32                 RSKBND      LV,$12,($2)                                                 EB000109
+!  14*  216022.40     000000.24 3C                             LV,10,S CHAN N($12)                                         EB000110
+!  15*  216023.00     000004.23 8D  005000.00 F0               CM0000(BU,5),S CCW+.19($13)                                 EB000111
+!  16*  216024.00     000032.24 B0                             V+,10,$10                                                   EB000112
+!  17*  216024.40     215002.24 B0                             V+,10,S CHAN S                                              EB000113
+!  18*  216025.00     000000.33 8A  216047.34 00               BZB,S MULTI($10),K DODO                                     EB000114
+!  19*  216026.00     000000.26 3A                             LV,11,0.0($10)                                              EB000115
+!  20*  216026.40     000000.66 BC                             V+,11,.32($12)                                              EB000116
+!  21*  216027.00     000000.36 8B  001000.00 F0  K CANCL      CM0000(BU,1),S UN SUP($11)                                  EB000117
+!  22*  216030.00 *   000000.00 8D  000000.04 A1               TI,2,0.0($13),0.0($1)                                       EB000118
+!  23*  216031.00     215373.42 60                             LWF(U),S LR MCP+9.0                                         EB000119
+!  24*  216031.40     000014.40 E0                             ST(U),$MASK                                                 EB000120
+!  25*  216032.00     000013.17 80  005000.06 70               LF(BU,5),$IND+.15              -IF AD,OP,USA OR DS          EB000121
+!  26*  216033.00     720000.00 80  405000.03 70               CTI0001(BU,5),(2)11101                                      EB000122
+!  27*  216034.00     216242.34 C0                             BZRZ,KSUPP                     -LET IT HAPPEN               EB000123
+!  28*  216034.40     000013.22 00                             Z,$IND                                                      EB000124
+!  29*  216035.00     000037.22 00                             Z,$15                                                       EB000124
+!  30*  216035.40     216036.11 46                             BEXEZ,$+.32                                                 EB000125
+!  31*  216036.00     000001.11 8D  216042.74 02               BB,S IO IND($13),C ERROR       -TEST INTERRUPT TYPE - EPGK  EB000126
+!  32*  216037.00     000001.12 8D  216042.74 02               BB,S IO IND+.1($13),C ERROR    - UK                         EB000127
+!  33*  216040.00     000001.13 8D  216043.34 02               BB,S IO IND+.2($13),K END E    - EE                         EB000128
+!  34*  216041.00     000001.14 8D  216043.74 00               BZB,S IO IND+.3($13),K C SIGL  -CS                          EB000129
+!  35*  216042.00     000005.00 01                             BE,5.0($1)                                                  EB000130
+!  36*  216042.40     000002.00 01                 C ERROR     BE,2.0($1)                                                  EB000131
+!  37*  216043.00     000003.00 01                 K END E     BE,3.0($1)                                                  EB000132
+!  38*  216043.40 *   000004.00 01                 K C SIGL    BE,4.0($1)                                                  EB000133
+!  39*  216044.00     000036.31 02                 RNGTOE      LCI,$12,30.0                                                EB000134
+!  40*  216044.40     215266.00 80  215230.30 20               T,$12,SLRPP,STLR                                            EB000135
+!  41*  216045.40     010005.35 01                             LVI,$14,SPPTNG                                              EB000136
+!  42*  216046.00     217451.40 80                             SIC,S DISIC                                                 EB000137
+!  43*  216046.40     217372.10 00                             B,S DISP                                                    EB000137
+!  44*  216047.00     000032.26 30                 K DODO      LV,11,$10                                                   EB000138
+!  45*  216047.40     216027.10 00                             B,K CANCL                                                   EB000139
+!  46*  216050.00     000032.26 30                 K SINGL     LV,11,$10                                                   EB000140
+!  47*  216050.40     000000.35 8B  216242.34 02               BB,SUNASG($11),KSUPP                                        EB000141
+!  48*  216051.40     215240.16 50                             LC,7,S TLR+8.0                                              EB000142
+!  49*  216052.00     215732.10 00                             B,K DOCL                                                    EB000143
+!  50*  216052.40     000001.11 04                 K MAL       KVI,4,1.0                      -IS EQUIP CONSOLE            EB000144
+!  51*  216053.00     216620.72 C2                             BXE,P CON E1                                                EB000145
+!  52*  216053.40     215730.10 00                             B,K KK                                                      EB000146
+!  53*  216054.00     000020.17 02                 K SIGNL     LCI,7,16                       -CS IND TO CF($7)            EB000147
+!  54*  216054.40     000004.11 04                             KVI,4,4.0                                                   EB000148
+!  55*  216055.00     216052.72 C0                             BZXE,K MAL                                                  EB000149
+!  56*  216055.40     000000.73 8A  004067.20 50               L(BU,4),SUNITK($10),-18                                     EB000150
+!
+! ALL FIFTY-SIX ROWS ARE CHECKED BELOW, and all eleven symbols the
+! page defines are checked against the LOCATION column.  There is no
+! row on this page that a !CHECK does not cover.
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 124 ------------------
+!SYM   KPPINT   216015.40
+!SYM   RSKBND   216022.00
+!SYM   KCANCL   216027.00
+!SYM   CERROR   216042.40
+!SYM   KENDE    216043.00
+!SYM   KCSIGL   216043.40
+!SYM   RNGTOE   216044.00
+!SYM   KDODO    216047.00
+!SYM   KSINGL   216050.00
+!SYM   KMAL     216052.40
+!SYM   KSIGNL   216054.00
+!CHECK 216013.00 | 216015.71 42 | line 1 BXVZ,K PP INT
+!CHECK 216013.40 | 215003.04 B0 | line 2 V+,2,S BA MCP -- byte is B0, read at 1800 dpi
+!CHECK 216014.00 | 215224.00 80 000003.02 A0 | line 3 TI,1,S BNDRS,3.0 (flag column prints *)
+!CHECK 216015.00 | 216022.10 00 | line 4 B,RSKBND
+!CHECK 216015.40 | 215005.04 B0 | line 5 K PP INT V+,2,S BA PP
+!CHECK 216016.00 | 215324.00 80 000003.02 A0 | line 6 TI,1,S LR BU,3.0
+!CHECK 216017.00 | 215324.42 90 | line 7 KV,$1,SLRBU.32
+!CHECK 216017.40 | 216044.32 42 | line 8 BXL,RNGTOE -- the CLOSED O that settles the name
+!CHECK 216020.00 | 000021.30 30 | line 9 LV,$12,$1
+!CHECK 216020.40 | 000005.31 05 | line 10 V+I,$12,5.0
+!CHECK 216021.00 | 215324.30 90 | line 11 KV,$12,SLRBU
+!CHECK 216021.40 | 216044.32 40 | line 12 BZXL,RNGTOE
+!CHECK 216022.00 | 000000.30 32 | line 13 RSKBND LV,$12,($2) -- deck writes 0($2), gap (1)
+!CHECK 216022.40 | 000000.24 3C | line 14 LV,10,S CHAN N($12)
+!CHECK 216023.00 | 000004.23 8D 005000.00 F0 | line 15 CM0000(BU,5),S CCW+.19($13) -- index is $13
+!CHECK 216024.00 | 000032.24 B0 | line 16 V+,10,$10
+!CHECK 216024.40 | 215002.24 B0 | line 17 V+,10,S CHAN S
+!CHECK 216025.00 | 000000.33 8A 216047.34 00 | line 18 BZB,S MULTI($10),K DODO
+!CHECK 216026.00 | 000000.26 3A | line 19 LV,11,0.0($10)
+!CHECK 216026.40 | 000000.66 BC | line 20 V+,11,.32($12)
+!CHECK 216027.00 | 000000.36 8B 001000.00 F0 | line 21 K CANCL CM0000(BU,1),S UN SUP($11)
+!CHECK 216030.00 | 000000.00 8D 000000.04 A1 | line 22 TI,2,0.0($13),0.0($1) (flag column prints *)
+!CHECK 216031.00 | 215373.42 60 | line 23 LWF(U),S LR MCP+9.0
+!CHECK 216031.40 | 000014.40 E0 | line 24 ST(U),$MASK
+!CHECK 216032.00 | 000013.17 80 005000.06 70 | line 25 LF(BU,5),$IND+.15
+!CHECK 216033.00 | 720000.00 80 405000.03 70 | line 26 CTI0001(BU,5),(2)11101 -- deck writes CT0001I, gap (2)
+!CHECK 216034.00 | 216242.34 C0 | line 27 BZRZ,KSUPP -- byte is C0, read at 1800 dpi
+!CHECK 216034.40 | 000013.22 00 | line 28 Z,$IND
+!CHECK 216035.00 | 000037.22 00 | line 29 Z,$15
+!CHECK 216035.40 | 216036.11 46 | line 30 BEXEZ,$+.32
+!CHECK 216036.00 | 000001.11 8D 216042.74 02 | line 31 BB,S IO IND($13),C ERROR
+!CHECK 216037.00 | 000001.12 8D 216042.74 02 | line 32 BB,S IO IND+.1($13),C ERROR
+!CHECK 216040.00 | 000001.13 8D 216043.34 02 | line 33 BB,S IO IND+.2($13),K END E
+!CHECK 216041.00 | 000001.14 8D 216043.74 00 | line 34 BZB,S IO IND+.3($13),K C SIGL
+!CHECK 216042.00 | 000005.00 01 | line 35 BE,5.0($1)
+!CHECK 216042.40 | 000002.00 01 | line 36 C ERROR BE,2.0($1)
+!CHECK 216043.00 | 000003.00 01 | line 37 K END E BE,3.0($1)
+!CHECK 216043.40 | 000004.00 01 | line 38 K C SIGL BE,4.0($1) (flag column prints *)
+!CHECK 216044.00 | 000036.31 02 | line 39 RNGTOE LCI,$12,30.0
+!CHECK 216044.40 | 215266.00 80 215230.30 20 | line 40 T,$12,SLRPP,STLR -- deck writes T,12, gap (3)
+!CHECK 216045.40 | 010005.35 01 | line 41 LVI,$14,SPPTNG -- corroborates the WORD 010005 only; the .35 is J=$14 doubled plus the immediate bit, so there is no room in it for SPPTNG's own offset (compare line 14, where S CHAN N's .12 does not appear either)
+!CHECK 216046.00 | 217451.40 80 | line 42 SIC,S DISIC
+!CHECK 216046.40 | 217372.10 00 | line 43 B,S DISP
+!CHECK 216047.00 | 000032.26 30 | line 44 K DODO LV,11,$10
+!CHECK 216047.40 | 216027.10 00 | line 45 B,K CANCL
+!CHECK 216050.00 | 000032.26 30 | line 46 K SINGL LV,11,$10
+!CHECK 216050.40 | 000000.35 8B 216242.34 02 | line 47 BB,SUNASG($11),KSUPP
+!CHECK 216051.40 | 215240.16 50 | line 48 LC,7,S TLR+8.0 -- corroborates STLR = 215230.00
+!CHECK 216052.00 | 215732.10 00 | line 49 B,K DOCL
+!CHECK 216052.40 | 000001.11 04 | line 50 K MAL KVI,4,1.0
+!CHECK 216053.00 | 216620.72 C2 | line 51 BXE,P CON E1 -- the printed 0o40 pins PCONE1 to 216620.40
+!CHECK 216053.40 | 215730.10 00 | line 52 B,K KK
+!CHECK 216054.00 | 000020.17 02 | line 53 K SIGNL LCI,7,16
+!CHECK 216054.40 | 000004.11 04 | line 54 KVI,4,4.0
+!CHECK 216055.00 | 216052.72 C0 | line 55 BZXE,K MAL -- byte is C0, read at 1800 dpi
+!CHECK 216055.40 | 000000.73 8A 004067.20 50 | line 56 L(BU,4),SUNITK($10),-18

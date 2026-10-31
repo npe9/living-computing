@@ -1,0 +1,514 @@
+! mcp_bootstrap_p126.strap -- the unit-recovery / "is this unit mine"
+! path of the console-request handler, printed page 126.
+! docs/MCP_Mar63_001-249.pdf PDF p.133, header READ and not assumed:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID EB000199
+!  DIST. OF 3/01   3/01   PAGE NUMBER  126", and the header's own
+! right-hand field "LOCATION 216121" names the word this page starts
+! inside.
+!
+! FIFTY-SIX LINES, ALL CODE.  Lines 1-56 fill the sheet; there is no
+! SLC, no DD, no comment-only card.  Counted off the card serial
+! column, which runs EB000199..EB000244 -- FORTY-SIX cards for
+! fifty-six lines, because TEN CARDS EACH CARRY TWO STATEMENTS
+! (lines 11/12, 15/16, 17/18, 19/20, 21/22, 23/24, 25/26, 27/28,
+! 31/32, 33/34).  That is STRAP's semicolon, the same idiom printed
+! p.120 carries, and the unbroken serial run is an independent
+! witness that nothing fell off the top or the bottom of the render.
+!
+! ---------------------------------------------------------------
+! THE JOIN, CLOSED AT BOTH ENDS BY THE PAGES' OWN INK
+! ---------------------------------------------------------------
+! BACKWARD, three ways that agree:
+!   * the header prints "LOCATION 216121";
+!   * line 1's own LOCATION is 216121.40;
+!   * printed p.125 line 56 (OCR'd PDF p.132) is
+!     "216121.00  221300.10 00   B,K REJT" -- a HALF word at
+!     216121.00, so the counter leaves p.125 at 216121.40.
+! FORWARD: this page's last row, line 56, is a half word at
+! 216170.40, so the counter leaves at 216171.00 -- and printed
+! p.127 line 1 (OCR'd PDF p.134) is
+!   "216171.00  000000.00+   K CS Q   VF,0".
+! That is the same 216171.00 this page BRANCHES TO as an external
+! (lines 50/52/54), so the forward join and one of the externals
+! are confirmed by the same card.
+!
+! THE PAGE PRINTS NO SLC, so this deck sets a hard origin,
+! SLC,(8)216121.40.  Per docs/transcription_workflow.md "WHAT THE
+! ORACLE CANNOT SEE" (2): a hard SLC OVERRIDES the arriving counter
+! silently and cannot disagree with it, so every !CHECK below would
+! still pass at a wrong origin.  The three readings above are the
+! evidence; the SLC is not.
+!
+! TAIL SCOPE.  printed p.99 line 11's "SLC,(8)215000." moved the
+! origin, and pp.99+ are OUTSIDE the TAIL,(2)G block that printed
+! p.2 opened and printed p.98 line 37 closed with UNTAIL,(2).  Names
+! here may repeat names defined in pp.2-98 at different addresses.
+! None of the eight names this page DEFINES (R KMP, R NT MCP, R SRC,
+! R TABLE, R MCP CS, Z RCP FC, K FAKE, Z KCSQ) occurs in any landed
+! deck, so nothing here is even a candidate collision.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE CONTAINS
+! ---------------------------------------------------------------
+! Lines 1-16  the tail of a console-request routine that begins on
+!             printed p.125.  It tests bits of the per-request word
+!             K RECEP (SEOP, "not ready", line 14's bit 21), walks a
+!             four-entry table R TABLE with an index word R SRC
+!             looking for the requesting unit, and if the unit is not
+!             owned by MCP (S OWNER zero, line 6) falls into R NT MCP
+!             which saves the IC in K CBJR and branches to K CLEAR.
+! Lines 17-29 two "post a control-word operation" sequences, each
+!             LVI/SVA pair storing a code (14. and 94.) and an
+!             address into Z CTLRW / Z COMRT, guarded by tests of
+!             S L and of R SRC bit 62.
+! Lines 30-36 R SRC, the index word, and R TABLE, its four-entry
+!             table of tape symbolic unit numbers -- V RTP, V WTP,
+!             CT11, CT21 -- followed by two DRZ reservations.
+! Lines 37-38 R MCP CS, the "found it" exit, which sets count 16 and
+!             branches into K FAKE+1.0.
+! Lines 39-56 Z RCP FC, the "reel not mounted / file closed" path:
+!             zero the file count S FILEK, turn on the UNR status bit
+!             in the copied control word S CCW.18, and then dispatch
+!             on S MOUNT / S REL / S SEOP / the console-queue bit
+!             K CSQ.31.
+!
+! ---------------------------------------------------------------
+! THE EXTERNALS, AND HOW WELL EACH ONE IS PINNED
+! ---------------------------------------------------------------
+! >>> TWO CLASSES, AND THE DIFFERENCE MATTERS. <<<  A passing !CHECK
+! below proves only that the deck's SYN reproduces the printed half
+! word -- the address came off the same print.  What makes a value
+! REAL is a card somewhere that PRINTS it in its LOCATION column.
+!
+! PINNED BY A DEFINING CARD (address read out of a LOCATION column,
+! not back-derived from an instruction):
+!   K STAG   216116.40  OCR'd printed p.125 line 52,
+!                       "216116.40  000036.03 02  K STAG  LCI,..."
+!   K HEX    216062.40  OCR'd printed p.125 line 7,
+!                       "216062.40  216060.67 CB  K HEX  CP-,11,..."
+!   K CBJR   221313.40  OCR'd listing, "221313.40  221263.10 00
+!                       K CBJ R  B,K RETRY"
+!   K CLEAR  221302.40  OCR'd listing, "221302.40  000036.03 02
+!                       K CLEAR  LCI,1,K REP"
+!   K RELES  216202.00  OCR'd listing, "216202.00  000000.37 8B
+!                       001000.00 F0  K RELES  CM0000(BU,1),..."
+!   K G IN   215762.00  OCR'd listing, "215762.00  215021.23 ...
+!                       K G IN  LVI,9,S PROG"
+!   Z COMRT  220234.40  OCR'd listing, "220234.40  000000.45 CD
+!                       Z COM RT  VF,..."
+!   K CSQ    216171.00  printed p.127 line 1 (above)
+!   K MOUNT  216171.40  printed p.127 line 2, "216171.40
+!                       000010.46 3C  K MOUNT  LV,3,S C REEL($12)"
+!   K FAKE   216160.00  DEFINED HERE (line 46) and independently
+!                       referenced from printed p.127,
+!                       "216203.40  216160.10 00   B,K FAKE"
+!   V RTP  4.0       ALL FOUR come off ONE page: OCR'd PDF p.107 =
+!   V WTP  6.0       printed p.100 prints a block of SYN cards with
+!   CT11  11.0       NO location, one per symbolic unit --
+!   CT21  12.0       "V RTP SYN,4.0 -INPUT ROUTINE READ TAPE",
+!                    "V WTP SYN,6.0 -INPUT ROUTINE WRITE TAPE",
+!                    "CT11 SYN,11.0 -OUTPUT SPOOL TAPE 1",
+!                    "CT21 SYN,12.0 -OUTPUT SPOOL TAPE 2" (the OCR
+!                    mangles the names and the English comments are
+!                    what identify them; the VALUES 4, 6, 11, 12 are
+!                    exactly this page's 000004/000006/000013/000014).
+!                    Two other pages' VFs agree independently:
+!                    "224032.40 000013.00+ A MR 1 VF,CT11",
+!                    "224033.00 000014.00+ A MR 2 VF,CT21",
+!                    "215003.40 000004.00+ S RTAPE VF,V RTP".
+!                    NOTE FOR WHOEVER TAKES printed p.100: the p.103
+!                    deck records it as "comment cards only".  It is
+!                    not -- it carries these SYNs.  Its CONCLUSION
+!                    still holds, because a SYN with no location
+!                    spends no storage and the counter does not move.
+!   K RECEP  216332.00  NOT a defining card but BETTER than the
+!                       half-word class: lines 1, 2 and 14 use it as
+!                       a VFL BIT operand ("K RECEP.24" -> .30,
+!                       ".18" -> .22, ".21" -> .25), and a VFL
+!                       address field carries the real bit offset.
+!                       216332.00 is pinned TO THE BIT, three times.
+!
+! >>> PINNED ONLY TO THE HALF WORD, AND ".00" IS A CONVENTION. <<<
+!   K SUPP   216242.00  seen only through line 27's "LVI,$0,K SUPP"
+!                       (prints 216242.01) and, in the OCR, through
+!                       branches that print 216242.34 / 216242.10.
+!   Z CTLRW  220231.00  seen only through line 22's "B,Z CTLRW-1.0"
+!                       (prints 220230.10) and lines 18/26's
+!                       "SVA,$0,Z CTLRW.32" (prints 220231.41).
+!   An INDEX instruction's address field is nineteen bits -- eighteen
+!   word bits plus the HALF-WORD SELECT -- and the remaining five
+!   bits of the printed octal pair are the J field (2*J) plus one
+!   flag bit.  Bit offsets 1..31 are therefore invisible, exactly as
+!   docs/transcription_workflow.md records for branches and LVI.  No
+!   !CHECK here can test them; they are written .00 by convention.
+!
+! >>> THE INDEX-FIELD RULE, MEASURED ON THIS PAGE. <<<  printed
+! offset = 32*(half-word select) + 2*J + flag.  Lines 8/9/10 are
+! LV,12 / LV,13 / LV,2 and print .30 / .32 / .04 = 2*12, 2*13, 2*2
+! with flag 0; lines 17/25/27 are LVI,$0 and print .01 = 2*0+1; line
+! 55 is LVI,$1 and prints .03; line 54 is SV,11 and prints .27 =
+! 2*11+1.  The OCR of printed p.125 line 38 prints "LV,11,K CS Q" as
+! 216171.26 -- the SAME address with flag 0 -- which is what shows
+! that line 54's .27 is SV and not LV.  printed p.120 line 7's
+! "LVI,$14,S PQ FUL" printing .35 = 2*14+1 is the same rule on a
+! landed page.
+!
+! >>> S FILEK IS 000007.46, NOT THE 000007.40 THIS PAGE SUGGESTS,
+! AND THAT IS THE MOST INSTRUCTIVE ROW ON THE SHEET. <<<  Line 41 is
+! "SV,0,S FILEK($12)" printing 000007.41.  Subtract the flag bit and
+! the field reads "word 7, half-word 1" -- the half-word select is
+! ALL an index instruction can show.  printed p.101 line 25 prints
+! the defining card, "S FILEK SYN(BU,12),7.38", and 38 decimal = .46
+! octal, which is in that half word.  The landed p.101 value wins and
+! line 41's !CHECK still passes bit for bit.
+!
+! >>> SIX p.99 BIT VALUES ARE CONFIRMED HERE TO THE BIT. <<<  Unlike
+! the index rows, lines 3-6, 45, 46, 48, 49 and 51 use their operands
+! as VFL bit addresses, where the full six-bit offset prints.  They
+! independently reproduce printed p.99's SYNs:
+!   S IMNT  .65     S REW   .64     S MOUNT .63
+!   S OWNER .40     S REL   .75     S SEOP  .56
+! and printed p.102's S IOD RN 000000.00 and S CCW 000004.00 and
+! printed p.101's S FI A AC 000003.00.
+!
+! ---------------------------------------------------------------
+! GLYPHS: WHAT WAS SETTLED, AND HOW
+! ---------------------------------------------------------------
+! >>> "S SECP" IS S SEOP. <<<  Lines 1 (comment) and 49 print SECP.
+! printed p.99 line 34 prints the defining card "S SEOP SYN(BU,1),
+! 0.46" and its Appendix A (printed p.266) prints ".46 SSEOP" in a
+! typeset table.  The bit value .56 this page compiles is p.99's
+! 0.46 decimal exactly.  Spelling taken from the landed p.99 deck.
+!
+! >>> "SICDRN"/"SICORN" IS S IOD RN. <<<  Line 10's operand prints
+! with a worn round glyph and a D whose bowl is open.  printed p.102
+! line 6 prints the defining card "S IOD RN SYN(BU,18),0.0" --
+! comment "-IOD REFERENCE NUMBER", which is English and settles both
+! letters.  000000.00 is what line 10 compiles.  Spelling taken from
+! the landed p.102 deck.
+!
+! >>> "K G IN" IS A G, NOT A Q, AND IT WAS SETTLED BY SHAPE AGAINST
+! TWO KNOWN GLYPHS ON THIS PAGE. <<<  Line 56 is "B,K G IN".
+! tesseract reads G -- and tesseract's vote is WORTHLESS here,
+! because it also reads printed p.127 line 1's certain "K CS Q" as
+! "K CS G": this reader has a Q->G bias.  What settles it is that
+! this page prints BOTH letters with independent attestation:
+!   a certain G in line 1's "K STAG" (defining card at 216116.40),
+!   a certain Q in line 54's "K CS Q" (defining card at 216171.00),
+! and at 1800 dpi the line-56 glyph is structurally identical to the
+! STAG G -- bowl open at the upper right with a short horizontal bar
+! protruding inward at mid-right and a stem below it -- and quite
+! unlike the Q, whose bowl is closed with a tail crossing the lower
+! right.  THE ADDRESS IS NOT AT RISK EITHER WAY: 215762.00 comes
+! from a defining card in the OCR.
+!
+! >>> "R MCP CS" AND "R NT MCP" KEEP THEIR C's. <<<  Both are page-
+! local and nothing off-page references them, so no check can fail
+! on the spelling.  The reading rests on the token MCP, which this
+! corpus attests with the same glyph (the OCR prints "S L R MCP" on
+! six other rows), and on R NT MCP reading as "not MCP" -- line 6
+! branches there when S OWNER is ZERO, i.e. when the unit is not
+! owned by MCP.
+!
+! >>> "Z RCP FC" IS RECORDED AS PRINTED AND IS NOT SETTLED. <<<  The
+! name appears three times (lines 3, 5, 39) and its 3rd and 6th
+! glyphs are round and open every time.  docs/transcription_workflow
+! .md's asymmetry says an observed C MAY be a damaged O while an
+! observed O never is, so ZROPFO / ZROPFC / ZRCPFO are all live.
+! Line 5 gives a same-row calibration and it does NOT settle it: that
+! row prints "S MOUNT" as "S MCUNT", a certain O printed open, beside
+! the two unknown glyphs.  At 1800 dpi the two unknowns have a
+! visibly wider aperture than that O, which is why ZRCPFC is written;
+! "FC" also reads as the File Count the routine's third statement
+! zeroes.  THIS IS INK, NOT PROOF.  It is page-local -- nothing off
+! this sheet names it -- so the deck is correct whichever letter is
+! right, and this note is the only record.
+!
+! >>> LINE 19'S SECOND BYTE IS 0C AND A 900-dpi READ SAID 00. <<<
+! The row is "BZB1,S L,$+2.0" -- BZB1 is Branch on Zero Bit AND SET
+! TO ONE, whose two-bit bit-modification field is 0b11 and lands in
+! the second half word's byte as 0x0C (plain BZB is 0b00, which is
+! why lines 6, 14 and 51 really do print 00 there).  THE EVIDENCE IS
+! THE PAGE, NOT THE ASSEMBLER: at 1800 dpi the two glyphs of that
+! byte print DIFFERENTLY from each other in one character pair --
+! the first closed, the second open with a wide aperture -- and the
+! "F0" directly beneath it on line 20 prints a closed 0 for
+! comparison.  A byte whose own two round glyphs disagree is the
+! strongest same-row calibration this page offers, and it points at
+! C.  Recorded because the first reading was wrong and the
+! disagreement is what sent the glyph back under the lens.
+!
+! A BARE "*" AFTER THE LOCATION on lines 1, 17, 34 and 52.  printed
+! pp.103 and 120 carry the same mark and left it unexplained; it
+! changes no compiled bit and nothing here depends on it.
+!
+! ---------------------------------------------------------------
+! ONE ASSEMBLER GAP, SUBSTITUTED AND FLAGGED
+! ---------------------------------------------------------------
+! >>> LINE 11 PRINTS "KV,2,($1)" AND strap_asm REJECTS IT. <<<
+!     AssemblerError: line NN: empty expression
+! STRAP accepts an OMITTED address field in front of an index
+! parenthetical -- the address is then an implicit zero -- and
+! strap_asm's expression parser requires a literal there.  THE
+! PRINTED FORM WAS TESTED FIRST; this is not a guess at the parser.
+!
+! The failure is at PARSE time, so leaving the printed text in place
+! does not leave one row failing -- it raises before a single one of
+! the fifty-six rows is checked.  The deck therefore writes
+! "KV,2,($1)" and line 11's !CHECK against the printed
+! "000000.04 91" is what PROVES the two are bit-identical (address
+! word 000000, offset .04 = 2*J for J=2, byte 91 whose low nibble is
+! the i2 index $1).  The printed form is kept in the listing block
+! and in the !CHECK note.  THIS IS A REAL GAP AND SHOULD BE FIXED IN
+! strap_asm, not worked around again.
+!
+! ---------------------------------------------------------------
+! WHAT IS CHECKED, AND WHAT DELIBERATELY IS NOT
+! ---------------------------------------------------------------
+! Fifty-four of the fifty-six rows carry a !CHECK.  The two that do
+! not are lines 35 and 36, the DRZ reservations: their BINARY OUTPUT
+! ("000000.07", "000001.40") is the reservation's SIZE and not its
+! contents, which is printed p.109's and p.120's convention, and
+! listing_oracle.render has no shape for a bare "wwwwww.bb" with no
+! hex byte -- it would fall through to fmt_half and compare a
+! three-token string against a one-token one.  THEIR SIZES ARE STILL
+! VERIFIED, INDIRECTLY AND EXACTLY: R MCP CS only lands on its
+! printed 216152.40 if VF's 25-bit deposit (strap_asm's (HALF,25))
+! leaves the counter at 216150.71, the 7-bit DRZ closes the word at
+! 216151.00, and the 3x32-bit DRZ spends 96 bits.  Line 35's own
+! printed location 216150.71 is the direct witness for the first.
+!
+! ALL EIGHT SYMBOLS THIS PAGE DEFINES ARE ALSO CONFIRMED BY ANOTHER
+! ROW'S BINARY, not only by the LOCATION column:
+!   R KMP    216131.40  <- line 13 "CBH,1,R KMP"      216131.42
+!   R NT MCP 216133.00  <- line  6 "...,R NT MCP"     216133.34
+!   R SRC    216146.00  <- lines 7/20/23              216146.02/.76
+!   R TABLE  216147.00  <- line 30's XW value         216147.00+
+!   R MCP CS 216152.40  <- line 12 "BXE,R MCP CS"     216152.72
+!   Z RCP FC 216153.40  <- lines 3/5                  216153.74
+!   K FAKE   216160.00  <- line 38 "B,K FAKE+1.0"     216161.10
+!   Z KCSQ   216170.00  <- line 50 "BB,K CSQ.31,..."  216170.34
+! so the !SYM block does not rest on the location column alone.
+! ---------------------------------------------------------------
+
+! -- externals pinned by a defining card (see the table above) ----
+KRECEP  SYN, (8)216332.              ! bit-pinned by lines 1/2/14
+KSTAG   SYN, (8)216116.40            ! printed p.125 line 52
+KHEX    SYN, (8)216062.40            ! printed p.125 line 7
+KCBJR   SYN, (8)221313.40            ! OCR'd defining card
+KCLEAR  SYN, (8)221302.40            ! OCR'd defining card
+KRELES  SYN, (8)216202.              ! OCR'd defining card
+KGIN    SYN, (8)215762.              ! OCR'd defining card
+ZCOMRT  SYN, (8)220234.40            ! OCR'd defining card
+KCSQ    SYN, (8)216171.              ! printed p.127 line 1
+KMOUNT  SYN, (8)216171.40            ! printed p.127 line 2
+! -- externals pinned ONLY to the half word; .00 is a convention --
+KSUPP   SYN, (8)216242.              ! line 27 only; offset unreadable
+ZCTLRW  SYN, (8)220231.              ! lines 18/22/26 only; ditto
+! -- communication region, printed p.103 ---------------------------
+SL      SYN(BU,1), (8)215001.04      ! p.103 line 14 -LEVEL OF INSTR
+SCSINT  SYN(BU,1), (8)215001.07      ! p.103 line 17
+! -- unit area table fields, printed p.99 --------------------------
+SUNA    SYN(BU,25), 0.0              ! p.99 line 20
+SOWNER  SYN(BU,1), 0.32              ! p.99 line 30
+SSEOP   SYN(BU,1), 0.46              ! p.99 line 34
+SMOUNT  SYN(BU,1), 0.51              ! p.99 line 42
+SREW    SYN(BU,1), 0.52              ! p.99 line 43
+SIMNT   SYN(BU,1), 0.53              ! p.99 line 44
+SREL    SYN(BU,1), 0.61              ! p.99 line 49
+! -- file area table fields, printed pp.101 and 102 ----------------
+SFIAAC  SYN(BU,18), 3.0              ! p.101 line 13 -FILE AREA ACTIVATED
+SFILEK  SYN(BU,12), 7.38             ! p.101 line 25 -FILE COUNT
+SIODRN  SYN(BU,18), 0.0              ! p.102 line  6 -IOD REFERENCE NUMBER
+SCCW    SYN(BU,64), 4.0              ! p.102 line 15 -COPIED CONTROL WORD
+! -- symbolic unit numbers used by the VFs on lines 31-34 ----------
+VRTP    SYN, 4.0                     ! -INPUT ROUTINE READ TAPE
+VWTP    SYN, 6.0                     ! value required by line 32
+CT11    SYN, 11.0                    ! -OUTPUT SPOOL TAPE 1
+CT21    SYN, 12.0                    ! -OUTPUT SPOOL TAPE 2
+
+        SLC, (8)216121.40
+
+        BB, KRECEP.24, KSTAG         ! line  1  -IF SEOP BIT ON, LOOP
+        BZB, KRECEP.18, KHEX         ! line  2  -IF UNIT IS NOT READY, SKIP
+        BZBZ, SIMNT($11), ZRCPFC     ! line  3
+        BBZ, SREW($11), KHEX         ! line  4
+        BZBZ, SMOUNT($11), ZRCPFC    ! line  5
+        BZB, SOWNER($11), RNTMCP     ! line  6
+        LX, 1, RSRC                  ! line  7
+        LV, 12, SUNA($11)            ! line  8
+        LV, 13, SFIAAC($12)          ! line  9
+        LV, 2, SIODRN($13)           ! line 10
+RKMP    KV, 2, 0($1)                 ! line 11  PRINTED "KV,2,($1)" -- see note
+        BXE, RMCPCS                  ! line 12
+        CBH, 1, RKMP                 ! line 13
+RNTMCP  BZB, KRECEP.21, KHEX         ! line 14
+        SIC, KCBJR                   ! line 15
+        B, KCLEAR                    ! line 16
+        LVI, $0, 14.0                ! line 17
+        SVA, $0, ZCTLRW.32           ! line 18
+        BZB1, SL, $+2.0              ! line 19
+        CM1111(BU,1), RSRC.62        ! line 20
+        SIC, ZCOMRT-.32              ! line 21
+        B, ZCTLRW-1.0                ! line 22
+        BBZ, RSRC.62, $+2.0          ! line 23
+        CM0000(BU,1), SL             ! line 24
+        LVI, $0, 94.0                ! line 25
+        SVA, $0, ZCTLRW.32           ! line 26
+        LVI, $0, KSUPP               ! line 27
+        SVA, $0, ZCOMRT-.32          ! line 28
+        B, KHEX                      ! line 29
+RSRC    XW, RTABLE, 7                ! line 30
+RTABLE  VF, VRTP                     ! line 31
+        VF, VWTP                     ! line 32
+        VF, CT11                     ! line 33
+        VF, CT21                     ! line 34
+        DRZ(BU,7),1                  ! line 35
+        DRZ(BU,32),3                 ! line 36
+RMCPCS  LCI, 7, 16.                  ! line 37
+        B, KFAKE+1.0                 ! line 38
+ZRCPFC  LVNI, $0, 0                  ! line 39
+        LV, 12, SUNA($11)            ! line 40
+        SV, 0, SFILEK($12)           ! line 41
+        LCI, 7, 16                   ! line 42
+        LV, 13, SFIAAC($12)          ! line 43
+        CM1111(BU,1), SCCW.18($13)   ! line 44  -TURN ON UNR STATUS BIT IN CW
+        BBZ, SMOUNT($11), KMOUNT     ! line 45
+KFAKE   CM0000(BU,1), SREW($11)      ! line 46
+        SC, 7, 1.0($13)              ! line 47
+        BBZ, SREL($11), KRELES       ! line 48  -BR. IF RELEASE
+        BBZ, SSEOP($11), KHEX        ! line 49
+        BB, KCSQ.31, ZKCSQ           ! line 50
+        BZB, SOWNER($11), $+2.0      ! line 51
+        CM1111(BU,1), KCSQ.31        ! line 52
+        CM1111(BU,1), SCSINT         ! line 53
+        SV, 11, KCSQ                 ! line 54
+ZKCSQ   LVI, $1, KHEX                ! line 55
+        B, KGIN                      ! line 56
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, read off PDF p.133 -- the whole sheet at
+! 400 dpi, the BINARY OUTPUT column again at 900 dpi, the NAME and
+! STATEMENT columns at 600 dpi, and four names at 1800 dpi.
+! ---------------------------------------------------------------
+!  LINE  LOCATION      BINARY OUTPUT                   NAME     STATEMENT                  COMMENT                        CARD
+!   1*   216121.40 *   216332.30 80  216116.74 02               BB,K RECEP.24,K STAG       -IF SEOP BIT ON, LOOP          EB000199
+!   2*   216122.40     216332.22 80  216062.74 00               BZB,K RECEP.18,K HEX       -IF UNIT IS NOT READY, SKIP    EB000200
+!   3*   216123.40     000000.65 8B  216153.74 04               BZBZ,S IMNT($11),Z RCP FC                                 EB000201
+!   4*   216124.40     000000.64 8B  216062.74 06               BBZ,S REW($11),K HEX                                      EB000202
+!   5*   216125.40     000000.63 8B  216153.74 04               BZBZ,S MOUNT($11),Z RCP FC                                EB000203
+!   6*   216126.40     000000.40 8B  216133.34 00               BZB,S OWNER($11),R NT MCP                                 EB000204
+!   7*   216127.40     216146.02 10                             LX,1,R SRC                                                EB000205
+!   8*   216130.00     000000.30 3B                             LV,12,S UNA($11)                                          EB000206
+!   9*   216130.40     000003.32 3C                             LV,13,S FIAAC($12)                                        EB000207
+!  10*   216131.00     000000.04 3D                             LV,2,S IOD RN($13)                                        EB000208
+!  11*   216131.40     000000.04 91                    R KMP    KV,2,($1)                                                 EB000209
+!  12*   216132.00     216152.72 C2                             BXE,R MCP CS                                              EB000209
+!  13*   216132.40     216131.42 C8                             CBH,1,R KMP                                               EB000210
+!  14*   216133.00     216332.25 80  216062.74 00      R NT MCP BZB,K RECEP.21,K HEX                                      EB000211
+!  15*   216134.00     221313.40 80                             SIC,K CBJR                                                EB000212
+!  16*   216134.40     221302.50 00                             B,K CLEAR                                                 EB000212
+!  17*   216135.00 *   000016.01 01                             LVI,$0,14.0                                               EB000213
+!  18*   216135.40     220231.41 D0                             SVA,$0,Z CTLRW.32                                         EB000213
+!  19*   216136.00     215001.04 80  216140.34 0C               BZB1,S L,$+2.0                                            EB000214
+!  20*   216137.00     216146.76 80  001000.36 F0               CM1111(BU,1),R SRC.62                                     EB000214
+!  21*   216140.00     220234.00 80                             SIC,Z COMRT-.32                                           EB000215
+!  22*   216140.40     220230.10 00                             B,Z CTLRW-1.0                                             EB000215
+!  23*   216141.00     216146.76 80  216143.34 06               BBZ,R SRC.62,$+2.0                                        EB000216
+!  24*   216142.00     215001.04 80  001000.00 F0               CM0000(BU,1),S L                                          EB000216
+!  25*   216143.00     000136.01 01                             LVI,$0,94.0                                               EB000217
+!  26*   216143.40     220231.41 D0                             SVA,$0,Z CTLRW.32                                         EB000217
+!  27*   216144.00     216242.01 01                             LVI,$0,K SUPP                                             EB000218
+!  28*   216144.40     220234.01 D0                             SVA,$0,Z COMRT-.32                                        EB000218
+!  29*   216145.00     216062.50 00                             B,K HEX                                                   EB000219
+!  30*   216146.00     216147.00+ 000 000007 000000    R SRC    XW,R TABLE,7                                              EB000220
+!  31*   216147.00     000004.00+                      R TABLE  VF,V RTP                                                  EB000221
+!  32*   216147.40     000006.00+                               VF,V WTP                                                  EB000221
+!  33*   216150.00     000013.00+                               VF,CT11                                                   EB000222
+!  34*   216150.40 *   000014.00+                               VF,CT21                                                   EB000222
+!  35*   216150.71     000000.07                                DRZ(BU,7),1                                               EB000223
+!  36*   216151.00     000001.40                                DRZ(BU,32),3                                              EB000224
+!  37*   216152.40     000020.17 02                    R MCP CS LCI,7,16.                                                 EB000225
+!  38*   216153.00     216161.10 00                             B,K FAKE+1.0                                              EB000226
+!  39*   216153.40     000000.01 09                    Z RCP FC LVNI,$0,0                                                 EB000227
+!  40*   216154.00     000000.30 3B                             LV,12,S UN A($11)                                         EB000228
+!  41*   216154.40     000007.41 3C                             SV,0,S FILEK($12)                                         EB000229
+!  42*   216155.00     000020.17 02                             LCI,7,16                                                  EB000230
+!  43*   216155.40     000003.32 3C                             LV,13,S FI A AC($12)                                      EB000231
+!  44*   216156.00     000004.22 8D  001000.36 F0               CM1111(BU,1),S CCW.18($13) -TURN ON UNR STATUS BIT IN CW   EB000232
+!  45*   216157.00     000000.63 8B  216171.74 06               BBZ,S MOUNT($11),K MOUNT                                  EB000233
+!  46*   216160.00     000000.64 8B  001000.00 F0      K FAKE   CM0000(BU,1),S REW($11)                                   EB000234
+!  47*   216161.00     000001.17 5D                             SC,7,1.0($13)                                             EB000235
+!  48*   216161.40     000000.75 8B  216202.34 06               BBZ,S REL($11),K RELES     -BR. IF RELEASE                EB000236
+!  49*   216162.40     000000.56 8B  216062.74 06               BBZ,S SEOP($11),K HEX                                     EB000237
+!  50*   216163.40     216171.37 80  216170.34 02               BB,K CSQ.31,Z KCSQ                                        EB000238
+!  51*   216164.40     000000.40 8B  216166.74 00               BZB,S OWNER($11),$+2.0                                    EB000239
+!  52*   216165.40 *   216171.37 80  001000.36 F0               CM1111(BU,1),K CSQ.31                                     EB000240
+!  53*   216166.40     215001.07 80  001000.36 F0               CM1111(BU,1),S CS INT                                     EB000241
+!  54*   216167.40     216171.27 30                             SV,11,K CS Q                                              EB000242
+!  55*   216170.00     216062.43 01                    Z KCSQ   LVI,$1,K HEX                                              EB000243
+!  56*   216170.40     215762.10 00                             B,K G IN                                                  EB000244
+
+!SYM   RKMP     216131.40
+!SYM   RNTMCP   216133.00
+!SYM   RSRC     216146.00
+!SYM   RTABLE   216147.00
+!SYM   RMCPCS   216152.40
+!SYM   ZRCPFC   216153.40
+!SYM   KFAKE    216160.00
+!SYM   ZKCSQ    216170.00
+
+!CHECK 216121.40 | 216332.30 80 216116.74 02 | line  1 BB,K RECEP.24,K STAG
+!CHECK 216122.40 | 216332.22 80 216062.74 00 | line  2 BZB,K RECEP.18,K HEX
+!CHECK 216123.40 | 000000.65 8B 216153.74 04 | line  3 BZBZ,S IMNT($11),Z RCP FC
+!CHECK 216124.40 | 000000.64 8B 216062.74 06 | line  4 BBZ,S REW($11),K HEX
+!CHECK 216125.40 | 000000.63 8B 216153.74 04 | line  5 BZBZ,S MOUNT($11),Z RCP FC
+!CHECK 216126.40 | 000000.40 8B 216133.34 00 | line  6 BZB,S OWNER($11),R NT MCP
+!CHECK 216127.40 | 216146.02 10 | line  7 LX,1,R SRC
+!CHECK 216130.00 | 000000.30 3B | line  8 LV,12,S UNA($11)
+!CHECK 216130.40 | 000003.32 3C | line  9 LV,13,S FIAAC($12)
+!CHECK 216131.00 | 000000.04 3D | line 10 LV,2,S IOD RN($13)
+!CHECK 216131.40 | 000000.04 91 | line 11 R KMP KV,2,($1) -- printed form; deck writes 0($1)
+!CHECK 216132.00 | 216152.72 C2 | line 12 BXE,R MCP CS
+!CHECK 216132.40 | 216131.42 C8 | line 13 CBH,1,R KMP
+!CHECK 216133.00 | 216332.25 80 216062.74 00 | line 14 R NT MCP BZB,K RECEP.21,K HEX
+!CHECK 216134.00 | 221313.40 80 | line 15 SIC,K CBJR
+!CHECK 216134.40 | 221302.50 00 | line 16 B,K CLEAR
+!CHECK 216135.00 | 000016.01 01 | line 17 LVI,$0,14.0
+!CHECK 216135.40 | 220231.41 D0 | line 18 SVA,$0,Z CTLRW.32
+!CHECK 216136.00 | 215001.04 80 216140.34 0C | line 19 BZB1,S L,$+2.0
+!CHECK 216137.00 | 216146.76 80 001000.36 F0 | line 20 CM1111(BU,1),R SRC.62
+!CHECK 216140.00 | 220234.00 80 | line 21 SIC,Z COMRT-.32
+!CHECK 216140.40 | 220230.10 00 | line 22 B,Z CTLRW-1.0
+!CHECK 216141.00 | 216146.76 80 216143.34 06 | line 23 BBZ,R SRC.62,$+2.0
+!CHECK 216142.00 | 215001.04 80 001000.00 F0 | line 24 CM0000(BU,1),S L
+!CHECK 216143.00 | 000136.01 01 | line 25 LVI,$0,94.0
+!CHECK 216143.40 | 220231.41 D0 | line 26 SVA,$0,Z CTLRW.32
+!CHECK 216144.00 | 216242.01 01 | line 27 LVI,$0,K SUPP
+!CHECK 216144.40 | 220234.01 D0 | line 28 SVA,$0,Z COMRT-.32
+!CHECK 216145.00 | 216062.50 00 | line 29 B,K HEX
+!CHECK 216146.00 | 216147.00+ 000 000007 000000 | line 30 R SRC XW,R TABLE,7
+!CHECK 216147.00 | 000004.00+ | line 31 R TABLE VF,V RTP
+!CHECK 216147.40 | 000006.00+ | line 32 VF,V WTP
+!CHECK 216150.00 | 000013.00+ | line 33 VF,CT11
+!CHECK 216150.40 | 000014.00+ | line 34 VF,CT21
+!CHECK 216152.40 | 000020.17 02 | line 37 R MCP CS LCI,7,16.
+!CHECK 216153.00 | 216161.10 00 | line 38 B,K FAKE+1.0
+!CHECK 216153.40 | 000000.01 09 | line 39 Z RCP FC LVNI,$0,0
+!CHECK 216154.00 | 000000.30 3B | line 40 LV,12,S UN A($11)
+!CHECK 216154.40 | 000007.41 3C | line 41 SV,0,S FILEK($12)
+!CHECK 216155.00 | 000020.17 02 | line 42 LCI,7,16
+!CHECK 216155.40 | 000003.32 3C | line 43 LV,13,S FI A AC($12)
+!CHECK 216156.00 | 000004.22 8D 001000.36 F0 | line 44 CM1111(BU,1),S CCW.18($13)
+!CHECK 216157.00 | 000000.63 8B 216171.74 06 | line 45 BBZ,S MOUNT($11),K MOUNT
+!CHECK 216160.00 | 000000.64 8B 001000.00 F0 | line 46 K FAKE CM0000(BU,1),S REW($11)
+!CHECK 216161.00 | 000001.17 5D | line 47 SC,7,1.0($13)
+!CHECK 216161.40 | 000000.75 8B 216202.34 06 | line 48 BBZ,S REL($11),K RELES
+!CHECK 216162.40 | 000000.56 8B 216062.74 06 | line 49 BBZ,S SEOP($11),K HEX
+!CHECK 216163.40 | 216171.37 80 216170.34 02 | line 50 BB,K CSQ.31,Z KCSQ
+!CHECK 216164.40 | 000000.40 8B 216166.74 00 | line 51 BZB,S OWNER($11),$+2.0
+!CHECK 216165.40 | 216171.37 80 001000.36 F0 | line 52 CM1111(BU,1),K CSQ.31
+!CHECK 216166.40 | 215001.07 80 001000.36 F0 | line 53 CM1111(BU,1),S CS INT
+!CHECK 216167.40 | 216171.27 30 | line 54 SV,11,K CS Q
+!CHECK 216170.00 | 216062.43 01 | line 55 Z KCSQ LVI,$1,K HEX
+!CHECK 216170.40 | 215762.10 00 | line 56 B,K G IN
