@@ -364,10 +364,16 @@ def main():
     # pp.121-128.  All three are immediates and none is costed, for
     # that same reason; the two connectives write the "I" INFIX, which
     # strap_asm learned this batch.
+    #
+    # "+I" and "-I" joined the same day with printed p.130, which
+    # prints both on one page (lines 27 and 29).  "-I" is why
+    # strap_asm grew its written-minus-plus-immediate rule; it is the
+    # VFL add with the invert bit AND immediate addressing, so like
+    # every other immediate Table A-2 does not cost it.
     check("page_silent_mnemonics_in_mcp",
           sorted(notgiven),
-          ["*I+", "/I", "CI0001", "CTI0001", "KFI", "KI", "LFI", "LI",
-           "SWAPI", "T", "TB", "TI"])
+          ["*I+", "+I", "-I", "/I", "CI0001", "CTI0001", "KFI", "KI",
+           "LFI", "LI", "SWAPI", "T", "TB", "TI"])
 
     if fails:
         print(f"\n{fails} TEST(S) FAILED")
