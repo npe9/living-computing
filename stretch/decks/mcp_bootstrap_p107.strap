@@ -1,0 +1,382 @@
+! mcp_bootstrap_p107.strap -- MCP, printed page 107:
+! "***** EXIT CODES TO ERROR ROUTINE *****".
+! docs/MCP_Mar63_001-249.pdf PDF p.114, header READ not assumed: the
+! top line prints "TIME CLOCK 00054041  PUNID 11011MCP  CARD ID
+! CC000001  DIST. OF 3/01   3/01   PAGE NUMBER 107".
+!
+! THIRTY-SIX LINES, AND THE COUNT WAS CONFIRMED, NOT ESTIMATED.  The
+! rightmost column prints the card serial: line 1 is CC000001 and
+! line 36 is CC000036, so line N is serial CC0000NN with no break,
+! and CC000036 is the last printed row -- the rest of the page is
+! blank.  Nothing fell off the top or the bottom of the render (the
+! whole body was read in one 300-dpi frame, x=640 y=350 w=4300
+! h=2900, and the blank lower half of the form is visible in it).
+!
+! >>> THE WHOLE PAGE IS DEFINITIONS, AND IT COMPILES NOT ONE BIT. <<<
+! Lines 1-3 are the asterisk box around the heading.  Lines 4-25 and
+! 29-36 are THIRTY SYN cards.  Lines 26, 27 and 28 are comment cards
+! ("-", "-  *****   ERRORS IN MCP ONLY   *****", "-").  A SYN
+! deposits no storage word, so this deck's entire check surface is
+! THIRTY SYMBOLS AND ZERO LISTING ROWS -- the convention printed
+! pp.24, 98, 99 and 101 established.  The BINARY OUTPUT column prints
+! "+00000000" and the data-description column prints "NULL" on all
+! thirty rows; that is the column working correctly on a definitions
+! page and it must NOT be faked into a !CHECK.
+!
+! WHAT THE PAGE IS.  These are the error-exit codes MCP's error
+! routine is entered with.  Each card is a SYN whose VALUE is a
+! hexadecimal literal -- "SYN,(16)1001.0" -- with NO data
+! description, which is why the data-description column prints NULL
+! rather than p.101's "BU,nn ,10".  Lines 4-25 are the codes a
+! problem program can provoke (printed -1 through -20 in the comment
+! column); lines 29-36 are headed "ERRORS IN MCP ONLY" and print
+! -75 through -82.
+!
+! ---------------------------------------------------------------
+! >>> THERE IS NO SLC ON THIS PAGE, AND THIS DECK DOES NOT INVENT
+! ONE. <<<
+! ---------------------------------------------------------------
+! Not one of the thirty-six lines carries an SLC, and not one row
+! consumes storage, so the location counter neither moves nor is
+! read here.  EVERY SYMBOL BELOW IS AN ABSOLUTE VALUE written into
+! its own card, not an offset from a running counter: SIFERR is
+! 0o10001.00 because the card says (16)1001, not because anything
+! earlier in the assembly put the counter there.  The deck therefore
+! carries NO SLC statement at all, and assembles from the default
+! origin, and every !SYM still lands on the printed LOCATION.
+!
+! THAT IS A DELIBERATE DEPARTURE FROM p.101's DECK, WHICH CARRIES A
+! NOT-PRINTED "SLC,(8)215000.0".  p.101 could justify it: printed
+! p.99 line 11 set the counter to 215000.00 and pp.100-101 compile
+! nothing, so the counter was still there.  THAT JUSTIFICATION DOES
+! NOT SURVIVE TO HERE.  printed p.103 lays the communication region
+! down at 215000.00..215021.00, so the counter is NOT at 215000 when
+! this page begins, and I have not read pp.104, 105 or 106, so I do
+! not know where it is.  Writing "SLC,(8)215000.0" here would assert
+! something false, and it would assemble and pass, because nothing
+! on this page depends on it.  Omitted instead, and recorded.
+!
+! ---------------------------------------------------------------
+! WHAT ACTUALLY CHECKS WHAT
+! ---------------------------------------------------------------
+! * NO ROW IS AN INDEPENDENT BINARY CHECK, because there are no rows.
+! * NO SYMBOL ON THIS PAGE IS REFERENCED BY ANY LANDED DECK.  A grep
+!   of decks/, strap/ and tests/ for all thirty names returns
+!   nothing (the single hit, SCWADR, is p.101's own control-word
+!   address field in the UNIT AREA TABLE and is a different symbol).
+!   So not one name here can fail a merge, and every !SYM below
+!   rests on this page's own ink.
+! * WHAT DOES CHECK THE DIGITS, ROW BY ROW, IS THAT THE STATEMENT
+!   PRINTS THE VALUE IN HEX AND THE LOCATION COLUMN PRINTS THE SAME
+!   VALUE IN OCTAL.  Two independent columns, twenty-eight rows:
+!     (16)1001 = 0o10001   (16)1002 = 0o10002   (16)1003 = 0o10003
+!     (16)1004 = 0o10004   (16)1005 = 0o10005   (16)1006 = 0o10006
+!     (16)1007 = 0o10007   (16)1008 = 0o10010   (16)1009 = 0o10011
+!     (16)010A = 0o00412   (16)0101 = 0o00401   (16)0102 = 0o00402
+!     (16)0103 = 0o00403   (16)0104 = 0o00404   (16)0105 = 0o00405
+!     (16)0106 = 0o00406   (16)0107 = 0o00407   (16)0108 = 0o00410
+!     (16)0109 = 0o00411   (16)020A = 0o01012   (16)0705 = 0o03405
+!     (16)0706 = 0o03406   (16)0707 = 0o03407   (16)0708 = 0o03410
+!     (16)0709 = 0o03411   (16)080A = 0o04012   (16)0801 = 0o04001
+!     (16)0802 = 0o04002
+!   ALL TWENTY-EIGHT AGREE.  This is what pins the awkward glyphs:
+!   the "A" in 010A/020A/080A is forced by the octal 412/1012/4012,
+!   and the leading zeros of 0101..0109 are forced by 401..411.
+!   THE REMAINING TWO ROWS ARE NOT HEX AT ALL -- line 7 is
+!   "SUNNAV SYN,SCHNAV" and line 9 is "SUNNAS SYN,SIODI" -- and they
+!   are checked instead by printing the SAME location as the symbol
+!   they name (010003.00+ and 010004.00+).  Thirty names, twenty-
+!   eight distinct addresses.
+! * THE COMMENT COLUMN AGREES WITH THE HEX ON ALL THIRTY ROWS, and
+!   this is recorded as a CHECK ON MY READING, NOT as a documented
+!   encoding -- I have no primary source for it and am not inferring
+!   one.  Observed: with the decimal code written as tens digit T
+!   and units digit U, the hex is (T==0 -> 10, else 0T)(U==0 -> 0A,
+!   else 0U).  -1 -> 1001, -9 -> 1009, -10 -> 010A, -19 -> 0109,
+!   -20 -> 020A, -75 -> 0705, -80 -> 080A, -82 -> 0802.  Every one
+!   of the twenty-eight hex rows fits, and lines 7 and 9 print the
+!   codes (3, 4) of the symbols they SYN to.  As a check it is
+!   strong; as semantics it is unsourced and is not claimed.
+!
+! ---------------------------------------------------------------
+! A PRIMARY SOURCE CORROBORATES THE ENGLISH, AND THROUGH IT SEVEN
+! SPELLINGS
+! ---------------------------------------------------------------
+! C22-6678-1, "IBM 7030 MCP Reference Manual" (June 1964), Appendix
+! E "Messages to the Programmer", "Errors During Execution",
+! printed p.54 = PDF p.54, lists "JOB ENDED, - ERROR TYPE YY" with
+! YY = 01..23 and a sentence for each.  Error types 01-09 and 11-20
+! line up with this page's comments one for one:
+!
+!   01 IF interrupt, instruction counter -.32 is not a B,$MCP
+!   02 invalid pseudo-operation          03 channel not available
+!   04 illegal IOD reference number      05 illegal PP I/O Table of
+!      Exits on an IOD card              07 invalid Control word
+!   08 invalid Control word address      09 communicate with
+!      protected storage                 11 invalid exit address in
+!      a $CHEX calling sequence          12 unit with an interrupt
+!      stacked                           13 exceeded the limit of
+!      maskable interrupts MCP will process
+!   14 OP, AD, USA or DS interrupt while auto stacked
+!   16 successful branch to location 32.0 or 32.32
+!   17 illegal PTOE address in the refill field of $15
+!   18 invalid FWA in a $COMM calling sequence
+!   19 illegal instruction in a $FIXUP calling sequence
+!   20 a $STLR when not in the Auto Stacked mode
+!
+! IT IS A LATER REVISION OF A DIFFERENT DOCUMENT AND IT DISAGREES IN
+! PLACES -- its 06 is the Reel Pool Table and this page's -6 is
+! "REQUEST FOR TOO MANY SCRATCH TAPES"; its 10 is a non-tape IOD in
+! $ATID and this page's -10 is "DUMP FORMAT INVALID"; its 15 and 21
+! are repeated UKs and this page's -15 is "BAD LABEL"; its codes
+! 65-76 are interrupt classes and this page's -75..-82 are a
+! separate "ERRORS IN MCP ONLY" group.  SO IT IS NOT USED AS
+! VERIFICATION.  What it IS used for is the thing listing_oracle can
+! never check, SPELLING, by confirming the ENGLISH WORDS the comment
+! column abbreviates:
+!   $COMM   (p.54 error 18)  -> the comment's "$CCMM" is $COMM, so
+!           line 23's name is S C O M E R and not S C C M E R.
+!   CHEX    (p.54 error 11)  -> line 16's "GOOF IN CHEX".
+!   PTOE    (p.54 error 17)  -> line 22's name S P T O E X.
+!   OR      (p.54 error 14, "OP, AD, USA, or DS") -> line 19's
+!           comment prints "CR" and the word is OR; the name is
+!           S O A U D.
+!   $FIXUP  (p.54 error 19)  -> line 24.
+!   $STLR   (p.54 error 20)  -> line 25.
+!   "maskable interrupts MCP will process" (p.54 error 13) -> line
+!           18's "50 MASKABLE INTERRUPTS" and the name STMMI.
+!   "branch to location 32.0 or 32.32" (p.54 error 16) -> line 21's
+!           "SUCCESSFUL B,$MCP", and decimal word 32 IS OCTAL 40, so
+!           the name's last two cells are the DIGITS 4 and 0:
+!           S B R 4 0.  (Measured: that round glyph is 87 px wide at
+!           1200 dpi against 89 and 90 for the known O's in SNXOUT
+!           and SOAUD, so WIDTH DOES NOT SEPARATE 0 FROM O on this
+!           drum and the manual is what settles it.)
+!
+! ---------------------------------------------------------------
+! THE GLYPHS, AND THE ONE THAT IS NOT SETTLED
+! ---------------------------------------------------------------
+! THIS PAGE OPENS ITS O's CONSTANTLY.  The octal LOCATION column
+! prints 010001.00+ as "01CCC1.CC+" and 000412.00+ as "000412.CC+",
+! and an octal field cannot hold a C, so those are 0's with
+! certainty.  The same happens in letters: SFORBD prints "SFCRBD",
+! SIODI prints "SICDI", SIOERR prints "SICERR", SPTOEX prints
+! "SPTCEX", and in the comment column FOR prints "FCR", OR prints
+! "CR", PTOE prints "PTCE" and $COMM prints "$CCMM".  SO AN OPEN
+! ROUND GLYPH CARRIES ALMOST NO INFORMATION HERE.  Closed ones do:
+! SNXOUT's O, SOAUD's O and SERCOD's O all print shut, and a shut
+! glyph is never a damaged C.
+!
+! C vs D gave no trouble: every D on the page prints the straight
+! vertical left stem and squared corners (SIODI, SFORBD, SOAUD,
+! SERCOD, SCCWAD), against the stemless bowl of C and O.
+! B vs 8 does not arise -- there is no hex byte column on this page.
+!
+! >>> THE UNRESOLVED ONE IS LINE 13's NAME, TRANSCRIBED SCCWAD. <<<
+! Its comment is "- 8 CW ADDRESS INVALID" and C22-6678-1 p.54's
+! error 08 is "invalid Control word address", so the English is CW
+! AD and the obvious name would be the five-character SCWAD.  IT IS
+! NOT FIVE CHARACTERS.  The name column's cell pitch was measured at
+! 1200 dpi off eleven rows: the cells start at x = 134, 251, 368,
+! 489, 611, 729 on every name, and line 13 has INK IN ALL SIX,
+! exactly where line 12's SCWINV has its six.  So SCWAD is excluded
+! ON GEOMETRY, not on ink -- the comment column is an oracle for
+! WHICH LETTER a glyph is, and it cannot delete a cell.  The six
+! cells read S, round, round, W, A, D, and since both round glyphs
+! are open neither is decidable by shape.  The surviving candidates
+! are SCCWAD, SCOWAD and SOCWAD; SCCWAD is transcribed because it is
+! the only one that reads as English (CCW ADdress).  IT RESTS ON INK
+! ALONE: nothing references it, and listing_oracle checks LOCATIONS
+! and BINARY and never spellings, so this is a name that can be
+! wrong and still pass everything.  DO NOT "FIX" IT TO SCWAD -- that
+! would be deleting a printed character to match a guess.
+!
+! SETTLED BY THE SAME RULE, THE OTHER WAY: line 23 prints the same
+! S-round-round shape and IS reduced to five letters plus one,
+! SCOMER, because there the comment supplies the word ($COMM) and
+! the reduction is a LETTER substitution (C -> O in cell 3), not a
+! deleted cell.  Printed form "SCCMER"; transcribed SCOMER.
+!
+! ---------------------------------------------------------------
+! CONVENTIONS AND OMISSIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2.  Only two names here print with an interior blank --
+!     line 24's "S FIXP" and line 36's "S ASNER" -- and they become
+!     SFIXP and SASNER.  Line 25's SERCOD is printed one cell to the
+!     RIGHT of every other name (its cells start at 245, not 134);
+!     that is the card column the name was punched in and it is not
+!     a leading blank in the symbol.
+! (2) THE STATEMENTS ARE WRITTEN EXACTLY AS PRINTED, "SYN,(16)1001.0"
+!     -- SYN with NO data description and a hexadecimal value.  The
+!     trailing ".0" is the bit offset and is kept.
+! (3) LINES 1, 2, 3, 26, 27 AND 28 COMPILE NOTHING AND ARE NOT
+!     TRANSCRIBED.  1 and 3 are asterisk rules, 2 is the heading
+!     "-*****   EXIT CODES TO ERROR ROUTINE   *****", 26 and 28 are
+!     bare "-" cards and 27 is "-  *****   ERRORS IN MCP ONLY
+!     *****".  All six print an empty LOCATION and an empty BINARY
+!     OUTPUT.
+! (4) THE LOCATIONS ARE NOT MONOTONIC AND THAT IS NOT A MISREAD:
+!     010001 .. 010011, then 000412, then 000401 .. 000411, then
+!     001012, then 003405 .. 003411, then 004012, 004001, 004002.
+!     A SYN does not advance the location counter, so the cards are
+!     in card order and the addresses are in whatever order the
+!     codes fall.  Lines 6/7 and 8/9 print the SAME location twice
+!     for two different names, which is what SYN,symbol does.
+! (5) EVERY LOCATION PRINTS A TRAILING "+" -- the sign, printed as a
+!     suffix the way printed p.84's negative SYN prints
+!     "000001.00-".  All thirty.  It is dropped in the !SYM lines
+!     below because listing_oracle's loc_bits parses "word.bit" and
+!     has no sign field, which is what pp.99 and 101 do.
+! (6) EVERY ONE of the thirty-six line numbers carries an asterisk
+!     right after it ("4*", "36*"), exactly as pp.99 and 101 do.
+!     That is the line-number column and not the mark that sits
+!     after a LOCATION on pp.3/37/88/97/98.  No location on this
+!     page carries a mark.
+! (7) NOTHING ELSE.  No printed spelling on this page was refused by
+!     strap_asm; there is no substitution anywhere in this deck.
+!     The hexadecimal literal "(16)nnnn.0", the data-description-
+!     less "SYN,value" and "SYN,symbol" all assemble as printed.
+! (8) TAIL SCOPE: pp.99+ are outside the TAIL,(2)G block that p.2
+!     opened and p.98 line 37 closed with UNTAIL,(2), so a name here
+!     may legitimately repeat a name from pp.2-98 at a different
+!     address.  None of these thirty does, as it happens -- the grep
+!     above found no collision -- but the rule is recorded.
+
+! ---- ***** EXIT CODES TO ERROR ROUTINE ***** (lines 1-3) ---------
+SIFERR  SYN,(16)1001.0              ! line  4 - 1 ILLEGAL IF
+                                     !            INTERRUPT
+SCPCI   SYN,(16)1002.0              ! line  5 - 2 PSEUDO CP CODE
+                                     !            INVALID
+SCHNAV  SYN,(16)1003.0              ! line  6 - 3 CHANNEL NOT
+                                     !            AVAILABLE
+SUNNAV  SYN,SCHNAV                  ! line  7 - 3 UNIT NOT AVAILABLE
+SIODI   SYN,(16)1004.0              ! line  8 - 4 PHONY IOD
+SUNNAS  SYN,SIODI                   ! line  9 - 4 UNIT NOT ASSIGNED
+SPPTNG  SYN,(16)1005.0              ! line 10 - 5 ILLEGAL PP T.O.E.
+                                     !            ON IOD CARD
+S2BIG   SYN,(16)1006.0              ! line 11 - 6 REQUEST FOR TOO
+                                     !            MANY SCRATCH TAPES
+SCWINV  SYN,(16)1007.0              ! line 12 - 7 CW INVALID
+SCCWAD  SYN,(16)1008.0              ! line 13 - 8 CW ADDRESS INVALID
+                                     !   (six printed cells; see the
+                                     !   glyph note above)
+SFORBD  SYN,(16)1009.0              ! line 14 - 9 COMMUNICATION WITH
+                                     !            PROTECTED AREA
+SFORMT  SYN,(16)010A.0              ! line 15 -10 DUMP FORMAT INVALID
+SNXOUT  SYN,(16)0101.0              ! line 16 -11 GOOF IN CHEX
+SUSUPP  SYN,(16)0102.0              ! line 17 -12 UNIT SUPPRESSED
+STMMI   SYN,(16)0103.0              ! line 18 -13 50 MASKABLE
+                                     !            INTERRUPTS
+SOAUD   SYN,(16)0104.0              ! line 19 -14 OP,AD,USA OR DS
+SLABNG  SYN,(16)0105.0              ! line 20 -15 BAD LABEL
+SBR40   SYN,(16)0106.0              ! line 21 -16 SUCCESSFUL B,$MCP
+SPTOEX  SYN,(16)0107.0              ! line 22 -17 BAD PTOE ADDRESS
+SCOMER  SYN,(16)0108.0              ! line 23 -18 ILLEGAL $COMM FWA
+                                     !   (printed "SCCMER"/"$CCMM")
+SFIXP   SYN,(16)0109.0              ! line 24 -19 ILLEGAL FIXUP WD
+                                     !            FOR $FIXUP
+SERCOD  SYN,(16)020A.0              ! line 25 -20 PP BUFFER OUT OF
+                                     !            BOUNDS FOR
+                                     !            $STLR/$FHLR
+
+! ---- *****   ERRORS IN MCP ONLY   ***** (lines 26-28) ------------
+SIOERR  SYN,(16)0705.0              ! line 29 -75 MCP SETUP I/O ERROR
+SREJ    SYN,(16)0706.0              ! line 30 -76 I/O OPERATION
+                                     !            REJECTED
+SQERR   SYN,(16)0707.0              ! line 31 -77 FILE NOT STACKED IN
+                                     !            INT. QUE
+SQ2BIG  SYN,(16)0708.0              ! line 32 -78 INTERRUPT QUE TOO
+                                     !            SMALL
+SPQFUL  SYN,(16)0709.0              ! line 33 -79 PRIME QUE TOO SMALL
+SIFAS   SYN,(16)080A.0              ! line 34 -80 MCP ERROR WHILE
+                                     !            AUTO STACKED
+SEPGK   SYN,(16)0801.0              ! line 35 -81 MCP EPGK
+SASNER  SYN,(16)0802.0              ! line 36 -82 SPECIAL ASSIGNMENT
+                                     !            ERROR
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING -- all thirty definition lines, with the
+! LOCATION, the BINARY OUTPUT and the data description exactly as
+! printed.  The NAME column is given in its PRINTED form, which is
+! not always the transcribed form (see lines 13 and 23).
+! ---------------------------------------------------------------
+!   line  4  010001.00+  +00000000  NULL  SIFERR  SYN,(16)1001.0
+!   line  5  010002.00+  +00000000  NULL  SCPCI   SYN,(16)1002.0
+!   line  6  010003.00+  +00000000  NULL  SCHNAV  SYN,(16)1003.0
+!   line  7  010003.00+  +00000000  NULL  SUNNAV  SYN,SCHNAV
+!   line  8  010004.00+  +00000000  NULL  SIODI   SYN,(16)1004.0
+!   line  9  010004.00+  +00000000  NULL  SUNNAS  SYN,SIODI
+!   line 10  010005.00+  +00000000  NULL  SPPTNG  SYN,(16)1005.0
+!   line 11  010006.00+  +00000000  NULL  S2BIG   SYN,(16)1006.0
+!   line 12  010007.00+  +00000000  NULL  SCWINV  SYN,(16)1007.0
+!   line 13  010010.00+  +00000000  NULL  SCCWAD  SYN,(16)1008.0
+!   line 14  010011.00+  +00000000  NULL  SFORBD  SYN,(16)1009.0
+!   line 15  000412.00+  +00000000  NULL  SFORMT  SYN,(16)010A.0
+!   line 16  000401.00+  +00000000  NULL  SNXOUT  SYN,(16)0101.0
+!   line 17  000402.00+  +00000000  NULL  SUSUPP  SYN,(16)0102.0
+!   line 18  000403.00+  +00000000  NULL  STMMI   SYN,(16)0103.0
+!   line 19  000404.00+  +00000000  NULL  SOAUD   SYN,(16)0104.0
+!   line 20  000405.00+  +00000000  NULL  SLABNG  SYN,(16)0105.0
+!   line 21  000406.00+  +00000000  NULL  SBR40   SYN,(16)0106.0
+!   line 22  000407.00+  +00000000  NULL  SPTOEX  SYN,(16)0107.0
+!   line 23  000410.00+  +00000000  NULL  SCCMER  SYN,(16)0108.0
+!   line 24  000411.00+  +00000000  NULL  S FIXP  SYN,(16)0109.0
+!   line 25  001012.00+  +00000000  NULL  SERCOD  SYN,(16)020A.0
+!   line 29  003405.00+  +00000000  NULL  SIOERR  SYN,(16)0705.0
+!   line 30  003406.00+  +00000000  NULL  SREJ    SYN,(16)0706.0
+!   line 31  003407.00+  +00000000  NULL  SQERR   SYN,(16)0707.0
+!   line 32  003410.00+  +00000000  NULL  SQ2BIG  SYN,(16)0708.0
+!   line 33  003411.00+  +00000000  NULL  SPQFUL  SYN,(16)0709.0
+!   line 34  004012.00+  +00000000  NULL  SIFAS   SYN,(16)080A.0
+!   line 35  004001.00+  +00000000  NULL  SEPGK   SYN,(16)0801.0
+!   line 36  004002.00+  +00000000  NULL  S ASNER SYN,(16)0802.0
+!
+! THE OTHER PRINTED LINES, for the record:
+!   line  1  - ****************************************************
+!   line  2    -*****   EXIT CODES TO ERROR ROUTINE   *****
+!   line  3  - ****************************************************
+!   line 26  -
+!   line 27  -       *****   ERRORS IN MCP ONLY   *****
+!   line 28  -
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 107 ----------------
+! Thirty symbols and no rows: a SYN deposits no storage word, so
+! there is nothing for a !CHECK to look at.  Manufacturing one from
+! the "+00000000" the BINARY OUTPUT column prints would be checking
+! the printer, not the assembler.
+! >>> TWO PAIRS SHARE AN ADDRESS BY DESIGN AND ARE NOT DUPLICATES:
+! lines 6/7 (SCHNAV, SUNNAV) both at 010003.00 and lines 8/9
+! (SIODI, SUNNAS) both at 010004.00, because lines 7 and 9 are
+! "SYN,symbol" cards naming the line above.  THIRTY !SYM LINES,
+! TWENTY-EIGHT DISTINCT LOCATIONS.  See convention (4).
+!SYM   SIFERR   010001.00
+!SYM   SCPCI    010002.00
+!SYM   SCHNAV   010003.00
+!SYM   SUNNAV   010003.00
+!SYM   SIODI    010004.00
+!SYM   SUNNAS   010004.00
+!SYM   SPPTNG   010005.00
+!SYM   S2BIG    010006.00
+!SYM   SCWINV   010007.00
+!SYM   SCCWAD   010010.00
+!SYM   SFORBD   010011.00
+!SYM   SFORMT   000412.00
+!SYM   SNXOUT   000401.00
+!SYM   SUSUPP   000402.00
+!SYM   STMMI    000403.00
+!SYM   SOAUD    000404.00
+!SYM   SLABNG   000405.00
+!SYM   SBR40    000406.00
+!SYM   SPTOEX   000407.00
+!SYM   SCOMER   000410.00
+!SYM   SFIXP    000411.00
+!SYM   SERCOD   001012.00
+!SYM   SIOERR   003405.00
+!SYM   SREJ     003406.00
+!SYM   SQERR    003407.00
+!SYM   SQ2BIG   003410.00
+!SYM   SPQFUL   003411.00
+!SYM   SIFAS    004012.00
+!SYM   SEPGK    004001.00
+!SYM   SASNER   004002.00

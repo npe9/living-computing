@@ -6339,6 +6339,13 @@ run "the MCP pseudo-operation codes, printed p.104" python3 verify_mcp_page.py 1
 # 215023.00, which is what p.110 line 5 prints. pp.105-108 consume no
 # storage, which is why the two SLCs can agree across them.
 run "miscellaneous system symbols, printed p.105" python3 verify_mcp_page.py 105
+# pp.106 and 107 finish the pseudo-op code table and add the EXIT
+# CODES TO ERROR ROUTINE: 30 SYN cards whose value is a HEX literal,
+# "SYN,(16)nnnn.0".  Their whole check surface is that the statement
+# prints the value in hex and the LOCATION column prints it in octal,
+# and all 28 hex rows agree arithmetically.
+run "the special MCP pseudo-ops, printed p.106" python3 verify_mcp_page.py 106
+run "the exit codes to the error routine, printed p.107" python3 verify_mcp_page.py 107
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
 run "the program status table, printed p.109" python3 verify_mcp_page.py 109
 run "the interrupt table, printed p.110" python3 verify_mcp_page.py 110

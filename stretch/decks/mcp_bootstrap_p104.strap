@@ -205,7 +205,7 @@
 !   where it arrived.  Printed p.105 should therefore RESUME at
 !   215020.71 -- but that is testable only at p.105's first card
 !   that EMITS STORAGE, if it has one.  docs/syn_cards.md records
-!   p.105 line 1 as "S FREE SYN,12.22", and a SYN prints a SYMBOL
+!   p.105 line 1 as "S FREE SYN,12.32", and a SYN prints a SYMBOL
 !   VALUE in the LOCATION column, not a storage location, so line 1
 !   cannot test it.  ONE THING IS NOT SETTLED HERE: whether 215020.71 is
 !   the counter ON ARRIVAL or the counter AFTER "SLC,$" -- for a

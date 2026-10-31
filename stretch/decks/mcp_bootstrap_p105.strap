@@ -54,6 +54,31 @@
 ! symbolic SYN,D RET resolves to line 17's 000041.00.  That is a
 ! real check of the digits, though not of the card.
 !
+! >>> TWO EXISTING RECORDS OF THIS PAGE ARE WRONG, AND BOTH ARE
+! CORRECTED HERE. <<<
+! (i)  docs/syn_cards.md:259 records "printed p.105 line 1 declares
+!      S FREE SYN,12.22", and decks/mcp_bootstrap_p104.strap's
+!      header quotes that figure.  THE CARD READS SYN,12.32.  The
+!      page settles it without appeal to the glyph: 12.22 decimal
+!      would print 000014.26 in the LOCATION column and the page
+!      prints 000014.40, which is 12.32.  The same file's census
+!      scores this page at "thirty straight cards"; seventeen
+!      compile and thirty-nine are comment cards, so thirty is an
+!      OCR count of SYN tokens and not a count of definitions.
+! (ii) THE LOCATION-COLUMN SURVEY UNDERSTATES THIS PAGE BADLY.  The
+!      independent OCR survey measured "10 rows carrying a LOCATION,
+!      8 of them with a trailing +, range 000041.0+..40104.4+".
+!      Read by eye: SEVENTEEN rows carry a LOCATION and ALL
+!      SEVENTEEN carry the +.  The survey's high endpoint is
+!      000104.40+ with the zeros mangled, and it agrees.  Its LOW
+!      endpoint 000041.0+ is this page's LINE 17 -- lines 1, 2, 15
+!      and 16 were dropped whole, so the true first location is
+!      000014.40+, four rows earlier.  That is 10 of 17 rows, about
+!      59%, against mcp_ocr.py's documented 85-90%, and it lost the
+!      sign on two of the ten it did read.  Recorded because the
+!      survey is cited as a cross-check elsewhere and this page is
+!      evidence that its recall is page-dependent.
+!
 ! >>> THERE IS NO SLC ON THIS PAGE AND THIS DECK WRITES NONE. <<<
 ! p.104 line 6 printed "SLC,$" at 215020.71; p.105 prints no SLC row
 ! at all and emits no storage, so the counter leaves this page
@@ -142,12 +167,20 @@
 !
 ! >>> WHERE THE MANUALS DO NOT LINE UP, RECORDED AND NOT SMOOTHED.
 ! <<<
-!   * FIGURE 13 PRINTS "$FREE" TWICE, at 10.32 and at 12.32.  p.104
-!     line 44 declares D FREE at 10.32 and THIS page's line 1
-!     declares S FREE at 12.32, so the listing uses two different
-!     names for the manual's two $FREE rows.  Whether the manual has
-!     a genuine duplicate or the OCR doubled a row cannot be told
-!     from OCR, and the PDF page was not rendered.
+!   * THE TWO MANUALS DISAGREE ABOUT WHAT OCCUPIES 12.32, AND THIS
+!     LISTING BREAKS THE TIE.  Figure 13 prints "$FREE" TWICE, at
+!     10.32 and at 12.32.  APPENDIX A PRINTS IT ONCE, at 10.32: its
+!     sequence runs $WAIT 11.32, $CHEX 12.0, $IODEF 13.0, $HD 14.0
+!     with NO 12.32 entry at all, and a grep for FREE over the whole
+!     of docs/ocr/C22-6678-1_..._Jun64.txt returns exactly one
+!     appendix row (line 5165) plus the prose section on the free-
+!     tape pseudo-op.  So this is not an OCR doubling that can be
+!     waved away: one IBM document says 12.32 is empty and the other
+!     says $FREE lives there.  p.104 line 44 declares D FREE at
+!     10.32 and THIS page's line 1 declares S FREE at 12.32, so the
+!     March 1963 listing agrees with Figure 13 and against Appendix
+!     A, and the listing uses two different names for the two rows.
+!     Both manual readings are OCR, not rendered pages.
 !   * $ATID 17.0 and $ABEX 38.0 are in Appendix A and have NO CARD
 !     on this page, commented or otherwise.  The 1964 manuals are a
 !     later revision than this March 1963 listing; the absence is
@@ -290,11 +323,37 @@
 ! of rounded off.
 !
 ! ---------------------------------------------------------------
+! >>> ONE THING THIS PAGE DOES NOT EXPLAIN: THE "S" PREFIX. <<<
+! ---------------------------------------------------------------
+! printed p.104 names all twenty-three of its codes "D something".
+! This page names fifteen of seventeen the same way and TWO with an
+! S: line 1's S FREE (12.32) and line 18's S D RET (33.0), the
+! latter an alias for line 17's D RET at the same bit.  Nothing on
+! the page says what the prefix means and no comment column exists
+! to ask -- not one of the fifty-six cards carries a comment.
+! A HYPOTHESIS, LABELLED AS ONE AND NOT RELIED ON: C22-6728's
+! Figure 13 footnote reads "* Available only to MCP", and Figure
+! 14's right-hand column, the "Available to MCP Only" one, is
+! entirely S-names (SJC1, SOUTPT, SSPEOJ, SDDT, SJC4, SSCR4, SKOM,
+! SCOMD, SLOG4, SLOG2, SLOG1).  That would make S an MCP-only
+! marker and D the problem-program-visible set.  IT IS NOT A
+! MEASUREMENT: the 1964 figures use "$" for every code in the body
+! of both tables and the S/D split is this listing's own, so the
+! correspondence may be coincidence.  Left open.
+!
+! ---------------------------------------------------------------
 ! >>> NO CROSS-DECK COLLISION. <<<
 ! ---------------------------------------------------------------
 ! Of the seventeen names, only D RET and D COMM appear in any other
-! deck, and both AGREE (see above).  The other fifteen -- SFREE,
-! DIODEF, DSIO, DRIO, SDRET, DTIME, DSIT, DDUMP, DEOJ, DHOLD,
+! deck, and both AGREE (see above).  CHECKED AGAINST EVERY DECK IN
+! decks/ AS OF THIS WRITING, INCLUDING THE pp.108-112 DECKS THAT
+! LANDED WHILE THIS PAGE WAS BEING READ and the pp.106-107 drafts
+! staged beside them: no name of the seventeen is defined twice
+! anywhere, at one address or at two.  That second half matters,
+! because check_symbol_spellings.py groups by ADDRESS and therefore
+! catches two spellings of one bit, not one name at two bits --
+! which is the DFREE class p.104's deck flagged.  The other fifteen
+! -- SFREE, DIODEF, DSIO, DRIO, SDRET, DTIME, DSIT, DDUMP, DEOJ, DHOLD,
 ! DRESLD, DFETCH, DSPR, DABEOJ, DSCR -- appear nowhere else in
 ! decks/.  In particular SFREE does NOT collide with p.104's DFREE:
 ! they are different names at different codes.  printed p.70 line 56

@@ -14,19 +14,38 @@
 ! deck read its own prefix as "CB" and declined to claim it; this
 ! one is claimed.)
 !
-! FIFTY LINES, AND TWENTY-SIX CARDS.  The printed LINE column runs
-! 1 to 50 with no gap and the page is blank below line 50.  The
-! card-serial column runs DB000041 to DB000066 -- TWENTY-SIX
-! serials for FIFTY lines, because MOST SERIALS APPEAR ON TWO
-! CONSECUTIVE LINES.  That is not a scan artifact and it counts
-! out exactly: line 1 (an SLC) is card 041 alone, lines 2+3 are
-! card 042, line 4 (an SLC) is card 043 alone, and lines 5+6,
-! 7+8, ... 49+50 are cards 044 through 066.
-!     1 + 2 + 1 + 23*2 = 50 lines,  1+1+1+23 = 26 cards.
+! FIFTY LINES.  The printed LINE column runs 1 to 50 with no gap
+! and the page is blank below line 50.  THE FIFTY IS READ OFF THAT
+! COLUMN, and nothing below depends on the card-serial column.
+!
+! >>> AND THE SERIAL COLUMN DOES NOT RUN ONE PER LINE: TWENTY-SIX
+! SERIALS FOR FIFTY LINES. <<<  It runs DB000041 to DB000066 and
+! MOST SERIALS ARE PRINTED ON TWO CONSECUTIVE LINES.
+! THAT WAS CHALLENGED AS A SKEW ARTIFACT AND IT IS NOT ONE.  The
+! first reading used a 700-px-wide crop at 400 dpi that clipped the
+! last digit, which is exactly how a repeat could be faked; it was
+! re-rendered at 1200 dpi with the whole eight-character field in
+! frame, and the first six read, unclipped and unambiguous:
+!     line 1  DB000041      line 4  DB000043
+!     line 2  DB000042      line 5  DB000044
+!     line 3  DB000042      line 6  DB000044
+! A skew cannot duplicate a VALUE; two adjacent rows printing the
+! same eight characters is a repeat.  A second render with the LINE
+! column and the serial column IN ONE FRAME gives the far end:
+!     line 46 DB000064   line 47 DB000065   line 48 DB000065
+!     line 49 DB000066   line 50 DB000066
+! and the two ends agree with one rule: line 1 (an SLC) is card 041
+! alone, lines 2+3 are card 042, line 4 (an SLC) is card 043 alone,
+! and lines 5+6, 7+8, ... 49+50 are cards 044 through 066.
+!     1 + 2 + 1 + 23*2 = 50 lines,  1+1+1+23 = 26 cards,
+!     and 0o41..0o66 inclusive IS 26.
 ! So EACH INTERRUPT-SLOT CARD CARRIES BOTH HALF-WORD STATEMENTS OF
 ! ITS FULL WORD -- "SIC,S T IC" and "BD,SIPT+NN." -- and the
-! listing prints one card as two lines.  Recorded as measured; the
-! card-image mechanics are not needed by anything here.
+! listing prints one card as two lines.  THAT IS NEW FOR THIS
+! CORPUS: printed pp.103 and 104 print one serial per line
+! throughout.  Recorded as measured and NOT explained further; the
+! card-image mechanics are not needed by anything here, and the
+! fifty-line count does not rest on them.
 !
 ! ---------------------------------------------------------------
 ! WHAT THE PAGE IS, AND A PRIMARY SOURCE THAT NAMES EVERY SYMBOL
@@ -161,7 +180,8 @@
 ! substituted.  So the page's whole address chain is tied to SIT's
 ! external value instead of asserting an address, and if SIT were
 ! wrong by one word every one of the forty-eight checked locations
-! would miss.
+! would miss -- though see the check accounting below: they would
+! miss TOGETHER and no check here would notice.
 !
 ! ---------------------------------------------------------------
 ! WHAT THE FORTY-EIGHT !CHECK ROWS ACTUALLY CHECK
@@ -184,7 +204,20 @@
 !    against a base address read off five other printed pages, is
 !    this page's real check surface.
 !  * 1 row prints "215471.04 00" for BD,S IFA E -- see SIFAE above.
-!  * ALL 48 LOCATIONS rest on SIT = 215023.00 through line 1.
+!  * ALL 48 LOCATIONS rest on SIT = 215023.00 through line 1 --
+!    BUT THAT IS NOT A CHECK OF SIT, AND SAYING SO WOULD BE WRONG.
+!    Line 1 is an SLC, and an SLC overrides the arriving counter
+!    silently.  If SIT were 0o215024 instead, all forty-eight
+!    locations would move together and all forty-eight !CHECK rows
+!    would still pass.  What this page checks is the RELATIVE
+!    layout and the SIPT arithmetic; SIT's ABSOLUTE value rests on
+!    printed p.110's label and decks/mcp_bootstrap_p103.strap, not
+!    on anything checkable here.  THIS WAS TESTED, NOT ASSUMED:
+!    SIT was changed to (8)215024.0 in a scratch copy and
+!    tests/check_symbol_spellings.py still reported PASS (with the
+!    definition count up by one, since the name then stopped
+!    merging with p.103's).  NEITHER AVAILABLE CHECKER CATCHES A
+!    WRONG EXTERNAL BASE ON THIS PAGE.
 !
 ! The BD encoding itself is checked forty-eight ways over: a BD to
 ! word W prints "W.04 00", which is what printed p.38 lines 12 and

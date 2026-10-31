@@ -9,7 +9,11 @@
 ! FIFTY-ONE LINES, COUNTED NOT ESTIMATED.  The printed LINE column
 ! runs 1..51 with no gap and the page is blank below line 51.  The
 ! card-serial column runs DB000068 (line 1) through DB000098 (line
-! 51) -- THIRTY-ONE CARDS for fifty-one lines, because a SIC and the
+! 51).  THE WHOLE COLUMN WAS RENDERED AND READ, in three overlapping
+! crops at 600 dpi (lines 1-22, 23-43, 42-51); the last four serials
+! are DB000097, DB000097, DB000098, DB000098 and below line 51 the
+! form is blank.  That is THIRTY-ONE CARDS for fifty-one lines,
+! because a SIC and the
 ! branch that completes its 64-bit instruction are punched on ONE
 ! card and listed on TWO lines with the SAME serial (lines 1+2 are
 ! both DB000068, 9+10 are both DB000073, and so on).  The serial
@@ -93,17 +97,26 @@
 !
 ! SIX lines carry a SECOND asterisk after the LOCATION, the
 ! unexplained marker of docs/listing_typography.md 12: lines 8, 11,
-! 17, 20, 23 and 46.  >>> THIS PAGE SHARPENS THE OPEN QUESTICN. <<<
-! Five of the six are exactly the five SLC rows -- i.e. exactly the
-! rows at which the location counter jumps -- which is the "gap
-! marker" reading that printed p.3 killed.  LINE 46 KILLS IT AGAIN
-! HERE: it is an ordinary "SIC,W INTOR" at 215144.00, it carries
-! binary ("216371.40 80", read at 900 dpi beside the asterisk), line
-! 45 is a half-word branch at 215143.40 that ends exactly at
-! 215144.00, and there is no gap.  So on this page the marker is
-! neither "SLC row" nor "gap".  What line 46 DOES fit is the pitch
-! reading: line 23 and line 46 are 23 lines apart, and printed p.3
-! (52 lines) had a 22-23 line pitch.  Recorded, still open.
+! 17, 20, 23 and 46.  Five of the six are exactly this page's five
+! SLC rows, which is suggestive and which I CHECKED AND THEN HAD TO
+! DROP.  The tempting reading -- "an SLC row carries the mark" --
+! predicts that every SLC row in every transcribed deck carries it,
+! and TWO ROWS SAY OTHERWISE:
+!     printed p.99  line 11  215000.00    SLC,(8)215000.   no mark
+!     printed p.109 line  5  215020.71    SLC,$            no mark
+! and the second is decisive, because printed p.104 line 6 is the
+! SAME STATEMENT AT THE SAME LOCATION -- "215020.71 * SLC,$" -- and
+! IS marked.  One statement, one location, two pages, mark on one
+! only.  So the correlation on this page is a coincidence of this
+! page, and the equivalent "gap marker" reading (the five SLC rows
+! are exactly the five rows where the counter jumps) dies with it,
+! as it already died on printed p.3.
+!
+! LINE 46 IS THE SIXTH AND FITS NEITHER: an ordinary "SIC,W INTOR"
+! at 215144.00 WITH binary beside the asterisk ("216371.40 80", read
+! at 900 dpi), preceded by a half-word branch at 215143.40 that ends
+! exactly at 215144.00, so no gap and no SLC.  Recorded as open, per
+! docs/listing_typography.md 12, with nothing added to it.
 !
 ! ---------------------------------------------------------------
 ! HOW THE BINARY WAS SETTLED, FIELD BY FIELD
@@ -196,6 +209,11 @@
 ! because their targets are computed from it.
 ! ---------------------------------------------------------------
         SLC, (8)215100.
+! The last glyph of this name is a C, not an O.  This deck first
+! read it as STIO; at 1200 dpi it is open on the right and the SAME
+! SHAPE as the C of "SIC" at the start of its own row, and printed
+! pp.110 and 111 spell it STIC at this same 215265.00.  Caught by
+! tests/check_symbol_spellings.py.
 STIC    SYN, (8)215265.0             ! line  1 "SIC,ST IO"
 SINTO   SYN, (8)216371.40            ! line  9 "SIC,S INTO"
 JWLODE  SYN, (8)216604.40            ! line 10 "B,JWLODE" prints 216604.50

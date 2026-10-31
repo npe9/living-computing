@@ -1,0 +1,319 @@
+! mcp_bootstrap_p106.strap -- printed page 106:
+! "******** SPECIAL MCP PSEUDO OPS ********", followed by the head
+! of "******** INPUT COMMAND PARAMETERS ********".
+! docs/MCP_Mar63_001-249.pdf PDF p.113, header READ AND NOT ASSUMED:
+! the top line prints "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID
+! CB000106  DIST. OF 3/01   3/01   PAGE NUMBER 106".  The TIME CLOCK
+! 00054041 and the PUNID are the ones every page since printed p.97
+! prints; the card-ID prefix is the "CB" that printed p.104 opened
+! with (CB000001) and is read, not assumed -- see the line count.
+!
+! TWENTY-NINE LINES, AND THAT IS COUNTED, NOT ESTIMATED.  The
+! rightmost column prints one card serial per line, CB000106 through
+! CB000134 with no break, twenty-nine rows, and the printed line
+! numbers run 1 to 29.  Below line 29 the page is blank (the bottom
+! two thirds of the render carry only the form's rules).  Nothing
+! fell off the top or the bottom.
+!
+! THE JOIN TO printed p.105 IS CLEAN: p.105's last serial is
+! CB000105 (its line 56) and this page opens at CB000106, so this
+! page is the next card of one punched deck with no break.
+!
+! >>> BUT CB000049 IS MISSING FROM THE PRINTED LISTING, AND THAT IS
+! NOT MY PAGE'S DOING. <<<  Rendered and read at 600 dpi, printed
+! p.104's last serial is CB000048 (its line 48) and printed p.105's
+! first is CB000050 (its line 1).  One serial is skipped between
+! those two pages.  Recorded here because the serial column is the
+! tool every one of these decks uses to prove nothing fell off a
+! page, and this is the first place it does NOT run consecutively.
+! Whether card 49 was pulled, was a card the listing suppresses, or
+! sits on a page edge is NOT examined here and nothing on p.106
+! depends on it.
+!
+! >>> THE WHOLE PAGE IS DEFINITIONS AND NOT ONE CARD COMPILES A
+! WORD. <<<  Eleven SYN cards define eleven symbols (lines 8-18);
+! thirteen more SYN cards are COMMENTED OUT (lines 1-5 and 22-29);
+! five cards are heading/spacer comment cards (lines 6, 7, 19, 20,
+! 21).  11 + 13 + 5 = 29.  So this deck's entire check surface is
+! ELEVEN SYMBOLS AND ZERO LISTING ROWS -- printed p.99's convention,
+! which pp.101, 102 and 104 also follow: a SYN deposits no storage
+! word, so it is checked in !SYM and must NOT be faked into a
+! !CHECK.  There are no !CHECK lines below and that is correct.
+!
+! >>> THERE IS NO SLC ON THIS PAGE AND THE DECK WRITES NONE. <<<
+! Nothing here emits storage, so the location counter arrives and
+! leaves untouched, and no row on the page states it.  (printed
+! p.104 line 6 is the last SLC seen, "SLC,$" printed 215020.71.)
+! Every LOCATION printed here ends in "+" and is a SYN's RESOLVED
+! VALUE relative to a zero base -- a pseudo-op code, not an address.
+! THERE IS NO ADDRESS CHAIN TO CLOSE ACROSS THIS PAGE and none
+! should be attempted.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! It continues printed pp.104-105's MCP PSEUDO-OPERATION CODE
+! TABLE.  p.104 defines the service pseudo-ops a problem program
+! may request ($RD at 1.0 through $CHEX at 12.0); p.105 carries
+! $IODEF and the $SIO..$SCR group and then two reserved blocks;
+! this page defines the ELEVEN MAJOR-PACKAGE PSEUDO-OPS, the codes
+! by which MCP's own major packages (job control, the loggers, the
+! debugger, the command programs) call each other through $MCP.
+! Each code is a word.bit pair at .0 or .32, and the eleven run
+! consecutively from 76.32 to 81.32 with no gap.
+!
+! >>> THE NAMES AND THE CODES ARE CONFIRMED BY A PRIMARY SOURCE,
+! NAME FOR NAME AND NUMBER FOR NUMBER. <<<
+! docs/C22-6728_7030_MCP_Sys_Analysis_Guide.pdf, FIGURE 14, "MAJOR
+! PACKAGE PSEUDO-OPS", printed p.29 (PDF p.29 of that scan), prints
+! a two-column table whose right half is:
+!
+!     SJC1    Job Control 1        76.32
+!     SOUTPT  Output Command       77.00
+!     SSPEOJ  Output EOJ           77.32
+!     SDDT    Debugger             78.00
+!     SJC4    IPL Entry to JC4     78.32
+!     SSCR4   First Card Request   79.00
+!     SKOM    Input Commands       79.32
+!     SCOMD   System Commands      80.00
+!     SLOG4   Logger 4             80.32
+!     SLOG2   Logger 2             81.00
+!     SLOG1   Logger 1             81.32
+!
+! -- eleven names in this page's order, with this page's codes, and
+! with descriptions that are this page's own comment column almost
+! word for word ("IPL Entry to JC4" / "-IPL ENTRY TO JC4", "Input
+! Commands" / "-INPUT COMMANDS", "First Card Request" /
+! "-$SCR+N.32,N=10.0 1ST CARD REQ.").
+!
+! ONE OF THE ELEVEN DESCRIPTIONS DOES NOT MATCH, AND IT IS NAMED
+! RATHER THAN GLOSSED: SOUTPT is "Output Command" in Figure 14 and
+! "-OUTPUT TAPE SWITCH" on this page.  The name and the code agree;
+! only the gloss differs, and the two documents are not the same
+! date.  Nothing here depends on either wording.
+!
+! That settles BY DOCUMENT
+! every glyph on this page that shape alone cannot -- see the GLYPH
+! section below, where four round glyphs were decided by
+! measurement first and then found to agree with this table.
+!
+! >>> AND THE REVISION OF THAT MANUAL IS THE WRONG ONE TO USE. <<<
+! docs/C22-6728-1_7030_MCP_Sys_Analysis_Guide.pdf is the LATER
+! printing and its FIGURE 15 carries the SAME ELEVEN NAMES IN THE
+! SAME ORDER WITH ALL ELEVEN CODES MOVED UP BY EXACTLY 3.0 WORDS
+! (SJC1 79.32 ... SLOG1 84.32).  This March 1963 listing agrees
+! with the UNREVISED C22-6728 and not with C22-6728-1.  Anyone
+! checking these codes against a manual must check which printing
+! they have; the -1 would make all eleven look wrong by 3.0.
+!
+! ---------------------------------------------------------------
+! THE PAGE LINE BY LINE
+! ---------------------------------------------------------------
+! Lines 1-5   FIVE COMMENTED-OUT SYN CARDS, printed with an EMPTY
+!             NAME field and the statement "$SYN,74.0", "$SYN,74.32",
+!             "$SYN,75.0", "$SYN,75.32", "$SYN,76.0".  They continue
+!             printed p.105 line 55's heading "******** RESERVED FOR
+!             INSTALLATION PSEUDO OPS ********": p.105 lines 44-53
+!             are the identical form "$SYN,69.0" .. "$SYN,73.32"
+!             under "RESERVED FOR FUTURE MCP USE".  So codes 69.0
+!             through 76.0 are reserved placeholders and line 8
+!             picks the table up again at 76.32 with no gap.
+!             LINE 2 CARRIES A COMMENT and the others do not:
+!             "-UNCONDITIONA $SCR RESLD - TEMPORARY" (the page
+!             prints UNCONDITIONA, twelve letters, with no final L;
+!             read twice at 600 dpi).  So the 74.32 slot is in
+!             temporary use for an unconditional $SCR/$RESLD.
+! Line 6      "******** SPECIAL MCP PSEUDO OPS ********"
+! Line 7      spacer comment card
+! Lines 8-18  THE ELEVEN COMPILED SYN CARDS, transcribed below.
+! Lines 19,21 spacer comment cards
+! Line 20     "******** INPUT COMMAND PARAMETERS********"  (the page
+!             prints no blank between PARAMETERS and the asterisks)
+! Lines 22-29 EIGHT COMMENTED-OUT SYN CARDS, the parameter values
+!             passed with SKOM:
+!               22  - S ONL   SYN,0      -ON-LINE
+!               23  - S OFF   SYN,.32    -OFFLINE
+!               24  - S EOF   SYN,1.0    -END OF FILES
+!               25  - S EJSCNSYN,1.32    -EOJ SCAN
+!               26  - S BYP   SYN,2.0    -BYPASS
+!               27  - S REW   SYN,2.32   -REWIND
+!               28  - S CR1   SYN,3.0    -JC1 CARD REQUEST
+!               29  - S CAN   SYN,3.32   -PHASE ONE SCAN
+!             NONE of these is faked into a !SYM: a commented card
+!             defines nothing.  They are recorded because the same
+!             parameter codes appear in C22-6728's SKOM calling
+!             sequences ("(3.0) , SKOM", "(1.32) , SKOM", "(0.0) ,
+!             SKOM"), which is a second reading of the numbers.
+!
+! >>> HOW THE COMMENTED CARDS WERE IDENTIFIED, AND THE DASH IS NOT
+! THE TELL. <<<  Measured at 1200 dpi, the first printed character
+! of lines 6, 7, 19, 20, 21 and 22-29 is a "-" sitting in the SAME
+! character cell as the NAME field of lines 8-18 (x = 2351 vs 2358
+! at 300 dpi, a quarter of the 29.7 px character pitch -- the same
+! cell, not the cell to its left).  LINES 1-5 PRINT NO DASH AT ALL.
+! So a dash neither marks every comment card nor is confined to a
+! column of its own, exactly as printed p.103 found.  The two tells
+! that do hold for all thirteen are printed p.104's:
+!   (i)  LOCATION and BINARY OUTPUT are BOTH empty, and
+!   (ii) the fields DO NOT LINE UP.  Line 25 prints
+!        "S EJSCNSYN,1.32" with NO GAP before SYN -- a six-character
+!        name run straight into the statement -- which no compiled
+!        row on this page does; all eleven print NAME and STATEMENT
+!        in their own columns.
+!
+! ---------------------------------------------------------------
+! THE BINARY OUTPUT COLUMN ON A DEFINITIONS PAGE
+! ---------------------------------------------------------------
+! All eleven compiled rows print "+00000000" in the value field and
+! the data description "NULL".  That is the column working
+! correctly: a SYN with no mode has a NULL data description, and
+! the eleven cards carry none.  It is NOT machine code and NOT a
+! crop landing in the wrong place, and it is not checked here.
+!
+! THE PAGE CHECKS ITS OWN DIGITS.  Each SYN prints its offset in
+! DECIMAL in the STATEMENT column and the same offset in OCTAL in
+! the LOCATION column, and all eleven agree:
+!   76.32/000114.40  77.0/000115.00  77.32/000115.40
+!   78.0/000116.00   78.32/000116.40 79.0/000117.00
+!   79.32/000117.40  80.0/000120.00  80.32/000120.40
+!   81.0/000121.00   81.32/000121.40
+! (76 = 0o114, 81 = 0o121, 32 = 0o40.)  That is a real check of the
+! digits, though not of the card.
+!
+! ---------------------------------------------------------------
+! TWO OF THE ELEVEN ARE ALREADY IN THE CORPUS, AND THEY AGREE
+! ---------------------------------------------------------------
+! decks/mcp_bootstrap_p35.strap lines 110-111 carry
+!   SJC4  SYN, 78.32    000116.40
+!   SCOMD SYN, 80.0     000120.00
+! back-derived from printed p.33's operands ", S JC4" and
+! ", S COMD" (p.33 line 43, and lines 27 and 36).  This page
+! DECLARES both at exactly those values.  So this is NOT the
+! DFREE-style cross-deck collision printed p.104 reports: it is a
+! corroboration, and it is also an independent check on the two
+! spellings, since p.33/p.35 read them off a different page in a
+! different punched deck.  The other nine names appear nowhere else
+! in the corpus.
+!
+! TAIL SCOPE, RECORDED AND NOT "FIXED".  printed p.99 line 11's
+! "SLC,(8)215000." put pp.99+ outside the TAIL,(2)G block that
+! printed p.2 opened and printed p.98 line 37 closed with
+! "UNTAIL,(2)", so a name here may legitimately repeat a pp.2-98
+! name at a different value.  None of these eleven does: the only
+! two that recur recur at the SAME value.  Note separately that
+! tests/verify_mcp_bootstrap_p4.py carries X9A3A at 000114.40 and
+! X9A5 at 000121.40 -- the same octal strings as lines 8 and 18 --
+! but those are IPL STORAGE ADDRESSES and these are SYN VALUES in a
+! zero-based pseudo-op code space.  Different kinds of number that
+! happen to print alike; not a collision of any sort.
+!
+! ---------------------------------------------------------------
+! GLYPHS: FOUR ROUND CHARACTERS, MEASURED BEFORE THEY WERE LOOKED UP
+! ---------------------------------------------------------------
+! >>> ON THIS PAGE AN O IN THE NAME COLUMN IS ROUTINELY PRINTED
+! OPEN, SO SHAPE ALONE IS A COIN FLIP. <<<  Proof, not impression:
+! tesseract run on the name column at 1200 dpi returns
+!   SJCl SCUTPT SSPECJ SLCT SJC4 SSCR4 SKCM SCCMD SLCG4 SLCG2 SLCG1
+! -- it reads EVERY round glyph as C, including the five that are
+! certainly O (SOUTPT's, SCOMD's, and the three LOGGER O's).  Nine
+! round glyphs in that column have known values (four C from JC1,
+! JC4, SCR and COMD; five O from OUTPT, COMD and the three LOGs)
+! and a second reader called all nine C.
+!
+! WHAT WAS DONE INSTEAD.  The eleven names were segmented into
+! glyph bitmaps, size-normalised, and each round glyph scored by
+! intersection-over-union against the KNOWN O's and KNOWN C's OF
+! THE SAME COLUMN OF THE SAME PAGE.  Leave-one-out over the nine
+! knowns classifies 9 of 9 correctly (C margins .06-.12, O margins
+! .07-.17).  Run on the four unknown glyphs it gives
+!   line 10, 5th glyph   O (.729 vs C .676)   -> SSPEOJ
+!   line 11, 2nd glyph   D (.551, C .557, O .533 -- A TIE)
+!   line 11, 3rd glyph   D (.671 vs O .603, C .588)
+!   line 14, 3rd glyph   O (.799 vs C .664)   -> SKOM
+! (the D template is SCOMD's own D, the only known D in the
+! column).  The line 11 pair's best match is EACH OTHER (.593),
+! which is the argument for reading them as the same letter.
+! ONLY THEN was C22-6728 Figure 14 opened, and it gives SSPEOJ,
+! SDDT, SKOM.  Four for four, including the glyph the measurement
+! called a tie.
+!
+! The two round glyphs that are NOT ambiguous are recorded too:
+!   * SOUTPT's O (line 9) prints CLOSED, the only closed round
+!     glyph in the column, and the comment "-OUTPUT TAPE SWITCH"
+!     names the word.
+!   * SJC1's and SJC4's C (lines 8, 12) are C by their comments,
+!     "-JOB CONTROL PHASE ONE" and "-IPL ENTRY TO JC4".
+!
+! THE STATEMENT COLUMN DROPS INK ON ROUND GLYPHS TOO, AND IT COSTS
+! NOTHING HERE.  Lines 9, 11, 15 and 17 print their bit offset as
+! "SYN,77.C", "SYN,78.C", "SYN,80.C" and "SYN,81.C" where the
+! offset is 0.  All four are settled by the LOCATION column, which
+! prints 000115.00, 000116.00, 000120.00 and 000121.00 -- an octal
+! field cannot hold a C.  (printed p.104's deck records three rows
+! of the same kind.)  No statement on this page has a legal reading
+! with a C in that position.
+!
+! $ IS NOT S ON THIS PAGE AND THE PAGE PROVES IT ITSELF.  Lines 1-5
+! print "$SYN" and line 13's comment prints "-$SCR+N.32", both with
+! the vertical bar clearly struck, while all eleven names begin
+! with a bare S.  The first glyph of the names is therefore an S
+! and not a worn $ -- which matters, because printed pp.104-105
+! name their pseudo-ops with a "D " prefix ("D RD", "D SCR") and
+! these eleven with an "S", and C22-6728 Figure 14 confirms the S.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS AND OMISSIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page
+!     since printed p.2.  This page punches its names WITHOUT
+!     blanks -- the glyph segmentation measures a uniform 29.7 px
+!     pitch across all eleven, with no missing cell -- while
+!     printed p.33's operands punch ", S JC4" and ", S COMD" WITH
+!     one.  Both reduce to the same symbol, which is why p.35's
+!     deck and this one agree.
+! (2) THE THIRTEEN COMMENTED-OUT SYN CARDS AND THE FIVE HEADING AND
+!     SPACER CARDS ARE NOT TRANSCRIBED.  Their text is recorded
+!     above, verbatim.
+! (3) Nothing else is substituted.  No printed spelling on this
+!     page was rejected by strap_asm.
+!
+! ---------------------------------------------------------------
+! THE CARDS
+! ---------------------------------------------------------------
+! The offsets are written EXACTLY AS THE STATEMENT COLUMN PRINTS
+! THEM -- bare decimal literals, so "76.32" is word 76 decimal, bit
+! 32 decimal, and resolves to 0o114.40, which is what the LOCATION
+! column prints.  (The octal-inside-(8) rule does not apply: there
+! is no (8) literal on this page.)
+
+SJC1    SYN, 76.32                  ! line  8  S JC1    -JOB CONTROL PHASE ONE
+SOUTPT  SYN, 77.0                   ! line  9  S OUTPT  -OUTPUT TAPE SWITCH
+SSPEOJ  SYN, 77.32                  ! line 10  S SPEOJ  -OUTPUT EOJ
+SDDT    SYN, 78.0                   ! line 11  S DDT    -DEBUGGER
+SJC4    SYN, 78.32                  ! line 12  S JC4    -IPL ENTRY TO JC4
+SSCR4   SYN, 79.0                   ! line 13  S SCR4   -$SCR+N.32,N=10.0 1ST CARD REQ.
+SKOM    SYN, 79.32                  ! line 14  S KOM    -INPUT COMMANDS
+SCOMD   SYN, 80.0                   ! line 15  S COMD   -SYSTEM COMMANDS
+SLOG4   SYN, 80.32                  ! line 16  S LOG4   -LOGGER 4
+SLOG2   SYN, 81.0                   ! line 17  S LOG2   -LOGGER 2
+SLOG1   SYN, 81.32                  ! line 18  S LOG1   -LOGGER 1
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, DECLARED FOR listing_oracle
+! ---------------------------------------------------------------
+! Eleven symbols.  ZERO listing rows: every row on this page is a
+! SYN and a SYN deposits no storage word, so there is nothing for
+! the BINARY OUTPUT half of the oracle to check and nothing is
+! invented for it.
+
+!SYM   SJC1     000114.40
+!SYM   SOUTPT   000115.00
+!SYM   SSPEOJ   000115.40
+!SYM   SDDT     000116.00
+!SYM   SJC4     000116.40
+!SYM   SSCR4    000117.00
+!SYM   SKOM     000117.40
+!SYM   SCOMD    000120.00
+!SYM   SLOG4    000120.40
+!SYM   SLOG2    000121.00
+!SYM   SLOG1    000121.40

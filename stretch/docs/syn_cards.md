@@ -41,7 +41,7 @@ describes, and it does not reach 555 on this text.
 
 **But `SYN(` is the wrong regex anyway.** A SYN card need not carry a data
 description. Printed p.105 is thirty straight cards of the form
-`S FREE SYN,12.22` with `NULL` in the dds column — `SYN(` scores it **zero**.
+`S FREE SYN,12.32` with `NULL` in the dds column — `SYN(` scores it **zero**.
 Printed p.98, the page this task transcribes, has ten SYN cards and `SYN(`
 scores it **five**.
 
@@ -256,7 +256,11 @@ against the same page's own letters: the `C` in `UNCODE` (line 23's comment)
 is a round open bowl with no vertical stroke; the `D` in `BCRD` has a
 straight vertical left with square corners. Line 27's glyph has the straight
 vertical. **`D FREE` → `DFREE`.** (`SFREE` is a different symbol and exists
-— printed p.105 line 1 declares `S FREE SYN,12.22`.)
+— printed p.105 line 1 declares `S FREE SYN,12.32`.  THIS FILE SAID 12.22 UNTIL
+2026-10-31; the card reads 12.32 and its own LOCATION column
+proves it -- 12.32 is word 0o14 bit 0o40, printed 000014.40,
+and 12.22 would have printed 000014.26.  Rendered at 600 dpi:
+`1* 000014.40+  +00000000  NULL  S FREE  SYN,12.32`.)
 
 ---
 
