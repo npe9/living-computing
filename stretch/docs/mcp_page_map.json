@@ -1,0 +1,2306 @@
+{
+ "1": {
+  "pdf": 1,
+  "printed": null,
+  "rows": 0,
+  "plus": 0,
+  "first": null,
+  "last": null,
+  "raw": "o ."
+ },
+ "2": {
+  "pdf": 2,
+  "printed": null,
+  "rows": 0,
+  "plus": 0,
+  "first": null,
+  "last": null,
+  "raw": ". oe _ ee"
+ },
+ "3": {
+  "pdf": 3,
+  "printed": 1,
+  "rows": 0,
+  "plus": 0,
+  "first": null,
+  "last": null,
+  "raw": "/C1 3/01 PAGE NUMBER 1"
+ },
+ "4": {
+  "pdf": 4,
+  "printed": 2,
+  "rows": 0,
+  "plus": 0,
+  "first": null,
+  "last": null,
+  "raw": "/Cl 3/701 PAGE NUMBER 2"
+ },
+ "5": {
+  "pdf": 5,
+  "printed": null,
+  "rows": 0,
+  "plus": 0,
+  "first": null,
+  "last": null,
+  "raw": "Tn"
+ },
+ "6": {
+  "pdf": 6,
+  "printed": null,
+  "rows": 0,
+  "plus": 0,
+  "first": null,
+  "last": null,
+  "raw": "E RECORD, IF START iS PUSHED, NEXT TAPE RECORD WILL BE"
+ },
+ "7": {
+  "pdf": 7,
+  "printed": null,
+  "rows": 0,
+  "plus": 0,
+  "first": null,
+  "last": null,
+  "raw": ""
+ },
+ "8": {
+  "pdf": 8,
+  "printed": 1,
+  "rows": 0,
+  "plus": 0,
+  "first": null,
+  "last": null,
+  "raw": "/O1 3/01 PAGE NUMBER 1"
+ },
+ "9": {
+  "pdf": 9,
+  "printed": 2,
+  "rows": 11,
+  "plus": 0,
+  "first": "000041.00",
+  "last": "00047.0",
+  "raw": "7Cl1 3701 PAGE NUMBER 2"
+ },
+ "10": {
+  "pdf": 10,
+  "printed": 3,
+  "rows": 14,
+  "plus": 0,
+  "first": "00052.40",
+  "last": "42074.60",
+  "raw": "/01 37/01 PAGE NUMBER 3"
+ },
+ "11": {
+  "pdf": 11,
+  "printed": 4,
+  "rows": 30,
+  "plus": 1,
+  "first": "000105.40",
+  "last": "000132.40",
+  "raw": "SC1 3/01 PAGE NUMBER 4"
+ },
+ "12": {
+  "pdf": 12,
+  "printed": 5,
+  "rows": 27,
+  "plus": 0,
+  "first": "000133.00",
+  "last": "00155.00",
+  "raw": "fol 3/01 PAGE NUMBER 5"
+ },
+ "13": {
+  "pdf": 13,
+  "printed": 6,
+  "rows": 6,
+  "plus": 0,
+  "first": "00171.40",
+  "last": "0175.4",
+  "raw": "/Cl , 3701 PAGE NUMBER 6"
+ },
+ "14": {
+  "pdf": 14,
+  "printed": null,
+  "rows": 28,
+  "plus": 0,
+  "first": "000176.00",
+  "last": "000221.60",
+  "raw": "/C1 3/01 PAGE NUMBER qT"
+ },
+ "15": {
+  "pdf": 15,
+  "printed": 8,
+  "rows": 29,
+  "plus": 3,
+  "first": "000230.40",
+  "last": "00063.0",
+  "raw": "/Cl 3/01 PAGE NUMBER 8"
+ },
+ "16": {
+  "pdf": 16,
+  "printed": 9,
+  "rows": 33,
+  "plus": 4,
+  "first": "000254.0+",
+  "last": "000310.00+",
+  "raw": "fC1 3/01 PAGE NUMBER 9"
+ },
+ "17": {
+  "pdf": 17,
+  "printed": 10,
+  "rows": 33,
+  "plus": 4,
+  "first": "0322.10",
+  "last": "000361.00+",
+  "raw": "/Cl 3/01 PAGE NUMBER 10"
+ },
+ "18": {
+  "pdf": 18,
+  "printed": 11,
+  "rows": 36,
+  "plus": 5,
+  "first": "000374.20",
+  "last": "000437.00",
+  "raw": "/Cl 3/01 PAGE NUMBER 11"
+ },
+ "19": {
+  "pdf": 19,
+  "printed": 12,
+  "rows": 33,
+  "plus": 6,
+  "first": "000451.10",
+  "last": "000513.20",
+  "raw": "/OQl 3/01 PAGE NUMBER 12"
+ },
+ "20": {
+  "pdf": 20,
+  "printed": 13,
+  "rows": 22,
+  "plus": 4,
+  "first": "000526.00",
+  "last": "011406.00+",
+  "raw": "/Ol , 3/01 PAGE NUMBER 13"
+ },
+ "21": {
+  "pdf": 21,
+  "printed": 14,
+  "rows": 30,
+  "plus": 1,
+  "first": "000552.60",
+  "last": "000617.00",
+  "raw": "sC1 3/01 PAGE NUMBER 14"
+ },
+ "22": {
+  "pdf": 22,
+  "printed": 15,
+  "rows": 20,
+  "plus": 0,
+  "first": "00021.6",
+  "last": "000632.40",
+  "raw": "fCl 3/01 PAGE NUMBER 15"
+ },
+ "23": {
+  "pdf": 23,
+  "printed": 16,
+  "rows": 27,
+  "plus": 0,
+  "first": "00633.00",
+  "last": "00654.40",
+  "raw": "/01 3/01 PAGE NUMBER 16 ,"
+ },
+ "24": {
+  "pdf": 24,
+  "printed": 17,
+  "rows": 26,
+  "plus": 0,
+  "first": "000655.4",
+  "last": "00701.40",
+  "raw": "/CL \u00a9 3/01 PAGE NUMBER 17"
+ },
+ "25": {
+  "pdf": 25,
+  "printed": 18,
+  "rows": 23,
+  "plus": 0,
+  "first": "000714.00",
+  "last": "000736.0",
+  "raw": "/Cl 3/01 PAGE NUMBER 18"
+ },
+ "26": {
+  "pdf": 26,
+  "printed": 19,
+  "rows": 30,
+  "plus": 0,
+  "first": "0074.40",
+  "last": "000770.4",
+  "raw": "/Cl 3/01 PAGE NUMBER 19"
+ },
+ "27": {
+  "pdf": 27,
+  "printed": 20,
+  "rows": 12,
+  "plus": 0,
+  "first": "70777.40",
+  "last": "001007.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 20"
+ },
+ "28": {
+  "pdf": 28,
+  "printed": null,
+  "rows": 32,
+  "plus": 0,
+  "first": "001012.00",
+  "last": "001051.60",
+  "raw": "/C1 3/01 PAGE NUMBER 2l ,"
+ },
+ "29": {
+  "pdf": 29,
+  "printed": 22,
+  "rows": 30,
+  "plus": 0,
+  "first": "001052.00",
+  "last": "001105.4",
+  "raw": "/Cl 3/01 PAGE NUMBER 22"
+ },
+ "30": {
+  "pdf": 30,
+  "printed": 23,
+  "rows": 36,
+  "plus": 0,
+  "first": "001122.00",
+  "last": "001162.0",
+  "raw": "4C1 3/01 PAGE NUMBER 23"
+ },
+ "31": {
+  "pdf": 31,
+  "printed": 24,
+  "rows": 38,
+  "plus": 0,
+  "first": "001175.4",
+  "last": "001236.20",
+  "raw": "/Cl 3/01 PAGE NUMBER 24"
+ },
+ "32": {
+  "pdf": 32,
+  "printed": 25,
+  "rows": 24,
+  "plus": 0,
+  "first": "001412.20",
+  "last": "001436.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 25"
+ },
+ "33": {
+  "pdf": 33,
+  "printed": 26,
+  "rows": 22,
+  "plus": 0,
+  "first": "001444.00",
+  "last": "001463.00",
+  "raw": "/Cl 3/01 PAGE NUMBER 26"
+ },
+ "34": {
+  "pdf": 34,
+  "printed": 27,
+  "rows": 19,
+  "plus": 0,
+  "first": "001464.40",
+  "last": "00153.00",
+  "raw": "/C0l 3/01 PAGE NUMBER 27"
+ },
+ "35": {
+  "pdf": 35,
+  "printed": 28,
+  "rows": 18,
+  "plus": 0,
+  "first": "001507.4",
+  "last": "001525.0",
+  "raw": "/01 3/01 PAGE NUMBER 28"
+ },
+ "36": {
+  "pdf": 36,
+  "printed": 29,
+  "rows": 22,
+  "plus": 0,
+  "first": "001532.40",
+  "last": "001552.4",
+  "raw": "/C1 \u20143/01 PAGE NUMBER 29"
+ },
+ "37": {
+  "pdf": 37,
+  "printed": 30,
+  "rows": 22,
+  "plus": 0,
+  "first": "061553.40",
+  "last": "0160.60",
+  "raw": "/01 3/01 PAGE NUMBER 30"
+ },
+ "38": {
+  "pdf": 38,
+  "printed": 31,
+  "rows": 22,
+  "plus": 0,
+  "first": "001601.40",
+  "last": "001623.40",
+  "raw": "/C1 3/01 PAGE NUMBER 31"
+ },
+ "39": {
+  "pdf": 39,
+  "printed": 32,
+  "rows": 23,
+  "plus": 0,
+  "first": "001632.40",
+  "last": "00152.00",
+  "raw": "/Cl 3/01 PAGE NUMBER 32"
+ },
+ "40": {
+  "pdf": 40,
+  "printed": 33,
+  "rows": 28,
+  "plus": 0,
+  "first": "001661.40",
+  "last": "001704.40",
+  "raw": "/G1 3/01 PAGE NUMBER 33"
+ },
+ "41": {
+  "pdf": 41,
+  "printed": 34,
+  "rows": 33,
+  "plus": 0,
+  "first": "001713.40",
+  "last": "001743.40",
+  "raw": "Cl 3/701 PAGE NUMBER 34%"
+ },
+ "42": {
+  "pdf": 42,
+  "printed": 35,
+  "rows": 25,
+  "plus": 0,
+  "first": "001747.60",
+  "last": "00175.4",
+  "raw": "/O01 3/01 PAGE NUMBER 35"
+ },
+ "43": {
+  "pdf": 43,
+  "printed": 36,
+  "rows": 19,
+  "plus": 2,
+  "first": "001760.40",
+  "last": "00200.00",
+  "raw": "/Cl 3/01 PAGE NUMBER 36"
+ },
+ "44": {
+  "pdf": 44,
+  "printed": 37,
+  "rows": 22,
+  "plus": 2,
+  "first": "002147.40",
+  "last": "2164.00",
+  "raw": "/01 3/01 PAGE NUMBER 37"
+ },
+ "45": {
+  "pdf": 45,
+  "printed": 38,
+  "rows": 31,
+  "plus": 0,
+  "first": "002166.00",
+  "last": "002212.4",
+  "raw": "/01 3/01 PAGE NUMBER 38"
+ },
+ "46": {
+  "pdf": 46,
+  "printed": 39,
+  "rows": 35,
+  "plus": 0,
+  "first": "002213.40",
+  "last": "002244.40",
+  "raw": "/C1 3/01 PAGE NUMBER 39"
+ },
+ "47": {
+  "pdf": 47,
+  "printed": 40,
+  "rows": 34,
+  "plus": 0,
+  "first": "002266.40",
+  "last": "002312.0",
+  "raw": "/Cl 3/01 PAGE NUMBER 40"
+ },
+ "48": {
+  "pdf": 48,
+  "printed": 41,
+  "rows": 19,
+  "plus": 1,
+  "first": "002313.40",
+  "last": "002334.64+",
+  "raw": "/C1 3/01 PAGE NUMBER 41"
+ },
+ "49": {
+  "pdf": 49,
+  "printed": 42,
+  "rows": 29,
+  "plus": 0,
+  "first": "002365.60",
+  "last": "002417.30",
+  "raw": "701 3/01 PAGE NUMBER 42"
+ },
+ "50": {
+  "pdf": 50,
+  "printed": 43,
+  "rows": 28,
+  "plus": 0,
+  "first": "002422.0",
+  "last": "002445.40",
+  "raw": "/ C1 3/01 PAGE NUMBER 43"
+ },
+ "51": {
+  "pdf": 51,
+  "printed": 44,
+  "rows": 23,
+  "plus": 0,
+  "first": "002456.00",
+  "last": "002501.40",
+  "raw": "Cl 3/01 PAGE NUMBER 44"
+ },
+ "52": {
+  "pdf": 52,
+  "printed": 45,
+  "rows": 31,
+  "plus": 1,
+  "first": "002501.71",
+  "last": "002526.4",
+  "raw": "Cl 3/01 PAGE NUMBER 45"
+ },
+ "53": {
+  "pdf": 53,
+  "printed": 46,
+  "rows": 19,
+  "plus": 1,
+  "first": "002536.00",
+  "last": "002556.61",
+  "raw": "/Cl 3/01 PAGE NUMBER 46"
+ },
+ "54": {
+  "pdf": 54,
+  "printed": 47,
+  "rows": 0,
+  "plus": 0,
+  "first": null,
+  "last": null,
+  "raw": "Cl 3/01 PAGE NUMBER 47"
+ },
+ "55": {
+  "pdf": 55,
+  "printed": 48,
+  "rows": 19,
+  "plus": 7,
+  "first": "002560.0",
+  "last": "00031.00+",
+  "raw": "/Cl 3/01 PAGE NUMBER 48"
+ },
+ "56": {
+  "pdf": 56,
+  "printed": 49,
+  "rows": 5,
+  "plus": 0,
+  "first": "02603.0",
+  "last": "002612.0",
+  "raw": "S/Cl 3/Cl PAGE NUMBER 49"
+ },
+ "57": {
+  "pdf": 57,
+  "printed": 50,
+  "rows": 29,
+  "plus": 0,
+  "first": "002614.10",
+  "last": "32660.00",
+  "raw": "7C1 37/01 PAGE NUMBER 50 :"
+ },
+ "58": {
+  "pdf": 58,
+  "printed": 51,
+  "rows": 17,
+  "plus": 0,
+  "first": "002720.00",
+  "last": "002735.0",
+  "raw": "/C1 3/01 PAGE NUMBER 51"
+ },
+ "59": {
+  "pdf": 59,
+  "printed": 52,
+  "rows": 27,
+  "plus": 0,
+  "first": "002737.60",
+  "last": "002764.40",
+  "raw": "/Cl 3/Cl PAGE NUMBER 52"
+ },
+ "60": {
+  "pdf": 60,
+  "printed": null,
+  "rows": 29,
+  "plus": 0,
+  "first": "002774.4",
+  "last": "003026.0",
+  "raw": "R/C} 2/1 DALE ALTIMA ED i 2"
+ },
+ "61": {
+  "pdf": 61,
+  "printed": 54,
+  "rows": 28,
+  "plus": 0,
+  "first": "003041.40",
+  "last": "003015.9",
+  "raw": "Cl 3/01 PAGE NUMBER 54"
+ },
+ "62": {
+  "pdf": 62,
+  "printed": 55,
+  "rows": 34,
+  "plus": 0,
+  "first": "003106.40",
+  "last": "003145.4",
+  "raw": "/CL 3/01 PAGE NUMBER 55"
+ },
+ "63": {
+  "pdf": 63,
+  "printed": 56,
+  "rows": 27,
+  "plus": 0,
+  "first": "003147.40",
+  "last": "003177.40",
+  "raw": "/C1 3/01 PAGE NUMBER 56"
+ },
+ "64": {
+  "pdf": 64,
+  "printed": null,
+  "rows": 33,
+  "plus": 1,
+  "first": "003206.40",
+  "last": "003237.00",
+  "raw": "/O1 37/01 PAGE NUMBER a7"
+ },
+ "65": {
+  "pdf": 65,
+  "printed": 58,
+  "rows": 27,
+  "plus": 0,
+  "first": "003237.40",
+  "last": "003264.00",
+  "raw": "/C1 3/01 PAGE NUMBER 58"
+ },
+ "66": {
+  "pdf": 66,
+  "printed": 59,
+  "rows": 0,
+  "plus": 0,
+  "first": null,
+  "last": null,
+  "raw": "/Cl 3/01 PAGE NUMBER 59"
+ },
+ "67": {
+  "pdf": 67,
+  "printed": 60,
+  "rows": 0,
+  "plus": 0,
+  "first": null,
+  "last": null,
+  "raw": "/Cl 3/01 PAGE NUMBER 60"
+ },
+ "68": {
+  "pdf": 68,
+  "printed": 61,
+  "rows": 21,
+  "plus": 7,
+  "first": "03264.4",
+  "last": "3632.00+",
+  "raw": "/Cl 3/01 PAGE NUMBER 61"
+ },
+ "69": {
+  "pdf": 69,
+  "printed": 62,
+  "rows": 10,
+  "plus": 3,
+  "first": "003314.60",
+  "last": "003515.0",
+  "raw": "701 3/01 PAGE NUMBER 62 |"
+ },
+ "70": {
+  "pdf": 70,
+  "printed": 63,
+  "rows": 2,
+  "plus": 1,
+  "first": "20000.31+",
+  "last": "800351.0",
+  "raw": "701 3/01 PAGE NUMBER 63"
+ },
+ "71": {
+  "pdf": 71,
+  "printed": 64,
+  "rows": 27,
+  "plus": 0,
+  "first": "003651.40",
+  "last": "003661.0",
+  "raw": "/Cl 3/01 PAGE NUMBER 64"
+ },
+ "72": {
+  "pdf": 72,
+  "printed": 65,
+  "rows": 23,
+  "plus": 0,
+  "first": "003702.0",
+  "last": "003722.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 65"
+ },
+ "73": {
+  "pdf": 73,
+  "printed": 66,
+  "rows": 25,
+  "plus": 0,
+  "first": "003733.40",
+  "last": "003762.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 66"
+ },
+ "74": {
+  "pdf": 74,
+  "printed": 67,
+  "rows": 25,
+  "plus": 0,
+  "first": "003774.40",
+  "last": "004017.4",
+  "raw": "/C1 3/01 PAGE NUMBER 67"
+ },
+ "75": {
+  "pdf": 75,
+  "printed": 68,
+  "rows": 28,
+  "plus": 0,
+  "first": "004027.4",
+  "last": "004055.40",
+  "raw": "7Cl 3/01 PAGE NUMBER 68"
+ },
+ "76": {
+  "pdf": 76,
+  "printed": 69,
+  "rows": 25,
+  "plus": 1,
+  "first": "004064.40",
+  "last": "004114.40",
+  "raw": "/Cl 3/0F PAGE NUMBER 69"
+ },
+ "77": {
+  "pdf": 77,
+  "printed": 70,
+  "rows": 19,
+  "plus": 0,
+  "first": "004127.00",
+  "last": "004152.0",
+  "raw": "Cl 3/01 PAGE NUMBER 70"
+ },
+ "78": {
+  "pdf": 78,
+  "printed": 71,
+  "rows": 18,
+  "plus": 0,
+  "first": "004165.4",
+  "last": "004207.0",
+  "raw": "/C1 3/01 PAGE NUMBER 71"
+ },
+ "79": {
+  "pdf": 79,
+  "printed": null,
+  "rows": 36,
+  "plus": 0,
+  "first": "004215.09",
+  "last": "004253.0",
+  "raw": "/Cl 3/01 PAGE NUMBER T2"
+ },
+ "80": {
+  "pdf": 80,
+  "printed": 13,
+  "rows": 22,
+  "plus": 0,
+  "first": "004264.0",
+  "last": "004307.4",
+  "raw": "/C1 3/01 PAGE NUMBER 13"
+ },
+ "81": {
+  "pdf": 81,
+  "printed": 14,
+  "rows": 28,
+  "plus": 0,
+  "first": "004320.0",
+  "last": "34794.9",
+  "raw": "/Cl 3/01 PAGE NUMBER 14 ."
+ },
+ "82": {
+  "pdf": 82,
+  "printed": 15,
+  "rows": 29,
+  "plus": 0,
+  "first": "004361.40",
+  "last": "004415.4",
+  "raw": "/Cl | 3/01 PAGE NUMBER 15"
+ },
+ "83": {
+  "pdf": 83,
+  "printed": 16,
+  "rows": 25,
+  "plus": 5,
+  "first": "004423.40",
+  "last": "004460.0",
+  "raw": "/C1 3/01 PAGE NUMBER 16"
+ },
+ "84": {
+  "pdf": 84,
+  "printed": null,
+  "rows": 23,
+  "plus": 0,
+  "first": "004461.40",
+  "last": "004510.00",
+  "raw": "fO01 3/01 PAGE NUMBER rai"
+ },
+ "85": {
+  "pdf": 85,
+  "printed": 18,
+  "rows": 28,
+  "plus": 0,
+  "first": "004511.00",
+  "last": "004542.0",
+  "raw": "/Cl 3/01 PAGE NUMBER 18"
+ },
+ "86": {
+  "pdf": 86,
+  "printed": 19,
+  "rows": 25,
+  "plus": 0,
+  "first": "004556.4",
+  "last": "004603.40",
+  "raw": "/C1 3/01 PAGE NUMBER 19"
+ },
+ "87": {
+  "pdf": 87,
+  "printed": 80,
+  "rows": 24,
+  "plus": 0,
+  "first": "004604.00",
+  "last": "004627.00",
+  "raw": "/Cl 3/01 , PAGE NUMBER 80"
+ },
+ "88": {
+  "pdf": 88,
+  "printed": 81,
+  "rows": 0,
+  "plus": 0,
+  "first": null,
+  "last": null,
+  "raw": "/Cl 3/01 PAGE NUMBER 81"
+ },
+ "89": {
+  "pdf": 89,
+  "printed": 82,
+  "rows": 0,
+  "plus": 0,
+  "first": null,
+  "last": null,
+  "raw": "/Cl 3/01 PAGE NUMBER 82"
+ },
+ "90": {
+  "pdf": 90,
+  "printed": null,
+  "rows": 24,
+  "plus": 12,
+  "first": "004627.40",
+  "last": "004652.0",
+  "raw": "1/01 , 3/01 PAGE NUMBER a3"
+ },
+ "91": {
+  "pdf": 91,
+  "printed": null,
+  "rows": 11,
+  "plus": 8,
+  "first": "004654.00",
+  "last": "3707.76+",
+  "raw": "/Cl 3/01 , PAGE NUMBER B4"
+ },
+ "92": {
+  "pdf": 92,
+  "printed": 85,
+  "rows": 15,
+  "plus": 2,
+  "first": "0002.35+",
+  "last": "00475.4",
+  "raw": "/Cl , 3/01 PAGE NUMBER 85"
+ },
+ "93": {
+  "pdf": 93,
+  "printed": 86,
+  "rows": 24,
+  "plus": 0,
+  "first": "004753.00",
+  "last": "004763.31",
+  "raw": "/Cl , 3/01 PAGE NUMBER 86"
+ },
+ "94": {
+  "pdf": 94,
+  "printed": 87,
+  "rows": 9,
+  "plus": 0,
+  "first": "004767.40",
+  "last": "005012.71",
+  "raw": "FC1 3/01 PAGE NUMBER 87"
+ },
+ "95": {
+  "pdf": 95,
+  "printed": 88,
+  "rows": 24,
+  "plus": 0,
+  "first": "005014.0",
+  "last": "00542.00",
+  "raw": "/Cl 3/01 PAGE NUMBER 88"
+ },
+ "96": {
+  "pdf": 96,
+  "printed": 89,
+  "rows": 27,
+  "plus": 0,
+  "first": "005054.40",
+  "last": "005161.40",
+  "raw": "7Cl 3/01 PAGE NUMBER 89"
+ },
+ "97": {
+  "pdf": 97,
+  "printed": 90,
+  "rows": 24,
+  "plus": 0,
+  "first": "005115.40",
+  "last": "005143.40",
+  "raw": "7C1 3/01 | PAGE NUMBER 90"
+ },
+ "98": {
+  "pdf": 98,
+  "printed": 91,
+  "rows": 17,
+  "plus": 0,
+  "first": "005154.40",
+  "last": "005175.00",
+  "raw": "/Cl 3/01 PAGE NUMBER 91"
+ },
+ "99": {
+  "pdf": 99,
+  "printed": 92,
+  "rows": 30,
+  "plus": 0,
+  "first": "005210.40",
+  "last": "005244.00",
+  "raw": "/Cl 3/01 PAGE NUMBER 92"
+ },
+ "100": {
+  "pdf": 100,
+  "printed": null,
+  "rows": 21,
+  "plus": 0,
+  "first": "005245.40",
+  "last": "005270.40",
+  "raw": "i0* 1 32/1 DOAK NATIMRER O2"
+ },
+ "101": {
+  "pdf": 101,
+  "printed": 94,
+  "rows": 25,
+  "plus": 0,
+  "first": "005274.00",
+  "last": "005316.00",
+  "raw": "Cl 3/01 PAGE NUMBER 94"
+ },
+ "102": {
+  "pdf": 102,
+  "printed": 95,
+  "rows": 28,
+  "plus": 0,
+  "first": "005327.40",
+  "last": "005354.40",
+  "raw": "/Ol 3/01 PAGE NUMBER 95"
+ },
+ "103": {
+  "pdf": 103,
+  "printed": 96,
+  "rows": 28,
+  "plus": 0,
+  "first": "005366.4",
+  "last": "005411.40",
+  "raw": "Cl 3/01 PAGE NUMBER 96"
+ },
+ "104": {
+  "pdf": 104,
+  "printed": 97,
+  "rows": 22,
+  "plus": 0,
+  "first": "005425.4",
+  "last": "05447.60",
+  "raw": "/01 3/01 PAGE NUMBER 97"
+ },
+ "105": {
+  "pdf": 105,
+  "printed": 98,
+  "rows": 21,
+  "plus": 5,
+  "first": "005450.40",
+  "last": "005466.0+",
+  "raw": "/Cl 3/01 PAGE NUMBER 98"
+ },
+ "106": {
+  "pdf": 106,
+  "printed": 99,
+  "rows": 4,
+  "plus": 1,
+  "first": "005466.00",
+  "last": "3580.57+",
+  "raw": "/Cl 3/01 PAGE NUMBER 99"
+ },
+ "107": {
+  "pdf": 107,
+  "printed": 100,
+  "rows": 0,
+  "plus": 0,
+  "first": null,
+  "last": null,
+  "raw": "f/Cl 3/01 PAGE NUMBER 100"
+ },
+ "108": {
+  "pdf": 108,
+  "printed": 101,
+  "rows": 5,
+  "plus": 5,
+  "first": "0001.6+",
+  "last": "27181.71+",
+  "raw": "s/Cl 3/01 PAGE NUMBER \u00a3101"
+ },
+ "109": {
+  "pdf": 109,
+  "printed": 102,
+  "rows": 3,
+  "plus": 3,
+  "first": "100002.00+",
+  "last": "0005.4+",
+  "raw": "IO) 3/01 PAGE NUMRER 102"
+ },
+ "110": {
+  "pdf": 110,
+  "printed": 103,
+  "rows": 32,
+  "plus": 15,
+  "first": "215000.00",
+  "last": "215010.46",
+  "raw": "/C1 3/01 PAGE NUMBER 103"
+ },
+ "111": {
+  "pdf": 111,
+  "printed": 104,
+  "rows": 7,
+  "plus": 5,
+  "first": "21502.71",
+  "last": "741011.41+",
+  "raw": "/Cl 3/01 PAGE NUMBER 104 ,"
+ },
+ "112": {
+  "pdf": 112,
+  "printed": 105,
+  "rows": 10,
+  "plus": 8,
+  "first": "000041.0+",
+  "last": "40104.4+",
+  "raw": "C1 3/701 PAGE NUMBER 105"
+ },
+ "113": {
+  "pdf": 113,
+  "printed": 106,
+  "rows": 6,
+  "plus": 5,
+  "first": "000114.40+",
+  "last": "000121.40",
+  "raw": "/01l 3/01 PAGE NUMBER 106"
+ },
+ "114": {
+  "pdf": 114,
+  "printed": 107,
+  "rows": 17,
+  "plus": 15,
+  "first": "0103.00+",
+  "last": "064002.06",
+  "raw": "401 3/01 PAGE NUMBER 107"
+ },
+ "115": {
+  "pdf": 115,
+  "printed": 108,
+  "rows": 0,
+  "plus": 0,
+  "first": null,
+  "last": null,
+  "raw": "/Cl 3/01 PAGE NUMBER 108 ,"
+ },
+ "116": {
+  "pdf": 116,
+  "printed": 109,
+  "rows": 1,
+  "plus": 0,
+  "first": "215020.71",
+  "last": "215020.71",
+  "raw": "/C1 3/01 \u2014 PAGE NUMBER 109"
+ },
+ "117": {
+  "pdf": 117,
+  "printed": 110,
+  "rows": 31,
+  "plus": 0,
+  "first": "215023.00",
+  "last": "215044.4",
+  "raw": "/Cl 3/01 PAGE NUMBER 110"
+ },
+ "118": {
+  "pdf": 118,
+  "printed": 117,
+  "rows": 31,
+  "plus": 1,
+  "first": "215050.0",
+  "last": "215073.4",
+  "raw": "R/C 1 2/07 DACE NiiMReD 117"
+ },
+ "119": {
+  "pdf": 119,
+  "printed": 112,
+  "rows": 33,
+  "plus": 0,
+  "first": "215100.40",
+  "last": "215142.60",
+  "raw": "C1 } 3/01 PAGE NUMBER 112"
+ },
+ "120": {
+  "pdf": 120,
+  "printed": 113,
+  "rows": 18,
+  "plus": 0,
+  "first": "215147.40",
+  "last": "215162.4",
+  "raw": "Cl 3/01 PAGE NUMBER 113 )"
+ },
+ "121": {
+  "pdf": 121,
+  "printed": 114,
+  "rows": 32,
+  "plus": 0,
+  "first": "215166.0",
+  "last": "215210.4",
+  "raw": "/Cl 3/01 PAGE NUMBER 114"
+ },
+ "122": {
+  "pdf": 122,
+  "printed": 115,
+  "rows": 10,
+  "plus": 0,
+  "first": "215214.40",
+  "last": "215223.40",
+  "raw": "/O1 3/01 PAGE NUMBER 115"
+ },
+ "123": {
+  "pdf": 123,
+  "printed": 116,
+  "rows": 28,
+  "plus": 3,
+  "first": "215224.00",
+  "last": "215470.40",
+  "raw": "/Cl 32/01 PAGE NUMBER 116"
+ },
+ "124": {
+  "pdf": 124,
+  "printed": 117,
+  "rows": 29,
+  "plus": 0,
+  "first": "215470.71",
+  "last": "215521.4",
+  "raw": "JC 3/01 PAGE NUMBER 117"
+ },
+ "125": {
+  "pdf": 125,
+  "printed": 118,
+  "rows": 36,
+  "plus": 0,
+  "first": "215527.0",
+  "last": "215563.00",
+  "raw": "Cl 3/01 PAGE NUMBER 118"
+ },
+ "126": {
+  "pdf": 126,
+  "printed": 119,
+  "rows": 36,
+  "plus": 1,
+  "first": "215573.00",
+  "last": "215627.4",
+  "raw": "/Cl 3/01 | PAGE NUMBER 119"
+ },
+ "127": {
+  "pdf": 127,
+  "printed": null,
+  "rows": 10,
+  "plus": 3,
+  "first": "215636.0",
+  "last": "0114.40+",
+  "raw": "/Cl 3/01 PAGE NUMBER 12C ."
+ },
+ "128": {
+  "pdf": 128,
+  "printed": 177,
+  "rows": 27,
+  "plus": 0,
+  "first": "215666.00",
+  "last": "215704.00",
+  "raw": ",/C] 3/0) DAGE NILiMRER \u00a3177"
+ },
+ "129": {
+  "pdf": 129,
+  "printed": 122,
+  "rows": 31,
+  "plus": 0,
+  "first": "215710.0",
+  "last": "215741.00",
+  "raw": "C1 2/01 PAGE NUMBER 122"
+ },
+ "130": {
+  "pdf": 130,
+  "printed": 123,
+  "rows": 36,
+  "plus": 0,
+  "first": "215747.40",
+  "last": "216004.4",
+  "raw": "S01 3/01 PAGE NUMBER) 123"
+ },
+ "131": {
+  "pdf": 131,
+  "printed": 124,
+  "rows": 37,
+  "plus": 0,
+  "first": "216013.40",
+  "last": "160646.0",
+  "raw": "/Cl 3/01 PAGE NUMBER 124"
+ },
+ "132": {
+  "pdf": 132,
+  "printed": 125,
+  "rows": 33,
+  "plus": 0,
+  "first": "21657.0",
+  "last": "216110.40",
+  "raw": "/CL 3/01 PAGE NUMBER 125"
+ },
+ "133": {
+  "pdf": 133,
+  "printed": 126,
+  "rows": 36,
+  "plus": 0,
+  "first": "216122.40",
+  "last": "216154.40",
+  "raw": "/Cl 3/01 | PAGE NUMBER 126"
+ },
+ "134": {
+  "pdf": 134,
+  "printed": 127,
+  "rows": 32,
+  "plus": 0,
+  "first": "216171.40",
+  "last": "216226.60",
+  "raw": "/C1 3/01 PAGE NUMBER 127"
+ },
+ "135": {
+  "pdf": 135,
+  "printed": 128,
+  "rows": 36,
+  "plus": 0,
+  "first": "216241.0",
+  "last": "216273.00",
+  "raw": "/Cl 3/01 PAGE NUMBER 128"
+ },
+ "136": {
+  "pdf": 136,
+  "printed": 129,
+  "rows": 20,
+  "plus": 0,
+  "first": "216306.4",
+  "last": "216332.00",
+  "raw": "/Cl 3/01 PAGE NUMBER 129"
+ },
+ "137": {
+  "pdf": 137,
+  "printed": 130,
+  "rows": 33,
+  "plus": 0,
+  "first": "216333.00",
+  "last": "216364.4",
+  "raw": "/Cl , 3/01 PAGE NUMBER 130"
+ },
+ "138": {
+  "pdf": 138,
+  "printed": 131,
+  "rows": 30,
+  "plus": 0,
+  "first": "216303.40",
+  "last": "216434.64",
+  "raw": "/Cl 3/01 PAGE NUMBER 131"
+ },
+ "139": {
+  "pdf": 139,
+  "printed": 132,
+  "rows": 34,
+  "plus": 0,
+  "first": "216441.4",
+  "last": "21473.00",
+  "raw": "/Cl 3/01 PAGE NUMBER 132 \u2014"
+ },
+ "140": {
+  "pdf": 140,
+  "printed": 133,
+  "rows": 34,
+  "plus": 1,
+  "first": "216501.00",
+  "last": "216551.4",
+  "raw": "/Cl 3/01 PAGE NUMBER 133"
+ },
+ "141": {
+  "pdf": 141,
+  "printed": 134,
+  "rows": 32,
+  "plus": 2,
+  "first": "216566.0",
+  "last": "216612.4",
+  "raw": "Cl 3/01 PAGE NUMBER 134 |"
+ },
+ "142": {
+  "pdf": 142,
+  "printed": 135,
+  "rows": 30,
+  "plus": 0,
+  "first": "216620.4",
+  "last": "216647.0",
+  "raw": "/C1 3/01 PAGE NUMBER 135"
+ },
+ "143": {
+  "pdf": 143,
+  "printed": 136,
+  "rows": 30,
+  "plus": 0,
+  "first": "216661.4",
+  "last": "216716.00",
+  "raw": "/Gl 3/01 PAGE NUMBER 136"
+ },
+ "144": {
+  "pdf": 144,
+  "printed": 137,
+  "rows": 26,
+  "plus": 0,
+  "first": "216732.00",
+  "last": "217047.00",
+  "raw": "/C1 3/01 PAGE NUMBER 137"
+ },
+ "145": {
+  "pdf": 145,
+  "printed": 138,
+  "rows": 27,
+  "plus": 0,
+  "first": "217060.40",
+  "last": "217106.4",
+  "raw": "/Cl 3/01 PAGE NUMBER 138"
+ },
+ "146": {
+  "pdf": 146,
+  "printed": 139,
+  "rows": 18,
+  "plus": 0,
+  "first": "217116.4",
+  "last": "217132.4",
+  "raw": "/C1 3/01 PAGE NUMBER 139"
+ },
+ "147": {
+  "pdf": 147,
+  "printed": 140,
+  "rows": 30,
+  "plus": 0,
+  "first": "217154.00",
+  "last": "217200.4",
+  "raw": "/Cl 3/01 PAGE NUMBER 140"
+ },
+ "148": {
+  "pdf": 148,
+  "printed": 141,
+  "rows": 35,
+  "plus": 0,
+  "first": "217206.4",
+  "last": "217237.00",
+  "raw": "{C1 3/01 PAGE NUMBER 141"
+ },
+ "149": {
+  "pdf": 149,
+  "printed": 142,
+  "rows": 33,
+  "plus": 1,
+  "first": "217245.40",
+  "last": "422173.00",
+  "raw": "/Cl 3/01 PAGE NUMBER 142"
+ },
+ "150": {
+  "pdf": 150,
+  "printed": 143,
+  "rows": 17,
+  "plus": 0,
+  "first": "21731.40",
+  "last": "217325.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 143 |"
+ },
+ "151": {
+  "pdf": 151,
+  "printed": 144,
+  "rows": 23,
+  "plus": 0,
+  "first": "217326.00",
+  "last": "217346.00",
+  "raw": "Cl 3/01 PAGE NUMBER 144"
+ },
+ "152": {
+  "pdf": 152,
+  "printed": 145,
+  "rows": 7,
+  "plus": 0,
+  "first": "217347.4",
+  "last": "217355.00",
+  "raw": "/ C1 3/Cl PAGE NUMBER 145"
+ },
+ "153": {
+  "pdf": 153,
+  "printed": 146,
+  "rows": 15,
+  "plus": 0,
+  "first": "217355.40",
+  "last": "217370.00",
+  "raw": "/Cl 3/01 PAGE NUMBER 146"
+ },
+ "154": {
+  "pdf": 154,
+  "printed": 147,
+  "rows": 33,
+  "plus": 0,
+  "first": "217371.70",
+  "last": "217424.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 147"
+ },
+ "155": {
+  "pdf": 155,
+  "printed": 148,
+  "rows": 21,
+  "plus": 1,
+  "first": "217433.40",
+  "last": "217457.4",
+  "raw": "/Cl 3/01 PAGE NUMBER 148"
+ },
+ "156": {
+  "pdf": 156,
+  "printed": 149,
+  "rows": 31,
+  "plus": 0,
+  "first": "227460.00",
+  "last": "217504.4",
+  "raw": "/Cl 3/01 PAGE NUMBER 149"
+ },
+ "157": {
+  "pdf": 157,
+  "printed": 150,
+  "rows": 25,
+  "plus": 1,
+  "first": "217511.0",
+  "last": "217531.00",
+  "raw": "7/Cl 3/01 PAGE NUMBER 150"
+ },
+ "158": {
+  "pdf": 158,
+  "printed": 151,
+  "rows": 34,
+  "plus": 0,
+  "first": "217544.0",
+  "last": "217567.0",
+  "raw": "/Cl 3/01 PAGE NUMBER 151"
+ },
+ "159": {
+  "pdf": 159,
+  "printed": 152,
+  "rows": 29,
+  "plus": 0,
+  "first": "217574.00",
+  "last": "217621.00",
+  "raw": "Cl 3/01 PAGE NUMBER 152 ."
+ },
+ "160": {
+  "pdf": 160,
+  "printed": 153,
+  "rows": 33,
+  "plus": 0,
+  "first": "217630.00",
+  "last": "217653.4",
+  "raw": "/Cl 3/01 PAGE NUMBER 153"
+ },
+ "161": {
+  "pdf": 161,
+  "printed": 154,
+  "rows": 26,
+  "plus": 3,
+  "first": "176606.00",
+  "last": "21770.4",
+  "raw": "7/01 3/01 PAGE NUMBER 154 :"
+ },
+ "162": {
+  "pdf": 162,
+  "printed": 155,
+  "rows": 25,
+  "plus": 0,
+  "first": "217705.40",
+  "last": "217737.4",
+  "raw": "/Cl 3/01 PAGE NUMBER 155"
+ },
+ "163": {
+  "pdf": 163,
+  "printed": 156,
+  "rows": 22,
+  "plus": 0,
+  "first": "217745.0",
+  "last": "217763.4",
+  "raw": "/Cl 3/01. PAGE NUMBER 156"
+ },
+ "164": {
+  "pdf": 164,
+  "printed": 157,
+  "rows": 24,
+  "plus": 1,
+  "first": "217766.4",
+  "last": "842201.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 157"
+ },
+ "165": {
+  "pdf": 165,
+  "printed": 158,
+  "rows": 10,
+  "plus": 0,
+  "first": "22011.0",
+  "last": "220017.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 158"
+ },
+ "166": {
+  "pdf": 166,
+  "printed": 159,
+  "rows": 31,
+  "plus": 0,
+  "first": "2221.40",
+  "last": "22005.4",
+  "raw": "/Cl 3/01 PAGE NUMBER 159"
+ },
+ "167": {
+  "pdf": 167,
+  "printed": 160,
+  "rows": 27,
+  "plus": 0,
+  "first": "220057.40",
+  "last": "220105.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 160"
+ },
+ "168": {
+  "pdf": 168,
+  "printed": 161,
+  "rows": 16,
+  "plus": 0,
+  "first": "220106.00",
+  "last": "220120.00",
+  "raw": "701 3/01 PAGE NUMBER 161"
+ },
+ "169": {
+  "pdf": 169,
+  "printed": 162,
+  "rows": 27,
+  "plus": 0,
+  "first": "220120.40",
+  "last": "220142.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 162"
+ },
+ "170": {
+  "pdf": 170,
+  "printed": 163,
+  "rows": 33,
+  "plus": 0,
+  "first": "22015.00",
+  "last": "220200.40",
+  "raw": "/Cl 3/01, PAGE NUMBER 163"
+ },
+ "171": {
+  "pdf": 171,
+  "printed": 164,
+  "rows": 25,
+  "plus": 0,
+  "first": "220203.00",
+  "last": "220225.4",
+  "raw": "/C1 3/01 PAGE NUMBER 164"
+ },
+ "172": {
+  "pdf": 172,
+  "printed": null,
+  "rows": 24,
+  "plus": 0,
+  "first": "220226.00",
+  "last": "220245.00",
+  "raw": "2/Cl 2sQl DACE NLMRER }AS ,"
+ },
+ "173": {
+  "pdf": 173,
+  "printed": 166,
+  "rows": 30,
+  "plus": 0,
+  "first": "220245.40",
+  "last": "220302.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 166"
+ },
+ "174": {
+  "pdf": 174,
+  "printed": 167,
+  "rows": 28,
+  "plus": 0,
+  "first": "220325.00",
+  "last": "220347.00",
+  "raw": "C1 3/01 PAGE NUMBER 167"
+ },
+ "175": {
+  "pdf": 175,
+  "printed": 168,
+  "rows": 27,
+  "plus": 0,
+  "first": "220350.40",
+  "last": "220376.40",
+  "raw": "7CT1 3/01 PAGE NUMBER 168"
+ },
+ "176": {
+  "pdf": 176,
+  "printed": 169,
+  "rows": 12,
+  "plus": 0,
+  "first": "220400.40",
+  "last": "220410.60",
+  "raw": "101 3/01 PAGE NUMBER 169"
+ },
+ "177": {
+  "pdf": 177,
+  "printed": 170,
+  "rows": 20,
+  "plus": 1,
+  "first": "220410.40",
+  "last": "220427.0",
+  "raw": "/Cl 3/01 PAGE NUMBER 170 ,"
+ },
+ "178": {
+  "pdf": 178,
+  "printed": 171,
+  "rows": 28,
+  "plus": 1,
+  "first": "220427.64",
+  "last": "220450.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 171 ."
+ },
+ "179": {
+  "pdf": 179,
+  "printed": 172,
+  "rows": 24,
+  "plus": 0,
+  "first": "220502.00",
+  "last": "270523.0",
+  "raw": "/Cl 3/01 PAGE NUMBER 172"
+ },
+ "180": {
+  "pdf": 180,
+  "printed": 173,
+  "rows": 28,
+  "plus": 1,
+  "first": "220823.40",
+  "last": "220546.06",
+  "raw": "7C1 3/01 PAGE NUMBER 173 ,"
+ },
+ "181": {
+  "pdf": 181,
+  "printed": 174,
+  "rows": 19,
+  "plus": 0,
+  "first": "220560.40",
+  "last": "220575.0",
+  "raw": "/Cl 3/701 : PAGE NUMBER 174"
+ },
+ "182": {
+  "pdf": 182,
+  "printed": 175,
+  "rows": 34,
+  "plus": 0,
+  "first": "220607.0",
+  "last": "220640.00",
+  "raw": "/Cl 3/01 PAGE NUMBER 175 }"
+ },
+ "183": {
+  "pdf": 183,
+  "printed": 176,
+  "rows": 34,
+  "plus": 0,
+  "first": "220650.40",
+  "last": "206714.40",
+  "raw": "701 3/01 PAGE NUMBER 176 ,"
+ },
+ "184": {
+  "pdf": 184,
+  "printed": 177,
+  "rows": 32,
+  "plus": 0,
+  "first": "220701.40",
+  "last": "220726.4",
+  "raw": "Cl 3/01 PAGE. NUMBER 177"
+ },
+ "185": {
+  "pdf": 185,
+  "printed": 178,
+  "rows": 34,
+  "plus": 0,
+  "first": "220743.00",
+  "last": "220766.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 178 ,"
+ },
+ "186": {
+  "pdf": 186,
+  "printed": 179,
+  "rows": 30,
+  "plus": 0,
+  "first": "220777.0",
+  "last": "221027.00",
+  "raw": "/\u20ac1 3/01 PAGE NUMBER 179"
+ },
+ "187": {
+  "pdf": 187,
+  "printed": 180,
+  "rows": 34,
+  "plus": 0,
+  "first": "221041.0",
+  "last": "221674.40",
+  "raw": "/Cl 3/01 PAGE NUMBER .180"
+ },
+ "188": {
+  "pdf": 188,
+  "printed": 181,
+  "rows": 32,
+  "plus": 0,
+  "first": "222102.0",
+  "last": "221132.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 181"
+ },
+ "189": {
+  "pdf": 189,
+  "printed": 182,
+  "rows": 21,
+  "plus": 0,
+  "first": "221144.40",
+  "last": "221160.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 182 :"
+ },
+ "190": {
+  "pdf": 190,
+  "printed": 183,
+  "rows": 29,
+  "plus": 0,
+  "first": "221161.00",
+  "last": "221207.00",
+  "raw": "ST1 3/01 PAGE NUMBER 183"
+ },
+ "191": {
+  "pdf": 191,
+  "printed": 184,
+  "rows": 30,
+  "plus": 1,
+  "first": "221214.40",
+  "last": "221255.50",
+  "raw": "/Ci 3/01 PAGE NUMBER 184 }"
+ },
+ "192": {
+  "pdf": 192,
+  "printed": 185,
+  "rows": 24,
+  "plus": 0,
+  "first": "221261.00",
+  "last": "221277.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 185 ."
+ },
+ "193": {
+  "pdf": 193,
+  "printed": 186,
+  "rows": 26,
+  "plus": 1,
+  "first": "221307.0",
+  "last": "221337.00",
+  "raw": "7/01 3/01 PAGE NUMBER 186 ,"
+ },
+ "194": {
+  "pdf": 194,
+  "printed": 187,
+  "rows": 18,
+  "plus": 0,
+  "first": "22135.40",
+  "last": "221367.0",
+  "raw": "/Cl 3/01 PAGE NUMBER 187 } ."
+ },
+ "195": {
+  "pdf": 195,
+  "printed": 188,
+  "rows": 26,
+  "plus": 0,
+  "first": "221371.40",
+  "last": "221412.40",
+  "raw": "/Cl | 3/01 PAGE NUMBER 188"
+ },
+ "196": {
+  "pdf": 196,
+  "printed": 189,
+  "rows": 34,
+  "plus": 1,
+  "first": "221416.40",
+  "last": "221441.0",
+  "raw": "Cl 3/701 PAGE NUMBER 189"
+ },
+ "197": {
+  "pdf": 197,
+  "printed": 190,
+  "rows": 25,
+  "plus": 0,
+  "first": "221445.00",
+  "last": "221465.40",
+  "raw": "Cl 3/01 PAGE NUMBER 190 }"
+ },
+ "198": {
+  "pdf": 198,
+  "printed": 191,
+  "rows": 19,
+  "plus": 1,
+  "first": "221476.40",
+  "last": "221513.40",
+  "raw": "7Cl 3/01 PAGE NUMBER 191 }"
+ },
+ "199": {
+  "pdf": 199,
+  "printed": 192,
+  "rows": 22,
+  "plus": 1,
+  "first": "221515.40",
+  "last": "221537.4",
+  "raw": "/CTl 3/01 PAGE NUMBER 192"
+ },
+ "200": {
+  "pdf": 200,
+  "printed": 193,
+  "rows": 33,
+  "plus": 0,
+  "first": "221543.0",
+  "last": "221610.40",
+  "raw": "C1 \u2014 3/01 PAGE NUMBER 193"
+ },
+ "201": {
+  "pdf": 201,
+  "printed": 194,
+  "rows": 29,
+  "plus": 1,
+  "first": "221622.00",
+  "last": "221644.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 194"
+ },
+ "202": {
+  "pdf": 202,
+  "printed": 195,
+  "rows": 30,
+  "plus": 0,
+  "first": "221652.0",
+  "last": "221725.0",
+  "raw": "/Cl 3/01 PAGE NUMBiLR 195 ,"
+ },
+ "203": {
+  "pdf": 203,
+  "printed": 196,
+  "rows": 31,
+  "plus": 0,
+  "first": "221733.00",
+  "last": "221761.40",
+  "raw": "C1 3/01 PAGE NUMBER 196 ,"
+ },
+ "204": {
+  "pdf": 204,
+  "printed": null,
+  "rows": 19,
+  "plus": 0,
+  "first": "221767.24",
+  "last": "222017.40",
+  "raw": "/Cl 3/01 PAGE NUMBER L9T7"
+ },
+ "205": {
+  "pdf": 205,
+  "printed": 198,
+  "rows": 26,
+  "plus": 0,
+  "first": "222017.71",
+  "last": "222042.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 198"
+ },
+ "206": {
+  "pdf": 206,
+  "printed": 199,
+  "rows": 30,
+  "plus": 0,
+  "first": "222051.40",
+  "last": "222072.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 199 ."
+ },
+ "207": {
+  "pdf": 207,
+  "printed": 200,
+  "rows": 13,
+  "plus": 0,
+  "first": "222073.00",
+  "last": "222163.40",
+  "raw": "/O1 3/01 PAGE NUMBER 200"
+ },
+ "208": {
+  "pdf": 208,
+  "printed": 201,
+  "rows": 24,
+  "plus": 1,
+  "first": "222105.00",
+  "last": "222135.0",
+  "raw": "fCl 3/01 PAGE NUMBER 201 ,"
+ },
+ "209": {
+  "pdf": 209,
+  "printed": 202,
+  "rows": 29,
+  "plus": 1,
+  "first": "222151.4",
+  "last": "222204.0",
+  "raw": "/Cl 3/01 PAGE NUMBER 202 |"
+ },
+ "210": {
+  "pdf": 210,
+  "printed": 203,
+  "rows": 33,
+  "plus": 1,
+  "first": "0031.00+",
+  "last": "222247.0",
+  "raw": "/C1 3/01 PAGE NUMBER 203"
+ },
+ "211": {
+  "pdf": 211,
+  "printed": 204,
+  "rows": 37,
+  "plus": 0,
+  "first": "222261.0",
+  "last": "222316.00",
+  "raw": "701 3/01 PAGE NUMBER 204"
+ },
+ "212": {
+  "pdf": 212,
+  "printed": 205,
+  "rows": 31,
+  "plus": 0,
+  "first": "222327.40",
+  "last": "222356.40",
+  "raw": "/C1 3/01 PAGE NUMBER 205 os"
+ },
+ "213": {
+  "pdf": 213,
+  "printed": 206,
+  "rows": 24,
+  "plus": 0,
+  "first": "222367.40",
+  "last": "222414.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 206 \u00a9 ,"
+ },
+ "214": {
+  "pdf": 214,
+  "printed": 207,
+  "rows": 34,
+  "plus": 0,
+  "first": "222426.4",
+  "last": "222457.0",
+  "raw": "/Cl 3/01 PAGE NUMBER 207 ~\u2014"
+ },
+ "215": {
+  "pdf": 215,
+  "printed": 208,
+  "rows": 36,
+  "plus": 0,
+  "first": "222470.40",
+  "last": "222522.40",
+  "raw": "Cl 2/01 PAGE NUMBER 208"
+ },
+ "216": {
+  "pdf": 216,
+  "printed": 209,
+  "rows": 35,
+  "plus": 0,
+  "first": "222534.40",
+  "last": "222571.00",
+  "raw": "S01 3/01 PAGE NUMBER 209"
+ },
+ "217": {
+  "pdf": 217,
+  "printed": 210,
+  "rows": 32,
+  "plus": 1,
+  "first": "22303.00",
+  "last": "223753.00",
+  "raw": "/Cl . 3/701 PAGE NUMBER 210 |"
+ },
+ "218": {
+  "pdf": 218,
+  "printed": 211,
+  "rows": 19,
+  "plus": 0,
+  "first": "224006.3",
+  "last": "224045.40",
+  "raw": "/C1 3/01 PAGE NUMBER 211 \u00a9 ."
+ },
+ "219": {
+  "pdf": 219,
+  "printed": 212,
+  "rows": 28,
+  "plus": 0,
+  "first": "224046.31",
+  "last": "224101.00",
+  "raw": "/Cl 3/01 PAGE NUMBER 212 |"
+ },
+ "220": {
+  "pdf": 220,
+  "printed": 13,
+  "rows": 17,
+  "plus": 16,
+  "first": "224105.00",
+  "last": "00002.40+",
+  "raw": "/C1 3/01 PAGE NUMBER ?13"
+ },
+ "221": {
+  "pdf": 221,
+  "printed": 214,
+  "rows": 33,
+  "plus": 0,
+  "first": "224111.04",
+  "last": "224136.4",
+  "raw": "7Cl 3/01 PAGE NUMBER 214 ."
+ },
+ "222": {
+  "pdf": 222,
+  "printed": 215,
+  "rows": 34,
+  "plus": 2,
+  "first": "722415.00+",
+  "last": "224173.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 215 |"
+ },
+ "223": {
+  "pdf": 223,
+  "printed": 216,
+  "rows": 32,
+  "plus": 0,
+  "first": "224201.40",
+  "last": "224231.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 216 |"
+ },
+ "224": {
+  "pdf": 224,
+  "printed": 21,
+  "rows": 32,
+  "plus": 0,
+  "first": "224240.00",
+  "last": "224267.40",
+  "raw": "/Ci 3/01 PAGE NUMBER 21?"
+ },
+ "225": {
+  "pdf": 225,
+  "printed": 218,
+  "rows": 34,
+  "plus": 0,
+  "first": "224274.40",
+  "last": "224320.00",
+  "raw": "/Cl 3/01 PAGt NUMBER 218"
+ },
+ "226": {
+  "pdf": 226,
+  "printed": 219,
+  "rows": 36,
+  "plus": 1,
+  "first": "224325.40",
+  "last": "224352.00",
+  "raw": "/C1 3/01 PAGE NUMBER 219 ."
+ },
+ "227": {
+  "pdf": 227,
+  "printed": 220,
+  "rows": 13,
+  "plus": 0,
+  "first": "224367.40",
+  "last": "224376.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 220"
+ },
+ "228": {
+  "pdf": 228,
+  "printed": 221,
+  "rows": 34,
+  "plus": 1,
+  "first": "224401.00",
+  "last": "224424.4+",
+  "raw": "7C1 3/01 PAGE NUMBER 221"
+ },
+ "229": {
+  "pdf": 229,
+  "printed": 222,
+  "rows": 33,
+  "plus": 0,
+  "first": "224430.40",
+  "last": "224456.4",
+  "raw": "/Cl 3/01 PAGE NUMBER 222"
+ },
+ "230": {
+  "pdf": 230,
+  "printed": 223,
+  "rows": 31,
+  "plus": 0,
+  "first": "224462.40",
+  "last": "224511.40",
+  "raw": "/Cl , 3/01 PAGE NUMBLR 223"
+ },
+ "231": {
+  "pdf": 231,
+  "printed": 224,
+  "rows": 36,
+  "plus": 0,
+  "first": "224516.40",
+  "last": "224543.00",
+  "raw": "701 3/01 PAGE NUMBER 224 }"
+ },
+ "232": {
+  "pdf": 232,
+  "printed": 225,
+  "rows": 29,
+  "plus": 0,
+  "first": "224550.0",
+  "last": "224601.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 225"
+ },
+ "233": {
+  "pdf": 233,
+  "printed": 226,
+  "rows": 32,
+  "plus": 0,
+  "first": "224610.40",
+  "last": "224633.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 226"
+ },
+ "234": {
+  "pdf": 234,
+  "printed": 227,
+  "rows": 35,
+  "plus": 0,
+  "first": "224642.40",
+  "last": "22466.40",
+  "raw": "C1 3/01 PAGE NUMBER 227"
+ },
+ "235": {
+  "pdf": 235,
+  "printed": 228,
+  "rows": 33,
+  "plus": 0,
+  "first": "224673.40",
+  "last": "224720.00",
+  "raw": "7C1 3/01 PAGE NUMBER 228 ,"
+ },
+ "236": {
+  "pdf": 236,
+  "printed": 229,
+  "rows": 29,
+  "plus": 0,
+  "first": "224730.40",
+  "last": "224756.40",
+  "raw": "ACL 3/01 PAGE NUMBER 229 :"
+ },
+ "237": {
+  "pdf": 237,
+  "printed": 230,
+  "rows": 34,
+  "plus": 0,
+  "first": "224764.00",
+  "last": "22511.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 230 ,"
+ },
+ "238": {
+  "pdf": 238,
+  "printed": 231,
+  "rows": 31,
+  "plus": 0,
+  "first": "225021.40",
+  "last": "225050.4",
+  "raw": "/Cl 3/01 PAGE NUMBER 231 :"
+ },
+ "239": {
+  "pdf": 239,
+  "printed": 232,
+  "rows": 36,
+  "plus": 0,
+  "first": "225061.0",
+  "last": "225110.40",
+  "raw": "/Cl 32/01 PAGE NUMBER 232 \u2014 |"
+ },
+ "240": {
+  "pdf": 240,
+  "printed": 233,
+  "rows": 33,
+  "plus": 1,
+  "first": "225120.40",
+  "last": "225151.00",
+  "raw": "C1 3/01 PAGE NUMBER 233"
+ },
+ "241": {
+  "pdf": 241,
+  "printed": 234,
+  "rows": 37,
+  "plus": 0,
+  "first": "225161.0",
+  "last": "225206.00",
+  "raw": "Cl 3/01 PAGE NUMBER 234"
+ },
+ "242": {
+  "pdf": 242,
+  "printed": 235,
+  "rows": 0,
+  "plus": 0,
+  "first": null,
+  "last": null,
+  "raw": "/Cl 3/01 PAGE NUMBER 235 :"
+ },
+ "243": {
+  "pdf": 243,
+  "printed": 236,
+  "rows": 30,
+  "plus": 4,
+  "first": "225216.40",
+  "last": "225244.00",
+  "raw": "/Cl 32/01 PAGE NUMBER 236"
+ },
+ "244": {
+  "pdf": 244,
+  "printed": 237,
+  "rows": 34,
+  "plus": 0,
+  "first": "225263.0",
+  "last": "225324.00",
+  "raw": "Cl 3/01 PAGE NUMBER 237"
+ },
+ "245": {
+  "pdf": 245,
+  "printed": 238,
+  "rows": 34,
+  "plus": 0,
+  "first": "253406.00",
+  "last": "225440.40",
+  "raw": "/Cl 3/01 PAGE NUMBER 238"
+ },
+ "246": {
+  "pdf": 246,
+  "printed": 239,
+  "rows": 39,
+  "plus": 0,
+  "first": "225444.22",
+  "last": "225467.62",
+  "raw": "/Cl 3/01 PAGE NUMBER 239"
+ },
+ "247": {
+  "pdf": 247,
+  "printed": 240,
+  "rows": 38,
+  "plus": 1,
+  "first": "225477.62",
+  "last": "227515.44",
+  "raw": "/Cl 3/01 PAGE NUMBER 240 :"
+ },
+ "248": {
+  "pdf": 248,
+  "printed": null,
+  "rows": 30,
+  "plus": 2,
+  "first": "000003.00+",
+  "last": "221546.00",
+  "raw": "ge A F\u2122 = MmMikisigniiogr +s: \u2122 \u201cns 2% , |"
+ },
+ "249": {
+  "pdf": 249,
+  "printed": 242,
+  "rows": 29,
+  "plus": 2,
+  "first": "227552.40",
+  "last": "227577.4",
+  "raw": "Cl 3/01 PAGE NUMBER 242"
+ },
+ "250": {
+  "pdf": 250,
+  "printed": 243,
+  "rows": 37,
+  "plus": 0,
+  "first": "227604.40",
+  "last": "227632.4",
+  "raw": "/C1 3/01 PAGE NUMBER 243"
+ },
+ "251": {
+  "pdf": 251,
+  "printed": 244,
+  "rows": 34,
+  "plus": 1,
+  "first": "227643.40",
+  "last": "227673.00",
+  "raw": "/Cl 3/01 PAGE NUMBER 244 :"
+ },
+ "252": {
+  "pdf": 252,
+  "printed": 245,
+  "rows": 30,
+  "plus": 0,
+  "first": "227703.0",
+  "last": "227727.2",
+  "raw": "/01 3/01 DAGE NUMBER 245 _"
+ },
+ "253": {
+  "pdf": 253,
+  "printed": 246,
+  "rows": 33,
+  "plus": 0,
+  "first": "227733.40",
+  "last": "227757.40",
+  "raw": "Cl 3/01 PAGE NUMBER 246 -"
+ },
+ "254": {
+  "pdf": 254,
+  "printed": 247,
+  "rows": 28,
+  "plus": 0,
+  "first": "227765.40",
+  "last": "230014.4",
+  "raw": "SG1 3/01 PAGE NUMBER 247"
+ },
+ "255": {
+  "pdf": 255,
+  "printed": 248,
+  "rows": 35,
+  "plus": 0,
+  "first": "230022.0",
+  "last": "230047.40",
+  "raw": "/Cl 3/01 ~ PAGE NUMBER 248"
+ },
+ "256": {
+  "pdf": 256,
+  "printed": 249,
+  "rows": 36,
+  "plus": 0,
+  "first": "230055.00",
+  "last": "230101.40",
+  "raw": "/Cl | 3/01 PAGE NUMBER 249"
+ }
+}

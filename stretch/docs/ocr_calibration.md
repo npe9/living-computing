@@ -63,18 +63,38 @@ with no indication anything had gone wrong. Pages 14 and 84 both did
 this. *Fix: anchor on the word NUMBER and accept only digits after it;
 return None otherwise.* A refusal is a result; a fabricated 1 is not.
 
-**(b) A GLYPH-CONFUSION MAP MAKES IT WORSE AGAIN.** The natural next
-idea is to map the drum's known confusions (`l`→1, `o`/`C`→0, `a`/`B`→8,
-`T`/`q`/`?`→7) over the token. Measured, it *lowered* accuracy:
+**(b) A GLYPH-CONFUSION MAP TRADES REFUSALS FOR WRONG ANSWERS.** The
+natural next idea is to map the drum's known confusions (`l`→1,
+`o`/`C`→0, `a`/`B`→8, `T`/`q`/`?`→7) over the token. Measured over the
+249 numbered pages, against the offset established below:
 
-```
-PDF 14   'PAGE NUMBER qT'    -> 77   (truth 7)
-PDF 64   'PAGE NUMBER a7'    -> 87   (truth 57)
-PDF 84   'PAGE NUMBER rai'   -> 81   (truth 17)
-```
+| parser | correct | **wrong** | refused |
+|---|---|---|---|
+| strict — digits or nothing | 226 | **10** | 13 |
+| with the confusion map | 232 | **15** | 2 |
 
-Each is a guess dressed as a reading. **The map was removed.** The
-sequence below supplies the truth for free and does not guess.
+> **AN EARLIER VERSION OF THIS FILE SAID THE MAP "LOWERED ACCURACY".
+> THAT WAS WRONG** and is corrected here. It raises the count of
+> correct readings. What it actually does is convert eleven refusals
+> into six right answers and five wrong ones:
+>
+> ```
+> PDF  14  'PAGE NUMBER qT'   -> 77   (truth   7)   fabricated
+> PDF  64  'PAGE NUMBER a7'   -> 87   (truth  57)   fabricated
+> PDF  84  'PAGE NUMBER rai'  -> 181  (truth  77)   fabricated
+> PDF  28  'PAGE NUMBER 2l'   -> 21   (truth  21)   RIGHT
+> PDF 127  'PAGE NUMBER 12C'  -> 120  (truth 120)   RIGHT
+> ```
+
+**The map is still not used, and the reason is not accuracy.** On this
+corpus every error of both parsers is caught by the modal-offset check,
+so neither is dangerous *here*. But the two failure modes are not
+equally safe in general: **a refusal can never be undetectable, and a
+fabrication can.** A guessed number that happens to land on the modal
+offset would pass every check in this tool silently, and a parser that
+guesses more has more chances to do it. Strict refusal gives up six
+readings that the offset recovers for free, in exchange for never
+being able to fail that way.
 
 ## The check is global, because a local check can be fooled
 

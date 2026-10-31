@@ -6329,6 +6329,30 @@ run "the MCP pseudo-operation codes, printed p.104" python3 verify_mcp_page.py 1
 # referencing one word are two independent readings of it, so
 # disagreement is a defect -- see tests/check_symbol_spellings.py.
 run "No MCP symbol is spelled two ways across the decks" python3 check_symbol_spellings.py
+
+# >>> READING THE PAGE NUMBER OFF ALL 256 PAGES, AND THE TWO PARSERS
+# THAT WERE WORSE THAN THE OCR. <<<
+# Every page used to begin by rendering its header and confirming the
+# number BY EYE, because PDF page != printed page and mcp_crop.sh
+# warns the offset is not constant.  strap/mcp_survey.py does all of
+# them in one 2m30s run; docs/ocr_calibration.md is the measurement
+# record and docs/mcp_page_map.json the result (PDF 8..256 = printed
+# 1..249 at +7, PDF 3-4 the duplicate pp.1-2, PDF 1,2,5,6,7 unnumbered
+# -- which CONFIRMS mcp_crop.sh's warning and confines it to the front
+# matter).
+#
+# The test below is not about the OCR, which cannot be made perfect on
+# a 1963 drum scan.  It is about the PARSER REFUSING INSTEAD OF
+# GUESSING, because a page reported as None is flagged and recovered
+# from the modal offset, while a page reported wrongly is reported as
+# fine.  Two parsers failed that way and are pinned as regressions:
+# "take the last run of digits" read the distribution date 3/01 and
+# turned every total OCR failure into PAGE 1; a glyph-confusion map
+# fabricated 77 for a page printing 7.
+#
+# INJECTION (measured): restore the last-digits parser and 8 of the 14
+# recorded strings fail; add the confusion map and 4 fail.
+run "the page-number parser refuses rather than guessing" python3 check_page_number_parse.py
 # Thirty-seven lines, thirty compiled, and only SEVEN print any
 # machine code at all.  A data page: the message buffers the
 # assignment printer fills in, three hexadecimal constants, five SYN

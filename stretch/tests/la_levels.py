@@ -201,7 +201,12 @@ PSEUDO = {"DD", "DR", "DRZ", "VF", "CF", "RF", "XW", "CW", "END", "SYN",
           # PRNS, and printed p.99 lines 12-14's punch control: these
           # direct the card punch and the listing and execute nothing,
           # so Table A-2 has no cost for them and should not.
-          "PRNS", "PUNORG", "PUNID", "RESEQ"}
+          "PRNS", "PUNORG", "PUNID", "RESEQ",
+          # INDMK creates one word of binary output (C28-6129 printed
+          # p.19) and executes nothing, so it costs no look-ahead
+          # level -- the same reason XW, CW, VF, CF and RF are here.
+          # C22-6729 printed p.14 names it in exactly that company.
+          "INDMK"}
 
 
 def opcode_of(line):
