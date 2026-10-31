@@ -2006,6 +2006,10 @@ class Image:
                              # silently corrupting a word via OR instead of
                              # raising -- the same protection fieldCrosses
                              # gives on the hardware side (see StretchVFL.bsv).
+        self._fill = {}     # word_addr -> bitmask of bits that are a DRZ's
+                             # ZERO FILL rather than written content.  A
+                             # later deposit may overwrite these; see
+                             # reserve_zero().
 
     def deposit(self, loc_bits, width_bits, value):
         value &= (1 << width_bits) - 1
@@ -2017,6 +2021,12 @@ class Image:
             shift = 64 - bit_in_word - take
             field_mask = ((1 << take) - 1) << shift
             prior = self._written.get(word_addr, 0)
+            # Bits that are only a DRZ's zero FILL are not content:
+            # writing over them is what printed p.116 line 28 does.
+            fill = self._fill.get(word_addr, 0) & field_mask
+            if fill:
+                self._fill[word_addr] &= ~fill
+                self.words[word_addr] = self.words.get(word_addr, 0) & ~fill
             if prior & field_mask:
                 raise AssemblerError(
                     f"internal: two statements deposited overlapping bits "
@@ -2024,6 +2034,44 @@ class Image:
                     f"a size-computation or alignment bug", None)
             self._written[word_addr] = prior | field_mask
             self.words[word_addr] = self.words.get(word_addr, 0) | (chunk << shift)
+            remaining -= take
+            pos += take
+
+    def reserve_zero(self, loc_bits, width_bits):
+        """A DRZ's zero fill: present in the image, but NOT content.
+
+        >>> WHY THIS IS NOT JUST deposit(0). <<<  MCP printed p.116
+        reserves 29 words with "S LR MCP DRZ(BU,64),29" on line 26,
+        then line 27 is "SLC,SLRMCP+9.0" -- back INSIDE that region --
+        and line 28 punches an indicator mask there.  IBM's assembler
+        accepted it; the page prints the result.  deposit() refused it
+        as an overlap, which is right for two statements fighting over
+        a word and wrong for a statement landing in a reservation.
+
+        C22-6531 printed p.35 draws the distinction: DRZ "is exactly
+        the same fashion as DR with one exception: the fields reserved
+        are all set to zero", and printed p.44 adds that "DRZ yields
+        THE SAME SIZE OF BINARY DECK AS DR".  A DR punches no data for
+        its reservation, so neither does a DRZ -- the zeros are a
+        default, not content, and content written over them wins.
+
+        The protection is kept in the direction that matters: a DRZ
+        over ALREADY-WRITTEN bits is still an error, because that is a
+        reservation swallowing real data.
+        """
+        remaining, pos = width_bits, loc_bits
+        while remaining > 0:
+            word_addr, bit_in_word = divmod(pos, 64)
+            take = min(64 - bit_in_word, remaining)
+            shift = 64 - bit_in_word - take
+            field_mask = ((1 << take) - 1) << shift
+            if self._written.get(word_addr, 0) & field_mask:
+                raise AssemblerError(
+                    f"a DRZ reservation covers bits already written in word "
+                    f"{word_addr} (bit {pos}, {take} bits) -- the reservation "
+                    f"would zero real data", None)
+            self._fill[word_addr] = self._fill.get(word_addr, 0) | field_mask
+            self.words.setdefault(word_addr, 0)
             remaining -= take
             pos += take
 
@@ -2577,7 +2625,7 @@ def emit_statement(stmt, symtab, image):
         # absent from it and a DRZ region is a hundred zero words.
         width = dds_length_bits(stmt.mods, stmt.lineno, symtab)
         for k in range(dr_count(stmt, symtab)):
-            image.deposit(loc + k * width, width, 0)
+            image.reserve_zero(loc + k * width, width)
         return
 
     if op == 'VF':
@@ -2770,7 +2818,23 @@ def emit_statement(stmt, symtab, image):
         for i, f in enumerate(stmt.fields):
             if not f.strip():
                 continue
-            bit = eval_expr(f.strip(), symtab, loc, lineno=stmt.lineno)
+            fld = f.strip()
+            # >>> AN INDICATOR MNEMONIC NAMES A BIT, NOT AN ADDRESS. <<<
+            # C28-6129 printed p.19's own example is "INDMK, $ZM, $EXE,
+            # $IF", so a $-prefixed indicator name is the documented way
+            # to write an indicator mask -- which is what INDMK is FOR.
+            # eval_expr cannot be used for it: it resolves $IF to the
+            # BIT ADDRESS word 11 bit 21 = 725 (see the INDICATOR_BITS
+            # branch there), and 725 is not a bit of a word.  The mask
+            # wants the indicator NUMBER, 21.
+            #
+            # WITNESS: MCP printed p.116 line 28 is "INDMK,$IF" and the
+            # listing prints 000000.04 00 000000.00 00 -- bits 18-23 of
+            # the first half word are 0o04, i.e. bit 21 alone.
+            if fld.startswith('$') and fld[1:].upper() in INDICATOR_BITS:
+                bit = INDICATOR_BITS[fld[1:].upper()]
+            else:
+                bit = eval_expr(fld, symtab, loc, lineno=stmt.lineno)
             if not 0 <= bit <= 63:
                 raise AssemblerError(
                     f"INDMK bit {bit} is outside a word's bits 0-63 "

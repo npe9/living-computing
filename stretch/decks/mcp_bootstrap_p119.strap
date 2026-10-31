@@ -1,0 +1,348 @@
+! mcp_bootstrap_p119.strap -- the tail of the PRIME routine and the
+! start of the dispatcher's error-exit block, printed page 119.
+! docs/MCP_Mar63_001-249.pdf PDF p.126, header read and not assumed:
+! the top line prints "TIME CLOCK 00054041   PUNID 11011MCP
+! CARD ID EA000100   DIST. OF 3/01   3/01   PAGE NUMBER 119".
+!
+! Fifty lines, serials EA000100 (line 1) .. EA000147 (line 50) --
+! the same EA deck the pages before this one are punching, not a new
+! one.  Forty-nine lines carry a LOCATION; line 47 is a CNOP that
+! emits nothing (see below).  215572.00 .. 215634.00.
+!
+! FORTY-EIGHT SERIALS FOR FIFTY LINES, and the two repeats are not
+! misreads -- at 1200 dpi lines 42 and 43 both print EA000141 and
+! lines 45 and 46 both print EA000143.  Each repeat is a SIC paired
+! with the branch that must follow it ("SIC,S DISIC" then
+! "B,S DISP"), i.e. two statements punched on one card.  That is
+! STRAP's own rule showing in the card column: strap_asm refuses a
+! SIC that is not immediately followed by a half-word branch.
+! printed p.118 does the same thing once, at its lines 26 and 27.
+!
+! CHECKED, NOT ASSUMED: printed p.118's serial column was rendered
+! for this (PDF p.125, x=5700 at 400 dpi).  It runs EA000050 ..
+! EA000098 over fifty lines, with its own repeat at EA000075.  So
+! this IS the same EA deck -- and EA000099 is printed on neither
+! page.  A one-serial gap across the page break, recorded and not
+! explained.
+!
+! WHAT THE PAGE IS.  Lines 1-40 are the tail of the PRIME routine:
+! p.103 line 41 puts SPRIME at 215570.00, two words before line 1,
+! and the names (MPR2, MPR4A/4B, MPR5A, MPR6A/6B, MPR7, MPR8) and
+! comments ("-PRIME Q EMPTY", "-PRIME Q FULL", "-PARAM IN PRIME Q.")
+! agree.  Lines 41-50 begin the error-exit block that printed p.120
+! continues: each entry is LVI,$14,<error code>; SIC,SDISIC; B,SDISP,
+! which is exactly the sequence the MCP System Analysis Guide
+! describes ("SDISP Error; code in $14 ... Type 1 (MNOMCP) illegal IF
+! interrupt").
+!
+! >>> THE ORIGIN IS NOT SET ON THIS PAGE. <<<  There is no SLC row
+! here; printed p.99 line 11's "SLC,(8)215000." is still the last
+! one transcribed, and printed pp.113-118 are not transcribed yet.
+! The SLC below is therefore written from THIS page's own first
+! LOCATION -- but the join to the page before IS checked, not
+! assumed.  printed p.118's bottom rows were rendered (PDF p.125):
+!
+!   line 48  215570.00  000020.00 80  215622.12 A0  S PRIME TI,5,$0,MPR8
+!   line 49  215571.00  000000.03 01                S PRIMR LVI,$1,0
+!   line 50  215571.40  000000.04 01                LV,$2,0.0($1)
+!
+! Line 50 is a half word, so the counter leaves printed p.118 at
+! 215572.00, which is this page's line 1.  CONTIGUOUS.  Three more
+! things fall out of those three rows, all of them independent
+! confirmations of values this deck carries:
+!   * S PRIME is at 215570.00, exactly where printed p.103 line 41
+!     SYNs it -- so this page really is the PRIME routine's body,
+!     entered two words above line 1;
+!   * p.118 line 48's "TI,5,$0,MPR8" prints 215622.12, which is
+!     MPR8 at 215622.00 read off a DIFFERENT page;
+!   * S PRIMR is at 215571.00, where printed p.103 SYNs it too.
+!
+! TAIL SCOPE: pp.99+ are outside the TAIL,(2)G block printed p.2
+! opened and printed p.98 line 37 closed with UNTAIL,(2), so a name
+! here may legitimately repeat a pp.2-98 name at another address.
+!
+! ---------------------------------------------------------------
+! GLYPHS SETTLED, AND HOW
+! ---------------------------------------------------------------
+! (1) MNOMCP (line 41).  The page prints "M NC MCP".  The typeset
+!     manual decides it: docs/ocr/C22-6728_7030_MCP_Sys_Analysis_
+!     Guide.txt and its -1 revision both print "Type 1 (MNOMCP)
+!     illegal IF interrupt" -- MNOMCP 2, NCMCP 0 over all of
+!     docs/ocr/ -- and this row's own comment is
+!     "- ILLEGAL IF INTERRUPT".  printed p.117 line 12 branches here
+!     ("BZXE,M NC MCP") and is the only other instance in the
+!     listing, printed with the same damaged O.
+!
+! (2) MOPCI (line 44).  The page prints "M CP CI" in the NAME column
+!     and "S CP C I" in the statement, but the comment is
+!     "- ILLEGAL OP CODE" and docs/ocr/MCP_Mar63_001-249.txt prints
+!     the reference as English three times: "BZRZ,M OP CI" and
+!     "BZXL,M OP CI" on printed p.117 (lines 15 and 26) and
+!     "B,M OP CI  -INVALID OP" on printed p.178.  OP, not CP.
+!
+!     >>> AND THAT MAKES decks/mcp_bootstrap_p107.strap WRONG. <<<
+!     p.107 line 5 defines this symbol and the deck spells it SCPCI;
+!     its own transcribed comment is "- 2 PSEUDO CP CODE INVALID",
+!     which is PSEUDO OP CODE INVALID.  The symbol is SOPCI at
+!     010002.00.  This deck writes SOPCI.  A merged image built from
+!     p.107 and this page would fail on an undefined symbol until
+!     p.107 is corrected -- that is the right failure to have.
+!
+! (3) MIFTTT, MIFAS, MPRMQK are spelled by the typeset manual too
+!     (one/two hits each in C22-6728, zero for any variant).
+!
+! (4) B's op byte is 00, not C0.  Lines 31, 34, 38, 43 and 46 print
+!     a round glyph that reads C at 900 dpi; printed p.112's landed
+!     rows print B as "216333.10 00" fourteen times, and the octal
+!     field two characters earlier on these same rows drops ink the
+!     same way.  Observed C may be a damaged 0; observed 0 is never
+!     a damaged C.
+!
+! (5) D0 on lines 11, 20 and 24 IS a D: at 1500 dpi the glyph has the
+!     straight vertical left stem and squared corners that the round
+!     0/C of the octal field in the same row does not.
+!
+! (6) The LOCATION column carries a trailing asterisk on lines 6, 25,
+!     40 and 48.  That is the unexplained marker of
+!     docs/listing_typography.md 12 (printed p.3's note); it changes
+!     no assembled bit.  Every LINE NUMBER also carries one, as on
+!     pp.99-112.  A stray ink dot sits in the NAME column between
+!     lines 24 and 25 and is not a character.
+!
+! (7) Line 40 really is "DRZ(BU,0),(5)", one glyph, against line 48's
+!     two-glyph "DRZ(BU,64),(1)" in the same column -- compared side
+!     by side at 1800 dpi.  It reserves five words all the same
+!     (215622.00 -> 215627.00, printed 000005.00), and that is
+!     STRAP's documented rule, not an inference from the assembler:
+!     C28-6129 STRAP-II (PDF p.11) says "If the field length is
+!     null, a field length of zero (effectively 64 -- see 7030
+!     Reference Manual -- except in the case of VFL immediate where
+!     it is 24) is compiled."  A written 0 and a null field compile
+!     the same zero, and zero means 64.
+!
+! (8) Line 47 prints NO location and NO binary: line 46 is a half
+!     word that leaves the counter at 215632.00, already full-word
+!     aligned, so its CNOP emits nothing.  Line 39's CNOP does emit
+!     (000000.30 00), because line 38 left the counter at .40.  No
+!     !CHECK for line 47.
+!
+! (9) Line 33's comment really ends "REGSZ" at 1500 dpi.  Transcribed
+!     as printed.
+! ---------------------------------------------------------------
+
+! ---- externals, with where each value was read ---------------------
+MIFTTT  SYN, (8)215666.0             ! line 2 prints 215566.04 for
+                                      !   MIFTTT-64.0($2); 64.0 is a
+                                      !   bare decimal literal = 0o100
+                                      !   words.  printed p.121 heads
+                                      !   "IF ANALYZER TABLE OF
+                                      !   TENTACLE ADDRESSES" and its
+                                      !   line 22 carries 215666.00.
+MPRMQK  SYN, (8)215640.0             ! p.120 line  6 "M PRM QK DRZ"
+MPRMER  SYN, (8)215641.0             ! p.120 line  7 "M PRM ER LVI,"
+MC1     SYN, (8)215637.0             ! p.120 line  4 "M C 1 DD(BU,24)"
+MPQR    SYN, (8)215643.0             ! p.120 line 10 defines it at
+                                      !   215643.00.  SPELLING IS
+                                      !   SINGLE-SOURCE: only line 35
+                                      !   here prints the letters, and
+                                      !   p.120's OCR garbles the Q to
+                                      !   "MP @ RR".  No MPQR anywhere
+                                      !   in docs/ocr/ (the MPOR hits
+                                      !   are all inside TEMPORARY).
+MR4     SYN, (8)215644.0             ! p.120 line 11 "M R 4 DRZ"
+MR5     SYN, (8)215645.0             ! p.120 line 12 "M R 5 DRZ"
+SIFERR  SYN, (8)010001.0             ! p.107 line  4
+SOPCI   SYN, (8)010002.0             ! p.107 line  5 (spelled SCPCI
+                                      !   there -- see note (2))
+SIFAS   SYN, (8)004012.0             ! p.107 line 34
+SDISIC  SYN, (8)217451.40            ! p.103; lines 42/45 print it
+SDISP   SYN, (8)217372.0             ! lines 43/46 print 217372.10 and
+                                      !   B prints its target + .10
+                                      !   (line 31: MPR4B 215606.40 ->
+                                      !   215606.50)
+
+        SLC, (8)215572.00
+
+! ---- the PRIME routine, continued ----------------------------------
+        CM0000(BU,1), $2+.24         ! line  1
+        LV, 2, MIFTTT-64.0($2)       ! line  2 -GET ADDRESS OF TT
+        L(BU,4), 0.0($2), -19        ! line  3 -N IN ACC
+        LV, $0, $L                   ! line  4
+        V+, $0, $0                   ! line  5 -19 BIT VALUE =18 BIT
+                                      !           COUNT
+        LC, $4, $0                   ! line  6
+        LV, $0, MPRMQK               ! line  7
+MPR2    BXVZZ, MPR7                  ! line  8 -PRIME Q EMPTY
+        LV, $3, $1                   ! line  9
+        V+, $3, $L                   ! line 10
+        SVA, 3, MPR6B                ! line 11 -SET RETURN ADDRESS
+        V+, 0, $L                    ! line 12
+        KVI, $0, 15.0                ! line 13
+        BXHZ, MPRMER                 ! line 14 -PRIME Q FULL
+        SV, $0, MPRMQK               ! line 15 - NEW Q COUNT
+        LX, $3, MR4                  ! line 16
+        LI(BU,24), .9, -24           ! line 17
+        V+, $2, $L                   ! line 18 -FORM EFF. BIT
+MPR4A   L(V+I)(BU,32), .32($1)       ! line 19
+        ST(V+ICR)(BU,32), .32($3)    ! line 20 -PARAM IN PRIME Q.
+MPR4B   CBZ, $4, MPR6A               ! line 21
+        V+, $2, MC1                  ! line 22 -ADD. 2 FOR NEXT FORM
+                                      !           EFF
+        BZB, 0.0($2), MPR4A          ! line 23 -NO FORM EFF
+        SVA, $1, MPR5A               ! line 24
+        V+I, 1, .32                  ! line 25
+        SWAPI, 4, $1, MPR8+1.0       ! line 26
+MPR5A   LVE, $0, $                   ! line 27 -FORM EFF
+        SWAPI, 4, $1, MPR8+1.0       ! line 28
+        SV, 0, 0($3)                 ! line 29
+        V+ICR, 3, .32                ! line 30
+        B, MPR4B                     ! line 31
+MPR6A   SX, 3, MR4                   ! line 32 -SAVE PRIME CONTROL
+        TI, 5, MPR8, $0              ! line 33 -RESTORE USED X REGSZ
+MPR6B   B, $                         ! line 34 -RETURN DISABLED
+MPR7    LX, $3, MPQR                 ! line 35
+        SX, $3, MR4                  ! line 36 -REFILL PRIME CONTROL
+        SX, $3, MR5                  ! line 37 -REFILL UNPRIME CONTROL
+        B, MPR2+.32                  ! line 38
+        CNOP                         ! line 39
+MPR8    DRZ(BU,0), (5)               ! line 40
+
+! ---- the error exits -----------------------------------------------
+MNOMCP  LVI, $14, SIFERR             ! line 41 - ILLEGAL IF INTERRUPT
+        SIC, SDISIC                  ! line 42
+        B, SDISP                     ! line 43
+MOPCI   LVI, 14, SOPCI               ! line 44 - ILLEGAL OP CODE
+        SIC, SDISIC                  ! line 45
+        B, SDISP                     ! line 46
+        CNOP                         ! line 47 (emits nothing)
+        DRZ(BU,64), (1)              ! line 48
+MMK1    INDMK, .53, .55(.63)21       ! line 49
+MIFAS   LVI, $14, SIFAS              ! line 50
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, all fifty lines, with the LOCATION and the
+! BINARY OUTPUT exactly as printed.  The NAME column is given in its
+! PRINTED form, which carries blanks the transcription drops.
+! ---------------------------------------------------------------
+!   line  1  215572.00    000022.30 80  001000.00 F0            CM0000(BU,1),$2+.24
+!   line  2  215573.00    215566.04 32                          LV,2,MIFTTT-64.0($2)   -GET ADDRESS OF TT
+!   line  3  215573.40    000000.00 82  004066.60 50            L(BU,4),0.0($2),-19    -N IN ACC
+!   line  4  215574.40    000010.00 30                          LV,$0,$L
+!   line  5  215575.00    000020.00 B0                          V+,$0,$0               -19 BIT VALUE =18 BIT COUNT
+!   line  6  215575.40 *  000020.10 50                          LC,$4,$0
+!   line  7  215576.00    215640.00 30                          LV,$0,M PRM QK
+!   line  8  215576.40    215617.71 46                 M PR 2   BXVZZ,M PR 7           -PRIME Q EMPTY
+!   line  9  215577.00    000021.06 30                          LV,$3,$1
+!   line 10  215577.40    000010.06 B0                          V+,$3,$L
+!   line 11  215600.00    215617.07 D0                          SVA,3,MPR6B            -SET RETURN ADDRESS
+!   line 12  215600.40    000010.00 B0                          V+,0,$L
+!   line 13  215601.00    000017.01 04                          KVI,$0,15.0
+!   line 14  215601.40    215641.33 46                          BXHZ,M PRM ER          -PRIME Q FULL
+!   line 15  215602.00    215640.01 30                          SV,$0,M PRM QK         - NEW Q COUNT
+!   line 16  215602.40    215644.06 10                          LX,$3,M R 4
+!   line 17  215603.00    000000.11 80  430064.20 50            LI(BU,24),.9,-24
+!   line 18  215604.00    000010.04 B0                          V+,$2,$L               -FORM EFF. BIT
+!   line 19  215604.40    000000.40 81  140000.20 50   M PR 4A  L(V+I)(BU,32),.32($1)
+!   line 20  215605.40    000000.40 83  340000.20 D0            ST(V+ICR)(BU,32),.32($3) -PARAM IN PRIME Q.
+!   line 21  215606.40    215615.50 4A                 M PR 4B  CBZ,$4,M PR 6A
+!   line 22  215607.00    215637.04 B0                          V+,$2,M C 1            -ADD. 2 FOR NEXT FORM EFF
+!   line 23  215607.40    000000.00 82  215604.74 00            BZB,0.0($2),M PR 4A    -NO FORM EFF
+!   line 24  215610.40    215612.43 D0                          SVA,$1,M PR 5A
+!   line 25  215611.00 *  000000.43 05                          V+I,1,.32
+!   line 26  215611.40    000021.00 80  215623.10 E0            SWAPI,4,$1,MPR8+1.0
+!   line 27  215612.40    215612.41 B0                 M PR 5A  LVE,$0,$               -FORM EFF
+!   line 28  215613.00    000021.00 80  215623.10 E0            SWAPI,4,$1,MPR8+1.0
+!   line 29  215614.00    000000.01 33                          SV,0,0($3)
+!   line 30  215614.40    000000.47 07                          V+ICR,3,.32
+!   line 31  215615.00    215606.50 00                          B,M PR 4B
+!   line 32  215615.40    215644.07 10                 M PR 6A  SX,3,M R 4             -SAVE PRIME CONTROL
+!   line 33  215616.00    215622.00 80  000020.12 A0            TI,5,MPR8,$0           -RESTORE USED X REGSZ
+!   line 34  215617.00    215617.10 00                 M PR 6B  B,$                    -RETURN DISABLED
+!   line 35  215617.40    215643.06 10                 M PR 7   LX,$3,M P Q R
+!   line 36  215620.00    215644.07 10                          SX,$3,M R 4            -REFILL PRIME CONTROL
+!   line 37  215620.40    215645.07 10                          SX,$3,M R 5            -REFILL UNPRIME CONTROL
+!   line 38  215621.00    215577.10 00                          B,M PR 2+.32
+!   line 39  215621.40    000000.30 00                          CNOP
+!   line 40  215622.00 *  000005.00                    M PR 8   DRZ(BU,0),(5)
+!   line 41  215627.00    010001.35 01                 M NO MCP LVI,$14,S IF ERR       - ILLEGAL IF INTERRUPT
+!   line 42  215627.40    217451.40 80                          SIC,S DISIC
+!   line 43  215630.00    217372.10 00                          B,S DISP
+!   line 44  215630.40    010002.35 01                 M OP CI  LVI,14,S OP C I        - ILLEGAL OP CODE
+!   line 45  215631.00    217451.40 80                          SIC,S DISIC
+!   line 46  215631.40    217372.10 00                          B,S DISP
+!   line 47  (no location, no binary)                           CNOP
+!   line 48  215632.00 *  000001.00                             DRZ(BU,64),(1)
+!   line 49  215633.00    000000.00 00  000000.05 15   M MK 1   INDMK,.53,.55(.63)21
+!   line 50  215634.00    004012.35 01                 M IF AS  LVI,$14,S IF AS
+
+! ---------------------------------------------------------------
+! THE CHECKS.  Twelve !SYM -- every NAME this page prints.  Forty-
+! seven !CHECK rows.  Forty-nine of the fifty lines carry a LOCATION
+! (line 47's CNOP emits nothing), and of those, lines 40 and 48 are
+! DRZ rows whose BINARY OUTPUT column prints the reservation's SIZE
+! and not its contents -- 000005.00 is five words, 000001.00 is one
+! -- so they get NO !CHECK, which is printed pp.42, 84 and 109's
+! convention.  Both sizes are still checked, by the rows after them:
+! five words from 215622.00 lands line 41 at 215627.00 and one word
+! from 215632.00 lands line 49 at 215633.00, and both of those ARE
+! !CHECKed.  50 - 1 (line 47) - 2 (the DRZ rows) = 47.
+! ---------------------------------------------------------------
+!SYM   MPR2     215576.40
+!SYM   MPR4A    215604.40
+!SYM   MPR4B    215606.40
+!SYM   MPR5A    215612.40
+!SYM   MPR6A    215615.40
+!SYM   MPR6B    215617.00
+!SYM   MPR7     215617.40
+!SYM   MPR8     215622.00
+!SYM   MNOMCP   215627.00
+!SYM   MOPCI    215630.40
+!SYM   MMK1     215633.00
+!SYM   MIFAS    215634.00
+!CHECK 215572.00 | 000022.30 80 001000.00 F0 | line  1 CM0000(BU,1),$2+.24
+!CHECK 215573.00 | 215566.04 32 | line  2 LV,2,MIFTTT-64.0($2)
+!CHECK 215573.40 | 000000.00 82 004066.60 50 | line  3 L(BU,4),0.0($2),-19
+!CHECK 215574.40 | 000010.00 30 | line  4 LV,$0,$L
+!CHECK 215575.00 | 000020.00 B0 | line  5 V+,$0,$0
+!CHECK 215575.40 | 000020.10 50 | line  6 LC,$4,$0 (location carries an asterisk)
+!CHECK 215576.00 | 215640.00 30 | line  7 LV,$0,MPRMQK
+!CHECK 215576.40 | 215617.71 46 | line  8 MPR2 BXVZZ,MPR7
+!CHECK 215577.00 | 000021.06 30 | line  9 LV,$3,$1
+!CHECK 215577.40 | 000010.06 B0 | line 10 V+,$3,$L
+!CHECK 215600.00 | 215617.07 D0 | line 11 SVA,3,MPR6B
+!CHECK 215600.40 | 000010.00 B0 | line 12 V+,0,$L
+!CHECK 215601.00 | 000017.01 04 | line 13 KVI,$0,15.0
+!CHECK 215601.40 | 215641.33 46 | line 14 BXHZ,MPRMER
+!CHECK 215602.00 | 215640.01 30 | line 15 SV,$0,MPRMQK
+!CHECK 215602.40 | 215644.06 10 | line 16 LX,$3,MR4
+!CHECK 215603.00 | 000000.11 80 430064.20 50 | line 17 LI(BU,24),.9,-24
+!CHECK 215604.00 | 000010.04 B0 | line 18 V+,$2,$L
+!CHECK 215604.40 | 000000.40 81 140000.20 50 | line 19 MPR4A L(V+I)(BU,32),.32($1)
+!CHECK 215605.40 | 000000.40 83 340000.20 D0 | line 20 ST(V+ICR)(BU,32),.32($3)
+!CHECK 215606.40 | 215615.50 4A | line 21 MPR4B CBZ,$4,MPR6A
+!CHECK 215607.00 | 215637.04 B0 | line 22 V+,$2,MC1
+!CHECK 215607.40 | 000000.00 82 215604.74 00 | line 23 BZB,0.0($2),MPR4A
+!CHECK 215610.40 | 215612.43 D0 | line 24 SVA,$1,MPR5A
+!CHECK 215611.00 | 000000.43 05 | line 25 V+I,1,.32 (location carries an asterisk)
+!CHECK 215611.40 | 000021.00 80 215623.10 E0 | line 26 SWAPI,4,$1,MPR8+1.0
+!CHECK 215612.40 | 215612.41 B0 | line 27 MPR5A LVE,$0,$
+!CHECK 215613.00 | 000021.00 80 215623.10 E0 | line 28 SWAPI,4,$1,MPR8+1.0
+!CHECK 215614.00 | 000000.01 33 | line 29 SV,0,0($3)
+!CHECK 215614.40 | 000000.47 07 | line 30 V+ICR,3,.32
+!CHECK 215615.00 | 215606.50 00 | line 31 B,MPR4B
+!CHECK 215615.40 | 215644.07 10 | line 32 MPR6A SX,3,MR4
+!CHECK 215616.00 | 215622.00 80 000020.12 A0 | line 33 TI,5,MPR8,$0
+!CHECK 215617.00 | 215617.10 00 | line 34 MPR6B B,$
+!CHECK 215617.40 | 215643.06 10 | line 35 MPR7 LX,$3,MPQR
+!CHECK 215620.00 | 215644.07 10 | line 36 SX,$3,MR4
+!CHECK 215620.40 | 215645.07 10 | line 37 SX,$3,MR5
+!CHECK 215621.00 | 215577.10 00 | line 38 B,MPR2+.32
+!CHECK 215621.40 | 000000.30 00 | line 39 CNOP
+!CHECK 215627.00 | 010001.35 01 | line 41 MNOMCP LVI,$14,SIFERR
+!CHECK 215627.40 | 217451.40 80 | line 42 SIC,SDISIC
+!CHECK 215630.00 | 217372.10 00 | line 43 B,SDISP
+!CHECK 215630.40 | 010002.35 01 | line 44 MOPCI LVI,14,SOPCI
+!CHECK 215631.00 | 217451.40 80 | line 45 SIC,SDISIC
+!CHECK 215631.40 | 217372.10 00 | line 46 B,SDISP
+!CHECK 215633.00 | 000000.00 00 000000.05 15 | line 49 MMK1 INDMK,.53,.55(.63)21
+!CHECK 215634.00 | 004012.35 01 | line 50 MIFAS LVI,$14,SIFAS

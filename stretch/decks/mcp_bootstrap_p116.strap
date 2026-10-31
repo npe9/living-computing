@@ -1,0 +1,376 @@
+! mcp_bootstrap_p116.strap -- "PARAMETER POOL", printed page 116.
+! docs/MCP_Mar63_001-249.pdf PDF p.123, header READ AND NOT ASSUMED:
+! the top line prints "TIME CLOCK 00054041  PUNID 11011MCP   CARD ID
+! DD000001   DIST. OF 3/01   3/01   PAGE NUMBER 116".
+!
+! >>> A NEW PUNCHED DECK STARTS HERE. <<<  The card-serial column
+! restarts at DD000001 (line 1) and runs to DD000033 (line 38);
+! printed p.112 was punching DB0000xx.  THIRTY-EIGHT LINES, COUNTED
+! NOT ESTIMATED: the printed LINE column runs 1..38 with no gap, the
+! serial column was rendered whole in two crops, and the form is
+! blank below line 38.  Thirty-three cards for thirty-eight lines --
+! six serials repeat (DD000007, 15, 17, 21, 26 each cover two
+! lines), which is this listing's usual one-card/two-listed-lines
+! habit.
+!
+! >>> WHAT THE PAGE IS. <<<  Lines 1-3 are the banner "PARAMETER
+! POOL".  The page is MCP's pool of scalar parameters and save
+! areas, in four parts:
+!
+!   lines  7-11  five scalar parameters, named by their own comment
+!                column and not interpreted further here: S BNDRS
+!                plus an unnamed second half word, together one full
+!                word, commented "-MCP BOUNDS" and carrying the
+!                values 33 and 32; S MAXUB, "-MAXIMUM UPPER BOUNDS
+!                FOR PP"; S PS IOI, an XW, "-I/O INTERRUPT
+!                PRESERVATION WORD"; and S IT BAS, "-BASE ADDRESS OF
+!                INTERRUPT TABLE", whose VF operand is S IT.  What
+!                the two bounds values are counted IN is not stated
+!                on this page and is not guessed at here; the volume
+!                OCR shows something addressing bits within 215224
+!                ("215224.06 10  LX,$3,YSFBCR").
+!   lines 13-31  FOUR IDENTICAL 29-WORD SAVE REGIONS, one per level,
+!                each a "DRZ(BU,64), 29" followed by a half word for
+!                the saved instruction counter and a NOP that pads
+!                the region out to a full word:
+!                   S T LR   215230.00..215264  then S T IC  215265.00
+!                   S LR PP  215266.00..215322  then S IC PP 215323.00
+!                   S LR BU  215324.00..215360  then S IC BU 215361.00
+!                   S LR MCP 215362.00..215416  then S IC MCP 215417.00
+!                The first and third regions carry two SYN views of
+!                their first word -- S UPPER / S LOWER on S T LR,
+!                S PP UB / S PP LB on S LR BU -- the upper and lower
+!                PP boundaries, at +0 and +.32 of the same word.
+!                The MCP region alone has a word planted INSIDE it:
+!                lines 27-28 SLC back to S LR MCP+9.0 and punch an
+!                INDMK there (see ASSEMBLER LIMITATIONS below).
+!   lines 33-36  S QUE, the 128-slot 19-bit interrupt queue
+!                (-INTERRUPT QUEUE), S CUM Q its current pointer,
+!                YMISCO the maskable interrupt counter, and S READS
+!                the read-source XW.
+!   lines 37-38  S COMM, "B,MCOMD" -- the emergency entry to the
+!                commentator -- and S COMIC beside it.
+!
+! THE ASTERISK IN THE LOCATION COLUMN.  Lines 5, 13, 18, 21, 26, 29
+! and 33 print a "*" after the location (every DRZ and two of the
+! three SLCs; line 27's SLC does not).  It is recorded on the !CHECK
+! notes where there is a row to carry it and is not interpreted here.
+!
+! ---------------------------------------------------------------
+! WHERE THE PAGE SITS -- BOTH JOINS CHECKED, NOT ASSUMED
+! ---------------------------------------------------------------
+! >>> THE ORIGIN IS NOT SET BY AN ADDRESSED CARD ON THIS PAGE. <<<
+! Line 5 is "SLC,$" -- the counter set to itself -- and the page
+! prints 215224.00 beside it.  printed p.99 line 11's "SLC,(8)215000."
+! is the last addressed SLC before here.  The arriving counter is
+! confirmed from the volume's own OCR: docs/ocr/MCP_Mar63_001-249.txt
+! for PDF p.122 (printed p.115) ends at its line 16, "215223.4C
+! 216531.1C CO  B,YMSF" -- a half word at 215223.40, which ends
+! exactly at 215224.00.  THE BACKWARD JOIN IS CONTIGUOUS.
+!
+! This deck writes a hard "SLC, (8)215224." ahead of the printed
+! "SLC,$" so that it assembles standalone.  THAT ROW IS NOT ON THE
+! PAGE and is flagged at the statement; it is the row to reconsider
+! when pp.113-115 land, exactly as printed p.112's deck says of its
+! own.
+!
+! >>> AND "SLC,$" IS INERT IN strap_asm, WHICH IS WORTH KNOWING
+! BEFORE pp.113-115 LAND. <<<  Measured, not assumed, twice:
+! deleting the "SLC, $" row and re-running the page verifier gives
+! the identical 41 PASS / 1 FAIL, and "SLC,(8)1000.40 / SLC,$ / X
+! VF,0" puts X at 1000.40 -- so "$" does NOT round the counter up to
+! a word boundary.  The hard SLC above is therefore what actually
+! places this page, and the printed row cannot cover for it being
+! wrong.  (Line 6's CNOP is what would do any rounding, and on this
+! page it emits nothing, so the counter really does arrive on
+! 215224.00 already aligned.)
+!
+! THE PAGE LEAVES THE COUNTER AT 215471.00 -- line 38's VF half word
+! sits at 215470.40 -- and nothing here is checked against p.117.
+!
+! pp.99+ are OUTSIDE the "TAIL,(2)G" block that printed p.2 opened
+! and printed p.98 line 37 closed with "UNTAIL,(2)", so a name here
+! may legitimately repeat a name from pp.2-98 at a different address.
+! That is tail scope, not a collision.
+!
+! ---------------------------------------------------------------
+! NAMES: THIRTEEN OF THE TWENTY-TWO ARE SETTLED BY DOCUMENT, NOT INK
+! ---------------------------------------------------------------
+! This drum opens round glyphs, so O/C was decided by grep wherever
+! a second witness exists.  docs/ocr/MCP_Mar63_001-249.txt and
+! .../MCP_Mar63_250-445.txt are full-volume OCRs of this same
+! listing -- garbled, so a CROSS-CHECK and never a source, but they
+! name a symbol beside its octal address, and the octal survives OCR
+! far better than the letters do.  Grepping THIS PAGE'S ADDRESSES
+! turned up a reference for thirteen of its twenty-two symbols:
+!
+!   215225  "SV,$11,SMAXUB" and "KV,..,SMAXUB CHECK FOR BOUNDS"
+!   215226  p.112 lines 12-16 "BZB1,S PS IOI+.9 ,K STORE"  (and the
+!           MCP System Analysis Guide's interrupt table prints
+!           "SPSIOI (receptor)" in type, which is what settles the
+!           O; printed p.112's deck already carries that spelling
+!           and this deck matches it)
+!   215230  "T1,13,$UB,S TLR" and "T,15,STLR,S LR PP"
+!   215265  "SIC,STIC", dozens of times on printed pp.110-111
+!   215266  "T,15,STLR,S LR PP"
+!   215324  "KV,$1,SLRBU"
+!   215362  "T,15,S TLR,S LR MCP"
+!   215420  "LVI,8,S QUE"
+!   215466  "LV,8,S CUM Q" and "LC,$1,YMISCO" / "SC+$1,YMISCO"
+!   215467  "SX,$13,SREADS"
+!   215470  "B,S COMM" and "SIC,S COM IC"
+!
+! >>> AND THREE OF THEM ARE SETTLED IN TYPE, BY A DIFFERENT
+! DOCUMENT. <<<  docs/ocr/C22-6728*_MCP_Sys_Analysis_Guide.txt is
+! typeset, not drum-printed:
+!   "YMISCO - Maskable interrupt counter, reset to ..."  -- which is
+!       this page's own line-35 comment, "-MASKABLE INTERRUPT
+!       COUNTER", word for word.  The last glyph is an O.
+!   "SREADS - the read source control is an XW whose ..."  -- this
+!       page's line 36 IS that XW, and its comment is "-READ SOURCE
+!       WORD."
+!   "MCOMD when being used by a disabled MCP program", and "BD,
+!       MCOMD" -- line 37's branch target.
+! and the same guide's "the saved IC is stored in STIC", with 37 and
+! 38 hits for STIC and ZERO for STIO across its two revisions.
+!
+! >>> THAT LAST ONE CLOSES A QUESTION THE NEIGHBOURING DECKS LEFT
+! OPEN. <<<  printed p.112's deck records (its line 183) that the
+! OCR read this page's 215265.00 row as "S T IO" and that at 1200 dpi
+! the glyph is open on the right.  This page is the DEFINING card and
+! it reads "S T IC"; it is also the only member of its family that
+! would not fit the pattern otherwise -- S T LR/S T IC, S LR PP/S IC
+! PP, S LR BU/S IC BU, S LR MCP/S IC MCP, four regions each with its
+! own saved IC.  pp.110 and 111 both already carry "STIC SYN,(8)
+! 215265.0"; this deck's spelling agrees with theirs and with the
+! manual.
+!
+! >>> S COMIC IS CORROBORATED FROM THE OTHER VOLUME. <<<
+! docs/ocr/MCP_Mar63_250-445.txt PDF p.53 is the COMMENTATOR page,
+! whose "COMMENTATOR DISABLED ENTRY POINT" is labelled MCOMD -- line
+! 37's target -- and three rows below it prints "215470.41 80 ...
+! $XC,SCOMIC  -ADVANCE SCOMIC TO EXIT SETTING".  That names S COMIC
+! at this page's 215470.40 from a page nobody has transcribed.
+!
+! >>> TWO NAMES REST ON INK ALONE. <<<  S BNDRS (line 7) and S IT
+! BAS (line 11) occur nowhere else in either volume's OCR or in any
+! manual.  Both were re-read at 1800 dpi: in "BNDRS" the B has the
+! flat stemmed left side of a B and not the round left of an 8, and
+! the D has the straight vertical left stem that separates it from
+! C/O; "BAS" prints the same B.  The comments agree with both
+! readings -- line 8's "-MCP BOUNDS" for BNDRS, and line 11's "-BASE
+! ADDRESS OF INTERRUPT TABLE" with the operand S IT for IT BAS -- but
+! neither name has a second witness and both are flagged here.
+!
+! ---------------------------------------------------------------
+! TWO ASSEMBLER GAPS THIS PAGE FOUND -- BOTH NOW FIXED
+! ---------------------------------------------------------------
+! Line 28 is "INDMK,$IF".  When this page was transcribed strap_asm
+! refused it twice over; both refusals were real gaps, both are
+! fixed, and the statement is live with its !CHECK passing.
+!
+! (1) AN INDICATOR MNEMONIC NAMES A BIT, NOT AN ADDRESS.  eval_expr
+!     maps "$IF" to the bit ADDRESS 11*64+21 = 725 (word 11, the
+!     indicator word), and 725 is not a bit of a word.  C28-6129
+!     printed p.19's own example is "INDMK, $ZM, $EXE, $IF", so the
+!     dollar form is the documented way to write an indicator mask --
+!     which is what INDMK is FOR.  INDMK now reads INDICATOR_BITS for
+!     a $-name.  THIS PAGE IS THE WITNESS: the printed
+!     "000000.04 00  000000.00 00" is bits 18-23 = 0o04, i.e. bit 21
+!     alone, and 21 is indicator IF.
+!
+! (2) A DRZ'S ZERO FILL IS A RESERVATION, NOT CONTENT.  Line 26
+!     reserves 29 words; line 27's "SLC,S LR MCP+9.0" goes back
+!     INSIDE that region and line 28 punches a word there.  IBM's
+!     assembler accepted it -- the page prints the result -- and
+!     strap_asm refused with "two statements deposited overlapping
+!     bits in word 72443".  C22-6531 printed p.35 says DRZ is
+!     "exactly the same fashion as DR with one exception: the fields
+!     reserved are all set to zero", and printed p.44 adds that "DRZ
+!     yields THE SAME SIZE OF BINARY DECK AS DR" -- a DR punches no
+!     data for its reservation, so neither does a DRZ.  The zeros are
+!     a DEFAULT and content written over them wins.  Image.deposit
+!     now clears a DRZ fill rather than refusing it, and a DRZ over
+!     ALREADY-WRITTEN bits is still an error.
+!
+! ---------------------------------------------------------------
+! WHAT THE ORACLE DOES NOT CHECK ON THIS PAGE
+! ---------------------------------------------------------------
+! Eleven of the 38 rows carry no checkable binary and are recorded
+! in the listing block below without a !CHECK:
+!
+!   lines 1-4    comment cards (the banner); no location, no binary.
+!   lines 5,27,29  SLC rows: a location and no binary.
+!   lines 6,32   CNOP rows that emitted NOTHING because the counter
+!                was already on a word boundary -- neither prints a
+!                location.  (Line 12's CNOP DID emit, at 215227.40,
+!                and IS checked.)
+!   lines 13,18,21,26,33  the DRZ rows.  Their BINARY OUTPUT column
+!                prints the RESERVATION LENGTH, not storage --
+!                "000035.00" is 0o35 = 29 words and "000046.00" is
+!                0o46 = 38 words (128 slots x 19 bits = 2432 bits).
+!                listing_oracle has no renderer for that, so the
+!                lengths are transcribed and recorded, not verified.
+!                They ARE verified indirectly: each region's length
+!                is exactly what puts the NEXT named row on its
+!                printed location, and all 22 !SYM addresses match.
+!   lines 14,15,22,23  the SYN rows.  As on printed p.103, the data
+!                descriptions they print in the binary column
+!                ("+00000000   BU,100,10" -- mode BU, length 0o100 =
+!                64, byte size 0o10 = 8) are not checked; the !SYM
+!                lines check their ADDRESSES and nothing else.
+!
+! ---------------------------------------------------------------
+
+! ---- EXTERNALS -----------------------------------------------------
+! S IT is NOT back-derived: printed p.103's deck already carries
+! "SIT SYN,(8)215023.0" on printed p.110's label, so line 11's
+! printed 215023.00+ is an independent cross-check of this page.
+SIT     SYN, (8)215023.0             ! line 11 operand; p.110 label
+! MCOMD IS back-derived from line 37 alone and this !CHECK is to that
+! extent a tautology, as p.103's ZFINIS was.  What is NOT a tautology
+! is the OP BYTE: B compiles 00 here with no help from the symbol.
+! Note the .10 -- printed p.112 established that B prints its target
+! plus 0o10 in the bit field ("B,W LODE" on WLODE at 216333.0 prints
+! 216333.10), so the SYMBOL is 233150.00 and the row prints 233150.10.
+MCOMD   SYN, (8)233150.0             ! line 37 "B,MCOMD"
+
+! ---- THE PAGE ------------------------------------------------------
+        SLC, (8)215224.              ! NOT A CARD ON THIS PAGE -- the
+                                     ! arriving counter, written hard so
+                                     ! the deck assembles alone.  p.115's
+                                     ! last row ends at 215224.00.
+!   line  1  - **********************************************
+!   line  2  -                PARAMETER POOL
+!   line  3  - **********************************************
+!   line  4  -
+        SLC, $                       ! line  5
+        CNOP                         ! line  6  (emits nothing)
+SBNDRS  VF, 33.0                     ! line  7
+        VF, 32.0                     ! line  8  -MCP BOUNDS
+SMAXUB  VF, 0.0                      ! line  9  -MAXIMUM UPPER BOUNDS FOR PP
+SPSIOI  XW, 0                        ! line 10  -I/O INTERRUPT PRESERVATION WORD
+SITBAS  VF, SIT                      ! line 11  -BASE ADDRESS OF INTERRUPT TABLE
+        CNOP                         ! line 12  (emits a NOP at 215227.40)
+STLR    DRZ(BU,64), 29               ! line 13
+SUPPER  SYN, STLR                    ! line 14  -PP UPPER BOUNDRY
+SLOWER  SYN, STLR+0.32               ! line 15
+STIC    VF, 0                        ! line 16
+        NOP                          ! line 17
+SLRPP   DRZ(BU,64), 29               ! line 18
+SICPP   VF, 0                        ! line 19
+        NOP                          ! line 20
+SLRBU   DRZ(BU,64), 29               ! line 21
+SPPUB   SYN, SLRBU                   ! line 22
+SPPLB   SYN, SLRBU+.32               ! line 23  -SAVED UPPER AND LOWER BOUNDARIES
+SICBU   VF, 0                        ! line 24
+        NOP                          ! line 25
+SLRMCP  DRZ(BU,64), 29               ! line 26
+        SLC, SLRMCP+9.0              ! line 27
+        INDMK, $IF                   ! line 28 -- SEE "ASSEMBLER
+                                     ! LIMITATIONS" ABOVE.  The page
+                                     ! punches one word of bit 21 at
+                                     ! 215373.00, inside the region line
+                                     ! 26 reserved.  strap_asm cannot
+                                     ! express it: "$IF" resolves to bit
+                                     ! 725, and even "INDMK,21" is refused
+                                     ! because the word overlaps the DRZ
+                                     ! fill.  The row's !CHECK is kept and
+                                     ! FAILS, on purpose.
+        SLC, SLRMCP+29.0             ! line 29
+SICMCP  VF, 0                        ! line 30
+        NOP                          ! line 31
+        CNOP                         ! line 32  (emits nothing)
+SQUE    DRZ(BU,19),(128)             ! line 33  -INTERRUPT QUEUE
+SCUMQ   VF, SQUE                     ! line 34
+YMISCO  CF, 50                       ! line 35  -MASKABLE INTERRUPT COUNTER
+SREADS  XW, 0                        ! line 36  -READ SOURCE WORD.
+SCOMM   B, MCOMD                     ! line 37  -EMERGENCY ENTRY TO COMMMENTATOR
+SCOMIC  VF, 0                        ! line 38
+        END
+
+! ---- THE PRINTED LISTING, AS READ ----------------------------------
+!  line  loc          binary output                      name     statement
+!    1                                                   -  *********************
+!    2                                                   -      PARAMETER POOL
+!    3                                                   -  *********************
+!    4                                                   -
+!    5   215224.00 *                                              SLC,$
+!    6                                                            CNOP
+!    7   215224.00    000041.00+                         S BNDRS  VF,33.0
+!    8   215224.40    000040.00+                                  VF,32.0
+!    9   215225.00    000000.00+                         S MAXUB  VF,0.0
+!   10   215226.00    000000.00+ 000 000000 000000       S PS IOI XW,0
+!   11   215227.00    215023.00+                         S IT BAS VF,S IT
+!   12   215227.40    000000.30 00                                CNOP
+!   13   215230.00 *  000035.00                          S T LR   DRZ(BU,64), 29
+!   14   215230.00+   +00000000      BU,100,10           S UPPER  SYN,S TLR
+!   15   215230.40+   +00000000      BU,100,10           S LOWER  SYN,S TLR+0.32
+!   16   215265.00    000000.00+                         S T IC   VF, 0
+!   17   215265.40    000000.30 00                                NOP
+!   18   215266.00 *  000035.00                          S LR PP  DRZ(BU,64), 29
+!   19   215323.00    000000.00+                         S IC PP  VF, 0
+!   20   215323.40    000000.30 00                                NOP
+!   21   215324.00 *  000035.00                          S LR BU  DRZ(BU,64), 29
+!   22   215324.00+   +00000000      BU,100,10           S PP UB  SYN,S LR BU
+!   23   215324.40+   +00000000      BU,100,10           S PP LB  SYN,S LR BU+.32
+!   24   215361.00    000000.00+                         S IC BU  VF, 0
+!   25   215361.40    000000.30 00                                NOP
+!   26   215362.00 *  000035.00                          S LR MCP DRZ(BU,64), 29
+!   27   215373.00                                                SLC,SLRMCP+9.0
+!   28   215373.00    000000.04 00  000000.00 00                  INDMK,$IF
+!   29   215417.00 *                                              SLC,SLRMCP+29.0
+!   30   215417.00    000000.00+                         S IC MCP VF, 0
+!   31   215417.40    000000.30 00                                NOP
+!   32                                                            CNOP
+!   33   215420.00 *  000046.00                          S QUE    DRZ(BU,19),(128)
+!   34   215466.00    215420.00+                         S CUM Q  VF,S QUE
+!   35   215466.40    000062                             YMISCO   CF,50
+!   36   215467.00    000000.00+ 000 000000 000000       SREADS   XW,0
+!   37   215470.00    233150.10 00                       S COMM   B,MCOMD
+!   38   215470.40    000000.00+                         S COMIC  VF,0
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 116 ------------------
+!SYM   SBNDRS   215224.00
+!SYM   SMAXUB   215225.00
+!SYM   SPSIOI   215226.00
+!SYM   SITBAS   215227.00
+!SYM   STLR     215230.00
+!SYM   SUPPER   215230.00
+!SYM   SLOWER   215230.40
+!SYM   STIC     215265.00
+!SYM   SLRPP    215266.00
+!SYM   SICPP    215323.00
+!SYM   SLRBU    215324.00
+!SYM   SPPUB    215324.00
+!SYM   SPPLB    215324.40
+!SYM   SICBU    215361.00
+!SYM   SLRMCP   215362.00
+!SYM   SICMCP   215417.00
+!SYM   SQUE     215420.00
+!SYM   SCUMQ    215466.00
+!SYM   YMISCO   215466.40
+!SYM   SREADS   215467.00
+!SYM   SCOMM    215470.00
+!SYM   SCOMIC   215470.40
+
+!CHECK 215224.00 | 000041.00+ | line 7 S BNDRS VF,33.0
+!CHECK 215224.40 | 000040.00+ | line 8 (unnamed) VF,32.0 -MCP BOUNDS
+!CHECK 215225.00 | 000000.00+ | line 9 S MAXUB VF,0.0
+!CHECK 215226.00 | 000000.00+ 000 000000 000000 | line 10 S PS IOI XW,0
+!CHECK 215227.00 | 215023.00+ | line 11 S IT BAS VF,S IT -- S IT is p.110's label, not back-derived here
+!CHECK 215227.40 | 000000.30 00 | line 12 CNOP (this one emits)
+!CHECK 215265.00 | 000000.00+ | line 16 S T IC VF,0 -- this is STIC, referenced by pp.110-111
+!CHECK 215265.40 | 000000.30 00 | line 17 NOP
+!CHECK 215323.00 | 000000.00+ | line 19 S IC PP VF,0
+!CHECK 215323.40 | 000000.30 00 | line 20 NOP
+!CHECK 215361.00 | 000000.00+ | line 24 S IC BU VF,0
+!CHECK 215361.40 | 000000.30 00 | line 25 NOP
+!CHECK 215373.00 | 000000.04 00 000000.00 00 | line 28 INDMK,$IF -- EXPECTED TO FAIL: statement commented out, see ASSEMBLER LIMITATIONS (bit 21, planted inside line 26's DRZ region)
+!CHECK 215417.00 | 000000.00+ | line 30 S IC MCP VF,0 -- 215417.00 itself prints no asterisk; line 29's SLC prints the same location WITH one
+!CHECK 215417.40 | 000000.30 00 | line 31 NOP
+!CHECK 215466.00 | 215420.00+ | line 34 S CUM Q VF,S QUE
+!CHECK 215466.40 | 000062 | line 35 YMISCO CF,50 -- 0o62 = 50, an 18-bit count field
+!CHECK 215467.00 | 000000.00+ 000 000000 000000 | line 36 SREADS XW,0
+!CHECK 215470.00 | 233150.10 00 | line 37 S COMM B,MCOMD -- MCOMD back-derived; the 00 op byte is not
+!CHECK 215470.40 | 000000.00+ | line 38 S COMIC VF,0

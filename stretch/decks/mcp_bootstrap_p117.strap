@@ -1,0 +1,424 @@
+! mcp_bootstrap_p117.strap -- "IF ANALYZER", printed page 117.
+! docs/MCP_Mar63_001-249.pdf PDF p.124, header READ AND NOT ASSUMED:
+! the top line prints "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID
+! EA000001  DIST. OF 3/01   3/01   PAGE NUMBER 117".
+!
+! FORTY-EIGHT LINES, COUNTED NOT ESTIMATED.  The printed LINE column
+! runs 1..48 with no gap and the form is blank below line 48.  The
+! card-serial column was rendered in two overlapping 600-dpi crops
+! and read end to end: EA000001 (line 1) through EA000048 (line 48),
+! one serial per line, NO duplicates -- so forty-eight cards for
+! forty-eight lines, unlike printed p.112 where a SIC and its branch
+! shared a card.
+!
+! >>> A NEW PUNCHED DECK STARTS HERE. <<<  The serial prefix changes
+! to "EA" and the number restarts at 000001; printed p.112 was still
+! punching DB0000xx.  The header's own CARD ID repeats line 1's
+! serial.
+!
+! >>> WHAT THE PAGE IS. <<<  Lines 1-3 are an asterisk banner reading
+! "IF ANALYZER".  Line 4 is "SLC,$".  Lines 5-48 are forty-four rows
+! of straight code in three entry points:
+!   S IF AE (line 5)  -- the AE entry: save the lower registers, then
+!                        decide whether the interrupted program was
+!                        MCP itself (KC,0,MKMCPA / BZXE,M NO MCP),
+!                        classify the operation code, and either
+!                        branch out to M OP C I / K FRONT or fall
+!                        into the common path at M IF 6.
+!   S IF AD (line 30) -- the AD entry: save the lower registers,
+!                        set S E ("DISABLED IF ENTRY"), and fall in.
+!   M IF 6  (line 35) -- the common body: step the IC, pick up the
+!                        tentacle table entry (M IF TTT), test the
+!                        pseudo-op busy bit against K SUPP2, set the
+!                        user bit in the tentacle table, set S L to
+!                        MCP, and check S PROG S for the AS register.
+!
+! >>> S IF AD IS NAMED BY A PRIMARY SOURCE. <<<
+! docs/C22-6728-1_7030_MCP_Sys_Analysis_Guide (quoted in
+! docs/transcription_workflow.md) prints the listing's own statement
+! form "(SIC,STIC; B,SIFAD)" -- so SIFAD is the Analysis Guide's
+! spelling of this page's line-30 label, letter for letter, and the
+! S TIC this page loads twice (lines 9 and 33) is the same STIC.
+!
+! >>> NINE OF THIS PAGE'S NAMES ARE SETTLED BY A TYPESET PRIMARY
+! SOURCE, NOT BY INK. <<<  docs/ocr/C22-6728_7030_MCP_Sys_Analysis
+! _Guide.txt and its -1 revision are typeset documents, not a drum
+! print.  COUNTED, with the counts stated so the claim can be
+! checked (base revision / -1 revision):
+!     SIFAE  4/4     SIFAD  4/4     SLRMCP 11/11   KSUPP2 2/2
+!     MIFTTT 1/1     MNOMCP 1/1     MIFAS  1/1     KFRONT 6/7
+! -- eight names, no variant spelling of any of them in either
+! revision.  M OP C I IS THE EXCEPTION AND IS SAID PLAINLY: the two
+! revisions print it "MOPC1" and "MOPC]1", neither of which is a
+! spelling, both of which are the OCR mangling one final character.
+! So the Guide corroborates its POSITION (the Type 2 exit) and its
+! first five letters, and the final "I" comes from this page's own
+! statement column, where lines 15, 17 and 26 print it three times
+! and all three compile the same 215630.40.
+! The -1 revision's EXITS table FOR THIS VERY ROUTINE prints
+!     "SDISP  Error; code in $14 ... Errors possible:
+!        Type 1 (MNOMCP) illegal IF interrupt
+!        Type 2 (MOPCI)  illegal op code
+!        Type 80 (MIFAS) MCP in Auto stack."
+!     "KFRONT  $OP is a service op, $1.0 <= OP <= 64"
+!     "Address from tentacle table  Legal non-actuator pseudo-op.
+!                                   Tentacle linkage set up."
+! That table IS lines 13, 15/17/26, 46, 16-19 and 40-48 of this
+! page, in order, and it is why no round glyph on this page had to
+! be argued from shape: M NO MCP is NO and not NC, M OP C I ends in
+! I, and K FRONT's own line 19 comment "-BRANCH IF ACTUATOR OP" is
+! the same sentence as the Guide's "$OP is a service op".
+!
+! ---------------------------------------------------------------
+! WHERE THE PAGE SITS
+! ---------------------------------------------------------------
+! pp.99+ are OUTSIDE the "TAIL,(2)G" block that printed p.2 opened
+! and printed p.98 line 37 closed with "UNTAIL,(2)", so names here
+! may legitimately repeat names defined in pp.2-98 at different
+! addresses.  That is tail scope and not a collision.
+!
+! THE ORIGIN IS NOT SET BY A VALUE ON THIS PAGE.  Line 4's card is
+! "SLC,$" and the page prints its location as 215470.71 -- word
+! 0o215470, bit 0o71 = 57 decimal, i.e. the counter ARRIVED in the
+! middle of a word and the SLC rounds it up to the next half-word
+! boundary, 215471.00, which is exactly where line 5 is printed.
+! This deck writes "SLC, (8)215470.71" for printed p.104's reason: a
+! hard SLC assembles standalone and cannot disagree with an arriving
+! counter this deck does not have.  When pp.113-116 land, that SLC
+! is the row to reconsider -- a bare "SLC,$" would then make the
+! join self-checking.  THE ROUND-UP WAS CHECKED, NOT ASSUMED: with
+! that SLC, strap_asm puts S IF AE at 0o215471.0, S IF AD at
+! 0o215510.0 and M IF 6 at 0o215514.0, which are the three printed
+! locations.
+!
+! FROM LINE 5 TO LINE 48 THE PAGE IS CONTIGUOUS -- 215471.00 to
+! 215526.40, with no SLC and no gap; every full word is followed by
+! the next row one word on and every half word by the next row a
+! half word on, and all forty-four locations were checked against
+! that chain before a !CHECK was written.
+!
+! FORWARD JOIN, OBSERVED NOT RESOLVED: line 48 is a half word at
+! 215526.00, so the counter leaves this page at 215526.40, while
+! strap/mcp_survey.py reads printed p.118's first location as
+! 215527.00.  That is half a word apart.  p.118 has not been read
+! here and may well open with an SLC or with a line the survey's
+! OCR dropped; it is recorded for whoever takes that page and is
+! NOT reconciled by guesswork.
+!
+! ---------------------------------------------------------------
+! LISTING MARKS
+! ---------------------------------------------------------------
+! Every one of the 48 line numbers carries the ordinary asterisk
+! ("5*", "48*").  THREE lines carry a SECOND asterisk after the
+! LOCATION, the unexplained marker of docs/listing_typography.md 12:
+! line 4 (215470.71, the SLC), line 23 (215504.00, "LWF(U),SLRMCP
+! +9.0") and line 39 (215517.00, "LF(BU,1),S L,-22").  Lines 23 and
+! 39 are ordinary instructions WITH binary printed beside the mark
+! and with no gap before them, so the "gap marker" and "SLC marker"
+! readings both fail here exactly as they failed on printed p.112.
+! Recorded as open, with nothing added to it.
+!
+! ---------------------------------------------------------------
+! HOW THE BINARY WAS SETTLED, AND WHICH ROUND GLYPHS ARE REAL
+! ---------------------------------------------------------------
+! This drum opens round glyphs constantly -- this page prints its
+! own column heading as "LCCATICN" twice.  Every byte below was
+! settled on WHAT PRODUCED IT, against strap/strap_asm.py's encoders
+! and their cited sources, never on ink:
+!
+! * HALF-WORD BRANCH (line 29, "B,M IF 6+.32").  enc_branch_or_misc
+!   puts the 19-bit address in bits 0-18 and the code in 19-23; bits
+!   24-31 are ZERO for every unconditional branch.  The page prints
+!   "215514.50 CO"; the byte is 00 and the C is a damaged 0.
+!   (printed p.112 reached the same conclusion for its 28 branches.)
+! * BRANCH ON INDICATOR (lines 8, 13, 15, 17, 19, 26).  enc_branch_ind
+!   is addr19 | indnum(6) | 1000 | clear | branchOn | idx, so the
+!   hex byte CARRIES the indicator's last bit and the 1000 literal
+!   and REALLY IS 0xC0 / 0x42 / 0x40 / 0xC6.  These C's are NOT
+!   damaged zeros, and they decode:
+!     line 13 "215627.32 C0"  indnum 110101 = 53 = XE, branchOn 0 -> BZXE
+!     line 15 "215630.74 C0"  indnum 111001 = 57 = RZ, branchOn 0 -> BZRZ
+!     line 17 "215630.72 42"  indnum 110100 = 52 = XL, branchOn 1 -> BXL
+!     line 26 "215630.72 40"  same XL, branchOn 0            -> BZXL
+!     line 19 "220700.32 42"  XL again, branchOn 1           -> BXL
+!     line  8 "215474.07 C6"  indnum 001111 = 15 = OP, clear 1,
+!                             branchOn 1                     -> BOPZ
+!   The same six bytes also settle the ADDRESS's half-word select,
+!   which is bit 18, the top bit of the printed two-octal-digit
+!   field: .74 and .72 have it set, so M OP C I is at 215630.40 and
+!   not 215630.00, and three independent rows agree.
+! * IMMEDIATE INDEX (lines 34 and 38, "V-I,2,.32").  enc_imm_index is
+!   imm19 | J(4) | 10000 | code(4).  The literal 10000 starts at bit
+!   23, so bits 24-27 are 0000 and bits 28-31 are V-I's code 1101:
+!   the byte is 0D.  The page prints "CD" and the C is a damaged 0 --
+!   but the D is REAL, and is the opcode, not a damaged C.
+! * VFL STORE (line 44, "ST(BU,1),.4($1),-22").  enc_vfl_full's last
+!   ten bits are code(6) and i2(4); ST's code puts 1101 in bits
+!   56-59 and the statement has no "(I')" operand so i2 is 0.  The
+!   byte "D0" is real.
+! * The OCTAL fields cannot hold a C at all, so every round glyph in
+!   a location or in the first two fields of a half word is a 0 with
+!   certainty; that is how "COCC03.00", "2155CC.CO" and "215C01.04"
+!   were read.  It is NOT used as a licence for any hex byte.
+!
+! ---------------------------------------------------------------
+! EXTERNALS
+! ---------------------------------------------------------------
+! Every address below is READ OFF THIS PAGE'S OWN BINARY OUTPUT
+! COLUMN by inverting the encoder for that row, so a !CHECK on such
+! a row tests the opcode and modifier bits and NOT the address
+! (listing_oracle's docstring says so).  SEVENTEEN OF THE NINETEEN
+! ARE THEN CORROBORATED AT THEIR OWN DEFINING CARDS in
+! docs/ocr/MCP_Mar63_001-249.txt, a garbled full-volume OCR of this
+! same PDF used here as a CROSS-CHECK and never as a source:
+!
+!   215230.00  "S T LR  DRZ(BU,64), 29"            -> S TLR
+!   215265.00  "SIC,S T IC" rows on printed p.104  -> S TIC   (and
+!              decks/mcp_bootstrap_p112.strap ALREADY SPELLS THIS
+!              SYMBOL STIC at this same 215265.00; that spelling is
+!              reused here rather than invented, per the brief.)
+!   215566.40  "...KMCPA  BAD MCP"                 -> MKMCPA
+!   215630.40  "B,M OP CI -INVALID OP" at 226750   -> M OP C I
+!   215001.00  "S E   SYN(BU,1),S COM RG"          -> S E
+!   215001.04  "S L   SYN(BU,1),S COM RG+0.04
+!                     -LEVEL OF INSTRUCTION COUNTER" -> S L
+!   215224.00  "S BNDRS  VF,23.0"                  -> S BNDRS
+!   215362.00  "S LR MCP DRZ(BU,64), 29"           -> SLRMCP
+!   000114.40  "M MAXOP  SYN,SJC1 -MAX PP OP CODE" -> MMAXOP
+!   215324.00  "S LR BU  DRZ(BU,64), 29"           -> S LR BU
+!   215633.00  "M MK 1   INDMK,.53,255(263)21"     -> M MK 1
+!   215666.00  the M IF TTT definition             -> M IF TTT
+!   217176.40  "K SUPP2  V,2,32.0"                 -> K SUPP2
+!   215546.00  "MR 3AD VF,0.0 -CURRENT TENTACLE
+!                              TABLE ADDRESS"      -> MR3 AD
+!   215636.00  "M CR  XS IPL IN -CURRENT TENTACLE
+!                              TABLE ADDRESS"      -> M CR
+!   215021.00  "S PROG S DRZ(BU,64), 2
+!                              -PROGRAM STATUS TABLE" -> S PROG S
+!   215634.00  "M IF AS  LVI,$14,S IF AS"          -> M IF AS
+!   220700.00  "K FRONT  KVI,3,32.0"               -> K FRONT
+!
+! >>> FIVE OF THEM ARE ALSO CORROBORATED BY DECKS ALREADY LANDED
+! IN THIS REPOSITORY, at the same bit, which is a stronger witness
+! than the OCR because another transcriber read another page:
+!   decks/mcp_bootstrap_p103.strap  SE     SYN(BU,1), SCOMRG
+!                                   SL     SYN(BU,1), SCOMRG+0.04
+!     and that deck's own !CHECK puts SCOMRG at 215001.00, so its
+!     S E is 215001.00 and its S L is 215001.04 -- exactly the two
+!     addresses this page's lines 32/45 and 20/39/45 produce.
+!   decks/mcp_bootstrap_p109.strap  !SYM SPROGS 215021.00
+!   decks/mcp_bootstrap_p110/111/112.strap  STIC SYN, (8)215265.0
+! tests/check_symbol_spellings.py was run with this deck added to a
+! copy of decks/: "950 symbol definitions, no symbol spelled two
+! ways".
+!
+! >>> THIS PAGE CLOSES AN OPEN ITEM ON printed p.111. <<<
+! decks/mcp_bootstrap_p111.strap line 334 writes
+! "SIFAE  SYN, (8)215471.0   ! ONE witness, p.175 'BD,SIFAE'" and
+! calls it "THE WEAK ONE, AND IT IS SAID PLAINLY" -- its address
+! rested on a single garbled OCR row.  THIS PAGE DEFINES S IF AE,
+! and defines it at 215471.00.  p.111's guess was right and is now
+! a read definition rather than an inference.  (p.111 spells the
+! printed name "S IFA E"; this page prints "S IF AE".  Blanks are
+! not significant, both deck spellings are SIFAE, and the two
+! agree.)
+!
+! >>> ONE NAME REPEATS A NAME FROM THE TAIL BLOCK, AND THAT IS NOT
+! A COLLISION. <<<  decks/mcp_bootstrap_p19/p28/p29.strap write
+! "SLRBU  SYN, (8)2155.0".  Those pages are INSIDE the "TAIL,(2)G"
+! block that printed p.98 line 37 closed; this page is outside it,
+! and its S LR BU is the 215324.00 word whose own defining card the
+! OCR prints as "S LR BU  DRZ(BU,64), 29".  Two scopes, two words,
+! one spelling.  RECORDED, NOT "FIXED".
+!
+! >>> M NO MCP'S ADDRESS IS THE ONE WITH NO SECOND WITNESS. <<<
+! The OCR's only legible occurrence of 215627 as a branch target is
+! this page's own line 13, and no defining card for it was found in
+! the volume.  Its NAME is settled by the Analysis Guide above
+! ("Type 1 (MNOMCP) illegal IF interrupt"); its ADDRESS rests on
+! this page's binary alone, which is stated here because the
+! !CHECK on line 13 tests the indicator and modifier bits and NOT
+! the address.
+!
+! >>> AND THE PAGE IS REFERENCED FROM OUTSIDE. <<<  The OCR of
+! printed p.213 prints "220645.40  215471.04 C0" -- a BD whose
+! 19-bit target is 215471.00, this page's S IF AE.  So line 5's
+! label and its address are corroborated by a card on another page.
+!
+! MCP's names carry blanks ("S TLR", "M OP C I", "MR3 AD") and the
+! listing prints them inconsistently (line 15 "M OP CI", line 17
+! "M OP C I", line 26 "M OPCI" -- one symbol, three spacings, one
+! address).  As in every deck here the blanks are dropped and the
+! name is written solid; the printed form is kept verbatim in the
+! listing block below.
+! ---------------------------------------------------------------
+
+STLR    SYN, (8)215230.0             ! lines 5,6,7,28 "S TLR"
+STIC    SYN, (8)215265.0             ! lines 9,33 "S TIC" -- p112's spelling
+MKMCPA  SYN, (8)215566.40            ! line 12 "MKMCPA"
+MNOMCP  SYN, (8)215627.0             ! line 13 "M NO MCP" -- no second witness
+MOPCI   SYN, (8)215630.40            ! lines 15,17,26 "M OP CI"/"M OP C I"/"M OPCI"
+KFRONT  SYN, (8)220700.0             ! line 19 "K FRONT"
+SL      SYN, (8)215001.4             ! lines 20,39,45 "S L"
+SBNDRS  SYN, (8)215224.0             ! line 21 "SBNDRS"
+SLRMCP  SYN, (8)215362.0             ! line 23 "SLRMCP+9.0" prints 215373
+MMAXOP  SYN, (8)114.40               ! line 25 "MMAXOP"
+SLRBU   SYN, (8)215324.0             ! line 28 "SLRBU"
+SE      SYN, (8)215001.0             ! line 32 "S E"
+MMK1    SYN, (8)215633.0             ! line 37 "M MK 1"
+MIFTTT  SYN, (8)215666.0             ! line 40 "MIFTTT-64.0" prints 215566
+KSUPP2  SYN, (8)217176.40            ! line 41 "K SUPP2+.32" prints 217177.00
+MR3AD   SYN, (8)215546.0             ! line 42 "MR3 AD"
+MCR     SYN, (8)215636.0             ! lines 43,47 "M CR"
+SPROGS  SYN, (8)215021.0             ! line 46 "S PROG S+1.25" prints 215022.31
+MIFAS   SYN, (8)215634.0             ! line 46 "M IF AS"
+
+        SLC, (8)215470.71            ! line 4 -- printed card is "SLC,$"
+SIFAE   TI, 14, 3.0, STLR            ! line 5
+        TI, 15, 17.0, STLR+14.0      ! line 6
+        BE, STLR+1.32(.26,2)111101   ! line 7
+        BOPZ, $.32                   ! line 8
+        LV, 2, STIC                  ! line 9
+        LVE, 3, 0.0($2)              ! line 10
+        LC, 0, -.32($2)              ! line 11
+        KC, 0, MKMCPA                ! line 12
+        BZXE, MNOMCP                 ! line 13
+        CT0011(BU,4), $3.19          ! line 14
+        BZRZ, MOPCI                  ! line 15
+        KVI, 3, 1.0                  ! line 16
+        BXL, MOPCI                   ! line 17
+        KVI, 3, 64.0                 ! line 18
+        BXL, KFRONT                  ! line 19
+        BB, SL, MIF6+.32             ! line 20
+        LX, 0, SBNDRS                ! line 21
+        SX, 0, 3.0                   ! line 22
+        LWF(U), SLRMCP+9.0           ! line 23
+        ST(U), $MASK                 ! line 24
+        KVI, 3, MMAXOP               ! line 25
+        BZXL, MOPCI                  ! line 26
+        LCI, 15, 30                  ! line 27
+        T, 15, STLR, SLRBU           ! line 28
+        B, MIF6+.32                  ! line 29
+SIFAD   TI, 14, 3.0, STLR            ! line 30
+        TI, 15, 17.0, STLR+14.0      ! line 31
+        CM1111(BU,1), SE             ! line 32
+        LV, 2, STIC                  ! line 33
+        V-I, 2, .32                  ! line 34
+MIF6    LV, 3, .32($2)               ! line 35
+        CM0000(BU,2), $3.23          ! line 36
+        LF(BU,64), MMK1, -64         ! line 37
+        V-I, 2, .32                  ! line 38
+        LF(BU,1), SL, -22            ! line 39
+        LV, 1, MIFTTT-64.0($3)       ! line 40
+        BB, .9($1), KSUPP2+.32       ! line 41
+        SV, $1, MR3AD                ! line 42
+        LV, $3, MCR                  ! line 43
+        ST(BU,1), .4($1), -22        ! line 44
+        CM1111(BU,1), SL             ! line 45
+        BB, SPROGS+1.25, MIFAS       ! line 46
+        SV, $1, MCR                  ! line 47
+        SV, 3, 1.0($1)               ! line 48
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, lines 1-48, transcribed verbatim.
+! ---------------------------------------------------------------
+!   line  1*                                      - ****************
+!   line  2*                           -*************** IF ANALYZER *************-
+!   line  3*                                      - ****************
+!   line  4* 215470.71 *                            SLC,$
+!   line  5* 215471.00  000003.00 80 215230.34 A0  S IF AE  TI,14,3.0,S TLR          -SAVE LOWER REGISTERS
+!   line  6* 215472.00  000021.00 80 215246.36 A0           TI,15,17.0,S TLR+14.0
+!   line  7* 215473.00  215231.47 A0                        BE,STLR+1.32(.26,2)111101 -STM(U),STLR+1.0 - SAVE $MR.
+!   line  8* 215473.40  215474.07 C6                        BOPZ,$.32                -FOR LASL LRL
+!   line  9* 215474.00  215265.04 30                        LV,2,S TIC
+!   line 10* 215474.40  000000.07 B2                        LVE,3,0.0($2)
+!   line 11* 215475.00  777777.40 52                        LC,0,-.32($2)
+!   line 12* 215475.40  215566.41 90                        KC,0,MKMCPA
+!   line 13* 215476.00  215627.32 C0                        BZXE,M NO MCP
+!   line 14* 215476.40  000023.23 80 004000.07 70           CT0011(BU,4),$3.19
+!   line 15* 215477.40  215630.74 C0                        BZRZ,M OP CI
+!   line 16* 215500.00  000001.07 04                        KVI,3,1.0
+!   line 17* 215500.40  215630.72 42                        BXL,M OP C I
+!   line 18* 215501.00  000100.07 04                        KVI,3,64.0
+!   line 19* 215501.40  220700.32 42                        BXL,K FRONT              -BRANCH IF ACTUATOR OP
+!   line 20* 215502.00  215001.04 80 215514.74 02           BB,S L,M IF 6+.32
+!   line 21* 215503.00  215224.00 10                        LX,0,SBNDRS              -GET MCP BOUNDS
+!   line 22* 215503.40  000003.01 10                        SX,0,3.0                 -SET MCP BOUNDS
+!   line 23* 215504.00 * 215373.42 60                       LWF(U),SLRMCP+9.0
+!   line 24* 215504.40  000014.40 E0                        ST(U),$MASK
+!   line 25* 215505.00  000114.47 04                        KVI,3,MMAXOP
+!   line 26* 215505.40  215630.72 40                        BZXL,M OPCI
+!   line 27* 215506.00  000036.37 02                        LCI,15,30
+!   line 28* 215506.40  215230.00 80 215324.36 20           T,15,STLR,SLRBU
+!   line 29* 215507.40  215514.50 00                        B,M IF 6+.32
+!   line 30* 215510.00  000003.00 80 215230.34 A0  S IF AD  TI,14,3.0,S TLR
+!   line 31* 215511.00  000021.00 80 215246.36 A0           TI,15,17.0,S TLR+14.0    -SAVE LR TEMP.
+!   line 32* 215512.00  215001.00 80 001000.36 F0           CM1111(BU,1),S E         -DISABLED IF ENTRY
+!   line 33* 215513.00  215265.04 30                        LV,2,S TIC
+!   line 34* 215513.40  000000.45 0D                        V-I,2,.32
+!   line 35* 215514.00  000000.46 32           M IF 6       LV,3,.32($2)
+!   line 36* 215514.40  000023.27 80 002000.00 F0           CM0000(BU,2),$3.23
+!   line 37* 215515.40  215633.00 80 000040.06 70           LF(BU,64),M MK 1,-64
+!   line 38* 215516.40  000000.45 0D                        V-I, 2,.32
+!   line 39* 215517.00 * 215001.04 80 001065.06 70          LF(BU,1),S L,-22
+!   line 40* 215520.00  215566.02 33                        LV,1,MIFTTT-64.0($3)     -GET TENTACLE TABLE ADDRESS
+!   line 41* 215520.40  000000.11 81 217177.34 02           BB,.9($1),K SUPP2+.32    -PSEUDO OP IS BUSY
+!   line 42* 215521.40  215546.03 30                        SV,$1,MR3 AD
+!   line 43* 215522.00  215636.06 30                        LV,$3,M CR               -OLD TENT. ADR. IN $3
+!   line 44* 215522.40  000000.04 81 001065.20 D0           ST(BU,1),.4($1),-22      -SET USER BIT IN TENT.TABLE
+!   line 45* 215523.40  215001.04 80 001000.36 F0           CM1111(BU,1),S L         -SET S L TO MCP
+!   line 46* 215524.40  215022.31 80 215634.34 02           BB,S PROG S+1.25,M IF AS -MCP BUG-AS REG.
+!   line 47* 215525.40  215636.03 30                        SV,$1,M CR
+!   line 48* 215526.00  000001.07 31                        SV,3,1.0($1)
+!
+! ---------------------------------------------------------------
+! THE CHECKS
+! ---------------------------------------------------------------
+!SYM SIFAE 215471.00
+!SYM SIFAD 215510.00
+!SYM MIF6  215514.00
+
+!CHECK 215471.00 | 000003.00 80 215230.34 A0 | line  5 S IF AE TI,14,3.0,S TLR
+!CHECK 215472.00 | 000021.00 80 215246.36 A0 | line  6 TI,15,17.0,S TLR+14.0
+!CHECK 215473.00 | 215231.47 A0 | line  7 BE,STLR+1.32(.26,2)111101
+!CHECK 215473.40 | 215474.07 C6 | line  8 BOPZ,$.32
+!CHECK 215474.00 | 215265.04 30 | line  9 LV,2,S TIC
+!CHECK 215474.40 | 000000.07 B2 | line 10 LVE,3,0.0($2)
+!CHECK 215475.00 | 777777.40 52 | line 11 LC,0,-.32($2)
+!CHECK 215475.40 | 215566.41 90 | line 12 KC,0,MKMCPA
+!CHECK 215476.00 | 215627.32 C0 | line 13 BZXE,M NO MCP
+!CHECK 215476.40 | 000023.23 80 004000.07 70 | line 14 CT0011(BU,4),$3.19
+!CHECK 215477.40 | 215630.74 C0 | line 15 BZRZ,M OP CI
+!CHECK 215500.00 | 000001.07 04 | line 16 KVI,3,1.0
+!CHECK 215500.40 | 215630.72 42 | line 17 BXL,M OP C I
+!CHECK 215501.00 | 000100.07 04 | line 18 KVI,3,64.0
+!CHECK 215501.40 | 220700.32 42 | line 19 BXL,K FRONT
+!CHECK 215502.00 | 215001.04 80 215514.74 02 | line 20 BB,S L,M IF 6+.32
+!CHECK 215503.00 | 215224.00 10 | line 21 LX,0,SBNDRS
+!CHECK 215503.40 | 000003.01 10 | line 22 SX,0,3.0
+!CHECK 215504.00 | 215373.42 60 | line 23 LWF(U),SLRMCP+9.0 (location carries an asterisk)
+!CHECK 215504.40 | 000014.40 E0 | line 24 ST(U),$MASK
+!CHECK 215505.00 | 000114.47 04 | line 25 KVI,3,MMAXOP
+!CHECK 215505.40 | 215630.72 40 | line 26 BZXL,M OPCI
+!CHECK 215506.00 | 000036.37 02 | line 27 LCI,15,30
+!CHECK 215506.40 | 215230.00 80 215324.36 20 | line 28 T,15,STLR,SLRBU
+!CHECK 215507.40 | 215514.50 00 | line 29 B,M IF 6+.32 (printed "CO"; a branch's byte is 00)
+!CHECK 215510.00 | 000003.00 80 215230.34 A0 | line 30 S IF AD TI,14,3.0,S TLR
+!CHECK 215511.00 | 000021.00 80 215246.36 A0 | line 31 TI,15,17.0,S TLR+14.0
+!CHECK 215512.00 | 215001.00 80 001000.36 F0 | line 32 CM1111(BU,1),S E
+!CHECK 215513.00 | 215265.04 30 | line 33 LV,2,S TIC
+!CHECK 215513.40 | 000000.45 0D | line 34 V-I,2,.32 (printed "CD"; bits 24-27 are the 10000 literal's tail)
+!CHECK 215514.00 | 000000.46 32 | line 35 M IF 6 LV,3,.32($2)
+!CHECK 215514.40 | 000023.27 80 002000.00 F0 | line 36 CM0000(BU,2),$3.23
+!CHECK 215515.40 | 215633.00 80 000040.06 70 | line 37 LF(BU,64),M MK 1,-64
+!CHECK 215516.40 | 000000.45 0D | line 38 V-I, 2,.32 (printed "CD", same as line 34)
+!CHECK 215517.00 | 215001.04 80 001065.06 70 | line 39 LF(BU,1),S L,-22 (location carries an asterisk)
+!CHECK 215520.00 | 215566.02 33 | line 40 LV,1,MIFTTT-64.0($3)
+!CHECK 215520.40 | 000000.11 81 217177.34 02 | line 41 BB,.9($1),K SUPP2+.32
+!CHECK 215521.40 | 215546.03 30 | line 42 SV,$1,MR3 AD
+!CHECK 215522.00 | 215636.06 30 | line 43 LV,$3,M CR
+!CHECK 215522.40 | 000000.04 81 001065.20 D0 | line 44 ST(BU,1),.4($1),-22 (the D is REAL: enc_vfl_full's bits 56-59 are the top four of ST's 6-bit code, 1101, and bits 60-63 are i2 = 0 because the statement has no (I'))
+!CHECK 215523.40 | 215001.04 80 001000.36 F0 | line 45 CM1111(BU,1),S L
+!CHECK 215524.40 | 215022.31 80 215634.34 02 | line 46 BB,S PROG S+1.25,M IF AS
+!CHECK 215525.40 | 215636.03 30 | line 47 SV,$1,M CR
+!CHECK 215526.00 | 000001.07 31 | line 48 SV,3,1.0($1)

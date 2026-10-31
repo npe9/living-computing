@@ -1,0 +1,163 @@
+! mcp_bootstrap_p115.strap -- printed page 115, the last sixteen
+! lines of the Y-INDICATOR dispatch table.
+! docs/MCP_Mar63_001-249.pdf PDF p.122, header READ AND NOT ASSUMED:
+! the top line prints "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID
+! DC000050  DIST. OF 3/01   3/01   PAGE NUMBER 115", and the column-
+! head line's own right-hand LOCATION field prints 215214, which is
+! this page's first location.  (The PUNID is boilerplate rendered
+! with this drum's opened zeros and is NOT settled here: printed
+! p.103's deck wrote it "11011MCP" and printed p.112's "11D11MCP".
+! It is not used by anything.)
+!
+! SIXTEEN LINES, COUNTED NOT ESTIMATED.  The printed LINE column
+! runs 1..16 with no gap, and the whole form below line 16 is blank
+! -- the 400-dpi render of the full body band (y=480..4580, i.e.
+! from LINE 1 to the bottom rule) shows paper and the pre-printed
+! dashed guide lines and nothing else.  The card-serial column runs
+! DC000050 (line 1) through DC000065 (line 16): SIXTEEN CARDS for
+! sixteen lines, one card per line.  That differs from printed
+! p.112, where a SIC and the branch completing its 64-bit
+! instruction shared ONE card and were listed on two lines with the
+! same serial; here each half-word instruction is its own card.
+! The header's own CARD ID repeats line 1's serial.
+!
+! >>> WHAT THE PAGE IS. <<<  Eight two-line slots, each
+!     LVI,$1,<Y-indicator>   /   B,YMSF
+! loading index register 1 with the address of one Y-indicator
+! datum and branching to the common routine YMSF.  The eight are
+! YINDTR, then YINPG0 through YINPG6.  Printed pp.113 and 114 --
+! NOT yet transcribed -- are the same table running upward from
+! 215171.40; docs/ocr/MCP_Mar63_001-249.txt lines 5968..6024 show
+! their rows, every one of them a "216531.10 00  B,YMSF" against an
+! "LVI,$1,Y...".  So this page is the TAIL of that table.
+!
+! >>> THE NAME COLUMN IS EMPTY ON EVERY ROW. <<<  This page defines
+! no symbol.  Between the BINARY OUTPUT column and the STATEMENT
+! column there is clear paper on all sixteen rows; the only mark
+! there is an asterisk trailing line 2's LOCATION ("215214.40  *").
+! The volume OCR agrees -- its rows 6008 and 6010 carry no name
+! token either -- so this deck declares NO !SYM lines, only !CHECK
+! lines.  Line 2 is the only row whose location is starred.
+!
+! >>> WHERE THE EXTERNALS LIVE, AND HOW THE ADDRESSES WERE GOT. <<<
+! Every SYN below is READ OFF THIS PAGE'S OWN BINARY OUTPUT COLUMN,
+! the way printed p.112's deck took W LODE from its own rows, so a
+! !CHECK on such a row tests the opcode and modifier bits and not
+! the address.  Two printed forms are involved:
+!   * A BRANCH prints its target's address with 0o10 ADDED to the
+!     offset field: "B,YMSF" prints 216531.10, so YMSF is at
+!     216531.00.  printed p.112 established that form independently
+!     -- its WLODE is SYN'd (8)216333.0 and its "B,W LODE" rows
+!     print 216333.10, and its JWLODE at (8)216604.40 prints
+!     216604.50.
+!   * AN LVI prints its value with 0o03 ADDED to the offset field
+!     and the byte 01: "LVI,$1,YINDTR" prints 216577.03 01, so
+!     YINDTR is at 216577.00.  The eight values step by one half-
+!     word exactly (.03, .43, .03 of the next word, ...), which is
+!     the internal consistency check that the +0o03 is constant and
+!     not part of any one address.
+! CORROBORATED, not sourced, by the volume OCR: lines 7027-7028 and
+! 7020-7032 of docs/ocr/MCP_Mar63_001-249.txt are the defining
+! cards, "216577.00 * YINDTR (AA)DD(BU,32), DTRA" and "216577.40
+! YINPG0 (AA)DD(BU,32), PGOA" and so on through "216602.40 YINPG6",
+! on printed p.130 or thereabouts; and line 6971 is
+! "216531.00 ... YMSF  T1,16,STLR,SLRBU".  Every address agrees with
+! what this page's binary says.
+!
+! >>> THE D OF YINDTR IS SETTLED BY THE COMMENT COLUMN, NOT BY INK.
+! C/D is the pair this drum breaks worst.  The defining card's own
+! comment column reads "DTRA", and its immediate neighbour at
+! 216576.40 is "YINBTR" with comment "BTRA" -- the same slot, one
+! stroke apart, in English.  That is positional confirmation rather
+! than a shape judgement, and it breaks the tie the OCR itself shows
+! (it reads the name "YINCTR" at line 7027 and "YINDTR" at line
+! 6008).  At 600 dpi on this page the glyph also carries the
+! straight vertical left stem of a D.  YMSF's M is the same kind of
+! question and is settled by count: "grep -o YMSF" over the volume
+! OCR returns 21 hits and no YNSF, YPSF or Y MSF.
+!
+! >>> TAIL SCOPE. <<<  printed p.99 line 11's "SLC,(8)215000." moved
+! the origin here, and pp.99+ are OUTSIDE the TAIL,(2)G block that
+! printed p.2 opened and printed p.98 line 37 closed.  Names on this
+! page may legitimately repeat names defined in pp.2-98 at other
+! addresses; that is tail scope and not a collision.
+!
+! >>> WHERE THE PAGE ENDS. <<<  Line 16 is a half word at 215223.40,
+! so the location counter leaves this page at 215224.00.  NOTHING IS
+! CLAIMED about what occupies it: the volume OCR does show a row
+! "215224.00+ ... YSFBCR SYN,SBNERS" on the YIN definitions page,
+! but that location carries a TRAILING "+", which printed p.103's
+! deck recorded as the mark of a resolved SYN VALUE rather than the
+! location counter.  It is not evidence about printed p.116.
+!
+! ---------------------------------------------------------------
+! EXTERNALS
+! ---------------------------------------------------------------
+YINDTR  SYN, (8)216577.0             ! line  1 "LVI,$1,YINDTR" prints 216577.03
+YINPG0  SYN, (8)216577.40            ! line  3 prints 216577.43
+YINPG1  SYN, (8)216600.0             ! line  5 prints 216600.03
+YINPG2  SYN, (8)216600.40            ! line  7 prints 216600.43
+YINPG3  SYN, (8)216601.0             ! line  9 prints 216601.03
+YINPG4  SYN, (8)216601.40            ! line 11 prints 216601.43
+YINPG5  SYN, (8)216602.0             ! line 13 prints 216602.03
+YINPG6  SYN, (8)216602.40            ! line 15 prints 216602.43
+YMSF    SYN, (8)216531.0             ! line  2 "B,YMSF" prints 216531.10
+
+        SLC, (8)215214.00
+        LVI, $1, YINDTR              ! line  1
+        B, YMSF                      ! line  2  (location starred)
+        LVI, $1, YINPG0              ! line  3
+        B, YMSF                      ! line  4
+        LVI, $1, YINPG1              ! line  5
+        B, YMSF                      ! line  6
+        LVI, $1, YINPG2              ! line  7
+        B, YMSF                      ! line  8
+        LVI, $1, YINPG3              ! line  9
+        B, YMSF                      ! line 10
+        LVI, $1, YINPG4              ! line 11
+        B, YMSF                      ! line 12
+        LVI, $1, YINPG5              ! line 13
+        B, YMSF                      ! line 14
+        LVI, $1, YINPG6              ! line 15
+        B, YMSF                      ! line 16
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, as read off PDF p.122.
+!
+!   line  loc         binary output   statement
+!      1  215214.00   216577.03 01    LVI,$1,YINDTR
+!      2  215214.40 * 216531.10 00    B,YMSF
+!      3  215215.00   216577.43 01    LVI,$1,YINPG0
+!      4  215215.40   216531.10 00    B,YMSF
+!      5  215216.00   216600.03 01    LVI,$1,YINPG1
+!      6  215216.40   216531.10 00    B,YMSF
+!      7  215217.00   216600.43 01    LVI,$1,YINPG2
+!      8  215217.40   216531.10 00    B,YMSF
+!      9  215220.00   216601.03 01    LVI,$1,YINPG3
+!     10  215220.40   216531.10 00    B,YMSF
+!     11  215221.00   216601.43 01    LVI,$1,YINPG4
+!     12  215221.40   216531.10 00    B,YMSF
+!     13  215222.00   216602.03 01    LVI,$1,YINPG5
+!     14  215222.40   216531.10 00    B,YMSF
+!     15  215223.00   216602.43 01    LVI,$1,YINPG6
+!     16  215223.40   216531.10 00    B,YMSF
+!
+! No NAME column entry and no comment column entry on any row.
+! ---------------------------------------------------------------
+
+!CHECK 215214.00 | 216577.03 01 | line  1 LVI,$1,YINDTR
+!CHECK 215214.40 | 216531.10 00 | line  2 B,YMSF (location starred)
+!CHECK 215215.00 | 216577.43 01 | line  3 LVI,$1,YINPG0
+!CHECK 215215.40 | 216531.10 00 | line  4 B,YMSF
+!CHECK 215216.00 | 216600.03 01 | line  5 LVI,$1,YINPG1
+!CHECK 215216.40 | 216531.10 00 | line  6 B,YMSF
+!CHECK 215217.00 | 216600.43 01 | line  7 LVI,$1,YINPG2
+!CHECK 215217.40 | 216531.10 00 | line  8 B,YMSF
+!CHECK 215220.00 | 216601.03 01 | line  9 LVI,$1,YINPG3
+!CHECK 215220.40 | 216531.10 00 | line 10 B,YMSF
+!CHECK 215221.00 | 216601.43 01 | line 11 LVI,$1,YINPG4
+!CHECK 215221.40 | 216531.10 00 | line 12 B,YMSF
+!CHECK 215222.00 | 216602.03 01 | line 13 LVI,$1,YINPG5
+!CHECK 215222.40 | 216531.10 00 | line 14 B,YMSF
+!CHECK 215223.00 | 216602.43 01 | line 15 LVI,$1,YINPG6
+!CHECK 215223.40 | 216531.10 00 | line 16 B,YMSF

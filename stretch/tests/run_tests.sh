@@ -6346,6 +6346,29 @@ run "miscellaneous system symbols, printed p.105" python3 verify_mcp_page.py 105
 # and all 28 hex rows agree arithmetically.
 run "the special MCP pseudo-ops, printed p.106" python3 verify_mcp_page.py 106
 run "the exit codes to the error routine, printed p.107" python3 verify_mcp_page.py 107
+
+# >>> pp.113-120: THE PARALLEL INTERRUPT TABLE, THE PTOE, THE IF
+# ANALYZER AND PRIME. <<<
+# pp.113-115 finish the interrupt table p.112 starts; p.114 is the
+# PROGRAM TABLE OF EXITS, whose pattern word let its reader PREDICT
+# that p.115 must carry exactly eight entries (DTR, PG0..PG6) ending
+# at 215223.40 -- which is what p.115's independent reading found.
+# p.116 is the PARAMETER POOL, p.117 the IF ANALYZER, pp.118-119
+# PRIME and the dispatcher's error exits, p.120 the prime queue.
+#
+# p.116 FOUND TWO ASSEMBLER GAPS, both now fixed and both witnessed
+# by its own line 28 ("INDMK,$IF", printed 000000.04 00): an
+# indicator mnemonic names a BIT and not an address, and a DRZ's zero
+# fill is a RESERVATION that later content may overwrite.  See that
+# deck's header for the citations.
+run "the parallel interrupt table, printed p.113" python3 verify_mcp_page.py 113
+run "the program table of exits, printed p.114" python3 verify_mcp_page.py 114
+run "the PTOE's last eight entries, printed p.115" python3 verify_mcp_page.py 115
+run "the parameter pool, printed p.116" python3 verify_mcp_page.py 116
+run "the IF analyzer, printed p.117" python3 verify_mcp_page.py 117
+run "transfer control and enter pseudo-op, printed p.118" python3 verify_mcp_page.py 118
+run "PRIME and the dispatcher error exits, printed p.119" python3 verify_mcp_page.py 119
+run "the prime queue control words, printed p.120" python3 verify_mcp_page.py 120
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
 run "the program status table, printed p.109" python3 verify_mcp_page.py 109
 run "the interrupt table, printed p.110" python3 verify_mcp_page.py 110

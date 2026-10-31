@@ -1,0 +1,234 @@
+! mcp_bootstrap_p120.strap -- the PRIME/UNPRIME error exits and the
+! prime-queue control words, printed page 120.
+! docs/MCP_Mar63_001-249.pdf PDF p.127, header READ and not assumed:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID EA000149
+!  DIST. OF 3/01   3/01   PAGE NUMBER  120", and the header's own
+! "LOCATION 215634" names the page's first word.
+!
+! FIFTEEN LINES AND NOTHING ELSE.  The page prints lines 1-15 and
+! then stops; the rest of the sheet is blank.  Counted off the card
+! serial column, which runs EA000149..EA000161 -- THIRTEEN cards for
+! fifteen lines, because TWO CARDS EACH CARRY TWO STATEMENTS:
+!   line 1 and line 2 are both EA000149  ("SIC,S DISIC ; B,S DISP")
+!   line 8 and line 9 are both EA000155  (the same pair again)
+! That is STRAP's semicolon, and C22-6728's prose prints the idiom
+! in exactly this form -- "(SIC,STIC; B,SIFAD)".  The deck writes
+! the two halves on two lines, which assembles identically; the
+! card fact is recorded here and nowhere else.
+!
+! WHERE IT SITS.  printed p.119 line 50 is "M IF AS LVI,$14,S IF AS"
+! at 215634.00, a half word, so the counter arrives here at
+! 215634.40 and line 1 is the first row to spend it.  The trail is
+! contiguous.  p.119 is not transcribed yet, so this deck sets its
+! own origin with SLC,(8)215634.40 rather than inheriting one.
+!
+! TAIL SCOPE.  printed p.99 line 11's "SLC,(8)215000." moved the
+! origin here, and pp.99+ are OUTSIDE the TAIL,(2)G block that
+! printed p.2 opened and printed p.98 line 37 closed.  Every name
+! this page DEFINES is M-prefixed (M CR, M C 1, M PRM QK, M PRM ER,
+! M P Q R, M R 4, M R 5, M MK 3, M PRIM Q, M MAXOP) and none of
+! them collides with anything in pp.2-98.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE CONTAINS
+! ---------------------------------------------------------------
+! Two error exits and the control words of the prime queue.
+!
+! Lines 1-2    the tail of an error exit that BEGINS ON p.119:
+!              p.119 line 50 loads error code S IF AS into $14 and
+!              these two lines store the IC and branch to the
+!              dispatcher.  SIC,S DISIC saves the instruction
+!              counter in the "LOCATION GENERATING ERROR CODE"
+!              cell (that is S DISIC's own comment where it is
+!              defined, 217451.40 "S DISIC VF,0"), then B,S DISP.
+! Line 3   M CR     XW,S IPL IN  -CURRENT TENTACLE TABLE ADDRESS.
+!                                An index word whose value field is
+!                                the IPL tentacle table, S IPL IN,
+!                                at 215016.00 (printed p.103 line
+!                                53 defines it).  Count and refill
+!                                are zero.
+! Line 4   M C 1    DD(BU,24),2  a 24-bit constant 2, referenced
+!                                from printed p.117 as "V+,$3,M C 1
+!                                -ADD. 2 FOR NEXT PARAM."
+! Line 5            CNOP         rounds 215637.30 up to a full word
+!                                by planting a NOP half word.
+! Line 6   M PRM QK DRZ(BU,64),(1)
+! Line 7   M PRM ER LVI,$14,S PQ FUL  -- the SECOND error exit, and
+!                                the one that starts on this page:
+!                                load error code 79 "PRIME QUE TOO
+!                                SMALL" and fall into
+! Lines 8-9         SIC,S DISIC / B,S DISP, the same pair as 1-2.
+!                                printed p.119 line 14 branches here
+!                                ("BXHZ,M PRM ER -PRIME Q FULL").
+! Line 10  M P Q R  XW,MPRIMQ,30,MPQR  -- the prime queue's control
+!                                word: value = the queue M PRIM Q at
+!                                215647.00, count = 30 (0o36), and
+!                                refill = ITSELF, word 215643, so
+!                                the queue reloads its own control
+!                                word when it runs out.
+! Lines 11-12 M R 4 / M R 5   one word each, the saved prime and
+!                                unprime control words (printed
+!                                p.119: "SX,$3,M R 4 -SAVE PRIME
+!                                CONTROL", "SX,$3,M R 5 -REFILL
+!                                UNPRIME CONTROL").
+! Line 13  M MK 3   INDMK,.21,.55(.63)21  -- an indicator mask; see
+!                                the note on the parenthetical entry
+!                                mode below.
+! Line 14  M PRIM Q DRZ(BU,32),(30)  -- the prime queue itself,
+!                                thirty half words = fifteen words,
+!                                215647.00..215666.00.
+! Line 15  M MAXOP  SYN,SJC1    -MAX PP OP CODE.  A SYN, so it
+!                                spends no storage and its printed
+!                                LOCATION 000114.40+ is the resolved
+!                                VALUE, not the counter.
+!
+! ---------------------------------------------------------------
+! THE FIVE SYMBOLS THIS PAGE REFERENCES AND DOES NOT DEFINE
+! ---------------------------------------------------------------
+! S IPL IN  215016.00  printed p.103 line 53 ("S IPL IN INDMK,4"),
+!                      already in decks/mcp_bootstrap_p103.strap as
+!                      SIPLIN.  p.103's own header predicted this
+!                      row.
+! S DISIC   217451.40  decks/mcp_bootstrap_p103.strap line 289,
+!                      SDISIC SYN,(8)217451.40.  Its defining card is
+!                      OCR'd on PDF p.155 (printed p.148):
+!                      "217451.40 000000.00+  S DISIC  VF,0
+!                      -LOCATION GENERATING ERROR CODE".
+! S PQ FUL  003411.00  SPQFUL, defined on printed p.107 line 33 as
+!                      "SYN,(16)0709.0" and already landed in
+!                      decks/mcp_bootstrap_p107.strap.  0x709 = 1801
+!                      = 0o3411.  THE SPELLING AND VALUE BOTH COME
+!                      FROM THAT DECK, not from this page's ink.
+! SJC1      000114.40  decks/mcp_bootstrap_p106.strap line 289,
+!                      "SJC1 SYN, 76.32" (76*64+32 = 4896 bits =
+!                      0o114.40).  Same: spelling taken from the
+!                      landed deck.
+! S DISP    217372.00  NEW HERE.  No landed deck defines it.  See
+!                      the next note -- the printed "217372.10" is
+!                      NOT its address.
+!
+! >>> S DISP IS 217372.00, NOT THE 217372.10 THE PAGE PRINTS. <<<
+! Lines 2 and 9 print "217372.10 00" for "B,S DISP".  In a half
+! word the printed octal pair is bits 18-23, and a branch's addr19
+! occupies bits 0-18 -- so only the TOP bit of that pair belongs to
+! the address and the other five are opcode.  0o10 = 001000 has its
+! bit 18 CLEAR, so addr19 is even and the target is word 0o217372
+! bit 0.  (Compare S DISIC on lines 1 and 8: "217451.40 80", 0o40 =
+! 100000, bit 18 SET, which is why p.103 writes 217451.40 with the
+! .40 and this one must not.)  Both spellings compile to the same
+! thirty-two bits, so the !CHECK below cannot tell them apart -- the
+! evidence that settles it is OCR'd PDF p.154 (printed p.147), which
+! prints a full-word instruction NAMED "S DISP" at 217372.00.
+! Twenty-one other rows in the OCR of this volume print "B,S DISP"
+! with the identical half word; not one prints anything else.
+!
+! >>> ".55(.63)21" IS THE PARENTHETICAL INTEGER ENTRY MODE, AND IT
+! IS NOT A TYPO FOR A LIST OF BITS. <<<  C28-6129 Section II printed
+! p.25: "(.n)A" enters the unsigned integer A with its RIGHTMOST BIT
+! at bit address .n, OR-ed into the field.  So line 13's second
+! INDMK field is bit 55, then 21 decimal = 10101 laid down with its
+! last bit at 63 -- bits 59, 61 and 63.  Five bits in all: 21, 55,
+! 59, 61, 63, which is exactly the printed
+! "000000.04 00  000000.01 15".  printed p.119 line 49 ("M MK 1
+! INDMK,.53,.55(.63)21") prints "000000.05 15" in its second half
+! for the same reason.  strap_asm already implements this
+! (split_parenthetical_entries) and reproduces the word bit-exactly;
+! nothing had to be added for this page.
+!
+! BARE DECIMAL BIT OFFSETS.  The INDMK fields are written ".21",
+! ".55", ".63" with no "(8)", so they are DECIMAL -- and they must
+! be, because bits 21, 55, 59, 61, 63 are what the page compiles.
+! Written as octal they would land on 17, 45, 51.
+!
+! ---------------------------------------------------------------
+! WHAT IS RECORDED AND NOT EXPLAINED
+! ---------------------------------------------------------------
+! A BARE "*" AFTER THE LOCATION on lines 6, 11 and 14 -- "215640.00 *",
+! "215644.00 *", "215647.00 *".  printed p.103 line 48 carries the
+! same mark and p.37 line 29 and p.3 carry it too, and it was left
+! unexplained there.  It does NOT simply mark a DRZ: line 12 is a
+! DRZ(BU,64),(1) identical to line 11's and prints no star.  It
+! changes no compiled bit and nothing here depends on it.
+!
+! ---------------------------------------------------------------
+! WHAT IS CHECKED, AND WHAT DELIBERATELY IS NOT
+! ---------------------------------------------------------------
+! Eight of the fifteen rows carry a !CHECK.  The seven that do not:
+!   lines 6, 11, 12, 14 are DRZ.  The "000001.00" / "000017.00" in
+!     their BINARY OUTPUT column is the reservation's SIZE, not its
+!     contents -- printed p.109's deck states the convention and
+!     printed p.84 follows it.  0o17 = 15 words IS still read: it is
+!     the (30) half words of line 14, and it is what puts the next
+!     page's origin where it is.
+!   line 15 is a SYN, which deposits no storage word; printed p.99's
+!     convention, restated by p.102 and p.104, is !SYM only and never
+!     a manufactured !CHECK.
+!   lines 8 and 9 repeat lines 1 and 2 bit for bit and ARE checked.
+! All ten defined symbols are checked against the LOCATION column.
+! ---------------------------------------------------------------
+
+SDISIC  SYN, (8)217451.40            ! p.103 line 289; "SIC,S DISIC"
+SDISP   SYN, (8)217372.00            ! printed p.147 names it; see note
+SIPLIN  SYN, (8)215016.00            ! printed p.103 line 53
+SPQFUL  SYN, (16)0709.0              ! printed p.107 line 33, verbatim
+SJC1    SYN, 76.32                   ! printed p.106 line 8, verbatim
+
+        SLC, (8)215634.40
+
+        SIC, SDISIC                  ! line  1  (card EA000149)
+        B, SDISP                     ! line  2  (card EA000149)
+MCR     XW, SIPLIN                   ! line  3  -CURRENT TENTACLE TABLE ADDRESS
+MC1     DD(BU,24),2                  ! line  4
+        CNOP                         ! line  5
+MPRMQK  DRZ(BU,64),(1)               ! line  6
+MPRMER  LVI, $14, SPQFUL             ! line  7
+        SIC, SDISIC                  ! line  8  (card EA000155)
+        B, SDISP                     ! line  9  (card EA000155)
+MPQR    XW, MPRIMQ, 30, MPQR         ! line 10
+MR4     DRZ(BU,64),(1)               ! line 11
+MR5     DRZ(BU,64),(1)               ! line 12
+MMK3    INDMK,.21,.55(.63)21         ! line 13
+MPRIMQ  DRZ(BU,32),(30)              ! line 14
+MMAXOP  SYN, SJC1                    ! line 15  -MAX PP OP CODE
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, read off PDF p.127 at 900 dpi
+! ---------------------------------------------------------------
+!  LINE  LOCATION      BINARY OUTPUT                     NAME      STATEMENT                   COMMENT          CARD
+!   1*   215634.40     217451.40 80                                SIC,S DISIC                                  EA000149
+!   2*   215635.00     217372.10 00                                B,S DISP                                     EA000149
+!   3*   215636.00     215016.00+ 000 000000 000000      M CR      XW,S IPL IN       -CURRENT TENTACLE TABLE ADDRESS  EA000150
+!   4*   215637.00                          00000002     M C 1     DD(BU,24),2                                  EA000151
+!   5*   215637.40     000000.30 00                                CNOP                                         EA000152
+!   6*   215640.00 *   000001.00                         M PRM QK  DRZ(BU,64),(1)                               EA000153
+!   7*   215641.00     003411.35 01                      M PRM ER  LVI,$14,S PQ FUL                             EA000154
+!   8*   215641.40     217451.40 80                                SIC,S DISIC                                  EA000155
+!   9*   215642.00     217372.10 00                                B,S DISP                                     EA000155
+!  10*   215643.00     215647.00+ 000 000036 215643      M P Q R   XW,MPRIMQ,30,MPQR                            EA000156
+!  11*   215644.00 *   000001.00                         M R 4     DRZ(BU,64),(1)                               EA000157
+!  12*   215645.00     000001.00                         M R 5     DRZ(BU,64),(1)                               EA000158
+!  13*   215646.00     000000.04 00   000000.01 15       M MK 3    INDMK,.21,.55(.63)21                         EA000159
+!  14*   215647.00 *   000017.00                         M PRIM Q  DRZ(BU,32),(30)                              EA000160
+!  15*   000114.40+    +00000000        NULL             M MAXOP   SYN,SJC1          -MAX PP OP CODE            EA000161
+
+!SYM   MCR      215636.00
+!SYM   MC1      215637.00
+!SYM   MPRMQK   215640.00
+!SYM   MPRMER   215641.00
+!SYM   MPQR     215643.00
+!SYM   MR4      215644.00
+!SYM   MR5      215645.00
+!SYM   MMK3     215646.00
+!SYM   MPRIMQ   215647.00
+!SYM   MMAXOP   000114.40
+
+!CHECK 215634.40 | 217451.40 80 | line 1 SIC,S DISIC
+!CHECK 215635.00 | 217372.10 00 | line 2 B,S DISP
+!CHECK 215636.00 | 215016.00+ 000 000000 000000 | line 3 M CR XW,S IPL IN
+!CHECK 215637.00 | 00000002 | line 4 M C 1 DD(BU,24),2 | 24
+!CHECK 215637.40 | 000000.30 00 | line 5 CNOP
+!CHECK 215641.00 | 003411.35 01 | line 7 M PRM ER LVI,$14,S PQ FUL
+!CHECK 215641.40 | 217451.40 80 | line 8 SIC,S DISIC
+!CHECK 215642.00 | 217372.10 00 | line 9 B,S DISP
+!CHECK 215643.00 | 215647.00+ 000 000036 215643 | line 10 M P Q R XW,MPRIMQ,30,MPQR
+!CHECK 215646.00 | 000000.04 00 000000.01 15 | line 13 M MK 3 INDMK,.21,.55(.63)21

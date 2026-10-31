@@ -1,0 +1,413 @@
+! mcp_bootstrap_p114.strap -- "MCP FURNISHED PTOE", printed page 114.
+! docs/MCP_Mar63_001-249.pdf PDF p.121, header READ AND NOT ASSUMED:
+! the top line prints "TIME CLOCK 00054041  PUNID 11D11MCP   CARD ID
+! DC000001   DIST. OF 3/01   3/01   PAGE NUMBER 114".
+!
+! FORTY-EIGHT LINES, COUNTED NOT ESTIMATED.  The printed LINE column
+! runs 1..48 with no gap and the form is blank below line 48.  The
+! card-serial column runs DC000001 (line 1) through DC000048 (line
+! 48) -- ONE CARD PER LINE, forty-eight cards, with no serial
+! repeated (unlike printed p.112, where a SIC and its branch share a
+! card).  A NEW PUNCHED DECK STARTS HERE: the serial restarts at
+! 000001 with the prefix "DC", where printed p.112 was punching
+! DB0000nn.  The header's own CARD ID repeats line 1's serial.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS, FROM A PRIMARY SOURCE THAT DESCRIBES IT EXACTLY
+! ---------------------------------------------------------------
+! docs/ocr/C22-6728-1_7030_MCP_Sys_Analysis_Guide.txt, "The Program
+! Table of Exits (PTOE)" and "The MCP PTOE and the Standard Fixup"
+! (PDF pp.14-15), is this page in prose:
+!
+!   "The MCP PTOE is located at SFPTE.  It has the same structure as
+!    the PP PTOE, and contains ones in the pattern word corresponding
+!    to each of the maskable interrupts.  The last 27 full word entry
+!    points are all of the form
+!         LVI, $1, YIN**
+!         B,   YMSF
+!    (** denotes the location of the indicator mnemonic)
+!    NOTE: The first two interrupts, TS and EXE, are treated as
+!    masked off, and the PTOE branches to the return after maskable
+!    routine (WRAM)."
+!
+! and the PTOE's layout is given as "4+k full words":
+!    word 1  saved IC        word 2  saved $IND
+!    word 3  saved $MASK     word 4  pattern word, containing k ones
+!    word 4+i  first instruction for the ith special interrupt
+!              routine, i counted through the ONE bits of the
+!              pattern word in indicator order.
+!
+! This page is exactly that:
+!   line  5  S FPTE DRZ(N),(3)   -- words 1-3, the IC/$IND/$MASK save
+!                                   area, 215163.00..215165.77.
+!   line  6  DD(BU,64),(8)...    -- word 4, THE PATTERN WORD, at
+!                                   215166.00.
+!   lines 7-10  words 4+1 and 4+2: the TS and EXE entries, which do
+!               NOT use the standard fixup -- "B,YFXTS / NOP" and
+!               "B,YEXEFX / NOP", and printed p.133 defines both
+!               YFXTS (216530.00) and YEXEFX (216530.40) as "B,WRAM",
+!               the return-after-maskable routine the guide names.
+!   lines 11-48  nineteen of the twenty-seven "LVI,$1,YIN** / B,YMSF"
+!               entries.
+!
+! >>> WHAT THIS PREDICTS FOR printed p.115, AS A CROSS-PAGE CHECK. <<<
+! The guide fixes the count at twenty-seven.  This page spends
+! nineteen (DF..BTR), so printed p.115 must carry EXACTLY EIGHT more
+! -- DTR and PG0..PG6, in that order -- and then the table ends.
+! MEASURED, not inferred: the OCR of PDF p.122 (printed p.115) opens
+!   line 1  215214.00  216577.03 01  LVI,$1,YINDTR
+!   line 2  215214.40  216531.10 00  B,YMSF
+!   line 3  215215.00  216577.43 01  LVI,$1,YINPG0
+!   ...
+!   line 7  215217.00  216600.43 01  LVI,$1,YINPG2
+! so it resumes at 215214.00, contiguous with this page's last row
+! at 215213.40, and sixteen half words later the PTOE is complete at
+! 215223.40.  A p.115 reading that does not land there is wrong, or
+! this one is.
+!
+! >>> THE PATTERN WORD IS VERIFIED AGAINST THE GUIDE, BIT BY BIT. <<<
+! The guide says "Only bits 4, 18, 20, and 22 through 47 may be set
+! to one in the pattern word.  All others are treated as zero."
+! Line 6's twenty-two printed octal digits
+!     0 0 4 0 0 0 1 2 7 7 7 7 7 7 7 7 6 0 0 0 0 0
+! decode, as bit 0 then twenty-one groups of three, to exactly
+!     bit 4, bit 18, bit 20, bits 22-47 and nothing else
+! -- 29 ones.  Twenty-nine entries, of which the first two (bit 4 =
+! TS, bit 18 = EXE) are lines 7-10, leaves TWENTY-SEVEN "LVI,$1,YIN**"
+! entries, which is the number the guide states.  Bit 21 (IF) is off,
+! as the guide requires.  This is an independent check of the whole
+! word from a typeset source, not a re-reading of the drum print.
+!
+! ---------------------------------------------------------------
+! THE ORIGIN, AND HOW THE COUNTER GETS HERE
+! ---------------------------------------------------------------
+! printed p.99 line 11's "SLC,(8)215000." moved the origin, and this
+! page is OUTSIDE the TAIL,(2)G block that printed p.2 opened and
+! printed p.98 line 37 closed, so names here may repeat names from
+! pp.2-98 at different addresses.  None here does.
+!
+! Line 4 prints "215163.00 *" against the statement "SLC,$" -- an
+! SLC to the counter's own current value, which moves nothing.  The
+! counter arrives at 215163.00 on its own: printed p.112 ends at
+! 215146.40 and printed p.113 (PDF p.120) runs 215147.00..215162.40,
+! its last row a half word "B,W LODE" at 215162.40, so the next free
+! half word IS 215163.00.  CONTIGUOUS, measured in the OCR of PDF
+! p.120 and not inferred.  This deck therefore sets the origin with
+! an explicit "SLC,(8)215163.0" and then carries the printed
+! "SLC,$" as line 4, which assembles and changes nothing.
+!
+! ---------------------------------------------------------------
+! THE NINETEEN YIN** NAMES ARE SETTLED BY A TABLE, NOT BY INK
+! ---------------------------------------------------------------
+! Every operand on lines 11-47 is "YIN" + a 7030 INDICATOR MNEMONIC,
+! and strap/opcodes.py's INDICATOR_BITS (from the Reference Manual's
+! Figure 11) gives the mnemonics and their bit numbers:
+!   DF 20, IF 21, LC 22, PF 23, ZD 24, IR 25, LS 26, PSH 27,
+!   XPFP 28, XPO 29, XPH 30, XPL 31, XPU 32, ZM 33, RU 34, TF 35,
+!   UF 36, VF 37, XF 38, BTR 39, DTR 40, PG0..PG6 41-47.
+! This page's operands, in printed order, are
+!   DF LC PF ZD IR LS PSH XPF XPO XPH XPL XPU ZM RU TF UF VF XF BTR
+! -- bits 20, 22, 23, 24, ... 39 with IF (21) skipped, which is the
+! pattern word's one-bits in order.  So LC really is a C (Lost
+! Carry), ZD really is a D (Zero Divisor) and XPO really is an O
+! (eXPonent Overflow); none of the three rests on the drum.
+!
+! CORROBORATED A SECOND TIME, by the Y table's OWN DEFINING CARDS.
+! docs/ocr/MCP_Mar63_001-249.txt, PDF p.141 (printed p.134), prints
+! one card per indicator in the form "YIN** (AA)DD(BU,32),**" -- the
+! mnemonic again, as a four-character datum -- at
+!   216566.00 YINDF   216566.40 YINLC   216567.00 YINPF
+!   216567.40 YINZD   216570.00 YINIR   216570.40 YINLS
+!   216571.00 YINPSH  216571.40 YINXPF  216572.00 YINXPO
+!   216572.40 YINXPH  216573.00 YINXPL  216573.40 YINZM
+!   216574.00 YINRU   216574.40 YINTF   216575.00 YINUF
+!   216575.40 YINVF   216576.00 YINXF   216576.40 YINBTR
+!   216577.00 YINDTR  216577.40 YINPG0  ...  216602.40 YINPG6
+!   216603.00 YINXPU
+! which is where every SYN below comes from.  It also EXPLAINS THE
+! PAGE'S ONE ANOMALY: line 33's operand is 216603.03 where its
+! neighbours are 216573.03 and 216573.43.  YINXPU is not in the
+! table's main run at all -- it was appended AFTER the seven program
+! indicators -- so the page's entry for it, which must appear in
+! pattern-word order between XPL and ZM, points thirty words away.
+! Read, cross-checked, and not an error.
+!
+! ---------------------------------------------------------------
+! WHAT THE LVI IMMEDIATE PINS, AND WHAT IT DOES NOT
+! ---------------------------------------------------------------
+! "LVI,$1,SYM" puts bits 0-18 of SYM's BIT address in the value
+! field (strap_asm: eval_addr_field shift 5), so the printed half
+! word is (bitaddr & ~31) | 3 -- the symbol's HALF WORD, and nothing
+! finer.  216566.03 means "somewhere in 216566.00..216566.37" and
+! 216566.43 means "somewhere in 216566.40..216566.77".  The .00/.40
+! values written below are therefore NOT this page's reading; they
+! come from the defining cards on printed p.134 listed above.  The
+! trailing "3" in ".03"/".43" is the J field for $1 and is the same
+! on every one of the nineteen rows; printed pp.89-95 print ".03"
+! for the identically-indexed "LVI,TMX1,...".
+!
+! The three branch targets are pinned the same way and corroborated
+! the same way: "B,YFXTS" prints 216530.10 and printed p.133 line 18
+! defines "YFXTS B,WRAM" at 216530.00; "B,YEXEFX" prints 216530.50
+! and p.133 line 19 defines YEXEFX at 216530.40; "B,YMSF" prints
+! 216531.10 and p.133 line 20 defines "YMSF TI1,16,STLR,SLRBU" at
+! 216531.00.
+!
+! ---------------------------------------------------------------
+! THE TWO NAMES THIS PAGE DEFINES
+! ---------------------------------------------------------------
+! S FPTE (line 5) is printed "SFPTE" with no embedded blank, read at
+! 1200 dpi, and it is referenced twice elsewhere in the listing at
+! THIS address: PDF p.137 prints "WCCNA LVI,$1,SFPTE" compiling
+! 215163.03, and PDF p.151 prints "WRAWM LVI,$1,SFPTE" compiling
+! 215163.03.  The guide's sentence "The MCP PTOE is located at
+! SFPTE" is a third, typeset witness to the spelling.
+!
+! ST FIX (line 7) is printed with an embedded blank and becomes
+! STFIX once blanks are dropped, as on every page since p.2.  IT IS
+! REFERENCED NOWHERE ELSE IN THE LISTING -- grepping the full-volume
+! OCR for "ST FIX" returns only this page's own line 7 -- so unlike
+! SFPTE it rests on ink alone.  The risk is small because S, T, F, I
+! and X carry none of this drum's round-glyph or B/8 hazards, but it
+! is recorded rather than left implied.
+!
+! The word 4 pattern itself carries no name on this page.  It has
+! one elsewhere: PDF p.137 prints "WPATT SYN,SFPTE+3.0" resolving to
+! 215166.00, which is line 6's location.  Not needed here, not
+! declared here.
+!
+! ---------------------------------------------------------------
+! GLYPHS
+! ---------------------------------------------------------------
+! This page opens round glyphs as every page in this volume does --
+! its own column heading prints "LCCATICN" for LOCATION, and nearly
+! every ".00" in the LOCATION and BINARY columns prints ".CC".  All
+! of those are octal fields and are read as 0 with certainty.
+!
+! The twenty-two digits of line 6 were NOT read by eye.  The glyphs
+! were sliced on the print's own 1/10-inch pitch at 1200 dpi and
+! clustered by shape; nine clusters came back and resolve to
+! 0, 4, 1, 2, 7, 7(variant), 6, 0, 0 -- six distinct digits.  The
+! same procedure on the STATEMENT column's copy of the constant
+! returns the identical twenty digits.  Counting them by eye had
+! given four zeros between the 4 and the 1 where there are three.
+!
+! The remaining round glyphs are all inside YIN** names and are
+! settled by the indicator table above, not by shape.
+!
+! ---------------------------------------------------------------
+! TWO LISTING MARKS, RECORDED AND NOT EXPLAINED
+! ---------------------------------------------------------------
+! Line 4 prints a bare "*" after its location ("215163.00 *") and so
+! does line 27 ("215201.00 *").  printed pp.103, 110 and 112 carry
+! the same mark.  Neither changes a compiled bit and neither is
+! checked here.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) Blanks inside symbol names are dropped: S FPTE -> SFPTE,
+!     ST FIX -> STFIX.
+! (2) Line 31 prints "LVI,$1 ,YINXPL" with a space before the comma,
+!     which is the card's own column spacing and not a datum; it is
+!     written "LVI, $1, YINXPL" here.
+! (3) Nothing else.  No printed spelling was rejected by strap_asm;
+!     "SLC,$" and "DRZ(N),(3)" both assemble as printed.
+!
+! ---------------------------------------------------------------
+! WHICH ROWS ARE INDEPENDENT CHECKS, AND WHICH ARE NOT
+! ---------------------------------------------------------------
+! The forty-two instruction rows all name externals, so their
+! ADDRESS halves came from the same print they are checked against
+! and only the opcode/modifier bits and the LOCATION are an
+! independent check.  What IS independent on this page:
+!   * every LOCATION, against a counter started at 215163.00 and
+!     advanced by the page's own statements -- and the start itself
+!     is fixed by printed p.113's last row, not by this page;
+!   * line 6's whole 64-bit pattern word, against the guide's
+!     "bits 4, 18, 20, and 22 through 47";
+!   * SFPTE's address, against two LVI immediates on pp.130 and 144;
+!   * the nineteen YIN** addresses, against the defining cards on
+!     printed p.134 -- a different page of the same listing.
+! Line 5's DRZ gets no !CHECK: "000003.00" is the RESERVATION COUNT
+! printed in the BINARY OUTPUT column, not storage contents, and
+! nothing is deposited for the oracle to read.  printed pp.84 and
+! 109 give their DRZ rows no !CHECK for the same reason.
+! Line 4 gets none either -- an SLC prints no binary.
+!
+! ---------------------------------------------------------------
+
+        SLC, (8)215163.0
+
+! Externals.  Addresses from printed p.133 (YFXTS, YEXEFX, YMSF) and
+! printed p.134 (every YIN**), both via the full-volume OCR.
+YFXTS   SYN, (8)216530.0             ! p.133 "YFXTS  B,WRAM"
+YEXEFX  SYN, (8)216530.40            ! p.133 "YEXEFX B,WRAM"
+YMSF    SYN, (8)216531.0             ! p.133 "YMSF   TI1,16,STLR,SLRBU"
+YINDF   SYN, (8)216566.0             ! p.134 "YINDF   (AA)DD(BU,32),DF"
+YINLC   SYN, (8)216566.40            ! p.134 "YINLC   (AA)DD(BU,32),LC"
+YINPF   SYN, (8)216567.0             ! p.134 "YINPF   (AA)DD(BU,32),PF"
+YINZD   SYN, (8)216567.40            ! p.134 "YINZD   (AA)DD(BU,32),ZD"
+YINIR   SYN, (8)216570.0             ! p.134 "YINIR   (AA)DD(BU,32),IR"
+YINLS   SYN, (8)216570.40            ! p.134 "YINLS   (AA)DD(BU,32),LS"
+YINPSH  SYN, (8)216571.0             ! p.134 "YINPSH  (AA)DD(BU,32),PSH"
+YINXPF  SYN, (8)216571.40            ! p.134 "YINXPF  (AA)DD(BU,32),XPFP"
+YINXPO  SYN, (8)216572.0             ! p.134 "YINXPO  (AA)DD(BU,32),XPO"
+YINXPH  SYN, (8)216572.40            ! p.134 "YINXPH  (AA)DD(BU,32),XPH"
+YINXPL  SYN, (8)216573.0             ! p.134 "YINXPL  (AA)DD(BU,32),XPL"
+YINXPU  SYN, (8)216603.0             ! p.134, APPENDED AFTER YINPG6
+YINZM   SYN, (8)216573.40            ! p.134 "YINZM   (AA)DD(BU,32),ZM"
+YINRU   SYN, (8)216574.0             ! p.134 "YINRU   (AA)DD(BU,32),RU"
+YINTF   SYN, (8)216574.40            ! p.134 "YINTF   (AA)DD(BU,32),TF"
+YINUF   SYN, (8)216575.0             ! p.134 "YINUF   (AA)DD(BU,32),UF"
+YINVF   SYN, (8)216575.40            ! p.134 "YINVF   (AA)DD(BU,32),VF"
+YINXF   SYN, (8)216576.0             ! p.134 "YINXF   (AA)DD(BU,32),XF"
+YINBTR  SYN, (8)216576.40            ! p.134 "YINBTR  (AA)DD(BU,32),BTR"
+
+        SLC, (8)215163.0
+        SLC, $                       ! line  4, as printed
+
+SFPTE   DRZ(N), (3)                  ! line  5 -MCP TOE
+        DD(BU,64), (8)40001277777777600000    ! line 6 -PATTERN
+STFIX   B, YFXTS                     ! line  7
+        NOP                          ! line  8
+        B, YEXEFX                    ! line  9
+        NOP                          ! line 10
+        LVI, $1, YINDF               ! line 11
+        B, YMSF                      ! line 12
+        LVI, $1, YINLC               ! line 13
+        B, YMSF                      ! line 14
+        LVI, $1, YINPF               ! line 15
+        B, YMSF                      ! line 16
+        LVI, $1, YINZD               ! line 17
+        B, YMSF                      ! line 18
+        LVI, $1, YINIR               ! line 19
+        B, YMSF                      ! line 20
+        LVI, $1, YINLS               ! line 21
+        B, YMSF                      ! line 22
+        LVI, $1, YINPSH              ! line 23
+        B, YMSF                      ! line 24
+        LVI, $1, YINXPF              ! line 25
+        B, YMSF                      ! line 26
+        LVI, $1, YINXPO              ! line 27
+        B, YMSF                      ! line 28
+        LVI, $1, YINXPH              ! line 29
+        B, YMSF                      ! line 30
+        LVI, $1, YINXPL              ! line 31
+        B, YMSF                      ! line 32
+        LVI, $1, YINXPU              ! line 33
+        B, YMSF                      ! line 34
+        LVI, $1, YINZM               ! line 35
+        B, YMSF                      ! line 36
+        LVI, $1, YINRU               ! line 37
+        B, YMSF                      ! line 38
+        LVI, $1, YINTF               ! line 39
+        B, YMSF                      ! line 40
+        LVI, $1, YINUF               ! line 41
+        B, YMSF                      ! line 42
+        LVI, $1, YINVF               ! line 43
+        B, YMSF                      ! line 44
+        LVI, $1, YINXF               ! line 45
+        B, YMSF                      ! line 46
+        LVI, $1, YINBTR              ! line 47
+        B, YMSF                      ! line 48
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, recorded so the oracle can check the page
+! without re-rendering it.
+! ---------------------------------------------------------------
+!   line  1                                     * ****** (comment card)
+!   line  2                                     * ****** MCP FURNISHED PTOE - CONTAINS ENTRIES TO STANDARD FIXUPS
+!   line  3                                     * ****** (comment card)
+!   line  4  215163.00 *                        SLC,$
+!   line  5  215163.00  000003.00      S FPTE   DRZ(N),(3)          -MCP TOE
+!   line  6  215166.00  0040001277777777600000  DD(BU,64),(8)40001277777777600000  -PATTERN
+!   line  7  215167.00  216530.10 00   ST FIX   B,YFXTS
+!   line  8  215167.40  000000.30 00            NOP
+!   line  9  215170.00  216530.50 00            B,YEXEFX
+!   line 10  215170.40  000000.30 00            NOP
+!   line 11  215171.00  216566.03 01            LVI,$1,YINDF
+!   line 12  215171.40  216531.10 00            B,YMSF
+!   line 13  215172.00  216566.43 01            LVI,$1,YINLC
+!   line 14  215172.40  216531.10 00            B,YMSF
+!   line 15  215173.00  216567.03 01            LVI,$1,YINPF
+!   line 16  215173.40  216531.10 00            B,YMSF
+!   line 17  215174.00  216567.43 01            LVI,$1,YINZD
+!   line 18  215174.40  216531.10 00            B,YMSF
+!   line 19  215175.00  216570.03 01            LVI,$1,YINIR
+!   line 20  215175.40  216531.10 00            B,YMSF
+!   line 21  215176.00  216570.43 01            LVI,$1,YINLS
+!   line 22  215176.40  216531.10 00            B,YMSF
+!   line 23  215177.00  216571.03 01            LVI,$1,YINPSH
+!   line 24  215177.40  216531.10 00            B,YMSF
+!   line 25  215200.00  216571.43 01            LVI,$1,YINXPF
+!   line 26  215200.40  216531.10 00            B,YMSF
+!   line 27  215201.00 *  216572.03 01          LVI,$1,YINXPO
+!   line 28  215201.40  216531.10 00            B,YMSF
+!   line 29  215202.00  216572.43 01            LVI,$1,YINXPH
+!   line 30  215202.40  216531.10 00            B,YMSF
+!   line 31  215203.00  216573.03 01            LVI,$1 ,YINXPL
+!   line 32  215203.40  216531.10 00            B,YMSF
+!   line 33  215204.00  216603.03 01            LVI,$1,YINXPU
+!   line 34  215204.40  216531.10 00            B,YMSF
+!   line 35  215205.00  216573.43 01            LVI,$1,YINZM
+!   line 36  215205.40  216531.10 00            B,YMSF
+!   line 37  215206.00  216574.03 01            LVI,$1,YINRU
+!   line 38  215206.40  216531.10 00            B,YMSF
+!   line 39  215207.00  216574.43 01            LVI,$1,YINTF
+!   line 40  215207.40  216531.10 00            B,YMSF
+!   line 41  215210.00  216575.03 01            LVI,$1,YINUF
+!   line 42  215210.40  216531.10 00            B,YMSF
+!   line 43  215211.00  216575.43 01            LVI,$1,YINVF
+!   line 44  215211.40  216531.10 00            B,YMSF
+!   line 45  215212.00  216576.03 01            LVI,$1,YINXF
+!   line 46  215212.40  216531.10 00            B,YMSF
+!   line 47  215213.00  216576.43 01            LVI,$1,YINBTR
+!   line 48  215213.40  216531.10 00            B,YMSF
+
+!SYM   SFPTE    215163.00
+!SYM   STFIX    215167.00
+
+!CHECK 215166.00 | 0040001277777777600000 | line  6 DD(BU,64),(8)40001277777777600000 -PATTERN
+!CHECK 215167.00 | 216530.10 00 | line  7 ST FIX B,YFXTS
+!CHECK 215167.40 | 000000.30 00 | line  8 NOP
+!CHECK 215170.00 | 216530.50 00 | line  9 B,YEXEFX
+!CHECK 215170.40 | 000000.30 00 | line 10 NOP
+!CHECK 215171.00 | 216566.03 01 | line 11 LVI,$1,YINDF
+!CHECK 215171.40 | 216531.10 00 | line 12 B,YMSF
+!CHECK 215172.00 | 216566.43 01 | line 13 LVI,$1,YINLC
+!CHECK 215172.40 | 216531.10 00 | line 14 B,YMSF
+!CHECK 215173.00 | 216567.03 01 | line 15 LVI,$1,YINPF
+!CHECK 215173.40 | 216531.10 00 | line 16 B,YMSF
+!CHECK 215174.00 | 216567.43 01 | line 17 LVI,$1,YINZD
+!CHECK 215174.40 | 216531.10 00 | line 18 B,YMSF
+!CHECK 215175.00 | 216570.03 01 | line 19 LVI,$1,YINIR
+!CHECK 215175.40 | 216531.10 00 | line 20 B,YMSF
+!CHECK 215176.00 | 216570.43 01 | line 21 LVI,$1,YINLS
+!CHECK 215176.40 | 216531.10 00 | line 22 B,YMSF
+!CHECK 215177.00 | 216571.03 01 | line 23 LVI,$1,YINPSH
+!CHECK 215177.40 | 216531.10 00 | line 24 B,YMSF
+!CHECK 215200.00 | 216571.43 01 | line 25 LVI,$1,YINXPF
+!CHECK 215200.40 | 216531.10 00 | line 26 B,YMSF
+!CHECK 215201.00 | 216572.03 01 | line 27 LVI,$1,YINXPO (location carries an asterisk)
+!CHECK 215201.40 | 216531.10 00 | line 28 B,YMSF
+!CHECK 215202.00 | 216572.43 01 | line 29 LVI,$1,YINXPH
+!CHECK 215202.40 | 216531.10 00 | line 30 B,YMSF
+!CHECK 215203.00 | 216573.03 01 | line 31 LVI,$1 ,YINXPL
+!CHECK 215203.40 | 216531.10 00 | line 32 B,YMSF
+!CHECK 215204.00 | 216603.03 01 | line 33 LVI,$1,YINXPU
+!CHECK 215204.40 | 216531.10 00 | line 34 B,YMSF
+!CHECK 215205.00 | 216573.43 01 | line 35 LVI,$1,YINZM
+!CHECK 215205.40 | 216531.10 00 | line 36 B,YMSF
+!CHECK 215206.00 | 216574.03 01 | line 37 LVI,$1,YINRU
+!CHECK 215206.40 | 216531.10 00 | line 38 B,YMSF
+!CHECK 215207.00 | 216574.43 01 | line 39 LVI,$1,YINTF
+!CHECK 215207.40 | 216531.10 00 | line 40 B,YMSF
+!CHECK 215210.00 | 216575.03 01 | line 41 LVI,$1,YINUF
+!CHECK 215210.40 | 216531.10 00 | line 42 B,YMSF
+!CHECK 215211.00 | 216575.43 01 | line 43 LVI,$1,YINVF
+!CHECK 215211.40 | 216531.10 00 | line 44 B,YMSF
+!CHECK 215212.00 | 216576.03 01 | line 45 LVI,$1,YINXF
+!CHECK 215212.40 | 216531.10 00 | line 46 B,YMSF
+!CHECK 215213.00 | 216576.43 01 | line 47 LVI,$1,YINBTR
+!CHECK 215213.40 | 216531.10 00 | line 48 B,YMSF

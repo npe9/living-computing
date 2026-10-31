@@ -1,0 +1,411 @@
+! mcp_bootstrap_p118.strap -- printed page 118, the tail of the
+! "M ED" parameter-linkage loop, the whole of the "M TC" transfer-
+! control / ENTER PSEUDO OP routine, three one-word constants, and
+! the first three cards of S PRIME.
+! docs/MCP_Mar63_001-249.pdf PDF p.125, header READ AND NOT ASSUMED:
+! the top line prints "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID EA000050  DIST. OF 3/01   3/01   PAGE NUMBER 118", read at
+! 400 dpi with the words PAGE NUMBER in frame.
+!
+! FIFTY LINES, COUNTED NOT ESTIMATED.  The printed LINE column runs
+! 1..50 with no gap and the form is blank below line 50.  The whole
+! column was rendered and read in four bands at 400 dpi and again,
+! column by column, in five bands at 900 dpi; nothing was read from
+! band 1 alone.  The card-serial column runs EA000050 (line 1) to
+! EA000098 (line 50) -- FORTY-NINE cards for fifty lines, because
+! lines 26 and 27 ("MTC1 BUSAZ,$+.32" and the indented "BADZ,$+.32")
+! share the serial EA000075: one card, two statements, two listed
+! lines.  The header's CARD ID repeats line 1's serial.
+!
+! >>> THE ORIGIN IS NOT SET ON THIS PAGE. <<<  There is no SLC row
+! here; line 1 is already at 215526.40 and the page runs contiguously
+! to 215571.40.  printed p.99 line 11's "SLC,(8)215000." moved the
+! counter, and the VOLUME OCR of printed p.117 (a cross-check, never
+! a source, and this page was not rendered) shows its last row as a
+! half word at 215526.00 -- "000001.07 31  SV,2,1.0($1)" -- which
+! ends exactly where line 1 begins.  The SLC card in this deck is the
+! deck's own and is written "(8)215526.40": INSIDE AN (8) LITERAL
+! BOTH PARTS ARE BASE 8, so the bit offset is the printed octal .40,
+! not decimal 32.
+!
+! >>> TAIL SCOPE. <<<  pp.99+ are outside the TAIL,(2)G block that
+! printed p.2 opened and printed p.98 line 37 closed, so a name here
+! may repeat a name defined in pp.2-98 at a different address.  D MCP
+! is exactly that: inside the tail it is 001472.00 (printed pp.91 and
+! 97 both compile "B,DMCP" as "001472.10 00"), and out here it is
+! 000040.00.  RECORDED, NOT "FIXED".
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE DOES
+! ---------------------------------------------------------------
+! lines 1-24  build a TENTACLE ("TENT") entry for a linkage operation
+!   and copy its parameters in.  The comments name every field:
+!   "-**LINK FWA IN TENT**", "-**NORM. RET. ADR. IN TENT**", "-N IN
+!   CF OF $1", "-***PARAM IN TENT."  M ED 1/M ED 1A is the copy loop
+!   (load a 32-bit parameter progressively, store it, count the index
+!   down, branch back on BXCZZ) and M ED 2A is a SWAPI pair around
+!   S TLR+14.0 that swaps a register out and back.
+! lines 25-44  the transfer-control block.  MR 3AD is a one half-word
+!   cell, "-CURRENT TENTACLE TABLE ADDRESS", loaded into $1 by line
+!   28 "-TRANSFER ROUTINES".  Lines 29-30 lift a 19-bit entry address
+!   out of the table and plant it in M TC 3A, which is a "BD,$" --
+!   the "- *****ENTER PSEUDO OP******" of line 40, a self-branch that
+!   the preceding ST rewrites.  Lines 31-44 are the enable/disable
+!   and SIO housekeeping around that entry: three BB tests on bits
+!   .5/.6/.7 of the table entry, CM0000/CM1111 connectives that clear
+!   or set the BD bit of M TC 3A and the SIO bit SPROGS+1.61, and a
+!   TI that saves registers through S TLR+13.0.
+! lines 45-47  three constants: M 9 (VF,.9), M KMCPA (a bare branch
+!   to D MCP used as a transfer vector) and M MK 2, an indicator mask.
+! lines 48-50  S PRIME begins -- "-SAVE X REGS. TO BE USED" into
+!   M PR 8, then S PRIMR picks up the location of the "$ OP" and
+!   loads its op code into $2.  The routine continues on printed
+!   p.119, which is where M PR 8 (215622.00) and M C 1 (215637.00)
+!   are defined.
+!
+! ---------------------------------------------------------------
+! LISTING MARKS
+! ---------------------------------------------------------------
+! Every line number carries the ordinary asterisk ("1*", "50*").
+! THREE lines carry a SECOND asterisk after the LOCATION -- lines 8,
+! 26 and 39 -- the unexplained marker of docs/listing_typography.md
+! 12.  printed p.112's deck tested and discarded the "SLC row" and
+! "counter gap" readings of it; none of these three is an SLC row,
+! none is at a counter gap, and all three carry ordinary binary
+! (000021.34 80 / 215547.10 C6 / 215245.00 80).  Line 26 is also the
+! first of the two statements that share one card, and line 8 and
+! line 39 are not, so that is not it either.  LEFT OPEN, with nothing
+! added to it.
+!
+! ---------------------------------------------------------------
+! GLYPHS THAT WERE AT RISK, AND HOW EACH WAS SETTLED
+! ---------------------------------------------------------------
+! * "M ED 1" / "M ED 1A" / "M ED 2A" (lines 12, 14, 20).  Read at
+!   1800 dpi: the D has the straight vertical left stem and squared
+!   corners that a C and a 0 do not.  Corroborated two ways -- the
+!   volume OCR spells "MED" twelve times and "MEO"/"M EO" zero times,
+!   and line 16's own binary "215535.34 00" (BZB to M ED 1) pins
+!   M ED 1 at 215535.00, which is line 12's location.
+!   >>> THE VOLUME OCR IS WRONG ABOUT LINE 12. <<<  It reads line
+!   12's NAME as "M C 1".  There IS a real M C 1 on this page, at
+!   215637.00, referenced by line 15 -- a DIFFERENT symbol defined on
+!   printed p.119.  The two must not be merged.
+! * The byte of line 26, "215547.10 C6".  The C is open where the
+!   same row's own octal ".10" prints a closed 0, so ink says
+!   nothing.  SETTLED ON WHAT PRODUCED IT: BUSAZ is branch-on-
+!   indicator USA (17) with the trailing-Z clear, and strap_asm
+!   assembles "BUSAZ,$+.32" at 215546.40 to exactly 215547.10 C6.
+!   Its neighbour "BADZ,$+.32" assembles to 215547.50 46, which is
+!   the byte printed p.95/p.18 and many other decks already carry for
+!   BADZ.
+! * The byte of line 43, "215565.74 0E".  Settled from the BB_CODES
+!   table in strap/opcodes.py before the ink was trusted: bits 60-61
+!   are the "set afterward" modifier and bit 62 the tested value, so
+!   BB is 02, BBZ is 06 and BB1 (mod 11, cond 1) is 0E.  This page
+!   prints all three -- lines 31/33/34 are 02, line 41 is 06, line 43
+!   is 0E -- and the assembler agrees with every one.
+! * "MPR8" (line 48), not "MPRB".  Read at 1200 dpi; the glyph has
+!   both bowls closed.  The volume OCR spells it MPR8 twice and MPRB
+!   once, and printed p.119 line 40 defines it at 215622.00, which is
+!   the address this row prints.
+! * The comment of line 42 really is "-SAME ENABLDD".  Two D's, both
+!   with left stems, at 1200 dpi.  The CARD is misspelled; it is
+!   transcribed as printed.
+! * Line 3's comment is "-ADDRESS OF LINKAGE OP": the O of its own
+!   "OF" is open in the same word, so this row drops ink on round
+!   glyphs, and "OP" is what lines 49 and 50 call the same thing
+!   ("-PICK UP LOC. OF $ OP", "-OP CODE IN $2").
+!
+! ---------------------------------------------------------------
+! THE ONE PRINTED FORM THIS DECK DOES NOT WRITE VERBATIM
+! ---------------------------------------------------------------
+! Line 47 prints
+!     M MK 2   INDMK,.21,.25,.26,.27,.28,.29,.30,.31,.55(.63)21
+! and C28-6129 printed p.19 documents only "INDMK, A, B, C, D,....",
+! each field NAMING ONE BIT.  "(.63)21" is a STRAP address-field
+! notation this project has no source for, and strap_asm has no rule
+! for it.  WHAT THE BITS SAY is unambiguous, because the MCP listing
+! punches the same tail on three cards whose other fields differ:
+!     p.118 l.47  M MK 2  .21,.25..31,.55(.63)21  000000.04 7F 000000.01 15
+!     p.119       M MK 1  .53,.55(.63)21          000000.00 00 000000.05 15
+!     p.119       M MK 3  .21,.55(.63)21          000000.04 00 000000.01 15
+! (the two p.119 rows are read from the volume OCR, not transcribed).
+! In all three, ".55(.63)21" contributes bits 55, 59, 61 and 63 and
+! nothing else.  So this deck writes those four bits explicitly --
+! ".55,.59,.61,.63" -- which assembles BIT-IDENTICALLY to the printed
+! word, and the printed form is kept verbatim in the !CHECK note.
+! WHAT IS STILL OPEN: the three cards cannot distinguish "bit .55
+! plus the 8-bit field .56-.63 holding 0x15" from "bit .55 plus the
+! value 21 right-justified at bit .63", because the bits between are
+! zero either way.  No semantics is claimed.
+!
+! ---------------------------------------------------------------
+! EXTERNALS.  Every address below is read off THIS page's own BINARY
+! OUTPUT column, so a !CHECK on a row that uses one tests the opcode
+! and modifier bits and not the address (listing_oracle's docstring).
+! Each therefore carries its independent witness.
+! ---------------------------------------------------------------
+! STIC   215265.00 -- already SYN'd at this value by the p110, p111
+!                     and p112 decks; here from lines 3 and 7
+!                     ("215265.04 30" / "215265.05 30").
+STIC    SYN, (8)215265.0
+! STLR   215230.00 -- the volume OCR's printed p.117 line 12 is the
+!                     defining card, "215230.00 * 000035.00  S T LR
+!                     DRZ(BU,64),29".  This page agrees twice over:
+!                     STLR+13.0 prints 215245.00 (line 39) and
+!                     STLR+14.0 prints 215246.10 (lines 19, 21).
+STLR    SYN, (8)215230.0
+! SE     215001.00 -- printed p.103 line 10 defines it, "S E
+!                     SYN(BU,1), S COM RG", and the p103 deck records
+!                     215001.00+.  Here from lines 32 and 41.
+SE      SYN, (8)215001.0
+! SPROGS 215021.00 -- the p109 deck's !SYM carries 215021.00.  This
+!                     page's lines 35 and 43 print SPROGS+1.61 as
+!                     215022.75 (1 word + 61 decimal bits = .75
+!                     octal), and printed p.117 line 46 prints
+!                     SPROGS+1.25 as 215022.31.  Three offsets, one
+!                     base.
+SPROGS  SYN, (8)215021.0
+! DMCP   000040.00 -- the p108 deck's "D MCP SYN,32.0" row IS the
+!                     defining card (printed p.108 line 5, "000040.00+").
+!                     The volume OCR shows about thirty "B,DMCP" rows
+!                     at 22xxxx all printing "000040.10 00".  Written
+!                     as a bare decimal 32.0 to match that deck.
+DMCP    SYN, 32.0
+! MPR8   215622.00 -- defined on printed p.119 (volume OCR line 40 of
+!                     that page, "215622.00 *  M PR 8 DRZ(BU,...)"),
+!                     and its "MPR8+1.0" on that same page prints
+!                     215623.10.  Here from line 48.
+MPR8    SYN, (8)215622.0
+! MC1    215637.00 -- defined on printed p.119 (volume OCR line 4).
+!                     Referenced from printed p.133 as well, which
+!                     prints the same "215637.06 B0" this page's line
+!                     15 prints.
+MC1     SYN, (8)215637.0
+
+! >>> TWO OF THE NAMES THIS PAGE *DEFINES* HAVE AN INDEPENDENT
+! WITNESS, AND THEY AGREE. <<<  decks/mcp_bootstrap_p103.strap SYNs
+! "SPRIME 215570.0" and "SPRIMR 215571.0" from printed pp.132/193
+! ("B,SPRIME" printing 215570.10 and "SIC,SPRIMR" printing
+! 215571.00) -- read by a different transcriber from different
+! pages, and exactly the two locations lines 48 and 49 print here.
+! tests/check_symbol_spellings.py was run with this deck alongside
+! the repository's: 949 symbol definitions, none spelled two ways,
+! and it groups this deck's STIC with pp.110/111/112, SE with p.103,
+! SPROGS with p.109 and DMCP with p.108 at the same addresses.
+! THE THREE WITH NO SECOND DECK are STLR, MPR8 and MC1; each rests
+! on this page's binary plus the volume OCR of the page that defines
+! it (printed p.117 line 12 for S TLR, printed p.119 for the other
+! two), which is stated because the !CHECK rows that use them cannot
+! test them.
+
+        SLC, (8)215526.40
+        SV,$2,2.0($1)                ! line  1 -**LINK FWA IN TENT**
+        L(BU,4),0.0($1),-19          ! line  2
+        LV,2,STIC                    ! line  3 -ADDRESS OF LINKAGE OP
+        LV,4,$2                      ! line  4
+        V+,$2,$L                     ! line  5 -RETURN ADDRESS IN $2
+        SV,$2,1.32($1)               ! line  6 -**NORM. RET. ADR. IN TENT**
+        SV,2,STIC                    ! line  7
+        ST(BU,18),$1+.28,-19         ! line  8 -N IN CF OF $1
+        LV,$3,$1                     ! line  9
+        V+,$3,M9                     ! line 10
+        V+I,$1,2.32                  ! line 11
+MED1    L(V+I)(BU,32),.32($4)        ! line 12
+        ST(V+IC)(BU,32),.32($1)      ! line 13 -***PARAM IN TENT.
+MED1A   BXCZZ,MTC1                   ! line 14
+        V+,$3,MC1                    ! line 15 -ADD. 2 FOR NEXT PARAM.
+        BZB,0.0($3),MED1             ! line 16 -NO FORM EFF.
+        SVA,4,MED2A                  ! line 17 -PARAM ADDR
+        V+I,4,.32                    ! line 18
+        SWAPI,4,$1,STLR+14.0         ! line 19
+MED2A   LVE,$0,$                     ! line 20
+        SWAPI,4,$1,STLR+14.0         ! line 21
+        SV,0,0($1)                   ! line 22
+        V+IC,1,.32                   ! line 23
+        B,MED1A                      ! line 24
+MR3AD   VF,0.0                       ! line 25 -CURRENT TENTACLE TABLE ADDRESS
+MTC1    BUSAZ,$+.32                  ! line 26 \ one card, EA000075,
+        BADZ,$+.32                   ! line 27 / two statements
+        LV,$1,MR3AD                  ! line 28 -TRANSFER ROUTINES
+        L(BU,19),.45($1)             ! line 29
+        ST(BU,19),MTC3A              ! line 30 -SET ENTRY ADR.
+MTC2A   BB,.5($1),MTC3B              ! line 31
+        CM0000(BU,1),SE              ! line 32
+        BB,.6($1),MTC3A-2.0          ! line 33 -ENTRY DISABLED
+        BB,.7($1),MTC4A              ! line 34 -ENTRY SIO
+        CM0000(BU,1),SPROGS+1.61     ! line 35 -TURN OFF SIO BIT FOR NEXT
+!                                              M PACK
+MTC3    CM0000(BU,1),MTC3A+.21       ! line 36
+        B,MTC3A-1.0                  ! line 37 -TO ENABLED
+        CM1111(BU,1),MTC3A+.21       ! line 38
+        TI,0,STLR+13.0,$0            ! line 39
+MTC3A   BD,$                         ! line 40 - *****ENTER PSEUDO OP******
+MTC3B   BBZ,SE,MTC3A-2.0             ! line 41 -SAME DISABLED
+        B,MTC3                       ! line 42 -SAME ENABLDD (as printed)
+MTC4A   BB1,SPROGS+1.61,$+1.0        ! line 43 -TURN ON SIO BIT
+        B,MTC3                       ! line 44 -SIO TO ENABLED
+M9      VF,.9                        ! line 45
+MKMCPA  B,DMCP                       ! line 46
+! line 47 prints "INDMK,.21,.25,.26,.27,.28,.29,.30,.31,.55(.63)21".
+! The last printed field is written out as its four bits; see above.
+! The printed form assembles. This deck substituted
+! ".55,.59,.61,.63" believing strap_asm had no rule for
+! "(.63)21"; it does -- split_parenthetical_entries -- and the
+! printed card compiles to 000000.04 7F 000000.01 15, which is
+! what the page prints. Measured, not argued.
+MMK2    INDMK,.21,.25,.26,.27,.28,.29,.30,.31,.55(.63)21
+SPRIME  TI,5,$0,MPR8                 ! line 48 -SAVE X REGS. TO BE USED
+SPRIMR  LVI,$1,0                     ! line 49 -PICK UP LOC. OF $ OP
+        LV,$2,0.0($1)                ! line 50 -OP CODE IN $2
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, VERBATIM.  LINE | LOCATION | BINARY OUTPUT |
+! NAME | STATEMENT | comment.  "*" after a location is the marker
+! discussed above.  Blanks inside names are as punched: the NAME
+! column prints "MTC1" and "MR 3AD" where the STATEMENT column
+! writes "M TC 1" and "MR3AD" for the same two symbols, so blanks
+! inside a STRAP name are not significant.
+! ---------------------------------------------------------------
+!   line  1  215526.40  000002.05 31                  SV,$2,2.0($1)
+!                                        -**LINK FWA IN TENT**
+!   line  2  215527.00  000000.00 81  004066.60 50    L(BU,4),0.0($1),-19
+!   line  3  215530.00  215265.04 30                  LV,2,S TIC
+!                                        -ADDRESS OF LINKAGE OP
+!   line  4  215530.40  000022.10 30                  LV,4,$2
+!   line  5  215531.00  000010.04 B0                  V+,$2,$L
+!                                        -RETURN ADDRESS IN $2
+!   line  6  215531.40  000001.45 31                  SV,$2,1.32($1)
+!                                        -**NORM. RET. ADR. IN TENT**
+!   line  7  215532.00  215265.05 30                  SV,2,S TIC
+!   line  8  215532.40 * 000021.34 80  022066.60 D0   ST(BU,18),$1+.28,-19
+!                                        -N IN CF OF $1
+!   line  9  215533.40  000021.06 30                  LV,$3,$1
+!   line 10  215534.00  215566.06 B0                  V+,$3,M 9
+!   line 11  215534.40  000002.43 05                  V+I,$1,2.32
+!   line 12  215535.00  000000.40 84  140000.20 50  M ED 1   L(V+I)(BU,32),.32($4)
+!   line 13  215536.00  000000.40 81  240000.20 D0    ST(V+IC)(BU,32),.32($1)
+!                                        -***PARAM IN TENT.
+!   line 14  215537.00  215546.70 46                M ED 1A  BXCZZ,M TC 1
+!   line 15  215537.40  215637.06 B0                  V+,$3,M C 1
+!                                        -ADD. 2 FOR NEXT PARAM.
+!   line 16  215540.00  000000.00 83  215535.34 00    BZB,0.0($3),M ED 1
+!                                        -NO FORM EFF.
+!   line 17  215541.00  215543.11 D0                  SVA,4,M ED 2A   -PARAM ADDR
+!   line 18  215541.40  000000.51 05                  V+I,4,.32
+!   line 19  215542.00  000021.00 80  215246.10 E0    SWAPI,4,$1,S TLR+14.0
+!   line 20  215543.00  215543.01 B0                M ED 2A  LVE,$0,$
+!   line 21  215543.40  000021.00 80  215246.10 E0    SWAPI,4,$1,S TLR+14.0
+!   line 22  215544.40  000000.01 31                  SV,0,0($1)
+!   line 23  215545.00  000000.43 06                  V+IC,1,.32
+!   line 24  215545.40  215537.10 00                  B,M ED 1A
+!   line 25  215546.00  000000.00+                  MR 3AD   VF,0.0
+!                                        -CURRENT TENTACLE TABLE ADDRESS
+!   line 26  215546.40 * 215547.10 C6                MTC1     BUSAZ,$+.32
+!   line 27  215547.00  215547.50 46                   BADZ,$+.32
+!   line 28  215547.40  215546.02 30                  LV,$1,MR3AD
+!                                        -TRANSFER ROUTINES
+!   line 29  215550.00  000000.55 81  023000.20 50    L(BU,19),.45($1)
+!   line 30  215551.00  215562.40 80  023000.20 D0    ST(BU,19),M TC 3A
+!                                        -SET ENTRY ADR.
+!   line 31  215552.00  000000.05 81  215563.34 02  M TC 2A  BB,.5($1),M TC 3B
+!   line 32  215553.00  215001.00 80  001000.00 F0    CM0000(BU,1),S E
+!   line 33  215554.00  000000.06 81  215560.74 02    BB,.6($1),M TC 3A-2.0
+!                                        -ENTRY DISABLED
+!   line 34  215555.00  000000.07 81  215564.74 02    BB,.7($1),M TC 4A
+!                                        -ENTRY SIO
+!   line 35  215556.00  215022.75 80  001000.00 F0    CM0000(BU,1),SPROGS+1.61
+!                                        -TURN OFF SIO BIT FOR NEXT M PACK
+!   line 36  215557.00  215562.65 80  001000.00 F0  M TC 3   CM0000(BU,1),M TC 3A+.21
+!   line 37  215560.00  215561.50 00                  B,M TC 3A-1.0   -TO ENABLED
+!   line 38  215560.40  215562.65 80  001000.36 F0    CM1111(BU,1),M TC 3A+.21
+!   line 39  215561.40 * 215245.00 80  000020.00 A0   TI,0,STLR+13.0,$0
+!   line 40  215562.40  215562.44 00                M TC 3A  BD,$
+!                                        - *****ENTER PSEUDO OP******
+!   line 41  215563.00  215001.00 80  215560.74 06  M TC 3B  BBZ,S E,M TC 3A-2.0
+!                                        -SAME DISABLED
+!   line 42  215564.00  215557.10 00                  B,M TC 3    -SAME ENABLDD
+!   line 43  215564.40  215022.75 80  215565.74 0E  M TC 4A  BB1,S PROG S+1.61,$+1.0
+!                                        -TURN ON SIO BIT
+!   line 44  215565.40  215557.10 00                  B,M TC 3    -SIO TO ENABLED
+!   line 45  215566.00  000000.11+                  M 9      VF,.9
+!   line 46  215566.40  000040.10 00                M KMCPA  B,D MCP
+!   line 47  215567.00  000000.04 7F  000000.01 15  M MK 2
+!                 INDMK,.21,.25,.26,.27,.28,.29,.30,.31,.55(.63)21
+!   line 48  215570.00  000020.00 80  215622.12 A0  S PRIME  TI,5,$0,MPR8
+!                                        -SAVE X REGS. TO BE USED
+!   line 49  215571.00  000000.03 01                S PRIMR  LVI,$1,0
+!                                        -PICK UP LOC. OF $ OP
+!   line 50  215571.40  000000.04 31                  LV,$2,0.0($1)
+!                                        -OP CODE IN $2
+
+! ---------------------------------------------------------------
+! THE CHECKS.  Thirteen !SYM -- every NAME this page prints -- and
+! fifty !CHECK rows, one per printed line.  No line on this page is
+! an SLC or any other pseudo-op that emits nothing, so 50 = 50.
+! ---------------------------------------------------------------
+!SYM   MED1     215535.00
+!SYM   MED1A    215537.00
+!SYM   MED2A    215543.00
+!SYM   MR3AD    215546.00
+!SYM   MTC1     215546.40
+!SYM   MTC2A    215552.00
+!SYM   MTC3     215557.00
+!SYM   MTC3A    215562.40
+!SYM   MTC3B    215563.00
+!SYM   MTC4A    215564.40
+!SYM   M9       215566.00
+!SYM   MKMCPA   215566.40
+!SYM   MMK2     215567.00
+!SYM   SPRIME   215570.00
+!SYM   SPRIMR   215571.00
+!CHECK 215526.40 | 000002.05 31 | line  1 SV,$2,2.0($1)
+!CHECK 215527.00 | 000000.00 81 004066.60 50 | line  2 L(BU,4),0.0($1),-19
+!CHECK 215530.00 | 215265.04 30 | line  3 LV,2,S TIC
+!CHECK 215530.40 | 000022.10 30 | line  4 LV,4,$2
+!CHECK 215531.00 | 000010.04 B0 | line  5 V+,$2,$L
+!CHECK 215531.40 | 000001.45 31 | line  6 SV,$2,1.32($1)
+!CHECK 215532.00 | 215265.05 30 | line  7 SV,2,S TIC
+!CHECK 215532.40 | 000021.34 80 022066.60 D0 | line  8 ST(BU,18),$1+.28,-19 (location carries an asterisk)
+!CHECK 215533.40 | 000021.06 30 | line  9 LV,$3,$1
+!CHECK 215534.00 | 215566.06 B0 | line 10 V+,$3,M 9
+!CHECK 215534.40 | 000002.43 05 | line 11 V+I,$1,2.32
+!CHECK 215535.00 | 000000.40 84 140000.20 50 | line 12 M ED 1 L(V+I)(BU,32),.32($4)
+!CHECK 215536.00 | 000000.40 81 240000.20 D0 | line 13 ST(V+IC)(BU,32),.32($1)
+!CHECK 215537.00 | 215546.70 46 | line 14 M ED 1A BXCZZ,M TC 1
+!CHECK 215537.40 | 215637.06 B0 | line 15 V+,$3,M C 1
+!CHECK 215540.00 | 000000.00 83 215535.34 00 | line 16 BZB,0.0($3),M ED 1
+!CHECK 215541.00 | 215543.11 D0 | line 17 SVA,4,M ED 2A
+!CHECK 215541.40 | 000000.51 05 | line 18 V+I,4,.32
+!CHECK 215542.00 | 000021.00 80 215246.10 E0 | line 19 SWAPI,4,$1,S TLR+14.0
+!CHECK 215543.00 | 215543.01 B0 | line 20 M ED 2A LVE,$0,$
+!CHECK 215543.40 | 000021.00 80 215246.10 E0 | line 21 SWAPI,4,$1,S TLR+14.0
+!CHECK 215544.40 | 000000.01 31 | line 22 SV,0,0($1)
+!CHECK 215545.00 | 000000.43 06 | line 23 V+IC,1,.32
+!CHECK 215545.40 | 215537.10 00 | line 24 B,M ED 1A
+!CHECK 215546.00 | 000000.00+ | line 25 MR 3AD VF,0.0
+!CHECK 215546.40 | 215547.10 C6 | line 26 MTC1 BUSAZ,$+.32 (location carries an asterisk)
+!CHECK 215547.00 | 215547.50 46 | line 27 BADZ,$+.32
+!CHECK 215547.40 | 215546.02 30 | line 28 LV,$1,MR3AD
+!CHECK 215550.00 | 000000.55 81 023000.20 50 | line 29 L(BU,19),.45($1)
+!CHECK 215551.00 | 215562.40 80 023000.20 D0 | line 30 ST(BU,19),M TC 3A
+!CHECK 215552.00 | 000000.05 81 215563.34 02 | line 31 M TC 2A BB,.5($1),M TC 3B
+!CHECK 215553.00 | 215001.00 80 001000.00 F0 | line 32 CM0000(BU,1),S E
+!CHECK 215554.00 | 000000.06 81 215560.74 02 | line 33 BB,.6($1),M TC 3A-2.0
+!CHECK 215555.00 | 000000.07 81 215564.74 02 | line 34 BB,.7($1),M TC 4A
+!CHECK 215556.00 | 215022.75 80 001000.00 F0 | line 35 CM0000(BU,1),SPROGS+1.61
+!CHECK 215557.00 | 215562.65 80 001000.00 F0 | line 36 M TC 3 CM0000(BU,1),M TC 3A+.21
+!CHECK 215560.00 | 215561.50 00 | line 37 B,M TC 3A-1.0
+!CHECK 215560.40 | 215562.65 80 001000.36 F0 | line 38 CM1111(BU,1),M TC 3A+.21
+!CHECK 215561.40 | 215245.00 80 000020.00 A0 | line 39 TI,0,STLR+13.0,$0 (location carries an asterisk)
+!CHECK 215562.40 | 215562.44 00 | line 40 M TC 3A BD,$
+!CHECK 215563.00 | 215001.00 80 215560.74 06 | line 41 M TC 3B BBZ,S E,M TC 3A-2.0
+!CHECK 215564.00 | 215557.10 00 | line 42 B,M TC 3
+!CHECK 215564.40 | 215022.75 80 215565.74 0E | line 43 M TC 4A BB1,S PROG S+1.61,$+1.0
+!CHECK 215565.40 | 215557.10 00 | line 44 B,M TC 3
+!CHECK 215566.00 | 000000.11+ | line 45 M 9 VF,.9
+!CHECK 215566.40 | 000040.10 00 | line 46 M KMCPA B,D MCP
+!CHECK 215567.00 | 000000.04 7F 000000.01 15 | line 47 M MK 2 INDMK,.21,.25,.26,.27,.28,.29,.30,.31,.55(.63)21 -- printed form, written here as .55,.59,.61,.63
+!CHECK 215570.00 | 000020.00 80 215622.12 A0 | line 48 S PRIME TI,5,$0,MPR8
+!CHECK 215571.00 | 000000.03 01 | line 49 S PRIMR LVI,$1,0
+!CHECK 215571.40 | 000000.04 31 | line 50 LV,$2,0.0($1)

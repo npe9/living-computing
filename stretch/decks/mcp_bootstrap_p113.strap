@@ -1,0 +1,289 @@
+! mcp_bootstrap_p113.strap -- printed page 113, the LAST TWELVE
+! slots of the PARALLEL interrupt table.  docs/MCP_Mar63_001-249.pdf
+! PDF p.120, header READ AND NOT ASSUMED: the top line prints
+! "TIME CLOCK 00054041  PUNID 11D11MCP   CARD ID DB000100
+! DIST. OF 3/01   3/01   PAGE NUMBER 113", and the column-head
+! line's own right-hand "LOCATION" field prints 215147, which is
+! this page's first location.
+!
+! TWENTY-FIVE LINES, COUNTED NOT ESTIMATED.  The printed LINE column
+! runs 1..25 with no gap and the form is blank below line 25 -- the
+! whole page was rendered in one 400-dpi band from y=480 (LINE 1)
+! and re-read in two 900-dpi crops.  The card-serial column runs
+! DB000100 (line 1) through DB000112 (line 25): THIRTEEN CARDS for
+! twenty-five lines, because a SIC and the branch that completes its
+! 64-bit instruction are punched on ONE card and listed on TWO lines
+! with the SAME serial (lines 1+2 are both DB000100, 3+4 both
+! DB000101, ... 23+24 both DB000111), and line 25 is a card of its
+! own.  The serial prefix is "DB", the same deck printed p.112 was
+! punching, and at 900 dpi the first glyph has the straight vertical
+! left stem of a D in all thirteen.
+!
+! >>> WHAT THE PAGE IS. <<<  Twelve more entries of the parallel
+! interrupt table, every one of them the ordinary slot --
+! "SIC,W INTOR / B,W LODE" -- that printed p.112 lines 18-51 is also
+! made of.  Each 64-bit slot stores the instruction counter into the
+! save area W INTOR and branches to the routine W LODE.  Then line
+! 25, a bare CNOP.  There is no NAME on this page: the NAME column
+! carries no ink on any of the twenty-five lines, so the page
+! DEFINES nothing and references only two symbols.  (One stray mark
+! is discussed under LISTING MARKS below; it is not in the NAME
+! column.)
+!
+! >>> WHICH SLOTS THESE ARE, FROM OTHER PAGES' BINARY. <<<
+! S IPT, the base of the parallel table, is 215103.00 (printed
+! p.112 line 7).  215103 + 44(8) = 215147 and 215103 + 57(8) =
+! 215162, i.e. S IPT+36 and S IPT+47 DECIMAL, so THIS PAGE IS SLOTS
+! 36 THROUGH 47 of the parallel interrupt table, twelve words,
+! contiguous.  Two other pages confirm it by branching into exactly
+! these words with the slot number written out in their STATEMENT
+! column:
+!   printed p.111 (PDF p.118), already transcribed: its line 50 is
+!     "215077.40 *  215157.04 00  BD,SIPT+44." -- 215157 is this
+!     page's line 17.  Its BD rows run SIPT+22. .. SIPT+44., i.e.
+!     words 215133..215157.
+!   PDF p.183, not yet transcribed: lines 26..48 run
+!     "220664.40 *  215147.04 00  BD,SIPT+36." through
+!     "220677.40   215162.04 00  BD,SIPT+47." -- this page's twelve
+!     words exactly.  (Its lines 1-27 were rendered and read at 600
+!     dpi; the rest is the volume OCR and is a cross-check only.)
+! A "215147.04 00" BD prints the TARGET WORD in bits 0-17 and 04 in
+! bits 18-23: half-word select 0, modifier 00100 = BD.  So those
+! rows enter at the SIC half of each slot, not the branch half.
+!
+! ---------------------------------------------------------------
+! WHERE THE PAGE SITS -- BOTH JOINS ARE CONTIGUOUS
+! ---------------------------------------------------------------
+! THE ORIGIN IS NOT SET BY A CARD ON THIS PAGE -- there is no SLC
+! row anywhere on it.  printed p.99 line 11's "SLC,(8)215000."
+! moved the counter to 0o215000, and printed p.112's last line
+! (line 51) is a half-word "B,W LODE" at 215146.40, which ends
+! exactly at 215147.00, where this page's line 1 begins.  This deck
+! writes the arriving counter as a hard "SLC, (8)215147." so that it
+! assembles standalone; that is the row to reconsider when the pages
+! are merged, exactly as printed pp.104 and 112 note for themselves.
+!
+! THE PAGE LEAVES THE COUNTER AT 215163.00 -- line 24's half-word
+! branch at 215162.40 ends there, and line 25's CNOP adds nothing
+! (see below).  PDF p.121 (printed p.114) opens a NEW PUNCHED DECK:
+! its header prints "CARD ID DC000001" and its header LOCATION field
+! is BLANK.  Its lines 1-3 are comment cards, and ITS LINE 4 IS
+! "215163.00 *  SLC,$" -- an origin set to the counter's own current
+! value, which emits nothing and therefore PRINTS THE ARRIVING
+! COUNTER.  That is the cleanest possible forward witness: printed
+! p.114 states in its own LOCATION column that the counter reached
+! it at 215163.00.  (Rendered at 600 dpi and read, not taken from
+! the OCR.  Its line 5, "215163.00  000003.00  S FPTE  DRZ(N),(3)",
+! is the first row there to spend storage.)  So the forward join is
+! contiguous too, and printed p.113 is the last page of the DB deck.
+!
+! pp.99+ are OUTSIDE the "TAIL,(2)G" block that printed p.2 opened
+! and printed p.98 line 37 closed with "UNTAIL,(2)", so names here
+! may legitimately repeat names defined in pp.2-98 at different
+! addresses.  Neither of this page's two names does.
+!
+! ---------------------------------------------------------------
+! LINE 25 IS A CNOP THAT PRINTS NO LOCATION AND NO BINARY
+! ---------------------------------------------------------------
+! The LINE column prints "25*" and the STATEMENT column prints
+! "CNOP"; the LOCATION and BINARY OUTPUT columns are BLANK, checked
+! at 900 dpi across the whole width of both columns.  That is the
+! assembler saying the CNOP emitted nothing, and it is independently
+! confirmed by the next page: the counter arrives at 215163.00 after
+! line 24 (a full-word boundary, so no alignment is needed) and
+! printed p.114's first located row is 215163.00.  A CNOP that DOES
+! emit prints both fields -- printed p.83 line 8 is
+! "004423.40  000000.30 00  CNOP", a half-word NOP compiled because
+! the counter was mid-word there.
+!
+! Because the row emits no storage it gets no !CHECK, which is
+! printed p.99's convention for a row that spends nothing.
+! 24 checked rows + 1 CNOP = 25 lines.
+!
+! THAT MEANS NO CHECK IN THIS DECK CAN SEE THE CNOP, so it was
+! probed directly instead of assumed.  Assembling this deck gives
+! TWELVE words, 0o215147..0o215162, with nothing at 0o215163;
+! deleting the CNOP line changes neither the count nor the last
+! word; and appending a scratch "ZZEND SYN,$" resolves ZZEND to
+! 4627648 = 0o215163 . bit 0.  strap_asm and the listing agree that
+! the CNOP is a no-op here, and printed p.114's line 4 agrees from
+! the far side.
+!
+! ---------------------------------------------------------------
+! LISTING MARKS
+! ---------------------------------------------------------------
+! EVERY ONE of the twenty-five line numbers carries an asterisk
+! right after it ("1*", "25*").  That is the ordinary column and is
+! not a mark.
+!
+! ONE line carries a SECOND asterisk after the LOCATION, the
+! unexplained marker of docs/listing_typography.md 12: LINE 18, at
+! 215157.40, an ordinary "B,W LODE" with its binary printed beside
+! the asterisk ("216333.10 00").  It is not an SLC row (there are
+! none here), it is not a gap (215157.00 plus a half word lands
+! exactly on it), and the rows before and after it are the identical
+! pair of instructions, unmarked.  printed p.112 found the same
+! thing on its own line 46 and had to leave it open; it is open
+! here too.
+!
+! I TRIED ONE READING AND IT DIED, so it is recorded dead rather
+! than left to be tried again.  The marked word here is 215157, slot
+! S IPT+44, and printed p.111's line 50 -- the row that branches
+! into 215157 -- IS ITSELF MARKED.  Tempting.  But PDF p.183 line 26
+! is ALSO marked ("220664.40 *") and it branches to 215147, which is
+! this page's line 1 and is NOT marked; and p.183's line 3
+! ("220651.00 *") is marked and is a "SIC,STIC" that branches
+! nowhere.  Both asterisks were read off the rendered page at 600
+! dpi, not off the OCR.  So "the mark follows the slot" is false on
+! its second instance, like every other reading of this mark so far.
+!
+! ONE STRAY BLOB, line 15, recorded so the next reader need not
+! re-derive it.  At 1200 dpi there is a single comma-sized mark on
+! line 15 at 300-dpi x=1919, i.e. in the clear gutter BETWEEN the
+! BINARY OUTPUT column (which ends at x=1855) and the NAME column
+! (whose header sits at x=2423).  It is one character wide with
+! clear paper on all four sides, it is in no field, and line 15's
+! own binary "216371.40 80" is the same as the eleven other SIC rows
+! and checks out.  Drum noise.  It is the only ink on this page
+! outside the LINE, LOCATION, BINARY OUTPUT, STATEMENT, comment-dash
+! and card-serial columns, and it is why strap/mcp_columns.py
+! reports a column run at x=1919-1945 with ink 0.1.
+!
+! ---------------------------------------------------------------
+! HOW THE BINARY WAS SETTLED
+! ---------------------------------------------------------------
+! Only two distinct rows exist on this page, twelve of each, and
+! both are the rows printed p.112 settled by argument rather than by
+! ink.  The reasoning is repeated here because this deck has to
+! stand on its own:
+!
+! * "216371.40 80" (SIC,W INTOR).  Bits 0-17 print as the octal
+!   word, bits 18-23 as two octal digits, bits 24-31 as two hex.
+!   SIC shares the literal 1000 at bits 24-27 with BRANCH ON BIT
+!   (strap/opcodes.py, X22-6533) and its index field is empty here,
+!   so the byte is 80 and CANNOT be B0: B0 needs bits 24-27 = 1011,
+!   which is not SIC's literal.  The ".40" is the target's
+!   half-word-select bit, 1.
+! * "216333.10 00" (B,W LODE).  The top bit of the octal pair is
+!   bit 18, the branch target's half-word select (0 here); bits
+!   19-23 are the modifier, and B = 01000 gives .10.  Byte 00.
+!
+! THE ROUND GLYPHS.  This drum opens round glyphs constantly and
+! this page is a clear example: the page's own heading prints
+! "LOCATICN" and "BINARY CUTPUT", and the LOCATION column prints the
+! same address two ways on neighbouring lines -- line 1 "215147.CC"
+! against line 3 "215150.CO" against line 7 "215152.00".  The first
+! two fields of a half-word are OCTAL and cannot hold a C, so every
+! one of those is a 0 with certainty.  That does NOT license
+! converting the hex bytes by ink, and they are not converted by
+! ink: the "80"s and "00"s above are settled on what produced them,
+! per the rule in docs/transcription_workflow.md.
+!
+! THE TWO NAMES.  "W INTOR" and "W LODE" are not settled on shape
+! either -- this drum would let either read WINTCR/WLCDE.  They are
+! settled by a primary source, quoted by printed p.112:
+! docs/ocr/C22-6728-1_7030_MCP_Sys_Analysis_Guide.txt's interrupt
+! table prints the row "All other ... STIC SIPT+   WINTOR   WLODE".
+! The spellings used here are the spellings printed p.112's landed
+! deck already uses, so tests/check_symbol_spellings.py sees one
+! spelling for each across both pages.
+!
+! ---------------------------------------------------------------
+! EXTERNALS.  Both addresses are READ OFF THIS PAGE'S OWN BINARY
+! OUTPUT COLUMN, so a !CHECK on such a row tests the opcode and
+! modifier bits and not the address (listing_oracle's docstring says
+! so).  Both agree to the digit with printed p.112's reading of the
+! same two symbols on thirty-four rows of its own.
+! ---------------------------------------------------------------
+        SLC, (8)215147.
+WINTOR  SYN, (8)216371.40            ! line  1 "SIC,WINTOR"
+WLODE   SYN, (8)216333.0             ! line  2 "B,W LODE"
+
+        SLC, (8)215147.
+        SIC, WINTOR                  ! line  1
+        B, WLODE                     ! line  2
+        SIC, WINTOR                  ! line  3
+        B, WLODE                     ! line  4
+        SIC, WINTOR                  ! line  5
+        B, WLODE                     ! line  6
+        SIC, WINTOR                  ! line  7
+        B, WLODE                     ! line  8
+        SIC, WINTOR                  ! line  9
+        B, WLODE                     ! line 10
+        SIC, WINTOR                  ! line 11
+        B, WLODE                     ! line 12
+        SIC, WINTOR                  ! line 13
+        B, WLODE                     ! line 14
+        SIC, WINTOR                  ! line 15
+        B, WLODE                     ! line 16
+        SIC, WINTOR                  ! line 17
+        B, WLODE                     ! line 18
+        SIC, WINTOR                  ! line 19
+        B, WLODE                     ! line 20
+        SIC, WINTOR                  ! line 21
+        B, WLODE                     ! line 22
+        SIC, WINTOR                  ! line 23
+        B, WLODE                     ! line 24
+        CNOP                         ! line 25
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, as rendered.  A trailing "-" in the
+! STATEMENT column of every "B,W LODE" row is the card's own comment
+! dash with nothing after it, exactly as printed p.112 prints it.
+! ---------------------------------------------------------------
+!   line  1  215147.00  216371.40 80   SIC,WINTOR
+!   line  2  215147.40  216333.10 00   B,W LODE    -
+!   line  3  215150.00  216371.40 80   SIC,WINTOR
+!   line  4  215150.40  216333.10 00   B,W LODE    -
+!   line  5  215151.00  216371.40 80   SIC,WINTOR
+!   line  6  215151.40  216333.10 00   B,W LODE    -
+!   line  7  215152.00  216371.40 80   SIC,WINTOR
+!   line  8  215152.40  216333.10 00   B,W LODE    -
+!   line  9  215153.00  216371.40 80   SIC,WINTOR
+!   line 10  215153.40  216333.10 00   B,W LODE    -
+!   line 11  215154.00  216371.40 80   SIC,WINTOR
+!   line 12  215154.40  216333.10 00   B,W LODE    -
+!   line 13  215155.00  216371.40 80   SIC,WINTOR
+!   line 14  215155.40  216333.10 00   B,W LODE    -
+!   line 15  215156.00  216371.40 80   SIC,WINTOR
+!   line 16  215156.40  216333.10 00   B,W LODE    -
+!   line 17  215157.00  216371.40 80   SIC,WINTOR
+!   line 18  215157.40 * 216333.10 00  B,W LODE    -
+!   line 19  215160.00  216371.40 80   SIC,WINTOR
+!   line 20  215160.40  216333.10 00   B,W LODE    -
+!   line 21  215161.00  216371.40 80   SIC,WINTOR
+!   line 22  215161.40  216333.10 00   B,W LODE    -
+!   line 23  215162.00  216371.40 80   SIC,WINTOR
+!   line 24  215162.40  216333.10 00   B,W LODE    -
+!   line 25  (no location, no binary)  CNOP
+
+! ---------------------------------------------------------------
+! THE CHECKS.  No !SYM: this page prints no NAME, so it defines no
+! symbol and there is no location to check a name against.  Twenty-
+! four !CHECK rows -- every line that carries binary.  Line 25's
+! CNOP emits no storage and gets no !CHECK; 24 + 1 = 25.
+! ---------------------------------------------------------------
+!CHECK 215147.00 | 216371.40 80 | line  1 SIC,WINTOR
+!CHECK 215147.40 | 216333.10 00 | line  2 B,W LODE
+!CHECK 215150.00 | 216371.40 80 | line  3 SIC,WINTOR
+!CHECK 215150.40 | 216333.10 00 | line  4 B,W LODE
+!CHECK 215151.00 | 216371.40 80 | line  5 SIC,WINTOR
+!CHECK 215151.40 | 216333.10 00 | line  6 B,W LODE
+!CHECK 215152.00 | 216371.40 80 | line  7 SIC,WINTOR
+!CHECK 215152.40 | 216333.10 00 | line  8 B,W LODE
+!CHECK 215153.00 | 216371.40 80 | line  9 SIC,WINTOR
+!CHECK 215153.40 | 216333.10 00 | line 10 B,W LODE
+!CHECK 215154.00 | 216371.40 80 | line 11 SIC,WINTOR
+!CHECK 215154.40 | 216333.10 00 | line 12 B,W LODE
+!CHECK 215155.00 | 216371.40 80 | line 13 SIC,WINTOR
+!CHECK 215155.40 | 216333.10 00 | line 14 B,W LODE
+!CHECK 215156.00 | 216371.40 80 | line 15 SIC,WINTOR
+!CHECK 215156.40 | 216333.10 00 | line 16 B,W LODE
+!CHECK 215157.00 | 216371.40 80 | line 17 SIC,WINTOR
+!CHECK 215157.40 | 216333.10 00 | line 18 B,W LODE (location carries an asterisk)
+!CHECK 215160.00 | 216371.40 80 | line 19 SIC,WINTOR
+!CHECK 215160.40 | 216333.10 00 | line 20 B,W LODE
+!CHECK 215161.00 | 216371.40 80 | line 21 SIC,WINTOR
+!CHECK 215161.40 | 216333.10 00 | line 22 B,W LODE
+!CHECK 215162.00 | 216371.40 80 | line 23 SIC,WINTOR
+!CHECK 215162.40 | 216333.10 00 | line 24 B,W LODE
