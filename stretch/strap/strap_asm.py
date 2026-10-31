@@ -472,6 +472,16 @@ _TERM_NUM = re.compile(r'\d+')
 _TERM_NUM16 = re.compile(r'[0-9A-F]+')
 _TERM_RADIX = re.compile(r'\((\d+)\)(?=[\dA-F.])')
 
+def _is_radix_digit(ch, radix):
+    """Is `ch` a digit of `radix`?  Used to decide whether a blank
+    inside a radix literal is GROUPING (MCP prints "(2)1111 1110")
+    or the end of the term."""
+    try:
+        return int(ch, radix) >= 0
+    except ValueError:
+        return False
+
+
 def tokenize_expr(s, lineno=None):
     s = s.strip()
     i, n = 0, len(s)
@@ -528,6 +538,44 @@ def tokenize_expr(s, lineno=None):
             if radix < 2 or radix > 16:
                 raise AssemblerError(f"unsupported radix ({radix}) in {s!r}", lineno)
             i = m.end(); c = s[i]
+            # >>> BLANKS INSIDE A RADIX LITERAL ARE GROUPING, NOT
+            # SEPARATORS -- AND THIS PATH DID NOT KNOW IT. <<<
+            # parse_dd_value's _DD_RADIX_LITERAL at the bottom of this
+            # file carries the rule and the citation (MCP printed p.9
+            # writes console codes as "(2)1111 1101"), but it is
+            # reached only for DD DATA.  A VFL IMMEDIATE came down
+            # here, where tokenize_expr skips blanks BETWEEN terms --
+            # so "(2)1111 1110" was read as (2)1111 PLUS 1110, i.e.
+            # 15 + 1110 = 1125, truncated to 8 bits = 101.
+            #
+            # THAT WAS A WRONG ANSWER, NOT A REFUSAL: MCP printed p.135
+            # line 53 is "KFI(BU,8),(2)1111 1110" and the listing
+            # prints 774000.00, where this compiled 312000.00 and said
+            # nothing.  Found because that page left the row FAILING
+            # instead of substituting the closed-up literal, which
+            # would have hidden it.
+            #
+            # Scoped to the digits of a radix literal: consume blanks
+            # only while the next non-blank is still a digit of THIS
+            # radix, so "(8)40 ,2" and "(2)1111 X" still end the term
+            # where they did.
+            _j, _buf = i, []
+            while _j < n:
+                _ch = s[_j]
+                if _ch in ' \t':
+                    _k = _j
+                    while _k < n and s[_k] in ' \t':
+                        _k += 1
+                    if _k < n and _is_radix_digit(s[_k], radix):
+                        _j = _k
+                        continue
+                    break
+                if not _is_radix_digit(_ch, radix):
+                    break
+                _buf.append(_ch); _j += 1
+            if len(_buf) > 0 and _j > i and ' ' in s[i:_j]:
+                tokens.append((sign, 'int', int(''.join(_buf), radix)))
+                i = _j; sign = 1; continue
         numre = _TERM_NUM16 if radix > 10 else _TERM_NUM
         if c == '.' and radix != 10:
             m = numre.match(s, i + 1)
@@ -1536,6 +1584,23 @@ def classify_vfl_or_fp(stmt):
     # one check instead of the dds-present path silently skipping it
     # (which previously made "LI(BU,7), 127" fail as an unknown op
     # instead of being recognized as L with immediate addressing).
+    # >>> "-I" FALLS BETWEEN TWO RULES. <<<  The written-minus rewrite
+    # above fires only on a BARE "-", and the I-immediate strip below
+    # needs base_op[:-1] to be in VFL_INT_CODES -- which "-" is not,
+    # because it is VFL_INT_MINUS_BASE, "+" with the invert bit (see
+    # opcodes.py).  So "+I" worked and "-I" raised KeyError.
+    #
+    # MCP printed p.130 line 29 is "-I(BU,18),64.0,-24" and compiles to
+    # 000100.00 80 422064.30 10.  The same word comes from "+NI", whose
+    # N/I suffixes C22-6531 Appendix A footnote 4 licenses and which
+    # this file already handles -- that equality is what says "-I" is a
+    # SPELLING of it and not a different operation.
+    # NOT "VFL_INT_MINUS_BASE + 'I'" -- that base IS "+", so the test
+    # would fire on the legitimate "+I" and silently invert its sign.
+    # printed p.130 line 27 is "+I(BU,18),1.0,-24" and caught it
+    # immediately: .30 against the printed .20, one bit, the invert.
+    if base_op == '-I':
+        base_op, invert, immediate = VFL_INT_MINUS_BASE, 1, True
     if base_op not in VFL_INT_CODES and base_op.endswith('I') and base_op[:-1] in VFL_INT_CODES:
         base_op, immediate = base_op[:-1], True
 
