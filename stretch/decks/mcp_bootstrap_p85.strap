@@ -82,3 +82,44 @@ TSCAN1  (AX)DD(BU,42,6),CONSOLEX     ! line 32
 !SYM   TSCAN1   004744.31
 !CHECK 004743.00 | 004744.31+ 000 000010 000000 | line 29  T SCIX1  XW,TSCAN1,8,0
 !CHECK 004744.00 | 000000.05- | line 30  T SCBK1  VF,-5
+
+! ---- THE TYPE CODES THEMSELVES, read off the page ----------------
+!
+! >>> THE EIGHT DD(BU,5) ROWS DO PRINT BINARY OUTPUT. <<<  Printed
+! lines 29-47 carry BARE locations -- no trailing "+" -- and each
+! DD(BU,5) prints its value in the BINARY OUTPUT column as TWO octal
+! digits: 02 01 03 04 05 06 21 10.  Two of those cannot be a
+! coincidence of reading: line 45's operand (2)10001 is binary 10001
+! = 17 = octal 21, and line 47's operand 8 is octal 10, and both
+! print exactly that.  So this is the page confirming the type codes
+! the configuration table was built from, digit for digit.
+!
+! THE WIDTH 5 COMES FROM THE PAGE'S OWN STATEMENT COLUMN, which
+! prints DD(BU,5) on all eight -- not from the deck.  Five bits is
+! two octal digits, and listing_oracle.render() is explicit that the
+! digit count does not determine the width.
+!
+! WHAT STILL CANNOT BE CHECKED: the eight (AX)DD(BU,42,6) character
+! rows (lines 32, 34, 36, 38, 40, 42, 44, 46) print a LOCATION and
+! NOTHING in the BINARY OUTPUT column.  The seven-character names are
+! not on this page as bits.  Only one of the eight, TSCAN1, is
+! covered by a !SYM; the other seven are accounted by neither !SYM
+! nor !CHECK, and that is the page, not the deck.
+!
+! AND ONE AMBIGUITY LEFT ALONE: printed line 6, TFLLGN SYN(BU,6),7,
+! prints LOCATION 000000.00+ and BINARY OUTPUT +00000007, while every
+! other SYN on the page prints its value in the LOCATION column with
+! +00000000 beside it.  strap_asm gives TFLLGN the value 7, which
+! would be 000000.07 in the location column.  Read at 900 dpi the
+! page's location digits there are round glyphs, i.e. zeros.  That
+! disagreement is RECORDED, NOT RESOLVED, and no !SYM TFLLGN is
+! added -- the landed deck's omission of it was right.
+
+!CHECK 004745.03 | 02 | line 33 DD(BU,5),2 as printed       | 5
+!CHECK 004745.62 | 01 | line 35 DD(BU,5),1 as printed       | 5
+!CHECK 004746.41 | 03 | line 37 DD(BU,5),3 as printed       | 5
+!CHECK 004747.20 | 04 | line 39 DD(BU,5),4 as printed       | 5
+!CHECK 004747.77 | 05 | line 41 DD(BU,5),5 as printed       | 5
+!CHECK 004750.56 | 06 | line 43 DD(BU,5),6 as printed       | 5
+!CHECK 004751.35 | 21 | line 45 DD(BU,5),(2)10001 as printed | 5
+!CHECK 004752.14 | 10 | line 47 DD(BU,5),8 as printed       | 5

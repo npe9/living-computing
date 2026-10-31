@@ -81,3 +81,52 @@ TSCAN4  (AX)DD(BU,30,6),NSAVEX       ! line 42
 !CHECK 004760.00 | 000000.02- | line 25 T SCBK3 VF,-2
 !CHECK 004762.00 | 004763.31+ 000 000005 000000 | line 39 T SCIX4 XW,TSCAN4,5,0
 !CHECK 004763.00 | 000000.03- | line 40 T SCBK4 VF,-3
+
+! ---- THE SCAN-TABLE DATA ITSELF, read off the page ---------------
+!
+! >>> THE CODE DD ROWS PRINT; THE CHARACTER ROWS DO NOT. <<<  Every
+! DD(BU,2) and DD(BU,3) on this page prints its value in the BINARY
+! OUTPUT column as ONE octal digit.  Every (AX)DD(BU,30,6) and
+! (AX)DD(BU,12,6) prints NOTHING there -- thirteen rows (lines 8, 10,
+! 12, 14, 16, 26, 28, 30, 42, 44, 46, 48, 50) carry a LOCATION and a
+! blank binary column, so THE CHARACTER BITS ARE NOT ON THIS PAGE and
+! cannot be !CHECKed from it.  Three of the thirteen are TSCAN2/3/4
+! and are covered by a !SYM; the other ten are accounted by neither
+! !SYM nor !CHECK, and that is the page's doing, not the deck's.
+!
+! THE WIDTHS BELOW COME FROM THE PAGE'S OWN STATEMENT COLUMN, which
+! prints DD(BU,2) in the mode and density tables and DD(BU,3) in the
+! disposition table (line 52 prints DD(BU,03)) -- not from the deck.
+! listing_oracle.render() says in capitals that the DIGIT COUNT DOES
+! NOT DETERMINE THE WIDTH, and here one digit covers both 2 and 3
+! bits, so the width had to be read rather than inferred.
+!
+! AND THE SINGLE DIGIT IS THE FIELD, NOT A WINDOW OVER ITS NEIGHBOUR:
+! all sixteen printed digits equal their printed operands, and not one
+! of them is 4-7.  A 3-bit window starting at a 2-bit field would have
+! pulled in the next character row's leading bit and shown a 4, 5, 6
+! or 7 on at least one of the six rows whose operand is 3.  None does.
+!
+! One oddity, recorded and transcribed past: printed line 16's
+! LOCATION carries a trailing asterisk, "004756.31 *".  That is the
+! unexplained marker of docs/listing_typography.md 12 -- it sits in
+! the LOCATION column, is not the line number's asterisk, and does not
+! change an assembled bit.  Line 16 is an (AX)DD row, so it has no
+! binary output to check either way.
+
+!CHECK 004754.67 | 0 | line 9  DD(BU,2),0 as printed | 2
+!CHECK 004755.27 | 1 | line 11 DD(BU,2),1 as printed | 2
+!CHECK 004755.67 | 3 | line 13 DD(BU,2),3 as printed | 2
+!CHECK 004756.27 | 2 | line 15 DD(BU,2),2 as printed | 2
+!CHECK 004756.67 | 3 | line 17 DD(BU,2),3 as printed | 2
+!CHECK 004756.71 | 3 | line 18 DD(BU,2),3 as printed | 2
+!CHECK 004760.45 | 1 | line 27 DD(BU,2),1 as printed | 2
+!CHECK 004760.63 | 3 | line 29 DD(BU,2),3 as printed | 2
+!CHECK 004761.01 | 0 | line 31 DD(BU,2),0 as printed | 2
+!CHECK 004761.03 | 0 | line 32 DD(BU,2),0 as printed | 2
+!CHECK 004763.67 | 0 | line 43 DD(BU,3),0 as printed | 3
+!CHECK 004764.30 | 0 | line 45 DD(BU,3),0 as printed | 3
+!CHECK 004764.71 | 1 | line 47 DD(BU,3),1 as printed | 3
+!CHECK 004765.32 | 2 | line 49 DD(BU,3),2 as printed | 3
+!CHECK 004765.73 | 3 | line 51 DD(BU,3),3 as printed | 3
+!CHECK 004765.76 | 0 | line 52 DD(BU,03),0 as printed | 3
