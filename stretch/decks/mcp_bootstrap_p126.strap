@@ -92,8 +92,8 @@
 !                       K CLEAR  LCI,1,K REP"
 !   K RELES  216202.00  OCR'd listing, "216202.00  000000.37 8B
 !                       001000.00 F0  K RELES  CM0000(BU,1),..."
-!   K G IN   215762.00  OCR'd listing, "215762.00  215021.23 ...
-!                       K G IN  LVI,9,S PROG"
+!   K Q IN   215762.00  OCR'd listing, "215762.00  215021.23 ...
+!                       K Q IN  LVI,9,S PROG"
 !   Z COMRT  220234.40  OCR'd listing, "220234.40  000000.45 CD
 !                       Z COM RT  VF,..."
 !   K CSQ    216171.00  printed p.127 line 1 (above)
@@ -187,8 +187,8 @@
 ! letters.  000000.00 is what line 10 compiles.  Spelling taken from
 ! the landed p.102 deck.
 !
-! >>> "K G IN" IS A G, NOT A Q, AND IT WAS SETTLED BY SHAPE AGAINST
-! TWO KNOWN GLYPHS ON THIS PAGE. <<<  Line 56 is "B,K G IN".
+! >>> "K Q IN" IS A G, NOT A Q, AND IT WAS SETTLED BY SHAPE AGAINST
+! TWO KNOWN GLYPHS ON THIS PAGE. <<<  Line 56 is "B,K Q IN".
 ! tesseract reads G -- and tesseract's vote is WORTHLESS here,
 ! because it also reads printed p.127 line 1's certain "K CS Q" as
 ! "K CS G": this reader has a Q->G bias.  What settles it is that
@@ -298,7 +298,14 @@ KHEX    SYN, (8)216062.40            ! printed p.125 line 7
 KCBJR   SYN, (8)221313.40            ! OCR'd defining card
 KCLEAR  SYN, (8)221302.40            ! OCR'd defining card
 KRELES  SYN, (8)216202.              ! OCR'd defining card
-KGIN    SYN, (8)215762.              ! OCR'd defining card
+! KQIN, not KGIN.  This deck took the name from an OCR'd
+! defining card, and this drum has a Q->G bias (that is in
+! this deck's own notes).  The typeset manuals print KQIN 18
+! times to KGIN 3; printed pp.123, 128 and 136 all spell it
+! Q; and p.136 reads the glyph at 1800 dpi as a bowl cut by a
+! diagonal with NO mid-height bar, beside a known G that has
+! one.
+KQIN    SYN, (8)215762.              ! defining card, printed p.123
 ZCOMRT  SYN, (8)220234.40            ! OCR'd defining card
 KCSQ    SYN, (8)216171.              ! printed p.127 line 1
 KMOUNT  SYN, (8)216171.40            ! printed p.127 line 2
@@ -384,7 +391,7 @@ KFAKE   CM0000(BU,1), SREW($11)      ! line 46
         CM1111(BU,1), SCSINT         ! line 53
         SV, 11, KCSQ                 ! line 54
 ZKCSQ   LVI, $1, KHEX                ! line 55
-        B, KGIN                      ! line 56
+        B, KQIN                      ! line 56
 
 ! ---------------------------------------------------------------
 ! THE PRINTED LISTING, read off PDF p.133 -- the whole sheet at
@@ -447,7 +454,7 @@ ZKCSQ   LVI, $1, KHEX                ! line 55
 !  53*   216166.40     215001.07 80  001000.36 F0               CM1111(BU,1),S CS INT                                     EB000241
 !  54*   216167.40     216171.27 30                             SV,11,K CS Q                                              EB000242
 !  55*   216170.00     216062.43 01                    Z KCSQ   LVI,$1,K HEX                                              EB000243
-!  56*   216170.40     215762.10 00                             B,K G IN                                                  EB000244
+!  56*   216170.40     215762.10 00                             B,K Q IN                                                  EB000244
 
 !SYM   RKMP     216131.40
 !SYM   RNTMCP   216133.00
@@ -511,4 +518,4 @@ ZKCSQ   LVI, $1, KHEX                ! line 55
 !CHECK 216166.40 | 215001.07 80 001000.36 F0 | line 53 CM1111(BU,1),S CS INT
 !CHECK 216167.40 | 216171.27 30 | line 54 SV,11,K CS Q
 !CHECK 216170.00 | 216062.43 01 | line 55 Z KCSQ LVI,$1,K HEX
-!CHECK 216170.40 | 215762.10 00 | line 56 B,K G IN
+!CHECK 216170.40 | 215762.10 00 | line 56 B,K Q IN

@@ -6412,6 +6412,12 @@ run "the program-error fixup, printed p.132" python3 verify_mcp_page.py 132
 run "MCP's two exit routines, printed p.133" python3 verify_mcp_page.py 133
 run "the interrupt-name table and JWLODE, printed p.134" python3 verify_mcp_page.py 134
 run "the CONCEPTOR's console handler, printed p.135" python3 verify_mcp_page.py 135
+# printed p.136 hit the radix-literal miscompile INDEPENDENTLY and
+# left all four of its rows FAILING; they pass against the fix
+# printed p.135 produced, on three literals p.135 never used.
+# It also found the last blank-in-a-name path and a connective
+# carrying no address field at all.
+run "the console-message scanner and PP return, printed p.136" python3 verify_mcp_page.py 136
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
 run "the program status table, printed p.109" python3 verify_mcp_page.py 109
 run "the interrupt table, printed p.110" python3 verify_mcp_page.py 110

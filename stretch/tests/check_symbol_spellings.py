@@ -64,7 +64,14 @@ DECKS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "decks")
 # The glyph pairs this printer actually confuses. See
 # docs/transcription_workflow.md and docs/listing_typography.md.
 CONFUSABLE = {frozenset("OC"), frozenset("CD"), frozenset("B8"),
-              frozenset("O0"), frozenset("C0")}
+              frozenset("O0"), frozenset("C0"),
+              # G/Q joined on 2026-10-31.  printed p.126 spelled KGIN
+              # where pp.123, 128 and 136 spell KQIN, at one address,
+              # and THIS FILE SAID NOTHING because the pair was not
+              # here.  The drum cuts Q's bowl with a diagonal and no
+              # mid-height bar, which a worn G loses; printed p.126's
+              # own notes record tesseract reading a certain Q as G.
+              frozenset("GQ")}
 
 SYN_RE = re.compile(r'^\s*([A-Z0-9$]+)\s+SYN(?:\([^)]*\))?\s*,\s*([^!\s]+)',
                     re.IGNORECASE)

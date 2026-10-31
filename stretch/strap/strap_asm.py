@@ -3405,8 +3405,23 @@ def emit_statement(stmt, symtab, image):
         bs_field = (MODE_DEFAULT_BS[mode] if bs_expr is None
                     else eval_expr(bs_expr, symtab, 0, lineno=stmt.lineno)) & 0x7
 
+        # >>> A CONNECTIVE MAY CARRY NO ADDRESS FIELD AT ALL. <<<
+        # MCP printed p.136 lines 19 and 23 print "C1111(BU,1)" and
+        # nothing after it -- no operand, no comma -- and the listing
+        # compiles 000000.00 80  001000.36 70: address zero, index
+        # zero.  C22-6531 printed p.7 is the rule this file already
+        # quotes for DR, VF and an omitted address before an index:
+        # "the instruction is compiled as if the missing fields
+        # contained zeros ... A NULL FIELD IS ALWAYS COMPILED AS A
+        # ZERO."
+        #
+        # This was an AssemblerError, so it stopped the WHOLE deck and
+        # the page could check nothing -- which is why printed p.136
+        # had to substitute "C1111(BU,1),0.0" to get its other 53 rows
+        # verified.
         if not stmt.fields or not stmt.fields[0].strip():
-            raise AssemblerError(f"{op} needs an address field", stmt.lineno)
+            stmt = Statement(stmt.lineno, stmt.name, stmt.op, stmt.mods,
+                             ['0.0'], stmt.raw, stmt.entry)
         base, paren = split_field_trailing_paren(stmt.fields[0])
         if immediate:
             # THE OPERAND FIELD'S UNIT IS NOT ONE BIT.  Reference
