@@ -409,6 +409,22 @@ a page prints `SLC,$`, the join to the previous page has to be
 compared BY HAND — and pp.101 and 108 carry an `SLC` their pages do
 not print at all.
 
+> **BUT A PRINTED `SLC,$` IS THE BEST FORWARD-JOIN WITNESS THERE IS,
+> and it is the PAGE that supplies it, not the deck.** An `SLC`
+> emits nothing, so **its printed LOCATION _is_ the counter arriving
+> from the previous page** — a free, independent reading of the join,
+> printed by IBM's own assembler. printed p.114 line 4 is
+> `215163.00 *  SLC,$`, which is what confirms that printed p.113's
+> twelve interrupt slots end at 215162.40 and nothing fell off the
+> bottom of that page.
+>
+> So the loss is entirely in the SUBSTITUTION. A deck that writes a
+> hard `SLC,(8)nnnn.` for a printed `SLC,$` throws the witness away
+> and asserts the value instead. **Record the printed location in the
+> `!CHECK` note even though no check can use it**, and when the
+> neighbouring page lands, compare the two by hand — it costs one
+> line and it is the only thing that closes the join.
+
 **3. A `!CHECK` THE DECK NEVER WROTE IS NOT A FAILURE.**
 `verify_mcp_page.py` checks what the deck DECLARES, so a deck
 declaring two checks for a twenty-four-row page passes having
