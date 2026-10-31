@@ -387,6 +387,40 @@ failing check.
 > the statement, the same instruction on another page, or the index
 > rule (the low nibble is `i2`, 0 when there is no second operand).
 
+### A SIC/BRANCH PAIR CAN STRADDLE A PAGE BREAK
+
+`SIC` must be immediately followed by a half-word branch (Reference
+Manual printed p.41), and `strap_asm` enforces it:
+
+```
+  SIC alone     -> "SIC must be immediately followed by a half-word branch"
+  SIC + branch  -> assembles
+```
+
+That is right — real STRAP read the next CARD and never saw a page
+break. But a LISTING PAGE can end between the two. printed p.131's
+line 48 is `Y FX AD  SIC,Y PREL` at 216440.00 and its branch is
+printed p.132's line 1.
+
+**Do not invent the branch to make the page assemble.** A stub would
+deposit a word at 216440.40 that this page does not print and that
+the NEXT page owns, and the deck would then disagree with p.132 for
+as long as nobody looked. The right move is what p.131 did: leave the
+orphaned `SIC` out of the deck, carry it in the listing block with no
+`!CHECK`, and say why.
+
+**Bound the loss explicitly** rather than leaving it open:
+
+* its bits are the SAME STATEMENT as four other rows on that page,
+  all of which ARE checked;
+* its location is pinned by the deck's counter arriving at exactly
+  216440.00; and
+* printed p.110 independently SYNs `YFXAD` at `(8)216440.0`.
+
+So the row is unchecked and nothing about it is unknown. When the
+neighbouring page lands, the pair can be rejoined if anyone wants it
+under a single check.
+
 ### WHAT THE ORACLE CANNOT SEE
 
 `listing_oracle` compares assembled bits against printed bits, and
