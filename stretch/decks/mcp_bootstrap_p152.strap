@@ -1,0 +1,654 @@
+! mcp_bootstrap_p152.strap -- the tail of the disk arc-address
+! computation (Z DISK 1) and the whole of the CHANGE MODE routine
+! (K MODE), printed page 152.  docs/MCP_Mar63_001-249.pdf PDF p.159,
+! header READ and not assumed: the top line prints "TIME CLOCK
+! 00054041  PUNID 11D11MCP   CARD ID IA000047   DIST. OF 3/01
+! 3/01   PAGE NUMBER  152", and the column-heading row's own
+! "LOCATION 217573" names the page's first word.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! FIFTY-ONE PRINTED LINES, forty-two of which emit bits.  The page
+! prints NO SLC and NO DD/SYN/VF: every emitting row is an
+! instruction except the last three, which are index words (XW).
+! Lines 13 and 28-34 are COMMENT CARDS -- a "-" in the NAME column,
+! no LOCATION, no BINARY OUTPUT -- and line 41 is a CNOP that found
+! the counter already on a word boundary and so printed NEITHER a
+! location NOR any bits (printed p.151 line 46's CNOP, two rows
+! earlier in the listing, DID emit "000000.30 00"; the difference is
+! the alignment it arrives on, and this page's line 40 is a full
+! word ending exactly at 217621.00).
+!
+! Two routines, back to back:
+!
+!   lines 1-27   the tail of the DISK request path.  Line 7's label
+!                Z DISK 1 is the entry: it tests S LOC SU and
+!                S HS ECH, checks the channel is not already
+!                operating (BBZ -> K C BUSY), pulls the control
+!                word's count field out of S CW, tests for a
+!                complete arc, decrements by one for a full-arc
+!                request, adds the current arc and compares against
+!                the file's maximum (BXH -> K ILEGL, "-TOO MANY
+!                ARCS"), then loads the arc address, tests whether a
+!                LOC is needed, and leaves either through K G LOC
+!                (with the IC saved in K G LOCR) or through
+!                Z STEVL.  Lines 1-6 are the tail of whatever
+!                precedes it on printed p.151: they set the RD
+!                operation bit, test an index, set the HS ECH bit
+!                and go to M IOREJ by way of K SUPP.
+!
+!   lines 29-51  "*****CHANGE MODE*****", entered at K MODE (line
+!                35, 217615.00).  Its own comment cards give the
+!                calling sequence -- "LV,1,(CODE)" then
+!                "SIC,K K MODE;B,K MODE" -- and the two-bit code:
+!                01 ECC odd, 10 no-ECC even, 11 no-ECC odd.  It
+!                compares the wanted mode against the channel
+!                status table (KF), returns at once if it already
+!                matches (BAE), otherwise picks the octal code out
+!                of the K M CODE table, plants it in the mode-change
+!                command at K MODE C, resets the table (SF), saves
+!                $0 into S IO INS, issues the CTL(SEOP), and waits
+!                for end-op through K SEOP T / K EOP R / M IO REJ.
+!                K K MODE (line 48) is the "B,$" the caller's SIC
+!                modifies.
+!
+! ---------------------------------------------------------------
+! FORTY-SIX CARDS OVER FIFTY-ONE LINES, AND NOTHING FELL OFF EITHER
+! END
+! ---------------------------------------------------------------
+! The card-serial column runs IA000047 (line 1) to IA000092 (line
+! 51), read at 400 dpi off the right-hand band.  Line 1's serial is
+! also the header's own CARD ID, so nothing fell off the top of the
+! render; line 51 is followed by blank paper to the foot of the
+! form, and printed p.153 opens with its own asterisk box, so
+! nothing fell off the bottom.  The serials are consecutive, with
+! FIVE printed twice -- one card, two statements, exactly the shape
+! printed p.136 line 1-2 and printed p.127 line 56 carry:
+!
+!   IA000048  lines 2,3    KVI,4,.32          ; BZXE,$+1.32
+!   IA000050  lines 5,6    LVI,1,K SUPP       ; B,M IOREJ
+!   IA000069  lines 25,26  SIC,K G LOCR       ; B,K G LOC
+!   IA000085  lines 42,43  LX,0,$+1.          ; SX,0,S IO INS($12)
+!   IA000088  lines 46,47  SIC,K EOP R        ; B,M IO REJ
+!
+! 51 lines - 5 doubled = 46 cards = IA000092 - IA000047 + 1.  The
+! two SIC pairs are on this page in full, so the straddle of
+! docs/transcription_workflow.md's "A SIC/BRANCH PAIR CAN STRADDLE A
+! PAGE BREAK" does not arise here and no row is left out.
+!
+! >>> THE SURVEY IS WRONG ABOUT THIS PAGE AND THE CARD COLUMN SAYS
+! SO. <<<  strap/mcp_survey.py read 29 rows, 217574.00..217621.00.
+! The truth is 42 emitting rows, 217573.00..217627.00: it lost line
+! 1 off the top (the page's FIRST row, and the one the heading
+! LOCATION field names) and lines 42-51 off the bottom, including
+! all three XW index words.  Counted off the card serials, as the
+! brief requires.
+!
+! ---------------------------------------------------------------
+! THE JOINS -- BOTH SIDES CLOSED, NEITHER BY THIS PAGE'S INK
+! ---------------------------------------------------------------
+! >>> THE PAGE PRINTS NO SLC, SO NO !CHECK BELOW CAN TEST THE
+! ORIGIN. <<<  A hard SLC overrides the arriving counter silently
+! (docs/transcription_workflow.md, "A HARD SLC CANNOT DISAGREE WITH
+! THE ARRIVING COUNTER"), so every !CHECK here would still pass if
+! 217573.00 were wrong.  It is nevertheless fixed four ways, three
+! of which never touch this page:
+!
+!   (a) THE HEADING ROW'S OWN "LOCATION 217573", printed by IBM's
+!       assembler at the right-hand end of the column-heading line
+!       and read, not assumed.  It gives the word and not the bit.
+!   (b) NEAR SIDE.  The volume OCR of PDF p.158 -- printed p.151, a
+!       DIFFERENT page and therefore an admissible witness -- ends
+!       at its line 48: "48* 217572.00 * 000000.00 8E 000000.01 00
+!       K GO  RD,0.0($14),0  -ISSUE RD COMMAND".  That is a full
+!       word at 217572.00, so it occupies 217572.00 and 217572.40
+!       and leaves the counter at exactly 217573.00.
+!   (c) FAR SIDE.  The volume OCR of PDF p.160 -- printed p.153 --
+!       carries, after its three-line asterisk box, an EMITTING row
+!       at 217630.00 ("217630.00  221140.00 80", a SIC), which is
+!       where p.153's own code begins.  Line 51 here is a full word
+!       at 217627.00 and so leaves the counter at exactly
+!       217630.00.  They agree, and the agreement does not depend
+!       on reading the garbled line beside it -- the OCR ALSO shows
+!       a second, NON-emitting row printed at 217630.00 just above,
+!       which is the shape of a printed "SLC,$"; if that is what it
+!       is, it is the free forward-join witness of
+!       docs/transcription_workflow.md, but the join is closed
+!       without it.
+!   (d) TWO OUTSIDE PAGES PIN TWO OF THIS PAGE'S OWN LABELS, and
+!       between them they pin the origin to the BIT:
+!         Z DISK 1 at 217577.00 -- printed p.151 line 14 prints
+!           "217551.00  217577.10 00  B,Z DISK 1  -DISK - 1" and
+!           printed p.153 line 14 prints "217635.00  217577.10 00
+!           B,Z DISK1  -DISK".  A plain B prints target+.10, so both
+!           put Z DISK 1 on the EVEN half word of 217577.
+!         K K MODE at 217624.40 -- printed p.152's own neighbours
+!           print "SIC,K K MODE" against "217624.40 80" TWICE on
+!           other pages (OCR lines 8006 and 9434), and SIC prints
+!           the BARE 24-bit address with no operation bits in the
+!           offset field (measured on printed p.143 line 8), so
+!           K K MODE is pinned to the BIT, not the half word.
+!         K MODE at 217615.00 -- three other pages print
+!           "B,K MODE" against "217615.10 00" (OCR 7882, 8008,
+!           9435).
+!       This deck's counter reaches 217577.00 after six rows,
+!       217615.00 after twenty-six emitting rows and 217624.40
+!       after thirty-eight.  A wrong origin moves all three
+!       together and all three are independently printed elsewhere.
+!
+! ---------------------------------------------------------------
+! GLYPHS -- WHAT WAS SETTLED AND ON WHAT
+! ---------------------------------------------------------------
+! This page opens round glyphs constantly: its own column heading
+! prints "LOCATICN" and "BINARY CUTPUT", and LOCATIONS print
+! "217573.CC" for .00.  A round glyph in a LOCATION or in an OCTAL
+! BINARY field is a 0 with certainty (C is not an octal digit).
+! The glyphs that are NOT in an octal field were each settled on
+! something else, and on this page almost all of them are settled
+! by the ASSEMBLER, because the field they sit in is checked:
+!
+! (1) "CTO111" IS "CT0111", AND THE BITS SAY SO, NOT THE INK.  The
+!     connective's four binary digits land in the second half word's
+!     offset field, where the oracle sees them.  Measured, varying
+!     nothing else (line 12, printed 011062.57 70):
+!         CT0111(BU,9),S CW+.37($13),-27   011062.57 70  = PRINTED
+!         CT0000(...)                      011062.41 70
+!         CT1111(...)                      011062.77 70
+!         C0111(...)                       011062.56 70
+!         CM0111(...)                      011062.56 F0
+!     Only CT0111 matches.  The round glyph after "CT" cannot be an
+!     O in any case -- a connective's digits are binary -- but the
+!     measurement also settles CT against C and CM, which ink could
+!     not.
+!
+! (2) THE TRAILING BYTE ON LINE 23 IS "0C", NOT "00" OR "CC".  It
+!     prints as two round glyphs.  A branch-on-bit's trailing byte
+!     is bits 56-63: the top nibble is part of the literal 111000000
+!     and is always 0, and the bottom nibble is mod+cond.  Measured:
+!         BZB1,SLOCSU,KKLOC   220065.74 0C  = PRINTED
+!         BZB,...             220065.74 00
+!         BZBZ,...            220065.74 04
+!         BZBN,...            220065.74 08
+!         BB1,...             220065.74 0E
+!     So the first glyph is a damaged 0 and the second is a real C,
+!     IN THE SAME TWO-CHARACTER FIELD -- the sharpest illustration
+!     on this page of "ink varies per CHARACTER, not per row".  The
+!     same measurement is what spells the mnemonic BZB1 (and lines
+!     7, 8, 9 and 24 are BB, BZB, BBZ and BZBZ by the same check).
+!
+! (3) THE TRAILING BYTE ON LINE 14 IS "C0", AND HERE THE C IS REAL.
+!     Read "00" at 400 dpi; the assembler said C0; rendered at 1800
+!     dpi the first glyph is open on the right with no top or bottom
+!     closure (a C) and the second is a closed ring (a 0), and the
+!     row below prints "0D" with the opposite shapes for comparison.
+!     The bits agree:  BZRZ,$+1.0 -> 217605.74 C0, BRZ -> ...74 C2.
+!     An indicator branch's byte carries the indicator; C0/C2 differ
+!     only in the "branch on" bit, which is what the leading Z in
+!     BZRZ means.  >>> THIS IS THE ONE PLACE A FIRST READING OF THIS
+!     PAGE WAS WRONG, AND WHAT CAUGHT IT WAS THE ASSEMBLER
+!     DISAGREEING, NOT A SECOND LOOK. <<<
+!
+! (4) "SF" IS NOT "ST", AND "KF" IS NOT "K".  Lines 36 and 40 are
+!     the same operand with different operations.  Measured:
+!         KF(BU,2),S C MODE($10),-18   002067.23 10  = PRINTED
+!         K(BU,2),...                  002067.21 10
+!         KFE(BU,2),...                002067.23 30
+!         KR(BU,2),...                 002067.21 50
+!         SF(BU,2),S C MODE($10),-18   002067.12 F0  = PRINTED
+!         ST(BU,2),...                 002067.20 D0
+!
+! (5) "CTL(SEOP)" IS CHECKED AGAINST ITS WHOLE FAMILY (line 44):
+!         CTL(SEOP),0.0($14),0.0   000000.15 00  = PRINTED
+!         CTL,...                  000000.05 00
+!         RD(SEOP),...             000000.11 00
+!         W(SEOP),...              000000.13 00
+!         LOC(SEOP),...            000000.17 00
+!     and the index "($14)" is checked by the first half word's byte
+!     (8E; "($4)" prints 84).
+!
+! (6) INDEX NUMBERS ARE DECIMAL AND THE PAGE PROVES IT TO ITSELF.
+!     The low nibble of a VFL full word's first byte is i1, so
+!     ($10)->A, ($11)->B, ($12)->C, ($13)->D, ($14)->E.  Lines 1
+!     (8B), 9 (8A), 10 (8D), 20 (8A), 24 (8B), 36 (8A), 43 (1C) and
+!     44 (8E) print exactly that, which is five different index
+!     registers agreeing across eight rows.
+!
+! (7) "K EOP R" AND "K SEOP T" END AND BEGIN IN O's, NOT C's.  The
+!     volume's own table of contents prints the routine's title --
+!     "EOP TEST FOR SEOP TYPE I/O   PAGE 0187" -- and line 47's
+!     comment column is the English word: "-WAIT FOR END OP".  EOP
+!     is also an indicator name in the operation set (C22-6531).
+!
+! (8) THE "1" IN "Z DISK 1" IS A DIGIT.  Rendered at 1800 dpi the
+!     final glyph has the drum's digit-1 shape -- an upper-left flag
+!     stroke into a bare stem with a base serif and NO top bar --
+!     against the full top-and-bottom serifs of the I two characters
+!     to its left in the same name.  Independently, printed p.151
+!     line 14 prints the reference as "B,Z DISK 1" with the comment
+!     "-DISK - 1", and printed p.153 line 14 prints "B,Z DISK1".
+!
+! (9) >>> "K MODE C" AND "K M CODE" REST ON INK AND NOTHING ELSE,
+!     SO THEY WERE READ AT 1200 dpi AGAINST A CALIBRATION INSIDE
+!     THEIR OWN WORDS. <<<  They are the page's only two labels
+!     that nothing outside this page references (Z DISK 1, K MODE
+!     and K K MODE are all pinned by other pages; see THE JOINS),
+!     so listing_oracle and check_symbol_spellings are both blind
+!     to them -- exactly the class that "assembles perfectly and is
+!     simply wrong".  What settles them:
+!       * Line 49's name prints "CODE" with the C and the O
+!         ADJACENT: the C is open on the right with flared
+!         terminals, the O is a closed ring, in one word off one
+!         drum one character apart.  Line 44's name prints the same
+!         two shapes a word apart -- a closed O in "MODE" and an
+!         open C as the trailing character -- and the D of both
+!         shows the straight vertical left stem and squared corners
+!         that distinguish it from C and 0 (the discriminator of
+!         docs/transcription_workflow.md's "C vs D").
+!       * Line 35's "K MODE" is pinned from outside (three pages
+!         print "B,K MODE" at 217615.10), so its MODE is a
+!         known-good instance of the same string in the same
+!         column, and lines 44 and 48 print it identically.
+!       * The comment column is English and says both words: line
+!         36 "-IS CHAN SET TO DESIRED MODE", line 38 "-IF NOT,
+!         PICK UP OCTAL CODE", line 44 "-MODE CHANGE COMMAND"
+!         (which is what the trailing C of K MODE C abbreviates),
+!         and the routine's own comment cards on lines 31 and 33
+!         print "LV,1,(CODE)" and "***  CODE  **".
+!
+! (10) THE SAME SYMBOL IS PRINTED WITH AND WITHOUT ITS BLANKS ON THIS
+!     ONE PAGE, which is the assembler's own witness that the blanks
+!     are not part of the name: line 4 prints "S HS ECH" and line 8
+!     prints "SHSECH"; line 6 prints "M IOREJ" and line 47 prints
+!     "M IO REJ".  Both are written closed up below, as every deck
+!     since p.2 does, and all are within the six-character limit
+!     (C22-6531 printed p.10).
+!
+! ---------------------------------------------------------------
+! THE SECOND ASTERISK, AND WHAT THIS PAGE ADDS TO IT
+! ---------------------------------------------------------------
+! Every one of the fifty-one line numbers carries the ordinary
+! asterisk ("1*", "51*").  TWO lines carry a SECOND asterisk after
+! the LOCATION: line 17 (217606.00) and line 43 (217621.40).  That
+! is the unexplained marker of docs/listing_typography.md 12.
+! What this page contributes:
+!   * both marked rows are HALF-WORD DIRECT INDEX instructions
+!     (KV and SX) -- so "a full word on an odd half word", which
+!     printed p.144 already disconfirmed, stays dead;
+!   * one is on an even half word and one on an odd one, so
+!     alignment is not it;
+!   * line 43 is the SECOND statement of card IA000085 and line 17
+!     is the only statement on card IA000061, so "the second
+!     statement punched on one card" is not it either (which
+!     printed p.3 had already shown);
+!   * the pitch here is 26 lines on a 51-line page, against printed
+!     p.3's 22-23 on 52 lines and printed p.144's 16 on 30 lines.
+!     That is ordered the same way as the "fixed physical distance
+!     down the form" reading in 12, but p.3 and this page are the
+!     same density and 22-23 is not 26, so it does not settle it.
+! Recorded as open, with nothing added to it.  It changes no bit:
+! both rows are in the checked set below and both match.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- every one defined by a card on a DIFFERENT page
+! ---------------------------------------------------------------
+! ZERO TAUTOLOGICAL ROWS.  This page's own cards sit at OCR lines
+! ~7891-7946 of docs/ocr/MCP_Mar63_001-249.txt; every witness cited
+! below is a different printed page, so none of them is this page
+! reading itself.  Twelve of the twenty-two are already carried by
+! LANDED decks at these same values.
+!
+! S COM RG 215001.00  printed p.103 line 8 DEFINES it, "S COM RG
+!                     XW,(8)520000."  Carried only so S HS ECH and
+!                     S LOC SU can be written the way p.103 writes
+!                     them.
+SCOMRG  SYN, (8)215001.0
+! S HS ECH 215001.01  p.103 line 11 DEFINES it, "S HS ECH
+!                     SYN(BU,1),S COM RG+.1" -HS ECH OPERATION BIT.
+!                     Lines 4 and 8 here print 215001.01 as a full
+!                     24-bit BIT address, so they pin it to the bit.
+SHSECH  SYN(BU,1), SCOMRG+.1
+! S LOC SU 215001.21  p.103 line 26 DEFINES it, "S LOC SU
+!                     SYN(BU,1),S COM RG.17" -ON WHEN DISK IN SETUP.
+!                     Lines 7 and 23 print the bit address in full.
+SLOCSU  SYN(BU,1), SCOMRG.17
+! S RD     000000.71  printed p.99 line 45 "-READ, OPERATION STATUS";
+!                     carried by five landed decks as SYN(BU,1),0.57
+!                     (57 decimal = 0o71).  Line 1 pins it to the bit.
+SRD     SYN(BU,1), 0.57
+! S CH OP  000000.32  printed p.99 "-CHAN OPERATING"; four landed
+!                     decks carry 0.26 (= 0o32).  Line 9 pins the bit.
+SCHOP   SYN(BU,1), 0.26
+! S SEL    000000.47  printed p.99 line 32 "-SELECT FILE STATUS";
+!                     four landed decks carry 0.39 (= 0o47).  Line 24
+!                     pins the bit.
+SSEL    SYN(BU,1), 0.39
+! S C MODE 000000.62  printed p.99 line 37 "-CHANNEL MODE", 0.50
+!                     (= 0o62).  Lines 36 and 40 pin the bit.
+SCMODE  SYN(BU,2), 0.50
+! S ARCAD  000000.40  printed p.99 line 52 "-ARC ADDRESS (DISK)",
+!                     0.32 (= 0o40).  Line 20 pins the bit.
+SARCAD  SYN(BU,18), 0.32
+! S CW     000003.00  printed p.102 line 14 "-CONTROL WORD";
+!                     decks p.102, p.129 and p.138 carry 3.0.  Lines
+!                     10 and 12 pin it to the bit, through two
+!                     DIFFERENT offsets (.28 and +.37 decimal, which
+!                     print .34 and .45 octal).
+SCW     SYN(BU,64), 3.0
+! S DD     000000.00  printed p.108's defining card; decks p.108 and
+!                     p.129 carry SYN(BU,7),0.  Line 10 writes its
+!                     byte size as "9-S DD" and the byte-size field
+!                     is SEVEN BITS, so this page pins S DD only
+!                     MOD 128 -- see WHAT THE CHECKS DO NOT SHOW.
+SDD     SYN(BU,7), 0
+! S CU ARC 000006.00  printed p.102 line 19 "-CURRENT ARC"; deck
+!                     p.129 carries 6.00 too.  Lines 16 and 19 pin
+!                     it only to the half word (measured below).
+SCUARC  SYN(BU,18), 6.00
+! S MX ARC 000005.40  printed p.102 line 18 "- MAXIMUM ARC", 5.32
+!                     (= 0o40).  Line 17 pins the half word.
+SMXARC  SYN(BU,18), 5.32
+! S IO INS 000004.00  printed p.101 line 17 "-IO INSTR. LAST"; decks
+!                     p.101, p.122 and p.135 carry 4.0.  Line 43
+!                     pins the half word.
+SIOINS  SYN(BU,64), 4.0
+! K SUPP   216242.00  printed p.128 line 3 is the label row,
+!                     "K SUPP  NOP,K COMM R"; eleven landed decks
+!                     carry it.  Line 5 is an LVI and pins only the
+!                     half word.
+KSUPP   SYN, (8)216242.0
+! M IOREJ  221261.00  deck p.135 line 25 carries it.  Lines 6 and 47
+!                     are plain branches: half word only.
+MIOREJ  SYN, (8)221261.0
+! K C BUSY 221065.00  the volume prints the LABEL ROW on another
+!                     page: OCR line 9290, "21* 221065.00 ... 0D
+!                     K C BUSY  V-I,...".  Line 9's branch-on-bit A
+!                     field pins the half word.
+KCBUSY  SYN, (8)221065.0
+! K ILEGL  220064.00  deck p.127 carries it as a label row from
+!                     printed p.160.  Line 18's BXH pins the half
+!                     word.
+KILEGL  SYN, (8)220064.0
+! K K LOC  220065.40  the volume prints the LABEL ROW on another
+!                     page: OCR line 8290, "11* 220065.40
+!                     221144.63 01  K K LOC ...".  Line 23 pins the
+!                     half word -- and note it is the ODD one: the
+!                     printed ".74" has bit 50 set, which is the
+!                     address's own low bit.
+KKLOC   SYN, (8)220065.40
+! Z STEVL  221144.40  eight other pages print "B,Z STEVL" against
+!                     "221144.50 00" (OCR 7856, 7862, 7969, 8149,
+!                     8373, 8470 ...), and a plain B prints
+!                     target+.10, so Z STEVL is the ODD half word of
+!                     221144.  Lines 24 and 27 here print the two
+!                     forms -- a branch-on-bit (".74") and a plain
+!                     branch (".50") -- and both carry the same low
+!                     address bit, which is what makes this page's
+!                     own reading of ".74" as "odd half word"
+!                     self-checking rather than assumed.
+ZSTEVL  SYN, (8)221144.40
+! K G LOCR 220105.40  the volume prints the LABEL ROW on another
+!                     page: OCR line 8313, "34* 220105.40
+!                     220105.50 00  K G LOCR  B,$  -RETURN".  Line
+!                     25 is a SIC, which prints the BARE 24-bit
+!                     address, so this row pins K G LOCR TO THE BIT.
+KGLOCR  SYN, (8)220105.40
+! K G LOC  220100.40  another page prints "B,K G LOC" against
+!                     "220100.50 00" (OCR line 8246), and OCR 8306
+!                     shows a different label, K POSLD, occupying
+!                     220100.00 -- so K G LOC really is the odd half
+!                     word.  Line 26 pins the half word.
+KGLOC   SYN, (8)220100.40
+! K SEOP T 221350.40  two other pages print "B,K SEOP T" against
+!                     "221350.50 00" (OCR 8022, 8259).  Line 45 is
+!                     an LVI and pins only the half word.
+KSEOPT  SYN, (8)221350.40
+! K EOP R  221354.40  the volume prints the LABEL ROW on another
+!                     page: OCR line 9654, "12* 221354.40
+!                     221354.74 C2  K EOP R  BRZ,$  -IF NONE ON,
+!                     ALLS WELL", and four other pages print
+!                     "SIC,K EOP R" against "221354.40 80".  Line
+!                     46 is a SIC, so it pins K EOP R TO THE BIT.
+KEOPR   SYN, (8)221354.40
+
+! ---------------------------------------------------------------
+! THE ORIGIN.  The page prints NO SLC.  217573.00 is line 1's
+! printed LOCATION and 217573 is the heading row's own "LOCATION"
+! field; see THE JOINS for the three witnesses that never touch
+! this page's ink.  Stated hard so the deck assembles standalone,
+! which ASSERTS it rather than checking it.
+! ---------------------------------------------------------------
+        SLC, (8)217573.0
+
+! ---- tail of the disk request path -------------------------------
+        CM1111(BU,1), SRD($11)       ! line  1
+        KVI,4,.32                    ! line  2
+        BZXE,$+1.32                  ! line  3  (same card as 2)
+        CM1111(BU,1), SHSECH         ! line  4
+        LVI,1,KSUPP                  ! line  5
+        B,MIOREJ                     ! line  6  (same card as 5)
+ZDISK1  BB,SLOCSU,$+2.0              ! line  7
+        BZB,SHSECH,$+2.0             ! line  8
+        BBZ,SCHOP($10),KCBUSY        ! line  9
+        L(BU,9-SDD),SCW.28($13),-18  ! line 10  -CW COUNT OFFSET BY 9 FOR ARCS
+        LV,8,$L                      ! line 11
+        CT0111(BU,9),SCW+.37($13),-27 ! line 12 -TEST IF COMPLETE ARC
+        BZRZ,$+1.0                   ! line 14  -BRANCH IF NOT COMPLETE ARC
+        V-I,8,1.0                    ! line 15  -SUBTRACT 1 FOR FULL ARC REQUEST
+        V+,8,SCUARC($13)             ! line 16  -ADD CURRENT ARC ADDRESS
+        KV,8,SMXARC($13)             ! line 17  -COMPARE WITH MAX ARC ADDR
+        BXH,KILEGL                   ! line 18  -TOO MANY ARCS
+        LV,0,SCUARC($13)             ! line 19
+        L(BU,18),SARCAD($10),-18     ! line 20
+        KV,0,$L                      ! line 21  -TEST IF LOC NEEDED
+        BXE,$+1.32                   ! line 22
+        BZB1,SLOCSU,KKLOC            ! line 23
+        BZBZ,SSEL($11),ZSTEVL        ! line 24
+        SIC,KGLOCR                   ! line 25
+        B,KGLOC                      ! line 26  (same card as 25)
+        B,ZSTEVL                     ! line 27
+
+! ---- *****CHANGE MODE***** ---------------------------------------
+KMODE   SV,1,$L                      ! line 35
+        KF(BU,2),SCMODE($10),-18     ! line 36  -IS CHAN SET TO DESIRED MODE
+        BAE,KKMODE                   ! line 37  -IF SO, RETURN
+        LV,1,KMCODE-1.0($1)          ! line 38  -IF NOT, PICK UP OCTAL CODE
+        SVA,1,KMODEC.32              ! line 39
+        SF(BU,2),SCMODE($10),-18     ! line 40  -RESET CHAN ST TABLE
+        CNOP                         ! line 41  (emits nothing: already aligned)
+        LX,0,$+1.                    ! line 42
+        SX,0,SIOINS($12)             ! line 43  (same card as 42)
+KMODEC  CTL(SEOP),0.0($14),0.0       ! line 44  -MODE CHANGE COMMAND
+        LVI,1,KSEOPT                 ! line 45
+        SIC,KEOPR                    ! line 46
+        B,MIOREJ                     ! line 47  (same card as 46) -WAIT FOR END OP
+KKMODE  B,$                          ! line 48
+KMCODE  XW,(8)57.,                   ! line 49  -ECC ODD PARITY
+        XW,(8)156.,                  ! line 50  -NO-ECC EVEN PARITY
+        XW,(8)157.,                  ! line 51  -NO-ECC ODD PARITY
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS RENDERED AT 400/600/900/1800 dpi
+! ---------------------------------------------------------------
+!   1*  217573.00   000000.71 8B  001000.36 F0             CM1111(BU,1),S RD($11)                                       IA000047
+!   2*  217574.00   000000.51 04                           KVI,4,.32                                                    IA000048
+!   3*  217574.40   217576.32 C0                           BZXE,$+1.32                                                  IA000048
+!   4*  217575.00   215001.01 80  001000.36 F0             CM1111(BU,1),S HS ECH                                        IA000049
+!   5*  217576.00   216242.03 01                           LVI,1,K SUPP                                                 IA000050
+!   6*  217576.40   221261.10 00                           B,M IOREJ                                                    IA000050
+!   7*  217577.00   215001.21 80  217601.34 02    ZDISK1   BB,SLOCSU,$+2.0                                              IA000051
+!   8*  217600.00   215001.01 80  217602.34 00             BZB,SHSECH,$+2.0                                             IA000052
+!   9*  217601.00   000000.32 8A  221065.34 06             BBZ,SCHOP($10),KCBUSY                                        IA000053
+!  10*  217602.00   000003.34 8D  011067.20 50             L(BU,9-S DD),S CW.28($13),-18  -CW COUNT OFFSET BY 9 FOR ARCS IA000054
+!  11*  217603.00   000010.20 30                           LV,8,$L                                                      IA000055
+!  12*  217603.40   000003.45 8D  011062.57 70             CT0111(BU,9),S CW+.37($13),-27   -TEST IF COMPLETE ARC        IA000056
+!  13*                                                   -                        -TABLES ARE ONE ARC AHEAD OF MACHINE AND ASSIGNMENT  IA000057
+!  14*  217604.40   217605.74 C0                           BZRZ,$+1.0                      -BRANCH IF  NOT COMPLETE ARC  IA000058
+!  15*  217605.00   000001.21 0D                           V-I,8,1.0                       -SUBTRACT 1 FOR FULL ARC REQUEST IA000059
+!  16*  217605.40   000006.20 BD                           V+,8,S CU ARC($13)        -ADD CURRENT ARC ADDRESS            IA000060
+!  17*  217606.00 * 000005.60 9D                           KV,8,S MX ARC($13)        -COMPARE WITH MAX ARC ADDR FOR FILE  IA000061
+!  18*  217606.40   220064.33 42                           BXH,K ILEGL                     -TOO MANY ARCS                IA000062
+!  19*  217607.00   000006.00 3D                           LV,0,S CU ARC($13)                                           IA000063
+!  20*  217607.40   000000.40 8A  022067.20 50             L(BU,18),S ARCAD($10),-18                                    IA000064
+!  21*  217610.40   000010.00 90                           KV,0,$L                         -TEST IF LOC NEEDED           IA000065
+!  22*  217611.00   217612.72 C2                           BXE,$+1.32                                                   IA000066
+!  23*  217611.40   215001.21 80  220065.74 0C             BZB1,SLOCSU,KKLOC                                            IA000067
+!  24*  217612.40   000000.47 8B  221144.74 04             BZBZ,S SEL($11),Z STEVL                                      IA000068
+!  25*  217613.40   220105.40 80                           SIC,K G LOCR                                                 IA000069
+!  26*  217614.00   220100.50 00                           B,K G LOC                                                    IA000069
+!  27*  217614.40   221144.50 00                           B,Z STEVL                                                    IA000070
+!  28*                                                   -                                                              IA000071
+!  29*                                                   -  ******************** CHANGE MODE  *******************************  IA000072
+!  30*                                                   -                                                              IA000073
+!  31*                                                   -  CALLING SEQUENCE ** LV,1,(CODE)                             IA000074
+!  32*                                                   -                      SIC,K K MODE;B,K MODE                   IA000075
+!  33*                                                   -  ***  CODE  **  01 - ECC ODD;  10 - NECC EVEN;  11 - NECC ODD IA000076
+!  34*                                                   -                                                              IA000077
+!  35*  217615.00   000010.03 30             K MODE       SV,1,$L                                                       IA000078
+!  36*  217615.40   000000.62 8A  002067.23 10            KF(BU,2),S C MODE($10),-18   -IS CHAN SET TO DESIRED MODE      IA000079
+!  37*  217616.40   217624.76 C2                          BAE,K K MODE                 -IF SO, RETURN                   IA000080
+!  38*  217617.00   217624.02 31                          LV,1,K M CODE-1.0($1)        -IF NOT, PICK UP OCTAL CODE      IA000081
+!  39*  217617.40   217622.43 D0                          SVA,1,K MODE C.32                                             IA000082
+!  40*  217620.00   000000.62 8A  002067.12 F0            SF(BU,2),S C MODE($10),-18   -RESET CHAN ST TABLE             IA000083
+!  41*                                                    CNOP                                                          IA000084
+!  42*  217621.00   217622.00 10                          LX,0,$+1.                                                     IA000085
+!  43*  217621.40 * 000004.01 1C                          SX,0,S IO INS($12)                                            IA000085
+!  44*  217622.00   000000.00 8E  000000.15 00  K MODE C  CTL(SEOP),0.0($14),0.0       -MODE CHANGE COMMAND             IA000086
+!  45*  217623.00   221350.43 01                          LVI,1,K SEOP T                                                IA000087
+!  46*  217623.40   221354.40 80                          SIC,K EOP R                                                   IA000088
+!  47*  217624.00   221261.10 00                          B,M IO REJ                   -WAIT FOR END OP                 IA000088
+!  48*  217624.40   217624.50 00             K K MODE     B,$                                                           IA000089
+!  49*  217625.00   000057.00+ 000 000000 000000  K M CODE  XW,(8)57.,                 -ECC ODD PARITY                  IA000090
+!  50*  217626.00   000156.00+ 000 000000 000000            XW,(8)156.,                -NO-ECC EVEN PARITY              IA000091
+!  51*  217627.00   000157.00+ 000 000000 000000            XW,(8)157.,                -NO-ECC ODD PARITY               IA000092
+!
+! Line 51 is a full word, so THE COUNTER LEAVES THIS PAGE AT
+! 217630.00.  printed p.153 line 4 prints "217630.00 *" against an
+! SLC with no binary output, which is that value read back off
+! IBM's own assembler on the next sheet.
+!
+! The banner on line 29 is 20 asterisks, "CHANGE MODE", 31
+! asterisks, counted off the ink-run pitch (58.3 px at 600 dpi) and
+! not off a glyph-by-glyph count; the two groups' end-to-end spans
+! divide by that pitch to 19 and 30 intervals exactly.  The ";" on
+! lines 32 and 33 is STRAP's statement separator, which this drum
+! prints as a doubled dagger-like glyph; printed p.136 and printed
+! p.127 establish the semicolon double-statement card, and lines
+! 25/26 and 46/47 here ARE such cards (see the serial column), but
+! the separator itself is inside a COMMENT card here and no check
+! can see it.
+!
+! ---------------------------------------------------------------
+! WHAT THESE CHECKS DO AND DO NOT ESTABLISH
+! ---------------------------------------------------------------
+! All forty-two emitting rows are declared, and all five of the
+! page's own labels.  Nothing that emits a bit on this page is left
+! unchecked.
+!
+! THE REAL CHECKS OF THIS PAGE'S OWN COUNTING are the three rows
+! whose operand is a label defined HERE, all three forward:
+!   line 37  BAE,K K MODE       -> 217624.76, and K K MODE is line 48
+!   line 38  LV,1,K M CODE-1.0  -> 217624.02, and K M CODE is line 49
+!   line 39  SVA,1,K MODE C.32  -> 217622.43, and K MODE C is line 44
+! Each resolves only if every intervening row's LENGTH is right,
+! and line 39 reaches across the CNOP on line 41 that emits nothing
+! -- so it is also the check that the CNOP is correctly silent.
+! The six "$"-relative rows (lines 3, 7, 8, 14, 22, 42, 48) check
+! the counter against itself one or two words at a time.
+!
+! >>> WHAT IS PINNED ONLY TO THE HALF WORD, MEASURED AND NOT
+! ASSUMED. <<<  Each external was perturbed by ONE BIT and by
+! THIRTY-TWO, with everything else fixed, and the forty-two rows
+! re-rendered:
+!   A ONE-BIT CHANGE SHOWS (so this page pins them to the bit):
+!     S RD, S HS ECH, S LOC SU, S CH OP, S SEL, S C MODE, S ARCAD,
+!     S CW, S DD, K G LOCR, K EOP R.
+!   ONLY A THIRTY-TWO-BIT CHANGE SHOWS (so ".00"/".40" is read and
+!   anything below bit 32 is a CONVENTION here):
+!     S CU ARC, S MX ARC, S IO INS, K SUPP, M IOREJ, K C BUSY,
+!     K ILEGL, K K LOC, Z STEVL, K G LOC, K SEOP T.
+!   The second group is the LVI / plain-branch / branch-on-bit-A /
+!   direct-index-address forms of docs/transcription_workflow.md's
+!   "WHAT THE ORACLE CANNOT SEE" 1.  NOTE that the DIRECT INDEX
+!   address field behaves the same way: S CU ARC at 6.00 and at
+!   6.01 render identically on lines 16 and 19.  Every one of the
+!   eleven is nevertheless pinned by a card on another page, cited
+!   under EXTERNALS.
+!
+! >>> S DD IS PINNED ONLY MOD 128. <<<  Line 10 writes its byte
+! size as "9-S DD" and that field is seven bits, so the row
+! establishes 9-S DD = 9 (mod 128) and nothing more --
+! "L(BU,9)" and "L(BU,9-S DD)" render the same word.  S DD = 0
+! exactly comes from printed p.108's defining card, a different
+! page.  This is "WHAT THE ORACLE CANNOT SEE" 4, in the same shape
+! printed p.129 found it.
+!
+! >>> THE ORIGIN IS ASSERTED, NOT CHECKED. <<<  See THE JOINS.
+!
+! TAUTOLOGY AUDIT: none.  Every external is defined by a card on
+! another printed page; no row below is checking a value this page
+! itself supplied.
+!
+! ---------------------------------------------------------------
+! ASSEMBLER LIMITATION HIT: none.
+! Every printed statement on this page was handed to strap_asm in
+! its printed form and every one was accepted, including the
+! three-operand VFL forms with a negative offset
+! ("L(BU,18),S ARCAD($10),-18"), the connective-for-test
+! "CT0111(BU,9)", the symbolic byte size "9-S DD", the
+! store-field "SF(BU,2)", the I/O "CTL(SEOP),0.0($14),0.0", the
+! bare "CNOP" that emits nothing, the trailing-comma index words
+! "XW,(8)57.," and the branch-on-bit-and-set-to-one "BZB1".  The
+! only substitutions are the ones the deck format requires and
+! that the page itself licenses: names written closed up (the page
+! prints "S HS ECH" and "SHSECH" for the same symbol, and
+! "M IOREJ" and "M IO REJ"), and the SLC the page does not print.
+! ---------------------------------------------------------------
+
+!SYM   ZDISK1   217577.00
+!SYM   KMODE    217615.00
+!SYM   KMODEC   217622.00
+!SYM   KKMODE   217624.40
+!SYM   KMCODE   217625.00
+!CHECK 217573.00 | 000000.71 8B 001000.36 F0 | line 1 CM1111(BU,1),S RD($11) -- the first row on the page, which the survey lost; byte 8B is i1 = $11 = 11 decimal
+!CHECK 217574.00 | 000000.51 04 | line 2 KVI,4,.32 -- .32 decimal immediate prints .40 octal, plus J=4's .10 and KVI's .01
+!CHECK 217574.40 | 217576.32 C0 | line 3 BZXE,$+1.32 (same card as line 2) -- target 217576.00
+!CHECK 217575.00 | 215001.01 80 001000.36 F0 | line 4 CM1111(BU,1),S HS ECH -- printed "CM1111" and "001000.36"; CM0000 would print 001000.00
+!CHECK 217576.00 | 216242.03 01 | line 5 LVI,1,K SUPP -- the .03 is LVI's operation bits, not address bits
+!CHECK 217576.40 | 221261.10 00 | line 6 B,M IOREJ (same card as line 5)
+!CHECK 217577.00 | 215001.21 80 217601.34 02 | line 7 ZDISK1 BB,SLOCSU,$+2.0 -- printed p.151 and p.153 both branch here, which pins this page's origin
+!CHECK 217600.00 | 215001.01 80 217602.34 00 | line 8 BZB,SHSECH,$+2.0 -- printed "SHSECH" closed up, against line 4's "S HS ECH"; byte 00 vs line 7's 02 is the BZB/BB cond bit
+!CHECK 217601.00 | 000000.32 8A 221065.34 06 | line 9 BBZ,SCHOP($10),KCBUSY -- byte 06 checks the "and zero" modifier; BB would print 02
+!CHECK 217602.00 | 000003.34 8D 011067.20 50 | line 10 L(BU,9-S DD),S CW.28($13),-18 -- the leading 011 of the second half word is the byte size 9 octal, so S DD is pinned mod 128 only
+!CHECK 217603.00 | 000010.20 30 | line 11 LV,8,$L -- $L is word 0o10, J=8 prints .20
+!CHECK 217603.40 | 000003.45 8D 011062.57 70 | line 12 CT0111(BU,9),S CW+.37($13),-27 -- printed "CTO111"; the four connective digits are checked by .57 (CT0000 prints .41, CT1111 .77)
+!CHECK 217604.40 | 217605.74 C0 | line 14 BZRZ,$+1.0 -- printed byte really is C0 and not 00 (1800 dpi); BRZ prints C2
+!CHECK 217605.00 | 000001.21 0D | line 15 V-I,8,1.0 -SUBTRACT 1 FOR FULL ARC REQUEST
+!CHECK 217605.40 | 000006.20 BD | line 16 V+,8,S CU ARC($13) -- byte D is i = $13 = 13 decimal
+!CHECK 217606.00 | 000005.60 9D | line 17 KV,8,S MX ARC($13) -- .60 is S MX ARC's own .40 plus J=8's .20 (this LOCATION carries the unexplained second asterisk)
+!CHECK 217606.40 | 220064.33 42 | line 18 BXH,K ILEGL -- BXL would print .32, BXE .32 with byte C2
+!CHECK 217607.00 | 000006.00 3D | line 19 LV,0,S CU ARC($13) -- J=0, so this row prints S CU ARC bare, against line 16's J=8
+!CHECK 217607.40 | 000000.40 8A 022067.20 50 | line 20 L(BU,18),S ARCAD($10),-18 -- 022 is the byte size 18 decimal
+!CHECK 217610.40 | 000010.00 90 | line 21 KV,0,$L -TEST IF LOC NEEDED
+!CHECK 217611.00 | 217612.72 C2 | line 22 BXE,$+1.32 -- target 217612.40, and the .40 shows as bit 18 of the address field inside the printed .72
+!CHECK 217611.40 | 215001.21 80 220065.74 0C | line 23 BZB1,SLOCSU,KKLOC -- printed "CC"; the first glyph is a damaged 0 and the second a real C, and the pair is what spells BZB1 (BZB prints 00, BZBZ 04, BZBN 08, BB1 0E)
+!CHECK 217612.40 | 000000.47 8B 221144.74 04 | line 24 BZBZ,S SEL($11),Z STEVL -- the .74 and line 27's .50 are the same Z STEVL read two ways
+!CHECK 217613.40 | 220105.40 80 | line 25 SIC,K G LOCR -- SIC prints the bare 24-bit address, so this row pins K G LOCR to the bit
+!CHECK 217614.00 | 220100.50 00 | line 26 B,K G LOC (same card as line 25; the SIC/branch pair is complete on this page)
+!CHECK 217614.40 | 221144.50 00 | line 27 B,Z STEVL -- .50 is Z STEVL's .40 plus B's .10
+!CHECK 217615.00 | 000010.03 30 | line 35 K MODE SV,1,$L -- three other pages print "B,K MODE" against 217615.10, which pins this label from outside
+!CHECK 217615.40 | 000000.62 8A 002067.23 10 | line 36 KF(BU,2),S C MODE($10),-18 -- K would print .21, KFE byte 30, KR .21/50
+!CHECK 217616.40 | 217624.76 C2 | line 37 BAE,K K MODE -- forward reference to line 48, a real check of this page's counting
+!CHECK 217617.00 | 217624.02 31 | line 38 LV,1,K M CODE-1.0($1) -- forward reference to line 49 minus one word
+!CHECK 217617.40 | 217622.43 D0 | line 39 SVA,1,K MODE C.32 -- forward reference to line 44 plus 32 bits (prints .40) plus SVA's J=1 and .01; it reaches across the silent CNOP on line 41
+!CHECK 217620.00 | 000000.62 8A 002067.12 F0 | line 40 SF(BU,2),S C MODE($10),-18 -- ST would print 002067.20 D0
+!CHECK 217621.00 | 217622.00 10 | line 42 LX,0,$+1.
+!CHECK 217621.40 | 000004.01 1C | line 43 SX,0,S IO INS($12) (same card as line 42) -- byte C is i = $12 = 12 decimal (this LOCATION carries the unexplained second asterisk)
+!CHECK 217622.00 | 000000.00 8E 000000.15 00 | line 44 K MODE C CTL(SEOP),0.0($14),0.0 -- the .15 checks CTL against RD(SEOP) .11, W(SEOP) .13, LOC(SEOP) .17 and plain CTL .05; the 8E checks the index $14
+!CHECK 217623.00 | 221350.43 01 | line 45 LVI,1,K SEOP T -- the .03 is LVI's operation bits; the .40 is K SEOP T's half word
+!CHECK 217623.40 | 221354.40 80 | line 46 SIC,K EOP R -- a bare 24-bit address, so this row pins K EOP R to the bit
+!CHECK 217624.00 | 221261.10 00 | line 47 B,M IO REJ (same card as line 46) -- printed "M IO REJ" against line 6's "M IOREJ"
+!CHECK 217624.40 | 217624.50 00 | line 48 K K MODE B,$ -- the half-word branch the caller's SIC modifies; two other pages print "SIC,K K MODE" against 217624.40, which pins it to the bit from outside
+!CHECK 217625.00 | 000057.00+ 000 000000 000000 | line 49 K M CODE XW,(8)57., -ECC ODD PARITY
+!CHECK 217626.00 | 000156.00+ 000 000000 000000 | line 50 XW,(8)156., -NO-ECC EVEN PARITY
+!CHECK 217627.00 | 000157.00+ 000 000000 000000 | line 51 XW,(8)157., -NO-ECC ODD PARITY -- a full word, so the counter leaves this page at 217630.00

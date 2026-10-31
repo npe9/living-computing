@@ -7,8 +7,10 @@ SCOPE (implemented / not, and why -- mirrors the "decode completely,
 execute partially, document the rest" ethos of the Bluespec model):
 
   Pseudo-ops:  DD, DR, DRZ, VF, CF, RF, XW, CW, END, SYN, SLC, CNOP.
-  Not yet:     DDI, EXT (raise AssemblerError citing C22-6531 rather
-               than silently guessing).
+  Not yet:     DDI (raises AssemblerError citing C22-6531 rather than
+               silently guessing).  EXT was built 2026-10-31 against
+               C22-6531 printed p.35's worked example; see
+               tests/check_ext_pseudo_op.py.
 
   ENTRY MODES: the "(IQS*)" style prefix in front of a DD (see
   parse_statement_text), the radix prefix "(8)7.0", and the
@@ -1911,8 +1913,91 @@ LISTING_CONTROL = frozenset([
 ])
 
 
+# ---------------------------------------------------------------------
+# EXT -- "Extract"
+# ---------------------------------------------------------------------
+# C22-6531 printed p.35 and C28-6129 printed p.19 ("2. ext--Extract"),
+# which agree:
+#
+#   "First, Statement is compiled as is any legal machine instruction.
+#    Then the field beginning at I and ending at J is extracted and
+#    compiled in the position in the code where the EXT occurs."
+#
+# So the FOLLOWING statement deposits nothing of its own; the EXT
+# deposits J-I+1 bits taken out of it.  Bit 0 is the first bit of that
+# statement, "according to 7030 custom".
+#
+# C28-6129 lists four permissible parameter spellings -- any two of the
+# three suffice and the third is derived:
+#
+#   (I, J, COUNT)   (I, J)   (I, , COUNT)   (, J, COUNT)
+#
+# "If EXT is used to specify the extraction of anything beyond the
+# range of the single statement that follows it up to 64 zeros will be
+# added", which is why the target is compiled into a zeroed 64-bit
+# scratch word and simply read back.
+#
+# IBM's own worked example is the test: "EXT(18, 47) +(B, 18, 7),
+# 73.16 ... The dds (BU, 30, 8) is formed.  The location counter is
+# advanced 30 bits."  MCP printed p.149 lines 7-8 are the corpus use,
+# "EXT(0,18)" over "B,AEDUMP", which extracts the 19-bit half-word
+# address of AEDUMP (217463.40 -> 0o437147, the printed field).
+#
+# NOT IMPLEMENTED: the dds "(BU, J-I+1, 8)" that IBM attaches to a name
+# written on the EXT.  This assembler's symbols carry a VALUE and no
+# data description at all (see SymTab), so there is nowhere to put it;
+# the location and the bits are both right without it.
+def _ext_params(stmt, symtab=None):
+    """(i, j, count) for an EXT, from either printed spelling."""
+    if stmt.mods:
+        raw = ','.join(stmt.mods)
+    elif stmt.fields:
+        raw = ','.join(stmt.fields).strip()
+        if raw.startswith('(') and raw.endswith(')'):
+            raw = raw[1:-1]
+    else:
+        raise AssemblerError("EXT has no (I,J) parameters", stmt.lineno)
+    raw = raw.strip()
+    if raw.startswith('(') and raw.endswith(')'):
+        raw = raw[1:-1]
+    parts = [t.strip() for t in raw.split(',')]
+    if len(parts) == 2:
+        parts.append('')
+    if len(parts) != 3:
+        raise AssemblerError(
+            f"EXT takes two or three parameters, got {raw!r} "
+            f"(C28-6129 printed p.19)", stmt.lineno)
+    def val(t):
+        if t == '':
+            return None
+        return eval_expr(t, symtab, stmt.addr, lineno=stmt.lineno)
+    i, j, count = (val(t) for t in parts)
+    given = sum(v is not None for v in (i, j, count))
+    if given < 2:
+        raise AssemblerError(
+            "EXT needs any TWO of I, J and COUNT "
+            "(C28-6129 printed p.19)", stmt.lineno)
+    if count is None:
+        count = j - i + 1
+    elif i is None:
+        i = j - count + 1
+    elif j is None:
+        j = i + count - 1
+    if count <= 0 or i < 0:
+        raise AssemblerError(
+            f"EXT extracts {count} bits starting at bit {i}", stmt.lineno)
+    return i, j, count
+
+
 def statement_size(stmt, symtab=None):
     """Returns (alignment_bits, size_bits). alignment 0 = no rounding."""
+    if getattr(stmt, 'ext_suppressed', False):
+        # The statement AFTER an EXT is compiled only to be extracted
+        # FROM; the EXT deposits the subfield where the EXT stands, so
+        # this statement contributes nothing to the location counter.
+        # Checked first because C28-6129 lets the target be a pseudo
+        # operation, whose sizing is dispatched further down.
+        return 0, 0
     op = stmt.op.upper()
     if op == '':
     # >>> A NULL OPERATION FIELD.  C22-6531 printed p.7, under the
@@ -2122,7 +2207,18 @@ def statement_size(stmt, symtab=None):
         return 0, 0  # see LISTING_CONTROL -- no storage, no alignment
     if op == 'CNOP':
         return FULL, 0  # align to a full word; the gap filler emits the NOP
-    if op in ('CF', 'RF', 'DDI', 'CW', 'EXT'):
+    if op == 'EXT':
+        # The extracted subfield is compiled WHERE THE EXT OCCURS, so
+        # the EXT itself is what advances the counter -- by COUNT bits,
+        # with no alignment (C22-6531 printed p.35's worked example
+        # advances it 30 bits, which is not a half word).
+        return 0, _ext_params(stmt, symtab)[2]
+    # DDI ALONE.  This tuple used to read ('CF', 'RF', 'DDI', 'CW'),
+    # which was misleading: all three of those are implemented and are
+    # dispatched ABOVE, so they never reached here and a reader of this
+    # line would have concluded they were unsupported.  Measured before
+    # narrowing it -- CF,X / RF,X / CW,0 all assemble; only DDI refuses.
+    if op == 'DDI':
         raise AssemblerError(
             f"pseudo-operation {op} not implemented by this assembler yet "
             f"(see strap_asm.py module docstring / C22-6531)", stmt.lineno)
@@ -2476,6 +2572,22 @@ def resolve_syns(syn_stmts, symtab, final):
 def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
     statements = list(iter_statements(source))
 
+    # >>> AN EXT OWNS THE STATEMENT THAT FOLLOWS IT. <<<
+    # C22-6531 printed p.35: the following statement is compiled, a
+    # subfield is taken out of it, and THAT is what lands in the code.
+    # Pairing them here keeps both passes below ignorant of the fact:
+    # the EXT sizes and emits the subfield, the target sizes to zero
+    # and emits nothing.
+    for _n, _st in enumerate(statements):
+        if _st.op.upper() != 'EXT':
+            continue
+        if _n + 1 >= len(statements):
+            raise AssemblerError(
+                "EXT is the last statement -- it has nothing to extract "
+                "from (C22-6531 printed p.35)", _st.lineno)
+        _st.ext_target = statements[_n + 1]
+        statements[_n + 1].ext_suppressed = True
+
     # Pass 1: sizes + symbol table. Rounding a full-word instruction's
     # location up past a half-word instruction that didn't fill a whole
     # word leaves a gap that straight-line execution would otherwise
@@ -2712,6 +2824,30 @@ def apply_parenthetical_entries(stmt, symtab, image):
 
 
 def emit_statement(stmt, symtab, image):
+    if getattr(stmt, 'ext_suppressed', False):
+        return  # the EXT above it already compiled and extracted this
+    if stmt.op.upper() == 'EXT':
+        i, j, count = _ext_params(stmt, symtab)
+        # Compile the target into a zeroed 64-bit scratch word at a
+        # word boundary, then read the field straight back out of it.
+        # "up to 64 zeros will be added" (C28-6129) falls out of the
+        # scratch word being zero to begin with.
+        scratch = Image()
+        target = stmt.ext_target
+        saved_addr, saved_flag = target.addr, target.ext_suppressed
+        target.addr, target.ext_suppressed = 0, False
+        try:
+            emit_statement(target, symtab, scratch)
+            apply_parenthetical_entries(target, symtab, scratch)
+        finally:
+            target.addr, target.ext_suppressed = saved_addr, saved_flag
+        word = scratch.words.get(0, 0)
+        # IBM bit 0 is the MOST significant bit of the statement.
+        field = 0
+        for bit in range(i, i + count):
+            field = (field << 1) | ((word >> (63 - bit)) & 1 if bit < 64 else 0)
+        image.deposit(stmt.addr, count, field)
+        return
     op = stmt.op.upper()
     loc = stmt.addr
 

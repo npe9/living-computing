@@ -1,0 +1,359 @@
+! mcp_bootstrap_p145.strap -- "SET INTERVAL TIMER", printed page 145.
+! docs/MCP_Mar63_001-249.pdf PDF p.152, header read and not assumed:
+! the top line prints "TIME CLOCK 00054041   PUNID 11011MCP
+! CARD ID FD000001   DIST. OF 3/01   3/01   PAGE NUMBER 145".
+!
+! >>> THE HEADING ROW'S OWN "LOCATION" FIELD IS BLANK ON THIS PAGE.
+! The column-heading line prints "LINE  LOCATION  BINARY OUTPUT
+! NAME  STATEMENT  LOCATION" and NOTHING follows that last word --
+! rendered at 400 dpi and looked at, not OCR'd.  A blank is not a
+! zero (docs/transcription_workflow.md step 1), so this page gives
+! NO independent origin word from its header.  printed pp.83 and
+! 144 print it blank too; pp.95, 120, 125, 133, 136, 138-139 and
+! 141-143 print a number.  Still unexplained.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! SIXTEEN printed lines and then blank paper -- this is a SHORT
+! page, not a truncated render.  Lines 1-4 are the asterisk box
+! around the heading "****** SET INTERVAL TIMER ******" (line 2);
+! line 5 is "SLC,$"; lines 6-16 are eleven instructions, every one
+! of them CODE.  No SYN, no DD, no VF, no DR/DRZ, no data at all.
+!
+! FIFTEEN CARDS OVER SIXTEEN LINES.  The serial column runs
+! FD000001 (line 1) to FD000015 (line 16), with FD000014 printed
+! on lines 14 AND 15 -- one card carrying two statements, the
+! BUSAZ/BADZ pair, exactly the way printed p.144's FB000007 and
+! FB000008 each carry two.  Nothing fell off either end: the top
+! serial is 001 and below line 16 the page is blank to the footer.
+!
+! >>> WHERE THIS DISAGREES WITH THE SURVEY.  `mcp_survey.py
+! --pages 152-152` reports "152  145  7  10  0  217347.4C
+! 217355.C0  code": TEN located rows, first 217347.40, last
+! 217355.00.  The SPAN is exactly right, both ends included -- for
+! once nothing fell off either end of the survey's read -- and the
+! count is short by ONE.  The row it loses is line 15, the second
+! statement on card FD000014, whose LOCATION prints 217354.4C and
+! which sits between two rows it did find.  Counted off the
+! card-serial column, this page emits ELEVEN.
+! (The "7" in that line is the OFFSET column -- printed = PDF - 7
+! -- and not a row count.  It was passed to this transcriber as
+! "the survey read only 7 rows", which is a misreading of the
+! table, not an under-read by the survey.  Said here so the next
+! page's transcriber reads the columns and not the briefing.)
+!
+! The routine is the Set Interval Timer exit.  JSITX (line 6) is
+! the entry: two V+I/SVA pairs step $2 past the interrupted
+! address and plant it twice -- once into the address field of
+! JSITF (line 7, a self-modifying store into line 11's own half
+! word) and once into S TIC (line 9) as the return address -- the
+! TI on line 10 restores $1,$2,$3 from the save area, and JSITF
+! (line 11) is the modified LVE that picks up the caller's
+! parameter word.  Line 12 loads it into $1, line 13 stores it to
+! $IT, the interval timer register (word 1, Reference Manual's
+! special-register map), and lines 14-15 branch out and clear USA
+! and AD if setting the timer tripped either, which is what the
+! comment "-IF USA OR AD,PP WILL CATCH IT" is about.  Line 16
+! leaves to K SUPP.
+!
+! ---------------------------------------------------------------
+! THE JOIN, CLOSED FROM BOTH SIDES
+! ---------------------------------------------------------------
+! LINE 5 PRINTS "217347.40 *  SLC,$", AND THAT IS A FREE WITNESS.
+! An SLC emits nothing, so its printed LOCATION *is* the counter
+! arriving from printed p.144.  This deck writes a hard
+! "SLC,(8)217347.40" so it assembles standalone, which ASSERTS the
+! origin rather than checking it (docs/transcription_workflow.md,
+! "A HARD SLC CANNOT DISAGREE WITH THE ARRIVING COUNTER"), so the
+! printed value is recorded here and in line 6's !CHECK note.
+!
+! NEAR SIDE: decks/mcp_bootstrap_p144.strap ends at line 30, the
+!   half-word "B,S IPT+4.0" at 217347.00, so the counter leaves
+!   p.144 at exactly 217347.40.  THE PREDICTION HELD -- the page
+!   prints 217347.40 on both line 5 and line 6.
+! FAR SIDE: the volume OCR carries, on the page near 220767,
+!   "42* 220767.00  217347.50 00  B,JSITX  -SET INTERVAL TIMER"
+!   (docs/ocr/MCP_Mar63_001-249.txt line 9177, a DIFFERENT printed
+!   page, so a legitimate index onto this one).  A plain B prints
+!   target+.10, so JSITX is at 217347.40 -- this page's first
+!   label and its first location, read off another page, and it
+!   independently confirms the X of JSITX as well.
+!
+! FORWARD, FOR THE NEXT TRANSCRIBER: line 16 is a half word at
+! 217355.00, so the counter leaves this page at 217355.40.  The
+! volume OCR's block for PDF p.153 (printed p.146, "T/C
+! DEFINITION REPORT") opens with an SLC and then
+! "217355.40  220706.00 30  JZICR  L,$0,KICOCRN-.32", so printed
+! p.146 should print 217355.40 on its own line 5/6.  That is the
+! falsifiable prediction; if p.146's SLC prints anything else,
+! something here is wrong.
+!
+! ---------------------------------------------------------------
+! GLYPHS -- WHAT WAS SETTLED AND ON WHAT
+! ---------------------------------------------------------------
+! This page opens round glyphs constantly: its own column heading
+! prints "LCCATICN", every ".00" prints ".CC", and line 6's
+! BINARY OUTPUT prints "CCCCOO.45".  A round glyph in a LOCATION
+! or in an octal BINARY field is a 0 with certainty (C is not an
+! octal digit).  The glyphs NOT in an octal field were each
+! settled on something else.
+!
+! (1) >>> THE PAGE CALIBRATES ITSELF ON ITS OWN HEX BYTE. <<<
+!     Lines 6 and 8 are the SAME STATEMENT, "V+I,$2,.32", and
+!     compile to the same word.  The drum prints their BYTES
+!     differently, in the SAME CHARACTER POSITION:
+!         line 6   CCCCOO.45  C5
+!         line 8   CCCCCO.45  05
+!     One page, one drum, one instruction, open and closed in the
+!     same column.  Dropout opens a closed glyph and never closes
+!     an open one, so line 6's byte is 05.  This is rung 4 of
+!     docs/transcription_workflow.md 2b and it costs nothing.
+!
+! (2) >>> AND THE SAME PAGE SHOWS WHY RUNG 4 IS NOT A LICENCE.
+!     Line 14's byte really IS C6.  BUSAZ,$+.32 assembles to
+!     "217354.50 C6" -- measured -- while line 15's BADZ,$+.32
+!     assembles to "217355.10 46".  So on this page a printed C in
+!     a HEX byte is sometimes a damaged 0 (line 6) and sometimes a
+!     genuine C (line 14), two rows apart.  "Ink varies per
+!     CHARACTER, not per row" is the written rule; this page is a
+!     clean instance of it, and the thing that decides each case is
+!     what PRODUCED the byte, never the ink.
+!
+! (3) "BADZ" ENDS ITS THIRD GLYPH WITH A D, not a C.  Read at 1800
+!     dpi: a straight vertical left stem and squared corners,
+!     against the round no-stem C's elsewhere in the same row.
+!     AND THE ASSEMBLER ELIMINATES THE OTHER READING OUTRIGHT --
+!     measured, with everything else fixed:
+!         BADZ,$+.32    217354.50 46   (= line 15's printed bits)
+!         BACZ,$+.32    "unknown mnemonic 'BACZ'"
+!         8ADZ,$+.32    "unknown mnemonic '8ADZ'"
+!     and the same for line 14:
+!         BUSAZ,$+.32   217354.50 C6   (= line 14's printed bits)
+!         BOSAZ,$+.32   "unknown mnemonic 'BOSAZ'"
+!         8USAZ,$+.32   "unknown mnemonic '8USAZ'"
+!     Rung 3 of the ladder, firing as an eliminator on both the
+!     O/C and the B/8 question in the one operation field.
+!
+! (3a) >>> AND THE TRAILING Z IS ORACLE-VISIBLE HERE, UNLIKE
+!     DR/DRZ. <<<  docs/transcription_workflow.md's fifth entry
+!     under "WHAT THE ORACLE CANNOT SEE" is that DR and DRZ print
+!     the same thing, so a trailing Z has to be read off the ink.
+!     That does NOT apply to a branch-and-clear.  Measured, with
+!     everything else fixed:
+!         BUSAZ,$+.32   217354.50 C6      BUSA,$+.32   217354.50 C2
+!         BADZ,$+.32    217354.50 46      BAD,$+.32    217354.50 42
+!     The clear-the-indicator bit is 0x04 of the byte, so both Z's
+!     on this page are CHECKED by their own !CHECK rows and rest
+!     on nothing's ink.  (C6 and 46 differ by 0x80, which is the
+!     one-step difference between indicators USA=17 and AD=16 --
+!     the two bytes corroborate each other.)
+!
+! (4) "LV,$1,0.C($1)" (line 12) IS "0.0($1)" -- the octal-looking
+!     offset of a progressive-index operand, and the assembled
+!     word 000000.02 31 is exactly what the page prints.  printed
+!     p.144's lines 14 and 26 print the same operand both ways.
+!
+! (5) "TI,3,STLR+14.C,$1" (line 10) IS "+14.0,$1", and its second
+!     half word checks it: $1 is index register 1 at word 0o21 and
+!     J=3 shifts to .06, giving "000021.06 A0" -- printed
+!     "0C0021.C6 AC".  printed p.144 lines 18/22/29 run the same
+!     operation with $0 (word 0o20, J=4) and print "000020.10 A0",
+!     the pair this encoding predicts.
+!
+! (6) THE TRAILING "AC" ON LINE 10 IS A0, by the i2 rule: the low
+!     nibble of a VFL full word is the OFFSET INDEX and there is
+!     no "(I')" operand, so it is 0.  "CO" on line 16 is 00 the
+!     same way (a plain B has no index).
+!
+! (7) "JSITF" (line 11) IS SPELLED J-S-I-T-F, read at 1800 dpi in
+!     the NAME column and again in line 7's STATEMENT column.
+!     Nothing off this page references it, so it rests on ink --
+!     the I has full horizontal serifs top and bottom, the T has a
+!     crossbar and no bottom serif, and the F is open on the
+!     right.  "JSITX" is pinned off the page by the OCR card
+!     quoted under THE JOIN.
+!
+! ---------------------------------------------------------------
+! THE SECOND ASTERISK
+! ---------------------------------------------------------------
+! Every line number carries an asterisk right after it ("6*").
+! That is the ordinary column.  LINE 5 ALONE carries a SECOND
+! asterisk, after its LOCATION: "217347.40 *".  printed p.144 put
+! one on its SLC line too (and on one other row); this page puts
+! one on its SLC line and NOWHERE else.  Still the unexplained
+! marker of docs/listing_typography.md 12; recorded, nothing added.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- every one pinned by a card on a DIFFERENT page
+! ---------------------------------------------------------------
+! ZERO TAUTOLOGICAL ROWS.  Three externals, all already carried by
+! landed decks at these same values.
+!
+! S T LR  215230.00  printed p.116 line 13 is the defining card,
+!                    "S T LR DRZ(BU,64),29".  TI's A1 is a full
+!                    24-bit address, so line 10's "S TLR+14.0" ->
+!                    215246.00 pins it to the BIT from this page
+!                    alone as well (0o215230 + 14 = 0o215246).
+STLR    SYN, (8)215230.0
+! S TIC   215265.00  printed p.116 line 16 "S T IC VF,0"; carried
+!                    by pp.110-112, 117, 118, 144.  Line 9's SVA
+!                    pins only the half word; the bit comes from
+!                    the volume's "L(BU,1),STIC+.18,2" against
+!                    215265.22.  Final letter is C, not O:
+!                    C22-6728 prose, "the saved IC is stored in
+!                    STIC".
+STIC    SYN, (8)215265.0
+! K SUPP  216242.00  DEFINED on printed p.128, "2* 216242.00
+!                    216246.70 00  K SUPP  NOP,K COMM"; carried at
+!                    this value by decks/mcp_bootstrap_p123,
+!                    _p124 and _p125.  Line 16's plain B pins only
+!                    the half word; p.123/p.124's BB rows print
+!                    216242.34 with no 0o40, so the low half word
+!                    is right.
+KSUPP   SYN, (8)216242.0
+
+! ---------------------------------------------------------------
+! THE ORIGIN.  The page prints "SLC,$" (line 5, at 217347.40).
+! Restated hard so the deck assembles standalone; see THE JOIN.
+! ---------------------------------------------------------------
+        SLC, (8)217347.40
+
+! ---- the routine -------------------------------------------------
+JSITX   V+I,$2,.32                   ! line  6  -$2 = INTERRUPTED ADDRESS
+        SVA,$2,JSITF                 ! line  7  -LOC OF FWA
+        V+I,$2,.32                   ! line  8
+        SVA,$2,STIC                  ! line  9  -RETURN ADDRESS
+        TI,3,STLR+14.0,$1            ! line 10  -RESTORE $1,$2,$3
+JSITF   LVE,$1,$                     ! line 11  -LOCATION OF SETTING
+        LV,$1,0.0($1)                ! line 12  -IF USA OR AD,PP WILL CATCH IT
+        SVA,$1,$IT                   ! line 13
+        BUSAZ,$+.32                  ! line 14
+        BADZ,$+.32                   ! line 15  (same card as 14)
+        B,KSUPP                      ! line 16
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS RENDERED AT 400/900/1800 dpi
+! ---------------------------------------------------------------
+!   1*                                              - ****************************************************  FD000001
+!   2*                                              -      ****** SET INTERVAL TIMER ******                  FD000002
+!   3*                                              - ****************************************************  FD000003
+!   4*                                              -                                                       FD000004
+!   5*  217347.40 *                                           SLC,$                                         FD000005
+!   6*  217347.40   000000.45 05            JSITX    V+I,$2,.32                 -$2 = INTERRUPTED ADDRESS   FD000006
+!   7*  217350.00   217352.45 D0                     SVA,$2,JSITF               -LOC OF FWA                 FD000007
+!   8*  217350.40   000000.45 05                     V+I,$2,.32                                             FD000008
+!   9*  217351.00   215265.05 D0                     SVA,$2,STIC                -RETURN ADDRESS             FD000009
+!  10*  217351.40   215246.00 80  000021.06 A0       TI,3,STLR+14.0,$1          -RESTORE $1,$2,$3           FD000010
+!  11*  217352.40   217352.43 B0            JSITF    LVE,$1,$                   -LOCATION OF SETTING        FD000011
+!  12*  217353.00   000000.02 31                     LV,$1,0.0($1)              -IF USA OR AD,PP WILL CATCH IT FD000012
+!  13*  217353.40   000001.03 D0                     SVA,$1,$IT                                             FD000013
+!  14*  217354.00   217354.50 C6                     BUSAZ,$+.32                                            FD000014
+!  15*  217354.40   217355.10 46                       BADZ,$+.32                                           FD000014
+!  16*  217355.00   216242.10 00                     B,KSUPP                                                FD000015
+!
+! (The drum prints every ".00" as ".CC", line 6's first field as
+! "CCCCOO", line 6's byte as "C5", line 10's second half word as
+! "0C0021.C6 AC", line 12's operand as "0.C($1)", and line 16's
+! byte as "CO".  Each of those is restored above on the grounds
+! given under GLYPHS; the forms above are what the bits say.)
+!
+! Line 16 is a half word, so the counter reaches 217355.40 for
+! printed p.146.
+!
+! ---------------------------------------------------------------
+! WHAT THESE CHECKS DO AND DO NOT ESTABLISH
+! ---------------------------------------------------------------
+! All eleven emitting rows are declared, and both of the page's
+! own labels.  Nothing on this page is left unchecked.
+!
+! THE REAL CHECKS OF THIS PAGE'S OWN COUNTING are the rows whose
+! operand is a label or a self-reference defined HERE:
+!   line  7  SVA,$2,JSITF  -> 217352.45, and JSITF is line 11
+!   line 11  LVE,$1,$      -> 217352.43, its own location
+!   line 14  BUSAZ,$+.32   -> 217354.50, i.e. line 15's location
+!   line 15  BADZ,$+.32    -> 217355.10, i.e. line 16's location
+! Line 7's is a forward reference across four intervening rows and
+! only resolves if every one of their LENGTHS is right -- and one
+! of those four (line 10) is the page's only FULL word, so that
+! single check is what distinguishes the page's half/full pattern.
+!
+! TAUTOLOGY AUDIT: none.  All three externals are defined by cards
+! on other pages (see EXTERNALS); this page's own rows sit at OCR
+! lines ~7600-7621 of docs/ocr/MCP_Mar63_001-249.txt and every
+! witness cited above is at a different OCR line and a different
+! printed page.
+!
+! WHAT IS PINNED ONLY TO THE HALF WORD, from this page alone:
+!   S TIC (line 9, SVA), K SUPP (line 16, a plain B) and JSITF
+!   (line 7, SVA).  Bit offsets 0-31 all encode identically in
+!   those forms, so ".00" is a CONVENTION there and no !CHECK can
+!   test it.  S TIC and K SUPP are pinned to the bit by cards
+!   elsewhere, cited under EXTERNALS; JSITF is pinned by its own
+!   printed LOCATION on line 11.
+! WHAT IS PINNED TO THE BIT from this page: S T LR (line 10, TI's
+!   24-bit A1) and $IT (line 13, whose A2 prints word 1).
+!
+! ---------------------------------------------------------------
+! TAIL SCOPE, NOT A COLLISION
+! ---------------------------------------------------------------
+! printed p.99 line 11's "SLC,(8)215000." opened the second
+! assembly of MCP, so names here may legitimately repeat names
+! pp.2-98 define at other addresses.  Checked against the landed
+! decks: S T LR, S TIC and K SUPP all agree with the values the
+! landed decks already carry.  JSITX and JSITF are new names that
+! no landed deck carries.  Reported, not touched.
+!
+! ---------------------------------------------------------------
+! WHAT IS NOT RESOLVED
+! ---------------------------------------------------------------
+! (a) THE HEADING ROW'S "LOCATION" FIELD IS BLANK, so this page
+!     supplies NO independent origin word of its own.  The join
+!     rests on exactly two things, both outside this page: printed
+!     p.144's counter arriving at 217347.40, and the off-page
+!     "B,JSITX" that resolves to 217347.40.  Why some pages print
+!     that field and some do not is still unexplained, and this
+!     page adds a data point and no explanation.
+! (b) THE SECOND ASTERISK on line 5 is unexplained, and this page
+!     NARROWS NOTHING.  p.144 carried two marks (its SLC line and
+!     one ordinary full word); this page carries exactly one, on
+!     its SLC line.  "Only the SLC line is marked" is consistent
+!     with this page and already refuted by p.144, so there is no
+!     rule here, only a second observation.
+! (c) JSITF RESTS ON INK ALONE.  Nothing off this page references
+!     it, so listing_oracle can never see its SPELLING.  Line 7's
+!     "SVA,$2,JSITF" is NOT a second witness -- same drum, same
+!     page, same reader.  It was read at 1800 dpi in both columns
+!     and the letters are not close to their confusables, but if
+!     a later page turns out to branch to this routine's second
+!     entry, that page's spelling is the one to believe.
+!     (JSITX does NOT have this problem: see THE JOIN.)
+! (d) S TIC and K SUPP are pinned by this page only to the HALF
+!     WORD (SVA and a plain B); their low bits come from other
+!     pages' cards, cited under EXTERNALS.
+!
+! ---------------------------------------------------------------
+! ASSEMBLER LIMITATION HIT: none.
+! Every printed spelling was handed to strap_asm as printed and
+! accepted: "V+I,$2,.32", "SVA,$2,...", "TI,3,S TLR+14.0,$1",
+! "LVE,$1,$", "LV,$1,0.0($1)", "SVA,$1,$IT", "BUSAZ,$+.32",
+! "BADZ,$+.32", "B,K SUPP" and "SLC,$" -- which assembles, and is
+! restated hard here only so the deck stands alone; see THE JOIN.
+! Symbol names printed with blanks ("S TLR", "K SUPP") are written
+! closed up, as every deck since p.2 does and as C22-6531 printed
+! p.10 requires.  No substitution was made anywhere on this page.
+! ---------------------------------------------------------------
+
+!SYM   JSITX    217347.40
+!SYM   JSITF    217352.40
+!CHECK 217347.40 | 000000.45 05 | line 6 JSITX V+I,$2,.32 -$2 = INTERRUPTED ADDRESS (the page's printed SLC on line 5 gives its arriving counter as 217347.40; byte printed "C5", settled against line 8's "05" -- same statement, same word, same character position)
+!CHECK 217350.00 | 217352.45 D0 | line 7 SVA,$2,JSITF -LOC OF FWA -- forward reference to line 11 across the page's only full word, so this row checks the half/full pattern
+!CHECK 217350.40 | 000000.45 05 | line 8 V+I,$2,.32 -- byte printed closed here and open on line 6
+!CHECK 217351.00 | 215265.05 D0 | line 9 SVA,$2,STIC -RETURN ADDRESS -- the .05 is $2's .04 plus SVA's .01
+!CHECK 217351.40 | 215246.00 80 000021.06 A0 | line 10 TI,3,STLR+14.0,$1 -RESTORE $1,$2,$3 -- 14 decimal words on from 215230.00; the second half word is $1 (word 0o21) with J=3 (.06), and "AC" is A0 by the i2 rule
+!CHECK 217352.40 | 217352.43 B0 | line 11 JSITF LVE,$1,$ -LOCATION OF SETTING -- the modified half word line 7's SVA plants into; .43 is .40 plus $1's .02 plus LVE's .01
+!CHECK 217353.00 | 000000.02 31 | line 12 LV,$1,0.0($1) -IF USA OR AD,PP WILL CATCH IT -- printed "0.C($1)"; p.144 lines 14/26 print the same operand both ways
+!CHECK 217353.40 | 000001.03 D0 | line 13 SVA,$1,$IT -- $IT is the interval timer at word 1, so A2 is 000001; .03 is $1's .02 plus SVA's .01
+!CHECK 217354.00 | 217354.50 C6 | line 14 BUSAZ,$+.32 -- the byte REALLY IS C6 here (BADZ on line 15 prints 46), which is why line 6's "C5" had to be settled on something other than ink; BUSA without the Z prints C2, so the Z is checked too
+!CHECK 217354.40 | 217355.10 46 | line 15 BADZ,$+.32 (same card as line 14) -- indicator AD is 16 and prints 46; BACZ and 8ADZ are not instructions at all, and the trailing Z is worth 0x04 of the byte (BAD alone prints 42), so both the D and the Z are checked by this row
+!CHECK 217355.00 | 216242.10 00 | line 16 B,KSUPP -- K SUPP is 216242.00, defined on printed p.128; the .10 is a plain B's own bits and the byte is 00 by the i2 rule

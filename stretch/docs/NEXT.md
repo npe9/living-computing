@@ -23,6 +23,51 @@ accumulate.
 
 
 
+## `EXT` IS BUILT -- "Extract", closed 2026-10-31
+
+> **CLOSED.** `EXT` compiles the statement AFTER it only to take a
+> subfield out of it: the following statement deposits nothing of its
+> own, and J-I+1 bits land where the `EXT` stands. C22-6531 printed
+> p.35 and C28-6129 printed p.19 agree, and C28-6129 gives the four
+> permissible parameter spellings — `(I,J,COUNT)`, `(I,J)`,
+> `(I,,COUNT)`, `(,J,COUNT)`, any two of three.
+>
+> **IBM's worked example is the oracle and it states every answer**:
+> "EXT(18, 47) + (B, 18, 7), 73.16 ... bits 18 through 47 ... are
+> extracted ... The dds (BU, 30, 8) is formed. The location counter
+> is advanced 30 bits." Two of the three are checked in
+> `tests/check_ext_pseudo_op.py`. The counter advance is the one a
+> careless implementation gets wrong, because 30 is not a multiple of
+> 32 and nothing rounds.
+>
+> **The dds is NOT implemented**, deliberately and said out loud: this
+> assembler's symbols carry a value and no data description at all
+> (see `SymTab`), so there is nowhere to put `(BU, 30, 8)`. The
+> location and the bits are both right without it.
+>
+> **The corpus use is MCP printed p.149 lines 7-8**, which are ONE
+> card (HB000007, the page's only repeated serial): `EXT(0,18)` over
+> `B,AEDUMP`, extracting the 19-bit half-word address
+> 0o217463*2+1 = 0o437147, the printed field. That deck had been
+> carrying a `DD(BU,19),(8)437147` substitution which threw the
+> DERIVATION away — it wrote the number the page computes from a
+> label. It now writes the page's own form.
+>
+> **THE PARAMETERS ARE TESTED ONLY AS LITERALS.** C28-6129 says I, J
+> and COUNT "may contain any number of symbolic integers", and
+> `_ext_params` evaluates them during SIZING, where `stmt.addr` may
+> not be set yet. Every use in the corpus and every case in the test
+> is a literal, so the symbolic path is unexercised rather than
+> known-good. A symbolic `I`/`J` is the thing to try first if `EXT`
+> ever misbehaves.
+>
+> **STILL UNIMPLEMENTED: the same-card spelling.** Both manuals write
+> `A| EXT(I,J) STATEMENT` with the target on the SAME card, and the
+> parser rejects the trailing text. The corpus does not need it (the
+> listing prints the pair as two lines and the deck writes two
+> lines), and the semantics are identical, but IBM's example cannot
+> be run verbatim until it exists.
+
 ## THE `$`-PREFIXED OPERATION FORMS FAIL WITH A BARE `KeyError` -- open
 
 Measured 2026-10-31, with a defined operand so the error is the form

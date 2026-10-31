@@ -1,0 +1,406 @@
+! mcp_bootstrap_p146.strap -- "I/O DEFINITION REPORT", printed page
+! 146.  docs/MCP_Mar63_001-249.pdf PDF p.153, header read and not
+! assumed: the top line prints "TIME CLOCK 00054041   PUNID 11011MCP
+! CARD ID FF000001   DIST. OF 3/01   3/01   PAGE NUMBER 146".
+!
+! WHAT THE PAGE IS.  TWENTY-THREE printed lines, and that is the
+! whole page -- the paper below line 23 is blank.  Lines 1-4 are the
+! asterisk box around the heading "****** I/O DEFINITION REPORT
+! ******" (line 2), with line 4 a bare connective; line 5 is
+! "SLC,$"; lines 6-22 are seventeen emitting statements; line 23 is
+! the (IQS*)DD message the routine delivers.
+!
+! The routine answers a PP's "what I/O do I have" request:
+!   JZIOR  (line 6)   LV picks up K IODRN-.32, SVA plants the FWA
+!                     of the J table in line 9's LVE, and the first
+!                     SWAPI parks $1 in S TLR+14.
+!   JZLOC  (line 9)   the modified LVE; the second SWAPI puts $1
+!                     back; LV,$1,$0 reloads $1 from index 0.
+!   lines 12-13       BUSAZ/BADZ to K GOOF -- the error exit.
+!   JZECBR (line 14)  SIC/B to K CONV, "GET CH AND UN NUMBER".
+!   line 16           a VF holding JZCHU.16 -- bit 48 of the
+!                     message word, i.e. its character 2.  WHAT
+!                     THAT CHARACTER IS FOR is not stated anywhere
+!                     on this page and is not asserted here.
+!   lines 17-18       SIC/B to Z T8, "CHECK PP LIMITS".
+!   lines 19-21       L loads 56 bits (7 characters) from JZCHU,
+!                     LF loads the single byte at JZCHU.80, SF
+!                     delivers the field to the PP.  See COMMENTS
+!                     THAT DO NOT MATCH THE DATUM, below, before
+!                     reading any more into them than that.
+!   JZECM  (line 22)  B,KSUPP, the common return.
+!   JZCHU  (line 23)  the message itself, "CHXX,UNIT X" in IQS.
+!
+! NINETEEN CARDS OVER TWENTY-THREE LINES.  The serial column runs
+! FF000001 (line 1) to FF000019 (line 23), with FF000006 printed on
+! lines 6 AND 7, FF000011 on 12 AND 13, FF000012 on 14 AND 15, and
+! FF000014 on 17 AND 18 -- four cards carrying two statements each.
+! Two of those four are the page's two SIC/branch pairs, which is
+! exactly what the rule "SIC must be immediately followed by a
+! half-word branch" predicts of the card deck.  The banner's CARD
+! ID is FF000001 and the last serial is FF000019, so nothing fell
+! off either end of the render.
+!
+! THE SURVEY UNDER-READ THIS PAGE.  It reported 15 rows,
+! 217355.40..217370.00.  The page prints 23 lines, 217355.40..
+! 217370.40, and the last row -- JZCHU, the one row that fixes
+! where the NEXT page starts -- is one of the two it lost.
+!
+! ---------------------------------------------------------------
+! THE JOIN, CLOSED FROM BOTH SIDES
+! ---------------------------------------------------------------
+! THE COLUMN-HEADING ROW'S OWN "LOCATION" FIELD IS BLANK.  Rendered
+! at 600 dpi: the word LOCATION is printed at the right-hand end of
+! the heading line with NOTHING after it, out to the margin rule.
+! A blank is not a zero and no digits are invented here; printed
+! pp.83, 144 and 145 do the same.  So the origin comes from line 5
+! instead, and from the page before.
+!
+! LINE 5 PRINTS "217355.40 *  SLC,$" AND THAT IS A FREE WITNESS.
+! An SLC emits nothing, so its printed LOCATION *is* the counter
+! arriving from printed p.145.  This deck writes a hard
+! "SLC,(8)217355.40" so it assembles standalone, which ASSERTS the
+! origin rather than checking it (docs/transcription_workflow.md,
+! "A HARD SLC CANNOT DISAGREE WITH THE ARRIVING COUNTER"), so the
+! printed value is recorded here and in the !CHECK note instead.
+!
+! NEAR SIDE: docs/ocr/MCP_Mar63_001-249.txt, PDF p.152 (printed
+!   p.145), ends at
+!   "217355.00  216242.10 00  B,KSUPP", a half-word branch, so the
+!   counter leaves p.145 at exactly 217355.40.  That is an OCR of
+!   ANOTHER page, so it is a legitimate index and not a second
+!   reading of this page's ink; p.145 is being transcribed in
+!   parallel and its own ink should be compared against this.
+!
+! FAR SIDE, AND THIS ONE IS READ OFF THE INK: printed p.147 (PDF
+!   p.154) line 4 prints "217371.70 *  SLC,$".  That is IBM's own
+!   assembler stating the counter that leaves THIS page, and it is
+!   the only thing in the volume that can check line 23's length --
+!   see THE ONE ROW NO !CHECK CAN TEST.  It agrees to the bit.
+!   p.147 line 5 is then "217372.00 ... S DISP BB1,SL,MCPERR".
+!
+! ---------------------------------------------------------------
+! THE ONE ROW NO !CHECK CAN TEST, AND HOW IT WAS SETTLED ANYWAY
+! ---------------------------------------------------------------
+! Line 23 is "JZCHU (IQS*)DD(BU),CHXX,UNIT X*".  An (IQS*)DD prints
+! NOTHING in the BINARY OUTPUT column (strap/charsets.py says so
+! outright, and the page confirms it), so no !CHECK on this page
+! can test how many characters it holds.  The two rows that
+! reference it do not help either: line 19's "JZCHU,8" pins only
+! the label's address, and line 20's "JZCHU.80" -> 217371.60 is
+! satisfied by any datum at least eleven characters long.
+!
+! The datum is ELEVEN characters, "CHXX,UNIT X" -- no blank after
+! the comma, exactly ONE blank between T and X -- and three
+! independent things say so:
+!
+!  (1) PITCH, measured not eyeballed.  An ink-column profile of the
+!      row at 1200 dpi puts the glyph centres at a uniform 118-125
+!      px; the T-to-X gap is 235 px, i.e. exactly two pitches, one
+!      blank.  The same profile shows ")" "," "C" consecutive at
+!      one pitch, so there is no blank after the comma.
+!  (2) THE ASSEMBLER.  Handed the printed statement verbatim,
+!      strap_asm puts the next card at 217371.70.
+!  (3) PRINTED p.147 LINE 4 prints "217371.70 *  SLC,$".
+!
+! Had it been twelve characters the page would have ended on the
+! word boundary 217372.00, which is the tempting reading and is
+! WRONG.  Recorded because the row carries no check of its own.
+!
+! ---------------------------------------------------------------
+! COMMENTS THAT DO NOT MATCH THE DATUM -- UNRESOLVED
+! ---------------------------------------------------------------
+! Lines 19 and 20 carry the comments "-CHXX,UNO" and "-CHXX,UNY",
+! read at 1800 dpi; the final glyphs are a closed round O and a
+! clear Y.  NEITHER STRING OCCURS IN THE DATUM line 23 prints.
+! Line 19 is L(BU,56),JZCHU,8 -- 56 bits is 7 characters and the
+! ",8" is the VFL OFFSET field (IBM bits 44-50), not a memory
+! displacement, so the characters loaded are 0-6, "CHXX,UN".
+! Line 20's JZCHU.80 is character 10, the "X" of "UNIT X".  So the
+! comments name something -- a unit letter, a field the PP sees, a
+! convention from another page -- that this page does not define.
+! Recorded as printed and left unexplained.  Nothing checks a
+! comment, and an O in a comment cannot be told from a 0 on this
+! drum, so the O is itself only the likelier reading.
+!
+! ---------------------------------------------------------------
+! GLYPHS SETTLED, AND ON WHAT
+! ---------------------------------------------------------------
+! (1) "JZIOR" (line 6), not JZICR.  Ladder rung 2, the typeset
+!     manuals: JZIOR appears 4 times in C22-6728/-1 (MCP System
+!     Analysis Guide) and C22-6678-1, JZICR zero times.  The page's
+!     own heading is "I/O DEFINITION REPORT", and
+!     docs/ocr/MCP_Mar63_001-249.txt line 9164 -- PDF p.185, a
+!     DIFFERENT page -- prints "B,JZIOR" compiling 217355.50, which
+!     is this label's address plus B's .10.
+!
+! (2) "KGOOF" (lines 12-13), not KGCOF or KGCCF.  Ladder rung 2 and
+!     decisive: C22-6728-1 prose reads "the routine exits at
+!     KGOOF".  Printed p.171 (PDF p.178) line 26 is the DEFINING
+!     card, "K GOOF  BADZ,$+.32" at 220443.40 -- rendered here at
+!     1200 dpi and read directly, not through OCR -- and p.171
+!     lines 17 and 18 print the same two statements this page's
+!     lines 12 and 13 print, against the same two half words.
+!     The page prints it closed up and p.171 prints it with a
+!     blank; STRAP ignores blanks inside a name, so they are one
+!     symbol (strap/strap_asm.py, "IBM's assembler simply ignores
+!     blanks").
+!
+! (3) "KIODRN" (line 6), with an O then a D.  The two glyphs were
+!     read at 1200 dpi against this drum's own discriminator -- C
+!     and 0 are round with no stem, D has a straight vertical left
+!     stem and squared corners -- and the third glyph has no stem
+!     while the fourth does.  Independently: the typeset manuals
+!     spell IODRN 16 times and "IOD RN" 14 more, zero IOCRN or
+!     ICDRN, and gloss it "IOD REF NUMBER"; and the volume OCR of
+!     PDF p.184 carries the DEFINING card at 220706.40, which is
+!     this row's 220706.00 plus the .32 the statement subtracts.
+!
+! (4) "$0", twice, on the drum's own calibration.  Line 11 prints
+!     "LV,$1,$C" and line 6 prints "LV,$0,...": both compile byte
+!     30, the SAME OPERATION on the SAME PAGE, and line 11's
+!     operand compiles 000020.02 -- word 0o20 is index register 0.
+!     "$C" is not a system symbol in any reading.
+!
+! (5) "ZT81" (line 17) ends in a DIGIT 1, not an I or an L.  Read
+!     at 1200 dpi: the terminal glyph has the drum's digit-1 shape,
+!     a top-left flag stroke into a bare stem with a base serif and
+!     NO top bar, while the I of "SIC" three characters to its left
+!     in the same row has full horizontal serifs top and bottom.
+!     Z T8 and Z T81 are two different symbols at two different
+!     addresses (233136.00 and 233141.00), both printed on this
+!     page, so the reading is not "the same name twice".
+!
+! (6) "JZECM" (line 22) ends in M.  docs/ocr/MCP_Mar63_001-249.txt
+!     lines 7712 and 7714 -- PDF p.155, a DIFFERENT page -- print
+!     "SIC,JZECM" compiling 217370.00, which is this label's printed
+!     location, and "B,JZECBR" compiling 217362.50, which is line
+!     14's location plus B's .10.  Both names are therefore
+!     referenced from outside this page, so a misreading of either
+!     would fail the merge when p.148 lands.
+!
+! (7) THE ROUND GLYPH IN "JZECBR" AND "JZECM" IS A C, by same-row
+!     calibration: line 14 prints "K CONVR" two words to the right,
+!     whose C is open on the right in exactly the way these are and
+!     whose O is closed.
+!
+! (8) THE OCTAL FIELDS CALIBRATE THIS PAGE AS AN INK-DROPPER.  Line
+!     10 prints "COCC21.CC", line 11 "COCC20.02", line 17
+!     "233141.CC", line 21 "COCCCO.CC" -- a C cannot occur in an
+!     octal field, so those are all 0.  That licenses nothing about
+!     any particular glyph elsewhere (ink varies per CHARACTER),
+!     but it is why "it looks like a C" carries almost no weight
+!     here.
+!
+! (9) THE BYTE "FC" ON LINE 21 IS F0, settled on what produced it
+!     and not on ink: the low nibble of a VFL full word is i2, the
+!     offset index, and "SF(BU),0.0($1)" has no second operand, so
+!     i2 is 0.  Likewise line 15's "CO" and line 18's "CO" are 00,
+!     and line 22's "CO" is 00.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- every one pinned by a card on a DIFFERENT page
+! ---------------------------------------------------------------
+! ZERO TAUTOLOGICAL ROWS.  This page's own rows sit at OCR lines
+! ~7629-7656 of docs/ocr/MCP_Mar63_001-249.txt; every witness cited
+! below is at a different OCR line and a different printed page.
+!
+! K IODRN  220706.40  READ OFF THE INK, not off OCR: printed p.177
+!                     (PDF p.184) was rendered at 900 dpi and its
+!                     line 16 is the DEFINING card, "220706.40
+!                     220706.43 B0   K IOD RN   LVE,1,$".  The same
+!                     page's line 11 prints "SVA,2,K IOD RN-.32"
+!                     against 220706.05 -- the same minus-32
+!                     arithmetic this page's line 6 does, landing on
+!                     the same word 220706.00 -- and its line 9
+!                     prints "SVA,2,K IOD RN" against 220706.45.
+!                     THIS PAGE pins only the half word (varying
+!                     the bit offset 0-31 changes no printed word),
+!                     so .40 is read from that card, not from here.
+KIODRN  SYN, (8)220706.40
+! S T LR   215230.00  printed p.116 line 13 is the defining card,
+!                     "S T LR DRZ(BU,64),29"; decks p.114/p.144
+!                     already carry it at this value.  THIS PAGE
+!                     PINS IT TO THE BIT: lines 8 and 10 print
+!                     "STLR+14." as a full 24-bit address field,
+!                     215246.00, and 0o215246 - 0o16 = 0o215230.
+!                     The page prints the name closed up where
+!                     p.116 and p.171 print "S TLR"/"S T LR".
+STLR    SYN, (8)215230.0
+! K GOOF   220443.40  printed p.171 line 26 is the defining card,
+!                     "K GOOF BADZ,$+.32", read off the ink here at
+!                     1200 dpi.  BUSAZ pins only the half word from
+!                     this page; p.171's printed LOCATION pins the
+!                     rest, and p.171 line 18's "BADZ,K GOOF+.32"
+!                     prints the same 220444.10 line 13 prints.
+KGOOF   SYN, (8)220443.40
+! K CONVR  221350.00  the SIC on line 14 writes a full 24-bit
+!                     address field, so THIS ROW PINS IT TO THE
+!                     BIT.  Volume OCR independently prints
+!                     "ZIO07 SIC,KCONVR" and "K UNR SIC,K CONV R"
+!                     against the same 221350.00 on two other
+!                     pages.
+KCONVR  SYN, (8)221350.0
+! K CONV   221335.00  docs/ocr/MCP_Mar63_001-249.txt line 9620
+!                     (PDF p.193, printed p.186) carries the
+!                     defining card, "221335.00 ... K CONV SX1,..."
+!                     -CONVERT CH AND UN NUMBERS; lines 9250 and
+!                     9992, on two further pages, print "B,K CONV"
+!                     against 221335.10.  B pins only the half word
+!                     here.  All three are OCR of OTHER pages, which
+!                     is an index and not a second reading of this
+!                     page's ink.
+KCONV   SYN, (8)221335.0
+! Z T81    233141.00  docs/ocr/MCP_Mar63_250-445.txt line 2736
+!                     (PDF p.51 of that volume) prints
+!                     "233141.10 00  ZT81  B,..." -- the defining
+!                     card is in the OTHER volume, not transcribed
+!                     yet.  The SIC on line 17 pins it to the BIT
+!                     from here.
+ZT81    SYN, (8)233141.0
+! Z T8     233136.00  docs/ocr/MCP_Mar63_250-445.txt line 2712
+!                     (PDF p.51 of that volume) prints
+!                     "233136.10 00  B,Z T8 -TO CHECK BOUNDS IF PP
+!                     REQUEST" -- the same statement this page's
+!                     line 18 prints, on a different page.  B pins
+!                     only the half word.
+ZT8     SYN, (8)233136.0
+! K SUPP   216242.00  printed p.128 defines it, "K SUPP NOP,K COMM
+!                     R"; decks p.123, p.124 and p.125 already
+!                     carry it at (8)216242.0.  B pins only the
+!                     half word.
+KSUPP   SYN, (8)216242.0
+
+! ---------------------------------------------------------------
+! THE ORIGIN.  The page prints "SLC,$" (line 5, at 217355.40).
+! Restated hard so the deck assembles standalone; see THE JOIN.
+! ---------------------------------------------------------------
+        SLC, (8)217355.40
+
+! ---- the routine -------------------------------------------------
+JZIOR   LV,$0,KIODRN-.32             ! line  6
+        SVA,$0,JZLOC                 ! line  7  -LOC OF FWA(J)
+        SWAPI,15,STLR+14.,$1         ! line  8  (card FF000007)
+JZLOC   LVE,$0,$                     ! line  9
+        SWAPI,15,$1,STLR+14.         ! line 10
+        LV,$1,$0                     ! line 11
+        BUSAZ,KGOOF                  ! line 12
+        BADZ,KGOOF.32                ! line 13  (same card as 12)
+JZECBR  SIC,KCONVR                   ! line 14  printed "SIC,K CONVR"
+        B,KCONV                      ! line 15  -GET CH AND UN NUMBER
+        VF,JZCHU.16                  ! line 16
+        SIC,ZT81                     ! line 17
+        B,ZT8                        ! line 18  -CHECK PP LIMITS
+        L(BU,56),JZCHU,8             ! line 19  -CHXX,UNO
+        LF(BU,8),JZCHU.80            ! line 20  -CHXX,UNY
+        SF(BU),0.0($1)               ! line 21  -DELIVER TO PP
+JZECM   B,KSUPP                      ! line 22
+JZCHU   (IQS*)DD(BU),CHXX,UNIT X*    ! line 23  prints no binary
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS RENDERED AT 300/900/1200/1800 dpi
+! ---------------------------------------------------------------
+!   1*                                             - ****************************************************  FF000001
+!   2*                                             -      ****** I/O DEFINITION REPORT ******              FF000002
+!   3*                                             - ****************************************************  FF000003
+!   4*                                             -                                                       FF000004
+!   5*  217355.40 *                                          SLC,$                                         FF000005
+!   6*  217355.40   220706.00 30            JZIOR    LV,$0,KIODRN-.32                                      FF000006
+!   7*  217356.00   217357.41 D0                       SVA,$0,JZLOC   -LOC OF FWA(J)                       FF000006
+!   8*  217356.40   215246.00 80  000021.36 E0         SWAPI,15,STLR+14.,$1                                FF000007
+!   9*  217357.40   217357.41 B0            JZLOC    LVE,$0,$                                              FF000008
+!  10*  217360.00   000021.00 80  215246.36 E0         SWAPI,15,$1,STLR+14.                                FF000009
+!  11*  217361.00   000020.02 30                       LV,$1,$0                                            FF000010
+!  12*  217361.40   220443.50 C6                       BUSAZ,KGOOF                                         FF000011
+!  13*  217362.00   220444.10 46                       BADZ,KGOOF.32                                       FF000011
+!  14*  217362.40   221350.00 80            JZECBR   SIC,K CONVR                                           FF000012
+!  15*  217363.00   221335.10 00                       B,K CONV   -GET CH AND UN NUMBER                    FF000012
+!  16*  217363.40   217370.60+                          VF,JZCHU.16                                        FF000013
+!  17*  217364.00   233141.00 80                       SIC,ZT81                                            FF000014
+!  18*  217364.40   233136.10 00                         B,ZT8          -CHECK PP LIMITS                   FF000014
+!  19*  217365.00   217370.40 80  070004.20 50          L(BU,56),JZCHU,8          -CHXX,UNO                FF000015
+!  20*  217366.00   217371.60 80  010000.06 70          LF(BU,8),JZCHU.80         -CHXX,UNY                FF000016
+!  21*  217367.00   000000.00 81  000000.12 F0          SF(BU),0.0($1)            -DELIVER TO PP           FF000017
+!  22*  217370.00   216242.10 00            JZECM    B,KSUPP                                               FF000018
+!  23*  217370.40 *                         JZCHU    (IQS*)DD(BU),CHXX,UNIT X*                             FF000019
+!
+! Line 23's eleven IQS characters are 88 bits from 217370.40, so
+! the counter reaches 217371.70 -- which is what printed p.147
+! line 4 prints.
+!
+! THE SECOND ASTERISK.  Lines 5 and 23 carry an asterisk after the
+! LOCATION, in addition to the one every line number carries.  That
+! is the unexplained marker of docs/listing_typography.md 12 and
+! nothing here explains it; printed p.171 puts it on an SLC, a
+! V-I, and a DR, and printed p.147 puts it on an SLC.  Recorded as
+! printed, with nothing added to it.
+!
+! ---------------------------------------------------------------
+! WHAT THESE CHECKS DO AND DO NOT ESTABLISH
+! ---------------------------------------------------------------
+! All SEVENTEEN emitting rows are declared, and all five of the
+! page's own labels.  The only row with no check is line 23, which
+! prints no binary at all; see THE ONE ROW NO !CHECK CAN TEST.
+!
+! THE REAL CHECKS OF THIS PAGE'S OWN COUNTING are the four rows
+! whose operand is a label defined HERE:
+!   line  7  SVA,$0,JZLOC   -> 217357.41, and JZLOC is line 9
+!   line 16  VF,JZCHU.16    -> 217370.60, and JZCHU is line 23
+!   line 19  L(...),JZCHU,8 -> 217370.40, and JZCHU is line 23
+!   line 20  LF(...),JZCHU.80 -> 217371.60, JZCHU + 80 bits
+! Line 7 is a forward reference over one row, lines 16/19/20 are
+! forward references over seven, four and three rows, and none of
+! them resolves unless every intervening row's LENGTH is right.
+! Line 16 is also the row that makes "a bare bit offset is written
+! DECIMAL and printed OCTAL" visible: ".16" decimal on bit 0o40
+! prints .60 = 48.
+!
+! WHAT IS PINNED ONLY TO THE HALF WORD, from this page alone:
+!   K IODRN (line 6 -- LV), K GOOF (lines 12,13 -- BUSAZ/BADZ),
+!   K CONV (line 15 -- B), Z T8 (line 18 -- B), K SUPP (line 22 --
+!   B), and the page's own JZLOC (line 7 -- SVA).  Measured by
+!   varying each SYN's bit offset and re-assembling: offsets 0-31
+!   produce identical words.  ".0" there is a CONVENTION.  Each is
+!   nevertheless pinned elsewhere, cited under EXTERNALS; JZLOC is
+!   pinned by its own printed LOCATION on line 9.
+! WHAT IS PINNED TO THE BIT from this page: S T LR (lines 8,10 --
+!   SWAPI's 24-bit address field), K CONVR (line 14 -- SIC) and
+!   Z T81 (line 17 -- SIC).  Measured the same way: a .3 offset
+!   changes the printed word.
+!
+! ---------------------------------------------------------------
+! ASSEMBLER LIMITATION HIT: none.
+! Every printed statement was handed to strap_asm exactly as the
+! page prints it and every one was accepted, including the bare
+! "(IQS*)DD(BU)" with NO length and NO byte size -- which the
+! landed decks had only ever written as "DD(BU,64,8)".  It defaults
+! to eight-bit bytes and takes its length from the datum, which is
+! what makes line 23 eighty-eight bits.  The only substitutions are
+! BLANKS INSIDE NAMES: the page prints "K CONVR" and "K CONV" and
+! this deck writes KCONVR and KCONV, because the deck format takes
+! a label to the first blank and STRAP ignores blanks inside a name
+! (strap/strap_asm.py).  No other spelling was changed.
+! ---------------------------------------------------------------
+
+!SYM   JZIOR    217355.40
+!SYM   JZLOC    217357.40
+!SYM   JZECBR   217362.40
+!SYM   JZECM    217370.00
+!SYM   JZCHU    217370.40
+!CHECK 217355.40 | 220706.00 30 | line 6 JZIOR LV,$0,KIODRN-.32 (printed SLC,$ on line 5 gives this page's arriving counter as 217355.40) -- same byte 30 as line 11, which is what settles "$0" against the printed "$C"
+!CHECK 217356.00 | 217357.41 D0 | line 7 SVA,$0,JZLOC -LOC OF FWA(J) -- the .41 is JZLOC's half word (line 9) plus SVA's .01; forward reference
+!CHECK 217356.40 | 215246.00 80 000021.36 E0 | line 8 SWAPI,15,STLR+14.,$1 -- the first half is a full 24-bit address, so it pins S T LR to the bit; 000021 is word 0o21, index register 1
+!CHECK 217357.40 | 217357.41 B0 | line 9 JZLOC LVE,$0,$ -- the modified load the SVA on line 7 plants into
+!CHECK 217360.00 | 000021.00 80 215246.36 E0 | line 10 SWAPI,15,$1,STLR+14. -- line 8's operands the other way round; printed "COCC21.CC", an impossible C in an octal field
+!CHECK 217361.00 | 000020.02 30 | line 11 LV,$1,$0 -- printed "LV,$1,$C"; word 0o20 is index register 0 and $C is not a system symbol in any reading
+!CHECK 217361.40 | 220443.50 C6 | line 12 BUSAZ,KGOOF -- K GOOF is 220443.40, the .10 is BUSAZ's own operation bits; printed p.171 line 17 prints this same half word
+!CHECK 217362.00 | 220444.10 46 | line 13 BADZ,KGOOF.32 (same card as line 12) -- printed p.171 line 18 prints this same half word
+!CHECK 217362.40 | 221350.00 80 | line 14 JZECBR SIC,K CONVR -- SIC writes a full 24-bit address, so this row pins K CONVR to the bit
+!CHECK 217363.00 | 221335.10 00 | line 15 B,K CONV -GET CH AND UN NUMBER (same card as line 14; the half-word branch the SIC requires)
+!CHECK 217363.40 | 217370.60+ | line 16 VF,JZCHU.16 -- JZCHU is 217370.40, bit 0o40 = 32, plus 16 DECIMAL bits = bit 48 = 0o60; forward reference to line 23
+!CHECK 217364.00 | 233141.00 80 | line 17 SIC,ZT81 -- printed "233141.CC", an impossible C in an octal field; SIC pins Z T81 to the bit
+!CHECK 217364.40 | 233136.10 00 | line 18 B,ZT8 -CHECK PP LIMITS (same card as line 17)
+!CHECK 217365.00 | 217370.40 80 070004.20 50 | line 19 L(BU,56),JZCHU,8 -CHXX,UNO -- JZCHU is this page's line 23, a forward reference over four rows
+!CHECK 217366.00 | 217371.60 80 010000.06 70 | line 20 LF(BU,8),JZCHU.80 -CHXX,UNY -- 80 DECIMAL bits on from 217370.40 is word+1 bit 48 = .60, the eleventh character of the message
+!CHECK 217367.00 | 000000.00 81 000000.12 F0 | line 21 SF(BU),0.0($1) -DELIVER TO PP -- printed "COCCCO.CC 81" and byte "FC"; the byte is F0 by the i2 rule, there being no second operand
+!CHECK 217370.00 | 216242.10 00 | line 22 JZECM B,KSUPP -- K SUPP is 216242.00, the .10 is B's operation bits

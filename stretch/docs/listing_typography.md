@@ -543,14 +543,51 @@ card 11000047 and neither carries it. The marked statements have no
 operation, operand form, index register or alignment in common: a
 VFL instruction, two branches, two `REL`s, a `SC`, and four `DD`s.
 
-**The one pattern that survives contact with the data** is that the
-line-pitch between consecutive marks grows with the number of lines
-on the page — p.13 (38 lines) 14, p.4 (41) 18, p.5 (56) 20, p.3 (52)
-22–23 — which is what a mark at a fixed PHYSICAL distance down the
-form would do. But a fixed physical position would put p.3's first
-mark and p.5's first mark at the same height, and they are at rows 5
-and 26 of similarly dense pages, so that is not the whole story
-either. **Recorded as open.**
+**THE PITCH READING IS NOW DEAD TOO (2026-10-31).** It used to be
+"the one pattern that survives": the line-pitch between consecutive
+marks grows with the number of lines on the page — p.13 (38 lines)
+14, p.4 (41) 18, p.5 (56) 20, p.3 (52) 22–23 — which is what a mark
+at a fixed PHYSICAL distance down the form would do. Printed pp.145
+to 152 killed it:
+
+* **printed p.150** carries marks on lines 4, 23 and 28 of a 28-line
+  page — pitches of **19 and 5**, which no fixed physical distance
+  produces. Established by pixel count in that column alone
+  (1736/1747/1730 dark px on the marked rows against 0 on the other
+  twenty-five), not by eye.
+* **printed p.152** has marks on lines 17 and 43 of 51 lines, a pitch
+  of **26**, against p.3's 22–23 on a 52-line page of similar
+  density.
+
+**Four more readings died in the same block, each on a page that was
+not looking for them:**
+
+* *"the counter was discontinuous here"* — **p.149**: line 30's
+  counter arrives exactly (line 29's 64-bit TI runs 217475.40 →
+  217476.40) and line 30 is marked anyway, while line 23's TI is
+  equally contiguous and is not.
+* *"a blank-operation card"* — **p.147**: its lines 19 and 25 are
+  blank-operation cards and neither is marked.
+* *"the second statement punched on one card"* — **p.152**: line 43
+  is the second statement of a card and line 17 is the only
+  statement on its card; both are marked. (printed p.3 had already
+  refuted this from the other side.)
+* *"alignment"* — **p.152** again: both marked rows are half-word
+  direct index instructions, one on an even and one on an odd half
+  word.
+
+**And one candidate rule was raised and refuted INSIDE the block,
+which is worth recording as a method note.** printed p.147 proposed
+that *every printed `SLC,$` row carries the mark*, citing p.144 line
+5, p.145 line 5 and its own line 4. **printed p.151 line 4 is a
+printed `SLC,$` at 217544.00 and is NOT marked** — rendered here at
+600 dpi to settle the disagreement, because two transcribers working
+in parallel cannot see each other's page and only the pages together
+refute it. Beware reading the mark off the line-number asterisk,
+which every line carries (`1*`, `2*`, `3*`); they sit in different
+columns.
+
+**Recorded as open, and now with eight things it is not.**
 
 **Why it is safe to transcribe past it.** It sits in the LOCATION
 column, and all three of p.3's instances are in that page's checked

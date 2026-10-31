@@ -6443,6 +6443,36 @@ run "the level-return bookkeeping, printed p.141" python3 verify_mcp_page.py 141
 run "the PP-level entry and backup return, printed p.142" python3 verify_mcp_page.py 142
 run "JMPP and the TS/EXE test, printed p.143" python3 verify_mcp_page.py 143
 run "the WRAMPP parameter moves, printed p.144" python3 verify_mcp_page.py 144
+
+# >>> pp.145-152: THE INTERVAL TIMER, THE I/O AND T/C DEFINITION
+# REPORTS, ERROR CONTROL, THE ERROR DUMP, READ AND CHANGE MODE. <<<
+# This block implemented EXT, "Extract" -- the pseudo-operation that
+# compiles the statement AFTER it only to take a subfield out of it.
+# printed p.149 lines 7-8 are one card, "EXT(0,18)" over "B,AEDUMP",
+# and the 19 bits that land are the half-word address of AEDUMP
+# (217463.40 -> 0o437147, the printed field).  Before this the deck
+# wrote the NUMBER and lost the derivation; it now writes the page's
+# own form.  C22-6531 printed p.35 supplies a worked example with
+# every answer in it -- bits 18-47 of "+(B,18,7),73.16", dds
+# (BU,30,8), "the location counter is advanced 30 bits" -- and two of
+# those three are checked (the dds is not implemented: symbols here
+# carry a value and no data description).
+#
+# The joins close p.144 -> p.152 with two apparent gaps that are both
+# rows printing NO binary, and so checkable by nothing: p.146's
+# entry-mode (IQS*)DD runs to 217371.70 where p.147's printed SLC
+# sits, and p.150's DRZ(N),11 reserves eleven words to land exactly
+# on p.151's first location.  Each was pinned by arithmetic off the
+# neighbour instead.
+run "EXT against IBM's own worked example" python3 check_ext_pseudo_op.py
+run "the interval timer, printed p.145" python3 verify_mcp_page.py 145
+run "the I/O definition report, printed p.146" python3 verify_mcp_page.py 146
+run "error control, printed p.147" python3 verify_mcp_page.py 147
+run "the console control words, printed p.148" python3 verify_mcp_page.py 148
+run "the error dump routine, printed p.149" python3 verify_mcp_page.py 149
+run "the error dump's exits, printed p.150" python3 verify_mcp_page.py 150
+run "the READ routine, printed p.151" python3 verify_mcp_page.py 151
+run "the disk request tail and CHANGE MODE, printed p.152" python3 verify_mcp_page.py 152
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
 run "the program status table, printed p.109" python3 verify_mcp_page.py 109
 run "the interrupt table, printed p.110" python3 verify_mcp_page.py 110

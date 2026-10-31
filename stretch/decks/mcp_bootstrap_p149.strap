@@ -1,0 +1,514 @@
+! mcp_bootstrap_p149.strap -- "THE ERROR DUMP ROUTINE", printed page
+! 149.  docs/MCP_Mar63_001-249.pdf PDF p.156, header read and not
+! assumed: the top line prints "TIME CLOCK 00054041  PUNID 11011MCP
+! CARD ID HB000001   DIST. OF 3/01   3/01   PAGE NUMBER 149".
+!
+! THE COLUMN-HEADING ROW'S OWN "LOCATION" FIELD IS BLANK.  Rendered
+! at 600 dpi across the full right-hand end of that line: the word
+! LOCATION is printed and NOTHING follows it before the frame.  That
+! is the p.83 / p.144 case, not a zero and not a number -- refused,
+! not guessed (docs/transcription_workflow.md, step 1).  So the join
+! to p.148 rests on line 4's printed SLC and on the two witnesses
+! under THE JOIN below, and this page adds a third member to the
+! "blank heading LOCATION" set: pp.83, 144, 149.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! Forty-nine printed lines, forty-eight cards (HB000001..HB000048;
+! lines 7 and 8 share HB000007).  Lines 1-3 are the asterisk box
+! around the heading "***** THE ERROR DUMP ROUTINE *****" (line 2);
+! line 4 is "SLC,$"; line 5 is "CNOP,"; lines 6-10 build the
+! routine's table-of-exits word and its two reservations; lines
+! 11-49 are thirty-nine instructions, every one of them CODE.
+!
+! The routine is the error dump that printed p.121's Program Table
+! of Exits reaches by "VF,AEDMPT" -- p.121 line 6 prints
+! "215666.40  217460.00+  VF,AEDMPT  -ERROR DUMP", which is this
+! page's first word, named and addressed, printed on a DIFFERENT
+! page.
+!
+! The body:
+!   AEDMPT (line 6)  the exit word itself: 45 bits of control
+!                    followed by the 19-bit half-word address of
+!                    AEDUMP, extracted out of a branch (see THE
+!                    EXT PAIR).
+!   AEDUMP (line 11) the entry.  LV picks up AEDMPT+3 as the first
+!                    word address (comment "-FWA(I)"), LX/SX swap
+!                    index 4 between AEDMPA and AEDMPI.
+!   AEDMP2 (line 14) the bounds check: two KV/BXL-BXH pairs against
+!                    SPPLB / SPPUB send anything outside the saved
+!                    PP bounds to AEDRET, then an SVA/TI/BD/LVE
+!                    sequence saves the index registers through
+!                    SLRBU+14.
+!   lines 24-35      three LVE/V+I/SVA rungs that walk a value and
+!                    then test it with BUSAZ / BADZ / BE.
+!   lines 36-49      the second bounds check, against SPPLB and
+!                    SMARK, then a KVI ladder that counts 3, 15 and
+!                    15.32 and branches to AEDMP4.
+!
+! ---------------------------------------------------------------
+! THE JOIN, CLOSED FROM BOTH SIDES
+! ---------------------------------------------------------------
+! LINE 4 PRINTS "217460.00 *  SLC,$", AND AN SLC EMITS NOTHING, SO
+! ITS PRINTED LOCATION *IS* THE COUNTER ARRIVING FROM P.148.  This
+! deck writes a hard "SLC,(8)217460.0" so it assembles standalone,
+! which ASSERTS that origin rather than checking it (docs/
+! transcription_workflow.md, "A HARD SLC CANNOT DISAGREE WITH THE
+! ARRIVING COUNTER").  The printed value is recorded here and in
+! the first !CHECK note instead.
+!
+! NEAR SIDE: printed p.148 (PDF p.155) ends at its line 30, a
+!   half-word branch "217457.40  217372.10 00  B,SDISP", so the
+!   counter leaves p.148 at exactly 217460.00.  (Read out of
+!   docs/ocr/MCP_Mar63_001-249.txt, which is a legitimate index
+!   onto ANOTHER page.)
+! INDEPENDENT: printed p.121 line 6 prints "215666.40  217460.00+
+!   VF,AEDMPT -ERROR DUMP", and decks/mcp_bootstrap_p121.strap
+!   already carries "AEDMPT SYN,(8)217460.00".  A different page,
+!   a different card, the same word.
+! FAR SIDE, A FALSIFIABLE PREDICTION: line 49 is a half-word KVI at
+!   217510.00, so the counter leaves this page at 217510.40.  The
+!   volume OCR of printed p.150 line 1 reads "217510.40  217526.32
+!   00  BZXE,AEDRET", which is that value.
+!
+! THE SURVEY IS WRONG ABOUT THE FIRST LOCATION AND SHORT AT THE
+! END.  It reported 31 rows, 227460.00..217504.4.  The page prints
+! 49 lines; the first location is 217460.00 (the leading 1 read as
+! a 2 -- confirmed at 1200 dpi, and confirmed again by p.121's
+! VF,AEDMPT on another page), and the last is 217510.00, five rows
+! past where the survey stopped.  Nothing fell off either end: the
+! card-serial column runs unbroken HB000001 (line 1) to HB000048
+! (line 49) and the frame below line 49 is blank.
+!
+! ---------------------------------------------------------------
+! THE EXT PAIR -- THE ONE PLACE THIS DECK DOES NOT SAY WHAT THE
+! PAGE SAYS, AND EXACTLY WHAT IT COSTS
+! ---------------------------------------------------------------
+! Lines 6, 7 and 8 build ONE 64-bit word at 217460:
+!
+!   line 6   217460.00   100100000000000   AEDMPT  DD(BU,45),0(.3)2(.11)1
+!   line 7                                         EXT(0,18)
+!   line 8   217460.55   0437147                   B,AEDUMP
+!
+! C22-6531 printed p.35 ("5. EXT 'EXTRACT'") and C28-6129's
+! "2. ext--Extract": the statement FOLLOWING the EXT is compiled
+! only so that a subfield of it can be taken; bits I..J are then
+! "compiled in the position in the code where the EXT occurs", and
+! the name gets the dds (BU, J-I+1, 8).  So EXT(0,18) deposits
+! NINETEEN BITS and the branch on line 8 DEPOSITS NOTHING OF ITS
+! OWN.  There is no half word of branch at 217461.00 to be found
+! later and "fixed" in: the whole of line 8's contribution is the
+! 19 bits printed as "0437147".
+!
+! The arithmetic, so the literal and the label can be re-derived
+! against each other by hand: AEDUMP is line 11 at 217463.40, whose
+! HALF-WORD address is 0o217463 * 2 + 1 = 0o437147.  Bits 0-18 of
+! a full-word branch are exactly that half-word address (bits 0-17
+! the word, bit 18 the half-word select), which is why EXT(0,18)
+! takes 19 bits and not 18.
+!
+! WIDTH, MEASURED, NOT ASSUMED.  The DRZ on line 9 rounds up to a
+! word boundary either way, so the page's own counter does NOT pin
+! this width.  What pins it is the print: listing_oracle renders a
+! bare-octal datum in ceil(width/3) digits, and a column-ink
+! profile of line 8's field at 1200 dpi counts SEVEN glyphs
+! ("0437147"), which is 19 bits.  Line 6's field counts FIFTEEN
+! glyphs by the same measurement, which is the 45 of its DD.
+!
+! RESOLVED.  strap_asm used to refuse "EXT" and this deck carried a
+! "DD(BU,19),(8)437147" substitution that threw the DERIVATION away
+! -- it wrote the number the page COMPUTES from the label AEDUMP, so
+! if AEDUMP moved the page would follow and the deck would not.
+! strap_asm now implements EXT (C22-6531 printed p.35, C28-6129
+! printed p.19), checked against IBM's own worked example in
+! tests/check_ext_pseudo_op.py, and THE PRINTED FORM STANDS BELOW.
+! The 19 bits are now derived from AEDUMP exactly as the page
+! derives them.
+!
+! Corroboration that lines 7 and 8 really are one construct: they
+! share one card, HB000007 -- the only repeated serial on the page.
+! That is corroboration and not proof (p.130 and p.144 both carry
+! two-statement cards that are not EXT pairs).
+!
+! ---------------------------------------------------------------
+! THE "AC" BYTE ON LINES 19, 23 AND 29 IS "A0"
+! ---------------------------------------------------------------
+! All three TI rows print a byte whose second glyph is open, and
+! all three are recorded here as A0.  The argument runs from what
+! PRODUCED the byte, not from the ink:
+!
+!  * The low nibble of a VFL full word is i2, the offset index of
+!    the SECOND operand.  "TI,15,SLRBU+14.,$1" and
+!    "TI,1,SLRBU+14.,$1" carry no parenthetical index there, so i2
+!    is 0 and the byte ends in 0.  strap_asm agrees: assembled, all
+!    three rows come out A0, and no variant of the printed
+!    statement produces AC.
+!  * POSITIVE CONTROL: printed p.135 line 16 is
+!    "216625.40  216633.00 80  000004.02 AC  TI,1,WRESL1,SIOINS($12)"
+!    -- a genuine AC, and it has the ($12) that makes i2 = 0xC.
+!  * PRECEDENT: pp.130, 136 and 138 each resolved this identical
+!    print the same way, and p.130 carries both cases on one page.
+!
+! The ink supports the reading without licensing it: line 23 prints
+! its octal field "000021.C2" and line 29 prints "0C0021.C2", and a
+! C cannot occur in an octal field, so these rows demonstrably drop
+! ink on round glyphs.  Per docs/transcription_workflow.md that
+! shows the row CAN drop ink and never that a particular glyph did,
+! which is why the argument above is the one that decides.
+!
+! ---------------------------------------------------------------
+! GLYPHS SETTLED, AND HOW
+! ---------------------------------------------------------------
+! (1) "DRZ", not "DR", on lines 9 and 10.  DR and DRZ print the
+!     SAME BINARY OUTPUT (a reservation prints its COUNT), so no
+!     !CHECK on this page can tell them apart and a passing run is
+!     no evidence at all.  READ OFF THE INK at 1200 dpi: the
+!     statement column prints "DRZ(N),2" and "DRZ(BU,32),1", with a
+!     clear Z in both.  This is the p.136/p.137 failure mode and it
+!     is the reason the crop was taken.
+! (2) The leading digit of the page's first location is a 1.  At
+!     1200 dpi line 4 reads "21746C.CC" and line 6 "21746C.00" --
+!     open round glyphs in an OCTAL field, so 217460.00.  The
+!     survey's "227460.00" is a misread 1.
+! (3) "AEDUMP" on line 8 and "AEDMPT" on line 6: the D's print with
+!     the straight left stem and squared corners that separate D
+!     from C on this drum (1200 dpi).
+! (4) "AEDMPT" is corroborated as a SPELLING by another page, not
+!     just as an address: decks/mcp_bootstrap_p121.strap read the
+!     same six letters off printed p.121 line 6 independently, and
+!     tests/check_symbol_spellings.py groups the two at one bit
+!     number and passes.  AEDUMP, AEDMP2 and AEDMP1 have no such
+!     second reader and rest on the ink alone -- all four were
+!     rendered at 1200 dpi and every D shows the straight left stem
+!     and squared corners that separate D from C on this drum.
+! (5) Line 6's datum "0(.3)2(.11)1" was handed to strap_asm exactly
+!     as printed and compiles to exactly the printed
+!     100100000000000: the field entries put a 1 at bit 2 (the "2"
+!     ending at bit 3) and a 1 at bit 11, which is what those
+!     fifteen octal digits say.  The statement and the bits agree
+!     with no reading left over.
+!
+! ---------------------------------------------------------------
+! LISTING MARKS
+! ---------------------------------------------------------------
+! EVERY ONE of the forty-nine line numbers carries an asterisk
+! right after it ("7*", "49*").  That is the ordinary column, not a
+! mark.  LINES 4, 9 AND 30 carry a SECOND asterisk after their
+! LOCATION -- the familiar mark that pp.3/37/38/39/88/97/98/104/
+! 105/124/136 also carry.  It changes no bit.  What it MEANS is
+! still unexplained: the obvious guess, "the counter was
+! discontinuous here", is refuted on this very page, because line
+! 30's counter arrives exactly (line 29's TI is 64 bits from
+! 217475.40 and ends at 217476.40) and line 30 carries the mark
+! anyway, while line 23's TI, which also follows contiguously,
+! does not.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, EVERY ONE READ OFF ANOTHER PAGE
+! ---------------------------------------------------------------
+!   SLRBU   215324.00  decks/mcp_bootstrap_p116.strap line 21
+!                      defines it, "SLRBU DRZ(BU,64),29"
+!   SPPUB   215324.00  p.116 line 22 "SPPUB SYN,SLRBU"
+!   SPPLB   215324.40  p.116 line 23 "SPPLB SYN,SLRBU+.32"
+!   SMARK   215012.40  decks/mcp_bootstrap_p103.strap line 46
+!                      "SMARK VF", !SYM 215012.40
+!   AEDRET  217526.00  printed p.150 line 24 (volume OCR),
+!                      "217526.00  000040.10 00  AEDRET  B,OMCP"
+!   AEDMPI  217527.00  printed p.150 line 26, "AEDMPI XW,AEDMPB,6"
+!   AEDMPA  217530.00  printed p.150 line 27, "AEDMPA XW,AEDMPB,6"
+!   AEDMPB  217531.00  the operand of both those XWs, and p.150
+!                      line 28 prints 217531.00 as its own location
+!   AEDMP4  217511.00  printed p.150 line 2, "AEDMP4 LX,4,AEDMPI"
+!
+! SPPUB and SPPLB are SYN'd off SLRBU here the way p.116 defines
+! them, so the "+.32" relationship survives rather than becoming
+! two unrelated literals.
+!
+! NAME COLLISION, REPORTED NOT TOUCHED: "SMARK" at 215012.40 is NOT
+! the "SMARK" that decks/mcp_bootstrap_p28.strap and p37 carry at
+! 2162.40.  printed p.99 line 11's "SLC,(8)215000." opened the
+! second assembly of MCP after p.98 closed the first TAIL block, so
+! the two are different symbols that happen to share a spelling.
+! decks/mcp_bootstrap_p103.strap is the one that defines the one
+! used here.  AEDMPT already exists at this value in
+! decks/mcp_bootstrap_p121.strap (same value, no conflict); AEDUMP,
+! AEDMP2 and AEDMP1 are new names no landed deck carries.
+!
+! BIT OFFSETS THAT ARE A CONVENTION, NOT A READING: AEDRET,
+! AEDMPA, AEDMPI, AEDMPB, AEDMP4, SPPUB and SLRBU are SYN'd at
+! ".0".  Every offset from 0 to 31 encodes identically in a branch,
+! a KV, an LX/SX or a TI operand, so only bit 32 -- the half word
+! -- is observable from this page, and it IS checked (SPPLB at .40
+! and SMARK at .40 both show, and both pass).  The bit WITHIN the
+! half word comes from the defining cards cited above.
+!
+! ---------------------------------------------------------------
+! ASSEMBLER LIMITATION HIT: ONE, AND IT IS "EXT".
+! ---------------------------------------------------------------
+! "EXT(0,18)" is refused outright -- strap_asm.py line 2125 raises
+! "pseudo-operation EXT not implemented by this assembler yet",
+! and its module docstring lists EXT under "Not yet".  That is the
+! substitution documented above.  EVERY OTHER PRINTED FORM ON THIS
+! PAGE WAS HANDED TO strap_asm EXACTLY AS PRINTED AND ACCEPTED,
+! including the ones that looked least likely: "CNOP," with the
+! trailing comma, "DD(BU,45),0(.3)2(.11)1" with its two field
+! entries, "DRZ(N),2" and "DRZ(BU,32),1", the bare index in
+! "LX,4,AEDMPA" / "SX,4,AEDMPI" / "LVE,1,$" beside the "$1" form on
+! the same page, "V+I", "BUSAZ", "BADZ", "BZXH", "BXE", and the
+! "$.32" self-relative operand.
+! ---------------------------------------------------------------
+
+AEDRET  SYN, (8)217526.0             ! p.150 line 24
+AEDMPI  SYN, (8)217527.0             ! p.150 line 26
+AEDMPA  SYN, (8)217530.0             ! p.150 line 27
+AEDMPB  SYN, (8)217531.0             ! p.150 lines 26-28
+AEDMP4  SYN, (8)217511.0             ! p.150 line 2
+SLRBU   SYN, (8)215324.0             ! p.116 line 21
+SPPUB   SYN, SLRBU                   ! p.116 line 22
+SPPLB   SYN, SLRBU+.32               ! p.116 line 23
+SMARK   SYN, (8)215012.40            ! p.103 line 46
+
+!  THE PAGE PRINTS "SLC,$" ON LINE 4 AT 217460.00.  Restated hard
+!  so this deck stands alone -- see THE JOIN.
+        SLC, (8)217460.0
+
+        CNOP,                        ! line  5
+AEDMPT  DD(BU,45),0(.3)2(.11)1       ! line  6
+!  ---------------------------------------------------------------
+!  SUBSTITUTION.  THE PAGE PRINTS TWO LINES HERE:
+!        line 7                EXT(0,18)
+!        line 8   217460.55    B,AEDUMP      -> 0437147
+!  strap_asm does not implement EXT.  The nineteen bits the pair
+!  deposits are the half-word address of AEDUMP (217463.40):
+!  0o217463*2+1 = 0o437147.  The branch itself deposits NOTHING --
+!  do not "restore" a half word at 217461.00.  See THE EXT PAIR.
+        EXT(0,18)                    ! line 7   printed form
+        B,AEDUMP                     ! line 8   extracted by line 7
+!  ---------------------------------------------------------------
+        DRZ(N),2                     ! line  9
+        DRZ(BU,32),1                 ! line 10
+AEDUMP  LV,$0,AEDMPT+3.              ! line 11  -FWA(I)
+        LX,4,AEDMPA                  ! line 12
+        SX,4,AEDMPI                  ! line 13
+AEDMP2  KV,$0,SPPLB                  ! line 14
+        BXL,AEDRET                   ! line 15
+        KV,$0,SPPUB                  ! line 16
+        BXH,AEDRET                   ! line 17
+        SVA,$0,AEDMP1                ! line 18
+        TI,15,SLRBU+14.,$1           ! line 19
+        BD,$.32                      ! line 20
+AEDMP1  LVE,1,$                      ! line 21
+        SV,$1,AEDMPB+8.0             ! line 22
+        TI,1,SLRBU+14.,$1            ! line 23
+        V+I,$0,.32                   ! line 24
+        SVA,$0,$.32                  ! line 25
+        LVE,$1,$                     ! line 26
+        V+I,$1,1.                    ! line 27
+        SV,$1,AEDMPB+8.32            ! line 28
+        TI,1,SLRBU+14.,$1            ! line 29
+        V+I,$0,.32                   ! line 30
+        SVA,$0,$.32                  ! line 31
+        LVE,$2,$                     ! line 32
+        BUSAZ,$.32                   ! line 33
+        BADZ,$.32                    ! line 34
+        BE,$.32                      ! line 35
+        LV,$1,AEDMPB+8.0             ! line 36
+        LV,$3,AEDMPB+8.32            ! line 37
+        KV,$1,SPPLB                  ! line 38
+        BXL,AEDRET                   ! line 39
+        KV,$3,SMARK                  ! line 40
+        BXH,AEDRET                   ! line 41
+        KV,$3,$1                     ! line 42
+        BZXH,AEDRET                  ! line 43
+        SV,$2,$5                     ! line 44
+        KVI,$5,3.                    ! line 45
+        BXL,AEDMP4                   ! line 46
+        KVI,$5,15.                   ! line 47
+        BXE,AEDMP4                   ! line 48
+        KVI,$5,15.32                 ! line 49
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS RENDERED AT 400/800/1200 dpi
+! ---------------------------------------------------------------
+!   1*                                                     - ******************************************************  HB000001
+!   2*                                                     -        ************* THE ERROR DUMP ROUTINE *********   HB000002
+!   3*                                                     - ******************************************************  HB000003
+!   4*  217460.00 *                                                 SLC,$                                            HB000004
+!   5*                                                              CNOP,                                            HB000005
+!   6*  217460.00                 100100000000000   AEDMPT          DD(BU,45),0(.3)2(.11)1                           HB000006
+!   7*                                                              EXT(0,18)                                        HB000007
+!   8*  217460.55                         0437147                   B,AEDUMP                                         HB000007
+!   9*  217461.00 * 000002.00                                       DRZ(N),2                                         HB000008
+!  10*  217463.00   000000.40                                       DRZ(BU,32),1                                     HB000009
+!  11*  217463.40   217463.00 30                    AEDUMP          LV,$0,AEDMPT+3.            -FWA(I)                HB000010
+!  12*  217464.00   217530.10 10                                    LX,4,AEDMPA                                      HB000011
+!  13*  217464.40   217527.11 10                                    SX,4,AEDMPI                                      HB000012
+!  14*  217465.00   215324.40 90                    AEDMP2          KV,$0,SPPLB                                      HB000013
+!  15*  217465.40   217526.32 42                                    BXL,AEDRET                                       HB000014
+!  16*  217466.00   215324.00 90                                    KV,$0,SPPUB                                      HB000015
+!  17*  217466.40   217526.33 42                                    BXH,AEDRET                                       HB000016
+!  18*  217467.00   217471.01 D0                                    SVA,$0,AEDMP1                                    HB000017
+!  19*  217467.40   215342.00 80  000021.36 A0                      TI,15,SLRBU+14.,$1                               HB000018
+!  20*  217470.40   217471.04 00                                    BD,$.32                                          HB000019
+!  21*  217471.00   217471.03 B0                    AEDMP1          LVE,1,$                                          HB000020
+!  22*  217471.40   217541.03 30                                    SV,$1,AEDMPB+8.0                                 HB000021
+!  23*  217472.00   215342.00 80  000021.02 A0                      TI,1,SLRBU+14.,$1                                HB000022
+!  24*  217473.00   000000.41 05                                    V+I,$0,.32                                       HB000023
+!  25*  217473.40   217474.01 D0                                    SVA,$0,$.32                                      HB000024
+!  26*  217474.00   217474.03 B0                                    LVE,$1,$                                         HB000025
+!  27*  217474.40   000001.03 05                                    V+I,$1,1.                                        HB000026
+!  28*  217475.00   217541.43 30                                    SV,$1,AEDMPB+8.32                                HB000027
+!  29*  217475.40   215342.00 80  000021.02 A0                      TI,1,SLRBU+14.,$1                                HB000028
+!  30*  217476.40 * 000000.41 05                                    V+I,$0,.32                                       HB000029
+!  31*  217477.00   217477.41 D0                                    SVA,$0,$.32                                      HB000030
+!  32*  217477.40   217477.45 B0                                    LVE,$2,$                                         HB000031
+!  33*  217500.00   217500.50 C6                                    BUSAZ,$.32                                       HB000032
+!  34*  217500.40   217501.10 46                                    BADZ,$.32                                        HB000033
+!  35*  217501.00   217501.40 00                                    BE,$.32                                          HB000034
+!  36*  217501.40   217541.02 30                                    LV,$1,AEDMPB+8.0                                 HB000035
+!  37*  217502.00   217541.46 30                                    LV,$3,AEDMPB+8.32                                HB000036
+!  38*  217502.40   215324.42 90                                    KV,$1,SPPLB                                      HB000037
+!  39*  217503.00   217526.32 42                                    BXL,AEDRET                                       HB000038
+!  40*  217503.40   215012.46 90                                    KV,$3,SMARK                                      HB000039
+!  41*  217504.00   217526.33 42                                    BXH,AEDRET                                       HB000040
+!  42*  217504.40   000021.06 90                                    KV,$3,$1                                         HB000041
+!  43*  217505.00   217526.33 40                                    BZXH,AEDRET                                      HB000042
+!  44*  217505.40   000025.05 30                                    SV,$2,$5                                         HB000043
+!  45*  217506.00   000003.13 04                                    KVI,$5,3.                                        HB000044
+!  46*  217506.40   217511.32 42                                    BXL,AEDMP4                                       HB000045
+!  47*  217507.00   000017.13 04                                    KVI,$5,15.                                       HB000046
+!  48*  217507.40   217511.32 C2                                    BXE,AEDMP4                                       HB000047
+!  49*  217510.00   000017.53 04                                    KVI,$5,15.32                                     HB000048
+!
+! Lines 19, 23 and 29 are printed on the page with an OPEN second
+! byte glyph, "AC"; they are recorded above as the A0 they compile
+! to, for the reasons under THE "AC" BYTE.  Every other character
+! above is as printed.
+!
+! Line 49 is a half word, so the counter reaches 217510.40 for the
+! page that follows.
+!
+! ---------------------------------------------------------------
+! WHAT THESE CHECKS DO AND DO NOT ESTABLISH
+! ---------------------------------------------------------------
+! Forty-three rows print BINARY OUTPUT and FORTY-ONE carry a
+! !CHECK -- lines 6, 8 and 11 through 49 -- together with all four
+! of the page's own labels and all nine externals.  Lines 9 and 10
+! are the two DRZs, which carry none for the house reason recorded
+! beside them.  Lines 1-5 and line 7 emit nothing (three comment
+! cards, a blank comment card, an SLC, a CNOP at a boundary, and
+! the EXT whose bits are line 8's).
+!
+! THE REAL CHECKS OF THIS PAGE'S OWN COUNTING are the rows whose
+! operand is a label defined HERE, because each only resolves if
+! every intervening row's LENGTH is right:
+!   line  8  the extracted 0437147 IS AEDUMP's half-word address,
+!            and AEDUMP is line 11 at 217463.40 -- a forward
+!            reference over the two DRZs
+!   line 11  LV,$0,AEDMPT+3. prints 217463.00.  AEDMPT is line 6 at
+!            217460.00 and the trailing period makes the "+3." THREE
+!            WORDS, so the row is a backward reference over both
+!            reservations.  What it lands on is line 10's 32-bit
+!            DRZ, which is what the comment "-FWA(I)", first word
+!            address, reads against.
+!   line 18  SVA,$0,AEDMP1 -> 217471.01, and AEDMP1 is line 21 at
+!            217471.00 -- a forward reference ACROSS the 64-bit TI
+!            on line 19, which is the row that pins that TI's
+!            length and its half-word start
+!   lines 20,25,31,33,34,35  the "$.32" rows, each of which prints
+!            its own address plus 32 bits and so checks the
+!            location counter against itself at six places
+!
+! TAUTOLOGY AUDIT.  Nine externals, every one defined by a card on
+! another page (see EXTERNALS); no row here checks a value this
+! page itself supplied.  The one value this deck ASSERTS rather
+! than checks is the origin, 217460.0, because the printed "SLC,$"
+! had to be made hard -- and that is the value p.148's last line
+! and p.121's VF,AEDMPT both independently give.
+!
+! WHAT NO CHECK ON THIS PAGE CAN SEE:
+!   * DR vs DRZ on lines 9 and 10 -- settled off the ink only.
+!   * How the 2 words + 32 bits of lines 9 and 10 divide between
+!     the two rows -- ARITHMETICALLY (see the note above the
+!     checks).  It is not entirely unchecked in MEANING: line 11's
+!     AEDMPT+3. resolves to 217463.00, which is line 10's object,
+!     so a wrong split would leave the address right and the named
+!     object wrong.
+!   * What mode letter "N" means in line 9's "DRZ(N),2".  strap_asm
+!     accepts it and reserves 2 WORDS, which is what the page's own
+!     counter does (217461.00 -> 217463.00), but no primary source
+!     was located for the letter itself.  Nothing here depends on
+!     it beyond the length, which is checked.
+!   * The bit WITHIN the half word for the seven externals SYN'd
+!     at ".0" (see EXTERNALS).
+!   * Whether line 8's nineteen bits were DERIVED from AEDUMP or
+!     written as a literal.  The page derives them; this deck
+!     writes them.  They are equal today.
+! ---------------------------------------------------------------
+
+!SYM   AEDMPT   217460.00
+!SYM   AEDUMP   217463.40
+!SYM   AEDMP2   217465.00
+!SYM   AEDMP1   217471.00
+!SYM   AEDRET   217526.00
+!SYM   AEDMPI   217527.00
+!SYM   AEDMPA   217530.00
+!SYM   AEDMPB   217531.00
+!SYM   AEDMP4   217511.00
+!SYM   SLRBU    215324.00
+!SYM   SPPUB    215324.00
+!SYM   SPPLB    215324.40
+!SYM   SMARK    215012.40
+!CHECK 217460.00 | 100100000000000 | line 6 AEDMPT DD(BU,45),0(.3)2(.11)1 (printed SLC,$ on line 4 gives this page's arriving counter as 217460.00) | 45
+!CHECK 217460.55 | 0437147 | line 8 B,AEDUMP under line 7's EXT(0,18) -- 19 bits, the half-word address of AEDUMP, DERIVED from the label as the page derives it | 19
+! LINES 9 AND 10 GET NO !CHECK.  Their printed "000002.00" and
+! "000000.40" are RESERVATION COUNTS in the BINARY OUTPUT column
+! (2 words; 0 words and 0o40 = 32 bits), not storage contents, so
+! there is nothing deposited for the oracle to read -- printed
+! pp.84, 109, 114, 129 and 139 give their DRZ rows no !CHECK for
+! exactly this reason, and the two that were written here FAILED
+! as "assembled 000000.00 00" until they were removed.  Their
+! LENGTHS are pinned in sum, not singly: the counter leaves
+! AEDMPT's word at 217461.00 and must arrive at 217463.40, which
+! is AEDUMP's !SYM and its !CHECK, so 2 words + 32 bits is
+! checked and the split between the two rows is not.
+!CHECK 217463.40 | 217463.00 30 | line 11 AEDUMP LV,$0,AEDMPT+3. -FWA(I) -- AEDMPT is line 6, +3 words
+!CHECK 217464.00 | 217530.10 10 | line 12 LX,4,AEDMPA -- the .10 is LX's own operation bits
+!CHECK 217464.40 | 217527.11 10 | line 13 SX,4,AEDMPI
+!CHECK 217465.00 | 215324.40 90 | line 14 AEDMP2 KV,$0,SPPLB -- SPPLB is 215324.40, and the half word DOES show
+!CHECK 217465.40 | 217526.32 42 | line 15 BXL,AEDRET
+!CHECK 217466.00 | 215324.00 90 | line 16 KV,$0,SPPUB -- SPPUB is 215324.00
+!CHECK 217466.40 | 217526.33 42 | line 17 BXH,AEDRET
+!CHECK 217467.00 | 217471.01 D0 | line 18 SVA,$0,AEDMP1 -- forward over the 64-bit TI on line 19
+!CHECK 217467.40 | 215342.00 80 000021.36 A0 | line 19 TI,15,SLRBU+14.,$1 -- a 64-bit instruction at a HALF-WORD boundary; printed byte reads AC, see THE "AC" BYTE
+!CHECK 217470.40 | 217471.04 00 | line 20 BD,$.32
+!CHECK 217471.00 | 217471.03 B0 | line 21 AEDMP1 LVE,1,$ -- bare index 1, as printed
+!CHECK 217471.40 | 217541.03 30 | line 22 SV,$1,AEDMPB+8.0
+!CHECK 217472.00 | 215342.00 80 000021.02 A0 | line 23 TI,1,SLRBU+14.,$1 -- printed byte reads AC, see THE "AC" BYTE
+!CHECK 217473.00 | 000000.41 05 | line 24 V+I,$0,.32
+!CHECK 217473.40 | 217474.01 D0 | line 25 SVA,$0,$.32
+!CHECK 217474.00 | 217474.03 B0 | line 26 LVE,$1,$ -- the "$1" form beside line 21's bare "1", same bits
+!CHECK 217474.40 | 000001.03 05 | line 27 V+I,$1,1.
+!CHECK 217475.00 | 217541.43 30 | line 28 SV,$1,AEDMPB+8.32
+!CHECK 217475.40 | 215342.00 80 000021.02 A0 | line 29 TI,1,SLRBU+14.,$1 -- the SAME statement as line 23, printed twice on one page; printed byte reads AC, see THE "AC" BYTE
+!CHECK 217476.40 | 000000.41 05 | line 30 V+I,$0,.32 (location carries an asterisk although its counter arrives contiguously)
+!CHECK 217477.00 | 217477.41 D0 | line 31 SVA,$0,$.32
+!CHECK 217477.40 | 217477.45 B0 | line 32 LVE,$2,$
+!CHECK 217500.00 | 217500.50 C6 | line 33 BUSAZ,$.32
+!CHECK 217500.40 | 217501.10 46 | line 34 BADZ,$.32
+!CHECK 217501.00 | 217501.40 00 | line 35 BE,$.32
+!CHECK 217501.40 | 217541.02 30 | line 36 LV,$1,AEDMPB+8.0
+!CHECK 217502.00 | 217541.46 30 | line 37 LV,$3,AEDMPB+8.32
+!CHECK 217502.40 | 215324.42 90 | line 38 KV,$1,SPPLB
+!CHECK 217503.00 | 217526.32 42 | line 39 BXL,AEDRET
+!CHECK 217503.40 | 215012.46 90 | line 40 KV,$3,SMARK -- SMARK is 215012.40 and the half word shows
+!CHECK 217504.00 | 217526.33 42 | line 41 BXH,AEDRET
+!CHECK 217504.40 | 000021.06 90 | line 42 KV,$3,$1 -- $1 is the index-register word 000021.00
+!CHECK 217505.00 | 217526.33 40 | line 43 BZXH,AEDRET
+!CHECK 217505.40 | 000025.05 30 | line 44 SV,$2,$5 -- $5 is 000025.00
+!CHECK 217506.00 | 000003.13 04 | line 45 KVI,$5,3.
+!CHECK 217506.40 | 217511.32 42 | line 46 BXL,AEDMP4
+!CHECK 217507.00 | 000017.13 04 | line 47 KVI,$5,15.
+!CHECK 217507.40 | 217511.32 C2 | line 48 BXE,AEDMP4
+!CHECK 217510.00 | 000017.53 04 | line 49 KVI,$5,15.32 -- a half word, so the counter leaves this page at 217510.40

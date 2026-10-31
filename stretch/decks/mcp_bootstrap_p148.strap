@@ -1,0 +1,378 @@
+! mcp_bootstrap_p148.strap -- the console-message tail of the Z EC75
+! error routine, the MCP write-control-word block, and the entry
+! point S DSPDS, printed page 148.  docs/MCP_Mar63_001-249.pdf PDF
+! p.155, banner read and not assumed: "TIME CLOCK 00054041  PUNID
+! 11011MCP   CARD ID HA000047   DIST. OF 3/01   3/01   PAGE NUMBER
+! 148".
+!
+! WHAT THE PAGE IS.  Thirty printed lines, no asterisk box, no SLC.
+! Lines 1-8 finish a routine that came in from printed p.147: it
+! loads the message address, SICs into J ZECM, branches to J ZECBR,
+! restores the IODEF branch, picks up Z EC75S, bumps the MCP control
+! word's count field and leaves for Z EC99.  Lines 9-19 are the
+! DATA the routine uses -- two control words, a two-word
+! reservation, four DDs of bit patterns, an eight-bit IQS message,
+! a one-word reservation and two VF cells.  Line 20 is a bare
+! comment card, "***** ENTER HERE FROM B, DMCP ERROR ******", and
+! lines 21-30 are S DSPDS, the error-display entry: it waits on an
+! indicator, sets $14, saves the IC, restores two groups of index
+! registers through S T LR, returns through a masked BE, waits
+! again, loads the error code S BR40, SICs into S DISIC and leaves
+! for S DISP.
+!
+! TWENTY-FIVE CARDS OVER THIRTY LINES.  The serial column runs
+! HA000047 (line 1) to HA000071 (line 30), and five serials are
+! printed on two lines each -- HA000048 on lines 2 AND 3, HA000067
+! on 22 and 23, HA000068 on 24 and 25, HA000069 on 26 and 27, and
+! HA000071 on 29 and 30.  Each of those is one card carrying two
+! statements; the SIC/branch pairs (2,3) and (29,30) are the
+! familiar case and (22,23), (24,25), (26,27) are three more.
+! 30 - 5 = 25 cards.  NOTHING FELL OFF EITHER END: the banner's own
+! CARD ID is HA000047, which is line 1's serial, and the paper
+! below line 30 is blank to the foot of the form.
+!
+! >>> THE SURVEY UNDER-READ THIS PAGE BY NINE ROWS. <<<  It reported
+! 21 rows, 217433.40..217457.4, and classed the page MIXED on one
+! trailing "+".  The page has THIRTY rows, 217432.40..217457.40, it
+! lost line 1 off the top (which is what the brief warned about),
+! and there are FOUR "+" rows, not one -- lines 9, 10, 18 and 19.
+! Counted off the card-serial column, not off the survey.
+!
+! ---------------------------------------------------------------
+! THE JOIN
+! ---------------------------------------------------------------
+! NEAR SIDE.  This page prints NO "SLC", so the deck writes a hard
+! "SLC,(8)217432.40", which ASSERTS the origin rather than checking
+! it (docs/transcription_workflow.md, "A HARD SLC CANNOT DISAGREE
+! WITH THE ARRIVING COUNTER").  Two independent witnesses pay that
+! back:
+!
+!   * THE HEADING ROW'S OWN "LOCATION" FIELD IS NOT BLANK ON THIS
+!     PAGE.  It prints "LOCATION   217432" -- IBM's assembler
+!     stating the origin WORD.  It carries no bit offset, so it
+!     cannot settle .00 against .40; the ".40" is read off line 1's
+!     LOCATION column alone.
+!   * printed p.147's last line is at 217432.00 and is a half word
+!     ("217451.03 30   Z EC75   LV,1,ZEC75S"), so the counter leaves
+!     p.147 at exactly 217432.40.  Read out of
+!     docs/ocr/MCP_Mar63_001-249.txt, which is an OCR of ANOTHER
+!     printed page and therefore a legitimate index -- the volume
+!     OCR of p.148 itself would not be a witness for p.148.
+!
+! FAR SIDE, PREDICTED AND THEN CONFIRMED.  Line 30 is a half-word
+! branch whose printed LOCATION is 217457.40, so the counter leaves
+! this page at 217460.00 and printed p.149's first row must be
+! 217460.00.  CHECKED BEFORE LANDING, against the volume OCR of
+! PDF p.156 (printed p.149) -- another page, so a legitimate index:
+! after its four-line asterisk box ("THE ERROR DUMP ROUTINE") its
+! first emitting row is "A ELM PT  DD(BU,45),..." at 217460.00, and
+! the next row it prints is 217460.55.  The join closes.
+!
+! AND NO SIC/BRANCH PAIR STRADDLES THIS BREAK.  Lines 29 and 30 are
+! "SIC,SDISIC" and "B,SDISP" and they share ONE card, HA000071, so
+! the pair closes inside the page -- the hazard printed pp.131/132
+! ran into does not arise here, and p.149's transcriber inherits no
+! orphaned SIC.  p.149's own first statement is a DD, not a branch.
+!
+! ---------------------------------------------------------------
+! >>> THE HEADLINE: THIS IS THE DEFINING PAGE FOR S DISIC. <<<
+! ---------------------------------------------------------------
+! Eleven landed decks name SDISIC and SEVEN of them SYN it at
+! (8)217451.40 -- pp.103, 119, 120, 124, 129, 130 and 143, counted
+! with "grep -l '^SDISIC' decks/*.strap" and not off the citation
+! comments -- every one of those values BACK-DERIVED from a printed
+! "SIC,SDISIC" operand
+! half word or, on p.103 line 43, from "BD,SDISIC+.32".  None of
+! them had seen its defining card.  Line 19 of THIS page is that
+! card:
+!
+!     19*  217451.40   000000.00+      S DISIC   VF,0
+!
+! and this deck's counter, started at 217432.40 and carried through
+! two control words, a DRZ(N),(2), four DDs, a 112-bit IQS message
+! and a DRZ(N),(1), arrives at 217451.40 on its own.  The agreement
+! is digit for digit and it is not a tautology: nothing in this deck
+! was set to make it come out.  It also confirms p.103's
+! "SDISIC+.32 -> 217452.04" arithmetic, because SDISIC+.32 is
+! 217452.00, which is line 21's printed LOCATION for S DSPDS.
+!
+! ---------------------------------------------------------------
+! GLYPHS SETTLED, AND HOW
+! ---------------------------------------------------------------
+! (1) DR vs DRZ, THE ONE THE ORACLE CANNOT SEE.  Lines 11 and 17
+!     reserve 2 and 1 words.  A reservation prints its COUNT, so
+!     "DR" and "DRZ" compile to the same printed row and the
+!     difference is three words of zero CONTENT in the merged image.
+!     Rendered at 1800 dpi, both rows print "DRZ(N),(2)" and
+!     "DRZ(N),(1)" with the Z unmistakable -- a tall Z with its full
+!     diagonal, nothing like the (N) beside it.  Read off the ink,
+!     not off a passing run.  (This is the error decks/
+!     mcp_bootstrap_p136.strap made in the other direction.)
+! (2) S DSPDS (line 21) IS THE ONE NAME ON THIS PAGE THAT RESTS ON
+!     INK ALONE.  No other page in the listing names it -- p.103
+!     reaches the same address as "SDISIC+.32", by arithmetic, not
+!     by name -- so no merge and no !CHECK could ever catch a
+!     misspelling.  Six glyphs, two of them the D that this drum
+!     prints with the bowl worn through.  Rendered at 1800 dpi
+!     beside line 19's "S DISIC": both D's in S D S P D S show the
+!     straight vertical LEFT STEM and squared corners, against the
+!     stemless round C that ends S DISIC two rows above, in the same
+!     column off the same drum.
+! (3) THE BIT PATTERN ON LINE 26 IS "111101", NOT "1111C1".  At
+!     400 dpi the fifth glyph reads as an open C.  It cannot be one
+!     -- the field is a bit pattern -- and the ASSEMBLER SETTLES IT
+!     OUTRIGHT, because every bit of it is visible in the printed
+!     half word.  Measured, varying nothing else:
+!         BE,STLR+1.32(.26,2)111101  ->  215231.47 A0   (printed)
+!         BE,STLR+1.32(.26,2)111111  ->  215231.47 E0
+!         BE,STLR+1.32(.26,2)111100  ->  215231.47 80
+!         BE,STLR+1.32(.26,2)011101  ->  215231.43 A0
+!         BE,STLR+1.32(.26,2)111001  ->  215231.47 20
+!         BE,STLR+1.32(.26,2)000000  ->  215231.40 00
+!         BE,STLR+1.32   (no mask)   ->  215231.40 00
+!     So the printed "215231.47 A0" forces the mask, the ".26" and
+!     the "2" together, and line 26 is one of the strongest rows on
+!     the page.  The last line of that table also answers the one
+!     thing that looked wrong at first reading: printed p.144's
+!     "W FINI BE,$" prints "217337.40 00" with byte 00, and a bare
+!     BE here prints the same shape.  The .07 and the A0 are
+!     entirely the mask operand, not a different operation.
+! (4) BLANKS INSIDE NAMES ARE NOT SIGNIFICANT, AND THIS PAGE PROVES
+!     IT TWICE IN ITS OWN INK.  Line 18's NAME field prints
+!     "Z EC75S" with a clear blank; line 6's STATEMENT references
+!     the same symbol as "ZEC75S" with none.  Line 19's name is
+!     "S DISIC" and line 29's operand is "SDISIC".  Line 10's name
+!     prints closed up as "MMCPCW" while line 7's operand prints
+!     "M MCP CW+.43" with two blanks.  The deck writes every one of
+!     them closed up, as the deck format requires.
+! (5) The IQS datum on line 16 is "TYPE XX ERROR " -- thirteen
+!     characters and ONE trailing blank, no blank after the comma.
+!     Settled two ways.  By ARITHMETIC: 217446.20 to 217450.00 is
+!     112 bits and a converted DD with no byte size is eight bits a
+!     character (C28-6129 printed p.16, byte size modulo 8), so the
+!     datum is exactly fourteen characters.  By MEASUREMENT: the
+!     row was rendered at 1800 dpi and the ink runs fitted to a
+!     constant pitch of 180.74 px from the leading "(" to the
+!     terminating "*" twenty-seven character positions later; every
+!     glyph lands within 10 px of its slot and slots 17, 20 and 26
+!     are empty -- one blank between TYPE and XX, one between XX and
+!     ERROR, one between ERROR and the "*".
+!
+! ---------------------------------------------------------------
+! THE EIGHT EXTERNALS, AND WHAT EACH ONE RESTS ON
+! ---------------------------------------------------------------
+! J ZECM   217370.00  line 2 prints "217370.00 80" for "SIC,JZECM"
+!                     and line 5 prints "217370.35 D0" for
+!                     "SVA,14,JZECM" -- two different operations
+!                     agreeing on the word.  Corroborated off
+!                     ANOTHER printed page: the volume OCR puts a
+!                     card at 217370.00 whose name field carries
+!                     ZECM, on the page before this one.
+!                     >>> ITS BIT OFFSET WITHIN THE HALF WORD IS
+!                     UNOBSERVABLE (docs/transcription_workflow.md,
+!                     "WHAT THE ORACLE CANNOT SEE" (1)); ".0" is a
+!                     convention, not a reading.  The HALF word IS
+!                     checked.
+! J ZECBR  217362.40  line 3 prints "217362.50 00" for "B,JZECBR"
+!                     and a plain B prints target + .10.  The volume
+!                     OCR of the PREVIOUS printed page carries the
+!                     defining card, "14* 217362.40 ... JZECBR
+!                     SIC,K CONVR", which is an independent witness
+!                     for the .40 half word.  Bit offset
+!                     unobservable.
+! K SUPP   216242.00  already landed: decks/mcp_bootstrap_p123.strap
+!                     SYNs it at (8)216242.0 off printed p.123 line
+!                     2's own defining card, "K SUPP NOP,K COMM".
+!                     Line 4 here prints "216242.35 01".
+! Z EC99   217421.40  line 8 prints "217421.50 00" for "B,Z EC99".
+!                     The volume OCR of the previous printed page
+!                     prints its defining card at 217421.40,
+!                     "Z EC99 LV,14,SYCOCH -CONSOLE CHANNEL NUMBER".
+!                     Bit offset within the half word unobservable.
+! S TIC    215265.00  landed by pp.103/119/144 and others; line 23
+!                     prints "215265.35 D0".
+! S T LR   215230.00  landed by decks/mcp_bootstrap_p144.strap off
+!                     printed p.116.  THIS PAGE CHECKS THE
+!                     ARITHMETIC THREE TIMES OFF ONE BASE: line 24's
+!                     bare S TLR prints 215230, line 25's STLR+14.0
+!                     prints 215246 (fourteen DECIMAL words on) and
+!                     line 26's STLR+1.32 prints 215231.40 under the
+!                     mask.  Three different offsets, one symbol.
+! S BR40   000406.00  landed by decks/mcp_bootstrap_p107.strap,
+!                     which carries its DEFINING card -- "SBR40
+!                     SYN,(16)0106.0", printed p.107 line 21,
+!                     000406.00+.  An INTEGER, not an address: line
+!                     28's "LVI,$14,SBR40" loads it as the error
+!                     code.  Written here in p.107's own hex form so
+!                     the two decks cannot drift.
+! S DISP   217372.00  landed by decks/mcp_bootstrap_p119.strap off
+!                     its lines 43/46, which print 217372.10 for
+!                     "B,SDISP" exactly as line 30 here does.  Bit
+!                     offset within the half word unobservable.
+!
+! >>> NO MERGE HAZARD, CHECKED ACROSS EVERY DECK AND NOT JUST THE
+! p.1xx ONES. <<<  MCCW1, MMCPCW, MCPBAD, ZEC75M, ZEC75S and SDSPDS
+! appear in NO landed deck under any spelling.  SDISIC appears in
+! eleven and is SYNned in six, every one at (8)217451.40, which is
+! where this page defines it.  Nothing to reconcile.
+!
+! ---------------------------------------------------------------
+! THE PRINTED LISTING
+! ---------------------------------------------------------------
+!   1*  217432.40     217450.03 01                                        LVI,1,Z EC75M                   -GET MESSAGE ADDRESS            HA000047
+!   2*  217433.00     217370.00 80                                        SIC,JZECM                                                       HA000048
+!   3*  217433.40     217362.50 00                                        B,JZECBR                                                        HA000048
+!   4*  217434.00 *   216242.35 01                                        LVI,14,KSUPP                                                    HA000049
+!   5*  217434.40     217370.35 D0                                        SVA,14,JZECM                    -RESTORE IODEF BRANCH           HA000050
+!   6*  217435.00     217451.02 30                                        LV,1,ZEC75S                                                     HA000051
+!   7*  217435.40     217440.53 80  003000.22 B0                          M+1(BU,3),M MCP CW+.43          -UPDATE CONTROL WORD            HA000052
+!   8*  217436.40     217421.50 00                                        B,Z EC99                                                        HA000053
+!   9*  217437.00     000000.00+ 000 000000 000000       MCCW1            CW,0                            -COPIED CW                      HA000054
+!  10*  217440.00     217443.00+ 000 000005 000000       MMCPCW           CW,MCPBAD,5.0                   -WRITE CW                       HA000055
+!  11*  217441.00 *   000002.00                                           DRZ(N),(2)                                                      HA000056
+!  12*  217443.00     1777777777777777777777             MCPBAD           DD(BU),(16)FFFFFFFFFFFFFFFF     -11111......                    HA000057
+!  13*  217444.00     1252525252525252525252                              DD(BU),(16)AAAAAAAAAAAAAAAA     -........                       HA000058
+!  14*  217445.00     1777777777740000000000                              DD(BU),(16)FFFFFFFF00000000     -111111......                   HA000059
+!  15*  217446.00     176775                                              DD(BU,16),(16)FDFD              -TWO CARRIAGE RETURNS           HA000060
+!  16*  217446.20                                                         (IQS*)DD(BU),TYPE XX ERROR *                                    HA000061
+!  17*  217450.00 *   000001.00                          Z EC75M          DRZ(N),(1)                                                      HA000062
+!  18*  217451.00     000000.00+                         Z EC75S          VF,0.0                                                          HA000063
+!  19*  217451.40     000000.00+                       \ S DISIC          VF,0                            -LOCATION GENERATING ERROR CODE HA000064
+!  20*                                                    -               ***** ENTER HERE FROM B, DMCP ERROR ******                      HA000065
+!  21*  217452.00     217452.52 C6                        SDSPDS          BIFZ,$.32                                                       HA000066
+!  22*  217452.40     000040.35 01                                        LVI,$14,32.0                                                    HA000067
+!  23*  217453.00     215265.35 D0                                        SVA,$14,STIC                                                    HA000067
+!  24*  217453.40     000003.00 80  215230.34 A0                          TI,14,3.0,STLR                                                  HA000068
+!  25*  217454.40     000021.00 80  215246.36 A0                          TI,15,17.0,STLR+14.0                                            HA000068
+!  26*  217455.40     215231.47 A0                                        BE,STLR+1.32(.26,2)111101                                       HA000069
+!  27*  217456.00     217456.47 C6                                        BOPZ,$.32                                                       HA000069
+!  28*  217456.40     000406.35 01                                        LVI,$14,SBR40                                                   HA000070
+!  29*  217457.00     217451.40 80                                        SIC,SDISIC                                                      HA000071
+!  30*  217457.40     217372.10 00                                        B,SDISP                                                         HA000071
+!
+! The "*" printed after the LOCATION on lines 4, 11 and 17 is the
+! same unexplained second asterisk decks/mcp_bootstrap_p144.strap
+! records on its line 21 and p.137 on its lines 20 and 26.  It is
+! not read as part of any field.
+!
+! The "\" printed to the LEFT of the NAME column on line 19 is a
+! short diagonal tick in the margin, a character-width and a half
+! clear of where "Z" and "S" start on lines 17, 18 and 19.  It is a
+! mark on the paper, not a character of the name: "S DISIC" is six
+! letters and a blank, and the deck's counter lands it at 217451.40
+! without it.
+!
+! ---------------------------------------------------------------
+! WHAT IS CHECKED AND WHAT IS NOT -- 26 OF 30 ROWS
+! ---------------------------------------------------------------
+! Four rows carry no !CHECK, and each exclusion is bounded:
+!   line 11, line 17  DRZ.  The BINARY OUTPUT column prints the
+!       RESERVATION COUNT (000002.00, 000001.00), not storage, so
+!       there is nothing for the oracle to compare; pp.84, 109, 114,
+!       119, 120, 129 and 139 give their DRZ rows no !CHECK for
+!       exactly this reason.  NOTHING ABOUT THEM IS UNKNOWN: line
+!       11's two words are pinned by MCPBAD landing on its printed
+!       217443.00 (!SYM), and line 17's one word by ZEC75S landing
+!       on its printed 217451.00.  A wrong count would move both.
+!   line 16  the entry-mode DD prints NOTHING in the BINARY OUTPUT
+!       column.  Its 112 bits are pinned from both ends -- it starts
+!       at the printed 217446.20 (which line 15's 16-bit DD fixes)
+!       and Z EC75M lands on its printed 217450.00 (!SYM) -- and the
+!       pitch measurement in GLYPHS (5) fixes which 14 characters.
+!   line 20  a bare comment card.  It emits nothing and has no
+!       LOCATION.
+! The other twenty-six all carry a !CHECK, and seven names carry a
+! !SYM against the page's own LOCATION column.
+!
+! ---------------------------------------------------------------
+! ASSEMBLER LIMITATION HIT: NONE.
+! Every statement was handed to strap_asm exactly as printed and
+! every one was accepted on the first pass -- including "CW,0" and
+! "CW,MCPBAD,5.0", "DRZ(N),(2)", "(IQS*)DD(BU),TYPE XX ERROR *",
+! the bare "VF,0", "M+1(BU,3),M MCP CW+.43" and the masked
+! "BE,STLR+1.32(.26,2)111101".  No substitution anywhere.  The only
+! transformations are the two the deck format requires: blanks
+! squeezed out of names (GLYPHS (4)) and the hard SLC for an origin
+! the page does not print (THE JOIN).
+! ---------------------------------------------------------------
+
+! ---- externals -------------------------------------------------
+JZECM   SYN, (8)217370.0             ! p.147's own card; bit offset unobservable
+JZECBR  SYN, (8)217362.40            ! p.147's own card "JZECBR SIC,K CONVR"
+KSUPP   SYN, (8)216242.0             ! landed by p.123 off p.123 line 2
+ZEC99   SYN, (8)217421.40            ! p.147's "Z EC99 LV,14,SYCOCH"
+STIC    SYN, (8)215265.0             ! landed by pp.103/119/144
+STLR    SYN, (8)215230.0             ! landed by p.144 off printed p.116
+SBR40   SYN, (16)0106.0              ! p.107 line 21's DEFINING card, 000406.00+
+SDISP   SYN, (8)217372.0             ! landed by p.119 off its lines 43/46
+
+! ---- the origin ------------------------------------------------
+! The page prints no SLC.  Heading row: "LOCATION   217432"; line
+! 1's LOCATION column supplies the ".40".
+        SLC, (8)217432.40
+
+! ---- the page --------------------------------------------------
+        LVI,1,ZEC75M                        ! line  1  -GET MESSAGE ADDRESS
+        SIC,JZECM                           ! line  2
+        B,JZECBR                            ! line  3  (same card as 2)
+        LVI,14,KSUPP                        ! line  4
+        SVA,14,JZECM                        ! line  5  -RESTORE IODEF BRANCH
+        LV,1,ZEC75S                         ! line  6
+        M+1(BU,3),MMCPCW+.43                ! line  7  -UPDATE CONTROL WORD
+        B,ZEC99                             ! line  8
+MCCW1   CW,0                                ! line  9  -COPIED CW
+MMCPCW  CW,MCPBAD,5.0                       ! line 10  -WRITE CW
+        DRZ(N),(2)                          ! line 11
+MCPBAD  DD(BU),(16)FFFFFFFFFFFFFFFF         ! line 12  -11111......
+        DD(BU),(16)AAAAAAAAAAAAAAAA         ! line 13  -........
+        DD(BU),(16)FFFFFFFF00000000         ! line 14  -111111......
+        DD(BU,16),(16)FDFD                  ! line 15  -TWO CARRIAGE RETURNS
+        (IQS*)DD(BU),TYPE XX ERROR *        ! line 16
+ZEC75M  DRZ(N),(1)                          ! line 17
+ZEC75S  VF,0.0                              ! line 18
+SDISIC  VF,0                                ! line 19  -LOCATION GENERATING ERROR CODE
+!                                           ! line 20  ***** ENTER HERE FROM B, DMCP ERROR ******
+SDSPDS  BIFZ,$.32                           ! line 21
+        LVI,$14,32.0                        ! line 22
+        SVA,$14,STIC                        ! line 23  (same card as 22)
+        TI,14,3.0,STLR                      ! line 24
+        TI,15,17.0,STLR+14.0                ! line 25  (same card as 24)
+        BE,STLR+1.32(.26,2)111101           ! line 26
+        BOPZ,$.32                           ! line 27  (same card as 26)
+        LVI,$14,SBR40                       ! line 28
+        SIC,SDISIC                          ! line 29
+        B,SDISP                             ! line 30  (same card as 29)
+
+!SYM   MCCW1    217437.00
+!SYM   MMCPCW   217440.00
+!SYM   MCPBAD   217443.00
+!SYM   ZEC75M   217450.00
+!SYM   ZEC75S   217451.00
+!SYM   SDISIC   217451.40
+!SYM   SDSPDS   217452.00
+!CHECK 217432.40 | 217450.03 01 | line 1 LVI,1,ZEC75M -GET MESSAGE ADDRESS -- the .03 is LVI's own operation bits (index 1); ZEC75M is line 17 on this page
+!CHECK 217433.00 | 217370.00 80 | line 2 SIC,JZECM
+!CHECK 217433.40 | 217362.50 00 | line 3 B,JZECBR (same card as line 2) -- .50 is JZECBR's .40 plus B's .10
+!CHECK 217434.00 | 216242.35 01 | line 4 LVI,14,KSUPP -- index 14 prints .35 (2*14+1 = 0o35), K SUPP landed by p.123
+!CHECK 217434.40 | 217370.35 D0 | line 5 SVA,14,JZECM -RESTORE IODEF BRANCH -- same word as line 2, different operation
+!CHECK 217435.00 | 217451.02 30 | line 6 LV,1,ZEC75S -- the .02 is LV's index-1 bits; ZEC75S is line 18
+!CHECK 217435.40 | 217440.53 80 003000.22 B0 | line 7 M+1(BU,3),MMCPCW+.43 -UPDATE CONTROL WORD -- .43 written DECIMAL and printed 0o53; MMCPCW is line 10, so this row checks the deck's counting from line 7 to line 10
+!CHECK 217436.40 | 217421.50 00 | line 8 B,ZEC99
+!CHECK 217437.00 | 000000.00+ 000 000000 000000 | line 9 MCCW1 CW,0 -COPIED CW -- printed p.147 line 43 references MCCW1 as 217437.21 and line 44 as MCCW1+.24 -> 217437.30
+!CHECK 217440.00 | 217443.00+ 000 000005 000000 | line 10 MMCPCW CW,MCPBAD,5.0 -WRITE CW -- the count field is a REAL check of MCPBAD landing at 217443.00 across the DRZ on line 11
+!CHECK 217443.00 | 1777777777777777777777 | line 12 MCPBAD DD(BU),(16)FFFFFFFFFFFFFFFF -11111......
+!CHECK 217444.00 | 1252525252525252525252 | line 13 DD(BU),(16)AAAAAAAAAAAAAAAA -........
+!CHECK 217445.00 | 1777777777740000000000 | line 14 DD(BU),(16)FFFFFFFF00000000 -111111......
+!CHECK 217446.00 | 176775 | line 15 DD(BU,16),(16)FDFD -TWO CARRIAGE RETURNS -- 16 bits, so the entry-mode DD on line 16 starts at the printed 217446.20 | 16
+!CHECK 217451.00 | 000000.00+ | line 18 ZEC75S VF,0.0
+!CHECK 217451.40 | 000000.00+ | line 19 SDISIC VF,0 -LOCATION GENERATING ERROR CODE -- the defining card for the symbol pp.103/119/120/124/129/130 back-derived
+!CHECK 217452.00 | 217452.52 C6 | line 21 SDSPDS BIFZ,$.32 -- .32 written decimal, printed 0o40 plus BIFZ's 0o12; this address is p.103 line 43's SDISIC+.32
+!CHECK 217452.40 | 000040.35 01 | line 22 LVI,$14,32.0 -- 32 decimal words is 0o40
+!CHECK 217453.00 | 215265.35 D0 | line 23 SVA,$14,STIC (same card as line 22)
+!CHECK 217453.40 | 000003.00 80 215230.34 A0 | line 24 TI,14,3.0,STLR -- the second operand's offset is 2*14 = 0o34, which is what encodes the "14"
+!CHECK 217454.40 | 000021.00 80 215246.36 A0 | line 25 TI,15,17.0,STLR+14.0 (same card as 24) -- 17 decimal is 0o21, STLR+14 words is 215246, offset 2*15 = 0o36
+!CHECK 217455.40 | 215231.47 A0 | line 26 BE,STLR+1.32(.26,2)111101 -- every mask bit, the .26 and the 2 are all visible in this half word; see GLYPHS (3)
+!CHECK 217456.00 | 217456.47 C6 | line 27 BOPZ,$.32 (same card as 26)
+!CHECK 217456.40 | 000406.35 01 | line 28 LVI,$14,SBR40 -- S BR40 is the INTEGER 0o406 off printed p.107's defining card
+!CHECK 217457.00 | 217451.40 80 | line 29 SIC,SDISIC -- the same operand half word printed pp.119, 120, 124, 169, 173 and 193 print, here against the symbol's own defining card two rows up
+!CHECK 217457.40 | 217372.10 00 | line 30 B,SDISP (same card as 29) -- the counter leaves this page at 217460.00, which is where the volume OCR of printed p.149 puts its first emitting row

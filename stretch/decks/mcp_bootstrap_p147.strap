@@ -1,0 +1,567 @@
+! mcp_bootstrap_p147.strap -- "ERROR CONTROL", printed page 147.
+! docs/MCP_Mar63_001-249.pdf PDF p.154.  Header read, not assumed:
+! "TIME CLOCK 00054041  PUNID 11011MCP   CARD ID HA000001
+!  DIST. OF 3/01   3/01   PAGE NUMBER 147".
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! FORTY-EIGHT printed lines, on forty-five cards (HA000001 ..
+! HA000045 -- a NEW card series; printed p.144 was FB).  Nothing
+! fell off either end: line 1 is the first asterisk of the heading
+! box and line 48 is the last row with ink on the page, with the
+! bottom third of the column blank below it.
+!
+!   lines 1-3   the asterisk box around "***** ERROR CONTROL *****"
+!   line  4     "SLC,$", printed at 217371.70
+!   lines 5-25  twenty-one instructions
+!   line 26     "CNOP" -- which compiles NOTHING here (see below)
+!   lines 27-28 two entry-mode (AX)/(A*) DD cards, the operator
+!               message "1YOUR PROGRAM WAS ENDED BECAUSE OF A TYPE
+!               XX ERROR"
+!   lines 29-48 twenty more instructions, including a three-half-
+!               word VF/CF/VF parameter block for S A8IQS
+!
+! Two routines share the page.  S DISP (line 5) is MCP's error
+! dispatcher: it tests the S L bit ("LEVEL OF INSTRUCTION",
+! printed p.103 line 14) and branches to MCPERR if the error is
+! MCP's own; otherwise it decides from the error code in $14
+! whether the problem is a special-assignment error (S ASNER), an
+! I-O error (S IOERR) or neither, sets the MCP bounds and mask,
+! moves the PP's lower registers to the permanent buffer, primes
+! abnormal end-of-job through S PRIME with the parameter D ABEOJ,
+! plants the error code in the spool message M PPBAD and goes to
+! the spool printer through Z SPLPR.  MCPERR (line 29) is the
+! other end: MCP itself has failed, so it saves 14 and 15, puts
+! the code into MCPBAD (a message on the NEXT page), converts it
+! to characters through S A8IQS, writes it on the console channel
+! and then branches to itself -- "-MCP CANNOT CONTINUE".
+!
+! ---------------------------------------------------------------
+! THE JOIN, BACKWARD AND FORWARD
+! ---------------------------------------------------------------
+! BACKWARD.  Line 4 prints "SLC,$" at 217371.70.  An SLC emits
+! nothing, so that printed location IS the location counter
+! arriving from printed p.146, free and in IBM's own hand: p.146
+! must end at 217371.70 -- word 217371, bit 0o70 = 56 decimal.
+! The ".70" is not a misread: it is printed with a closed 7 and
+! a closed 0 at 900 dpi and the digit pattern is unlike any
+! half-word offset on the page.  A page ending at bit 56 of a
+! word means p.146's last card is a VFL/character datum, not an
+! instruction.  >>> PREDICTION FOR p.146's TRANSCRIBER: your last
+! row ends at 217371.70, i.e. 56 bits into word 217371. <<<
+!
+! This deck restates the origin hard as "SLC,(8)217371.70" -- the
+! PRINTED value, not 217372.00 -- and lets strap_asm align line
+! 5's full word up to 217372.00 by itself.  A hard SLC cannot
+! disagree with an arriving counter (transcription_workflow.md,
+! "WHAT THE ORACLE CANNOT SEE" 2), so the join has to be compared
+! by hand when p.146 lands; the number to compare against is
+! written above and in the line-4 listing row below.
+!
+! FORWARD, AND IT IS ALREADY CLOSED.  decks/mcp_bootstrap_p119.
+! strap carries "SDISP SYN,(8)217372.0", read off printed p.119
+! lines 43 and 46, which print "B,S DISP" compiling 217372.10.
+! That is this page's line 5, pinned from a page transcribed
+! before it and by a different reader.  Line 5 of this page lands
+! at 217372.00 from the arriving counter alone.  The two agree.
+!
+! The page's last row is line 48 at 217432.00, a half word, so
+! printed p.148 begins at 217432.40.  Independently: the volume
+! OCR of p.148 carries "217435.CC 217451.C2 30 LV,1,ZEC75S" and
+! "217437.0C ... MCCW1 CW,0" and "217440.0C -217443.00+ ...
+! MMCPCW CW,MCPBAD,5.0" and "217443.00 ... MCPBAD DD(BU),(16)
+! FFFF...", so p.148 runs 217432.40 .. 217446.70 at least.
+! >>> PREDICTION FOR p.148's TRANSCRIBER: your first row is at
+! 217432.40, and your page defines MCCW1 at 217437.00, MMCPCW at
+! 217440.00 (a CW whose address field is 217443.00) and MCPBAD at
+! 217443.00. <<<
+!
+! ---------------------------------------------------------------
+! GLYPHS -- WHAT WAS SETTLED AND ON WHAT
+! ---------------------------------------------------------------
+! This page drops ink on round glyphs constantly: its own column
+! heading prints "LCCATICN" and "BINARY CUTPUT", and locations
+! print "217373.CC" for .00.  Every round glyph in a LOCATION or
+! in an OCTAL binary field is a 0 with certainty.  The four that
+! are NOT in an octal field were each settled on something else.
+!
+! (1) LINE 6's BYTE: "C4" IS "04".  Line 6 prints
+!         C04C02.35 C4      KVI,$14,SASNER
+!     and line 8, three rows down and the SAME STATEMENT SHAPE,
+!     prints 003405.35 04 with four closed zeros.  Line 6's own
+!     octal field carries THREE impossible C's ("C04C02"), so
+!     that row is demonstrably dropping ink.  Off the page: the
+!     volume OCR has sixteen other KVI rows on fifteen other
+!     printed pages and every one of them is byte 04.  The
+!     assembler agrees: KVI,$14,SASNER compiles 004002.35 04.
+!
+! (2) LINE 29's BYTE: "AC" IS "A0", BY THE i2 RULE AND BY LINE 46.
+!     Line 29 prints "COOC36.CC 80  217441.C4 AC" -- five
+!     impossible C's in octal fields in one row.  The low nibble
+!     of a VFL/transmit full word is i2, the index on operand 2,
+!     and line 29's statement "TI,2,$14,MMCPCW+1.0" has no "(I)"
+!     on either operand, so i2 = 0.  Line 46 is the same TI with
+!     the operands swapped, also unindexed, and prints a clean
+!     A0 at 900 dpi.  Both compile A0.
+!
+! (3) "(SECP)" IS "(SEOP)", AND THE ASSEMBLER ELIMINATES THE
+!     OTHER READING.  Lines 37 and 45 print "REL(SECP)" and
+!     "W(SECP)".  SECP is not an I-O modifier at all; SEOP
+!     (Suppress End-Of-Operation) is, and MCP printed pp.3-4
+!     already print "REL(SEOP),0.0($15)".  Measured:
+!         REL(SEOP),.0($14)   000000.00 8E 000000.33 00 = PRINTED
+!         REL(SECP),.0($14)   "unrecognized I-O mnemonic/modifier
+!                              combination"
+!
+! (4) "Z,$INC" IS "Z,$IND" (line 10).  $INC is not a system
+!     symbol; $IND is index-and-mask word 0o13, and "Z,$IND"
+!     compiles the printed 000013.22 00.  printed p.144 settled
+!     the same glyph the same way on its own lines 17/28.
+!
+! (5) "SA8IQS" (line 39) -- B, NOT 8, SETTLED BY THE CALLING
+!     SEQUENCE AND NOT BY INK.  Printed p.77 lines 18-22 are:
+!         LVI,$15,TP6A  /  BD,SA8IQS  /  TP6A VF,TP5IN  /  CF,8
+!         /  VF,TP5OUT
+!     and this page's lines 38-42 are:
+!         LVI,$15,$+1.0 /  B,SA8IQS   /  VF,MCPBAD+3.56 / CF,2.0
+!         /  VF,MCPBAD+3.56
+!     -- the identical five-card idiom (set $15 to the parameter
+!     block, branch to the 8-bit conversion routine, FWA-in /
+!     count / FWA-out), from a landed deck on a different page.
+!     See the EXTERNALS note for the address, which is NOT p.77's.
+!
+! WHAT ONLY THE INK SAYS, AND SO IS NOT CLAIMED AS CHECKED:
+! lines 27 and 28 print no BINARY OUTPUT at all (an entry-mode DD
+! prints nothing in that column on this listing), so the thirty-
+! two and twenty-four CHARACTERS of the message rest on reading
+! the statement column, and a wrong LETTER inside either message
+! is invisible to every check on this page, forever.
+!
+! BE EXACT ABOUT WHAT THE COUNTER CHECKS, BECAUSE THE OBVIOUS
+! CLAIM IS TOO STRONG.  Line 29's !CHECK at 217415.00 verifies
+! the SUM of the two data, 32 + 24 = 56 characters = 448 bits =
+! seven words, and NOT the split.  Measured, moving one blank
+! from line 28's trailer into line 27's:
+!     32 / 24 characters   line 29 lands at 217415.00
+!     33 / 23 characters   line 29 lands at 217415.00
+! -- strap_asm does not pad an entry-mode DD up to a word, so the
+! two land identically.  What pins the SPLIT is line 28's own
+! PRINTED LOCATION, 217412.00: measured the same way, the 33/23
+! variant starts the second datum one character late (the text at
+! 217412.00 reads " OF A TYPE" instead of "OF A TYPE "), i.e. at
+! 217412.10, which the page does not print.  That comparison is
+! BY HAND, because line 28 prints no binary and carries no label,
+! so no !SYM or !CHECK can express it.  It is recorded here
+! rather than claimed by a passing row.
+!
+! ---------------------------------------------------------------
+! LINE 26's CNOP COMPILES NOTHING, AND THAT IS THE POINT
+! ---------------------------------------------------------------
+! Line 26 prints "CNOP" with a BLANK location and a BLANK binary
+! column.  Line 25 is a half word at 217405.40, so the counter
+! already stands at 217406.00 and the CNOP has nothing to round.
+! Contrast printed p.84 line 8 and printed p.133 line 1, where
+! the counter stands on an odd half word and the CNOP prints its
+! own location and a 000000.30 00 no-op half word.  So a blank
+! CNOP row is the operation working, not a crop landing short.
+!
+! ---------------------------------------------------------------
+! THE BLANK-OPERATION CARDS (lines 19, 24, 25)
+! ---------------------------------------------------------------
+! Three cards print a statement whose OPERATION FIELD IS EMPTY --
+! ",DABEOJ", ",MPPBAD", ",7.0" -- the comma standing in the same
+! column as the comma of "B,ZSPLPR" one row up.  Each compiles
+! one half word: the operand's address in bits 0-23 and 0x80 in
+! bits 24-31.  They are the in-line parameters of the SIC/branch
+! pair immediately above them (lines 17-18 call S PRIME with
+! D ABEOJ; lines 22-23 call Z SPLPR with M PPBAD and 7.0), which
+! is how a Stretch subroutine takes arguments: the callee reads
+! them through the IC that SIC saved.
+!
+! strap_asm already accepts a blank operation and already
+! compiles exactly this, which is why all three rows are checked
+! here rather than carried unchecked.
+!
+! ---------------------------------------------------------------
+! THE HEADING-ROW "LOCATION" FIELD IS BLANK, AND WHY -- A RULE
+! THAT docs/transcription_workflow.md CURRENTLY CALLS UNEXPLAINED
+! ---------------------------------------------------------------
+! This page prints the word "LOCATION" at the right-hand end of
+! the column-heading line with NOTHING after it (read at 600 dpi;
+! no digits, only the dashed rule).  So there is no independent
+! witness of the origin from that field, and none is invented
+! here.
+!
+! But the pattern is now explicable.  Measured across every page
+! the file records: pp.83, 144, 145 and 147 print the field
+! BLANK, and pp.95, 120, 125, 133, 136, 138, 139, 141, 142 and
+! 143 print a number.  Rendering line 1 of each:
+!   * on all four BLANK pages, LINE 1 IS A CARD THAT COMPILES
+!     NOTHING and has no LOCATION of its own -- p.147 lines 1-3
+!     are the asterisk box, p.145 lines 1-4 are the asterisk box,
+!     p.83 lines 1-5 are comment cards;
+!   * on all ten NUMBERED pages, line 1 carries a location (p.136
+!     "SIC,G KONEC" at 216661.00, p.138 at 217056.40, p.139 at
+!     217116.00, p.142 at 217245.00, p.133's CNOP at 216565.40,
+!     p.143 at 217310.40, p.120's SIC, p.125's LC, p.95's BAE).
+! The field is therefore LINE 1's location, not the page's
+! origin, and it is blank exactly when line 1 has none.  This
+! page is itself a check on that: its first LOCATED line is line
+! 4 at 217371.70 and the heading does NOT print 217371.
+!
+! ---------------------------------------------------------------
+! LABELS PRINTED WITH BLANKS
+! ---------------------------------------------------------------
+! "S DISP" (5), "Z EC99" (36), "Z EC 75" (48) print with blanks
+! and are written closed up, as every deck since p.2 does.
+! SDISP is already spelled closed up by decks/mcp_bootstrap_p119
+! .strap and by the MCP System Analysis Guide's prose ("SDISP
+! Error; code in $14"), which is the independent witness.
+! "S IO ERR" (line 32) and "SIOERR" (line 8) are the SAME SYMBOL
+! printed two ways on one page -- both compile 003405.35 04 --
+! which is the page's own demonstration that the blanks are not
+! part of the name.  Likewise "S REJ" (34).
+!
+! ---------------------------------------------------------------
+! THE SECOND ASTERISK
+! ---------------------------------------------------------------
+! Every line number carries an asterisk ("6*", "48*"); that is
+! the ordinary column.  THREE lines carry a SECOND asterisk after
+! the LOCATION: line 4 (217371.70, the SLC), line 24 (217405.00,
+! ",MPPBAD") and line 34 (217420.40, "KVI,14,S REJ").  This is
+! the unexplained marker of docs/listing_typography.md 12.  What
+! this page adds, in both directions:
+!
+! WHAT DIES: the three marked rows have nothing in common -- an
+! SLC that emits nothing, a blank-operation half word, and an
+! ordinary KVI -- and lines 19 and 25, the other two blank-
+! operation cards, are NOT marked, so "the mark follows the
+! blank-operation card" is refuted on this page alone.
+!
+! WHAT SURVIVES, one-directional and cheap to falsify: EVERY
+! PRINTED "SLC,$" ROW SEEN SO FAR CARRIES THE MARK.  Three for
+! three -- printed p.144 line 5 (217326.00 *), printed p.145
+! line 5 (217347.40 *, rendered for this note) and this page's
+! line 4 (217371.70 *).  The converse is false (lines 24 and 34
+! are marked and are not SLCs), so this predicts only that the
+! next page's "SLC,$" will be marked, and one crop refutes it.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- each pinned by a card on a DIFFERENT page
+! ---------------------------------------------------------------
+! This page's own rows are OCR lines ~7660-7708 of
+! docs/ocr/MCP_Mar63_001-249.txt; every witness cited below is at
+! a different OCR line and a different printed page, so none of
+! them is this page reading itself.
+!
+! S COM RG 215001.00  p.103 line 8 "S COM RG XW,(8)520000."
+SCOMRG  SYN, (8)215001.0
+! S L      215001.04  p.103 line 14 DEFINES it, "S L SYN(BU,1),
+!                     S COM RG+0.04" -LEVEL OF INSTRUCTION.  Line
+!                     5 here prints 215001.04 as a full 24-bit
+!                     BIT address, so the row pins it to the bit.
+SL      SYN(BU,1), SCOMRG+0.04
+! S ASNER  004002.00  p.107 line 36 DEFINES it, "S ASNER SYN,(16)
+!                     0802.0" -82 SPECIAL ASSIGNMENT; hex 0802 is
+!                     octal 4002.  (decks/mcp_bootstrap_p107
+!                     carries it at exactly this value.)
+SASNER  SYN, (8)4002.0
+! S IOERR  003405.00  p.107 line 29 DEFINES it, "S IOERR SYN,(16)
+!                     0705.0" -75 MCP SETUP I/O ERROR.
+SIOERR  SYN, (8)3405.0
+! S REJ    003406.00  p.107 line 30 DEFINES it, "S REJ SYN,(16)
+!                     0706.0" -76 I/O OPERATION REJECTED.
+SREJ    SYN, (8)3406.0
+! S BNDRS  215224.00  p.116 line 7 DEFINES it, "S BNDRS VF,33.0".
+SBNDRS  SYN, (8)215224.0
+! S LRMCP  215362.00  p.116 line 26 DEFINES it, "S LRMCP DRZ(BU,
+!                     64),29", and p.116 line 27 prints "SLC,
+!                     SLRMCP+9.0" resolving to 215373.00 -- which
+!                     is the very word line 13 here prints.  That
+!                     is the arithmetic checked on two pages.
+SLRMCP  SYN, (8)215362.0
+! S T LR   215230.00  p.116 line 13 "S T LR DRZ(BU,64),29";
+!                     carried at this value by p.144's deck.
+STLR    SYN, (8)215230.0
+! S LRBU   215324.00  printed p.133 line 20 "YMSF TI1,16,STLR,
+!                     SLRBU" (cited by decks/mcp_bootstrap_p114
+!                     and p.115) -- the same two-operand pair as
+!                     line 16 here.
+SLRBU   SYN, (8)215324.0
+! S PRIMR  215571.00  pp.132 and 193 print "SIC,SPRIMR" against
+!                     215571.00 80; carried by p.103's deck.
+SPRIMR  SYN, (8)215571.0
+! S PRIME  215570.00  pp.132 and 193 print "B,SPRIME" against
+!                     215570.10; carried by p.103's deck.  BD
+!                     adds .04, which is what line 18 prints.
+SPRIME  SYN, (8)215570.0
+! D ABEOJ  000104.00  p.105 line 39 DEFINES it, "D ABEOJ SYN,
+!                     68.0" (68 decimal = 0o104).
+DABEOJ  SYN, (8)104.0
+! Z SPLP9  224052.00  printed p.132 line 47 prints 224052.00 80
+!                     for "SIC,ZSPLP9"; carried by p.132's deck.
+ZSPLP9  SYN, (8)224052.0
+! Z SPLPR  224046.40  printed p.132 line 48 prints 224046.50 for
+!                     "B,ZSPLPR"; 0o50 is 0o40 (the half word)
+!                     plus B's own 0o10.  Carried by p.132.
+ZSPLPR  SYN, (8)224046.40
+! S YCOCH  215006.00  p.103 line 37 DEFINES it, "S YCOCH VF,(8)
+!                     23.40" -CONSOLE CHANNEL NUMBER, at
+!                     215006.00; line 36's comment here is the
+!                     same English, "-CONSOLE CHANNEL NUMBER".
+SYCOCH  SYN, (8)215006.0
+! S A8IQS  230566.00  NOT p.77's S A8IQS.  p.77 line 19 branches
+!                     to an S A8IQS at 002366.00 -- the IPL's own
+!                     copy of the 8-bit conversion routine, in
+!                     low storage -- and the MCP body has a
+!                     second copy at 230566.00.  The address is
+!                     pinned OFF THIS PAGE: the volume OCR around
+!                     printed address 221747 carries a row
+!                     "221747.00  230566.10 00  B,SA?IQS", the
+!                     identical half word from a different page.
+!                     >>> ONE NAME, TWO ADDRESSES, ON PURPOSE:
+!                     decks/mcp_bootstrap_p77.strap SYNs this
+!                     same name to (8)2366.0.  Nothing on THIS
+!                     page is wrong -- line 39 prints 230566.10
+!                     and p.77 line 19 prints 002366.04 -- and
+!                     the corpus already carries 78 names bound
+!                     to more than one address across the
+!                     IPL/MCP split (Z FINIS and D FREE among
+!                     them), so this is the existing pattern and
+!                     not a new hazard.  check_symbol_spellings
+!                     passes with this deck in place (1254
+!                     definitions, no symbol spelled two ways).
+!                     Recorded here so the merge is not
+!                     surprised by it.
+SA8IQS  SYN, (8)230566.0
+! M CCW1   217437.00  printed p.148, the NEXT page: the volume OCR
+!                     carries "217437.0C  CC00.00+ ...  MCCW1
+!                     CW,0  -COPIED C[W]" -- its defining card.
+!                     Line 44 here prints 217437.30 for
+!                     "MCCW1+.24" (24 decimal = 0o30), so the
+!                     arithmetic agrees with that definition.
+MCCW1   SYN, (8)217437.0
+! M MCPCW  217440.00  printed p.148: the OCR carries "217440.0C
+!                     -217443.00+ ...  MMCPCW CW,MCPBAD,5.0
+!                     -WRITE CW" -- its defining card, AND that
+!                     card's own address field is 217443.00,
+!                     which independently pins M CPBAD below.
+MMCPCW  SYN, (8)217440.0
+! M CPBAD  217443.00  printed p.148: the OCR carries "217443.00
+!                     ...  MCPBAD DD(BU),(16)FFFF..." -- the
+!                     defining card.  Two checks on this page
+!                     agree: lines 40/42 print the VF value
+!                     217446.70+ for "MCPBAD+3.56" (56 decimal =
+!                     0o70) and line 31 prints 217446.70 for the
+!                     same expression as an SF address.
+!                     NOTE M CPBAD (external, 217443.00) and
+!                     M PPBAD (this page's line 27, 217406.00)
+!                     are TWO DIFFERENT SYMBOLS that differ in
+!                     one letter.  They are not a drum confusion:
+!                     line 21's "MPPBAD+5.16" prints 217413.20
+!                     and line 31's "MCPBAD+3.56" prints
+!                     217446.70, and only two distinct bases
+!                     produce both.
+MCPBAD  SYN, (8)217443.0
+! >>> HOW FAR EACH EXTERNAL IS ACTUALLY PINNED BY *THIS* PAGE.
+! transcription_workflow.md, "WHAT THE ORACLE CANNOT SEE" 1: an
+! address back-derived from a printed branch or LVI is known only
+! to the HALF WORD, so writing ".0" is a CONVENTION there and not
+! a reading.  Split for this page:
+!   PINNED TO THE BIT by a row here, because the row prints a
+!   full 24-bit address: S L (line 5's BB1 A1), S T LR (line 16's
+!   transmit A1), M CPBAD (line 31's SF A1, and again as a 24-bit
+!   VF value on lines 40/42), M CCW1 (line 44's BB A1), M MCPCW
+!   (line 46's TI A1), and -- less obviously -- D ABEOJ and
+!   M PPBAD, because the blank-operation cards on lines 19 and 24
+!   emit bits 18-23 as the offset field, so "000104.00" and
+!   "217406.00" show the offset and not only the half word.
+!   S ASNER, S IOERR and S REJ are immediates, printed in full.
+!   S BNDRS and S LRMCP come through LX, whose A is a word
+!   address, and p.116's defining cards pin them anyway.
+!   PINNED ONLY TO THE HALF WORD by this page, rescued by a
+!   defining card elsewhere: S PRIMR, S PRIME (p.103's deck),
+!   Z SPLP9, Z SPLPR (p.132's deck), M CCW1/M MCPCW/M CPBAD
+!   again from p.148's own cards, Z EC75S (p.148's LV row).
+!   WEAKEST, AND SAID SO: S LRBU.  Its only witness is printed
+!   p.133's "YMSF TI1,16,STLR,SLRBU", which is itself an
+!   INSTRUCTION -- a transmit's A2 is nineteen bits, word plus
+!   half-word select -- so S LRBU is pinned to the half word from
+!   both sides and no defining card is known for it.  The ".0" in
+!   its SYN below is convention.  Same for S A8IQS, whose only
+!   witnesses are two branches.
+!
+! Z EC75S  217451.00  printed p.148: the OCR carries "217435.CC
+!                     217451.C2 30  LV,1,ZEC75S" -- the same
+!                     symbol in an LV on a DIFFERENT page, whose
+!                     0o02 is LV's J=1 operation bits where line
+!                     48's 0o03 is SV's.  Same word, two
+!                     operations, two pages.
+ZEC75S  SYN, (8)217451.0
+
+! ---------------------------------------------------------------
+! THE ORIGIN.  The page prints "SLC,$" (line 4) at 217371.70.
+! Restated hard at the PRINTED value; strap_asm aligns line 5's
+! full word up to 217372.00 on its own.  See THE JOIN.
+! ---------------------------------------------------------------
+        SLC, (8)217371.70
+
+! ---- S DISP: the error dispatcher --------------------------------
+SDISP   BB1, SL, MCPERR              ! line  5  -MCP CONTAMINATION IF BRANCH
+        KVI, $14, SASNER             ! line  6
+        BXH, $+1.32                  ! line  7  (same card as 6)
+        KVI, $14, SIOERR             ! line  8
+        BZXL, MCPERR                 ! line  9  (same card as 8)
+        Z, $IND                      ! line 10
+        LX, 0, SBNDRS                ! line 11
+        SX, 0, 3.0                   ! line 12  -SET MCP BOUNDS (same card as 11)
+        LX, 0, SLRMCP+9.0            ! line 13
+        SX, 0, $MASK                 ! line 14  -SET MCP MASK (same card as 13)
+        LCI, 15, 30.0                ! line 15
+        T, 15, STLR, SLRBU           ! line 16  -MOVE PP LOWER REGS. TO PERM. BUFFER
+        SIC, SPRIMR                  ! line 17
+        BD, SPRIME                   ! line 18  (same card as 17)
+        , DABEOJ                     ! line 19  -PRIME ABNORMAL E O J
+        SV, 14, $L                   ! line 20  -GET ERROR CODE
+        SF(BU,16), MPPBAD+5.16, -18  ! line 21  -SET ERROR CODE IN SPOOL MESSAGE
+        SIC, ZSPLP9                  ! line 22
+        B, ZSPLPR                    ! line 23
+        , MPPBAD                     ! line 24
+        , 7.0                        ! line 25
+        CNOP                         ! line 26  (compiles nothing; counter is already aligned)
+! ---- the operator message ----------------------------------------
+MPPBAD  (AX)DD(BU),1YOUR PROGRAM WAS ENDED BECAUSE X
+        (A*)DD(BU),OF A TYPE XX ERROR      *
+! ---- MCPERR: MCP's own failure -----------------------------------
+MCPERR  TI, 2, $14, MMCPCW+1.0       ! line 29  -SAVE 14 AND 15
+        SV, $14, $L                  ! line 30
+        SF(BU,16), MCPBAD+3.56, -18  ! line 31  -ERROR CODE
+        KVI, 14, SIOERR              ! line 32  (printed "S IO ERR")
+        BXE, ZEC75                   ! line 33
+        KVI, 14, SREJ                ! line 34  (printed "S REJ")
+        BXE, ZEC75                   ! line 35
+ZEC99   LV, 14, SYCOCH               ! line 36  -CONSOLE CHANNEL NUMBER
+        REL(SEOP), .0($14)           ! line 37
+        LVI, $15, $+1.0              ! line 38
+        B, SA8IQS                    ! line 39
+        VF, MCPBAD+3.56              ! line 40  -FWA IN
+        CF, 2.0                      ! line 41  -N
+        VF, MCPBAD+3.56              ! line 42  -FWA OUT
+MCCW    CCW, 0.0($14), MCCW1         ! line 43  -LOOP UNTIL CHANNEL
+        BB, MCCW1+.24, MCCW          ! line 44  -IS RELEASED
+        W(SEOP), 0.0($14), MMCPCW    ! line 45
+        TI, 2, MMCPCW+1.0, $14       ! line 46
+        BD, $                        ! line 47  -MCP CANNOT CONTINUE
+ZEC75   SV, 1, ZEC75S                ! line 48
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS RENDERED AT 400/600/900/1800 dpi
+! ---------------------------------------------------------------
+! Round glyphs are transcribed here as the digits the octal/hex
+! fields must hold; the four non-octal cases are argued above.
+!
+!   line  1                                                      *************************************************
+!   line  2                                                      ****************** ERROR CONTROL ******************
+!   line  3                                                      *************************************************
+!   line  4  217371.70 *                                         SLC,$
+!   line  5  217372.00  215001.04 80  217415.34 0E   S DISP      BB1,SL,MCPERR              -MCP CONTAMINATION IF BRANCH
+!   line  6  217373.00  004002.35 04                             KVI,$14,SASNER
+!   line  7  217373.40  217375.33 42                             BXH,$+1.32
+!   line  8  217374.00  003405.35 04                             KVI,$14,SIOERR
+!   line  9  217374.40  217415.32 40                             BZXL,MCPERR
+!   line 10  217375.00  000013.22 00                             Z,$IND
+!   line 11  217375.40  215224.00 10                             LX,0,SBNDRS
+!   line 12  217376.00  000003.01 10                             SX,0,3.0   -SET MCP BOUNDS
+!   line 13  217376.40  215373.00 10                             LX,0,SLRMCP+9.0
+!   line 14  217377.00  000014.01 10                             SX,0,$MASK -SET MCP MASK
+!   line 15  217377.40  000036.37 02                             LCI,15,30.0
+!   line 16  217400.00  215230.00 80  215324.36 20               T,15,STLR,SLRBU            -MOVE PP LOWER REGS. TO PERM. BUFFER
+!   line 17  217401.00  215571.00 80                             SIC,SPRIMR
+!   line 18  217401.40  215570.04 00                             BD,SPRIME
+!   line 19  217402.00  000104.00 80                             ,DABEOJ                    -PRIME ABNORMAL E O J
+!   line 20  217402.40  000010.35 30                             SV,14,$L                   -GET ERROR CODE
+!   line 21  217403.00  217413.20 80  020067.12 F0               SF(BU,16),MPPBAD+5.16,-18  -SET ERROR CODE IN SPOOL MESSAGE
+!   line 22  217404.00  224052.00 80                             SIC,ZSPLP9
+!   line 23  217404.40  224046.50 00                             B,ZSPLPR
+!   line 24  217405.00 *  217406.00 80                           ,MPPBAD
+!   line 25  217405.40  000007.00 80                             ,7.0
+!   line 26                                                      CNOP
+!   line 27  217406.00                              MPPBAD       (AX)DD(BU),1YOUR PROGRAM WAS ENDED BECAUSE X
+!   line 28  217412.00                                           (A*)DD(BU),OF A TYPE XX ERROR      *
+!   line 29  217415.00  000036.00 80  217441.04 A0  MCPERR       TI,2,$14,MMCPCW+1.0        -SAVE 14 AND 15
+!   line 30  217416.00  000010.35 30                             SV,$14,$L
+!   line 31  217416.40  217446.70 80  020067.12 F0               SF(BU,16),MCPBAD+3.56,-18  -ERROR CODE
+!   line 32  217417.40  003405.35 04                             KVI,14,S IO ERR
+!   line 33  217420.00  217432.32 C2                             BXE,Z EC 75
+!   line 34  217420.40 *  003406.35 04                           KVI,14,S REJ
+!   line 35  217421.00  217432.32 C2                             BXE,Z EC 75
+!   line 36  217421.40  215006.34 30                 Z EC99      LV,14,SYCOCH               -CONSOLE CHANNEL NUMBER
+!   line 37  217422.00  000000.00 8E  000000.33 00               REL(SEOP),.0($14)
+!   line 38  217423.00  217424.37 01                             LVI,$15,$+1.0
+!   line 39  217423.40  230566.10 00                             B,SA8IQS
+!   line 40  217424.00  217446.70+                               VF,MCPBAD+3.56
+!   line 41  217424.40  000002                                   CF,2.0
+!   line 42  217425.00  217446.70+                               VF,MCPBAD+3.56
+!   line 43  217425.40  000000.00 8E  217437.21 00  MCCW         CCW,0.0($14),MCCW1         -LOOP UNTIL CHANNEL
+!   line 44  217426.40  217437.30 80  217425.74 02               BB,MCCW1+.24,MCCW          -IS RELEASED
+!   line 45  217427.40  000000.00 8E  217440.13 00               W(SEOP),0.0($14),MMCPCW
+!   line 46  217430.40  217441.00 80  000036.04 A0               TI,2,MMCPCW+1.0,$14
+!   line 47  217431.40  217431.44 00                             BD,$                       -MCP CANNOT CONTINUE
+!   line 48  217432.00  217451.03 30                 Z EC 75     SV,1,ZEC75S
+!
+! CARD SERIALS, read at 400 dpi: HA000001 on line 1 through
+! HA000045 on line 48, with three cards carrying two statements
+! each (lines 11+12 = HA000011, lines 13+14 = HA000012, lines
+! 17+18 = HA000015).  Lines 6+7 and 8+9 are consecutive serials,
+! so those pairs are NOT one card despite being one logical test;
+! lines 22+23, the other SIC/branch pair, are two cards too.
+! ---------------------------------------------------------------
+
+!SYM   SDISP    217372.00
+!SYM   MPPBAD   217406.00
+!SYM   MCPERR   217415.00
+!SYM   ZEC99    217421.40
+!SYM   MCCW     217425.40
+!SYM   ZEC75    217432.00
+!CHECK 217372.00 | 215001.04 80 217415.34 0E | line 5 S DISP BB1,SL,MCPERR (printed SLC,$ on line 4 gives this page's arriving counter as 217371.70)
+!CHECK 217373.00 | 004002.35 04 | line 6 KVI,$14,SASNER -- printed "C04C02.35 C4"; three impossible C's in the octal field, and line 8 prints the same byte closed
+!CHECK 217373.40 | 217375.33 42 | line 7 BXH,$+1.32 -- forward to line 10, a real check of this page's counting
+!CHECK 217374.00 | 003405.35 04 | line 8 KVI,$14,SIOERR
+!CHECK 217374.40 | 217415.32 40 | line 9 BZXL,MCPERR -- forward reference to line 29
+!CHECK 217375.00 | 000013.22 00 | line 10 Z,$IND -- printed "$INC"; $INC is not a system symbol
+!CHECK 217375.40 | 215224.00 10 | line 11 LX,0,SBNDRS
+!CHECK 217376.00 | 000003.01 10 | line 12 SX,0,3.0
+!CHECK 217376.40 | 215373.00 10 | line 13 LX,0,SLRMCP+9.0 -- p.116 line 27's own SLC resolves to the same 215373.00
+!CHECK 217377.00 | 000014.01 10 | line 14 SX,0,$MASK -- $MASK is word 0o14
+!CHECK 217377.40 | 000036.37 02 | line 15 LCI,15,30.0 -- 30 decimal prints 0o36, and J=15 gives the offset 2*15+1 = 0o37
+!CHECK 217400.00 | 215230.00 80 215324.36 20 | line 16 T,15,STLR,SLRBU
+!CHECK 217401.00 | 215571.00 80 | line 17 SIC,SPRIMR
+!CHECK 217401.40 | 215570.04 00 | line 18 BD,SPRIME -- BD's own operation bits are .04
+!CHECK 217402.00 | 000104.00 80 | line 19 ,DABEOJ -- a blank-operation card, the in-line parameter of lines 17-18
+!CHECK 217402.40 | 000010.35 30 | line 20 SV,14,$L -- $L is 000010.00 and J=14 gives 2*14+1 = 0o35
+!CHECK 217403.00 | 217413.20 80 020067.12 F0 | line 21 SF(BU,16),MPPBAD+5.16,-18 -- 5 words and 16 DECIMAL bits on from MPPBAD at 217406.00 is 217413.20 octal, which checks this page's own label
+!CHECK 217404.00 | 224052.00 80 | line 22 SIC,ZSPLP9
+!CHECK 217404.40 | 224046.50 00 | line 23 B,ZSPLPR -- 0o50 is ZSPLPR's half word 0o40 plus B's 0o10
+!CHECK 217405.00 | 217406.00 80 | line 24 ,MPPBAD -- blank operation; the address is this page's own line 27 (location carries the second asterisk)
+!CHECK 217405.40 | 000007.00 80 | line 25 ,7.0
+!CHECK 217415.00 | 000036.00 80 217441.04 A0 | line 29 MCPERR TI,2,$14,MMCPCW+1.0 -- printed byte "AC" is A0 by the i2 rule (no index on operand 2) and by line 46; $14 is index word 0o36. This row's LOCATION checks lines 27-28's COMBINED size (56 characters = 7 words) and NOT their 32/24 split; a 33/23 split lands here too -- see WHAT ONLY THE INK SAYS
+!CHECK 217416.00 | 000010.35 30 | line 30 SV,$14,$L
+!CHECK 217416.40 | 217446.70 80 020067.12 F0 | line 31 SF(BU,16),MCPBAD+3.56,-18 -- 56 decimal bits prints 0o70; the second half word is byte-identical to line 21's, which is what a shared "(BU,16),...,-18" should give
+!CHECK 217417.40 | 003405.35 04 | line 32 KVI,14,S IO ERR -- same word as line 8, printed with blanks in the name
+!CHECK 217420.00 | 217432.32 C2 | line 33 BXE,Z EC 75 -- byte C2 is real, not a damaged 02: the volume OCR prints ".32 C2" for BXE on nine other printed pages
+!CHECK 217420.40 | 003406.35 04 | line 34 KVI,14,S REJ (location carries the second asterisk)
+!CHECK 217421.00 | 217432.32 C2 | line 35 BXE,Z EC 75 -- byte-identical to line 33, the same statement twice on one page
+!CHECK 217421.40 | 215006.34 30 | line 36 Z EC99 LV,14,SYCOCH -- J=14 gives 2*14 = 0o34, where line 20's SV gives 2*14+1
+!CHECK 217422.00 | 000000.00 8E 000000.33 00 | line 37 REL(SEOP),.0($14) -- printed "(SECP)", which is not an I-O modifier; the 8E is i1 = $14
+!CHECK 217423.00 | 217424.37 01 | line 38 LVI,$15,$+1.0 -- J=15 gives 2*15+1 = 0o37; the target is line 40, this page's own VF
+!CHECK 217423.40 | 230566.10 00 | line 39 B,SA8IQS -- the volume OCR prints the identical 230566.10 00 for a B on a page near 221747
+!CHECK 217424.00 | 217446.70+ | line 40 VF,MCPBAD+3.56
+!CHECK 217424.40 | 000002 | line 41 CF,2.0 -- an 18-bit count field, printed as six bare octal digits
+!CHECK 217425.00 | 217446.70+ | line 42 VF,MCPBAD+3.56 -- byte-identical to line 40, the same statement twice on one page
+!CHECK 217425.40 | 000000.00 8E 217437.21 00 | line 43 MCCW CCW,0.0($14),MCCW1
+!CHECK 217426.40 | 217437.30 80 217425.74 02 | line 44 BB,MCCW1+.24,MCCW -- bit 24 written decimal prints 0o30; the branch is backward to line 43, .40 plus BB's 0o34 = 0o74, a real check of this page's counting
+!CHECK 217427.40 | 000000.00 8E 217440.13 00 | line 45 W(SEOP),0.0($14),MMCPCW
+!CHECK 217430.40 | 217441.00 80 000036.04 A0 | line 46 TI,2,MMCPCW+1.0,$14 -- line 29 with the operands swapped; this row prints the A0 that line 29 drops ink on
+!CHECK 217431.40 | 217431.44 00 | line 47 BD,$ -- branches to itself, .00 plus BD's 0o44
+!CHECK 217432.00 | 217451.03 30 | line 48 Z EC 75 SV,1,ZEC75S -- J=1 gives 2*1+1 = 0o03, where p.148's LV,1,ZEC75S prints 0o02

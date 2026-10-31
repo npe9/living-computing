@@ -1,0 +1,686 @@
+! mcp_bootstrap_p151.strap -- "R E A D", printed page 151.
+! docs/MCP_Mar63_001-249.pdf PDF p.158.  Header read and not
+! assumed: the top line prints "TIME CLOCK 00054041  PUNID
+! 11011MCP   CARD ID IA000001   DIST. OF 3/01   3/01   PAGE
+! NUMBER 151".
+!
+! >>> THE HEADING ROW'S OWN LOCATION FIELD IS BLANK. <<<  The
+! column-heading line prints "LINE  LOCATION  BINARY OUTPUT  NAME
+! STATEMENT  LOCATION" and NOTHING follows that second LOCATION --
+! rendered at 900 dpi and looked at, not guessed.  So this page
+! joins printed pp.83, 144 and 145 in omitting the origin word,
+! and no digits are recorded here.  (A BLANK is not a zero; see
+! docs/transcription_workflow.md step 1.)  It also kills, again,
+! the tempting "the field is dropped on pages carrying their own
+! SLC" story only in one direction: this page DOES carry an SLC
+! and DOES omit the field, which is consistent with that guess,
+! while pp.133/136/138/139/141/142/143 are the pages that refuted
+! it.  Nothing new is claimed.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! Forty-eight printed lines, all of them code or banner.  No SYN,
+! no DD, no VF, no DR/DRZ, no data of any kind -- so rule 5 of
+! "WHAT THE ORACLE CANNOT SEE" (DR vs DRZ) does not arise here.
+!
+!   lines 1-3   the asterisk box around the heading
+!               "***************** R E A D *****************"
+!   line  4     "SLC,$"
+!   lines 5-48  forty-four instructions, every one of them CODE.
+!
+! The routine is the MCP READ setup.  C22-6728 (MCP System
+! Analysis Guide), a TYPESET manual and therefore a genuinely
+! independent press, describes this exact code twice:
+!
+!   "The control word check routine (Figure 99) is entered with
+!    the calling sequence SIC, BIRA; B, BCWCR, with the location
+!    of the first control word in the VF of $0."
+!                                          -- C22-6728, PDF p.177
+!
+! which is lines 5 and 6 VERBATIM, and
+!
+!   "It is entered at ZSTEVL with the location of a status
+!    evaluation mask in SEVLMK in the unit area table, and the
+!    first location of a table of branch instructions in SEVLTB
+!    in the unit area table."                  -- same page
+!
+! which is lines 7-11 and the ZSTEVL branches on lines 15 and 21.
+!
+! The body is:
+!   Z START (5)   SIC/B into the control-word check (B CWCR).
+!   7-11          plant Z EVL MK in S EVL MK and K FORK in
+!                 S EVL TB, i.e. set up the status evaluation to
+!                 come back to this page's own K FORK, and set
+!                 S CH OP to say the channel is operating.
+!   12            "BR,0.0($4)" -- branch into the sixteen-entry
+!                 equipment table on $4.
+!   13-28         the table: 0 illegal, 1 disk, 2 console, 3 card
+!                 reader, 4-7 incorrect/no equipment, 10 tape,
+!                 11-17 no equipment.  Sixteen half-word branches,
+!                 one per equipment code, exactly as the comment
+!                 column numbers them 1,2,3,4,5,6,7,10,11..17.
+!   K FORK (29)   where the status evaluation returns: dispatch on
+!                 the unit -- K K LOC, R VFY, P CSRD -- then
+!                 KVI,4,4.0 "-TEST IF TAPE", BZXE to K YOME if
+!                 console, and the file-count / label-mode tests.
+!   K TEST M (38) set the channel to file mode, or label mode if
+!                 the IOD is null; SIC/B to K MODE to check the
+!                 mode selected.
+!   K YOME (43)   "SETUP READ OPERATION" (the manual's own words
+!                 for this box, Figure 99): pick up the control
+!                 word address, plant the live RD at K GO+.32,
+!                 CNOP, LX/SX the instruction into S IO INS, and
+!   K GO (48)     issue it -- "RD,0.0($14),0  -ISSUE RD COMMAND".
+!
+! ---------------------------------------------------------------
+! FORTY-FIVE CARDS OVER FORTY-EIGHT LINES; NOTHING FELL OFF EITHER
+! END
+! ---------------------------------------------------------------
+! COUNTED OFF THE CARD-SERIAL COLUMN, not off the survey.  The
+! serials run IA000001 (line 1) to IA000045 (line 48) with no gap,
+! and three serials are printed TWICE, on two statements each:
+!
+!   IA000036  lines 36 and 37   SIC,S SCRPM($12) + B,RS1 FLK
+!   IA000040  lines 41 and 42   SIC,K K MODE     + B,K MODE
+!   IA000044  lines 46 and 47   LX,0,$+1.0       + SX,0,S IO INS
+!
+! 45 + 3 = 48, so every printed line is accounted for and the
+! render lost nothing.  Line 1 is the page's first line (the
+! render starts at y=480 at 400 dpi, which is LINE 1) and line 48
+! is followed by blank paper to the bottom rule.
+!
+! >>> WHERE THIS DECK DISAGREES WITH THE SURVEY. <<<  The survey
+! reported 34 rows spanning 217544.0..217567.0.  This page has 46
+! emitting HALF WORDS over 44 statements and runs
+! 217544.00..217572.40.  The survey lost the whole tail from line
+! 44 on -- the SVA/CNOP/LX/SX/RD that are the point of the routine
+! -- and under-read the middle.  The deck wins because every one
+! of the 46 half words is checked against the printed BINARY
+! OUTPUT column below, and all 46 agree.
+!
+! NOTE THE CARD-PAIR ASYMMETRY, recorded because it is printed:
+! lines 5 and 6 are ALSO a SIC/branch pair and they carry TWO
+! serials (IA000005, IA000006), while the SIC/branch pairs on
+! 36/37 and 41/42 each carry one.  So "a SIC and its branch share
+! a card" is NOT a rule on this page.  Nothing here depends on it.
+!
+! ---------------------------------------------------------------
+! THE JOIN
+! ---------------------------------------------------------------
+! LINE 4 PRINTS "217544.00   SLC,$" AND THAT IS A FREE WITNESS.
+! An SLC emits nothing, so its printed LOCATION *is* the counter
+! arriving from printed p.150.  This deck writes a hard
+! "SLC,(8)217544.0" so it assembles standalone, which ASSERTS the
+! origin rather than checking it (docs/transcription_workflow.md,
+! "A HARD SLC CANNOT DISAGREE WITH THE ARRIVING COUNTER"), so the
+! printed value is recorded here and in the first !CHECK note.
+!
+! NEAR SIDE, and it closes: the volume OCR of printed p.150 (a
+! legitimate index onto ANOTHER page) ends at its line 28,
+! "217531.00 *  000013.00   AEDMPB  DRZ(..),(11)" -- the OCR
+! garbles the name and the operand ("MPR ORZINDODD") but prints
+! the LOCATION and the RESERVATION COUNT cleanly, and p.150's own
+! lines 26 and 27 are "AEDMPI XW,AEDMPB,6" and "AEDMPA
+! XW,AEDMPB,6" both resolving to 217531.00+, which independently
+! fixes that card's address.  A reservation prints its COUNT in
+! the BINARY OUTPUT column, so 000013.00 is 0o13 = eleven words,
+! and 0o217531 + 0o13 = 0o217544 EXACTLY.  The counter leaves
+! p.150 at 217544.00, which is what line 4 here prints.  (What
+! carries this is the ARITHMETIC off two clean octal fields, not
+! the OCR's reading of any name.)
+!
+! FAR SIDE, independent of this page: the volume OCR carries, on a
+! page near 220744, "220744.40  217544.10 00   B,Z START  -READ".
+! A plain B prints target+.10, so Z START is at 217544.00 -- this
+! page's first label, read off a DIFFERENT printed page.
+!
+! So the near side is a measurement, not a prediction; what is
+! left for the p.150 transcriber is only to confirm that its line
+! 28 really is an eleven-word reservation at 217531.00.
+!
+! >>> PREDICTION FOR THE p.152 TRANSCRIBER: line 48 is a FULL WORD
+!     at 217572.00, so the counter leaves this page at 217573.00.
+!     p.152's first emitting row should print 217573.00.  (If
+!     p.152 opens with its own "SLC,$" its printed LOCATION should
+!     read 217573.00 and that settles it outright.) <<<
+!
+! ---------------------------------------------------------------
+! GLYPHS -- WHAT WAS SETTLED AND ON WHAT
+! ---------------------------------------------------------------
+! This page opens round glyphs constantly.  ITS OWN COLUMN HEADING
+! PRINTS "LCCATICN" for LOCATION, which is the cleanest possible
+! calibration: in that one word the drum prints two known O's as
+! broken-right C-shapes right beside a known C.  Every LOCATION
+! field prints "217544.CC" for .00, and every octal BINARY field
+! likewise, so a round glyph in a LOCATION or in an octal BINARY
+! field is a 0 with certainty (C is not an octal digit).  The
+! glyphs that are NOT in an octal field were each settled on
+! something else, and ink varies per CHARACTER here, so the
+! calibration licenses nothing by itself.
+!
+! (1) >>> THE TYPESET MANUAL SETTLED THE NAMES, AND IT IS THE
+!     STRONGEST EVIDENCE ON THIS PAGE. <<<  C22-6728 and
+!     C22-6728-1 (MCP System Analysis Guide) are a different
+!     press, different ink, and genuinely independent of this
+!     drum.  Counting hits across the two revisions:
+!
+!       ZSTART 4/4   KILEGL 13/17   ZDISK1 3/3   ZSTEVL 15/17
+!       RVFY   8/9   PCSRD   8/7    KKLOC 14/16  KKMODE 1/1
+!       KTESTM 3/2   KGO     1/2    KMODE  4/3   RS1FLK 1/0
+!       BIRA   2/0   BCWCR   4/4    KYOME  1/0
+!       SEVLMK 6/6   SEVLTB  7/7    SCHOP  5/8   SIOINS 5/5
+!       SSCRPM 4/4   SLABM   1/1    SFILEK 5/5   SFMODE 1/1
+!       SCWADR 2/2
+!
+!     TWENTY-FOUR of this page's TWENTY-SIX distinct symbol names
+!     are confirmed letter-for-letter by a typeset source.  The
+!     only two that are not are K FORK and Z EVL MK, and both are
+!     written up below.  In particular:
+!
+!     * "K YOME" (lines 33 and 43).  On the drum the middle glyph
+!       is the usual broken-right round shape and the name is not
+!       an English word, so neither the comment column nor shape
+!       could settle it; the volume OCR carries only this page's
+!       own two cards, which is not a witness.  SETTLED BY
+!       RENDERING C22-6728 PDF p.167 AT 900 dpi: "Figure 90 - The
+!       Read Routine" is a flowchart of THIS VERY PAGE, and its
+!       box reads "KYOME / SET UP READ OPERATION. STORE IN SIOINS
+!       IN UAT" with a FULLY CLOSED O.  The argument is the
+!       dropout asymmetry, and the figure supplies its own
+!       calibration: that chart's printer drops O's constantly --
+!       in the SAME figure KMODE prints "KMCCE", KKLOC prints
+!       "KKLCC", KGO prints "KGC", S CH OP prints "SCHCP" and
+!       CONSOLE prints "CCNSCLE" -- yet KYOME's O came out closed.
+!       Ink can open a closed glyph and never closes an open one,
+!       so an observed O is not a damaged C.  O, decisively.
+!       Figure 90 also corroborates the whole routine
+!       independently: ZSTART -> BCWCR "CW ADDRESS CHECKING" ->
+!       the tape/console/disk/card-reader dispatch -> ZSTEVL,
+!       ZDISK1, KILEGL, KTESTM, RS1FLK "SPACE OVER LABEL TAPE
+!       MARK", KMODE "CHECK FOR PROPER MODE SELECTED", KYOME,
+!       KGO "READ", and KKLOC "LOCATE ARC".
+!     * "RS1 FLK" (line 37).  Digit 1, not letter I: the manual
+!       prints RS1FLK, and the DEFINING card on another printed
+!       page (volume OCR, 220143.00, "RS1 FLK BZB,S SYSTM($12),
+!       K N SYST") spells it the same way.
+!     * "B IRA" (line 5).  Letter I, not digit 1: the manual's
+!       prose prints "the calling sequence SIC, BIRA; B, BCWCR".
+!     * "P CSRD" (line 31) ends in D, not O -- the C/D pair this
+!       drum breaks worst.  Confirmed twice over: the manual
+!       prints PCSRD, and decks/mcp_bootstrap_p138.strap DEFINES
+!       the label PCSRD at 217071.00, which is exactly the address
+!       line 31 branches to.
+!
+! (2) "K FORK" (lines 10 and 29) IS THE ONE NAME NO INDEPENDENT
+!     SOURCE CONFIRMS.  Neither revision of C22-6728 mentions it,
+!     and the only volume-OCR hits are this page's own two cards
+!     (OCR lines 7851 and 7870), which are the same ink read by a
+!     worse reader and are NOT a witness.  It rests on (a) FORK
+!     being English where FCRK is not, (b) the page's own
+!     "LCCATICN" calibration, and (c) the two printed instances
+!     agreeing with each other.  Recorded as UNRESOLVED-BY-A-
+!     SECOND-SOURCE; see WHAT COULD NOT BE SETTLED.
+!
+! (3) "Z EVL MK" (line 7) is likewise not in the manual, but its
+!     DEFINING card is on another printed page and the volume OCR
+!     reads it there: "221152.00  003004.00+   ? EVL MK  VF,
+!     (8)3004.  -$RD MASK - SEL,VER,CONSOLE" (OCR line 9397), with
+!     the next card at 221152.40 being "E MK1A VF,(8)3000. -$ AND
+!     SWEF MASK".  The manual independently names EMK1A as a thing
+!     that gets loaded "in SEVLMK", which is precisely what line 8
+!     does with Z EVL MK.  The Z prefix is the module's, shared
+!     with Z START, Z STEVL and Z DISK 1, all three typeset-
+!     confirmed.
+!
+! (4) THE BYTES THAT LOOKED DOUBTFUL WERE SETTLED ON WHAT PRODUCED
+!     THEM, not on ink:
+!     * line  9's second word reads ".36 F0" at 1800 dpi with a
+!       closed 0; the assembler produces F0, and printed p.18
+!       prints "CM1111(BU,1)" six times, every one "001000.36 F0".
+!     * line 48's second word prints "000000.C1 0C" -- the ".C1"
+!       is an impossible octal C, so that row IS dropping ink on
+!       round glyphs, and the byte's open second glyph is a
+!       damaged 0.  The statement settles it outright: the
+!       assembler emits "000000.01 00" for "RD,0.0($14),0".
+!     * line 33's "217567.72 C0" and line 44's "217572.41 D0" look
+!       like the same confusion and are NOT: both are produced
+!       exactly as printed.  The D of D0 has the straight vertical
+!       left stem and squared corners that a C and a 0 do not.
+!
+! (5) THE COMMENT COLUMN, used as the oracle it is:
+!     * line 39's "-IF IOD NULL, USE LABEL MODE" prints the middle
+!       letter as the broken-right round shape.  IOD is the term
+!       (cf. printed p.84's "T IODK  -THE IOD COUNT"); ICD is not.
+!     * line 13's "-ILLEGAL EQUIP CODE - FAKE EPGK" is recorded
+!       verbatim.  EPGK is read off the ink with a clean G
+!       crossbar and is NOT an English word; nothing on this page
+!       or in the manuals explains it, and it is a COMMENT, so
+!       nothing depends on it.
+!
+! (6) MNEMONICS: "KVI" (line 32) and "LVI" (lines 7, 10) are the
+!     K/L pair, not an O/C or B/8 confusion, and both are real
+!     operations, so the assembler-as-eliminator test is silent
+!     here by construction.  What decides it is the printed bits:
+!     the 6-bit field after the "." carries the index register as
+!     bits 19-22, so both spellings print the same ADDRESS and
+!     differ only in the operation byte.  MEASURED, at this
+!     page's own SLC, varying nothing else:
+!
+!       KVI,4,4.0  ->  000004.11 04
+!       LVI,4,4.0  ->  000004.11 01
+!
+!     The page prints 04.  (Note what this is NOT: K and L are not
+!     one of this drum's confusable pairs, so the reading was
+!     never in real doubt; the measurement is recorded because the
+!     claim was made.)
+!
+! ---------------------------------------------------------------
+! LABELS PRINTED WITH BLANKS
+! ---------------------------------------------------------------
+! "Z START", "K FORK", "K TEST M", "K YOME", "K GO", "B IRA",
+! "B CWCR", "Z EVL MK", "S EVL MK", "S EVL TB", "S CH OP",
+! "K ILEGL", "Z DISK 1", "Z STEVL", "K K LOC", "R VFY", "P CSRD",
+! "S FILE K", "S SCRPM", "RS1 FLK", "S F MODE", "S LABM",
+! "K K MODE", "K MODE", "S CW ADR" and "S IO INS" all print with
+! blanks and are written closed up, as every deck since p.2 does
+! -- the deck format takes a label to the first blank.  Each is
+! six characters or fewer closed up (C22-6531 printed p.10).  The
+! typeset manual prints them ALREADY closed up (ZSTART, KYOME,
+! RS1FLK, KKLOC, ...), which is an independent witness that the
+! closed-up form is the name and not an artifact of this format.
+!
+! ---------------------------------------------------------------
+! THE TWO ASTERISKS
+! ---------------------------------------------------------------
+! Every line number carries an asterisk after it ("5*", "48*").
+! That is the ordinary column.  TWO lines carry a SECOND asterisk
+! after the LOCATION: line 26 (217557.00) and line 48 (217572.00).
+! This is the unexplained marker of docs/listing_typography.md 12.
+! What this page ADDS to the record: p.144's marker fell on its
+! SLC line and on a full word at an odd half word; here the SLC
+! line (line 4) is NOT marked, and line 26 is an ordinary half-
+! word "B,K ILEGL" at an EVEN half word, byte-for-byte identical
+! to the fourteen other B,K ILEGL rows around it, none of which is
+! marked.  So neither "the SLC is marked" nor "an odd half word is
+! marked" survives this page.  Recorded as open, with nothing
+! added to it.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- every one pinned by a card on a DIFFERENT page
+! ---------------------------------------------------------------
+! ZERO TAUTOLOGICAL ROWS.  This page's own cards sit at OCR lines
+! ~7840-7887 of docs/ocr/MCP_Mar63_001-249.txt; every witness
+! cited below is at a different OCR line and a different printed
+! page, or in a typeset manual.
+!
+! The nine unit-area field offsets are all carried by LANDED decks
+! at these same values, and this page's printed bits agree with
+! every one of them to the BIT (a VFL offset is printed in full in
+! the 6-bit field, modulo the half-word/index packing noted under
+! GLYPHS (6)) -- which is nine independent joins between this page
+! and pp.99/101/102, none of them arranged by me.
+SEVLTB  SYN(BU,19), 2.0      ! p.101 line 11 "S EVL TB SYN(BU,19),2.0"
+SEVLMK  SYN(BU,19), 2.32     ! p.101 line 12 "S EVL MK SYN(BU,19),2.32"
+SCWADR  SYN(BU,18), 3.32     ! p.101 line 14 -CONTROL WORD ADDRESS
+SIOINS  SYN(BU,64), 4.0      ! p.101 line 17 -IO INSTR. LAST
+SSCRPM  SYN(BU,64), 6.0      ! p.101 line 20 -SCRATCH PAD MEMORY
+SLABM   SYN(BU,2),  7.16     ! p.101 line 22 -MODE SPECIFIED IN
+SFILEK  SYN(BU,12), 7.38     ! p.101 line 25 -FILE COUNT
+SFMODE  SYN(BU,2),  2.48     ! p.102 line 13 -FILE MODE
+SCHOP   SYN(BU,1),  0.26     ! p.99  line 22 -CHAN OPERATING
+! The eleven code externals.  Each printed address below is read
+! off THIS page's BINARY OUTPUT column; the NAME and the fact that
+! a card defines that address are from elsewhere, as cited.
+! B IRA    221140.00  C22-6728 PDF p.177 names the calling
+!                     sequence "SIC, BIRA; B, BCWCR" IN TYPE.  The
+!                     volume OCR also carries another printed
+!                     page's own copy of that calling sequence --
+!                     "217630.CC 221140.CC 800 ERE STC BRA" --
+!                     whose statement field it garbles but whose
+!                     BINARY is byte-for-byte line 5's.  The NAME
+!                     comes from the manual, not from that OCR.
+BIRA    SYN, (8)221140.0
+! B CWCR   221102.00  same manual sentence; the DEFINING card is
+!                     on another printed page: volume OCR
+!                     "221102.00 = 221133.01 CO BB CWO RR
+!                     SVASCJPICK ACER OF CWE", i.e. a card at
+!                     221102.00 whose statement is an SVA to
+!                     J PICK.  THE OCR'S NAME FIELD IS GARBLED
+!                     THERE; the spelling is the manual's.
+BCWCR   SYN, (8)221102.0
+! Z EVL MK 221152.00  defining card on another printed page,
+!                     volume OCR "221152.CC CC3004.0C+ 2 CVL MK
+!                     VF,(8)3004. $RD MASK - SEL,VER,CONSG", i.e.
+!                     a VF card at 221152.00 holding (8)3004 with
+!                     a read-mask comment.  The OCR's name is
+!                     garbled; the reading Z EVL MK is THIS page's
+!                     own line 7, corroborated only by the Z
+!                     prefix and by what line 8 does with it.
+ZEVLMK  SYN, (8)221152.0
+! K ILEGL  220064.00  decks/mcp_bootstrap_p127.strap already SYNs
+!                     KILEGL at (8)220064.0, citing printed p.160
+!                     (PDF 167) where the label card is printed.
+KILEGL  SYN, (8)220064.0
+! Z DISK 1 217577.00  defining card on another printed page,
+!                     volume OCR "217577.00 215C01.21 80
+!                     217601.34 O02 ZUISKL BB,SLOCSU,$+2.0" -- a
+!                     card at 217577.00 whose name the OCR garbles
+!                     to ZUISKL.  ZDISK1 is typeset in C22-6728,
+!                     three times in each revision.
+ZDISK1  SYN, (8)217577.0
+! Z STEVL  221144.40  the status evaluation entry, named in type
+!                     by C22-6728 ("It is entered at ZSTEVL").
+!                     Pinned to the half word by a card on
+!                     another printed page, volume OCR
+!                     "220065.4C 221144.63 C1 ... DZ STEVE":
+!                     an LVI at 220065.40 naming 221144, and 0o63
+!                     is 0o40 plus LVI's index bits, so the
+!                     half-word select bit IS on -- which is why
+!                     this deck writes .40 and not .0.
+ZSTEVL  SYN, (8)221144.40
+! K K LOC  220065.40  that same card, at 220065.40 on a
+!                     different printed page, is K K LOC's
+!                     defining card; the OCR garbles its name
+!                     field, and KKLOC is typeset in C22-6728
+!                     fourteen times.
+KKLOC   SYN, (8)220065.40
+! R VFY    221161.00  defining card on another printed page,
+!                     volume OCR "221161.CO COCCO7.31 BC
+!                     221165474 02 R VEY B8BS SYSTM($12),R RR
+!                     TEST IF SYSTEM TAPE" -- a card at 221161.00
+!                     testing S SYSTM.  The OCR reads the name
+!                     "R VEY"; RVFY is typeset in C22-6728.
+RVFY    SYN, (8)221161.0
+! P CSRD   217071.00  decks/mcp_bootstrap_p138.strap DEFINES the
+!                     label PCSRD at 217071.00 (its line 21,
+!                     "PCSRD LV,$1,S UNA($10)").  Typeset as
+!                     PCSRD in C22-6728.
+PCSRD   SYN, (8)217071.0
+! RS1 FLK  220143.00  defining card on another printed page,
+!                     volume OCR "220143.00  000007.31 8C
+!                     220174.74 00  RS1 FLK  BZB,S SYSTM($12),
+!                     K N SYST".  Typeset as RS1FLK.
+RS1FLK  SYN, (8)220143.0
+! K K MODE 217624.40  defining card on another printed page,
+!                     volume OCR "217624.40 217624.5C CO K K MUDE
+!                     6,4" -- a card AT 217624.40 (so the .40 half
+!                     word is right), name OCR'd as K K MUDE.
+!                     Another printed page carries the identical
+!                     "SIC,K K MODE" -> 217624.40 80.  KKMODE is
+!                     typeset in both revisions of C22-6728.
+KKMODE  SYN, (8)217624.40
+! K MODE   217615.00  defining card on another printed page,
+!                     the OCR of the defining page is too garbled
+!                     to read its name ("217615.CC 1. C3 30 KK
+!                     MECE SV HE"), but the ADDRESS is there and
+!                     TWO other printed pages print "B,K MODE"
+!                     -> 217615.10 00 (volume OCR lines 8008 and
+!                     9435; line 7882 is this page's own card and
+!                     is NOT counted).  KMODE is typeset in
+!                     C22-6728 as "CHECK FOR PROPER MODE
+!                     SELECTED".
+KMODE   SYN, (8)217615.0
+
+! ---------------------------------------------------------------
+! THE ORIGIN.  The page prints "SLC,$" (line 4, at 217544.00).
+! Restated hard so the deck assembles standalone; see THE JOIN.
+! ---------------------------------------------------------------
+        SLC, (8)217544.0
+
+! ---- the READ routine --------------------------------------------
+ZSTART  SIC,BIRA                     ! line  5
+        B,BCWCR                      ! line  6  -BRANCH TO CHECK CW
+        LVI,8,ZEVLMK                 ! line  7
+        SV,8,SEVLMK($12)             ! line  8  -STORE MASK ADDR IN UA
+        CM1111(BU,1),SCHOP($10)      ! line  9
+        LVI,8,KFORK                  ! line 10
+        SV,8,SEVLTB($12)             ! line 11  -STORE TABLE BASE ADDR IN UA
+        BR,0.0($4)                   ! line 12  -FOR BRANCH INTO EQUIP TABLE
+        B,KILEGL                     ! line 13  -ILLEGAL EQUIP CODE - FAKE EPGK
+        B,ZDISK1                     ! line 14  -DISK - 1
+        B,ZSTEVL                     ! line 15  -CONSOLE - 2
+        B,KTESTM                     ! line 16  -CARD READER - 3
+        B,KILEGL                     ! line 17  -INCORRECT EQUIPMENT - 4
+        B,KILEGL                     ! line 18  -INCORRECT EQUIPMENT - 5
+        B,KILEGL                     ! line 19  -NO EQUIPMENT - 6
+        B,KILEGL                     ! line 20  -NO EQUIPMENT - 7
+        B,ZSTEVL                     ! line 21  -TAPE - 10
+        B,KILEGL                     ! line 22  -NO EQUIPMENT - 11
+        B,KILEGL                     ! line 23  -NO EQUIPMENT - 12
+        B,KILEGL                     ! line 24  -NO EQUIPMENT - 13
+        B,KILEGL                     ! line 25  -NO EQUIPMENT - 14
+        B,KILEGL                     ! line 26  -NO EQUIPMENT - 15
+        B,KILEGL                     ! line 27  -NO EQUIPMENT - 16
+        B,KILEGL                     ! line 28  -NO EQUIPMENT - 17
+KFORK   B,KKLOC                      ! line 29
+        B,RVFY                       ! line 30
+        B,PCSRD                      ! line 31
+        KVI,4,4.0                    ! line 32  -TEST IF TAPE
+        BZXE,KYOME                   ! line 33  -BR. IF CONSOLE
+        LV,5,SFILEK($12)             ! line 34  -IF TAPE, TEST IF FILE K IS ZERO
+        BZXVZ,KTESTM                 ! line 35
+        SIC,SSCRPM($12)              ! line 36
+        B,RS1FLK                     ! line 37  -IF SO, SPACE OVER LABEL
+KTESTM  LV,1,SFMODE($13)             ! line 38  -IF NOT, SET CHAN TO FILE MODE
+        BZXVZ,$+1.0                  ! line 39  -IF IOD NULL, USE LABEL MODE
+        LV,1,SLABM($12)              ! line 40
+        SIC,KKMODE                   ! line 41
+        B,KMODE                      ! line 42
+KYOME   LV,0,SCWADR($12)             ! line 43
+        SVA,0,KGO+.32                ! line 44
+        CNOP                         ! line 45
+        LX,0,$+1.0                   ! line 46
+        SX,0,SIOINS($12)             ! line 47
+KGO     RD,0.0($14),0                ! line 48  -ISSUE RD COMMAND
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS RENDERED AT 400/600/900/1800 dpi
+! ---------------------------------------------------------------
+!   1*                                                        - ************************************************  IA000001
+!   2*                                                        -**************** R E A D ****************-         IA000002
+!   3*                                                        - ************************************************  IA000003
+!   4*  217544.00                                                       SLC,$                                     IA000004
+!   5*  217544.00   221140.00 80                      Z START  SIC,B IRA                                          IA000005
+!   6*  217544.40   221102.10 00                               B,B CWCR          -BRANCH TO CHECK CW              IA000006
+!   7*  217545.00   221152.21 01                               LVI,8,Z EVL MK                                     IA000007
+!   8*  217545.40   000002.61 3C                               SV,8,S EVL MK($12) -STORE MASK ADDR IN UA          IA000008
+!   9*  217546.00   000000.32 8A  001000.36 F0                 CM1111(BU,1),S CH OP($10)                          IA000009
+!  10*  217547.00   217560.61 01                               LVI,8,K FORK                                       IA000010
+!  11*  217547.40   000002.21 3C                               SV,8,S EVL TB($12) -STORE TABLE BASE ADDR IN UA    IA000011
+!  12*  217550.00   000000.14 04                               BR,0.0($4)         -FOR BRANCH INTO EQUIP TABLE    IA000012
+!  13*  217550.40   220064.10 00                               B,K ILEGL          -ILLEGAL EQUIP CODE - FAKE EPGK IA000013
+!  14*  217551.00   217577.10 00                               B,Z DISK 1         -DISK - 1                       IA000014
+!  15*  217551.40   221144.50 00                               B,Z STEVL          -CONSOLE - 2                    IA000015
+!  16*  217552.00   217565.10 00                               B,K TEST M         -CARD READER - 3                IA000016
+!  17*  217552.40   220064.10 00                               B,K ILEGL          -INCORRECT EQUIPMENT - 4        IA000017
+!  18*  217553.00   220064.10 00                               B,K ILEGL          -INCORRECT EQUIPMENT - 5        IA000018
+!  19*  217553.40   220064.10 00                               B,K ILEGL          -NO EQUIPMENT - 6               IA000019
+!  20*  217554.00   220064.10 00                               B,K ILEGL          -NO EQUIPMENT - 7               IA000020
+!  21*  217554.40   221144.50 00                               B,Z STEVL          -TAPE - 10                      IA000021
+!  22*  217555.00   220064.10 00                               B,K ILEGL          -NO EQUIPMENT - 11              IA000022
+!  23*  217555.40   220064.10 00                               B,K ILEGL          -NO EQUIPMENT - 12              IA000023
+!  24*  217556.00   220064.10 00                               B,K ILEGL          -NO EQUIPMENT - 13              IA000024
+!  25*  217556.40   220064.10 00                               B,K ILEGL          -NO EQUIPMENT - 14              IA000025
+!  26*  217557.00 * 220064.10 00                               B,K ILEGL          -NO EQUIPMENT - 15              IA000026
+!  27*  217557.40   220064.10 00                               B,K ILEGL          -NO EQUIPMENT - 16              IA000027
+!  28*  217560.00   220064.10 00                               B,K ILEGL          -NO EQUIPMENT - 17              IA000028
+!  29*  217560.40   220065.50 00                      K FORK   B,K K LOC                                          IA000029
+!  30*  217561.00   221161.10 00                               B,R VFY                                            IA000030
+!  31*  217561.40   217071.10 00                               B,P CSRD                                           IA000031
+!  32*  217562.00   000004.11 04                               KVI,4,4.0          -TEST IF TAPE                   IA000032
+!  33*  217562.40   217567.72 C0                               BZXE,K YOME        -BR. IF CONSOLE                 IA000033
+!  34*  217563.00   000007.52 3C                               LV,5,S FILE K($12) -IF TAPE, TEST IF FILE K IS ZERO IA000034
+!  35*  217563.40   217565.31 40                               BZXVZ,K TEST M                                     IA000035
+!  36*  217564.00   000006.00 8C                               SIC,S SCRPM($12)                                   IA000036
+!  37*  217564.40   220143.10 00                               B,RS1 FLK   -IF SO, SPACE OVER LABEL               IA000036
+!  38*  217565.00   000002.42 3D                      K TEST M LV,1,S F MODE($13) -IF NOT, SET CHAN TO FILE MODE  IA000037
+!  39*  217565.40   217566.71 40                               BZXVZ,$+1.0        -IF IOD NULL, USE LABEL MODE    IA000038
+!  40*  217566.00   000007.02 3C                               LV,1,S LABM($12)                                   IA000039
+!  41*  217566.40   217624.40 80                               SIC,K K MODE                                       IA000040
+!  42*  217567.00   217615.10 00                               B,K MODE                                           IA000040
+!  43*  217567.40   000003.40 3C                      K YOME   LV,0,S CW ADR($12)                                 IA000041
+!  44*  217570.00   217572.41 D0                               SVA,0,K GO+.32                                     IA000042
+!  45*  217570.40   000000.30 00                               CNOP                                               IA000043
+!  46*  217571.00   217572.00 10                               LX,0,$+1.0                                         IA000044
+!  47*  217571.40   000004.01 1C                               SX,0,S IO INS($12)                                 IA000044
+!  48*  217572.00 * 000000.00 8E  000000.01 00        K GO     RD,0.0($14),0      -ISSUE RD COMMAND               IA000045
+!
+! Line 48 is a FULL word, so the counter reaches 217573.00 for
+! whatever page follows.
+!
+! ---------------------------------------------------------------
+! WHAT THESE CHECKS DO AND DO NOT ESTABLISH
+! ---------------------------------------------------------------
+! All forty-four emitting statements are declared -- forty-six
+! half words -- and all five of the page's own labels.  Nothing on
+! this page is left unchecked and nothing was substituted: every
+! statement below is the PRINTED form, with blanks closed up in
+! labels per the deck format, and strap_asm accepted every one.
+!
+! THE REAL CHECKS OF THIS PAGE'S OWN COUNTING are the six rows
+! whose operand is a label defined HERE:
+!   line 10  LVI,8,K FORK  -> 217560.61, and K FORK is line 29
+!   line 16  B,K TEST M    -> 217565.10, and K TEST M is line 38
+!   line 33  BZXE,K YOME   -> 217567.72, and K YOME is line 43
+!   line 35  BZXVZ,K TEST M-> 217565.31, same target, different op
+!   line 44  SVA,0,K GO+.32-> 217572.41, and K GO is line 48
+!   line 46  LX,0,$+1.0    -> 217572.00, which is K GO's location
+! Four of them are FORWARD references nineteen, twenty-two, ten
+! and four rows ahead, so each one only resolves if every
+! intervening row's LENGTH is right.
+!
+! A SEVENTH, INDEPENDENT CHECK OF THE SAME COUNTING: line 44's
+! "K GO+.32" and line 46's "$+1.0" both name 217572.00 by two
+! DIFFERENT routes -- one through the label, one through the
+! location counter -- and the two printed words agree.
+!
+! TAUTOLOGY AUDIT: none.  Every external is defined by a card on
+! another printed page or by a landed deck, cited under EXTERNALS.
+!
+! WHAT IS PINNED ONLY TO THE HALF WORD, from this page alone: the
+!   eleven code externals.  A branch, a SIC and an LVI all print
+!   only bit 18 of the address (the half-word select), bits 19-22
+!   being the index register, so bit offsets 0-31 encode
+!   identically and ".00" is a CONVENTION there, not a reading
+!   (docs/transcription_workflow.md, "AN EXTERNAL BACK-DERIVED
+!   FROM A BRANCH OR AN LVI").  Z STEVL and K K LOC are written
+!   ".40" and K K MODE ".40" because that bit IS checked and
+!   writing ".0" would fail.  Each name's own defining card is
+!   cited above.
+! WHAT IS PINNED TO THE BIT from this page: the nine unit-area
+!   offsets, whose VFL 6-bit field carries the full offset --
+!   S CH OP at 0.26 prints "000000.32" outright on line 9, and
+!   S EVL MK (2.32), S LABM (7.16), S FILE K (7.38), S F MODE
+!   (2.48) and S CW ADR (3.32) each print a byte that changes if
+!   the offset moves.  All nine agree with pp.99/101/102.
+!
+! ---------------------------------------------------------------
+! WHAT COULD NOT BE SETTLED
+! ---------------------------------------------------------------
+! (a) "K FORK" HAS NO SECOND READER.  Neither revision of C22-6728
+!     mentions it, and the volume OCR's only two hits are this
+!     page's own lines 10 and 29 -- same ink, worse reader, not a
+!     witness.  C22-6728's Figure 90, which charts this exact
+!     routine box by box and names fifteen of its symbols, has NO
+!     K FORK box: the equipment-table dispatch is drawn as
+!     decision diamonds, so the label never appears.  Z EVL MK is
+!     absent from that figure for the same reason.  The name rests on FORK being English, on the
+!     page's own "LCCATICN" calibration, and on the two printed
+!     instances agreeing.  NOTHING ON THIS PAGE DEPENDS ON THE
+!     SPELLING: K FORK is a label defined and referenced only
+!     here, so every !CHECK passes either way.  That is exactly
+!     the class of error docs/transcription_workflow.md says the
+!     oracle is blind to.  If a later page turns out to reference
+!     it, that reference is the check this deck cannot supply.
+!
+! (b) "Z EVL MK" (line 7) likewise.  Its defining card IS on
+!     another printed page at 221152.00, and the OCR of that card
+!     fixes the ADDRESS and the VF datum, but garbles the NAME.
+!     Z EVL MK is this page's reading alone.  Same blindness: the
+!     address is checked, the spelling is not.
+!
+! (c) THE SECOND ASTERISK on lines 26 and 48 is unexplained, and
+!     this page kills two readings of it (see THE TWO ASTERISKS).
+!
+! (d) "FAKE EPGK" (line 13's comment).  Read off clean ink with a
+!     plain G crossbar, not an English word, and not found in
+!     either manual or anywhere else in the volume OCR.  It is a
+!     comment, so nothing depends on it, but it is not understood.
+!
+! (e) WHY THE HEADING'S LOCATION FIELD IS BLANK HERE.  Measured
+!     blank, not guessed.  Why some pages print it is still open.
+!
+! (f) THE BIT OFFSETS OF THE ELEVEN CODE EXTERNALS, below bit 32.
+!     Branches, SIC and LVI print only the half-word select, so
+!     ".00"/".40" is as fine as this page can see; each name's
+!     defining card elsewhere is cited under EXTERNALS, but this
+!     deck did not re-render those pages.
+!
+! (g) WHY lines 5 and 6 are TWO cards when the other three
+!     statement pairs on this page share one.  Printed, not
+!     explained.
+!
+! ---------------------------------------------------------------
+! ASSEMBLER LIMITATION HIT: none.
+! No printed spelling was rejected by strap_asm.  Accepted exactly
+! as printed: "SIC,B IRA" and its branch (an intra-page SIC/branch
+! pair, so the p.131 straddle problem does not arise), the
+! connective "CM1111(BU,1)", the entry-mode-free index forms
+! "($4)", "($10)", "($12)", "($13)", "($14)", the self-relative
+! "$+1.0", the label-relative "K GO+.32", "CNOP", and "SLC,$" --
+! which assembles, and is restated hard here only so the deck
+! stands alone; see THE JOIN for what that costs.
+! ---------------------------------------------------------------
+
+!SYM   ZSTART   217544.00
+!SYM   KFORK    217560.40
+!SYM   KTESTM   217565.00
+!SYM   KYOME    217567.40
+!SYM   KGO      217572.00
+!CHECK 217544.00 | 221140.00 80 | line 5 Z START SIC,B IRA (printed SLC,$ on line 4 gives this page's arriving counter as 217544.00)
+!CHECK 217544.40 | 221102.10 00 | line 6 B,B CWCR -BRANCH TO CHECK CW
+!CHECK 217545.00 | 221152.21 01 | line 7 LVI,8,Z EVL MK -- .21 is LVI's index-8 bits, not address bits
+!CHECK 217545.40 | 000002.61 3C | line 8 SV,8,S EVL MK($12) -STORE MASK ADDR IN UA -- .61 = S EVL MK's 2.32 plus index 8
+!CHECK 217546.00 | 000000.32 8A | line 9 CM1111(BU,1),S CH OP($10) first half -- .32 is S CH OP at 0.26 decimal, pinned to the bit
+!CHECK 217546.40 | 001000.36 F0 | line 9 second half -- the CM1111 connective, same word printed p.18 prints six times
+!CHECK 217547.00 | 217560.61 01 | line 10 LVI,8,K FORK -- forward reference to line 29, nineteen rows ahead
+!CHECK 217547.40 | 000002.21 3C | line 11 SV,8,S EVL TB($12) -STORE TABLE BASE ADDR IN UA
+!CHECK 217550.00 | 000000.14 04 | line 12 BR,0.0($4) -FOR BRANCH INTO EQUIP TABLE
+!CHECK 217550.40 | 220064.10 00 | line 13 B,K ILEGL -ILLEGAL EQUIP CODE - FAKE EPGK
+!CHECK 217551.00 | 217577.10 00 | line 14 B,Z DISK 1 -DISK - 1
+!CHECK 217551.40 | 221144.50 00 | line 15 B,Z STEVL -CONSOLE - 2 -- the .40 half-word bit of Z STEVL shows here
+!CHECK 217552.00 | 217565.10 00 | line 16 B,K TEST M -CARD READER - 3 -- forward reference to line 38
+!CHECK 217552.40 | 220064.10 00 | line 17 B,K ILEGL -INCORRECT EQUIPMENT - 4
+!CHECK 217553.00 | 220064.10 00 | line 18 B,K ILEGL -INCORRECT EQUIPMENT - 5
+!CHECK 217553.40 | 220064.10 00 | line 19 B,K ILEGL -NO EQUIPMENT - 6
+!CHECK 217554.00 | 220064.10 00 | line 20 B,K ILEGL -NO EQUIPMENT - 7
+!CHECK 217554.40 | 221144.50 00 | line 21 B,Z STEVL -TAPE - 10
+!CHECK 217555.00 | 220064.10 00 | line 22 B,K ILEGL -NO EQUIPMENT - 11
+!CHECK 217555.40 | 220064.10 00 | line 23 B,K ILEGL -NO EQUIPMENT - 12
+!CHECK 217556.00 | 220064.10 00 | line 24 B,K ILEGL -NO EQUIPMENT - 13
+!CHECK 217556.40 | 220064.10 00 | line 25 B,K ILEGL -NO EQUIPMENT - 14
+!CHECK 217557.00 | 220064.10 00 | line 26 B,K ILEGL -NO EQUIPMENT - 15 (this line carries the unexplained second asterisk)
+!CHECK 217557.40 | 220064.10 00 | line 27 B,K ILEGL -NO EQUIPMENT - 16
+!CHECK 217560.00 | 220064.10 00 | line 28 B,K ILEGL -NO EQUIPMENT - 17
+!CHECK 217560.40 | 220065.50 00 | line 29 K FORK B,K K LOC -- K K LOC is at 220065.40, the .40 bit shows
+!CHECK 217561.00 | 221161.10 00 | line 30 B,R VFY
+!CHECK 217561.40 | 217071.10 00 | line 31 B,P CSRD -- 217071.00 is where decks/mcp_bootstrap_p138.strap defines PCSRD
+!CHECK 217562.00 | 000004.11 04 | line 32 KVI,4,4.0 -TEST IF TAPE -- the .11 carries index 4 in bits 19-22
+!CHECK 217562.40 | 217567.72 C0 | line 33 BZXE,K YOME -BR. IF CONSOLE -- forward reference to line 43; the C0 is produced, not read off ink
+!CHECK 217563.00 | 000007.52 3C | line 34 LV,5,S FILE K($12) -IF TAPE, TEST IF FILE K IS ZERO
+!CHECK 217563.40 | 217565.31 40 | line 35 BZXVZ,K TEST M -- same target as line 16, different operation bits
+!CHECK 217564.00 | 000006.00 8C | line 36 SIC,S SCRPM($12)
+!CHECK 217564.40 | 220143.10 00 | line 37 B,RS1 FLK -IF SO, SPACE OVER LABEL (same card as line 36)
+!CHECK 217565.00 | 000002.42 3D | line 38 K TEST M LV,1,S F MODE($13) -IF NOT, SET CHAN TO FILE MODE
+!CHECK 217565.40 | 217566.71 40 | line 39 BZXVZ,$+1.0 -IF IOD NULL, USE LABEL MODE
+!CHECK 217566.00 | 000007.02 3C | line 40 LV,1,S LABM($12)
+!CHECK 217566.40 | 217624.40 80 | line 41 SIC,K K MODE -- K K MODE is at 217624.40
+!CHECK 217567.00 | 217615.10 00 | line 42 B,K MODE (same card as line 41)
+!CHECK 217567.40 | 000003.40 3C | line 43 K YOME LV,0,S CW ADR($12)
+!CHECK 217570.00 | 217572.41 D0 | line 44 SVA,0,K GO+.32 -- K GO is line 48; the .41 is the +.32 half-word bit plus SVA's index 0
+!CHECK 217570.40 | 000000.30 00 | line 45 CNOP
+!CHECK 217571.00 | 217572.00 10 | line 46 LX,0,$+1.0 -- names K GO's location through the counter instead of the label
+!CHECK 217571.40 | 000004.01 1C | line 47 SX,0,S IO INS($12) (same card as line 46)
+!CHECK 217572.00 | 000000.00 8E | line 48 K GO RD,0.0($14),0 -ISSUE RD COMMAND, first half (this line carries the unexplained second asterisk)
+!CHECK 217572.40 | 000000.01 00 | line 48 second half -- printed "000000.C1 0C"; the impossible octal C proves this row drops ink, and the statement produces 00
