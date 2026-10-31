@@ -29,6 +29,52 @@ The column order, left to right, is always:
 LINE | LOCATION | BINARY OUTPUT | NAME | STATEMENT | (comment)
 ```
 
+**AND READ THE HEADING ROW'S OWN `LOCATION` FIELD, FAR TO THE RIGHT.**
+The column-heading line repeats the word `LOCATION` at the right-hand
+end and prints the page's origin WORD after it — IBM's own assembler
+stating where the page begins:
+
+```
+LINE   LOCATION      BINARY OUTPUT      NAME   STATEMENT      LOCATION   217056
+```
+
+It is the cheapest join check in the volume. It gives no bit offset,
+so it does NOT replace line 1 and it cannot settle a `.00`/`.40`
+question; what it does is confirm the origin word independently of
+your own reading of the LOCATION column. Eighteen decks had found it
+one at a time before it was written down here.
+
+> **IT IS LINE 1'S LOCATION, AND IT IS BLANK WHEN LINE 1 COMPILES
+> NOTHING.** Not the page's origin -- line 1's. Measured over
+> sixteen pages with no counterexample. BLANK on printed pp.83, 144,
+> 145, 146, 147, 149 and 151, every one of which opens with an
+> asterisk banner or a comment card carrying no location. NUMBERED
+> on pp.95, 120, 125, 133, 136, 138, 139, 141, 142, 143, 148, 150
+> and 152, every one of which has a located line 1 -- p.148 reads
+> `217432` against a line 1 at 217432.40, p.152 reads `217573`
+> against a line 1 at 217573.00.
+>
+> **printed p.147 is the case that discriminates, and it is the one
+> to remember:** its field is BLANK although the page is full of
+> located rows, because its first located row is line 4
+> (`217371.70 * SLC,$`) and not line 1. So the field is NOT "the
+> page's first location", and a blank does not mean the page has no
+> origin -- it means line 1 was a banner.
+>
+> An earlier guess -- that the field is dropped on pages carrying
+> their own `SLC` -- was tested against the landed decks and
+> **refuted** (pp.83 and 95 both carry scaffolding-only SLCs and
+> differ). The reading above supersedes it.
+>
+> This matters because tesseract will happily invent digits out of
+> the dashed rule line that runs through that field: on printed p.83
+> it returned `000222`, confidently, from blank paper. Anchor on the
+> word and refuse when no digits follow, the way
+> `strap/mcp_survey.py`'s `page_number()` does. **A reader that
+> guesses here is worse than no reader at all**, because this field's
+> whole value is being an independent witness.
+
+
 ### 2. Render and read, in two images not nine
 
 ```sh
@@ -217,6 +263,52 @@ re-read into one zoom.
 > `tesseract` then reports *"image file not found"* for the file that
 > demonstrably exists -- the two processes do not see the same `/tmp`
 > here. `tempfile.mkdtemp()` honours `TMPDIR` and both see it.
+
+### 2b. Settle a doubtful glyph, cheapest first
+
+This drum confuses `O`/`C`, `C`/`D`, `B`/`8`, `O`/`0`, `C`/`0` and
+`G`/`Q`, and dropout OPENS a closed glyph far more often than ink
+CLOSES an open one. That asymmetry is a hint, not a proof. Work down
+this ladder and stop at the first rung that answers:
+
+1. **The comment column.** It is English prose, a different
+   vocabulary from the statement field, and it is right there in the
+   same row. printed p.138 settled `G DIAR` this way.
+2. **`grep docs/ocr/` for the typeset manuals.** Different ink,
+   different press, genuinely independent of the listing drum.
+   `STIC` vs `STIO` was settled outright: 75 hits for `STIC` across
+   two revisions, zero for `STIO`.
+3. **Hand both readings to the assembler.** This is an ELIMINATOR
+   and NEVER a confirmation — if one reading is not an instruction
+   at all, the other wins; if both assemble, you have learned
+   nothing. `BZR` fell this way ("unknown mnemonic").
+4. **THE SAME STATEMENT PRINTED TWICE ON ONE PAGE.** The strongest
+   rung, and the cheapest once you notice it. printed p.144 lines 14
+   and 26 are the same instruction compiling to the same word,
+   printed `LV,0,0.0($1)` and `LV,C,C.C($1)`; lines 17 and 28 repeat
+   the trick with `$IND`/`$INC`. One page, one drum, one instruction,
+   open and closed glyphs in the SAME CHARACTER POSITION — which is
+   what makes it stronger than the octal-field argument below, since
+   it holds position and context fixed and varies only the ink.
+5. **The octal-field argument.** A `C` in a field that can only hold
+   an octal digit is a damaged `0`, because the machine cannot
+   produce a `C` there. printed p.143 line 5 prints
+   `215335.CC 80 001000.CC` — four impossible `C`s — so that row is
+   demonstrably dropping ink and its doubtful byte is a `0`.
+
+> **INK VARIES PER CHARACTER, NOT PER ROW.** Rung 5 is about the row
+> only far enough to show the row CAN drop ink; it does not license
+> "this row is clean, therefore every glyph in it is". printed p.85
+> line 12 prints `-ORIGINAL ARC` with a clean closed `O` beside
+> `T CRARC` with an open one, in one row. printed p.143 used rung 5
+> correctly and it called two rows on the same page OPPOSITE ways.
+
+> **AND SETTLE A BYTE ON WHAT PRODUCED IT.** The best witness for a
+> doubtful byte is usually not ink at all: it is another row on the
+> page running the same operation with a known operand. If the
+> statement cannot produce the byte you think you read, you misread
+> the byte — or you misread the statement, and that is worth finding
+> out before the page lands.
 
 ### 3. Write the deck
 
@@ -425,7 +517,7 @@ under a single check.
 
 `listing_oracle` compares assembled bits against printed bits, and
 that is a strong check — but a deck can be wrong in ways that produce
-the *same printed word*, and those are invisible to it forever. Three
+the *same printed word*, and those are invisible to it forever. Five
 are known, all measured, and they bound what "bit-exact" means here.
 
 **1. AN EXTERNAL BACK-DERIVED FROM A BRANCH OR AN `LVI` IS KNOWN ONLY
@@ -509,9 +601,42 @@ from printed p.108's defining card, a different page. This is not the
 half-word gap in another costume: there the invisible part is the low
 bits of an address, here a fully-specified value wraps.
 
+**5. `DR` AND `DRZ` PRINT THE SAME THING.** A reservation prints its
+COUNT in the BINARY OUTPUT column, not its storage, so the oracle
+cannot tell a reservation that plants nothing from one that plants
+zeros. Measured, varying nothing else:
+
+```
+  DR(BU,64),(13)   ->  000000.00 00
+  DRZ(BU,64),(13)  ->  000000.00 00
+```
+
+C22-6531 p.35 makes `DRZ` a `DR` whose words "are all set to zero",
+so on a 13-word buffer the difference is 13 words of zero content in
+the merged image — invisible to every `!CHECK` on the page and
+decisive for anything that later reads that buffer. `decks/
+mcp_bootstrap_p136.strap` quoted these cards as `DRZ` and the page
+prints `DR`; it was caught by RENDERING printed p.137 line 20 at 1200
+dpi, because nothing else could catch it. **Read the Z off the ink,
+and never off a passing run.**
+
+> **BUT A TRAILING `Z` ON A BRANCH IS FULLY VISIBLE — DO NOT
+> OVER-READ THIS ITEM.** The blindness is about RESERVATIONS, not
+> about the letter Z. On a branch-and-clear the clear bit is `0x04`
+> of the printed byte, and an ordinary `!CHECK` catches it. Measured,
+> everything else fixed:
+>
+> ```
+>   BUSAZ,$+.32  ->  217354.50 C6        BUSA,$+.32  ->  217354.50 C2
+>   BADZ,$+.32   ->  217354.50 46        BAD,$+.32   ->  217354.50 42
+> ```
+>
+> printed p.145 carries both. So flag a reservation's `Z` as
+> ink-only, and do NOT flag a branch's.
+
 > None of these is a defect in the oracle. They are the edge of what
 > comparing one word against one word can establish, and the answer
-> to all four is the same: **a second, independent reading** — the
+> to all five is the same: **a second, independent reading** — the
 > next page's first location, a manual, or the page's own English.
 
 > **AND BE SURE THE SECOND READING IS INDEPENDENT.**

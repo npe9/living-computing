@@ -1,0 +1,390 @@
+! mcp_bootstrap_p139.strap -- the TAIL OF THE TRANSFER SUBROUTINE
+! (G TRANF), printed page 139.
+! docs/MCP_Mar63_001-249.pdf PDF p.146, header READ and not assumed:
+! "TIME CLOCK 00054041  PUNID 11D11MCP   CARD ID EE000222
+!  DIST. OF 3/01   3/01   PAGE NUMBER  139", and the column-heading
+! row's own "LOCATION 217116" names the page's first word.
+!
+! TWENTY-FOUR PRINTED LINES AND ALL TWENTY-FOUR EMIT BITS.  There is
+! no comment-only card, no SYN, no XW; line 24 is the page's only
+! reservation.  The card-serial column runs EE000222 (line 1) to
+! EE000245 (line 24) -- twenty-four serials for twenty-four lines,
+! read at 600 dpi -- so nothing fell off the top or the bottom of the
+! render.  The sheet is three-quarters blank below line 24.
+!
+! ---------------------------------------------------------------
+! THE ORIGIN, AND BOTH JOINS
+! ---------------------------------------------------------------
+! >>> THE PAGE PRINTS NO SLC. <<<  217116.00 is printed twice -- as
+! line 1's own LOCATION and, as the word, in the heading row's
+! "LOCATION 217116" field -- so the origin below is a READING of the
+! page.  It is NOT a test of contiguity with printed p.138: a hard
+! SLC asserts its value rather than checking it
+! (docs/transcription_workflow.md, "A HARD SLC CANNOT DISAGREE WITH
+! THE ARRIVING COUNTER").
+!
+! THE BACKWARD JOIN IS WITNESSED ANYWAY, off-page, by the volume OCR
+! of printed p.138 (which is a page nobody has transcribed yet, so it
+! is an independent reader of different ink):
+!   p.138 line 54  "217114.00  000022.33 80  217116.34 02  G SKIP
+!                   BB,$2+.27,G SKIPA  -TEST IF ,SKIP, BIT IS ON"
+!                   -- 0o34 has bit 18 clear, so G SKIPA is the .00
+!                   half word of 217116, which is THIS page's line 1.
+!   p.138 line 55  "...  000000.00 83  000000.04 22
+!                   T,$2,0.0($3),0.0($2)" -- a TRANSMIT, so a full
+!                   word.  The OCR of its LOCATION is damaged
+!                   ("217115.60", and 0o60 is not a legal instruction
+!                   boundary), but it does not need to be read: line 54
+!                   is a full-word Branch on Bit at 217114.00 and
+!                   therefore ends at 217115.00, so line 55 occupies
+!                   217115.00 and 217115.40 and the counter leaves
+!                   p.138 at exactly 217116.00.  NOT MEASURED -- this
+!                   is p.138's OCR, and p.138 has not been transcribed;
+!                   when it lands, compare by hand.
+!   p.138 line 56  is a continuation comment card ("-ADD. FROM VF. OF
+!                   CONTROL WORD") and emits nothing.
+! So the arriving counter and this page's first printed LOCATION agree,
+! two-sidedly, and the hard SLC below restates a value that was read.
+!
+! THE FORWARD JOIN.  Line 24 reserves SIXTEEN FULL WORDS from
+! 217134.00, so the counter leaves this page at 217154.00 (0o134 + 0o20
+! = 0o154).  printed p.140's first location is the check; it has not
+! landed yet.
+!
+! TAIL SCOPE.  printed p.99 line 11's "SLC,(8)215000." moved the origin
+! here and pp.99+ are OUTSIDE the TAIL,(2)G block that printed p.2
+! opened and printed p.98 line 37 closed with "UNTAIL,(2)".  Names
+! defined here may legitimately repeat names from pp.2-98 at other
+! addresses; none of this page's seven does.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE CONTAINS
+! ---------------------------------------------------------------
+! The exit half of the TRANSFER subroutine whose entry is printed
+! p.138 line 44, "217107.00  000020.00 80  217134.00 A0  G TRANF
+! TI,16.0,$0,G VODR  -SAVE $0-$15 IN LOC. G VODR".  That card and this
+! page's line 19 are the same Transmit with its two operands swapped:
+! p.138 saves $0-$15 INTO G VODR on entry, line 19 here restores them
+! FROM G VODR on exit, and line 24 is the sixteen-word area itself.
+!
+! Lines 1-11   the control-word pointer arithmetic.  G SKIPA (the
+!              target of p.138's "skip" test) stores CF.$2 into VF.$14,
+!              then PLANTS THREE ADDRESSES: lines 2, 8 and 10 are SVA
+!              (Store Value field in Address field) writing VF.$14 into
+!              the address halves of GNWADD, G EMAN and G IGOR -- the
+!              comments say so in English, "-STORE VF.$14 IN LOC.
+!              G EMAN ADD.F." and "... G IGOR ADD.F.".  Lines 3 and 6
+!              are Branch-on-Bit tests on $4.24 that pick whether the
+!              temp-buffer pointer is moved by $3 (line 5, "- MOVE
+!              POINTER IN TEMP BUFFER") or by $4 (line 7, "-NO, ADJUST
+!              STORE LOC").  Lines 9 and 11 then subtract the planted
+!              values back out of CF.$4 and VF.$1.
+! Lines 12-16  the LOOP TEST.  Line 12 tests the chain bit ($2+.25) and
+!              line 13 tests the $1 index-value-zero indicator; either
+!              one sends control to G NOLOP.  Otherwise lines 14-15
+!              Refill $2 and $4 with the next control word and line 16
+!              loops back to G KOLO on printed p.138.
+! Lines 17-20  G NOLOP, the EXIT.  Store $4 in $L, turn on the unit
+!              ready bit with a CM1111 connective on $L+.18, restore
+!              $0-$15 from G VODR, and branch out through $15.
+! Lines 21-22  G HI, a two-card re-entry that loads CF.$2 with the
+!              number of control words from VF.$1 and returns to G SKIP
+!              on printed p.138.  p.138's lines 50 and 52 are the two
+!              branches that reach it.
+! Line  23     CNOP, aligning line 24 onto a full-word boundary.
+! Line  24     G VODR, the sixteen-word register save area.
+!
+! ---------------------------------------------------------------
+! THE SEVEN NAMES THIS PAGE DEFINES
+! ---------------------------------------------------------------
+!   G SKIPA  217116.00   GNWADD   217120.00   G EMAN  217123.00
+!   G IGOR   217124.00   G NOLOP  217127.40   G HI    217132.40
+!   G VODR   217134.00
+!
+! THREE OF THE SEVEN HAVE AN INDEPENDENT OFF-PAGE WITNESS in the
+! volume OCR -- a reference printed on printed p.138, which nobody
+! here has opened, at the address this page gives it.  That is a
+! second reading of the SPELLING, which no !CHECK can supply:
+!   G SKIPA  217116.00  p.138 line 54, "G SKIP BB,$2+.27,G SKIPA".
+!   G HI     217132.40  p.138 line 50, "217112.40  217132.70 42
+!                       BXOZ,G HI  - IS CF OF CTL WORD ZERO", and
+!                       again on p.138 line 52 at "217132.73 42".
+!                       0o70 and 0o73 both have bit 18 set, so the
+!                       .40 half word is READ, twice.
+!   G VODR   217134.00  p.138 line 44, "G TRANF TI,16.0,$0,G VODR",
+!                       whose COMMENT prints "-SAVE $0-$15 IN LOC.
+!                       G VODR" in English -- which is what closes the
+!                       O and the D against this drum's C.
+! THE FOUR WITH NO OFF-PAGE WITNESS are GNWADD, G EMAN, G IGOR and
+! G NOLOP: they occur nowhere in either OCR volume except on this page.
+! Each is referenced from a SECOND row here and compiles bit-exactly at
+! every use (GNWADD from lines 2 and 3, G EMAN from line 8, G IGOR from
+! line 10, G NOLOP from lines 12 and 13), so their LOCATIONS are safe;
+! only their SPELLINGS rest on this page's ink.  GNWADD is printed
+! CLOSED UP and the other six are printed with a blank after the G;
+! the deck writes every one blankless, which is what the deck format
+! requires (a label is taken to the first blank) and what STRAP does
+! anyway (blanks in a name are ignored).
+!
+! ---------------------------------------------------------------
+! >>> THREE BYTES PRINT AN OPEN ROUND GLYPH WHERE THE INSTRUCTION
+! REQUIRES A ZERO.  ALL THREE ARE TRANSCRIBED AS 0, EACH ON A NAMED
+! OFF-PAGE LANDED WITNESS, AND THE READING IS RECORDED HERE RATHER
+! THAN SILENTLY APPLIED. <<<
+! ---------------------------------------------------------------
+! This page opens round glyphs constantly: line 1's octal field prints
+! "000036" as "C0CC36" and line 4's prints "000000" as "CCCCCC" -- a C
+! cannot occur in an octal field, so those are certainly 0.  That is
+! NOT a per-row ink gauge (ink varies per CHARACTER: line 4 prints six
+! open C's in its octal field and a CLOSED 0 in its byte two characters
+! later).  The BYTE column on this page prints about twenty-eight 0
+! glyphs and three of them come out open, at 1800 dpi, with no right
+! stem at all -- compare line 19's "A0" and line 18's "F0", closed, in
+! the same column one row away.  So this page's byte column drops the
+! right stem of a 0 at roughly 3 in 28, AND AN OPEN GLYPH THERE
+! THEREFORE CARRIES ALMOST NO INFORMATION.  Each of the three is
+! settled on WHAT PRODUCED IT, not on the ink: in every case the
+! printed STATEMENT is unambiguous, a C in that bit position would
+! require a DIFFERENT printed mnemonic, and a landed passing row
+! elsewhere prints the same statement with a closed 0.
+!
+! LINE 20 -- printed "000001.50 CF", written 0F.  SETTLED BY AN EXACT
+! LANDED WITNESS.  printed p.97 line 32 is the same instruction with
+! the same index, "005450.00  000001.10 0F  B,1.00($15)", landed and
+! passing in decks/mcp_bootstrap_p97.strap (and quoted in p80 and p83);
+! it differs from line 20 only in the bit offset, which shows as bit 18
+! (0o10 against 0o50).  The high nibble of an unconditional branch's
+! byte is bits 24-27, a FIXED LITERAL in the half-word branch format
+! (strap_asm enc_branch_or_misc: addr19, code3, lit6, idx4) -- only the
+! low nibble, the index, varies, and it prints F for $15 on both rows.
+! No branch can print C there.
+!
+! LINE 9 -- printed "000000.11 C8", written 08.  SETTLED THE SAME WAY.
+! The landed witness is decks/mcp_bootstrap_p133.strap line 38,
+! "216547.00  000001.03 08  C-I,$1,1.0", and
+! printed p.136 line 5's landed "216663.40  000010.11 00  C+I,$4,8.0"
+! has the SAME register field (0o11 = j=4 plus the literal's first bit)
+! and also prints a zero high nibble.  In the immediate-index format
+! (enc_imm_index: imm19, j4, literal 10000 at 23-27, code4 at 28-31)
+! bits 24-27 are literal zeros and the printed bits 28-31 are 1000,
+! which IS C-I's code.  So the format is confirmed and only the round
+! glyph disagrees.
+!
+! >>> LINE 12 IS THE WEAKEST OF THE THREE AND THIS IS THE ONE TO LOOK
+! AT AGAIN. <<<  The row prints "217124.40  000022.31 80  217127.74 0C"
+! with the statement "BZB,$2+.25,G NOLOP  -TEST FOR CHAIN BIT".  It is
+! the weakest because, unlike lines 9 and 20, the open glyph here is a
+! VALID encoding of a REAL mnemonic one suffix away -- so a wrong
+! settlement would be invisible to every future check.  Four facts
+! decide it, and the fourth is a measurement:
+!   (a) THE BYTE READS 0C.  At 1800 dpi the second glyph has no right
+!       stem over any of its height, against the closed 0 of line 19's
+!       "A0" two rows down in the same column.
+!   (b) 0C IS THE LANDED SIGNATURE OF BZB1, NOT BZB.  In a full-word
+!       Branch on Bit the low nibble is bits 60-63 = mod2, cond, K
+!       (opcodes.BB_CODES, from X22-6533 and RefMan p.41); C = 1100 is
+!       mod=11 "set to one", cond=0, i.e. BZB1.  decks/mcp_bootstrap_
+!       p112.strap carries five landed, passing rows of exactly that
+!       shape -- "215114.00 | 215226.11 80 215710.34 0C | BZB1,
+!       S PS IOI+.9,K STORE" and four more at 215115..215120.  COUNTED
+!       ACROSS ALL LANDED DECKS: SEVEN !CHECKed BZB1 rows, every one
+!       with low nibble C, and THIRTY-ONE !CHECKed BZB rows spread over
+!       twenty decks (p89..p136), every one with low nibble 0 -- e.g.
+!       decks/mcp_bootstrap_p118.strap line 16, "215540.00 |
+!       000000.00 83 215535.34 00 | BZB,0.0($3),M ED 1".  The mapping
+!       is not strap_asm's assertion; it is what the listing itself
+!       prints on thirty-eight rows of other pages.
+!   (c) THE MNEMONIC IS THREE CHARACTERS, MEASURED, NOT GUESSED.  The
+!       statement field prints on a fixed pitch of 180 px at 1800 dpi.
+!       Line 13's "BXVZ,G NOLOP" puts its comma at x=845 with its B at
+!       x=110 -- position 5, four characters.  Line 12's comma is at
+!       x=680 with its B at x=110 -- position 4, THREE characters.  A
+!       dropped "1" would have left a 180 px gap and there is none.
+!   (d) THE THIRD CHARACTER IS B, NOT R.  It reads B-or-R by shape and
+!       the volume OCR of this page reads "BZR" -- but a bare BZR is
+!       not an operation: grepping docs/ocr/ for BZR finds it only
+!       inside CBZR, BZRZ and BZRGZ (RefMan 22-6530-2, the STRAP-II
+!       manual C28-6129, Programming Examples C22-6578), never alone,
+!       while BZB1 is listed outright in C28-6129 ("BB1  BZB1") and in
+!       the RefMan's operation list.  Measured: strap_asm answers
+!       "unknown mnemonic 'BZR' (not a supported instruction or
+!       pseudo-op)", which is the eliminator docs/transcription_
+!       workflow.md describes -- an O/C or B/R confusion usually
+!       produces a string that is not an operation at all.
+! (c) AND (d) TOGETHER CLOSE THE MNEMONIC AT BZB, three independent
+! ways -- shape, the manual eliminating BZR from the operation set, and
+! the measured comma position eliminating a fourth character.  The
+! STATEMENT column is the tie-breaker because it is what produced the
+! bits (docs/transcription_workflow.md), so the !CHECK below records
+! 00 and this is THE PAGE'S THIRD BYTE-COLUMN DROPOUT.
+! LINE 13 CORROBORATES THE TARGET INDEPENDENTLY of the disputed byte:
+! "BXVZ,G NOLOP" at 217125.40 prints "217127.71 42" -- no round glyph
+! in the mnemonic, the same branch target, and p.138's OCR carries the
+! same 42 byte on its own two index-indicator branches to G HI
+! ("217132.70 42" and "217132.73 42").  So only the MODIFIER bits of
+! line 12 were ever in doubt, never its address.
+! >>> THE NEXT READER SHOULD LOOK AT THE GLYPH, NOT THE BYTE. <<<  The
+! difference between BZB and BZB1 is not cosmetic: BZB1 SETS the chain
+! bit it tested, and nothing else on this page sets it.  IF A LATER
+! READER SETTLES THE MNEMONIC AS BZB1, then the statement above is
+! wrong, the printed 0C is right, and this row is wrong.  Writing 0C
+! here was considered and declined, because a row whose statement says
+! BZB and whose !CHECK says 0C asserts bits that no BZB card can
+! produce -- it is not a loud flag, it is a self-contradictory record.
+!
+! ---------------------------------------------------------------
+! EXTERNALS.  WHAT IS READ AND WHAT IS CONVENTION
+! ---------------------------------------------------------------
+! >>> AN ADDRESS BACK-DERIVED FROM A PRINTED BRANCH IS PINNED ONLY TO
+! THE HALF WORD. <<<  Bit offsets 0-31 all encode identically; only
+! bit 18 shows.  Writing ".0" is a CONVENTION and no !CHECK here can
+! test the bits below it (docs/transcription_workflow.md, "WHAT THE
+! ORACLE CANNOT SEE", item 1).  Both externals below are back-derived
+! from a plain branch, and for both the volume OCR carries the
+! DEFINING card on printed p.138, which is what fixes the spelling.
+!
+! GKOLO   217113.00  NEW.  Line 16 prints "217113.10 00"; bit 18 of
+!                    0o10 is clear, so the half word is .00.  The
+!                    volume OCR carries the defining card -- "51#
+!                    217113.00  000021.05 90  G KOLO  KC,$2,$1
+!                    -COMP. CO.F. $2 WITH TOT. NOS OF FULL" -- and
+!                    line 16's own comment prints "-LOOP TO LOC. KOLO"
+!                    in English, which closes both round glyphs.
+GKOLO   SYN, (8)217113.0
+! GSKIP   217114.00  NEW.  Line 22 prints "217114.10 00", same
+!                    reasoning.  The volume OCR carries the defining
+!                    card, "54* 217114.00  000022.33 80  217116.34 02
+!                    G SKIP  BB,$2+.27,G SKIPA", and line 22's comment
+!                    prints "-RETURN TO LOC. ,G SKIP,".  NOTE THAT
+!                    G SKIP AND G SKIPA ARE TWO DIFFERENT SYMBOLS one
+!                    word apart in the printed text and two words apart
+!                    in storage; p.138's card uses both in one line,
+!                    which is the cleanest proof that the trailing A is
+!                    real and not a smudge.
+GSKIP   SYN, (8)217114.0
+! $L is strap_asm's built-in (lines 17 and 18 print 000010.11 and
+! 000010.22, word 0o10) and needs no SYN.
+!
+! ---------------------------------------------------------------
+! COVERAGE
+! ---------------------------------------------------------------
+! Twenty-four printed lines, all of which emit.  TWENTY-THREE CARRY A
+! !CHECK and all seven symbols a !SYM.  Line 24's DRZ carries none, for
+! the house reason recorded beside it.  ALL TWENTY-THREE PASS, and so
+! do all seven !SYMs.  No statement was changed to make a row pass and
+! nothing was substituted: strap_asm accepted every printed form on
+! this page exactly as printed, including the blanks inside
+! "V+, $3, $14".  THE ONE THING THAT IS NOT A READING OF THE INK is the
+! high nibble of the bytes on lines 9, 12 and 20 and the low nibble on
+! line 12's second half word; see the three-dropout note above, which
+! names the landed row that settles each one.
+! ---------------------------------------------------------------
+
+        SLC, (8)217116.0
+
+GSKIPA  SC,$2,$14                       ! line  1  -STORE CF.$2 IN VF.$14
+        SVA,$14,GNWADD                  ! line  2
+        BB,$4.24,GNWADD+.32             ! line  3
+GNWADD  V-I,$4,0                        ! line  4
+        V+, $3, $14                     ! line  5  - MOVE POINTER IN TEMP BUFFER
+        BB,$4.24,$+1.32                 ! line  6
+        V+, $4, $14                     ! line  7  -NO, ADJUST STORE LOC
+        SVA,$14,GEMAN                   ! line  8  -STORE VF.$14 IN LOC. G EMAN ADD.F.
+GEMAN   C-I,$4,0.0                      ! line  9  -SUBTRACT FROM CF.$4 CF.$2
+        SVA,$14,GIGOR                   ! line 10  -STORE VF.$14 IN LOC. G IGOR ADD.F.
+GIGOR   V-I,$1,0.0                      ! line 11  -SUBTRACT FROM VF.$1 CF.$2
+        BZB,$2+.25,GNOLOP               ! line 12  -TEST FOR CHAIN BIT  (SEE THE NOTE: byte prints 0C, written 00)
+        BXVZ,GNOLOP                     ! line 13  -TEST IF $1 INDIC.,INDEX VAL.0, IS ON
+        R,$2                            ! line 14  -REFILL $2 WITH NEXT CONTROL WORD
+        R,$4                            ! line 15  -REFILL $4 WITH NEXT CONTROL WORD
+        B,GKOLO                         ! line 16  -LOOP TO LOC. KOLO
+GNOLOP  SX,$4,$L                        ! line 17  -STORE $4 IN $L
+        CM1111(BU,1),$L+.18             ! line 18  -TURN ON UNIT READY BIT
+        TI,16.0,GVODR,$0                ! line 19  -RESTORE $0-$15 FROM LOC. G VODR
+        B,1.32($15)                     ! line 20  -BRANCH OUT
+GHI     LC,$2,$1                        ! line 21  -LOAD CF.$2 WITH NOS FROM VF.$1
+        B,GSKIP                         ! line 22  -RETURN TO LOC. ,G SKIP,
+        CNOP                            ! line 23
+GVODR   DRZ(BU,64),16                   ! line 24  -RESERVE 16 FULL WORDS
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, read off PDF p.146 (400 dpi for the page, 900
+! dpi for the BINARY OUTPUT column, 600 dpi for the card serials and
+! the comments, 1800 dpi for the bytes on lines 9, 12, 19, 20 and for
+! the NAME column and the mnemonic on line 12).
+! ---------------------------------------------------------------
+!  LINE  LOCATION      BINARY OUTPUT                   NAME      STATEMENT                  COMMENT                                   CARD
+!   1*   217116.00     000036.05 50                    G SKIPA   SC,$2,$14                  -STORE CF.$2 IN VF.$14                    EE000222
+!   2*   217116.40     217120.35 D0                              SVA,$14,GNWADD                                                       EE000223
+!   3*   217117.00     000024.30 80  217120.74 02                BB,$4.24,GNWADD+.32                                                  EE000224
+!   4*   217120.00     000000.11 0D                    GNWADD    V-I,$4,0                                                             EE000225
+!   5*   217120.40     000036.06 B0                              V+, $3, $14                - MOVE POINTER IN TEMP BUFFER             EE000226
+!   6*   217121.00     000024.30 80  217122.74 02                BB,$4.24,$+1.32                                                      EE000227
+!   7*   217122.00     000036.10 B0                              V+, $4, $14                -NO, ADJUST STORE LOC                     EE000228
+!   8*   217122.40     217123.35 D0                              SVA,$14,G EMAN             -STORE VF.$14 IN LOC. G EMAN ADD.F.       EE000229
+!   9*   217123.00     000000.11 C8                    G EMAN    C-I,$4,0.0                 -SUBTRACT FROM CF.$4 CF.$2                EE000230
+!  10*   217123.40     217124.35 D0                              SVA,$14,G IGOR             -STORE VF.$14 IN LOC. G IGOR ADD.F.       EE000231
+!  11*   217124.00     000000.03 0D                    G IGOR    V-I,$1,0.0                 -SUBTRACT FROM VF.$1 CF.$2                EE000232
+!  12*   217124.40     000022.31 80  217127.74 0C                BZB,$2+.25,G NOLOP         -TEST FOR CHAIN BIT                       EE000233
+!  13*   217125.40     217127.71 42                              BXVZ,G NOLOP               -TEST IF $1 INDIC.,INDEX VAL.0, IS ON     EE000234
+!  14*   217126.00     000022.02 00                              R,$2                       -REFILL $2 WITH NEXT CONTROL WORD         EE000235
+!  15*   217126.40     000024.02 00                              R,$4                       -REFILL $4 WITH NEXT CONTROL WORD         EE000236
+!  16*   217127.00     217113.10 00                              B,G KOLO                   -LOOP TO LOC. KOLO                        EE000237
+!  17*   217127.40     000010.11 10                    G NOLOP   SX,$4,$L                   -STORE $4 IN $L                           EE000238
+!  18*   217130.00 *   000010.22 80  001000.36 F0                CM1111(BU,1),$L+.18        -TURN ON UNIT READY BIT                   EE000239
+!  19*   217131.00     217134.00 80  000020.00 A0                TI,16.0,G VODR,$0          -RESTORE $0-$15 FROM LOC. G VODR          EE000240
+!  20*   217132.00     000001.50 CF                              B,1.32($15)                -BRANCH OUT                               EE000241
+!  21*   217132.40     000021.04 50                    G HI      LC,$2,$1                   -LOAD CF.$2 WITH NOS FROM VF.$1           EE000242
+!  22*   217133.00     217114.10 00                              B,G SKIP                   -RETURN TO LOC. ,G SKIP,                  EE000243
+!  23*   217133.40     000000.30 00                              CNOP                                                                 EE000244
+!  24*   217134.00 *   000020.00                       G VODR    DRZ(BU,64),16              -RESERVE 16 FULL WORDS                    EE000245
+! ---------------------------------------------------------------
+! A BARE "*" AFTER THE LOCATION on lines 18 and 24 -- "217130.00 *"
+! and "217134.00 *".  printed pp.3, 37, 103, 120, 128 and 136 carry the
+! same mark and it was left unexplained on each.  It changes no
+! compiled bit.  (Line 24 is a DRZ, which would fit a "reservation"
+! reading; line 18 is a CM connective, which does not.)
+!
+! THE LINE-NUMBER COLUMN prints every line with a trailing "*", which
+! is this listing's ordinary continuation mark and not a flag.
+! ---------------------------------------------------------------
+
+!SYM   GSKIPA   217116.00
+!SYM   GNWADD   217120.00
+!SYM   GEMAN    217123.00
+!SYM   GIGOR    217124.00
+!SYM   GNOLOP   217127.40
+!SYM   GHI      217132.40
+!SYM   GVODR    217134.00
+
+!CHECK 217116.00 | 000036.05 50 | line  1 G SKIPA SC,$2,$14
+!CHECK 217116.40 | 217120.35 D0 | line  2 SVA,$14,GNWADD (byte D0: the D has the straight vertical left stem, cf. the C of line 9)
+!CHECK 217117.00 | 000024.30 80 217120.74 02 | line  3 BB,$4.24,GNWADD+.32
+!CHECK 217120.00 | 000000.11 0D | line  4 GNWADD V-I,$4,0 (octal field prints CCCCCC for 000000 beside a closed 0 in the byte)
+!CHECK 217120.40 | 000036.06 B0 | line  5 V+, $3, $14
+!CHECK 217121.00 | 000024.30 80 217122.74 02 | line  6 BB,$4.24,$+1.32
+!CHECK 217122.00 | 000036.10 B0 | line  7 V+, $4, $14
+!CHECK 217122.40 | 217123.35 D0 | line  8 SVA,$14,G EMAN
+!CHECK 217123.00 | 000000.11 08 | line  9 G EMAN C-I,$4,0.0 -- PRINTED "C8"; written 08, settled by the landed C-I,$1,1.0 at 216547.00 and p.136's C+I,$4,8.0. See the note.
+!CHECK 217123.40 | 217124.35 D0 | line 10 SVA,$14,G IGOR
+!CHECK 217124.00 | 000000.03 0D | line 11 G IGOR V-I,$1,0.0
+!CHECK 217124.40 | 000022.31 80 217127.74 00 | line 12 BZB,$2+.25,G NOLOP -- the byte PRINTS "0C"; written 00. 0C is BZB1's landed signature (p112) but the mnemonic measures THREE characters and BZR is not an operation. THE WEAKEST OF THE THREE -- see the note.
+!CHECK 217125.40 | 217127.71 42 | line 13 BXVZ,G NOLOP
+!CHECK 217126.00 | 000022.02 00 | line 14 R,$2
+!CHECK 217126.40 | 000024.02 00 | line 15 R,$4
+!CHECK 217127.00 | 217113.10 00 | line 16 B,G KOLO (G KOLO's bit offset inside the .00 half word is unobservable)
+!CHECK 217127.40 | 000010.11 10 | line 17 G NOLOP SX,$4,$L
+!CHECK 217130.00 | 000010.22 80 001000.36 F0 | line 18 CM1111(BU,1),$L+.18 (location carries an asterisk)
+!CHECK 217131.00 | 217134.00 80 000020.00 A0 | line 19 TI,16.0,G VODR,$0 -- p.138 line 44 prints the mirror-image save, "000020.00 80 217134.00 A0"
+!CHECK 217132.00 | 000001.50 0F | line 20 B,1.32($15) -- PRINTED "CF"; written 0F, settled by the landed B,1.00($15) at 005450.00 (p.97 line 32). See the note.
+!CHECK 217132.40 | 000021.04 50 | line 21 G HI LC,$2,$1
+!CHECK 217133.00 | 217114.10 00 | line 22 B,G SKIP (G SKIP's bit offset inside the .00 half word is unobservable)
+!CHECK 217133.40 | 000000.30 00 | line 23 CNOP
+! Line 24 (G VODR DRZ(BU,64),16) gets NO !CHECK: its printed
+! "000020.00" is the RESERVATION COUNT in the BINARY OUTPUT column
+! (0o20 = 16 words), not storage contents, and there is nothing
+! deposited for the oracle to read -- printed pp.84, 109, 114 and 129
+! give their DRZ rows no !CHECK for exactly this reason.  Its LOCATION
+! is checked, by "!SYM GVODR 217134.00", and its LENGTH is checked
+! independently by line 19 and by p.138 line 44, which both Transmit
+! 16.0 words to and from it.

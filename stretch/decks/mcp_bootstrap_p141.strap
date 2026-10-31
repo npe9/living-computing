@@ -1,0 +1,419 @@
+! mcp_bootstrap_p141.strap -- the $RET return routine, second half:
+! the SD (save/restore) path, the unstack path and the entry to
+! MUP1, printed page 141.
+! docs/MCP_Mar63_001-249.pdf PDF p.148, header READ and not assumed:
+! "TIME CLOCK 00054041  PUNID 11D11MCP   CARD ID FA000047
+!  DIST. OF 3/01   3/01   PAGE NUMBER  141", rendered at 600 dpi.
+! The column-heading row's own right-hand field prints
+! "LOCATION  217206", which is line 1's address word.
+!
+! FIFTY PRINTED LINES AND ALL FIFTY EMIT BITS.  No comment card, no
+! SYN, no DD, no DRZ, no reservation: this page is pure code, from
+! 217206.00 to 217244.00, and the counter leaves it at 217245.00.
+! (The volume survey OCR'd 34 rows and 217206.4C..217237.00.  That
+! is a window and an under-read, exactly as the brief warned; see
+! the agreement note at the bottom.)
+!
+! >>> FORTY-NINE CARDS, NOT FIFTY: LINES 1 AND 2 SHARE ONE. <<<
+! The card-serial column, rendered at 600 dpi, reads FA000047 on
+! BOTH line 1 and line 2, then FA000048 on line 3 and one per line
+! to FA000095 on line 50.  48 + (50-3) = 95, so the run is
+! contiguous and NOTHING FELL OFF THE TOP OR THE BOTTOM of the
+! render.  The shared card was punched as a semicolon
+! double-statement card -- "LVI,1,$+1.0 ; B,K SERCH" -- the same
+! shape printed p.127 line 56 and printed p.136 lines 1-2 carry.
+! The deck writes the two statements on two lines; the bits are the
+! same and the oracle checks both.
+!
+! ---------------------------------------------------------------
+! BOTH JOINS ARE MEASURED, AND NEITHER REST ON THIS PAGE'S OWN INK
+! ---------------------------------------------------------------
+! >>> THE PAGE PRINTS NO SLC. <<<  The "SLC,(8)217206.0" below is
+! this page's line-1 LOCATION restated so the deck assembles
+! standalone, and a hard SLC ASSERTS its value rather than checking
+! it (docs/transcription_workflow.md, "A HARD SLC CANNOT DISAGREE
+! WITH THE ARRIVING COUNTER").  So both joins were read off the
+! NEIGHBOURING PAGES instead, from ink, at 600 dpi:
+!
+!   BACKWARD.  printed p.140 (PDF p.147) ends at its line 48,
+!   "48*  217205.40   217200.31 42   BXVZ, C P SNOW".  A half-word
+!   branch at 217205.40 leaves the counter at 217206.00, which is
+!   this page's line 1.  THE BACKWARD JOIN IS CLOSED.
+!   (printed p.140 line 4 is its own "SLC,$" at 217155.00 -- a free
+!   join witness for p.139->p.140, recorded here because it is the
+!   only SLC anywhere near this page.)
+!
+!   FORWARD.  printed p.142 (PDF p.149) prints "LOCATION  217245"
+!   in its column-heading row and its line 1 at 217245.00.  Line 50
+!   here is a full word at 217244.00, so the counter arrives at
+!   217245.00.  THE FORWARD JOIN IS CLOSED.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS, AND THE MANUAL THAT NAMES IT
+! ---------------------------------------------------------------
+! docs/ocr/C22-6728-1_7030_MCP_Sys_Analysis_Guide.txt ("The Logic of
+! the Return Routine") describes THIS CODE, in order, and supplied
+! four readings the drum could not:
+!   "the return address is moved from the tentacle table to SICBU"
+!       -- line 40, SV,$1,S IC BU, "-RET. AD. SET"
+!   "the return address placed in the low register buffer (STIC)"
+!       -- line 31, SV,0,ST IC
+!   "return to the routine via the IF analyzer (MTC2A)"
+!       -- line 35, BXVZ,MTC2A
+!   "the unstack routine (KUNSTC) is entered"
+!       -- lines 38 and 42
+!   "control is given to MUP1 to attempt return to PP"
+!       -- lines 9, 41 (M UP 1 is defined here, 217236.40)
+! and the same document's program-status-table table prints
+!   "SQK  .32-.49  Interrupt queue count"
+!   "SSIO .61      SIO bit.  If 1, the program is in SIO mode."
+! which settles lines 6, 34 and 41 -- see GLYPHS below.
+!
+! TAIL SCOPE.  printed p.99 line 11's "SLC,(8)215000." moved the
+! origin, and pp.99+ are OUTSIDE the TAIL,(2)G block that printed
+! p.2 opened and printed p.98 line 37 closed.  Names here may
+! legitimately repeat names defined in pp.2-98 at other addresses.
+! That is scope, not collision.
+!
+! ---------------------------------------------------------------
+! GLYPHS -- FOUR QUESTIONS, FOUR ANSWERS, NONE OF THEM "IT LOOKS
+! LIKE A C"
+! ---------------------------------------------------------------
+! >>> THIS PAGE OPENS ITS ROUND GLYPHS CONSTANTLY. <<<  At 900 dpi
+! line 16 prints its first half word as "COCCOO.CO 81" for
+! 000000.00 81 and line 6 prints its second byte as "FC" for F0.
+! A C cannot occur in an OCTAL field, so those are 0 with
+! certainty; but per docs/transcription_workflow.md that is NOT a
+! per-row ink gauge, so each of the four below was settled on what
+! PRODUCED the characters, not on how they look.
+!
+! >>> THE !CHECK LINES BELOW CARRY THE RESOLVED READING, NOT A
+! CHARACTER-BY-CHARACTER TRANSCRIPTION OF THE INK. <<<  Where this
+! page prints "COCCOO.CO 81" the !CHECK says "000000.00 81", and
+! where it prints "001000.CC FC" the !CHECK says "001000.00 F0".
+! A later reader comparing deck against page will see the
+! difference; it is deliberate and it is the only way the oracle's
+! string comparison can run.
+!
+! (1) LINE 5'S LABEL IS "M D RET", WITH A D.  Two independent
+!     printings agree:
+!       (a) at 1800 dpi the second glyph has a STRAIGHT VERTICAL
+!           LEFT STEM and squared top corners, and the SAME ROW's
+!           operand "M C R" prints a round, stemless C a few
+!           characters away -- the C/D discriminator of
+!           docs/transcription_workflow.md applied within one row
+!           off one drum;
+!       (b) printed p.140 line 6 is
+!           "217156.00  000000.31 89  217210.34 04
+!            BZBZ,S AS($9),M D RET" -- a DIFFERENT page's print of
+!           the same name, and its address 217210.34 is 217210.00
+!           once the .34 operation bits come off, which is exactly
+!           where line 5 sits.
+!     MDRET is DEFINED here and referenced by no row on this page,
+!     so within this deck it rests on ink alone; (b) is what takes
+!     it off ink alone.
+!
+! (2) LINE 3 IS "B, C P SNOW", WITH A C, AND THE MANUAL SAYS SO.
+!     docs/ocr/C22-6728-1_7030_MCP_Sys_Analysis_Guide.txt prints
+!     "(CPSNOW) uses the JTSEXE subroutine to determine ..." in
+!     typeset text.  printed p.140 line 38 then carries the
+!     DEFINING CARD at 217200.00 -- "38*  217200.00  217201.03 01
+!     C P SNOW  LVI,1,$+1.0  -CHECK FOR TS,EXE" -- read off PDF
+!     p.147 at 600 dpi, which is where line 3's 217200.10 00
+!     branches.
+!
+! (3) LINE 6 IS "SSIO", NOT "SSIC".  The last glyph is round and
+!     open, so shape says nothing.  Three things settle it:
+!     the manual's "SSIO .61 SIO bit"; the printed offset, which is
+!     000000.75 -- 0o75 = 61 decimal, the manual's own bit; and
+!     printed p.140 line 7, "BB,S SIO($9),C M SNOW", which prints
+!     the name on a different page.  decks/mcp_bootstrap_p109.strap
+!     line 10 already landed "SSIO SYN(BU,1), .61" with the comment
+!     "-SUPPRESSED MODE STATUS"; THIS DECK USES THAT SPELLING
+!     VERBATIM.
+!
+! (4) LINE 19'S MNEMONIC IS "CBZH", SETTLED BY THE ASSEMBLER AND
+!     NOT BY INK.  Fed nine near-neighbours of the printed string,
+!     strap_asm accepts exactly one:
+!         CBZH   assembles, prints this page's own 217226.44 CA
+!         CBZF CBZB CBZE CBZN CBZK CBZM CBZR CB2H C8ZH
+!                "unknown mnemonic"
+!     This is the eliminator of docs/transcription_workflow.md used
+!     the way that file says to use it: it fired, and it is
+!     decisive BECAUSE only one candidate is an operation.
+!
+! ---------------------------------------------------------------
+! THE ONE THING ON THIS PAGE I COULD NOT RESOLVE
+! ---------------------------------------------------------------
+! >>> LINE 5'S COMMENT BANNER READS "S D RET" AND I CANNOT SAY
+! WHETHER THE FIRST GLYPH IS AN S OR A WORN "$". <<<  The comment
+! is "-**************S D RET*********".  At 1800 dpi the glyph is a
+! clean curved S with NO vertical bar; a "$" on this drum is an S
+! WITH a vertical bar, and a vertical stroke is the first thing
+! this drum loses (same failure mode as B/8).  The reason it
+! matters only a little and the reason it matters at all:
+!   * MCP's pseudo-op codes are defined on printed p.43 as
+!     "NULL $RET SYN,33.0" and friends, and the volume OCR reads
+!     that very field as "D RET" and "S C RET" -- i.e. the OCR
+!     cannot read a "$" there either.
+!   * the typeset manual says the $RET routine "is entered at
+!     CRETN", and printed p.140 line 5 IS "C RETN LVI,9,S PROG S",
+!     so CRETN is p.140's label and MDRET is this page's.
+! NO BIT DEPENDS ON IT: it is comment text, the row's label is
+! settled independently (note 1 above), and the row's binary is
+! checked.  It is transcribed below exactly as printed and is NOT
+! resolved.
+!
+! ---------------------------------------------------------------
+! LISTING MARKS
+! ---------------------------------------------------------------
+! Every one of the fifty line numbers carries the ordinary trailing
+! asterisk ("1*", "50*"); that is the column, not a mark.  TWO rows
+! carry a SECOND asterisk after their LOCATION -- line 14
+! ("217216.00 *") and line 32 ("217231.40 *") -- the same
+! unexplained mark printed pp.3/37/38/39/88/97/98/103/104 carry,
+! and printed p.140 line 43 carries it too.  No mark changes a
+! compiled bit; all four rows' bits are checked below and all four
+! pass.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, IN TWO CLASSES
+! ---------------------------------------------------------------
+! CLASS A -- PINNED BY A DEFINING CARD'S OWN LOCATION COLUMN, so
+! the bit offset is READ and not conventional:
+!   CPSNOW 217200.00   printed p.140 line 38, read at 600 dpi
+!   MCR    215636.00   volume OCR "215636.00 ... M CR  XS IPL IN"
+!   MC1    215637.00   volume OCR "215637.00 ... M C 1  DD(BU,24)"
+!   MTC3A  215562.40   volume OCR "215562.40 ... M TC 3A"
+!   MTC2A  215552.00   volume OCR "215552.00 ... M TC 2A  BB,..."
+!   MR5    215645.00   volume OCR "215645.00 ... M R 5  DRZ(BU,64)"
+!   MPP1   217260.00   volume OCR "217260.00 215636.22 ... M PP1"
+!   MB1    217256.40   volume OCR "217256.40 ... M B1  M-1(BU,19)"
+!   SICBU  215361.00   volume OCR "215361.00 000000.00+ S IC BU VF,0"
+!   KSERCH 222020.00   volume OCR "222020.00 215021.23 K SERCH LVI"
+!   KUNSTC 222037.00   volume OCR "222037.00 215021.23 K UNSTC LVI"
+!   KINTTY 216010.40   volume OCR "216010.40 ... K INT TY"
+!   MIFTTT 215666.00   DEFINED in decks/mcp_bootstrap_p121.strap
+!                      line 5 at 215666.00, a landed page
+!   SQK    .32  }      definitions landed in
+!   SSIO   .61  }      decks/mcp_bootstrap_p109.strap lines 9,10
+!   STIC   215265.00   landed, printed p.116 header; the manual's
+!                      "the saved IC is stored in STIC"
+!   STLR   215230.00   landed, decks/mcp_bootstrap_p117.strap
+!   SLRMCP 215362.00   landed, decks/mcp_bootstrap_p117.strap
+!                      ("SLRMCP+9.0" prints 215373 on p.117)
+!   MPRMQK 215640.00   landed, decks/mcp_bootstrap_p119.strap;
+!                      p.120 line 6 is "M PRM QK DRZ"
+!
+! CLASS B -- back-derived from THIS page only: NONE.  Every symbol
+! above is pinned by a card printed somewhere other than p.141.
+! Where a value came from a printed branch or LV the bit offset
+! would have been pinned ONLY TO THE HALF WORD (bit offsets 0-31
+! encode identically); that caveat does not apply to any row here,
+! and the half-word bit IS checked for all of them, because bit 32
+! shows in the print (KINTTY .40 and MTC3A .40 and MB1 .40 would
+! all FAIL if written .00).
+!
+! EVERY SPELLING ABOVE THAT ANOTHER DECK ALREADY USES IS COPIED
+! FROM IT VERBATIM -- SSIO, SQK, STIC, STLR, SLRMCP, MCR, MC1, MR5,
+! MPRMQK, MIFTTT, KUNSTC, KSERCH, SICBU.  tests/check_symbol_
+! spellings.py passes with this deck in place ("1010 symbol
+! definitions, no symbol spelled two ways").
+!
+! NAMES PRINTED WITH BLANKS are written closed up, as the deck
+! format requires: "M D RET" -> MDRET, "M SD 2A" -> MSD2A,
+! "S IC BU" -> SICBU, "ST IC" -> STIC, "K INT TY" -> KINTTY,
+! "M C R" (line 5) and "MCR" (line 33) are ONE symbol printed two
+! ways on one page.
+
+KSERCH  SYN, (8)222020.0             ! line  2  "B,K SERCH"
+CPSNOW  SYN, (8)217200.0             ! line  3  p.140 line 38 defines
+KINTTY  SYN, (8)216010.40            ! line  4  "B,K INT TY"
+MCR     SYN, (8)215636.0             ! lines 5,27,33  "M C R"/"M CR"/"MCR"
+SSIO    SYN(BU,1), .61               ! line  6  p.109 line 10 verbatim
+SQK     SYN(BU,18), .32              ! lines 34,41  p.109 line 9 verbatim
+MC1     SYN, (8)215637.0             ! line 20  "M C 1"
+MTC3A   SYN, (8)215562.40            ! line 30  "MTC3A"
+STIC    SYN, (8)215265.0             ! line 31  "ST IC"
+MTC2A   SYN, (8)215552.0             ! line 35  "MTC2A"
+STLR    SYN, (8)215230.0             ! line 37  "STLR"
+SLRMCP  SYN, (8)215362.0             ! line 37  "SLRMCP"
+KUNSTC  SYN, (8)222037.0             ! lines 38,42  "KUNSTC"
+SICBU   SYN, (8)215361.0             ! line 40  "S IC BU"
+MPRMQK  SYN, (8)215640.0             ! line 43  "MPRMQK"
+MPP1    SYN, (8)217260.0             ! line 44  "M PP 1"
+MR5     SYN, (8)215645.0             ! line 45  "M R 5"
+MIFTTT  SYN, (8)215666.0             ! line 48  "MIFTTT-64.0" prints 215566
+MB1     SYN, (8)217256.40            ! line 49  "M B1"
+
+        SLC, (8)217206.0             ! line 1's printed LOCATION, and
+                                     !   the heading row's "LOCATION
+                                     !   217206".  ASSERTED, not
+                                     !   checked -- see the join note.
+
+        LVI, 1, $+1.0                ! line  1  card FA000047
+        B, KSERCH                    ! line  2  card FA000047 (shared)
+        B, CPSNOW                    ! line  3
+        B, KINTTY                    ! line  4
+MDRET   LX, $1, MCR                  ! line  5  -*****S D RET*****
+        CM0000(BU,1), SSIO($9)       ! line  6
+        LV, 4, 1.0($1)               ! line  7  -CHECK USERS TT
+        BZB, .4($1), MSDA            ! line  8  -USER IS PP
+        BXVZZ, MUP1                  ! line  9  -PRIMED OP
+MSDA    LX, $2, 2.0($1)              ! line 10  -ADDR. OF USERS B,$MCP
+        BZB, .6($4), $+1.32          ! line 11
+        V+I, 2, .32                  ! line 12
+        V+I, $2, .32                 ! line 13  -ADDR. OF USERS $OP IN $2
+        SV, $1, $3                   ! line 14  -SENDERS K IN $3
+        V+, 3, MX                    ! line 15
+        L(BU,4), 0.0($1), -18        ! line 16
+        V+I, 1, 2.32                 ! line 17
+        LC, $2, $L                   ! line 18  -N IN C.F. $2
+MSD2A   CBZH, $2, MSD3A              ! line 19
+        V+, $3, MC1                  ! line 20  -GET NEXT RESTORE BIT
+        V+I, $1, .32                 ! line 21
+        BZB, 0.0($3), MSD2A          ! line 22  -NO RESTORE
+        L(BU,32), 0.0($1), -32       ! line 23
+        ST(BU,32), 0.0($2), -32      ! line 24  -RESTORE
+        B, MSD2A                     ! line 25
+MX      VF, .10                      ! line 26
+MSD3A   LX, $1, MCR                  ! line 27
+        BZB, .4($1), MIUP            ! line 28  -PP USER
+        LV, $0, 1.32($1)             ! line 29
+        SV, 0, MTC3A                 ! line 30
+        SV, 0, STIC                  ! line 31
+        LV, $1, 1.0($1)              ! line 32
+        SV, $1, MCR                  ! line 33
+        LV, 0, SQK($9)               ! line 34
+        BXVZ, MTC2A                  ! line 35
+MSD3B   LCI, 15, 30                  ! line 36
+        T, 15, STLR, SLRMCP          ! line 37
+        B, KUNSTC                    ! line 38
+MIUP    LV, $1, 1.32($1)             ! line 39
+        SV, $1, SICBU                ! line 40  -RET. AD. SET
+MUP1    LV, 0, SQK($9)               ! line 41
+        BZXVZ, KUNSTC                ! line 42
+        LV, 1, MPRMQK                ! line 43
+        BXVZZ, MPP1                  ! line 44
+        LV, $2, MR5                  ! line 45
+        LV, $2, 0.0($2)              ! line 46  -$OP CODE IN $2
+        CM0000(BU,1), $2+.24         ! line 47  -MAKE OP CODE +
+        LV, 2, MIFTTT-64.0($2)       ! line 48  -GET ADDRESS OF TT
+        BB, .9($2), MB1              ! line 49
+        L(BU,4), 0.0($2), -19        ! line 50  card FA000095
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, printed p.141 = PDF p.148, lines 1-50.
+! LINE | LOCATION | BINARY OUTPUT | NAME | STATEMENT | comment
+! Binary is the RESOLVED reading; the ink prints many of these
+! zeros as open C's (see GLYPHS above).
+! ---------------------------------------------------------------
+!   line  1  217206.00    217207.03 01                             LVI,1,$+1.0
+!   line  2  217206.40    222020.10 00                             B,K SERCH
+!   line  3  217207.00    217200.10 00                             B, C P SNOW
+!   line  4  217207.40    216010.50 00                             B,K INT TY
+!   line  5  217210.00    215636.02 10    M D RET  LX,$1,M C R     -**************S D RET*********
+!   line  6  217210.40    000000.75 89  001000.00 F0               CM0000(BU,1),SSIO($9)
+!   line  7  217211.40    000001.10 31                             LV,4,1.0($1)            -CHECK USERS TT
+!   line  8  217212.00    000000.04 81  217213.74 00               BZB,.4($1),M SD A       -USER IS PP
+!   line  9  217213.00    217236.71 46                             BXVZZ,M UP 1            -PRIMED OP
+!   line 10  217213.40    000002.04 11    M SD A   LX,$2,2.0($1)   -ADDR. OF USERS B,$MCP
+!   line 11  217214.00    000000.06 84  217215.74 00               BZB,.6($4),$+1.32
+!   line 12  217215.00    000000.45 05                             V+I,2,.32
+!   line 13  217215.40    000000.45 05                             V+I,$2,.32              -ADDR. OF USERS $OP IN $2
+!   line 14  217216.00 *  000023.03 30                             SV,$1,$3                -SENDERS K IN $3
+!   line 15  217216.40    217226.06 B0                             V+,3,M X
+!   line 16  217217.00    000000.00 81  004067.20 50               L(BU,4),0.0($1),-18
+!   line 17  217220.00    000002.43 05                             V+I,1,2.32
+!   line 18  217220.40    000010.04 50                             LC,$2,$L                -N IN C.F. $2
+!   line 19  217221.00    217226.44 CA    M SD 2A  CBZH,$2,M SD 3A
+!   line 20  217221.40    215637.06 B0                             V+,$3,M C 1             -GET NEXT RESTORE BIT
+!   line 21  217222.00    000000.43 05                             V+I,$1,.32
+!   line 22  217222.40    000000.00 83  217221.34 00               BZB,0.0($3),M SD 2A -NO RESTORE
+!   line 23  217223.40    000000.00 81  040060.20 50               L(BU,32),0.0($1),-32
+!   line 24  217224.40    000000.00 82  040060.20 D0               ST(BU,32),0.0($2),-32 -RESTORE
+!   line 25  217225.40    217221.10 00                             B,M SD 2A
+!   line 26  217226.00    000000.12+      M X      VF,.10
+!   line 27  217226.40    215636.02 10    M SD 3A  LX,$1,M C R
+!   line 28  217227.00    000000.04 81  217235.74 00               BZB,.4($1),M IUP        -PP USER
+!   line 29  217230.00    000001.40 31                             LV,$0,1.32($1)
+!   line 30  217230.40    215562.41 30                             SV,0,MTC3A
+!   line 31  217231.00    215265.01 30                             SV,0,ST IC
+!   line 32  217231.40 *  000001.02 31                             LV,$1,1.0($1)
+!   line 33  217232.00    215636.03 30                             SV,$1,MCR
+!   line 34  217232.40    000000.40 39                             LV,0,SQK($9)
+!   line 35  217233.00    215552.31 42                             BXVZ,MTC2A
+!   line 36  217233.40    000036.37 02    M SD 3B  LCI,15,30
+!   line 37  217234.00    215230.00 80  215362.36 20               T,15,STLR,SLRMCP
+!   line 38  217235.00    222037.10 00                             B,KUNSTC
+!   line 39  217235.40    000001.42 31    M IUP    LV,$1,1.32($1)
+!   line 40  217236.00    215361.03 30                             SV,$1,S IC BU           -RET. AD. SET
+!   line 41  217236.40    000000.40 39    M UP 1   LV,0,SQK($9)
+!   line 42  217237.00    222037.31 40                             BZXVZ,KUNSTC
+!   line 43  217237.40    215640.02 30                             LV,1,MPRMQK
+!   line 44  217240.00    217260.31 46                             BXVZZ,M PP 1
+!   line 45  217240.40    215645.04 30                             LV,$2,M R 5
+!   line 46  217241.00    000000.04 32                             LV,$2,0.0($2)           -$OP CODE IN $2
+!   line 47  217241.40    000022.30 80  001000.00 F0               CM0000(BU,1),$2+.24     -MAKE OP CODE +
+!   line 48  217242.40    215566.04 32                             LV,2,MIFTTT-64.0($2)    -GET ADDRESS OF TT
+!   line 49  217243.00    000000.11 82  217256.74 02               BB,.9($2),M B1
+!   line 50  217244.00    000000.00 82  004066.60 50               L(BU,4),0.0($2),-19
+
+!SYM   MDRET    217210.00
+!SYM   MSDA     217213.40
+!SYM   MSD2A    217221.00
+!SYM   MX       217226.00
+!SYM   MSD3A    217226.40
+!SYM   MSD3B    217233.40
+!SYM   MIUP     217235.40
+!SYM   MUP1     217236.40
+!CHECK 217206.00 | 217207.03 01 | line  1 LVI,1,$+1.0
+!CHECK 217206.40 | 222020.10 00 | line  2 B,K SERCH
+!CHECK 217207.00 | 217200.10 00 | line  3 B, C P SNOW -- CPSNOW defined p.140 line 38
+!CHECK 217207.40 | 216010.50 00 | line  4 B,K INT TY -- .50 carries bit 32, so KINTTY is at .40 and a .00 would FAIL
+!CHECK 217210.00 | 215636.02 10 | line  5 M D RET LX,$1,M C R
+!CHECK 217210.40 | 000000.75 89 001000.00 F0 | line  6 CM0000(BU,1),SSIO($9) -- .75 = 61 dec = the manual's SSIO bit; ink prints "001000.CC FC"
+!CHECK 217211.40 | 000001.10 31 | line  7 LV,4,1.0($1)
+!CHECK 217212.00 | 000000.04 81 217213.74 00 | line  8 BZB,.4($1),M SD A
+!CHECK 217213.00 | 217236.71 46 | line  9 BXVZZ,M UP 1
+!CHECK 217213.40 | 000002.04 11 | line 10 M SD A LX,$2,2.0($1)
+!CHECK 217214.00 | 000000.06 84 217215.74 00 | line 11 BZB,.6($4),$+1.32
+!CHECK 217215.00 | 000000.45 05 | line 12 V+I,2,.32
+!CHECK 217215.40 | 000000.45 05 | line 13 V+I,$2,.32 -- "2" and "$2" print identically
+!CHECK 217216.00 | 000023.03 30 | line 14 SV,$1,$3 (location carries a second asterisk)
+!CHECK 217216.40 | 217226.06 B0 | line 15 V+,3,M X -- B0 read at 900 dpi; MX is defined on this page
+!CHECK 217217.00 | 000000.00 81 004067.20 50 | line 16 L(BU,4),0.0($1),-18
+!CHECK 217220.00 | 000002.43 05 | line 17 V+I,1,2.32
+!CHECK 217220.40 | 000010.04 50 | line 18 LC,$2,$L -- $L prints as address 000010
+!CHECK 217221.00 | 217226.44 CA | line 19 M SD 2A CBZH,$2,M SD 3A -- CBZH is the only mnemonic of nine candidates strap_asm accepts
+!CHECK 217221.40 | 215637.06 B0 | line 20 V+,$3,M C 1
+!CHECK 217222.00 | 000000.43 05 | line 21 V+I,$1,.32
+!CHECK 217222.40 | 000000.00 83 217221.34 00 | line 22 BZB,0.0($3),M SD 2A
+!CHECK 217223.40 | 000000.00 81 040060.20 50 | line 23 L(BU,32),0.0($1),-32
+!CHECK 217224.40 | 000000.00 82 040060.20 D0 | line 24 ST(BU,32),0.0($2),-32 -- ink prints the byte "DC"; D has the left stem, the 0 is an opened round glyph
+!CHECK 217225.40 | 217221.10 00 | line 25 B,M SD 2A
+!CHECK 217226.00 | 000000.12+ | line 26 M X VF,.10 -- ".10" is a BARE decimal, 10 bits, printed 0o12
+!CHECK 217226.40 | 215636.02 10 | line 27 M SD 3A LX,$1,M C R
+!CHECK 217227.00 | 000000.04 81 217235.74 00 | line 28 BZB,.4($1),M IUP
+!CHECK 217230.00 | 000001.40 31 | line 29 LV,$0,1.32($1)
+!CHECK 217230.40 | 215562.41 30 | line 30 SV,0,MTC3A -- .41 carries bit 32, so MTC3A is at 215562.40
+!CHECK 217231.00 | 215265.01 30 | line 31 SV,0,ST IC
+!CHECK 217231.40 | 000001.02 31 | line 32 LV,$1,1.0($1) (location carries a second asterisk)
+!CHECK 217232.00 | 215636.03 30 | line 33 SV,$1,MCR -- same symbol line 5 prints "M C R"
+!CHECK 217232.40 | 000000.40 39 | line 34 LV,0,SQK($9) -- .40 = 32 dec = the manual's SQK bit
+!CHECK 217233.00 | 215552.31 42 | line 35 BXVZ,MTC2A
+!CHECK 217233.40 | 000036.37 02 | line 36 M SD 3B LCI,15,30 -- "30" is a bare decimal, printed 0o36
+!CHECK 217234.00 | 215230.00 80 215362.36 20 | line 37 T,15,STLR,SLRMCP
+!CHECK 217235.00 | 222037.10 00 | line 38 B,KUNSTC
+!CHECK 217235.40 | 000001.42 31 | line 39 M IUP LV,$1,1.32($1)
+!CHECK 217236.00 | 215361.03 30 | line 40 SV,$1,S IC BU
+!CHECK 217236.40 | 000000.40 39 | line 41 M UP 1 LV,0,SQK($9)
+!CHECK 217237.00 | 222037.31 40 | line 42 BZXVZ,KUNSTC
+!CHECK 217237.40 | 215640.02 30 | line 43 LV,1,MPRMQK
+!CHECK 217240.00 | 217260.31 46 | line 44 BXVZZ,M PP 1
+!CHECK 217240.40 | 215645.04 30 | line 45 LV,$2,M R 5
+!CHECK 217241.00 | 000000.04 32 | line 46 LV,$2,0.0($2)
+!CHECK 217241.40 | 000022.30 80 001000.00 F0 | line 47 CM0000(BU,1),$2+.24 -- $2 prints as address 000022, matching $3 = 000023 on line 14
+!CHECK 217242.40 | 215566.04 32 | line 48 LV,2,MIFTTT-64.0($2) -- 215666 less 0o100 words
+!CHECK 217243.00 | 000000.11 82 217256.74 02 | line 49 BB,.9($2),M B1 -- .74 carries bit 32, so MB1 is at 217256.40
+!CHECK 217244.00 | 000000.00 82 004066.60 50 | line 50 L(BU,4),0.0($2),-19

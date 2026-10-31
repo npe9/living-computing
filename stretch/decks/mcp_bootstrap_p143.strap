@@ -1,0 +1,324 @@
+! mcp_bootstrap_p143.strap -- the tail of JMPP (the backup-buffer
+! operation check) and the TS/EXE test JTSEXE, printed page 143.
+! docs/MCP_Mar63_001-249.pdf PDF p.150, header READ and not assumed:
+! "TIME CLOCK 00054041  PUNID 11D11MCP   CARD ID FA000149
+!  DIST. OF 3/01   3/01   PAGE NUMBER  143", and the column-heading
+! row's own "LOCATION 217307" names the page's first word.
+!
+! TWENTY-SEVEN PRINTED LINES AND THE PAGE STOPS THERE.  Lines 28
+! onward are blank paper -- the whole lower two thirds of the sheet
+! carries no ink but the form's rules.  Twenty-two lines emit bits.
+! Lines 10-14 are COMMENT CARDS: they print a "-" in the NAME column
+! and no LOCATION and no BINARY OUTPUT.  Line 10 is blank after the
+! dash, line 11 is a banner ("*****CHECK FOR TS OR EXE*****") and
+! lines 12-14 are three cards recording the CALLING SEQUENCE that
+! reaches JTSEXE ("LINKAGE... LVI,$1,$+1.0 / B,JTSEXE / VF,BUFFER"),
+! which is why line 15 can load the buffer address out of 0.0($1).
+!
+! >>> TWENTY-SIX CARDS, NOT TWENTY-SEVEN: LINES 8 AND 9 SHARE ONE.
+! <<<  The card-serial column runs FA000149 (line 1) to FA000174
+! (line 27), read at 600 dpi, and FA000156 is printed TWICE -- on
+! line 8 and again on line 9.  That card was punched
+! "SIC,SDISIC ; B,SDISP", a semicolon double-statement card of
+! exactly the shape printed p.136 line 1-2 and printed p.127 line 56
+! carry, and it is punched that way because SIC must be immediately
+! followed by a half-word branch (Reference Manual printed p.41).
+! The deck writes the two statements on two lines, as p.136's does.
+! Line 1's serial FA000149 is also the header's own CARD ID, so
+! nothing fell off the top of the render, and the serials are
+! consecutive to line 27, so nothing fell out of the middle.
+!
+! ---------------------------------------------------------------
+! THE JOINS -- THE BOTTOM ONE IS WITNESSED BY IBM'S OWN ASSEMBLER
+! ---------------------------------------------------------------
+! >>> THE PAGE PRINTS NO SLC, SO NO !CHECK BELOW CAN TEST THE
+! ORIGIN -- BUT AN OUTSIDE PAGE PINS IT ANYWAY. <<<  217307.40 is
+! line 1's printed LOCATION and 217307 is the heading row's
+! "LOCATION" field, and a hard SLC overrides the arriving counter
+! silently (docs/transcription_workflow.md, "A HARD SLC CANNOT
+! DISAGREE WITH THE ARRIVING COUNTER"), so every !CHECK below would
+! still pass if this origin were wrong.  The origin is nevertheless
+! FIXED, by a chain that never touches this page's ink:
+!   (a) The volume OCR of PDF p.149 -- printed p.142, a DIFFERENT
+!       page and therefore an admissible witness -- carries its
+!       line 20 as "20* 217261.00  217310.40 80  SIC,JMPP2".
+!   (b) SIC prints the BARE address with no operation bits in the
+!       offset field.  That is measured on THIS page, by line 8:
+!       "SIC,SDISIC" prints 217451.40 and SDISIC is 217451.40 (p.103
+!       and three other decks).  So (a) pins JMPP2 to 217310.40 TO
+!       THE BIT, not merely to the half word.
+!   (c) Line 1 is a FULL WORD -- the page prints two half words for
+!       it and its !CHECK passes on both -- so it occupies
+!       217307.40 and 217310.00 and leaves the counter at 217310.40.
+!   (d) 217310.40 is where JMPP2, this page's line 2, is printed.
+! Run backwards, (b)+(c)+(d) put line 1 at 217310.40 minus one full
+! word = 217307.40.  So the SLC asserts a value that an outside page
+! independently requires.  The one thing still unmeasured is whether
+! printed p.142 ENDS at 217307.40 rather than leaving a gap: the OCR
+! of its line 56 reads "56* 217306.40  215334.17 80  005000.06 70
+! JMPP1  LF(BU,5),SLRBU+8.15  -PICK UP OP, USA, EXE, DS", a full
+! word that leaves the counter at exactly 217307.40, which is
+! consistent and not a check.  When p.142 lands, compare by hand.
+!
+! >>> THE FORWARD JOIN IS CLOSED, AND IT IS FREE. <<<  printed
+! p.144 (PDF p.151) prints an "SLC,$" at 217326.00 as its line 6.
+! An SLC emits nothing, so its printed LOCATION *is* the counter
+! arriving from this page -- the best forward-join witness there is,
+! printed by IBM's own assembler.  Line 27 here is a half-word
+! branch at 217325.40, so this page's counter leaves at 217326.00.
+! They agree.  No !CHECK can consume that, so it is recorded in the
+! note on line 27 instead.  (That SLC was read in the volume OCR of
+! PDF p.151, which is a different page from this one and therefore
+! an admissible second reading; the next line of that page, WRAMPP
+! "SR,15,$1", is also printed at 217326.00.)
+!
+! TWO OF THIS PAGE'S OWN LABELS ARE CORROBORATED FROM OUTSIDE.
+!   JTSEXE 217316.00 -- the volume OCR carries "B,JTSEXE" compiled
+!     as "217316.10 00" on printed p.141 (217200.40) and again on
+!     printed p.142 (217302.40).  A branch prints .10, so the
+!     target half word is 217316.00, which is this page's line 15.
+!   JMPP2  217310.40 -- printed p.142's line 20 is "217261.00
+!     217310.40 80  SIC,JMPP2" in the volume OCR; SIC prints the
+!     bare address, so JMPP2 is at 217310.40, which is this page's
+!     line 2.  The comment on line 2, "-SIC INTO HERE", says the
+!     same thing in English.
+! Both witnesses are OCR of OTHER pages, never of this one.
+!
+! TAIL SCOPE.  printed p.99 line 11's "SLC,(8)215000." moved the
+! origin here, and pp.99+ are OUTSIDE the "TAIL,(2)G" block that
+! printed p.2 opened and printed p.98 line 37 closed with
+! "UNTAIL,(2)".  Names defined here may legitimately repeat names
+! from pp.2-98 at other addresses; none of this page's five does.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE CONTAINS
+! ---------------------------------------------------------------
+! Two pieces laid end to end.
+!
+! Lines 1-9: the TAIL OF JMPP, whose line 56 on printed p.142 picked
+! up five bits of the backup buffer ("OP, USA, EXE, DS") with
+! "LF(BU,5),SLRBU+8.15".  Line 1 is a full-word immediate connective
+! that tests those five bits against the constant (2)11101; line 2,
+! JMPP2, is the BRZ the caller SICs into.  When the test falls
+! through, lines 3-4 move thirty half words from SLRBU to STLR,
+! line 5 clears a flag nine words into the backup buffer, line 6
+! sets S L -- "LEVEL OF INSTRUCTION COUNTER", printed p.103 line 14
+! -- to zero, which the comment calls "-CHANGE TO PP LEVEL", line 7
+! loads the error code SOAUD into $14, and lines 8-9 (one card) save
+! the IC into SDISIC and jump to the dispatcher SDISP.
+!
+! Lines 15-27: JTSEXE, "CHECK FOR TS OR EXE".  It is called with $1
+! pointing at a VF,BUFFER word (lines 12-14's linkage comment), so
+! line 15 loads the buffer address into $15.  Line 16 tests bit 4
+! of that buffer and branches to JTSEX1 if there is no TS; otherwise
+! line 17 points $1 at SIPT+4 (the parallel-table entry) and falls
+! into JTSEX3, which plants a branch into JTSEXT (line 18), reads
+! word 29 of the buffer into $1 (line 19), stores it as the saved
+! instruction counter STIC (line 20), sets a count of 29 (line 21),
+! fetches (line 22), and transmits three words from the buffer
+! (line 23) before line 24's planted branch goes "-GO TO PARALLEL
+! TABLE".  Line 25, JTSEX1, makes the same test for EXE on bit 18
+! and branches on bit .32 of ($1); lines 26-27 point $1 at SIPT+18
+! and rejoin JTSEX3.
+!
+! ---------------------------------------------------------------
+! GLYPHS: THIS PAGE OPENS ITS ZEROS, AND FIVE BYTES TURN ON IT
+! ---------------------------------------------------------------
+! >>> FIVE BYTES IN THE CODE COLUMN SHOW AN OPEN ROUND GLYPH, AND
+! FOUR OF THEM ARE ZEROS.  ONE IS A REAL C.  <<<  Read at 1200 dpi;
+! a first pass at 400 dpi got TWO of the five wrong in opposite
+! directions, so this is written out in full.
+!
+! The discriminator is NOT shape and it is not the assembler.  It is
+! the SAME ROW'S OWN OCTAL FIELD, which cannot hold a C, read one or
+! two characters from the byte in question:
+!
+!   line  1  720CCC.CC 80   -- "720000.00": four C-shaped zeros and
+!                             a closed one, in a field that is
+!                             octal; the byte's own "80" prints a
+!                             CLOSED zero in the same row
+!   line  4  215324.CC 80   -- same, two C-shaped zeros
+!   line  5  215335.CC 80  001000.CC F?  -- four C-shaped zeros
+!   line 27  217320.1C  C?  -- ".10" prints ".1C".  THE CERTAIN
+!                             ZERO IS ONE CHARACTER FROM THE BYTE
+!   line 24  217323.5C 00   -- ".50" prints ".5C" and the byte
+!                             prints two CLOSED zeros, which is the
+!                             control: the same drum, the same row,
+!                             open in one field and shut in the next
+!
+! So every one of the four doubtful glyphs sits in a row that
+! demonstrably drops ink on round glyphs, and each has a
+! SAME-OPERATION ROW ON THIS PAGE that prints the byte with a closed
+! zero:
+!   line  1's "70" -- no second operand, so i2 = 0
+!   line  4's "20" against line 23's "20": both are "T,$15,...",
+!                   neither second operand is indexed
+!   line  5's "F0" against line  6's "F0": both are
+!                   "CM0000(BU,1),<operand>", neither indexed
+!   line 27's "00" against lines 9 and 24's "00": three plain "B,"
+! They are recorded as 70, 20, F0 and 00, and all four check.
+!
+! >>> LINE 2's "C2" IS A GENUINE C, AND IT IS WHAT PROVES THE TEST
+! IS NOT CIRCULAR. <<<  Line 2's row prints "217310.74" with a
+! CLOSED zero -- this row does not drop ink -- and its byte's first
+! glyph is wide open with the C's upper and lower terminal hooks.
+! strap_asm computes C2 for "BRZ,$" independently.  A first reading
+! of this deck wrote "02" there and the oracle refused it.  So the
+! page does print real Cs in this column; what settles each one is
+! its own row, not a page-wide ink level.
+! * Line 3 prints "LCI,15,30.0" with NO dollar sign on the 15, where
+!   line 21 prints "LCI,$15,29.0" with one.  Checked at 1200 dpi:
+!   there is no $ on line 3.  Both are the J register 15 -- both
+!   compile the same ".37" offset field (0o36 = 15*2, plus the 0o01
+!   the operation contributes) -- and strap_asm accepts both forms,
+!   so the page is transcribed as printed.
+! * Line 6's operand reads "SL" closed up here; printed p.103 line
+!   14 prints the same symbol as "S L" with a blank.  Either way the
+!   deck writes SL, which is the spelling decks/mcp_bootstrap_p134
+!   and p.103's !SYM block already carry, and the row checks the
+!   symbol TO THE BIT (215001.04), not just to the half word.
+! * Line 7's operand is SOAUD -- S, O, A, U, D, with the D showing
+!   the straight vertical left stem that separates it from C.  It is
+!   not a guess: printed p.107 line 19 DEFINES it, "000404.00+
+!   NULL  SOAUD  SYN,(16)0104.0  -14 OP,AD,USA OR DS", and
+!   decks/mcp_bootstrap_p107.strap already carries that spelling and
+!   that value.  This row's printed 000404.35 confirms it: an LVI's
+!   offset field is J*2 plus 0o01, and $14 gives 0o34+0o01 = 0o35
+!   over a symbol whose own offset is 0.
+! * "30.0" on line 3 and "29.0" on lines 19/21 print their zeros
+!   open ("3C.0"); they are decimal literals in the STATEMENT
+!   column, and 30 and 29 are what compile to the printed 0o36 and
+!   0o35 word fields.
+!
+! ---------------------------------------------------------------
+! WHAT NO CHECK HERE CAN SEE
+! ---------------------------------------------------------------
+! The externals below that are back-derived from a branch, an LVI,
+! an SVA or a Transmit are pinned ONLY TO THE HALF WORD: bit offsets
+! 0-31 all encode identically and only bit 32 shows
+! (docs/transcription_workflow.md, "WHAT THE ORACLE CANNOT SEE").
+! So the ".0" on SDISP, SIPT, STIC, SLRBU and STLR is a CONVENTION,
+! not a reading.  Bit 32 IS checked.  SL is different: a VFL
+! connective prints the bit offset in the half word's own field, so
+! line 6 checks SL to the bit, 215001.04.  SOAUD is different again:
+! an LVI compiles its operand as a 24-bit immediate VALUE, so line 7
+! checks all twenty-four bits of SOAUD, offset included.
+!
+! ---------------------------------------------------------------
+
+! Externals, with the deck that already carries each spelling.
+SLRBU   SYN, (8)215324.0             ! p.116 !SYM; p.117/p.134 SYN
+STLR    SYN, (8)215230.0             ! p.116 !SYM; p.117/p.134 SYN
+SL      SYN(BU,1), (8)215001.04      ! p.103 line 14 -LEVEL OF INSTR
+SOAUD   SYN, (16)0104.0              ! p.107 line 19 defines it, verbatim
+SDISIC  SYN, (8)217451.40            ! p.103/119/120/124 SYN
+SDISP   SYN, (8)217372.0             ! p.119/120/124/129 SYN
+SIPT    SYN, (8)215103.0             ! p.112 line 7 defines it; p.110/111 SYN
+STIC    SYN, (8)215265.0             ! p.116 line 16 defines it; p.110/111 SYN
+
+        SLC, (8)217307.40            ! ASSERTED, not printed -- see above
+
+        CTI0001(BU,5),(2)11101       ! line  1 (location carries an asterisk)
+JMPP2   BRZ,$                        ! line  2 -SIC INTO HERE
+        LCI,15,30.0                  ! line  3 (printed without the $)
+        T,$15,SLRBU,STLR             ! line  4
+        CM0000(BU,1),SLRBU+9.0       ! line  5
+        CM0000(BU,1),SL              ! line  6 -CHANGE TO PP LEVEL
+        LVI,$14,SOAUD                ! line  7 -ERROR CODE
+        SIC,SDISIC                   ! line  8 \ one card, FA000156
+        B,SDISP                      ! line  9 / printed on both lines
+JTSEXE  LV,$15,0.0($1)               ! line 15 -ADDRESS OF BUFFER
+        BZBZ,8.4($15),JTSEX1         ! line 16 - IF NO TS
+        LVI,$1,SIPT+4.0              ! line 17
+JTSEX3  SVA,$1,JTSEXT                ! line 18
+        LV,$1,29.0($15)              ! line 19
+        SVA,$1,STIC                  ! line 20
+        LCI,$15,29.0                 ! line 21
+        LFT(U),1.0($15)              ! line 22
+        T,$15,0.0($15),3.0           ! line 23 (location carries an asterisk)
+JTSEXT  B,$                          ! line 24 -GO TO PARALLEL TABLE
+JTSEX1  BZBZ,8.18($15),.32($1)       ! line 25 -IF NO EXE
+        LVI,$1,SIPT+18.0             ! line 26
+        B,JTSEX3                     ! line 27
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, as rendered at 600 dpi from PDF p.150 with
+! the code column re-read at 1200 dpi.  Lines 10-14 print a dash in
+! the NAME column and nothing else, so they carry no !CHECK.
+! ---------------------------------------------------------------
+!   line  1  217307.40 *  720000.00 80  405000.03 70              CTI0001(BU,5),(2)11101                        FA000149
+!   line  2  217310.40     217310.74 C2                  JMPP2    BRZ,$                   -SIC INTO HERE        FA000150
+!   line  3  217311.00     000036.37 02                           LCI,15,30.0                                   FA000151
+!   line  4  217311.40     215324.00 80  215230.36 20             T,$15,SLRBU,STLR                              FA000152
+!   line  5  217312.40     215335.00 80  001000.00 F0             CM0000(BU,1),SLRBU+9.0                        FA000153
+!   line  6  217313.40     215001.04 80  001000.00 F0             CM0000(BU,1),SL         -CHANGE TO PP LEVEL   FA000154
+!   line  7  217314.40     000404.35 01                           LVI,$14,SOAUD           -ERROR CODE           FA000155
+!   line  8  217315.00     217451.40 80                           SIC,SDISIC                                    FA000156
+!   line  9  217315.40     217372.10 00                           B,SDISP                                       FA000156
+!   line 10                                              -                                                      FA000157
+!   line 11                                              -        *****CHECK FOR TS OR EXE*****                 FA000158
+!   line 12                                              -        LINKAGE... LVI,$1,$+1.0                       FA000159
+!   line 13                                              -                   B,JTSEXE                           FA000160
+!   line 14                                              -                   VF,BUFFER                          FA000161
+!   line 15  217316.00     000000.36 31                  JTSEXE   LV,$15,0.0($1)          -ADDRESS OF BUFFER    FA000162
+!   line 16  217316.40     000010.04 8F  217324.34 04             BZBZ,8.4($15),JTSEX1    - IF NO TS            FA000163
+!   line 17  217317.40     215107.03 01                           LVI,$1,SIPT+4.0                               FA000164
+!   line 18  217320.00     217323.43 D0                  JTSEX3   SVA,$1,JTSEXT                                 FA000165
+!   line 19  217320.40     000035.02 3F                           LV,$1,29.0($15)                               FA000166
+!   line 20  217321.00     215265.03 D0                           SVA,$1,STIC                                   FA000167
+!   line 21  217321.40     000035.37 02                           LCI,$15,29.0                                  FA000168
+!   line 22  217322.00     000001.44 AF                           LFT(U),1.0($15)                               FA000169
+!   line 23  217322.40 *   000000.00 8F  000003.36 20             T,$15,0.0($15),3.0                            FA000170
+!   line 24  217323.40     217323.50 00                  JTSEXT   B,$                     -GO TO PARALLEL TABLE FA000171
+!   line 25  217324.00     000010.22 8F  000000.74 05    JTSEX1   BZBZ,8.18($15),.32($1)  -IF NO EXE            FA000172
+!   line 26  217325.00     215125.03 01                           LVI,$1,SIPT+18.0                              FA000173
+!   line 27  217325.40     217320.10 00                           B,JTSEX3                                      FA000174
+
+! ---------------------------------------------------------------
+! Five symbols -- every name this page defines -- and twenty-two
+! rows, which is every row the page prints a BINARY OUTPUT for.
+! ---------------------------------------------------------------
+
+!SYM   JMPP2    217310.40
+!SYM   JTSEXE   217316.00
+!SYM   JTSEX3   217320.00
+!SYM   JTSEXT   217323.40
+!SYM   JTSEX1   217324.00
+
+!CHECK 217307.40 | 720000.00 80 405000.03 70 | line  1 CTI0001(BU,5),(2)11101 -- an INFIX-I connective; the first half word is the 5-bit immediate 11101 left-justified in the 24-bit address field (0o72000000), which is what confirms the reading of the literal. THE COUNTER ARRIVES HERE from printed p.142, which is NOT transcribed; the SLC above asserts it
+!CHECK 217310.40 | 217310.74 C2 | line  2 JMPP2 BRZ,$ -- printed p.142 line 20 "SIC,JMPP2" compiles 217310.40, an outside witness for this label
+!CHECK 217311.00 | 000036.37 02 | line  3 LCI,15,30.0 -- printed WITHOUT a $ on the 15; 30 decimal is the printed 0o36 and the .37 offset is J=15 (0o36) plus the operation's 0o01
+!CHECK 217311.40 | 215324.00 80 215230.36 20 | line  4 T,$15,SLRBU,STLR -- first half is SLRBU, second is STLR with Transmit's 0o36
+!CHECK 217312.40 | 215335.00 80 001000.00 F0 | line  5 CM0000(BU,1),SLRBU+9.0 -- SLRBU+9 words = 215335.00, so the operand is read twice. THE LAST GLYPH IS PRINTED OPEN, like a C. It is a 0: this row prints its own octal fields "215335.00" and "001000.00" with four C-shaped zeros, and line 6 is the same statement shape one row down and prints a CLOSED F0. See the glyph section above
+!CHECK 217313.40 | 215001.04 80 001000.00 F0 | line  6 CM0000(BU,1),SL -- the .04 checks SL TO THE BIT (printed p.103 line 14, "-LEVEL OF INSTRUCTION COUNTER"); comment "-CHANGE TO PP LEVEL"
+!CHECK 217314.40 | 000404.35 01 | line  7 LVI,$14,SOAUD -- an LVI compiles its operand as a 24-bit immediate, so all of SOAUD is checked: 000404.00 (printed p.107 line 19) plus J=14's 0o34 plus the operation's 0o01 = .35
+!CHECK 217315.00 | 217451.40 80 | line  8 SIC,SDISIC -- this and line 9 are ONE card, FA000156, punched "SIC,SDISIC ; B,SDISP"
+!CHECK 217315.40 | 217372.10 00 | line  9 B,SDISP -- a branch prints .10, so SDISP's bit offset within its half word is unobservable
+!CHECK 217316.00 | 000000.36 31 | line 15 JTSEXE LV,$15,0.0($1) -- .36 is J=15, the 1 in the byte is the index $1. printed pp.141 and 142 both branch here
+!CHECK 217316.40 | 000010.04 8F 217324.34 04 | line 16 BZBZ,8.4($15),JTSEX1 -- 8.4 is word 8 bit 4 DECIMAL, printed 0o10.04; the second half is JTSEX1 at 217324.00
+!CHECK 217317.40 | 215107.03 01 | line 17 LVI,$1,SIPT+4.0 -- SIPT+4 words = 215107; .03 is J=1 (0o02) plus 0o01
+!CHECK 217320.00 | 217323.43 D0 | line 18 JTSEX3 SVA,$1,JTSEXT -- JTSEXT is 217323.40, so bit 32 (0o40) IS checked here; the remaining 0o03 is J=1 plus the operation
+!CHECK 217320.40 | 000035.02 3F | line 19 LV,$1,29.0($15) -- 29 decimal prints 0o35; .02 is J=1 and the F in the byte is the index $15
+!CHECK 217321.00 | 215265.03 D0 | line 20 SVA,$1,STIC
+!CHECK 217321.40 | 000035.37 02 | line 21 LCI,$15,29.0 -- the same operation as line 3, here printed WITH the $
+!CHECK 217322.00 | 000001.44 AF | line 22 LFT(U),1.0($15)
+!CHECK 217322.40 | 000000.00 8F 000003.36 20 | line 23 T,$15,0.0($15),3.0 (location carries an asterisk)
+!CHECK 217323.40 | 217323.50 00 | line 24 JTSEXT B,$ -- 0o50 is this half word's own bit 32 plus the branch's 0o10
+!CHECK 217324.00 | 000010.22 8F 000000.74 05 | line 25 JTSEX1 BZBZ,8.18($15),.32($1) -- 18 decimal prints 0o22 and 32 decimal prints 0o40, which with the operation's 0o34 is the printed .74
+!CHECK 217325.00 | 215125.03 01 | line 26 LVI,$1,SIPT+18.0 -- +18 is DECIMAL and lands 0o22 words on from SIPT+4's 215107
+!CHECK 217325.40 | 217320.10 00 | line 27 B,JTSEX3 -- LAST ROW. printed p.144 (PDF p.151) line 6 prints "217326.00  SLC,$", an SLC that emits nothing, so its LOCATION is the counter leaving this page: 217325.40 plus one half word. The forward join is closed and no check here consumes it
+
+! ---------------------------------------------------------------
+! AGREEMENT WITH THE VOLUME SURVEY
+! ---------------------------------------------------------------
+! The survey OCR of this page reported "17 rows carrying a LOCATION,
+! 0 with a trailing '+', 21731C.40..217325.40".  Against this
+! reading: 22 rows carry a LOCATION, not 17 -- the survey UNDER-READS
+! as the brief warned, and 17 is a lower bound that holds.  No row
+! carries a trailing "+", which AGREES: there is not a SYN on the
+! page.  The high endpoint 217325.40 is this page's last row, line
+! 27, EXACTLY.  The low endpoint 21731C.40 is 217310.40, which is
+! line 2, not line 1: the survey missed line 1, whose location
+! 217307.40 is the one on the page followed by a second asterisk and
+! whose row carries no NAME.  So the page starts one full word
+! earlier than the survey's range says.

@@ -1,0 +1,596 @@
+! mcp_bootstrap_p142.strap -- the TENTACLE-PARAMETER loop, the PP
+! interrupt return (M PP1) and the entry to the backup-buffer scan
+! (JMPP1), printed page 142.
+! docs/MCP_Mar63_001-249.pdf PDF p.149, header READ and not assumed:
+! "TIME CLOCK 00054041  PUNID 11D11MCP   CARD ID FA000097
+!  DIST. OF 3/01   3/01   PAGE NUMBER  142", and the column-heading
+! row's own "LOCATION 217245" names the page's first word.
+!
+! FIFTY-SIX PRINTED LINES, FIFTY-TWO OF WHICH EMIT BITS.  Lines 52,
+! 53, 54 and 55 are COMMENT CARDS -- no LOCATION, no BINARY OUTPUT;
+! line 54 carries "*****CHECK FOR OP, AD, USA, OR DS IN BACKUP
+! BUFFER*****" and the other three are blank but for the "-" in the
+! flag column.  Everything else is code: no DRZ, no XW, no SYN, no
+! reservation, and no SLC.
+!
+! CARD SERIALS FA000097 (line 1) to FA000148 (line 56) -- fifty-two
+! serials for fifty-six lines, read at 400 dpi off the right-hand
+! column, so nothing fell off the top or the bottom of the render.
+! Four pairs of lines share a card by the serial column -- 20/21,
+! 23/24, 25/26 and 47/48 -- while lines 22, 27 and 49 carry the next
+! serial in sequence, so the run FA000097..FA000148 is continuous
+! with exactly four duplicates.  ONLY 20/21 IS EXPLAINED: it is
+! "SIC,JMPP2" and its branch, the semicolon double-statement card
+! printed pp.127, 131 and 136 also carry.  The other three pairs are
+! not SIC/branch pairs and no reason is offered for them here.  The
+! load-bearing claim is only that nothing fell off the top or the
+! bottom of the render.
+!
+! ---------------------------------------------------------------
+! BOTH JOINS ARE MEASURED, NOT ASSUMED
+! ---------------------------------------------------------------
+! >>> THE BACKWARD JOIN IS READ OFF THE PREVIOUS PAGE ITSELF. <<<
+! This page prints no SLC, so the "SLC,(8)217245.0" written below is
+! an ASSERTION as far as this deck's own checks go (a hard SLC
+! cannot disagree with the arriving counter -- docs/transcription_
+! workflow.md, "A HARD SLC CANNOT DISAGREE WITH THE ARRIVING
+! COUNTER").  It is nevertheless MEASURED, by rendering PDF p.148 at
+! 400 dpi: printed p.141 has FIFTY lines, not fifty-six, and its
+! last is
+!     50*  217244.00   000000.00 82  004066.60 50
+!          L(BU,4),0.0($2),-19
+! a VFL FULL WORD at 217244.00, which occupies 217244.00 and
+! 217244.40 and leaves the counter at exactly 217245.00.  That is
+! this page's own line 1, and it is also what the heading row's
+! "LOCATION 217245" field prints.  Three readings, one value.
+!
+! >>> THE FORWARD JOIN HAS TWO WITNESSES. <<<  Line 56 is a VFL full
+! word at 217306.40, so it occupies 217306.40 and 217307.00 and the
+! counter leaves at 217307.40.
+!   (a) The volume OCR of printed p.143 (PDF p.150) reads its line 1
+!       as "1* 217307.4C * 720CCC.CO 80 405000.C3 7C
+!       CTICOO1(BU,5),(2)11101" -- 217307.40, exactly where this
+!       page's counter arrives, and carrying the same bare "*" in
+!       the location column that lines 1, 19 and 37 carry here.
+!   (b) p.143's line 2 is "2* 21731C.40 217310.74 C2  JMPP2  BRZ,$
+!       - SIC INTO HERE", which is the DEFINING card for JMPP2 at
+!       217310.40 -- the address this page's line 20 SICs to.  An
+!       off-page reading of both the address and the spelling.
+!
+! TAIL SCOPE.  printed p.99 line 11's "SLC,(8)215000." moved the
+! origin and pp.99+ are OUTSIDE the TAIL,(2)G block that printed p.2
+! opened and printed p.98 line 37 closed with "UNTAIL,(2)".  Names
+! here may legitimately repeat names from pp.2-98 at other
+! addresses; none of this page's six does.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE CONTAINS
+! ---------------------------------------------------------------
+! Lines 1-15   THE TENTACLE-PARAMETER LOOP.  $0 is set to the
+!              left-zeros count ($L), doubled and complemented to
+!              give "-N IN $0" (line 3's comment); line 4 multiplies
+!              M PRM QK by it with a -19 bit offset; line 5 saves
+!              the transmit control out of M R 5.  Line 6's
+!              CM1111(BU,1),.4($2) "SETs USER TO MCP", lines 7-8
+!              plant $2 in M CR ("-SET K IN MCR") and in MR3 AD,
+!              lines 9-10 clear and step it.  M UP 5A (line 11) is
+!              the loop: load a parameter with progressive indexing
+!              and refill ("L(V+ICR)"), store it with progressive
+!              indexing into the tentacle ("-PARAM. TO TENT."),
+!              count back on CB until "-PARAM FINISHED".  Line 14
+!              saves the unprime control and line 15 enters M TC 1.
+! Lines 16-17  M B1: store STIC into the saved-IC slot and branch to
+!              K SUPP.
+! Lines 18-21  M PP1, the PP-level entry: clear M CR, step index 9,
+!              then SIC,JMPP2 / B,JMPP1 -- "-CHECK FOR OP, AD, USA,
+!              DS" -- the SIC/branch pair on one card.
+! Lines 22-32  the AUTO-STACK path.  If S AS is on, return to the PP
+!              at C RET BU ("-RETURN TO PP IF HE IS AUTO STACKED");
+!              otherwise load index 13, branch on index-value-zero
+!              to RSIOTT, and (lines 25-32) call K SERCH with a
+!              return address in $1, then transmit 30 words of
+!              S LR BU into S LR PP, set two bits and go to K INTTY.
+! Lines 33-40  RSIOTT, the same shape for the SUPPRESSED-I/O bit:
+!              test S SIO, read S QK, "-NO PP INTERRUPTS STACKED"
+!              branches to C RET BU, otherwise 30 words are moved
+!              and control goes to K UNSTC.
+! Lines 41-51  C RET BU, the return to the backup level: 29 words
+!              this time, S L and S LR BU+9.0 toggled, "-CHECK FOR
+!              TS, EXE" through J TSEXE, S LR BU restated as a VF,
+!              S IC BU loaded, the save-value-address of $+2,
+!              "-RESTORE $MR" out of S LR BU+1.0, three words
+!              transmitted, and line 51's "BE,$" (Branch Enabled to
+!              itself) as the wait.
+! Lines 52-55  comment cards; line 54 heads the next section.
+! Line 56      JMPP1: "LF(BU,5),SLRBU+8.15  -PICK UP OP, USA, EXE,
+!              DS" -- the first word of the backup-buffer scan whose
+!              body is printed p.143.
+!
+! ---------------------------------------------------------------
+! THE SIX NAMES THIS PAGE DEFINES
+! ---------------------------------------------------------------
+!   M UP 5A  217253.00     M B1    217256.40     M PP1   217260.00
+!   RSIOTT   217271.40     C RET BU 217277.40    JMPP1   217306.40
+!
+! TWO OF THE SIX HAVE AN INDEPENDENT OFF-PAGE WITNESS, both on
+! printed p.141, read from the volume OCR of a page this deck does
+! not transcribe:
+!   M B1   217256.40   p.141 line 49, "217243.00  000000.11 82
+!                      217256.74 02   BB,.9($2),M B1" -- and that
+!                      row is also on the 400 dpi render of PDF
+!                      p.148 made for the backward join, so the
+!                      address was read from the image and not only
+!                      from the OCR.  0o74 has bit 18 set, so .40.
+!   M PP1  217260.00   p.141 line 44, "217240.00  217260.31 46
+!                      BXVZZ,M PP 1".  0o31 has bit 18 clear, so
+!                      .00.  Printed there WITH a blank before the
+!                      1, here without; STRAP ignores blanks in a
+!                      name.
+! THE OTHER FOUR -- M UP 5A, RSIOTT, C RET BU and JMPP1 -- have no
+! off-page witness at all.  Each LOCATION is pinned twice on this
+! page (M UP 5A by line 11's own location and line 13's CB;
+! RSIOTT by line 33 and the branches on lines 24 and 27; C RET BU by
+! line 41 and the branch-on-bit targets on lines 22, 33 and 35;
+! JMPP1 by line 56 and line 21's branch), so the ADDRESSES are safe.
+! THE SPELLINGS REST ON INK:
+!   "RSIOTT" -- the fourth glyph is a round open bowl.  Read O, not
+!   C, on the asymmetry rule (dropout opens a closed glyph and never
+!   closes an open one) and because the row it labels tests S SIO,
+!   whose own O two inches to the right is printed the same way.  No
+!   manual and no other page carries the name; recorded as a
+!   reading, not a proof.
+!   "C RET BU" -- read C.  The MCP's C-family names are attested
+!   elsewhere in the volume (C WAIT and C NOWAT at 216226.40 and
+!   216225.00), and this page prints the name four times (line 41's
+!   NAME column and lines 22, 33, 35 as "CRETBU"), always with the
+!   same glyph.
+!   "M UP 5A" -- the last two characters are 5 and A, read at 1200
+!   dpi; the A has a clear apex.
+!
+! ---------------------------------------------------------------
+! >>> "M PRM GK" IS "M PRM QK", AND THE PAGE'S OWN INK SETTLES IT
+! ---------------------------------------------------------------
+! Line 4's second operand was read "M PRM GK" on the first pass.  At
+! 1800 dpi the glyph is a round bowl with a short DIAGONAL stroke at
+! the LOWER RIGHT, crossing the bowl and running outside it -- which
+! is the same glyph line 34 prints in "S QK" on this page, and not
+! a G (a G's bar is at mid height, horizontal, and runs inward).
+! Two further readings agree: printed p.120 line 6 is the DEFINING
+! card, "M PRM QK DRZ", already landed as MPRMQK in decks/mcp_
+! bootstrap_p119.strap, and the volume OCR of printed p.141 line 42
+! reads "LV,1,MPRMQK".  THE DECK FOLLOWS p.119/p.120's SPELLING AND
+! SAYS SO.
+!
+! ---------------------------------------------------------------
+! THE BYTE COLUMN: THIS PAGE PRINTS A LOW-NIBBLE 0 AS AN OPEN C,
+! AND LINES 42 AND 43 PROVE IT ON ROWS WHOSE VALUE IS CERTAIN
+! ---------------------------------------------------------------
+! Lines 4 and 12 print their trailing hex nibble OPEN -- "9C" and
+! "DC" to the eye at 900, 1200 and 1800 dpi.  Both are read here as
+! 0, and the evidence is NOT the usual adjacent-octal-field argument
+! (which docs/transcription_workflow.md calls necessary but not
+! sufficient, and which on line 4 came out differently at 1200 dpi
+! than at 1800 dpi).  It is this:
+!
+!   (a) LINES 42 AND 43 PRINT "001000.CC FC" WHERE THE VALUE IS
+!       CERTAIN.  They are "CM0000(BU,1),S L" and "CM0000(BU,1),
+!       SLRBU+9.0" -- the SAME TWO STATEMENTS as lines 31 and 30,
+!       and as lines 39 and 38, which print a CLOSED "F0" in the
+!       identical column.  All six assemble to F0 and all six
+!       !CHECKs below pass.  So this page demonstrably opens the
+!       byte's low-nibble 0, in exactly that column, on rows where
+!       0 is established four other ways.  It is per-CHARACTER, not
+!       a band failure: line 48's "D0" eight rows later prints
+!       closed.
+!   (b) WHAT PRODUCED THEM.  The low nibble of a VFL full word is
+!       i2, the offset index from the OF7(I') operand (vflAddrOf:
+!       w[3:0], IBM 60-63).  Line 12's "ST(V+I)(BU,32),.32($2)" has
+!       NO offset operand at all, so i2 is 0; its twin line 11,
+!       "L(V+ICR)(BU,32),.32($3)", is the same shape and prints a
+!       closed 0.  Line 4's offset operand is the literal -19 and
+!       carries no index, so i2 is 0 there too.
+! Recorded as 90 and D0.  The raw ink reads 9C and DC and that is
+! written here rather than quietly dropped.
+!
+! ---------------------------------------------------------------
+! >>> THE ASSEMBLER GAP: "M-" ON A VFL OPERATION (LINE 4) <<<
+! ---------------------------------------------------------------
+! Line 4 is printed "M-(BU,19),M PRM QK,-19" -- read at 1800 dpi,
+! and the "M-" is unambiguous.  strap_asm raises KeyError 'M-' out
+! of VFL_INT_CODES, which ABORTS the whole assembly, so leaving the
+! printed form in would check NOTHING on this page.  The deck
+! therefore writes "M+N(BU,19),MPRMQK,-19".
+!
+! MEASURED, and that is all that is claimed for it:
+!     M+N(BU,19),MPRMQK,-19  ->  215640.00 80  023066.70 90
+! which is the printed row (see the byte note above).  The other
+! twenty-eight accepted VFL spellings were tried and none of them
+! produces that word:  M+ gives .60 90, M+1 gives .62 B0, M-1 gives
+! .72 B0, -MG gives .72 10, "-" alone gives .70 10.
+!
+! >>> THIS IS A SUBSTITUTION AND IT IS THE WEAKEST !CHECK ON THE
+! PAGE. <<<  The operation is substituted AND the row's final nibble
+! is read against contrary ink, so its check verifies rather less
+! than the other fifty-one do.  WHAT THE ROW DOES ESTABLISH ON ITS
+! OWN, with no circularity, is the OCTAL FIELD "023066.70": that
+! field is clean ink, and 0o70 against M+'s 0o60 is exactly the
+! invert-sign bit -- the same 0o10 that separates M-1 (.72) from
+! M+1 (.62) and "-" (.70) from "+" (.60).  So the page independently
+! confirms that line 4 is a NEGATED multiply, whatever is written in
+! the deck to get it there.
+!
+! THE GAP IS REAL AND IT IS A FINDING.  strap/opcodes.py's
+! VFL_INT_WRITTEN_MINUS deliberately omits "M-" with the note "M-
+! AND M-MG REMAIN DELIBERATELY ABSENT.  Nothing in the corpus spells
+! either of them on a VFL operation."  THIS PAGE SPELLS IT: "M-" on
+! a VFL operation carrying a VFL data description "(BU,19)", which
+! is precisely the standard that file applied when it admitted "M-1"
+! (MCP printed p.92 line 27) and "-MG" (Reference Manual printed
+! p.61, Figure 12).  printed p.142 line 4 is the witness that would
+! admit M-.  Not changed here -- this deck touches nothing under
+! strap/.
+!
+! ---------------------------------------------------------------
+! EXTERNALS.  WHAT IS READ AND WHAT IS CONVENTION
+! ---------------------------------------------------------------
+! The distinction was MEASURED on this page's own rows rather than
+! assumed: each SYN below was re-assembled with its bit offset set
+! to .0, .04 and .40 and the printed half word compared.
+!
+! FULLY OBSERVED (the bit offset lands in a printed address field):
+!   MPRMQK  line 4 is a VFL operand, so the whole 24-bit address
+!           prints -- .04 would print "215640.04".  .00 is READ.
+!   STIC    line 16, the same -- "215265.00 80".  .00 is READ.
+!   SLRBU   line 46 is "VF,SLRBU", which prints the 24-bit value
+!           and its sign -- .04 would print "215324.04+".  READ.
+!   SL      line 31/39/42 are VFL operands printing "215001.04", so
+!           bit 4 is READ, not conventional.
+!   SAS/SSIO  lines 22 and 33 are Branch on Bit and print the bit
+!           address directly, 0o31 = 25 and 0o75 = 61.
+!
+! HALF WORD ONLY (bit 18 shows, bits 19-23 are swallowed by the
+! operation or register field, so ".0" below is a CONVENTION and no
+! !CHECK here can test it -- docs/transcription_workflow.md, "WHAT
+! THE ORACLE CANNOT SEE", item 1):
+!   MR5, MCR, MR3AD, SICBU, SLRPP  -- index and Transmit operands.
+!           Measured: setting MCR to .04 changes nothing; setting it
+!           to .40 turns line 7's ".05" into ".45", which WOULD
+!           fail, so the half word itself is checked.
+!   MTC1, KSUPP, JMPP2, KSERCH, KINTTY, KUNSTC, JTSEXE -- branch and
+!           SIC targets.  The ".40" values are READ (bit 18 set in
+!           the printed octal pair: 0o50 and 0o74 mean .40, 0o10 and
+!           0o34 mean .00); the bits below are convention.
+!
+! MPRMQK  215640.00  LANDED as MPRMQK by decks/mcp_bootstrap_p119.
+!                    strap from printed p.120 line 6's defining card
+!                    "M PRM QK DRZ".  See the Q note above.
+MPRMQK  SYN, (8)215640.0
+! MR5     215645.00  LANDED, decks/mcp_bootstrap_p119.strap, from
+!                    printed p.120 line 12 "M R 5 DRZ".  The volume
+!                    OCR carries that defining card, "1* 215645.00
+!                    M R 5 DRZ(BU,64),(1)".  Lines 5 and 14 print
+!                    215645.06 and 215645.07 -- 2*3 and 2*3+1 for
+!                    register $3, which is the whole octal pair.
+MR5     SYN, (8)215645.0
+! MCR     215636.00  The volume OCR carries the defining card,
+!                    "2* 215636.00  215016.00+  M CR  XS IPL IN
+!                    -CURRENT TENTACLE TABLE ADDRESS".  Lines 7 and
+!                    18 print 215636.05 and 215636.22.
+MCR     SYN, (8)215636.0
+! MR3AD   215546.00  LANDED, decks/mcp_bootstrap_p117.strap line 42
+!                    "MR3 AD"; p.118's !SYM puts it here.  The
+!                    volume OCR carries the defining card,
+!                    "25* 215546.00  00.+  M R 3AD  VF,0.0".
+MR3AD   SYN, (8)215546.0
+! MTC1    215546.40  LANDED, decks/mcp_bootstrap_p118.strap !SYM.
+!                    The volume OCR carries the defining card,
+!                    "26* 215546.40 *  215547.10 06  M TC 1
+!                    BUSAZ,$+.32".  Line 15 prints 215546.50, and
+!                    0o50 has bit 18 set, so .40 is READ.
+MTC1    SYN, (8)215546.40
+! STIC    215265.00  LANDED by p110, p111, p112, p118, p128 and
+!                    p136, and named in C22-6728's prose ("the saved
+!                    IC is stored in STIC"), which is what settles
+!                    the last letter as C.  Line 16 prints
+!                    "215265.00 80" -- a VFL operand, so READ.
+STIC    SYN, (8)215265.0
+! KSUPP   216242.00  The volume OCR carries the defining card,
+!                    "2* 216242.00  216246.70 00  K SUPP
+!                    NOP,K COMM R".  Line 17 prints 216242.10.
+KSUPP   SYN, (8)216242.0
+! JMPP2   217310.40  The DEFINING card is printed p.143 line 2, in
+!                    the volume OCR as "2* 21731C.40  217310.74 C2
+!                    JMPP2  BRZ,$  - SIC INTO HERE".  Line 20 here
+!                    prints "217310.40 80"; SIC prints its operand's
+!                    half word, and 0o40 is bit 18 set.
+JMPP2   SYN, (8)217310.40
+! KSERCH  222020.00  LANDED, decks/mcp_bootstrap_p127.strap.  The
+!                    volume OCR carries the defining card,
+!                    "5* 222020.00  215021.23 01  K SERCH
+!                    LVI,9,S PROG S".  Line 26 prints 222020.10.
+KSERCH  SYN, (8)222020.0
+! KINTTY  216010.40  LANDED, decks/mcp_bootstrap_p123.strap !SYM.
+!                    The volume OCR carries the defining card at
+!                    216010.40 with "K INT TY" in the NAME column,
+!                    and an off-page reference "220361.00
+!                    000000.31 89  216010.74 02  BB,S AS($9),
+!                    K INT TY".  Line 32 prints 216010.50 -- 0o50,
+!                    bit 18 set, so .40 is READ.
+KINTTY  SYN, (8)216010.40
+! KUNSTC  222037.00  LANDED, decks/mcp_bootstrap_p123.strap and
+!                    p127.  The volume OCR carries an off-page
+!                    reference, "216010.00  222037.10 00  K NENTY
+!                    B,K UNSTC  -NOT FOUND RETURN".  Line 40 prints
+!                    222037.10.
+KUNSTC  SYN, (8)222037.0
+! JTSEXE  217316.00  The volume OCR carries the DEFINING card,
+!                    "15* 217316.00  000000.36 31  JTSEXE
+!                    LV,$15,0.0($1)  -ADDRESS OF BUFFER", and an
+!                    off-page reference "217200.40  217316.10 00
+!                    B,JTSEXE".  Line 45 prints 217316.10.
+JTSEXE  SYN, (8)217316.0
+! SLRBU   215324.00  LANDED, decks/mcp_bootstrap_p117.strap line 28
+!                    and p.116's !SYM.  The volume OCR carries the
+!                    defining card, "21* 215324.00 *  000035.00
+!                    S LR BU  DRZ(BU,64),(29)".  FULLY OBSERVED
+!                    here by line 46's VF.
+SLRBU   SYN, (8)215324.0
+! SLRPP   215266.00  LANDED, decks/mcp_bootstrap_p116.strap line 18
+!                    defines it; p123/p127/p134 carry it.  The
+!                    volume OCR's defining card is "1* 215266.00 *
+!                    000035.00  S LR PP  DRZ(BU,64),(29)".  Lines 29
+!                    and 37 print 215266.36; half word only --
+!                    measured, .04 changes nothing and .40 prints
+!                    .76.
+SLRPP   SYN, (8)215266.0
+! SICBU   215361.00  LANDED, decks/mcp_bootstrap_p116.strap !SYM and
+!                    p127/p132.  The volume OCR carries the defining
+!                    card, "24* 215361.00  000000.00 F  S IC BU
+!                    VF,0", and off-page references at 216223.40 and
+!                    216732.40.  Line 47 prints 215361.02 -- 2*1 for
+!                    register 1, half word only.
+SICBU   SYN, (8)215361.0
+! SCOMRG  215001.00  LANDED, decks/mcp_bootstrap_p103.strap line 8
+!                    ("S COM RG XW,(8)520000.").  Carried only so
+!                    that S L can be written the way p.103 writes
+!                    it.
+SCOMRG  SYN, (8)215001.0
+! SL      215001.04  LANDED, p.103 line 14, "S L SYN(BU,1),
+!                    S COM RG + 0.04", and already used this way by
+!                    decks/mcp_bootstrap_p136.strap.  Lines 31, 39
+!                    and 42 are VFL operands printing "215001.04",
+!                    so bit 4 is READ.
+!                    >>> THE PAGE SPELLS IT BOTH WAYS. <<<  Line 31
+!                    and line 39 print "SL"; line 42 prints "S L"
+!                    with the blank.  The deck keeps both forms
+!                    exactly as printed -- STRAP ignores blanks in a
+!                    name and strap_asm resolves them to the same
+!                    symbol (all three rows pass).
+SL      SYN(BU,1), SCOMRG+0.04
+! SAS     .25        LANDED, decks/mcp_bootstrap_p109.strap line 8
+!                    "-AUTO STACK STATUS".  Line 22 prints
+!                    000000.31, 0o31 = 25, fully observed.
+SAS     SYN(BU,1), .25
+! SSIO    .61        LANDED, decks/mcp_bootstrap_p109.strap line 10
+!                    "-SUPPRESSED MODE STATUS".  Line 33 prints
+!                    000000.75, 0o75 = 61, fully observed.
+SSIO    SYN(BU,1), .61
+! SQK     .32        LANDED, decks/mcp_bootstrap_p109.strap line 9
+!                    (no comment printed there).  Line 34 prints
+!                    000000.40, 0o40 = 32 -- but LV swallows the
+!                    bits below the half word (measured), so this
+!                    row pins S QK only to 32..63 and the value
+!                    comes from p.109, not from here.
+SQK     SYN(BU,18), .32
+!
+! ---------------------------------------------------------------
+! RECORDED AND NOT EXPLAINED
+! ---------------------------------------------------------------
+! A BARE "*" AFTER THE LOCATION on lines 1, 19 and 37 --
+! "217245.00 *", "217260.40 *", "217274.00 *".  printed pp.3, 37,
+! 103, 120, 128 and 136 carry the same mark and it was left
+! unexplained on each; the volume OCR of printed p.143 marks ITS
+! line 1 the same way.  It changes no compiled bit.  Note that line
+! 37 is a verbatim repeat of line 29 ("T,15,SLRBU,SLRPP" against
+! "T,$15,SLRBU,SLRPP") and only one of the two is starred, so it is
+! not a property of the statement.
+!
+! THE PAGE PRINTS THE SAME THREE-ROW SEQUENCE THREE TIMES with the
+! register written "$15" once and "15" twice (lines 28/29 against
+! 36/37 and 41 following), and the deck transcribes each as printed.
+! Both forms compile identically, which is itself worth recording:
+! "LCI,$15,30.0" and "LCI,15,30" both give 000036.37 02.
+!
+! ---------------------------------------------------------------
+! COVERAGE
+! ---------------------------------------------------------------
+! ALL FIFTY-TWO EMITTING ROWS CARRY A !CHECK and all six symbols a
+! !SYM.  Lines 52-55 have no !CHECK because they are comment cards
+! and emit nothing.  Fifty-one of the fifty-two checks are on the
+! printed statement exactly as it stands; line 4 is the one
+! SUBSTITUTION and is flagged above and in its own !CHECK note.
+! ---------------------------------------------------------------
+
+        SLC, (8)217245.0
+
+        LV,$0,$L                        ! line  1
+        V+,$0,$0                        ! line  2
+        LC,$0,$0                        ! line  3  -N IN $0
+        M-(BU,19),MPRMQK,-19            ! line  4  printed form, no substitution
+        LX,$3,MR5                       ! line  5  -TRANSMIT CONTROL
+        CM1111(BU,1),.4($2)             ! line  6  -SET USER TO MCP
+        SV,$2,MCR                       ! line  7  -SET K IN MCR
+        SV,$2,MR3AD                     ! line  8
+        Z,1.0($2)                       ! line  9
+        V+I,$2,2.32                     ! line 10
+MUP5A   L(V+ICR)(BU,32),.32($3)         ! line 11
+        ST(V+I)(BU,32),.32($2)          ! line 12  -PARAM. TO TENT.
+        CB,$0,MUP5A                     ! line 13  -PARAM FINISHED
+        SX,$3,MR5                       ! line 14  -SAVE UNPRIME CONTROL
+        B,MTC1                          ! line 15  -ENTER
+MB1     M-1(BU,19),STIC                 ! line 16
+        B,KSUPP                         ! line 17
+MPP1    Z,MCR                           ! line 18
+        V-I,9,1.0                       ! line 19
+        SIC,JMPP2                       ! line 20
+        B,JMPP1                         ! line 21  -CHECK FOR OP, AD, USA, DS
+        BB,SAS($9),CRETBU               ! line 22  -RETURN TO PP IF HE IS AUTO STACKED
+        LV,$13,($9)                     ! line 23
+        BXVZ,RSIOTT                     ! line 24
+        LVI,$1,$+1.0                    ! line 25
+        B,KSERCH                        ! line 26
+        B,RSIOTT                        ! line 27
+        LCI,$15,30.0                    ! line 28
+        T,$15,SLRBU,SLRPP               ! line 29
+        CM0000(BU,1),SLRBU+9.0          ! line 30
+        CM0000(BU,1),SL                 ! line 31
+        B,KINTTY                        ! line 32
+RSIOTT  BB,SSIO($9),CRETBU              ! line 33
+        LV,0,SQK($9)                    ! line 34
+        BXVZ,CRETBU                     ! line 35  -NO PP INTERRUPTS STACKED
+        LCI,15,30                       ! line 36
+        T,15,SLRBU,SLRPP                ! line 37
+        CM0000(BU,1),SLRBU+9.0          ! line 38
+        CM0000(BU,1),SL                 ! line 39
+        B,KUNSTC                        ! line 40
+CRETBU  LCI,15,29.0                     ! line 41
+        CM0000(BU,1),S L                ! line 42  printed "S L", with the blank
+        CM0000(BU,1),SLRBU+9.0          ! line 43
+        LVI,1,$+1.0                     ! line 44  -CHECK FOR TS, EXE
+        B,JTSEXE                        ! line 45
+        VF,SLRBU                        ! line 46
+        LV,1,SICBU                      ! line 47
+        SVA,1,$+2.                      ! line 48
+        LFT(U),SLRBU+1.0                ! line 49  -RESTORE $MR
+        T,15,SLRBU,3.0                  ! line 50
+        BE,$                            ! line 51
+!                                       ! line 52  (comment card)
+!                                       ! line 53  (comment card)
+!                                       ! line 54  *****CHECK FOR OP, AD, USA, OR DS IN BACKUP BUFFER*****
+!                                       ! line 55  (comment card)
+JMPP1   LF(BU,5),SLRBU+8.15             ! line 56  -PICK UP OP, USA, EXE, DS
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, read off PDF p.149 (400 dpi for the page,
+! 900 and 1200 dpi for the BINARY OUTPUT column, 1800 dpi for the
+! bytes on lines 4 and 12, the operation on line 4 and the Q in
+! "M PRM QK", and 400 dpi for the card serials).
+! ---------------------------------------------------------------
+!  LINE  LOCATION       BINARY OUTPUT                  NAME      STATEMENT                      COMMENT                                CARD
+!   1*   217245.00 *    000010.00 30                             LV,$0,$L                                                              FA000097
+!   2*   217245.40      000020.00 B0                             V+,$0,$0                                                              FA000098
+!   3*   217246.00      000020.00 50                             LC,$0,$0                       -N IN $0                               FA000099
+!   4*   217246.40      215640.00 80  023066.70 90               M-(BU,19),M PRM QK,-19                                                FA000100
+!   5*   217247.40      215645.06 10                             LX,$3,M R 5                    -TRANSMIT CONTROL                      FA000101
+!   6*   217250.00      000000.04 82  001000.36 F0               CM1111(BU,1),.4($2)            -SET USER TO MCP                       FA000102
+!   7*   217251.00      215636.05 30                             SV,$2,M CR                     -SET K IN MCR                          FA000103
+!   8*   217251.40      215546.05 30                             SV,$2,MR3 AD                                                          FA000104
+!   9*   217252.00      000001.22 02                             Z,1.0($2)                                                             FA000105
+!  10*   217252.40      000002.45 05                             V+I,$2,2.32                                                           FA000106
+!  11*   217253.00      000000.40 83  340000.20 50     M UP 5A   L(V+ICR)(BU,32),.32($3)                                               FA000107
+!  12*   217254.00      000000.40 82  140000.20 D0               ST(V+I)(BU,32),.32($2)         -PARAM. TO TENT.                       FA000108
+!  13*   217255.00      217253.00 48                             CB,$0,M UP 5A                  -PARAM FINISHED                        FA000109
+!  14*   217255.40      215645.07 10                             SX,$3,M R 5                    -SAVE UNPRIME CONTROL                  FA000110
+!  15*   217256.00      215546.50 00                             B,M TC 1                       -ENTER                                 FA000111
+!  16*   217256.40      215265.00 80  023000.32 B0     M B1      M-1(BU,19),S TIC                                                      FA000112
+!  17*   217257.40      216242.10 00                             B,K SUPP                                                              FA000113
+!  18*   217260.00      215636.22 00                   M PP1     Z,M CR                                                                FA000114
+!  19*   217260.40 *    000001.23 0D                             V-I,9,1.0                                                             FA000115
+!  20*   217261.00      217310.40 80                             SIC,JMPP2                                                             FA000116
+!  21*   217261.40      217306.50 00                             B,JMPP1                        -CHECK FOR OP, AD, USA, DS             FA000116
+!  22*   217262.00      000000.31 89  217277.74 02               BB,SAS($9),CRETBU              -RETURN TO PP IF HE IS AUTO STACKED    FA000117
+!  23*   217263.00      000000.32 39                             LV,$13,($9)                                                           FA000118
+!  24*   217263.40      217271.71 42                             BXVZ,RSIOTT                                                           FA000118
+!  25*   217264.00      217265.03 01                             LVI,$1,$+1.0                                                          FA000119
+!  26*   217264.40      222020.10 00                             B,KSERCH                                                              FA000119
+!  27*   217265.00      217271.50 00                             B,RSIOTT                                                              FA000120
+!  28*   217265.40      000036.37 02                             LCI,$15,30.0                                                          FA000121
+!  29*   217266.00      215324.00 80  215266.36 20               T,$15,SLRBU,SLRPP                                                     FA000122
+!  30*   217267.00      215335.00 80  001000.00 F0               CM0000(BU,1),SLRBU+9.0                                                FA000123
+!  31*   217270.00      215001.04 80  001000.00 F0               CM0000(BU,1),SL                                                       FA000124
+!  32*   217271.00      216010.50 00                             B,KINTTY                                                              FA000125
+!  33*   217271.40      000000.75 89  217277.74 02     RSIOTT    BB,SSIO($9),CRETBU                                                    FA000126
+!  34*   217272.40      000000.40 39                             LV,0,SQK($9)                                                          FA000127
+!  35*   217273.00      217277.71 42                             BXVZ,CRETBU                    -NO PP INTERRUPTS STACKED              FA000128
+!  36*   217273.40      000036.37 02                             LCI,15,30                                                             FA000129
+!  37*   217274.00 *    215324.00 80  215266.36 20               T,15,SLRBU,SLRPP                                                      FA000130
+!  38*   217275.00      215335.00 80  001000.00 F0               CM0000(BU,1),SLRBU+9.0                                                FA000131
+!  39*   217276.00      215001.04 80  001000.00 F0               CM0000(BU,1),SL                                                       FA000132
+!  40*   217277.00      222037.10 00                             B,KUNSTC                                                              FA000133
+!  41*   217277.40      000035.37 02                   C RET BU  LCI,15,29.0                                                           FA000134
+!  42*   217300.00      215001.04 80  001000.00 F0               CM0000(BU,1),S L                                                      FA000135
+!  43*   217301.00      215335.00 80  001000.00 F0               CM0000(BU,1),SLRBU+9.0                                                FA000136
+!  44*   217302.00      217303.03 01                             LVI,1,$+1.0                    -CHECK FOR TS, EXE                     FA000137
+!  45*   217302.40      217316.10 00                             B,JTSEXE                                                              FA000138
+!  46*   217303.00      215324.00+                               VF,SLRBU                                                              FA000139
+!  47*   217303.40      215361.02 30                             LV,1,SICBU                                                            FA000140
+!  48*   217304.00      217306.03 D0                             SVA,1,$+2.                                                            FA000140
+!  49*   217304.40      215325.44 A0                             LFT(U),SLRBU+1.0               -RESTORE $MR                           FA000141
+!  50*   217305.00      215324.00 80  000003.36 20               T,15,SLRBU,3.0                                                        FA000142
+!  51*   217306.00      217306.00 00                             BE,$                                                                  FA000143
+!  52*                                                                                                                                 FA000144
+!  53*                                                                                                                                 FA000145
+!  54*                                                           *****CHECK FOR OP, AD, USA, OR DS IN BACKUP BUFFER*****               FA000146
+!  55*                                                                                                                                 FA000147
+!  56*   217306.40      215334.17 80  005000.06 70     JMPP1     LF(BU,5),SLRBU+8.15            -PICK UP OP, USA, EXE, DS              FA000148
+! ---------------------------------------------------------------
+
+!SYM   MUP5A    217253.00
+!SYM   MB1      217256.40
+!SYM   MPP1     217260.00
+!SYM   RSIOTT   217271.40
+!SYM   CRETBU   217277.40
+!SYM   JMPP1    217306.40
+
+!CHECK 217245.00 | 000010.00 30 | line  1 LV,$0,$L (location carries an asterisk)
+!CHECK 217245.40 | 000020.00 B0 | line  2 V+,$0,$0
+!CHECK 217246.00 | 000020.00 50 | line  3 LC,$0,$0
+!CHECK 217246.40 | 215640.00 80 023066.70 90 | line  4 printed "M-(BU,19),M PRM QK,-19"; deck writes M+N -- SUBSTITUTION, strap_asm has no M-. Byte read 0 against ink that prints 9C; see the byte note. WEAKEST CHECK ON THE PAGE
+!CHECK 217247.40 | 215645.06 10 | line  5 LX,$3,M R 5
+!CHECK 217250.00 | 000000.04 82 001000.36 F0 | line  6 CM1111(BU,1),.4($2)
+!CHECK 217251.00 | 215636.05 30 | line  7 SV,$2,M CR
+!CHECK 217251.40 | 215546.05 30 | line  8 SV,$2,MR3 AD
+!CHECK 217252.00 | 000001.22 02 | line  9 Z,1.0($2)
+!CHECK 217252.40 | 000002.45 05 | line 10 V+I,$2,2.32
+!CHECK 217253.00 | 000000.40 83 340000.20 50 | line 11 M UP 5A L(V+ICR)(BU,32),.32($3)
+!CHECK 217254.00 | 000000.40 82 140000.20 D0 | line 12 ST(V+I)(BU,32),.32($2) -- byte read 0 against ink that prints DC; i2 is 0 (no OF7 operand) and line 11 is its twin printing a closed 0
+!CHECK 217255.00 | 217253.00 48 | line 13 CB,$0,M UP 5A
+!CHECK 217255.40 | 215645.07 10 | line 14 SX,$3,M R 5
+!CHECK 217256.00 | 215546.50 00 | line 15 B,M TC 1
+!CHECK 217256.40 | 215265.00 80 023000.32 B0 | line 16 M B1 M-1(BU,19),S TIC
+!CHECK 217257.40 | 216242.10 00 | line 17 B,K SUPP
+!CHECK 217260.00 | 215636.22 00 | line 18 M PP1 Z,M CR
+!CHECK 217260.40 | 000001.23 0D | line 19 V-I,9,1.0 (location carries an asterisk)
+!CHECK 217261.00 | 217310.40 80 | line 20 SIC,JMPP2 (same card as line 21, FA000116)
+!CHECK 217261.40 | 217306.50 00 | line 21 B,JMPP1
+!CHECK 217262.00 | 000000.31 89 217277.74 02 | line 22 BB,SAS($9),CRETBU
+!CHECK 217263.00 | 000000.32 39 | line 23 LV,$13,($9) -- address omitted before the index
+!CHECK 217263.40 | 217271.71 42 | line 24 BXVZ,RSIOTT
+!CHECK 217264.00 | 217265.03 01 | line 25 LVI,$1,$+1.0
+!CHECK 217264.40 | 222020.10 00 | line 26 B,KSERCH
+!CHECK 217265.00 | 217271.50 00 | line 27 B,RSIOTT
+!CHECK 217265.40 | 000036.37 02 | line 28 LCI,$15,30.0
+!CHECK 217266.00 | 215324.00 80 215266.36 20 | line 29 T,$15,SLRBU,SLRPP
+!CHECK 217267.00 | 215335.00 80 001000.00 F0 | line 30 CM0000(BU,1),SLRBU+9.0
+!CHECK 217270.00 | 215001.04 80 001000.00 F0 | line 31 CM0000(BU,1),SL
+!CHECK 217271.00 | 216010.50 00 | line 32 B,KINTTY
+!CHECK 217271.40 | 000000.75 89 217277.74 02 | line 33 RSIOTT BB,SSIO($9),CRETBU
+!CHECK 217272.40 | 000000.40 39 | line 34 LV,0,SQK($9)
+!CHECK 217273.00 | 217277.71 42 | line 35 BXVZ,CRETBU
+!CHECK 217273.40 | 000036.37 02 | line 36 LCI,15,30 -- same bits as line 28's LCI,$15,30.0
+!CHECK 217274.00 | 215324.00 80 215266.36 20 | line 37 T,15,SLRBU,SLRPP (location carries an asterisk; same bits as line 29)
+!CHECK 217275.00 | 215335.00 80 001000.00 F0 | line 38 CM0000(BU,1),SLRBU+9.0
+!CHECK 217276.00 | 215001.04 80 001000.00 F0 | line 39 CM0000(BU,1),SL
+!CHECK 217277.00 | 222037.10 00 | line 40 B,KUNSTC
+!CHECK 217277.40 | 000035.37 02 | line 41 C RET BU LCI,15,29.0
+!CHECK 217300.00 | 215001.04 80 001000.00 F0 | line 42 CM0000(BU,1),S L -- printed with the blank; printed byte reads FC and is F0 (same statement as line 31)
+!CHECK 217301.00 | 215335.00 80 001000.00 F0 | line 43 CM0000(BU,1),SLRBU+9.0 -- printed byte reads FC and is F0 (same statement as lines 30 and 38)
+!CHECK 217302.00 | 217303.03 01 | line 44 LVI,1,$+1.0
+!CHECK 217302.40 | 217316.10 00 | line 45 B,JTSEXE
+!CHECK 217303.00 | 215324.00+ | line 46 VF,SLRBU -- a VF prints its 24-bit value and sign, so SLRBU's bit offset is fully observed here
+!CHECK 217303.40 | 215361.02 30 | line 47 LV,1,SICBU
+!CHECK 217304.00 | 217306.03 D0 | line 48 SVA,1,$+2. -- the D is read on its straight vertical left stem and the 0 prints closed
+!CHECK 217304.40 | 215325.44 A0 | line 49 LFT(U),SLRBU+1.0
+!CHECK 217305.00 | 215324.00 80 000003.36 20 | line 50 T,15,SLRBU,3.0
+!CHECK 217306.00 | 217306.00 00 | line 51 BE,$ -- the octal pair is .00, not the .10 an unconditional B prints
+!CHECK 217306.40 | 215334.17 80 005000.06 70 | line 56 JMPP1 LF(BU,5),SLRBU+8.15 -- the operand arithmetic, +8 words and 15 bits off SLRBU, prints as 215334.17 (0o17 = 15); the 8 and the 15 are literals in the statement, not a reading

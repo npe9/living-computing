@@ -1,0 +1,495 @@
+! mcp_bootstrap_p138.strap -- MCP printed page 138, the tail of the
+! console EDIT routine plus the whole of P CSRD (the fake-read
+! routine) and the head of G TRANF (the TRANSFER SUBROUTINE).
+! docs/MCP_Mar63_001-249.pdf PDF p.145.
+!
+! HEADER READ, NOT ASSUMED.  The top line prints
+!   "TIME CLOCK 00054041   PUNID 11011MCP   CARD ID EE000167
+!    DIST. OF 3/01   3/01   PAGE NUMBER 138"
+! and the column-header line below it prints
+!   "LINE   LOCATION   BINARY OUTPUT   NAME   STATEMENT   LOCATION
+!    217056".
+!
+! >>> THE COLUMN-HEADER LINE CARRIES A SECOND "LOCATION" FIELD, AND
+! IT IS A FREE ORIGIN WITNESS. <<<  Far to the right of "STATEMENT"
+! this page prints "LOCATION  217056" -- the WORD at which the page
+! begins, printed by IBM's own assembler in the page header.  Read
+! at 600 dpi from x=5800 y=380 (600-dpi units).  It is not a
+! substitute for line 1's own 217056.40 (the header gives no bit
+! offset), but it is an independent confirmation of the word, and it
+! is the cheapest join check in this volume.  No deck in this
+! repository has used it; it should be read on every page from here
+! on.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! 56 printed lines.  48 carry a LOCATION; 8 are comment cards
+! (lines 10, 17, 18, 19, 20, 43, 52, 56 -- LOCATION and BINARY
+! OUTPUT both empty, text printed raw from card column 2).
+! First printed location 217056.40 (line 1), last 217115.00
+! (line 55).  Card serials EE000167..EE000221, and EE000194 IS
+! PUNCHED TWICE, on lines 28 and 29 -- read at 1200 dpi, not
+! inferred: the column prints 192, 193, 194, 194, 195, 196.  That
+! is 55 distinct serials over 56 cards.  Nothing rests on it; the
+! row count is pinned by the LINE column (1..56) and by the closed
+! address chain below.
+!
+! Three locations carry an asterisk after them: lines 11, 33 and
+! 55 (217065.40 *, 217101.00 *, 217115.00 *).  Recorded, not
+! explained -- printed p.136 carries the same mark on four of its
+! rows and no deck has yet established what it flags.
+!
+! THE ADDRESS CHAIN CLOSES END TO END.  Every row's printed address
+! plus its own length (one half word, or one full word for lines 1,
+! 2, 3, 4, 9, 11, 22, 23, 25, 26, 33, 38, 44, 54, 55) equals the
+! next row's printed address, across all forty-eight of them, with
+! no gap and no overlap.  Line 55 is a full word, so the counter
+! reaches 217116.00 for printed p.139.
+!
+! ---------------------------------------------------------------
+! THE JOINS, BOTH WITNESSED
+! ---------------------------------------------------------------
+! >>> BACKWARD, to printed p.137. <<<  This page prints no SLC, so
+! the "SLC,(8)217056.40" below is an ASSERTION and a hard SLC
+! cannot disagree with the counter arriving from the previous page
+! (docs/transcription_workflow.md, "WHAT THE ORACLE CANNOT SEE",
+! item 2).  Two things support it, neither of them this page's own
+! ink:
+!   (a) the page header's own "LOCATION 217056" (above), which is
+!       printed on THIS page and so is not an independent witness
+!       for the join, but is independent of my reading of line 1;
+!   (b) the volume OCR of printed p.137 -- a DIFFERENT page, so a
+!       legitimate (if garbled) second reader -- whose last row is
+!       "217056.00  000011.11 50  SC,$4,$R  -YES-PUT EDITED CHAR.
+!       COUNT IN $R", a HALF word at 217056.00, which leaves the
+!       counter at exactly 217056.40.
+! printed p.137 is being transcribed in parallel and its deck must
+! land on 217056.40; if it does not, this SLC is the thing to
+! re-examine.
+!
+! >>> FORWARD, to printed p.139. <<<  Line 54 branches to G SKIPA,
+! and the branch's second half word prints "217116.34 02" -- bit 18
+! of 0o34 is clear, so the target is the .00 half word of 217116.
+! That is exactly where this page's counter stops.  The volume OCR
+! carries p.139's defining card, "217116.00  000036.05 50  G SKIPA
+! SC,$2,$14".  So the last row of this page and the first row of
+! the next are joined by a branch printed here.
+!
+! ---------------------------------------------------------------
+! >>> ONE ROW IS LEFT FAILING.  LINE 11's "M-" IS AN ASSEMBLER GAP
+! AND THE STATEMENT BELOW IS A PLACEHOLDER, NOT A TRANSCRIPTION. <<<
+! ---------------------------------------------------------------
+! The page prints, at 217065.40:
+!
+!    11*  217065.40 *  000025.00 80  030000.30 90   M-(BU,24),$5
+!                                                   -FROM THE MSG
+!
+! strap_asm raises a bare KeyError 'M-' on "M-(BU,24),$5": the VFL
+! dispatch has no entry for the written-minus form, although the
+! FLOATING-POINT path in the same file knows the rule exactly --
+! see strap/strap_asm.py ~line 1405, "M- is M+ with the negative
+! sign modifier (printed code 22355.50 A0 vs M+'s .40)".
+!
+! THE ARITHMETIC MAKES THIS A PRECISE GAP RATHER THAN A MYSTERY:
+!
+!    M+(BU,24),$5   assembles   000025.00 80  030000.20 90
+!    the page prints            000025.00 80  030000.30 90
+!    difference                                      0o10
+!
+! and 0o10 in that field is exactly the difference the assembler's
+! own FP note records between M- and M+ (.50 against .40).  So the
+! reading is confirmed three ways: the glyph at 1800 dpi is an
+! unambiguous "M-"; the comment ("REMOVE PREVIOUS NON BACKSPACE
+! CHAR- FROM THE MSG", lines 9-11) is a SUBTRACTION; and the
+! printed bits are M+ plus the one documented sign bit.
+!
+! RESOLVED: strap_asm now admits "M-" on a VFL operation (this page and
+! printed p.142 line 4 are the two witnesses that admitted it).  The row
+! below is the PRINTED form and it passes.
+! COUNTER RIGHT -- M+ and M- are the same length, so every row
+! after line 11 still lands on its printed address.  The !CHECK for
+! this row carries the PRINTED bits "030000.30 90", so IT FAILS,
+! deliberately and loudly.
+!
+! >>> DO NOT "FIX" THAT CHECK TO .20. <<<  Changing it would make
+! the page pass while compiling an ADD where IBM compiled a
+! SUBTRACT.  The fix belongs in strap_asm's VFL dispatch: give it
+! the same written-minus rule the FP path already has.  When it
+! lands, change the statement line back to the printed "M-" and the
+! check passes untouched.
+!
+! ---------------------------------------------------------------
+! A SECOND, NARROWER GAP: A BLANK INSIDE A NAME INSIDE AN
+! EXPRESSION
+! ---------------------------------------------------------------
+! Line 25 prints "CM0000(BU,1), S CNS SG+1.0($1),0".  strap_asm
+! accepts blanks in a name in a bare address field (the house
+! examples are "B, P ERR EX" and "VF,S ASPUT") but NOT when the
+! name is followed by an arithmetic operator: the printed form
+! raises "line N: undefined symbol 'S'" -- the expression parser
+! splits on "+" first and then on the blank.  The deck writes
+! "SCNSSG+1.0($1),0", which assembles BIT-IDENTICALLY to the
+! printed row, and the printed form is kept in the !CHECK note.
+! Line 38's "SCNSSG($1)" is printed closed up already and needs no
+! substitution, which is what isolates the failure to the
+! expression path.
+!
+! Everything else on the page was handed to strap_asm AS PRINTED
+! and accepted, including the forms that have cost pages before:
+!   "(2)1111 1110"        a BLANK INSIDE A RADIX LITERAL (line 3).
+!                         TESTED, not assumed: it assembles to the
+!                         printed 774000.00 80 410000.20 50.  This
+!                         was silently miscompiling until 36290f2.
+!   ",0($2)" ",3.0($3)"   a BLANK OPERATION FIELD (lines 30-32),
+!   ",$R"                 the three parameter half words of the
+!                         B,GTRANF calling sequence.
+!   "LVE,$3,($15)"        an OMITTED ADDRESS before an index.
+!   "*I(BU,18),8,46"      multiply immediate (line 1).
+!   "LX,$4,$2"            a register as a bare address.
+!
+! ---------------------------------------------------------------
+! THE C/0 QUESTION, AND WHY LINE 5's BYTE IS 00
+! ---------------------------------------------------------------
+! This drum opens round glyphs constantly.  Line 5 reads, at 900
+! dpi, "CCCC01.11 CO" -- and the first four characters sit in an
+! OCTAL field, which cannot hold a C, so they are certainly 0 and
+! this row demonstrably drops ink on round glyphs before it reaches
+! the byte.  That is NOT a licence to convert the byte (ink varies
+! per CHARACTER).  WHAT SETTLES IT IS WHAT PRODUCED IT:
+!   (a) line 14 on this page is the SAME instruction with the other
+!       sign, "C-I,$4,1.0", and prints "000001.11 08".  C+I and C-I
+!       differ by the sign bit alone, so C+I's byte is 00 and C-I's
+!       is 08 -- there is no reading in which C+I prints C0 and C-I
+!       prints 08;
+!   (b) printed p.136 line 5 is a landed "C+I,$4,8.0" whose !CHECK
+!       passes at "000010.11 00".
+! The deck writes 00.  The same reasoning covers line 25's and line
+! 38's "001000.CC FO" (= 001000.00 F0, CM0000 with no second-operand
+! index, matching p.136 line 35's landed row) and line 44's
+! "217134.CC AC" (= 217134.00 A0, a Transmit whose second operand
+! carries no index, so the low nibble i2 is 0).
+!
+! ---------------------------------------------------------------
+! TWO GLYPHS SETTLED AT 1800 dpi
+! ---------------------------------------------------------------
+! "G DIAR" (lines 8 and 12).  The third character has a STRAIGHT
+! VERTICAL LEFT STEM and squared corners, against the round
+! stemless C of "KCI" in the row below it and the round 0 of
+! "LI(BU,24),8" in the row above.  It is a D.
+!
+! "G VODR" (line 44).  The STATEMENT prints a CLOSED O in position
+! 2 and a stemmed D in position 3; the COMMENT in the same row
+! prints the same word with position 2 OPEN.  Dropout opens a
+! closed glyph and never closes an open one, so the closed reading
+! wins: V-O-D-R.  The volume OCR's four readings of this symbol on
+! OTHER pages are VOCR, VCDR, VODR and VCCR -- all four consistent
+! with V-O-D-R and with nothing else -- and p.139's defining card
+! reads "217134.00 *  000020.00  G VODR  DRZ(BU,64),16  -RESERVE 16
+! FULL WORDS", sixteen words, which is exactly the count line 44
+! transmits ("TI,16.0,$0,G VODR  -SAVE $0-$15 IN LOC. G VODR").
+!
+! "G OKOLO" (line 15) AND "G KOLO" (line 51) ARE TWO DIFFERENT
+! SYMBOLS, not one misread.  Line 15's CB prints 217047.12 and line
+! 51 is DEFINED here at 217113.00.  The volume OCR carries p.137's
+! defining card at 217047.00 ("G CKOLC  L(V+I)(BU,8),.8($4)  -LOAD
+! A CHAR.") and p.137's own reference "217054.40  217047.12 48
+! CB,$5,G CKOLG" -- the same instruction to the same word, one page
+! earlier.
+!
+! ---------------------------------------------------------------
+! TAIL SCOPE
+! ---------------------------------------------------------------
+! printed p.99 line 11's "SLC,(8)215000." moved the origin, and
+! pp.99+ are OUTSIDE the TAIL,(2)G block that printed p.2 opened
+! and printed p.98 line 37 closed.  Names here may legitimately
+! repeat names defined in pp.2-98 at different addresses.  None of
+! this page's twelve labels collides with a pp.2-98 name in any
+! landed deck.
+!
+! ---------------------------------------------------------------
+! EXTERNALS.  WHAT IS READ AND WHAT IS CONVENTION
+! ---------------------------------------------------------------
+! >>> AN ADDRESS BACK-DERIVED FROM A BRANCH OR AN LVI IS PINNED
+! ONLY TO THE HALF WORD. <<<  Bit offsets 0-31 all encode
+! identically; only bit 18, the half-word select, shows.  Writing
+! ".0" is a CONVENTION and no !CHECK here can test below it.  The
+! half word ITSELF is checked and does catch errors, which is why
+! the ".40" values are written as read.
+!
+! A VFL CONNECTIVE'S OPERAND ADDRESS IS A BIT ADDRESS AND IS FULLY
+! PRINTED, so the symbols derived from lines 4, 22, 23, 33 and 44
+! are read to the bit.
+!
+! GMISTO  217012.00  FULLY OBSERVED HERE, and more strongly than on
+!                    printed p.136, which back-derived it from an
+!                    LVI.  Line 4 is a VFL connective whose operand
+!                    address is a BIT address: it prints
+!                    "217012.00 86".  Line 7's "KVI,$5, G MISTO"
+!                    prints 217012.13, the same word a second way.
+!                    LANDED at this value by decks/
+!                    mcp_bootstrap_p136.strap.
+GMISTO  SYN, (8)217012.0
+! GOKOLO  217047.00  NEW.  Line 15's CB prints "217047.12 48";
+!                    0o12 = $5*2, bit 18 clear, so the target is
+!                    the .00 half word.  DEFINED on printed p.137
+!                    (volume OCR, defining card at 217047.00).
+GOKOLO  SYN, (8)217047.0
+! GKONTR  217055.00  NEW.  Line 16 prints "217055.10 00"; 0o10 is
+!                    the unconditional-branch code, bit 18 clear.
+!                    DEFINED on printed p.137 (volume OCR:
+!                    "217055.00  000120.11 0A  G KONTR  KCI,$4,80
+!                    -HAVE EDITED 80 CHARS WITHOUT ENCOUNTERING AN
+!                    END CODE").
+GKONTR  SYN, (8)217055.0
+! GVODR   217134.00  NEW, AND FULLY OBSERVED.  Line 44's Transmit
+!                    prints its second operand's address as
+!                    "217134.00 A0" -- a storage address with its
+!                    bit offset.  Defined on printed p.139.
+GVODR   SYN, (8)217134.0
+! GHI     217132.40  NEW.  Lines 50 and 53 print "217132.70 42" and
+!                    "217132.73 42"; bit 18 of both is SET, so the
+!                    .40 half word IS observed and IS checked.  Two
+!                    independent rows, two different conditions,
+!                    the same half word.  Defined on printed p.139
+!                    (volume OCR: "217132.40  000021.04 50  G HI
+!                    LC,$2,$1").
+GHI     SYN, (8)217132.40
+! GSKIPA  217116.00  NEW.  Line 54's second half word prints
+!                    "217116.34 02", bit 18 clear.  Defined on
+!                    printed p.139, the page this one runs into.
+GSKIPA  SYN, (8)217116.0
+! KNORM   215776.00  LANDED by decks/mcp_bootstrap_p128.strap.
+!                    Line 35 prints "215776.03 01", the same
+!                    reference printed p.136 line 45 carries.
+KNORM   SYN, (8)215776.0
+! KGATE   215746.40  LANDED by decks/mcp_bootstrap_p123.strap
+!                    (label row).  Line 36 prints "215746.50 00" --
+!                    0o50 is 0o40 plus the branch code 0o10, so the
+!                    half word IS observed.
+KGATE   SYN, (8)215746.40
+! PPPBF   216760.00  LANDED by decks/mcp_bootstrap_p136.strap, whose
+!                    line 52 prints "216760.32 A0".  Line 24 here
+!                    prints "216760.05 01" ($2*2+1 = 0o05), the
+!                    same word from an LVI.
+PPPBF   SYN, (8)216760.0
+! PMCPBF  216775.00  LANDED by decks/mcp_bootstrap_p136.strap.
+!                    Line 37 prints "216775.05 01".
+PMCPBF  SYN, (8)216775.0
+! SUNA    0.0        LANDED as a communication-region field offset
+!                    by decks/mcp_bootstrap_p103.strap et al
+!                    ("SUNA SYN(BU,25), 0.0", printed p.99 line 20
+!                    "S UN A  SYN, S UN A A").  Line 21's
+!                    "LV,$1,SUNA($10)" prints "000000.02 3A": the
+!                    0o02 is $1*2, the index field, so this row
+!                    pins only the WORD (0), not the bit offset.
+SUNA    SYN(BU,25), 0.0
+! SCW     3.0        LANDED by decks/mcp_bootstrap_p102.strap
+!                    ("S CW  SYN(BU,64),3.0  -CONTROL WORD").  Line
+!                    22's VFL operand prints "000003.00 8D", which
+!                    reads the bit offset too.
+SCW     SYN(BU,64), 3.0
+! SCCW    4.0        LANDED by decks/mcp_bootstrap_p102.strap
+!                    ("S CCW SYN(BU,64),4.0 -COPIED CONTROL WORD").
+!                    Line 33 prints "000004.00 8D".
+SCCW    SYN(BU,64), 4.0
+! SL      215001.04  LANDED by decks/mcp_bootstrap_p103.strap
+!                    (printed p.103 line 14, SCOMRG+0.04, -LEVEL OF
+!                    INSTRUCTION).  Line 23 prints "215001.04 80",
+!                    a one-bit VFL operand read to the bit.
+SL      SYN(BU,1), (8)215001.04
+! SCNSSG  0.47       LANDED by decks/mcp_bootstrap_p103.strap
+!                    (-CONSOLE SIGNAL).  0.47 is a BARE DECIMAL
+!                    literal -- bit 47 decimal -- and prints as
+!                    0o57, which is what lines 25 and 38 show
+!                    ("000001.57" = SCNSSG+1.0, "000000.57" =
+!                    SCNSSG).
+SCNSSG  SYN(BU,1), 0.47
+!
+! >>> THIS PAGE RETIRES TWO OF printed p.136's CAVEATS. <<<
+! p.136 back-derived GKONEC from a SIC and POUT from a VFL
+! connective and wrote, correctly, that the bit offsets were
+! convention.  This page carries BOTH DEFINING CARDS: line 6 is
+! "G KONEC  B,$" at 217063.00 and line 42 is "P OUT  VF, 0.0" at
+! 217106.40.  Both land on exactly p.136's values, and POUT's .40
+! is now read off a printed LOCATION rather than inferred.
+!
+! ---------------------------------------------------------------
+        SLC,(8)217056.40
+
+        *I(BU,18),8,46                  ! line  1   217056.40
+        ST(BU,25), $6,19                ! line  2   217057.40
+        LI(BU,8),(2)1111 1110           ! line  3   217060.40
+        CM0101(BU,8),GMISTO($6)         ! line  4   217061.40
+        C+I,$4,1                        ! line  5   217062.40
+GKONEC  B,$                             ! line  6   217063.00
+GVRAT   KVI,$5,GMISTO                   ! line  7   217063.40
+        BXE,GDIAR                       ! line  8   217064.00
+        LI(BU,24),8                     ! line  9   217064.40
+!       >>> LINE 11 IS "M-(BU,24),$5" AND THE LINE BELOW IS A
+!       PLACEHOLDER THAT KEEPS THE COUNTER.  ITS !CHECK FAILS BY
+!       THE ONE SIGN BIT, ON PURPOSE.  SEE THE HEAD OF THIS FILE.
+        M-(BU,24),$5                    ! line 11   217065.40
+GDIAR   KCI,$4,0                        ! line 12   217066.40
+        BXE,$+1.0                       ! line 13   217067.00
+        C-I,$4,1.0                      ! line 14   217067.40
+        CB,$5,GOKOLO                    ! line 15   217070.00
+        B,GKONTR                        ! line 16   217070.40
+PCSRD   LV,$1,SUNA($10)                 ! line 21   217071.00
+        C0011(BU),SCW($13),0            ! line 22   217071.40
+        BB,SL,PMCP                      ! line 23   217072.40
+        LVI,$2,PPPBF                    ! line 24   217073.40
+        CM0000(BU,1),SCNSSG+1.0($1),0   ! line 25   217074.00
+PCSRD1  BZB,2.63($2),P3WD               ! line 26   217075.00
+        LV,$3,POUT                      ! line 27   217076.00
+PCSRD2  LVI,$15,$+1.0                   ! line 28   217076.40
+        B,GTRANF                        ! line 29   217077.00
+        ,0($2)                          ! line 30   217077.40
+        ,3.0($3)                        ! line 31   217100.00
+        ,$R                             ! line 32   217100.40
+        ST(BU),SCCW($13),64             ! line 33   217101.00
+        LCI,$7,(8)40.0                  ! line 34   217102.00
+        LVI,$1,KNORM                    ! line 35   217102.40
+        B,KGATE                         ! line 36   217103.00
+PMCP    LVI,$2,PMCPBF                   ! line 37   217103.40
+        CM0000(BU,1),SCNSSG($1)         ! line 38   217104.00
+        B,PCSRD1                        ! line 39   217105.00
+P3WD    LVI,$3,0                        ! line 40   217105.40
+        B,PCSRD2                        ! line 41   217106.00
+POUT    VF,0.0                          ! line 42   217106.40
+GTRANF  TI,16.0,$0,GVODR                ! line 44   217107.00
+        LVE,$1,.32($15)                 ! line 45   217110.00
+        LVE,$3,($15)                    ! line 46   217110.40
+        LVE,$2,1.0($15)                 ! line 47   217111.00
+        LX,$2,0.0($2)                   ! line 48   217111.40
+        LX,$4,$2                        ! line 49   217112.00
+        BXCZ,GHI                        ! line 50   217112.40
+GKOLO   KC,$2,$1                        ! line 51   217113.00
+        BXH,GHI                         ! line 53   217113.40
+GSKIP   BB,$2+.27,GSKIPA                ! line 54   217114.00
+        T,$2,0.0($3),0.0($2)            ! line 55   217115.00
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS READ.  Columns: LINE / LOCATION / BINARY
+! OUTPUT / NAME / STATEMENT / comment / card serial.  The eight
+! comment cards print LOCATION and BINARY OUTPUT empty and their
+! text raw from card column 2.
+! ---------------------------------------------------------------
+!   1*  217056.40    000010.00 80  422027.21 90           *I(BU,18),8,46                 -MULTIPLY CHAR. COUNT BY 8                EE000167
+!   2*  217057.40    000026.00 80  031011.60 D0           ST(BU,25), $6,19               -STORE A POSITIVE PRODUCT                 EE000168
+!   3*  217060.40    774000.00 80  410000.20 50           LI(BU,8),(2)1111 1110                                                    EE000169
+!   4*  217061.40    217012.00 86  010000.12 F0           CM0101(BU,8),G MISTO($6)       -INSERT END CODE AFTER EDITED MSG         EE000170
+!   5*  217062.40    000001.11 00                         C+I,$4,1                       -ADD ONE TO EDITED CHAR COUNT             EE000171
+!   6*  217063.00    217063.10 00                G KONEC  B,$                            -OUT                                      EE000172
+!   7*  217063.40    217012.13 04                G VRAT   KVI,$5, G MISTO                - IS BACKSPACE CHAR THE 1ST CHAR.         EE000173
+!   8*  217064.00    217066.72 C2                         BXE,G DIAR                     -OF THE MSG                               EE000174
+!   9*  217064.40    000000.10 80  430000.20 50           LI(BU,24),8                    -REMOVE PREVIOUS NON BACKSPACE            EE000175
+!  10*                                                 -  -CHAR-                                                                   EE000176
+!  11*  217065.40 *  000025.00 80  030000.30 90           M-(BU,24),$5                   -FROM THE MSG                             EE000177
+!  12*  217066.40    000000.11 0A                G DIAR   KCI,$4,0                       -IS EDITED CHAR. COUNT ZERO               EE000178
+!  13*  217067.00    217070.32 C2                         BXE,$+1.0                                                                EE000179
+!  14*  217067.40    000001.11 08                         C-I,$4,1.0                     -NO-REDUCE COUNT BY 1                     EE000180
+!  15*  217070.00    217047.12 48                         CB,$5, G OKOLO                 - LOOP IF 80 CHARS NOT TESTED             EE000181
+!  16*  217070.40    217055.10 00                         B,G KONTR                      -80 CHAR TEST WITHOUT END CODE            EE000182
+!  17*                                                 -  -PCSRD ROUTINE-ITS FCNS ARE                                              EE000183
+!  18*                                                 -  -1. TO PERFORM A FAKE READ FROM THE CNSL WHEN $RD PSEUDO                 EE000184
+!  19*                                                 -  -OP WAS ENCOUNTERED IF A CS HAD PREVIOUSLY BEEN GIVEN.                   EE000185
+!  20*                                                 -  -2. GENERATE A FAKE EOP IF NECESSARY                                     EE000186
+!  21*  217071.00    000000.02 3A                P CSRD   LV,$1,SUNA($10)                                                          EE000187
+!  22*  217071.40    000003.00 8D  000000.06 70           C0011(BU),S CW($13),0          -PUT CW IN $R                             EE000188
+!  23*  217072.40    215001.04 80  217103.74 02           BB,SL,P MCP                    -WHO ISSUED THE READ                      EE000189
+!  24*  217073.40    216760.05 01                         LVI,$2,PPPBF                   -PP-SET TO TRANSFER FROM PP BF            EE000190
+!  25*  217074.00    000001.57 81  001000.00 F0           CM0000(BU,1), S CNS SG+1.0($1),0  - TURN OFF PP CNS SG BIT               EE000191
+!  26*  217075.00    000002.77 82  217105.74 00  P CS RD1 BZB, 2.63($2), P3WD            -IS LAST BYTE OF 3RD WORD  END CODE       EE000192
+!  27*  217076.00    217106.46 30                         LV,$3, P OUT                   - NO - SET TO TRANSFER UP TO 13 WORDS     EE000193
+!  28*  217076.40    217077.77 01                PCSRD2   LVI,$15,$+1.0                                                           EE000194
+!  29*  217077.00    217107.10 00                         B,GTRANF                       -TRANSFER FROM PROPER BUFFER              EE000194
+!  30*  217077.40    000000.00 82                         ,0($2)                                                                   EE000195
+!  31*  217100.00    000003.00 83                         ,3.0($3)                                                                 EE000196
+!  32*  217100.40    000011.00 80                         ,$R                                                                      EE000197
+!  33*  217101.00 *  000004.00 8D  000040.20 D0           ST(BU),SCCW($13),64            -STORE LAST CW IN FAT                     EE000198
+!  34*  217102.00    000040.17 02                         LCI,$7,(8)40.0                                                           EE000199
+!  35*  217102.40    215776.03 01                         LVI,$1,KNORM                                                             EE000200
+!  36*  217103.00    215746.50 00                         B,KGATE                                                                  EE000201
+!  37*  217103.40    216775.05 01                P MCP    LVI,$2,P MCP BF                -SET TO TRANSFER FROM MCP BF              EE000202
+!  38*  217104.00    000000.57 81  001000.00 F0           CM0000(BU,1), SCNSSG($1)       - TURN OFF MCP CNS SG BIT                 EE000203
+!  39*  217105.00    217075.10 00                         B,PCSRD1                                                                 EE000204
+!  40*  217105.40    000000.07 01                P3WD     LVI,$3,0                                                                 EE000205
+!  41*  217106.00    217076.50 00                         B,PCSRD2                                                                 EE000206
+!  42*  217106.40    000000.00+                  P OUT    VF, 0.0                                                                  EE000207
+!  43*                                                 -                                 ***** TRANSFER SUBROUTINE *****           EE000208
+!  44*  217107.00    000020.00 80  217134.00 A0  G TRANF  TI,16.0,$0,G VODR              -SAVE $0-$15 IN LOC. G VODR               EE000209
+!  45*  217110.00    000000.43 BF                         LVE,$1,.32($15)                -LOAD $1 WITH TOT. NOS. OF FULL WORDS     EE000210
+!  46*  217110.40    000000.07 BF                         LVE,$3,($15)                                                             EE000211
+!  47*  217111.00    000001.05 BF                         LVE,$2,1.0($15)                                                          EE000212
+!  48*  217111.40    000000.04 12                         LX,$2,0.0($2)                  -LOAD $2 WITH 1ST CONTROL WORD            EE000213
+!  49*  217112.00    000022.10 10                         LX,$4,$2                       -LOAD $4 WITH 1ST CONTROL WORD            EE000214
+!  50*  217112.40    217132.70 42                         BXCZ, G HI                     - IS CF OF CTL WORD ZERO                  EE000215
+!  51*  217113.00    000021.05 90                G KOLO   KC,$2,$1                       -COMP. CO.F. $2 WITH TOT. NOS OF FULL     EE000216
+!  52*                                                 -                                 -WORDS TO BE TRANSFERRED                  EE000217
+!  53*  217113.40    217132.73 42                         BXH,G HI                       -TEST INDICATOR IF HIGH                   EE000218
+!  54*  217114.00    000022.33 80  217116.34 02  G SKIP   BB,$2+.27,G SKIPA              -TEST IF ,SKIP, BIT IS ON                 EE000219
+!  55*  217115.00 *  000000.00 83  000000.04 22           T,$2,0.0($3),0.0($2)           -TRANS. $2CF. WORDS FROM TEM. BUF. TO     EE000220
+!  56*                                                 -                                 -ADD. FROM VF. OF CONTROL WORD            EE000221
+
+!SYM   GKONEC   217063.00
+!SYM   GVRAT    217063.40
+!SYM   GDIAR    217066.40
+!SYM   PCSRD    217071.00
+!SYM   PCSRD1   217075.00
+!SYM   PCSRD2   217076.40
+!SYM   PMCP     217103.40
+!SYM   P3WD     217105.40
+!SYM   POUT     217106.40
+!SYM   GTRANF   217107.00
+!SYM   GKOLO    217113.00
+!SYM   GSKIP    217114.00
+
+!CHECK 217056.40 | 000010.00 80 422027.21 90 | line  1 *I(BU,18),8,46
+!CHECK 217057.40 | 000026.00 80 031011.60 D0 | line  2 ST(BU,25), $6,19
+!CHECK 217060.40 | 774000.00 80 410000.20 50 | line  3 LI(BU,8),(2)1111 1110 -- A BLANK INSIDE A RADIX LITERAL, printed form TESTED and kept
+!CHECK 217061.40 | 217012.00 86 010000.12 F0 | line  4 CM0101(BU,8),G MISTO($6) -- VFL operand address, so GMISTO is read to the bit
+!CHECK 217062.40 | 000001.11 00 | line  5 C+I,$4,1 (byte prints as an open "C0"; it is 00 -- see the C/0 note above)
+!CHECK 217063.00 | 217063.10 00 | line  6 G KONEC B,$ -- the DEFINING card for p.136's back-derived GKONEC
+!CHECK 217063.40 | 217012.13 04 | line  7 G VRAT KVI,$5, G MISTO
+!CHECK 217064.00 | 217066.72 C2 | line  8 BXE,G DIAR
+!CHECK 217064.40 | 000000.10 80 430000.20 50 | line  9 LI(BU,24),8
+!CHECK 217065.40 | 000025.00 80 030000.30 90 | line 11 M-(BU,24),$5 -- >>> THIS ROW FAILS ON PURPOSE. <<< strap_asm has no VFL "M-"; the deck's statement is "M+", which prints 030000.20 90, one sign bit (0o10) short of the page.  DO NOT change this check to .20 -- fix the VFL dispatch.
+!CHECK 217066.40 | 000000.11 0A | line 12 G DIAR KCI,$4,0 (the D has a straight left stem at 1800 dpi)
+!CHECK 217067.00 | 217070.32 C2 | line 13 BXE,$+1.0
+!CHECK 217067.40 | 000001.11 08 | line 14 C-I,$4,1.0 -- the sign-bit twin of line 5, which is what settles line 5's byte
+!CHECK 217070.00 | 217047.12 48 | line 15 CB,$5, G OKOLO (G OKOLO, defined on p.137, is NOT this page's G KOLO)
+!CHECK 217070.40 | 217055.10 00 | line 16 B,G KONTR
+!CHECK 217071.00 | 000000.02 3A | line 21 P CSRD LV,$1,SUNA($10) (the 0o02 is the $1 index field, so only SUNA's WORD is pinned)
+!CHECK 217071.40 | 000003.00 8D 000000.06 70 | line 22 C0011(BU),S CW($13),0
+!CHECK 217072.40 | 215001.04 80 217103.74 02 | line 23 BB,SL,P MCP (0o74 has bit 18 set, so P MCP's .40 IS observed)
+!CHECK 217073.40 | 216760.05 01 | line 24 LVI,$2,PPPBF
+!CHECK 217074.00 | 000001.57 81 001000.00 F0 | line 25 printed "CM0000(BU,1), S CNS SG+1.0($1),0"; deck writes SCNSSG+1.0 -- GAP 2, a blank in a name inside an EXPRESSION; bit-identical
+!CHECK 217075.00 | 000002.77 82 217105.74 00 | line 26 P CS RD1 BZB, 2.63($2), P3WD
+!CHECK 217076.00 | 217106.46 30 | line 27 LV,$3, P OUT (0o46 = 0o40 + $3*2, so P OUT's .40 is observed)
+!CHECK 217076.40 | 217077.77 01 | line 28 PCSRD2 LVI,$15,$+1.0 (0o77 = 0o40 + $15*2 + 1)
+!CHECK 217077.00 | 217107.10 00 | line 29 B,GTRANF (printed closed up here, "G TRANF" on line 44 -- STRAP ignores blanks in a name)
+!CHECK 217077.40 | 000000.00 82 | line 30 ,0($2) -- BLANK OPERATION FIELD, printed form accepted
+!CHECK 217100.00 | 000003.00 83 | line 31 ,3.0($3) -- BLANK OPERATION FIELD
+!CHECK 217100.40 | 000011.00 80 | line 32 ,$R -- BLANK OPERATION FIELD
+!CHECK 217101.00 | 000004.00 8D 000040.20 D0 | line 33 ST(BU),SCCW($13),64 (location carries an asterisk)
+!CHECK 217102.00 | 000040.17 02 | line 34 LCI,$7,(8)40.0 (inside an (8) literal BOTH parts are base 8)
+!CHECK 217102.40 | 215776.03 01 | line 35 LVI,$1,KNORM
+!CHECK 217103.00 | 215746.50 00 | line 36 B,KGATE
+!CHECK 217103.40 | 216775.05 01 | line 37 P MCP LVI,$2,P MCP BF
+!CHECK 217104.00 | 000000.57 81 001000.00 F0 | line 38 CM0000(BU,1), SCNSSG($1) -- printed closed up, no substitution needed
+!CHECK 217105.00 | 217075.10 00 | line 39 B,PCSRD1
+!CHECK 217105.40 | 000000.07 01 | line 40 P3WD LVI,$3,0
+!CHECK 217106.00 | 217076.50 00 | line 41 B,PCSRD2
+!CHECK 217106.40 | 000000.00+ | line 42 P OUT VF, 0.0 -- the DEFINING card for p.136's POUT, and its .40 is a printed LOCATION here
+!CHECK 217107.00 | 000020.00 80 217134.00 A0 | line 44 G TRANF TI,16.0,$0,G VODR (G VODR read to the bit; byte A0, not AC -- no second-operand index)
+!CHECK 217110.00 | 000000.43 BF | line 45 LVE,$1,.32($15) (0o43 = 0o40 + $1*2 + 1)
+!CHECK 217110.40 | 000000.07 BF | line 46 LVE,$3,($15) -- an OMITTED ADDRESS before an index, printed form accepted
+!CHECK 217111.00 | 000001.05 BF | line 47 LVE,$2,1.0($15)
+!CHECK 217111.40 | 000000.04 12 | line 48 LX,$2,0.0($2)
+!CHECK 217112.00 | 000022.10 10 | line 49 LX,$4,$2 (0o22 = 18 = index register 2, words 16-31)
+!CHECK 217112.40 | 217132.70 42 | line 50 BXCZ, G HI
+!CHECK 217113.00 | 000021.05 90 | line 51 G KOLO KC,$2,$1
+!CHECK 217113.40 | 217132.73 42 | line 53 BXH,G HI (same half word as line 50, a different condition)
+!CHECK 217114.00 | 000022.33 80 217116.34 02 | line 54 G SKIP BB,$2+.27,G SKIPA -- G SKIPA is p.139's first location, so this row joins the two pages
+!CHECK 217115.00 | 000000.00 83 000000.04 22 | line 55 T,$2,0.0($3),0.0($2) (location carries an asterisk)

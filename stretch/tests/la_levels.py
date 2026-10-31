@@ -47,7 +47,10 @@ for m in ("CV", "DCV"):
 # M-1 is M+1 with the invert-sign modifier (opcodes.py
 # VFL_INT_WRITTEN_MINUS, witnessed by MCP printed p.92 line 27).
 # A sign modifier changes no level, so it costs what M+1 costs.
-for m in ("ST", "SRD", "M+MG", "M+1", "M-1", "M+"):
+# M- is the same case one step along: it is M+ with that modifier,
+# witnessed by MCP printed p.138 line 11 and printed p.142 line 4,
+# and by the same reasoning it costs what M+ costs.
+for m in ("ST", "SRD", "M+MG", "M+1", "M-1", "M-", "M+"):
     VFL[m] = 3                     # op / opnd / store
 VFL["*+"] = 3                      # op / opnd / C($FT)
 for m in ("LFT", "LTRS", "LTRCV"):
@@ -370,10 +373,14 @@ def main():
     # strap_asm grew its written-minus-plus-immediate rule; it is the
     # VFL add with the invert bit AND immediate addressing, so like
     # every other immediate Table A-2 does not cost it.
+    # "*I" joined on 2026-10-31 with printed p.138, which spells it
+    # "*I(BU,18),8,46".  The trailing-I loop above had always built
+    # it; this is simply the first landed deck to USE it, and like
+    # every other immediate Table A-2 gives it no count.
     check("page_silent_mnemonics_in_mcp",
           sorted(notgiven),
-          ["*I+", "+I", "-I", "/I", "CI0001", "CTI0001", "KFI", "KI",
-           "LFI", "LI", "SWAPI", "T", "TB", "TI"])
+          ["*I", "*I+", "+I", "-I", "/I", "CI0001", "CTI0001", "KFI",
+           "KI", "LFI", "LI", "SWAPI", "T", "TB", "TI"])
 
     if fails:
         print(f"\n{fails} TEST(S) FAILED")

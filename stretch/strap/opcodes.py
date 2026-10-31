@@ -92,13 +92,22 @@ VFL_INT_MINUS_BASE = "+"
 # by 0o10, which is exactly the bit separating M- (.50 A0) from
 # M+ (.40 A0).
 #
-# "M-" AND "M-MG" REMAIN DELIBERATELY ABSENT.  Nothing in the corpus
-# spells either of them on a VFL operation.  C22-6531 Appendix A
-# footnote 4's "N" suffix is the documented general mechanism and is
-# also unimplemented; see docs/NEXT.md.
+# "M-" was admitted on the same standard that admitted "M-1".  MCP
+# printed p.138 line 11 and printed p.142 line 4 both spell it on a VFL
+# operation carrying a VFL data description, read at 1800 dpi by two
+# independent transcribers.  The encoding is not inferred from those
+# listings -- only the spelling is.  Measured: M+1 prints ".22", M-1
+# ".32"; M+ prints ".20" and both pages print ".30".  The same 0o10
+# invert-sign bit, in the same field.
+#
+# "M-MG" REMAINS DELIBERATELY ABSENT.  Nothing in the corpus spells it
+# on a VFL operation.  C22-6531 Appendix A footnote 4's "N" suffix is
+# the documented general mechanism and is also unimplemented; see
+# docs/NEXT.md.
 VFL_INT_WRITTEN_MINUS = {
     "-MG": "+MG",
     "M-1": "M+1",
+    "M-":  "M+",
 }
 
 # ---------------------------------------------------------------------

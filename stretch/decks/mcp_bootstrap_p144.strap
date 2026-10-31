@@ -1,0 +1,421 @@
+! mcp_bootstrap_p144.strap -- "RETURN AFTER MASKABLE INTERRUPT",
+! printed page 144.  docs/MCP_Mar63_001-249.pdf PDF p.151, header
+! read and not assumed: the top line prints "TIME CLOCK 00054041
+! PUNID 11011MCP   CARD ID FB000001   DIST. OF 3/01   3/01
+! PAGE NUMBER 144".
+!
+! WHAT THE PAGE IS.  Thirty printed lines.  Lines 1-4 are the
+! asterisk box around the heading "*****RETURN AFTER MASKABLE
+! INTERRUPT *****" (line 2); line 5 is "SLC,$"; lines 6-30 are
+! twenty-five instructions, every one of them CODE.  No SYN, no
+! DD, no VF, no DRZ, no data of any kind.  The routine is the one
+! C22-6728-1 (MCP System Analysis Guide) names in prose: "control
+! returned to the point of interrupt via the return after maskable
+! interrupt routine", reached from the Program Table of Exits.
+!
+! The body is three exits that share one tail:
+!   WRAMPP (line 6)  the PP entry.  SR,15,$1 lifts the PTOE address
+!                    out of X15's refill field, the two KV/branch
+!                    pairs bounds-check it against S LOWER / S UPPER
+!                    and go to W JERR if it is outside PP storage,
+!                    CM0000 takes the PP out of special fixup, the
+!                    TI restores $LZC, and BBZ,STSBIT goes to
+!                    JWRAM1 if a TS was stacked.
+!   W CON 1 (line 14) the common restore: LV picks up the interrupt
+!                    address, BB tests bit 18 (the EXE bit) and goes
+!                    to JWFINI if the PP tries to restore EXE, SVA
+!                    plants the address in W FINI, two TIs restore
+!                    the indicators+mask and the used index
+!                    registers, and line 19's "W FINI BE,$" is the
+!                    modified branch that returns.
+!   JWFINI (line 20) and JWRAM1 (line 26) are the two fake-exit
+!                    tails: each plants the address in S TIC instead
+!                    and branches into the parallel interrupt table,
+!                    S IPT+18.0 to fake EXE (line 23) and S IPT+4.0
+!                    to fake TS (line 30).
+!   WRAM   (line 24) the MCP entry -- LVI,1,SFPTE loads the MCP PTOE
+!                    and falls into W CON 1.
+!
+! TWENTY-EIGHT CARDS OVER THIRTY LINES.  The serial column runs
+! FB000001 (line 1) to FB000028 (line 30) with FB000007 printed on
+! lines 7 AND 8 and FB000008 on lines 9 AND 10 -- two cards that
+! each carry two statements, exactly as printed p.130's EC000015
+! and EC000016 do for the SAME two pairs.  Nothing is missing off
+! the top or the bottom of the render.
+!
+! ---------------------------------------------------------------
+! THE JOIN, CLOSED FROM BOTH SIDES
+! ---------------------------------------------------------------
+! LINE 5 PRINTS "217326.00 *  SLC,$" AND THAT IS A FREE WITNESS.
+! An SLC emits nothing, so its printed LOCATION *is* the counter
+! arriving from the previous page.  This deck writes a hard
+! "SLC,(8)217326.0" so it assembles standalone, which ASSERTS the
+! origin rather than checking it (docs/transcription_workflow.md,
+! "A HARD SLC CANNOT DISAGREE WITH THE ARRIVING COUNTER"), so the
+! printed value is recorded here and in the !CHECK note instead.
+!
+! NEAR SIDE: printed p.143 (PDF p.150) ends at line 27, a half-word
+!   branch "B,JTSEX3" whose printed LOCATION is 217325.40, so the
+!   counter leaves p.143 at exactly 217326.00.  (Read out of the
+!   volume OCR, which is a legitimate index onto ANOTHER page.)
+!   p.143's line 26, at 217325.00, is "LVI,$1,S IPT+18.0" printing
+!   215125.03 -- the same S IPT base lines 23 and 30 here use.
+! FAR SIDE: the volume OCR carries, on a page near 220764,
+!   "220764.40  217326.10 00  B,WRAMPP  -RETURN AFTER MASKABLE".
+!   A plain B prints target+.10, so WRAMPP is at 217326.00 -- this
+!   page's first label, read off a different page.
+! Both agree with line 6's printed 217326.00.
+!
+! ---------------------------------------------------------------
+! GLYPHS -- WHAT WAS SETTLED AND ON WHAT
+! ---------------------------------------------------------------
+! This page opens round glyphs constantly: its own column heading
+! prints "LCCATICN", and locations print "217326.CC" for .00.
+! Every round glyph in a LOCATION or in an octal BINARY field is a
+! 0 with certainty (C is not an octal digit).  The glyphs that are
+! NOT in an octal field were each settled on something else.
+!
+! (1) >>> THE PAGE CALIBRATES ITSELF, TWICE, AND THIS IS THE
+!     STRONGEST EVIDENCE HERE. <<<  Lines 14 and 26 are the SAME
+!     STATEMENT and compile to the same word, and the drum prints
+!     them differently:
+!         line 14   W CON 1   LV,0,0.0($1)      000000.00 31
+!         line 26   JWRAM1    LV,C,C.C($1)      000000.00 31
+!     Same instruction, same bits, one printed with closed zeros
+!     and one with open C's, on one page off one drum.  Lines 17
+!     and 28 do it again ("TI,2,1.0($1),$IND" vs "TI,2,1.C($1),
+!     $INC").  So an open round glyph in a STATEMENT on this page
+!     is an ordinary 0, with no OCR and no other page involved.
+!
+! (2) "$C" IS "$0", AND THE ASSEMBLER ELIMINATES THE OTHER READING.
+!     Lines 18, 22 and 29 print "TI,4,STLR+13.0,$C".  Measured:
+!         TI,4,STLR+13.0,$0     215245.00 80  000020.10 A0  = PRINTED
+!         TI,4,STLR+13.0,$C     "unsupported system symbol $'C'"
+!     There is no register $C; $0 is index register 0 at word 0o20,
+!     and its 19-bit A2 plus J=4 is exactly the printed .10.  The
+!     operand is therefore ORACLE-CHECKED, not read off ink.
+!
+! (3) "$INC" IS "$IND", by the comment column and by the bits.
+!     Line 17's comment is "-RESTORE IND + MASK REGS." -- the word
+!     is IND -- and $IND is word 11, whose A2 prints 000013.04 with
+!     J=2, which is what the page prints.
+!
+! (4) "$LZC" vs "$AOC", settled on the bits.  Both live in word 7
+!     ($LZC bits 17-23, $AOC bits 44-50), so the glyph does not
+!     have to decide it.  Measured:
+!         TI,1,STLR+4.0,$LZC    000007.02 A0   = PRINTED
+!         TI,1,STLR+4.0,$AOC    000007.42 A0
+!     Printed is .02, so it is $LZC.
+!
+! (5) "CMOCOO" IS "CM0000", AND IT IS CHECKED, NOT GUESSED.  The
+!     connective's four digits land in the second half word's
+!     offset field, so the oracle sees them.  Measured, with
+!     everything else fixed:
+!         CM0000(BU,1),SSPFIX   001000.00 F0   = PRINTED
+!         CM0011(BU,1),SSPFIX   001000.06 F0
+!         CM1100(BU,1),SSPFIX   001000.30 F0
+!         CM1111(BU,1),SSPFIX   001000.36 F0
+!     All four are distinct and only CM0000 matches.  printed p.130
+!     line 19 independently prints "CM0000(BU,1),WCONY.21" against
+!     the same "001000.00 F0", and p.130's line 13 prints the
+!     CM1111 form against "001000.36 F0" -- the pair that this
+!     measurement predicts.
+!
+! (6) THE TRAILING BYTE "FC" ON LINE 11 IS F0.  Hex field, so C is
+!     legal there and the octal-field calibration does NOT settle
+!     it.  It is settled on what produced it: the low nibble of a
+!     VFL full word is i2, the offset index, and there is no second
+!     operand, so it is 0.  printed p.18 prints "CM1111(BU,1)" six
+!     times and every one is "001000.36 F0".  Likewise lines 12,
+!     17, 18, 21, 22, 28, 29 print "AC" for A0 by the same rule.
+!
+! (7) THE "1" AT THE END OF "W CON 1" AND "JWRAM1" IS A DIGIT, NOT
+!     AN I.  Nothing outside this page references either name, so
+!     listing_oracle cannot see it and the name rests on ink; read
+!     at 1800 dpi against this page's own I's one row away.  The
+!     terminal glyph of both has the drum's digit-1 shape -- a
+!     top-left flag stroke into a bare vertical stem with a base
+!     serif and NO top bar -- and the I's of "JWFINI" and "W FINI"
+!     directly below have full horizontal serifs top AND bottom.
+!     The two shapes are not close at that magnification.
+!     (This mattered: the volume carries a real WCONA at 216237.40
+!     and a real WCON at 216343.40, so a neighbouring name family
+!     exists and "obviously 1" was not safe.)
+!
+! (8) "WRAM" (line 24) ends in M, and printed p.133 lines 18-19
+!     both print "B,WRAM" compiling 217343.10 -- this page's own
+!     address, read by a different transcriber on a different page.
+!     decks/mcp_bootstrap_p133.strap already SYNs WRAM at
+!     217343.00.
+!
+! (9) "BXL"/"BZXL" and "BOPZ"-style mnemonics: the operation set is
+!     small, and both of these assemble to exactly the printed
+!     bytes (42 and 40), so the B/8 question does not arise.
+!
+! ---------------------------------------------------------------
+! LABELS PRINTED WITH BLANKS
+! ---------------------------------------------------------------
+! "W CON 1" (line 14) and "W FINI" (line 19) print with blanks and
+! are written closed up, WCON1 and WFINI, as every deck since p.2
+! does -- the deck format takes a label to the first blank.  Both
+! are six characters closed up, inside the six-character limit
+! (C22-6531 printed p.10).  The page's own references print them
+! ALREADY closed up ("B,WCON1" line 25, "SVA,0,WFINI" line 16),
+! which is the assembler's own witness that the closed-up form is
+! the name.
+!
+! ---------------------------------------------------------------
+! THE TWO ASTERISKS, AND A READING THAT DIES ON THIS PAGE
+! ---------------------------------------------------------------
+! Every one of the thirty line numbers carries an asterisk right
+! after it ("6*", "30*").  That is the ordinary column.
+!
+! TWO lines carry a SECOND asterisk after the LOCATION: line 5
+! (217326.00, the SLC) and LINE 21 (217340.40).  This is the
+! unexplained marker of docs/listing_typography.md 12 and nothing
+! here explains it.  What this page DISCONFIRMS: the tempting
+! reading "a full word landing on an ODD half word is marked" --
+! line 21 is a full-word TI at 217340.40 -- dies immediately,
+! because lines 11 (217330.40), 17 (217335.40) and 22 (217341.40)
+! are also full words on odd half words and carry NO mark.  Line
+! 21 is also byte-for-byte identical to lines 17 and 28, which are
+! unmarked.  Recorded as open, with nothing added to it.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- every one pinned by a card on a DIFFERENT page
+! ---------------------------------------------------------------
+! ZERO TAUTOLOGICAL ROWS.  This page's own rows sit at OCR lines
+! ~7569-7598 of docs/ocr/MCP_Mar63_001-249.txt; every witness cited
+! below is at a different OCR line and a different printed page, so
+! none of them is this page reading itself.  Seven of the nine are
+! already carried by LANDED decks at these same values.
+!
+! S COM RG 215001.00  p.103 line 8 "S COM RG XW,(8)520000.".
+!                     Carried only so S SPFIX and S TSBIT can be
+!                     written the way p.103 writes them.
+SCOMRG  SYN, (8)215001.0
+! S SPFIX  215001.13  p.103 line 20 DEFINES it, "S SPFIX SYN(BU,1),
+!                     S COM RG+.11" -ON IF PP IN SPECIAL FIXUP,
+!                     printing the resolved 215001.13+.  Line 11
+!                     here prints 215001.13 as a full 24-bit BIT
+!                     address, so this row pins it to the BIT.
+SSPFIX  SYN(BU,1), SCOMRG+.11
+! S TSBIT  215001.14  p.103 line 21 DEFINES it, "S TSBIT SYN(BU,1),
+!                     S COM RG+.12" -ON IF TS STACKED FOR PP.
+!                     Line 13 here prints the bit address in full.
+STSBIT  SYN(BU,1), SCOMRG+.12
+! S T LR   215230.00  p.116 line 13 is the defining card, "S T LR
+!                     DRZ(BU,64),29".  TI's A1 is a full 24-bit
+!                     address, so lines 12/18 ("S TLR+4.0" ->
+!                     215234.00, "S TLR+13.0" -> 215245.00) pin it
+!                     to the bit from THIS page alone as well.
+STLR    SYN, (8)215230.0
+! S UPPER  215230.00  p.116 line 14 "S UPPER SYN,S T LR" -PP UPPER
+!                     BOUNDRY.  It is the SAME ADDRESS as S T LR by
+!                     construction -- that is not a collision.
+SUPPER  SYN, STLR
+! S LOWER  215230.40  p.116 line 15 "S LOWER SYN,S T LR+0.32"; 32
+!                     decimal is bit 0o40.  KV only pins the half
+!                     word, but the volume also prints
+!                     "L(BU,18),SLOWER,46" against 215230.40 and
+!                     "KV,$X1,S TLR+0.32 -COMPARE TO PP LOWER
+!                     BOUNDRY" against 215230.42, so the bit is
+!                     pinned too.
+SLOWER  SYN, STLR+0.32
+! S TIC    215265.00  p.116 line 16 "S T IC VF,0"; pp.110-112,
+!                     117, 118 carry it.  SVA pins only the half
+!                     word, but the volume prints "L(BU,1),
+!                     STIC+.18,2" against 215265.22 -- a VFL bit
+!                     address -- so S TIC is 215265.00 exactly.
+!                     Final letter is C, not O: C22-6728 prose,
+!                     "the saved IC is stored in STIC".
+STIC    SYN, (8)215265.0
+! S IPT    215103.00  p.112 line 7 DEFINES it, "S IPT BEW,$" at
+!                     215103.00 -BASE ADDRESS OF PARALLEL
+!                     INTERRUPT TABLE -- that card is the
+!                     independent pin.  Lines 23 and 30 here check
+!                     the arithmetic against two different printed
+!                     words off the one base: "S IPT+18.0" ->
+!                     215125.00 and "S IPT+4.0" -> 215107.00, and
+!                     215125 - 0o22 = 215107 - 0o4 = 215103.
+SIPT    SYN, (8)215103.0
+! S FPTE   215163.00  p.114 line 5 "S FPTE DRZ(N),(3)" -- the MCP
+!                     Program Table of Exits.  Independently, the
+!                     volume prints "WPATT SYN,SFPTE+3.0" resolving
+!                     to 215166.00, and 215166 - 3 = 215163.
+SFPTE   SYN, (8)215163.0
+! W JERR   216372.00  decks/mcp_bootstrap_p130.strap DEFINES it --
+!                     p.130 line 51, "W JERR LVI,$14,SPTOEX" at
+!                     216372.00 -- and p.130 lines 15-18 are the
+!                     SAME FOUR STATEMENTS as lines 7-10 here, with
+!                     the same four printed half words.  BXL/BZXL
+!                     pin only the half word; p.130's label pins
+!                     the rest.
+WJERR   SYN, (8)216372.0
+
+! ---------------------------------------------------------------
+! THE ORIGIN.  The page prints "SLC,$" (line 5, at 217326.00).
+! Restated hard so the deck assembles standalone; see THE JOIN.
+! ---------------------------------------------------------------
+        SLC, (8)217326.0
+
+! ---- the routine -------------------------------------------------
+WRAMPP  SR,15,$1                     ! line  6  -GET PTOE
+        KV,$1,SLOWER                 ! line  7
+        BXL,WJERR                    ! line  8  (same card as 7)
+        KV,$1,SUPPER                 ! line  9
+        BZXL,WJERR                   ! line 10  (same card as 9)
+        CM0000(BU,1),SSPFIX          ! line 11  -TAKE PP OUT OF SPECIAL
+        TI,1,STLR+4.0,$LZC           ! line 12
+        BBZ,STSBIT,JWRAM1            ! line 13  -IF TS STACKED
+WCON1   LV,0,0.0($1)                 ! line 14  -GET INT. AD.
+        BB,1.18($1),JWFINI           ! line 15  -IF PP TRIES TO RESTORE EXE
+        SVA,0,WFINI                  ! line 16  -SET TOE ADDRESS
+        TI,2,1.0($1),$IND            ! line 17  -RESTORE IND + MASK REGS.
+        TI,4,STLR+13.0,$0            ! line 18  -RESTORE USED INDEX REGS
+WFINI   BE,$                         ! line 19  -RETURN TO PP INTERRUPTED ADDRESS
+JWFINI  SVA,$0,STIC                  ! line 20  -MUST FAKE EXE
+        TI,2,1.0($1),$IND            ! line 21
+        TI,4,STLR+13.0,$0            ! line 22
+        B,SIPT+18.0                  ! line 23  - FAKE EXE
+WRAM    LVI,1,SFPTE                  ! line 24
+        B,WCON1                      ! line 25
+JWRAM1  LV,0,0.0($1)                 ! line 26
+        SVA,0,STIC                   ! line 27
+        TI,2,1.0($1),$IND            ! line 28
+        TI,4,STLR+13.0,$0            ! line 29
+        B,SIPT+4.0                   ! line 30  -FAKE TS
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS RENDERED AT 400/900/1800 dpi
+! ---------------------------------------------------------------
+!   1*                                              - ****************************************************  FB000001
+!   2*                                              -      *****RETURN AFTER MASKABLE INTERRUPT *****       FB000002
+!   3*                                              - ****************************************************  FB000003
+!   4*                                              -                                                       FB000004
+!   5*  217326.00 *                                           SLC,$                                         FB000005
+!   6*  217326.00   000021.37 70            WRAMPP   SR,15,$1                   -GET PTOE                   FB000006
+!   7*  217326.40   215230.42 90                     KV,$1,SLOWER                                           FB000007
+!   8*  217327.00   216372.32 42                     BXL,WJERR                                              FB000007
+!   9*  217327.40   215230.02 90                     KV,$1,SUPPER                                           FB000008
+!  10*  217330.00   216372.32 40                     BZXL,WJERR                                             FB000008
+!  11*  217330.40   215001.13 80  001000.00 F0       CM0000(BU,1),SSPFIX        -TAKE PP OUT OF SPECIAL     FB000009
+!  12*  217331.40   215234.00 80  000007.02 A0       TI,1,STLR+4.0,$LZC                                     FB000010
+!  13*  217332.40   215001.14 80  217344.34 06       BBZ,STSBIT,JWRAM1          -IF TS STACKED              FB000011
+!  14*  217333.40   000000.00 31            W CON 1  LV,0,0.0($1)               -GET INT. AD.               FB000012
+!  15*  217334.00   000001.22 81  217340.34 02       BB,1.18($1),JWFINI         -IF PP TRIES TO RESTORE EXE FB000013
+!  16*  217335.00   217337.41 D0                     SVA,0,WFINI                -SET TOE ADDRESS            FB000014
+!  17*  217335.40   000001.00 81  000013.04 A0       TI,2,1.0($1),$IND          -RESTORE IND + MASK REGS.   FB000015
+!  18*  217336.40   215245.00 80  000020.10 A0       TI,4,STLR+13.0,$0          -RESTORE USED INDEX REGS    FB000016
+!  19*  217337.40   217337.40 00            W FINI   BE,$                       -RETURN TO PP INTERRUPTED ADDRESS FB000017
+!  20*  217340.00   215265.01 D0            JWFINI   SVA,$0,STIC                -MUST FAKE EXE              FB000018
+!  21*  217340.40 * 000001.00 81  000013.04 A0       TI,2,1.0($1),$IND                                      FB000019
+!  22*  217341.40   215245.00 80  000020.10 A0       TI,4,STLR+13.0,$0                                      FB000020
+!  23*  217342.40   215125.10 00                     B,SIPT+18.0                - FAKE EXE                  FB000021
+!  24*  217343.00   215163.03 01            WRAM     LVI,1,SFPTE                                            FB000022
+!  25*  217343.40   217333.50 00                     B,WCON1                                                FB000023
+!  26*  217344.00   000000.00 31            JWRAM1   LV,0,0.0($1)                                           FB000024
+!  27*  217344.40   215265.01 D0                     SVA,0,STIC                                             FB000025
+!  28*  217345.00   000001.00 81  000013.04 A0       TI,2,1.0($1),$IND                                      FB000026
+!  29*  217346.00   215245.00 80  000020.10 A0       TI,4,STLR+13.0,$0                                      FB000027
+!  30*  217347.00   215107.10 00                     B,SIPT+4.0                 -FAKE TS                    FB000028
+!
+! Line 30 is a half word, so the counter reaches 217347.40 for
+! whatever page follows.
+!
+! ---------------------------------------------------------------
+! WHAT THESE CHECKS DO AND DO NOT ESTABLISH
+! ---------------------------------------------------------------
+! All twenty-five emitting rows are declared, and all six of the
+! page's own labels.  Nothing on this page is left unchecked.
+!
+! THE REAL CHECKS OF THIS PAGE'S OWN COUNTING are the four rows
+! whose operand is a label defined HERE:
+!   line 13  BBZ,STSBIT,JWRAM1 -> 217344.34, and JWRAM1 is line 26
+!   line 15  BB,...,JWFINI     -> 217340.34, and JWFINI is line 20
+!   line 16  SVA,0,WFINI       -> 217337.41, and W FINI is line 19
+!   line 25  B,WCON1           -> 217333.50, and W CON 1 is line 14
+! Each one is a forward or backward reference across the page that
+! only resolves if every intervening row's LENGTH is right, and
+! they run in both directions.
+!
+! TAUTOLOGY AUDIT: none.  Every external is defined by a card on
+! another page (see EXTERNALS), so no row here is checking a value
+! this page itself supplied.
+!
+! WHAT IS PINNED ONLY TO THE HALF WORD, from this page alone:
+!   W JERR (lines 8,10 -- BXL/BZXL), S TIC (lines 20,27 -- SVA),
+!   S FPTE (line 24 -- LVI), S IPT (lines 23,30 -- B), W FINI
+!   (line 16 -- SVA), W CON 1 (line 25 -- B), S LOWER and S UPPER
+!   (lines 7,9 -- KV).  Bit offsets 0-31 all encode identically in
+!   those forms, so ".00" is a CONVENTION there and no !CHECK can
+!   test it.  Each is nevertheless pinned to the bit by a card
+!   elsewhere, cited under EXTERNALS; W FINI and W CON 1 are
+!   pinned by their own printed LOCATIONS on lines 19 and 14.
+! WHAT IS PINNED TO THE BIT from this page: S SPFIX (line 11) and
+!   S TSBIT (line 13), whose operands are full 24-bit bit
+!   addresses, and S T LR (lines 12,18, TI's 24-bit A1).
+!
+! ---------------------------------------------------------------
+! TAIL SCOPE, NOT A COLLISION
+! ---------------------------------------------------------------
+! printed p.99 line 11's "SLC,(8)215000." opened the second
+! assembly of MCP, and p.98 line 37's "UNTAIL,(2)" had already
+! closed p.2's TAIL block, so names here may legitimately repeat
+! names that pp.2-98 define at other addresses.  Checked against
+! the landed decks: WRAM is already SYN'd at 217343.00 by
+! decks/mcp_bootstrap_p133.strap (same value, no conflict);
+! W JERR at 216372.00 agrees with decks/mcp_bootstrap_p130.strap's
+! definition; S T LR, S UPPER, S LOWER, S TIC, S IPT, S FPTE,
+! S SPFIX, S TSBIT and S COM RG all agree with the values the
+! landed decks already carry.  WRAMPP, W CON 1, W FINI, JWFINI
+! and JWRAM1 are new names that no landed deck carries.  Reported,
+! not touched.
+!
+! ---------------------------------------------------------------
+! ASSEMBLER LIMITATION HIT: none.
+! No printed spelling was rejected by strap_asm except "$C", and
+! "$C" is not a system symbol in ANY reading -- see GLYPHS (2),
+! where it is read as "$0" on the drum's dropout asymmetry and the
+! reading is then confirmed by the printed bits.  Accepted exactly
+! as printed: the blank-in-a-label forms "W CON 1" and "W FINI"
+! (written closed up, as the deck format requires and as the page's
+! own references already print them), "$0" in the index position
+! beside the plain "0" form on the same page ("SVA,$0,STIC" line 20
+! vs "SVA,0,STIC" line 27), the connective "CM0000(BU,1)", and
+! "SLC,$" -- which assembles, and is restated hard here only so the
+! deck stands alone; see THE JOIN for what that costs and for the
+! two witnesses that pay it back.
+! ---------------------------------------------------------------
+
+!SYM   WRAMPP   217326.00
+!SYM   WCON1    217333.40
+!SYM   WFINI    217337.40
+!SYM   JWFINI   217340.00
+!SYM   WRAM     217343.00
+!SYM   JWRAM1   217344.00
+!CHECK 217326.00 | 000021.37 70 | line 6 WRAMPP SR,15,$1 -GET PTOE (printed SLC,$ on line 5 gives this page's arriving counter as 217326.00)
+!CHECK 217326.40 | 215230.42 90 | line 7 KV,$1,SLOWER -- S LOWER is 215230.40, the .02 is KV's own operation bits
+!CHECK 217327.00 | 216372.32 42 | line 8 BXL,WJERR (same card as line 7)
+!CHECK 217327.40 | 215230.02 90 | line 9 KV,$1,SUPPER -- S UPPER is 215230.00
+!CHECK 217330.00 | 216372.32 40 | line 10 BZXL,WJERR (same card as line 9)
+!CHECK 217330.40 | 215001.13 80 001000.00 F0 | line 11 CM0000(BU,1),SSPFIX -- printed "CMOCOO" and "OC1000.CC FC"; the four connective digits are checked by this row (CM1111 would print 001000.36), and the byte is F0 by the i2 rule
+!CHECK 217331.40 | 215234.00 80 000007.02 A0 | line 12 TI,1,STLR+4.0,$LZC -- $AOC would print 000007.42, so .02 checks $LZC
+!CHECK 217332.40 | 215001.14 80 217344.34 06 | line 13 BBZ,STSBIT,JWRAM1 -- forward reference to line 26, a real check of this page's counting
+!CHECK 217333.40 | 000000.00 31 | line 14 W CON 1 LV,0,0.0($1) -GET INT. AD.
+!CHECK 217334.00 | 000001.22 81 217340.34 02 | line 15 BB,1.18($1),JWFINI -- bit 18 written decimal, printed .22 octal; forward reference to line 20
+!CHECK 217335.00 | 217337.41 D0 | line 16 SVA,0,WFINI -- the .41 is .40 (W FINI's half word, line 19) plus SVA's .01
+!CHECK 217335.40 | 000001.00 81 000013.04 A0 | line 17 TI,2,1.0($1),$IND -- printed byte "AC" is A0, no index on operand 2
+!CHECK 217336.40 | 215245.00 80 000020.10 A0 | line 18 TI,4,STLR+13.0,$0 -- printed "$C"; $C is not a system symbol at all and $0 prints exactly this
+!CHECK 217337.40 | 217337.40 00 | line 19 W FINI BE,$ -- the modified branch the SVA on line 16 plants into
+!CHECK 217340.00 | 215265.01 D0 | line 20 JWFINI SVA,$0,STIC -- "$0" in the index position, beside line 27's plain "0" form
+!CHECK 217340.40 | 000001.00 81 000013.04 A0 | line 21 TI,2,1.0($1),$IND (this LOCATION carries the unexplained second asterisk)
+!CHECK 217341.40 | 215245.00 80 000020.10 A0 | line 22 TI,4,STLR+13.0,$0
+!CHECK 217342.40 | 215125.10 00 | line 23 B,SIPT+18.0 - FAKE EXE -- 18 decimal words on from 215103.00
+!CHECK 217343.00 | 215163.03 01 | line 24 WRAM LVI,1,SFPTE -- the .03 is LVI's operation bits, not address bits
+!CHECK 217343.40 | 217333.50 00 | line 25 B,WCON1 -- backward reference to line 14 (.40 plus B's .10)
+!CHECK 217344.00 | 000000.00 31 | line 26 JWRAM1 LV,0,0.0($1) -- printed "LV,C,C.C($1)", the same statement as line 14 printed with open glyphs
+!CHECK 217344.40 | 215265.01 D0 | line 27 SVA,0,STIC
+!CHECK 217345.00 | 000001.00 81 000013.04 A0 | line 28 TI,2,1.0($1),$IND
+!CHECK 217346.00 | 215245.00 80 000020.10 A0 | line 29 TI,4,STLR+13.0,$0
+!CHECK 217347.00 | 215107.10 00 | line 30 B,SIPT+4.0 -FAKE TS -- 4 words on from 215103.00; with line 23 this checks the arithmetic against two different printed words off one base

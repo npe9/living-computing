@@ -1,0 +1,451 @@
+! mcp_bootstrap_p140.strap -- "R E T U R N", the MCP return-to-user
+! sequence, printed page 140.  docs/MCP_Mar63_001-249.pdf PDF p.147,
+! header READ and not assumed:
+!   "TIME CLOCK 00054041   PUNID 11D11MCP   CARD ID FA000001
+!    DIST. OF 3/01   3/01   PAGE NUMBER  140"
+! The column-heading row's own right-hand LOCATION field is BLANK on
+! this page, so -- unlike printed p.136, whose heading printed
+! "LOCATION 216661" -- the page supplies no second reading of its
+! own first word there.  The SLC on line 4 supplies one instead; see
+! THE JOINS below.
+!
+! >>> A NEW PUNCHED DECK STARTS HERE. <<<  The card-serial column
+! restarts at FA000001 (line 1) and the page header names that same
+! serial as its CARD ID.  printed p.136 was still punching EE0000nn.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! FORTY-EIGHT PRINTED LINES.  Lines 1-3 are the comment-card banner
+! ("R E T U R N"); line 4 is "SLC,$" and emits nothing; lines 5-48
+! are forty-four rows of code.  No DD, no DRZ, no XW, no SYN, no
+! reservation -- every bit-emitting row is an instruction except
+! line 40, which is a VF constant planted in the instruction stream.
+!
+! The page is two near-identical routines side by side:
+!   C RETN  (lines  5-24)  return to a user running under the MCP,
+!                          restoring $MR and the lower registers
+!                          from S LR MCP / S IC MCP;
+!   C RET PP(lines 25-46)  the same thing for a PP user, restoring
+!                          from S LR PP / S IC PP.
+! Each ends "BE,$" -- branch-enabled to itself, the enable-and-go
+! that hands the machine back.  C RET 1, C M SNOW, K SUPP2, C P SNOW
+! and C P SIO are the entry points the two routines branch between.
+!
+! >>> FORTY-FIVE CARDS, NOT FORTY-EIGHT: THREE DOUBLE-STATEMENT
+! CARDS. <<<  The serial column runs FA000001 (line 1) to FA000045
+! (line 48) -- 45 serials for 48 lines -- and the three duplicates
+! were read at 1200 dpi:
+!   FA000014  lines 14+15   "LVI,1,$+1.0 ; B,K SERCH"
+!   FA000030  lines 31+32   "LVI,1,$+1.0 ; B,K SERCH"
+!   FA000040  lines 42+43   "LV,1,SICPP ; SV,$1,$+2.0"
+! the same semicolon shape printed p.127 line 56 and printed p.136
+! lines 1-2 found.  Line 43 prints its statement INDENTED by three
+! blanks, which is the second half of its card arriving at a
+! different card column; lines 15 and 32 do not, so the indentation
+! is NOT the tell and the serial column is.  Counted off that
+! column, nothing fell off the top or the bottom of the render.
+!
+! ---------------------------------------------------------------
+! THE JOINS -- FORWARD IS CHECKED, BACKWARD IS NOT
+! ---------------------------------------------------------------
+! >>> THE ADDRESS CHAIN CLOSES END TO END. <<<  Every one of the
+! forty-four code rows' printed addresses plus its own length equals
+! the next row's printed address, with no gap and no overlap, from
+! 217154.00 (line 5) to 217205.40 (line 48).  Line 48 is a half
+! word, so the counter leaves this page at 217206.00.
+!
+! >>> THE FORWARD JOIN IS MEASURED. <<<  printed p.141 (PDF p.148)
+! line 1 prints 217206.00, rendered and read.  So the chain lands
+! exactly on the next page's first word.
+!
+! >>> THE BACKWARD JOIN IS NOT. <<<  Line 4 prints
+!     "4*  217154.00                         SLC,$"
+! An SLC emits nothing, so 217154.00 IS the location counter
+! arriving from printed p.139 -- a free, independent reading of the
+! join printed by IBM's own assembler.  THE DECK CANNOT USE IT: a
+! hard SLC overrides the arriving counter silently
+! (docs/transcription_workflow.md, "A HARD SLC CANNOT DISAGREE WITH
+! THE ARRIVING COUNTER"), so the "SLC,(8)217154." written below
+! ASSERTS that origin rather than checking it.  printed p.139 is not
+! landed yet; when it lands, compare its last location by hand
+! against 217154.00.  Lines 4 and 5 print the SAME location and line
+! 4 gets no !CHECK, because it emits nothing.
+!
+! One further off-page witness for the first label: the volume OCR
+! carries another page branching "B,C RETN" with the half word
+! "217154.10 00" (OCR line 9171, at 220764.00), which pins C RETN
+! from outside this page.
+!
+! ---------------------------------------------------------------
+! GLYPHS SETTLED, AND HOW
+! ---------------------------------------------------------------
+! (1) "M D RET" (line 8) IS A D, NOT A C.  Two independent readings:
+!     at 1800 dpi on THIS page the glyph has a straight vertical
+!     LEFT stem with squared top and bottom corners and a bowl worn
+!     through on the right -- the C/D discriminator from
+!     docs/transcription_workflow.md.  And printed p.141 line 5 is
+!     the DEFINING card, "M D RET  LX,$1,M C R" at 217210.00, whose
+!     comment is an English banner reading "...S D RET..." with a
+!     crisp D; p.141 line 13's "-ADDR. OF USERS" on the same page
+!     prints two more crisp D's, so the drum does print D when it is
+!     inked.  (p.141 is a different page, so this is a second
+!     reading and not this page's own ink.)
+! (2) "K UNSTC" ENDS IN C, NOT O.  Line 16 prints "B,K UNSTC" and
+!     the comment "-NO" IN THE SAME ROW.  Rendered side by side at
+!     1600 dpi, the UNSTC glyph is wide open on the right and the O
+!     of NO is closed.  Same row, same drum, so the asymmetry rule
+!     (dropout opens a closed glyph, never closes an open one) is
+!     not needed -- the closed O is right there for comparison.
+!     UNSTC is also the spelling the landed p.123 and p.127 decks
+!     use, from the defining card at 222037.00.
+! (3) "SNOW" IS AN O.  Several instances on this page print a closed
+!     O (lines 9 and 48 at 700 dpi) and SNOW is an English word;
+!     under the asymmetry rule the open ones are damaged O's.
+! (4) "S Q K" IS A Q, NOT A G.  The comment on line 27 reads
+!     "-BRANCH IF Q K NOT ZERO", and SQK is the landed spelling from
+!     printed p.109 line 9.
+! (5) "C RET 1" (line 12) RESTS ON INK ALONE and is the one name on
+!     this page that NOTHING can catch: no row on this page branches
+!     to it, and the volume OCR's only hit for it is this page's own
+!     card.  Read at 1600 dpi: the final glyph has the flag and the
+!     serifed foot of a DIGIT 1 and is plainly not the L of the "LV"
+!     two fields to its right in the same row.  Recorded as the
+!     weakest reading in the deck.
+! (6) The HEX BYTES were read at 900 dpi (strap/mcp_crop.sh's
+!     resolution, for B vs 8).  Every "CO"/"0C" in the byte column
+!     is "00": those two characters are the operation byte of a B,
+!     and printed p.113's landed "B,W LODE" row is "216333.10 00".
+!
+! ---------------------------------------------------------------
+! WHAT THE PRINTED BINARY MEANS, MEASURED NOT ASSUMED
+! ---------------------------------------------------------------
+! An index instruction prints "wwwwww.oo HH", and the ".oo" field is
+! NOT the address's bit offset alone -- it is the address's bit
+! offset PLUS the operation's J-code.  Measured across this page's
+! own rows, with the J-code read off the statement:
+!   LVI,9,SPROGS      SPROGS .00 + 0o23 (=2*9+1)   prints .23
+!   LVI,1,$+1.0 (l.14) 217163 .00 + 0o03           prints .03
+!   LVI,1,$+1.0 (l.31) 217175 .40 + 0o03           prints .43
+!   LV,13,0.0($9)        0.0  .00 + 0o32 (=2*13)   prints .32
+!   LV,2,SQK($9)      SQK    .40 + 0o04            prints .44
+!   SV,2,STIC         STIC   .00 + 0o05 (=2*2+1)   prints .05
+!   SV,8,$+2.0        217170 .00 + 0o21            prints .21
+!   SV,$1,$+2.0       217204 .40 + 0o03            prints .43
+!   V+I,2,.32         bit 32 =0o40 + 0o05          prints .45
+!   LCI,15,29         29 = 0o35 in the ADDRESS, + 0o37 (=2*15+1)
+! This is why line 43's ".43" and line 21's ".21" differ for the
+! same "SV,...,$+2.0": the targets are 217204.40 and 217170.00.
+! Nothing here is inferred from a manual -- the deck assembles the
+! printed statements and listing_oracle compares the bits.
+!
+! >>> A BARE ".32" IS DECIMAL. <<<  SQK is printed p.109 line 9's
+! "SYN(BU,18),.32", a BARE decimal literal, so it is bit 32 decimal
+! = 0o40 -- which is exactly the 0o40 this page's line 10 prints.
+! Likewise SAS ".25" = 0o31 (line 8 prints 000000.31) and SSIO ".61"
+! = 0o75 (line 9 prints 000000.75).  Those THREE externals -- SAS,
+! SSIO and SQK, and only those three -- have their bit offsets
+! OBSERVED on this page: a wrong offset would change the printed
+! .31/.75/.44 and the !CHECK would fail.
+!
+! >>> THE OTHER FIFTEEN EXTERNALS ARE PINNED ONLY TO THE HALF WORD.
+! <<<  SLRMCP, SLRPP, SICMCP, SICPP, STIC, SPROGS, SCOMRG, SL,
+! MDRET, MUP1, KUNSTC, KSERCH, KINTTY, KSUPP and JTSEXE are used
+! here only through branches and index instructions, where bit
+! offsets 0-31 all encode identically and only bit 32 shows
+! (docs/transcription_workflow.md, "WHAT THE ORACLE CANNOT SEE" 1).
+! So the forty-four PASSES below do NOT verify their low bits; they
+! verify the half word, which is what caught printed p.122's two
+! ".0"-by-habit errors.  The VALUES come from the landed decks and
+! defining cards listed under THE EXTERNALS below, not from here.
+!
+! ---------------------------------------------------------------
+! TWO LISTING MARKS, RECORDED AND NOT EXPLAINED
+! ---------------------------------------------------------------
+! Every one of the forty-eight line numbers carries the ordinary
+! trailing asterisk ("1*", "48*").  TWO lines carry a SECOND
+! asterisk after the LOCATION, in the one-character column between
+! LOCATION and BINARY OUTPUT, read at 600 dpi:
+!   line 23  217167.00 *  T,15,S LR MCP,3.0
+!   line 43  217202.40 *  SV,$1,$+2.0
+! Both rows print ordinary binary beside the mark and both sit on an
+! unbroken address chain, so nothing is missing where they are.
+! printed pp.112, 113, 114 and 117 carry the same mark and none of
+! them explains it either; it is recorded, not explained.  Note it
+! does NOT mark the double-statement cards: line 43 is the second
+! half of one and line 23 is not part of one at all, and lines 15
+! and 32 are second halves and carry no mark.
+!
+! ---------------------------------------------------------------
+! THE EXTERNALS, AND WHAT EACH ONE RESTS ON
+! ---------------------------------------------------------------
+! DEFINING CARDS READ ON ANOTHER PAGE (the strong kind):
+!   MDRET  217210.00  printed p.141 line 5, RENDERED here, label row
+!   KUNSTC 222037.00  volume OCR, label row on printed p.142
+!   KSERCH 222020.00  volume OCR, label row on printed p.142
+!   JTSEXE 217316.00  volume OCR, label row on printed p.143
+!                     ("JTSEXE  LV,$15,0.0($1)")
+! LANDED DECKS (their own pages' readings, reused verbatim):
+!   SPROGS 215021.00  p.109 line 7 DRZ; p.117/118/123/128/134 SYN
+!   SAS    000000.25d p.109 line  8 "-AUTO STACK STATUS"
+!   SQK    000000.32d p.109 line  9
+!   SSIO   000000.61d p.109 line 10 "-SUPPRESSED MODE STATUS"
+!   SLRMCP 215362.00  p.116 line 26 DRZ; p.117 SYN
+!   SICMCP 215417.00  p.116 line 30 VF
+!   SLRPP  215266.00  p.117 deck
+!   SICPP  215323.00  p.117 deck
+!   STIC   215265.00  p.117 deck; the name is settled from the
+!                     manuals (C22-6728: "the saved IC is stored in
+!                     STIC"), not from this drum
+!   SL     215001.04  p.103 line 14, a SCOMRG bit
+!   KINTTY 216010.40  printed p.123 line 47, the DEFINING label row
+!                     ("K INT TY  LV,1,S TOE LO($13)"), landed and
+!                     checked in that page's own deck
+!   KSUPP  216242.00  printed p.128 line 3, the DEFINING label row
+!                     ("K SUPP  NOP,K COMM R"), landed and checked
+!                     in that page's own deck
+! BACK-DERIVED FROM THIS PAGE'S OWN BRANCH (the weak kind):
+!   MUP1   217236.40  from line 18's "217236.74 04".  Bit 32 shows
+!                     (hence .40 and not .00) but bits 0-31 do NOT:
+!                     every offset from 0 to 31 encodes identically,
+!                     so the ".0" after the half word is a
+!                     CONVENTION and no !CHECK on this page can test
+!                     it.  Corroborated only as to the WORD by the
+!                     volume OCR's printed p.141 line 9,
+!                     "BXVZZ,M UP 1  217236.71 46".
+! MDRET does NOT have that limitation: printed p.141 line 5 prints
+! "217210.00" in its own LOCATION COLUMN, which states the bit
+! offset outright, so MDRET's .00 is a READING.  What makes it
+! strong is the location column, not the fact that the card carries
+! a label.
+!
+! >>> TAIL SCOPE, NOT A COLLISION. <<<  This page is outside the
+! TAIL,(2)G block that printed p.2 opened and printed p.98 line 37
+! closed, so names here may legitimately repeat names defined at
+! other addresses in pp.2-98.  Recorded, not "fixed".
+!
+! ---------------------------------------------------------------
+! NAMES ARE WRITTEN CLOSED UP -- THE PRINTED SPACING IS HERE
+! ---------------------------------------------------------------
+! The deck format takes a label to its first blank, so the printed
+! blanks inside names are recorded here and removed below:
+!   "C RETN"   "C RET 1"  "C M SNOW"  "C RET PP"  "K SUPP2"
+!   "C P SNOW" "C P SIO"  "S PROG S"  "S L"       "S AS"
+!   "S SIO"    "S Q K"    "M D RET"   "M UP1"     "K UNSTC"
+!   "K SERCH"  "K INT TY" "S IC MCP"  "S LR MCP"  "S TIC"
+!   "S LR PP"  "K SUPP"
+! Lines 22 and 44 print their operands ALREADY closed up
+! ("SLRMCP+1.0", "SLRPP+1.0") while lines 23 and 45 print the same
+! symbols spaced ("S LR MCP", "S LR PP") -- both forms are on this
+! one page, which is why closing up is the house format and not a
+! substitution.  Lines 40 and 42 likewise print "SLRPP" and "SICPP".
+!
+! ---------------------------------------------------------------
+! THE PRINTED LISTING
+! ---------------------------------------------------------------
+!   line  1  (comment card)  "- " + a rule of asterisks
+!   line  2  (comment card)  "-" + asterisks + " R E T U R N " +
+!                            asterisks + "-"
+!   line  3  (comment card)  "- " + a rule of asterisks
+!   line  4  217154.00    (no binary)                              SLC,$
+!   line  5  217154.00    215021.23 01                    C RETN   LVI,9,S PROG S
+!   line  6  217154.40    215001.04 80  217170.74 00               BZB, S L, C RET PP          -TEST IF IN MCP
+!   line  7  217155.40    000001.23 05                             V+I,9, 1.0                  -IF SO, SET VF $1
+!   line  8  217156.00    000000.31 89  217210.34 04               BZBZ,S AS($9),M D RET
+!   line  9  217157.00    000000.75 89  217164.34 02               BB,S SIO($9),C M SNOW
+!   line 10  217160.00    000000.44 39                             LV,2,S Q K($9)
+!   line 11  217160.40    217164.31 42                             BXVZ, C M SNOW
+!   line 12  217161.00    000000.32 39                    C RET 1  LV,13, 0.0($9)
+!   line 13  217161.40    222037.31 42                             BXVZ, K UNSTC
+!   line 14  217162.00    217163.03 01                             LVI,1,$+1.0
+!   line 15  217162.40    222020.10 00                             B,K SERCH
+!   line 16  217163.00    222037.10 00                             B,K UNSTC                   -NO
+!   line 17  217163.40    216010.50 00                             B,K INT TY
+!   line 18  217164.00    215373.00 80  217236.74 04     C M SNOW  BZBZ,S LR MCP+9.0,M UP1
+!   line 19  217165.00    000035.37 02                             LCI,15,29
+!   line 20  217165.40    215417.20 30                             LV,8,S IC MCP
+!   line 21  217166.00    217170.21 30                             SV,8,$+2.0
+!   line 22  217166.40    215363.44 A0                             LFT(U),SLRMCP+1.0           -RESTORE $MR
+!   line 23  217167.00 *  215362.00 80  000003.36 20               T,15,S LR MCP,3.0
+!   line 24  217170.00    217170.00 00                             BE,$
+!   line 25  217170.40    000000.31 89  217176.74 04     C RET PP  BZBZ,S AS($9),K SUPP2
+!   line 26  217171.40    000000.75 89  217205.34 02               BB, S SIO($9), C P SIO      -BRANCH IF SIO BIT IS ON
+!   line 27  217172.40    000000.44 39                             LV,2,S Q K($9)              -BRANCH IF Q K NOT ZERO
+!   line 28  217173.00    217200.31 42                             BXVZ, C P SNOW
+!   line 29  217173.40    000000.32 39                             LV,13,0.0($9)
+!   line 30  217174.00    222037.31 42                             BXVZ,K UNSTC                -BRANCH IF NOT WAITING
+!   line 31  217174.40    217175.43 01                             LVI,1,$+1.0
+!   line 32  217175.00    222020.10 00                             B,K SERCH
+!   line 33  217175.40    222037.10 00                             B,K UNSTC
+!   line 34  217176.00    216010.50 00                             B,K INT TY
+!   line 35  217176.40    000000.45 05      K SUPP2                V+I,2,.32
+!   line 36  217177.00    215265.05 30                             SV,2,S TIC
+!   line 37  217177.40    216242.10 00                             B,K SUPP
+!   line 38  217200.00    217201.03 01     C P SNOW                LVI,1,$+1.0                 -CHECK FOR TS,EXE
+!   line 39  217200.40    217316.10 00                             B,JTSEXE
+!   line 40  217201.00    215266.00+                               VF,SLRPP
+!   line 41  217201.40    000035.37 02                             LCI,15,29
+!   line 42  217202.00    215323.02 30                             LV,1,SICPP
+!   line 43  217202.40 *  217204.43 30                               SV,$1,$+2.0
+!   line 44  217203.00    215267.44 A0                             LFT(U),SLRPP+1.0            -RESTORE $MR
+!   line 45  217203.40    215266.00 80  000003.36 20               T,15,S LR PP,3.0            -RESTORE LOWER REGISTERS
+!   line 46  217204.40    217204.40 00                             BE,$
+!   line 47  217205.00    000000.32 39      C P SIO                LV,13, 0.0($9)
+!   line 48  217205.40    217200.31 42                             BXVZ, C P SNOW
+!
+! ---------------------------------------------------------------
+! ASSEMBLER LIMITATION
+! ---------------------------------------------------------------
+! NONE.  Every one of the forty-four printed statements assembles as
+! printed, with only the blanks removed from names.  The forms that
+! looked risky were TESTED before anything was substituted and all
+! of them were accepted unchanged: "V+I,9, 1.0" (blank before the
+! literal), "V+I,2,.32" (bare decimal bit offset), "LFT(U),...",
+! "T,15,...,3.0", "BE,$" and "SV,$1,$+2.0".  NOTHING under strap/
+! was modified and nothing was substituted.
+!
+! ---------------------------------------------------------------
+! AGREEMENT WITH THE VOLUME SURVEY
+! ---------------------------------------------------------------
+! The survey OCR'd "33 rows carrying a LOCATION, range
+! 217154.00..2172C2.CC".  THIS READING DISAGREES, in the direction
+! the survey is documented to fail: the page prints FORTY-FIVE rows
+! with a LOCATION (lines 4-48), over 217154.00..217205.40.  The
+! survey's first address is right; its last ("2172C2.CC", i.e.
+! 217202.00) is this page's line 42, with six more rows below it.
+! The page's own 48 line numbers, its card-serial column running
+! unbroken to FA000045, the gapless address chain and p.141's first
+! location all agree with the reading above.
+! Note also that the volume listing OCR of printed p.140 itself
+! (docs/ocr lines 7352-7398) is NOT a witness for anything here --
+! it is this page's ink read by a worse reader.  Every OCR citation
+! above is to a DIFFERENT page.
+
+! ---- EXTERNALS, with the location each one is printed at ----------
+SLRMCP  SYN, (8)215362.0                 ! p.116 line 26 / p.117
+SLRPP   SYN, (8)215266.0                 ! p.117 deck; line 40 prints it
+SICMCP  SYN, (8)215417.0                 ! p.116 line 30
+SICPP   SYN, (8)215323.0                 ! p.117 deck
+STIC    SYN, (8)215265.0                 ! p.117 deck; C22-6728 for the name
+SPROGS  SYN, (8)215021.0                 ! p.109 line 7
+SCOMRG  SYN, (8)215001.0                 ! p.103 line 8
+SL      SYN(BU,1), SCOMRG+0.04           ! p.103 line 14, a SCOMRG bit
+SAS     SYN(BU,1), .25                   ! p.109 line  8  (.25 DECIMAL = 0o31)
+SSIO    SYN(BU,1), .61                   ! p.109 line 10  (.61 DECIMAL = 0o75)
+SQK     SYN(BU,18), .32                  ! p.109 line  9  (.32 DECIMAL = 0o40)
+MDRET   SYN, (8)217210.0                 ! p.141 line 5, label row, RENDERED
+MUP1    SYN, (8)217236.40                ! back-derived from line 18; see above
+KUNSTC  SYN, (8)222037.0                 ! p.142 label row (volume OCR)
+KSERCH  SYN, (8)222020.0                 ! p.142 label row (volume OCR)
+KINTTY  SYN, (8)216010.40                ! p.123 line 47, label row
+KSUPP   SYN, (8)216242.0                 ! p.128 line  3, label row
+JTSEXE  SYN, (8)217316.0                 ! p.143 label row (volume OCR)
+
+! ---- THE PAGE ------------------------------------------------------
+! Line 4 prints "SLC,$".  The hard origin below ASSERTS 217154.00;
+! the page's own printed location for that row is the only reading
+! of it.  See THE JOINS above.
+        SLC,(8)217154.
+CRETN   LVI,9,SPROGS                     ! line  5
+        BZB,SL,CRETPP                    ! line  6  -TEST IF IN MCP
+        V+I,9, 1.0                       ! line  7  -IF SO, SET VF $1
+        BZBZ,SAS($9),MDRET               ! line  8
+        BB,SSIO($9),CMSNOW               ! line  9
+        LV,2,SQK($9)                     ! line 10
+        BXVZ,CMSNOW                      ! line 11
+CRET1   LV,13,0.0($9)                    ! line 12
+        BXVZ,KUNSTC                      ! line 13
+        LVI,1,$+1.0                      ! line 14  (card FA000014, first half)
+        B,KSERCH                         ! line 15  (card FA000014, second half)
+        B,KUNSTC                         ! line 16  -NO
+        B,KINTTY                         ! line 17
+CMSNOW  BZBZ,SLRMCP+9.0,MUP1             ! line 18
+        LCI,15,29                        ! line 19
+        LV,8,SICMCP                      ! line 20
+        SV,8,$+2.0                       ! line 21
+        LFT(U),SLRMCP+1.0                ! line 22  -RESTORE $MR
+        T,15,SLRMCP,3.0                  ! line 23  (location carries an asterisk)
+        BE,$                             ! line 24
+CRETPP  BZBZ,SAS($9),KSUPP2              ! line 25
+        BB,SSIO($9),CPSIO                ! line 26  -BRANCH IF SIO BIT IS ON
+        LV,2,SQK($9)                     ! line 27  -BRANCH IF Q K NOT ZERO
+        BXVZ,CPSNOW                      ! line 28
+        LV,13,0.0($9)                    ! line 29
+        BXVZ,KUNSTC                      ! line 30  -BRANCH IF NOT WAITING
+        LVI,1,$+1.0                      ! line 31  (card FA000030, first half)
+        B,KSERCH                         ! line 32  (card FA000030, second half)
+        B,KUNSTC                         ! line 33
+        B,KINTTY                         ! line 34
+KSUPP2  V+I,2,.32                        ! line 35
+        SV,2,STIC                        ! line 36
+        B,KSUPP                          ! line 37
+CPSNOW  LVI,1,$+1.0                      ! line 38  -CHECK FOR TS,EXE
+        B,JTSEXE                         ! line 39
+        VF,SLRPP                         ! line 40  a constant inside the code
+        LCI,15,29                        ! line 41
+        LV,1,SICPP                       ! line 42  (card FA000040, first half)
+        SV,$1,$+2.0                      ! line 43  (card FA000040, second half;
+                                         !           location carries an asterisk)
+        LFT(U),SLRPP+1.0                 ! line 44  -RESTORE $MR
+        T,15,SLRPP,3.0                   ! line 45  -RESTORE LOWER REGISTERS
+        BE,$                             ! line 46
+CPSIO   LV,13,0.0($9)                    ! line 47
+        BXVZ,CPSNOW                      ! line 48
+! counter leaves at 217206.00 = printed p.141 line 1, rendered.
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 140 ------------------
+! The seven !SYM lines are the seven labels THIS page defines.  No
+! !SYM is written for a SYN'd external: that would only check the
+! deck against itself.  Every bit-emitting row (lines 5-48) has a
+! !CHECK -- forty-four of them, no sampling.
+!SYM   CRETN    217154.00
+!SYM   CRET1    217161.00
+!SYM   CMSNOW   217164.00
+!SYM   CRETPP   217170.40
+!SYM   KSUPP2   217176.40
+!SYM   CPSNOW   217200.00
+!SYM   CPSIO    217205.00
+!CHECK 217154.00 | 215021.23 01 | line 5 C RETN LVI,9,S PROG S
+!CHECK 217154.40 | 215001.04 80 217170.74 00 | line 6 BZB, S L, C RET PP -TEST IF IN MCP
+!CHECK 217155.40 | 000001.23 05 | line 7 V+I,9, 1.0 -IF SO, SET VF $1
+!CHECK 217156.00 | 000000.31 89 217210.34 04 | line 8 BZBZ,S AS($9),M D RET
+!CHECK 217157.00 | 000000.75 89 217164.34 02 | line 9 BB,S SIO($9),C M SNOW
+!CHECK 217160.00 | 000000.44 39 | line 10 LV,2,S Q K($9)
+!CHECK 217160.40 | 217164.31 42 | line 11 BXVZ, C M SNOW
+!CHECK 217161.00 | 000000.32 39 | line 12 C RET 1 LV,13, 0.0($9)
+!CHECK 217161.40 | 222037.31 42 | line 13 BXVZ, K UNSTC
+!CHECK 217162.00 | 217163.03 01 | line 14 LVI,1,$+1.0
+!CHECK 217162.40 | 222020.10 00 | line 15 B,K SERCH
+!CHECK 217163.00 | 222037.10 00 | line 16 B,K UNSTC -NO
+!CHECK 217163.40 | 216010.50 00 | line 17 B,K INT TY
+!CHECK 217164.00 | 215373.00 80 217236.74 04 | line 18 C M SNOW BZBZ,S LR MCP+9.0,M UP1
+!CHECK 217165.00 | 000035.37 02 | line 19 LCI,15,29
+!CHECK 217165.40 | 215417.20 30 | line 20 LV,8,S IC MCP
+!CHECK 217166.00 | 217170.21 30 | line 21 SV,8,$+2.0
+!CHECK 217166.40 | 215363.44 A0 | line 22 LFT(U),SLRMCP+1.0 -RESTORE $MR
+!CHECK 217167.00 | 215362.00 80 000003.36 20 | line 23 T,15,S LR MCP,3.0 (location carries an asterisk)
+!CHECK 217170.00 | 217170.00 00 | line 24 BE,$
+!CHECK 217170.40 | 000000.31 89 217176.74 04 | line 25 C RET PP BZBZ,S AS($9),K SUPP2
+!CHECK 217171.40 | 000000.75 89 217205.34 02 | line 26 BB, S SIO($9), C P SIO -BRANCH IF SIO BIT IS ON
+!CHECK 217172.40 | 000000.44 39 | line 27 LV,2,S Q K($9) -BRANCH IF Q K NOT ZERO
+!CHECK 217173.00 | 217200.31 42 | line 28 BXVZ, C P SNOW
+!CHECK 217173.40 | 000000.32 39 | line 29 LV,13,0.0($9)
+!CHECK 217174.00 | 222037.31 42 | line 30 BXVZ,K UNSTC -BRANCH IF NOT WAITING
+!CHECK 217174.40 | 217175.43 01 | line 31 LVI,1,$+1.0
+!CHECK 217175.00 | 222020.10 00 | line 32 B,K SERCH
+!CHECK 217175.40 | 222037.10 00 | line 33 B,K UNSTC
+!CHECK 217176.00 | 216010.50 00 | line 34 B,K INT TY
+!CHECK 217176.40 | 000000.45 05 | line 35 K SUPP2 V+I,2,.32
+!CHECK 217177.00 | 215265.05 30 | line 36 SV,2,S TIC
+!CHECK 217177.40 | 216242.10 00 | line 37 B,K SUPP
+!CHECK 217200.00 | 217201.03 01 | line 38 C P SNOW LVI,1,$+1.0 -CHECK FOR TS,EXE
+!CHECK 217200.40 | 217316.10 00 | line 39 B,JTSEXE
+!CHECK 217201.00 | 215266.00+ | line 40 VF,SLRPP
+!CHECK 217201.40 | 000035.37 02 | line 41 LCI,15,29
+!CHECK 217202.00 | 215323.02 30 | line 42 LV,1,SICPP
+!CHECK 217202.40 | 217204.43 30 | line 43 SV,$1,$+2.0 (location carries an asterisk)
+!CHECK 217203.00 | 215267.44 A0 | line 44 LFT(U),SLRPP+1.0 -RESTORE $MR
+!CHECK 217203.40 | 215266.00 80 000003.36 20 | line 45 T,15,S LR PP,3.0 -RESTORE LOWER REGISTERS
+!CHECK 217204.40 | 217204.40 00 | line 46 BE,$
+!CHECK 217205.00 | 000000.32 39 | line 47 C P SIO LV,13, 0.0($9)
+!CHECK 217205.40 | 217200.31 42 | line 48 BXVZ, C P SNOW

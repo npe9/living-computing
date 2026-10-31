@@ -255,7 +255,7 @@ GMISTO  SYN, (8)217012.0
 POUT    SYN, (8)217106.40
 ! PTEMBF  216743.00  NEW.  Lines 34 and 52 print "216743.00 80".
 !                    The volume OCR carries the DEFINING card --
-!                    "216743.00 *  000015.00  P TEM BF  DRZ(BU,64),
+!                    "216743.00 *  000015.00  P TEM BF  DR(BU,64),
 !                    (13)" -- a thirteen-word buffer, which is
 !                    exactly the count line 52 transmits.
 PTEMBF  SYN, (8)216743.0
@@ -268,7 +268,17 @@ PTEMBF  SYN, (8)216743.0
 PMCPBF  SYN, (8)216775.0
 ! PPPBF   216760.00  NEW.  Line 52 prints "216760.32 A0".  The
 !                    volume OCR carries the defining card,
-!                    "216760.00  000015.00  P PP BF  DRZ(BU,64),
+!                    "216760.00  000015.00  P PP BF  DR(BU,64),
+!
+! CORRECTION (made when printed p.137 landed): the two quotations above
+! originally read "DRZ(BU,64)".  The page prints "DR", no Z -- rendered
+! at 1200 dpi on printed p.137 line 20, which carries the same cards.
+! It changes no bit HERE (this page only SYNs the symbols), but it is
+! not cosmetic: C22-6531 p.35 makes DRZ a DR whose words "are all set
+! to zero", so DRZ would plant 49 words of zero content in the merged
+! image where DR plants none.  listing_oracle CANNOT catch this --
+! DR(BU,64),(13) and DRZ(BU,64),(13) both print "000000.00 00",
+! because a reservation prints its COUNT, not its storage.  Measured.
 !                    (13)", and a reference "217073.40  216760.05 01
 !                    LVI,$2,PPPBF  -PP-SET TO TRANSFER FROM PP BF".
 PPPBF   SYN, (8)216760.0

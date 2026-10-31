@@ -23,6 +23,72 @@ accumulate.
 
 
 
+## THE `$`-PREFIXED OPERATION FORMS FAIL WITH A BARE `KeyError` -- open
+
+Measured 2026-10-31, with a defined operand so the error is the form
+and not the symbol:
+
+```
+  (IQS*)DD(BU,,8),ABC*     OK      -- printed p.137 is the first page
+                                      to exercise IQS entry mode on data
+  (CC*)DD(BU,,12),...*     REJECT  -- "entry mode 'CC' is not
+                                      implemented", cites the manual.
+                                      A GOOD refusal: sourced and clear.
+  $KF(BU,8),X              REJECT  -- bare KeyError: '$KF'
+  $CM0000(BU,1),X          REJECT  -- bare KeyError: '$CM0000'
+```
+
+The last two are the shape that cost real time on `M-` this session:
+a `KeyError` out of a dispatch dict aborts the WHOLE assembly and
+names no line, no page and no reason, so a transcriber cannot tell
+"not implemented" from "you misread the card". `(CC*)`'s message is
+the model to copy.
+
+**The cheap fix is the diagnostic, not the feature** — catch the
+miss and say which operation, on which line, and that it is
+unimplemented rather than unrecognised. Whether `$KF` and `$CM0000`
+should ASSEMBLE is a separate question needing a primary source.
+
+## `M-` IS ADMITTED ON A VFL OPERATION -- closed, 2026-10-31
+
+> **CLOSED.** `strap/opcodes.py` had kept `M-` out in so many words:
+> *"Nothing in the corpus spells either of them on a VFL operation."*
+> That was true when written and is no longer. MCP **printed p.138
+> line 11** (`M-(BU,24),$5`) and **printed p.142 line 4**
+> (`M-(BU,19),M PRM QK,-19`) both spell it on a VFL operation
+> carrying a VFL data description, read at 1800 dpi by two
+> transcribers working in parallel who never saw each other's page.
+>
+> **Only the SPELLING came from the listings**, which is the one
+> thing a listing is authoritative for — it is IBM's own assembler's
+> accepted input. The ENCODING is the 0o10 invert-sign bit the file
+> already carried for `M-1`, measured here rather than inferred:
+>
+> ```
+>   M+1(BU,24),$5  ->  000025.00 80 030000.22 B0
+>   M-1(BU,24),$5  ->  000025.00 80 030000.32 B0     (already admitted)
+>   M+(BU,24),$5   ->  000025.00 80 030000.20 90
+>   M-(BU,24),$5   ->  000025.00 80 030000.30 90     printed p.138 l.11
+> ```
+>
+> Same bit, same field. Injection: deleting the one table entry makes
+> both pages die with `KeyError: 'M-'`.
+>
+> **`M-MG` REMAINS DELIBERATELY ABSENT.** Nothing in the corpus
+> spells it on a VFL operation, and that is still the standard.
+
+> **STILL OPEN: NOTHING EXECUTES IT.** Admitting the spelling is an
+> ASSEMBLER fact. Whether the model's VFL multiply honours the
+> negative sign modifier is a separate question and is NOT settled
+> here. `bsv/StretchExecute.bsv` threads `vi.m.invert` into
+> `fieldToSM` at the VFL operand-fetch sites, so it plausibly works
+> already — but "plausibly" is what Figure 12 said about `-MG`
+> before it was run, and `-MG` turned out to compute x PLUS y with
+> every unsigned subtract in the model silently an addition. The
+> work is a deck that MULTIPLIES and checks the product's sign, in
+> the shape of `decks/fig14_sign_modifiers.strap`. Until that
+> exists, `M-` assembles correctly and runs unexamined.
+
 ## >>> THE VFL TIMING IS SOLVED EXACTLY -- AND APPLYING IT BREAKS THE BOOT <<< 2026-10-26
 
 Against Volume 2 **printed p.113 (PDF 120), VFL `L`, NO INDEXING /

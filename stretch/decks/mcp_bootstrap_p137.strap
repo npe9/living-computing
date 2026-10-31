@@ -1,0 +1,576 @@
+! mcp_bootstrap_p137.strap -- the CONSOLE-MESSAGE buffers, the four
+! operator messages, and G EDIT, the backspace editor.  printed page
+! 137.  docs/MCP_Mar63_001-249.pdf PDF p.144, header READ and not
+! assumed: "TIME CLOCK 00054041  PUNID 11D11MCP   CARD ID EE000111
+! DIST. OF 3/01   3/01   PAGE NUMBER  137".
+!
+! FIFTY-SIX PRINTED LINES.  The card-serial column runs EE000111
+! (line 1) to EE000166 (line 56) -- fifty-six serials for fifty-six
+! lines, one per line, read at 400 dpi off the right-hand column.
+! Nothing fell off the top or the bottom of the render.  It joins
+! printed p.136, whose last serial is EE000110.
+!
+! WHAT EMITS AND WHAT DOES NOT, counted line by line:
+!   32 rows of machine code             lines 1-3, 5-18, 38-46,
+!                                       48-51, 54, 56
+!    4 DR reservations                  lines 20-23
+!    4 entry-mode DD messages           lines 24, 25, 26, 28
+!    2 CNOPs                            line 19 (emits a NOP, and
+!                                       prints a LOCATION and bits)
+!                                       and line 27 (emits nothing
+!                                       at all and prints neither)
+!   14 comment cards                    lines 4, 29-37, 47, 52, 53,
+!                                       55
+! 32 + 4 + 4 + 2 + 14 = 56.  FORTY-ONE ROWS CARRY A LOCATION (the 32
+! plus the 4 plus the 4 plus line 19).  THIRTY-THREE CARRY MACHINE
+! CODE (the 32 plus line 19), which is the !CHECK count below -- the
+! four DR rows DO print in the BINARY OUTPUT column, but what they
+! print is the reservation's size, not code, so they are not among
+! the 33.  See COVERAGE at the bottom.
+!
+! ---------------------------------------------------------------
+! THE ORIGIN IS READ, AND BOTH JOINS ARE WITNESSED
+! ---------------------------------------------------------------
+! >>> THE PAGE PRINTS NO SLC. <<<  216731.00 is line 1's own printed
+! LOCATION and it is ALSO printed in the column-heading row, whose
+! right-hand field reads "LOCATION      216731" -- RENDERED AND READ
+! at 600 dpi (x=7600, y=400), not inherited from p.136's header,
+! which carries the same kind of sentence about its own page.  So
+! the origin below is a reading of the page twice over -- but a
+! hard SLC asserts its value rather than
+! checking it (docs/transcription_workflow.md, "A HARD SLC CANNOT
+! DISAGREE WITH THE ARRIVING COUNTER"), so THE BACKWARD JOIN IS NOT
+! CHECKED BY THIS DECK.
+!
+! IT IS, HOWEVER, CLOSED BY HAND AND EXACTLY.  decks/mcp_bootstrap_
+! p136.strap's line 56 is a full-word connective at 216730.00, so
+! that page's counter leaves at 216731.00 -- which is where this
+! page's line 1 is printed.  The two pages meet with no gap and no
+! overlap, and p.136's deck predicted this join in advance ("(a) The
+! survey OCR of printed p.137 reads its line 2 at 216732.00").
+!
+! THE FORWARD JOIN, AS A PREDICTION printed p.138 CAN FALSIFY.
+! Line 56 is a half word at 217056.00, so this page's counter leaves
+! at 217056.40.  >>> printed p.138's FIRST row should print
+! 217056.40. <<<  Between there and 217063.00 lie four and a half
+! words, because the volume OCR carries two p.138 cards whose
+! addresses are known independently of this page: "217063.00
+! 217063.10 00  G KONEC  B,$" and "217063.40  217012.13 04  G VRAT
+! KVI,$5, G MISTO".  So p.138 opens with nine half words of G EDIT's
+! tail and then defines G KONEC and G VRAT, the two symbols this
+! page's lines 44, 49 and 54 branch to.  NOT CLOSED HERE -- a hard
+! SLC cannot check a join -- but written down so that landing p.138
+! either confirms it in one line or contradicts it loudly.
+!
+! THE ADDRESS CHAIN CLOSES END TO END ACROSS ALL FORTY-ONE EMITTING
+! ROWS.  Every row's printed address plus its own length is the next
+! row's printed address, from 216731.00 to 217056.00, including the
+! four DR reservations (13 + 13 + 13 + 10 words) and the four
+! entry-mode messages (4 + 4 + 6 + 3 words).  That is the single
+! strongest check on this page and it is what pins the message
+! texts character for character -- see below.
+!
+! TAIL SCOPE.  printed p.99 line 11's "SLC,(8)215000." moved the
+! origin here and pp.99+ are OUTSIDE the TAIL,(2)G block that printed
+! p.2 opened and printed p.98 line 37 closed with "UNTAIL,(2)".
+! Names defined here may legitimately repeat names from pp.2-98 at
+! other addresses; none of this page's fifteen does.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE CONTAINS
+! ---------------------------------------------------------------
+! Lines 1-18   the tails of three short routines, all of which
+!              printed p.136 branches into or out of.
+!              Line 1 unselects the MCP unit (S SEL-1.0, one word
+!              below the S SEL that p.136 lines 36-37 select) and
+!              line 2 jumps back to P EX1 on p.136.
+!              Line 3 is P MP LEV, the MCP-level interrupt entry
+!              that p.136 line 53 branches to: it loads S IC BU and
+!              falls into P COM.
+!              Lines 6-8 are G ERROR (p.136 line 47's target): point
+!              $1 at the "PP HAS NO CONSOLE IOD" message, set $2 to
+!              its 6-word length, and branch to P ERR EX on p.135.
+!              Lines 9-11 are G ODBOC, the same three steps for the
+!              3-word "MESSAGE HAS BEEN ERASED".
+!              Lines 12-18 are P DBRET, the DEBUGGER-side return:
+!              index P CDEF2 (the debugger console IOD) off S BAMCP,
+!              fetch the activated file-area address into S FI AAC,
+!              and -- if S L says so -- rejoin P MAIN on p.136,
+!              otherwise load S IC BU and branch to P MAIN1.
+! Lines 20-23  FOUR BUFFER RESERVATIONS, which is where p.136's four
+!              SYNs were pointing all along: P TEM BF (13 words),
+!              P PP BF (13), P MCP BF (13) and G MISTO (10).
+! Lines 24-28  THE FOUR OPERATOR MESSAGES, entry-mode DD cards in
+!              the 89-character set with "*" as the end-of-statement
+!              character.
+! Lines 38-56  G EDIT, THE BACKSPACE EDITOR.  Its nine comment cards
+!              (29-37) state the contract: "ITS FCN IS TO EDIT OUT
+!              FROM A STRING OF 8 BIT IQS CHARACTERS ALL BACK SPACE
+!              CHARACTERS.  FOR EACH BACKSPACE CHARACTER BOTH IT AND
+!              THE PREVIOUS NON BACKSPACE CHARACTER ARE REMOVED FROM
+!              THE STRING.  THE UNEDITED STRING OF CHARACTERS MUST BE
+!              LESS THAN 81 CHARACTERS LONG.  AT THE CONCLUSION OF
+!              THE EDITING, THE CF OF $4 CONTAINS THE NUMBER OF
+!              CHARACTERS IN THE EDITED MESSAGE."
+!              G OKOLO (line 42) is the loop: load a character with
+!              progressive indexing, compare it against backspace
+!              (2)1111 1100 -- go to G VRAT if so -- otherwise store
+!              it, count it, and compare against the end code
+!              (2)1111 1110.  G KONTR (line 51) is the 80-character
+!              overrun test.  Line 56 puts the edited count into $R.
+!
+! ---------------------------------------------------------------
+! THE FOUR MESSAGE CARDS, AND WHY THEIR BLANKS ARE NOT GUESSED
+! ---------------------------------------------------------------
+! >>> IN ENTRY MODE THE BLANK AFTER THE COMMA IS DATA, AND SO IS
+! EVERY BLANK BEFORE THE TERMINATOR. <<<  The cards print as
+!
+!   (IQS*)DD(BU), MESSAGE NOT ACCEPTED EPGK ERROR*
+!   (IQS*)DD(BU), MESSAGE NOT ACCEPTED UK ERROR  *
+!   (IQS*)DD(BU), MESSAGE NOT ACCEPTED PP HAS NO CONSOLE IOD     *
+!   (IQS*)DD(BU), MESSAGE HAS BEEN ERASED*
+!
+! and the BINARY OUTPUT column is EMPTY for all four -- the listing
+! prints no bits for a converted DD this long -- so no !CHECK can
+! read them.  What checks them instead is the LOCATION column, and
+! it checks them exactly:
+!
+!   P EPGK  217024.00   32 chars = 4 words -> P UK at 217030.00
+!   P UK    217030.00   32 chars = 4 words -> P UNNOT at 217034.00
+!   P UNNOT 217034.00   48 chars = 6 words -> P MSGER at 217042.00
+!   P MSGER 217042.00   24 chars = 3 words -> G EDIT  at 217045.00
+!
+! At 8 bits per character (the byte size is omitted, which C28-6129
+! printed p.16 reads modulo 8 as eight) the character count IS the
+! address arithmetic, so a single wrong blank anywhere in any of the
+! four moves every later symbol on the page.  MEASURED: assembled on
+! its own, the four-card block puts all four symbols on their printed
+! addresses.  The counts are
+!   " MESSAGE NOT ACCEPTED EPGK ERROR"              32, no padding
+!   " MESSAGE NOT ACCEPTED UK ERROR" + 2 blanks     32
+!   " MESSAGE NOT ACCEPTED PP HAS NO CONSOLE IOD"
+!                                   + 5 blanks      48
+!   " MESSAGE HAS BEEN ERASED"                      24, no padding
+! and the two padded ones were also read off the page at 600 dpi as
+! a two-character and a five-character gap before the "*".
+!
+! >>> WHAT THE LOCATION COLUMN PINS IS THE LENGTH, AND ONLY THE
+! LENGTH. <<<  Seventeen words of English text sit inside these four
+! cards and NOTHING IN THIS REPOSITORY CHECKS A SINGLE CHARACTER OF
+! THEM.  "ACCEPTED" against "ACCEPTEC", "CONSOLE" against "CCNSCLE",
+! "NOT" against "NCT" -- every one of this drum's round-glyph
+! failures produces a string of the SAME LENGTH, so it lands every
+! later symbol on its printed address and passes.  The only thing
+! holding the characters is that the column is ENGLISH and a
+! misprinted letter inside a known word is visible as a misspelling
+! (docs/transcription_workflow.md, "THE COMMENT COLUMN IS ENGLISH").
+! They were read at 600 dpi and every word is an ordinary English
+! word; that is the whole of the evidence, and it is weaker than
+! what backs any !CHECK row above.
+!
+! THE ENTRY MODE ITSELF IS "(IQS*)", the 89-character set with "*"
+! chosen as the end-of-statement character (C28-6129 printed p.16:
+! the last character of the field is the terminator and is the
+! programmer's choice).  strap_asm implements IQS; it does NOT
+! implement MCP's other entry mode "(CC*)", so this page is the
+! first to exercise IQS entry mode on a real page.  No substitution
+! was needed: the printed form assembles as printed.
+!
+! ---------------------------------------------------------------
+! THE FIFTEEN NAMES THIS PAGE DEFINES, AND WHAT SETTLES EACH
+! ---------------------------------------------------------------
+! SEVEN ARE CONFIRMED OFF-PAGE BY A LANDED DECK, which is the
+! strongest witness available for a SPELLING (no !CHECK tests one).
+! decks/mcp_bootstrap_p136.strap SYNs each of these at exactly the
+! address this page prints for it:
+!   P MP LEV 216732.40   p.136 line 53's BB target
+!   G ERROR  216733.40   p.136 line 47's BB target
+!   P TEM BF 216743.00   p.136 lines 34 and 52
+!   P PP BF  216760.00   p.136 line 52
+!   P MCP BF 216775.00   p.136 lines 31 and 34
+!   G MISTO  217012.00   p.136 lines 9 and 31
+!   G EDIT   217045.00   p.136 line 2
+! TWO MORE ARE CONFIRMED OFF-PAGE BY printed p.135's landed deck:
+!   G ODBOC  216735.00   p.135 line 48, "BZAE,G ODBOC"
+!   P EPGK   217024.00   p.135 line 27, "LVI,$1, P EPGK"
+! and p.135's deck also names P DBRET (216736.40) from its own line
+! 54 and quotes this page's line 12 as that symbol's defining card.
+!
+! >>> G ODBOC: THE SPELLING IS NOT MINE AND IS NOT A GUESS. <<<  The
+! name is round-D-B-round-round and this drum opens round glyphs, so
+! shape alone cannot settle it, AND THIS PAGE'S OWN INK DID NOT
+! SETTLE IT HERE: at 1800 dpi line 9's glyphs 1 and 4 both read as
+! open rounds and glyph 5 as an open round, which under the dropout
+! asymmetry is compatible with O-D-B-O-C and with C-D-B-C-C alike.
+! What settles it is measurement done elsewhere.
+! decks/mcp_bootstrap_p135.strap
+! measured mean ink in the right-hand band of each glyph at 1600 dpi
+! on BOTH printings -- p.135 line 48 and THIS page's line 9 -- and
+! got O=.07 D=.31 B=.63 O=.08 C=.00 here against O=.12 .. O=.55
+! C=.00 there; position 5 measures exactly .00 on both pages, which
+! no O does.  Its second, independent reading is the wordlist: this
+! programmer's G-labels are Czech -- G KONEC (konec, end), G ZPET
+! (zpet, back), G VRAT (vrat, return), G MISTO (misto, place),
+! G OKOLO (okolo, around), G KONTR (kontr-) -- and "odboc" is
+! "branch off", which is what line 9 does.
+!
+! >>> G OKOLO (line 42) IS SETTLED BY ITS OWN REFERENCE ON THIS
+! PAGE. <<<  Line 42's NAME column reads "G CKOLC"-ish at 1800 dpi;
+! line 50's "CB,$5,G OKOLO" in the STATEMENT column, two inches
+! away and two words of ink later, prints glyphs 1 and 3 as plainly
+! CLOSED bowls and glyph 5 with a nick in the upper right.  Dropout
+! opens a closed glyph and never closes an open one, so the closed
+! ones are O.  The wordlist agrees, and the volume OCR of p.135's
+! agent had flagged this very symbol as "probably OKOLO, around" and
+! declined to call it without rendering it; it is rendered here.
+!
+! >>> P UK (217030.00) IS THE ONE NAME WITH NO WITNESS ANYWHERE.
+! <<<  Nothing on this page references it and the full-volume OCR
+! has no hit at 217030 and no hit on the name.  Its two glyphs are
+! clean at 1200 dpi (U with both stems, K unambiguous) and the
+! message beside it reads "MESSAGE NOT ACCEPTED UK ERROR", which is
+! the same two letters in English -- and UK is Reference Manual
+! indicator 10 (strap/opcodes.py INDICATOR_BITS), the Unending
+! Operation / Unconditional-K indicator, exactly as EPGK on the line
+! above is indicator 9.  So the PAIR is named after two adjacent
+! machine indicators, which is as close to a second reading as this
+! symbol has.  Its LOCATION is checked (by P UNNOT's); its SPELLING
+! rests on ink plus that argument.
+!
+! P UNNOT (217034.00) and P MSGER (217042.00) are each referenced a
+! second time ON THIS PAGE, by lines 6 and 9, which print them as
+! "P UN NOT" and "P MSG ER"; the comments beside the messages
+! ("PP HAS NO CONSOLE IOD", "MESSAGE HAS BEEN ERASED") are the
+! English oracle for the round glyphs in NOT and MSG.
+! G KONTR (217055.00) has an off-page reference in the volume OCR
+! at printed p.138, "217070.40  21?055.16 C0  B,G KONTR".
+!
+! ---------------------------------------------------------------
+! EXTERNALS.  WHAT IS READ AND WHAT IS CONVENTION
+! ---------------------------------------------------------------
+! >>> AN ADDRESS BACK-DERIVED FROM A PRINTED BRANCH OR LVI IS PINNED
+! ONLY TO THE HALF WORD. <<<  Bit offsets 0-31 all encode
+! identically; only bit 18, the half-word select, shows, and it is
+! the TOP bit of the printed octal pair.  Writing ".0" below is a
+! CONVENTION and no !CHECK on this page can see the bits under it
+! (docs/transcription_workflow.md, "WHAT THE ORACLE CANNOT SEE",
+! item 1).  The ".40" values ARE read, because bit 18 is checked.
+!
+! PEX1    216712.40  LANDED, decks/mcp_bootstrap_p136.strap line 37.
+!                    Line 2 prints "216712.50 00": 0o50 has the top
+!                    bit set, so the .40 half word is observed.
+PEX1    SYN, (8)216712.40
+! PCOM    216727.40  LANDED, p.136 line 55.  Line 5 prints
+!                    "216727.50 00", same reading.
+PCOM    SYN, (8)216727.40
+! PMAIN   216706.40  LANDED, p.136 line 32.  Line 16's branch half
+!                    prints "216706.74 00"; 0o74 has bit 18 set.
+PMAIN   SYN, (8)216706.40
+! PMAIN1  216707.00  LANDED, p.136 line 33.  Line 18 prints
+!                    "216707.10 00"; 0o10's top bit is clear.
+PMAIN1  SYN, (8)216707.0
+! PERREX  216640.40  LANDED, decks/mcp_bootstrap_p135.strap line 32,
+!                    which transcribes the DEFINING card
+!                    "216640.40  215470.40 80  P ERR EX  SIC,
+!                    S COM IC".  Lines 8 and 11 print "216640.50 00"
+!                    -- the same .40 half word, twice.
+PERREX  SYN, (8)216640.40
+! SICBU   215361.00  LANDED, decks/mcp_bootstrap_p116.strap line 24,
+!                    which transcribes the defining card "215361.00
+!                    000000.00+  S IC BU  VF, 0".  Lines 3 and 17
+!                    print "215361.00 30" -- and note the page
+!                    spells it BOTH ways, "S IC BU" on line 3 and
+!                    "SICBU" on line 17, which is STRAP ignoring
+!                    blanks in a name.
+SICBU   SYN, (8)215361.0
+! GKONEC  217063.00  LANDED as a SYN by p.136 (its line 1's SIC).
+!                    Lines 49 and 54 print "217063.36 C2" and
+!                    "217063.32 40": 0o36 and 0o32 both have bit 18
+!                    clear, so .00.  The volume OCR carries the
+!                    DEFINING card on printed p.138, "217063.00
+!                    217063.10 00  G KONEC  B,$".
+GKONEC  SYN, (8)217063.0
+! GVRAT   217063.40  NEW.  Line 44 prints "217063.76 C2"; 0o76 has
+!                    bit 18 SET, so the target is the .40 half word
+!                    and that bit IS observable and IS checked.  The
+!                    volume OCR carries the defining card one line
+!                    below G KONEC's on printed p.138: "217063.40
+!                    217012.13 04  G VRAT  KVI,$5, G MISTO
+!                    - IS BACKSPACE CHAR THE 1ST CHAR."  G KONEC at
+!                    .00 and G VRAT at .40 are the two halves of one
+!                    word, which is why the two addresses agree to
+!                    the word and differ only in bit 18.
+GVRAT   SYN, (8)217063.40
+! PCDEF2  10.0  >>> AN INTEGER, NOT AN ADDRESS, AND ITS DEFINING
+!               CARD WAS FOUND BY GREPPING THE OCR. <<<  Line 12
+!               prints "000012.03 01" -- 0o03 is register 1 times
+!               two plus one, so the whole printed octal pair is
+!               consumed by the register and the half-word select,
+!               and the VALUE is the word field, 0o12 = 10.  printed
+!               p.100 (PDF p.107) carries the defining card and it
+!               was RENDERED, not just OCR'd: at 1800 dpi it reads
+!               "-  PCDEF2  SYN,10.0   -DEBUGGER CONSOLE IOD", with
+!               the C wide open on the right and the D beside it
+!               closed with a straight vertical left stem, so the
+!               C/D pair is settled on a DIFFERENT page's ink.  Its
+!               neighbours on that page are the same family -- "JC
+!               IOD SYN,8.0  -COMMAND CONSOLE IOD", which is the
+!               symbol p.136 line 26 uses and which p.136 could only
+!               give as 0o10 = 8 from its own print.  So p.100 is
+!               the table of console IOD indices and this page uses
+!               the debugger's.  Line 13 adds S BAMCP to it, exactly
+!               as p.136 line 27 does with JC IOD.
+PCDEF2  SYN, 10.0
+! SBAMCP  215003.00  LANDED, decks/mcp_bootstrap_p103.strap !SYM
+!                    line 31.  Line 13 prints "215003.02 B0".
+SBAMCP  SYN, (8)215003.0
+! SCOMRG  215001.00  LANDED, p.103 line 8.  Carried only so that
+!                    S L below can be written as p.103 writes it.
+SCOMRG  SYN, (8)215001.0
+! SL      215001.04  LANDED, p.103 line 14, "S L SYN(BU,1),
+!                    S COM RG + 0.04".  FULLY OBSERVED HERE: line 16
+!                    is a Branch on Bit, so its printed "215001.04"
+!                    is a BIT address and bit 4 is read, not
+!                    conventional.  It is the same bit p.136 line 53
+!                    tests.
+SL      SYN(BU,1), SCOMRG+0.04
+! The remaining two are VFL FIELD DEFINITIONS, not addresses, and
+! are copied VERBATIM from the landed decks that define them --
+! the SYN's mode and length are part of what the referencing rows
+! compile.
+! SSEL    0.39  LANDED, decks/mcp_bootstrap_p99.strap line 32
+!               "-SELECT FILE STATUS", and carried at this value by
+!               p.136.  Line 1 prints "777777.47 8B" for
+!               "S SEL-1.0($11)": 0o47 = 39 is the bit, and 777777
+!               is -1 word in eighteen bits -- the word BELOW the
+!               S SEL that p.136 lines 36 and 37 address.  Fully
+!               observed.
+SSEL    SYN(BU,1), 0.39
+! SFIAAC  3.0   LANDED, decks/mcp_bootstrap_p101.strap line 13.
+!               Line 15 prints "000003.33 3C" -- SV of register 13,
+!               0o33 = 27 = 13*2+1 -- so the WORD 3 is read off the
+!               page.
+SFIAAC  SYN(BU,18), 3.0
+
+        SLC, (8)216731.0
+
+        CM1111(BU,1),SSEL-1.0($11)      ! line  1  -UNSELECT MCP UNIT
+        B,PEX1                          ! line  2
+PMPLEV  LV,$0,SICBU                     ! line  3  -INTERRUPT AT MCP LEVEL CONT OF
+!                                       ! line  4  -S IC BU   (comment card)
+        B,PCOM                          ! line  5
+GERROR  LVI,$1,PUNNOT                   ! line  6
+        LVI,$2,6.0                      ! line  7
+        B,PERREX                        ! line  8
+GODBOC  LVI,$1,PMSGER                   ! line  9
+        LVI,$2,3.0                      ! line 10
+        B,PERREX                        ! line 11
+PDBRET  LVI,$1,PCDEF2                   ! line 12
+        V+,$1,SBAMCP                    ! line 13
+        LV,$13,.32($1)                  ! line 14
+        SV,13,SFIAAC($12)               ! line 15  -ACTIVATED FILE AREA ADDR TO UA
+        BZB,SL,PMAIN                    ! line 16
+        LV,$0,SICBU                     ! line 17  -ENTER AT MCP LEVEL CONTENTS OF SICBU
+        B,PMAIN1                        ! line 18
+        CNOP                            ! line 19
+PTEMBF  DR(BU,64),(13)                  ! line 20
+PPPBF   DR(BU,64),(13)                  ! line 21
+PMCPBF  DR(BU,64),(13)                  ! line 22
+GMISTO  DR(BU,64),(10)                  ! line 23
+PEPGK   (IQS*)DD(BU), MESSAGE NOT ACCEPTED EPGK ERROR*
+PUK     (IQS*)DD(BU), MESSAGE NOT ACCEPTED UK ERROR  *
+PUNNOT  (IQS*)DD(BU), MESSAGE NOT ACCEPTED PP HAS NO CONSOLE IOD     *
+        CNOP                            ! line 27  (emits nothing; already aligned)
+PMSGER  (IQS*)DD(BU), MESSAGE HAS BEEN ERASED*
+!                                       ! lines 29-37  nine comment cards, G EDIT's contract
+GEDIT   Z,$4                            ! line 38  -INITIALIZE
+        LVI,$4,PTEMBF+3.0               ! line 39  -FWA OF UNEDITED MSG. IN $4
+        LVI,$5,GMISTO                   ! line 40  -FWA FOR EDITED MSG. IN $5
+        LCI,$5,80                       ! line 41  -SET MAX ALLOWABLE CHARS TO 80
+GOKOLO  L(V+I)(BU,8),.8($4)             ! line 42  -LOAD A CHAR.
+        KFI(BU,8),(2)1111 1100          ! line 43  -IS IT BACKSPACE
+        BAE,GVRAT                       ! line 44
+        ST(V+I)(BU,8),.8($5)            ! line 45  -NO-STORE CHAR IN EDITED BUFFER
+        C+I,$4,1                        ! line 46  -ADD ONE TO COUNT OF EDITED
+!                                       ! line 47  -CHARS.   (comment card)
+        KFI(BU,8),(2)1111 1110          ! line 48  -END CODE
+        BAE,GKONEC                      ! line 49  -YES-OUT
+        CB,$5,GOKOLO                    ! line 50
+GKONTR  KCI,$4,80                       ! line 51  -HAVE EDITED 80 CHARS WITHOUT
+!                                       ! lines 52-53  -ENCOUNTERING- / -AND END CODE
+        BZXL,GKONEC                     ! line 54  -IS EDITED CHARACTER COUNT LESS
+!                                       ! line 55  -THAN 80   (comment card)
+        SC,$4,$R                        ! line 56  -YES-PUT EDITED CHAR.COUNT IN SR
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, read off PDF p.144 (400 dpi for the page and
+! the card serials, 600 dpi for the message cards' blank runs, 900
+! dpi for the BINARY OUTPUT column, 1200 dpi for the NAME column,
+! 1800 dpi for the glyphs of G ODBOC, G OKOLO and P DBRET -- and for
+! P CDEF2 on printed p.100, a different page).
+! ---------------------------------------------------------------
+!  LINE  LOCATION       BINARY OUTPUT                   NAME      STATEMENT                                            COMMENT                                   CARD
+!   1*   216731.00      777777.47 8B  001000.36 F0                CM1111(BU,1),S SEL-1.0($11)                          -UNSELECT MCP UNIT                        EE000111
+!   2*   216732.00      216712.50 00                              B,PEX1                                                                                         EE000112
+!   3*   216732.40      215361.00 30                    P MP LEV  LV,$0,S IC BU                                        -INTERRUPT AT MCP LEVEL CONT OF           EE000113
+!   4*                                             -                                                                   -S IC BU                                  EE000114
+!   5*   216733.00      216727.50 00                              B,P COM                                                                                        EE000115
+!   6*   216733.40      217034.03 01                    G ERROR   LVI,$1, P UN NOT                                                                               EE000116
+!   7*   216734.00      000006.05 01                              LVI,$2, 6.0                                                                                    EE000117
+!   8*   216734.40      216640.50 00                              B, P ERR EX                                                                                    EE000118
+!   9*   216735.00      217042.03 01                    G ODBOC   LVI,$1, P MSG ER                                                                               EE000119
+!  10*   216735.40      000003.05 01                              LVI,$2, 3.0                                                                                    EE000120
+!  11*   216736.00      216640.50 00                              B, P ERR EX                                                                                    EE000121
+!  12*   216736.40      000012.03 01                    PDBRET    LVI,$1,PCDEF2                                                                                  EE000122
+!  13*   216737.00      215003.02 B0                              V+,$1,SBAMCP                                                                                   EE000123
+!  14*   216737.40      000000.72 31                              LV,$13,.32($1)                                                                                 EE000124
+!  15*   216740.00      000003.33 3C                              SV,13,S FI AAC($12)                                  -ACTIVATED FILE AREA ADDR TO UA           EE000125
+!  16*   216740.40 *    215001.04 80  216706.74 00                BZB,SL,P MAIN                                                                                  EE000126
+!  17*   216741.40      215361.00 30                              LV,$0,SICBU                                          -ENTER AT MCP LEVEL CONTENTS OF SICBU     EE000127
+!  18*   216742.00      216707.10 00                              B,PMAIN1                                                                                       EE000128
+!  19*   216742.40      000000.30 00                              CNOP                                                                                           EE000129
+!  20*   216743.00 *    000015.00                      P TEM BF   DR(BU,64),(13)                                                                                 EE000130
+!  21*   216760.00      000015.00                      P PP  BF   DR(BU,64),(13)                                                                                 EE000131
+!  22*   216775.00      000015.00                      P MCP BF   DR(BU,64),(13)                                                                                 EE000132
+!  23*   217012.00      000012.00                      G MISTO    DR(BU,64),(10)                                                                                 EE000133
+!  24*   217024.00                                     PEPGK      (IQS*)DD(BU), MESSAGE NOT ACCEPTED EPGK ERROR*                                                 EE000134
+!  25*   217030.00                                     PUK        (IQS*)DD(BU), MESSAGE NOT ACCEPTED UK ERROR  *                                                 EE000135
+!  26*   217034.00 *                                   PUNNOT     (IQS*)DD(BU), MESSAGE NOT ACCEPTED PP HAS NO CONSOLE IOD     *                                 EE000136
+!  27*                                                            CNOP                                                                                           EE000137
+!  28*   217042.00                                     PMSGER     (IQS*)DD(BU), MESSAGE HAS BEEN ERASED*                                                          EE000138
+!  29*                                             -                                                                   -GEDIT                                    EE000139
+!  30*                                             -                                                                   -ITS FCN IS TO EDIT OUT FROM A STRING OF 8 BIT IQS   EE000140
+!  31*                                             -                                                                   -CHARACTERS ALL BACK SPACE CHARACTERS. FOR EACH BACKSPACE  EE000141
+!  32*                                             -                                                                   -CHARACTER BOTH IT AND THE PREVIOUS NON BACKSPACE CHARACTER EE000142
+!  33*                                             -                                                                   -ARE REMOVED FROM THE STRING.             EE000143
+!  34*                                             -                                                                   -THE UNEDITED STRING OF CHARACTERS MUST BE LESS THAN 81    EE000144
+!  35*                                             -                                                                   -CHARACTERS LONG.                         EE000145
+!  36*                                             -                                                                   -AT THE CONCLUSION OF THE EDITING, THE CF OF $4 CONTAINS   EE000146
+!  37*                                             -                                                                   -THE NUMBER OF CHARACTERS IN THE EDITED MESSAGE.           EE000147
+!  38*   217045.00      000024.22 00                    G EDIT    Z,$4                                                 -INITIALIZE                               EE000148
+!  39*   217045.40      216746.11 01                              LVI,$4,P TEMBF+3.0                                   -FWA OF UNEDITED MSG. IN $4               EE000149
+!  40*   217046.00      217012.13 01                              LVI,$5,G MISTO                                       -FWA FOR EDITED MSG. IN $5                EE000150
+!  41*   217046.40      000120.13 02                              LCI,$5,80                                            -SET MAX ALLOWABLE CHARS TO 80            EE000151
+!  42*   217047.00      000000.10 84  110000.20 50      G OKOLO   L(V+I)(BU,8),.8($4)                                  -LOAD A CHAR.                             EE000152
+!  43*   217050.00      770000.00 80  410000.23 10                KFI(BU,8),(2)1111 1100                               -IS IT BACKSPACE                          EE000153
+!  44*   217051.00      217063.76 C2                              BAE,GVRAT                                                                                      EE000154
+!  45*   217051.40      000000.10 85  110000.20 D0                ST(V+I)(BU,8),.8($5)                                 -NO-STORE CHAR IN EDITED BUFFER           EE000155
+!  46*   217052.40 *    000001.11 00                              C+I,$4,1                                             -ADD ONE TO COUNT OF EDITED               EE000156
+!  47*                                             -                                                                   -CHARS.                                   EE000157
+!  48*   217053.00      774000.00 80  410000.23 10                KFI(BU,8),(2)1111 1110                               -END CODE                                 EE000158
+!  49*   217054.00      217063.36 C2                              BAE,G KONEC                                          -YES-OUT                                  EE000159
+!  50*   217054.40      217047.12 48                              CB,$5,G OKOLO                                                                                  EE000160
+!  51*   217055.00      000120.11 0A                    G KONTR   KCI,$4,80                                            -HAVE EDITED 80 CHARS WITHOUT             EE000161
+!  52*                                             -                                                                   -ENCOUNTERING-                            EE000162
+!  53*                                             -                                                                   -AND END CODE                             EE000163
+!  54*   217055.40      217063.32 40                              BZXL,G KONEC                                         -IS EDITED CHARACTER COUNT LESS           EE000164
+!  55*                                             -                                                                   -THAN 80                                  EE000165
+!  56*   217056.00      000011.11 50                              SC,$4,$R                                             -YES-PUT EDITED CHAR.COUNT IN SR          EE000166
+!
+! ---------------------------------------------------------------
+! RECORDED AND NOT EXPLAINED
+! ---------------------------------------------------------------
+! A BARE "*" AFTER THE LOCATION on lines 16, 20, 26 and 46 --
+! "216740.40 *", "216743.00 *", "217034.00 *", "217052.40 *".
+! printed pp.3, 37, 103, 120, 128 and 136 carry the same mark and it
+! was left unexplained on each.  It changes no compiled bit.  Line
+! 20 is a DR and line 26 is an entry-mode DD, but lines 21-23 and
+! 24-25 are the same two shapes and carry no mark, so it is not a
+! marker for either.
+!
+! >>> THE FOUR RESERVATIONS ARE "DR", NOT "DRZ", AND decks/mcp_
+! bootstrap_p136.strap's COMMENT SAYS DRZ. <<<  p.136's header
+! quotes the volume OCR as "P TEM BF  DRZ(BU,64),(13)" and
+! "P PP BF  DRZ(BU,64),(13)".  Rendered at 1200 dpi, lines 20-23 of
+! THIS page print "DR(BU,64),(13)" with no Z -- and the volume OCR
+! itself reads "DR(BU,64),(13)" on both rows, so the Z is in p.136's
+! comment and not in the ink or in the OCR.  It changes no bit on
+! p.136 (which only SYNs the symbols) but it DOES change this page:
+! C22-6531 printed p.35 makes DRZ "exactly" a DR whose words "are
+! all set to zero", so DRZ would plant 49 words of zero content in
+! the merged image where DR plants none.  The deck writes DR, as
+! printed.  p.136's comment should be corrected.
+!
+! LINE 27's CNOP PRINTS NEITHER A LOCATION NOR BINARY OUTPUT, and
+! line 19's prints both ("216742.40  000000.30 00").  That is the
+! pseudo-op working: P UNNOT's six words end at 217042.00, which is
+! already a full-word boundary, so line 27's CNOP has nothing to
+! round and emits nothing; line 19 follows a half-word branch at
+! 216742.00 and emits the NOP.  C22-6531's "CNOP".
+!
+! ---------------------------------------------------------------
+! AGREEMENT WITH THE VOLUME SURVEY
+! ---------------------------------------------------------------
+! The survey OCR'd 18 rows carrying a LOCATION, range
+! 216734.CC..217047.0C.  THIS READING DISAGREES ON THE COUNT AND ON
+! BOTH ENDPOINTS: 41 rows carry a LOCATION, the first is 216731.00
+! and the last is 217056.00 -- so the survey read fewer than half of
+! them and missed three words at the top and six at the bottom.  Re-run here, strap/mcp_ocr.py reads the same 18 rows
+! and every one of them agrees with the reading above; it simply
+! drops the other twenty-six.  The survey is a lower bound, as its
+! brief says, and the endpoints it reports are the endpoints of what
+! it happened to read.
+!
+! ---------------------------------------------------------------
+! COVERAGE
+! ---------------------------------------------------------------
+! 33 !CHECK rows and 15 !SYM lines.  The rows with NO !CHECK are:
+!   lines 20-23   DR reservations.  The BINARY OUTPUT column prints
+!                 the reservation's SIZE (000015.00 = 13 words,
+!                 000012.00 = 10) and not its contents, so they get
+!                 no !CHECK -- printed pp.42, 84, 109 and 119's
+!                 convention.  All four sizes ARE checked, by the
+!                 !SYM of the symbol that follows each.
+!   lines 24-28   the four entry-mode DDs and the empty CNOP.  The
+!                 listing prints no bits for them.  All four DDs'
+!                 lengths are checked by the following !SYM.
+!   lines 4, 29-37, 47, 52, 53, 55   comment cards.
+! ---------------------------------------------------------------
+!SYM   PMPLEV   216732.40
+!SYM   GERROR   216733.40
+!SYM   GODBOC   216735.00
+!SYM   PDBRET   216736.40
+!SYM   PTEMBF   216743.00
+!SYM   PPPBF    216760.00
+!SYM   PMCPBF   216775.00
+!SYM   GMISTO   217012.00
+!SYM   PEPGK    217024.00
+!SYM   PUK      217030.00
+!SYM   PUNNOT   217034.00
+!SYM   PMSGER   217042.00
+!SYM   GEDIT    217045.00
+!SYM   GOKOLO   217047.00
+!SYM   GKONTR   217055.00
+!CHECK 216731.00 | 777777.47 8B 001000.36 F0 | line 1 CM1111(BU,1),S SEL-1.0($11) -- deck writes SSEL
+!CHECK 216732.00 | 216712.50 00 | line 2 B,PEX1
+!CHECK 216732.40 | 215361.00 30 | line 3 P MP LEV LV,$0,S IC BU -- deck writes PMPLEV / SICBU
+!CHECK 216733.00 | 216727.50 00 | line 5 B,P COM -- deck writes PCOM
+!CHECK 216733.40 | 217034.03 01 | line 6 G ERROR LVI,$1, P UN NOT -- deck writes GERROR / PUNNOT
+!CHECK 216734.00 | 000006.05 01 | line 7 LVI,$2, 6.0
+!CHECK 216734.40 | 216640.50 00 | line 8 B, P ERR EX -- deck writes PERREX
+!CHECK 216735.00 | 217042.03 01 | line 9 G ODBOC LVI,$1, P MSG ER -- deck writes GODBOC / PMSGER
+!CHECK 216735.40 | 000003.05 01 | line 10 LVI,$2, 3.0
+!CHECK 216736.00 | 216640.50 00 | line 11 B, P ERR EX
+!CHECK 216736.40 | 000012.03 01 | line 12 PDBRET LVI,$1,PCDEF2 (P CDEF2 = 10.0, defining card on printed p.100)
+!CHECK 216737.00 | 215003.02 B0 | line 13 V+,$1,SBAMCP
+!CHECK 216737.40 | 000000.72 31 | line 14 LV,$13,.32($1)
+!CHECK 216740.00 | 000003.33 3C | line 15 SV,13,S FI AAC($12)
+!CHECK 216740.40 | 215001.04 80 216706.74 00 | line 16 BZB,SL,P MAIN (location carries an asterisk; bit 4 of S L is READ here)
+!CHECK 216741.40 | 215361.00 30 | line 17 LV,$0,SICBU
+!CHECK 216742.00 | 216707.10 00 | line 18 B,PMAIN1
+!CHECK 216742.40 | 000000.30 00 | line 19 CNOP
+!CHECK 217045.00 | 000024.22 00 | line 38 G EDIT Z,$4
+!CHECK 217045.40 | 216746.11 01 | line 39 LVI,$4,P TEMBF+3.0 (216743 + 3 = 216746, the word arithmetic checks P TEM BF)
+!CHECK 217046.00 | 217012.13 01 | line 40 LVI,$5,G MISTO
+!CHECK 217046.40 | 000120.13 02 | line 41 LCI,$5,80
+!CHECK 217047.00 | 000000.10 84 110000.20 50 | line 42 G OKOLO L(V+I)(BU,8),.8($4)
+!CHECK 217050.00 | 770000.00 80 410000.23 10 | line 43 KFI(BU,8),(2)1111 1100 -- printed WITH the blank, assembled WITH the blank
+!CHECK 217051.00 | 217063.76 C2 | line 44 BAE,GVRAT
+!CHECK 217051.40 | 000000.10 85 110000.20 D0 | line 45 ST(V+I)(BU,8),.8($5)
+!CHECK 217052.40 | 000001.11 00 | line 46 C+I,$4,1 (location carries an asterisk)
+!CHECK 217053.00 | 774000.00 80 410000.23 10 | line 48 KFI(BU,8),(2)1111 1110 -- printed WITH the blank
+!CHECK 217054.00 | 217063.36 C2 | line 49 BAE,G KONEC -- deck writes GKONEC
+!CHECK 217054.40 | 217047.12 48 | line 50 CB,$5,G OKOLO -- deck writes GOKOLO
+!CHECK 217055.00 | 000120.11 0A | line 51 G KONTR KCI,$4,80
+!CHECK 217055.40 | 217063.32 40 | line 54 BZXL,G KONEC
+!CHECK 217056.00 | 000011.11 50 | line 56 SC,$4,$R ($R is word 9 = 0o11, opcodes.py SYSTEM_SYMBOLS)

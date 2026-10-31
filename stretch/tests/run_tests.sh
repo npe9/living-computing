@@ -6418,6 +6418,31 @@ run "the CONCEPTOR's console handler, printed p.135" python3 verify_mcp_page.py 
 # It also found the last blank-in-a-name path and a connective
 # carrying no address field at all.
 run "the console-message scanner and PP return, printed p.136" python3 verify_mcp_page.py 136
+
+# >>> pp.137-144: THE CONSOLE BUFFERS, THE EDITOR, THE TRANSFER
+# SUBROUTINE AND THE PP/BACKUP LEVEL RETURNS. <<<
+# This block admitted "M-" on a VFL operation.  opcodes.py had kept it
+# out in so many words -- "Nothing in the corpus spells either of them
+# on a VFL operation" -- and printed p.138 line 11 and printed p.142
+# line 4 both spell it, read at 1800 dpi by two transcribers who never
+# saw each other's page.  Only the SPELLING came from the listings:
+# the encoding is the 0o10 invert-sign bit the file already carried
+# for M-1 (measured, M+1 ".22" vs M-1 ".32", M+ ".20" vs the ".30"
+# both pages print).
+#
+# It also produced a join confirmed by PREDICTION rather than by
+# assertion: printed p.137 ended by predicting that p.138's first row
+# would print 217056.40, and p.138 -- transcribed in parallel, from
+# its own ink -- printed exactly that.  p.139's 16-word DRZ likewise
+# lands on p.140's first location, 217154.00.
+run "the console buffers and the backspace editor, printed p.137" python3 verify_mcp_page.py 137
+run "the fake-read routine, printed p.138" python3 verify_mcp_page.py 138
+run "the TRANSFER subroutine's exit, printed p.139" python3 verify_mcp_page.py 139
+run "the tentacle dispatch, printed p.140" python3 verify_mcp_page.py 140
+run "the level-return bookkeeping, printed p.141" python3 verify_mcp_page.py 141
+run "the PP-level entry and backup return, printed p.142" python3 verify_mcp_page.py 142
+run "JMPP and the TS/EXE test, printed p.143" python3 verify_mcp_page.py 143
+run "the WRAMPP parameter moves, printed p.144" python3 verify_mcp_page.py 144
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
 run "the program status table, printed p.109" python3 verify_mcp_page.py 109
 run "the interrupt table, printed p.110" python3 verify_mcp_page.py 110
