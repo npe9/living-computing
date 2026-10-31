@@ -124,7 +124,7 @@ def _ocr(png, psm, whitelist):
 def survey_page(page):
     """Everything this tool knows about one PDF page."""
     rec = {"pdf": page, "printed": None, "rows": 0, "plus": 0,
-           "first": None, "last": None, "raw": ""}
+           "first": None, "last": None, "raw": "", "loc_raw": ""}
     # tesseract cannot read what pdftoppm writes into /tmp here, so each
     # worker gets its own directory (same reason mcp_ocr.py mkdtemps).
     with tempfile.TemporaryDirectory() as tmp:
@@ -136,17 +136,40 @@ def survey_page(page):
     with tempfile.TemporaryDirectory() as tmp:
         png = _render(page, LOC, tmp)
         if png:
-            txt = _ocr(png, 6, "0123456789.+*")
+            txt = _ocr(png, 6, None)
+            rec["loc_raw"] = txt
             locs = []
             for line in txt.splitlines():
                 # A location is six octal digits, a dot and two more.
                 # The line number sits to its left in the same window,
                 # so anchor on the dotted form rather than on position.
-                hit = re.search(r"(\d{4,6}\.\d{1,2})(\+?)", line)
+                #
+                # >>> PERMISSIVE ON PURPOSE, AND THE OPPOSITE OF
+                # page_number() ABOVE. <<<  This drum prints 0 as an
+                # open C or O, so printed p.108's eight SYN cards come
+                # back as "OCCCCC.CCt", "OCCCC2.CC+", "OCCCO3.00+".
+                # A pattern demanding \d matched NONE of them, the
+                # page was recorded as carrying ZERO located rows, and
+                # it was classified as compiling nothing -- which went
+                # into an agent's brief as "this page COMPILES NOTHING"
+                # for a page that is eight SYN cards.  (The agent
+                # ignored it and transcribed them. The brief was
+                # wrong, not the agent.)
+                #
+                # The rule that separates this from page_number(): a
+                # VALUE must be read strictly, because a wrong value is
+                # a confident error.  A COUNT should be read loosely,
+                # because a missed row is a silent undercount and the
+                # count feeds no arithmetic.  So O and C count as
+                # digits here and must never do so there.
+                # the optional space is real: tesseract renders
+                # printed p.108 line 12 as "OCCCCC. 32+".
+                hit = re.search(r"([0-9OCoc]{4,6}\. ?[0-9OCoc]{1,2})([+t]?)", line)
                 if hit:
                     locs.append(hit.group(0))
             rec["rows"] = len(locs)
-            rec["plus"] = sum(1 for s in locs if s.endswith("+"))
+            # "+" often prints as a "t" to tesseract.
+            rec["plus"] = sum(1 for s in locs if s.endswith(("+", "t")))
             if locs:
                 rec["first"], rec["last"] = locs[0], locs[-1]
     return rec

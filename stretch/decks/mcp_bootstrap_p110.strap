@@ -1,0 +1,379 @@
+! mcp_bootstrap_p110.strap -- printed page 110:
+! "********INTERRUPT TABLE**********".
+! docs/MCP_Mar63_001-249.pdf PDF p.117, header READ AND NOT ASSUMED:
+! the top line prints "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID
+! DB000001  DIST. OF 3/01   3/01   PAGE NUMBER 110".
+!
+! FORTY-EIGHT LINES, counted off the page's own printed line-number
+! column, 1 to 48 with no gap; below line 48 the page is blank.
+!   lines 1-4   comment cards (no LOCATION, no BINARY)
+!   line  5     SLC,$      -- prints a LOCATION (215023.00) and a "*"
+!   line  6     CNOP       -- prints NOTHING: already word-aligned
+!   lines 7-48  42 half-word instructions, 215023.00 .. 215047.40
+!
+! >>> WHAT THE PAGE IS. <<<  It is the MCP INTERRUPT TABLE: twenty-one
+! consecutive WORDS, each holding two half-word instructions, a
+! "SIC,<save cell>" in the left half and a "BD,<handler>" in the right.
+! Every word is one interrupt-table entry; the entry stores the
+! interrupted instruction counter and branches, disabled, to the
+! handler.  The one entry that does nothing is word 215041 (lines 35
+! and 36), which is NOP / NOP.
+!
+! THE ADDRESS CHAIN CLOSES END TO END.  Line 7 prints 215023.00, line
+! 48 prints 215047.40, and every row is a half word: 42 half words =
+! 21 words = 215023.00 .. 215047.40 inclusive, with no gap and no
+! overlap.  The deck's SLC puts the first row at 215023.00 and the
+! assembler lands line 48 on 215047.40 (see the !CHECK block).
+!
+! >>> THE PAGE JOINS printed p.103 BY NAME AND BY ADDRESS. <<<
+! Line 7 is the only NAMED row on the page and its name is S IT.
+! printed p.103 line 47 prints "S IA  VF,SIT" with the resolved value
+! 215023.00+, and THIS page prints S IT's LOCATION as 215023.00.  Two
+! pages, two independent prints, same address.  That is also why the
+! SLC below is written (8)215023. rather than copied from p.103: p.103
+! ends at 215021.00 and printed pp.104-109 are not transcribed yet, so
+! the two words between 215021.00 and 215023.00 are accounted for by
+! THIS page's own printed LOCATION column and by p.103's S IA, not by
+! a chain this deck can assemble.
+!
+! >>> TAIL SCOPE, NOT A COLLISION. <<<  printed p.99 line 11's
+! "SLC,(8)215000." moved the origin to 0o215000 and pp.99+ are OUTSIDE
+! the TAIL,(2)G block that printed p.2 opened and printed p.98 line 37
+! closed with UNTAIL,(2).  Names here may legitimately repeat names
+! defined in pp.2-98 at different addresses.  Nothing on this page is
+! "fixed" on that account.  (SIFDMP is an example already in the tree:
+! p.34 SYNs it to 2161.0, p.37 defines it at 002155.00, p.103 defines
+! it again at 215011.00.)
+!
+! ---------------------------------------------------------------
+! HOW THE EXTERNAL ADDRESSES BELOW WERE OBTAINED
+! ---------------------------------------------------------------
+! Every operand on this page is a symbol defined somewhere else, so
+! the SYN values below are BACK-DERIVED FROM THIS PAGE'S OWN BINARY
+! OUTPUT COLUMN.  That makes the !CHECK rows a check of the OPCODE
+! and MODIFIER bits and of the ADDRESS PLACEMENT, not an independent
+! check of the addresses themselves -- listing_oracle.py's docstring
+! says exactly this about rows whose operand is external.  What IS
+! independent here is the SEVEN-WAY agreement on S IPT:
+!
+!   line 16  BD,SIPT+4.0   -> 215107.04      215103 + 4  = 215107
+!   line 26  BD,SIPT+9.0   -> 215114.04      215103 + 11 = 215114
+!   line 28  BD,SIPT+10.0  -> 215115.04      215103 + 12 = 215115
+!   line 30  BD,SIPT+11.0  -> 215116.04      215103 + 13 = 215116
+!   line 32  BD,SIPT+12.0  -> 215117.04      215103 + 14 = 215117
+!   line 34  BD,SIPT+13.0  -> 215120.04      215103 + 15 = 215120
+!   line 44  BD,SIPT+18.   -> 215125.04      215103 + 22 = 215125
+!   line 48  BD,SIPT+20.   -> 215127.04      215103 + 24 = 215127
+!
+! (left side decimal, right side octal).  Eight rows, one value,
+! S IPT = 215103.00, and the page never prints that address itself.
+! A single misread digit in any one of the eight would break it.
+!
+! >>> AND THE EIGHT OFFSETS ARE THE ENTRIES' OWN INDICES. <<<  This is
+! a stronger statement than the one above and it uses NONE of the
+! binary column.  Subtract the table's base word 215023 from each of
+! those rows' own printed LOCATION and the remainder, read in octal,
+! IS the decimal offset the STATEMENT column prints:
+!
+!   line  LOCATION   loc-215023      statement
+!    16   215027.40    4  = 4        BD,SIPT+4.0
+!    26   215034.40   11o = 9        BD,S IPT+9.0
+!    28   215035.40   12o = 10       BD,S IPT+10.0
+!    30   215036.40   13o = 11       BD,S IPT+11.0
+!    32   215037.40   14o = 12       BD,S IPT+12.0
+!    34   215040.40   15o = 13       BD,S IPT+13.0
+!    44   215045.40   22o = 18       BD,SIPT+18.
+!    48   215047.40   24o = 20       BD,SIPT+20.
+!
+! Eight for eight.  Each entry of the table branches to the S IPT cell
+! WITH ITS OWN INDEX, so the LOCATION digits, the decimal offsets in
+! the STATEMENT column and S IPT's base all cross-check one another
+! through printed numbers alone.  THAT IS AN ARITHMETIC INVARIANT
+! AMONG PRINTED NUMBERS AND NOTHING MORE -- no claim is made here
+! about what S IPT is or what the entries mean.
+!
+! >>> THE TWELVE Y FX* ADDRESSES RUN STRIDE 2, MONOTONE, IN TABLE
+! ORDER. <<<  In the order the table branches to them:
+!   216374 216376 216400 216402 216404 | 216430 216432 216434 216436
+!   216440 216442 216444
+! -- two octal runs, step 2 throughout (376+2 = 400 and 436+2 = 440
+! are the two places that look like breaks and are not), increasing in
+! exactly the order lines 8, 10, 12, 14, 18, 20, 22, 24, 38, 40, 42
+! and 46 appear.  Two words apiece.  This is EVIDENCE AND NOT PROOF --
+! a misread digit that happened to land on another stride-2 slot would
+! survive it -- but a misread digit that did not would break either
+! the stride or the ordering, so ten of the twelve are corroborated by
+! their neighbours rather than resting on ink alone.  Note that the
+! 216404 -> 216430 gap is NOT all handler stubs: Y MFIC sits inside it
+! at 216411.40.
+!
+! >>> WHY A BD PRINTS ".04" AND A SIC PRINTS THE REAL BIT OFFSET. <<<
+! fmt_half in strap/listing_oracle.py prints bits 0-17 as the octal
+! word, bits 18-23 as two octal digits and bits 24-31 as the hex byte.
+! For a branch, bit 18 is the HALF-WORD SELECT and bits 19-23 belong
+! to the operation, so an unconditional BD to a word boundary prints
+! ".04" (0o04 = 000100: bit 18 = 0, the op bits = 4) and the same
+! branch to the right half word would print ".44".  Every BD on this
+! page prints ".04", so every handler address is a WORD boundary.
+! printed p.103 line 43 is the control: "BD,SDISIC+.32" with SDISIC at
+! 217451.40 resolves to word 217452 bit 0 and prints "217452.04 00" --
+! the ".32" in the statement is nowhere in the ".04".  SIC is a
+! different format: its printed ".40"/".00" IS the operand's own bit
+! offset, which is why Y MFIC is 216411.40 (a right half word) while
+! Y SFIC and S T IC are 216604.00 and 215265.00 (left half words).
+! Confirmed by assembling, not by reasoning: the smoke test
+! "SIC,YMFIC / BD,YFXMK / BD,SIPT+4.0 / NOP" reproduces
+! "216411.40 80", "216374.04 00", "215107.04 00", "000000.30 00"
+! character for character.
+!
+! ---------------------------------------------------------------
+! GLYPHS SETTLED AT 1800-4500 dpi
+! ---------------------------------------------------------------
+! This drum opens round glyphs, so an observed C may be a damaged 0/O
+! while an observed 0/O is never a damaged C.  The discriminator used
+! throughout is the LEFT SIDE: C and O are round with no stem, D has a
+! straight vertical left stem and squared corners.  The "BD," at the
+! head of twenty-one rows is a free, in-row D specimen for every one
+! of them.
+!
+!   line 18  BD,Y FXCPU   C -- round, wide gap at the right, nothing
+!                             like the D two characters to its left.
+!   line 24  BD,Y FXCBJ   C -- same.
+!   line 38  BD,Y FXOP    O -- CLOSED and round on the left; this is
+!                             the one that is NOT a C.  Checked
+!                             against line 18's C and line 40's D in
+!                             one montage at 1800 dpi x 2.5.
+!   line 40  BD,Y FXAD    D -- straight left stem, squared corners.
+!   line 46  BD,Y FXDS    D -- straight left stem, squared corners.
+!   lines 7+ SIC,Y MFIC   C -- final letter round and open; the same
+!                             shape as the C in the mnemonic SIC in
+!                             its own row.
+!
+! THE PAGE CALIBRATES ITSELF ON O/C IN ONE PLACE, AND IT IS WORTH
+! RECORDING: lines 35 and 36 are the SAME instruction (both print
+! 000000.30 00, which is what CNOP prints on printed p.103 line 48),
+! and line 35 prints "NCP" while line 36 prints "NOP".  One drum, two
+! adjacent rows, one letter, printed both ways.  Both are NOP.
+!
+! THE COMMENT COLUMN, used as the English oracle on six rows:
+!   line 16  "- TIME SIGNAL INTERRUPT"
+!   line 26  "-EPCK INTERRUPT"     (C, not G: no crossbar at 1800 dpi)
+!   line 28  "-UK INTERRUPT"
+!   line 30  "-EE INTERRUPT"
+!   line 32  "-EOP INTERRUPT"      (O: closed, beside line 34's open C)
+!   line 34  "-CS INTERRUPT"
+! These are IBM's own words for six of the twenty-one entries.  They
+! are recorded; NO MEANING IS INFERRED FROM THEM and no symbol on this
+! page was spelled from them.
+!
+! BLANKS INSIDE A NAME ARE NOT CHARACTERS.  The page prints the same
+! symbol both ways in the STATEMENT column -- "SIC,STIC" on line 15,
+! "SIC,S T IC" on lines 25-33 and "SIC,ST IC" on lines 43 and 47; and
+! "BD,SIPT+4.0" on line 16 against "BD,S IPT+9.0" on line 26.  They
+! are one symbol each (S T IC = 215265.00, S IPT = 215103.00): the
+! binary column prints the SAME address for all of them, which is the
+! proof, not the typography.  The deck writes them closed up.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! LINE 5 IS PRINTED "SLC,$" AND IS WRITTEN "SLC,(8)215023." HERE.
+! "$" is the location counter, so on the real tape line 5 is a no-op
+! that re-states where the assembler already is; in a STANDALONE deck
+! it would set the origin to 0.  The printed form is kept in the
+! listing block below.  strap_asm does accept "SLC,$" -- the
+! substitution is for standalone assembly, not for an assembler gap.
+!
+! NOTHING UNDER strap/, tests/, decks/ OR docs/ WAS MODIFIED.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- every one back-derived from this page's BINARY column
+! ---------------------------------------------------------------
+YMFIC   SYN, (8)216411.40            ! lines 7,9,11,13,17  SIC operand
+YSFIC   SYN, (8)216604.0             ! lines 19,21,23,37,39,41,45
+STIC    SYN, (8)215265.0             ! lines 15,25,27,29,31,33,43,47
+SIPT    SYN, (8)215103.0             ! eight rows agree; see above
+YFXMK   SYN, (8)216374.0             ! line 8
+YFXIK   SYN, (8)216376.0             ! line 10
+YFXIJ   SYN, (8)216400.0             ! line 12
+YFXEK   SYN, (8)216402.0             ! line 14
+YFXCPU  SYN, (8)216404.0             ! line 18
+YFXEKJ  SYN, (8)216430.0             ! line 20
+YFXUNR  SYN, (8)216432.0             ! line 22
+YFXCBJ  SYN, (8)216434.0             ! line 24
+YFXOP   SYN, (8)216436.0             ! line 38
+YFXAD   SYN, (8)216440.0             ! line 40
+YFXUSA  SYN, (8)216442.0             ! line 42
+YFXDS   SYN, (8)216444.0             ! line 46
+
+        SLC, (8)215023.              ! line 5, printed "SLC,$"
+        CNOP                         ! line 6, prints no binary
+SIT     SIC, YMFIC                   ! line 7
+        BD, YFXMK                    ! line 8
+        SIC, YMFIC                   ! line 9
+        BD, YFXIK                    ! line 10
+        SIC, YMFIC                   ! line 11
+        BD, YFXIJ                    ! line 12
+        SIC, YMFIC                   ! line 13
+        BD, YFXEK                    ! line 14
+        SIC, STIC                    ! line 15
+        BD, SIPT+4.0                 ! line 16 - TIME SIGNAL INTERRUPT
+        SIC, YMFIC                   ! line 17
+        BD, YFXCPU                   ! line 18
+        SIC, YSFIC                   ! line 19
+        BD, YFXEKJ                   ! line 20
+        SIC, YSFIC                   ! line 21
+        BD, YFXUNR                   ! line 22
+        SIC, YSFIC                   ! line 23
+        BD, YFXCBJ                   ! line 24
+        SIC, STIC                    ! line 25
+        BD, SIPT+9.0                 ! line 26 -EPCK INTERRUPT
+        SIC, STIC                    ! line 27
+        BD, SIPT+10.0                ! line 28 -UK INTERRUPT
+        SIC, STIC                    ! line 29
+        BD, SIPT+11.0                ! line 30 -EE INTERRUPT
+        SIC, STIC                    ! line 31
+        BD, SIPT+12.0                ! line 32 -EOP INTERRUPT
+        SIC, STIC                    ! line 33
+        BD, SIPT+13.0                ! line 34 -CS INTERRUPT
+        NOP                          ! line 35, printed "NCP"
+        NOP                          ! line 36
+        SIC, YSFIC                   ! line 37
+        BD, YFXOP                    ! line 38
+        SIC, YSFIC                   ! line 39
+        BD, YFXAD                    ! line 40
+        SIC, YSFIC                   ! line 41
+        BD, YFXUSA                   ! line 42
+        SIC, STIC                    ! line 43
+        BD, SIPT+18.                 ! line 44
+        SIC, YSFIC                   ! line 45
+        BD, YFXDS                    ! line 46
+        SIC, STIC                    ! line 47
+        BD, SIPT+20.                 ! line 48
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, transcribed from PDF p.117
+! LINE  LOCATION    BINARY OUTPUT   NAME   STATEMENT
+! ---------------------------------------------------------------
+!   line  1  (comment card)  *********************************************
+!   line  2  (comment card)  ********INTERRUPT TABLE**********
+!   line  3  (comment card)  *********************************************
+!   line  4  (comment card)  (blank text)
+!   line  5  215023.00 *  (no binary)                 SLC,$
+!   line  6  (no location) (no binary)                CNOP
+!   line  7  215023.00   216411.40 80      S IT       SIC,YMFIC
+!   line  8  215023.40   216374.04 00                 BD,YFXMK
+!   line  9  215024.00   216411.40 80                 SIC,YMFIC
+!   line 10  215024.40   216376.04 00                 BD,YFXIK
+!   line 11  215025.00   216411.40 80                 SIC,YMFIC
+!   line 12  215025.40   216400.04 00                 BD,YFXIJ
+!   line 13  215026.00   216411.40 80                 SIC,YMFIC
+!   line 14  215026.40   216402.04 00                 BD,YFXEK
+!   line 15  215027.00   215265.00 80                 SIC,STIC
+!   line 16  215027.40   215107.04 00                 BD,SIPT+4.0   - TIME SIGNAL INTERRUPT
+!   line 17  215030.00   216411.40 80                 SIC,YMFIC
+!   line 18  215030.40   216404.04 00                 BD,YFXCPU
+!   line 19  215031.00   216604.00 80                 SIC,YSFIC
+!   line 20  215031.40   216430.04 00                 BD,YFXEKJ
+!   line 21  215032.00   216604.00 80                 SIC,YSFIC
+!   line 22  215032.40   216432.04 00                 BD,YFXUNR
+!   line 23  215033.00   216604.00 80                 SIC,YSFIC
+!   line 24  215033.40   216434.04 00                 BD,YFXCBJ
+!   line 25  215034.00   215265.00 80                 SIC,S T IC
+!   line 26  215034.40   215114.04 00                 BD,S IPT+9.0  -EPCK INTERRUPT
+!   line 27  215035.00   215265.00 80                 SIC,S T IC
+!   line 28  215035.40   215115.04 00                 BD,S IPT+10.0 -UK INTERRUPT
+!   line 29  215036.00 *  215265.00 80                SIC,S T IC
+!   line 30  215036.40   215116.04 00                 BD,S IPT+11.0 -EE INTERRUPT
+!   line 31  215037.00   215265.00 80                 SIC,S T IC
+!   line 32  215037.40   215117.04 00                 BD,S IPT+12.0 -EOP INTERRUPT
+!   line 33  215040.00   215265.00 80                 SIC,S T IC
+!   line 34  215040.40   215120.04 00                 BD,S IPT+13.0 -CS INTERRUPT
+!   line 35  215041.00   000000.30 00                 NOP   (printed "NCP")
+!   line 36  215041.40   000000.30 00                 NOP
+!   line 37  215042.00   216604.00 80                 SIC,YSFIC
+!   line 38  215042.40   216436.04 00                 BD,YFXOP
+!   line 39  215043.00   216604.00 80                 SIC,YSFIC
+!   line 40  215043.40   216440.04 00                 BD,YFXAD
+!   line 41  215044.00   216604.00 80                 SIC,YSFIC
+!   line 42  215044.40   216442.04 00                 BD,YFXUSA
+!   line 43  215045.00   215265.00 80                 SIC,ST IC
+!   line 44  215045.40   215125.04 00                 BD,SIPT+18.
+!   line 45  215046.00   216604.00 80                 SIC,YSFIC
+!   line 46  215046.40   216444.04 00                 BD,YFXDS
+!   line 47  215047.00   215265.00 80                 SIC,ST IC
+!   line 48  215047.40   215127.04 00                 BD,SIPT+20.
+!
+! TWO LISTING MARKS, RECORDED AND NOT EXPLAINED: lines 5 and 29 print
+! a "*" in the one-character column just right of the LOCATION, where
+! every other row prints a blank.  printed p.103 line 48 carries the
+! same mark on its CNOP.  Line 5 here is an SLC and line 29 is an
+! ordinary "SIC,S T IC" identical to lines 25, 27, 31 and 33, which do
+! not carry it, so the mark is not a property of the statement.
+!
+! THE CARD-SERIAL COLUMN IS ANOMALOUS AND IS NOT RELIED ON.  It reads
+! DB000001 at line 1 -- D, not C: in the SERIAL COLUMN the straight
+! vertical left stem and squared corners are unmistakable at 600 dpi.
+! THE HEADER'S "CARD ID" GLYPH IS NOT INDEPENDENTLY SETTLED: it is
+! read DB here by appeal to the serial column, not off its own shape,
+! which at 1800 dpi could be either.  Worth knowing that
+! decks/mcp_bootstrap_p104.strap records its own prefix as "CB" and
+! says in so many words that it is "NOT claimed with confidence", so
+! the two pages disagree and nothing in either depends on it.
+! The serial column also does NOT advance once per line: DB000015, DB000024, DB000025,
+! DB000026, DB000027, DB000028, DB000029 and DB000036 each appear on
+! TWO consecutive lines, so 48 lines carry about 41 distinct serials.
+! THE LINE COUNT IN THIS DECK COMES FROM THE PRINTED LINE-NUMBER
+! COLUMN (1..48, no gap), NOT FROM THE SERIALS.  printed p.103 used
+! the serial column to count its lines; on this page that method would
+! have given the wrong answer, and I have no explanation for the
+! repeats.
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 110 ------------------
+! Only S IT is !SYM'd: it is the one symbol this page DEFINES, and
+! p.103's "S IA VF,SIT" corroborates its address off the page.  The
+! sixteen SYN'd names are back-derived from this page's own binary, so
+! !SYM-ing them would check nothing.
+!SYM   SIT      215023.00
+!CHECK 215023.00 | 216411.40 80 | line 7 S IT SIC,YMFIC
+!CHECK 215023.40 | 216374.04 00 | line 8 BD,YFXMK
+!CHECK 215024.00 | 216411.40 80 | line 9 SIC,YMFIC
+!CHECK 215024.40 | 216376.04 00 | line 10 BD,YFXIK
+!CHECK 215025.00 | 216411.40 80 | line 11 SIC,YMFIC
+!CHECK 215025.40 | 216400.04 00 | line 12 BD,YFXIJ
+!CHECK 215026.00 | 216411.40 80 | line 13 SIC,YMFIC
+!CHECK 215026.40 | 216402.04 00 | line 14 BD,YFXEK
+!CHECK 215027.00 | 215265.00 80 | line 15 SIC,STIC
+!CHECK 215027.40 | 215107.04 00 | line 16 BD,SIPT+4.0 - TIME SIGNAL INTERRUPT
+!CHECK 215030.00 | 216411.40 80 | line 17 SIC,YMFIC
+!CHECK 215030.40 | 216404.04 00 | line 18 BD,YFXCPU
+!CHECK 215031.00 | 216604.00 80 | line 19 SIC,YSFIC
+!CHECK 215031.40 | 216430.04 00 | line 20 BD,YFXEKJ
+!CHECK 215032.00 | 216604.00 80 | line 21 SIC,YSFIC
+!CHECK 215032.40 | 216432.04 00 | line 22 BD,YFXUNR
+!CHECK 215033.00 | 216604.00 80 | line 23 SIC,YSFIC
+!CHECK 215033.40 | 216434.04 00 | line 24 BD,YFXCBJ
+!CHECK 215034.00 | 215265.00 80 | line 25 SIC,S T IC
+!CHECK 215034.40 | 215114.04 00 | line 26 BD,S IPT+9.0 -EPCK INTERRUPT
+!CHECK 215035.00 | 215265.00 80 | line 27 SIC,S T IC
+!CHECK 215035.40 | 215115.04 00 | line 28 BD,S IPT+10.0 -UK INTERRUPT
+!CHECK 215036.00 | 215265.00 80 | line 29 SIC,S T IC (location carries a "*")
+!CHECK 215036.40 | 215116.04 00 | line 30 BD,S IPT+11.0 -EE INTERRUPT
+!CHECK 215037.00 | 215265.00 80 | line 31 SIC,S T IC
+!CHECK 215037.40 | 215117.04 00 | line 32 BD,S IPT+12.0 -EOP INTERRUPT
+!CHECK 215040.00 | 215265.00 80 | line 33 SIC,S T IC
+!CHECK 215040.40 | 215120.04 00 | line 34 BD,S IPT+13.0 -CS INTERRUPT
+!CHECK 215041.00 | 000000.30 00 | line 35 NOP (printed "NCP")
+!CHECK 215041.40 | 000000.30 00 | line 36 NOP
+!CHECK 215042.00 | 216604.00 80 | line 37 SIC,YSFIC
+!CHECK 215042.40 | 216436.04 00 | line 38 BD,YFXOP
+!CHECK 215043.00 | 216604.00 80 | line 39 SIC,YSFIC
+!CHECK 215043.40 | 216440.04 00 | line 40 BD,YFXAD
+!CHECK 215044.00 | 216604.00 80 | line 41 SIC,YSFIC
+!CHECK 215044.40 | 216442.04 00 | line 42 BD,YFXUSA
+!CHECK 215045.00 | 215265.00 80 | line 43 SIC,ST IC
+!CHECK 215045.40 | 215125.04 00 | line 44 BD,SIPT+18.
+!CHECK 215046.00 | 216604.00 80 | line 45 SIC,YSFIC
+!CHECK 215046.40 | 216444.04 00 | line 46 BD,YFXDS
+!CHECK 215047.00 | 215265.00 80 | line 47 SIC,ST IC
+!CHECK 215047.40 | 215127.04 00 | line 48 BD,SIPT+20.

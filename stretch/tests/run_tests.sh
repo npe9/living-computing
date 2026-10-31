@@ -6321,6 +6321,30 @@ run "the file area table definitions, printed p.102" python3 verify_mcp_page.py 
 run "MCP's communication region at its second origin, printed p.103" python3 verify_mcp_page.py 103
 run "the MCP pseudo-operation codes, printed p.104" python3 verify_mcp_page.py 104
 
+# >>> PAST p.104, AND THE PAGE MAP IS NOW THE PLAN. <<<
+# docs/mcp_page_map.json reads every page's own header, so a page no
+# longer begins by confirming its number by eye; strap/mcp_survey.py
+# and docs/ocr_calibration.md record how.
+#
+# pp.105 and 108 are SYN-only definition pages (MISCELLANEOUS SYSTEM
+# SYMBOLS on p.108); p.109 is the PROGRAM STATUS TABLE, one DRZ and
+# three bit names; pp.110-112 are the INTERRUPT TABLE, 21 one-word
+# entries of SIC/BD per page.
+#
+# THE COUNTER CHAIN ACROSS THEM IS CHECKED THREE WAYS AND AGREES:
+# printed p.103 line 56's VF sits at 215020.40 and a VF is 25 bits,
+# 0o40+25 = 0o71, so the counter leaves at 215020.71 -- which is what
+# p.104 line 6 AND p.109 line 5 both print, read off the page by two
+# different agents. p.109's two-word DRZ at 215021.00 then leaves
+# 215023.00, which is what p.110 line 5 prints. pp.105-108 consume no
+# storage, which is why the two SLCs can agree across them.
+run "miscellaneous system symbols, printed p.105" python3 verify_mcp_page.py 105
+run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
+run "the program status table, printed p.109" python3 verify_mcp_page.py 109
+run "the interrupt table, printed p.110" python3 verify_mcp_page.py 110
+run "the interrupt table continued, printed p.111" python3 verify_mcp_page.py 111
+run "the interrupt table continued, printed p.112" python3 verify_mcp_page.py 112
+
 # A LABEL'S SPELLING IS THE ONE THING listing_oracle CANNOT CHECK:
 # it compares LOCATIONS and BINARY, and a name is not in the machine
 # code.  printed p.84 read T IODK as TIODCK and printed p.85 read

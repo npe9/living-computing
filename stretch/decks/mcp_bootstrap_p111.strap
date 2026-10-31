@@ -1,0 +1,469 @@
+! mcp_bootstrap_p111.strap -- printed page 111, the INTERRUPT TABLE
+! (SIT) slots 21 through 44.  docs/MCP_Mar63_001-249.pdf PDF p.118,
+! header READ AND NOT ASSUMED: the top line prints "TIME CLOCK
+! 00054041  PUNID 11D11MCP  CARD ID DB000041  DIST. OF 3/01   3/01
+! PAGE NUMBER 111", and the right-hand page header prints
+! "LOCATION  215050", which is this page's first location.
+!
+! The CARD-ID PREFIX IS "DB" and that is not a guess: the two
+! letters sit in this drum's O/C/D failure class, but
+! docs/resuscitation_roadmap.md quotes "CARD ID DB000100" off PDF
+! p.120 (printed p.113) from an independent rendering, and the D
+! here has the straight vertical left stem and squared corners the
+! round C of "DIST." in the same header does not.  (printed p.104's
+! deck read its own prefix as "CB" and declined to claim it; this
+! one is claimed.)
+!
+! FIFTY LINES, AND TWENTY-SIX CARDS.  The printed LINE column runs
+! 1 to 50 with no gap and the page is blank below line 50.  The
+! card-serial column runs DB000041 to DB000066 -- TWENTY-SIX
+! serials for FIFTY lines, because MOST SERIALS APPEAR ON TWO
+! CONSECUTIVE LINES.  That is not a scan artifact and it counts
+! out exactly: line 1 (an SLC) is card 041 alone, lines 2+3 are
+! card 042, line 4 (an SLC) is card 043 alone, and lines 5+6,
+! 7+8, ... 49+50 are cards 044 through 066.
+!     1 + 2 + 1 + 23*2 = 50 lines,  1+1+1+23 = 26 cards.
+! So EACH INTERRUPT-SLOT CARD CARRIES BOTH HALF-WORD STATEMENTS OF
+! ITS FULL WORD -- "SIC,S T IC" and "BD,SIPT+NN." -- and the
+! listing prints one card as two lines.  Recorded as measured; the
+! card-image mechanics are not needed by anything here.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS, AND A PRIMARY SOURCE THAT NAMES EVERY SYMBOL
+! ---------------------------------------------------------------
+! C22-6728-1 7030 MCP System Analysis Guide, Interrupt Control
+! (printed pp.12-46), printed p.12: MCP "keeps two 48-entry
+! tables", the SIT -- "48 full word instructions of the form
+! SIC,---; BD,---; one for each indicator 0 through 47" -- and the
+! parallel SIPT.  THIS PAGE IS SIT SLOTS 21..44, two half words
+! each.  Its own dispatch table (docs/ocr/C22-6728-1_7030_MCP_Sys_
+! Analysis_Guide.txt line 1443, in the Interrupt Control chapter;
+! THE PRINTED PAGE OF THAT TABLE IS NOT PINNED HERE -- the OCR
+! carries no page marks -- so this is cited as an OCR line inside
+! a chapter whose printed range IS pinned, not as a printed page)
+! reads, column for column:
+!
+!     MASKABLE  TS(4)            STIC  SIPT+4.0   SINTO   JW LODE
+!     All other maskable
+!               (18, 20, 22-47)  STIC  SIPT+(indicator number)
+!     I-O       (9-13)           STIC  SIPT+(indicator number)
+!     IF        IF (21)          STIC  SIFAE
+!
+! That settles, by document and not by ink, every symbol on this
+! page: S T IC is STIC, S IFA E is SIFAE, SIPT is SIPT, and the
+! reason line 3 breaks the pattern is that SLOT 21 IS THE IF
+! (instruction fetch) INTERRUPT, which goes to the IF ANALYZER
+! instead of the parallel table.  The page's own comments agree in
+! English: line 1 "-TO PLACE IF INTERRUPT INSTRUCTION IN" and line
+! 3 "-IFA INTERRUPT INSTRUCTION".  SIFAE is also in the Guide's
+! named-routine list for Interrupt Control, recorded in
+! docs/archival_inventory_notes.md:130 ("...RVFCSG etc/SIFAE/SIFAD/
+! MTC1/...").
+!
+! Line 1    SLC,S IT+21.0   -- origin to SIT slot 21.
+! Line 2    SIC,S T IC      -- store the IC.
+! Line 3    BD,S IFA E      -- branch disabled to the IF analyzer.
+! Line 4    SLC, S IT+22.   -- origin to SIT slot 22.
+! Lines 5-50  twenty-three more slots, 22 through 44, each
+!             "SIC,ST IC" at word.00 and "BD,SIPT+NN." at word.40.
+! No NAME is printed on any of the fifty lines, no SYN, no DD, no
+! comment card.  The page is forty-eight half-word instructions
+! and two SLC cards.
+!
+! ---------------------------------------------------------------
+! >>> THERE IS NOTHING FOR !SYM TO LOOK AT, AND THAT IS CORRECT.
+! ---------------------------------------------------------------
+! The NAME column is EMPTY on all fifty lines, so this page defines
+! no symbol.  The four names below are SYN STAND-INS FOR EXTERNALS
+! that this deck declares itself; writing "!SYM SIT 215023.00"
+! would check this deck's own declaration against itself and prove
+! nothing.  None is written.  printed p.104's deck has the mirror
+! case -- twenty-three !SYM and no !CHECK -- and says so for the
+! same reason.
+!
+! ---------------------------------------------------------------
+! THE FOUR EXTERNALS, AND THE EVIDENCE CLASS OF EACH
+! ---------------------------------------------------------------
+! >>> ALL FOUR WERE READ IN docs/ocr/MCP_Mar63_001-249.txt AND NOT
+! RE-RENDERED. <<<  printed p.103's deck established that OCR-only
+! evidence is a weaker class than a render and must be labelled;
+! every witness below is OCR-only, and each OCR line's printed page
+! was resolved from the file's own "===== PDF page N =====" marks
+! with the verified +7 offset.
+!
+!   SIT    215023.00  -- ALREADY CARRIED BY A LANDED DECK.
+!       decks/mcp_bootstrap_p103.strap:290 declares
+!       "SIT SYN,(8)215023.0" off printed p.110's label
+!       ("S IT  SIC,YMFIC" at 215023.00) and printed p.175's
+!       "SIT($4)".  THAT SPELLING IS REUSED HERE DELIBERATELY
+!       rather than invented, per the house rule to prefer a
+!       spelling another page already uses.
+!       AND THIS PAGE IS AN INDEPENDENT CHECK OF IT: line 1's
+!       "SLC,S IT+21.0" prints 215050.00, and 0o215023 + 21
+!       words (0o25) = 0o215050.  All forty-eight of this page's
+!       locations hang off that one number.
+!
+!   SIPT   215103.00  -- DEFINED ON THE NEXT PRINTED PAGE, and
+!       corroborated four more times:
+!         printed p.112 line 7  "S IPT  BEW," at 215103.00, the
+!             DEFINING LABEL, comment "-BASE ADDRESS OF PARALLEL
+!             INTERRUPT T[ABLE]"   (OCR line 5870)
+!         printed p.112, the SLC row below it: "SLC,SIPT+4.0"
+!             prints 215107.00  (that row's LINE number is
+!             garbled in the OCR and is not claimed)
+!         printed p.144        "B,SIPT+4.0" prints 215107.10
+!             (a plain B prints target + 8 bits)
+!         printed p.130        "V-I,2,SIPT+1.0" prints 215104.05
+!         printed p.143        "LVI,$1,SIPT+18.0" prints 215125.03
+!       All five give 0o215103.  NOT a tautology.
+!
+!   STIC   215265.00  -- its defining row is printed p.116, which
+!       prints 215265.00 against "000000.00+ ... VF,0" with the
+!       NAME garbled by the OCR; the row above it is "S UPPER" and
+!       the row below "S IC PP VF,0" at 215323.00, so the shape is
+!       right.  THE ADDRESS DOES NOT REST ON THAT ROW: printed
+!       pp.117, 127, 136, 141, 143, 144 and 175 print
+!       operands "LV,$0,STIC" / "SVA,$0,STIC" / "SIC,STIC" with the
+!       half word 215265.xx, agreeing digit for digit.  NOT a
+!       tautology.
+!
+!   SIFAE  215471.00  -- THE WEAK ONE, AND IT IS SAID PLAINLY.
+!       Its spelling is settled by C22-6728-1 above.  Its ADDRESS
+!       has exactly ONE witness outside this page: a row of
+!       printed p.175 (its LINE number is garbled in the OCR),
+!       on a page that prints a SECOND COPY of this same SIT
+!       pattern at 220644..220647 and whose "BD,SIFAE" at
+!       220645.40 prints "215471.04 00" -- the same target this
+!       page's line 3 prints at 215050.40.  That OCR row is badly
+!       garbled in its text column ("FFC((((( (#U#C#C#N BOYSIFAED")
+!       though its two octal fields are clean.  IF THAT WITNESS
+!       DOES NOT HOLD, LINE 3 IS A TAUTOLOGY.  It was not
+!       re-rendered.
+!
+! ---------------------------------------------------------------
+! >>> BOTH SLC CARDS ARE REDUNDANT RE-ORIGINS, AND THAT COSTS THE
+! JOIN. <<<
+! ---------------------------------------------------------------
+! printed p.110's last row is line 48, "215047.40  215127.04 00
+! BD,SIPT+20." -- a half word, so the location counter ARRIVES at
+! 215050.00, which is exactly where line 1's "SLC,S IT+21.0" sends
+! it.  Line 4's "SLC, S IT+22." lands on 215051.00, where line 3's
+! half word had already left it.  Neither SLC moves anything.
+!
+! printed p.104's hazard applies: AN SLC CANNOT DISAGREE WITH THE
+! ARRIVING COUNTER, IT OVERRIDES IT SILENTLY.  So this page does
+! NOT test that printed p.110 lands against it; when p.110's deck
+! exists, that join must be compared by hand.
+!
+! One thing is better here than in p.104's case and is worth
+! saying: both SLCs are written SYMBOLICALLY, "SIT+21.0" and
+! "SIT+22.", EXACTLY AS PRINTED -- no hard octal literal was
+! substituted.  So the page's whole address chain is tied to SIT's
+! external value instead of asserting an address, and if SIT were
+! wrong by one word every one of the forty-eight checked locations
+! would miss.
+!
+! ---------------------------------------------------------------
+! WHAT THE FORTY-EIGHT !CHECK ROWS ACTUALLY CHECK
+! ---------------------------------------------------------------
+! Forty-eight rows, but NOT forty-eight independent facts:
+!
+!  * 24 rows print "215265.00 80" -- ONE fact (STIC = 215265.00,
+!    plus the SIC half-word encoding) repeated twenty-four times.
+!  * 23 rows print "2151NN.04 00" for BD,SIPT+22. .. BD,SIPT+44.
+!    These ARE twenty-three distinct checks, because the operand
+!    is written in DECIMAL and the location prints in OCTAL and
+!    every one of the twenty-three maps differently:
+!      +22. -> 215131   (22 dec = 26 oct)
+!      +28. -> 215137   (28 dec = 34 oct)
+!      +29.0-> 215140   the octal carry
+!      +36. -> 215147
+!      +37. -> 215150   the next carry
+!      +44. -> 215157   (44 dec = 54 oct)
+!    That decimal-to-octal word arithmetic at twenty-three points,
+!    against a base address read off five other printed pages, is
+!    this page's real check surface.
+!  * 1 row prints "215471.04 00" for BD,S IFA E -- see SIFAE above.
+!  * ALL 48 LOCATIONS rest on SIT = 215023.00 through line 1.
+!
+! The BD encoding itself is checked forty-eight ways over: a BD to
+! word W prints "W.04 00", which is what printed p.38 lines 12 and
+! 17 print and what printed p.103 line 43 prints for SDISIC+.32.
+!
+! ---------------------------------------------------------------
+! THE GLYPHS
+! ---------------------------------------------------------------
+! THIS PAGE OPENS ROUND GLYPHS CONSTANTLY and proves it in its own
+! column heading, which prints "LOCATICN" for LOCATION, and in its
+! header, which prints "TIME CLCCK 00054041" and "DIST. CF 3/C1".
+! So shape alone decides nothing, which is why C22-6728-1 is cited
+! above rather than a zoom.
+!
+! EVERY FIELD THIS DECK READS IS OCTAL, and a round glyph in an
+! octal field is a 0 with certainty because C is not an octal
+! digit.  At 900 dpi line 2's location renders "215C50.CO", line 4's
+! "215C51.CC *", line 35's "215C7C.CC", line 8's binary
+! "215132.04 CO", line 16's "215136.C4 CO".  Every one of those C's
+! is a 0 and is read as a 0.
+!
+! THE TWO BYTES ARE SETTLED ON WHAT PRODUCED THEM, not on the
+! page's ink:
+!   * "80" on the SIC rows.  The 8 prints with both bowls closed at
+!     900 dpi, and it is the byte that printed p.113 prints for
+!     "SIC,WINTOR" (216371.40 80, quoted in
+!     docs/resuscitation_roadmap.md off an independent render) and
+!     that printed pp.119/169/173/193 print for "SIC,SDISIC".
+!     B0 is excluded by the instruction, not by the stroke.
+!   * "00" on the BD rows.  A BD to word W compiles "W.04 00";
+!     decks/mcp_bootstrap_p38.strap records "002422.04 00" for
+!     "BD,S CA6" and "002502.04 00" for "BD,S BRK8", and
+!     decks/mcp_bootstrap_p103.strap records "217452.04 00" for
+!     "BD,SDISIC+.32".  The assembler reproduces all forty-eight.
+!
+! THE FOUR OPERANDS THAT PRINT A TRAILING ".0" -- lines 20, 22, 24
+! and 26, "BD,SIPT+29.0" through "BD,SIPT+32.0", where the other
+! nineteen print a bare "+NN." -- ARE TRANSCRIBED AS PRINTED.  Two
+! of the four render their 0 open ("+29.C", "+31.C"); that field is
+! a DECIMAL bit offset and cannot hold a C either, so all four are
+! ".0".  A ".0" bit offset is bit-identical to no bit offset and
+! none of the four changes a compiled bit; the difference is in the
+! card, not in the machine.
+!
+! B vs 8 and C vs D gave no trouble: the only letters this page
+! prints in a checked field are the "8" of "80", and the only
+! letters in a NAME are in SIPT, STIC and SIFAE, all three settled
+! by document above.
+!
+! ---------------------------------------------------------------
+! SPELLING VARIANTS -- ONE SYMBOL, FOUR PRINTINGS
+! ---------------------------------------------------------------
+! BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+! p.2.  The STATEMENT column prints the SAME operand four ways and
+! they are one symbol:
+!     line  2  "SIC,S T IC"    lines 5-18, 27-50  "SIC,ST IC"
+!     lines 19-25 (odd)  "SIC,STIC"
+! and likewise "SLC,S IT+21.0" / "SLC, S IT+22." for SIT and
+! "BD,S IFA E" for SIFAE against the unspaced "BD,SIPT+NN.".
+! The inter-word spacing is card column position and is not load-
+! bearing; it is recorded in the listing block below exactly as
+! read and written one way in the code.
+!
+! ---------------------------------------------------------------
+! LISTING MARKS
+! ---------------------------------------------------------------
+! Every one of the fifty line numbers carries an asterisk right
+! after it ("1*", "50*"); that is the ordinary column, as on
+! printed pp.99/104, and is not a mark.  FOUR ROWS CARRY A SECOND
+! ASTERISK AFTER THE LOCATION -- lines 1, 4, 27 and 50, e.g.
+! "215077.40 *" -- the same mark printed pp.3/37/38/39/88/97/98/
+! 103/104 carry.  Lines 1 and 4 are the two SLC cards; lines 27 and
+! 50 are ordinary BD/SIC rows and nothing distinguishes them from
+! their neighbours.  RECORDED, NOT EXPLAINED.  No mark changes a
+! compiled bit and none is checked.
+!
+! (printed p.112 carries the same mark on its own
+! "SLC,SIPT+4.0", which is consistent with the mark attaching to
+! an SLC -- but lines 27 and 50 here are not SLCs, so that cannot
+! be the whole rule.  printed p.111 line 27 is the 27th line and
+! printed p.104's marked row was its line 6, so it is not a fixed
+! line either.)
+!
+! ---------------------------------------------------------------
+! WHERE THE PAGE SITS
+! ---------------------------------------------------------------
+! FIRST 215050.00 (line 1, and line 2 is the first row to spend
+! storage), LAST 215077.40 (line 50).  Twenty-four full words,
+! forty-eight half words, contiguous: nothing on this page skips a
+! bit.  printed p.110 ends at 215047.40 and printed p.112 opens at
+! 215100.00 with "SIC,ST IC" and continues the SAME table with
+! slots 45, 46 and 47 at 215100.40 / 215101.40 / 215102.40, then
+! defines S IPT itself at 215103.00.  So the chain p.110 -> p.111
+! -> p.112 is contiguous.
+!
+! THIS IS THE SECOND ASSEMBLY -- printed p.99 line 11's
+! "SLC,(8)215000." origin, outside the TAIL,(2)G block that
+! printed p.2 opened and printed p.98 line 37 closed.  Names here
+! may legitimately repeat names defined in pp.2-98 at different
+! addresses.  NONE OF THIS PAGE'S FOUR NAMES COLLIDES with any
+! landed deck: SIT is already declared with this same value in
+! decks/mcp_bootstrap_p103.strap, and SIPT, STIC and SIFAE appear
+! in no deck in decks/ at all.
+
+! ---- externals, with the printed page each value was read on -------
+! All four read in docs/ocr/MCP_Mar63_001-249.txt, not re-rendered.
+SIT     SYN, (8)215023.0             ! p.110 label; p.175 SIT($4);
+                                      ! already in p.103's deck
+SIPT    SYN, (8)215103.0             ! p.112 line 7 DEFINES "S IPT";
+                                      ! pp.112,130,143,144 references
+STIC    SYN, (8)215265.0             ! p.116 definition row; operand
+                                      ! on pp.117,127,136,141,143,
+                                      ! 144,175
+SIFAE   SYN, (8)215471.0             ! ONE witness, p.175 "BD,SIFAE"
+                                      ! -> 215471.04.  See above.
+
+! ---- SIT slot 21 -- the IF (instruction fetch) interrupt -----------
+        SLC, SIT+21.0                ! line  1 -TO PLACE IF INTERRUPT
+                                      !          INSTRUCTION IN
+        SIC, STIC                    ! line  2
+        BD, SIFAE                    ! line  3 -IFA INTERRUPT
+                                      !          INSTRUCTION
+
+! ---- SIT slots 22..44 -- the parallel-interrupt-table slots --------
+        SLC, SIT+22.                 ! line  4
+        SIC, STIC                    ! line  5
+        BD, SIPT+22.                 ! line  6
+        SIC, STIC                    ! line  7
+        BD, SIPT+23.                 ! line  8
+        SIC, STIC                    ! line  9
+        BD, SIPT+24.                 ! line 10
+        SIC, STIC                    ! line 11
+        BD, SIPT+25.                 ! line 12
+        SIC, STIC                    ! line 13
+        BD, SIPT+26.                 ! line 14
+        SIC, STIC                    ! line 15
+        BD, SIPT+27.                 ! line 16
+        SIC, STIC                    ! line 17
+        BD, SIPT+28.                 ! line 18
+        SIC, STIC                    ! line 19
+        BD, SIPT+29.0                ! line 20
+        SIC, STIC                    ! line 21
+        BD, SIPT+30.0                ! line 22
+        SIC, STIC                    ! line 23
+        BD, SIPT+31.0                ! line 24
+        SIC, STIC                    ! line 25
+        BD, SIPT+32.0                ! line 26
+        SIC, STIC                    ! line 27
+        BD, SIPT+33.                 ! line 28
+        SIC, STIC                    ! line 29
+        BD, SIPT+34.                 ! line 30
+        SIC, STIC                    ! line 31
+        BD, SIPT+35.                 ! line 32
+        SIC, STIC                    ! line 33
+        BD, SIPT+36.                 ! line 34
+        SIC, STIC                    ! line 35
+        BD, SIPT+37.                 ! line 36
+        SIC, STIC                    ! line 37
+        BD, SIPT+38.                 ! line 38
+        SIC, STIC                    ! line 39
+        BD, SIPT+39.                 ! line 40
+        SIC, STIC                    ! line 41
+        BD, SIPT+40.                 ! line 42
+        SIC, STIC                    ! line 43
+        BD, SIPT+41.                 ! line 44
+        SIC, STIC                    ! line 45
+        BD, SIPT+42.                 ! line 46
+        SIC, STIC                    ! line 47
+        BD, SIPT+43.                 ! line 48
+        SIC, STIC                    ! line 49
+        BD, SIPT+44.                 ! line 50
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING -- LOCATION, BINARY OUTPUT, STATEMENT, read
+! off PDF p.118 at 900 dpi (location and binary) and 600/1200 dpi
+! (statement).  The NAME column is empty on every line.
+! ---------------------------------------------------------------
+!   line  1  215050.00 *                     SLC,S IT+21.0   -TO PLACE IF INTERRUPT INSTRUCTION IN
+!   line  2  215050.00    215265.00 80       SIC,S T IC
+!   line  3  215050.40    215471.04 00       BD,S IFA E      -IFA INTERRUPT INSTRUCTION
+!   line  4  215051.00 *                     SLC, S IT+22.
+!   line  5  215051.00    215265.00 80       SIC,ST IC
+!   line  6  215051.40    215131.04 00       BD,SIPT+22.
+!   line  7  215052.00    215265.00 80       SIC,ST IC
+!   line  8  215052.40    215132.04 00       BD,SIPT+23.
+!   line  9  215053.00    215265.00 80       SIC,ST IC
+!   line 10  215053.40    215133.04 00       BD,SIPT+24.
+!   line 11  215054.00    215265.00 80       SIC,ST IC
+!   line 12  215054.40    215134.04 00       BD,SIPT+25.
+!   line 13  215055.00    215265.00 80       SIC,ST IC
+!   line 14  215055.40    215135.04 00       BD,SIPT+26.
+!   line 15  215056.00    215265.00 80       SIC,ST IC
+!   line 16  215056.40    215136.04 00       BD,SIPT+27.
+!   line 17  215057.00    215265.00 80       SIC,ST IC
+!   line 18  215057.40    215137.04 00       BD,SIPT+28.
+!   line 19  215060.00    215265.00 80       SIC,STIC
+!   line 20  215060.40    215140.04 00       BD,SIPT+29.0
+!   line 21  215061.00    215265.00 80       SIC,STIC
+!   line 22  215061.40    215141.04 00       BD,SIPT+30.0
+!   line 23  215062.00    215265.00 80       SIC,STIC
+!   line 24  215062.40    215142.04 00       BD,SIPT+31.0
+!   line 25  215063.00    215265.00 80       SIC,STIC
+!   line 26  215063.40    215143.04 00       BD,SIPT+32.0
+!   line 27  215064.00 *  215265.00 80       SIC,ST IC
+!   line 28  215064.40    215144.04 00       BD,SIPT+33.
+!   line 29  215065.00    215265.00 80       SIC,ST IC
+!   line 30  215065.40    215145.04 00       BD,SIPT+34.
+!   line 31  215066.00    215265.00 80       SIC,ST IC
+!   line 32  215066.40    215146.04 00       BD,SIPT+35.
+!   line 33  215067.00    215265.00 80       SIC,ST IC
+!   line 34  215067.40    215147.04 00       BD,SIPT+36.
+!   line 35  215070.00    215265.00 80       SIC,ST IC
+!   line 36  215070.40    215150.04 00       BD,SIPT+37.
+!   line 37  215071.00    215265.00 80       SIC,ST IC
+!   line 38  215071.40    215151.04 00       BD,SIPT+38.
+!   line 39  215072.00    215265.00 80       SIC,ST IC
+!   line 40  215072.40    215152.04 00       BD,SIPT+39.
+!   line 41  215073.00    215265.00 80       SIC,ST IC
+!   line 42  215073.40    215153.04 00       BD,SIPT+40.
+!   line 43  215074.00    215265.00 80       SIC,ST IC
+!   line 44  215074.40    215154.04 00       BD,SIPT+41.
+!   line 45  215075.00    215265.00 80       SIC,ST IC
+!   line 46  215075.40    215155.04 00       BD,SIPT+42.
+!   line 47  215076.00    215265.00 80       SIC,ST IC
+!   line 48  215076.40    215156.04 00       BD,SIPT+43.
+!   line 49  215077.00    215265.00 80       SIC,ST IC
+!   line 50  215077.40 *  215157.04 00       BD,SIPT+44.
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 111 ----------------
+! FORTY-EIGHT ROWS AND NO SYMBOLS.  Lines 1 and 4 are SLC cards and
+! print no BINARY OUTPUT, so they are not rows; the NAME column is
+! empty on all fifty lines, so there is no symbol to declare.  See
+! "WHAT THE FORTY-EIGHT !CHECK ROWS ACTUALLY CHECK" above for which
+! of these are independent and which are one fact repeated.
+!CHECK 215050.00 | 215265.00 80 | line  2 SIC,S T IC
+!CHECK 215050.40 | 215471.04 00 | line  3 BD,S IFA E
+!CHECK 215051.00 | 215265.00 80 | line  5 SIC,ST IC
+!CHECK 215051.40 | 215131.04 00 | line  6 BD,SIPT+22.
+!CHECK 215052.00 | 215265.00 80 | line  7 SIC,ST IC
+!CHECK 215052.40 | 215132.04 00 | line  8 BD,SIPT+23.
+!CHECK 215053.00 | 215265.00 80 | line  9 SIC,ST IC
+!CHECK 215053.40 | 215133.04 00 | line 10 BD,SIPT+24.
+!CHECK 215054.00 | 215265.00 80 | line 11 SIC,ST IC
+!CHECK 215054.40 | 215134.04 00 | line 12 BD,SIPT+25.
+!CHECK 215055.00 | 215265.00 80 | line 13 SIC,ST IC
+!CHECK 215055.40 | 215135.04 00 | line 14 BD,SIPT+26.
+!CHECK 215056.00 | 215265.00 80 | line 15 SIC,ST IC
+!CHECK 215056.40 | 215136.04 00 | line 16 BD,SIPT+27.
+!CHECK 215057.00 | 215265.00 80 | line 17 SIC,ST IC
+!CHECK 215057.40 | 215137.04 00 | line 18 BD,SIPT+28.
+!CHECK 215060.00 | 215265.00 80 | line 19 SIC,STIC
+!CHECK 215060.40 | 215140.04 00 | line 20 BD,SIPT+29.0
+!CHECK 215061.00 | 215265.00 80 | line 21 SIC,STIC
+!CHECK 215061.40 | 215141.04 00 | line 22 BD,SIPT+30.0
+!CHECK 215062.00 | 215265.00 80 | line 23 SIC,STIC
+!CHECK 215062.40 | 215142.04 00 | line 24 BD,SIPT+31.0
+!CHECK 215063.00 | 215265.00 80 | line 25 SIC,STIC
+!CHECK 215063.40 | 215143.04 00 | line 26 BD,SIPT+32.0
+!CHECK 215064.00 | 215265.00 80 | line 27 SIC,ST IC
+!CHECK 215064.40 | 215144.04 00 | line 28 BD,SIPT+33.
+!CHECK 215065.00 | 215265.00 80 | line 29 SIC,ST IC
+!CHECK 215065.40 | 215145.04 00 | line 30 BD,SIPT+34.
+!CHECK 215066.00 | 215265.00 80 | line 31 SIC,ST IC
+!CHECK 215066.40 | 215146.04 00 | line 32 BD,SIPT+35.
+!CHECK 215067.00 | 215265.00 80 | line 33 SIC,ST IC
+!CHECK 215067.40 | 215147.04 00 | line 34 BD,SIPT+36.
+!CHECK 215070.00 | 215265.00 80 | line 35 SIC,ST IC
+!CHECK 215070.40 | 215150.04 00 | line 36 BD,SIPT+37.
+!CHECK 215071.00 | 215265.00 80 | line 37 SIC,ST IC
+!CHECK 215071.40 | 215151.04 00 | line 38 BD,SIPT+38.
+!CHECK 215072.00 | 215265.00 80 | line 39 SIC,ST IC
+!CHECK 215072.40 | 215152.04 00 | line 40 BD,SIPT+39.
+!CHECK 215073.00 | 215265.00 80 | line 41 SIC,ST IC
+!CHECK 215073.40 | 215153.04 00 | line 42 BD,SIPT+40.
+!CHECK 215074.00 | 215265.00 80 | line 43 SIC,ST IC
+!CHECK 215074.40 | 215154.04 00 | line 44 BD,SIPT+41.
+!CHECK 215075.00 | 215265.00 80 | line 45 SIC,ST IC
+!CHECK 215075.40 | 215155.04 00 | line 46 BD,SIPT+42.
+!CHECK 215076.00 | 215265.00 80 | line 47 SIC,ST IC
+!CHECK 215076.40 | 215156.04 00 | line 48 BD,SIPT+43.
+!CHECK 215077.00 | 215265.00 80 | line 49 SIC,ST IC
+!CHECK 215077.40 | 215157.04 00 | line 50 BD,SIPT+44.

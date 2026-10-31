@@ -1,0 +1,383 @@
+! mcp_bootstrap_p112.strap -- printed page 112, the tail of the
+! SERIAL interrupt table and the head of the PARALLEL interrupt
+! table.  docs/MCP_Mar63_001-249.pdf PDF p.119, header READ AND NOT
+! ASSUMED: the top line prints "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID DB000068  DIST. OF 3/01   3/01   PAGE NUMBER 112", and the
+! column-head line's own right-hand "LOCATION" field prints 215100,
+! which is this page's first location.
+!
+! FIFTY-ONE LINES, COUNTED NOT ESTIMATED.  The printed LINE column
+! runs 1..51 with no gap and the page is blank below line 51.  The
+! card-serial column runs DB000068 (line 1) through DB000098 (line
+! 51) -- THIRTY-ONE CARDS for fifty-one lines, because a SIC and the
+! branch that completes its 64-bit instruction are punched on ONE
+! card and listed on TWO lines with the SAME serial (lines 1+2 are
+! both DB000068, 9+10 are both DB000073, and so on).  The serial
+! prefix is "DB": printed p.104's prefix was read "CB" and NOT
+! claimed with confidence, and at 600 dpi on this page the glyph has
+! the straight vertical left stem of a D in every one of the thirty-
+! one serials.  (The header's own CARD ID repeats line 1's serial.)
+!
+! >>> WHAT THE PAGE IS. <<<  Three more entries of the serial
+! interrupt table (lines 1-6), then S IPT, the base of the PARALLEL
+! interrupt table (line 7), then the parallel table's own entries.
+! Each table slot is one 64-bit "SIC,<save area> / B,<routine>" pair:
+! the SIC stores the instruction counter into the save area and the
+! branch enters the routine.  Three kinds of slot appear:
+!   lines 1-6   SIC,ST IO   / BD,S IPT+45..47.   -- serial table
+!   lines 9-10  SIC,S INTO  / B,JWLODE           -- the TS slot
+!   lines 18+   SIC,W INTOR / B,W LODE           -- every other slot
+! and lines 12-16 are five BRANCH ON ZERO BIT instructions, one per
+! parallel I-O interrupt class, each testing a bit of S PS IOI and
+! branching to K STORE.
+!
+! >>> THE PAGE'S OWN STRUCTURE IS CORROBORATED BY A PRIMARY SOURCE.
+! docs/ocr/C22-6728-1_7030_MCP_Sys_Analysis_Guide.txt, the interrupt
+! table, prints two rows that are exactly lines 8-10 and lines 17-19
+! of this page:
+!     "MASKABLE TS ... STIC SIPT+4.0   SINTO    JW LODE"
+!     "All other  ... STIC SIPT+       WINTOR   WLODE"
+! and its I-O row names "SPSIOI (receptor)" and "KSTORE" -- "The
+! receptor is entered at KSTORE from the parallel ... interrupt
+! table with a bit set in SPSIOI corresponding ...".  That settles
+! by document every glyph on this page that shape alone cannot:
+! S INTO (not SINTC), W INTOR (not WINTCR), W LODE and JWLODE (not
+! WLCDE/JWLCDE), S PS IOI (not SPSICI) and K STORE.  Every one of
+! those six names has an O in the position this drum prints open.
+!
+! >>> ONE REAL SURPRISE, AND IT IS NOT A MISREADING. <<<  Line 9's
+! "SIC,S INTO" and line 18's "SIC,W INTOR" compile the SAME binary,
+! "216371.40 80".  Both were re-read at 900 dpi: the statements are
+! six characters apart (S-I-N-T-O against W-I-N-T-O-R) and cannot be
+! confused, and both binary fields read 216371.40.  So S INTO and
+! W INTOR are two names for ONE half-word save area at 216371.40 --
+! which is what the Analysis Guide's table implies when it lists them
+! in the same column.  They are SYN'd to the same value below and the
+! fact is recorded rather than "fixed".
+!
+! ---------------------------------------------------------------
+! WHERE THE PAGE SITS
+! ---------------------------------------------------------------
+! The ORIGIN IS NOT SET BY A CARD ON THIS PAGE -- there is no SLC
+! before line 1.  printed p.99 line 11's "SLC,(8)215000." moved the
+! counter to 0o215000 and printed p.111's last line (line 50) is a
+! BD at 215077.40, a half word that ends exactly at 215100.00, where
+! this page's line 1 begins.  THE JOIN IS CONTIGUOUS.  This deck
+! writes the arriving counter as a hard "SLC, (8)215100." so that it
+! assembles standalone; when pp.105-111 land, that SLC is the row to
+! reconsider (see printed p.104's note on the same point).
+!
+! THE PAGE LEAVES THE COUNTER AT 215147.00 -- line 51's half-word
+! branch at 215146.40 ends there -- and the OCR of PDF p.120
+! (printed p.113) prints its line 1 as "215147.00  216371.40 80
+! SIC,WINTOR".  BOTH JOINS ARE CONTIGUOUS, backward and forward.
+!
+! pp.99+ are OUTSIDE the "TAIL,(2)G" block that printed p.2 opened
+! and printed p.98 line 37 closed with "UNTAIL,(2)", so names here
+! may legitimately repeat names defined in pp.2-98 at different
+! addresses.  None of this page's eight names collides with one in
+! the transcribed decks.
+!
+! THE LOCATION COUNTER JUMPS FIVE TIMES, each time by an SLC that
+! names a slot of the parallel table (lines 8, 11, 17, 20, 23).  The
+! words skipped are 215104-215106, 215110-215113, 215121-215124,
+! 215126 and 215130: slots of the table that other pages fill.  From
+! line 24 (215131.00) to line 51 (215146.40) the page is contiguous.
+!
+! ---------------------------------------------------------------
+! LISTING MARKS
+! ---------------------------------------------------------------
+! EVERY ONE of the fifty-one line numbers carries an asterisk right
+! after it ("7*", "51*").  That is the ordinary column and is not a
+! mark.
+!
+! SIX lines carry a SECOND asterisk after the LOCATION, the
+! unexplained marker of docs/listing_typography.md 12: lines 8, 11,
+! 17, 20, 23 and 46.  >>> THIS PAGE SHARPENS THE OPEN QUESTICN. <<<
+! Five of the six are exactly the five SLC rows -- i.e. exactly the
+! rows at which the location counter jumps -- which is the "gap
+! marker" reading that printed p.3 killed.  LINE 46 KILLS IT AGAIN
+! HERE: it is an ordinary "SIC,W INTOR" at 215144.00, it carries
+! binary ("216371.40 80", read at 900 dpi beside the asterisk), line
+! 45 is a half-word branch at 215143.40 that ends exactly at
+! 215144.00, and there is no gap.  So on this page the marker is
+! neither "SLC row" nor "gap".  What line 46 DOES fit is the pitch
+! reading: line 23 and line 46 are 23 lines apart, and printed p.3
+! (52 lines) had a 22-23 line pitch.  Recorded, still open.
+!
+! ---------------------------------------------------------------
+! HOW THE BINARY WAS SETTLED, FIELD BY FIELD
+! ---------------------------------------------------------------
+! Every byte on this page sits in one of five shapes, and each one
+! was settled on WHAT PRODUCED IT, not on ink:
+!
+! * "215265.00 80" (SIC).  Per listing_oracle's format note, bits
+!   0-17 print as the octal word, bits 18-23 as two octal digits and
+!   bits 24-31 as two hex.  SIC shares the literal 1000 at bits
+!   24-27 with BRANCH ON BIT (strap/opcodes.py, X22-6533), and its
+!   index field is empty here, so the byte is 80 and cannot be B0:
+!   B0 would need bits 28-31 = 0000 with bit 24-27 = 1011, which is
+!   not SIC's literal.
+! * "215160.04 00" / "216604.50 00" / "215103.20 00" (half-word
+!   branches).  The top bit of the octal pair is bit 18, the branch
+!   target's HALF-WORD SELECT; bits 19-23 are the branch modifier.
+!   The three modifiers on this page are therefore BD = 00100,
+!   B = 01000 and BEW = 10000, and they are CONSISTENT ACROSS THE
+!   PAGE: every one of the twenty-eight "B,W LODE" rows prints .10
+!   (b18=0, 01000) and every one of the three "BD,S IPT+n." rows
+!   prints .04 (b18=0, 00100).  JWLODE's .50 is 101000 -- b18=1,
+!   so its target is 216604.40, a SECOND half word, and the modifier
+!   is B's own 01000.  The hex byte of every branch is 00.
+! * "215226.11 80  215710.34 0C" (BRANCH ON ZERO BIT AND SET TO ONE).
+!   Checked field by field against strap/opcodes.py BB_CODES, whose
+!   source is X22-6533 "BRANCH ON BIT -- Strap Format: OP,B,(I),A(K)":
+!   first half = the 24-bit BIT address (word 215226, bit 0o11 = 9
+!   decimal = the ".9" in the statement) with the 1000 literal and a
+!   zero index, giving 80; second half = the 19-bit branch address in
+!   bits 32-50 (215710, half-word select 0, the top bit of 0o34),
+!   then the literal 111000000 at 51-59 (0o34's low five bits 11100
+!   plus 0x0C's top four 0000), then mod = 11 and cond = 0 at bits
+!   60-62 and K = 0 at bit 63 -- which is BZB1 and nothing else.
+!   THE LOW NIBBLE C IS THE MODIFIER, NOT AN INDEX, and the five
+!   rows' bit offsets .11 .12 .13 .14 .15 are 9 10 11 12 13 decimal,
+!   exactly the statements' +.9 +.10 +.11 +.12 +.13.
+! * The round glyphs.  This page prints 0 open constantly ("2151CC"
+!   for 215100 in the OCR of its own location column), and the octal
+!   fields -- which cannot hold a C -- are the calibration: line 1's
+!   location prints 215100.00 with both zeros open at 400 dpi and
+!   closed at 900.  Every "C" in a binary field on this page is in a
+!   position that is either octal (so a 0 with certainty) or part of
+!   a hex byte whose value the paragraph above derives from the
+!   statement.  NO byte here was settled by ink alone.
+!
+! ---------------------------------------------------------------
+! WHAT THE STATEMENT COLUMN PRINTS vs WHAT THIS DECK WRITES
+! ---------------------------------------------------------------
+! MCP's names carry blanks ("S IPT", "W LODE", "S PS IOI") and the
+! listing prints them as punched, INCONSISTENTLY: line 2 prints
+! "BD,SIPT+45." and line 11 prints "SLC,S IPT+9.0" for the same
+! symbol.  As in every deck here, the blanks are dropped and the
+! name is written solid.  The printed form is kept in the listing
+! block below, verbatim.
+!
+! >>> FIVE OF THE SEVEN EXTERNALS ARE CORROBORATED AT THEIR OWN
+! DEFINING CARDS, on pages this project has NOT yet transcribed.
+! docs/ocr/MCP_Mar63_001-249.txt is a full-volume OCR of the same
+! PDF; it is garbled and is a CROSS-CHECK, NOT A SOURCE, but it is
+! legible enough to name a symbol and its location:
+!   printed p.116 line  1  215226.00  S PS IOI  XW,0
+!                                     "-I/O INTERRUPT PRESERVATION WORD"
+!   printed p.116 line  9  215265.00  S T IO    VF,0
+!   printed p.130 line ~8  216333.00  W LODE    T,0,3-...
+!   printed p.130 line 50  216371.40  W INTOR   VF,0
+!                                     "- INTERRUPT PRESERVATION WORD"
+!   printed p.130 line 51  216371.40+           S INTO  SYN,W INTOR
+!   printed p.134 line 38  216604.40  JWLODE    T16,3-...
+! >>> THE LAST OF THOSE SETTLES THE SURPRISE ABOVE OUTRIGHT. <<<
+! S INTO is not a coincidence and not a misreading: printed p.130
+! defines it with a SYN card whose operand IS W INTOR, which is why
+! the two compile the same half-word address here.  The reading
+! "S INTO and W INTOR are two names for one save area" was arrived
+! at from this page's binary alone and is then confirmed by the card
+! that does it.
+!
+! K STORE is the ONE external with no second witness: the OCR's only
+! legible occurrences of 215710 are this page's own five rows.  Its
+! NAME is corroborated by the Analysis Guide prose quoted above; its
+! ADDRESS rests on this page's binary, which is stated here because
+! the !CHECK rows that use it cannot test it.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- every address below is READ OFF THIS PAGE'S OWN
+! BINARY OUTPUT COLUMN, and a !CHECK on such a row therefore tests
+! the opcode and modifier bits, not the address (listing_oracle's
+! docstring says so).  S IPT is the one symbol this page DEFINES,
+! and the three "BD,S IPT+45..47." rows ARE a real address check,
+! because their targets are computed from it.
+! ---------------------------------------------------------------
+        SLC, (8)215100.
+STIC    SYN, (8)215265.0             ! line  1 "SIC,ST IO"
+SINTO   SYN, (8)216371.40            ! line  9 "SIC,S INTO"
+JWLODE  SYN, (8)216604.40            ! line 10 "B,JWLODE" prints 216604.50
+SPSIOI  SYN, (8)215226.0             ! line 12 "BZB1,S PS IOI+.9 ,..."
+KSTORE  SYN, (8)215710.0             ! line 12 ",K STORE"
+WINTOR  SYN, (8)216371.40            ! line 18 "SIC,W INTOR" -- SAME AS S INTO
+WLODE   SYN, (8)216333.0             ! line 19 "B,W LODE"
+
+        SLC, (8)215100.
+        SIC, STIC                    ! line  1
+        BD, SIPT+45.                 ! line  2
+        SIC, STIC                    ! line  3
+        BD, SIPT+46.                 ! line  4
+        SIC, STIC                    ! line  5
+        BD, SIPT+47.                 ! line  6
+SIPT    BEW, $                       ! line  7 -BASE ADDRESS OF PARALLEL
+!                                              INTERRUPT T  <- the comment
+!                                              ENDS at that bare "T", with
+!                                              clear paper between it and
+!                                              the card-serial column: the
+!                                              card's own comment field ran
+!                                              out mid-word.  "T(ABLE)" is
+!                                              NOT transcribed, only noted.
+        SLC, SIPT+4.0                ! line  8
+        SIC, SINTO                   ! line  9
+        B, JWLODE                    ! line 10 -SPECIAL ROUTINE FOR TS
+        SLC, SIPT+9.0                ! line 11 -PARALLEL IO INTERRUPT SLOTS
+        BZB1, SPSIOI+.9,KSTORE       ! line 12 -EPGK PARALLEL INTERRUPT
+        BZB1, SPSIOI+.10,KSTORE      ! line 13 -UK PARALLEL INTERRUPT
+        BZB1, SPSIOI+.11,KSTORE      ! line 14 -EE PARALLEL INTERRUPT
+        BZB1, SPSIOI+.12,KSTORE      ! line 15 -EOP PARALLEL INTERRUPT
+        BZB1, SPSIOI+.13,KSTORE      ! line 16 - CS PARALLEL INTERRUPT
+        SLC, SIPT+18.0               ! line 17
+        SIC, WINTOR                  ! line 18
+        B, WLODE                     ! line 19
+        SLC, SIPT+20.0               ! line 20
+        SIC, WINTOR                  ! line 21
+        B, WLODE                     ! line 22
+        SLC, SIPT+22.0               ! line 23
+        SIC, WINTOR                  ! line 24
+        B, WLODE                     ! line 25
+        SIC, WINTOR                  ! line 26
+        B, WLODE                     ! line 27
+        SIC, WINTOR                  ! line 28
+        B, WLODE                     ! line 29
+        SIC, WINTOR                  ! line 30
+        B, WLODE                     ! line 31
+        SIC, WINTOR                  ! line 32
+        B, WLODE                     ! line 33
+        SIC, WINTOR                  ! line 34
+        B, WLODE                     ! line 35
+        SIC, WINTOR                  ! line 36
+        B, WLODE                     ! line 37
+        SIC, WINTOR                  ! line 38
+        B, WLODE                     ! line 39
+        SIC, WINTOR                  ! line 40
+        B, WLODE                     ! line 41
+        SIC, WINTOR                  ! line 42
+        B, WLODE                     ! line 43
+        SIC, WINTOR                  ! line 44
+        B, WLODE                     ! line 45
+        SIC, WINTOR                  ! line 46
+        B, WLODE                     ! line 47
+        SIC, WINTOR                  ! line 48
+        B, WLODE                     ! line 49
+        SIC, WINTOR                  ! line 50
+        B, WLODE                     ! line 51
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, VERBATIM.  LINE | LOCATION | BINARY OUTPUT |
+! NAME | STATEMENT | comment.  "*" after a location is the marker
+! discussed above.  Blanks inside names are as punched.
+! ---------------------------------------------------------------
+!   line  1  215100.00  215265.00 80                SIC,ST IO
+!   line  2  215100.40  215160.04 00                BD,SIPT+45.
+!   line  3  215101.00  215265.00 80                SIC,ST IO
+!   line  4  215101.40  215161.04 00                BD,SIPT+46.
+!   line  5  215102.00  215265.00 80                SIC,ST IO
+!   line  6  215102.40  215162.04 00                BD,SIPT+47.
+!   line  7  215103.00  215103.20 00     S IPT      BEW,$
+!                                        -BASE ADDRESS OF PARALLEL INTERRUPT T
+!   line  8  215107.00 *                            SLC,SIPT+4.0
+!   line  9  215107.00  216371.40 80                SIC,SINTO
+!   line 10  215107.40  216604.50 00                B,JWLODE  -SPECIAL ROUTINE FOR TS
+!   line 11  215114.00 *                            SLC,S IPT+9.0
+!                                        -PARALLEL IO INTERRUPT SLOTS
+!   line 12  215114.00  215226.11 80  215710.34 0C  BZB1,S PS IOI+.9 ,K STORE
+!                                        -EPGK PARALLEL INTERRUPT
+!   line 13  215115.00  215226.12 80  215710.34 0C  BZB1,S PS IOI+.10,K STORE
+!                                        -UK PARALLEL INTERRUPT
+!   line 14  215116.00  215226.13 80  215710.34 0C  BZB1,S PS IOI+.11,K STORE
+!                                        -EE PARALLEL INTERRUPT
+!   line 15  215117.00  215226.14 80  215710.34 0C  BZB1,S PS IOI+.12,K STORE
+!                                        -EOP PARALLEL INTERRUPT
+!   line 16  215120.00  215226.15 80  215710.34 0C  BZB1,S PS IOI+.13,K STORE
+!                                        - CS PARALLEL INTERRUPT
+!   line 17  215125.00 *                            SLC,S IPT+18.0
+!   line 18  215125.00  216371.40 80                SIC,WINTOR
+!   line 19  215125.40  216333.10 00                B,W LODE    -
+!   line 20  215127.00 *                            SLC,S IPT+20.0
+!   line 21  215127.00  216371.40 80                SIC,WINTOR
+!   line 22  215127.40  216333.10 00                B,W LODE    -
+!   line 23  215131.00 *                            SLC,S IPT+22.0
+!   line 24  215131.00  216371.40 80                SIC,WINTOR
+!   line 25  215131.40  216333.10 00                B,W LODE    -
+!   line 26  215132.00  216371.40 80                SIC,WINTOR
+!   line 27  215132.40  216333.10 00                B,W LODE    -
+!   line 28  215133.00  216371.40 80                SIC,WINTOR
+!   line 29  215133.40  216333.10 00                B,W LODE    -
+!   line 30  215134.00  216371.40 80                SIC,WINTOR
+!   line 31  215134.40  216333.10 00                B,W LODE    -
+!   line 32  215135.00  216371.40 80                SIC,WINTOR
+!   line 33  215135.40  216333.10 00                B,W LODE    -
+!   line 34  215136.00  216371.40 80                SIC,WINTOR
+!   line 35  215136.40  216333.10 00                B,W LODE    -
+!   line 36  215137.00  216371.40 80                SIC,WINTOR
+!   line 37  215137.40  216333.10 00                B,W LODE    -
+!   line 38  215140.00  216371.40 80                SIC,WINTOR
+!   line 39  215140.40  216333.10 00                B,W LODE    -
+!   line 40  215141.00  216371.40 80                SIC,WINTOR
+!   line 41  215141.40  216333.10 00                B,W LODE    -
+!   line 42  215142.00  216371.40 80                SIC,WINTOR
+!   line 43  215142.40  216333.10 00                B,W LODE    -
+!   line 44  215143.00  216371.40 80                SIC,WINTOR
+!   line 45  215143.40  216333.10 00                B,W LODE    -
+!   line 46  215144.00 * 216371.40 80               SIC,WINTOR
+!   line 47  215144.40  216333.10 00                B,W LODE    -
+!   line 48  215145.00  216371.40 80                SIC,WINTOR
+!   line 49  215145.40  216333.10 00                B,W LODE    -
+!   line 50  215146.00  216371.40 80                SIC,WINTOR
+!   line 51  215146.40  216333.10 00                B,W LODE    -
+
+! ---------------------------------------------------------------
+! THE CHECKS.  One !SYM: S IPT is the only NAME this page prints.
+! Forty-six !CHECK rows -- every line that carries binary.  The five
+! SLC rows (8, 11, 17, 20, 23) emit no storage and get no !CHECK,
+! printed p.99's convention; 46 + 5 = 51.
+! ---------------------------------------------------------------
+!SYM   SIPT     215103.00
+!CHECK 215100.00 | 215265.00 80 | line  1 SIC,ST IO
+!CHECK 215100.40 | 215160.04 00 | line  2 BD,SIPT+45.
+!CHECK 215101.00 | 215265.00 80 | line  3 SIC,ST IO
+!CHECK 215101.40 | 215161.04 00 | line  4 BD,SIPT+46.
+!CHECK 215102.00 | 215265.00 80 | line  5 SIC,ST IO
+!CHECK 215102.40 | 215162.04 00 | line  6 BD,SIPT+47.
+!CHECK 215103.00 | 215103.20 00 | line  7 S IPT BEW,$
+!CHECK 215107.00 | 216371.40 80 | line  9 SIC,SINTO
+!CHECK 215107.40 | 216604.50 00 | line 10 B,JWLODE
+!CHECK 215114.00 | 215226.11 80 215710.34 0C | line 12 BZB1,S PS IOI+.9 ,K STORE
+!CHECK 215115.00 | 215226.12 80 215710.34 0C | line 13 BZB1,S PS IOI+.10,K STORE
+!CHECK 215116.00 | 215226.13 80 215710.34 0C | line 14 BZB1,S PS IOI+.11,K STORE
+!CHECK 215117.00 | 215226.14 80 215710.34 0C | line 15 BZB1,S PS IOI+.12,K STORE
+!CHECK 215120.00 | 215226.15 80 215710.34 0C | line 16 BZB1,S PS IOI+.13,K STORE
+!CHECK 215125.00 | 216371.40 80 | line 18 SIC,WINTOR
+!CHECK 215125.40 | 216333.10 00 | line 19 B,W LODE
+!CHECK 215127.00 | 216371.40 80 | line 21 SIC,WINTOR
+!CHECK 215127.40 | 216333.10 00 | line 22 B,W LODE
+!CHECK 215131.00 | 216371.40 80 | line 24 SIC,WINTOR
+!CHECK 215131.40 | 216333.10 00 | line 25 B,W LODE
+!CHECK 215132.00 | 216371.40 80 | line 26 SIC,WINTOR
+!CHECK 215132.40 | 216333.10 00 | line 27 B,W LODE
+!CHECK 215133.00 | 216371.40 80 | line 28 SIC,WINTOR
+!CHECK 215133.40 | 216333.10 00 | line 29 B,W LODE
+!CHECK 215134.00 | 216371.40 80 | line 30 SIC,WINTOR
+!CHECK 215134.40 | 216333.10 00 | line 31 B,W LODE
+!CHECK 215135.00 | 216371.40 80 | line 32 SIC,WINTOR
+!CHECK 215135.40 | 216333.10 00 | line 33 B,W LODE
+!CHECK 215136.00 | 216371.40 80 | line 34 SIC,WINTOR
+!CHECK 215136.40 | 216333.10 00 | line 35 B,W LODE
+!CHECK 215137.00 | 216371.40 80 | line 36 SIC,WINTOR
+!CHECK 215137.40 | 216333.10 00 | line 37 B,W LODE
+!CHECK 215140.00 | 216371.40 80 | line 38 SIC,WINTOR
+!CHECK 215140.40 | 216333.10 00 | line 39 B,W LODE
+!CHECK 215141.00 | 216371.40 80 | line 40 SIC,WINTOR
+!CHECK 215141.40 | 216333.10 00 | line 41 B,W LODE
+!CHECK 215142.00 | 216371.40 80 | line 42 SIC,WINTOR
+!CHECK 215142.40 | 216333.10 00 | line 43 B,W LODE
+!CHECK 215143.00 | 216371.40 80 | line 44 SIC,WINTOR
+!CHECK 215143.40 | 216333.10 00 | line 45 B,W LODE
+!CHECK 215144.00 | 216371.40 80 | line 46 SIC,WINTOR (location carries an asterisk)
+!CHECK 215144.40 | 216333.10 00 | line 47 B,W LODE
+!CHECK 215145.00 | 216371.40 80 | line 48 SIC,WINTOR
+!CHECK 215145.40 | 216333.10 00 | line 49 B,W LODE
+!CHECK 215146.00 | 216371.40 80 | line 50 SIC,WINTOR
+!CHECK 215146.40 | 216333.10 00 | line 51 B,W LODE

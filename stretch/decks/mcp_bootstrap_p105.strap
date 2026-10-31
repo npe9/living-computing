@@ -1,0 +1,386 @@
+! mcp_bootstrap_p105.strap -- printed page 105, the SECOND HALF of
+! the MCP PSEUDO-OPERATION CODE TABLE that printed p.104 begins.
+! docs/MCP_Mar63_001-249.pdf PDF p.112, header READ AND NOT ASSUMED:
+! the top line prints "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID
+! CB000050  DIST. OF 3/01   3/01   PAGE NUMBER 105", and the page
+! number was rendered on its own at 600 dpi and reads 105.  The TIME
+! CLOCK is the same 00054041 that every page since printed p.97
+! prints; the PUNID is p.99's 11D11MCP; the card-ID prefix is the
+! "CB" p.104 carries.
+!
+! FIFTY-SIX LINES, AND THAT IS COUNTED, NOT ESTIMATED.  The printed
+! line numbers run 1 to 56 with no gap and the rightmost column
+! prints one card serial per line, CB000050 through CB000105 --
+! 105-50+1 = 56, so the two counts agree and nothing fell off the
+! top or the bottom of the render.  Below line 56 the page is blank.
+!
+! >>> THE WHOLE PAGE IS DEFINITIONS AND NOT ONE CARD COMPILES A
+! WORD. <<<  Seventeen SYN cards define seventeen symbols; the other
+! thirty-nine cards are comment cards.  17 + 39 = 56.  So this
+! deck's entire check surface is SEVENTEEN SYMBOLS AND ZERO LISTING
+! ROWS -- printed p.99's convention, which p.104 also follows: a SYN
+! deposits no storage word, so it is checked in !SYM and must NOT be
+! faked into a !CHECK.  There are no !CHECK lines below and that is
+! correct.  The BINARY OUTPUT column prints "+00000000" and the data
+! description "NULL" on all seventeen, which is the column working
+! correctly on a definitions page, not a crop in the wrong place.
+!
+! THE SEVENTEEN, in printed order:
+!   line  1  S FREE  12.32   000014.40+     line 24  DSIT    36.0   000044.00+
+!   line  2  DIODEF  13.0    000015.00+     line 31  D DUMP  64.0   000100.00+
+!   line 15  D SIO   32.0    000040.00+     line 33  D EOJ   65.0   000101.00+
+!   line 16  D RIO   32.32   000040.40+     line 34  D HOLD  65.32  000101.40+
+!   line 17  D RET   33.0    000041.00+     line 35  DRESLD  66.0   000102.00+
+!   line 18  S D RET SYN,D RET 000041.00+   line 36  D FETCH 66.32  000102.40+
+!   line 22  D TIME  35.0    000043.00+     line 38  D SPR   67.32  000103.40+
+!   line 23  D COMM  35.32   000043.40+     line 39  D ABEOJ 68.0   000104.00+
+!                                           line 40  D SCR   68.32  000104.40+
+!
+! FIRST printed location 000014.40+ (line 1), LAST 000104.40+ (line
+! 40).  ALL SEVENTEEN CARRY THE TRAILING "+".  These are SYN VALUES,
+! NOT ASSEMBLY ADDRESSES: the location counter does not advance by
+! one bit anywhere on this page, so THERE IS NO ADDRESS CHAIN TO
+! CLOSE ACROSS IT and none should be attempted.  printed pp.99-104
+! are the same kind of page.
+!
+! >>> THE CHECK THE PAGE PERFORMS ON ITSELF, AND IT IS 17 OF 17.
+! <<<  Each SYN prints its word.bit offset in DECIMAL in the
+! STATEMENT column and the same offset in OCTAL in the LOCATION
+! column, and every one of the seventeen agrees: 12.32/000014.40,
+! 13.0/000015.00, 32.0/000040.00, 32.32/000040.40, 33.0/000041.00,
+! 35.0/000043.00, 35.32/000043.40, 36.0/000044.00, 64.0/000100.00,
+! 65.0/000101.00, 65.32/000101.40, 66.0/000102.00, 66.32/000102.40,
+! 67.32/000103.40, 68.0/000104.00, 68.32/000104.40, and line 18's
+! symbolic SYN,D RET resolves to line 17's 000041.00.  That is a
+! real check of the digits, though not of the card.
+!
+! >>> THERE IS NO SLC ON THIS PAGE AND THIS DECK WRITES NONE. <<<
+! p.104 line 6 printed "SLC,$" at 215020.71; p.105 prints no SLC row
+! at all and emits no storage, so the counter leaves this page
+! exactly where it arrived, still 215020.71.  Every value below is
+! an absolute literal, so the deck assembles standalone with no
+! origin and the verifier passes 17 of 17 without one.  Writing an
+! SLC here would record a fact the page does not state.
+!   >>> AND IT ANSWERS p.104's OPEN QUESTION, IN THE NEGATIVE. <<<
+!   p.104's header asks whether p.105 resumes at 215020.71 and notes
+!   that this is "testable only at p.105's first card that EMITS
+!   STORAGE, if it has one".  IT HAS NONE.  So the p.103/p.104/p.105
+!   counter join is still untested and rolls forward to the first
+!   page after this one that spends a bit.
+!
+! >>> NO EXTERNAL SYMBOL IS REFERENCED ANYWHERE ON THIS PAGE. <<<
+! Sixteen of the seventeen cards carry a literal word.bit offset
+! written on the card itself, and the seventeenth -- line 18's
+! "S D RET SYN,D RET" -- names D RET, which line 17 defines one row
+! above it.  There are no SYN stand-ins to declare and none appear
+! below.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE CONTAINS, IN FOUR BLOCKS
+! ---------------------------------------------------------------
+! Lines 1-14   the tail of the I/O pseudo-ops p.104 starts: $FREE at
+!              12.32 and $IODEF at 13.0 compile; the twelve tape-mode
+!              codes 14.0-16.33 (HD/LD density, EVEN/ODD parity,
+!              ECC/NOECC) are all COMMENTED OUT.
+! Lines 15-27  the service pseudo-ops 32.0-37.32.  Nine compile, six
+!              are commented out.
+! Lines 28-40  a box heading, "******** PSEUDO-OPS WITH TENTACLES
+!              ********" (line 29), and the major-package codes
+!              64.0-68.32.  Nine compile, D EDUMP (64.32) and D SPU
+!              (67.0) are commented out.
+! Lines 41-56  two more box headings, "******** RESERVED FOR FUTURE
+!              MCP USE ********" (line 42) and "******** RESERVED FOR
+!              INSTALLATION PSEUDO OPS ********" (line 55), and ten
+!              unnamed reserved slots 69.0-73.32 (lines 44-53), all
+!              comment cards.
+!
+! ---------------------------------------------------------------
+! THE NAMES ARE CORROBORATED BY TWO PRIMARY SOURCES, AND BE PRECISE
+! ABOUT HOW THEY WERE READ
+! ---------------------------------------------------------------
+! >>> BOTH WERE READ IN docs/ocr/, NOT RENDERED OFF THE PDF. <<<
+! They are modern typeset manuals rather than this drum, so their
+! OCR is far cleaner than the listing's, but they are still the
+! weaker evidence class that printed p.103's deck labelled for
+! SDISIC/SPRIME/SPRIMR/SIT.  Said out loud rather than smoothed.
+!
+! (a) docs/C22-6728_7030_MCP_Sys_Analysis_Guide.pdf, FIGURE 13 "The
+!     Service Pseudo-Ops" and FIGURE 14 "Major Package Pseudo-Ops"
+!     (docs/ocr/C22-6728_7030_MCP_Sys_Analysis_Guide.txt:4085-4125).
+!     Figure 13's third column runs
+!       $CHEX 12.00  $FREE 12.32  $IODEF 13.00  $SIO 32.00
+!       $RIO 32.32   $RET 33.00   $RAM 33.32    $STRG 34.00
+!       $FECRG 34.32 $TIME 35.00  $COMM 35.32   $SIT 36.00
+!     and Figure 14's left column runs
+!       $DUMP 64.00  $EDUMP 64.32 $EOJ 65.00    $HOLD 65.32
+!       $RESLD 66.00 $FETCH 66.32 $SPU 67.00    $SPR 67.32
+!       $ABEOJ 68.00 $SCR 68.32
+!     -- the same names at the same codes as this page's NAME and
+!     STATEMENT columns, position for position, with the "$" where
+!     this page writes "D ".  Figure 14's title is this page's own
+!     line 29: "PSEUDO-OPS WITH TENTACLES".
+!
+! (b) docs/C22-6678-1_7030_MCP_Reference_Jun64.pdf, APPENDIX A, "MCP
+!     PSEUDO-OPERATION CODES" (docs/ocr/..._Jun64.txt:5204-5244),
+!     which adds the commented-out cards:
+!       $HD 14.0  $HDS 14.01  $LD 14.32  $LDS 14.33
+!       $EVEN 15.0 $EVENS 15.01 $ODD 15.32 $ODDS 15.33
+!       $ECC 16.0 $ECCS 16.01 $NOECC 16.32 $NOECCS 16.33
+!       $FIXUP 36.32 $STLR 37.0 $FELR 37.32
+!
+! >>> WHAT (b) RESCUED: ECC, NOT EOC. <<<  Lines 11-14 print
+! "-DECC", "-DECCS", "-DNOECC", "-DNOECCS", and the first reading of
+! this page took the third glyph for a damaged O and wrote DEOC /
+! DNOEOC -- "end of chain" beside EVEN/ODD and HD/LD is a plausible
+! English word and the drum opens round glyphs constantly, so the
+! hazard pushes exactly that way.  Appendix A prints $ECC / $NOECC.
+! The C's are genuine.  Nothing in this deck depends on it (all four
+! are comment cards) but the correction is recorded because the same
+! reflex would have been wrong on a card that compiled.
+! (b) likewise settles line 21's "D FECRG" -- $FECRG 34.32 -- which
+! is not an English word and could not have been settled by shape.
+!
+! >>> WHERE THE MANUALS DO NOT LINE UP, RECORDED AND NOT SMOOTHED.
+! <<<
+!   * FIGURE 13 PRINTS "$FREE" TWICE, at 10.32 and at 12.32.  p.104
+!     line 44 declares D FREE at 10.32 and THIS page's line 1
+!     declares S FREE at 12.32, so the listing uses two different
+!     names for the manual's two $FREE rows.  Whether the manual has
+!     a genuine duplicate or the OCR doubled a row cannot be told
+!     from OCR, and the PDF page was not rendered.
+!   * $ATID 17.0 and $ABEX 38.0 are in Appendix A and have NO CARD
+!     on this page, commented or otherwise.  The 1964 manuals are a
+!     later revision than this March 1963 listing; the absence is
+!     recorded rather than passed over.
+!   * THE MANUALS DO NOT CONFIRM THE "S" ON LINE 1 OR LINE 18.  They
+!     give the CODE (12.32, 33.0); the PREFIX LETTER is this page's
+!     own ink and nothing else.  It is clean: at 1800 dpi line 1's
+!     first glyph is an unmistakable S and line 18 reads "S D RET"
+!     with the same S and a stemmed D two characters along.
+!
+! >>> AND THREE LANDED DECKS ALREADY AGREE, WHICH IS THE STRONGEST
+! EVIDENCE ON THIS PAGE. <<<  D RET and D COMM are not new here:
+!   decks/mcp_bootstrap_p35.strap lines 108-109 carry
+!     "DRET  SYN, 33.0" and "DCOMM SYN, 35.32" -- the IDENTICAL
+!     statements, transcribed off printed p.35 lines 45-46;
+!   decks/mcp_bootstrap_p34.strap:69 carries "DRET  SYN, (8)41.0";
+!   decks/mcp_bootstrap_p79.strap:100 carries "DCOMM SYN, (8)43.40".
+! 0o41.0 and 0o43.40 are exactly this page's printed locations for
+! lines 17 and 23.  Three transcribers, three pages, one address
+! each -- this is the cross-deck agreement check_symbol_spellings.py
+! exists to find, and here it passes rather than fires.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS AND OMISSIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2.  The NAME column prints "S FREE", "D SIO", "D RIO",
+!     "D RET", "S D RET", "D TIME", "D COMM", "D DUMP", "D EOJ",
+!     "D HOLD", "D FETCH", "D SPR", "D ABEOJ", "D SCR"; "DIODEF",
+!     "DSIT" and "DRESLD" are printed closed up with no blank, which
+!     is how a six- or four-character name fills the field, and they
+!     are NOT comment cards -- each prints a LOCATION and a BINARY
+!     OUTPUT in its own column.
+! (2) THE THIRTY-NINE COMMENT CARDS ARE NOT TRANSCRIBED.  They are
+!     identified by p.104's two tells: (i) LOCATION and BINARY
+!     OUTPUT are BOTH empty, and (ii) the card prints as a RAW CARD
+!     IMAGE and its fields do not line up -- lines 21 and 32 print
+!     "D FECRGSYN,34.32" and "D EDUMPSYN,64.32" with NO GAP before
+!     SYN, which no compiled row on this page does.
+!     They are, with the code each would have defined:
+!       line  3 D HD   14.0     line  4 D HDS   14.01
+!       line  5 D LD   14.32    line  6 D LDS   14.33
+!       line  7 D EVEN 15.0     line  8 D EVENS 15.01
+!       line  9 D ODD  15.32    line 10 D ODDS  15.33
+!       line 11 D ECC  16.0     line 12 D ECCS  16.01
+!       line 13 DNOECC 16.32    line 14 DNOECCS 16.33
+!       line 19 D RAM  33.32    line 20 DSTRG   34.0
+!       line 21 D FECRG 34.32   line 25 DFIXUP  36.32
+!       line 26 DSTLR  37.0     line 27 DFELR   37.32
+!       line 32 D EDUMP 64.32   line 37 D SPU   67.0
+!     plus lines 28, 30, 41, 43, 54 and 56, which carry a bare "-";
+!     lines 29, 42 and 55, the three box headings quoted above; and
+!     lines 44-53, the ten reserved slots described below.
+!     NONE of them is faked into a !SYM: a commented card defines
+!     nothing, so there is nothing to check.
+! (3) NOTHING ELSE.  strap_asm refused no printed spelling and no
+!     printed operand on this page, and no row was altered to make
+!     the assembler agree.
+!
+! ---------------------------------------------------------------
+! THE GLYPHS
+! ---------------------------------------------------------------
+! THIS PAGE OPENS ROUND GLYPHS FREELY and proves it in its own
+! column headings: "LOCATION" prints "LCCATICN" at 900 dpi on both
+! the left and the right rule.  EVERY LOCATION HERE IS AN OCTAL
+! FIELD, printed "0000NN.NN+", so a round glyph there is a 0 with
+! certainty -- line 2 renders "000015.CC+", line 17 "000041.CC+",
+! line 24 "000044.CC+", line 40 "CCC104.4C+".  All zeros.  The
+! STATEMENT column's bit offsets are DECIMAL and many print their 0
+! open ("SYN,13.C", "SYN,32.C", "SYN,64.C"); all are 0, confirmed by
+! their own LOCATION fields.
+!
+! THE C/D PAIR WAS THE ONLY REAL WORK, and it was settled on the
+! LEFT SIDE of the glyph at 1800 dpi, not on the bowl: D has a
+! straight vertical left stem with squared corners, C and O are
+! round with no stem.  Rows zoomed to 1800 dpi for this: line 1
+! (S, not D), line 2 (D-I-O-D-E-F: stems on characters 1 and 4, a
+! round open O at 3), line 18 ("S D RET"), lines 22-24 ("D TIME",
+! "D COMM", "DSIT" -- 23's leading glyph has the stem and its
+! second and third characters are the round C and the open O of
+! COMM), lines 33-39 ("D EOJ", "D HOLD", "DRESLD", "D FETCH",
+! "D SPR", "D ABEOJ") and line 40 ("D SCR", whose leading D stands
+! directly beside the stemless C of SCR in the same word).
+!
+! ---------------------------------------------------------------
+! LISTING MARKS AND TWO OBSERVATIONS NOT EXPLAINED
+! ---------------------------------------------------------------
+! EVERY ONE of the fifty-six line numbers carries an asterisk right
+! after it ("1*", "56*").  That is the ordinary column, as on
+! pp.99 and 104, and is not a mark.  No row carries the second
+! asterisk after its LOCATION that p.104 line 6 carries.  No mark
+! changes a compiled bit, and this page compiles none.
+!
+! (A) >>> THE PAGE-HEADER "LOCATION" FIELD IS FILLED IN HERE AND
+!     BLANK ON pp.103 AND 104. <<<  The right-hand end of this
+!     page's column-heading rule prints "LOCATION   000014" -- six
+!     octal digits, rendered on its own at 900 dpi.  000014 is the
+!     WORD part of line 1's 000014.40.  The same field on PDF pp.110
+!     and 111 (printed 103 and 104) prints "LOCATION" with NOTHING
+!     after it, checked at 900 dpi and again at 400 dpi across the
+!     full width of the rule.  What decides whether the field is
+!     filled is NOT established here.  It is recorded because, on
+!     this page, it is a free second witness to the first location.
+!
+! (B) >>> LINES 44-53 PRINT "$SYN,69.0" WITH A BLANK NAME FIELD AND
+!     NO DASH, AND THE "$" IS NOT EXPLAINED. <<<  Under the heading
+!     "RESERVED FOR FUTURE MCP USE" the page prints ten rows
+!     $SYN,69.0 / 69.32 / 70.0 / 70.32 / 71.0 / 71.32 / 72.0 /
+!     72.32 / 73.0 / 73.32.  They are comment cards by p.104's
+!     tells -- LOCATION and BINARY OUTPUT are BOTH empty on all ten,
+!     confirmed at 900 dpi -- so they define nothing and nothing
+!     from them goes in this deck.  Two details are recorded as
+!     OBSERVATIONS ONLY: the one-character dash column that lines
+!     41, 42, 43, 54, 55 and 56 fill is BLANK on all ten, and the
+!     "$" prints exactly one character to the LEFT of where every
+!     compiled row's "SYN" begins.  A plain reading is that these
+!     are notes reserving ten codes for pseudo-ops not yet named,
+!     with "$" standing in for the absent name, but that is a
+!     reading and not a measurement and it is not relied on.
+!     Corroboration that the slots were later filled, from the same
+!     weaker OCR class as above: C22-6728 Figure 14's right column
+!     gives SJC1 76.32, SOUTPT 77.0, SSPEOJ 77.32, SDDT 78.0,
+!     SJC4 78.32, SSCR4 79.0, SKOM 79.32, SCOMD 80.0, SLOG4 80.32,
+!     SLOG2 81.0, SLOG1 81.32 -- a different range, so the 1964
+!     expansion did not use 69-73 either.
+!
+! ---------------------------------------------------------------
+! >>> THE CARD SERIAL SKIPS CB000049. <<<
+! ---------------------------------------------------------------
+! printed p.104's deck counts its serials CB000001..CB000048,
+! "counted, not estimated", and its last printed serial was
+! re-rendered at 600 dpi for this page and is CB000048, with the
+! paper blank below it.  This page's header card ID and its line 1
+! both read CB000050, re-rendered at 900 dpi beside p.104's line 48
+! in one montage.  CB000049 IS ON NEITHER PAGE.  Nothing in this
+! deck depends on it -- no symbol, no bit, and the two pages' codes
+! run 12.0 -> 12.32 -> 13.0 across the break with nothing missing
+! from the manuals' sequence either -- but a card that was punched
+! and not listed is worth knowing about, so it is recorded instead
+! of rounded off.
+!
+! ---------------------------------------------------------------
+! >>> NO CROSS-DECK COLLISION. <<<
+! ---------------------------------------------------------------
+! Of the seventeen names, only D RET and D COMM appear in any other
+! deck, and both AGREE (see above).  The other fifteen -- SFREE,
+! DIODEF, DSIO, DRIO, SDRET, DTIME, DSIT, DDUMP, DEOJ, DHOLD,
+! DRESLD, DFETCH, DSPR, DABEOJ, DSCR -- appear nowhere else in
+! decks/.  In particular SFREE does NOT collide with p.104's DFREE:
+! they are different names at different codes.  printed p.70 line 56
+! is "T IPL3  B,DMCP" with the comment "-THEN UNLOAD WITH - SFREE -"
+! and printed p.71 line 1's parameter half word is ",DFREE"
+! compiling 000000.00 80, so the first assembly's DFREE is 0 there
+! and the English name the comment uses for the operation is SFREE.
+! That is a nice echo of this page's line 1 but it is NOT a check of
+! it: the compiled parameter is DFREE, not SFREE.
+!
+! >>> AND THIS PAGE IS OUTSIDE THE TAIL SCOPE pp.2-98 SIT IN. <<<
+! printed p.98 line 37's "UNTAIL,(2)" closed the TAIL,(2)G block
+! that printed p.2 opened, and printed p.99 line 11's
+! "SLC,(8)215000." moved the origin, so a name here that repeats a
+! name from pp.2-98 is tail scope and not a collision.  Nothing on
+! this page needed that excuse; it is noted for the next reader.
+
+! ---- MCP PSEUDO-OPERATION CODES, the second half -------------------
+! No SLC: see the header.  No externals: see the header.  The bit
+! offsets are written DECIMAL exactly as the STATEMENT column prints
+! them, and print OCTAL in the LOCATION column.
+SFREE   SYN, 12.32                   ! line  1  S FREE
+DIODEF  SYN, 13.0                    ! line  2  DIODEF
+DSIO    SYN, 32.0                    ! line 15  D SIO
+DRIO    SYN, 32.32                   ! line 16  D RIO
+DRET    SYN, 33.0                    ! line 17  D RET  -- p.35 l.45 too
+SDRET   SYN, DRET                    ! line 18  S D RET -- the page's
+                                      !          only symbolic operand
+DTIME   SYN, 35.0                    ! line 22  D TIME
+DCOMM   SYN, 35.32                   ! line 23  D COMM -- p.35 l.46 too
+DSIT    SYN, 36.0                    ! line 24  DSIT
+DDUMP   SYN, 64.0                    ! line 31  D DUMP
+DEOJ    SYN, 65.0                    ! line 33  D EOJ
+DHOLD   SYN, 65.32                   ! line 34  D HOLD
+DRESLD  SYN, 66.0                    ! line 35  DRESLD
+DFETCH  SYN, 66.32                   ! line 36  D FETCH
+DSPR    SYN, 67.32                   ! line 38  D SPR
+DABEOJ  SYN, 68.0                    ! line 39  D ABEOJ
+DSCR    SYN, 68.32                   ! line 40  D SCR
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING -- the seventeen cards that define a symbol.
+! LOCATION, then BINARY OUTPUT with its data description, then NAME
+! and STATEMENT.  All seventeen print "+00000000  NULL", which is
+! what a SYN with no data description prints.
+! ---------------------------------------------------------------
+!   line  1  000014.40+  +00000000  NULL        S FREE   SYN,12.32
+!   line  2  000015.00+  +00000000  NULL        DIODEF   SYN,13.0
+!   line 15  000040.00+  +00000000  NULL        D SIO    SYN,32.0
+!   line 16  000040.40+  +00000000  NULL        D RIO    SYN,32.32
+!   line 17  000041.00+  +00000000  NULL        D RET    SYN,33.0
+!   line 18  000041.00+  +00000000  NULL        S D RET  SYN,D RET
+!   line 22  000043.00+  +00000000  NULL        D TIME   SYN,35.0
+!   line 23  000043.40+  +00000000  NULL        D COMM   SYN,35.32
+!   line 24  000044.00+  +00000000  NULL        DSIT     SYN,36.0
+!   line 31  000100.00+  +00000000  NULL        D DUMP   SYN,64.0
+!   line 33  000101.00+  +00000000  NULL        D EOJ    SYN,65.0
+!   line 34  000101.40+  +00000000  NULL        D HOLD   SYN,65.32
+!   line 35  000102.00+  +00000000  NULL        DRESLD   SYN,66.0
+!   line 36  000102.40+  +00000000  NULL        D FETCH  SYN,66.32
+!   line 38  000103.40+  +00000000  NULL        D SPR    SYN,67.32
+!   line 39  000104.00+  +00000000  NULL        D ABEOJ  SYN,68.0
+!   line 40  000104.40+  +00000000  NULL        D SCR    SYN,68.32
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 105 ----------------
+! Seventeen symbols and NO rows: a SYN deposits no storage word, so
+! there is nothing for a !CHECK to look at and none is written.
+! The trailing "+" the page prints after every location is the SIGN,
+! printed as a suffix the way printed p.84's negative SYN prints
+! "000001.00-".  It is dropped here because listing_oracle.loc_bits
+! parses a location as "word.bit" and has no sign field, and because
+! every landed deck records the bare NNNNNN.NN -- p.99's convention.
+!SYM   SFREE    000014.40
+!SYM   DIODEF   000015.00
+!SYM   DSIO     000040.00
+!SYM   DRIO     000040.40
+!SYM   DRET     000041.00
+!SYM   SDRET    000041.00
+!SYM   DTIME    000043.00
+!SYM   DCOMM    000043.40
+!SYM   DSIT     000044.00
+!SYM   DDUMP    000100.00
+!SYM   DEOJ     000101.00
+!SYM   DHOLD    000101.40
+!SYM   DRESLD   000102.00
+!SYM   DFETCH   000102.40
+!SYM   DSPR     000103.40
+!SYM   DABEOJ   000104.00
+!SYM   DSCR     000104.40

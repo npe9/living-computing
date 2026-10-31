@@ -1,0 +1,263 @@
+! mcp_bootstrap_p109.strap -- printed page 109:
+! "********PROGRAM STATUS TABLE**********".
+! docs/MCP_Mar63_001-249.pdf PDF p.116, header READ AND NOT ASSUMED:
+! the top line prints "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID
+! DA000001  DIST. OF 3/01   3/01   PAGE NUMBER 109".  The page
+! number was rendered on its own at 600 dpi and reads 109 in clean
+! digits; the +7 offset is not assumed here, it is confirmed.
+!
+! TEN LINES, AND THAT IS COUNTED, NOT ESTIMATED.  The card-serial
+! column prints DA000001 through DA000010, ten rows, and the printed
+! line numbers run 1 to 10 with no gap.  Below line 10 the page is
+! blank to the bottom rule.  (The serial PREFIX is read "DA" and is
+! NOT claimed with confidence -- the pair sits in this drum's O/C/D
+! failure class and nothing depends on it.  It is worth recording
+! only because p.103 prints CA and p.104 prints CB, so the prefix is
+! a per-punched-deck serial and this page starts a new one again.)
+!
+! >>> WHAT THE PAGE IS. <<<  Four heading cards, an SLC and a CNOP
+! that realign the location counter, ONE storage card -- a two-word
+! zeroed reservation named S PROG S -- and three SYN cards that name
+! bits inside it.  That is the whole page.
+!
+! ---------------------------------------------------------------
+! THE ADDRESS CHAIN CLOSES ON BOTH SIDES, AND BOTH ENDS WERE READ
+! ---------------------------------------------------------------
+! >>> THIS PAGE DISCHARGES printed p.104's STANDING REQUEST. <<<
+! decks/mcp_bootstrap_p104.strap, SUBSTITUTIONS note (1), asks that
+! when pp.100-103 land, "the counter they leave behind must be
+! compared BY HAND against this page's printed 215020.71".  Done,
+! and it agrees:
+!
+!   printed p.103 line 56 is "S TERMI VF,ZFINIS" at 215020.40.
+!   A VF is TWENTY-FIVE BITS (decks/mcp_bootstrap_p48.strap's bit
+!   chain is the witness), and 0o40 + 25 = 57 = 0o71.
+!   So the counter p.103 leaves behind is 215020.71.
+!
+!   printed p.104 line 6 is "SLC,$" and prints 215020.71.
+!   printed p.109 line 5 is "SLC,$" and prints 215020.71.
+!
+! Two pages print the arriving counter and the page before them
+! computes it.  Three independent readings, one value.
+!
+! THE FAR SIDE CLOSES TOO.  Line 7's DRZ(BU,64),2 is two words at
+! 215021.00, so the counter leaves this page at 215023.00 --
+! and printed p.110 line 5 ("SLC,$", the INTERRUPT TABLE) PRINTS
+! 215023.00.  Read off PDF p.117 for this deck; not assumed.
+!
+! >>> pp.105-108 CONSUME NO STORAGE, AND THE TWO SLCs SAY SO. <<<
+! The counter printed by p.104's SLC and the counter printed by
+! p.109's SLC are the same bit, so nothing between them moved it.
+! Those four pages are not transcribed and this deck does not claim
+! to know what they contain -- only that whatever it is, it spends
+! no storage.
+!
+! ---------------------------------------------------------------
+! THE CNOP EMITS NOTHING, AND THE PAGE PRINTS THAT
+! ---------------------------------------------------------------
+! Line 6's CNOP prints an EMPTY LOCATION and an EMPTY BINARY OUTPUT
+! column -- the only row on the page with a statement and no
+! location.  That is not a dropout: the counter arrives at
+! 215020.71, a CNOP first rounds up to the next HALF word, and
+! 0o71 is 57 so seven zero bits reach 215021.00, which is ALREADY a
+! full-word address.  No NOP is needed, so none is compiled and
+! there is nothing to print.  (strap_asm does the same thing: its
+! gap filler computes pad = (-gap_start) % HALF = 7, lays the seven
+! zero bits, and finds no half word left to fill.  See the comment
+! above "pad = (-gap_start) % HALF" in strap/strap_asm.py.)
+! Compare printed p.103 line 48, whose CNOP arrives at a half-word
+! boundary and DOES print "215013.40 * 000000.30 00".
+!
+! >>> THE FLAG-COLUMN ASTERISK IS ABSENT HERE, AND THAT WAS
+! MEASURED. <<<  printed p.104 line 6 and printed p.110 line 5 are
+! the same "SLC,$" card and BOTH print a "*" in the one-character
+! column between LOCATION and BINARY OUTPUT.  printed p.109 line 5
+! does NOT.  Checked by rendering the identical window -- 1800 dpi,
+! x=6900 y=3330 W=1900 -- on PDF p.117 and PDF p.116 and montaging
+! the two: p.110's asterisk is in frame and p.109's row is blank
+! across the same column.  Recorded, not explained.  Nothing in
+! this deck depends on it.
+!
+! ---------------------------------------------------------------
+! THE FOUR HEADING CARDS (lines 1-4) ARE NOT TRANSCRIBED
+! ---------------------------------------------------------------
+! They carry no LOCATION and no BINARY OUTPUT and print as raw card
+! images from column 2 on, which is printed p.103's pair of tells.
+! They read:
+!   1  **********************************************************
+!   2       ********PROGRAM STATUS TABLE**********
+!   3  **********************************************************
+!   4  (blank after the column-2 dash)
+!
+! ---------------------------------------------------------------
+! NO EXTERNAL SYMBOLS
+! ---------------------------------------------------------------
+! Every operand on this page is a literal -- "2", ".25", ".32",
+! ".61".  Nothing on the page references a name defined elsewhere,
+! so there are no SYN stand-ins to declare and that section of the
+! house format is legitimately empty.
+!
+! ---------------------------------------------------------------
+! THE NAMES
+! ---------------------------------------------------------------
+! The NAME column is eight characters and prints blanks inside the
+! name, exactly as printed p.103's "S COM SZ" does.  Read at 1800
+! dpi:
+!
+!   line  7  "S PROG S"  -> SPROGS
+!   line  8  "S A S"     -> SAS
+!   line  9  "S Q K"     -> SQK     (a clean Q: the tail is printed)
+!   line 10  "S SIO"     -> SSIO
+!
+! THE COMMENT COLUMN IS AN ORACLE FOR PART OF TWO OF THEM, AND NO
+! MORE THAN THAT.  Line 7's comment is "-PROGRAM STATUS TABLE",
+! which spells PROG for me; line 8's is "-AUTO STACK STATUS
+! INDICATOR", which spells the A.  Neither comment spells the
+! trailing S of a name -- those are read off the glyph at 1800 dpi,
+! where an S is unambiguous on this drum, and the comment is not
+! claimed as evidence for them.  Line 9 carries NO comment at all.
+!
+! >>> SSIO's LAST GLYPH, SETTLED BY THE ASYMMETRY RULE AND NOT BY
+! RESEMBLANCE. <<<  It is a round glyph, so O, C, D and 0 are all
+! on the table.  D is out at once: D prints a straight vertical
+! LEFT stem and squared corners and this glyph's left side is a
+! bowl.  For O against C the page supplies its own controls, and
+! all three were cropped at 1800 dpi at identical size and
+! montaged beside the glyph:
+!
+!   the O of "MODE" in line 10's own comment          (English: O)
+!   the C of "INDICATOR" in line 10's own comment     (English: C)
+!   the O of "INDICATOR" in line 10's own comment     (English: O)
+!
+! The known C has its mid-right side CLEANLY ABSENT with both
+! terminals curling inward and a blob on the lower terminal.  The
+! glyph in question has ink on the mid-right and the lower right --
+! a broken ring, not an open arc -- which is how this drum's O
+! prints in the very same comment ("MODE"'s O is broken the same
+! way).  The rule in docs/transcription_workflow.md runs one way:
+! DROPOUT CAN OPEN A CLOSED GLYPH BUT NEVER CLOSES AN OPEN ONE.  A
+! ring with ink on its right side therefore cannot be a damaged C,
+! because that would require ink to have been ADDED.  So the
+! reading is O.
+!
+! >>> AND IT RESTS ON INK ALONE, WHICH IS SAID OUT LOUD. <<<  A
+! grep over every deck and every test in the repository finds NO
+! other page that mentions SPROGS, SAS, SQK or SSIO.  None of the
+! four is referenced anywhere, so tests/check_symbol_spellings.py
+! has nothing to cross-check them against and a misspelling here
+! would assemble perfectly and pass every check in this repository.
+! The weakest of the four is SSIO, whose comment ("-SUPPRESSED MODE
+! STATUS INDICATOR") does not spell its name out the way lines 7
+! and 8 do.  printed p.104 establishes that MCP writes "S" for its
+! suppress-wait pseudo-op variants (D RD / D RD S), which makes
+! "suppressed I/O" a plausible expansion of S + SIO -- that is
+! SUGGESTIVE ONLY and is not what the reading rests on.
+!
+! ---------------------------------------------------------------
+! WHAT IS CHECKED AND WHAT IS NOT
+! ---------------------------------------------------------------
+! FOUR !SYM LINES AND ZERO !CHECK LINES, and that is correct.
+!
+! * The three SYN cards deposit no storage word.  printed p.99's
+!   convention, restated by printed p.104: a SYN is checked in
+!   !SYM and must NOT be faked into a !CHECK.
+! * Line 7 is a DRZ, and the "000002.00" it prints in the BINARY
+!   OUTPUT column is the reservation's SIZE, not its contents --
+!   0o2 is two, and the two words it reserves are zeros.  printed
+!   p.84 gives its DRZ rows no !CHECK for the same reason.  0o2 = 2
+!   IS still read: it is the count in the statement, and the count
+!   is what puts printed p.110's SLC at 215023.00.
+!
+! WHICH OF THE FOUR SYMBOLS ARE LOAD-BEARING:
+! * SAS, SQK and SSIO are the real independent checks.  Their
+!   values resolve from the DECIMAL bit offsets .25, .32 and .61
+!   written on the cards -- 25 = 0o31, 32 = 0o40, 61 = 0o75 --
+!   against the printed 000000.31+, 000000.40+ and 000000.75+, and
+!   they do not depend on the origin at all.
+! * SPROGS does NOT check the origin.  The hard SLC below asserts
+!   it.  What SPROGS checks is the CNOP's alignment: that .71
+!   rounds to 215021.00 and not past it.
+!
+! NOT CHECKED: the SYN rows' printed DATA DESCRIPTIONS
+! ("BU,01 ,10", "BU,22 ,10", "BU,01 ,10").  listing_oracle has no
+! renderer for them, exactly as printed p.103 records.  They are
+! transcribed into the listing block below and are NOT
+! independently verified -- a SYN(BU,18) written as SYN(BU,1) would
+! pass everything here.  0o22 = 18 and 0o10 = 8 is the arithmetic
+! that reads them.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS AND OMISSIONS
+! ---------------------------------------------------------------
+! (1) LINE 5'S CARD IS "SLC,$" AND THIS DECK WRITES
+!     "SLC, (8)215020.71", for printed p.104's reason: in an
+!     isolated deck "$" is zero, not 0o215020.71, so transcribing
+!     the card verbatim would record a different fact than the page
+!     prints.  strap_asm DOES accept a bare "SLC, $" -- this is a
+!     deliberate substitution, not an assembler limitation, and the
+!     printed card is recorded verbatim in the listing block.
+!     The bit offset is written .71 EXACTLY AS PRINTED, because
+!     inside an (8) literal BOTH parts are base 8.
+!     AND IT COSTS THE SAME CHECK IT COST p.104: a hard SLC cannot
+!     disagree with an arriving counter, it overrides it silently.
+!     Here the disagreement is checked by hand instead, above, in
+!     three readings that agree -- but if pp.105-108 are ever
+!     transcribed and merged, this line should become a bare
+!     "SLC,$" so the join becomes self-checking.
+! (2) The four heading cards are not transcribed (see above).
+! (3) Line 7's statement prints "DRZ(BU,64),  2" with the count
+!     written BARE and right-shifted in the operand field.  This
+!     deck writes "DRZ(BU,64), 2".  strap_asm's dr_count takes a
+!     bare or a parenthesised count (strap/strap_asm.py's DR/DRZ
+!     note cites printed p.24 line 52's bare "DRZ(BU),100"), so
+!     this is spacing only, not a substitution of form.
+! * NO OTHER SUBSTITUTIONS AND NO OMISSIONS AMONG THE CARDS THAT
+!   COMPILE.  All six are below.
+
+        SLC, (8)215020.71            ! line 5 -- printed card is "SLC,$"
+        CNOP                         ! line 6 -- prints no location and
+                                     !           no binary; see above
+
+! ---- THE PROGRAM STATUS TABLE ------------------------------------
+SPROGS  DRZ(BU,64), 2                ! line 7 -PROGRAM STATUS TABLE
+
+! ---- BITS NAMED INSIDE IT, RELATIVE TO A ZERO BASE ---------------
+! The bit offsets are BARE DECIMAL literals, so they are decimal and
+! print octal: 25 -> 31, 32 -> 40, 61 -> 75.
+SAS     SYN(BU,1), .25               ! line  8 -AUTO STACK STATUS
+                                     !          INDICATOR
+SQK     SYN(BU,18), .32              ! line  9 (no comment printed)
+SSIO    SYN(BU,1), .61               ! line 10 -SUPPRESSED MODE STATUS
+                                     !          INDICATOR
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING -- the six cards that are not comments.
+! LOCATION, then BINARY OUTPUT with its data description, then NAME
+! and STATEMENT, then the comment.  A row whose location ends in
+! "+" is a SYN and the column prints its RESOLVED VALUE, not the
+! counter.
+! ---------------------------------------------------------------
+!   line  5  215020.71                                 SLC,$
+!            (no "*" in the flag column -- see above)
+!   line  6  (no location, no binary)                  CNOP
+!   line  7  215021.00   000002.00                     S PROG S DRZ(BU,64),  2
+!                                                        -PROGRAM STATUS TABLE
+!   line  8  000000.31+  +00000000     BU,01 ,10       S A S    SYN(BU,1),.25
+!                                                        -AUTO STACK STATUS INDICATOR
+!   line  9  000000.40+  +00000000     BU,22 ,10       S Q K    SYN(BU,18),.32
+!   line 10  000000.75+  +00000000     BU,01 ,10       S SIO    SYN(BU,1),.61
+!                                                        -SUPPRESSED MODE STATUS INDICATOR
+!
+! Line 7's "000002.00" is the reservation's SIZE; see above.
+!
+! ---------------------------------------------------------------
+! NO ASSEMBLER LIMITATION WAS HIT ON THIS PAGE.
+! Every card that compiles is written in its printed form except
+! the SLC, and that one substitution is documentary (note (1)).
+! ---------------------------------------------------------------
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 109 ------------------
+!SYM   SPROGS   215021.00
+!SYM   SAS      000000.31
+!SYM   SQK      000000.40
+!SYM   SSIO     000000.75

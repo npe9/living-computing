@@ -1,0 +1,242 @@
+! mcp_bootstrap_p108.strap -- MCP, printed page 108:
+! "*** MISCELLANEOUS SYSTEM SYMBOLS ***".
+! docs/MCP_Mar63_001-249.pdf PDF p.115, header READ not assumed: the
+! top line prints "TIME CLOCK 00054041  PUNID 11011MCP  CARD ID
+! CD000001  DIST. OF 3/01   3/01   PAGE NUMBER 108".
+!
+! TWELVE LINES, AND THE COUNT WAS CONFIRMED, NOT ESTIMATED.  The
+! rightmost column prints the card serial: line 1 is CD000001 and
+! line 12 is CD000012, consecutive with no break.  MEASURED OVER THE
+! WHOLE PAGE HEIGHT, not over the band the body was read from: the
+! serial column (x 4600-4860 at 300 dpi) was rendered y=0..3300 and
+! its ink profile has exactly THIRTEEN text runs -- twelve at the
+! listing's 50-px line pitch (y 349..929) and one at y 3192, which
+! is the form's own mirrored "IBM." imprint showing through from the
+! back and not a row.  So nothing fell off the top or the bottom.
+! (This mattered: the body render was -x 900 -W 4300 at 400 dpi,
+! which stops at x 3900 in 300-dpi coords and does NOT include the
+! serial column at all.  "The rest of the page looked blank" would
+! not have been evidence -- see printed p.84's phantom 51-word gap.)
+!
+! >>> A NEW PUNCHED DECK STARTS HERE: "CD". <<<  printed p.103 was
+! punching CA0000NN.  The card-serial prefix on this page is CD and
+! the serial restarts at 000001, so this is the fourth deck of the
+! assembly, not a continuation of p.103's.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS, AND WHY IT COMPILES NOT ONE BIT
+! ---------------------------------------------------------------
+! Lines 1-4 are comment cards: the asterisk box around the heading.
+! Lines 5-12 are EIGHT SYN cards.  A SYN deposits no storage word, so
+! this deck's entire check surface is EIGHT SYMBOLS AND ZERO LISTING
+! ROWS -- the convention printed pp.24, 98, 99, 101 and 102
+! established.  The BINARY OUTPUT column prints "+00000000" and a
+! data description ("NULL", "BU,30 ,10", "BU,01 ,10", "BU,07 ,10")
+! on all eight rows; that is the column working correctly on a
+! definitions page and it must NOT be faked into a !CHECK.
+!
+! >>> THE PROOF THAT THE LOCATION COLUMN IS PRINTING SYN VALUES AND
+! NOT ADDRESSES DOES NOT REST ON THE TRAILING "+". <<<  It rests on
+! the sequence, which a location counter cannot produce:
+!
+!     line  5   000040.00+
+!     line  6   000000.00+      <-- BACKWARDS
+!     line  7   000002.00+
+!     line  8   000000.00+      <-- backwards again
+!     line  9   000003.00+
+!     line 10   000000.00+      <-- and a third time
+!     line 11   000000.33+
+!     line 12   000000.32+      <-- backwards by 1 bit
+!
+! A counter does not go down, and three different symbols do not
+! share one address.  Every one of the eight is a RESOLVED SYN VALUE.
+! The trailing "+" is the sign, printed as a suffix the way printed
+! p.84's negative SYN prints "000001.00-"; it is dropped in the !SYM
+! lines below because listing_oracle's loc_bits parses "word.bit" and
+! has no sign field, which is what pp.99-102's decks do.
+!
+! >>> THE ORIGIN IS NOT PRINTED ON THIS PAGE, AND I AM NOT GUESSING
+! WHERE THE COUNTER STANDS. <<<  There is no SLC row here.  The SLC
+! written below is INERT SCAFFOLDING so the deck assembles
+! standalone: nothing on this page consumes storage, and not one of
+! the eight !SYM locations is a function of the location counter --
+! each is the value written in its own SYN statement.  CHECKED, NOT
+! ASSUMED: the deck was assembled three ways -- with the SLC as
+! written, with it changed to "SLC,(8)7.0", and with the SLC line
+! deleted outright -- and the symbol table came out BIT-IDENTICAL
+! all three times.  I did NOT inherit
+! p.101's sentence that "the counter is still 215000.00", because it
+! is not true here: printed p.103 spent storage out to 215021.00.
+! What the counter actually holds when p.108 is read is a question
+! for the pages between, and this page cannot answer it.
+!
+! ---------------------------------------------------------------
+! TAIL SCOPE: DMCP IS DEFINED TWICE IN THIS ASSEMBLY, AND BOTH ARE
+! RIGHT
+! ---------------------------------------------------------------
+! Line 5 defines D MCP as 32.0, i.e. 000040.00.  printed p.35 line 44
+! defines D MCP as X24A at 001472.00, and printed pp.70, 75, 79 and
+! 97 all branch to it there ("B,DMCP" assembling 001472.10 00).
+! printed p.99 line 11's "SLC,(8)215000." put pp.99+ OUTSIDE the
+! TAIL,(2)G block that printed p.2 opened and printed p.98 line 37
+! closed with UNTAIL,(2).  So this is a name legitimately redefined
+! in a different tail scope, NOT a collision and NOT an error in
+! either transcription.  RECORDED, NOT FIXED.  A merge that puts this
+! deck and p.35's in one symbol table without honouring tail scope
+! will see a duplicate; that is the merge's problem to solve, not
+! this page's.
+!
+! ---------------------------------------------------------------
+! GLYPHS: WHAT WAS SETTLED AND HOW
+! ---------------------------------------------------------------
+! (1) THE LOCATION AND BINARY COLUMNS ARE OCTAL, so every round glyph
+!     in them is a 0 with certainty.  At 600 dpi this page prints
+!     "OCCC4C.CO+" for 000040.00+ and "+OCCCOOCO" for +00000000 --
+!     it drops ink on round glyphs constantly.  That calibrates the
+!     page, it does NOT license converting any particular C elsewhere
+!     (docs/transcription_workflow.md, "BE PRECISE ABOUT WHAT THE
+!     GAUGE IS").
+!
+! (2) C vs D IN THE NAME COLUMN, SETTLED BY THE LEFT SIDE AT 1200
+!     DPI, NOT BY INK LEVEL.  Six glyphs were cropped out of the name
+!     column at 1200 dpi and montaged side by side at 500%:
+!
+!       line  5, the C of "MCP"      -- ROUND left side, curved
+!                                       corners, no stem      -> C
+!       line  9, the 3rd of "STDMOD" -- STRAIGHT vertical left
+!                                       stem, square corners  -> D
+!       line  9, the D of "MOD"      -- same shape             -> D
+!       line 10, the 3rd of "S DD"   -- same shape             -> D
+!       line 10, the 4th of "S DD"   -- same shape             -> D
+!       line  8, the D of "DEN"      -- same shape             -> D
+!
+!     At 400 dpi lines 9 and 10 read "STCMOD" and "S CD"; both are
+!     the worn-bowl D of printed p.93, and the C of MCP on line 5 is
+!     visibly a different letter in the same column on the same page.
+!
+! (3) THE COMMENT COLUMN AGREES WITH ALL OF IT, independently:
+!       line  6  "S INST D"  -INSTALLATION DENSITY - HIGH
+!       line  7  "S INSTM"   -INSTALLATION MODE-NECC EVEN
+!       line  8  "S TD DEN"  -STANDARD DENSITY * 1-LOW, 0-HIGH
+!       line  9  "STDMOD"    -STANDARD MODE  NECC,ODD
+!       line 10  "S DD"      -DISK DENSITY * 0-LOW, 1-HIGH
+!       line 11  "SYSTAP"    -SYSTEM TAPE
+!       line 12  "S FP"      -FILE PROTECT
+!     DENSITY/MODE/DISK/STANDARD are all English words with a D in
+!     them, and the names abbreviate the comments letter for letter.
+!     Line 5 has NO comment, which is why its two round glyphs had to
+!     be settled on shape alone -- and the spelling DMCP is
+!     corroborated OFF THIS PAGE by five decks (pp.35, 70, 75, 79,
+!     97), which is the preferred evidence per the brief.
+!
+! (4) "NECC" in lines 7 and 9's comments is transcribed as printed.
+!     I did not decide what it abbreviates.
+!
+! ---------------------------------------------------------------
+! THE ARITHMETIC, CHECKED BOTH WAYS
+! ---------------------------------------------------------------
+! A SYN value written bare is DECIMAL and the LOCATION column prints
+! it OCTAL (docs/transcription_workflow.md, "A BIT OFFSET IS OCTAL
+! INSIDE (8), DECIMAL ONLY WHEN BARE").  Every row closes:
+!
+!   line  5  SYN,32.0        word 32 dec = 40 oct  -> 000040.00+
+!   line  6  SYN(BU,24),0.0  word  0               -> 000000.00+
+!   line  7  SYN(BU,24),2.0  word  2               -> 000002.00+
+!   line  8  SYN(BU,1),0     word  0               -> 000000.00+
+!   line  9  SYN(BU,24),3.0  word  3               -> 000003.00+
+!   line 10  SYN(BU,7),0     word  0               -> 000000.00+
+!   line 11  SYN(BU,1),.27   bit 27 dec = 33 oct   -> 000000.33+
+!   line 12  SYN(BU,1),.26   bit 26 dec = 32 oct   -> 000000.32+
+!
+! and the data descriptions close the same way, 0o30 = 24 and
+! 0o07 = 7, so "BU,30 ,10" is SYN(BU,24) and "BU,07 ,10" is
+! SYN(BU,7).  Line 5's SYN carries no mode, so its data description
+! prints "NULL", exactly as printed p.103 line 51's "SYN,$" does.
+!
+! ---------------------------------------------------------------
+! WHAT IS NOT CHECKED HERE
+! ---------------------------------------------------------------
+! listing_oracle has no renderer for a data description, so the
+! "BU,30 ,10" / "BU,01 ,10" / "BU,07 ,10" / "NULL" column is NOT
+! checked by anything below -- a SYN(BU,24) mistranscribed as
+! SYN(BU,30) would pass silently, since the mode does not change the
+! resolved location.  The lengths were read off the column and are
+! recorded in the listing block; they are not independently verified.
+! This is the same gap printed p.103's deck records.
+!
+! ---------------------------------------------------------------
+! ASSEMBLER LIMITATIONS
+! ---------------------------------------------------------------
+! NONE.  Every printed spelling on this page was accepted by
+! strap_asm as printed, including the two forms this page introduces
+! that pp.99-103 did not use:
+!   * a MODELESS SYN WITH A VALUE, "SYN, 32.0" (p.103's modeless SYN
+!     was "SYN,$"), and
+!   * a BIT-ONLY SYN VALUE WITH NO WORD PART, "SYN(BU,1), .27".
+! Both were assembled in isolation before this deck was written and
+! both resolve to the printed location.  There is no substitution
+! anywhere in this deck.
+
+        SLC, (8)215000.0            ! NOT PRINTED ON THIS PAGE, and
+                                     ! not a claim about where the
+                                     ! counter stands.  Inert: no row
+                                     ! below consumes storage and no
+                                     ! !SYM depends on it.
+
+! ---- *** MISCELLANEOUS SYSTEM SYMBOLS *** (lines 1-4) -------------
+DMCP    SYN, 32.0                   ! line  5 (no comment printed)
+SINSTD  SYN(BU,24), 0.0             ! line  6 -INSTALLATION DENSITY
+                                     !           - HIGH
+SINSTM  SYN(BU,24), 2.0             ! line  7 -INSTALLATION MODE-NECC
+                                     !           EVEN
+STDDEN  SYN(BU,1), 0                ! line  8 -STANDARD DENSITY *
+                                     !           1-LOW, 0-HIGH
+STDMOD  SYN(BU,24), 3.0             ! line  9 -STANDARD MODE
+                                     !           NECC,ODD
+SDD     SYN(BU,7), 0                ! line 10 -DISK DENSITY *
+                                     !           0-LOW, 1-HIGH
+SYSTAP  SYN(BU,1), .27              ! line 11 -SYSTEM TAPE
+SFP     SYN(BU,1), .26              ! line 12 -FILE PROTECT
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING -- all eight definition lines, with the
+! LOCATION, the BINARY OUTPUT and the data description exactly as
+! printed.  Every line number prints with a trailing asterisk
+! ("5*" .. "12*"), the line-number column, not a location mark.
+! ---------------------------------------------------------------
+!   line  5  000040.00+  +00000000  NULL       D MCP    SYN,32.0
+!   line  6  000000.00+  +00000000  BU,30 ,10  S INST D SYN(BU,24),0.0
+!   line  7  000002.00+  +00000000  BU,30 ,10  S INSTM  SYN(BU,24),2.0
+!   line  8  000000.00+  +00000000  BU,01 ,10  S TD DEN SYN(BU,1),0
+!   line  9  000003.00+  +00000000  BU,30 ,10  STDMOD   SYN(BU,24),3.0
+!   line 10  000000.00+  +00000000  BU,07 ,10  S DD     SYN(BU,7),0
+!   line 11  000000.33+  +00000000  BU,01 ,10  SYSTAP   SYN(BU,1),.27
+!   line 12  000000.32+  +00000000  BU,01 ,10  S FP     SYN(BU,1),.26
+!
+! THE FOUR COMMENT CARDS, for the record.  LOCATION and BINARY OUTPUT
+! are both empty on all four and the card prints raw from the NAME
+! column on, so no field lines up.  Measured at 600 dpi by counting
+! ink runs at the printer's 10-per-inch pitch:
+!   line  1  "- " + 70 asterisks            (dash in the NAME column)
+!   line  2  9 blanks + "- *** MISCELLANEOUS SYSTEM SYMBOLS ***"
+!   line  3  "- " + 70 asterisks            (identical to line 1)
+!   line  4  "-"   and nothing else
+! Lines 1, 3 and 4 put the dash in the NAME column; LINE 2 PUTS IT 9
+! CHARACTERS FURTHER RIGHT, which is one more instance of the finding
+! printed pp.101 and 103 both record: THE DASH IS CARD TEXT, NOT A
+! FLAG COLUMN.  The tells that do hold are that LOCATION and BINARY
+! OUTPUT are both empty and the NAME column is empty on all four.
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 108 ------------------
+! Eight symbols and no rows: a SYN deposits no storage word, so there
+! is nothing for a !CHECK to look at.  Manufacturing one from the
+! "+00000000" the BINARY OUTPUT column prints would be checking the
+! printer, not the assembler.
+!SYM   DMCP     000040.00
+!SYM   SINSTD   000000.00
+!SYM   SINSTM   000002.00
+!SYM   STDDEN   000000.00
+!SYM   STDMOD   000003.00
+!SYM   SDD      000000.00
+!SYM   SYSTAP   000000.33
+!SYM   SFP      000000.32
