@@ -1914,6 +1914,16 @@ def statement_size(stmt, symtab=None):
         return HALF, HALF
     if op == 'XW':
         return FULL, FULL
+    if op == 'INDMK':
+        # C28-6129 printed p.19, "INDMK - Create one word of binary
+        # output", read first-hand: "This pseudo-operation provides a
+        # convenient way of producing ONE FULL WORD of binary output
+        # BEGINNING AT A FULL WORD ADDRESS, with a bit pattern as
+        # specified in the address field, bits 0-63."  So: align to a
+        # word, occupy a word.  C22-6729 printed p.14 groups it with
+        # XW, CF, RF, VF, CW and CNOP as "any code that produces a
+        # single piece of binary output of predetermined length".
+        return FULL, FULL
     if op == 'CW':
         return FULL, FULL  # C28-6129 printed p.14: "The location
                             # counter is first rounded up to a full
@@ -2733,6 +2743,45 @@ def emit_statement(stmt, symtab, image):
                 | ((skip & 1) << 36)
                 | ((count & 0x3FFFF) << 18)
                 | (chain_addr & 0x3FFFF))
+        image.deposit_full(loc, word)
+        return
+
+    if op == 'INDMK':
+        # "INDMK, A, B, C, D,......." -- C28-6129 printed p.19.  Each
+        # field NAMES A BIT of the word, in IBM numbering (bit 0 is the
+        # most significant), and the word is those bits set and nothing
+        # else.  "These integers may also be specified symbolically if
+        # desired.  A sample usage is the creation of an indicator
+        # mask, using the mnemonics for the desired bits in the address
+        # field of the INDMK, e.g., INDMK, $ZM, $EXE, $IF."
+        #
+        # A BIT NAMED TWICE IS AN ERROR, and it is STRAP's own: the
+        # same document's diagnostic 121 is "BIT ADDRESSED TWICE IN LVS
+        # OR INDMK", glossed "A bit has been addressed more than once
+        # in the address field of the LVS or the INDMK instruction."
+        # Silently OR-ing a repeat would hide exactly what IBM's
+        # assembler refused to hide.
+        #
+        # WITNESS: MCP printed p.103 line 53, "S IPL IN INDMK,4", which
+        # the listing prints as "020000.00 00  000000.00 00" -- bit 4
+        # of 64, i.e. 1 << 59, and nothing else set.
+        word = 0
+        seen = {}
+        for i, f in enumerate(stmt.fields):
+            if not f.strip():
+                continue
+            bit = eval_expr(f.strip(), symtab, loc, lineno=stmt.lineno)
+            if not 0 <= bit <= 63:
+                raise AssemblerError(
+                    f"INDMK bit {bit} is outside a word's bits 0-63 "
+                    f"(C28-6129 printed p.19)", stmt.lineno)
+            if bit in seen:
+                raise AssemblerError(
+                    f"INDMK addresses bit {bit} twice (fields {seen[bit]} "
+                    f"and {i}) -- STRAP diagnostic 121, 'BIT ADDRESSED "
+                    f"TWICE IN LVS OR INDMK'", stmt.lineno)
+            seen[bit] = i
+            word |= 1 << (63 - bit)      # IBM bit 0 is the MSB
         image.deposit_full(loc, word)
         return
 

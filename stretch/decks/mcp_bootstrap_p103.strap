@@ -366,22 +366,17 @@ SENDCM  SYN, $                       ! line 51 -END OF COMMUNICATION
                                       !           REGION
 
 ! ---- the IPL tentacle table (line 52 is its heading card) ----------
-! >>> SUBSTITUTION, FLAGGED.  The page prints "INDMK,4" and
-! strap_asm has no INDMK: "AssemblerError: unknown mnemonic 'INDMK'".
-! C28-6129 (STRAP-II with the Apr63 update), in its list of pseudo-
-! ops not in the STRAP manual:
-!   "6. INDMK - Create one word of binary output ... produces one
-!    full word of binary output beginning at a full word address,
-!    with a bit pattern as specified in the address field, bits
-!    0-63.  These integers may also be specified symbolically ...
-!    e.g., INDMK, $ZM, $EXE, $IF."
-! So INDMK,4 is one full word with BIT 4 set, i.e. 2**59, and the
-! printed binary 020000.00 00 / 000000.00 00 is exactly that
-! (0o020000 in bits 0-17 is 2**13, and bit 4 of an 18-bit field is
-! 2**13).  The DD below assembles BIT-IDENTICALLY at the same
-! full-word address.  THE PRINTED FORM IS "INDMK,4" -- see the
-! !CHECK note.  strap_asm should grow INDMK.
-SIPLIN  DD(BU,64), (8)40000000000000000000   ! line 53 printed "INDMK,4"
+! >>> THE PAGE PRINTS "INDMK,4" AND SO DOES THIS DECK NOW. <<<
+! strap_asm had no INDMK and this row was written as a bit-identical
+! DD(BU,64),(8)40000000000000000000 for one commit.  C28-6129 printed
+! p.19 defines it -- "6. INDMK - Create one word of binary output ...
+! producing one full word of binary output beginning at a full word
+! address, with a bit pattern as specified in the address field, bits
+! 0-63 ... e.g., INDMK, $ZM, $EXE, $IF" -- so INDMK,4 is one word with
+! IBM BIT 4 set, i.e. 1 << 59, and nothing else.  strap_asm implements
+! it now, including that document's own diagnostic 121, "BIT ADDRESSED
+! TWICE IN LVS OR INDMK".  The printed spelling is restored.
+SIPLIN  INDMK, 4                     ! line 53
                                       !          -USERBIT MCP
         DD(BU), 0                    ! line 54
 SJCTWS  VF, (8)42.0                  ! line 55 - TWS FOR JC

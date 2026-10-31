@@ -6287,12 +6287,29 @@ run "the channel-unit status table definitions, printed p.99" python3 verify_mcp
 #   SXCHAN 002152.00 -> 215002.00     STERMI 005465.40 -> 215020.40
 #
 # The sharpest case is that the SAME STATEMENT, "S TERMI VF,ZFINIS",
-# compiles to a different value in each assembly and NEITHER IS WRONG.
-# Widening MCP_IPL_PAGES over them would make mcp_image.merge() reject
-# on duplicate symbols, which is that guard working. They get page
-# checks here and their own page list when someone builds the second
-# image. docs/boot_plan.md carries the open DFREE question, which is
-# one instance of this same thing.
+# compiles to a different value on each side and NEITHER IS WRONG.
+#
+# >>> AND THEY ARE NOT DUPLICATE SYMBOLS AT ALL. <<<  printed p.2 line
+# 10 is "TAIL,(2)G" and printed p.98 line 37 is "UNTAIL,(2)", with
+# nothing after it.  C28-6129 printed p.37: TAIL "appends the symbol
+# that appears in its address field as a tail to every symbol in the
+# statements that follow".  So pp.2-98 are ONE TAILED BLOCK and
+# everything from p.99 on is outside it: inside, DFREE is really
+# DFREE$G; on p.104 it is plain DFREE.  Two different symbols that
+# look alike only because strap_asm discards TAIL and UNTAIL.
+#
+# THE LISTING AGREES.  C28-6129's update says STRAP prints the MULTI
+# flag "immediately preceding both definitions" of a multiply defined
+# symbol, and CONTAG before anything referencing one.  Both DFREE
+# cards were rendered at 600 dpi -- printed p.98 line 27 and p.104
+# line 44 -- and NEITHER carries a flag.  IBM's assembler did not
+# think these were duplicates.
+#
+# So mcp_image cannot merge ACROSS p.98 line 37 until strap_asm
+# implements tails, and its duplicate-symbol rejection is right for a
+# better reason than the one first written here.  The ORIGIN change at
+# p.99 line 11 and the TAIL SCOPE change at p.98 line 37 are two
+# separate facts that fall one page apart.  docs/boot_plan.md has it.
 #
 # pp.101, 102 and 104 are SYN-only definition pages: their LOCATION
 # column prints SYMBOL VALUES, not addresses, the location counter

@@ -1730,7 +1730,7 @@ is the decisive one.
 > established from a primary source here; C22-6729 is in `docs/` and
 > would settle it.
 
-### THE `DFREE` COLLISION, 2026-10-30 — open, and it gates pp.100-104
+### THE `DFREE` COLLISION, 2026-10-30 — ANSWERED, see the section after
 
 **Two pages print `D FREE` with two different values, and neither is
 a transcription error.**
@@ -1777,3 +1777,52 @@ to 103 land, the counter they leave has to be compared BY HAND
 against that printed 215020.71. A bare `SLC,$` would make the join
 self-checking; it is written hard only because the deck is checked
 standing alone.
+
+
+### IT IS ONE ASSEMBLY WITH TWO TAIL SCOPES, AND THE BOUNDARY IS p.98 LINE 37
+
+The section above left `DFREE` open between "one assembly with a
+redefined SYN" and "two assemblies". **Both were wrong, and the
+answer was already in two decks.**
+
+* **printed p.2 line 10 is `TAIL,(2)G`.** C28-6129 printed p.37: TAIL
+  "appends the symbol that appears in its address field as a tail to
+  every symbol in the statements that follow."
+* **printed p.98 line 37 is `UNTAIL,(2)`, and nothing follows it.**
+
+So pp.2-98 sit inside one tailed block and **everything from printed
+p.99 on is outside it**. The tail boundary is exactly the seam the
+addresses already pointed at.
+
+**That means the colliding names are not collisions at all.** Inside
+the block, `DFREE` is really `DFREE$G`; on printed p.104 it is plain
+`DFREE`. Two different symbols that look identical only because
+`strap_asm` discards TAIL and UNTAIL. The same goes for `SMCP`,
+`SCOMRG`, `SXCHAN`, `ZFINIS`, `SPRIME`, `SPRIMR`, `STERMI`, `SYSMOD`
+and `SCORG` on printed p.103, and it is why the SAME statement
+`S TERMI VF,ZFINIS` can compile to two values with neither wrong.
+
+**THE LISTING ITSELF CORROBORATES IT.** C28-6129's update says STRAP
+"prints the MULTI error flag on the output listing line immediately
+preceding both definitions" of a multiply defined symbol, and CONTAG
+before any instruction referencing one. A genuinely redefined `DFREE`
+would therefore be flagged twice in this very listing. **No page
+transcribed so far prints MULTI or CONTAG.** IBM's own assembler did
+not think these were duplicates. **What would falsify this: a MULTI
+flag on printed p.98 line 27 or p.104 line 44.** Neither has been
+looked for at high resolution yet, and that is the one check left.
+
+**WHAT IT MEANS FOR THE BUILD.** printed p.2's deck already notes that
+one tail over a whole program mangles every definition and every
+reference alike, so *a standalone assembly is bit-identical with or
+without it*. That is true per page, and it **stops being true the
+moment a page from inside the tail is merged with a page from outside
+it** -- which is exactly pp.99+. So `mcp_image` cannot merge across
+printed p.98 line 37 until `strap_asm` implements tails, and the
+duplicate-symbol rejection there is the guard being right for a
+reason better than the one first written down.
+
+This refines, and partly corrects, the "second image" wording in
+`tests/run_tests.sh`: the ORIGIN change at printed p.99 line 11
+(`SLC,(8)215000.`) and the TAIL SCOPE change at printed p.98 line 37
+are two separate facts that happen to fall one page apart.
