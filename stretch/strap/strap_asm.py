@@ -653,7 +653,39 @@ def eval_system_symbol(name, loc_bits, reg_context, lineno=None):
     raise AssemblerError(f"unsupported system symbol ${name!r}", lineno)
 
 
+# A SYMBOL MAY BE PRINTED WITH BLANKS INSIDE IT, and the listing does
+# it constantly: "VF,S ASPUT", "SIC,S T IC", "LVI,$1,S IPT",
+# "SYN,S UN A A".  C22-6531 printed p.10 defines a symbol as "any
+# sequence of six or fewer ALPHABETIC AND NUMERIC characters", so a
+# blank is not part of one -- IBM's assembler simply ignores blanks
+# while scanning the statement field, and "S ASPUT" is SASPUT, six
+# characters exactly.
+#
+# tokenize_expr ALSO skips blanks, but it skips them BETWEEN terms, so
+# "S ASPUT" came out as two summed symbols and failed with "undefined
+# symbol 'S'".  Roughly ninety decks work around this by writing the
+# closed-up spelling, which assembles identically and loses the
+# printed form.
+#
+# The rule below is deliberately the narrowest thing that fixes it:
+# the WHOLE field must be letters, digits and blanks -- no operator,
+# no dot, no dollar, no parenthesis -- AND the closed-up spelling must
+# already be a defined symbol.  So it cannot change the meaning of any
+# expression that works today; it can only resolve one that is
+# currently an error, or that would otherwise silently SUM two symbols
+# which is a bug either way.  Entry-mode data never reaches here:
+# parse_statement_text keeps an entry datum unsplit and unstripped,
+# because there a blank IS a character (eight bits of it).
+_BLANKED_SYMBOL = re.compile(r'^[A-Za-z][A-Za-z0-9 ]*$')
+
+
 def eval_expr(expr, symtab, loc_bits, reg_context=False, lineno=None):
+    if expr and ' ' in expr.strip():
+        _t = expr.strip()
+        if _BLANKED_SYMBOL.match(_t):
+            _closed = _t.replace(' ', '')
+            if _closed in symtab:
+                return symtab[_closed]
     total = 0
     for sign, kind, val in tokenize_expr(expr, lineno):
         if kind == 'int':
@@ -1416,6 +1448,23 @@ def classify_vfl_or_fp(stmt):
     invert = 0
     immediate = False
     base_op = VFL_INFIX_IMMEDIATE.get(op.upper(), op)
+    # A CONNECTIVE WRITES THE IMMEDIATE "I" INFIX TOO: "CI0001" is
+    # C0001 with immediate addressing, not a mnemonic of its own.  The
+    # suffix form is what Appendix A footnote 3 words (reached for
+    # connectives through footnote 10, quoted below) and what this
+    # assembler already handles, so rewrite to it.
+    #
+    # THREE WITNESSES, TWO DOCUMENTS, AND ONE OF THEM IS NOT A LISTING:
+    #   7030 Performance Characteristics Vol.2 (Mar 61), IBM's own
+    #   worked example:          "CI0011(BU, 8), (16)A, -8"
+    #   the same manual set:     "CTI0010"
+    #   MCP printed p.125 line 28: "CI0001(BU,6),(.5,2)110001", which
+    #   compiles to 610000.00 80 406000.02 70 -- the printed word.
+    # CT as well as C, so this is the connective family and not one
+    # spelling; CM is not witnessed and needs none of its own.
+    _ci = re.match(r'^(C[MT]?)I([01]{4})$', base_op.upper())
+    if _ci:
+        base_op = _ci.group(1) + _ci.group(2) + 'I'
     if op == '-':
         base_op, invert = VFL_INT_MINUS_BASE, 1
 
