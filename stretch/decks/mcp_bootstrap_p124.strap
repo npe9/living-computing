@@ -112,7 +112,7 @@
 !       prints "2S% 215730.CCG ... KKK --L(BU,3)S UNIT($1C),-18" at
 !       215730.00.  Line 52's "B,K KK" prints 215730.10, i.e. no
 !       half-word bit, so .00 is a reading and not a convention here.
-!   KDOCL   215732.00  Defining card on printed p.122 (PDF p.129),
+!   KDOOL   215732.00  Defining card on printed p.122 (PDF p.129),
 !       "K DOCL  LV,12,S UN A($11)   -OBTAIN UNIT AREA TABLE".  See
 !       the GLYPHS note below -- the fourth character is a C and not
 !       an O, read at 1800 dpi against the closed O beside it.
@@ -140,7 +140,7 @@
 ! the printed offset carries bit 32 of the target, so .00 vs .40 IS
 ! read, not assumed -- that is how PCONE1 was caught at .40.  What is
 ! NOT observable is bits 0-31: every value from .00 to .37 encodes
-! identically, so KSUPP, KKK, KDOCL, SDISP and the rest are pinned to
+! identically, so KSUPP, KKK, KDOOL, SDISP and the rest are pinned to
 ! the HALF WORD and their ".00" is a convention.  The index-arithmetic
 ! rows (LV/V+/KV/LC/...) print a WORD address and a field that is the
 ! J register doubled, so they pin nothing below the word.
@@ -271,7 +271,12 @@ SDISIC  SYN, (8)217451.40             ! p.103/119/120
 SDISP   SYN, (8)217372.               ! p.119/120
 SUNASG  SYN(BU,1), 0.29               ! p.99  line 27
 SUNITK  SYN(BU,4), 0.59               ! p.99  line 40
-KDOCL   SYN, (8)215732.               ! defined printed p.122; half word only
+! KDOOL, not KDOCL: both typeset revisions of the MCP System
+! Analysis Guide print KDOOL and neither prints KDOCL, and
+! printed p.122 DEFINES the label.  Caught by
+! tests/check_symbol_spellings.py when p.122 landed beside
+! this page.
+KDOOL   SYN, (8)215732.               ! defined printed p.122; half word only
 PCONE1  SYN, (8)216620.40             ! printed p.135 (PDF p.142); the .40 IS observed
 KKK     SYN, (8)215730.               ! defined printed p.122
 KSUPP   SYN, (8)216242.               ! defined printed p.128 "K SUPP NOP,K COMM R"
@@ -326,7 +331,7 @@ KDODO   LV, 11, $10                         ! line 44
 KSINGL  LV, 11, $10                         ! line 46
         BB, SUNASG($11), KSUPP              ! line 47
         LC, 7, STLR+8.0                     ! line 48
-        B, KDOCL                            ! line 49
+        B, KDOOL                            ! line 49
 KMAL    KVI, 4, 1.0                         ! line 50   -IS EQUIP CONSOLE
         BXE, PCONE1                         ! line 51
         B, KKK                              ! line 52

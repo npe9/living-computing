@@ -133,6 +133,13 @@ TABLES = [("fp", FP), ("vfl", VFL), ("dix", DIX), ("imm", IMM),
 # instructions: LF is C0011 and SF is CM0101 (strap_asm.py:1232-1233).
 CONN_LEVELS = {"C": 2, "CT": 2, "CM": 3}
 _CONN_RE = re.compile(r"^(CM|CT|C)([01]{4})$")
+# A CONNECTIVE MAY WRITE ITS IMMEDIATE "I" INFIX: "CI0001" is C0001
+# with immediate addressing (7030 Performance Characteristics Vol.2
+# prints "CI0011(BU, 8), (16)A, -8" in IBM's own example; MCP printed
+# pp.124 and 125 print CTI0001 and CI0001).  Like every other
+# immediate it is NOT GIVEN -- Table A-2 costs no immediate, and the
+# paragraph above VFL_IMM gives the reason.
+_CONN_IMM_RE = re.compile(r"^(CM|CT|C)I([01]{4})$")
 
 # --- sheet 2's branch-on-indicator split -------------------------------
 # An INDEX condition takes one noop level; any other indicator takes four
@@ -181,6 +188,14 @@ def lookup(mnemonic):
     this module simply failed to recognise the mnemonic.  THE TWO ARE
     KEPT APART deliberately: "the page is silent" is a fact about the
     source and "I did not match it" is a fact about this file."""
+    # An IMMEDIATE connective, with the "I" written infix.  It cannot
+    # go in a table: the spelling is open (any of C/CM/CT over any four
+    # bits), so it is matched here.  It is NOT-GIVEN rather than
+    # unrecognised, which is the distinction this function's docstring
+    # exists to keep -- Table A-2 costs no immediate, and the note
+    # above VFL_IMM gives the reason it refuses to guess one.
+    if _CONN_IMM_RE.match(mnemonic):
+        return "not-given", NOT_GIVEN
     for name, t in TABLES:
         if mnemonic in t:
             return ("not-given" if t[mnemonic] is NOT_GIVEN else name), t[mnemonic]
@@ -344,9 +359,15 @@ def main():
     # cumulative-multiply immediate, which Table A-2 does not cost for
     # the same reason it costs no other VFL immediate.  Grown on
     # purpose, which is what this check exists to force.
+    #
+    # "KI", "CI0001" and "CTI0001" joined on 2026-10-31 with printed
+    # pp.121-128.  All three are immediates and none is costed, for
+    # that same reason; the two connectives write the "I" INFIX, which
+    # strap_asm learned this batch.
     check("page_silent_mnemonics_in_mcp",
           sorted(notgiven),
-          ["*I+", "/I", "KFI", "LFI", "LI", "SWAPI", "T", "TB", "TI"])
+          ["*I+", "/I", "CI0001", "CTI0001", "KFI", "KI", "LFI", "LI",
+           "SWAPI", "T", "TB", "TI"])
 
     if fails:
         print(f"\n{fails} TEST(S) FAILED")
