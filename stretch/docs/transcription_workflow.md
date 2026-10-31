@@ -352,6 +352,34 @@ run "... printed p.84, bit-exact (MCP_Mar63 PDF p.91)" python3 verify_mcp_bootst
 > that string reports a mismatch that is not one. printed p.84 line 23's
 > `T JCNME SYN(BU,48,6),-1.0` is -64 bits and prints `000001.00-`.
 
+### 3b. Diff the deck's OWN listing comments against its checks
+
+Nothing in the repo parses the `!  NN*  <location> <binary> ...`
+comment block most decks carry, so **a digit typo there is permanent
+and invisible** -- it is the human-readable record of what the page
+says, and it can drift from the `!CHECK` rows that are actually
+tested. Five lines of Python close it:
+
+```python
+import re
+rows = {}
+for ln in open(deck):
+    m = re.match(r'!\s+\d+\*?\s+([0-7]{6}\.[0-7]{2})\s+(.*)', ln)
+    if m: rows.setdefault(m.group(1), m.group(2))
+for ln in open(deck):
+    m = re.match(r'!CHECK\s+([0-7]{6}\.[0-7]{2})\s*\|\s*([^|]*)', ln)
+    if m and m.group(1) in rows:
+        a = ' '.join(rows[m.group(1)].split()[:3])
+        b = ' '.join(m.group(2).split())
+        if b and not a.startswith(b.split('|')[0].strip()[:8]):
+            print('MISMATCH', m.group(1), '|', a, '|', b)
+```
+
+printed p.159's transcriber ran it over all 46 rows of that page and
+found 0 mismatches -- which is the point: it is cheap, and it covers
+the one part of a deck that no other check can see. Do it before
+reporting.
+
 ### 4. Join it to the image -- two mechanical edits
 
 `strap/mcp_image.py`:

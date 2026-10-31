@@ -1,0 +1,504 @@
+! mcp_bootstrap_p159.strap -- the LOCATE routine (K S LOC) in full,
+! printed page 159.  docs/MCP_Mar63_001-249.pdf PDF p.166, header
+! READ and not assumed: the top line prints "TIME CLOCK 00054041
+! PUNID 11D11MCP   CARD ID IE000001   DIST. OF 3/01   3/01
+! PAGE NUMBER  159".
+!
+! THE HEADING ROW'S OWN "LOCATION" FIELD IS BLANK, and that is the
+! expected reading, not a loss: line 1 is an asterisk banner that
+! compiles nothing, and the field is LINE 1'S location (see
+! docs/transcription_workflow.md step 1).  Nothing was invented
+! there; the field carries no digits at 400 dpi and none at 900.
+!
+! THE CARD SERIAL RESTARTS HERE.  printed p.152 ended on IA000092;
+! this page runs IE000001..IE000045.  A new deck (IE) begins at
+! line 1, which is also why line 1 is a banner.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! FIFTY PRINTED LINES over FORTY-FIVE CARDS.  Lines 1-3 are the
+! "LOCATE" banner (comment cards: a "-" in the NAME column, no
+! LOCATION, no BINARY OUTPUT).  Line 4 is "SLC,$" -- it prints a
+! LOCATION (220021.40) and NO bits.  Every one of lines 5-50 emits.
+!
+! The routine is entered at K S LOC (line 5, 220021.40) and is the
+! LOCATE half of the I/O supervisor:
+!
+!   lines  5-20  decide whether a LOC (seek) is needed at all.
+!                KVI,4,.32 tests the unit class; a non-disk goes
+!                straight to K ILEGL (BZXE).  Then two SWAPI's
+!                around S TLR+14 compute the third parameter,
+!                LVE picks up K IOD RN-.32, CM0000(BU,7) clears a
+!                seven-bit field of $0, the desired arc address is
+!                formed (V+ with S OR ARC) and bounds-checked
+!                against S MX ARC (BXH -> K ILEGL) and against
+!                S OR ARC again (BXL -> K ILEGL, "-IF NOT, FAKE
+!                EPGK"), the arc address is loaded (L(BU,18),
+!                S ARC AD($10)) and compared against $L; if it is
+!                already there (BXE) the routine leaves through
+!                K FINI.  Otherwise LVI,3,K MOON / SV,3,S RETAD
+!                plants the return.
+!
+!   lines 21-38  K LOCAT: update the status tables through
+!                K G LOCR/K G LOC, re-test the unit class (disk ->
+!                K DISK, console -> K LOCTD-1.0), build the SELECT
+!                command at K SLECT from S UNIT N, issue it
+!                (LOC,0.0($14),0), and wait -- B,M IO REJ on
+!                rejection, BZB on 4.52($12) to K SUPP, SIC,K EOP R
+!                / B,K SEOP T for end-op.
+!
+!   lines 39-50  the exits.  Z LOCXX and K LOCTD leave through
+!                Z STEVL; K DISK re-initialises the RT effective
+!                address and re-enters at K SLECT-1.0; K MOON is
+!                the return the SV on line 20 planted -- it reloads
+!                S IO INS.32, tests S IO IND.1 ("-IF UK") and either
+!                goes back to K DISK or falls into SIC,K POSLD /
+!                B,K POST L.
+!
+! ---------------------------------------------------------------
+! NOTHING FELL OFF EITHER END
+! ---------------------------------------------------------------
+! Counted off the CARD-SERIAL column, not off the survey: the
+! serials run IE000001 (line 1) to IE000045 (line 50) with no gap.
+! Five serials appear twice, and each pair is one card carrying two
+! statements separated by STRAP's ";" -- lines 21/22 (IE000021),
+! 31/32 (IE000030), 34/35 (IE000032), 37/38 (IE000034) and 49/50
+! (IE000045).  THREE of the five are a SIC and its branch, which the
+! Reference Manual (printed p.41) requires to be adjacent; the other
+! two (31/32 LX/SX and 34/35 LVI/B) are ordinary two-statement cards.
+!
+! The survey read 31 rows spanning "2221.40".."22005.4"; both of
+! its endpoints had dropped a digit.  The true span is
+! 220021.40 .. 220056.40 over 46 emitting rows (50 printed lines).
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK
+! ---------------------------------------------------------------
+! Three rows carry the extra "*" after the LOCATION: lines 4, 23
+! and 41.  Recorded, not explained.  (Note the "*" printed right
+! after EVERY line number is the listing's own line-number
+! formatting and is on every row of every page -- printed p.152
+! prints it too.  It is not the location-column asterisk.)
+!
+! ---------------------------------------------------------------
+! EXTERNALS, each with where its value comes from
+! ---------------------------------------------------------------
+! S TLR    215230.00  deck p.113 defines it; lines 7 and 10 print
+!                     "S TLR+14." against 215246.00, and
+!                     0o215230 + 14 = 0o215246 exactly.
+STLR    SYN, (8)215230.
+! K IOD RN 220706.40  deck p.149 carries it.  Line 8's LVE pins
+!                     only the half word (the printed .01 is the
+!                     direct-index code's low bit, not an address
+!                     bit).
+KIODRN  SYN, (8)220706.40
+! S OR ARC 000005.00  decks p.129/p.138 carry 5.00.  Lines 11 and
+!                     14 both print 000005.00; a direct-index
+!                     address is 19 bits, so this pins it only to
+!                     the half word.
+SORARC  SYN(BU,18), 5.00
+! S MX ARC 000005.40  printed p.102 line 18 "- MAXIMUM ARC", 5.32
+!                     (= 0o40); deck p.152 carries it.  Line 12
+!                     pins the half word.
+SMXARC  SYN(BU,18), 5.32
+! S ARC AD 000000.40  deck p.152 carries SYN(BU,18),0.32.  Line 16
+!                     is the SAME CARD as printed p.152 line 20 --
+!                     both print "000000.40 8A  022067.20 50" --
+!                     and a VFL address field pins it TO THE BIT.
+SARCAD  SYN(BU,18), 0.32
+! S RETAD 000005.00   decks p.101/p.122 carry SYN(BU,19),5.0.
+!                     Line 20 pins the half word.
+SRETAD  SYN(BU,19), 5.0
+! S UNIT N 000000.47  decks carry SYN(BU,3),0.47.  Line 27 is a
+!                     direct-index LV, so it sees only the half
+!                     word (0.47 and 0.32 print the same ".40").
+SUNITN  SYN(BU,3), 0.47
+! S IO INS 000004.00  printed p.101 line 17 "-IO INSTR. LAST";
+!                     decks p.101/p.122/p.135/p.152 carry 4.0.
+!                     Line 32 pins the half word; line 47 prints
+!                     "S IO INS.32" -- run together as "SICINS" on
+!                     this drum -- against 000004.40, which is what
+!                     identifies the two as the same symbol.
+SIOINS  SYN(BU,64), 4.0
+! S IO IND 000001.11  deck p.102 defines it as SYN(BU,5),1.09
+!                     ("-IO INDICATORS").  Line 48 prints
+!                     "S IO IND.1" against the BIT address
+!                     000001.12 (= bit 10 = 9+1), so this row pins
+!                     S IO IND TO THE BIT.
+SIOIND  SYN(BU,5), 1.09
+! S SEL    000000.47  decks carry SYN(BU,1),0.39 (= 0o47).  Lines
+!                     39 and 45 both print 000000.47; a VFL address
+!                     pins it to the bit.
+SSEL    SYN(BU,1), 0.39
+! S CH OP  000000.32  decks carry SYN(BU,1),0.26 (= 0o32).  Line 41
+!                     pins it to the bit.
+SCHOP   SYN(BU,1), 0.26
+! S SET UP 000000.37  decks carry SYN(BU,1),0.31 (= 0o37).  Line 43
+!                     pins it to the bit.
+SSETUP  SYN(BU,1), 0.31
+! K ILEGL  220064.00  deck p.127 carries it as a label row from
+!                     printed p.160; deck p.152 SYNs it the same.
+!                     Lines 6, 13 and 15 are indicator branches and
+!                     pin only the half word -- and line 13 is the
+!                     SAME CARD as printed p.152 line 18, both
+!                     printing "220064.33 42".
+KILEGL  SYN, (8)220064.0
+! K FINI   220057.00  READ OFF THIS PAGE ONLY.  Line 18's BXE
+!                     prints 220057.32, and a BXE prints
+!                     target + .32, so K FINI is the EVEN half word
+!                     of 220057.  Corroborated by this deck's own
+!                     counter, which leaves line 50 at exactly
+!                     220057.00 -- so K FINI is printed p.160's
+!                     first location.  Half word only.
+KFINI   SYN, (8)220057.0
+! K G LOCR 220105.40  deck p.152 carries it (OCR line 8313 prints
+!                     the label row).  Line 21 is a SIC, which
+!                     prints the bare address, so this row pins
+!                     K G LOCR TO THE BIT.
+KGLOCR  SYN, (8)220105.40
+! K G LOC  220100.40  deck p.152 carries it.  Line 22 is a plain
+!                     branch: half word only.
+KGLOC   SYN, (8)220100.40
+! M IO REJ 221261.00  decks p.135/p.152 carry it.  Line 35 is a
+!                     plain branch: half word only.
+MIOREJ  SYN, (8)221261.0
+! K SUPP   216242.00  printed p.128 line 3 is its label row.  Line
+!                     36's branch-on-bit A field pins the half word.
+KSUPP   SYN, (8)216242.0
+! K EOP R  221354.40  deck p.152 carries it; line 37 is a SIC, so
+!                     this row pins K EOP R TO THE BIT.
+KEOPR   SYN, (8)221354.40
+! K SEOP T 221350.40  deck p.152 carries it.  Line 38 is a plain
+!                     branch: half word only.
+KSEOPT  SYN, (8)221350.40
+! Z STEVL  221144.40  deck p.152 carries it (eight other pages
+!                     print "B,Z STEVL" against 221144.50).  Line
+!                     40: half word only.
+ZSTEVL  SYN, (8)221144.40
+! K POSLD  220100.00  deck p.152's note records the volume OCR
+!                     (line 8306) showing K POSLD at 220100.00 --
+!                     the EVEN half word of the word whose odd half
+!                     is K G LOC.  Line 49 is a SIC, so this page
+!                     pins K POSLD TO THE BIT, and the two readings
+!                     agree.
+KPOSLD  SYN, (8)220100.0
+! K POST L 220074.00  READ OFF THIS PAGE ONLY, line 50's plain
+!                     branch (220074.10 - .10 = .00).  Half word
+!                     only.  220074 is inside printed p.160's
+!                     range, so that page should print its label
+!                     row.
+KPOSTL  SYN, (8)220074.0
+
+! ---------------------------------------------------------------
+! THE ORIGIN.  Line 4 prints "220021.40 *  SLC,$" -- an SLC that
+! emits nothing, so its printed LOCATION *is* the counter arriving
+! from printed p.158.  Written hard here so the deck assembles
+! standalone, which ASSERTS the value rather than checking it; the
+! check is p.158's own last row, by hand, when that page lands.
+! ---------------------------------------------------------------
+        SLC, (8)220021.40
+
+! ---- LOCATE -------------------------------------------------------
+KSLOC   KVI,4,.32                    ! line  5
+        BZXE,KILEGL                  ! line  6
+        SWAPI,15,STLR+14.,$1         ! line  7  -COMPUTE 3RD PARAMETER
+        LVE,0,KIODRN-.32             ! line  8
+        CM0000(BU,7),$0.18           ! line  9
+        SWAPI,15,STLR+14.,$1         ! line 10
+        V+,0,SORARC($13)             ! line 11  -COMPUTE DESIRED ARC ADDRESS
+        KV,0,SMXARC($13)             ! line 12  -TEST IF IT IS WITHIN HIS BOUNDS
+        BXH,KILEGL                   ! line 13  -IF NOT, FAKE EPGK
+        KV,0,SORARC($13)             ! line 14
+        BXL,KILEGL                   ! line 15
+        L(BU,18),SARCAD($10),-18     ! line 16
+        KV,0,$L                      ! line 17
+        BXE,KFINI                    ! line 18
+        LVI,3,KMOON                  ! line 19
+        SV,3,SRETAD($12)             ! line 20
+KLOCAT  SIC,KGLOCR                   ! line 21
+        B,KGLOC                      ! line 22  (same card as 21) -UPDATE STATUS TABLES
+        KVI,4,.32                    ! line 23  -TEST IF DISK
+        BXE,KDISK                    ! line 24
+        KVI,4,1.0                    ! line 25  -TEST IF CONSOLE
+        BXE,KLOCTD-1.0               ! line 26
+        LV,0,SUNITN($12)             ! line 27
+        SVA,0,KSLECT+.32             ! line 28
+        CM1111(BU,1),KSLECT+.52      ! line 29
+        CNOP                         ! line 30
+        LX,0,$+1.0                   ! line 31
+        SX,0,SIOINS($12)             ! line 32  (same card as 31)
+KSLECT  LOC,0.0($14),0               ! line 33  -GIVE LOC INSTRUCTION
+        LVI,1,$+1.0                  ! line 34
+        B,MIOREJ                     ! line 35  (same card as 34)
+        BZB,4.52($12),KSUPP          ! line 36
+        SIC,KEOPR                    ! line 37
+        B,KSEOPT                     ! line 38  (same card as 37)
+ZLOCXX  CM0000(BU,1),SSEL($11)       ! line 39
+KLOCTD  B,ZSTEVL                     ! line 40
+KDISK   CM1111(BU,1),SCHOP($10)      ! line 41
+        SVA,0,KSLECT+.32             ! line 42  -INITIALIZE RT EFF ADDR
+        CM1111(BU,1),SSETUP($11)     ! line 43
+        CM0000(BU,1),KSLECT+.52      ! line 44  -SEOP BIT OFF
+        CM0000,SSEL($11)             ! line 45
+        B,KSLECT-1.0                 ! line 46
+KMOON   LV,$0,SIOINS.32($12)         ! line 47
+        BB,SIOIND.1($13),KDISK       ! line 48  -IF UK
+        SIC,KPOSLD                   ! line 49
+        B,KPOSTL                     ! line 50  (same card as 49)
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS RENDERED AT 400/900/1800 dpi
+! ---------------------------------------------------------------
+!   1*                                                   -  **********************************************************************  IE000001
+!   2*                                                   -  ******************* L O C A T E *******************-                    IE000002
+!   3*                                                   -  **********************************************************************  IE000003
+!   4*  220021.40 *                                                SLC,$                                                            IE000004
+!   5*  220021.40   000000.51 04             K S LOC      KVI,4,.32                                                                 IE000005
+!   6*  220022.00   220064.32 C0                          BZXE,K ILEGL                                                              IE000006
+!   7*  220022.40   215246.00 80  000021.36 E0            SWAPI,15,S TLR+14.,$1        -COMPUTE 3RD PARAMETER                       IE000007
+!   8*  220023.40   220706.01 B0                          LVE,0,K IOD RN-.32                                                        IE000008
+!   9*  220024.00   000020.22 80  007000.00 F0            CM0000(BU,7),$0.18                                                        IE000009
+!  10*  220025.00   215246.00 80  000021.36 E0            SWAPI,15,S TLR+14.,$1                                                     IE000010
+!  11*  220026.00   000005.00 BD                          V+,0,S OR ARC($13)           -COMPUTE DESIRED ARC ADDRESS                 IE000011
+!  12*  220026.40   000005.40 9D                          KV,0,S MX ARC($13)           -TEST IF IT IS WITHIN HIS BOUNDS             IE000012
+!  13*  220027.00   220064.33 42                          BXH,K ILEGL                  -IF NOT, FAKE EPGK                           IE000013
+!  14*  220027.40   000005.00 9D                          KV,0,SORARC($13)                                                          IE000014
+!  15*  220030.00   220064.32 42                          BXL,KILEGL                                                                IE000015
+!  16*  220030.40   000000.40 8A  022067.20 50            L(BU,18),S ARC AD($10),-18                                                IE000016
+!  17*  220031.40   000010.00 90                          KV,0,$L                                                                   IE000017
+!  18*  220032.00   220057.32 C2                          BXE,K FINI                                                                IE000018
+!  19*  220032.40   220054.47 01                          LVI,3,K MOON                                                              IE000019
+!  20*  220033.00   000005.07 3C                          SV,3,S RETAD($12)                                                         IE000020
+!  21*  220033.40   220105.40 80             K LOCAT      SIC,K G LOCR                                                              IE000021
+!  22*  220034.00   220100.50 00                          B,K G LOC                    -UPDATE STATUS TABLES                        IE000021
+!  23*  220034.40 * 000000.51 04                          KVI,4,.32                    -TEST IF DISK                                IE000022
+!  24*  220035.00   220047.72 C2                          BXE,K DISK                                                                IE000023
+!  25*  220035.40   000001.11 04                          KVI,4,1.0                    -TEST IF CONSOLE                             IE000024
+!  26*  220036.00   220046.32 C2                          BXE,K LOCTD-1.0                                                           IE000025
+!  27*  220036.40   000000.40 3C                          LV,0,S UNIT N($12)                                                        IE000026
+!  28*  220037.00   220042.41 D0                          SVA,0,K SLECT+.32                                                         IE000027
+!  29*  220037.40   220042.64 80  001000.36 F0            CM1111(BU,1),K SLECT+.52                                                  IE000028
+!  30*  220040.40   000000.30 00                          CNOP                                                                      IE000029
+!  31*  220041.00   220042.00 10                          LX,0,$+1.0                                                                IE000030
+!  32*  220041.40   000004.01 1C                          SX,0,S IO INS($12)                                                        IE000030
+!  33*  220042.00   000000.00 8E  000000.07 00  K SLECT   LOC,0.0($14),0               -GIVE LOC INSTRUCTION                        IE000031
+!  34*  220043.00   220044.03 01                          LVI,1,$+1.0                                                               IE000032
+!  35*  220043.40   221261.10 00                          B,M IO REJ                                                                IE000032
+!  36*  220044.00   000004.64 8C  216242.34 00            BZB,4.52 ($12),K SUPP                                                     IE000033
+!  37*  220045.00   221354.40 80                          SIC,K EOP R                                                               IE000034
+!  38*  220045.40   221350.50 00                          B,K SEOP T                                                                IE000034
+!  39*  220046.00   000000.47 8B  001000.00 F0  ZLOCXX    CM0000(BU,1),SSEL($11)                                                    IE000035
+!  40*  220047.00   221144.50 00             K LOCTD      B,Z STEVL                                                                 IE000036
+!  41*  220047.40 * 000000.32 8A  001000.36 F0  K DISK    CM1111(BU,1),S CH OP($10)                                                 IE000037
+!  42*  220050.40   220042.41 D0                          SVA,0,K SLECT+.32            -INITIALIZE RT EFF ADDR                      IE000038
+!  43*  220051.00   000000.37 8B  001000.36 F0            CM1111(BU,1),S SET UP($11)                                                IE000039
+!  44*  220052.00   220042.64 80  001000.00 F0            CM0000(BU,1),K SLECT+.52     -SEOP BIT OFF                                IE000040
+!  45*  220053.00   000000.47 8B  001000.00 F0            CM0000,SSEL($11)                                                          IE000041
+!  46*  220054.00   220041.10 00                          B,K SLECT-1.0                                                             IE000042
+!  47*  220054.40   000004.40 3C             K MOON       LV,$0,SICINS.32($12)                                                      IE000043
+!  48*  220055.00   000001.12 8D  220047.74 02            BB,SICIND.1($13),KDISK       -IF UK                                       IE000044
+!  49*  220056.00   220100.00 80                          SIC,K POSLD                                                               IE000045
+!  50*  220056.40   220074.10 00                          B,K POST L                                                                IE000045
+!
+! Line 50 is a half word, so THE COUNTER LEAVES THIS PAGE AT
+! 220057.00 -- which is exactly where line 18's BXE puts K FINI.
+!
+! THE BANNER, measured and not eyeballed.  Rendered at 600 dpi and
+! counted off the drum's own character pitch, 60.07 px, which the
+! asterisk runs reproduce to within a pixel over 70 of them:
+!   lines 1 and 3: "-" in the NAME column (x=4709), then SEVENTY
+!     asterisks running x=4842..9027.  The first asterisk is two
+!     character positions right of the dash.
+!   line 2: no dash in the name column; the card's own text begins
+!     NINE character positions in, at the statement column
+!     (x=5252), with "-", then NINETEEN asterisks, then
+!     "L O C A T E" spaced at two pitches per letter, then NINETEEN
+!     asterisks, then a closing "-".
+! None of this can be checked -- a comment card emits nothing.
+!
+! ---------------------------------------------------------------
+! THE CHECKS
+! ---------------------------------------------------------------
+!SYM   KSLOC    220021.40
+!SYM   KLOCAT   220033.40
+!SYM   KSLECT   220042.00
+!SYM   ZLOCXX   220046.00
+!SYM   KLOCTD   220047.00
+!SYM   KDISK    220047.40
+!SYM   KMOON    220054.40
+!CHECK 220021.40 | 000000.51 04 | line  5 K S LOC KVI,4,.32
+!CHECK 220022.00 | 220064.32 C0 | line  6 BZXE,K ILEGL -- the byte's C is a REAL hex C, not a damaged 0
+!CHECK 220022.40 | 215246.00 80 000021.36 E0 | line  7 SWAPI,15,S TLR+14.,$1
+!CHECK 220023.40 | 220706.01 B0 | line  8 LVE,0,K IOD RN-.32 -- B0 read at 900 dpi; at 400 dpi it reads 80
+!CHECK 220024.00 | 000020.22 80 007000.00 F0 | line  9 CM0000(BU,7),$0.18
+!CHECK 220025.00 | 215246.00 80 000021.36 E0 | line 10 SWAPI,15,S TLR+14.,$1 -- same card as line 7; its printed "EC" is line 7's "E0" with the 0 opened
+!CHECK 220026.00 | 000005.00 BD | line 11 V+,0,S OR ARC($13)
+!CHECK 220026.40 | 000005.40 9D | line 12 KV,0,S MX ARC($13)
+!CHECK 220027.00 | 220064.33 42 | line 13 BXH,K ILEGL -- same card as printed p.152 line 18, same bits
+!CHECK 220027.40 | 000005.00 9D | line 14 KV,0,SORARC($13) -- printed closed up; the address is line 11's
+!CHECK 220030.00 | 220064.32 42 | line 15 BXL,KILEGL
+!CHECK 220030.40 | 000000.40 8A 022067.20 50 | line 16 L(BU,18),S ARC AD($10),-18 -- same card as printed p.152 line 20
+!CHECK 220031.40 | 000010.00 90 | line 17 KV,0,$L
+!CHECK 220032.00 | 220057.32 C2 | line 18 BXE,K FINI
+!CHECK 220032.40 | 220054.47 01 | line 19 LVI,3,K MOON -- forward to line 47
+!CHECK 220033.00 | 000005.07 3C | line 20 SV,3,S RETAD($12)
+!CHECK 220033.40 | 220105.40 80 | line 21 K LOCAT SIC,K G LOCR
+!CHECK 220034.00 | 220100.50 00 | line 22 B,K G LOC -- printed ".5C CC" at 1800 dpi; three impossible octal Cs settle the row
+!CHECK 220034.40 | 000000.51 04 | line 23 KVI,4,.32 -- location-column asterisk
+!CHECK 220035.00 | 220047.72 C2 | line 24 BXE,K DISK -- forward to line 41
+!CHECK 220035.40 | 000001.11 04 | line 25 KVI,4,1.0
+!CHECK 220036.00 | 220046.32 C2 | line 26 BXE,K LOCTD-1.0 -- forward to line 40
+!CHECK 220036.40 | 000000.40 3C | line 27 LV,0,S UNIT N($12)
+!CHECK 220037.00 | 220042.41 D0 | line 28 SVA,0,K SLECT+.32 -- forward to line 33
+!CHECK 220037.40 | 220042.64 80 001000.36 F0 | line 29 CM1111(BU,1),K SLECT+.52
+!CHECK 220040.40 | 000000.30 00 | line 30 CNOP -- it DID emit, unlike printed p.152 line 41
+!CHECK 220041.00 | 220042.00 10 | line 31 LX,0,$+1.0
+!CHECK 220041.40 | 000004.01 1C | line 32 SX,0,S IO INS($12) -- byte 1C, not 10; read at 900 dpi
+!CHECK 220042.00 | 000000.00 8E 000000.07 00 | line 33 K SLECT LOC,0.0($14),0
+!CHECK 220043.00 | 220044.03 01 | line 34 LVI,1,$+1.0 -- printed "220C44.C3 C1"; two impossible octal Cs in the row, and printed p.152 line 5's LVI,1 prints 01
+!CHECK 220043.40 | 221261.10 00 | line 35 B,M IO REJ
+!CHECK 220044.00 | 000004.64 8C 216242.34 00 | line 36 BZB,4.52 ($12),K SUPP
+!CHECK 220045.00 | 221354.40 80 | line 37 SIC,K EOP R
+!CHECK 220045.40 | 221350.50 00 | line 38 B,K SEOP T
+!CHECK 220046.00 | 000000.47 8B 001000.00 F0 | line 39 ZLOCXX CM0000(BU,1),SSEL($11)
+!CHECK 220047.00 | 221144.50 00 | line 40 K LOCTD B,Z STEVL
+!CHECK 220047.40 | 000000.32 8A 001000.36 F0 | line 41 K DISK CM1111(BU,1),S CH OP($10) -- location-column asterisk
+!CHECK 220050.40 | 220042.41 D0 | line 42 SVA,0,K SLECT+.32
+!CHECK 220051.00 | 000000.37 8B 001000.36 F0 | line 43 CM1111(BU,1),S SET UP($11)
+!CHECK 220052.00 | 220042.64 80 001000.00 F0 | line 44 CM0000(BU,1),K SLECT+.52
+!CHECK 220053.00 | 000000.47 8B 001000.00 F0 | line 45 CM0000,SSEL($11) -- no DD printed; identical bits to line 39, which prints (BU,1) explicitly
+!CHECK 220054.00 | 220041.10 00 | line 46 B,K SLECT-1.0
+!CHECK 220054.40 | 000004.40 3C | line 47 K MOON LV,$0,SICINS.32($12) -- J is printed "$0", not "0"
+!CHECK 220055.00 | 000001.12 8D 220047.74 02 | line 48 BB,SICIND.1($13),KDISK
+!CHECK 220056.00 | 220100.00 80 | line 49 SIC,K POSLD
+!CHECK 220056.40 | 220074.10 00 | line 50 B,K POST L
+!
+! ---------------------------------------------------------------
+! WHAT THESE CHECKS DO AND DO NOT ESTABLISH
+! ---------------------------------------------------------------
+! All forty-six emitting rows are declared and all seven of the
+! page's own labels.  Nothing that emits a bit on this page is left
+! unchecked.  Lines 1-3 (comment cards) and line 4 (an SLC) emit
+! nothing and so cannot be checked by anything.
+!
+! THE REAL CHECKS OF THIS PAGE'S OWN COUNTING are the six rows
+! whose operand is a label defined HERE:
+!   line 19  LVI,3,K MOON      -> 220054.47, K MOON is line 47
+!   line 24  BXE,K DISK        -> 220047.72, K DISK is line 41
+!   line 26  BXE,K LOCTD-1.0   -> 220046.32, K LOCTD is line 40
+!   line 28  SVA,0,K SLECT+.32 -> 220042.41, K SLECT is line 33
+!   line 46  B,K SLECT-1.0     -> 220041.10, backward
+!   line 48  BB,...,K DISK     -> 220047.74, backward
+! The four forward ones resolve only if every intervening row's
+! LENGTH is right, and line 28 reaches across the CNOP on line 30 --
+! so it is also the check that the CNOP emitted exactly one half
+! word.  The two "$"-relative rows, lines 31 and 34, check the
+! counter against itself one word at a time.
+!
+! >>> WHAT IS PINNED ONLY TO THE HALF WORD, MEASURED AND NOT
+! ASSUMED. <<<  Every external was perturbed by ONE BIT and by
+! THIRTY-TWO, everything else held fixed, and the page re-checked:
+!
+!   pinned TO THE BIT (a one-bit change FAILS)
+!     S TLR, S ARC AD, S IO IND, S SEL, S CH OP, S SET UP,
+!     K G LOCR, K EOP R, K POSLD
+!     -- the VFL and branch-on-bit rows carry a full bit address,
+!        and a SIC prints the bare 24-bit address.
+!
+!   pinned only to the HALF WORD (one bit passes, 32 fails)
+!     K IOD RN, S OR ARC, S MX ARC, S RETAD, S UNIT N, S IO INS,
+!     K ILEGL, K FINI, K G LOC, M IO REJ, K SUPP, K SEOP T,
+!     Z STEVL, K POST L
+!     -- branches and direct-index addresses are 19 bits.  Writing
+!        ".0" for these is a CONVENTION, not a reading.
+!
+! ALSO INVISIBLE HERE:
+!  * THE ORIGIN.  The page prints "SLC,$"; this deck writes a hard
+!    SLC instead, which ASSERTS 220021.40 rather than checking it.
+!    A hard SLC cannot disagree with an arriving counter.
+!  * line 16's "-18" VFL offset is a SEVEN-BIT field, so it is
+!    pinned only mod 128.
+!  * line 45 prints "CM0000,SSEL($11)" with no data description and
+!    line 39 prints "CM0000(BU,1),SSEL($11)"; they compile to the
+!    same word, so no check can tell which card wrote which -- the
+!    spelling difference is read off the ink and recorded here
+!    because it would otherwise be lost.
+!  * line 47 prints its J field as "$0", not "0".  strap_asm
+!    accepts the printed form; the bits are identical either way.
+!
+! ---------------------------------------------------------------
+! THE JOINS -- BOTH CLOSED, each by an OCR of a DIFFERENT page
+! ---------------------------------------------------------------
+! BACKWARD, to printed p.158: line 4 prints "220021.40 *  SLC,$".
+! An SLC emits nothing, so that printed LOCATION *is* the counter
+! arriving from p.158 -- IBM's own assembler stating where p.158
+! ended.  CORROBORATED: the volume OCR of PDF p.165 (printed 158),
+! line 8217, reads its last row as "220021.00  220064.50 00
+! B,K ILEGL+.32" -- a half word at 220021.00, which leaves the
+! counter at 220021.40 exactly.  That is p.158's ink, not mine, so
+! it is an independent witness and not the forbidden self-quote.
+! PREDICTION for p.158's transcriber, still worth testing against
+! your own rendering: your last emitting row is a half-word branch
+! at 220021.00 and nothing follows it.
+!
+! FORWARD, to printed p.160 -- PREDICTED AND THEN CONFIRMED.
+! Line 50 is a half word at 220056.40, so the counter leaves this
+! page at 220057.00; line 18's "BXE,K FINI" prints 220057.32 and a
+! BXE prints target+.32, so K FINI is 220057.00.  The volume OCR of
+! PDF p.167 (printed 160) then prints, at line 8273-8274:
+!
+!   LIN  LOCATICN ... STATEMENT LOCATION 220057
+!   1  22C057.CC  OOCC2ZQ0.17 O02.  K FINI  LCI 7,16
+!
+! -- p.160's heading-row LOCATION field is 220057 and its line 1 is
+! labelled K FINI.  Three readings (this page's counter, this
+! page's BXE, p.160's own header) agree.
+!
+! The same OCR also prints, from pages this one does not touch:
+!   220064.00  K ILEGL's label row  ("K ILEGL  LCI,7,(8)400")
+!   220074.00  K POST L's label row ("K POST L  L(BU,18),
+!              $ IO INS+.32($12)")
+!   220100.00  K POSLD's label row  ("K POSLD  B,$  -RETURN
+!              CONTROL")
+!   220066.00  "SVA,9,K LOCTD" -- another page referencing THIS
+!              page's label at 220047, which is what makes
+!              K LOCTD's spelling corroborated rather than ink-only.
+! and, on printed p.166, "220126.40  220064.32 C0  BZXE,K ILEGL",
+! which is line 6's card on another sheet and confirms the byte C0.
+!
+! SIDEWAYS: lines 13, 16 and 17 are the SAME CARDS as printed
+! p.152's lines 18, 20 and 21, printing the same bits off a
+! different sheet.  That is what makes K ILEGL and S ARC AD here
+! corroborated rather than merely consistent.
+!
+! ---------------------------------------------------------------
+! WHAT I COULD NOT SETTLE
+! ---------------------------------------------------------------
+! SIX LABELS REST ON INK ALONE.  listing_oracle never checks a
+! label's SPELLING, and nothing outside this page references these:
+!   K S LOC (line 5), K LOCAT (line 21), K SLECT (line 33),
+!   Z LOCXX (line 39), K DISK (line 41), K MOON (line 47).
+!   -- K MOON is the one of the six that IS settled, by rung 4:
+!      line 19 prints "K MOON" with two closed O's and line 47
+!      prints the same name "KMOON" with both opened, one page,
+!      one drum, same name.
+!   -- K LOCTD (line 40) is settled from OUTSIDE: printed p.160
+!      references it at 220047 (OCR line 8291).
+!   -- K SLECT is the one I am least sure of.  Five rows on this
+!      page reference it, all of which only fix its ADDRESS.  The
+!      reading "SLECT" (for SELECT, elided to six characters) is
+!      consistent and the C is well formed at 900 dpi, but a
+!      second page is what would settle it.  If a later page
+!      prints a label at 220042.00, compare.
+!
+! THE LOCATION-COLUMN ASTERISK on lines 4, 23 and 41 is recorded
+! and NOT explained.  I will not propose a rule from one page.
+! What this page can say is NEGATIVE and is worth having: line 4 IS
+! the printed "SLC,$" row and it carries the asterisk, but lines 23
+! and 41 are an ordinary KVI and an ordinary CM1111 with nothing
+! structurally in common with it or with each other, so "the
+! asterisk marks the SLC row" dies on this page by itself.
+!
+! THE BANNER on lines 1-3 is counted off the drum's pitch, not
+! glyph by glyph, and nothing can check it.

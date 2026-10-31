@@ -1,0 +1,695 @@
+! mcp_bootstrap_p160.strap -- the tail of the LOCATE PSEUDO-OP
+! (K FINI), the illegal-request exit (K ILEGL), the status-
+! evaluation locate entry (K K LOC), the post-locate bookkeeping
+! (K POST L) and the select-the-unit subroutine (K G LOC),
+! printed page 160.  docs/MCP_Mar63_001-249.pdf PDF p.167, header
+! READ and not assumed: the top line prints "TIME CLOCK 00054041
+! PUNID 11D11MCP   CARD ID IE000047   DIST. OF 3/01   3/01
+! PAGE NUMBER  160", and the column-heading row's own
+! "LOCATION  220057" names line 1's word.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! THIRTY-FOUR PRINTED LINES AND NOT ONE OF THEM IS QUIET.  Every
+! line compiles bits.  There is no SLC, no banner, no comment
+! card, no DD/SYN/VF and no reservation on this page: thirty-four
+! instructions, twenty-two half words and twelve full words, and
+! then blank paper to the foot of the form.
+!
+! Five entry points, back to back:
+!
+!   lines  1-7   K FINI, the tail of the LOCATE pseudo-op.  It
+!                sets the condition code to 16, moves S ARC AD
+!                into S CU ARC (the requested arc becomes the
+!                current arc), and tests the SELECT bit
+!                S SEL($11).  If the unit is not already in
+!                select it goes round K ILEGL's first card into
+!                K ILEGL.32; otherwise it calls the select
+!                subroutine (SIC,K G LOCR ; B,K G LOC) and then
+!                leaves the same way.
+!
+!   lines  8-10  K ILEGL, the illegal-request exit: load condition
+!                code 0o400 (fake an EPGK), set the return to
+!                K NORM and go to K GATE.  Its SECOND half word,
+!                K ILEGL.32, is the normal exit, which is why
+!                lines 4 and 7 both branch to K ILEGL.32 and not
+!                to K ILEGL.
+!
+!   lines 11-14  K K LOC, the status-evaluation entry to the
+!                locate subroutine.  C22-6728 (MCP System Analysis
+!                Guide) printed p.172 describes these four cards
+!                in English: "the appropriate entry in the branch
+!                table should be B, KKLOC, where the routine at
+!                KKLOC sets the KLOCAT return to ZSTEVL, and sets
+!                SRETAD in the event the equipment is disk".  Line
+!                11 is LVI,9,Z STEVL and line 12 SVA,9,K LOCTD --
+!                that is "sets the KLOCAT return to ZSTEVL".  Line
+!                13's SIC and line 14's branch are "sets SRETAD",
+!                and the saved IC is 220067.40, which is
+!                K K LOC + 2.0 exactly; Figure 94's own box reads
+!                "SET KLOCAT RETURN TO ZSTVL, SET SRETAD TO
+!                KKLOC+2.0" and the guide's index carries the
+!                entry "KKLOC+2.0".  See WITNESSES below.
+!
+!   lines 15-22  K K LOC + 2.0, where the locate interrupt comes
+!                back.  Tests index 4, clears the locate-suppress
+!                bit S LOC SU, calls the I/O-indicator check
+!                (SIC,E IND R ; B,E IC IND -- the calling sequence
+!                printed in full on printed p.189), then calls
+!                K POST L and leaves to Z STEVL.
+!
+!   lines 23-27  K POST L: take the arc address out of the last
+!                I/O instruction (S IO INS+.32), store it as both
+!                S ARC AD and S CU ARC, drop the SELECT bit, and
+!                return through K POSLD's B,$.
+!
+!   lines 28-34  K G LOC, "-TURN ON SEL BIT FOR LAST UNIT".  It
+!                loads the unit-area value, adds the unit number
+!                shifted left 18, indexes $9 by it (V+,9,$L), sets
+!                S SEL($9), then "-SELECT CURRENT UNIT": loads
+!                S UNIT N($12) and plants it in S UNIT($10) with
+!                connective 0101.  Returns through K G LOCR's B,$,
+!                which is the half word printed p.159 line 21's
+!                "K LOCAT SIC,K G LOCR" loads.
+!
+! ---------------------------------------------------------------
+! THIRTY-FOUR LINES, TWENTY-EIGHT CARDS, AND NOTHING FELL OFF
+! EITHER END -- THREE INDEPENDENT WAYS
+! ---------------------------------------------------------------
+! The SURVEY SAID 27 ROWS, 220057.40..220105.40.  It is short by
+! seven rows and it lost line 1 at BOTH ends of its range: the
+! page's first row is 220057.00, not 220057.40.  Counted off the
+! card-serial column at 500 dpi the page runs IE000047 (line 1) to
+! IE000074 (line 34), consecutive, with SIX serials printed twice
+! -- one card, two statements:
+!
+!   IE000051  lines  5,6    SIC,K G LOCR     ; B,K G LOC
+!   IE000056  lines 11,12   LVI,9,Z STEVL    ; SVA,9,K LOCTD
+!   IE000057  lines 13,14   SIC,S RET AD($12); B,K LOCAT
+!   IE000058  lines 15,16   KVI,4,.32        ; BZXE,$+1.32
+!   IE000060  lines 18,19   SIC,E IND R      ; B,E IC IND
+!   IE000061  lines 20,21   SIC,K POSLD      ; B,K POST L
+!
+! Every one of the six is a SIC/branch or a test/branch pair, so
+! the doubling is the programmer keeping a pair on one card.
+!
+! THE TOP is closed by the header: line 1's serial IE000047 IS the
+! header's own "CARD ID IE000047", so no row is above line 1.  It
+! is closed a second time by the heading row's LOCATION field,
+! which reads 220057 and is line 1's word (it is NOT blank here,
+! because line 1 is a located instruction and not a banner -- see
+! docs/transcription_workflow.md 1).  And a third time by printed
+! p.159, whose last line (line 50, 220056.40) is a half-word
+! "B,K POST L"; a half word at 220056.40 leaves the counter at
+! 220057.00, which is this page's line 1.
+!
+! THE BOTTOM is closed by arithmetic that does not depend on
+! reading the blank paper: 22 single-group rows + 12 double-group
+! rows = 46 half words = 23 words = 0o27, and 220057 + 27 =
+! 220106.  The deck's assembled counter arrives at 220106.00, and
+! printed p.161 line 4 prints "220106.00 * SLC" -- a printed
+! SLC,$ at exactly that word.  See THE JOIN FORWARD at the end.
+!
+! ---------------------------------------------------------------
+! GLYPHS -- WHAT WAS SETTLED, AND ON WHAT
+! ---------------------------------------------------------------
+! This page opens round glyphs everywhere: "22C057.CC" for
+! 220057.00, "COCCCO.40" for 000000.40, "215776.C3" for
+! 215776.03, "001000.CC FO" for 001000.00 F0.  Every round glyph
+! in a LOCATION field or in one of the two OCTAL fields of a
+! BINARY OUTPUT group is a 0 with certainty (the octal-field
+! argument, docs/transcription_workflow.md 2b rung 5).  Three
+! glyphs needed more than that:
+!
+! (1) LINE 3's SECOND HEX BYTE IS "D0", PRINTED "DC", AND IT IS
+!     SETTLED BY RUNG 4 -- THE SAME STATEMENT PRINTED TWICE ON ONE
+!     PAGE.  Line 3 is "ST(BU,18),SCUARC($13)" and line 25 is
+!     "ST(BU,18), S CU ARC($13)".  Same card, same instruction,
+!     same first half word (000006.00 8D) character for character;
+!     line 25's trailing byte is a closed "D0" and line 3's is an
+!     open "DC", in the SAME character position off the SAME drum.
+!     Ink alone varies, so line 3 is D0.  The assembler agrees
+!     without being told: the deck below compiles both rows to
+!     000006.00 8D 022000.20 D0.
+!
+! (2) THE OP BYTE IS IN THE SECOND GROUP, NOT THE FIRST, AND THAT
+!     IS WHAT MAKES (1) SAFE.  Lines 2 and 24 are the clean
+!     control: "L(BU,18),SARCAD($10)" and "ST(BU,18), S ARC AD
+!     ($10)" print IDENTICAL first groups (000000.40 8A) and
+!     differ only in the second group's byte -- 50 for L, D0 for
+!     ST.  The first group's low nibble is the INDEX: 8A for
+!     ($10), 8B for ($11), 8C for ($12), 8D for ($13), 89 for
+!     ($9), confirmed on nine rows of this page.
+!
+! (3) LINE 11's ".63" AND LINE 12's ".23" ARE READ AS PRINTED, NOT
+!     "corrected" to the ".03" that docs/transcription_workflow.md
+!     quotes for an LVI.  That ".03" is an index-1 figure, and the
+!     field is the J (INDEX) FIELD plus bit 18.  Measured on this
+!     repository's assembler, varying only J:
+!
+!         LVI, 0,(8)215776.0  ->  215776.01 01
+!         LVI, 1,(8)215776.0  ->  215776.03 01
+!         LVI, 2,(8)215776.0  ->  215776.05 01
+!         LVI, 4,(8)215776.0  ->  215776.11 01
+!         LVI, 8,(8)215776.0  ->  215776.21 01
+!         LVI, 9,(8)215776.0  ->  215776.23 01
+!         LVI,15,(8)215776.0  ->  215776.37 01
+!
+!     so J prints as 2J (+1 for the immediate forms) in the octal
+!     offset position, and the operand's bit 18 adds 0o40 on top.
+!     Line 11 is 0o40 (Z STEVL's .40) + 0o23 (J=9) = 0o63; line 12
+!     is 0o00 (K LOCTD's .00) + 0o23 = 0o23; line 9 is 0 + 0o03
+!     (J=1).  The page's own lines 28 and 30 print 0o22 for LV,9
+!     and V+,9 -- the same J, one bit lower because they are not
+!     immediate -- against two different operands, which is the
+!     page checking the reading against itself.
+!
+!     THE CONSEQUENCE FOR THE EXTERNALS: because the field is J and
+!     bit 18, an index instruction observes an operand's WORD and
+!     its HALF WORD and nothing below.  Measured:
+!
+!         S UN A = 0.0   ->  LV,9,S UN A($10)  prints 000000.22 3A
+!         S UN A = 0.8   ->  LV,9,S UN A($10)  prints 000000.22 3A
+!         S UN A = 0.32  ->  LV,9,S UN A($10)  prints 000000.62 3A
+!
+!     0.0 and 0.8 are indistinguishable; 0.32 is not.  Same for
+!     K NORM on line 9 and Z STEVL on line 11.
+!
+! NOTHING ELSE ON THIS PAGE NEEDED SETTLING, because the deck
+! reproduces all forty-six printed half words character for
+! character on the first assembly -- see THE PRINTED LISTING.
+!
+! ---------------------------------------------------------------
+! THE SECOND ASTERISK: LINES 7 AND 26, AND TWO MORE THINGS IT IS
+! NOT
+! ---------------------------------------------------------------
+! Every line number carries an asterisk ("1*", "34*"); that is the
+! ordinary column and is not the marker.  TWO lines carry a SECOND
+! asterisk, in its own column to the right of the LOCATION:
+! LINE 7 (220063.40) and LINE 26 (220077.00).  Established by
+! pixel count in that column alone at 300 dpi -- 218 and 208 dark
+! pixels on those two rows against 0 on the other thirty-two --
+! not by eye.
+!
+! docs/listing_typography.md 12 records the marker as open with
+! eight things it is not.  This page adds two, both refuted from
+! INSIDE the page so no neighbour has to be consulted:
+!
+!   * NOT "the row before a labelled entry point".  Line 7 does
+!     precede K ILEGL and line 26 does precede K POSLD -- but line
+!     10 precedes K K LOC and line 22 precedes K POST L, and
+!     neither is marked.
+!   * NOT "the row that ends on a word boundary".  Line 7 (a half
+!     word at .40) and line 26 (a full word at .00) both do, and
+!     so do lines 5, 9, 11, 13, 19, 21, 24, 25 and 33, unmarked.
+!
+! It is also two more nails in the pitch reading, which
+! listing_typography.md already calls dead: the pitch here is 19
+! on a 34-LINE page, where printed p.150 had 19 and 5 on a 28-line
+! page and printed p.3 had 22-23 on 52 lines.  And the two marked
+! statements have nothing in common -- line 7 is a half-word
+! unconditional branch, line 26 a full-word VFL connective.
+!
+! RECORDED AND NOT THEORIZED.  No rule is proposed from this page.
+!
+! ---------------------------------------------------------------
+! WITNESSES -- C22-6728 IS TYPESET AND COVERS THIS ROUTINE
+! ---------------------------------------------------------------
+! The MCP System Analysis Guide charts the locate routine as
+! FIGURE 94 and describes it in prose on its printed p.172.  It is
+! a different press and a different ink, so it is a genuinely
+! independent witness for SPELLINGS, unlike the volume OCR of this
+! same listing.  Counting whole-token hits across both revisions
+! (docs/ocr/C22-6728*_MCP_Sys_Analysis_Guide.txt, blanks squeezed
+! out of names there as the guide prints them):
+!
+!   KILEGL 31   KKLOC 30   KLOCAT 28   KGATE 30   KNORM 24
+!   ZSTEVL 32   SRETAD 39   SSEL 18    SUNA 15    SUNIT 11
+!   SIOINS 10   SCUARC 8   SARCAD 7    KPOSTL 3   SUNITN 2
+!   SLOCSU 2    KLOCTD 2   KGLOC 1
+!
+! Eighteen of this page's twenty-three distinct names, confirmed
+! off a typeset page.  The prose is decisive about the semantics
+! as well, and the match is card for card:
+!
+!   "If the status evaluation routine is being used, the
+!    appropriate entry in the branch table should be B, KKLOC,
+!    where the routine at KKLOC sets the KLOCAT return to ZSTEVL,
+!    and sets SRETAD in the event the equipment is disk."
+!                                       -- C22-6728 printed p.172
+!
+!   Figure 94, one box:  "SET KLOCAT RETURN TO ZSTVL, SET SRETAD
+!                         TO KKLOC+2.0"
+!
+! Lines 11-14 ARE those sentences, and the "+2.0" is checkable:
+! K K LOC is 220065.40, the SIC on line 13 saves the IC of the
+! half word after line 14's branch, which is 220067.40, and
+! 220065.40 + 2.0 = 220067.40.  The guide's own index entry reads
+! "KKLOC+2.0".  That is a typeset document agreeing with this
+! page's LOCATION column to the half word.
+!
+! FOUR NAMES THE GUIDE DOES NOT CARRY, and what holds them up:
+!
+! ALL FOUR WERE RENDERED FIRST HAND off printed p.159 at 600 dpi
+! for this deck -- not taken from the volume OCR:
+!
+!   K ILEGL  printed p.159 line 6, rendered here: "220022.00
+!            220064.32 C0  BZXE,K ILEGL".  Bit 18 is 0, so that row
+!            pins this page's line 8 to the half word 220064.00
+!            from another page -- which matters, because lines 4
+!            and 7 here branch to K ILEGL.32 and never to K ILEGL,
+!            so without p.159 this page would show only the SECOND
+!            half word of its own label.
+!   K FINI   Figure 94 prints a box "KEINI" (C22-6728 OCR).  F and
+!            E differ by one bar and that is an ordinary OCR slip,
+!            so this is a weak-but-real typeset witness in the
+!            right chart.  The strong one is printed p.159 line
+!            18: "220032.00  220057.32 C2  BXE,K FINI", a card on
+!            a DIFFERENT page naming this page's line 1 at this
+!            page's address.  (A BXE pins bit 18 only, and it is
+!            0; the WORD is what that row establishes.)
+!   K G LOCR printed p.159 line 21 is "220033.40  220105.40 80
+!            K LOCAT  SIC,K G LOCR" -- byte for byte this page's
+!            line 5, from another page.  It is a SIC, so it names
+!            220105.40 to the BIT: this page's line 34.
+!   K POSLD  printed p.159 line 49, "220056.00  220100.00 80
+!            SIC,K POSLD" -- again a SIC, so 220100.00 is pinned
+!            to the bit; this page's line 27 is at 220100.00.
+!   K POST L printed p.159 line 50, "220056.40  220074.10 00
+!            B,K POST L" -- a branch, so bit 18 only (it is 0);
+!            this page's line 23 is at 220074.00.  That row is
+!            p.159's LAST, and the half word it occupies is what
+!            leaves the counter at this page's 220057.00.
+!
+! AND THE TWO EXTERNALS NOBODY HAD PINNED, E IND R AND E IC IND,
+! ARE DEFINED BY CARDS ON printed p.189 (PDF p.196), found by
+! grepping the ADDRESS and not the name:
+!
+!   "221370.00+ ... BU,100,10   E IC IND  SYN,K IC IND"
+!   "221371.00+ ... BU,40,10    E IND R   SYN,K K IND"
+!
+! and that page's own comment card prints the calling sequence
+! this page uses on lines 18-19:
+!
+!   "- CALLING SEQUENCE  **  SIC,E IND R ; B,E IC IND"
+!
+! So both are aliases: E IC IND for K IC IND at 221370.00 (whose
+! defining instruction, "K IC IND L(BU,2),S IO IND($13)", prints
+! at 221370.00), and E IND R for K K IND at 221371.00 (whose
+! "K K IND BRZ,$" prints at 221371.00).  Both SYN cards print
+! their 24-bit VALUE, so these are addresses read off a card, not
+! back-derived from a branch.
+!
+! ---------------------------------------------------------------
+! WHAT THE REPO ALREADY BELIEVED ABOUT THIS PAGE, AND A LOOP THIS
+! RENDER CLOSES
+! ---------------------------------------------------------------
+! A CLAIM ABOUT THE REPO, cheap for the caller to check: FOUR of
+! this page's seven labels were ALREADY carried as externals by
+! landed decks, at exactly the addresses printed here --
+!
+!   decks/mcp_bootstrap_p127.strap  KILEGL  (8)220064.0
+!   decks/mcp_bootstrap_p151.strap  KILEGL  (8)220064.0
+!                                   KKLOC   (8)220065.40
+!   decks/mcp_bootstrap_p152.strap  KILEGL  (8)220064.0
+!                                   KKLOC   (8)220065.40
+!                                   KGLOC   (8)220100.40
+!                                   KGLOCR  (8)220105.40
+!
+! THAT IS NOT A COLLISION WAITING TO HAPPEN -- it is four more
+! cross-page checks the merge will run for free.  strap/
+! mcp_image.py's merge() treats a SYN for a symbol some other page
+! PLACES as a STAND-IN and fails only if the two values disagree
+! ("FAIL <sym>: <page> SYNs bit N, <page> places it at bit M").
+! All four agree to the bit, so when p.160 enters MCP_IPL_PAGES the
+! merge gains four checked stand-ins and loses four externals.
+! (A bare `assemble(p152 + p160)` DOES fail, on "symbol 'SLOCSU'
+! multiply defined" -- but that is the two decks both SYNing the
+! same external and has nothing to do with these four labels;
+! merge() is what deduplicates, not raw concatenation.)
+!
+! and all four agree with this page's LOCATION column exactly.  BUT
+! READ THEIR NOTES BEFORE COUNTING THAT AS SEVEN WITNESSES: p.127's
+! says "label row, printed p.160 (PDF 167)", p.152's cites "OCR
+! line 8290" and "OCR line 8313" -- i.e. the VOLUME OCR OF THIS
+! PAGE.  By docs/transcription_workflow.md rule 5 that is the same
+! ink read by a worse reader, so those derivations were never
+! independent of what is rendered here.  THE SAME HOLDS FOR
+! ZSTEVL's ".40", which p.151 took from the OCR of THIS page's
+! line 11.
+!
+! What IS independent, and what actually closes it, is the other
+! half of each of those decks' notes: the BRANCH OR SIC ON THEIR
+! OWN PAGE that reaches the address.  A branch pins bit 18, a SIC
+! pins all 24 bits, and every one of them lands where this page
+! prints the label.  So the loop is closed in the right direction
+! now -- this render is the primary reading, and their rows are
+! the check on it.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- every one pinned, and which bits are OBSERVED
+! ---------------------------------------------------------------
+! THE SIC MEASUREMENT, because it changes what two of these claims
+! are worth.  docs/transcription_workflow.md, "WHAT THE ORACLE
+! CANNOT SEE" 1, says an external back-derived from a branch or an
+! LVI is known only to the HALF WORD.  SIC IS DIFFERENT.
+! decks/mcp_bootstrap_p152.strap already says so in passing ("Line
+! 25 is a SIC, which prints the BARE 24-bit address, so this row
+! pins K G LOCR TO THE BIT") -- the credit is theirs; here it is
+! MEASURED on this repository's assembler rather than asserted,
+! everything else fixed and only the SYN's bit offset varied:
+!
+!     SIC,(8)221371.0   -> 221371.00 80     B,(8)221371.0  -> 221371.10 00
+!     SIC,(8)221371.03  -> 221371.03 80     B,(8)221371.03 -> 221371.10 00
+!     SIC,(8)221371.17  -> 221371.17 80     B,(8)221371.17 -> 221371.10 00
+!     SIC,(8)221371.37  -> 221371.37 80     B,(8)221371.37 -> 221371.10 00
+!     SIC,(8)221371.40  -> 221371.40 80     B,(8)221371.40 -> 221371.50 00
+!
+! A SIC prints its operand's FULL 24-bit address; a branch prints
+! bit 18 and nothing below it.  So on this page E IND R's ".00" is
+! OBSERVED to all six octal digits (line 18 is a SIC), while
+! E IC IND's ".00" is observed only to the half word (line 19 is a
+! branch) -- and is then supplied exactly by printed p.189's SYN
+! card, which prints 221370.00+.
+!
+! S ARC AD   0.32       printed p.99 line 52's defining card,
+!                       "S ARC AD SYN(BU,18),0.32 -ARC ADDRESS
+!                       (DISK)"; a field offset, not an address.
+!                       Lines 2 and 24 print 000000.40 (0o40 = 32)
+!                       and the deck reproduces it.
+SARCAD  SYN(BU,18), 0.32
+! S CU ARC   6.00       printed p.102 line 19's defining card,
+!                       "-CURRENT ARC"; landed in
+!                       decks/mcp_bootstrap_p102.strap.  Lines 3
+!                       and 25 print 000006.00.
+SCUARC  SYN(BU,18), 6.00
+! S SEL      0.39       printed p.99 line 32, "-SELECT FILE
+!                       STATUS", a ONE-BIT field.  Lines 4, 26 and
+!                       31 print 000000.47 (0o47 = 39) with three
+!                       different index nibbles, so this page
+!                       checks the offset three times over.
+SSEL    SYN(BU,1), 0.39
+! S RET AD   5.0        printed p.101 line 18, "-RETURN ADDRESS IN
+!                       MCP", SYN(BU,19).  Line 13 prints
+!                       000005.00 8C, and line 13 is a SIC, so all
+!                       six octal digits are checked.
+SRETAD  SYN(BU,19), 5.0
+! S IO INS   4.0        printed p.101 line 17, "-IO INSTR. LAST",
+!                       SYN(BU,64).  Line 23 writes S IO INS+.32
+!                       and prints 000004.40 -- the +.32 is 0o40,
+!                       so the base 4.0 is what the row checks.
+SIOINS  SYN(BU,64), 4.0
+! S UN A     0.0        printed p.99 line 20, "-UNIT AREA TABLE
+!                       FIELD", SYN(BU,25).  Line 28 prints
+!                       000000.22 3A; the .22 is the LV operation
+!                       and index-9 bits, not the offset -- the
+!                       page's own line 30, "V+,9,$L", prints
+!                       000010.22 B0 with the SAME .22 against a
+!                       different operand, which is what shows the
+!                       .22 belongs to the "9" and not to S UN A.
+!                       So this row observes the WORD only.
+SUNA    SYN(BU,25), 0.0
+! S UNIT     0.56       printed p.99 line 39, "-UNIT (MULTI UNIT",
+!                       SYN(BU,3).  Lines 29 and 33 print
+!                       000000.70 (0o70 = 56).
+SUNIT   SYN(BU,3), 0.56
+! S UNIT N   0.47       printed p.101 line 6, "-UNIT NUMBER",
+!                       SYN(BU,3).  Line 32 prints 000000.57
+!                       (0o57 = 47).
+SUNITN  SYN(BU,3), 0.47
+! S COMRG    215001.00  printed p.103's defining card; landed in
+!                       decks/mcp_bootstrap_p103.strap.  Carried
+!                       only because S LOC SU is defined off it.
+SCOMRG  SYN, (8)215001.0
+! S LOC SU   215001.17  "SUPPRESS LOCATE", bit 17 of the common
+!                       region, as decks/mcp_bootstrap_p143.strap
+!                       and others write it.  Line 17 prints
+!                       215001.21 (0o21 = 17) -- and the operand
+!                       of a VFL prints its FULL address, so this
+!                       row checks the bit, not just the word.
+SLOCSU  SYN(BU,1), SCOMRG.17
+! K NORM     215776.00  a LANDED LABEL ROW: decks/mcp_bootstrap_
+!                       p123.strap declares "!SYM KNORM 215776.00"
+!                       off printed p.123's own LOCATION column.
+!                       Line 9 here prints 215776.03 01; the .03 is
+!                       LVI operation bits, so the bit offset below
+!                       bit 18 is UNOBSERVABLE from this page and
+!                       the ".0" is p.123's reading, not mine.
+KNORM   SYN, (8)215776.0
+! K GATE     215746.40  a LANDED LABEL ROW: decks/mcp_bootstrap_
+!                       p123.strap declares "!SYM KGATE 215746.40".
+!                       Line 10 here prints 215746.50 00: bit 18 IS
+!                       set, so this page checks the HALF WORD
+!                       against p.123 and does not assume it.
+KGATE   SYN, (8)215746.40
+! Z STEVL    221144.40  ITS OWN LABEL ROW IS PRINTED LATER IN THE
+!                       VOLUME: "221144.40  000002.54 3C  Z STEVL
+!                       LV,9,Z EVL MK($12) -GET MASK ADDR" (volume
+!                       OCR of PDF p.195 -- an index, and the page
+!                       is not transcribed yet).  Lines 11 and 22
+!                       here print 221144.63 01 and 221144.50 00;
+!                       both carry bit 18 set, so the half word is
+!                       checked twice from this page.
+!                       WORTH FLAGGING FOR THE CALLER: decks for
+!                       printed pp.151 and 152 derived this ".40"
+!                       from the volume OCR of THIS PAGE's line 11
+!                       (OCR line 8290), which by
+!                       docs/transcription_workflow.md rule 5 was
+!                       not independent of this page's ink.  THIS
+!                       RENDER CLOSES THAT LOOP: line 11 is read
+!                       first hand at 900 dpi and compiles the
+!                       printed word.
+ZSTEVL  SYN, (8)221144.40
+! K LOCAT    220033.40  printed p.159 line 21 IS the defining
+!                       card, RENDERED FIRST HAND at 600 dpi for
+!                       this deck: "220033.40  220105.40 80
+!                       K LOCAT  SIC,K G LOCR".  Line 14 here
+!                       prints 220033.50 00, bit 18 set, agreeing.
+!                       That same p.159 row is also a SIC naming
+!                       220105.40, which pins this page's line 34
+!                       (K G LOCR) to the BIT from another page.
+KLOCAT  SYN, (8)220033.40
+! K LOCTD    220047.00  printed p.159 line 40 IS the defining
+!                       label row, RENDERED FIRST HAND at 600 dpi:
+!                       "220047.00  221144.50 00  K LOCTD
+!                       B,Z STEVL".  Line 12 here prints
+!                       220047.23 D0, whose bit 18 is 0, agreeing
+!                       with it; and p.159 line 26's
+!                       "BXE,K LOCTD-1.0" at 220046.32 is a third
+!                       reading of the same word.
+KLOCTD  SYN, (8)220047.0
+! E IND R    221371.00  printed p.189's SYN card "E IND R SYN,K K
+!                       IND", and K K IND's own instruction prints
+!                       at 221371.00.  Line 18 is a SIC, so ALL
+!                       SIX OCTAL DIGITS of the offset are checked
+!                       here (see THE SIC MEASUREMENT above) --
+!                       this is one of the few externals in these
+!                       decks whose ".00" is a reading and not a
+!                       convention.
+EINDR   SYN, (8)221371.0
+! E IC IND   221370.00  printed p.189's SYN card "E IC IND SYN,K
+!                       IC IND"; K IC IND's own instruction prints
+!                       at 221370.00 and the SYN prints its value
+!                       as 221370.00+.  Line 19 is a BRANCH, so
+!                       this page observes bit 18 only (it is 0);
+!                       the rest comes from p.189.
+EICIND  SYN, (8)221370.0
+
+        SLC, (8)220057.0             ! p.159 line 50 leaves here
+
+KFINI   LCI,7,16                     ! line  1
+        L(BU,18),SARCAD($10)         ! line  2  printed "SARCAD"
+        ST(BU,18),SCUARC($13)        ! line  3  printed "SCUARC"
+        BZBZ,SSEL($11),KILEGL.32     ! line  4
+        SIC,KGLOCR                   ! line  5
+        B,KGLOC                      ! line  6  same card as 5
+        B,KILEGL.32                  ! line  7  (second asterisk)
+KILEGL  LCI,7,(8)400                 ! line  8
+        LVI,1,KNORM                  ! line  9
+        B,KGATE                      ! line 10
+KKLOC   LVI,9,ZSTEVL                 ! line 11
+        SVA,9,KLOCTD                 ! line 12  same card as 11
+        SIC,SRETAD($12)              ! line 13
+        B,KLOCAT                     ! line 14  same card as 13
+        KVI,4,.32                    ! line 15
+        BZXE,$+1.32                  ! line 16  same card as 15
+        CM0000,SLOCSU                ! line 17
+        SIC,EINDR                    ! line 18
+        B,EICIND                     ! line 19  same card as 18
+        SIC,KPOSLD                   ! line 20
+        B,KPOSTL                     ! line 21  same card as 20
+        B,ZSTEVL                     ! line 22
+KPOSTL  L(BU,18),SIOINS+.32($12)     ! line 23
+        ST(BU,18),SARCAD($10)        ! line 24  printed "S ARC AD"
+        ST(BU,18),SCUARC($13)        ! line 25  printed "S CU ARC"
+        CM0000(BU,1),SSEL($11)       ! line 26  (second asterisk)
+KPOSLD  B,$                          ! line 27
+KGLOC   LV,9,SUNA($10)               ! line 28
+        L(BU,3),SUNIT($10),-18       ! line 29
+        V+,9,$L                      ! line 30
+        CM1111(BU,1),SSEL($9)        ! line 31
+        L(BU,3),SUNITN($12)          ! line 32
+        CM0101(BU,3),SUNIT($10)      ! line 33
+KGLOCR  B,$                          ! line 34
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, recorded so the oracle can check it later
+! ---------------------------------------------------------------
+!   line  1  220057.00    000020.17 02                K FINI    LCI,7,16                        IE000047
+!   line  2  220057.40    000000.40 8A  022000.20 50            L(BU,18),SARCAD($10)            IE000048
+!   line  3  220060.40    000006.00 8D  022000.20 D0            ST(BU,18),SCUARC($13)           IE000049
+!   line  4  220061.40    000000.47 8B  220064.74 04            BZBZ,S SEL($11),K ILEGL.32      IE000050
+!   line  5  220062.40    220105.40 80                          SIC,K G LOCR                    IE000051
+!   line  6  220063.00    220100.50 00                          B,K G LOC                       IE000051
+!   line  7  220063.40 *  220064.50 00                          B,K ILEGL.32                    IE000052
+!   line  8  220064.00    000400.17 02                K ILEGL   LCI,7,(8)400                    IE000053
+!   line  9  220064.40    215776.03 01                          LVI,1,K NORM                    IE000054
+!   line 10  220065.00    215746.50 00                          B,K GATE                        IE000055
+!   line 11  220065.40    221144.63 01                K K LOC   LVI,9,Z STEVL                   IE000056
+!   line 12  220066.00    220047.23 D0                          SVA,9,K LOCTD                   IE000056
+!   line 13  220066.40    000005.00 8C                          SIC,S RET AD($12)               IE000057
+!   line 14  220067.00    220033.50 00                          B,K LOCAT      -SELECT THE UNIT IE000057
+!   line 15  220067.40    000000.51 04                          KVI,4,.32                       IE000058
+!   line 16  220070.00    220071.72 C0                          BZXE,$+1.32                     IE000058
+!   line 17  220070.40    215001.21 80  001000.00 F0            CM0000,SLOCSU                   IE000059
+!   line 18  220071.40    221371.00 80                          SIC,E IND R                     IE000060
+!   line 19  220072.00    221370.10 00                          B,E IC IND                      IE000060
+!   line 20  220072.40    220100.00 80                          SIC,K POSLD                     IE000061
+!   line 21  220073.00    220074.10 00                          B,K POST L                      IE000061
+!   line 22  220073.40    221144.50 00                          B,Z STEVL                       IE000062
+!   line 23  220074.00    000004.40 8C  022000.20 50  K POST L  L(BU,18),S IO INS+.32($12)      IE000063
+!   line 24  220075.00    000000.40 8A  022000.20 D0            ST(BU,18), S ARC AD($10)        IE000064
+!   line 25  220076.00    000006.00 8D  022000.20 D0            ST(BU,18), S CU ARC($13)        IE000065
+!   line 26  220077.00 *  000000.47 8B  001000.00 F0            CM0000(BU,1),S SEL($11)         IE000066
+!   line 27  220100.00    220100.10 00                K POSLD   B,$            -RETURN CONTROL  IE000067
+!   line 28  220100.40    000000.22 3A                K G LOC   LV,9,S UN A($10)                IE000068
+!                                                               -TURN ON SEL BIT FOR LAST UNIT
+!   line 29  220101.00    000000.70 8A  003067.20 50            L(BU,3),S UNIT($10),-18         IE000069
+!   line 30  220102.00    000010.22 B0                          V+,9,$L                         IE000070
+!   line 31  220102.40    000000.47 89  001000.36 F0            CM1111(BU,1),S SEL($9)          IE000071
+!   line 32  220103.40    000000.57 8C  003000.20 50            L(BU,3),S UNIT N($12)           IE000072
+!                                                               -SELECT CURRENT UNIT
+!   line 33  220104.40    000000.70 8A  003000.12 F0            CM0101(BU,3),S UNIT($10)        IE000073
+!   line 34  220105.40    220105.50 00                K G LOCR  B,$            -RETURN          IE000074
+!
+! WHAT WAS HANDED TO strap_asm EXACTLY AS PRINTED, and taken:
+! ALL THIRTY-FOUR STATEMENTS.  NOTHING WAS SUBSTITUTED, nothing
+! was dropped, and no row was left failing.  The only editorial
+! changes are the ones the deck format requires: blanks removed
+! from names (the page itself prints the same symbol both ways --
+! "SARCAD" on line 2 and "S ARC AD" on line 24, "SCUARC" on line 3
+! and "S CU ARC" on line 25, "SLOCSU" on line 17 and "S SEL" on
+! lines 4/26/31 -- which is IBM's own assembler telling us the
+! blank is not part of the name).
+!
+! THE DECK REPRODUCES ALL FORTY-SIX PRINTED HALF WORDS CHARACTER
+! FOR CHARACTER ON THE FIRST ASSEMBLY.  No assembler limitation
+! was hit.
+!
+! ---------------------------------------------------------------
+! WHAT COULD NOT BE RESOLVED
+! ---------------------------------------------------------------
+! (a) THE SECOND ASTERISK on lines 7 and 26.  Measured, recorded,
+!     and still unexplained; two more candidate rules die on this
+!     page alone (above), and no rule is proposed.
+!
+! (b) THREE NAMES HAVE NO TYPESET WITNESS: K FINI, K G LOCR and
+!     K POSLD.  (K POST L is thin but real -- KPOSTL appears three
+!     times in C22-6728, twice as a Figure 94 box.  K FINI survives
+!     only as Figure 94's garbled box "KEINI".)
+!     Each is read a SECOND TIME off printed p.159's ink -- a
+!     different card, a different page, the same drum -- which is a
+!     second IMPRESSION but not a second PRESS.  If any of the four
+!     is misspelled, nothing in this repository can currently say
+!     so.  The cheapest thing that would: C22-6728's index pages
+!     (around OCR line 45780 and 47840) list routine names with
+!     page numbers, and a careful pass over them is unexplored.
+!
+! (c) BIT OFFSETS BELOW BIT 18 for K NORM, Z STEVL, K GATE, K LOCAT
+!     and S UN A are UNOBSERVABLE from this page, by the index-
+!     instruction measurement in GLYPHS (3) and by the branch rule
+!     in docs/transcription_workflow.md.  They are supplied by
+!     p.123's LOCATION column, p.159's LOCATION column, and a
+!     later page's Z STEVL label row -- NOT by this page.  By
+!     contrast E IND R, K POSLD, K G LOCR and S RET AD ARE pinned
+!     to the bit here, because a SIC prints the bare address.
+!
+! (d) THE COMMENT ON LINE 28 is read as "-TURN ON SEL BIT FOR LAST
+!     UNIT" at 500 dpi.  It is the longest comment on the page and
+!     the only one this deck had to read near the right-hand rule;
+!     "LAST" is the one word in it that a second reader should
+!     re-check.
+!
+! (e) NOT A DEFECT, BUT WORTH SAYING OUT LOUD because the next
+!     reader of these decks will meet it: S COMRG is carried at
+!     TWO values across the repo -- (8)2151.0 in the decks for
+!     printed pp.30-33 and (8)215001.0 in p.103's and onward.
+!     This is the same block split that
+!     decks/mcp_bootstrap_p150.strap records for D MCP (001472.00
+!     inside the pp.2-98 tail, 000040.00 outside it), not a
+!     disagreement about one word.  p.160 is in the MCP body, so
+!     it takes 215001.0, and line 17's printed 215001.21 is this
+!     page's own confirmation of that choice.
+!
+! ---------------------------------------------------------------
+! THE JOIN FORWARD -- a falsifiable prediction for printed p.161
+! ---------------------------------------------------------------
+! Line 34 is a half-word branch at 220105.40, so THE COUNTER
+! LEAVES THIS PAGE AT 220106.00.  Three ways to break that claim:
+!
+!   1. printed p.161's first LOCATED row should be 220106.00.
+!   2. Its heading-row LOCATION field should be BLANK, because
+!      p.161 opens with an asterisk banner (line 1 compiles
+!      nothing) -- a blank there is NOT a refutation of (1); a
+!      NUMBER there other than 220106 would be.
+!   3. If p.161 prints its own "SLC,$", that row's LOCATION is the
+!      counter arriving and must read 220106.00.
+!
+! The volume OCR of PDF p.168 carries "4  220106.00 *  SLC" --
+! which is (3) and (2) together, and which also hands p.161's
+! transcriber a second asterisk on that row.  That is an INDEX,
+! not a witness; p.161's own render decides it.
+! ---------------------------------------------------------------
+
+!SYM   KFINI    220057.00
+!SYM   KILEGL   220064.00
+!SYM   KKLOC    220065.40
+!SYM   KPOSTL   220074.00
+!SYM   KPOSLD   220100.00
+!SYM   KGLOC    220100.40
+!SYM   KGLOCR   220105.40
+!CHECK 220057.00 | 000020.17 02 | line 1 K FINI LCI,7,16 -- 16 decimal is word 0o20
+!CHECK 220057.40 | 000000.40 8A 022000.20 50 | line 2 L(BU,18),SARCAD($10) -- first group's low nibble A is index $10; second group's byte 50 is the L operation (against line 24's D0 for ST)
+!CHECK 220060.40 | 000006.00 8D 022000.20 D0 | line 3 ST(BU,18),SCUARC($13) -- printed "DC"; settled against line 25, the same card printed twice on this page
+!CHECK 220061.40 | 000000.47 8B 220064.74 04 | line 4 BZBZ,S SEL($11),K ILEGL.32 -- the second group is a real internal check: K ILEGL.32 is line 8's label plus 32 bits, a forward reference into this page
+!CHECK 220062.40 | 220105.40 80 | line 5 SIC,K G LOCR -- forward reference to line 34; a SIC prints the full 24-bit address, so this checks K G LOCR's bit offset as well as its word
+!CHECK 220063.00 | 220100.50 00 | line 6 B,K G LOC -- forward reference to line 28; bit 18 set is K G LOC's .40
+!CHECK 220063.40 | 220064.50 00 | line 7 B,K ILEGL.32 -- same target as line 4's second group, reached by a different operation (this LOCATION carries the second asterisk)
+!CHECK 220064.00 | 000400.17 02 | line 8 K ILEGL LCI,7,(8)400 -- an (8) literal against line 1's bare decimal 16, same operation
+!CHECK 220064.40 | 215776.03 01 | line 9 LVI,1,K NORM -- external; the .03 is LVI operation bits, so only K NORM's word and bit 18 are checked
+!CHECK 220065.00 | 215746.50 00 | line 10 B,K GATE -- bit 18 set checks K GATE's half word 215746.40
+!CHECK 220065.40 | 221144.63 01 | line 11 K K LOC LVI,9,Z STEVL -- index 9 prints .63 where line 9's index 1 prints .03; bit 18 set checks Z STEVL's .40
+!CHECK 220066.00 | 220047.23 D0 | line 12 SVA,9,K LOCTD -- same index 9, .23 against line 11's .63; bit 18 clear checks K LOCTD's .00
+!CHECK 220066.40 | 000005.00 8C | line 13 SIC,S RET AD($12) -- a SIC, so all six octal digits of S RET AD's offset are checked; low nibble C is index $12
+!CHECK 220067.00 | 220033.50 00 | line 14 B,K LOCAT -- K LOCAT is printed p.159 line 21's own label at 220033.40; bit 18 set agrees
+!CHECK 220067.40 | 000000.51 04 | line 15 KVI,4,.32 -- byte for byte the same card printed p.159 carries TWICE (its line 5, "220021.40  000000.51 04  K S LOC  KVI,4,.32", rendered here at 600 dpi, and again at its line 23, 220034.40)
+!CHECK 220070.00 | 220071.72 C0 | line 16 BZXE,$+1.32 -- $ is 220070.00 so the target is 220071.40; bit 18 set, and this row checks the deck's own counter
+!CHECK 220070.40 | 215001.21 80 001000.00 F0 | line 17 CM0000,SLOCSU -- a VFL operand prints its FULL address, so 0o21 = bit 17 of S COMRG is checked; the second group's 001000.00 is the all-zero connective against line 31's 001000.36
+!CHECK 220071.40 | 221371.00 80 | line 18 SIC,E IND R -- a SIC, so E IND R's offset is OBSERVED to all six octal digits, not assumed (see THE SIC MEASUREMENT)
+!CHECK 220072.00 | 221370.10 00 | line 19 B,E IC IND -- a branch, so bit 18 only; printed p.189's SYN card supplies the rest
+!CHECK 220072.40 | 220100.00 80 | line 20 SIC,K POSLD -- forward reference to line 27, all 24 bits internal to this page
+!CHECK 220073.00 | 220074.10 00 | line 21 B,K POST L -- forward reference to line 23; byte for byte printed p.159 line 50's word, which is that page's last row
+!CHECK 220073.40 | 221144.50 00 | line 22 B,Z STEVL -- the same external as line 11 reached by a branch; the two rows agree on bit 18
+!CHECK 220074.00 | 000004.40 8C 022000.20 50 | line 23 K POST L L(BU,18),S IO INS+.32($12) -- the +.32 lands as 0o40, which is what pins S IO INS at 4.0 rather than 4.32
+!CHECK 220075.00 | 000000.40 8A 022000.20 D0 | line 24 ST(BU,18), S ARC AD($10) -- identical to line 2 except the operation byte, 50 vs D0: the L/ST discriminator, printed twice on one page
+!CHECK 220076.00 | 000006.00 8D 022000.20 D0 | line 25 ST(BU,18), S CU ARC($13) -- byte for byte line 3's card, printed a second time; this is the row that settles line 3's "DC"
+!CHECK 220077.00 | 000000.47 8B 001000.00 F0 | line 26 CM0000(BU,1),S SEL($11) -- same connective as line 17 on a different operand (this LOCATION carries the second asterisk)
+!CHECK 220100.00 | 220100.10 00 | line 27 K POSLD B,$ -- a branch to itself, the half word the caller's SIC overwrites
+!CHECK 220100.40 | 000000.22 3A | line 28 K G LOC LV,9,S UN A($10) -- the .22 is the operation and index-9 bits; see line 30
+!CHECK 220101.00 | 000000.70 8A 003067.20 50 | line 29 L(BU,3),S UNIT($10),-18 -- the -18 offset prints as 0o67 in the second group, the only row on the page carrying an explicit offset
+!CHECK 220102.00 | 000010.22 B0 | line 30 V+,9,$L -- $L is register word 0o10; the .22 is the SAME as line 28's, which shows the .22 tracks the "9" operand and not the address
+!CHECK 220102.40 | 000000.47 89 001000.36 F0 | line 31 CM1111(BU,1),S SEL($9) -- 001000.36 against line 26's 001000.00 checks all four connective digits; low nibble 9 is index $9
+!CHECK 220103.40 | 000000.57 8C 003000.20 50 | line 32 L(BU,3),S UNIT N($12) -- 0o57 = 47 pins S UNIT N apart from line 29's S UNIT at 0o70 = 56
+!CHECK 220104.40 | 000000.70 8A 003000.12 F0 | line 33 CM0101(BU,3),S UNIT($10) -- 003000.12 is connective 0101 against line 31's .36 for 1111 and line 26's .00 for 0000: three of the sixteen checked on one page
+!CHECK 220105.40 | 220105.50 00 | line 34 K G LOCR B,$ -- the half word printed p.159 line 21's SIC loads; the counter leaves at 220106.00

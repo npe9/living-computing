@@ -23,6 +23,123 @@ accumulate.
 
 
 
+## DOES A DOTTED LITERAL IN A CTL/LOC CODE FIELD CONVERT? -- OPEN, blocks three pages
+
+**Three transcribed decks are held out of the suite on this one
+question**: printed pp.154, 155 and 156, each with exactly one failing
+row. The transcriptions are believed right; the assembler's answer is
+what is in doubt.
+
+**The rows.** Each prints a control code written as a DOTTED literal
+and lands it as a word number:
+
+```
+  p.154 l.8   CTL(SEOP),0.0($14),46.       printed 000056.15 00
+  p.155 l.18  CTL,0.0($14),(8)176.         printed 000176.05 00
+  p.156 l.14  CTL,0.0($14),(8)117.         printed 000117.05 00
+```
+
+`strap_asm` evaluates the dot as a bit address and emits the value 64
+times too large (`005600`, `017600`, `011700`).
+
+**FOR converting** (an address-written operand divides by 64, exactly
+the rule that fixed `eval_reg`):
+
+* 46 decimal is 0o56 and **Reference Manual printed p.132 lists "056
+  Erase Long Gap"** -- a real tape control function.
+* `decks/io_tape.strap` independently writes that family's codes as
+  plain integers: `CTL, 0($1), 126` with the comment "BACKSPACE BLOCK
+  (octal 176)". 126 decimal IS 0o176, which is p.155's row.
+* Three pages, three different codes, all consistent.
+* The bare spellings already work: `(8)176` gives 000176 today.
+
+**AGAINST** (and this is why it is still open):
+
+* `emit_statement`'s I-O branch says in so many words that CTL/LOC's
+  second field is **"a raw code, not an address of anything, so it
+  gets NO conversion at all"**, citing Reference Manual printed p.111
+  -- "control information which is decoded by the external unit
+  (CONTROL)... a selection address (LOCATE)".
+* The same comment records that the `>>6` was **REMOVED** "once CTL
+  had a real behavior (tape CONTROL functions) to test the conversion
+  against". That is a prior MEASURED decision, not an oversight.
+* No manual sentence anywhere says what UNITS that field's operand is
+  written in. C22-6531 printed p.11's five restrictions cover the
+  index field and the parenthetical-integer field and are silent here.
+
+**The two are not actually in conflict**, which is the likely
+resolution: p.111 is about what the value MEANS to the device, and
+the open question is how STRAP EVALUATES `176.`. A gate on
+address-vs-integer -- the one `eval_reg` now uses -- would convert the
+dotted form and leave `io_tape.strap`'s bare `126` alone. **But that
+is an argument, not a citation**, and reinstating a conversion that
+was removed after testing needs better than an argument.
+
+**What would settle it:** a STRAP manual sentence on the units of an
+I-O operation's second field, or a listing row that writes the SAME
+control code BOTH ways (dotted and bare) so the two spellings can be
+compared directly.
+
+**BOTH WERE LOOKED FOR, 2026-10-31, AND NEITHER IS THERE** -- recorded
+so the next reader does not repeat the sweep:
+
+* `C28-6129` and `C22-6531` were searched for any sentence on the
+  units or form of an I-O operation's second operand. **Silent.**
+  C22-6531 printed p.11's five restrictions name the index field and
+  the parenthetical-integer field and stop.
+* Every `CTL` statement in both halves of the volume OCR was
+  extracted and tallied. **The statement field is too garbled to
+  adjudicate** -- the operands come back as "CTLC , ,", "CTLBT ,
+  VB000336", "CTLI , TACCO4OB". The OCR cannot answer this, which is
+  itself worth knowing before anyone tries again.
+
+So the remaining route is RENDERING: find a page that writes a
+control code bare where another writes it dotted, and compare the two
+printed words. The three held decks name the codes to look for --
+0o56, 0o117, 0o176. Until then the three decks stay in the scratchpad,
+transcribed and unused, and the suite stays green.
+
+## AN INDEX FIELD NAMED BY A SYMBOL LOADED THE WRONG REGISTER -- fixed 2026-10-31
+
+> **A SILENT WRONG ANSWER, and the corpus had been hiding it.** A
+> register field holds a WORD NUMBER; this assembler carries addresses
+> in BITS; index register N lives at word 16+N. `eval_reg` masked the
+> raw bit value, so a symbol naming a register by its ADDRESS gave the
+> wrong register and **emitted no diagnostic**.
+>
+> MCP printed p.153, measured, varying nothing else:
+>
+> ```
+>   EA SYN,12    ->  000002.41 3C   (the printed word)
+>   EA SYN,12.0  ->  000002.41 30   index silently 0, NO ERROR
+>   EA SYN,$12   ->  000002.41 3C
+> ```
+>
+> **The printed form is the second one.** MCP printed p.154 lines
+> 23-28 SYN five index registers by word address (`E U SYN,11.0`,
+> whose own printed LOCATION is `000013.00+`, word 0o13 = 11), and
+> four of that page's rows came out with index 0.
+>
+> **C22-6531 printed p.11, restriction 1, is the citation** and it
+> says the printed form is the CORRECT STRAP: *"The 'I' or 'K' index
+> field must contain at least one bit address term."* The field is
+> DEFINED to take a bit-address term, so converting it is the
+> assembler's job, not the programmer's.
+>
+> The fix gates on the address-vs-integer distinction `SYN` already
+> draws (`sym_int`): an operand written as an address is divided by
+> 64, one written as a plain integer is used as-is, and a `$N` is
+> already a register number. All three spellings of register 12 now
+> compile to the same word.
+>
+> **This is the general case of the `TIXF` bug** recorded inline in
+> `assemble()`, where `LX, TIXF, ...` assembled `j = 1664 & 0xF = 0`
+> and loaded `$0` instead of `$10`. That was papered over with a
+> `sys_alias` chain covering only a SYN leading back to a `$N`
+> spelling. 1664 bits is word 26, and `26 & 0xF` is 10 -- the
+> conversion. **Whether `sys_alias` is now redundant is untested;**
+> removing it and running the suite is the measurement.
+
 ## `EXT` IS BUILT -- "Extract", closed 2026-10-31
 
 > **CLOSED.** `EXT` compiles the statement AFTER it only to take a

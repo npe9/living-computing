@@ -6473,6 +6473,39 @@ run "the error dump routine, printed p.149" python3 verify_mcp_page.py 149
 run "the error dump's exits, printed p.150" python3 verify_mcp_page.py 150
 run "the READ routine, printed p.151" python3 verify_mcp_page.py 151
 run "the disk request tail and CHANGE MODE, printed p.152" python3 verify_mcp_page.py 152
+
+# >>> pp.153-160, LANDED IN PART: WRITE, RELEASE, LOCATE, COPY
+# CONTROL WORD and the error-dump exits. <<<
+# This block found a SILENT WRONG ANSWER.  A register field holds a
+# WORD NUMBER, this assembler carries addresses in BITS, and index
+# register N lives at word 16+N -- so a symbol naming a register by
+# its ADDRESS was masked raw and loaded the WRONG REGISTER with no
+# diagnostic.  printed p.153 measured it:
+#     EA SYN,12    -> 000002.41 3C   (the printed word)
+#     EA SYN,12.0  -> 000002.41 30   index silently 0, NO ERROR
+#     EA SYN,$12   -> 000002.41 3C
+# and the PRINTED form is the second: printed p.154 SYNs five index
+# registers by word address.  C22-6531 printed p.11 restriction 1 --
+# "The 'I' or 'K' index field must contain at least one bit address
+# term" -- says that form is correct STRAP, so the conversion is the
+# assembler's job.  It is the general case of the TIXF bug already
+# confessed inline in assemble().
+#
+# >>> pp.154, 155 and 156 ARE DELIBERATELY NOT HERE. <<<  Each still
+# has one failing row, all three the same open question: whether a
+# DOTTED literal in a CTL/LOC control-code field converts to a word
+# number.  Three pages print it ((8)176., (8)117., 46.) and
+# decks/io_tape.strap independently writes that code as 126, but
+# emit_statement's "raw code, NO conversion" rule is sourced to
+# Reference Manual p.111 and was REMOVED once CTL had real tape
+# behaviour to test against.  A sourced, tested decision is not
+# overturned by listing rows alone.  The decks are transcribed and
+# held; see docs/NEXT.md.
+run "the WRITE routine, printed p.153" python3 verify_mcp_page.py 153
+run "the copy control word, printed p.157" python3 verify_mcp_page.py 157
+run "the RELEASE routine, printed p.158" python3 verify_mcp_page.py 158
+run "the LOCATE routine, printed p.159" python3 verify_mcp_page.py 159
+run "the equipment dispatch, printed p.160" python3 verify_mcp_page.py 160
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
 run "the program status table, printed p.109" python3 verify_mcp_page.py 109
 run "the interrupt table, printed p.110" python3 verify_mcp_page.py 110
@@ -6487,6 +6520,16 @@ run "the interrupt table continued, printed p.112" python3 verify_mcp_page.py 11
 # referencing one word are two independent readings of it, so
 # disagreement is a defect -- see tests/check_symbol_spellings.py.
 run "No MCP symbol is spelled two ways across the decks" python3 check_symbol_spellings.py
+
+# >>> AND THE CHECKER ABOVE MUST NOT QUIETLY CHECK LESS THAN IT SAYS.
+# It had two independent silent-degradation paths, both found by page
+# transcribers instrumenting it rather than by this suite -- which
+# could not have caught either, because it exports PYTHONPATH and
+# never patches DECKS.  The suite's own happy path is exactly where
+# that kind of bug hides.  Measured: 1080 definitions against 1312,
+# PASS both ways; and DECKS patched to an empty directory still
+# returning 1155 addresses.
+run "the spelling checker does not silently check less" python3 check_spelling_checker_does_not_degrade.py
 
 # >>> READING THE PAGE NUMBER OFF ALL 256 PAGES, AND THE TWO PARSERS
 # THAT WERE WORSE THAN THE OCR. <<<

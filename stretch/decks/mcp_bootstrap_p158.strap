@@ -1,0 +1,482 @@
+! mcp_bootstrap_p158.strap -- "RELEASE", printed page 158.
+! docs/MCP_Mar63_001-249.pdf PDF p.165.  Header read and not
+! assumed, at 600 dpi: "TIME CLOCK 00054041   PUNID 11011MCP
+! CARD ID ID000001   DIST. OF 3/01   3/01   PAGE NUMBER 158".
+!
+! >>> THE HEADING ROW'S OWN LOCATION FIELD IS BLANK. <<<  The
+! column-heading line prints "LINE  LOCATION  BINARY OUTPUT  NAME
+! STATEMENT  LOCATION" and NOTHING follows that second LOCATION --
+! rendered at 900 dpi and LOOKED AT, not guessed, and not handed
+! to tesseract, which invents digits off the dashed rule that runs
+! through that field.  A BLANK IS NOT A ZERO.  It is also exactly
+! what docs/transcription_workflow.md predicts: the field is LINE
+! 1'S location, line 1 here is an asterisk banner that compiles
+! nothing, so the field is blank.  This page therefore joins
+! pp.83, 144-147, 149 and 151 and supplies no origin word; the
+! origin comes from line 4's printed SLC instead (see THE JOIN).
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! A SHORT PAGE: sixteen printed lines and then blank paper to the
+! bottom rule.  It is the whole of the MCP RELEASE routine, and it
+! is the first page of a new card deck -- the serials restart at
+! ID000001.
+!
+!   lines 1-3   the asterisk box around the heading
+!               "-****************  RELEASE  ****************-"
+!   line  4     "SLC,$"
+!   lines 5-16  twelve cards, every one of them CODE: five full
+!               words and seven half words, 17 emitted half words
+!               in all.
+!
+! The routine: W REL saves the caller's IC (V-I/SV into S TIC),
+! asks whether the channel is still operating (S CH OP) and
+! whether it is a multi-unit channel (S MULTI), checks the SELECT
+! status bit (S SEL), and at W 22D compares the activated file
+! area address against the one in $X12.  If anything says the
+! release cannot be done now it falls through to W 23K, which
+! fakes an end-of-operation (LCI,7,(8)40 "-FAKE EOP") and copies
+! a zero connective into the copied control word before branching
+! to K ILEGL.  The clean path sets the S REL bit and goes to
+! K SUPP.
+!
+! NO SYN, NO DD, NO VF, NO XW, NO DR/DRZ, NO DATA OF ANY KIND on
+! this page -- so rule 5 of "WHAT THE ORACLE CANNOT SEE" (DR vs
+! DRZ prints the same thing) does not arise here at all.
+!
+! ---------------------------------------------------------------
+! SIXTEEN CARDS OVER SIXTEEN LINES; NOTHING FELL OFF EITHER END
+! ---------------------------------------------------------------
+! COUNTED OFF THE CARD-SERIAL COLUMN, not off the survey, at 600
+! dpi.  The serials run ID000001 (line 1) to ID000016 (line 16),
+! one per line, with NO gap and NO serial printed twice.  16
+! serials over 16 lines, so every printed line is accounted for.
+! Line 1 is the page's first line and line 16 is followed by blank
+! paper -- the 200 dpi whole-page render shows the remaining two
+! thirds of the form empty except for the dashed rules.
+!
+! >>> WHERE THIS DECK DISAGREES WITH THE SURVEY. <<<  The survey
+! reported 10 rows spanning "22011.0".."220017.40".  Both of those
+! are short:
+!
+!   * "22011.0" is a dropped digit; the page prints 220011.00.
+!   * the span is 220011.00 .. 220021.00, not .. 220017.40.  The
+!     survey lost lines 15 and 16 (the CM0000 full word and the
+!     B,K ILEGL.32) off the bottom and lines 1-4 off the top.
+!   * 10 rows is lines 5-14.  The page has 12 emitting cards.
+!
+! This deck wins because all 17 of the page's emitted half words
+! are declared below as !CHECK rows and all 17 agree with the
+! printed BINARY OUTPUT column, first assembly, with NO
+! substitution anywhere -- every statement below is the PRINTED
+! form.
+!
+! ---------------------------------------------------------------
+! THE JOIN -- BOTH SIDES ARE MEASUREMENTS, NOT PREDICTIONS
+! ---------------------------------------------------------------
+! NEAR SIDE.  LINE 4 PRINTS "220011.00  *  SLC,$" AND THAT IS THE
+! WITNESS.  An SLC emits nothing, so its printed LOCATION *is* the
+! counter arriving from printed p.157.  This deck has to write a
+! hard "SLC,(8)220011.0" so it assembles standalone, which ASSERTS
+! that origin rather than checking it (docs/transcription_
+! workflow.md, "A HARD SLC CANNOT DISAGREE WITH THE ARRIVING
+! COUNTER"), so the printed value is recorded here and in the
+! first !CHECK note and must be compared BY HAND when p.157 lands.
+!
+! Corroboration, NOT the source: the volume OCR of printed p.157
+! (a legitimate index onto ANOTHER page) ends that page with
+! "220010.40  216242.10 00   B,K SUPP" -- a half word at
+! 220010.40, so the counter leaves p.157 at 220011.00, which is
+! what line 4 prints.  (Do not read a line count out of that OCR;
+! it under-reads.  What is used here is one location and one
+! half-word width.)
+!
+! FAR SIDE.  Line 16 is a HALF WORD at 220021.00, so the counter
+! leaves this page at 220021.40.  The volume OCR of printed p.159
+! prints its own line 4 as "220021.40  *  SLC,$", and its line 5
+! as "220021.40 ... K S LOC  KV,4,.32".  So the forward join is
+! already measured and agrees.
+!
+! >>> PREDICTION FOR THE p.159 TRANSCRIBER, falsifiable: your
+!     line 4 is "SLC,$" and its printed LOCATION reads 220021.40.
+!     THE ADDRESS IS FORCED BY ARITHMETIC (220021.00 plus one half
+!     word is the only thing it can be), so if your line 4 reads
+!     anything else, THIS page is wrong.  Your first label sits at
+!     220021.40 and the volume OCR spells it "KS LOO" against a
+!     "KV,4,.32" -- the ADDRESS is forced, the NAME is OCR-derived
+!     and is yours to read off the ink.  Render your line 4's
+!     LOCATION at 900 dpi and confirm it. <<<
+!
+! >>> AND FOR WHOEVER TAKES p.157: your page must end with a half
+!     word at 220010.40 whose statement is "B,K SUPP", preceded by
+!     "SX,0,0.0($1)" at 220010.00 and "LX,0,S CCW($13)  -COPIED CW
+!     TO DEST ADDR" at 220007.40.  Those are read off the volume
+!     OCR of YOUR page, so they are an index and not a reading --
+!     but the ARITHMETIC (your last half word is at 220010.40) is
+!     forced by this page's printed SLC. <<<
+!
+! ---------------------------------------------------------------
+! WHAT THIS PAGE PINS, AND WHAT IT ONLY ASSERTS
+! ---------------------------------------------------------------
+! Nine symbols are defined off this page and SYNed below.  A
+! !CHECK that passes because the SYN fed the assembler the right
+! address is not a reading of the page, so each SYN was PERTURBED
+! BY ONE BIT and the page reassembled (the p.111 method).  Result,
+! measured and not assumed:
+!
+!   BIT-PINNED -- a one-bit change breaks the printed word, so
+!   this page is an independent reading of the bit address:
+!     S CH OP  0.26   line 7   0.27 prints 000000.33, not .32
+!     S MULTI  0.27   line 8   0.26 prints 000000.32, not .33
+!     S SEL    0.39   line 9   0.40 prints 000000.50, not .47
+!     S REL    0.61   line 12  0.62 prints 000000.76, not .75
+!     S CCW    4.0    line 15  4.1  prints 000004.24, not .23
+!
+!   HALF-WORD-PINNED ONLY -- bit 32 shows and nothing below it,
+!   so .00 here is a CONVENTION and not a reading (blindness #1):
+!     S TIC    215265.00  line 6   .01 and .4 print identically;
+!                                  .040 (bit 32) prints .45 ->
+!                                  215265.45, so the HALF WORD is
+!                                  checked and the bit is not
+!     S FI AAC 3.0        line 10  3.1 prints identically; 3.32
+!                                  prints 000003.72
+!     K SUPP   216242.00  line 13  a plain B; .40 prints 216242.50
+!     K ILEGL  220064.00  line 16  a plain B; .40 prints 220065.10
+!
+!   MEASURED FACT: on lines 6 and 10 the operand's low five bits
+!   DO NOT REACH the printed offset field, although both rows
+!   print a full-looking offset (.05 and .32).  That is the
+!   perturbation above and nothing else is needed for the deck:
+!   S TIC and S FI A AC are HALF-WORD witnesses here.
+!
+!   HYPOTHESIS, NOT MEASURED, recorded so the next transcriber can
+!   kill it: the split looks like an instruction-CLASS split --
+!   lines 7, 8, 9, 12 and 15 are VFL/branch-on-bit operations and
+!   address to the bit, while lines 6 and 10 are index arithmetic
+!   whose printed offset field appears to hold 2J+1 (SV, LVI, V-I,
+!   LCI) or 2J (KV, LV, V+) plus 32 for a second-half-word
+!   operand.  THAT ROSTER IS PATTERN-MATCHED off pp.151, 152 and
+!   this page and is NOT cited to any manual, so it is exactly the
+!   kind of claim brief rule 1 forbids building on, and the kind
+!   this project has already been burned by twice (p.147's
+!   asterisk rule, the decimal/octal bit-offset rule).  WHAT KILLS
+!   IT: a page printing an SV and a KV against the SAME operand at
+!   the SAME J whose offsets differ by anything but 1.  NOTHING IN
+!   THIS DECK DEPENDS ON IT -- strap_asm supplied every encoding
+!   and all 17 half words matched the print.
+!
+!   >>> AND A CLAIM I NEARLY MADE AND DID NOT, because I checked
+!   it: these are NOT the first checks of K SUPP's or K ILEGL's
+!   half word.  "grep '!CHECK.*216242' decks/" returns rows in
+!   p.126, p.127, p.134, p.135, p.140, p.142, p.145 and p.146 --
+!   "216242.34 02" from a BB, "216242.34 C0" from a BZRZ,
+!   "216242.01 01" from an LVI -- all of which already pin that
+!   half word, and K ILEGL's is pinned by p.152 line 18's
+!   "220064.33 42".  So lines 13 and 16 CORROBORATE and do not
+!   establish.  What is still unestablished is K SUPP's bit
+!   offset, which p.125 and p.126 flag as unreadable and which
+!   nothing in the corpus, including this page, can see.
+!
+! ---------------------------------------------------------------
+! THIS PAGE'S OWN THREE LABELS, AND HOW WELL EACH IS CARRIED
+! ---------------------------------------------------------------
+! W REL  220011.00  CONFIRMED FROM ANOTHER PRINTED PAGE.  The
+!        volume OCR carries, near 220746, "220746.00  220011.10
+!        00   B,W REL  -RELEASE".  A plain B prints target+.10,
+!        so W REL is at 220011.00 -- read off a DIFFERENT page,
+!        which is a legitimate index.  The name is also English
+!        and matches the page's own RELEASE banner and the S REL
+!        bit it sets.
+!
+! W 23K  220017.40  CONFIRMED TWICE FROM OUTSIDE, and this is the
+!        strongest external agreement on the page.
+!        (a) decks/mcp_bootstrap_p123.strap already carries
+!            "W23K SYN,(8)220017.40" -- a DIFFERENT transcriber,
+!            a DIFFERENT page, the same name and the same address.
+!        (b) the volume OCR of a page near 215760 prints
+!            "215760.00  000000.75 8B  220017.74 06   K K REL
+!            BBZ,S REL($11),W 23K  -CHECK IF RELEASED", and of a
+!            page near 220120 prints "220120.00  220017.50 00
+!            B,W 23K  -FAKE EOP".  A plain B prints target+.10,
+!            so 220017.50 gives 220017.40 exactly.
+!        Note what (a) costs: p.123's SYN was itself derived from
+!        an OCR of THIS page's line 14, so (a) is agreement about
+!        a spelling, and (b) is the independent address.
+!
+! W 22D  220015.00  >>> NOT CONFIRMED BY ANY SOURCE OUTSIDE THIS
+!        PAGE. <<<  See WHAT COULD NOT BE SETTLED.
+!
+! ---------------------------------------------------------------
+! GLYPHS -- WHAT WAS SETTLED AND ON WHAT
+! ---------------------------------------------------------------
+! This page opens round glyphs, like every page in the volume.
+! Its LOCATION column prints 220011.CC for 220011.00 and its
+! BINARY OUTPUT prints C00000, 006000.CC and 215265.C5 -- all
+! OCTAL fields, where C is not a legal digit, so a round glyph in
+! a LOCATION or in an octal BINARY field is a 0 with certainty.
+! That calibration licenses NOTHING about the hex bytes two
+! characters away (ink varies per CHARACTER), so each doubtful
+! byte was settled on what PRODUCED it:
+!
+! (1) LINE 11 "BZXE" AND ITS BYTE C0.  The byte's first glyph is
+!     round and open, i.e. exactly the shape this page prints 0 as
+!     -- so "C0" could have been "00".  SETTLED BY THE ASSEMBLER,
+!     as an eliminator over the readings that are real operations:
+!         BZXE -> 220017.72 C0      <- what the page prints
+!         BXE  -> 220017.72 C2
+!         BZXL -> 220017.72 40
+!         BZXH -> 220017.73 40
+!         BZXN -> "unknown mnemonic"
+!     Only BZXE produces C0, so the C is a real C and the Z is
+!     real.  (Per docs/transcription_workflow.md the Z on a BRANCH
+!     is visible and must NOT be flagged as ink-only; this is that
+!     case, and here it is visible in the BYTE, not just the ink.)
+!
+! (2) LINE 15'S SECOND BYTE prints as "FC" to the eye at 1200 dpi
+!     and is F0.  Its own address field prints "006000.CC" for
+!     006000.00 -- four impossible C's in one row -- so the row is
+!     demonstrably dropping ink.  But the row's calibration is not
+!     the argument (p.97 line 9 showed it can point the wrong
+!     way); the argument is what produced the byte: the low nibble
+!     of a VFL full word is i2, the offset index, and
+!     "CM0000(BU,6),SCCW+.19($13)" has NO second operand, so i2 is
+!     0 and the byte ends in 0.  Line 12 on this same page prints
+!     "CM1111(BU,1),S REL($11)" as "001000.36 F0" with a closed 0.
+!     The assembler agrees: F0.
+!
+! (3) LINES 7 AND 8'S SECOND BYTES print as "CC" and "0C" and are
+!     both 00.  Settled by the operation, not the ink: BZB prints
+!     00 and BB prints 02, and line 9's BB on this same page
+!     prints a clean "02" against the same target word
+!     (220017.74).  So the page prints the two readings side by
+!     side, one line apart.
+!
+! (4) "W 22D" -- the D.  C and D are the pair this drum breaks
+!     worst.  The discriminator is the LEFT side: C and 0 are
+!     round with no stem, D has a straight vertical left stem and
+!     squared corners, and at 1200 dpi this glyph has the stem.
+!     That is INK ONLY; see WHAT COULD NOT BE SETTLED.
+!
+! (5) "SCCW" (line 15) IS PRINTED WITH NO SPACES, where every
+!     other table symbol on the page prints with them (S TIC,
+!     S CH OP, S MULTI, S SEL, S FI A AC, S REL).  That is a fact
+!     about the CARD, not about the glyphs; a STRAP name ignores
+!     blanks, so it is the same symbol either way.  It is recorded
+!     because it is printed, and because the name is confirmed
+!     outright: decks p.102, p.122, p.123 and p.124 all carry
+!     "SCCW SYN(BU,64),4.0  -COPIED CONTROL WORD", and p.102 line
+!     15 is its defining card.
+!
+! (6) LINE 8'S COMMENT IS MISSPELLED ON THE CARD: it reads
+!     "-IS CHAN OPERAING ON THIS FILE", not OPERATING, at 1200
+!     dpi.  Recorded because the comment column is normally the
+!     ENGLISH ORACLE and here it is the thing being read; line 7's
+!     "-IF CHAN NOT OPERATING, ALL DONE" spells it correctly four
+!     characters away, which is what makes the misprint legible as
+!     IBM's own keypunch error rather than a drum fault.
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK
+! ---------------------------------------------------------------
+! EXACTLY ONE second asterisk on this page, on LINE 4, the
+! "SLC,$" row: the page prints "4*  220011.00  *   SLC,$".
+! Corroborated mechanically: strap/mcp_columns.py measures the
+! column it lives in (x 1337-1356 at 300 dpi) as carrying 0.2
+! units of ink over the whole page, which is one glyph.
+!
+! RECORDED AND NOTHING PROPOSED.  docs/transcription_workflow.md
+! says the asterisk has eight things it is not, and that printed
+! p.147's "every printed SLC,$ row carries it" was refuted by
+! printed p.151 line 4 the same afternoon.  This page is
+! CONSISTENT with p.147's dead hypothesis and that is worth
+! exactly nothing; p.151 already killed it.
+!
+! ---------------------------------------------------------------
+! THREE INDEPENDENT CONFIRMATIONS OF THE BIT-OFFSET RULE
+! ---------------------------------------------------------------
+! A CLAIM ABOUT THE REPO'S RULES, cheap to check.  docs/
+! transcription_workflow.md says a bit offset is DECIMAL when
+! bare and OCTAL inside an (8) literal.  This page tests the bare
+! case three times, in three different syntactic positions, and
+! all three agree:
+!
+!   line  5  "V-I,2,.32"            -> 000000.45  (.32 dec = 0o40,
+!                                      plus SV-class 2J+1 = 5)
+!   line 15  "CM0000(BU,6),SCCW+.19($13)"
+!                                   -> 000004.23  (.19 dec = 0o23)
+!   line 16  "B,K ILEGL.32"         -> 220064.50  (.32 dec = 0o40
+!                                      on 220064.00, plus B's .10)
+!
+! Had any of these been read as octal the row would have failed.
+! The page's own SLC is written "(8)220011.0" and is octal, which
+! is the other half of the rule.
+!
+! ---------------------------------------------------------------
+! WHAT COULD NOT BE SETTLED
+! ---------------------------------------------------------------
+! (A) >>> "W 22D" RESTS ON INK ALONE. <<<  It is the one name on
+!     this page with no witness of any kind outside it.
+!       * grep of the whole volume OCR for 220015 returns ONE hit
+!         and it is this page's own line 8 -- same ink, worse
+!         reader, not a witness.
+!       * grep for the name returns nothing else.
+!       * the typeset manuals (docs/ocr/C22-6728*) name routines,
+!         not local W-tags, and have no hit.
+!       * the comment column cannot help: the label is a tag, not
+!         English.
+!     What it does rest on: the C/D left-stem discriminator at
+!     1200 dpi, and the fact that the page prints the name TWICE
+!     -- as the label on line 10 and inside line 8's target --
+!     and the two agree.  Both printings share one drum, so that
+!     is consistency, not corroboration.  The readings rejected
+!     were "W 22C" and "W 220"; neither can be eliminated by the
+!     assembler, because a label spelling compiles to nothing, and
+!     neither can be eliminated by a !CHECK, for the same reason.
+!     WHAT WOULD SETTLE IT: a page that BRANCHES to 220015.00 from
+!     outside.  None is known.  If one turns up and spells it
+!     differently, THIS deck is the one to change.
+!
+! (B) S TIC, S FI A AC, K SUPP and K ILEGL are carried at .00 and
+!     this page CANNOT see their low five bits (measured above).
+!     The .00 is the corpus convention, not a reading.  K SUPP is
+!     the one where that matters, because two landed decks
+!     explicitly flag its offset as unreadable and nothing in the
+!     corpus has ever checked it; this page adds the half word and
+!     stops there.
+!
+! (C) THE ASTERISK BANNERS (lines 1-3) ARE NOT TRANSCRIBED
+!     CHARACTER BY CHARACTER.  They are comment cards and emit no
+!     bits, and counting ~60 asterisks off a worn drum would be a
+!     reading nobody can check.  Their SHAPE is recorded above and
+!     their serials (ID000001-ID000003) are counted.  If an exact
+!     count is ever wanted it has to be re-rendered.
+!
+! (D) WHY THIS DECK IS A NEW CARD DECK and what that means for the
+!     merged image is not established here.  The serials restart
+!     at ID000001 while printed p.157's run under a different
+!     prefix, and printed p.151 opened IA000001 the same way.  The
+!     prefix letters are not decoded anywhere in docs/ and this
+!     page does not decode them.
+!
+! ---------------------------------------------------------------
+! ASSEMBLER LIMITATIONS HIT
+! ---------------------------------------------------------------
+! NONE.  Every statement below is the PRINTED form, handed to
+! strap_asm first and accepted first time.  Two spellings are
+! worth naming because they are unusual and they WORK:
+!
+!   * "$X13" and "$X12" (line 10).  This page writes the J field
+!     as "$X13" and the index as "($X12)" where other pages write
+!     "13" and "($12)".  strap_asm accepts both and they are the
+!     same bits -- "KV,$X13,SFIAAC($X12)" and "KV,13,SFIAAC($12)"
+!     both print 000003.32 9C, and swapping them ("$X12"/"$X13")
+!     prints 000003.30 9D, so the page's assignment is pinned by
+!     the printed word.  "$X99" errors with "unsupported system
+!     symbol", so the spelling is checked and not just swallowed.
+!     The deck below writes the page's "$X" form.
+!   * "SLC,$" assembles, but standalone it means "the counter is
+!     wherever it is", i.e. zero.  The hard SLC below is the
+!     substitution, and it is the only one on this page.
+!
+! ---------------------------------------------------------------
+! SYMBOLS DEFINED OFF THIS PAGE
+! ---------------------------------------------------------------
+! S TIC    215265.00  the STored Instruction Counter.  Three
+!                     landed decks (p.110, p.111, p.112) carry
+!                     "STIC SYN,(8)215265.0", and C22-6728 names
+!                     it in prose ("the saved IC is stored in
+!                     STIC").  Nineteen landed decks carry this
+!                     SYN at this address.  Line 6 here checks the
+!                     HALF WORD.
+STIC    SYN, (8)215265.0
+! K SUPP   216242.00  defined printed p.128, "K SUPP NOP,K COMM
+!                     R".  Decks p.123, p.124, p.125 and p.126
+!                     carry it; p.125 and p.126 flag the offset as
+!                     unreadable.  Line 13 checks the HALF WORD.
+KSUPP   SYN, (8)216242.0
+! K ILEGL  220064.00  the label row is on printed p.160 (PDF 167);
+!                     decks p.127, p.151 and p.152 carry it.  Line
+!                     16 checks the HALF WORD, through a +.32.
+KILEGL  SYN, (8)220064.0
+! S CH OP  000000.32  printed p.99 line 22 "-CHAN OPERATING",
+!                     0.26 decimal = 0o32.  Decks p.99, p.123,
+!                     p.128, p.135, p.151 and p.152 carry it.
+!                     LINE 7 PINS IT TO THE BIT.
+SCHOP   SYN(BU,1), 0.26
+! S MULTI  000000.33  printed p.99 line 24 "-MULTI-UNIT CHAN",
+!                     0.27 decimal = 0o33.  Decks p.122, p.123 and
+!                     p.124 carry it.  LINE 8 PINS IT TO THE BIT.
+SMULTI  SYN(BU,1), 0.27
+! S SEL    000000.47  printed p.99 line 32 "-SELECT", 0.39 decimal
+!                     = 0o47.  Decks p.135, p.136, p.137 and p.152
+!                     carry it.  LINE 9 PINS IT TO THE BIT.
+SSEL    SYN(BU,1), 0.39
+! S REL    000000.75  printed p.99 line 49 "-RELEASE - OPERATION",
+!                     0.61 decimal = 0o75.  Decks p.99, p.123 and
+!                     p.126 carry it.  LINE 12 PINS IT TO THE BIT.
+!                     This is the bit the whole page is about.
+SREL    SYN(BU,1), 0.61
+! S FI A AC 000003.00 printed p.101 line 13 "-FILE AREA
+!                     ACTIVATED".  Decks p.101, p.122, p.126 and
+!                     p.128 carry 3.0, and p.122 line 33 prints
+!                     the SAME binary word this page's line 10
+!                     prints (000003.32) off a different
+!                     instruction (LV,13 against KV,$X13).  Line
+!                     10 checks the HALF WORD.
+SFIAAC  SYN(BU,18), 3.0
+! S CCW    000004.00  printed p.102 line 15 "-COPIED CONTROL
+!                     WORD".  Decks p.102, p.122, p.123 and p.124
+!                     carry 4.0.  LINE 15 PINS IT TO THE BIT,
+!                     through "+.19".
+SCCW    SYN(BU,64), 4.0
+!
+! ---------------------------------------------------------------
+! THE PAGE
+! ---------------------------------------------------------------
+! lines 1-3 are the asterisk banner, three comment cards
+! (ID000001-ID000003) that emit nothing; see WHAT COULD NOT BE
+! SETTLED (C).
+!
+! >>> SUBSTITUTION, LABELLED LOUDLY: the page prints "SLC,$" on
+!     line 4.  This deck writes the hard origin so it assembles
+!     standalone.  The printed form is "SLC,$" and the printed
+!     LOCATION is 220011.00, which is the arriving counter and the
+!     thing to compare by hand against printed p.157. <<<
+        SLC, (8)220011.0             ! line  4  printed "SLC,$" at 220011.00 *
+WREL    V-I,2,.32                    ! line  5
+        SV,2,STIC                    ! line  6
+        BZB,SCHOP($10),W23K          ! line  7  -IF CHAN NOT OPERATING, ALL DONE
+        BZB,SMULTI($10),W22D         ! line  8  -IS CHAN OPERAING ON THIS FILE  (sic)
+        BB,SSEL($11),W23K            ! line  9
+W22D    KV,$X13,SFIAAC($X12)         ! line 10  - COMPARE FILE AREA ADDRESS
+        BZXE,W23K                    ! line 11
+        CM1111(BU,1),SREL($11)       ! line 12
+        B,KSUPP                      ! line 13
+W23K    LCI,7,(8)40                  ! line 14  -FAKE EOP
+        CM0000(BU,6),SCCW+.19($13)   ! line 15
+        B,KILEGL.32                  ! line 16
+!
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS THE ORACLE READS IT
+! ---------------------------------------------------------------
+! Three symbols and twelve rows covering all 17 emitted half
+! words.  Every row is the printed BINARY OUTPUT column verbatim,
+! with the two glyph calls recorded in their notes.
+!
+!SYM WREL   220011.00
+!SYM W22D   220015.00
+!SYM W23K   220017.40
+!
+!CHECK 220011.00 | 000000.45 0D | line 5 W REL V-I,2,.32 -- .45 is .32 DECIMAL (0o40) plus the SV-class 2J+1 = 5 for J=2; the printed SLC,$ on line 4 gives this page's arriving counter as 220011.00
+!CHECK 220011.40 | 215265.05 30 | line 6 SV,2,S TIC -- .05 is 2J+1 for J=2 and NOT any part of S TIC's offset; perturbing S TIC by 1 or by 4 bits changes nothing, by 32 bits prints .45, so this row checks the HALF WORD only
+!CHECK 220012.00 | 000000.32 8A 220017.74 00 | line 7 BZB,S CH OP($10),W 23K -IF CHAN NOT OPERATING, ALL DONE -- .32 is S CH OP at 0.26 decimal, pinned to the bit; 8A is index $10; the branch half prints W 23K's 220017.40 as .74 and its byte 00 is BZB (BB prints 02, as line 9 does against the same target)
+!CHECK 220013.00 | 000000.33 8A 220015.34 00 | line 8 BZB,S MULTI($10),W 22D -IS CHAN OPERAING ON THIS FILE (the card's own misspelling) -- .33 is S MULTI at 0.27 decimal; the branch half prints W 22D's 220015.00 as .34, the same +0o34 line 7 shows
+!CHECK 220014.00 | 000000.47 8B 220017.74 02 | line 9 BB,S SEL($11),W 23K -- .47 is S SEL at 0.39 decimal; 8B is index $11; byte 02 is BB against line 7's BZB 00, one line apart against the SAME target word, which is what settles both bytes
+!CHECK 220015.00 | 000003.32 9C | line 10 W 22D KV,$X13,S FI A AC($X12) - COMPARE FILE AREA ADDRESS -- .32 is 2J = 26 for J=13 and NOT S FI A AC's offset (half-word-pinned only); byte 9C has low nibble C = index 12, and swapping $X12/$X13 prints 000003.30 9D, so the printed word pins the assignment
+!CHECK 220015.40 | 220017.72 C0 | line 11 BZXE,W 23K -- byte C0 is BZXE alone: BXE prints C2, BZXL 40, BZXH 40 with .73, BZXN is not an instruction. The C is a real C, not this page's damaged 0
+!CHECK 220016.00 | 000000.75 8B 001000.36 F0 | line 12 CM1111(BU,1),S REL($11) -- .75 is S REL at 0.61 decimal, pinned to the bit; the CM1111 connective word 001000.36 F0 is the one printed p.18 prints six times
+!CHECK 220017.00 | 216242.10 00 | line 13 B,K SUPP -- a plain B prints target+.10, so this pins K SUPP's HALF WORD at 216242.00 and nothing below bit 32; eight landed decks already check that same half word (p.126 p.127 p.134 p.135 p.140 p.142 p.145 p.146), so this row corroborates rather than establishes, and K SUPP's BIT offset stays unreadable
+!CHECK 220017.40 | 000040.17 02 | line 14 W 23K LCI,7,(8)40 -FAKE EOP -- .17 is 2J+1 = 15 for J=7; the datum 0o40 is the (8) literal, octal, printed in the address field
+!CHECK 220020.00 | 000004.23 8D 006000.00 F0 | line 15 CM0000(BU,6),SCCW+.19($13) -- .23 is 0o23 = 19 DECIMAL on S CCW's 4.0, pinned to the bit; 8D is index $13; the second word's address field prints "006000.CC", four impossible C's, and its byte prints "FC" and is F0 because CM0000 has no second operand so i2 is 0 (line 12's F0 is the same byte printed clean)
+!CHECK 220021.00 | 220064.50 00 | line 16 B,K ILEGL.32 -- .32 DECIMAL is 0o40 on K ILEGL's 220064.00, plus a plain B's .10; a HALF WORD, so the counter leaves this page at 220021.40, which is what printed p.159 line 4's "SLC,$" prints

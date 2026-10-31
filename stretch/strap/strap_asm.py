@@ -813,11 +813,74 @@ def eval_addr_field(expr, symtab, loc_bits, unit_shift, lineno=None, int_shift=0
     return total
 
 
+def _names_an_address(expr, symtab, lineno=None):
+    """True when this register expression is written as an ADDRESS.
+
+    A register field holds a WORD NUMBER, but this assembler carries
+    addresses in BITS, so an operand written as an address has to be
+    divided by 64 before it can be masked.  An operand written as a
+    plain integer is already the number and must not be touched.
+
+    The distinction is the one SYN already draws (see SymTab's
+    `sym_int`): "a dot, a `$` or an unclassified symbol makes it an
+    address".  System symbols are excluded because
+    eval_system_symbol's `reg_context` has ALREADY returned the
+    register number for them -- see its `return n if reg_context`.
+    """
+    if not hasattr(symtab, 'sym_int'):
+        return False
+    try:
+        toks = tokenize_expr(expr, lineno)
+    except Exception:
+        return False
+    if any(kind == 'sys' for _s, kind, _v in toks):
+        return False          # $N: already a register number
+    if any(kind == 'addr' for _s, kind, _v in toks):
+        return True           # a dotted literal, e.g. "11.0"
+    names = [v.upper() for _s, kind, v in toks if kind == 'sym']
+    if not names:
+        return False
+    # A name the `sys_alias` chain already resolved to a REGISTER
+    # NUMBER (a SYN leading back to a "$N" spelling) has had the
+    # conversion done for it -- dividing again would give 0.  Measured:
+    # without this, "EA SYN,$12" went from 3C to 30.
+    alias = getattr(symtab, 'sys_alias', None) or {}
+    if any(n in alias for n in names):
+        return False
+    return any(n not in symtab.sym_int for n in names)
+
+
 def eval_reg(expr, symtab, lineno=None):
-    """4-bit (or 1-bit, for K fields) register-number field."""
+    """4-bit (or 1-bit, for K fields) register-number field.
+
+    >>> A REGISTER FIELD HOLDS A WORD NUMBER, NOT A BIT ADDRESS. <<<
+    Index register N lives at word 16+N (eval_system_symbol:
+    `(16 + n) * 64`), so a symbol naming one carries 64 times the
+    number this field wants.  Masking the raw bit value silently
+    loaded the WRONG REGISTER and emitted no diagnostic:
+
+      MCP printed p.153, measured, varying nothing else --
+        EA SYN,12    ->  000002.41 3C   (the printed word)
+        EA SYN,12.0  ->  000002.41 30   index silently 0, NO ERROR
+        EA SYN,$12   ->  000002.41 3C
+
+      MCP printed p.154 writes exactly the second form -- its index
+      registers are SYNned by WORD ADDRESS ("E U SYN, 11.0", whose
+      own printed LOCATION is 000013.00+, word 0o13 = 11) -- and four
+      of its rows came out with index 0.
+
+    This is the general case of the `TIXF` fix recorded in assemble():
+    there `LX, TIXF, ...` assembled "j = 1664 & 0xF = 0" and loaded $0
+    instead of $10, and it was papered over with a `sys_alias` chain
+    that only covers a SYN leading back to a `$N` spelling.  1664 bits
+    is word 26, and 26 & 0xF is 10 -- the conversion below.
+    """
     if expr is None:
         return 0
-    return eval_expr(expr, symtab, 0, reg_context=True, lineno=lineno) & 0xF
+    v = eval_expr(expr, symtab, 0, reg_context=True, lineno=lineno)
+    if _names_an_address(expr, symtab, lineno):
+        v //= 64
+    return v & 0xF
 
 
 def referenced_symbols(expr, lineno=None):

@@ -61,6 +61,24 @@ import sys
 
 DECKS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "decks")
 
+# >>> THIS CHECKER USED TO DEGRADE SILENTLY, TWICE. <<<
+#
+# (1) _as_bit() did "import strap_asm" inside a bare try/except, so
+# running it without `strap` on PYTHONPATH made EVERY address symbolic:
+# the literal and !SYM forms of one bit stopped grouping, and the !SYM
+# branch of collect() -- which is guarded by "if bit is not None" --
+# dropped every block it had.  Measured on the same corpus, same
+# command: 1080 definitions bare against 1312 with PYTHONPATH, and it
+# printed PASS both ways.  run_tests.sh exports PYTHONPATH so the suite
+# was always fine; every ad-hoc run was checking 82% of what it said.
+#
+# The import now happens HERE, off this file's own location, so it
+# cannot depend on how the process was launched -- and an ImportError
+# is a setup failure that must be LOUD, not a symbolic address.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "..", "strap"))
+import strap_asm                                            # noqa: E402
+
 # The glyph pairs this printer actually confuses. See
 # docs/transcription_workflow.md and docs/listing_typography.md.
 CONFUSABLE = {frozenset("OC"), frozenset("CD"), frozenset("B8"),
@@ -71,7 +89,22 @@ CONFUSABLE = {frozenset("OC"), frozenset("CD"), frozenset("B8"),
               # here.  The drum cuts Q's bowl with a diagonal and no
               # mid-height bar, which a worn G loses; printed p.126's
               # own notes record tesseract reading a certain Q as G.
-              frozenset("GQ")}
+              frozenset("GQ"),
+              # 1/I joined on 2026-10-31.  decks/mcp_bootstrap_p151
+              # spelled B IRA with a LETTER I, citing the typeset
+              # manual -- and THAT CITATION DID NOT HOLD: C22-6728 and
+              # C22-6728-1 print the same sentence "BIRA; B, BCWCR"
+              # and "B1RA; B, BCWCR" respectively, one each way.  The
+              # manual's own OCR shares the confusion, rendering
+              # RS1FLK as "RSIFLK" seven times against one correct
+              # reading, so RUNG 2 OF THE GLYPH LADDER DOES NOT FIRE
+              # ON THIS PAIR -- the typeset manual is not an
+              # independent witness for 1 against I.
+              #
+              # The ink settles it: at 1800 dpi the drum's I has a
+              # SYMMETRIC top bar and its 1 has a flag at the top
+              # LEFT ONLY.  printed pp.151 and 153 print the digit.
+              frozenset("1I")}
 
 SYN_RE = re.compile(r'^\s*([A-Z0-9$]+)\s+SYN(?:\([^)]*\))?\s*,\s*([^!\s]+)',
                     re.IGNORECASE)
@@ -110,13 +143,22 @@ def _as_bit(addr):
     and a !SYM block writes 005464.40 for the same bit.
     """
     try:
-        import strap_asm
         return strap_asm.eval_expr(addr, {}, 0, lineno=0)
     except Exception:
-        return None
+        return None  # genuinely symbolic -- the only legitimate None
 
 
-def collect(deck_dir=DECKS):
+def collect(deck_dir=None):
+    # Resolved at CALL time, not bound at def time.  It used to read
+    # "deck_dir=DECKS", which made the obvious idiom -- import the
+    # module, set c.DECKS to another directory, call main() -- a
+    # SILENT NO-OP: main() calls collect() with no argument, so the
+    # default captured at import still pointed at the repo.  Measured:
+    # with c.DECKS patched to an empty directory, collect() still
+    # returned 1155 addresses.  Agents verifying a scratchpad deck
+    # that way were checking the repo and reporting PASS.
+    if deck_dir is None:
+        deck_dir = DECKS
     """key -> {name -> {pages}} over every MCP deck.
 
     The key is a resolved bit number where the address is a literal,

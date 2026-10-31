@@ -34,7 +34,7 @@
 ! independent press, describes this exact code twice:
 !
 !   "The control word check routine (Figure 99) is entered with
-!    the calling sequence SIC, BIRA; B, BCWCR, with the location
+!    the calling sequence SIC, B1RA; B, BCWCR, with the location
 !    of the first control word in the VF of $0."
 !                                          -- C22-6728, PDF p.177
 !
@@ -168,7 +168,7 @@
 !       ZSTART 4/4   KILEGL 13/17   ZDISK1 3/3   ZSTEVL 15/17
 !       RVFY   8/9   PCSRD   8/7    KKLOC 14/16  KKMODE 1/1
 !       KTESTM 3/2   KGO     1/2    KMODE  4/3   RS1FLK 1/0
-!       BIRA   2/0   BCWCR   4/4    KYOME  1/0
+!       B1RA   2/0   BCWCR   4/4    KYOME  1/0
 !       SEVLMK 6/6   SEVLTB  7/7    SCHOP  5/8   SIOINS 5/5
 !       SSCRPM 4/4   SLABM   1/1    SFILEK 5/5   SFMODE 1/1
 !       SCWADR 2/2
@@ -205,7 +205,8 @@
 !       page (volume OCR, 220143.00, "RS1 FLK BZB,S SYSTM($12),
 !       K N SYST") spells it the same way.
 !     * "B IRA" (line 5).  Letter I, not digit 1: the manual's
-!       prose prints "the calling sequence SIC, BIRA; B, BCWCR".
+!       prose prints it BOTH ways across its two revisions -- see
+!       the B1RA note below; the ink settles it, not the manual.
 !     * "P CSRD" (line 31) ends in D, not O -- the C/D pair this
 !       drum breaks worst.  Confirmed twice over: the manual
 !       prints PCSRD, and decks/mcp_bootstrap_p138.strap DEFINES
@@ -332,15 +333,34 @@ SCHOP   SYN(BU,1),  0.26     ! p.99  line 22 -CHAN OPERATING
 ! The eleven code externals.  Each printed address below is read
 ! off THIS page's BINARY OUTPUT column; the NAME and the fact that
 ! a card defines that address are from elsewhere, as cited.
-! B IRA    221140.00  C22-6728 PDF p.177 names the calling
-!                     sequence "SIC, BIRA; B, BCWCR" IN TYPE.  The
-!                     volume OCR also carries another printed
-!                     page's own copy of that calling sequence --
-!                     "217630.CC 221140.CC 800 ERE STC BRA" --
-!                     whose statement field it garbles but whose
-!                     BINARY is byte-for-byte line 5's.  The NAME
-!                     comes from the manual, not from that OCR.
-BIRA    SYN, (8)221140.0
+! B 1RA    221140.00  >>> CORRECTED 2026-10-31: THIS WAS "B IRA",
+!                     LETTER I, AND THE MANUAL CITATION DID NOT
+!                     HOLD. <<<  The two revisions print the SAME
+!                     SENTENCE both ways --
+!                       C22-6728   "BIRA; B, BCWCR, with the..."
+!                       C22-6728-1 "B1RA; B, BCWCR, with the..."
+!                     -- so quoting one of them was selective.  And
+!                     that OCR shares the drum's 1/I confusion: it
+!                     renders RS1FLK as "RSIFLK" seven times against
+!                     one correct "RS1FLK", and THIS DECK took the
+!                     DIGIT there.  Rung 2 of the glyph ladder does
+!                     not fire on the 1/I pair.
+!
+!                     SETTLED ON THE INK, in one row, three
+!                     characters apart.  Line 5 prints
+!                     "Z START  SIC,B 1RA" and at 1800 dpi the I of
+!                     SIC has a SYMMETRIC top bar extending equally
+!                     left and right; the glyph after "B " has a
+!                     flag at the TOP LEFT ONLY and no right
+!                     extension.  That is the drum's digit 1.
+!                     printed p.153 found this and rendered both
+!                     pages; re-rendered here before changing it.
+!
+!                     NO BIT MOVES -- the SYN is to a literal either
+!                     way -- and check_symbol_spellings could never
+!                     have caught it: 1/I was not in its CONFUSABLE
+!                     set until this correction added it.
+B1RA    SYN, (8)221140.0
 ! B CWCR   221102.00  same manual sentence; the DEFINING card is
 !                     on another printed page: volume OCR
 !                     "221102.00 = 221133.01 CO BB CWO RR
@@ -429,7 +449,7 @@ KMODE   SYN, (8)217615.0
         SLC, (8)217544.0
 
 ! ---- the READ routine --------------------------------------------
-ZSTART  SIC,BIRA                     ! line  5
+ZSTART  SIC,B1RA                     ! line  5
         B,BCWCR                      ! line  6  -BRANCH TO CHECK CW
         LVI,8,ZEVLMK                 ! line  7
         SV,8,SEVLMK($12)             ! line  8  -STORE MASK ADDR IN UA
