@@ -139,6 +139,25 @@ Six reads become one.
 > undefined symbol); one that nothing references rests on ink alone, so
 > read those at 1800 dpi against a known-good instance of each candidate.
 
+> **AND WHEN THE AMBIGUOUS GLYPH IS IN A MNEMONIC, HAND BOTH
+> READINGS TO THE ASSEMBLER — ONE OF THEM MAY NOT BE AN
+> INSTRUCTION.** This is cheaper than the manuals and strictly
+> decisive when it fires. printed p.134 line 44 reads `BOPZ` or
+> `BCPZ` depending on how its round glyph is taken, and the volume
+> OCR is no help: it carries the same card six times, four as BOPZ
+> and two as BCPZ. Measured:
+>
+> ```
+>   BOPZ  assembles, and prints the page's own 216607.47 C6
+>   BCPZ  "unknown mnemonic 'BCPZ'"
+> ```
+>
+> The operation set is small and fixed, so an O/C or B/8 confusion
+> usually produces a string that is not an operation at all. Note the
+> tell this does NOT give you: both spellings being valid means the
+> test is silent, not that either is right — `C0011` and `C0001` are
+> both real. Use it as an eliminator, never as a confirmation.
+
 > **WHEN THE INK CANNOT SETTLE A NAME, GREP THE MANUALS. IT IS THE
 > CHEAPEST CHECK IN THIS REPOSITORY AND IT IS ROUTINELY DECISIVE.**
 >
