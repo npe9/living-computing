@@ -460,7 +460,37 @@ deck against an independent OCR of its page for exactly this, and
 printed p.86 was checking six of its rows and none of the scan-table
 data beside them.
 
+**4. A VFL OFFSET IS PINNED ONLY MOD 128.** The offset field is seven
+bits (IBM 44-50), so it wraps. Measured, varying nothing else:
+
+```
+  +(BU,18), X, 55     ->  022033.00 80 022033.60 10
+  +(BU,18), X, 183    ->  022033.00 80 022033.60 10
+  +(BU,18), X, -73    ->  022033.00 80 022033.60 10
+```
+
+printed p.129 line 14 computes `55-S DD` into such a field, so that
+row establishes only `S DD` ≡ 0 (mod 128). `S DD = 0` exactly comes
+from printed p.108's defining card, a different page. This is not the
+half-word gap in another costume: there the invisible part is the low
+bits of an address, here a fully-specified value wraps.
+
 > None of these is a defect in the oracle. They are the edge of what
 > comparing one word against one word can establish, and the answer
-> to all three is the same: **a second, independent reading** — the
+> to all four is the same: **a second, independent reading** — the
 > next page's first location, a manual, or the page's own English.
+
+> **AND BE SURE THE SECOND READING IS INDEPENDENT.**
+> `docs/ocr/MCP_Mar63_*.txt` is an OCR of THE LISTING ITSELF, so the
+> OCR of page N is not a witness for page N — it is the same ink read
+> by a worse reader, and it inherits every one of this drum's
+> confusions. printed p.129 nearly recorded `C Q2BIG` as having a
+> second witness on printed p.123; the "witness" was p.123's OCR of
+> p.129's own card. The volume OCR is an excellent index of where a
+> symbol is DEFINED on some OTHER page, and worthless as corroboration
+> of the page it came from.
+>
+> The same applies to a count: four OCR hits spelling a name one way
+> and two the other is not a 4-2 vote, because all six readings share
+> the drum and the reader. printed p.134's `BOPZ`/`BCPZ` split exactly
+> that way and was settled by the assembler instead.
