@@ -800,7 +800,25 @@ def split_field_trailing_paren(field):
             elif c == '(':
                 depth -= 1
                 if depth == 0:
-                    return field[:k].strip(), field[k + 1:-1].strip()
+                    base = field[:k].strip()
+                    # >>> AN OMITTED ADDRESS IN FRONT OF AN INDEX IS A
+                    # ZERO. <<<  MCP printed p.126 line 11 is
+                    # "KV,2,($1)" and the listing compiles it to
+                    # 000000.04 91 -- address zero, indexed by $1.
+                    # C22-6531 printed p.7 is the rule, and this file
+                    # already quotes it for DR and VF: "the instruction
+                    # is compiled as if the missing fields contained
+                    # zeros ... A NULL FIELD IS ALWAYS COMPILED AS A
+                    # ZERO."  Without this the row died at PARSE time
+                    # with "empty expression", which costs the whole
+                    # page rather than one row.
+                    #
+                    # Scoped to a field that HAS an index parenthetical:
+                    # a wholly empty field still reaches the callers as
+                    # empty, so the places that legitimately refuse one
+                    # (an address field with nothing at all) keep
+                    # refusing it.
+                    return (base if base else '0'), field[k + 1:-1].strip()
         raise AssemblerError(f"unbalanced parens in field {field!r}")
     return field, None
 
