@@ -367,3 +367,57 @@ failing check.
 > you a particular glyph did. Settle the byte on what produced it --
 > the statement, the same instruction on another page, or the index
 > rule (the low nibble is `i2`, 0 when there is no second operand).
+
+### WHAT THE ORACLE CANNOT SEE
+
+`listing_oracle` compares assembled bits against printed bits, and
+that is a strong check — but a deck can be wrong in ways that produce
+the *same printed word*, and those are invisible to it forever. Three
+are known, all measured, and they bound what "bit-exact" means here.
+
+**1. AN EXTERNAL BACK-DERIVED FROM A BRANCH OR AN `LVI` IS KNOWN ONLY
+TO THE HALF WORD.** Most decks SYN their externals by reading the
+address out of a printed instruction. Measured, with the symbol's bit
+offset varied and everything else fixed:
+
+```
+  SYN value        LVI,$1,T prints    B,U prints
+  ...216577.00     216577.03 01       216531.10 00
+  ...216577.03     216577.03 01       216531.10 00
+  ...216577.37     216577.03 01       216531.10 00     (bit 31)
+  ...216577.40     216577.43 01       216531.50 00     (bit 32)
+```
+
+Every offset from 0 to 31 encodes identically; only bit 32, the
+half-word select, shows. So `YINDTR` at `216577.00` and at
+`216577.03` are indistinguishable, **and so is every other value in
+between**. Writing `.00` is a CONVENTION, not a reading. The printed
+`.03` on an `LVI` and the `.10` on a branch are operation bits, not
+address bits — p.110 found the same for `BD`, which prints `.04`.
+
+The practical rule: **when you SYN an external off a printed
+instruction, say in the deck that its bit offset is unobservable.**
+Do not let a passing `!CHECK` imply you read it.
+
+**2. A HARD `SLC` CANNOT DISAGREE WITH THE ARRIVING COUNTER.** It
+overrides it, silently. printed p.111's agent tested this rather than
+asserting it: setting `SIT` to `(8)215024.0` moves all forty-eight of
+that page's locations together and **all forty-eight `!CHECK` rows
+still pass**. So a deck whose page prints `SLC,$` and which writes a
+hard origin instead is asserting that origin, not checking it. Where
+a page prints `SLC,$`, the join to the previous page has to be
+compared BY HAND — and pp.101 and 108 carry an `SLC` their pages do
+not print at all.
+
+**3. A `!CHECK` THE DECK NEVER WROTE IS NOT A FAILURE.**
+`verify_mcp_page.py` checks what the deck DECLARES, so a deck
+declaring two checks for a twenty-four-row page passes having
+verified almost nothing. `strap/mcp_coverage_report.py` compares each
+deck against an independent OCR of its page for exactly this, and
+printed p.86 was checking six of its rows and none of the scan-table
+data beside them.
+
+> None of these is a defect in the oracle. They are the edge of what
+> comparing one word against one word can establish, and the answer
+> to all three is the same: **a second, independent reading** — the
+> next page's first location, a manual, or the page's own English.
