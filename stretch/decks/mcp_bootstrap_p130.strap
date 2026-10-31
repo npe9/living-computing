@@ -1,0 +1,479 @@
+! mcp_bootstrap_p130.strap -- "MASKABLE INTERRUPTS", printed page 130.
+! docs/MCP_Mar63_001-249.pdf PDF p.137, header READ and not assumed:
+! "TIME CLOCK 00054041  PUNID 11D11MCP   CARD ID EC000001   DIST. OF
+! 3/01   3/01   PAGE NUMBER  130".  Lines 1-3 are the banner comment
+! cards "***** MASKABLE INTERRUPTS ****", which is also how the
+! volume's own table of contents names this page (docs/ocr/
+! MCP_Mar63_001-249.txt line 30: "F 025 EC MASKABLE INTERRUPTS ,
+! PAGE 0130" -- the deck letters EC are this page's card serials).
+!
+! >>> A NEW PUNCHED DECK STARTS HERE. <<<  The card-serial column
+! restarts at EC000001 on line 1 and runs to EC000051 on line 54.
+! FIFTY-FOUR LINES, FIFTY-ONE CARDS, and the three repeats are
+! DOUBLE-STATEMENT CARDS, read off the serial column at 600 dpi:
+!   EC000015 = lines 15+16   "KV,$1,SLOWER;BXL,WJERR"
+!   EC000016 = lines 17+18   "KV,$1,SUPPER;BZXL,WJERR"
+!   EC000050 = lines 52+53   "SIC,SDISIC;B,SDISP"
+! (the last is forced: a SIC must be immediately followed by a
+! half-word branch).  The serials are otherwise consecutive 1..51
+! with no gap, so nothing fell off the top or the bottom of the
+! render.
+!
+! ---------------------------------------------------------------
+! BOTH JOINS ARE WITNESSED, AND THE PAGE SUPPLIES ONE OF THEM FREE
+! ---------------------------------------------------------------
+! >>> LINE 4 PRINTS "216333.00  *  SLC,$". <<<  An SLC emits
+! nothing, so its printed LOCATION *is* the counter arriving from
+! printed p.129 -- a free, independent reading of the backward join,
+! printed by IBM's own assembler (docs/transcription_workflow.md,
+! "A PRINTED SLC,$ IS THE BEST FORWARD-JOIN WITNESS THERE IS").
+! NO !CHECK CAN CONSUME IT, so it is recorded here instead:
+!
+!   printed p.128 leaves the counter at 216305.40 (its line 56 is a
+!   half word at 216305.00).  The volume OCR of printed p.129
+!   (PDF p.136) reads its line 1 at 216305.40 -- contiguous -- and
+!   its last readable row, line 30, at 216332.00, "K RECEP XW,0".
+!   XW is a full word, so p.129 would leave the counter at
+!   216333.00, which is exactly what line 4 of THIS page prints.
+!   THE WITNESS IS THE PRINTED "SLC,$", NOT THE OCR: that last
+!   location comes back from tesseract as the seven-digit
+!   "2163232.00" and was resolved to 216332.00 BECAUSE the
+!   arithmetic works, which is a weaker thing than a reading.  The
+!   OCR is CONSISTENT WITH the join; the SLC,$ is what closes it,
+!   and it closes it on its own.
+!
+! THE FORWARD JOIN CLOSES THE SAME WAY.  Line 53 is a half word at
+! 216373.00, so this page leaves the counter at 216373.40 -- and the
+! OCR of printed p.131 (PDF p.138) prints ITS line 4 as
+! "216373.40  SLC,$".  Two printed SLC,$ cards, one at each end,
+! and nothing between them is unaccounted for.
+!
+! THIS DECK STILL WRITES A HARD "SLC, (8)216333." so that it
+! assembles standalone, and that SLC ASSERTS rather than checks
+! (docs/transcription_workflow.md, "A HARD SLC CANNOT DISAGREE WITH
+! THE ARRIVING COUNTER").  The check above is the hand comparison
+! that rule asks for; when p.129 lands, the row to reconsider is
+! this one.
+!
+! TAIL SCOPE.  printed p.99 line 11's "SLC,(8)215000." moved the
+! origin and pp.99+ are OUTSIDE the "TAIL,(2)G" block that printed
+! p.2 opened and printed p.98 line 37 closed with "UNTAIL,(2)", so a
+! name here may legitimately repeat a name from pp.2-98 at a
+! different address.  Nothing this page DEFINES does: the eleven
+! names are W LODE, W CONA, W JTST, W CON, W CONE, W CONV, W CONY,
+! W PATT, W INTOR, W JERR and S INTO.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE CONTAINS
+! ---------------------------------------------------------------
+! The MASKABLE-INTERRUPT entry point, whole, in fifty lines of code.
+! Printed p.112's interrupt table is what branches here: every slot
+! in it is a "SIC,W INTOR / B,W LODE" pair, and the volume OCR shows
+! fourteen of them (PDF p.136 region, lines 5890-5914) all branching
+! to 216333.10 -- which is W LODE, line 5 of this page, plus the
+! branch's own .10 operation bits.
+!
+!   lines  5-10  save state: $0-$2 and $3-$15 into S T LR, $MR
+!                through a parenthetical-entry BE, the clock into
+!                $1, and "SV,1,0.0" which sets XVZ if there is no
+!                PTOE.
+!   lines 11-18  choose the TOE and bounds-check it.  W CONA selects
+!                the MCP PTOE (line 13 turns W CONY into a branch by
+!                setting bit 21); W JTST compares $1 against S LOWER
+!                and S UPPER and goes to W JERR if it is outside.
+!   lines 19-26  W CON selects the PP TOE, reads the interrupt type
+!                out of S IPT, shifts it into a bit field, and
+!                branches back to W CONA if the pattern bit is 0.
+!   lines 27-36  W CONE / W CONV build the field length, the offset
+!                and the exit address -- the page MODIFIES ITS OWN
+!                INSTRUCTIONS, "SF(BU,6),WCONV+.35" and
+!                "SF(BU,7),WCONV+.44" storing a length and an offset
+!                into line 32's own word.
+!   lines 37-47  plant the exit address in W CONY, restore $MR and
+!                the link registers out of S T LR, mask and go.
+!   line  48     W CONY, the exit itself: "BE,$", a branch that the
+!                connectives above have been editing all page.  Its
+!                comment says so: "-TO FIXUP  ENABLED IF SPECIAL,
+!                DISABLED IF STANDARD".
+!   lines 49-54  the page's data: W PATT (a SYN into the MCP PTOE),
+!                W INTOR the interrupt preservation word, W JERR the
+!                error exit, and S INTO, a second name for W INTOR.
+!
+! >>> THE ANALYSIS GUIDE DRAWS THIS PAGE. <<<
+! docs/ocr/C22-6728-1_7030_MCP_Sys_Analysis_Guide.txt line 1812 is a
+! flowchart box labelled "WCONA" whose next box reads "*SELECT MCP
+! PTOE*" -- which is line 12's name and line 13's comment, in a
+! TYPESET document.  That is what settles the O in the W CON family
+! against a drum that prints it open (see GLYPHS below).
+!
+! ---------------------------------------------------------------
+! GLYPHS -- FOUR READINGS THAT NEEDED MORE THAN SHAPE
+! ---------------------------------------------------------------
+! (1) LINE 5's NAME IS "W LODE", NOT "W LOCE" OR "W LOOE".  Read at
+!     1800 dpi: the fourth glyph has a STRAIGHT VERTICAL LEFT STEM
+!     and squared corners, which is the C/D discriminator in
+!     docs/transcription_workflow.md; the third glyph beside it is
+!     round with no stem.  The volume OCR reads it "W LOCE"/"WLOCE"
+!     fourteen times over and is wrong every time -- C22-6728-1's
+!     interrupt table prints "WLODE" and "JW LODE", typeset, and
+!     decks/mcp_bootstrap_p112.strap already carries that reading.
+!
+! (2) LINE 54's NAME IS "S INTO", NOT "S INTC".  The drum prints its
+!     last glyph open, and so it prints W INTOR's O two lines above
+!     -- a glyph known to be O from four typeset documents.  THE
+!     MANUALS SETTLE IT: across docs/ocr/, "S INTO"/"SINTO" appears
+!     twelve times in four TYPESET documents (C22-6728, C22-6728-1,
+!     C22-6729, R23-9732 and MCP volume 2), and "S INTC" appears
+!     only in the OCR of THIS drum print.  C22-6728-1 line 1428 is
+!     the decisive row: "MASKABLE TS ... STIC SIPT+4.0  SINTO
+!     JW LODE" -- the maskable-interrupt table entry, naming this
+!     page's two symbols side by side.  printed p.112 line 9's
+!     "SIC,S INTO" compiles to 216371.40, which is this card's own
+!     printed location, so it is the same word and not a lookalike.
+!     >>> I FIRST READ IT "SINTC" OFF THE INK AND THE GREP REVERSED
+!     ME. <<<
+!
+! (3) LINES 5 AND 44 END "A0", NOT "AC", AND THE ROW SAYS SO.  Both
+!     trailing bytes LOOK like AC at 1800 dpi.  Both are A0:
+!       * line 5 prints its own octal fields "C0C003.CC" and
+!         "215230.CC" -- an octal field cannot hold a C, so every one
+!         of those is a 0, and the hex byte's second glyph has the
+!         IDENTICAL open shape a few characters away.
+!       * line 44 prints "215234.0C": a CLOSED 0 and an OPEN C in
+!         ONE two-digit octal field, both certainly 0.  That is the
+!         "ink varies per CHARACTER" warning made visible inside a
+!         single field, and it is why a per-row gauge is not enough.
+!       * THE STATEMENT IS THE TIE-BREAKER AND AGREES: the low
+!         nibble of the second half word is i2, the index on the
+!         second operand.  Line 43 WRITES one -- "1.0($1)" -- and
+!         prints A1; lines 5, 6, 44 and 45 write none and must print
+!         A0.  Lines 6 and 45, same instruction, same page, print a
+!         CLOSED 0 in that position.
+!     Recorded as A0 below.  This is the printed word read, not the
+!     assembler accommodated.
+!
+! (4) LINE 7's OPERAND TAIL IS "(.26,2)111101".  At 1800 dpi the
+!     fifth binary digit is an open round glyph in a BASE-2 literal,
+!     where only 0 and 1 are legal: it is a 0.  It assembles to the
+!     printed "215231.47 A0".
+!
+! (5) ONE GLYPH I COULD NOT SETTLE, AND IT IS IN A COMMENT.  Line
+!     5's comment prints "-SAVE LR$BC THRU $2".  At 1800 dpi the
+!     character after the "$" is unambiguously B -- straight left
+!     stem, two bowls, which an 8 does not have -- and the one after
+!     IT is an open round glyph, so C or 0.  The English does not
+!     help: the statement transmits three words from 3.0, which is
+!     $0 through $2, so the sense wants "$0", and no reading of
+!     these two glyphs gives "$0".  THE OCR DOES NOT AGREE WITH ME
+!     EITHER: docs/ocr/MCP_Mar63_001-249.txt reads the same field
+!     "SAVE LROBC THRU $2000".  Recorded AS PRINTED, with the
+!     ambiguity named, rather than quietly corrected to the reading
+!     the sense wants.  It is a comment column: no bits depend on
+!     it and no check can see it.
+!
+! (6) A SMALL DISAGREEMENT WITH THE ANALYSIS GUIDE, IN IBM'S
+!     FAVOUR BOTH TIMES.  C22-6728-1's flowchart box beside WCONA
+!     reads "SELECT MCP PTOE"; this page's line 13 prints
+!     "-SELECT MCP TOE" and line 19 prints "-SELECT PP TOE".  Both
+!     were read at 1800 dpi and there is a clear blank where the
+!     Guide's P would be.  The listing is transcribed as printed;
+!     the Guide is prose about the same routine, not a second
+!     printing of it.
+!
+! ---------------------------------------------------------------
+! NAMES WITH BLANKS
+! ---------------------------------------------------------------
+! The page punches six of its labels WITH an embedded blank -- the
+! NAME column prints "W LODE", "W CONE", "W CONV", "W CONY" with a
+! gap and "WCONA", "WJTST", "WCON", "WPATT", "WINTOR", "WJERR",
+! "SINTO" without one -- and the STATEMENT column references every
+! one of them with NO blank ("B,WCON+1.0", "SVA,0,WCONY",
+! "SF(BU,6),WCONV+.35").  STRAP ignores blanks inside a name, which
+! is the same thing printed p.128 showed with "SCHANS"/"S CHAN S".
+! THIS DECK WRITES THEM CLOSED UP, because strap_asm does not accept
+! a blank in the LABEL field (it does accept one in an operand --
+! "VF,S ASPUT" assembles).  That is a notation difference, not a
+! reading: the printed spelling is in the listing block below.
+!
+! ---------------------------------------------------------------
+! ASSEMBLER LIMITATION HIT -- ONE, AND IT IS NARROW
+! ---------------------------------------------------------------
+! >>> LINE 29 IS PRINTED "-I(BU,18),64.0,-24" AND strap_asm REJECTS
+! THAT SPELLING. <<<  Tested, not assumed:
+!     KeyError: '-I'   strap_asm.py:3424, VFL_INT_CODES[base_op]
+! The written-minus rewrite at strap_asm.py:1487 fires only on a
+! BARE "-" ("if op == '-'"), and the I-immediate strip at line 1539
+! needs base_op[:-1] to be in VFL_INT_CODES -- "-" is not, it is
+! VFL_INT_MINUS_BASE.  So "+I" works (line 27 proves it) and "-I"
+! falls between the two.
+!
+! SUBSTITUTED BIT-IDENTICALLY, NOT WORKED AROUND.  The row below
+! writes "-I(BU,18),64.0,-24".  C22-6531 Appendix A footnote 4 is
+! the source: a VFL operation code may be suffixed I (Immediate),
+! N (Negative) or NI (Negative Immediate), and strap_asm's own NI
+! path (line 1581) sets exactly the same (base_op='+', invert=1,
+! immediate=True) that "-I" must set.  MEASURED: it assembles to
+! "000100.00 80 422064.30 10", the printed word, half word for half
+! word.  The printed form is kept in the !CHECK note.
+!
+! THE FIX, if it is wanted, is one line beside the existing strip at
+! strap_asm.py:1539 -- recognise "-I" as (VFL_INT_MINUS_BASE,
+! invert=1, immediate=True), the same way line 1487 recognises "-".
+!
+! EVERYTHING ELSE THE PAGE PRINTS, strap_asm TOOK AS PRINTED, and
+! two of those were worth testing rather than assuming:
+!   * line 7's parenthetical entry "BE,STLR+1.32(.26,2)111101"
+!   * line 8's "BOPZ,$.32" -- "$.32" with no "+", which resolves to
+!     $ plus 32 bits (216336.00) and prints 216336.07 C6
+!   * line 32's connective "CT0001(BU,0),3.0($1)"
+!   * "$0".."$15", "$L", "$MASK" and "$IND" as operands, and "$0" /
+!     "$2" / "$14" in the INDEX position ("LV,$0,STIC",
+!     "LVI,$14,SPTOEX") beside the plain-number form on the same
+!     page ("LX,0,$L", "LV,0,7.32").
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- every one taken from a LANDED deck, none invented
+! ---------------------------------------------------------------
+! S T LR   215230.00  p.116 line 13 "S T LR DRZ(BU,64),29" is the
+!                     defining card; p.117/p.118/p.128 carry it.
+!                     Eight rows here agree (lines 5,6,7,42,43,44).
+STLR    SYN, (8)215230.0
+! S FPTE   215163.00  p.114 line 5 "S FPTE DRZ(N),(3)" -- the MCP
+!                     PTOE.  p.114's own note cites THIS PAGE as one
+!                     of its two witnesses ("PDF p.137 prints
+!                     'WCCNA LVI,$1,SFPTE' compiling 215163.03").
+SFPTE   SYN, (8)215163.0
+! S LOWER  215230.40  p.116 line 15 "S LOWER SYN,S T LR+0.32".  The
+!                     32 is a BARE DECIMAL and 32 decimal is bit
+!                     0o40, which is why line 15 here prints
+!                     215230.42 (.40 plus the KV operation's .02).
+SLOWER  SYN, STLR+0.32
+! S UPPER  215230.00  p.116 line 14 "S UPPER SYN,S T LR".  Line 17
+!                     prints 215230.02 -- same .02, offset .00.
+SUPPER  SYN, STLR
+! S IPT    215103.00  p.112 line 7 DEFINES it ("S IPT BEW,$"); eight
+!                     rows across the landed decks agree.  Line 21
+!                     prints "S IPT+1.0" as 215104.05.
+SIPT    SYN, (8)215103.0
+! S COM RG 215001.00  p.103 line 8 "S COM RG XW,(8)520000.".
+!                     Carried only so S SPFIX can be written the way
+!                     p.103 writes it.
+SCOMRG  SYN, (8)215001.0
+! S SPFIX  215001.13  p.103 line 20 "S SPFIX SYN(BU,1),S COM RG+.11"
+!                     -ON IF PP IN SPECIAL.  Line 39 prints
+!                     215001.13 80 001000.36 F0, bit address and all.
+SSPFIX  SYN(BU,1), SCOMRG+.11
+! S TIC    215265.00  p.116 line 16 "S T IC VF,0"; pp.110-112,117,118
+!                     carry it.  The final letter is C and not O by
+!                     C22-6728's prose, "the saved IC is stored in
+!                     STIC".  Line 40 prints 215265.00 30.
+STIC    SYN, (8)215265.0
+! S LRMCP  215362.00  p.116/p.117.  Line 45's "S LRMCP+9.0" prints
+!                     215373.00 -- nine words on, which checks the
+!                     base and the arithmetic together.
+SLRMCP  SYN, (8)215362.0
+! S DISIC  217451.40  p.103 line 289; pp.119,120 carry it.  Line 52
+!                     prints 217451.40 80.
+SDISIC  SYN, (8)217451.40
+! S DISP   217372.00  pp.119,120,147.  Line 53 prints 217372.10 00 --
+!                     the .10 is the branch's operation bits.
+SDISP   SYN, (8)217372.0
+! S PTOEX  000407.00  p.107 line 22 "S PTOEX SYN,(16)0107.0" -17 BAD
+!                     PTOE ADDRESS.  0x107 = 0o407.  Line 51 prints
+!                     000407.35 01, where .35 = 2*14+1 is the $14 of
+!                     "LVI,$14,S PTOEX" and NOT part of the address.
+SPTOEX  SYN, (16)0107.0
+!
+! THE BIT OFFSET OF EVERY ONE OF THESE IS PINNED ONLY TO THE HALF
+! WORD by anything on this page (docs/transcription_workflow.md,
+! "WHAT THE ORACLE CANNOT SEE" 1) -- but none of them is
+! back-derived here: each is read off a LANDED defining card, and
+! S SPFIX's .13 and S LOWER's .40 are genuine bit addresses from
+! theirs.
+!
+! ---------------------------------------------------------------
+! THE PAGE
+! ---------------------------------------------------------------
+        SLC, (8)216333.              ! line  4  printed "SLC,$"
+WLODE   TI,0,3.0,STLR                ! line  5  -SAVE LR$BC THRU $2
+        TI,13,19.0,STLR+16.0         ! line  6  -SAVE LR $3 THRU $15
+        BE,STLR+1.32(.26,2)111101    ! line  7  -STM(U),STLR+1.0
+        BOPZ,$.32                    ! line  8  -FOR LASL LRL
+        SR,15,$1                     ! line  9
+        SV,1,0.0                     ! line 10  -SETS XVZ IF NO PTOE
+        BZXVZ,WJTST                  ! line 11
+WCONA   LVI,$1,SFPTE                 ! line 12
+        CM1111(BU,1),WCONY.21        ! line 13  -SELECT MCP TOE
+        B,WCON+1.0                   ! line 14
+WJTST   KV,$1,SLOWER                 ! line 15
+        BXL,WJERR                    ! line 16  (same card as 15)
+        KV,$1,SUPPER                 ! line 17
+        BZXL,WJERR                   ! line 18  (same card as 17)
+WCON    CM0000(BU,1),WCONY.21        ! line 19  -SELECT PP TOE
+        LV,$2,WINTOR                 ! line 20
+        V-I,2,SIPT+1.0               ! line 21  -TYPE OF INTERRUPT
+        L(BU,6),$2+.12,-24           ! line 22  -SHIFT INT TYPE
+        LX,0,$L                      ! line 23  -INT TYPE IN $0
+        SV,1,$2                      ! line 24  -ADDRESS OF TOE
+        LVS,3,$0,$1                  ! line 25  -CHECK PATTERN BIT
+        BZB,3.0($3),WCONA            ! line 26  -STANDARD FIXUP
+WCONE   +I(BU,18),1.0,-24            ! line 27  -DEVELOP FIELD LENGTH
+        SF(BU,6),WCONV+.35,-24       ! line 28  -SET FIELD LENGTH
+        -I(BU,18),64.0,-24          ! line 29  PRINTED "-I(...)"
+        SF(BU,7),WCONV+.44,-24       ! line 30  -SET OFFSET
+        L(BU,44),WPATT+.4,16         ! line 31  -MASK FOR PATTERN
+WCONV   CT0001(BU,0),3.0($1)         ! line 32  -SET ALL ONES COUNT
+        LV,0,7.32                    ! line 33
+        V+,0,$0                      ! line 34  -DEVELOP EXIT ADDRESS
+        LVS,0,$0,$2                  ! line 35  -DEVELOP EXIT ADDRESS
+        V+I,0,3.0                    ! line 36  -EXIT ADDRESS IN $0
+        SVA,0,WCONY                  ! line 37  -SET EXIT ADDRESS
+        BB,WCONY.21,$+2.0            ! line 38  -IF MCP FIXUP
+        CM1111(BU,1),SSPFIX          ! line 39  -PP IN SPECIAL FIXUP
+        LV,$0,STIC                   ! line 40
+        SVA,0,0.0($1)                ! line 41
+        LFT(U),STLR+1.0              ! line 42  -RESTORE $MR
+        TI,2,STLR+8.0,1.0($1)        ! line 43
+        TI,13,STLR+4.0,7.0           ! line 44  -RESTORE USED LR
+        TI,1,SLRMCP+9.0,$MASK        ! line 45
+        Z,$IND                       ! line 46
+        BEXEZ,$+.32                  ! line 47
+WCONY   BE,$                         ! line 48  -TO FIXUP
+WPATT   SYN,SFPTE+3.0                ! line 49
+WINTOR  VF,0                         ! line 50  -INTERRUPT PRESERVATION
+WJERR   LVI,$14,SPTOEX               ! line 51
+        SIC,SDISIC                   ! line 52
+        B,SDISP                      ! line 53  (same card as 52)
+SINTO   SYN,WINTOR                   ! line 54
+!
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS PRINTED
+! ---------------------------------------------------------------
+!  LINE  LOCATION     BINARY OUTPUT              NAME     STATEMENT                      COMMENT                              SERIAL
+!   1*                                                    -****************************                                       EC000001
+!   2*                                                    -  ***** MASKABLE INTERRUPTS ****                                   EC000002
+!   3*                                                    -****************************                                       EC000003
+!   4*  216333.00 *                                                SLC,$                                                      EC000004
+!   5*  216333.00     000003.00 80  215230.00 A0  W LODE   TI,0,3.0,STLR                 -SAVE LR$BC THRU $2                  EC000005
+!   6*  216334.00     000023.00 80  215250.32 A0           TI,13,19.0,STLR+16.0          -SAVE LR $3 THRU $15                 EC000006
+!   7*  216335.00     215231.47 A0                         BE,STLR+1.32(.26,2)111101     -STM(U),STLR+1.0 - SAVE $MR.         EC000007
+!   8*  216335.40     216336.07 C6                         BOPZ,$.32                     -FOR LASL LRL                        EC000008
+!   9*  216336.00     000021.37 70                         SR,15,$1                                                           EC000009
+!  10*  216336.40     000000.03 30                         SV,1,0.0                      -SETS XVZ INDICATOR ON IF NO PTOE    EC000010
+!  11*  216337.00     216341.71 40                         BZXVZ,WJTST                                                        EC000011
+!  12*  216337.40     215163.03 01                 WCONA   LVI,$1,SFPTE                                                       EC000012
+!  13*  216340.00     216371.25 80  001000.36 F0           CM1111(BU,1),WCONY.21         -SELECT MCP TOE                      EC000013
+!  14*  216341.00     216344.50 00                         B,WCON+1.0                                                         EC000014
+!  15*  216341.40     215230.42 90                 WJTST   KV,$1,SLOWER                                                       EC000015
+!  16*  216342.00     216372.32 42                         BXL,WJERR                                                          EC000015
+!  17*  216342.40     215230.02 90                         KV,$1,SUPPER                                                       EC000016
+!  18*  216343.00     216372.32 40                         BZXL,WJERR                                                         EC000016
+!  19*  216343.40     216371.25 80  001000.00 F0   WCON    CM0000(BU,1),WCONY.21         -SELECT PP TOE                       EC000017
+!  20*  216344.40     216371.44 30                         LV,$2,WINTOR                                                       EC000018
+!  21*  216345.00     215104.05 0D                         V-I,2,SIPT+1.0                -TYPE OF INTERRUPT AS FULL WORD      EC000019
+!  22*  216345.40 *   000022.14 80  006064.20 50           L(BU,6),$2+.12,-24            -SHIFT INT TYPE TO BIT FIELD         EC000020
+!  23*  216346.40     000010.00 10                         LX,0,$L                       -INT TYPE IN BIT FIELD OF $0         EC000021
+!  24*  216347.00     000022.03 30                         SV,1,$2                       -ADDRESS OF TOE                      EC000022
+!  25*  216347.40     600000.07 0B                         LVS,3,$0,$1                   -PREPARE TO CHECK PATTERN BIT        EC000023
+!  26*  216350.00     000003.00 83  216337.74 00           BZB,3.0($3),WCONA             -STANDARD FIXUP IF PATTERN BIT IS 0  EC000024
+!  27*  216351.00     000001.00 80  422064.20 10  W CONE   +I(BU,18),1.0,-24             -DEVELOP FIELD LENGTH                EC000025
+!  28*  216352.00     216356.43 80  006064.12 F0           SF(BU,6),WCONV+.35,-24        -SET FIELD LENGTH                    EC000026
+!  29*  216353.00     000100.00 80  422064.30 10           -I(BU,18),64.0,-24            -DEVELOP OFFSET                      EC000027
+!  30*  216354.00     216356.54 80  007064.12 F0           SF(BU,7),WCONV+.44,-24        -SET OFFSET                          EC000028
+!  31*  216355.00     215166.04 80  054010.20 50           L(BU,44),WPATT+.4,16          -MASK FOR PATTERN                    EC000029
+!  32*  216356.00     000003.00 81  000000.03 70  W CONV   CT0001(BU,0),3.0($1)          -SET ALL ONES COUNT                  EC000030
+!  33*  216357.00     000007.40 30                         LV,0,7.32                                                          EC000031
+!  34*  216357.40     000020.00 B0                         V+,0,$0                       -DEVELOP EXIT ADDRESS                EC000032
+!  35*  216360.00     500000.01 0B                         LVS,0,$0,$2                   -DEVELOP EXIT ADDRESS                EC000033
+!  36*  216360.40     000003.01 05                         V+I,0,3.0                     -EXIT ADDRESS IN $0                  EC000034
+!  37*  216361.00     216371.01 D0                         SVA,0,WCONY                   -SET EXIT ADDRESS                    EC000035
+!  38*  216361.40 *   216371.25 80  216363.74 02           BB,WCONY.21,$+2.0             -IF MCP FIXUP                        EC000036
+!  39*  216362.40     215001.13 80  001000.36 F0           CM1111(BU,1),SSPFIX           -PUT PP IN SPECIAL FIXUP             EC000037
+!  40*  216363.40     215265.00 30                         LV,$0,STIC                                                         EC000038
+!  41*  216364.00     000000.01 D1                         SVA,0,0.0($1)                                                      EC000039
+!  42*  216364.40     215231.44 A0                         LFT(U),STLR+1.0               -RESTORE $MR                         EC000040
+!  43*  216365.00     215240.00 80  000001.04 A1           TI,2,STLR+8.0,1.0($1)                                              EC000041
+!  44*  216366.00     215234.00 80  000007.32 A0           TI,13,STLR+4.0,7.0            -RESTORE USED LR                     EC000042
+!  45*  216367.00     215373.00 80  000014.02 A0           TI,1,SLRMCP+9.0,$MASK                                              EC000043
+!  46*  216370.00     000013.22 00                         Z,$IND                                                             EC000044
+!  47*  216370.40     216371.11 46                         BEXEZ,$+.32                                                        EC000045
+!  48*  216371.00     216371.00 00                 W CONY  BE,$    -TO FIXUP  ENABLED IF SPECIAL,DISABLED IF STANDARD         EC000046
+!  49*  215166.00+    +00000000         N ,100,04  WPATT   SYN,SFPTE+3.0                                                      EC000047
+!  50*  216371.40     000000.00+                   WINTOR  VF,0                          - INTERRUPT PRESERVATION WORD        EC000048
+!  51*  216372.00     000407.35 01                 WJERR   LVI,$14,SPTOEX                                                     EC000049
+!  52*  216372.40     217451.40 80                         SIC,SDISIC                                                         EC000050
+!  53*  216373.00     217372.10 00                         B,SDISP                                                            EC000050
+!  54*  216371.40+    +00000000         B ,31 ,01  SINTO   SYN,WINTOR                                                         EC000051
+!
+! Lines 49 and 54 are SYN cards: the "+" after the location marks a
+! RESOLVED VALUE and not the location counter, and the printed
+! "+00000000" with a data description beside it is the inherited
+! description, not emitted storage.  Neither moves the counter, and
+! neither takes a !CHECK -- their !SYM lines are the check.
+! Line 50's "000000.00+" IS storage: a VF full word of zero.
+!
+! The asterisks on lines 4, 22 and 38 are the listing's own
+! word-boundary marks and carry no bits.
+!
+! ---------------------------------------------------------------
+! CHECKS
+! ---------------------------------------------------------------
+!SYM   WLODE    216333.00
+!SYM   WCONA    216337.40
+!SYM   WJTST    216341.40
+!SYM   WCON     216343.40
+!SYM   WCONE    216351.00
+!SYM   WCONV    216356.00
+!SYM   WCONY    216371.00
+!SYM   WPATT    215166.00
+!SYM   WINTOR   216371.40
+!SYM   WJERR    216372.00
+!SYM   SINTO    216371.40
+!CHECK 216333.00 | 000003.00 80 215230.00 A0 | line 5 W LODE TI,0,3.0,STLR -- printed byte reads "AC"; the row's own octal fields print 0 as the same open glyph, and there is no index on operand 2, so it is A0 (see GLYPHS 3)
+!CHECK 216334.00 | 000023.00 80 215250.32 A0 | line 6 TI,13,19.0,STLR+16.0 -- same instruction, CLOSED 0 in that byte
+!CHECK 216335.00 | 215231.47 A0 | line 7 BE,STLR+1.32(.26,2)111101 -- parenthetical entry, accepted as printed
+!CHECK 216335.40 | 216336.07 C6 | line 8 BOPZ,$.32 -- "$.32" with no "+" is $ plus 32 bits; accepted as printed
+!CHECK 216336.00 | 000021.37 70 | line 9 SR,15,$1
+!CHECK 216336.40 | 000000.03 30 | line 10 SV,1,0.0
+!CHECK 216337.00 | 216341.71 40 | line 11 BZXVZ,WJTST
+!CHECK 216337.40 | 215163.03 01 | line 12 W CONA LVI,$1,SFPTE -- also p.114's witness for SFPTE's address
+!CHECK 216340.00 | 216371.25 80 001000.36 F0 | line 13 CM1111(BU,1),WCONY.21 -- .21 is DECIMAL, printed .25 octal
+!CHECK 216341.00 | 216344.50 00 | line 14 B,WCON+1.0
+!CHECK 216341.40 | 215230.42 90 | line 15 W JTST KV,$1,SLOWER -- S LOWER is 215230.40, the .02 is KV's
+!CHECK 216342.00 | 216372.32 42 | line 16 BXL,WJERR
+!CHECK 216342.40 | 215230.02 90 | line 17 KV,$1,SUPPER
+!CHECK 216343.00 | 216372.32 40 | line 18 BZXL,WJERR
+!CHECK 216343.40 | 216371.25 80 001000.00 F0 | line 19 W CON CM0000(BU,1),WCONY.21
+!CHECK 216344.40 | 216371.44 30 | line 20 LV,$2,WINTOR
+!CHECK 216345.00 | 215104.05 0D | line 21 V-I,2,SIPT+1.0
+!CHECK 216345.40 | 000022.14 80 006064.20 50 | line 22 L(BU,6),$2+.12,-24 -- $2 is 000022.00, +.12 decimal = .14 octal
+!CHECK 216346.40 | 000010.00 10 | line 23 LX,0,$L -- $L is 000010.00, the same cell p.128 line 37 uses
+!CHECK 216347.00 | 000022.03 30 | line 24 SV,1,$2
+!CHECK 216347.40 | 600000.07 0B | line 25 LVS,3,$0,$1
+!CHECK 216350.00 | 000003.00 83 216337.74 00 | line 26 BZB,3.0($3),WCONA
+!CHECK 216351.00 | 000001.00 80 422064.20 10 | line 27 W CONE +I(BU,18),1.0,-24 -- the I-immediate suffix, accepted
+!CHECK 216352.00 | 216356.43 80 006064.12 F0 | line 28 SF(BU,6),WCONV+.35,-24 -- stores into line 32's own word
+!CHECK 216353.00 | 000100.00 80 422064.30 10 | line 29 PRINTED "-I(BU,18),64.0,-24"; strap_asm rejects "-I" (KeyError at strap_asm.py:3424), deck writes the bit-identical "-I(BU,18),64.0,-24" -- see ASSEMBLER LIMITATION
+!CHECK 216354.00 | 216356.54 80 007064.12 F0 | line 30 SF(BU,7),WCONV+.44,-24
+!CHECK 216355.00 | 215166.04 80 054010.20 50 | line 31 L(BU,44),WPATT+.4,16
+!CHECK 216356.00 | 000003.00 81 000000.03 70 | line 32 W CONV CT0001(BU,0),3.0($1)
+!CHECK 216357.00 | 000007.40 30 | line 33 LV,0,7.32 -- 7.32 decimal is word 7 bit 0o40
+!CHECK 216357.40 | 000020.00 B0 | line 34 V+,0,$0 -- $0 is 000020.00
+!CHECK 216360.00 | 500000.01 0B | line 35 LVS,0,$0,$2
+!CHECK 216360.40 | 000003.01 05 | line 36 V+I,0,3.0
+!CHECK 216361.00 | 216371.01 D0 | line 37 SVA,0,WCONY
+!CHECK 216361.40 | 216371.25 80 216363.74 02 | line 38 BB,WCONY.21,$+2.0
+!CHECK 216362.40 | 215001.13 80 001000.36 F0 | line 39 CM1111(BU,1),SSPFIX -- S SPFIX's .13 is a real bit address
+!CHECK 216363.40 | 215265.00 30 | line 40 LV,$0,STIC
+!CHECK 216364.00 | 000000.01 D1 | line 41 SVA,0,0.0($1)
+!CHECK 216364.40 | 215231.44 A0 | line 42 LFT(U),STLR+1.0 -- p.128 line 8 prints the same operand the same way
+!CHECK 216365.00 | 215240.00 80 000001.04 A1 | line 43 TI,2,STLR+8.0,1.0($1) -- the ONLY TI here with an index on operand 2, and the only one ending in a nonzero nibble
+!CHECK 216366.00 | 215234.00 80 000007.32 A0 | line 44 TI,13,STLR+4.0,7.0 -- printed byte reads "AC"; the row's own "215234.0C" prints a closed 0 and an open C in one octal field (see GLYPHS 3)
+!CHECK 216367.00 | 215373.00 80 000014.02 A0 | line 45 TI,1,SLRMCP+9.0,$MASK -- $MASK is 000014.00
+!CHECK 216370.00 | 000013.22 00 | line 46 Z,$IND
+!CHECK 216370.40 | 216371.11 46 | line 47 BEXEZ,$+.32
+!CHECK 216371.00 | 216371.00 00 | line 48 W CONY BE,$ -- the exit the connectives edit
+!CHECK 216371.40 | 000000.00+ | line 50 W INTOR VF,0 -- the interrupt preservation word, referenced by pp.112,113 and by S INTO on line 54
+!CHECK 216372.00 | 000407.35 01 | line 51 W JERR LVI,$14,SPTOEX
+!CHECK 216372.40 | 217451.40 80 | line 52 SIC,SDISIC
+!CHECK 216373.00 | 217372.10 00 | line 53 B,SDISP -- the counter leaves at 216373.40, where printed p.131 line 4 prints "SLC,$"

@@ -1,0 +1,448 @@
+! mcp_bootstrap_p131.strap -- "STANDARD FIXUPS", printed page 131.
+! docs/MCP_Mar63_001-249.pdf PDF p.138, header READ and not assumed:
+! "TIME CLOCK 00054041  PUNID 11D11MCP   CARD ID ED000001   DIST. OF
+! 3/01   3/01   PAGE NUMBER  131".
+!
+! >>> THE HEADER'S "LOCATION" FIELD IS BLANK ON THIS PAGE. <<<
+! printed p.128 prints "LOCATION 216240" there and this deck's
+! predecessor used it as a second reading of the first word.  Here
+! the field is empty -- rendered at 600 dpi beside p.128's for the
+! comparison -- and the reason is visible on the page: line 1 is a
+! COMMENT CARD, so the page's first card has no location to print.
+! The origin below therefore rests on line 4's SLC and line 5, not
+! on the header.
+!
+! >>> A NEW PUNCHED DECK STARTS HERE. <<<  The card-serial column
+! runs ED000001 (line 1) to ED000048 (line 48) -- forty-eight
+! consecutive serials for forty-eight lines, ONE CARD PER LINE, no
+! semicolon double-statement cards.  Counted off the serial column,
+! nothing fell off the top or the bottom of the render.  printed
+! p.128 was punching EB0003xx.
+!
+! FORTY-EIGHT LINES.  Lines 1-3 are a comment banner and line 28's
+! CNOP compiles nothing, so FORTY-FOUR rows carry a LOCATION.  The
+! page runs 216373.40 (line 4) .. 216440.00 (line 48).
+!
+! ---------------------------------------------------------------
+! THE BACKWARD JOIN IS WITNESSED BY THE PAGE ITSELF
+! ---------------------------------------------------------------
+! >>> LINE 4 PRINTS "SLC,$" AT 216373.40. <<<  An SLC emits nothing,
+! so its printed LOCATION *is* the counter arriving from printed
+! p.130 -- a free, independent reading of the join, printed by IBM's
+! own assembler (docs/transcription_workflow.md, "A PRINTED SLC,$ IS
+! THE BEST FORWARD-JOIN WITNESS THERE IS").  p.130 is not
+! transcribed, so this deck writes the hard origin "SLC,(8)216373.40"
+! and ASSERTS what the page CHECKS; the printed card is recorded here
+! and in line 4's note so that the witness is not thrown away.
+!
+! The volume OCR of printed p.130 agrees: its line 53 reads
+! "216373.00  217372.10 00  B,SVISP" (docs/ocr/MCP_Mar63_001-249.txt
+! line 6832) -- a half word at 216373.00 leaves the counter at
+! 216373.40, exactly where this page's SLC lands.  Its line 54 is a
+! SYN ("215166.00+ ... SINTE SYN,WINTOR"), which spends no storage.
+! THAT IS AN OCR READING, NOT A RENDERED ONE; when p.130 lands,
+! compare by hand.
+!
+! Line 5's CNOP is the proof that the counter really arrived on a
+! HALF word: a CNOP emits a NOP only when the counter is odd, and
+! this one prints "000000.30 00" at 216373.40 while line 28's CNOP,
+! reached at the full word 216412.00, prints NOTHING AT ALL -- no
+! location, no binary.  Two CNOPs on one page, one firing and one
+! not, is the page's own demonstration of the rule.
+!
+! THE FORWARD JOIN: the counter leaves line 47 at 216440.00, which
+! is line 48's printed LOCATION, and printed p.132 line 1 is at
+! 216440.40 (volume OCR).  See "LINE 48 IS NOT IN THIS DECK" below.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE CONTAINS
+! ---------------------------------------------------------------
+! Ten "standard fixup" entry points, laid out as a table, plus the
+! commentator call they all funnel into.
+!
+! Lines 6-20   FIVE fixups that go to YMFL.  Each is three cards:
+!              "SIC,YMFL / B,YMFL / (IQSX)DD(BU),<name>X".  The SIC
+!              and the branch are ONE 64-bit instruction (Reference
+!              Manual printed p.41), and the DD after them is a
+!              four-character-wide IQS literal naming the fixup:
+!              MK, IK, IJ, EK, CPUS.  The names match the labels --
+!              YFXMK/MK, YFXIK/IK, YFXIJ/IJ, YFXEK/EK, YFXCPU/CPUS.
+! Lines 21-28  YMFL, the common tail.  Line 21 transmits one word
+!              from itself to YMFCM (so the message word carries the
+!              interrupted address), lines 22-23 call the
+!              commentator with the standard "SIC,S COM IC / B,S
+!              COMM" pair, lines 24-25 are TWO NULL-OPERATION half
+!              words -- the commentator's parameter pair, the
+!              message address YMFCM and the decimal count 10 -- and
+!              lines 26-27 are "BD,$ / BE,$", a two-way wait whose
+!              second half word is YMFIC.
+! Lines 29-30  YMFCM, the message itself, in 89-character-set IQS
+!              code: "INTERRUPT. THE NEXT INSTRUCTION IS A BE TO THE
+!              INTERRUPTED ADDRESS."
+! Line 31      YMFCF, a three-word reservation, "DR(N),(3)".
+! Lines 32-47  FOUR more fixups, going to YPREL instead: "SIC,YPREL
+!              / B,YPREFX" followed by TWO 32-bit literals of the
+!              same name, one in the 48-character set and one in the
+!              89-character set -- "(AX)DD(BU,32),...X" then
+!              "(IQSX)DD(BU,32),...X".  EKJ, UNRJ, CBJ, OP.
+! Line 48      YFXAD, the head of a fifth such group, cut off by the
+!              page.  See below.
+!
+! ---------------------------------------------------------------
+! THE NULL OPERATION ON LINES 24 AND 25 IS A PRINTED FORM, AND IT
+! WAS TESTED BEFORE IT WAS BELIEVED
+! ---------------------------------------------------------------
+! Lines 24 and 25 print, in the STATEMENT column with the operation
+! field EMPTY:
+!
+!     24*  216410.00   216412.00 80        ,YMFCM
+!     25*  216410.40   000012.00 80        ,10.
+!
+! The comma sits in the same character cell as the "B" of line 23's
+! "B,SCOMM" and the "(" of line 29's "(IQS$)" -- measured on the
+! page's own 10-cpi character grid, not eyeballed -- so the
+! operation really is blank.  strap_asm already implements this:
+! statement_size/emit_statement's "op == ''" case cites C22-6531
+! printed p.7 ("the instruction is compiled as if the missing fields
+! contained zeros ... called NULL") and Reference Manual printed
+! p.163, and emits "the address-and-index half word every full-word
+! format begins with" -- address in bits 0-23, the literal 1000 in
+! bits 24-27, the index in 28-31.  That is exactly 0x80 with no
+! index, which is what both rows print.  NO assembler change was
+! needed and none is proposed.
+!
+! The idiom is not local to this page.  The volume OCR shows the
+! same shape after another commentator call: "221037.00 215470.40 80
+! SIC,SCOMIC / 221037.40 215470.10 00 B,SCOMM / 221040.00
+! 221050.00 80 ,ZIC01", and the next page's line 1 prints
+! "221040.40 ... 87" for a statement indexed by $7 -- an index of 7
+! in the low nibble, which is the same field this deck's null
+! operation leaves at zero.
+!
+! ---------------------------------------------------------------
+! LINE 48 IS NOT IN THIS DECK, AND THAT IS DELIBERATE
+! ---------------------------------------------------------------
+! Line 48 is "YFXAD  SIC,YPREL" at 216440.00, printing
+! "216457.40 80".  Its paired half-word branch is printed p.132
+! line 1 ("216440.40  216446.10 00  B,YPREFX", volume OCR).  A SIC
+! and the branch after it are ONE 64-bit instruction, and strap_asm
+! enforces that -- correctly; real STRAP read the next card and
+! never saw a page break.  Writing line 48 alone makes the WHOLE
+! deck fail to assemble, and writing a stub branch after it would
+! deposit a word at 216440.40 that this page does not print and that
+! printed p.132 owns.  So line 48 is recorded in the listing block
+! below and nowhere else.
+!
+! WHAT IS LOST IS SMALL AND BOUNDED.  Line 48's bits,
+! "216457.40 80", are the SAME STATEMENT as lines 32, 36, 40 and 44,
+! all four of which this deck checks -- so the pattern is verified
+! four times over on this page.  The only thing lost is line 48's
+! LOCATION, and that is pinned twice anyway: this deck's counter
+! ends at exactly 216440.00, and decks/mcp_bootstrap_p110.strap
+! already carries "YFXAD SYN,(8)216440.0".
+!
+! ---------------------------------------------------------------
+! THIS PAGE IS THE DEFINING PAGE FOR ELEVEN OF printed p.110'S SYNs
+! ---------------------------------------------------------------
+! decks/mcp_bootstrap_p110.strap SYNs eleven symbols it only
+! REFERENCES.  Every one of them is DEFINED here, and every one
+! lands on p.110's value to the bit:
+!
+!     YFXMK   216374.00    p110 "YFXMK  SYN,(8)216374.0"
+!     YFXIK   216376.00    p110 "YFXIK  SYN,(8)216376.0"
+!     YFXIJ   216400.00    p110 "YFXIJ  SYN,(8)216400.0"
+!     YFXEK   216402.00    p110 "YFXEK  SYN,(8)216402.0"
+!     YFXCPU  216404.00    p110 "YFXCPU SYN,(8)216404.0"
+!     YMFIC   216411.40    p110 "YMFIC  SYN,(8)216411.40"
+!     YFXEKJ  216430.00    p110 "YFXEKJ SYN,(8)216430.0"
+!     YFXUNR  216432.00    p110 "YFXUNR SYN,(8)216432.0"
+!     YFXCBJ  216434.00    p110 "YFXCBJ SYN,(8)216434.0"
+!     YFXOP   216436.00    p110 "YFXOP  SYN,(8)216436.0"
+!     YFXAD   216440.00    p110 "YFXAD  SYN,(8)216440.0"  (line 48)
+!
+! That is eleven independent confirmations of a SPELLING, which no
+! !CHECK can supply -- listing_oracle checks LOCATIONS and BINARY
+! and never label spellings.  printed p.110's own witness for YMFIC
+! is "215023.00  216411.40 80  S IT  SIC,YMFIC", and for YFXMK
+! "215023.40  216374.04 00  BD,YFXMK".
+!
+! The three names NOT witnessed off-page are YMFL, YMFCM and YMFCF.
+! YMFL is referenced from ten rows ON this page (lines 6,7,9,10,12,
+! 13,15,16,18,19) and compiles bit-exactly at every one; YMFCM is
+! referenced from lines 21 and 24; YMFCF is referenced from printed
+! p.132 line 18, which the volume OCR reads as "216453.00
+! 216425.03 10  SX,$1,YMFCF" -- word 216425, which is where this
+! page's line 31 puts it.
+!
+! >>> THE VOLUME OCR MISSPELLS ONE OF THEM, AND THE PAGE SETTLES IT
+! AGAINST THE OCR. <<<  Line 44's name OCRs twice as "YFXCP"
+! (docs/ocr/MCP_Mar63_001-249.txt), never as YFXOP.  Rendered at
+! 1200 dpi beside line 40's YFXCBJ, the fourth glyph of line 44 is a
+! CLOSED round O and line 40's is an open C with no left stem -- and
+! ink dropout can open a closed glyph but never close an open one,
+! so the closed one is certainly O.  Three further witnesses agree:
+! the entry datum this very group punches is " OP " (lines 46-47),
+! "OP" is English for the operation-code fixup, and p.110's deck
+! already carries "YFXOP SYN,(8)216436.0".  Line 48's last glyph is
+! a D by the same test -- a straight vertical LEFT stem -- and
+! printed p.132's own entry datum for it reads "AD".
+!
+! TAIL SCOPE.  printed p.99 line 11's "SLC,(8)215000." moved the
+! origin here and pp.99+ are OUTSIDE the TAIL,(2)G block that printed
+! p.2 opened and printed p.98 line 37 closed.  Every name this page
+! DEFINES is Y-prefixed and none collides with anything in pp.2-98.
+!
+! ---------------------------------------------------------------
+! EXTERNALS.  WHAT IS READ AND WHAT IS CONVENTION
+! ---------------------------------------------------------------
+! >>> ALL FOUR ADDRESSES BELOW ARE BACK-DERIVED FROM A PRINTED
+! INSTRUCTION, AND A BACK-DERIVED ADDRESS IS PINNED ONLY TO THE HALF
+! WORD. <<<  Bit offsets 0-31 all encode identically; only bit 32,
+! the half-word select, shows.  Writing ".0" or ".40" is therefore a
+! reading of the HALF WORD and a CONVENTION within it, and no !CHECK
+! on this page can test the bits inside
+! (docs/transcription_workflow.md, "WHAT THE ORACLE CANNOT SEE",
+! item 1).  Two of the four are LANDED in another deck at the same
+! value, which is a real second reading.
+!
+! SCOMM   215470.00  LANDED, decks/mcp_bootstrap_p116.strap line 293
+!                    ("S COMM  B,MCOMD  -EMERGENCY ENTRY TO
+!                    COMMMENTATOR"), which is the DEFINING card.
+!                    Line 23 here prints 215470.10 00 and B
+!                    contributes .10, so the half word is 215470.00.
+!                    THE PAGE SPELLS IT WITHOUT BLANKS ("SCOMM")
+!                    where p.116 prints "S COMM"; STRAP ignores
+!                    blanks in a name and both compile identically.
+SCOMM   SYN, (8)215470.0
+! SCOMIC  215470.40  LANDED, decks/mcp_bootstrap_p116.strap line 294
+!                    ("S COMIC  VF,0").  Line 22 here prints
+!                    215470.40 80 and SIC contributes .00, so the
+!                    half word is 215470.40.  Spelled "SCOMIC" here
+!                    and "S COM IC" on printed pp.133 and 157 of the
+!                    same listing (volume OCR), the same two-ways
+!                    spelling p.128 found for S CHAN S.
+SCOMIC  SYN, (8)215470.40
+! YPREL   216457.40  NEW HERE.  Lines 32, 36, 40, 44 and 48 all
+!                    print 216457.40 80.  The volume OCR gives the
+!                    DEFINING card on printed p.132: "27* 216457.40
+!                    216457.40 80 000000.20 50  YPREL  L(BU),$
+!                    -LOAD IDENTIFYING INITIALS".  Not rendered
+!                    here; it is an OCR reading of a page nobody has
+!                    opened.
+YPREL   SYN, (8)216457.40
+! YPREFX  216446.00  NEW HERE.  Lines 33, 37, 41 and 45 all print
+!                    216446.10 00 and B contributes .10.  The volume
+!                    OCR gives the defining card on printed p.132:
+!                    "12* 216446.00  215001.04 80  216453.34 02
+!                    YPREFX  BB,SL,$+5.0".  Same caveat.
+YPREFX  SYN, (8)216446.0
+!
+! ---------------------------------------------------------------
+! THE ORIGIN
+! ---------------------------------------------------------------
+        SLC, (8)216373.40            ! line 4 -- printed card is "SLC,$"
+!
+! ---------------------------------------------------------------
+! THE PAGE
+! ---------------------------------------------------------------
+        CNOP                         ! line 5
+YFXMK   SIC, YMFL                    ! line 6
+        B, YMFL                      ! line 7
+        (IQSX)DD(BU),     MK X       ! line 8
+YFXIK   SIC, YMFL                    ! line 9
+        B, YMFL                      ! line 10
+        (IQSX)DD(BU),     IK X       ! line 11
+YFXIJ   SIC, YMFL                    ! line 12
+        B, YMFL                      ! line 13
+        (IQSX)DD(BU),     IJ X       ! line 14
+YFXEK   SIC, YMFL                    ! line 15
+        B, YMFL                      ! line 16
+        (IQSX)DD(BU),     EK X       ! line 17
+YFXCPU  SIC, YMFL                    ! line 18
+        B, YMFL                      ! line 19
+        (IQSX)DD(BU),   CPUS X       ! line 20
+YMFL    TI, 1, $, YMFCM              ! line 21
+        SIC, SCOMIC                  ! line 22
+        B, SCOMM                     ! line 23
+        , YMFCM                      ! line 24  null operation
+        , 10.                        ! line 25  null operation
+        BD, $                        ! line 26
+YMFIC   BE, $                        ! line 27
+        CNOP                         ! line 28 -- compiles nothing
+YMFCM   (IQS$)DD(BU),        INTERRUPT. THE NEXT INSTRUCTION IS A BE$
+        (IQS$)DD(BU), TO THE INTERRUPTED ADDRESS.      $
+YMFCF   DR(N), (3)                   ! line 31
+YFXEKJ  SIC, YPREL                   ! line 32
+        B, YPREFX                    ! line 33
+        (AX)DD(BU,32), EKJX          ! line 34
+        (IQSX)DD(BU,32), EKJX        ! line 35
+YFXUNR  SIC, YPREL                   ! line 36
+        B, YPREFX                    ! line 37
+        (AX)DD(BU,32),UNRJX          ! line 38
+        (IQSX)DD(BU,32),UNRJX        ! line 39
+YFXCBJ  SIC, YPREL                   ! line 40
+        B, YPREFX                    ! line 41
+        (AX)DD(BU,32),CBJ X          ! line 42
+        (IQSX)DD(BU,32), CBJX        ! line 43
+YFXOP   SIC, YPREL                   ! line 44
+        B, YPREFX                    ! line 45
+        (AX)DD(BU,32), OP X          ! line 46
+        (IQSX)DD(BU,32), OP X        ! line 47
+! line 48  216440.00   216457.40 80   YFXAD  SIC,YPREL
+!          NOT ASSEMBLED -- see "LINE 48 IS NOT IN THIS DECK" above.
+!
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, READ OFF PDF p.138
+! ---------------------------------------------------------------
+!   line  1  -  **********************************************************
+!   line  2       ******************** STANDARD FIXUPS ********************
+!   line  3  -  **********************************************************
+!   line  4  216373.40 *                                 SLC,$
+!   line  5  216373.40     000000.30 00                  CNOP
+!   line  6  216374.00     216406.00 80          YFXMK   SIC,YMFL
+!   line  7  216374.40     216406.10 00                  B,YMFL
+!   line  8  216375.00     (no binary printed)           (IQSX)DD(BU),     MK X
+!   line  9  216376.00     216406.00 80          YFXIK   SIC,YMFL
+!   line 10  216376.40     216406.10 00                  B,YMFL
+!   line 11  216377.00     (no binary printed)           (IQSX)DD(BU),     IK X
+!   line 12  216400.00     216406.00 80          YFXIJ   SIC,YMFL
+!   line 13  216400.40     216406.10 00                  B,YMFL
+!   line 14  216401.00     (no binary printed)           (IQSX)DD(BU),     IJ X
+!   line 15  216402.00     216406.00 80          YFXEK   SIC,YMFL
+!   line 16  216402.40     216406.10 00                  B,YMFL
+!   line 17  216403.00     (no binary printed)           (IQSX)DD(BU),     EK X
+!   line 18  216404.00     216406.00 80          YFXCPU  SIC,YMFL
+!   line 19  216404.40     216406.10 00                  B,YMFL
+!   line 20  216405.00     (no binary printed)           (IQSX)DD(BU),   CPUS X
+!   line 21  216406.00 *   216406.00 80 216412.02 A0   YMFL  TI,1,$,YMFCM
+!   line 22  216407.00     215470.40 80                  SIC,SCOMIC
+!   line 23  216407.40     215470.10 00                  B,SCOMM
+!   line 24  216410.00     216412.00 80                  ,YMFCM
+!   line 25  216410.40     000012.00 80                  ,10.
+!   line 26  216411.00     216411.04 00                  BD,$
+!   line 27  216411.40     216411.40 00          YMFIC   BE,$
+!   line 28  (no location, no binary)                    CNOP
+!   line 29  216412.00     (no binary printed)   YMFCM   (IQS$)DD(BU),        INTERRUPT. THE NEXT INSTRUCTION IS A BE$
+!   line 30  216417.70 *   (no binary printed)           (IQS$)DD(BU), TO THE INTERRUPTED ADDRESS.      $
+!   line 31  216425.00 *   000003.00             YMFCF   DR(N),(3)
+!   line 32  216430.00     216457.40 80          YFXEKJ  SIC,YPREL
+!   line 33  216430.40     216446.10 00                  B,YPREFX
+!   line 34  216431.00     (no binary printed)           (AX)DD(BU,32), EKJX
+!   line 35  216431.40     (no binary printed)           (IQSX)DD(BU,32), EKJX
+!   line 36  216432.00     216457.40 80          YFXUNR  SIC,YPREL
+!   line 37  216432.40     216446.10 00                  B,YPREFX
+!   line 38  216433.00     (no binary printed)           (AX)DD(BU,32),UNRJX
+!   line 39  216433.40     (no binary printed)           (IQSX)DD(BU,32),UNRJX
+!   line 40  216434.00     216457.40 80          YFXCBJ  SIC,YPREL
+!   line 41  216434.40     216446.10 00                  B,YPREFX
+!   line 42  216435.00     (no binary printed)           (AX)DD(BU,32),CBJ X
+!   line 43  216435.40     (no binary printed)           (IQSX)DD(BU,32), CBJX
+!   line 44  216436.00     216457.40 80          YFXOP   SIC,YPREL
+!   line 45  216436.40     216446.10 00                  B,YPREFX
+!   line 46  216437.00     (no binary printed)           (AX)DD(BU,32), OP X
+!   line 47  216437.40     (no binary printed)           (IQSX)DD(BU,32), OP X
+!   line 48  216440.00     216457.40 80          YFXAD   SIC,YPREL
+!
+! The LOCATION-column asterisk (docs/listing_typography.md 12,
+! "RECORDED, NOT EXPLAINED" in decks/mcp_bootstrap_p111.strap)
+! appears on lines 4, 21, 30 and 31.  Line 4 is the SLC, line 21 is
+! the TI -- printed p.124 saw the same mark on three of its TI rows
+! -- and lines 30/31 are the message tail and the DR.  No mark
+! changes a compiled bit and none is checked.
+!
+! ---------------------------------------------------------------
+! THE BLANKS INSIDE THE DD DATA WERE MEASURED, NOT ESTIMATED
+! ---------------------------------------------------------------
+! The DD rows print NOTHING in the BINARY OUTPUT column (printed
+! pp.21, 37 and 103 do the same), so NO !CHECK can see their
+! contents.  Only their LENGTHS are checked, by the location of the
+! row after them.  The blank counts were read off the page's own
+! 10-cpi character grid: the statement column's cell 0 is at x=3507
+! in the 400-dpi render and the pitch is 40.0 px, both fitted
+! against line 7's known "B,YMFL".
+!
+!   line  8   datum cells 13-20, "MK" at 18-19  ->  "     MK "   8 chars
+!   line 11   same shape                            "     IK "   8
+!   line 14   same shape                            "     IJ "   8
+!   line 17   same shape                            "     EK "   8
+!   line 20   "CPUS" at 16-19                       "   CPUS "   8
+!   line 29   8 blanks then cells 21-59         47 chars
+!   line 30   cells 13-46, "$" at 47            34 chars
+!   lines 34/35  " EKJ"   lines 38/39  "UNRJ"
+!   lines 42     "CBJ "   line 43      " CBJ"
+!   lines 46/47  " OP "
+!
+! At eight bits a character (C28-6129 printed p.16: a missing byte
+! size is treated modulo 8, so it is eight) each eight-character
+! datum is one word, which is what lines 8/11/14/17/20 spend, and
+! each four-character datum is 32 bits, which is what "DD(BU,32)"
+! declares.
+!
+! >>> ONE OF THESE IS PINNED ONLY TO A RANGE, AND IT IS LINE 30. <<<
+! Line 29's 47 characters land the counter on 216417.70, which is
+! line 30's PRINTED location, so 47 is exact.  Line 30's 34
+! characters land it on 216424.10 -- and line 31's DR reserves
+! WORDS, so the counter is rounded up to 216425.00, which is line
+! 31's printed location.  Any length from 34 through 41 characters
+! rounds to the same place.  The reading of 34 is the character-grid
+! measurement above and nothing else.  Everything downstream of line
+! 31 is unaffected either way.
+!
+! ---------------------------------------------------------------
+! WHAT IS AND IS NOT CHECKED
+! ---------------------------------------------------------------
+! Twenty-six !CHECK rows and thirteen !SYM symbols below.  The
+! rows NOT checked are exactly the ones that print no binary:
+!   * lines 1-3, comment cards;
+!   * line 4, an SLC -- an SLC prints no binary;
+!   * lines 8,11,14,17,20,29,30,34,35,38,39,42,43,46,47, the DD
+!     character literals;
+!   * line 28, the CNOP that compiles nothing;
+!   * line 31, "DR(N),(3)".  Its printed "000003.00" is the
+!     RESERVATION COUNT in the BINARY OUTPUT column, not storage
+!     contents, and nothing is deposited for the oracle to read --
+!     the same reason printed pp.84, 109 and 114 give their DRZ rows
+!     no !CHECK (decks/mcp_bootstrap_p114.strap, whose line 5 prints
+!     the identical "000003.00");
+!   * line 48, not assembled -- see above.
+!
+!SYM   YFXMK    216374.00
+!SYM   YFXIK    216376.00
+!SYM   YFXIJ    216400.00
+!SYM   YFXEK    216402.00
+!SYM   YFXCPU   216404.00
+!SYM   YMFL     216406.00
+!SYM   YMFIC    216411.40
+!SYM   YMFCM    216412.00
+!SYM   YMFCF    216425.00
+!SYM   YFXEKJ   216430.00
+!SYM   YFXUNR   216432.00
+!SYM   YFXCBJ   216434.00
+!SYM   YFXOP    216436.00
+!
+!CHECK 216373.40 | 000000.30 00 | line 5 CNOP -- the counter arrived on a half word
+!CHECK 216374.00 | 216406.00 80 | line 6 YFXMK SIC,YMFL
+!CHECK 216374.40 | 216406.10 00 | line 7 B,YMFL
+!CHECK 216376.00 | 216406.00 80 | line 9 YFXIK SIC,YMFL
+!CHECK 216376.40 | 216406.10 00 | line 10 B,YMFL
+!CHECK 216400.00 | 216406.00 80 | line 12 YFXIJ SIC,YMFL
+!CHECK 216400.40 | 216406.10 00 | line 13 B,YMFL
+!CHECK 216402.00 | 216406.00 80 | line 15 YFXEK SIC,YMFL
+!CHECK 216402.40 | 216406.10 00 | line 16 B,YMFL
+!CHECK 216404.00 | 216406.00 80 | line 18 YFXCPU SIC,YMFL
+!CHECK 216404.40 | 216406.10 00 | line 19 B,YMFL
+!CHECK 216406.00 | 216406.00 80 216412.02 A0 | line 21 YMFL TI,1,$,YMFCM (flag column prints *)
+!CHECK 216407.00 | 215470.40 80 | line 22 SIC,SCOMIC -- SCOMIC back-derived, half word only
+!CHECK 216407.40 | 215470.10 00 | line 23 B,SCOMM -- SCOMM back-derived, half word only
+!CHECK 216410.00 | 216412.00 80 | line 24 ,YMFCM -- NULL OPERATION, printed with an empty operation field
+!CHECK 216410.40 | 000012.00 80 | line 25 ,10. -- NULL OPERATION; 10 decimal is 0o12
+!CHECK 216411.00 | 216411.04 00 | line 26 BD,$
+!CHECK 216411.40 | 216411.40 00 | line 27 YMFIC BE,$
+!CHECK 216430.00 | 216457.40 80 | line 32 YFXEKJ SIC,YPREL
+!CHECK 216430.40 | 216446.10 00 | line 33 B,YPREFX
+!CHECK 216432.00 | 216457.40 80 | line 36 YFXUNR SIC,YPREL
+!CHECK 216432.40 | 216446.10 00 | line 37 B,YPREFX
+!CHECK 216434.00 | 216457.40 80 | line 40 YFXCBJ SIC,YPREL
+!CHECK 216434.40 | 216446.10 00 | line 41 B,YPREFX
+!CHECK 216436.00 | 216457.40 80 | line 44 YFXOP SIC,YPREL
+!CHECK 216436.40 | 216446.10 00 | line 45 B,YPREFX

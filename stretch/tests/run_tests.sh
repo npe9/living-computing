@@ -6394,6 +6394,24 @@ run "the receptor's unit hunt, printed p.125" python3 verify_mcp_page.py 125
 run "the console-request handler, printed p.126" python3 verify_mcp_page.py 126
 run "the tape mount and release exits, printed p.127" python3 verify_mcp_page.py 127
 run "the CONCEPTOR and channel-signal queue, printed p.128" python3 verify_mcp_page.py 128
+
+# >>> pp.129-136: THE MASKABLE-INTERRUPT ENTRY, THE FIXUP TABLE AND
+# THE CONCEPTOR. <<<
+# This block found the two WRONG-ANSWER bugs of the session, both
+# because a page left a row FAILING instead of substituting: a blank
+# inside a radix literal silently compiled the wrong word (printed
+# p.135 line 53), and my own "-I" fix had fired on the legitimate
+# "+I" (printed p.130 line 27 caught it in one bit).  It also closed
+# the blank-in-a-name rule on its other two code paths -- the
+# OPERATION field (printed p.132's "BCBJ Z") and an ADDRESS field
+# (printed p.135's "B, P ERR EX").
+run "the disk ARC-address arithmetic, printed p.129" python3 verify_mcp_page.py 129
+run "the maskable-interrupt entry, printed p.130" python3 verify_mcp_page.py 130
+run "the standard fixups, printed p.131" python3 verify_mcp_page.py 131
+run "the program-error fixup, printed p.132" python3 verify_mcp_page.py 132
+run "MCP's two exit routines, printed p.133" python3 verify_mcp_page.py 133
+run "the interrupt-name table and JWLODE, printed p.134" python3 verify_mcp_page.py 134
+run "the CONCEPTOR's console handler, printed p.135" python3 verify_mcp_page.py 135
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
 run "the program status table, printed p.109" python3 verify_mcp_page.py 109
 run "the interrupt table, printed p.110" python3 verify_mcp_page.py 110

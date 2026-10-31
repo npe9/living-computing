@@ -1,0 +1,381 @@
+! mcp_bootstrap_p133.strap -- the MCP PROGRAM-ERROR / MASKABLE-
+! INTERRUPT exits, printed page 133.  docs/MCP_Mar63_001-249.pdf PDF
+! p.140, header READ and not assumed: "TIME CLOCK 00054041  PUNID
+! 11D11MCP   CARD ID ED000101   DIST. OF 3/01   3/01   PAGE NUMBER
+! 133", and the header's own "LOCATION 216500" names the page's
+! first word.
+!
+! FIFTY-ONE LINES.  The card-serial column runs ED000101 (line 1) to
+! ED000151 (line 51), fifty-one consecutive serials for fifty-one
+! lines, ONE CARD PER LINE.  Counted off the serial column, nothing
+! fell off the top or the bottom of the render.
+!
+! >>> THE VOLUME SURVEY SAW A WINDOW, NOT THE PAGE. <<<
+! docs/mcp_page_map.json scores this page "34 rows, 216501.00 ..
+! 216551.4C".  The page has 51 rows running 216500.40 .. 216563.70.
+! The survey's LOCATION-column OCR stops at its own line 42 and it
+! drops the rows whose location it cannot read; the serial column
+! above is what makes 51 a reading rather than a guess.
+!
+! ---------------------------------------------------------------
+! THE ORIGIN IS READ, AND IT IS ASSERTED, NOT CHECKED
+! ---------------------------------------------------------------
+! >>> THE PAGE PRINTS NO SLC. <<<  216500.40 is line 1's own
+! LOCATION; the header's "LOCATION 216500" prints the word.  So the
+! "SLC,(8)216500.40" below is a READING of line 1, not a test of
+! contiguity with printed p.132 -- a hard SLC overrides the arriving
+! counter silently (docs/transcription_workflow.md, "A HARD SLC
+! CANNOT DISAGREE WITH THE ARRIVING COUNTER").  pp.129-132 are not
+! transcribed.  The volume OCR of printed p.132 (PDF p.139) carries
+! a row at 216500.00 as its last readable line, which is consistent
+! with a clean join to 216500.40, but p.132 may have lines below
+! that the OCR dropped, so the join is NOT confirmed here.  When
+! p.132 lands, compare by hand.
+!
+! >>> "!SYM YMCPPE 216500.40" IS NOT A CHECK. <<<  It is the SLC
+! target, so it passes by construction.  Every OTHER !SYM below is a
+! real check, because the counter has to walk to it.
+!
+! THE FORWARD JOIN HAS A WITNESS AND IT AGREES.  Line 51 is an
+! (AX)DD entry whose datum is ten blanks, so the counter leaves it
+! at 216565.10; the volume OCR of printed p.134 (PDF p.141) reads
+! its line 1 as "216565.40 000000.30 00 CNOP".  A CNOP advances to
+! the next HALF WORD, 216565.10 -> 216565.40, exactly.  See "CNOP
+! ALIGNMENT" below -- the same rule is witnessed a second time
+! INSIDE this page at lines 13/14.
+!
+! TAIL SCOPE.  printed p.99 line 11's "SLC,(8)215000." moved the
+! origin and pp.99+ are OUTSIDE the TAIL,(2)G block that printed p.2
+! opened and printed p.98 line 37 closed with UNTAIL,(2).  YUXSAV
+! below is the clearest case: printed pp.38/40/41 define a YUXSAV at
+! 002324.00 and this page's YUXSAV is 231363.00.  That is tail
+! scope, NOT a collision; it is recorded, not "fixed".
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE CONTAINS
+! ---------------------------------------------------------------
+! Lines 1-11   YMCPPE, the MCP program-error exit.  It loads the
+!              console channel (SYCOCH), releases both channels,
+!              turns the console lights on through YMFCF+1, copies
+!              the saved index registers out of YUXSAV, writes the
+!              YMCPCW control-word chain to the console and halts on
+!              itself at YMCPHP ("BD,YMCPHP" is a branch-disabled
+!              loop on its own address).  Lines 10-11 are the two
+!              I/O CONTROL WORDS that chain: YMCPC2 writes the
+!              7-byte YMCPCM code and YMCPCW writes 3 words of
+!              YMFCF, chaining to YMCPC2.
+! Lines 12-17  the message area: YPPEM / YPEIC (mode A, the 48
+!              character set) and YMCPCM / YMCPIN (mode IQS, the
+!              console typewriter set).  Line 14 is the CNOP that
+!              realigns after line 13's odd-length datum.
+! Lines 18-19  YFXTS and YEXEFX, two "B,WRAM" slots.  printed p.114
+!              already references both, at 216530.00 and 216530.40,
+!              and its deck SYNs them there -- a landed second
+!              reading of two of this page's own symbols.
+! Lines 20-48  YMSF, the maskable-interrupt exit.  It transmits the
+!              30 words of S T LR / SLRBU, loads the interrupted
+!              address, converts the saved IC to BCD into YMIMIN,
+!              decrements the maskable-interrupt count YMISCO and
+!              either writes the spool message (SIC/B calling
+!              sequence at lines 42-45, whose two parameter words
+!              are YMIMIN and the count 8) or, when the count has
+!              not run out, branches to YTMMI -> STMMI -> S DISP.
+! Lines 49-51  YMIMIN and YMIMIC, the message the spooler prints.
+!
+! ---------------------------------------------------------------
+! CNOP ALIGNMENT, WITNESSED TWICE
+! ---------------------------------------------------------------
+! An entry-mode DD compiles EIGHT BITS PER CHARACTER with the
+! end-of-statement character not compiled (strap/charsets.py).  Two
+! rows on this page land the counter on a NON-half-word boundary and
+! both are followed by a CNOP that the page prints one half word
+! further on:
+!
+!   line 13 at 216516.40, datum 14 blanks = 112 bits -> 216520.20,
+!           and line 14 prints its CNOP at 216520.40.
+!   line 51 at 216563.70, datum 10 blanks =  80 bits -> 216565.10,
+!           and printed p.134 line 1 prints its CNOP at 216565.40.
+!
+! Both datum lengths were MEASURED off the page's character grid
+! (ink-column runs at 400 dpi against a 39.9 px pitch), not fitted
+! to the deltas: line 13's terminating X sits at character 25 with
+! the comma at 10, line 51's at 21.  strap_asm's CNOP advances the
+! same way, so both rows check; the agreement of two independent
+! pages with the assembler is the point.
+!
+! THE OTHER FIVE ENTRY-MODE DATA MEASURE EXACTLY, with no CNOP to
+! absorb an error -- each one's length is pinned by the NEXT row's
+! printed LOCATION and the character grid gives the same number:
+!
+!   line 12  216513.00 -> 216516.40  = 224 bits = 28 chars
+!   line 16  216521.10 -> 216523.00  = 120 bits = 15 chars
+!   line 17  216523.00 -> 216530.00  = 320 bits = 40 chars
+!   line 49  216555.00 -> 216562.20  = 336 bits = 42 chars
+!   line 50  216562.20 -> 216563.70  = 104 bits = 13 chars
+!
+! >>> THE SPACES INSIDE THOSE DATA ARE DATA. <<<  In entry mode the
+! blank after the comma is a character (docs/transcription_workflow
+! .md, "In entry mode the space after the comma is DATA"), so the
+! runs of blanks below are transcribed to the column and must not be
+! tidied.  No !CHECK can test them -- MCP's listing prints NOTHING
+! in the BINARY OUTPUT column for an (AX)DD or (IQSX)DD row -- but
+! the LOCATION of the row after each one does, and those checks are
+! declared.
+!
+! ---------------------------------------------------------------
+! GLYPHS SETTLED, AND HOW
+! ---------------------------------------------------------------
+! ZSPLP9 (line 42).  The last glyph is a 9, read at 1200 dpi (closed
+!   upper bowl, straight descender), and the volume OCR of this very
+!   row agrees -- docs/ocr/MCP_Mar63_001-249.txt line 6989 reads
+!   "SIC,ZSPLP9".  Worth saying because the OCR renders the same
+!   name "ZSPLPS" on three other pages.
+! SDISP (line 47).  Five glyphs, read at 1200 dpi: S, D (straight
+!   vertical left stem, bowl worn through), I, S, P.  NO embedded
+!   blank on this page.  pp.99/119/120/122/124 print "S DISP";
+!   STRAP ignores blanks in a name, so they are one symbol.  The
+!   PRINTED form is used here.
+! Three more names this page prints solid that other pages print
+!   with a blank: SL (p.103 line 14 "S L"), STIC (p.128 "S TIC"),
+!   SYCOCH (p.103 "S YCOCH").  Printed forms used; alternates named.
+! tests/check_symbol_spellings.py, run over the landed decks plus
+!   this one, reports "1153 symbol definitions, no symbol spelled two
+!   ways".  Eleven of this page's names group with a landed deck at
+!   the same bit: SL, SYCOCH, STMMI, YSFIC, STIC, YFXTS, YEXEFX,
+!   YMSF, STLR, SLRBU, YMISCO, SDISP.  YFXTS/YEXEFX/YMSF are the
+!   strongest of these, because they are symbols this page DEFINES
+!   and printed p.114 referenced them before this page was read.
+! "CO" vs "00" in the byte column.  Lines 18 and 19 are the SAME
+!   instruction, "B,WRAM"; line 18's byte prints open and line 19's
+!   closed, and both are 00.  Line 32's byte really is C0 -- printed
+!   p.128 line 1 prints the same mnemonic BZRZ with a clean C0.  The
+!   discriminator is what PRODUCED the byte, not the row's ink.
+! Line 41's "FC" is F0: printed p.18 prints CM1111(BU,1) six times
+!   and every one is "001000.36 F0" (docs/transcription_workflow.md).
+! Line 30's "C2" is 02: printed p.128 line 7's LCI prints 02.
+!
+! ---------------------------------------------------------------
+! SEVEN PRINTED FORMS TESTED BEFORE THEY WERE WRITTEN; ALL SEVEN
+! ASSEMBLE AS PRINTED.  No substitution anywhere in this deck.
+! ---------------------------------------------------------------
+!   L (BU,1),STIC+.18,2          blank between the op and the "("
+!   CW(CCR),YMFCF,3,YMCPC2       CCR as a CW modifier (= flags 0o100)
+!   TI,16,STLR,SLRBU             and TI,14,...  -- the T family
+!   (AX)DD(BU),-   ...           a datum that STARTS with "-"
+!   CCW,0($1),YUXSAV             three-field I/O with an indexed first
+!                                operand
+!   ,YMIMIN  and  ,8.0           A STATEMENT WITH A BLANK OPERATION
+!                                FIELD, lines 44-45.  Not in the
+!                                accepted-forms list any brief has
+!                                carried, and strap_asm needs no
+!                                change: it emits "aaaaaa.oo 80", the
+!                                parameter half words of the
+!                                SIC/B calling sequence at lines
+!                                42-45, exactly as printed.
+!
+! THE COUNT FIELD OF TI IS CHECKED, not coincidence.  Line 20's
+! "TI,16" prints its second half word ".00" and line 21's "TI,14"
+! prints ".34".  Measured by varying the count alone: 16 -> .00,
+! 14 -> .34, 12 -> .30, with the address bits unchanged.  So the
+! page's two rows pin the count field twice.
+!
+! YPPEM / YPEIC / YMIMIN / YMIMIC are confirmed by their own data,
+!   which is English: "INTERRUPT AT LOCATION", "INTERRUPT-...
+!   INSTRUCTION COUNTER", "CONTENTS".  YMISCO is confirmed by the
+!   comment column, "-GET CURRENT MASKABLE INTERRUPT / -COUNT.", and
+!   by its defining card (below).
+!
+! ---------------------------------------------------------------
+! EXTERNALS.  WHAT IS OBSERVED AND WHAT IS CONVENTION
+! ---------------------------------------------------------------
+! FULLY OBSERVED -- these come off a VFL instruction's ADDRESS half
+! word, where all 24 bits print, so the bit offset is read:
+!
+!   SL      215001.04   p.103 line 14 "S L SYN(BU,1),S COM RG+0.04".
+!                       Line 41's CM1111 prints 215001.04 80.
+!   YMFCF   216425.00   line 3/5 print 216426.00 for "YMFCF+1.0" and
+!                       line 11's CW prints 216425.00 for YMFCF
+!                       itself.  The defining card is on printed
+!                       p.131: OCR line 6870, "216425.CC * ... YMFCF
+!                       DR(IN),(3)" -- a three-word reservation,
+!                       which is why line 11 writes a count of 3.
+!   YUXSAV  231363.00   line 6 prints 231363.21 and line 7 prints
+!                       231363.30 for "YUXSAV+.24" (0o30 = 24).  OCR
+!                       line 7039 carries "231363.C0+ ... YSFLCR
+!                       SYN YUXSAV", a second name for the cell.
+!   YSFIC   216604.00   line 4's LF prints 216604.00.  LANDED:
+!                       decks/mcp_bootstrap_p110.strap line 193.
+!   STIC    215265.00   lines 26/28.  LANDED by p110/111/112/118.
+!   STLR    215230.00   line 20.  LANDED by p117/p118; p.117 line 12
+!                       is the defining card.
+!   SLRBU   215324.00   line 20.  LANDED by p116/p117.
+!   YSFBCR  215224.00   line 24's LX prints 215224.02.  OCR line
+!                       7038 is the defining card: "215224.0C+ ...
+!                       YSFBCR SYN,S BNDRS".  So YSFBCR and S BNDRS
+!                       (pp.116/117/124) are TWO DELIBERATE NAMES for
+!                       one cell, like p.99's S UN A / S UN A A --
+!                       not a misreading of either.
+!   YMISCO  215466.40   lines 37/39 print 215466.42 and 215466.43 --
+!                       bit 18 (0o40) set in BOTH, so the half word
+!                       is read, and the low bits are the LC/SC
+!                       operation difference.  LANDED: decks/
+!                       mcp_bootstrap_p116.strap line 291, "YMISCO
+!                       CF,50" at 215466.40, "-MASKABLE INTERRUPT
+!                       COUNTER", which is this page's own comment.
+!
+! PINNED ONLY TO THE HALF WORD -- these come off a branch, an LVI or
+! an index instruction, whose printed ".oo" field holds bits 18-23
+! of which only bit 18 is address.  Writing ".0" is a CONVENTION and
+! no !CHECK here can test the bits below it (docs/transcription_
+! workflow.md, "WHAT THE ORACLE CANNOT SEE", item 1):
+!
+!   SYCOCH  215006.00   line 1 prints 215006.02 (reg $1, bit 18 = 0).
+!                       LANDED: p.103 line 37 "S YCOCH VF,(8)23.40"
+!                       at 215006.00, "-CONSOLE CHANNEL NUMBER".
+!   WRAM    217343.00   lines 18/19 print 217343.10.  OCR line 7591
+!                       is the defining card at 217343.00.
+!   SDISP   217372.00   line 47 prints 217372.10.  LANDED by the
+!                       p117/p119/p120/p124 decks.
+!   STMMI   000403.00   line 46 prints 000403.35 01 (LVI, reg $14).
+!                       LANDED: decks/mcp_bootstrap_p107.strap line
+!                       269, "STMMI SYN,(16)0103.0" -- 0x103 = 0o403
+!                       -- "-13 50 MASKABLE INTERRUPTS".
+!   ZSPLP9  224052.00   line 42 prints 224052.00 80.
+!   ZSPLPR  224046.40   line 43 prints 224046.50 00; B's operation
+!                       bits are .10, so the extra 0o40 IS bit 18
+!                       and the HALF WORD is read -- .40, not .00.
+!
+SYCOCH  SYN, (8)215006.0
+SL      SYN(BU,1), (8)215001.04
+STLR    SYN, (8)215230.0
+SLRBU   SYN, (8)215324.0
+YSFBCR  SYN, (8)215224.0
+STIC    SYN, (8)215265.0
+YMISCO  SYN, (8)215466.40
+YMFCF   SYN, (8)216425.0
+YSFIC   SYN, (8)216604.0
+WRAM    SYN, (8)217343.0
+SDISP   SYN, (8)217372.0
+ZSPLPR  SYN, (8)224046.40
+ZSPLP9  SYN, (8)224052.0
+STMMI   SYN, (8)403.0
+YUXSAV  SYN, (8)231363.0
+!
+        SLC, (8)216500.40
+!
+YMCPPE  LV, $1, SYCOCH                 ! line  1 -GET ABSOLUTE ADDRESSES FOR
+        REL(SEOP), 0($1)               ! line  2 -CLEAR BOTH CHANNELS.
+        CM1111(BU,64), YMFCF+1.0       ! line  3
+        LF(BU,21,3), YSFIC             ! line  4 -SET UP INT. ADDRESS FOR
+        SF(BU,28,4), YMFCF+1.0         ! line  5 -CONSOLE LIGHTS.
+        CCW, 0($1), YUXSAV             ! line  6
+        BB, YUXSAV+.24, $-1.0          ! line  7
+        W(SEOP), 0($1), YMCPCW         ! line  8
+YMCPHP  BD, YMCPHP                     ! line  9
+YMCPC2  CW, YMCPCM, 7, 0               ! line 10
+YMCPCW  CW(CCR), YMFCF, 3, YMCPC2      ! line 11
+YPPEM   (AX)DD(BU),-     INTERRUPT AT LOCATION X
+YPEIC   (AX)DD(BU),              X
+        CNOP                           ! line 14
+YMCPCM  DD(BU,8), (2)11111101          ! line 15
+        (IQSX)DD(BU),MCP ERROR-...  X
+YMCPIN  (IQSX)DD(BU),      INTERRUPT AT ABOVE LOCATION.      X
+YFXTS   B, WRAM                        ! line 18
+YEXEFX  B, WRAM                        ! line 19
+YMSF    TI, 16, STLR, SLRBU            ! line 20
+        TI, 14, STLR+16., SLRBU+16.    ! line 21
+        L(BU,32), 0($1)                ! line 22 -LOAD IDENTIFYING INITIALS-...
+        ST(BU,32), YMIMIN+.16          ! line 23 -STORE IN SPOOL MESSAGE.
+        LX, $1, YSFBCR                 ! line 24 -SET NEW BOUNDARY CONTROL
+        SX, $1, 3.0                    ! line 25
+        L (BU,1), STIC+.18, 2          ! line 26 -CONVERT IC TO BCD.
+        LFI(BU,8), (2)00111011, 8      ! line 27
+        LF(BU,18,3), STIC, 16          ! line 28
+        LVI, $1, 0                     ! line 29
+        LCI, $1, 8                     ! line 30
+YSFCL1  CT0101(BU,8), 0, 0($1)         ! line 31
+        BZRZ, $+1.32                   ! line 32
+        LFI(BU,8), (2)00001010, 0($1)  ! line 33
+        V+I, $1, 4.0                   ! line 34
+        CB, $1, YSFCL1                 ! line 35
+        ST(BU), YMIMIC                 ! line 36
+        LC, $1, YMISCO                 ! line 37 -GET CURRENT MASKABLE INTERRUPT
+        C-I, $1, 1.0                   ! line 38 -COUNT. IF COUNT REACHES ZERO, P.P. IS
+        SC, $1, YMISCO                 ! line 39 -TO BE KICKED OFF THE MACHINE
+        BXCZ, YTMMI                    ! line 40
+        CM1111(BU,1), SL               ! line 41
+        SIC, ZSPLP9                    ! line 42
+        B, ZSPLPR                      ! line 43
+        , YMIMIN                       ! line 44
+        , 8.0                          ! line 45
+YTMMI   LVI, $14, STMMI                ! line 46
+        B, SDISP                       ! line 47
+        CNOP                           ! line 48
+YMIMIN  (AX)DD(BU),-       INTERRUPT-... INSTRUCTION COUNTER X
+        (AX)DD(BU),CONTENTS  -  X
+YMIMIC  (AX)DD(BU),          X
+        END
+!
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, for listing_oracle
+! ---------------------------------------------------------------
+!SYM   YMCPPE   216500.40
+!SYM   YMCPHP   216510.00
+!SYM   YMCPC2   216511.00
+!SYM   YMCPCW   216512.00
+!SYM   YPPEM    216513.00
+!SYM   YPEIC    216516.40
+!SYM   YMCPCM   216521.00
+!SYM   YMCPIN   216523.00
+!SYM   YFXTS    216530.00
+!SYM   YEXEFX   216530.40
+!SYM   YMSF     216531.00
+!SYM   YSFCL1   216542.00
+!SYM   YTMMI    216553.40
+!SYM   YMIMIN   216555.00
+!SYM   YMIMIC   216563.70
+!
+!CHECK 216500.40 | 215006.02 30 | line  1 YMCPPE LV,$1,SYCOCH
+!CHECK 216501.00 | 000000.00 81 000000.33 00 | line  2 REL(SEOP),0($1)
+!CHECK 216502.00 | 216426.00 80 000000.36 F0 | line  3 CM1111(BU,64),YMFCF+1.0
+!CHECK 216503.00 | 216604.00 80 025300.06 70 | line  4 LF(BU,21,3),YSFIC
+!CHECK 216504.00 | 216426.00 80 034400.12 F0 | line  5 SF(BU,28,4),YMFCF+1.0
+!CHECK 216505.00 | 000000.00 81 231363.21 00 | line  6 CCW,0($1),YUXSAV
+!CHECK 216506.00 | 231363.30 80 216505.34 02 | line  7 BB,YUXSAV+.24,$-1.0
+!CHECK 216507.00 | 000000.00 81 216512.13 00 | line  8 W(SEOP),0($1),YMCPCW
+!CHECK 216510.00 | 216510.04 00 | line  9 YMCPHP BD,YMCPHP
+!CHECK 216511.00 | 216521.00+ 000 000007 000000 | line 10 YMCPC2 CW,YMCPCM,7,0
+!CHECK 216512.00 | 216425.00+ 100 000003 216511 | line 11 YMCPCW CW(CCR),YMFCF,3,YMCPC2
+!CHECK 216520.40 | 000000.30 00 | line 14 CNOP -- its LOCATION is the check on line 13's 14-blank datum
+!CHECK 216521.00 | 375 | line 15 YMCPCM DD(BU,8),(2)11111101 | 8
+!CHECK 216530.00 | 217343.10 00 | line 18 YFXTS B,WRAM -- its LOCATION is the check on line 17's 40-char datum
+!CHECK 216530.40 | 217343.10 00 | line 19 YEXEFX B,WRAM
+!CHECK 216531.00 | 215230.00 80 215324.00 A0 | line 20 YMSF TI,16,STLR,SLRBU
+!CHECK 216532.00 | 215250.00 80 215344.34 A0 | line 21 TI,14,STLR+16.,SLRBU+16.
+!CHECK 216533.00 | 000000.00 81 040000.20 50 | line 22 L(BU,32),0($1)
+!CHECK 216534.00 | 216555.20 80 040000.20 D0 | line 23 ST(BU,32),YMIMIN+.16
+!CHECK 216535.00 | 215224.02 10 | line 24 LX,$1,YSFBCR
+!CHECK 216535.40 | 000003.03 10 | line 25 SX,$1,3.0
+!CHECK 216536.00 | 215265.22 80 001001.20 50 | line 26 L (BU,1),STIC+.18,2
+!CHECK 216537.00 | 166000.00 80 410004.06 70 | line 27 LFI(BU,8),(2)00111011,8
+!CHECK 216540.00 | 215265.00 80 022310.06 70 | line 28 LF(BU,18,3),STIC,16
+!CHECK 216541.00 | 000000.03 01 | line 29 LVI,$1,0
+!CHECK 216541.40 | 000010.03 02 | line 30 LCI,$1,8
+!CHECK 216542.00 | 000000.00 80 010000.13 71 | line 31 YSFCL1 CT0101(BU,8),0,0($1)
+!CHECK 216543.00 | 216544.74 C0 | line 32 BZRZ,$+1.32
+!CHECK 216543.40 | 024000.00 80 410000.06 71 | line 33 LFI(BU,8),(2)00001010,0($1)
+!CHECK 216544.40 | 000004.03 05 | line 34 V+I,$1,4.0
+!CHECK 216545.00 | 216542.02 48 | line 35 CB,$1,YSFCL1
+!CHECK 216545.40 | 216563.70 80 000000.20 D0 | line 36 ST(BU),YMIMIC
+!CHECK 216546.40 | 215466.42 50 | line 37 LC,$1,YMISCO
+!CHECK 216547.00 | 000001.03 08 | line 38 C-I,$1,1.0
+!CHECK 216547.40 | 215466.43 50 | line 39 SC,$1,YMISCO
+!CHECK 216550.00 | 216553.70 42 | line 40 BXCZ,YTMMI
+!CHECK 216550.40 | 215001.04 80 001000.36 F0 | line 41 CM1111(BU,1),SL
+!CHECK 216551.40 | 224052.00 80 | line 42 SIC,ZSPLP9
+!CHECK 216552.00 | 224046.50 00 | line 43 B,ZSPLPR
+!CHECK 216552.40 | 216555.00 80 | line 44 ,YMIMIN -- blank operation, printed as a bare ",YMIMIN"
+!CHECK 216553.00 | 000010.00 80 | line 45 ,8.0
+!CHECK 216553.40 | 000403.35 01 | line 46 YTMMI LVI,$14,STMMI
+!CHECK 216554.00 | 217372.10 00 | line 47 B,SDISP
+!CHECK 216554.40 | 000000.30 00 | line 48 CNOP

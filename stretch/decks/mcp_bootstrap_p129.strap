@@ -1,0 +1,385 @@
+! mcp_bootstrap_p129.strap -- the tail of the channel-signal supervisor
+! and the DISK ARC-ADDRESS arithmetic, printed page 129.
+! docs/MCP_Mar63_001-249.pdf PDF p.136, header READ and not assumed:
+! "TIME CLOCK 00054041  PUNID 11D11MCP   CARD ID EB000356
+!  DIST. OF 3/01   3/01   PAGE NUMBER  129".
+!
+! THIRTY LINES, TWENTY-EIGHT CARDS.  The card-serial column runs
+! EB000356 (line 1) to EB000383 (line 30) and prints TWENTY-EIGHT
+! distinct serials for THIRTY lines: EB000364 appears on lines 9 AND
+! 10, EB000381 on lines 27 AND 28.  Those two cards each carry TWO
+! statements separated by a semicolon, and they are transcribed that
+! way below -- "SIC,SDISIC; B,SDISP" and "LX,0,SCW($13); SX,0,
+! SCCW($13)".  strap_asm accepts the printed one-card form (it splits
+! on ';' at strap_asm.py:1010); IT WAS TESTED BEFORE IT WAS WRITTEN,
+! and splitting them into four deck lines would have been a
+! substitution nothing on the page asks for.  Counted off the serial
+! column, nothing fell off the top or the bottom of the render.
+! (The volume survey OCR'd 20 rows of this page over 216306.40..
+! 216332.00.  It is a LOWER BOUND: it misses line 1 entirely and nine
+! more besides.  The page's own thirty line numbers, 1* .. 30*, are
+! read directly and are what is used here.)
+!
+! ---------------------------------------------------------------
+! THE JOIN IS CLOSED AT BOTH ENDS -- which is new for this run
+! ---------------------------------------------------------------
+! >>> THE PAGE PRINTS NO SLC, <<< so the hard "SLC,(8)216305.40"
+! below ASSERTS the origin rather than checking it (docs/
+! transcription_workflow.md, "A HARD SLC CANNOT DISAGREE WITH THE
+! ARRIVING COUNTER").  But unlike printed p.128, BOTH JOINS HAVE
+! INDEPENDENT WITNESSES AND BOTH LAND:
+!
+!   BACKWARD.  decks/mcp_bootstrap_p128.strap is landed.  Its line 56
+!   is a half word at 216305.00, so its counter leaves at 216305.40 --
+!   which is exactly this page's line 1 LOCATION.  Independently, p.128
+!   line 56 is "BZXCZ,$+1.32", whose target is 216306.40, and that is
+!   this page's line 2.  p.128's own deck PREDICTED both ("a full word
+!   at 216305.40 puts line 2 at exactly 216306.40"); the prediction is
+!   now read off the page.  The card serials agree too: p.128 ends at
+!   EB000355 and this page opens at EB000356.
+!
+!   FORWARD.  Line 30's XW is word-aligned at 216332.00 and is one
+!   word, so the counter leaves this page at 216333.00.  The
+!   full-volume OCR of PDF p.137 (printed p.130) opens its first
+!   storage row at 216333.00 ("216333.00  000003.00 80 215230.00 A0
+!   W LOCK  T,0,3.0,STLR").  Nothing falls between the pages.
+!
+! TAIL SCOPE.  printed p.99 line 11's "SLC,(8)215000." moved the
+! origin here and pp.99+ are OUTSIDE the TAIL,(2)G block that printed
+! p.2 opened and printed p.98 line 37 closed.  The six names this page
+! DEFINES are K CS REG, C Q2BIG, K RELAY, C ARC AD, K DISK E and
+! K RECEP; none collides with anything in pp.2-98.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE CONTAINS
+! ---------------------------------------------------------------
+! Lines 1-6   the tail of printed p.128's channel-signal supervisor.
+!             Line 1 re-arms K SUP CS by setting bit 19 ("-IF SO, NOP
+!             ENTRY"), line 2 clears the queue bit the handler just
+!             consumed ("-RESET CS QUEUE"), lines 3-4 load a count of
+!             16 and store it in $L ("-FAKE CS"), line 5 plants a
+!             5-bit field in S TLR+8.9, and line 6 jumps to S FAKE I
+!             on printed p.122.
+! Line 7      K CS REG, the one-word channel-signal register that
+!             printed p.128 stacks into (its lines 38, 41 and 54 all
+!             print 216312.00).  THE DEFINING CARD LANDS HERE.
+! Lines 8-10  C Q2BIG, the "interrupt queue too big" error exit: load
+!             the error code S Q2BIG into $14, save the IC in S DISIC
+!             and branch to the dispatcher S DISP.  Lines 9 and 10 are
+!             ONE CARD.
+! Lines 11-13 K RELAY -- load the MCP return address out of the file
+!             area table and branch through it, "B,0.0($8)".
+! Lines 14-24 C ARC AD, the arc-address arithmetic.  Line 14 pulls the
+!             original count out of the control word; line 15 clears
+!             S HS ECH; lines 16-17 test the final CW count for zero;
+!             lines 19-21 ask whether the number of arcs is an integer
+!             and round up by one if not ("M+1"); lines 22-24 add the
+!             result to S ARC AD and store the sum into BOTH S ARC AD
+!             and S CU ARC.  Line 18 is a COMMENT CARD (EB000372, no
+!             LOCATION, no BINARY): its text "-$L HOLDS NO OF ARCS
+!             WHICH EQUALS" runs on into line 19's comment.
+! Lines 25-29 K DISK E, the disk error path: force a locate on the
+!             next I/O by setting the whole 18-bit S ARC AD field to
+!             ones, copy S CW into S CCW, and rejoin K GATE.  Lines 27
+!             and 28 are ONE CARD.
+! Line 30     K RECEP XW,0 -- the receptor's index word, a full word
+!             of zeros, referenced from printed pp.122, 125 and 126.
+!
+! ---------------------------------------------------------------
+! EVERY EXTERNAL IS LANDED SOMEWHERE ELSE.  NOT ONE IS NEW.
+! ---------------------------------------------------------------
+! This is unusual and it is worth saying plainly: fifteen symbols are
+! referenced and not defined here, and every one of them is already
+! carried by a landed deck at the value this page's binary demands.
+! Nothing below is back-derived from this page alone.
+!
+! SCOMRG  215001.00  p.103 line 8 "S COM RG XW,(8)520000.".  Carried
+!                    only so S HS ECH can be written as p.103 writes it.
+SCOMRG  SYN, (8)215001.0
+! SHSECH  215001.01  p.103 line 11 "S HS ECH SYN(BU,1),S COM RG+.1".
+!                    FULLY OBSERVED here: line 15 is a VFL connective,
+!                    so its printed "215001.01" is a BIT address and
+!                    bit 1 is read, not conventional.
+SHSECH  SYN(BU,1), SCOMRG+.1
+! The five FILE/UNIT AREA TABLE field symbols are copied VERBATIM from
+! the landed decks that define them, mode and length included, because
+! a SYN's data description is part of what the referencing rows
+! compile.  All five values are fully observed here: a field symbol
+! lands in the address field as a bit address.
+! SCW     3.0   p.102 line 14 "S CW SYN(BU,64),3.0 -CONTROL WORD".
+!               Line 27 prints 000003.00 and line 14 prints
+!               000003.34 for "SCW.28" -- 28 decimal bits = .34 octal,
+!               so the word AND the offset arithmetic are checked.
+SCW     SYN(BU,64), 3.0
+! SCCW    4.0   p.102 line 15 "-COPIED CONTROL WORD".  Lines 16, 28.
+SCCW    SYN(BU,64), 4.0
+! SRETAD  5.0   p.101 line 18 "-RETURN ADDRESS IN MCP".  Line 11
+!               prints 000005.20, where .20 is register 8 and the
+!               symbol's own offset is 0.
+SRETAD  SYN(BU,19), 5.0
+! SCUARC  6.0   p.102 line 19 "S CU ARC SYN(BU,18),6.0 -CURRENT ARC".
+!               Line 24 prints 000006.00 8D.
+SCUARC  SYN(BU,18), 6.00
+! SARCAD  0.32  p.99 line 52 "S ARC AD SYN(BU,18),0.32 -ARC ADDRESS
+!               (DISK)".  Lines 22, 23 and 26 all print 000000.40,
+!               and 0o40 = 32 decimal: the bit offset is READ.
+SARCAD  SYN(BU,18), 0.32
+! SDD     0     p.108 line 10 "S DD SYN(BU,7),0 -DISK DENSITY *
+!               0-LOW, 1-HIGH".  See the note on line 14 below: this
+!               page pins 55-SDD only MODULO 128, so the value 0 comes
+!               from p.108, not from here.
+SDD     SYN(BU,7), 0
+! STLR    215230.00  landed by pp.116/117/118/128; printed p.117 line
+!                    12 is the defining card, "S T LR DRZ(BU,64),29".
+!                    Line 5 prints "STLR+8.9" as 215240.11 -- 8 words
+!                    plus 9 decimal bits = .11 octal -- the same
+!                    half word printed p.128 line 20 prints.
+STLR    SYN, (8)215230.0
+! SFAKEI  215721.40  >>> THE LAST CHARACTER IS THE LETTER I. <<<
+!                    decks/mcp_bootstrap_p122.strap line 202 DEFINES
+!                    it -- "SFAKEI L(BU,4),SEQUIP($10),-19" at its
+!                    !SYM 215721.40 -- and the volume OCR carries that
+!                    same card ("215721.40 ... S FAKE I L(BU,4),
+!                    S EQUIP($10),-19").  This page's line 6 prints
+!                    215721.50 00, and a B contributes 0o10 to the
+!                    printed offset field, so the target half word is
+!                    .40 and bit 18 IS checked.
+SFAKEI  SYN, (8)215721.40
+! KGATE   215746.40  decks/mcp_bootstrap_p122.strap line 181 and
+!                    p.127 line 396, both at .40; p.123 line 348 is
+!                    the defining label row ("KGATE BZB,SUNSUP($11),
+!                    JKGATE").  Lines 25 and 29 print 215746.50 00.
+KGATE   SYN, (8)215746.40
+! KSUPCS  216242.40  decks/mcp_bootstrap_p128.strap DEFINES it (its
+!                    line 4, "K SUP CS NOP,K MT CSQ", !SYM 216242.40).
+!                    Line 1 here prints 216242.63 80 001000.36 F0 --
+!                    the SAME two half words p.128 line 39 prints for
+!                    its own "CM0000(BU,1),K SUP CS.19", with only the
+!                    connective differing.  Bit 19 is the branch-enable
+!                    bit of that NOP; line 1 turns it ON where p.128
+!                    line 39 turns it off.
+KSUPCS  SYN, (8)216242.40
+! SDISP   217372.00  landed by pp.119, 120 and 124.  Line 10 prints
+!                    217372.10 00.
+SDISP   SYN, (8)217372.0
+! SDISIC  217451.40  landed by pp.103, 119, 120 and 124, every one of
+!                    them off a printed "SIC,S DISIC".  Line 9 prints
+!                    217451.40 80, so the half word IS checked.
+SDISIC  SYN, (8)217451.40
+! SQ2BIG  (16)0708.0  decks/mcp_bootstrap_p107.strap line 289,
+!                    "SQ2BIG SYN,(16)0708.0 -78 INTERRUPT QUE TOO
+!                    BIG".  Hex 0708 = 1800 decimal = 0o3410, and line
+!                    8 here prints 003410.35 01 -- an EXACT, fully
+!                    observed match of an error code read off a
+!                    different page in a different radix.  This is the
+!                    strongest single corroboration on the page.
+SQ2BIG  SYN, (16)0708.0
+!
+! ---------------------------------------------------------------
+! NOTHING WAS SUBSTITUTED.  FOUR PRINTED FORMS WERE TESTED FIRST.
+! ---------------------------------------------------------------
+! The forms that looked likely to be assembler gaps were each tried AS
+! PRINTED before anything else was considered, and strap_asm accepts
+! all four:
+!   * "KF(BU,64),$Z"   (line 19) -- a KF with a data description; the
+!     only KF in the test suite before this was p.45's bare "KF,Q CMA".
+!   * "BAE, $+1.32"    (line 20) -- BAE appears nowhere in strap_asm.py
+!     by name; it is generated by the branch tables.
+!   * "+, S ARC AD($10),64"  (line 22) -- a bare "+" connective with a
+!     space after the comma.
+!   * "XW,0"           (line 30) -- an XW WITH an explicit zero
+!     operand, where printed p.128's line 23 is a bare "XW,".
+! The two semicolon cards (lines 9/10 and 27/28) were tested the same
+! way.  NO ASSEMBLER LIMITATION WAS HIT ON THIS PAGE.
+!
+! ---------------------------------------------------------------
+! GLYPHS: WHAT WAS SETTLED, AND ON WHAT
+! ---------------------------------------------------------------
+! This page opens round glyphs like every other: its own heading
+! prints "LOCATICN", the header's time clock prints "0C054C41", and
+! line 2's second half word prints 001000.00 as "001000.CC".  A round
+! glyph in a LOCATION or an octal BINARY field is a 0 with certainty
+! (C is not an octal digit) and every one is read as 0.  The glyphs
+! that are NOT in an octal field were each settled on something else:
+!
+!   * C Q2BIG (line 8).  The second word's first glyph is a Q, not a
+!     G or a C: at 1200 dpi it carries a DESCENDING TAIL below the
+!     baseline at the lower right, which line 7's "REG" G (a bar
+!     INSIDE the bowl, no descender) does not.  >>> THE SECOND
+!     WITNESS IS WEAKER THAN IT LOOKS AND IS NOT A SECOND PAGE. <<<
+!     decks/mcp_bootstrap_p123.strap line 342 carries "CQ2BIG
+!     SYN,(8)216313.0", but its own note (line 146) shows it took the
+!     name from the OCR of THIS card -- the same row, not an
+!     independent reading of another page's ink.  So the Q rests on
+!     this page's ink at 1200 dpi, supported by the OCR of this row
+!     and by p.107's operand S Q2BIG ("-78 INTERRUPT QUE TOO BIG",
+!     whose English puts a QUEUE in the neighbourhood).
+!   * C ARC AD (line 14) / S ARC AD / S CU ARC.  "ARC" is a real token
+!     in this listing, not a damaged "ORC": p.85 line 12's comment
+!     "-ORIGINAL ARC" prints it in English, p.99 line 52 defines
+!     "S ARC AD ... -ARC ADDRESS (DISK)", and this page's own line 18
+!     comment reads "-$L HOLDS NO OF ARCS WHICH EQUALS".  C ARC AD's
+!     address 216316.00 is corroborated by
+!     decks/mcp_bootstrap_p122.strap line 183, which SYNs CARCAD at
+!     216316.0 off its own line 48 "BXE,C ARC AD".
+!   * S FAKE I (line 6).  See the SYN note above; the letter I is
+!     p.122's reading of the defining card, not this page's ink.
+!   * 55-SDD (line 14).  >>> BOTH GLYPHS ARE D. <<<  Re-rendered at
+!     1800 dpi and upscaled, each has the straight vertical LEFT stem
+!     and squared corners of a D; a C or a 0 is round with no stem
+!     (docs/transcription_workflow.md, "C vs D, AND THE ORACLE CANNOT
+!     CATCH IT").  The wider crop confirms there is no fourth
+!     character and that "-ORIGINAL COUNT TO ACC" is a separate
+!     comment field, so the operand really is the expression 55-SDD.
+!   * K DISK E (lines 17, 26).  THE ONLY NAME ON THIS PAGE WITH NO
+!     WITNESS ANYWHERE ELSE -- see UNRESOLVED below.
+!
+! ---------------------------------------------------------------
+! LINE 14's "55-SDD" IS PINNED ONLY MODULO 128
+! ---------------------------------------------------------------
+! The printed second half word is 022033.60 50.  Varying ONLY the
+! final operand through strap_asm, the value that reproduces it is 55
+! -- and so is -73.  The two differ by 128, so the offset field that
+! carries it is seven bits and THE CHECK CANNOT DISTINGUISH 55 from
+! 55-128.  What it establishes is 55-SDD == 55 (mod 128), i.e. SDD is
+! 0 modulo 128 bits.  SDD = 0 exactly comes from printed p.108 line
+! 10, which is a different page and a real second reading; this page
+! on its own would also admit SDD = 2.0 or -2.0.  Said here so that a
+! passing !CHECK is not read as more than it is.
+!
+! ---------------------------------------------------------------
+! WHAT IS RECORDED AND NOT EXPLAINED
+! ---------------------------------------------------------------
+! A BARE "*" AFTER THE LOCATION on lines 1, 7 and 24 -- "216305.40 *",
+! "216312.00 *", "216325.40 *".  printed pp.3, 37, 103, 120 and 128
+! carry the same mark and it was left unexplained on each.  Line 7 is
+! the page's only DRZ, which might suggest a reservation marker, but
+! lines 1 and 24 are an ordinary VFL connective and an ordinary store.
+! It changes no compiled bit and nothing here depends on it.
+!
+! THE IBM TYPO IS TRANSCRIBED AS PRINTED.  Line 23's run-on comment
+! reads "64-SUM TO STORAGE IN" with no space before the dash, and line
+! 24's "64 - S ARC AD AND S CU ARC" with one: the same sentence,
+! punctuated two ways on consecutive cards.
+!
+! ---------------------------------------------------------------
+! COVERAGE
+! ---------------------------------------------------------------
+! Thirty printed lines.  Line 18 is a comment card and emits nothing.
+! Line 7's DRZ gets NO !CHECK: its printed "000001.00" is the
+! RESERVATION COUNT in the BINARY OUTPUT column, not storage contents,
+! and there is nothing deposited for the oracle to read -- printed
+! pp.84, 109 and 114 give their DRZ rows no !CHECK for exactly this
+! reason.  Its LOCATION is checked, by "!SYM KCSREG 216312.00".
+! THE REMAINING TWENTY-EIGHT ROWS ALL CARRY A !CHECK and all six
+! symbols a !SYM.
+!
+! tests/check_symbol_spellings.py was run with this deck alongside the
+! repository's: 968 symbol definitions, NO symbol spelled two ways.
+! ---------------------------------------------------------------
+
+        SLC, (8)216305.40
+
+        CM1111(BU,1),KSUPCS.19        ! line  1  -IF SO, NOP ENTRY
+        CM0000(BU,1),KCSREG($11)      ! line  2  -RESET CS QUEUE
+        LCI,7,16                      ! line  3  -FAKE CS
+        SC,7,$L                       ! line  4
+        CM0101(BU,5),STLR+8.9,-13     ! line  5
+        B,SFAKEI                      ! line  6
+KCSREG  DRZ(BU,64),1                  ! line  7
+CQ2BIG  LVI,$14,SQ2BIG                ! line  8  -LOAD ERROR CODE AND
+        SIC,SDISIC; B,SDISP           ! lines 9 and 10, ONE CARD EB000364
+KRELAY  LV,8,SRETAD($12)              ! line 11
+        SC,7,1.0($13)                 ! line 12
+        B,0.0($8)                     ! line 13
+CARCAD  L(BU,18),SCW.28($13),55-SDD   ! line 14  -ORIGINAL COUNT TO ACC
+        CM0000(BU,1),SHSECH           ! line 15
+        LX,0,SCCW($13)                ! line 16  -TEST IF FINAL CW COUNT IS ZERO
+        BZXCZ,KDISKE                  ! line 17
+!                                       line 18  COMMENT CARD, EB000372:
+!                                       "-$L HOLDS NO OF ARCS WHICH EQUALS"
+        KF(BU,64),$Z                  ! line 19  -IS NO OF ARCS AN INTEGER
+        BAE, $+1.32                   ! line 20  -IF YES, BRANCH
+        M+1(BU,64), 8.0               ! line 21  -IF NOT, ROUND UP BY ONE
+        +, SARCAD($10),64             ! line 22  -ADD THIS TO S ARC AD AND RETURN THE
+        ST(BU,18),SARCAD($10),64      ! line 23  -SUM TO STORAGE IN
+        ST(BU,18), SCUARC($13),64     ! line 24  - S ARC AD AND S CU ARC
+        B,KGATE                       ! line 25
+KDISKE  CM1111(BU,18),SARCAD($10)     ! line 26  -FORCE LOCATE ON NEXT I/O
+        LX,0,SCW($13); SX,0,SCCW($13) ! lines 27 and 28, ONE CARD EB000381
+        B,KGATE                       ! line 29
+KRECEP  XW,0                          ! line 30
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, read off PDF p.136 (300 dpi for the page, 900
+! dpi for the LOCATION and BINARY OUTPUT columns, 1200 dpi for the
+! NAME column, 1800 dpi for line 14's "55-SDD" and lines 17/26's
+! "K DISK E").
+! ---------------------------------------------------------------
+!  LINE  LOCATION      BINARY OUTPUT                      NAME      STATEMENT                      COMMENT                              CARD
+!   1*   216305.40 *   216242.63 80  001000.36 F0                   CM1111(BU,1),K SUP CS.19       -IF SO, NOP ENTRY                    EB000356
+!   2*   216306.40     216312.00 8B  001000.00 F0                   CM0000(BU,1),K CS REG($11)     -RESET CS QUEUE                      EB000357
+!   3*   216307.40     000020.17 02                                 LCI,7,16                       -FAKE CS                             EB000358
+!   4*   216310.00     000010.17 50                                 SC,7,$L                                                             EB000359
+!   5*   216310.40     215240.11 80  005071.52 F0                   CM0101(BU,5),S TLR+8.9,-13                                          EB000360
+!   6*   216311.40     215721.50 00                                 B,S FAKE I                                                          EB000361
+!   7*   216312.00 *   000001.00                            K CS REG  DRZ(BU,64),1                                                      EB000362
+!   8*   216313.00     003410.35 01                         C Q2BIG   LVI,$14,SQ2BIG               -LOAD ERROR CODE AND                 EB000363
+!   9*   216313.40     217451.40 80                                   SIC,S DISIC                                                       EB000364
+!  10*   216314.00     217372.10 00                                   B,S DISP                                                          EB000364
+!  11*   216314.40     000005.20 3C                         K RELAY   LV,8,S RET AD($12)                                                EB000365
+!  12*   216315.00     000001.17 5D                                   SC,7,1.0($13)                                                     EB000366
+!  13*   216315.40     000000.10 08                                   B,0.0($8)                                                         EB000367
+!  14*   216316.00     000003.34 8D  022033.60 50           C ARC AD  L(BU,18),SCW.28($13),55-SDD  -ORIGINAL COUNT TO ACC               EB000368
+!  15*   216317.00     215001.01 80  001000.00 F0                     CM0000(BU,1),S HS ECH                                             EB000369
+!  16*   216320.00     000004.00 1D                                   LX,0,S CCW($13)              -TEST IF FINAL CW COUNT IS ZERO      EB000370
+!  17*   216320.40     216327.30 40                                   BZXCZ,K DISK E                                                    EB000371
+!  18*                                                                                             -$L HOLDS NO OF ARCS WHICH EQUALS    EB000372
+!  19*   216321.00     000000.00 80  000000.23 10                     KF(BU,64),$Z                 -IS NO OF ARCS AN INTEGER            EB000373
+!  20*   216322.00     216323.76 C2                                   BAE, $+1.32                  -IF YES, BRANCH                      EB000374
+!  21*   216322.40     000010.00 80  000000.22 B0                     M+1(BU,64), 8.0              -IF NOT, ROUND UP BY ONE             EB000375
+!  22*   216323.40     000000.40 8A  022040.20 10                     +, S ARC AD($10),64          -ADD THIS TO S ARC AD AND RETURN THE EB000376
+!  23*   216324.40     000000.40 8A  022040.20 D0                     ST(BU,18),SARC AD($10),64-SUM TO STORAGE IN                       EB000377
+!  24*   216325.40 *   000006.00 8D  022040.20 D0                     ST(BU,18), SCUARC($13),64 - S ARC AD AND S CU ARC                 EB000378
+!  25*   216326.40     215746.50 00                                   B,K GATE                                                          EB000379
+!  26*   216327.00     000000.40 8A  022000.36 F0           KDISKE    CM1111(BU,18),SARCAD($10)-FORCE LOCATE ON NEXT I/O                EB000380
+!  27*   216330.00     000003.00 1D                                   LX,0,S CW($13)                                                    EB000381
+!  28*   216330.40     000004.01 1D                                   SX,0,S CCW($13)                                                   EB000381
+!  29*   216331.00     215746.50 00                                   B,K GATE                                                          EB000382
+!  30*   216332.00     000000.00+ 000 000000 000000         K RECEP   XW,0                                                              EB000383
+
+!SYM   KCSREG   216312.00
+!SYM   CQ2BIG   216313.00
+!SYM   KRELAY   216314.40
+!SYM   CARCAD   216316.00
+!SYM   KDISKE   216327.00
+!SYM   KRECEP   216332.00
+
+!CHECK 216305.40 | 216242.63 80 001000.36 F0 | line  1 CM1111(BU,1),K SUP CS.19
+!CHECK 216306.40 | 216312.00 8B 001000.00 F0 | line  2 CM0000(BU,1),K CS REG($11)
+!CHECK 216307.40 | 000020.17 02 | line  3 LCI,7,16
+!CHECK 216310.00 | 000010.17 50 | line  4 SC,7,$L
+!CHECK 216310.40 | 215240.11 80 005071.52 F0 | line  5 CM0101(BU,5),S TLR+8.9,-13
+!CHECK 216311.40 | 215721.50 00 | line  6 B,S FAKE I  (target half word checked; bits 0-31 of the offset are not)
+!CHECK 216313.00 | 003410.35 01 | line  8 C Q2BIG LVI,$14,SQ2BIG  (S Q2BIG = (16)0708.0, from p.107)
+!CHECK 216313.40 | 217451.40 80 | line  9 SIC,S DISIC  (first statement of card EB000364)
+!CHECK 216314.00 | 217372.10 00 | line 10 B,S DISP  (second statement of card EB000364)
+!CHECK 216314.40 | 000005.20 3C | line 11 K RELAY LV,8,S RET AD($12)
+!CHECK 216315.00 | 000001.17 5D | line 12 SC,7,1.0($13)
+!CHECK 216315.40 | 000000.10 08 | line 13 B,0.0($8)
+!CHECK 216316.00 | 000003.34 8D 022033.60 50 | line 14 C ARC AD L(BU,18),SCW.28($13),55-SDD  (the offset is pinned only mod 128; SDD = 0 is p.108's)
+!CHECK 216317.00 | 215001.01 80 001000.00 F0 | line 15 CM0000(BU,1),S HS ECH
+!CHECK 216320.00 | 000004.00 1D | line 16 LX,0,S CCW($13)
+!CHECK 216320.40 | 216327.30 40 | line 17 BZXCZ,K DISK E
+!CHECK 216321.00 | 000000.00 80 000000.23 10 | line 19 KF(BU,64),$Z  (low nibble is i2 = 0: no second operand)
+!CHECK 216322.00 | 216323.76 C2 | line 20 BAE, $+1.32
+!CHECK 216322.40 | 000010.00 80 000000.22 B0 | line 21 M+1(BU,64), 8.0
+!CHECK 216323.40 | 000000.40 8A 022040.20 10 | line 22 +, S ARC AD($10),64
+!CHECK 216324.40 | 000000.40 8A 022040.20 D0 | line 23 ST(BU,18),SARC AD($10),64
+!CHECK 216325.40 | 000006.00 8D 022040.20 D0 | line 24 ST(BU,18), SCUARC($13),64
+!CHECK 216326.40 | 215746.50 00 | line 25 B,K GATE
+!CHECK 216327.00 | 000000.40 8A 022000.36 F0 | line 26 KDISKE CM1111(BU,18),SARCAD($10)
+!CHECK 216330.00 | 000003.00 1D | line 27 LX,0,S CW($13)  (first statement of card EB000381)
+!CHECK 216330.40 | 000004.01 1D | line 28 SX,0,S CCW($13)  (second statement of card EB000381)
+!CHECK 216331.00 | 215746.50 00 | line 29 B,K GATE
+!CHECK 216332.00 | 000000.00+ 000 000000 000000 | line 30 K RECEP XW,0

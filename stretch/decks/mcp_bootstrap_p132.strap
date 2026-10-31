@@ -1,0 +1,581 @@
+! mcp_bootstrap_p132.strap -- the TAIL OF THE INDICATOR-FIX TABLE and
+! the common PREFIX routine YPREFX, printed page 132.
+! docs/MCP_Mar63_001-249.pdf PDF p.139, header READ and not assumed:
+! "TIME CLOCK 00054041  PUNID 11D11MCP   CARD ID ED000050
+!  DIST. OF 3/01   3/01   PAGE NUMBER  132", and the header's own
+! "LOCATION 216440" field names the page's first word.
+!
+! FIFTY LINES, ALL OF THEM CODE OR DATA.  No comment cards, no
+! heading box, no DRZ.  The card-serial column runs ED000050
+! (line 1) to ED000099 (line 50) -- fifty consecutive serials for
+! fifty lines, ONE CARD PER LINE, counted off the serial column, so
+! nothing fell off the top or the bottom of the render.  (The volume
+! survey OCR of this page read 35 rows over 216441..216474; that is
+! a window, not the page.  See THE SURVEY, below.)
+!
+! ---------------------------------------------------------------
+! THE ORIGIN IS READ TWICE AND THE BACKWARD JOIN IS NOT MEASURED
+! ---------------------------------------------------------------
+! >>> THE PAGE PRINTS NO SLC. <<<  216440.40 is line 1's own
+! LOCATION, and the page header's "LOCATION 216440" prints the same
+! word independently, so the SLC below is a READING of two printed
+! fields and not a guess.  What it is NOT is a test of contiguity
+! with printed p.131: pp.129-131 are not transcribed, so there is no
+! landed deck to join to, and a hard SLC asserts its value rather
+! than checking it (docs/transcription_workflow.md, "A HARD SLC
+! CANNOT DISAGREE WITH THE ARRIVING COUNTER").
+!
+! The backward join is nevertheless CONSISTENT on an independent
+! reading: docs/ocr/MCP_Mar63_001-249.txt carries printed p.131's
+! row "216440.C0  216457.40 80   YFXAD  SIC,YPREL", a HALF word at
+! 216440.00, which leaves the counter at exactly 216440.40 -- this
+! page's line 1.  The OCR is a cross-check and never a source, so
+! that is consistency, not measurement.  When p.131 lands, compare
+! by hand.
+!
+! THE FORWARD JOIN HAS TWO WITNESSES THAT AGREE.  The counter leaves
+! line 50 at 216500.40 (line 50 is a half word at 216500.00).  The
+! same OCR reads printed p.133's line 1 as "216500.40  215006.02 30
+! YMCPPE  LV,$1,SYCOCH", which is that half word; and line 41 of
+! THIS page, "BB1,SL,YMCPPE", branches to 216500.40.  The deck's own
+! YMCPPE SYN is that address, so line 41's !CHECK is a test of the
+! forward join as well as of the row.
+!
+! TAIL SCOPE.  printed p.99 line 11's "SLC,(8)215000." moved the
+! origin here and pp.99+ are OUTSIDE the TAIL,(2)G block that printed
+! p.2 opened and printed p.98 line 37 closed, so a name here may
+! legitimately repeat a name from pp.2-98 at a different address.
+! Nothing on this page does: every name it DEFINES is Y-prefixed.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE CONTAINS
+! ---------------------------------------------------------------
+! This is the end of MCP's INDICATOR-FIX table and the routine every
+! entry of it calls.
+!
+! Lines 1-11  the last three entries of a table that begins on
+!             printed p.131.  Each entry is four rows:
+!
+!                 YFXxxx  SIC,YPREL            store the return IC
+!                         B,YPREFX             into YPREL's address
+!                         (AX)DD(BU,32), nn X  the indicator's
+!                         (IQSX)DD(BU,32),nn X initials, twice
+!
+!             Line 1 is the "B,YPREFX" of p.131's last entry, whose
+!             label (YFXAD, per the volume OCR) is on that page; its
+!             two data rows are lines 2 and 3 here.  Lines 4-7 are
+!             YFXUSA and lines 8-11 are YFXDS.
+!
+!             THE TWO DATA ROWS ARE THE SAME TEXT IN TWO CHARACTER
+!             SETS -- "(AX)" is Reference Manual p.166's 48 Character
+!             Set and "(IQSX)" its 89 Character Set -- and together
+!             they make the 64 bits that line 27's "L(BU),$" loads.
+!             Lines 28 and 29 then store the two halves to two
+!             different places (YPPEM+.8, the printed message, and
+!             YMCPIN).
+!
+! Lines 12-26 YPREFX.  Line 12 tests S L and skips five words if it
+!             is on; lines 13-15 are three TRANSMITs that save the
+!             machine state into SLRBU/SLRMCP; lines 16-18 save the
+!             IC; lines 19-26 are EIGHT branch-on-indicator-and-reset
+!             instructions, one per I/O and program indicator, each
+!             branching to "$.32", i.e. to the very next half word.
+!             They are a reset chain, not a dispatch: the fall-through
+!             and the taken path are the same place.
+!
+!             The eight indicators are UNRJ(7), CBJ(8), OP(15),
+!             AD(16), EXE(18), USA(17), DS(19) and IF(21), in that
+!             order, and the printed low-offset field of each row IS
+!             the indicator number halved (7->.3, 8->.4, 15->.7,
+!             16->.10, 18->.11, 17->.10, 19->.11, 21->.12 octal,
+!             added to the half-word select) with the odd/even bit in
+!             the operation byte (C6 for odd, 46 for even).  All
+!             eight agree, which is what settles the four round
+!             glyphs: see THE NAMES, below.
+!
+! Lines 27-40 YPREL.  Loads the two-character-set initials through
+!             the address SIC planted in it, converts the saved IC to
+!             BCD with a count-down loop (lines 30-39, YSFCL2), and
+!             stores the result in YPEIC.
+!
+! Lines 41-50 the exit.  If S L is set, go to YMCPPE on printed
+!             p.133; otherwise call SPRIME with the parameter DABEOJ
+!             (line 44), reset boundary control (lines 45-46), and
+!             write the message on the spool tape through ZSPLPR
+!             with the parameters YPPEM and 5.0 (lines 47-50).
+!
+! ---------------------------------------------------------------
+! THE MANUAL DESCRIBES THIS PAGE IN TYPESET PRINT
+! ---------------------------------------------------------------
+! >>> C22-6728-1 MCP SYSTEM ANALYSIS GUIDE, "INTERRUPT CONTROL",
+! WRITES OUT THIS PAGE'S OWN TABLE ENTRY AND NAMES ITS ROUTINE. <<<
+! Found by grepping docs/ocr/ for the names, and it settles more of
+! this page than every glyph crop put together.  Quoting:
+!
+!   "2. Program errors (indicators 6-8, 15-17, 19)"
+!   "EKJ, UNRJ, CBJ, OP, AD, USA, DS (6-8, 15-17, 19, program
+!    error) ... SIC IN YSFIC ... B TO YFX** (standard fixup; **
+!    denotes indicator mnemonic)"
+!   "(AX)DD(BU, 32), **X
+!    (IQSX)DD(BU,32)  **X"
+!   "Control passes to a common fixup routine, YPREFX"
+!   "the lower registers are stored in the backup buffer (SLRBU),
+!    the program error indicators are cleared, and the EXE and IF
+!    indicators are reset"
+!   "the level bit (SL) is tested to determine the source of the
+!    error"
+!   "the IC saved in YSFIC is converted to A8 ... the ABEOJ is
+!    primed with control given to the short message routine that
+!    writes the error message"
+!
+! That is typeset, not drum-printed, and it independently gives:
+!   * the SPELLINGS YPREFX, YSFIC, SLRBU, SL and ABEOJ;
+!   * the EIGHT INDICATORS of lines 19-26 by name and by number,
+!     which is what settles their four round glyphs as BCBJZ, BOPZ
+!     (not BCPZ), BADZ (not BAOZ) and BUSAZ;
+!   * the SHAPE of lines 1-11 -- two entry-mode DDs holding the
+!     indicator's own mnemonic, in the 48-character set and the 89-
+!     character set -- which is the only outside reading there will
+!     ever be of six rows that print no binary at all;
+!   * the English for lines 41-50: prime ABEOJ, then the short
+!     message routine.  Line 44's parameter is DABEOJ.
+! (The manual's template also carries a "VF, XX." ABEX-code row that
+! this page does not print.  The locations leave no room for one --
+! line 1 at 216440.40, lines 2 and 3 at 216441.00 and 216441.40,
+! line 4 at 216442.00, four half words -- so the listing is what is
+! transcribed and the difference is recorded, not reconciled.)
+!
+! ---------------------------------------------------------------
+! THE NAMES
+! ---------------------------------------------------------------
+! >>> TWO LANDED DECKS ALREADY CARRY THREE OF THIS PAGE'S NAMES AT
+! THIS PAGE'S ADDRESSES, WRITTEN BEFORE IT WAS TRANSCRIBED -- AND
+! EACH OF THE THREE IS A MERGE COLLISION WAITING FOR WHOEVER WIRES
+! THIS PAGE INTO strap/mcp_image.py. <<<  Same value either way, so
+! nothing is wrong; but p.110's two SYNs are a FORWARD REFERENCE to
+! labels THIS page defines, and p.105 defines DABEOJ outright where
+! this deck SYNs it.  Expect duplicate definitions at merge, and
+! expect p.110's two SYNs to become removable once this lands.
+!   * decks/mcp_bootstrap_p110.strap lines 206-207 SYN "YFXUSA
+!     216442.0" and "YFXDS 216444.0" for its own "BD,YFXUSA" and
+!     "BD,YFXDS" -- which is exactly where THIS page defines them.
+!     The two definitions and the two references now meet, and the
+!     !SYM lines below are a real cross-page check, not a reading
+!     of this page alone.  The spellings are p.110's.
+!   * decks/mcp_bootstrap_p105.strap line 394 defines "DABEOJ SYN,
+!     68.0" at 000104.00, the identical symbol, address AND
+!     spelling -- O and not C -- that line 44 needs.
+! So this deck PREFERS SPELLINGS ANOTHER PAGE ALREADY USES for
+! YFXUSA, YFXDS, DABEOJ, and (from p.103/p.110/p.116/p.117) SCOMRG,
+! SL, SLRBU, SLRMCP, SICBU, YSFIC, SPRIME and SPRIMR.
+!
+! EVERY NAME ON THIS PAGE WAS ALSO CHECKED AGAINST THE VOLUME OCR, and
+! every one of them is there (docs/ocr/MCP_Mar63_001-249.txt and
+! ...250-445.txt): YPREFX 4, YPREL 8, YFXUSA 1, YSFCL2 2, SLRBU 25,
+! SLRMCP 5, SICBU 4, YSFIC 9, YMFCF 5, YPPEM 3, YMCPIN 1, YPEIC 1,
+! YMCPPE 2, SPRIMR 18, SPRIME 19, YSFBCR 3, ZSPLP9 3, ZSPLPR 11.
+! That is an index, not a spelling check -- the OCR reads this drum's
+! O as C just as the eye does -- but a name with ZERO hits would be
+! a reason to look again, and only YFXDS has none (it is defined
+! here and, in the part of the volume that is OCR'd, never used).
+!
+! >>> DABEOJ, LINE 44, IS ALSO SETTLED BY A TYPESET TABLE. <<<  The row
+! prints "000104.00 80  ,DABEOJ" and the last-but-one glyph is this
+! drum's round one, so the name could be read DABECJ.  Three
+! witnesses, none of them ink:
+!   * C22-6728 MCP System Analysis Guide, Figure 14 "Major Package
+!     Pseudo-Ops", prints "$ABEOJ 68.00".  Decimal 68 IS octal 104,
+!     and 68.00 IS this row's value.  The manual is typeset.
+!   * The same figure prints "$SCR 68.32", and the volume OCR carries
+!     a row "000104.40 80 ... DSCR" -- so the "D" prefix is the
+!     listing's name for the pseudo-op word and the pair lines up.
+!   * The volume OCR carries, on another page, "000104.00 80  DABEOJ
+!     -GO TO END OF JOB" and "SIC,SPRIME -USE ABEOJ", and C22-6728
+!     line 1760 reads "CBJ, OP, AD, and USA (6-8, 15-17) result in
+!     ABEOJ".  ABEOJ is ABnormal End Of Job.
+! That last sentence is doing double duty: it NAMES FOUR OF THIS
+! PAGE'S EIGHT INDICATORS in typeset print, which is what settles
+! lines 20, 21, 22 and 24 as BCBJZ, BOPZ (not BCPZ), BADZ (not BAOZ)
+! and BUSAZ, and corroborates the 6-8/15-17 numbering that the rows'
+! own printed offsets gave independently.
+!
+! >>> YMFCF AND YSFCL2 REST ON INK ALONE, and are the page's two
+! soft spots. <<<  Both carry a round glyph that this drum opens.
+! YMFCF's address is pinned (the volume OCR has its defining card,
+! "216425.00 *  YMFCF  DR(N),(3)", and four more references at
+! 216425/216426), but no manual names it and no landed deck uses it,
+! so the C-vs-O cannot be decided.  YSFCL2 is defined here and
+! referenced only from line 39 of this page, which is the exact
+! category docs/transcription_workflow.md warns about: it compiles
+! perfectly either way and no test can see it.  Recorded, not fixed.
+!
+! ---------------------------------------------------------------
+! EXTERNALS.  WHAT IS READ AND WHAT IS CONVENTION
+! ---------------------------------------------------------------
+! FOUR OF THESE ARE FULLY OBSERVED, because they appear as VFL or
+! index operands whose printed address field is a complete 24-bit
+! BIT address.  The rest are back-derived from a branch, a SIC or a
+! TRANSMIT and are pinned ONLY TO THE HALF WORD -- bit offsets 0-31
+! all encode identically, so writing ".0" there is a CONVENTION and
+! no !CHECK on this page can test it (docs/transcription_workflow
+! .md, "WHAT THE ORACLE CANNOT SEE", item 1).  Each is marked.
+!
+! SCOMRG  215001.00  LANDED, decks/mcp_bootstrap_p103.strap line 8
+!                    ("S COM RG XW,(8)520000.").  Carried only so
+!                    that S L below can be written the way p.103
+!                    writes it, exactly as p.128 carries it for S M.
+SCOMRG  SYN, (8)215001.0
+! SL      215001.04  FULLY OBSERVED.  LANDED, p.103 line 14
+!                    ("S L  SYN(BU,1), S COM RG + 0.04").  Lines 12
+!                    and 41 are branch-on-bit, whose FIRST half word
+!                    is a 24-bit bit address, and both print
+!                    215001.04 -- bit 4 is read, not conventional.
+SL      SYN(BU,1), SCOMRG+0.04
+! SLRBU   215324.00  LANDED by the p.116 and p.117 decks.  Line 13
+!                    prints 215324.00 and line 14 prints
+!                    "SLRBU+16." as 215344.32 -- 16 words on from
+!                    215324 is 215344 -- so the WORD is checked
+!                    twice and the arithmetic with it.
+SLRBU   SYN, (8)215324.0
+! SLRMCP  215362.00  LANDED by the p.116 and p.117 decks.  Line 15
+!                    prints "SLRMCP+9.0" as 215373.00; 215362+9 is
+!                    215373.
+SLRMCP  SYN, (8)215362.0
+! SICBU   215361.00  LANDED by the p.117 deck.  Line 17 prints
+!                    215361.03, whose ".03" is the index field
+!                    (register 1, doubled, plus the store bit), not
+!                    an address offset.
+SICBU   SYN, (8)215361.0
+! YSFIC   216604.00  FULLY OBSERVED, and LANDED by the p.110 deck.
+!                    Line 32 prints "YSFIC+.18" as 216604.22 --
+!                    eighteen decimal bits is .22 octal -- which
+!                    reads the word AND the zero bit offset.  The
+!                    SPELLING is typeset in C22-6728-1 ("the IC
+!                    saved in YSFIC"), twice in each revision.
+YSFIC   SYN, (8)216604.0
+! YMFCF   216425.00  NEW.  Line 18 prints 216425.03 ($1 index).
+!                    Half-word pinned; SPELLING NOT SETTLED, above.
+!                    NOT the manual's YMFL or YMFIC: YMFIC is landed
+!                    at 216411.40 (p.110) and YMFL is the MACHINE-
+!                    error analogue of this page's YPREL.  Grepping
+!                    both MCP guides for YMF*/YSF* returns only
+!                    YMFL, YMFP, YMFIC and YSFIC -- this name is not
+!                    in them.
+YMFCF   SYN, (8)216425.0
+! YPPEM   216513.00  FULLY OBSERVED.  Line 28 prints "YPPEM+.8" as
+!                    216513.10 (eight decimal bits is .10 octal),
+!                    which reads the word and the zero offset; line
+!                    49 prints the bare symbol as 216513.00.
+YPPEM   SYN, (8)216513.0
+! YMCPIN  216523.00  FULLY OBSERVED.  Line 29 is a VFL store and
+!                    prints 216523.00.
+YMCPIN  SYN, (8)216523.0
+! YPEIC   216516.40  FULLY OBSERVED.  Line 40 is a VFL store and
+!                    prints 216516.40 -- bit 32, read not assumed.
+YPEIC   SYN, (8)216516.40
+! YMCPPE  216500.40  NEW, and it is this page's forward join.  Line
+!                    41 prints 216500.74: octal 74 is the half-word
+!                    select (.40) plus branch-on-bit's own .34
+!                    operation bits, exactly as printed p.79 line 16
+!                    prints 004570.74 0E for "BB1,THEAD,TPENY" with
+!                    T PENY at 004570.40.  Half-word pinned.  The
+!                    volume OCR puts printed p.133 line 1 at
+!                    216500.40 and names it YMCPPE.
+YMCPPE  SYN, (8)216500.40
+! SPRIMR  215571.00  LANDED, decks/mcp_bootstrap_p103.strap line 288
+!                    -- whose own comment already says "pp.132,193
+!                    SIC,SPRIMR 215571.00", written before this page
+!                    was transcribed.  Half-word pinned.
+SPRIMR  SYN, (8)215571.0
+! SPRIME  215570.00  LANDED, p.103 line 287, same note.  Line 43
+!                    prints 215570.10, the .10 being B's operation
+!                    bits.  Half-word pinned.
+SPRIME  SYN, (8)215570.0
+! DABEOJ  000104.00  NEW.  Line 44 prints 000104.00 80.  Decimal 68,
+!                    which C22-6728 Figure 14 prints as "$ABEOJ
+!                    68.00".  Half-word pinned; the NAME is settled
+!                    (see THE NAMES).
+DABEOJ  SYN, (8)104.0
+! YSFBCR  215224.00  NEW here.  Line 45 prints 215224.06 ($3 index
+!                    doubled).  The volume OCR carries its defining
+!                    card, "215224.00+ ... YSFBCR SYN,SBNDRS", and a
+!                    second reference at 215224.02.  Half-word
+!                    pinned.
+YSFBCR  SYN, (8)215224.0
+! ZSPLP9  224052.00  NEW.  Line 47 prints 224052.00 80.  The volume
+!                    OCR carries three more "SIC,ZSPLP9" rows at the
+!                    same address.  Half-word pinned.
+ZSPLP9  SYN, (8)224052.0
+! ZSPLPR  224046.40  NEW.  Line 48 prints 224046.50: octal 50 is the
+!                    half-word select (.40) plus B's .10 operation
+!                    bits.  The volume OCR carries five more
+!                    "B,ZSPLPR" rows printing the identical 224046.50
+!                    00.  Half-word pinned.
+ZSPLPR  SYN, (8)224046.40
+!
+! $MASK (line 15) is the machine's mask register, word 12 -- it is
+! in strap/opcodes.py's SPECIAL_REGISTERS and needs no SYN here.
+!
+! ---------------------------------------------------------------
+! THE ORIGIN
+! ---------------------------------------------------------------
+        SLC, (8)216440.40
+!
+        B, YPREFX                     ! line  1
+        (AX)DD(BU,32), AD X           ! line  2
+        (IQSX)DD(BU,32), AD X         ! line  3
+YFXUSA  SIC, YPREL                    ! line  4
+        B, YPREFX                     ! line  5
+        (AX)DD(BU,32), USAX           ! line  6
+        (IQSX)DD(BU,32), USAX         ! line  7
+YFXDS   SIC, YPREL                    ! line  8
+        B, YPREFX                     ! line  9
+        (AX)DD(BU,32), DS X           ! line 10
+        (IQSX)DD(BU,32), DS X         ! line 11
+YPREFX  BB, SL, $+5.0                 ! line 12
+        TI, 16, 3.0, SLRBU            ! line 13
+        TI, 13, 19.0, SLRBU+16.       ! line 14
+        TI, 1, SLRMCP+9.0, $MASK      ! line 15
+        LV, $1, YSFIC                 ! line 16
+        SV, $1, SICBU                 ! line 17
+        SX, $1, YMFCF                 ! line 18
+        BUNRJZ, $.32                  ! line 19
+        BCBJZ, $.32                   ! line 20  printed "BCBJ Z"
+        BOPZ, $.32                    ! line 21  printed "BOP  Z"
+        BADZ, $.32                    ! line 22  printed "BAD  Z"
+        BEXEZ, $.32                   ! line 23  printed "BEXE Z"
+        BUSAZ, $.32                   ! line 24  printed "BUSAZ "
+        BDSZ, $.32                    ! line 25  printed "BDS Z "
+        BIFZ, $.32                    ! line 26  printed "BIF Z "
+YPREL   L(BU), $                      ! line 27 -LOAD IDENTIFYING INITIALS.
+        ST(BU,32), YPPEM+.8, 32       ! line 28
+        ST(BU,32), YMCPIN             ! line 29
+        LVI, $1, 0                    ! line 30 -CONVERT IC TO BCD
+        LCI, $1, 8                    ! line 31
+        L(BU,1), YSFIC+.18, 2         ! line 32
+        LFI(BU,8), (2)00111011, 8     ! line 33
+        LF(BU,18,3), YSFIC, 16        ! line 34
+YSFCL2  CT0101(BU,8), 0, 0($1)        ! line 35
+        BZRZ, $+1.32                  ! line 36
+        LFI(BU,8), (2)00001010, 0($1) ! line 37
+        V+I, $1, 4.0                  ! line 38
+        CB, $1, YSFCL2                ! line 39
+        ST(BU), YPEIC                 ! line 40
+        BB1, SL, YMCPPE               ! line 41
+        SIC, SPRIMR                   ! line 42
+        B, SPRIME                     ! line 43
+        , DABEOJ                      ! line 44
+        LX, $3, YSFBCR                ! line 45 -RESET BOUNDARY CONTROL.
+        SX, $3, 3.0                   ! line 46
+        SIC, ZSPLP9                   ! line 47 -WRITE MESSAGE ON SPOOL TAPE.
+        B, ZSPLPR                     ! line 48
+        , YPPEM                       ! line 49
+        , 5.0                         ! line 50
+!
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS THE PAGE PRINTS IT
+! ---------------------------------------------------------------
+!   LINE  LOCATION    BINARY OUTPUT                 NAME     STATEMENT
+!    1*   216440.40   216446.10 00                           B,YPREFX
+!    2*   216441.00                                          (AX)DD(BU,32), AD X
+!    3*   216441.40                                          (IQSX)DD(BU,32), AD X
+!    4*   216442.00   216457.40 80                  YFXUSA   SIC,YPREL
+!    5*   216442.40   216446.10 00                           B,YPREFX
+!    6*   216443.00 *                                        (AX)DD(BU,32), USAX
+!    7*   216443.40                                          (IQSX)DD(BU,32), USAX
+!    8*   216444.00   216457.40 80                  YFXDS    SIC,YPREL
+!    9*   216444.40   216446.10 00                           B,YPREFX
+!   10*   216445.00                                          (AX)DD(BU,32), DS X
+!   11*   216445.40                                          (IQSX)DD(BU,32), DS X
+!   12*   216446.00   215001.04 80  216453.34 02    YPREFX   BB,SL,$+5.0
+!   13*   216447.00   000003.00 80  215324.00 A0             TI,16,3.0,SLRBU
+!   14*   216450.00   000023.00 80  215344.32 A0             TI,13,19.0,SLRBU+16.
+!   15*   216451.00   215373.00 80  000014.02 A0             TI,1,SLRMCP+9.0,$MASK
+!   16*   216452.00   216604.02 30                           LV,$1,YSFIC
+!   17*   216452.40   215361.03 30                           SV,$1,SICBU
+!   18*   216453.00   216425.03 10                           SX,$1,YMFCF
+!   19*   216453.40   216454.03 C6                           BUNRJZ,$.32
+!   20*   216454.00   216454.44 46                           BCBJ Z,$.32
+!   21*   216454.40   216455.07 C6                           BOP  Z,$.32
+!   22*   216455.00   216455.50 46                           BAD  Z,$.32
+!   23*   216455.40   216456.11 46                           BEXE Z,$.32
+!   24*   216456.00   216456.50 C6                           BUSAZ ,$.32
+!   25*   216456.40 * 216457.11 C6                           BDS Z ,$.32
+!   26*   216457.00   216457.52 C6                           BIF Z ,$.32
+!   27*   216457.40   216457.40 80  000000.20 50    YPREL    L(BU),$           -LOAD IDENTIFYING INITIALS.
+!   28*   216460.40   216513.10 80  040020.20 D0             ST(BU,32),YPPEM+.8,32
+!   29*   216461.40   216523.00 80  040000.20 D0             ST(BU,32),YMCPIN
+!   30*   216462.40   000000.03 01                           LVI,$1,0          -CONVERT IC TO BCD
+!   31*   216463.00   000010.03 02                           LCI,$1,8
+!   32*   216463.40   216604.22 80  001001.20 50             L(BU,1),YSFIC+.18,2
+!   33*   216464.40   166000.00 80  410004.06 70             LFI(BU,8),(2)00111011,8
+!   34*   216465.40   216604.00 80  022310.06 70             LF(BU,18,3),YSFIC,16
+!   35*   216466.40   000000.00 80  010000.13 71    YSFCL2   CT0101(BU,8),0,0($1)
+!   36*   216467.40   216471.34 C0                           BZRZ,$+1.32
+!   37*   216470.00   024000.00 80  410000.06 71             LFI(BU,8),(2)00001010,0($1)
+!   38*   216471.00   000004.03 05                           V+I,$1,4.0
+!   39*   216471.40   216466.42 48                           CB,$1,YSFCL2
+!   40*   216472.00 * 216516.40 80  000000.20 D0             ST(BU),YPEIC
+!   41*   216473.00   215001.04 80  216500.74 0E             BB1,SL,YMCPPE
+!   42*   216474.00   215571.00 80                           SIC,SPRIMR
+!   43*   216474.40   215570.10 00                           B,SPRIME
+!   44*   216475.00   000104.00 80                           ,DABEOJ
+!   45*   216475.40   215224.06 10                           LX,$3,YSFBCR      -RESET BOUNDARY CONTROL.
+!   46*   216476.00   000003.07 10                           SX,$3,3.0
+!   47*   216476.40   224052.00 80                           SIC,ZSPLP9        -WRITE MESSAGE ON SPOOL TAPE.
+!   48*   216477.00   224046.50 00                           B,ZSPLPR
+!   49*   216477.40   216513.00 80                           ,YPPEM
+!   50*   216500.00   000005.00 80                           ,5.0
+!
+! LISTING MARKS.  Every line number carries the ordinary trailing
+! asterisk ("1*", "50*"); that is the column, not a mark.  THREE
+! rows carry a SECOND asterisk after the LOCATION -- lines 6, 25 and
+! 40 -- which is the familiar mark printed pp.3/37/38/39/88/97/98
+! and p.104 line 6 also carry.  It changes no compiled bit.
+!
+! ---------------------------------------------------------------
+! WHAT NO !CHECK ON THIS PAGE CAN SEE
+! ---------------------------------------------------------------
+! (1) >>> LINES 2, 3, 6, 7, 10 AND 11 PRINT NO BINARY OUTPUT AT
+! ALL, AND NOTHING IN THIS REPOSITORY CAN CHECK THEM IN EITHER
+! DIRECTION. <<<  They are entry-mode DDs and the listing leaves the
+! column blank, so their CONTENTS are untestable.  THE SIZE IS NO
+! HELP EITHER, and this was MEASURED rather than assumed, because
+! the obvious hope is that it would be: the three !SYM lines
+! YFXUSA/YFXDS/YPREFX sit immediately below these rows, so a datum
+! one character short ought to move all three.  It does not.
+! Shortening line 2's datum from " AD " to " AD" and re-running the
+! verifier leaves YFXUSA at 216442.00, YFXDS at 216444.00 and
+! YPREFX at 216446.00 and the page still passes 44 of 44 rows.
+!
+! The reason is that the emitted width comes from the DATA
+! DESCRIPTION -- "(BU,32)" says thirty-two bits -- and not from the
+! datum's length, so the datum is padded or truncated to fit and the
+! locations below it never move.  (entry_byte_size's own evidence,
+! printed p.37's "(AX)DD(BU),03/15/63X", is a dds with NO length,
+! which is the case where the characters do set the width.  This
+! page is the other case.)
+!
+! So these six rows rest on the reading of the STATEMENT column
+! alone, backed only by C22-6728-1's template and by the padding
+! rule being self-consistent across three mnemonics of two
+! different lengths.  A WRONG CHARACTER OR A WRONG BLANK HERE WOULD
+! BE INVISIBLE FOREVER.  Said plainly so the next reader does not
+! mistake this page's "ALL TESTS PASSED" for coverage of them.
+!
+! THE BLANKS IN THE DATUM ARE READ AS DATA, not formatting
+! (docs/transcription_workflow.md, "In entry mode the space after
+! the comma is DATA"): the page prints ", AD X", ", USAX" and
+! ", DS X", whose data are " AD ", " USA" and " DS " -- four
+! characters each, leading blank always, trailing blank on two of
+! the three.  (BU,32) names no byte size, which C28-6129 printed
+! p.16 makes EIGHT, and four eight-bit characters are the 32 bits
+! the locations demand.  Transcribed character for character.
+!
+! AND THE PADDING IS SELF-CONSISTENT, which is the closest thing to
+! a check these six rows can have: C22-6728-1 says the datum is the
+! INDICATOR MNEMONIC, and AD is two letters, USA is three, DS is
+! two -- so " AD ", " USA" and " DS " are one leading blank plus the
+! mnemonic plus however many blanks reach four.  Three rows, three
+! different mnemonic lengths, one rule.  That is an argument, not a
+! check -- see (1) above for why no check exists -- but it is the
+! only independent handle these rows have.
+!
+! (2) The half-word-pinned externals above: YMCPPE, ZSPLPR, SPRIME,
+! SPRIMR, ZSPLP9, DABEOJ, YSFBCR, YMFCF, SLRBU, SLRMCP, SICBU.  Bit
+! offsets 0-31 encode identically, so ".0"/".40" is read only as far
+! as bit 32.  SL, YSFIC, YPPEM, YMCPIN and YPEIC are NOT in this
+! class -- each is a VFL or branch-on-bit operand whose printed
+! field is a full 24-bit bit address, so their offsets are read.
+!
+! (3) The spellings YMFCF and YSFCL2, discussed above.
+!
+! ---------------------------------------------------------------
+! THE ASSEMBLER GAP THIS PAGE FOUND
+! ---------------------------------------------------------------
+! >>> STRAP IGNORES BLANKS INSIDE AN OPERATION, AND strap_asm DOES
+! NOT. <<<  Lines 20-26 print their operations with blanks inside
+! them -- "BCBJ Z", "BOP  Z", "BAD  Z", "BEXE Z", "BUSAZ ", "BDS Z ",
+! "BIF Z " -- and all seven are rejected:
+!
+!     line 38: unknown mnemonic 'BCBJ Z' (not a supported
+!     instruction or pseudo-op)
+!
+! The assembler already ignores blanks inside a SYMBOL ("VF,S ASPUT",
+! "SIC,S T IC"), which is the same STRAP rule applied in a different
+! column, so this looks like the same gap one code path over.
+! TESTED, not assumed: the printed forms were handed to assemble()
+! first and the error above is its reply.
+!
+! The seven rows here are written without the blanks, which is
+! bit-identical (the blanks carry no bits), and every printed form
+! is recorded in the !CHECK note beside its row.  THE OPERATION
+! FIELD IS SIX COLUMNS WIDE and the blanks are padding inside it:
+! "BUNRJZ" fills it, "BCBJ Z" puts the Z in column 6, "BUSAZ " in
+! column 5.  Measured off the character pitch at 900 dpi, with the
+! comma landing in column 7 on five of the eight rows.
+!
+! ---------------------------------------------------------------
+! THE SURVEY
+! ---------------------------------------------------------------
+! strap/mcp_survey.py OCR'd this page as 35 rows carrying a
+! LOCATION over 216441.CC..216474.CC.  THE PAGE HAS FIFTY, over
+! 216440.40..216500.00, and the reading above wins on three
+! independent counts: the page header's own "LOCATION 216440" field,
+! the card-serial column running ED000050 to ED000099 unbroken, and
+! the volume OCR putting printed p.133's first row at 216500.40.
+! The survey's own note says its count is a LOWER BOUND.
+!
+! ---------------------------------------------------------------
+! THE DECLARED CHECKS
+! ---------------------------------------------------------------
+!SYM   YFXUSA   216442.00
+!SYM   YFXDS    216444.00
+!SYM   YPREFX   216446.00
+!SYM   YPREL    216457.40
+!SYM   YSFCL2   216466.40
+!
+!CHECK 216440.40 | 216446.10 00 | line  1 B,YPREFX
+!CHECK 216442.00 | 216457.40 80 | line  4 YFXUSA SIC,YPREL
+!CHECK 216442.40 | 216446.10 00 | line  5 B,YPREFX
+!CHECK 216444.00 | 216457.40 80 | line  8 YFXDS SIC,YPREL
+!CHECK 216444.40 | 216446.10 00 | line  9 B,YPREFX
+!CHECK 216446.00 | 215001.04 80 216453.34 02 | line 12 YPREFX BB,SL,$+5.0
+!CHECK 216447.00 | 000003.00 80 215324.00 A0 | line 13 TI,16,3.0,SLRBU
+!CHECK 216450.00 | 000023.00 80 215344.32 A0 | line 14 TI,13,19.0,SLRBU+16.
+!CHECK 216451.00 | 215373.00 80 000014.02 A0 | line 15 TI,1,SLRMCP+9.0,$MASK
+!CHECK 216452.00 | 216604.02 30 | line 16 LV,$1,YSFIC
+!CHECK 216452.40 | 215361.03 30 | line 17 SV,$1,SICBU
+!CHECK 216453.00 | 216425.03 10 | line 18 SX,$1,YMFCF
+!CHECK 216453.40 | 216454.03 C6 | line 19 BUNRJZ,$.32
+!CHECK 216454.00 | 216454.44 46 | line 20 printed "BCBJ Z,$.32"
+!CHECK 216454.40 | 216455.07 C6 | line 21 printed "BOP  Z,$.32"
+!CHECK 216455.00 | 216455.50 46 | line 22 printed "BAD  Z,$.32"
+!CHECK 216455.40 | 216456.11 46 | line 23 printed "BEXE Z,$.32"
+!CHECK 216456.00 | 216456.50 C6 | line 24 printed "BUSAZ ,$.32"
+!CHECK 216456.40 | 216457.11 C6 | line 25 printed "BDS Z ,$.32"
+!CHECK 216457.00 | 216457.52 C6 | line 26 printed "BIF Z ,$.32"
+!CHECK 216457.40 | 216457.40 80 000000.20 50 | line 27 YPREL L(BU),$
+!CHECK 216460.40 | 216513.10 80 040020.20 D0 | line 28 ST(BU,32),YPPEM+.8,32
+!CHECK 216461.40 | 216523.00 80 040000.20 D0 | line 29 ST(BU,32),YMCPIN
+!CHECK 216462.40 | 000000.03 01 | line 30 LVI,$1,0
+!CHECK 216463.00 | 000010.03 02 | line 31 LCI,$1,8
+!CHECK 216463.40 | 216604.22 80 001001.20 50 | line 32 L(BU,1),YSFIC+.18,2
+!CHECK 216464.40 | 166000.00 80 410004.06 70 | line 33 LFI(BU,8),(2)00111011,8
+!CHECK 216465.40 | 216604.00 80 022310.06 70 | line 34 LF(BU,18,3),YSFIC,16
+!CHECK 216466.40 | 000000.00 80 010000.13 71 | line 35 YSFCL2 CT0101(BU,8),0,0($1)
+!CHECK 216467.40 | 216471.34 C0 | line 36 BZRZ,$+1.32
+!CHECK 216470.00 | 024000.00 80 410000.06 71 | line 37 LFI(BU,8),(2)00001010,0($1)
+!CHECK 216471.00 | 000004.03 05 | line 38 V+I,$1,4.0
+!CHECK 216471.40 | 216466.42 48 | line 39 CB,$1,YSFCL2
+!CHECK 216472.00 | 216516.40 80 000000.20 D0 | line 40 ST(BU),YPEIC
+!CHECK 216473.00 | 215001.04 80 216500.74 0E | line 41 BB1,SL,YMCPPE
+!CHECK 216474.00 | 215571.00 80 | line 42 SIC,SPRIMR
+!CHECK 216474.40 | 215570.10 00 | line 43 B,SPRIME
+!CHECK 216475.00 | 000104.00 80 | line 44 ,DABEOJ
+!CHECK 216475.40 | 215224.06 10 | line 45 LX,$3,YSFBCR
+!CHECK 216476.00 | 000003.07 10 | line 46 SX,$3,3.0
+!CHECK 216476.40 | 224052.00 80 | line 47 SIC,ZSPLP9
+!CHECK 216477.00 | 224046.50 00 | line 48 B,ZSPLPR
+!CHECK 216477.40 | 216513.00 80 | line 49 ,YPPEM
+!CHECK 216500.00 | 000005.00 80 | line 50 ,5.0

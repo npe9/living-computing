@@ -1,0 +1,301 @@
+! mcp_bootstrap_p134.strap -- the Y INTERRUPT-NAME TABLE and
+! "***** SPECIAL INTERRUPT ROUTINE FOR TS *****", printed page 134.
+! docs/MCP_Mar63_001-249.pdf PDF p.141 (printed + 7).  THE HEADER WAS
+! READ, NOT ASSUMED: the top line prints "TIME CLOCK 00054041  PUNID
+! 11011MCP   CARD ID ED000153   DIST. OF 3/01   3/01   PAGE NUMBER
+! 134", rendered on its own at 600 dpi.
+!
+! FIFTY LINES, AND NONE WERE LOST OFF EITHER END.  The card-serial
+! column runs ED000153 (line 1) to ED000202 (line 50) without a gap
+! -- 153 + 49 = 202 -- so line n carries serial ED000(152+n) and the
+! render covers the whole page.
+!
+! WHAT THE PAGE IS, IN TWO HALVES
+! ---------------------------------------------------------------
+! Lines 1-29 are a TABLE OF INTERRUPT-INDICATOR NAMES: a CNOP, then
+! twenty-seven "(AA)DD(BU,32),xxxx A" entry-mode cards, one per 7030
+! indicator, then a second CNOP.  Each card is named YIN** and
+! reserves one half word; the datum is the indicator's own mnemonic
+! as four characters of the 48 Character Set (STRAP entry mode A,
+! terminated by "A" -- C28-6129 printed p.16: the second character
+! of the entry-mode field is the end-of-statement character and is
+! not compiled, so "(AA)" is mode A terminated by A).
+!
+! Lines 30-32 are three definitions (YSFIC, YSFBCR, YSFLCR), lines
+! 33-34 a comment box, and lines 35-50 the sixteen instructions of
+! the special-interrupt routine JWLODE.
+!
+! >>> THE BINARY OUTPUT COLUMN IS EMPTY ON LINES 2-28. <<<  Checked
+! at 900 dpi over the whole column, not inferred from the 400-dpi
+! page: the entry-mode DD cards print a LOCATION and a NAME and
+! nothing else, where the two CNOPs around them print
+! "000000.30 00".  So those twenty-seven rows can carry a !SYM and
+! can NOT carry a !CHECK -- there is no printed word to compare the
+! thirty-two assembled bits against.  Their datum rests on the ink
+! and on the corroboration below, never on an oracle.
+!
+! THE TWENTY-SEVEN NAMES ARE SETTLED BY A TABLE, NOT BY INK
+! ---------------------------------------------------------------
+! Every datum is a 7030 INDICATOR MNEMONIC and strap/opcodes.py's
+! INDICATOR_BITS (Reference Manual Figure 11) gives them with their
+! bit numbers:  DF 20, IF 21, LC 22, PF 23, ZD 24, IR 25, LS 26,
+! PSH 27, XPFP 28, XPO 29, XPH 30, XPL 31, XPU 32, ZM 33, RU 34,
+! TF 35, UF 36, VF 37, XF 38, BTR 39, DTR 40, PG0..PG6 41-47.
+! The page's data, in printed order, are
+!   DF LC PF ZD IR LS PSH XPFP XPO XPH XPL ZM RU TF UF VF XF BTR
+!   DTR PG0 PG1 PG2 PG3 PG4 PG5 PG6 XPU
+! -- the indicator list in bit order with IF (21) omitted and XPU
+! (32) moved to the end.  So LC really is a C (Lost Carry), ZD is a
+! D (Zero Divisor), XPO is an O (eXPonent Overflow) and PG0 ends in
+! a DIGIT zero, and none of the four rests on this drum.  Line 9's
+! datum really is the four letters XPFP, not XPF padded: the column
+! measurement below puts a glyph in all four datum positions.
+!
+! A SECOND, INDEPENDENT READING OF THESE ADDRESSES ALREADY EXISTS,
+! AND IT COVERS ALL TWENTY-SEVEN.  printed p.114's lines 11-47 are
+! "LVI,$1,YIN**; B,YMSF" pairs and printed p.115 continues them, so
+! decks/mcp_bootstrap_p114.strap and p115.strap between them SYN
+! every YIN** name off this page.  Run through
+! tests/check_symbol_spellings.py with this deck added, all
+! twenty-seven names group at exactly the bit this page prints --
+! DF..BTR and XPU from p.114, DTR and PG0..PG6 from p.115 --
+! including YINXPU at 216603.00, out of bit order.  YSFIC agrees
+! with p.110's deck and JWLODE with p.112's.  Nothing here was
+! changed to match any of them; the whole run is 0 hits over 1143
+! name groups.
+!
+! THE DATUM FIELD WAS MEASURED, NOT EYEBALLED
+! ---------------------------------------------------------------
+! "Is the terminator one column further right on lines 2 and 3?"
+! could not be answered by looking.  The statement column was
+! rendered at 900 dpi and the ink profiled by column: the character
+! pitch is 91 px, "(AA)DD(BU,32)," occupies cells 1-14, the datum
+! occupies cells 15-18 on EVERY one of the twenty-seven cards, and
+! the terminator A sits in cell 19 on every one.  What the eye saw
+! as "further right" was the datum's own alignment:
+!
+!   cells 15-18 = "DF  " "LC  " on lines 2 and 3  (LEFT-aligned)
+!   cells 15-18 = " PF " " ZD " " IR " " LS "     (one blank in front)
+!   cells 15-18 = " PSH" " XPO" ... " XPU"        (three letters)
+!   cells 15-18 = "XPFP"                          (four letters)
+!
+! The keypunch was inconsistent and the assembler does not care: all
+! six shapes assemble to exactly 32 bits, measured by putting a
+! named VF after each and reading the symbol table.  The datum IS
+! transcribed as printed anyway, because nothing checks it.
+!
+! THE JOINS
+! ---------------------------------------------------------------
+! >>> THE TOP OF THIS PAGE IS NOT CLOSED, AND THE SLC BELOW IS AN
+! ASSERTION. <<<  The page prints no SLC of its own and printed
+! p.133 is not transcribed, so "SLC,(8)216565.40" states the
+! arriving counter rather than checking it.  A hard SLC overrides
+! the counter silently (docs/transcription_workflow.md, "WHAT THE
+! ORACLE CANNOT SEE", item 2), so every !CHECK below would still
+! pass if this origin were wrong.  What is known about the join:
+! printed p.133's last card is line 51, "216563.70 * YMIMIC
+! (AX)DD(BU), X", and line 1 here is a CNOP at 216565.40.  Thirteen
+! characters of YMIMIC's datum fit that gap exactly (216565.40 -
+! 216563.70 = 104 bits = 13 eight-bit bytes), which is consistent
+! but is NOT a check; p.133 has to land before the top is closed.
+!
+! >>> THE BOTTOM IS CLOSED, BY THE NEXT PAGE'S OWN ASSEMBLER. <<<
+! printed p.135 line 8 prints "216620.40 *  SLC,$" (PDF p.142, read
+! at 600 dpi, not taken from the OCR).  An SLC emits nothing, so its
+! printed LOCATION *is* the counter arriving from this page -- and
+! line 50 here is "B,KSUPP" at 216620.00, one half word earlier.
+! The two agree.  No !CHECK can consume that, so it is recorded in
+! the note on line 50 instead.
+!
+! TAIL SCOPE
+! ---------------------------------------------------------------
+! printed p.99 line 11's "SLC,(8)215000." moved the origin, and
+! pp.99+ are OUTSIDE the "TAIL,(2)G" block that printed p.2 opened
+! and printed p.98 line 37 closed.  So YUXSAV here is 231363.00
+! while the YUXSAV of printed p.37 is 002324.00.  Two different
+! names in two different tails, NOT a collision, and not reconciled.
+!
+! LISTING MARKS
+! ---------------------------------------------------------------
+! Every one of the fifty line numbers carries the ordinary trailing
+! asterisk ("1*", "50*"); that is the column, not a mark.  LINES 20
+! AND 42 carry a SECOND asterisk after the LOCATION -- "216577.00 *"
+! and "216612.40 *" -- the familiar mark printed pp.3/37/38/39/88/
+! 97/98/104 also carry.  It changes no compiled bit; both rows are
+! checked below and both pass.
+!
+! GLYPHS SETTLED AWAY FROM THE DRUM
+! ---------------------------------------------------------------
+! * Line 30's statement reads "VF,C" to the eye.  It is VF,0: the
+!   row's own BINARY OUTPUT is "000000.00+", and listing_oracle
+!   renders a VF as a 24-bit value plus its sign, so the operand is
+!   the value zero.  (The page prints 0 as an open C constantly --
+!   line 1's own binary reads "CCCCCC.3C CO" at 400 dpi.)
+! * Line 38's mnemonic reads BOPZ here and BCPZ in the volume OCR.
+!   It is BOPZ.  The OCR of this listing carries the same card six
+!   times with the same comment "-FOR LASL LRL" and the same byte
+!   C6, four times as BOPZ and twice as BCPZ, and dropout opens a
+!   closed glyph but never closes an open one.  Decided, not by the
+!   count, but by strap_asm: BOPZ assembles to the printed
+!   "216607.47 C6" and BCPZ is rejected as an unknown mnemonic.
+! * Lines 31-32's names end "CR", not "DR".  The letters are round
+!   with no left stem where SBNDRS on the same row prints a D with
+!   a straight vertical left stem, and the volume OCR corroborates
+!   YSFBCR twice in English: printed p.132 "LX,$3,YSFBCR  -RESET
+!   BOUNDARY CONTROL" and printed p.133 "LX,$L,YSFBCR  SET NEW
+!   BOUNDARY CONTROL".  BCR is the Boundary Control Register.
+!   >>> YSFLCR IS THE ONE NAME ON THIS PAGE WITH NO OUTSIDE
+!   CORROBORATION AT ALL. <<<  It occurs exactly once in the whole
+!   volume OCR -- here -- and nowhere in docs/ocr/'s manuals, and
+!   nothing references it, so the oracle can never fail on it.  The
+!   final C rests on ink and on the YSFBCR analogy, and what "LCR"
+!   stands for is unknown; see the report.
+! * YSFIC is corroborated six times outside this page: printed p.110
+!   prints "SIC,YSFIC" at 215031.00, 215032.00, 215042.00,
+!   215043.00, 215044.00 and 215046.00 -- Store Instruction Counter
+!   into YSFIC, which is what a VF,0 half word is for -- and
+!   decks/mcp_bootstrap_p110.strap already carries the name at this
+!   address.
+!
+! ---------------------------------------------------------------
+
+! Externals, with the deck that already carries each spelling.
+STLR    SYN, (8)215230.0              ! p.116 !SYM; p.117/118 SYN
+SPROGS  SYN, (8)215021.0              ! p.109/117/118 SYN
+SLRPP   SYN, (8)215266.0              ! p.116 line 18 defines it
+SLRBU   SYN, (8)215324.0              ! p.116 !SYM; p.117 SYN
+SBNDRS  SYN, (8)215224.0              ! p.116 !SYM; p.117 SYN
+KSUPP   SYN, (8)216242.0              ! p.128 "K SUPP NOP,K COMM R"
+WLODE   SYN, (8)216333.0              ! p.112/p.113 decks "B,W LODE"
+YUXSAV  SYN, (8)231363.0              ! THIS tail's YUXSAV -- see above
+SL      SYN(BU,1), (8)215001.04       ! p.103 line 14 -LEVEL OF INSTR
+SSPFIX  SYN(BU,1), (8)215001.13       ! p.103 line 20 -ON IF PP IN SPECIAL
+STSBIT  SYN(BU,1), (8)215001.14       ! p.103 line 21 -ON IF TS STACKED
+SAS     SYN(BU,1), .25                ! p.109 line  8 -AUTO STACK STATUS
+
+! An external back-derived from a printed branch or an LVI is pinned
+! only to the HALF WORD: bit offsets 0-31 all encode identically, so
+! the ".0" on STLR, SPROGS, SLRPP, SLRBU, SBNDRS, KSUPP, WLODE and
+! YUXSAV is a CONVENTION and no !CHECK below can test it.  Bit 32
+! IS checked, which is why writing ".0" is safe to do and safe to
+! check.  SL, SSPFIX, STSBIT and SAS are different: a BB/BZB prints
+! the bit offset in the half word's 18-23 field, so lines 39, 40,
+! 41 and 47 do check those four to the BIT.
+
+        SLC, (8)216565.40             ! ASSERTED, not printed -- see above
+
+        CNOP                          ! line  1
+YINDF   (AA)DD(BU,32),DF  A           ! line  2
+YINLC   (AA)DD(BU,32),LC  A           ! line  3
+YINPF   (AA)DD(BU,32), PF A           ! line  4
+YINZD   (AA)DD(BU,32), ZD A           ! line  5
+YINIR   (AA)DD(BU,32), IR A           ! line  6
+YINLS   (AA)DD(BU,32), LS A           ! line  7
+YINPSH  (AA)DD(BU,32), PSHA           ! line  8
+YINXPF  (AA)DD(BU,32),XPFPA           ! line  9
+YINXPO  (AA)DD(BU,32), XPOA           ! line 10
+YINXPH  (AA)DD(BU,32), XPHA           ! line 11
+YINXPL  (AA)DD(BU,32), XPLA           ! line 12
+YINZM   (AA)DD(BU,32), ZM A           ! line 13
+YINRU   (AA)DD(BU,32), RU A           ! line 14
+YINTF   (AA)DD(BU,32), TF A           ! line 15
+YINUF   (AA)DD(BU,32), UF A           ! line 16
+YINVF   (AA)DD(BU,32), VF A           ! line 17
+YINXF   (AA)DD(BU,32), XF A           ! line 18
+YINBTR  (AA)DD(BU,32), BTRA           ! line 19
+YINDTR  (AA)DD(BU,32), DTRA           ! line 20 (location carries an asterisk)
+YINPG0  (AA)DD(BU,32), PG0A           ! line 21
+YINPG1  (AA)DD(BU,32), PG1A           ! line 22
+YINPG2  (AA)DD(BU,32), PG2A           ! line 23
+YINPG3  (AA)DD(BU,32), PG3A           ! line 24
+YINPG4  (AA)DD(BU,32), PG4A           ! line 25
+YINPG5  (AA)DD(BU,32), PG5A           ! line 26
+YINPG6  (AA)DD(BU,32), PG6A           ! line 27
+YINXPU  (AA)DD(BU,32), XPUA           ! line 28
+        CNOP                          ! line 29
+YSFIC   VF,0                          ! line 30
+YSFBCR  SYN,SBNDRS                    ! line 31  prints "B ,31 ,01"
+YSFLCR  SYN,YUXSAV                    ! line 32  prints "BU,100,10"
+!                                       line 33  ***** SPECIAL INTERRUPT
+!                                                ROUTINE FOR TS *****
+!                                       line 34  (blank comment card)
+JWLODE  TI,16,3.0,STLR                ! line 35
+        TI,13,19.0,STLR+16.0          ! line 36
+        BE,STLR+1.32(.26,2)111101     ! line 37 -STM(U),STLR+1.0 SAVE $MR
+        BOPZ,$+.32                    ! line 38 -FOR LASL  LRL
+        BB,SL,JWLOD3                  ! line 39 -BR. IF MCP LEVEL
+        BB,SSPFIX,JWLOD4              ! line 40 -IF NOW IN SPECIAL FIXUP
+        BZB,SPROGS+SAS,WLODE+2.0      ! line 41 -IF NOT AUTOSTACKED
+        SR,$15,$1                     ! line 42 (location carries an asterisk)
+        SV,$1,0                       ! line 43
+        BZXVZ,WLODE+2.0               ! line 44 -LET HIM HAVE IT
+JWLOD2  CM1111(BU,1),SLRPP+8.4        ! line 45 -PUT TS IN PP BUFFER
+        B,KSUPP                       ! line 46
+JWLOD4  CM1111(BU,1),STSBIT           ! line 47 -SAVE TS WHILE IN SPECIAL
+        B,KSUPP                       ! line 48
+JWLOD3  CM1111(BU,1),SLRBU+8.4        ! line 49 -PUT TS IN BACKUP BUFFER
+        B,KSUPP                       ! line 50
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS THE ORACLE READS IT
+! ---------------------------------------------------------------
+! Thirty-four symbols and nineteen rows.  The thirty-four cover
+! every name the page defines; the nineteen cover every row the page
+! prints a BINARY OUTPUT for.  Lines 2-28 print none (see above),
+! lines 31-32 are SYNs whose printed LOCATION is a resolved VALUE
+! and not storage, and lines 33-34 are comment cards.
+
+!SYM   YINDF    216566.00
+!SYM   YINLC    216566.40
+!SYM   YINPF    216567.00
+!SYM   YINZD    216567.40
+!SYM   YINIR    216570.00
+!SYM   YINLS    216570.40
+!SYM   YINPSH   216571.00
+!SYM   YINXPF   216571.40
+!SYM   YINXPO   216572.00
+!SYM   YINXPH   216572.40
+!SYM   YINXPL   216573.00
+!SYM   YINZM    216573.40
+!SYM   YINRU    216574.00
+!SYM   YINTF    216574.40
+!SYM   YINUF    216575.00
+!SYM   YINVF    216575.40
+!SYM   YINXF    216576.00
+!SYM   YINBTR   216576.40
+!SYM   YINDTR   216577.00
+!SYM   YINPG0   216577.40
+!SYM   YINPG1   216600.00
+!SYM   YINPG2   216600.40
+!SYM   YINPG3   216601.00
+!SYM   YINPG4   216601.40
+!SYM   YINPG5   216602.00
+!SYM   YINPG6   216602.40
+!SYM   YINXPU   216603.00
+!SYM   YSFIC    216604.00
+!SYM   YSFBCR   215224.00
+!SYM   YSFLCR   231363.00
+!SYM   JWLODE   216604.40
+!SYM   JWLOD2   216614.00
+!SYM   JWLOD4   216615.40
+!SYM   JWLOD3   216617.00
+
+!CHECK 216565.40 | 000000.30 00 | line  1 CNOP -- the counter arrives here from printed p.133, which is NOT transcribed; the SLC above asserts it
+!CHECK 216603.40 | 000000.30 00 | line 29 CNOP
+!CHECK 216604.00 | 000000.00+ | line 30 YSFIC VF,0 -- printed "VF,C"; the value field settles it as 0
+!CHECK 216604.40 | 000003.00 80 215230.00 A0 | line 35 JWLODE TI,16,3.0,STLR
+!CHECK 216605.40 | 000023.00 80 215250.32 A0 | line 36 TI,13,19.0,STLR+16.0 -- the +16 is DECIMAL and lands 0o20 words on
+!CHECK 216606.40 | 215231.47 A0 | line 37 BE,STLR+1.32(.26,2)111101 -- a parenthetical integer entry (C28-6129 p.25) ORs 111101 with its rightmost bit at 26; the comment calls the result "STM(U),STLR+1.0 SAVE $MR"
+!CHECK 216607.00 | 216607.47 C6 | line 38 BOPZ,$+.32 -- BOPZ, not BCPZ; BCPZ is rejected by strap_asm and BOPZ gives this printed word
+!CHECK 216607.40 | 215001.04 80 216617.34 02 | line 39 BB,SL,JWLOD3 -- the .04 checks SL to the BIT
+!CHECK 216610.40 | 215001.13 80 216615.74 02 | line 40 BB,SSPFIX,JWLOD4 -- .13 checks SSPFIX to the bit; 216615.74 is JWLOD4 at .40 (bit 18 set)
+!CHECK 216611.40 | 215021.31 80 216335.34 00 | line 41 BZB,SPROGS+SAS,WLODE+2.0 -- .31 checks SAS to the bit
+!CHECK 216612.40 | 000021.37 70 | line 42 SR,$15,$1 -- $1 resolves to word 0o21 (location carries an asterisk)
+!CHECK 216613.00 | 000000.03 30 | line 43 SV,$1,0
+!CHECK 216613.40 | 216335.31 40 | line 44 BZXVZ,WLODE+2.0
+!CHECK 216614.00 | 215276.04 80 001000.36 F0 | line 45 JWLOD2 CM1111(BU,1),SLRPP+8.4
+!CHECK 216615.00 | 216242.10 00 | line 46 B,KSUPP
+!CHECK 216615.40 | 215001.14 80 001000.36 F0 | line 47 JWLOD4 CM1111(BU,1),STSBIT -- .14 checks STSBIT to the bit
+!CHECK 216616.40 | 216242.10 00 | line 48 B,KSUPP
+!CHECK 216617.00 | 215334.04 80 001000.36 F0 | line 49 JWLOD3 CM1111(BU,1),SLRBU+8.4
+!CHECK 216620.00 | 216242.10 00 | line 50 B,KSUPP -- LAST ROW. printed p.135 line 8 prints "216620.40 *  SLC,$", an SLC that emits nothing, so its LOCATION is the counter leaving this page: 216620.00 + one half word. The forward join is closed and no check here consumes it.

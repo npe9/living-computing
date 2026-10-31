@@ -757,6 +757,18 @@ def eval_expr(expr, symtab, loc_bits, reg_context=False, lineno=None):
 
 
 def eval_addr_field(expr, symtab, loc_bits, unit_shift, lineno=None, int_shift=0):
+    # A BLANKED SYMBOL REACHES AN ADDRESS FIELD TOO.  eval_expr grew
+    # this rule when printed p.121 printed "VF,S ASPUT"; every branch,
+    # B, LV, LVI, SIC and SVA address comes down HERE instead, so
+    # "B, P ERR EX" and "SIC, S COM IC" still failed with "undefined
+    # symbol 'P'".  printed p.135 measured which forms land on which
+    # path.  Same narrow rule as there: the whole field must be
+    # letters, digits and blanks, and the closed-up spelling must
+    # already be defined, so it can only resolve what is an error now.
+    if expr and ' ' in expr.strip():
+        _t = expr.strip()
+        if _BLANKED_SYMBOL.match(_t) and _t.replace(' ', '') in symtab:
+            expr = _t.replace(' ', '')
     """Evaluate an expression destined for an ADDRESS field whose unit
     is 2**unit_shift bits (5 for a 19-bit half-word-address field, 6
     for an 18-bit word-address field), applying C22-6531 p.11's rule
@@ -966,6 +978,22 @@ def parse_statement_text(text, lineno=None):
         fields = [f.strip() for f in split_top_level(rest[1:], ',')]
     elif rest.strip():
         raise AssemblerError(f"unexpected trailing text {rest!r}", lineno)
+    # >>> THE OPERATION FIELD IS SIX COLUMNS AND ITS BLANKS ARE
+    # PADDING. <<<  MCP printed p.132 lines 20-26 print "BCBJ Z",
+    # "BOP  Z", "BAD  Z", "BEXE Z", "BUSAZ ", "BDS Z ", "BIF Z " --
+    # one branch-on-indicator-and-clear each, the mnemonic laid out
+    # across the field.  This is the same rule that already applies
+    # inside a SYMBOL (see _BLANKED_SYMBOL): C22-6531 printed p.10
+    # makes a name alphameric, so a blank is never part of one, and
+    # STRAP ignores blanks while scanning a field.
+    #
+    # Safe unconditionally here, unlike in an operand: an operation is
+    # a mnemonic or it is empty.  A statement with a BLANK operation
+    # field -- the parameter half words of a SIC/B calling sequence,
+    # printed p.133 lines 44-45 -- has no blanks to strip, because
+    # parse_statement_text has already reduced it to "".
+    if op:
+        op = op.replace(' ', '').replace('\t', '')
     # `entry` rather than None: it is None for an ordinary statement
     # anyway, and a NUMERIC entry mode reaches here (see the note
     # above) and must keep its radix for entry_radix to find.
