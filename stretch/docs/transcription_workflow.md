@@ -399,6 +399,14 @@ The practical rule: **when you SYN an external off a printed
 instruction, say in the deck that its bit offset is unobservable.**
 Do not let a passing `!CHECK` imply you read it.
 
+> **BUT THE HALF WORD ITSELF IS CHECKED, AND THAT CATCHES REAL
+> ERRORS.** Bit 32 shows, so a symbol that is really at `.40` and
+> written `.00` FAILS. printed p.122 wrote `.0` for two externals and
+> the oracle refused both — `K ST CS` is 216272.40 and `K RELAY` is
+> 216314.40 — which is why writing `.0` by habit is safe to do and
+> safe to check. The invisible part is only the bit WITHIN the half
+> word.
+
 **2. A HARD `SLC` CANNOT DISAGREE WITH THE ARRIVING COUNTER.** It
 overrides it, silently. printed p.111's agent tested this rather than
 asserting it: setting `SIT` to `(8)215024.0` moves all forty-eight of

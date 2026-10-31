@@ -110,7 +110,12 @@
 !           "SPSIOI (receptor)" in type, which is what settles the
 !           O; printed p.112's deck already carries that spelling
 !           and this deck matches it)
-!   215230  "T1,13,$UB,S TLR" and "T,15,STLR,S LR PP"
+!   215230  "TI,13,$UB,S TLR" and "T,15,STLR,S LR PP"
+!           (this file quoted it as "T1" until 2026-10-31; T1 is
+!            not a Transmit mnemonic -- opcodes.TRANSMIT_CODES is
+!            T/TI/TB/TBI plus the SWAPs -- and printed p.122's
+!            glyph has an I's top and bottom bars.  Comment only;
+!            no check consumed it, which is why it survived.)
 !   215265  "SIC,STIC", dozens of times on printed pp.110-111
 !   215266  "T,15,STLR,S LR PP"
 !   215324  "KV,$1,SLRBU"
