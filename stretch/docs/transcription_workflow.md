@@ -139,6 +139,40 @@ Six reads become one.
 > undefined symbol); one that nothing references rests on ink alone, so
 > read those at 1800 dpi against a known-good instance of each candidate.
 
+> **WHEN THE INK CANNOT SETTLE A NAME, GREP THE MANUALS. IT IS THE
+> CHEAPEST CHECK IN THIS REPOSITORY AND IT IS ROUTINELY DECISIVE.**
+>
+> `docs/ocr/` holds OCR text for every manual. The listings are a
+> drum print and ambiguous; the manuals are typeset and are not. One
+> `grep` answers what an afternoon of 1800-dpi crops cannot:
+>
+> ```
+> $ grep -o 'STIC\|STIO' docs/ocr/C22-6728*_MCP_Sys_Analysis_Guide.txt | sort | uniq -c
+>   75 STIC
+> ```
+>
+> Zero STIO, in two revisions of a different document -- and the
+> prose says what it is: *"the saved IC is stored in STIC"*, with
+> the listing's own statement form printed at
+> *"(SIC,STIC; B,SIFAD)"*. **STIC is STored Instruction Counter.**
+>
+> That question had resisted everything else. Printed pp.110 and 111
+> read the last glyph C, printed p.112 read it O, and neither reading
+> was safe: this drum opens round glyphs constantly -- p.110's own
+> lines 35 and 36 are the SAME instruction, both compiling
+> `000000.30 00`, printed `NCP` and `NOP` -- so "it looks like a C"
+> carries almost no information, and a count of nine known glyphs on
+> printed p.106 had tesseract reading all five certain O's as C.
+> Shape was exhausted. The manual took one command.
+>
+> **Grep the ADDRESS as well as the name.** A symbol's name is the
+> OCR-fragile part and its octal address usually is not, so
+> `grep 215265` finds defining cards that `grep STIC` misses.
+> `docs/ocr/MCP_Mar63_001-249.txt` is a full-volume OCR of the
+> listing itself and is under-used for exactly this: it is far too
+> garbled to transcribe from, and it is an excellent index of where a
+> symbol is DEFINED on a page nobody has opened yet.
+
 > **A DD OR SYN LINE PRINTS A DATA DESCRIPTION, NOT MACHINE CODE**, in
 > the BINARY OUTPUT column -- `BU,100,10` is mode BU, length 0o100=64,
 > byte size 0o10=8. That is the column working correctly on a
