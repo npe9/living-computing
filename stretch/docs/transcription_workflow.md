@@ -920,3 +920,57 @@ one bit.
 > and two the other is not a 4-2 vote, because all six readings share
 > the drum and the reader. printed p.134's `BOPZ`/`BCPZ` split exactly
 > that way and was settled by the assembler instead.
+
+## 3c. THE DECK TEMPLATE, AND WHY IT GOT 5.6x LONGER
+
+Measured 2026-11-02 across all 180 landed decks. Source per page is
+FLAT; commentary is not:
+
+    pp.  2- 50   43 pages   prose/page    97   src/page  51   1.9:1
+    pp. 51-100   45 pages   prose/page   160   src/page  59   2.7:1
+    pp.101-130   30 pages   prose/page   346   src/page  48   7.2:1
+    pp.131-160   30 pages   prose/page   450   src/page  53   8.4:1
+    pp.161-180   20 pages   prose/page   540   src/page  55   9.8:1
+
+printed p.192 is 706 lines, 49 of them source. At that rate the
+remaining pages cost ~164,000 lines of English. The deliverable rate
+never changed; the writing around it grew 5.6x.
+
+### THE SUPERLINEAR TERM IS THE CROSS-PAGE CITATION, AND IT IS REDUNDANT
+
+Lines like `! landed pp.125/126/184; line 37 SIC -- BIT-EXACT` grow as
+O(corpus) per page BY CONSTRUCTION: p.22 could cite 20 prior pages,
+p.192 can cite 180. **`mcp_image.merge()` already enforces exactly
+what they assert, and names the authority itself.** Measured by
+perturbing p.196's `ZID09X SYN,(8)221045.00` to `221046.00`:
+
+    merge REFUSED -> FAIL ZID09X: printed p.196 SYNs bit 4753792,
+                     printed p.180 places it at bit 4753728
+
+Note which page the machine names. The hand-written citation on that
+line reads `landed pp.166/179/184` -- it does not mention p.180, the
+page that actually PLACES the symbol. **The prose is redundant with
+the merge AND less accurate than it.**
+
+### SO: WHAT A DECK SHOULD AND SHOULD NOT CARRY
+
+KEEP, because nothing else records it:
+  * the heading as READ (card id, page number, LOCATION field)
+  * line/serial accounting and the span, with the holes named
+  * the listing block and the !CHECKs -- READ OFF THE PAGE, never
+    pasted from the volume OCR (see NEXT.md: ten rows of `C`-for-`0`
+    reached the corpus that way)
+  * every glyph call that ink alone could not settle, and WHAT settled
+    it
+  * every departure from the printed form, and the refusal that forced
+    it
+  * what could NOT be settled, and what would settle it
+
+DROP:
+  * "WHAT THE PAGE IS" narrative and band-by-band retellings
+  * cross-page witness citations for a symbol the merge checks --
+    one line, "stand-ins are checked by the merge", covers all of them
+  * restating a rule this file already states
+
+A stand-in whose address NO page checks is the exception: say so
+explicitly, because that is the case the merge CANNOT catch.
