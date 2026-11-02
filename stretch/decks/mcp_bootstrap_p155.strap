@@ -522,8 +522,8 @@ SCREEL  SYN(BU,18), 8.32     ! p.101 line 28 -CURRENT REEL ADDRESS; line 12 prin
 ! "EF SYN,13.0"; written that way the index field comes out 0 in
 ! this assembler.  See the EU/EF section above for the
 ! measurement.  The VALUES are p.154's own.
-EU      SYN, 11              ! p.154 "EU SYN,11.0 -UNIT STATUS TABLE INDEX"; line 48's byte 8B
-EF      SYN, 13              ! p.154 "EF SYN,13.0 -FILE AREA TABLE INDEX"; line 23's byte 8D
+EU      SYN, 11.0            ! p.154 "EU SYN,11.0 -UNIT STATUS TABLE INDEX"; line 48's byte 8B
+EF      SYN, 13.0            ! p.154 "EF SYN,13.0 -FILE AREA TABLE INDEX"; line 23's byte 8D
 ! The six code externals.  Each printed address below is read off
 ! THIS page's BINARY OUTPUT column; the NAME and the fact that a
 ! card defines that address are from elsewhere, as cited.  A SYN

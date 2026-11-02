@@ -359,9 +359,21 @@
 ! reading itself.
 !
 ! S COM RG 215001.00  printed p.103 line 8 DEFINES it, "S COM RG
-!                     XW,(8)520000."  Carried only so S L can be
-!                     written the way p.103 writes it.
-SCOMRG  XW, (8)520000.
+!                     XW,(8)520000."
+!                     >>> CHANGED 2026-11-02: THIS WAS A VERBATIM COPY
+!                     OF THAT DEFINING CARD. <<<  An XW is a PLACE, so
+!                     the copy landed at THIS deck's counter inside the
+!                     externals block -- bit 2048, not 215001.00 -- and
+!                     the merged MCP-body image refused to build:
+!                     "SCOMRG is defined twice: printed p.103 and
+!                     printed p.157, and they disagree".  The page
+!                     never noticed because nothing here derives from
+!                     it: S L below is written as the literal
+!                     (8)215001.04, not as S COM RG+0.04, so the
+!                     comment's stated reason was not true either.
+!                     It is now a STAND-IN, which the merge CHECKS
+!                     against p.103's card instead of colliding with.
+SCOMRG  SYN, (8)215001.
 ! S L      215001.04  printed p.103 line 14 DEFINES it,
 !                     "S L SYN(BU,1),S COM RG+0.04  -LEVEL OF
 !                     INSTRUCTION"; decks p.117, p.123 and p.126

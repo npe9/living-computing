@@ -77,7 +77,16 @@ PAGES = [
     (DECK("mcp_bootstrap_p14.strap"), "printed p.14"),
 ]
 
-_STANDIN = re.compile(r'^\(8\)[0-7]+(\.[0-7]+)?$')
+# A TRAILING DOT WITH NO OFFSET DIGITS IS THE SAME BIT ADDRESS.
+# "(8)215003." is word 215003 at offset 0, exactly like
+# "(8)215003.00", and MCP's decks write both.  The pattern used to
+# require at least one digit after the dot, so printed p.124's
+# "SBAMCP SYN, (8)215003." was classified as a competing DEFINE
+# rather than a stand-in -- and because printed p.103 line 31 carries
+# that symbol as a PLACE ("SBAMCP VF, SMCP"), the merge refused the
+# whole image with "SBAMCP is defined twice".  The values agreed; only
+# the spelling of the literal differed.
+_STANDIN = re.compile(r'^\(8\)[0-7]+(\.[0-7]*)?$')
 _NAMED = re.compile(r'^(\S+)\s+(.*)$')
 
 
@@ -209,8 +218,22 @@ def merge(verbose=False, pages=None, end_at='XIPLBS'):
     for path, label in pages:
         for raw in open(path).read().splitlines():
             code = raw.split('!', 1)[0]
-            m = re.match(r'^([A-Z0-9]+)\s+SYN(\([^)]*\))?\s*,', code)
+            m = re.match(r'^([A-Z0-9]+)\s+SYN(\([^)]*\))?\s*,(.*)$', code)
             if m:
+                # AN ALIAS DECLARES NO dds OF ITS OWN, BY DESIGN.
+                # "S UN A SYN,S UN AA" (printed p.99 line 20) inherits
+                # (BU,25) from S UN AA -- C22-6531 printed p.31, "THE
+                # MEANING OF SYN IS ALWAYS ONE OF EXACT SUBSTITUTION"
+                # -- so counting it as a "(no dds)" DECLARATION made
+                # three pages that merely spell the alias look like
+                # they contradicted the five that spell the dds.  They
+                # never did.  strap_asm now carries the inheritance
+                # through sym_dds; this scan is pure text and has to
+                # recognise the shape instead.
+                if (m.group(2) is None
+                        and re.fullmatch(r'\s*[A-Za-z][A-Za-z0-9 ]*\s*',
+                                         m.group(3))):
+                    continue
                 ddsers.setdefault(m.group(1), {}).setdefault(
                     (m.group(2) or '').replace(' ', ''), []).append(label)
     for sym, byd in sorted(ddsers.items()):
@@ -367,7 +390,23 @@ def build(verbose=False, pages=None, end_at='XIPLBS'):
 # column rather than its top band.  Nothing on either compiles, so the
 # address trail runs straight from p.80's last line at 004627.00 to
 # p.83's first at 004627.40.
-NO_DECK_PAGES = {47, 59, 60, 81, 82}
+# printed p.100 joined on 2026-11-02, the entry the comment further
+# down had been predicting.  MEASURED, not restated: all sixteen of
+# its cards are COMMENT cards -- twelve of them SYN cards commented
+# out -- and the LOCATION and BINARY OUTPUT columns are EMPTY on every
+# row (rendered at 400 dpi across both columns).  The card images are
+# visibly jammed, "U NUSE1SYN,2.0" and "UNUSE2SYN,7.0", which a parsed
+# row cannot print.  It is MCP's IOD-card table reproduced as
+# documentation: PROSA 1, UNUSE1 2, UNAGN3 3, VRTP 4, VCRD 5, VWTP 6,
+# UNUSE2 7, JCIOD 8, UNAGN9 9, PCDEF2 10, CT11 11, CT21 12 -- decimal,
+# and the live cards are on printed p.1 with an octal reference field.
+#
+# So the symbols several decks SYN off it (JCIOD, PCDEF2) are NOT
+# defined here; p.100 is their documentary witness only.  Where their
+# live cards are is open: p.100's serials are BD000001-BD000016 and
+# p.101's are BF000001, so an entire BE group exists between them and
+# appears on no page in this PDF.
+NO_DECK_PAGES = {47, 59, 60, 81, 82, 100}
 
 # >>> THE RANGE REACHES printed p.58, 2026-10-24, AND IT IS
 # CONTIGUOUS. <<<

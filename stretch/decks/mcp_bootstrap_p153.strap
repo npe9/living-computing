@@ -405,7 +405,12 @@ EWR31   SYN, (8)217667.0
 !                     itself: line 9's byte is 3C (i = 12) and line
 !                     11, the second statement of the SAME CARD,
 !                     writes the sibling field as "($12)".
-EA      SYN, 12
+EA      SYN, 12.0                    ! printed form, restored 2026-11-02 once eval_reg
+                                     ! learned that an index field holds a WORD
+                                     ! NUMBER (C22-6531 p.11 restriction 1).
+                                     ! It read "SYN, 12" while that was broken,
+                                     ! which DISAGREED with p.154's defining
+                                     ! card and the merge refused the image.
 ! S COM RG 215001.00  printed p.103 line 8 DEFINES it, "S COM RG
 !                     XW,(8)520000."  Carried only so S HS ECH can be
 !                     written the way p.103 writes it.
@@ -457,7 +462,12 @@ SFMODE  SYN(BU,2), 2.48
 !                     the half word of word 3, and the NAME rests on
 !                     this page's ink plus its own English comment.
 !                     See GLYPHS (4) and WHAT COULD NOT BE SETTLED.
-STDMOD  SYN, 3.0
+STDMOD  SYN(BU,24), 3.0              ! dds (BU,24) from printed p.108 line 9,
+                                     ! "S TD MOD SYN(BU,24),3.0 -STANDARD MODE",
+                                     ! which PRINTS the definition.  Added
+                                     ! 2026-11-02 for the merged image; a VFL
+                                     ! operation writing no dds takes its length
+                                     ! from the symbol.
 
 ! ---------------------------------------------------------------
 ! WHERE THIS DECK DISAGREES WITH A LANDED ONE: "B 1RA" vs "BIRA"

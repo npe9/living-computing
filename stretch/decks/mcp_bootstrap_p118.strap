@@ -158,7 +158,9 @@ STLR    SYN, (8)215230.0
 ! SE     215001.00 -- printed p.103 line 10 defines it, "S E
 !                     SYN(BU,1), S COM RG", and the p103 deck records
 !                     215001.00+.  Here from lines 32 and 41.
-SE      SYN, (8)215001.0
+SE      SYN(BU,1), (8)215001.0       ! dds (BU,1) from p.103 line 10, the
+                                     ! page that PRINTS the definition; see
+                                     ! the note in p.117's deck.
 ! SPROGS 215021.00 -- the p109 deck's !SYM carries 215021.00.  This
 !                     page's lines 35 and 43 print SPROGS+1.61 as
 !                     215022.75 (1 word + 61 decimal bits = .75

@@ -405,8 +405,22 @@ SLRBU   SYN, (8)215324.0             ! p.117 deck, verbatim
 SLRPP   SYN, (8)215266.0             ! p.116 header layout; see note
 SLRMCP  SYN, (8)215362.0             ! p.117 deck, verbatim
 SICBU   SYN, (8)215361.0             ! p.116 header layout; see note
-SL      SYN, (8)215001.4             ! p.117 deck, verbatim
-SM      SYN, (8)215001.5             ! p.103 deck !SYM SM
+SL      SYN(BU,1), (8)215001.4   ! dds from the page that PRINTS the definition,
+                                     ! p.103 line 14; added 2026-11-02 -- the merged
+                                     ! MCP-body image refused without it,
+                                     ! because a connective or VFL operation
+                                     ! that writes NO dds takes its length from
+                                     ! the SYMBOL, so the merge would have had
+                                     ! to pick one silently.
+
+SM      SYN(BU,1), (8)215001.5   ! dds from the page that PRINTS the definition,
+                                     ! p.103 line 15 "S M SYN(BU,1),S COM RG+0.05"; added 2026-11-02 -- the merged
+                                     ! MCP-body image refused without it,
+                                     ! because a connective or VFL operation
+                                     ! that writes NO dds takes its length from
+                                     ! the SYMBOL, so the merge would have had
+                                     ! to pick one silently.
+
 STIC    SYN, (8)215265.0             ! p.110/111/112/117 decks, verbatim
 
         SLC, (8)216171.00            ! ASSERTED, not printed -- see join note

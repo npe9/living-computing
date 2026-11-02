@@ -245,7 +245,12 @@
 
 ! ---- EXTERNALS, with the printed address each was read from -----
 
-SUNA    SYN, 0.0                     ! p.99 line 20 (SUNA SYN,SUNAA,
+SUNA    SYN(BU,25), 0.0              ! dds (BU,25) added 2026-11-02: p.99
+                                     ! line 19 declares S UN AA (BU,25) and
+                                     ! line 20 aliases S UN A to it, so this
+                                     ! literal spelling must carry the dds
+                                     ! the alias would have inherited.
+                                     ! Original note: p.99 line 20 (SUNA SYN,SUNAA,
                                       !   SUNAA SYN(BU,25),0.0)
 SREW    SYN(BU,1), 0.52              ! p.99 line 43; line 5 here
 SMOUNT  SYN(BU,1), 0.51              ! p.99 line 42; line 6 here

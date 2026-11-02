@@ -2587,6 +2587,26 @@ def resolve_syns(syn_stmts, symtab, final):
             if (stmt.mods and stmt.mods[0].strip()
                     and hasattr(symtab, 'sym_dds')):
                 symtab.sym_dds[up] = stmt.mods[0]
+            # >>> A SYN TO A BARE SYMBOL INHERITS ITS DATA DESCRIPTION.
+            # <<<  C22-6531 printed p.31, already quoted in SymTab:
+            # "THE MEANING OF SYN IS ALWAYS ONE OF EXACT SUBSTITUTION."
+            # If A is SYNned to B then A means exactly B, dds included;
+            # writing no dds of its own is not writing NO dds.
+            #
+            # MCP printed p.99 is the case.  Line 19 is
+            # "S UN AA SYN(BU,25),0.0" and line 20 is
+            # "S UN A  SYN,S UN AA" -- so S UN A is (BU,25) through the
+            # alias.  Without this, the merged MCP-body image refused:
+            # "SUNA is declared with more than one data description:
+            # (no dds) on printed pp.99,125,128,136; (BU,25) on printed
+            # pp.122,126,135,138,160" -- the pages that RECONSTRUCTED
+            # the dds disagreeing with the page that DEFINES it, when
+            # in fact they agree and the inheritance was simply not
+            # being carried.
+            elif (body and hasattr(symtab, 'sym_dds')
+                    and re.fullmatch(r"[A-Za-z][A-Za-z0-9 ]*", body)
+                    and body.upper() in symtab.sym_dds):
+                symtab.sym_dds[up] = symtab.sym_dds[body.upper()]
             # INTEGER OR BIT ADDRESS -- see SymTab.  A SYN is an
             # INTEGER when every term of its operand is one: a plain
             # number, or another symbol already classified as one.  A

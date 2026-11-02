@@ -259,12 +259,28 @@ MKMCPA  SYN, (8)215566.40            ! line 12 "MKMCPA"
 MNOMCP  SYN, (8)215627.0             ! line 13 "M NO MCP" -- no second witness
 MOPCI   SYN, (8)215630.40            ! lines 15,17,26 "M OP CI"/"M OP C I"/"M OPCI"
 KFRONT  SYN, (8)220700.0             ! line 19 "K FRONT"
-SL      SYN, (8)215001.4             ! lines 20,39,45 "S L"
+SL      SYN(BU,1), (8)215001.4   ! dds from the page that PRINTS the definition,
+                                     ! p.103 line 14 "S L SYN(BU,1),S COM RG+0.04"; added 2026-11-02 -- the merged
+                                     ! MCP-body image refused without it,
+                                     ! because a connective or VFL operation
+                                     ! that writes NO dds takes its length from
+                                     ! the SYMBOL, so the merge would have had
+                                     ! to pick one silently.
+
 SBNDRS  SYN, (8)215224.0             ! line 21 "SBNDRS"
 SLRMCP  SYN, (8)215362.0             ! line 23 "SLRMCP+9.0" prints 215373
 MMAXOP  SYN, (8)114.40               ! line 25 "MMAXOP"
 SLRBU   SYN, (8)215324.0             ! line 28 "SLRBU"
-SE      SYN, (8)215001.0             ! line 32 "S E"
+SE      SYN(BU,1), (8)215001.0       ! line 32 "S E" -- dds (BU,1) from
+                                     ! p.103 line 10, which PRINTS the
+                                     ! definition "S E SYN(BU,1),S COM RG".
+                                     ! Added 2026-11-02: a page that only
+                                     ! USES an external never prints its
+                                     ! dds, and the merged image refused --
+                                     ! "SE is declared with more than one
+                                     ! data description".  A connective
+                                     ! writing no dds takes its length from
+                                     ! the SYMBOL, so this is load-bearing.
 MMK1    SYN, (8)215633.0             ! line 37 "M MK 1"
 MIFTTT  SYN, (8)215666.0             ! line 40 "MIFTTT-64.0" prints 215566
 KSUPP2  SYN, (8)217176.40            ! line 41 "K SUPP2+.32" prints 217177.00
