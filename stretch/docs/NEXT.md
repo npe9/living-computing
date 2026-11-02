@@ -16243,3 +16243,42 @@ defines 002367.40.
 THE SPELLING correction `SA6IGS` -> `SA6IQS` still stands, but on its
 original footing -- two landed decks plus a 1600-dpi render -- not on
 this list.
+
+### THE LISTING IS A DETERMINISTIC GRID: 10.00 CPI x 6.00 LPI
+
+Measured 2026-11-02, printed p.192 at 300 dpi, by autocorrelating the
+ink profile in each axis. Both peaks are clean and both land exactly
+on the standard line-printer values:
+
+    character pitch  30 px  r=0.684 at lag 30 vs 0.675 at 31  = 10.00 CPI
+    line pitch       50 px  r=0.468 at lag 50 vs 0.423 at 49  =  6.00 LPI
+
+So a cell is `x = xphase + k*30`, `y = yphase + n*50`, and cutting the
+page into characters needs nothing about glyph shape. Overlaid on
+p.192 the grid puts every character in its own cell and the rules in
+the gutters. Banked as `strap/listing_grid.py`.
+
+**This is the half of a trained reader that is now measured.** It is
+not the reader.
+
+### TWO SEGMENTATION TRAPS, BOTH WALKED INTO FIRST
+
+1. **Ink-run row segmentation looks right and is not.** On p.192 it
+   finds 51 runs and the page prints 51 lines -- a coincidence I
+   quoted as a result before checking. The runs include the DASHED
+   RULES (6-9 px) and MERGE adjacent text lines (runs of 90, 100, 110,
+   289, 449 px). Filtering to >=20 px gives 43 runs for 51 lines.
+   Step the line pitch instead of segmenting.
+
+2. **The phase estimator is UNSTABLE and would silently poison every
+   glyph.** Minimising ink on the cell seams returns 3 over
+   x=700..4900 and 20 over x=200..1800. Phase is mod 30, so those
+   disagree by two thirds of a cell and one of them cuts every glyph
+   in half. Left in the file with the instability documented rather
+   than deleted, so the next reader reproduces it instead of
+   rediscovering it. Two untried candidates: align to detected glyph
+   bounding boxes, or maximise between-cell ink variance.
+
+**STOPPED HERE deliberately.** The classifier is a project, not an
+afternoon, and 43% remains the number it has to beat. What is banked
+is reusable and measured; what is missing is named.
