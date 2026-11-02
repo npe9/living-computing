@@ -16193,3 +16193,53 @@ FIELDS of each row". A new check does not ship until an injection has
 been run against *each field it claims to compare*, separately, and
 each one named in the docstring. Reach without depth is how a check
 stays green for weeks across ten wrong rows.
+
+### CORRECTION: it is "SYMBOLS NEVER USED IN PROGRAM", not a cross-reference
+
+Commit c640577 (earlier today) called the six pages after `END,0` a
+"SYMBOL CROSS-REFERENCE TABLE" and said they would resolve the
+externals behind the frontier. **Both claims are wrong.** I read the
+rows and never read the heading. Rendered at 200 dpi, PDF p.190's
+first line says:
+
+    SYMBOLS NEVER USED IN PROGRAM
+
+pp.191-194 carry no heading of their own, so they continue that one
+list, and PDF p.195 is the assembly statistics ("THIS ASSEMBLY
+REQUIRED 000952 SECOND(S). FOR 20228 UNITS").
+
+**It cannot resolve a single external.** An external in this corpus is
+a symbol some transcribed page REFERENCES but no transcribed page
+defines. This list is, by construction, the symbols that nothing
+references. The two sets are disjoint by definition. I asserted the
+opposite in a commit message.
+
+WHAT IT IS ACTUALLY GOOD FOR -- a NEGATIVE authority. If a name on
+this list is referenced anywhere in the corpus, then either the
+reference or the name is misread. That is a real check and it fires
+immediately (see below).
+
+WHAT SURVIVES of the measurement: of 105 names OCR'd off the list, 12
+are also in the 865-symbol body image and **10 agree on the address
+exactly** (SWTAPE, SPRIN, SPROUT, DREW, DRLNS, DKLN, ...). So the
+column is an address in the same space, and the list is real data.
+
+### THE SA6IQS CONTRADICTION, UNRESOLVED AND FLAGGED
+
+PDF p.191 prints `SA6IQS* 1  002367.40`. Read at 600 dpi the name is
+unambiguous -- the Q's tail crosses the bowl. But:
+
+  * printed p.179 line 41 prints `B,SA6IQS`, so it IS used; and
+  * this corpus places it at 230567.40, not 002367.40.
+
+So c640577's "confirmed against IBM's own dictionary" is **withdrawn**.
+Three candidate explanations, none measured: the `* 1` suffix is a
+section number and MCP is a 97-section program where a name may denote
+different things per section; p.42 (the pp.15-98 IPL assembly, a
+DIFFERENT assembly) also carries the name; or the p.179 stand-in's
+asserted address is wrong. Settled by transcribing the page that
+defines 002367.40.
+
+THE SPELLING correction `SA6IGS` -> `SA6IQS` still stands, but on its
+original footing -- two landed decks plus a 1600-dpi render -- not on
+this list.
