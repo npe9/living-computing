@@ -261,6 +261,13 @@ count is, and for the same reason. **Both endpoints and the count are
 floors.** The FIRST endpoint is usually right when line 1 is located
 and wrong when line 1 is a banner.
 
+> **AND `docs/mcp_page_map.json` IS KEYED BY *PDF* PAGE, NOT PRINTED
+> PAGE.** Verified: key `190` is printed p.183, key `197` is printed
+> p.190. Anyone indexing it by the printed number reads a page seven
+> earlier and will "disagree with the survey" about a page they never
+> looked at. The offset is +7, the same one everywhere else, but the
+> file does not say so in its keys.
+
 And the cached `survey_report.txt` in a scratchpad can be staler than
 the tool: printed p.171's transcriber re-ran `mcp_survey.py` and got a
 first endpoint the cached file did not have. **Re-run the tool rather
@@ -693,11 +700,26 @@ Do not let a passing `!CHECK` imply you read it.
 >   LVI,$1,X:       216577.03  216577.03  216577.03  216577.43  216577.43
 > ```
 >
-> **The division is by INSTRUCTION CLASS, not by one mnemonic.** A
-> VFL operation and a `SIC` carry a full 24-bit bit address, so a row
-> using one is a READING of its operand. A branch or an index
-> operation spends the low bits on its own operation field and shows
-> only bit 32.
+> **The division is by INSTRUCTION CLASS, not by one mnemonic, and
+> there are THREE tiers rather than two.** Measured, same sweep
+> extended to `.77`:
+>
+> ```
+>   SYN offset ->   .00        .01        .37        .40        .77
+>   SIC,X:     000030.00  000030.01  000030.37  000030.40  000030.77
+>   LVI,2,X:   000030.05  000030.05  000030.05  000030.45  000030.45
+>   LX,2,X:    000030.04  000030.04  000030.04  000030.44  000030.44
+>   LCI,2,X:   000030.05  000030.05  000030.05  000030.05  000030.05
+> ```
+>
+> * **a VFL operation or a `SIC` reads EVERY BIT** -- that row is a
+>   reading of its operand;
+> * **a branch or an index operation reads BIT 32 ONLY** -- the half
+>   word is checked and the low five bits are convention;
+> * **`LCI` reads NOTHING BELOW THE WORD.** All sixty-four offsets
+>   print one word, so an `LCI` row does not even pin the half word.
+>   printed p.190 found this; do not assume an index operation
+>   behaves like `LVI`.
 >
 > printed p.184 found the VFL half (its `ST(BU,40),K DRAG` prints
 > `221250.50`, matching K DRAG's own LOCATION), pp.171 and 176 the

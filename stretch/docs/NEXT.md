@@ -171,6 +171,84 @@ two is unknown and is the thread to pull.
 > exactly as printed. An earlier reading of the GARBLED RefMan OCR had
 > suggested 117 was not a code at all; the curated table says it is.
 
+## A BLANKED NAME BREAKS THE MOMENT ANYTHING FOLLOWS IT -- open, 7 decks affected
+
+STRAP ignores blanks inside a symbol and `_BLANKED_SYMBOL` honours
+that -- but only when the name is the WHOLE field. Measured, with
+`KREPET` defined:
+
+```
+  CB,2,KREPET        OK
+  CB,2,K REPET       OK          <- blanked name alone resolves
+  CB,2,KREPET.32     OK
+  CB,2,K REPET.32    REFUSED     undefined symbol 'K'
+  CB,2,K REPET+.32   REFUSED     undefined symbol 'K'
+```
+
+**It is not the operator.** A bare `.NN` breaks it just as an operator
+does; what matters is that the name stops being the entire field.
+printed p.188 established that (the brief had cited only operator
+cases, which made it look like an operator problem), and printed
+p.187 found a third shape, `K WS.19`.
+
+**SEVEN landed decks carry a flagged substitution for this**: printed
+pp.138, 169, 171, 177, 187, 188, 190. Every one closes the blanks up
+and records the printed form beside it.
+
+**THIS IS A FIDELITY GAP, NOT A CORRECTNESS ONE** -- which is why it
+has not been fixed under time pressure. Closing up the blanks is
+bit-identical, so no image is wrong today; what is lost is the decks
+carrying the page's own spelling.
+
+**The fix, specified:** before tokenising an address field or an
+expression, if it matches `^([A-Za-z][A-Za-z0-9 ]*?)\s*([.+-].*)$`,
+the first group CONTAINS A BLANK, and its closed-up spelling is
+already a defined symbol, rewrite the field with that name closed up.
+Both guards matter: without the blank test every expression goes
+through the path for nothing, and without the symtab test the rule
+could change the meaning of an expression that works today. Apply it
+in the same two places the existing rule lives, `eval_expr` and
+`eval_addr_field`, and keep the existing whole-field rule as the
+first case.
+
+## ONE CONFUSION CAUSED THREE BUGS: IS THE OPERAND A VALUE OR AN ADDRESS?
+
+Three separate wrong answers this week turned out to be the same
+mistake wearing different clothes. In each, a field holds something
+WORD- or LENGTH-granular, the operand can be written either as a
+plain integer or as a STRAP bit address, and the assembler applied
+one rule to both:
+
+| field | written as an integer | written as an address | was |
+|---|---|---|---|
+| index register (`I`/`K`) | `SYN,12` -> register 12 | `SYN,12.0` -> 768 bits | masked raw: **register 0** |
+| CTL/LOC control code | `126` -> code 0o176 | `(8)176.` -> word 126 | **64x too large** |
+| VFL immediate A24 | `127` -> `127<<17` | `(8)300600.` -> the address | **truncated at short lengths** |
+
+**The tokenizer already distinguishes them** -- `(8)176.` is a
+`bitaddr`, `(8)176` and `126` are `int` -- so the fix in all three
+cases was to gate on the operand's SPELLING, and in all three the
+integer path was left exactly as it was, which is why no landed deck
+moved.
+
+**Each was invisible for a different reason**, and that is the part
+worth remembering: the register bug needed a page that names an index
+by word address; the control code needed a page writing the dotted
+form; the immediate needed ONE PAGE USING THE SAME IMMEDIATE AT TWO
+LENGTHS (printed p.186), because the conversion is exact at L=16 and
+lossy only at L=8.
+
+### THE AUDIT FOR A FOURTH, DONE 2026-11-02 -- and it is clean
+
+Every `eval_addr_field` call site was listed and its unit shift read.
+All the remaining ones use a FIXED shift of 5 (bits -> half words) or
+6 (bits -> words), which is exact at the granularity those fields
+actually hold, so they cannot truncate a legitimate operand. The only
+variable shift in the file was the `24 - length` one the immediate
+used, and that was the bug. **No fourth instance of this class is
+present today.** If one appears, it will be at a new call site with a
+length-dependent shift.
+
 ## WHAT CLOSES THE BODY'S EXTERNALS -- measured 2026-11-02
 
 The body image pp.99-176 defines **695 symbols and still has 62

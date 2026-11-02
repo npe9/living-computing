@@ -22,8 +22,17 @@ misfiring before it was measured against the whole corpus:
      pattern read only two of them -- 38% of the lines -- and the
      run then reported "119 of 156 decks carry no parseable block"
      as though that were a fact about the DECKS.  It was a fact
-     about the regex.  Widened: 101 of 156 decks, 3537 rows, 2472
-     checks compared.  The remaining 55 genuinely carry no block.
+     about the regex.  SEVEN defects in all, found one at a time by
+     seven different page transcribers; the reach went 37 -> 101 ->
+     109 -> 117 -> 123 decks and 1231 -> 3066 comparisons as each
+     was fixed, with zero mismatches at every step.
+
+     THE REMAINING 49 ARE NOT A GAP.  Characterised once rather than
+     discovered again: they carry PROSE notes with locations in them
+     ("p.104 line 6 is the last SLC seen, SLC,$ printed 215020.71")
+     and no tabular block at all.  123/172 is the ceiling, not a
+     shortfall, and a future reader should not go looking for an
+     eighth layout.
 
 The third is why this is a script and not a snippet: **it reports its
 own REACH**, so silence can never be mistaken for verification. A
@@ -60,8 +69,16 @@ DECKS = os.path.join(HERE, "..", "decks")
 # suit the tool, which is the wrong way round.
 #
 # Both the optional "line " and both optional asterisks are skipped.
+# The space before the LOCATION's asterisk is also optional -- decks
+# write both "221352.00 *" and "221352.00*".  Requiring it dropped
+# rows on TWENTY-FOUR decks, +236 rows corpus-wide, and several
+# (printed pp.99, 101, 104, 107) went from almost nothing to fully
+# read: they were effectively unchecked while the tool reported a
+# reach that counted them.  printed p.187's transcriber found it
+# after losing 2 of 24 rows on their own page and still seeing
+# ALL TESTS PASSED.
 ROW_RE = re.compile(
-    r'!\s*(?:line\s+)?\d+\*?\s+([0-7]{6}\.[0-7]{2})\s+\*?\s*(.*)')
+    r'!\s*(?:line\s+)?\d+\*?\s+([0-7]{6}\.[0-7]{2})\s*\*?\s*(.*)')
 CHK_RE = re.compile(r'!CHECK\s+([0-7]{6}\.[0-7]{2})\s*\|\s*([^|]*)')
 
 # >>> ONLY COMPARE WHERE THERE IS SOMETHING TO COMPARE AGAINST. <<<

@@ -2608,8 +2608,25 @@ def resolve_syns(syn_stmts, symtab, final):
         for up, stmt in pending:
             if not stmt.fields or not stmt.fields[0].strip():
                 raise AssemblerError("SYN needs a value operand", stmt.lineno)
-            missing = [s for s in referenced_symbols(stmt.fields[0], stmt.lineno)
-                       if s not in symtab]
+            # >>> A BARE BLANKED NAME RESOLVES HERE TOO. <<<  The
+            # instruction path has stripped blanks inside a symbol
+            # since printed p.121 ("VF,S ASPUT"), but this one never
+            # did, so "B,K IO IND" assembled while
+            # "E IO IND SYN,K IO IND" -- the SAME NAME, on the same
+            # page -- was refused with "SYN symbol(s) never resolve".
+            # printed p.189 prints both and found the asymmetry.
+            #
+            # Same narrow rule as _BLANKED_SYMBOL's other two uses:
+            # the WHOLE field must be letters, digits and blanks, and
+            # the closed-up spelling must ALREADY be defined.  So it
+            # can only resolve something that is an error today.
+            _f = stmt.fields[0].strip()
+            if (_BLANKED_SYMBOL.match(_f) and ' ' in _f
+                    and _f.replace(' ', '').upper() in symtab):
+                missing = []
+            else:
+                missing = [s for s in referenced_symbols(stmt.fields[0], stmt.lineno)
+                           if s not in symtab]
             if missing:
                 still_pending.append((up, stmt))
                 continue
@@ -3800,12 +3817,38 @@ def emit_statement(stmt, symtab, image):
             # unchanged by this: a plain integer passes through
             # eval_addr_field untouched and still packs to 127<<17.
             actual_len = 64 if length_field == 0 else length_field
-            if actual_len <= 24:
-                raw_val = eval_addr_field(base, symtab, loc, 24 - actual_len,
-                                          lineno=stmt.lineno)
+            # >>> AN ADDRESS OPERAND IS DEPOSITED WHOLE; ONLY A LITERAL
+            # IS PACKED BY LENGTH. <<<  Reference Manual printed p.56,
+            # already quoted in encode_vfl_immediate: "the effective
+            # address itself is used as the operand.  The field length
+            # specifies the number of bits in the field starting with
+            # the LEFTMOST bit of the effective address."  So for an
+            # ADDRESS the whole 24-bit effective address goes in and
+            # the HARDWARE takes the leftmost L bits; the assembler
+            # must not pre-truncate it.
+            #
+            # Dividing by 2^(24-L) first loses the low bits whenever L
+            # is small, and MCP printed p.186 catches it by writing
+            # ONE immediate at TWO lengths:
+            #     line 43  CI0111(BU,16),(8)300600.  -> 300600.00  OK
+            #     line 47  CI0111(BU,8), (8)300600.  -> 300000.00  WRONG
+            # the page prints 300600.00 for both.  At L=16 the shift
+            # of 8 is exact and the bug is invisible; at L=8 it is not.
+            # Gated on the operand's SPELLING, the same distinction
+            # that governs a register field and a CTL control code, so
+            # a plain integer still packs left-justified (127 -> 127<<17).
+            if _written_as_bit_address(base, stmt.lineno):
+                addr24 = eval_expr(base, symtab, loc,
+                                   lineno=stmt.lineno) & 0xFFFFFF
             else:
-                raw_val = eval_expr(base, symtab, loc, lineno=stmt.lineno)
-            addr24 = encode_vfl_immediate(raw_val, length_field, stmt.lineno)
+                if actual_len <= 24:
+                    raw_val = eval_addr_field(base, symtab, loc,
+                                              24 - actual_len,
+                                              lineno=stmt.lineno)
+                else:
+                    raw_val = eval_expr(base, symtab, loc, lineno=stmt.lineno)
+                addr24 = encode_vfl_immediate(raw_val, length_field,
+                                              stmt.lineno)
         else:
             addr24 = eval_expr(base, symtab, loc, lineno=stmt.lineno) & 0xFFFFFF
         i1 = eval_reg(paren, symtab, stmt.lineno)
@@ -3864,12 +3907,38 @@ def emit_statement(stmt, symtab, image):
             # unchanged by this: a plain integer passes through
             # eval_addr_field untouched and still packs to 127<<17.
             actual_len = 64 if length_field == 0 else length_field
-            if actual_len <= 24:
-                raw_val = eval_addr_field(base, symtab, loc, 24 - actual_len,
-                                          lineno=stmt.lineno)
+            # >>> AN ADDRESS OPERAND IS DEPOSITED WHOLE; ONLY A LITERAL
+            # IS PACKED BY LENGTH. <<<  Reference Manual printed p.56,
+            # already quoted in encode_vfl_immediate: "the effective
+            # address itself is used as the operand.  The field length
+            # specifies the number of bits in the field starting with
+            # the LEFTMOST bit of the effective address."  So for an
+            # ADDRESS the whole 24-bit effective address goes in and
+            # the HARDWARE takes the leftmost L bits; the assembler
+            # must not pre-truncate it.
+            #
+            # Dividing by 2^(24-L) first loses the low bits whenever L
+            # is small, and MCP printed p.186 catches it by writing
+            # ONE immediate at TWO lengths:
+            #     line 43  CI0111(BU,16),(8)300600.  -> 300600.00  OK
+            #     line 47  CI0111(BU,8), (8)300600.  -> 300000.00  WRONG
+            # the page prints 300600.00 for both.  At L=16 the shift
+            # of 8 is exact and the bug is invisible; at L=8 it is not.
+            # Gated on the operand's SPELLING, the same distinction
+            # that governs a register field and a CTL control code, so
+            # a plain integer still packs left-justified (127 -> 127<<17).
+            if _written_as_bit_address(base, stmt.lineno):
+                addr24 = eval_expr(base, symtab, loc,
+                                   lineno=stmt.lineno) & 0xFFFFFF
             else:
-                raw_val = eval_expr(base, symtab, loc, lineno=stmt.lineno)
-            addr24 = encode_vfl_immediate(raw_val, length_field, stmt.lineno)
+                if actual_len <= 24:
+                    raw_val = eval_addr_field(base, symtab, loc,
+                                              24 - actual_len,
+                                              lineno=stmt.lineno)
+                else:
+                    raw_val = eval_expr(base, symtab, loc, lineno=stmt.lineno)
+                addr24 = encode_vfl_immediate(raw_val, length_field,
+                                              stmt.lineno)
         else:
             addr24 = eval_expr(base, symtab, loc, lineno=stmt.lineno) & 0xFFFFFF
         i1 = eval_reg(paren, symtab, stmt.lineno)

@@ -6611,7 +6611,34 @@ run "the reload and drag handlers, printed p.184" python3 verify_mcp_page.py 184
 # not in CONFUSABLE.  Settled by rendering printed p.179 line 44,
 # which prints "VF,Z ID 04" with the blank in.  The manuals' seven
 # "ZIO" hits are all the SUBSTRING inside ZIOCH and ZIOR.
-run "MCP's body merges and accounts for every word, printed pp.99-184" python3 check_mcp_body_image.py
+run "the I/O reject test, printed p.185" python3 verify_mcp_page.py 185
+run "the control-word retry paths, printed p.186" python3 verify_mcp_page.py 186
+run "the SEOP end-of-operation test, printed p.187" python3 verify_mcp_page.py 187
+run "the I/O indicator check, printed p.188" python3 verify_mcp_page.py 188
+run "the label and space paths, printed p.189" python3 verify_mcp_page.py 189
+run "the density check, printed p.190" python3 verify_mcp_page.py 190
+run "the backspace routine, printed p.191" python3 verify_mcp_page.py 191
+run "the J-level service paths, printed p.192" python3 verify_mcp_page.py 192
+
+# >>> pp.185-192 FOUND A WRONG ANSWER IN THE VFL IMMEDIATE, and the
+# page caught it by writing ONE immediate at TWO LENGTHS. <<<
+#     printed p.186 line 43  CI0111(BU,16),(8)300600.  -> 300600.00
+#     printed p.186 line 47  CI0111(BU,8), (8)300600.  -> 300000.00
+# the page prints 300600.00 for both.  eval_addr_field divided the
+# bit address by 2^(24-L) first, which is exact at L=16 and LOSES
+# THE LOW BITS at L=8 -- so the defect was invisible until one page
+# used the same immediate at both lengths.  Reference Manual printed
+# p.56, already quoted in encode_vfl_immediate, says "the effective
+# address itself is used as the operand ... starting with the
+# LEFTMOST bit", so an ADDRESS is deposited whole and the hardware
+# selects.  Gated on the operand's SPELLING -- the third time that
+# same address-vs-integer distinction has been the answer, after the
+# register field and the CTL control code.
+#
+# Also: the SYN path never stripped blanks the instruction path does
+# ("B,K IO IND" assembled, "E IO IND SYN,K IO IND" did not), found
+# by printed p.189 printing both on one page.
+run "MCP's body merges and accounts for every word, printed pp.99-192" python3 check_mcp_body_image.py
 run "the equipment dispatch, printed p.160" python3 verify_mcp_page.py 160
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
 run "the program status table, printed p.109" python3 verify_mcp_page.py 109

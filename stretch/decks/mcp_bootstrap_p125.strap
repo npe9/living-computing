@@ -257,8 +257,22 @@ SMOUNT  SYN(BU,1), 0.51              ! p.99 line 42; line 6 here
 SUNIT   SYN(BU,3), 0.56              ! p.99 line 39; line 8 here
 SOWNER  SYN(BU,1), 0.32              ! p.99 line 30; line 39 here
 SCSINT  SYN(BU,1), (8)215001.07      ! p.103 line 17 (SCOMRG bit 7)
-KREP    SYN, 30                      ! A COUNT, not an address --
-                                      !   OCR 9569 / 6405, see above
+KREP    SYN(BU,18), 30               ! A COUNT, not an address --
+                                      !   OCR 9569 / 6405, see above.
+                                      ! dds (BU,18) ADDED 2026-11-02:
+                                      ! printed p.185 line 27 PRINTS the
+                                      ! defining card, "K REP SYN(BU,18),30",
+                                      ! its dds column reading BU,22 ,10 --
+                                      ! length 0o22 = 18, byte size 0o10 = 8.
+                                      ! This deck had carried it with NO dds
+                                      ! and the merged body image refused:
+                                      ! "KREP is declared with more than one
+                                      ! data description: (no dds) on printed
+                                      ! p.125; (BU,18) on printed p.185".
+                                      ! NOTE the !SYM here checks the VALUE
+                                      ! (bit 30) and passes either way -- the
+                                      ! merge refusal is the ONLY test of the
+                                      ! length.
 KRECEP  SYN, (8)216332.0             ! card OCR 6770 "K RECEP XW,0"
 KCSQ    SYN, (8)216171.0             ! card OCR 6616 "K CS Q VF,0"
 KREJT   SYN, (8)221300.0             ! card OCR 9561; HALF WORD only

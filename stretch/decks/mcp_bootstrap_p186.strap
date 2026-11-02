@@ -1,0 +1,494 @@
+! mcp_bootstrap_p186.strap -- MCP printed page 186: the UNIT NOT READY
+! REJECT routine (K UNR) and the channel/unit-number-to-IQS converter
+! (K CONV), with the two operator-message cards they fill in.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.193.  The header was READ, not
+! assumed, at 400 dpi:  "TIME CLOCK 00054041   PUNID 11D11MCP
+! CARD ID LE000053   DIST. OF 3/01   3/01   PAGE NUMBER  186".
+!
+! >>> THE COLUMN-HEADING ROW'S OWN "LOCATION" FIELD READS 221306. <<<
+! Six digits, printed after the word LOCATION at the right-hand end
+! of the heading line, clear of the dashed rule.  That is LINE 1'S
+! location word (docs/transcription_workflow.md step 1), and line 1
+! here IS a located row -- the numbered case the rule predicts.
+! Line 1's own LOCATION column reads 221306.40.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! FIFTY-ONE PRINTED LINES, serials LE000053..LE000097.  Nine of them
+! are comment cards (10-14, 34-37) carrying a "-" in the NAME column
+! and no location.  No SLC, no SYN, NO RESERVATION OF ANY KIND.
+! The page is CONTIGUOUS from 221306.40 to 221350.40 -- thirty-three
+! words and a half, no hole -- and then blank paper to the foot.
+!
+!   lines  1-9    the tail of the end-of-operation wait: K SEOUL
+!                 loops on the control word's SEOP bit, gives up to
+!                 K REJT after three EKJ's, and K CBJ R returns to
+!                 K RETRY once the control word is cleared.
+!   lines 10-14   the banner and the calling sequence for what
+!                 follows.
+!   lines 15-30   K UNR, the unit-not-ready arm: convert the channel
+!                 and unit numbers (K CONV), set the commentator's
+!                 busy/wait flags, call the commentator with the
+!                 message K SERV M, then K K LOOP waits for the unit
+!                 to come ready and K UNR R returns.
+!   lines 31-33   the routine's data: the index word K K CCW and the
+!                 two IQS message cards K SERV M and K NN.
+!   lines 34-37   the second banner.
+!   lines 38-51   K CONV: expand the channel number to 8-bit bytes,
+!                 make it an IQS numeral, store it into the message,
+!                 do the same for the unit number, and return
+!                 through K CONV R.
+!
+! ---------------------------------------------------------------
+! THE SPAN, ESTABLISHED FROM THE PAGE AND NOT FROM THE SURVEY
+! ---------------------------------------------------------------
+! The brief no longer quotes survey endpoints, so this deck fixed
+! its own.  Measured three ways that agree:
+!
+!   * the LINE column runs 1..51 with no gap, and the page's text
+!     rows were located mechanically (ink-row detection over the
+!     NAME+STATEMENT columns at 1200 dpi): fifty-one rows of body
+!     text, the last at 221350.00, and nothing but dashed rule and
+!     blank paper below it.
+!   * the CARD-SERIAL column runs LE000053..LE000097 with the usual
+!     one-card-two-lines repeats (53, 57, 65, 69, 70, 74 each print
+!     twice) and NO gap.  Forty-five distinct serials for fifty-one
+!     lines.
+!   * the counter chain closes: 221306.40 + the printed widths =
+!     221350.40, and the last located row prints 221350.00.
+!
+! strap/mcp_ocr.py reads only 15 of the 51 locations on this page,
+! and the fifteen it reads all agree with the eye (its one wobble is
+! "221314.46" for line 15's 221314.40).  That is the cross-check the
+! workflow asks for, not a source.
+!
+! ---------------------------------------------------------------
+! THE JOIN, AND WHY THIS DECK'S ORIGIN IS CHECKED AND NOT ASSERTED
+! ---------------------------------------------------------------
+! The page prints NO SLC, so the SLC below is this deck's own.  But
+! it is NOT an assertion: FIVE landed decks already SYN symbols that
+! THIS page defines, and strap/mcp_image.merge compares them --
+!
+!     KCBJR   221313.40   pp.125, 126, 184   (line  9)
+!     KKLOOP  221321.40   p.184              (line 24)
+!     KUNRR   221325.40   p.184              (line 30)
+!     KCONV   221335.00   pp.146, 179        (line 38)
+!     KCONVR  221350.00   pp.146, 179        (line 51)
+!
+! -- and all five of those are read off SIC or branch half words on
+! pages that had never seen this one.  Moving this deck's origin one
+! half word and re-merging is refused (the injection was run; see
+! the report).  So the origin is CHECKED.
+!
+! The join backwards is independent as well: printed p.185's LAST
+! line is a full-word "BZB,SMULTI($10),KSEOUL" at 221305.40, which
+! leaves the counter at 221306.40 -- this page's line 1.  That card
+! also REFERENCES this page's line 3, and prints 221307.74 for it:
+! 0o40 OR 0o34 = 0o74, so p.185 reads K SEOUL at 221307.40, which is
+! the location line 3 prints.  Two pages, one symbol, same answer.
+! The CARD SERIALS close the same join: p.185's last line is
+! LE000052 and this page's line 1 is LE000053.
+!
+! FORWARD: line 51's "B,$" is a HALF WORD at 221350.00, so the
+! counter leaves this page at 221350.40 and printed p.187 must begin
+! there.  Stated as a prediction and then checked: printed p.187's
+! deck already carries "SLC,(8)221350.40", and its CARD ID header
+! reads LF000001 against this page's last serial LE000097 -- a new
+! serial family at the page break, which is the usual pattern.
+!
+! ---------------------------------------------------------------
+! GLYPH CALLS
+! ---------------------------------------------------------------
+! (1) LINE 3's NAME IS "K SEOUL", WITH A LETTER O.  The round glyph
+!     is settled against the drum's own Q and D on the same page:
+!     line 32's "(IQSX)" prints a Q with a plain tail and its "DD"
+!     prints D with a straight left stem and squared corners, and
+!     this glyph has neither.  That leaves O / C / 0, and the C is
+!     excluded by the two known C's of line 3's OWN comment,
+!     "-CHECK": their right-hand gap is wide and this glyph's is a
+!     hairline break in an otherwise continuous bowl.  printed
+!     p.185's reference to the same symbol prints it CLOSED, on a
+!     row whose "($10)" prints a known 0 OPEN -- so the page that
+!     references it and the page that defines it print the same
+!     letter and neither prints a C.
+!     NOT SETTLED BY SHAPE ALONE, and this is recorded as a call:
+!     the workflow's p.184 measurement says width and openness do
+!     not separate O/0/C.  What is offered here is the Q and D
+!     EXCLUSION (which is a shape argument that measurement does not
+!     cover) plus the C/O contrast against known C's in the same
+!     row.  The volume OCR reads "KSECUL" all three times it sees
+!     the name, which is the same ink read worse and is not a vote.
+!     THE NAME OCCURS NOWHERE ELSE IN THE CORPUS -- three hits, all
+!     on pp.185/186 -- so no manual and no other page can settle it.
+!     If printed p.185's transcriber reads it differently, THAT is
+!     the disagreement to resolve, and it is a real one: the merge
+!     will leave the symbol unresolved rather than flag it.
+!     >>> COMPARED, AND WE AGREE. <<<  printed p.185's deck (its
+!     GLYPH CALL (1)) independently reads KSEOUL and SYNs it at
+!     221307.40, and its argument is a different one from the one
+!     above and worth more: the listing OCR renders the TYPESET-
+!     confirmed sister symbol KSEOPT -- same K S E O prefix -- as
+!     "K SECP T" ten times against two for "K SEOP", so the
+!     reader's O->C substitution is MEASURED on a name whose
+!     spelling a press settles; and the SEOP family is spelled with
+!     an O on printed p.99's "S SEOP SYN(BU,1),0.46".  Two pages,
+!     two independent arguments, one spelling.  It is still a call.
+!
+! (2) LINE 9's NAME IS "K CBJ R", WITH A C.  CONFIRMED, and not from
+!     this page's ink: pp.125 and 126 both SYN KCBJR at 221313.40,
+!     which is the location this page prints for it.  printed p.184
+!     asked for this to be checked; it checks out.
+!
+! (3) "K UNR" (line 15, 221314.00) AND "K UNR R" (line 30,
+!     221325.40) ARE TWO DIFFERENT SYMBOLS.  CONFIRMED off this
+!     page's ink and arithmetic both: the two NAME fields are four
+!     and six characters wide in the measured character grid, the
+!     two locations are twelve half words apart, line 15's SIC/B
+!     pair ENTERS the routine and line 30's "B,$" is where it
+!     RETURNS to, and p.184 line 22's "SIC,K UNR R" prints
+!     221325.40 -- line 30's location, not line 15's.
+!
+! (4) >>> THE CALLING-SEQUENCE SEPARATOR IS ONE CHARACTER, AND IT IS
+!     A RECORD MARK, NOT "**".  printed p.184's deck reports the
+!     line-13 comment as "SIC,K UNR R ** B,K UNR".
+!     REFUTED BY MEASUREMENT FIRST: this page's character grid (a
+!     least-squares fit of a 40.09 px cell at 400 dpi, every glyph
+!     within 2.3 px) puts "R", the separator, "B", "," and "K" in
+!     FIVE CONSECUTIVE CELLS.  The separator occupies exactly one
+!     cell, so it cannot be "**" (two cells) and cannot be " ** "
+!     (four).  Line 35 measures the same.
+!     AND THE CHARACTER IS IDENTIFIED: at 1600 dpi it is a single
+!     vertical stroke with TWO horizontal crossbars -- the IBM
+!     record mark -- which looks nothing like the six-point stars
+!     the real "**" prints earlier in the same comment.
+!     This changes no symbol and no bit; it is recorded because a
+!     later reader comparing the two decks would otherwise see a
+!     contradiction.  Written as "#" in the listing block above.
+!
+! (5) THE COMMENT ON LINE 13 IS LINE 13, NOT LINE 12.  printed
+!     p.184's deck cites "p.186 line 12's comment".  Line 12 is a
+!     blank comment card (serial LE000062); the calling sequence is
+!     line 13 (LE000063).  An off-by-one in a citation, nothing more.
+!
+! ---------------------------------------------------------------
+! THE TWO MESSAGE CARDS, AND WHAT SETTLES THEIR CHARACTER COUNTS
+! ---------------------------------------------------------------
+! Lines 32 and 33 print NOTHING in the BINARY OUTPUT column, so no
+! !CHECK can test them directly.  Their character counts are settled
+! by ARITHMETIC, and the arithmetic is sharp:
+!
+!   K SERV M  221327.00 -> K NN 221333.00   = 4 words = 256 bits
+!   K NN      221333.00 -> line 38 221335.00 = 2 words = 128 bits
+!
+! At eight bits a character that is 32 and 16 characters exactly.
+! The character positions were measured, not eyeballed: the print is
+! a 10-per-inch monospace grid, and a least-squares fit of cell
+! centres over each row lands every glyph within 2.3 px of a 40.09
+! px cell at 400 dpi.  Counting cells from the comma:
+!
+!   line 32   cells 23..54 are data, cell 55 is "X"   -> 32 chars
+!   line 33   cells 23..38 are data, cell 39 is "Y"   -> 16 chars
+!
+! >>> THE TRAILING X AND Y ARE THE ENTRY MODE'S OWN TERMINATOR, NOT
+! >>> DATA.  "(IQSX)" is mode IQS terminated by X and "(IQSY)" is
+! mode IQS terminated by Y, exactly as p.184's four "(A*)" cards are
+! mode A terminated by "*".  Counting the X as data gives 33
+! characters = 264 bits, which would put K NN at 221334.00; the page
+! prints 221333.00.  So the arithmetic decides it, and it decides it
+! the same way on both cards.
+!
+! >>> AND THE PAGE STATES THE ANSWER A SECOND TIME, IN THE CODE. <<<
+! Line 23 is the second parameter of the commentator call, ",6.",
+! and its comment reads "-LOCATION + LENGTH OF MESSAGE".  Line 22
+! passes the LOCATION (K SERV M, 221327.00) and line 23 passes the
+! LENGTH: SIX WORDS.  K SERV M is four words (0o327->0o333) and K NN
+! is two (0o333->0o335), and four plus two is the six the card
+! carries.  So the two message cards together are six words = 384
+! bits = 48 characters at eight bits, which is 32 + 16 -- the counts
+! the terminator reading gives.  Count the X and the Y as data and
+! the message is 50 characters and the card should say 7.  THIS IS
+! INDEPENDENT OF THE LOCATION COUNTER: it is what the program says
+! about its own data, not what the assembler did with it.
+!
+! The trailing blanks ARE data -- line 32's datum ends in a blank at
+! cell 54 and line 33's in six blanks at cells 33-38 -- and they are
+! the positions the converter writes the IQS numerals into.  That is
+! the workflow's "in entry mode the space after the comma is DATA"
+! rule working at the END of the datum.
+!
+! WHAT IS NOT CHECKED: the CHARACTER COUNTS are checked three ways
+! (the counter, the grid, and line 23's "6."), but the LETTERS are
+! read off ink alone and nothing in docs/ocr/ prints this message.
+! The nearest typeset witness is the JUNE 1964 Reference Manual
+! C22-6678-1 Appendix D, "$OPTR READY CHXX UNY." -- a LATER
+! revision of the same message, which corroborates the sense and
+! the X/Y channel-and-unit placeholders and settles no character.
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK: LINES 3, 26 AND 40
+! ---------------------------------------------------------------
+! Three rows carry it, measured (a 27 px glyph 53 px to the right of
+! the last location digit, on a page whose character pitch is 40):
+!
+!   line  3   221307.40 *   K SEOUL  LCI,1,K REP
+!   line 26   221323.00 *            BZEKJZ,$+1.32
+!   line 40   221336.40 *            LVE,1,K CONV R
+!
+! RECORDED, NOT EXPLAINED.  This page kills at least one hypothesis
+! on its own: lines 5 and 26 are the SAME STATEMENT, "BZEKJZ,$+1.32",
+! and only line 26 carries it, so it is not a property of the
+! operation.  It is not "the row is a label" either (line 26 and
+! line 40 are unnamed, and the page's seven other named rows do not
+! carry it).  Per the brief, no rule is proposed from one page.
+!
+! ---------------------------------------------------------------
+! >>> ONE ROW FAILS, ON PURPOSE: LINE 47. <<<
+! ---------------------------------------------------------------
+! >>> RESOLVED 2026-11-02 -- strap_asm WAS WRONG AND IS FIXED. <<<
+! This block is kept as the record of what the failing row bought.
+! The gate is the operand's SPELLING: an ADDRESS is now deposited
+! whole into the 24-bit field and the HARDWARE takes the leftmost
+! L bits, exactly as Reference Manual printed p.56 says -- "the
+! effective address itself is used as the operand.  The field
+! length specifies the number of bits in the field starting with
+! the LEFTMOST bit of the effective address."  A plain integer
+! still packs left-justified by length (127 -> 127<<17), so no
+! landed deck moved.  Both rows below now assemble as printed.
+!
+! THE PAGE AND strap_asm DISAGREED ABOUT A VFL-IMMEDIATE'S A24 FIELD
+! WHEN THE FIELD LENGTH IS SHORTER THAN THE OPERAND, and this page is
+! the discriminating case because it writes THE SAME IMMEDIATE TWICE
+! AT TWO LENGTHS:
+!
+!   line 43  CI0111(BU,16),(8)300600.   prints  300600.00 80 420000.16 70
+!   line 47  CI0111(BU,8), (8)300600.   prints  300600.00 80 410000.16 70
+!
+! The two second half words differ by exactly 0o10000, which is the
+! LENGTH field: 0o020000 is 16 and 0o010000 is 8, the same scale
+! lines 45 and 48 print for CM0101 at those two lengths.  So the
+! lengths are not in doubt.  THE FIRST HALF WORD IS IDENTICAL on the
+! two rows -- rendered at 1200 dpi both read 300600.00, digit for
+! digit, and the "6" is unmistakable against the 0's beside it.
+!
+! strap_asm assembles line 47 as 300000.00 80.  It converts the
+! bit-address term to OPERAND UNITS (2**(24-length), so 2**16 here),
+! truncating, and repacks: 0o30060000 >> 16 = 0o140 (= 0x60), back
+! <<16 = 0o30000000.  Measured over lengths, everything else fixed:
+!
+!     L= 4  300000.00 80       L=16  300600.00 80
+!     L= 8  300000.00 80       L=18  300600.00 80
+!     L=12  300600.00 80       L=24  300600.00 80
+!
+! -- the quantisation only shows once the unit passes the operand's
+! lowest set bit, which is why line 43 passes and line 47 does not,
+! and why no landed page has caught it: it needs one immediate used
+! at two lengths on one page.  IBM's assembler evidently deposited
+! the whole 24-bit effective address and left the hardware to take
+! the leftmost L bits (which is what the code wants: 0o300600. is
+! the IQS zone pair 0x6060, and its top 8 bits are the single zone
+! byte 0x60 that line 47 needs).
+!
+! PER docs/transcription_workflow.md 3a2 AND THE BRIEF, THE PRINTED
+! STATEMENT AND THE PRINTED CHECK BOTH STAY AND THE ROW FAILS.
+! Writing a statement that reproduces 300000.00 would verify this
+! deck against itself and hide the defect.  The other thirty-nine
+! !CHECKs pass and all ten symbols land on their printed locations,
+! so nothing else on the page rests on this.
+!
+! ---------------------------------------------------------------
+! ASSEMBLER: ONE REFUSAL, TWICE.  Every one of the forty-two
+! statements was handed to strap_asm IN ITS PRINTED FORM first.
+! Lines 8 and 29 were REFUSED -- "undefined symbol 'K'" -- because
+! they put a name CONTAINING A BLANK inside an EXPRESSION
+! ("K K CCW+.24", "K K CCW.18"), the gap the brief names.  The
+! refusal is an AssemblerError and aborts the WHOLE assembly, so
+! unlike a wrong word it cannot be left to fail: the blanks are
+! closed up to "KKCCW" at both occurrences and flagged there.  It is
+! the same symbol the deck's own label defines, so no reading
+! changed.  The printed forms are in the listing block above.
+! Everything else was accepted as printed, including the two
+! blank-operation cards, the "(IQSX)"/"(IQSY)" entry modes, the
+! bare-decimal bit offsets (".24", ".18", ".56", ".63", "1.32"),
+! the index-named operands ($1, $12, $14) and the VF.
+! ---------------------------------------------------------------
+
+KSTCS   SYN, (8)216272.40            ! line  1 SIC -- BIT-EXACT; landed p.122
+KCSIN   SYN, (8)216267.0             ! line  2 B; bit offset unobservable; printed p.128 line 36 is the defining card at 216267.00
+KREP    SYN(BU,18), 30               ! lines 3, 24 -- A COUNT, not an address.
+!                                      dds carried from the DEFINING card,
+!                                      printed p.185 line 27 "K REP SYN(BU,18),30";
+!                                      the merge refuses without it
+KREJT   SYN, (8)221300.0             ! lines 7, 28 B; landed pp.125, 157
+KRETRY  SYN, (8)221263.0             ! line  9 B; bit offset unobservable.  printed p.185 line 13 is the defining card, "K RETRY LX,0,SIOINS($12)" at 221263.00
+JIOBSY  SYN, (8)233666.04            ! line 18 VFL address -- BIT-EXACT; landed p.184, no dds
+JWAIT   SYN, (8)233666.00            ! line 19 VFL address -- BIT-EXACT; landed p.184, no dds
+SCOMIC  SYN, (8)215470.40            ! line 20 SIC -- BIT-EXACT; landed pp.116, 179
+SCOMM   SYN, (8)215470.0             ! line 21 B; landed pp.116, 179
+SCHANN  SYN(BU,7), 0.12              ! line 39 -- landed by four decks, which cite printed p.101 line 5 as the defining card; the dds is carried, not invented
+SUNITN  SYN(BU,3), 0.47              ! line 46 -- landed by four decks, which cite printed p.101 line 6 as the defining card; the dds is carried, not invented
+
+        SLC, (8)221306.40            ! NOT PRINTED.  CHECKED by the merge; see THE JOIN
+        SIC,K ST CS                  ! line  1
+        B,K CS IN                    ! line  2   -STACK CHANNEL SIGNAL
+KSEOUL  LCI,1,K REP                  ! line  3 * -CHECK FOR END OP OF REL
+        CCW,0.0($14),K K CCW         ! line  4
+        BZEKJZ,$+1.32                ! line  5
+        CB,1,$-1.32                  ! line  6
+        B,K REJT                     ! line  7   -IF 3 EKJ, GIVE UP
+        BB,KKCCW+.24,K SEOUL         ! line  8   -IF SEOP BIT ON, LOOP
+!   >>> PRINTED "BB,K K CCW+.24,K SEOUL".  strap_asm REFUSES a blank
+!   inside a name INSIDE AN EXPRESSION ("undefined symbol K"), and
+!   the refusal aborts the WHOLE assembly, so the blanks are closed
+!   up here.  Same symbol, same bits; see ASSEMBLER in the report.
+KCBJR   B,K RETRY                    ! line  9   -CTL WORD CLEARED FOR RETRY
+KUNR    SIC,K CONV R                 ! line 15
+        B,K CONV                     ! line 16   -CONVERT CHAN + UNIT NO TO IQS
+        VF,K NN                      ! line 17
+        LF(BU,1),JIOBSY              ! line 18
+        SF(BU,1),JWAIT               ! line 19
+        SIC,S COMIC                  ! line 20
+        B,S COMM                     ! line 21   -CALL COMMENTATOR
+        ,K SERV M                    ! line 22   blank operation
+        ,6.                          ! line 23   -LOCATION + LENGTH OF MESSAGE
+KKLOOP  LCI,1,K REP                  ! line 24   -WAIT FOR UNIT TO BECOME READY
+        CCW,0.0($14),K K CCW         ! line 25
+        BZEKJZ,$+1.32                ! line 26 *
+        CB,1,$-1.32                  ! line 27
+        B,K REJT                     ! line 28   -IF REPEATED EKJ, GIVE UP
+        BZB,KKCCW.18,K K LOOP        ! line 29   -CHECK UNR STATUS BIT
+!   >>> PRINTED "BZB,K K CCW.18,K K LOOP".  Same refusal, same
+!   closing-up, same bits.
+KUNRR   B,$                          ! line 30   -IF UNR ON, ALLS WELL
+KKCCW   XW,0                         ! line 31
+! lines 32 and 33: the terminator is the entry mode's own X and Y.
+! The blanks before the terminator are DATA.  No trailing comment.
+KSERVM  (IQSX)DD(BU,64),*** OPERATOR ***  READY CHANNEL X
+KNN     (IQSY)DD(BU,64),   UNIT  .      Y
+KCONV   SX,1,K K CCW                 ! line 38   -SAVE XR1
+        LCV(BU,7),S CHAN N($12)      ! line 39   -IF NOT,SEND MESSAGE
+        LVE,1,K CONV R               ! line 40 *
+        LF(BU,8,4),$R.56,1           ! line 41   -EXPAND IT TO 8 BIT BYTES
+        CM0000(BU,1),$R.63           ! line 42
+        CI0111(BU,16),(8)300600.     ! line 43   -MAKE IT IQS NUMERAL
+        LV,1,0.0($1)                 ! line 44
+        CM0101(BU,16),0.0($1)        ! line 45
+        L(BU,3),S UNIT N($12),1      ! line 46   -PICK UP UNIT NO
+        CI0111(BU,8),(8)300600.      ! line 47
+        CM0101(BU,8),1.0($1)         ! line 48
+        LX,1,K K CCW                 ! line 49   -RESTORE XR1
+        M+1(BU,19),K CONV R          ! line 50   -SET RETURN ADDRESS
+KCONVR  B,$                          ! line 51
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS READ
+! ---------------------------------------------------------------
+! "#" in lines 13 and 35 stands for the IBM RECORD MARK; see GLYPH
+! CALL (4).  It is one character and has no blank on either side.
+! The "+" on lines 16 and 23 is a GENUINE PRINTED PLUS SIGN and is
+! not a stand-in for anything.
+!
+!   line  1  221306.40   216272.40 80                              SIC,K ST CS                                              LE000053
+!   line  2  221307.00   216267.10 00                              B,K CS IN                 -STACK CHANNEL SIGNAL          LE000053
+!   line  3* 221307.40   000036.03 02                   K SEOUL    LCI,1,K REP               -CHECK FOR END OP OF REL       LE000054
+!   line  4  221310.00   000000.00 8E 221326.21 00                 CCW,0.0($14),K K CCW                                     LE000055
+!   line  5  221311.00   221312.43 44                              BZEKJZ,$+1.32                                            LE000056
+!   line  6  221311.40   221310.02 48                              CB,1,$-1.32                                              LE000057
+!   line  7  221312.00   221300.10 00                              B,K REJT                  -IF 3 EKJ, GIVE UP             LE000057
+!   line  8  221312.40   221326.30 80 221307.74 02                 BB,K K CCW+.24,K SEOUL    -IF SEOP BIT ON, LOOP          LE000058
+!   line  9  221313.40   221263.10 00                   K CBJ R    B,K RETRY                 -CTL WORD CLEARED FOR RETRY    LE000059
+!   line 10                                             -                                                                   LE000060
+!   line 11                                             -          ***************  UNIT NOT READY REJECT  ********************    LE000061
+!   line 12                                             -                                                                   LE000062
+!   line 13                                             -          CALLING SEQUENCE ** SIC,K UNR R#B,K UNR                  LE000063
+!   line 14                                             -                                                                   LE000064
+!   line 15  221314.00   221350.00 80                   K UNR      SIC,K CONV R                                             LE000065
+!   line 16  221314.40   221335.10 00                              B,K CONV                  -CONVERT CHAN + UNIT NO TO IQS LE000065
+!   line 17  221315.00   221333.00+                                VF,K NN                                                  LE000066
+!   line 18  221315.40   233666.04 80 001000.06 70                 LF(BU,1),JIOBSY                                          LE000067
+!   line 19  221316.40   233666.00 80 001000.12 F0                 SF(BU,1),JWAIT                                           LE000068
+!   line 20  221317.40   215470.40 80                              SIC,S COMIC                                              LE000069
+!   line 21  221320.00   215470.10 00                              B,S COMM                  -CALL COMMENTATOR              LE000069
+!   line 22  221320.40   221327.00 80                              ,K SERV M                                                LE000070
+!   line 23  221321.00   000006.00 80                               ,6.                      -LOCATION + LENGTH OF MESSAGE  LE000070
+!   line 24  221321.40   000036.03 02                   K K LOOP   LCI,1,K REP               -WAIT FOR UNIT TO BECOME READY LE000071
+!   line 25  221322.00   000000.00 8E 221326.21 00                 CCW,0.0($14),K K CCW                                     LE000072
+!   line 26* 221323.00   221324.43 44                              BZEKJZ,$+1.32                                            LE000073
+!   line 27  221323.40   221322.02 48                              CB,1,$-1.32                                              LE000074
+!   line 28  221324.00   221300.10 00                              B,K REJT                  -IF REPEATED EKJ, GIVE UP      LE000074
+!   line 29  221324.40   221326.22 80 221321.74 00                 BZB,K K CCW.18,K K LOOP   -CHECK UNR STATUS BIT          LE000075
+!   line 30  221325.40   221325.50 00                   K UNR R    B,$                       -IF UNR ON, ALLS WELL          LE000076
+!   line 31  221326.00   000000.00+ 000 000000 000000   K K CCW    XW,0                                                     LE000077
+!   line 32  221327.00                                  K SERV M   (IQSX)DD(BU,64),*** OPERATOR ***  READY CHANNEL X        LE000078
+!   line 33  221333.00                                  K NN       (IQSY)DD(BU,64),   UNIT  .      Y                        LE000079
+!   line 34                                             -                                                                   LE000080
+!   line 35                                             -          CALLING SEQUENCE ** SIC,K CONV R#B,K CONV                LE000081
+!   line 36                                             -                              VF, LOC OF CHAN NO (IQS)             LE000082
+!   line 37                                             -                                                                   LE000083
+!   line 38  221335.00   221326.03 10                   K CONV     SX,1,K K CCW              -SAVE XR1                      LE000084
+!   line 39  221335.40   000000.14 8C 007000.20 30                 LCV(BU,7),S CHAN N($12)   -IF NOT,SEND MESSAGE           LE000085
+!   line 40* 221336.40   221350.03 B0                              LVE,1,K CONV R                                           LE000086
+!   line 41  221337.00   000011.70 80 010400.46 70                 LF(BU,8,4),$R.56,1        -EXPAND IT TO 8 BIT BYTES      LE000087
+!   line 42  221340.00   000011.77 80 001000.00 F0                 CM0000(BU,1),$R.63                                       LE000088
+!   line 43  221341.00   300600.00 80 420000.16 70                 CI0111(BU,16),(8)300600.  -MAKE IT IQS NUMERAL           LE000089
+!   line 44  221342.00   000000.02 31                              LV,1,0.0($1)                                             LE000090
+!   line 45  221342.40   000000.00 81 020000.12 F0                 CM0101(BU,16),0.0($1)                                    LE000091
+!   line 46  221343.40   000000.57 8C 003000.60 50                 L(BU,3),S UNIT N($12),1   -PICK UP UNIT NO               LE000092
+!   line 47  221344.40   300600.00 80 410000.16 70                 CI0111(BU,8),(8)300600.                                  LE000093
+!   line 48  221345.40   000001.00 81 010000.12 F0                 CM0101(BU,8),1.0($1)                                     LE000094
+!   line 49  221346.40   221326.02 10                              LX,1,K K CCW              -RESTORE XR1                   LE000095
+!   line 50  221347.00   221350.00 80 023000.22 B0                 M+1(BU,19),K CONV R       -SET RETURN ADDRESS            LE000096
+!   line 51  221350.00   221350.10 00                   K CONV R   B,$                                                      LE000097
+
+!SYM KSEOUL 221307.40
+!SYM KCBJR  221313.40
+!SYM KUNR   221314.00
+!SYM KKLOOP 221321.40
+!SYM KUNRR  221325.40
+!SYM KKCCW  221326.00
+!SYM KSERVM 221327.00
+!SYM KNN    221333.00
+!SYM KCONV  221335.00
+!SYM KCONVR 221350.00
+!
+!CHECK 221306.40 | 216272.40 80 | line 1 SIC,K ST CS
+!CHECK 221307.00 | 216267.10 00 | line 2 B,K CS IN -STACK CHANNEL SIGNAL
+!CHECK 221307.40 | 000036.03 02 | line 3 K SEOUL LCI,1,K REP -CHECK FOR END OP OF REL
+!CHECK 221310.00 | 000000.00 8E 221326.21 00 | line 4 CCW,0.0($14),K K CCW
+!CHECK 221311.00 | 221312.43 44 | line 5 BZEKJZ,$+1.32
+!CHECK 221311.40 | 221310.02 48 | line 6 CB,1,$-1.32
+!CHECK 221312.00 | 221300.10 00 | line 7 B,K REJT -IF 3 EKJ, GIVE UP
+!CHECK 221312.40 | 221326.30 80 221307.74 02 | line 8 BB,K K CCW+.24,K SEOUL -IF SEOP BIT ON, LOOP
+!CHECK 221313.40 | 221263.10 00 | line 9 K CBJ R B,K RETRY -CTL WORD CLEARED FOR RETRY
+!CHECK 221314.00 | 221350.00 80 | line 15 K UNR SIC,K CONV R
+!CHECK 221314.40 | 221335.10 00 | line 16 B,K CONV -CONVERT CHAN + UNIT NO TO IQS
+!CHECK 221315.00 | 221333.00+ | line 17 VF,K NN
+!CHECK 221315.40 | 233666.04 80 001000.06 70 | line 18 LF(BU,1),JIOBSY
+!CHECK 221316.40 | 233666.00 80 001000.12 F0 | line 19 SF(BU,1),JWAIT
+!CHECK 221317.40 | 215470.40 80 | line 20 SIC,S COMIC
+!CHECK 221320.00 | 215470.10 00 | line 21 B,S COMM -CALL COMMENTATOR
+!CHECK 221320.40 | 221327.00 80 | line 22 ,K SERV M
+!CHECK 221321.00 | 000006.00 80 | line 23 ,6. -LOCATION + LENGTH OF MESSAGE
+!CHECK 221321.40 | 000036.03 02 | line 24 K K LOOP LCI,1,K REP -WAIT FOR UNIT TO BECOME READY
+!CHECK 221322.00 | 000000.00 8E 221326.21 00 | line 25 CCW,0.0($14),K K CCW
+!CHECK 221323.00 | 221324.43 44 | line 26 BZEKJZ,$+1.32
+!CHECK 221323.40 | 221322.02 48 | line 27 CB,1,$-1.32
+!CHECK 221324.00 | 221300.10 00 | line 28 B,K REJT -IF REPEATED EKJ, GIVE UP
+!CHECK 221324.40 | 221326.22 80 221321.74 00 | line 29 BZB,K K CCW.18,K K LOOP -CHECK UNR STATUS BIT
+!CHECK 221325.40 | 221325.50 00 | line 30 K UNR R B,$ -IF UNR ON, ALLS WELL
+!CHECK 221326.00 | 000000.00+ 000 000000 000000 | line 31 K K CCW XW,0
+!CHECK 221335.00 | 221326.03 10 | line 38 K CONV SX,1,K K CCW -SAVE XR1
+!CHECK 221335.40 | 000000.14 8C 007000.20 30 | line 39 LCV(BU,7),S CHAN N($12) -IF NOT,SEND MESSAGE
+!CHECK 221336.40 | 221350.03 B0 | line 40 LVE,1,K CONV R
+!CHECK 221337.00 | 000011.70 80 010400.46 70 | line 41 LF(BU,8,4),$R.56,1 -EXPAND IT TO 8 BIT BYTES
+!CHECK 221340.00 | 000011.77 80 001000.00 F0 | line 42 CM0000(BU,1),$R.63
+!CHECK 221341.00 | 300600.00 80 420000.16 70 | line 43 CI0111(BU,16),(8)300600. -MAKE IT IQS NUMERAL
+!CHECK 221342.00 | 000000.02 31 | line 44 LV,1,0.0($1)
+!CHECK 221342.40 | 000000.00 81 020000.12 F0 | line 45 CM0101(BU,16),0.0($1)
+!CHECK 221343.40 | 000000.57 8C 003000.60 50 | line 46 L(BU,3),S UNIT N($12),1 -PICK UP UNIT NO
+!CHECK 221344.40 | 300600.00 80 410000.16 70 | line 47 CI0111(BU,8),(8)300600.
+!CHECK 221345.40 | 000001.00 81 010000.12 F0 | line 48 CM0101(BU,8),1.0($1)
+!CHECK 221346.40 | 221326.02 10 | line 49 LX,1,K K CCW -RESTORE XR1
+!CHECK 221347.00 | 221350.00 80 023000.22 B0 | line 50 M+1(BU,19),K CONV R -SET RETURN ADDRESS
+!CHECK 221350.00 | 221350.10 00 | line 51 K CONV R B,$

@@ -1,0 +1,479 @@
+! mcp_bootstrap_p190.strap -- MCP printed page 190: the WRITE-TAPE-MARK
+! RETRY arm of the tape error routine, and the DENSITY CHECK subroutine
+! that follows it.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.197.  The header was READ, not
+! assumed, at 200 and 600 dpi:  "TIME CLOCK 00054041   PUNID 11D11MCP
+! CARD ID LG000076   DIST. OF 3/01   3/01   PAGE NUMBER  190".
+!
+! >>> THE COLUMN-HEADING ROW'S OWN "LOCATION" FIELD IS BLANK. <<<
+! Cropped at 600 dpi (x 7200, W 3400) and looked at directly: the
+! word LOCATION, then clean paper to the right-hand rule.  NO DIGITS
+! ARE RECORDED HERE, because the dashed rule runs through that field
+! and tesseract invents numbers out of it (workflow step 1).  A blank
+! is what the rule PREDICTS for this page: the field is LINE 1's
+! location and line 1 here is an asterisk banner card that compiles
+! nothing.  It is therefore NOT a witness for this page's origin, and
+! this page has no other independent witness either -- see THE JOIN.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! FIFTY-THREE PRINTED LINES, of which FORTY-THREE carry a location
+! and compile.  Ten compile nothing: lines 1-3 and 36-42, which are
+! comment cards (they print a "-" in the NAME column and no location
+! and no binary at all).  The page is CONTIGUOUS: its FIRST located
+! row is line 4 at 221444.40 and its LAST is line 53 at 221474.00;
+! the counter LEAVES the page at 221474.40.  Thirty-eight half-word
+! rows and five full-word rows is forty-eight half words, EXACTLY
+! TWENTY-FOUR WORDS, which is exactly 221474.40 minus 221444.40.
+! NO reservation, NO SLC, NO VF, NO DD and NO hole of any kind; the
+! counter chain was walked row by row off the LOCATION column and
+! never jumps.
+!
+!   lines  1-3    banner: "RETRY FOR WRITE TAPE MARK OP"
+!   lines  4-18   K R WEF: rewind the tape (control code 0o136),
+!                 wait for the channel, clear the control word,
+!                 set installation density, then go to J R WRIT
+!                 to erase a long gap and rewrite the label.
+!   lines 19-26   the file-density arm: load S F DEN, set the unit
+!                 to it, re-issue the Write Tape Mark (0o117).
+!   lines 27-35   the termination test, the three-tries give-up
+!                 (RK2 / K SOS TM) and the successful exit.
+!   lines 36-42   banner and CALLING SEQUENCE for the next routine.
+!   lines 43-53   K K DENS, the density-check subroutine: compare
+!                 the wanted density against S U DENS, pick the
+!                 0o36 / 0o37 control code, set the UST bit, and
+!                 re-issue the control word.
+!
+! ---------------------------------------------------------------
+! >>> THIS PAGE PRINTS FOUR 729 IV CONTROL CODES AS LITERALS, WITH
+! >>> THE OPERATOR'S ENGLISH BESIDE THEM.  READ THE LIMITS ON THIS
+! >>> BEFORE QUOTING IT: IT IS NOT THE LEG SPFL AND REW MET. <<<
+! ---------------------------------------------------------------
+! The page never spells an I-O function pseudo-op.  It loads the
+! control code into index 2 as an IMMEDIATE and lets a later CTL
+! use it, so the code itself is printed in the BINARY OUTPUT column
+! with the operator's own English two columns away:
+!
+!   line  5   LVI,2,(8)136.   000136.05 01   -REWIND TAPE
+!   line 23   LVI,2,(8)117.   000117.05 01   -RETRY WEF OP
+!   line 47   LVI,2,(8)36.    000036.05 01   -HIGH DENSITY DESIRED
+!   line 49   LVI,2,(8)37.    000037.05 01   -LOW DENSITY DESIRED
+!
+! docs/exchange_and_io.md's transcription of Reference Manual p.132
+! gives 036 High Density Mode, 037 Low Density Mode, 117 Write Tape
+! Mark, 136 Rewind.  0o136 CORROBORATES the already-implemented REW
+! (printed p.165 was its listing leg; this is a second, independent
+! one, and this page's English says "REWIND TAPE" in as many words).
+!
+! >>> BE EXACT ABOUT WHAT THIS IS AND IS NOT. <<<  strap_asm's
+! IO_FUNCTION_OPS note admits a mnemonic on three legs, and the
+! listing leg it names is specific: SPFL came from printed p.3 line
+! 35 printing 000077 IN A CTL'S SECOND ADDRESS FIELD with .15 =
+! CTLSEOP in bits 50-55, and REW from printed p.165 line 11 printing
+! 000136 THE SAME WAY.  MY FOUR ROWS ARE NOT THAT.  They are LVI
+! immediates: the code lands in an index register's value field,
+! there is no CTL on this page, no channel operand and no CTLSEOP.
+! What I measured is that the code appears in MCP beside the
+! operator's English, which CORROBORATES but is a weaker leg.  What
+! would finish it for WEF: any page printing 000117 with .15 in bits
+! 50-55, the way p.3 and p.165 do.
+!
+! WHAT THIS PAGE DOES CLOSE IS THE *NAME* GAP FOR "WEF", AND THAT IS
+! THE PART WORTH CARRYING.  The note refuses a mnemonic whose
+! Appendix B NAME only resembles the p.132 table's name -- "Write
+! End-of-File" against "Write Tape Mark" is exactly that kind of
+! near-match, the "Backspace" against "Backspace Block" case.  THIS
+! PAGE IS THE DOCUMENT THAT JOINS THE TWO NAMES: its banner reads
+! "RETRY FOR WRITE TAPE MARK OP", the routine it names is K R WEF,
+! and line 23's comment calls 0o117 "RETRY WEF OP".  IBM's own
+! programmer writes WEF for the operation the Reference Manual calls
+! Write Tape Mark.  Name gap closed; code leg still the weaker kind.
+!
+! AND HD/LD DO *NOT* GET THE SAME TREATMENT -- a first draft of this
+! deck said they did and that was wrong.  Appendix B says "High
+! Density" and "Low Density"; the p.132 table says "High Density
+! MODE" and "Low Density MODE".  That is the near-match the note
+! rejects, and these rows are LVI immediates besides.  I am NOT
+! implementing any of these (scope); I am recording the evidence and
+! its exact weight.
+!
+! ---------------------------------------------------------------
+! THE SURVEY, AND THE SECOND MACHINE READING
+! ---------------------------------------------------------------
+! THE CACHED SURVEY IS KEYED BY *PDF* PAGE, NOT PRINTED PAGE.
+! docs/mcp_page_map.json's "190" is PDF 190 = printed 183, and
+! quoting it for this page would be an error of a whole different
+! kind.  The entry for printed p.190 is "197":
+!
+!   rows 27   first 221444.64   last 221465.40
+!
+! ALL THREE DISAGREE WITH THE PAGE, AND THE PAGE WINS ALL THREE:
+!
+!  * first 221444.64 is not a floor, it is IMPOSSIBLE.  A STRAP
+!    instruction starts on a half word, so a location's fraction is
+!    .00 or .40 and never .64.  The page prints 221444.40, read at
+!    600 dpi, and every one of the other forty-two located rows
+!    follows from it by the counter chain with no gap.
+!  * last 221465.40 is line 35, EIGHTEEN ROWS SHORT of line 53's
+!    221474.00 -- and it is exactly where mcp_ocr.py stops, which is
+!    the brief's diagnosis reproduced on a fresh page.
+!  * rows 27 against 43 located rows out of 53 printed lines.
+!
+! THE SECOND MACHINE READING AGREES WHERE IT CAN SEE (workflow step
+! 2a).  "python3 strap/mcp_ocr.py 190" reads 17 locations:
+! 221444.40, 221445.00, 221446.40, 221447.00, 221450.00, 221450.40,
+! 221452.00, 221452.40, 221454.40, 221455.40, 221456.40, 221457.00,
+! 221457.40, 221460.40, 221461.00, 221461.40, 221465.40.  EVERY ONE
+! is in this deck at the row the deck puts it in; ZERO disagreements.
+! It then gives up.  So there is no row the OCR read that I dispute
+! -- it simply stops, exactly as the floors rule predicts.
+!
+! ---------------------------------------------------------------
+! THE JOIN -- THE ORIGIN IS ASSERTED, NOT CHECKED
+! ---------------------------------------------------------------
+! The page prints NO "SLC,$", so the deck has to write a hard
+! origin, and a hard SLC cannot disagree with an arriving counter
+! (workflow, WHAT THE ORACLE CANNOT SEE #2).  The way out is the
+! merge: if a landed deck SYNs a label this page DEFINES, the merge
+! compares them and the origin becomes CHECKED.  I ran that query.
+! THIS PAGE DEFINES FIVE LABELS -- K R WEF, RK2, K SOS TM, K K DENS
+! and K LOW -- AND NO LANDED DECK REFERENCES ANY OF THEM:
+!
+!   $ cd decks && grep -n 'KRWEF\|RK2\|KSOSTM\|KKDENS\|KLOW' *.strap
+!   (no output)
+!
+! AND I RAN THE INJECTION ANYWAY RATHER THAN ARGUING FROM THE GREP.
+! Merging printed pp.99-184 plus this page, with the origin moved one
+! half word to (8)221445.00:
+!
+!   origin as read       -> merge OK, 771 defined, 78 external
+!   origin shifted .40   -> merge OK, 771 defined        <- ACCEPTED
+!
+! The merge does NOT refuse it.  That is the measurement, and it says
+! ASSERTED outright instead of leaving it to inference.
+!
+! So I must say ASSERTED.  What the origin rests on is line 4's own
+! printed LOCATION, 221444.40, read at 600 dpi, and the fact that
+! every one of the other forty-two located rows follows from it by
+! the counter chain with no gap -- which is a strong internal check
+! of the SPAN and no check at all of where the span starts.
+!
+! FALSIFIABLE PREDICTION FOR printed p.189: its last located row is
+! at 221444.00 and is a HALF WORD, so that p.190 line 4 lands on
+! 221444.40.  If p.189 ends on a full word at 221443.40 or on
+! 221444.40 itself, one of us is wrong and this origin is the thing
+! to doubt first.
+!
+! FALSIFIABLE PREDICTION FOR printed p.191: its first located row is
+! 221474.40, and it is K DEN OK -- this page SICs that label THREE
+! times (lines 14, 21 and 52's pair) and an SIC reads its operand to
+! the bit, so 221474.40 is a BIT-EXACT reading, not a convention.
+! p.191 should also define K CTL CM at 221475.00, K K EOP at
+! 221476.00 and K SEOP R at 221502.00, in that order, because this
+! page reads all four and they are consecutive.
+!
+! ---------------------------------------------------------------
+! >>> ONE SUBSTITUTION, AND IT IS LOUD <<<
+! ---------------------------------------------------------------
+! LINE 34 PRINTS      K SOS TM  CB,2,K R WEF.32
+! THIS DECK WRITES    KSOSTM    CB,2,KRWEF.32
+!
+! strap_asm REFUSES the printed form -- "line NN: undefined symbol
+! 'K'" -- because a blank inside a name INSIDE AN EXPRESSION is not
+! parsed, which is the known gap the brief lists ("S TLR+14.",
+! "K GOOF+.32").  The bare name "K R WEF" resolves perfectly; only
+! the ".32" suffix breaks it.  The substitution closes up the blanks
+! in the NAME ONLY and changes no value: KRWEF is this page's own
+! line 4 at 221444.40, +32 bits is 221445.00, and the row's !CHECK
+! below is the PRINTED 221445.04 48, so the check still tests the
+! address this page prints.  Every other row in this deck is the
+! printed form verbatim.
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK
+! ---------------------------------------------------------------
+! TWO ROWS CARRY IT: line 6 (221445.40, LX,0,K CTL CM) and line 27
+! (221461.00, LVI,1,$+1.0).  I am recording it and proposing no
+! rule, as the brief requires.  What it is NOT, on this page: it is
+! not the mnemonic (lines 24 and 51 are the SAME LX card with no
+! asterisk), it is not "$-relative" (line 48's B,$+1.0 has none), it
+! is not a label row (neither is named), it is not a branch target
+! inside this page, and it is NOT "the first statement of a
+! two-statement card": line 27 does share serial LG000095 with line
+! 28, but line 6 is ALONE on LG000081, and the eight SIC rows that
+! ARE the first statement of a two-statement card carry no asterisk.
+!
+! ---------------------------------------------------------------
+! CARD SERIALS -- AND WHAT THEY SHOW ABOUT TWO-STATEMENT CARDS
+! ---------------------------------------------------------------
+! LG000076 on line 1 (which is also the header's CARD ID) through
+! LG000118 on line 53.  Forty-three distinct serials over fifty-three
+! lines, and the repeats are not errors: TEN SERIALS APPEAR TWICE --
+! 82 (lines 7-8), 83 (9-10), 84 (11-12), 86 (14-15), 88 (17-18),
+! 91 (21-22), 94 (25-26), 95 (27-28), 101 (34-35) and 118 (52-53).
+! EIGHT of the ten are an SIC and its branch; the other two are
+! LVI/branch (95) and CB/branch (101), so the pairing is "two
+! statements on one card", not "an SIC pair".  Line 41 prints the
+! reason in plain sight --
+! it is a COMMENT CARD showing the calling sequence as
+! "SIC,K DEN OK<sep>B,K K DENS" on ONE card, with STRAP's statement
+! separator between them.  So one card can hold two statements and
+! the listing prints them on two lines under one serial.  Nothing
+! fell off either end: the first serial equals the header's CARD ID
+! and the last two lines share LG000118.
+!
+! ---------------------------------------------------------------
+! WHAT I READ OFF THE INK AND WHAT I DID NOT
+! ---------------------------------------------------------------
+! This page drops ink on round glyphs constantly: line 20 prints its
+! octal fraction field as ".C2", line 17 prints "221660.CC", line 26
+! prints its hex byte as "CO".  Those are octal/branch fields that
+! CANNOT hold a C, so they are 0s with certainty (workflow rung 5) --
+! and per the same note that licenses NOTHING about the letters.
+! Every round glyph in a NAME on this page was settled by a TYPESET
+! manual or a landed deck, never by shape:
+!
+!   KKEOP   5 hits in C22-6728/6678, KKECP 0   -> "K K EOP"
+!   KIOREJ  7 hits (KICREJ 3, KIGREJ 2)        -> "K IO REJ"
+!   SEOP    134 hits (SECP 15, and JSEOPT 5
+!           against JSECPT 1)                  -> "SEOP", "J SEOP T"
+!   KRWEF   5 hits                             -> "K R WEF"
+!   KREP    5 hits, and landed as SYN, 30      -> "K REP"
+!   KKDENS  5 hits                             -> "K K DENS"
+!   JRWRIT  4 hits                             -> "J R WRIT"
+!   SFDEN   2 hits, and landed SYN(BU,2), 2.27 -> "S F DEN"
+!   RK2     2 hits                             -> "RK2"
+!   KSOS    landed by printed p.125 at 221274.00
+!   KCLEAR / KCBJR / KUNRR / KKLOOP / SINSTD / SUDENS all landed
+!
+! "K LOW" is settled by its own row's ENGLISH (rung 1): line 49's
+! comment is "-LOW DENSITY DESIRED" and the label and the comment
+! print the same word on the same row.
+!
+! THE R IN "K SEOP R" WAS READ TWICE AT 1200 dpi -- ON LINE 7 AND
+! AGAIN ON LINE 52, which are the SAME CARD printed twice on one
+! page in the same character position.  That is rung 4, the
+! strongest rung in the ladder, and both instances carry the R's
+! diagonal leg.  IT MATTERS THAT BOTH WERE READ, because the typeset
+! manuals print KSEOPT twenty-three times and KSEOPR never: the
+! manual would have talked a single reading out of being right.
+! R/T is not one of this drum's confusable pairs and neither glyph
+! is ambiguous.  If a later page DEFINES 221502.00 and spells it
+! with a T, that page wins and this note is the thing to re-read.
+!
+! ---------------------------------------------------------------
+! WHAT I COULD NOT SETTLE
+! ---------------------------------------------------------------
+! 1. "K SOS" / "K SOS TM".  I inherited the O from printed p.125's
+!    landed KSOS and the merge will keep us consistent, but NOBODY
+!    has settled it independently: the typeset manuals contain
+!    neither KSOS nor KSCS, the volume OCR splits 12 "K SOS" to 10
+!    "K SCS" (which is not a vote -- same drum, same reader), and
+!    shape cannot separate O from C on this drum.  WHAT WOULD SETTLE
+!    IT: printed p.187-ish, wherever 221274.00 is DEFINED, with a
+!    comment beside it; or any typeset prose naming the routine.
+! 2. "K CTL CM", "K DEN OK", "K K RET", "K K EXIT", "J PREV X" and
+!    "J WRIT X" have no typeset hit at all.  Their round glyphs are
+!    read as O's from the English they plainly spell (CONTROL,
+!    DENSITY OK, PREVIOUS, WRITE), which is an argument and not a
+!    reading.  Each is defined on a page nobody has opened; the page
+!    that DEFINES it is the authority and should overrule this deck.
+! 3. THE ASTERISK.  See above.  Two instances, no rule.
+! 4. The bit offsets marked "half word only" below are NOT readings.
+!    Measured on this page's own operations (sweep over a SYN at
+!    .00/.01/.37/.40/.41): TI, LX, LVI and BZB all collapse every
+!    offset below 32 to one printed word, and LCI collapses ALL
+!    SIXTY-FOUR -- "LCI,2,X" prints the same 000036.05 02 for X at
+!    30.00 and at 30.77, so K REP is pinned to a WORD and not even
+!    to a half word.  The SIC and VFL rows are the opposite case and
+!    are bit-exact; they are marked so, one by one.
+!
+! ---------------------------------------------------------------
+! THE EXTERNALS, AND EXACTLY HOW WELL EACH IS KNOWN
+! ---------------------------------------------------------------
+
+KREP    SYN(BU,18), 30              ! dds (BU,18) from printed p.185 line 27,
+                                     !   which PRINTS the defining card
+                                     !   "K REP SYN(BU,18),30" (dds column
+                                     !   BU,22 ,10 = length 0o22 = 18).
+                                     !   Added 2026-11-02: the merged body
+                                     !   image refused without it.                      ! line  4 LCI -- WORD ONLY (see above); landed value, unchanged
+KCTLCM  SYN, (8)221475.00            ! lines 6, 24, 51 LX -- HALF WORD only; p.191 should define it
+KSEOPR  SYN, (8)221502.00            ! lines 7, 52 SIC -- BIT-EXACT, and printed twice on this page
+KKEOP   SYN, (8)221476.00            ! lines 8, 53 B -- HALF WORD only
+KUNRR   SYN, (8)221325.40            ! line  9 SIC -- BIT-EXACT; agrees with landed p.184
+KKLOOP  SYN, (8)221321.40            ! line 10 B -- HALF WORD only; agrees with landed p.184
+KCBJR   SYN, (8)221313.40            ! line 11 SIC -- BIT-EXACT; agrees with landed p.184
+KCLEAR  SYN, (8)221302.40            ! line 12 B -- HALF WORD only; agrees with landed p.184
+SINSTD  SYN(BU,24), 0.0              ! line 13 LVI -- HALF WORD only; dds and value carried from printed p.108's defining card
+KDENOK  SYN, (8)221474.40            ! lines 14, 21 SIC -- BIT-EXACT; this is p.191's predicted first row
+JPREVX  SYN, (8)221730.00            ! line 16 TI second operand -- HALF WORD only
+JWRITX  SYN, (8)221660.00            ! line 17 SIC -- BIT-EXACT
+JRWRIT  SYN, (8)221644.40            ! line 18 B -- HALF WORD only
+SFDEN   SYN(BU,2), 2.27              ! line 19 VFL operand -- BIT-EXACT (000002.33 = word 2 bit 27); dds carried from printed p.102 line 12
+KKRET   SYN, (8)221512.40            ! line 25 SIC -- BIT-EXACT
+KIOREJ  SYN, (8)221505.00            ! line 26 B -- HALF WORD only
+JSEOPT  SYN, (8)221525.00            ! line 28 B -- HALF WORD only
+KSOS    SYN, (8)221274.0             ! lines 31, 33, 35 -- HALF WORD only (B and BZB both); landed by printed p.125, spelling inherited
+KKEXIT  SYN, (8)221422.40            ! line 32 B -- HALF WORD only
+SUDENS  SYN(BU,1), 0.49              ! lines 43, 50 VFL operand -- BIT-EXACT (000000.61 = word 0 bit 49); dds carried from its defining card
+
+        SLC, (8)221444.40            ! NOT PRINTED.  Asserted; see THE JOIN
+KRWEF   LCI,2,K REP                  ! line  4   printed name "K R WEF"
+        LVI,2,(8)136.                ! line  5   -REWIND TAPE
+        LX,0,K CTL CM                ! line  6 * location-column asterisk
+        SIC,K SEOP R                 ! line  7
+        B,K K EOP                    ! line  8
+        SIC,K UNR R                  ! line  9
+        B,K K LOOP                   ! line 10   -WAIT FOR END OP REW
+        SIC,K CBJ R                  ! line 11
+        B,K CLEAR                    ! line 12   -CLEAR CONTROL WORD
+        LVI,1,S INST D               ! line 13   -SET UNIT TO INSTALLATION DENS
+        SIC,K DEN OK                 ! line 14
+        B,K K DENS                   ! line 15
+        TI,3,$1,J PREV X             ! line 16
+        SIC,J WRIT X                 ! line 17
+        B,J R WRIT                   ! line 18   -ERASE LONG GAP + REWRITE LABEL
+        L(BU,1),S F DEN($13),46      ! line 19   -SET UNIT TO FILE DENSITY
+        LV,1,$R                      ! line 20
+        SIC,K DEN OK                 ! line 21
+        B,K K DENS                   ! line 22
+        LVI,2,(8)117.                ! line 23   -RETRY WEF OP
+        LX,0,K CTL CM                ! line 24
+        SIC,K K RET                  ! line 25
+        B,K IO REJ                   ! line 26
+        LVI,1,$+1.0                  ! line 27 * location-column asterisk
+        B,J SEOP T                   ! line 28   -CHECK TERMINATION
+        B,K SOS TM                   ! line 29   -EPGK - GIVE UP AFTER 3 TRIES
+        B,RK2                        ! line 30
+        B,K SOS                      ! line 31   -EE - VERY SHORT TAPE
+        B,K K EXIT                   ! line 32   -SUCCESSFUL END
+RK2     BZB,$R.63,K SOS              ! line 33   printed name "RK2"
+KSOSTM  CB,2,KRWEF.32                ! line 34   printed "K SOS TM CB,2,K R WEF.32" -- SUBSTITUTED, see ONE SUBSTITUTION
+        B,K SOS                      ! line 35
+KKDENS  L(BU,1),S U DENS($11),46     ! line 43   printed name "K K DENS"  -TEST IF UNIT SET TO DESIRED DEN
+        KV,1,$R                      ! line 44
+        BXE,K DEN OK                 ! line 45
+        BRZ,K LOW                    ! line 46   -IF NOT SEE WHATS DESIRED
+        LVI,2,(8)36.                 ! line 47   -HIGH DENSITY DESIRED
+        B,$+1.0                      ! line 48
+KLOW    LVI,2,(8)37.                 ! line 49   printed name "K LOW"  -LOW DENSITY DESIRED
+        CM1100(BU,1),S U DENS($11)   ! line 50   -SET UNIT DENSITY BIT IN UST
+        LX,0,K CTL CM                ! line 51
+        SIC,K SEOP R                 ! line 52
+        B,K K EOP                    ! line 53
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS READ
+! ---------------------------------------------------------------
+!   line  1  (no location, no binary)             -   (blank banner card)
+!   line  2  (no location, no binary)             -   ************ RETRY FOR WRITE TAPE MARK OP ************
+!   line  3  (no location, no binary)             -   (blank banner card)
+!   line  4  221444.40   000036.05 02    K R WEF  LCI,2,K REP
+!   line  5  221445.00   000136.05 01             LVI,2,(8)136.              -REWIND TAPE
+!   line  6* 221445.40   221475.00 10             LX,0,K CTL CM
+!   line  7  221446.00   221502.00 80             SIC,K SEOP R
+!   line  8  221446.40   221476.10 00             B,K K EOP
+!   line  9  221447.00   221325.40 80             SIC,K UNR R
+!   line 10  221447.40   221321.50 00             B,K K LOOP                 -WAIT FOR END OP REW
+!   line 11  221450.00   221313.40 80             SIC,K CBJ R
+!   line 12  221450.40   221302.50 00             B,K CLEAR                  -CLEAR CONTROL WORD
+!   line 13  221451.00   000000.03 01             LVI,1,S INST D             -SET UNIT TO INSTALLATION DENS
+!   line 14  221451.40   221474.40 80             SIC,K DEN OK
+!   line 15  221452.00   221466.10 00             B,K K DENS
+!   line 16  221452.40   000021.00 80 221730.06 A0            TI,3,$1,J PREV X
+!   line 17  221453.40   221660.00 80             SIC,J WRIT X
+!   line 18  221454.00   221644.50 00             B,J R WRIT                 -ERASE LONG GAP + REWRITE LABEL
+!   line 19  221454.40   000002.33 8D 001027.20 50            L(BU,1),S F DEN($13),46   -SET UNIT TO FILE DENSITY
+!   line 20  221455.40   000011.02 30             LV,1,$R
+!   line 21  221456.00   221474.40 80             SIC,K DEN OK
+!   line 22  221456.40   221466.10 00             B,K K DENS
+!   line 23  221457.00   000117.05 01             LVI,2,(8)117.              -RETRY WEF OP
+!   line 24  221457.40   221475.00 10             LX,0,K CTL CM
+!   line 25  221460.00   221512.40 80             SIC,K K RET
+!   line 26  221460.40   221505.10 00             B,K IO REJ
+!   line 27* 221461.00   221462.03 01             LVI,1,$+1.0
+!   line 28  221461.40   221525.10 00             B,J SEOP T                 -CHECK TERMINATION
+!   line 29  221462.00   221465.10 00             B,K SOS TM                 -EPGK - GIVE UP AFTER 3 TRIES
+!   line 30  221462.40   221464.10 00             B,RK2
+!   line 31  221463.00   221274.10 00             B,K SOS                    -EE - VERY SHORT TAPE
+!   line 32  221463.40   221422.50 00             B,K K EXIT                 -SUCCESSFUL END
+!   line 33  221464.00   000011.77 80 221274.34 00   RK2      BZB,$R.63,K SOS
+!   line 34  221465.00   221445.04 48    K SOS TM  CB,2,K R WEF.32
+!   line 35  221465.40   221274.10 00             B,K SOS
+!   line 36  (no location, no binary)             -
+!   line 37  (no location, no binary)             -   ***************** DENSITY CHECK *****************
+!   line 38  (no location, no binary)             -
+!   line 39  (no location, no binary)             -
+!   line 40  (no location, no binary)             -   CALLING SEQUENCE ** LVI,1,DEN CODE    (0 - HIGH, 1.0 - LOW)
+!   line 41  (no location, no binary)             -                        SIC,K DEN OK<sep>B,K K DENS
+!   line 42  (no location, no binary)             -
+!   line 43  221466.00   000000.61 8B 001027.20 50   K K DENS L(BU,1),S U DENS($11),46   -TEST IF UNIT SET TO DESIRED DEN
+!   line 44  221467.00   000011.02 90             KV,1,$R
+!   line 45  221467.40   221474.72 C2             BXE,K DEN OK
+!   line 46  221470.00   221471.74 C2             BRZ,K LOW                  -IF NOT SEE WHATS DESIRED
+!   line 47  221470.40   000036.05 01             LVI,2,(8)36.               -HIGH DENSITY DESIRED
+!   line 48  221471.00   221472.10 00             B,$+1.0
+!   line 49  221471.40   000037.05 01    K LOW    LVI,2,(8)37.               -LOW DENSITY DESIRED
+!   line 50  221472.00   000000.61 8B 001000.30 F0            CM1100(BU,1),S U DENS($11)   -SET UNIT DENSITY BIT IN UST
+!   line 51  221473.00   221475.00 10             LX,0,K CTL CM
+!   line 52  221473.40   221502.00 80             SIC,K SEOP R
+!   line 53  221474.00   221476.10 00             B,K K EOP
+!
+! Lines 1-3 and 36-42 print a "-" in the NAME column and NOTHING in
+! the LOCATION and BINARY OUTPUT columns, so there is nothing for a
+! !CHECK to test and they are not in the deck.  All forty-three
+! located rows ARE checked below.
+!
+
+!SYM KRWEF   221444.40
+!SYM RK2     221464.00
+!SYM KSOSTM  221465.00
+!SYM KKDENS  221466.00
+!SYM KLOW    221471.40
+!
+!CHECK 221444.40 | 000036.05 02 | line 4 K R WEF LCI,2,K REP -- the LCI immediate occupies the address field's WORD part only; measured, every bit offset from .00 to .77 on the operand prints the same 000036, so this row pins K REP to WORD 30 and no further. .05 is 2J+1 = 5 for J=2, the same field the five LVI rows print
+!CHECK 221445.00 | 000136.05 01 | line 5 LVI,2,(8)136. -REWIND TAPE -- a LITERAL, so this row is a pure encoding check with no symbol in it: 0o136 is Reference Manual p.132's Rewind control code and the operator's comment says so in English. Byte 01 against line 4's 02 is the only difference between LVI and LCI
+!CHECK 221445.40 | 221475.00 10 | line 6 LX,0,K CTL CM -- HALF WORD ONLY: measured, an LX prints .00 for every operand offset 0-31 and .40 for 32-63, so this row establishes K CTL CM is in the LOW half of word 221475 and nothing finer. THIS ROW CARRIES THE FIRST LOCATION-COLUMN ASTERISK. Lines 24 and 51 are the identical card without one
+!CHECK 221446.00 | 221502.00 80 | line 7 SIC,K SEOP R -- AN SIC CARRIES ITS OPERAND'S FULL 24-BIT BIT ADDRESS (workflow), so K SEOP R is read at 221502.00 BIT-EXACT. Line 52 is the same card and prints the same half word, which is this page's own control on the reading
+!CHECK 221446.40 | 221476.10 00 | line 8 B,K K EOP -- target+.10; bit offset unobservable, and only bit 32 is checked. Line 53 is the same card
+!CHECK 221447.00 | 221325.40 80 | line 9 SIC,K UNR R -- SIC, so BIT-EXACT at 221325.40; printed p.184 line 22 is the SAME CARD and prints the same half word, and its deck landed K UNR R at that address independently
+!CHECK 221447.40 | 221321.50 00 | line 10 B,K K LOOP -WAIT FOR END OP REW -- 0o40 OR 0o10 = 0o50 on K K LOOP's landed 221321.40, so this checks the half word; printed p.184 line 23 prints the identical word
+!CHECK 221450.00 | 221313.40 80 | line 11 SIC,K CBJ R -- SIC, so BIT-EXACT at 221313.40; printed p.184 line 24 is the same card and agrees
+!CHECK 221450.40 | 221302.50 00 | line 12 B,K CLEAR -CLEAR CONTROL WORD -- 0o40 OR 0o10 = 0o50 on K CLEAR's landed 221302.40; printed p.184 line 25 prints the identical word
+!CHECK 221451.00 | 000000.03 01 | line 13 LVI,1,S INST D -SET UNIT TO INSTALLATION DENS -- .03 is 2J+1 = 3 for J=1 with bit 32 CLEAR, so S INST D is in word 0's low half; printed p.108's defining card gives 0.0 exactly and its dds (BU,24) is carried here so the merged image cannot disagree
+!CHECK 221451.40 | 221474.40 80 | line 14 SIC,K DEN OK -- SIC, so K DEN OK is read at 221474.40 BIT-EXACT. This address is ONE HALF WORD PAST THIS PAGE'S LAST ROW, which is why the deck predicts it is printed p.191's line 1. Line 21 is the same card and agrees
+!CHECK 221452.00 | 221466.10 00 | line 15 B,K K DENS -- K K DENS is THIS page's line 43 at 221466.00, so this is a real address check and not a tautology: 0o00 OR 0o10 = 0o10. Line 22 repeats it
+!CHECK 221452.40 | 000021.00 80 221730.06 A0 | line 16 TI,3,$1,J PREV X -- the first address is $1's own cell, word 0o21 = 17 (index registers occupy words 16-31), which is a pure encoding check with no symbol. The second is J PREV X: measured, a TI's second operand prints .06 for every offset 0-31 and .46 for 32-63, so this is HALF WORD ONLY
+!CHECK 221453.40 | 221660.00 80 | line 17 SIC,J WRIT X -- SIC, so J WRIT X is read at 221660.00 BIT-EXACT. Nothing else on this page or in any landed deck names it, so this row is its only witness
+!CHECK 221454.00 | 221644.50 00 | line 18 B,J R WRIT -ERASE LONG GAP + REWRITE LABEL -- 0o40 OR 0o10 = 0o50, so J R WRIT is at 221644.40 to the half word; the typeset C22-6728/6678 print JRWRIT four times, which is what settles the spelling and not the address
+!CHECK 221454.40 | 000002.33 8D 001027.20 50 | line 19 L(BU,1),S F DEN($13),46 -SET UNIT TO FILE DENSITY -- A VFL OPERAND IS THE FULL 24-BIT BIT ADDRESS, so S F DEN is read at 000002.33 = word 2 bit 0o33 = 27 BIT-EXACT, and printed p.102 line 12's defining card gives 2.27. 8D's low nibble is index $13; the second word is the (BU,1) dds 0o001027 with the offset 46 in IBM bits 44-50 and the L code 20 50
+!CHECK 221455.40 | 000011.02 30 | line 20 LV,1,$R -- the operand is $R, word 0o11 = 9, the right half of the accumulator, so this is an encoding check with no symbol: .02 is 2J = 2 for J=1, the even-J counterpart of line 13's 2J+1. The printed fraction field reads ".C2" on the page and a C cannot occur in an octal field, so it is .02 (workflow rung 5)
+!CHECK 221456.00 | 221474.40 80 | line 21 SIC,K DEN OK -- the second of three readings of K DEN OK on this page; identical to line 14, which is what makes either one trustworthy
+!CHECK 221456.40 | 221466.10 00 | line 22 B,K K DENS -- the second branch to this page's own line 43; identical to line 15
+!CHECK 221457.00 | 000117.05 01 | line 23 LVI,2,(8)117. -RETRY WEF OP -- a LITERAL. 0o117 is Reference Manual p.132's Write Tape Mark, and the comment calls it the WEF op, which is the name-to-code join strap_asm's IO_FUNCTION_OPS note is missing for WEF
+!CHECK 221457.40 | 221475.00 10 | line 24 LX,0,K CTL CM -- identical to line 6 and WITHOUT the asterisk line 6 carries, which is the measurement that kills "the asterisk marks this mnemonic"
+!CHECK 221460.00 | 221512.40 80 | line 25 SIC,K K RET -- SIC, so K K RET is read at 221512.40 BIT-EXACT; this row is its only witness anywhere
+!CHECK 221460.40 | 221505.10 00 | line 26 B,K IO REJ -- 0o00 OR 0o10 on K IO REJ's 221505.00, HALF WORD only. The printed hex byte reads "CO" on this page and a branch byte here is 00; the octal field two characters away is clean, so this is the per-CHARACTER ink dropout the workflow warns about, not a different byte
+!CHECK 221461.00 | 221462.03 01 | line 27 LVI,1,$+1.0 -- $ is this row's own 221461.00, so $+1.0 is 221462.00 and .03 is 2J+1 = 3 for J=1 with bit 32 clear. THE ROW IS SELF-CHECKING: it depends on nothing but this page's counter, and it carries the SECOND location-column asterisk
+!CHECK 221461.40 | 221525.10 00 | line 28 B,J SEOP T -CHECK TERMINATION -- HALF WORD only on 221525.00. The spelling is settled in TYPESET prose: JSEOPT 5 hits against JSECPT 1 in C22-6728/6678
+!CHECK 221462.00 | 221465.10 00 | line 29 B,K SOS TM -EPGK - GIVE UP AFTER 3 TRIES -- K SOS TM is THIS page's line 34 at 221465.00, a real internal address check. EPGK is indicator 9 and the comment is naming the condition, not an operand
+!CHECK 221462.40 | 221464.10 00 | line 30 B,RK2 -- RK2 is THIS page's line 33 at 221464.00, internal
+!CHECK 221463.00 | 221274.10 00 | line 31 B,K SOS -EE - VERY SHORT TAPE -- 0o00 OR 0o10 on K SOS's 221274.00, landed by printed p.125 from an OCR'd defining card. EE is indicator 11
+!CHECK 221463.40 | 221422.50 00 | line 32 B,K K EXIT -SUCCESSFUL END -- 0o40 OR 0o10 = 0o50, so K K EXIT is at 221422.40 to the half word; nothing else names it
+!CHECK 221464.00 | 000011.77 80 221274.34 00 | line 33 RK2 BZB,$R.63,K SOS -- the first address is $R bit 63: word 0o11 = 9 and bit 0o77 = 63, so the system-symbol-plus-bit form is checked outright with no external in it. The second is K SOS, and measured, a BZB's target prints .34 for every offset 0-31 and .74 for 32-63, so it is HALF WORD ONLY and agrees with the landed .0
+!CHECK 221465.00 | 221445.04 48 | line 34 K SOS TM CB,2,K R WEF.32 -- SUBSTITUTED AS KRWEF.32, see ONE SUBSTITUTION; the value is unchanged. K R WEF is THIS page's line 4 at 221444.40 and .32 is BARE DECIMAL (workflow), so +32 bits is 221445.00 and .04 is 2J = 4 for J=2. The row is therefore an internal address check of this page's own first label
+!CHECK 221465.40 | 221274.10 00 | line 35 B,K SOS -- identical to line 31, the two being each other's control
+!CHECK 221466.00 | 000000.61 8B 001027.20 50 | line 43 K K DENS L(BU,1),S U DENS($11),46 -TEST IF UNIT SET TO DESIRED DEN -- A VFL OPERAND IS BIT-EXACT: S U DENS is read at word 0 bit 0o61 = 49, matching its landed SYN(BU,1), 0.49. 8B is index $11; the second word is the identical dds/offset/opcode group as line 19, which differs only in the index and the first address -- the two rows are each other's control on the L encoding
+!CHECK 221467.00 | 000011.02 90 | line 44 KV,1,$R -- the same $R cell and the same 2J = 2 field as line 20, with the KV byte 90 against LV's 30. THE PAIR IS WHAT IDENTIFIES THE MNEMONIC: two rows one page apart, same operand, same printed address, different byte
+!CHECK 221467.40 | 221474.72 C2 | line 45 BXE,K DEN OK -- a branch on indicator XE (53): 0o40 OR 0o32 = 0o72, where 0o32 = 26 = 53>>1 is the indicator field. So this row checks K DEN OK's HALF WORD a third time and the indicator outright. printed p.184 line 5's BZXE prints the same 0o32 with bit 32 clear and byte C0, the branch-if-OFF form
+!CHECK 221470.00 | 221471.74 C2 | line 46 BRZ,K LOW -IF NOT SEE WHATS DESIRED -- a branch on indicator RZ (57): 0o40 OR 0o34 = 0o74, and 0o34 = 28 = 57>>1. K LOW is THIS page's line 49 at 221471.40, so the address half is an internal check
+!CHECK 221470.40 | 000036.05 01 | line 47 LVI,2,(8)36. -HIGH DENSITY DESIRED -- a LITERAL: 0o36 is Reference Manual p.132's High Density Mode, with the operator's English beside it. The same .05 field as lines 5 and 23
+!CHECK 221471.00 | 221472.10 00 | line 48 B,$+1.0 -- $ is 221471.00 so the target is 221472.00; self-checking, and NOTE IT CARRIES NO ASTERISK although line 27's $+1.0 does
+!CHECK 221471.40 | 000037.05 01 | line 49 K LOW LVI,2,(8)37. -LOW DENSITY DESIRED -- 0o37 is p.132's Low Density Mode. This row's own English is what settles the label's round glyph: the comment prints LOW and the name prints LOW
+!CHECK 221472.00 | 000000.61 8B 001000.30 F0 | line 50 CM1100(BU,1),S U DENS($11) -SET UNIT DENSITY BIT IN UST -- the SAME first address and index as line 43 through a different operation, so S U DENS at word 0 bit 49 is read twice on this page; the second word is the bare (BU,1) dds 0o001000 with offset 0 and the CM1100 code 30 F0
+!CHECK 221473.00 | 221475.00 10 | line 51 LX,0,K CTL CM -- the third printing of this card; identical to lines 6 and 24
+!CHECK 221473.40 | 221502.00 80 | line 52 SIC,K SEOP R -- the second BIT-EXACT reading of K SEOP R; identical to line 7
+!CHECK 221474.00 | 221476.10 00 | line 53 B,K K EOP -- identical to line 8, and the last located row on the page. The counter leaves this page at 221474.40

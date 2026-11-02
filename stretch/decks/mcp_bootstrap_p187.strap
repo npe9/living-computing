@@ -1,0 +1,627 @@
+! mcp_bootstrap_p187.strap -- MCP printed page 187: the EOP (end of
+! operation) test for SEOP-type I/O, the SEOP wait loop, the "only
+! CS is on" connective test, and the one-word status work area K WS
+! that every row on the page reads bits out of.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.194.  The header was READ, not
+! assumed, at 400 dpi:  "TIME CLOCK 00054041   PUNID 11D11MCP
+! CARD ID LF000001   DIST. OF 3/01   3/01   PAGE NUMBER  187".
+!
+! >>> THE COLUMN-HEADING ROW'S OWN "LOCATION" FIELD IS BLANK. <<<
+! Blank paper after the word LOCATION at the right-hand end of the
+! heading line, with the dashed rule running through it -- NO
+! DIGITS, and none invented.  That is the case the workflow
+! predicts: the field is LINE 1'S location, line 1 here is an
+! asterisk banner that compiles nothing, so the field is empty.  A
+! blank does NOT mean the page has no origin; this page's first
+! LOCATED row is line 6 at 221350.40.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! THIRTY-ONE PRINTED LINES on TWENTY-SIX CARDS.  Lines 1-5 are a
+! banner and a calling-sequence comment; lines 6-29 and 31 compile;
+! line 30 is a CNOP that emits nothing (see LISTING MARKS).  No
+! SLC, no SYN, no VF, no DD.  ONE reservation, line 31's one-word
+! DRZ, and it is the page's last row.
+!
+! The page is CONTIGUOUS from 221350.40 to 221367.77 -- fifteen and
+! a half words of code plus the one reserved word -- with NO HOLE,
+! and then blank paper to the foot of the form.
+!
+!   lines  6-10   K SEOP T, the SEOP wait loop: load the retry
+!                 count, copy the channel's control word into
+!                 K WS, branch-on-zero-EKJ back round, count down
+!                 and give up at K REJT.
+!   line  11      load six status bits out of K WS.
+!   lines 12-16   K EOP R, the indicator test: branch if none on,
+!                 loop if the SEOP bit is on, the CI0001 connective
+!                 that asks whether ONLY CS is on, and the
+!                 branch-on-zero-bit to Z TSEOP.
+!   lines 17-25   the save/restore arm -- SVA the return into
+!                 R SVRTN, clear the control word, reload XR1, two
+!                 KVI/BXE dispatch pairs, and R SVRTN itself.
+!   lines 26-29   Z TSEOP, the "true SEOP" arm: count-branch-zero
+!                 to K SOS, clear the control word, retry.
+!   line  30      CNOP -- prints NOTHING, see below.
+!   line  31      K WS, the one-word status work area.
+!
+! ---------------------------------------------------------------
+! THE SPAN, ESTABLISHED FROM THE PAGE (no survey endpoint used)
+! ---------------------------------------------------------------
+! I was told not to quote survey endpoints and I did not read them.
+! The span comes from three columns of this page:
+!
+!   * the LINE column runs 1..31 with no gap, 31 is the last line
+!     printed and there is blank paper below it;
+!   * the CARD SERIAL column runs LF000001..LF000026 with no gap,
+!     and the heading's own "CARD ID LF000001" agrees with line 1,
+!     so nothing fell off either end;
+!   * the counter chain closes digit for digit from 221350.40 to
+!     221367.00 with every intermediate location printed.
+!
+!   FIRST LOCATED ROW   line  6   221350.40
+!   LAST LOCATED ROW    line 31   221367.00  (a one-word DRZ)
+!   ROWS                31 printed lines, 26 cards, 24 !CHECKs
+!
+! ---------------------------------------------------------------
+! CARD SERIALS: FIVE PRINT TWICE, AND THEY CONFIRM p.184's RULE
+! ---------------------------------------------------------------
+! 31 lines, 26 serials.  Five serials carry two listing lines:
+!
+!   lines  9/10  LF000009   CB,1,$-1.32   ;  B,K REJT
+!   lines 18/19  LF000017   SIC,KCBJR     ;  B,KCLEAR
+!   lines 21/22  LF000019   KVI,$1,ZLOCXX ;  BXE,($1)
+!   lines 23/24  LF000020   KVI,$1,KKMODE ;  BXE,($1)
+!   lines 27/28  LF000023   SIC,K CBJ R   ;  B,K CLEAR
+!
+! printed p.184 found five such pairs and concluded the rule is
+! "ONE CARD, ONE WORD" and not "one card, one SIC pair", because
+! one of its five was an LVI/SVA pair.  THIS PAGE CONFIRMS IT ON A
+! SECOND PAGE and strengthens it: only two of my five are SIC
+! pairs, two are KVI/BXE and one is CB/B.  Every pair is two
+! HALF-WORD instructions totalling one word.
+!
+! The page shows the convention in its own prose.  Line 4's comment
+! card reads
+!     CALLING SEQUENCE  **  SIC,K EOP R?B,K SEOP T
+! where the character printed between "R" and "B" is NOT a plus
+! sign: at 1600 dpi it is a vertical bar crossed by TWO horizontals.
+! >>> I DESCRIBE THE SHAPE AND I DO NOT NAME IT. <<<  strap/
+! charsets.py has no such character and neither volume's OCR
+! contains the words "record mark", so a name would be recall and
+! not a citation -- brief rule 1.  What IS evidence is the SHAPE
+! plus the USAGE: it stands between two half-word instructions, and
+! printed p.186 line 12's comment puts the same construction (there
+! written "SIC,K UNR R ** B,K UNR", per p.184's deck) in the same
+! place.  Nothing on this page depends on it: line 4 compiles
+! nothing, and the LISTING prints the two instructions of a
+! two-instruction card as two lines with two locations, which is
+! what the deck does too.
+!
+! ---------------------------------------------------------------
+! THE JOIN, BOTH WAYS -- AND BOTH ENDS ARE WITNESSED OFF OTHER
+! PAGES' INK, NOT MINE
+! ---------------------------------------------------------------
+! BACKWARD.  This page prints NO SLC card, so the deck's
+! "SLC,(8)221350.40" is a substitution for a counter that simply
+! arrived.  But it is not an assertion:
+!
+!   * THE LAST ROW OF printed p.186 THAT THE VOLUME OCR READS
+!     (OCR of PDF p.193, a DIFFERENT page) is its line 51,
+!         221350.00   221350.10 00   K CONV R   B,$
+!     a HALF word at 221350.00, so the counter leaves p.186 at
+!     221350.40, which is exactly this page's line 6.  And K CONV R
+!     is not a guess either: three other pages print
+!     "SIC,K CONV R" compiling 221350.00 80, and a SIC carries its
+!     operand's full 24-bit bit address, so that word is pinned to
+!     the bit.
+!     >>> SAID CAREFULLY, BECAUSE AN OCR ENDPOINT IS A FLOOR. <<<
+!     The workflow measured that mcp_ocr gives up mid-page (printed
+!     p.181 has 56 lines and the reader quits at 42), so "line 51"
+!     bounds what the READER read, not what p.186 PRINTS.  If p.186
+!     prints rows below 51, the OCR lost them and the forward join
+!     is p.186's to state.  Nothing here depends on it either way:
+!     my origin is checked by the merge (next item), not by p.186.
+!
+!   * >>> AND THE ORIGIN IS CHECKED, NOT ASSERTED.  MEASURED. <<<
+!     Five landed decks SYN symbols THIS page defines --
+!     pp.152, 154, 159, 164 and 165 all carry
+!         KSEOPT  SYN, (8)221350.40
+!         KEOPR   SYN, (8)221354.40
+!     and several of those references are SICs, hence bit-exact.
+!     Injection run against the merged body image with this page
+!     added, moving nothing but the SLC:
+!
+!         origin as printed  (8)221350.40  -> merge OK
+!                                             771 defined, 66 external
+!         origin shifted      (8)221351.00 -> REFUSED
+!            FAIL KEOPR: printed p.152 SYNs bit 4766496,
+!                        printed p.187 places it at bit 4766528
+!
+!     (The merge was run over pp.99-184 plus this page; pp.185 and
+!     186 are not landed yet, so the run is the body image as it
+!     stands today with p.187 appended.)
+!
+!     So this is the "CHECKED" case of the workflow's item 2, not
+!     the "asserted" one.
+!
+! FORWARD.  Line 31 is a ONE-WORD DRZ at 221367.00, so
+! >>> THE COUNTER LEAVES THIS PAGE AT 221370.00. <<<
+! The volume OCR of printed p.188 (PDF p.195, a DIFFERENT page)
+! prints "221370.00" against its line 4 SLC and against its line 8
+! "K IO IND L(BU,2),S IO IND($13)".  A printed SLC is the best
+! forward-join witness there is, and p.188 supplies one.
+!
+! ---------------------------------------------------------------
+! >>> FALSIFIABLE PREDICTIONS FOR printed p.188 (PDF p.195) <<<
+! ---------------------------------------------------------------
+!   (1) its first LOCATED row is 221370.00, and it is a printed
+!       "SLC,$" -- which, if it is really an SLC, is a free
+!       confirmation of this page's forward join.  If p.188's
+!       first location is anything but 221370.00, one of us is
+!       wrong and the one-word DRZ on my line 31 is the first
+!       thing to re-read.
+!   (2) its first card serial is LF000027.  WEAKER THAN (1): the
+!       brief records two measured cases of a serial that prints
+!       NO listing line (ED000049, IH000041), both at page breaks,
+!       which is exactly here.  A missing LF000027 would not
+!       falsify the join; a serial BELOW LF000027 would.
+!   (3) its heading-row LOCATION field is BLANK, because the
+!       volume OCR shows p.188's lines 1-3 are an asterisk banner
+!       ("****** I/O INDICATOR CHECK ******") and its first
+!       located row is line 4.
+!   (4) p.188 DEFINES none of the five names this page defines
+!       (KSEOPT, KEOPR, RSVRTN, ZTSEOP, KWS).  It does define
+!       K IO IND and K K IND.
+!
+! AND ONE FOR printed p.186's TRANSCRIBER:
+!   (5) p.186's last located row is 221350.00 and is a HALF word
+!       ("K CONV R  B,$"), so its page leaves the counter at
+!       221350.40.  If p.186's ink says otherwise, say so loudly:
+!       my line 6 depends on it, though my ORIGIN does not (see
+!       the injection above).
+!
+! ---------------------------------------------------------------
+! WHAT HAD TO BE SUBSTITUTED, AND IT IS LOUD
+! ---------------------------------------------------------------
+! >>> TWO ROWS ARE NOT WRITTEN AS THE PAGE PRINTS THEM. <<<
+! Lines 11 and 13 print a NAME WITH A BLANK IN IT FOLLOWED BY A
+! BIT OFFSET:
+!
+!     line 11   L(BU,6),K WS.19
+!     line 13   BB,K WS.24,K SEOP T
+!
+! and strap_asm REFUSES both -- "undefined symbol 'K'" -- which is
+! the brief's known gap ("a blank inside a name INSIDE AN
+! EXPRESSION is refused") showing up on a third shape: name plus
+! BIT OFFSET, where the two cases already recorded were name plus
+! a word term (S TLR+14., K GOOF+.32).  The deck writes KWS.19 and
+! KWS.24 CLOSED UP.  Measured, so the gap is bounded rather than
+! guessed:
+!
+!     L(BU,6),K WS.19        -> REFUSED  undefined symbol 'K'
+!     L(BU,6),KWS.19         -> assembles, prints the page's own
+!                               221367.23 80 006000.20 50
+!     CCW,0.0($14),K WS      -> ASSEMBLES.  A blanked name as a
+!                               BARE operand is fine; it is only
+!                               the ".NN" that breaks it.
+!
+! So line 7 keeps its printed blank and lines 11 and 13 do not.
+! THE PRINTED FORMS ARE "K WS.19" AND "K WS.24"; the page itself
+! writes the same symbol both ways (line 16 prints "KWS.21" closed
+! up and line 31's NAME field prints "KWS"), so the substitution
+! is to a spelling this page also uses -- but it is still a
+! substitution and it is recorded here because a later reader
+! cannot see it in the deck.
+!
+! The five NAMES this page defines are written closed up for the
+! same reason p.184 gives: strap_asm cannot carry a blank in a
+! LABEL field at all.  Printed: "K SEOP T", "K EOP R", "RSVRTN",
+! "ZTSEOP", "KWS".  Three of the five print closed up already.
+!
+! ---------------------------------------------------------------
+! GLYPH CALLS
+! ---------------------------------------------------------------
+! (1) >>> THE PAGE'S ROUND GLYPH IS SETTLED BY THE ASSEMBLER, NOT
+!     BY SHAPE.  Line 14's immediate reads "(.5,2)1111C1" to the
+!     eye at 1600 dpi.  Handed to strap_asm, BOTH readings:
+!
+!       CI0001(BU,6),(.5,2)1111C1  -> "undefined symbol 'C1'"
+!       CI0001(BU,6),(.5,2)111101  -> 750000.00 80 406000.02 70,
+!                                     the page's own printed word
+!
+!     A radix-2 literal cannot hold a C, so the glyph is a 0 --
+!     ladder rung 3 used as the eliminator it is, and then rung 5
+!     and the compiled word agreeing with it.  0o75 = 111101 is
+!     the six-bit immediate left-justified in A24, which is a
+!     third, independent statement of the same six characters.
+!
+! (2) "EOP", banner line 2 and the names K EOP R / KEOPR.  The
+!     banner prints "ECP TEST FCR SEOP TYPE I/C" to the eye.  It
+!     is settled by ENGLISH IN THE SAME ROW, which is rung 1:
+!     "FOR" is a word and prints with the SAME open round glyph as
+!     the second character of "ECP", while "SEOP" four words later
+!     prints a CLOSED one off the same drum in the same line.  So
+!     the row contains both an open O and a closed O, the open one
+!     inside a known English word, and the reading is
+!     "EOP TEST FOR SEOP TYPE I/O".  EOP is end-of-operation and
+!     SEOP is select-end-of-operation, which is what the page
+!     tests.  NOTE WHAT THIS IS NOT: it is not a width or
+!     openness argument (p.184 measured that those separate
+!     nothing on this drum); it is one known English word next to
+!     one unknown one.
+!
+! (3) K CBJ R (lines 18, 27).  Settled before this page: p.184's
+!     GLYPH CALL (8) corrected "K OBJ R" to "K CBJ R" off p.186's
+!     defining card and off the typeset index's ALPHABETICAL
+!     POSITION in C22-6728.  Both my rows compile 221313.40 80,
+!     the same half word p.184 line 24 prints, and line 27 prints
+!     the name with its blanks in while line 18 prints it closed
+!     up -- one page, one symbol, two spellings.
+!
+! (4) DRZ, line 31.  The Z IS READ OFF THE INK at 1600 dpi and
+!     not off a passing run: the workflow records that DR and DRZ
+!     print the identical BINARY OUTPUT (the reservation's COUNT),
+!     so no !CHECK on this page can tell them apart.  At 1600 dpi
+!     the three characters D R Z are unambiguous -- the D has the
+!     straight vertical left stem and squared corners that
+!     separate it from C and 0, and the Z is a Z.  >>> FLAGGED AS
+!     INK-ONLY.  If this is wrong, the merged image gains one word
+!     of unspecified content at 221367 where it should have a word
+!     of zeros, and nothing in this repository would notice. <<<
+!
+! (5) The mode letter in "DRZ(N),(1)" is N, read at 1600 dpi.
+!     strap_asm accepts mode N and the row compiles the printed
+!     000001.00, but a reservation prints its COUNT, so THE MODE
+!     IS UNCHECKED BY ANYTHING.  It is ink only, like the Z.
+!
+! ---------------------------------------------------------------
+! LISTING MARKS
+! ---------------------------------------------------------------
+! Every line number carries the ordinary trailing asterisk.
+! THREE ROWS CARRY A SECOND ASTERISK AFTER THE LOCATION:
+!
+!     line  8   221352.00 *   BZEKJZ,$+1.32
+!     line 27   221365.40 *   SIC,K CBJ R
+!     line 31   221367.00 *   KWS  DRZ(N),(1)
+!
+! Recorded, NO RULE PROPOSED -- the brief is explicit that a rule
+! from one page gets refuted the same afternoon.  What this page
+! does do is kill two candidate rules that its three marks might
+! otherwise suggest, and it kills them with its OWN rows:
+!
+!   * NOT "every SIC".  Line 27 is a marked SIC and line 18 is an
+!     UNMARKED SIC compiling the identical half word from the
+!     identical statement.  Two SIC rows, one page, one marked.
+!   * NOT "every label row".  Line 31 is marked and carries the
+!     name KWS; lines 6, 12, 25 and 26 carry names and are not.
+!   * NOT "every branch".  Line 8 is marked; the page's eleven
+!     other branches are not.
+!
+! So the three have nothing in common on this page either: one
+! branch, one SIC, one reservation; one of the three is a label
+! row and two are not.  Add them to the list of things the
+! asterisk is not and move on.
+!
+! >>> AND LINE 30's CNOP PRINTS NO LOCATION AND NO BINARY. <<<
+! Worth one line because it is the exact complement of printed
+! p.184 line 31, which prints "221236.40  000000.30 00  CNOP".
+! There the counter arrived at an ODD half word and the CNOP
+! emitted one; here line 29 ends at 221367.00, already word
+! aligned, so the CNOP emits nothing and the listing prints an
+! empty row.  Two pages, the same pseudo-op, both behaviours, and
+! strap_asm reproduces both.  This row therefore writes NO !CHECK
+! -- there is nothing to check -- and it still costs a card
+! (LF000025).
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- EIGHT, AND SIX ARE ALREADY LANDED
+! ---------------------------------------------------------------
+! Every one is written in the form the landed deck uses, so the
+! merged image cannot disagree about a spelling or a value:
+!
+!   K REP     30          p.125 "KREP SYN, 30" -- A COUNT, not an
+!                         address.  The defining card elsewhere in
+!                         the volume prints "K REP SYN(BU,18),30";
+!                         this deck copies p.125's dds-less form
+!                         because an LCI takes an immediate count
+!                         and nothing here inherits a length.
+!   K REJT    221300.0    p.125; line 10 B, half word only
+!   K SOS     221274.0    p.125; line 26 CBZ, half word only
+!   K CBJ R   221313.40   pp.125/126/184; lines 18 and 27 are
+!                         SICs, so BIT-EXACT from this page
+!   K CLEAR   221302.40   pp.125/126/184; lines 19 and 28 B
+!   K K MODE  217624.40   pp.151/152/154/183; line 23 KVI
+!   Z LOCXX   220046.0    DEFINED by printed p.159 line 39,
+!                         "ZLOCXX CM0000(BU,1),SSEL($11)".  My
+!                         reference is a KVI, an INDEX-class
+!                         operation, so this page sees the half
+!                         word only; the value and the dds both
+!                         come from p.159 and the merge checks
+!                         them.  SYNned with NO dds on purpose --
+!                         p.159's defining card carries it.
+!   K RETRY   221263.0    >>> THE ONE EXTERNAL WHOSE DEFINING PAGE
+!                         IS NOT LANDED. <<<  The volume OCR of
+!                         printed p.185 line 12 prints
+!                         "221263.00  000004.00 10  K RETRY
+!                         LX,0,S IO INS($12)", and p.186 line 9's
+!                         "K CBJ R  B,K RETRY" compiles 221263.10
+!                         exactly as my line 29 does.  p.185 is
+!                         being transcribed in this same block, so
+!                         if the merge refuses K RETRY, p.185's
+!                         deck is where to look, not this one.
+!
+! WHICH OF THEM THIS PAGE READS TO THE BIT, AND WHICH IT DOES NOT:
+!   BIT-EXACT   K CBJ R (lines 18, 27 are SICs).
+!   HALF WORD   K REJT, K SOS, K CLEAR, K K MODE, Z LOCXX --
+!               branches and index operations, which spend their
+!               low bits on their own operation field.  Where this
+!               deck writes ".0" the bit is this corpus's
+!               convention and NOT a reading; the values come from
+!               the landed decks and from the OCR'd defining
+!               cards, not from my page's binary.
+!   NOT AN ADDRESS AT ALL   K REP, a count of 30.
+!
+! >>> AND LINE 7's CCW DOES NOT READ K WS's BIT OFFSET EITHER,
+! >>> ALTHOUGH ITS SECOND WORD LOOKS LIKE AN ADDRESS. <<<
+! It prints "221367.21 00".  The 0o21 is NOT a bit offset: the
+! half word's octal pair is instruction bits 50-55, and an I-O
+! instruction spends 51-54 on the OP field (CCW = 0b1000) followed
+! by the literal 10000 of the pocket card's 9-bit code, so bits
+! 50-55 read 0,1000,1 = 0o21 whatever K WS's offset is.  The
+! address part is the word 221367 and nothing below it.  K WS is
+! at 221367.00 because THIS PAGE'S LINE 31 PRINTS IT THERE, not
+! because line 7 says so.
+!
+! ---------------------------------------------------------------
+! WHAT I COULD NOT SETTLE
+! ---------------------------------------------------------------
+! (A) >>> K SOS: THE ROUND GLYPH IS OPEN AND I DID NOT CLOSE IT.
+!     Line 26 prints "CBZ,$11,KSOS", four characters K S ? S, and
+!     the third is a round glyph.  Every rung of the ladder came
+!     back empty or self-referential:
+!       * rung 1, the comment column: line 26 HAS NO COMMENT.
+!       * rung 2, the typeset manuals: no KS entry I can reach
+!         from this page; p.184 showed the C22-6728 index is
+!         decisive when the name is in it, and this one is the
+!         case where it is not.
+!       * rung 3, the assembler: the name is an operand, so both
+!         readings assemble.  Silent, as the workflow warns.
+!       * rungs 4 and 5 do not apply: the statement is printed
+!         ONCE on this page and there is no octal field in it.
+!       * the volume OCR SPLITS -- "K SOS" at its line 9549
+!         (p.185's defining card, "221274.00 * 003405.35 00
+!         K SOS LVI,14,S IO ERR") and "K SCS" at 9705 and 9564 --
+!         and that is the same drum read twice, not a vote.  The
+!         workflow says so in as many words.
+!     WHAT IT RESTS ON: printed p.125's landed deck writes
+!     "KSOS SYN, (8)221274.0" and this deck agrees with it, so the
+!     merge will pair them whichever way the glyph goes.  The
+!     ADDRESS is not in doubt; only the one character is.
+!     WHAT WOULD SETTLE IT: printed p.185's transcriber rendering
+!     its line 21 NAME field at 1600 dpi beside a known digit 0 or
+!     a known letter O in the SAME ROW -- its statement
+!     "LVI,14,S IO ERR" carries an "IO" whose O is a known letter,
+!     one column away.  That is the measurement I could not make
+!     from here, because p.185's ink is not my page.
+!
+! (B) THE BIT OFFSETS OF THE FIVE HALF-WORD EXTERNALS, which is
+!     the workflow's item 1 and is not news -- but the page gave
+!     me no SIC and no VFL operand for any of them, so I am
+!     explicitly NOT claiming to have read them.  The one VFL row
+!     that could have read an external, line 11's L(BU,6), reads
+!     K WS, which this page DEFINES; it prints 221367.23 against
+!     line 31's printed LOCATION of 221367.00 plus the decimal
+!     offset .19 = 0o23, which is a real check of the conversion
+!     and not of an external.
+!
+! (C) THE RECORD-MARK GLYPH in line 4's comment (see CARD SERIALS).
+!     I can describe the shape and I can show that the listing
+!     uses it where two instructions share a card, but I cannot
+!     cite a manual for STRAP's own spelling of it, and line 4
+!     compiles nothing, so nothing here forces the question.
+!
+! (D) THE MODE LETTER N and the Z of DRZ on line 31 (GLYPH CALLS
+!     4 and 5).  Both are ink-only and no check on this page or in
+!     the merged image can see either.
+!
+! (E) The brief's open question -- does a mode-only dds "(BU)"
+!     inherit a LENGTH from its operand symbol? -- IS NOT TOUCHED
+!     BY THIS PAGE.  Every dds here writes an explicit length
+!     ((BU,6) twice, (BU,2) none, (N) on a reservation), so there
+!     is no mode-only dds against a symbol anywhere on it.
+!
+! ---------------------------------------------------------------
+! JOINING IT TO THE BODY IMAGE
+! ---------------------------------------------------------------
+! tests/check_mcp_body_image.py's "FIRST, LAST" (99, 184 -> 99,
+! 187 once pp.185 and 186 land) and its body_page_count, NOT
+! strap/mcp_image.py's MCP_IPL_PAGES: pp.15-98 and pp.99+ are two
+! assemblies and merging them fails on SMCP.  This deck cannot
+! edit tests/, so it says so here.
+!
+! >>> THIS PAGE MAKES NO HOLE AT ALL, AND I CHECKED RATHER THAN
+! >>> ASSUMING IT DID. <<<  The obvious reading is that line 31's
+! one-word reservation leaves 221367 empty and needs the
+! reservation-span exemption.  IT DOES NOT: the card is a DRZ, and
+! a DRZ's words "are all set to zero" (C22-6531 p.35), so
+! strap_asm DEPOSITS a word of zeros there.  Measured on the merged
+! image with this page appended:
+!
+!     0o221367 in prog.words        -> True (it is the image's
+!                                     last word)
+!     0o221367 in holes             -> False
+!     0o221367 in reserved_words()  -> False
+!     every_word_accounted_for      -> 0 unaccounted
+!
+! So the page is solid from 221350.40 to 221367.77 with nothing
+! exempted, and there is no SLC skip either because there is no
+! SLC.  >>> AND THIS IS WHY GLYPH CALL (4) MATTERS MORE THAN IT
+! LOOKS: had the card been a DR, 221367 would be a HOLE needing
+! the reservation exemption, and the merged image would hold one
+! word of unspecified content instead of one word of zeros.  The Z
+! is the difference, it is ink-only, and no check can see it. <<<
+!
+! ONE ARTIFACT OF RUNNING THE MERGE TODAY, so nobody reads it as a
+! defect: with pp.185 and 186 absent, the accounting reports 55
+! extra SLC-covered holes at 0o221261..0o221347 -- which is
+! EXACTLY the span those two pages occupy, jumped over by this
+! deck's origin SLC.  They close when pp.185 and 186 land.  With
+! them absent the run still reports 0 unaccounted words.
+!
+! ---------------------------------------------------------------
+! A TOOL FINDING, AND IT IS A CLAIM ABOUT THE REPO, NOT ABOUT MY
+! PAGE -- SO IT IS CHEAP TO CHECK
+! ---------------------------------------------------------------
+! tests/check_deck_listing_comments.py's ROW_RE requires WHITESPACE
+! between the LOCATION and its second asterisk.  This deck's first
+! draft wrote the block as the LOCATION column prints it,
+! "221352.00* 221353.43 44", and the three marked rows then failed
+! to parse as listing rows -- silently.  Measured on this deck
+! alone, changing nothing but that one space:
+!
+!     "221352.00* ..."   ->  checks_compared = 22
+!     "221352.00 * ..."  ->  checks_compared = 24
+!
+! and both runs printed ALL TESTS PASSED.  The tool's whole point
+! is that silence can never be mistaken for verification, and its
+! reach counter did exactly its job here -- but only because I
+! looked at the number.  Two of my twenty-four rows (lines 8 and
+! 27) were being skipped.  The rows the block still matched at
+! those two locations came from the LISTING MARKS prose section,
+! whose text is a STATEMENT and not a binary, so BINARY_RE
+! correctly discarded them and nothing was compared at all.
+!
+! >>> AND FOUR LANDED DECKS ARE LOSING ROWS THE SAME WAY.  I
+! >>> MEASURED IT RATHER THAN SAYING "other decks may be". <<<
+! Five decks in decks/ write a location-column asterisk with no
+! space.  Re-running scan() on each, with nothing changed but that
+! space inserted:
+!
+!     p.88    compared 42 -> 44
+!     p.96    compared 41 -> 44
+!     p.97    compared 26 -> 27
+!     p.125   compared 53 -> 56
+!     p.166   compared 44 -> 44   (its marks are in prose, not the
+!                                  block; nothing lost)
+!
+! NINE ROWS across the corpus, and ZERO of them mismatch once they
+! are compared -- so this is lost REACH, not a hidden defect.  I
+! cannot edit tests/, so: either ROW_RE should allow "LOC*" with no
+! space (a fifth house layout), or the workflow doc should tell
+! transcribers to write "LOC *".
+!
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS READ
+! ---------------------------------------------------------------
+!   line  1*                                                       ****************************************************
+!   line  2*                                                       -***********   EOP TEST FOR SEOP TYPE I/O   ***********-
+!   line  3*                                                       ****************************************************
+!   line  4*                                                           CALLING SEQUENCE  **  SIC,K EOP R<record mark>B,K SEOP T
+!   line  5*                                                       (empty comment card)
+!   line  6   221350.40  000036.03 02                    K SEOP T  LCI,1,K REP
+!   line  7   221351.00  000000.00 8E 221367.21 00                 CCW,0.0($14),K WS
+!   line  8   221352.00 * 221353.43 44                              BZEKJZ,$+1.32
+!   line  9   221352.40  221351.02 48                              CB,1,$-1.32
+!   line 10   221353.00  221300.10 00                              B,K REJT
+!   line 11   221353.40  221367.23 80 006000.20 50                 L(BU,6),K WS.19          -TEST STATUS INDICATORS
+!   line 12   221354.40  221354.74 C2                    K EOP R   BRZ,$                    -IF NONE ON, ALLS WELL
+!   line 13   221355.00  221367.30 80 221350.74 02                 BB,K WS.24,K SEOP T      -IF SEOP BIT ON, LOOP
+!   line 14   221356.00  750000.00 80 406000.02 70                 CI0001(BU,6),(.5,2)111101 -TEST IF ONLY CS IS ON
+!   line 15   221357.00  221354.74 C2                              BRZ,K EOP R              -IF SO, ALLS WELL
+!   line 16   221357.40  221367.25 80 221365.34 00                 BZB,KWS.21,ZTSEOP
+!   line 17   221360.40  221364.43 D0                              SVA,$1,RSVRTN
+!   line 18   221361.00  221313.40 80                              SIC,KCBJR
+!   line 19   221361.40  221302.50 00                              B,KCLEAR
+!   line 20   221362.00  221354.43 B0                              LVE,$1,KEOPR
+!   line 21   221362.40  220046.03 04                              KVI,$1,ZLOCXX
+!   line 22   221363.00  000000.32 C3                              BXE,($1)
+!   line 23   221363.40  217624.43 04                              KVI,$1,KKMODE
+!   line 24   221364.00  000000.32 C3                              BXE,($1)
+!   line 25   221364.40  221364.43 01                    RSVRTN    LVI,$1,$
+!   line 26   221365.00  221274.26 4A                    ZTSEOP    CBZ,$11,KSOS
+!   line 27   221365.40 * 221313.40 80                              SIC,K CBJ R
+!   line 28   221366.00  221302.50 00                              B,K CLEAR                -CLEAR CONTROL WORD FOR RETRY
+!   line 29   221366.40  221263.10 00                              B,K RETRY
+!   line 30                                                        CNOP
+!   line 31   221367.00 * 000001.00                       KWS       DRZ(N),(1)
+!
+! ---------------------------------------------------------------
+
+!SYM KSEOPT 221350.40
+!SYM KEOPR  221354.40
+!SYM RSVRTN 221364.40
+!SYM ZTSEOP 221365.00
+!SYM KWS    221367.00
+!
+!CHECK 221350.40 | 000036.03 02 | line 6 K SEOP T LCI,1,K REP -- K REP is a COUNT of 30 (p.125's landed SYN), not an address, so 000036 is the immediate 0o36 = 30 itself and this row checks the value outright; .03 is 2J+1 = 3 for J=1. Five other pages print the identical half word for the identical card (K NET, K CBJ, K CLEAR, K SEQUL, K K LOOP all do "LCI,1,K REP")
+!CHECK 221351.00 | 000000.00 8E 221367.21 00 | line 7 CCW,0.0($14),K WS -- 8E's low nibble is index $14 on the all-zero first address; the second word's 0o21 is NOT a bit offset but instruction bits 50-55, the CCW op 0b1000 followed by the leading 1 of the pocket card's 10000 literal, so this row reads K WS's WORD (221367) and nothing below it. K WS's .00 comes from line 31's own LOCATION column
+!CHECK 221352.00 | 221353.43 44 | line 8 BZEKJZ,$+1.32 -- $ is this row's 221352.00 and "1.32" is a BARE decimal offset, so +1 word +32 bits = +1.40 octal = 221353.40, printing 0o40 OR the 0o03 indicator as 0o43. The deck hands the assembler the printed mnemonic and it is accepted; the byte 44 is the whole of what checks the Z's. This row carries the first location-column asterisk
+!CHECK 221352.40 | 221351.02 48 | line 9 CB,1,$-1.32 -- the MINUS counterpart of line 8 and its control: $ is 221352.40, less 1 word 32 bits = 221351.00, and .02 is 2J = 2 for J=1 against line 8's branch-indicator 0o43. Two rows, one page, the same "1.32" decimal offset read in both directions
+!CHECK 221353.00 | 221300.10 00 | line 10 B,K REJT -- target+0o10; bit offset unobservable. K REJT is p.125's landed SYN at 221300.0 and the volume OCR's defining card reads "221300.00 K REJT LVI,14,S REJ -I/O COMMAND REJECTED"; five other pages print this identical half word
+!CHECK 221353.40 | 221367.23 80 006000.20 50 | line 11 L(BU,6),K WS.19 -TEST STATUS INDICATORS -- >>> A VFL OPERAND IS BIT-EXACT, so this row READS 221367.23: line 31 prints K WS's LOCATION as 221367.00 and 0o23 = 19 decimal, which is the printed ".19" as a BARE DECIMAL offset. The decimal-to-octal conversion is therefore checked outright and not assumed. The second word is the (BU,6) dds 0o006000 with offset 0 and the L code 20 50. >>> THE DECK WRITES "KWS.19" CLOSED UP; THE PAGE PRINTS "K WS.19" WITH A BLANK, which strap_asm refuses -- see WHAT HAD TO BE SUBSTITUTED
+!CHECK 221354.40 | 221354.74 C2 | line 12 K EOP R BRZ,$ -IF NONE ON, ALLS WELL -- $ is this row's own 221354.40, so 0o40 OR the BRZ indicator 0o34 = 0o74. This is the label five landed decks SYN at 221354.40 and several of them with a SIC, so the row is also the page's own statement of its origin
+!CHECK 221355.00 | 221367.30 80 221350.74 02 | line 13 BB,K WS.24,K SEOP T -IF SEOP BIT ON, LOOP -- the first address is a VFL-class bit address and reads K WS to the bit: 0o30 = 24 decimal, the printed ".24". The second is THIS page's line 6 label at 221350.40, printing 0o40 OR 0o34 = 0o74 with the BB byte 02, so the row pins the page's first located row from eleven half-words later. >>> "KWS.24" IS WRITTEN CLOSED UP; THE PAGE PRINTS "K WS.24"
+!CHECK 221356.00 | 750000.00 80 406000.02 70 | line 14 CI0001(BU,6),(.5,2)111101 -TEST IF ONLY CS IS ON -- the immediate 111101 is LEFT-JUSTIFIED in A24 and prints as 0o750000, which is 0o75 = 111101 in the top six bits: the word itself re-states the six characters, which is how the last one was settled (it prints as a C and a radix-2 literal cannot hold one -- see GLYPH CALL 1). The second word is the (BU,6) dds with the connective code 02 70
+!CHECK 221357.00 | 221354.74 C2 | line 15 BRZ,K EOP R -IF SO, ALLS WELL -- byte for byte the SAME HALF WORD as line 12, which is what makes the pair useful: line 12 reaches it through "$" and line 15 through the symbol, so the label and the counter agree independently
+!CHECK 221357.40 | 221367.25 80 221365.34 00 | line 16 BZB,KWS.21,ZTSEOP -- 0o25 = 21 decimal reads K WS to the bit a third time, with a third different offset (.19, .24, .21 all against one symbol); Z TSEOP is THIS page's line 26 at 221365.00, printing 0o34 with bit 32 CLEAR, which is what distinguishes it from a .40. The page prints this name CLOSED UP, so no substitution here
+!CHECK 221360.40 | 221364.43 D0 | line 17 SVA,$1,RSVRTN -- R SVRTN is THIS page's line 25 at 221364.40; 0o43 is 0o40 OR 2J+1 = 3 for J=1, so bit 32 is SET and the .40 is checked. The byte D0 is the same SVA byte printed p.184 line 21 prints
+!CHECK 221361.00 | 221313.40 80 | line 18 SIC,KCBJR -- AN SIC CARRIES ITS OPERAND'S FULL 24-BIT BIT ADDRESS, so this row READS K CBJ R at 221313.40 to the bit. printed p.184 line 24 is the same card and prints the same half word, and printed p.186 line 9 is the defining card. Line 27 is the same statement again with the name spelled "K CBJ R"
+!CHECK 221361.40 | 221302.50 00 | line 19 B,KCLEAR -- K CLEAR is landed at 221302.40 and 0o40 OR 0o10 = 0o50 checks bit 32. Repeated verbatim on line 28 with the blanks in
+!CHECK 221362.00 | 221354.43 B0 | line 20 LVE,$1,KEOPR -- the SAME symbol as lines 12 and 15 through a THIRD operation: 0o43 is 0o40 OR 2J+1 for J=1 against the branches' 0o74, so the two operation classes agree on bit 32 and on nothing below it. The byte B0 is LVE's
+!CHECK 221362.40 | 220046.03 04 | line 21 KVI,$1,ZLOCXX -- Z LOCXX is DEFINED by printed p.159 line 39 at 220046.00; .03 is 2J+1 = 3 for J=1 with bit 32 CLEAR, which is what confirms the landed ".00". A KVI is index-class, so only bit 32 shows and the deck's SYN says so
+!CHECK 221363.00 | 000000.32 C3 | line 22 BXE,($1) -- no address at all, so the whole half word is the operation: 0o32 and the byte C3. Line 24 is the identical card and its control
+!CHECK 221363.40 | 217624.43 04 | line 23 KVI,$1,KKMODE -- K K MODE is landed at 217624.40 by pp.151/152/154/183; 0o43 is 0o40 OR 3, so bit 32 is SET here where line 21's Z LOCXX has it clear, and the two KVI rows are each other's control on that bit
+!CHECK 221364.00 | 000000.32 C3 | line 24 BXE,($1) -- the same word as line 22, printed twice on one page from the same statement
+!CHECK 221364.40 | 221364.43 01 | line 25 RSVRTN LVI,$1,$ -- $ is this row's own 221364.40, so 0o43 = 0o40 OR 2J+1 for J=1 is self-referential; what makes it a real check is line 17's SVA, which reaches the SAME 221364.43 through the SYMBOL. Byte 01 is LVI's against the SVA's D0
+!CHECK 221365.00 | 221274.26 4A | line 26 ZTSEOP CBZ,$11,KSOS -- 0o26 = 2J = 22 decimal for J=11 with bit 32 CLEAR, so K SOS is at 221274.00 (p.125's landed SYN, and the volume OCR's p.185 defining card); 4A's low nibble is the index 11. >>> THE "O" OF KSOS IS AN OPEN ROUND GLYPH AND I DID NOT SETTLE IT -- see WHAT I COULD NOT SETTLE (A). This check passes either way, which is exactly why that note exists
+!CHECK 221365.40 | 221313.40 80 | line 27 SIC,K CBJ R -- the SAME CARD as line 18 with the name spelled with its blanks in, compiling the identical half word. Two spellings of one symbol on one page, and an SIC both times, so K CBJ R's 221313.40 is read to the bit twice. This row carries the second location-column asterisk
+!CHECK 221366.00 | 221302.50 00 | line 28 B,K CLEAR -CLEAR CONTROL WORD FOR RETRY -- the same half word as line 19 with the blanks in
+!CHECK 221366.40 | 221263.10 00 | line 29 B,K RETRY -- target+0o10; bit offset unobservable. K RETRY is the one external whose defining page has not landed: the volume OCR of printed p.185 line 12 prints "221263.00 K RETRY LX,0,S IO INS($12)" and p.186 line 9 prints this identical half word for the same symbol
+
+KREP    SYN(BU,18), 30              ! dds (BU,18) from printed p.185 line 27,
+                                     !   which PRINTS the defining card
+                                     !   "K REP SYN(BU,18),30" (dds column
+                                     !   BU,22 ,10 = length 0o22 = 18).
+                                     !   Added 2026-11-02: the merged body
+                                     !   image refused without it.                      ! landed: p.125 "A COUNT, not an address"
+KREJT   SYN, (8)221300.0             ! landed: p.125; line 10 B, half word only
+KSOS    SYN, (8)221274.0             ! landed: p.125; line 26 CBZ, half word only; SPELLING OPEN, see (A)
+KCBJR   SYN, (8)221313.40            ! landed: pp.125/126/184; lines 18 and 27 are SICs -- BIT-EXACT
+KCLEAR  SYN, (8)221302.40            ! landed: pp.125/126/184; lines 19 and 28 print 221302.50
+KKMODE  SYN, (8)217624.40            ! landed: pp.151/152/154/183; line 23 KVI
+ZLOCXX  SYN, (8)220046.0             ! p.159 line 39 DEFINES it, with the dds; line 21 KVI, half word only
+KRETRY  SYN, (8)221263.0             ! p.185's OCR'd defining card; p.185 NOT YET LANDED -- see EXTERNALS
+
+        SLC, (8)221350.40            ! NOT PRINTED.  The counter arrives here from
+                                     ! p.186; the origin is CHECKED by the merge --
+                                     ! see THE JOIN, BOTH WAYS
+KSEOPT  LCI,1,K REP                  ! line  6   printed name "K SEOP T"
+        CCW,0.0($14),K WS            ! line  7   blanked name as a BARE operand: accepted
+        BZEKJZ,$+1.32                ! line  8 * location-column asterisk
+        CB,1,$-1.32                  ! line  9
+        B,K REJT                     ! line 10
+        L(BU,6),KWS.19               ! line 11   >>> PRINTED "K WS.19"; blank refused <<<
+KEOPR   BRZ,$                        ! line 12   printed name "K EOP R"
+        BB,KWS.24,K SEOP T           ! line 13   >>> PRINTED "K WS.24"; blank refused <<<
+        CI0001(BU,6),(.5,2)111101    ! line 14   last digit prints as a C; see GLYPH CALL 1
+        BRZ,K EOP R                  ! line 15
+        BZB,KWS.21,ZTSEOP            ! line 16   the page prints "KWS.21" closed up
+        SVA,$1,RSVRTN                ! line 17
+        SIC,KCBJR                    ! line 18
+        B,KCLEAR                     ! line 19
+        LVE,$1,KEOPR                 ! line 20
+        KVI,$1,ZLOCXX                ! line 21
+        BXE,($1)                     ! line 22
+        KVI,$1,KKMODE                ! line 23
+        BXE,($1)                     ! line 24
+RSVRTN  LVI,$1,$                     ! line 25
+ZTSEOP  CBZ,$11,KSOS                 ! line 26
+        SIC,K CBJ R                  ! line 27 * location-column asterisk
+        B,K CLEAR                    ! line 28
+        B,K RETRY                    ! line 29
+        CNOP                         ! line 30   emits NOTHING: 221367.00 is already
+                                     ! word aligned.  The listing prints no location
+                                     ! and no binary for it, so it writes no !CHECK
+KWS     DRZ(N),(1)                   ! line 31 * one word; the Z and the N are INK ONLY
