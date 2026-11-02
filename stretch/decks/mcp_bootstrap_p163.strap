@@ -1,0 +1,443 @@
+! mcp_bootstrap_p163.strap -- the SPACE BLOCK, SPACE FILE, K FIL K1 and
+! K N SYST paths of the tape-command interpreter, printed page 163.
+! docs/MCP_Mar63_001-249.pdf PDF p.170.  The header was READ and not
+! assumed: the top line prints "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID IH000042   DIST. OF 3/01   3/01   PAGE NUMBER  163", and the
+! column-heading row's own LOCATION field reads 220147, which is line
+! 1's word (rendered on its own at 900 dpi -- the digits are there, it
+! is not the dashed rule).
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! FORTY-SIX PRINTED LINES, EVERY ONE OF WHICH EMITS BITS.  There is no
+! SLC, no DD, no SYN, no reservation and no banner: forty-six
+! consecutive instructions, 220147.40 through 220202.40, with NO HOLE
+! anywhere in the span.  Both CNOPs (lines 3 and 21) found the counter
+! on a HALF word and so each emitted a real half-word no-op
+! "000000.30 00" at its own printed location -- unlike printed p.156
+! line 11, whose CNOP was already aligned and printed neither a
+! location nor any bits.
+!
+! THE SURVEY SAID 33 ROWS AND IT WAS COUNTING CARDS, NOT LINES.  The
+! card-serial column runs IH000042 .. IH000074 -- thirty-three
+! serials, contiguous, no gap -- and thirteen of them carry TWO
+! printed statements (the SIC/branch pairs and the LX/SX pairs), which
+! is exactly 33 + 13 = 46.  Nothing fell off either end: serial
+! IH000042 is also the CARD ID in the page header, and the last line
+! is IH000074.
+!
+! The page is four fragments back to back:
+!
+!   lines 1-12   the tail of the SPACE BLOCK command begun on printed
+!                p.162: save the IC in K K IND / go to K IO IND, then
+!                CNOP, build the I/O instruction in place (LX/SX
+!                through S IO INS), the CTL with the decimal command
+!                62, set the SET UP bit under K SUPP, offer it, and
+!                leave through M IO REJ or through E IND R / E IO IND.
+!   lines 13-18  K SP TM, "SPACE OVER TAPE MARK": pull the two-bit
+!                density out of S F DEN, skip the alternative with
+!                BRN, else take the label density out of S LABD, put
+!                the return address in $R and call K DENST.
+!   lines 19-30  the SPACE FILE command, line for line the same shape
+!                as lines 1-12 with the octal command (8)77 in place
+!                of the decimal 62.
+!   lines 31-35  K FIL K1: set the file count to +1 (S FILEK), pick up
+!                the return address out of S SCRPM, clear the CTL bit
+!                with CM0000, and return through B,0.0($1).
+!   lines 36-46  K N SYST ("new system"): the same file-count bump,
+!                then S F DEN / BRN / LI(BU,1),S TD DEN -- i.e. the
+!                STANDARD DENSITY literal instead of a loaded field --
+!                and out through K DENST and K IO IND to Z STEVL.
+!
+! ---------------------------------------------------------------
+! WHERE THE PAGE JOINS, AND IT JOINS AT BOTH ENDS
+! ---------------------------------------------------------------
+! The page prints no SLC, so its origin is the counter arriving from
+! printed p.162 and the deck ASSERTS it with a hard SLC (which cannot
+! disagree with a counter it overrides -- see
+! docs/transcription_workflow.md, "A HARD SLC CANNOT DISAGREE").  Two
+! readings INDEPENDENT of this page's LOCATION column agree on
+! 220147.40:
+!
+!   * the column-heading row's own LOCATION field reads 220147; and
+!   * docs/ocr/MCP_Mar63_001-249.txt line 8397 is printed p.162's OWN
+!     last row -- a DIFFERENT page, so a real witness --
+!     "46* 220147.00  217674.50 00  B,K DENST  -SET UNIT TO
+!     INSTALAATICN DEN", a half-word branch at 220147.00 which leaves
+!     the counter at exactly 220147.40.
+!
+! THE FAR END IS WITNESSED TOO.  Line 46 is a half word at 220202.40,
+! so the counter leaves this page at 220203.00; the volume OCR of
+! printed p.164 (PDF p.171, a DIFFERENT page) opens with a three-line
+! asterisk banner "*** WRITE END OF FILE ***" and its first located
+! row is line 4 at "220203.00 *".  So printed p.164's FIRST LOCATION
+! IS 220203.00 and that is corroborated, not predicted.  TWO ACTUAL
+! PREDICTIONS for its transcriber, neither of them read: its first
+! card serial is IH000075, and its heading LOCATION field is BLANK,
+! because its line 1 is a banner that compiles nothing (the rule
+! measured over sixteen pages in docs/transcription_workflow.md).
+!
+! TWO OF THIS PAGE'S OWN LABELS ARE PINNED BY printed p.162, not by
+! this page's ink:
+!   * OCR line 8396, p.162 line 45: "BZB,$5.224,K SP TM" against
+!     220156.74 -- 0o74 = K SP TM's own .40 plus BZB's .34 -- i.e.
+!     K SP TM = 220156.40, this page's line 13.
+!   * OCR line 8394, p.162 line 43: "RS1 FLK  BZB,S SYSTM($12),K N
+!     SYST" against 220174.74, i.e. K N SYST = 220174.40, this page's
+!     line 36.
+! K FIL K1 is referenced from a later page (OCR line 9690,
+! "221372.00  220171.45 04 ... K FIL K?"), whose 220171.45 is this
+! page's line 31 at 220171.40 plus .05 of operation bits; that
+! reference corroborates the ADDRESS but its OCR of the NAME is
+! garbled, so the spelling rests on this page's ink (read at 900 dpi:
+! K, space, F I L, space, K 1 -- eight characters, which is the full
+! width of the NAME field).
+!
+! ---------------------------------------------------------------
+! NO SUBSTITUTIONS.  EVERY ROW IS THE PRINTED CARD.
+! ---------------------------------------------------------------
+! Forty-six printed statements were handed to strap_asm exactly as
+! printed and all forty-six compiled to the printed bits on the first
+! try.  Nothing is left failing, nothing is labelled, nothing was
+! dropped.  In particular:
+!
+! * LINE 24'S DOTTED OCTAL CONTROL CODE NOW COMPILES.  The page prints
+!   "CTL,0.0($14),(8)77." and strap_asm renders "000000.00 8E
+!   000077.05 00", which is the printed pair.  This is the exact form
+!   printed p.156 line 14 had to leave FAILING ("(8)117." compiled to
+!   011700.05 00, the octal shifted six bits left).  The word-granular
+!   fix landed since.  MEASURED, not suggested: "cd tests &&
+!   PYTHONPATH=../strap python3 verify_mcp_page.py 156" now prints
+!   "PASS MCP p.156 217753.00 line 14 CTL,0.0($14),(8)117. ...
+!   assembled '000000.00 8E 000117.05 00'" and "ALL TESTS PASSED" for
+!   all 27 of its rows.  So p.156's PROSE IS NOW STALE: it still says
+!   that row is "LEFT FAILING ON PURPOSE" and that its statement and
+!   its !CHECK contradict each other, and they no longer do.  Fixing
+!   that comment is outside this page's scope and is flagged here.
+! * LINE 6'S DECIMAL CONTROL CODE AGREES WITH IT.  "CTL,0.0($14),62."
+!   renders "000076.05 00"; 62 decimal is 0o76, which is what the page
+!   prints, so the decimal and the octal spellings of the same field
+!   are both right on one page.
+! * LINE 40 IS AN IMMEDIATE, AND ITS DATUM IS WITNESSED TO ONE BIT --
+!   WHICH IS A SIXTH ENTRY FOR "WHAT THE ORACLE CANNOT SEE".
+!   "LI(BU,1),S TD DEN,46" renders "000000.00 80 401027.20 50", the
+!   printed pair.  An LI's first half word holds the DATUM and not an
+!   address, and a short field is LEFT-justified in the 24-bit A24
+!   field (Reference Manual p.56 "Field Definition", quoted at
+!   strap/strap_asm.py:311-324), so a ONE-BIT immediate puts the
+!   value's low bit at A24's bit 0 and discards everything else.
+!   MEASURED, varying nothing but the SYN and assembling
+!   "LI(BU,1),X,46":
+!
+!       X = 0     -> 000000.00 80 401027.20 50
+!       X = 1.0   -> 000000.00 80 401027.20 50
+!       X = 0.32  -> 000000.00 80 401027.20 50
+!       X = 2.0   -> 000000.00 80 401027.20 50
+!       X = 8     -> 000000.00 80 401027.20 50
+!       X = 1     -> 400000.00 80 401027.20 50
+!
+!   So this row establishes only that S TD DEN's value is EVEN.  That
+!   it is 0 comes from printed p.108 line 8's DEFINING card, a
+!   different page, and not from here.  An earlier draft of this deck
+!   said the row "pins S TD DEN's value to 0 exactly"; it does not,
+!   and the measurement above is why the sentence was removed.
+!   The leading 4 of the second half word, against line 15's
+!   "001027.20 50" for the same dds and offset, is the P
+!   (addressing-mode) field: P=4 is Immediate addressing, Reference
+!   Manual Appendix A footnote 3 ("This operation code may be
+!   suffixed by the letter 'I' to invoke immediate addressing"), as
+!   quoted at strap/strap_asm.py:126 and :1355-1367.
+!
+! ---------------------------------------------------------------
+! WHAT THE INK SAID AND WHAT SETTLED IT
+! ---------------------------------------------------------------
+! * THIS DRUM OPENS ROUND GLYPHS CONSTANTLY, AND THE OCTAL FIELDS
+!   PROVE IT ROW BY ROW.  Line 5 prints "C0CC04.C1 1C", line 13
+!   "C00002.33 8D", line 32 "C0CC07.41 3C", line 35 "C0CC00.1C C1".
+!   Every one of those C's sits in a field that can hold only 0-7, so
+!   each is a damaged 0 with certainty.
+! * BUT A C IN THE HEX BYTE IS USUALLY REAL ON THIS PAGE, and the
+!   assembler says which: 1C (lines 5, 23 -- SX with index $12 = C),
+!   3C (lines 32, 33, 37 -- SV/LV with $12), 8C (the SICs), C2 (lines
+!   14, 39 -- BRN) are all genuine.  The one place the open glyph IS a
+!   zero in the byte position is line 35, where "C0CC00.1C C1" is
+!   000000.10 01: the trailing byte is 01, the index $1.
+! * LINE 40'S SYMBOL IS "S TD DEN", NOT "S IO DEN".  At 400 dpi the
+!   two glyphs after the S read I and O.  At 900 dpi the first has a
+!   full top bar (T, not I) and the second a straight vertical left
+!   stem with squared corners (D, not O or C).  THE INDEPENDENT CHECK
+!   IS DECISIVE: printed p.108 line 8 defines "S TD DEN SYN(BU,1),0 --
+!   STANDARD DENSITY * 1-LOW, 0-HIGH" at 000000.00, and this page's
+!   printed 000000.00 is consistent with it (see the caveat above --
+!   the row witnesses only that the value is even).  Of the DEN-suffixed
+!   symbols carried by the 148 landed mcp_bootstrap decks' !SYM lines --
+!   S F DEN,
+!   S U DENS, S TD DEN, T DEN MD, K DENST, K DENOP, K KF DEN, Z CH DEN
+!   -- S TD DEN is the only one whose value is 0 (printed p.108 line 6's
+!   S INSTD, "INSTALLATION DENSITY", is also 000000.00 but is SYN(BU,24)
+!   and is not "S ?? DEN" shaped); that is a measurement
+!   over decks/, NOT over the volume, and a page nobody has opened could
+!   define another.  (The volume OCR of THIS page reads "DS TO DEND4SE"
+!   and is worthless here, as rule 5 says it must be.)
+! * CM0000 vs CM0C00 IS NOT A QUESTION.  A connective's mask digits
+!   can only be 0 or 1, so line 34's four round glyphs are zeros by
+!   construction -- and the second half word confirms it: CM0000
+!   prints "001000.00 F0" where line 8's and 26's CM1111 print
+!   "001000.36 F0".
+! * "IO IND" IS AN O, SETTLED BY RUNG 4 OF THE LADDER ON THIS PAGE
+!   ALONE.  The card "B,? IO IND" prints five times here (lines 2, 12,
+!   20, 30, 45).  Rendered side by side at 1200 dpi, line 20 prints a
+!   FULLY CLOSED O in the same character position where lines 2 and 12
+!   print an open C-shaped glyph -- one page, one drum, one card text,
+!   one character position, varying only the ink.  The comment column
+!   agrees (printed p.156 line 4 reads "-CHECK IO INDS") and so does
+!   the English: these are the I/O INDicators.
+!
+!   THIS CONTRADICTS A LANDED DECK, which is worth the caller's
+!   minute: decks/mcp_bootstrap_p160.strap SYNs the same word as
+!   EICIND where printed pp.156 and 163 both read E IO IND, and
+!   tests/check_symbol_spellings.py already reports it ("two spellings
+!   of one symbol at (8)221370.0: EICIND (pp.160) vs EIOIND
+!   (pp.156,163) -- glyph C/O").  That hit is PRE-EXISTING -- it fires
+!   with this deck removed, with pp.160 and 156 alone -- and this page
+!   only adds a third vote on the O side.  Nothing in this deck fixes
+!   p.160; saying which reading is right is as far as one page's ink
+!   can go.
+! * "K DENST" IS D, NOT C: the left stem is straight with squared
+!   corners at 900 dpi, and the symbol is pinned anyway by printed
+!   p.154's and p.156's decks at (8)217674.40, which is what lines 18
+!   and 43 print as "217674.50 00" (.40 plus B's .10).
+! * THE SAME-CARD-TWICE ARGUMENT IS AVAILABLE ALL OVER THIS PAGE AND
+!   WAS USED: "SIC,K K IND" prints on lines 1, 19, 29 and 44,
+!   "B,K IO IND" on 2, 20, 30 and 45, "SX,0,S IO INS($12)" on 5 and
+!   23, "L(B,2,1),S F DEN($13),46" on 13 and 38, "BRN,$+1.32" on 14
+!   and 39.  Every repetition compiles the same word and every one is
+!   checked below, so a misread glyph in any of them would have had to
+!   be misread identically four times.
+! * ONE PRINTED DIFFERENCE IS REAL AND IS KEPT: line 31 prints
+!   "LVI,0,1." and line 36 prints "LVI,0,1.0".  They compile to the
+!   same "000001.01 01"; the deck writes each as its own card prints
+!   it rather than normalising them.
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK
+! ---------------------------------------------------------------
+! EXACTLY TWO rows carry the extra asterisk after the location:
+! line 19 (220162.40 *) and line 38 (220175.40 *).  The whole column
+! was rendered on its own, full height, at 600 dpi to be sure there
+! are no others, and no row carries the SECOND line-column asterisk
+! that printed p.156 line 28 has.
+!
+! THIS PAGE REFUTES A STATEMENT-KEYED RULE AGAIN, twice over:
+! "SIC,K K IND" prints on lines 1, 19, 29 and 44 and only 19 is
+! starred; "L(B,2,1),S F DEN($13),46" prints on lines 13 and 38 and
+! only 38 is starred.  Same card text, same bits, same index, one
+! star.
+!
+! A PERIODICITY HYPOTHESIS WAS FORMED HERE AND KILLED HERE, so that
+! nobody spends an afternoon on it: this page's stars are 19 lines
+! apart, and so are printed p.156's (7, 26) and printed p.160's
+! (7, 26).  Measured over every landed deck's listing block, the gaps
+! are 3, 6, 23 on printed p.112 and 3, 23, 23 on p.111, so there is
+! NO periodicity.  The one-liner that measures it:
+!   awk '/^! *line +[0-9]+\*?\*? *[0-7]{6}\.[0-7]{2} *\*/ {print FILENAME, $0}' decks/mcp_bootstrap_p1*.strap
+! Record it and move on.
+!
+! ---------------------------------------------------------------
+! WHAT RESTS ON INK ALONE, AND WHAT IS UNOBSERVABLE
+! ---------------------------------------------------------------
+! * K FIL K1's SPELLING rests on this page's ink (see above); its
+!   ADDRESS does not.
+! * Every external SYNed below as "(8)nnnnnn.0" is back-derived from a
+!   printed branch, so its bit offset WITHIN the half word is
+!   unobservable; the half word itself IS checked.  The SIC rows
+!   (1, 19, 29, 44) print the bare 24-bit address, so K K IND IS
+!   pinned to the bit at 221371.00; E IND R likewise at 221371.00 from
+!   line 11.  K K IND and E IND R are therefore the SAME WORD under
+!   two names, and so are K IO IND and E IO IND -- which is exactly
+!   what printed p.156 found, independently, on its own lines 3/9 and
+!   4/10.
+! * S FILEK's bit offset is unobservable from this page: an index-
+!   arithmetic operand keeps only bit 32, so lines 32 and 37 would
+!   print "000007.41 3C" for 7.38 or for 7.32 alike.  The 7.38 below
+!   is printed p.101 line 25's defining card, not a reading of this
+!   page.  The same applies to S RET AD, S IO INS and S SCRPM, whose
+!   LENGTHS come from p.101 and not from here.
+! * S TD DEN, S F DEN, S SET UP, S CTL, S LABD: the dds on each SYN
+!   below is the DEFINING page's, carried verbatim so the merged image
+!   does not see two pages disagree about one symbol's length.
+! ---------------------------------------------------------------
+
+SRETAD  SYN(BU,19), 5.0              ! p.101 line 18 -RETURN ADDRESS IN MCP
+SIOINS  SYN(BU,64), 4.0              ! p.101 line 17 -IO INSTR. LAST
+SSCRPM  SYN(BU,64), 6.0              ! p.101 line 20 -SCRATCH PAD MEMORY
+SLABD   SYN(BU,1), 7.29              ! p.101 line 24 -DENSITY SPECIFIED IN
+SFILEK  SYN(BU,12), 7.38             ! p.101 line 25 -FILE COUNT
+SSETUP  SYN(BU,1), 0.31              ! p.99  line 29 -PSEUDO-OP SET-UP
+SCTL    SYN(BU,1), 0.60              ! p.99  line 48 -CONTROL - OPERATION
+SFDEN   SYN(BU,2), 2.27              ! p.102 line 12 -IOD DENSITY
+STDDEN  SYN(BU,1), 0                 ! p.108 line  8 -STANDARD DENSITY *1-LOW, 0-HIGH
+KSUPP   SYN, (8)216242.0             ! as twenty-one other decks write it
+MIOREJ  SYN, (8)221261.0             ! off lines 10 and 28; bit offset unobservable
+EINDR   SYN, (8)221371.0             ! off the SIC on line 11 -- pinned to the bit
+EIOIND  SYN, (8)221370.0             ! off line 12; bit offset unobservable
+KKIND   SYN, (8)221371.0             ! off the SICs on 1, 19, 29, 44 -- same word as E IND R
+KIOIND  SYN, (8)221370.0             ! off lines 2, 20, 30, 45 -- same word as E IO IND
+KDENST  SYN, (8)217674.40            ! off lines 18 and 43; the .40 half word IS checked
+ZSTEVL  SYN, (8)221144.40            ! as printed pp.151, 152 and 156 write it
+
+        SLC, (8)220147.40            ! the page prints no SLC; heading LOCATION 220147,
+                                     ! and p.162's own line 46 ends at 220147.40
+
+        SIC,KKIND                    ! line  1
+        B,KIOIND                     ! line  2  (same card as 1)
+        CNOP                         ! line  3  emits a half word: the counter was at .40
+        LX,0,$+1.0                   ! line  4
+        SX,0,SIOINS($12)             ! line  5  (same card as 4)
+        CTL,0.0($14),62.             ! line  6  -SPACE BLOCK COMMAND
+        LVI,1,KSUPP                  ! line  7
+        CM1111(BU,1),SSETUP($11)     ! line  8
+        SIC,SRETAD($12)              ! line  9
+        B,MIOREJ                     ! line 10  (same card as 9)
+        SIC,EINDR                    ! line 11
+        B,EIOIND                     ! line 12  (same card as 11)
+KSPTM   L(B,2,1),SFDEN($13),46       ! line 13  -SPACE OVER TAPE MARK
+        BRN,$+1.32                   ! line 14
+        L(BU,1),SLABD($12),46        ! line 15
+        LV,0,$R                      ! line 16
+        SIC,SRETAD($12)              ! line 17
+        B,KDENST                     ! line 18  (same card as 17)
+        SIC,KKIND                    ! line 19  (location carries the trailing asterisk)
+        B,KIOIND                     ! line 20  (same card as 19)
+        CNOP                         ! line 21  emits a half word: the counter was at .40
+        LX,0,$+1.0                   ! line 22
+        SX,0,SIOINS($12)             ! line 23  (same card as 22)
+        CTL,0.0($14),(8)77.          ! line 24  -SPACE FILE COMMAND
+        LVI,1,KSUPP                  ! line 25
+        CM1111(BU,1),SSETUP($11)     ! line 26
+        SIC,SRETAD($12)              ! line 27
+        B,MIOREJ                     ! line 28  (same card as 27)
+        SIC,KKIND                    ! line 29
+        B,KIOIND                     ! line 30  (same card as 29)
+KFILK1  LVI,0,1.                     ! line 31
+        SV,0,SFILEK($12)             ! line 32  (same card as 31) -SET FILE COUNT TO +1
+        LV,1,SSCRPM($12)             ! line 33  -PICK UP RETURN ADDRESS
+        CM0000(BU,1),SCTL($11)       ! line 34
+        B,0.0($1)                    ! line 35
+KNSYST  LVI,0,1.0                    ! line 36
+        SV,0,SFILEK($12)             ! line 37  (same card as 36) -SET FILE COUNT TO +1
+        L(B,2,1),SFDEN($13),46       ! line 38  -SET UNIT TO IOD DENSITY
+                                     !          (location carries the trailing asterisk)
+        BRN,$+1.32                   ! line 39
+        LI(BU,1),STDDEN,46           ! line 40
+        LV,0,$R                      ! line 41
+        SIC,SRETAD($12)              ! line 42
+        B,KDENST                     ! line 43  (same card as 42)
+        SIC,KKIND                    ! line 44
+        B,KIOIND                     ! line 45  (same card as 44)
+        B,ZSTEVL                     ! line 46
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, line by line.  The card serial in the right
+! margin runs IH000042 .. IH000074 with no gap; it is given for every
+! line, because thirteen cards carry two printed lines and the
+! repeats are the evidence that 46 lines are 33 cards.
+!
+!   line  1* 220147.40   221371.00 80                   SIC,K K IND                            IH000042
+!   line  2* 220150.00   221370.10 00                   B,K IO IND                             IH000042
+!   line  3* 220150.40   000000.30 00                   CNOP                                   IH000043
+!   line  4* 220151.00   220152.00 10                   LX,0,$+1.0                             IH000044
+!   line  5* 220151.40   000004.01 1C                   SX,0,S IO INS($12)                     IH000044
+!   line  6* 220152.00   000000.00 8E 000076.05 00      CTL,0.0($14),62.  -SPACE BLOCK COMMAND IH000045
+!   line  7* 220153.00   216242.03 01                   LVI,1,K SUPP                           IH000046
+!   line  8* 220153.40   000000.37 8B 001000.36 F0      CM1111(BU,1),S SET UP($11)             IH000047
+!   line  9* 220154.40   000005.00 8C                   SIC,S RET AD($12)                      IH000048
+!   line 10* 220155.00   221261.10 00                   B,M IO REJ                             IH000048
+!   line 11* 220155.40   221371.00 80                   SIC,E IND R                            IH000049
+!   line 12* 220156.00   221370.10 00                   B,E IO IND                             IH000049
+!   line 13* 220156.40   000002.33 8D 002127.00 50    K SP TM  L(B,2,1),S FDEN($13),46  -SPACE OVER TAPE MARK  IH000050
+!   line 14* 220157.40   220161.35 C2                   BRN,$+1.32                             IH000051
+!   line 15* 220160.00   000007.35 8C 001027.20 50      L(BU,1),S LABD($12),46                 IH000052
+!   line 16* 220161.00   000011.00 30                   LV,0,$R                                IH000053
+!   line 17* 220161.40   000005.00 8C                   SIC,S RET AD($12)                      IH000054
+!   line 18* 220162.00   217674.50 00                   B,K DENST                              IH000054
+!   line 19* 220162.40 * 221371.00 80                   SIC,K K IND                            IH000055
+!   line 20* 220163.00   221370.10 00                   B,K IO IND                             IH000055
+!   line 21* 220163.40   000000.30 00                   CNOP                                   IH000056
+!   line 22* 220164.00   220165.00 10                   LX,0,$+1.0                             IH000057
+!   line 23* 220164.40   000004.01 1C                   SX,0,S IO INS($12)                     IH000057
+!   line 24* 220165.00   000000.00 8E 000077.05 00      CTL,0.0($14),(8)77.  -SPACE FILE COMMAND  IH000058
+!   line 25* 220166.00   216242.03 01                   LVI,1,K SUPP                           IH000059
+!   line 26* 220166.40   000000.37 8B 001000.36 F0      CM1111(BU,1),S SET UP($11)             IH000060
+!   line 27* 220167.40   000005.00 8C                   SIC,S RET AD($12)                      IH000061
+!   line 28* 220170.00   221261.10 00                   B,M IO REJ                             IH000061
+!   line 29* 220170.40   221371.00 80                   SIC,K K IND                            IH000062
+!   line 30* 220171.00   221370.10 00                   B,K IO IND                             IH000062
+!   line 31* 220171.40   000001.01 01                 K FIL K1  LVI,0,1.                       IH000063
+!   line 32* 220172.00   000007.41 3C                   SV,0,S FILEK($12)  -SET FILE COUNT TO +1  IH000063
+!   line 33* 220172.40   000006.02 3C                   LV,1,S SCRPM($12)  -PICK UP RETURN ADDRESS  IH000064
+!   line 34* 220173.00   000000.74 8B 001000.00 F0      CM0000(BU,1),S CTL($11)                IH000065
+!   line 35* 220174.00   000000.10 01                   B,0.0($1)                              IH000066
+!   line 36* 220174.40   000001.01 01                 K N SYST  LVI,0,1.0                      IH000067
+!   line 37* 220175.00   000007.41 3C                   SV,0,S FILE K($12)  -SET FILE COUNT TO +1  IH000067
+!   line 38* 220175.40 * 000002.33 8D 002127.00 50      L(B,2,1),S FDEN($13),46  -SET UNIT TO IOD DENSITY  IH000068
+!   line 39* 220176.40   220200.35 C2                   BRN,$+1.32                             IH000069
+!   line 40* 220177.00   000000.00 80 401027.20 50      LI(BU,1),S TD DEN,46                   IH000070
+!   line 41* 220200.00   000011.00 30                   LV,0,$R                                IH000071
+!   line 42* 220200.40   000005.00 8C                   SIC,S RET AD($12)                      IH000072
+!   line 43* 220201.00   217674.50 00                   B,K DENST                              IH000072
+!   line 44* 220201.40   221371.00 80                   SIC,K K IND                            IH000073
+!   line 45* 220202.00   221370.10 00                   B,K IO IND                             IH000073
+!   line 46* 220202.40   221144.50 00                   B,Z STEVL                              IH000074
+! ---------------------------------------------------------------
+
+!SYM   KSPTM    220156.40
+!SYM   KFILK1   220171.40
+!SYM   KNSYST   220174.40
+!CHECK 220147.40 | 221371.00 80 | line 1 SIC,K K IND -- the first row on the page; a SIC prints the bare 24-bit address, so this row pins K K IND to the bit
+!CHECK 220150.00 | 221370.10 00 | line 2 B,K IO IND (same card as line 1) -- .10 is B's operation bits, so K IO IND is 221370.00 to the half word only
+!CHECK 220150.40 | 000000.30 00 | line 3 CNOP -- the counter arrived at .40, so unlike p.156's line 11 this CNOP emitted a real half-word no-op at its own printed location
+!CHECK 220151.00 | 220152.00 10 | line 4 LX,0,$+1.0 -- the target is line 6's word, which is where line 5 stores the built instruction
+!CHECK 220151.40 | 000004.01 1C | line 5 SX,0,S IO INS($12) (same card as line 4) -- .01 is SX's operation bit, byte C is i = $12
+!CHECK 220152.00 | 000000.00 8E 000076.05 00 | line 6 CTL,0.0($14),62. -SPACE BLOCK COMMAND -- 62 DECIMAL is 0o76, which is the printed field; the .05 checks plain CTL against CTL(SEOP)'s .15 and the 8E checks the index $14
+!CHECK 220153.00 | 216242.03 01 | line 7 LVI,1,K SUPP -- the .03 is LVI's .01 plus J=1's .02, not address bits
+!CHECK 220153.40 | 000000.37 8B 001000.36 F0 | line 8 CM1111(BU,1),S SET UP($11) -- .37 is S SET UP's bit 31; CM0000 would print 001000.00 (see line 34), and byte B is i = $11
+!CHECK 220154.40 | 000005.00 8C | line 9 SIC,S RET AD($12) -- byte 8C is 80 for SIC plus i = $12 = C, so this C is REAL and not a damaged 0
+!CHECK 220155.00 | 221261.10 00 | line 10 B,M IO REJ (same card as line 9) -- printed p.152 line 6 and p.156 lines 2 and 18 print the identical card
+!CHECK 220155.40 | 221371.00 80 | line 11 SIC,E IND R -- same word as line 1's K K IND under a different name, and pinned to the bit by the SIC
+!CHECK 220156.00 | 221370.10 00 | line 12 B,E IO IND (same card as line 11) -- same word as line 2's K IO IND
+!CHECK 220156.40 | 000002.33 8D 002127.00 50 | line 13 K SP TM L(B,2,1),S FDEN($13),46 -SPACE OVER TAPE MARK -- .33 is S F DEN's bit 27; the second half word is the dds (B,2,1) with offset 46, which differs from line 15's (BU,1) 001027.20 and is printed identically on line 38; byte 8D is i = $13
+!CHECK 220157.40 | 220161.35 C2 | line 14 BRN,$+1.32 -- $ is 220157.40 and 1.32 decimal is 1.40 octal, so the target is 220161.00, i.e. line 16, skipping line 15's full word; the .35 is BRN's operation bits and the C2 is real
+!CHECK 220160.00 | 000007.35 8C 001027.20 50 | line 15 L(BU,1),S LABD($12),46 -- .35 is S LABD's bit 29; the second half word is identical to printed p.156 line 5's, which is the same dds and the same offset
+!CHECK 220161.00 | 000011.00 30 | line 16 LV,0,$R -- $R is word 0o11 out of SYSTEM_SYMBOLS and J=0, so the row prints it bare
+!CHECK 220161.40 | 000005.00 8C | line 17 SIC,S RET AD($12) -- the second of five printings of this card on one page
+!CHECK 220162.00 | 217674.50 00 | line 18 B,K DENST (same card as line 17) -- .50 is K DENST's own .40 plus B's .10
+!CHECK 220162.40 | 221371.00 80 | line 19 SIC,K K IND -- THIS location carries the trailing asterisk and lines 1, 29 and 44, the same card, do not
+!CHECK 220163.00 | 221370.10 00 | line 20 B,K IO IND (same card as line 19)
+!CHECK 220163.40 | 000000.30 00 | line 21 CNOP -- the second aligning no-op; the counter was again at .40
+!CHECK 220164.00 | 220165.00 10 | line 22 LX,0,$+1.0 -- the byte reads 1C at 400 dpi and is 10: an LX has no index here, exactly as line 4 has none
+!CHECK 220164.40 | 000004.01 1C | line 23 SX,0,S IO INS($12) (same card as line 22) -- bit-identical to line 5
+!CHECK 220165.00 | 000000.00 8E 000077.05 00 | line 24 CTL,0.0($14),(8)77. -SPACE FILE COMMAND -- THE DOTTED OCTAL CONTROL CODE, which printed p.156 line 14 had to leave failing; it now compiles word-granular and matches the print
+!CHECK 220166.00 | 216242.03 01 | line 25 LVI,1,K SUPP (bit-identical to line 7)
+!CHECK 220166.40 | 000000.37 8B 001000.36 F0 | line 26 CM1111(BU,1),S SET UP($11) (bit-identical to line 8)
+!CHECK 220167.40 | 000005.00 8C | line 27 SIC,S RET AD($12)
+!CHECK 220170.00 | 221261.10 00 | line 28 B,M IO REJ (same card as line 27)
+!CHECK 220170.40 | 221371.00 80 | line 29 SIC,K K IND
+!CHECK 220171.00 | 221370.10 00 | line 30 B,K IO IND (same card as line 29)
+!CHECK 220171.40 | 000001.01 01 | line 31 K FIL K1 LVI,0,1. -- J=0, so the .01 is LVI's operation bit alone; the name is eight characters, the full NAME field, and rests on this page's ink
+!CHECK 220172.00 | 000007.41 3C | line 32 SV,0,S FILEK($12) (same card as line 31) -SET FILE COUNT TO +1 -- .41 is SV's .01 plus S FILEK's bit 32; the bits BELOW 32 are dropped by an index-arithmetic operand, so 7.38 and 7.32 are indistinguishable here
+!CHECK 220172.40 | 000006.02 3C | line 33 LV,1,S SCRPM($12) -PICK UP RETURN ADDRESS -- .02 is J=1, so S SCRPM is word 6 bit 0; printed p.156 line 22 reads the same word with L(BU,30)
+!CHECK 220173.00 | 000000.74 8B 001000.00 F0 | line 34 CM0000(BU,1),S CTL($11) -- 0o74 is S CTL's bit 60; the second half word's .00 against line 8's .36 is what distinguishes CM0000 from CM1111, so the four round mask glyphs are zeros twice over
+!CHECK 220174.00 | 000000.10 01 | line 35 B,0.0($1) -- address 0.0 plus B's .10, byte 01 = i = $1; this is the one row where the byte's leading glyph really is a zero
+!CHECK 220174.40 | 000001.01 01 | line 36 K N SYST LVI,0,1.0 -- printed with a trailing 0 where line 31 prints a bare dot; same bits, and the location is pinned independently by printed p.162's BZB at 220174.74
+!CHECK 220175.00 | 000007.41 3C | line 37 SV,0,S FILE K($12) (same card as line 36) -SET FILE COUNT TO +1 -- printed "S FILE K" with a space where line 32 prints "S FILEK"; one symbol
+!CHECK 220175.40 | 000002.33 8D 002127.00 50 | line 38 L(B,2,1),S FDEN($13),46 -SET UNIT TO IOD DENSITY -- bit-identical to line 13 and the SECOND starred location on the page, which is what refutes keying the asterisk to the statement
+!CHECK 220176.40 | 220200.35 C2 | line 39 BRN,$+1.32 -- target 220200.00, i.e. line 41, skipping line 40's full word, exactly as line 14 skips line 15
+!CHECK 220177.00 | 000000.00 80 401027.20 50 | line 40 LI(BU,1),S TD DEN,46 -- the leading 4 of the second half word is the P field, P=4 being Immediate addressing (line 15's L prints 001027.20 for the same dds and offset); an LI's first half word is the DATUM, left-justified, so a ONE-BIT immediate witnesses only the value's low bit -- measured, X = 0, 1.0, 0.32, 2.0 and 8 all print 000000.00 and only X = 1 prints 400000.00, so this row establishes that S TD DEN is EVEN and printed p.108 line 8 is what makes it 0
+!CHECK 220200.00 | 000011.00 30 | line 41 LV,0,$R (bit-identical to line 16)
+!CHECK 220200.40 | 000005.00 8C | line 42 SIC,S RET AD($12)
+!CHECK 220201.00 | 217674.50 00 | line 43 B,K DENST (same card as line 42)
+!CHECK 220201.40 | 221371.00 80 | line 44 SIC,K K IND
+!CHECK 220202.00 | 221370.10 00 | line 45 B,K IO IND (same card as line 44)
+!CHECK 220202.40 | 221144.50 00 | line 46 B,Z STEVL -- .50 is Z STEVL's .40 plus B's .10; a half word, so the counter leaves this page at 220203.00, which is where printed p.164's line 4 is printed

@@ -274,6 +274,19 @@ IO_BASE_OPS = {'RD', 'W', 'CTL', 'LOC', 'REL', 'CCW'}
 IO_FUNCTION_OPS = {
     'SPFL': 0o77,    # Space File, IBM 729 IV; Reference Manual p.132
     'GONG': 0o177,   # Sound Gong, IBM 7152 Operator's Console; RefMan p.150
+    # REW joined on 2026-11-02 on the SAME bar SPFL met, not on a name
+    # resemblance.  (1) C28-6129 Appendix B lists "REW Rewind";
+    # (2) the Reference Manual's 729 IV table gives "136 | Rewind (EOP
+    # given at initiation; CS when load point reached)"; and (3) MCP
+    # printed p.165 line 11 PRINTS 000136 with .15 = CTLSEOP in bits
+    # 50-55 -- the same three-way agreement, with the name matching
+    # the table VERBATIM, which is precisely what "Backspace" against
+    # "Backspace Block" does not do.  Until it landed, printed p.165
+    # had to substitute "CTL(SEOP),0.0($14),(8)136." for the page's
+    # own "REW(SEOP),0.0($14)", which strap_asm refused with "unknown
+    # data-description mode 'SEOP'" because REW was not here and
+    # "(SEOP)" fell through to the dds parser.
+    'REW':  0o136,   # Rewind, IBM 729 IV; Reference Manual p.132
 }
 
 # A NOTE ON 0o177, because the collision is real and deliberate.  The
@@ -1873,6 +1886,29 @@ def inherited_dds(stmt, symtab):
     if not stmt.fields or not stmt.fields[0].strip():
         return None
     base, _ = split_field_trailing_paren(stmt.fields[0])
+    # >>> A NAME MAY CARRY BLANKS, AND THAT USED TO LOSE THE dds
+    # SILENTLY. <<<  STRAP ignores blanks inside a symbol (see
+    # _BLANKED_SYMBOL and C22-6531 printed p.10), and the rest of this
+    # file honours that -- but referenced_symbols() is a pure syntax
+    # scan, so "S CTL" came back as the TWO names {'S', 'CTL'}, the
+    # len(names) != 1 test fired, and a statement writing no dds of its
+    # own quietly compiled with LENGTH 0 instead of the symbol's.
+    #
+    # MCP printed p.164 prints "CM1111,S CTL(EU)" with no dds.
+    # Measured against "SCTL SYN(BU,1),0.60", nothing else varying:
+    #
+    #   CM1111,SCTL(EU)         ->  001000.36 F0   (the printed word)
+    #   CM1111,S CTL(EU)        ->  000000.36 F0   WRONG, and silent
+    #   CM1111(BU,1),S CTL(EU)  ->  001000.36 F0
+    #
+    # The address resolved correctly the whole time -- only the length
+    # was lost -- so nothing but a !CHECK on that row could see it.
+    stripped = base.strip()
+    if _BLANKED_SYMBOL.match(stripped):
+        closed = stripped.replace(' ', '').upper()
+        dds = getattr(symtab, 'sym_dds', {}).get(closed)
+        if dds is not None:
+            return dds
     names = sorted(referenced_symbols(base, stmt.lineno))
     if len(names) != 1:
         return None
@@ -2359,6 +2395,23 @@ def statement_size(stmt, symtab=None):
 class Image:
     def __init__(self):
         self.reservations = []      # (bit location, bit width) from DR
+        # >>> AND WHAT A FORWARD SLC JUMPED OVER. <<<  Recorded in the
+        # same shape and for the same reason as a DR's range: it is the
+        # SECOND legitimate hole in an image.  A DR says "reserve this
+        # storage"; a forward SLC says "the counter moves on, and what
+        # lies between is not this deck's".  Both leave the words as
+        # the loader found them, and a caller walking an image word by
+        # word cannot otherwise tell either one from a transcription
+        # that LOST a word.
+        #
+        # MCP printed p.112 is the case that needed it: five printed
+        # SLC cards (SIPT+4.0, +9.0, +18.0, +20.0, +22.0, the line-11
+        # comment naming them "PARALLEL IO INTERRUPT SLOTS") skip
+        # exactly thirteen words -- 215104-6, 215110-13, 215121-4,
+        # 215126, 215130 -- and no deck in the corpus emits at any of
+        # them.  Without this they are indistinguishable from thirteen
+        # lost words.
+        self.skips = []             # (bit location, bit width) from SLC
         self.words = {}
         self._written = {}  # word_addr -> bitmask of bits already deposited,
                              # to catch a size-computation/alignment bug
@@ -2503,7 +2556,7 @@ DEFAULT_ORIGIN_BITS = 32 * 64
 
 
 class AssembledProgram:
-    def __init__(self, words, symtab, end_pc, reservations=()):
+    def __init__(self, words, symtab, end_pc, reservations=(), skips=()):
         self.words = words          # dict word_addr(int) -> value(int)
         self.symtab = symtab        # dict SYMBOL(str) -> bit-count(int)
         self.end_pc = end_pc        # half-word PC (int) from an END statement, or None
@@ -2517,6 +2570,7 @@ class AssembledProgram:
         # word reads as zero and a zero half word is BRANCH ENABLED to
         # location zero.  DRZ is NOT here, because it emits.
         self.reservations = list(reservations)
+        self.skips = list(skips)
 
     def reserved_words(self):
         """The set of whole word addresses this program reserved."""
@@ -2524,6 +2578,20 @@ class AssembledProgram:
         for loc, width in self.reservations:
             for b in range(loc, loc + width, 64):
                 out.add(b // 64)
+        return out
+
+    def skipped_words(self):
+        """Whole word addresses a forward SLC jumped over.
+
+        Only words wholly inside the jump count: an SLC landing
+        mid-word leaves the rest of that word to whatever emits next,
+        so it is not a hole.
+        """
+        out = set()
+        for loc, width in self.skips:
+            first = (loc + 63) // 64
+            last = (loc + width) // 64
+            out.update(range(first, last))
         return out
 
 
@@ -2701,6 +2769,7 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
     # before every full-word instruction.
     symtab = SymTab()
     gaps = []
+    slc_skips = []   # (bit loc, bit width) a forward SLC jumped over
     syn_stmts = []  # SYN statements: named but NOT assigned the location
                      # counter (unlike every other pseudo-op/instruction)
                      # -- their value comes from evaluating their own
@@ -2775,6 +2844,8 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
             # NOT entered into symtab, so a later reference to it
             # fails loud as undefined rather than silently meaning
             # the new location.
+            if new_loc > loc:
+                slc_skips.append((loc, new_loc - loc))
             loc = new_loc
             stmt.addr = loc
             continue
@@ -2836,6 +2907,7 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
 
     # Pass 2: evaluate + emit.
     image = Image()
+    image.skips = slc_skips
     for gap_start, gap_size in gaps:
         # A CNOP's gap need not start on a half-word boundary, because
         # the statement before it need not have ended on one.  MCP's
@@ -2877,7 +2949,8 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
                 raise AssemblerError("END target is not half-word aligned", stmt.lineno)
             end_pc = target_bits // 32
 
-    return AssembledProgram(image.words, symtab, end_pc, image.reservations)
+    return AssembledProgram(image.words, symtab, end_pc, image.reservations,
+                            image.skips)
 
 
 def apply_parenthetical_entries(stmt, symtab, image):

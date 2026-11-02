@@ -156,8 +156,22 @@
 !         LVI, 9,(8)215776.0  ->  215776.23 01
 !         LVI,15,(8)215776.0  ->  215776.37 01
 !
-!     so J prints as 2J (+1 for the immediate forms) in the octal
-!     offset position, and the operand's bit 18 adds 0o40 on top.
+!     so J prints as 2J in the octal offset position, and the
+!     operand's bit 18 adds 0o40 on top.
+!
+!     >>> CORRECTED 2026-11-02: THIS SAID "(+1 for the immediate
+!     forms)" AND THAT MISATTRIBUTES THE LOW BIT. <<<  The STORE
+!     forms set it too, and they are not immediate.  Measured,
+!     varying only J:
+!         LV,2,X   -> .04      SV,2,X   -> .05
+!         LV,8,X   -> .20      SV,8,X   -> .21
+!         LVI,2    -> .05      SVA,9,X  -> .23   (2*9+1)
+!     So the low bit is an OPERATION bit that both the immediate and
+!     the store forms set -- not a property of immediates.  THIS
+!     DECK ALREADY CONTAINED THE COUNTEREXAMPLE: line 12's
+!     "SVA,9,K LOCTD" prints .23 = 2*9+1 and SVA is a store.
+!     Caught by printed p.164's transcriber.  No bit on this page
+!     changes; every !CHECK here passed before and after.
 !     Line 11 is 0o40 (Z STEVL's .40) + 0o23 (J=9) = 0o63; line 12
 !     is 0o00 (K LOCTD's .00) + 0o23 = 0o23; line 9 is 0 + 0o03
 !     (J=1).  The page's own lines 28 and 30 print 0o22 for LV,9

@@ -1,0 +1,430 @@
+! mcp_bootstrap_p161.strap -- two small I/O entry points, FEED CARD
+! (W FC) and ERASE LONG GAP (E ELG), printed page 161.
+! docs/MCP_Mar63_001-249.pdf PDF p.168.  Header READ and not
+! assumed: the top line prints "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID IF000001   DIST. OF 3/01    3/01    PAGE NUMBER  161".
+!
+! THE COLUMN-HEADING ROW'S OWN "LOCATION" FIELD IS BLANK.  Rendered
+! alone at 900 dpi (x=12000,y=820 at that dpi): nothing but the
+! dashed rule runs through it.  That is NOT a refutation of this
+! page's origin -- docs/transcription_workflow.md records the field
+! as LINE 1'S location, and line 1 here is an asterisk banner that
+! compiles nothing, exactly the printed-p.147 case.  A reader that
+! returns digits from this field on this page is reading the rule.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! TWENTY-EIGHT PRINTED LINES, TWENTY-FIVE CARDS, SEVENTEEN EMITTED
+! HALF WORDS.  Two routines, each opened by its own three-card
+! asterisk banner and its own printed "SLC,$":
+!
+!   lines  1-3   asterisk banner, "FEED CARD"
+!   line   4     SLC,$ at 220106.00  (second asterisk in LOCATION)
+!   lines  5-16  W FC, the FEED CARD entry.  It saves its return
+!                (V-I,2,.32 ; SV,2,S TIC), asks index 4 whether the
+!                unit is a punch (KVI,4,2.0 "- IS IT A PUNCH") and
+!                exits to K ILEGL if not; sets S CH OP to say the
+!                channel is operating; then builds the I/O command
+!                in place: LX,0,$+1.0 picks up the very next word
+!                -- line 13's CTL -- and SX,0,S IO INS($12) files
+!                it as "the last I/O instruction", which is the
+!                word printed p.160 line 23 reads back with
+!                "L(BU,18),S IO INS+.32($12)".  Line 13 then
+!                ISSUES it, "-CARD RUN OUT COMMAND"; line 14 sets
+!                S CTL (control operation); lines 15-16 set the
+!                return to K SUPP and go to M IO REJ,
+!                "-CHECK IF COMMAND ACCEPTED".
+!   lines 17-18  two comment cards carrying nothing but the "-"
+!   lines 19-21  asterisk banner, "ERASE LONG GAP"
+!   line  22     SLC,$ at 220115.00  (second asterisk in LOCATION)
+!   lines 23-28  E ELG, the ERASE LONG GAP entry.  The same four
+!                opening cards with a different index-4 datum
+!                (KVI,4,4.0 instead of 2.0), S ELG set instead of
+!                S CH OP, and an exit to W 23K, "-FAKE EOP" --
+!                i.e. it never issues anything, it just reports an
+!                end-of-operation.  W 23K is printed p.158 line 14,
+!                "W 23K  LCI,7,(8)40   -FAKE EOP".
+!
+! There is no DD, SYN, VF, XW or reservation on this page and no
+! hole in its storage: the seventeen emitted half words run
+! 220106.00 .. 220120.00 with nothing skipped.
+!
+! ---------------------------------------------------------------
+! NOTHING FELL OFF EITHER END -- COUNTED OFF THE CARD SERIALS
+! ---------------------------------------------------------------
+! THE SURVEY SAID 16 ROWS, 220106.00..220120.00.  The locations are
+! right and the count is short by twelve lines: it lost both
+! three-card banners (lines 1-3, 19-21), both "SLC,$" rows (4, 22),
+! the two bare "-" cards (17, 18), the CNOP (10), and the three
+! lines that share a card with the line above them.  Counting off
+! the card-serial column instead:
+!
+!   line  1 = IF000001  ...  line 16 = IF000014
+!   line 17 = IF000015        line 18 = IF000016
+!   line 19 = IG000001  ...  line 28 = IG000009
+!
+! IF000001-IF000016 is 16 cards and IG000001-IG000009 is 9, which
+! is 25 cards for 28 lines.  The three extra lines are THREE CARDS
+! THAT CARRY TWO HALF-WORD STATEMENTS EACH, printed on two lines
+! with one serial:
+!
+!   IF000011 = lines 11+12   LX,0,$+1.0 ; SX,0,S IO INS($12)
+!   IF000014 = lines 15+16   LVI,1,K SUPP ; B,M IO REJ
+!   IG000005 = lines 23+24   V-I,2,.32 ; SV,2,S TIC
+!
+! 25 + 3 = 28.  Line 1 is IF000001, the first card of a new serial
+! block (printed p.160 ran IE...), and it is also what the page
+! header prints as its CARD ID, so no card fell off the top; line
+! 28 is IG000009 and the paper below it is blank to the foot of
+! the form, so none fell off the bottom.
+!
+! Lines 5+6 are TWO cards (IF000005, IF000006) although lines 23+24
+! are the same two statements on ONE card (IG000005).  That is the
+! listing's own witness that the two routines were keypunched
+! separately, and it is recorded because it is the kind of detail
+! no check can recover later.
+!
+! ---------------------------------------------------------------
+! THE BACKWARD JOIN -- CONFIRMED FROM THIS PAGE'S OWN INK
+! ---------------------------------------------------------------
+! printed p.160 predicted this page begins at 220106.00, with a
+! second asterisk on that row and an asterisk banner above it.  All
+! three hold, read off the render and not off any OCR:
+!
+!   * line 4 is "220106.00  *   SLC,$".  An SLC emits nothing, so
+!     its printed LOCATION _is_ the counter arriving from printed
+!     p.160 -- IBM's own assembler stating the join.  p.160's line
+!     34 is a half-word branch at 220105.40; 220105.40 + .40 =
+!     220106.00.  AGREES.
+!   * the second asterisk is there, after the location, exactly as
+!     predicted.
+!   * lines 1-3 are the asterisk banner, so the heading row's
+!     LOCATION field is blank, which p.160 named in advance as the
+!     expected non-refutation.
+!
+! ---------------------------------------------------------------
+! THE FORWARD JOIN -- A FALSIFIABLE PREDICTION FOR printed p.162
+! ---------------------------------------------------------------
+! THE COUNTER LEAVES THIS PAGE AT 220120.40, NOT AT 220120.00.
+! Line 28 is a HALF word at 220120.00 (its printed byte 00 is a
+! plain B), so the next card lands in the second half of the same
+! word.  Four ways to break the claim:
+!
+!   1. printed p.162's first LOCATED row should be 220120.40.
+!   2. That row should carry the label R 1, and its routine should
+!      be "-SPACE BLOCK".
+!   3. If p.162 prints its own "SLC,$", that row's LOCATION is the
+!      arriving counter and must read 220120.40.
+!   4. Its heading-row LOCATION field should be BLANK if line 1 is
+!      a banner and should read 220120 otherwise; any OTHER number
+!      there refutes (1).
+!
+! (2) is not a guess.  printed p.178 (PDF p.185) is the operation
+! branch table and its OCR carries, as lines 10, 13 and 14 of that
+! page:
+!
+!   10*  220747.00   220106.10 00   B,W FC   -FEED CARD - PUNCH ONLY
+!   13*  220750.40   220115.10 00   B,E ELG  -ERASE LONG GAP
+!   14*  220751.00   220120.50 00   B,R 1    -SPACE BLOCK
+!
+! A plain B prints target+.10, so .10 is a target at .00 and .50 is
+! a target at .40: W FC at 220106.00, E ELG at 220115.00, R 1 at
+! 220120.40.  The first two are THIS page's two labels at THIS
+! page's two locations, read by a different transcriber off a
+! different page -- which is what makes the third line credible
+! about where p.162 starts.  It is an INDEX and not a witness
+! (docs/transcription_workflow.md: the volume OCR of page N is not
+! a witness for page N -- but p.178 is not this page), so p.162's
+! own render decides it.
+!
+! p.178's table also hands p.162's transcriber two more rows to
+! check against: R 1+1.0 at 220121.40 "-BACKSPACE BLOCK" and two
+! further R-entries at 220122.40 and 220123.40.
+!
+! ---------------------------------------------------------------
+! THE ONE SUBSTITUTION, LABELLED LOUDLY
+! ---------------------------------------------------------------
+! >>> The page prints "SLC,$" on line 4, at LOCATION 220106.00.
+!     This deck writes the hard origin "SLC,(8)220106.0" so it
+!     assembles standalone.  A hard SLC CANNOT DISAGREE with the
+!     arriving counter -- it overrides it silently -- so this deck
+!     ASSERTS 220106.00 and does not check it.  The printed form is
+!     "SLC,$" and the printed LOCATION is 220106.00; that is the
+!     reading to compare by hand against printed p.160, and it is
+!     compared above and agrees. <<<
+!
+! >>> LINE 22'S "SLC,$" IS DELIBERATELY NOT WRITTEN AT ALL. <<<
+!     Writing a second hard "SLC,(8)220115.0" would assert that
+!     word too and throw away a check that is free.  Omitted, the
+!     deck's own counter has to WALK from line 4 through sixteen
+!     half words and arrive at 220115.00 by itself, and line 23's
+!     !CHECK is at that location, so a lost or invented row
+!     anywhere in lines 5-16 fails the page.  The printed row is
+!     recorded in the listing block below with no check, as
+!     "220115.00  *   SLC,$".
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- EVERY ONE ALREADY LANDED, WITH ITS DATA DESCRIPTION
+! ---------------------------------------------------------------
+! Nine symbols, all defined on pages that are already transcribed.
+! The four VFL operands carry the DATA DESCRIPTION their DEFINING
+! page prints, because a connective takes its length from the
+! symbol and the merged image refuses a disagreement.
+!
+! S TIC    215265.00  STored Instruction Counter.  decks p.110
+!                     (line 194) and p.117 (line 257) both carry
+!                     "(8)215265.0"; the name was settled out of
+!                     C22-6728, 75 hits for STIC and none for STIO.
+!                     Lines 6 and 24 are SVs: see the note on the
+!                     ".05" below -- they pin the HALF WORD only.
+STIC    SYN, (8)215265.0
+! S CH OP  0.26       printed p.99 line 22, "-CHAN OPERATING";
+!                     decks p.99 (line 181), p.123 and p.128 carry
+!                     "SYN(BU,1), 0.26".  Line 9 prints 000000.32
+!                     = 0o32 = 26, so this one is pinned TO THE BIT
+!                     by this page.
+SCHOP   SYN(BU,1), 0.26
+! S IO INS 4.0        printed p.101 line 17, "-IO INSTR. LAST";
+!                     decks p.101 (line 235), p.122, p.135 and
+!                     p.152 carry "SYN(BU,64), 4.0".  Line 12
+!                     prints 000004.01 -- the word is pinned and
+!                     the .01 is the index-0 operand, not an
+!                     offset.
+SIOINS  SYN(BU,64), 4.0
+! S CTL    0.60       printed p.99 line 48, "-CONTROL - OPERATION";
+!                     decks p.99 (line 220), p.122 and p.155 carry
+!                     "SYN(BU,1), 0.60".  Line 14 prints 000000.74
+!                     = 0o74 = 60: pinned to the bit.
+SCTL    SYN(BU,1), 0.60
+! S ELG    0.50       printed p.99 line 41, "-ERASE LONG GAP" --
+!                     the same four words this page's own banner
+!                     prints.  decks p.99 (line 213) and p.154
+!                     carry "SYN(BU,1), 0.50".  Line 27 prints
+!                     000000.62 = 0o62 = 50: pinned to the bit.
+SELG    SYN(BU,1), 0.50
+! K ILEGL  220064.00  printed p.160 line 8 is the label row; deck
+!                     p.127 (line 397) and deck p.152 carry
+!                     "(8)220064.0".  Lines 8 and 26 are BZXEs
+!                     printing 220064.32; the same instruction
+!                     against K ILEGL.32 prints 220064.72, so this
+!                     page OBSERVES bit 32 clear and pins the half
+!                     word at 220064.00.  The bit WITHIN that half
+!                     word is unobservable here.
+KILEGL  SYN, (8)220064.0
+! K SUPP   216242.00  printed p.128 line 3 is the label row,
+!                     "K SUPP  NOP,K COMM R"; eleven landed decks
+!                     carry "(8)216242.0".  Line 15 is an LVI:
+!                     half word only.
+KSUPP   SYN, (8)216242.0
+! M IOREJ  221261.00  deck p.135 (line 311) and deck p.152 carry
+!                     "(8)221261.0"; p.135's own line 25 prints
+!                     the identical word this page's line 16
+!                     prints.  A plain B: half word only.
+MIOREJ  SYN, (8)221261.0
+! W 23K    220017.40  printed p.158 line 14 is the label row,
+!                     "W 23K  LCI,7,(8)40   -FAKE EOP"; decks
+!                     p.123 (line 343) and p.158 carry
+!                     "(8)220017.40".  THIS IS THE ONE EXTERNAL
+!                     WHOSE HALF WORD THIS PAGE REALLY READS: line
+!                     28 prints 220017.50, and .50 is .10 plus bit
+!                     32, so the ".40" is OBSERVED here and agrees
+!                     with both earlier decks.  The bits below 32
+!                     are still unobservable.
+W23K    SYN, (8)220017.40
+!
+! ---------------------------------------------------------------
+! THE PAGE
+! ---------------------------------------------------------------
+! lines 1-3 are the FEED CARD asterisk banner, three comment cards
+! (IF000001-IF000003) that emit nothing.  Line 2's heading is
+! "-***...*** FEED CARD ***...***-", with a leading dash inside the
+! comment field and a trailing one; lines 1 and 3 are a full-width
+! rule of asterisks after the field's "-".  THE NUMBER OF
+! ASTERISKS IS NOT RECORDED: two pixel-run counts of lines 1 and 3,
+! which are the same card twice, came back 71 and 72, so no count
+! here would be a reading.  It is immaterial -- a comment card
+! emits nothing.
+!
+        SLC, (8)220106.0             ! line  4  printed "SLC,$" at 220106.00 *
+WFC     V-I,2,.32                    ! line  5
+        SV,2,STIC                    ! line  6
+        KVI,4,2.0                    ! line  7  - IS IT A PUNCH
+        BZXE,KILEGL                  ! line  8  -IF NOT, ERROR
+        CM1111(BU,1),SCHOP($10)      ! line  9
+        CNOP                         ! line 10  emits nothing: 220111.00 is already word-aligned
+        LX,0,$+1.0                   ! line 11
+        SX,0,SIOINS($12)             ! line 12  (same card as 11)
+        CTL,0.0($14),(8)56.          ! line 13  -CARD RUN OUT COMMAND
+        CM1111(BU,1),SCTL($11)       ! line 14
+        LVI,1,KSUPP                  ! line 15
+        B,MIOREJ                     ! line 16  (same card as 15)  -CHECK IF COMMAND ACCEPTED
+!
+! lines 17-18 are two comment cards (IF000015, IF000016) carrying
+! nothing but the "-" that opens the comment field; lines 19-21 are
+! the ERASE LONG GAP banner (IG000001-IG000003), line 20's heading
+! being "***...*** ERASE LONG GAP ***...***" with NO leading dash
+! inside the field, unlike line 2's.  Line 22 is the printed
+! "SLC,$" at 220115.00 that this deck deliberately does not write;
+! see THE ONE SUBSTITUTION above.
+!
+EELG    V-I,2,.32                    ! line 23
+        SV,2,STIC                    ! line 24  (same card as 23)  -SET RETURN ADDRESS
+        KVI,4,4.0                    ! line 25
+        BZXE,KILEGL                  ! line 26  printed "BZXE,KILEGL" closed up, against line 8's "BZXE,K ILEGL"
+        CM1111(BU,1),SELG($11)       ! line 27
+        B,W23K                       ! line 28  -FAKE EOP
+!
+! ---------------------------------------------------------------
+! THE GLYPH CALLS, AND WHAT SETTLED EACH
+! ---------------------------------------------------------------
+! THIS PAGE DROPS INK ON ROUND GLYPHS CONSTANTLY.  Its own octal
+! fields prove it: line 5's location prints "220106.CC", line 5's
+! binary prints "COCCCO.45", line 6's prints "215265.C5", line 13's
+! second group prints "000056.C5", line 28's location prints
+! "220120.CC".  None of those fields can hold a C.  So "it looks
+! like a C" carries almost no information here, and every call
+! below was settled on what PRODUCED the character, not on shape.
+!
+! (a) THE BYTE ON LINES 5 AND 23, printed "CD".  The strongest rung
+!     in the ladder fires twice over: V-I,2,.32 is printed TWICE on
+!     this page, line 5 as "CD" and line 23 as "0D", same character
+!     position, same drum -- and the identical card is printed a
+!     third time on printed p.158 (its line 5, "W REL V-I,2,.32"),
+!     where the landed deck records 000000.45 0D.  The byte is 0D.
+!     The assembler agrees and the MINUS is what it checks: V+I
+!     prints 05 against V-I's 0D, so the sign on this card is read
+!     by the oracle and not by the eye.
+!
+! (b) THE INDEX OPERAND ON LINES 11 AND 12, printed "LX,C," and
+!     "SX,C,".  SETTLED BY THE PRINTED WORD, which is rare for an
+!     O/C call on this drum and is worth the measurement.  The
+!     index number is VISIBLE in the compiled word:
+!
+!         LX,0,$+1.0        -> 220112.00 10      <- printed
+!         LX,1,$+1.0        -> 220112.02 10
+!         LX,2,$+1.0        -> 220112.04 10
+!         SX,0,SIOINS($12)  -> 000004.01 1C      <- printed
+!         SX,1,SIOINS($12)  -> 000004.03 1C
+!         SX,2,SIOINS($12)  -> 000004.05 1C
+!
+!     The page prints 220112.00 and 000004.01, so both operands are
+!     0 and the round glyph is a damaged zero.  This is rung 3 used
+!     as a DISCRIMINATOR rather than an eliminator, which it can be
+!     only because the operand reaches the word.
+!
+! (c) THE BYTE ON LINE 28, printed "CO", AND THE BYTE ON LINES 8
+!     AND 26, ALSO PRINTED "CO" -- AND THEY GO OPPOSITE WAYS.  This
+!     is the "ink varies per CHARACTER, not per row" rule paying
+!     for itself on one page:
+!
+!       line 28 is "B,W 23K", a PLAIN BRANCH.  Line 16 on this same
+!       page is also a plain branch and prints a clean "00".  A
+!       plain B's byte is 00; the assembler emits 220017.50 00.
+!       Line 28's "C" is a damaged 0.
+!
+!       lines 8 and 26 are "BZXE", and BZXE's byte really is C0:
+!       BXE prints C2 against it, so the Z is checked by the byte
+!       and the C is a REAL C.  (Deck p.158 line 11 made the same
+!       call on the same mnemonic and recorded it the same way.)
+!
+! (d) THE COMMENT ON LINE 28, printed "-FAKE ECP".  It is
+!     "-FAKE EOP", End Of Operation: the card it branches to,
+!     printed p.158 line 14, carries the same comment, and printed
+!     p.178's branch table reaches both of this page's labels with
+!     English comments that read as English.  The comment column is
+!     an oracle; ECP is not a word.
+!
+! (e) THE LABEL "W FC", whose C is open.  FC is Feed Card, which is
+!     what this page's own banner says in capitals three lines
+!     above it, and printed p.178 line 10 reaches 220106.00 with
+!     the comment "-FEED CARD - PUNCH ONLY" -- a DIFFERENT page, so
+!     an admissible second reading.  (That page's OCR reads the
+!     name itself as "W FO"; the English is what settles it.)
+!     "E ELG" needs no call: E, L and G are unambiguous, and the
+!     banner above it reads ERASE LONG GAP.
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK
+! ---------------------------------------------------------------
+! Two rows on this page carry the second asterisk, after the
+! location: line 4 (220106.00) and line 22 (220115.00).  Both are
+! printed "SLC,$" rows and no other row on the page carries it.
+! NO RULE IS PROPOSED -- printed p.147 proposed "every printed
+! SLC,$ row carries it" from its own page and printed p.151 line 4
+! refuted it the same afternoon.  Recorded and moved past.
+!
+! ---------------------------------------------------------------
+! WHAT THE CHECKS BELOW DO NOT ESTABLISH
+! ---------------------------------------------------------------
+! 1. THE ".05" ON LINES 6 AND 24 IS NOT S TIC'S OFFSET.  It is the
+!    SV-class 2J+1 for J=2 -- SV,3,STIC prints .07 -- so those rows
+!    pin S TIC's HALF WORD and nothing below bit 32.  Deck p.158
+!    measured this on the identical card and says the same.
+! 2. K SUPP and M IOREJ are reached by an LVI and a plain B, so
+!    only their half words are observed; the bit within is a
+!    convention carried from the decks that define them.  K ILEGL
+!    is the same, with bit 32 additionally OBSERVED clear.
+! 3. The page's ORIGIN is asserted, not checked -- see THE ONE
+!    SUBSTITUTION.  Line 22's arriving counter, by contrast, IS
+!    checked, because this deck does not write it.
+! 4. Lines 1-3, 10, 17-22 emit nothing, so seven of the twenty-
+!    eight printed lines have no check and can have none.  Their
+!    card serials are what shows they are all accounted for.
+!
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS THE ORACLE READS IT
+! ---------------------------------------------------------------
+! Two symbols and seventeen rows -- every emitted half word on the
+! page, with no row left out.  Each !CHECK's second field is the
+! BINARY OUTPUT column verbatim, with the glyph calls of the
+! section above applied and named.
+!
+!   line  1*                                                       - ****...****                               IF000001
+!   line  2*                                                       -****...**** FEED CARD ****...****-         IF000002
+!   line  3*                                                       - ****...****                               IF000003
+!   line  4* 220106.00  *                                            SLC,$                                     IF000004
+!   line  5* 220106.00     000000.45 0D                     W FC     V-I,2,.32                                 IF000005
+!   line  6* 220106.40     215265.05 30                              SV,2,S TIC                                IF000006
+!   line  7* 220107.00     000002.11 04                              KVI,4,2.0            - IS IT A PUNCH      IF000007
+!   line  8* 220107.40     220064.32 C0                              BZXE,K ILEGL         -IF NOT, ERROR       IF000008
+!   line  9* 220110.00     000000.32 8A  001000.36 F0                CM1111(BU,1),S CH OP($10)                 IF000009
+!   line 10*                                                         CNOP                                      IF000010
+!   line 11* 220111.00     220112.00 10                              LX,0,$+1.0                                IF000011
+!   line 12* 220111.40     000004.01 1C                              SX,0,S IO INS($12)                        IF000011
+!   line 13* 220112.00     000000.00 8E  000056.05 00                CTL,0.0($14),(8)56.  -CARD RUN OUT COMMAND IF000012
+!   line 14* 220113.00     000000.74 8B  001000.36 F0                CM1111(BU,1),S CTL($11)                   IF000013
+!   line 15* 220114.00     216242.03 01                              LVI,1,K SUPP                              IF000014
+!   line 16* 220114.40     221261.10 00                              B,M IO REJ      -CHECK IF COMMAND ACCEPTED IF000014
+!   line 17*                                                       -                                           IF000015
+!   line 18*                                                       -                                           IF000016
+!   line 19*                                                       - ****...****                               IG000001
+!   line 20*                                                       - ****...**** ERASE LONG GAP ****...****    IG000002
+!   line 21*                                                       - ****...****                               IG000003
+!   line 22* 220115.00  *                                            SLC,$                                     IG000004
+!   line 23* 220115.00     000000.45 0D                     E ELG    V-I,2,.32                                 IG000005
+!   line 24* 220115.40     215265.05 30                              SV,2,S TIC           -SET RETURN ADDRESS   IG000005
+!   line 25* 220116.00     000004.11 04                              KVI,4,4.0                                 IG000006
+!   line 26* 220116.40     220064.32 C0                              BZXE,KILEGL                               IG000007
+!   line 27* 220117.00     000000.62 8B  001000.36 F0                CM1111(BU,1),S ELG($11)                   IG000008
+!   line 28* 220120.00     220017.50 00                              B,W 23K              -FAKE EOP            IG000009
+!
+!SYM   WFC      220106.00
+!SYM   EELG     220115.00
+!CHECK 220106.00 | 000000.45 0D | line 5 W FC V-I,2,.32 -- printed byte "CD"; settled against line 23, the same statement printed twice on this page, and against printed p.158 line 5. The sign is checked: V+I prints 05
+!CHECK 220106.40 | 215265.05 30 | line 6 SV,2,S TIC -- the .05 is the SV-class 2J+1 for J=2 (SV,3 prints .07) and is NOT part of S TIC's offset, so this row pins the HALF WORD 215265.00 only
+!CHECK 220107.00 | 000002.11 04 | line 7 KVI,4,2.0 - IS IT A PUNCH -- the datum 2.0 is in the address field and is checked (line 25's 4.0 prints 000004.11), and so is the 4: KVI,3 prints .07, KVI,5 prints .13
+!CHECK 220107.40 | 220064.32 C0 | line 8 BZXE,K ILEGL -IF NOT, ERROR -- byte C0 is a REAL C (BXE prints C2, so the Z is checked); the .32 is BZXE's operation bits with bit 32 CLEAR, which pins the target at K ILEGL and not at K ILEGL.32 (that prints 220064.72)
+!CHECK 220110.00 | 000000.32 8A 001000.36 F0 | line 9 CM1111(BU,1),S CH OP($10) -- 0o32 = 26 pins S CH OP to the BIT; 8A is index $10; 001000.36 F0 is the CM1111 connective printed p.18 prints six times, and the second group's printed "FC" is F0 by what produced it
+!CHECK 220111.00 | 220112.00 10 | line 11 LX,0,$+1.0 -- printed "LX,C,"; the index operand REACHES THE WORD (LX,1 prints 220112.02), so the printed .00 settles it as 0. The address $+1.0 is line 13's CTL, which is the word line 12 then files
+!CHECK 220111.40 | 000004.01 1C | line 12 SX,0,S IO INS($12) (same card as line 11) -- printed "SX,C,"; SX,1 prints 000004.03, so the .01 settles the operand as 0. Low nibble C is index $12 and IS a real C
+!CHECK 220112.00 | 000000.00 8E 000056.05 00 | line 13 CTL,0.0($14),(8)56. -CARD RUN OUT COMMAND -- a control code written as an ADDRESS, word-granular; the second group's address field carries the (8)56 literal (57 prints 000057.05) and the first group's low nibble E is index $14 ($13 prints 8D)
+!CHECK 220113.00 | 000000.74 8B 001000.36 F0 | line 14 CM1111(BU,1),S CTL($11) -- 0o74 = 60 pins S CTL to the bit; same connective word as lines 9 and 27, a third printing on one page
+!CHECK 220114.00 | 216242.03 01 | line 15 LVI,1,K SUPP -- the .03 is LVI's index-1 bits, so only K SUPP's word and bit 32 are checked
+!CHECK 220114.40 | 221261.10 00 | line 16 B,M IO REJ (same card as line 15) -CHECK IF COMMAND ACCEPTED -- byte for byte the word printed p.135 line 25 prints; a plain B, so bit 32 only, and the clean "00" here is what settles line 28's "CO"
+!CHECK 220115.00 | 000000.45 0D | line 23 E ELG V-I,2,.32 -- byte for byte line 5's card printed a second time, with the byte printed "0D" here and "CD" there: this is the row that settles line 5. ITS LOCATION IS ALSO THE CHECK ON LINE 22's PRINTED "SLC,$", which this deck does not write -- the counter had to walk here from line 4
+!CHECK 220115.40 | 215265.05 30 | line 24 SV,2,S TIC (same card as line 23) -SET RETURN ADDRESS -- identical to line 6; the comment is printed only on this one of the two
+!CHECK 220116.00 | 000004.11 04 | line 25 KVI,4,4.0 -- line 7's card with the datum changed from 2.0 to 4.0, which is the only difference in the word and is checked
+!CHECK 220116.40 | 220064.32 C0 | line 26 BZXE,KILEGL -- line 8's card, printed closed up as "KILEGL" against line 8's "K ILEGL"; blanks are not significant in a STRAP symbol, and the two rows compile the same word
+!CHECK 220117.00 | 000000.62 8B 001000.36 F0 | line 27 CM1111(BU,1),S ELG($11) -- 0o62 = 50 pins S ELG to the bit, and 50 is exactly what printed p.99 line 41 defines with the comment "-ERASE LONG GAP", the same four words as this routine's banner
+!CHECK 220120.00 | 220017.50 00 | line 28 B,W 23K -FAKE EOP -- byte printed "CO" and it is 00: a plain B, as line 16 prints cleanly on this page. The .50 is .10 plus bit 32, so W 23K's HALF WORD 220017.40 is OBSERVED here and agrees with decks p.123 and p.158. THE COUNTER LEAVES THIS PAGE AT 220120.40

@@ -47,6 +47,173 @@ accumulate.
 > fails; printed p.136's bare `C1111(BU,1)` passes either way, which
 > is why the original change looked complete.
 
+## printed p.166 PRINTS ONE LABEL TWICE -- OPEN, and strap_asm cannot represent it
+
+MCP printed p.166 carries `ZFRO5` on **line 27 (220267.00) and line
+30 (220272.00)**, and two references that both PRECEDE both
+definitions resolve to DIFFERENT ones: line 18's `BZBZ,TMFREJ,ZFRO5`
+prints target `220267.34` and line 20's `BB,SOWNER($11),ZFRO5` prints
+`220272.34`. No ordering rule produces that.
+
+**`strap_asm` refuses a duplicate label outright** -- `AssemblerError:
+symbol 'ZFRO5' multiply defined`, and NOTHING assembles. So the house
+rule "leave the printed form and let the row fail" **is not available
+for a duplicate definition**; the choice is a stand-in or losing the
+page. printed p.166's deck writes `ZFRO5DUP` for line 30, which is
+not a reading of any glyph, and flags it at every occurrence. That is
+a gap in the workflow's rule 3, which assumes a failing row is always
+on offer.
+
+### WHAT HAS BEEN RULED OUT
+
+* **It is not an O/0 glyph split.** Measured by its transcriber: every
+  `ZFRO*` round on the page carries 121-135 px of ink (mean 129)
+  against a certain-letter-O band of 126-135 and a certain-digit-0
+  band of 112-126. The two labels print five glyphs in the same cells
+  at 1800 dpi with no sixth character.
+* **It is not TAIL scoping.** The corpus's only `TAIL` card is printed
+  p.43's `TAIL, A`, in the IPL image; **no deck in the MCP body
+  carries one**, so the scoped-duplicate mechanism that makes a name
+  legitimately mean two things across printed p.98's `UNTAIL,(2)`
+  boundary does not apply here. Checked, not assumed.
+
+### WHAT THE NEXT READER SHOULD DO FIRST
+
+**C28-6129 defines the discriminator and it is one render.** The
+update's listing-format note says STRAP *"prints the MULTI error flag
+on the output listing line immediately preceding both definitions"*,
+and *"the CONTAG flag is printed immediately preceding an instruction
+which references a multiply defined symbol"*. So:
+
+* no MULTI on lines 26 and 29, and no CONTAG on lines 17 and 19 =>
+  **these are not two definitions of one symbol** and the names differ
+  in a way nobody has read yet;
+* MULTI and CONTAG present => IBM's own assembler saw the duplicate,
+  and what it DID with it is the question.
+
+This is the same test that settled `DFREE` (see
+`docs/transcription_workflow.md`): a flag the listing either prints or
+does not.
+
+**A rendering here found something the page report did not mention:
+line 29, BETWEEN the two, is labelled `ZFRO5A`** -- five glyphs plus a
+trailing A, at 220271.00. Whether that is a third symbol or bears on
+the other two is unknown. A first look at the left-hand flag column on
+lines 26 and 29 showed it EMPTY, which would point at the first
+branch, but that column's exact position has not been established
+(printed p.100 prints `-` there on every row and printed p.1 prints
+`B`), so the negative is SUGGESTIVE AND NOT FIRM. Establish the column
+first, then read the flag.
+
+## A BLANKED NAME LOST ITS DATA DESCRIPTION, SILENTLY -- fixed 2026-11-02
+
+> **A WRONG ANSWER WITH NO DIAGNOSTIC, and only a `!CHECK` could see
+> it.** STRAP ignores blanks inside a symbol (C22-6531 printed p.10)
+> and this assembler honours that everywhere -- except that
+> `inherited_dds()` asked `referenced_symbols()`, which is a pure
+> syntax scan. `S CTL` came back as the TWO names `{'S','CTL'}`, the
+> `len(names) != 1` test fired, and a statement writing no dds of its
+> own compiled with **length 0** instead of the symbol's.
+>
+> MCP printed p.164 prints `CM1111,S CTL(EU)` with no dds. Measured
+> against `SCTL SYN(BU,1),0.60`, nothing else varying:
+>
+> ```
+>   CM1111,SCTL(EU)         ->  001000.36 F0   the printed word
+>   CM1111,S CTL(EU)        ->  000000.36 F0   WRONG, and silent
+>   CM1111(BU,1),S CTL(EU)  ->  001000.36 F0
+> ```
+>
+> **The ADDRESS resolved correctly the whole time** -- only the length
+> was lost -- so no address check, no symbol check and no spelling
+> check could have caught it. Only a row's own `!CHECK` on the second
+> half word. That is the fourth silent miscompile this corpus has
+> produced (after the radix-literal blank, the `-I` sign, and the
+> dropped connective offset), and every one of them surfaced because a
+> page was transcribed as PRINTED rather than normalised.
+
+## `REW` IS ADMITTED -- closed 2026-11-02
+
+> On the same three-way bar `SPFL` met, not on a name resemblance:
+> C28-6129 Appendix B lists "REW Rewind"; the Reference Manual's IBM
+> 729 IV table gives **"136 | Rewind (EOP given at initiation; CS when
+> load point reached)"**; and MCP printed p.165 line 11 PRINTS `000136`
+> with `.15` = CTLSEOP in bits 50-55. The name matches the table
+> VERBATIM, which is exactly what "Backspace" against "Backspace
+> Block" does not -- the case `opcodes.py` cites for refusing the rest
+> of the family.
+>
+> `REW(SEOP),0.0($14)` had been refused with *"unknown
+> data-description mode 'SEOP'"*, because `REW` was absent from
+> `IO_FUNCTION_OPS` and `(SEOP)` fell through to the dds parser.
+> printed p.165 carried a bit-identical `CTL(SEOP),...,(8)136.`
+> substitution for one commit and now carries the printed form.
+>
+> **The other eighteen members of the family remain absent** and the
+> standard is unchanged: Appendix B's name plus the p.132 table plus a
+> listing that prints the code.
+>
+> **AND IT SETTLED printed p.156's control code retroactively.** The
+> p.132 table in `docs/exchange_and_io.md` reads "117 | Write Tape
+> Mark (writes the standard tape mark 0001111)", so p.156's
+> `CTL,0.0($14),(8)117.` commented "-WEF COMMAND" is write-end-of-file
+> exactly as printed. An earlier reading of the GARBLED RefMan OCR had
+> suggested 117 was not a code at all; the curated table says it is.
+
+## MCP'S BODY MERGES, pp.99-160 -- closed 2026-11-02
+
+> **1541 words over 0o215000..0o220105, 597 symbols defined, 57 still
+> external**, checked by `tests/check_mcp_body_image.py`. This is the
+> first time MCP's body has existed as one artifact rather than 61
+> separately-verified pages.
+>
+> **IT IS A SECOND ASSEMBLY, NOT A LONGER BOOTSTRAP**, and the merge
+> said so itself. Extending `MCP_IPL_PAGES` past p.99 died instantly
+> on *"SMCP is defined twice: printed p.37 and printed p.103, and they
+> disagree: bit 72192 against bit 4620288"*. printed p.98 closes the
+> tail block with `UNTAIL,(2)` and printed p.99 moves the origin with
+> `SLC,(8)215000.`, so a name may denote one thing in pp.15-98 and
+> another in the body. Any future range extension has to respect that
+> boundary.
+>
+> **A FORWARD `SLC` IS THE SECOND LEGITIMATE HOLE IN AN IMAGE.** The
+> contract was that only a `DR` reservation may leave a word empty,
+> because a missing word reads as ZERO and a zero half word is BRANCH
+> ENABLED to location zero -- so a hole and a lost transcription must
+> never be confused. That reasoning is right and is NOT relaxed here;
+> it is completed. A `DR` says "reserve this storage"; a forward `SLC`
+> says "the counter moves on, and what lies between is not this
+> deck's". Both are PRINTED EVIDENCE in the deck and both leave the
+> words as the loader found them.
+>
+> `AssembledProgram` now records SLC spans in the same shape as
+> reservations (`skips`, `skipped_words()`). The body's 65 hole-words
+> are 52 reserved + 13 SLC-skipped, 0 unaccounted.
+>
+> printed p.112 is the case: five printed SLC cards (`SIPT+4.0`,
+> `+9.0`, `+18.0`, `+20.0`, `+22.0`, the line-11 comment naming them
+> "PARALLEL IO INTERRUPT SLOTS") skip exactly 215104-6, 215110-13,
+> 215121-4, 215126 and 215130. That deck calls them "slots of the
+> table that other pages fill" -- **they are not filled**; no deck in
+> the corpus emits at any of them, and the volume OCR's only trace is
+> a REFERENCE, `V-I,2,SIPT+1.0` against 215104.05, glossed "TYPE OF
+> INTERRUPT AS FULL WORD". They are storage.
+
+### STILL OPEN ON THE BODY IMAGE
+
+* **The entry point is not established.** `build()` always appends
+  `END, <sym>` and the test passes `SDISP` purely to make the image
+  assemble. Nothing depends on it. Finding MCP's real body entry is
+  the next structural question, and it is what a RUN would need.
+* **57 symbols are still external** -- defined on pages past p.160 or
+  below p.99. `JCIOD` and `PCDEF2` are among them and their live
+  cards are on NO page in this PDF: printed p.100 is their
+  documentary witness only (all comment cards), its serials are
+  BD000001-BD000016 and p.101's are BF000001, so **an entire BE card
+  group exists and is not in the scan**.
+* **The body is not yet RUN.** Merging and accounting for every word
+  is not execution; the model has never been pointed at this image.
+
 ## A CONTROL CODE WRITTEN AS AN ADDRESS IS WORD-GRANULAR -- closed 2026-10-31
 
 > **CLOSED, and NOT by overturning Reference Manual p.111.** The

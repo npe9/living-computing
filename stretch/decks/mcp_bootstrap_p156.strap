@@ -65,7 +65,21 @@
 ! ---------------------------------------------------------------
 ! TWO THINGS THE PRINTED FORM AND strap_asm DISAGREE ABOUT
 ! ---------------------------------------------------------------
-! 1. LINE 14 IS LEFT FAILING ON PURPOSE.  The page prints
+! 1. LINE 14 WAS LEFT FAILING ON PURPOSE AND NOW PASSES.
+!    >>> RESOLVED 2026-10-31, AND THIS BLOCK IS KEPT AS THE RECORD
+!    OF WHAT THE FAILING ROW BOUGHT. <<<  strap_asm now gates the
+!    conversion on the operand's SPELLING: "(8)117." tokenizes as a
+!    bitaddr of WORD 0o117 while "(8)117" and a bare integer are the
+!    integer itself, so the dotted form converts and every bare code
+!    in the corpus -- including decks/io_tape.strap's tested
+!    "CTL, 0($1), 126" and printed p.16's "(8)137" below -- is
+!    bit-identical.  Reference Manual printed p.111 is NOT overturned:
+!    it says what the value MEANS to the device, and the question was
+!    how STRAP EVALUATES the operand.  printed pp.154 and 155 print
+!    the same form and were held out of the suite with this page for
+!    one commit until it was settled.
+!
+!    The original finding, unchanged, follows.  The page prints
 !
 !        CTL,0.0($14),(8)117.          000000.00 8E 000117.05 00
 !
@@ -82,10 +96,10 @@
 !    field and for CW, and does not perform for a CTL's second
 !    operand.  (0o11700 >> 6 = 0o117 exactly, which is the printed
 !    field, so the direction of the error is not in doubt.)  The deck
-!    keeps the PRINTED statement and the PRINTED !CHECK, which
-!    contradict each other, and the row FAILS.  Do not "fix" it by
-!    dropping the printed dot: that would be a silent substitution
-!    hiding an assembler bug.
+!    keeps the PRINTED statement and the PRINTED !CHECK.  They
+!    contradicted each other and the row FAILED, which is exactly
+!    what surfaced the bug -- dropping the printed dot would have
+!    been a silent substitution hiding it.  They agree now.
 !
 !    THE DOT WAS READ AT 1800 dpi, twice, because the whole finding
 !    rests on it: the page prints ") , ( 8 ) 1 1 7 ." with a solid
@@ -286,7 +300,7 @@ ELABCW  XW,SSCRPM,1,$                ! line 28  -WRITE LABEL CTL WD
 !CHECK 217751.40 | 221370.10 00 | line 10 B,K IO IND (same card as line 9) -- same word as line 4's E IO IND
 !CHECK 217752.00 | 217753.00 10 | line 12 LX,0,$+1. -- line 11's CNOP found the counter already aligned and printed neither a location nor any bits
 !CHECK 217752.40 | 000004.01 1C | line 13 SX,0,S IO INS($12) (same card as line 12) -- .01 is SX's operation bit, byte C is i = $12
-!CHECK 217753.00 | 000000.00 8E 000117.05 00 | line 14 CTL,0.0($14),(8)117. -WEF COMMAND -- LEFT FAILING ON PURPOSE: strap_asm compiles the printed statement to 011700.05 00, shifting the octal 117 six bits left; the .05 checks plain CTL against CTL(SEOP)'s .15 and the 8E checks the index $14
+!CHECK 217753.00 | 000000.00 8E 000117.05 00 | line 14 CTL,0.0($14),(8)117. -WEF COMMAND -- this row FAILED until 2026-10-31 and is what surfaced the dotted-control-code bug; the .05 checks plain CTL against CTL(SEOP)'s .15 and the 8E checks the index $14
 !CHECK 217754.00 | 216242.03 01 | line 15 LVI,1,K SUPP -- the .03 is LVI's .01 plus J=1's .02, not address bits
 !CHECK 217754.40 | 000000.37 8B 001000.36 F0 | line 16 CM1111(BU,1),S SET UP($11) -- .37 is S SET UP's bit 31; CM0000 would print 001000.00 instead of .36, and byte B is i = $11
 !CHECK 217755.40 | 000005.00 8C | line 17 SIC,S RET AD($12) -- the third printing of this card on one page, and the second one with no asterisk

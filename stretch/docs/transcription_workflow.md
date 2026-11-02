@@ -352,33 +352,89 @@ run "... printed p.84, bit-exact (MCP_Mar63 PDF p.91)" python3 verify_mcp_bootst
 > that string reports a mismatch that is not one. printed p.84 line 23's
 > `T JCNME SYN(BU,48,6),-1.0` is -64 bits and prints `000001.00-`.
 
+### 3a2. Hand the assembler the PRINTED form, and let a bad row FAIL
+
+Every wrong-answer bug this corpus has produced was found because a
+page was written AS PRINTED and allowed to fail, rather than
+normalised into something that assembles. Four of them, all silent,
+all invisible to every check but a row's own `!CHECK`:
+
+* a blank inside a radix literal compiled the wrong word;
+* a written-minus `-I` fired on the legitimate `+I`, inverting a sign;
+* an empty address field dropped the OFFSET that followed it;
+* **a blanked NAME lost its data description**, so a statement with no
+  dds of its own compiled with LENGTH 0 while its ADDRESS resolved
+  perfectly (printed p.164, `CM1111,S CTL(EU)`).
+
+So: try the printed spelling first, always. If it is refused, that is
+a FINDING and belongs in the report. If you must substitute to keep
+the location counter honest, label it loudly and record the printed
+form beside it.
+
+> **A ROW WHOSE STATEMENT AND `!CHECK` CONTRADICT EACH OTHER IS NOT
+> LOUD, IT IS SELF-CONTRADICTORY.** Leaving the printed statement with
+> a printed check that it cannot produce is the right move -- the row
+> fails and names the defect. Writing a statement you know is wrong
+> AND a check that matches your wrong statement verifies nothing.
+
+> **THE ONE CASE WHERE FAILING IS NOT ON OFFER: A DUPLICATE LABEL.**
+> `strap_asm` refuses a repeated name outright -- `symbol 'X' multiply
+> defined` -- and assembles NOTHING, so the whole page checks nothing
+> rather than one row failing. printed p.166 prints `ZFRO5` on two
+> cards at two addresses and had to carry a `ZFRO5DUP` stand-in that
+> is not a reading of any glyph. When this happens, say so at every
+> occurrence and treat it as an open question about the ASSEMBLER
+> MODEL, not about your page. C28-6129's `MULTI` and `CONTAG` listing
+> flags are what settle whether IBM's own assembler saw a duplicate.
+
 ### 3b. Diff the deck's OWN listing comments against its checks
 
 Nothing in the repo parses the `!  NN*  <location> <binary> ...`
 comment block most decks carry, so **a digit typo there is permanent
 and invisible** -- it is the human-readable record of what the page
 says, and it can drift from the `!CHECK` rows that are actually
-tested. Five lines of Python close it:
+tested. A few lines close it:
 
 ```python
-import re
-rows = {}
+import re, collections
+rows = collections.defaultdict(list)          # NOT setdefault/one-per-key
 for ln in open(deck):
     m = re.match(r'!\s+\d+\*?\s+([0-7]{6}\.[0-7]{2})\s+(.*)', ln)
-    if m: rows.setdefault(m.group(1), m.group(2))
+    if m: rows[m.group(1)].append(m.group(2))
+checks = 0
 for ln in open(deck):
     m = re.match(r'!CHECK\s+([0-7]{6}\.[0-7]{2})\s*\|\s*([^|]*)', ln)
-    if m and m.group(1) in rows:
-        a = ' '.join(rows[m.group(1)].split()[:3])
-        b = ' '.join(m.group(2).split())
-        if b and not a.startswith(b.split('|')[0].strip()[:8]):
-            print('MISMATCH', m.group(1), '|', a, '|', b)
+    if not m or m.group(1) not in rows: continue
+    checks += 1
+    want = ' '.join(m.group(2).split())
+    if want and not any(' '.join(r.split()).startswith(want[:8])
+                        for r in rows[m.group(1)]):
+        print('MISMATCH', m.group(1), '->', rows[m.group(1)], '|', want)
+print('%d listing rows, %d compared' % (len(rows), checks))
 ```
 
-printed p.159's transcriber ran it over all 46 rows of that page and
-found 0 mismatches -- which is the point: it is cheap, and it covers
-the one part of a deck that no other check can see. Do it before
-reporting.
+> **IT MUST PRINT HOW MANY ROWS IT COMPARED, and the two refinements
+> below are why.** Both were found by printed p.161's transcriber
+> after this recipe went into the file, and both made it report
+> success while doing less than it claimed -- the failure mode this
+> whole document keeps circling.
+>
+> **ONE LOCATION CAN CARRY TWO LISTING LINES.** A printed `SLC,$`
+> emits nothing, so it prints the SAME location as the first card
+> below it. The first draft used `rows.setdefault(...)`, keeping only
+> the `SLC` line, and then diffed the emitting card's `!CHECK`
+> against it. Measured on the landed decks: printed pp.151, 153 and
+> 159 each have exactly one such shared location and each would
+> report one BOGUS mismatch. Collect a list per location and accept a
+> match against any of them.
+>
+> **AND THE REGEX MATCHES NOTHING ON SOME DECKS.** The `!  NN*`
+> comment block is a convention, not a format: measured, it matches
+> 44-46 rows on printed pp.151/153/159 and **ZERO** on printed pp.147
+> and 158, whose decks lay their notes out differently. A run over
+> those prints "0 mismatches" having compared nothing at all. That is
+> why the count is printed: **"0 mismatches" and "0 rows compared"
+> must never look the same.**
 
 ### 4. Join it to the image -- two mechanical edits
 
@@ -545,7 +601,7 @@ under a single check.
 
 `listing_oracle` compares assembled bits against printed bits, and
 that is a strong check — but a deck can be wrong in ways that produce
-the *same printed word*, and those are invisible to it forever. Five
+the *same printed word*, and those are invisible to it forever. Six
 are known, all measured, and they bound what "bit-exact" means here.
 
 **1. AN EXTERNAL BACK-DERIVED FROM A BRANCH OR AN `LVI` IS KNOWN ONLY
@@ -662,9 +718,34 @@ and never off a passing run.**
 > printed p.145 carries both. So flag a reservation's `Z` as
 > ink-only, and do NOT flag a branch's.
 
+**6. A ONE-BIT IMMEDIATE PINS ONLY THE VALUE'S PARITY.** An
+immediate operand is LEFT-JUSTIFIED in the 24-bit A24 field
+(Reference Manual printed p.56, "Field Definition", quoted at
+`strap_asm.py`'s A24 note), so a `(BU,1)` immediate puts the symbol's
+LOW BIT at the top of the field and nothing else shows. Measured on
+`LI(BU,1),X,46`, varying only the SYN:
+
+```
+  X = 0      ->  000000.00 80 401027.20 50
+  X = 1.0    ->  000000.00 80 401027.20 50
+  X = 0.32   ->  000000.00 80 401027.20 50
+  X = 2.0    ->  000000.00 80 401027.20 50
+  X = 8      ->  000000.00 80 401027.20 50
+  X = 1      ->  400000.00 80 401027.20 50
+  X = 3      ->  400000.00 80 401027.20 50
+```
+
+printed p.163 line 40 is such a row and its first draft claimed the
+printed `000000.00` pinned `S TD DEN` to zero. **It does not** -- it
+establishes only that the value is EVEN. That `S TD DEN` is exactly 0
+comes from printed p.108's defining card, a different page. This is
+not the half-word gap in another costume either: there the low bits of
+an ADDRESS are invisible, here a fully-specified value is reduced to
+one bit.
+
 > None of these is a defect in the oracle. They are the edge of what
 > comparing one word against one word can establish, and the answer
-> to all five is the same: **a second, independent reading** — the
+> to all six is the same: **a second, independent reading** — the
 > next page's first location, a manual, or the page's own English.
 
 > **AND BE SURE THE SECOND READING IS INDEPENDENT.**

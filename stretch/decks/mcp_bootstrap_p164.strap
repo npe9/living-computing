@@ -1,0 +1,538 @@
+! mcp_bootstrap_p164.strap -- WRITE END OF FILE (E WT1), the write-
+! end-of-file pseudo-op and its erase-long-gap variant E WT31,
+! printed page 164.  docs/MCP_Mar63_001-249.pdf PDF p.171, header
+! READ and not assumed: the top line prints "TIME CLOCK 00054041
+! PUNID 11D11MCP   CARD ID IJ000001   DIST. OF 3/01   3/01
+! PAGE NUMBER  164", and the column-heading row's own LOCATION
+! field is BLANK -- which is what the rule in
+! docs/transcription_workflow.md 1 predicts, because line 1 is an
+! asterisk banner and compiles nothing.  A blank there is NOT a
+! zero and NOT "this page has no origin"; printed p.147 is the
+! discriminating case.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! THIRTY-SIX PRINTED LINES.  Lines 1-3 are the asterisk banner
+! "***** WRITE END OF FILE *****" and compile nothing.  Line 4 is
+! a printed "SLC,$" at 220203.00, which emits nothing either.  The
+! remaining THIRTY-TWO lines are instructions: twenty-six half
+! words and six full words = 19 words = 0o23, from 220203.00 to
+! 220225.40 inclusive, leaving the counter at 220226.00.  Then
+! blank paper to the foot of the form.  There is no DD, no SYN, no
+! VF, no reservation and no comment card on this page.
+!
+! TWO ENTRY POINTS:
+!
+!   lines  5-28  E WT1, WRITE END OF FILE.  It saves the return
+!                (V-I,2,.32 then SV,2,S TIC), sets condition code
+!                4, refuses non-tape equipment (BZXE,K ILEGL) and
+!                file-protected files (BB,S FP($9),K ILEGL), loads
+!                the "$ AND SWEF" evaluation mask E MK 1A, turns
+!                the channel-operating bit on (CM1111(BU,1),
+!                S CH OP($10)), plants the mask (SV,EX,S EVL MK
+!                (EA)) and calls the status evaluator
+!                (SIC,S EVL TB($12) ; B,Z STEVL).  Lines 16-17 are
+!                the two evaluation-table exits ("-SEL BIT ON" ->
+!                B,K K LOC and "-VER BIT ON" -> B,R VFY).  Line 18
+!                tests the file count ("-TEST IF IN LABEL FILE")
+!                and line 21 goes to RS1 FLK to space over a
+!                label.  Line 22 tests the ERASE LONG GAP request
+!                bit S ELG($11) and, if it is on, jumps into the
+!                SECOND entry one half word early (E WT31-1.0).
+!                Lines 24-28 issue the ordinary control command 46
+!                with the SEOP modifier and wait on M IO REJ.
+!
+!   lines 29-36  the erase-long-gap tail.  SIC,K EOP R ; B,K SEOP T
+!                is the end-of-operation wait, then E WT31 issues
+!                control code 79.0 (CTL,0.0($14),79.0), turns the
+!                CONTROL bit on (CM1111,S CTL(EU)) and leaves
+!                through LVI,1,K SUPP ; B,M IOREJ.
+!
+! ---------------------------------------------------------------
+! THIRTY-SIX LINES, TWENTY-NINE CARDS, AND NOTHING FELL OFF EITHER
+! END
+! ---------------------------------------------------------------
+! The SURVEY SAID 25 rows, 220203.00..220225.4.  It got both
+! ENDPOINTS right and under-read the MIDDLE by eight rows.  Counted
+! off the card-serial column at 900 dpi the page runs IJ000001
+! (line 1) to IJ000029 (line 36), consecutive, with SEVEN serials
+! printed twice -- one card, two statements:
+!
+!   IJ000014  lines 14,15   SIC,S EVL TB($12) ; B,Z STEVL
+!   IJ000019  lines 20,21   SIC,S SCR PM($12) ; B,RS1 FLK
+!   IJ000022  lines 24,25   LX,0,$+1.0        ; SX,0,S IO INS($12)
+!   IJ000024  lines 27,28   LVI,1,$+1.0       ; B,M IO REJ
+!   IJ000025  lines 29,30   SIC,K EOP R       ; B,K SEOP T
+!   IJ000026  lines 31,32   LX,0,$+1.0        ; SX,0,S IO INS($12)
+!   IJ000029  lines 35,36   LVI,1,K SUPP      ; B,M IOREJ
+!
+! Every one is a SIC/branch or a load/store pair, so the doubling
+! is the programmer keeping a pair on one card.  29 serials + 7
+! repeats = 36 lines, which closes the count arithmetically.
+!
+! THE TOP is closed twice over.  Line 1's serial IJ000001 IS the
+! page header's own "CARD ID IJ000001", so no row is above line 1
+! -- and the deck letters change here (printed p.163 is IH), so
+! printed p.164 begins a new card deck.  The heading row's
+! LOCATION field is blank, which under the rule above is what a
+! banner line 1 produces and is not evidence of anything else.
+!
+! THE BOTTOM is closed by arithmetic that does not depend on
+! reading blank paper: 26 single-group rows + 6 double-group rows
+! = 38 half words = 19 words = 0o23, and 220203 + 23 = 220226.
+!
+! ---------------------------------------------------------------
+! THE JOIN BACKWARD -- THE SURVEY'S "GAP" IS FIVE LOST ROWS, NOT A
+! RESERVATION AND NOT AN SLC JUMP
+! ---------------------------------------------------------------
+! The survey reports printed p.163 ending at 220200.40 and this
+! page starting at 220203.00, which would leave two words
+! unaccounted for.  RENDERED FIRST HAND (PDF p.170 at 400 dpi,
+! y=3080..3780) printed p.163 does not end at 220200.40: it runs
+! on to LINE 46, and its last five rows are
+!
+!   line 42  220200.40  000005.00 8C   SIC,S RET AD($12)
+!   line 43  220201.00  217674.50 00   B,K DENST
+!   line 44  220201.40  221371.00 80   SIC,K K IND
+!   line 45  220202.00  221370.10 00   B,K IO IND
+!   line 46  220202.40  221144.50 00   B,Z STEVL
+!
+! -- five half words, serials IH000072..IH000074.  A half word at
+! 220202.40 leaves the counter at 220203.00, which is EXACTLY this
+! page's printed line 4.  So the answer is the third of the three
+! offered: A LOST ROW, five of them, off the bottom of the survey's
+! read of p.163.  There is no reservation anywhere near the join
+! (no DR/DRZ prints on either page) and no SLC jump: this page's
+! SLC is "SLC,$", which moves nothing.
+!
+! THE WITNESS AND WHAT THE DECK THROWS AWAY.  Printed line 4 is
+!
+!   220203.00  *   SLC,$
+!
+! An SLC emits nothing, so that printed LOCATION _is_ the counter
+! arriving from printed p.163 -- a free reading of the join printed
+! by IBM's own assembler.  THE DECK BELOW WRITES A HARD
+! "SLC, (8)220203.0" INSTEAD, AND THAT ASSERTS THE ORIGIN RATHER
+! THAN CHECKING IT: a hard SLC cannot disagree with the arriving
+! counter (docs/transcription_workflow.md, WHAT THE ORACLE CANNOT
+! SEE item 2 -- move it and all 33 checks still pass).  The join is
+! closed BY HAND, above, against p.163's own line 46 rendered for
+! this deck.  No !CHECK can use it.
+!
+! THE JOIN FORWARD IS CLOSED, NOT PREDICTED.  Printed p.165 (PDF
+! p.172), rendered for this deck, prints at its line 4
+!
+!   220226.00  *   SLC,$        (card deck IK, "***** REWIND *****")
+!
+! which is exactly where this deck's 19 words leave the counter.
+! Both neighbours are therefore joined to this page by a printed
+! SLC,$ location and not by assumption.
+!
+! ---------------------------------------------------------------
+! GLYPHS -- WHAT WAS SETTLED, AND ON WHAT
+! ---------------------------------------------------------------
+! This page opens round glyphs constantly: "22C203.CO" for
+! 220203.00, "COCCCO.45" for 000000.45, "220C64.32" for 220064.32,
+! "0C1000.36" for 001000.36.  Every round glyph in a LOCATION field
+! or in either OCTAL field of a BINARY OUTPUT group is a 0 with
+! certainty (the octal-field argument, rung 5).  Four glyphs needed
+! more than that, and they are instructive BECAUSE THEY DO NOT ALL
+! GO THE SAME WAY:
+!
+! (1) LINE 11's BYTE IS "01", PRINTED "C1", AND RUNG 4 SETTLES IT
+!     WITHOUT LEAVING THE PAGE.  LVI prints its byte three times
+!     here -- line 11 (LVI,EX,E MK 1A), line 27 (LVI,1,$+1.0) and
+!     line 35 (LVI,1,K SUPP).  Same operation, same character
+!     position, same drum.  Lines 27 and 35 print a CLOSED "01";
+!     line 11 prints the same byte OPEN.  Dropout opens a closed
+!     glyph and never closes an open one, so line 11 is 01.
+!
+! (2) LINE 8's BYTE IS "C0" -- A GENUINE C IN THAT SAME NIBBLE
+!     POSITION.  BZXE's byte really is C0, and it prints with the
+!     identical open round glyph line 11 prints for a 0.  ONE PAGE,
+!     ONE DRUM, TWO OPPOSITE READINGS OF THE SAME SHAPE IN THE SAME
+!     COLUMN.  That is what bounds the octal-field gauge: it tells
+!     you the page CAN drop ink on round glyphs, never that a
+!     particular glyph did.  Line 16 ("220C65.5C CO" = 220065.50
+!     00) prints C, 0 and 0 as three different-looking round
+!     glyphs in one row.
+!
+! (3) LINE 5's BYTE IS "0D", PRINTED "CD".  Settled on WHAT
+!     PRODUCED IT, in two independent halves.  The LOW nibble is D
+!     because V-I's immediate-index code is 0b1101 and that code
+!     lands in the low nibble -- the page's own KVI (0b0100) prints
+!     4 there on line 7 and its three LVIs (0b0001) print 1 there on
+!     lines 11, 27 and 35.  The HIGH nibble is 0 because those same
+!     four immediate-index rows print 04, 01, 01, 01: high nibble 0,
+!     four times, in the same character position.  So only the
+!     FIRST glyph of line 5's byte is in question, and the row also
+!     prints three impossible Cs in its own octal field
+!     ("COCCCO.45"), so it is demonstrably dropping ink.
+!
+! (4) LINE 23 IS "CNOP", READ OFF THE INK AT 1800 dpi, AND NO CHECK
+!     CAN CONFIRM IT.  See the next section.
+!
+! THE COMMENT COLUMN was used as the oracle it is:  "-IF EQUIP IS
+! NOT TAPE, FAKE EPGK" (line 8), "-IF FILE PROTECTED, FAKE EPGK"
+! (line 10), "-MASK IN EVAL MASK AD" (13), "-SEL BIT ON" (16),
+! "-VER BIT ON" (17), "-TEST IF IN LABEL FILE" (18), "-IF SO, SPACE
+! OVER LABEL" (21), "-ERASE LONG GAP COMMAND" (26), "-TURN ON
+! CONTROL BIT" (34).  Line 26's comment is what names the control
+! code 46 as ERASE LONG GAP, which is the whole point of the S ELG
+! test on line 22.
+!
+! THE NAME "E WT1" IS FOUR GLYPHS IN FIVE CHARACTER CELLS, WHICH IS
+! HOW IT IS DISTINGUISHED FROM "E WT11".  At 1800 dpi the glyphs E,
+! W, T, 1 are legible but the trailing "1" sits beside the statement
+! column, so the reading was checked by GLYPH-RUN MEASUREMENT in the
+! name column at 300 dpi, against line 33's "EWT31" in the same
+! column off the same drum.  Dark-pixel runs, x in page pixels:
+!
+!   line  5   2363-2381  ....gap....  2422-2442  2455-2472  2484-2500
+!   line 33   2357-2376   2387-2407   2417-2436  2447-2467  2480-2496
+!
+! The pitch is ~30 px.  Line 33 is five consecutive cells (E W T 3 1);
+! line 5 is the same five cells with cell 2 EMPTY (E _ W T 1), and
+! both end at ~2500.  A sixth cell would start near 2514 and there is
+! no ink there.  So the name is E WT1 and not E WT11.  NOTHING ELSE HOLDS
+! THIS NAME UP: no landed deck references E WT1, and under a hard
+! SLC its LOCATION is tautological, so both its spelling and its
+! address rest on this page's ink alone.  E WT31 is better off --
+! line 22's second group, 220222.34 04, IS "E WT31-1.0", so its
+! LOCATION is checked internally by this deck and only its SPELLING
+! is ink.
+!
+! ---------------------------------------------------------------
+! A SIXTH THING THE ORACLE CANNOT SEE, AND IT IS POSITIONAL:
+! "NOP" AND "CNOP" AT AN ODD HALF WORD
+! ---------------------------------------------------------------
+! C22-6531's CNOP compiles a NOP only when the counter is NOT on a
+! word boundary.  Measured on this repository's assembler, varying
+! nothing else:
+!
+!     SLC,(8)1.0  ; CNOP   ->  emits NOTHING
+!     SLC,(8)1.40 ; CNOP   ->  000001.40  000000.30 00
+!     SLC,(8)1.40 ; NOP    ->  000001.40  000000.30 00
+!
+! Line 23 sits at 220215.40 -- an odd half word, because line 22 is
+! a FULL word that started at 220214.40 -- so "NOP" and "CNOP"
+! produce the SAME half word here and the !CHECK below cannot tell
+! them apart.  The spelling was read off the ink at 1800 dpi (four
+! glyphs, C N O P, leading C unambiguous).  Flag it as ink-only at
+! THIS position; at an even half word the two are trivially
+! distinguishable, so this blindness is positional and not a
+! property of the mnemonic.
+!
+! ---------------------------------------------------------------
+! "SEOP" vs "SECP" WAS SETTLED BY THE BITS, NOT BY THE ELIMINATOR
+! ---------------------------------------------------------------
+! Line 26 prints "CTL(SEOP),0.0($14),46" with the round glyph
+! open, so SECP is a live reading.  Rung 3 of the glyph ladder
+! (hand both to the assembler) IS SILENT HERE -- "CTL(SECP)"
+! assembles perfectly, because an unrecognised modifier is simply
+! not the SEOP flag.  What fires is the printed second group:
+!
+!     CTL(SEOP),0.0($14),46  ->  000000.00 8E  000056.15 00
+!     CTL(SECP),0.0($14),46  ->  000000.00 8E  000056.05 00
+!
+! and the page prints .15.  The SEOP bit is 0o10 of that field.
+! Line 33's plain "CTL,0.0($14),79.0" prints 000117.05 00 -- the
+! same field without the flag -- so the page carries its own
+! control for the comparison.  (The typeset manuals agree on the
+! name: strap_asm.py cites C22-6531 "Progressive Indexing" and the
+! Reference Manual's "REL(SEOP),0.0($15)"; and printed p.154's own
+! card "LVI,1,K SEOP T" spells the external with an O.)
+!
+! ---------------------------------------------------------------
+! TWO ASSEMBLER LIMITATIONS, BOTH FOUND BY HANDING IT THE PRINTED
+! FORM FIRST
+! ---------------------------------------------------------------
+! Most of this page's blanked spellings go in VERBATIM and compile
+! the printed word: "SV,2,S TIC", "LV,9,S C REEL($12)",
+! "SV,EX,S EVL MK(EA)", "CM1111(BU,1),S CH OP($10)", "B,K K LOC",
+! "SIC,S EVL TB($12)", "B,RS1 FLK", "LVI,EX,E MK 1A",
+! "SIC,S SCR PM($12)", "SX,0,S IO INS($12)", "B,M IO REJ",
+! "SIC,K EOP R", "B,K SEOP T", "LVI,1,K SUPP".  Two do not, and
+! BOTH substitutions are labelled at their rows below.
+!
+! (A) A BLANKED NAME IN THE NAME FIELD IS REJECTED.  The printed
+!     card is
+!
+!         E WT1   V-I,2,.32
+!
+!     and strap_asm reads the first blank-delimited token as the
+!     name and the rest as the statement, so it reports
+!
+!         line 26: unknown mnemonic 'WT1V-I'
+!
+!     THE DECK WRITES "EWT1".  Printed form: "E WT1".  (Line 33's
+!     "EWT31" needs no substitution -- the page prints it closed
+!     up, which is itself evidence that blanks in a STRAP name are
+!     not significant: line 22 references the same symbol as
+!     "E WT31".)
+!
+! (B) "E WT31-1.0" IS REJECTED, because eval_addr_field's blanked-
+!     symbol rule requires the WHOLE field to be letters, digits
+!     and blanks, and this one carries a "-" and a ".":
+!
+!         BZBZ,S ELG($11),E WT31-1.0  ->  undefined symbol 'E'
+!
+!     THE DECK WRITES "EWT31-1.0".  Printed form: "E WT31-1.0".
+!     Note that the OTHER operand on the same card, "S ELG($11)",
+!     is accepted blanked and is written as printed.
+!
+! (C) AND ONE THAT IS WORSE THAN A REJECTION -- A SILENT WRONG
+!     ANSWER, REPORTED FOR THE REPOSITORY AND NOT WORKED AROUND
+!     BLINDLY.  Line 34 prints "CM1111,S CTL(EU)" with NO data
+!     description, so the connective takes its field length from
+!     the SYMBOL.  The blanked spelling resolves the ADDRESS and
+!     DROPS THE SYMBOL'S DATA DESCRIPTION.  Isolated, with
+!     "SCTL SYN(BU,1), 0.60" and nothing else varying:
+!
+!         CM1111,SCTL(EU)         ->  000000.74 8B  001000.36 F0
+!         CM1111,S CTL(EU)        ->  000000.74 8B  000000.36 F0
+!         CM1111(BU,1),S CTL(EU)  ->  000000.74 8B  001000.36 F0
+!
+!     The page prints 001000.36 F0.  So the blanked form compiles
+!     and is WRONG by the 0o1000 that is the one-bit field length.
+!     THE DECK WRITES "SCTL" closed up (printed form: "S CTL") and
+!     does NOT write the "(BU,1)" the page does not print.  This
+!     row's !CHECK is what catches the defect, which is why it is
+!     safe to write blanked forms elsewhere on a fully checked
+!     page -- and why it would not be safe on an unchecked one.
+!
+! ---------------------------------------------------------------
+! A CORRECTION TO A NOTE IN A LANDED DECK: THE "+1" IN THE J FIELD
+! IS NOT "THE IMMEDIATE FORMS"
+! ---------------------------------------------------------------
+! decks/mcp_bootstrap_p160.strap records "J prints as 2J (+1 for the
+! immediate forms) in the octal offset position".  This page's line 6
+! is "SV,2,S TIC" printing 215265.05 -- 0o05 = 2*2+1 -- and SV is not
+! an immediate form.  Measured on this repository's assembler with
+! S TIC fixed and only J varied:
+!
+!     SV,0  -> 215265.01 30      LV,2 -> 215265.04 30
+!     SV,1  -> 215265.03 30      LV,8 -> 215265.20 30
+!     SV,2  -> 215265.05 30
+!     SV,8  -> 215265.21 30
+!     SV,15 -> 215265.37 30
+!
+! So LV prints 2J and SV prints 2J+1, and LVI (immediate) also prints
+! 2J+1.  The low bit of that field is therefore an OPERATION bit that
+! both the immediate forms and the store forms set.
+!
+! AND p.160's OWN DECK ALREADY CONTAINED THE COUNTEREXAMPLE: its line
+! 12 is "SVA,9,K LOCTD" printing 220047.23, and 0o23 = 2*9+1 with SVA
+! a STORE and not an immediate form.  So the error there is not "that
+! page only saw immediate forms" -- it is a bit that page had already
+! measured both ways and then attributed to the wrong thing.
+!
+! RECORDED, not theorized: this page does not say what that bit means,
+! only that "immediate" is not what selects it.  Lines 6 and 13 check
+! the field at two different J values on one page.
+!
+! ---------------------------------------------------------------
+! THE SECOND ASTERISK: LINES 4 AND 24, MEASURED
+! ---------------------------------------------------------------
+! Every line number carries an asterisk ("1*", "36*"); that is the
+! ordinary column.  TWO lines carry a SECOND asterisk in its own
+! column to the right of the LOCATION, established by pixel count
+! in that column alone at 300 dpi (x=1300..1420) and not by eye:
+!
+!     line  4  (220203.00, "SLC,$")       201 dark pixels
+!     line 24  (220216.00, "LX,0,$+1.0")  197 dark pixels
+!     every other row                     0 or 1
+!
+! docs/listing_typography.md records the marker as open with eight
+! things it is not.  RECORDED AND NOT THEORIZED.
+!
+! THE TEMPTING READING FROM THIS PAGE IS ALREADY DEAD, and saying
+! so is cheaper than proposing it.  Both marked rows are rows whose
+! LOCATION was set by something other than plain sequential advance
+! -- line 4 by the SLC, line 24 by line 23's CNOP padding to the
+! word boundary.  That is refuted by printed p.160, which marks its
+! lines 7 and 26: "grep -n CNOP decks/mcp_bootstrap_p160.strap"
+! returns nothing and that deck carries no SLC either, so neither
+! of its marked rows had its counter adjusted.  Separately, printed
+! p.147's "every printed SLC,$ row carries it" was killed by
+! printed p.151 line 4; this page and printed p.165 both happen to
+! mark their SLC,$ row, which is consistent with that dead rule and
+! is not evidence for it.
+!
+! ---------------------------------------------------------------
+! THE EXTERNALS -- WHERE EACH ONE COMES FROM
+! ---------------------------------------------------------------
+! Every one of the twenty-four names below is ALREADY DEFINED by a
+! landed deck, and this deck writes the landed spelling and the
+! landed data description so the merged image of pp.99-164 agrees
+! with itself.  THE PAGE THAT PRINTS THE DEFINITION IS THE
+! AUTHORITY; a stand-in SYN is CHECKED against it, a copied
+! defining card COLLIDES with it (printed p.157's lesson).  The
+! bit offsets of the K/M/R/Z addresses are back-derived from
+! branches and LVIs on THIS page, so each is observed to the HALF
+! WORD and no further -- the ".0"/".40" below is the defining
+! page's reading for the bits under bit 18, not mine.  What THIS
+! page does check is bit 18 of every one of them.
+!
+! THE MERGE TEST THIS DECK PASSED IS PARTIAL, AND HERE IS THE HOLE.
+! pp.161, 162 and 163 are not landed yet (they are in this same
+! batch), so the merge was run over pp.99-160 PLUS this page and
+! accepted it: 1560 words, no duplicate definition, no dds conflict.
+! It therefore does NOT exercise this page against pp.161-163 -- and
+! p.163 is the page this deck's backward join rests on.  THE CHEAP
+! POST-BATCH CHECK: p.163's rendered tail branches to K K IND,
+! K IO IND and Z STEVL, so Z STEVL, K K LOC, M IO REJ, K EOP R and
+! K SEOP T are the names most likely to be SYNed by both decks.  If
+! p.163 writes any of them differently, the merge will say so the
+! moment all four pages are in the list.
+!
+! EA/EX/EU are INDEX REGISTERS NAMED BY A SYMBOL and are written in
+! the printed form printed p.154 defines them with; "SYN, 12" is a
+! workaround that disagrees with that page.
+EA      SYN, 12.0            ! p.154 line 23 -UNIT AREA TABLE INDEX; line 13's nibble C
+EX      SYN, 8.0             ! p.154 line 26 -SCRATCH INDEX; lines 11 and 13
+EU      SYN, 11.0            ! p.154 line 28 -UNIT STATUS TABLE INDEX; line 34's nibble B
+!
+! The S-prefixed names are FIELD OFFSETS in the unit tables, not
+! addresses; their data descriptions matter to the merge because a
+! connective or VFL writing no dds takes its length from the
+! symbol (see (C) above for the row where that is visible).
+STIC    SYN, (8)215265.0     ! STored Instruction Counter (C22-6728); line 6 prints 215265.05
+SFP     SYN(BU,1), 0.26      ! p.99 line 13 -FILE PROTECT; line 10 prints 000000.32 (0o32 = 26)
+SCHOP   SYN(BU,1), 0.26      ! p.99 line 22 -CHAN OPERATING; line 12 prints 000000.32
+SELG    SYN(BU,1), 0.50      ! p.99 line 41 -ERASE LONG GAP; line 22 prints 000000.62 (0o62 = 50)
+SCTL    SYN(BU,1), 0.60      ! p.99 line 48 -CONTROL - OPERATION; line 34 prints 000000.74 (0o74 = 60)
+SEVLTB  SYN(BU,19), 2.0      ! p.101 line 11 -EVALUATION TABLE BASE; line 14 prints 000002.00
+SEVLMK  SYN(BU,19), 2.32     ! p.101 line 12 -EVALUATION MASK; line 13 prints 000002.61 (bit 18 set)
+SIOINS  SYN(BU,64), 4.0      ! p.101 line 17 -IO INSTR. LAST; lines 25 and 32 print 000004.01
+SSCRPM  SYN(BU,64), 6.0      ! p.101 line 20 -SCRATCH PAD MEMORY; line 20 prints 000006.00
+SFILEK  SYN(BU,12), 7.38     ! p.101 line 25 -FILE COUNT; line 18 prints 000007.52 (bit 18 set)
+SCREEL  SYN(BU,18), 8.32     ! p.101 line 28 -CURRENT REEL ADDRESS; line 9 prints 000010.62
+!
+! The K/M/R/Z/E names are ADDRESSES of routines on other pages.
+KILEGL  SYN, (8)220064.0     ! printed p.160 line 8's own label row; lines 8 and 10, bit 18 clear
+KSUPP   SYN, (8)216242.0     ! printed p.128 "K SUPP NOP,K COMM R"; line 35, bit 18 clear
+KKLOC   SYN, (8)220065.40    ! printed p.160 line 11's own label row; line 16, bit 18 SET
+KEOPR   SYN, (8)221354.40    ! as pp.152/154/159 write it; line 29 is a SIC, so all six digits check
+KSEOPT  SYN, (8)221350.40    ! as pp.152/154/159 write it; line 30, bit 18 SET
+MIOREJ  SYN, (8)221261.0     ! as pp.135/152/154/155/156/159 write it; lines 28 and 36, bit 18 clear
+RS1FLK  SYN, (8)220143.0     ! as pp.151/153 write it; line 21, bit 18 clear
+ZSTEVL  SYN, (8)221144.40    ! as pp.151/152/153/156/159/160 write it; line 15, bit 18 SET
+RVFY    SYN, (8)221161.0     ! as pp.151/153 write it; line 17, bit 18 clear
+EMK1A   SYN, (8)221152.40    ! printed p.153's definition "E MK1A VF,(8)3000."; line 11, bit 18 SET
+
+! THE ORIGIN IS ASSERTED, NOT CHECKED.  The page prints
+! "220203.00 *  SLC,$"; see THE JOIN BACKWARD above.
+        SLC, (8)220203.0             ! p.163 line 46 (220202.40, a half word) leaves here
+
+EWT1    V-I,2,.32                    ! line  5  >>> printed name is "E WT1" -- a blanked NAME field is rejected, see (A)
+        SV,2,S TIC                   ! line  6
+        KVI,4,4.0                    ! line  7
+        BZXE,K ILEGL                 ! line  8
+        LV,9,S C REEL($12)           ! line  9
+        BB,S FP($9),K ILEGL          ! line 10
+        LVI,EX,E MK 1A               ! line 11
+        CM1111(BU,1),S CH OP($10)    ! line 12
+        SV,EX,S EVL MK(EA)           ! line 13
+        SIC,S EVL TB($12)            ! line 14
+        B,Z STEVL                    ! line 15  same card as 14
+        B,K K LOC                    ! line 16
+        B,R VFY                      ! line 17
+        LV,5,S FILEK($12)            ! line 18
+        BZXVZ,$+1.32                 ! line 19
+        SIC,S SCR PM($12)            ! line 20
+        B,RS1 FLK                    ! line 21  same card as 20
+        BZBZ,S ELG($11),EWT31-1.0    ! line 22  >>> printed "E WT31-1.0" -- blanked symbol in an expression is rejected, see (B)
+        CNOP                         ! line 23  spelling is ink-only at this half word
+        LX,0,$+1.0                   ! line 24  (second asterisk)
+        SX,0,S IO INS($12)           ! line 25  same card as 24
+        CTL(SEOP),0.0($14),46        ! line 26  SEOP settled by the printed .15, see above
+        LVI,1,$+1.0                  ! line 27
+        B,M IO REJ                   ! line 28  same card as 27
+        SIC,K EOP R                  ! line 29
+        B,K SEOP T                   ! line 30  same card as 29
+        LX,0,$+1.0                   ! line 31
+        SX,0,S IO INS($12)           ! line 32  same card as 31
+EWT31   CTL,0.0($14),79.0            ! line 33  printed closed up, as the page prints it
+        CM1111,SCTL(EU)              ! line 34  >>> printed "S CTL" -- the blanked form compiles 000000.36 instead of 001000.36, see (C)
+        LVI,1,K SUPP                 ! line 35
+        B,M IOREJ                    ! line 36  same card as 35
+
+! ---------------------------------------------------------------
+! THE CHECKS
+! ---------------------------------------------------------------
+!SYM   EWT1    220203.00
+!SYM   EWT31   220223.00
+!CHECK 220203.00 | 000000.45 0D | line  5 E WT1 V-I,2,.32 -- printed "COCCCO.45 CD"; the LOW nibble is D because V-I's immediate-index code is 0b1101, and the HIGH nibble is 0 because every immediate-index row on this page prints it 0 (lines 7, 11, 27 and 35 print 04, 01, 01, 01)
+!CHECK 220203.40 | 215265.05 30 | line  6 SV,2,S TIC -- printed "215265.C5 30"; the C is in an octal field
+!CHECK 220204.00 | 000004.11 04 | line  7 KVI,4,4.0 -- the clean control for (3): an immediate index byte with high nibble 0, printed closed
+!CHECK 220204.40 | 220064.32 C0 | line  8 BZXE,K ILEGL -- the byte IS C0, a genuine C in the nibble line 11 prints 0 in
+!CHECK 220205.00 | 000010.62 3C | line  9 LV,9,S C REEL($12) -- low nibble C is index $12; bit 18 set checks S C REEL's 8.32 against p.101
+!CHECK 220205.40 | 000000.32 89 220064.34 02 | line 10 BB,S FP($9),K ILEGL -- 0o32 = S FP's bit 26; low nibble 9 is index $9; second group is K ILEGL again
+!CHECK 220206.40 | 221152.61 01 | line 11 LVI,EX,E MK 1A -- printed "C1"; settled by lines 27 and 35, the same operation printed closed on this page
+!CHECK 220207.00 | 000000.32 8A 001000.36 F0 | line 12 CM1111(BU,1),S CH OP($10) -- 001000.36 F0 is the CM1111 connective (printed p.18 prints it six times); low nibble A is index $10
+!CHECK 220210.00 | 000002.61 3C | line 13 SV,EX,S EVL MK(EA) -- 0o61 = bit 18 (S EVL MK's .32) + 0o21, which is 2J+1 for J = EX = 8; line 6's SV,2 prints 0o05 = 2J+1 for J=2, so the two rows check the field against each other; low nibble C is EA = 12
+!CHECK 220210.40 | 000002.00 8C | line 14 SIC,S EVL TB($12) -- a SIC, so all six octal digits of S EVL TB's offset are checked
+!CHECK 220211.00 | 221144.50 00 | line 15 B,Z STEVL -- bit 18 set agrees with Z STEVL's .40
+!CHECK 220211.40 | 220065.50 00 | line 16 B,K K LOC -- bit 18 set agrees with K K LOC's .40; this row prints C, 0 and 0 as three different-looking round glyphs
+!CHECK 220212.00 | 221161.10 00 | line 17 B,R VFY -- bit 18 clear
+!CHECK 220212.40 | 000007.52 3C | line 18 LV,5,S FILEK($12) -- bit 18 set checks S FILEK's 7.38 against p.101
+!CHECK 220213.00 | 220214.71 40 | line 19 BZXVZ,$+1.32 -- $ is 220213.00 so the target is 220214.32; this row checks the deck's own counter
+!CHECK 220213.40 | 000006.00 8C | line 20 SIC,S SCR PM($12) -- a SIC, so S SCR PM's 6.0 is checked to all six digits
+!CHECK 220214.00 | 220143.10 00 | line 21 B,RS1 FLK -- bit 18 clear
+!CHECK 220214.40 | 000000.62 8B 220222.34 04 | line 22 BZBZ,S ELG($11),E WT31-1.0 -- 0o62 = S ELG's bit 50; low nibble B is index $11; the second group is a real INTERNAL check, E WT31 minus one word = 220222.00
+!CHECK 220215.40 | 000000.30 00 | line 23 CNOP -- an odd half word, so NOP and CNOP compile the same thing here; the spelling is ink
+!CHECK 220216.00 | 220217.00 10 | line 24 LX,0,$+1.0 -- (this LOCATION carries the second asterisk)
+!CHECK 220216.40 | 000004.01 1C | line 25 SX,0,S IO INS($12) -- low nibble C is index $12
+!CHECK 220217.00 | 000000.00 8E 000056.15 00 | line 26 CTL(SEOP),0.0($14),46 -- low nibble E is index $14; 0o56 = 46 is the control code as an address, and the 0o10 of .15 is the SEOP flag (SECP prints .05)
+!CHECK 220220.00 | 220221.03 01 | line 27 LVI,1,$+1.0 -- the closed "01" that settles line 11
+!CHECK 220220.40 | 221261.10 00 | line 28 B,M IO REJ -- bit 18 clear; printed with a blank, where line 36 prints the same symbol closed up
+!CHECK 220221.00 | 221354.40 80 | line 29 SIC,K EOP R -- a SIC, so all six octal digits of K EOP R are checked, including the .40
+!CHECK 220221.40 | 221350.50 00 | line 30 B,K SEOP T -- bit 18 set agrees with K SEOP T's .40
+!CHECK 220222.00 | 220223.00 10 | line 31 LX,0,$+1.0 -- byte for byte line 24's card, and its target IS line 33's label
+!CHECK 220222.40 | 000004.01 1C | line 32 SX,0,S IO INS($12) -- byte for byte line 25
+!CHECK 220223.00 | 000000.00 8E 000117.05 00 | line 33 E WT31 CTL,0.0($14),79.0 -- 0o117 = 79; .05 against line 26's .15 is the SEOP flag, present once and absent once on one page
+!CHECK 220224.00 | 000000.74 8B 001000.36 F0 | line 34 CM1111,S CTL(EU) -- 0o74 = S CTL's bit 60; low nibble B is EU = 11; the 001000 is the one-bit field length taken from the SYMBOL, which is the digit the blanked spelling silently drops
+!CHECK 220225.00 | 216242.03 01 | line 35 LVI,1,K SUPP -- the second closed "01"
+!CHECK 220225.40 | 221261.10 00 | line 36 B,M IOREJ -- byte for byte line 28, the same symbol printed closed up; the counter leaves at 220226.00
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, recorded so the oracle can check it later
+! ---------------------------------------------------------------
+!   line  1                                                              -  *************************************************  IJ000001
+!   line  2                                                              -  ************* WRITE END OF FILE *************-     IJ000002
+!   line  3                                                              -  *************************************************  IJ000003
+!   line  4  220203.00 *                                                    SLC,$                                              IJ000004
+!   line  5  220203.00    000000.45 0D                 E WT1              V-I,2,.32                 -SET RETURN ADDRESS        IJ000005
+!   line  6  220203.40    215265.05 30                                    SV,2,S TIC                                           IJ000006
+!   line  7  220204.00    000004.11 04                                    KVI,4,4.0                                            IJ000007
+!   line  8  220204.40    220064.32 C0                                    BZXE,K ILEGL              -IF EQUIP IS NOT TAPE, FAKE EPGK   IJ000008
+!   line  9  220205.00    000010.62 3C                                    LV,9,S C REEL($12)                                   IJ000009
+!   line 10  220205.40    000000.32 89  220064.34 02                      BB,S FP($9),K ILEGL       -IF FILE PROTECTED, FAKE EPGK      IJ000010
+!   line 11  220206.40    221152.61 01                                    LVI,EX,E MK 1A                                       IJ000011
+!   line 12  220207.00    000000.32 8A  001000.36 F0                      CM1111(BU,1),S CH OP($10)                            IJ000012
+!   line 13  220210.00    000002.61 3C                                    SV,EX,S EVL MK(EA)        -MASK IN EVAL MASK AD      IJ000013
+!   line 14  220210.40    000002.00 8C                                    SIC,S EVL TB($12)                                    IJ000014
+!   line 15  220211.00    221144.50 00                                    B,Z STEVL                                            IJ000014
+!   line 16  220211.40    220065.50 00                                    B,K K LOC                 -SEL BIT ON                IJ000015
+!   line 17  220212.00    221161.10 00                                    B,R VFY                   -VER BIT ON                IJ000016
+!   line 18  220212.40    000007.52 3C                                    LV,5,S FILEK($12)         -TEST IF IN LABEL FILE     IJ000017
+!   line 19  220213.00    220214.71 40                                    BZXVZ,$+1.32                                         IJ000018
+!   line 20  220213.40    000006.00 8C                                    SIC,S SCR PM($12)                                    IJ000019
+!   line 21  220214.00    220143.10 00                                    B,RS1 FLK  -IF SO, SPACE OVER LABEL                  IJ000019
+!   line 22  220214.40    000000.62 8B  220222.34 04                      BZBZ,S ELG($11),E WT31-1.0                           IJ000020
+!   line 23  220215.40    000000.30 00                                    CNOP                                                 IJ000021
+!   line 24  220216.00 *  220217.00 10                                    LX,0,$+1.0                                           IJ000022
+!   line 25  220216.40    000004.01 1C                                    SX,0,S IO INS($12)                                   IJ000022
+!   line 26  220217.00    000000.00 8E  000056.15 00                      CTL(SEOP),0.0($14),46     -ERASE LONG GAP COMMAND     IJ000023
+!   line 27  220220.00    220221.03 01                                    LVI,1,$+1.0                                          IJ000024
+!   line 28  220220.40    221261.10 00                                    B,M IO REJ                                           IJ000024
+!   line 29  220221.00    221354.40 80                                    SIC,K EOP R                                          IJ000025
+!   line 30  220221.40    221350.50 00                                    B,K SEOP T                                           IJ000025
+!   line 31  220222.00    220223.00 10                                    LX,0,$+1.0                                           IJ000026
+!   line 32  220222.40    000004.01 1C                                    SX,0,S IO INS($12)                                   IJ000026
+!   line 33  220223.00    000000.00 8E  000117.05 00    E WT31            CTL,0.0($14),79.0                                     IJ000027
+!   line 34  220224.00    000000.74 8B  001000.36 F0                      CM1111,S CTL(EU)          -TURN ON CONTROL BIT       IJ000028
+!   line 35  220225.00    216242.03 01                                    LVI,1,K SUPP                                         IJ000029
+!   line 36  220225.40    221261.10 00                                    B,M IOREJ                                            IJ000029

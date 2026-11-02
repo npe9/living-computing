@@ -1,0 +1,522 @@
+! mcp_bootstrap_p165.strap -- the REWIND pseudo-op (Z REW ST), its
+! shared common-return (Z COM RT), the rewind branch-table slot
+! (Z TB RW) and the UNLOAD pseudo-op (Z UNLDB), printed page 165.
+! docs/MCP_Mar63_001-249.pdf PDF p.172, header READ and not assumed:
+! the top line prints "TIME CLOCK 00054041   PUNID 11D11MCP
+! CARD ID IK000001   DIST. OF 3/01   3/01   PAGE NUMBER  165".
+!
+! >>> THE SURVEY MISREAD THIS PAGE'S OWN NUMBER. <<<  The survey
+! reported printed p.165 at PDF offset 170 (i.e. it read the header
+! as "2"), which would be PDF p.167.  PDF p.172's header reads
+! "PAGE NUMBER  165" at 400 dpi with no ambiguity, so the volume's
+! +7 offset holds here exactly as everywhere else.  PDF p.167 is
+! printed p.160, which is already transcribed.
+!
+! THE HEADING ROW'S OWN "LOCATION" FIELD IS BLANK, and that is the
+! rule and not an omission: line 1 is an asterisk banner card that
+! compiles nothing, so there is no line-1 location to print.  The
+! field was rendered at 400 dpi across its whole width and carries
+! no digits; nothing was read off the dashed rule.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! THIRTY-EIGHT PRINTED LINES, twenty-nine of them located, and the
+! paper runs out at line 38 with the form two thirds empty.  Two
+! routines separated by a banner:
+!
+!   lines  1-3   "***** REWIND *****" banner (three comment cards).
+!   line   4     SLC,$ -- the counter arriving, 220226.00.
+!   lines  5-29  Z REW ST, the REWIND pseudo-operation.
+!   lines 30-31  two bare comment cards (the "-" marker only).
+!   lines 32-34  "***** UNLOAD *****" banner.
+!   line  35     SLC,$ -- the counter arriving, 220244.00.
+!   lines 36-38  Z UNLDB, the UNLOAD pseudo-operation.
+!
+! REWIND, read as code:  Z REW ST saves its caller's IC into the
+! branch-table slot Z TB RW+.32 (line 5), which is line 29's own
+! half word -- line 29 is printed "B,$" and the SIC overwrites its
+! address, which is what the comment "-BRANCH BACK TO MOTHER
+! ROUTINE" means.  It then sets the REWIND bit S REW($11) (line 7),
+! stores its own continuation into S IO INS($12) (lines 9-10), and
+! issues the control order (line 11).  Lines 12-13 are the
+! I/O-reject exit, 14-16 the end-of-operation linkage.  Line 17 is
+! Z COM RT, the common return shared by REWIND and UNLOAD: it
+! checks that the equipment is a tape (lines 17-20), sets the
+! evaluation mask and table addresses from Z EVL RW and Z TB RW
+! (lines 21-25), clears the unit's UNR status bit and sets its CTL
+! bit (lines 23 and 26), and leaves to the status evaluator
+! Z STEVL (line 27).
+!
+! UNLOAD is three cards: the same SIC into the same slot, the same
+! branch to Z COM RT, and B,K UNLOD.  Z UNLDB and Z REW ST differ
+! only in that third card, which is why the two share Z TB RW.
+!
+! ---------------------------------------------------------------
+! COUNTING THE ROWS -- WHERE THIS DISAGREES WITH THE SURVEY
+! ---------------------------------------------------------------
+! The survey read 24 rows, 220226.00..220245.00, kind=code.  The
+! endpoints are right and the count is not: there are
+!
+!   29 LOCATED rows   (lines 4-7, 9-29, 35-38)
+!   27 rows WITH BINARY OUTPUT   (the two SLC,$ rows emit nothing)
+!   23 half words and 4 full words   (lines 7, 11, 23, 26)
+!
+! Nothing fell off either end.  The count was taken off the CARD
+! SERIAL column, not off the row images:  lines 1-31 carry
+! IK000001..IK000027 and lines 32-38 carry IL000001..IL000006, so
+! the page is complete from its first card to its last.  Line 38 is
+! IL000006 and the paper below it is blank.
+!
+! FIVE CARDS CARRY TWO STATEMENTS EACH, which is why 38 printed
+! lines come from 33 cards (27 IK + 6 IL).  The duplicated serials are the
+! evidence and they are not an OCR artefact -- rendered at 600 dpi:
+!
+!   lines  5,6   IK000005   SIC,Z TB RW+.32  ;  B,Z COM RT
+!   lines  9,10  IK000008   LX,0,$+1.0       ;  SX,0,S IO INS($12)
+!   lines 12,13  IK000010   LVI,1,$+1.0      ;  B,M IO REJ
+!   lines 14,15  IK000011   SIC,K EOP R      ;  B,K SEOP T
+!   lines 36,37  IL000005   SIC,Z TB RW+.32  ;  B,Z COM RT
+!
+! The fifth is in the IL deck: lines 36/37 repeat lines 5/6's card
+! exactly, which is why the UNLOAD entry is three lines and two
+! cards.  Every one of them is a pair whose
+! second member MUST follow the first (SIC/branch, LVI/branch,
+! LX/SX), so the pairing is the programmer's, not the printer's.
+!
+! LINE 8 IS A "CNOP" WITH NO LOCATION AND NO BINARY, and that is
+! correct: line 7 is a full word ending at 220227.40, so the
+! counter is already word-aligned at 220230.00 and the CNOP pads
+! nothing.  It is a real card (IK000007) that compiles zero bits.
+!
+! THE LOCATION-COLUMN ASTERISK appears on THREE rows: lines 4, 25
+! and 35.  Lines 4 and 35 are the two SLC,$ rows; line 25 is an
+! ordinary "SV,7,S EVL TB($12)".  Recorded, not explained.  No
+! hypothesis is offered: printed p.160 already carries two
+! asterisks on ordinary rows (its lines 7 and 26), which kills any
+! SLC-shaped rule before this page is consulted.
+!
+! ---------------------------------------------------------------
+! THE JOIN BACKWARD
+! ---------------------------------------------------------------
+! Line 4 prints "220226.00 *  SLC,$", so THE PAGE ITSELF states
+! that the counter arrives from printed p.164 at 220226.00 -- an
+! independent reading of the join, printed by IBM's assembler.
+!
+! >>> BUT THIS DECK THROWS THAT WITNESS AWAY AND MUST SAY SO. <<<
+! A deck has to start somewhere, so line 4 is written here as a
+! hard "SLC,(8)220226." instead of the printed "SLC,$".  A hard SLC
+! cannot disagree with an arriving counter (workflow "WHAT THE
+! ORACLE CANNOT SEE", item 2), so NO CHECK ON THIS PAGE TESTS THE
+! JOIN TO p.164.  It has to be compared by hand, and the comparison
+! is: the volume OCR of printed p.164 (PDF p.171 -- an INDEX, not a
+! witness, and p.164's own transcriber decides it) carries
+! "36* 220225.40  221261.10 00  B,M IO REJ" as that page's last
+! row, a half-word branch, which leaves the counter at 220226.00.
+! If p.164's deck lands anywhere else, this page's line 4 is wrong
+! and nothing here will have failed.
+!
+! LINE 35'S SLC,$ IS WRITTEN AS PRINTED, and that one IS a live
+! check, internal to this page: strap_asm accepts a bare "SLC,$"
+! (measured), so line 35 does not override the counter and the fact
+! that lines 36-38 land at 220244.00/.40 and 220245.00 is this
+! deck's own arithmetic agreeing with the printed column.  Had the
+! REWIND routine above been one half word longer or shorter, line
+! 36's check would fail.
+!
+! ---------------------------------------------------------------
+! THE ONE SUBSTITUTION -- LINE 11, AND IT IS LOUD
+! ---------------------------------------------------------------
+! >>> THE PAGE PRINTS "REW(SEOP),0.0($14)".  THIS DECK WRITES
+! >>> RESOLVED 2026-11-02: REW IS NOW IMPLEMENTED and the printed
+! form stands.  The note below records the substitution this deck
+! carried for one commit, and why it was bit-identical.
+! >>> "CTL(SEOP),0.0($14),(8)136."  The printed form was NOT what
+! >>> is compiled below.
+!
+! strap_asm REFUSES the printed form.  Measured, verbatim:
+!
+!     REW(SEOP),0.0($14)
+!       -> AssemblerError: unknown data-description mode 'SEOP'
+!
+! because REW is not in strap/strap_asm.py's IO_FUNCTION_OPS (which
+! holds only SPFL and GONG, deliberately -- see the long comment
+! there), so "(SEOP)" falls through to the data-description parser.
+! That is an ASSEMBLER LIMITATION, not a reading problem: the
+! statement column was rendered at 1400 dpi and reads "Z CTL RW
+! REW(SEOP),0.0($14)" with no doubtful glyph.
+!
+! THE SUBSTITUTE IS EXACT, NOT APPROXIMATE, and it is checked:
+!
+!     CTL(SEOP),0.0($14),(8)136.  ->  000000.00 8E  000136.15 00
+!     the page prints              ->  000000.00 8E  000136.15 00
+!
+! so the deck's statement and its !CHECK do not contradict each
+! other, which is the condition rule 3 sets.  TWO independent
+! sources make the equivalence an identity rather than a guess:
+!
+!   (a) 0o136 = Rewind.  The Reference Manual's IBM 729 IV control
+!       code table (printed p.132), transcribed in
+!       docs/exchange_and_io.md, line 626: "136 | Rewind (EOP given
+!       at initiation; CS when load point reached)".
+!   (b) The page prints the code itself.  The second half word's
+!       address field IS 000136, and its .15 is the CTL(SEOP)
+!       operation -- byte for byte printed p.152 line 44's
+!       "000000.00 8E  000000.15 00" for "CTL(SEOP),0.0($14),0.0",
+!       the same instruction with a zero control code.
+!
+! WHAT IS LOST BY THE SUBSTITUTION: nothing in the bits, and the
+! spelling "REW" as an accepted STRAP-II input.  If REW is ever
+! added to IO_FUNCTION_OPS (0o136, by (a) and (b) above -- the same
+! two-source standard SPFL met), this line should become the
+! printed form and this comment should go.
+!
+! MCP'S OWN IDIOM FOR THE THIRD OPERAND, for whoever does that:
+! printed p.164 line 33 writes the code as a BARE DECIMAL bit
+! address -- its volume OCR reads "33* 220223.00  000000.00 8E
+! 000117.05 00  CTL,0.0($14),79.0", and 79 decimal is 0o117.  So
+! "(8)136." here and "94.0" there are the same word; the (8) form
+! was chosen because docs/transcription_workflow.md blesses it and
+! because it prints as the page prints.
+!
+! ---------------------------------------------------------------
+! AN ENCODING RESULT THIS PAGE MEASURES -- AND WHAT PINS Z EVL RW
+! ---------------------------------------------------------------
+! A VALUE OPERATION ENCODES ITS REGISTER AS 2N+1, ADDED INTO THE
+! PRINTED BIT-OFFSET FIELD.  Eight rows on this page, three
+! registers, four operations, nothing else varying:
+!
+!     line 12  LVI,1,$+1.0            220233.03    0o03 = 2*1+1
+!     line 17  V-I,2,.32              000000.45    0o40 + 0o05
+!     line 18  SV,2,S TIC             215265.05    0o05 = 2*2+1
+!     line 19  KVI,4,4.0              000004.11    0o11 = 2*4+1
+!     line 21  LVI,7,Z EVL RW         221153.57    0o40 + 0o17
+!     line 22  SV,7,S EVL MK($12)     000002.57    0o40 + 0o17
+!     line 24  LVI,7,Z TB RW          220243.17    0o17 = 2*7+1
+!     line 25  SV,7,S EVL TB($12)     000002.17    0o17 = 2*7+1
+!
+! and it agrees with printed p.160 line 11's LVI,9 printing 0o63
+! (0o40 + 0o23, 0o23 = 2*9+1) on a .40 symbol.  The 0o40 is the
+! operand's own bit 32.
+!
+! >>> THIS IS WHAT PINS Z EVL RW AT 221153.40 AND NOT .00. <<<
+! Lines 21 and 24 are the SAME OPERATION ON THE SAME REGISTER and
+! they print 0o57 and 0o17.  Z TB RW is this page's own label at
+! 220243.00, so 0o17 is the no-bit-32 reading and 0o57 carries
+! bit 32: Z EVL RW is a .40 symbol.  That is an OBSERVATION off two
+! rows of one page, not the usual ".0 by convention".  It is
+! corroborated by an INDEX (not a witness) -- the volume OCR of the
+! untranscribed STATUS EVALUATION page whose first located row is
+! 221144.40 = Z STEVL carries
+! "221153.40  002000.00+   Z EVL RW   VF,(8)2000.  -REW,UNLD,FREE
+! MASK - SEL", a VF constant at exactly 221153.40.
+!
+! >>> THE RULE DOES NOT COVER LX/SX, AND THIS IS UNRESOLVED. <<<
+! Lines 9 and 10 are index operations, not value operations:
+!
+!     line  9  LX,0,$+1.0             220231.00 10    offset 0o00
+!     line 10  SX,0,S IO INS($12)     000004.01 1C    offset 0o01
+!
+! SX,0 fits (0o01 = 2*0+1); LX,0 does not (0o00, where the rule
+! predicts 0o01).  The BYTES are not the puzzle -- both are the same
+! base byte 10 and line 10's low nibble is just its index $12 (see
+! GLYPHS (2) below) -- it is the OFFSET field that disagrees.  One
+! page cannot settle whether LX simply does not carry the register
+! in that field or whether something else about a word-granular
+! fetch zeroes it, and this deck does not guess.  A page carrying LX
+! on a register other than 0 would settle it in one row.
+!
+! ---------------------------------------------------------------
+! GLYPHS SETTLED, AND HOW
+! ---------------------------------------------------------------
+! (1) LINE 23'S SECOND HALF WORD prints "001000.CO FC" to the eye.
+!     It is "001000.00 F0".  The octal field itself prints a C for
+!     a 0 ("001000.CO"), which shows the row drops ink on round
+!     glyphs; what settles the byte is printed p.160, which carries
+!     the SAME CONNECTIVE TWICE -- line 17 "CM0000,S LOC SU" and
+!     line 26 "CM0000(BU,1),S SEL($11)", both printing
+!     "001000.00 F0" -- against its own lines 31's CM1111
+!     "001000.36 F0".  Lines 7 and 26 here print the CM1111 form
+!     and both read "001000.36 F0" cleanly, so the page itself
+!     carries the contrast.  The assembler agrees.
+!
+! (2) THE LOW NIBBLE OF A BYTE IS THE INDEX REGISTER, and that is
+!     what decides four of this page's bytes -- NOT the glyph.
+!     $11 -> B (lines 7, 26), $12 -> C (lines 10, 22, 25), $13 -> D
+!     (line 23), $14 -> E (line 11); printed p.152 line 44 and
+!     printed p.160 line 13 ("000005.00 8C" for "SIC,S RET AD($12)")
+!     read the same nibble the same way.
+!
+!     >>> THIS DECK'S FIRST READING GOT FOUR OF THEM WRONG IN THE
+!     >>> SAME DIRECTION, so the correction is worth recording.  At
+!     900 dpi lines 10, 22 and 25 were transcribed "10", "30", "30"
+!     -- a reflex application of "a round glyph in a damaged row is
+!     a 0".  THE DRUM WAS RIGHT AND THE READER WAS WRONG: at 1400
+!     dpi the second glyph of each is visibly OPEN against line 9's
+!     and line 18's visibly CLOSED 0, and every one of them has a
+!     ($12) that the C spells.  The printed bytes are 1C, 3C, 3C.
+!     The asymmetry "dropout opens a closed glyph but never closes
+!     an open one" says a C MAY be a damaged 0; it does not say it
+!     is, and four rows on one page is the price of treating it as
+!     if it did.
+!
+! (2a) LINE 20'S "C0" IS THE ONE BYTE ON THIS PAGE THAT INK CANNOT
+!     SETTLE AT ALL, and it must be said plainly.  Lines 13, 16 and
+!     28 are plain branches whose byte IS 00, and at 1400 dpi all
+!     three print their first glyph OPEN, exactly as line 20 does;
+!     lines 27 and 29 print the same 00 with it CLOSED.  So on this
+!     page an open first glyph carries NO information and "C0"
+!     cannot be read off the paper.  It is settled by WHAT PRODUCED
+!     IT: BZXE's byte is C0, and printed p.159 line 6 is the SAME
+!     STATEMENT -- "BZXE,K ILEGL" printing "220064.32 C0", the same
+!     six octal digits and the same byte, transcribed by a different
+!     reader off a different page.  Fourteen landed decks print BZXE
+!     with C0, printed p.124 line 55 read at 1800 dpi, and printed
+!     p.153 line 45 prints BXE as "217667.32 C2" against it, so the
+!     C is a real hex C and the low bits are the condition, not ink.
+!
+! (3) "S CCW", not "S COW" or "S CCH".  Rendered at 1400 dpi the
+!     name reads "S CCW.18($13)"; the drum's W is the glyph that
+!     looks lowercase (the same one in "REWIND" in the banner and
+!     in "Z TB RW").  The comment column is the oracle: "-TURN OFF
+!     UNR STATUS BIT IN CW".  And eleven landed decks carry SCCW at
+!     4.0 while nothing in the repository carries SCOW.
+!
+! (4) "Z UNLDB", read at 1400 dpi: the D has the straight left stem
+!     and squared corners that separate it from a C, and the final
+!     B has both bowls and the stroke.  Nothing references this
+!     label yet, so it rests on ink alone -- flagged accordingly.
+!
+! (5) ".18" IN LINE 23 IS DECIMAL, as a bare STRAP bit offset
+!     always is, and the page confirms it: S CCW is 4.0 and the
+!     printed address field is "000004.22", 0o22 = 18.
+!
+! (6) "V-I" ON LINE 17, at 1400 dpi, with a clean closed O in the
+!     name "Z COM RT" beside it.  strap_asm's own comment (line
+!     3500) records "V-I,$X15,1.0 -> 1.37 0D"; this row prints
+!     byte 0D, which is the same operation.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- EVERY ONE CARRIED AS A LANDED DECK WRITES IT
+! ---------------------------------------------------------------
+! A connective or VFL operation writing no data description takes
+! its length from the SYMBOL, so a dds that disagrees with the
+! defining page refuses the merge.  LINE 26 IS EXACTLY THAT CASE
+! ("CM1111,S CTL($11)", no dds), so S CTL's "SYN(BU,1), 0.60" is
+! printed p.99 line 48's own card, copied field for field and not
+! normalised.  The same for the other five dds-bearing externals.
+!
+! The three "SYN, (8)nnnn" externals reached only through a BRANCH
+! (M IO REJ, K SUPP, K SEOP T, K ILEGL, Z STEVL, K K LOC, K UNLOD)
+! are known TO THE HALF WORD ONLY -- a branch shows bit 32 and no
+! lower bit.  Writing ".0" on them is a convention; bit 32 is read.
+! K EOP R is the exception: line 14 is a SIC, which prints the full
+! 24-bit address, so 221354.40 is observed to all six digits.
+
+SREW    SYN(BU,1), 0.52              ! p.99  line 43 -REWIND TAPE
+SCTL    SYN(BU,1), 0.60              ! p.99  line 48 -CONTROL - OPERATION
+SIOINS  SYN(BU,64), 4.0              ! p.101 line 17 -IO INSTR. LAST
+SEVLTB  SYN(BU,19), 2.0              ! p.101 line 11 -EVALUATION TABLE BASE
+SEVLMK  SYN(BU,19), 2.32             ! p.101 line 12 -EVALUATION MASK
+SCCW    SYN(BU,64), 4.0              ! p.102 line 15 -COPIED CONTROL WORD
+STIC    SYN, (8)215265.0             ! STored Instruction Counter
+KSUPP   SYN, (8)216242.0             ! half word only
+KILEGL  SYN, (8)220064.0             ! printed p.160 line 8's own label
+KKLOC   SYN, (8)220065.40            ! printed p.160 line 11's own label
+MIOREJ  SYN, (8)221261.0             ! half word only
+ZSTEVL  SYN, (8)221144.40            ! half word only; eight pages agree
+ZEVLRW  SYN, (8)221153.40            ! the .40 is MEASURED -- see above
+KSEOPT  SYN, (8)221350.40            ! half word only
+KEOPR   SYN, (8)221354.40            ! a SIC: all 24 bits observed
+KUNLOD  SYN, (8)221733.0             ! half word only; line 38 is a branch
+
+        SLC, (8)220226.              ! line  4 printed "220226.00 *  SLC,$"
+                                     !         -- A HARD ORIGIN SUBSTITUTED
+                                     !         FOR A PRINTED SLC,$; the join
+                                     !         to p.164 is UNCHECKED here
+
+ZREWST  SIC,ZTBRW+.32                ! line  5
+        B,ZCOMRT                     ! line  6  same card as 5
+        CM1111(BU,1),SREW($11)       ! line  7
+        CNOP                         ! line  8  compiles nothing
+        LX,0,$+1.0                   ! line  9
+        SX,0,SIOINS($12)             ! line 10  same card as 9
+ZCTLRW  REW(SEOP),0.0($14)           ! line 11  printed form -- REW landed 2026-11-02
+                                     !          -- SUBSTITUTED, see above
+        LVI,1,$+1.0                  ! line 12
+        B,MIOREJ                     ! line 13  same card as 12
+        SIC,KEOPR                    ! line 14
+        B,KSEOPT                     ! line 15  same card as 14
+        B,KSUPP                      ! line 16
+ZCOMRT  V-I,2,.32                    ! line 17
+        SV,2,STIC                    ! line 18
+        KVI,4,4.0                    ! line 19
+        BZXE,KILEGL                  ! line 20
+        LVI,7,ZEVLRW                 ! line 21
+        SV,7,SEVLMK($12)             ! line 22
+        CM0000(BU,1),SCCW.18($13)    ! line 23
+        LVI,7,ZTBRW                  ! line 24
+        SV,7,SEVLTB($12)             ! line 25  (the third asterisk)
+        CM1111,SCTL($11)             ! line 26
+        B,ZSTEVL                     ! line 27
+ZTBRW   B,KKLOC                      ! line 28
+        B,$                          ! line 29  the slot line 5 overwrites
+
+        SLC,$                        ! line 35 printed "220244.00 *  SLC,$"
+                                     !         -- WRITTEN AS PRINTED
+
+ZUNLDB  SIC,ZTBRW+.32                ! line 36
+        B,ZCOMRT                     ! line 37  same card as 36
+        B,KUNLOD                     ! line 38
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, recorded so the oracle can check it later
+! ---------------------------------------------------------------
+!   line  1                                                                   - ****************************************  IK000001
+!   line  2                                                                   -*************** R E W I N D ************  IK000002
+!   line  3                                                                   - ****************************************  IK000003
+!   line  4  220226.00 *                                        SLC,$                                                     IK000004
+!   line  5  220226.00    220243.40 80            Z REW ST      SIC,Z TB RW+.32                                           IK000005
+!   line  6  220226.40    220234.50 00                          B,Z COM RT                                                IK000005
+!   line  7  220227.00    000000.64 8B  001000.36 F0            CM1111(BU,1),S REW($11)                                   IK000006
+!   line  8                                                     CNOP                                                      IK000007
+!   line  9  220230.00    220231.00 10                          LX,0,$+1.0                                                IK000008
+!   line 10  220230.40    000004.01 1C                          SX,0,S IO INS($12)                                        IK000008
+!   line 11  220231.00    000000.00 8E  000136.15 00  Z CTL RW  REW(SEOP),0.0($14)          -ISSUE REWIND                  IK000009
+!   line 12  220232.00    220233.03 01                          LVI,1,$+1.0                                                IK000010
+!   line 13  220232.40    221261.10 00                          B,M IO REJ                                                IK000010
+!   line 14  220233.00    221354.40 80                          SIC,K EOP R                                               IK000011
+!   line 15  220233.40    221350.50 00                          B,K SEOP T                                                IK000011
+!   line 16  220234.00    216242.10 00                          B,K SUPP                                                  IK000012
+!   line 17  220234.40    000000.45 0D            Z COM RT      V-I,2,.32                                                 IK000013
+!   line 18  220235.00    215265.05 30                          SV,2,S TIC                                                IK000014
+!   line 19  220235.40    000004.11 04                          KVI,4,4.0                   -TEST IF EQUIP IS TAPE        IK000015
+!   line 20  220236.00    220064.32 C0                          BZXE,K ILEGL                -IF NOT, FAKE EPGK            IK000016
+!   line 21  220236.40    221153.57 01                          LVI,7,Z EVL RW              -SET EVAL MASK ADDR           IK000017
+!   line 22  220237.00    000002.57 3C                          SV,7,S EVL MK($12)                                        IK000018
+!   line 23  220237.40    000004.22 8D  001000.00 F0            CM0000(BU,1),S CCW.18($13)  -TURN OFF UNR STATUS BIT IN CW IK000019
+!   line 24  220240.40    220243.17 01                          LVI,7,Z TB RW               -SET EVAL TABLE ADDR          IK000020
+!   line 25  220241.00 *  000002.17 3C                          SV,7,S EVL TB($12)                                        IK000021
+!   line 26  220241.40    000000.74 8B  001000.36 F0            CM1111,S CTL($11)           -TURN CTL BIT ON IN UST       IK000022
+!   line 27  220242.40    221144.50 00                          B,Z STEVL                                                 IK000023
+!   line 28  220243.00    220065.50 00            Z TB RW       B,K K LOC                                                 IK000024
+!   line 29  220243.40    220243.50 00                          B,$                         -BRANCH BACK TO MOTHER ROUTINE IK000025
+!   line 30                                                     -                                                         IK000026
+!   line 31                                                     -                                                         IK000027
+!   line 32                                                                   - ****************************************  IL000001
+!   line 33                                                                   -*************** U N L O A D ************  IL000002
+!   line 34                                                                   - ****************************************  IL000003
+!   line 35  220244.00 *                                        SLC,$                                                     IL000004
+!   line 36  220244.00    220243.40 80            Z UNLDB       SIC,Z TB RW+.32                                           IL000005
+!   line 37  220244.40    220234.50 00                          B,Z COM RT                                                IL000005
+!   line 38  220245.00    221733.10 00                          B,K UNLOD                                                 IL000006
+!
+! ---------------------------------------------------------------
+! WHAT COULD NOT BE SETTLED
+! ---------------------------------------------------------------
+! (a) THE JOIN TO p.164 IS NOT CHECKED BY ANYTHING HERE.  Line 4's
+!     printed "SLC,$" was replaced by a hard origin, so every check
+!     below would still pass if the whole page were at the wrong
+!     address.  The page's own witness says 220226.00; p.164's deck
+!     is what closes it.
+!
+! (b) "Z UNLDB" RESTS ON INK ALONE.  Nothing in the repository
+!     references it and nothing on this page spells it twice, so
+!     neither the comment column, the manuals, nor the assembler
+!     can test the D or the B.  A later page branching to it would.
+!     ("Z REW ST" is in better shape: the volume OCR of a later
+!     page -- an INDEX -- carries "220753.40  220226.10 00  B,Z REW
+!     ST  -REWIND", whose .10 is a branch's operation bits on
+!     220226.00, this page's own line 5.)
+!
+! (c) THE LX/SX OFFSET ASYMMETRY of lines 9 and 10, above.  SX,0
+!     prints 0o01 and LX,0 prints 0o00 for what the value
+!     operations would both make 0o01.  Both rows CHECK, so the
+!     deck is not wrong; what is unknown is the rule.
+!
+! (c') LINE 20'S BYTE IS NOT READ, IT IS DEDUCED -- see GLYPHS (2a).
+!     Three rows on this page print a 00 byte whose first glyph is
+!     as open as line 20's, so nothing about the paper distinguishes
+!     C0 from 00 there.  The row passes because strap_asm encodes
+!     BZXE as C0, and strap_asm's BZXE encoding is a SHARED
+!     assumption with the fourteen landed decks that print it, so
+!     "it checks" is not independent of "the assembler is right".
+!     What makes it safe is printed p.159 line 6 carrying the same
+!     statement and the same printed word, and printed p.124 line 55
+!     carrying a 1800-dpi reading of the same byte -- neither of
+!     which is this page.  If BZXE's byte is ever found to be 00,
+!     fifteen decks move together and this row is one of them.
+!
+! (d) THE LOCATION ASTERISK on lines 4, 25 and 35.  Ninth entry in
+!     the list of things it is not.  No rule proposed.
+!
+! (e) THE COMMENT ON LINE 20 reads "-IF NOT, FAKE EPGK" at 400 dpi.
+!     "EPGK" is the spelling printed p.160's deck also carries for
+!     the same idea, so the two agree -- but it is an abbreviation
+!     this repository has never expanded, and a reader who knows
+!     what the G is should correct it.
+!
+! (f) EVERY "DR"/"DRZ" CAVEAT IS VACUOUS HERE -- this page has no
+!     reservation, no DD, no VF and no XW.  Nor does it jump its
+!     counter: lines 4..29 and 35..38 are contiguous half and full
+!     words with no hole, so there is no span to declare.
+!
+! ---------------------------------------------------------------
+! THE JOIN FORWARD -- a falsifiable prediction for printed p.166
+! ---------------------------------------------------------------
+! Line 38 is a half-word branch at 220245.00, so THE COUNTER LEAVES
+! THIS PAGE AT 220245.40.  Four ways to break that:
+!
+!   1. printed p.166's first LOCATED row should be 220245.40.
+!   2. If p.166 opens with a banner, its heading-row LOCATION field
+!      is BLANK and that refutes nothing; a NUMBER there other than
+!      220245 does refute it.
+!   3. If p.166 prints its own "SLC,$", that row's LOCATION is the
+!      counter arriving and must read 220245.40.
+!   4. THE CARD SERIAL.  Line 38 here is IL000006, so p.166's line
+!      1 should be IL000007 unless p.166 opens a new card deck, in
+!      which case it is IM000001 (or the next letter in use).  This
+!      page shows the IK->IL boundary falling MID-PAGE at line 32,
+!      so a deck change at a page boundary is not required and
+!      IL000007 is the prediction.
+!
+! Also for p.166's transcriber, because this page has already paid
+! for them: the UNLOAD routine ends at line 38 after only three
+! cards, so whatever p.166 opens with is a NEW routine, not a
+! continuation -- and if it carries "REW", "UNLOAD" or any other
+! I-O FUNCTION pseudo-op, strap_asm will refuse it the way it
+! refused line 11 here.
+! ---------------------------------------------------------------
+
+!SYM   ZREWST   220226.00
+!SYM   ZCTLRW   220231.00
+!SYM   ZCOMRT   220234.40
+!SYM   ZTBRW    220243.00
+!SYM   ZUNLDB   220244.00
+!CHECK 220226.00 | 220243.40 80 | line 5 Z REW ST SIC,Z TB RW+.32 -- a SIC prints the full 24-bit address, so this checks Z TB RW's bit offset as well as its word: a FORWARD reference to line 28 plus 32 bits, internal to this page
+!CHECK 220226.40 | 220234.50 00 | line 6 B,Z COM RT -- same card as line 5; bit 18 set is Z COM RT's .40, which is line 17's own label
+!CHECK 220227.00 | 000000.64 8B 001000.36 F0 | line 7 CM1111(BU,1),S REW($11) -- low nibble B is index $11; the second group's 001000.36 is the all-ones connective, printed again on line 26 and against line 23's 001000.00
+!CHECK 220230.00 | 220231.00 10 | line 9 LX,0,$+1.0 -- $ is 220230.00 so the target is 220231.00, which is line 11's own location: this row checks the deck's own counter across the CNOP
+!CHECK 220230.40 | 000004.01 1C | line 10 SX,0,S IO INS($12) -- same card as line 9; S IO INS is 4.0 and the 0o01 offset is the register encoding (2*0+1), the one index row that fits the value-op rule; the byte's low nibble C is index $12, against line 9's bare 10 -- the two halves of one card printing the same operation with and without an index
+!CHECK 220231.00 | 000000.00 8E 000136.15 00 | line 11 Z CTL RW -- PRINTED "REW(SEOP),0.0($14)", COMPILED "CTL(SEOP),0.0($14),(8)136." -- REW admitted 2026-11-02 (0o136 Rewind: RefMan p.132 table, C28-6129 Appendix B, and this row), so the PRINTED form now stands, and the .15 checks CTL(SEOP) against plain CTL's .05
+!CHECK 220232.00 | 220233.03 01 | line 12 LVI,1,$+1.0 -- the 0o03 is 2*1+1 for register 1; the address 220233.00 is line 14's location, so this checks the counter
+!CHECK 220232.40 | 221261.10 00 | line 13 B,M IO REJ -- same card as line 12; bit 18 clear agrees with M IO REJ at 221261.00 as six other decks write it
+!CHECK 220233.00 | 221354.40 80 | line 14 SIC,K EOP R -- a SIC, so K EOP R's offset is OBSERVED to all six octal digits (221354.40), not assumed
+!CHECK 220233.40 | 221350.50 00 | line 15 B,K SEOP T -- same card as line 14; bit 18 set is K SEOP T's .40
+!CHECK 220234.00 | 216242.10 00 | line 16 B,K SUPP -- bit 18 clear agrees with the fifteen decks that write K SUPP at 216242.0
+!CHECK 220234.40 | 000000.45 0D | line 17 Z COM RT V-I,2,.32 -- 0o45 is bit 32 plus 2*2+1; byte 0D is the V-I operation, the same byte strap_asm's own comment records for "V-I,$X15,1.0"
+!CHECK 220235.00 | 215265.05 30 | line 18 SV,2,S TIC -- same register 2 as line 17 printing the same 0o05 with no bit-32 term, because S TIC is a .00 symbol
+!CHECK 220235.40 | 000004.11 04 | line 19 KVI,4,4.0 -- 0o11 is 2*4+1; the bare 4.0 is word 4 bit 0
+!CHECK 220236.00 | 220064.32 C0 | line 20 BZXE,K ILEGL -- byte for byte printed p.159 line 6's word, the SAME statement on another page; the C0 is NOT read off this page's ink (see WHAT COULD NOT BE SETTLED (c')) -- the 0o32 is BZXE's operation bits and bit 18 clear agrees with printed p.160 line 8's own label at 220064.00
+!CHECK 220236.40 | 221153.57 01 | line 21 LVI,7,Z EVL RW -- 0o57 is bit 32 plus 2*7+1, and comparing it with line 24's 0o17 on the SAME operation and register is what pins Z EVL RW at .40
+!CHECK 220237.00 | 000002.57 3C | line 22 SV,7,S EVL MK($12) -- the identical 0o57 on a symbol independently known to be 2.32, which is what makes line 21's reading an observation and not a convention; low nibble C is index $12 against line 18's bare 30, the same operation without an index
+!CHECK 220237.40 | 000004.22 8D 001000.00 F0 | line 23 CM0000(BU,1),S CCW.18($13) -- 0o22 = 18 decimal pins the ".18"; low nibble D is index $13; the second group 001000.00 against lines 7 and 26's 001000.36 checks all four connective digits
+!CHECK 220240.40 | 220243.17 01 | line 24 LVI,7,Z TB RW -- 0o17 with no bit-32 term; Z TB RW is this page's own line 28, so this row is fully internal
+!CHECK 220241.00 | 000002.17 3C | line 25 SV,7,S EVL TB($12) -- S EVL TB is 2.0 against line 22's S EVL MK at 2.32, same register, 0o17 against 0o57, and byte for byte line 22 (this LOCATION carries the third asterisk)
+!CHECK 220241.40 | 000000.74 8B 001000.36 F0 | line 26 CM1111,S CTL($11) -- NO data description, so the length comes from S CTL's own SYN(BU,1); 0o74 is bit 60, which is p.99 line 48's 0.60
+!CHECK 220242.40 | 221144.50 00 | line 27 B,Z STEVL -- bit 18 set is Z STEVL's .40, byte for byte printed p.160 line 22's word
+!CHECK 220243.00 | 220065.50 00 | line 28 Z TB RW B,K K LOC -- bit 18 set is K K LOC's .40, printed p.160 line 11's own label
+!CHECK 220243.40 | 220243.50 00 | line 29 B,$ -- a branch to itself; this is the half word lines 5 and 36 overwrite with the caller's IC, which is why the comment reads "-BRANCH BACK TO MOTHER ROUTINE"
+!CHECK 220244.00 | 220243.40 80 | line 36 Z UNLDB SIC,Z TB RW+.32 -- byte for byte line 5's card punched a second time in the IL deck; it lands here only because line 35's printed SLC,$ was written as printed and the counter arrived on its own
+!CHECK 220244.40 | 220234.50 00 | line 37 B,Z COM RT -- same card as line 36, and byte for byte line 6
+!CHECK 220245.00 | 221733.10 00 | line 38 B,K UNLOD -- the page's last row; bit 18 clear agrees with K UNLOD at 221733.00, and the half word leaves the counter at 220245.40 for printed p.166

@@ -1,0 +1,569 @@
+! mcp_bootstrap_p166.strap -- Z FREE, the FREE (release-a-unit)
+! routine, printed page 166.  docs/MCP_Mar63_001-249.pdf PDF p.173,
+! header READ and not assumed: the top line prints "TIME CLOCK
+! 00054041   PUNID 11D11MCP   CARD ID IM000001   DIST. OF 3/01
+! 3/01   PAGE NUMBER  166", and the column-heading row's own
+! far-right "LOCATION" field is BLANK -- line 1 is an asterisk
+! banner that compiles nothing, exactly the rule
+! docs/transcription_workflow.md records.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! FIFTY-SIX PRINTED LINES.  Lines 1-3 are the asterisk banner
+! "***** F R E E *****"; lines 4-40 and 50-56 are instructions;
+! line 41 is a CNOP that compiles NOTHING (see below); lines 42-45
+! and 47-49 are eight entry-mode message/name cells; line 46 is a
+! two-word DRZ reservation.
+!
+!   line   4      Z FREE, the entry.  "BB,S CH OP($10),K K MARK"
+!                 -- if the channel is operating, go to K K MARK
+!                 (line 50), which saves the IC and goes round the
+!                 E LOOP.
+!   line   5-6    Z Z FREE: SIC,Z TB RW.32 ; B,Z COM RT.  The
+!                 SIC/branch pair is ONE CARD (both lines print
+!                 card IM000005).
+!   lines  7-13   set S UN ASG, test S P INCL, test bit 2.30($13),
+!                 fetch the current reel address, then Z FFLIP
+!                 (line 11) clears STATI and dispatches on T REL B
+!                 and on bit .26($8).
+!   lines 14-16   Z FRE NS / K DFREE: plant "DO NOT SAVE" and set
+!                 up the message pointers (LVI,2,Z FRO4 ;
+!                 LVI,5,K FRE M).
+!   lines 17-23   the owner/entry tests, then SIC,Z ID09X ;
+!                 B,Z ID09 "-CONVERT JOB NAME" (one card,
+!                 IM000021).
+!   lines 24-26   Z FRO6: LVI,7,8. , set S DISPO, and leave to
+!                 K UNLD1+1.32.
+!   lines 27-36   Z FRO5 / Z FRO5A / Z FRO7: the overlap-reserve
+!                 tests, "-REMOVE THE SCRATCH TAPE", and the
+!                 preassign-name fetch.
+!   lines 37-40   Z F 2 and Z FSAVE: the save path, back to
+!                 K D FREE.
+!   line  41      CNOP -- see THE CNOP THAT COMPILED NOTHING.
+!   lines 42-49   the eight message/name cells the LVIs above point
+!                 at, and Z FRO3's two-word DRZ.
+!   lines 50-56   K K MARK: V-I,2,.32 ; SV,2,S TIC ; the two
+!                 K E LOOP branches; LVI,0,Z Z FREE ;
+!                 SV,0,S RET AD($12) ; B,K SUPP.
+!
+! ---------------------------------------------------------------
+! FIFTY-SIX LINES, FIFTY-TWO CARDS, AND NOTHING FELL OFF EITHER END
+! ---------------------------------------------------------------
+! THE SURVEY SAID 30 ROWS, 220245.40..220302.40.  It is short by
+! TWENTY-SIX ROWS and stops at line 40 of 56.  The page runs
+! 220245.40 .. 220324.40.  Counted off the CARD-SERIAL column, not
+! off the survey:
+!
+!   * line 1 prints card IM000001 and the page header's own
+!     "CARD ID IM000001" names it.  The first card of the page is
+!     card number ONE, so NOTHING can have fallen off the top.
+!     (The header field is the page's FIRST CARD, not a deck
+!     prefix: printed p.160's header reads IE000047.)
+!   * line 56 prints IM000052.  52 cards + 4 doubled serials
+!     (IM000005 on lines 5-6, IM000021 on 22-23, IM000048 on
+!     50-51, IM000052 on 55-56) = 56 printed lines exactly, so no
+!     line fell off the bottom either.
+!   * the counter closes: line 56 is a half-word B,K SUPP at
+!     220324.40, so this page LEAVES ITS COUNTER AT 220325.00.
+!
+! ---------------------------------------------------------------
+! WHERE THE COUNTER LEAVES, AND THERE IS NO GAP
+! ---------------------------------------------------------------
+! 220325.00, and the survey puts printed p.167's first row at
+! exactly 220325.00.  **The join is contiguous and nothing
+! accounts for a gap, because there is no gap** -- the apparent
+! 22-word hole between 220302.40 and 220325.00 is entirely the
+! survey having stopped reading at line 40.  No reservation and no
+! SLC is involved in it.
+!
+! TWO INTERIOR DISCONTINUITIES, both printed, neither a lost row:
+!
+!   * line 46, Z FRO3 DRZ(N),(2), prints its COUNT 000002.00 and
+!     reserves TWO WORDS, 220311.00 and 220312.00; the next
+!     located row is line 47 at 220313.00.  A printed reservation
+!     is one of the two legitimate holes.  >>> ITS TRAILING "Z" IS
+!     INK ONLY: a reservation prints its count, so no !CHECK on
+!     this page or any other can tell DR from DRZ.  Read at 900
+!     dpi; recorded as ink.
+!   * line 49's datum "PREASSIGN" is NINE characters = 72 bits, so
+!     it ends at 220320.08 while line 50 sits at 220320.40.  THAT
+!     IS ALIGNMENT, NOT A HOLE -- K K MARK is an instruction and
+!     rounds up to the next half word.  Assembled, the 24 bits are
+!     part of Z FR17's word; the word count is continuous
+!     (220245..220324 inclusive, 48 words, every one touched).
+!
+! ---------------------------------------------------------------
+! >>> THE PAGE DEFINES "ZFRO5" TWICE AND strap_asm REFUSES IT <<<
+! ---------------------------------------------------------------
+! THIS IS THE ONE THING ON THE PAGE THAT IS NOT SETTLED, and the
+! deck below carries a LOUD STAND-IN for it.  What the page prints:
+!
+!   line 27  220267.00     ZFRO5     BZB,SOVRES($11),ZFRO5A
+!   line 30  220272.00  *  ZFRO5     BB,SOVRES($11),ZFRO7
+!
+! and two references resolve to the TWO DIFFERENT addresses:
+!
+!   line 18  BZBZ,TMFREJ,ZFRO5   prints 220267.34 04  -> line 27
+!   line 20  BB,SOWNER($11),ZFRO5 prints 220272.34 02 -> line 30
+!
+! MEASURED, NOT EYEBALLED.  Both names were cropped at 1800 dpi at
+! identical x and stacked (the cmp2730 method): five glyphs each,
+! same cells, Z F R <round> 5, the only difference being that line
+! 27's round has dropped ink on its right and line 30's has not.
+! Both OPERANDS were cropped the same way: five glyphs each, no
+! sixth character on either.  Glyph-ink widths at 1800 dpi, from
+! the runs in each row:
+!
+!   letter O, certain (SOWNER/SOVRES/CONVERT/JOB):  126-135
+!   digit 0, certain (same rows' octal fields):     112-126
+!   the round in every ZFRO* name and operand:      121-135, mean
+!                                                   129 -- LETTER O
+!
+! so it is not an O/0 split either.  NO READING OF THE INK
+! SEPARATES THE TWO SYMBOLS, and no rule I can state produces
+! "line 18 takes the first definition and line 20 the second".
+!
+! WHAT THE DECK DOES.  strap_asm raises
+! "line 53: symbol 'ZFRO5' multiply defined" and assembles NOTHING,
+! so a failing row is not on offer -- the whole page would be lost.
+! Line 30's label and line 20's operand are therefore written
+! **ZFRO5DUP**, which is NOT A READING OF ANY GLYPH; both cards
+! PRINT "ZFRO5".  Nothing else is changed, the statement and the
+! !CHECK agree, and all 44 checkable rows pass.  The alternative --
+! dropping line 30's label and letting line 20 compile 220267.34 --
+! was rejected because it puts a WRONG WORD in the merged image,
+! which is the one thing the workflow says never to do.
+!
+! ---------------------------------------------------------------
+! THE CNOP THAT COMPILED NOTHING
+! ---------------------------------------------------------------
+! Line 41 prints "CNOP" with a BLANK LOCATION and a BLANK BINARY
+! OUTPUT.  That is the pseudo-op doing its job: line 40 is a
+! half-word branch at 220302.40, so the counter is already on a
+! word boundary at 220303.00 and no NOP half word is needed.  Line
+! 42 prints 220303.00, which is the proof.  It carries no !CHECK
+! (there is nothing to check) and no label, and it is the ONLY one
+! of the 56 lines that neither a !CHECK nor a !SYM covers.
+!
+! ---------------------------------------------------------------
+! COVERAGE -- WHAT IS AND IS NOT CHECKED
+! ---------------------------------------------------------------
+! 44 !CHECK rows (lines 4-40 and 50-56) and 22 !SYM symbols.
+!
+!   * the seven entry-mode DD cells (42-45, 47-49) print NO BINARY
+!     OUTPUT, which is the listing behaving normally for entry
+!     mode -- but every one of them CARRIES A LABEL, so the !SYM
+!     half of check_rows pins all seven to their printed
+!     LOCATION.  Do not read their blank binary column as
+!     uncovered: the datum lengths are what put the NEXT label on
+!     its printed word, and all eight cells' lengths were measured
+!     cell-by-cell at 1800 dpi (10 cpi, pitch 180.4 px) rather
+!     than counted by eye.  The space after the comma is DATA.
+!   * line 46's DRZ carries no !CHECK (a reservation prints its
+!     count, not storage; strap_asm renders the storage), as every
+!     landed deck with a DR/DRZ does.  Its two words are pinned by
+!     K NSAVE arriving at 220313.00.
+!   * line 41 is unchecked and nothing about it is unknown.
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK -- RECORDED, NOT EXPLAINED
+! ---------------------------------------------------------------
+! Four rows carry it: lines 15 (220257.00), 30 (220272.00),
+! 43 (220306.00) and 46 (220311.00).  Pitches 15, 13 and 3 on a
+! 56-line page, which is one more nail in the already-dead
+! "fixed physical distance down the form" reading
+! (docs/listing_typography.md 12).
+!
+! ONE HYPOTHESIS RAISED AND KILLED HERE, so nobody spends an hour
+! on it: *"it marks a multiply-defined symbol."*  Line 30 is a
+! duplicate definition and IS marked, which is why it looked
+! promising.  It is refuted by this page's own lines 43 and 46
+! (Z FRO4 and Z FRO3 are each defined once and referenced three
+! times between them) and conclusively by printed p.3 line 28,
+! "BRZ,0.0", which is marked and HAS NO NAME AT ALL.  Make it nine
+! things the asterisk is not.
+!
+! ONE DATA POINT FOR WHOEVER IS STILL COLLECTING THEM, from the
+! p.165 render made for the join above: printed p.165 line 35 is
+! "220244.00 *  SLC,$" -- a printed SLC,$ that DOES carry the mark,
+! on the same side as pp.144/145/147 and against p.151 line 4,
+! which does not.  It changes nothing; the universal is already
+! refuted.  Recorded so the count is honest.
+!
+! ---------------------------------------------------------------
+! THE EXTERNALS, AND WHERE EACH DATA DESCRIPTION COMES FROM
+! ---------------------------------------------------------------
+! Every unit-table field below carries the dds of THE PAGE THAT
+! PRINTS ITS DEFINING CARD, not one invented here:
+!
+!   printed p.99's field table  S CH OP .26, STATI .26, S DISPO
+!     .27, S UN ASG .29, S SET UP .31, S OWNER .32, S SEL .39,
+!     S UN RES .62, S OV RES .63   (decks/mcp_bootstrap_p99.strap
+!     lines 181-225)
+!   printed p.101  S RET AD 5.0 (BU,19), S C REEL 8.32 (BU,18)
+!   printed p.103  S COM RG (8)215001.0 and S P INCL = SCOMRG+.6,
+!     which is exactly the 215001.06 line 8 prints.  >>> S COM RG
+!     IS WRITTEN AS A SYN STAND-IN, NOT AS p.103's OWN CARD: its
+!     defining card is an XW, and copying it would deposit a word
+!     at THIS page's counter (the printed p.157 mistake).
+!   T REL B 0.27 (BU,1) -- carried by an earlier deck at the same
+!     word; this page's line 12 prints 000000.33 88, confirming it.
+!
+! The absolute externals, each back-derived from a printed
+! instruction on THIS page and then CORROBORATED on another page:
+!
+!   S TIC    (8)215265.0   -- C22-6728 names it (STored Instruction
+!                             Counter); eleven landed decks SYN it
+!                             at this word.
+!   K SUPP   (8)216242.0   -- defined printed p.128, fifteen decks.
+!   Z REWST  (8)220226.0   -- line 13's BZB target 220227.34 is
+!                             Z REWST+1.0.  Corroborated: the
+!                             volume OCR of PDF p.172 (printed
+!                             p.165) carries "2  220226.00
+!                             220243.40 80  Z REW ST  SIC,Z TB
+!                             RW.32" -- a DIFFERENT page, so a
+!                             legitimate index, and it is p.165's
+!                             first word, which the survey also
+!                             gives as 220226.00.
+!   Z COM RT (8)220234.40  -- line 6 prints 220234.50 (a B adds
+!                             0o10).  decks/mcp_bootstrap_p126
+!                             already SYNs it at exactly this.
+!   Z TB RW  (8)220243.0   -- line 5's SIC plants 220243.40 for
+!                             "Z TB RW.32"; the OCR of printed
+!                             p.165 line 24 reads "220243.17 01
+!                             LVI,7,Z TB RW", and an LVI,7 adds
+!                             0o17 to a .00 address.
+!   K E LOOP (8)220374.0   -- lines 52 and 54 both print
+!                             220374.34.  SEE THE JOIN FORWARD.
+!   Z ID09   (8)221042.0   -- line 23's B prints 221042.10.
+!   Z ID09X  (8)221045.0   -- line 22's SIC plants 221045.00.
+!   K UNLD1  (8)221751.0   -- line 26's "B,K UNLD1+1.32" prints
+!                             221752.50, i.e. target 221752.40.
+!                             The OCR of printed p.~202 carries
+!                             "27  221751.00  000000.32 88
+!                             221752.74 00  K UNLD1  BZB,.-26($8),
+!                             $+1.32" -- its own $+1.32 is the SAME
+!                             word this page branches to.
+!   K SCRAC  (8)222013.0   -- line 29's "L(BU,64),KSCRAC.16" prints
+!                             222013.20 (0o20 = 16).  The OCR
+!                             carries its defining card on another
+!                             page: "24  222013.00  K SCRAC
+!                             (IQSX)DD(BU,64),A SCRATCH TAPE XY".
+!   T MFREJ  (8)22133.31 (BU,1) -- line 18's first half word prints
+!                             022133.31 80.  >>> NO SECOND WITNESS
+!                             ANYWHERE: grep of the whole volume
+!                             OCR for TMFREJ returns exactly one
+!                             hit and it is this page's own card.
+!                             See WHAT I COULD NOT SETTLE.
+!
+! >>> EVERY ABSOLUTE SYN ABOVE IS KNOWN ONLY TO THE HALF WORD.
+! Back-derived from a branch or an LVI, bits 0-31 all encode
+! identically (workflow, "WHAT THE ORACLE CANNOT SEE" 1).  The
+! ".0" is a convention, not a reading; bit 32 IS checked and all
+! of them are on a .00 half word.
+!
+! ---------------------------------------------------------------
+! THE JOIN FORWARD -- A FALSIFIABLE PREDICTION FOR p.167
+! ---------------------------------------------------------------
+!   1. p.167's first located row is 220325.00, with NO SLC, NO
+!      reservation and NO gap: this page's line 56 is a half word
+!      at 220324.40.
+!   2. p.167's first card is IM000053.
+!   3. **p.167 RUNS AT LEAST TO 220374.00**, so the survey's
+!      "220325.00..220347.00, 28 rows" is an UNDER-READ as well.
+!      The volume OCR of that page carries "32  220374.00
+!      000001.45 0D  K E LOOP  V-I,2,1.32" -- K E LOOP's own
+!      defining card, the word lines 52 and 54 here both branch
+!      to, and it is line 32 of a page the survey stops at row 28.
+!      That is one render to falsify.
+!   4. p.167 line 32's "V-I,2,1.32" is the same operation as this
+!      page's line 50 "V-I,2,.32" one word lower in the value
+!      field, so p.166 line 50's 000000.45 0D and p.167 line 32's
+!      000001.45 0D check each other.
+!
+! ---------------------------------------------------------------
+! WHAT I COULD NOT SETTLE
+! ---------------------------------------------------------------
+! 1. THE DUPLICATE ZFRO5.  Above, in full.  Unresolved as to
+!    MECHANISM; the stand-in is flagged everywhere it appears.
+! 2. "Z ID09" vs "Z IDO9" -- DIGIT ZERO OR LETTER O.  The ink
+!    leans digit and the deck writes the digit, but say so out
+!    loud: the round in "Z ID?9" measures 121 px (line 22) and
+!    122 px (line 23) of ink at 1800 dpi, against a same-page
+!    digit-0 band of 112-126 (mean 118) and a letter-O band of
+!    126-135 (mean 132).  It sits with the digits and BELOW every
+!    certain O on the page.  The second, independent line is that
+!    the volume OCR shows the series Z ID03, Z ID10, Z ID14,
+!    Z ID15, Z ID16 on OTHER pages, which is a numbered series.
+!    Neither is proof and the assembler cannot help (both spellings
+!    assemble).  If the page that DEFINES it spells it with a
+!    letter O, change it here.
+! 3. T MFREJ at 022133.31 has NO second witness of any kind -- not
+!    a deck, not another page's OCR, not the manuals.  Its word is
+!    far below the rest of MCP (0o22133 = 9307), which is unusual
+!    enough to be worth re-reading when a "TM" page lands.  Its
+!    (BU,1) is inferred from its USE as a branch-on-bit operand,
+!    not from a defining card, and a connective taking its length
+!    from the symbol is exactly the merge hazard the brief warns
+!    about.
+! 4. K SCRAC's final glyph.  It is a C or a damaged 0, NOT a D --
+!    the left side is round with no vertical stem, which is the
+!    workflow's own C/D discriminator.  Four OCR hits on its
+!    defining page all read C, but they share this drum, so that
+!    is not independent.  "KSCRA0" would be an odd name; C is
+!    written.
+! 5. Line 44's datum contains a PERIOD: " .  JOB ".  Measured, not
+!    guessed -- a 81-px glyph in cell 14, and the datum must be 8
+!    characters because Z FRO2 lands on 220310.00.  But 8 blanks
+!    would also be 8 characters, so the LENGTH does not prove the
+!    period; only the ink does, and the ink is a low 81-px blob
+!    that could in principle be a speck.  Nothing on the page
+!    distinguishes " .  JOB " from "    JOB " in the binary,
+!    because entry mode prints none.
+!
+! ---------------------------------------------------------------
+! THE DECK
+! ---------------------------------------------------------------
+
+! -- unit-table fields, dds from printed p.99's own table ---------
+SCHOP   SYN(BU,1), 0.26             ! p.99 line 22 -CHAN OPERATING
+STATI   SYN(BU,1), 0.26             ! p.99 line 23 -TYPE OF TAPE MTED
+SDISPO  SYN(BU,1), 0.27             ! p.99 line 25
+TRELB   SYN(BU,1), 0.27             ! -REEL LABELED IF ONE
+SUNASG  SYN(BU,1), 0.29             ! p.99 line 27 -UNIT ASSIGNMENT
+SSETUP  SYN(BU,1), 0.31             ! p.99 line 29 -PSEUDO-OP SET-UP
+SOWNER  SYN(BU,1), 0.32             ! p.99 line 30 -PRIORITY LEVEL
+SSEL    SYN(BU,1), 0.39             ! p.99 line 32 -SELECT FILE STATUS
+SUNRES  SYN(BU,1), 0.62             ! p.99 line 50 -NOT OVERLAP RESERVED
+SOVRES  SYN(BU,1), 0.63             ! p.99 line 51 -OVERLAPPED RESERVE
+SRETAD  SYN(BU,19), 5.0             ! p.101 line 18 -RETURN ADDRESS IN MCP
+SCREEL  SYN(BU,18), 8.32            ! p.101 line 28 -CURRENT REEL ADDRESS
+
+! -- the common region; a STAND-IN, see above ---------------------
+SCOMRG  SYN, (8)215001.0            ! p.103 line 8 defines it with an XW
+SPINCL  SYN(BU,1), SCOMRG+.6        ! p.103 line 16; line 8 prints 215001.06
+
+! -- absolute externals, bit offset unobservable (half word only) --
+STIC    SYN, (8)215265.0            ! STored Instruction Counter, C22-6728
+KSUPP   SYN, (8)216242.0            ! printed p.128 "K SUPP NOP,K COMM R"
+TMFREJ  SYN(BU,1), (8)22133.31      ! line 18; NO SECOND WITNESS, see above
+ZREWST  SYN, (8)220226.0            ! printed p.165's first word
+ZCOMRT  SYN, (8)220234.40           ! as p.126's deck writes it
+ZTBRW   SYN, (8)220243.0            ! printed p.165 line 24's LVI,7
+KELOOP  SYN, (8)220374.0            ! printed p.167 line 32 defines it
+ZID09   SYN, (8)221042.0            ! printed "Z IDO9"/"Z ID09", see above
+ZID09X  SYN, (8)221045.0            ! printed "Z IDO9X"/"Z ID09X"
+KUNLD1  SYN, (8)221751.0            ! K UNLD1's own $+1.32 is 221752.40
+KSCRAC  SYN, (8)222013.0            ! "K SCRAC (IQSX)DD(BU,64),A SCRATCH TAPE"
+
+! -- a HARD SLC: this page prints no SLC of its own.  Line 1 is a
+! -- banner, so there is no printed "SLC,$" to witness the join,
+! -- and a hard origin CANNOT disagree with the arriving counter
+! -- (workflow, "WHAT THE ORACLE CANNOT SEE" 2) -- so printed p.165
+! -- WAS COMPARED BY HAND, rendered at 400 dpi here, and it closes:
+! --
+! --   p.165 has 38 lines, not the survey's 25.  Line 35 prints
+! --   "220244.00 *  SLC,$"; lines 36-38 are Z UNLDB's three half
+! --   words, and line 38 is "220245.00  221733.10 00  B,K UNLOD".
+! --   A half word at 220245.00 LEAVES THE COUNTER AT 220245.40,
+! --   which is this page's line 4 exactly.  No gap, no overlap.
+! --
+! -- p.165 also corroborates two of this deck's externals from its
+! -- own ink: its line 28 is "220243.00  220065.50 00  Z TB RW
+! -- B,K K LOC" (so Z TB RW = 220243.00) and its line 29 is
+! -- "220243.40  220243.50 00  B,$", which is the very half word
+! -- this page's line 5 SICs into as "Z TB RW.32".  Its line 37
+! -- prints "220234.50 00  B,Z COM RT", character for character
+! -- this page's line 6.
+        SLC, (8)220245.40
+
+ZFREE   BB,SCHOP($10),KKMARK        ! line  4  printed "S CH OP", "K K MARK"
+ZZFREE  SIC,ZTBRW.32                ! line  5  printed "Z Z FREE", "Z TB RW"
+        B,ZCOMRT                    ! line  6  same card IM000005 as line 5
+        CM1111(BU,1),SUNASG($11)    ! line  7  printed "S UN ASG"
+        BB,SPINCL,ZF2               ! line  8  printed "S P INCL", "Z F2"
+        BB,2.30($13),ZFSAVE         ! line  9  printed "Z F SAVE" -BRANCH IF SAVE
+        LV,8,SCREEL($12)            ! line 10  printed "S C REEL" -GET CURRENT REEL ADDR
+ZFFLIP  CM0000(BU,2),STATI($11)     ! line 11
+        BZB,TRELB($8),ZFRENS        ! line 12  -BR IF NON- SYSTEM TAPE TO UNLOAD
+        BZB,.26($8),ZREWST+1.0      ! line 13
+ZFRENS  TI,2,KNSAVE,ZFRO3           ! line 14  printed "Z FRE NS", "K N SAVE", "Z FRO3"
+KDFREE  LVI,2,ZFRO4                 ! line 15  printed "K DFREE", "Z FRO4"  (asterisk)
+        LVI,5,KFREM                 ! line 16  printed "K FRE M"
+        BZB,SOWNER($11),ZFRO5B      ! line 17  -IF PP OWNER
+        BZBZ,TMFREJ,ZFRO5           ! line 18  -IF ENRY WAS NOT FROM THE MOVE ROUTINE
+ZFRO5B  LVI,7,ZFRO2                 ! line 19  printed "Z FRO5B"
+        BB,SOWNER($11),ZFRO5DUP     ! line 20  >>> PRINTS "ZFRO5": see THE PAGE
+        LVI,7,ZFRO2                 ! line 21  printed "Z FRO2"
+        SIC,ZID09X                  ! line 22  printed "Z IDO9X"
+        B,ZID09                     ! line 23  same card IM000021 -CONVERT JOB NAME
+ZFRO6   LVI,7,8.                    ! line 24
+        CM1111(BU,1),SDISPO($11)    ! line 25  printed "SDISPO"
+        B,KUNLD1+1.32               ! line 26  printed "K UNLD1+1.32"
+ZFRO5   BZB,SOVRES($11),ZFRO5A      ! line 27  -IF NOT OVERLAP RESERED (sic)
+        BB,SUNRES($11),ZFRO7        ! line 28  -IF IT IS NOT OVERLAP RESERVED
+ZFRO5A  L(BU,64),KSCRAC.16          ! line 29  -REMOVE THE SCRATCH TAPE
+ZFRO5DUP BB,SOVRES($11),ZFRO7       ! line 30  >>> PRINTS "ZFRO5" (asterisk)
+        ST(BU,64),ZFRO2             ! line 31
+        B,ZFRO6                     ! line 32
+ZFRO7   TI,1,ZFR17,ZFRO2            ! line 33
+        L(BU,8),ZFR17+1.0           ! line 34  -GET PREASSIGN NAME
+        ST(BU,8),ZFRO3              ! line 35
+        B,ZFRO6                     ! line 36
+ZF2     BB,2.31($13),ZFSAVE         ! line 37  printed "Z F 2" -BRANCH IF SAVE
+        B,ZFFLIP-.32                ! line 38
+ZFSAVE  TI,2,KSAVE,ZFRO3            ! line 39  printed "Z FSAVE", "KSAVE"
+        B,KDFREE                    ! line 40  printed "K D FREE"
+        CNOP                        ! line 41  compiles NOTHING; blank location
+KFREM   (IQSX)DD(BU), UNLOAD TAPE ON CHANNEL X    ! line 42  24 chars = 3 words
+ZFRO4   (IQSX)DD(BU),   UNIT X      ! line 43  8 chars = 1 word  (asterisk)
+ZFRO1   (IQSX)DD(BU), .  JOB X      ! line 44  8 chars; the PERIOD is data
+ZFRO2   (IQSX)DD(BU),        X      ! line 45  8 blanks = 1 word
+ZFRO3   DRZ(N),(2)                  ! line 46  prints 000002.00; Z is INK ONLY (asterisk)
+KNSAVE  (IQSX)DD(BU),    DO NOT SAVE X          ! line 47  16 chars = 2 words
+KSAVE   (IQSX)DD(BU),       SAVE     X          ! line 48  16 chars = 2 words
+ZFR17   (IQSX)DD(BU),PREASSIGNX     ! line 49  9 chars = 72 bits, then alignment
+KKMARK  V-I,2,.32                   ! line 50  printed "K K MARK"
+        SV,2,STIC                   ! line 51  printed "S TIC"
+        BB,SSEL($11),KELOOP         ! line 52  printed "S SEL", "K E LOOP"
+        LVI,0,ZZFREE                ! line 53  printed "Z Z FREE"
+        BB1,SSETUP($11),KELOOP      ! line 54  printed "S SET UP"
+        SV,0,SRETAD($12)            ! line 55  printed "S RET AD"
+        B,KSUPP                     ! line 56  printed "K SUPP"; leaves at 220325.00
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, line by line.  LOCATION | BINARY OUTPUT |
+! NAME | STATEMENT | comment | card.  Octal fields can hold no C,
+! so every "C" the drum prints in one is a damaged 0 and is
+! written 0 here (workflow 2b rung 5).
+! ---------------------------------------------------------------
+!   1*                                                                                       - ****************************************   IM000001
+!   2*                                                                                       -*************** F R E E  ***************-   IM000002
+!   3*                                                                                       - ****************************************   IM000003
+!   4*  220245.40   000000.32 8A  220320.74 02   Z FREE    BB,S CH OP($10),K K MARK           IM000004
+!   5*  220246.40   220243.40 80                 Z Z FREE  SIC,Z TB RW.32                     IM000005
+!   6*  220247.00   220234.50 00                           B,Z COM RT                         IM000005
+!   7*  220247.40   000000.35 8B  001000.36 F0             CM1111(BU,1),S UN ASG($11)         IM000006
+!   8*  220250.40   215001.06 80  220300.34 02             BB,S P INCL,Z F2                   IM000007
+!   9*  220251.40   000002.36 8D  220301.74 02             BB,2.30($13),Z F SAVE    -BRANCH IF SAVE            IM000008
+!  10*  220252.40   000010.60 3C                           LV,8,S C REEL($12)       -GET CURRENT REEL ADDR     IM000009
+!  11*  220253.00   000000.32 8B  002000.00 F0   ZFFLIP    CM0000(BU,2),STATI($11)            IM000010
+!  12*  220254.00   000000.33 88  220256.34 00             BZB,TRELB($8),ZFRENS     -BR IF NON- SYSTEM TAPE TO UNLOAD   IM000011
+!  13*  220255.00   000000.32 88  220227.34 00             BZB,.26($8),ZREWST+1.0             IM000012
+!  14*  220256.00   220313.00 80  220311.04 A0   Z FRE NS  TI,2,K N SAVE,Z FRO3               IM000013
+!  15*  220257.00 * 220306.05 01                 K DFREE   LVI,2,Z FRO4                       IM000014
+!  16*  220257.40   220303.13 01                           LVI,5,K FRE M                      IM000015
+!  17*  220260.00   000000.40 8B  220262.34 00             BZB,SOWNER($11),ZFRO5B   -IF PP OWNER                        IM000016
+!  18*  220261.00   022133.31 80  220267.34 04             BZBZ,TMFREJ,ZFRO5        -IF ENRY WAS NOT FROM THE MOVE ROUTINE  IM000017
+!  19*  220262.00   220310.17 01                 Z FRO5B   LVI,7,ZFRO2                        IM000018
+!  20*  220262.40   000000.40 8B  220272.34 02             BB,SOWNER($11),ZFRO5     -BR. IF ASSIGN DISMNT REQUEST       IM000019
+!  21*  220263.40   220310.17 01                           LVI,7,Z FRO2                       IM000020
+!  22*  220264.00   221045.00 80                           SIC,Z ID09X                        IM000021
+!  23*  220264.40   221042.10 00                           B,Z ID09                 -CONVERT JOB NAME                   IM000021
+!  24*  220265.00   000010.17 01                 ZFRO6     LVI,7,8.                           IM000022
+!  25*  220265.40   000000.33 8B  001000.36 F0             CM1111(BU,1),SDISPO($11)           IM000023
+!  26*  220266.40   221752.50 00                           B,K UNLD1+1.32                     IM000024
+!  27*  220267.00   000000.77 8B  220271.34 00   ZFRO5     BZB,SOVRES($11),ZFRO5A   -IF NOT OVERLAP RESERED             IM000025
+!  28*  220270.00   000000.76 8B  220274.74 02             BB,SUNRES($11),ZFRO7     -IF IT IS NOT OVERLAP RESERVED      IM000026
+!  29*  220271.00   222013.20 80  000000.20 50   ZFRO5A    L(BU,64),KSCRAC.16       -REMOVE THE SCRATCH TAPE            IM000027
+!  30*  220272.00 * 000000.77 8B  220274.74 02   ZFRO5     BB,SOVRES($11),ZFRO7               IM000028
+!  31*  220273.00   220310.00 80  000000.20 D0             ST(BU,64),ZFRO2                    IM000029
+!  32*  220274.00   220265.10 00                           B,ZFRO6                            IM000030
+!  33*  220274.40   220317.00 80  220310.02 A0   ZFRO7     TI,1,ZFR17,ZFRO2                   IM000031
+!  34*  220275.40   220320.00 80  010000.20 50             L(BU,8),ZFR17+1.0        -GET PREASSIGN NAME                 IM000032
+!  35*  220276.40   220311.00 80  010000.20 D0             ST(BU,8),ZFRO3                     IM000033
+!  36*  220277.40   220265.10 00                           B,ZFRO6                            IM000034
+!  37*  220300.00   000002.37 8D  220301.74 02   Z F 2     BB,2.31($13),Z F SAVE    -BRANCH IF SAVE                     IM000035
+!  38*  220301.00   220252.50 00                           B,ZFFLIP-.32                       IM000036
+!  39*  220301.40   220315.00 80  220311.04 A0   Z FSAVE   TI,2,KSAVE,Z FRO3                  IM000037
+!  40*  220302.40   220257.10 00                           B,K D FREE                         IM000038
+!  41*                                                     CNOP                               IM000039
+!  42*  220303.00   (no binary printed)          K FREM    (IQSX)DD(BU), UNLOAD TAPE ON CHANNEL X                       IM000040
+!  43*  220306.00 * (no binary printed)          Z FRO4    (IQSX)DD(BU),   UNIT X             IM000041
+!  44*  220307.00   (no binary printed)          Z FRO1    (IQSX)DD(BU), .  JOB X             IM000042
+!  45*  220310.00   (no binary printed)          Z FRO2    (IQSX)DD(BU),        X             IM000043
+!  46*  220311.00 * 000002.00                    Z FRO3    DRZ(N),(2)                         IM000044
+!  47*  220313.00   (no binary printed)          K NSAVE   (IQSX)DD(BU),    DO NOT SAVE X     IM000045
+!  48*  220315.00   (no binary printed)          K SAVE    (IQSX)DD(BU),       SAVE     X     IM000046
+!  49*  220317.00   (no binary printed)          Z FR17    (IQSX)DD(BU),PREASSIGNX            IM000047
+!  50*  220320.40   000000.45 0D                 K K MARK  V-I,2,.32                          IM000048
+!  51*  220321.00   215265.05 30                           SV,2,S TIC                         IM000048
+!  52*  220321.40   000000.47 8B  220374.34 02             BB,S SEL($11),K E LOOP             IM000049
+!  53*  220322.40   220246.41 01                           LVI,0,Z Z FREE                     IM000050
+!  54*  220323.00   000000.37 8B  220374.34 0E             BB1,S SET UP($11),K E LOOP         IM000051
+!  55*  220324.00   000005.01 3C                           SV,0,S RET AD($12)                 IM000052
+!  56*  220324.40   216242.10 00                           B,K SUPP                           IM000052
+
+! ---------------------------------------------------------------
+! THE CHECKS
+! ---------------------------------------------------------------
+!SYM   ZFREE     220245.40
+!SYM   ZZFREE    220246.40
+!SYM   ZFFLIP    220253.00
+!SYM   ZFRENS    220256.00
+!SYM   KDFREE    220257.00
+!SYM   ZFRO5B    220262.00
+!SYM   ZFRO6     220265.00
+!SYM   ZFRO5     220267.00
+!SYM   ZFRO5A    220271.00
+!SYM   ZFRO5DUP  220272.00
+!SYM   ZFRO7     220274.40
+!SYM   ZF2       220300.00
+!SYM   ZFSAVE    220301.40
+!SYM   KFREM     220303.00
+!SYM   ZFRO4     220306.00
+!SYM   ZFRO1     220307.00
+!SYM   ZFRO2     220310.00
+!SYM   ZFRO3     220311.00
+!SYM   KNSAVE    220313.00
+!SYM   KSAVE     220315.00
+!SYM   ZFR17     220317.00
+!SYM   KKMARK    220320.40
+!CHECK 220245.40 | 000000.32 8A 220320.74 02 | line  4 Z FREE BB,S CH OP($10),K K MARK -- the 8A is index $10, the 02 is BB
+!CHECK 220246.40 | 220243.40 80 | line  5 Z Z FREE SIC,Z TB RW.32 -- the .40 is the ".32" decimal bit offset printed octal
+!CHECK 220247.00 | 220234.50 00 | line  6 B,Z COM RT -- a B adds 0o10, so the target word is 220234.40
+!CHECK 220247.40 | 000000.35 8B 001000.36 F0 | line  7 CM1111(BU,1),S UN ASG($11) -- .35 is S UN ASG's 0.29; printed "FC" on line 25 is the same literal and p.18 prints it F0 six times
+!CHECK 220250.40 | 215001.06 80 220300.34 02 | line  8 BB,S P INCL,Z F2 -- 215001.06 is SCOMRG+.6 exactly
+!CHECK 220251.40 | 000002.36 8D 220301.74 02 | line  9 BB,2.30($13),Z F SAVE -- .36 is bit 30, D is index $13
+!CHECK 220252.40 | 000010.60 3C | line 10 LV,8,S C REEL($12) -- .60 is S C REEL's .32 plus LV,8's 0o20; C is index $12
+!CHECK 220253.00 | 000000.32 8B 002000.00 F0 | line 11 ZFFLIP CM0000(BU,2),STATI($11) -- printed "0C2000.CC"; both C runs are in octal fields
+!CHECK 220254.00 | 000000.33 88 220256.34 00 | line 12 BZB,TRELB($8),ZFRENS -- byte 00 spells BZB (BB 02, BZBZ 04, BB1 0E)
+!CHECK 220255.00 | 000000.32 88 220227.34 00 | line 13 BZB,.26($8),ZREWST+1.0 -- the statement's decimal .26 prints octal .32, which is the page's own calibration of that rule
+!CHECK 220256.00 | 220313.00 80 220311.04 A0 | line 14 Z FRE NS TI,2,K N SAVE,Z FRO3
+!CHECK 220257.00 | 220306.05 01 | line 15 K DFREE LVI,2,Z FRO4 -- .05 is Z FRO4's .00 plus LVI,2's 2N+1 = 5
+!CHECK 220257.40 | 220303.13 01 | line 16 LVI,5,K FRE M -- .13 = 11 = 2*5+1; "K FRE M" is "K FREM", blanks are not significant in a STRAP name
+!CHECK 220260.00 | 000000.40 8B 220262.34 00 | line 17 BZB,SOWNER($11),ZFRO5B
+!CHECK 220261.00 | 022133.31 80 220267.34 04 | line 18 BZBZ,TMFREJ,ZFRO5 -- byte 04 spells BZBZ; the target is line 27's ZFRO5
+!CHECK 220262.00 | 220310.17 01 | line 19 Z FRO5B LVI,7,ZFRO2 -- .17 = 15 = 2*7+1
+!CHECK 220262.40 | 000000.40 8B 220272.34 02 | line 20 BB,SOWNER($11),ZFRO5 -- >>> THE OPERAND IS PRINTED "ZFRO5" and is written ZFRO5DUP; its target is line 30, NOT line 18's line 27
+!CHECK 220263.40 | 220310.17 01 | line 21 LVI,7,Z FRO2 -- the same word as line 19 from a differently spaced name
+!CHECK 220264.00 | 221045.00 80 | line 22 SIC,Z ID09X
+!CHECK 220264.40 | 221042.10 00 | line 23 B,Z ID09 -- same card as line 22
+!CHECK 220265.00 | 000010.17 01 | line 24 ZFRO6 LVI,7,8. -- 0o10 is the value 8, .17 the index
+!CHECK 220265.40 | 000000.33 8B 001000.36 F0 | line 25 CM1111(BU,1),SDISPO($11) -- the byte is printed "FC" and is F0: line 7 is the SAME literal in the SAME character position on this page, and printed p.18 prints it six times
+!CHECK 220266.40 | 221752.50 00 | line 26 B,K UNLD1+1.32 -- target 221752.40, which is K UNLD1's own $+1.32
+!CHECK 220267.00 | 000000.77 8B 220271.34 00 | line 27 ZFRO5 BZB,SOVRES($11),ZFRO5A -- .77 is S OV RES's 0.63
+!CHECK 220270.00 | 000000.76 8B 220274.74 02 | line 28 BB,SUNRES($11),ZFRO7 -- .76 is S UN RES's 0.62, one bit below line 27's
+!CHECK 220271.00 | 222013.20 80 000000.20 50 | line 29 ZFRO5A L(BU,64),KSCRAC.16 -- .20 is the statement's decimal 16
+!CHECK 220272.00 | 000000.77 8B 220274.74 02 | line 30 >>> PRINTED "ZFRO5", written ZFRO5DUP; identical bits to line 28 but for S OV RES vs S UN RES
+!CHECK 220273.00 | 220310.00 80 000000.20 D0 | line 31 ST(BU,64),ZFRO2
+!CHECK 220274.00 | 220265.10 00 | line 32 B,ZFRO6
+!CHECK 220274.40 | 220317.00 80 220310.02 A0 | line 33 ZFRO7 TI,1,ZFR17,ZFRO2
+!CHECK 220275.40 | 220320.00 80 010000.20 50 | line 34 L(BU,8),ZFR17+1.0 -- 220320.00 is Z FR17 plus one word
+!CHECK 220276.40 | 220311.00 80 010000.20 D0 | line 35 ST(BU,8),ZFRO3
+!CHECK 220277.40 | 220265.10 00 | line 36 B,ZFRO6 -- the same word as line 32
+!CHECK 220300.00 | 000002.37 8D 220301.74 02 | line 37 Z F 2 BB,2.31($13),Z F SAVE -- .37 is bit 31, one above line 9's .36
+!CHECK 220301.00 | 220252.50 00 | line 38 B,ZFFLIP-.32 -- target 220252.40, a half word below Z FFLIP
+!CHECK 220301.40 | 220315.00 80 220311.04 A0 | line 39 Z FSAVE TI,2,KSAVE,Z FRO3 -- the same operation as line 14 with K SAVE for K N SAVE
+!CHECK 220302.40 | 220257.10 00 | line 40 B,K D FREE -- target 220257.00, line 15
+!CHECK 220320.40 | 000000.45 0D | line 50 K K MARK V-I,2,.32 -- printed "OD"; the leading round is in a position every other row on this page prints 0
+!CHECK 220321.00 | 215265.05 30 | line 51 SV,2,S TIC -- .05 = 2*2+1 on S TIC's .00
+!CHECK 220321.40 | 000000.47 8B 220374.34 02 | line 52 BB,S SEL($11),K E LOOP -- .47 is S SEL's 0.39
+!CHECK 220322.40 | 220246.41 01 | line 53 LVI,0,Z Z FREE -- .41 is Z Z FREE's own bit 32 plus LVI,0's 1
+!CHECK 220323.00 | 000000.37 8B 220374.34 0E | line 54 BB1,S SET UP($11),K E LOOP -- byte 0E spells BB1 against line 52's BB 02; .37 is S SET UP's 0.31
+!CHECK 220324.00 | 000005.01 3C | line 55 SV,0,S RET AD($12) -- word 5 is S RET AD's own, .01 is SV,0's 1, C is index $12
+!CHECK 220324.40 | 216242.10 00 | line 56 B,K SUPP -- the last word of the page; the counter leaves at 220325.00
+! -- line 41 (CNOP) compiles nothing and carries no check; line 46's
+! -- DRZ prints its COUNT 000002.00, which no !CHECK can compare
+! -- against storage, exactly as every landed deck with a DR/DRZ does.

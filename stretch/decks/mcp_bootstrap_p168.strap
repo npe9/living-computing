@@ -1,0 +1,650 @@
+! mcp_bootstrap_p168.strap -- THE WAIT ROUTINE, the whole of it:
+! K WAIT, K DIG, K MISU, K E LOOP and K PASS, printed page 168.
+! docs/MCP_Mar63_001-249.pdf PDF p.175, header READ and not
+! assumed: the top line prints "TIME CLOCK 00054041  PUNID
+! 11D11MCP   CARD ID JA000001   DIST. OF 3/01   3/01   PAGE
+! NUMBER  168".
+!
+! >>> THE COLUMN-HEADING ROW'S OWN "LOCATION" FIELD IS BLANK. <<<
+! Rendered at 400 dpi across the full 6800-pixel width of the
+! form: the word "LOCATION" is printed at the right-hand end of
+! the heading row and NO DIGITS FOLLOW IT.  That is exactly what
+! docs/transcription_workflow.md predicts -- the field is LINE
+! 1'S location, and line 1 here is an asterisk banner that
+! compiles nothing.  A blank is NOT a zero; nothing was read off
+! the dashed rule.  This page therefore has no independent
+! witness to its origin word except its own printed "SLC,$".
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! THIRTY-SEVEN PRINTED LINES.  Three asterisk-banner comment
+! cards, one "SLC,$", and thirty-three instructions -- nineteen
+! half words and fourteen full words -- and then blank paper to
+! the foot of the form.  No DD, no SYN, no VF, no reservation, no
+! forward SLC: the page is CONTIGUOUS from 220347.40 to
+! 220377.00 with no hole of any kind.
+!
+! Five entry points, and the IBM manual draws all five:
+!
+!   lines  1-3   the banner, "********** WAIT **********".
+!
+!   line   4     "SLC,$".  Its printed LOCATION, 220347.40, is
+!                the counter ARRIVING from printed p.167.
+!
+!   lines  5-15  K WAIT.  C22-6728-1 printed p.205 ("Wait
+!                Routine"): "the wait routine is entered at KWAIT
+!                when the pseudo-op $WAIT is requested...  When
+!                entered, the wait routine adjusts the return
+!                address in STIC and sets up $9 for the proper
+!                program status table (SPROGS)."  Lines 6-7 are
+!                "adjusts the return address in STIC" (V-I,2,.32
+!                then SV,2,S TIC); lines 9-10 are "sets up $9 for
+!                the proper program status table" (LV,9,$L then
+!                V+I,9,S PROG S, comment "-PROG STAT TABLE ADDR").
+!                Line 5's comment is "-DETERMINE LEVEL OF
+!                INTERRUPT" and line 8 stores that level into S M.
+!                Lines 11-14 are the redundant-entry test the
+!                manual describes in English: "SINTAD -- the
+!                interrupted address is set to zero when entering
+!                the enabled loop...  SEWAIL -- this bit in the
+!                file area table is turned on when entering the
+!                enabled loop.  It is turned off when $WAIT is
+!                requested by mainstream with SINTAD non-zero."
+!                Line 11 loads SINTAD, line 12 BXVZ's on it, line
+!                14 is the "test and turn off SEWAIL" box of
+!                Figure 113.  Line 15 is that figure's "IS
+!                CHANNEL OPERATING".
+!
+!   lines 16-18  K DIG.  Figure 113 names this box KDIG and
+!                reads "IS INTERRUPT STACKED ON THIS CHAN".  Line
+!                16 is LVI,1,$+1. -- the one-card return that the
+!                search subroutine uses -- and line 17 is
+!                "B,K SERCH".  >>> C22-6728-1 printed p.21
+!                ("Search and Unstack", footed "Interrupt Control
+!                21") PRINTS THE WHOLE CALLING SEQUENCE IN
+!                TYPESET: "LVI, 1, $+1.0 / B, KSERCH / (not found
+!                return) / (found return)".  That is lines 16, 17,
+!                18 and 19 of this page, in order, off a different
+!                press. <<<  Line 18 is the not-found return,
+!                "B,K PASS", and line 19 is the found return.
+!
+!   lines 19-25  the autostacked / level test.  Line 19 is
+!                Figure 113's "IS REQUESTOR AUTOSTACKED -> KINTY"
+!                and lines 20-25 are its "MOVE LOWER REGISTERS
+!                FROM STLR TO SLRPP" / "... TO SLRMCP" pair,
+!                selected on S M (the level of interrupt) by line
+!                21's BB.
+!
+!   lines 26-29  K MISU, Figure 113's "IS UNIT IN SELECT STATUS"
+!                -> "DOES UNIT AREA POINT TO RIGHT FILE AREA"
+!                (lines 27-28, KV against S FI A AC then BZXE)
+!                -> "IS REQUESTOR AUTOSTACKED" (line 29).
+!
+!   lines 30-35  the enabled loop.  Figure 113: "SET FILE AREA
+!                ADDRESS IN PROGRAM STATUS" (line 30, comment
+!                "-FILE A ADDR TO WAIT FIELD"), "CLEAR" SINTAD
+!                (line 31), "TURN ON FILE AREA SEWAIL" (line 32),
+!                then KELOOP "ACTUATED ADDRESS TO STIC" (lines
+!                33-34) and out through K SUPP (line 35).
+!
+!   lines 36-37  K PASS, Figure 113's "CLEAR WAIT ADDRESS IN
+!                PROGRAM STATUS TABLE" -> KSUPP.  Twenty-four
+!                bits of zero at 0.0($9) and a branch.
+!
+! ---------------------------------------------------------------
+! THIRTY-SEVEN LINES, AND NOTHING FELL OFF EITHER END -- THREE
+! INDEPENDENT WAYS
+! ---------------------------------------------------------------
+! THE SURVEY SAID 27 ROWS, 220350.40..220376.40.  It is short by
+! ten and it lost the top of the page: its first location,
+! 220350.40, is LINE 6.  Lines 1-5 fell off, including the
+! "SLC,$" that is this page's only statement about its own origin
+! and including K WAIT's own label row.  The real span is
+! 220347.40..220376.40 over 37 lines.  Three ways of knowing:
+!
+! (1) THE CARD-SERIAL COLUMN, read at 900 dpi.  It runs
+!     JA000001 on line 1 to JA000035 on line 37, unbroken, and
+!     the next printed thing below line 37 is blank form.  The
+!     header's own "CARD ID JA000001" names line 1's card, so the
+!     top of the page is pinned by IBM twice.
+!
+!     >>> TWO SERIALS ARE PRINTED TWICE. <<<  JA000016 appears on
+!     lines 16 AND 17, and JA000026 on lines 27 AND 28.  Verified
+!     at 900 dpi on both pairs; they are not an OCR artefact and
+!     not a dropped digit (JA000017 and JA000027 follow normally).
+!     So 37 lines carry 35 distinct serials.  RECORDED AS A FACT
+!     AND NOTHING PROPOSED -- two cards punched with the same
+!     identification is a fact about the deck, and this page
+!     cannot say why.
+!
+! (2) THE LOCATION COLUMN CLOSES ON ITSELF.  Every one of the 33
+!     emitted statements' printed locations follows from the one
+!     above it by exactly the width of the instruction printed
+!     there -- 19 half words and 14 full words, no gap anywhere.
+!     19*32 + 14*64 = 1504 bits = 23.5 words, and
+!     220377.00 - 220347.40 is 24 words less 32 bits = 23.5 words.
+!     A dropped row would not balance.
+!
+! (3) THE LINE-NUMBER COLUMN runs 1..37 with no break, and line
+!     37 is followed by the form's own right-margin ruling and
+!     nothing else.
+!
+! ---------------------------------------------------------------
+! WHERE THE COUNTER LEAVES -- A FALSIFIABLE PREDICTION FOR p.169
+! ---------------------------------------------------------------
+! Line 37 is "B,K SUPP" at 220376.40, a HALF WORD.  >>> THE
+! COUNTER LEAVES THIS PAGE AT 220377.00. <<<
+!
+! Printed p.169 (PDF p.176) opens with an asterisk banner --
+! "*** CHANGE IO TABLE OF EXITS ***", the routine C22-6728-1
+! printed p.205 says "is entered at CCHEX".  So, as predictions
+! that can be killed:
+!
+!   * p.169's column-heading "LOCATION" field is BLANK (line 1 is
+!     a banner).
+!   * p.169's first LOCATED row prints 220377.00, and if it
+!     prints "SLC,$" that location IS this page's exit, read off
+!     IBM's own assembler.
+!   * backwards: printed p.167 must leave its counter at
+!     220347.40, which is what THIS page's line 4 prints.
+!
+! If p.169 begins anywhere else, this deck is wrong and the place
+! to look is the 14 full words -- a full word misread as a half
+! word loses exactly 32 bits.
+!
+! >>> THE FORWARD HALF OF THAT PREDICTION WAS THEN CHECKED, AND IT
+!     HOLDS. <<<  PDF p.176 was rendered at 900 dpi for its first
+!     six rows -- ITS LOCATION COLUMN ONLY, not transcribed, that
+!     page belongs to another transcriber.  It prints:
+!
+!       1*  2*  3*            (asterisk banner, "*** C...")
+!       4*  220377.00  *      SLC,$
+!       5*  220377.00   215246.00 80  000021.36 E0   C CHEX
+!       6*  220400.00   220706.01 B0
+!
+!     So p.169's "SLC,$" prints 220377.00, which is IBM's own
+!     assembler stating the counter arriving from THIS page, and
+!     it is the value above.  Its heading-row LOCATION field is
+!     BLANK, as predicted (line 1 is a banner).  Its label is
+!     C CHEX, which is the "entered at CCHEX" of C22-6728-1
+!     printed p.205.  The join 220347.40 -> 220377.00 -> p.169 is
+!     closed at both ends of this page except for the backward
+!     one, which only printed p.167 can close.
+!
+! >>> AND THE CARD DECK ENDS WITH THE PAGE. <<<  p.169's header
+!     reads "CARD ID JB000001" -- a NEW prefix.  So the JA deck is
+!     exactly the 35 serials JA000001-JA000035 printed on this one
+!     page, and p.169 opens JB.  That is a second, independent
+!     reason nothing fell off the bottom of printed p.168: the
+!     deck it belongs to does not continue.
+!
+! ---------------------------------------------------------------
+! GLYPH CALLS, AND WHAT SETTLED EACH
+! ---------------------------------------------------------------
+! THIS PAGE DROPS INK ON ROUND GLYPHS CONSTANTLY.  The LOCATION
+! column alone prints "22035C.40" for 220350.40, "220351.CC" for
+! 220351.00, "22037C.40", "220375.CC" and so on -- a C cannot
+! occur in an octal field, so every one is a 0 with certainty and
+! the page is demonstrably a heavy dropper.  Per the workflow
+! that licenses nothing by itself; each call below is settled on
+! what PRODUCED the glyph.
+!
+! (1) LINES 31 AND 36'S SECOND BYTES print "FC" and are "F0",
+!     and their address fields print ".CC" for ".00".
+!     Line 36's field prints "030000.CC" -- FOUR impossible C's
+!     in one field -- and line 31's "031000.CC" two more.  The
+!     byte is settled by the statement, not by the row: the low
+!     nibble of a VFL full word is i2, the OFFSET INDEX, and
+!     neither "CM0000(BU,25),SINTAD($13)" nor
+!     "CM0000(BU,24),0.0($9)" has a second operand, so i2 is 0.
+!     >>> AND THE PAGE PRINTS THE CONTROL: line 32, one line
+!     below line 31, is "CM1111,SEWAIL($13)" and prints
+!     "001000.36 F0" with a CLOSED 0 at 1800 dpi, two characters
+!     from line 31's open one.  Dropout opens a closed glyph and
+!     never closes an open one. <<<  printed p.18 prints that
+!     same connective word six times (docs/transcription_
+!     workflow.md), and printed p.158 line 15 called an
+!     identical "FC" the same way.
+!
+! (2) LINE 8'S SECOND BYTE IS "D0", not "C0" and not "00".
+!     Rendered at 1800 dpi: the first glyph has a straight
+!     vertical LEFT STEM and squared corners, which is the C/D
+!     discriminator the workflow names; the second is round with
+!     no stem.  Corroborated by what produced it -- an ST and not
+!     an L.  Line 5 on this same page is the matching LOAD, with
+!     the SAME operand word "001067.20", and prints "50".  Two
+!     landed decks print this exact byte for this exact
+!     operation: p.75 line 12 and p.97 line 1 both carry
+!     "ST(BU,3),T CAT+.47,46 -> 004771.57 80 003027.20 D0".
+!
+! (3) "K DIG" -- THE D.  Settled by the TYPESET MANUAL, which is
+!     a different press and genuinely independent of this drum:
+!     C22-6728 printed p.196, Figure 113 ("The RIO and Wait
+!     Routines"), labels the box "KDIG".  The ink agrees (left
+!     stem at 900 dpi) and so does the page's own second printing
+!     on line 26, but neither of those is independent.
+!
+! (4) "SEWAIL" -- THE FINAL L.  Settled OUTRIGHT, twice over, by
+!     the typeset manual: C22-6728-1 printed p.271 (Appendix A,
+!     "Symbolic I-O Control Tables") tabulates
+!     "1.57  SEWAIL  This indicator enables the $WAIT routine to
+!     not wait again on a file which has been reactuated in a
+!     fixup", and printed p.205 explains it in prose.  The
+!     ADDRESS matches to the bit -- lines 14 and 32 both print
+!     "000001.71" and 0o71 = 57 -- so the manual pins the name
+!     AND the offset.  "SEWAIT" returns zero hits in either
+!     revision.
+!
+! (5) "8B" vs "88" ON LINES 5 AND 26.  Not settled by ink at all.
+!     The low nibble of a VFL first half word is the INDEX
+!     REGISTER, and this page prints nine of them against nine
+!     different "($n)" operands:
+!       line  5  ($11) -> 8B      line 15  ($10) -> 8A
+!       line 13  ($9)  -> 89      line 26  ($11) -> 8B
+!       line 14  ($13) -> 8D      line 19  ($9)  -> 89
+!       line 29  ($9)  -> 89      line 31  ($13) -> 8D
+!       line 36  ($9)  -> 89      line 32  ($13) -> 8D
+!     Ten rows, one page, five distinct nibbles, every one
+!     agreeing with its own statement.  "88" would need an index
+!     8 that no row writes.
+!
+! (6) "BZXE" ON LINE 28, byte "C0".  The Z is VISIBLE here and is
+!     NOT flagged as ink-only: the workflow's DR/DRZ blindness is
+!     about RESERVATIONS.  printed p.122 line 37 prints the same
+!     instruction and the same byte ("215742.32 C0"), and that
+!     deck measured the alternatives: BXE prints C2, BZXL 40,
+!     BZXN is not an instruction.  Likewise lines 13 and 14 print
+!     "BB" and "BBZ" ONE LINE APART, with bytes 02 and 06 -- the
+!     clear bit is 0x04 and an ordinary !CHECK catches it.
+!
+! (7) THE SPACED AND UNSPACED SPELLINGS ARE BOTH PRINTED, on the
+!     same page, for the same symbol.  A STRAP name ignores
+!     blanks, so these are one symbol each; recorded because they
+!     are printed:
+!       "S TIC" (line 7)      vs "STIC" (line 34)
+!       "SAS" (line 13)       vs "S AS" (lines 19, 29)
+!       "KPASS" (line 14)     vs "K PASS" (lines 18, 36)
+!       "K MISU" (line 15)    vs "KMISU" (line 26)
+!       "KDIG" (line 26)      vs "K DIG" (lines 16, 28)
+!       "K E LOOP" (line 29)  vs "KELOOP" (line 33)
+!       "SSEL" (line 26)      vs -- (S SEL elsewhere in the
+!                                 corpus)
+!       "SINTAD" (lines 11,31), "SEWAIL" (lines 14,32) always
+!       unspaced.
+!     The statements below use the unspaced form, as every landed
+!     deck does; the listing block records the printed spacing.
+!
+! (8) WHERE THIS DECK BEATS THE VOLUME OCR.  docs/ocr/
+!     MCP_Mar63_001-249.txt line 8661 reads line 5's index as
+!     "($10)".  It is "($11)", pinned by the printed byte 8B
+!     against line 15's 8A for a real ($10).  The volume OCR is
+!     the same ink read by a worse reader and is not a witness;
+!     it was used here only as an index and to confirm no line
+!     was dropped.
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK -- THREE OF THEM, AND TWO ARE NOT
+! ON AN "SLC" ROW
+! ---------------------------------------------------------------
+! EXACTLY THREE second asterisks on this page:
+!
+!   line  4   220347.40 *   SLC,$
+!   line 21   220362.40 *   BB,S M,$+2.32
+!   line 36   220375.40 *   K PASS  CM0000(BU,24),0.0($9)
+!
+! Corroborated mechanically: strap/mcp_columns.py measures the
+! thin column these live in as carrying 0.7 units of ink over the
+! whole page, against printed p.158's 0.2 for its single glyph.
+!
+! RECORDED AND NOTHING PROPOSED.  docs/transcription_workflow.md
+! says the asterisk has eight things it is not and that printed
+! p.147's "every printed SLC,$ row carries it" was refuted by
+! p.151 the same afternoon.  What this page ADDS to the record is
+! the converse datum: TWO of its three asterisks are on ordinary
+! instruction rows -- a BB and a VFL connective -- with no SLC,
+! no label on line 21, and a label on line 36.  Whatever the mark
+! means, it is not "SLC row" and it is not "label row".  No
+! hypothesis is offered; see WHAT COULD NOT BE SETTLED (A).
+!
+! ---------------------------------------------------------------
+! WHAT THIS PAGE PINS, AND WHAT IT ONLY CORROBORATES
+! ---------------------------------------------------------------
+! PINNED TO THE BIT (the printed word changes if the offset
+! changes by one):
+!   S OWNER  000000.40   line  5
+!   S M      215001.05   lines 8 and 21 (SCOMRG+0.05)
+!   S AS     000000.31   lines 13, 19, 29
+!   SEWAIL   000001.71   lines 14 and 32, TWICE
+!   S CH OP  000000.32   line 15
+!   S SEL    000000.47   line 26
+!   SINTAD   000001.40   lines 11 and 31
+!
+! HALF WORD ONLY -- the .00 or .40 is a reading of bit 32 and the
+! five bits below it are UNOBSERVABLE (workflow, WHAT THE ORACLE
+! CANNOT SEE item 1):
+!   S TIC    215265.00   lines 7 and 34 (the printed .05 is
+!                        2J+1 for J=2, not S TIC's offset)
+!   S PROG S 215021.00   line 10 (.23 is 2J+1 for J=9)
+!   K SERCH  222020.00   line 17
+!   K PASS   220375.40   lines 14 and 18  <-- this page's own
+!   K INT TY 216010.40   lines 19, 23, 25
+!   S TLR    215230.00   lines 22 and 24
+!   S LR PP  215266.00   line 22
+!   S LR MCP 215362.00   line 24
+!   K SUPP   216242.00   lines 35 and 37
+!   S FI A AC 000003.00  line 27 -- the printed .32 is 2J for
+!                        J=13 and NOT the symbol's offset, the
+!                        same finding printed p.158 made
+!   $L       000010.00   line 9 (.22 is 2J for J=9); $L is the
+!                        left half of the accumulator, word 8,
+!                        from C22-6531 Appendix A
+!
+! ---------------------------------------------------------------
+! WHAT COULD NOT BE SETTLED
+! ---------------------------------------------------------------
+! (A) >>> WHAT THE THREE LOCATION-COLUMN ASTERISKS MEAN. <<<
+!     This is the page's most interesting unresolved thing,
+!     because two of the three are on rows that no previous
+!     hypothesis covers.  Lines 4, 21 and 36 have almost nothing
+!     in common: line 4 emits no bits, line 21 is a conditional
+!     branch with no label, line 36 is a labelled VFL connective.
+!     Nothing was proposed, per the workflow's instruction.  WHAT
+!     WOULD SETTLE IT: a census of the mark across all landed
+!     decks' listing blocks, which no tool in the repo does -- the
+!     comment blocks are not parsed by anything (workflow 3b).
+!     That census is a repo-wide job and is explicitly NOT done
+!     here.
+!
+! (B) "K MISU" -- WHAT IT MEANS, and therefore whether the M is
+!     right for a reason rather than by ink.  The name is printed
+!     twice ("K MISU" line 15, "KMISU" line 26) and both read M
+!     at 900 dpi, but both share one drum.  The typeset manuals
+!     do NOT contain the string: grep of both revisions of
+!     C22-6728 returns zero hits for MISU, although the SAME
+!     figure names KDIG, KPASS, KELOOP, KSERCH, KSUPP and KINTY.
+!     So of the six routine names on this page, five have a
+!     typeset witness and this one does not.  The reading
+!     rejected was "K NISU"; it cannot be eliminated by the
+!     assembler (a label spelling compiles to nothing) nor by any
+!     !CHECK.  WHAT WOULD SETTLE IT: a page that branches to
+!     220366.40 from outside this page.  None is known.  IF ONE
+!     TURNS UP AND SPELLS IT DIFFERENTLY, THIS DECK IS THE ONE TO
+!     CHANGE.
+!
+! (C) TWO CARDS CARRY DUPLICATE SERIALS (JA000016, JA000026) and
+!     this page cannot say why.  Both duplicates sit immediately
+!     above a dashed rule, as it happens, but two instances are
+!     not a pattern and the rules are printed by the form.
+!
+! (D) WHY THIS IS A NEW CARD DECK.  The serials restart at
+!     JA000001 while printed p.167's run under another prefix.
+!     printed p.151 opened IA000001 and printed p.158 ID000001
+!     the same way, and printed p.158's transcriber filed the
+!     prefix letters as undecoded.  Nothing in docs/ decodes
+!     them and this page does not either.  What this page DOES
+!     add is that a deck can be exactly ONE PAGE long: JA runs
+!     JA000001-JA000035 here and p.169's header opens JB000001.
+!     Whether the prefix tracks a ROUTINE (the WAIT routine is
+!     exactly this page) or something else is not established.
+!
+! (E) THE ASTERISK BANNERS (lines 1-3) ARE NOT TRANSCRIBED
+!     CHARACTER BY CHARACTER.  They are comment cards, they emit
+!     no bits, and counting ~65 asterisks off a worn drum is a
+!     reading nobody can check.  Line 2's text is "WAIT",
+!     centred; the serials JA000001-JA000003 are counted.
+!
+! ---------------------------------------------------------------
+! ASSEMBLER LIMITATIONS HIT
+! ---------------------------------------------------------------
+! NONE.  Every statement below is the PRINTED form, handed to
+! strap_asm first, and every one was accepted first time -- the
+! trailing-period "LVI,1,$+1." of line 16 included.  There is
+! exactly ONE substitution on the page and it is the usual one:
+!
+! >>> SUBSTITUTION, LABELLED LOUDLY: the page prints "SLC,$" on
+!     line 4.  This deck writes the hard origin so it assembles
+!     standalone.  THE PRINTED FORM IS "SLC,$" AND THE PRINTED
+!     LOCATION IS 220347.40 -- that is the counter arriving from
+!     printed p.167, printed by IBM's own assembler, and it is
+!     the thing to compare BY HAND against p.167's exit.  A hard
+!     SLC cannot disagree with an arriving counter; it overrides
+!     it silently (workflow, item 2).  Note the ".40": the offset
+!     inside an (8) literal is OCTAL and is written exactly as
+!     printed.  Writing "(8)220347.0" by habit would move all 33
+!     rows back 32 bits. <<<
+!
+! ---------------------------------------------------------------
+! SYMBOLS DEFINED OFF THIS PAGE
+! ---------------------------------------------------------------
+! S COMRG  215001.00  a STAND-IN, not a copy.  printed p.103 line
+!                     8 DEFINES it as "SCOMRG XW,(8)520000." --
+!                     an XW is a PLACE, and copying it here would
+!                     land a word at this page's own counter and
+!                     refuse the body merge (that is exactly what
+!                     printed p.157 did and had to undo).  Only
+!                     S M needs it.
+SCOMRG  SYN, (8)215001.0
+! S M      215001.05  printed p.103 line 15, "S M SYN(BU,1),
+!                     SCOMRG+0.05  -LEVEL OF INTERRUPT".  Decks
+!                     p.103 and p.128 carry it.  The dds (BU,1)
+!                     is CARRIED, not omitted: line 21's BB and
+!                     line 8's ST both take their length from the
+!                     symbol.  LINES 8 AND 21 PIN IT TO THE BIT.
+SM      SYN(BU,1), SCOMRG+0.05
+! S OWNER  000000.40  printed p.99, "-PRIORITY LEVEL", 0.32
+!                     decimal = 0o40.  SIX landed decks carry it
+!                     (counted), p.123 and p.128 among them.
+!                     LINE 5 PINS IT TO THE BIT.
+SOWNER  SYN(BU,1), 0.32
+! S CH OP  000000.32  printed p.99 line 22 "-CHAN OPERATING",
+!                     0.26 decimal = 0o32.  TEN landed decks
+!                     carry it (counted, not estimated).  LINE 15 PINS IT TO THE BIT.
+SCHOP   SYN(BU,1), 0.26
+! S SEL    000000.47  printed p.99 line 32 "-SELECT", 0.39
+!                     decimal = 0o47.  NINE landed decks carry
+!                     it (counted, not estimated).  LINE 26 PINS IT TO THE BIT.
+SSEL    SYN(BU,1), 0.39
+! S AS     000000.31  printed p.109 line 8 "-AUTO STACK STATUS",
+!                     .25 decimal = 0o31.  Six landed decks carry
+!                     it.  LINES 13, 19 AND 29 PIN IT TO THE BIT.
+SAS     SYN(BU,1), .25
+! SINTAD   000001.40  printed p.102 line 8 "-INTERRUPTED
+!                     ADDRESS", 1.32 decimal = 0o40, nineteen
+!                     bits.  C22-6728-1 printed p.271 tabulates
+!                     "1.32 - 1.50 SINTAD".  LINES 11 AND 31 PIN
+!                     IT TO THE BIT; line 31's (BU,25) overrides
+!                     the length, line 11's LV does not.
+SINTAD  SYN(BU,19), 1.32
+! SEWAIL   000001.71  >>> printed p.102 line 9 DEFINES IT:
+!                     "SEWAIL SYN(BU,1),1.57  -LOOP BIT FOR
+!                     $WAIT", and decks/mcp_bootstrap_p102.strap
+!                     line 272 already carries exactly this card
+!                     with exactly this dds. <<<  So this deck
+!                     AGREES with the defining page and the body
+!                     merge has nothing to refuse.  The manual
+!                     agrees independently (item 4 above).  LINES
+!                     14 AND 32 PIN IT TO THE BIT, twice.
+SEWAIL  SYN(BU,1), 1.57
+! S FI A AC 000003.00 printed p.101 line 13 "-FILE AREA
+!                     ACTIVATED".  EIGHT landed decks carry 3.0
+!                     with (BU,18) (counted, not estimated).  LINE 27 CHECKS THE HALF WORD
+!                     ONLY -- its printed .32 is 2J for J=13.
+SFIAAC  SYN(BU,18), 3.0
+! S TIC    215265.00  the STored Instruction Counter; C22-6728
+!                     prose, "the saved IC is stored in STIC",
+!                     and NINETEEN landed decks carry this SYN at
+!                     this address, with a twentieth (printed
+!                     p.116) defining it by VF (counted).  LINES 7 AND 34 CHECK THE
+!                     HALF WORD.
+STIC    SYN, (8)215265.0
+! S PROG S 215021.00  the program status table; printed p.109
+!                     line 7 DEFINES it ("SPROGS DRZ(BU,64),2").
+!                     SEVEN landed decks carry it (counted),
+!                     p.117, p.118, p.123 and p.128 among them.
+!                     LINE 10 CHECKS THE HALF WORD.
+SPROGS  SYN, (8)215021.0
+! S TLR    215230.00  printed p.116 line 13 DEFINES it
+!                     ("STLR DRZ(BU,64),29").  LINES 22 AND 24
+!                     CHECK THE HALF WORD.
+STLR    SYN, (8)215230.0
+! S LR PP  215266.00  printed p.116 line 18 DEFINES it.  LINE 22
+!                     CHECKS THE HALF WORD -- and prints the
+!                     identical word printed p.123 line 43
+!                     prints, "215230.00 80 215266.36 20".
+SLRPP   SYN, (8)215266.0
+! S LR MCP 215362.00  printed p.116 line 26 DEFINES it.  LINE 24
+!                     CHECKS THE HALF WORD.
+SLRMCP  SYN, (8)215362.0
+! K SERCH  222020.00  the search subroutine; C22-6728-1 prints
+!                     its calling sequence as "B, KSERCH".  Deck
+!                     p.142 carries this SYN.  LINE 17 CHECKS THE
+!                     HALF WORD.
+KSERCH  SYN, (8)222020.0
+! K INT TY 216010.40  printed p.123 line 47 is its label row
+!                     ("KINTTY LV,1,STOELO($13)").  Decks p.140,
+!                     p.141 and p.142 carry this SYN.  LINES 19,
+!                     23 AND 25 CHECK THE HALF WORD, and the .40
+!                     is REAL -- bit 32 is visible.
+KINTTY  SYN, (8)216010.40
+! K SUPP   216242.00  the service-op return routine; defined
+!                     printed p.128.  NINETEEN landed decks SYN
+!                     it at this address and ELEVEN carry the
+!                     printed word "216242.10" in a check or a
+!                     listing row (counted).  LINES 35 AND 37 CHECK THE
+!                     HALF WORD; the BIT offset stays unreadable.
+KSUPP   SYN, (8)216242.0
+!
+! ---------------------------------------------------------------
+! THE PAGE
+! ---------------------------------------------------------------
+! lines 1-3 are the asterisk banner "********** WAIT **********",
+! three comment cards (JA000001-JA000003) emitting nothing; see
+! WHAT COULD NOT BE SETTLED (E).
+!
+        SLC, (8)220347.40            ! line  4  printed "SLC,$" at 220347.40 *
+KWAIT   L(BU,1),SOWNER($11),-18      ! line  5  -DETERMINE LEVEL OF INTERRUPT
+        V-I,2,.32                    ! line  6
+        SV,2,STIC                    ! line  7  printed "SV,2,S TIC"
+        ST(BU,1),SM,-18              ! line  8  printed "ST(BU,1),S M,-18"
+        LV,9,$L                      ! line  9
+        V+I,9,SPROGS                 ! line 10  -PROG STAT TABLE ADDR
+        LV,1,SINTAD($13)             ! line 11
+        BXVZ,$+2.32                  ! line 12
+        BB,SAS($9),$+2.0             ! line 13  printed "BB,SAS($9),$+2.0"
+        BBZ,SEWAIL($13),KPASS        ! line 14
+        BB,SCHOP($10),KMISU          ! line 15  printed "BB,S CH OP($10),K MISU"
+KDIG    LVI,1,$+1.                   ! line 16  printed "K DIG"
+        B,KSERCH                     ! line 17  printed "B,K SERCH"
+        B,KPASS                      ! line 18  printed "B,K PASS"
+        BB,SAS($9),KINTTY            ! line 19  printed "BB,S AS($9),K INT TY"
+        LCI,15,30                    ! line 20
+        BB,SM,$+2.32                 ! line 21  printed "BB,S M,$+2.32" *
+        T,15,STLR,SLRPP              ! line 22  printed "T,15,S TLR,S LR PP"
+        B,KINTTY                     ! line 23  printed "B,K INT TY"
+        T,15,STLR,SLRMCP             ! line 24  printed "T,15,S TLR,S LR MCP"
+        B,KINTTY                     ! line 25  printed "B,K INT TY"
+KMISU   BB,SSEL($11),KDIG            ! line 26  printed "KMISU"
+        KV,13,SFIAAC($12)            ! line 27  printed "KV,13,S FI AAC($12)"
+        BZXE,KDIG                    ! line 28  printed "BZXE,K DIG"
+        BB,SAS($9),KELOOP            ! line 29  printed "BB,S AS($9),K E LOOP"
+        SV,13,0.0($9)                ! line 30  -FILE A ADDR TO WAIT FIELD
+        CM0000(BU,25),SINTAD($13)    ! line 31
+        CM1111,SEWAIL($13)           ! line 32  no dds; length comes from SEWAIL
+KELOOP  V-I,2,1.32                   ! line 33  printed "KELOOP"
+        SV,2,STIC                    ! line 34  printed "SV,2,STIC", unspaced
+        B,KSUPP                      ! line 35  printed "B,K SUPP"
+KPASS   CM0000(BU,24),0.0($9)        ! line 36  printed "K PASS" *
+        B,KSUPP                      ! line 37  printed "B,K SUPP"
+!
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS THE ORACLE READS IT
+! ---------------------------------------------------------------
+! Five symbols and thirty-three rows, covering every one of the
+! 47 emitted half words.  Each row is the printed BINARY OUTPUT
+! column verbatim, with the three glyph calls recorded in their
+! notes.  LINE | LOCATION | BINARY OUTPUT | NAME | STATEMENT |
+! comment | card serial:
+!
+!   line  1                                                       **********  WAIT  **********             JA000001
+!   line  2                                                       (banner)                                 JA000002
+!   line  3                                                       (banner)                                 JA000003
+!   line  4*  220347.40  *                                        SLC,$                                    JA000004
+!   line  5*  220347.40     000000.40 8B  001067.20 50   K WAIT   L(BU,1),S OWNER($11),-18  -DETERMINE LEVEL OF INTERRUPT   JA000005
+!   line  6*  220350.40     000000.45 0D                          V-I,2,.32                                JA000006
+!   line  7*  220351.00     215265.05 30                          SV,2,S TIC                               JA000007
+!   line  8*  220351.40     215001.05 80  001067.20 D0            ST(BU,1),S M,-18                         JA000008
+!   line  9*  220352.40     000010.22 30                          LV,9,$L                                  JA000009
+!   line 10*  220353.00     215021.23 05                          V+I,9,S PROG S           -PROG STAT TABLE ADDR           JA000010
+!   line 11*  220353.40     000001.42 3D                          LV,1,SINTAD($13)                         JA000011
+!   line 12*  220354.00     220356.71 42                          BXVZ,$+2.32                              JA000012
+!   line 13*  220354.40     000000.31 89  220356.74 02            BB,SAS($9),$+2.0                         JA000013
+!   line 14*  220355.40     000001.71 8D  220375.74 06            BBZ,SEWAIL($13),KPASS                    JA000014
+!   line 15*  220356.40     000000.32 8A  220366.74 02            BB,S CH OP($10),K MISU                   JA000015
+!   line 16*  220357.40     220360.43 01                 K DIG    LVI,1,$+1.                               JA000016
+!   line 17*  220360.00     222020.10 00                          B,K SERCH                                JA000016  (sic, duplicate)
+!   line 18*  220360.40     220375.50 00                          B,K PASS                                 JA000017
+!   line 19*  220361.00     000000.31 89  216010.74 02            BB,S AS($9),K INT TY                     JA000018
+!   line 20*  220362.00     000036.37 02                          LCI,15,30                                JA000019
+!   line 21*  220362.40  *   215001.05 80  220365.34 02           BB,S M,$+2.32                            JA000020
+!   line 22*  220363.40     215230.00 80  215266.36 20            T,15,S TLR,S LR PP                       JA000021
+!   line 23*  220364.40     216010.50 00                          B,K INT TY                               JA000022
+!   line 24*  220365.00     215230.00 80  215362.36 20            T,15,S TLR,S LR MCP                      JA000023
+!   line 25*  220366.00     216010.50 00                          B,K INT TY                               JA000024
+!   line 26*  220366.40     000000.47 8B  220357.74 02   KMISU    BB,SSEL($11),KDIG                        JA000025
+!   line 27*  220367.40     000003.32 9C                          KV,13,S FI AAC($12)                      JA000026
+!   line 28*  220370.00     220357.72 C0                          BZXE,K DIG                               JA000026  (sic, duplicate)
+!   line 29*  220370.40     000000.31 89  220374.34 02            BB,S AS($9),K E LOOP                     JA000027
+!   line 30*  220371.40     000000.33 39                          SV,13,0.0($9)            -FILE A ADDR TO WAIT FIELD      JA000028
+!   line 31*  220372.00     000001.40 8D  031000.00 F0            CM0000(BU,25),SINTAD($13)                JA000029
+!   line 32*  220373.00     000001.71 8D  001000.36 F0            CM1111,SEWAIL($13)                       JA000030
+!   line 33*  220374.00     000001.45 0D                 KELOOP   V-I,2,1.32                               JA000031
+!   line 34*  220374.40     215265.05 30                          SV,2,STIC                                JA000032
+!   line 35*  220375.00     216242.10 00                          B,K SUPP                                 JA000033
+!   line 36*  220375.40  *   000000.00 89  030000.00 F0  K PASS   CM0000(BU,24),0.0($9)                    JA000034
+!   line 37*  220376.40     216242.10 00                          B,K SUPP                                 JA000035
+!
+! Lines 31 and 36 are recorded above with the bytes and fields AS
+! ESTABLISHED (F0, .00); the drum prints them "FC" and ".CC" and
+! GLYPH CALL (1) says why that is a 0.  Line 8's D0 is recorded
+! as read at 1800 dpi, GLYPH CALL (2).
+!
+!SYM KWAIT  220347.40
+!SYM KDIG   220357.40
+!SYM KMISU  220366.40
+!SYM KELOOP 220374.00
+!SYM KPASS  220375.40
+!
+!CHECK 220347.40 | 000000.40 8B 001067.20 50 | line 5 K WAIT L(BU,1),S OWNER($11),-18 -DETERMINE LEVEL OF INTERRUPT -- .40 is S OWNER at 0.32 decimal, pinned to the bit; 8B's low nibble B is index $11 (the volume OCR reads $10 and is wrong); the second word's 001067.20 carries length 1 and offset -18 (110 = 0o156 in the 7-bit field), and 50 is the LOAD against line 8's STORE D0
+!CHECK 220350.40 | 000000.45 0D | line 6 V-I,2,.32 -- .32 DECIMAL is 0o40, plus the index-arithmetic 2J+1 = 5 for J=2; had .32 been read octal this row would fail. The printed SLC,$ on line 4 gives this page's arriving counter as 220347.40
+!CHECK 220351.00 | 215265.05 30 | line 7 SV,2,S TIC -- .05 is 2J+1 for J=2 and NOT any part of S TIC's offset, so this row checks the HALF WORD only
+!CHECK 220351.40 | 215001.05 80 001067.20 D0 | line 8 ST(BU,1),S M,-18 -- .05 is S M at SCOMRG+0.05, pinned to the bit; no index so the byte is 80; the second byte prints D0 at 1800 dpi (straight left stem, squared corners) and is the STORE counterpart of line 5's LOAD 50 against the IDENTICAL operand word 001067.20 -- decks p.75 and p.97 print this same byte for ST
+!CHECK 220352.40 | 000010.22 30 | line 9 LV,9,$L -- 0o10 is word 8, the left half of the accumulator (C22-6531 Appendix A); .22 is 2J = 18 for J=9
+!CHECK 220353.00 | 215021.23 05 | line 10 V+I,9,S PROG S -PROG STAT TABLE ADDR -- .23 is 2J+1 = 19 for J=9, so S PROG S is checked to the HALF WORD only
+!CHECK 220353.40 | 000001.42 3D | line 11 LV,1,SINTAD($13) -- .42 is SINTAD's 1.32 decimal (0o40) plus 2J = 2 for J=1, which pins the symbol to the bit; 3D's low nibble D is index $13
+!CHECK 220354.00 | 220356.71 42 | line 12 BXVZ,$+2.32 -- $ is 220354.00 so the target is 220356.40 (.32 DECIMAL = 0o40) and 0o31 is the XVZ indicator, 0o40 OR 0o31 = 0o71. Line 28's BZXE uses 0o32 the same way, which is what makes the two readings mutually checking
+!CHECK 220354.40 | 000000.31 89 220356.74 02 | line 13 BB,SAS($9),$+2.0 -- .31 is S AS at .25 decimal, pinned to the bit; 89 is index $9; the target 220356.40 prints as .74 (0o40 OR 0o34) and the byte 02 is BB against line 14's BBZ 06, ONE LINE APART, which is what settles both
+!CHECK 220355.40 | 000001.71 8D 220375.74 06 | line 14 BBZ,SEWAIL($13),KPASS -- .71 is SEWAIL at 1.57 decimal, the exact offset C22-6728-1 printed p.271 tabulates and printed p.102 line 9 defines; 8D is index $13; byte 06 is BBZ (BB prints 02, line 13) and the Z is VISIBLE, not ink-only
+!CHECK 220356.40 | 000000.32 8A 220366.74 02 | line 15 BB,S CH OP($10),K MISU -- .32 is S CH OP at 0.26 decimal, pinned to the bit; 8A is index $10, which is what pins line 5's 8B to $11 by contrast; the target is this page's own K MISU at 220366.40
+!CHECK 220357.40 | 220360.43 01 | line 16 K DIG LVI,1,$+1. -- the trailing period is the printed form and strap_asm takes it; $+1. is 220360.40 and 0o40 OR 0o03 is LVI's .03 (the operation bits the workflow names); byte 01 is J=1
+!CHECK 220360.00 | 222020.10 00 | line 17 B,K SERCH -- a plain B prints target+.10, so this checks K SERCH's HALF WORD at 222020.00 and nothing below bit 32
+!CHECK 220360.40 | 220375.50 00 | line 18 B,K PASS -- K PASS is this page's own line 36 at 220375.40; 0o40 OR 0o10 = 0o50, so bit 32 IS checked here and the label row confirms it
+!CHECK 220361.00 | 000000.31 89 216010.74 02 | line 19 BB,S AS($9),K INT TY -- the same .31 and 89 as line 13 with a different target; K INT TY's .40 prints as .74 and is REAL, bit 32 being visible
+!CHECK 220362.00 | 000036.37 02 | line 20 LCI,15,30 -- the datum 30 DECIMAL prints as 0o36 in the address field, and .37 is 2J+1 = 31 for J=15
+!CHECK 220362.40 | 215001.05 80 220365.34 02 | line 21 BB,S M,$+2.32 -- the SAME first half word as line 8, which is two readings of S M's 215001.05 off two different operations; the target is $+2.32 = 220365.00 (.32 DECIMAL), printing .34; this row carries the second of the page's three location-column asterisks
+!CHECK 220363.40 | 215230.00 80 215266.36 20 | line 22 T,15,S TLR,S LR PP -- bit-identical to printed p.123 line 43's own row, a landed deck printing the same word for the same statement; both symbols checked to the HALF WORD
+!CHECK 220364.40 | 216010.50 00 | line 23 B,K INT TY -- target+.10 on 216010.40
+!CHECK 220365.00 | 215230.00 80 215362.36 20 | line 24 T,15,S TLR,S LR MCP -- the same transmit against S LR MCP; the two T rows differ ONLY in the second address, which is what makes them each other's control
+!CHECK 220366.00 | 216010.50 00 | line 25 B,K INT TY -- the same half word as line 23, printed twice on one page
+!CHECK 220366.40 | 000000.47 8B 220357.74 02 | line 26 KMISU BB,SSEL($11),KDIG -- .47 is S SEL at 0.39 decimal, pinned to the bit; 8B is index $11 again; the target is this page's own K DIG at 220357.40
+!CHECK 220367.40 | 000003.32 9C | line 27 KV,13,S FI AAC($12) -- .32 is 2J = 26 for J=13 and NOT S FI A AC's offset, so the symbol is half-word-pinned only; 9C's low nibble C is index $12, and printed p.158 line 10 prints this identical word
+!CHECK 220370.00 | 220357.72 C0 | line 28 BZXE,K DIG -- 0o40 OR 0o32 = 0o72 on K DIG's 220357.40, the same indicator-bit construction line 12 uses with 0o31; byte C0 is BZXE and printed p.122 line 37 prints the identical byte for the identical instruction, so the C is a real C and not this page's damaged 0
+!CHECK 220370.40 | 000000.31 89 220374.34 02 | line 29 BB,S AS($9),K E LOOP -- the third printing of S AS's .31 on this page; the target is this page's own KELOOP at 220374.00, printing .34
+!CHECK 220371.40 | 000000.33 39 | line 30 SV,13,0.0($9) -FILE A ADDR TO WAIT FIELD -- .33 is 2J+1 = 27 for J=13; 39's low nibble is index $9; the address is a literal 0.0, not a symbol
+!CHECK 220372.00 | 000001.40 8D 031000.00 F0 | line 31 CM0000(BU,25),SINTAD($13) -- .40 is SINTAD at 1.32 decimal, pinned to the bit; 0o031 in the second word is the length 25; the page prints that field ".CC" and the byte "FC", both demonstrably 0 -- a C cannot occur in an octal field, CM0000 has no second operand so i2 is 0, and line 32 one row below prints a CLOSED 0 in the same byte position
+!CHECK 220373.00 | 000001.71 8D 001000.36 F0 | line 32 CM1111,SEWAIL($13) -- NO dds on the card, so the length comes from SEWAIL's own (BU,1); the resulting connective word 001000.36 F0 is the one printed p.18 prints six times, and its closed 0 is the control for line 31's open one. .71 is SEWAIL at 1.57, its second bit-exact printing on this page
+!CHECK 220374.00 | 000001.45 0D | line 33 KELOOP V-I,2,1.32 -- 1.32 DECIMAL is word 1 bit 0o40, plus 2J+1 = 5; identical to line 6 except for the word, which is what shows the .32 is read the same way in both
+!CHECK 220374.40 | 215265.05 30 | line 34 SV,2,STIC -- bit-identical to line 7, and the card spells the name UNSPACED where line 7 spaces it; a STRAP name ignores blanks and the printed word proves it
+!CHECK 220375.00 | 216242.10 00 | line 35 B,K SUPP -- target+.10 on K SUPP's 216242.00; eleven landed decks already carry this printed word, so this row corroborates rather than establishes, and K SUPP's BIT offset stays unreadable
+!CHECK 220375.40 | 000000.00 89 030000.00 F0 | line 36 K PASS CM0000(BU,24),0.0($9) -- 0o030 is the length 24; the page prints "030000.CC FC" with four impossible C's and the byte is F0 for the same reason as line 31; 89 is index $9; this row carries the third location-column asterisk
+!CHECK 220376.40 | 216242.10 00 | line 37 B,K SUPP -- the same half word as line 35, printed twice. A HALF WORD, so THE COUNTER LEAVES THIS PAGE AT 220377.00, which is what printed p.169's first located row must print

@@ -6514,6 +6514,61 @@ run "the LOCATE routine, printed p.159" python3 verify_mcp_page.py 159
 run "the write-label density path, printed p.154" python3 verify_mcp_page.py 154
 run "WRITE LABEL, printed p.155" python3 verify_mcp_page.py 155
 run "the write-mode tail, printed p.156" python3 verify_mcp_page.py 156
+
+# >>> AND THE BODY NOW MERGES INTO ONE IMAGE. <<<  printed pp.99-160
+# assembled together, 1541 words over 0o215000..0o220105.  This is a
+# DIFFERENT question from the per-page checks above: merging puts
+# every external SYN beside the card that DEFINES it, and five
+# defects fell out of it that 603 green sections could not see -- a
+# stand-in spelled "(8)215003." misread as a competing define, a
+# VERBATIM COPY of p.103's XW defining card sitting at p.157's own
+# counter, three symbols declared with no dds on pages that only use
+# them, a SYN alias not inheriting its target's dds, and two pages
+# carrying integer workarounds for the wrong-register bug that
+# disagreed with p.154's defining card.
+#
+# It also needed the SECOND kind of legitimate hole.  A DR says
+# "reserve this storage"; a FORWARD SLC says "the counter moves on".
+# printed p.112's five printed SLC cards skip exactly thirteen words
+# that no deck emits at, and until the assembler recorded those spans
+# they were indistinguishable from thirteen LOST words -- which
+# matters because a missing word reads as zero and a zero half word
+# is BRANCH ENABLED to location zero.
+run "the feed-card and erase-gap entries, printed p.161" python3 verify_mcp_page.py 161
+run "the SPACE pseudo-op, printed p.162" python3 verify_mcp_page.py 162
+run "the space-label and density path, printed p.163" python3 verify_mcp_page.py 163
+run "WRITE END OF FILE, printed p.164" python3 verify_mcp_page.py 164
+run "REWIND and UNLOAD, printed p.165" python3 verify_mcp_page.py 165
+run "the free-and-release path, printed p.166" python3 verify_mcp_page.py 166
+run "the density and mode change pseudo-ops, printed p.167" python3 verify_mcp_page.py 167
+run "the WAIT routine, printed p.168" python3 verify_mcp_page.py 168
+
+# >>> pp.161-168 FOUND THE SESSION'S FOURTH SILENT MISCOMPILE. <<<
+# A BLANKED NAME LOST ITS DATA DESCRIPTION.  STRAP ignores blanks
+# inside a symbol and this assembler honours that everywhere -- but
+# inherited_dds() asked referenced_symbols(), a pure SYNTAX scan, so
+# "S CTL" came back as the two names {'S','CTL'}, the single-name
+# test fired, and a statement writing no dds of its own compiled with
+# LENGTH 0.  printed p.164 prints "CM1111,S CTL(EU)":
+#     CM1111,SCTL(EU)   ->  001000.36 F0   the printed word
+#     CM1111,S CTL(EU)  ->  000000.36 F0   WRONG, and silent
+# THE ADDRESS RESOLVED CORRECTLY THE WHOLE TIME.  Only the length was
+# lost, so no address check, no symbol check and no spelling check
+# could see it -- only a row's own !CHECK on the second half word.
+#
+# REW is admitted on the three-way bar SPFL met: C28-6129 Appendix B
+# names it, the Reference Manual's 729 IV table gives "136 Rewind",
+# and printed p.165 line 11 prints 000136 with .15 = CTLSEOP.  The
+# name matches the table VERBATIM, which "Backspace" against
+# "Backspace Block" does not -- the case opcodes.py cites for
+# refusing the other eighteen.
+#
+# printed p.166 ships ONE labelled stand-in and it is not a glyph
+# reading: the page prints ZFRO5 on two cards at two addresses, and
+# strap_asm refuses a duplicate label OUTRIGHT, assembling nothing --
+# so "leave the row failing" was not on offer.  See docs/NEXT.md;
+# C28-6129's MULTI/CONTAG flags are the test that settles it.
+run "MCP's body merges and accounts for every word, printed pp.99-168" python3 check_mcp_body_image.py
 run "the equipment dispatch, printed p.160" python3 verify_mcp_page.py 160
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
 run "the program status table, printed p.109" python3 verify_mcp_page.py 109
