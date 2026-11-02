@@ -16070,3 +16070,44 @@ everything on that page verifies except the two reservation starts.
 > And note what the page is: THE DUMMY TABLES FOR THE UN-ASSIGNMENT,
 > ending at line 26 with `T WORM XW,(.26)3` at 005013.00 -- **one word
 > before T MOVE at 005014.00.** p.87 is the last page before it.
+
+## THE LISTING ENDS AT PRINTED p.439, AND IBM PRINTED A SYMBOL DICTIONARY
+
+Measured 2026-11-02 by rendering `MCP_Mar63_250-445.pdf` directly.
+The "pp.1-445" figure in section 5i was an inference from the file
+name. The page itself says otherwise:
+
+- **PDF p.189 = printed PAGE NUMBER 439, and its line 33 is `END,0`
+  at 023233.76.** That is the END card of the whole assembly. The
+  source listing is printed pp.1-439, not 1-445.
+- **PDF pp.190-195 are a SYMBOL CROSS-REFERENCE TABLE** -- two fixed
+  columns, `NAME  ADDRESS`, e.g. `WJ4PD 020276.40`, `TIPL3 021464.40`,
+  `SSPACE 000000.73`. Some rows carry a `* 1` suffix after the name.
+- Offset in this region is +250 (PDF 186 -> printed 436, PDF 189 ->
+  printed 439), consistent with 5i's warning that it is not constant.
+
+So the remaining transcription is **pp.193-439 = 247 pages**, not 253.
+
+### WHY THE DICTIONARY MATTERS MORE THAN THE SIX PAGES SUGGEST
+
+It is the authority this project has been reconstructing by hand, one
+cross-page citation at a time. Every `! landed pp.125/126/184` comment
+in a deck is a row of this table, re-derived from corpus consensus.
+
+Two things it should settle, and one it already has:
+
+1. **ALREADY SETTLED.** PDF p.191 prints `SA6IQS* 1  002367.40`.
+   That is the spelling corrected on printed p.179 this session
+   (`SA6IGS` -> `SA6IQS`), confirmed against IBM's own dictionary
+   rather than against two other decks agreeing with each other.
+2. **Externals behind the frontier** (`VCRD`, `JCIOD`, `TMFREJ`,
+   `JCNAD`, `YFXAD`) can be resolved from the table WITHOUT
+   transcribing the pages that define them.
+3. **`check_symbol_spellings.py`** currently votes among transcribed
+   decks. It should check against this table, which cannot be outvoted
+   by two pages carrying the same misreading.
+
+NOT YET READ, and the caveat that applies: the table gives an address,
+not a data description. `KREP`'s dds came from a DEFINING CARD, and no
+cross-reference row carries `SYN(BU,18)`. The table replaces the
+address half of the citation burden, not the dds half.
