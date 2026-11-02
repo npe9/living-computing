@@ -1,0 +1,683 @@
+! mcp_bootstrap_p174.strap -- THE $FIXUP PSEUDO OP, its entry and the
+! whole of its argument decoding: F FXP, F SVEF, F STEF.  Printed
+! page 174.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.181, header READ and not assumed:
+! the top line prints "TIME CLOCK 00054041  PUNID 11D11MCP   CARD ID
+! KE000001   DIST. OF 3/01   3/01   PAGE NUMBER  174".
+!
+! >>> THE COLUMN-HEADING ROW'S OWN "LOCATION" FIELD IS BLANK. <<<
+! Rendered at 600 dpi across the right-hand end of the heading row:
+! the word "LOCATION" is printed and NO DIGITS FOLLOW IT, only the
+! form's dashed rule.  That is what docs/transcription_workflow.md
+! predicts -- the field is LINE 1'S location, and line 1 here is a
+! comment card that compiles nothing.  A BLANK IS NOT A ZERO and
+! nothing was read off the rule.  So this page has NO heading-row
+! witness to its origin, and it prints no "SLC" either; see THE
+! ORIGIN below, where two OTHER pages supply the witness instead.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! FIFTY-SIX PRINTED LINES.  Eighteen comment cards (lines 1-18, the
+! banner and the typeset-style calling sequence), three more blank
+! comment cards used as separators (lines 34, 38, 43), and
+! THIRTY-FIVE emitted statements -- twenty-six half words and nine
+! full words.  No DD, no SYN, no VF, no reservation, no SLC of any
+! kind: the page is CONTIGUOUS from 220560.00 to 220605.00 and the
+! counter leaves it at 220606.00, with NO HOLE anywhere.
+!
+! The page is the head of the $FIXUP pseudo-op, and lines 1-17 are
+! IBM's own description of it, printed as comment cards:
+!
+!     THE CALLING SEQUENCE FOR $FIXUP
+!             B,$MCP
+!             ,$FIXUP
+!             ,A(I)
+!             ,B(J)
+!             -RETURN-
+!     A(I), IF NOT ZERO, IS THE LOCATION IN PP MEMORY WHERE THE
+!     PATTERN WORD AND THE PRESENT INTERRUPT TABLE ARE SAVED.
+!     B(J) IS THE LOCATION WHERE THE PP PATTERN WORD AND THE ONE
+!     WORD FIXUPS ARE, IN ORDER OF APPEARANCE.
+!
+! That prose is the page's own English and is quoted, not paraphrased.
+! It is also what makes the code legible:
+!
+!   lines 19-25  F FXP, the entry.  Three V+I/SVA pairs step the
+!                return pointer $2 past the three argument words and
+!                plant their addresses in F SVEF, F STEF and S TIC,
+!                then line 25 restores PP indices 2-3 from S TLR.
+!
+!   lines 26-27  F SVEF and F STEF, the two LVE cards the SVAs
+!                above have just overwritten -- self-modifying code,
+!                which is why both are labelled and why both print
+!                an address equal to their own location.
+!
+!   lines 28-33  the argument checks: USA/AD error out to F ERRZ,
+!                then B(J) tested against the PP bounds (KV 3.32 /
+!                BXL, KV 3.0 / BZXL) out to F ERRX.
+!
+!   lines 35-42  the pattern word: load it from B(J), AND it with
+!                F BMSK to "REMOVE UNWANTED ONES", save it in
+!                F PTWD, then load the counters word and distribute
+!                it into F ALOC, F LZCN and F ADC.
+!
+!   lines 44-56  the same bounds test applied to A(I), with
+!                BXVZ,F STUP taking the A(I)=0 case out to printed
+!                p.175 line 3.
+!
+! ---------------------------------------------------------------
+! FIFTY-SIX LINES, AND NOTHING FELL OFF EITHER END -- FOUR WAYS
+! ---------------------------------------------------------------
+! THE SURVEY SAID 19 ROWS, 220560.40..220575.0.  It is short by
+! sixteen emitted rows and it lost BOTH ends: its first location is
+! LINE 20 (line 19, the label row F FXP at 220560.00, fell off the
+! top) and its last is LINE 41, so lines 42 and 44-56 fell off the
+! bottom -- fourteen more.  The real span is 220560.00..220605.00
+! over 35 emitted rows in 56 printed lines.  Four ways of knowing:
+!
+! (1) THE CARD-SERIAL COLUMN, read at 400 dpi over the full width.
+!     It runs KE000001 on line 1 to KE000045 on line 56, unbroken,
+!     and the header's own "CARD ID KE000001" names line 1's card,
+!     so the top of the page is pinned by IBM twice.  Below line 56
+!     is blank form.
+!
+!     >>> ELEVEN SERIALS ARE PRINTED TWICE, ALWAYS ON A PAIR OF
+!     HALF-WORD INSTRUCTIONS. <<<  KE000019 on lines 19 AND 20,
+!     KE000020 on 21 and 22, KE000021 on 23 and 24, KE000025 on 28
+!     and 29, KE000026 on 30 and 31, KE000027 on 32 and 33,
+!     KE000038 on 44 and 45, KE000039 on 46 and 47, KE000040 on 48
+!     and 49, KE000041 on 50 and 51, KE000042 on 52 and 53.  Read
+!     at 600 dpi on the serial column, not at 400.  Every one of
+!     the eleven pairs is two HALF-WORD instructions, and NO FULL
+!     WORD EVER SHARES A SERIAL: all nine full words (lines 25, 35,
+!     36, 37, 39, 40, 41, 42, 56) carry one of their own.  Four
+!     half words also stand alone (lines 26, 27, 54, 55), so the
+!     rule is not "half words always pair".  RECORDED AS A FACT;
+!     see WHAT COULD NOT BE SETTLED (B) for what is NOT claimed.
+!
+! (2) THE LINE-NUMBER COLUMN, rendered on its own at 400 dpi, runs
+!     1..56 with no break and line 56 is the last printed thing.
+!
+! (3) THE LOCATION COLUMN CLOSES ON ITSELF.  Every emitted row's
+!     printed location follows from the one above by exactly the
+!     width of the instruction printed there.  26 half words and 9
+!     full words = 26*32 + 9*64 = 1408 bits = 22 words, and
+!     220606.00 - 220560.00 is exactly 0o26 = 22 words.  A dropped
+!     row would not balance.
+!
+! (4) THE JOIN IS CLOSED AT BOTH ENDS BY OTHER PAGES -- see below.
+!
+! ---------------------------------------------------------------
+! THE ORIGIN.  THIS PAGE PRINTS NO "SLC" AT ALL
+! ---------------------------------------------------------------
+! >>> THIS IS AN ADDITION, NOT A SUBSTITUTION. <<<  printed p.168
+! and most of its neighbours print "SLC,$" and their decks replace
+! it with a hard origin.  THIS PAGE PRINTS NO SLC CARD OF ANY KIND
+! -- lines 1-18 are comment cards and line 19 is already a located
+! instruction.  The "SLC, (8)220560.0" below is therefore not a
+! rewriting of anything the page prints; it is this deck ASSERTING
+! an origin so it assembles standalone.  The heading-row LOCATION
+! field is blank, so the page itself offers NO independent witness.
+!
+! TWO OTHER PAGES SUPPLY ONE, AND BOTH WERE RENDERED, NOT OCR'd:
+!
+!   * printed p.173 (PDF p.180) line 38, its LAST printed line, is
+!     "220546.00   000012.00   DRZ(BU),10   -FOR DEBUGGING PURPOSES".
+!     0o12 = 10 is the printed COUNT; (BU) with no length is 64 bits,
+!     so ten words from 220546.00 end at 220560.00 EXACTLY.  That is
+!     IBM's own assembler stating the counter arriving here.
+!
+!   * printed p.178 (PDF p.185) line 43 is
+!     "220767.40   220560.10 00   B,FFXP".  A plain B prints
+!     target+.10, so F FXP is at 220560.00 -- and the printed ".10"
+!     rather than ".50" means BIT 32 IS READ, not assumed.  A
+!     different page, a different card deck, a different routine.
+!
+! Note the ".0" written out in the literal: an offset inside an (8)
+! literal is OCTAL and a bare trailing dot has been mis-classified
+! by the body-image check before.
+!
+! ---------------------------------------------------------------
+! WHERE THE COUNTER LEAVES -- PREDICTED, THEN CHECKED
+! ---------------------------------------------------------------
+! Line 56 is "L(BU),0.($1)" at 220605.00, a FULL WORD.  >>> THE
+! COUNTER LEAVES THIS PAGE AT 220606.00. <<<
+!
+! >>> CHECKED, AND IT HOLDS. <<<  PDF p.182's first row was rendered
+! at 900 dpi -- ITS LOCATION COLUMN ONLY, that page belongs to
+! another transcriber -- and prints:
+!
+!     1*  220606.00  *   000000.00 82  000000.20 D0   ST(BU),0.($2)
+!
+! So printed p.175 line 1 is 220606.00, which is this page's exit,
+! and it carries a location-column asterisk of its own.  (Its
+! comment, "-SAVE PATTERN WORD AT A(I)", is the continuation of
+! this page's line 56 load.)
+!
+! Remaining predictions, each killable:
+!
+!   * p.175's heading-row LOCATION field is NUMBERED 220606,
+!     because its line 1 IS located -- the converse of this page.
+!   * p.175's card serials continue KE, from KE000046.
+!   * backwards: printed p.173 must end at 220546.00 with a
+!     ten-word DRZ, which is what this deck read off PDF p.180.
+!
+! ---------------------------------------------------------------
+! GLYPH CALLS, AND WHAT SETTLED EACH
+! ---------------------------------------------------------------
+! THIS PAGE DROPS INK ON ROUND GLYPHS CONSTANTLY.  The LOCATION
+! column alone prints "22056C.00", "220561.4C", "22060C.00" and so
+! on -- a C cannot occur in an octal field, so every one is a 0 with
+! certainty and the page is a demonstrable dropper.  Per the
+! workflow that licenses nothing by itself; each call below is
+! settled on what PRODUCED the glyph.
+!
+! (1) >>> LINE 40'S SECOND BYTE IS "D0", AND LINES 41 AND 42 PROVE
+!     IT -- LADDER RUNG 4, THE STRONGEST ONE. <<<  Rendered at 1800
+!     dpi, the three rows print their second fields as
+!
+!         line 40   007006.60 DC
+!         line 41   006024.20 D0
+!         line 42   006024.20 D0
+!
+!     All three are "ST(BU,n)" with no index and no offset operand,
+!     so all three bytes MUST be the same byte; lines 41 and 42
+!     print a CLOSED 0 in the SAME CHARACTER POSITION on the same
+!     page off the same drum.  Dropout opens a closed glyph and
+!     never closes an open one, so line 40's is the damaged one.
+!     The octal fields corroborate: all three print their ".x0" as
+!     ".xC", three impossible C's two characters from the byte.
+!
+! (2) LINE 25'S SECOND BYTE IS "A0", printed "AC"; and LINE 37'S IS
+!     "F0", printed "FC".  NOT settled by ink -- settled by what
+!     produced them, MEASURED, varying nothing else:
+!
+!         TI,2,STLR+15.,$2          ->  000022.04 A0
+!         TI,2,STLR+15.,$2($12)     ->  000022.04 AC
+!         TI,2,STLR+15.,$2($1)      ->  000022.04 A1
+!         SF(BU,64),FPTWD           ->  000000.12 F0
+!         SF(BU,64),FPTWD,0($12)    ->  000000.12 FC
+!
+!     The low nibble is the OFFSET INDEX i2, and the ONLY thing that
+!     puts a C there is an index-12 operand that neither printed
+!     statement carries (both were re-rendered at 900 dpi to be
+!     sure).  Line 25's own field is the corroboration: at 1800 dpi
+!     it prints "0C0022.04" -- the second glyph is an OPEN C in an
+!     OCTAL field, impossible, while the first, third, fourth and
+!     the ".0" are CLOSED, so that row demonstrably opened one zero
+!     already.  printed p.168 lines 31 and 36 and printed p.158 line
+!     15 made the identical call on the identical nibble.
+!
+! (3) "F ADC" ON LINE 42 -- THE D.  Rendered at 1800 dpi beside line
+!     40's "F ALOC" in the same column: line 40's third glyph is an
+!     L (vertical stem, foot, no bowl) and its fourth a closed round
+!     O; line 42's third glyph has a STRAIGHT VERTICAL LEFT STEM
+!     AND SQUARED CORNERS WITH A BOWL, which is the C/D
+!     discriminator the workflow names.  CONFIRMED BY THE DEFINING
+!     CARD: printed p.175 line 46 (PDF p.182, rendered at 1200 dpi,
+!     name column only) prints "F ADC   VF,0.0   -TO SAVE LZC AS
+!     FWA", directly under "F ALOC VF,0.0" and "F LZCN VF,0.0".
+!     Note the volume OCR reads p.175's name "F ALC" and p.174's
+!     "FADC"; it is the same ink read by a worse reader and is not
+!     a witness either way.
+!
+! (4) "C0001" ON LINE 36, printed "COOC1".  A STRAP connective's
+!     code is FOUR BINARY DIGITS, so O and C are impossible there
+!     and all four round glyphs are 0 -- the octal-field argument in
+!     its strictest form, since the field admits only 0 and 1.  The
+!     page's own English agrees: C0001 is AND and the comment is
+!     "-REMOVE UNWANTED ONES ONLY".
+!
+! (5) "F FXP", "F SVEF", "F STEF" rendered at 1800 dpi in the NAME
+!     column.  F SVEF and F STEF are each printed TWICE on this page
+!     -- once as a name and once inside the SVA that overwrites them
+!     (lines 20 and 22) -- and F FXP has the external witness of
+!     printed p.178 line 43's "B,FFXP".
+!
+! (6) "BUSAZ" (line 28) and "BADZ" (line 29).  The Z IS VISIBLE and
+!     is NOT flagged as ink-only: the workflow's DR/DRZ blindness is
+!     about RESERVATIONS.  The clear bit is 0x04 of the printed byte
+!     and an ordinary !CHECK catches it -- C6 against BUSA's C2, 46
+!     against BAD's 42.
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK -- EXACTLY ONE, AND NOT ON AN SLC
+! ---------------------------------------------------------------
+! The LINE + LOCATION + asterisk columns were rendered as one strip
+! at 400 dpi for all 56 lines and read together, so this is a census
+! of the page and not a sample:
+!
+!        39   220573.00 *   L(BU),7.0   -LOAD COUNTERS
+!
+! and NOTHING ELSE on the page carries the mark.
+!
+! RECORDED AND NOTHING PROPOSED, per the workflow.  What this page
+! ADDS to the record is a datum no previous page could give: THIS
+! PAGE HAS NO "SLC" ROW AT ALL, and its one asterisk is on an
+! unlabelled, ordinary VFL load in the middle of a contiguous run.
+! printed p.168 had already shown the mark on a BB and on a labelled
+! connective; this page shows it with no SLC anywhere on the sheet
+! to be near.  See WHAT COULD NOT BE SETTLED (A).
+!
+! ---------------------------------------------------------------
+! WHAT THIS PAGE PINS, AND WHAT IT ONLY CORROBORATES
+! ---------------------------------------------------------------
+! PINNED TO THE BIT (the printed word changes if the offset moves
+! by one):
+!   S TLR    215230.00   line 25.  >>> THIS IS STRONGER THAN A
+!                        BRANCH OR AN LVI. <<<  "STLR+15." is a VFL
+!                        ADDRESS FIELD, so its printed 215247.00
+!                        pins S TLR's bit offset to 0, not merely
+!                        its half word.  Contrast line 24 below.
+!   F ALOC   220642.00   lines 40, 45, 52.  Line 40's "FALOC.11"
+!                        prints 220642.13 (0o13 = 11), a VFL address
+!                        field, so the bit offset IS pinned.
+!   F LZCN   220642.40   line 41.  "FLZCN.18" prints 220642.62 and
+!                        0o62 - 18 = 0o40, so bit 32 AND the bits
+!                        below it are pinned.
+!   F ADC    220643.00   line 42.  "FADC.12" prints 220643.14,
+!                        0o14 = 12, same construction.
+!
+! HALF WORD ONLY -- the .00 or .40 is a reading of bit 32 and the
+! five bits below it are UNOBSERVABLE (workflow, WHAT THE ORACLE
+! CANNOT SEE item 1):
+!   S TIC    215265.00   line 24; the printed .05 is 2J+1 for J=2
+!   F ERRZ   220636.00   lines 28 and 29 (.10 and .50 are operation
+!                        bits; the 0o40 between them is the +.32)
+!   F ERRX   220636.40   lines 31, 33, 47, 51, 54 -- FIVE rows, and
+!                        the .40 is REAL because 0o72 = 0o40 OR the
+!                        0o32 XL indicator
+!   F STUP   220607.00   line 49; 0o31 is the XVZ indicator, so the
+!                        printed .31 reads bit 32 as ZERO
+!   F PTWD   220640.00   line 37
+!   F BMSK   220641.00   line 36
+!
+! AND THREE THINGS THE PAGE DOES NOT ESTABLISH AT ALL:
+!   * line 39's "7.0" is an absolute address, not a symbol; what
+!     word 7 of the machine holds is NOT read off this listing (rule
+!     1).  The page's own English is all that is claimed: "-LOAD
+!     COUNTERS", and the three stores below it are commented "-ALL
+!     ONES COUNTER", "-LEFT ZEROS COUNT AS VF BIT ADDR." and
+!     "-LEFT ZEROS COUNT AS VF FWA".
+!   * lines 35 and 56's "0.($1)" and the indices $0/$1/$2 are
+!     literals, not symbols.
+!   * $MCP and $FIXUP appear only in the COMMENT cards and compile
+!     nothing here.
+!
+! ---------------------------------------------------------------
+! SYMBOLS DEFINED OFF THIS PAGE
+! ---------------------------------------------------------------
+! All ten are STAND-INS, never copies of a defining card (printed
+! p.157's lesson).  Seven of the ten are defined on printed p.175,
+! the page immediately after this one, and their locations were
+! read off PDF p.182 at 1200 dpi -- the DEFINING cards, not the
+! volume OCR, which was used only as an index to find them.
+!
+! >>> ALL TEN ARE WRITTEN WITH NO DATA DESCRIPTION, AND THAT IS
+!     DELIBERATE AND MEASURED. <<<  A VFL operation writing no dds
+!     takes its length from the SYMBOL, so a dds invented here would
+!     be a silent miscompile in the merged image.  NO USE ON THIS
+!     PAGE CAN TAKE A LENGTH FROM ITS SYMBOL: lines 37, 40, 41 and
+!     42 write an EXPLICIT (BU,n); lines 45 and 52 are index
+!     arithmetic; lines 24, 28, 29, 31, 33, 47, 49, 51 and 54 are
+!     branches or SVAs; and lines 35, 36 and 56 write a MODE-ONLY
+!     "(BU)", which strap_asm treats as an explicit length and NOT
+!     as an inheritance -- measured below.  printed p.175 defines
+!     seven of the ten with VF and DD cards, not SYN, so there is
+!     nothing for the merge's dds check to compare against either.
+!
+! >>> NONE OF THE TEN CARRIES A !SYM LINE, SO NONE OF THEIR VALUES
+!     IS ASSERTED AS A SYMBOL. <<<  verify_mcp_page checks a symbol
+!     only if the deck declares it, and the three !SYM lines below
+!     are the page's OWN labels.  Each stand-in's value is therefore
+!     guarded ONLY by the row checks that use it -- and that is the
+!     whole guard when p.175 lands and the merge drops these cards.
+!     Named here because a reader counting !SYM lines would conclude
+!     the externals were unchecked, and they are not: F ERRX is
+!     exercised by five rows, F ALOC by three, S TIC, S TLR,
+!     F STUP, F PTWD, F BMSK, F LZCN and F ADC by one or two each.
+!
+! S TIC    215265.00  the STored Instruction Counter; C22-6728
+!                     prose, "the saved IC is stored in STIC".
+!                     Nineteen landed decks carry this SYN at this
+!                     address.  LINE 24 CHECKS THE HALF WORD.
+STIC    SYN, (8)215265.0
+! S TLR    215230.00  printed p.116 line 13 DEFINES it,
+!                     "STLR DRZ(BU,64),29".  LINE 25 PINS IT TO THE
+!                     BIT -- a VFL address field, not a branch.
+STLR    SYN, (8)215230.0
+! F STUP   220607.00  printed p.175 line 3's LABEL row,
+!                     "F STUP  LV,$3,FLZCN  -B.A. OF 1ST ONE BIT IN
+!                     PATTERN WD".  LINE 49 CHECKS THE HALF WORD.
+FSTUP   SYN, (8)220607.0
+! F ERRZ   220636.00  printed p.175 line 37's LABEL row,
+!                     "F ERRZ  BADZ,$+.32  -TURN OFF AD IND.".
+!                     LINES 28 AND 29 CHECK THE HALF WORD.
+FERRZ   SYN, (8)220636.0
+! F ERRX   220636.40  printed p.175 line 38's LABEL row,
+!                     "F ERRX  LVI,$14,SFORBC".  FIVE rows here
+!                     check its half word and the .40 is REAL.
+FERRX   SYN, (8)220636.40
+! F PTWD   220640.00  printed p.175 line 42 DEFINES it,
+!                     "F PTWD  DD(BU),0  -TO SAVE PATTERN WORD".
+!                     LINE 37 CHECKS THE HALF WORD.  No dds is
+!                     written here: line 37 supplies its own
+!                     (BU,64), so this page cannot read F PTWD's.
+FPTWD   SYN, (8)220640.0
+! F BMSK   220641.00  printed p.175 line 43 DEFINES it,
+!                     "F BMSK  (16)DD(BU),BFFFFFF80000  -MASK TO
+!                     REMOVE UNWANTED ONES".  NO dds is written
+!                     here: line 36 CANNOT read one, measured --
+!                     see ASSEMBLER / CROSS-PAGE NOTES.  LINE 36
+!                     CHECKS THE HALF WORD.
+FBMSK   SYN, (8)220641.0
+! F ALOC   220642.00  printed p.175 line 44 DEFINES it,
+!                     "F ALOC  VF,0.0".  LINES 40, 45 AND 52.
+FALOC   SYN, (8)220642.0
+! F LZCN   220642.40  printed p.175 line 45 DEFINES it,
+!                     "F LZCN  VF,0.0  -TO SAVE LZC AS B.A.".
+!                     LINE 41 PINS IT TO THE BIT.
+FLZCN   SYN, (8)220642.40
+! F ADC    220643.00  printed p.175 line 46 DEFINES it,
+!                     "F ADC   VF,0.0  -TO SAVE LZC AS FWA".
+!                     LINE 42 PINS IT TO THE BIT.
+FADC    SYN, (8)220643.0
+!
+! ---------------------------------------------------------------
+! THE PAGE
+! ---------------------------------------------------------------
+! lines 1-18 are comment cards, KE000001-KE000018, emitting nothing;
+! their text is quoted in full in WHAT THE PAGE IS above.  Lines 34,
+! 38 and 43 are blank comment cards (KE000028, KE000032, KE000037).
+!
+        SLC, (8)220560.0             ! ADDED, not substituted: the page prints no SLC
+FFXP    V+I,$2,.32                   ! line 19  printed name "F FXP"
+        SVA,$2,FSVEF                 ! line 20  -ADDRESS OF A(I)
+        V+I,$2,.32                   ! line 21
+        SVA,$2,FSTEF                 ! line 22  -ADDRESS OF B(J)
+        V+I,$2,.32                   ! line 23
+        SVA,$2,STIC                  ! line 24  -RETURN ADDRESS
+        TI,2,STLR+15.,$2             ! line 25  -RESTORE PP INDICES 2-3
+FSVEF   LVE,$0,$                     ! line 26  -A(I) EFFECTIVE ADDRESS
+FSTEF   LVE,$1,$                     ! line 27  -B(J) EFFECTIVE ADDRESS
+        BUSAZ,FERRZ                  ! line 28
+        BADZ,FERRZ+.32               ! line 29  -USA OR AD ERROR
+        KV,$1,3.32                   ! line 30
+        BXL,FERRX                    ! line 31  -BRANCH IF B(J) IS NOT
+        KV,$1,3.0                    ! line 32
+        BZXL,FERRX                   ! line 33  -WITHIN PP BOUNDS
+        L(BU),0.($1)                 ! line 35  -LOAD THE PP PATTERN WORD
+        C0001(BU),FBMSK              ! line 36  -REMOVE UNWANTED ONES ONLY
+        SF(BU,64),FPTWD              ! line 37  -SAVE DOCTORED PATTERN WORD
+        L(BU),7.0                    ! line 39  -LOAD COUNTERS            *
+        ST(BU,7),FALOC.11,13         ! line 40  -ALL ONES COUNTER
+        ST(BU,6),FLZCN.18,40         ! line 41  -LEFT ZEROS COUNT AS VF BIT ADDR.
+        ST(BU,6),FADC.12,40          ! line 42  -LEFT ZEROS COUNT AS VF FWA
+        LV,$2,$1                     ! line 44
+        V+,$2,FALOC                  ! line 45
+        KV,$2,3.0                    ! line 46
+        BZXL,FERRX                   ! line 47  -BRANCH IF B(J) ABOVE PP BOUNDS
+        LV,$2,$0                     ! line 48
+        BXVZ,FSTUP                   ! line 49  -BRANCH IF A(I) IS ZERO
+        KV,$2,3.32                   ! line 50
+        BXL,FERRX                    ! line 51  -BRANCH IF A(I) BELOW PP BOUNDS
+        V+,$2,FALOC                  ! line 52
+        KV,$2,3.0                    ! line 53
+        BZXL,FERRX                   ! line 54  -BRANCH IF A(I) ABOVE PP BOUNDS
+        LV,$2,$0                     ! line 55  -RESTORE A(I) IN $2
+        L(BU),0.($1)                 ! line 56
+!
+! ---------------------------------------------------------------
+! ASSEMBLER / CROSS-PAGE NOTES
+! ---------------------------------------------------------------
+! NO ASSEMBLER LIMITATION WAS HIT.  Every statement above is the
+! PRINTED form, handed to strap_asm first, and every one was
+! accepted first time -- including line 25's mixed index spelling
+! ("TI,2,...,$2": a BARE 2 in one field and "$2" in another, both
+! on one card), line 25's trailing-period "STLR+15.", and lines 35
+! and 56's empty bit field "0.($1)".  Nothing was normalised.
+!
+! >>> A MODE-ONLY "(BU)" DOES NOT INHERIT A LENGTH, AND THAT IS THE
+!     MOST INTERESTING THING THIS PAGE MEASURES. <<<
+! Line 36 is "C0001(BU),F BMSK" -- a dds with a MODE and NO LENGTH.
+! The first draft of this deck assumed the length would come from
+! the symbol, SYN'd F BMSK as (BU,64) and wrote in the row's note
+! that the printed 000 length field pinned it.  THAT WAS WRONG.
+! Measured, varying only F BMSK's declaration and nothing else:
+!
+!     C0001(BU),FBMSK   FBMSK SYN(BU,64)   ->  000000.02 70
+!     C0001(BU),FBMSK   FBMSK SYN(BU,48)   ->  000000.02 70
+!     C0001(BU),FBMSK   FBMSK SYN(BU,44)   ->  000000.02 70
+!     C0001(BU),FBMSK   FBMSK SYN(BU,25)   ->  000000.02 70
+!     C0001(BU),FBMSK   FBMSK SYN          ->  000000.02 70
+!
+! and, with the dds removed from the STATEMENT instead:
+!
+!     C0001,FBMSK       FBMSK SYN(BU,25)   ->  031000.02 70
+!     C0001,FBMSK       FBMSK SYN(BU,64)   ->  000000.02 70
+!
+! So strap_asm's inheritance (C22-6531 printed p.31, quoted at
+! strap_asm.py's sym_dds note) fires only when the statement writes
+! NO dds AT ALL; "(BU)" is an explicit length-0 dds, and effLength
+! reads 0 as sixty-four.  TWO CONSEQUENCES:
+!
+!   1. LINE 36 DOES NOT PIN F BMSK'S LENGTH TO ANYTHING.  This is a
+!      SEVENTH entry for the workflow's "WHAT THE ORACLE CANNOT
+!      SEE": a mode-only dds erases the symbol's length from the
+!      printed word.  The deck therefore SYNs F BMSK with no dds at
+!      all, like the other nine, and claims nothing about its
+!      length.  The row still checks F BMSK's half-word ADDRESS.
+!
+!   2. WHETHER IBM'S STRAP AGREES IS NOT SETTLED BY THIS PAGE, and
+!      it cannot be: length 0 and length 64 print the same 000 in a
+!      six-bit field, and this page writes "(BU)" three times
+!      (lines 35, 36, 56) with all three printing 000.  Lines 35
+!      and 56 take a LITERAL operand, so no symbol is available to
+!      inherit from and length 0 is the only reading there.  WHAT
+!      WOULD SETTLE IT: a listing row writing a mode-only dds
+!      against a symbol whose length is NOT 64 and NOT 0.  If one
+!      turns up and the printed length is the symbol's, strap_asm's
+!      model is wrong and THIS ROW is where the corpus would notice.
+!
+! For the record, printed p.175's F BMSK datum decodes to 44 bits
+! (0o0000000277777776000000 = 0xBFFFFF80000) although the symbol
+! occupies a whole word (F ALOC follows at 220642.00).  Under
+! strap_asm's current model that mismatch cannot reach this page;
+! under the other model it would.
+!
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS THE ORACLE READS IT
+! ---------------------------------------------------------------
+! Three symbols and thirty-five rows, covering every one of the 44
+! emitted half words.  Each row is the printed BINARY OUTPUT column
+! verbatim except where a GLYPH CALL above says otherwise, and both
+! exceptions are named in the row's own note.
+! LINE | LOCATION | BINARY OUTPUT | NAME | STATEMENT | comment | card
+!
+! >>> THE BLOCK IS LAID OUT SO tests/check_deck_listing_comments.py
+!     CAN READ IT. <<<  That checker's ROW_RE is
+!     "!\s+\d+\*?\s+([0-7]{6}\.[0-7]{2})\s+\*?\s*(.*)" -- the line
+!     NUMBER must follow the "!" with nothing but blanks between.
+!     The house habit of writing "!   line 19*" puts the word "line"
+!     there and the pattern finds NOTHING, which is the silent
+!     "0 mismatches over 0 rows" case the checker exists to prevent
+!     (measured: it reaches 37 of 156 decks).  Measured on this
+!     deck: 35 rows parsed, 35 compared, 0 mismatches.
+!
+!         1                                                               -------------------------------------  KE000001
+!         2                                                               THE $FIXUP PSEUDO OP                   KE000002
+!         3                                                               -------------------------------------  KE000003
+!         4                                                                                                      KE000004
+!         5                                                               -------------------------------------  KE000005
+!         6                                                               THE CALLING SEQUENCE FOR $FIXUP        KE000006
+!         7                                                               -------------------------------------  KE000007
+!         8                                                                       B,$MCP                         KE000008
+!         9                                                                       ,$FIXUP                        KE000009
+!        10                                                                       ,A(I)                          KE000010
+!        11                                                                       ,B(J)                          KE000011
+!        12                                                                       -RETURN-                       KE000012
+!        13                                                                                                      KE000013
+!        14                                                               A(I), IF NOT ZERO, IS THE LOCATION IN PP MEMORY WHERE THE   KE000014
+!        15                                                               PATTERN WORD AND THE PRESENT INTERRUPT TABLE ARE SAVED.     KE000015
+!        16                                                               B(J) IS THE LOCATION WHERE THE PP PATTERN WORD AND THE ONE  KE000016
+!        17                                                               WORD FIXUPS ARE, IN ORDER OF APPEARANCE.                    KE000017
+!        18                                                                                                      KE000018
+!        19*  220560.00     000000.45 05                  F FXP   V+I,$2,.32                                     KE000019
+!        20*  220560.40     220564.05 D0                          SVA,$2,FSVEF  -ADDRESS OF A(I)                 KE000019
+!        21*  220561.00     000000.45 05                          V+I,$2,.32                                     KE000020
+!        22*  220561.40     220564.45 D0                          SVA,$2,FSTEF  -ADDRESS OF B(J)                 KE000020
+!        23*  220562.00     000000.45 05                          V+I,$2,.32                                     KE000021
+!        24*  220562.40     215265.05 D0                          SVA,$2,STIC   -RETURN ADDRESS                  KE000021
+!        25*  220563.00     215247.00 80  000022.04 A0            TI,2,STLR+15.,$2  -RESTORE PP INDICES 2-3      KE000022
+!        26*  220564.00     220564.01 B0                  F SVEF  LVE,$0,$      -A(I) EFFECTIVE ADDRESS          KE000023
+!        27*  220564.40     220564.43 B0                  F STEF  LVE,$1,$      -B(J) EFFECTIVE ADDRESS          KE000024
+!        28*  220565.00     220636.10 C6                          BUSAZ,FERRZ                                    KE000025
+!        29*  220565.40     220636.50 46                          BADZ,FERRZ+.32  -USA OR AD ERROR               KE000025
+!        30*  220566.00     000003.42 90                          KV,$1,3.32                                     KE000026
+!        31*  220566.40     220636.72 42                          BXL,FERRX     -BRANCH IF B(J) IS NOT           KE000026
+!        32*  220567.00     000003.02 90                          KV,$1,3.0                                      KE000027
+!        33*  220567.40     220636.72 40                          BZXL,FERRX    -WITHIN PP BOUNDS                KE000027
+!        34                                                                                                      KE000028
+!        35*  220570.00     000000.00 81  000000.20 50            L(BU),0.($1)  -LOAD THE PP PATTERN WORD        KE000029
+!        36*  220571.00     220641.00 80  000000.02 70            C0001(BU),FBMSK  -REMOVE UNWANTED ONES ONLY    KE000030
+!        37*  220572.00     220640.00 80  000000.12 F0            SF(BU,64),FPTWD  -SAVE DOCTORED PATTERN WORD   KE000031
+!        38                                                                                                      KE000032
+!        39*  220573.00  *  000007.00 80  000000.20 50            L(BU),7.0     -LOAD COUNTERS                   KE000033
+!        40*  220574.00     220642.13 80  007006.60 D0            ST(BU,7),FALOC.11,13  -ALL ONES COUNTER        KE000034
+!        41*  220575.00     220642.62 80  006024.20 D0            ST(BU,6),FLZCN.18,40  -LEFT ZEROS COUNT AS VF BIT ADDR.  KE000035
+!        42*  220576.00     220643.14 80  006024.20 D0            ST(BU,6),FADC.12,40   -LEFT ZEROS COUNT AS VF FWA        KE000036
+!        43                                                                                                      KE000037
+!        44*  220577.00     000021.04 30                          LV,$2,$1                                       KE000038
+!        45*  220577.40     220642.04 B0                          V+,$2,FALOC                                    KE000038
+!        46*  220600.00     000003.04 90                          KV,$2,3.0                                      KE000039
+!        47*  220600.40     220636.72 40                          BZXL,FERRX    -BRANCH IF B(J) ABOVE PP BOUNDS  KE000039
+!        48*  220601.00     000020.04 30                          LV,$2,$0                                       KE000040
+!        49*  220601.40     220607.31 42                          BXVZ,FSTUP    -BRANCH IF A(I) IS ZERO          KE000040
+!        50*  220602.00     000003.44 90                          KV,$2,3.32                                     KE000041
+!        51*  220602.40     220636.72 42                          BXL,FERRX     -BRANCH IF A(I) BELOW PP BOUNDS  KE000041
+!        52*  220603.00     220642.04 B0                          V+,$2,FALOC                                    KE000042
+!        53*  220603.40     000003.04 90                          KV,$2,3.0                                      KE000042
+!        54*  220604.00     220636.72 40                          BZXL,FERRX    -BRANCH IF A(I) ABOVE PP BOUNDS  KE000043
+!        55*  220604.40     000020.04 30                          LV,$2,$0      -RESTORE A(I) IN $2              KE000044
+!        56*  220605.00     000000.00 81  000000.20 50            L(BU),0.($1)                                   KE000045
+!
+! >>> EVERY ROW ABOVE IS RECORDED AS ESTABLISHED, NOT AS THE DRUM
+! PRINTED IT, AND THESE ARE ALL THE PLACES THE TWO DIFFER. <<<
+! BYTES: line 25 prints "AC" and is A0, line 37 prints "FC" and is
+! F0, line 40 prints "DC" and is D0 -- GLYPH CALLS (1) and (2).
+! OCTAL FIELDS: a C cannot occur in an octal field, so every open
+! round glyph in one is a 0 with certainty and the block carries
+! the 0.  The ones that matter, because they sit beside a byte that
+! WAS in doubt: line 25's second field prints "0C0022.04", line
+! 40's "0C7006.6C", lines 41 and 42's "006024.2C", and the LOCATION
+! column prints "22056C.00", "220561.4C", "22060C.00" and others
+! the same way.  Nothing else on the page was corrected.
+!
+!SYM FFXP   220560.00
+!SYM FSVEF  220564.00
+!SYM FSTEF  220564.40
+!
+!CHECK 220560.00 | 000000.45 05 | line 19 F FXP V+I,$2,.32 -- the page's first emitted row and its entry point; ".32" is DECIMAL, 0o40, plus the index-arithmetic 2J+1 = 5 for J=2, so a bit offset read octal would fail this row. printed p.178 line 43's "B,FFXP -> 220560.10 00" is an independent page printing this location
+!CHECK 220560.40 | 220564.05 D0 | line 20 SVA,$2,FSVEF -ADDRESS OF A(I) -- .05 is 2J+1 for J=2 and NOT any part of F SVEF's offset, so this row checks the HALF WORD only; the target is this page's own line 26, which is what makes this self-modifying pair internally consistent
+!CHECK 220561.00 | 000000.45 05 | line 21 V+I,$2,.32 -- bit-identical to line 19, the same statement printed twice
+!CHECK 220561.40 | 220564.45 D0 | line 22 SVA,$2,FSTEF -ADDRESS OF B(J) -- 0o45 = 0o40 OR 0o05, so bit 32 of F STEF IS checked here and this page's own line 27 confirms it at 220564.40
+!CHECK 220562.00 | 000000.45 05 | line 23 V+I,$2,.32 -- the THIRD printing of this statement on one page
+!CHECK 220562.40 | 215265.05 D0 | line 24 SVA,$2,S TIC -RETURN ADDRESS -- .05 is 2J+1 for J=2, so S TIC is checked to the HALF WORD only; nineteen landed decks already carry 215265.00
+!CHECK 220563.00 | 215247.00 80 000022.04 A0 | line 25 TI,2,S TLR+15.,$2 -RESTORE PP INDICES 2-3 -- 0o215230 + 15 = 0o215247 in a VFL ADDRESS field, so this PINS S TLR's bit offset to 0 and not merely its half word; the destination 000022.04 is word 0o22 = index register 2 with 2J = 4; the byte prints "AC" and is A0 -- the low nibble is the offset index i2 and only a "($12)" this card does not carry can set it (measured, GLYPH CALL 2)
+!CHECK 220564.00 | 220564.01 B0 | line 26 F SVEF LVE,$0,$ -A(I) EFFECTIVE ADDRESS -- "$" is this instruction's own location and .01 is 2J+1 for J=0; the card is the one line 20 overwrites, so its printed address equalling its printed location is the self-modification stated by the listing
+!CHECK 220564.40 | 220564.43 B0 | line 27 F STEF LVE,$1,$ -B(J) EFFECTIVE ADDRESS -- 0o43 = 0o40 OR 0o03 = 2J+1 for J=1; the pair with line 26 varies only J and the half word, which makes each the other's control
+!CHECK 220565.00 | 220636.10 C6 | line 28 BUSAZ,F ERRZ -- a branch prints target+.10, so F ERRZ's half word 220636.00 is checked; byte C6 is BUSAZ against BUSA's C2 and the Z is VISIBLE, not ink-only
+!CHECK 220565.40 | 220636.50 46 | line 29 BADZ,F ERRZ+.32 -USA OR AD ERROR -- 0o50 = 0o40 OR 0o10, the +.32 DECIMAL being 0o40; byte 46 is BADZ against BAD's 42. Lines 28 and 29 differ by exactly the +.32, which is what makes F ERRZ's bit 32 readable as zero
+!CHECK 220566.00 | 000003.42 90 | line 30 KV,$1,3.32 -- 3.32 DECIMAL is word 3 bit 0o40, plus 2J = 2 for J=1; paired with line 32's .02 the two readings of ".32" and ".0" check each other
+!CHECK 220566.40 | 220636.72 42 | line 31 BXL,F ERRX -BRANCH IF B(J) IS NOT -- 0o72 = 0o40 OR the 0o32 XL indicator, so F ERRX's bit 32 IS read; byte 42 is BXL against line 33's BZXL 40, one line apart
+!CHECK 220567.00 | 000003.02 90 | line 32 KV,$1,3.0 -- the same word as line 30 with the bit offset removed
+!CHECK 220567.40 | 220636.72 40 | line 33 BZXL,F ERRX -WITHIN PP BOUNDS -- identical half word to line 31 with byte 40 for the Z form; the pair is printed four times on this page (31/33, 51/47, and 54), every time with the same address
+!CHECK 220570.00 | 000000.00 81 000000.20 50 | line 35 L(BU),0.($1) -LOAD THE PP PATTERN WORD -- 81's low nibble is index $1; the address is a literal 0. with an EMPTY bit field, handed to strap_asm as printed; length 000 because the dds writes none and the operand is not a symbol. Line 56 prints this identical full word, which is ladder rung 4 for every glyph in it
+!CHECK 220571.00 | 220641.00 80 000000.02 70 | line 36 C0001(BU),F BMSK -REMOVE UNWANTED ONES ONLY -- the connective code is four BINARY digits, so "COOC1" can only be C0001 (AND), which is what the comment says and what "REMOVE UNWANTED ONES" means. THE PRINTED LENGTH FIELD 000 PINS NOTHING: measured, it is unchanged for F BMSK declared (BU,64), (BU,48), (BU,44), (BU,25) and bare, because a MODE-ONLY "(BU)" is an explicit length-0 dds and does not inherit. This row checks F BMSK's HALF-WORD ADDRESS only; see ASSEMBLER / CROSS-PAGE NOTES
+!CHECK 220572.00 | 220640.00 80 000000.12 F0 | line 37 SF(BU,64),F PTWD -SAVE DOCTORED PATTERN WORD -- length 64 prints as 000 in a six-bit field; the byte prints "FC" and is F0, measured: only a second-operand "0($12)" this card does not carry puts a C in the low nibble
+!CHECK 220573.00 | 000007.00 80 000000.20 50 | line 39 L(BU),7.0 -LOAD COUNTERS -- 7.0 is an ABSOLUTE address and no symbol; what word 7 holds is not read off this listing. This row carries the page's ONLY location-column asterisk, and the page has no SLC anywhere
+!CHECK 220574.00 | 220642.13 80 007006.60 D0 | line 40 ST(BU,7),F ALOC.11,13 -ALL ONES COUNTER -- 0o13 = 11 in a VFL address field pins F ALOC's bit offset to 0; 0o007 is the length 7; the byte prints "DC" and is D0, settled by lines 41 and 42 printing a CLOSED 0 in the same character position for the same operation
+!CHECK 220575.00 | 220642.62 80 006024.20 D0 | line 41 ST(BU,6),F LZCN.18,40 -LEFT ZEROS COUNT AS VF BIT ADDR. -- 0o62 = 50 and 50 - 18 = 32 = 0o40, so F LZCN is pinned to the bit at 220642.40; 0o006 is the length 6
+!CHECK 220576.00 | 220643.14 80 006024.20 D0 | line 42 ST(BU,6),F ADC.12,40 -LEFT ZEROS COUNT AS VF FWA -- 0o14 = 12 pins F ADC's bit offset to 0; the second half word is bit-identical to line 41's, two rows differing only in the first address, which is what makes each the other's control for the D0
+!CHECK 220577.00 | 000021.04 30 | line 44 LV,$2,$1 -- 0o21 is word 17, index register 1; .04 is 2J for J=2; byte 30 is LV
+!CHECK 220577.40 | 220642.04 B0 | line 45 V+,$2,F ALOC -- .04 is 2J (not 2J+1: V+ against line 19's V+I), so this row checks F ALOC's HALF WORD while line 40 pins its bit
+!CHECK 220600.00 | 000003.04 90 | line 46 KV,$2,3.0 -- line 32's word with J=2 instead of J=1
+!CHECK 220600.40 | 220636.72 40 | line 47 BZXL,F ERRX -BRANCH IF B(J) ABOVE PP BOUNDS -- bit-identical to line 33
+!CHECK 220601.00 | 000020.04 30 | line 48 LV,$2,$0 -- 0o20 is word 16, index register 0; against line 44's 0o21 for $1, which is what pins both
+!CHECK 220601.40 | 220607.31 42 | line 49 BXVZ,F STUP -BRANCH IF A(I) IS ZERO -- 0o31 is the XVZ indicator, the same construction printed p.168 line 12 used, so the printed .31 reads F STUP's bit 32 as ZERO and 220607.00 is printed p.175 line 3's own label row
+!CHECK 220602.00 | 000003.44 90 | line 50 KV,$2,3.32 -- 0o44 = 0o40 OR 0o04; line 30's word with J=2
+!CHECK 220602.40 | 220636.72 42 | line 51 BXL,F ERRX -BRANCH IF A(I) BELOW PP BOUNDS -- bit-identical to line 31
+!CHECK 220603.00 | 220642.04 B0 | line 52 V+,$2,F ALOC -- bit-identical to line 45
+!CHECK 220603.40 | 000003.04 90 | line 53 KV,$2,3.0 -- bit-identical to line 46
+!CHECK 220604.00 | 220636.72 40 | line 54 BZXL,F ERRX -BRANCH IF A(I) ABOVE PP BOUNDS -- the fifth printing of F ERRX's half word on this page
+!CHECK 220604.40 | 000020.04 30 | line 55 LV,$2,$0 -RESTORE A(I) IN $2 -- bit-identical to line 48
+!CHECK 220605.00 | 000000.00 81 000000.20 50 | line 56 L(BU),0.($1) -- bit-identical to line 35, the same full word printed twice on one page. A FULL WORD, so THE COUNTER LEAVES THIS PAGE AT 220606.00, which is what printed p.175 line 1 prints
+!
+! ---------------------------------------------------------------
+! WHAT COULD NOT BE SETTLED
+! ---------------------------------------------------------------
+! (A) >>> WHAT THE SINGLE LOCATION-COLUMN ASTERISK ON LINE 39
+!     MEANS. <<<  Nothing is proposed, per the workflow.  What this
+!     page contributes to the standing record is a NEGATIVE datum
+!     that no earlier page could give: the sheet contains NO "SLC"
+!     ROW AT ALL, so whatever the mark is, on this page it is not
+!     near one.  Line 39 has no label, is not a branch, is not a
+!     definition, is not the first or last row of anything, and sits
+!     in the middle of a contiguous run.  One hypothesis somebody
+!     will think of -- "the first row after a blank comment card" --
+!     is REFUTED BY THIS PAGE ALONE: there are THREE blank comment
+!     cards (lines 34, 38, 43) and only ONE of the three is followed
+!     by an asterisk.  (printed p.175 line 1 also carries the mark,
+!     but it is the FIRST LINE of its page and so is evidence for
+!     nothing here either way.)  WHAT WOULD SETTLE IT:
+!     a census of the mark across all landed decks' listing blocks,
+!     which no tool in the repo does; that is a repo-wide job and is
+!     explicitly NOT done here.
+!
+! (B) WHY ELEVEN CARDS CARRY TWO LISTING LINES.  Every one of the
+!     eleven is a pair of HALF-WORD instructions and every unpaired
+!     code line has its own serial, which is a strong regularity on
+!     one page -- but this page cannot say whether STRAP is printing
+!     one card punched with two statements, or something about the
+!     listing's own line breaking.  printed p.168 saw duplicate
+!     serials too and they were NOT paired half words there (its
+!     JA000016 covers an LVI and a B, JA000026 a KV and a BZXE), so
+!     the two observations do not obviously describe the same thing.
+!     NOTHING IS PROPOSED.  WHAT WOULD SETTLE IT: C28-6129 on the
+!     listing format, or a page where a FULL word shares a serial.
+!
+! (C) >>> WHETHER A MODE-ONLY "(BU)" SHOULD INHERIT ITS LENGTH FROM
+!     THE OPERAND SYMBOL. <<<  strap_asm says no -- it is an
+!     explicit length 0, which effLength reads as 64 -- and this
+!     page's three "(BU)" rows (35, 36, 56) all print 000, which is
+!     what BOTH models predict here.  So the page is consistent with
+!     either and settles neither.  Nothing about THIS deck turns on
+!     it (all three rows want 64 bits either way), but line 36 is
+!     the row in the corpus where the two models could diverge, and
+!     it is recorded so the next person does not re-derive the
+!     first draft's wrong claim that the printed 000 pinned F BMSK
+!     to 64 bits.  WHAT WOULD SETTLE IT: C22-6531 on an omitted
+!     length in a dds, or a listing row writing a mode-only dds
+!     against a symbol whose length is neither 0 nor 64.
+!
+! (D) THE BIT OFFSETS OF S TIC, F ERRZ, F ERRX, F STUP, F PTWD AND
+!     F BMSK ARE UNOBSERVABLE BELOW BIT 32 from this page (workflow,
+!     WHAT THE ORACLE CANNOT SEE item 1).  Writing ".0" is a
+!     CONVENTION here and not a reading; the half word itself IS
+!     checked and would fail if wrong.
+!
+! (E) THE EIGHTEEN COMMENT CARDS ARE QUOTED, NOT TRANSCRIBED
+!     CHARACTER BY CHARACTER.  Lines 1, 3, 5 and 7 are rules of
+!     dashes and counting them off a worn drum is a reading nobody
+!     can check.  The prose of lines 2, 6 and 8-17 is quoted in full
+!     above and was read at 400 dpi across the full form width.
+!
+! (F) WHAT WORD 7 OF THE MACHINE IS.  Line 39 loads 7.0 and the
+!     three stores below it are commented "ALL ONES COUNTER" and
+!     "LEFT ZEROS COUNT"; an obvious inference is available and is
+!     NOT made here, because rule 1 forbids taking an encoding from
+!     how a listing uses it.  WHAT WOULD SETTLE IT: C22-6531
+!     Appendix A's register assignment, cited by page.
+!

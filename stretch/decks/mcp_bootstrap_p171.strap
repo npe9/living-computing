@@ -1,0 +1,608 @@
+! mcp_bootstrap_p171.strap -- "STORE IN COMMUNICATION REGION" and
+! "FETCH FROM COMMUNICATION REGION", printed page 171.
+! docs/MCP_Mar63_001-249.pdf PDF p.178, header rendered at 400 dpi and
+! READ, not assumed: the top line prints "TIME CLOCK 00054041  PUNID
+! 11011MCP   CARD ID KA000001   DIST. OF 3/01   3/01   PAGE NUMBER
+! 171".
+!
+! >>> THE HEADING ROW'S OWN "LOCATION" FIELD IS BLANK ON THIS PAGE.
+! The column-heading line prints "LINE  LOCATION  BINARY OUTPUT
+! NAME  STATEMENT  LOCATION" and NOTHING follows that last word.
+! Rendered at 400 dpi and looked at; no OCR was allowed near it
+! (docs/transcription_workflow.md step 1: tesseract invents digits
+! out of the dashed rule there).  This is the EXPECTED reading under
+! the rule that the field is LINE 1'S location: line 1 here is the
+! top rule of an asterisk banner and compiles nothing.  So the page
+! gives no independent origin word from its header, and the origin
+! is established twice over from elsewhere -- see THE JOIN below.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! FORTY-THREE printed lines, then blank paper to the footer.  Two
+! short routines, each in its own asterisk box:
+!
+!   lines  1- 3  banner, "********** STORE IN COMMUNICATION REGION"
+!   line   4     220427.40 *  SLC,$
+!   lines  5-29  KSTRG, twenty-five half words of code
+!   lines 30-31  blank cards (the dash only, no statement)
+!   lines 32-34  banner, "********** FETCH FROM COMMUNICATION REGION"
+!   line  35     220445.40 *  SLC,$
+!   lines 36-41  K FECRG, six half words of code
+!   line  42     K QUANT SYN,25        -- a pure NUMBER, not an address
+!   line  43     K SILO  DR(BU,64),(K QUANT)  -COMMUNICATION REGION
+!
+! The two routines are the $STRG and $FECRG pseudo-operations of the
+! MCP pseudo-op table.  That is not inferred from the listing: the
+! TYPESET C22-6728-1 MCP System Analysis Guide prints the table
+! outright --
+!
+!     $STRG   34,0    KSTRG        $FECRG  34,32   KFECRG
+!
+! -- which names both entry symbols and is the witness that settles
+! both spellings (see GLYPHS SETTLED (1)).
+!
+! Both routines share one body.  KSTRG (line 5) loads a count of 25
+! into $3, plants the return in $1, and branches to K CAB; the
+! transmit on line 8 is the STORE direction (0($9) -> K SILO) and
+! line 39's is the FETCH direction (K SILO -> 0.0($9)).  K CAB
+! (lines 10-29) is the common argument-check: it steps $2 over the
+! caller's parameter word and saves the return in S TIC (lines
+! 10-13), swaps the caller's $1-$3 against S TLR+14 (lines 14-16),
+! branches out on USA or AD (lines 17-18), range-checks the word
+! against S LOWER and S UPPER (lines 19-24) and, if the request is
+! inside the communication region, returns through $1 (line 25).
+! K GOOF (line 26) is the failure exit: clear AD, load the
+! "forbidden" code 0o10011 into index 14, save the IC in S DISIC and
+! go to S DISP.
+!
+! FORTY CARDS OVER FORTY-THREE LINES, AND NOTHING FELL OFF
+! EITHER END.  The card-serial column, read at 600 dpi:
+!
+!   lines  1-31  KA000001 .. KA000029, with KA000006 printed on
+!                lines 6 AND 7 and KA000027 on lines 28 AND 29
+!                -- one card carrying two statements, twice
+!   lines 32-43  KB000001 .. KB000011, with KB000006 printed on
+!                lines 37 AND 38
+!
+! The top serial is 001 of deck KA and the page is blank below
+! KB000011, so no row is lost at either edge.  Two card decks meet
+! on this page: KA ends at line 31 and KB opens the FETCH banner on
+! line 32.  29 KA cards over 31 lines plus 11 KB cards over 12
+! lines is 40 cards over 43 lines -- equivalently 43 minus the
+! three doubled serials.
+!
+! ---------------------------------------------------------------
+! WHERE THIS DISAGREES WITH THE SURVEY -- AND WHY THIS WINS
+! ---------------------------------------------------------------
+! >>> THE SURVEY WAS RE-RUN HERE RATHER THAN QUOTED.  printed p.145's
+! deck ends its survey paragraph telling the next transcriber to read
+! the columns and not the briefing, and that advice paid again.  This
+! transcriber was handed "28 rows, 220427.64 .. 220450.40, MIXED (1
+! trailing '+')" and asked to establish the real span, the first
+! endpoint being suspect.  `python3 strap/mcp_survey.py --pages
+! 178-178`, run today, prints something DIFFERENT from the briefing:
+!
+!    PDF printed  off  rows    +       first       last  kind
+!    178     171    7    28    1   220427.40 OCCCCC.CCt  mixed
+!
+! So, point by point:
+!
+!   FIRST LOCATION.  The survey reads 220427.40 and is RIGHT.  The
+!   brief's "220427.64" is not reproducible from the tool and does
+!   not appear anywhere in this repository (grepped).  Whatever
+!   produced it, it is not this survey, and no explanation of it is
+!   offered here -- only the measurement.  220427.40 is also what the
+!   page prints at 900 dpi on lines 4 AND 5, which is what an SLC
+!   emitting nothing requires, and what printed p.178's "B,K STRG"
+!   independently confirms.
+!
+!   LAST LOCATION.  The survey's last field is "OCCCCC.CCt", which is
+!   tesseract on line 42's "000000.00+" -- unparsed, not a location.
+!   The brief's "220450.40" is line 41, the CNOP.  The real last
+!   location is line 43's 220451.00, which the survey does not reach
+!   at all.  The survey loses the bottom row; the brief loses the
+!   bottom two.
+!
+!   ROW COUNT.  28 against the ink.  THIRTY-FIVE lines carry a
+!   LOCATION field (lines 4-29, which is 26, plus lines 35-43, which
+!   is 9).  They take THIRTY-THREE distinct values, because the two
+!   SLCs emit nothing and so share a location with the card below
+!   each of them.  THIRTY-ONE of those rows emit, and all thirty-one
+!   are checked below.  The two SLCs are located and do not emit;
+!   subtracting them from the located count would be the wrong
+!   operation.
+!
+!   "MIXED, 1 trailing '+'" IS RIGHT in both the brief and the run,
+!   and it is line 42, the only SYN on the page.  A survey that gets
+!   the shape right and the bottom wrong is exactly what rule 4 says
+!   it is: a lower bound.
+!
+! ---------------------------------------------------------------
+! THE JOIN, BOTH ENDS, AND NEITHER FROM THIS PAGE'S OWN INK
+! ---------------------------------------------------------------
+! BACKWARD.  The volume OCR of PDF p.177 (printed p.170 -- a
+! DIFFERENT page, so a legitimate witness) ends at its line 32,
+! "220427.00  222037.10 00  B,KUNSTC", a half word.  The counter
+! therefore arrives at 220427.40, which is what this page's line 4
+! prints.  Contiguous, with nothing between.
+!
+! FORWARD.  K SILO reserves 25 words from 220451.00, so this deck's
+! counter ends at 0o220451 + 0o31 = 220502.00.  The volume OCR of
+! PDF p.179 (printed p.172) prints its first located row, line 4, at
+! 220502.00.  The hole is real, it is 25 words wide, and it is
+! accounted: 220451.00 .. 220501.77 is K SILO and nothing else.
+!
+! INDEPENDENTLY, BOTH ENTRY POINTS ARE PRINTED ON ANOTHER PAGE.  The
+! volume OCR of PDF p.185 (printed p.178, the pseudo-op branch
+! table) carries
+!
+!     38*  220765.00  220427.50 00  B,K STRG   -STORE IN COMMUNICATION REGION
+!     39*  220765.40  220445.50 00  B,K FECRG  -FETCH FROM COMMUNICATION REGION
+!
+! A B prints its target plus .10, so those two half words say
+! KSTRG = 220427.40 and KFECRG = 220445.40 -- this page's origin and
+! its second SLC, read off a page seven leaves away.  That is what
+! retires the brief's "220427.64" for good -- the survey itself
+! never printed it (see above).
+!
+! ---------------------------------------------------------------
+! GLYPHS SETTLED, AND ON WHAT
+! ---------------------------------------------------------------
+! (1) "KSTRG" (line 5) and "KFECRG" (line 36), not KSTRG/KFEORG and
+!     not anything with a C-for-O or O-for-C in it.  Ladder rung 2,
+!     the typeset manuals, and it is decisive: the pseudo-op table
+!     quoted above prints "$STRG 34,0 KSTRG" and "$FECRG 34,32
+!     KFECRG" in type.  Counted across the three typeset manuals,
+!     FECRG scores 17 and FEORG scores ZERO; KSTRG scores 4.  The
+!     drum cannot settle it -- line 41's "CNOP" prints a closed O
+!     and line 39's "K SILO" prints its O wide open, in the same
+!     column, two lines apart.
+!
+! (2) "KSILO" (lines 8, 39, 43), with a final O.  Typeset manuals
+!     again: KSILO 36 times across C22-6728 and C22-6728-1, glossed
+!     at C22-6728-1 "KSILO - The processor communication region",
+!     which is also this page's own line-43 comment.  KSILC: zero.
+!
+! (3) "KCAB" (lines 7, 10, 38).  Typeset manuals, 2 hits; and the
+!     page's own line 10 prints the name "K CAB" with a clean B.
+!
+! (4) The BYTE COLUMN, settled by rung 4 (the same statement printed
+!     twice on one page) and then confirmed by the assembler.  This
+!     drum drops ink on round glyphs all over this page -- line 8's
+!     location field prints "COCCCO.CO" for 000000.00, four
+!     impossible C's in an octal field -- so "it looks like a C"
+!     carries almost nothing here.  The repeated cards are what
+!     carry it:
+!
+!       lines  5 / 36  LCI,3,KQUANT  print "C2" and "02".  02.
+!       lines  6 / 37  LVI,1,$+1.0   print "C1" and "01".  01.
+!       lines 10 / 21  V+I           print "05" and "C5".  05.
+!       lines 12 / 24  V-I           print "0D" and "0D" (the D read
+!                                    on its straight left stem).
+!       lines  8 / 39  T             print "2C" and "29"/"80"; the
+!                                    low nibble is the offset index,
+!                                    9 for the 0($9) operand and 0
+!                                    for K SILO, so line 8's second
+!                                    byte is 20.
+!       lines 14 / 16  SWAPI         both print "EC"; the second
+!                                    operand carries no index, so E0.
+!
+!     EVERY ONE of those readings was then handed to strap_asm and
+!     every one came back identical to the printed half word.
+!     Thirty-one !CHECK rows, thirty-one matches, and NO SUBSTITUTION
+!     IN ANY BYTE READING.  (Four substitutions were made elsewhere
+!     and every one is announced where it stands: two blanked
+!     symbols closed up inside an expression, the name fields closed
+!     up, and the hard origin on line 4.)
+!
+! (5) "DR", NOT "DRZ" (line 43).  Read off the ink at 1800 dpi,
+!     because nothing else can read it -- a reservation prints its
+!     COUNT, so DR and DRZ compile the same "000031.00" and no check
+!     on this page or any other can tell them apart (workflow, WHAT
+!     THE ORACLE CANNOT SEE, item 5).  The statement is
+!     "DR(BU,64),(K QUANT)" with no Z anywhere on the card.  Flagged
+!     here as INK-ONLY: 25 words of this page's image are zeros or
+!     not according to this one glyph.
+!
+! (6) "LVE,9,$" (line 15) prints its byte "B0", not "80".  Settled
+!     by the assembler, which is the right witness for a B/8 pair:
+!     LVE,9,$ compiles 220435.63 B0 and nothing else on the page
+!     produces B0, so the stroke the drum nearly lost is checked.
+!
+! (7) "$3" ON LINE 8 AND BARE "3" ON LINE 39.  Both read at 1800
+!     dpi.  The two transmits are the same instruction in opposite
+!     directions and their J fields are punched differently --
+!     "T,$3,0($9),KSILO" against "T,3,K SILO,0.0($9)".  Recorded as
+!     printed; strap_asm accepts both and compiles the same J.
+!
+! (8) BLANKS INSIDE NAMES, as printed, card by card.  STRAP ignores
+!     blanks while scanning a field (strap_asm.py, _BLANKED_SYMBOL;
+!     C22-6531 printed p.10 makes a name alphameric), so these are
+!     one symbol each, but the page is inconsistent and the printed
+!     form is recorded in the listing block:
+!
+!       line  5  name "KSTRG"  (and INDENTED one character past
+!                every other name on the page -- measured at 900
+!                dpi, "KSTRG" starts ~1.2 character cells right of
+!                "K CAB", "K GOOF", "K FECRG", "K QUANT" and
+!                "K SILO", which all start flush.  The card was
+!                punched " KSTRG".)
+!       line  5  operand "KQUANT"   / line 36 operand "K QUANT"
+!       line 19  operand "SLOWER"   / line 22 operand "S UPPER"
+!       line 20  operand "KGOOF"    / lines 17,18,23 "K GOOF"
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK -- RECORDED, NOT EXPLAINED
+! ---------------------------------------------------------------
+! FOUR lines carry an asterisk after the LOCATION, in addition to
+! the one every line number carries: line 4 (SLC,$), line 24
+! (V-I,9,KQUANT), line 35 (SLC,$) and line 43 (DR).  printed p.146's
+! deck predicted "printed p.171 puts it on an SLC, a V-I, and a DR"
+! and that is CONFIRMED here, with the addition that BOTH of this
+! page's SLCs carry it, not one.
+!
+! docs/listing_typography.md section 12 was READ, not cited from
+! memory: it records the mark as open "with eight things it is not",
+! and this page adds a ninth of exactly the shape p.149 added --
+! TWO ROWS THAT DIFFER IN NOTHING THAT COULD MATTER, ONE MARKED AND
+! ONE NOT.  Line 24 is "V-I,9,KQUANT" and line 21 is "V+I,9,KQUANT":
+! same family, same index, same operand, same alignment (both the
+! second half word of their word), three lines apart, and only line
+! 24 carries the mark.
+!
+! It also bears on the rule section 12 records as raised by printed
+! p.147 and killed by printed p.151 -- "every printed SLC,$ row
+! carries the mark".  BOTH of this page's SLC,$ rows carry it.  That
+! is consistent with p.147 and does nothing to revive it, because
+! p.151 line 4 is a printed SLC,$ that does not, and one unmarked
+! instance is all it takes.  Recorded so the next transcriber who
+! notices two marked SLCs does not re-raise it.
+!
+! NO RULE IS PROPOSED FROM THIS PAGE.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- every one already landed by another deck, at the
+! value that deck's PAGE prints, and every one checked by a row here
+! ---------------------------------------------------------------
+!
+! >>> HOW MUCH OF EACH VALUE THIS PAGE ACTUALLY SEES.  MEASURED, NOT
+! ASSERTED.  The first draft of this deck claimed that SV, SWAPI,
+! LVI and SIC each "write a full address field, so this page pins
+! the symbol to the bit".  That is TRUE OF ONE OF THEM.  The
+! workflow's WHAT THE ORACLE CANNOT SEE item 1 measures LVI and B
+! and finds only bit 32 visible; the same experiment run here on
+! this page's own five cards, varying ONLY the SYN and nothing else:
+!
+!   SYN offset         .00    .01    .10    .37    .40    .41
+!   ------------------------------------------------------------
+!   line 11  SV        .05    .05    .05    .05    .45    .45
+!   line 14  SWAPI     .06    .06    .06    .06    .46    .46   (2nd half word)
+!   line 22  KV        .22    .22    .22    .22    .62    .62
+!   line 27  LVI       .35    .35    .35    .35    .75    .75
+!   line 29  B         .10    .10    .10    .10    .50    .50
+!   line 28  SIC       .00    .01    .10    .37    .40    .41
+!
+! So SV, SWAPI, KV, LVI and B all see the WORD and the HALF WORD and
+! nothing finer -- five rows, one answer.  **SIC IS THE EXCEPTION
+! AND IT IS A NEW ONE**: every offset from .00 to .77 appears in the
+! printed half word unchanged, so line 28 really does pin S DISIC to
+! the bit, including its .40.  That is worth more than this page:
+! the workflow's item 1 is written as though the half-word gap were
+! universal, and it is not -- SIC writes a 24-bit bit-address field
+! where a branch writes a 19-bit half-word one.  Falsifiable, and
+! cheap: run the table above against any other deck's SIC.
+!
+! S TIC    215265.00  STored Instruction Counter.  p.110/111/112/
+!                     116/117/118/123/127/128/130/133 all SYN it
+!                     here.  Line 11's SV checks the WORD and the
+!                     HALF WORD -- 215265.05 is 215265.00 plus
+!                     index 2's .04 plus SV's .01 -- and the bit
+!                     inside the half word is unobservable.
+STIC    SYN, (8)215265.0
+! S TLR    215230.00  printed p.116 line 13 is the defining card,
+!                     "S T LR DRZ(BU,64),29".  Lines 14 and 16 here
+!                     print "STLR+14." as a 24-bit address field,
+!                     215246.00, and 0o215246 - 0o16 = 0o215230, so
+!                     this page checks the WORD exactly; the bit
+!                     within the half word is unobservable (table
+!                     above).  Written with no dds, as every other
+!                     deck that only USES it does (p.117/118/122/
+!                     123/127/128/129/130/133/134/135/141/143/144/
+!                     145/146/147/148/157/159/168); both uses here
+!                     are ADDRESS fields, which take no length from
+!                     the symbol.
+STLR    SYN, (8)215230.0
+! S UPPER  215230.00  printed p.116 lines 14-15 define both as
+! S LOWER  215230.40  SYNs off S T LR; p.130 and p.144 carry the
+!                     same two cards.  THIS PAGE CHECKS THE HALF
+!                     WORD BETWEEN THEM INDEPENDENTLY: line 22
+!                     prints 215230.22 and line 19 prints 215230.62
+!                     for the same operation (KV with index 9,
+!                     worth .22), and 0o62 - 0o22 = 0o40 is exactly
+!                     the half word p.116's "+0.32" puts between
+!                     them.  The difference is checked; neither
+!                     absolute bit offset is.
+SUPPER  SYN, STLR
+SLOWER  SYN, STLR+0.32
+! S FORBD  010011.00  printed p.107 line 14 is the defining card,
+!                     "SFORBD SYN,(16)1009.0"; 0x1009 = 0o10011.
+!                     Line 27's LVI checks the WORD, 010011, and
+!                     the half word; .35 is index 14's .34 plus
+!                     LVI's .01.  Bit unobservable.
+SFORBD  SYN,(16)1009.0
+! S DISIC  217451.40  printed p.103 line 289 of that deck; p.119,
+!                     p.120, p.124, p.129, p.130 carry it.  LINE
+!                     28'S SIC IS THE ONE ROW ON THIS PAGE THAT
+!                     PINS AN EXTERNAL TO THE BIT -- measured, see
+!                     the table above -- so the .40 is READ here
+!                     and not inherited.
+SDISIC  SYN, (8)217451.40
+! S DISP   217372.00  p.119/120/124/129/130/133.  Line 29's B pins
+!                     the HALF WORD only (217372.10 is 217372.00
+!                     plus B's .10); the bit inside the half word is
+!                     unobservable here, as it is everywhere a
+!                     branch is the only witness.
+SDISP   SYN, (8)217372.0
+! K SUPP   216242.00  defined printed p.128, "K SUPP NOP,K COMM R";
+!                     p.123/124/125/126/127/134/135 carry it.  Lines
+!                     9 and 40 are branches, so again HALF WORD only.
+KSUPP   SYN, (8)216242.0
+!
+! ---------------------------------------------------------------
+! THE PAGE
+! ---------------------------------------------------------------
+!
+! >>> LINE 4 PRINTS "SLC,$" AND THIS DECK WRITES A HARD ORIGIN. <<<
+! The substitution is loud on purpose (workflow, WHAT THE ORACLE
+! CANNOT SEE, item 2: a hard SLC cannot disagree with the arriving
+! counter, it overrides it).  The printed card is
+!
+!     line 4   220427.40 *   SLC,$
+!
+! and its printed LOCATION is the counter arriving from printed
+! p.170 -- IBM's own assembler stating the join.  That value is
+! asserted below, not checked, and it is corroborated twice: by
+! p.170's own last row (220427.00, a half word) and by printed
+! p.178's "B,K STRG" compiling 220427.50.
+        SLC,(8)220427.40
+!
+KSTRG   LCI,3,KQUANT
+        LVI,1,$+1.0
+        B,K CAB
+        T,$3,0($9),KSILO
+        B,K SUPP
+KCAB    V+I,2,1.0
+        SV,2,S TIC
+        V-I,2,.32
+        SVA,2,$+1.32
+! >>> PRINTED "SWAPI,3,$1,S TLR+14." -- the blank in "S TLR" has to
+! come out HERE and only here.  strap_asm resolves a blanked symbol
+! only when the WHOLE field is letters, digits and blanks
+! (_BLANKED_SYMBOL); "S TLR+14." carries an operator and a dot, so
+! it reaches tokenize_expr, which splits on the blank and fails with
+! "undefined symbol 'S'".  That is an ASSEMBLER LIMITATION, not a
+! reading: the printed form was handed to strap_asm first and
+! refused.  Reported, and the printed form is in the listing block.
+! Every landed deck closes this up the same way (p.145 line 10 has
+! the identical card).
+        SWAPI,3,$1,STLR+14.
+        LVE,9,$
+        SWAPI,3,$1,STLR+14.0
+        BUSAZ,K GOOF
+! >>> PRINTED "BADZ,K GOOF+.32" -- closed up for the same reason as
+! the SWAPIs above, and for no other.
+        BADZ,KGOOF+.32
+        KV,9,SLOWER
+        BXL,KGOOF
+        V+I,9,KQUANT
+        KV,9,S UPPER
+        BZXL,K GOOF
+        V-I,9,KQUANT
+        B,0.0($1)
+! >>> LINE 26 IS THE DEFINING CARD FOR K GOOF, at 220443.40.  The
+! page prints the name with a blank, "K GOOF"; a name field cannot
+! carry one through strap_asm (it splits the line on the first
+! blank), so it is written closed up here, which is the same symbol.
+! printed p.146's deck SYNs KGOOF at (8)220443.40 off this card and
+! is correct -- see CONFIRMING p.146 at the foot of this file.
+KGOOF   BADZ,$+.32
+        LVI,14,S FORBD
+        SIC,S DISIC
+        B,S DISP
+!
+! >>> LINE 35 PRINTS "SLC,$" AND IT IS WRITTEN AS PRINTED.  Unlike
+! line 4 there is nothing to assert: the counter arrives here at
+! 220445.40 from line 29's half word, which is exactly what the page
+! prints beside this card.  Writing the printed form keeps the
+! witness instead of throwing it away.
+        SLC,$
+KFECRG  LCI,3,K QUANT
+        LVI,1,$+1.0
+        B,K CAB
+        T,3,K SILO,0.0($9)
+        B,K SUPP
+        CNOP
+! K QUANT IS A PURE NUMBER, NOT AN ADDRESS, and the listing says so
+! in a way worth recording: line 42 prints its LOCATION as
+! "000000.00+" and puts the value in the BINARY OUTPUT column,
+! "+00000031" (0o31 = 25), with "NULL" in the data-description
+! column.  An address-valued SYN prints the other way round --
+! printed p.107 line 14 prints "010011.00+" in the LOCATION column
+! and "+00000000" in BINARY for SFORBD.  So the two columns together
+! are STRAP stating which kind of value a SYN holds.
+KQUANT  SYN,25
+! >>> THE HOLE BELOW THIS CARD IS LEGITIMATE AND IT IS PRINTED
+! EVIDENCE.  K SILO reserves (K QUANT) = 25 words of 64 bits from
+! 220451.00, so 220451.00 .. 220501.77 is reserved and this deck
+! emits nothing in it.  The counter leaves at 220502.00, which is
+! where printed p.172's first located row prints.  "DR" and not
+! "DRZ" is read off the ink at 1800 dpi and CANNOT be checked -- see
+! GLYPHS SETTLED (5).
+KSILO   DR(BU,64),(K QUANT)
+!
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS PRINTED
+! ---------------------------------------------------------------
+! Locations and binary at 900 dpi, names and statements at 900 dpi
+! with the doubtful ones re-read at 1800, card serials at 600 dpi.
+! Characters this drum opened and that are written here CLOSED are
+! named in GLYPHS SETTLED (4); the raw open form is noted in
+! parentheses where it differs.
+!
+!   line  1   KA000001   ****************************************
+!   line  2   KA000002   -********** STORE IN COMMUNICATION REGION **********-
+!   line  3   KA000003   ****************************************
+!   line  4   KA000004   220427.40 *                                      SLC,$
+!   line  5   KA000005   220427.40   000031.07 02         KSTRG   LCI,3,KQUANT          (byte printed "C2"; name indented one column)
+!   line  6   KA000006   220430.00   220431.03 01                 LVI,1,$+1.0           (byte printed "C1")
+!   line  7   KA000006   220430.40   220432.50 00                 B,K CAB
+!   line  8   KA000007   220431.00   000000.00 89  220451.06 20   T,$3,0($9),KSILO      (2nd byte printed "2C")
+!   line  9   KA000008   220432.00   216242.10 00                 B,K SUPP
+!   line 10   KA000009   220432.40   000001.05 05         K CAB   V+I,2,1.0
+!   line 11   KA000010   220433.00   215265.05 30                 SV,2,S TIC
+!   line 12   KA000011   220433.40   000000.45 0D                 V-I,2,.32
+!   line 13   KA000012   220434.00   220435.45 D0                 SVA,2,$+1.32
+!   line 14   KA000013   220434.40   000021.00 80  215246.06 E0   SWAPI,3,$1,S TLR+14.  (2nd byte printed "EC")
+!   line 15   KA000014   220435.40   220435.63 B0                 LVE,9,$
+!   line 16   KA000015   220436.00   000021.00 80  215246.06 E0   SWAPI,3,$1,S TLR+14.0 (2nd byte printed "EC")
+!   line 17   KA000016   220437.00   220443.50 C6                 BUSAZ,K GOOF
+!   line 18   KA000017   220437.40   220444.10 46                 BADZ,K GOOF+.32
+!   line 19   KA000018   220440.00   215230.62 90                 KV,9,SLOWER
+!   line 20   KA000019   220440.40   220443.72 42                 BXL,KGOOF
+!   line 21   KA000020   220441.00   000014.63 05                 V+I,9,KQUANT          (byte printed "C5")
+!   line 22   KA000021   220441.40   215230.22 90                 KV,9,S UPPER
+!   line 23   KA000022   220442.00   220443.72 40                 BZXL,K GOOF
+!   line 24   KA000023   220442.40 * 000014.63 0D                 V-I,9,KQUANT
+!   line 25   KA000024   220443.00   000000.10 01                 B,0.0($1)             (byte printed "C1")
+!   line 26   KA000025   220443.40   220444.10 46         K GOOF  BADZ,$+.32
+!   line 27   KA000026   220444.00   010011.35 01                 LVI,14,S FORBD
+!   line 28   KA000027   220444.40   217451.40 80                 SIC,S DISIC
+!   line 29   KA000027   220445.00   217372.10 00                 B,S DISP
+!   line 30   KA000028   (blank card, dash only)
+!   line 31   KA000029   (blank card, dash only)
+!   line 32   KB000001   ****************************************
+!   line 33   KB000002   -********** FETCH FROM COMMUNICATION REGION **********-
+!   line 34   KB000003   ****************************************
+!   line 35   KB000004   220445.40 *                                      SLC,$
+!   line 36   KB000005   220445.40   000031.07 02         K FECRG LCI,3,K QUANT
+!   line 37   KB000006   220446.00   220447.03 01                 LVI,1,$+1.0
+!   line 38   KB000006   220446.40   220432.50 00                 B,K CAB
+!   line 39   KB000007   220447.00   220451.00 80  000000.06 29   T,3,K SILO,0.0($9)
+!   line 40   KB000008   220450.00   216242.10 00                 B,K SUPP
+!   line 41   KB000009   220450.40   000000.30 00                 CNOP
+!   line 42   KB000010   000000.00+  +00000031      NULL  K QUANT SYN,25
+!   line 43   KB000011   220451.00 * 000031.00            K SILO  DR(BU,64),(K QUANT)   -COMMUNICATION REGION
+!
+! ---------------------------------------------------------------
+! CONFIRMING printed p.146 -- ASKED FOR, AND IT HOLDS
+! ---------------------------------------------------------------
+! decks/mcp_bootstrap_p146.strap says, twice, that "printed p.171
+! (PDF p.178) line 26 is the DEFINING card, 'K GOOF BADZ,$+.32' at
+! 220443.40".  CONFIRMED, exactly, off this page's ink:
+!
+!   * it is LINE 26, counting from the banner's first line;
+!   * the LOCATION column prints 220443.40, read at 900 dpi;
+!   * the NAME field prints "K GOOF", with the blank p.146 says it
+!     has, against p.146's own closed-up "KGOOF" -- one symbol;
+!   * the STATEMENT is "BADZ,$+.32" and it compiles 220444.10 46,
+!     which is the half word p.146's line 13 prints;
+!   * p.146 line 12's "BUSAZ,KGOOF" compiling 220443.50 C6 is this
+!     page's line 17 exactly, and p.146 line 13's 220444.10 46 is
+!     this page's line 18 exactly.  Both cards appear on both pages.
+!
+! REFUTED, on one detail of the provenance, and it is worth saying
+! because it was passed to this transcriber as a fact to check: the
+! claim that p.146's transcriber rendered it "at 900 dpi".  p.146's
+! deck says 1200 dpi, in both places ("rendered here at 1200 dpi and
+! read directly, not through OCR", and "read off the ink here at
+! 1200 dpi").  Nothing about the READING changes -- 900 and 1200 dpi
+! both read 220443.40 and this page was read at 900 with the
+! doubtful cards re-read at 1800 -- but the brief's number is not
+! p.146's number.
+!
+! p.146 also predicted, correctly, that "p.171 line 18's
+! 'BADZ,K GOOF+.32' prints the same 220444.10 line 13 prints".  It
+! does.
+!
+! ---------------------------------------------------------------
+! WHAT IS NOT SETTLED
+! ---------------------------------------------------------------
+! (a) "DR" against "DRZ" on line 43 rests on ONE 1800-dpi reading
+!     and nothing else can ever check it (the oracle sees only the
+!     count).  Twenty-five words of the merged image are zeros if it
+!     is DRZ and undefined if it is DR.  If anyone ever renders this
+!     page again, that glyph is the one to look at.
+!
+! (b) KQUANT is the one symbol on this page with NO second witness.
+!     It appears zero times in the three typeset manuals (QUANTITY
+!     appears 50 times, which is suggestive and is not evidence) and
+!     the only listing hits are this page's own OCR.  It is defined
+!     and used entirely within these forty-three lines, so a
+!     misreading of its NAME would assemble perfectly and never
+!     fail.  Its VALUE is checked four ways on this page (lines 5,
+!     21, 24, 36 and the reservation count on line 43 all come out
+!     right at 25), so only the spelling is open.
+!
+! (c) The one-character INDENT on line 5's name field is measured
+!     and unexplained.  Every other name on the page starts flush;
+!     "KSTRG" alone starts one cell in.  It could be a leading blank
+!     in the card, and it could be something about the name column
+!     this corpus has not met.  Recorded, not explained.
+!
+! (d) The location-column asterisk: see above.  Four occurrences, no
+!     rule proposed.
+!
+! (e) SEVEN OF THE EIGHT EXTERNALS ARE PINNED ONLY TO THE HALF WORD
+!     by this page -- S TIC, S TLR, S UPPER, S LOWER, S FORBD,
+!     S DISP and K SUPP -- which is measured, not assumed, in the
+!     table in EXTERNALS.  Their written bit offsets are the corpus
+!     convention and the values of the pages that DEFINE them, not
+!     readings taken here.  Only S DISIC's .40 is read on this page,
+!     by line 28's SIC.
+!
+! (f) The brief's "220427.64" could not be reproduced and could not
+!     be sourced.  `mcp_survey.py --pages 178-178` prints 220427.40
+!     today and the string "220427.64" appears nowhere in the
+!     repository.  Not a defect in this page, and recorded because
+!     somebody else may be carrying the same number.
+!
+! ---------------------------------------------------------------
+! CHECKS
+! ---------------------------------------------------------------
+!SYM   KSTRG    220427.40
+!SYM   KCAB     220432.40
+!SYM   KGOOF    220443.40
+!SYM   KFECRG   220445.40
+!SYM   KSILO    220451.00
+!CHECK 220427.40 | 000031.07 02 | line 5 KSTRG LCI,3,KQUANT -- count 25 = 0o31 from K QUANT; .07 is index 3's .06 plus LCI's .01; byte printed "C2" and settled against line 36's clean "02", same card, same character position
+!CHECK 220430.00 | 220431.03 01 | line 6 LVI,1,$+1.0 -- the return link; byte printed "C1" and settled against line 37's clean "01"
+!CHECK 220430.40 | 220432.50 00 | line 7 B,K CAB (same card as line 6) -- K CAB is 220432.40 and a B adds .10
+!CHECK 220431.00 | 000000.00 89 220451.06 20 | line 8 T,$3,0($9),KSILO -- the STORE direction; first half word is 0($9), low nibble 9; second is K SILO at 220451.00 with no index, so "2C" is 20 by the i2 rule and by line 39 printing 29/80 for the same two operands reversed
+!CHECK 220432.00 | 216242.10 00 | line 9 B,K SUPP
+!CHECK 220432.40 | 000001.05 05 | line 10 K CAB V+I,2,1.0 -- one word = 64 bits; .05 is index 2's .04 plus V+I's .01
+!CHECK 220433.00 | 215265.05 30 | line 11 SV,2,S TIC -- the return address; .05 is index 2's .04 plus SV's .01.  Measured (see the table in EXTERNALS): this row checks S TIC's WORD and HALF WORD, 215265.00, and NOT the bit inside the half word
+!CHECK 220433.40 | 000000.45 0D | line 12 V-I,2,.32 -- 32 decimal bits is 0o40, plus .05; the sign is in the BYTE (0D against line 10's 05) and the D is read on its straight left stem
+!CHECK 220434.00 | 220435.45 D0 | line 13 SVA,2,$+1.32 -- plants the return into line 15's own half word, 220435.40, forward across one full word
+!CHECK 220434.40 | 000021.00 80 215246.06 E0 | line 14 SWAPI,3,$1,S TLR+14. -- $1 is word 0o21; S TLR+14 decimal words is 0o215230+0o16 = 215246.00, so this row checks S TLR's WORD exactly and its half word, but NOT the bit within it (measured); second byte printed "EC" and is E0, the second operand carrying no index
+!CHECK 220435.40 | 220435.63 B0 | line 15 LVE,9,$ -- the half word line 13's SVA modifies; .63 is .40 plus index 9's .22 plus LVE's .01; the byte is B0 and not 80, which is the B/8 pair this drum loses and which only the assembler can settle
+!CHECK 220436.00 | 000021.00 80 215246.06 E0 | line 16 SWAPI,3,$1,S TLR+14.0 -- the same card as line 14 with the bit written out, same bits; the pair is rung 4 of the glyph ladder for "EC"
+!CHECK 220437.00 | 220443.50 C6 | line 17 BUSAZ,K GOOF -- K GOOF is 220443.40 and BUSAZ adds .10; the byte really is C6 (BUSA without the Z prints C2), so the branch's trailing Z IS checked, unlike line 43's reservation
+!CHECK 220437.40 | 220444.10 46 | line 18 BADZ,K GOOF+.32 -- a BARE ".32" is 32 DECIMAL bits, so 220443.40 + 0o40 = 220444.00, plus BADZ's .10
+!CHECK 220440.00 | 215230.62 90 | line 19 KV,9,SLOWER -- S LOWER is S T LR + 0.32 = 215230.40; .62 is .40 plus index 9's .22, KV contributing nothing
+!CHECK 220440.40 | 220443.72 42 | line 20 BXL,KGOOF -- BXL's own .32 on top of K GOOF's .40
+!CHECK 220441.00 | 000014.63 05 | line 21 V+I,9,KQUANT -- byte printed "C5" and settled against line 10's clean "05", same operation
+!CHECK 220441.40 | 215230.22 90 | line 22 KV,9,S UPPER -- S UPPER is S T LR itself, 215230.00; .22 is index 9's and nothing else, and 0o62-0o22 = 0o40 is the half word p.116 puts between S LOWER and S UPPER
+!CHECK 220442.00 | 220443.72 40 | line 23 BZXL,K GOOF -- same address field as line 20, the Z worth 0x02 of the byte
+!CHECK 220442.40 | 000014.63 0D | line 24 V-I,9,KQUANT -- the location column carries the unexplained asterisk on this row and on nothing else like it
+!CHECK 220443.00 | 000000.10 01 | line 25 B,0.0($1) -- the return through the link line 6 planted; byte printed "C1"
+!CHECK 220443.40 | 220444.10 46 | line 26 K GOOF BADZ,$+.32 -- THE DEFINING CARD printed p.146 cites, and it compiles the half word p.146's line 13 prints
+!CHECK 220444.00 | 010011.35 01 | line 27 LVI,14,S FORBD -- 0o10011 is p.107's (16)1009.0; .35 is index 14's .34 plus LVI's .01.  Word and half word only; the workflow measures LVI's blindness below bit 32 and this page reproduces it
+!CHECK 220444.40 | 217451.40 80 | line 28 SIC,S DISIC -- THE ONE ROW ON THIS PAGE THAT PINS AN EXTERNAL TO THE BIT.  Measured by varying only the SYN: a SIC reproduces every offset .00 through .77 in its printed half word, where a branch, SV, SWAPI, KV and LVI all show only bit 32.  So S DISIC's .40 is READ here
+!CHECK 220445.00 | 217372.10 00 | line 29 B,S DISP (same card as line 28) -- HALF WORD only
+!CHECK 220445.40 | 000031.07 02 | line 36 K FECRG LCI,3,K QUANT -- the same card as line 5 with the blank punched; byte clean here, which is what settles line 5
+!CHECK 220446.00 | 220447.03 01 | line 37 LVI,1,$+1.0 -- byte clean here, which settles line 6
+!CHECK 220446.40 | 220432.50 00 | line 38 B,K CAB (same card as line 37) -- the shared body, entered from both routines
+!CHECK 220447.00 | 220451.00 80 000000.06 29 | line 39 T,3,K SILO,0.0($9) -- the FETCH direction, line 8's operands in the other order; the index 9 moves to the second half word with them
+!CHECK 220450.00 | 216242.10 00 | line 40 B,K SUPP
+!CHECK 220450.40 | 000000.30 00 | line 41 CNOP -- the page's last emitting card; what follows is a SYN and a reservation

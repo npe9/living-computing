@@ -1,0 +1,495 @@
+! mcp_bootstrap_p181.strap -- "CONTROL WORD CHECK", the routine two
+! other landed decks have been branching into for a fortnight without
+! its defining page: printed page 181.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.188 (printed + 7).  The title line
+! was READ at 300 dpi, not assumed: "TIME CLOCK 00054041  PUNID
+! 11D11MCP  CARD ID LB000001  DIST. OF 3/01  3/01  PAGE NUMBER  181".
+!
+! >>> THE COLUMN-HEADING ROW'S OWN "LOCATION" FIELD IS BLANK. <<<
+! Rendered at 300 dpi (crop x=3300 y=150 W=1800 H=150 of the 300-dpi
+! page): the word "LOCATION" is printed at the right-hand end of the
+! heading row and NOTHING follows it -- clean paper from the word to
+! the table's right rule.  No digits were taken off the dashed rule
+! and none were taken from the survey OCR.  That is the case
+! docs/transcription_workflow.md step 1 predicts: the field is LINE
+! 1'S location, and line 1 here is an asterisk banner that compiles
+! nothing.  A blank is NOT a zero and it is NOT "this page has no
+! origin"; see the origin note below for what does establish it.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! FIFTY-SIX PRINTED LINES.  Lines 1-3 are an asterisk banner
+! ("-************** CONTROL WORD CHECK **************-"), lines 4-54
+! are fifty-one emitting rows of straight code, lines 55-56 are two
+! SYN cards.  No SLC, no DD, no VF, no DR/DRZ reservation, no EXT, no
+! entry-mode card, no I-O pseudo-op anywhere on the page.
+!
+! THE CODE IS CONTIGUOUS FROM 221102.00 TO 221144.00 AND HAS NO HOLE.
+! Eighteen of the fifty-one rows are full words (the BINARY OUTPUT
+! column prints TWO half words) and thirty-three are half words:
+!
+!     18 * 2  +  33 * 1   =   69 half words
+!     221144.40 - 221102.00 = 0o42 words + 0o40 bits
+!                           = 34 words + 32 bits = 69 half words
+!
+! The two counts are computed from DIFFERENT things -- the first from
+! how many half words each row's BINARY OUTPUT column prints, the
+! second from the first and last LOCATION -- and they agree exactly,
+! so NOTHING FELL OFF EITHER END and no row is missing in the middle.
+! The per-row walk agrees too: every location is its predecessor plus
+! that predecessor's own width, fifty times running.
+!
+! >>> SO THE COUNTER LEAVES THIS PAGE AT 221144.40. <<<  Line 54 is a
+! HALF word at 221144.00.  See the prediction for printed p.182 at the
+! foot of this header: 221144.40 is Z STEVL, and TEN landed decks
+! already SYN it there, all ten at the same value.
+!
+! CARD SERIALS: LB000001 through LB000052, consecutive, with FOUR
+! serials printed TWICE -- LB000015 (lines 15/16), LB000023 (24/25),
+! LB000031 (33/34) and LB000050 (53/54).  52 cards, 56 lines, 4
+! repeats: 52 + 4 = 56.  Every one of the four repeats is a
+! "SIC,<save>; B,<entry>" PAIR on ONE card, the two-statement card
+! C22-6728 quotes as "(SIC,STIC; B,SIFAD)".  The first serial is on
+! line 1 and the last is on line 56, so nothing is lost at either
+! edge of the form.
+!
+! ---------------------------------------------------------------
+! WHAT THE ROUTINE DOES, off the page's own English
+! ---------------------------------------------------------------
+! B CWCR (line 4) is the entry.  It saves the IC's return in JPICK,
+! branches away if the control word belongs to MCP (line 5, "BB,SL" --
+! S L is the LEVEL OF INSTRUCTION bit), and otherwise CHECKS THE CW's
+! ADDRESS against the problem program's bounds: lines 8/9 load S UPPER
+! and subtract S LOWER (comment "-CHECK IF ADDR. OF CW"), lines 12/13
+! set those same bounds into $R as the page's own private pair S LOWA
+! / S UPPB (lines 55/56, which are SYNs INTO $R, not storage), and
+! lines 49/50 are the test itself -- KF/KFR against S LOWA and S UPPB,
+! comments "-TEST ADDR. FOR" / "-RANGE".
+!
+! JMORCW (line 14) is the per-control-word loop head: fetch the CW
+! address, SIC/B through JADOUT/JADIN to range-check it, load the
+! actual CW (line 17), test its SKIP bit (18), its READ bit (21), its
+! DISK bit (35), its MULTI bit (29, "-TEST MULTI BIT"), and its CHAIN
+! (36-38, "-CHAINING" / "-CHAINED ADDR." / "-END OF CHAIN"), then loop
+! with CB,$0,JMORCW (39).  JPICK (43-47) builds the control word
+! that goes to the FAT slots, S CW and S CCW.  BCWERR (52) is the
+! error exit: LVI,$14,S CWINV then SIC,S DISIC; B,S DISP.
+!
+! B1RA (line 48) is a one-row trampoline, "B,$" with the comment
+! "-EXIT PRESET BY SIC" -- a branch to itself that the SIC on the
+! caller's side overwrites.  printed pp.151 and 153 both print
+! "SIC,B1RA" immediately followed by "B,B CWCR", which is this
+! page's entry and this page's trampoline used as one pair.
+!
+! ---------------------------------------------------------------
+! >>> THIS PAGE DEFINES TWO OF THE MERGED BODY'S UNRESOLVED
+! EXTERNALS, AND BOTH WERE PREDICTED BY OTHER PAGES' INK. <<<
+! ---------------------------------------------------------------
+! Before this page landed the merge of printed pp.99-176 carried 62
+! external symbols.  Eight of them lie in 0o2211xx; two are here:
+!
+!   BCWCR  221102.00   line 4 ("B CWC R" on the page)   -- decks p.151 and p.153 both carry
+!                                   "BCWCR SYN, (8)221102.0", read off
+!                                   their own printed "B,B CWCR" rows
+!                                   compiling 221102.10 00.
+!   B1RA   221140.00   line 48 ("B1RA", closed up)  -- decks p.151 and p.153 both carry
+!                                   "B1RA SYN, (8)221140.0", read off
+!                                   their printed "SIC,B1RA" rows
+!                                   compiling 221140.00 80.  A SIC's
+!                                   half word carries the operand's
+!                                   FULL 24-bit bit address (Reference
+!                                   Manual printed p.41), so those two
+!                                   rows pin B1RA TO THE BIT, and this
+!                                   page's LOCATION column agrees with
+!                                   them digit for digit.
+!
+! THAT IS A GENUINELY INDEPENDENT WITNESS FOR THIS PAGE'S ORIGIN and
+! it is not the volume OCR: p.151 and p.153 are different cards, at
+! different locations, on different pages, transcribed by different
+! people, and their value was fixed before anyone opened p.188 of the
+! PDF.  It is what turns "221102.00 is what I read" into "221102.00 is
+! what two other pages' machine code says it must be".
+!
+! The other six 0o2211xx externals are NOT on this page and belong to
+! printed p.182 and after: Z STEVL 221144.40, Z EVLMK 221152.00,
+! E MK1A 221152.40, R MASK 221153.00, Z EVLRW 221153.40, R VFY
+! 221161.00.  All six are above this page's last word.
+!
+! ---------------------------------------------------------------
+! THE ORIGIN IS ASSERTED BY THE DECK AND CORROBORATED, NOT PRINTED
+! ---------------------------------------------------------------
+! The page prints NO "SLC,$", so the free forward-join witness that
+! docs/transcription_workflow.md prizes is not on offer here.  The
+! deck therefore writes a HARD "SLC,(8)221102." and that SLC CANNOT
+! FAIL -- it overrides the arriving counter silently (workflow, "WHAT
+! THE ORACLE CANNOT SEE" item 2).  What stops it being a bare
+! assertion is the paragraph above: pp.151/153 independently place
+! B CWCR, this page's line 4, at 221102.0.
+!
+! >>> FALSIFIABLE PREDICTION FOR printed p.180: its counter must
+! LEAVE at 221102.00. <<<  If p.180's last row plus its own width is
+! anything else, one of the two pages is wrong and this deck's SLC is
+! hiding it.
+!
+! ---------------------------------------------------------------
+! WHERE THIS DECK DISAGREES WITH THE CACHED SURVEY, AND WHY IT WINS
+! ---------------------------------------------------------------
+! The survey reports this page as "222102.0".."221132.40", endpoints
+! out of order, so at least one had to be a misread.  Both are:
+!
+!   * "222102.0" is 221102.00 with the third digit lost.  Settled by
+!     the 600-dpi LOCATION crop AND by pp.151/153's SYN above.
+!   * "221132.40" is line 42, not the last row.  That is not a random
+!     truncation -- `python3 strap/mcp_ocr.py 181` reads 27 of 56 rows
+!     and its LAST successful row is line 42, 221132.40, exactly the
+!     survey's endpoint.  The survey inherits mcp_ocr's window and
+!     stops where it stops.  The page runs twelve rows further, to
+!     221144.00.
+!   * The survey also cannot tell a LOCATION from a SYMBOL VALUE.
+!     Lines 55 and 56 print "000011.32+" and "000011.55+"; the
+!     TRAILING PLUS says those are values of S LOWA and S UPPB, not
+!     addresses, and the location counter never visits word 0o11.
+!     They are correctly absent from the span above.
+!
+! All twenty-seven locations mcp_ocr DID read agree with the eye
+! reading here, digit for digit, except line 40 where it returns
+! "221131.46" for a printed 221131.40.
+!
+! ---------------------------------------------------------------
+! GLYPHS SETTLED, AND BY WHICH RUNG OF THE LADDER
+! ---------------------------------------------------------------
+! * LINE 6's MNEMONIC IS "CT0011", NOT "CTOO11".  The two round
+!   glyphs after CT are wide and closed and look exactly like the
+!   letter O.  Rung 3 (the assembler as ELIMINATOR) is decisive:
+!   strap_asm's classify_connective takes C/CM/CT plus EXACTLY FOUR
+!   BINARY DIGITS (X22-6533 "CONNECTIVES"), so "CTOO11" is not an
+!   operation at all and "CT0011" is.  The field can hold only 0 and
+!   1, which is rung 5 pointing the same way.
+! * LINE 11's SECOND OPERAND IS "$X0", NOT "$XC".  Same argument from
+!   the other side: "$N"/"$XN" takes N = 0-15, so a C cannot stand
+!   there.  And the row CHECKS it -- $X0 in an address field is index
+!   register 0 at word 0o20, and the printed half word is
+!   "000020.02 30".  A "$XC" could not produce 000020.
+! * "JADOUT", NOT "J ADCUT" (lines 24, 33, 51).  Line 24 and line 33
+!   print the same statement; line 33's O is CLOSED and line 24's is
+!   OPEN, in the same character position on one page off one drum.
+!   That is rung 4, the strongest rung.  Line 51's NAME column prints
+!   it closed as well, and the page's English ("-ADDR OF CW", JADIN /
+!   JADOUT as a pair) agrees.
+! * LINE 4's BYTE IS "D0" AND LINE 7's IS "C0".  Both read as a round
+!   glyph plus a round glyph at 400 dpi.  At 900 dpi line 4's first
+!   character has a STRAIGHT VERTICAL LEFT STEM and squared corners
+!   and line 7's does not -- the C/D discriminator of
+!   docs/transcription_workflow.md.  Both are then CHECKED by the
+!   oracle below, which is what actually settles them.
+! * LINE 42's BYTE IS "3C", not "30".  Settled on WHAT PRODUCED IT:
+!   the low nibble of an indexed half word is the index, and the
+!   statement is "SV,0,3.32($12)" -- 12 is 0xC.
+! * LINE 45's ADDRESS IS "-1.09", with a 9.  Settled by arithmetic,
+!   not ink: -(64+9) bits as a 24-bit bit address is 16777143, which
+!   is word 0o777776 bit 0o67, and the page prints "777776.67".  No
+!   other low digit gives that.
+! * THE OCTAL FIELDS DROP INK CONSTANTLY on this page -- "COOO11.CC"
+!   for 000011.00 on line 10, "007000.C7" for 007000.07 on line 6,
+!   "215001.C4" for 215001.04 on line 5.  An octal field cannot hold a
+!   C, so each of those is a damaged 0 with certainty.  That is rung 5
+!   and it is used ONLY to show the page can drop ink; it licenses
+!   nothing about a particular hex byte (workflow: ink varies per
+!   CHARACTER, not per row).
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK: THREE OF THEM, AND NO RULE PROPOSED
+! ---------------------------------------------------------------
+! A second asterisk appears after the LOCATION on lines 13
+! (221111.00), 32 (221125.00) and 49 (221140.40).  Recorded and left
+! alone, as docs/transcription_workflow.md instructs.
+!
+! The tempting hypothesis -- "a full-word VFL row carrying BOTH a dds
+! AND a trailing offset" -- fits all three of mine and is DEAD ON
+! ARRIVAL: decks/mcp_bootstrap_p176.strap records its two asterisks at
+! 220651.00 and 220664.00, and both are "SIC,STIC", half word, no dds,
+! no offset.  So that is not the rule, and this page proposes none.
+!
+! ---------------------------------------------------------------
+! WHAT RESTS ON INK ALONE, AND IS THE HONEST EDGE OF "BIT-EXACT"
+! ---------------------------------------------------------------
+! listing_oracle checks LOCATIONS and BINARY and never label
+! SPELLINGS.  B CWCR and B1RA are safe -- other pages reference them
+! and the merge would refuse an undefined symbol.  These nine are
+! referenced ONLY from inside this page, so their spelling is read off
+! this drum and nothing can fail if it is wrong:
+!
+!     JMORCW  JJSKP  JJSKP1  JDISCK  JPICK  JPICK1
+!     JADIN   JADOUT  BCWERR
+!
+! Each was read at 900 dpi and each is printed at least twice on the
+! page (once in the NAME column, once or more in a statement), so the
+! within-page cross-check is as strong as it can be made here; it is
+! still one drum.  S LOWA and S UPPB (lines 55/56) are in the same
+! position, with the extra comfort that their VALUES are checked:
+! lines 49 and 50 print 000011.32 and 000011.55 as their operands.
+!
+! WHICH NAMES CARRY A PRINTED BLANK, MEASURED BY CHARACTER PITCH AT
+! 1800 dpi AND NOT GUESSED.  ALL THIRTEEN NAME-column entries were
+! rendered at 1800 dpi for this, in five crops of x=13900..16100
+! (y = 2960, 4300, 9000, 13700 and 18100, heights 330-4700).  The
+! drum's pitch there is 180 px; a blank is one whole empty cell and
+! is unmistakable.  EXACTLY THREE of the thirteen carry one:
+!
+!     line  4   "B CWC R"   B, blank, CWC, blank, R  -> BCWCR
+!     line 55   "S LOWA"    S, blank, LOWA           -> SLOWA
+!     line 56   "S UPPB"    S, blank, UPPB           -> SUPPB
+!
+! The other ten -- JMORCW, JJSKP, JJSKP1, JDISCK, JPICK1, JPICK,
+! B1RA, JADIN, JADOUT, BCWERR -- are printed CLOSED UP at regular
+! pitch, every one checked in the same five crops.  (A first draft of this deck wrote them all with a blank by
+! analogy with the operand column and was wrong; the pitch
+! measurement is what corrected it.)  B1RA's second glyph is the
+! DIGIT 1, which at 1800 dpi has both the upper-left flag and the
+! base serif that this drum's capital I lacks -- the reading decks
+! p.151 and p.153 already carry, now confirmed on the DEFINING page.
+!
+! FIVE OPERANDS DO carry a printed blank -- "L(BU,18),S UPPER" (12),
+! "LF(BU,18),S LOWER,19" (13), "BB,$1.26,BCW ERR" (29), "SIC,S DISIC"
+! (53) and "B,S DISP" (54) -- and all five are written EXACTLY as
+! printed in the deck above and all five assemble, because STRAP
+! ignores a blank inside a name and this assembler accepts one in an
+! OPERAND.  It REFUSES one in the NAME field, which is why the three
+! blanked NAMES are written closed up:
+!
+!     "B CWC R SVA,$0,JPICK"  ->  unknown mnemonic 'CWCRSVA'
+!     "S LOWA  SYN,$R.26"     ->  unknown mnemonic 'LOWASYN'
+!
+! That is the known gap the brief names, re-measured here, not worked
+! around silently: the printed blanks are recorded in the listing
+! block at the foot of this file.
+!
+! ---------------------------------------------------------------
+! >>> FALSIFIABLE PREDICTION FOR printed p.182 <<<
+! ---------------------------------------------------------------
+! It begins at 221144.40, and its first located row carries the NAME
+! "Z STEVL".  TEN landed decks -- pp.151, 152, 153, 156, 159, 160,
+! 162, 163, 164 and 165, counted with grep, every one writing the
+! SAME value -- SYN ZSTEVL at (8)221144.40 off their printed
+! "B,Z STEVL" rows
+! compiling "221144.50 00", and p.160's deck quotes a volume-OCR
+! fragment of the DEFINING row as "221144.40  000002.54 3C  Z STEVL".
+! This page's counter leaves at exactly 221144.40, so the two meet
+! with no gap.  If p.182 opens anywhere else, this deck is wrong.
+!
+! ---------------------------------------------------------------
+! EXTERNALS.  Every one is SYN'd to the value the page that PRINTS
+! its defining card establishes, spelled the way the landed decks
+! spell it so the merge compares like with like.  None is a verbatim
+! copy of a defining card (workflow: a copy COLLIDES, a stand-in is
+! CHECKED).
+! ---------------------------------------------------------------
+
+STLR    SYN, (8)215230.0             ! the DEFINING card is decks/mcp_bootstrap_p116.strap line 260, "STLR DRZ(BU,64), 29", its own line 13 (checked with grep: p.116 is the only deck in the corpus carrying a DRZ for this name); 14 landed decks SYN it at this value
+SUPPER  SYN, STLR                    ! printed p.116 line 14 -PP UPPER BOUNDRY
+SLOWER  SYN, STLR+0.32               ! printed p.116 line 15
+SL      SYN(BU,1), (8)215001.04      ! printed p.103 line 14 -LEVEL OF INSTR; the (BU,1) dds is the defining page's
+SCW     SYN(BU,64), 3.0              ! printed p.102 line 14 -CONTROL WORD
+SCCW    SYN(BU,64), 4.0              ! printed p.102 line 15 -COPIED CONTROL WORD
+SCWINV  SYN,(16)1007.0               ! printed p.107 line 12 -7 CW INVALID; p.107's !SYM is 010007.00
+SDISIC  SYN, (8)217451.40            ! printed p.103; four landed decks
+SDISP   SYN, (8)217372.0             ! printed p.103; five landed decks
+
+! ---------------------------------------------------------------
+! THE PAGE.  Lines 1-3 are the banner; lines 4-54 are below in
+! printed order; lines 55-56 are the two SYN cards, left where the
+! page prints them.
+! ---------------------------------------------------------------
+
+        SLC,(8)221102.
+
+BCWCR   SVA,$0,JPICK                 ! line  4  printed "B CWC R"   -ADDR OF CW
+        BB,SL,JPICK1                 ! line  5                      -BRANCH IF MCP
+        CT0011(BU,7),$X0+.18         ! line  6                      -CHECK IF ADDR. OF CW
+        BZRZ,BCWERR                  ! line  7
+        L(BU,18),SUPPER,46           ! line  8
+        -(BU,18),SLOWER,46           ! line  9
+        LC,$0,$R                     ! line 10                      -MAX NO OF CONTROL WORDS
+        LV,$1,$X0                    ! line 11
+        L(BU,18),S UPPER             ! line 12                      -SET BOUNDS IN $R
+        LF(BU,18),S LOWER,19         ! line 13  (LOCATION asterisk)
+JMORCW  LF(BU,18),$1,38              ! line 14  printed "JMORCW"   -CW ADDR.
+        SIC,JADOUT                   ! line 15  card LB000015, statement 1
+        B,JADIN                      ! line 16  card LB000015, statement 2
+        LX,$1,0.0($1)                ! line 17                      -ACTUAL CW
+        BZB,$1.27,JJSKP              ! line 18                      -IF NO SKIP BIT
+        KVI,4,.32                    ! line 19
+        BXE,JJSKP                    ! line 20
+        KVI,$3,1.0                   ! line 21                      -READ = 1.0
+        BXE,JDISCK                   ! line 22
+JJSKP   LF(BU,18),$1,38              ! line 23  printed "JJSKP"    -GET 1ST ADDRESS
+        SIC,JADOUT                   ! line 24  card LB000023, statement 1
+        B,JADIN                      ! line 25  card LB000023, statement 2
+        SC,$1,$6                     ! line 26                      -COMPUTE
+        BZXCZ,JJSKP1                 ! line 27                      -LASTADDRESS WHEN UNDER
+        KVI,4,.32                    ! line 28                      -BLOCK CONTROL
+        BB,$1.26,BCW ERR             ! line 29  printed WITH the blank  -TEST MULTI BIT
+        BXE,BCWERR                   ! line 30                      -BR IF DISK CW IS ZERO
+JJSKP1  V-I,6,1.                     ! line 31  printed "JJSKP1"
+        +(BU,18),$6,38               ! line 32  (LOCATION asterisk) -BLOCK CONTROL
+        SIC,JADOUT                   ! line 33  card LB000031, statement 1
+        B,JADIN                      ! line 34  card LB000031, statement 2
+JDISCK  KVI,$4,.32                   ! line 35  printed "JDISCK"   -IF DISK, NO
+        BXE,JPICK1                   ! line 36                      -CHAINING
+        SR,$1,$1                     ! line 37                      -CHAINED ADDR.
+        BZXF,JPICK1                  ! line 38                      -END OF CHAIN
+        CB,$0,JMORCW                 ! line 39
+JPICK1  LV,0,$13                     ! line 40  printed "JPICK1"
+        V+I,0,3.                     ! line 41
+        SV,0,3.32($12)               ! line 42                      -CW ADD IN FET TO LAT
+JPICK   LF(BU,64),$                  ! line 43  printed "JPICK"    -INITIAL CW
+        LFI(BU,6),(2)100000,40       ! line 44                      -SET STATUS BITS
+        LF(BU,1),-1.09($2),39        ! line 45                      -SEOP BIT
+        SF(BU,64),SCW($13)           ! line 46                      -CW TO FAT SLOTS
+        SF(BU,64),SCCW($13)          ! line 47
+B1RA    B,$                          ! line 48  printed "B1RA"     -EXIT PRESET BY SIC
+JADIN   KF(BU,19),SLOWA,38           ! line 49  printed "JADIN"; (LOCATION asterisk)  -TEST ADDR. FOR
+        KFR(BU,19),SUPPB,38          ! line 50                      -RANGE
+JADOUT  BAE,$                        ! line 51  printed "JADOUT"   -AE WHEN OK
+BCWERR  LVI,$14,SCWINV               ! line 52  printed "BCWERR"
+        SIC,S DISIC                  ! line 53  card LB000050, statement 1
+        B,S DISP                     ! line 54  card LB000050, statement 2
+SLOWA   SYN,$R.26                    ! line 55  printed "S LOWA"; value 000011.32+
+SUPPB   SYN,$R.45                    ! line 56  printed "S UPPB"; value 000011.55+
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, as the page prints it.  LINE | LOCATION |
+! BINARY OUTPUT | NAME | STATEMENT | comment | card serial.  Names
+! and operands are shown WITH the blanks the drum prints; the deck
+! above closes the NAME-field ones up because the assembler refuses
+! them there (see the header).
+! ---------------------------------------------------------------
+!   1*                                                   - ******************************************************   LB000001
+!   2*                                                   -*************** CONTROL WORD CHECK  ***************-      LB000002
+!   3*                                                   - ******************************************************   LB000003
+!   4*  221102.00   221133.01 D0                  B CWC R  SVA,$0,JPICK          -ADDR OF CW                        LB000004
+!   5*  221102.40   215001.04 80  221131.74 02             BB,SL,JPICK1          -BRANCH IF MCP                     LB000005
+!   6*  221103.40   000020.22 80  007000.07 70             CT0011(BU,7),$X0+.18  -CHECK IF ADDR. OF CW              LB000006
+!   7*  221104.40   221143.34 C0                           BZRZ,BCWERR                                              LB000007
+!   8*  221105.00   215230.00 80  022027.20 50             L(BU,18),SUPPER,46                                       LB000008
+!   9*  221106.00   215230.40 80  022027.30 10             -(BU,18),SLOWER,46                                       LB000009
+!  10*  221107.00   000011.00 50                           LC,$0,$R              -MAX NO OF CONTROL WORDS           LB000010
+!  11*  221107.40   000020.02 30                           LV,$1,$X0                                                LB000011
+!  12*  221110.00   215230.00 80  022000.20 50             L(BU,18),S UPPER      -SET BOUNDS IN $R                  LB000012
+!  13*  221111.00 * 215230.40 80  022011.46 70             LF(BU,18),S LOWER,19                                     LB000013
+!  14*  221112.00   000021.00 80  022023.06 70    JMORCW  LF(BU,18),$1,38       -CW ADDR.                          LB000014
+!  15*  221113.00   221142.40 80                           SIC,JADOUT                                              LB000015
+!  16*  221113.40   221140.50 00                           B,JADIN                                                 LB000015
+!  17*  221114.00   000000.02 11                           LX,$1,0.0($1)         -ACTUAL CW                         LB000016
+!  18*  221114.40   000021.33 80  221117.74 00             BZB,$1.27,JJSKP       -IF NO SKIP BIT                    LB000017
+!  19*  221115.40   000000.51 04                           KVI,4,.32                                                LB000018
+!  20*  221116.00   221117.72 C2                           BXE,JJSKP                                                LB000019
+!  21*  221116.40   000001.07 04                           KVI,$3,1.0            -READ = 1.0                        LB000020
+!  22*  221117.00   221127.32 C2                           BXE,JDISCK                                               LB000021
+!  23*  221117.40   000021.00 80  022023.06 70    JJSKP   LF(BU,18),$1,38       -GET 1ST ADDRESS                   LB000022
+!  24*  221120.40   221142.40 80                           SIC,JADOUT                                              LB000023
+!  25*  221121.00   221140.50 00                           B,JADIN                                                 LB000023
+!  26*  221121.40   000026.03 50                           SC,$1,$6              -COMPUTE                           LB000024
+!  27*  221122.00   221124.70 40                           BZXCZ,JJSKP1          -LASTADDRESS WHEN UNDER            LB000025
+!  28*  221122.40   000000.51 04                           KVI,4,.32             -BLOCK CONTROL                     LB000026
+!  29*  221123.00   000021.32 80  221143.34 02             BB,$1.26,BCW ERR      -TEST MULTI BIT                    LB000027
+!  30*  221124.00   221143.32 C2                           BXE,BCWERR            -BR IF DISK CW IS ZERO             LB000028
+!  31*  221124.40   000001.15 0D                  JJSKP1  V-I,6,1.                                                 LB000029
+!  32*  221125.00 * 000026.00 80  022023.20 10             +(BU,18),$6,38        -BLOCK CONTROL                     LB000030
+!  33*  221126.00   221142.40 80                           SIC,JADOUT                                              LB000031
+!  34*  221126.40   221140.50 00                           B,JADIN                                                 LB000031
+!  35*  221127.00   000000.51 04                  JDISCK  KVI,$4,.32            -IF DISK, NO                       LB000032
+!  36*  221127.40   221131.72 C2                           BXE,JPICK1            -CHAINING                          LB000033
+!  37*  221130.00   000021.03 70                           SR,$1,$1              -CHAINED ADDR.                     LB000034
+!  38*  221130.40   221131.63 40                           BZXF,JPICK1           -END OF CHAIN                      LB000035
+!  39*  221131.00   221112.00 48                           CB,$0,JMORCW                                            LB000036
+!  40*  221131.40   000035.00 30                  JPICK1  LV,0,$13                                                 LB000037
+!  41*  221132.00   000003.01 05                           V+I,0,3.                                                 LB000038
+!  42*  221132.40   000003.41 3C                           SV,0,3.32($12)        -CW ADD IN FET TO LAT              LB000039
+!  43*  221133.00   221133.00 80  000000.06 70    JPICK   LF(BU,64),$           -INITIAL CW                        LB000040
+!  44*  221134.00   400000.00 80  406024.06 70             LFI(BU,6),(2)100000,40  -SET STATUS BITS                 LB000041
+!  45*  221135.00   777776.67 82  001023.46 70             LF(BU,1),-1.09($2),39 -SEOP BIT                          LB000042
+!  46*  221136.00   000003.00 8D  000000.12 F0             SF(BU,64),SCW($13)    -CW TO FAT SLOTS                   LB000043
+!  47*  221137.00   000004.00 8D  000000.12 F0             SF(BU,64),SCCW($13)                                      LB000044
+!  48*  221140.00   221140.10 00                  B1RA    B,$                   -EXIT PRESET BY SIC                LB000045
+!  49*  221140.40 * 000011.32 80  023023.23 10    JADIN   KF(BU,19),SLOWA,38    -TEST ADDR. FOR                    LB000046
+!  50*  221141.40   000011.55 80  023023.23 50             KFR(BU,19),SUPPB,38   -RANGE                             LB000047
+!  51*  221142.40   221142.76 C2                  JADOUT  BAE,$                 -AE WHEN OK                        LB000048
+!  52*  221143.00   010007.35 01                  BCWERR  LVI,$14,SCWINV                                           LB000049
+!  53*  221143.40   217451.40 80                           SIC,S DISIC                                              LB000050
+!  54*  221144.00   217372.10 00                           B,S DISP                                                 LB000050
+!  55*  000011.32+  +00000000      BU,100,10       S LOWA  SYN,$R.26                                                LB000051
+!  56*  000011.55+  +00000000      BU,100,10       S UPPB  SYN,$R.45                                                LB000052
+
+! ---------------------------------------------------------------
+! THE DECLARED CHECKS.  Fifty-one !CHECK rows for the fifty-one
+! emitting lines -- the whole page, not a sample -- and thirteen
+! !SYM rows for the thirteen names the page defines.
+! ---------------------------------------------------------------
+!SYM   BCWCR    221102.00
+!SYM   JMORCW   221112.00
+!SYM   JJSKP    221117.40
+!SYM   JJSKP1   221124.40
+!SYM   JDISCK   221127.00
+!SYM   JPICK1   221131.40
+!SYM   JPICK    221133.00
+!SYM   B1RA     221140.00
+!SYM   JADIN    221140.40
+!SYM   JADOUT   221142.40
+!SYM   BCWERR   221143.00
+!SYM   SLOWA    000011.32
+!SYM   SUPPB    000011.55
+
+!CHECK 221102.00 | 221133.01 D0 | line 4 B CWC R SVA,$0,JPICK -ADDR OF CW -- FIRST ROW OF THE PAGE; the heading-row LOCATION field is BLANK (line 1 is a banner) so this row's location is asserted by the deck's hard SLC and corroborated by decks p.151/p.153, which SYN BCWCR at (8)221102.0 off their printed "B,B CWCR" rows compiling 221102.10 00
+!CHECK 221102.40 | 215001.04 80 221131.74 02 | line 5 BB,SL,JPICK1 -BRANCH IF MCP -- the printed ".C4" is an octal field and cannot hold a C, so it is .04; S L is printed p.103's (BU,1) level-of-instruction bit at 215001.04
+!CHECK 221103.40 | 000020.22 80 007000.07 70 | line 6 CT0011(BU,7),$X0+.18 -CHECK IF ADDR. OF CW -- the mnemonic's two round glyphs read as letter O at 900 dpi; "CTOO11" is not an operation (classify_connective takes four BINARY digits) and "CT0011" is, so the assembler eliminates the wrong reading outright
+!CHECK 221104.40 | 221143.34 C0 | line 7 BZRZ,BCWERR -- the byte's first glyph is round with NO left stem, against line 4's D0 which has one; both bytes are then checked here
+!CHECK 221105.00 | 215230.00 80 022027.20 50 | line 8 L(BU,18),SUPPER,46 -- SUPPER is printed p.116's S TLR; the address half word reads it to the bit as 215230.00
+!CHECK 221106.00 | 215230.40 80 022027.30 10 | line 9 -(BU,18),SLOWER,46 -- SLOWER is S TLR+0.32 = 215230.40, which is what this row prints
+!CHECK 221107.00 | 000011.00 50 | line 10 LC,$0,$R -MAX NO OF CONTROL WORDS -- printed "COOO11.CC 50"; both C runs are octal fields and are 0
+!CHECK 221107.40 | 000020.02 30 | line 11 LV,$1,$X0 -- the printed last glyph reads C; "$XC" is not a register ($XN takes N=0-15) and $X0 is index register 0 at word 0o20, which is the 000020 this row prints
+!CHECK 221110.00 | 215230.00 80 022000.20 50 | line 12 L(BU,18),S UPPER -SET BOUNDS IN $R -- written with the printed blank, which the assembler accepts in an operand
+!CHECK 221111.00 | 215230.40 80 022011.46 70 | line 13 LF(BU,18),S LOWER,19 -- THIS LOCATION CARRIES THE PAGE'S FIRST UNEXPLAINED ASTERISK
+!CHECK 221112.00 | 000021.00 80 022023.06 70 | line 14 JMORCW LF(BU,18),$1,38 -CW ADDR. -- the loop head; line 39's CB,$0,JMORCW prints 221112.00 48 and reads this location back
+!CHECK 221113.00 | 221142.40 80 | line 15 SIC,JADOUT -- first statement of card LB000015; a SIC's half word carries the full 24-bit bit address (Reference Manual printed p.41) so this row pins JADOUT to the BIT at 221142.40, matching its own label row on line 51
+!CHECK 221113.40 | 221140.50 00 | line 16 B,JADIN -- second statement of card LB000015; .50 is JADIN's .40 plus B's .10, so only the half word of JADIN shows here (line 49's label row is what pins it)
+!CHECK 221114.00 | 000000.02 11 | line 17 LX,$1,0.0($1) -ACTUAL CW
+!CHECK 221114.40 | 000021.33 80 221117.74 00 | line 18 BZB,$1.27,JJSKP -IF NO SKIP BIT -- a full word starting on an ODD half word; its target 221117.74 is JJSKP's 221117.40 plus the branch's .34
+!CHECK 221115.40 | 000000.51 04 | line 19 KVI,4,.32
+!CHECK 221116.00 | 221117.72 C2 | line 20 BXE,JJSKP
+!CHECK 221116.40 | 000001.07 04 | line 21 KVI,$3,1.0 -READ = 1.0 -- printed "COOCO1.C7"; three octal-field C's in one row, all 0
+!CHECK 221117.00 | 221127.32 C2 | line 22 BXE,JDISCK
+!CHECK 221117.40 | 000021.00 80 022023.06 70 | line 23 JJSKP LF(BU,18),$1,38 -GET 1ST ADDRESS -- bit-identical to line 14, a different card at a different location printing the same word
+!CHECK 221120.40 | 221142.40 80 | line 24 SIC,JADOUT -- first statement of card LB000023; THE NAME IS PRINTED HERE WITH AN OPEN ROUND GLYPH ("JADCUT") and on line 33 with a CLOSED one, the same statement in the same character position on one page, which is what settles it as JADOUT
+!CHECK 221121.00 | 221140.50 00 | line 25 B,JADIN -- second statement of card LB000023
+!CHECK 221121.40 | 000026.03 50 | line 26 SC,$1,$6 -COMPUTE
+!CHECK 221122.00 | 221124.70 40 | line 27 BZXCZ,JJSKP1 -LASTADDRESS WHEN UNDER -- the mnemonic assembles, so the ELIMINATOR rung is SILENT here and the spelling rests on the ink; the operand 221124.70 is JJSKP1's 221124.40 plus .30
+!CHECK 221122.40 | 000000.51 04 | line 28 KVI,4,.32 -BLOCK CONTROL -- bit-identical to lines 19 and 35
+!CHECK 221123.00 | 000021.32 80 221143.34 02 | line 29 BB,$1.26,BCW ERR -TEST MULTI BIT -- the operand is printed WITH A BLANK and is written that way here; it is the same symbol as lines 7 and 30 spell closed up
+!CHECK 221124.00 | 221143.32 C2 | line 30 BXE,BCWERR -BR IF DISK CW IS ZERO
+!CHECK 221124.40 | 000001.15 0D | line 31 JJSKP1 V-I,6,1.
+!CHECK 221125.00 | 000026.00 80 022023.20 10 | line 32 +(BU,18),$6,38 -BLOCK CONTROL -- THIS LOCATION CARRIES THE PAGE'S SECOND UNEXPLAINED ASTERISK
+!CHECK 221126.00 | 221142.40 80 | line 33 SIC,JADOUT -- first statement of card LB000031; the O is CLOSED here and open on line 24
+!CHECK 221126.40 | 221140.50 00 | line 34 B,JADIN -- second statement of card LB000031
+!CHECK 221127.00 | 000000.51 04 | line 35 JDISCK KVI,$4,.32 -IF DISK, NO
+!CHECK 221127.40 | 221131.72 C2 | line 36 BXE,JPICK1 -CHAINING
+!CHECK 221130.00 | 000021.03 70 | line 37 SR,$1,$1 -CHAINED ADDR.
+!CHECK 221130.40 | 221131.63 40 | line 38 BZXF,JPICK1 -END OF CHAIN
+!CHECK 221131.00 | 221112.00 48 | line 39 CB,$0,JMORCW -- reads line 14's location back as 221112.00
+!CHECK 221131.40 | 000035.00 30 | line 40 JPICK1 LV,0,$13 -- the printed index field reads C and can only hold a digit, so it is 0; mcp_ocr reads this LOCATION as 221131.46 and the eye and the arithmetic both say 221131.40
+!CHECK 221132.00 | 000003.01 05 | line 41 V+I,0,3.
+!CHECK 221132.40 | 000003.41 3C | line 42 SV,0,3.32($12) -CW ADD IN FET TO LAT -- the byte's low nibble is the index, 12 = 0xC, which is what settles 3C against 30.  THIS IS THE LAST ROW THE SURVEY AND mcp_ocr SEE; the page runs twelve rows further
+!CHECK 221133.00 | 221133.00 80 000000.06 70 | line 43 JPICK LF(BU,64),$ -INITIAL CW -- the "$" is this row's own location, so the address half word is a self-check on the counter: it prints 221133.00, the location column's own value
+!CHECK 221134.00 | 400000.00 80 406024.06 70 | line 44 LFI(BU,6),(2)100000,40 -SET STATUS BITS -- (2)100000 is 6 bits left-justified in the 24-bit A24 field, which is bit 8388608 = word 0o400000 bit 0, exactly as printed
+!CHECK 221135.00 | 777776.67 82 001023.46 70 | line 45 LF(BU,1),-1.09($2),39 -SEOP BIT -- -(64+9) bits as a 24-bit bit address is 16777143 = word 0o777776 bit 0o67; no other low digit than 9 gives the printed 777776.67
+!CHECK 221136.00 | 000003.00 8D 000000.12 F0 | line 46 SF(BU,64),SCW($13) -CW TO FAT SLOTS -- S CW is printed p.102's (BU,64) at word 3
+!CHECK 221137.00 | 000004.00 8D 000000.12 F0 | line 47 SF(BU,64),SCCW($13) -- S CCW is printed p.102's (BU,64) at word 4
+!CHECK 221140.00 | 221140.10 00 | line 48 B1RA B,$ -EXIT PRESET BY SIC -- a branch to its own location, so the operand half word is a second reading of the location column; decks p.151 and p.153 both SIC this symbol and a SIC prints the full 24-bit address, so they pin it to the bit at 221140.00 and agree with this row
+!CHECK 221140.40 | 000011.32 80 023023.23 10 | line 49 JADIN KF(BU,19),SLOWA,38 -TEST ADDR. FOR -- THIS LOCATION CARRIES THE PAGE'S THIRD UNEXPLAINED ASTERISK; the address half word 000011.32 is S LOWA's own printed value on line 55
+!CHECK 221141.40 | 000011.55 80 023023.23 50 | line 50 KFR(BU,19),SUPPB,38 -RANGE -- the address half word 000011.55 is S UPPB's own printed value on line 56
+!CHECK 221142.40 | 221142.76 C2 | line 51 JADOUT BAE,$ -AE WHEN OK -- branch to its own location, so .76 is 221142.40 plus BAE's .36
+!CHECK 221143.00 | 010007.35 01 | line 52 BCWERR LVI,$14,SCWINV -- S CWINV is printed p.107 line 12's SYN,(16)1007.0, !SYM 010007.00
+!CHECK 221143.40 | 217451.40 80 | line 53 SIC,S DISIC -- first statement of card LB000050; a SIC prints the full 24-bit bit address, so this row is a BIT-EXACT reading of S DISIC at 217451.40, agreeing with the four landed decks that SYN it there
+!CHECK 221144.00 | 217372.10 00 | line 54 B,S DISP -- second statement of card LB000050; .10 is S DISP's .00 plus B's .10.  LAST EMITTING ROW OF THE PAGE, a HALF word, SO THE COUNTER LEAVES AT 221144.40 -- which is Z STEVL, the symbol TEN landed decks SYN at (8)221144.40, so printed p.182 must open there

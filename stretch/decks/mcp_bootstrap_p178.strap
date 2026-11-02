@@ -1,0 +1,765 @@
+! mcp_bootstrap_p178.strap -- THE PSEUDO-OP BRANCH TABLE, printed
+! page 178.  Three dispatch legs of the I-O service-op dispatcher --
+! KOPOK, KPLUG1 and KCOP -- and the fifty-one branch entries they
+! index into.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.185.  The header was RENDERED and
+! READ, not assumed: "TIME CLOCK 00054041  PUNID 11D11MCP   CARD ID
+! LA000056   DIST. OF 3/01   3/01   PAGE NUMBER  178".
+!
+! >>> THE COLUMN-HEADING ROW'S OWN "LOCATION" FIELD READS 220742. <<<
+! It is NOT blank on this page.  That is IBM's own assembler stating
+! line 1's location, and line 1's LOCATION column reads 220742.00, so
+! the two agree.  Per docs/transcription_workflow.md the field is
+! line 1's location and is blank only when line 1 compiles nothing;
+! line 1 here is a located full-word VFL store, so a number is what
+! the reading predicts and a number is what is there.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! FIFTY-SIX PRINTED LINES, every one of them located and emitting.
+! No banner, no comment card, no DD, no SYN, no VF, no reservation,
+! and NO SLC of any kind.  The page is CONTIGUOUS from 220742.00 to
+! 220776.00 with no hole: fifty-four half words and one full word
+! (line 1), and the counter leaves the page at 220776.40.
+!
+! COUNTED OFF THE CARD-SERIAL COLUMN, not off the survey.  The
+! serials run LA000056 ... LA000110 -- fifty-five serials for
+! fifty-six lines, the one repeat being LA000101 on lines 46 AND 47
+! (see THE CARD SERIALS below).  NOTHING FELL OFF EITHER END:
+! serial LA000056 is on line 1, LA000110 is on line 56, and line 56
+! is followed by blank paper to the foot of the form.
+!
+! >>> WHERE THE SURVEY WENT WRONG, AND IT WENT WRONG AT BOTH ENDS.
+! The cached survey gave this page as 220743.00 .. 220766.40.  Both
+! endpoints are wrong and the row count is short by more than
+! twenty:
+!     survey first   220743.00   ACTUAL  220742.00   (line 1, lost)
+!     survey last    220766.40   ACTUAL  220776.00   (ten words out)
+! Line 1 is the page's only full word and the survey dropped it; the
+! last endpoint is a plain misread of 220776 as 220766.  Both
+! numbers here were counted off the page's own LINE and card-serial
+! columns and both are confirmed independently -- see THE JOINS.
+!
+!   line  1       the tail of the previous page's work: a full-word
+!                 VFL store of the control word, the ONLY full word
+!                 on the page.  Carries a location-column asterisk.
+!
+!   lines  2-4    KOPOK, the main entry.  V+I,2,2.0 steps the
+!                 calling-sequence pointer, SV,2,STIC plants the
+!                 return address, and BR,-1.0($3) indexes the table
+!                 below by the pseudo-op code in $3.
+!
+!   lines  5-30   THE $OP TABLE, twenty-six half-word branches at
+!                 pseudo-op displacements 1.0 through 13.32.  Its
+!                 comment column is the pseudo-op dictionary:
+!                 -READ, -RELEASE, -LOCATE - DISK ONLY, -FEED CARD
+!                 - PUNCH ONLY, -TAPE INDICATOR OFF ROUTINE,
+!                 -INVALID OP, -ERASE LONG GAP, -SPACE BLOCK,
+!                 -BACKSPACE BLOCK, -SPACE FILE, -WRITE TAPE MARK,
+!                 -REWIND, -REWIND AND UNLOAD, -RESERVED LIGHT OFF
+!                 ROUTINE, -RESERVED LIGHT ON ROUTINE, -CHECK LIGHT
+!                 ON ROUTINE, -FREE REEL AND DRIVE, -SOUND GONG -
+!                 CONSOLE ONLY, -WAIT FOR I/O INTERRUPT, -CHANGE
+!                 I/O TABLE OF EXITS, -UNASSIGN TAPE UNIT.
+!
+!   lines 31-33   KPLUG1, the second leg.  KVI,3,37.32 bounds the
+!                 code, BXH,MOPCI rejects anything higher, and
+!                 BR,-32.0($3) indexes the table below.
+!
+!   lines 34-45   THE $OPS TABLE, twelve half-word branches at
+!                 displacements 32.0 through 37.32: -STACK I/O
+!                 INTERRUPTS, -RELEASE I/O INTERRUPTS, -RETURN
+!                 AFTER I/O INTERRUPT, -RETURN AFTER MASKABLE,
+!                 -STORE IN COMMUNICATION REGION, -FETCH FROM
+!                 COMMUNICATION REGION, -SET INTERVAL TIMER.
+!
+!   lines 46-48   KCOP, the third leg.  KVI,3,16.32 / BXH,MOPCI /
+!                 BR,-11.32($3).  Carries a location-column
+!                 asterisk.
+!
+!   lines 49-56   the head of KCOP's table, displacements 11.32
+!                 through 15.0.  It RUNS OFF THE BOTTOM OF THE PAGE
+!                 and continues on printed p.179 -- see THE FORWARD
+!                 JOIN, which names the three rows that follow.
+!
+! ---------------------------------------------------------------
+! >>> THE DECISIVE WITNESS FOR THIS PAGE IS A TYPESET TABLE IN
+!     C22-6728, AND IT MATCHES THE BRANCH TABLE ENTRY FOR ENTRY. <<<
+! ---------------------------------------------------------------
+! docs/ocr/C22-6728_7030_MCP_Sys_Analysis_Guide.txt and its -1
+! revision both print "Routines are:" tables of Pseudo-Op / Entry
+! Symbol for exactly these legs.  Different press, different ink,
+! genuinely independent of this listing drum -- the workflow's
+! glyph-ladder rung 2, and here it fires on twenty-eight names at
+! once.  The -1 revision's $OPS table, reproduced as the OCR gives
+! it:
+!
+!   $RD or $RDS 1.0  ZSTART    $RLF    9.0   BRLFR
+!   $W or $WS   1.32 EWR1      $RLN    9.32  BRLNR
+!   $CCW        2.0  BCCWR     $KLN   10.0   BKLNR
+!   $REL        2.32 WREL      $FREE  10.32  ZFREE
+!   $LOC        3.0  KSLOC     $GONG  11.0   WGONG
+!   $FC         3.32 WFC       $WAIT  11.32  KWAIT
+!   $TIF        4.0  BTIFR     $CHEX  12.0   CCHEX
+!   (Invalid)   4.32 SDISP     $FREE  12.32  ZFREE
+!   $ERG        5.0  EELG      $IODEF 13.0   JZIOR
+!   $SP         5.32 R1        $HD    14.0   *RHD
+!   $BSP        6.0  R1+1.0    $LD    14.32  *RLD
+!   $SPFL       6.32 R1+2.0    $EVEN  15.0   *REVEN
+!   $BSFL       7.0  R2-.32    $ODD   15.32  *RODD
+!   $WEF        7.32 EWT1      $ECC   16.0   *RECC
+!   $REW        8.0  ZREWST    $NOECC 16.32  *RNOECC
+!   $UNLD       8.32 ZUNLDB    $ATID  17.0   SCBALT
+!
+!   $SIO  32.0  KSIO    $COMM  35.32 JCOMM
+!   $RIO  32.32 KRIO    $SIT   36.0  JSITX
+!   $RET  33.0  CRETN   $FIXUP 36.32 *SCBTT
+!   $RAM  33.32 WRAMPP  $STLR  37.0  TSTLR
+!   $STRG 34.0  KSTRG   $FELR  37.32 TFCHLR
+!   $FECRG 34.32 KFECRG $ABEX  38.0  YABEX
+!   $TIME 35.0  ZTIME
+!
+!   "* KCOP gives control to the location as indicated; however,
+!    each routine resets $3 to 13.32 and control goes to RALLPS to
+!    do functions common to the mode and density operations."
+!
+! Map that onto the page and it is line for line.  THE BRANCH-
+! RELATIVE ARITHMETIC IS EXACT, and it is the page's own internal
+! check: BR,addr($3) lands at the NEXT half word plus addr plus $3.
+!     line  4  BR,-1.0($3)    next = 220744.40, so $3 = 1.0 lands on
+!              line 5 and $3 = 13.32 lands on line 30 -- twenty-six
+!              entries, lines 5-30, exactly the manual's 1.0..13.32
+!     line 33  BR,-32.0($3)   next = 220763.00, so $3 = 32.0 lands
+!              on line 34 and $3 = 37.32 on line 45 -- twelve
+!              entries, exactly the manual's 32.0..37.32, which is
+!              also exactly the bound KVI,3,37.32 sets
+!     line 48  BR,-11.32($3)  next = 220772.40, so $3 = 11.32 lands
+!              on line 49 and $3 = 16.32 on 220777.40 -- the bound
+!              KVI,3,16.32 sets
+! And the manual's footnote names line 30: displacement 13.32 is
+! B,RALLPS, which is what the footnote says every asterisked
+! routine returns through.
+!
+! >>> WHERE THE MANUAL DRIFTS FROM THIS LISTING, SO THAT NOBODY
+!     DOWNSTREAM OVER-TRUSTS IT.  Three places, all recorded:
+!   (i)  $FIXUP 36.32 is "*SCBTT" in the -1 revision; THIS LISTING
+!        prints B,FFXP and printed p.174 DEFINES FFXP at 220560.00.
+!        The -1 footnote explains it -- "For core storage
+!        conservation, $FIXUP has been setup as a major package in
+!        the 22 $DUMP leg" -- so the manual is describing a LATER
+!        build.  The listing wins for the listing.
+!   (ii) (Invalid) 4.32 is "SDISP (type 2)"; this listing prints
+!        B,M OP CI.  No conflict, a difference of level: printed
+!        p.119 DEFINES MOPCI as "LVI,14,SOPCI  - ILLEGAL OP CODE"
+!        and printed p.117 calls it "Type 2 (MOPCI) illegal op
+!        code", so MOPCI is the entry that sets error code 2 and
+!        goes on to SDISP.  The manual names the destination.
+!   (iii) THE BASE REVISION'S TABLES ARE SHORTER.  C22-6728 (no -1)
+!        stops the $OP table at 13.0 JZIOR with no 13.32 entry and
+!        no asterisked 14.0-17.0 leg at all, and stops the $OPS
+!        table at 36.0 JSITX.  Its prose says "A pseudo-op code
+!        greater than 13.0 is detected at this point".  THIS MARCH
+!        1963 LISTING HAS BOTH EXTENSIONS, so on this point it sits
+!        between the two revisions and the -1 table is the one that
+!        matches it.  Use -1 for this page, not the base.
+!
+! ---------------------------------------------------------------
+! >>> THE BACKWARD JOIN IS CLOSED, AND IT IS NOT CLOSED BY AN SLC.
+! ---------------------------------------------------------------
+! This page prints no SLC, so the "SLC, (8)220742.0" below is an
+! ASSERTION, not a check (workflow, WHAT THE ORACLE CANNOT SEE item
+! 2: a hard SLC overrides the arriving counter silently; all
+! fifty-six !CHECK rows would move together and still pass).  What
+! closes the join is three independent things:
+!   (a) line 1's own printed LOCATION, 220742.00;
+!   (b) THE HEADING ROW'S "LOCATION 220742", IBM's assembler saying
+!       the same number a second time in a different place on the
+!       same page;
+!   (c) printed p.177's last line.  Its PDF p.184 is another
+!       transcriber's page and nothing of it is transcribed here,
+!       but the volume OCR indexes it as line 56 at 220741.00,
+!       "CCOCCC4.22 8D .007000.20 CO  STC EU,7),SCCWH18($13)" -- a
+!       FULL word at 220741.00, so the counter leaves p.177 at
+!       220742.00.  NOTE THE PAIR IS NOT A DUPLICATE: p.177's card
+!       is ST(BU,7),S CCW+.18($13) and prints 000004.22, this
+!       page's line 1 is ST(BU,7),S CW+.18($13) and prints
+!       000003.22.  SCW is 3.0 (printed p.102 line 14) and SCCW is
+!       4.0; the two differ by one word and the listing prints the
+!       difference.  Anyone merging the two pages should expect two
+!       adjacent full words, not one card printed twice.
+!
+! ---------------------------------------------------------------
+! >>> THE FORWARD JOIN, AND A PREDICTION THAT IS ALREADY HALF
+!     CHECKED. <<<
+! ---------------------------------------------------------------
+! Line 56 is a HALF WORD at 220776.00, so THE COUNTER LEAVES THIS
+! PAGE AT 220776.40.  The manual's KCOP leg continues $ODD 15.32 ->
+! RODD, $ECC 16.0 -> RECC, $NOECC 16.32 -> RNOECC, and
+! BR,-11.32($3) puts those at 220776.40, 220777.00 and 220777.40
+! exactly.  So printed p.179's first three located rows MUST be
+!     220776.40  B,RODD
+!     220777.00  B,RECC
+!     220777.40  B,RNOECC
+! and its fourth row must be a NEW ROUTINE at 221000.00, because
+! KVI,3,16.32 bounds this table at 16.32 and the manual's $ATID
+! 17.0 SCBALT entry is therefore NOT in this build.
+!
+! CHECKED AGAINST THE VOLUME OCR OF PDF p.186, which is an INDEX of
+! another page and not a witness for this one: it reads "1* 220776.4C
+! 220235.50 CO B,RCDD", "2* 220777.CC 220340.10 CO B,RECC", "2%
+! 220777.4C 220342.1C CO B,RNGECC", "4% 221C0C.0O0 C0CC14.47 C4 KOR
+! KV 3 S FREE".  All four hold, including the new routine at
+! 221000.00.  p.179's transcriber should treat this as a prediction
+! to CHECK off their own ink, not as a reading -- the OCR mangles
+! every one of those labels, and RODD/RECC/RNOECC are three more
+! symbols this page needs from them.
+!
+! ---------------------------------------------------------------
+! WHAT PRINTED p.177's TRANSCRIBER NEEDS FROM HERE
+! ---------------------------------------------------------------
+! THIS PAGE DEFINES THREE SYMBOLS p.177 BRANCHES TO, and the volume
+! OCR garbles all three names:
+!     KOPOK    220743.00   this page's line 2  (OCR of p.177 line 49
+!                          reads "BXE,K OP GK -> 220743.32 02")
+!     KPLUG1   220761.40   this page's line 31 (OCR of p.177 line 11
+!                          reads "BZXL,K PLUGI -> 220761.72 40")
+!     KCOP     220771.00   this page's line 46 (OCR of p.177 line 43
+!                          reads "BZXL,K C CP -> 220771.32 40")
+! All three half words are consistent with the locations printed
+! here, and p.177 should SYN them at those values.
+!
+! ---------------------------------------------------------------
+! >>> THE NAME CALLS.  THE OCR GARBLES THIS PAGE'S NAMES BADLY AND
+!     THIS IS THE FIRST FIRST-HAND READING OF THEM. <<<
+! ---------------------------------------------------------------
+! (1) >>> THE ENTRY IS "K OP OK" = KOPOK, NOT KCPOK, AND THE DECK
+!     THAT WROTE KCPOK WOULD HAVE BEEN WRONG. <<<  At 1200 dpi the
+!     NAME field of line 2 prints K, blank, [open round], P, blank,
+!     [closed O], K -- which reads "K CP OK" to the eye.  Three
+!     independent things say the second glyph is an O:
+!       (a) THE SAME STATEMENT PRINTED THREE TIMES ON THIS PAGE,
+!           which is the workflow's strongest rung.  Lines 49, 50
+!           and 52 are the same card, "B,KOPOK", all three
+!           compiling 220743.10.  In the FOURTH character position
+!           line 50 prints a CLOSED O and lines 49 and 52 print it
+!           OPEN -- one page, one drum, one instruction, the same
+!           character position, varying only the ink.  So an open
+!           round glyph in this name is an O that lost its right
+!           stroke, demonstrated on this page by this name.
+!       (b) THE TYPESET MANUAL.  C22-6728 prints KOPOK six times
+!           and C22-6728-1 six more, in running prose -- "control
+!           is given to KOPOK to accomplish the entry", "may be
+!           entered immediately via KOPOK", "the return address
+!           (KOPOK)".  The single "KCPOK" hit in -1 is inside an
+!           ASCII flow-chart box whose counterpart in the base
+!           revision reads KOPOK, i.e. one OCR slip of the same
+!           box.  Twelve to one, across two revisions, different
+!           press.
+!       (c) printed p.177's line 49 and printed p.179's line 15,
+!           both branches to 220743.00 from OTHER pages, OCR as
+!           "BXE,K OP GK" and "BXE,K GP CK" -- O in the second
+!           position in both.
+!     docs/archival_inventory_notes.md already lists KOPOK in this
+!     repository's own symbol inventory; nothing anywhere in the
+!     repository spells it KCPOK (grepped repo-wide, not just
+!     decks/).
+!
+! (2) "KCOP" ON LINE 46 IS K-C-O-P AND THE C IS A REAL C.  Read at
+!     1200 dpi against line 2's name in the same column: line 2's
+!     damaged O has a STRAIGHT VERTICAL LEFT STEM with square
+!     corners, and line 46's second glyph is ROUND on the left with
+!     no stem -- the workflow's C/D/O discriminator, applied within
+!     one column of one page.  Line 46's THIRD glyph does have the
+!     stem and is an O.  C22-6728-1 prints "KCOP" in prose in the
+!     footnote quoted above, which is the independent confirmation.
+!     KCOP is NOT the same symbol as KCOPY (printed p.122 line 45,
+!     215744.00); they differ by a letter and by 1025 words.
+!
+! (3) "B,B CCW R" ON LINE 7 IS BCCWR, not "B COW R".  printed p.157
+!     DEFINES BCCWR at 217766.00, which is the word this row
+!     prints, and the manual's table gives $CCW 2.0 -> BCCWR.
+!
+! (4) "B,K SIO"/"B,K RIO" ON LINES 34/35 ARE KSIO AND KRIO.  The
+!     volume OCR reads "K STO" and similar; printed p.170 DEFINES
+!     both ("printed K SIC / K RIC" in that deck's own note) at
+!     220410.40 and 220415.00, the two words these rows print, and
+!     the manual gives $SIO 32.0 KSIO, $RIO 32.32 KRIO.
+!
+! (5) "B,K STRG"/"B,K FECRG" ON LINES 38/39 ARE KSTRG AND KFECRG.
+!     The volume OCR reads "K STRGE"; printed p.171 DEFINES both at
+!     220427.40 and 220445.40 and the manual gives $STRG 34.0
+!     KSTRG, $FECRG 34.32 KFECRG.  Three readings, one answer.
+!
+! (6) "B,B KLN R" ON LINE 23 IS BKLNR with a K, and its own comment
+!     says so: "-CHECK LIGHT ON ROUTINE".  Compare lines 21 and 22,
+!     BRLFR and BRLNR, "-RESERVED LIGHT OFF/ON ROUTINE".  The
+!     manual gives $KLN 10.0 BKLNR.
+!
+! (7) "B,MCPCI" ON LINE 53 IS MOPCI.  Same name as lines 12 and 32,
+!     which print it with blanks as "M OP CI"; all three compile
+!     215630 and printed p.119 DEFINES MOPCI at 215630.40.  On line
+!     53 the SECOND glyph is an open O and the FOURTH is a genuine
+!     C -- the two cases side by side in one name, which is the
+!     workflow's "ink varies per CHARACTER, not per row" with a
+!     worked example.
+!
+! (8) THE SAME NAME IS PRINTED WITH AND WITHOUT ITS BLANKS ON THIS
+!     ONE PAGE.  Line 2 is "K OP OK" and lines 49/50/52 are
+!     "KOPOK"; line 12 is "M OP CI" and line 53 is "MOPCI"; line 32
+!     is "BXH,M OP CI" and line 47 is "BXH,MOPCI".  Each pair
+!     compiles the identical word, which is this page's own proof
+!     that STRAP ignores blanks inside a symbol.  Recorded so that
+!     a later reader does not "correct" one spelling towards the
+!     other.
+!
+! ---------------------------------------------------------------
+! THE ONE BYTE THE INK GOT WRONG, AND WHAT SETTLED IT
+! ---------------------------------------------------------------
+! LINE 1's SECOND HALF WORD IS "007000.20 D0", NOT "...C0".  At 400
+! and 600 dpi the byte reads C0, and the page drops ink on round
+! glyphs constantly -- line 1's own octal fields print "COCCO3.22"
+! and "0C7000.2C", five impossible Cs in fields that can hold only
+! octal digits, so the row demonstrably drops ink.  Per the
+! workflow that licenses nothing by itself.  What settles it is the
+! LEFT SIDE at 1200 dpi, rendered beside the D of this same row's
+! "8D" two inches away: both glyphs have a STRAIGHT VERTICAL LEFT
+! STEM with square top-left and bottom-left corners and a bowl hung
+! off it, and the byte's bowl is worn through on the right.  A C
+! and a 0 are round on the left with no stem, and the "0" that
+! follows in the same byte is exactly that.  This is the workflow's
+! C-vs-D pair, the one it calls the worst.  The assembler agrees
+! independently: ST(BU,7),SCW+.18($13) compiles 000003.22 8D
+! 007000.20 D0, and it was the ONLY one of the page's fifty-six
+! rows where the first reading and the assembler disagreed.
+!
+! Every other doubtful glyph on the page is a round one in a
+! position where the assembler and the printed octal agree on 0:
+! the branch rows print byte 00 and about half of them print it as
+! "CO".
+!
+! ---------------------------------------------------------------
+! THE CARD SERIALS
+! ---------------------------------------------------------------
+! LA000056 through LA000110, one prefix for the whole page, no
+! break.  ONE REPEAT: LA000101 on line 46 ("KCOP KVI,3,16.32") AND
+! line 47 ("BXH,MOPCI"), confirmed at 1200 dpi against LA000100
+! above and LA000102 below.  Two statements, one card.
+!
+! THIS IS A SIXTH INSTANCE OF THE PATTERN printed p.172 NAMED, AND
+! IT CORROBORATES RATHER THAN KILLS IT: p.172 observed that in
+! every repeated-serial pair the SECOND printed line is a BRANCH
+! (four instances on pp.171-172, a fifth on p.148), and line 47 is
+! BXH, a branch.  The named killer -- a repeated serial whose
+! second line is not a branch -- has still not been seen.  What is
+! NEW here is that the FIRST line of the pair is a KVI and not a
+! SIC or an LVI, so the pattern is not specific to SIC/branch.
+! Nobody should promote it to a rule; the mechanism (whether STRAP
+! punches two statements on one card or the listing expands one) is
+! a question about C28-6129 and is not settled by any page.
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK
+! ---------------------------------------------------------------
+! THREE on this page: line 1 (220742.00, an unlabelled full-word
+! VFL store), line 23 (220755.40, an unlabelled half-word branch)
+! and line 46 (220771.00, the LABELLED row "KCOP").  Recorded and
+! NOTHING PROPOSED.  The workflow says the mark has eight things it
+! is not and that a rule proposed from one page was refuted the
+! same afternoon.  What this page adds to the record is that the
+! three marked rows have nothing in common with each other: one
+! labelled and two not, one full word and two half words, one VFL
+! and two branches, and the twenty-five other half-word branches
+! between lines 5 and 30 are unmarked.
+!
+! ---------------------------------------------------------------
+! WHAT THIS PAGE PINS, AND WHAT IT ONLY CORROBORATES
+! ---------------------------------------------------------------
+! PINNED TO THE BIT:
+!   SCW     000003.00   line 1.  "SCW+.18" prints 000003.22 and
+!                       0o22 = 18 DECIMAL exactly, so SCW's own bit
+!                       offset is 0 and not merely "the .00 half".
+!                       printed p.102 line 14 DEFINES it,
+!                       "SYN(BU,64),3.0".
+!   KOPOK   220743.00   this page's own line 2.  Lines 49/50/52
+!                       branch to it and print 220743.10 = 0o10
+!                       with bit 32 CLEAR, and line 2's printed
+!                       LOCATION is 220743.00.  A branch sees only
+!                       bit 32, but here the DEFINING row is on the
+!                       same page, so the location column is the
+!                       reading and the branch is the control.
+!   KPLUG1  220761.40   line 31's own printed LOCATION.
+!   KCOP    220771.00   line 46's own printed LOCATION.
+!
+! HALF WORD ONLY -- the .00 or .40 is a reading of bit 32 and the
+! five bits below it are UNOBSERVABLE (workflow, WHAT THE ORACLE
+! CANNOT SEE item 1).  THERE IS NO SIC ANYWHERE ON THIS PAGE, so
+! the SIC exception cannot help any of them.  Every external SYN
+! below is in this class, and every one of them is checked against
+! the page that DEFINES it by the body-image merge rather than by
+! this deck:
+!   backward, all DEFINED inside printed pp.99-176 --
+!     STIC 215265.00 (p.116), MOPCI 215630.40 (p.119), CRETN
+!     217154.00 (p.140), WRAMPP 217326.00 (p.144), JSITX 217347.40
+!     (p.145), JZIOR 217355.40 (p.146), ZSTART 217544.00 (p.151),
+!     EWR1 217630.00 (p.153), BCCWR 217766.00 (p.157), WREL
+!     220011.00 (p.158), KSLOC 220021.40 (p.159), WFC 220106.00 and
+!     EELG 220115.00 (p.161), R1 220120.40 and R2 220124.00
+!     (p.162), EWT1 220203.00 (p.164), ZREWST 220226.00 and ZUNLDB
+!     220244.00 (p.165), ZFREE 220245.40 (p.166), RHD 220325.00,
+!     RLD 220326.00, REVEN 220334.40 and RALLPS 220346.00 (p.167),
+!     KWAIT 220347.40 (p.168), CCHEX 220377.00 (p.169), KSIO
+!     220410.40 and KRIO 220415.00 (p.170), KSTRG 220427.40 and
+!     KFECRG 220445.40 (p.171), TSTLR 220502.00 (p.172), TFCHLR
+!     220523.40 (p.173), FFXP 220560.00 (p.174), SCW 3.0 (p.102)
+!   not yet transcribed anywhere, so these are stand-ins read off
+!   THIS page's printed branch half words and nothing else --
+!     KNI 220726.40 (printed p.177 line 42 defines it; printed
+!       p.167's deck already SYNs it at this value)
+!     BTIFR 222051.40, BRLFR 222053.40, BRLNR 222054.40,
+!     BKLNR 222055.40, WGONG 222073.00  -- all in a 0o2220xx block
+!       no transcribed page reaches
+!     ZTIME 233107.00, JCOMM 233154.00  -- far forward, 0o233xxx
+!
+! NO DATA DESCRIPTION IS INHERITED ANYWHERE ON THIS PAGE.  Every
+! statement is a branch, an index operation or line 1's VFL store,
+! and line 1 writes its own "(BU,7)".  So the brief's dds hazard
+! cannot bite here; the only dds written below is SCW's, copied
+! from printed p.102's defining card as six landed decks write it.
+!
+! ---------------------------------------------------------------
+! >>> SUBSTITUTIONS.  THREE, ALL FORCED BY KNOWN ASSEMBLER GAPS,
+!     ALL FLAGGED AT THEIR ROW. <<<
+! ---------------------------------------------------------------
+! (S1) LINE 2's NAME FIELD IS PRINTED "K OP OK" WITH BLANKS and
+!      strap_asm refuses a blank in the label field.  Written
+!      "KOPOK".  The page itself prints the closed-up spelling on
+!      lines 49, 50 and 52, so the substitution is to a spelling
+!      THIS PAGE ALSO PRINTS, not to an invention.
+! (S2) LINE 15 IS PRINTED "B,R 1+1.0" and (S3) LINE 16 IS PRINTED
+!      "B,R 1+2.0" -- a blank inside a name INSIDE AN EXPRESSION,
+!      which strap_asm refuses ("undefined symbol 'R'").  Written
+!      "B,R1+1.0" and "B,R1+2.0".
+!      NOTE THE ASYMMETRY, because it is a finding: LINE 14's
+!      "B,R 1" IS WRITTEN AS PRINTED and assembles, because the
+!      bare blanked name resolves.  Only the expression form fails.
+!      The manual's table prints the same three operands as "R1",
+!      "R1+1.0", "R1+2.0", so the substitution agrees with the
+!      typeset source as well.
+! Every other blanked operand on the page is written AS PRINTED --
+! "B,Z START", "B,K S LOC", "B,M OP CI", "SV,2,S TIC" and twenty
+! more all assemble unchanged.
+!
+! ---------------------------------------------------------------
+! WHAT COULD NOT BE SETTLED
+! ---------------------------------------------------------------
+! (A) THE BIT OFFSETS WITHIN THE HALF WORD of all thirty-four
+!     external symbols listed above.  There is no SIC on this page,
+!     and a branch sees only bit 32 (workflow item 1), so the ".0"
+!     and ".40" below are the house convention for twenty-seven of
+!     them and a READING only of bit 32.  A passing !CHECK must not
+!     be read as a reading.  The seven forward ones -- BTIFR,
+!     BRLFR, BRLNR, BKLNR, WGONG, ZTIME, JCOMM -- are not checked
+!     against any defining card at all yet.
+!
+! (B) WHAT THE NAMES MEAN.  "KCOP", "KPLUG1" and "KOPOK" are read
+!     as strings and nothing is claimed about what K, C, OP or PLUG
+!     stand for.  The manual uses all three as bare labels.
+!
+! (C) WHETHER LINE 53's "B,MOPCI" IS REALLY THE 13.32 ENTRY.  The
+!     arithmetic puts line 53 at displacement 13.32 in KCOP's
+!     table, and the manual's footnote says every asterisked
+!     routine resets $3 to 13.32 and goes to RALLPS -- but line 53
+!     branches to MOPCI, not RALLPS, and line 30 (13.32 in KOPOK's
+!     table) is the one that branches to RALLPS.  Both readings are
+!     certain from the binary; what the two 13.32 slots are FOR is
+!     not established here and is a question for whoever
+!     transcribes RALLPS's page.
+!
+! (D) WHY LINES 1, 23 AND 46 CARRY THE LOCATION-COLUMN ASTERISK.
+!     See above.  No hypothesis offered.
+!
+! (E) WHETHER $ATID 17.0 -> SCBALT EXISTS IN THIS BUILD.  The -1
+!     manual lists it; KVI,3,16.32 on line 46 bounds this table at
+!     16.32, and the OCR of printed p.179 shows a new routine
+!     starting at 221000.00 where a 17.0 entry would have to sit.
+!     The evidence says NO, but it rests on a bound and on another
+!     page's OCR, so p.179's transcriber should settle it.
+!
+! ---------------------------------------------------------------
+! WHAT WAS RUN, AND WHAT IT SAID
+! ---------------------------------------------------------------
+!   verify_mcp_page.py 178 -- "3 symbols, 56 listing rows", ALL
+!     PASSED.  Fifty-six !CHECK rows for fifty-six located lines,
+!     so nothing on the page is unchecked.
+!   check_deck_listing_comments.py over a copy of decks/ with this
+!     deck added -- reach went from 109 to 110 decks, rows parsed
+!     from 3799 to 3855 (+56) and checks compared from 2706 to 2762
+!     (+56), with NO new mismatch.  The two failures it reports are
+!     printed p.171's and are present in the baseline without this
+!     deck; they are not this page's.
+!   check_symbol_spellings.py over the same copy -- "PASS 1467
+!     symbol definitions, no symbol spelled two ways".
+!   >>> check_mcp_body_image.py WITH FIRST,LAST = 99,178 OVER THE
+!     SAME COPY -- THE MERGE PASSED. <<<  "merges_without_
+!     disagreement = 698 defined, 69 external", against the
+!     baseline's 695 and 62: the three new definitions are KOPOK,
+!     KPLUG1 and KCOP and the seven new externals are the seven
+!     forward stand-ins.  SO ALL THIRTY-FOUR EXTERNAL SYNs ABOVE
+!     WERE PUT BESIDE THE CARDS THAT DEFINE THEM AND NONE
+!     DISAGREED.  every_word_accounted_for = 0.
+!
+!     ONE CHECK FAILED AND IT IS NOT THIS PAGE: "UNEXPECTED
+!     SLC-covered holes ... 0o220700 ... 0o220713", 34 words,
+!     exactly 0o220742 - 0o220700.  Those are printed p.177's
+!     words, and p.177 has no deck yet, so this deck's hard origin
+!     SLC jumps them.  That is precisely the failure mode the
+!     test's own comment names -- "a page LOST from the list ... is
+!     jumped over by the NEXT deck's origin SLC" -- and it is the
+!     test doing its job.  IT CLOSES WHEN p.177 LANDS, and if it
+!     does not close then, exactly 34 words are missing between the
+!     two pages and that is where to look.
+!
+! ===============================================================
+! EXTERNALS.  Every one is a stand-in SYN.  The backward ones are
+! written to agree with the page that DEFINES them; the forward
+! ones are read off this page's printed branch half words.
+! ===============================================================
+
+SCW     SYN(BU,64), 3.0       ! p.102 line 14 DEFINES it, -CONTROL WORD
+STIC    SYN, (8)215265.0      ! STored Instruction Counter; p.116 defines it
+MOPCI   SYN, (8)215630.40     ! p.119 line 44 DEFINES it, - ILLEGAL OP CODE
+CRETN   SYN, (8)217154.0      ! p.140 defines it; manual $RET 33.0
+WRAMPP  SYN, (8)217326.0      ! p.144 defines it; manual $RAM 33.32
+JSITX   SYN, (8)217347.40     ! p.145 defines it; manual $SIT 36.0
+JZIOR   SYN, (8)217355.40     ! p.146 defines it; manual $IODEF 13.0
+ZSTART  SYN, (8)217544.0      ! p.151 defines it; manual $RD/$RDS 1.0
+EWR1    SYN, (8)217630.0      ! p.153 defines it; manual $W/$WS 1.32
+BCCWR   SYN, (8)217766.0      ! p.157 defines it; manual $CCW 2.0
+WREL    SYN, (8)220011.0      ! p.158 defines it; manual $REL 2.32
+KSLOC   SYN, (8)220021.40     ! p.159 defines it; manual $LOC 3.0
+WFC     SYN, (8)220106.0      ! p.161 defines it; manual $FC 3.32
+EELG    SYN, (8)220115.0      ! p.161 defines it; manual $ERG 5.0
+R1      SYN, (8)220120.40     ! p.162 defines it; manual $SP 5.32
+R2      SYN, (8)220124.0      ! p.162 defines it; manual $BSFL 7.0 is R2-.32
+EWT1    SYN, (8)220203.0      ! p.164 defines it; manual $WEF 7.32
+ZREWST  SYN, (8)220226.0      ! p.165 defines it; manual $REW 8.0
+ZUNLDB  SYN, (8)220244.0      ! p.165 defines it; manual $UNLD 8.32
+ZFREE   SYN, (8)220245.40     ! p.166 defines it; manual $FREE at BOTH 10.32 and 12.32
+RHD     SYN, (8)220325.0      ! p.167 defines it; manual $HD 14.0
+RLD     SYN, (8)220326.0      ! p.167 defines it; manual $LD 14.32
+REVEN   SYN, (8)220334.40     ! p.167 defines it; manual $EVEN 15.0
+RALLPS  SYN, (8)220346.0      ! p.167 defines it; the manual's footnote names it
+KWAIT   SYN, (8)220347.40     ! p.168 defines it; manual $WAIT 11.32
+CCHEX   SYN, (8)220377.0      ! p.169 defines it; manual $CHEX 12.0
+KSIO    SYN, (8)220410.40     ! p.170 defines it; manual $SIO 32.0
+KRIO    SYN, (8)220415.0      ! p.170 defines it; manual $RIO 32.32
+KSTRG   SYN, (8)220427.40     ! p.171 defines it; manual $STRG 34.0
+KFECRG  SYN, (8)220445.40     ! p.171 defines it; manual $FECRG 34.32
+TSTLR   SYN, (8)220502.0      ! p.172 defines it; manual $STLR 37.0
+TFCHLR  SYN, (8)220523.40     ! p.173 defines it; manual $FELR 37.32
+FFXP    SYN, (8)220560.0      ! p.174 defines it; manual's -1 table says SCBTT here
+
+! FORWARD -- no transcribed page defines these.  Stand-ins, read off
+! THIS page's printed branch half words and nothing else.
+KNI     SYN, (8)220726.40     ! printed p.177 line 42; p.167's deck SYNs the same
+BTIFR   SYN, (8)222051.40     ! line 11 -> 222051.50 00; manual $TIF 4.0
+BRLFR   SYN, (8)222053.40     ! line 21 -> 222053.50 00; manual $RLF 9.0
+BRLNR   SYN, (8)222054.40     ! line 22 -> 222054.50 00; manual $RLN 9.32
+BKLNR   SYN, (8)222055.40     ! line 23 -> 222055.50 00; manual $KLN 10.0
+WGONG   SYN, (8)222073.0      ! line 25 -> 222073.10 00; manual $GONG 11.0
+ZTIME   SYN, (8)233107.0      ! line 40 -> 233107.10 00; manual $TIME 35.0
+JCOMM   SYN, (8)233154.0      ! line 41 -> 233154.10 00; manual $COMM 35.32
+
+! ===============================================================
+! THE PAGE.  Fifty-six located rows, no banner and no comment card.
+! The origin is an ASSERTION (this page prints no SLC) -- see THE
+! BACKWARD JOIN above, which closes it three other ways.
+! ===============================================================
+
+        SLC, (8)220742.0             ! page has no SLC; line 1 prints 220742.00
+        ST(BU,7),SCW+.18($13)        ! line  1   *
+KOPOK   V+I,2,2.0                    ! line  2  >>> SUBSTITUTED (S1): printed NAME is "K OP OK" with blanks
+        SV,2,S TIC                   ! line  3
+        BR,-1.0($3)                  ! line  4
+        B,Z START                    ! line  5  -READ
+        B,E WR1                      ! line  6
+        B,B CCW R                    ! line  7
+        B,W REL                      ! line  8  -RELEASE
+        B,K S LOC                    ! line  9  -LOCATE  - DISK ONLY
+        B,W FC                       ! line 10  -FEED CARD - PUNCH ONLY
+        B,B TIF R                    ! line 11  -TAPE INDICATOR OFF ROUTINE
+        B,M OP CI                    ! line 12  -INVALID OP
+        B,E ELG                      ! line 13  -ERASE LONG GAP
+        B,R 1                        ! line 14  -SPACE BLOCK   (printed blank KEPT: it assembles)
+        B,R1+1.0                     ! line 15  -BACKSPACE BLOCK  >>> SUBSTITUTED (S2): printed "B,R 1+1.0"
+        B,R1+2.0                     ! line 16  -SPACE FILE       >>> SUBSTITUTED (S3): printed "B,R 1+2.0"
+        B,R2-.32                     ! line 17
+        B,E WT1                      ! line 18  -WRITE TAPE MARK
+        B,Z REW ST                   ! line 19  -REWIND
+        B,Z UNLD B                   ! line 20  -REWIND AND UNLOAD
+        B,B RLF R                    ! line 21  -RESERVED LIGHT OFF ROUTINE
+        B,B RLN R                    ! line 22  -RESERVED LIGHT ON ROUTINE
+        B,B KLN R                    ! line 23  -CHECK LIGHT ON ROUTINE   *
+        B,Z FREE                     ! line 24  -FREE REEL AND DRIVE
+        B,W GONG                     ! line 25  -SOUND GONG - CONSOLE ONLY
+        B,K WAIT                     ! line 26  -WAIT FOR I/O INTERRUPT
+        B,C CHEX                     ! line 27  -CHANGE I/O TABLE OF EXITS
+        B,Z FREE                     ! line 28  -UNASSIGN TAPE UNIT
+        B,JZIOR                      ! line 29
+        B,RALLPS                     ! line 30
+KPLUG1  KVI,3,37.32                  ! line 31
+        BXH,M OP CI                  ! line 32
+        BR,-32.0($3)                 ! line 33
+        B,K SIO                      ! line 34  -STACK I/O INTERRUPTS
+        B,K RIO                      ! line 35  -RELEASE I/O INTERRUPTS
+        B,C RETN                     ! line 36  -RETURN AFTER I/O INTERRUPT
+        B,WRAMPP                     ! line 37  -RETURN AFTER MASKABLE
+        B,K STRG                     ! line 38  -STORE IN COMMUNICATION REGION
+        B,K FECRG                    ! line 39  -FETCH FROM COMMUNICATION REGION
+        B,ZTIME                      ! line 40
+        B,JCOMM                      ! line 41
+        B,JSITX                      ! line 42  -SET INTERVAL TIMER
+        B,FFXP                       ! line 43
+        B,TSTLR                      ! line 44
+        B,TFCHLR                     ! line 45
+KCOP    KVI,3,16.32                  ! line 46  card LA000101, with line 47   *
+        BXH,MOPCI                    ! line 47  card LA000101, with line 46
+        BR,-11.32($3)                ! line 48
+        B,KOPOK                      ! line 49
+        B,KOPOK                      ! line 50
+        B,KNI+1.0                    ! line 51
+        B,KOPOK                      ! line 52
+        B,MOPCI                      ! line 53
+        B,RHD                        ! line 54
+        B,RLD                        ! line 55
+        B,REVEN                      ! line 56
+
+! ===============================================================
+! THE PRINTED LISTING, line by line, as read off PDF p.185.
+! "*" after the location is the location-column asterisk.
+! ===============================================================
+!
+!   line  1* 220742.00   000003.22 8D  007000.20 D0          ST(BU,7),SCW+.18($13)
+!   line  2  220743.00   000002.05 05                 K OP OK  V+I,2,2.0
+!   line  3  220743.40   215265.05 30                        SV,2,S TIC
+!   line  4  220744.00   777777.14 03                        BR,-1.0($3)
+!   line  5  220744.40   217544.10 00                        B,Z START        -READ
+!   line  6  220745.00   217630.10 00                        B,E WR1
+!   line  7  220745.40   217766.10 00                        B,B CCW R
+!   line  8  220746.00   220011.10 00                        B,W REL          -RELEASE
+!   line  9  220746.40   220021.50 00                        B,K S LOC        -LOCATE  - DISK ONLY
+!   line 10  220747.00   220106.10 00                        B,W FC           -FEED CARD - PUNCH ONLY
+!   line 11  220747.40   222051.50 00                        B,B TIF R        -TAPE INDICATOR OFF ROUTINE
+!   line 12  220750.00   215630.50 00                        B,M OP CI        -INVALID OP
+!   line 13  220750.40   220115.10 00                        B,E ELG          -ERASE LONG GAP
+!   line 14  220751.00   220120.50 00                        B,R 1            -SPACE BLOCK
+!   line 15  220751.40   220121.50 00                        B,R 1+1.0        -BACKSPACE BLOCK
+!   line 16  220752.00   220122.50 00                        B,R 1+2.0        -SPACE FILE
+!   line 17  220752.40   220123.50 00                        B,R2-.32
+!   line 18  220753.00   220203.10 00                        B,E WT1          -WRITE TAPE MARK
+!   line 19  220753.40   220226.10 00                        B,Z REW ST       -REWIND
+!   line 20  220754.00   220244.10 00                        B,Z UNLD B       -REWIND AND UNLOAD
+!   line 21  220754.40   222053.50 00                        B,B RLF R        -RESERVED LIGHT OFF ROUTINE
+!   line 22  220755.00   222054.50 00                        B,B RLN R        -RESERVED LIGHT ON ROUTINE
+!   line 23* 220755.40   222055.50 00                        B,B KLN R        -CHECK LIGHT ON ROUTINE
+!   line 24  220756.00   220245.50 00                        B,Z FREE         -FREE REEL AND DRIVE
+!   line 25  220756.40   222073.10 00                        B,W GONG         -SOUND GONG - CONSOLE ONLY
+!   line 26  220757.00   220347.50 00                        B,K WAIT         -WAIT FOR I/O INTERRUPT
+!   line 27  220757.40   220377.10 00                        B,C CHEX         -CHANGE I/O TABLE OF EXITS
+!   line 28  220760.00   220245.50 00                        B,Z FREE         -UNASSIGN TAPE UNIT
+!   line 29  220760.40   217355.50 00                        B,JZIOR
+!   line 30  220761.00   220346.10 00                        B,RALLPS
+!   line 31  220761.40   000045.47 04                 KPLUG1  KVI,3,37.32
+!   line 32  220762.00   215630.73 42                        BXH,M OP CI
+!   line 33  220762.40   777740.14 03                        BR,-32.0($3)
+!   line 34  220763.00   220410.50 00                        B,K SIO          -STACK I/O INTERRUPTS
+!   line 35  220763.40   220415.10 00                        B,K RIO          -RELEASE I/O INTERRUPTS
+!   line 36  220764.00   217154.10 00                        B,C RETN         -RETURN AFTER I/O INTERRUPT
+!   line 37  220764.40   217326.10 00                        B,WRAMPP         -RETURN AFTER MASKABLE
+!   line 38  220765.00   220427.50 00                        B,K STRG         -STORE IN COMMUNICATION REGION
+!   line 39  220765.40   220445.50 00                        B,K FECRG        -FETCH FROM COMMUNICATION REGION
+!   line 40  220766.00   233107.10 00                        B,ZTIME
+!   line 41  220766.40   233154.10 00                        B,JCOMM
+!   line 42  220767.00   217347.50 00                        B,JSITX          -SET INTERVAL TIMER
+!   line 43  220767.40   220560.10 00                        B,FFXP
+!   line 44  220770.00   220502.10 00                        B,TSTLR
+!   line 45  220770.40   220523.50 00                        B,TFCHLR
+!   line 46* 220771.00   000020.47 04                   KCOP  KVI,3,16.32
+!   line 47  220771.40   215630.73 42                        BXH,MOPCI
+!   line 48  220772.00   777764.54 03                        BR,-11.32($3)
+!   line 49  220772.40   220743.10 00                        B,KOPOK
+!   line 50  220773.00   220743.10 00                        B,KOPOK
+!   line 51  220773.40   220727.50 00                        B,KNI+1.0
+!   line 52  220774.00   220743.10 00                        B,KOPOK
+!   line 53  220774.40   215630.50 00                        B,MOPCI
+!   line 54  220775.00   220325.10 00                        B,RHD
+!   line 55  220775.40   220326.10 00                        B,RLD
+!   line 56  220776.00   220334.50 00                        B,REVEN
+!
+! ===============================================================
+! THE CHECKS.  Fifty-six !CHECK rows for fifty-six located lines,
+! and all three of the page's labels.
+! ===============================================================
+
+!SYM KOPOK   220743.00
+!SYM KPLUG1  220761.40
+!SYM KCOP    220771.00
+
+!CHECK 220742.00 | 000003.22 8D 007000.20 D0 | line 1 ST(BU,7),SCW+.18($13) -- THE PAGE'S ONLY FULL WORD and its only location-column asterisk on an unlabelled VFL row.  "SCW+.18" prints 0o22 = 18 DECIMAL, which pins SCW to the BIT at 000003.00, the value printed p.102 line 14 defines.  >>> THE SECOND BYTE IS D0 AND NOT C0: at 1200 dpi this glyph has the same straight vertical left stem and square corners as the D of this row's own "8D", with the bowl worn through on the right; the 400/600-dpi reading was C0 and was wrong.  The low nibble 0 is the absence of an OFFSET index on the second operand
+!CHECK 220743.00 | 000002.05 05 | line 2 KOPOK V+I,2,2.0 -- the datum 2.0 words is 0o2 and .05 is 2J+1 for J=2.  >>> THE NAME IS PRINTED "K OP OK" WITH BLANKS and is written closed up here (S1); lines 49/50/52 print the closed-up spelling on this same page
+!CHECK 220743.40 | 215265.05 30 | line 3 SV,2,S TIC -- .05 is 2J+1 for J=2, so STIC is checked to the HALF WORD only; twenty-six landed decks already SYN it at 215265.0
+!CHECK 220744.00 | 777777.14 03 | line 4 BR,-1.0($3) -- -1.0 is -64 bits, 2^24-64, printing word 0o777777 with bit 0, so the printed 0o14 is BR's OWN operation bits and nothing of the address.  That is this page's calibration of BR, and lines 33 and 48 use it
+!CHECK 220744.40 | 217544.10 00 | line 5 B,Z START -READ -- ZSTART at 217544.00 with bit 32 CLEAR, printing the branch's 0o10.  Displacement 1.0 in the manual's $OPS table
+!CHECK 220745.00 | 217630.10 00 | line 6 B,E WR1 -- EWR1 at 217630.00, printed p.153's definition; manual $W/$WS 1.32
+!CHECK 220745.40 | 217766.10 00 | line 7 B,B CCW R -- BCCWR at 217766.00, printed p.157's definition; manual $CCW 2.0.  The name is CCW (channel control word) and not "COW"
+!CHECK 220746.00 | 220011.10 00 | line 8 B,W REL -RELEASE -- WREL at 220011.00; manual $REL 2.32
+!CHECK 220746.40 | 220021.50 00 | line 9 B,K S LOC -LOCATE  - DISK ONLY -- KSLOC at 220021.40, so 0o50 is bit 32 OR the branch's 0o10; manual $LOC 3.0
+!CHECK 220747.00 | 220106.10 00 | line 10 B,W FC -FEED CARD - PUNCH ONLY -- WFC at 220106.00, CONFIRMING the 220106.10 eight landed decks took from the volume OCR of this page; manual $FC 3.32
+!CHECK 220747.40 | 222051.50 00 | line 11 B,B TIF R -TAPE INDICATOR OFF ROUTINE -- BTIFR at 222051.40, a FORWARD stand-in no transcribed page defines; manual $TIF 4.0
+!CHECK 220750.00 | 215630.50 00 | line 12 B,M OP CI -INVALID OP -- MOPCI at 215630.40, printed p.119's definition.  The manual's table calls this slot "SDISP (type 2)", which is the destination and not the branch target
+!CHECK 220750.40 | 220115.10 00 | line 13 B,E ELG -ERASE LONG GAP -- EELG at 220115.00, CONFIRMING the 220115.10 taken from the volume OCR; manual $ERG 5.0
+!CHECK 220751.00 | 220120.50 00 | line 14 B,R 1 -SPACE BLOCK -- R1 at 220120.40, CONFIRMING the 220120.50 taken from the volume OCR.  WRITTEN AS PRINTED, blank and all: a bare blanked name resolves, and only the expression forms on lines 15-16 do not
+!CHECK 220751.40 | 220121.50 00 | line 15 B,R 1+1.0 -BACKSPACE BLOCK -- R1 + one word; >>> SUBSTITUTED (S2) to "B,R1+1.0", because a blank inside a name inside an expression is refused.  The manual's table prints this operand as "R1+1.0"
+!CHECK 220752.00 | 220122.50 00 | line 16 B,R 1+2.0 -SPACE FILE -- R1 + two words; >>> SUBSTITUTED (S3) to "B,R1+2.0", same reason.  Lines 14-16 are one symbol at three offsets, so each is the others' control
+!CHECK 220752.40 | 220123.50 00 | line 17 B,R2-.32 -- R2 at 220124.00 minus 32 bits is 220123.40, printing 0o40 OR the branch's 0o10.  THIS ROW IS THE PAGE'S CONTROL ON THE SIGN AND ON THE DECIMAL BIT OFFSET: -.32 DECIMAL is -0o40, and read octal the row would land a half word out.  The manual's table prints the same operand, "R2 - .32"
+!CHECK 220753.00 | 220203.10 00 | line 18 B,E WT1 -WRITE TAPE MARK -- EWT1 at 220203.00, printed p.164's definition; manual $WEF 7.32
+!CHECK 220753.40 | 220226.10 00 | line 19 B,Z REW ST -REWIND -- ZREWST at 220226.00, which printed p.165's deck already SYNs at that value; manual $REW 8.0
+!CHECK 220754.00 | 220244.10 00 | line 20 B,Z UNLD B -REWIND AND UNLOAD -- ZUNLDB at 220244.00; manual $UNLD 8.32
+!CHECK 220754.40 | 222053.50 00 | line 21 B,B RLF R -RESERVED LIGHT OFF ROUTINE -- BRLFR at 222053.40, a FORWARD stand-in; manual $RLF 9.0
+!CHECK 220755.00 | 222054.50 00 | line 22 B,B RLN R -RESERVED LIGHT ON ROUTINE -- BRLNR at 222054.40, a FORWARD stand-in; manual $RLN 9.32.  Lines 21-23 are three consecutive words of the same forward block, so the three readings are each other's controls on the block's base
+!CHECK 220755.40 | 222055.50 00 | line 23 B,B KLN R -CHECK LIGHT ON ROUTINE -- BKLNR at 222055.40; the K is confirmed by the row's own English comment and by the manual's $KLN 10.0.  CARRIES A LOCATION-COLUMN ASTERISK on an unlabelled branch row
+!CHECK 220756.00 | 220245.50 00 | line 24 B,Z FREE -FREE REEL AND DRIVE -- ZFREE at 220245.40, printed p.166's definition; manual $FREE 10.32
+!CHECK 220756.40 | 222073.10 00 | line 25 B,W GONG -SOUND GONG - CONSOLE ONLY -- WGONG at 222073.00, a FORWARD stand-in; manual $GONG 11.0
+!CHECK 220757.00 | 220347.50 00 | line 26 B,K WAIT -WAIT FOR I/O INTERRUPT -- KWAIT at 220347.40, printed p.168's definition; manual $WAIT 11.32
+!CHECK 220757.40 | 220377.10 00 | line 27 B,C CHEX -CHANGE I/O TABLE OF EXITS -- CCHEX at 220377.00, printed p.169's definition; manual $CHEX 12.0.  At 150 dpi this row reads 220717.10 and it is 220377.10; the digits were settled at 600 dpi
+!CHECK 220760.00 | 220245.50 00 | line 28 B,Z FREE -UNASSIGN TAPE UNIT -- BIT-IDENTICAL TO LINE 24, the same statement printed twice on one page with two different comments, which is what the manual's table predicts: $FREE appears at BOTH 10.32 and 12.32
+!CHECK 220760.40 | 217355.50 00 | line 29 B,JZIOR -- JZIOR at 217355.40, printed p.146's definition; manual $IODEF 13.0, the last entry of the base revision's table
+!CHECK 220761.00 | 220346.10 00 | line 30 B,RALLPS -- RALLPS at 220346.00, printed p.167's definition.  THIS IS DISPLACEMENT 13.32, the slot the -1 manual's footnote names: "each routine resets $3 to 13.32 and control goes to RALLPS"
+!CHECK 220761.40 | 000045.47 04 | line 31 KPLUG1 KVI,3,37.32 -- the bound 37.32 is 0o45 words plus 0o40 bits, and .47 is 0o40 OR 2J+1 = 7 for J=3.  Read octal the word part would be wrong, so this row pins the DECIMAL reading of both halves.  Printed p.177 line 11 branches here and the volume OCR of that page prints 220761.72 40, which is 0o40 OR BZXL's 0o32 -- an independent reading of this label's half word from another page
+!CHECK 220762.00 | 215630.73 42 | line 32 BXH,M OP CI -- MOPCI at 215630.40, printing 0o40 OR BXH's own 0o33; byte 42.  BIT-IDENTICAL TO LINE 47, which prints the same card with the name closed up as "MOPCI" -- one page, one instruction, the blanks varied and nothing else, which is this page's proof that STRAP ignores blanks inside a symbol
+!CHECK 220762.40 | 777740.14 03 | line 33 BR,-32.0($3) -- -32 words is 2^24-2048, word 0o777740 bit 0, plus BR's 0o14 as line 4 establishes.  The next half word is 220763.00, so $3 = 32.0 lands on line 34 and $3 = 37.32 on line 45: twelve entries, exactly the bound line 31 sets
+!CHECK 220763.00 | 220410.50 00 | line 34 B,K SIO -STACK I/O INTERRUPTS -- KSIO at 220410.40, printed p.170's definition; manual $SIO 32.0.  The volume OCR reads this name "K STO" and it is K SIO
+!CHECK 220763.40 | 220415.10 00 | line 35 B,K RIO -RELEASE I/O INTERRUPTS -- KRIO at 220415.00, printed p.170's definition; manual $RIO 32.32
+!CHECK 220764.00 | 217154.10 00 | line 36 B,C RETN -RETURN AFTER I/O INTERRUPT -- CRETN at 217154.00, printed p.140's definition; manual $RET 33.0
+!CHECK 220764.40 | 217326.10 00 | line 37 B,WRAMPP -RETURN AFTER MASKABLE -- WRAMPP at 217326.00, printed p.144's definition; manual $RAM 33.32
+!CHECK 220765.00 | 220427.50 00 | line 38 B,K STRG -STORE IN COMMUNICATION REGION -- KSTRG at 220427.40, CONFIRMING the 220427.50 taken from the volume OCR; the OCR reads the name "K STRGE" and it is K STRG, which printed p.171 defines and the manual prints as $STRG 34.0
+!CHECK 220765.40 | 220445.50 00 | line 39 B,K FECRG -FETCH FROM COMMUNICATION REGION -- KFECRG at 220445.40, CONFIRMING the 220445.50 taken from the volume OCR; manual $FECRG 34.32
+!CHECK 220766.00 | 233107.10 00 | line 40 B,ZTIME -- ZTIME at 233107.00, a FORWARD stand-in nearly five thousand words past the end of the transcribed body; manual $TIME 35.0
+!CHECK 220766.40 | 233154.10 00 | line 41 B,JCOMM -- JCOMM at 233154.00, the same far-forward block as line 40; manual $COMM 35.32.  0o233154 - 0o233107 = 0o45, so the two are 37 words apart and that difference is READ, not assumed
+!CHECK 220767.00 | 217347.50 00 | line 42 B,JSITX -SET INTERVAL TIMER -- JSITX at 217347.40, printed p.145's definition; manual $SIT 36.0, the last entry of the base revision's $OPS table
+!CHECK 220767.40 | 220560.10 00 | line 43 B,FFXP -- FFXP at 220560.00, CONFIRMING the 220560.10 taken from the volume OCR; printed p.174 defines it ("printed name F FXP").  THE -1 MANUAL PUTS "*SCBTT" IN THIS SLOT, so the listing and the manual differ here and the listing wins for the listing
+!CHECK 220770.00 | 220502.10 00 | line 44 B,TSTLR -- TSTLR at 220502.00, CONFIRMING the 220502.10 taken from the volume OCR; printed p.172's own deck quotes this very row as an independent reading of its origin word.  Manual $STLR 37.0
+!CHECK 220770.40 | 220523.50 00 | line 45 B,TFCHLR -- TFCHLR at 220523.40, CONFIRMING the 220523.50 taken from the volume OCR; printed p.173 defines it.  Manual $FELR 37.32, the last entry this build's KPLUG1 table reaches
+!CHECK 220771.00 | 000020.47 04 | line 46 KCOP KVI,3,16.32 -- the bound 16.32 is 0o20 words plus 0o40 bits, .47 being 0o40 OR 2J+1 = 7 for J=3; the same instruction as line 31 with a different datum, so the pair is each other's control.  Card LA000101, shared with line 47.  CARRIES A LOCATION-COLUMN ASTERISK.  printed p.177 line 43 branches here and prints 220771.32 40, bit 32 CLEAR, an independent reading of this label from another page
+!CHECK 220771.40 | 215630.73 42 | line 47 BXH,MOPCI -- bit-identical to line 32; see that row.  Card LA000101, shared with line 46, and this is the BRANCH half of the pair, which is the sixth instance of printed p.172's repeated-serial observation
+!CHECK 220772.00 | 777764.54 03 | line 48 BR,-11.32($3) -- -(11*64+32) bits is 2^24-736, word 0o777764 bit 0o40, plus BR's 0o14 giving 0o54.  The next half word is 220772.40, so $3 = 11.32 lands on line 49 and $3 = 16.32 on 220777.40, which is printed p.179's third row.  This row is where the sign, the decimal word part AND the decimal bit part are all checked at once
+!CHECK 220772.40 | 220743.10 00 | line 49 B,KOPOK -- this page's own line 2, 220743.00, bit 32 clear.  >>> ONE OF THE THREE IDENTICAL CARDS (49, 50, 52) THAT SETTLE THE NAME: in the FOURTH character position line 50 prints a closed O and this row prints it open, same drum, same column, same instruction
+!CHECK 220773.00 | 220743.10 00 | line 50 B,KOPOK -- bit-identical to line 49; the row whose fourth glyph is CLOSED
+!CHECK 220773.40 | 220727.50 00 | line 51 B,KNI+1.0 -- KNI at 220726.40 plus one word is 220727.40, printing 0o40 OR 0o10.  KNI is defined on printed p.177 line 42 and printed p.167's deck already SYNs it at 220726.40, so this row corroborates a value it does not establish
+!CHECK 220774.00 | 220743.10 00 | line 52 B,KOPOK -- bit-identical to lines 49 and 50, the third of the three
+!CHECK 220774.40 | 215630.50 00 | line 53 B,MOPCI -- MOPCI at 215630.40; bit-identical to line 12, which prints the name with blanks.  On this row the name prints its SECOND glyph as an open O and its FOURTH as a genuine C, which is the workflow's "ink varies per CHARACTER, not per row" inside one five-letter name
+!CHECK 220775.00 | 220325.10 00 | line 54 B,RHD -- RHD at 220325.00, printed p.167's definition; manual $HD 14.0, the first of the asterisked density/mode entries KCOP serves
+!CHECK 220775.40 | 220326.10 00 | line 55 B,RLD -- RLD at 220326.00, one word past RHD, printed p.167's definition; manual $LD 14.32
+!CHECK 220776.00 | 220334.50 00 | line 56 B,REVEN -- REVEN at 220334.40, printed p.167's definition; manual $EVEN 15.0.  A HALF WORD, so THE COUNTER LEAVES THIS PAGE AT 220776.40, which is where printed p.179's "B,RODD" must print

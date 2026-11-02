@@ -1,0 +1,410 @@
+! mcp_bootstrap_p173.strap -- FETCH LOWER REGISTERS: T FCHLR and the
+! bound check T CHEK1 / T MCHEK, the two error exits T MER1 and
+! T MER2, and the save word T MSVIN.  MCP printed page 173.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.180.  The page's own header was
+! READ and not assumed: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID KD000001   DIST. OF 3/01   3/01   PAGE NUMBER  173".
+!
+! >>> THE COLUMN-HEADING ROW'S OWN "LOCATION" FIELD IS BLANK. <<<
+! Rendered at 800 dpi over the right-hand end of the heading row:
+! the word "LOCATION" is printed and NO DIGITS FOLLOW IT.  That is
+! what docs/transcription_workflow.md predicts -- the field is LINE
+! 1'S location, and line 1 here is a comment-card banner that
+! compiles nothing.  A blank is NOT a zero; nothing was read off the
+! dashed rule.  So this page has no independent witness to its
+! origin word from its own heading, AND IT PRINTS NO "SLC" EITHER.
+! The origin below is therefore ASSERTED, and the next block says
+! what it is asserted from.
+!
+! ---------------------------------------------------------------
+! THE SPAN, AND WHY IT IS NOT THE SURVEY'S
+! ---------------------------------------------------------------
+! The survey read 28 rows and gave the endpoints as "220823.40" and
+! "220546.06".  BOTH ARE GARBAGE and both are visibly so:
+! "220823.40" has an 8 in an octal field, and "220546.06" is out of
+! order against it.  Neither was used.  Established instead from
+! this page's own ink:
+!
+!   THIRTY-SIX PRINTED LINES, counted off the CARD-SERIAL column
+!   (KD000001 .. KD000033 -- see the duplicate-serial note below),
+!   not off the survey.  Nothing fell off either end: line 1 is the
+!   first line of the banner and line 36 is followed by blank paper
+!   to the foot of the form.
+!
+!   Lines 1-3   comment-card banner, no location, compiles nothing.
+!   Lines 4-34  thirty-one instructions, 220523.40 .. 220544.40.
+!   Lines 35-36 two DRZ reservations, 220545.00 and 220546.00.
+!
+! THE PAGE IS CONTIGUOUS.  Every one of the 32 located rows advances
+! the counter by exactly its own size -- twenty-seven half words,
+! four full words, and the two reservations -- with no hole, no
+! forward SLC and no backward SLC.  That chain is what establishes
+! the span; the endpoints are not read in isolation.
+!
+! FIRST LOCATION  220523.40   (line 4, T FCHLR)
+! LAST  LOCATION  220546.00   (line 36, the 10-word DRZ)
+! THE COUNTER LEAVES THIS PAGE AT 220560.00: line 36 reserves 0o12
+! = 10 words from 220546.00, so 220546.00 .. 220557.00 inclusive.
+!
+! >>> AND THAT IS NOT A HOLE IN THE MERGED IMAGE. <<<  Both rows are
+! DRZ, not DR, so eleven words of ZEROS are planted at 220545.00 ..
+! 220557.00.  Measured through strap_asm with everything else fixed:
+! "DRZ(BU),10" deposits ten zero words and reserves none, exactly as
+! the landed "DRZ(BU,64),(10)" spelling does, while "DR(BU),10"
+! reserves ten and deposits none.  The printed form needed no
+! substitution.
+!
+! LINE 36'S OWN PRINTED LOCATION IS THE CHECK ON LINE 35'S COUNT.
+! Neither reservation gets a !CHECK (the house convention), so the
+! only thing that tests line 35's "1" is that line 36 prints
+! 220546.00 -- and the assembled deck puts it there.  Nothing tests
+! line 36's count of 10 until printed p.174 lands; its printed
+! reservation word 000012.00 is 0o12 = 10 and that is all there is.
+!
+! >>> THE BACKWARD JOIN IS READ OFF p.172's OWN INK. <<<  PDF p.179
+! was rendered here at 400 dpi: printed p.172's LAST line, line 30,
+! is "220523.00   216242.10 00   B,KSUPP".  A plain B is a HALF
+! WORD, so the counter leaves printed p.172 at 220523.40, which is
+! this page's line 4 exactly.  That is a reading of the neighbour's
+! ink, not of this page's, and not of any OCR.
+!
+! A SECOND, WEAKER WITNESS, LABELLED AS SUCH: the volume OCR
+! docs/ocr/MCP_Mar63_001-249.txt carries, at 220770.40 on a later
+! page, "220523.50 00  B,TFCHLR" -- target+.10 on 220523.40, which
+! is this page's first location.  IT IS OCR AND THAT PAGE WAS NOT
+! RENDERED HERE, so it corroborates and does not establish.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! T FCHLR is the MIRROR of printed p.172's T STLER ("STORE LOWER
+! REGISTERS"): p.172 saves the lower index registers into the PP
+! buffer, this page fetches them back out.  The two routines share
+! their prologue card for card, and that is the most useful thing
+! about this page as evidence -- six of its words are printed a
+! second time on p.172, off a different impression of the same
+! drum, and are therefore genuine independent readings:
+!
+!   p.173 line  4/6  000000.45 05   V+I,$2,.32     = p.172 line  6
+!   p.173 line  8    215246.00 80 000021.04 A0     = p.172 line 10
+!   p.173 line  9    220526.43 B0   LVE,$1,$       = p.172 line 11
+!   p.173 line 12    220541.40 80   SIC,TMCHEK     = p.172 line 14
+!   p.173 line 13    220536.50 00   B,TCHEK1       = p.172 line 15
+!   p.173 line 23    220542.32 42   BXL,TMER1      = p.172 line 20
+!   p.173 line 26    220542.32 40   BZXL,TMER1     = p.172 line 18
+!
+! The last four of those also pin FOUR OF THIS PAGE'S OWN LABELS
+! from outside it: p.172 branches to T MCHEK (220541.40), T CHEK1
+! (220536.40) and T MER1 (220542.00) and loads T MSVIN (220545.00).
+! So this page's internal symbol table is corroborated by a page
+! nobody here transcribed.
+!
+!   lines  4-8   entry.  V+I/SVA twice: the return address is filed
+!                in S TIC and the buffer address in the page's own
+!                T FSET, which line 9 then executes.  Line 8's TI
+!                restores the indexes from S TLR+14.
+!   line   9     T FSET, the card line 5 patched.
+!   lines 10-11  BUSAZ/BADZ, the PP-interrupt catchers (the same
+!                pair p.172 prints at its lines 12-13).
+!   lines 12-13  SIC + B,T CHEK1 -- the bound check, with the
+!                return planted in T MCHEK by the SIC.
+!   lines 14-21  the fetch proper: a 30-word transmit out of
+!                S LR PP, then S BAPP and S PROGS into the buffer,
+!                then B,K SUPP.
+!   lines 22-28  T CHEK1, the bound check itself: KV against S TLR
+!                and S TLR+.32, BXL/BZXL to T MER1 on either side,
+!                and T MCHEK's "B,$" which the SIC overwrites.
+!   lines 29-34  T MER1 and T MER2, two error exits, each
+!                LVI,$14,<code> then SIC,S DISIC then B,S DISP.
+!   lines 35-36  T MSVIN, one word, and ten more words of
+!                debugging storage.
+!
+! ---------------------------------------------------------------
+! WHAT THIS PAGE IS THE AUTHORITY FOR
+! ---------------------------------------------------------------
+! T MSVIN IS DEFINED HERE AND NOWHERE ELSE, as "DRZ(BU),1" -- a dds
+! with a MODE AND NO LENGTH, and a BARE, UNPARENTHESISED count.
+! printed p.172 REFERENCES it as "LF(BU,1),TMSVIN+.4" and
+! "LF(BU,1),TMSVIN+.18", carrying its own (BU,1); p.172's
+! transcriber must NOT SYN it with a (BU,1) of its own, because
+! this card is the defining one and it writes no length.
+!
+! ---------------------------------------------------------------
+! THE CARD-SERIAL COLUMN, AND A HYPOTHESIS ABOUT SIC
+! ---------------------------------------------------------------
+! The card serial (far right, "KD000001") runs 1..33 over 36 printed
+! lines.  THREE SERIALS ARE PRINTED TWICE, and the pairs are:
+!
+!   KD000012  lines 12,13   SIC,TMCHEK  /  B,TCHEK1
+!   KD000029  lines 30,31   SIC,SDISIC  /  B,SDISP
+!   KD000031  lines 33,34   SIC,SDISIC  /  B,SDISP
+!
+! Read at 600 dpi with the LINE-number column and the serial column
+! montaged side by side, so the alignment is not inferred.
+!
+! HYPOTHESIS, NOT A FINDING: a SIC and the half-word branch that
+! C22-6531 requires after it are punched on ONE CARD.  On this page
+! it is 3 for 3 BOTH WAYS -- every shared serial is a SIC pair and
+! every SIC is in a shared serial.  THE OBSERVATION THAT WOULD KILL
+! IT is already in the corpus and belongs to someone else's page:
+! printed p.131 line 48 is an ORPHANED "Y FX AD SIC,Y PREL" whose
+! branch is printed p.132 line 1.  If those two carry DIFFERENT card
+! serials, a SIC pair is not one card and this dies.  Whoever next
+! opens p.131/p.132 should read that column.
+!
+! (If it holds, it also explains why real STRAP never saw a page
+! break between a SIC and its branch: there was no card boundary
+! there to break at.)
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK -- RECORDED, NOT EXPLAINED
+! ---------------------------------------------------------------
+! Every LINE NUMBER carries an asterisk ("1*" .. "36*"); that is the
+! ordinary column.  THREE rows carry a SECOND asterisk after the
+! LOCATION value:
+!
+!   line 13   220530.40 *   B,TCHEK1
+!   line 33   220544.00 *   SIC,SDISIC
+!   line 35   220545.00 *   TMSVIN DRZ(BU),1
+!
+! NO RULE IS PROPOSED.  Two of docs/listing_typography.md 12's dead
+! candidates get a fresh, unusually clean refutation here, because
+! this page has three shared-serial card pairs on one drum:
+!
+!   "the second statement punched on one card" -- line 13 IS the
+!   second statement of card KD000012 and IS marked; lines 31 and 34
+!   are the second statements of KD000029 and KD000031 and are NOT.
+!   It is lines 31 and 34 that do the refuting -- line 13 is
+!   CONSISTENT with the dead candidate and proves nothing.  What
+!   makes this cleaner than printed p.152's refutation is that all
+!   three pairs are on ONE page off ONE impression, so no
+!   cross-page variable is in play.
+!
+!   "a fixed pitch down the form" -- the marks sit at lines 13, 33
+!   and 35 of a 36-line page: pitches of 20 and 2.  printed p.150
+!   had already killed this with 19 and 5.
+!
+! Whatever it is, it changed no bit here: all three marked rows are
+! in the checked set below and all three match character for
+! character.
+!
+! ---------------------------------------------------------------
+! GLYPHS SETTLED, AND HOW
+! ---------------------------------------------------------------
+! * line 6's byte prints "C5" and line 4's prints "05".  THE SAME
+!   STATEMENT TWICE ON ONE PAGE (rung 4): both are "V+I,$2,.32",
+!   both print the first half word 000000.45, the byte is in the
+!   same character position.  It is 05, and line 6's C is this
+!   drum's damaged 0.  printed p.172 line 6 prints the identical
+!   word a third time.
+! * line 7's octal field prints ".C5" -- a C cannot occur in an
+!   octal field (rung 5), so it is .05, which is also 2J+1 for J=2.
+!   The same row's byte prints a clean closed D.  INK VARIES PER
+!   CHARACTER: this row drops it in the octal field and not in the
+!   byte.
+! * line 9's byte is B0 AND NOT 80.  The glyph has a straight
+!   vertical left stem with two bowls; a worn drum LOSES that stroke
+!   and turns B into 8, never the reverse, so an observed stem is
+!   safe.  Corroborated off four other pages, filenames checked and
+!   not inferred -- decks/mcp_bootstrap_p145.strap line 11
+!   "J SITF LVE,$1,$" -> 217352.43 B0 is the SAME STATEMENT with the
+!   SAME .43, and p149 line 26 "LVE,$1,$" -> 217474.03 B0, p118
+!   line 20 "M ED 2A LVE,$0,$" -> 215543.01 B0, p119 line 27
+!   "M PR 5A LVE,$0,$" -> 215612.41 B0.  decks/mcp_bootstrap_p159
+!   line 8 records the trap in so many words: "B0 read at 900 dpi;
+!   at 400 dpi it reads 80".  THE ASSEMBLER AGREES, but that is not
+!   what settled it -- the ink and the four other pages are.
+! * line 29's first half word prints "C1CC11.35" and its byte "C1";
+!   line 32's print "001012.35" and "01" with closed zeros.  Lines
+!   29 and 32 are the same operation (LVI,$14,<external>) one row
+!   apart, so line 29 is 010011.35 01.  Independently: printed
+!   p.107 line 14 DEFINES S FORBD as SYN,(16)1009.0 = 0o010011 and
+!   line 25 defines S ERCOD as SYN,(16)020A.0 = 0o001012, which is
+!   the typeset-manual-grade check on both addresses and on the
+!   final D of S FORBD.
+! * DRZ, NOT DR, on lines 35 and 36.  Read off the ink at 1800 dpi
+!   -- the Z is unmistakable on both -- because the oracle cannot
+!   see it: a reservation prints its COUNT and DR and DRZ print the
+!   same thing.  NO !CHECK IS WRITTEN FOR EITHER ROW, which is the
+!   house convention for a reservation (pp.84, 109, 114, 136).
+! * line 36's count prints "1C".  The field is a decimal count, a C
+!   cannot occur in it, and the printed reservation 000012.00 is
+!   0o12 = 10.  It is 10.
+!
+! ---------------------------------------------------------------
+! WHAT IS ASSERTED RATHER THAN READ
+! ---------------------------------------------------------------
+! 1. THE SLC BELOW IS NOT PRINTED ON THIS PAGE.  The page prints no
+!    SLC at all, so there is no "SLC,$" row whose printed LOCATION
+!    would be a free reading of the arriving counter.  The origin
+!    220523.40 is asserted from p.172's rendered line 30.  A hard
+!    SLC cannot disagree with the counter (workflow, "WHAT THE
+!    ORACLE CANNOT SEE" 2), so no !CHECK here can test it.
+! 2. Every external is SYNned at its printed half word and its BIT
+!    OFFSET IS UNOBSERVABLE below bit 32 (same note, item 1).  The
+!    spellings and values below are the majority form already
+!    carried by the landed decks, not new readings.
+!
+! ---------------------------------------------------------------
+
+! -- externals, written as the landed decks write them ------------
+STIC    SYN, (8)215265.0              ! 26 decks; p.116 line 16 defines it
+STLR    SYN, (8)215230.0              ! 20 decks; p.116 !SYM
+SLRPP   SYN, (8)215266.0              ! 6 decks; p.116 line 18 defines it
+SBAPP   SYN, (8)215005.0              ! p.103 line 35 "S BAPP VF,0"
+SPROGS  SYN, (8)215021.0              ! 7 decks; p.109/117/118 SYN
+KSUPP   SYN, (8)216242.0              ! 24 decks; p.128 defines it
+SFORBD  SYN, (8)010011.0              ! stand-in for p.107 line 14's
+                                      ! "SYN,(16)1009.0" -- same word
+SERCOD  SYN, (8)001012.0              ! stand-in for p.107 line 25's
+                                      ! "SYN,(16)020A.0" -- same word
+SDISIC  SYN, (8)217451.40             ! 8 decks; p.103 line 289
+SDISP   SYN, (8)217372.0              ! 7 decks
+
+! -- NOT PRINTED ON THIS PAGE.  See "WHAT IS ASSERTED" 1 above. ---
+        SLC, (8)220523.40
+
+! lines 1-3: a three-card comment banner, "-----...-----" /
+! "---------FETCH LOWER REGISTERS---------" / "-----...-----".
+! No location, no binary, compiles nothing.
+
+TFCHLR  V+I,$2,.32                   ! line  4  -GET TO ADDRESS OF BUFFER
+        SVA,$2,TFSET                 ! line  5
+        V+I,$2,.32                   ! line  6
+        SVA,$2,STIC                  ! line  7  -RETURN ADDRESS
+        TI,2,STLR+14.0,$1            ! line  8  -RESTORE INDEXES
+TFSET   LVE,$1,$                     ! line  9  -PICK UP BUFFER ADDRESS
+        BUSAZ,$+.32                  ! line 10  -PP CATCHES THESE INTERRUPTS
+        BADZ,$+.32                   ! line 11
+        SIC,TMCHEK                   ! line 12
+        B,TCHEK1                     ! line 13  (second asterisk) -CHECK BOUNDS ON PP BUFFER
+        LCI,$1,30.0                  ! line 14
+        T,$1,SLRPP,1.($1)            ! line 15  -FETCH LOWER REGISTERS
+        L(BU,32),SBAPP               ! line 16
+        ST(BU,32),30.32($1)          ! line 17  -PP GETS SBAPP IN BUFFER + 30.32
+        LX,$2,SPROGS                 ! line 18
+        LV,$2,0($2)                  ! line 19  -CONVERSION OF FAT TO IOD NO.
+        SX,$2,0($1)                  ! line 20  -PP GETS SPROGS IN FIRST WORD OF BUF
+        B,KSUPP                      ! line 21
+TCHEK1  KV,$1,STLR+.32               ! line 22  -CHECK LOWER BOUND
+        BXL,TMER1                    ! line 23  -ERROR
+        V+I,$1,30.0                  ! line 24  -BUFFER 31 WORDS LONG
+        KV,$1,STLR                   ! line 25  -CHECK UPPER BOUND
+        BZXL,TMER1                   ! line 26  -ERROR
+        V-I,$1,30.0                  ! line 27
+TMCHEK  B,$                          ! line 28
+TMER1   LVI,$14,SFORBD               ! line 29
+        SIC,SDISIC                   ! line 30
+        B,SDISP                      ! line 31
+TMER2   LVI,$14,SERCOD               ! line 32  -ERROR ROUTINE
+        SIC,SDISIC                   ! line 33  (second asterisk)
+        B,SDISP                      ! line 34
+TMSVIN  DRZ(BU),1                    ! line 35  (second asterisk)
+        DRZ(BU),10                   ! line 36  -FOR DEBUGGING PURPOSES ONLY
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, transcribed.  Columns: line, LOCATION,
+! BINARY OUTPUT, NAME, STATEMENT, comment.  A "*" after the
+! location is the unexplained second asterisk.
+! ---------------------------------------------------------------
+!    1*                                                          ------------------------------------------
+!    2*                                             ------------------FETCH LOWER REGISTERS----------------
+!    3*                                                          ------------------------------------------
+!    4*  220523.40    000000.45 05                  TFCHLR  V+I,$2,.32            - GET TO ADDRESS OF BUFFER
+!    5*  220524.00    220526.45 D0                          SVA,$2,TFSET
+!    6*  220524.40    000000.45 05                          V+I,$2,.32
+!    7*  220525.00    215265.05 D0                          SVA,$2,STIC           - RETURN ADDRESS
+!    8*  220525.40    215246.00 80  000021.04 A0            TI,2,STLR+14.0,$1     - RESTORE INDEXES
+!    9*  220526.40    220526.43 B0                  TFSET   LVE,$1,$              - PICK UP BUFFER ADDRESS
+!   10*  220527.00    220527.50 C6                          BUSAZ,$+.32           - PP CATCHES THESE INTERRUPTS
+!   11*  220527.40    220530.10 46                          BADZ,$+.32
+!   12*  220530.00    220541.40 80                          SIC,TMCHEK
+!   13*  220530.40 *  220536.50 00                          B,TCHEK1              - CHECK BOUNDS ON PP BUFFER
+!   14*  220531.00    000036.03 02                          LCI,$1,30.0
+!   15*  220531.40    215266.00 80  000001.02 21            T,$1,SLRPP,1.($1)     - FETCH LOWER REGISTERS
+!   16*  220532.40    215005.00 80  040000.20 50            L(BU,32),SBAPP
+!   17*  220533.40    000036.40 81  040000.20 D0            ST(BU,32),30.32($1)   - PP GETS SBAPP IN BUFFER + 30.32
+!   18*  220534.40    215021.04 10                          LX,$2,SPROGS
+!   19*  220535.00    000000.04 32                          LV,$2,0($2)           - CONVERSION OF FAT TO IOD NO.
+!   20*  220535.40    000000.05 11                          SX,$2,0($1)           - PP GETS SPROGS IN FIRST WORD OF BUF
+!   21*  220536.00    216242.10 00                          B,KSUPP
+!   22*  220536.40    215230.42 90                  TCHEK1  KV,$1,STLR+.32        - CHECK LOWER BOUND
+!   23*  220537.00    220542.32 42                          BXL,TMER1             - ERROR
+!   24*  220537.40    000036.03 05                          V+I,$1,30.0           - BUFFER 31 WORDS LONG
+!   25*  220540.00    215230.02 90                          KV,$1,STLR            -  CHECK UPPER BOUND
+!   26*  220540.40    220542.32 40                          BZXL,TMER1            - ERROR
+!   27*  220541.00    000036.03 0D                          V-I,$1,30.0
+!   28*  220541.40    220541.50 00                  TMCHEK  B,$
+!   29*  220542.00    010011.35 01                  TMER1   LVI,$14,SFORBD
+!   30*  220542.40    217451.40 80                          SIC,SDISIC
+!   31*  220543.00    217372.10 00                          B,SDISP
+!   32*  220543.40    001012.35 01                  TMER2   LVI,$14,SERCOD        - ERROR ROUTINE
+!   33*  220544.00 *  217451.40 80                          SIC,SDISIC
+!   34*  220544.40    217372.10 00                          B,SDISP
+!   35*  220545.00 *  000001.00                     TMSVIN  DRZ(BU),1
+!   36*  220546.00    000012.00                             DRZ(BU),10            - FOR DEBUGGING PURPOSES ONLY
+!
+! Lines 35 and 36 print their RESERVATION COUNT, not storage, so
+! they get no !CHECK -- see "GLYPHS SETTLED" above.  What stands in
+! for line 35's check is line 36's printed LOCATION; see "THE SPAN".
+!
+! ---------------------------------------------------------------
+! A DEFECT IN docs/transcription_workflow.md's OWN STEP 3b RECIPE
+! ---------------------------------------------------------------
+! The recipe's row regex is
+!     r'!\s+\d+\*?\s+([0-7]{6}\.[0-7]{2})\s+(.*)'
+! which allows the asterisk after the LINE NUMBER but NOT the
+! second asterisk after the LOCATION.  Every marked row therefore
+! captures a leading "* " into group 2 and is reported as a
+! MISMATCH that is not one.  Measured, running the recipe verbatim:
+!
+!   this deck                      2 bogus mismatches (lines 13, 33)
+!   decks/mcp_bootstrap_p153       2 bogus (217643.00, 217656.40)
+!   decks/mcp_bootstrap_p154       1 bogus (217672.00)
+!   decks/mcp_bootstrap_p150       0 rows matched at all
+!
+! The fix is one character class: "...([0-7]{2})\s+\*?\s*(.*)".
+! Run with that, this deck is 33 listing rows, 31 compared, 0
+! mismatches -- 31 being lines 4-34, the two DRZ rows carrying no
+! !CHECK by convention.
+
+!SYM TFCHLR 220523.40
+!SYM TFSET  220526.40
+!SYM TCHEK1 220536.40
+!SYM TMCHEK 220541.40
+!SYM TMER1  220542.00
+!SYM TMER2  220543.40
+!SYM TMSVIN 220545.00
+
+!CHECK 220523.40 | 000000.45 05 | line 4 TFCHLR V+I,$2,.32 -- ".32" is DECIMAL and prints as 0o40, plus 2J+1 = 5 for J=2; the same word is printed again on line 6 and a third time on printed p.172 line 6
+!CHECK 220524.00 | 220526.45 D0 | line 5 SVA,$2,TFSET -- TFSET is this page's own line 9 at 220526.40, so 0o40 OR 0o05 = 0o45; this row checks a LOCAL symbol to the BIT
+!CHECK 220524.40 | 000000.45 05 | line 6 V+I,$2,.32 -- the page prints the byte "C5" here and "05" on line 4 for the SAME statement in the SAME character position; dropout opens a 0, it never closes a C
+!CHECK 220525.00 | 215265.05 D0 | line 7 SVA,$2,STIC -- .05 is 2J+1 for J=2 and no part of S TIC's offset, so S TIC is checked to the HALF WORD only; the page prints this field ".C5", an impossible octal C
+!CHECK 220525.40 | 215246.00 80 000021.04 A0 | line 8 TI,2,STLR+14.0,$1 -- S TLR+14.0 is 0o215230 + 0o16 = 0o215246, a real arithmetic check on S TLR's word; the second half word 000021 is index register $1's own storage word (0o21 = 17); printed p.172 line 10 prints this word identically
+!CHECK 220526.40 | 220526.43 B0 | line 9 TFSET LVE,$1,$ -- $ is this row, so the address is a check of the counter itself; 0o40 OR 0o03 = 0o43 is 2J+1 for J=1. THE BYTE IS B0 AND NOT 80: the glyph carries B's straight left stem, which a worn drum removes and never adds, and pp.139 and 141 print B0 for the same statement
+!CHECK 220527.00 | 220527.50 C6 | line 10 BUSAZ,$+.32 -- the target is $+.32 = 220527.40 printing 0o50; byte C6 is BUSAZ, the value printed p.145 measures against BUSA's C2, so the C here is a real C and not this page's damaged 0
+!CHECK 220527.40 | 220530.10 46 | line 11 BADZ,$+.32 -- target 220530.00, and 46 is BADZ against BAD's 42 (same measurement)
+!CHECK 220530.00 | 220541.40 80 | line 12 SIC,TMCHEK -- a SIC prints its operand address unshifted, and T MCHEK is this page's own line 28; printed p.172 line 14 prints the identical word
+!CHECK 220530.40 | 220536.50 00 | line 13 B,TCHEK1 -- T CHEK1 is this page's own line 22 at 220536.40, so 0o40 OR 0o10 = 0o50 and BIT 32 IS CHECKED; printed p.172 line 15 prints the identical word. This LOCATION carries the unexplained second asterisk
+!CHECK 220531.00 | 000036.03 02 | line 14 LCI,$1,30.0 -- 30 DECIMAL is 0o36 in the address field; .03 is 2J+1 for J=1; byte 02 against line 24's 05 for V+I in the same address field, one page, two operations
+!CHECK 220531.40 | 215266.00 80 000001.02 21 | line 15 T,$1,SLRPP,1.($1) -- S LR PP is checked to the HALF WORD; the second half word's 000001 is the literal 1.0 and .02 is 2J for J=1; byte 21's low nibble is index $1
+!CHECK 220532.40 | 215005.00 80 040000.20 50 | line 16 L(BU,32),SBAPP -- 0o040 in the second word is the dds length 32; S BAPP to the half word
+!CHECK 220533.40 | 000036.40 81 040000.20 D0 | line 17 ST(BU,32),30.32($1) -- 30.32 is word 0o36 bit 0o40, pinned to the BIT because it is a literal; 81 is index $1; the second half word is bit-identical to line 16's, which is the STORE against the LOAD on one page
+!CHECK 220534.40 | 215021.04 10 | line 18 LX,$2,SPROGS -- .04 is 2J for J=2, so S PROGS is checked to the HALF WORD only
+!CHECK 220535.00 | 000000.04 32 | line 19 LV,$2,0($2) -- byte 32's low nibble is index $2; the address is a literal 0
+!CHECK 220535.40 | 000000.05 11 | line 20 SX,$2,0($1) -- .05 is 2J+1 for J=2; byte 11's low nibble is index $1, and the pair with line 19 is two indexes one row apart
+!CHECK 220536.00 | 216242.10 00 | line 21 B,KSUPP -- target+.10 on K SUPP's 216242.00, the word twenty-four landed decks carry; printed p.172's line 30 prints it too, which is the row that gives this page its origin
+!CHECK 220536.40 | 215230.42 90 | line 22 TCHEK1 KV,$1,STLR+.32 -- S TLR+.32 DECIMAL is 215230.40, plus 2J = 2 for J=1, giving 0o42; had the .32 been read octal this row would fail
+!CHECK 220537.00 | 220542.32 42 | line 23 BXL,TMER1 -- T MER1 is this page's own line 29 at 220542.00 and 0o32 is the XL indicator; byte 42 is BXL against line 26's BZXL 40, THREE ROWS APART, which is what settles both; printed p.172 line 20 prints the identical word
+!CHECK 220537.40 | 000036.03 05 | line 24 V+I,$1,30.0 -- the same address field as line 14 with the other operation, so the two bytes 02 and 05 are each other's control
+!CHECK 220540.00 | 215230.02 90 | line 25 KV,$1,STLR -- the same KV as line 22 with the offset removed, so the pair is a bit-level reading of what the "+.32" contributes
+!CHECK 220540.40 | 220542.32 40 | line 26 BZXL,TMER1 -- same target as line 23; printed p.172 line 18 prints the identical word
+!CHECK 220541.00 | 000036.03 0D | line 27 V-I,$1,30.0 -- byte 0D is V-I against line 24's V+I 05 in the same address field; printed p.168 line 6 prints 0D for V-I as well
+!CHECK 220541.40 | 220541.50 00 | line 28 TMCHEK B,$ -- $ is this row, so 0o40 OR 0o10 = 0o50; the word line 12's SIC overwrites at run time
+!CHECK 220542.00 | 010011.35 01 | line 29 TMER1 LVI,$14,SFORBD -- .35 is 2J+1 = 29 for J=14, the operation bits, so S FORBD is pinned to the HALF WORD only; the page prints "C1CC11.35 C1" and every C is a 0 -- C is impossible in the octal field, and line 32 three rows down prints the identical byte closed
+!CHECK 220542.40 | 217451.40 80 | line 30 SIC,SDISIC -- S DISIC's .40 IS visible, bit 32 being printed; eight landed decks carry this word
+!CHECK 220543.00 | 217372.10 00 | line 31 B,SDISP -- target+.10 on S DISP's 217372.00
+!CHECK 220543.40 | 001012.35 01 | line 32 TMER2 LVI,$14,SERCOD -- the same .35 as line 29; S ERCOD to the half word
+!CHECK 220544.00 | 217451.40 80 | line 33 SIC,SDISIC -- bit-identical to line 30, printed twice on one page. This LOCATION carries the unexplained second asterisk
+!CHECK 220544.40 | 217372.10 00 | line 34 B,SDISP -- bit-identical to line 31, printed twice on one page. A HALF WORD, so the counter reaches 220545.00, which is where line 35's reservation starts

@@ -1,0 +1,499 @@
+! mcp_bootstrap_p169.strap -- CHANGE I-O TABLE OF EXITS, the whole
+! routine on one page: C CHEX, C CHEKT and C NX OUT, printed page 169.
+! docs/MCP_Mar63_001-249.pdf PDF p.176, header READ at 600 dpi and not
+! assumed: the top line prints "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID JB000001   DIST. OF 3/01   3/01   PAGE NUMBER  169".
+!
+! >>> THE COLUMN-HEADING ROW'S OWN "LOCATION" FIELD IS BLANK. <<<
+! Rendered at 600 dpi across the right-hand end of the form: the word
+! "LOCATION" is printed and NO DIGITS FOLLOW IT, only the dashed rule.
+! That is what docs/transcription_workflow.md predicts -- the field is
+! LINE 1'S location, and line 1 here is an asterisk banner that
+! compiles nothing.  A blank is NOT a zero; nothing was read off the
+! rule.  So this page has no independent witness to its origin word
+! except its own printed "SLC,$" on line 4.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! TWENTY PRINTED LINES, and then blank paper to the foot of the form.
+! Three asterisk-banner comment cards, one "SLC,$", and SIXTEEN
+! instructions -- THIRTEEN half words and THREE full words.  No DD,
+! no SYN, no VF, no reservation, no forward SLC: the page is
+! CONTIGUOUS from 220377.00 to 220410.40 with no hole of any kind.
+!
+!   lines 1-3    the banner.  Line 2 reads, character for character,
+!                "-********** CHANGE IO TABLE OF EXITS **********-"
+!                (ten asterisks each side).  Lines 1 and 3 are
+!                full-width asterisk rules, each with a lone "-" in
+!                the NAME column and the asterisk run starting at the
+!                STATEMENT column.
+!
+!   line 4       "SLC,$".  Its printed LOCATION, 220377.00, is the
+!                counter ARRIVING from printed p.168.  It is the only
+!                row on this page carrying a location-column asterisk.
+!
+!   lines 5-20   the routine.  C22-6728-1 printed p.205 ("Change I-O
+!                Table of Exits") describes it in typeset English,
+!                sentence by sentence, and the sentences land on the
+!                cards in order:
+!
+!                "This routine is entered at CCHEX (Figure 118) when
+!                 $CHEX is requested."
+!                   -> line 5's NAME is C CHEX.
+!                "The location of the new TOE is loaded into the CF
+!                 of $0."
+!                   -> line 10, "LC,0,$0" -- Load Count, and the
+!                      operand is literally index register $0 (word
+!                      0o20), which is why the row prints 000020.00.
+!                "If $AD or $USA occurred, dispatcher error control
+!                 (SDISP) is entered with error code 9 in $14."
+!                   -> lines 8-9 test exactly those two indicators,
+!                      BUSAZ then BADZ.  SEE THE OPEN QUESTION BELOW:
+!                      both branch to the NEXT half word, so the
+!                      error-9 exit the manual promises is not on
+!                      this page.
+!                "If PP boundaries are in effect (the boundary
+!                 control bit, 3.57=1), the new TOE address is
+!                 compared to see whether it is within the bounds,
+!                 and if not, dispatcher error control is entered
+!                 with type 11 error."
+!                   -> line 11 "BZB, S T LR + 0.57, C CHEKT" is the
+!                      boundary-control-bit test -- BIT 57, the
+!                      manual's own number -- and lines 12-15 are the
+!                      two-sided bounds compare (KC against S UPPER,
+!                      BZXL out; KC against S LOWER, BXL out).  The
+!                      type-11 exit is lines 18-20, and S NX OUT is
+!                      the constant printed p.107 line 16 defines
+!                      with the comment "-11 GOOF IN CHEX".
+!                "The new TOE is stored in the file area table"
+!                   -> line 16, "C CHEKT  SC,0, S TOE LO($13)", own
+!                      comment "-STORE IN FILE AREA TABLE", against
+!                      printed p.102 line 11's "-TABLE OF EXITS
+!                      LOCATION" for S TOE LO.
+!                "and return is made via KSUPP."
+!                   -> line 17, "B,K SUPP".
+!
+! ---------------------------------------------------------------
+! TWENTY LINES, AND NOTHING FELL OFF EITHER END -- THREE WAYS
+! ---------------------------------------------------------------
+! THE SURVEY SAID 12 ROWS, 220400.40..220410.60.  It is short by
+! eight, it lost the top of the page, and its last endpoint is not a
+! legal location.
+!
+!   * Its first location, 220400.40, is LINE 7.  Lines 1-6 fell off,
+!     including the "SLC,$" that is this page's only statement about
+!     its own origin AND including C CHEX's own label row.
+!   * Its last, "220410.60", is impossible NOT because 6 and 0 are
+!     not octal digits -- they are -- but because .60 IS NOT A HALF
+!     WORD BOUNDARY.  Every instruction on this page sits at .00 or
+!     .40.  The real last located row is 220410.00.
+!
+! Three independent ways of knowing the page is whole:
+!
+! (1) THE CARD-SERIAL COLUMN, read at 600 dpi.  It runs JB000001 on
+!     line 1 to JB000018 on line 20, unbroken, and the next printed
+!     thing below line 20 is blank form.  The header's own
+!     "CARD ID JB000001" names line 1's card, so the top of the page
+!     is pinned by IBM twice.  >>> JB IS A NEW PREFIX. <<<  printed
+!     p.168 ran JA000001-JA000035 and ended with its page, so this
+!     page opens a fresh card deck -- a second, independent reason
+!     nothing fell off the top.
+!
+!     >>> TWO SERIALS ARE PRINTED TWICE. <<<  JB000008 appears on
+!     lines 8 AND 9, and JB000018 on lines 19 AND 20.  Verified at
+!     600 dpi on both pairs; JB000009 and the end of the page follow
+!     normally, so neither is a dropped digit.  The 19/20 pair has a
+!     mechanism this repo already knows: C22-6531 printed p.41 makes
+!     SIC require an immediately following half-word branch, and
+!     strap_asm enforces it, so "SIC,S DISIC" and "B,S DISP" are one
+!     card by necessity.  THE 8/9 PAIR IS RECORDED AND NOTHING IS
+!     PROPOSED.  Note in particular that line 9's statement is
+!     INDENTED two characters and line 20's is NOT, so indentation is
+!     not a reliable marker of "second statement on the card".
+!
+! (2) THE LOCATION COLUMN CLOSES ON ITSELF.  Every one of the 16
+!     emitted statements' printed locations follows from the one
+!     above it by exactly the width of the instruction printed there
+!     -- 13 half words and 3 full words, no gap anywhere.
+!     13*32 + 3*64 = 608 bits = 9.5 words, and 220410.40 - 220377.00
+!     is 9 words plus 32 bits.  A dropped row would not balance.
+!
+! (3) THE LINE-NUMBER COLUMN runs 1..20 with no break, and line 20 is
+!     followed by the form's own ruling and nothing else.
+!
+! ---------------------------------------------------------------
+! THE BACKWARD JOIN -- CONFIRMED FROM THIS PAGE'S OWN INK
+! ---------------------------------------------------------------
+! printed p.168's deck predicted, before this page was opened, that
+!   * p.169's heading "LOCATION" field would be BLANK;
+!   * p.169's first located row would print 220377.00;
+!   * that row would be "SLC,$" and the row below it would be
+!     labelled C CHEX.
+!
+! >>> ALL THREE HOLD, read here independently at 600 and 800 dpi. <<<
+! Line 4 prints "220377.00  *  SLC,$" and line 5 prints
+! "220377.00  215246.00 80  000021.36 EC   C CHEX   SWAPI,15,S
+! TLR+14.,$1".  An SLC emits nothing, so IBM's own assembler is
+! stating that the counter arriving from printed p.168 is 220377.00,
+! which is exactly where p.168's line 37 ("B,K SUPP", a half word at
+! 220376.40) leaves it.  THE JOIN IS CLOSED.
+!
+! THE DECK CANNOT CHECK THAT, AND SAYS SO.  This deck writes a HARD
+! "SLC, (8)220377.00" where the page prints "SLC,$".  A hard SLC
+! OVERRIDES the arriving counter silently (workflow, "WHAT THE ORACLE
+! CANNOT SEE" item 2), so no !CHECK on this page can fail if the
+! origin is wrong.  The printed location is recorded here and in the
+! listing block, and the join above was compared BY HAND.
+!
+! ---------------------------------------------------------------
+! WHERE THE COUNTER LEAVES -- A FALSIFIABLE PREDICTION FOR p.170
+! ---------------------------------------------------------------
+! Line 20 is "B,S DISP" at 220410.00, a HALF WORD.
+! >>> THE COUNTER LEAVES THIS PAGE AT 220410.40. <<<
+!
+! So, as predictions that can be killed:
+!
+!   * printed p.170's first LOCATED row prints 220410.40, and if it
+!     prints "SLC,$" that location IS this page's exit, read off
+!     IBM's own assembler.
+!   * printed p.170's first card serial is JB000019 (this page ends
+!     at JB000018 and the JB deck is plainly not finished).
+!   * printed p.170 or p.171 DEFINES K IOD RN at 220706.40 -- this
+!     page's line 6 reads it to the half word (see the pin table
+!     below) and five words of this page's own code lie below it, so
+!     it is 190 words further on, well within the next two pages.
+!
+! If p.170 begins anywhere else, this deck is wrong and the place to
+! look is the THREE full words (lines 5, 7, 11) -- a full word misread
+! as a half word loses exactly 32 bits.
+!
+! ---------------------------------------------------------------
+! GLYPH CALLS, AND WHAT SETTLED EACH
+! ---------------------------------------------------------------
+! THIS PAGE DROPS INK ON ROUND GLYPHS CONSTANTLY.  The LOCATION
+! column alone prints "220377.CC" for 220377.00, "220400.CC",
+! "220402.4C", "220407.CC" and so on -- a C cannot occur in an octal
+! field, so every one of those is a 0 with certainty and the page is
+! demonstrably a heavy dropper.  Per the workflow that licenses
+! NOTHING by itself; each call below is settled on what PRODUCED the
+! glyph, or on a second printing of the same character.
+!
+! (1) LINE 5'S SECOND BYTE PRINTS "EC" AND IS "E0".  Settled by the
+!     strongest rung of the ladder -- THE SAME STATEMENT PRINTED
+!     TWICE ON ONE PAGE.  Lines 5 and 7 are the identical card
+!     "SWAPI,15,S TLR+14.,$1" (line 5 merely also carries the NAME
+!     C CHEX, which is not part of the compiled word), and they print
+!     the identical first word "215246.00 80".  At 1600 dpi line 5's
+!     byte is "EC", wide open on the right, and line 7's is "E0",
+!     shut.  One page, one drum, one instruction, the SAME CHARACTER
+!     POSITION: dropout opens a closed glyph and never closes an open
+!     one, so line 7's shut 0 is real and line 5's C is damaged.
+!     The assembler independently prints E0 for both.
+!     >>> printed p.168's deck, peeking at this page at 900 dpi,
+!     recorded line 5 as "E0".  That reading is RIGHT about the bits
+!     and WRONG about the ink: the glyph on line 5 is an open C. <<<
+!
+! (2) LINE 6'S FIRST BYTE IS "B0", NOT "80" -- READ OFF THE INK at
+!     1800 dpi.  This is the B/8 pair the workflow warns about, and
+!     the discriminator is decisive at that magnification: lines 5
+!     and 7, one row above and one below, print "80" with two round
+!     lobes, and line 6 prints a flat vertical left stem with squared
+!     corners.  Three glyphs, one crop, same drum.  The assembler
+!     agrees (LVE,0 -> B0), but the call was made on the ink first.
+!
+! (3) LINES 17 AND 20'S BYTES PRINT "C0" AND ARE "00".  Both are
+!     plain unconditional branches, and printed p.168 prints
+!     "B,K SUPP" TWICE as "216242.10 00" with a shut 0 -- a different
+!     page, the same instruction, the same target.  The first glyph
+!     of each byte here is open; the second is shut.  Settled on what
+!     produced it: a plain B has no index, so the low byte is 00.
+!
+! (4) LINES 13 AND 15 ARE "BZXL" AND "BXL", NOT BZXE/BXE, AND THE
+!     BYTE SAYS SO, NOT THE GLYPH.  Measured, everything else fixed:
+!
+!       BZXL,TGT  ->  220407.32 40        BXL,TGT  ->  220407.32 42
+!       BZXE,TGT  ->  220407.32 C0        BXE,TGT  ->  220407.32 C2
+!
+!     XL and XE share the printed .32 address bits ENTIRELY and
+!     differ only in the byte.  The page prints 40 and 42.  (This
+!     also retires a worry: printed p.168 line 28's "BZXE,K DIG"
+!     prints C0 and is consistent -- the two pages do not disagree.)
+!
+! (5) "S TOE LO" (line 16) and "C CHEKT" (lines 11, 16) and
+!     "C NX OUT" (lines 13, 15, 18) were rendered at 1800 dpi.  The
+!     E of CHEKT is a three-barred E, identical to the E of CHEX in
+!     the NAME column four rows above it; the O of TOE and of NX OUT
+!     is shut.  Two further witnesses, both OFF THIS PAGE:
+!       * C22-6728-1 and C22-6728 both print "CCHEX" in typeset, four
+!         times each, including the pseudo-op table line
+!         "$CHEX 12.0 CCHEX" and "This routine is entered at CCHEX";
+!       * printed p.102 line 11 prints S TOE LO's defining card with
+!         the comment "-TABLE OF EXITS LOCATION", and printed p.107
+!         line 16 prints S NX OUT's with "-11 GOOF IN CHEX".
+!     CCHEKT and CNXOUT are referenced by NO other deck in this repo
+!     and by no manual, so they rest on this page's ink alone; that
+!     is why they were taken to 1800 dpi.  The negative search was
+!     run rather than assumed: grepping BOTH volume OCRs for 220406
+!     and 220407 returns three lines and ALL THREE are p.169's own
+!     OCR (lines 8718-8720 of MCP_Mar63_001-249.txt), which is the
+!     same ink read by a worse reader and not a witness.  The one
+!     tempting hit elsewhere, "PRERD STC CHEKTO" at
+!     MCP_Mar63_250-445.txt line 3425, is a THIRD assembly (card
+!     prefix SB0001xx, addresses 0o234xxx) and its neighbours read
+!     "COB CHK PAROS" -- it is garble around a CHK PAR card, not a
+!     reference to C CHEKT.
+!
+! (6) "LC,C,$C" on line 10 is "LC,0,$0".  Both round glyphs are open.
+!     The middle one is an index-register NUMBER and can only be a
+!     digit; the last is settled twice over -- the row prints
+!     000020.00, which is word 0o20 = 16, which is index register $0,
+!     and C22-6728-1 printed p.205 says in typeset that this routine
+!     loads the new TOE location "into the CF of $0".
+!
+! (7) A RED HERRING, RECORDED SO THE NEXT READER DOES NOT CHASE IT.
+!     docs/ocr/MCP_Mar63_001-249.txt line 12954 (printed p.246-ish,
+!     at 227755.00) OCRs a card as "VF,CCHEX" printing "000014.00+".
+!     That is NOT this page's C CHEX at 220377.00.  0o14 = 12, and
+!     C22-6728-1's pseudo-op table reads "$CHEX 12.0 CCHEX" -- the
+!     card is "VF,$CHEX", with the "$" read as a "C".  Its neighbour
+!     two rows up is "VF,CBSFL" printing "000007.00+", the same
+!     shape.  No conflict with this page.
+!
+! ---------------------------------------------------------------
+! WHAT EACH EXTERNAL IS PINNED TO BY THIS PAGE -- MEASURED
+! ---------------------------------------------------------------
+! Every external below was varied, one at a time, and the page
+! reassembled, to see which printed rows move.  This is the workflow's
+! "AN EXTERNAL BACK-DERIVED FROM A BRANCH IS KNOWN ONLY TO THE HALF
+! WORD" done as a measurement instead of an assumption.
+!
+!   STLR     PINNED TO THE BIT.  Three rows move together on any
+!            change: lines 5 and 7 print 215246.00 (the address field
+!            carries the whole bit offset -- STLR+0.03 would print
+!            215246.03) and line 11 prints 215230.71.  So printed
+!            p.169 CORROBORATES printed p.116's own LOCATION column,
+!            which is where 215230.00 comes from, to the bit.  Six
+!            earlier decks carry "SYN, (8)215230.0" as a CONVENTION;
+!            on this page it is a reading.
+!   SDISIC   PINNED TO THE BIT by line 19.  SIC prints its operand's
+!            full bit offset: 217451.43 would print .43.  The page
+!            prints 217451.40, so all of it is read.
+!   SNXOUT   PINNED TO THE HALF WORD by line 18 (the word is read
+!            exactly -- 0101 hex -> 000401 octal -- and bit 32 shows,
+!            but bits 1-31 do not).
+!   SUPPER   HALF WORD only (line 12).  SLOWER likewise (line 14);
+!            the 0.32 between them IS visible, which is what makes
+!            the pair mutually checking.
+!   STOELO   HALF WORD only (line 16), and ITS DATA DESCRIPTION IS
+!            NOT VISIBLE HERE AT ALL -- (BU,18) vs (BU,17) assembles
+!            identically.  The dds is carried on printed p.102's
+!            authority, not read on this page.
+!   KSUPP    HALF WORD only (line 17).  SDISP likewise (line 20).
+!   KIODRN   HALF WORD only (line 6), AND THIS IS A REAL READING OF A
+!            PAGE NOBODY HAS TRANSCRIBED: if K IOD RN were 220706.00
+!            then "K IOD RN-.32" would print 220705.41, not
+!            220706.01.  printed pp.146 and 159 carry (8)220706.40;
+!            this page independently confirms the .40.
+!
+! AND THE MERGE WAS REHEARSED.  printed p.116 DEFINES S TLR with a
+! PLACE -- "STLR DRZ(BU,64), 29" -- so this deck must not copy that
+! card (workflow: a copied PLACE lands at the copying page's own
+! counter).  It writes a SYN stand-in instead.  Assembling this page
+! against p.116's real DRZ card, p.102's SYN(BU,18) and p.107's
+! SYN,(16)0101.0 reproduces all sixteen rows unchanged, so no dds or
+! value disagreement will surface when the page joins the body image.
+!
+! AND THE WHOLE MERGE WAS REHEARSED, not just the pairs.  The body
+! image was built over printed pp.99-169 (70 decks) with this page
+! added: 654 symbols defined, 63 external, 1736 words, origin
+! 0o215000, LAST WORD 0o220410 -- this page's own last row -- and
+! ZERO UNACCOUNTED WORDS.  So the edits this page needs are exactly
+! two, BOTH IN tests/check_mcp_body_image.py: "FIRST, LAST = 99, 168"
+! becomes 99, 169, and the body_page_count check 69 becomes 70.  Plus
+! one run_tests.sh registration line.
+!
+! >>> DO NOT TOUCH strap/mcp_image.py's MCP_IPL_PAGES. <<<  That list
+! is range(15, 100) and it is the IPL, a DIFFERENT ASSEMBLY from the
+! body -- check_mcp_body_image.py's own docstring records what
+! happens to anyone who extends it instead: "the merge refused at
+! once -- 'SMCP is defined twice: printed p.37 and printed p.103'".
+! docs/transcription_workflow.md step 4 still says "widen
+! MCP_IPL_PAGES", which was right when the range ended at p.98 and is
+! STALE for a body page.  (This deck cannot edit docs/.)
+!
+! ---------------------------------------------------------------
+! THE PRINTED SPELLING WAS HANDED TO strap_asm FIRST, AND HALF OF IT
+! IS REFUSED.  TWO ASSEMBLER GAPS, MEASURED
+! ---------------------------------------------------------------
+! Every landed deck writes MCP's blank-bearing names closed up and
+! asserts "STRAP ignores blanks inside a name" (C22-6531 printed
+! p.10).  That assertion is TRUE OF IBM'S ASSEMBLER -- these cards
+! are printed and they compiled -- and only PARTLY true of ours.
+! Measured on this page's own cards, varying nothing else:
+!
+!   B,K SUPP                 ->  216242.10 00   TAKEN
+!   KC, 0, S UPPER           ->  215230.01 90   TAKEN
+!   SC,0, S TOE LO($13)      ->  000002.01 5D   TAKEN
+!   LVI, 14, S NX OUT        ->  000401.35 01   TAKEN
+!   SIC,S DISIC              ->  217451.40 80   TAKEN
+!   BZXL, C NX OUT           ->  220407.32 40   TAKEN
+!
+!   SWAPI,15,S TLR+14.,$1    ->  REFUSED, "undefined symbol 'S'"
+!   BZB, S T LR + 0.57, ...  ->  REFUSED, "undefined symbol 'S'"
+!   LVE,0,K IOD RN-.32       ->  REFUSED, "undefined symbol 'K'"
+!   C CHEX  SWAPI,15,...     ->  REFUSED, "unknown mnemonic
+!                                 'CHEXSWAPI'"
+!
+! GAP A -- A BLANK IN A NAME INSIDE AN EXPRESSION.  A blank-bearing
+! name used BARE as an operand resolves correctly; the same name with
+! "+14." or "-.32" or "+0.57" after it does not, because the
+! expression scanner splits on the blank first.  printed p.138
+! already recorded this once (its line 25, "S CNS SG+1.0"); this page
+! adds three more cards and shows it is the EXPRESSION and not the
+! operand position that breaks it.
+!
+! GAP B -- A BLANK IN THE NAME (LABEL) FIELD.  "C CHEX" in column 1
+! makes the card parser run the name into the mnemonic.  I did not
+! find this one recorded anywhere in the repo.
+!
+! Both are labelled at every occurrence in the source below and in
+! the !CHECK notes.  NONE OF THE SIX SUBSTITUTIONS CHANGES A BIT:
+! the page assembles to the identical sixteen rows either way, which
+! is itself the evidence that the gaps are in the PARSER and not in
+! the encoding.
+!
+! ---------------------------------------------------------------
+! WHAT THIS PAGE COULD NOT SETTLE
+! ---------------------------------------------------------------
+! (a) LINES 8 AND 9 BRANCH TO THE NEXT HALF WORD, AND THE MANUAL SAYS
+!     THEY SHOULD GO SOMEWHERE.  "BUSAZ,$+.32" sits at 220401.40 and
+!     targets 220402.00, which is line 9 itself; "BADZ,$+.32" sits at
+!     220402.00 and targets 220402.40, which is line 10.  Both are
+!     fall-throughs.  Read as written they are a test-and-CLEAR of
+!     the USA and AD indicators and nothing more -- but C22-6728-1
+!     printed p.205 says that when $AD or $USA occurred "dispatcher
+!     error control (SDISP) is entered with error code 9 in $14", and
+!     NO error-9 exit is printed anywhere on this page (line 18 loads
+!     the type-11 constant, not a 9).  The bits are not in doubt --
+!     the targets are checked below and the statements produce them
+!     exactly -- what is unresolved is the SEMANTICS, and this page
+!     cannot close it.  Whoever transcribes the dispatcher error
+!     routine (S DISP, 217372.00) should look for where the 9 is set.
+!
+! (b) THE LOCATION-COLUMN ASTERISK.  Exactly ONE row on this page
+!     carries it: line 4, the printed "SLC,$".  RECORDED AND NOTHING
+!     PROPOSED.  The workflow's note already has eight things it is
+!     not, and printed p.151 line 4 killed the last rule anybody
+!     proposed from a single page ("every printed SLC,$ row carries
+!     it") -- this page is CONSISTENT with that dead rule and is not
+!     evidence for it, because printed p.168 carries three asterisks
+!     on rows that are not SLCs at all.
+!
+! (c) THE DUPLICATE CARD SERIAL JB000008 (lines 8 and 9).  The 19/20
+!     duplicate has a mechanism; this one does not have one that this
+!     page can see.  Line 9 is indented two characters and line 20 is
+!     not, so the indentation is not the marker.  No MULTI or CONTAG
+!     flag is printed anywhere on this page, which is as expected --
+!     these are duplicate SERIALS, not duplicate NAMES -- but it is
+!     worth recording that this page offers no evidence about which
+!     column those flags print in.
+!
+! (d) THE BIT OFFSETS OF SUPPER, SLOWER, STOELO, KSUPP, SDISP and
+!     KIODRN below the half word.  See the pin table.  Writing ".0"
+!     or ".40" for them is this deck's CONVENTION and a passing
+!     !CHECK does not imply it was read.
+!
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, ALL TWENTY LINES
+! ---------------------------------------------------------------
+! An "*" after the line number is on every line of this page.  A
+! second "*" after the LOCATION is the location-column asterisk and
+! appears ONLY on line 4.
+!
+!   line  1                                                       -  (full-width asterisk rule; the run was not counted)   JB000001
+!   line  2                                                       -********** CHANGE IO TABLE OF EXITS **********-   JB000002
+!   line  3                                                       -  (full-width asterisk rule; the run was not counted)   JB000003
+!   line  4*  220377.00  *                                        SLC,$                                       JB000004
+!   line  5*  220377.00     215246.00 80  000021.36 E0   C CHEX   SWAPI,15,S TLR+14.,$1   -COMPUTE 3RD PARAMETER   JB000005
+!   line  6*  220400.00     220706.01 B0                          LVE,0,K IOD RN-.32                          JB000006
+!   line  7*  220400.40     215246.00 80  000021.36 E0            SWAPI,15,S TLR+14.,$1                       JB000007
+!   line  8*  220401.40     220402.10 C6                          BUSAZ,$+.32                                 JB000008
+!   line  9*  220402.00     220402.50 46                            BADZ,$+.32                                JB000008  (sic, duplicate; statement indented)
+!   line 10*  220402.40     000020.00 50                          LC,0,$0                                     JB000009
+!   line 11*  220403.00     215230.71 80  220406.34 00            BZB, S T LR + 0.57, C CHEKT   -BRANCH IF MCP NEXIT   JB000010
+!   line 12*  220404.00     215230.01 90                          KC, 0, S UPPER          -IF IN PP, CHECK THAT NEXIT  JB000011
+!   line 13*  220404.40     220407.32 40                          BZXL, C NX OUT          -IS WITHIN PP BOUNDARIES     JB000012
+!   line 14*  220405.00     215230.41 90                          KC, 0, S LOWER                              JB000013
+!   line 15*  220405.40     220407.32 42                          BXL, C NX OUT                               JB000014
+!   line 16*  220406.00     000002.01 5D                 C CHEKT  SC,0, S TOE LO($13)     -STORE IN FILE AREA TABLE    JB000015
+!   line 17*  220406.40     216242.10 00                          B,K SUPP                                    JB000016
+!   line 18*  220407.00     000401.35 01                 C NX OUT LVI, 14, S NX OUT                           JB000017
+!   line 19*  220407.40     217451.40 80                          SIC,S DISIC                                 JB000018
+!   line 20*  220410.00     217372.10 00                          B,S DISP                                    JB000018  (sic, duplicate; the SIC/branch pair is one card)
+!
+! Line 5's second byte is recorded above AS ESTABLISHED (E0); the drum
+! prints it "EC" and GLYPH CALL (1) says why that is a 0.  Lines 17
+! and 20's bytes are recorded as 00 and print "C0", GLYPH CALL (3).
+! Line 6's B0 is recorded as READ at 1800 dpi, GLYPH CALL (2).
+!
+!SYM CCHEX   220377.00
+!SYM CCHEKT  220406.00
+!SYM CNXOUT  220407.00
+!
+!CHECK 220377.00 | 215246.00 80 000021.36 E0 | line 5 C CHEX SWAPI,15,S TLR+14.,$1 -COMPUTE 3RD PARAMETER -- S TLR+14. is FOURTEEN WORDS past 215230.00, printing 215246, which is what makes the "+14." a word count and not a bit count; .36 in the second word is 2J = 30 for J=15; the byte prints "EC" and is E0, GLYPH CALL (1)
+!CHECK 220400.00 | 220706.01 B0 | line 6 LVE,0,K IOD RN-.32 -- .32 DECIMAL is 0o40, so K IOD RN at 220706.40 less a half word is 220706.00, and .01 is 2J+1 = 1 for J=0. This row pins K IOD RN TO THE HALF WORD: at 220706.00 it would print 220705.41. The byte is B0 and was read off the ink at 1800 dpi against lines 5 and 7's 80 in the same crop, GLYPH CALL (2)
+!CHECK 220400.40 | 215246.00 80 000021.36 E0 | line 7 SWAPI,15,S TLR+14.,$1 -- the IDENTICAL card to line 5 with no NAME, and it is the control for line 5's damaged byte. $1 is index register 1 at word 0o21, which is where the second word's 000021 comes from
+!CHECK 220401.40 | 220402.10 C6 | line 8 BUSAZ,$+.32 -- $ is 220401.40 so .32 DECIMAL = 0o40 lands on 220402.00, printing 0o10, the plain-branch operation bits. C6 is BUSAZ and the Z is VISIBLE on a branch (BUSA prints C2), not ink-only
+!CHECK 220402.00 | 220402.50 46 | line 9 BADZ,$+.32 -- the target is 220402.40, printing 0o40 OR 0o10 = 0o50, so bit 32 IS checked here. 46 is BADZ against BAD's 42, the Z again visible. This card carries the SAME SERIAL as line 8 and its statement is indented two characters
+!CHECK 220402.40 | 000020.00 50 | line 10 LC,0,$0 -- $0 is index register 0 at word 0o20, a literal register reference and not a symbol; .00 is 2J = 0 for J=0, and the byte's low nibble 0 is the absent index. C22-6728-1 printed p.205: "the location of the new TOE is loaded into the CF of $0"
+!CHECK 220403.00 | 215230.71 80 220406.34 00 | line 11 BZB, S T LR + 0.57, C CHEKT -BRANCH IF MCP NEXIT -- 0.57 DECIMAL is bit 0o71, and a bit branch prints the whole bit offset, so this row pins S TLR TO THE BIT. 57 is the manual's own boundary-control bit number. The target is this page's own C CHEKT at 220406.00, printing 0o34; byte 00 is BZB against p.168's BB 02 and BBZ 06
+!CHECK 220404.00 | 215230.01 90 | line 12 KC, 0, S UPPER -IF IN PP, CHECK THAT NEXIT -- .01 is 2J+1 = 1 for J=0 and the rest is S UPPER, which printed p.116 line 14 SYNs to S TLR itself. Checked to the HALF WORD only
+!CHECK 220404.40 | 220407.32 40 | line 13 BZXL, C NX OUT -IS WITHIN PP BOUNDARIES -- 0o32 is the XL indicator address and the target C NX OUT is this page's own line 18 at 220407.00, so bit 32 is 0. The byte 40 is what distinguishes BZXL from BZXE, which prints C0 on the identical address field
+!CHECK 220405.00 | 215230.41 90 | line 14 KC, 0, S LOWER -- S LOWER is printed p.116 line 15's "SYN, STLR+0.32", so this row prints 0o40 OR 0o01 where line 12 prints 0o01. The two KC rows differ ONLY in that bit, which is what makes them each other's control
+!CHECK 220405.40 | 220407.32 42 | line 15 BXL, C NX OUT -- the same indicator and the same target as line 13; only the byte differs, 42 for BXL against 40 for BZXL, and the pair one row apart is what settles both
+!CHECK 220406.00 | 000002.01 5D | line 16 C CHEKT SC,0, S TOE LO($13) -STORE IN FILE AREA TABLE -- S TOE LO is printed p.102 line 11's SYN(BU,18), 2.0, a table-relative word 2; .01 is 2J+1 = 1 for J=0; 5D's low nibble D is index $13 and the D was read on its straight left stem. The (BU,18) itself is NOT observable in this row
+!CHECK 220406.40 | 216242.10 00 | line 17 B,K SUPP -- target+0o10 on K SUPP's 216242.00, the same printed half word printed p.168 carries twice; K SUPP's BIT offset stays unreadable. The byte prints "C0", GLYPH CALL (3)
+!CHECK 220407.00 | 000401.35 01 | line 18 C NX OUT LVI, 14, S NX OUT -- S NX OUT is printed p.107 line 16's SYN,(16)0101.0, and 0x101 = 0o401; .35 is 2J+1 = 29 for J=14, which is where the WHOLE of J lives -- MEASURED, the LVI byte is 01 for J=1, 2, 14 and 15 alike, so printed p.168's note on its own line 16 ("byte 01 is J=1") reads a coincidence as a field. p.107's comment is "-11 GOOF IN CHEX" and C22-6728-1 printed p.205 says this exit is "a type 11 error", which is the two halves of the same fact off two presses
+!CHECK 220407.40 | 217451.40 80 | line 19 SIC,S DISIC -- SIC prints its operand's FULL bit offset, so this row pins S DISIC to the bit at 217451.40, confirming six earlier decks that write it as a convention. SIC must be followed immediately by a half-word branch (C22-6531 printed p.41) and line 20 is it, on the same card
+!CHECK 220410.00 | 217372.10 00 | line 20 B,S DISP -- target+0o10 on S DISP's 217372.00; HALF WORD only. The byte prints "C0", GLYPH CALL (3). A HALF WORD, so THE COUNTER LEAVES THIS PAGE AT 220410.40, which is what printed p.170's first located row must print
+
+! ---------------------------------------------------------------
+! EXTERNALS.  Every one is a SYN STAND-IN, never a copy of another
+! page's defining card -- printed p.116 defines S TLR with a DRZ,
+! which is a PLACE, and copying it would deposit 29 words at THIS
+! page's counter.
+! ---------------------------------------------------------------
+STLR    SYN, (8)215230.0             ! printed p.116 line 13 "STLR DRZ(BU,64), 29"; this page pins it TO THE BIT
+SUPPER  SYN, STLR                    ! printed p.116 line 14 -PP UPPER BOUNDRY; half word only here
+SLOWER  SYN, STLR+0.32               ! printed p.116 line 15; half word only here
+KSUPP   SYN, (8)216242.0             ! printed p.128 "K SUPP NOP,K COMM R"; half word only
+STOELO  SYN(BU,18), 2.0              ! printed p.102 line 11 -TABLE OF EXITS LOCATION; the dds is p.102's, not read here
+SNXOUT  SYN,(16)0101.0               ! printed p.107 line 16 -11 GOOF IN CHEX
+SDISIC  SYN, (8)217451.40            ! printed p.103; this page pins it TO THE BIT
+SDISP   SYN, (8)217372.0             ! printed pp.119/120; half word only
+KIODRN  SYN, (8)220706.40            ! FORWARD, printed pp.146/159; this page pins the half word
+!
+! ---------------------------------------------------------------
+! THE PAGE, IN THE PRINTED SPELLING WHEREVER strap_asm TAKES IT.
+! Ten of the sixteen cards below are the page's characters exactly,
+! blanks and all.  The six that are not are each labelled, and the
+! measurement that forced each substitution is in the section above.
+! ---------------------------------------------------------------
+        SLC, (8)220377.00            ! line  4  SUBSTITUTED for the printed "SLC,$" at 220377.00 * -- see the hard-SLC note above
+CCHEX   SWAPI,15,STLR+14.,$1         ! line  5  SUBSTITUTED twice: printed NAME "C CHEX", printed operand "S TLR+14."  -COMPUTE 3RD PARAMETER
+        LVE,0,KIODRN-.32             ! line  6  SUBSTITUTED: printed "LVE,0,K IOD RN-.32"
+        SWAPI,15,STLR+14.,$1         ! line  7  SUBSTITUTED: printed "SWAPI,15,S TLR+14.,$1"; otherwise the identical card to line 5, unnamed
+        BUSAZ,$+.32                  ! line  8  as printed
+        BADZ,$+.32                   ! line  9  as printed (the page indents the statement two characters; same card serial as line 8)
+        LC,0,$0                      ! line 10  as printed; "$0" is index register 0, word 0o20
+        BZB,STLR+0.57, C CHEKT       ! line 11  SUBSTITUTED in the first operand only: printed "BZB, S T LR + 0.57, C CHEKT"  -BRANCH IF MCP NEXIT
+        KC, 0, S UPPER               ! line 12  as printed  -IF IN PP, CHECK THAT NEXIT
+        BZXL, C NX OUT               ! line 13  as printed  -IS WITHIN PP BOUNDARIES
+        KC, 0, S LOWER               ! line 14  as printed
+        BXL, C NX OUT                ! line 15  as printed
+CCHEKT  SC,0, S TOE LO($13)          ! line 16  SUBSTITUTED in the NAME only: printed "C CHEKT"  -STORE IN FILE AREA TABLE
+        B,K SUPP                     ! line 17  as printed
+CNXOUT  LVI, 14, S NX OUT            ! line 18  SUBSTITUTED in the NAME only: printed "C NX OUT"
+        SIC,S DISIC                  ! line 19  as printed
+        B,S DISP                     ! line 20  as printed; same card serial as line 19

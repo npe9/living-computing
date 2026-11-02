@@ -1,0 +1,680 @@
+! mcp_bootstrap_p179.strap -- MCP's TAPE/REEL DISPATCH CHAIN AND THE
+! "Z ID" REEL-MOUNT ROUTINE, printed page 179.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.186.  The header was READ, not
+! assumed, at 400 dpi over the full page width:
+!
+!   "TIME CLOCK 00054041   PUNID 11D11MCP   CARD ID LA000111
+!    DIST. OF 3/01   3/01   PAGE NUMBER  179"
+!
+! >>> THE COLUMN-HEADING ROW'S OWN "LOCATION" FIELD READS 220776. <<<
+! Six digits, clear of the dashed rule, printed after the second
+! "LOCATION" at the right-hand end of the heading line.  That is LINE
+! 1'S location word (docs/transcription_workflow.md step 1), and line
+! 1 here IS a located row (220776.40), which is the case the rule
+! predicts to be numbered rather than blank.  Nothing was taken from
+! the survey OCR and nothing was invented off the rule.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS -- AND IT IS *NOT* A DISPATCH **TABLE**
+! ---------------------------------------------------------------
+! FIFTY-SIX PRINTED LINES, 220776.40 .. 221040.00, CONTIGUOUS, no
+! hole of any kind: no DR/DRZ reservation, no SLC (forward or
+! otherwise), no DD, no comment card, no asterisk banner.  Every one
+! of the 56 lines carries a location and emits bits.
+!
+! The brief that commissioned this page said "several landed decks
+! treat pp.178-179 together as the dispatch tables, so expect
+! table-shaped content".  MEASURED, THAT IS WRONG FOR p.179.  There
+! is no table on this page.  What there is:
+!
+!   lines  1- 3  the TAIL of a branch vector that begins on p.178
+!                (B,RODD / B,RECC / B,RNOECC), three half-word
+!                unconditional branches and nothing else;
+!   lines  4-13  four short handlers, each with its own NAME in the
+!                NAME column -- K MCP (4-7), Z IOD H (8-10),
+!                K UNA (11-12), K NO GO (13).  Not a table either:
+!                the four are 4, 3, 2 and 1 rows long;
+!   lines 14-23  a dispatch CHAIN, not a table: five pairs of
+!                "KVI,3,<request code>" followed by
+!                "BXE,<handler>", i.e. compare-and-branch-if-equal
+!                run out straight-line (codes 2.0, 2.32, D CHEX,
+!                D FREE, DIODEF).  THAT READING IS FROM PRIMARY
+!                SOURCES, NOT FROM THE SHAPE: Reference Manual
+!                22-6530-2 names KVI "Compare Value Immediate" and
+!                says "the address part, bits 0-18, of the
+!                instruction is compared with bits 0-18 of the
+!                value field of the index word specified by J",
+!                and its indicator table gives 53 XE "Index Equal
+!                ... reset by index comparison".  Those two
+!                sentences also EXPLAIN this page's printed 6-bit
+!                offset field on every index-immediate row: the
+!                address is only 19 bits, so bits 19-23 hold J and
+!                the printed field is 2*J plus the one address bit
+!                (18) that survives -- which is why line 16's
+!                "KVI,3,2.32" prints .47 and line 14's "KVI,3,2.0"
+!                prints .07, the only difference being the 32.
+!                Lines 4-5 are a sixth pair of the
+!                same shape, and the chain continues BACKWARD onto
+!                p.178, whose line 42 the volume OCR indexes as
+!                "220726.40 * 000013.47 04 K NI KVI,3,11.32
+!                 -TEST IF WAIT, CHEX OR S FREE";
+!   lines 24-41  reel/mount handling -- multi-unit and mount bit
+!                tests, a time-lag subtraction against S RMTC, a
+!                reminder-message switch, the current-reel walk;
+!   lines 42-56  the "Z ID" routine proper, with three SIC/B
+!                calling sequences and their parameter words.
+!
+! A table would repeat ONE shape (printed p.176 is the real article:
+! twenty-four identical "SIC,STIC; BD,SIPT+n." words).  This page
+! never repeats a shape more than twice running.
+!
+! ---------------------------------------------------------------
+! >>> A SIC AND ITS BRANCH ARE ONE CARD, AND THE CARD-SERIAL COLUMN
+! >>> PROVES IT ON THIS PAGE.  <<<
+! ---------------------------------------------------------------
+! The serials run LA000111 (line 1) .. LA000162 (line 56): 52 cards
+! for 56 listing lines.  FOUR serials print TWICE, and each duplicate
+! pair is exactly a SIC followed by its half-word branch:
+!
+!   LA000119   lines  9/10   SIC,S DISIC ; B,S DISP
+!   LA000156   lines 47/48   SIC,Z ID09X ; B,Z ID09
+!   LA000159   lines 51/52   SIC,KCONVR  ; B,KCONV
+!   LA000161   lines 54/55   SIC,S COMIC ; B,S COMM
+!
+! That is a MEASUREMENT that STRAP's "SIC,X; B,Y" one-card spelling
+! (which decks/mcp_bootstrap_p176.strap already writes, and which
+! strap_asm already enforces) is how these cards were really punched,
+! not a convention the decks adopted for convenience.  The serial
+! column is the witness and it costs one crop to read.
+!
+! Nothing fell off either end: line 1 carries the FIRST serial of the
+! run and line 56 the LAST, and the heading row's LOCATION field
+! independently names line 1's word.
+!
+! ---------------------------------------------------------------
+! >>> LINE 56 IS NOT AN ORPHANED SIC.  IT IS A NULL OPERATION. <<<
+! ---------------------------------------------------------------
+! Line 56 prints, at 1200 dpi, with a BLANK operation field:
+!
+!   56*  221040.00      221050.00 80                   ,Z ID01
+!
+! and its own card serial (LA000162), so it is not the second
+! statement of a semicolon card.  strap_asm already implements this
+! and cites it: "A statement with a BLANK operation field -- the
+! parameter half words of a SIC/B calling sequence, printed p.133
+! lines 44-45", and C22-6531 printed p.7's NULL FIELD rule ("A MAJOR
+! FIELD MAY BE NULL ... if nothing but the comma denoting the field
+! termination is written").  A null operation emits the
+! address-and-index half word every full-word format begins with --
+! 0x80 in the byte, the full 24-bit BIT address above it.
+!
+! So line 56 is the PARAMETER WORD of the "SIC,S COMIC; B,S COMM"
+! call on lines 54/55, exactly as line 53's "VF,Z ID 02A" is the
+! parameter of the call on lines 51/52 and lines 42/43/44 are the
+! three parameter fields of the "LVI,15,$+1.0 / B,SA6IQS" call on
+! lines 40/41.  No SIC on this page is unpaired and no branch is
+! missing.
+!
+! BECAUSE THE NULL OPERATION DEPOSITS THE FULL 24-BIT BIT ADDRESS,
+! LINE 56 IS A BIT-EXACT READING OF Z ID01, not a half-word one.
+!
+! ---------------------------------------------------------------
+! WHAT THIS PAGE PINS TO THE BIT (and what it does not)
+! ---------------------------------------------------------------
+! docs/transcription_workflow.md: "before writing 'the bit offset is
+! unobservable', look for a SIC".  There are FOUR SICs here plus the
+! null operation plus three VFs, and every one of them is a reading
+! of its operand's FULL bit address:
+!
+!   line  9  SIC,S DISIC   -> S DISIC  = 217451.40   bit-exact
+!   line 47  SIC,Z ID09X   -> Z ID09X  = 221045.00   bit-exact
+!   line 51  SIC,KCONVR    -> KCONVR   = 221350.00   bit-exact
+!   line 54  SIC,S COMIC   -> S COMIC  = 215470.40   bit-exact
+!   line 56  ,Z ID01       -> Z ID01   = 221050.00   bit-exact
+!   line 44  VF,Z ID 04    -> Z ID 04  = 221056.10   bit-exact
+!   line 53  VF,Z ID 02A   -> Z ID 02A = 221053.00   bit-exact
+!
+! Z ID 04 at 221056.10 is NOT half-word aligned, and that is not a
+! misreading: the volume OCR indexes its DEFINING card on another
+! page as "20*  221056.10   Z ID04  (ITQSX)DD(BU),JOB X" -- an
+! entry-mode DD that landed mid-word.  (The volume OCR is used here
+! only as an INDEX to a page nobody has opened, never as a witness
+! for p.179 itself.)
+!
+! EVERYTHING ELSE IS HALF-WORD ONLY.  A branch, an LVI, an LV, a V+,
+! an SV and a BB/BZB all collapse every bit-offset below 32 to the
+! same encoding, so the ".0" written on those SYNs below is a
+! CONVENTION and not a reading.  Each SYN says which it is.
+!
+! ---------------------------------------------------------------
+! TWENTY-FIVE EXTERNALS WERE ALREADY IN THE MERGED BODY IMAGE AND
+! EVERY ONE OF THEM LANDS ON THIS PAGE'S PRINTED BITS
+! ---------------------------------------------------------------
+! The pp.99-176 merge was built and its symbol table read BEFORE the
+! !CHECK rows below were written.  Twenty-five of this page's
+! operands already had a value there, and all twenty-five reproduce
+! p.179's printed BINARY OUTPUT digit for digit:
+!
+!   RODD 220335.40  RECC 220340.00  RNOECC 220342.00  K NI 220726.40
+!   S BA MCP 215003.00  S DISIC 217451.40  S DISP 217372.00
+!   S COMIC 215470.40  S COMM 215470.00  KCONVR 221350.00
+!   KCONV 221335.00  Z ID09 221042.00  Z ID09X 221045.00
+!   S IOD I 010004.00  S FREE 12.32  D FREE 10.32  D CHEX 12.0
+!   DIODEF 13.0  S OWNER .32  S IMNT .53  S MULTI .27
+!   S MOUNT .51  S RMIND 1.63  S CREEL 8.32  S RMTC 1.32
+!
+! The SYN cards below are COPIED from the landed decks that carry
+! them (SYN cards, not PLACE cards -- the thing printed p.157 got
+! wrong was copying an "XW", which deposits at the copier's own
+! counter; a SYN deposits nothing and is checked against the
+! defining page by the merge).  Their data descriptions are carried
+! with them, which is the pp.153-160 rule.
+!
+! ---------------------------------------------------------------
+! TWO GLYPHS THE INK COULD NOT SETTLE, SETTLED BY THE ASSEMBLER AND
+! THE COMMENT COLUMN TOGETHER
+! ---------------------------------------------------------------
+! LINE 29 reads "BZAF" or "BZAH" at 1200 dpi.  Measured over every
+! B<indicator> / BZ<indicator> / B<indicator>Z / BZ<indicator>Z
+! spelling strap_asm accepts, exactly ONE produces this row's printed
+! "221041.37 40":
+!
+!     BZAH,KCHOPN   ->  221041.37 40     (AH = indicator 62)
+!     BZAF,KCHOPN   ->  "unknown mnemonic 'BZAF'"
+!     BZAE,KCHOPN   ->  221041.36 C0
+!     BZAL,KCHOPN   ->  221041.36 40
+!
+! and the row's own comment is "-BRANCH IF TIME NOT ELAPSED", with
+! line 27 immediately above it subtracting S RMTC into the
+! accumulator.  Branch-on-ACCUMULATOR-HIGH is what that computes.
+! Eliminator AND semantics agree, so this one is closed.
+!
+! LINE 30 reads "BBI" or "BB1".  "BBI" is not a mnemonic; "BB1" is
+! Branch on Bit and Set to One (opcodes.py BB_CODES, mod=0b11), whose
+! second half word's byte is 0b0000_11_1_0 = 0x0E -- which is what
+! the page prints, where a plain BB prints 02 and a BZB prints 00.
+! The comment column closes it independently: "-BR. IF REMINDER
+! SENT,SET SWTCH".  SET.
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK
+! ---------------------------------------------------------------
+! THREE rows carry the second asterisk, in the LOCATION column after
+! the bit offset: lines 13 (221004.40), 30 (221020.00) and 48
+! (221033.40).  Recorded, not explained.  No rule is proposed from
+! one page -- docs/transcription_workflow.md records that the mark
+! now has eight things it is NOT, and that printed p.147's proposed
+! rule was refuted by p.151 the same afternoon.  For the record, the
+! three rows are a BB, a BB1 and a B; two of them (13, 48) are the
+! first half word of a full-word instruction and one (30) is not, so
+! "every full-word instruction" is already dead on this page alone.
+!
+! Separately: EVERY line number on this page is followed by an
+! asterisk ("1*", "2*", ... "56*").  That is NOT the location-column
+! mark and is NOT a p.179 peculiarity -- the volume OCR shows the
+! same glyph after the line number on pages all over the listing
+! (e.g. "20* 220335.40", "21* 220715.40", "42* 220726.40").  It is a
+! column separator.  Non-finding, written down so the next
+! transcriber does not spend a crop on it.
+!
+! ---------------------------------------------------------------
+! THE SURVEY IS WRONG AT BOTH ENDS
+! ---------------------------------------------------------------
+! Cached survey: 220777.0 .. 221027.00.
+! Measured:      220776.40 .. 221040.00, 56 lines, 52 cards.
+! It lost line 1 at the top and the last SEVEN rows (lines 50-56) at
+! the bottom.  The card-serial run LA000111..LA000162 is what proves
+! neither end is a crop artefact.
+!
+! ---------------------------------------------------------------
+! JOINING THIS PAGE TO THE BODY IMAGE
+! ---------------------------------------------------------------
+! This deck was written under a scope rule that forbids writing to
+! tests/, so the registration was NOT made.  When pp.177 and 178
+! land, tests/check_mcp_body_image.py's "FIRST, LAST" becomes
+! 99, 179 and its body_page_count check becomes 80.  (NOT
+! strap/mcp_image.py's MCP_IPL_PAGES -- pp.15-98 and pp.99+ are two
+! assemblies and merging them fails on SMCP.)  The three pages are
+! interdependent; 179 cannot be added while 177/178 are missing.
+!
+! ---------------------------------------------------------------
+! WHAT THE NEXT PAGE MUST PRINT -- A FALSIFIABLE PREDICTION
+! ---------------------------------------------------------------
+! The last row is line 56 at 221040.00 and it is a HALF WORD (a null
+! operation emits one half word).  So THE COUNTER LEAVES THIS PAGE AT
+! 221040.40, and printed p.180's line 1 must be located there.
+!
+! Four of this page's own forward references land on p.180 and are
+! further predictions its transcriber can check against their own
+! LOCATION column, with no reference to this deck:
+!
+!   KCHOPN   221041.00   (lines 24,25,29,30 -- half-word only)
+!   Z ID09   221042.00   (line 48; already SYN'd by p.166's deck)
+!   Z ID09X  221045.00   (line 47 -- BIT-EXACT, it is a SIC)
+!   Z ID15   221045.40   (line 45 -- half-word only)
+!   Z ID13   221047.00   (line 49 -- half-word only)
+!   Z ID01   221050.00   (line 56 -- BIT-EXACT, null operation)
+!   Z ID 02A 221053.00   (line 53 -- BIT-EXACT, a VF)
+!   Z ID03   221055.00   (line 39 -- half-word only)
+!   Z ID 04  221056.10   (line 44 -- BIT-EXACT, a VF; note the .10)
+!   Z ID04A  221060.00   (line 46 -- half-word only)
+!   Z ID14   221063.00   (line 36 -- half-word only)
+!   Z RENME  221064.40   (line 37 -- half-word only)
+!   K NOT AV 221066.00   (line 13 -- half-word only)
+!
+! And one BACKWARD: p.178's last row must be at 220776.00, because
+! this page's line 1 is at 220776.40.
+!
+! ---------------------------------------------------------------
+! SYMBOLS THIS PAGE DEFINES (the NAME column, nine of them)
+! ---------------------------------------------------------------
+!   K MCP    221000.00   line  4
+!   Z IOD H  221002.00   line  8   (comment "-INVALID IOD REF NO"
+!                                   is what settles the O and the D)
+!   K UNA    221003.40   line 11
+!   K NO GO  221004.40   line 13
+!   Z ID06   221023.00   line 34
+!   Z ID 10  221030.00   line 42
+!   Z ID09A  221031.40   line 45
+!   Z ID08   221035.00   line 50
+!   Z ID07   221035.40   line 51
+!
+! STRAP ignores blanks inside a name (C22-6531 printed p.10: a name
+! is alphameric), and strap_asm refuses a blank in the LABEL field,
+! so every name is written closed up here, as every landed deck
+! does.  The printed spacing is recorded in the listing block.
+!
+! ---------------------------------------------------------------
+! WHAT THIS PAGE COULD NOT SETTLE
+! ---------------------------------------------------------------
+! * Z RMTCC's LENGTH AND LOW BITS.  Line 28 is "KI(BU,6),Z RMTCC"
+!   and prints 770000.00 in the immediate half word.  An immediate
+!   is LEFT-JUSTIFIED in the 24-bit A24 field and the STATEMENT
+!   writes its own (BU,6), so this row pins the TOP SIX BITS of the
+!   value to 111111 and NOTHING ELSE -- not the symbol's own length,
+!   not any bit below the sixth.  The volume OCR indexes a defining
+!   card on another page as "Z RMTCC  CCI(BU,6),(2)111111", but the
+!   MNEMONIC in that OCR line is garbled ("CCI" is not an operation)
+!   and it is therefore not safe to read the dds off it.  The SYN
+!   below writes (BU,6),(2)111111, which reproduces the printed word;
+!   THE DDS IS UNVERIFIED, AND THE MERGE CANNOT CATCH IT.  Z RMTCC
+!   is EXTERNAL on every page of pp.99-179 -- no landed page defines
+!   it -- so a green body-image build is SILENT here, not
+!   confirming.  Do not read the merge passing as evidence for this
+!   one card.  What would settle it: the page that prints Z RMTCC's
+!   defining card, read at 1200 dpi.
+!
+! * THE OPEN (BU) QUESTION FROM pp.169-176 IS NOT SETTLED HERE, and
+!   cannot be.  Every data description on this page writes an
+!   explicit length -- (BU,26) twice, (BU,6) once -- and there is no
+!   mode-only dds anywhere on the page.  Next transcriber: do not
+!   re-check p.179 for this.
+!
+! * LINE 1'S OPERAND IS WRITTEN "RODD" AND THIS PAGE'S INK SAYS
+!   "RCDD".  THE INK LOSES, AND IT IS WORTH SAYING WHY.  Rendered at
+!   1800 dpi the second glyph is a round form with a clear break in
+!   its upper right -- a C, to the eye, exactly the way printed
+!   p.87's "T WORM" presented as "T WCRM".  The first draft of this
+!   deck therefore wrote RCDD and
+!   tests/check_symbol_spellings.py REFUSED IT:
+!
+!     FAIL two spellings of one symbol at 4732768:
+!          RCDD (pp.179) vs RODD (pp.167) -- glyph C/O
+!
+!   decks/mcp_bootstrap_p167.strap carries the DEFINING card at
+!   220335.40 -- the same bit this page's line 1 branches to -- and
+!   names it RODD from C22-6728-1 printed p.271's IOD attribute
+!   table (ODD / EVEN / ECC / HD / LD), a TYPESET source, which is
+!   rung 2 of docs/transcription_workflow.md's glyph ladder and
+!   beats ink outright.  p.167 also records that the DEFINING card's
+!   own ink reads "RCCD", the same dropout in the same position on a
+!   different page.  And the asymmetry runs one way: dropout can
+!   open a closed glyph but never closes an open one, so an observed
+!   C is consistent with an O while an observed O could never be a
+!   C.  Three independent reasons, all pointing the same way.
+!
+!   The volume OCR's hit on the defining card ("RCDD") is NOT a
+!   counterweight: it is tesseract on the same worn glyph, the
+!   weakest reader of the two, and p.167's transcriber read that
+!   card's ink directly.
+!
+!   RECORDED AS A LIVE DISAGREEMENT BETWEEN INK AND NAME so that
+!   nobody re-opens it from p.179 alone.  What would close it for
+!   good: a page that spells the symbol with a CLOSED O.
+!
+! * THE BRANCH VECTOR ON LINES 1-3 IS A TAIL AND ITS HEAD IS NOT ON
+!   THIS PAGE.  decks/mcp_bootstrap_p167.strap predicted the whole
+!   six-entry vector before p.178 or p.179 was opened:
+!
+!     220775.00  220325.10 00  B,RHD
+!     220775.40  220326.10 00  B,RLD
+!     220776.00  220334.50 00  B,REVEN
+!     220776.40  220335.50 00  B,RODD      <-- this page's line 1
+!     220777.00  220340.10 00  B,RECC      <-- line 2
+!     220777.40  220342.10 00  B,RNOECC    <-- line 3
+!
+!   THE LAST THREE ARE NOW MEASURED OFF THE PAGE AND ALL THREE MATCH
+!   DIGIT FOR DIGIT, including the 220335.50 p.167 could only write
+!   as "2203?5.50" from the volume OCR.  SO THE FIRST THREE ARE A
+!   PREDICTION FOR printed p.178: its last three rows must be
+!   220775.00 B,RHD, 220775.40 B,RLD and 220776.00 B,REVEN, in that
+!   order, and its last row must be at 220776.00.  What selects
+!   among the six is still nobody's measurement.
+!
+! ---------------------------------------------------------------
+! WHAT WAS ACTUALLY RUN, AND WHAT IT SAID
+! ---------------------------------------------------------------
+! This deck was written in a scratchpad, not in decks/, so each
+! checker was pointed at it explicitly rather than taken on trust:
+!
+!   verify_mcp_page.py (DECK patched to the scratchpad copy)
+!       -> 9 symbols, 68 listing rows, ALL TESTS PASSED
+!   check_symbol_spellings.py (DECKS patched to decks/ + this page)
+!       -> 1483 symbol definitions, no symbol spelled two ways
+!          (ITS FIRST RUN FAILED -- see the RODD note below; that
+!           failure is the most useful thing any checker said today)
+!   check_deck_listing_comments.py (same patch)
+!       -> this deck's own block parses: 56 rows read, 55 compared
+!          against the !CHECKs, 0 mismatches.  The one row not
+!          compared is a CONVENTION mismatch and not a gap: twelve
+!          of these lines print TWO half words on one listing line
+!          and are checked as two separate !CHECKs, so the block's
+!          second binary has no row of its own to pair with.  Every
+!          one of those second half words IS checked -- see the
+!          verify_mcp_page run above, which compares 68 rows to the
+!          block's 56.
+!   mcp_image.build(pp.99-176 + this page)
+!       -> merges without a symbol or dds disagreement, and all
+!          nine of this page's NAMEs land on their printed
+!          locations.  (pp.177 and 178 are not in that list because
+!          they do not exist yet; the real registration waits for
+!          them.)
+!
+! EXACTLY ONE ROW FAILED on the first assembly and it was MY
+! misreading, not the page's and not the assembler's: line 6's byte
+! was transcribed 80 and the page prints B0.  Re-rendered at 1600
+! dpi the glyph has a straight left stem and two bowls -- a B -- and
+! the other V+ on this page (line 37) prints B0 as well.  Recorded
+! because the B/8 pair is the first thing this drum loses and
+! because the failure is what found it.
+!
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, LINE BY LINE
+! ---------------------------------------------------------------
+!   line  1  220776.40  220335.50 00                            B,RODD                            LA000111
+!   line  2  220777.00  220340.10 00                            B,RECC                            LA000112
+!   line  3  220777.40  220342.10 00                            B,RNOECC                          LA000113
+!   line  4  221000.00  000014.47 04              K MCP         KVI,3,S FREE                      LA000114
+!   line  5  221000.40  220715.32 C2                            BXE,K SOAR-.32                    LA000115
+!   line  6  221001.00  215003.02 B0                            V+,1,S BA MCP                     LA000116
+!   line  7  221001.40  220715.50 00                            B,K SOAR                          LA000117
+!   line  8  221002.00  010004.35 01              Z IOD H       LVI,14,S IOD I  -INVALID IOD REF NO   LA000118
+!   line  9  221002.40  217451.40 80                            SIC,S DISIC                       LA000119
+!   line 10  221003.00  217372.10 00                            B,S DISP                          LA000119 (same card)
+!   line 11  221003.40  000032.26 30              K UNA         LV,11,$10                         LA000120
+!   line 12  221004.00  220726.50 00                            B,K NI                            LA000121
+!   line 13* 221004.40  000010.00 80  221066.34 02  K NO GO     BB,$L,K NOT AV                    LA000122
+!   line 14  221005.40  000002.07 04                            KVI,3,2.0       -IF $CCW, PROCEED    LA000123
+!   line 15  221006.00  220743.32 C2                            BXE,K OP OK                       LA000124
+!   line 16  221006.40  000002.47 04                            KVI,3,2.32      -IF $REL, PROCEED    LA000125
+!   line 17  221007.00  220735.32 C2                            BXE,K K NI                        LA000126
+!   line 18  221007.40  000014.07 04                            KVI,3,D CHEX    -IF $CHEX, PROCEED   LA000127
+!   line 19  221010.00  220743.32 C2                            BXE,K OP OK                       LA000128
+!   line 20  221010.40  000012.47 04                            KVI,3,D FREE    -IF $FREE, PROCEED   LA000129
+!   line 21  221011.00  220735.32 C2                            BXE,K K NI                        LA000130
+!   line 22  221011.40  000015.07 04                            KVI,3,DIODEF                      LA000131
+!   line 23  221012.00  220743.32 C2                            BXE,K OPOK                        LA000132
+!   line 24  221012.40  000000.33 8A  221041.34 00              BZB,SMULTI($10),K CHOPN           LA000133
+!   line 25  221013.40  000000.63 8B  221041.34 00              BZB,SMOUNT($11),KCHOPN            LA000134
+!   line 26  221014.40  000001.34 80  032000.20 50              L(BU,26),$TC                      LA000135
+!   line 27  221015.40  000001.40 8C  032000.30 10              -(BU,26),S RMTC($12)  -COMPUTE TIME LAG   LA000136
+!   line 28  221016.40  770000.00 80  406000.21 10              KI(BU,6),Z RMTCC                  LA000137
+!   line 29  221017.40  221041.37 40                            BZAH,KCHOPN     -BRANCH IF TIME NOT ELAPSED  LA000138
+!   line 30* 221020.00  000001.77 8C  221041.34 0E              BB1,SRMIND($12),KCHOPN  -BR. IF REMINDER SENT,SET SWTCH  LA000139
+!   line 31  221021.00  000010.56 3C                            LV,7,SCREEL($12)                  LA000140
+!   line 32  221021.40  000000.65 8B  221023.34 02              BB,SIMNT($11),Z ID06  -BR. IF REEL SLOT IS ORIG REEL   LA000141
+!   line 33  221022.40  000000.16 37                            LV,7,0.0($7)    -GET NEXT REEL SLOT ADDRESS   LA000142
+!   line 34  221023.00  000000.42 87  036000.06 70  Z ID06      LF,TRENME($7)   -TEST IF REEL IS SCRATCH   LA000143
+!   line 35  221024.00  000027.20 30                            LV,8,$7                           LA000144
+!   line 36  221024.40  221063.34 C2                            BRZ,Z ID14      -BR. IF SCRATCH      LA000145
+!   line 37  221025.00  221064.56 B0                            V+,7,Z RENME                      LA000146
+!   line 38  221025.40  221030.17 30                            SV,7,Z ID 10                      LA000147
+!   line 39  221026.00  222015.00 80  221055.04 A0              TI,2,KEXTAP,Z ID03                LA000148
+!   line 40  221027.00  221030.37 01                            LVI,15,$+1.0                      LA000149
+!   line 41  221027.40  230567.50 00                            B,SA6IQS        -CONVERT REEL NAME   LA000150
+!   line 42  221030.00  000000.00+                 Z ID 10      VF,0.0                            LA000151
+!   line 43  221030.40  000005                                  CF,5                              LA000152
+!   line 44  221031.00  221056.10+                              VF,Z ID 04                        LA000153
+!   line 45  221031.40  000000.40 8B  221045.74 02  Z ID09A     BB,SOWNER($11),Z ID15             LA000154
+!   line 46  221032.40  221060.17 01                            LVI,7,Z ID04A                     LA000155
+!   line 47  221033.00  221045.00 80                            SIC,Z ID09X                       LA000156
+!   line 48* 221033.40  221042.10 00                            B,Z ID09        -GET JOB NAME        LA000156 (same card)
+!   line 49  221034.00  000000.32 88  221047.34 02              BB,TREPR($8),Z ID13  -BR. IF REEL FILE PROTECTED   LA000157
+!   line 50  221035.00  000011.17 01              Z ID08        LVI,7,9.0                         LA000158
+!   line 51  221035.40  221350.00 80              Z ID07        SIC,KCONVR                        LA000159
+!   line 52  221036.00  221335.10 00                            B,KCONV         -CONVERT CH AND UN NUMBERS   LA000159 (same card)
+!   line 53  221036.40  221053.00+                              VF,Z ID 02A                       LA000160
+!   line 54  221037.00  215470.40 80                            SIC,S COMIC                       LA000161
+!   line 55  221037.40  215470.10 00                            B,S COMM                          LA000161 (same card)
+!   line 56  221040.00  221050.00 80                            ,Z ID01                           LA000162
+!
+! ---------------------------------------------------------------
+
+! ---------------------------------------------------------------
+! EXTERNALS.  Every SYN whose symbol already exists in the merged
+! pp.99-176 body image is COPIED from the landed deck that carries
+! it, data description and all; the comment says which page DEFINES
+! it where that is known.  "half-word only" means the bit offset
+! below 32 is a convention and NOT a reading -- see the note above.
+! ---------------------------------------------------------------
+
+! -- the tail of p.178's branch vector (lines 1-3)
+RODD    SYN, (8)220335.40            ! line 1; the half word IS checked.
+                                     ! DEFINED by decks/mcp_bootstrap_p167.strap
+                                     ! at 220335.40, which this row confirms.
+                                     ! THIS PAGE'S INK READS "RCDD" -- see the
+                                     ! open-questions note; p.167's typeset
+                                     ! source wins and the spelling checker
+                                     ! refuses any other reading
+RECC    SYN, (8)220340.0             ! line 2, half-word only; DEFINED in the
+                                     ! merged body image at 220340.00
+RNOECC  SYN, (8)220342.0             ! line 3, half-word only; DEFINED in the
+                                     ! merged body image at 220342.00
+
+! -- the dispatch chain's request codes and handlers (lines 4-23)
+SFREE   SYN, 12.32                   ! line 4; landed decks' card
+KSOAR   SYN, (8)220715.40            ! lines 5,7; half word IS checked (.40).
+                                     ! Volume OCR indexes the defining card:
+                                     ! "220715.40 ... K SOAR LV,12,0.0($1)"
+SBAMCP  SYN, (8)215003.0             ! line 6, half-word only; p.103's card
+SIODI   SYN,(16)1004.0               ! line 8, half-word only; landed card
+SDISIC  SYN, (8)217451.40            ! line 9 -- BIT-EXACT, it is a SIC
+SDISP   SYN, (8)217372.0             ! line 10, half-word only; p.176's card
+KNI     SYN, (8)220726.40            ! line 12; half word IS checked
+KNOTAV  SYN, (8)221066.0             ! line 13, half-word only; on p.180
+KOPOK   SYN, (8)220743.0             ! lines 15,19,23, half-word only
+KKNI    SYN, (8)220735.0             ! lines 17,21, half-word only
+DCHEX   SYN, 12.0                    ! line 18; landed decks' card
+DFREE   SYN, 10.32                   ! line 20; the BODY image's value (the
+                                     ! pp.15-98 IPL assembly has its own,
+                                     ! different D FREE -- two assemblies)
+DIODEF  SYN, 13.0                    ! line 22; landed decks' card
+
+! -- reel / mount handling (lines 24-41)
+SMULTI  SYN(BU,1), 0.27              ! line 24; p.99 line 24 defines it
+SMOUNT  SYN(BU,1), 0.51              ! line 25; p.99 line 42 defines it
+KCHOPN  SYN, (8)221041.0             ! lines 24,25,29,30, half-word only; on p.180
+SRMTC   SYN(BU,26), 1.32             ! line 27 -REMINDER MESSAGE TIME CONSTANT
+ZRMTCC  SYN(BU,6), (2)111111         ! line 28.  THE VALUE'S TOP SIX BITS ARE
+                                     ! READ OFF THE PRINTED 770000.00; THE DDS
+                                     ! IS UNVERIFIED -- see the open question
+SRMIND  SYN(BU,1), 1.63              ! line 30 -REMINDER MESSAGE INDICATOR
+SCREEL  SYN(BU,18), 8.32             ! line 31; p.101 line 28 -CURRENT REEL ADDRESS
+SIMNT   SYN(BU,1), 0.53              ! line 32; landed decks' card
+TRENME  SYN(BU,30), 0.34             ! line 34 -REEL NAME FORMAT
+ZID14   SYN, (8)221063.0             ! line 36, half-word only; on p.180
+ZRENME  SYN, (8)221064.40            ! line 37; half word IS checked
+KEXTAP  SYN, (8)222015.0             ! line 39, half-word only.  Volume OCR
+                                     ! indexes "222015.00 K EX TAP (CIQSX)DD..."
+ZID03   SYN, (8)221055.0             ! line 39, half-word only; on p.180
+SA6IQS  SYN, (8)230567.40            ! line 41; half word IS checked
+
+! -- the Z ID routine (lines 42-56)
+ZID04   SYN, (8)221056.10            ! line 44 -- BIT-EXACT, it is a VF.  Volume
+                                     ! OCR indexes "221056.10 Z ID04 (ITQSX)DD(BU),JOB X"
+SOWNER  SYN(BU,1), 0.32              ! line 45; p.99 line 30 -PRIORITY LEVEL
+ZID15   SYN, (8)221045.40            ! line 45; half word IS checked
+ZID04A  SYN, (8)221060.0             ! line 46, half-word only; on p.180
+ZID09X  SYN, (8)221045.0             ! line 47 -- BIT-EXACT, it is a SIC;
+                                     ! p.166's deck SYNs the same value
+ZID09   SYN, (8)221042.0             ! line 48, half-word only; p.166's deck
+TREPR   SYN(BU,1), 0.26              ! line 49 -REEL PROTECT BIT IF ONE
+ZID13   SYN, (8)221047.0             ! line 49, half-word only; on p.180
+KCONVR  SYN, (8)221350.0             ! line 51 -- BIT-EXACT, it is a SIC
+KCONV   SYN, (8)221335.0             ! line 52, half-word only; landed card
+ZID02A  SYN, (8)221053.0             ! line 53 -- BIT-EXACT, it is a VF
+SCOMIC  SYN, (8)215470.40            ! line 54 -- BIT-EXACT, it is a SIC
+SCOMM   SYN, (8)215470.0             ! line 55, half-word only; p.116 line 37
+ZID01   SYN, (8)221050.0             ! line 56 -- BIT-EXACT, a null operation
+                                     ! deposits the full 24-bit bit address
+
+! ---------------------------------------------------------------
+        SLC, (8)220776.40
+! ---------------------------------------------------------------
+
+        B,RODD                       ! line  1  LA000111
+        B,RECC                       ! line  2  LA000112
+        B,RNOECC                     ! line  3  LA000113
+KMCP    KVI,3,SFREE                  ! line  4  LA000114  printed "K MCP"
+        BXE,KSOAR-.32                ! line  5  LA000115
+        V+,1,SBAMCP                  ! line  6  LA000116
+        B,KSOAR                      ! line  7  LA000117
+ZIODH   LVI,14,SIODI                 ! line  8  LA000118  printed "Z IOD H"
+        SIC,SDISIC; B,SDISP          ! lines 9/10  LA000119 -- ONE card
+KUNA    LV,11,$10                    ! line 11  LA000120  printed "K UNA"
+        B,KNI                        ! line 12  LA000121
+KNOGO   BB,$L,KNOTAV                 ! line 13  LA000122  printed "K NO GO"
+        KVI,3,2.0                    ! line 14  LA000123
+        BXE,KOPOK                    ! line 15  LA000124
+        KVI,3,2.32                   ! line 16  LA000125
+        BXE,KKNI                     ! line 17  LA000126
+        KVI,3,DCHEX                  ! line 18  LA000127
+        BXE,KOPOK                    ! line 19  LA000128
+        KVI,3,DFREE                  ! line 20  LA000129
+        BXE,KKNI                     ! line 21  LA000130
+        KVI,3,DIODEF                 ! line 22  LA000131
+        BXE,KOPOK                    ! line 23  LA000132
+        BZB,SMULTI($10),KCHOPN       ! line 24  LA000133
+        BZB,SMOUNT($11),KCHOPN       ! line 25  LA000134
+        L(BU,26),$TC                 ! line 26  LA000135
+        -(BU,26),SRMTC($12)          ! line 27  LA000136
+        KI(BU,6),ZRMTCC              ! line 28  LA000137
+        BZAH,KCHOPN                  ! line 29  LA000138
+        BB1,SRMIND($12),KCHOPN       ! line 30  LA000139
+        LV,7,SCREEL($12)             ! line 31  LA000140
+        BB,SIMNT($11),ZID06          ! line 32  LA000141
+        LV,7,0.0($7)                 ! line 33  LA000142
+ZID06   LF,TRENME($7)                ! line 34  LA000143  printed "Z ID06"
+        LV,8,$7                      ! line 35  LA000144
+        BRZ,ZID14                    ! line 36  LA000145
+        V+,7,ZRENME                  ! line 37  LA000146
+        SV,7,ZID10                   ! line 38  LA000147
+        TI,2,KEXTAP,ZID03            ! line 39  LA000148
+        LVI,15,$+1.0                 ! line 40  LA000149
+        B,SA6IQS                     ! line 41  LA000150
+ZID10   VF,0.0                       ! line 42  LA000151  printed "Z ID 10"
+        CF,5                         ! line 43  LA000152
+        VF,ZID04                     ! line 44  LA000153
+ZID09A  BB,SOWNER($11),ZID15         ! line 45  LA000154  printed "Z ID09A"
+        LVI,7,ZID04A                 ! line 46  LA000155
+        SIC,ZID09X; B,ZID09          ! lines 47/48  LA000156 -- ONE card
+        BB,TREPR($8),ZID13           ! line 49  LA000157
+ZID08   LVI,7,9.0                    ! line 50  LA000158  printed "Z ID08"
+ZID07   SIC,KCONVR; B,KCONV          ! lines 51/52  LA000159 -- ONE card
+        VF,ZID02A                    ! line 53  LA000160
+        SIC,SCOMIC; B,SCOMM          ! lines 54/55  LA000161 -- ONE card
+        ,ZID01                       ! line 56  LA000162  a NULL OPERATION
+
+! ---------------------------------------------------------------
+! THE CHECKS.  Read by tests/verify_mcp_page.py.
+! ---------------------------------------------------------------
+
+!SYM KMCP   221000.00
+!SYM ZIODH  221002.00
+!SYM KUNA   221003.40
+!SYM KNOGO  221004.40
+!SYM ZID06  221023.00
+!SYM ZID10  221030.00
+!SYM ZID09A 221031.40
+!SYM ZID08  221035.00
+!SYM ZID07  221035.40
+
+!CHECK 220776.40 | 220335.50 00 | line 1 B,RODD -- a branch prints target+.10, so RODD is read to the HALF WORD only (220335.40); the tail of a vector whose head is on printed p.178
+!CHECK 220777.00 | 220340.10 00 | line 2 B,RECC -- half-word only; RECC is DEFINED in the merged pp.99-176 body image at 220340.00 and this row agrees with it
+!CHECK 220777.40 | 220342.10 00 | line 3 B,RNOECC -- half-word only; RNOECC is DEFINED in the merged body image at 220342.00 and this row agrees
+!CHECK 221000.00 | 000014.47 04 | line 4 K MCP KVI,3,S FREE -- the 6-bit field is 2*index+1 (3 -> 7) plus 32 for a bit-32 operand, so this row reads S FREE's HALF WORD (12.32) and its index, nothing finer
+!CHECK 221000.40 | 220715.32 C2 | line 5 BXE,K SOAR-.32 -- K SOAR is 220715.40, minus 32 bits is 220715.00; .32 is BXE's own modifier, not an address bit
+!CHECK 221001.00 | 215003.02 B0 | line 6 V+,1,S BA MCP -- half-word only; S BA MCP is 215003.00 in the merged body image
+!CHECK 221001.40 | 220715.50 00 | line 7 B,K SOAR -- the .50 is .40+.10, so this row DOES check K SOAR's half word
+!CHECK 221002.00 | 010004.35 01 | line 8 Z IOD H LVI,14,S IOD I -- .35 is 2*14+1; S IOD I is half-word only (010004.00).  The comment "-INVALID IOD REF NO" is what settles the name's O and D
+!CHECK 221002.40 | 217451.40 80 | line 9 SIC,S DISIC -- a SIC's half word carries the operand's FULL 24-bit bit address (Reference Manual printed p.41), so this is a BIT-EXACT reading of S DISIC at 217451.40.  Same card as line 10 (serial LA000119)
+!CHECK 221003.00 | 217372.10 00 | line 10 B,S DISP -- half-word only; same card as line 9
+!CHECK 221003.40 | 000032.26 30 | line 11 K UNA LV,11,$10 -- $10 is index register 10 at word 0o32; .26 is 2*11
+!CHECK 221004.00 | 220726.50 00 | line 12 B,K NI -- .50 checks K NI's half word (220726.40)
+!CHECK 221004.40 | 000010.00 80 | line 13 K NO GO BB,$L,K NOT AV, first half word -- $L is the accumulator left half at word 0o10 (C22-6531 Appendix A).  THIS LOCATION CARRIES THE PAGE'S FIRST LOCATION-COLUMN ASTERISK
+!CHECK 221005.00 | 221066.34 02 | line 13 BB,$L,K NOT AV, second half word -- a BB branch address is 19 bits of HALF WORD, printed target+.34; byte 02 is mod=00 cond=1
+!CHECK 221005.40 | 000002.07 04 | line 14 KVI,3,2.0 -- an immediate 2.0; .07 is 2*3+1 with no bit-32 term.  -IF $CCW, PROCEED
+!CHECK 221006.00 | 220743.32 C2 | line 15 BXE,K OP OK -- half-word only (220743.00)
+!CHECK 221006.40 | 000002.47 04 | line 16 KVI,3,2.32 -- .47 is 0o40+0o07, the 32 of "2.32" plus 2*3+1.  THIS ROW PROVES THE 6-BIT FIELD'S DECOMPOSITION, because both halves are written in the statement.  -IF $REL, PROCEED
+!CHECK 221007.00 | 220735.32 C2 | line 17 BXE,K K NI -- a DIFFERENT symbol from K NI: 220735.00 against 220726.40.  The volume OCR indexes K K NI's defining card at 220735.00 on another page
+!CHECK 221007.40 | 000014.07 04 | line 18 KVI,3,D CHEX -- D CHEX is 12.0; contrast line 4's S FREE at 12.32, same word, different half.  -IF $CHEX, PROCEED
+!CHECK 221010.00 | 220743.32 C2 | line 19 BXE,K OP OK -- identical bits to line 15 and line 23
+!CHECK 221010.40 | 000012.47 04 | line 20 KVI,3,D FREE -- D FREE is 10.32 in the BODY image; the pp.15-98 IPL assembly's D FREE is a different symbol with value 0.  -IF $FREE, PROCEED
+!CHECK 221011.00 | 220735.32 C2 | line 21 BXE,K K NI -- identical bits to line 17
+!CHECK 221011.40 | 000015.07 04 | line 22 KVI,3,DIODEF -- DIODEF is 13.0
+!CHECK 221012.00 | 220743.32 C2 | line 23 BXE,K OPOK -- printed closed up here and spaced on lines 15/19; one symbol, identical bits all three times
+!CHECK 221012.40 | 000000.33 8A | line 24 BZB,SMULTI($10),K CHOPN, first half word -- S MULTI is bit 0o33 = 27 with dds (BU,1); the low nibble A is index 10
+!CHECK 221013.00 | 221041.34 00 | line 24 BZB second half word -- byte 00 is mod=00 cond=0 (branch on ZERO bit); KCHOPN half-word only at 221041.00, on printed p.180
+!CHECK 221013.40 | 000000.63 8B | line 25 BZB,SMOUNT($11),KCHOPN, first half word -- S MOUNT is bit 0o63 = 51, index 11
+!CHECK 221014.00 | 221041.34 00 | line 25 BZB second half word -- same target as line 24
+!CHECK 221014.40 | 000001.34 80 | line 26 L(BU,26),$TC, first half word -- $TC is the Time Clock, word 1 bit 28 = 0o34 (C22-6531 Appendix A), so this row READS the system symbol's bit address
+!CHECK 221015.00 | 032000.20 50 | line 26 L second half word -- the VFL op/length word for a 26-bit unsigned load
+!CHECK 221015.40 | 000001.40 8C | line 27 -(BU,26),S RMTC($12), first half word -- S RMTC is 1.32 with dds (BU,26); index 12 is the C.  -COMPUTE TIME LAG
+!CHECK 221016.00 | 032000.30 10 | line 27 subtract, second half word
+!CHECK 221016.40 | 770000.00 80 | line 28 KI(BU,6),Z RMTCC, first half word -- an immediate is LEFT-JUSTIFIED in the 24-bit A24 field, so this reads only the TOP SIX BITS of Z RMTCC (111111); the symbol's own length and lower bits are UNOBSERVABLE here
+!CHECK 221017.00 | 406000.21 10 | line 28 Connect-immediate, second half word -- independent of the operand's value (measured: the same bits with the SYN set to 0)
+!CHECK 221017.40 | 221041.37 40 | line 29 BZAH,KCHOPN -- the ONLY B/BZ indicator spelling strap_asm accepts that produces these bits; AH is indicator 62 and the comment is "-BRANCH IF TIME NOT ELAPSED", which is what line 27's subtraction sets
+!CHECK 221020.00 | 000001.77 8C | line 30 BB1,SRMIND($12),KCHOPN, first half word -- S RMIND is 1.63 = 0o177 within word 1, printed 000001.77.  THIS LOCATION CARRIES THE PAGE'S SECOND LOCATION-COLUMN ASTERISK
+!CHECK 221020.40 | 221041.34 0E | line 30 BB1 second half word -- byte 0E is mod=0b11 (set the bit to ONE) cond=1, which is what distinguishes BB1 from BB (02) and BZB (00); the comment says "SET SWTCH"
+!CHECK 221021.00 | 000010.56 3C | line 31 LV,7,SCREEL($12) -- S CREEL is 8.32, so .56 is 0o40 + 2*7; the byte's low nibble C is index 12
+!CHECK 221021.40 | 000000.65 8B | line 32 BB,SIMNT($11),Z ID06, first half word -- S IMNT is bit 0o65 = 53
+!CHECK 221022.00 | 221023.34 02 | line 32 BB second half word -- Z ID06 is this page's own line 34 at 221023.00, so this row is a SELF-CHECK of the page's counter
+!CHECK 221022.40 | 000000.16 37 | line 33 LV,7,0.0($7) -- .16 is 2*7 with a zero operand; byte 37's low nibble is index 7.  -GET NEXT REEL SLOT ADDRESS
+!CHECK 221023.00 | 000000.42 87 | line 34 Z ID06 LF,TRENME($7), first half word -- T RENME is 0.34 = 0o42 with dds (BU,30)
+!CHECK 221023.40 | 036000.06 70 | line 34 LF second half word -- 0o36 = 30, the dds length.  -TEST IF REEL IS SCRATCH
+!CHECK 221024.00 | 000027.20 30 | line 35 LV,8,$7 -- $7 is index register 7 at word 0o27; .20 is 2*8
+!CHECK 221024.40 | 221063.34 C2 | line 36 BRZ,Z ID14 -- half-word only; Z ID14 is 221063.00 on printed p.180.  -BR. IF SCRATCH
+!CHECK 221025.00 | 221064.56 B0 | line 37 V+,7,Z RENME -- .56 is 0o40 + 2*7, so Z RENME's HALF WORD is checked at 221064.40
+!CHECK 221025.40 | 221030.17 30 | line 38 SV,7,Z ID 10 -- .17 is 2*7+1; Z ID 10 is this page's own line 42 at 221030.00, another self-check
+!CHECK 221026.00 | 222015.00 80 | line 39 TI,2,KEXTAP,Z ID03, first half word -- a TRANSMIT's A1 is a 24-bit BIT address, so KEXTAP is read here to 222015.00 but the low bits are the transmit's own; treated as half-word only
+!CHECK 221026.40 | 221055.04 A0 | line 39 TI second half word -- A2 is a 19-bit HALF-WORD address, Z ID03 at 221055.00, on printed p.180
+!CHECK 221027.00 | 221030.37 01 | line 40 LVI,15,$+1.0 -- $ is 221027.00, so the value is 221030.00; .37 is 2*15+1.  A SELF-CHECK of the counter
+!CHECK 221027.40 | 230567.50 00 | line 41 B,SA6IQS -- the .50 checks SA6IQS's half word at 230567.40.  -CONVERT REEL NAME
+!CHECK 221030.00 | 000000.00+ | line 42 Z ID 10 VF,0.0 -- a VALUE FIELD prints magnitude then sign; the first parameter of the SA6IQS call on lines 40/41
+!CHECK 221030.40 | 000005 | line 43 CF,5 -- an 18-bit COUNT field, printed as six bare octal digits
+!CHECK 221031.00 | 221056.10+ | line 44 VF,Z ID 04 -- a VF deposits the value directly, so this is a BIT-EXACT reading of Z ID 04 at 221056.10, and the .10 is real: the volume OCR indexes its defining card on another page as an entry-mode DD landing mid-word
+!CHECK 221031.40 | 000000.40 8B | line 45 Z ID09A BB,SOWNER($11),Z ID15, first half word -- S OWNER is bit 0o40 = 32
+!CHECK 221032.00 | 221045.74 02 | line 45 BB second half word -- .74 is .34 + 0o40, so Z ID15 is at 221045.40, the ODD half of the same word Z ID09X occupies
+!CHECK 221032.40 | 221060.17 01 | line 46 LVI,7,Z ID04A -- .17 is 2*7+1, so Z ID04A is half-word only at 221060.00
+!CHECK 221033.00 | 221045.00 80 | line 47 SIC,Z ID09X -- BIT-EXACT: Z ID09X is 221045.00, which is also the value printed p.166's deck already SYNs.  Same card as line 48 (serial LA000156)
+!CHECK 221033.40 | 221042.10 00 | line 48 B,Z ID09 -- half-word only; p.166's deck SYNs the same 221042.00.  THIS LOCATION CARRIES THE PAGE'S THIRD LOCATION-COLUMN ASTERISK.  -GET JOB NAME
+!CHECK 221034.00 | 000000.32 88 | line 49 BB,TREPR($8),Z ID13, first half word -- T REPR is 0.26 = 0o32 with dds (BU,1); index 8
+!CHECK 221034.40 | 221047.34 02 | line 49 BB second half word -- Z ID13 at 221047.00, on printed p.180.  -BR. IF REEL FILE PROTECTED
+!CHECK 221035.00 | 000011.17 01 | line 50 Z ID08 LVI,7,9.0 -- 9 decimal is 0o11; .17 is 2*7+1
+!CHECK 221035.40 | 221350.00 80 | line 51 Z ID07 SIC,KCONVR -- BIT-EXACT: KCONVR is 221350.00, which is the value the merged body image already holds.  Same card as line 52 (serial LA000159)
+!CHECK 221036.00 | 221335.10 00 | line 52 B,KCONV -- half-word only; KCONV is 221335.00 in the merged body image.  -CONVERT CH AND UN NUMBERS
+!CHECK 221036.40 | 221053.00+ | line 53 VF,Z ID 02A -- BIT-EXACT: the parameter word of the KCONV call on lines 51/52, Z ID 02A at 221053.00
+!CHECK 221037.00 | 215470.40 80 | line 54 SIC,S COMIC -- BIT-EXACT: S COMIC is 215470.40, the merged body image's value.  Same card as line 55 (serial LA000161)
+!CHECK 221037.40 | 215470.10 00 | line 55 B,S COMM -- half-word only; S COMM is 215470.00, the EVEN half of the word S COMIC's odd half occupies
+!CHECK 221040.00 | 221050.00 80 | line 56 ,Z ID01 -- A NULL OPERATION (C22-6531 printed p.7's null-field rule; strap_asm's note cites printed p.133 lines 44-45 as the same shape).  It emits the address-and-index half word every full-word format begins with, so the FULL 24-bit bit address is printed and Z ID01 is pinned to the bit at 221050.00.  LAST ROW OF THE PAGE, a HALF WORD, so THE COUNTER LEAVES AT 221040.40, which is what printed p.180 must print

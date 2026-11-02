@@ -1,0 +1,397 @@
+! mcp_bootstrap_p182.strap -- MCP's STATUS EVALUATION ROUTINE, the
+! whole of it: the ZSTEVL entry, the mask/LZC/AOC table dispatch, the
+! four evaluation-mask VF constants, and three error exits.  Printed
+! page 182.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.189.  The header was READ, not
+! assumed, at 600 dpi: "TIME CLOCK 00054041   PUNID 11D11MCP
+! CARD ID LC000001   DIST. OF 3/01   3/01   PAGE NUMBER  182".
+!
+! >>> THE COLUMN-HEADING ROW'S OWN "LOCATION" FIELD IS BLANK. <<<
+! Rendered at 600 dpi (crop x=6500 y=380 W=3800 H=330 of the 600-dpi
+! page): the word "LOCATION" stands at the right-hand end of the
+! heading row and NO DIGITS FOLLOW IT -- clean paper between the two
+! dashed rules.  Nothing was invented off the rule.
+! docs/transcription_workflow.md step 1 predicts exactly this: the
+! field is LINE 1'S location, and line 1 here is an asterisk banner
+! card that compiles nothing.  A blank does NOT mean the page has no
+! origin; this page's origin is printed on line 4 instead.
+!
+! ---------------------------------------------------------------
+! >>> THIS PAGE CARRIES Z STEVL'S OWN DEFINING CARD, AND THIS IS
+! >>> THE FIRST FIRST-HAND READING OF IT IN THE REPOSITORY.
+! ---------------------------------------------------------------
+! Ten landed decks carry "ZSTEVL  SYN, (8)221144.40" as a STAND-IN
+! back-derived from branch targets -- pp.151, 152, 153, 156, 159,
+! 160, 162, 163, 164 and 165.  Their note is always some form of
+! "half word only; eight pages agree", because a branch encodes only
+! bit 32 of its target (docs/transcription_workflow.md, "WHAT THE
+! ORACLE CANNOT SEE" item 1).  printed p.151's deck had to reason
+! from an LVI on yet another page to justify the ".40" at all.
+!
+! HERE IT IS PRINTED.  Line 5's NAME field is "Z STEVL" and its
+! LOCATION column reads 221144.40 -- the location counter itself,
+! printed to the bit by IBM's own assembler.  Line 4, one row above,
+! is "221144.40 *  SLC,$", which prints the SAME value independently
+! as the counter ARRIVING from printed p.181.  Two printed readings
+! of the same number, neither of them an encoding.
+!
+! So ".40" is now a MEASUREMENT and not a convention, and every one
+! of those ten decks is confirmed rather than merely consistent.
+! (That is a claim about the REPO, not about this page: the list
+! above came from "grep -n ZSTEVL decks/*.strap" and is cheap to
+! re-check.)
+!
+! ---------------------------------------------------------------
+! AND IT SETTLES printed p.162'S OPEN QUESTION ABOUT R MASK
+! ---------------------------------------------------------------
+! decks/mcp_bootstrap_p162.strap writes, at its RMASK SYN:
+!
+!     "THE PRINTED PAGE IS NOT PINNED: the page-header OCR between
+!      volume-OCR lines 9130 (printed p.178) and 9380 is unreadable,
+!      so the card is somewhere in printed pp.179-184 and this deck
+!      does not guess which."
+!
+! It is printed p.182, LINE 15: "R MASK  VF,(8)3000." at 221153.00.
+!
+! This page is also the defining page for Z EVL MK (line 13,
+! 221152.00), E MK1A (line 14, 221152.40) and Z EVL RW (line 16,
+! 221153.40).  Every landed stand-in agrees with the card:
+!
+!     ZEVLMK  (8)221152.0   p.151          vs line 13  221152.00
+!     EMK1A   (8)221152.40  pp.153, 164    vs line 14  221152.40
+!     RMASK   (8)221153.0   p.162          vs line 15  221153.00
+!     ZEVLRW  (8)221153.40  p.165          vs line 16  221153.40
+!     ZSTEVL  (8)221144.40  ten decks      vs line  5  221144.40
+!
+! Those four are defined by VF cards, not SYNs, and the decks that
+! reference them SYN them BARE, with no data description.  That is
+! the established precedent, not an oversight: printed p.148 line 19
+! defines S DISIC with "VF,0" and eight decks SYN it bare while the
+! pp.99-176 body merge stays green.  A page joining this one should
+! keep writing them bare.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! TWENTY-SIX PRINTED LINES AND THEN BLANK PAPER.  Three banner
+! comment cards, a printed "SLC,$", twenty-two located rows, and
+! nothing below line 26 to the foot of the form.
+!
+! CONTIGUOUS, 221144.40 to 221161.00, no hole of any kind: eight and
+! a half words, every half word accounted for, no DR, no DRZ, no
+! forward SLC.
+!
+! C22-6728-1, the MCP System Analysis Guide, names this routine in
+! typeset prose: "the status evaluation routine (ZSTEVL)" and "It is
+! entered at ZSTEVL with the location of a status word".  Its flow
+! chart boxes "ZSTEVL" and "SELECT CHECK".  That is this page.
+!
+! The shape, in five parts:
+!
+!   lines  5-12  the dispatch.  Fetch the unit's evaluation mask
+!                (S EVL MK in the unit-area table), connect it with
+!                the status bits, take the leading-zeros count, use
+!                it as an index into the evaluation table whose base
+!                is S EVL TB, and branch there.  Eight rows.
+!   lines 13-16  four VF mask constants, named Z EVL MK, E MK1A,
+!                R MASK and Z EVL RW.
+!   lines 17-19  Z E1, unit not available  -> SIC,S DISIC; B,S DISP
+!   lines 20-22  Z E2, unit not assigned   -> the same pair
+!   lines 23-25  Z E4, I-O interrupt stacked on unit -> the same pair
+!   line  26     ZE 3  -> B,KCBUSY
+!
+! CARD SERIALS: LC000001 through LC000023, consecutive, no gap.
+! TWENTY-THREE CARDS, TWENTY-SIX LINES: the three SIC/branch pairs
+! share one card each, so lines 18/19 both print LC000018, 21/22 both
+! print LC000020, and 24/25 both print LC000022.  NOTHING FELL OFF
+! EITHER END -- LC000001 is serial ONE of the LC prefix, so this page
+! opens a new card deck and printed p.181 ends a different run, and
+! line 26 is followed by blank paper rather than by a page break.
+! (Brief rule 4: the survey's row count is a lower bound.  The cached
+! survey said 221144.40..221160.40, which is right as far as it goes
+! -- it names the first and last LOCATED rows -- but the page spans
+! to 221161.00 and has 26 lines, not 22.)
+!
+! ---------------------------------------------------------------
+! THE TWO GLYPHS THAT NEEDED SETTLING, AND WHAT SETTLED THEM
+! ---------------------------------------------------------------
+! This page's drum opens round glyphs constantly.  The octal fields
+! prove it on nearly every row: line 7 prints "C00C00.00 8B" and
+! "000000.C3 70", line 8 "000C07.C6 30", line 11 "C00CC2.C6 BC".  A
+! C cannot occur in a six-octal-digit word field or a two-octal-digit
+! bit field, so all of those are damaged 0s.  The ENGLISH ORACLE says
+! the same thing in the comment column: line 9's comment is the word
+! CONNECT and the drum prints it "-CCNNECT".
+!
+! But ink varies per CHARACTER, so that licenses nothing on its own.
+! Two HEX bytes had to be decided, and both were decided on what
+! PRODUCED them, by measurement:
+!
+!   LINE 9, printed "...000000.C6 FC".  The ".C6" is a certain 0.
+!   The final glyph is not, because C is a legal hex digit.  Measured
+!   with the assembler, everything else fixed:
+!
+!       CM0011(BU,64,8),$L($3)               -> 000000.06 F0
+!       CM0011(BU,64,8),$L($3),0($12)        -> 000000.06 FC
+!       CM0111(BU,64,8),$L($3)               -> 000000.16 F0
+!       CM1011(BU,64,8),$L($3)               -> 000000.26 F0
+!
+!   The connective FUNCTION lands in the octal field, so the byte's
+!   low nibble is the OFFSET INDEX i2 and nothing else.  An "FC"
+!   therefore requires a SECOND OPERAND with index 12.  Line 9's
+!   statement was rendered at 1800 dpi and there is nothing between
+!   the closing ")" of "$L($3)" and the comment's dash.  The byte is
+!   F0.  Recorded in the !CHECK as F0, with the ink reading named
+!   here so nobody has to re-render the page to find out why.
+!
+!   LINE 12, printed "C00C00.1C C3".  Three certain damaged 0s in
+!   the row (chars 1 and 4, and the ".1C").  Measured:
+!
+!       B,0.0($3)    -> 000000.10 03      BR,0.0($3) -> 000000.14 03
+!       BD,0.0($3)   -> 000000.04 03      BE,0.0($3) -> 000000.00 03
+!
+!   Only B reaches ".10", and no branch form reaches a byte of C3 at
+!   all -- the low nibble is the index ($3) and the high nibble is 0
+!   for every branch.  The byte is 03.
+!
+! A THIRD ROW NEEDED NO ARGUMENT BECAUSE ANOTHER PAGE HAD ALREADY
+! MADE IT.  Line 17 prints "C1C003.35 C1" for "LVI,14,S UN NAV".
+! printed p.173 line 29 prints "C1CC11.35 C1" for the same operation
+! and records "every C is a 0".  Same operation, same byte position,
+! two pages, one reading: 010003.35 01.
+!
+! THE CONNECTIVE MNEMONICS ARE READ THE SAME WAY, and they are the
+! easiest glyphs on the page once you see it.  "CTOC01" and "CMOC11"
+! have four BINARY digits after the CT / CM, and a binary field can
+! hold only 0 and 1, so every round glyph in them is a 0:
+! CT0001 and CM0011.
+!
+! ---------------------------------------------------------------
+! A SECOND, INDEPENDENT READING OF THE LOCATION COLUMN
+! ---------------------------------------------------------------
+! "python3 strap/mcp_ocr.py 182" (tesseract, a different reader)
+! returned twelve locations cleanly and EVERY ONE AGREES with the
+! eye: 221144.40, 221146.00, 221150.40, 221151.00, 221152.40,
+! 221153.00, 221154.40, 221155.00, 221155.40, 221156.40, 221157.00,
+! 221160.40.  It dropped the other rows; it contradicted none.
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK
+! ---------------------------------------------------------------
+! TWO rows carry the second asterisk: LINE 4 (221144.40, the printed
+! "SLC,$") and LINE 24 (221157.40, "SIC,S DISIC").  Recorded and no
+! rule proposed -- this page is itself a counterexample to any rule
+! built on either row alone, since one of its two is an SLC and the
+! other is an ordinary instruction in the middle of a repeated
+! three-row group whose other two copies (lines 18 and 21) carry no
+! asterisk at all.
+!
+! ---------------------------------------------------------------
+! THE JOINS
+! ---------------------------------------------------------------
+! BACKWARD.  Line 4 prints "SLC,$" at 221144.40, and an SLC emits
+! nothing, so that LOCATION IS the counter arriving from printed
+! p.181: p.181 must end at exactly 221144.40.  This deck substitutes
+! a HARD origin for it (see the loud note at the SLC below), which
+! throws the witness away inside the deck -- so the value is recorded
+! here, in prose, for the hand comparison when p.181 lands.
+!
+! FORWARD.  The last row is line 26 at 221160.40, a half word, so the
+! counter reaches 221161.00 and printed p.183 must begin there.
+! INDEPENDENTLY CORROBORATED: decks/mcp_bootstrap_p151.strap and
+! decks/mcp_bootstrap_p162.strap both SYN "RVFY" at 221161.00, p.162
+! quoting the volume OCR of its defining card --
+! "221161.00  000007.31 8C  221165.74 02  R VFY  BZB,S SYSTM($12),
+! R RR  -TEST IF SYSTEM TAPE".  So the prediction is sharp: printed
+! p.183's first located row is R VFY at 221161.00, a full-word BZB.
+!
+! ---------------------------------------------------------------
+! WHAT IS NOT SETTLED
+! ---------------------------------------------------------------
+! 1. THE FOUR ERROR-EXIT LABELS ZE1, ZE2, ZE3, ZE4 ARE INK ONLY.
+!    "grep -l '\bZE[1-4]\b' decks/*.strap" finds NOTHING: no other
+!    landed deck references any of them, so no merge, no oracle and
+!    no spelling check can ever confirm their names.  They are short
+!    and the glyphs are clean at 1800 dpi, but they rest on ink.
+!    Two oddities, both real and both unexplained:
+!      * the order on the page is E1, E2, E4, E3 -- line 23 is
+!        plainly "Z E4" and line 26 plainly "ZE 3" at 1800 dpi.
+!      * the BLANK sits in a different column: lines 17/20/23 punch
+!        "Z E1" / "Z E2" / "Z E4" and line 26 punches "ZE 3".  Blanks
+!        inside a name are squeezed out, so both resolve, but the
+!        card images really do differ.
+!    A page that branches to one of these would settle the spelling.
+! 2. THE BANNER ASTERISK COUNTS were MEASURED, not eyeballed, and one
+!    of them is odd.  Counting glyph ink-runs on a 600-dpi crop
+!    (x=4600 y=690 W=5400 H=330), with a character pitch of 60.2 px
+!    that is regular across both rows:
+!      line 1  "- " + SIXTY-NINE asterisks
+!      line 2  "-" + 15 + "   STATUS EVALUATION   " + 15 + "-"
+!      line 3  "- " + SEVENTY asterisks
+!    LINES 1 AND 3 ARE NOT THE SAME LENGTH.  Line 3 carries one more
+!    asterisk, at a position where line 1 has clean paper, and the
+!    pitch on both rows is regular, so this is not a dropped glyph in
+!    the middle of a run.  It may simply be two differently punched
+!    cards; nothing in this repository can check it, and nothing
+!    depends on it -- they are comment cards and compile nothing.
+! 3. S UN NAV / S UN NAS / S U SUPP are checked only to the extent an
+!    LVI checks anything: the immediate's low six bits are overwritten
+!    by the operation's own index bits (0o35 for index 14 plus LVI's
+!    0o01).  The WORD is pinned -- 010003, 010004, 000402 -- and
+!    printed p.107's defining cards give exactly those three words,
+!    which is the real check.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- every one SYNed from the page that DEFINES it
+! ---------------------------------------------------------------
+
+! S EVL MK   2.32   printed p.101 line 12's defining card,
+!                   "-EVALUATION MASK", SYN(BU,19).  Line 5 is an
+!                   index instruction: 000002.54 is 0o40 (bit 32)
+!                   OR index 6's 0o14, so this page sees that bit 18
+!                   is set and does not measure the 32.
+SEVLMK  SYN(BU,19), 2.32
+! S EVL TB   2.0    printed p.101 line 11's defining card,
+!                   "-EVALUATION TABLE BASE", SYN(BU,19).  Line 11
+!                   prints 000002.06, which is index 3's 0o06 alone.
+SEVLTB  SYN(BU,19), 2.0
+! S UN NAV  010003.00  printed p.107 line 7, "S UN NAV SYN,S CH NAV",
+!                   aliasing line 6's "SCHNAV SYN,(16)1003.0".  Both
+!                   print "010003.00+  +00000000  NULL" -- NO data
+!                   description, so this stand-in writes none either.
+SUNNAV  SYN, (16)1003.0
+! S UN NAS  010004.00  printed p.107 line 9, "S UN NAS SYN,S IODI",
+!                   aliasing line 8's "SIODI SYN,(16)1004.0"; also
+!                   NULL.
+SUNNAS  SYN, (16)1004.0
+! S U SUPP  000402.00  printed p.107 line 17's own card,
+!                   "SUSUPP SYN,(16)0102.0", "-12 UNIT SUPPRESSED";
+!                   also NULL.  0o402 = 0x102.
+SUSUPP  SYN, (16)0102.0
+! S DISIC   217451.40  printed p.148 line 19's defining card,
+!                   "SDISIC VF,0  -LOCATION GENERATING ERROR CODE";
+!                   eight landed decks SYN it bare at this value.
+!                   >>> THIS PAGE PINS IT TO THE BIT, THREE TIMES.
+!                   A SIC's half word carries the operand's FULL
+!                   24-bit bit address (Reference Manual printed
+!                   p.41), so lines 18, 21 and 24 printing
+!                   "217451.40 80" are a BIT-EXACT reading of
+!                   S DISIC and not a convention.
+SDISIC  SYN, (8)217451.40
+! S DISP    217372.00  printed p.147 line 5's own label row,
+!                   "SDISP BB1,SL,MCPERR"; seven landed decks SYN it.
+!                   Lines 19, 22 and 25 are BRANCHES, so bit 32 is
+!                   observed (it is 0) and the bits below it are NOT.
+SDISP   SYN, (8)217372.0
+! K C BUSY  221065.00  decks p.152 and p.157 SYN it at this value,
+!                   p.152 off its own line 9's
+!                   "BBZ,SCHOP($10),KCBUSY -> 221065.34 06".
+!                   Line 26 is a branch: half word only.
+KCBUSY  SYN, (8)221065.0
+
+! ---- the origin -------------------------------------------------
+! >>> A HARD ORIGIN SUBSTITUTED FOR A PRINTED "SLC,$". <<<
+! THE PAGE PRINTS, on line 4:   221144.40 *   SLC,$
+! and nothing else in that row.  A hard SLC cannot disagree with the
+! arriving counter -- it overrides it silently -- so this line is an
+! ASSERTION in this deck and not a check.  The printed form and the
+! printed location are recorded in the listing block below and in
+! "THE JOINS" above, for the hand comparison when printed p.181
+! lands.
+        SLC, (8)221144.40
+
+! ---- the page ---------------------------------------------------
+ZSTEVL  LV,6,SEVLMK($12)             ! line  5  -GET MASK ADDR
+        L(BU,32),0.0($6)             ! line  6  -LOAD MASK INTO $R
+        CT0001(BU,64,8),0.0($11)     ! line  7  -GET LZC ON MASK AND STATUS BITS
+        LV,3,$LZC                    ! line  8  -LOAD LZC AS BIT POSITION INDEX FOR
+        CM0011(BU,64,8),$L($3)       ! line  9  -CONNECT WITH MASK TO GET RESULT AOC
+        LV,3,$AOC                    ! line 10
+        V+,3,SEVLTB($12)             ! line 11  -ADD TABLE BASE ADDR
+        B,0.0($3)                    ! line 12
+ZEVLMK  VF,(8)3004.                  ! line 13  -$RD MASK - SEL,VER,CONSG
+EMK1A   VF,(8)3000.                  ! line 14  -$W AND $WEF MASK - SEL,VER
+RMASK   VF,(8)3000.                  ! line 15  -SPACE MASK - SEL,VER
+ZEVLRW  VF,(8)2000.                  ! line 16  -REW,UNLD,FREE MASK - SEL
+ZE1     LVI,14,SUNNAV                ! line 17  -UNIT NOT AVAILABLE
+        SIC,SDISIC                   ! line 18
+        B,SDISP                      ! line 19  (same card as 18)
+ZE2     LVI,14,SUNNAS                ! line 20  -UNIT NOT ASSIGNED
+        SIC,SDISIC                   ! line 21
+        B,SDISP                      ! line 22  (same card as 21)
+ZE4     LVI,14,SUSUPP                ! line 23  -I/O INTERRUPT STACKED ON UNIT
+        SIC,SDISIC                   ! line 24
+        B,SDISP                      ! line 25  (same card as 24)
+ZE3     B,KCBUSY                     ! line 26
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS RENDERED AT 200/600/900/1800 dpi
+! ---------------------------------------------------------------
+! The two bytes marked [ink] below print a round glyph that this
+! deck reads as 0; see "THE TWO GLYPHS THAT NEEDED SETTLING".
+!
+!   1*                                        - *********************************************************************   LC000001
+!   2*                                        -***************   STATUS EVALUATION   ***************-                  LC000002
+!   3*                                        - **********************************************************************  LC000003
+!   4*  221144.40 *                                                     SLC,$                                      LC000004
+!   5*  221144.40   000002.54 3C                      Z STEVL  LV,6,S EVL MK($12)   -GET MASK ADDR                 LC000005
+!   6*  221145.00   000000.00 86  040000.20 50                 L(BU,32),0.0($6)     -LOAD MASK INTO $R             LC000006
+!   7*  221146.00   000000.00 8B  000000.03 70                 CT0001(BU,64,8),0.0($11) -GET LZC ON MASK AND STATUS BITS  LC000007
+!   8*  221147.00   000007.06 30                               LV,3,$LZC            -LOAD LZC AS BIT POSITION INDEX FOR   LC000008
+!   9*  221147.40   000010.00 83  000000.06 F0                 CM0011(BU,64,8),$L($3) -CONNECT WITH MASK TO GET RESULT AOC  LC000009  [ink: F0 prints open]
+!  10*  221150.40   000007.46 30                               LV,3,$AOC                                           LC000010
+!  11*  221151.00   000002.06 BC                               V+,3,S EVL TB($12)   -ADD TABLE BASE ADDR           LC000011
+!  12*  221151.40   000000.10 03                               B,0.0($3)                                           LC000012  [ink: 03 prints open]
+!  13*  221152.00   003004.00+                       Z EVL MK  VF,(8)3004.          -$RD MASK - SEL,VER,CONSG      LC000013
+!  14*  221152.40   003000.00+                       E MK1A    VF,(8)3000.          -$W AND $WEF MASK - SEL,VER    LC000014
+!  15*  221153.00   003000.00+                       R MASK    VF,(8)3000.          -SPACE MASK - SEL,VER          LC000015
+!  16*  221153.40   002000.00+                       Z EVL RW  VF,(8)2000.          -REW,UNLD,FREE MASK - SEL      LC000016
+!  17*  221154.00   010003.35 01                     Z E1      LVI,14,S UN NAV      -UNIT NOT AVAILABLE            LC000017
+!  18*  221154.40   217451.40 80                               SIC,S DISIC                                         LC000018
+!  19*  221155.00   217372.10 00                               B,S DISP                                            LC000018
+!  20*  221155.40   010004.35 01                     Z E2      LVI,14,S UN NAS      -UNIT NOT ASSIGNED             LC000019
+!  21*  221156.00   217451.40 80                               SIC,S DISIC                                         LC000020
+!  22*  221156.40   217372.10 00                               B,S DISP                                            LC000020
+!  23*  221157.00   000402.35 01                     Z E4      LVI,14,S U SUPP      -I/O INTERRUPT STACKED ON UNIT LC000021
+!  24*  221157.40 * 217451.40 80                               SIC,S DISIC                                         LC000022
+!  25*  221160.00   217372.10 00                               B,S DISP                                            LC000022
+!  26*  221160.40   221065.10 00                     ZE 3      B,KCBUSY                                            LC000023
+!
+!   (blank paper from here to the foot of the form)
+
+! ---------------------------------------------------------------
+! THE CHECKS
+! ---------------------------------------------------------------
+!SYM   ZSTEVL   221144.40
+!SYM   ZEVLMK   221152.00
+!SYM   EMK1A    221152.40
+!SYM   RMASK    221153.00
+!SYM   ZEVLRW   221153.40
+!SYM   ZE1      221154.00
+!SYM   ZE2      221155.40
+!SYM   ZE4      221157.00
+!SYM   ZE3      221160.40
+
+!CHECK 221144.40 | 000002.54 3C | line 5 Z STEVL LV,6,S EVL MK($12) -GET MASK ADDR -- .54 is S EVL MK's bit 32 (0o40) OR index 6's 0o14, so bit 18 is checked and the 32 is not; byte 3C's low nibble is index $12. THIS ROW IS Z STEVL'S DEFINING CARD
+!CHECK 221145.00 | 000000.00 86 040000.20 50 | line 6 L(BU,32),0.0($6) -LOAD MASK INTO $R -- the 040000 in the second half word is the dds length 32 (0o40); byte 86's low nibble is index $6
+!CHECK 221146.00 | 000000.00 8B 000000.03 70 | line 7 CT0001(BU,64,8),0.0($11) -GET LZC ON MASK AND STATUS BITS -- byte 8B's low nibble is index $11; the .03 is CT's connective function 0001 and byte 70 has i2 = 0, there being no offset operand
+!CHECK 221147.00 | 000007.06 30 | line 8 LV,3,$LZC -LOAD LZC AS BIT POSITION INDEX FOR -- $LZC is word 7, and .06 is index 3's contribution alone
+!CHECK 221147.40 | 000010.00 83 000000.06 F0 | line 9 CM0011(BU,64,8),$L($3) -CONNECT WITH MASK TO GET RESULT AOC -- $L is word 8 (0o10); .06 is the connective function 0011; THE PAGE PRINTS THIS BYTE WITH AN OPEN ROUND GLYPH and it is F0, not FC: only a second operand with offset index 12 reaches FC, and 1800 dpi shows nothing after "$L($3)". A FULL WORD AT AN ODD HALF WORD, straddling 221147.40-221150.00
+!CHECK 221150.40 | 000007.46 30 | line 10 LV,3,$AOC -- the same word 7 as line 8 with the other field, so the pair 000007.06 / 000007.46 is this page's own reading of $LZC against $AOC
+!CHECK 221151.00 | 000002.06 BC | line 11 V+,3,S EVL TB($12) -ADD TABLE BASE ADDR -- S EVL TB is 2.0 and .06 is index 3's contribution; byte BC's low nibble is index $12, and the C IS A REAL C here (the page prints it closed)
+!CHECK 221151.40 | 000000.10 03 | line 12 B,0.0($3) -- .10 is B's half-word-select bit, not an address bit; THE PAGE PRINTS "C00C00.1C C3" and all four round glyphs are 0s: three are in octal fields where a C is impossible, and no branch form reaches a byte of C3 at all
+!CHECK 221152.00 | 003004.00+ | line 13 Z EVL MK VF,(8)3004. -$RD MASK - SEL,VER,CONSG -- THE DEFINING CARD for the symbol printed p.151 back-derives as (8)221152.0
+!CHECK 221152.40 | 003000.00+ | line 14 E MK1A VF,(8)3000. -$W AND $WEF MASK - SEL,VER -- THE DEFINING CARD for the symbol printed pp.153 and 164 back-derive as (8)221152.40
+!CHECK 221153.00 | 003000.00+ | line 15 R MASK VF,(8)3000. -SPACE MASK - SEL,VER -- THE DEFINING CARD printed p.162's deck could place only "somewhere in printed pp.179-184"; bit-identical to line 14, a different name on the same constant
+!CHECK 221153.40 | 002000.00+ | line 16 Z EVL RW VF,(8)2000. -REW,UNLD,FREE MASK - SEL -- THE DEFINING CARD for the symbol printed p.165 back-derives as (8)221153.40
+!CHECK 221154.00 | 010003.35 01 | line 17 Z E1 LVI,14,S UN NAV -UNIT NOT AVAILABLE -- .35 is index 14's 0o34 OR LVI's own 0o01, so the IMMEDIATE's low six bits are not observable; the word 010003 is printed p.107 line 7's own value. The page prints "C1C003.35 C1"; printed p.173 line 29 prints the same byte for the same operation and reads it 01
+!CHECK 221154.40 | 217451.40 80 | line 18 SIC,S DISIC -- A SIC CARRIES THE OPERAND'S FULL 24-BIT ADDRESS, so this is a BIT-EXACT reading of S DISIC, printed p.148 line 19's VF card, and not a convention
+!CHECK 221155.00 | 217372.10 00 | line 19 B,S DISP -- .10 is the branch's own bit; S DISP is checked to the HALF WORD only
+!CHECK 221155.40 | 010004.35 01 | line 20 Z E2 LVI,14,S UN NAS -UNIT NOT ASSIGNED -- the same .35 as line 17; 010004 is printed p.107 line 9's value
+!CHECK 221156.00 | 217451.40 80 | line 21 SIC,S DISIC -- bit-identical to line 18, the same card printed twice on one page
+!CHECK 221156.40 | 217372.10 00 | line 22 B,S DISP -- bit-identical to line 19
+!CHECK 221157.00 | 000402.35 01 | line 23 Z E4 LVI,14,S U SUPP -I/O INTERRUPT STACKED ON UNIT -- 0o402 is printed p.107 line 17's (16)0102.0, hex 102
+!CHECK 221157.40 | 217451.40 80 | line 24 SIC,S DISIC -- the THIRD printing of this word on this page. This LOCATION carries the unexplained second asterisk
+!CHECK 221160.00 | 217372.10 00 | line 25 B,S DISP -- the third printing of this word
+!CHECK 221160.40 | 221065.10 00 | line 26 ZE 3 B,KCBUSY -- K C BUSY to the half word; A HALF WORD, so the counter reaches 221161.00, which is where printed p.183 must begin

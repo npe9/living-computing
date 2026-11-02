@@ -6568,7 +6568,50 @@ run "the WAIT routine, printed p.168" python3 verify_mcp_page.py 168
 # strap_asm refuses a duplicate label OUTRIGHT, assembling nothing --
 # so "leave the row failing" was not on offer.  See docs/NEXT.md;
 # C28-6129's MULTI/CONTAG flags are the test that settles it.
-run "MCP's body merges and accounts for every word, printed pp.99-168" python3 check_mcp_body_image.py
+run "the change-I/O-exits routine, printed p.169" python3 verify_mcp_page.py 169
+run "the SIO and RIO routines, printed p.170" python3 verify_mcp_page.py 170
+run "the store/fetch comm-region pseudo-ops, printed p.171" python3 verify_mcp_page.py 171
+run "STORE LOWER REGISTERS, printed p.172" python3 verify_mcp_page.py 172
+run "FETCH LOWER REGISTERS, printed p.173" python3 verify_mcp_page.py 173
+run "the $FIXUP entry, printed p.174" python3 verify_mcp_page.py 174
+run "the fixup routine, printed p.175" python3 verify_mcp_page.py 175
+run "the F WIT interrupt-table copy, printed p.176" python3 verify_mcp_page.py 176
+
+# >>> pp.169-176 CLOSED A HOLE IN THE BODY-IMAGE TEST ITSELF. <<<
+# Recording SLC skips as legitimate holes (added with pp.99-160) had
+# re-opened the very gap the word-accounting contract exists to shut:
+# every deck substitutes a hard origin SLC for its printed "SLC,$",
+# so a LOST PAGE is jumped over by the next deck's SLC and counts as
+# accounted for.  MEASURED: drop printed p.140 from the list and the
+# build still reported 0 unaccounted.  The thirteen SLC-covered holes
+# are now pinned BY VALUE -- all of them printed p.112's five cards
+# -- and the same injection now fails, naming 0o217154 onward.
+# printed p.175's transcriber spotted it before it misled anyone.
+run "the IDENTIFIER entry, printed p.177" python3 verify_mcp_page.py 177
+run "the operation branch table, printed p.178" python3 verify_mcp_page.py 178
+run "the tape-attribute handlers, printed p.179" python3 verify_mcp_page.py 179
+run "the Z-ID message routine, printed p.180" python3 verify_mcp_page.py 180
+run "the control-word check, printed p.181" python3 verify_mcp_page.py 181
+run "STATUS EVALUATION, printed p.182" python3 verify_mcp_page.py 182
+run "the verify routine, printed p.183" python3 verify_mcp_page.py 183
+run "the reload and drag handlers, printed p.184" python3 verify_mcp_page.py 184
+
+# >>> pp.177-184 AND THE METRIC THAT MEASURES CLOSURE. <<<  Counting
+# TOTAL externals was the wrong test and it failed: it went UP, 62 to
+# 78, because every new page brings its own forward references.  What
+# means something is how many point BEHIND the frontier, and on the
+# complete block that is FLAT at five while 71 symbols were defined:
+#     pp.99-176   695 defined, 62 external, 5 behind
+#     pp.99-184   766 defined, 67 external, 5 behind
+#
+# It also caught what no checker could.  The first run showed SEVEN
+# behind; the two extra were ZID09/ZID09X, which printed p.180
+# DEFINES and printed p.184 had SYNned as ZIO09/ZIO09X -- a D/O pair
+# that check_symbol_spellings cannot see, because frozenset("DO") is
+# not in CONFUSABLE.  Settled by rendering printed p.179 line 44,
+# which prints "VF,Z ID 04" with the blank in.  The manuals' seven
+# "ZIO" hits are all the SUBSTRING inside ZIOCH and ZIOR.
+run "MCP's body merges and accounts for every word, printed pp.99-184" python3 check_mcp_body_image.py
 run "the equipment dispatch, printed p.160" python3 verify_mcp_page.py 160
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
 run "the program status table, printed p.109" python3 verify_mcp_page.py 109
@@ -6594,6 +6637,7 @@ run "No MCP symbol is spelled two ways across the decks" python3 check_symbol_sp
 # PASS both ways; and DECKS patched to an empty directory still
 # returning 1155 addresses.
 run "the spelling checker does not silently check less" python3 check_spelling_checker_does_not_degrade.py
+run "a deck's listing block agrees with its checks" python3 check_deck_listing_comments.py
 
 # >>> READING THE PAGE NUMBER OFF ALL 256 PAGES, AND THE TWO PARSERS
 # THAT WERE WORSE THAN THE OCR. <<<

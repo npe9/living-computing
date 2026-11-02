@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""check_mcp_body_image.py -- MCP's BODY, printed pp.99-168, merged
+"""check_mcp_body_image.py -- MCP's BODY, printed pp.99-184, merged
 into one image and made to account for every word it spans.
 
 >>> THE BODY IS NOT A LONGER BOOTSTRAP.  IT IS A SECOND ASSEMBLY. <<<
@@ -75,7 +75,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "strap"))
 import mcp_image                                          # noqa: E402
 
-FIRST, LAST = 99, 168
+FIRST, LAST = 99, 184
 
 
 def body_pages():
@@ -96,7 +96,7 @@ def main():
               f"{'' if ok else f' expected {want}'}")
 
     pages = body_pages()
-    check("body_page_count", len(pages), 69)
+    check("body_page_count", len(pages), 85)
 
     # merge() raises SystemExit on a symbol or dds disagreement, which
     # is the whole cross-check.  Reaching the next line IS the result.
@@ -118,6 +118,39 @@ def main():
         print("     unaccounted words: "
               + ", ".join("0o%o" % w for w in unaccounted[:12]))
     check("every_word_accounted_for", len(unaccounted), 0)
+
+    # >>> AND THE SLC-COVERED HOLES MUST BE EXACTLY THE KNOWN ONES.
+    # <<<  Accepting ANY SLC skip as legitimate re-opened the hole the
+    # original contract existed to close.  Every deck substitutes a
+    # hard origin SLC for its printed "SLC,$", so a page LOST from the
+    # list -- or a row lost off the bottom of a page -- is jumped over
+    # by the NEXT deck's origin SLC and counts as accounted for.
+    # Measured: drop printed p.140 from the page list and the build
+    # still reports 0 unaccounted.  printed p.175's transcriber
+    # spotted it before it could mislead anyone.
+    #
+    # So the skips that coincide with holes are pinned by VALUE.  All
+    # thirteen are printed p.112's five SLC cards (SIPT+4.0, +9.0,
+    # +18.0, +20.0, +22.0), the "PARALLEL IO INTERRUPT SLOTS" its own
+    # line 11 names.  A new one means a page or a row went missing.
+    expected_skip_holes = {
+        0o215104, 0o215105, 0o215106,
+        0o215110, 0o215111, 0o215112, 0o215113,
+        0o215121, 0o215122, 0o215123, 0o215124,
+        0o215126,
+        0o215130,
+    }
+    got_skip_holes = holes & skipped
+    extra = sorted(got_skip_holes - expected_skip_holes)
+    missing = sorted(expected_skip_holes - got_skip_holes)
+    if extra:
+        print("     UNEXPECTED SLC-covered holes (a lost page or row?): "
+              + ", ".join("0o%o" % w for w in extra[:12]))
+    if missing:
+        print("     expected SLC-covered holes now filled: "
+              + ", ".join("0o%o" % w for w in missing[:12]))
+    check("slc_holes_are_exactly_the_known_ones",
+          (len(extra), len(missing)), (0, 0))
 
     # And the two kinds are both actually exercised here, so a future
     # change that silently stopped recording one would show up.

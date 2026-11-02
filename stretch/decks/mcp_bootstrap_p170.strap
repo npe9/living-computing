@@ -1,0 +1,730 @@
+! mcp_bootstrap_p170.strap -- THE SIO AND RIO ROUTINES, both of them
+! whole: KSIO and KRIO, printed page 170.
+! docs/MCP_Mar63_001-249.pdf PDF p.177, header READ and not assumed:
+! the top line prints "TIME CLOCK 00054041   PUNID 11D11MCP
+! CARD ID JC000001   DIST. OF 3/01   3/01   PAGE NUMBER  170".
+!
+! >>> THE COLUMN-HEADING ROW'S OWN "LOCATION" FIELD IS BLANK. <<<
+! Rendered at 600 dpi across the right-hand half of the form: the
+! word "LOCATION" is printed at the right-hand end of the heading
+! row and NOTHING follows it but the dashed rule to the margin.
+! That is what docs/transcription_workflow.md predicts -- the field
+! is LINE 1'S location, and line 1 here is an asterisk banner that
+! compiles nothing.  A blank is NOT a zero; no digits were read off
+! the rule.  This page's only statement about its own origin is its
+! own printed "SLC,$" on line 4.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! THIRTY-TWO PRINTED LINES, and they are TWO COMPLETE ROUTINES:
+!
+!   lines  1- 3   banner, "**** SUPPRESS I/O INTERRUPT ****"
+!   line   4      "SLC,$" at 220410.40  (location-column asterisk)
+!   lines  5-11   K SIO, seven instructions, ending "B,K SUPP"
+!   lines 12-13   two bare comment cards (a "-" and nothing else)
+!   lines 14-16   banner, "**** RELEASE I/O INTERRUPTS ****"
+!   line  17      "SLC,$" at 220415.00  (location-column asterisk)
+!   lines 18-32   K RIO, fifteen instructions, ending "B,KUNSTC"
+!
+! No DD, no SYN, no VF, no reservation, no forward SLC.  The page
+! is CONTIGUOUS from 220410.40 to 220427.40 with no hole of any
+! kind: 14 half words + 8 full words = 960 bits = 15 words, and
+! 220427.40 - 220410.40 = 0o17 words = 15 words exactly.
+!
+! >>> C22-6728-1 DESCRIBES THIS PAGE IN TYPESET PROSE, LINE BY
+!     LINE. <<<  "INTERRUPT MODE CONTROL ROUTINES / SIO and RIO
+!     Routines":
+!
+!       "The SIO routine is entered at KSIO.  It identifies the
+!        requestor by the status of the level bit (SL) and turns
+!        on the SIO bit (SSIO) in the corresponding program status
+!        table (SPROGS).  It adjusts the address in STIC, and
+!        returns via the service op return routine (KSUPP)."
+!
+!     That is lines 5-11 in order: line 5 loads SL, lines 6-7
+!     index SPROGS by it, line 8 is CM1111 -- turns the SSIO bit
+!     ON -- lines 9-10 adjust STIC, line 11 is "B,K SUPP".
+!
+!       "The RIO routine is entered at KRIO (Figure 120).  It
+!        turns off the SIO bit (SSIO) in the requestors program
+!        status table (SPROGS), and if the requestor is auto-
+!        stacked or has no interrupts stacked, returns via the
+!        service-op return routine (KSUPP).  Otherwise, low
+!        registers are saved in SLRPP or SLRMCP according to the
+!        level of the requestor, and control is given to the
+!        unstack routine (KUNSTC) to release the first stacked
+!        interrupt."
+!
+!     That is lines 18-32 in order, including the detail that the
+!     ONLY difference between the two routines' first six
+!     instructions is CM1111 (line 8, ON) against CM0000 (line 21,
+!     OFF, comment "-TURN OFF SIO BIT").  Line 24 is "auto-
+!     stacked" (BB on S AS -> K SUPP); lines 25-26 are "has no
+!     interrupts stacked" (LC,8,S Q K($9) then BXCZ -> K SUPP);
+!     line 28 is "according to the level of the requestor" (BB on
+!     S L); lines 29 and 31 are "saved in SLRPP or SLRMCP"; lines
+!     30 and 32 are "control is given to the unstack routine
+!     (KUNSTC)".
+!
+! ---------------------------------------------------------------
+! THIRTY-TWO LINES, AND NOTHING FELL OFF EITHER END -- THREE WAYS
+! ---------------------------------------------------------------
+! THE SURVEY SAID 20 ROWS, 220410.40..220427.0, KIND "mixed" with
+! one trailing "+".  IT IS SHORT BY TWELVE AND ITS KIND IS WRONG.
+! There is no SYN, no VF and no data card anywhere on this page;
+! the "+" is survey noise.  Its first location is right (it is
+! line 4) and its last, "220427.0", is line 32's 220427.00 with a
+! digit dropped.  Three independent ways of knowing the real
+! extent:
+!
+! (1) THE CARD-SERIAL COLUMN, read at 600 dpi, glyph by glyph.
+!     Lines 1-13 carry JC000001..JC000013 and lines 14-32 carry
+!     JD000001..JD000019 -- two unbroken runs, no repeats, no
+!     gaps, 13 + 19 = 32.  The header's own "CARD ID JC000001"
+!     names line 1's card, so the TOP of the page is pinned by
+!     IBM twice.  Below JD000019 is blank form.
+!
+!     >>> SO A CARD DECK CAN BE SHORTER THAN A PAGE. <<<  printed
+!     p.168 established that a deck can be exactly one page (JA);
+!     p.169's header opens JB.  THIS page carries the WHOLE of
+!     deck JC (13 cards, the SIO routine and its banner) and then
+!     starts JD on line 14.  The prefix tracks the ROUTINE, not
+!     the page -- which is a sharper statement than p.168 could
+!     make, and it predicts that JD CONTINUES PAST this page only
+!     if the RIO routine does.  It does not: line 32 is RIO's last
+!     instruction, so p.171 must open a NEW prefix.  >>> CHECKED:
+!     PDF p.178's header reads "CARD ID KA000001". <<<  So JD is
+!     exactly the 19 cards on my lines 14-32, and the prefix
+!     tracks the ROUTINE.
+!
+! (2) THE LOCATION COLUMN CLOSES ON ITSELF.  Every one of the 22
+!     emitted statements' printed locations follows from the one
+!     above it by exactly the width of the instruction printed
+!     there -- 14 half words, 8 full words, no gap.  A dropped
+!     row would not balance (see the arithmetic above).
+!
+! (3) THE LINE-NUMBER COLUMN runs 1..32 with no break and line 32
+!     is the last printed thing on the form.
+!
+! ---------------------------------------------------------------
+! THE SECOND "SLC,$" IS WRITTEN AS "SLC,$" AND THAT MAKES THE
+! PAGE SELF-CHECKING
+! ---------------------------------------------------------------
+! Line 17 prints "SLC,$" at 220415.00.  An SLC emits nothing, so
+! that printed location IS the counter arriving from line 11 --
+! IBM's own assembler stating it.  THIS DECK WRITES "SLC,$" there,
+! not a hard origin, so the value is CHECKED and not asserted:
+!
+!   * line 11 is "B,K SUPP" at 220414.40, a HALF WORD, so the
+!     counter reaches 220415.00 if and only if lines 5-11 are all
+!     the right width;
+!   * line 18's !CHECK is at 220415.00, so a mis-sized instruction
+!     anywhere in K SIO moves every K RIO row and fails loudly.
+!
+! Only ONE number on this page is asserted rather than checked:
+! the origin 220410.40 on line 4, which this deck must write hard
+! so the page assembles standalone.  A hard SLC cannot disagree
+! with an arriving counter -- it overrides it silently (workflow,
+! WHAT THE ORACLE CANNOT SEE item 2) -- so THAT join has to be
+! compared BY HAND against printed p.169's exit.  The printed form
+! is "SLC,$" and the printed location is 220410.40.
+!
+! Note the ".40": the offset inside an (8) literal is OCTAL and is
+! written exactly as printed.  "(8)220410.0" would move all 22
+! rows back 32 bits.
+!
+! ---------------------------------------------------------------
+! GLYPH CALLS, AND WHAT SETTLED EACH
+! ---------------------------------------------------------------
+! THIS PAGE DROPS INK ON ROUND GLYPHS HEAVILY, and it proves it in
+! three different columns:
+!
+!   OCTAL FIELDS (a C cannot occur there): line 9 prints
+!   "COCCOO.45", line 21's second word prints "001000.CC", line 10
+!   prints "215265.C5", line 22 prints "COCCOO.45".
+!
+!   ENGLISH COMMENTS: lines 7 and 20 both print "-PROG STAT TABLE
+!   FCR SL" for FOR, while line 5's "-DETERMINE LEVEL OF IC" and
+!   line 21's "-TURN OFF SIO BIT" print closed O's a few
+!   characters away.  The comment column is English and FCR is not
+!   a word.  >>> This is the clearest same-page demonstration in
+!   the block that THIS DRUM PRINTS O AS C, and it is why the two
+!   label calls below are made the way they are. <<<
+!
+! Per the workflow that licenses nothing by itself; each call is
+! settled on what PRODUCED the glyph or on an independent press.
+!
+! (1) >>> "K SIC" IS "K SIO" AND "K RIC" IS "K RIO". <<<  At 1800
+!     dpi line 5's name reads S-I-C and line 18's reads R-I-C,
+!     both with an open final glyph.  SETTLED OUTRIGHT BY THE
+!     TYPESET MANUAL, a different press:
+!
+!       C22-6728-1, section "INTERRUPT MODE CONTROL ROUTINES",
+!       sub-heading "SIO and RIO Routines" (docs/ocr/
+!       C22-6728-1_7030_MCP_Sys_Analysis_Guide.txt lines
+!       36990-37015; the OCR carries no page footer there, so the
+!       citation is by HEADING and not by a page number I did not
+!       read): "The SIO routine is entered at KSIO...  The RIO
+!       routine is entered at KRIO (Figure 120)."
+!
+!       C22-6728-1's service-op entry table (same file, lines
+!       4154-4161): "$SIO 32.0 KSIO" and "$RIO 32,32 KRIO".
+!
+!     COUNTED BY ME, per revision, not inherited:
+!
+!                       C22-6728   C22-6728-1
+!         KSIO              2           2
+!         KRIO              3           3
+!         KSIC              0           0
+!         KRIC              0           1
+!
+!     The single "KRIC" is at OCR line 37331 of the -1 revision,
+!     inside a garbled ASCII rendering of a flowchart box that
+!     also prints "KWALT" for KWAIT -- OCR noise off a FIGURE, not
+!     prose, and the same O/C confusion read by a worse reader.
+!
+!     The semantics agree to the instruction: SIO turns the bit
+!     ON (line 8, CM1111) and RIO turns it OFF (line 21, CM0000,
+!     comment "-TURN OFF SIO BIT").
+!
+! (2) >>> AND A DIFFERENT PAGE OF THIS VERY LISTING PRINTS BOTH
+!     ADDRESSES. <<<  Keep the two claims apart: the MANUAL gives
+!     the SPELLING, and PDF p.185 (printed p.178, the operation
+!     branch table) gives the ADDRESSES, off a page nobody here
+!     transcribed:
+!
+!       line 34   220763.00   220410.50 00   B,K SIO  -STACK I/O INTERRUPTS
+!       line 35   220763.40   220415.10 00   B,K RIO  -RELEASE I/O INTERRUPTS
+!
+!     A plain B prints target+.10, so those are 220410.40 and
+!     220415.00 -- EXACTLY this page's two labels.  (That page's
+!     volume OCR garbles the first name to "K STO", which is the
+!     point: the ADDRESS is the witness there, not the spelling.
+!     The volume OCR of a page is never a witness for that page,
+!     but p.178 is a different page from p.170, so its printed
+!     ADDRESSES are a legitimate second reading of where my
+!     labels are.)
+!
+! (3) LINE 9'S BYTE IS "05", not "C5", AND THE PAGE PRINTS ITS OWN
+!     CONTROL.  Line 9 and line 22 are THE SAME STATEMENT,
+!     "V+I,2,.32", printed twice on one page in the same character
+!     positions -- the strongest rung of the workflow's glyph
+!     ladder.  At 1800 dpi line 9's byte opens ("C5") and line
+!     22's is closed ("05").  Dropout opens a closed glyph and
+!     never closes an open one, so the byte is 05.  Corroborated
+!     by what produced it: line 7's V+I prints a clean "05" and
+!     the operand has no index.
+!
+! (4) LINE 10 AND LINE 23 PRINT "215265.C5 30" FOR "215265.05 30".
+!     The .C5 is an OCTAL field, so the C is impossible.  The same
+!     word is printed by printed p.168 lines 7 and 34 for the same
+!     statement "SV,2,S TIC", and the 0o05 is 2J+1 for J=2, not
+!     S TIC's offset.
+!
+! (5) LINE 21'S SECOND WORD PRINTS "001000.CC FC" AND IS
+!     "001000.00 F0".  Four impossible C's in the octal field; the
+!     byte's low nibble is i2, the OFFSET INDEX, and
+!     "CM0000(BU,1),S SIO($9)" has no second operand, so i2 is 0.
+!     THE PAGE PRINTS THE CONTROL thirteen lines above: line 8 is
+!     the matching CM1111 and prints "001000.36 F0" with a CLOSED
+!     0.  printed p.18 prints that connective word six times
+!     (workflow), and printed p.141 line 6 prints line 21's word
+!     exactly, "000000.75 89 001000.00 F0", for the identical
+!     statement "CM0000(BU,1),SSIO($9)".
+!
+! (6) "K MOVE" -- see WHAT COULD NOT BE SETTLED (A).  Recorded
+!     here only as: at 1800 dpi the second glyph is open ("MCVE"),
+!     and MCVE is not a word.
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK -- EXACTLY TWO, BOTH ON "SLC,$"
+! ---------------------------------------------------------------
+!   line  4   220410.40 *   SLC,$
+!   line 17   220415.00 *   SLC,$
+!
+! Read at 900 dpi; no other row on the page carries the mark.
+!
+! RECORDED AND NOTHING PROPOSED, per the workflow.  What this page
+! ADDS is only that it is consistent with NEITHER surviving rule:
+! "every printed SLC,$ row carries it" was killed by printed p.151
+! line 4, and "only SLC rows carry it" was killed by printed p.168
+! lines 21 and 36 (a BB and a labelled VFL connective).  A page
+! agreeing with a dead rule is not evidence for it.  No ink-column
+! figure is quoted here: on this render the mark sits at the right
+! edge of mcp_columns' column 2 (the LOCATION run, x 913-1357 at
+! 300 dpi) and not in a run of its own, so the per-column ink
+! number p.168 cited would not measure the same thing.
+!
+! ---------------------------------------------------------------
+! THE PRINTED SPACING, RECORDED (the statements below use the
+! unspaced forms, as every landed deck does; a STRAP name ignores
+! blanks)
+! ---------------------------------------------------------------
+!   NAMES:      "K SIC" (line 5, = K SIO), "K RIC" (line 18,
+!               = K RIO), "K MOVE" (line 31)
+!   OPERANDS:   "S L", "S PROG S", "S SIO", "S TIC", "S AS",
+!               "S Q K", "S TLR", "S LR PP", "S LR MCP",
+!               "K SUPP", "K MOVE", "KUNSTC" (always unspaced)
+!   AND NOTE LINE 31 HAS A SPACE AFTER THE COMMA that line 29
+!   lacks: line 29 prints "T,15,S TLR,S LR PP" and line 31 prints
+!   "T,15,S TLR, S LR MCP".  Both compile to the same shape; the
+!   difference is in the punched card and is recorded because it
+!   is printed.
+!
+! ---------------------------------------------------------------
+! WHAT THIS PAGE PINS, AND WHAT IT ONLY CORROBORATES
+! ---------------------------------------------------------------
+! PINNED TO THE BIT (the printed word changes if the offset
+! changes by one -- the symbol lands in a full 24-bit A24 field or
+! in a VFL address):
+!   S L     215001.04   lines 5, 18 and 28  (SCOMRG+0.04), THREE
+!                       printings, two of them as a VFL address
+!                       and one as a branch-on-bit operand
+!   S SIO   000000.75   lines 8 and 21 (0o75 = 61 decimal)
+!   S AS    000000.31   line 24 (0o31 = 25 decimal)
+!   S Q K   000000.40   line 25.  The printed .60 is the symbol's
+!                       offset PLUS 2J for J=8 (= 0o20), so
+!                       0o60 - 0o20 = 0o40 = 32 decimal, which is
+!                       printed p.109 line 9's defining card
+!                       exactly.  This page pins it to the bit.
+!
+! HALF WORD ONLY -- the .00 or .40 is a reading of bit 32 and the
+! five bits below it are UNOBSERVABLE (workflow, WHAT THE ORACLE
+! CANNOT SEE item 1):
+!   S TIC    215265.00  lines 10 and 23 (.05 is 2J+1 for J=2)
+!   S PROG S 215021.00  lines 7 and 20 (.23 is 2J+1 for J=9)
+!   K SUPP   216242.00  lines 11, 24 and 26
+!   S TLR    215230.00  lines 29 and 31
+!   S LR PP  215266.00  line 29
+!   S LR MCP 215362.00  line 31
+!   KUNSTC   222037.00  lines 30 and 32
+!   $L       000010.00  lines 6 and 19 (.22 is 2J for J=9); $L is
+!                       the left half of the accumulator, word 8,
+!                       C22-6531 Appendix A
+!
+! THIS PAGE'S OWN LABELS, checked by check_rows against the
+! LOCATION column:
+!   K SIO   220410.40   line  5
+!   K RIO   220415.00   line 18
+!   K MOVE  220426.00   line 31 (and referenced by line 28, whose
+!                       printed target "220426.34" checks it to
+!                       the half word AND is produced from inside
+!                       this deck)
+!
+! ---------------------------------------------------------------
+! WHAT COULD NOT BE SETTLED
+! ---------------------------------------------------------------
+! (A) >>> "K MOVE" IS UNFALSIFIABLE FROM THIS PAGE AND IS THE
+!     PAGE'S ONE GENUINELY OPEN READING. <<<  It is referenced
+!     exactly once, by line 28 on its own page, so no merge can
+!     fail on it and no !CHECK can see it -- the workflow's
+!     "a symbol that nothing else references rests on ink alone".
+!     The evidence for MOVE: at 1800 dpi the second glyph is open,
+!     this page demonstrably opens O's in its own comment column
+!     ("FCR" for FOR, twice), and "MCVE" is not an English word
+!     where every other label on these pages is an abbreviation of
+!     one.  The manual's sentence that covers lines 28-31 -- "low
+!     registers are saved in SLRPP or SLRMCP according to the
+!     level of the requestor" -- is semantically exact but NAMES
+!     NO SYMBOL, so it is not a witness to the spelling.  Counted:
+!     "KMOVE"/"K MOVE" returns ZERO hits in either revision of
+!     C22-6728 and zero hits in the volume OCR outside this page's
+!     own line 28.  WHAT WOULD SETTLE IT: a page branching to
+!     220426.00 from outside this page.  None is known.  IF ONE
+!     TURNS UP AND SPELLS IT DIFFERENTLY, THIS DECK IS WRONG.
+!
+! (B) THE THREE LABELS ARE INVISIBLE TO check_symbol_spellings.py,
+!     and this must not be read as a pass.  That tool compares a
+!     name against OTHER decks' readings of the same location;
+!     nothing in the landed corpus references 220410.40, 220415.00
+!     or 220426.00, because the page that branches to the first
+!     two (printed p.178) has not landed.  So the tool is SILENT
+!     on all three, not agreeing.  K SIO and K RIO rest on the
+!     typeset manual (independent press, decisive); K MOVE rests
+!     on ink plus English (item A).  >>> WHEN printed p.178 LANDS,
+!     ITS TRANSCRIBER'S READING OF "B,K SIO" AND "B,K RIO" BECOMES
+!     THE FIRST REAL TEST OF THIS DECK'S TWO ENTRY-POINT NAMES.
+!     <<<
+!
+! (C) WHY LINES 12 AND 13 EXIST.  Two cards (JC000012, JC000013)
+!     printing a bare "-" in the comment column and nothing else,
+!     between K SIO's last instruction and the RELEASE banner.
+!     They compile nothing.  Lines 1-3 and 14-16's banners carry
+!     the same leading "-", so the "-" is the comment-card marker
+!     and these two are EMPTY comment cards.  Why the deck carries
+!     two blank cards here and p.168 carried none is not something
+!     this page can say.
+!
+! (D) THE PREFIX LETTERS ARE STILL UNDECODED, although this page
+!     narrows them.  p.168 showed a prefix can be exactly one page
+!     (JA, the WAIT routine).  THIS page shows a prefix can cover
+!     LESS than a page: JC is 13 cards, and JD starts on line 14 of
+!     the same page.  Five consecutive prefixes are now known and
+!     every one is exactly one ROUTINE:
+!
+!       JA  p.168           WAIT
+!       JB  p.169           CHEX   (header read by p.168's agent)
+!       JC  p.170 lines 1-13   SIO
+!       JD  p.170 lines 14-32  RIO
+!       KA  p.171           STRGE  (header read here, bounded)
+!
+!     "One prefix per routine" now has five data points and no
+!     counterexample, but NOTHING IN docs/ DECODES THE LETTERS and
+!     the second letter's reset (JD -> KA, not JE) is unexplained.
+!     WHAT WOULD KILL IT: any page whose serials change prefix
+!     mid-routine, or a routine spanning two prefixes.  NOT
+!     PROPOSED AS A RULE -- recorded as a five-point pattern with
+!     its own falsifier named.
+!
+! (E) THE ASTERISK BANNERS (lines 1-3, 14-16) ARE NOT TRANSCRIBED
+!     CHARACTER BY CHARACTER.  They emit no bits and counting ~65
+!     asterisks off a worn drum is a reading nobody can check.
+!     Line 2's text is "SUPPRESS I/O INTERRUPT" and line 15's is
+!     "RELEASE I/O INTERRUPTS", both centred; the serials are
+!     counted.  (Note line 15's banner is the only one whose
+!     asterisk run is BRACKETED by "-" at both ends.)
+!
+! ---------------------------------------------------------------
+! ASSEMBLER LIMITATIONS HIT
+! ---------------------------------------------------------------
+! NONE.  Every statement below is the PRINTED form, handed to
+! strap_asm first, and ALL TWENTY-TWO were accepted first time and
+! produced all THIRTY printed half words bit-for-bit on the first
+! run -- including "SLC,$" on line 17, "LC,8,S Q K($9)" and
+! "BXCZ,K SUPP".  There is exactly ONE substitution on the page:
+!
+! >>> SUBSTITUTION, LABELLED LOUDLY: line 4 prints "SLC,$" and
+!     this deck writes "SLC, (8)220410.40" so the page assembles
+!     standalone.  THE PRINTED FORM IS "SLC,$" AND THE PRINTED
+!     LOCATION IS 220410.40 -- the counter arriving from printed
+!     p.169, printed by IBM's own assembler.  Compare it BY HAND
+!     against p.169's exit.  Line 17's "SLC,$" is NOT substituted
+!     and is therefore a real check (see above). <<<
+!
+! ---------------------------------------------------------------
+! WHAT WAS RUN, AND WHICH HALF OF THE BODY-IMAGE TEST WAS NOT
+! ---------------------------------------------------------------
+! RUN AND GREEN:
+!   verify_mcp_page.py 170        3 symbols, 22 listing rows, ALL
+!                                 TESTS PASSED.
+!   check_symbol_spellings.py     1417 definitions, no symbol
+!                                 spelled two ways -- and the
+!                                 BASELINE WITHOUT THIS DECK IS
+!                                 1414, so this page adds exactly
+!                                 its three labels and groups with
+!                                 nothing.  THAT IS SILENCE, NOT
+!                                 AGREEMENT; see (B).
+!   the workflow 3b listing/      24 located listing rows parsed,
+!   !CHECK diff                   22 compared, 0 problems.  Both
+!                                 shared locations (220410.40 and
+!                                 220415.00, each carrying an SLC
+!                                 row AND an emitting card) were
+!                                 collected as LISTS, which is the
+!                                 case the recipe's first draft
+!                                 got wrong.
+!   mcp_image.build over printed  MERGED OK: 654 defined, 63
+!   pp.99-168 PLUS this deck      external, no symbol or dds
+!                                 disagreement anywhere.
+!
+! >>> NOT RUN, AND IT MATTERS: tests/check_mcp_body_image.py
+!     ITSELF. <<<  What I ran is only its
+!     merges_without_disagreement half.  Its
+!     every_word_accounted_for half CANNOT pass until printed
+!     p.169 lands, because without p.169 there is a real hole from
+!     0o220377 to 0o220410 that no reservation and no SLC skip
+!     explains.  "Merged OK" is NOT "the standing test passes".
+!
+! TWO MECHANICAL EDITS THIS PAGE NEEDS, WHICH THIS AGENT WAS
+! SCOPED OUT OF MAKING (both in tests/check_mcp_body_image.py, to
+! be made once BOTH p.169 and p.170 are in decks/):
+!     FIRST, LAST = 99, 168                     ->  99, 170
+!     check("body_page_count", len(pages), 69)  ->  71
+! mcp_image.NO_DECK_PAGES needs NO entry: this page compiles.
+!
+! ---------------------------------------------------------------
+! WHERE THE COUNTER LEAVES -- FALSIFIABLE PREDICTIONS
+! ---------------------------------------------------------------
+! BACKWARD, for printed p.169: it must leave its counter at
+! exactly 220410.40, which is what THIS page's line 4 prints.  The
+! survey's "220410.60" for p.169's last row is a garbled reading;
+! if p.169's transcriber lands anything other than 220410.40 as
+! their exit, one of the two pages is wrong and the place to look
+! here is my 8 full words -- a full word misread as a half word
+! loses exactly 32 bits.
+!
+! FORWARD, for printed p.171: line 32 is "B,KUNSTC" at 220427.00,
+! a HALF WORD.  >>> THE COUNTER LEAVES THIS PAGE AT 220427.40. <<<
+! And that value is ALREADY CORROBORATED from a page outside this
+! block: PDF p.185 (printed p.178) line 38 prints
+!
+!     220765.00   220427.50 00   B,K STRGE  -STORE IN COMMUNICATION REGION
+!
+! and a plain B prints target+.10, so that routine's entry is at
+! 220427.40.  (The OCR's NAME there is garbled -- the page itself
+! prints KSTRG -- but its ADDRESS is good; see below.)
+! So, as predictions that can be killed:
+!
+!   * p.171's first LOCATED row prints 220427.40.
+!   * p.171's first label is whatever p.178's branch table calls
+!     the routine at 220427.40.
+!   * p.171's header opens a NEW card prefix, because deck JD's
+!     routine ends on my line 32.
+!
+! (The survey's "220427.64" for PDF p.178 is consistent with a
+! garbled ".40"; it is not treated as evidence either way.)
+!
+! >>> THE FORWARD HALF WAS THEN CHECKED AT 600 dpi, AND IT HOLDS --
+!     TWO OF THREE EXACTLY, THE THIRD WITH A CORRECTION. <<<  PDF
+!     p.178 was rendered for its HEADER AND ITS FIRST SEVEN ROWS
+!     ONLY, LOCATION/NAME columns, NOT transcribed -- that page
+!     belongs to another transcriber.  It prints:
+!
+!       header:  CARD ID KA000001 ... PAGE NUMBER  171
+!       1*  2*  3*            banner, "*** STORE IN COMMUNICATION
+!                             REGION ***"
+!       4*  220427.40  *      SLC,$
+!       5*  220427.40   000031.07 02   KSTRG   LCI,3,KQUANT
+!       6*  220430.00   220431.03 01           LVI,1,$+1.0
+!       7*  220430.40   220432.50 00           B,K CAB
+!
+!     So p.171's "SLC,$" prints 220427.40, which is IBM's own
+!     assembler stating the counter arriving from THIS page, and it
+!     is the value predicted above.  The join
+!     p.169 -> 220410.40 -> THIS PAGE -> 220427.40 -> p.171 is
+!     closed at the FORWARD end.  Only the backward end is open,
+!     and only printed p.169 can close it.
+!
+!     >>> AND THE PREFIX CLAIM HOLDS: p.171 opens KA000001. <<<
+!     So deck JD is exactly the 19 cards JD000001-JD000019 printed
+!     on MY lines 14-32 -- the RIO routine and its banner, nothing
+!     more.  FIVE consecutive one-routine decks are now known:
+!     JA (p.168,
+!     WAIT), JB (p.169, CHEX), JC (my lines 1-13, SIO), JD (my
+!     lines 14-32, RIO), KA (p.171, STRGE).  TWO OF THEM FIT ON
+!     ONE PAGE, which is the thing p.168 could not see.
+!
+!     >>> THE CORRECTION: THE LABEL IS "KSTRG", NOT "K STRGE". <<<
+!     My prediction took the name from the VOLUME OCR of p.178's
+!     branch table, which reads "B,K STRGE".  The page itself
+!     prints "KSTRG" at 220427.40.  The ADDRESS the OCR gave was
+!     right and the NAME it gave was not -- which is the workflow's
+!     own rule about the volume OCR, demonstrated against me.  The
+!     branch table's ADDRESS 220427.50 is still a second,
+!     independent reading of where p.171 begins; its spelling is
+!     not evidence of anything.
+!
+! ---------------------------------------------------------------
+! SYMBOLS DEFINED OFF THIS PAGE
+! ---------------------------------------------------------------
+! Every card below is the form the DEFINING page prints, or the
+! stand-in convention the workflow requires.  No defining card is
+! copied verbatim where copying would plant storage.
+!
+! S COMRG  215001.00  a STAND-IN, not a copy.  printed p.103 line
+!                     8 DEFINES it as "SCOMRG XW,(8)520000." -- an
+!                     XW is a PLACE, and copying it here would
+!                     land a word at this page's own counter and
+!                     refuse the body merge (printed p.157 did
+!                     exactly that and had to undo it).  Only S L
+!                     needs it.
+SCOMRG  SYN, (8)215001.0
+! S L      215001.04  printed p.103 line 14 DEFINES it, "S L
+!                     SYN(BU,1),SCOMRG+0.04  -LEVEL OF INSTRUCTION
+!                     COUNTER", and the dds (BU,1) is CARRIED --
+!                     line 5's L and line 18's L take their LENGTH
+!                     from the symbol, and line 28's BB does too.
+!                     COUNTED BY ME: sixteen landed decks carry an
+!                     SL card -- seven write "SCOMRG+0.04" as p.103
+!                     does (p.147 among them), seven write the
+!                     equivalent "(8)215001.04" (p.126, p.138,
+!                     p.143) and two write "(8)215001.4", which is
+!                     the same bit inside an octal literal.  This
+!                     deck writes the DEFINING page's form.  LINES 5, 18 AND 28 PIN IT TO THE
+!                     BIT.  The comment on lines 5/18,
+!                     "-DETERMINE LEVEL OF IC", is the manual's
+!                     "identifies the requestor by the status of
+!                     the level bit (SL)" and the defining card's
+!                     own "LEVEL OF INSTRUCTION COUNTER".
+SL      SYN(BU,1), SCOMRG+0.04
+! S PROG S 215021.00  the program status table; printed p.109
+!                     line 7 DEFINES it ("SPROGS DRZ(BU,64),2").
+!                     A DRZ, so no dds is carried on a SYN -- deck
+!                     p.168 writes exactly this card and the body
+!                     image accepts it.  LINES 7 AND 20 CHECK THE
+!                     HALF WORD.
+SPROGS  SYN, (8)215021.0
+! S SIO    000000.75  printed p.109 line 10 DEFINES it, "SSIO
+!                     SYN(BU,1),.61  -SUPPRESSED MODE STATUS", and
+!                     C22-6728-1 Appendix A tabulates "SSIO .61
+!                     SIO bit.  If 1, the program is in SIO mode."
+!                     Deck p.141 carries this card verbatim.  The
+!                     dds (BU,1) is CARRIED: lines 8 and 21 write
+!                     "(BU,1)" of their own, but line 21's comment
+!                     "-TURN OFF SIO BIT" and the manual both say
+!                     it is one bit.  0o75 = 61.  LINES 8 AND 21
+!                     PIN IT TO THE BIT.
+SSIO    SYN(BU,1), .61
+! S TIC    215265.00  the STored Instruction Counter (C22-6728
+!                     prose, "the saved IC is stored in STIC");
+!                     COUNTED BY ME: twenty-six landed decks carry
+!                     this exact SYN card.  LINES 10 AND 23 CHECK THE HALF
+!                     WORD.
+STIC    SYN, (8)215265.0
+! S AS     000000.31  printed p.109 line 8 DEFINES it, "SAS
+!                     SYN(BU,1),.25  -AUTO STACK STATUS".  0o31 =
+!                     25.  LINE 24 PINS IT TO THE BIT, and its
+!                     comment "-DETERMINE IF IN FIX UP" sits
+!                     against the manual's "if the requestor is
+!                     auto-stacked ... returns via KSUPP".
+SAS     SYN(BU,1), .25
+! S Q K    000000.40  printed p.109 line 9 DEFINES it, "SQK
+!                     SYN(BU,18),.32", and C22-6728-1 Appendix A
+!                     tabulates "SQK .32-.49  Interrupt queue
+!                     count" -- eighteen bits, which is why the
+!                     dds is CARRIED.  Deck p.141 carries this
+!                     card verbatim.  LINE 25 PINS IT TO THE BIT
+!                     (see WHAT THIS PAGE PINS).
+SQK     SYN(BU,18), .32
+! S TLR    215230.00  printed p.116 line 13 DEFINES it ("STLR
+!                     DRZ(BU,64),29").  LINES 29 AND 31 CHECK THE
+!                     HALF WORD.
+STLR    SYN, (8)215230.0
+! S LR PP  215266.00  printed p.116 line 18 DEFINES it.  LINE 29
+!                     CHECKS THE HALF WORD, and prints the word
+!                     printed p.168 line 22 prints -- that deck
+!                     also cites printed p.123 line 43 for it, a
+!                     claim INHERITED and not checked here:
+!                     "215230.00 80 215266.36 20".
+SLRPP   SYN, (8)215266.0
+! S LR MCP 215362.00  printed p.116 line 26 DEFINES it.  LINE 31
+!                     CHECKS THE HALF WORD, against printed p.168
+!                     line 24's identical word.
+SLRMCP  SYN, (8)215362.0
+! K SUPP   216242.00  the service-op return routine, defined
+!                     printed p.128; COUNTED BY ME, twenty-six
+!                     landed decks SYN it here.  LINES 11, 24 AND 26 CHECK THE HALF
+!                     WORD; the BIT offset stays unreadable.
+KSUPP   SYN, (8)216242.0
+! KUNSTC   222037.00  the unstack routine; C22-6728-1 names it in
+!                     prose for THIS routine -- "control is given
+!                     to the unstack routine (KUNSTC)".  Deck
+!                     p.141 carries this SYN.  LINES 30 AND 32
+!                     CHECK THE HALF WORD.
+KUNSTC  SYN, (8)222037.0
+!
+! ---------------------------------------------------------------
+! THE PAGE
+! ---------------------------------------------------------------
+! lines 1-3 are the asterisk banner "**** SUPPRESS I/O INTERRUPT
+! ****", three comment cards (JC000001-JC000003) emitting nothing;
+! see WHAT COULD NOT BE SETTLED (E).
+!
+        SLC, (8)220410.40            ! line  4  printed "SLC,$" at 220410.40 *  SUBSTITUTED
+KSIO    L(BU,1),SL,-18               ! line  5  printed "K SIC" / "S L"  -DETERMINE LEVEL OF IC
+        LV,9,$L                      ! line  6
+        V+I,9,SPROGS                 ! line  7  printed "S PROG S"  -PROG STAT TABLE FOR SL
+        CM1111(BU,1),SSIO($9)        ! line  8  printed "S SIO($9)"
+        V+I,2,.32                    ! line  9
+        SV,2,STIC                    ! line 10  printed "SV,2,S TIC"
+        B,KSUPP                      ! line 11  printed "B,K SUPP"
+! lines 12-13 are two EMPTY comment cards (JC000012, JC000013),
+! printing a bare "-" and nothing else; see (C).
+! lines 14-16 are the asterisk banner "**** RELEASE I/O INTERRUPTS
+! ****", three comment cards (JD000001-JD000003).
+        SLC,$                        ! line 17  printed "SLC,$" at 220415.00 *  NOT substituted
+KRIO    L(BU,1),SL,-18               ! line 18  printed "K RIC" / "S L"  -DETERMINE LEVEL OF IC
+        LV,9,$L                      ! line 19
+        V+I,9,SPROGS                 ! line 20  -PROG STAT TABLE FOR SL
+        CM0000(BU,1),SSIO($9)        ! line 21  -TURN OFF SIO BIT
+        V+I,2,.32                    ! line 22
+        SV,2,STIC                    ! line 23  printed "SV,2,S TIC"
+        BB,SAS($9),KSUPP             ! line 24  printed "BB,S AS($9),K SUPP"  -DETERMINE IF IN FIX UP
+        LC,8,SQK($9)                 ! line 25  printed "LC,8,S Q K($9)"  -IF NOT, UNSTACK
+        BXCZ,KSUPP                   ! line 26  printed "BXCZ,K SUPP"
+        LCI,15,30                    ! line 27
+        BB,SL,KMOVE                  ! line 28  printed "BB,S L,K MOVE"
+        T,15,STLR,SLRPP              ! line 29  printed "T,15,S TLR,S LR PP"
+        B,KUNSTC                     ! line 30
+KMOVE   T,15,STLR,SLRMCP             ! line 31  printed "K MOVE   T,15,S TLR, S LR MCP"
+        B,KUNSTC                     ! line 32
+!
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, as it stands on PDF p.177
+! ---------------------------------------------------------------
+!   line  1                                                                  -  ****************************************  JC000001
+!   line  2                                                                  -  ********************SUPPRESS I/O INTERRUPT **************  JC000002
+!   line  3                                                                  -  ****************************************  JC000003
+!   line  4*  220410.40  *                                                      SLC,$                                      JC000004
+!   line  5*  220410.40     215001.04 80  001067.20 50   K SIC   L(BU,1),S L,-18          -DETERMINE LEVEL OF IC            JC000005
+!   line  6*  220411.40     000010.22 30                         LV,9,$L                                                    JC000006
+!   line  7*  220412.00     215021.23 05                         V+I,9,S PROG S           -PROG STAT TABLE FOR SL           JC000007
+!   line  8*  220412.40     000000.75 89  001000.36 F0           CM1111(BU,1),S SIO($9)                                     JC000008
+!   line  9*  220413.40     000000.45 05                         V+I,2,.32                                                  JC000009
+!   line 10*  220414.00     215265.05 30                         SV,2,S TIC                                                 JC000010
+!   line 11*  220414.40     216242.10 00                         B,K SUPP                                                   JC000011
+!   line 12*                                                                 -                                             JC000012
+!   line 13*                                                                 -                                             JC000013
+!   line 14*                                                                 -  ****************************************  JD000001
+!   line 15*                                                                 -  -***********  RELEASE I/O INTERRUPTS  ***********-  JD000002
+!   line 16*                                                                 -  ****************************************  JD000003
+!   line 17*  220415.00  *                                                      SLC,$                                      JD000004
+!   line 18*  220415.00     215001.04 80  001067.20 50   K RIC   L(BU,1),S L,-18          -DETERMINE LEVEL OF IC            JD000005
+!   line 19*  220416.00     000010.22 30                         LV,9,$L                                                    JD000006
+!   line 20*  220416.40     215021.23 05                         V+I,9,S PROG S           -PROG STAT TABLE FOR SL           JD000007
+!   line 21*  220417.00     000000.75 89  001000.00 F0           CM0000(BU,1),S SIO($9)   -TURN OFF SIO BIT                 JD000008
+!   line 22*  220420.00     000000.45 05                         V+I,2,.32                                                  JD000009
+!   line 23*  220420.40     215265.05 30                         SV,2,S TIC                                                 JD000010
+!   line 24*  220421.00     000000.31 89  216242.34 02           BB,S AS($9),K SUPP       -DETERMINE IF IN FIX UP           JD000011
+!   line 25*  220422.00     000000.60 59                         LC,8,S Q K($9)           -IF NOT, UNSTACK                  JD000012
+!   line 26*  220422.40     216242.30 42                         BXCZ,K SUPP                                                JD000013
+!   line 27*  220423.00     000036.37 02                         LCI,15,30                                                  JD000014
+!   line 28*  220423.40     215001.04 80  220426.34 02           BB,S L,K MOVE                                              JD000015
+!   line 29*  220424.40     215230.00 80  215266.36 20           T,15,S TLR,S LR PP                                         JD000016
+!   line 30*  220425.40     222037.10 00                         B,KUNSTC                                                   JD000017
+!   line 31*  220426.00     215230.00 80  215362.36 20   K MOVE  T,15,S TLR, S LR MCP                                       JD000018
+!   line 32*  220427.00     222037.10 00                         B,KUNSTC                                                   JD000019
+!
+! (THE ROWS ABOVE ARE WHAT THE DECK READS, NOT WHAT THE DRUM PUT ON
+!  the paper.  Open round glyphs are everywhere in the BINARY OUTPUT
+!  column; read at 900-1800 dpi, the ones that matter print:
+!    line  9  "COCCOO.45 C5"     -> 000000.45 05
+!    line 10  "215265.C5 30"     -> 215265.05 30   (line 23 likewise)
+!    line 21  "001000.CC FC"     -> 001000.00 F0
+!    line 22  "COCCOO.45 05"     -> 000000.45 05   (the CLOSED byte)
+!    line 24  "COCCOO.31 89"     -> 000000.31 89
+!    line 25  "COCCOO.60 59"     -> 000000.60 59
+!    line 29  "215230.C0 80"     -> 215230.00 80   (line 31 likewise)
+!    line 30  "222C37.10 C0"     -> 222037.10 00   (line 32 likewise)
+!  Every one of those C's stands in an OCTAL field, where a C cannot
+!  occur, or is settled by the same statement printed elsewhere --
+!  see GLYPH CALLS.  Lines 5 and 18's "215C01.C4 80" is the same.)
+!
+! ---------------------------------------------------------------
+! THE CHECKS
+! ---------------------------------------------------------------
+!SYM KSIO   220410.40
+!SYM KRIO   220415.00
+!SYM KMOVE  220426.00
+!CHECK 220410.40 | 215001.04 80 001067.20 50 | line  5 K SIO L(BU,1),S L,-18 -- .04 is S L at SCOMRG+0.04, pinned to the bit (printed p.103 line 14); no index so the first byte is 80; the second byte 50 is LOAD, the counterpart of printed p.168 line 8's STORE D0 against this IDENTICAL operand word 001067.20
+!CHECK 220411.40 | 000010.22 30 | line  6 LV,9,$L -- 0o10 is word 8, the left half of the accumulator (C22-6531 Appendix A); .22 is 2J = 18 for J=9
+!CHECK 220412.00 | 215021.23 05 | line  7 V+I,9,S PROG S -- .23 is 2J+1 = 19 for J=9, so S PROG S is checked to the HALF WORD only; the comment prints "-PROG STAT TABLE FCR SL" and FOR is the word
+!CHECK 220412.40 | 000000.75 89 001000.36 F0 | line  8 CM1111(BU,1),S SIO($9) -- .75 is S SIO at .61 decimal, pinned to the bit (printed p.109 line 10); 89 is index $9; the connective word 001000.36 F0 is the one printed p.18 prints six times, and its CLOSED 0 is the control for line 21's open one
+!CHECK 220413.40 | 000000.45 05 | line  9 V+I,2,.32 -- .32 DECIMAL is 0o40, plus 2J+1 = 5 for J=2; the byte prints OPEN here and CLOSED on line 22, the same statement in the same character positions one routine later
+!CHECK 220414.00 | 215265.05 30 | line 10 SV,2,S TIC -- .05 is 2J+1 for J=2 and NOT S TIC's offset, so the symbol is half-word-pinned only; printed p.168 lines 7 and 34 print this identical word
+!CHECK 220414.40 | 216242.10 00 | line 11 B,K SUPP -- a plain B prints target+.10, so this checks K SUPP's HALF WORD at 216242.00 and nothing below bit 32. A HALF WORD, so the counter reaches 220415.00, which is what line 17's printed SLC,$ says
+!CHECK 220415.00 | 215001.04 80 001067.20 50 | line 18 K RIO L(BU,1),S L,-18 -- bit-identical to line 5, and THIS ROW'S LOCATION IS THE CHECK: line 17's "SLC,$" is written as "SLC,$" in this deck, so 220415.00 is the counter arriving from line 11 and not an asserted origin
+!CHECK 220416.00 | 000010.22 30 | line 19 LV,9,$L -- the same half word as line 6, printed twice on one page
+!CHECK 220416.40 | 215021.23 05 | line 20 V+I,9,S PROG S -- the same half word as line 7
+!CHECK 220417.00 | 000000.75 89 001000.00 F0 | line 21 CM0000(BU,1),S SIO($9) -TURN OFF SIO BIT -- the second printing of S SIO's .75; the page prints "001000.CC FC", four impossible C's in an octal field and a byte whose low nibble is i2 = 0 (no second operand); line 8's CM1111 thirteen rows above prints the CLOSED control
+!CHECK 220420.00 | 000000.45 05 | line 22 V+I,2,.32 -- the same statement as line 9 with a CLOSED byte, which is what settles line 9
+!CHECK 220420.40 | 215265.05 30 | line 23 SV,2,S TIC -- the same half word as line 10
+!CHECK 220421.00 | 000000.31 89 216242.34 02 | line 24 BB,S AS($9),K SUPP -- .31 is S AS at .25 decimal, pinned to the bit; 89 is index $9; K SUPP's 216242.00 prints as .34, BB's operation bits being 0o34 (printed p.168 line 13 prints .74 = 0o40 OR 0o34 for a .40 target, which is what fixes the construction)
+!CHECK 220422.00 | 000000.60 59 | line 25 LC,8,S Q K($9) -- .60 is S Q K's 0o40 (= .32 decimal, printed p.109 line 9) PLUS 2J = 0o20 for J=8, so the symbol is pinned TO THE BIT; 59's low nibble is index $9
+!CHECK 220422.40 | 216242.30 42 | line 26 BXCZ,K SUPP -- 0o30 is the XCZ indicator on a .00 target; printed p.168 line 12's BXVZ uses 0o31 the same way and prints the same byte 42, which is what makes the two mutually checking
+!CHECK 220423.00 | 000036.37 02 | line 27 LCI,15,30 -- the datum 30 DECIMAL prints as 0o36 in the address field and .37 is 2J+1 = 31 for J=15; bit-identical to printed p.168 line 20
+!CHECK 220423.40 | 215001.04 80 220426.34 02 | line 28 BB,S L,K MOVE -- the third printing of S L's .04 on this page; the target is this page's OWN K MOVE at 220426.00, so this row checks a label produced inside the deck
+!CHECK 220424.40 | 215230.00 80 215266.36 20 | line 29 T,15,S TLR,S LR PP -- bit-identical to printed p.168 line 22 (p.168's deck also cites p.123 line 43; INHERITED, not re-checked); both symbols checked to the HALF WORD
+!CHECK 220425.40 | 222037.10 00 | line 30 B,KUNSTC -- target+.10 on KUNSTC's 222037.00; printed p.141 line 38 prints the identical word
+!CHECK 220426.00 | 215230.00 80 215362.36 20 | line 31 K MOVE T,15,S TLR, S LR MCP -- the same transmit against S LR MCP; lines 29 and 31 differ ONLY in the second address, which makes them each other's control. Bit-identical to printed p.168 line 24
+!CHECK 220427.00 | 222037.10 00 | line 32 B,KUNSTC -- the same half word as line 30, printed twice. A HALF WORD, so THE COUNTER LEAVES THIS PAGE AT 220427.40, which is what printed p.171's first located row must print -- CHECKED at 600 dpi: p.171 line 4 prints "220427.40 *  SLC,$"

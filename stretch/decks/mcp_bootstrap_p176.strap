@@ -1,0 +1,640 @@
+! mcp_bootstrap_p176.strap -- THE TAIL OF THE "F WIT" INTERRUPT-TABLE
+! MASTER COPY: slots 24 through 47, twenty-four full words of
+! "SIC,STIC; BD,SIPT+n.", printed page 176.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.183.  The header was READ, not
+! assumed: "TIME CLOCK 00054041   PUNID 11D11MCP   CARD ID KE000083
+! DIST. OF 3/01   3/01   PAGE NUMBER  176".
+!
+! >>> THE COLUMN-HEADING ROW'S OWN "LOCATION" FIELD READS 220650. <<<
+! Rendered at 600 dpi (crop x=6800 y=250 W=2600 H=400 of the 600-dpi
+! page): the word "LOCATION" is printed at the right-hand end of the
+! heading row and SIX DIGITS FOLLOW IT, "220650", clear of the dashed
+! rule.  Nothing was invented off the rule and nothing was taken from
+! the survey OCR.  That is LINE 1'S location word
+! (docs/transcription_workflow.md step 1), and line 1 here IS a
+! located row, which is exactly the case the rule predicts to be
+! numbered rather than blank.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! FORTY-EIGHT PRINTED LINES AND NOTHING ELSE.  No comment card, no
+! asterisk banner, no SLC, no DD, no SYN, no VF, no reservation, no
+! NAME in the NAME column on any of the forty-eight rows.  The page
+! is CONTIGUOUS from 220650.00 to 220677.40 -- twenty-four words,
+! forty-eight half words, no hole of any kind -- and then blank
+! paper to the foot of the form.
+!
+! The forty-eight lines are twenty-four copies of one shape:
+!
+!     SIC,STIC           215265.00 80      (even half word)
+!     BD,SIPT+n.         2151nn.04 00      (odd  half word)
+!
+! with n running 24, 25, ... 47 without a gap.
+!
+! >>> C22-6728-1 NAMES THIS SHAPE IN TYPESET PROSE. <<<  "THE
+! INTERRUPT TABLES ... All IBM 7030 interrupts are received by the
+! interrupt table (SIT).  It consists of 48 full word instructions
+! of the form SIC,---; BD,---; one for each indicator 0 through 47."
+! That is this page, twenty-four of those forty-eight words, for
+! indicators 24 through 47 -- the I-O and maskable indicators, which
+! the same page of the guide says are "all handled by a common
+! routine ... control is passed to these routines through the
+! parallel interrupt table".  Every one of this page's BD operands
+! is an SIPT slot, and every one of its SIC operands is STIC, the
+! stored instruction counter.
+!
+! ---------------------------------------------------------------
+! >>> THIS IS NOT THE SIT.  IT IS THE "F WIT" MASTER COPY OF IT,
+! AND THE TWO ARE BIT-IDENTICAL WORD FOR WORD. <<<
+! ---------------------------------------------------------------
+! The live SIT is at 215023.00 (printed p.110's own label "S IT
+! SIC,YMFIC").  This page is at 220650, five thousand words away,
+! and it prints the SAME WORDS as SIT slots 24..47.  Checked
+! mechanically against the two LANDED decks that carry those slots:
+!
+!   SIT slot 24..44  = 215053..215077  -- decks/mcp_bootstrap_p111
+!   SIT slot 45..47  = 215100..215102  -- decks/mcp_bootstrap_p112
+!
+! All forty-eight half words agree, digit for digit, with the
+! !CHECK lines those two decks already declare.  MEASURED, not
+! inferred: the two decks' !CHECK locations were collected
+! SEPARATELY and NO location appears in both, and the forty-eight
+! SIT half words resolve 42 from decks/mcp_bootstrap_p111 (slots
+! 24..44) and 6 from decks/mcp_bootstrap_p112 (slots 45..47), with
+! zero missing and zero disagreeing.  So the per-row attribution in
+! the !CHECK notes below is a measurement, not a reading of p.111's
+! header prose.  Example:
+!
+!   p.111 !CHECK 215053.00 | 215265.00 80 | line  9 SIC,ST IC
+!   p.111 !CHECK 215053.40 | 215133.04 00 | line 10 BD,SIPT+24.
+!   p.176 line 1 220650.00   215265.00 80              SIC,STIC
+!   p.176 line 2 220650.40   215133.04 00              BD,SIPT+24.
+!
+! >>> IT CORROBORATES, IT DOES NOT ESTABLISH. <<<  Same drum, same
+! volume (docs/transcription_workflow.md, "BE SURE THE SECOND
+! READING IS INDEPENDENT").  But it is NOT the oracle's forbidden
+! case either: these are DIFFERENT CARDS at DIFFERENT LOCATIONS on
+! DIFFERENT PAGES read by DIFFERENT transcribers, not an OCR of this
+! page's own ink.  Forty-eight-for-forty-eight agreement on that
+! basis is the strongest thing on this page.
+!
+! WHERE THE COPY'S BASE IS, AND WHAT READS IT.  >>> THIS WAS
+! SETTLED BY RENDERING printed p.175 (PDF p.182) AT 300 dpi, NOT BY
+! THE VOLUME OCR. <<<  p.111's deck had reached the same place
+! through that OCR and flagged it as its weakest row, unrendered --
+! the row whose statement column the OCR returns as
+! "FFC((((( (#U#C#C#N BOYSIFAED".  One command replaced it.  What
+! p.175 PRINTS, read off the image, is its last eight lines:
+!
+!   49*  220644.00   215265.00 80    F WIT   SIC,STIC      KE000079
+!   50*  220644.40   215127.04 00            BD,SIPT+20.   KE000079
+!   51*  220645.00   215265.00 80            SIC,STIC      KE000080
+!   52*  220645.40   215471.04 00            BD,SIFAE      KE000080
+!   53*  220646.00   215265.00 80            SIC,STIC      KE000081
+!   54*  220646.40   215131.04 00            BD,SIPT+22.   KE000081
+!   55*  220647.00   215265.00 80            SIC,STIC      KE000082
+!   56*  220647.40   215132.04 00            BD,SIPT+23.   KE000082
+!
+! and its line 15:
+!
+!   15*  220616.00   220620.00 84  000000.23 10
+!                    KF(BU,64),FWIT-20.($4) -IS WD AN MCP ST FXUP
+!
+! F WIT is a NAME in p.175's NAME column at 220644.00, and 0o220644
+! minus 20 DECIMAL (0o24) is exactly the 220620.00 that line 15
+! prints as its first operand.  So F WIT is SIT SLOT 20 (compare
+! decks/mcp_bootstrap_p110 line 48, "215047.40  215127.04 00
+! BD,SIPT+20."), F WIT-20 is the copy's virtual slot 0 at 220620,
+! and $4 holds the indicator number.  THE COPY THEREFORE RUNS
+! 220644..220677 -- twenty-eight words, slots 20 through 47 -- AND
+! THIS PAGE IS ITS LAST TWENTY-FOUR.
+!
+! WHAT THE F ROUTINE DOES WITH IT, also off p.175's printed English:
+!
+!   line 14  L(BU),SIT($4)                     (SIT = 215023.00)
+!   line 15  KF(BU,64),FWIT-20.($4) -IS WD AN MCP ST FXUP
+!   line 26  F INS ST(BU),SIT($4) -INSERT FIXUP INTO INTERPT TABLE
+!   line 31  F STZ TI,1,FWIT-20.($4),SIT($4) -STORE ST MCP FXUP IN TABLE
+!
+! It compares the live interrupt-table word for indicator $4 against
+! this master copy, and transmits the master copy back into the live
+! table when it must restore MCP's standard fixup.  THIS PAGE IS THE
+! THING BEING COMPARED AGAINST AND COPIED FROM.
+!
+! That reading is off a NEIGHBOURING page and is labelled as such;
+! nothing in this deck's checks depends on it.  What this page owns
+! on its own ink, with no reference to F WIT at all, is the
+! twenty-four words at 220650..220677 and their bit-identity with
+! SIT slots 24..47.
+!
+! ---------------------------------------------------------------
+! COUNTED OFF THE CARD-SERIAL COLUMN, AND IT IS TWENTY-FOUR CARDS
+! ---------------------------------------------------------------
+! The serial column runs KE000083 (lines 1 AND 2) to KE000106 (lines
+! 47 AND 48) -- TWENTY-FOUR serials for FORTY-EIGHT lines, each
+! serial printed on exactly two consecutive lines.  Rendered at 400
+! dpi beside the LINE column and read digit by digit; 106-83+1 = 24
+! and 24*2 = 48, so the count closes and nothing fell off either end
+! of the render.
+!
+! That is STRAP's semicolon: every card on this page is a
+! double-statement card punched "SIC,STIC ; BD,SIPT+n.".  The idiom
+! is already established in this corpus (printed pp.120, 126, 127,
+! 129, 136, 140, 141, 142, 143 -- p.129 writes the one-card form in
+! its deck and records that strap_asm splits on ';' at
+! strap_asm.py:1010) and C22-6728-1 prints this very instance in
+! prose as "(SIC,STIC; B,SIFAD)".  It is the largest run of it THIS
+! TRANSCRIBER FOUND -- twenty-four consecutive semicolon cards and
+! not one single-statement card, against the two-per-page the other
+! decks record -- but NO ONE COUNTED RUN LENGTHS ACROSS THE LANDED
+! DECKS, so treat "largest" as unmeasured.  printed p.175, rendered
+! here for the join, carries four more of the same cards
+! (KE000079..KE000082), so the run is really twenty-eight cards
+! long and begins on the previous page.
+!
+! THE DECK WRITES THE ONE-CARD FORM, which is what the card is.  It
+! was tried before it was written and it assembles to the printed
+! words (see THE DECLARED CHECKS below).  Splitting the pairs onto
+! forty-eight deck lines assembles identically; it was not done,
+! because the card is the printed artifact.
+!
+! >>> AND IT SETTLES A QUESTION THE SIC RULE RAISES. <<<  strap_asm
+! enforces "SIC must be immediately followed by a half-word branch"
+! and docs/transcription_workflow.md records printed p.131 line 48's
+! SIC and printed p.132 line 1's branch STRADDLING a page break.
+! Those two decks' own notes give p.131's last card as ED000048 and
+! p.132's first as ED000050 -- DIFFERENT CARDS -- so the pairing on
+! THIS page is a punching style, not an assembler requirement.
+!   (A LOOSE END IN THE REPO, CHEAP TO CHECK AND NOT CHECKED HERE:
+!   those two notes leave ED000049 unaccounted for between the two
+!   pages.  One render of either page's serial column would settle
+!   whether a serial is missing or one of the two notes is off by
+!   one.  It does not touch this page.)
+!
+! ---------------------------------------------------------------
+! THE ORIGIN IS ASSERTED, AND HERE IS EXACTLY WHAT BACKS IT
+! ---------------------------------------------------------------
+! >>> THE PAGE PRINTS NO SLC. <<<  Line 1 is a located instruction,
+! so this deck writes a hard "SLC, (8)220650.0", and
+! docs/transcription_workflow.md item 2 applies: a hard SLC CANNOT
+! disagree with an arriving counter, it overrides it silently.  The
+! forty-eight !CHECK rows below therefore ASSERT this origin rather
+! than check it.  Two independent things back it, and they back
+! different parts of it:
+!
+!   THE WORD, 220650, is the page header's own LOCATION field --
+!   IBM's assembler stating line 1's location, read at 600 dpi.
+!
+!   THE BIT OFFSET, .00, is pinned by the page's own forty-eight
+!   rows: the locations alternate .00/.40 across twenty-four words
+!   with no drift.  An origin of 220650.40 would make line 2 print
+!   220651.00, and it prints 220650.40.
+!
+! >>> THE BACKWARD JOIN TO printed p.175 IS NOW MEASURED OFF INK,
+! THOUGH STILL NOT BY ANY AUTOMATED CHECK HERE. <<<  p.175 was
+! rendered at 300 dpi (PDF p.182).  Its LAST printed row is line 56,
+! "220647.40  215132.04 00  BD,SIPT+23." -- a HALF WORD, so the
+! counter leaves p.175 at exactly 220650.00, which is this page's
+! line 1 and this page's header LOCATION field.
+!
+! AND THE CARD-SERIAL COLUMN IS UNBROKEN ACROSS THE PAGE BREAK:
+! p.175's last two lines are KE000082 and this page's first two are
+! KE000083.  Consecutive serials across a page boundary are a
+! stronger join witness than either page's location column, because
+! they are punched, not computed.
+!
+! When p.175's deck lands, the two should be compared by a single
+! merged assembly; until then this is a hand comparison and it
+! closes.
+!
+! ---------------------------------------------------------------
+! WHAT THE CHECKS CAN AND CANNOT SEE, MEASURED NOT ASSERTED
+! ---------------------------------------------------------------
+! >>> SIC PRINTS THE FULL 24-BIT BIT ADDRESS; BD PRINTS ONLY BIT 32.
+! The two operations on this page are NOT equally informative, and
+! the usual "an external back-derived from an instruction is known
+! only to the half word" is HALF WRONG here.  Measured through
+! strap_asm, varying ONLY the SYN and nothing else:
+!
+!   STIC SYN        SIC,STIC prints      SIPT SYN       BD,SIPT+24. prints
+!   (8)215265.0     215265.00 80         (8)215103.0    215133.04 00
+!   (8)215265.03    215265.03 80         (8)215103.03   215133.04 00
+!   (8)215265.37    215265.37 80         (8)215103.37   215133.04 00
+!   (8)215265.40    215265.40 80         (8)215103.40   215133.44 00
+!
+! So:
+!
+!   STIC IS PINNED TO THE BIT, twenty-four times over.  SIC's half
+!   word is "bits 0-23 storage address (bit address), 24-27 literal
+!   1000, 28-31 index" (Reference Manual printed p.41, cited at
+!   strap_asm.enc_sic), so the printed 215265.00 is STIC's whole
+!   address, offset included.  This page is therefore an
+!   independent bit-exact reading of STIC, agreeing with its
+!   DEFINING card -- printed p.116 line 16, "S T IC VF,0" at
+!   215265.00, which decks/mcp_bootstrap_p116 !SYMs.  The ".0" that
+!   twenty landed decks write for STIC is a convention on THEIR
+!   pages; on this one it is a measurement.
+!
+!   SIPT IS PINNED ONLY TO THE HALF WORD, like every other branch
+!   operand.  Bits 0-31 of SIPT are unobservable from this page;
+!   only bit 32 shows, and it is 0.  SIPT's exact value comes from
+!   its DEFINING card, printed p.112 line 7 ("S IPT BEW,$" at
+!   215103.00, !SYM'd by decks/mcp_bootstrap_p112).
+!
+!   WHAT TWENTY-FOUR BD ROWS DO PIN is SIPT's WORD and the word
+!   arithmetic: +24 through +47 land on 215133 through 215162
+!   without a gap, twenty-four distinct printed words off one base,
+!   so a one-word error in SIPT would fail all twenty-four at once.
+!   The "+n" terms are DECIMAL and the printed words are octal --
+!   +29 prints 215140, not 215134 -- which is checked twenty-four
+!   times here.
+!
+! NO !SYM LINE IS DECLARED, because THIS PAGE DEFINES NO SYMBOL.
+! The NAME column is empty on all forty-eight rows (the only ink in
+! it is the word "NAME" in the heading).  SIPT and STIC are
+! externals this deck SYNs from other pages' defining cards, so
+! !SYM'ing them would check this deck against itself.  printed
+! p.110's deck states the same rule for the same reason.
+!
+! ---------------------------------------------------------------
+! THE SURVEY IS WRONG AT BOTH ENDS AND HERE IS BY HOW MUCH
+! ---------------------------------------------------------------
+! strap/mcp_survey.py read this page as 34 rows over
+! "220650.40".."206714.40".
+!
+!   THE ROW COUNT IS 48, not 34 -- fourteen short.  Counted off the
+!   page's own line numbers 1* .. 48* AND independently off the
+!   card-serial column (24 serials x 2 lines).  Two counts, one
+!   answer.
+!
+!   THE FIRST LOCATION IS 220650.00, not 220650.40.  The survey lost
+!   line 1, which is the loss docs/transcription_workflow.md warns
+!   about by name.  The page header's LOCATION 220650 is the
+!   independent witness.
+!
+!   THE LAST LOCATION IS 220677.40.  "206714.40" IS NOT A ROW ON
+!   THIS PAGE and is not a row in MCP's body at all -- the body runs
+!   above 215000 -- so it is a misread, most likely of 220677.40 or
+!   of one of the 2151nn.04 operands in the BINARY OUTPUT column.
+!   Nothing on this page carries a location below 220650.00 or above
+!   220677.40.
+!
+! ---------------------------------------------------------------
+! GLYPHS
+! ---------------------------------------------------------------
+! This page opens round glyphs constantly and says so itself: its
+! own heading prints "LOCATICN" for LOCATION and "BINARY CUTPUT" for
+! OUTPUT, and the header's time clock prints "00054041" as
+! "C0054041".  In the body, "220650.00" prints as "220650.CC" on
+! line 1 and "215265.00" prints as "215265.CC" on most SIC rows.
+!
+! EVERY ONE OF THOSE IS AN OCTAL FIELD, so every one of those C's is
+! a 0 with certainty -- a C cannot occur in a location word, a
+! location offset, or an address offset (rung 5 of the glyph ladder,
+! docs/transcription_workflow.md 2b).  And rung 4, the strongest
+! rung, fires twenty-four times on this page without being looked
+! for: THE SAME STATEMENT IS PRINTED TWENTY-FOUR TIMES in the same
+! character positions.  Line 7 prints "220653.00  215265.00 80" with
+! closed zeros and line 1 prints the identical word with open ones.
+! One page, one drum, one instruction, open and closed glyphs in the
+! same column.  Nothing on this page rests on a single reading.
+!
+! The only two glyph pairs that could matter are in the mnemonics,
+! and the assembler eliminates neither-nor: "SIC" and "BD" are both
+! operations, so rung 3 is silent.  They are settled instead by the
+! two landed decks printing the same mnemonics for the same words at
+! the SIT addresses, by C22-6728-1's typeset "SIC,---; BD,---", and
+! by the fact that no other reading of either string is an
+! operation at all.
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK: WHAT THIS PAGE RULES OUT
+! ---------------------------------------------------------------
+! Every one of the forty-eight line numbers carries an asterisk
+! right after it ("1*", "48*").  That is the ordinary column, not a
+! mark (printed pp.140, 141, 144, 145, 147 all record it).
+!
+! EXACTLY TWO lines carry a SECOND asterisk, after their LOCATION:
+!
+!   line  3   "220651.00 *"      SIC,STIC
+!   line 26   "220664.40 *"      BD,SIPT+36.
+!
+! Both read off the 600-dpi render, not off any OCR, AND THE COUNT
+! WAS MADE BY MACHINE RATHER THAN BY EYE, because "exactly two" is
+! the load-bearing part.  The 400-dpi page was banded on the
+! LOCATION column's own ink (50 bands: the time-clock line, the
+! heading line, and the 48 rows -- which is a third independent
+! confirmation of the row count) and the dark pixels in the
+! asterisk column counted per band:
+!
+!   line  3   356 dark pixels   x 1782..1808   24 rows tall
+!   line 26   381 dark pixels   x 1781..1806   24 rows tall
+!   line 21    19 dark pixels   x 1827..1831    4 rows tall
+!   all other rows:  0
+!
+! >>> LINE 21'S MARK IS NOT AN ASTERISK, AND IT IS RECORDED HERE SO
+! THE NEXT READER NEED NOT RE-DERIVE IT. <<<  At 1200 dpi beside
+! line 3's asterisk it is a single period-sized blob: one twentieth
+! the ink, four pixels tall instead of twenty-four, sitting ON THE
+! BASELINE where the asterisk is RAISED, and forty-five pixels
+! (400 dpi) to the RIGHT of the column the two real asterisks share.
+! It is in no field -- clear paper on all four sides -- and line
+! 21's own row ("220662.00  215265.00 80  SIC,STIC") is
+! bit-identical to the other twenty-three SIC rows and checks out.
+! Drum noise, of the kind printed p.113's transcriber recorded on
+! its own line 15.  It is also what the full-page 300-dpi view
+! shows as a faint dot after "220662.CC", and at 300 dpi it is easy
+! to call a third asterisk.  It is not one.
+!
+! NO RULE IS
+! PROPOSED (the brief forbids it from one page, and printed p.151
+! killed printed p.147's rule the same afternoon).  What this page
+! can do is ELIMINATE, because it is the most uniform page in the
+! block -- forty-eight structurally identical rows, two marked:
+!
+!   * NOT the statement, the operation, or the operand: line 3 is
+!     bit-identical to the other twenty-three SIC rows and line 26
+!     is the same shape as the other twenty-three BD rows.
+!   * NOT the half-word parity: one mark is on a .00 row and the
+!     other on a .40 row.
+!   * NOT the presence of a NAME: no row on this page has one.
+!   * NOT anything to do with SLC: THIS PAGE PRINTS NO SLC AT ALL
+!     and still carries two marks.  That is a second independent
+!     hit on the SLC family of hypotheses after printed p.151's.
+!   * NOT the card: lines 3 and 26 are on different cards
+!     (KE000084, KE000095) and neither card's OTHER line is marked.
+!
+! What survives, and is only an observation: TWO PER PAGE is what
+! printed pp.140, 141, 144 and 146 also found, on pages with
+! completely different content.  printed p.147 found three.
+!
+! THE ONE READING THAT WAS TRIED AND DIED IS ALREADY RECORDED, by
+! printed p.113's transcriber, using THIS page: "the mark follows
+! the slot" fails because line 26 branches to 215147, which is
+! p.113's line 1 and is NOT marked, while line 3 is a "SIC,STIC"
+! that branches nowhere.  That reading is dead and is not retried
+! here.
+!
+! ---------------------------------------------------------------
+! NO ASSEMBLER LIMITATION WAS HIT ON THIS PAGE.
+! ---------------------------------------------------------------
+! Every statement went in exactly as printed -- the unspaced
+! "SIC,STIC", the trailing period on "BD,SIPT+24.", and the
+! semicolon one-card form -- and was accepted first try.  Nothing
+! was substituted, normalised or stubbed.
+!
+! ---------------------------------------------------------------
+! WHERE THE COUNTER LEAVES, AND WHAT printed p.177 MUST PRINT
+! ---------------------------------------------------------------
+! Line 48 is "BD,SIPT+47." at 220677.40, a HALF WORD, so
+!
+!     >>> THE COUNTER LEAVES THIS PAGE AT 220700.00. <<<
+!
+! There is no reservation, no forward SLC and no hole anywhere on
+! this page, so that is a hard prediction and not an estimate.  It
+! is falsifiable three ways on printed p.177:
+!
+!   1. If p.177's line 1 is a located row, its heading-row LOCATION
+!      field must read 220700.
+!   2. If p.177 opens with a printed "SLC,$", that SLC's own printed
+!      LOCATION must read 220700.00 -- an SLC emits nothing, so its
+!      location IS the arriving counter.
+!   3. p.177's first EMITTING row must be at 220700.00.
+!
+! Only a forward "SLC,(8)nnnn." would legitimately break this.
+!
+! TWO THINGS ALREADY AGREE WITH IT, both from outside this page:
+!
+!   * decks/mcp_bootstrap_p117.strap -- LANDED AND CHECKED -- carries
+!     "KFRONT SYN, (8)220700.0" and the !CHECK
+!     "215501.40 | 220700.32 42 | line 19 BXL,K FRONT".  A branch
+!     pins bit 32, and 0o32 has the 0o40 bit CLEAR, so K FRONT's
+!     half word is 220700.00 and not 220700.40.
+!   * the volume OCR of PDF p.184 (printed p.177, a DIFFERENT page)
+!     prints an asterisk banner around "IDENTIFIER", then a row at
+!     220700.00 carrying an asterisk and no binary (an "SLC,$"),
+!     then "K FRONT  KVI,3,32.0" at 220700.00.
+!
+! So the expected shape of p.177 is: three banner lines (hence a
+! BLANK heading-row LOCATION field there, by the line-1 rule), an
+! "SLC,$" printing 220700.00, and K FRONT at 220700.00.  If p.177's
+! heading LOCATION field turns out to be NUMBERED, one of the two
+! readings above is wrong and this prediction fails loudly.
+!
+! A WARNING FOR WHOEVER DIFFS p.177: ITS "SLC,$" ROW AND ITS FIRST
+! EMITTING ROW WILL PRINT THE SAME LOCATION, 220700.00, because an
+! SLC emits nothing.  That is the "one location, two listing lines"
+! case docs/transcription_workflow.md 3b describes; a diff that
+! keeps one line per location will report a bogus mismatch there.
+!
+! C22-6728-1 names the routine: "control is given to the identifier
+! routine (KFRONT)" / "The identifier is entered at KFRONT (Figure
+! 18)".  It is the service-op identifier, not an operation branch
+! table, and whatever p.177 turns out to contain, the ADDRESS is the
+! thing this page predicts.
+!
+! ---------------------------------------------------------------
+! WHAT I COULD NOT SETTLE
+! ---------------------------------------------------------------
+! 1. THE TWO LOCATION-COLUMN ASTERISKS.  Eliminations above; no
+!    rule.  This page is the best dataset in the volume for the
+!    question (48 identical rows, 2 marked) and it still does not
+!    answer it.
+! 2. SIPT'S BIT OFFSET.  Twenty-four rows and all of them blind
+!    below bit 32.  Its ".0" here is a convention carried from
+!    printed p.112's defining card.
+! 3. THE BACKWARD JOIN TO printed p.175 IS READ BUT NOT TESTED.
+!    p.175's last row is 220647.40 and its last serial is KE000082,
+!    both read off a 300-dpi render, and both agree with this page.
+!    But no check in this repository compares the two until p.175's
+!    deck lands and the merge runs.  That is a gap in the TESTING,
+!    not in the reading.
+! 4. WHICH MCP FUNCTION THE F ROUTINE SERVES.  p.175's own English
+!    establishes WHAT it does with this table ("IS WD AN MCP ST
+!    FXUP", "INSERT FIXUP INTO INTERPT TABLE", "STORE ST MCP FXUP
+!    IN TABLE") and I believe that settles the table's purpose.
+!    What I could NOT find is the F routine in C22-6728-1 by name,
+!    so WHO calls it and WHEN -- IPL, a $ pseudo-op, an error
+!    recovery -- is unestablished.  I did not grep exhaustively.
+! 4a. WHETHER SLOTS 0..19 OF THE COPY EXIST ANYWHERE.  The copy
+!    begins at F WIT = slot 20; nothing I read says what restores
+!    indicators 0..19, and "FWIT-20.($4)" would index BELOW the
+!    table for those.  Either $4 never goes below 20 on this path
+!    or there is a table I have not seen.  printed p.175 lines
+!    20-25 (the BRZ/BZB/KFI/BAE "SIC-BD ERROR" tests) are where
+!    that would be bounded, and I did not read them closely.
+! 5. ED000049, the serial unaccounted for between printed pp.131 and
+!    132 in those two decks' own notes.  Noticed here, not settled
+!    here, and it bears on how SIC/branch pairs were punched.
+!
+! ---------------------------------------------------------------
+! EXTERNALS
+! ---------------------------------------------------------------
+! Both are SYN'd exactly as the landed decks spell them.  Neither
+! carries a data description: neither defining card prints one
+! ("S IPT BEW,$" is a place, "S T IC VF,0" is a VF), and no
+! statement on this page takes its length from a symbol.
+! NOTE, LOUDLY: p.112's defining card for SIPT is "BEW,$", a PLACE.
+! Copying it here would deposit a word at THIS page's counter and
+! collide in the merge (the printed-p.157 mistake).  A stand-in SYN
+! is written instead, and it is checked against the defining page.
+
+SIPT    SYN, (8)215103.0             ! printed p.112 line 7 DEFINES it,
+                                     ! "S IPT BEW,$" at 215103.00
+                                     ! -BASE ADDRESS OF PARALLEL;
+                                     ! also SYN'd by pp.110/111/130/143/144
+STIC    SYN, (8)215265.0             ! printed p.116 line 16 DEFINES it,
+                                     ! "S T IC VF,0" at 215265.00; this
+                                     ! page's SIC rows read it TO THE BIT
+
+! ---------------------------------------------------------------
+! THE ORIGIN -- ASSERTED, see above.  The page prints no SLC.
+! ---------------------------------------------------------------
+        SLC, (8)220650.0
+
+! ---------------------------------------------------------------
+! THE PAGE.  Twenty-four semicolon double-statement cards, one per
+! source line, in printed order.  The card serial is in the comment.
+! ---------------------------------------------------------------
+        SIC,STIC; BD,SIPT+24.        ! lines  1/ 2  KE000083  SIT slot 24
+        SIC,STIC; BD,SIPT+25.        ! lines  3/ 4  KE000084  SIT slot 25
+        SIC,STIC; BD,SIPT+26.        ! lines  5/ 6  KE000085  SIT slot 26
+        SIC,STIC; BD,SIPT+27.        ! lines  7/ 8  KE000086  SIT slot 27
+        SIC,STIC; BD,SIPT+28.        ! lines  9/10  KE000087  SIT slot 28
+        SIC,STIC; BD,SIPT+29.        ! lines 11/12  KE000088  SIT slot 29
+        SIC,STIC; BD,SIPT+30.        ! lines 13/14  KE000089  SIT slot 30
+        SIC,STIC; BD,SIPT+31.        ! lines 15/16  KE000090  SIT slot 31
+        SIC,STIC; BD,SIPT+32.        ! lines 17/18  KE000091  SIT slot 32
+        SIC,STIC; BD,SIPT+33.        ! lines 19/20  KE000092  SIT slot 33
+        SIC,STIC; BD,SIPT+34.        ! lines 21/22  KE000093  SIT slot 34
+        SIC,STIC; BD,SIPT+35.        ! lines 23/24  KE000094  SIT slot 35
+        SIC,STIC; BD,SIPT+36.        ! lines 25/26  KE000095  SIT slot 36
+        SIC,STIC; BD,SIPT+37.        ! lines 27/28  KE000096  SIT slot 37
+        SIC,STIC; BD,SIPT+38.        ! lines 29/30  KE000097  SIT slot 38
+        SIC,STIC; BD,SIPT+39.        ! lines 31/32  KE000098  SIT slot 39
+        SIC,STIC; BD,SIPT+40.        ! lines 33/34  KE000099  SIT slot 40
+        SIC,STIC; BD,SIPT+41.        ! lines 35/36  KE0000100  SIT slot 41
+        SIC,STIC; BD,SIPT+42.        ! lines 37/38  KE0000101  SIT slot 42
+        SIC,STIC; BD,SIPT+43.        ! lines 39/40  KE0000102  SIT slot 43
+        SIC,STIC; BD,SIPT+44.        ! lines 41/42  KE0000103  SIT slot 44
+        SIC,STIC; BD,SIPT+45.        ! lines 43/44  KE0000104  SIT slot 45
+        SIC,STIC; BD,SIPT+46.        ! lines 45/46  KE0000105  SIT slot 46
+        SIC,STIC; BD,SIPT+47.        ! lines 47/48  KE0000106  SIT slot 47
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, as rendered at 600 dpi.  Columns:
+!   !  LINE*  LOCATION  BINARY OUTPUT  STATEMENT  CARD-SERIAL
+! The NAME column is EMPTY on every row and is not shown.
+! A "*" after the LOCATION is the page's second, unexplained mark.
+!
+! RUN NOTE for docs/transcription_workflow.md 3b: its regex also
+! matches the NINE printed-p.175 rows quoted in the prose above, so
+! a run over this deck reports 57 listing rows and 48 COMPARED, 0
+! mismatches.  48 compared is the number that matters -- one per
+! !CHECK, the whole page.  The nine extras are a neighbouring
+! page's rows and have no !CHECK here, by design.
+! ---------------------------------------------------------------
+!   1*  220650.00    215265.00 80   SIC,STIC        KE000083
+!   2*  220650.40    215133.04 00   BD,SIPT+24.     KE000083
+!   3*  220651.00 *  215265.00 80   SIC,STIC        KE000084
+!   4*  220651.40    215134.04 00   BD,SIPT+25.     KE000084
+!   5*  220652.00    215265.00 80   SIC,STIC        KE000085
+!   6*  220652.40    215135.04 00   BD,SIPT+26.     KE000085
+!   7*  220653.00    215265.00 80   SIC,STIC        KE000086
+!   8*  220653.40    215136.04 00   BD,SIPT+27.     KE000086
+!   9*  220654.00    215265.00 80   SIC,STIC        KE000087
+!  10*  220654.40    215137.04 00   BD,SIPT+28.     KE000087
+!  11*  220655.00    215265.00 80   SIC,STIC        KE000088
+!  12*  220655.40    215140.04 00   BD,SIPT+29.     KE000088
+!  13*  220656.00    215265.00 80   SIC,STIC        KE000089
+!  14*  220656.40    215141.04 00   BD,SIPT+30.     KE000089
+!  15*  220657.00    215265.00 80   SIC,STIC        KE000090
+!  16*  220657.40    215142.04 00   BD,SIPT+31.     KE000090
+!  17*  220660.00    215265.00 80   SIC,STIC        KE000091
+!  18*  220660.40    215143.04 00   BD,SIPT+32.     KE000091
+!  19*  220661.00    215265.00 80   SIC,STIC        KE000092
+!  20*  220661.40    215144.04 00   BD,SIPT+33.     KE000092
+!  21*  220662.00    215265.00 80   SIC,STIC        KE000093
+!  22*  220662.40    215145.04 00   BD,SIPT+34.     KE000093
+!  23*  220663.00    215265.00 80   SIC,STIC        KE000094
+!  24*  220663.40    215146.04 00   BD,SIPT+35.     KE000094
+!  25*  220664.00    215265.00 80   SIC,STIC        KE000095
+!  26*  220664.40 *  215147.04 00   BD,SIPT+36.     KE000095
+!  27*  220665.00    215265.00 80   SIC,STIC        KE000096
+!  28*  220665.40    215150.04 00   BD,SIPT+37.     KE000096
+!  29*  220666.00    215265.00 80   SIC,STIC        KE000097
+!  30*  220666.40    215151.04 00   BD,SIPT+38.     KE000097
+!  31*  220667.00    215265.00 80   SIC,STIC        KE000098
+!  32*  220667.40    215152.04 00   BD,SIPT+39.     KE000098
+!  33*  220670.00    215265.00 80   SIC,STIC        KE000099
+!  34*  220670.40    215153.04 00   BD,SIPT+40.     KE000099
+!  35*  220671.00    215265.00 80   SIC,STIC        KE0000100
+!  36*  220671.40    215154.04 00   BD,SIPT+41.     KE0000100
+!  37*  220672.00    215265.00 80   SIC,STIC        KE0000101
+!  38*  220672.40    215155.04 00   BD,SIPT+42.     KE0000101
+!  39*  220673.00    215265.00 80   SIC,STIC        KE0000102
+!  40*  220673.40    215156.04 00   BD,SIPT+43.     KE0000102
+!  41*  220674.00    215265.00 80   SIC,STIC        KE0000103
+!  42*  220674.40    215157.04 00   BD,SIPT+44.     KE0000103
+!  43*  220675.00    215265.00 80   SIC,STIC        KE0000104
+!  44*  220675.40    215160.04 00   BD,SIPT+45.     KE0000104
+!  45*  220676.00    215265.00 80   SIC,STIC        KE0000105
+!  46*  220676.40    215161.04 00   BD,SIPT+46.     KE0000105
+!  47*  220677.00    215265.00 80   SIC,STIC        KE0000106
+!  48*  220677.40    215162.04 00   BD,SIPT+47.     KE0000106
+
+! ---------------------------------------------------------------
+! THE DECLARED CHECKS.  Forty-eight rows for forty-eight printed
+! lines -- the whole page, not a sample.  No !SYM: this page defines
+! no symbol (see above).
+! ---------------------------------------------------------------
+!CHECK 220650.00 | 215265.00 80 | line 1 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 24 at 215053.00 in decks/mcp_bootstrap_p111 -- FIRST ROW OF THE PAGE; its location word is what the heading-row LOCATION field prints, 220650
+!CHECK 220650.40 | 215133.04 00 | line 2 BD,SIPT+24. -- SIPT+24 DECIMAL words on from 215103 is 215133 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 24 at 215053.40 in decks/mcp_bootstrap_p111
+!CHECK 220651.00 | 215265.00 80 | line 3 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 25 at 215054.00 in decks/mcp_bootstrap_p111 (this LOCATION carries the page's second, unexplained asterisk)
+!CHECK 220651.40 | 215134.04 00 | line 4 BD,SIPT+25. -- SIPT+25 DECIMAL words on from 215103 is 215134 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 25 at 215054.40 in decks/mcp_bootstrap_p111
+!CHECK 220652.00 | 215265.00 80 | line 5 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 26 at 215055.00 in decks/mcp_bootstrap_p111
+!CHECK 220652.40 | 215135.04 00 | line 6 BD,SIPT+26. -- SIPT+26 DECIMAL words on from 215103 is 215135 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 26 at 215055.40 in decks/mcp_bootstrap_p111
+!CHECK 220653.00 | 215265.00 80 | line 7 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 27 at 215056.00 in decks/mcp_bootstrap_p111
+!CHECK 220653.40 | 215136.04 00 | line 8 BD,SIPT+27. -- SIPT+27 DECIMAL words on from 215103 is 215136 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 27 at 215056.40 in decks/mcp_bootstrap_p111
+!CHECK 220654.00 | 215265.00 80 | line 9 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 28 at 215057.00 in decks/mcp_bootstrap_p111
+!CHECK 220654.40 | 215137.04 00 | line 10 BD,SIPT+28. -- SIPT+28 DECIMAL words on from 215103 is 215137 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 28 at 215057.40 in decks/mcp_bootstrap_p111
+!CHECK 220655.00 | 215265.00 80 | line 11 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 29 at 215060.00 in decks/mcp_bootstrap_p111
+!CHECK 220655.40 | 215140.04 00 | line 12 BD,SIPT+29. -- SIPT+29 DECIMAL words on from 215103 is 215140 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 29 at 215060.40 in decks/mcp_bootstrap_p111
+!CHECK 220656.00 | 215265.00 80 | line 13 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 30 at 215061.00 in decks/mcp_bootstrap_p111
+!CHECK 220656.40 | 215141.04 00 | line 14 BD,SIPT+30. -- SIPT+30 DECIMAL words on from 215103 is 215141 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 30 at 215061.40 in decks/mcp_bootstrap_p111
+!CHECK 220657.00 | 215265.00 80 | line 15 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 31 at 215062.00 in decks/mcp_bootstrap_p111
+!CHECK 220657.40 | 215142.04 00 | line 16 BD,SIPT+31. -- SIPT+31 DECIMAL words on from 215103 is 215142 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 31 at 215062.40 in decks/mcp_bootstrap_p111
+!CHECK 220660.00 | 215265.00 80 | line 17 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 32 at 215063.00 in decks/mcp_bootstrap_p111
+!CHECK 220660.40 | 215143.04 00 | line 18 BD,SIPT+32. -- SIPT+32 DECIMAL words on from 215103 is 215143 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 32 at 215063.40 in decks/mcp_bootstrap_p111
+!CHECK 220661.00 | 215265.00 80 | line 19 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 33 at 215064.00 in decks/mcp_bootstrap_p111
+!CHECK 220661.40 | 215144.04 00 | line 20 BD,SIPT+33. -- SIPT+33 DECIMAL words on from 215103 is 215144 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 33 at 215064.40 in decks/mcp_bootstrap_p111
+!CHECK 220662.00 | 215265.00 80 | line 21 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 34 at 215065.00 in decks/mcp_bootstrap_p111
+!CHECK 220662.40 | 215145.04 00 | line 22 BD,SIPT+34. -- SIPT+34 DECIMAL words on from 215103 is 215145 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 34 at 215065.40 in decks/mcp_bootstrap_p111
+!CHECK 220663.00 | 215265.00 80 | line 23 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 35 at 215066.00 in decks/mcp_bootstrap_p111
+!CHECK 220663.40 | 215146.04 00 | line 24 BD,SIPT+35. -- SIPT+35 DECIMAL words on from 215103 is 215146 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 35 at 215066.40 in decks/mcp_bootstrap_p111
+!CHECK 220664.00 | 215265.00 80 | line 25 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 36 at 215067.00 in decks/mcp_bootstrap_p111
+!CHECK 220664.40 | 215147.04 00 | line 26 BD,SIPT+36. -- SIPT+36 DECIMAL words on from 215103 is 215147 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 36 at 215067.40 in decks/mcp_bootstrap_p111 (this LOCATION carries the page's second, unexplained asterisk)
+!CHECK 220665.00 | 215265.00 80 | line 27 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 37 at 215070.00 in decks/mcp_bootstrap_p111
+!CHECK 220665.40 | 215150.04 00 | line 28 BD,SIPT+37. -- SIPT+37 DECIMAL words on from 215103 is 215150 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 37 at 215070.40 in decks/mcp_bootstrap_p111
+!CHECK 220666.00 | 215265.00 80 | line 29 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 38 at 215071.00 in decks/mcp_bootstrap_p111
+!CHECK 220666.40 | 215151.04 00 | line 30 BD,SIPT+38. -- SIPT+38 DECIMAL words on from 215103 is 215151 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 38 at 215071.40 in decks/mcp_bootstrap_p111
+!CHECK 220667.00 | 215265.00 80 | line 31 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 39 at 215072.00 in decks/mcp_bootstrap_p111
+!CHECK 220667.40 | 215152.04 00 | line 32 BD,SIPT+39. -- SIPT+39 DECIMAL words on from 215103 is 215152 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 39 at 215072.40 in decks/mcp_bootstrap_p111
+!CHECK 220670.00 | 215265.00 80 | line 33 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 40 at 215073.00 in decks/mcp_bootstrap_p111
+!CHECK 220670.40 | 215153.04 00 | line 34 BD,SIPT+40. -- SIPT+40 DECIMAL words on from 215103 is 215153 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 40 at 215073.40 in decks/mcp_bootstrap_p111
+!CHECK 220671.00 | 215265.00 80 | line 35 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 41 at 215074.00 in decks/mcp_bootstrap_p111
+!CHECK 220671.40 | 215154.04 00 | line 36 BD,SIPT+41. -- SIPT+41 DECIMAL words on from 215103 is 215154 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 41 at 215074.40 in decks/mcp_bootstrap_p111
+!CHECK 220672.00 | 215265.00 80 | line 37 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 42 at 215075.00 in decks/mcp_bootstrap_p111
+!CHECK 220672.40 | 215155.04 00 | line 38 BD,SIPT+42. -- SIPT+42 DECIMAL words on from 215103 is 215155 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 42 at 215075.40 in decks/mcp_bootstrap_p111
+!CHECK 220673.00 | 215265.00 80 | line 39 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 43 at 215076.00 in decks/mcp_bootstrap_p111
+!CHECK 220673.40 | 215156.04 00 | line 40 BD,SIPT+43. -- SIPT+43 DECIMAL words on from 215103 is 215156 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 43 at 215076.40 in decks/mcp_bootstrap_p111
+!CHECK 220674.00 | 215265.00 80 | line 41 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 44 at 215077.00 in decks/mcp_bootstrap_p111
+!CHECK 220674.40 | 215157.04 00 | line 42 BD,SIPT+44. -- SIPT+44 DECIMAL words on from 215103 is 215157 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 44 at 215077.40 in decks/mcp_bootstrap_p111
+!CHECK 220675.00 | 215265.00 80 | line 43 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 45 at 215100.00 in decks/mcp_bootstrap_p112
+!CHECK 220675.40 | 215160.04 00 | line 44 BD,SIPT+45. -- SIPT+45 DECIMAL words on from 215103 is 215160 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 45 at 215100.40 in decks/mcp_bootstrap_p112
+!CHECK 220676.00 | 215265.00 80 | line 45 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 46 at 215101.00 in decks/mcp_bootstrap_p112
+!CHECK 220676.40 | 215161.04 00 | line 46 BD,SIPT+46. -- SIPT+46 DECIMAL words on from 215103 is 215161 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 46 at 215101.40 in decks/mcp_bootstrap_p112
+!CHECK 220677.00 | 215265.00 80 | line 47 SIC,STIC -- SIC's half word is Reference Manual printed p.41 format, bits 0-23 the full BIT address, so this pins STIC to the bit at 215265.00 and not merely to the half word; bit-identical to the other 23 SIC rows on this page and to SIT slot 47 at 215102.00 in decks/mcp_bootstrap_p112
+!CHECK 220677.40 | 215162.04 00 | line 48 BD,SIPT+47. -- SIPT+47 DECIMAL words on from 215103 is 215162 OCTAL; a BD prints target+.04 and bits 0-31 of the operand are unobservable, so SIPT is checked to the HALF WORD only; bit-identical to SIT slot 47 at 215102.40 in decks/mcp_bootstrap_p112 -- LAST ROW OF THE PAGE, a HALF WORD, so THE COUNTER LEAVES AT 220700.00, which is what printed p.177 must print

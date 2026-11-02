@@ -67,7 +67,8 @@ UNIMPLEMENTED = {
     "DCV",                                # radix conversion
     # LCV moved to ENCODING_ONLY on 2026-10-18 (MCP printed p.17).
     # CV and LTRCV moved there on 2026-10-21 (MCP printed p.24).
-    "KE", "KFE", "KFR",                   # compare variants
+    "KE", "KFE",                          # compare variants
+    # KFR moved to ENCODING_ONLY on 2026-11-02 (MCP printed p.181).
     # KF moved to ENCODING_ONLY on 2026-10-18 (MCP printed p.17).
     "LTRS",                               # load transit and set
     # M+1 moved to ENCODING_ONLY on 2026-10-17: still unimplemented,
@@ -200,6 +201,15 @@ UNIMPLEMENTED = {
 #         arithmetic remains unimplemented and still refused.
 ENCODING_ONLY = {
     "RNX",
+    # KFR ARRIVED 2026-11-02 from MCP printed p.181 line 50,
+    # "KFR(BU,19),S UPPB,38  -RANGE", which with line 49's KF is the
+    # control-word range test on that page's CONTROL WORD CHECK.  It
+    # prints 023023.23 50 and the row is checked.  Still UNIMPLEMENTED
+    # in the model -- it is here because it is now ENCODED by a
+    # transcription, which is exactly what this category means, and
+    # the ratchet caught the move on the first full run after the page
+    # landed.  Same path KF took from printed p.17 and M+1 from
+    # printed p.16.
     # CV AND LTRCV ARRIVED TOGETHER ON 2026-10-21, from MCP printed
     # p.24's TIME CONVERSION, which is the only program in the corpus
     # that needs either.  Lines 25-29 divide the 26-bit time clock by

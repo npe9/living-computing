@@ -243,6 +243,29 @@ Six reads become one.
 > byte size 0o10=8. That is the column working correctly on a
 > definitions page, not the crop landing in the wrong place.
 
+### 2a0. THE SURVEY'S LAST ENDPOINT IS WHERE THE OCR STOPPED
+
+Every page this session has "disagreed with the survey", and the
+reason is not that the survey reads badly at random. **Its upper
+endpoint is `mcp_ocr`'s LAST READABLE ROW, not the page's last row.**
+Diagnosed on printed p.181 and then confirmed directly:
+
+```
+  $ python3 strap/mcp_ocr.py 181   ... last line read: line 42  221132.40
+  cached survey row for p.181:     221132.40          <- identical
+```
+
+p.181 has 56 lines; the OCR reads 27 of them and gives up at line 42.
+So the survey's `last` field is a LOWER BOUND IN THE SAME WAY the row
+count is, and for the same reason. **Both endpoints and the count are
+floors.** The FIRST endpoint is usually right when line 1 is located
+and wrong when line 1 is a banner.
+
+And the cached `survey_report.txt` in a scratchpad can be staler than
+the tool: printed p.171's transcriber re-ran `mcp_survey.py` and got a
+first endpoint the cached file did not have. **Re-run the tool rather
+than quoting the cache.**
+
 ### 2a. Get a SECOND reading, by machine
 
 ```sh
@@ -295,6 +318,28 @@ this ladder and stop at the first rung that answers:
    produce a `C` there. printed p.143 line 5 prints
    `215335.CC 80 001000.CC` — four impossible `C`s — so that row is
    demonstrably dropping ink and its doubtful byte is a `0`.
+
+> **AND NEITHER WIDTH NOR OPENNESS SEPARATES `O` FROM `0` FROM `C`
+> ON THIS DRUM.** Measured on printed p.184 at 1600 dpi, over every
+> instance whose identity is already known from its English word --
+> ink-segmented run widths:
+>
+> ```
+>   letter O   124 120 104 112 108 120
+>   letter C   112 116 116 112 116 116
+>   digit  0   112 108 116 108 100 112      <- complete overlap
+> ```
+>
+> and openness is no better: **four of six known O's print OPEN and
+> four of six known 0's print CLOSED.** Template matching scored 0.59
+> against 0.54, which is noise. printed p.197 measures the same.
+>
+> **So "dropout opens a closed glyph and never closes an open one" is
+> a HINT ABOUT A SINGLE CHARACTER'S DAMAGE, not a way to tell these
+> three apart.** Several pages have leaned on it as though it were;
+> it is not a reading. Every round glyph settled in this corpus was
+> settled by another page, a manual, or the compiled word -- never by
+> shape. Rungs 1-5 exist because of this measurement.
 
 > **INK VARIES PER CHARACTER, NOT PER ROW.** Rung 5 is about the row
 > only far enough to show the row CAN drop ink; it does not license
@@ -389,62 +434,67 @@ form beside it.
 
 ### 3b. Diff the deck's OWN listing comments against its checks
 
-Nothing in the repo parses the `!  NN*  <location> <binary> ...`
-comment block most decks carry, so **a digit typo there is permanent
-and invisible** -- it is the human-readable record of what the page
-says, and it can drift from the `!CHECK` rows that are actually
-tested. A few lines close it:
+A deck's own `!  NN  <location> <binary>` listing block is the
+human-readable record of what the page says, and it can drift from
+the `!CHECK` rows that are actually tested. Run it:
 
-```python
-import re, collections
-rows = collections.defaultdict(list)          # NOT setdefault/one-per-key
-for ln in open(deck):
-    m = re.match(r'!\s+\d+\*?\s+([0-7]{6}\.[0-7]{2})\s+(.*)', ln)
-    if m: rows[m.group(1)].append(m.group(2))
-checks = 0
-for ln in open(deck):
-    m = re.match(r'!CHECK\s+([0-7]{6}\.[0-7]{2})\s*\|\s*([^|]*)', ln)
-    if not m or m.group(1) not in rows: continue
-    checks += 1
-    want = ' '.join(m.group(2).split())
-    if want and not any(' '.join(r.split()).startswith(want[:8])
-                        for r in rows[m.group(1)]):
-        print('MISMATCH', m.group(1), '->', rows[m.group(1)], '|', want)
-print('%d listing rows, %d compared' % (len(rows), checks))
+```sh
+cd tests && python3 check_deck_listing_comments.py
 ```
 
-> **IT MUST PRINT HOW MANY ROWS IT COMPARED, and the two refinements
-> below are why.** Both were found by printed p.161's transcriber
-> after this recipe went into the file, and both made it report
-> success while doing less than it claimed -- the failure mode this
-> whole document keeps circling.
+> **THIS USED TO BE A FIVE-LINE RECIPE PASTED INTO THIS DOCUMENT AND
+> IT WAS WRONG THREE WAYS.** Three separate transcribers reported it
+> misfiring before anyone measured it against the whole corpus. It is
+> a script now for the third reason, which is the one a snippet
+> cannot fix:
 >
-> **ONE LOCATION CAN CARRY TWO LISTING LINES.** A printed `SLC,$`
-> emits nothing, so it prints the SAME location as the first card
-> below it. The first draft used `rows.setdefault(...)`, keeping only
-> the `SLC` line, and then diffed the emitting card's `!CHECK`
-> against it. Measured on the landed decks: printed pp.151, 153 and
-> 159 each have exactly one such shared location and each would
-> report one BOGUS mismatch. Collect a list per location and accept a
-> match against any of them.
+> 1. it kept only the FIRST line at a location, so a printed `SLC,$`
+>    -- which emits nothing and therefore prints the SAME location as
+>    the card below it -- shadowed the emitting row;
+> 2. its pattern did not allow the SECOND asterisk after the
+>    LOCATION, so every marked row captured a leading `"* "`.
+>    Measured over 156 decks: **67 false mismatches**, zero once the
+>    asterisk is allowed;
+> 3. **the block is a CONVENTION written FOUR ways** -- `! line 12`,
+>    `!  12*`, `! line 12*` and `!  12` -- and the pattern read only
+>    two of them. It then reported "119 of 156 decks carry no
+>    parseable block" as a fact about the DECKS when it was a fact
+>    about the regex. **Widened: 101 of 156 decks, 2472 checks
+>    compared, 0 mismatches.** A transcriber caught this by
+>    re-laying-out their own deck to suit the tool, which is exactly
+>    the wrong way round.
 >
-> **AND THE REGEX MATCHES NOTHING ON SOME DECKS.** The `!  NN*`
-> comment block is a convention, not a format: measured, it matches
-> 44-46 rows on printed pp.151/153/159 and **ZERO** on printed pp.147
-> and 158, whose decks lay their notes out differently. A run over
-> those prints "0 mismatches" having compared nothing at all. That is
-> why the count is printed: **"0 mismatches" and "0 rows compared"
-> must never look the same.**
+> The script prints its own REACH -- decks covered, rows parsed,
+> checks compared -- and FAILS if it compared nothing. Silence can
+> never be mistaken for verification. That is the whole difference,
+> and it is why the recipe is gone rather than corrected in place.
 
-### 4. Join it to the image -- two mechanical edits
+### 4. Join it to the image -- AND WHICH IMAGE DEPENDS ON THE PAGE
 
-`strap/mcp_image.py`:
+>>> THERE ARE TWO IMAGES AND THEY ARE DIFFERENT ASSEMBLIES. <<<
+printed p.98 closes the tail block with `UNTAIL,(2)` and printed p.99
+moves the origin with `SLC,(8)215000.`, so a NAME MAY DENOTE ONE
+THING IN pp.15-98 AND ANOTHER IN THE BODY. Putting a body page into
+the bootstrap's list is not "widening a range", it is merging two
+assemblies, and the merge refuses it -- *"SMCP is defined twice:
+printed p.37 and printed p.103, and they disagree: bit 72192 against
+bit 4620288"*.
 
-* `MCP_IPL_PAGES = [... for n in range(15, 81) ...]` -- widen the range
-* `NO_DECK_PAGES = {47, 59, 60}` -- add any page that compiles nothing
+| your page | what to edit |
+|---|---|
+| **pp.15-99**, the IPL bootstrap | `strap/mcp_image.py`'s `MCP_IPL_PAGES` range |
+| **pp.99 and after**, MCP's body | `tests/check_mcp_body_image.py`'s `FIRST, LAST` and its `body_page_count` |
 
-A page that compiles nothing still needs the second edit, or the build
-will look for a deck that does not exist.
+Either way, a page that compiles nothing needs an entry in
+`strap/mcp_image.py`'s `NO_DECK_PAGES` as well, or the build looks
+for a deck that does not exist. printed p.100 is the worked example:
+sixteen comment cards, both data columns empty on every row.
+
+> **THIS SECTION WAS STALE AND SAID THE WRONG THING**, down to
+> quoting `range(15, 81)` and `NO_DECK_PAGES = {47, 59, 60}` long
+> after both had moved. A body-page transcriber following it would
+> have broken the IPL image. Caught by printed p.169's transcriber,
+> who could not edit `docs/` and said so instead.
 
 ### 5. Check, in this order
 
@@ -628,6 +678,34 @@ The practical rule: **when you SYN an external off a printed
 instruction, say in the deck that its bit offset is unobservable.**
 Do not let a passing `!CHECK` imply you read it.
 
+> **AND THE GAP IS NOT UNIVERSAL: A VFL OPERAND, AND A `SIC`, READ
+> EVERY BIT.** This note first said the half-word gap applied to
+> everything, then said `SIC` was *the* exception. Both were too
+> narrow. Measured, varying only the SYN's offset:
+>
+> ```
+>   SYN offset ->   .00        .01        .37        .40        .41
+>   SIC,X:          216577.00  216577.01  216577.37  216577.40  216577.41
+>   ST(BU,40),X:    216577.00  216577.01  216577.37  216577.40  216577.41
+>   L(BU,18),X:     216577.00  216577.01  216577.37  216577.40  216577.41
+>   CM1111(BU,1),X: 216577.00  216577.01  216577.37  216577.40  216577.41
+>   B,X:            216577.10  216577.10  216577.10  216577.50  216577.50
+>   LVI,$1,X:       216577.03  216577.03  216577.03  216577.43  216577.43
+> ```
+>
+> **The division is by INSTRUCTION CLASS, not by one mnemonic.** A
+> VFL operation and a `SIC` carry a full 24-bit bit address, so a row
+> using one is a READING of its operand. A branch or an index
+> operation spends the low bits on its own operation field and shows
+> only bit 32.
+>
+> printed p.184 found the VFL half (its `ST(BU,40),K DRAG` prints
+> `221250.50`, matching K DRAG's own LOCATION), pp.171 and 176 the
+> SIC half. **So before writing "the bit offset is unobservable",
+> look for a VFL row or a SIC** -- either settles the symbol
+> outright, and an indexed SIC does NOT (it prints the displacement
+> instead).
+
 > **BUT THE HALF WORD ITSELF IS CHECKED, AND THAT CATCHES REAL
 > ERRORS.** Bit 32 shows, so a symbol that is really at `.40` and
 > written `.00` FAILS. printed p.122 wrote `.0` for two externals and
@@ -655,6 +733,32 @@ not print at all.
 > twelve interrupt slots end at 215162.40 and nothing fell off the
 > bottom of that page.
 >
+> **>>> BUT THE MERGE CHECKS THE ORIGIN ANYWAY, WHENEVER ANOTHER
+> PAGE SYNs ONE OF YOUR LABELS. <<<** This is the way out of the
+> substitution, and it was missed for a long time. A hard `SLC`
+> cannot disagree with the ARRIVING COUNTER -- but it can disagree
+> with a landed deck that already placed one of the symbols this
+> page DEFINES, and `mcp_image.merge` refuses when it does.
+> Measured on printed p.177, moving its origin one half word and
+> re-merging:
+>
+> ```
+>   origin as printed    -> merge OK
+>   origin shifted .40   -> REFUSED
+>      FAIL KFRONT: printed p.117 SYNs bit 4747264,
+>                   printed p.177 places it at bit 4747520
+> ```
+>
+> printed p.117 had SYNned `KFRONT` at `(8)220700.0` long before
+> anyone opened p.177. So **the origin of any page that defines a
+> previously-SYNned symbol is CHECKED, not asserted** -- and the
+> check is free, because the body-image test already runs the merge.
+>
+> **So say which case you are in.** If no landed deck references any
+> label you define, the origin really is an assertion and the note
+> belongs in the deck. If one does, run the injection and say that
+> it is checked.
+
 > So the loss is entirely in the SUBSTITUTION. A deck that writes a
 > hard `SLC,(8)nnnn.` for a printed `SLC,$` throws the witness away
 > and asserts the value instead. **Record the printed location in the
@@ -717,6 +821,21 @@ and never off a passing run.**
 >
 > printed p.145 carries both. So flag a reservation's `Z` as
 > ink-only, and do NOT flag a branch's.
+>
+> **BUT THERE ARE TWO BRANCH Z's AND THEY MOVE DIFFERENT BITS.**
+> This note recorded only the SUFFIX form until printed p.183
+> measured the other. Reasoning from one to the other is a coin
+> flip:
+>
+> ```
+>   SUFFIX Z -- SETS 0x04        INFIX Z -- CLEARS 0x02
+>     BUSA  C2  ->  BUSAZ  C6      BAE  C2  ->  BZAE  C0
+>     BAD   42  ->  BADZ   46      BXE  C2  ->  BZXE  C0
+>                                  BXL  42  ->  BZXL  40
+> ```
+>
+> Either way the Z IS visible, which is the point that matters --
+> but do not predict the byte of one family from the other.
 
 **6. A ONE-BIT IMMEDIATE PINS ONLY THE VALUE'S PARITY.** An
 immediate operand is LEFT-JUSTIFIED in the 24-bit A24 field

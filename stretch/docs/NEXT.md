@@ -77,33 +77,44 @@ on offer.
   legitimately mean two things across printed p.98's `UNTAIL,(2)`
   boundary does not apply here. Checked, not assumed.
 
-### WHAT THE NEXT READER SHOULD DO FIRST
+### THE OBVIOUS TEST DOES NOT APPLY -- CHECKED AND WITHDRAWN
 
-**C28-6129 defines the discriminator and it is one render.** The
-update's listing-format note says STRAP *"prints the MULTI error flag
-on the output listing line immediately preceding both definitions"*,
-and *"the CONTAG flag is printed immediately preceding an instruction
-which references a multiply defined symbol"*. So:
+This entry first proposed settling it with C28-6129's `MULTI` and
+`CONTAG` listing flags: STRAP *"prints the MULTI error flag on the
+output listing line immediately preceding both definitions"* and
+`CONTAG` before each referencing instruction. **THAT TEST IS INVALID
+FOR THIS LISTING AND THE REASON IS THE DATING.**
 
-* no MULTI on lines 26 and 29, and no CONTAG on lines 17 and 19 =>
-  **these are not two definitions of one symbol** and the names differ
-  in a way nobody has read yet;
-* MULTI and CONTAG present => IBM's own assembler saw the duplicate,
-  and what it DID with it is the question.
+Those sentences are on C28-6129 PDF p.65, directly above the footer
+**"N28-1081 (C28-6129) Page 7 of 20"** -- they belong to the
+**N28-1081 Technical Newsletter, the APRIL 1963 update**, and the
+sentence says STRAP *"**now** prints"* it, i.e. it is new behaviour.
+**This listing is MARCH 1963.** The assembler that produced these
+pages predates the flag, so its ABSENCE is not evidence of anything.
+The 1960 base manual C22-6531, which is the one that applies, says
+**nothing** about multiply-defined symbols at all.
 
-This is the same test that settled `DFREE` (see
-`docs/transcription_workflow.md`): a flag the listing either prints or
-does not.
+Measured, consistent with that: `CONTAG` appears **ZERO** times in
+either volume's OCR, and all 85 `MULTI` hits are the English word in
+comment text ("MULTI BIT TO ON IN CST", "NO UNITS AT ALL ON MULTI
+CHANNEL").
 
-**A rendering here found something the page report did not mention:
-line 29, BETWEEN the two, is labelled `ZFRO5A`** -- five glyphs plus a
-trailing A, at 220271.00. Whether that is a third symbol or bears on
-the other two is unknown. A first look at the left-hand flag column on
-lines 26 and 29 showed it EMPTY, which would point at the first
-branch, but that column's exact position has not been established
-(printed p.100 prints `-` there on every row and printed p.1 prints
-`B`), so the negative is SUGGESTIVE AND NOT FIRM. Establish the column
-first, then read the flag.
+> **This is a dating trap worth remembering for every other question
+> settled out of C28-6129.** That file is the base manual PLUS an
+> April 1963 newsletter bound together, and the newsletter describes
+> behaviour MCP's own listing cannot exhibit. Before citing it,
+> check whether the sentence sits above an `N28-1081` footer.
+
+### SO WHAT IS LEFT
+
+The ink and the arithmetic. What is established: it is not an O/0
+split (measured ink bands), it is not TAIL scoping (no TAIL card in
+the body), and **line 29, between the two, is labelled `ZFRO5A`** --
+five glyphs plus a trailing A, at 220271.00, which the page report
+did not mention. Whether that is a third symbol or bears on the other
+two is unknown and is the thread to pull.
+
+
 
 ## A BLANKED NAME LOST ITS DATA DESCRIPTION, SILENTLY -- fixed 2026-11-02
 
@@ -159,6 +170,105 @@ first, then read the flag.
 > `CTL,0.0($14),(8)117.` commented "-WEF COMMAND" is write-end-of-file
 > exactly as printed. An earlier reading of the GARBLED RefMan OCR had
 > suggested 117 was not a code at all; the curated table says it is.
+
+## WHAT CLOSES THE BODY'S EXTERNALS -- measured 2026-11-02
+
+The body image pp.99-176 defines **695 symbols and still has 62
+external**. Transcription is NOT closing that list by attrition:
+landing pp.169-176 moved it from **63 to 62**, because each page
+defines symbols and references new ones in roughly equal measure.
+
+**But they are not scattered.** Every one of the 62 has a located
+stand-in, and they bunch immediately ahead of the body's current end
+(0o220376):
+
+| cluster | externals | printed page |
+|---|---|---|
+| 0o2213xx | 11 | ~p.186 |
+| 0o2211xx | 8 | ~p.181 |
+| 0o2221xx | 4 | ~p.196 |
+| 0o2207xx, 0o2210xx, 0o2212xx, 0o2220xx | 12 | pp.177-195 |
+| 0o2325xx, 0o2331xx | 6 | ~pp.210-220 |
+
+**Roughly 35 of 62 are in pp.177-196**, so the prediction was that
+the count would fall sharply across the next two or three blocks.
+
+> **>>> THAT PREDICTION FAILED, 2026-11-02, AND THE METRIC WAS THE
+> MISTAKE. <<<** Adding five of pp.177-184 took the count from **62
+> to 78** -- UP. The clusters really are being resolved (`BCWCR`,
+> `B1RA`, `ZSTEVL`, `RMASK`, `EMK1A`, `ZEVLRW` all closed), but
+> **every new page brings its own forward references**, and the total
+> nets out against them. Counting total externals measures the
+> frontier's position, not its closure, and it will keep rising for
+> as long as there are pages ahead.
+>
+> **THE METRIC THAT MEANS SOMETHING is how many externals point
+> BEHIND the frontier** -- into the range already transcribed. Those
+> are the ones that should go to zero, and they are the ones that
+> would block a run.
+>
+> ```
+>   pp.99-176          62 external:  5 behind the frontier, 57 ahead
+>   + 5 of pp.177-184  78 external: 24 behind,               54 ahead
+> ```
+>
+> **And even THAT is not readable mid-block**: when first measured,
+> pp.177, 180 and 184 were still in flight, so most of a reported 24
+> were references into the gap. **Measure behind-frontier externals
+> only on a COMPLETE contiguous block.**
+>
+> **RUN ON THE COMPLETE pp.99-184 BLOCK, the corrected metric works
+> and is stable:**
+>
+> ```
+>   pp.99-176   695 defined, 62 external,  5 behind the frontier
+>   pp.99-184   766 defined, 67 external,  5 behind the frontier
+> ```
+>
+> Seventy-one symbols defined, the total external up by five (forward
+> refs, as expected), and **behind-frontier flat at five**. That is
+> what closure looks like: the frontier advances and nothing is left
+> unresolved behind it.
+>
+> **IT ALSO EARNED ITS KEEP IMMEDIATELY.** The first run showed SEVEN
+> behind, and the two extra were `ZID09`/`ZID09X`: printed p.180
+> DEFINES them, printed p.184 had SYNned them as `ZIO09`/`ZIO09X`,
+> and the merge kept them as separate symbols. **No checker could see
+> it** -- `frozenset("DO")` is not in `check_symbol_spellings`'s
+> CONFUSABLE set. Settled by rendering printed p.179 line 44, which
+> prints `VF,Z ID 04` with the blank in. (The argument for ZIO was
+> that the manuals print it seven times -- but all seven are the
+> SUBSTRING inside `ZIOCH` and `ZIOR`. A substring grep is not a
+> witness.)
+
+### THE FIVE THAT REMAIN BEHIND, EACH NAMED
+
+| symbol | stand-in | why it is open |
+|---|---|---|
+| `VCRD` | 0o5 | an IOD INDEX, not an address; printed p.100 is documentation only and the live cards are in the **BE card group, which is in no page of this scan** |
+| `JCIOD` | 0o10 | same |
+| `TMFREJ` | 0o22133 | printed p.166 searched both volumes: one hit, its own card. No witness anywhere |
+| `JCNAD` | 0o215006 | inside the body range; defining card not found on pp.99-184 |
+| `YFXAD` | 0o216440 | same |
+
+The first two are not really "behind" -- they are integers whose
+value is small, and the metric cannot tell an index from an address.
+The last three are the real residue.
+
+
+
+### WHY IT MATTERS, AND WHAT IS STILL MISSING AFTER IT
+
+An image with no unresolved externals is the precondition for RUNNING
+MCP's body, which is the standing goal and the thing bit-exactness
+cannot substitute for. Two blockers survive the externals:
+
+* **The entry point is not established.** `check_mcp_body_image.py`
+  passes `SDISP` to `end_at` purely to make the image assemble, and
+  nothing depends on it.
+* **The body has never been executed.** Merging and accounting for
+  every word is not running it; the model has never been pointed at
+  this image.
 
 ## MCP'S BODY MERGES, pp.99-160 -- closed 2026-11-02
 

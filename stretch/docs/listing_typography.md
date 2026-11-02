@@ -511,6 +511,40 @@ card is a misread byte until proven otherwise.
 
 ---
 
+## 11b. A CARD CAN EXIST AND PRINT NO LISTING LINE
+
+Two card serials are known that appear on no page, and **both fall at
+a page break**. Neither page could see this; it took one transcriber
+on each side plus a render of the two serial columns.
+
+| missing serial | break | established by |
+|---|---|---|
+| `ED000049` | printed p.131 → p.132 | p.131's last serial rendered here as `ED000048`, p.132's first as `ED000050` |
+| `IH000041` | printed p.162 → p.163 | p.162 ends `IH000040`, p.163 opens `IH000042` |
+
+**The standing guess is a listing-control card** -- an eject, which
+would emit nothing and would naturally sit exactly where a page
+breaks. printed p.162's transcriber proposed it independently and
+labelled it a guess; nothing has tested it.
+
+> **IT IS NOT "every page break skips a serial".** Most do not:
+> printed p.175 → p.176 runs `KE000082` → `KE000083` unbroken across
+> the boundary. So the claim is only that the two KNOWN gaps are both
+> at breaks, which is two observations, not a rule.
+
+**AND IT SETTLES A SEPARATE QUESTION.** printed p.172 observed that a
+`SIC` and its mandatory branch often share ONE serial -- five
+instances across pp.148, 171 and 172, every one with a branch on the
+second line -- and asked whether that is always so. **It is not.**
+printed p.131 line 48 is an orphaned `SIC` at `ED000048` and its
+branch is printed p.132 line 1 at `ED000050`: two cards, two serials,
+and a third unaccounted for between them. Both shapes occur, which is
+why `docs/transcription_workflow.md`'s "A SIC/BRANCH PAIR CAN
+STRADDLE A PAGE BREAK" stands as written -- a transcriber cannot
+infer the branch from the card column either way.
+
+---
+
 ## 12. AN UNEXPLAINED MARKER IN MCP's LOCATION COLUMN
 
 Transcribing MCP printed p.3 (2026-10-17) turned up a character that
