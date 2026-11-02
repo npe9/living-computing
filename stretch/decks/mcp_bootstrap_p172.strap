@@ -416,8 +416,8 @@
 !      13*  22C53C.4C  220536.5C 00            B,TCHEKL
 !      23*  220536.40  215230.42 90   TCREKI   KV,$1,STLR+.32
 !      28*  220541.40  220541.50 ..   T CREK   B,K...
-!      29*  220542.00  C10C11.35 C1   TERE     LVI,$14,SFORBO
-!      32*  220543.40  CC1012.35 O1   TMER2    LVI,$14,SERCCD
+!      29*  220542.00  010011.35 C1   TERE     LVI,$14,SFORBO
+!      32*  220543.40  001012.35 O1   TMER2    LVI,$14,SERCCD
 !                                              -ERROR ROUTINE
 !
 !     So p.173's FIRST LOCATED ROW IS 220523.40, which is this

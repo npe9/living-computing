@@ -16144,3 +16144,52 @@ truth on the other side:
 C/D/0/O and 1/I/L, exactly the pairs the per-page ladders re-derive by
 hand. **43% is now the number any trained reader has to beat**, and
 the 824 pairs are simultaneously its training set and its test set.
+
+## THE CHECK COMPARED 8 OF 12 CHARACTERS, AND THE BLIND FIELD WAS THE OPCODE
+
+2026-11-02. `check_deck_listing_comments.py` compared
+`r.startswith(want[:8])`. A binary field prints as `221512.40 80`:
+twelve characters. Eight of them were the location word, the `.` and
+the FIRST octal digit of the bit offset. It never looked at the second
+offset digit or at the trailing hex byte -- **the operation code**.
+
+It had been reporting `0 mismatches` over 3,313 comparisons.
+
+Widening to the whole field found **seven** disagreements. A second
+scan -- an 8, a 9 or a letter in an OCTAL field cannot be a reading --
+found **three** more that carry no `!CHECK` at all. Ten rows, four
+decks, printed pp.37, 95, 139, 172, every one of them `C` printed
+where the page prints `0`.
+
+### WHAT THE TEN ROWS ACTUALLY MEAN
+
+`C`-for-`0` is the volume OCR's signature substitution. **Those
+listing blocks were pasted from the OCR instead of read off the page.**
+That is the whole point of the block: it exists to be an INDEPENDENT
+second witness to the `!CHECK`, and a paste of a machine read nobody
+checked is not independent. Two records that agree because one is a
+copy of the other prove nothing.
+
+### HOW THE B0/BC PAIR WAS SETTLED -- MEASURED, NOT REASONED
+
+p.95 line 49 is `LFT,TIODCT(TMXA)` and `TMXA SYN,$2`, so "the low
+nibble is the index" made `BC` look possible. Sweeping the register
+through the oracle:
+
+    TMXA=$0   -> 014000.00 80 000000.20 B0
+    TMXA=$2   -> 014000.00 82 000000.20 B0
+    TMXA=$12  -> 014000.00 8C 000000.20 B0
+
+The index lands in the FIRST half word's byte and the second half
+word's byte is `B0` for every index, so `BC` cannot be a reading.
+`B,<sym>` separately prints `00` in 366 landed rows and never `C0`.
+
+### THE RULE THIS EARNS
+
+**Reporting a check's REACH is not reporting its DEPTH.** Every
+coverage number in this repo -- "123 of 172 decks", "3,066
+comparisons" -- answers "how many rows did it look at", not "how many
+FIELDS of each row". A new check does not ship until an injection has
+been run against *each field it claims to compare*, separately, and
+each one named in the docstring. Reach without depth is how a check
+stays green for weeks across ten wrong rows.

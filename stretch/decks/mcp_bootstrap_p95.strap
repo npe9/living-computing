@@ -163,7 +163,7 @@
 !            THIS PAGE SAID BC AND BLAMED THE ASSEMBLER.  IT WAS
 !            WRONG, AND THE REFUTATION IS IN THE SAME ROW:
 !
-!   005356.40   COC000.64 82   014000.2C BC      LFT,T IODCT(T MXA)
+!   005356.40   COC000.64 82   014000.20 B0      LFT,T IODCT(T MXA)
 !
 !            The first two fields of a half-word print in OCTAL and
 !            cannot hold a C, so "COC000" is 000000 and ".2C" is .20.
@@ -302,13 +302,13 @@ TSORT3  CB+, TMXG, TSORT2            ! line 41
 ! ---------------------------------------------------------------
 !   line  1  005327.00    005330.76 C2                        BAE,T M3EZ
 !   line  2  005327.40    000002.03 01                        LVI,T MX1,2.0
-!   line  3  005330.00    005444.10 C0                        B,T N2
+!   line  3  005330.00    005444.10 00                        B,T N2
 !   line  4  005330.40 *  000022.20 10                T M3EZ  LX,T MXG,T MXA
 !   line  5  005331.00    000000.31 8F  005333.34 02          BB,.25($15),T M2AM
 !   line  6  005332.00    000002.21 07                        V+ICR,T MXG,2.0
 !   line  7  005332.40    003315.21 10                        SX,T MXG,T PPRUN
 !   line  9  005333.00    000000.45 82  005334.74 00  T M2AM  BZB,T RJECT(T MXA),T M3A
-!   line 10  005334.00    005334.04 C0                        BD,$
+!   line 10  005334.00    005334.04 00                        BD,$
 !   line 11  005334.40    000000.44 82  005336.34 00  T M3A   BZB,T JBPRO(T MXA),T M3C
 !   line 12  005335.40    005335.44 00                        BD,$
 !   line 14  005336.00    000000.00 82  022027.20 50  T M3C   L,T CRREF(T MXA),46
@@ -334,11 +334,11 @@ TSORT3  CB+, TMXG, TSORT2            ! line 41
 !   line 41  005354.40    005347.61 48                T SORT3 CB+,T MXG,T SORT2
 !   line 42  005355.00    000000.00 87  000000.20 D0          ST(BU,64),0.0(T MXF)
 !   line 43  005356.00    005344.57 48                        CB+,T MXF,T SORT1
-!   line 49  005356.40    000000.64 82  014000.20 BC          LFT,T IODCT(T MXA)
+!   line 49  005356.40    000000.64 82  014000.20 B0          LFT,T IODCT(T MXA)
 !   line 50  005357.40 *  000000.50 82  014027.20 50          L,T LREFN(T MXA),46
 !   line 51  005360.40    002155.40 80  022027.12 F0          CM0101(BU,18),T MAXRF,46
 !   line 52  005361.40    002155.00 80  022027.20 10          +(BU,18),T LIMB,46
-!   line 53  005362.40    000011.00 80  022000.22 BC          M+1(BU,18),$R
+!   line 53  005362.40    000011.00 80  022000.22 B0          M+1(BU,18),$R
 !   line 54  005363.40    000011.12 30                        LV,T MXD,$R
 !   line 55  005364.00    070000.00 80  406027.23 90          *I+,T FLLGN,46
 !   line 56  005365.00    000011.14 30                        LV,T MXE,$R

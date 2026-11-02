@@ -74,10 +74,10 @@
 ! ---------------------------------------------------------------
 ! The page prints
 !
-!     34* 002161.00   000000.C4 00   S IF DMP  BD,0
+!     34* 002161.00   000000.04 00   S IF DMP  BD,0
 !
 ! and that "C" is a digit zero.  THE FIELD IT SITS IN CANNOT HOLD A
-! C: "000000.C4" is the OCTAL bit address, word.bit, and C is not an
+! C: "000000.04" is the OCTAL bit address, word.bit, and C is not an
 ! octal digit.  Assembling "BD,0" gives 000000.04 00 -- the same
 ! glyph the MCP scan renders with a gap at the right.  Thirteenth
 ! instance; see 13, 13a, 13b and 13c for the ones that were not this

@@ -1,0 +1,770 @@
+! mcp_bootstrap_p193.strap -- MCP printed page 193: the "get offline /
+! bad label" arm of the tape-label routine, the three operator-message
+! DD cards it prints, and the "take the unit off" (J TAKF) loop that
+! unloads the reel and waits for a new one.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.200.  The header was READ, not
+! assumed, at 400 dpi:  "TIME CLOCK 00054041   PUNID 11D11MCP
+! CARD ID LG000215   DIST. OF 3/01   3/01   PAGE NUMBER  193".
+!
+! >>> THE COLUMN-HEADING ROW'S OWN "LOCATION" FIELD READS 221542. <<<
+! Six digits, printed after the word LOCATION at the right-hand end of
+! the heading line, clear of the dashed rule.  That is LINE 1'S
+! location word (docs/transcription_workflow.md step 1), and line 1
+! here IS a located row -- the case the rule predicts to be NUMBERED
+! rather than blank.  Line 1's own LOCATION column reads 221542.00.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! FIFTY-TWO PRINTED LINES, AND ALL FIFTY-TWO COMPILE.  There is not
+! one comment card on this page, not one banner, no SLC, no SYN, no
+! reservation of any kind.  Four of the fifty-two are (A*)DD
+! character cards (lines 22-25); the other forty-eight are machine
+! instructions, half-word null operations, CNOP and VF.
+!
+! >>> SO verify_mcp_page.py REPORTS "8 symbols, 48 listing rows" AND
+! >>> NOTHING IS MISSING. <<<  52 = 48 rows that print a BINARY
+! OUTPUT, each with its own !CHECK, PLUS the four (A*)DD cards,
+! which print no binary at all and therefore cannot carry one.
+! What stands in for their checks is set out under THE COUNTER
+! CHAIN and again in the note at the foot of this file.
+!
+! The page is CONTIGUOUS from 221542.00 to 221617.00 -- no hole,
+! nothing skipped, every row's width accounted for -- and then blank
+! paper to the foot of the form.
+!
+!   lines  1-21   the bad-label arm.  BB,SOWNER($11),JITSMC splits
+!                 MCP's own unit off from a problem program's; the
+!                 reel name is picked up with LF(BU,30,6), a scratch
+!                 tape branches away to J ITS SC, and otherwise the
+!                 reel number is edited into the message with
+!                 SF(BU,40),JSPRNO.  J GETOF tests S CH OP and the
+!                 page then prints the message through SPRIME with
+!                 three parameter half words (,DSPR / ,0($1) / ,1.0).
+!                 BB,SL,JPREOJ then picks the PP-level exit
+!                 (SIC,SDISIC / B,SDISP, error control) or the
+!                 MCP-level exit J PREOJ (SPRIME again with ,DABEOJ,
+!                 then B,KSUPP).  Line 21's CNOP rounds the counter
+!                 to the word the first message needs.
+!   lines 22-25   four (A*)DD operator-message cards at EIGHT BITS a
+!                 character.  J LBMES is the message head; J SPRNO is
+!                 the card whose first five characters the SF on line
+!                 5 overwrites with the reel number.
+!   lines 26-29   J ITS SC, the scratch-tape path: SIC,KCONVR /
+!                 B,KCONV computes the channel-unit number, VF,JREPCU
+!                 and LVI,$2,JREPSC set up the "replace reel" message.
+!   lines 30-46   J TAKF, the take-the-unit-off loop: LX,$0,JUNLDK
+!                 loads the unload command, SIC,KKRET / B,KIOREJ
+!                 issues it, LVI,$1,$+1.0 / B,JSEOPT waits for
+!                 termination, LF(BU,1),JIOBSY and SF(BU,1),JWAIT
+!                 move the busy flag, SIC,SCOMIC / B,SCOMM tells the
+!                 operator (with ,0.0($2) / ,8.0), SIC,KUNRR /
+!                 B,KKLOOP releases, and TI,3,JNEWXR,$1 saves three
+!                 index registers.
+!   line  47      J NEWT, B,$ -- the wait loop p.189 line 2 SICs.
+!   lines 48-52   J ITS MC, the MCP-unit path: the same
+!                 SIC,KCONVR / B,KCONV pair, then VF,JRCTCU /
+!                 LVI,$2,JREPCT for the "appropriate MCP reel"
+!                 message, and B,JTAKF back into the loop.
+!
+! ---------------------------------------------------------------
+! THE SPAN, ESTABLISHED FROM THE PAGE AND NOT FROM THE SURVEY
+! ---------------------------------------------------------------
+! FIRST 221542.00 (line 1), LAST 221616.40 (line 52), FIFTY-TWO
+! LINES, all located.  The counter leaves the page at 221617.00.
+!
+! The brief no longer quotes survey endpoints, so all three numbers
+! come from the page's own ink:
+!
+!   * the LINE column runs 1..52 with no gap (read at 800 dpi);
+!   * the CARD SERIAL column runs LG000215..LG000265 -- fifty-ONE
+!     distinct serials for fifty-TWO lines, because LG000258 is
+!     printed TWICE, on lines 44 and 45 (confirmed at 1200 dpi;
+!     see THE DUPLICATE SERIAL below).  Nothing fell off either end:
+!     the header's own CARD ID is LG000215, which is line 1's
+!     serial, and the serial column stops with line 52;
+!   * the counter chain closes digit for digit (see below).
+!
+! For the record, strap/mcp_ocr.py reads 15 of the 52 rows and its
+! last is line 41 at 221610.40 -- eleven lines short of the page's
+! end, exactly the under-read the brief describes.  It is not quoted
+! anywhere in this deck as evidence.
+!
+! ---------------------------------------------------------------
+! THE COUNTER CHAIN, AND WHY THE FOUR DD CARDS ARE THE HARD PART
+! ---------------------------------------------------------------
+! Forty-eight of the fifty-two rows have a width that is fixed by
+! their operation: a half word or a full word.  Those chain
+! trivially and every one of their locations is checked below.
+!
+! THE FOUR (A*)DD CARDS DO NOT.  Their width is EIGHT BITS A
+! CHARACTER (printed p.184 established this and its four counts
+! closed on its own printed locations), so the character count --
+! including the trailing blanks, which are invisible -- is the only
+! unknown on the page.  Here it is pinned FOUR TIMES, each time by
+! the PRINTED LOCATION of the next card:
+!
+!   221557.00 + 38 chars x 8 = 304 bits -> 221563.60   line 22->23
+!   221563.60 + 22 chars x 8 = 176 bits -> 221566.40   line 23->24
+!   221566.40 + 36 chars x 8 = 288 bits -> 221573.00   line 24->25
+!   221573.00 + 40 chars x 8 = 320 bits -> 221600.00   line 25->26
+!
+! and 221563.60, 221566.40, 221573.00 and 221600.00 are what lines
+! 23, 24, 25 and 26 PRINT.  Four unknown counts, four printed
+! locations, no slack.  (221563.60 is NOT a half-word boundary and
+! is not supposed to be; an early reading of this deck took it for
+! "221563.00" and the arithmetic refused to close, which is how the
+! error was caught.)
+!
+! >>> AND LINE 24'S COUNT IS PINNED A SECOND TIME, BIT-EXACTLY,
+! >>> WITHOUT USING THE CHAIN AT ALL. <<<  Line 5 is
+! "SF(BU,40),JSPRNO" and prints 221566.40 in its first half word.
+! A VFL OPERAND READS ITS OPERAND TO THE BIT (workflow, "WHAT THE
+! ORACLE CANNOT SEE" item 1), so that row is a reading of J SPRNO's
+! bit address and it agrees with the location line 24 prints.  That
+! closes lines 22 and 23's counts from the far end independently of
+! the counter arriving from line 21.
+!
+! >>> THIRD READING: THE TERMINATOR'S OWN PRINTED COLUMN. <<<  The
+! prefix "(A*)DD(BU)," is eleven characters, so the "*" must stand
+! at column 11+n.  Measured off the 1200-dpi render (column 0 taken
+! from the "(" of line 22, character pitch measured at 118.5 px):
+!
+!     line 22   predicted 49   measured 48.5
+!     line 23   predicted 33   measured 33.0
+!     line 24   predicted 47   measured 46.8
+!     line 25   predicted 51   measured 51.0
+!
+! >>> LINE 25'S FORTY BLANKS ARE DERIVED FROM THIS PAGE. <<<
+! 221573.00 -> 221600.00 is five whole words = 320 bits = 40
+! characters, and the terminator column agrees.  printed p.184 line
+! 34 happens to carry forty blanks as well; that is a COINCIDENCE
+! and is not the evidence.
+!
+! ---------------------------------------------------------------
+! THE JOIN, BACKWARD AND FORWARD
+! ---------------------------------------------------------------
+! BACKWARD.  printed p.192's deck predicted, in writing and before
+! this page was opened, that p.193's first located row would be
+! 221542.00 and not 221542.40, because its line 51
+! "J NEWTE TI,3,$1,JNEWXR" is a FULL word at 221541.00.  >>> THE
+! PREDICTION HOLDS. <<<  Line 1 prints 221542.00 and the heading
+! row's LOCATION field prints 221542.
+!
+! p.192's prediction (2) -- "its first card serial is LG000214" --
+! is OFF BY ONE in the harmless direction: LG000214 is p.192's OWN
+! last serial, and this page opens at LG000215.  The run is
+! contiguous across the break, which is a third, independent
+! witness for the join and the one p.192 flagged as the weak one.
+!
+! FORWARD.  Line 52 is "B,JTAKF", a half word at 221616.40, so the
+! counter leaves this page at 221617.00.  TWO rows -- this page's
+! line 46 "TI,3,JNEWXR,$1" (first half 221617.00) and printed
+! p.192's line 51 "TI,3,$1,JNEWXR" (second half 221617.06), the
+! same instruction with its operands swapped -- place J NEWXR at
+! word 221617, and p.192's deck records the volume OCR carrying a
+! three-word reservation there.  So the next page almost certainly
+! OPENS with that reservation.  See PREDICTIONS below.
+!
+! >>> THIS DECK'S SLC IS NOT PRINTED -- AND THE ORIGIN IS CHECKED
+! >>> ANYWAY, MEASURED, NOT ASSUMED. <<<  The page carries no SLC
+! card, so the deck writes a hard "SLC,(8)221542.0".  A hard SLC
+! cannot disagree with the arriving counter.  But TWO landed decks
+! SYN labels THIS page defines, with bare (8) literals rather than
+! aliases, so the merge compares them:
+!
+!   decks/mcp_bootstrap_p184.strap:524  JGETOF SYN, (8)221546.40
+!   decks/mcp_bootstrap_p189.strap:445  JNEWT  SYN, (8)221614.0
+!
+! and this page prints J GETOF at 221546.40 (line 7) and J NEWT at
+! 221614.00 (line 47).  THE INJECTION WAS RUN (brief: "believe the
+! result, not the grep", after p.189 found the false positive):
+!
+!   origin as printed  SLC,(8)221542.0   -> MERGE OK
+!                         832 defined, 62 external, 0 unaccounted words
+!   origin shifted     SLC,(8)221542.40  -> REFUSED:
+!        FAIL JGETOF: printed p.184 SYNs bit 4774304,
+!                     printed p.193 places it at bit 4774336
+!
+! >>> SO THE ORIGIN OF THIS PAGE IS CHECKED, NOT ASSERTED. <<<
+!
+! >>> BUT ONLY ONE OF THE TWO WITNESSES IS DOING THE CHECKING, AND
+! >>> THE REASON IS A NEW FALSE-POSITIVE MECHANISM THE BRIEF DOES
+! >>> NOT LIST. <<<  The merge stops at the first disagreement, so I
+! reconciled p.184's SYN WITH the shift in a staged copy and re-ran
+! to see whether J NEWT would then refuse.  IT DID NOT -- the merge
+! came back OK.  Measured directly, assembling this deck at three
+! origins and reading the symbol table:
+!
+!     origin        J GETOF (line 7)   J NEWT (line 47)
+!     221542.0      221546.40          221614.00
+!     221542.40     221547.00          221614.00   <- UNMOVED
+!     221543.0      221547.40          221615.00
+!
+! >>> LINE 21'S "CNOP" ABSORBS A HALF-WORD ORIGIN ERROR. <<<  CNOP
+! rounds the counter UP TO A WORD BOUNDARY, so at the printed origin
+! it stands at 221556.40 and emits one NOP, while at an origin one
+! half word later it stands at 221557.00, emits NOTHING, and the
+! shift disappears.  Everything from line 22 onward -- J LBMES,
+! J SPRNO, J ITS SC, J NEWT, J ITS MC -- lands at the SAME address
+! either way.
+!
+! So of this page's two landed witnesses, only J GETOF (line 7,
+! BEFORE the CNOP) can see a half-word error; J NEWT (line 47,
+! AFTER it) sees only whole-word errors, and it does see those.
+! This is a DIFFERENT false positive from the one printed p.189
+! found -- p.189's was SYN aliasing, this one is a realigning
+! statement inside the page -- and it is the same shape as the
+! workflow's note that "on printed p.98 a wrong SLC still produced
+! the right address for the next row, because a half-word
+! instruction realigned the counter".  >>> IF A PAGE CONTAINS A
+! CNOP, AN ORIGIN INJECTION MUST BE RUN AT A FULL WORD AS WELL AS
+! AT A HALF, OR IT WILL REPORT "CHECKED" ON THE STRENGTH OF LABELS
+! THAT CANNOT MOVE. <<<
+!
+! ---------------------------------------------------------------
+! THE DUPLICATE CARD SERIAL -- AN OBSERVATION, NOT A RULE
+! ---------------------------------------------------------------
+! LG000258 is printed on TWO consecutive lines, 44 and 45, which are
+! "SIC,KUNRR" and "B,KKLOOP" -- a SIC and its mandatory half-word
+! branch.  Read at 1200 dpi with the neighbours LG000257 and
+! LG000259 in the same crop; the two 258s are character-for-
+! character identical and neither is a damaged 9 or 3.
+!
+! printed p.192 records the same shape at its lines 32/33 (LG000195
+! on a SIC/branch pair).  THAT IS NOT ENOUGH FOR A RULE, AND THIS
+! PAGE REFUTES THE OBVIOUS ONE: six other SIC/branch pairs here --
+! lines 8/9, 15/16, 17/18, 26/27, 31/32 and 40/41 -- carry DISTINCT
+! consecutive serials.  So "a SIC and its branch share a card"
+! is false on this page six times out of seven.  Recorded and
+! moved past; it costs nothing because the serial column is not an
+! input to anything the assembler does.
+!
+! ---------------------------------------------------------------
+! GLYPH CALLS, AND WHAT SETTLED EACH ONE
+! ---------------------------------------------------------------
+! (1) "S CH OP" (line 7).  The middle glyph is damaged and reads C,
+!     H, K or F at 1600 dpi.  Settled by the MANUALS, not the ink:
+!       grep -ho 'SC[A-Z]OP[A-Z0-9]*' docs/ocr/*.txt | sort | uniq -c
+!         20 SCHOP        2 SCNOP
+!     and SCHOP is landed in sixteen decks as SYN(BU,1), 0.26
+!     ("-CHAN OPERATING", printed p.99 line 22).  The row's own
+!     binary clinches it: printed p.135 line 41 prints EXACTLY
+!     "000000.32 8A  001000.00 F0" for "CM0000(BU,1),SCHOP($10)",
+!     which is this row's word for this row's word.
+! (2) "CM0000" (line 7) prints as CMOCOO -- five round glyphs, four
+!     of them the operand digits.  A CM mnemonic's four digits are
+!     all the same character, and the operation set has CM0000 and
+!     CM1111; the binary settles which (CM1111 prints 001000.36,
+!     CM0000 prints 001000.00, and this row prints 001000.00).
+! (3) Line 4's byte C2 is NOT a damaged 02.  printed p.192 line 36
+!     measured "BRZ,1.32($1) -> 000001.74 C3" and recorded that the
+!     byte really is C3; C3 = C2 OR the $1 index, so an unindexed
+!     BRZ is C2.  Handed to the assembler as printed and it agrees.
+! (4) Line 46's byte A0.  At 1200 dpi the low glyph is open and
+!     reads AC; it is A0, and NOT because of its shape.  The second
+!     operand is "$1" with no parenthesised index, so i2 = 0; and
+!     printed p.192's line 51 is the SAME INSTRUCTION with its two
+!     operands swapped and its byte was re-read at 1200 dpi there
+!     for exactly this reason and came out A0.  strap_asm emits A0.
+! (5) Line 3's "LF(BU,30,6)" -- the "0" of 30 is a round glyph in a
+!     DECIMAL field, so the octal-field argument does NOT apply.
+!     It is settled by the BINARY instead: the second half word
+!     prints 036600, i.e. length 0o36 = 30 and byte size 6, against
+!     line 38's 001000 for "LF(BU,1)".
+! (6) "JUNLDK" (line 30) -- D or O, which the brief warns is not in
+!     the spelling checker's confusable set.  Settled by the volume
+!     OCR used as an INDEX of another page: JUNLDK appears three
+!     times and JUNLOK zero, and one of the three is the DEFINING
+!     card at 221721.00 on a later printed page
+!     ("JUNLDK CTL(SEOP),0.0($14),(8)137.0 -UNLOAD COMMAND").
+! (7) Every ".CC"/".C0"/"C0C000" in the LOCATION and the octal
+!     halves of the BINARY column is 0 by the octal-field argument
+!     (rung 5): those fields cannot hold a C.  This page drops ink
+!     on round glyphs constantly and that fact is used ONLY where
+!     the field is octal.
+!
+! >>> AND THE PAGE CHECKS ITS OWN INDEX ENCODING SIX TIMES. <<<
+! The low nibble of the printed byte is the operand's index, and
+! six rows agree with six different parenthesised registers:
+!   line  1  BB,SOWNER($11),...   byte 8B   -> $11
+!   line  2  LV,$2,SCREEL($12)    byte 3C   -> $12
+!   line  3  LF(...),.34($2)      byte 82   -> $2
+!   line  7  CM0000(...),...($10) byte 8A   -> $10
+!   line 11  ,0($1)               byte 81   -> $1
+!   line 42  ,0.0($2)             byte 82   -> $2
+! That is worth more than any single glyph call, because it is six
+! independent rows agreeing on one encoding.
+!
+! ---------------------------------------------------------------
+! WHAT THIS PAGE DOES NOT HAVE (asked by the brief, answered once)
+! ---------------------------------------------------------------
+!   * No DR and no DRZ, and no forward SLC, so NO HOLE in the
+!     image is claimed or needed.  The chain is dense.
+!   * No VFL IMMEDIATE at all, so this page cannot exercise the
+!     "same immediate at two lengths" shape printed p.186 found.
+!     The LF/SF rows carry ADDRESSES, not immediates.
+!   * No I-O function pseudo-op from C28-6129 Appendix B.  The one
+!     control code this page's routine issues is loaded from
+!     J UNLDK, which is a CTL card on a LATER page.
+!   * No duplicate LABEL (the duplicate here is a card SERIAL,
+!     which the assembler never sees).
+!   * No mode-only "(BU)" dds against a symbol of known length, so
+!     the brief's open question about dds inheritance is not
+!     settled here either.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- AND WHICH OF THEM THIS PAGE READS TO THE BIT
+! ---------------------------------------------------------------
+! BIT-EXACT, because the referencing row is a SIC or a VFL operand
+! or a VF (workflow: these read every bit of their operand):
+!   SPRIMR  215571.00   lines  8, 17   SIC
+!   SDISIC  217451.40   line  15       SIC
+!   SCOMIC  215470.40   line  40       SIC
+!   KCONVR  221350.00   lines 26, 48   SIC
+!   KKRET   221512.40   line  31       SIC
+!   KUNRR   221325.40   line  44       SIC
+!   SOWNER  000000.40   line   1       BB, a 24-bit bit address
+!   SL      215001.04   line  13       BB, a 24-bit bit address
+!   JSPRNO  221566.40   line   5       SF, a VFL operand
+!   JIOBSY  233666.04   line  38       LF, a VFL operand
+!   JWAIT   233666.00   line  39       SF, a VFL operand
+!   JNEWXR  221617.00   line  46       TI first operand
+!   JREPCU  221674.50   line  28       VF -- a 24-bit value field
+!   JRCTCU  221714.50   line  50       VF -- a 24-bit value field
+!
+! HALF WORD ONLY (a branch or an index operation shows bit 32 and
+! nothing below it), so the ".0" in these SYNs is a CONVENTION and
+! not a reading:
+!   SPRIME 215570.0  SDISP 217372.0  KSUPP 216242.0  KCONV 221335.0
+!   KIOREJ 221505.0  JSEOPT 221525.0 SCOMM 215470.0  KKLOOP 221321.40
+!   SLABNG (16)105.0 SCREEL 8.32     SCHOP 0.26      DSPR 67.32
+!   DABEOJ (8)104.0  JREPSC 221671.0 JREPCT 221711.0 JUNLDK 221721.0
+!
+! Every one of these but five is already landed in decks/ at the
+! value written here, and the five new ones are below.
+!
+! >>> FIVE SYMBOLS ARE NEW TO THE CORPUS WITH THIS PAGE. <<<
+! J REP CU, J REP SC, J UNL DK, J RCT CU and J REP CT are all
+! FORWARD references -- 221671..221721 is past this page's end --
+! and the volume OCR carries their DEFINING cards on a later
+! printed page, which is the one use of the volume OCR the workflow
+! blesses (an index of where a symbol is defined on some OTHER
+! page).  Transcribed from that block, with my page's reading of
+! each beside it:
+!
+!   OCR 29* 221671.00  J REPSC (IQS*)DD(BU),REPLACE T REEL ON ...
+!       -> my line 29 LVI,$2 prints 221671.05, which pins the HALF
+!          WORD only.  I write .0 and say so.
+!   OCR 30* 221674.50  J REPCU (IQS*)DD(BU),XX UNIT X WITH A ...
+!       -> my line 28 VF prints 221674.50, BIT-EXACT.  Agreement.
+!   OCR 35* 221711.00  J REPCT (IQS*)DD(BU),REPLACE THE REEL ON ...
+!       -> my line 51 LVI,$2 prints 221711.05, HALF WORD only.
+!   OCR 36* 221714.50  J RCTCU (IQS*)DD(BU),XX UNIT X WITH ...
+!       -> my line 50 VF prints 221714.50, BIT-EXACT.  Agreement.
+!   OCR 38* 221721.00  J UNLDK CTL(SEOP),0.0($14),(8)137.0
+!       -> my line 30 LX,$0 prints 221721.00 10, HALF WORD only.
+!
+! The two .50 offsets are what make J REP SC and J REP CT worth
+! flagging: on that page the message cards sit at .50 as often as
+! at .00, so a "convention" .0 for those two is a GUESS that my
+! page cannot check.  See PREDICTIONS.
+!
+! ---------------------------------------------------------------
+! WHAT I COULD NOT SETTLE
+! ---------------------------------------------------------------
+! (a) >>> J REP SC's AND J REP CT's BIT OFFSETS. <<<  My page reads
+!     them through LVI,$2, which shows bit 32 and nothing below it,
+!     so 221671.00 and 221711.00 are CONVENTIONS here.  The volume
+!     OCR of the defining page reads both as .00, but that is an
+!     OCR, and the two symbols printed immediately after each of
+!     them on that same page (J REP CU, J RCT CU) sit at .50.  If
+!     the defining page turns out to put either at a non-zero
+!     offset, THIS DECK'S SYN IS WRONG and the merge will say so.
+!     I have left the convention in rather than guess .50, and
+!     named it here so it is not mistaken for a reading.
+! (b) The bit offsets of SPRIME, SDISP, KSUPP, KCONV, KIOREJ,
+!     JSEOPT, SCOMM and KKLOOP are likewise unobservable from this
+!     page; all eight are landed at these values by other decks,
+!     so this page agrees with them rather than establishing them.
+! (c) THE TRAILING BLANKS INSIDE THE DD CARDS ARE A COUNT, NOT A
+!     READING.  I know line 24 ends with four blanks and line 25
+!     carries forty, because the arithmetic and the terminator
+!     column both say so.  I cannot see them.  If the real cards
+!     carried, say, a tab character or a different pad, the count
+!     would still be right and the CONTENT of those bytes would be
+!     wrong -- and nothing on this page could tell.
+! (c2) >>> AND THE TWO SUMS ARE CHECKED WHILE THE TWO SPLITS ARE
+!     NOT, EQUALLY. <<<  !SYM J SPRNO pins 38+22 = 60 characters and
+!     the !CHECK at 221600.00 pins 36+40 = 76.  Those two totals are
+!     re-run by every build.  The SPLIT inside each pair -- 38
+!     against 22, 36 against 40 -- rests on the PRINTED LOCATIONS of
+!     lines 23 and 25, and those rows have no label and no binary,
+!     so nothing in the !SYM/!CHECK vocabulary can express them.
+!     THE SYNTHETIC-LABEL PROBE RECORDED AT THE FOOT OF THIS FILE
+!     IS NOT AN INDEPENDENT WITNESS TO THE SPLITS: the assembler is
+!     counting the characters I typed, so it cannot disagree with
+!     me about how many I typed.  What it does check is that my
+!     counts reproduce the two PRINTED locations, which is the same
+!     evidence stated twice.  The genuinely independent leg is the
+!     terminator column (48.5 / 33.0 / 46.8 / 51.0 against 49 / 33 /
+!     47 / 51), and that rests on a pitch I measured by hand at
+!     118.5 px.  If a later reader wants the splits nailed harder,
+!     the thing to do is re-measure that pitch from a row of known
+!     text.
+! (d) Whether the duplicate LG000258 means the two cards were
+!     punched as one, or the serial was simply repunched, is not
+!     answerable from a listing.  Six counterexamples on this page
+!     say it is not a convention; that is all I have.
+!
+! ---------------------------------------------------------------
+! ASSEMBLER NOTES (report, do not work around silently)
+! ---------------------------------------------------------------
+! >>> NOTHING ON THIS PAGE WAS REFUSED AND NOTHING WAS
+! >>> SUBSTITUTED IN A STATEMENT. <<<  Every one of the fifty-two
+! statements was handed to strap_asm exactly as printed and all
+! fifty-two were accepted on the first run, including the four
+! (A*)DD cards, both VF rows, CNOP, the six bare-comma null
+! operations and TI,3,JNEWXR,$1.
+!
+! >>> AND LINE 7 IS A NEW MEASUREMENT THE BRIEF DOES NOT COVER. <<<
+! The brief says a blanked name "with ANYTHING after it" is still
+! refused and gives "K WS.19" and "K GOOF+.32" as the cases.  Those
+! are EXPRESSION suffixes.  An INDEX is not:
+!
+!   SCHOP   SYN(BU,1), 0.26
+!   JGETOF  CM0000(BU,1),S CH OP($10)      -> ACCEPTED
+!
+! and it compiles 000000.32 8A 001000.00 F0, the word the page
+! prints.  So the rule is narrower than the brief states: a blanked
+! name followed by a PARENTHESISED INDEX resolves.  Worth a line in
+! the brief; measured here, not assumed.
+!
+! THE ONE SUBSTITUTION ON THIS PAGE IS IN A LABEL FIELD, not a
+! statement: line 7's NAME is printed "J GETOF" and the deck writes
+! "JGETOF", because a blank in the NAME field really is refused.
+! Every landed deck in the corpus closes up its label field for the
+! same reason, and the merge agrees with p.184's SYN of this very
+! label, so nothing is lost but the blank itself.
+!
+! ---------------------------------------------------------------
+! >>> FALSIFIABLE PREDICTIONS FOR printed p.194 (PDF p.201) <<<
+! ---------------------------------------------------------------
+!   (1) >>> ITS FIRST LOCATED ROW IS 221617.00. <<<  Line 52 is a
+!       half word at 221616.40.  If p.194's first location is
+!       221616.40 or 221617.40, one of us is wrong.
+!   (2) Its first card serial is LG000266, and my last is LG000265.
+!       WEAKER THAN (1): the brief records serials that print no
+!       listing line at page breaks, so a gap would not falsify the
+!       join -- a serial BELOW LG000266 would.
+!   (3) Its heading-row LOCATION field reads 221617 UNLESS its line
+!       1 is a banner or comment card, in which case it is blank.
+!   (4) p.194 DEFINES J NEWXR as a THREE-WORD reservation at
+!       221617.00.  Not my reading: printed p.192's deck records the
+!       volume OCR carrying that card, and my line 46 and p.192's
+!       line 51 both place the symbol at word 221617.
+!   (5) p.194 does NOT define J REP SC, J REP CU, J UNL DK, J RCT CU
+!       or J REP CT.  The volume OCR puts all five on a page whose
+!       rows run 221662..221730, which is at least one page further
+!       on; if p.194 ran that far it would have to cover sixty-odd
+!       words in fifty-odd lines, which this listing never does.
+!   (6) p.194 defines none of this page's eight labels (J GETOF,
+!       J PREOJ, J LBMES, J SPRNO, J ITS SC, J TAKF, J NEWT,
+!       J ITS MC).
+!
+! >>> AND ONE FOR WHOEVER TRANSCRIBES 221671..221721 <<<
+!   (7) That page prints J REP SC at 221671.xx and J REP CT at
+!       221711.xx.  THIS DECK ASSERTS xx = 00 FOR BOTH AND CANNOT
+!       CHECK IT.  If either is .50 (as its neighbours J REP CU and
+!       J RCT CU are, which THIS page reads bit-exactly), the merge
+!       will refuse against this deck and this deck is the one that
+!       must change.
+!
+! ---------------------------------------------------------------
+! JOINING IT TO THE BODY IMAGE -- CALLER ACTION REQUIRED
+! ---------------------------------------------------------------
+! pp.99+ are MCP's body, a DIFFERENT assembly from the pp.15-98
+! bootstrap, so this page goes in tests/check_mcp_body_image.py's
+! FIRST, LAST (and its body_page_count), NOT in strap/mcp_image.py's
+! MCP_IPL_PAGES.  The brief forbids this agent from writing under
+! tests/, so TWO EDITS ARE LEFT TO THE CALLER, both in
+! tests/check_mcp_body_image.py:
+!
+!     line 78   FIRST, LAST = 99, 192      ->  99, 193
+!     line 99   check("body_page_count", len(pages), 93)   ->  94
+!
+! 94 is measured, not predicted: 99..193 is 95 numbers and
+! mcp_image.NO_DECK_PAGES removes exactly one of them (100), so the
+! page list this deck was merged with has 94 entries.  The merge
+! itself was run from the scratchpad against that list and its
+! result is in THE JOIN above.
+!
+! ===============================================================
+
+        SLC,(8)221542.0              ! NOT PRINTED on this page; the
+                                     ! origin is CHECKED by the merge
+                                     ! against p.184's JGETOF and
+                                     ! p.189's JNEWT -- see THE JOIN
+
+! --- externals, all read off landed decks or off this page --------
+
+SOWNER  SYN(BU,1), 0.32              ! p.99 line 30 -PRIORITY LEVEL
+SCREEL  SYN(BU,18), 8.32             ! p.101 line 28 -CURRENT REEL ADDRESS
+SCHOP   SYN(BU,1), 0.26              ! p.99 line 22 -CHAN OPERATING
+SL      SYN(BU,1), (8)215001.04      ! p.103 line 14 -LEVEL OF INSTR;
+                                     ! the (BU,1) dds is the defining
+                                     ! page's and is carried on purpose
+SPRIMR  SYN, (8)215571.0             ! line 8/17 SIC -- BIT-EXACT
+SPRIME  SYN, (8)215570.0             ! line 9/18 B; half word only
+DSPR    SYN, 67.32                   ! landed; 67 = 0o103, .32 = 0o40
+DABEOJ  SYN, (8)104.0                ! landed
+SLABNG  SYN,(16)0105.0               ! landed; 0x105 = 0o405
+SDISIC  SYN, (8)217451.40            ! p.148 line 10 defines it; SIC
+SDISP   SYN, (8)217372.0             ! landed; B only, half word
+KSUPP   SYN, (8)216242.0             ! landed, this exact line, in 33 decks
+KCONVR  SYN, (8)221350.0             ! line 26/48 SIC -- BIT-EXACT
+KCONV   SYN, (8)221335.0             ! line 27/49 B; half word only
+KKRET   SYN, (8)221512.40            ! line 31 SIC -- BIT-EXACT
+KIOREJ  SYN, (8)221505.0             ! line 32 B; half word only
+JSEOPT  SYN, (8)221525.0             ! p.192 line 27 defines it
+JIOBSY  SYN, (8)233666.04            ! line 38 VFL address -- BIT-EXACT
+JWAIT   SYN, (8)233666.00            ! line 39 VFL address -- BIT-EXACT
+SCOMIC  SYN, (8)215470.40            ! line 40 SIC -- BIT-EXACT
+SCOMM   SYN, (8)215470.0             ! line 41 B; half word only
+KUNRR   SYN, (8)221325.40            ! line 44 SIC -- BIT-EXACT
+KKLOOP  SYN, (8)221321.40            ! line 45 B; .50 reads bit 32
+JNEWXR  SYN, (8)221617.0             ! line 46 TI; word pinned, offset not
+
+! --- five FORWARD externals, new to the corpus with this page ------
+! --- the two VF rows read theirs TO THE BIT; the other three are ---
+! --- half-word readings and the .0 is a convention (see above) -----
+
+JREPCU  SYN, (8)221674.50            ! line 28 VF -- BIT-EXACT
+JREPSC  SYN, (8)221671.0             ! line 29 LVI; OFFSET NOT OBSERVED
+JUNLDK  SYN, (8)221721.0             ! line 30 LX; offset not observed
+JRCTCU  SYN, (8)221714.50            ! line 50 VF -- BIT-EXACT
+JREPCT  SYN, (8)221711.0             ! line 51 LVI; OFFSET NOT OBSERVED
+
+! --- the page ------------------------------------------------------
+
+        BB,SOWNER($11),JITSMC        ! line  1  -IF MCP UNIT
+        LV,$2,SCREEL($12)            ! line  2
+        LF(BU,30,6),.34($2)          ! line  3  -PICK UP REEL NAME
+        BRZ,JITSSC                   ! line  4  -IF SCRATCH
+        SF(BU,40),JSPRNO             ! line  5  -REEL NO.
+        LVI,$1,JLBMES                ! line  6
+JGETOF  CM0000(BU,1),S CH OP($10)    ! line  7  THE PRINTED FORM, blank
+                                     ! and all.  The brief lists a
+                                     ! blanked name with ANYTHING after
+                                     ! it as still refused ("K WS.19");
+                                     ! an INDEX after one is NOT, and
+                                     ! this row is the measurement.
+                                     ! Only the LABEL is closed up
+                                     ! (printed "J GETOF"), because a
+                                     ! blank in the NAME field really
+                                     ! is refused.
+        SIC,SPRIMR                   ! line  8  -PUT REEL NO. IN MESSAGE
+        B,SPRIME                     ! line  9  -OUT ON SPOOL
+        ,DSPR                        ! line 10  null operation
+        ,0($1)                       ! line 11  null operation
+        ,1.0                         ! line 12  null operation
+        BB,SL,JPREOJ                 ! line 13  location carries a
+                                     ! second asterisk
+        LVI,$14,SLABNG               ! line 14  -IF AT PP LEVEL
+        SIC,SDISIC                   ! line 15  -USE ERROR CONTROL
+        B,SDISP                      ! line 16
+JPREOJ  SIC,SPRIMR                   ! line 17  -IF AT MCP LEVEL
+        B,SPRIME                     ! line 18  -USE ABEOJ
+        ,DABEOJ                      ! line 19  null operation
+        B,KSUPP                      ! line 20  -RETURN TO I/A IN MCP
+        CNOP                         ! line 21  rounds 221556.40 up to
+                                     ! 221557.00 and emits one NOP
+JLBMES  (A*)DD(BU),1YOUR JOB HAS BEEN TERMINATED BECAUSE *
+                                     ! line 22  38 characters
+        (A*)DD(BU),THE LABEL ON REEL NO. *
+                                     ! line 23  22 characters; location
+                                     ! carries a second asterisk
+JSPRNO  (A*)DD(BU),XXXXX GIVES REPEATED UNIT CHECK.    *
+                                     ! line 24  36 characters
+        (A*)DD(BU),                                        *
+                                     ! line 25  40 blanks
+JITSSC  SIC,KCONVR                   ! line 26  -COMPUTE CH-UNIT NO.
+        B,KCONV                      ! line 27
+        VF,JREPCU                    ! line 28
+        LVI,$2,JREPSC                ! line 29  -SET UP SCRATCH MESSAGE;
+                                     ! location carries a second asterisk
+JTAKF   LX,$0,JUNLDK                 ! line 30  -UNLOAD COMMAND
+        SIC,KKRET                    ! line 31
+        B,KIOREJ                     ! line 32
+        LVI,$1,$+1.0                 ! line 33  -WAIT FOR TERMINATION
+        B,JSEOPT                     ! line 34
+        NOP                          ! line 35
+        NOP                          ! line 36
+        B,JTAKF                      ! line 37
+        LF(BU,1),JIOBSY              ! line 38
+        SF(BU,1),JWAIT               ! line 39
+        SIC,SCOMIC                   ! line 40  -TELL OPERATOR WHAT TO DO
+        B,SCOMM                      ! line 41
+        ,0.0($2)                     ! line 42  null operation
+        ,8.0                         ! line 43  null operation
+        SIC,KUNRR                    ! line 44  card serial LG000258
+        B,KKLOOP                     ! line 45  card serial LG000258 AGAIN
+        TI,3,JNEWXR,$1               ! line 46
+JNEWT   B,$                          ! line 47  p.189 line 2 SICs this
+JITSMC  SIC,KCONVR                   ! line 48
+        B,KCONV                      ! line 49  location carries a
+                                     ! second asterisk
+        VF,JRCTCU                    ! line 50
+        LVI,$2,JREPCT                ! line 51
+        B,JTAKF                      ! line 52
+
+! ===============================================================
+! THE PRINTED LISTING, recorded so the oracle can check the page
+! without re-rendering it.  LINE | LOCATION | BINARY OUTPUT.
+! A "*" after the location is the location-column's second
+! asterisk, printed on lines 13, 23, 29 and 49.
+! ===============================================================
+!
+!   line  1  221542.00   000000.40 8B  221614.74 02   BB,SOWNER($11),JITSMC    LG000215
+!   line  2  221543.00   000010.44 3C                 LV,$2,SCREEL($12)        LG000216
+!   line  3  221543.40   000000.42 82  036600.06 70   LF(BU,30,6),.34($2)      LG000217
+!   line  4  221544.40   221600.34 C2                 BRZ,JITSSC               LG000218
+!   line  5  221545.00   221566.40 80  050000.12 F0   SF(BU,40),JSPRNO         LG000219
+!   line  6  221546.00   221557.03 01                 LVI,$1,JLBMES            LG000220
+!   line  7  221546.40   000000.32 8A  001000.00 F0   J GETOF CM0000(BU,1),S CH OP($10)   LG000221
+!   line  8  221547.40   215571.00 80                 SIC,SPRIMR               LG000222
+!   line  9  221550.00   215570.10 00                 B,SPRIME                 LG000223
+!   line 10  221550.40   000103.40 80                 ,DSPR                    LG000224
+!   line 11  221551.00   000000.00 81                 ,0($1)                   LG000225
+!   line 12  221551.40   000001.00 80                 ,1.0                     LG000226
+!   line 13* 221552.00   215001.04 80  221554.74 02   BB,SL,JPREOJ             LG000227
+!   line 14  221553.00   000405.35 01                 LVI,$14,SLABNG           LG000228
+!   line 15  221553.40   217451.40 80                 SIC,SDISIC               LG000229
+!   line 16  221554.00   217372.10 00                 B,SDISP                  LG000230
+!   line 17  221554.40   215571.00 80                 J PREOJ SIC,SPRIMR       LG000231
+!   line 18  221555.00   215570.10 00                 B,SPRIME                 LG000232
+!   line 19  221555.40   000104.00 80                 ,DABEOJ                  LG000233
+!   line 20  221556.00   216242.10 00                 B,KSUPP                  LG000234
+!   line 21  221556.40   000000.30 00                 CNOP                     LG000235
+!   line 22  221557.00   (no binary printed)          J LBMES (A*)DD(BU),1YOUR JOB HAS BEEN TERMINATED BECAUSE *   LG000236
+!   line 23* 221563.60   (no binary printed)          (A*)DD(BU),THE LABEL ON REEL NO. *                           LG000237
+!   line 24  221566.40   (no binary printed)          J SPRNO (A*)DD(BU),XXXXX GIVES REPEATED UNIT CHECK.<4 blanks>*   LG000238
+!   line 25  221573.00   (no binary printed)          (A*)DD(BU),<40 blanks>*                                      LG000239
+!   line 26  221600.00   221350.00 80                 J ITSSC SIC,KCONVR       LG000240
+!   line 27  221600.40   221335.10 00                 B,KCONV                  LG000241
+!   line 28  221601.00   221674.50+                   VF,JREPCU                LG000242
+!   line 29* 221601.40   221671.05 01                 LVI,$2,JREPSC            LG000243
+!   line 30  221602.00   221721.00 10                 J TAKF LX,$0,JUNLDK      LG000244
+!   line 31  221602.40   221512.40 80                 SIC,KKRET                LG000245
+!   line 32  221603.00   221505.10 00                 B,KIOREJ                 LG000246
+!   line 33  221603.40   221604.43 01                 LVI,$1,$+1.0             LG000247
+!   line 34  221604.00   221525.10 00                 B,JSEOPT                 LG000248
+!   line 35  221604.40   000000.30 00                 NOP                      LG000249
+!   line 36  221605.00   000000.30 00                 NOP                      LG000250
+!   line 37  221605.40   221602.10 00                 B,JTAKF                  LG000251
+!   line 38  221606.00   233666.04 80  001000.06 70   LF(BU,1),JIOBSY          LG000252
+!   line 39  221607.00   233666.00 80  001000.12 F0   SF(BU,1),JWAIT           LG000253
+!   line 40  221610.00   215470.40 80                 SIC,SCOMIC               LG000254
+!   line 41  221610.40   215470.10 00                 B,SCOMM                  LG000255
+!   line 42  221611.00   000000.00 82                 ,0.0($2)                 LG000256
+!   line 43  221611.40   000010.00 80                 ,8.0                     LG000257
+!   line 44  221612.00   221325.40 80                 SIC,KUNRR                LG000258
+!   line 45  221612.40   221321.50 00                 B,KKLOOP                 LG000258   <- PRINTED TWICE
+!   line 46  221613.00   221617.00 80  000021.06 A0   TI,3,JNEWXR,$1           LG000259
+!   line 47  221614.00   221614.10 00                 J NEWT B,$               LG000260
+!   line 48  221614.40   221350.00 80                 J ITSMC SIC,KCONVR       LG000261
+!   line 49* 221615.00   221335.10 00                 B,KCONV                  LG000262
+!   line 50  221615.40   221714.50+                   VF,JRCTCU                LG000263
+!   line 51  221616.00   221711.05 01                 LVI,$2,JREPCT            LG000264
+!   line 52  221616.40   221602.10 00                 B,JTAKF                  LG000265
+!
+! ===============================================================
+
+!SYM   JGETOF   221546.40
+!SYM   JPREOJ   221554.40
+!SYM   JLBMES   221557.00
+!SYM   JSPRNO   221566.40
+!SYM   JITSSC   221600.00
+!SYM   JTAKF    221602.00
+!SYM   JNEWT    221614.00
+!SYM   JITSMC   221614.40
+!
+!CHECK 221542.00 | 000000.40 8B 221614.74 02 | line 1 BB,SOWNER($11),JITSMC -IF MCP UNIT -- BB's first operand is a 24-bit bit address, so SOWNER's landed 0.32 is read TO THE BIT (0o40); the branch half carries J ITS MC, THIS page's line 48 at 221614.40, so 0o40 OR the BB code 0o34 = 0o74; byte 8B's low nibble is the $11 index
+!CHECK 221543.00 | 000010.44 3C | line 2 LV,$2,SCREEL($12) -- 0o44 is 0o40 (bit 32 of SCREEL's landed 8.32) OR 2J = 4 for J=2; byte 3C's low nibble is the $12 index
+!CHECK 221543.40 | 000000.42 82 036600.06 70 | line 3 LF(BU,30,6),.34($2) -PICK UP REEL NAME -- ".34" is a BARE DECIMAL bit offset, 34 bits = 0o42, which is the decimal-to-octal conversion checked outright; the second half word's 036600 carries length 0o36 = 30 and byte size 6, which is what settles the "3C" glyph in the statement field
+!CHECK 221544.40 | 221600.34 C2 | line 4 BRZ,JITSSC -IF SCRATCH -- J ITS SC is THIS page's line 26 at 221600.00, so this is a real label check; the byte is C2 and not 02 (printed p.192 line 36 measured BRZ indexed by $1 as C3)
+!CHECK 221545.00 | 221566.40 80 050000.12 F0 | line 5 SF(BU,40),JSPRNO -REEL NO. -- a VFL OPERAND, so J SPRNO's bit address is read TO THE BIT: 221566.40 is exactly what line 24 prints, which is the independent check on lines 22 and 23's character counts; 0o050000 is length 0o50 = 40
+!CHECK 221546.00 | 221557.03 01 | line 6 LVI,$1,JLBMES -- J LBMES is THIS page's line 22 at 221557.00; .03 is 2J+1 for J=1 with bit 32 clear, so this pins the label's half word
+!CHECK 221546.40 | 000000.32 8A 001000.00 F0 | line 7 J GETOF CM0000(BU,1),S CH OP($10) -- SCHOP's landed 0.26 gives 0o32; 001000.00 is the CM0000 comparand (CM1111 would print 001000.36, which is how the four round glyphs of "CMOCOO" are settled); byte 8A's low nibble is the $10 index.  printed p.135 line 41 prints this word for this statement
+!CHECK 221547.40 | 215571.00 80 | line 8 SIC,SPRIMR -PUT REEL NO. IN MESSAGE -- a SIC reads EVERY BIT, so this row CHECKS SPRIMR's landed 215571.00
+!CHECK 221550.00 | 215570.10 00 | line 9 B,SPRIME -OUT ON SPOOL -- a plain B shows bit 32 only; 0o10 is the B code and 00 the byte
+!CHECK 221550.40 | 000103.40 80 | line 10 ,DSPR -- a NULL OPERATION, printed with an empty operation field; D SPR's landed 67.32 is word 0o103 bit 0o40
+!CHECK 221551.00 | 000000.00 81 | line 11 ,0($1) -- null operation; byte 81's low nibble is the $1 index
+!CHECK 221551.40 | 000001.00 80 | line 12 ,1.0 -- null operation
+!CHECK 221552.00 | 215001.04 80 221554.74 02 | line 13 BB,SL,JPREOJ -- location carries a second asterisk.  BB's first operand is a 24-bit bit address so SL is read TO THE BIT at 215001.04, which CHECKS the landed value; the branch half carries J PREOJ, THIS page's line 17 at 221554.40 (0o40 OR 0o34 = 0o74)
+!CHECK 221553.00 | 000405.35 01 | line 14 LVI,$14,SLABNG -IF AT PP LEVEL -- S LABNG's landed (16)105 = 0o405; .35 is 2J+1 = 29 for J=14 with bit 32 clear
+!CHECK 221553.40 | 217451.40 80 | line 15 SIC,SDISIC -USE ERROR CONTROL -- a SIC, so this CHECKS SDISIC's landed 217451.40 to the bit
+!CHECK 221554.00 | 217372.10 00 | line 16 B,SDISP -- half word only
+!CHECK 221554.40 | 215571.00 80 | line 17 J PREOJ SIC,SPRIMR -IF AT MCP LEVEL -- the same word line 8 prints, from a second card; two identical words from two cards is the page's own check on the byte
+!CHECK 221555.00 | 215570.10 00 | line 18 B,SPRIME -USE ABEOJ -- the same card as line 9
+!CHECK 221555.40 | 000104.00 80 | line 19 ,DABEOJ -- null operation; D ABEOJ's landed (8)104.0.  printed p.132 line 44 prints the same word for the same card
+!CHECK 221556.00 | 216242.10 00 | line 20 B,KSUPP -RETURN TO I/A IN MCP
+!CHECK 221556.40 | 000000.30 00 | line 21 CNOP -- the counter stands at 221556.40, which is not a word boundary, so CNOP emits ONE NOP and the next card starts at 221557.00.  That is why line 21 prints a word at all and lines 35/36 (explicit NOPs) print the same one
+!CHECK 221600.00 | 221350.00 80 | line 26 J ITSSC SIC,KCONVR -COMPUTE CH-UNIT NO. -- a SIC, so this CHECKS K CONVR's landed 221350.00; its LOCATION also closes the four DD cards' character counts
+!CHECK 221600.40 | 221335.10 00 | line 27 B,KCONV
+!CHECK 221601.00 | 221674.50+ | line 28 VF,JREPCU -- a VALUE FIELD is a 24-bit plus sign quantity (C22-6531 printed p.18), so the WHOLE bit address is deposited and this row reads J REP CU to the bit: 221674.50.  The sign prints as a trailing "+"
+!CHECK 221601.40 | 221671.05 01 | line 29 LVI,$2,JREPSC -SET UP SCRATCH MESSAGE -- location carries a second asterisk.  .05 is 2J+1 for J=2 with bit 32 CLEAR, so this pins J REP SC to the first half word of 221671 and NOT to a bit; the .0 in the SYN above is a convention
+!CHECK 221602.00 | 221721.00 10 | line 30 J TAKF LX,$0,JUNLDK -UNLOAD COMMAND -- 2J = 0 for J=0 and bit 32 is clear, so this pins J UNL DK's half word only
+!CHECK 221602.40 | 221512.40 80 | line 31 SIC,KKRET -- a SIC, so this CHECKS K K RET's landed 221512.40
+!CHECK 221603.00 | 221505.10 00 | line 32 B,KIOREJ
+!CHECK 221603.40 | 221604.43 01 | line 33 LVI,$1,$+1.0 -WAIT FOR TERMINATION -- "$" is this row's own 221603.40, so $+1.0 is 221604.40: 0o40 OR 2J+1 = 0o03 for J=1 gives 0o43.  A real arithmetic check, not a symbol lookup
+!CHECK 221604.00 | 221525.10 00 | line 34 B,JSEOPT -- J SEOP T is printed p.192's line 27 at 221525.00
+!CHECK 221604.40 | 000000.30 00 | line 35 NOP
+!CHECK 221605.00 | 000000.30 00 | line 36 NOP
+!CHECK 221605.40 | 221602.10 00 | line 37 B,JTAKF -- J TAKF is THIS page's line 30 at 221602.00
+!CHECK 221606.00 | 233666.04 80 001000.06 70 | line 38 LF(BU,1),JIOBSY -- a VFL OPERAND, so J IOBSY's landed 233666.04 is CHECKED to the bit; 001000 is length 1 and the byte 70 is LF, matching line 3's second half word byte for byte
+!CHECK 221607.00 | 233666.00 80 001000.12 F0 | line 39 SF(BU,1),JWAIT -- a VFL operand, so J WAIT's landed 233666.00 is CHECKED to the bit; byte F0 is SF, matching line 5
+!CHECK 221610.00 | 215470.40 80 | line 40 SIC,SCOMIC -TELL OPERATOR WHAT TO DO -- a SIC, so this CHECKS S COMIC's landed 215470.40
+!CHECK 221610.40 | 215470.10 00 | line 41 B,SCOMM -- S COMM is 215470.00, one half word below S COMIC, and the pair is landed that way by printed p.116
+!CHECK 221611.00 | 000000.00 82 | line 42 ,0.0($2) -- null operation; byte 82's low nibble is the $2 index
+!CHECK 221611.40 | 000010.00 80 | line 43 ,8.0 -- null operation; 8 decimal is 0o10, another decimal-to-octal check
+!CHECK 221612.00 | 221325.40 80 | line 44 SIC,KUNRR -- a SIC, so this CHECKS K UNRR's landed 221325.40.  Card serial LG000258
+!CHECK 221612.40 | 221321.50 00 | line 45 B,KKLOOP -- K K LOOP's landed 221321.40: 0o40 OR 0o10 = 0o50, so the half word is checked.  Card serial LG000258 A SECOND TIME
+!CHECK 221613.00 | 221617.00 80 000021.06 A0 | line 46 TI,3,JNEWXR,$1 -- the MIRROR of printed p.192's line 51 "TI,3,$1,JNEWXR", which prints 000021.00 80 221617.06 A0: the same two half words with the operands swapped.  "$1" is index register 1, whose cell is word 0o21.  The byte is A0 and not AC: I2 = 0 because the second operand carries no parenthesised index, and p.192 re-read its mirror at 1200 dpi for exactly this reason
+!CHECK 221614.00 | 221614.10 00 | line 47 J NEWT B,$ -- "$" is this row's own 221614.00, so the row is self-referential and checks the location directly.  printed p.189 line 2 SICs J NEWT at (8)221614.0, which is what makes this page's origin CHECKED rather than asserted
+!CHECK 221614.40 | 221350.00 80 | line 48 J ITSMC SIC,KCONVR -- the same card as line 26; line 1's branch half carries this label, so the two rows check each other
+!CHECK 221615.00 | 221335.10 00 | line 49 B,KCONV -- the same statement as line 27, and THIS one carries the second asterisk while line 27 does not, which is one more counterexample to any statement-shaped rule for the mark
+!CHECK 221615.40 | 221714.50+ | line 50 VF,JRCTCU -- a value field, so J RCT CU is read to the bit at 221714.50
+!CHECK 221616.00 | 221711.05 01 | line 51 LVI,$2,JREPCT -- .05 is 2J+1 for J=2 with bit 32 clear, so J REP CT is pinned to the first half word of 221711 and the offset is NOT observed
+!CHECK 221616.40 | 221602.10 00 | line 52 B,JTAKF -- the same card as line 37; the counter leaves this page at 221617.00
+!
+! >>> THE FOUR (A*)DD ROWS (22-25) PRINT NO BINARY, SO NO !CHECK
+! >>> CAN NAME A WORD FOR THEM -- AND !SYM/!CHECK REACH ONLY THREE
+! >>> OF THEIR FOUR BOUNDARIES. <<<  What is checked by the file
+! above is:
+!
+!   !SYM JLBMES 221557.00   closes lines 1-21 (and CNOP)
+!   !SYM JSPRNO 221566.40   closes lines 22+23 TOGETHER (38+22=60)
+!   !CHECK 221600.00        closes lines 24+25 TOGETHER (36+40=76)
+!   !CHECK 221545.00        line 5's SF reads J SPRNO BIT-EXACTLY,
+!                           an independent reading of the same
+!                           boundary
+!
+! The SPLIT inside each pair -- 38 against 22, and 36 against 40 --
+! is pinned by the PRINTED LOCATIONS of lines 23 and 25, and those
+! two rows carry no label and no binary, so the !CHECK/!SYM
+! vocabulary cannot express them.  THEY WERE MEASURED ANYWAY, by
+! assembling this deck with a synthetic label on each of those two
+! cards (a scratchpad experiment; no label was added to the deck):
+!
+!   line 23 lands at 221563.60   page prints 221563.60
+!   line 25 lands at 221573.00   page prints 221573.00
+!   after line 52 the counter is 221617.00
+!
+! This probe is a CONSISTENCY check, not an independent witness --
+! the assembler is counting the characters this deck types, so it
+! cannot disagree about how many were typed.  What it establishes is
+! that those counts reproduce the two printed locations exactly.
+! See WHAT I COULD NOT SETTLE item (c2) for what that does and does
+! not buy, and THE COUNTER CHAIN for the independent leg.

@@ -38,6 +38,25 @@ The third is why this is a script and not a snippet: **it reports its
 own REACH**, so silence can never be mistaken for verification. A
 paste-able recipe cannot be relied on to keep doing that.
 
+MEASURED INJECTION 2, run on printed p.192 line 1, whose listing row
+and !CHECK both read "221512.40 80".  Perturbing the LISTING ROW:
+
+    location word  221512 -> 221513   CAUGHT (and was caught before)
+    bit offset .40 -> .41             MISSED before, CAUGHT now
+    opcode byte 80 -> 91              MISSED before, CAUGHT now
+
+Widening the comparison from want[:8] to the whole field turned up
+SEVEN disagreements that had stood green, and a second scan for
+non-octal digits in an octal field turned up THREE more.  All ten are
+`C` printed where the page prints `0` -- printed pp.37, 95, 139 and
+172 -- i.e. the listing block had been pasted from the volume OCR
+instead of read.  THAT IS THE WHOLE POINT OF THE BLOCK: it is supposed
+to be an INDEPENDENT second witness to the !CHECK, and an OCR paste is
+not independent.  The B0/BC pair on p.95 was settled by sweeping the
+index register through the oracle -- the index lands in the FIRST half
+word's byte (82 for $2) and the second half word's byte is B0 for
+every index, so BC cannot be a reading.
+
 MEASURED INJECTION, run: drop the `\\*?` from ROW_RE and this reports
 67 mismatches across the corpus, 59 of them on the pages that carry a
 location-column asterisk.  Drop the `defaultdict(list)` for a
@@ -120,9 +139,42 @@ def scan(path):
             continue          # an SLC row only: nothing comparable here
         compared += 1
         want = ' '.join(m.group(2).split())
-        if want and not any(r.startswith(want[:8]) for r in cands):
+        # >>> COMPARE THE WHOLE FIELD. <<<  This read want[:8] until
+        # 2026-11-02, which is the location word, the '.' and the FIRST
+        # octal digit of the bit offset -- 8 of the 12 characters in
+        # "221512.40 80".  It was blind to the second offset digit and
+        # to the entire trailing hex byte, WHICH IS THE OPERATION CODE,
+        # and so reported 0 mismatches over 3,313 comparisons while ten
+        # rows disagreed.  See MEASURED INJECTION 2 in the docstring.
+        if want and not any(r.startswith(want) for r in cands):
             bad.append((m.group(1), want, cands))
     return len(rows), compared, bad
+
+
+# A binary group prints as "oooooo.oo HH": two OCTAL fields and one HEX
+# byte.  An 8, a 9 or a letter in an octal field cannot be a reading of
+# the page -- it is OCR, and `C` for `0` is the volume OCR's signature
+# substitution.  This catches the corruption on rows that carry no
+# !CHECK, which the comparison above cannot reach.
+_GROUP_OK = re.compile(r'^[0-7]{6}\.[0-7]{2}$')
+_GROUP_SHAPE = re.compile(r'^[0-9A-Z]{6}\.[0-9A-Z]{2}$')
+
+
+def bad_octal(path):
+    """Binary-group octal fields in `path` that are not octal."""
+    out = []
+    for ln in open(path, errors='replace'):
+        m = ROW_RE.match(ln)
+        if not m:
+            continue
+        toks = m.group(2).split()
+        i = 0
+        while i < len(toks) and _GROUP_SHAPE.match(toks[i]):
+            if not _GROUP_OK.match(toks[i]):
+                out.append(toks[i])
+            i += 2 if (i + 1 < len(toks)
+                       and re.fullmatch(r'[0-9A-Z]{2}', toks[i + 1])) else 1
+    return out
 
 
 def main():
@@ -144,6 +196,18 @@ def main():
                   f"against listing {got!r}")
             fails += 1
 
+    octal_bad, octal_decks = 0, 0
+    for d in decks:
+        toks = bad_octal(d)
+        if toks:
+            octal_decks += 1
+        for tok in toks:
+            print(f"FAIL {os.path.basename(d)}: {tok!r} is not octal in a "
+                  f"binary group -- OCR contamination, not a reading")
+            octal_bad += 1
+    fails += octal_bad
+    print(f"PASS listing_block_octal_clean = {octal_bad} bad groups in "
+          f"{octal_decks} of {len(decks)} decks")
     print(f"PASS listing_block_reach = {covered}/{len(decks)} decks "
           f"carry a parseable block")
     print(f"PASS listing_rows_parsed = {total_rows}")

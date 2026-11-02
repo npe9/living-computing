@@ -384,7 +384,7 @@ from listing_oracle import check_rows, finish
 from strap_asm import assemble
 prog = assemble(open("../decks/mcp_bootstrap_p84.strap").read())
 SYMBOLS = {"TUNXW": "004653.00", "TUNATB": "004654.00", ...}
-ROWS = [("004654.00", "000062.00", "line 5  T UNATB DRZ(BU,64),(50)"), ...]
+ROWS = [("004653.00", "004654.00 00", "line 4  T UNXW XW,TUNATB,0,$0"), ...]
 finish(check_rows(prog, ROWS, SYMBOLS, label="MCP p.84 "))
 ```
 
@@ -392,6 +392,23 @@ finish(check_rows(prog, ROWS, SYMBOLS, label="MCP p.84 "))
 LOCATION column and every row against the BINARY OUTPUT column -- so
 the one call is the whole oracle. A DD printed as bare octal digits
 takes a fourth element, its width in bits.
+
+> **A RESERVATION ROW CANNOT GO IN `ROWS`, IN EITHER FLAVOUR.** This
+> example used to read
+> `("004654.00", "000062.00", "line 5 T UNATB DRZ(BU,64),(50)")` and
+> **that row can never pass.** The page prints the reservation's COUNT
+> in the binary column (0o62 = 50 words); `listing_oracle.render()`
+> returns the STORAGE at the location, which for both `DR` and `DRZ`
+> is `'000000.00 00'`. Measured 2026-11-02:
+>
+>     oracle renders : '000000.00 00'
+>     page prints    : '000062.00'
+>
+> p.84's own deck never contained the row -- the landed decks all skip
+> reservations here silently, so the example was never run. A
+> transcriber who copied it got one red row on a correct page. Pin a
+> reservation's extent with the LOCATION of the next card instead,
+> which `SYMBOLS` already does.
 
 Register it in `tests/run_tests.sh` beside the others:
 

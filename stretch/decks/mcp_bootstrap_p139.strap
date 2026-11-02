@@ -148,7 +148,7 @@
 ! require a DIFFERENT printed mnemonic, and a landed passing row
 ! elsewhere prints the same statement with a closed 0.
 !
-! LINE 20 -- printed "000001.50 CF", written 0F.  SETTLED BY AN EXACT
+! LINE 20 -- printed "000001.50 0F", written 0F.  SETTLED BY AN EXACT
 ! LANDED WITNESS.  printed p.97 line 32 is the same instruction with
 ! the same index, "005450.00  000001.10 0F  B,1.00($15)", landed and
 ! passing in decks/mcp_bootstrap_p97.strap (and quoted in p80 and p83);
@@ -159,7 +159,7 @@
 ! low nibble, the index, varies, and it prints F for $15 on both rows.
 ! No branch can print C there.
 !
-! LINE 9 -- printed "000000.11 C8", written 08.  SETTLED THE SAME WAY.
+! LINE 9 -- printed "000000.11 08", written 08.  SETTLED THE SAME WAY.
 ! The landed witness is decks/mcp_bootstrap_p133.strap line 38,
 ! "216547.00  000001.03 08  C-I,$1,1.0", and
 ! printed p.136 line 5's landed "216663.40  000010.11 00  C+I,$4,8.0"
@@ -171,7 +171,7 @@
 ! glyph disagrees.
 !
 ! >>> LINE 12 IS THE WEAKEST OF THE THREE AND THIS IS THE ONE TO LOOK
-! AT AGAIN. <<<  The row prints "217124.40  000022.31 80  217127.74 0C"
+! AT AGAIN. <<<  The row prints "217124.40  000022.31 80  217127.74 00"
 ! with the statement "BZB,$2+.25,G NOLOP  -TEST FOR CHAIN BIT".  It is
 ! the weakest because, unlike lines 9 and 20, the open glyph here is a
 ! VALID encoding of a REAL mnemonic one suffix away -- so a wrong
@@ -322,10 +322,10 @@ GVODR   DRZ(BU,64),16                   ! line 24  -RESERVE 16 FULL WORDS
 !   6*   217121.00     000024.30 80  217122.74 02                BB,$4.24,$+1.32                                                      EE000227
 !   7*   217122.00     000036.10 B0                              V+, $4, $14                -NO, ADJUST STORE LOC                     EE000228
 !   8*   217122.40     217123.35 D0                              SVA,$14,G EMAN             -STORE VF.$14 IN LOC. G EMAN ADD.F.       EE000229
-!   9*   217123.00     000000.11 C8                    G EMAN    C-I,$4,0.0                 -SUBTRACT FROM CF.$4 CF.$2                EE000230
+!   9*   217123.00     000000.11 08                    G EMAN    C-I,$4,0.0                 -SUBTRACT FROM CF.$4 CF.$2                EE000230
 !  10*   217123.40     217124.35 D0                              SVA,$14,G IGOR             -STORE VF.$14 IN LOC. G IGOR ADD.F.       EE000231
 !  11*   217124.00     000000.03 0D                    G IGOR    V-I,$1,0.0                 -SUBTRACT FROM VF.$1 CF.$2                EE000232
-!  12*   217124.40     000022.31 80  217127.74 0C                BZB,$2+.25,G NOLOP         -TEST FOR CHAIN BIT                       EE000233
+!  12*   217124.40     000022.31 80  217127.74 00                BZB,$2+.25,G NOLOP         -TEST FOR CHAIN BIT                       EE000233
 !  13*   217125.40     217127.71 42                              BXVZ,G NOLOP               -TEST IF $1 INDIC.,INDEX VAL.0, IS ON     EE000234
 !  14*   217126.00     000022.02 00                              R,$2                       -REFILL $2 WITH NEXT CONTROL WORD         EE000235
 !  15*   217126.40     000024.02 00                              R,$4                       -REFILL $4 WITH NEXT CONTROL WORD         EE000236
@@ -333,7 +333,7 @@ GVODR   DRZ(BU,64),16                   ! line 24  -RESERVE 16 FULL WORDS
 !  17*   217127.40     000010.11 10                    G NOLOP   SX,$4,$L                   -STORE $4 IN $L                           EE000238
 !  18*   217130.00 *   000010.22 80  001000.36 F0                CM1111(BU,1),$L+.18        -TURN ON UNIT READY BIT                   EE000239
 !  19*   217131.00     217134.00 80  000020.00 A0                TI,16.0,G VODR,$0          -RESTORE $0-$15 FROM LOC. G VODR          EE000240
-!  20*   217132.00     000001.50 CF                              B,1.32($15)                -BRANCH OUT                               EE000241
+!  20*   217132.00     000001.50 0F                              B,1.32($15)                -BRANCH OUT                               EE000241
 !  21*   217132.40     000021.04 50                    G HI      LC,$2,$1                   -LOAD CF.$2 WITH NOS FROM VF.$1           EE000242
 !  22*   217133.00     217114.10 00                              B,G SKIP                   -RETURN TO LOC. ,G SKIP,                  EE000243
 !  23*   217133.40     000000.30 00                              CNOP                                                                 EE000244
