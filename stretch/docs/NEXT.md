@@ -16111,3 +16111,36 @@ NOT YET READ, and the caveat that applies: the table gives an address,
 not a data description. `KREP`'s dds came from a DEFINING CARD, and no
 cross-reference row carries `SYN(BU,18)`. The table replaces the
 address half of the citation burden, not the dds half.
+
+### MEASURED BASELINE: off-the-shelf OCR reads the dictionary at 43%
+
+Before proposing a trained reader, the cheap thing was measured.
+tesseract 5.5, `--psm 6`, uppercase+digit whitelist, 400 dpi, on the
+six cross-reference pages; scored against the 824 symbol->address
+pairs the merged body image (pp.99-192) already knows.
+
+Join on the ADDRESS, which is self-correcting: octal has no `C` and no
+`O`, so those are unambiguously `0` and nothing else was rewritten.
+
+    rows parsed (strict, whole-line)   107
+    name AND address agree              10
+    address known, OCR name differs     13
+    name accuracy where address known   43%
+
+43% is not usable, which is the same verdict `mcp_ocr.py`'s docstring
+already reached for the LOCATION column (~85% there; worse here
+because names carry letters). **The first measurement I ran was
+WRONG and more pessimistic**: it also mapped D->0, A->4, Z->2, B->6
+in the address field, corrupting good reads into misses. Addresses
+are octal; only C and O need fixing.
+
+THE FAILURES ARE ALL THE PROJECT'S OWN GLYPH LADDER, now with ground
+truth on the other side:
+
+    ocr CRLFS   corpus DRLFS      ocr ZICO2   corpus ZID02
+    ocr YSFLOR  corpus YSFLCR     ocr SCSPDS  corpus SDSPDS
+    ocr ZFROLS  corpus ZFRO1      ocr S100K   corpus SIODK
+
+C/D/0/O and 1/I/L, exactly the pairs the per-page ladders re-derive by
+hand. **43% is now the number any trained reader has to beat**, and
+the 824 pairs are simultaneously its training set and its test set.
