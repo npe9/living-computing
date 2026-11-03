@@ -16385,3 +16385,43 @@ blocks were pasted from that OCR, and the check that should have
 caught them compared 8 of 12 characters. At 98% this reader disagrees
 loudly enough to flag such rows. It is a FLAGGER, not a transcriber.
 Rule 3 is unchanged.
+
+### macOS VISION BEATS OUR CLASSIFIER ON LOCATIONS AND FAILS THE SAME WAY ON C
+
+2026-11-03. `tools/vision_ocr.swift`, 40 lines, `usesLanguageCorrection`
+OFF (the listing is machine code; correction invents plausible words).
+
+| task | tesseract | Vision | our templates |
+|---|---|---|---|
+| symbol pages, names | 43% | **69%** | - |
+| LOCATION characters | - | **99.7%** | 98.0% |
+| LOCATION whole strings | - | **97.7%** | 82.0% |
+| HEX BYTE | - | 87.4% | **89.3%** |
+
+Vision is the better reader of the LOCATION column and it is forty
+lines against a whole pipeline. Its RECALL is lower -- 177 locations
+read where the decks list 227, ~78% -- because it declines instead of
+guessing, which for a cross-check is the right bias.
+
+APPLY THE ALPHABET CONSTRAINT. Raw Vision gets 81.7% on the hex byte
+and most of the loss is the LETTER `O` where the DIGIT `0` belongs.
+Hex is 0-9A-F: O and Q are not in it, I is not either. O,Q->0 and
+I->1 takes it to 87.4%. (Octal fields likewise contain no C and no O.)
+
+**THE CONVERGENT NEGATIVE.** After that constraint, 58 of Vision's 89
+remaining hex errors are `C` read where `0` is printed (00->C0 forty-
+two times, 01->C1 twelve). Our template classifier, trained on 2,642
+cells cut from this drum, fails identically: C at 78.7%, C->0 twenty
+and 0->C nineteen.
+
+Three independent methods -- tesseract, Apple's production OCR, and a
+classifier trained on this very drum -- all break on C against 0. The
+original hand-measured negative (width and openness, n=6) is now very
+well supported. **A round glyph is not settled by image processing**;
+it is settled by the corpus, a manual, or the assembler. The glyph
+ladder stays.
+
+DELIBERATELY NOT USED: the on-device LLM (Foundation Models). Asked
+to clean up a symbol name it returns a PLAUSIBLE one, which is
+indistinguishable from a reading and is the exact error rule 3
+exists to prevent. Vision reports what it saw.
