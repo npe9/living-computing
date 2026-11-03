@@ -16431,10 +16431,12 @@ exists to prevent. Vision reports what it saw.
 Measured on 19 pages, nine of nine characters, line-keyed truth
 (tools/README_vision.md has the table). Vision at 200/300/400 dpi and
 on crops is NOT independent: 50-75% of its binary errors repeat
-identically across resolutions. Tesseract shares ZERO errors with
-Vision. Where both engines agree: 99.75% on 404 locations, 100% on
+identically across resolutions. Tesseract shares ONE error with
+Vision in the sample (p.56 line 48, 3->2), so agreement is not proof. Where both engines agree: 99.75% on 404 locations, 100% on
 139 binary half words. Five rows where all Vision readers out-voted
-the deck are 7->1, checked on the ink at p.93: deck right.
+the deck are 7->1; p.93 checked on the ink, deck right.
+p.146 fell out of the LINE-column fit (1 page in 20): on vol 2 there is
+no deck to fall back on, a known coverage hole.
 strap/listing_truth.py now covers 175 pages / 6,039 lines (adds the
 two-page verify files); 19 pages carry no line-keyed row, listed in
 its docstring. NEXT: raise tesseract coverage per column, then use

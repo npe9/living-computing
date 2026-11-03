@@ -98,16 +98,22 @@ another Vision reader reads the SAME wrong value in 50-75% of cases
 on the binary field (e.g. vis_crop_300 wrong 8 times, vis_crop_600
 identical 6 of them). Voting across Vision resolutions mostly counts
 one error several times, which is why the >=5 vote on binary is stuck
-at 99.08%. **Tesseract shares no error with Vision**: 0 of 37, 0 of
-35, ... in every cell of the matrix, both fields. The two engines fail
+at 99.08%. **Tesseract almost never shares an error with Vision**:
+one row in the whole sample -- p.56 line 48, LOCATION 003201.00, which
+vis_full_400 and tes_crop_600 both read 002201.00 (3->2); every other
+cell of the matrix is 0 of N, both fields. Coincidence between the
+engines is therefore bounded by sample size, NOT zero, and the
+"both agree" class below carries that one miss. The two engines fail
 differently -- Vision on 7->1 (12) and 0->6 (4) only; tesseract on
 0->6 (24), 2->1 (19), 1->0 (8), 1->6 (7), 4->0, 0->4, 5->0, 2->0.
 
 **THE 7->1 CASES.** Five binary rows have EVERY Vision reader against
 the deck (p.93 lines 4 and 6, p.96 line 10, p.130 line 11, p.196 line
-22), all 7 read as 1. Inspected on the ink at p.93: the 7 has a broken
-top stroke and reads as 7 to the eye; the deck is right, and the
-assembler reproduces it. A systematic error across resolutions is
+22), all 7 read as 1. One of the five was inspected on the ink (p.93
+lines 4 and 6, both visible in one crop): the 7's top stroke is faint,
+and it reads as 7 to the eye. The deck is right there. The other four
+were not inspected; their deck values are what the assembler
+reproduces. A systematic error across resolutions is
 caught only by a different ENGINE.
 
 WHAT THIS LICENSES. For pages with no deck, a numeric field is
