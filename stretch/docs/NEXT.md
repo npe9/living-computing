@@ -16282,3 +16282,56 @@ not the reader.
 **STOPPED HERE deliberately.** The classifier is a project, not an
 afternoon, and 43% remains the number it has to beat. What is banked
 is reusable and measured; what is missing is named.
+
+### THE PHASE WAS NEVER UNSTABLE -- THE PAGES ARE SKEWED
+
+2026-11-02, following on from the grid measurement above. The previous
+entry recorded `phase()` as an unstable estimator and advised using a
+phase "confirmed by eye". **That diagnosis was wrong about the cause.**
+
+Fitting the phase in separate y bands shows a clean monotonic trend.
+printed p.193 drifts -5.25 px per 1000 px of y = **-0.301 degrees**,
+which is nearly HALF A CELL across the text block. The model was
+missing a parameter, so every estimate of that parameter disagreed
+with every other. The right model is
+
+    x(k, y) = phase0 + skew * y + k * cpitch
+
+fitted per page by maximising the circular concentration of glyph
+midpoints over (cpitch, skew) jointly. `strap/listing_grid.py`.
+
+    cpitch  30.055 .. 30.060 px at 300 dpi  = 9.982 CPI
+    skew    -0.115 .. -0.286 degrees, always NEGATIVE
+    phase0  per page (scan registration)
+
+**AND THE "10.00 CPI x 6.00 LPI EXACTLY" ABOVE IS WRONG.** It came
+from one page's autocorrelation and was precise to ~0.2%. 0.2% of 143
+cells is a quarter cell by the right margin. The true figures are
+9.982 CPI and 5.96..6.02 LPI, the row pitch fitted per page (printed
+p.172 is the outlier at 50.36 px).
+
+### THE VALIDATOR HAD TO BECOME A RATIO, AND AN OVERLAY CAUGHT IT
+
+Seam ink as an ABSOLUTE percentage called printed p.186 a failure at
+9.01% -- and an overlay showed its grid correctly aligned, character
+by character. That page simply prints heavier, so more ink lies near
+a seam even when the seam is in the gutter. Compare against the SAME
+page shifted half a cell and boldness cancels:
+
+                     seam ink        ratio vs half-cell shift
+    no skew term     2.05 .. 9.01%   1.29 .. 7.23
+    with skew        1.38 .. 1.93%   7.65 .. 10.58
+
+on eight pages (95, 139, 172, 186, 190, 192, 193, 196). p.186 went
+from the worst fit to the best.
+
+### WHAT IS STILL NOT MEASURED: ROW SKEW
+
+A pure page rotation would make the row grid's dy/dx equal and
+opposite to the character grid's dx/dy. **That cross-check does not
+confirm.** Fitted from per-glyph ink centroids, row skew comes out ~0
+on four pages and +0.401 deg on p.196 against its character skew of
+-0.115. The signal is too weak for the method: a glyph's vertical
+centroid depends strongly on WHICH glyph it is and that swamps 0.2
+degrees. Reported as a failed cross-check, not as "rotation
+confirmed". Use the fitted row PITCH only.
