@@ -6669,6 +6669,9 @@ run "No MCP symbol is spelled two ways across the decks" python3 check_symbol_sp
 # returning 1155 addresses.
 run "the spelling checker does not silently check less" python3 check_spelling_checker_does_not_degrade.py
 run "a deck's listing block agrees with its checks" python3 check_deck_listing_comments.py
+# Vision and tesseract read every landed page; a row FAILS only where
+# both engines read the same value and it is not the deck's.
+run "two OCR engines read the landed pages as the decks do" python3 check_vision_cross_reading.py
 
 # >>> READING THE PAGE NUMBER OFF ALL 256 PAGES, AND THE TWO PARSERS
 # THAT WERE WORSE THAN THE OCR. <<<

@@ -16441,3 +16441,9 @@ strap/listing_truth.py now covers 175 pages / 6,039 lines (adds the
 two-page verify files); 19 pages carry no line-keyed row, listed in
 its docstring. NEXT: raise tesseract coverage per column, then use
 "both engines agree" to acquire vol 2 / pp.197-439 numerics.
+tests/check_vision_cross_reading.py is in the suite: Vision (docs/vision/
+mcp_pNNN.tsv) and tesseract (mcp_pNNN.tes.tsv, tools/tess_cache.py) on
+all 184 deck pages, line-keyed. FAIL only where both engines read the
+same value against the deck: 0 rows. Vision alone 99.11% on 4,397
+locations and 98.99% on 4,337 binary half words; 2,314 / 652 confirmed
+by tesseract; 39 / 44 Vision-only candidates; 12 of 174 pages unfit.
