@@ -16447,3 +16447,14 @@ all 184 deck pages, line-keyed. FAIL only where both engines read the
 same value against the deck: 0 rows. Vision alone 99.11% on 4,397
 locations and 98.99% on 4,337 binary half words; 2,314 / 652 confirmed
 by tesseract; 39 / 44 Vision-only candidates; 12 of 174 pages unfit.
+
+## Every page read by two engines (2026-11-03)
+
+docs/vision/listing_reading.tsv: all 451 PDF pages, 16,297 lines,
+LOCATION + BINARY h1 with status (tools/README_vision.md). Agreed = 100%
+/ 99.88% on 164 landed pages; the residual is faint-7-as-1 in BOTH
+engines (4 binary rows, adjudicated on the ink). On the 241 no-deck
+pages: 6,438 agreed locations, 5,527 agreed binaries. Suite:
+tests/check_listing_reading.py.
+STILL NOT READ: the hex byte and BINARY half word 2 (so the object code
+is not yet complete from the image), and NAME/STATEMENT -- the source.

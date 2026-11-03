@@ -130,3 +130,57 @@ reported 0% coverage; and an "eight digits, period dropped" rule then
 grabbed the fused line number (`12003777`). Groups are now found
 inside tokens and placed at their own x by character offset (30.06 px
 per character on the 5100 px page).
+
+## EVERY PAGE, BOTH VOLUMES (2026-11-03)
+
+`tools/read_every_page.py` reads all 451 PDF pages (vol 1: 256, vol 2:
+195) into `docs/vision/all/`: Vision whole page and Vision on the two
+column crops (ONE engine), tesseract on the same crops at 600 dpi (the
+other). `tools/listing_reading.py` turns that into
+`docs/vision/listing_reading.tsv`, one row per printed LINE with
+LOCATION and BINARY half word 1 and a status for each; the suite
+(`tests/check_listing_reading.py`) keeps it whole, fresh and scored.
+
+What had to change to leave vol 1:
+
+* **The column frame is measured per page** (strap/listing_read.py
+  `geometry`). Vol 2 is a different scan: 4499 px wide, LOCATION at
+  x ~0.094 not ~0.202. LOCATION = the leftmost octal column with a
+  BINARY partner 13-17 cells right; "leftmost strong column" alone
+  picked BINARY on four vol 2 pages.
+* **The row pitch is scanned, not estimated.** On vol 2 Vision often
+  keeps only the tens digit of a line number ("46*" -> "4"), and the
+  pairwise-median pitch came out 2-16 px. The pitch is scanned over its
+  physical bound, the best-supported points are least-squares fitted,
+  and a bare single digit d stands for d or 10d..10d+9.
+* **The pitch bound** spans both measurements, which disagree: ink fit
+  49.81-50.36 px, Vision line positions 49.58 (q10-q90 49.32-49.69).
+* **Vision on column crops** nearly doubles its vol 2 coverage (PDF
+  p.34: 45 location groups against 26 whole-page). Same engine: two
+  Vision readings agreeing are still `vision-only`.
+
+Measured against the 164 landed pages, nine of nine characters:
+
+| status | LOCATION share / right | BINARY h1 share / right |
+|---|---|---|
+| agreed | 67.8% / 100.00% | 62.7% / 99.88% |
+| agreed-out-of-order | 0.1% / 33% (the flag works) | -- |
+| conflict | 7.3% / 99.05% either value | 4.6% / 99.59% either value |
+| vision-only | 18.0% / 99.03% | 26.6% / 99.07% |
+| tesseract-only | 2.2% / 93.70% | 1.5% / 89.74% |
+| unread / not paired | 4.6% | 4.6% |
+
+**Agreement is ~99.9%, not proof.** Six agreed fields were wrong, all
+the same mechanism: a faint 7 that BOTH engines read as 1 (one broken 0
+read as 6). The two LOCATIONS were caught by the order check; the four
+BINARY ones were inspected on the ink and are in
+`tests/vision_adjudicated.tsv`. Binary has no ordering to catch them.
+
+**On the 241 printed pages with no deck** (197-439): 221 paired, 9,518
+lines; LOCATION agreed 6,438, BINARY agreed 5,527. Headers: vol 1 is
+PDF - 7 on all 230 read; vol 2 is +249 to PDF p.79 and +250 after
+(printed 329 is not in the scan); printed 249 is missing too; no
+number is read twice. 20 printed pages >= 197 do not pair (200 235
+239 245 252 275 285 286 296 310 360 383 390 391 393 394 410 411 416
+417); PDF vol 2 pp.190-195 (SYMBOLS NEVER USED, statistics) are not
+listing pages.

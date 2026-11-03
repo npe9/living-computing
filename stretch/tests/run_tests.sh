@@ -6672,6 +6672,9 @@ run "a deck's listing block agrees with its checks" python3 check_deck_listing_c
 # Vision and tesseract read every landed page; a row FAILS only where
 # both engines read the same value and it is not the deck's.
 run "two OCR engines read the landed pages as the decks do" python3 check_vision_cross_reading.py
+# The same two engines on EVERY page of both volumes: whole, consistent,
+# fresh, and as accurate as measured on the landed pages.
+run "every listing page read by two engines, scored on the landed ones" python3 check_listing_reading.py
 
 # >>> READING THE PAGE NUMBER OFF ALL 256 PAGES, AND THE TWO PARSERS
 # THAT WERE WORSE THAN THE OCR. <<<

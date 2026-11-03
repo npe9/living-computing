@@ -33,9 +33,12 @@ ROOT = os.path.dirname(HERE)
 PDF = os.path.join(ROOT, "docs", "MCP_Mar63_001-249.pdf")
 OFFSET = 7
 CROP_X0, CROP_X1 = 0.165, 0.40      # LINE, LOCATION, BINARY half 1, hex byte
+# One column each: a narrow crop leaves tesseract no neighbour to fuse with.
+COLS = {"crop": (CROP_X0, CROP_X1), "loc": (0.192, 0.262), "bin": (0.282, 0.345)}
 
 READERS = ["vis_full_200", "vis_full_300", "vis_full_400",
-           "vis_crop_300", "vis_crop_600", "tes_crop_300", "tes_crop_600"]
+           "vis_crop_300", "vis_crop_600", "tes_crop_300", "tes_crop_600",
+           "tes_loc_300", "tes_bin_300", "tes_loc_600", "tes_bin_600"]
 
 
 def vision_bin():
@@ -48,6 +51,7 @@ def vision_bin():
 
 
 def render(printed, dpi, td, crop):
+    """crop: False, or a COLS key."""
     from PIL import Image
     base = os.path.join(td, f"r{dpi}")
     png = base + ".png"
@@ -57,12 +61,13 @@ def render(printed, dpi, td, crop):
                         "-singlefile", PDF, base], check=True)
     if not crop:
         return png, (0.0, 1.0)
-    out = base + "_crop.png"
+    x0, x1 = COLS[crop if isinstance(crop, str) else "crop"]
+    out = base + "_%s.png" % (crop if isinstance(crop, str) else "crop")
     if not os.path.exists(out):
         im = Image.open(png)
         w, h = im.size
-        im.crop((int(CROP_X0 * w), 0, int(CROP_X1 * w), h)).save(out)
-    return out, (CROP_X0, CROP_X1 - CROP_X0)
+        im.crop((int(x0 * w), 0, int(x1 * w), h)).save(out)
+    return out, (x0, x1 - x0)
 
 
 def run_vision(png, frame, ocr):
@@ -94,13 +99,13 @@ def run_tesseract(png, frame):
     return rows
 
 
-def read_page(printed, outdir, ocr):
+def read_page(printed, outdir, ocr, readers=READERS):
     d = os.path.join(outdir, "p%03d" % printed)
     os.makedirs(d, exist_ok=True)
     with tempfile.TemporaryDirectory() as td:
-        for r in READERS:
+        for r in readers:
             eng, frame, dpi = r.split("_")
-            png, fr = render(printed, int(dpi), td, frame == "crop")
+            png, fr = render(printed, int(dpi), td, False if frame == "full" else frame)
             rows = run_vision(png, fr, ocr) if eng == "vis" else run_tesseract(png, fr)
             rows.sort()
             with open(os.path.join(d, r + ".tsv"), "w") as f:
@@ -111,6 +116,8 @@ def read_page(printed, outdir, ocr):
 if __name__ == "__main__":
     outdir = sys.argv[1]
     ocr = vision_bin()
+    only = os.environ.get("READERS")
+    readers = only.split(",") if only else READERS
     for p in sys.argv[2:]:
-        read_page(int(p), outdir, ocr)
-        print(f"p.{p} read by {len(READERS)} readers", flush=True)
+        read_page(int(p), outdir, ocr, readers)
+        print(f"p.{p} read by {len(readers)} readers", flush=True)

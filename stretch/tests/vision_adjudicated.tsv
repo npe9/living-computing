@@ -1,0 +1,8 @@
+# page	field	deck	read	verdict	reason
+# A row here is one where Vision AND tesseract read the same value and it
+# is not the deck's.  "vision-misread" = inspected on the ink at 300 dpi,
+# and the page prints what the deck says.
+97	every-binary	000000.76	000000.16	vision-misread	inked 2026-11-03: a 7 with a faint top stroke; reads 7 by eye
+171	every-binary	220431.03	220431.63	vision-misread	inked 2026-11-03: a broken 0, both engines read 6; reads 0 by eye
+136	every-binary	216666.76	216666.16	vision-misread	inked 2026-11-03: the 7 reads 7 by eye
+196	every-binary	221766.71	221766.11	vision-misread	inked 2026-11-03: the 7 reads 7 by eye
