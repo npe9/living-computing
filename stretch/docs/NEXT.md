@@ -16335,3 +16335,53 @@ on four pages and +0.401 deg on p.196 against its character skew of
 centroid depends strongly on WHICH glyph it is and that swamps 0.2
 degrees. Reported as a failed cross-check, not as "rotation
 confirmed". Use the fitted row PITCH only.
+
+### A TRAINED READER: 98% ON LOCATIONS, AND IT STILL CANNOT TELL C FROM 0
+
+2026-11-02, built on the skewed grid above. `strap/glyph_reader.py`.
+
+COLUMN LAYOUT IS FIXED IN CELL COORDINATES, verified on eight pages
+before a single cell was harvested, because an off-by-one in k
+mislabels every sample silently:
+
+    k 34..42  LOCATION (period at 40)   k 49..57 BINARY half 1 (period 55)
+    k 58      SPACE, mean ink 2         k 59..60 HEX BYTE, mean ink 237/242
+
+PAIRING ROWS TO LABELS ORDINALLY IS WRONG AND FAILS SILENTLY. Zipping
+detected rows to the deck's located lines in order disagreed in count
+on all but 4 of 47 pages, and the contaminated labels still scored
+95.1%. The error structure gave it away: positions 0-1 were 100%
+correct (the "221" prefix barely varies down a page, so a mispairing
+still lands the right label) while position 7 was 17.3% wrong, almost
+all symmetric 0<->4 -- i.e. ".00" against ".40". **Bootstrap instead:**
+read the location, keep the row only if all 9 characters read are
+exactly a location the deck lists. That pairs 46 pages, not 4.
+
+RESULTS, leave-one-PAGE-out, 1-NN:
+
+    LOCATION, 9 classes, scored with NO row->line mapping at all
+      characters        98.0%     (tesseract baseline 43%)
+      whole strings     82.0%
+    HEX BYTE, 16 classes, 2,642 cells, 46 pages
+      overall           89.3%
+      0 93.1%   8 90.4%   C 78.7%   B 78.1%   D 82.2%
+
+**THE NEGATIVE RESULT IS THE IMPORTANT ONE.** C->0 is 20 and 0->C is
+19. Two normalisers tried: bbox-crop 88.8%/C=76.9%, whole-cell-frame
+89.3%/C=78.7%. The hypothesis that cropping destroyed the width
+difference between a narrow C and a round 0 is **REJECTED** -- keeping
+extent and position changes nothing.
+
+So the existing measured negative on O/0/C STANDS, and is now tested
+far harder: that one was two hand-picked features on n=6 per class,
+this is 2,642 labelled cells and the entire bitmap. **A trained reader
+does not retire the glyph ladder.** A round glyph is still settled by
+the corpus, a manual, or the assembler -- never by shape.
+
+WHAT IT IS FOR. An independent second reading of the LOCATION and
+BINARY columns, independent OF THE VOLUME OCR, which is the whole
+point: ten rows of `C`-for-`0` reached the corpus because listing
+blocks were pasted from that OCR, and the check that should have
+caught them compared 8 of 12 characters. At 98% this reader disagrees
+loudly enough to flag such rows. It is a FLAGGER, not a transcriber.
+Rule 3 is unchanged.
