@@ -66,7 +66,8 @@ BEFORE THE PITCH BOUND (strap/listing_read.py), 14 rows FAILED here on
 p.53, 95 and 156: their LINE columns read badly, the fit's pitch came
 out 0.0120-0.0148 against a measured 0.0151-0.0153, and rows were
 compared with their neighbours.  Bounded and gated, those pages are
-reported unfit instead (12 of 174), and no row fails.
+reported unfit instead (11 of 174 since the scanned-pitch fit), and no
+row fails.
 """
 import collections
 import glob

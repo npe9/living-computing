@@ -22,6 +22,9 @@ CHECKS
                        inspected and tests/vision_adjudicated.tsv says the
                        engines misread it ("every-location"/"every-binary")
   floors               coverage and accuracy of each status, measured
+                       (for `agreed`, adjudicated rows count as right, so
+                       the accuracy floor cannot fail on its own: any other
+                       disagreement has already FAILED agreed_vs_deck)
                        2026-11-03, so a broken reader cannot pass by
                        reading less (values in FLOORS)
 
@@ -161,7 +164,8 @@ def main(root=ROOT):
         good = c[(fld, st, "ok")]
         ok(rows and n / rows >= share and good / max(1, n) >= acc, f"floor_{fld}_{st}",
            f"{n} of {rows} rows ({100 * n / max(1, rows):.1f}%, floor {100 * share:.0f}%), "
-           f"{100 * good / max(1, n):.2f}% right (floor {100 * acc:.1f}%)")
+           f"{100 * good / max(1, n):.2f}% right or adjudicated on the ink "
+           f"(floor {100 * acc:.1f}%)")
 
     print("ALL TESTS PASSED" if not fails else f"{fails} FAILURE(S)")
     return 1 if fails else 0

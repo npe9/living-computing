@@ -16458,3 +16458,8 @@ pages: 6,438 agreed locations, 5,527 agreed binaries. Suite:
 tests/check_listing_reading.py.
 STILL NOT READ: the hex byte and BINARY half word 2 (so the object code
 is not yet complete from the image), and NAME/STATEMENT -- the source.
+DEBT: vol 1 is cached twice by the same engine at the same dpi
+(docs/vision/mcp_pNNN.tsv for check_vision_cross_reading, and
+docs/vision/all/v1_pdfNNN.vis.tsv); fold the first into the second.
+OPEN: row pitch -- ink fit (857028e) 49.81-50.36 px vs Vision line
+positions 49.58 px; one of the two committed numbers is wrong.
