@@ -16425,3 +16425,17 @@ DELIBERATELY NOT USED: the on-device LLM (Foundation Models). Asked
 to clean up a symbol name it returns a PLAUSIBLE one, which is
 indistinguishable from a reading and is the exact error rule 3
 exists to prevent. Vision reports what it saw.
+
+## Cross-reading Vision x tesseract x resolution (2026-11-03)
+
+Measured on 19 pages, nine of nine characters, line-keyed truth
+(tools/README_vision.md has the table). Vision at 200/300/400 dpi and
+on crops is NOT independent: 50-75% of its binary errors repeat
+identically across resolutions. Tesseract shares ZERO errors with
+Vision. Where both engines agree: 99.75% on 404 locations, 100% on
+139 binary half words. Five rows where all Vision readers out-voted
+the deck are 7->1, checked on the ink at p.93: deck right.
+strap/listing_truth.py now covers 175 pages / 6,039 lines (adds the
+two-page verify files); 19 pages carry no line-keyed row, listed in
+its docstring. NEXT: raise tesseract coverage per column, then use
+"both engines agree" to acquire vol 2 / pp.197-439 numerics.
