@@ -281,9 +281,37 @@ pages the arithmetic confirms 3,875 locations and supplies 492. What
 accuracy fell from 99.03% to 87.65%: that row is now a list of places to
 look. Binary has no such rule; the cross-page check below gives it one.
 
-NEXT (cross-page symbols): an operand naming a symbol must carry, in its
-BINARY, the LOCATION of that symbol's defining line anywhere in the 451
-pages -- the only check that ties the unfinished pages to each other.
+## CROSS-PAGE SYMBOLS: A REFERENCE CARRIES ITS DEFINITION (2026-11-04)
+
+An instruction whose operand names a symbol (`B,KFUNLD.32`) carries in
+BINARY h1 that symbol's LOCATION, read off the line that DEFINES it --
+on any of the 451 pages -- plus the operand's offset, plus the
+mnemonic's opcode bits. `tools/listing_reading.py symbols()`:
+
+* **The opcode bits come from the assembler**, not a fit: `op_delta`
+  assembles `OP,T` with strap_asm and reads the bits back (a half-word
+  branch carries its opcode in bits 19-23: B +8, BD +4, BXE +26, BRZ
+  +28; a bit-addressed or VFL field is the address itself, 0). A fit
+  from the reading had produced 41 deltas; strap_asm reproduces all 38
+  real mnemonics, and the other three were misreads (CMOCOO, BZBI, E).
+* **MCP is several assemblies.** GKRUH is 002374 on printed p.42 and
+  230574 on p.260; 229 of 2,993 names read in the NAME column have more
+  than one location. Each is a candidate; a reading that equals exactly
+  one confirms.
+* **Confirm only, never deny.** On agreed binaries (100% right on landed
+  pages) 94 of 1,141 predictions disagree: a look-alike symbol in the
+  statement, a misread NAME, a local name reused. A mismatch says the
+  check is wrong far more often than the binary.
+
+| status | BINARY h1 share / right, 164 landed pages |
+|---|---|
+| **sym-confirmed** | **2.9% (150) / 100.00%** |
+| sym-only | 0.1% (7) / 100% |
+
+On all 451 pages: 402 binaries confirmed, 61 supplied. Smaller than the
+arithmetic because it needs a parsed reference AND a read definition;
+the reverse direction -- an agreed reference fixing the DEFINING line's
+LOCATION -- is the one that can reach the location residue, and is next.
 
 ## REPAIRING THE STATEMENT DRAFT (2026-11-03)
 

@@ -34,7 +34,8 @@ framings.  So two Vision readings that agree are still `vision-only`;
   unread          neither
 
 LOCATION ARITHMETIC (see arithmetic()) adds two statuses for LOCATION:
-arith-confirmed and arith-only.
+arith-confirmed and arith-only.  CROSS-PAGE SYMBOLS (see symbols()) add
+two for BINARY h1: sym-confirmed and sym-only.
 
 ORDER CHECK, independent of the image: STRAP assigns locations in
 order, so an `agreed` location that falls OUTSIDE its two agreed
@@ -188,6 +189,86 @@ def arithmetic(lines):
                 changed = True
 
 
+# an operand that names a symbol, at the head of the statement: OP,SYM,
+# OP,SYM+.n, OP,SYM+n.m -- anything after it (index, second field) left out
+_REF = re.compile(r"^([A-Z][A-Z0-9+\-]*),([A-Z][A-Z0-9]*)((?:\+?\d*\.\d+|\+\d+(?:\.\d*)?)?)(?=$|[,(])")
+_DELTA = {}
+
+
+def op_delta(op):
+    """BINARY h1's 24-bit field minus the bit address of its operand, for
+    mnemonic `op`, from the ASSEMBLER (strap/strap_asm.py), never from a fit:
+    a half-word branch carries its opcode in bits 19-23 (B +8, BD +4, BXE
+    +26, BRZ +28), a bit-addressed or VFL field is the address itself (0).
+    None when strap_asm does not take the mnemonic (a misread one)."""
+    if op not in _DELTA:
+        import strap_asm
+        _DELTA[op] = None
+        for tail in (",T", ",T,U", ",T\n        B,U"):
+            src = "T       SYN, (8)221741.40\nU       SYN, (8)001000.00\n        %s%s\n" % (op, tail)
+            try:
+                p = strap_asm.assemble(src)
+            except Exception:
+                continue
+            if not p.words:          # a pseudo-op: no binary to predict
+                break
+            h1, t = p.words[min(p.words)] >> 40, p.symtab["T"]
+            _DELTA[op] = (h1 - t) if h1 >> 6 == t >> 6 else None
+            break
+    return _DELTA[op]
+
+
+def symbols(pages):
+    """CROSS-PAGE SYMBOLS: a BINARY h1 that names a symbol holds that
+    symbol's LOCATION, read off the line that DEFINES it -- on any of the
+    451 pages.  So a BINARY h1 the engines did not agree on is
+
+      sym-confirmed  when one of its readings equals the prediction from a
+                     defining line (NAME column, location agreed or
+                     arith-confirmed), plus the operand's offset, plus the
+                     mnemonic's opcode bits (op_delta);
+      sym-only       when nothing was read and the name has ONE location.
+
+    MCP is several assemblies (GKRUH is 002374 on printed p.42 and 230574
+    on p.260), so a name may have several locations: each is a candidate,
+    and only a reading that equals exactly one confirms.
+
+    CONFIRM ONLY, never deny: on agreed binaries (100% right on the landed
+    pages) 94 of 1,141 predictions disagree -- a symbol look-alike in the
+    statement, a misread NAME, a local name reused.  A mismatch says the
+    check is wrong far more often than the binary."""
+    fmt = lambda b: "%06o.%02o" % (b // 64, b % 64)
+    defs = collections.defaultdict(set)
+    for p in pages.values():
+        for r in p["lines"].values():
+            nm = re.sub(r"\s+", "", R.printer_charset(r["name"])).replace("_", "")
+            if r["loc"][0] in ("agreed", "arith-confirmed") and re.fullmatch(r"[A-Z][A-Z0-9]{1,7}", nm):
+                defs[nm].add(R.bit_address(r["loc"][1]))
+    for p in pages.values():
+        for r in p["lines"].values():
+            st, v = r["bin"]
+            if st not in ("conflict", "vision-only", "tesseract-only", "unread"):
+                continue
+            m = _REF.match(re.split(r"\s[-=]", R.printer_charset(r["stmt"]))[0].replace(" ", ""))
+            if not m or m.group(2) not in defs:
+                continue
+            op, sym, off = m.groups()
+            d = op_delta(op)
+            if d is None:
+                continue
+            o = 0
+            if off:
+                w, _, b = off.lstrip("+").partition(".")
+                o = int(w or 0) * 64 + int(b or 0)
+            preds = {fmt(a + o + d) for a in defs[sym]}
+            vals = v.split("|") if v else []
+            hit = [x for x in preds if x in vals]
+            if len(hit) == 1:
+                r["bin"] = ("sym-confirmed", hit[0])
+            elif not vals and len(preds) == 1:
+                r["bin"] = ("sym-only", next(iter(preds)))
+
+
 def infer_printed(pages):
     """Fill unread headers from neighbours when both sides agree on the offset."""
     keys = sorted(pages)
@@ -215,6 +296,7 @@ def load_all(all_dir=ALL):
         if not os.path.exists(geom[:-5] + ".tes.tsv"):
             continue                  # tools/read_every_page.py still writing it
         pages[(int(m.group(1)), int(m.group(2)))] = read_page(geom[:-5])
+    symbols(pages)
     return infer_printed(pages)
 
 
@@ -292,7 +374,7 @@ def score(pages):
                 st, v = r[fld] if r else ("not-paired", "")
                 c[(fld, st, "n")] += 1
                 if st in ("agreed", "agreed-out-of-order", "vision-only", "tesseract-only",
-                          "arith-confirmed", "arith-only"):
+                          "arith-confirmed", "arith-only", "sym-confirmed", "sym-only"):
                     c[(fld, st, "ok")] += (v == want)
                 elif st == "conflict":
                     c[(fld, st, "ok")] += want in v.split("|")
@@ -305,7 +387,8 @@ def score(pages):
         tot = sum(n for (f, s, k), n in c.items() if f == fld and k == "n")
         name = {"loc": "LOCATION", "bin": "BINARY h1", "bin2": "BINARY h2"}[fld]
         print(f"  {name}  ({tot} rows with truth)")
-        for st in ("agreed", "agreed-out-of-order", "arith-confirmed", "arith-only", "conflict",
+        for st in ("agreed", "agreed-out-of-order", "arith-confirmed", "arith-only",
+                   "sym-confirmed", "sym-only", "conflict",
                    "vision-only", "tesseract-only", "unread", "not-paired"):
             n = c[(fld, st, "n")]
             if not n:

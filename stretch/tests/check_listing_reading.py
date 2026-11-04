@@ -18,7 +18,8 @@ CHECKS
                        329 is absent from the scan)
   tables_fresh         the committed tables are what the cache produces
   agreed_vs_deck       every `agreed` field (LOCATION, BINARY h1 and h2),
-                       and every `arith-confirmed` LOCATION,
+                       every `arith-confirmed` LOCATION and every
+                       `sym-confirmed` BINARY h1,
                        on a landed page, nine of
                        nine characters, is the deck's -- or the ink was
                        inspected and tests/vision_adjudicated.tsv says the
@@ -39,6 +40,7 @@ MEASURED INJECTIONS (python3 check_listing_reading.py --inject):
                                                       FAIL agreed_vs_deck
     deck LOCATION on the first arith-confirmed row    FAIL agreed_vs_deck
       (proves the check reaches the rows the arithmetic confirms)
+    deck BINARY h1 on the first sym-confirmed row     FAIL agreed_vs_deck
     deck BINARY h2 p.88 line 6, 004633.30 -> 004633.31
                                                       FAIL agreed_vs_deck
     PDF p.120 header 113 -> 112 (PDF p.119's number)  FAIL printed_numbers
@@ -89,7 +91,10 @@ FLOORS = {("loc", "agreed"): (0.60, 0.999), ("bin", "agreed"): (0.55, 0.998),
           ("bin2", "agreed"): (0.65, 0.998), ("bin2", "vision-only"): (0.0, 0.97),
           # LOCATION ARITHMETIC (tools/listing_reading.py arithmetic()),
           # 2026-11-04: arith-confirmed 25.1% / 100.00%, arith-only 1.1% / 95.16%
-          ("loc", "arith-confirmed"): (0.20, 0.998), ("loc", "arith-only"): (0.0, 0.90)}
+          ("loc", "arith-confirmed"): (0.20, 0.998), ("loc", "arith-only"): (0.0, 0.90),
+          # CROSS-PAGE SYMBOLS (tools/listing_reading.py symbols()),
+          # 2026-11-04: sym-confirmed 150 rows (2.9%) / 100.00%, sym-only 7 / 7
+          ("bin", "sym-confirmed"): (0.02, 0.998), ("bin", "sym-only"): (0.0, 0.85)}
 TEXT_FLOOR = 0.38
 # tools/statement_repair.py, leave-one-page-out (2026-11-03): the column-
 # split, repaired STATEMENT equals the deck's on 54.2% of 6,392 lines; the
@@ -177,11 +182,12 @@ def main(root=ROOT):
                 st, v = r[fld] if r else ("not-paired", "")
                 c[(fld, "rows")] += 1
                 c[(fld, st)] += 1
-                if st in ("agreed", "vision-only", "arith-confirmed", "arith-only"):
+                if st in ("agreed", "vision-only", "arith-confirmed", "arith-only",
+                          "sym-confirmed", "sym-only"):
                     c[(fld, st, "ok")] += v == want
-                # a value the arithmetic CONFIRMED is held to the same
-                # standard as one both engines agreed on
-                if st in ("agreed", "arith-confirmed") and v != want:
+                # a value the arithmetic or a defining line CONFIRMED is
+                # held to the same standard as one both engines agreed on
+                if st in ("agreed", "arith-confirmed", "sym-confirmed") and v != want:
                     key = (p["printed"], {"loc": "location", "bin": "binary", "bin2": "binary2"}[fld], want, v)
                     if key in adj:
                         used += 1
@@ -189,7 +195,8 @@ def main(root=ROOT):
                         continue
                     print(f"FAIL agreed_vs_deck: p.{p['printed']} line {line} "
                           f"{ {'loc': 'LOCATION', 'bin': 'BINARY h1', 'bin2': 'BINARY h2'}[fld]}: deck {want}, " +
-                          (f"Vision AND tesseract read {v}" if st == "agreed" else f"the arithmetic confirmed {v}"))
+                          {"agreed": f"Vision AND tesseract read {v}", "arith-confirmed": f"the arithmetic confirmed {v}",
+                           "sym-confirmed": f"the defining line confirmed {v}"}[st])
                     fails += 1
     ok(used == len(adj), "agreed_vs_deck",
        f"{len(landed)} landed pages; {used} of {len(adj)} adjudicated misreads still occur")
@@ -262,6 +269,34 @@ def inject():
         print(f"-- injected: p.{page} line {line} LOCATION {loc} ({want_st}) -> {bad}")
         res.append((f"deck {want_st} location p.{page} line {line}", main(td)))
         shutil.rmtree(td)
+
+    # BINARY h1 on the first sym-confirmed row: its last octal digit
+    td = scratch()
+    pages = listing_reading.load_all(os.path.join(td, "docs", "vision", "all"))
+    target = None
+    for (vol, pdf), p in sorted(pages.items()):
+        if target or vol != 1 or not p["printed"]:
+            continue
+        deck = os.path.join(td, "decks", "mcp_bootstrap_p%d.strap" % p["printed"])
+        if not os.path.exists(deck):
+            continue
+        s = open(deck).read()
+        for line, r in sorted(p["lines"].items()):
+            b1 = r["bin"][1]
+            if r["bin"][0] != "sym-confirmed":
+                continue
+            bad = b1[:-1] + ("1" if b1[-1] != "1" else "2")
+            pat = r"^(!CHECK\s+[0-7.]+\s*\|\s*)" + re.escape(b1) + r"(\s[^\n]*\|\s*line\s+%d\b)" % line
+            t = re.sub(pat, r"\g<1>" + bad + r"\g<2>", s, count=1, flags=re.M)
+            if t != s:
+                target = (p["printed"], line, b1, bad, t, deck)
+                break
+    assert target, "h1 injection found no row to change"
+    page, line, b1, bad, t, deck = target
+    open(deck, "w").write(t)
+    print(f"-- injected: p.{page} line {line} BINARY h1 {b1} (sym-confirmed) -> {bad}")
+    res.append((f"deck sym-confirmed h1 p.{page} line {line}", main(td)))
+    shutil.rmtree(td)
 
     # BINARY h2: the first agreed half word 2 whose deck !CHECK prints a
     # full word; its last octal digit is changed
