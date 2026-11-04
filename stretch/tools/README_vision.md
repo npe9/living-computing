@@ -253,6 +253,38 @@ assembler: transcribe, assemble, and compare against the BINARY the
 two engines read at ~99.9%. That closes the loop the image cannot,
 including C against 0 in the hex byte.
 
+## LOCATION ARITHMETIC: THE PROGRAM CHECKS ITS OWN READING (2026-11-04)
+
+Each instruction's LOCATION is the previous one's plus its length: 32
+bits for a half word, 64 when BINARY h2 is printed. On landed pages it
+holds for 4,966 of 4,988 consecutive instruction lines (the rest are
+origin changes and data). `tools/listing_reading.py arithmetic()` uses
+it as a THIRD witness, independent of the glyphs:
+
+* `arith-confirmed`: a non-agreed LOCATION (conflict, vision-only,
+  tesseract-only) whose value equals the one predicted from an agreed
+  (or already confirmed) neighbour. In a conflict it picks the value.
+* `arith-only`: no engine read the LOCATION; the neighbour supplies it.
+
+Repeated to a fixed point, so a confirmed row confirms the next.
+
+| status | LOCATION share / right, 164 landed pages |
+|---|---|
+| agreed | 67.8% / 100.00% |
+| **arith-confirmed** | **25.1% / 100.00%** |
+| arith-only | 1.1% / 95.16% |
+| vision-only (the residue) | 1.4% / 87.65% |
+
+Agreed plus arith-confirmed is 92.9% of locations at 100%. On all 451
+pages the arithmetic confirms 3,875 locations and supplies 492. What
+`vision-only` keeps is what the arithmetic would NOT confirm, so its
+accuracy fell from 99.03% to 87.65%: that row is now a list of places to
+look. Binary has no such rule; the cross-page check below gives it one.
+
+NEXT (cross-page symbols): an operand naming a symbol must carry, in its
+BINARY, the LOCATION of that symbol's defining line anywhere in the 451
+pages -- the only check that ties the unfinished pages to each other.
+
 ## REPAIRING THE STATEMENT DRAFT (2026-11-03)
 
 `tools/statement_repair.py` turns a draft into a candidate deck card

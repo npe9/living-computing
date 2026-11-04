@@ -33,6 +33,9 @@ framings.  So two Vision readings that agree are still `vision-only`;
   tesseract-only  only tesseract read it
   unread          neither
 
+LOCATION ARITHMETIC (see arithmetic()) adds two statuses for LOCATION:
+arith-confirmed and arith-only.
+
 ORDER CHECK, independent of the image: STRAP assigns locations in
 order, so an `agreed` location that falls OUTSIDE its two agreed
 neighbours, while they are in order with each other, is demoted to
@@ -132,7 +135,57 @@ def read_page(stem):
         (_, a), (line, v), (_, b) = ag[i - 1], ag[i], ag[i + 1]
         if a <= b and not a <= v <= b:
             page["lines"][line]["loc"] = ("agreed-out-of-order", page["lines"][line]["loc"][1])
+    arithmetic(page["lines"])
     return page
+
+
+def _length(row):
+    """An instruction's length in bits from its printed shape: a full word
+    prints half word 2, a half word does not."""
+    return 64 if row["bin2"][1] else 32
+
+
+def arithmetic(lines):
+    """LOCATION ARITHMETIC: line n+1's location is line n's plus n's length.
+
+    Measured on the landed pages: 4,966 of 4,988 consecutive instruction
+    lines step by exactly their printed length (the 22 that do not are
+    half words before a word boundary).  So a location the engines did
+    NOT agree on is
+
+      arith-confirmed  when one of its readings equals the prediction from
+                       a trusted neighbour (1,440 of 1,440 right on the
+                       landed pages);
+      arith-only       when nothing was read and a trusted neighbour
+                       predicts it (59 of 62 right).
+
+    Trusted = agreed or arith-confirmed.  Predicted forwards from the line
+    above and backwards from the line below, repeated until nothing
+    changes, so a confirmation can carry along a run of lines."""
+    fmt = lambda b: "%06o.%02o" % (b // 64, b % 64)
+    trusted = lambda r: r["loc"][0] in ("agreed", "arith-confirmed") and r["bin"][1]
+    changed = True
+    while changed:
+        changed = False
+        for n in sorted(lines):
+            r = lines[n]
+            st, v = r["loc"]
+            if st in ("agreed", "agreed-out-of-order", "arith-confirmed", "arith-only"):
+                continue
+            preds = set()
+            a, b = lines.get(n - 1), lines.get(n + 1)
+            if a and trusted(a):
+                preds.add(fmt(R.bit_address(a["loc"][1]) + _length(a)))
+            if b and trusted(b) and r["bin"][1]:
+                preds.add(fmt(R.bit_address(b["loc"][1]) - _length(r)))
+            vals = v.split("|") if v else []
+            hit = [p for p in preds if p in vals]
+            if len(hit) == 1:
+                r["loc"] = ("arith-confirmed", hit[0])
+                changed = True
+            elif not vals and len(preds) == 1:
+                r["loc"] = ("arith-only", next(iter(preds)))
+                changed = True
 
 
 def infer_printed(pages):
@@ -238,7 +291,8 @@ def score(pages):
                     continue
                 st, v = r[fld] if r else ("not-paired", "")
                 c[(fld, st, "n")] += 1
-                if st in ("agreed", "agreed-out-of-order", "vision-only", "tesseract-only"):
+                if st in ("agreed", "agreed-out-of-order", "vision-only", "tesseract-only",
+                          "arith-confirmed", "arith-only"):
                     c[(fld, st, "ok")] += (v == want)
                 elif st == "conflict":
                     c[(fld, st, "ok")] += want in v.split("|")
@@ -251,8 +305,8 @@ def score(pages):
         tot = sum(n for (f, s, k), n in c.items() if f == fld and k == "n")
         name = {"loc": "LOCATION", "bin": "BINARY h1", "bin2": "BINARY h2"}[fld]
         print(f"  {name}  ({tot} rows with truth)")
-        for st in ("agreed", "agreed-out-of-order", "conflict", "vision-only",
-                   "tesseract-only", "unread", "not-paired"):
+        for st in ("agreed", "agreed-out-of-order", "arith-confirmed", "arith-only", "conflict",
+                   "vision-only", "tesseract-only", "unread", "not-paired"):
             n = c[(fld, st, "n")]
             if not n:
                 continue

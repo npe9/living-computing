@@ -17,7 +17,8 @@ CHECKS
                        PDF + 249 then + 250, never going back (printed
                        329 is absent from the scan)
   tables_fresh         the committed tables are what the cache produces
-  agreed_vs_deck       every `agreed` field (LOCATION, BINARY h1 and h2)
+  agreed_vs_deck       every `agreed` field (LOCATION, BINARY h1 and h2),
+                       and every `arith-confirmed` LOCATION,
                        on a landed page, nine of
                        nine characters, is the deck's -- or the ink was
                        inspected and tests/vision_adjudicated.tsv says the
@@ -36,6 +37,8 @@ MEASURED INJECTIONS (python3 check_listing_reading.py --inject):
     control, nothing changed                          PASS
     deck LOCATION p.83 line 14, 004632.00 -> 004631.00
                                                       FAIL agreed_vs_deck
+    deck LOCATION on the first arith-confirmed row    FAIL agreed_vs_deck
+      (proves the check reaches the rows the arithmetic confirms)
     deck BINARY h2 p.88 line 6, 004633.30 -> 004633.31
                                                       FAIL agreed_vs_deck
     PDF p.120 header 113 -> 112 (PDF p.119's number)  FAIL printed_numbers
@@ -79,8 +82,14 @@ ADJUDICATED = os.path.join(HERE, "vision_adjudicated.tsv")
 # 98.50%.  NAME+STATEMENT draft: 41.5% of 6,001 lines end with the deck's
 # statement (spaces and remark dropped).
 FLOORS = {("loc", "agreed"): (0.60, 0.999), ("bin", "agreed"): (0.55, 0.998),
-          ("loc", "vision-only"): (0.0, 0.98), ("bin", "vision-only"): (0.0, 0.98),
-          ("bin2", "agreed"): (0.65, 0.998), ("bin2", "vision-only"): (0.0, 0.97)}
+          # LOCATION vision-only is now the RESIDUE the arithmetic would
+          # not confirm: 81 rows, 87.65% (it was 1,032 rows at 99.03% before
+          # arith-confirmed took the rest) -- so its floor is the residue's
+          ("loc", "vision-only"): (0.0, 0.85), ("bin", "vision-only"): (0.0, 0.98),
+          ("bin2", "agreed"): (0.65, 0.998), ("bin2", "vision-only"): (0.0, 0.97),
+          # LOCATION ARITHMETIC (tools/listing_reading.py arithmetic()),
+          # 2026-11-04: arith-confirmed 25.1% / 100.00%, arith-only 1.1% / 95.16%
+          ("loc", "arith-confirmed"): (0.20, 0.998), ("loc", "arith-only"): (0.0, 0.90)}
 TEXT_FLOOR = 0.38
 # tools/statement_repair.py, leave-one-page-out (2026-11-03): the column-
 # split, repaired STATEMENT equals the deck's on 54.2% of 6,392 lines; the
@@ -168,17 +177,19 @@ def main(root=ROOT):
                 st, v = r[fld] if r else ("not-paired", "")
                 c[(fld, "rows")] += 1
                 c[(fld, st)] += 1
-                if st in ("agreed", "vision-only"):
+                if st in ("agreed", "vision-only", "arith-confirmed", "arith-only"):
                     c[(fld, st, "ok")] += v == want
-                if st == "agreed" and v != want:
+                # a value the arithmetic CONFIRMED is held to the same
+                # standard as one both engines agreed on
+                if st in ("agreed", "arith-confirmed") and v != want:
                     key = (p["printed"], {"loc": "location", "bin": "binary", "bin2": "binary2"}[fld], want, v)
                     if key in adj:
                         used += 1
                         c[(fld, st, "ok")] += 1
                         continue
                     print(f"FAIL agreed_vs_deck: p.{p['printed']} line {line} "
-                          f"{ {'loc': 'LOCATION', 'bin': 'BINARY h1', 'bin2': 'BINARY h2'}[fld]}: deck {want}, "
-                          f"Vision AND tesseract read {v}")
+                          f"{ {'loc': 'LOCATION', 'bin': 'BINARY h1', 'bin2': 'BINARY h2'}[fld]}: deck {want}, " +
+                          (f"Vision AND tesseract read {v}" if st == "agreed" else f"the arithmetic confirmed {v}"))
                     fails += 1
     ok(used == len(adj), "agreed_vs_deck",
        f"{len(landed)} landed pages; {used} of {len(adj)} adjudicated misreads still occur")
@@ -222,34 +233,35 @@ def inject():
     res.append(("control", main(td)))
     shutil.rmtree(td)
 
-    td = scratch()
-    pages = listing_reading.load_all(os.path.join(td, "docs", "vision", "all"))
-    # the first agreed row whose truth is a deck !CHECK line (early pages
-    # keep theirs in tests/verify_*.py, which this must not edit)
-    target = None
-    for (vol, pdf), p in sorted(pages.items()):
-        if target or vol != 1 or not p["printed"]:
-            continue
-        deck = os.path.join(td, "decks", "mcp_bootstrap_p%d.strap" % p["printed"])
-        if not os.path.exists(deck):
-            continue
-        s = open(deck).read()
-        for line, r in sorted(p["lines"].items()):
-            loc = r["loc"][1]
-            if r["loc"][0] != "agreed":
+    for want_st in ("agreed", "arith-confirmed"):
+        td = scratch()
+        pages = listing_reading.load_all(os.path.join(td, "docs", "vision", "all"))
+        # the first row of that status whose truth is a deck !CHECK line (early pages
+        # keep theirs in tests/verify_*.py, which this must not edit)
+        target = None
+        for (vol, pdf), p in sorted(pages.items()):
+            if target or vol != 1 or not p["printed"]:
                 continue
-            bad = loc[:5] + ("1" if loc[5] != "1" else "2") + loc[6:]
-            t = re.sub(r"^(!CHECK\s+)" + re.escape(loc) + r"(\s*\|[^\n]*\|\s*line\s+%d\b)" % line,
-                       r"\g<1>" + bad + r"\g<2>", s, count=1, flags=re.M)
-            if t != s:
-                target = (p["printed"], line, loc)
-                break
-    assert target, "deck injection found no row to change"
-    page, line, loc = target
-    open(deck, "w").write(t)
-    print(f"-- injected: p.{page} line {line} LOCATION {loc} -> {bad}")
-    res.append((f"deck location p.{page} line {line}", main(td)))
-    shutil.rmtree(td)
+            deck = os.path.join(td, "decks", "mcp_bootstrap_p%d.strap" % p["printed"])
+            if not os.path.exists(deck):
+                continue
+            s = open(deck).read()
+            for line, r in sorted(p["lines"].items()):
+                loc = r["loc"][1]
+                if r["loc"][0] != want_st:
+                    continue
+                bad = loc[:5] + ("1" if loc[5] != "1" else "2") + loc[6:]
+                t = re.sub(r"^(!CHECK\s+)" + re.escape(loc) + r"(\s*\|[^\n]*\|\s*line\s+%d\b)" % line,
+                           r"\g<1>" + bad + r"\g<2>", s, count=1, flags=re.M)
+                if t != s:
+                    target = (p["printed"], line, loc)
+                    break
+        assert target, "deck injection found no row to change"
+        page, line, loc = target
+        open(deck, "w").write(t)
+        print(f"-- injected: p.{page} line {line} LOCATION {loc} ({want_st}) -> {bad}")
+        res.append((f"deck {want_st} location p.{page} line {line}", main(td)))
+        shutil.rmtree(td)
 
     # BINARY h2: the first agreed half word 2 whose deck !CHECK prints a
     # full word; its last octal digit is changed

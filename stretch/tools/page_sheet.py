@@ -10,6 +10,8 @@ status from docs/vision/listing_reading.tsv:
     =  agreed (Vision and tesseract)       ~  Vision only
     ?  conflict, every value shown         t  tesseract only
     !  agreed but out of order             .  unread
+    +  one engine's value, confirmed by     a  no engine read it; the
+       location arithmetic                     arithmetic supplies it
 
 Under each draft, "->" is tools/statement_repair.py's CANDIDATE CARD:
 label (from the NAME+STATEMENT crop, which keeps one-letter name
@@ -40,7 +42,7 @@ sys.path.insert(0, HERE)
 import statement_repair     # noqa: E402
 
 MARK = {"agreed": "=", "vision-only": "~", "conflict": "?", "tesseract-only": "t",
-        "agreed-out-of-order": "!", "unread": "."}
+        "agreed-out-of-order": "!", "unread": ".", "arith-confirmed": "+", "arith-only": "a"}
 HEX_FIX = str.maketrans({"O": "0", "Q": "0", "D": "0", "I": "1", "L": "1", "|": "1"})
 
 

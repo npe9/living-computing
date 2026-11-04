@@ -16479,3 +16479,8 @@ Statement repair (tools/statement_repair.py): 54.2% of statements and
 71.6% of labels exact, leave-one-page-out; either of two Vision drafts
 66.3%. tools/page_sheet.py PRINTED prints the candidate cards. NEXT is
 the assembler choosing between candidates against the agreed binary.
+Location arithmetic (2026-11-04): loc[n+1] = loc[n] + 32 or 64 bits
+confirms a single-engine or conflicting LOCATION from its agreed
+neighbour -- 25.1% of landed rows at 100.00%, so agreed + confirmed =
+92.9% at 100%. NEXT: cross-page symbols -- a reference's binary address
+equals the defining label's location, over all 451 pages.
