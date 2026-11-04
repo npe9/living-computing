@@ -1,0 +1,39 @@
+0.0770	0.5244	1.000	combine integer and bit values, and set bit value to	0.3853	0.0191
+0.0785	0.1034	1.000	the operator code from the coded expression and get	0.3891	0.0161
+0.0915	0.1034	1.000	both the section entry and the operand type from the	0.3853	0.0161
+0.0945	0.5263	1.000	zero. Skip the pointer over the padding in the coded	0.3891	0.0131
+0.1061	0.1034	1.000	table. Then after picking up the datum number from	0.3910	0.0176
+0.1076	0.5263	1.000	expression. Put integer and bit values into VALUE's	0.3966	0.0146
+0.1206	0.5282	1.000	output words, Sini and Sinb.	0.2086	0.0189
+0.1221	0.1053	1.000	the coded expression and getting the location of the	0.3759	0.0146
+0.1394	0.1053	1.000	right and/or left operand if needed, perform the	0.3571	0.0118
+0.1512	0.5282	1.000	Box 9	0.0470	0.0174
+0.1539	0.1053	1.000	indicated operation. When there is no other opera-	0.3778	0.0103
+0.1685	0.1053	1.000	tor, go to box 6.	0.1222	0.0133
+0.1830	0.5301	1.000	Pick up datum prefix (usually bits five, six, and	0.3534	0.0146
+0.1962	0.5282	1.000	seven in the coded expression), space the pointer	0.3628	0.0145
+0.1991	0.1034	1.000	Bоx 6	0.0470	0.0131
+0.2121	0.5282	1.000	over the prefix and branch according to the prefix.	0.3741	0.0132
+0.2252	0.1053	1.000	Reset $11 (current location in workspace) with $10	0.3722	0.0133
+0.2397	0.7350	1.000	Type of Datum	0.1128	0.0161
+0.2411	0.5770	1.000	Datum Prefix	0.1016	0.0148
+0.2427	0.1071	1.000	(location of current heading). If S/X type is unknown,	0.3947	0.0116
+0.2545	0.1032	1.000	set on trouble bit, Vtbsx. If no values were computed,	0.4026	0.0179
+0.2674	0.7331	1.000	Symbol	0.0583	0.0189
+0.2703	0.1034	1.000	go to Vz. Mark index as existing if Vvspx is on. If	0.3872	0.0131
+0.2703	0.5996	1.000	100	0.0301	0.0131
+0.2818	0.7349	1.000	Subexpression	0.1091	0.0192
+0.2828	0.1051	1.000	Vvspx is off and Vvabs is on (indicating result is to	0.3783	0.0191
+0.2863	0.5996	1.000	101	0.0301	0.0131
+0.2976	0.7348	1.000	Absolute	0.0699	0.0182
+0.2994	0.1053	1.000	be made), set signs of the integer and of the bit values	0.4004	0.0131
+0.2994	0.6015	1.000	110	0.0301	0.0145
+0.3149	0.1052	1.000	to plus, and continue. If the result is not to be made	0.3911	0.0126
+0.3154	0.7350	1.000	Long	0.0470	0.0131
+0.3154	0.5996	1.000	111--	0.0451	0.0131
+0.3255	0.1861	1.000	i.e., Vvint is off, then exit; otherwise	0.2914	0.0191
+0.3285	0.7350	1.000	System symbol	0.1109	0.0145
+0.3285	0.5996	1.000	11100	0.0470	0.0145
+0.3308	0.1050	1.000	an integer,	0.0850	0.0118
+0.9331	0.8402	1.000	VALUE	0.0414	0.0102
+0.9346	0.9060	1.000	59	0.0150	0.0073

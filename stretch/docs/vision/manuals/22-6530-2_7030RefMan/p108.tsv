@@ -1,0 +1,110 @@
+0.0609	0.5075	1.000	given in case of data errors and can be treated ac-	0.3929	0.0147
+0.0624	0.0940	1.000	of a given type. Only one such device, however, may	0.3853	0.0146
+0.0770	0.5056	1.000	cordingly.	0.0771	0.0145
+0.0785	0.0940	1.000	operate at a time over a single channel, and the pro-	0.3853	0.0145
+0.0900	0.5244	1.000	In order to avoid exceeding exchange capacity, the	0.3759	0.0147
+0.0904	0.0938	1.000	gram selects which device is connected to the control	0.3876	0.0173
+0.1061	0.5094	1.000	program can keep track of the amount of data flow	0.3891	0.0146
+0.1090	0.0940	1.000	unit at any one time. Thus, there may be more ex-	0.3853	0.0131
+0.1221	0.5075	1.000	in process by adding the byte weights of all units op	0.3910	0.0146
+0.1235	0.0940	1.000	ternal devices connected to the system than there are	0.3872	0.0131
+0.1366	0.5075	1.000	erating in the form of a byte weight count. The scale	0.3929	0.0146
+0.1378	0.0939	1.000	channels, but this does not increase the amount of	0.3892	0.0137
+0.1526	0.5075	1.000	of byte weights is defined such that a byte weight	0.3929	0.0147
+0.1555	0.0940	1.000	simultaneous operation.	0.1711	0.0132
+0.1672	0.5075	1.000	count of 256 represents the maximum safe load on	0.3910	0.0147
+0.1783	0.5092	1.000	the exchange. The total data transmission rate of the	0.3914	0.0208
+0.1933	0.0940	1.000	Simultaneity of Data Transfer	0.2143	0.0131
+0.1962	0.5094	1.000	exchange corresponding to this byte weight count is	0.3910	0.0160
+0.2121	0.5094	1.000	not fixed and depends upon the particular set of units	0.3910	0.0146
+0.2151	0.0959	1.000	The amount of simultaneous reading and writing de-	0.3835	0.0131
+0.2296	0.0939	1.000	pends upon the number of exchange channels and	0.3874	0.0161
+0.2297	0.5094	1.000	used.	0.0376	0.0116
+0.2427	0.5263	1.000	Since the byte weight of a unit reflects only the rate	0.3741	0.0145
+0.2429	0.0938	1.000	upon the data transmission rates of the units attached.	0.3875	0.0175
+0.2587	0.5094	1.000	of transfer of bytes of data between the exchange and	0.3910	0.0131
+0.2602	0.0959	1.000	As to the data transmission rates, the limitation can	0.3853	0.0132
+0.2733	0.5094	1.000	the units, it is fixed for a given type of unit and does	0.3910	0.0146
+0.2761	0.0959	1.000	be imposed either by the transmission of bytes of data	0.3853	0.0146
+0.2892	0.5094	1.000	not depend upon the mode of operation. Normally	0.3910	0.0145
+0.2921	0.0959	1.000	between the exchange and the units or by the trans-	0.3872	0.0131
+0.3035	0.5093	1.000	the sum of the byte weights indicates when exchange	0.3912	0.0158
+0.3067	0.0940	1.000	mission of data words and control words between the	0.3891	0.0116
+0.3197	0.5075	1.000	capacity is exceeded. The byte weight system, how-	0.3947	0.0161
+0.3227	0.0921	1.000	exchange and core storage.	0.1917	0.0146
+0.3358	0.1109	1.000	The limitations on the simultaneity of data transfer	0.3722	0.0145
+0.3358	0.5094	1.000	ever, does not reflect the load imposed on the exchange	0.3929	0.0131
+0.3479	0.1505	0.500	nă the unit ie bye wright of al uni im!	0.3254	0.0705
+0.3482	0.0938	1.000	imposed by the transmssion of data between the ex-	0.3894	0.0191
+0.3503	0.5113	1.000	by the transfer of data words for the zero-byte-weight	0.3910	0.0146
+0.3609	0.5110	1.000	units and the fetching of control words for chained	0.3897	0.0215
+0.3677	0.0959	1.000	change and the units is expressed by means of the	0.3872	0.0132
+0.3805	0.5112	1.000	operations. When extensive chaining is employed or	0.3893	0.0149
+0.3821	0.0959	1.000	byte weight system. The byte weight of a unit indi-	0.3872	0.0147
+0.3967	0.0959	1.000	cates the relative amount of exchange capacity which	0.3872	0.0147
+0.3967	0.5113	1.000	many zero-byte-weight units are operated, it is possible	0.3910	0.0147
+0.4112	0.5113	1.000	that the word transfer between the exchange and the	0.3910	0.0133
+0.4142	0.0959	1.000	is necessary to service the unit. It depends upon the	0.3872	0.0131
+0.4273	0.5113	1.000	core storage may limit the capacity of the exchange.	0.3684	0.0131
+0.4288	0.0959	1.000	shortest interval in which the exchange may have to	0.3872	0.0131
+0.4418	0.5263	1.000	In order to facilitate the evaluation of the total in-	0.3759	0.0118
+0.4433	0.0940	1.000	respond to the unit's byte request and is not necessarily	0.3891	0.0146
+0.4563	0.5093	1.000	stantaneous rate of transmission of information be-	0.3912	0.0137
+0.4573	0.0939	1.000	proportional to the data transmission rate of the unit.	0.3874	0.0153
+0.4724	0.5094	1.000	tween the exchange and core storage, a word weight is	0.3929	0.0131
+0.4738	0.1090	1.000	As far as estimation of the maximum data flow	0.3741	0.0116
+0.4869	0.5113	1.000	defined for each external unit, including the zero-byte-	0.3910	0.0146
+0.4897	0.0959	1.000	between the exchange and the units is concerned, the	0.3872	0.0133
+0.5002	0.5111	1.000	weight units. The word weight of a unit is an indica-	0.3913	0.0182
+0.5021	0.0957	1.000	external units can be classified into two types: non-	0.3875	0.0175
+0.5188	0.5094	1.000	tion of the unit's data transmission rate and is equal to	0.3910	0.0118
+0.5203	0.0959	1.000	buffered units whose operation cannot be interrupted	0.3853	0.0131
+0.5333	0.5075	1.000	2560 divided by (T - 11), where T' is the unit's mini-	0.3947	0.0161
+0.5348	0.0959	1.000	without loss of information, and units which are buf-	0.3853	0.0131
+0.5479	0.5094	1.000	mum instantaneous word period expressed in micro-	0.3929	0.0146
+0.5509	0.0940	1.000	fered or because of some other reason can be delayed	0.3872	0.0131
+0.5639	0.5094	1.000	seconds per word. When a unit is engaged in chained	0.3910	0.0145
+0.5654	0.0940	1.000	in case of conflict.	0.1297	0.0131
+0.5799	0.5094	1.000	reading or writing, its word weight has to be doubled.	0.3891	0.0146
+0.5814	0.1090	1.000	The latter type of units (e.g., card readers, card	0.3741	0.0132
+0.5945	0.5132	1.000	The word weight count, which is the sum of the word	0.3872	0.0146
+0.5973	0.0959	1.000	punches, consoles, printers) are flexible in timing their	0.3872	0.0133
+0.6087	0.5112	1.000	weights of all units reading and writing, then is an in-	0.3912	0.0165
+0.6118	0.0940	1.000	data transmission and have a byte weight of zero.	0.3891	0.0132
+0.6235	0.5113	1.000	dication of the amount of information that is cur-	0.3910	0.0131
+0.6264	0.0940	1.000	When the exchange cannot service their byte requests,	0.3891	0.0146
+0.6395	0.5093	1.000	rently being transmitted between the exchange and	0.3930	0.0165
+0.6439	0.0940	1.000	their operation is interrupted. This interruption,	0.3891	0.0102
+0.6555	0.5113	1.000	core storage. As in the case of the byte weight system,	0.3929	0.0146
+0.6566	0.0939	1.000	however, is not associated with any loss of informa-	0.3893	0.0143
+0.6700	0.5113	1.000	the scale of the word weight system is defined such	0.3910	0.0146
+0.6730	0.0940	1.000	tion. As soon as the excess load is removed and the	0.3891	0.0116
+0.6860	0.5113	1.000	that a word weight count of 256 represents the maxi-	0.3891	0.0146
+0.6875	0.0940	1.000	exchange has time to spare, the mechanism of the unit	0.3891	0.0146
+0.7020	0.0940	1.000	is automatically restarted and the original reading or	0.3891	0.0146
+0.7020	0.5113	1.000	mum safe load on the exchange. Whenever the ex-	0.3910	0.0131
+0.7166	0.5113	1.000	change capacity to communicate with core storage is	0.3929	0.0146
+0.7179	0.0940	1.000	writing operation is continued. The interruption does	0.3891	0.0147
+0.7311	0.5113	1.000	exceeded and a data word or a control word is not	0.3929	0.0131
+0.7339	0.0940	1.000	not have any effect on the completion of the opera-	0.3910	0.0132
+0.7427	0.5110	1.000	transferred, a unit-check indication for that channel	0.3933	0.0201
+0.7485	0.0940	1.000	tion, and no indication is given to the computer to this	0.3891	0.0146
+0.7614	0.5093	1.000	is given. The communications between the exchange	0.3949	0.0163
+0.7776	0.5094	1.000	and core storage limit the maximum instantaneous	0.3947	0.0146
+0.7791	0.1071	1.000	In the non-buffered type of external units (e.g.,	0.3778	0.0131
+0.7921	0.5094	1.000	information transmission rate of the exchange to	0.3947	0.0131
+0.7951	0.0940	1.000	tape units), data are transmitted continuously between	0.3891	0.0131
+0.8096	0.0940	1.000	the external unit and core storage. These units have	0.3891	0.0131
+0.8096	0.5113	1.000	100,000 words per second.	0.1823	0.0131
+0.8225	0.5300	1.000	Both the above weight systems assume that the units	0.3743	0.0159
+0.8241	0.0940	1.000	non-zero weights. When exchange capacity is ex-	0.3891	0.0147
+0.8387	0.5113	1.000	are connected to the exchange in such a way that the	0.3929	0.0132
+0.8400	0.0921	1.000	ceeded, such units cannot interrupt their operation,	0.3929	0.0133
+0.8529	0.5131	1.000	unit having the highest byte and word weights has	0.3912	0.0167
+0.8561	0.0921	1.000	and, as a result, some data may be lost. When this	0.3929	0.0131
+0.8691	0.5113	1.000	the lowest channel address of the system, with the	0.3929	0.0132
+0.8706	0.0940	1.000	happens, a unit-check indication is automatically sent	0.3910	0.0146
+0.8852	0.5113	1.000	weights decreasing in the order of ascending chan-	0.3929	0.0146
+0.8866	0.0921	1.000	to the computer. This indication is identical to that	0.3910	0.0131
+0.9215	0.8816	1.000	105	0.0207	0.0102
+0.9230	0.7274	1.000	IBM 7619 Exchange	0.1241	0.0102

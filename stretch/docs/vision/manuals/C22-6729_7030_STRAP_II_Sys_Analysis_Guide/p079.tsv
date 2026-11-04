@@ -1,0 +1,88 @@
+0.0799	0.8496	1.000	GETCHA	0.0696	0.0133
+0.1422	0.1033	1.000	LINKAGE	0.0716	0.0122
+0.1424	0.5301	1.000	character appearing in the name field of the card	0.3628	0.0116
+0.1570	0.5301	1.000	image is blanked out.	0.1598	0.0116
+0.1715	0.5470	1.000	A comment character appearing in columns 2-9 of	0.3722	0.0116
+0.1730	0.1015	1.000	The calling sequence is: SIC, Getchz; B, GETCHA.	0.3853	0.0146
+0.1860	0.5301	1.000	a continuation card causes the remaining characters	0.3872	0.0116
+0.2006	0.5301	1.000	on the card to be treated as a comment. The name	0.3797	0.0116
+0.2019	0.1033	1.000	DETAILS	0.0715	0.0119
+0.2142	0.5300	1.000	may be continued on the following continuation cards	0.3874	0.0142
+0.2297	0.5301	1.000	of that card block. The characters from the statement	0.4079	0.0131
+0.2311	0.1034	1.000	GETCHA performs the following functions:	0.3158	0.0116
+0.2456	0.1203	1.000	1. This subroutine gives the characters of the input	0.3872	0.0116
+0.2456	0.5282	1.000	field of these subsequent continuation cards are	0.3534	0.0116
+0.2602	0.1034	1.000	to main flow character-by-character through the value	0.4041	0.0132
+0.2602	0.5263	1.000	treated as part of the comment.	0.2387	0.0132
+0.2747	0.5470	1.000	A comment character appearing in column 1 on the	0.3759	0.0117
+0.2747	0.1034	1.000	field of $3 during Pass 1 in A8 code.	0.2707	0.0132
+0.2878	0.5282	1.000	initial card of the card block causes the entire card	0.3835	0.0146
+0.2906	0.1203	1.000	2. This subroutine collects the characters of each	0.3741	0.0118
+0.3036	0.5282	1.000	to be treated as a comment.	0.2105	0.0133
+0.3052	0.1034	1.000	name associated with a card block. Then the GNLOAD	0.4060	0.0118
+0.3182	0.5432	1.000	A comment character appearing in columns 10-72	0.3703	0.0147
+0.3197	0.1015	1.000	subroutine collects the names and puts them out on	0.3778	0.0132
+0.3208	0.1022	0.500	ie doe nod ne	0.1129	0.0417
+0.3327	0.5301	1.000	causes the remaining character of the unit to be	0.3553	0.0133
+0.3342	0.1034	1.000	tape or on disk. Unlike the symbol file, the name	0.3703	0.0131
+0.3460	0.1033	1.000	file does not remain in memory during all the passes.	0.3988	0.0164
+0.3488	0.5301	1.000	treated as part of the comment.	0.2350	0.0118
+0.3618	0.5470	1.000	If a comment started in the first nine columns, then	0.3835	0.0133
+0.3648	0.1053	1.000	The NAMEIN subroutine brings the name file into	0.3628	0.0116
+0.3772	0.1033	1.000	memory for the OUTPUT subroutine at the end of	0.3667	0.0147
+0.3779	0.5301	1.000	GETCHA informs main flow that a comment has been	0.3929	0.0117
+0.3924	0.5301	1.000	encountered with the comment character in $3 as	0.3628	0.0103
+0.3939	0.1053	1.000	Pass 2 when the listing is produced.	0.2669	0.0116
+0.4070	0.5301	1.000	usual. Subsequently, GETCHA will put all the	0.3440	0.0131
+0.4084	0.1203	1.000	3. This subroutine also builds up the corresponding	0.3872	0.0116
+0.4215	0.5301	1.000	remaining characters of this type of comment into the	0.3985	0.0116
+0.4230	0.1053	1.000	symbol for each name. With each of these symbols,	0.3853	0.0131
+0.4375	0.1034	1.000	the TABMAN subroutines build up the symbol file.	0.3703	0.0116
+0.4375	0.5301	1.000	collection buffer for the statement characters without	0.3966	0.0102
+0.4520	0.1053	1.000	The symbol file remains in memory for the entire	0.3684	0.0116
+0.4520	0.5301	1.000	giving them out to main flow through $3. When	0.3496	0.0131
+0.4666	0.5301	1.000	GETCHA has finished collecting this type comment,	0.3835	0.0116
+0.4680	0.1053	1.000	assembly.	0.0771	0.0102
+0.4811	0.1203	1.000	4. This subroutine also collects the characters of	0.3741	0.0116
+0.4811	0.5301	1.000	GETCHA does inform main flow with the usual end of	0.3947	0.0116
+0.4956	0.5301	1.000	card block indications.	0.1692	0.0116
+0.4956	0.1034	1.000	the statement field in the buffer, Bsyst. The MAIN	0.3816	0.0147
+0.5092	0.5488	1.000	However, when a comment begins in the statement	0.3724	0.0145
+0.5115	0.1053	1.000	routine later puts the contents of this buffer into the	0.3816	0.0118
+0.5247	0.5301	1.000	field, GETCHA not only inserts each character into	0.3835	0.0132
+0.5261	0.1034	1.000	unique expanded instruction unit associated with the	0.3816	0.0118
+0.5406	0.5301	1.000	the collection buffer for the statement characters as	0.3872	0.0103
+0.5409	0.1032	1.000	instruction.	0.0888	0.0111
+0.5552	0.5301	1.000	usual, but also gives each character to main flow.	0.3722	0.0132
+0.5552	0.1203	1.000	5. This subroutine tells main flow of Pass 1 when	0.3722	0.0118
+0.5681	0.1033	1.000	an end of card block has been reached by setting the	0.3837	0.0151
+0.5697	0.5301	1.000	MAIN then ignores the characters in a statement	0.3628	0.0118
+0.5842	0.5282	1.000	comment by relooping into GETCHA until a semicolon	0.4004	0.0131
+0.5858	0.1053	1.000	bit, Fend, and by putting an A8 semicolon ("false	0.3628	0.0116
+0.5984	0.1052	1.000	semicolon") into the value field of $3.	0.2784	0.0136
+0.5986	0.5300	1.000	appears in $3.	0.1072	0.0136
+0.6148	0.1222	1.000	6. This subroutine informs the coprocessor sub-	0.3647	0.0116
+0.6279	0.5282	1.000	Boxes 5, 7, 8, 12, 13, 18, 19, 25, 26	0.2857	0.0161
+0.6294	0.1053	1.000	routine when one of its conditions has been detected	0.3797	0.0102
+0.6439	0.1034	1.000	by GETCHA or by MAIN or by XINPUT.	0.2951	0.0146
+0.6570	0.5301	1.000	The specifications for including a coprocessor sub-	0.3816	0.0145
+0.6715	0.5282	1.000	routine with Pass 1 is described in a later section of	0.3947	0.0145
+0.6730	0.1034	1.000	FLOW CHART DESCRIPTION	0.2218	0.0116
+0.6860	0.5282	1.000	this manual. During her initialization GETCHA	0.3571	0.0161
+0.6991	0.5282	1.000	determines whether there is a coprocessor sub-	0.3590	0.0176
+0.7020	0.1034	1.000	Boxes 11-16, 28, 29	0.1541	0.0146
+0.7116	0.5281	1.000	routine operating with Pass 1 and fills in GETCHA's	0.3893	0.0199
+0.7311	0.1053	1.000	A comment character appearing in columns 2-9 on	0.3703	0.0131
+0.7311	0.5282	1.000	error branch vector accordingly. When there is no	0.3835	0.0131
+0.7442	0.5301	1.000	coprocessor subroutine with STRAP II or when a	0.3609	0.0131
+0.7456	0.1034	1.000	the initial card of a card block causes the entire card	0.3947	0.0131
+0.7573	0.5301	1.000	coprocessor subroutine does not want control for one	0.3947	0.0176
+0.7587	0.1034	1.000	block to be treated as if the comment character had	0.3816	0.0146
+0.7718	0.5301	1.000	of its error conditions, then GETCHA or MAIN gives	0.3929	0.0176
+0.7747	0.1034	1.000	appeared in column 1. In fact, GETCHA super-	0.3553	0.0147
+0.7878	0.5282	1.000	an error message and continues with the appropriate	0.3929	0.0160
+0.7906	0.1034	1.000	imposes a comment character over the first column	0.3835	0.0132
+0.8052	0.5301	1.000	corrective action.	0.1372	0.0103
+0.8052	0.1034	1.000	character of the initial card image. The comment	0.3759	0.0146
+0.9345	0.8345	1.000	GETCHA	0.0527	0.0090
+0.9346	0.9098	1.000	79	0.0169	0.0087

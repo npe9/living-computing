@@ -1,0 +1,106 @@
+0.0988	0.5226	1.000	The dictionary type area consists of as many arcs	0.3853	0.0204
+0.0988	0.0771	1.000	THE DISK FETCH PROGRAM	0.2256	0.0118
+0.1163	0.5113	1.000	as necessary to provide a two word entry for each	0.3778	0.0160
+0.1279	0.5113	1.000	type area (Figure 100).	0.1786	0.0189
+0.1294	0.0789	1.000	The disk fetch program transmits named system	0.3665	0.0131
+0.1439	0.0771	1.000	material from the permanent read only storage area	0.3947	0.0161
+0.1570	0.0733	1.000	(PROSA) on the disk to a specified area of the user's	0.3985	0.0176
+0.1642	0.5094	1.000	Word 1	0.0433	0.0147
+0.1744	0.0752	1.000	core when the pseudo-op $FETCH is requested. The	0.3985	0.0147
+0.1846	0.5395	1.000	TYPE	0.0395	0.0160
+0.1873	0.6709	1.000	AREA	0.0398	0.0150
+0.1887	0.0751	1.000	requested material does not have to start at an arc	0.3836	0.0149
+0.2035	0.0752	1.000	boundary and need not be an integral number of arcs.	0.3985	0.0145
+0.2078	0.6203	1.000	12	0.0207	0.0116
+0.2093	0.7669	1.000	48	0.0188	0.0116
+0.2179	0.5075	1.000	Word 2	0.0451	0.0133
+0.2258	0.0975	1.000	The $FETCH pseudo-op requires the linkage:	0.3390	0.0216
+0.2339	0.6090	1.000	WORD	0.0433	0.0132
+0.2340	0.5376	1.000	ARC	0.0320	0.0116
+0.2355	0.7519	1.000	SIZE	0.0301	0.0131
+0.2544	0.5902	1.000	12	0.0207	0.0116
+0.2558	0.6654	1.000	21	0.0169	0.0116
+0.2558	0.7124	1.000	28	0.0188	0.0116
+0.2558	0.8158	1.000	46	0.0188	0.0145
+0.2612	0.0976	1.000	B, ŞMCP	0.0699	0.0155
+0.2761	0.0940	1.000	, SFETCH	0.0827	0.0146
+0.2791	0.5075	1.000	Figure 100. Typical Fetch Dictionary Eatry	0.2556	0.0161
+0.2921	0.0959	1.000	(AX)DD(BU, 48, 6), TYPE AREA X	0.2575	0.0146
+0.3067	0.0959	1.000	, RELFWA. (I)	0.1090	0.0116
+0.3201	0.0937	1.000	,FWA. (J)	0.0814	0.0154
+0.3355	0.5222	1.000	The first 48 bits of each dictionary entry are the	0.3672	0.0217
+0.3358	0.0940	1.000	, N.(K)	0.0583	0.0131
+0.3503	0.0959	1.000	, M	0.0301	0.0116
+0.3532	0.5075	1.000	type area name in A6 code. The second word of the	0.3853	0.0132
+0.3648	0.0959	1.000	(Error Return)	0.1109	0.0116
+0.3666	0.5055	1.000	dictionary entry holds the disk location (arc and word)	0.4082	0.0172
+0.3794	0.0959	1.000	(End Return)	0.0959	0.0116
+0.3821	0.5075	1.000	of the first word of the type area, and the number of	0.3947	0.0147
+0.3939	0.0959	1.000	(Normal Return)	0.1222	0.0116
+0.3963	0.5074	1.000	words in the type area. The dictionary is in alpha-	0.3837	0.0155
+0.4079	0.0769	1.000	where:	0.0530	0.0112
+0.4112	0.5056	1.000	numeric order by type area.	0.2143	0.0147
+0.4229	0.0957	1.000	TYPE AREA is an eight-character name of a	0.3368	0.0148
+0.4403	0.1955	1.000	specific part of PROSA.	0.1805	0.0118
+0.4403	0.5038	1.000	The Disk Fetch Program	0.1917	0.0161
+0.4522	0.0957	1.000	RELFWA. (I) specifies the first word within the type	0.3895	0.0161
+0.4660	0.1934	1.000	area (relative to the type area starting	0.2919	0.0181
+0.4693	0.5055	1.000	Performing a fetch from PROSA consists of the fol-	0.3912	0.0167
+0.4819	0.1934	1.000	address) which is to be brought into	0.2692	0.0159
+0.4840	0.5038	1.000	lowing:	0.0564	0.0131
+0.4985	0.5205	1.000	1. Reading the PROSA dictionary into the MCP	0.3575	0.0171
+0.4985	0.1955	1.000	core storage by $FETCH.	0.1917	0.0118
+0.5122	0.5054	1.000	512 word buffer in the overlay area.	0.2712	0.0164
+0.5130	0.0959	1.000	FWA. (J) specifies the first word (18 bit) address of	0.3872	0.0131
+0.5276	0.1936	1.000	core storage into which $FETCH will	0.2801	0.0131
+0.5281	0.5204	1.000	2. Obtaining from the PROSA dictionary, the disk	0.3802	0.0192
+0.5436	0.1936	1.000	read the requested part of the type area. address of the type area.	0.5000	0.0131
+0.5567	0.0940	1.000	N. (I) specifies the number of full words requested.	0.3872	0.0146
+0.5579	0.5206	1.000	3. Reading into and transmitting from the MCP	0.3611	0.0157
+0.5727	0.1936	1.000	If N. (K) is zero, $FETCH will read in	0.2857	0.0116
+0.5727	0.5056	1.000	buffer the initial non arc boundary portion of the re-	0.3910	0.0146
+0.5853	0.1934	1.000	all of the type area from RELFWA. (I)	0.2824	0.0161
+0.5872	0.5038	1.000	quested type area.	0.1391	0.0146
+0.6015	0.1935	1.000	onward.	0.0603	0.0107
+0.6019	0.5205	1.000	4. Reading the remainder of the requested type	0.3594	0.0161
+0.6143	0.0938	1.000	M will be set by $FETCH if and only if N. (K) words	0.3856	0.0158
+0.6167	0.5036	1.000	area directly to core storage starting at the type	0.3650	0.0161
+0.6308	0.1917	1.000	cannot be transmitted. M will then	0.2650	0.0116
+0.6321	0.5038	1.000	area's first full arc boundary.	0.2274	0.0133
+0.6453	0.1917	1.000	contain the number of words which were	0.3026	0.0116
+0.6465	0.5186	1.000	To improve the performance of $FETCH, the	0.3425	0.0182
+0.6599	0.1917	1.000	transmitted.	0.0940	0.0116
+0.6627	0.5038	1.000	program does the following:	0.2086	0.0118
+0.6726	0.0920	1.000	End Return is a half-word instruction to which	0.3481	0.0146
+0.6773	0.5188	1.000	1. Attempts to find the type area in the special	0.3571	0.0131
+0.6883	0.1915	1.000	$FETCH will return control with M set	0.2936	0.0140
+0.6899	0.5036	1.000	short dictionary to avoid reading the full dictionary	0.3838	0.0166
+0.7039	0.5015	1.000	from the disk.	0.1099	0.0144
+0.7048	0.1917	1.000	as above, when the type area is	0.2368	0.0118
+0.7179	0.1917	1.000	exhausted.	0.0790	0.0120
+0.7207	0.5187	1.000	2. Keeps a record of the contents of its 512 word	0.3742	0.0134
+0.7311	0.0921	1.000	Error Return is a half-word instruction to which	0.3628	0.0131
+0.7353	0.5036	1.000	buffer, transmitting from the buffer if the requested	0.3912	0.0150
+0.7461	0.1897	1.000	$FETCH will return with M set as	0.2579	0.0144
+0.7484	0.5017	1.000	information is there from a previous read.	0.3238	0.0163
+0.7615	0.1898	1.000	above, when protected storage is	0.2481	0.0133
+0.7643	0.5187	1.000	3. Reads directly into the user's core storage	0.3517	0.0149
+0.7752	0.1896	1.000	violated or when a non-existent type	0.2711	0.0158
+0.7791	0.5019	1.000	if possible, eliminating a subsequent transmit from	0.3872	0.0131
+0.7921	0.1898	1.000	area is called for.	0.1372	0.0117
+0.7934	0.5018	1.000	the buffer.	0.0828	0.0121
+0.8072	0.5205	1.000	The program is entered at CFETCH (Figure 101)	0.3651	0.0170
+0.8194	0.5016	1.000	from the IF analyzer with its tentacle (XTENB) set	0.3821	0.0198
+0.8197	0.0714	1.000	PROSA Controls	0.1259	0.0132
+0.8383	0.5018	1.000	up. The program operates enabled and non-SIO. The	0.4006	0.0151
+0.8458	0.0730	1.000	The permanent read only storage area, PROSA, is	0.3821	0.0210
+0.8504	0.5017	1.000	short dictionary (to be discussed later) is set up by	0.3820	0.0174
+0.8618	0.0712	1.000	written on the disk at IPL time from the master IPL	0.3952	0.0182
+0.8662	0.4998	1.000	IPL. The following steps are executed for a $FETCH	0.4045	0.0158
+0.8779	0.0712	1.000	tape prepared by the system update program. The	0.3820	0.0173
+0.8837	0.5000	1.000	request.	0.0639	0.0103
+0.8932	0.0712	1.000	first two type areas on the disk are the PROSA diction-	0.4158	0.0157
+0.8967	0.5169	1.000	1. Determine if the requested material is in the	0.3647	0.0133
+0.9084	0.0714	1.000	ary and index.	0.1090	0.0116
+0.9109	0.4998	1.000	buffer from the last request. If it is, go to step 13.	0.3913	0.0159
+0.9535	0.0658	1.000	178	0.0263	0.0102

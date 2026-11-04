@@ -1,0 +1,134 @@
+0.0697	0.4981	1.000	Item Number	0.1015	0.0176
+0.0753	0.0694	1.000	11101	0.0472	0.0136
+0.0849	0.4979	1.000	for Referencing	0.1226	0.0192
+0.0887	0.1786	1.000	Not used.	0.0714	0.0116
+0.0887	0.6278	1.000	Bit	0.0357	0.0131
+0.0900	0.0714	1.000	11110 --	0.1053	0.0103
+0.1003	0.7180	1.000	Comments	0.0808	0.0174
+0.1003	0.5000	1.000	Purposes	0.0714	0.0174
+0.1015	0.6371	1.000	Length	0.0547	0.0164
+0.1045	0.0695	1.000	11111	0.0452	0.0119
+0.1291	0.4981	1.000	Datum Portions:	0.1279	0.0193
+0.1321	0.0902	1.000	Encoding for a subscript, if present, is that of a	0.3628	0.0133
+0.1467	0.0733	1.000	regular coded expression. The encoding for a sub-	0.3816	0.0133
+0.1599	0.7162	1.000	Indicator: 1-if datum	0.1654	0.0160
+0.1599	0.0714	1.000	script immediately follows the encoding of the symbol	0.4004	0.0160
+0.1599	0.5226	1.000	2A	0.0263	0.0160
+0.1613	0.6541	1.000	1	0.0094	0.0116
+0.1744	0.7331	1.000	exists; 0-if no (more)	0.1635	0.0174
+0.1773	0.0714	1.000	to which the subscript refers.	0.2218	0.0118
+0.2035	0.5226	1.000	2B	0.0282	0.0160
+0.2035	0.6523	1.000	2	0.0132	0.0160
+0.2048	0.7162	1.000	Indicator: 10-if absolute	0.1880	0.0132
+0.2048	0.0733	1.000	Encoding for an index, if present, is that of a regular	0.3985	0.0146
+0.2194	0.0733	1.000	coded expression. The encoding for an index follows	0.3910	0.0132
+0.2194	0.7293	1.000	datum; 00-if symbolic.	0.1748	0.0146
+0.2324	0.7180	1.000	Absolute datum: value,	0.1749	0.0148
+0.2326	0.6429	1.000	24	0.0244	0.0160
+0.2340	0.5226	1.000	2C	0.0263	0.0145
+0.2341	0.0732	1.000	the encoding of the last datum and precedes the	0.3499	0.0153
+0.2500	0.0733	1.000	encoding of the operators.	0.1936	0.0116
+0.2515	0.7293	1.000	binary.	0.0620	0.0131
+0.2529	0.5263	1.000	or	0.0207	0.0116
+0.2616	0.5226	1.000	2C	0.0263	0.0145
+0.2645	0.7180	1.000	Symbolic datum: length	0.1767	0.0131
+0.2743	0.7330	1.000	of item 2D (symbol)	0.1505	0.0211
+0.2775	0.0732	1.000	Encoding for operator, if present, in the field con-	0.3800	0.0167
+0.2905	0.7330	1.000	in 8-bit bytes.	0.1110	0.0178
+0.2936	0.0733	1.000	sists of nine bits of which the first bit is 1 (to indicate	0.4004	0.0131
+0.3067	0.5244	1.000	and	0.0301	0.0160
+0.3081	0.0733	1.000	operators exist). The nine bits are made up of the	0.3797	0.0131
+0.3210	0.6183	1.000	Variable	0.0716	0.0164
+0.3212	0.5226	1.000	2D	0.0263	0.0160
+0.3227	0.0695	1.000	following fields: a 1-bit, a 3-bit operator code, and	0.3910	0.0161
+0.3241	0.7199	1.000	Symbol (in A8 code).	0.1504	0.0147
+0.3358	0.5226	1.000	2E	0.0263	0.0160
+0.3372	0.0695	1.000	a 5-bit datum number telling which datum the opera-	0.3929	0.0161
+0.3372	0.7199	1.000	Indicator': 1-if coder	0.1598	0.0146
+0.3387	0.6504	1.000	1	0.0150	0.0131
+0.3529	0.7330	1.000	expression(s) for	0.1298	0.0137
+0.3532	0.0714	1.000	tor follows. The operator codes are:	0.2801	0.0117
+0.3659	0.7349	1.000	symbol subscript	0.1298	0.0154
+0.3794	0.7350	1.000	exists; O-if no (more)	0.1617	0.0189
+0.3821	0.1372	1.000	.t, a. in a context such as 2.3, A. B.	0.2895	0.0103
+0.3823	0.0902	1.000	111	0.0263	0.0087
+0.3936	0.7330	1.000	subscript(s).	0.1054	0.0194
+0.3953	0.1391	1.000	. L, a. left in a context such as 2., 2. +3.	0.3195	0.0131
+0.3968	0.0902	1.000	110	0.0282	0.0087
+0.4099	0.7331	1.000	("'subscript" may be	0.1541	0.0160
+0.4099	0.1391	1.000	.R, a. right in a context such as . 2, 2t.3.	0.3252	0.0131
+0.4113	0.0902	1.000	101	0.0263	0.0102
+0.4244	0.7312	1.000	index.)	0.0620	0.0160
+0.4244	0.1410	1.000	U-, a unitary - in a context such as -7,	0.2914	0.0132
+0.4259	0.0902	1.000	100	0.0263	0.0102
+0.4404	0.1579	1.000	A*-2.	0.0432	0.0116
+0.4418	0.5000	1.000	NOTE: Items 2E and 2F are repeated for each sub-	0.3835	0.0118
+0.4535	0.1410	1.000	*	0.0113	0.0087
+0.4542	0.5018	1.000	script until item 2E is "O."	0.2050	0.0146
+0.4549	0.0902	1.000	011	0.0263	0.0102
+0.4680	0.1410	1.000	/	0.0094	0.0116
+0.4695	0.0902	1.000	010	0.0263	0.0102
+0.4826	0.5226	1.000	2F	0.0282	0.0160
+0.4839	0.6203	1.000	Variable	0.0696	0.0162
+0.4840	0.0883	1.000	001	0.0282	0.0116
+0.4869	0.7237	1.000	Coded expression fo	0.1485	0.0116
+0.4967	0.7381	1.000	subscript field. З	0.1199	0.0190
+0.4985	0.1410	1.000	-, a - in a context such as 2-3, A-2.	0.2726	0.0131
+0.4985	0.0902	1.000	000	0.0263	0.0102
+0.5291	0.5019	1.000	NOTE: Items 2A through 2E(F) are repeated for as	0.3797	0.0146
+0.5436	0.5019	1.000	many data as exist until item 2A is "0."	0.2970	0.0116
+0.5581	0.0883	1.000	Encoding for a general parenthetical field entry, if	0.3797	0.0161
+0.5697	0.5019	1.000	Operator Portions:	0.1429	0.0191
+0.5741	0.0733	1.000	present, includes the 1-bit (to indicate a general	0.3609	0.0116
+0.5887	0.0733	1.000	parenthetical field entry exists) followed both by six	0.3853	0.0132
+0.6003	0.7180	1.000	Indicator: 1-if opera-	0.1692	0.0176
+0.6003	0.5244	1.000	ЗА	0.0244	0.0145
+0.6017	0.0733	1.000	bits giving the value of Nand by a coded expression	0.3835	0.0131
+0.6017	0.6541	1.000	1	0.0113	0.0131
+0.6163	0.0714	1.000	for the entry to be OR'ed into the field. The encoding	0.4004	0.0160
+0.6163	0.7331	1.000	tor exists; O-if no	0.1429	0.0146
+0.6308	0.0714	1.000	for a general parenthetical field entry follows encoding	0.4079	0.0160
+0.6336	0.7425	1.000	more) operator(s)	0.1297	0.0118
+0.6439	0.7274	1.000	peration code.4,	0.1353	0.0161
+0.6453	0.5244	1.000	3B	0.0263	0.0160
+0.6467	0.0733	1.000	of the operators.	0.1259	0.0118
+0.6483	0.6560	1.000	3	0.0094	0.0102
+0.6584	0.5244	1.000	30	0.0263	0.0160
+0.6612	0.7199	1.000	Reference number to	0.1541	0.0147
+0.6628	0.6560	1.000	5	0.0075	0.0073
+0.6744	0.0714	1.000	GENERAL COMPOSITION OF A CODED	0.2989	0.0147
+0.6744	0.7331	1.000	datum to which opera-	0.1673	0.0147
+0.6890	0.7331	1.000	tor applies.	0.0940	0.0174
+0.6904	0.0883	1.000	EXPRESSION	0.1034	0.0116
+0.7020	0.5019	1.000	NOTE: Items 3A through 30 are repeated for as	0.3609	0.0189
+0.7151	0.5019	1.000	many operators as exist until item 3A is "O."	0.3402	0.0189
+0.7194	0.0695	1.000	Item Number	0.1015	0.0132
+0.7339	0.0695	1.000	for Referencing	0.1222	0.0146
+0.7340	0.2011	1.000	Bit	0.0357	0.0131
+0.7483	0.0714	1.000	Purposes	0.0734	0.0136
+0.7484	0.2086	1.000	Length	0.0527	0.0147
+0.7485	0.5000	1.000	General Parenthetical Integer Entry Portions (g.p.):	0.3910	0.0176
+0.7498	0.2913	1.000	Comments	0.0791	0.0121
+0.7772	0.0713	1.000	Prefix Portion (once for every coded expression):	0.3706	0.0180
+0.7791	0.6541	1.000	1	0.0113	0.0116
+0.7791	0.5244	1.000	4A	0.0226	0.0131
+0.7791	0.7180	1.000	Indicator: 1-if (.n)	0.1541	0.0146
+0.7921	0.7350	1.000	entry follows; O-if no	0.1617	0.0161
+0.8067	0.7331	1.000	(more). (.n) entries.	0.1523	0.0176
+0.8067	0.0959	1.000	1A	0.0226	0.0145
+0.8081	0.2895	1.000	Indicator: I-if coded	0.1635	0.0131
+0.8227	0.5244	1.000	4B	0.0244	0.0131
+0.8241	0.3064	1.000	expression exists;	0.1372	0.0116
+0.8241	0.7199	1.000	Value of n, binary.	0.1429	0.0131
+0.8357	0.6221	1.000	Variable	0.0677	0.0162
+0.8358	0.5244	1.000	4C	0.0263	0.0145
+0.8358	0.3064	1.000	O-if no (more) expres-	0.1692	0.0145
+0.8363	0.7198	1.000	Coded expression to be	0.1713	0.0164
+0.8488	0.7331	1.000	OR'ed in.	0.0808	0.0176
+0.8501	0.3026	1.000	sion(s).	0.0659	0.0177
+0.8648	0.0940	1.000	1B	0.0282	0.0160
+0.8654	0.2927	1.000	Type of coded expression	0.1847	0.0227
+0.8677	0.5000	1.000	NOTE: Items 4A through 4C are repeated for as many	0.4023	0.0132
+0.8815	0.5018	1.000	g.p.'s as exist until item 4A is "0."	0.2708	0.0132
+0.8821	0.3083	1.000	(normally 000).	0.1128	0.0133
+0.9215	0.0714	1.000	198	0.0263	0.0145

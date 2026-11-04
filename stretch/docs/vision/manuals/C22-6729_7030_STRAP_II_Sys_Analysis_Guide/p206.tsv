@@ -1,0 +1,36 @@
+0.0639	0.4906	1.000	contagious error: A contagious error occurs	0.3402	0.0204
+0.0654	0.0639	1.000	multiple-defined without contradiction: This type of	0.3891	0.0161
+0.0799	0.4925	1.000	wherever a programmer symbol is defined in terms	0.3853	0.0146
+0.0814	0.0677	1.000	symbol is here defined by an example:	0.2838	0.0116
+0.0945	0.4925	1.000	of another programmer symbol which has been	0.3515	0.0146
+0.0959	0.1429	1.000	SYN, 5	0.0658	0.0132
+0.1061	0.0846	1.000	RAT	0.0602	0.0145
+0.1076	0.4925	1.000	erroneously defined in one of the four ways described	0.4023	0.0174
+0.1105	0.1466	1.000	SYN(BU, 32), 5	0.1241	0.0132
+0.1250	0.0677	1.000	Note the additional specifications (BU, 32) on the	0.3628	0.0132
+0.1409	0.0677	1.000	symbol, RAT, does not contradict any previous	0.3515	0.0118
+0.1526	0.4944	1.000	Unit	0.0357	0.0145
+0.1555	0.0677	1.000	specifications of the symbol.	0.2143	0.0118
+0.1802	0.4906	1.000	This refers to the intermediate expanded instruction	0.3929	0.0174
+0.1831	0.0638	1.000	multiple-defined with contradictions: This type of	0.3780	0.0175
+0.1962	0.4925	1.000	unit record built up by STRAP II for an instruction.	0.3816	0.0160
+0.1991	0.0677	1.000	symbol is also best defined by an example:	0.3177	0.0131
+0.2136	0.1372	1.000	LX, 5, CAT	0.1053	0.0133
+0.2151	0.0846	1.000	DOG	0.0376	0.0102
+0.2253	0.4944	1.000	VFL	0.0376	0.0160
+0.2282	0.0865	1.000	DOG	0.0451	0.0116
+0.2297	0.1504	1.000	SX, 5, MONKEY	0.1259	0.0116
+0.2412	0.0677	1.000	In this case a contradictory condition exists as DOG	0.3853	0.0146
+0.2558	0.4944	1.000	This stands for variable field length.	0.2726	0.0146
+0.2587	0.0677	1.000	is referencing two different instructions.	0.3045	0.0116
+0.2849	0.4925	1.000	vle	0.0301	0.0145
+0.3153	0.0675	1.000	circularly defined symbol: This type of symbol is	0.3726	0.0191
+0.3154	0.4944	1.000	This stands for variable length entry, in particular	0.3797	0.0189
+0.3296	0.4943	1.000	the variable portion of a symbol table entry.	0.3290	0.0137
+0.3314	0.0677	1.000	defined by an example:	0.1692	0.0147
+0.3473	0.1259	1.000	SYN, B + 2	0.0865	0.0118
+0.3600	0.4961	1.000	X-Datum	0.0679	0.0111
+0.3619	0.1278	1.000	SYN, A	0.0583	0.0147
+0.3634	0.0865	1.000	B	0.0113	0.0087
+0.3894	0.4962	1.000	See bit style number.	0.1579	0.0118
+0.9201	0.0714	1.000	206	0.0207	0.0087

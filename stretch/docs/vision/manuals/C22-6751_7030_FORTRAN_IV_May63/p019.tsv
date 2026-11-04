@@ -1,0 +1,104 @@
+0.0770	0.5019	1.000	COMMON BLOCK	0.1165	0.0118
+0.0770	0.0752	1.000	the statement list encloses the names of two or more	0.3985	0.0146
+0.0930	0.0771	1.000	quantities which are to be stored in the same locations	0.3966	0.0131
+0.0973	0.5000	1.000	The symbolic name of a block is placed at the head	0.3985	0.0146
+0.1076	0.0771	1.000	during execution of the object program; any number	0.3947	0.0146
+0.1118	0.5019	1.000	of the variable names belonging to the block. It is	0.3966	0.0146
+0.1206	0.0752	1.000	of equivalences (i.e., sets of parentheses) may be	0.3985	0.0176
+0.1264	0.4981	1.000	always enclosed between slashes. There are two types	0.4004	0.0161
+0.1410	0.0752	1.000	given.	0.0470	0.0131
+0.1424	0.5000	1.000	of coMMoN blocks: blank and labeled.	0.2838	0.0146
+0.1555	0.0921	1.000	Quantities or arrays which are not mentioned in an	0.3797	0.0161
+0.1584	0.5113	1.000	a. Blank common is indicated as in FORTRAN II (no	0.3872	0.0146
+0.1700	0.0752	1.000	EQUIVALENCE statement will be assigned unique loca-	0.3985	0.0161
+0.1744	0.5357	1.000	slashes), or by preceding the blank common vari-	0.3628	0.0147
+0.1875	0.5357	1.000	ables by two consecutive slashes ("//").	0.3083	0.0174
+0.1875	0.0752	1.000	tions. Locations can be shared only among variables,	0.3966	0.0146
+0.1983	0.0749	1.000	not among constants. EQUIVALANCE should not be used	0.3953	0.0212
+0.2035	0.5150	1.000	b. Labeled common is indicated by preceding the	0.3835	0.0160
+0.2179	0.0733	1.000	to establish mathematical equivalence.	0.2876	0.0147
+0.2194	0.5338	1.000	labeled common variables by the block name be-	0.3647	0.0146
+0.2355	0.5338	1.000	tween two slashes.	0.1466	0.0131
+0.2583	0.0751	1.000	COMMON	0.0754	0.0140
+0.2586	0.4981	1.000	RULES	0.0489	0.0118
+0.2776	0.5132	1.000	1. The field of entries pertaining to a block name	0.3853	0.0161
+0.2833	0.1259	1.000	GENERAL FORM	0.0959	0.0118
+0.2849	0.3496	1.000	EXAMPLES	0.0658	0.0087
+0.2936	0.4981	1.000	ends with a new block name or the end of the coMMoN	0.3985	0.0146
+0.3023	0.2914	1.000	COMMON A, B, C/X/Q, R	0.1805	0.0146
+0.3089	0.4979	1.000	statement.	0.0775	0.0159
+0.3139	0.2932	1.000	/Y/M, P, O	0.0771	0.0132
+0.3197	0.5132	1.000	2. Block name entries are cumulative throughout a	0.3835	0.0191
+0.3241	0.2914	1.000	COMMON/Z/G, H, J / / D	0.1805	0.0160
+0.3354	0.1447	1.000	variable names of	0.1298	0.0109
+0.3387	0.4981	1.000	program. A block name may appear more than once	0.4004	0.0160
+0.3488	0.1053	1.000	type. /r/,/s/are symbols	0.1692	0.0118
+0.3517	0.0752	1.000	any	0.0244	0.0073
+0.3530	0.4998	1.000	with entries for previous appearances.	0.2824	0.0188
+0.3590	0.0752	1.000	conforming to FORTRAN	0.1992	0.0131
+0.3691	0.5132	1.000	3. Blank coмmoN may be of any length. Labeled	0.3835	0.0161
+0.3735	0.0752	1.000	naming conventions.	0.1259	0.0102
+0.3852	0.5000	1.000	coMMoN must conform to this size requirement: all	0.3985	0.0131
+0.3953	0.0752	1.000	The common statement permits data storage area to.	0.4041	0.0147
+0.4012	0.5000	1.000	coMMON blocks of a given name should have the same	0.3966	0.0131
+0.4112	0.0752	1.000	be shared between programs in a way analogous to	0.3966	0.0133
+0.4157	0.4981	1.000	length in programs which are to be operated together.	0.4004	0.0161
+0.4258	0.0752	1.000	that by which EQUIvALENcE permits data storage shar-	0.3985	0.0146
+0.4418	0.0752	1.000	ing within a single program. Where the logic of the	0.3966	0.0131
+0.4433	0.4981	1.000	DIMENSION AND COMMON	0.2237	0.0131
+0.4564	0.0752	1.000	programs permits, this can result in a large saving of	0.3966	0.0146
+0.4636	0.5000	1.000	Dimension information may be included in the com-	0.3966	0.0131
+0.4752	0.0752	1.000	storage space.	0.1015	0.0103
+0.4782	0.5000	1.000	MoN statement. In this case, it need not be included	0.3966	0.0146
+0.4876	0.0920	1.000	The programmer has complete control over the loca-	0.3799	0.0171
+0.4942	0.4981	1.000	in a DIMENSION statement. Example:	0.2669	0.0131
+0.5058	0.0752	1.000	tions assigned to the variables appearing in COMMON.	0.3966	0.0131
+0.5130	0.5282	1.000	COMMON A, B (10, 15), C.	0.1748	0.0118
+0.5203	0.0752	1.000	The locations are assigned in the sequence in which	0.3947	0.0146
+0.5287	0.4979	1.000	EQUIVALENCE AND COMMON	0.2486	0.0182
+0.5348	0.0752	1.000	the variables appear in the common statements, begin-	0.3966	0.0146
+0.5509	0.5000	1.000	Equivalence will never re-order commoN, but may	0.3966	0.0146
+0.5509	0.0752	1.000	ning with the first coMMoN statement of the problem.	0.3947	0.0146
+0.5669	0.4962	1.000	lengthen COMMON.	0.1410	0.0147
+0.5814	0.0752	1.000	ARGUMENTS IN COMMON STORAGE	0.2387	0.0116
+0.5842	0.5000	1.000	Note 1: In order to force correspondence in storage	0.3966	0.0131
+0.6003	0.5132	1.000	locations between two variables which otherwise	0.3835	0.0116
+0.6032	0.0752	1.000	Because of the above, common statements may be	0.3966	0.0147
+0.6148	0.5150	1.000	will occupy different relative positions in coMMON	0.3797	0.0146
+0.6208	0.1613	0.300	calil Pancion or Slbtontine sityr	0.3065	0.0458
+0.6294	0.5150	1.000	storage, it is valid to place dummy variable names	0.3816	0.0146
+0.6467	0.5132	1.000	in a coMMoN statement. These dummy names, which	0.3835	0.0147
+0.6599	0.5132	1.000	may be dimensioned, will cause reservation of the	0.3835	0.0160
+0.6672	0.0733	1.000	gram. In this way, they are transmitted implicitly	0.3947	0.0132
+0.6758	0.5113	1.000	space necessary to cause correspondence.	0.3177	0.0176
+0.6797	0.0733	1.000	rather than explicitly by being listed in the paren-	0.3948	0.0156
+0.6903	0.4981	1.000	Note 2: While implicit arguments can take the place	0.3985	0.0191
+0.6976	0.0752	1.000	theses following the subroutine name.	0.2782	0.0132
+0.7106	0.5094	1.000	of all arguments in CALL-type subroutines, there	0.3853	0.0133
+0.7121	0.0902	1.000	To obtain implicit arguments, it is necessary only	0.3797	0.0191
+0.7205	0.5111	1.000	must be at least one explicit argument in a FORTRAN	0.3838	0.0198
+0.7297	0.0752	1.000	to have the corresponding variables in the two pro-	0.3966	0.0146
+0.7384	0.5113	1.000	function. Here, too, a dummy variable may be used	0.3853	0.0174
+0.7444	0.0749	1.000	grams occupy the same location.	0.2448	0.0174
+0.7524	0.5112	1.000	for convenience. When a variable is made equiv-	0.3854	0.0170
+0.7630	0.0902	1.000	This can be obtained by having them occupy cor-	0.3797	0.0161
+0.7674	0.5132	1.000	alent to a variable which appears in a COMMON	0.3835	0.0189
+0.7747	0.0752	1.000	responding positions in comMon statements of the two	0.3947	0.0174
+0.7848	0.5113	1.000	statement, the first variable will also be located	0.3835	0.0176
+0.7961	0.0751	1.000	programs.	0.0735	0.0125
+0.8007	0.5108	1.000	in coMMoN storage.	0.1512	0.0177
+0.8096	0.0902	1.000	All elements placed in common may be placed in	0.3797	0.0160
+0.8182	0.5113	1.000	Variables brought into a common block through	0.3835	0.0161
+0.8255	0.0733	1.000	separate blocks of common, each block of which is	0.3966	0.0147
+0.8358	0.4962	1.000	equivalence statements may increase the size of the	0.3985	0.0131
+0.8400	0.0714	1.000	located separately at object time. The block name	0.3985	0.0161
+0.8488	0.4962	1.000	block indicated by the common statements as in the	0.3985	0.0146
+0.8545	0.0733	1.000	is carried symbolically at load time so that blocks	0.3966	0.0161
+0.8633	0.4925	1.000	following example:	0.1485	0.0161
+0.8691	0.0733	1.000	with the same name from different programs may be	0.3966	0.0191
+0.8821	0.5244	1.000	COMMON A, B, C	0.1222	0.0133
+0.8850	0.0731	1.000	given the same location. The block name must not be	0.3971	0.0207
+0.8939	0.5244	1.000	DIMENSION D(3)	0.1297	0.0131
+0.9039	0.0752	1.000	used in any other reference in the program.	0.3195	0.0133
+0.9055	0.5244	1.000	EQUIVALENCE (B, D)	0.1598	0.0146
+0.9302	0.8759	1.000	19	0.0169	0.0116

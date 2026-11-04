@@ -1,0 +1,27 @@
+0.0712	0.0733	1.000	Box 10	0.0526	0.0131
+0.0724	0.5017	1.000	made to box 1. If the indicator is not on, the routine	0.3932	0.0187
+0.0885	0.5018	1.000	exits.	0.0435	0.0149
+0.1003	0.0733	1.000	The count in the blocking control is checked for zero.	0.3985	0.0146
+0.1148	0.0733	1.000	If zero, all cards in the input buffer have been used	0.3835	0.0146
+0.1163	0.5000	1.000	Вож 13	0.0583	0.0189
+0.1264	0.0733	1.000	and the buffer must be refilled. If not zero, the	0.3628	0.0161
+0.1424	0.0733	1.000	blocking control count field is decremented.	0.3271	0.0161
+0.1467	0.5000	1.000	Entrance when the next card is desired unconverted.	0.3891	0.0147
+0.1599	0.5000	1.000	Xsp1 is turned on.	0.1410	0.0189
+0.1726	0.0750	1.000	Box 11	0.0549	0.0168
+0.2020	0.0733	1.000	If STRAP II is first in the chain, the buffer is filled	0.3853	0.0160
+0.2179	0.0733	1.000	by the System Input. If not first in the chain arc	0.3665	0.0147
+0.2324	0.0733	1.000	address of the next block of input is obtained from the	0.4041	0.0118
+0.2325	0.4981	1.000	Box 14	0.0583	0.0161
+0.2482	0.0733	1.000	first word of the exhausted input, and the buffer is	0.3779	0.0110
+0.2587	0.5019	1.000	Entrance when a card is desired from a special input	0.3966	0.0189
+0.2615	0.0733	1.000	filled from the disk. Blocking control is reset.	0.3571	0.0146
+0.2761	0.5019	1.000	buffer. $7 is inspectéd to determine the memory	0.3684	0.0146
+0.2891	0.0751	1.000	Box 12	0.0547	0.0192
+0.2892	0.5000	1.000	Iocation of the source and the number of cards in the	0.3929	0.0145
+0.3023	0.5019	1.000	special input. The code is determined and linkage to	0.3966	0.0189
+0.3182	0.5000	1.000	the proper conversion code is set up. Xsp2 is turned	0.4004	0.0176
+0.3197	0.0733	1.000	If the blank card indicator which may have been set	0.3835	0.0161
+0.3358	0.0733	1.000	in box 9 is on, the card is ignored and a branch is	0.3741	0.0145
+0.3372	0.5019	1.000	on.	0.0263	0.0116
+0.9259	0.0695	1.000	134	0.0207	0.0073

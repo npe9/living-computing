@@ -1,0 +1,101 @@
+0.0669	0.1823	1.000	This variable field length operation says "Take	0.3496	0.0174
+0.0669	0.6053	1.000	unit located on this channel if more than one	0.3477	0.0131
+0.0827	0.6071	1.000	unit is attached) according to the instructions	0.3477	0.0147
+0.0827	0.1823	1.000	the 24-bit unsigned field composed of 8-bit	0.3496	0.0161
+0.0973	0.6053	1.000	contained in the control word addressed by	0.3477	0.0161
+0.0988	0.1805	1.000	bytes found offset from the right end of the	0.3496	0.0161
+0.1118	0.6053	1.000	coNwOrD modified by index register 9."	0.2876	0.0176
+0.1148	0.1842	1.000	accumulator by an amount equal to 6 bits	0.3477	0.0146
+0.1294	0.1805	1.000	modified by index register 4 and add it to the	0.3515	0.0161
+0.1366	0.5564	1.000	12. Load Value With Sum	0.2011	0.0146
+0.1439	0.1805	1.000	field of the same length that is found beginning	0.3496	0.0174
+0.1539	0.6748	1.000	LVS, J, X1, Xz, X,...	0.1598	0.0161
+0.1599	0.1823	1.000	at location Dummy modified by index register	0.3496	0.0147
+0.1740	0.1819	1.000	9 in storage."	0.1027	0.0189
+0.1771	0.6089	1.000	Example:	0.0735	0.0165
+0.1948	0.6748	1.000	LVS, $3, $5, $6, $7, $8	0.1617	0.0160
+0.1962	0.1429	1.000	8. Progressive Indexing	0.1786	0.0145
+0.2114	0.6050	1.000	This instruction reads, "Add together the value	0.3482	0.0212
+0.2121	0.2030	1.000	OP, (OP.) (dds), A, (I), OF.(I')	0.2556	0.0176
+0.2297	0.6053	1.000	fields of index registers 5, 6, 7, and 8 and store	0.3477	0.0161
+0.2338	0.1842	1.000	Example:	0.0715	0.0149
+0.2442	0.6053	1.000	the sum in the value field of index register 3."	0.3496	0.0174
+0.2515	0.2049	1.000	ST (V+I) (BU, 24, 8), .30($8), 2($14)	0.2857	0.0161
+0.2688	0.5714	1.000	Each of these formats is a slight variation or expan-	0.3835	0.0161
+0.2718	0.1805	1.000	This veL instruction with progressive indexing	0.3496	0.0161
+0.2833	0.1859	1.000	illustrates the power of sTReTcH instructions.	0.3443	0.0191
+0.2833	0.5564	1.000	sion of the basic sTrAP instruction format which is:	0.3835	0.0132
+0.3009	0.1823	1.000	The operation reads "Store the unsigned 24-bit	0.3496	0.0174
+0.3023	0.7312	1.000	OP, A	0.0489	0.0146
+0.3169	0.1823	1.000	field composed of 8-bit bytes that is found oft-	0.3496	0.0160
+0.3212	0.5564	1.000	The inclusion of index modification of the principal	0.3985	0.0161
+0.3327	0.1823	1.000	set from the right end of the accumulator by	0.3477	0.0118
+0.3372	0.5564	1.000	address expands this basic pattern to a stRAp format	0.3985	0.0161
+0.3427	0.1803	1.000	2 modified by index register 14 bits in the stor-	0.3481	0.0205
+0.3557	0.7198	1.000	OP, A(1)	0.0717	0.0153
+0.3633	0.1805	1.000	age location specified by the value field of in-	0.3515	0.0161
+0.3749	0.5563	1.000	used in Unconditional Branches, Indicator Branches	0.3986	0.0168
+0.3794	0.1842	1.000	dex register 8. Then increment the value field	0.3459	0.0131
+0.3909	0.5583	1.000	and Miscellaneous instructions. Through the addition	0.3966	0.0146
+0.3953	0.1842	1.000	of index register 8 by 30 bits and proceed to	0.3459	0.0116
+0.4055	0.5564	1.000	of the data description field	0.2030	0.0161
+0.4078	0.1842	1.000	the next instruction in sequence."	0.2426	0.0144
+0.4244	0.6936	1.000	OP (dds), A(I)	0.1241	0.0160
+0.4302	0.1429	1.000	9. Swap, Transmit full words.	0.2256	0.0146
+0.4405	0.5582	1.000	we arrive at the format for floating point instructions.	0.3950	0.0190
+0.4462	0.2425	1.000	OP, J, Ais(I), A'is(I')	0.1805	0.0174
+0.4578	0.5583	1.000	Adding to this format the offset specification and its	0.3966	0.0174
+0.4676	0.1841	1.000	Example:	0.0717	0.0139
+0.4738	0.5564	1.000	index modifier	0.1109	0.0131
+0.4855	0.2011	1.000	T, $2, TABLEI ($3), TABLE2($4)	0.2613	0.0161
+0.4912	0.6635	1.000	OP(dds), A(I), OF (I')	0.1861	0.0176
+0.5042	0.1842	1.000	This transmit instruction is written to "Transmit	0.3477	0.0133
+0.5130	0.5583	1.000	we develop the Variable Field Length format.	0.3477	0.0146
+0.5203	0.1842	1.000	the number of full words specified by the count	0.3477	0.0146
+0.5276	0.5695	1.000	Other changes in the basic format yield the other	0.3853	0.0146
+0.5363	0.1842	1.000	field of index register 2 from the storage area	0.3459	0.0146
+0.5421	0.5583	1.000	STRAP formats. For example, the insertion of the J	0.3947	0.0161
+0.5523	0.1823	1.000	beginning at location TABLEI modified by index	0.3496	0.0146
+0.5581	0.5564	1.000	field to specify the index register that is being oper-	0.3966	0.0161
+0.5669	0.1823	1.000	register 3 to the storage area beginning at	0.3496	0.0147
+0.5738	0.5563	1.000	ated upon	0.0792	0.0167
+0.5809	0.7085	1.000	OP, J, A(I)	0.0924	0.0171
+0.5813	0.1822	1.000	TABLE2 modified by index register 4."	0.2709	0.0170
+0.6017	0.5583	1.000	becomes the basis for the Index Arithmetic and Count	0.3966	0.0116
+0.6061	0.1335	1.000	10. Branch on Bit	0.1391	0.0103
+0.6177	0.5583	1.000	and Branch formats. Swap-Transmit, Input-Output,	0.3947	0.0132
+0.6221	0.2575	1.000	OP, Aг, (I), Bı (K)	0.1485	0.0161
+0.6321	0.5583	1.000	Bit Branching and the Load Value With Sum for-	0.3966	0.0147
+0.6378	0.1803	1.000	Example:	0.0735	0.0166
+0.6467	0.5583	1.000	mats evolve from the basic strap format in similar	0.3966	0.0118
+0.6555	0.2124	1.000	BB, ONEBIT($5), FIXUP($9)	0.2406	0.0161
+0.6628	0.5564	1.000	fashion.	0.0602	0.0145
+0.6758	0.1842	1.000	This instruction is interpreted to mean, "If the	0.3477	0.0146
+0.6802	0.5677	1.000	The major fields in any STRAP format are separated	0.3853	0.0161
+0.6903	0.1823	1.000	bit in storage whose location is ONEBIT modified	0.3496	0.0146
+0.6962	0.5564	1.000	by commas. All of the fields shown for a particular	0.3985	0.0160
+0.7064	0.1823	1.000	by index register 5 is on, branch to the instruc-	0.3496	0.0146
+0.7078	0.5581	1.000	format need not be written in every instruction. It is	0.3969	0.0190
+0.7224	0.1823	1.000	tion at location Fixup modified by index regis-	0.3496	0.0146
+0.7267	0.5583	1.000	obvious, for example, that an offset would not always	0.3947	0.0132
+0.7369	0.1823	1.000	ter 9. If this bit is not on, proceed to the next	0.3496	0.0146
+0.7412	0.5564	1.000	be specified in every vrL arithmetic statement. There-	0.3966	0.0161
+0.7513	0.1803	1.000	instruction in sequence."	0.1829	0.0169
+0.7573	0.5564	1.000	fore, a right-to-left drop-out order for major fields has	0.3985	0.0146
+0.7733	0.5602	1.000	been established; that is to say, missing fields are	0.3929	0.0131
+0.7761	0.1316	1.000	11. Input-Output	0.1353	0.0146
+0.7878	0.5582	1.000	compiled by sTRaP-II as if they contained zeros and	0.3948	0.0122
+0.7936	0.2293	1.000	OP, (OP2), Aro(I), Ars(I')	0.2030	0.0146
+0.8023	0.5564	1.000	were added at the end of the statement. A missing	0.3966	0.0174
+0.8136	0.1841	1.000	Example:	0.0717	0.0138
+0.8169	0.5564	1.000	field that is always compiled in some standard fashion	0.3966	0.0174
+0.8314	0.1617	1.000	RD(SEOP), CHANX($6), CONWORD ($9)	0.3365	0.0160
+0.8327	0.5583	1.000	(in this case zero) is referred to as a null field. Our	0.3947	0.0133
+0.8468	0.1802	1.000	The meaning of this I/o instruction is "Read the	0.3501	0.0223
+0.8488	0.5564	1.000	previous example of a vEL arithmetic instruction, now	0.3966	0.0161
+0.8633	0.5564	1.000	written with the offset field null, would appear	0.3590	0.0161
+0.8677	0.1805	1.000	unit connected to the channel symbolized by	0.3496	0.0160
+0.8821	0.1823	1.000	CHANx modified by index register 6 (or the last	0.3496	0.0147
+0.8821	0.6372	1.000	M+ (BU, 24, 8), DUMMY ($9)	0.2368	0.0161
+0.9172	0.1335	1.000	4	0.0113	0.0102
+0.9184	0.1766	1.000	IBM 7030	0.0621	0.0092

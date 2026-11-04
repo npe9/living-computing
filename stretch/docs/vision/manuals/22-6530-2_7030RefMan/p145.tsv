@@ -1,0 +1,107 @@
+0.0609	0.0996	1.000	start for single card reading. For multiple card reading	0.3910	0.0147
+0.0610	0.5299	1.000	Power On, Ready, Write Check, Reserved, Out of	0.3762	0.0183
+0.0755	0.0996	1.000	in the operator stop condition, the operation was not	0.3910	0.0147
+0.0770	0.5132	1.000	Material. These lights are standard. The out-of-	0.3910	0.0161
+0.0915	0.1015	1.000	ended and channel signal does not come on until	0.3891	0.0131
+0.0930	0.5150	1.000	material light goes on whenever the hopper is empty	0.3891	0.0161
+0.1061	0.1015	1.000	operation is ended otherwise.	0.2105	0.0131
+0.1062	0.5148	1.000	or whenever the stacker is full.	0.2223	0.0161
+0.1218	0.5299	1.000	Feed Check. This light is turned on automatically	0.3744	0.0189
+0.1221	0.1165	1.000	When the last card of the file has been read as indi-	0.3741	0.0116
+0.1381	0.5132	1.000	whenever misfeeding of cards has made the punch	0.3910	0.0174
+0.1381	0.0996	1.000	cated by out-of-material light and not ready, the opera-	0.3910	0.0146
+0.1526	0.0996	1.000	tor should depress the signal key to indicate the logical	0.3891	0.0147
+0.1526	0.5132	1.000	inoperative. When this occurs, a unit-check indica-	0.3910	0.0160
+0.1637	0.5147	1.000	tion terminates the instruction in progress, and the	0.3897	0.0236
+0.1685	0.0996	1.000	end of file. This causes the channel signal to be set even	0.3891	0.0133
+0.1845	0.0996	1.000	though the unit is not ready. By use of copy control	0.3891	0.0131
+0.1845	0.5132	1.000	punch becomes not ready. After the card jam is	0.3910	0.0161
+0.1980	0.5130	1.000	cleared, the feed-check light is turned off by lifting	0.3895	0.0192
+0.1991	0.0996	1.000	word, the program can recognize this condition as end	0.3891	0.0131
+0.2136	0.0996	1.000	of file. If the program turns off the reserved light at	0.3891	0.0146
+0.2151	0.5132	1.000	the cards in the hopper and pressing the unload key,	0.3891	0.0161
+0.2297	0.0996	1.000	this time, the operator knows that any further channel	0.3891	0.0131
+0.2311	0.5150	1.000	thereby running out the cards remaining in the feed.	0.3853	0.0131
+0.2442	0.0977	1.000	signals will be interpreted as part of the next file and	0.3910	0.0146
+0.2602	0.0996	1.000	that it is safe to ready the reader.	0.2387	0.0132
+0.2791	0.5132	1.000	Control Functions	0.1297	0.0116
+0.3009	0.0959	1.000	IBM 7553 Card Punch	0.2086	0.0146
+0.3009	0.5132	1.000	The following control functions initiated by CONTROL	0.3872	0.0161
+0.3146	0.5110	1.000	instructions can be executed by the card punch:	0.3632	0.0196
+0.3285	0.0996	1.000	The IBM 7553 Card Punch operates at 250 cards per	0.3872	0.0145
+0.3415	0.5113	1.000	OCTAL CODE	0.0846	0.0103
+0.3416	0.6805	1.000	FUNCTION	0.0714	0.0087
+0.3430	0.0977	1.000	minute. Blank cards are loaded in the hopper face	0.3891	0.0161
+0.3590	0.5846	1.000	Reserved Light Of. Standard function.	0.2951	0.0160
+0.3590	0.5282	1.000	016	0.0282	0.0116
+0.3590	0.0977	1.000	down, 9 edge first. They feed past a punching station,	0.3891	0.0161
+0.3728	0.0976	1.000	a reading station for checking, a blank station, and	0.3894	0.0168
+0.3779	0.5865	1.000	Reserved Light On. Standard function.	0.2932	0.0131
+0.3779	0.5282	1.000	017	0.0263	0.0116
+0.3876	0.0957	1.000	from there to the stacker. Another blank station pre-	0.3913	0.0168
+0.3953	0.5263	1.000	056	0.0301	0.0116
+0.3953	0.5865	1.000	Card Run-Out. The card punch feed goes	0.3139	0.0147
+0.4055	0.0959	1.000	cedes the punching station, so that when the punch is	0.3910	0.0146
+0.4112	0.5902	1.000	through two mechanical cycles and feeds	0.3083	0.0147
+0.4197	0.0957	1.000	loaded there are two unpunched cards between the	0.3912	0.0164
+0.4273	0.5846	1.000	two cards, without any punching taking	0.3139	0.0161
+0.4360	0.0977	1.000	hopper and the punch dies. A clutch permits inter-	0.3891	0.0146
+0.4433	0.5846	1.000	place.	0.0470	0.0131
+0.4497	0.0957	1.000	mittent starting and stopping as far as the reading	0.3913	0.0180
+0.4593	0.5263	1.000	057	0.0282	0.0116
+0.4593	0.5865	1.000	ECC Mode. Standard function.	0.2331	0.0131
+0.4641	0.0957	1.000	station; from there the cards feed continuously to the	0.3894	0.0176
+0.4767	0.5865	1.000	Check Light On. In addition to turning	0.3120	0.0161
+0.4767	0.5263	1.000	116	0.0282	0.0116
+0.4824	0.0959	1.000	stacker. An offset device permits cards to be slightly	0.3891	0.0147
+0.4927	0.5827	1.000	the write-check light on, this control code	0.3158	0.0161
+0.4940	0.0957	1.000	offset in the stacker for easier identification; this is	0.3895	0.0184
+0.5067	0.5845	1.000	causes a card to be offset in the stacker.	0.2898	0.0152
+0.5130	0.0959	1.000	done under program control.	0.2086	0.0131
+0.5247	0.5263	1.000	157	0.0282	0.0131
+0.5261	0.5846	1.000	No-ECC Mode. Standard Function.	0.2632	0.0146
+0.5276	0.1128	1.000	The information to be punched must be assembled	0.3703	0.0146
+0.5421	0.0940	1.000	in core storage as a card image occupying up to 15	0.3910	0.0161
+0.5561	0.0957	1.000	words in 960 consecutive bit positions: column 1-	0.3894	0.0187
+0.5738	0.0939	1.000	row 12, column 1 - row 11, column 1 - row 0, to col-	0.3912	0.0156
+0.5741	0.5132	1.000	Operation under Program Control	0.2481	0.0131
+0.5876	0.0957	1.000	umn 1 — row 9, column 2 - row 12, column 2 - row 11,	0.3895	0.0172
+0.5959	0.5113	1.000	Each single-block wrITe instruction given to a card	0.3872	0.0147
+0.6061	0.0940	1.000	etc., to column 80, row 9.	0.1805	0.0176
+0.6118	0.5113	1.000	punch causes one card image to be transferred from	0.3872	0.0132
+0.6279	0.5113	1.000	core storage to the transposition buffer in the punch.	0.3853	0.0146
+0.6424	0.5113	1.000	The feed mechanism is then started to punch the	0.3872	0.0161
+0.6497	0.0921	1.000	Keys, Lights, and Switches	0.1936	0.0145
+0.6528	0.5109	1.000	buffer contents into the card waiting just ahead of	0.3879	0.0220
+0.6710	0.5111	1.000	the punching station. Simultaneously with the punch-	0.3858	0.0191
+0.6715	0.1090	1.000	Power On, Power Of, Master Power, Start, Stop,	0.3759	0.0145
+0.6871	0.5092	1.000	ing of the new card, the card punched in the preced-	0.3875	0.0168
+0.6875	0.0921	1.000	Signal, Unload. These controls are standard. If the	0.3929	0.0131
+0.7020	0.5092	1.000	ing cycle is fed past the reading station for checking.	0.3857	0.0182
+0.7020	0.0921	1.000	stop key is depressed during the execution of a mul-	0.3910	0.0131
+0.7166	0.0921	1.000	tiple-block write instruction, the operation is inter-	0.3929	0.0146
+0.7180	0.5111	1.000	Unlike the case of the card reader, the end-of-opera-	0.3856	0.0170
+0.7324	0.5113	1.000	tion indication is not given until the end of the card	0.3853	0.0147
+0.7324	0.0921	1.000	rupted at the end of the current card cycle. No infor-	0.3929	0.0147
+0.7485	0.0921	1.000	mation is lost, however, and hence unit-check is not	0.3910	0.0118
+0.7500	0.5094	1.000	cycle. At this time the checking of the preceding card	0.3872	0.0145
+0.7645	0.0902	1.000	sent to the exchange. When the start key is depressed,	0.3929	0.0131
+0.7645	0.5094	1.000	has been completed. A card constitutes a block of	0.3872	0.0146
+0.7791	0.0921	1.000	the original operation is resumed, provided the power	0.3910	0.0146
+0.7805	0.5075	1.000	information as far as the exchange is concerned.	0.3628	0.0131
+0.7935	0.0901	1.000	has been continuously on.	0.1864	0.0136
+0.7950	0.5262	1.000	Since the checking of punching takes place only	0.3706	0.0165
+0.8088	0.5091	1.000	in the subsequent cycle when the card passes the read-	0.3858	0.0197
+0.8096	0.1071	1.000	Motor. This toggle switch controls the power for	0.3759	0.0146
+0.8251	0.5074	1.000	ing station, the card just punched is not yet checked	0.3893	0.0170
+0.8255	0.0921	1.000	the feed drive motor and is provided as a safety meas-	0.3910	0.0133
+0.8400	0.0921	1.000	ure. When the switch is off, the motor is disconnected	0.3891	0.0133
+0.8415	0.5094	1.000	at the time the end-of-operation indication is given.	0.3853	0.0161
+0.8561	0.5094	1.000	However, in addition to punching errors, errors in a	0.3853	0.0146
+0.8561	0.0902	1.000	and the unit cannot be placed in the ready status.	0.3910	0.0146
+0.8706	0.0921	1.000	Normally, it is on. This switch does not have to be	0.3910	0.0131
+0.8721	0.5075	1.000	card can be introduced also during transmission of	0.3891	0.0146
+0.8866	0.0902	1.000	used during the normal operation of the unit.	0.3402	0.0131
+0.8881	0.5094	1.000	the data from the exchange to the unit. These errors	0.3872	0.0131
+0.9244	0.0883	1.000	142	0.0244	0.0102
+0.9244	0.1391	1.000	IBM 7030	0.0658	0.0087

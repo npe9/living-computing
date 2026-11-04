@@ -1,0 +1,72 @@
+0.0872	0.8759	1.000	MIBA	0.0470	0.0131
+0.1438	0.5318	1.000	receive the STRAP error op treatment here in MIBA.	0.3950	0.0147
+0.1452	0.1034	1.000	LINKAGE	0.0734	0.0118
+0.1599	0.5320	1.000	The adjustment of the op mnemonic may make it	0.3590	0.0131
+0.1744	0.1053	1.000	On Entry	0.0677	0.0116
+0.1744	0.5301	1.000	possible for MAIN to find the op in another search of	0.3929	0.0116
+0.1890	0.1203	1.000	1. MAIN branches directly to MIBA	0.2726	0.0117
+0.1890	0.5320	1.000	the primary op table.	0.1579	0.0132
+0.2035	0.1541	1.000	The complete operation mnemonic is in the	0.3177	0.0117
+0.2049	0.1222	1.000	2.	0.0150	0.0102
+0.2179	0.1053	1.000	operation collection buffer, Bop.	0.2406	0.0133
+0.2194	0.5301	1.000	Boxes 3-5; 3,4, I1-13; 3,4, II,12, 15,16 ; 3,4, I1, 12, 15, 17-19	0.4267	0.0146
+0.2470	0.1053	1.000	On Exit	0.0583	0.0103
+0.2485	0.5320	1.000	For each of the indicators that can appear in the BI-	0.3872	0.0118
+0.2615	0.1485	1.000	The proper indicator number, indicator operation	0.3703	0.0133
+0.2630	0.5301	1.000	type instruction, MIBA has in its table one entry with	0.3966	0.0131
+0.2631	0.1203	1.000	1.	0.0150	0.0102
+0.2761	0.1053	1.000	code, and indicator bits are set up in the binary out-	0.3872	0.0133
+0.2776	0.5320	1.000	the mnemonie for the indicator and its associated in-	0.3929	0.0118
+0.2921	0.5301	1.000	dicator number (See Appendix A.)	0.2519	0.0131
+0.2921	0.1053	1.000	put skeleton contained in the expanded instruction unit.	0.4004	0.0117
+0.3052	0.1541	1.000	The location of this op's index word is estab-	0.3365	0.0118
+0.3067	0.5526	1.000	The variations of a BI-type of instruction are:	0.3421	0.0131
+0.3067	0.1203	1.000	2.	0.0150	0.0102
+0.3210	0.1014	1.000	lished.	0.0547	0.0121
+0.3212	0.5320	1.000	BI, BIZ, BZI, and BZIZ. The maximum mnemonic	0.3853	0.0161
+0.3342	0.1504	1.000	MIBA returns to one of three locations in MAIN:	0.3590	0.0146
+0.3358	0.5301	1.000	for an indicator contains four characters.	0.3102	0.0145
+0.3372	0.1203	1.000	3.	0.0188	0.0102
+0.3503	0.5414	1.000	By successive testing of the last and second	0.3327	0.0146
+0.3503	0.1034	1.000	The three subsequent actions that can occur in MAIN	0.3910	0.0146
+0.3648	0.5320	1.000	characters of the original operation mnemonic for a	0.3853	0.0146
+0.3648	0.1034	1.000	after MIBA has analyzed the op are:	0.2669	0.0146
+0.3794	0.1692	1.000	To continue processing the branch-on-indic-	0.3289	0.0116
+0.3794	0.5320	1.000	Z and by subsequent selected stripping of the basic	0.3778	0.0146
+0.3823	0.1391	1.000	a.	0.0226	0.0087
+0.3939	0.5301	1.000	operation mnemonic, MIBA tests to see if any one of	0.3929	0.0161
+0.3953	0.1673	1.000	ator operation.	0.1109	0.0102
+0.4084	0.1579	1.000	To relook-up in the primary operation table	0.3383	0.0131
+0.4099	0.5301	1.000	the resulting indicator mnemonies is in the table of	0.3835	0.0147
+0.4244	0.1654	1.000	the formerly illegally specified operation	0.3064	0.0132
+0.4244	0.5301	1.000	the indicator mnemonies.	0.1898	0.0132
+0.4375	0.1692	1.000	mnemonic which MIBA has now adjusted with	0.3308	0.0131
+0.4520	0.5301	1.000	Boxes 6, 14, 20, Z	0.1466	0.0174
+0.4535	0.1654	1.000	the MBSPEC subroutine.	0.1842	0.0145
+0.4679	0.1560	1.000	To treat an illegal operation which cannot be	0.3402	0.0133
+0.4709	0.1391	0.500	c.	0.0169	0.0087
+0.4824	0.5320	1.000	The binary output skeleton for the instruction is	0.3534	0.0147
+0.4824	0.1692	1.000	successfully adjusted.	0.1617	0.0133
+0.4970	0.5301	1.000	contained in the fixed format portion of the op which	0.3853	0.0147
+0.5115	0.1053	1.000	FLOW CHART DESCRIPTION	0.2199	0.0133
+0.5145	0.5301	1.000	is in the expanded instruction unit. MIBA inserts in	0.3891	0.0103
+0.5276	0.5301	1.000	the binary output skeleton the indicator number, the	0.3853	0.0146
+0.5417	0.1033	1.000	Boxes 1, 9	0.0792	0.0140
+0.5421	0.5301	1.000	operation code, and the setting for bits 29 and 30.	0.3703	0.0146
+0.5552	0.5301	1.000	(The fixed portion of each new unit is zeroed during	0.3835	0.0161
+0.5697	0.1053	1.000	MIBA uses an index register which has a standard use	0.4004	0.0132
+0.5712	0.5301	1.000	the processing initialization for each new instruction.)	0.4060	0.0145
+0.5858	0.1034	1.000	in main flow. This index register mustbe savedwhile	0.3985	0.0145
+0.5988	0.5301	1.000	Box 8	0.0508	0.0176
+0.5988	0.1034	1.000	MIBA is in process and restored before MIBA enters	0.3947	0.0146
+0.6163	0.1053	1.000	main flow.	0.0789	0.0102
+0.6294	0.5301	1.000	MIBA also supplies main flow with the information	0.3759	0.0161
+0.6453	0.5301	1.000	that is usually obtained from the primary operation	0.3816	0.0147
+0.6453	0.1034	1.000	Boxes 2, 9, 10, 21-23	0.1635	0.0131
+0.6584	0.5282	1.000	table. This location of the op index is put into the	0.3741	0.0161
+0.6726	0.5300	1.000	unit and into the value field of $X5 for referencing	0.3706	0.0169
+0.6744	0.1053	1.000	If the op does not start with the character, B, or is	0.3797	0.0116
+0.6890	0.5282	1.000	purposes.	0.0752	0.0131
+0.6890	0.1053	1.000	not a legally specified BI-type op, the operation will	0.3835	0.0132
+0.9390	0.9041	1.000	95	0.0188	0.0116
+0.9390	0.8477	1.000	MIBA	0.0338	0.0116

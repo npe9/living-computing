@@ -1,0 +1,39 @@
+0.1090	0.1898	1.000	DEFINITION CARD	0.1560	0.0146
+0.1394	0.1898	1.000	The five types of definition cards are:	0.3045	0.0161
+0.1730	0.2124	1.000	1. Job Card	0.1053	0.0131
+0.1875	0.2143	1.000	2. Type-of-Problem Card	0.2143	0.0161
+0.2020	0.2124	1.000	3. LIM Card	0.1109	0.0160
+0.2176	0.2123	1.000	4. IOD Card	0.1073	0.0168
+0.2336	0.2123	1.000	5. Reel Card	0.1130	0.0168
+0.2615	0.1898	1.000	A job card and a type-of-problem card must precede every deck in the order stated.	0.6767	0.0206
+0.2790	0.1898	1.000	If the first four types of definition cards are used, they must appear in the order in	0.6693	0.0182
+0.2936	0.1917	1.000	which they are listed above.	0.2237	0.0161
+0.3270	0.1898	1.000	JOB CARD	0.0902	0.0161
+0.3561	0.1898	1.000	This card is always the initial card in an input deck. It serves as a logical separation	0.6917	0.0176
+0.3735	0.1898	1.000	between jobs; its appearance signals the beginning of a new job.	0.5169	0.0160
+0.4055	0.1898	1.000	The format of the job card is:	0.2406	0.0146
+0.4575	0.3815	1.000	10B, ANYIDENTIFICATION	0.1919	0.0298
+0.4578	0.7068	1.000	68/69	0.0376	0.0131
+0.4578	0.8271	1.000	80	0.0207	0.0116
+0.4593	0.2575	1.000	2	0.0094	0.0102
+0.4593	0.2350	1.000	1	0.0132	0.0131
+0.5115	0.2256	1.000	The identifying information is printed out on the typewriter and heads and follows any SPOOL output.	0.6297	0.0161
+0.5247	0.2256	1.000	At the option of the individual installation, an accounting program will also make use of the identifying	0.6485	0.0160
+0.5378	0.2256	1.000	information supplied on job cards.	0.2180	0.0160
+0.5596	0.1917	1.000	TYPE-OF-PROBLEM CARD	0.2312	0.0174
+0.5910	0.1897	1.000	This card must be punched in one of the following formats:	0.4721	0.0195
+0.6483	0.8346	1.000	80	0.0244	0.0160
+0.6483	0.3797	1.000	910	0.0338	0.0160
+0.6497	0.7068	1.000	68/69	0.0357	0.0131
+0.6512	0.2575	1.000	2	0.0150	0.0131
+0.6628	0.3835	1.000	IGO	0.0338	0.0145
+0.6642	0.2331	1.000	B	0.0132	0.0116
+0.6773	0.3891	1.000	STRAP, NOLIST, NOPUNCH	0.1898	0.0161
+0.6788	0.2350	1.000	B	0.0113	0.0102
+0.7035	0.3891	1.000	COLASL, NOLIST, NOPUNCH	0.1955	0.0174
+0.7179	0.3910	1.000	STRAPGO, NOLIST, NOPUNCH	0.2030	0.0161
+0.7410	0.3810	1.000	ICOLASIGO, NOLIST, NOPUNCH	0.2173	0.0239
+0.7747	0.2387	1.000	OLASL is the Los Alamos compile	0.2049	0.0117
+0.7833	0.2368	1.000	OLIST suppresses the listing produced by the compiler namer	0.3703	0.0161
+0.7979	0.2218	0.300	boru ncth ep ptesce maydlpear the comay ov p a ded yiehet eo i lpramad Eiser one, o	0.6034	0.0321
+0.9375	0.0752	1.000	2	0.0150	0.0160

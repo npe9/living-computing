@@ -1,0 +1,115 @@
+0.0624	0.0939	1.000	control word. On reading, the new control word is	0.3855	0.0156
+0.0624	0.5056	1.000	pressed, the first channel signal interruption causes	0.3910	0.0146
+0.0770	0.5056	1.000	the channel responsible for the interruption to read	0.3891	0.0146
+0.0785	0.0940	1.000	fetched when the data transfer specified by the preced-	0.3853	0.0131
+0.0930	0.5038	1.000	in a specified number of words into a specified core	0.3929	0.0146
+0.0945	0.0940	1.000	ing control word has been completed and the ex-	0.3853	0.0131
+0.1090	0.0940	1.000	change has already assembled the first data word to	0.3853	0.0146
+0.1118	0.5056	1.000	storage area.	0.0902	0.0103
+0.1235	0.0939	1.000	be sent to the area defined by the new control word.	0.3836	0.0161
+0.1235	0.5226	1.000	The INITIAL PROGRAM LOAD key is physically located	0.3722	0.0146
+0.1378	0.5055	1.000	on the operator's console, although not an integral	0.3912	0.0166
+0.1394	0.0959	1.000	This timing does not depend upon the original word	0.3816	0.0147
+0.1539	0.5056	1.000	logical part of it. If the system does not contain an	0.3910	0.0147
+0.1555	0.0940	1.000	count of the control word nor on the state of its mul-	0.3853	0.0118
+0.1685	0.5056	1.000	operator's console, it is provided in a separate box,	0.3910	0.0161
+0.1715	0.0921	1.000	tiple flag.	0.0620	0.0161
+0.1845	0.5056	1.000	which may be placed at a convenient operating point.	0.3891	0.0146
+0.1860	0.1071	1.000	On single block writing, chaining normally takes	0.3722	0.0146
+0.1982	0.6088	1.000	program, as recorded on the medium	0.2880	0.0171
+0.2020	0.5207	1.000	The initial	0.0865	0.0116
+0.2020	0.0940	1.000	place when the count in the control word is stepped	0.3835	0.0146
+0.2166	0.0940	1.000	from 2 to 1. When a control word on chained writ-	0.3853	0.0131
+0.2166	0.5075	1.000	from which it is to be loaded, must start with a con-	0.3891	0.0131
+0.2292	0.0938	1.000	ing originally has a word count of one, the next con-	0.3857	0.0186
+0.2311	0.5075	1.000	trol word that specifies the number of words to be	0.3891	0.0147
+0.2456	0.5056	1.000	read and the core storage address at which the first	0.3929	0.0147
+0.2485	0.1823	1.000	obtained one word time (the time re-	0.2970	0.0118
+0.2485	0.0940	1.000	trol word is	0.0865	0.0103
+0.2615	0.5075	1.000	word of the remainder of the program is to be stored.	0.3910	0.0133
+0.2630	0.0940	1.000	quired to write one word) after fetching the control	0.3872	0.0146
+0.2761	0.5075	1.000	This control word is immediately followed by the	0.3910	0.0146
+0.2776	0.0940	1.000	word with the count of one. If the first control word	0.3853	0.0131
+0.2921	0.0940	1.000	of a wRITe has'a word count of one, and the chain	0.3853	0.0146
+0.2921	0.5075	1.000	program itself. When the program has been read, the	0.3910	0.0146
+0.3079	0.0939	1.000	flag is on, the next control word is fetched immedi-	0.3855	0.0151
+0.3081	0.5075	1.000	computer automatically starts execution of the new	0.3910	0.0146
+0.3227	0.5056	1.000	program. Specifically, the depression of the INITIAL	0.3929	0.0174
+0.3241	0.0921	1.000	ately after fetching the data word for the first contro!	0.3891	0.0160
+0.3387	0.5056	1.000	PROGRAM LOAD key has the following effect:	0.3083	0.0147
+0.3401	0.0921	1.000	word.	0.0414	0.0145
+0.3545	0.1090	1.000	As a result of the buffering action of the exchange,	0.3722	0.0146
+0.3706	0.0940	1.000	the new control word is fetched and stored in the ex-	0.3872	0.0117
+0.3764	0.5075	1.000	1. The execution of any program by the computer is terminated.	0.3910	0.0132
+0.3852	0.0940	1.000	change ahead of the time it actually starts controlling	0.3872	0.0146
+0.3881	0.5282	1.000	The interruption system is temporarily disabled.	0.2989	0.0116
+0.3895	0.5075	1.000	2.	0.0132	0.0087
+0.3995	0.5075	1.000	3. All input-output operations on the exchange are terminated.	0.3911	0.0135
+0.4012	0.0940	1.000	the operation of the unit. The restarting of the unit	0.3891	0.0146
+0.4127	0.5244	1.000	All control words in the exchange are reset to zero.	0.3233	0.0103
+0.4128	0.5094	1.000	4.	0.0132	0.0087
+0.4157	0.0940	1.000	at the end of a block depends upon the multiple flag	0.3872	0.0146
+0.4230	0.5263	1.000	The exchange is set to interpret the next channel signal in	0.3722	0.0116
+0.4244	0.5075	1.000	5.	0.0150	0.0102
+0.4317	0.0940	1.000	of the control word controlling the transfer of the	0.3872	0.0132
+0.4375	0.5282	1.000	a special way.	0.0865	0.0089
+0.4448	0.5075	1.000	6. All input-output units are reset to "initial power-on" status.	0.3891	0.0131
+0.4462	0.0940	1.000	last data word of the block. The next control word	0.3872	0.0117
+0.4578	0.5282	1.000	a. If an input-output unit was in ready status before the	0.3722	0.0116
+0.4595	0.0939	1.000	takes over the control only after the unit has re-	0.3874	0.0171
+0.4709	0.5489	1.000	IPL, it remains in that status.	0.1786	0.0103
+0.4767	0.0940	1.000	quested the first byte of the data word belonging to	0.3872	0.0146
+0.4811	0.5282	1.000	b. If the card punch was filling its bufter at the time of the	0.3722	0.0116
+0.4912	0.5489	1.000	IPL, zeros are inserted for the remainder of the unit record	0.3515	0.0118
+0.4927	0.0940	1.000	that control word. In order to accomplish this, the	0.3872	0.0131
+0.5042	0.5489	1.000	and the card is punched. If the punch was punching, the	0.3515	0.0118
+0.5073	0.0940	1.000	exchange always stores the multiple flags of the per-	0.3891	0.0146
+0.5160	0.5489	1.000	operation is completed. An error sensed during this process	0.3515	0.0116
+0.5247	0.0959	1.000	tinent control words.	0.1466	0.0102
+0.5276	0.5489	1.000	may cause an indicator to be set during execution of the	0.3515	0.0118
+0.5371	0.5484	1.000	program loaded by the IPL.	0.1663	0.0175
+0.5378	0.1090	1.000	An exception to the above rules for chained writing	0.3722	0.0146
+0.5509	0.5282	1.000	c. If the card reader is in ready status when an IPL is given,	0.3722	0.0116
+0.5536	0.0940	1.000	occurs when the current control word has both the	0.3891	0.0118
+0.5624	0.5489	1.000	a maximum of two old records may be obtained if the	0.3515	0.0103
+0.5681	0.0939	1.000	multiple and the chain flags on. In this case the new	0.3893	0.0165
+0.5741	0.5489	1.000	new program addresses the reader. Each of these records	0.3515	0.0131
+0.5827	0.0938	1.000	control word starts a new operation as far as the unit	0.3894	0.0179
+0.5842	0.6147	1.000	the setting of indicators during execution of	0.2876	0.0131
+0.5973	0.5489	1.000	the program loaded by the IPL. This can be prevented by	0.3515	0.0133
+0.6003	0.0940	1.000	is concerned, and chaining takes place only after the	0.3891	0.0131
+0.6090	0.5489	1.000	manually unloading the reader.	0.1974	0.0116
+0.6148	0.0940	1.000	exchange buffer has been cleared and the preceding	0.3891	0.0146
+0.6308	0.0940	1.000	block has been terminated. If an error is discovered	0.3872	0.0116
+0.6453	0.0921	1.000	in the completed block, the operation is terminated	0.3910	0.0147
+0.6526	0.5075	1.000	The depression of the INITIAL PROGRAM LOAD key per-	0.3929	0.0147
+0.6599	0.0921	1.000	at the end of the block, and the exchange contains the	0.3910	0.0160
+0.6672	0.5075	1.000	forms these functions even if the computer has hung	0.3929	0.0160
+0.6758	0.0921	1.000	old control word at the time of program interruption.	0.3929	0.0161
+0.6830	0.5094	1.000	up within an operation.	0.1748	0.0161
+0.6991	0.5244	1.000	The disabling of the interruption system prevents	0.3759	0.0146
+0.7136	0.5094	1.000	any extraneous interruptions, such as the elapsed	0.3891	0.0161
+0.7282	0.5094	1.000	time clock, from interfering with the initial loading	0.3910	0.0176
+0.7339	0.0921	1.000	Initial Program Loading	0.2237	0.0161
+0.7442	0.5094	1.000	until the program has set up suitable procedures for	0.3910	0.0161
+0.7587	0.5094	1.000	coping with such interruptions. The initial program	0.3910	0.0174
+0.7660	0.0921	1.000	In order that a program can be loaded into the ma-	0.3929	0.0161
+0.7747	0.5094	1.000	should reset the indicator register before enabling the	0.3910	0.0160
+0.7820	0.0921	1.000	chine without a programmed READ instruction, an ini-	0.3910	0.0160
+0.7906	0.5075	1.000	interruption system.	0.1504	0.0161
+0.7942	0.0938	1.000	tial program loading technique is provided. The ini-	0.3895	0.0207
+0.8052	0.5244	1.000	The resetting of input-output units to the "initial	0.3759	0.0161
+0.8109	0.0921	1.000	tial program can be loaded from any unit accommo-	0.3929	0.0176
+0.8212	0.5113	1.000	power-on" status has the following effect:	0.2951	0.0145
+0.8270	0.0921	1.000	dated by the exchange and is based on a special in-	0.3929	0.0161
+0.8415	0.5113	1.000	1. Where more than one input-output unit is connected to a	0.3872	0.0118
+0.8430	0.0921	1.000	terpretation of channel signal. The loading is ini-	0.3929	0.0161
+0.8517	0.5338	1.000	common control unit, the control unit is reset to select the	0.3665	0.0116
+0.8576	0.0921	1.000	tiated by means of the INITIAL PROGRAM LOAD key,	0.3947	0.0161
+0.8633	0.5338	1.000	unit with the selection address 0.	0.1992	0.0103
+0.8735	0.0940	1.000	which sets up the exchange and the computer in a spe-	0.3910	0.0160
+0.8794	0.5075	1.000	2. Where applicable, the unit is reset to the no-ecc and odd-	0.3910	0.0102
+0.8881	0.0940	1.000	cial mode. Once the INITIAL PROGRAM LOAD key is de-	0.3910	0.0160
+0.8894	0.5338	1.000	parity mode of operation.	0.1523	0.0089
+0.9215	0.8797	1.000	125	0.0226	0.0087
+0.9230	0.7256	1.000	IBM 7619 Exchange	0.1259	0.0102

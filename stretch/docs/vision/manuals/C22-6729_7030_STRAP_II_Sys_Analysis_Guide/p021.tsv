@@ -1,0 +1,128 @@
+0.0858	0.6165	1.000	Setting	0.0639	0.0174
+0.0867	0.0994	1.000	in Pass 2b. GETCHA saves the characters associated	0.4064	0.0203
+0.0872	0.5188	1.000	Setting	0.0640	0.0175
+0.1014	0.6221	1.000	of Fblena	0.0792	0.0167
+0.1015	0.5262	1.000	of Fblend	0.0772	0.0179
+0.1031	0.7293	1.000	Comment	0.0734	0.0132
+0.1032	0.1015	1.000	with each instruction in a symbolic statement buffer	0.3853	0.0160
+0.1177	0.0996	1.000	which Pass 1 transfers into the unit during the end-of-	0.4060	0.0145
+0.1294	0.7293	1.000	This semicolon is not	0.1654	0.0161
+0.1308	0.6410	1.000	off	0.0282	0.0145
+0.1323	0.5432	1.000	on	0.0244	0.0145
+0.1336	0.0996	1.000	instruction processing in MAIN.	0.2387	0.0146
+0.1439	0.7274	1.000	from the symbolic input	0.1842	0.0174
+0.1555	0.7293	1.000	but is the "false" semi-	0.1805	0.0204
+0.1640	0.0995	1.000	Box 8	0.0491	0.0150
+0.1744	0.7274	1.000	colon from GETCHA. A	0.1861	0.0147
+0.1860	0.7274	1.000	semicolon (already proc-	0.1917	0.0189
+0.1918	0.1034	1.000	For a comma character (a null op) Pass 1 transfers	0.3835	0.0146
+0.2030	0.7293	1.000	essed) has been specified	0.1900	0.0156
+0.2048	0.1015	1.000	to that part of the main flow where up to eight char-	0.3853	0.0161
+0.2179	0.7274	1.000	unnecessarily after the	0.1767	0.0176
+0.2224	0.1015	1.000	acters of the op have already been collected in Bop.	0.3816	0.0131
+0.2339	0.7274	1.000	last instruction in the	0.1654	0.0132
+0.2369	0.1015	1.000	Note: since the buffer was blanked out in the initiali-	0.3929	0.0116
+0.2446	0.7269	1.000	previous card block. If	0.1834	0.0214
+0.2500	0.1015	1.000	zation, Bopx is already set up for the look-up of the	0.3853	0.0161
+0.2604	0.7291	1.000	this immediately previous	0.1960	0.0187
+0.2674	0.1034	1.000	null op in the primary op table.	0.2312	0.0116
+0.2776	0.7274	1.000	card block has a name,	0.1786	0.0161
+0.2918	0.7293	1.000	MAIN makes the entry into	0.2012	0.0168
+0.2978	0.1033	1.000	Boxes 9-9H	0.0903	0.0120
+0.3060	0.7292	1.000	the symbol table now	0.1581	0.0173
+0.3223	0.7274	1.000	because MAIN knows that	0.1937	0.0139
+0.3241	0.1015	1.000	For a semicolon character in a named card block,	0.3722	0.0160
+0.3372	0.7293	1.000	the card block has finally	0.1936	0.0161
+0.3400	0.1015	1.000	MAIN moves a precoded - DRZ(N), 1 - unit into the	0.3816	0.0147
+0.3532	0.7293	1.000	been completed.	0.1222	0.0147
+0.3545	0.1034	1.000	current unit. For a semicolon character in an unnamed	0.4135	0.0133
+0.3677	0.1015	1.000	card block, a comment unit is set up. This ultimately	0.4041	0.0160
+0.3820	0.5281	1.000	Boxes 10, 11	0.1054	0.0179
+0.3836	0.1034	1.000	will produce a blank line on the listing. However the	0.3929	0.0132
+0.3982	0.1015	1.000	setting of the ID field in the unit prior to this move is	0.3947	0.0146
+0.4127	0.1034	1.000	saved and restored. Because the precoded format has	0.4023	0.0131
+0.4142	0.5301	1.000	For a(() Pass 1 determines the type of entry mode	0.3835	0.0116
+0.4278	0.5281	1.000	betore having the characters of the op collected. A	0.3798	0.0151
+0.4288	0.1034	1.000	all the information needed for the instruction, practi-	0.3966	0.0131
+0.4418	0.5282	1.000	two word buffer at Bem, which holds the information	0.3910	0.0161
+0.4418	0.1034	1.000	cally all the intermediary action between this box and	0.3947	0.0131
+0.4564	0.5282	1.000	about any entry mode and radices on a DD, is built	0.3797	0.0161
+0.4564	0.1034	1.000	box 38 is not needed. However, three things must be	0.3947	0.0146
+0.4724	0.5282	1.000	up. The second index word contains the parameter,	0.3853	0.0146
+0.4724	0.1034	1.000	done before the transfer to box 38: First, $5 is set up	0.4023	0.0131
+0.4855	0.5282	1.000	if any, specified before the op; the first index word,	0.3872	0.0189
+0.4869	0.1034	1.000	with the location of the appropriate op index. Second,	0.3985	0.0146
+0.5015	0.5282	1.000	the radix to be used on the current D field under proc-	0.4041	0.0146
+0.5029	0.1034	1.000	since the usual encoding of GETFLD will not take	0.3703	0.0116
+0.5144	0.5281	1.000	ess. In each index word the value field is reserved	0.3837	0.0168
+0.5160	0.1015	1.000	place for this DR, index word Bofldx must be adjusted	0.4023	0.0161
+0.5305	0.1015	1.000	so that later redefinition of Ibuffw by Befldx will be	0.3797	0.0174
+0.5305	0.5263	1.000	for the terminating character of an alphabetic DD;	0.3741	0.0146
+0.5451	0.5282	1.000	the twenty four bits, 36-60, for the radix; bits 61-63,	0.3966	0.0160
+0.5464	0.1034	1.000	correct. Third, Fiod is turned on to indicate a non-	0.3891	0.0133
+0.5596	0.5301	1.000	Bemt, Bemu, Bemv, for the type of DD.	0.3008	0.0160
+0.5610	0.1033	1.000	MCP instruction has occurred.	0.2295	0.0117
+0.5755	0.1203	1.000	In summary, if the first character of a new instruc-	0.3853	0.0147
+0.5777	0.6163	1.000	Setting of	0.0775	0.0161
+0.5779	0.5280	1.000	Setting of	0.0737	0.0157
+0.5782	0.6916	1.000	Setting of	0.0848	0.0152
+0.5915	0.1053	1.000	tion is a semicolon, one of the following three situa-	0.3872	0.0118
+0.5944	0.6203	1.000	Bemu	0.0433	0.0132
+0.5944	0.8007	1.000	Comment	0.0733	0.0132
+0.5945	0.5301	1.000	Bemt	0.0414	0.0131
+0.5945	0.7030	1.000	Bemv	0.0470	0.0131
+0.6061	0.1034	1.000	tions is possible:	0.1278	0.0118
+0.6206	0.7914	1.000	alphabetic entry	0.1222	0.0161
+0.6206	0.6335	1.000	0/1	0.0301	0.0160
+0.6206	0.7124	1.000	0/1	0.0320	0.0160
+0.6206	0.5451	1.000	1	0.0132	0.0189
+0.6294	0.2011	1.000	Setting	0.0508	0.0102
+0.6294	0.1015	1.000	Setting	0.0526	0.0131
+0.6352	0.8064	1.000	mode	0.0451	0.0160
+0.6437	0.3045	1.000	Comment	0.0715	0.0121
+0.6439	0.1015	1.000	of Fblend	0.0789	0.0146
+0.6439	0.1955	1.000	of Fblena	0.0752	0.0146
+0.6497	0.7895	1.000	A entry mode	0.1090	0.0176
+0.6642	0.7914	1.000	CC entry mode	0.1147	0.0176
+0.6657	0.7124	1.000	1	0.0150	0.0145
+0.6672	0.5451	1.000	1	0.0113	0.0116
+0.6685	0.3026	1.000	More than one semicolon	0.1898	0.0176
+0.6701	0.2124	1.000	-	0.0207	0.0174
+0.6701	0.1184	1.000	off	0.0263	0.0160
+0.6772	0.7894	1.000	IQS entry mode	0.1185	0.0192
+0.6817	0.6335	1.000	1	0.0150	0.0131
+0.6845	0.3026	1.000	has been specified after an	0.2011	0.0161
+0.6928	0.7912	1.000	no entry mode	0.1093	0.0199
+0.6962	0.7162	1.000	0	0.0094	0.0116
+0.6971	0.3026	1.000	instruction which is not the	0.2050	0.0172
+0.7091	0.8007	1.000	given	0.0528	0.0178
+0.7106	0.3026	1.000	last instruction in this card	0.2086	0.0206
+0.7252	0.7914	1.000	En entry mode	0.1109	0.0147
+0.7253	0.7143	1.000	1	0.0132	0.0145
+0.7297	0.3026	1.000	block. STRAP II makes up	0.2049	0.0146
+0.7385	0.3021	1.000	a -- DRZ(N), 1 -- instruc-	0.2040	0.0231
+0.7397	0.7914	1.000	(r) radix	0.0695	0.0133
+0.7413	0.6335	1.000	1	0.0132	0.0131
+0.7542	0.7932	1.000	(. n) parenthetical	0.1297	0.0147
+0.7544	0.7162	1.000	1	0.0113	0.0131
+0.7558	0.6372	1.000	I	0.0094	0.0116
+0.7573	0.3026	1.000	tion for this unit.	0.1335	0.0161
+0.7703	0.8045	1.000	integer entry	0.1034	0.0131
+0.7834	0.8026	1.000	mode	0.0545	0.0160
+0.7848	0.3045	1.000	A semicolon has been	0.1635	0.0189
+0.7892	0.1184	1.000	on	0.0244	0.0145
+0.7907	0.2162	1.000	on	0.0207	0.0116
+0.7979	0.5301	1.000	This information is picked up later when MQDD or	0.3759	0.0191
+0.8023	0.3045	1.000	specified as the first char-	0.2030	0.0146
+0.8124	0.5282	1.000	MQDALF processes the DD.	0.2143	0.0191
+0.8169	0.3045	1.000	acter of this card block	0.1786	0.0147
+0.8314	0.3045	1.000	STRAP II makes up either	0.1955	0.0160
+0.8358	0.5282	1.000	Boxes 12-15	0.0977	0.0176
+0.8459	0.3045	1.000	a -- DRZ(N), 1 -- instruc-	0.2030	0.0147
+0.8605	0.3045	1.000	tion in the unit if it has a	0.1880	0.0174
+0.8618	0.5282	1.000	Using GETCHA, MAIN collects the characters of the	0.3929	0.0204
+0.8750	0.3026	1.000	name or a comment if	0.1692	0.0174
+0.8764	0.5282	1.000	op mnemonic, each being tested for legality. Up to	0.3853	0.0191
+0.8924	0.3045	1.000	unnamed.	0.0733	0.0145
+0.9390	0.7876	1.000	Assembly Phases	0.0996	0.0160
+0.9419	0.8966	1.000	21	0.0282	0.0131

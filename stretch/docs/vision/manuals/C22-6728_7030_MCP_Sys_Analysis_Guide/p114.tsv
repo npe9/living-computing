@@ -1,0 +1,132 @@
+0.0624	0.6842	1.000	— Entry Point Symbols -	0.1410	0.0146
+0.0639	0.3703	1.000	Phase 4	0.0451	0.0088
+0.0639	0.1259	1.000	Phase 1	0.0451	0.0073
+0.0754	0.1315	1.000	Buffer	0.0358	0.0090
+0.0770	0.5489	1.000	Table	0.0395	0.0174
+0.0770	0.3778	1.000	Buffer	0.0357	0.0073
+0.0783	0.5036	1.000	Pro-	0.0304	0.0164
+0.0842	0.6955	1.000	Pseudo- EOP	0.0808	0.0118
+0.0843	0.8008	1.000	EE	0.0207	0.0116
+0.0843	0.6015	1.000	Queue	0.0395	0.0116
+0.0843	0.8421	1.000	CS	0.0207	0.0116
+0.0945	0.5470	1.000	Symbol Symbol Entry	0.1391	0.0146
+0.0974	0.5038	1.000	gram	0.0320	0.0116
+0.0974	0.6955	1.000	Op	0.0226	0.0131
+0.1047	0.1466	1.000	CR	0.0169	0.0073
+0.1206	0.5038	1.000	CR	0.0244	0.0145
+0.1219	0.6541	1.000	VRDQ VEOFB	0.0847	0.0135
+0.1221	0.5996	1.000	VRD2	0.0395	0.0116
+0.1221	0.5489	1.000	VCR	0.0282	0.0102
+0.1235	0.7462	1.000	VRDEOP VRDEE VRDCSS	0.1523	0.0146
+0.1321	0.5995	1.000	VSCZQ	0.0471	0.0163
+0.1323	0.5038	1.000	sC	0.0226	0.0145
+0.1336	0.6955	1.000	VSCAN, VSC1O	0.0997	0.0162
+0.1337	0.6523	1.000	VSQ	0.0338	0.0145
+0.1352	0.8120	0.500	--.	0.0226	0.0116
+0.1352	0.5489	1.000	VSC	0.0263	0.0102
+0.1453	0.6955	1.000	VSCR1	0.0489	0.0160
+0.1526	0.1955	1.000	WT	0.0244	0.0116
+0.1541	0.2519	1.000	Online	0.0395	0.0087
+0.1570	0.5996	1.000	VW2	0.0338	0.0160
+0.1584	0.6842	1.000	VSREW, VWEOP, RWEE	0.1579	0.0174
+0.1584	0.6523	0.300	vwQ	0.0376	0.0160
+0.1584	0.5470	1.000	VWT	0.0357	0.0145
+0.1599	0.5038	1.000	WT	0.0244	0.0131
+0.1744	0.7406	1.000	VWFEOP	0.0620	0.0116
+0.1744	0.6955	1.000	VEOFN	0.0451	0.0116
+0.1991	0.5996	1.000	VEZ	0.0282	0.0131
+0.1991	0.6523	1.000	VEQ	0.0282	0.0131
+0.1991	0.5432	1.000	VE	0.0244	0.0116
+0.1991	0.6880	1.000	VREQ,	0.0489	0.0145
+0.2020	0.8102	1.000	---	0.0282	0.0087
+0.2122	0.6955	1.000	VBEO]R	0.0414	0.0131
+0.2238	0.5451	1.000	VRT	0.0321	0.0132
+0.2238	0.5038	1.000	RT	0.0207	0.0131
+0.2238	0.6504	1.000	VRQ VOEOJ	0.0865	0.0146
+0.2252	0.7387	1.000	VREO VREE	0.1071	0.0133
+0.2253	0.5959	1.000	VR2	0.0338	0.0116
+0.2282	0.8534	1.000	---	0.0263	0.0116
+0.2355	0.6504	0.500	vọo	0.0338	0.0160
+0.2355	0.3835	1.000	RT	0.0207	0.0102
+0.2355	0.5451	1.000	vọ	0.0263	0.0145
+0.2369	0.6936	1.000	VREQ	0.0414	0.0145
+0.2383	0.5977	1.000	VQ2Q	0.0395	0.0117
+0.2413	0.8553	1.000	---	0.0244	0.0087
+0.2413	0.7575	1.000	---	0.0226	0.0073
+0.2413	0.8102	1.000	---	0.0226	0.0073
+0.2471	0.5019	1.000	ST	0.0226	0.0160
+0.2485	0.5451	1.000	VST	0.0320	0.0145
+0.2497	0.6409	1.000	IVSTO ---	0.0885	0.0152
+0.2500	0.5977	1.000	VS2T	0.0357	0.0131
+0.2515	0.7462	1.000	VREOP VRFEE -	0.1353	0.0131
+0.2834	0.2519	1.000	Offline	0.0414	0.0073
+0.2906	0.5019	1.000	Figure 59. Functional Program Symbols	0.2350	0.0146
+0.3198	0.1391	1.000	sC	0.0188	0.0116
+0.3415	0.5207	1.000	As the queue is used, VX2S and VX2R are occa-	0.3590	0.0161
+0.3576	0.5056	1.000	sionally updated by means of the instruction, V+ICR,	0.3910	0.0131
+0.3721	0.5075	1.000	(XR), . 32 so that the references move upward in	0.3647	0.0131
+0.3881	0.5056	1.000	memory over the queue and then recycle starting at	0.3835	0.0116
+0.4009	0.5074	1.000	the low-order position. VX2S and VX2R are indirectly	0.4043	0.0134
+0.4113	0.2500	1.000	Bypass	0.0395	0.0116
+0.4113	0.2030	1.000	E	0.0094	0.0087
+0.4172	0.5056	1.000	interlocked so that VX2R never passes VX2S. Thus,	0.3910	0.0116
+0.4317	0.5056	1.000	the queue is maintained on a first-in first-out basis	0.3816	0.0116
+0.4462	0.5056	1.000	consistent with processing buffer areas and negative	0.3872	0.0117
+0.4606	0.5038	1.000	parameters in proper order.	0.2162	0.0118
+0.4824	0.0808	1.000	Figure 58. Passage of Buffer Parameters	0.2312	0.0118
+0.4897	0.5056	1.000	The VCOM Subroutine: VCOM (Figure 60) maintains	0.3891	0.0133
+0.5042	0.5056	1.000	the VX2S pointer so that it is always pointing to the	0.3797	0.0133
+0.5188	0.5056	1.000	last positive parameter entered. When positive	0.3553	0.0133
+0.5348	0.5056	1.000	parameters are received they are simply added into	0.3853	0.0117
+0.5494	0.5056	1.000	the position designated by VX2S, which remains	0.3534	0.0117
+0.5639	0.5056	1.000	unchanged. When a negative parameter is received	0.3816	0.0116
+0.5682	0.0752	1.000	to be taken when that point in its queue is reached.	0.3778	0.0147
+0.5785	0.5075	1.000	VX2S is updated, the negative parameter is stored,	0.3778	0.0131
+0.5842	0.0752	1.000	For example, if the job boundary scan program	0.3590	0.0146
+0.5930	0.5075	1.000	VX2S is again updated, and zero is stored. An	0.3477	0.0131
+0.5973	0.0752	1.000	received 10 cards from the card reader program and	0.3947	0.0146
+0.6090	0.5056	1.000	example is given for a queue of 5 positions:	0.3214	0.0116
+0.6105	0.0752	1.000	found a job boundary after the third card, it would	0.3778	0.0174
+0.6279	0.0752	1.000	pass to the write tape program the parameters 3,	0.3741	0.0146
+0.6424	0.0752	1.000	- VWEFT, 7, in that order (one at a time). The write	0.4023	0.0161
+0.6433	0.4999	1.000	Parameter Just	0.0867	0.0142
+0.6539	0.5000	1.000	Entered by VCOM	0.1090	0.0161
+0.6555	0.6485	1.000	Queue after Parameter is Entered by VCOM	0.2481	0.0146
+0.6570	0.0752	1.000	tape program would branch to VWEFT to write a	0.3628	0.0145
+0.6715	0.0771	1.000	file mark when it encountered the -VWEFT in its	0.3647	0.0116
+0.6788	0.5169	1.000	Initially	0.0526	0.0160
+0.6817	0.7782	1.000	17*	0.0263	0.0131
+0.6904	0.0771	1.000	queue.	0.0508	0.0087
+0.6948	0.5320	1.000	3	0.0132	0.0116
+0.6948	0.7782	1.000	20*	0.0263	0.0116
+0.7006	0.0902	1.000	Each functional program has a subroutine whose	0.3628	0.0131
+0.7046	0.5187	1.000	-VWEFT	0.0529	0.0151
+0.7061	0.5844	1.000	Step 1	0.0454	0.0151
+0.7063	0.8327	1.000	-VWEFT*	0.0583	0.0119
+0.7064	0.7782	1.000	20	0.0226	0.0145
+0.7151	0.0771	1.000	function is to enter a parameter in the queue. The	0.3778	0.0131
+0.7166	0.5865	1.000	Step 2	0.0432	0.0174
+0.7180	0.7782	1.000	20	0.0226	0.0160
+0.7209	0.8327	1.000	-VWEFT	0.0508	0.0102
+0.7294	0.0769	1.000	parameter is given in index register, VT5, and the	0.3819	0.0174
+0.7326	0.7782	1.000	20	0.0226	0.0131
+0.7326	0.8327	1.000	-VWEFT	0.0526	0.0145
+0.7340	0.5357	1.000	7	0.0113	0.0102
+0.7442	0.5338	1.000	2	0.0132	0.0145
+0.7456	0.8327	1.000	-VWEFT	0.0527	0.0132
+0.7456	0.7782	1.000	20	0.0226	0.0131
+0.7456	0.0771	1.000	various programs are entered at the Q entry point	0.3759	0.0131
+0.7471	0.6466	1.000	9%	0.0207	0.0102
+0.7587	0.0752	1.000	for this purpose. The symbols associated with each	0.3910	0.0161
+0.7718	0.5000	1.000	* Indicates the cell referenced by VX2S	0.2293	0.0131
+0.7761	0.0771	1.000	functional program are listed in Figure 59.	0.3233	0.0118
+0.8067	0.0789	1.000	Queue Manipulation	0.1447	0.0116
+0.8314	0.5019	1.000	The accumulation of successive positive parameters	0.3910	0.0174
+0.8327	0.0789	1.000	Considering a queue as composed of N consecutive	0.3741	0.0133
+0.8459	0.5019	1.000	is significant because it overcomes the many influ-	0.3835	0.0174
+0.8473	0.0771	1.000	half words, then the queue store and remove refer-	0.3835	0.0146
+0.8590	0.5019	1.000	ences tending to fragment buffer areas (for example,	0.3947	0.0189
+0.8633	0.0789	1.000	ences, VX2S and VX2R, are of the form:	0.3045	0.0131
+0.8750	0.5038	1.000	the job boundaries).	0.1523	0.0174
+0.8794	0.1391	1.000	XW, Queue, N, K.	0.1391	0.0131
+0.9142	0.0733	1.000	114	0.0244	0.0102

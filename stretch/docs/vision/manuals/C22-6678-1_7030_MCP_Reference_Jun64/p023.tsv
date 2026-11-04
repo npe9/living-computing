@@ -1,0 +1,112 @@
+0.0727	0.0827	1.000	Problem Program Exit from Abnormal End of Job	0.3741	0.0131
+0.0741	0.5338	1.000	Each time a problem program receives control	0.3496	0.0131
+0.0872	0.0827	1.000	Pseudo-Operation (SABEX): SABEX allows the	0.3515	0.0146
+0.0887	0.5094	1.000	via SABEX, a new $ABEX must be issued to regain	0.3835	0.0147
+0.1012	0.5111	1.000	control from the next abnormal job termination. Each	0.4008	0.0172
+0.1017	0.0827	1.000	problem program to regain control in the event that	0.3872	0.0131
+0.1163	0.0827	1.000	MCP terminates the job for a problem program or	0.3778	0.0116
+0.1177	0.5113	1.000	SABEX is in effect for one abnormal job termination	0.3910	0.0132
+0.1308	0.0827	1.000	machine error. The macro-instruction	0.2970	0.0116
+0.1323	0.5075	1.000	only.	0.0432	0.0145
+0.1452	0.5318	1.000	MCP will return control to the problem program	0.3632	0.0169
+0.1452	0.1240	1.000	MABEX	0.0621	0.0119
+0.1599	0.0827	1.000	is expanded to the calling sequence	0.2613	0.0116
+0.1612	0.5075	1.000	N times per job, if the job is terminated due to a	0.3703	0.0147
+0.1744	0.1240	1.000	B, ŞMCP	0.0677	0.0147
+0.1773	0.5094	1.000	problem program error or a machine error. (N is	0.3778	0.0131
+0.1890	0.1241	1.000	, ŞABEX	0.0658	0.0147
+0.1898	0.5074	1.000	specified by the installation.) However, control will	0.3913	0.0178
+0.2034	0.1240	1.000	, FWA. (D)	0.0715	0.0147
+0.2048	0.5075	1.000	be returned only once per job, when the operator	0.3684	0.0146
+0.2194	0.1240	1.000	(return)	0.0602	0.0088
+0.2209	0.5075	1.000	terminates the job, regardless of the problem pro-	0.3835	0.0131
+0.2326	0.0808	1.000	where:	0.0526	0.0102
+0.2339	0.5094	1.000	gram's issuance of a new $ABEX.	0.2556	0.0132
+0.2470	0.1259	1.000	FWA. (I) is the first word (18 bit) address of a	0.3440	0.0118
+0.2483	0.5318	1.000	The following is an example of the output, on the	0.3630	0.0153
+0.2600	0.5074	1.000	system output tape, from a job termination with	0.3612	0.0196
+0.2615	0.1034	1.000	32 word table, that includes a return slot, into	0.3496	0.0133
+0.2761	0.1015	1.000	which the following information will be placed:	0.3515	0.0118
+0.2776	0.5056	1.000	$ABEX in effect:	0.1297	0.0131
+0.2906	0.1259	1.000	FWA. (I)+0. 00-0.17 contains the associated	0.3233	0.0118
+0.2921	0.5301	1.000	1. A message indicating the cause of the abnormal	0.3778	0.0131
+0.3052	0.1015	1.000	IOD reference number, if the problem program	0.3571	0.0132
+0.3067	0.5038	1.000	job termination. Examples:	0.2180	0.0146
+0.3212	0.1034	1.000	was terminated while in a mainstream wait	0.3233	0.0088
+0.3212	0.5489	1.000	a. ABNORMAL EOJ REQUESTED BY OPERA-	0.3628	0.0145
+0.3342	0.1034	1.000	status, for an I/O interruption that was not re-	0.3496	0.0118
+0.3358	0.5846	1.000	TOR. (Error Code 0).	0.1673	0.0161
+0.3488	0.1015	1.000	leased to the problem program.	0.2406	0.0118
+0.3503	0.5489	1.000	b. JOB ENDED -- ERROR TYPE YY	0.2895	0.0161
+0.3633	0.1241	1.000	FWA. (D+0. 25 contains a one if the problem	0.3233	0.0117
+0.3663	0.5827	1.000	(Where YY is one of the error codes 1-64).	0.3252	0.0146
+0.3779	0.1015	1.000	program was interrupted during an I/O fixup	0.3327	0.0131
+0.3794	0.5733	1.000	XXXX INTERRUPT AT LOCATION 'loca-	0.3233	0.0131
+0.3823	0.5489	1.000	c.	0.0207	0.0131
+0.3924	0.0996	1.000	(the auto-stacked mode).	0.1861	0.0116
+0.3939	0.5827	1.000	tion'. (Where XXXX is one of the indica-	0.3139	0.0146
+0.4070	0.1241	1.000	FWA. (I)+0. 26 contains a one if the problem	0.3289	0.0131
+0.4099	0.5827	1.000	tors 0-3, 5-8, 15-17 or 19 which are	0.2801	0.0147
+0.4215	0.1015	1.000	program was interrupted while in the stack I/O	0.3534	0.0131
+0.4244	0.5827	1.000	represented by $ABEX error codes 65-76)	0.3177	0.0132
+0.4360	0.1015	1.000	mode (SIO).	0.0884	0.0132
+0.4375	0.5489	1.000	d.	0.0188	0.0160
+0.4390	0.5733	1.000	A descriptive diagnostic message.	0.2707	0.0132
+0.4506	0.1241	1.000	FWA. (I)+0. 28-0.45 contains the error code	0.3271	0.0116
+0.4535	0.5827	1.000	(Error codes 77-80).	0.1598	0.0145
+0.4651	0.1015	1.000	indicating the cause of termination (described	0.3421	0.0131
+0.4679	0.5827	1.000	(See Appendix E for error code descriptions)	0.3383	0.0133
+0.4795	0.0996	1.000	later).	0.0508	0.0119
+0.4811	0.5263	1.000	2. The ABEOJ dump indicating the status of the	0.3571	0.0147
+0.4956	0.1241	1.000	FWA. (I)+O. 46-0.63 contains the I/O interrupt	0.3440	0.0116
+0.4970	0.5056	1.000	machine at the time of job termination. (The dump is	0.3966	0.0133
+0.5087	0.1015	1.000	queue count of the number of non-SEOPed I/O	0.3421	0.0131
+0.5115	0.5038	1.000	taken before the current SABEX table is set by MCP).	0.4060	0.0146
+0.5247	0.0996	1.000	operations actuated by the problem program;	0.3383	0.0117
+0.5247	0.5056	1.000	The problem program I/O will have been released at	0.3966	0.0147
+0.5378	0.1015	1.000	the interrupts for these operations were not	0.3289	0.0116
+0.5403	0.5037	1.000	this time.	0.0773	0.0138
+0.5536	0.0996	1.000	released to the problem program.	0.2556	0.0118
+0.5552	0.5282	1.000	3. The message indicating the address where con-	0.3778	0.0118
+0.5682	0.1241	1.000	FWA. (I)+1. 0-30.0 contains the problem	0.2970	0.0118
+0.5697	0.5038	1.000	trol was returned within the problem program	0.3459	0.0146
+0.5814	0.0996	1.000	program's lower registers, in the format of the	0.3590	0.0132
+0.5827	0.5019	1.000	(FWA. (L)+31.). The message is:	0.2481	0.0161
+0.5953	0.5486	1.000	YOU HAVE BEEN GIVEN CONTROL VIA $ABEX,	0.3727	0.0196
+0.5959	0.1015	1.000	$FELR buffer. (See "Fetch Lower Registers	0.3327	0.0132
+0.6105	0.1015	1.000	Pseudo-Operation.")	0.1560	0.0131
+0.6133	0.5489	1.000	AT LOCATION 'location'.	0.1955	0.0146
+0.6264	0.1241	1.000	FWA. (I) +31. 0 is the address where control	0.3214	0.0118
+0.6409	0.0996	1.000	will be returned to the problem program.	0.3102	0.0118
+0.6539	0.1015	1.000	Note: This last word, FWA. (I)+31. must be set-	0.3665	0.0133
+0.6685	0.0771	1.000	up by the problem program.	0.2105	0.0133
+0.6830	0.5038	1.000	Hold Pseudo-Operation ($HOLD): $HOLD allows the	0.3966	0.0206
+0.6845	0.0996	1.000	At ABEOJ time, MCP checks to see if the cur-	0.3534	0.0131
+0.6971	0.0788	1.000	rent job had previously issued a $ABEX. If so,	0.3574	0.0151
+0.7006	0.5038	1.000	programmer to halt his operations at the point where	0.4004	0.0146
+0.7119	0.0788	1.000	and if the abnormal job termination was neither a	0.3686	0.0136
+0.7136	0.5038	1.000	$HOLD occurs. It may be specified in the macro-	0.3797	0.0161
+0.7267	0.0789	1.000	result of the problem program issuing a $ABEOJ	0.3684	0.0132
+0.7267	0.5038	1.000	instruction	0.0865	0.0160
+0.7412	0.0789	1.000	nor a result of an improper use of $RESLD, MСP	0.3741	0.0146
+0.7427	0.5451	1.000	MHOLD	0.0677	0.0160
+0.7543	0.0769	1.000	does the following: sets up the $ABEX table; clears	0.3913	0.0181
+0.7570	0.5016	1.000	which is expanded to the calling sequence	0.3125	0.0200
+0.7703	0.5451	1.000	B,$МСР	0.0734	0.0176
+0.7703	0.0771	1.000	the interrupt queue count and the interrupt queue of	0.3872	0.0161
+0.7848	0.0771	1.000	all previously stacked problem program interrupts;	0.3872	0.0146
+0.7863	0.5470	1.000	,$HOLD	0.0677	0.0174
+0.8003	0.5017	1.000	When $HOLD is encountered, the corresponding hold	0.3989	0.0201
+0.8023	0.0771	1.000	removes the problem program from any combination	0.3947	0.0131
+0.8154	0.0771	1.000	of auto-stacked mode, suppressed I/O mode, or wait	0.3966	0.0161
+0.8182	0.5019	1.000	binary light (above binary switch 16), on the console	0.3947	0.0147
+0.8299	0.5019	1.000	is turned on. The contents of the instruction counter	0.4004	0.0161
+0.8299	0.0771	1.000	status; clears the refill field of $15; clears the Indi-	0.3929	0.0146
+0.8445	0.0771	1.000	cator Register; resets the Mask Register to the MCP	0.3966	0.0146
+0.8459	0.5000	1.000	are displayed, in the octal format, in the right half	0.3910	0.0160
+0.8590	0.5019	1.000	of the console numeric display. (See "Checkout	0.3571	0.0160
+0.8605	0.0733	1.000	mask; and returns control to the problem program at	0.4023	0.0132
+0.8712	0.5017	1.000	Facilities" for console options with a $HOLD.)	0.3557	0.0214
+0.8720	0.0750	1.000	location FWA. (1)+31. in the mainstream mode.	0.3537	0.0164
+0.9200	0.7049	1.000	Programming With MCP	0.1466	0.0118
+0.9201	0.8872	1.000	23	0.0207	0.0131

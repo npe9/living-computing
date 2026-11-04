@@ -1,0 +1,110 @@
+0.1003	0.6165	1.000	(7) Unidentifiable card - not origin,	0.2876	0.0131
+0.1032	0.0902	1.000	Errors: Error conditions of any kind terminate the	0.3872	0.0117
+0.1148	0.6748	1.000	flow, Ccard, or transfer.	0.2030	0.0146
+0.1176	0.0902	1.000	update. Information necessary to correct the situa-	0.3930	0.0133
+0.1294	0.6165	1.000	(8) C card out of range.	0.1992	0.0131
+0.1321	0.0902	1.000	tion is typed and written on $SPR.	0.2556	0.0133
+0.1453	0.6165	1.000	(9) No transfer card.	0.1786	0.0131
+0.1482	0.1053	1.000	1. SMADDMAC errors	0.1786	0.0118
+0.1627	0.1335	1.000	a. Name too long or blank.	0.2143	0.0118
+0.1788	0.1353	1.000	b. Name duplicated.	0.1654	0.0103
+0.1845	0.5169	1.000	Operating Procedures: The program prints the	0.3590	0.0161
+0.1933	0.1353	1.000	c. Any error in binary deck.	0.2274	0.0116
+0.1985	0.5168	1.000	sequence number of the last correct binary card	0.3649	0.0141
+0.2078	0.1071	1.000	2. SMREPLAC errors	0.1729	0.0116
+0.2121	0.5188	1.000	(Figure 136). Code within the librarian is divided	0.3759	0.0132
+0.2224	0.1353	1.000	a. Name too long or blank.	0.2143	0.0116
+0.2282	0.5169	1.000	into four parts:	0.1184	0.0146
+0.2369	0.1353	1.000	b. Name not in table.	0.1729	0.0116
+0.2427	0.5357	1.000	1. Tables, Bits, and Buffers - All permanent	0.3496	0.0131
+0.2515	0.1353	1.000	c. New library being generated.	0.2519	0.0131
+0.2573	0.5169	1.000	accumulation of information is maintained in the table	0.4079	0.0131
+0.2643	0.1352	1.000	d. Attempt to replace a new or a replaced	0.3254	0.0148
+0.2718	0.5188	1.000	of contents for eventual replacement of the old table.	0.3966	0.0131
+0.2820	0.1805	1.000	generator, or any synonym.	0.2162	0.0117
+0.2863	0.5188	1.000	Bits within the table define the type of entry, and bits	0.4023	0.0161
+0.2979	0.1071	1.000	3. SMYNONYM errors	0.1767	0.0132
+0.3023	0.5188	1.000	within the librarian record temporary flow and con-	0.3929	0.0146
+0.3124	0.1353	1.000	a. Parent name too long or blank.	0.2650	0.0118
+0.3182	0.5188	1.000	trol information during an update cycle.	0.3008	0.0147
+0.3241	0.1353	1.000	b. Parent name not present in table of contents.	0.3703	0.0147
+0.3327	0.5357	1.000	2. Executive Routines - These routines perform	0.3684	0.0133
+0.3415	0.1673	1.000	Synonym too long or blank.	0.2030	0.0131
+0.3459	0.1353	1.000	C.	0.0263	0.0087
+0.3488	0.5207	1.000	the operation necessary to implement a command.	0.3759	0.0118
+0.3561	0.1353	1.000	d. Synonym already in table of contents.	0.3139	0.0131
+0.3633	0.5207	1.000	They provide sequencing through the appropriate	0.3647	0.0131
+0.3764	0.1053	1.000	4. SMUPDATE errors	0.1748	0.0118
+0.3808	0.5188	1.000	subroutines, and do the majority of the error checking.	0.4154	0.0131
+0.3909	0.1335	1.000	a. Name too long or blank.	0.2124	0.0118
+0.3953	0.5188	1.000	Return is to RETURN.	0.1692	0.0116
+0.4055	0.1335	1.000	b. Name not in table of contents.	0.2575	0.0118
+0.4099	0.5357	1.000	3. Control Routines - These routines provide con-	0.3835	0.0116
+0.4200	0.1335	1.000	c. Updating a synonym.	0.1880	0.0118
+0.4244	0.5188	1.000	tinuity to the library update mechanism: i.e., they	0.3872	0.0132
+0.4345	0.1335	1.000	d. Sort field zero or greater than 1000 (10)•	0.3346	0.0161
+0.4390	0.5188	1.000	are concerned with transition between phases, initiali-	0.4117	0.0132
+0.4506	0.1053	1.000	5. SMDELETE errors	0.1748	0.0102
+0.4535	0.5188	1.000	zation, flow, and cleanup.	0.1992	0.0145
+0.4636	0.1335	1.000	a. Name too long or blank.	0.2143	0.0131
+0.4679	0.5357	1.000	4. Subroutines - These are service routines,	0.3440	0.0133
+0.4797	0.1335	1.000	b. Name not in table of contents.	0.2575	0.0102
+0.4839	0.5188	1.000	reached by a calling sequence, and in general used at	0.4023	0.0118
+0.4927	0.1335	1.000	c. Deleting a new or replaced generator, or	0.3421	0.0145
+0.4985	0.5188	1.000	any time by the executive and control routines.	0.3553	0.0118
+0.5102	0.1823	1.000	a new synonym.	0.1203	0.0102
+0.5233	0.1053	1.000	6. SMRENAME errors	0.1767	0.0116
+0.5378	0.1335	1.000	a. Old name too long or blank.	0.2406	0.0116
+0.5523	0.1335	1.000	b. Old name not in table of contents.	0.2857	0.0116
+0.5581	0.5188	1.000	Tables, Bits, Buffers:	0.1748	0.0146
+0.5669	0.1335	1.000	c. New name too long or blank.	0.2462	0.0116
+0.5727	0.5338	1.000	Tables	0.0564	0.0145
+0.5814	0.1335	1.000	d. New name already in table of contents.	0.3233	0.0116
+0.5959	0.1335	1.000	e. Replacing a new, replaced, new synonym,	0.3496	0.0132
+0.6017	0.5470	1.000	Table of Contents (TOFC) - A table of three-word	0.3797	0.0146
+0.6105	0.1842	1.000	or already renamed name.	0.1992	0.0117
+0.6163	0.5207	1.000	entries, one entry for each statement in the library.	0.3929	0.0131
+0.6264	0.1053	1.000	7. SMARANGE errors	0.1748	0.0103
+0.6308	0.5207	1.000	One word at the top of the table, TCTLD, contains	0.3778	0.0131
+0.6394	0.1673	1.000	Arrange requested during an update which	0.3158	0.0133
+0.6453	0.5188	1.000	the number of entries, the starting address of the	0.3741	0.0147
+0.6539	0.1842	1.000	included a SMADDMAC or SMREPLAC.	0.2951	0.0118
+0.6599	0.5207	1.000	table, and its own address for indexing the table.	0.3684	0.0131
+0.6744	0.5207	1.000	The name of the entry is left adjusted with trailing	0.3778	0.0116
+0.6758	0.1053	1.000	8. Other Errors	0.1297	0.0103
+0.6890	0.5207	1.000	blanks in IQS in the first word. The record number	0.3891	0.0117
+0.6903	0.1335	1.000	a. Any command which is not recognized by	0.3402	0.0118
+0.7035	0.5207	1.000	field (bits 0 through 17 of word 2) contains the number	0.4060	0.0132
+0.7048	0.1823	1.000	the librarian.	0.1034	0.0103
+0.7179	0.5207	1.000	to be used for ZTAKE by the librarian or the compiler.	0.4154	0.0133
+0.7194	0.1335	1.000	b. Updating a library which does not exist.	0.3289	0.0118
+0.7339	0.5207	1.000	The record number may reflect the old or new posi-	0.3910	0.0118
+0.7355	0.1335	1.000	c. Updating a library more than once per	0.3195	0.0116
+0.7485	0.5207	1.000	tions at various times during update. The sort field,	0.3985	0.0118
+0.7500	0.1805	1.000	update.	0.0583	0.0116
+0.7615	0.1333	1.000	d. Table overflow. The maximum number of	0.3518	0.0148
+0.7630	0.5188	1.000	bits 28 through 45, contains the binary number	0.3553	0.0118
+0.7776	0.5188	1.000	assigned by the SMUPDATE command. The control	0.3910	0.0118
+0.7791	0.1823	1.000	entries allowed is 300 per library.	0.2613	0.0116
+0.7921	0.5188	1.000	bit field, bit 46 through 63, contains bits used by the	0.3966	0.0131
+0.7936	0.1335	1.000	e. The following errors in a binary deck	0.3195	0.0116
+0.8067	0.5188	1.000	librarian and the compiler to identify the type of	0.3647	0.0116
+0.8081	0.1880	1.000	(1) Sequence error.	0.1673	0.0116
+0.8204	0.5206	1.000	entry and current status during update. (See Bits.)	0.3855	0.0142
+0.8241	0.2274	1.000	Checksum error.	0.1353	0.0102
+0.8358	0.5207	1.000	The memory address field is used only during com-	0.3891	0.0131
+0.8372	0.2331	1.000	Bits to load on a card greater	0.2237	0.0116
+0.8503	0.5188	1.000	pilation by the FORTRAN compiler. The size field	0.3853	0.0131
+0.8517	0.2481	1.000	than 23 half-words.	0.1485	0.0116
+0.8663	0.5188	1.000	is created by the librarian for use by the FORTRAN	0.3910	0.0116
+0.8663	0.2312	1.000	Origin out of range (not 1000(10)).	0.2575	0.0146
+0.8677	0.1880	1.000	(4)	0.0263	0.0116
+0.8794	0.5188	1.000	compiler. The third table entry illustrates the for-	0.3910	0.0131
+0.8808	0.2331	1.000	Flow card out of range (Range is	0.2444	0.0116
+0.8823	0.1880	1.000	(5)	0.0263	0.0131
+0.8953	0.5207	1.000	mat for a synonym, where NAME3 is a synonym for	0.3891	0.0116
+0.8967	0.2481	1.000	1000 to 3045 (10)).	0.1353	0.0133
+0.9099	0.5207	1.000	NAMEX. See Figure 135.	0.1898	0.0116
+0.9099	0.1880	1.000	(6) Origin plus modifiers out of range.	0.3083	0.0131
+0.9520	0.8741	1.000	241	0.0451	0.0087
+0.9520	0.7556	1.000	Supporting Programs	0.1203	0.0102

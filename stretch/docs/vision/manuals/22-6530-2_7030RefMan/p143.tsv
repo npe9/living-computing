@@ -1,0 +1,104 @@
+0.0684	0.5092	1.000	cleared and the last card reloaded to continue op-	0.3952	0.0189
+0.0842	0.0940	1.000	be automatically corrected. The Ecc mode on cards	0.3929	0.0131
+0.0872	0.5132	1.000	eration.	0.0564	0.0116
+0.0988	0.0920	1.000	is used primarily to punch binary data for re-use in	0.3930	0.0166
+0.1017	0.5282	1.000	When the stacker becomes full, the out-of-material	0.3759	0.0146
+0.1163	0.0940	1.000	the system, such as for entry of programs in condensed	0.3910	0.0131
+0.1177	0.5113	1.000	status is assumed after the execution of the next READ	0.3929	0.0117
+0.1308	0.0940	1.000	machine language.	0.1391	0.0131
+0.1321	0.5094	1.000	instruction, i.e., the instruction following the cycle in	0.3947	0.0176
+0.1464	0.5111	1.000	which the stacker-full condition is sensed. Thus, the	0.3932	0.0167
+0.1482	0.1090	1.000	In the no-ecc mode, an entire card appears in core	0.3759	0.0146
+0.1642	0.0940	1.000	storage as 15 full words. In the ecc mode, a card is	0.3910	0.0131
+0.1642	0.5094	1.000	out-of-material light and the end-exception indication	0.3947	0.0161
+0.1757	0.5111	1.000	are turned on after transferring to core storage the	0.3932	0.0196
+0.1788	0.0940	1.000	treated as 13 full words, corresponding to 78 columns,	0.3891	0.0146
+0.1948	0.5113	1.000	contents of the card responsible for tripping the sense	0.3929	0.0146
+0.1948	0.0921	1.000	with the last two columns ignored. When cards are	0.3929	0.0131
+0.2093	0.0902	1.000	read in the ecc mode with the multiple flag on, and	0.3929	0.0146
+0.2093	0.5094	1.000	switch in the stacker. If the stacker becomes full while	0.3947	0.0131
+0.2252	0.5094	1.000	the last card from the hopper is passing through the	0.3947	0.0161
+0.2252	0.0921	1.000	the word count in the control word is greater than 13,	0.3929	0.0147
+0.2385	0.0920	1.000	a new card is fed as soon as the contents of the first 78	0.3912	0.0148
+0.2397	0.5074	1.000	feed, the out-of-material condition is delayed until	0.3950	0.0180
+0.2558	0.5113	1.000	that last card has been read and stacked.	0.2895	0.0131
+0.2558	0.0921	1.000	columns of the preceding card have been transferred	0.3910	0.0131
+0.2703	0.0902	1.000	to the exchange. The last two columns of a card are	0.3929	0.0131
+0.2863	0.0921	1.000	entered into the buffer and checked, but they are not	0.3929	0.0131
+0.2951	0.5094	1.000	Card Reader Timing	0.1504	0.0146
+0.3023	0.0902	1.000	sent to the exchange in the ecc mode.	0.2688	0.0116
+0.3139	0.5113	1.000	A card cycle of the reader is 60 milliseconds long. The	0.3910	0.0161
+0.3299	0.5094	1.000	transfer of the card image from the reader's buffer to	0.3929	0.0131
+0.3445	0.5094	1.000	the exchange takes place at the rate of one 8-bit byte	0.3929	0.0146
+0.3473	0.0921	1.000	Out of Material	0.1147	0.0103
+0.3605	0.5094	1.000	per 62 microseconds and requires a total of 7.5 milli-	0.3910	0.0132
+0.3678	0.0901	1.000	The card reader continues to feed cards in response	0.3931	0.0163
+0.3764	0.5075	1.000	seconds. Defining the card cycle as the interval be-	0.3929	0.0132
+0.3833	0.0883	1.000	to READ instructions until the hopper and feed are	0.3949	0.0172
+0.3909	0.5094	1.000	tween the completion of the mechanical reading of	0.3929	0.0146
+0.3997	0.0902	1.000	empty or until the stacker is full. Either condition	0.3910	0.0131
+0.4070	0.5094	1.000	two successive cards, during continuous operation the	0.3910	0.0131
+0.4157	0.0883	1.000	represents an out-of-material status, which is signalled	0.3929	0.0146
+0.4215	0.5094	1.000	data transfer has to be completed within the first 9	0.3910	0.0145
+0.4317	0.0902	1.000	by turning on the out-of-material light and giving an	0.3910	0.0132
+0.4375	0.5075	1.000	milliseconds of the cycle. Normally, it occurs within	0.3910	0.0146
+0.4462	0.0902	1.000	end-exception indication.	0.1842	0.0132
+0.4520	0.5094	1.000	the first 7.5 milliseconds. The last 33.5 milliseconds	0.3929	0.0131
+0.4636	0.1053	1.000	When the last card has left the hopper, the reader	0.3759	0.0146
+0.4665	0.5093	1.000	of the cycle are used for reading the following card,	0.3912	0.0169
+0.4757	0.0900	1.000	can take two more normal reading cycles to permit the	0.3933	0.0195
+0.4824	0.5075	1.000	i.e., for loading the contents of the card into the buf-	0.3910	0.0147
+0.4939	0.0882	1.000	last card to pass the second reading station and go to the	0.3931	0.0157
+0.4985	0.5075	1.000	fer. Timing for one of a set of consecutive single	0.3929	0.0146
+0.5102	0.0883	1.000	stacker. The third read operation then transfers the	0.3929	0.0132
+0.5130	0.5075	1.000	block operations is shown in Figure 42. (The cross-	0.3929	0.0146
+0.5229	0.0901	1.000	contents of the last card from the buffer to storage,	0.3894	0.0165
+0.5291	0.5075	1.000	hatched areas represent the actual data transmission	0.3910	0.0131
+0.5406	0.0902	1.000	whereupon the unit gives an end-exception indication	0.3910	0.0146
+0.5552	0.0883	1.000	and becomes not ready. If this operation is in the	0.3929	0.0146
+0.5596	0.5226	1.000	The end-of-operation indication signifying the com-	0.3778	0.0160
+0.5712	0.0902	1.000	single-block mode, the end-exception indication is	0.3910	0.0131
+0.5741	0.5075	1.000	pletion of an operation is given immediately upon	0.3910	0.0160
+0.5858	0.0883	1.000	always accompanied by the usual EoP. In the mul-	0.3929	0.0145
+0.5900	0.5075	1.000	completion of data transfer, which is near the end of	0.3929	0.0147
+0.6017	0.0902	1.000	tiple-block mode, the eop indication is given only if	0.3929	0.0146
+0.6061	0.5075	1.000	the first 9 milliseconds of the cycle. If the next READ	0.3910	0.0131
+0.6133	0.0882	1.000	this card is the one that would have normally caused	0.3913	0.0183
+0.6206	0.5075	1.000	instruction is given any time before the end of the	0.3910	0.0146
+0.6321	0.0883	1.000	end of operation. Otherwise, only end exception oc-	0.3910	0.0147
+0.6352	0.5075	1.000	current card cycle, the data transfer for that instruc-	0.3910	0.0146
+0.6482	0.0865	1.000	curs, and the program must use a COPY CONTROL WORD	0.3929	0.0146
+0.6482	0.5056	1.000	tion is executed during the first 7.5 milliseconds of	0.3966	0.0191
+0.6642	0.0865	1.000	instruction to determine how many cards have actually	0.3929	0.0131
+0.6657	0.5056	1.000	the following card cycle and the card reader operates at	0.3947	0.0146
+0.6773	0.0883	1.000	been read with the last READ instruction. When the	0.3910	0.0146
+0.6788	0.5075	1.000	the rate of 1000 cards per minute. In order to maintain	0.3910	0.0176
+0.6791	0.3871	0.300	в- то не	0.0914	0.0459
+0.6918	0.5073	1.000	operation at the rated speed, it is necessary, however,	0.3895	0.0211
+0.6948	0.0883	1.000	contents of the last card have been transferred to	0.3910	0.0102
+0.7079	0.5055	1.000	that the data transfer from the buffer to the exchange be	0.3933	0.0207
+0.7093	0.0864	1.000	storage, the card reader becomes not ready. The out-	0.3930	0.0160
+0.7238	0.0883	1.000	of-material light is turned on at the time the end-	0.3929	0.0146
+0.7252	0.5056	1.000	completed within the first 9 milliseconds of a cycle. If	0.3947	0.0161
+0.7397	0.5056	1.000	the buffer is not cleared within this time, either because	0.3947	0.0176
+0.7412	0.0883	1.000	exception indication is sent to the exchange.	0.3421	0.0103
+0.7581	0.1052	1.000	After the last card has left the hopper, it is ad-	0.3741	0.0129
+0.7733	0.0865	1.000	visable not to reload the hopper until that card has	0.3947	0.0161
+0.7761	0.6147	1.000	- ONE CARD CYCLE, 60MS	0.1241	0.0118
+0.7878	0.0865	1.000	gone through to the stacker. (The time this takes de-	0.3929	0.0146
+0.7936	0.8571	1.000	EOP	0.0244	0.0233
+0.7951	0.5526	1.000	EOP	0.0244	0.0102
+0.8052	0.0883	1.000	pends on the rate at which the program issues READ	0.3891	0.0118
+0.8197	0.0883	1.000	instructions.) If the last card has gone past the first	0.3910	0.0132
+0.8342	0.0846	1.000	reading station and stopped before the second reading	0.3947	0.0176
+0.8488	0.0846	1.000	station, putting more cards into the hopper will turn	0.3947	0.0161
+0.8503	0.5132	1.000	→	0.0226	0.0145
+0.8545	0.7086	1.000	READING, 33.5MS_	0.1053	0.0074
+0.8547	0.5376	1.000	9MS	0.0301	0.0073
+0.8619	0.5414	1.000	DATA	0.0263	0.0073
+0.8633	0.0865	1.000	on the feed-check light and cause a unit check be-	0.3929	0.0146
+0.8692	0.5132	1.000	TRAPERMOSSION	0.0771	0.0160
+0.8794	0.0846	1.000	cause there is a gap in the sequence of cards which	0.3947	0.0161
+0.8953	0.0846	1.000	usually indicates a misfeed. The feed will have to be	0.3947	0.0160
+0.8982	0.5038	1.000	Figure 42. Card Reader Timing	0.1974	0.0161
+0.9330	0.0865	1.000	140 IBM 7030	0.1147	0.0088

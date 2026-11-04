@@ -1,0 +1,108 @@
+0.0609	0.5019	1.000	interruption address register is located in the per-	0.3929	0.0147
+0.0624	0.0902	1.000	set to one, bit positions 19 through 23 can be changed	0.3835	0.0132
+0.0770	0.0902	1.000	also by means of STORE VALUE IN ADDRESS. A store ad-	0.3853	0.0131
+0.0770	0.5019	1.000	manently protected area of storage.	0.2556	0.0131
+0.0930	0.0902	1.000	dress of 1 in the instructions T, swap, sx, Z, R, and	0.3835	0.0131
+0.1017	0.5019	1.000	Address Boundaries	0.1466	0.0116
+0.1074	0.0902	1.000	RCZ, causes both the AD and Ds indicators to be set if the	0.3855	0.0134
+0.1187	0.5036	1.000	The address monitoring system requires the definition	0.3894	0.0186
+0.1235	0.0902	1.000	interrupt system is enabled.	0.1936	0.0146
+0.1352	0.5019	1.000	of an area in core storage. The two limits of this area	0.3910	0.0146
+0.1465	0.0920	1.000	Time Clock	0.0734	0.0108
+0.1512	0.5038	1.000	are defined by the upper and lower boundary registers.	0.3891	0.0146
+0.1639	0.5036	1.000	The area starts with the word at the address in the	0.3912	0.0158
+0.1642	0.0921	1.000	The time clock is provided to measure time difference	0.3835	0.0145
+0.1799	0.5018	1.000	Iower boundary register and includes all words in sub-	0.3912	0.0174
+0.1802	0.0902	1.000	or duration over relatively long periods. This clock	0.3853	0.0131
+0.1948	0.0921	1.000	consists of a number 36 bits long which is continually	0.3835	0.0131
+0.1962	0.5019	1.000	sequent locations up to, but not including, the word	0.3929	0.0145
+0.2104	0.5036	1.000	at the address in the upper boundary register. If the	0.3913	0.0179
+0.2106	0.0902	1.000	stepped up by pulses originating from the same 1024	0.3853	0.0147
+0.2252	0.0921	1.000	cycle per second oscillator which controls the updating	0.3835	0.0147
+0.2267	0.5038	1.000	contents of the upper boundary register are equal to	0.3910	0.0146
+0.2412	0.0921	1.000	of the interval timer. The two clocks are updated	0.3835	0.0131
+0.2412	0.5038	1.000	or smaller than the contents of the lower boundary	0.3910	0.0131
+0.2531	0.0919	1.000	consecutively in the same time interval. The leftmost	0.3857	0.0183
+0.2573	0.5038	1.000	register, no words are included in the area.	0.3195	0.0146
+0.2703	0.0921	1.000	26 bits of the time clock measure time in seconds. A	0.3835	0.0131
+0.2718	0.5226	1.000	The upper boundary register occupies bit positions	0.3741	0.0161
+0.2863	0.5056	1.000	0-17 of location 3. The lower boundary register oc-	0.3910	0.0146
+0.2863	0.0921	1.000	full cycle is about 777 days.	0.1917	0.0131
+0.3009	0.1071	1.000	The value of the clock occupies bits 28-63 of loca-	0.3722	0.0146
+0.3023	0.5038	1.000	cupies bit positions 32-49 of location 3. The boundary	0.3929	0.0174
+0.3154	0.0902	1.000	tion 1. Each time the oscillator delivers a pulse it is	0.3872	0.0161
+0.3182	0.5019	1.000	control bit, which determines whether addresses inside	0.3947	0.0161
+0.3314	0.0921	1.000	read out, incremented by one, using the index adder,	0.3853	0.0147
+0.3327	0.5056	1.000	or outside of the defined area are to be protected, is	0.3910	0.0147
+0.3488	0.5019	1.000	located in bit 57 of location 3. All bits of location 3	0.3947	0.0146
+0.3488	0.0921	1.000	and returned to core storage.	0.2049	0.0118
+0.3618	0.1071	1.000	The clock runs continually while the computer is	0.3703	0.0146
+0.3648	0.5056	1.000	are in the permanently protected area of storage.	0.3553	0.0146
+0.3779	0.0921	1.000	under program control, including the time the com-	0.3872	0.0146
+0.3866	0.5056	1.000	Maintenance Bits	0.1241	0.0116
+0.3939	0.0921	1.000	puter is executing a BRANCH ENABLED AND WAIT opera-	0.3872	0.0146
+0.4055	0.5038	1.000	The 64 bits of storage location 4 are reserved for main-	0.3891	0.0146
+0.4084	0.0921	1.000	tion. When the clock reaches its maximum reading of	0.3872	0.0131
+0.4200	0.5038	1.000	tenance purposes. These bits are active only when the	0.3910	0.0161
+0.4230	0.0921	1.000	all ones, the next oscillator pulse sets it to all zeros.	0.3853	0.0146
+0.4360	0.5038	1.000	machine is in the maintenance mode. When it is not	0.3910	0.0131
+0.4375	0.0940	1.000	No indication is given when the clock recycles to zero.	0.3853	0.0146
+0.4520	0.5038	1.000	in this mode, they act like the bits of location 0. After	0.3910	0.0131
+0.4535	0.1071	1.000	The time clock is also in the permanently protected	0.3703	0.0145
+0.4666	0.5038	1.000	an initial program load, this location contains the first	0.3910	0.0160
+0.4694	0.0921	1.000	area of storage. It may be read under the same con-	0.3872	0.0132
+0.4824	0.5038	1.000	word read from the input unit. This is the control	0.3910	0.0147
+0.4839	0.0940	1.000	ditions as the interval timer. Its setting, however, can-	0.3853	0.0132
+0.4985	0.5038	1.000	word for the initial load. Any store to location 4 causes	0.3910	0.0131
+0.5000	0.0921	1.000	not be altered under program control. Any attempt to	0.3872	0.0145
+0.5130	0.5038	1.000	it to contain a 0 with correct check bits.	0.2895	0.0118
+0.5145	0.0921	1.000	store into the right half of location 1 is suppressed,	0.3872	0.0146
+0.5291	0.0921	1.000	and indicator AD, address invalid, is turned on.	0.3383	0.0146
+0.5392	0.5075	1.000	Channel Address	0.1259	0.0117
+0.5536	0.0940	1.000	PROGRAMMING NOTES	0.1485	0.0103
+0.5581	0.5075	1.000	The exchange channel responsible for the current set-	0.3891	0.0146
+0.5697	0.0940	1.000	The time clock can be used to obtain a time-of-day	0.3853	0.0132
+0.5727	0.5075	1.000	tings of the input-output status indicators is identified	0.3891	0.0146
+0.5858	0.0921	1.000	indication. A known external time is taken as a	0.3872	0.0116
+0.5887	0.5075	1.000	by the channel address register. This register occupies	0.3910	0.0147
+0.6003	0.0921	1.000	reference point and the setting of the time clock at	0.3872	0.0146
+0.6032	0.5075	1.000	bits 12-18 of location 5. The channel address register	0.3910	0.0132
+0.6163	0.0940	1.000	that time is stored. The time-of-day at a later time	0.3853	0.0131
+0.6177	0.5075	1.000	is a read-only register; any information stored there is	0.3910	0.0145
+0.6308	0.0940	1.000	can be obtained by using the time which has elapsed	0.3853	0.0146
+0.6336	0.5056	1.000	lost. In this respect it resemibles location 0. The chan-	0.3929	0.0146
+0.6467	0.0921	1.000	since the reference time. The difference between the	0.3891	0.0118
+0.6497	0.5056	1.000	nel address register can be set only by the exchange.	0.3929	0.0161
+0.6612	0.0921	1.000	current clock setting and the setting at the time of	0.3910	0.0161
+0.6672	0.5056	1.000	Other CPU Bits	0.1128	0.0160
+0.6773	0.0940	1.000	reference can be converted to hours, minutes and sec-	0.3853	0.0118
+0.6887	0.0939	1.000	onds. If this time difference is added to the time-of-	0.3855	0.0149
+0.6890	0.5056	1.000	In some systems, several computers or other central	0.3947	0.0147
+0.7026	0.5055	1.000	processing units may be very closely interrelated, shar-	0.3931	0.0184
+0.7040	0.0938	1.000	day which was used as the reference, the current exter-	0.3875	0.0195
+0.7176	0.5055	1.000	ing common core storage units or a common exchange.	0.3931	0.0196
+0.7224	0.0921	1.000	nal time of day is obtained. Since the time clock is con-	0.3891	0.0161
+0.7339	0.5056	1.000	In order to permit a program in one computer to	0.3929	0.0161
+0.7369	0.0959	1.000	tinually stepping and has a recycle time of over two	0.3853	0.0161
+0.7482	0.5055	1.000	signal others, the other cpu register, bits 0-18 of loca-	0.3949	0.0179
+0.7515	0.0940	1.000	years, it may be used to provide a convenient "serial	0.3872	0.0161
+0.7645	0.5056	1.000	tion 6, and the ceu signal indicator, cpus, have been	0.3929	0.0161
+0.7688	0.0959	1.000	number" for program outputs. Each output can in-	0.3872	0.0146
+0.7791	0.5056	1.000	provided. Each of the bits can actuate the cPU signal	0.3929	0.0174
+0.7833	0.0940	1.000	clude a clock reading which will provide a chron-	0.3872	0.0161
+0.7936	0.5056	1.000	indicator of one and only one other computer. The	0.3947	0.0174
+0.7994	0.0940	1.000	ological identification of the output.	0.2575	0.0161
+0.8065	0.5054	1.000	system thus provides for up to nineteen other com-	0.3952	0.0219
+0.8218	0.0937	1.000	Interruption Address	0.1491	0.0168
+0.8255	0.5075	1.000	puters. When a bit is set to one by programming, the	0.3929	0.0161
+0.8415	0.0959	1.000	Bits 0-17 of location 2 form the interruption address	0.3872	0.0146
+0.8415	0.5075	1.000	cPu signal indicator is actuated in the computer asso-	0.3929	0.0146
+0.8555	0.1502	1.000	When an interruption occurs, the contents of	0.3331	0.0180
+0.8561	0.5094	1.000	ciated with that bit. In this manner any computer can	0.3910	0.0161
+0.8590	0.0921	1.000	register.	0.0583	0.0145
+0.8706	0.5075	1.000	actuate the indicator in any other computer, and thus	0.3929	0.0161
+0.8718	0.0958	1.000	this register are used to obtain the address of an in-	0.3893	0.0151
+0.8866	0.5075	1.000	interrupt the other computer's program. When a bit	0.3947	0.0161
+0.8881	0.0921	1.000	struction to be inserted into the normal sequence. The	0.3910	0.0146
+0.9244	0.7256	1.000	Operand Designation	0.1297	0.0116
+0.9244	0.8835	1.000	35	0.0188	0.0102

@@ -1,0 +1,107 @@
+0.0654	0.0921	1.000	a unit check. When the card punch stops because of	0.3910	0.0146
+0.0654	0.5094	1.000	When the start key is depressed, the original operation	0.3891	0.0131
+0.0799	0.5094	1.000	is resumed, provided the power has been on continu-	0.3910	0.0146
+0.0814	0.0921	1.000	a data error, the erroneous card is either the one last	0.3910	0.0132
+0.0973	0.0902	1.000	fed to the stacker or the following one, depending	0.3910	0.0133
+0.0974	0.5075	1.000	ously.	0.0451	0.0131
+0.1118	0.0921	1.000	upon the cause of the error.	0.1974	0.0146
+0.1118	0.5263	1.000	Carriage Space. Depression of this key causes the	0.3741	0.0146
+0.1264	0.5094	1.000	carriage to advance by one line space.	0.2726	0.0146
+0.1424	0.5244	1.000	Selective Printing Keys. Six keys, which comprise a	0.3759	0.0161
+0.1584	0.5094	1.000	horizontal strip switch, are labeled 1, 2, 3, 4, SEL RUN,	0.3910	0.0146
+0.1672	0.0883	1.000	IBM 1403-2 Printer	0.1898	0.0132
+0.1715	0.5094	1.000	and RESTORE. These keys provide a selective printing	0.3910	0.0161
+0.1890	0.5075	1.000	of properly tagged data. With the sEL RUN key de-	0.3929	0.0160
+0.2006	0.0921	1.000	The IBM 1403-2 Printer has 132 printing positions and	0.3891	0.0146
+0.2035	0.5113	1.000	pressed, any combination of keys 1, 2, 3 and 4 may be	0.3891	0.0145
+0.2166	0.0921	1.000	operates at a speed of 600 lines per minute. Each print-	0.3891	0.0146
+0.2182	0.5074	1.000	used. Depression of the ResTore key resets the other	0.3931	0.0179
+0.2324	0.0902	1.000	ing position is capable of printing any one of 49	0.3910	0.0133
+0.2355	0.5075	1.000	five keys to the off position.	0.2049	0.0161
+0.2470	0.0902	1.000	different symbols, which include numerical, alphabetic	0.3929	0.0161
+0.2500	0.5244	1.000	Mode Selection Keys. A second horizontal strip	0.3759	0.0145
+0.2630	0.0921	1.000	and special characters and the blank space. The print-	0.3891	0.0146
+0.2660	0.5075	1.000	switch, composed of keys labeled 6-bit, 8-bit, 48 BCD,	0.3929	0.0161
+0.2776	0.0902	1.000	ing density is 10 characters per inch. A chain consisting	0.3910	0.0146
+0.2805	0.5094	1.000	48 ECS, 120 ECS, and RESTORE, allows selection for the	0.3910	0.0146
+0.2936	0.0921	1.000	of 119 charactérs and a blank space may also be used.	0.3891	0.0146
+0.2964	0.5094	1.000	mode of operation. The 6-bit and 8-bit keys refer to	0.3891	0.0147
+0.3096	0.0921	1.000	Speed with this chain is 275 lines per minute.	0.3271	0.0131
+0.3124	0.5094	1.000	the incoming byte size, while those labeled 48 BcD,	0.3910	0.0132
+0.3241	0.1034	1.000	Information to be printed is coded in an 8-bit code,	0.3797	0.0160
+0.3251	0.5074	1.000	48 Ecs, and 120 ecs describe the chain and related code	0.3931	0.0183
+0.3387	0.0902	1.000	one line occupying up to 17 words. A WRIte instruc-	0.3910	0.0147
+0.3415	0.5075	1.000	being used. Only one byte size can be used at any one	0.3910	0.0176
+0.3561	0.0921	1.000	tion then transfers this block from core storage to the	0.3910	0.0131
+0.3590	0.5094	1.000	time. These keys are not interlocked and depression	0.3891	0.0146
+0.3706	0.0921	1.000	printer's buffer, which stores one complete line of	0.3910	0.0146
+0.3735	0.5094	1.000	of the RESTore key resets the others to the oFF condi-	0.3891	0.0146
+0.3852	0.0921	1.000	printing. When all the information to be printed on	0.3891	0.0146
+0.3895	0.5094	1.000	tion.	0.0357	0.0131
+0.3917	0.3065	0.300	rationg ratomaie and	0.1720	0.0375
+0.4012	0.0921	1.000	one line has been transferred, printing is initiated.	0.3628	0.0146
+0.4039	0.5244	1.000	Power On, Ready, Check, Reserved, Out-of-Material.	0.3741	0.0161
+0.4172	0.1071	1.000	Checking of the printer operation is automatic and	0.3741	0.0147
+0.4200	0.5113	1.000	These lights are standard. The out-of-material light	0.3891	0.0146
+0.4317	0.0902	1.000	concurrent with printing. Each character code sent to	0.3910	0.0147
+0.4360	0.5094	1.000	comes on when the last form has passed the form-	0.3910	0.0131
+0.4476	0.0921	1.000	the printer is associated with an odd parity bit. These	0.3910	0.0146
+0.4520	0.5075	1.000	sensing switch.	0.1090	0.0146
+0.4636	0.0921	1.000	bits are used to detect errors introduced in the trans-	0.3891	0.0117
+0.4666	0.5244	1.000	Forms Check. This light indicates that a form jam	0.3759	0.0160
+0.4782	0.0902	1.000	mission of the character codes from the exchange to	0.3910	0.0131
+0.4824	0.5094	1.000	occurred at the printer.	0.1729	0.0133
+0.4942	0.0921	1.000	the printer control as well as to check the storing and	0.3891	0.0131
+0.4970	0.5263	1.000	Automatic Overflow Key. This is a lighted key when	0.3741	0.0147
+0.5102	0.4192	1.000	control.	0.0620	0.0102
+0.5102	0.0902	1.000	handling of these codes within the printer	0.3308	0.0132
+0.5130	0.5113	1.000	depressed and in an overflow condition. It conditions	0.3891	0.0131
+0.5247	0.0902	1.000	In addition, an echo caused by the regenerative part	0.3929	0.0147
+0.5291	0.5113	1.000	the carriage for automatic overflow.	0.2594	0.0131
+0.5406	0.0921	1.000	of the hammer firing pulse is used to verify that a	0.3891	0.0146
+0.5436	0.5263	1.000	Carriage Restore Key. Depression of this key causes	0.3741	0.0161
+0.5552	0.0902	1.000	hammer has been fired at the proper instant and that	0.3929	0.0146
+0.5596	0.5113	1.000	the carriage to restore to the first line of the next form.	0.3891	0.0131
+0.5712	0.0902	1.000	it has not been fired at any other time.	0.2895	0.0131
+0.5741	0.5263	1.000	Carriage Stop Key. Depression of this key allows the	0.3741	0.0160
+0.5858	0.1071	1.000	Operation of the carriage is under program control	0.3759	0.0145
+0.5900	0.5094	1.000	operator to stop the carriage if it is in a runaway con-	0.3910	0.0147
+0.6017	0.0902	1.000	and is determined by a control field that must always	0.3929	0.0131
+0.6061	0.5113	1.000	dition.	0.0489	0.0116
+0.6177	0.0902	1.000	precede the information to be printed on one line.	0.3891	0.0132
+0.6321	0.0921	1.000	There are two carriage speeds, the selection of which	0.3891	0.0147
+0.6366	0.5113	1.000	Control Functions	0.1259	0.0116
+0.6468	0.0882	1.000	is automatic and depends upon the distance the car-	0.3949	0.0173
+0.6512	0.5094	1.000	Standard control functions initiated by a CoNTROL in-	0.3929	0.0161
+0.6642	0.0883	1.000	riage has to advance. A carriage control tape is used	0.3929	0.0131
+0.6657	0.5094	1.000	struction and executed by the printer are:	0.3064	0.0174
+0.6788	0.0883	1.000	for restore, automatic overflow, and out-of-materials	0.3929	0.0131
+0.6874	0.7142	1.000	FUNCTION	0.0753	0.0162
+0.6874	0.5338	1.000	OCTAL CODE	0.0884	0.0176
+0.6948	0.0902	1.000	functions only.	0.1090	0.0116
+0.7020	0.5620	1.000	016	0.0320	0.0160
+0.7035	0.6955	1.000	Reserved Light Off	0.1372	0.0145
+0.7179	0.6936	1.000	Reserved Light On	0.1372	0.0161
+0.7180	0.5620	1.000	017	0.0301	0.0160
+0.7324	0.6936	1.000	Check Light On	0.1166	0.0163
+0.7324	0.0921	1.000	Keys and Lights	0.1147	0.0147
+0.7326	0.5620	1.000	116	0.0320	0.0160
+0.7542	0.1071	1.000	Power On, Power Of, Start, Stop. These keys are	0.3722	0.0147
+0.7660	0.0902	1.000	standard. Depression of the power on key at any time	0.3891	0.0161
+0.7660	0.5075	1.000	Carriage Control	0.1259	0.0146
+0.7805	0.5094	1.000	Operation of the carriage is under the control of a	0.3929	0.0189
+0.7820	0.0883	1.000	causes a machine reset. If the stop key is depressed	0.3929	0.0145
+0.7964	0.5094	1.000	special control code, called CARRIAGE CONTROL FIELD.	0.3891	0.0161
+0.7979	0.0883	1.000	during the execution of a single-block wRITe instruc-	0.3910	0.0146
+0.8096	0.5113	1.000	The carriage control field consists of one or more 8-bit	0.3891	0.0189
+0.8124	0.0883	1.000	tion, the key has no effect on the current operation. If	0.3947	0.0161
+0.8227	0.5075	1.000	bytes and specifies the number of lines over which the	0.3929	0.0204
+0.8285	0.0883	1.000	the stop key is depressed during the execution of a	0.3929	0.0145
+0.8415	0.5038	0.500	Cace intormat ioki pinmere ataly ingltelig ion whibe	0.3985	0.0335
+0.8459	0.0883	1.000	multiple-block WRITE instruction, the operation is ter-	0.3929	0.0132
+0.8605	0.0921	1.000	minated upon the completion of the printing of the	0.3853	0.0160
+0.8703	0.5056	1.000	printed. Every line to be printed must be preceded by	0.3948	0.0196
+0.8735	0.0921	1.000	current line. No information is lost, however, anc	0.3853	0.0146
+0.8894	0.0902	1.000	hence no error indication is sent to the exchange.	0.3891	0.0147
+0.9185	0.7500	1.000	External Units	0.0940	0.0118
+0.9186	0.8778	1.000	145	0.0226	0.0116

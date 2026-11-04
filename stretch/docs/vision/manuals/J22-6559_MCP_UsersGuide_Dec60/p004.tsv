@@ -1,0 +1,49 @@
+0.1032	0.2105	1.000	2. Name: columns 2 through 9 contain a symbol up to 8 characters in length that	0.6504	0.0147
+0.1191	0.2387	1.000	names the symbolic file. Symbolic file is used here as a synonym for the I-O	0.6203	0.0132
+0.1352	0.2387	1.000	requirement defined by the parameters appearing on the IOD card.	0.5320	0.0131
+0.1656	0.2086	1.000	3. Statement: columns 10 through 68 contain parameters, each separated by a	0.6336	0.0155
+0.1803	0.2386	1.000	comma, that describe the symbolic I-O file. These parameters vary with the	0.6299	0.0163
+0.1976	0.2368	1.000	type of I-O device requested, but the pseudo-op code and the first three param-	0.6391	0.0146
+0.2136	0.2387	1.000	eters are the same for all types of units: IOD, TYPE, EXIT, and CHANNEL.	0.6222	0.0131
+0.2282	0.2368	1.000	IOD is the mnemonic for the pseudo-operation "I-O Definition." TYPE symbol-	0.6410	0.0131
+0.2442	0.2368	1.000	izes the field where the programmer specifies the type of input-output unit re-	0.6297	0.0131
+0.2602	0.2368	1.000	quired. TYPE may be PRINTER, CONSOLE, READER, PUNCH, DISK, TRACK,	0.6541	0.0147
+0.2742	0.2386	1.000	or TAPE. EXIT represents a programmer symbol that specifies the location of	0.6393	0.0168
+0.2906	0.2368	1.000	the first word of the I-O Table of Exits. (See I-O Interrupts.) The symbol EXIT	0.6485	0.0132
+0.3067	0.2368	1.000	may not contain more than eight characters. CHANNEL represents a programmer	0.6635	0.0146
+0.3207	0.2386	1.000	symbol, not more than eight characters in length, that will be assigned an absolute	0.6618	0.0173
+0.3372	0.2350	1.000	channel number by MCP. If the programmer supplies several IOD's and he wishes	0.6654	0.0161
+0.3517	0.2368	1.000	them all to be assigned to units on the same channel, he must use the identical	0.6297	0.0146
+0.3677	0.2387	1.000	channel symbol on each IOD card; if each request is to be assigned to a different	0.6485	0.0145
+0.3823	0.2386	1.000	channel, a different channel symbol must be specified on each IOD card. If no	0.6299	0.0179
+0.3997	0.2387	1.000	channel symbol is supplied (null CHANNEL field) on an IOD card, MCP assumes	0.6410	0.0131
+0.4142	0.2368	1.000	that channel assignment is of no importance to the problem program and will	0.6184	0.0145
+0.4293	0.2368	1.000	assign any unit available, regardless of the channel to which it is attached. If	0.6280	0.0171
+0.4455	0.2386	1.000	special channel assignments are requested and they cannot be honored by MCP,	0.6355	0.0157
+0.4600	0.2367	1.000	the problem program is run and the channels actually assigned conform as closely	0.6581	0.0179
+0.4771	0.2367	1.000	as possible tothe programmer's request.	0.3311	0.0159
+0.5087	0.2086	1.000	4. I-O Reference Number: columns 69-72 are left blank by the problem program.	0.6617	0.0146
+0.5212	0.2386	1.000	On the output IOD's, STRAP II converts the IODNAME to an absolute number and	0.6450	0.0195
+0.5384	0.2368	1.000	punches this octal number in this field. The first IOD card encountered has the	0.6374	0.0154
+0.5552	0.2368	1.000	number 1 punched in this field, the second IOD card has the number 2 punched	0.6259	0.0161
+0.5738	0.2368	1.000	here, etc.	0.0828	0.0122
+0.6009	0.2086	1.000	5. Absolute Exit: columns 73-80 are left blank by the problem program. On the	0.6506	0.0169
+0.6162	0.2367	1.000	output IOD's, STRAP II punches the octal equivalent of the evaluated symbol	0.6092	0.0169
+0.6319	0.2367	1.000	for the first word address of the I-O Table of Exits in this field. (See 'Input-	0.6224	0.0171
+0.6482	0.2350	1.000	Output Interrupts. ")	0.1654	0.0176
+0.6783	0.1821	1.000	The general format for an IOD card is:	0.3143	0.0200
+0.7205	0.5673	1.000	6869	0.0439	0.0226
+0.7297	0.7105	1.000	72.73	0.0414	0.0131
+0.7297	0.3421	1.000	9 10	0.0301	0.0131
+0.7297	0.8158	1.000	80	0.0207	0.0131
+0.7311	0.2613	1.000	2	0.0094	0.0087
+0.7398	0.6410	1.000	I-O	0.0301	0.0160
+0.7408	0.7367	1.000	ABSOLUTE	0.0736	0.0154
+0.7422	0.2555	1.000	IODNAME	0.0699	0.0141
+0.7427	0.3534	1.000	IOD, TYPE, EXIT, CHANNEL, ....	0.2105	0.0161
+0.7554	0.6202	1.000	REFERENCE	0.0792	0.0154
+0.7573	0.7462	1.000	EXIT	0.0395	0.0116
+0.7703	0.6259	1.000	NUMBER	0.0602	0.0131
+0.8241	0.1842	1.000	There are four classes of IOD cards. An IOD card is classified by the type of I-O unit	0.6955	0.0189
+0.8415	0.1823	1.000	to which the symbolic file of information is to be assigned.	0.4699	0.0176
+0.9390	0.0677	1.000	4	0.0150	0.0131

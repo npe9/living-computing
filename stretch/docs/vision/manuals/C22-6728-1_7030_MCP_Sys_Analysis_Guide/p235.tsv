@@ -1,0 +1,107 @@
+0.0931	0.5204	1.000	not, it is fetched from PROSA. When the buffer. be-	0.3934	0.0209
+0.1000	0.0901	1.000	into a special buffer by the librarian. The new library	0.4062	0.0152
+0.1113	0.5224	1.000	comes full, the contents of the buffer are written on	0.3895	0.0175
+0.1148	0.0902	1.000	is written on the disk as it is updated. The new table	0.3929	0.0131
+0.1264	0.5226	1.000	the new master tape in blocked records with a check	0.3929	0.0146
+0.1308	0.0902	1.000	of contents is written on the disk, and the proper	0.3741	0.0131
+0.1424	0.5226	1.000	sum made of the contents of the buffer before writing,	0.4060	0.0131
+0.1453	0.0921	1.000	word count is stored in the two change dictionary	0.3665	0.0116
+0.1558	0.5224	1.000	the current buffer position is reset, and the process	0.3932	0.0161
+0.1612	0.0921	1.000	entries. From this point, these two type areas are	0.3853	0.0118
+0.1706	0.5224	1.000	continues. After the MCP IPL type area is brought	0.3838	0.0163
+0.1744	0.0921	1.000	treated exactly as if they had been put on the disk by	0.3910	0.0132
+0.1846	0.5224	1.000	into the buffer the new PROSA size is stored in the	0.3819	0.0161
+0.1903	0.0921	1.000	two replace operations. (See Generator Librarian.)	0.3872	0.0133
+0.2008	0.1088	1.000	At ARCNST, the relative arc address of each new	0.3727	0.0205
+0.2020	0.5244	1.000	proper place and the B cards in the IPL program are	0.3966	0.0146
+0.2177	0.0919	1.000	type area on the disk is computed and stored in each	0.3914	0.0165
+0.2195	0.5244	1.000	printed.	0.0620	0.0116
+0.2311	0.5414	1.000	The current date is stored in the bootstrap type	0.3553	0.0131
+0.2337	0.0920	1.000	change dictionary entry. The computation is made by	0.3987	0.0152
+0.2442	0.5244	1.000	area after it is brought into the buffer (Figure 134).	0.3910	0.0146
+0.2500	0.0921	1.000	adding the word count of the previous entry to its	0.3684	0.0131
+0.2587	0.5243	1.000	When the NEWDIC entries have been exhausted, the	0.3875	0.0152
+0.2630	0.0940	1.000	relative arc address and rounding up to the next full	0.3891	0.0131
+0.2747	0.5244	1.000	check sum of the final portion of the buffer is made.	0.3910	0.0132
+0.2791	0.0940	1.000	arc. The first type area starts at relative arc zero.	0.3910	0.0131
+0.2892	0.5263	1.000	The total check sum for the system is calculated	0.3628	0.0132
+0.2936	0.1109	1.000	At SORT, the change dictionary entries are sorted	0.3778	0.0131
+0.3036	0.5263	1.000	and stored in the first word of the check sum type	0.3722	0.0147
+0.3081	0.0921	1.000	by type area name and checked for the illegal condi-	0.3947	0.0131
+0.3166	0.5223	1.000	area)||)))). and the arc count of PROSA is stored in	0.3933	0.0191
+0.3241	0.0940	1.000	tion of two entries having the same name.	0.3139	0.0116
+0.3299	0.5260	1.000	the second word. The buffer is written on the new	0.3746	0.0199
+0.3366	0.1108	1.000	At MERGE, (Figure 132) the current dictionary is	0.3762	0.0157
+0.3473	0.5186	1.000	master tape followed by an end of file. The end	0.3613	0.0167
+0.3517	0.0921	1.000	fetched from PROSA and merged with the change	0.3665	0.0116
+0.3608	0.5261	1.000	message is printed and UPDATE-30 is terminated.	0.3838	0.0189
+0.3663	0.0940	1.000	dictionary to form the new dictionary (stored in the	0.3872	0.0131
+0.3809	0.0957	1.000	NEWDIC buffer). The following illegal conditions	0.3744	0.0176
+0.3905	0.5261	1.000	Input-Output: UPDATE-30 uses three I-O devices	0.3764	0.0194
+0.3961	0.0957	1.000	are checked for: a delete or replace operation for a	0.3931	0.0153
+0.4055	0.5263	1.000	in addition to system input, system printer, and MCP	0.4041	0.0146
+0.4107	0.0957	1.000	non-existing type area, and an add operation for an	0.3857	0.0171
+0.4199	0.5280	1.000	commentator. They are: the disk, the new master	0.3802	0.0190
+0.4288	0.0959	1.000	already existing type area.	0.2030	0.0116
+0.4342	0.5260	1.000	tape, and the change tape (optional). The associated	0.3822	0.0200
+0.4414	0.1146	1.000	At CHECK, the first four type area entries in the	0.3705	0.0155
+0.4505	0.5262	1.000	tables of exits are labeled DSKEX, NMTEX, and	0.3667	0.0149
+0.4560	0.0976	1.000	new dictionary are checked for the required MCP	0.3706	0.0143
+0.4645	0.5299	1.000	CHTEX. After activating an I-O device, the program	0.4008	0.0183
+0.4751	0.0977	1.000	sequence.	0.0753	0.0106
+0.4785	0.5280	1.000	always waits for a successful completion before con-	0.4026	0.0177
+0.4839	0.1145	1.000	At BSTRAP, (Figure 132) the new dictionary is	0.3613	0.0172
+0.5000	0.0977	1.000	searched for the IPL bootstrap entry. The bootstrap	0.3985	0.0131
+0.5102	0.5470	1.000	The EOP routine for the disk automatically keeps	0.3684	0.0132
+0.5145	0.0977	1.000	is read from the disk (if new) or fetched from PROSA	0.4004	0.0131
+0.5247	0.5282	1.000	track of the current arc location (ARCLOC) in case	0.3853	0.0132
+0.5305	0.0977	1.000	and the current date is inserted. It is then written	0.3816	0.0116
+0.5389	0.5299	1.000	a data error occurs while writing. The disk is al-	0.3762	0.0153
+0.5424	0.0994	1.000	on the new master tape, and followed by an end of	0.3745	0.0185
+0.5511	0.5298	1.000	ways located before reading and the new arc location	0.3952	0.0191
+0.5675	0.5299	1.000	is stored in ARCLOC at the same time. The librarian	0.4045	0.0161
+0.5756	0.1163	1.000	At IND1, (Figure 132) the new index is constructed	0.3803	0.0202
+0.5823	0.5299	1.000	uses special blocking routines for writing the disk,	0.3838	0.0173
+0.5930	0.0996	1.000	and the new dictionary is moved into the buffer. The	0.3985	0.0146
+0.5953	0.5317	1.000	and changes the table of exits to PETXIT. DSKEX	0.3765	0.0194
+0.6090	0.0996	1.000	move is made because the MCP requires that the	0.3684	0.0131
+0.6118	0.5301	1.000	and ARCLOC are properly restored before the	0.3496	0.0146
+0.6235	0.0996	1.000	entries for any given type must all be contained within	0.4060	0.0131
+0.6294	0.5301	1.000	librarian returns to the main program.	0.2951	0.0131
+0.6381	0.0996	1.000	the same arc of the dictionary, and that the dictionary	0.4060	0.0131
+0.6526	0.0996	1.000	must occupy an integral number of ares on PROSA.	0.3853	0.0147
+0.6563	0.5318	1.000	Error Routines: Each error routine sets up the appro-	0.3988	0.0177
+0.6666	0.0995	1.000	The unused portion of any dictionary arc and any	0.3668	0.0160
+0.6687	0.5335	1.000	priate message in a print buffer (ERRMS) andtransfers	0.4047	0.0198
+0.6809	0.0995	1.000	unused portion of the new index are cleared.	0.3330	0.0161
+0.6875	0.5320	1.000	to location ERRP, which outputs the error message.	0.3872	0.0131
+0.6987	0.5336	1.000	The order of these routines does not correspond to	0.3820	0.0168
+0.7031	0.1164	1.000	At TAADI, (Figure 133) the size of the new dictionarj	0.4045	0.0189
+0.7138	0.0994	1.000	is stored in the first dictionary entry, and the size of.; the order in which the messages are listed in the	0.8012	0.0243
+0.7323	0.0995	1.000	the new index (set to 40 decimal words) is stored in	0.3894	0.0158
+0.7324	0.5320	1.000	program description.	0.1635	0.0147
+0.7470	0.1013	1.000	the second entry. The absolute arc-word address of	0.3971	0.0178
+0.7542	0.5353	1.000	Loader: UPDATE-30 includes a version of the stand-	0.4029	0.0217
+0.7603	0.1012	1.000	each type area as it will appear on the new PROSA is	0.3990	0.0199
+0.7709	0.5355	1.000	ard MCP relocatable loader with modifications. The	0.3932	0.0172
+0.7768	0.1013	1.000	computed and stored into each dictionary entry. The	0.3989	0.0173
+0.7865	0.5355	1.000	master update program contains a special loader	0.3689	0.0182
+0.7921	0.1015	1.000	new dictionary is printed at the same time. The arc-	0.4041	0.0146
+0.8023	0.5357	1.000	that accepts absolute and relocatable decks, but not	0.3872	0.0160
+0.8080	0.1014	1.000	word address forthelast (dummy) entry)))))))) is	0.3743	0.0138
+0.8164	0.5374	1.000	BSS decks. When the LOAD option is used, the first	0.3951	0.0177
+0.8202	0.1031	1.000	rounded up to the nearest track address before being	0.3952	0.0182
+0.8319	0.5374	1.000	card loaded sets the lower bound of the program,	0.3687	0.0156
+0.8359	0.1032	1.000	stored. The new index is moved into the buffer	0.3575	0.0166
+0.8457	0.5374	1.000	which is the first location in the new type area. Ab-	0.3895	0.0169
+0.8545	0.1034	1.000	following the dictionary.	0.1823	0.0133
+0.8618	0.5376	1.000	solute decks should begin with an origin or C card,	0.3816	0.0146
+0.8714	0.1201	1.000	At ENTRY, (Figure 133)' the entries in the NEWDIC	0.3970	0.0177
+0.8746	0.5373	1.000	and relocatable decks with a loader adjustment card.	0.3970	0.0174
+0.8866	0.1034	1.000	buffer are used to pick up each type area following	0.3797	0.0146
+0.8959	0.5468	1.000	The deck may contain B cards (other than JOB,	0.3575	0.0183
+0.9012	0.1034	1.000	the new index and pack it into the buffer. If the type	0.3929	0.0146
+0.9102	0.5298	1.000	COMD, or HED cards) that are read into the load buffer	0.4009	0.0194
+0.9151	0.1032	1.000	area is new, it is located and read from the disk; if	0.3895	0.0176
+0.9477	0.9098	1.000	235	0.0244	0.0087
+0.9491	0.7688	1.000	Supporting Programs	0.1203	0.0103

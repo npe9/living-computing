@@ -1,0 +1,108 @@
+0.0988	0.0902	1.000	omitted in setting up a field, as are commas. The	0.3816	0.0146
+0.1032	0.5207	1.000	encountered during loading, SEOJ or $ABEOJ is	0.3628	0.0147
+0.1148	0.0902	1.000	routine saves, uses, and restores index registers 1,	0.4060	0.0146
+0.1177	0.5094	1.000	primed so that the program is not executed.	0.3421	0.0132
+0.1292	0.0902	1.000	2, and 3.	0.0696	0.0134
+0.1321	0.5395	1.000	Resume load uses the following routines:	0.3064	0.0133
+0.1453	0.5395	1.000	1. The JC4 print program - YPR - to print out	0.3534	0.0147
+0.1584	0.0902	1.000	The Short Message Routine	0.2030	0.0116
+0.1612	0.5207	1.000	diagnosing messages for loading errors.	0.3045	0.0133
+0.1758	0.5376	1.000	2. The major package fetcher - YMPFCH - to	0.3515	0.0133
+0.1875	0.0883	1.000	The short message routine provides MCP with a	0.3647	0.0146
+0.1918	0.5207	1.000	call itself into memory (if necessary).	0.2876	0.0131
+0.2015	0.0863	1.000	common 17 word buffer for output via $SPR. It	0.3613	0.0179
+0.2053	0.5375	1.000	3. The MCP Loader - MLOADR - to load cards.	0.3649	0.0143
+0.2179	0.0883	1.000	operates disabled, and is entered with the linkage:	0.3797	0.0161
+0.2209	0.5376	1.000	4. The Input program - $SCR - to get cards from	0.3741	0.0131
+0.2319	0.1202	1.000	SIC, ZSPLP9	0.1037	0.0158
+0.2369	0.5207	1.000	the system input source.	0.1842	0.0116
+0.2468	0.1221	1.000	BD, ZSPLPR	0.1017	0.0152
+0.2515	0.5376	1.000	5. The Disk fetch - $FETCH - to get card images	0.3778	0.0131
+0.2616	0.1203	1.000	,FWA(D)	0.0695	0.0145
+0.2647	0.5205	1.000	from the disk.	0.1076	0.0116
+0.2776	0.1222	1.000	, N.	0.0320	0.0131
+0.2803	0.5375	1.000	6. The Prime and return - SPRIME, $RET - as	0.3630	0.0153
+0.2920	0.1221	1.000	Return	0.0508	0.0104
+0.2951	0.5188	1.000	noted above.	0.0940	0.0116
+0.3067	0.0865	1.000	where	0.0489	0.0102
+0.3095	0.5187	1.000	Resume load immediately enters YMPFCH to get	0.3686	0.0147
+0.3209	0.1202	1.000	FWA(I)	0.0660	0.0137
+0.3212	0.1842	1.000	- is the starting location of the message	0.3158	0.0131
+0.3241	0.5169	1.000	itself into memory from disk.	0.2274	0.0131
+0.3358	0.2274	1.000	intended for $SPR, and	0.1767	0.0161
+0.3385	0.5338	1.000	Its first task is to determine whether it is to act	0.3648	0.0135
+0.3517	0.1898	1.000	- is the number of words.	0.2030	0.0116
+0.3517	0.1203	1.000	N	0.0150	0.0102
+0.3545	0.5188	1.000	as a postprocessor to the BSS loader as is the case	0.3872	0.0118
+0.3663	0.1053	1.000	The short message routine moves the message to	0.3703	0.0131
+0.3672	0.5186	1.000	if KSILO+2. 0 says BSSbbbbb in BCD, and if the	0.3556	0.0163
+0.3808	0.0865	1.000	its buffer and uses $SPR via the disabled entry to the	0.4004	0.0131
+0.3836	0.5188	1.000	current job is in the GO phase (SCORG=0) of a	0.3440	0.0118
+0.3953	0.0883	1.000	IF analyzer. The routine saves, uses, and restores	0.3947	0.0131
+0.3967	0.5186	1.000	COMPILGO (KSILO+1. 19=1). If it is a BSS post-	0.3668	0.0161
+0.4099	0.0883	1.000	index registers 0 and 1. Note that control is not	0.3647	0.0116
+0.4142	0.5188	1.000	processor, resume load obtains the loader limits	0.3684	0.0116
+0.4244	0.0883	1.000	returned when the short message routine is used by	0.3872	0.0132
+0.4258	0.5168	1.000	from KSILO and sets them up to extend from the	0.3631	0.0147
+0.4398	0.5167	1.000	lower limit to the base address of blank common, to	0.3933	0.0170
+0.4403	0.0865	1.000	a program which is not a major package. $SPR will	0.3947	0.0133
+0.4548	0.0865	1.000	appear to the return routine to have been primed,	0.3759	0.0132
+0.4552	0.5167	1.000	inhibit loading into blank common. If the BSS job	0.3706	0.0160
+0.4679	0.0864	1.000	and primed routines do not return to the requestor.	0.3855	0.0147
+0.4724	0.5169	1.000	is segmented, exit is made to MRNRM5. Otherwise,	0.3985	0.0146
+0.4838	0.5186	1.000	PP memory is set to plus (t) infinity, starting at lo-	0.3933	0.0177
+0.4839	0.0865	1.000	(See dispatcher error control.)	0.2350	0.0118
+0.4997	0.5168	1.000	cation (8)41. to the base of the relocation tables. It	0.3911	0.0136
+0.5145	0.5168	1.000	then exits to MRNRM5 in the loader, in such a way as	0.3987	0.0154
+0.5276	0.0883	1.000	Resume Load	0.1015	0.0103
+0.5278	0.5168	1.000	to persuade the loader that it should load the next	0.3706	0.0145
+0.5436	0.5169	1.000	(i.e., the first) Fortran subprogram.	0.2744	0.0131
+0.5548	0.5335	1.000	If resume load is not a BSS postprocessor, it sets	0.3746	0.0205
+0.5567	0.0883	1.000	The resume load major package controls the loading	0.3910	0.0131
+0.5712	0.0883	1.000	of binary decks prior to execution of programs under	0.3966	0.0131
+0.5727	0.5150	1.000	up loader limits from YLLSAV, the fetch type-area	0.3872	0.0146
+0.5858	0.0883	1.000	MCP. Its main function is to supply cards to the MCP	0.4060	0.0131
+0.5872	0.5150	1.000	from YDFCS, and $13 with the read source. At this	0.3872	0.0146
+0.6000	0.0863	1.000	loader, which it uses as a subroutine, and respond	0.3819	0.0157
+0.6032	0.5150	1.000	point the op code is checked for 74. 32, or uncondi-	0.3835	0.0132
+0.6148	0.0883	1.000	to exceptional returns from it. It also serves as the	0.3929	0.0131
+0.6152	0.5148	1.000	tional $SCR. If this is the initial entry for the cur-	0.3820	0.0189
+0.6285	0.0863	1.000	last phase of the Fortran BSS Loader. It is primed by	0.4044	0.0158
+0.6321	0.5150	1.000	rent deck (YLLSAV.25=1) PP memory is cleared	0.3665	0.0133
+0.6431	0.0863	1.000	phase 4 of job control, and may also be used by the	0.3838	0.0168
+0.6467	0.5132	1.000	from location 41. (8) TO SBAPP, or the base address	0.3985	0.0147
+0.6584	0.0883	1.000	PP.	0.0282	0.0116
+0.6612	0.5150	1.000	of the PP I-O location table. The Ist card is already	0.3947	0.0147
+0.6758	0.5150	1.000	in YBCBU, if this is a GO phase, otherwise, it must	0.3966	0.0146
+0.6859	0.0862	1.000	The Resume Load Package	0.2016	0.0150
+0.6876	0.5148	1.000	be read from the source indicated by $13.	0.3126	0.0174
+0.7047	0.5318	1.000	At this point we have completed all of the initiali-	0.3724	0.0150
+0.7166	0.0865	1.000	Resume load has one entry point, YRESLD (Figure	0.3816	0.0146
+0.7209	0.5150	1.000	zation in resume load. The routine basically con-	0.3741	0.0131
+0.7310	0.0863	1.000	43). Two pseudo-ops are associated with this entry	0.3837	0.0148
+0.7315	0.5148	1.000	sists of a loop between YRLCR and YLBRA. 32: get	0.3820	0.0189
+0.7450	0.0863	1.000	point, $RESLD and 74. 32. The latter pseudo-op	0.3594	0.0172
+0.7500	0.5150	1.000	a card, load a card, etc.. If the loader gives branch	0.3966	0.0131
+0.7598	0.0844	1.000	forces resume load to use $SCR as a source of cards.	0.4026	0.0152
+0.7645	0.5132	1.000	return, the loop is broken, and return is made to the	0.3985	0.0131
+0.7746	0.0863	1.000	Otherwise, the SCORG bit, KSILO (see JC4) and	0.3612	0.0162
+0.7791	0.5150	1.000	PP provided no input program UK has occurred	0.3553	0.0131
+0.7886	0.0863	1.000	SR EADS determine the source of cards and the man-	0.3932	0.0158
+0.7936	0.5132	1.000	(REJJOB. 60=0).	0.1222	0.0116
+0.8052	0.0846	1.000	ner of loading. Other preset registers hold limits	0.3778	0.0132
+0.8077	0.5318	1.000	The remaining code exists to handle exceptional	0.3555	0.0139
+0.8181	0.0844	1.000	for the loader (YLLSAV), and the disk type-area, if	0.3913	0.0165
+0.8227	0.5132	1.000	returns; $SCR end return, $FETCH end or error	0.3665	0.0131
+0.8334	0.0844	1.000	any (YDFCS). Resume load runs enabled, in the	0.3593	0.0163
+0.8372	0.5132	1.000	return, and loader error return. All are errors and	0.3947	0.0131
+0.8488	0.0846	1.000	RIO mode, and saves no index registers.	0.3064	0.0131
+0.8532	0.5132	1.000	cause a diagnostic message to be printed via YPR,	0.3778	0.0147
+0.8648	0.1015	1.000	Exit is always made via $RET. If the current	0.3496	0.0116
+0.8677	0.5132	1.000	with the exception of end return from $FETCH for a	0.3872	0.0117
+0.8794	0.0846	1.000	deck was successfully loaded, its return or branch	0.3797	0.0131
+0.8807	0.5130	1.000	BSS job, which is handled specially. After printing	0.3857	0.0165
+0.8922	0.0844	1.000	address is placed both into SICBU and location 1. 32	0.3856	0.0151
+0.8941	0.5129	1.000	the message, resume load primes $ABEOJ or $EOJ,	0.3953	0.0188
+0.9084	0.0846	1.000	of the tentacle table (see $RET). If an error was	0.3684	0.0131
+0.9112	0.5113	1.000	depending on the initial entry bit. YEOJS and SPINCL	0.4060	0.0133
+0.9549	0.0752	1.000	86	0.0207	0.0116

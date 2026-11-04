@@ -1,0 +1,109 @@
+0.0930	0.1353	1.000	Entry sequence: LVI, $14, $+1.0	0.2500	0.0131
+0.0930	0.7519	1.000	Mode (O=odd, E=even,	0.1729	0.0189
+0.0943	0.5470	1.000	Column 16	0.0828	0.0134
+0.1076	0.2632	1.000	B, ZPUT	0.0695	0.0131
+0.1090	0.7538	1.000	C=odd with ECC). If	0.1617	0.0160
+0.1221	0.2613	1.000	T1, 0, DFILE1, IOWRD	0.1842	0.0161
+0.1250	0.7519	1.000	column 16 is blank, odd	0.1823	0.0160
+0.1375	0.7499	1.000	parity is assumed and an	0.1919	0.0171
+0.1395	0.3778	1.000	Return	0.0564	0.0116
+0.1466	0.1332	1.000	ZTAKE - Transmits a requested record from	0.3445	0.0207
+0.1521	0.7536	1.000	O is inserted.	0.1074	0.0171
+0.1642	0.5470	1.000	Columns 17 through 24	0.1729	0.0204
+0.1657	0.0996	1.000	BUFF to IOWRD. Uses $FETCH to read a block at a	0.4004	0.0174
+0.1684	0.7480	1.000	Blank.	0.0566	0.0150
+0.1802	0.0977	1.000	time from PROSA. When the record number requested	0.4192	0.0174
+0.1802	0.5470	1.000	Columns 25 through 80	0.1729	0.0189
+0.1845	0.7500	1.000	Information contained in	0.1861	0.0131
+0.1976	0.0959	1.000	is not in the block currently in memory, it fetches	0.3816	0.0132
+0.1991	0.7556	1.000	these columns is printed	0.1805	0.0161
+0.2108	0.7532	1.000	but not recorded on tape.	0.1872	0.0209
+0.2121	0.0996	1.000	another block until the record is found or the END	0.3759	0.0103
+0.2238	0.0977	1.000	return is taken from $FETCH. Should the END condi-	0.4117	0.0174
+0.2397	0.5301	1.000	Operator Instructions	0.1635	0.0176
+0.2412	0.0977	1.000	tion occur, it returns to the librarian at the address	0.3947	0.0161
+0.2529	0.0993	1.000	found in NEXT+2.	0.1342	0.0148
+0.2573	0.5395	1.000	1. Ready the card reader, printer, and console;	0.3778	0.0218
+0.2703	0.1333	1.000	Entry sequence: LVI, $14, $+1.	0.2409	0.0152
+0.2733	0.5282	1.000	place Sense Switch A in the on (up) position and I-O	0.3872	0.0174
+0.2863	0.2613	1.000	B, ZTAKE	0.0809	0.0118
+0.2875	0.5301	1.000	Check Stop switch in the off (down) position. (Sense	0.3854	0.0180
+0.2994	0.2575	1.000	SWAP, $XR, DFILE, IOWRD	0.2237	0.0161
+0.3009	0.5280	1.000	Switch A must be on because it is used as the last	0.3783	0.0199
+0.3152	0.5263	1.000	card indicator.)	0.1279	0.0193
+0.3154	0.3722	1.000	Normal return	0.1147	0.0146
+0.3285	0.1316	1.000	ZENDFILE - Forces the write-out of a block even	0.3759	0.0176
+0.3323	0.5430	1.000	2. Ready the first tape to be labeled and all suc-	0.3746	0.0210
+0.3430	0.0959	1.000	though it is partially empty. Writes an end of file after	0.4211	0.0131
+0.3489	0.5299	1.000	ceeding tapes in turn, on unit 1 in high density.	0.3538	0.0170
+0.3587	0.0977	1.000	the block.	0.0753	0.0107
+0.3660	0.5469	1.000	3. Place the labeling program deck and label cards	0.3893	0.0150
+0.3821	0.5282	1.000	in the card reader hopper, then push Load key.	0.3571	0.0147
+0.3821	0.1335	1.000	Entry sequence: LVI, $14, $+1.	0.2387	0.0133
+0.3944	0.5299	1.000	NOTE: IBM 1401 binary tapes are always written in	0.3895	0.0166
+0.3982	0.2613	1.000	B, ZENDFILE	0.1071	0.0118
+0.4112	0.5883	1.000	the odd parity mode, therefore, if the tape is	0.3383	0.0147
+0.4127	0.2594	1.000	, DFILE1	0.0733	0.0118
+0.4237	0.5862	1.000	to be used by the 1401 System Input Program	0.3389	0.0185
+0.4287	0.3759	1.000	Return	0.0508	0.0103
+0.4302	0.2726	0.300	----	0.0639	0.0044
+0.4392	0.5862	1.000	I, column 15 must contain an H for high density	0.3576	0.0190
+0.4548	0.0959	1.000	PERIPHERAL INPUT-OUTPUT	0.2387	0.0132
+0.4564	0.5865	1.000	and column 16 must contain an O for odd parity	0.3534	0.0146
+0.4709	0.5865	1.000	mode.	0.0470	0.0102
+0.4839	0.0996	1.000	Peripheral input-output programs consist of four IBM	0.4023	0.0132
+0.4985	0.5263	1.000	Stop Conditions	0.1165	0.0131
+0.4985	0.0977	1.000	1401 programs:	0.1184	0.0118
+0.5124	0.1143	1.000	1. Tape Labeling	0.1341	0.0140
+0.5275	0.5280	1.000	Non-Error Stops: Two non-error stops are possible:	0.4007	0.0156
+0.5276	0.1128	1.000	2. System Peripheral Input I	0.2237	0.0131
+0.5414	0.5431	1.000	1. STOP 1 - After a label is written on tape and	0.3650	0.0160
+0.5418	0.1126	1.000	3. System Peripheral Input II	0.2277	0.0153
+0.5567	0.1128	1.000	4. System Peripheral Output	0.2237	0.0131
+0.5581	0.5263	1.000	concluded with an end of file, the tape is rewound and	0.4023	0.0131
+0.5711	0.0976	1.000	These programs prepare tape labels and input tapes to	0.4082	0.0155
+0.5727	0.5263	1.000	unloaded. The information on the label card associated	0.4173	0.0131
+0.5852	0.0957	1.000	be used by MCP. In addition, the System Peripheral	0.3988	0.0170
+0.5868	0.5261	1.000	with the tape is printed by the 1403 printer, in addition	0.4120	0.0171
+0.6002	0.0976	1.000	Output program prints or punches data from MCP-	0.3800	0.0164
+0.6005	0.5243	1.000	to operator instructions as follows:	0.2672	0.0144
+0.6163	0.0959	1.000	generated output tapes.	0.1748	0.0116
+0.6177	0.6034	1.000	Write the above information onto outer label	0.3308	0.0117
+0.6192	0.5583	1.000	a.	0.0188	0.0087
+0.6321	0.6034	1.000	of tape on unit 1.	0.1278	0.0118
+0.6453	0.0940	1.000	Tape Labeling (1401)	0.1598	0.0147
+0.6454	0.6013	1.000	Ready new tape on unit 1 - High Density.	0.3068	0.0160
+0.6612	0.6034	1.000	Push Start to continue.	0.1711	0.0118
+0.6741	0.0957	1.000	The IBM 1401 Tape Labeling program labels tapes	0.3762	0.0150
+0.6744	0.5414	1.000	2. STOP 2 - A message is printed to end the opera-	0.3966	0.0147
+0.6886	0.0938	1.000	used by the MCP. Input for the label files is supplied	0.4044	0.0167
+0.6904	0.5244	1.000	tion.	0.0357	0.0102
+0.7035	0.0940	1.000	by a card reader. A label file consists of 11 six-bit	0.3947	0.0132
+0.7194	0.0940	1.000	characters written in high-density, BCD code, using	0.3966	0.0146
+0.7194	0.5226	1.000	Error Stop: Only one error stop may be encountered.	0.4060	0.0146
+0.7322	0.0938	1.000	the even parity mode. Label cards follow the labeling	0.4064	0.0164
+0.7325	0.5393	1.000	1. ESTOP - A card reader error has occurred.	0.3650	0.0161
+0.7470	0.5242	1.000	The last card in the N/R stacker should be checked,	0.3896	0.0176
+0.7485	0.0921	1.000	program and specify the labels to be written. There	0.3966	0.0131
+0.7630	0.0921	1.000	is one label card for each tape.	0.2368	0.0131
+0.7638	0.5243	1.000	repunched if necessary, and reloaded into the hopper.	0.4044	0.0156
+0.7750	0.5222	1.000	When an error card is reloaded, make certain proper	0.4048	0.0219
+0.7768	0.1108	1.000	The format for a label card is as follows:	0.3105	0.0140
+0.7933	0.5224	1.000	card sequence is maintained.	0.2202	0.0135
+0.8009	0.1109	1.000	Column 1	0.0695	0.0088
+0.8023	0.3158	1.000	L punch (all non-L cards	0.1861	0.0102
+0.8169	0.3158	1.000	are ignored).	0.0996	0.0116
+0.8299	0.1109	1.000	Columns 2 through 9	0.1523	0.0116
+0.8314	0.3158	1.000	Blank.	0.0489	0.0102
+0.8327	0.5226	1.000	Program Flow	0.1090	0.0118
+0.8445	0.1109	1.000	Columns 10 through 14	0.1692	0.0116
+0.8459	0.3158	1.000	Label (5 BCD characters)	0.1917	0.0116
+0.8590	0.1109	1.000	Column 15	0.0771	0.0102
+0.8605	0.3158	1.000	Density (H=high, L=low).	0.1898	0.0132
+0.8608	0.5092	1.000	Label cards are read, partially checked (columns 15	0.4064	0.0171
+0.8732	0.3136	1.000	If column 15 is blank, an	0.1904	0.0156
+0.8759	0.5036	1.000	and 16), and the information in columns 1 through 80	0.4139	0.0178
+0.8894	0.3158	1.000	H for high density is	0.1523	0.0118
+0.8924	0.5188	1.000	printed by the printer. See Figure 141. Columns 10	0.4004	0.0131
+0.9035	0.3119	1.000	inserted by the program. through 20 are recorded on tape with an end of file	0.5886	0.0180
+0.9491	0.0865	1.000	250	0.0207	0.0087

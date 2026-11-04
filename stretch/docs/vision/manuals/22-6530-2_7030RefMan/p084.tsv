@@ -1,0 +1,104 @@
+0.0624	0.5038	1.000	division, both the divisor and dividend may be pre-	0.3929	0.0132
+0.0654	0.0940	1.000	the instruction STORE ROUNDED is used to store the	0.3835	0.0102
+0.0770	0.5056	1.000	normalized. Prenormalization of the divisor occurs as	0.3910	0.0131
+0.0799	0.0921	1.000	results. Rounding is achieved by adding 1 to the	0.3853	0.0131
+0.0930	0.5038	1.000	a part of the arithmetic procedure and is independent	0.3929	0.0146
+0.0945	0.0921	1.000	49th bit of the result fraction, bit position 60, and	0.3853	0.0146
+0.1090	0.5038	1.000	of the normalization modifiers. Prenormalization of	0.3929	0.0116
+0.1103	0.0939	1.000	truncating the result fraction to 48 bits.	0.2784	0.0152
+0.1235	0.5056	1.000	the dividend is required when a normalized quotient	0.3910	0.0146
+0.1381	0.5056	1.000	is to be obtained. A fully normalized dividend is de-	0.3910	0.0146
+0.1539	0.5056	1.000	veloped when a normalized quotient is to be obtained.	0.3910	0.0147
+0.1686	0.0921	1.000	Normalization	0.1278	0.0145
+0.1700	0.5056	1.000	Dividend prenormalization is conditional on the set-	0.3910	0.0146
+0.1836	0.5055	1.000	ting of the normalization modifier. If an unnormal-	0.3930	0.0157
+0.1962	0.0919	1.000	In floating point instructions, normalized or unnor-	0.3875	0.0185
+0.2006	0.5056	1.000	ized quotient is to be obtained, the dividend fraction	0.3910	0.0146
+0.2151	0.0940	1.000	malized operation is specified through use of the	0.3853	0.0146
+0.2166	0.5056	1.000	is shifted, at most, the same amount as the divisor.	0.3778	0.0131
+0.2311	0.5226	1.000	A normalized result fraction, as developed by this	0.3759	0.0131
+0.2311	0.0940	1.000	normalization modifier, instruction bit position 18.	0.3835	0.0131
+0.2456	0.0940	1.000	Normalized operation is specified when this bit is zero;	0.3853	0.0160
+0.2470	0.5056	1.000	system, has a magnitude in the range 1 > F= ½ or	0.3929	0.0133
+0.2602	0.0921	1.000	unnormalized operation is specified when this bit is	0.3872	0.0147
+0.2615	0.5056	1.000	zero. An unnormalized result fraction has a magni-	0.3910	0.0133
+0.2776	0.5056	1.000	tude in the range 1 > F≥ 0.	0.2199	0.0131
+0.2791	0.0921	1.000	one.	0.0282	0.0102
+0.2921	0.5226	1.000	The unnormalized mode of operation can be used	0.3741	0.0146
+0.2921	0.1053	1.000	When normalized operation is specified, the initial	0.3741	0.0131
+0.3067	0.0921	1.000	operands used in the operation need not be in nor-	0.3891	0.0146
+0.3081	0.5056	1.000	as the equivalent of a fixed-point set of arithmetic	0.3929	0.0146
+0.3212	0.0921	1.000	malized form, but the result of the operation is	0.3891	0.0161
+0.3227	0.5038	1.000	operations. When so used, the exponent field pro-	0.3947	0.0161
+0.3387	0.5038	1.000	vides an automatic means of recording scale changes	0.3947	0.0147
+0.3387	0.0902	1.000	usually normalized. The exceptions to providing a	0.3891	0.0147
+0.3532	0.5056	1.000	during the course of the program. The unnormalized	0.3929	0.0160
+0.3532	0.0921	1.000	normalized result are discussed with each operation.	0.3872	0.0132
+0.3691	0.0940	1.000	When normalization occurs, it may involve a left shift	0.3853	0.0132
+0.3691	0.5038	1.000	fraction provides a 48-bit or 96-bit fixed point data	0.3947	0.0161
+0.3836	0.0921	1.000	of the fraction to eliminate high-order zeros, or it	0.3891	0.0132
+0.3852	0.5056	1.000	field.	0.0395	0.0145
+0.3997	0.0940	1.000	may involve a right shift to insert a high-order one	0.3853	0.0145
+0.4142	0.0940	1.000	bit when the arithmetic operation produces a result	0.3872	0.0145
+0.4302	0.0940	1.000	fraction overflow bit. After the shift, the result frac-	0.3853	0.0131
+0.4389	0.5053	1.000	Sign Control	0.1190	0.0189
+0.4448	0.0940	1.000	tion is truncated to 48 or 96 bits. When normaliza-	0.3872	0.0131
+0.4606	0.0940	1.000	tion of the result requires shifting, the exponent is	0.3891	0.0133
+0.4738	0.5075	1.000	The effective sign of an operand used during instruc-	0.3910	0.0131
+0.4752	0.0939	1.000	changed by the amount of the shift. A right shift is	0.3874	0.0164
+0.4884	0.5075	1.000	tion execution can be determined in three ways. Two	0.3910	0.0131
+0.4911	0.0939	1.000	added to the exponent; a left shift is subtracted from	0.3874	0.0153
+0.5042	0.5038	1.000	operation modifiers, bit positions 19 and 20 of the	0.3966	0.0161
+0.5073	0.0940	1.000	the exponent. An exception to the rules for normal-	0.3872	0.0146
+0.5188	0.5056	1.000	instruction, are associated with the floating-point op-	0.3929	0.0146
+0.5218	0.0940	1.000	ization occurs when the 48-bit result fraction in single-	0.3872	0.0131
+0.5340	0.0937	1.000	precision operations or the 96-bit result fraction in	0.3877	0.0195
+0.5348	0.5075	1.000	erations to provide flexible sign control: The third	0.3910	0.0146
+0.5509	0.5075	1.000	way is through the operation code, as in ADD TO MAG-	0.3910	0.0146
+0.5536	0.0940	1.000	double-precision is zero. For zero fractions the nor-	0.3891	0.0147
+0.5635	0.5074	1.000	NITUDE, and the discussion of this action will be found	0.3913	0.0170
+0.5682	0.0940	1.000	malization is suppressed and no change, due to nor-	0.3891	0.0147
+0.5814	0.0940	1.000	malization, is made in the result exponent. This	0.3891	0.0160
+0.5814	0.5075	1.000	under the various operations.	0.2105	0.0147
+0.5959	0.5244	1.000	Instruction bit position 19 is called the "absolute	0.3759	0.0147
+0.5973	0.0938	1.000	point is further discussed in "Zero Definition."	0.3425	0.0176
+0.6118	0.5075	1.000	sign modifier." It corresponds to the unsigned modi-	0.3929	0.0146
+0.6148	0.1071	1.000	When unnormalized operation is specified, the	0.3741	0.0131
+0.6264	0.5056	1.000	fier in integer arithmetic. The absolute sign modifier	0.3947	0.0161
+0.6268	0.0938	1.000	arithmetic operation result fraction is truncated to 48	0.3876	0.0182
+0.6424	0.5056	1.000	applies to the storage operand when the data are	0.3947	0.0176
+0.6453	0.0921	1.000	or 96 bits without a normalization cycle. High-order	0.3910	0.0131
+0.6570	0.5075	1.000	fetched from storage. In store operations, the modi-	0.3929	0.0145
+0.6583	0.0939	1.000	zeros in the fraction are not eliminated. If a fraction	0.3874	0.0154
+0.6730	0.5075	1.000	fier applies to the number which is placed in storage.	0.3910	0.0146
+0.6758	0.0940	1.000	overflow bit is produced, the extra bit is lost and the	0.3891	0.0146
+0.6890	0.5094	1.000	When the modifier bit is zero, the sign of the operand	0.3910	0.0132
+0.6903	0.0940	1.000	lost carry indicator, Lc, is turned on. The details of	0.3891	0.0146
+0.7035	0.5075	1.000	is used as it exists or is subject to further modification	0.3929	0.0132
+0.7064	0.0940	1.000	unnormalized operation are discussed with each op-	0.3891	0.0146
+0.7194	0.5094	1.000	by the negative sign modifier. When the modifier bit	0.3910	0.0146
+0.7238	0.0940	1.000	eration.	0.0527	0.0103
+0.7339	0.5075	1.000	is one, the sign of the operand is considered to be	0.3929	0.0146
+0.7369	0.1090	1.000	Normalization, when specified by the instruction,	0.3741	0.0146
+0.7469	0.5073	1.000	positive and the original sign is ignored. This as-	0.3933	0.0210
+0.7506	0.0938	1.000	usually applies to the result of the operation. This is	0.3894	0.0178
+0.7660	0.5075	1.000	sumed positive sign is subject to further modification	0.3929	0.0146
+0.7668	0.1334	1.000	post-normalization. In performance of the	0.3499	0.0167
+0.7805	0.5094	1.000	by the negative sign modifier.	0.2105	0.0146
+0.7833	0.0921	1.000	arithmetic operations of addition and division, an-	0.3910	0.0146
+0.7951	0.5244	1.000	Instruction bit position 20 is called the "negative	0.3759	0.0146
+0.7979	0.0940	1.000	other form of normalization may be used. This is	0.3891	0.0132
+0.8108	0.0938	1.000	called prenormalization and is applied to one or more	0.3895	0.0193
+0.8109	0.5075	1.000	sign modifier." It corresponds to the integer arith-	0.3947	0.0161
+0.8270	0.5094	1.000	metic sign modifier with the same name. The nega-	0.3929	0.0146
+0.8299	0.0940	1.000	of the operands specified in the operation. During	0.3891	0.0146
+0.8414	0.5093	1.000	tive sign modifier applies to the operand that is not	0.3930	0.0164
+0.8445	0.0921	1.000	addition, the operand having the smaller exponent	0.3910	0.0146
+0.8576	0.5094	1.000	changed in the operation. In operations that change	0.3929	0.0146
+0.8583	0.0939	1.000	is shifted right with its exponent increased by	0.3893	0.0175
+0.8721	0.5094	1.000	the accumulator contents, it applies to the operand	0.3910	0.0146
+0.8750	0.0940	1.000	the amount of the shift, until the exponents of the	0.3891	0.0132
+0.8881	0.5094	1.000	from storage. In operations that change storage, it	0.3929	0.0146
+0.8890	0.0939	1.000	two operands agree in magnitude and sign. During	0.3893	0.0168
+0.9258	0.6992	1.000	Floating-Point Arithmetic	0.1579	0.0103
+0.9259	0.8853	1.000	81	0.0169	0.0073

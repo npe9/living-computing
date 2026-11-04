@@ -1,0 +1,112 @@
+0.0785	0.5244	1.000	Master Tape Select Card: The file or files specified	0.3929	0.0204
+0.0814	0.1147	1.000	A message is printed if an error, such as a multi-	0.3741	0.0147
+0.0973	0.5226	1.000	by the control card will be read from the master tape	0.3985	0.0118
+0.0973	0.0958	1.000	punch, is detected during a card reading procedure.	0.3856	0.0151
+0.1090	0.5226	1.000	and written in 17 card records on the input tape. The	0.4023	0.0161
+0.1118	0.0959	1.000	If an error exists, the operator must clear the reader	0.4004	0.0146
+0.1250	0.0959	1.000	and return the cards to the hopper, making certain	0.3797	0.0160
+0.1250	0.5244	1.000	output from the master will be buffered until a record	0.4004	0.0145
+0.1381	0.5244	1.000	(17 cards) is accumulated. Iwo consecutive End of	0.3853	0.0146
+0.1408	0.0977	1.000	proper sequence is maintained, and initiate start.	0.3705	0.0147
+0.1526	0.5244	1.000	File marks will identify the end of master tape.	0.3553	0.0160
+0.1539	0.0977	1.000	The program causes a branch to RI and the read and	0.3910	0.0161
+0.1667	0.5393	1.000	Column 2	0.0736	0.0169
+0.1672	0.7387	1.000	I - denotes input from	0.1729	0.0174
+0.1715	0.0996	1.000	error check is again performed.	0.2387	0.0131
+0.1845	0.7387	1.000	the master tape.	0.1335	0.0131
+0.1974	0.7368	1.000	Denote the first file to	0.1711	0.0136
+0.1991	0.5414	1.000	Columns 10 and 11	0.1391	0.0146
+0.2020	0.0940	1.000	System Peripheral Input !I	0.2011	0.0146
+0.2136	0.7387	1.000	be read from the master	0.1842	0.0146
+0.2297	0.7387	1.000	tape.	0.0451	0.0131
+0.2297	0.0959	1.000	System Peripheral Input II is a 1401 program used to	0.3966	0.0131
+0.2427	0.7387	1.000	Denote the last file to be	0.1842	0.0131
+0.2437	0.0957	1.000	generate a system input tape for MCP. System Periph-	0.4119	0.0165
+0.2442	0.5414	1.000	Columns 14 and 15	0.1391	0.0131
+0.2587	0.7387	1.000	read from the master	0.1654	0.0131
+0.2602	0.0996	1.000	eral Input II differs from Input I as follows:	0.3195	0.0116
+0.2714	0.1127	1.000	1. Input II can furnish its own tape label file or	0.3557	0.0198
+0.2731	0.7387	1.000	tape. If columns 14 and	0.1805	0.0135
+0.2863	0.7368	1.000	15 are blank, only one	0.1729	0.0174
+0.2906	0.0977	1.000	have no label file.	0.1335	0.0103
+0.3009	0.7387	1.000	file from the master	0.1598	0.0146
+0.3036	0.1147	1.000	2. Data for Input II can be supplied by either a	0.3496	0.0133
+0.3164	0.7387	1.000	tape will be written on	0.1712	0.0155
+0.3197	0.0977	1.000	master tape or a card reader.	0.2237	0.0118
+0.3314	0.7387	1.000	the input tape. If	0.1372	0.0147
+0.3324	0.0995	1.000	The program writes the input tape in the same format	0.3987	0.0167
+0.3459	0.7406	1.000	columns 14 and 15 con-	0.1748	0.0160
+0.3488	0.0977	1.000	as System Peripheral Input I.	0.2180	0.0118
+0.3573	0.7387	1.000	tain a file number, the	0.1749	0.0195
+0.3745	0.7387	1.000	file specified in columns	0.1862	0.0155
+0.3794	0.0996	1.000	Card Format	0.0977	0.0102
+0.3881	0.7387	1.000	10 and 11 through the	0.1635	0.0189
+0.4055	0.0996	1.000	Control cards follow the object deck and select the	0.3741	0.0146
+0.4070	0.7387	1.000	file specified in columns	0.1842	0.0131
+0.4208	0.7386	1.000	14 and 15 will be written	0.1844	0.0145
+0.4215	0.0959	1.000	input media (card reader or tape) for the input tape.	0.3872	0.0161
+0.4360	0.0996	1.000	The control cards are distinguished by an 11-6-8	0.3628	0.0131
+0.4373	0.7387	1.000	as one file on the input	0.1711	0.0121
+0.4501	0.7384	1.000	tape.	0.0457	0.0169
+0.4506	0.0959	1.000	punch in column 1, which corresponds to a 1401 semi-	0.4060	0.0161
+0.4636	0.7406	1.000	Any additional descriptive	0.1955	0.0176
+0.4666	0.5414	1.000	Columns 20 through 80	0.1692	0.0146
+0.4679	0.1015	1.000	colon. When read by the card reader, the informa-	0.3797	0.0118
+0.4782	0.0996	1.000	tion contained on the control card is printed by the	0.3722	0.0161
+0.4782	0.7387	1.000	information will be con-	0.1842	0.0161
+0.4927	0.7387	1.000	tained in these columns.	0.1823	0.0189
+0.4951	0.0957	1.000	printer. Three types of control cards (BCD punched)	0.3951	0.0173
+0.5087	0.7387	1.000	The information will be	0.1786	0.0174
+0.5115	0.0977	1.000	are used to control the operation of the input tape	0.3665	0.0133
+0.5233	0.7387	1.000	printed, but not recorded	0.1898	0.0174
+0.5290	0.0996	1.000	program:	0.0677	0.0104
+0.5392	0.7387	1.000	on tape.	0.0658	0.0160
+0.5509	0.1147	1.000	1. Label card	0.1090	0.0102
+0.5654	0.1147	1.000	2. Master tape	0.1165	0.0116
+0.5654	0.5244	1.000	Card Reader Select Card: The card deck to be read	0.3835	0.0131
+0.5780	0.5244	1.000	onto the input tape must immediately follow the card	0.3892	0.0156
+0.5796	0.1163	1.000	3. Card reader	0.1188	0.0122
+0.5915	0.5226	1.000	reader select control card. The deck will be read	0.3797	0.0191
+0.5945	0.0996	1.000	The formats for the individual cards are:	0.3026	0.0116
+0.6076	0.5226	1.000	and blocked into 17 card records, and these records	0.3891	0.0174
+0.6235	0.0996	1.000	Label Card: The label card must follow the object	0.3759	0.0116
+0.6250	0.5226	1.000	written on the input tape. When a new control card is	0.4004	0.0132
+0.6381	0.0977	1.000	deck. The label control card contains the information	0.4041	0.0131
+0.6394	0.5226	1.000	read, an end of file will be written on the input tape.	0.3910	0.0133
+0.6512	0.0977	1.000	necessary to write the label on the input tape. Columns	0.4135	0.0161
+0.6526	0.7425	1.000	R - denotes input will be	0.1842	0.0147
+0.6627	0.0977	1.000	10 through 20 (as defined below) may be written as	0.3741	0.0176
+0.6657	0.7406	1.000	from the card reader.	0.1692	0.0174
+0.6786	0.0977	1.000	the first file on the input tape.	0.2256	0.0178
+0.6817	0.7425	1.000	Any additional descriptive	0.1974	0.0174
+0.6817	0.5395	1.000	Columns 20 through 80	0.1711	0.0160
+0.6948	0.3139	1.000	I, - defines a label card.	0.1842	0.0174
+0.6948	0.7406	1.000	information will be con-	0.1842	0.0189
+0.7078	0.1147	1.000	Columns 10 through 14	0.1711	0.0189
+0.7093	0.7425	1.000	tained in these columns.	0.1842	0.0189
+0.7121	0.3139	1.000	A five character label.	0.1692	0.0146
+0.7236	0.3120	1.000	If the label NOLAB is	0.1655	0.0149
+0.7238	0.7425	1.000	The information will be	0.1786	0.0189
+0.7412	0.3120	1.000	used, columns 10 through	0.1936	0.0146
+0.7412	0.7406	1.000	printed, but not recorded	0.1936	0.0176
+0.7538	0.3120	1.000	20 will not be written on	0.1825	0.0157
+0.7557	0.7406	1.000	on tape.	0.0658	0.0161
+0.7703	0.3102	1.000	the input tape.	0.1147	0.0176
+0.7820	0.3120	1.000	Program assumes H for	0.1842	0.0189
+0.7848	0.5206	1.000	Input Deck	0.0846	0.0162
+0.7878	0.1165	1.000	Column 15	0.0752	0.0102
+0.8009	0.3102	1.000	high density.	0.1034	0.0131
+0.8124	0.3120	1.000	Program assumes O for	0.1823	0.0161
+0.8154	0.5207	1.000	The first cards of the input deck are arranged as	0.3665	0.0161
+0.8164	0.1146	1.000	Column 16	0.0792	0.0125
+0.8283	0.5225	1.000	follows:	0.0640	0.0177
+0.8297	0.3120	1.000	odd parity.	0.0866	0.0150
+0.8397	0.3120	1.000	Additional BCD informa-	0.1862	0.0183
+0.8443	0.5394	1.000	Label card	0.0865	0.0163
+0.8459	0.1165	1.000	Columns 17 through 20	0.1654	0.0116
+0.8576	0.5395	1.000	I or R control card	0.1504	0.0174
+0.8589	0.3120	1.000	tion to go on the input	0.1655	0.0148
+0.8717	0.3119	1.000	tape label file.	0.1130	0.0182
+0.8735	0.5376	1.000	(Job deck if R control card)	0.2086	0.0160
+0.9375	0.8872	1.000	241	0.0320	0.0131
+0.9375	0.7538	1.000	Supporting Programs	0.1203	0.0131

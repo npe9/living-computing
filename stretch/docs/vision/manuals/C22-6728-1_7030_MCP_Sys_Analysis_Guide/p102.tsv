@@ -1,0 +1,104 @@
+0.0988	0.4981	1.000	The Restart Program	0.1635	0.0131
+0.1001	0.0695	1.000	RESTART	0.0791	0.0121
+0.1264	0.5000	1.000	At YARPBRP (Figure 52), the Restart program is	0.3741	0.0132
+0.1294	0.0733	1.000	The Restart program is used to reinitialize the sys-	0.3929	0.0116
+0.1409	0.5000	1.000	transmitted into its place starting at octal location	0.3778	0.0118
+0.1439	0.0714	1.000	tem without recourse to the master IPL tape once	0.3759	0.0116
+0.1555	0.5000	1.000	1000 and is given control at YARPBF (Figure 53). In	0.3947	0.0132
+0.1571	0.0713	1.000	the IPL program has written the system on the disk	0.3875	0.0152
+0.1700	0.4981	1.000	the YARPBF routine, two messages are given; one	0.3835	0.0131
+0.1744	0.0714	1.000	in the PROSA area and has placed MCP in core stor-	0.3985	0.0116
+0.1845	0.4981	1.000	indicates Restart was brought in from the disk suc-	0.3891	0.0131
+0.1890	0.0733	1.000	age. Restart is composed of two parts: the Restart	0.3835	0.0132
+0.1990	0.4999	1.000	cessfully, and the other gives the job name, system's	0.4026	0.0167
+0.2035	0.0714	1.000	bootstrap in main leg of MCP and the Restart type	0.3778	0.0132
+0.2151	0.5000	1.000	mode, and IC. The console is then read to get the	0.3741	0.0146
+0.2179	0.0733	1.000	area (33RESTRT) on the disk. Some of the actions	0.3797	0.0133
+0.2297	0.5000	1.000	Restart options. If binary key 63 is set, the com-	0.3797	0.0131
+0.2324	0.0733	1.000	of Restart are controlled by the binary keys but Re-	0.3891	0.0133
+0.2439	0.4999	1.000	mentator buffer is written on the typewriter. At	0.3629	0.0135
+0.2485	0.0733	1.000	start can perform all the following functions:	0.3365	0.0118
+0.2583	0.5018	1.000	VJSYNX, binary key 62 is tested and if set, the out-	0.3912	0.0158
+0.2630	0.0846	1.000	.1. Give a console message if 33RESTRT is	0.3327	0.0118
+0.2701	0.5016	1.000	put program's print and punch buffers are written on	0.3952	0.0192
+0.2791	0.0733	1.000	brought in successfully.	0.1805	0.0116
+0.2869	0.4998	1.000	the output tape. The status of the buffers is checked	0.3914	0.0170
+0.2917	0.0901	1.000	2. Give a console message stating the name of	0.3555	0.0137
+0.3052	0.5000	1.000	in the VJTEST routine and the buffers are written	0.3741	0.0118
+0.3067	0.0733	1.000	the current program, the system's operating mode,	0.3891	0.0131
+0.3197	0.4925	1.000	out, starting at VJTAPE (Figure 54). Control event-	0.4041	0.0161
+0.3212	0.0733	1.000	and the instruction counter when Restart was initiated.	0.4154	0.0116
+0.3342	0.5000	1.000	ually goes to YGOONX (Figure 53), a routine which	0.3853	0.0131
+0.3345	0.0901	1.000	3. Write out the commentator buffer on the type-	0.3743	0.0159
+0.3488	0.5019	1.000	reads the console; if binary key 61 is set, control	0.3722	0.0131
+0.3530	0.0751	1.000	writer.	0.0547	0.0120
+0.3648	0.5019	1.000	goes to the YDMLOOP routine. At YDMLOOP, it a	0.3872	0.0131
+0.3648	0.0921	1.000	4. Write the output program's print and punch	0.3496	0.0131
+0.3779	0.5019	1.000	console channel signal is given in response to the	0.3722	0.0131
+0.3808	0.0771	1.000	buffers on the output tape.	0.1936	0.0116
+0.3924	0.5019	1.000	dump request message, the program dumps on the	0.3778	0.0131
+0.3953	0.0921	1.000	5. Give a dump of core storage.	0.2462	0.0116
+0.4070	0.5019	1.000	selected output device, the locations specified in the	0.3929	0.0145
+0.4084	0.0921	1.000	6. Reinitialize the system by bringing in the IPL.	0.3778	0.0131
+0.4230	0.0752	1.000	bootstrap program from the disk and giving it con-	0.3816	0.0146
+0.4244	0.5019	1.000	numeric switches.	0.1391	0.0102
+0.4359	0.5187	1.000	At the end of each dump, the console is checked to	0.3761	0.0156
+0.4403	0.0752	1.000	trol (Disk IPL).	0.1203	0.0118
+0.4496	0.4999	1.000	see if binary key 61 is still set; if so, a return is made	0.4119	0.0167
+0.4666	0.5000	1.000	to repeat the dump sequence. When binary key 61 is	0.3891	0.0131
+0.4694	0.0752	1.000	Restart Bootstrap	0.1372	0.0132
+0.4811	0.5000	1.000	off, control goes to YSKPDMP where binary key 60	0.3853	0.0131
+0.4956	0.0771	1.000	The Restart bootstrap (YSICADD, Figure 52) first	0.3759	0.0147
+0.4970	0.5000	1.000	is tested.	0.0733	0.0103
+0.5102	0.5188	1.000	If binary key 60 is set, the VCHKNO bit is set to	0.3628	0.0132
+0.5115	0.0771	1.000	checks the instruction counter to determine if there	0.3853	0.0118
+0.5233	0.5019	1.000	indicate to the Disk IPL program that a check sum of	0.3985	0.0131
+0.5247	0.0752	1.000	is a call for Restart or a violation of protected stor-	0.3966	0.0132
+0.5384	0.0768	1.000	age area, octal location 41. If the instruction	0.3444	0.0180
+0.5392	0.5019	1.000	PROSA should not be done. Control then passes to	0.3741	0.0117
+0.5536	0.5019	1.000	VCLEAR (Figure 55), the beginning of the Disk IPL	0.3853	0.0133
+0.5552	0.0771	1.000	counter indicates a branch disabled to location 41,	0.3759	0.0132
+0.5682	0.5019	1.000	program and the last subprogram in Restart.	0.3383	0.0133
+0.5697	0.0771	1.000	a type 16 error is given. Otherwise, Restart boot-	0.3872	0.0146
+0.5827	0.5188	1.000	VCLEAR halts the Restart program and gives a	0.3553	0.0118
+0.5842	0.0771	1.000	strap saves the lower registers, and searches the	0.3759	0.0146
+0.5973	0.5019	1.000	message suggesting that the IPL console options be	0.3835	0.0133
+0.6003	0.0771	1.000	dictionary in core storage for 33RESTRT to get the	0.3835	0.0131
+0.6106	0.5017	1.000	set up in the binary keys. Upon console channel sig-	0.3988	0.0162
+0.6148	0.0771	1.000	are and word for the type area. If 33RESTRT is not	0.3929	0.0116
+0.6246	0.5017	1.000	nal, Restart continues and the check sum of PROSA is	0.4063	0.0167
+0.6294	0.0771	1.000	found in the dictionary, Restart bootstrap halts with	0.3910	0.0146
+0.6403	0.5018	1.000	calculated if the VCHKNO bit is zero. If the check	0.3818	0.0139
+0.6439	0.1297	1.000	If 33RESTRT is found, the track containing	0.3308	0.0131
+0.6453	0.0771	1.000	а B,$.	0.0526	0.0131
+0.6555	0.5000	1.000	sum calculated does not agree with the one that Update	0.4117	0.0146
+0.6562	0.0769	1.000	the Restart program is read from the disk into octal	0.3932	0.0167
+0.6700	0.5019	1.000	30 calculated and stored in Type Area )))'''|). on the	0.3929	0.0146
+0.6730	0.0771	1.000	location 1000. Control then passes to the Restart	0.3684	0.0131
+0.6860	0.5000	1.000	disk, Restart gives a console message stating that the	0.4079	0.0161
+0.6873	0.0770	1.000	program at the relative location of YARPBRP. This	0.3893	0.0163
+0.7006	0.5038	1.000	check sum is incorrect; this is followed by another	0.3797	0.0146
+0.7020	0.0771	1.000	location is determined by the arc-word address of	0.3778	0.0131
+0.7146	0.5036	1.000	message to IPL the tape, after which Restart halts	0.3801	0.0173
+0.7194	0.0771	1.000	the Restart type area.	0.1673	0.0103
+0.7283	0.5036	1.000	at a B, $. If the check sum is correct or if it is not to	0.4044	0.0164
+0.7456	0.5000	1.000	be calculated, the IPL bootstrap program is brought	0.3966	0.0147
+0.7485	0.0789	1.000	Internal Restart	0.1222	0.0103
+0.7602	0.5019	1.000	in from the diak, the PROSA arc count is stored into	0.3947	0.0147
+0.7747	0.5019	1.000	XVDK, the disk is located to arc zero, the Disk IPL	0.3929	0.0160
+0.7761	0.0808	1.000	The MCP program allows the option of initiating a	0.3759	0.0133
+0.7889	0.0807	1.000	Restart through programmed instructions in MCP	0.3725	0.0165
+0.7892	0.5019	1.000	indicator (PG5) is set, and IPL bootstrap is given	0.3741	0.0160
+0.8029	0.0806	1.000	rather than operator intervention. The instructions:	0.3876	0.0174
+0.8052	0.5038	1.000	control to renew the system.	0.2162	0.0118
+0.8212	0.1109	1.000	SIC, YIPLREQ	0.1147	0.0131
+0.8358	0.1109	1.000	BD, YIPLREQ	0.1128	0.0145
+0.8468	0.0806	1.000	pass control to the YIPLREQ routine in Restart	0.3557	0.0166
+0.8605	0.4981	1.000	THE COMMAND PACKAGE	0.2068	0.0132
+0.8619	0.0788	1.000	bootstrap, which prints the console message:	0.3405	0.0169
+0.8779	0.1109	1.000	$ SYSTEM ERROR. MCP WILL RE-IPL.	0.3102	0.0146
+0.8894	0.4981	1.000	At any given time during the normal processing of	0.3778	0.0147
+0.8921	0.0826	1.000	The gong is then sounded and a branch is made to	0.3706	0.0154
+0.9039	0.4962	1.000	jobs, the operator may want to alter the automatic	0.3816	0.0161
+0.9084	0.0827	1.000	YSICADD, the beginning of Restart bootstrap.	0.3421	0.0131
+0.9564	0.0658	1.000	102	0.0226	0.0087

@@ -1,0 +1,109 @@
+0.0973	0.1015	1.000	SIC, (VP); B, VSETX	0.1654	0.0146
+0.1017	0.5169	1.000	processing a buffer area, VX will be updated by the	0.3910	0.0146
+0.1133	0.1034	1.000	SV, VT2, VXI (VU)	0.1410	0.0117
+0.1146	0.5169	1.000	amount VX1.	0.0997	0.0150
+0.1277	0.2161	1.000	'do no work	0.0922	0.0120
+0.1279	0.1053	1.000	BXVZ, ---	0.0865	0.0131
+0.1439	0.2162	1.000	"process new parameter	0.1842	0.0116
+0.1439	0.5188	1.000	The VMD Subroutine: To process a buffer area it is	0.3929	0.0161
+0.1570	0.1034	1.000	The basic difference between VSETX and VSETUP	0.3759	0.0131
+0.1599	0.5169	1.000	usually necessary to convert VX and VXI into an	0.3684	0.0147
+0.1700	0.0844	1.000	is that VSETUP is used when the program may	0.3576	0.0178
+0.1742	0.5187	1.000	explieit repres entation of memory area which usually	0.4024	0.0162
+0.1874	0.5168	1.000	takes the form of a control word or words. This	0.3707	0.0180
+0.1875	0.0846	1.000	already be busy, as when entered at the queue entry	0.3910	0.0146
+0.2020	0.0846	1.000	point, and VSETX is used when the program is	0.3515	0.0131
+0.2027	0.5167	1.000	conversion is done by the VMD subroutine (Figure 71)	0.4083	0.0184
+0.2150	0.0844	1.000	known not to be busy as at the EOP entry.	0.3162	0.0151
+0.2176	0.5167	1.000	which modifies the two control words in the program	0.3989	0.0186
+0.2339	0.5188	1.000	table according to two parameters given it repre-	0.3759	0.0132
+0.2456	0.0865	1.000	The VBLOC Subroutine: The VBLOC subroutine	0.3628	0.0131
+0.2485	0.5169	1.000	senting buffer origin and buffer length. The two con-	0.4023	0.0146
+0.2615	0.0846	1.000	(Figure 70) is used in the same manner as the VCOM	0.4004	0.0133
+0.2628	0.5169	1.000	trol words are located at VCWR-1 and VCWR within	0.3911	0.0134
+0.2761	0.0846	1.000	subroutine, but it has additional functions. It is	0.3628	0.0133
+0.2791	0.5169	1.000	the program tables of CR, WT, E, and Q, and a	0.3628	0.0131
+0.2890	0.0845	1.000	used by those programs concerned with blocked tape	0.3931	0.0164
+0.2936	0.5150	1.000	typical set is:	0.1071	0.0131
+0.3052	0.0846	1.000	records. Instead of entering a parameter in the	0.3628	0.0132
+0.3081	0.5338	1.000	CW, VBF1, 0, $	0.1259	0.0146
+0.3081	0.7387	1.000	VCWR-1.	0.0733	0.0145
+0.3197	0.0808	1.000	queue directly, it adds it to VRQB, the residual after	0.4041	0.0161
+0.3227	0.5320	1.000	CW, 0, 0, 0	0.0959	0.0146
+0.3227	0.7387	1.000	VCWR	0.0508	0.0131
+0.3324	0.0844	1.000	blocking. If the result is less than 17, it is stored	0.3820	0.0177
+0.3372	0.5338	1.000	All but the count field of the first word is a constant	0.3910	0.0131
+0.3479	0.0844	1.000	in VRQB and control returned to the user. If the	0.3688	0.0162
+0.3510	0.5168	1.000	which serves as a model for VMD in constructing	0.3706	0.0153
+0.3643	0.0845	1.000	result is 17 or greater, 17 is entered in the queue,	0.3818	0.0152
+0.3677	0.5169	1.000	explicit control words; in particular, the value field	0.3891	0.0132
+0.3794	0.0846	1.000	VX2S is stepped, and subroutine VACTX used to	0.3628	0.0131
+0.3818	0.5168	1.000	contains the origin, VBF1 (phase 1) or VBF2 (phase 4),	0.4156	0.0151
+0.3928	0.0825	1.000	attempt an I-O operation. When control is returned,.	0.4045	0.0165
+0.3954	0.5148	1.000	to which the program applies. If x, an integer between	0.4158	0.0176
+0.4084	0.0827	1.000	the process is repeated until the residual is less	0.3665	0.0116
+0.4110	0.5168	1.000	-34 and -1 inclusive representing buffer origin, and	0.3893	0.0153
+0.4230	0.0827	1.000	than 17, where upon it is stored in VRQB and control	0.3985	0.0131
+0.4252	0.5167	1.000	C, an integer between 1 and 34 inclusive representing	0.4027	0.0186
+0.4375	0.0827	1.000	returned to the user.	0.1579	0.0116
+0.4403	0.5150	1.000	buffer length, were the parameters which VMD	0.3571	0.0146
+0.4564	0.5150	1.000	received, VMD would operate as follows:	0.3102	0.0117
+0.4683	0.0861	1.000	Buffer Processing	0.1361	0.0144
+0.4738	0.5320	1.000	1. The value field of VCWR is replaced by 15*	0.3553	0.0131
+0.4884	0.5150	1.000	(34+x) plus the value field of the model.	0.2970	0.0131
+0.4984	0.0844	1.000	Every positive quantity put into VX1 represents an	0.3781	0.0164
+0.5029	0.5320	1.000	2.	0.0188	0.0116
+0.5029	0.5602	1.000	The multiple bit of VCWR is set equal to that	0.3383	0.0132
+0.5145	0.0846	1.000	amount of buffer area which must be processed by	0.3759	0.0131
+0.5172	0.5148	1.000	of the model.	0.1001	0.0120
+0.5291	0.0827	1.000	the functional program. Generally, the processing	0.3853	0.0146
+0.5320	0.5320	1.000	3. The count field of VCWR is replaced by 15*C	0.3647	0.0132
+0.5433	0.0826	1.000	routines must give up control after initiating an	0.3574	0.0139
+0.5479	0.5150	1.000	it Ctx 50 or15*(-x)ifC+X>O. IC+X>0, it	0.3910	0.0146
+0.5581	0.0846	1.000	operation, and, in order to maintain the continuity	0.3759	0.0146
+0.5624	0.5132	1.000	means that the buffer area wraps around the end of	0.3853	0.0118
+0.5712	0.0827	1.000	of overall operation, the input program must have	0.3759	0.0145
+0.5770	0.5150	1.000	the physical buffer and therefore an additional step	0.3816	0.0131
+0.5872	0.0827	1.000	control when the processing of a buffer area is com-	0.3947	0.0131
+0.5915	0.5150	1.000	(4) is needed to produce the necessary chained con-	0.3853	0.0131
+0.6017	0.0827	1.000	plete. This control comes about in three ways:	0.3571	0.0131
+0.6057	0.5149	1.000	trol words.	0.0848	0.0125
+0.6174	0.0976	1.000	1. The input program completes the processing	0.3630	0.0135
+0.6206	0.5301	1.000	4. If C + X>0, set the count field of VCWR-1.	0.3571	0.0131
+0.6308	0.0827	1.000	of the buffer area solely under its own control. This	0.3966	0.0131
+0.6326	0.5149	1.000	equal to 15 * (C + x), turn on the chain bit of VCWR,	0.3932	0.0185
+0.6467	0.0827	1.000	occurs when job boundary scanning in bypass mode	0.3816	0.0118
+0.6497	0.5113	1.000	and set the refill field of VCWR equal to that of the	0.3853	0.0145
+0.6596	0.0807	1.000	and in overlapped mode when it is not necessary to	0.3837	0.0153
+0.6607	0.5108	1.000	monthe case of RT and ST where only bloeked read	0.3920	0.0353
+0.6758	0.0808	1.000	prime job control one (JC1).	0.2143	0.0118
+0.6890	0.0977	1.000	2. The input program has control as the result of	0.3778	0.0147
+0.6913	0.5111	1.000	operations are done, it is only necessary to perform	0.3989	0.0205
+0.7048	0.0808	1.000	an externally generated request for a card or cards	0.3872	0.0132
+0.7059	0.5093	1.000	the instruction R, VCWR(VU) to obtain the control	0.3818	0.0183
+0.7194	0.0808	1.000	which results in the last card of an area being used.	0.3910	0.0161
+0.7207	0.5093	1.000	word for the next buffer area. SC does not require	0.3893	0.0182
+0.7328	0.0826	1.000	The requests possible and the related functional pro-	0.3950	0.0146
+0.7339	0.5113	1.000	control words in its functioning and employs a special	0.4060	0.0191
+0.7485	0.0808	1.000	grams are SSCR4 (E or Q), $SCR (E or Q), SCRI (SC	0.4004	0.0146
+0.7515	0.5094	1.000	technique which is discussed later.	0.2669	0.0161
+0.7630	0.0808	1.000	overlapped) and SCAN (SC overlapped).	0.2932	0.0131
+0.7791	0.0977	1.000	3. The input program receives control through one	0.3872	0.0131
+0.7805	0.5075	1.000	Buffer Process Categories: The processes performed	0.4135	0.0174
+0.7920	0.0807	1.000	of its tables of exits after the completion of an I-O	0.3799	0.0156
+0.7964	0.5113	1.000	on buffers fall into two categories: CPU processes	0.3853	0.0147
+0.8080	0.0808	1.000	operation.	0.0771	0.0105
+0.8087	0.5092	1.000	and I-O operations (CR, RT, WT, ST).	0.2975	0.0199
+0.8220	0.0976	1.000	All of the buffer processing programs have to up-	0.3743	0.0139
+0.8255	0.5244	1.000	Buffer processes involving only CPU operations	0.3647	0.0161
+0.8355	0.0807	1.000	date VX to reflect changes in buffer area origin.	0.3631	0.0150
+0.8416	0.5094	1.000	are:	0.0395	0.0102
+0.8517	0.0789	1.000	Initially all of the VX parameters in a circle of func-	0.3985	0.0131
+0.8545	0.5207	1.000	1. Servicing of request for card transmission	0.3571	0.0146
+0.8663	0.0808	1.000	tional programs are in phase, reflecting the fact that	0.3985	0.0131
+0.8686	0.5093	1.000	(SCR, SCR4).	0.1055	0.0157
+0.8808	0.0808	1.000	each functional program will begin processing on the	0.3947	0.0146
+0.8836	0.5207	1.000	2. Servicing of requests for the address of a	0.3534	0.0146
+0.8953	0.0789	1.000	same card image. By the time each has finished	0.3703	0.0131
+0.8959	0.5091	1.000	single card in the phase 1 buffer (SCR1).	0.3088	0.0204
+0.9506	0.0752	1.000	130	0.0244	0.0087

@@ -1,0 +1,112 @@
+0.0651	0.4773	1.000	lustrated by the following table.	0.2372	0.0186
+0.0684	0.0544	1.000	The Form of Data Entries in DD Statements	0.3518	0.0176
+0.0870	0.6165	1.000	Sign Byte	0.0716	0.0150
+0.0872	0.4981	1.000	Byte Size	0.0695	0.0161
+0.0924	0.0579	1.000	Any number written in a DD statement for conversion	0.3953	0.0230
+0.1103	0.0562	1.000	by straP must be capable of being expressed in 64	0.3970	0.0196
+0.1105	0.5282	1.000	1	0.0094	0.0116
+0.1250	0.5282	1.000	2	0.0113	0.0116
+0.1263	0.0544	1.000	binary bits. This means that the largest fixed point	0.3988	0.0194
+0.1381	0.6128	1.000	STU	0.0432	0.0160
+0.1393	0.0542	1.000	quantity that can be converted by sTRAP is equal to	0.3992	0.0254
+0.1410	0.5282	1.000	3	0.0094	0.0102
+0.1526	0.6165	1.000	STUV	0.0526	0.0160
+0.1535	0.0561	1.000	2it or 18, 146, 744, 073, 709, 551, 615 or 20 decimal	0.3973	0.0244
+0.1539	0.7612	1.000	Z = zone bit	0.0978	0.0148
+0.1555	0.5282	1.000	4	0.0113	0.0116
+0.1685	0.6165	1.000	ZSTUV	0.0621	0.0161
+0.1685	0.7631	1.000	S= sign bit	0.0921	0.0176
+0.1715	0.5282	1.000	5	0.0113	0.0102
+0.1752	0.0560	1.000	digits.	0.0458	0.0159
+0.1860	0.6165	1.000	ZZSTUV	0.0696	0.0132
+0.1875	0.7632	1.000	1	0.0226	0.0087
+0.1875	0.5301	1.000	6	0.0094	0.0102
+0.1890	0.0733	1.000	The floating point data format is a special case.	0.3797	0.0147
+0.1989	0.7856	1.000	- flag bits	0.0678	0.0179
+0.2006	0.6165	1.000	ZZZSTUV	0.0771	0.0131
+0.2019	0.0581	1.000	Here the numeric entry is always converted to a 18-	0.3951	0.0197
+0.2020	0.5301	1.000	7	0.0094	0.0102
+0.2165	0.6184	1.000	ZZZZSTUV	0.0846	0.0133
+0.2166	0.5301	1.000	8	0.0094	0.0116
+0.2178	0.0563	1.000	bit fraction and an 1l-bit exponent. Therefore, the	0.3969	0.0180
+0.2321	0.0581	1.000	only decimal quantities that can be expressed in 7030	0.3952	0.0201
+0.2384	0.4793	1.000	A byte size of 1 means that the sign byte is composed	0.3966	0.0131
+0.2467	0.0562	1.000	floating point format must lie within the range 10-308	0.3970	0.0204
+0.2544	0.4793	1.000	only of the sign bit; hence, an octal I will be ored	0.3968	0.0133
+0.2660	0.0583	1.000	to 10308.	0.0602	0.0131
+0.2688	0.4774	1.000	into the sign bit position and create a negative sign.	0.3985	0.0146
+0.2804	0.4773	1.000	If the specified byte size had been 4, the suffix s10	0.3988	0.0196
+0.2805	0.0752	1.000	Numeric entries in Data Definition statements may	0.3778	0.0131
+0.2948	0.0582	1.000	be written in a variety of formats. The two basic	0.3950	0.0177
+0.2979	0.4793	1.000	would be required to create a negative sign. Because	0.3985	0.0146
+0.3124	0.0564	1.000	formats are the integer format, such as	0.2801	0.0132
+0.3154	0.4793	1.000	the logical or is used for the insertion, the sign byte	0.3985	0.0131
+0.3270	0.2274	1.000	982104	0.0526	0.0116
+0.3292	0.4793	1.000	sign position can be made negative by either a nega-	0.3986	0.0160
+0.3445	0.4793	1.000	tive sign written with the numeric entry or by an	0.3985	0.0161
+0.3459	0.0639	1.000	ınd the decimal fraction format, as ir	0.2594	0.0102
+0.3604	0.2180	1.000	-982104.2	0.0752	0.0103
+0.3618	0.4793	1.000	s-type entry.	0.0977	0.0146
+0.3794	0.0583	1.000	These illustrations are written in the decimal radix.	0.3966	0.0116
+0.3909	0.4812	1.000	EXPONENT ENTRY.	0.1297	0.0103
+0.3937	0.0601	1.000	As previously described, an entry mode in the form	0.3949	0.0173
+0.4084	0.4812	1.000	The suffix letter x may be used if the programmer	0.3985	0.0146
+0.4099	0.0583	1.000	of a radix specifier can be employed so that the pro-	0.3966	0.0147
+0.4210	0.0598	1.000	grammer may write the data entry in one of several	0.3955	0.0239
+0.4230	0.4831	1.000	wishes to create his own exponent for a floating point	0.3985	0.0146
+0.4390	0.4812	1.000	data entry. The number following the x is interpreted	0.3985	0.0160
+0.4403	0.0583	1.000	radices. If no sign is written, the number is assumed to	0.3966	0.0146
+0.4535	0.4812	1.000	by straP as a decimal integer and is converted to	0.3985	0.0160
+0.4547	0.0601	1.000	be positive. If a Bu or Du use mode is given and a sign	0.3949	0.0163
+0.4694	0.4812	1.000	binary and compiled as the machine exponent of the	0.3985	0.0176
+0.4724	0.0583	1.000	is written, the sign is ignored by STRAP.	0.2820	0.0131
+0.4839	0.4812	1.000	floating point number to which it is attached. It over-	0.4004	0.0176
+0.4852	0.0751	1.000	Some special characters may be appended to data	0.3800	0.0171
+0.5000	0.4793	1.000	rules and replaces the exponent computed by STRAP	0.4004	0.0161
+0.5015	0.0602	1.000	entries to provide further flexibility in notation. It is	0.3966	0.0161
+0.5152	0.0600	1.000	often convenient to express a data entry as a num-	0.3968	0.0177
+0.5160	0.4793	1.000	in the conversion process, which is completely eradi-	0.4023	0.0161
+0.5305	0.4812	1.000	cated by the replacement process.	0.2519	0.0174
+0.5320	0.0602	1.000	ber raised to some power of 10. The suffix letter E is	0.3947	0.0145
+0.5479	0.0602	1.000	used for this purpose, as in this example:	0.3026	0.0146
+0.5633	0.2254	1.000	670.7E7	0.0606	0.0129
+0.5723	0.4828	1.000	Complete Rules for DD Statements	0.2899	0.0199
+0.5827	0.0602	1.000	The meaning of E is to multiply the number that pre-	0.3966	0.0147
+0.5988	0.0602	1.000	cedes it by the power of 10 expressed by the number	0.3966	0.0161
+0.6017	0.4812	1.000	The legal formats for entering data can be classified	0.3985	0.0174
+0.6133	0.0602	1.000	that follows it. This number is always interpreted as	0.3966	0.0146
+0.6156	0.4829	1.000	according to the use mode written in the data de-	0.3989	0.0191
+0.6294	0.0602	1.000	a decimal integer. Thus, the above example is inter-	0.3966	0.0146
+0.6336	0.4812	1.000	scription field of the DD statement. Normally, an ele-	0.4004	0.0176
+0.6435	0.0601	1.000	preted by STRAP to mean 670.7 X 10'. The presence	0.3968	0.0165
+0.6482	0.4812	1.000	ment listed in the general format may be omitted if	0.4004	0.0176
+0.6599	0.0620	1.000	of E automatically implies that the entry is written in	0.3947	0.0131
+0.6642	0.4812	1.000	it is not needed to specify the data.	0.2594	0.0161
+0.6744	0.0620	1.000	the decimal radix. If' a floating point use mode is speci-	0.3947	0.0147
+0.6788	0.5019	1.000	The data entries in a DD statement are restricted to	0.3797	0.0131
+0.6903	0.0620	1.000	fied, both the e specification and the position of the	0.3929	0.0133
+0.6962	0.4831	1.000	real numbers. Bit addresses would have no meaning	0.3985	0.0117
+0.7043	0.0620	1.000	decimal point affect the computation of the exponent	0.3910	0.0144
+0.7106	0.4831	1.000	here and are not allowed. In addition, programmer	0.3985	0.0133
+0.7209	0.0789	1.000	Two other suffix characters are used for the inser-	0.3797	0.0116
+0.7252	0.4850	1.000	symbols are not permitted. In one special case, where	0.3966	0.0161
+0.7369	0.0602	1.000	tion of specific fields.	0.1541	0.0161
+0.7412	0.4831	1.000	normalized floating point has been specified in the	0.3985	0.0146
+0.7558	0.4850	1.000	data description, the system symbols for certain	0.3966	0.0161
+0.7685	0.4830	1.000	mathematical constants are accepted.	0.2842	0.0183
+0.7688	0.0620	1.000	SIGN BYTE ENTRY.	0.1259	0.0103
+0.7863	0.5019	1.000	Arithmetic expressions, that is, combination of two	0.3797	0.0146
+0.7892	0.0639	1.000	The letter s is used to enter information into the sign	0.3929	0.0132
+0.8023	0.4850	1.000	or more numbers by means of addition, subtraction,	0.3966	0.0160
+0.8034	0.0657	1.000	byte of signed data. Any integer that follows the s is	0.3893	0.0141
+0.8169	0.4831	1.000	multiplication and division to form one data entry,	0.4004	0.0160
+0.8197	0.0639	1.000	interpreted by straP as an octal integer. It is con-	0.3910	0.0132
+0.8327	0.4831	1.000	are permitted in all DD statements regardless of the	0.3985	0.0147
+0.8342	0.0620	1.000	verted to binary and inserted by means of a logical oR	0.3947	0.0146
+0.8473	0.4831	1.000	use mode specified. Such arithmetic is specified using	0.3985	0.0176
+0.8503	0.0602	1.000	into any previously calculated sign byte.	0.2932	0.0146
+0.8633	0.4831	1.000	the standard FORTRAN symbols. The symbols available	0.3985	0.0161
+0.8648	0.0789	1.000	The sign byte generated depends upon the byte size	0.3778	0.0146
+0.8779	0.4831	1.000	are addition (t), subtraction (-), multiplication (*)	0.3985	0.0176
+0.8808	0.0620	1.000	specified in the data description; its composition is il-	0.3966	0.0146
+0.9142	0.7669	1.000	Section II 27	0.1147	0.0103

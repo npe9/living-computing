@@ -1,0 +1,49 @@
+0.0824	0.8513	1.000	RSERCH	0.0718	0.0184
+0.1482	0.0996	1.000	FLOW CHART DESCRIPTION	0.2218	0.0161
+0.1497	0.5226	1.000	set up for the found return, and a branch is made to	0.3891	0.0161
+0.1642	0.5244	1.000	the exit routine.	0.1259	0.0161
+0.1948	0.5244	1.000	Box 8	0.0489	0.0160
+0.2035	0.0996	1.000	Box 1	0.0432	0.0132
+0.2252	0.5226	1.000	$0 - $7 are restored. Return to the user program is	0.3966	0.0147
+0.2311	0.0977	1.000	$0 - $7 are saved and bit Azzs is set to one to indicate	0.4060	0.0160
+0.2402	0.5242	1.000	a -- B,-1 ($15).	0.1188	0.0163
+0.2456	0.0977	1.000	to TABMAN that the management routine being used	0.3872	0.0147
+0.2587	0.0977	1.000	is RSERCH. The contents of the index register I in	0.3835	0.0161
+0.2702	0.5244	1.000	Boxes 2-4	0.0809	0.0163
+0.2733	0.0977	1.000	the calling sequence is saved for later tests.	0.3346	0.0189
+0.2979	0.5226	1.000	If bit Afirst is on, $2 is reset to the first location of	0.3929	0.0176
+0.3081	0.0977	1.000	Boxes 2-6	0.0808	0.0146
+0.3109	0.5244	1.000	the vle table. If off the location of the next vle entry	0.3947	0.0176
+0.3285	0.5244	1.000	is picked up from index word Anexta. The bit is	0.3628	0.0145
+0.3358	0.0996	1.000	The location of the first dietionary location is deter-	0.3891	0.0145
+0.3397	0.5244	1.000	turned off by the test.	0.1655	0.0168
+0.3503	0.1015	1.000	mined and its function address is compared to the	0.3684	0.0131
+0.3633	0.1015	1.000	address given in the calling sequence. If it is not	0.3684	0.0146
+0.3705	0.5244	1.000	Boxes 5, 6	0.0885	0.0178
+0.3794	0.1015	1.000	equal and if we have not exhausted the list, we update	0.3929	0.0131
+0.3967	0.0996	1.000	by the entry length, and test the next dictionary entry.	0.4023	0.0118
+0.4026	0.5188	1.000	If the ID in the calling sequence is not equal to the ID	0.4004	0.0160
+0.4077	0.1015	1.000	If there are no more entries in the list, we set up $15	0.3986	0.0145
+0.4172	0.5188	1.000	in the entry and more entries are in the table, $2 is	0.3929	0.0160
+0.4224	0.1014	1.000	for the not found return, and branch to the exit routine.	0.4099	0.0162
+0.4302	0.5244	1.000	updated by the length of the entry just tested and the	0.3891	0.0174
+0.4462	0.5263	1.000	next entry ID is checked. If there are no more entries	0.4060	0.0160
+0.4564	0.1015	1.000	Boxes 7, 9-12	0.1071	0.0131
+0.4606	0.5244	1.000	the routine exits to the "no more entries" return.	0.3684	0.0147
+0.4805	0.5111	1.000	Boxes 8, 9	0.1000	0.0187
+0.4839	0.1015	1.000	If the function address specified in the calling sequence	0.4117	0.0118
+0.4970	0.1015	1.000	has been found we place the dietionary location and	0.3759	0.0133
+0.5115	0.1015	1.000	the function location in the appropriate words in the	0.3816	0.0133
+0.5115	0.5244	1.000	If the ID's are equal and the entry is not deleted, the	0.3910	0.0161
+0.5258	0.0995	1.000	table control block. Also, if an index register was	0.3800	0.0183
+0.5276	0.5226	1.000	location of the entry is put in the index word Anextx	0.3835	0.0118
+0.5385	0.5225	1.000	and the index word Anexta is set to point to the next	0.3873	0.0161
+0.5436	0.0996	1.000	specified in the calling sequence, the dictionary entry	0.3966	0.0131
+0.5536	0.5226	1.000	vle. Exit is made to the normal exit. If the entry	0.3778	0.0176
+0.5567	0.0996	1.000	is moved to the location specified in the value field of	0.3966	0.0131
+0.5654	0.5226	1.000	has been deleted we treat it as if it had not been	0.3609	0.0204
+0.5697	0.0996	1.000	the index register, and the value field is updated by	0.3835	0.0161
+0.5827	0.5225	1.000	found.	0.0528	0.0163
+0.5842	0.1015	1.000	the length of the entry moved. In either case $15 is	0.3835	0.0146
+0.9419	0.9041	1.000	53	0.0150	0.0073
+0.9419	0.8289	1.000	RSERCH	0.0508	0.0073

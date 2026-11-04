@@ -1,0 +1,114 @@
+0.0682	0.5620	1.000	an offset is even more remote, but legal nonetheless.	0.3966	0.0147
+0.0697	0.1391	1.000	binary integer by sTraP and the rightmost 7 bits are	0.3966	0.0146
+0.0842	0.5620	1.000	As previously stated, a system symbol is equivalent	0.3966	0.0161
+0.0858	0.1372	1.000	placed in the offset tield. It a programmer writes the	0.4004	0.0145
+0.1003	0.5639	1.000	to a numeric entry; specitying an oftset by means of	0.3947	0.0131
+0.1014	0.1390	1.000	statement	0.0734	0.0108
+0.1148	0.5639	1.000	a system symbol that is defined as a bit address, such	0.3929	0.0161
+0.1177	0.1861	1.000	L(BU, 64), PAYROLLDEDUCTION, 5	0.3008	0.0160
+0.1308	0.5602	1.000	as SIT in this example:	0.1729	0.0146
+0.1381	0.1372	1.000	STRAP assembles the instruction to mean load the 64-	0.3985	0.0116
+0.1512	0.6654	1.000	+ (BU, 32), THISIS, ŞIT	0.1898	0.0161
+0.1539	0.1391	1.000	bit quantity found at symbolic location PAYROLLDE-	0.3966	0.0147
+0.1685	0.1372	1.000	DUCTION into the accumulator offset 5 bits from the	0.3985	0.0118
+0.1700	0.5620	1.000	is the same as writing 1.0 or specifying an offset of	0.3966	0.0161
+0.1845	0.1391	1.000	right end. Since the offset field can contain a maxi-	0.3966	0.0131
+0.1860	0.5602	1.000	64 bits.	0.0583	0.0131
+0.1991	0.1391	1.000	mum of 7 binary bits, the programmer can specify any	0.3947	0.0146
+0.2006	0.5695	1.000	Index register specification is treated in the same	0.3872	0.0146
+0.2136	0.1372	1.000	offset from zero to 127. When specifying offsets of	0.3985	0.0161
+0.2166	0.5620	1.000	fashion as an index modifier in an address field, ex-	0.3947	0.0146
+0.2297	0.1391	1.000	greater than 64 bits or one full word, it may be more	0.3966	0.0146
+0.2324	0.5602	1.000	cept that the modification can affect the field length	0.3966	0.0147
+0.2456	0.1372	1.000	convenient to begin counting bits from the left end	0.3966	0.0131
+0.2470	0.5602	1.000	and byte size as well as the offset. The strap instruc-	0.3966	0.0147
+0.2594	0.5619	1.000	tion format for vFL statements including data descrip-	0.3951	0.0179
+0.2602	0.1391	1.000	of the double length accumulator. This can be easily	0.3947	0.0147
+0.2761	0.1391	1.000	done by using negative offsets. The offset field is	0.3966	0.0146
+0.2776	0.5620	1.000	tion as seen below	0.1353	0.0118
+0.2921	0.1372	1.000	unsigned, hence STRAP translates any negative entry	0.3966	0.0131
+0.2979	0.6316	1.000	OP (M, FL, BS), Az(I), OF.(I')	0.2538	0.0161
+0.3067	0.1372	1.000	to the two's complement. The 128 bits of the accumu-	0.3985	0.0131
+0.3182	0.5602	1.000	does not hint at the relationship between field length,	0.3966	0.0161
+0.3212	0.1335	1.000	lator, proceeding from left to right, are referred to	0.4004	0.0161
+0.3314	0.5583	1.000	byte size and offset. The internal 7030 vrt instruc-	0.3985	0.0189
+0.3372	0.1353	1.000	by the offsets 127, 126... O or, alternatively, - 1, - 2,	0.4004	0.0161
+0.3445	0.5602	1.000	tion format,	0.0921	0.0189
+0.3532	0.1391	1.000	-3...-128.	0.0865	0.0116
+0.3677	0.1541	1.000	If an offset specification is a parameter in a program	0.3797	0.0145
+0.3836	0.1372	1.000	that may vary from time to time, it is helpful to use	0.3966	0.0132
+0.3881	0.8872	1.000	OP1	0.0263	0.0131
+0.3895	0.6372	1.000	1001	0.0244	0.0116
+0.3895	0.6936	1.000	P	0.0113	0.0102
+0.3910	0.8008	1.000	Oftset	0.0282	0.0087
+0.3910	0.5771	1.000	Address	0.0338	0.0087
+0.3910	0.7180	1.000	Length	0.0357	0.0102
+0.3910	0.7669	1.000	BS	0.0169	0.0102
+0.3982	0.1372	1.000	a programmer symbol in place of an integer.	0.3214	0.0146
+0.4099	0.6015	1.000	17	0.0113	0.0087
+0.4113	0.7105	1.000	35	0.0132	0.0073
+0.4113	0.8402	1.000	51	0.0132	0.0087
+0.4113	0.7895	1.000	44	0.0132	0.0102
+0.4113	0.6297	1.000	21	0.0132	0.0087
+0.4113	0.6842	1.000	32	0.0150	0.0073
+0.4113	0.6635	1.000	28	0.0132	0.0087
+0.4128	0.9211	1.000	60	0.0132	0.0073
+0.4128	0.9417	1.000	63	0.0113	0.0073
+0.4200	0.1353	1.000	INDENT SYN, 4	0.1429	0.0146
+0.4343	0.5581	1.000	the format into which a STRAP vEL instruction is trans-	0.3969	0.0179
+0.4390	0.2218	1.000	(intervening instructions )	0.1898	0.0117
+0.4520	0.5583	1.000	lated, does show that the offset field is adjacent to the	0.3966	0.0146
+0.4577	0.4003	1.000	INDENT	0.0922	0.0134
+0.4593	0.2218	1.000	ST(BU, 24), WORDI,	0.1786	0.0146
+0.4651	0.5583	1.000	field length and byte size fields. The index modifier	0.3966	0.0146
+0.4736	0.4153	1.000	INDENT	0.0754	0.0137
+0.4752	0.2274	1.000	+(BU, 24), WORD2,	0.1598	0.0147
+0.4797	0.5562	1.000	in the second half word treats all three fields together	0.3988	0.0178
+0.4884	0.2312	1.000	L(BU, 24)„WORDSUM, INDENT	0.2594	0.0160
+0.4922	0.5582	1.000	as one 16-bit field. For the modification process, the	0.3948	0.0201
+0.5087	0.1335	1.000	The programmer symbol INDENT in the example above,	0.4004	0.0161
+0.5087	0.5583	1.000	two fields are aligned as follows:	0.2425	0.0189
+0.5247	0.1353	1.000	can be defined as an integer early in the program, in	0.3966	0.0147
+0.5406	0.1353	1.000	this case by the pseudo operation Synonym. If the	0.3966	0.0146
+0.5544	0.1352	1.000	programmer changes the syn card that defines INDENT	0.3969	0.0164
+0.5580	0.7687	1.000	OFFSET	0.0715	0.0177
+0.5596	0.6767	1.000	FL	0.0301	0.0160
+0.5596	0.7237	1.000	BS	0.0263	0.0160
+0.5608	0.8495	1.000	Instruction	0.0847	0.0151
+0.5755	0.2613	1.000	INDENT SYN, 5	0.1410	0.0161
+0.5930	0.1335	1.000	and reassembles, all offsets specified by this particu-	0.3985	0.0161
+0.6090	0.1335	1.000	lar symbol are changed in value to 5 as well.	0.3214	0.0131
+0.6235	0.1485	1.000	In the case of the offset field, care must be exer-	0.3816	0.0146
+0.6294	0.7556	1.000	16 bits	0.0564	0.0219
+0.6349	0.6371	1.000	18 bits	0.0567	0.0166
+0.6394	0.8214	1.000	Index Value Field	0.1391	0.0147
+0.6409	0.1353	1.000	cised when using straP bit addresses, not integers as	0.3947	0.0118
+0.6555	0.1335	1.000	in address fields. The reason for this is twofold.	0.3947	0.0103
+0.6700	0.1316	1.000	First, the length of the offset field is fixed, so an in-	0.4004	0.0146
+0.6830	0.1316	1.000	teger always has the same meaning. The bit address	0.4004	0.0176
+0.6918	0.5564	1.000	If the magnitude of the contents of the value field of	0.3966	0.0161
+0.7006	0.1316	1.000	is also handled according to a fixed rule, but the mean-	0.3985	0.0146
+0.7064	0.5545	1.000	the index register does not exceed 2°, only the ottset	0.3985	0.0176
+0.7151	0.1297	1.000	ing is not immediately clear from its appearance in	0.4004	0.0161
+0.7209	0.5545	1.000	field can be modified. If the value field does exceed	0.3985	0.0161
+0.7297	0.1316	1.000	the instruction. Second, a bit address is not the natu-	0.3985	0.0161
+0.7369	0.5545	1.000	28, the byte size may be affected (by a carry, for ex-	0.3985	0.0189
+0.7470	0.1335	1.000	ral means of expressing an offset, and it unnecessarily	0.3947	0.0118
+0.7529	0.5545	1.000	ample). The diagram above shows how larger value	0.3985	0.0174
+0.7592	0.1334	1.000	complicates the specification. A STRAP bit address	0.3948	0.0151
+0.7703	0.5545	1.000	tields will modity byte size and field length. This 7030	0.3966	0.0131
+0.7761	0.1316	1.000	here will be converted to a 24-bit binary integer and	0.3985	0.0161
+0.7805	0.5526	1.000	feature can provide very flexible and elaborate index-	0.3985	0.0174
+0.7921	0.1316	1.000	the rightmost 7 bits will be inserted in the offset field	0.3985	0.0146
+0.7979	0.5545	1.000	ing of certain vFL instruction fields.	0.2556	0.0146
+0.8052	0.1297	1.000	while the leftmost 17 bits are truncated. Any STRAP	0.4004	0.0176
+0.8241	0.1335	1.000	bit address expression that specifies an address above	0.3947	0.0102
+0.8299	0.5564	1.000	Pseudo Operations	0.1617	0.0174
+0.8372	0.1297	1.000	1.63 will overflow the offset field when converted to	0.3985	0.0131
+0.8528	0.5544	1.000	Pseudo operations are operations created by STRAP-II	0.3969	0.0183
+0.8532	0.1316	1.000	binary and only the rightmost 7 bits will participate.	0.3985	0.0132
+0.8677	0.1316	1.000	This occurrence can yield unexpected results.	0.3421	0.0145
+0.8691	0.5545	1.000	to provide a simplified means of performing some spe-	0.3966	0.0176
+0.8812	0.5543	1.000	cial functions that are required in writing most pro-	0.3971	0.0210
+0.8836	0.1466	1.000	The likelihood of using a system symbol to specify	0.3816	0.0161
+0.9215	0.1335	1.000	12 IBM 7030	0.1128	0.0103

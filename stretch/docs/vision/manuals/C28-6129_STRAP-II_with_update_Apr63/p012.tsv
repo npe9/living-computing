@@ -1,0 +1,101 @@
+0.0654	0.5602	1.000	word". Note that the period is definitely not a decimal	0.3966	0.0174
+0.0682	0.1372	1.000	begin at half or full words. Other examples are seen	0.3966	0.0147
+0.0827	0.5620	1.000	point. This can be proven by the following illustration.	0.3947	0.0147
+0.0838	0.1370	1.000	below:	0.0511	0.0126
+0.1003	0.7049	1.000	999.1= 999.01	0.1071	0.0131
+0.1032	0.1541	1.000	A vEL operand may begin anywhere in core storage	0.3797	0.0147
+0.1191	0.1523	1.000	— a 24-bit standard binary bit address is required.	0.3835	0.0146
+0.1206	0.5789	1.000	A straP bit address is translated by STRAP and com-	0.3778	0.0146
+0.1352	0.5620	1.000	piled as a 24-bit binary integer. The period that sepa-	0.3947	0.0161
+0.1366	0.1541	1.000	A floating point operand must begin at a full word	0.3797	0.0146
+0.1495	0.5600	1.000	rates the two integers may be imagined to always line	0.3969	0.0194
+0.1526	0.1541	1.000	- this location can be specified in 18 bits.	0.3045	0.0131
+0.1655	0.5601	1.000	up between bit positions 17 and 18. If the address	0.3968	0.0163
+0.1700	0.1504	1.000	I/o control words must begin at a full word - the	0.3835	0.0131
+0.1817	0.5620	1.000	field of the instruction is 24 bits long, the binary	0.3929	0.0147
+0.1845	0.1523	1.000	location can be specified by 18 bits.	0.2575	0.0146
+0.2020	0.1523	1.000	Index arithmetic operands can begin at either half	0.3816	0.0146
+0.2121	0.5602	1.000	field is smaller than 24 bits, the 24-bit standard binary	0.3966	0.0132
+0.2179	0.1541	1.000	or full word locations - 19 bits are sufficient to	0.3797	0.0118
+0.2267	0.5602	1.000	address must be truncated before it is inserted. For a	0.3947	0.0132
+0.2324	0.1523	1.000	address any of these locations.	0.2274	0.0147
+0.2427	0.5602	1.000	19-bit address field, the rightmost 5 bits are dropped;	0.3947	0.0145
+0.2529	0.1541	1.000	A Hoating point instruction needs only to address	0.3797	0.0147
+0.2573	0.5602	1.000	for an 18-bit address field, the rightmost 6 bits are	0.3947	0.0146
+0.2688	0.1353	1.000	floating point data; hence the size of the address field	0.3966	0.0146
+0.2733	0.5602	1.000	dropped. Our sample STRAP bit address, 124.32,	0.3947	0.0146
+0.2833	0.1353	1.000	of a floating point instruction is limited to 18 bits. A	0.3966	0.0146
+0.2892	0.5602	1.000	would yield the proper meaning when inserted in a	0.3947	0.0145
+0.2994	0.1353	1.000	VEL instruction must be capable of addressing any	0.3966	0.0131
+0.3036	0.5602	1.000	19 or a 24-bit address field, but would be truncated	0.3947	0.0147
+0.3139	0.1353	1.000	field, in fact any bit, in storage. Its format, therefore,	0.3985	0.0176
+0.3197	0.5564	1.000	to 124.0 for an 18-bit field.	0.1992	0.0132
+0.3299	0.1353	1.000	provides for a 24-bit address field. In general, the	0.3966	0.0146
+0.3372	0.5695	1.000	The only restriction on the size of a STRap bit	0.3853	0.0146
+0.3445	0.1353	1.000	STRAP instruction formats are designed to provide the	0.3966	0.0146
+0.3517	0.5601	1.000	address is that it must be able to be expressed in 24	0.3949	0.0150
+0.3590	0.1334	1.000	largest address field demanded by the operations of	0.3987	0.0161
+0.3677	0.5602	1.000	binary bits. If a strap bit address is symbolized by	0.3947	0.0145
+0.3745	0.1352	1.000	a particular class. When an instruction does not re-	0.3968	0.0152
+0.3834	0.5619	1.000	A. B, then	0.0698	0.0138
+0.3894	0.7086	1.000	64A+B <2*+	0.0977	0.0133
+0.3909	0.1353	1.000	quire a 24-bit address field, a smaller one is provided	0.3966	0.0146
+0.4055	0.1353	1.000	and the bits not used as part of the address field can	0.3966	0.0146
+0.4112	0.5602	1.000	The following three examples are all legal strap bit	0.3947	0.0133
+0.4215	0.1335	1.000	be efficiently used in other fields of that instruction,	0.3985	0.0145
+0.4258	0.5583	1.000	address representations of the same address.	0.3346	0.0146
+0.4360	0.1316	1.000	vieines to the variations in Jonnat te have abready	0.4004	0.0276
+0.4448	0.6523	1.000	505. 17= 500.337= 0.32337	0.2068	0.0131
+0.4666	0.1504	1.000	It would be most difficult for the programmer to	0.3816	0.0160
+0.4782	0.5583	1.000	INTEGER ADDRESSES	0.1353	0.0088
+0.4824	0.1353	1.000	write 24-bit, or even 19-bit or 18-bit, binary addresses	0.3966	0.0133
+0.4970	0.1335	1.000	in his program. In place of a binary address, STRAP	0.3985	0.0147
+0.4985	0.5602	1.000	An integer, written without a period, may also be used	0.3929	0.0146
+0.5130	0.5583	1.000	to specify an address. STRAP also translates an integer	0.3966	0.0146
+0.5130	0.1353	1.000	permits the programmer a choice of entries in address	0.3966	0.0146
+0.5275	0.1332	1.000	fields. He may write a	0.1658	0.0154
+0.5276	0.5583	1.000	into a standard binary bit address. However, the bit	0.3966	0.0161
+0.5451	0.5583	1.000	address equivalent is dependent upon the environment	0.3966	0.0131
+0.5479	0.2500	1.000	1. STRAP bit address	0.1485	0.0132
+0.5596	0.5564	1.000	in which the integer is found. The operation deter-	0.3985	0.0146
+0.5659	0.2478	1.000	2. Integer	0.0759	0.0133
+0.5755	0.5583	1.000	mines the environment, that is, it determines the	0.3947	0.0133
+0.5842	0.2481	1.000	3. Programmer symbol	0.1692	0.0131
+0.5900	0.5564	1.000	length of the address field. The integer specified is	0.3985	0.0161
+0.6017	0.2462	1.000	4. System symbol	0.1335	0.0161
+0.6045	0.5583	1.000	treated as an integer for that address field, i.e., the	0.3947	0.0146
+0.6206	0.5583	1.000	integer is converted to binary and inserted in the	0.3947	0.0146
+0.6264	0.1504	1.000	Address fields are unsigned fields. When a negative	0.3816	0.0146
+0.6352	0.5564	1.000	address field with the unit bit placed in the rightmost	0.3985	0.0176
+0.6409	0.1335	1.000	quantity is expressed in an unsigned field, the two's	0.3985	0.0161
+0.6482	0.5564	1.000	bit position of the field.	0.1786	0.0191
+0.6539	0.1316	1.000	complement of the quantity is computed and compiled	0.3985	0.0191
+0.6685	0.5677	1.000	An integer can be interpreted by the programmer to	0.3835	0.0147
+0.6743	0.1328	1.000	by STRAP.	0.0722	0.0144
+0.6845	0.5564	1.000	count in the units that are specified by the length of	0.3966	0.0131
+0.6991	0.5564	1.000	the address field. A 24-bit address field specifies bits;	0.3947	0.0131
+0.7035	0.1316	1.000	STRAP BIT ADDRESSES	0.1485	0.0087
+0.7148	0.5564	1.000	an integer in this field counts bits. A 19-bit field	0.3948	0.0137
+0.7194	0.1335	1.000	A STRAP bit address provides a simple means of writ-	0.3966	0.0161
+0.7297	0.5564	1.000	specifies half words so an integer here counts halt	0.3966	0.0161
+0.7355	0.1297	1.000	ing a standard binary bit address. Using this STRAP	0.4004	0.0161
+0.7456	0.5564	1.000	words. An 18-bit field specifies full words, so an	0.3966	0.0160
+0.7515	0.1316	1.000	shorthand, the programmer writes two integers sepa-	0.4004	0.0146
+0.7602	0.5545	1.000	integer here counts full words.	0.2274	0.0160
+0.7674	0.1335	1.000	rated by a period, thus:	0.1767	0.0132
+0.7776	0.5677	1.000	Consider the following instruction.	0.2632	0.0161
+0.7848	0.3045	1.000	124.32	0.0508	0.0117
+0.7962	0.7048	1.000	C+I, $3, 13	0.1017	0.0152
+0.8036	0.1297	1.000	The integer to the left of the period specifies the word	0.4004	0.0161
+0.8169	0.5564	1.000	The environment is determined by the operation	0.3947	0.0160
+0.8197	0.1316	1.000	address portion, while the integer to the right of the	0.3985	0.0161
+0.8314	0.5545	1.000	cti (Add Immediate to Count). This instruction has	0.3985	0.0147
+0.8342	0.1297	1.000	period specifies the bit position within that word. It	0.4004	0.0161
+0.8459	0.5545	1.000	an 18-bit address field, so an integer is inserted with	0.3985	0.0174
+0.8503	0.1297	1.000	the example above appeared in the address field of a	0.3985	0.0161
+0.8615	0.1295	1.000	VEL instruction, STRAP would interpret it as "location	0.3990	0.0227
+0.8618	0.5526	1.000	its unit bit in bit 17. This is equivalent to	0.3214	0.0161
+0.8791	0.1296	1.000	124, bit position 32 - the first bit of the second half	0.4006	0.0180
+0.8804	0.7029	1.000	CHI, $3, 13.0	0.1054	0.0153
+0.9172	0.1335	1.000	8	0.0094	0.0087
+0.9172	0.1748	1.000	IBM 7030	0.0639	0.0087

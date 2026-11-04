@@ -1,0 +1,103 @@
+0.0654	0.1184	1.000	The instruction counter may be stored in any avail-	0.3741	0.0146
+0.0669	0.5207	1.000	time of interruption, it is necessary to be able to pre-	0.3872	0.0147
+0.0814	0.1015	1.000	able location with 19-bit address 16.0 or above.	0.3459	0.0116
+0.0827	0.5188	1.000	vent immediately succeeding interruptions. This is	0.3910	0.0147
+0.0971	0.5187	1.000	accomplished by controlling an enabling mechanism.	0.3893	0.0167
+0.1017	0.1015	1.000	PROGRAMMING NOTES	0.1523	0.0102
+0.1133	0.5188	1.000	Upon execution of the instruction BRANCH DISABLED,	0.3910	0.0131
+0.1163	0.1015	1.000	A simple storage of the instruction counter without	0.3910	0.0131
+0.1294	0.5188	1.000	the mechanism will disable the computer's ability to	0.3891	0.0146
+0.1308	0.0996	1.000	branching action is accomplished by STORE INSTRUC-	0.3929	0.0146
+0.1424	0.5188	1.000	interrupt a program. The system will remain in the	0.3891	0.0161
+0.1467	0.0996	1.000	TION COUNTER IF BRANCH RELATIVE with a branch	0.3910	0.0118
+0.1581	0.5186	1.000	disabled state until execution of one of the instruc-	0.3894	0.0155
+0.1612	0.0996	1.000	address of 0.	0.0921	0.0118
+0.1744	0.5187	1.000	tions BRANCH ENABLED Or BRANCH ENABLED AND WAIT.	0.3893	0.0135
+0.1773	0.1165	1.000	The combination of the sic prefix and NO OPERA-	0.3759	0.0146
+0.1879	0.5186	1.000	The system is then said to be enabled, and interrup-	0.3895	0.0183
+0.1916	0.0995	1.000	TION is executed as a valid full-word NO OPERATION;	0.3912	0.0149
+0.2048	0.5188	1.000	tion will occur whenever both an indicator and its	0.3891	0.0132
+0.2078	0.0996	1.000	the counter is not stored.	0.1786	0.0116
+0.2209	0.5169	1.000	corresponding mask bit are on.	0.2312	0.0131
+0.2237	0.1145	1.000	STORE INSTRUCTION COUNTER IF cannot be used by	0.3744	0.0162
+0.2353	0.5337	1.000	Address monitoring is also controlled by the en-	0.3742	0.0165
+0.2397	0.0977	1.000	itself as a half-length instruction, and it cannot be	0.3929	0.0147
+0.2500	0.5150	1.000	abling	0.0489	0.0160
+0.2515	0.5639	1.000	mechanism. When the system is enabled,	0.3440	0.0146
+0.2558	0.0977	1.000	used to prefix any instruction other than the half-	0.3910	0.0146
+0.2654	0.5149	1.000	monitoring is in force; when disabled, monitoring is	0.3931	0.0173
+0.2718	0.0977	1.000	length branching instructions. If STORE INSTRUCTION	0.3910	0.0131
+0.2820	0.5150	1.000	suspended. Most indicators may come on at any time	0.3929	0.0145
+0.2857	0.0977	1.000	COUNTER IF should be accidentally used in either of	0.3931	0.0169
+0.2964	0.5150	1.000	whether the system is enabled or disabled.	0.3064	0.0161
+0.3023	0.0977	1.000	these ways, the full-word beginning with STORE IN-	0.3929	0.0146
+0.3182	0.0959	1.000	STRUCTION COUNTER IF might be interpreted by the	0.3929	0.0147
+0.3197	0.5132	1.000	PROGRAMMING NOTE	0.1504	0.0132
+0.3327	0.0977	1.000	computer as a valid connect, integer, or other type of	0.3929	0.0147
+0.3360	0.5148	1.000	The program interruption system is so designed that	0.3932	0.0193
+0.3479	0.0957	1.000	instruction.	0.0869	0.0121
+0.3532	0.5150	1.000	a program written without detailed knowledge of the	0.3929	0.0147
+0.3677	0.5150	1.000	feature may be interrupted at any time with control	0.3910	0.0145
+0.3836	0.5150	1.000	transferred to a supervisory program. The procedure	0.3910	0.0161
+0.3980	0.5149	1.000	for taking care of the various conditions causing in-	0.3912	0.0164
+0.4070	0.0940	1.000	Program Interruption System	0.3064	0.0189
+0.4142	0.5150	1.000	terruption can be a task for the supervisory program.	0.3891	0.0161
+0.4302	0.5150	1.000	On completing the special procedure, the supervisory	0.3910	0.0146
+0.4462	0.5150	1.000	program can return control to the interrupted pro-	0.3891	0.0145
+0.4462	0.0977	1.000	The sequence of instructions executed may be altered	0.3891	0.0132
+0.4606	0.5150	1.000	gram at the point of interruption.	0.2481	0.0147
+0.4606	0.0959	1.000	not only by programmed branch-type operations, but	0.3910	0.0147
+0.4767	0.0959	1.000	also by the computer itself upon occurrence of certain	0.3910	0.0146
+0.4912	0.0940	1.000	conditions. These conditions are recorded in a col-	0.3929	0.0118
+0.5035	0.0937	1.000	lection of indicators, which	0.2167	0.0180
+0.5073	0.3177	1.000	can be tested by the	0.1692	0.0131
+0.5188	0.5113	1.000	Indicator Register	0.1692	0.0176
+0.5215	0.0958	1.000	BRANCH ON INDICATOR operation. An actuated indi-	0.3912	0.0163
+0.5339	0.0957	1.000	cator can cause program interruption without an ex-	0.3914	0.0226
+0.5536	0.5150	1.000	The indicator register contains 64 bits. Each bit is	0.3891	0.0133
+0.5536	0.0940	1.000	plicit programmed test.	0.1711	0.0133
+0.5680	0.5130	1.000	turned on (set to 1) or off (set to 0) when certain	0.3912	0.0172
+0.5682	0.1109	1.000	For many indicators there are mask bits which the	0.3741	0.0133
+0.5827	0.0959	1.000	programmer can set. If a mask bit is set to zero, oc-	0.3910	0.0147
+0.5842	0.5132	1.000	conditions occur in the computer system. Each bit is	0.3910	0.0146
+0.5961	0.0938	1.000	currence of the corresponding indication will not	0.3931	0.0189
+0.6003	0.5132	1.000	also turned off automatically as it causes a program	0.3910	0.0161
+0.6133	0.0940	1.000	cause program interruption. If, however, the mask	0.3910	0.0146
+0.6148	0.5113	1.000	interruption. An individual bit may be turned off	0.3929	0.0146
+0.6294	0.5132	1.000	by a BRANCH ON INDICATOR instruction that tests it.	0.3741	0.0146
+0.6294	0.0940	1.000	bit is set to one, occurrence of the corresponding indi-	0.3891	0.0146
+0.6396	0.0919	1.000	cation can cause the instruction sequence to be im-	0.3933	0.0223
+0.6467	0.5282	1.000	The indicator register has address 11. Bit positions	0.3759	0.0161
+0.6612	0.5113	1.000	0-19 may be read, but not loaded.. Any attempt to	0.3910	0.0176
+0.6612	0.0940	1.000	mediately altered so that a single instruction located	0.3910	0.0133
+0.6755	0.5111	1.000	store into these bit positions has no effect. Bit posi-	0.3913	0.0169
+0.6758	0.0921	1.000	at a place unique to the causing condition is exe-	0.3929	0.0133
+0.6918	0.0940	1.000	cuted. Since this instruction may be of the branch	0.3910	0.0131
+0.6918	0.5113	1.000	tions 20-63 may either be read or loaded. Thus, the	0.3910	0.0146
+0.7048	0.0940	1.000	type, provision is made for complete sequence re-	0.3910	0.0161
+0.7078	0.5113	1.000	entire contents of the indicator register may be stored	0.3910	0.0146
+0.7224	0.5094	1.000	in any storage location by a transmission-type instruc-	0.3910	0.0146
+0.7224	0.0921	1.000	arrangements when unexpected or irregularly timed	0.3910	0.0131
+0.7369	0.0921	1.000	conditions occur. Some indicators have mask bits	0.3910	0.0116
+0.7384	0.5113	1.000	tion. Similarly, the register may be loaded from any	0.3891	0.0147
+0.7529	0.5094	1.000	storage location by a transmission-type instruction,	0.3929	0.0147
+0.7529	0.0921	1.000	that are permanently set to zero or one. Those with	0.3910	0.0132
+0.7658	0.0920	1.000	permanent mask bits of zero can never cause inter-	0.3912	0.0162
+0.7688	0.5113	1.000	but only bit positions 20-63 will be affected.	0.3233	0.0133
+0.7833	0.5262	1.000	On any arithmetic or connective operations in	0.3743	0.0152
+0.7833	0.0921	1.000	ruption, but they can be tested by branching opera-	0.3910	0.0132
+0.7994	0.5094	1.000	which indicator positions 20-63 are the replaced	0.3910	0.0161
+0.7994	0.0921	1.000	tions. Indicators with mask bits permanently set to	0.3910	0.0131
+0.8134	0.5093	1.000	operand, these indicators are read before they can	0.3911	0.0167
+0.8139	0.0902	1.000	one will cause interruption whenever both the indi-	0.3929	0.0131
+0.8299	0.0902	1.000	cator is actuated and the interruption system is	0.3929	0.0131
+0.8299	0.5094	1.000	be set by the result of the arithmetic or connective	0.3910	0.0146
+0.8459	0.5094	1.000	instruction, with the exception of IF, which	0.3553	0.0147
+0.8503	0.8665	1.000	can	0.0338	0.0087
+0.8590	0.1053	1.000	In order that interruption correction routines have	0.3759	0.0146
+0.8605	0.5094	1.000	be set before the indicators are read when the lo-	0.3910	0.0132
+0.8750	0.0902	1.000	adequate time to correct conditions causing inter-	0.3929	0.0145
+0.8764	0.5075	1.000	cation of this instruction has a protected address.	0.3910	0.0146
+0.8909	0.5113	1.000	The result is placed in the indicators at the end of	0.3891	0.0146
+0.8909	0.0902	1.000	ruption, or at least to store the machine state at the	0.3910	0.0132
+0.9288	0.0883	1.000	42 IBM 7030	0.1071	0.0103

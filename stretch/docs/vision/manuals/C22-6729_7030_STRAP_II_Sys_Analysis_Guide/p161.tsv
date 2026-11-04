@@ -1,0 +1,55 @@
+0.0843	0.8571	1.000	NAMEIN	0.0677	0.0174
+0.1492	0.5318	1.000	Boxes 5, 9	0.0868	0.0171
+0.1512	0.1090	1.000	LINKAGE	0.0714	0.0131
+0.1788	0.5338	1.000	The count is checked for zero. If zero, the end-of-	0.3872	0.0189
+0.1948	0.5338	1.000	file has been reached and the flag in Namexw is set	0.3835	0.0160
+0.1960	0.1108	1.000	On Entry	0.0659	0.0120
+0.2122	0.5320	1.000	on.	0.0301	0.0131
+0.2238	0.1241	1.000	1. Initially the calling sequence is:	0.2650	0.0116
+0.2384	0.1090	1.000	SIC, Nameiz; B, Namint.	0.1880	0.0131
+0.2412	0.5320	1.000	Box 6	0.0508	0.0146
+0.2558	0.1259	1.000	2. Subsequently the calling sequence is:	0.2989	0.0131
+0.2688	0.5338	1.000	The address of the name check character is stored	0.3778	0.0161
+0.2703	0.1071	1.000	SIC, Nameiz; B, NAMEIN.	0.2011	0.0146
+0.2820	0.5338	1.000	in the value field of Namexw.	0.2199	0.0174
+0.2992	0.1108	1.000	On Exit	0.0565	0.0107
+0.3124	0.5338	1.000	Boxes 7, 8, 10, 11	0.1447	0.0191
+0.3285	0.1241	1.000	1. This subroutine reads the name file from the	0.3609	0.0145
+0.3400	0.5338	1.000	The count of the next name is added to the present	0.3759	0.0191
+0.3445	0.1071	1.000	disk.	0.0414	0.0131
+0.3576	0.5320	1.000	location in the buffer. If the result exceeds the end	0.3872	0.0161
+0.3576	0.1222	1.000	2. The address in memory of the name check	0.3440	0.0161
+0.3721	0.5338	1.000	of the buffer, another read will be required if in	0.3609	0.0161
+0.3750	0.1090	1.000	character is placed in the value field of Namexw.	0.3590	0.0117
+0.3852	0.5338	1.000	the second buffer. If not, indicator C' is tested. If	0.3835	0.0176
+0.3866	0.1241	1.000	3. When the file is exhausted, the flag, bit 25 in	0.3647	0.0146
+0.3997	0.5338	1.000	off, return is made. If on, it is reset, indicator B	0.3835	0.0189
+0.4026	0.1071	1.000	Namexw, is turned on.	0.1711	0.0160
+0.4157	0.5338	1.000	is turned on, and a read initiated.	0.2575	0.0174
+0.4444	0.5356	1.000	Boxes 12-14	0.0961	0.0181
+0.4506	0.1109	1.000	FLOW CHART DESCRIPTION	0.2218	0.0131
+0.4752	0.5338	1.000	Indicator D is turned on indicating that the end of the	0.3929	0.0161
+0.4797	0.1109	1.000	Boxes 1, 19	0.0921	0.0161
+0.4927	0.5357	1.000	second buffer has been reached. The program waits	0.3891	0.0116
+0.5042	0.5338	1.000	for indicator B to be reset to zero by an EOP interrupt,	0.4173	0.0161
+0.5073	0.1109	1.000	During initialization, indicators A, B, and C, are	0.3722	0.0176
+0.5160	0.5338	1.000	and indicator C is turned on (indicating a read is	0.3647	0.0204
+0.5233	0.1109	1.000	turned on and a read operation is initiated. Each	0.3684	0.0146
+0.5332	0.5338	1.000	required).	0.0810	0.0179
+0.5363	0.1109	1.000	read EOP interrupt fix-up turns off indicators A and	0.3872	0.0146
+0.5509	0.1128	1.000	B. This box waits for the first read operation to be	0.3835	0.0146
+0.5638	0.5338	1.000	Boxes 15-17	0.0978	0.0177
+0.5669	0.1109	1.000	completed and for indicator A to be set to zero.	0.3534	0.0147
+0.5915	0.5357	1.000	If indicator D is on, the locator is reset to the first	0.3853	0.0191
+0.6061	0.5338	1.000	buffer. The buffer limits are initialized.	0.3120	0.0176
+0.6148	0.1128	1.000	Boxes 2-4	0.0771	0.0132
+0.6364	0.5356	1.000	Box 18	0.0548	0.0193
+0.6394	0.1128	1.000	The character count is loaded into the accumulator	0.3778	0.0176
+0.6539	0.1109	1.000	from $2, the latter being stepped to the beginning of	0.3891	0.0191
+0.6652	0.5336	1.000	If indicator D is off, return is made; if on, it is	0.3576	0.0205
+0.6730	0.1917	1.000	The count is checked against 128. If less,	0.3195	0.0116
+0.6747	0.1126	1.000	the name.	0.0774	0.0096
+0.6845	0.5376	1.000	reset, and the next name is obtained.	0.2763	0.0118
+0.6875	0.1128	1.000	the count is placed in the count field of Namexw.	0.3571	0.0116
+0.9416	0.8345	1.000	NAMEIN	0.0509	0.0092
+0.9419	0.9079	1.000	161	0.0226	0.0087

@@ -1,0 +1,163 @@
+0.0634	0.5167	1.000	hausted. As before, only the console switches are	0.3951	0.0187
+0.0669	0.1222	1.000	BITS	0.0395	0.0116
+0.0697	0.2368	1.000	3ITS 0,1,2,:	0.0883	0.0088
+0.0770	0.1861	1.000	000 /0001 /1000 /1001/1010/101	0.1974	0.0131
+0.0770	0.1053	1.000	4,5,6,7	0.0602	0.0145
+0.0799	0.5169	1.000	sensed and each block is limited to three words.	0.3477	0.0131
+0.0945	0.5336	1.000	In order to use the keyboard for entry	0.2880	0.0161
+0.0965	0.8194	1.000	• of informa-	0.0906	0.0134
+0.0974	0.1917	1.000	E	0.0169	0.0116
+0.0974	0.2237	1.000	cks	0.0883	0.0116
+0.0974	0.1222	1.000	0000	0.0301	0.0116
+0.0988	0.3628	1.000	8	0.0188	0.0131
+0.1104	0.5187	1.000	tion, the keyboard must have been enabled by depress-	0.3894	0.0165
+0.1264	0.5169	1.000	ing the enter key. The subsequent READ instruction,	0.3929	0.0146
+0.1279	0.1222	1.000	0001	0.0301	0.0102
+0.1294	0.2237	1.000	C K	0.0545	0.0116
+0.1294	0.2970	1.000	S	0.0113	0.0102
+0.1294	0.1917	1.000	+	0.0113	0.0102
+0.1352	0.3703	1.000	8	0.0094	0.0102
+0.1409	0.5169	1.000	after scanning the three words from the console	0.3929	0.0146
+0.1570	0.5150	1.000	switches, then makes the keyboard active so that a	0.3929	0.0145
+0.1584	0.1917	1.000	$	0.0113	0.0116
+0.1584	0.2613	1.000	1	0.0113	0.0116
+0.1584	0.1203	1.000	0010	0.0320	0.0102
+0.1599	0.2970	1.000	t	0.0113	0.0102
+0.1599	0.3684	1.000	9	0.0113	0.0102
+0.1599	0.3327	1.000	1	0.0113	0.0102
+0.1730	0.5150	1.000	message can be keyed. When the keyboard is active,	0.3929	0.0146
+0.1860	0.1203	1.000	0011	0.0338	0.0145
+0.1875	0.5169	1.000	the enter light is on and the keyboard is unlocked.	0.3891	0.0146
+0.1890	0.2594	1.000	L	0.0132	0.0131
+0.1890	0.2274	1.000	D	0.0113	0.0102
+0.1904	0.1898	1.000	=	0.0113	0.0087
+0.1977	0.3684	1.000	9	0.0113	0.0087
+0.1977	0.3346	1.000	1	0.0094	0.0087
+0.2017	0.5167	1.000	As the message is keyed, a copy is always typed on the	0.3913	0.0180
+0.2179	0.5150	1.000	the console printer.	0.1429	0.0133
+0.2180	0.1203	1.000	0100	0.0301	0.0116
+0.2195	0.1861	1.000	*	0.0150	0.0116
+0.2195	0.3327	1.000	2	0.0113	0.0116
+0.2195	0.2556	1.000	m	0.0207	0.0087
+0.2339	0.5320	1.000	When the keyboard is enabled, a console block may	0.3741	0.0146
+0.2480	0.5167	1.000	be of any length; the length is not defined by the unit.	0.3894	0.0171
+0.2485	0.1184	1.000	0101	0.0320	0.0116
+0.2500	0.2237	1.000	E	0.0150	0.0131
+0.2500	0.1898	1.000	(	0.0113	0.0131
+0.2500	0.2575	1.000	M	0.0150	0.0131
+0.2515	0.2951	1.000	U	0.0132	0.0131
+0.2529	0.3684	1.000	:	0.0094	0.0102
+0.2573	0.3327	1.000	2	0.0113	0.0087
+0.2601	0.5148	1.000	To indicate the end of the message, the operator nor-	0.3915	0.0221
+0.2791	0.2237	1.000	f	0.0132	0.0116
+0.2791	0.1184	1.000	0110	0.0320	0.0116
+0.2791	0.5132	1.000	mally presses the end key. In the single mode this	0.3947	0.0146
+0.2791	0.1880	1.000	/	0.0132	0.0131
+0.2805	0.3327	1.000	3	0.0113	0.0116
+0.2805	0.2951	1.000	V	0.0113	0.0102
+0.2820	0.2594	1.000	n	0.0132	0.0102
+0.2834	0.3684	1.000	-	0.0113	0.0073
+0.2933	0.5130	1.000	terminates the reAD operation, disabling the keyboard.	0.3913	0.0172
+0.3096	0.5150	1.000	In the multiple mode, depression of the end key ter-	0.3910	0.0146
+0.3110	0.1880	1.000	)	0.0094	0.0116
+0.3110	0.2951	1.000	V	0.0113	0.0116
+0.3110	0.2218	1.000	F	0.0132	0.0116
+0.3110	0.1203	0.300	0111	0.0301	0.0073
+0.3110	0.2575	1.000	N	0.0150	0.0131
+0.3125	0.3684	1.000	?	0.0094	0.0116
+0.3169	0.3308	1.000	3	0.0113	0.0102
+0.3219	0.5130	1.000	minates the current block. However, since the ter-	0.3933	0.0202
+0.3375	0.5111	1.000	mination of the block also disables the keyboard, the	0.3952	0.0206
+0.3387	0.1184	1.000	1000	0.0338	0.0145
+0.3401	0.3289	1.000	4	0.0150	0.0131
+0.3416	0.2876	1.000	W	0.0188	0.0116
+0.3561	0.5132	1.000	READ instruction subsequently is restricted to the con-	0.3929	0.0146
+0.3692	0.1184	1.000	1001	0.0320	0.0131
+0.3701	0.5130	1.000	sole switches only and the block length is limited to	0.3913	0.0177
+0.3706	0.2218	1.000	G	0.0150	0.0131
+0.3721	0.1898	1.000	;	0.0094	0.0116
+0.3721	0.2914	1.000	W	0.0169	0.0131
+0.3779	0.3308	1.000	4	0.0132	0.0116
+0.3866	0.5132	1.000	three words. The scanning of the console switches	0.3910	0.0146
+0.3983	0.1184	1.000	1010	0.0320	0.0145
+0.4012	0.3289	1.000	5	0.0132	0.0145
+0.4012	0.5132	1.000	then is repeated until the control word is exhausted.	0.3891	0.0131
+0.4012	0.2237	1.000	h	0.0132	0.0131
+0.4026	0.2575	1.000	P	0.0150	0.0131
+0.4160	0.5129	1.000	It is thus impossible to enter more than one message	0.3914	0.0184
+0.4288	0.1861	1.000	11	0.0150	0.0102
+0.4302	0.1165	1.000	1011	0.0320	0.0131
+0.4317	0.5132	1.000	through the keyboard with a single READ instruction,	0.3910	0.0147
+0.4317	0.2218	1.000	H	0.0150	0.0131
+0.4331	0.2914	1.000	X	0.0150	0.0131
+0.4331	0.2575	1.000	P	0.0150	0.0116
+0.4390	0.3271	1.000	5	0.0150	0.0131
+0.4476	0.5132	1.000	even if the multiple mode is used. A depression of the	0.3910	0.0146
+0.4608	0.2237	1.000	i	0.0094	0.0116
+0.4608	0.1165	1.000	1100	0.0320	0.0131
+0.4622	0.1861	1.000	a	0.0113	0.0102
+0.4622	0.3271	1.000	6	0.0150	0.0145
+0.4636	0.5132	1.000	end key does not interrupt the scanning of the console	0.3910	0.0146
+0.4778	0.5112	1.000	switches.	0.0660	0.0124
+0.4913	0.1165	1.000	1101	0.0320	0.0131
+0.4927	0.2256	1.000	I	0.0094	0.0116
+0.4927	0.1842	1.000	A	0.0150	0.0145
+0.4942	0.5282	1.000	If the operator discovers an error while entering in-	0.3759	0.0146
+0.4942	0.2575	1.000	Q	0.0132	0.0145
+0.4942	0.2914	1.000	Y	0.0150	0.0131
+0.5015	0.3289	1.000	6	0.0132	0.0116
+0.5082	0.5111	1.000	formation through the keyboard, he may press the	0.3913	0.0169
+0.5203	0.2237	1.000	j	0.0094	0.0145
+0.5218	0.1165	1.000	1110	0.0301	0.0116
+0.5218	0.1842	1.000	b	0.0150	0.0131
+0.5233	0.3289	1.000	7	0.0132	0.0131
+0.5247	0.2914	1.000	Z	0.0132	0.0116
+0.5247	0.2575	1.000	r	0.0132	0.0102
+0.5247	0.5113	1.000	erase key. This terminates the READ operation and	0.3910	0.0147
+0.5372	0.5111	1.000	causes end-exception and end-of-operation indications	0.3913	0.0181
+0.5523	0.1842	1.000	B	0.0132	0.0131
+0.5523	0.2556	1.000	R	0.0132	0.0145
+0.5523	0.2218	1.000	J	0.0113	0.0131
+0.5552	0.5113	1.000	unless the multiple-block flag in the control word is	0.3910	0.0132
+0.5596	0.3289	1.000	7	0.0113	0.0116
+0.5697	0.5094	1.000	on. In the latter case only end-exception is given.	0.3910	0.0146
+0.5858	0.5113	1.000	The erase key is inoperative when the printing mech-	0.3891	0.0145
+0.5900	0.0900	1.000	Figure 47. Ribbon Shift Codes, Console Printer and Keyboard	0.3950	0.0178
+0.6003	0.5094	1.000	anism is not writing or when the keyboard is not ac-	0.3910	0.0146
+0.6163	0.5113	1.000	tive for entry of information.	0.2086	0.0131
+0.6264	0.0977	1.000	A channel-signal indication can be caused in two	0.3853	0.0161
+0.6321	0.5263	1.000	Whenever a character or a keyboard function key is	0.3741	0.0133
+0.6424	0.0883	1.000	ways: by depressing the signal key or by depressing	0.3947	0.0176
+0.6467	0.5056	1.000	depressed, the corresponding 8-bit code is sent to the	0.3947	0.0147
+0.6570	0.0883	1.000	the enter key. The enter key, in addition to generat-	0.3929	0.0176
+0.6627	0.5094	1.000	exchange and from there to core storage. Character	0.3910	0.0161
+0.6730	0.0902	1.000	ing a channel signal, also enables the keyboard. The	0.3929	0.0146
+0.6769	0.5074	1.000	and function codes may be intermixed in any order.	0.3911	0.0152
+0.6875	0.0902	1.000	keyboard is disabled by the termination of the subse-	0.3929	0.0146
+0.6933	0.5094	1.000	If the shift key is manually locked in the upper posi-	0.3891	0.0146
+0.7048	0.0902	1.000	quent READ operation or by the completion of the first	0.3929	0.0132
+0.7078	0.5094	1.000	tion, the shift bit continues to be one. If the repeat	0.3910	0.0146
+0.7194	0.0902	1.000	block of such operation if the multiple mode is used.	0.3910	0.0146
+0.7224	0.5075	1.000	action is used, the code is sent every time the action	0.3910	0.0146
+0.7308	0.0881	1.000	If no data transfer follows the enabling, the keyboard	0.3933	0.0195
+0.7369	0.5075	1.000	is repeated. When the character is entered with the	0.3929	0.0146
+0.7500	0.0883	1.000	is disabled by the next depression of the signal or end	0.3929	0.0145
+0.7542	0.5075	1.000	ribbon shift key depressed, a modified character code	0.3910	0.0133
+0.7645	0.0883	1.000	key.	0.0320	0.0145
+0.7688	0.5056	1.000	is generated, as described before.	0.2350	0.0133
+0.7833	0.1053	1.000	When a READ instruction is received by the console	0.3759	0.0146
+0.7848	0.5244	1.000	Both the end and erase keys generate a correspond-	0.3741	0.0146
+0.7979	0.0902	1.000	with a keyboard not enabled, the block length is lim-	0.3891	0.0146
+0.8009	0.5056	1.000	ing function code to be sent to the exchange before	0.3929	0.0131
+0.8139	0.0883	1.000	ited by the console to three words, and in the single-	0.3910	0.0145
+0.8154	0.5075	1.000	terminating the operation.	0.1917	0.0131
+0.8284	0.0882	1.000	block mode the operation	0.2071	0.0151
+0.8299	0.3252	1.000	automatically termi-	0.1541	0.0131
+0.8445	0.0883	1.000	nated when the three words scanned from the console	0.3910	0.0116
+0.8545	0.5075	1.000	Writing under Computer Control	0.2368	0.0118
+0.8605	0.0865	1.000	switches have been sent to the exchange. When the	0.3929	0.0132
+0.8750	0.0865	1.000	multiple mode of reading is specified, the operation is	0.3929	0.0132
+0.8764	0.5056	1.000	Information can be displayed on the console by	0.3910	0.0146
+0.8909	0.5056	1.000	means of a WRITe instruction. The first three words	0.3929	0.0132
+0.8909	0.0865	1.000	repeated until the count in the control word is ex-	0.3929	0.0132
+0.9273	0.0865	1.000	154 IBM 7030	0.1147	0.0103

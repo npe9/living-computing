@@ -8,7 +8,8 @@ For each PDF page writes, under docs/vision/all/:
 
     v1_pdf010.vis.tsv   macOS Vision, whole page, 300 dpi
     v1_pdf010.tes.tsv   tesseract on THIS page's LOCATION column and its
-                        BINARY half word 1 column, each cropped alone, 600 dpi
+                        BINARY half word 1 and 2 columns, each cropped
+                        alone, 600 dpi
     v1_pdf010.vcol.tsv  macOS Vision again, on the same two column crops,
                         300 dpi -- the SAME engine, so it never counts as a
                         second witness; it raises Vision's coverage (vol 2
@@ -16,6 +17,7 @@ For each PDF page writes, under docs/vision/all/:
     v1_pdf010.geom      the measured column frame, or "none"
 
     python3 tools/read_every_page.py --vcol VOL:PDF ...   adds only .vcol.tsv
+    python3 tools/read_every_page.py --crops VOL:PDF ...  re-reads the crops
 
 Keyed by PDF page, NOT printed page: the offset between them is not
 constant in either volume, and the printed number is read back off each
@@ -64,14 +66,14 @@ def render(vol, pdf, dpi, td):
 
 
 def crops(vol, pdf, g, dpi, td):
-    """[(png, frame)] for this page's LOCATION and BINARY h1 columns."""
+    """[(png, frame)] for this page's LOCATION, BINARY h1 and h2 columns."""
     from PIL import Image
     png, _ = render(vol, pdf, dpi, td)
     im = Image.open(png)
     W, H = im.size
     cw = g["char_w"]
     out = []
-    for cell in (g["loc_cell"], g["bin_cell"]):
+    for cell in (g["loc_cell"], g["bin_cell"], g["bin_cell"] + 14):
         x0, x1 = (cell - 1.0) * cw, (cell + 10.5) * cw
         crop = os.path.join(td, "c%d_%d.png" % (dpi, cell))
         im.crop((int(x0 * W), 0, int(x1 * W), H)).save(crop)
@@ -94,6 +96,24 @@ def read_vcol(vol, pdf, ocr):
             for png, fr in crops(vol, pdf, json.loads(gl), 300, td):
                 rows += [r for r in multi_read.run_vision(png, fr, ocr)]
     write_rows(stem + ".vcol.tsv", rows)
+    return gl != "none"
+
+
+def read_crops(vol, pdf, ocr):
+    """Re-read only the column crops (tesseract and Vision) from the stored
+    frame; the whole-page Vision reading is kept."""
+    stem = os.path.join(OUT, "v%d_pdf%03d" % (vol, pdf))
+    gl = open(stem + ".geom").read().strip()
+    rows, vrows = [], []
+    if gl != "none":
+        g = json.loads(gl)
+        with tempfile.TemporaryDirectory() as td:
+            for png, fr in crops(vol, pdf, g, 600, td):
+                rows += multi_read.run_tesseract(png, fr)
+            for png, fr in crops(vol, pdf, g, 300, td):
+                vrows += multi_read.run_vision(png, fr, ocr)
+    write_rows(stem + ".tes.tsv", rows)
+    write_rows(stem + ".vcol.tsv", vrows)
     return gl != "none"
 
 
@@ -131,6 +151,8 @@ if __name__ == "__main__":
     args, fn = sys.argv[1:], read
     if args and args[0] == "--vcol":
         args, fn = args[1:], read_vcol
+    if args and args[0] == "--crops":
+        args, fn = args[1:], read_crops
     for a in args:
         vol, pdf = map(int, a.split(":"))
         ok = fn(vol, pdf, ocr)

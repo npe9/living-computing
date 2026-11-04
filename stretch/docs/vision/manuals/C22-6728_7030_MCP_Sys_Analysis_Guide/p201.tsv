@@ -1,0 +1,100 @@
+0.0785	0.5301	1.000	pointer, turning on the wait bit if there is no longer	0.3835	0.0131
+0.0785	0.1203	1.000	At JEXITD (Figure 115), the program returns to	0.3590	0.0131
+0.0930	0.1034	1.000	KSUPP if entry was from the receptor. Otherwise,	0.3835	0.0116
+0.0930	0.5320	1.000	room for one more message, and returns.	0.3139	0.0131
+0.1076	0.1034	1.000	controls are set, if necessary, to insure unstacking	0.3853	0.0131
+0.1221	0.5320	1.000	The I-O Routine, JIOGO	0.1805	0.0131
+0.1221	0.1034	1.000	of interrupts before returning to PP, and at JTSTEX	0.3910	0.0131
+0.1366	0.1053	1.000	return is made to KSUPP or to MCP according to the	0.3910	0.0116
+0.1512	0.5320	1.000	The function of JIOGO is to perform a specified I-O	0.3816	0.0131
+0.1526	0.1034	1.000	JIF bit.	0.0564	0.0102
+0.1672	0.1203	1.000	When a commentator I-O interrupt occurs, the pro-	0.3835	0.0116
+0.1672	0.5301	1.000	instruction, retry if EkJ or UNRJ occurs, and select	0.3985	0.0116
+0.1802	0.5320	1.000	one of two returns according to whether or not CBJ	0.3797	0.0131
+0.1817	0.1053	1.000	gram is entered at MRETAD from the receptor.	0.3534	0.0116
+0.1817	0.4699	1.000	The	0.0282	0.0102
+0.1962	0.5320	1.000	occurs. The routine will retry a EKJ ten times	0.3534	0.0117
+0.1962	0.1034	1.000	receptor bit is set, the control word copied, and the	0.3872	0.0117
+0.2106	0.1053	1.000	MBSY flow joined at MFIXUP.	0.2218	0.0118
+0.2106	0.5320	1.000	before hanging up in a B,$, and will retry a UNRJ	0.3722	0.0133
+0.2252	0.5320	1.000	until the unit accepts the operation. If CBJ occurs,	0.3835	0.0133
+0.2382	0.1049	1.000	Commentator Subroutines	0.1903	0.0149
+0.2397	0.5320	1.000	the routine will try the operation ten times before	0.3684	0.0118
+0.2558	0.5320	1.000	using the CBJ return.	0.1617	0.0118
+0.2688	0.1053	1.000	There are ten commentator subroutines. All are	0.3647	0.0118
+0.2776	0.5301	1.000	The I-O Bookkeeping Routine, MSETIO	0.2895	0.0146
+0.2848	0.1053	1.000	entered with linkage of the general form:	0.3008	0.0117
+0.2994	0.1222	1.000	LVI, XR, (return address or first parameter)	0.3383	0.0131
+0.3067	0.5320	1.000	This routine is entered after a successful write	0.3515	0.0116
+0.3120	0.1218	1.000	B, (Subroutine)	0.1117	0.0155
+0.3212	0.5320	1.000	operation. Its function is to update the I-O control	0.3759	0.0131
+0.3285	0.1053	1.000	Some have multiple returns, and some require	0.3477	0.0131
+0.3372	0.5320	1.000	tables. It should be noted that there are two unit	0.3647	0.0116
+0.3430	0.1034	1.000	parameters either in the linkage or index registers.	0.3872	0.0131
+0.3517	0.5320	1.000	status tables for the console. Although the console	0.3797	0.0116
+0.3590	0.1053	1.000	Most are short and straightforward.	0.2669	0.0102
+0.3663	0.5301	1.000	is on a single unit channel, it is treated as two	0.3496	0.0116
+0.3808	0.5301	1.000	logical units, one available for PP and one for MCP.	0.3929	0.0131
+0.3881	0.1053	1.000	The Stack Subroutine, JSTKR	0.2180	0.0116
+0.3953	0.5320	1.000	The two UST words are consecutive, the first MCP's	0.3929	0.0131
+0.4099	0.5320	1.000	and the second PP's.	0.1560	0.0116
+0.4172	0.1053	1.000	JSTKR picks up the request parameters, branching	0.3778	0.0132
+0.4258	0.5489	1.000	The routine sets up the addresses of the control	0.3553	0.0118
+0.4304	0.1051	1.000	immediately to JTSTEX if a zero word count is	0.3480	0.0150
+0.4403	0.5320	1.000	tables, updates as shown below, then returns.	0.3421	0.0133
+0.4476	0.1053	1.000	specified. It prefaces all messages with a carriage	0.3835	0.0118
+0.4535	0.5695	1.000	Sets the select bit (SSEL) in the MCP UST, and	0.3553	0.0132
+0.4606	0.1053	1.000	return and all MCP messages with a red $. It checks	0.3966	0.0133
+0.4694	0.5320	1.000	resets the select bit in the PP UST (SSEL + 1.0).	0.3647	0.0118
+0.4767	0.1053	1.000	a PP FWA against PP bounds, entering dispatcher	0.3741	0.0132
+0.4839	0.5695	1.000	Sets the channel operating (SCHOP) bit in the	0.3402	0.0118
+0.4912	0.1053	1.000	error control on an error. It checks the word count	0.3891	0.0118
+0.4985	0.5338	1.000	CST, and the set up (SSETUP) and write (SWR) bits	0.3778	0.0146
+0.5058	0.1053	1.000	to be sure it is 10 or less, and moves the words to	0.3759	0.0118
+0.5142	0.5319	1.000	in the UST.	0.0847	0.0123
+0.5218	0.1053	1.000	the stack. It adds a terminating carriage return,	0.3665	0.0116
+0.5276	0.5695	1.000	Stores MRETAD in SRETAD, and the I-O	0.3120	0.0131
+0.5305	0.5489	1.000	3.	0.0226	0.0102
+0.5348	0.1053	1.000	stores the new stack pointer (JSTKP), and returns.	0.3797	0.0131
+0.5436	0.5320	1.000	instruction in SIOINS in the UAT.	0.2462	0.0116
+0.5567	0.5489	1.000	4. Clears the unit field (SUNIT) in the CST.	0.3289	0.0131
+0.5654	0.1071	1.000	The Write Test Subroutine, JDWTST	0.2707	0.0116
+0.5814	0.5338	1.000	The Wait for I-O Routine, JTERM	0.2538	0.0132
+0.5945	0.1071	1.000	The function of this subroutine is to decide whether or	0.3985	0.0102
+0.6090	0.1071	1.000	not to do a write now. It has two returns, one for	0.3684	0.0131
+0.6105	0.5338	1.000	The JTERM routine is used to monitor the completion	0.3985	0.0117
+0.6235	0.1053	1.000	Write and one for Do Not Write. If the commentator	0.3891	0.0116
+0.6250	0.5338	1.000	of the current console I-O operation. The routine is	0.3891	0.0132
+0.6381	0.1053	1.000	has no write operation in progress, or if the wait bit	0.3910	0.0131
+0.6390	0.5337	1.000	a copy control word loop which is broken under the	0.3761	0.0139
+0.6526	0.1053	1.000	is on, it will return to the write return. Otherwise,	0.3891	0.0147
+0.6555	0.5301	1.000	following conditions:	0.1560	0.0132
+0.6685	0.1053	1.000	it will select the return on the basis of whether or not	0.4004	0.0103
+0.6700	0.5489	1.000	1. Ten consecutive EKJ's on a CCW.	0.2801	0.0118
+0.6830	0.1071	1.000	the stack has room for another message. If not, it	0.3797	0.0118
+0.6845	0.5489	1.000	2. EPGK, UK, EE, or EOP occur.	0.2669	0.0131
+0.6976	0.1071	1.000	turns on the wait bit and takes the write return.	0.3515	0.0103
+0.6991	0.5508	1.000	3. The channel operating bit (SCHOP) is off and	0.3571	0.0131
+0.7136	0.5338	1.000	the commentator is not the source of the operation.	0.3797	0.0117
+0.7267	0.1071	1.000	The Control Word Setup Subroutine, JSTCW	0.3233	0.0132
+0.7277	0.5488	1.000	4. The SEOP bit in the CW if off and the operation	0.3779	0.0137
+0.7442	0.5338	1.000	was a SEOP release by the commentator.	0.3064	0.0116
+0.7558	0.1071	1.000	JSTCW stores blanks in the last partial word, if any,	0.3929	0.0131
+0.7587	0.5489	1.000	In case 1, the routine hangs up in a B,$. For the	0.3703	0.0131
+0.7718	0.1053	1.000	in the stack. It sets up a control word to type the	0.3703	0.0116
+0.7733	0.5338	1.000	rest, the routine (at JFKCS) tests the CS bit in the	0.3741	0.0131
+0.7863	0.1071	1.000	stack from the word specified by the write pointer to	0.3891	0.0116
+0.7878	0.5357	1.000	CW, and returns if it is off. Otherwise, it uses the	0.3835	0.0146
+0.8009	0.1071	1.000	the word before the one specified by the stack pointer.	0.4004	0.0116
+0.8023	0.5338	1.000	KCSIN subroutine in the receptor to stack the CS, and	0.3985	0.0131
+0.8154	0.1090	1.000	This control word will be the second of a chain of two.	0.3985	0.0116
+0.8196	0.5338	1.000	returns.	0.0640	0.0106
+0.8314	0.1090	1.000	The first will control writing the display lights as	0.3647	0.0116
+0.8358	0.5320	1.000	The Release Routine, JRECLN	0.2312	0.0145
+0.8445	0.1071	1.000	most recently used by the debugging package. If the	0.3872	0.0131
+0.8590	0.5338	1.000	This routine is used to release the console when the	0.3853	0.0102
+0.8605	0.1071	1.000	resulting word count is zero, the chain bit in the first	0.3985	0.0117
+0.8735	0.5338	1.000	commentator has retained control until the operation	0.3891	0.0116
+0.8750	0.1071	1.000	control word is left off. The routine checks the stack	0.3985	0.0117
+0.9330	0.7632	1.000	System Input-Output	0.1203	0.0103
+0.9331	0.9041	1.000	201	0.0226	0.0073

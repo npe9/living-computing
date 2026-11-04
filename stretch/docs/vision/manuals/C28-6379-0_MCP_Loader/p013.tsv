@@ -1,0 +1,98 @@
+0.0872	0.1109	1.000	Phase 4 -- Checking for overlap of program and	0.3628	0.0131
+0.0887	0.5395	1.000	Phase 6 -- Further testing for legality of transfers	0.3872	0.0132
+0.1017	0.1109	1.000	common: A scan is made of the node table. If the	0.3797	0.0131
+0.1032	0.5376	1.000	between segments: A scan of the third intermediate	0.3910	0.0132
+0.1162	0.1090	1.000	beginning address of common for any segment is lo-	0.3930	0.0135
+0.1177	0.5357	1.000	table is made. The entries are marked in such a	0.3741	0.0117
+0.1301	0.1108	1.000	wer than the highest address occupied by a subpro-	0.3855	0.0140
+0.1321	0.5395	1.000	way that each direction of transfer is unique. With	0.3872	0.0133
+0.1467	0.1090	1.000	gram in that segment, an error message is given.	0.3797	0.0118
+0.1482	0.5376	1.000	successive comparisons of the segment numbers of	0.3872	0.0118
+0.1599	0.1109	1.000	An additional check is made to insure that there is	0.3778	0.0116
+0.1627	0.5376	1.000	the entries in the third intermediate table with seg-	0.3891	0.0118
+0.1758	0.1090	1.000	space available for the relocation table for the pri-	0.3872	0.0118
+0.1773	0.5376	1.000	ment numbers and their associated segment numbers	0.3985	0.0118
+0.1918	0.1090	1.000	mary segment.	0.1147	0.0103
+0.1918	0.5357	1.000	in the entries in the node table, in a manner similar	0.3947	0.0131
+0.2064	0.5357	1.000	to the prócedure described in phase 5, the compat-	0.3872	0.0131
+0.2194	0.1109	1.000	Phase 5 -- Formation of transfer vectors and check-	0.3966	0.0132
+0.2209	0.5357	1.000	ibility of the transfers is tested. A transfer to a	0.3703	0.0116
+0.2339	0.1071	1.000	ing for legality of initial transfers between segments:	0.4041	0.0132
+0.2355	0.5376	1.000	segment at a lower storage address is illegal in this	0.3910	0.0116
+0.2485	0.1090	1.000	Segment numbers of segments transferred to are	0.3684	0.0118
+0.2500	0.5376	1.000	phase if the return cannot be made because another	0.3853	0.0131
+0.2630	0.1090	1.000	matched, from the third intermediate table, in the	0.3816	0.0131
+0.2660	0.5357	1.000	transfer would cause the original segment to be over-	0.4023	0.0116
+0.2776	0.1090	1.000	node table. If the desired transfer address is either	0.3985	0.0118
+0.2805	0.5357	1.000	laid.	0.0376	0.0102
+0.2921	0.1090	1.000	within the segment or to a segment which will be	0.3684	0.0117
+0.3041	0.1070	1.000	loaded at a lower storage address,	0.2635	0.0157
+0.3067	0.3703	1.000	the actual address	0.1429	0.0131
+0.3081	0.5338	1.000	Phase 7 -- Formation of relocation table: The base	0.3929	0.0146
+0.3212	0.1090	1.000	of the transfer is computed and stored in the third	0.3778	0.0116
+0.3241	0.5338	1.000	address of the relocation table is computed. (Note:	0.3910	0.0131
+0.3358	0.1071	1.000	intermediate table entry. If the desired transfer ad-	0.4004	0.0131
+0.3387	0.5357	1.000	A job which uses the segmentation feature will not	0.3797	0.0132
+0.3503	0.1071	1.000	dress is to a segment which will be loaded at a higher	0.4060	0.0131
+0.3532	0.5357	1.000	have its relocation table starting at the same storage	0.3985	0.0117
+0.3648	0.1090	1.000	storage address, a transfer to the link subprogram is	0.4004	0.0131
+0.3677	0.5357	1.000	location as the base address of blank common. Refer	0.4060	0.0117
+0.3794	0.1071	1.000	stored in the third intermediate table. (See also in-	0.3947	0.0116
+0.3821	0.5357	1.000	to discussion of storage allocation under Segmenta-	0.3910	0.0118
+0.3953	0.1071	1.000	formation about the link subprogram.)	0.2876	0.0116
+0.3967	0.5357	1.000	tion.) A check is made to see if the relocation table	0.3947	0.0118
+0.4099	0.1297	1.000	In order to test the legality of the transfers, the	0.3628	0.0131
+0.4112	0.5357	1.000	is too large. Using the information in the three inter-	0.4117	0.0118
+0.4244	0.1071	1.000	structures of the node table entries for the two seg-	0.3910	0.0116
+0.4258	0.5357	1.000	mediate tables, the relocation table entries for each	0.3947	0.0133
+0.4390	0.1071	1.000	ments involved in the transfer are examined (that is,	0.3966	0.0117
+0.4403	0.5376	1.000	segment are filled in. The address of the relocation	0.3966	0.0118
+0.4535	0.1071	1.000	the entry for the segment from which the transfer is	0.3947	0.0117
+0.4564	0.5357	1.000	table is placed in the communication region of MCP.	0.3966	0.0117
+0.4679	0.1071	1.000	made and the entry for the segment to which the trans-	0.4117	0.0118
+0.4709	0.5357	1.000	(See Figure 5.)	0.1165	0.0116
+0.4824	0.1071	1.000	fer is made). If it is possible to match the segment	0.3929	0.0133
+0.4970	0.1090	1.000	number from which the transfer is made with one of	0.3929	0.0103
+0.5000	0.5376	1.000	Phase 8 -- Transfer of the node table: The base ad-	0.3966	0.0116
+0.5115	0.1071	1.000	the associated segment numbers in the node table	0.3722	0.0118
+0.5145	0.5376	1.000	dress of the node table is computed. (The nodetable	0.3910	0.0116
+0.5261	0.1071	1.000	entry for the segment to which the transfer is made,	0.3966	0.0133
+0.5291	0.5357	1.000	is originally located in lower storage, but its final	0.3816	0.0116
+0.5421	0.1071	1.000	the transfer may be legal. The transfer may also	0.3778	0.0103
+0.5436	0.5357	1.000	location is at the top of available storage.) A veri-	0.3910	0.0116
+0.5552	0.1071	1.000	be legal if it is possible to match the segment num-	0.3910	0.0118
+0.5581	0.5376	1.000	fication is made that the relocation table is lower in	0.3910	0.0102
+0.5697	0.1071	1.000	ber to which the transfer is made with one of the as-	0.3985	0.0118
+0.5727	0.5376	1.000	storage than the computed address for the node table.	0.4023	0.0116
+0.5842	0.1071	1.000	sociated segment numbers in the node table entry	0.3722	0.0118
+0.5887	0.5376	1.000	The first 64 bits of each entry in the node table are	0.3853	0.0116
+0.5985	0.1071	1.000	for the segment from which the transfer is made.	0.3742	0.0135
+0.6032	0.5376	1.000	not transferred to the upper address.	0.2801	0.0117
+0.6133	0.1089	1.000	However, if neither of the two above conditions are	0.3836	0.0146
+0.6177	0.5602	1.000	The BSS processor gives up control after re-	0.3402	0.0117
+0.6294	0.1071	1.000	met, then the transfer is illegal. In Figure8, thele-	0.3985	0.0131
+0.6321	0.5376	1.000	ordering the library subprogram entries in the relo-	0.3966	0.0118
+0.6467	0.5357	1.000	cation table and printing out the mapping of storage	0.3872	0.0118
+0.6570	0.1053	1.000	this phase: (1) a transfer from segment 1 to segment	0.3985	0.0131
+0.6613	0.5338	1.000	allocation.	0.0846	0.0131
+0.6715	0.1053	1.000	4 may be legal; (2) a transfer from segment 4 to seg-	0.4023	0.0131
+0.6860	0.1053	1.000	ment 1 may be legal; (3) a transfer from segment 3	0.3891	0.0131
+0.6903	0.5357	1.000	The Link Program	0.1410	0.0146
+0.7020	0.1109	1.000	o segment 4 is illegal; (4) a transfer from segmen	0.3797	0.0116
+0.7121	0.1109	1.000	2 to segment 3 is illegal	0.1786	0.0146
+0.7194	0.5357	1.000	The segmentation feature of the BSS processor places	0.4041	0.0146
+0.7339	0.5320	1.000	into the transfer vector a branch to the link program,	0.4060	0.0146
+0.7485	0.5320	1.000	if the call is to a subprogram in a segment which will	0.4041	0.0146
+0.7645	0.5338	1.000	oceupy a higher storage position than the segment	0.3778	0.0131
+0.7791	0.5338	1.000	from which the call is made.	0.2199	0.0131
+0.7936	0.5526	1.000	The communication region of MCP is set up by the	0.3816	0.0131
+0.8081	0.5357	1.000	BSS processor to contain a link table mask. Each	0.3778	0.0161
+0.8227	0.5357	1.000	bit which is turned on in the mask is an indication to	0.3947	0.0102
+0.8372	0.5338	1.000	the link program that the segment designated by that	0.3966	0.0131
+0.8517	0.5357	1.000	bit is currently in storage. (See Figure 7.)	0.3383	0.0131
+0.8663	0.5545	1.000	Control is initially passed to the link program	0.3515	0.0131
+0.8821	0.5338	1.000	(after the loading of the primary segment, but before	0.4004	0.0133
+0.8967	0.1034	1.000	FIGURE 8. EXAMPLE OF TRANSFERS BETWEEN SEGMENTS	0.3571	0.0147
+0.8967	0.5357	1.000	execution has begun). The only function of this entry	0.3929	0.0133
+0.9390	0.8271	1.000	BSS Processor	0.0789	0.0102
+0.9404	0.9173	1.000	13	0.0188	0.0073

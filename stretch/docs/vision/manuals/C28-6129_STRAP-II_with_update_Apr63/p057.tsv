@@ -1,0 +1,150 @@
+0.0669	0.4793	1.000	APPENDIX D	0.0827	0.0116
+0.1250	0.1222	1.000	The Current (May I, 1961) list of STRAP II Error Messages are as follows*:	0.4398	0.0132
+0.1744	0.5320	1.000	Message	0.0508	0.0145
+0.1773	0.1071	1.000	Message	0.0489	0.0102
+0.1846	0.5414	1.000	No.	0.0244	0.0116
+0.1875	0.1184	1.000	No.	0.0244	0.0087
+0.2035	0.5508	1.000	27	0.0188	0.0116
+0.2035	0.7350	1.000	The data description has not beer	0.1898	0.0102
+0.2035	0.3064	1.000	An improper primary op has been	0.2011	0.0160
+0.2049	0.1353	1.000	1	0.0094	0.0087
+0.2106	0.7481	1.000	closed by a right parenthesi	0.1410	0.0133
+0.2224	0.3064	1.000	An improper secondary op has been	0.2011	0.0146
+0.2238	0.7293	1.000	The field length of the data descrip-	0.2011	0.0146
+0.2253	0.5508	1.000	28	0.0188	0.0116
+0.2253	0.1353	1.000	2	0.0094	0.0087
+0.2324	0.7406	1.000	tion is greater than 64.	0.1316	0.0161
+0.2424	0.3211	1.000	entry mode has been specified w	0.1699	0.0159
+0.2456	0.5508	1.000	29	0.0188	0.0116
+0.2456	0.7293	1.000	The byte size of the data description	0.1992	0.0116
+0.2542	0.3308	1.000	non-DD pseudo-r	0.0902	0.0103
+0.2542	0.7293	1.000	A bit sgate mitaber has been specified	0.2011	0.0234
+0.2630	0.3064	1.000	More than one secondary op has been	0.1992	0.0131
+0.2660	0.1335	1.000	4	0.0113	0.0087
+0.2660	0.5508	1.000	30	0.0188	0.0131
+0.2757	0.7405	1.000	in the data description.	0.1317	0.0125
+0.2848	0.3083	1.000	More than one dds has been specified.	0.1955	0.0117
+0.2849	0.5489	1.000	31	0.0226	0.0145
+0.2878	0.7293	1.000	The negative field length or byte size	0.1992	0.0116
+0.2951	0.3064	1.000	This symbol is multiple defined	0.1673	0.0116
+0.3052	0.1861	1.000	ASSEMBLY ERROR There is an error in the assembly	0.3195	0.0118
+0.3067	0.1353	1.000	7	0.0075	0.0058
+0.3067	0.5489	1.000	32	0.0207	0.0116
+0.3183	0.5489	1.000	33	0.0207	0.0102
+0.3241	0.3045	1.000	The internal VLE table buffer has	0.2030	0.0147
+0.3270	0.5489	1.000	34	0.0207	0.0116
+0.3270	0.1335	1.000	8	0.0113	0.0087
+0.3285	0.7274	1.000	This instruction has been assigned a	0.2011	0.0116
+0.3358	0.3158	1.000	been exceeded.	0.0883	0.0116
+0.3358	0.7406	1.000	data description.	0.0940	0.0145
+0.3445	0.3045	1.000	The internal MSYTE buffer has been	0.2011	0.0161
+0.3459	0.1335	1.000	9	0.0113	0.0102
+0.3472	0.7291	1.000	This SYN does not have a name.	0.1753	0.0130
+0.3474	0.5489	1.000	35	0.0188	0.0131
+0.3576	0.5489	1.000	36	0.0207	0.0116
+0.3576	0.7293	1.000	An address field has not been speci-	0.1974	0.0116
+0.3648	0.1861	0.300	ASTCIBLY BERROR There 5 al BSYST Infet ase miuly	0.3195	0.0247
+0.3677	0.1259	1.000	10	0.0169	0.0102
+0.3677	0.7406	1.000	fied with the SYN.	0.1053	0.0132
+0.3765	0.1259	1.000	11	0.0169	0.0102
+0.3794	0.7293	1.000	The value of a DD was unattainable.	0.1974	0.0102
+0.3894	0.7293	1.000	A data description has not been speci-	0.1974	0.0103
+0.3953	0.1842	1.000	REACHED FLAG	0.1071	0.0131
+0.3967	0.3045	1.000	Output has received the flag in the	0.2011	0.0118
+0.3982	0.7406	1.000	fied with the DR.	0.0959	0.0118
+0.4084	0.5489	1.000	39	0.0207	0.0116
+0.4084	0.7312	1.000	A character in the D field of a DD is	0.1974	0.0102
+0.4084	0.3214	1.000	index word, NAMEXW, before re-	0.1805	0.0102
+0.4172	0.1955	1.000	PRIOR TO END	0.0996	0.0116
+0.4172	0.3214	1.000	ceiving the instruction, END.	0.1523	0.0116
+0.4200	0.7538	1.000	illegal under the radix specified.	0.1729	0.0118
+0.4268	0.1954	1.000	INSTRUCTION	0.0905	0.0141
+0.4288	0.5489	1.000	40	0.0207	0.0131
+0.4302	0.7293	1.000	More than one point has been used in	0.1992	0.0102
+0.4375	0.1842	1.000	FLAG NOT SET	0.0996	0.0131
+0.4390	0.7425	1.000	the D field of the numeric DD.	0.1673	0.0102
+0.4491	0.5489	1.000	41	0.0188	0.0116
+0.4506	0.7293	1.000	Too many characters have been speci-	0.1974	0.0088
+0.4574	0.1973	1.000	END INSTRUC-	0.0961	0.0126
+0.4593	0.7425	1.000	fied for a symbolic address.	0.1410	0.0102
+0.4694	0.7293	1.000	More than one E has been used in the	0.1992	0.0103
+0.4695	0.5489	1.000	42	0.0188	0.0116
+0.4766	0.1842	1.000	NAME CHECK	0.0903	0.0148
+0.4782	0.3026	1.000	The name check characters do not	0.2030	0.0131
+0.4797	0.7406	1.000	D field of a numeric DD.	0.1353	0.0102
+0.4869	0.5489	1.000	43	0.0207	0.0145
+0.4897	0.7293	1.000	More than one $ has been used before	0.1992	0.0118
+0.4985	0.1955	1.000	DO NOT COM-	0.0959	0.0131
+0.5102	0.5489	1.000	44	0.0188	0.0116
+0.5115	0.7293	1.000	The multiple dimensions have not	0.1992	0.0088
+0.5174	0.1842	1.000	THE OUTPUT FOR The output for this DD instruction is	0.3195	0.0147
+0.5203	0.7368	1.000	been enclosed in parentheses.	0.1598	0.0131
+0.5291	0.5489	1.000	45	0.0188	0.0131
+0.5305	0.1955	1.000	THIS INSTRUC-	0.0977	0.0116
+0.5320	0.7406	1.000	he exponent specified on a numer	0.1767	0.0087
+0.5392	0.1955	1.000	TION IS UNDE-	0.0977	0.0117
+0.5509	0.5489	1.000	46	0.0188	0.0116
+0.5523	0.7274	1.000	The dimension has not been closed	0.1992	0.0102
+0.5596	0.3139	1.000	O code specified is not compatib	0.1805	0.0116
+0.5596	0.1823	1.000	XXXXXXXCODE	0.0996	0.0131
+0.5624	0.7368	1.000	by a right parenthesis.	0.1203	0.0103
+0.5682	0.3252	1.000	ith 1/0 unit specifie	0.1128	0.0133
+0.5712	0.7293	1.000	The system symbol specified is non-	0.1955	0.0116
+0.5712	0.5489	1.000	48	0.0188	0.0116
+0.5770	0.1805	0.300	RDR NEEDS ATIN Canl STP t reennghid witc-	0.3271	0.0277
+0.5799	0.1241	1.000	17	0.0188	0.0116
+0.5915	0.7274	1.000	An illegal character has been specified	0.1992	0.0131
+0.5916	0.5489	1.000	49	0.0188	0.0116
+0.6014	0.7387	1.000	in the level indication of the UN-	0.1862	0.0122
+0.6090	0.1842	1.000	UNORDER	0.0639	0.0145
+0.6105	0.1241	1.000	18	0.0188	0.0116
+0.6105	0.3120	1.000	symbol table entry has been mai	0.1823	0.0117
+0.6118	0.7368	1.000	TAIL, psuedo-op.	0.0977	0.0132
+0.6221	0.7368	1.000	he numeric level of untailing	0.1786	0.0116
+0.6221	0.5470	1.000	50	0.0188	0.0116
+0.6292	0.1823	1.000	SYMBOL TABLE	0.1016	0.0148
+0.6294	0.3515	1.000	an error in the assembly	0.1504	0.0146
+0.6308	0.1241	1.000	19	0.0188	0.0116
+0.6320	0.7479	1.000	reater than the current level	0.1677	0.0133
+0.6482	0.3026	1.000	The unit begins with an improper	0.2030	0.0161
+0.6497	0.1823	1.000	MAIN I	0.0508	0.0145
+0.6497	0.5470	1.000	51	0.0207	0.0131
+0.6512	0.1222	1.000	21	0.0188	0.0116
+0.6526	0.7256	1.000	A null symbolic tail has been speci-	0.1992	0.0116
+0.6701	0.5470	1.000	52	0.0207	0.0145
+0.6715	0.1823	1.000	MAIN 2	0.0508	0.0131
+0.6715	0.3026	1.000	There is more than one leading $ on	0.1992	0.0116
+0.6715	0.1222	1.000	22	0.0188	0.0116
+0.6715	0.7293	1.000	The level indication of the TAII	0.1936	0.0131
+0.6817	0.7406	1.000	pseudo-op. has been closed by a	0.1823	0.0132
+0.6915	0.1822	1.000	MAIN 3	0.0510	0.0137
+0.6919	0.1222	1.000	23	0.0188	0.0116
+0.6933	0.7368	1.000	right parenthesis.	0.0977	0.0131
+0.7048	0.7331	1.000	An illegal character has been specifie	0.1861	0.0103
+0.7121	0.7444	1.000	in the level indication of the TAI	0.1729	0.0132
+0.7121	0.1823	1.000	MAIN 4	0.0508	0.0132
+0.7122	0.1222	1.000	24	0.0188	0.0116
+0.7324	0.1805	1.000	MAIN 5	0.0508	0.0133
+0.7326	0.1203	1.000	25	0.0207	0.0116
+0.7499	0.1823	1.000	MAIN 6	0.0528	0.0163
+0.7515	0.3008	1.000	This op should not have a data de-	0.2030	0.0146
+0.7529	0.1222	1.000	26	0.0188	0.0116
+0.7529	0.5470	1.000	55	0.0188	0.0116
+0.7542	0.7312	1.000	A number has been used which is no	0.1898	0.0118
+0.7630	0.7406	1.000	less than the radix specified	0.1447	0.0131
+0.7733	0.5470	1.000	56	0.0188	0.0116
+0.7892	0.1053	0.300	e a erete necr tratr ate to ecme me meuminges	0.4004	0.0320
+0.7936	0.5451	1.000	57	0.0207	0.0116
+0.8139	0.7237	0.300	CrETED han dhe on gaiter	0.2030	0.0349
+0.8227	0.1053	1.000	•° INPUT CODE ERR-Input code specified is not compatible with input	0.3966	0.0146
+0.8342	0.1334	1.000	unit specified	0.0715	0.0119
+0.8343	0.5451	1.000	58	0.0207	0.0116
+0.8503	0.1203	1.000	BINOUT CODE ERR-Output code specified is not compatible with	0.3797	0.0116
+0.8532	0.5451	1.000	59	0.0207	0.0131
+0.8618	0.1316	1.000	output unit specified.	0.1147	0.0103
+0.8735	0.1184	1.000	LIST CODE ERR-Output code specified is not compatible with output	0.3835	0.0146
+0.8750	0.6071	1.000	MAIN 40	0.0564	0.0117
+0.8765	0.5451	1.000	60	0.0207	0.0102
+0.8849	0.1296	1.000	unit specified.	0.0791	0.0137
+0.9172	0.1034	1.000	54	0.0207	0.0145
+0.9184	0.1503	1.000	IBM 7030	0.0678	0.0135

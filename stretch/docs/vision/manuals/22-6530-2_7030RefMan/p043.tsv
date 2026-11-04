@@ -1,0 +1,94 @@
+0.0669	0.5132	1.000	ing instruction is specified in the halt-word format	0.3947	0.0160
+0.0669	0.0977	1.000	Branch Relative (BR)	0.1541	0.0131
+0.0827	0.5169	1.000	shown below. Bits 0-18, the address, represent the	0.3910	0.0147
+0.0858	0.0996	1.000	This instruction causes the absolute value of the	0.3910	0.0145
+0.0973	0.5150	1.000	branch address. Bits 19-24 specify the number of the	0.3929	0.0161
+0.1003	0.1034	1.000	effective address to be added to the instruction coun-	0.3835	0.0176
+0.1133	0.1034	1.000	er contents. Bits 0-18 of the sum replace the instruc	0.3816	0.0176
+0.1133	0.5150	1.000	tested indicator. Bits 25-30 specify the operation,	0.3910	0.0161
+0.1279	0.5150	1.000	where bits 29 and 30 serve as modifiers. Bit 31 de-	0.3910	0.0146
+0.1308	0.0977	1.000	tion counter contents.	0.1617	0.0146
+0.1439	0.5150	1.000	termines whether or not there will be branch address	0.3929	0.0146
+0.1570	0.5132	1.000	modification using index register XI.	0.2707	0.0176
+0.1672	0.0959	1.000	Branch Enabled (BE)	0.1523	0.0147
+0.1846	0.6635	1.000	11000	0.0301	0.0102
+0.1860	0.6391	1.000	IND,	0.0244	0.0102
+0.1860	0.5545	1.000	ADDRESS	0.0395	0.0087
+0.1871	0.0975	1.000	This operation enables the interruption mechanism,	0.3914	0.0211
+0.1977	0.6692	1.000	25	0.0113	0.0073
+0.2020	0.0959	1.000	and then performs the same operation as BRANCH.	0.3703	0.0160
+0.2151	0.5150	1.000	Branch on Indicator (BI)	0.1711	0.0146
+0.2238	0.0959	1.000	PROGRAMMING NOTE	0.1541	0.0160
+0.2369	0.5132	1.000	This operation causes the specified indicator to be	0.3929	0.0161
+0.2410	0.0995	1.000	A half-word of all zeros when taken as an instruction	0.3855	0.0162
+0.2515	0.5132	1.000	tested. If its value matches that of bit 30 of the in-	0.3929	0.0131
+0.2529	0.0996	1.000	will be interpreted as BRANCH ENABLED to location	0.3853	0.0160
+0.2674	0.0977	1.000	0.0, an invalid address.	0.1692	0.0174
+0.2688	0.5150	1.000	struction, bits 0-18 of the effective address replace the	0.3910	0.0118
+0.2833	0.5132	1.000	instruction counter contents. Whether	0.3102	0.0118
+0.2848	0.8214	1.000	or not a	0.0846	0.0103
+0.2979	0.5150	1.000	branching operation is successful, the tested indicator	0.3910	0.0161
+0.3081	0.0959	1.000	Branch Disabled (BD)	0.1617	0.0174
+0.3124	0.5132	1.000	is reset to zero when instruction bit 29 is one; when	0.3910	0.0146
+0.3285	0.5150	1.000	bit 29 is zero, the tested indicator remains unchanged.	0.3891	0.0161
+0.3314	0.0959	1.000	This operation disables the interruption mechanism,	0.3929	0.0174
+0.3415	0.5150	1.000	A BI which addresses indicators 0 through 19 of the	0.3910	0.0176
+0.3473	0.0977	1.000	and then performs the same operation as BRANCH.	0.3665	0.0146
+0.3590	0.5150	1.000	indicator register may not be used as free (due to an	0.3891	0.0146
+0.3728	0.5149	1.000	interrupt) instruction in the interrupt table.	0.3216	0.0172
+0.3836	0.0959	1.000	Branch Enabled and Wait (BEW)	0.2350	0.0132
+0.4026	0.0996	1.000	This instruction provides a means of stopping pro-	0.3891	0.0160
+0.4147	0.0974	1.000	gram execution. The interruption mechanism is en-	0.3914	0.0224
+0.4288	0.5132	1.000	Index Branching	0.1541	0.0161
+0.4345	0.0977	1.000	abled, and the instruction counter contents are re-	0.3891	0.0131
+0.4491	0.1466	1.000	with bits 0-18 of the effective address of the	0.3402	0.0131
+0.4645	0.0977	1.000	operation as in BRANCH ENABLED. However, no fur-	0.3912	0.0158
+0.4651	0.5132	1.000	In index branching, the count field of an index reg-	0.3929	0.0146
+0.4811	0.0977	1.000	ther instruction will be executed until after an inter-	0.3910	0.0116
+0.4811	0.5132	1.000	ister J is counted down, which sets the index count	0.3910	0.0131
+0.4956	0.0977	1.000	ruption occurs.	0.1090	0.0131
+0.4956	0.5132	1.000	zero indicator, xcz, according to whether or not the	0.3910	0.0147
+0.5078	0.5130	1.000	count field became zero. This setting of xcz deter-	0.3913	0.0181
+0.5261	0.5132	1.000	mines the success of branching. Limited increment-	0.3910	0.0146
+0.5320	0.0959	1.000	No Operation (NOP)	0.1523	0.0145
+0.5407	0.5131	1.000	ing of the value field of the index register is possible.	0.3893	0.0162
+0.5509	0.0977	1.000	The address and index fields of NO OPERATION are not	0.3891	0.0116
+0.5536	0.5148	1.000	Normal branch address modification can be provided	0.3895	0.0184
+0.5654	0.0959	1.000	interpreted, so they cannot cause any indicators to be	0.3910	0.0146
+0.5712	0.5132	1.000	by index register XI. The index branching instruc-	0.3910	0.0145
+0.5814	0.0959	1.000	actuated; no addressable bits or locations are altered.	0.3872	0.0132
+0.5872	0.5132	1.000	tions are specified in the half-word format shown be-	0.3910	0.0131
+0.5973	0.0977	1.000	The computer proceeds to the next instruction in	0.3891	0.0133
+0.6032	0.5113	1.000	low. Bits 0-18, the address, represent the branch ad-	0.3929	0.0147
+0.6147	0.0958	1.000	sequence.	0.0696	0.0119
+0.6177	0.5132	1.000	dress. Bits 19-22 specify the index register J whose	0.3910	0.0145
+0.6290	0.5130	1.000	count field will be counted down. Bits 23-30 specify	0.3895	0.0198
+0.6321	0.0959	1.000	PROGRAMMING NOTE	0.1466	0.0118
+0.6482	0.5113	1.000	the operation, where bits 23, 24, 29, and 30 are modi-	0.3910	0.0161
+0.6482	0.0940	1.000	The operation code for NO OPERATION differs from	0.3910	0.0146
+0.6627	0.0940	1.000	those for BRANcH and BRANCH ENABLED AND WAIT in	0.3929	0.0161
+0.6642	0.5094	1.000	fiers. Bit 31 determines whether or not there will be	0.3929	0.0131
+0.6755	0.5094	1.000	branch address modification using index register XI.	0.3948	0.0182
+0.6773	0.0940	1.000	only one bit position each. Similarly, the operation	0.3910	0.0176
+0.6933	0.5094	1.000	When bit 29 is zero, the instruction is COUNT AND	0.3929	0.0161
+0.6948	0.0940	1.000	code for STORE INSTRUCTION COUNTER IF NO OPERATION	0.3891	0.0116
+0.7093	0.5075	1.000	BRANCH; when the bit is one, the instruction is COUNT,	0.3966	0.0160
+0.7093	0.0940	1.000	differs in only one bit position from BRANCH ON BIT.	0.3891	0.0131
+0.7224	0.5094	1.000	BRANCH, AND REFILL.	0.1541	0.0161
+0.7252	0.0940	1.000	Thus, a branching or waiting instruction can readily	0.3891	0.0133
+0.7390	0.0958	1.000	be switched from active to inactive condition within	0.3873	0.0130
+0.7542	0.0921	1.000	a program.	0.0847	0.0163
+0.7573	0.5414	1.000	ADDRESS	0.0470	0.0116
+0.7587	0.6729	1.000	OP	0.0150	0.0073
+0.8052	0.5094	1.000	Count and Branch (CB)	0.1673	0.0132
+0.8096	0.0921	1.000	Indicator Branching	0.1842	0.0160
+0.8299	0.5094	1.000	The count field of index register J is counted down	0.3891	0.0131
+0.8430	0.5056	1.000	by subtracting one at bit position 45, and appropri-	0.3947	0.0176
+0.8445	0.0921	1.000	In indicator branching, the success of branching de-	0.3910	0.0131
+0.8576	0.5056	1.000	ately setting the index count zero indicator, xcz. The	0.3966	0.0174
+0.8576	0.0921	1.000	pends upon a test of one of the 64 indicators. Normal	0.3929	0.0161
+0.8689	0.0901	1.000	modification of the branch address is provided by in-	0.3951	0.0218
+0.8735	0.5056	1.000	value field of index register J is incremented as indi-	0.3947	0.0160
+0.8866	0.5075	1.000	cated by the table below:	0.1842	0.0189
+0.8881	0.0902	1.000	dex register XI (address 17). The indicator branch-	0.3891	0.0131
+0.9273	0.0902	1.000	40 IBM 7030	0.1090	0.0118

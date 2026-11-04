@@ -1,0 +1,116 @@
+0.0567	0.5056	1.000	to right, the lower row to bit positions 32 through	0.3929	0.0161
+0.0581	0.1071	1.000	The end-of-operation indication signalling the	0.3741	0.0131
+0.0727	0.5056	1.000	63. When a light is on, it corresponds to a one bit;	0.3929	0.0161
+0.0727	0.3252	1.000	control operation is	0.1560	0.0146
+0.0741	0.0883	1.000	completion of the SOUND GoNG	0.2406	0.0131
+0.0887	0.0883	1.000	given immediately upon the initiation of the opera-	0.3929	0.0147
+0.0887	0.5056	1.000	when it is off, to a zero bit.	0.1936	0.0132
+0.1032	0.0902	1.000	tion, even though the striking of the gong takes place	0.3910	0.0147
+0.1177	0.0883	1.000	some time later. The unit is subsequently available	0.3929	0.0145
+0.1352	0.0883	1.000	for another instruction. If a number of SOUND GONG	0.3929	0.0117
+0.1424	0.5075	1.000	Numerical Switches	0.1447	0.0131
+0.1497	0.0883	1.000	control instructions are given so that the next in-	0.3929	0.0145
+0.1642	0.5075	1.000	There are two banks of decimal columnar switches.	0.3910	0.0116
+0.1642	0.0883	1.000	struction follows immediately after the end of opera-	0.3929	0.0145
+0.1788	0.5056	1.000	Each bank consists of eight columns, each of which	0.3929	0.0146
+0.1802	0.0902	1.000	tion because of the preceding one, the gong sounds	0.3910	0.0146
+0.1948	0.5056	1.000	contains keys for the digits 0-9 and a reset key. Each	0.3929	0.0146
+0.1962	0.0883	1.000	at its maximum rate of approximately once per	0.3929	0.0132
+0.2089	0.5055	1.000	column is encoded with four bits. Digits 0-9 are en-	0.3949	0.0170
+0.2122	0.0883	1.000	second.	0.0526	0.0102
+0.2252	0.5075	1.000	coded 0000-1001. When no digit key is depressed,	0.3910	0.0161
+0.2297	0.1071	1.000	The other set of control functions is associated with	0.3741	0.0116
+0.2412	0.5075	1.000	the output for the column is encoded I11l.	0.3083	0.0131
+0.2442	0.0902	1.000	the console printer and keyboard. In order to per-	0.3910	0.0146
+0.2573	0.5226	1.000	Each digit key is illuminated when depressed. The	0.3778	0.0161
+0.2587	0.0883	1.000	form a function, the required code has to be trans-	0.3910	0.0161
+0.2733	0.5075	1.000	depression of any key releases the other in the same	0.3910	0.0161
+0.2747	0.0902	1.000	mitted to the console printer by means of a WRITE	0.3872	0.0147
+0.2892	0.5056	1.000	column. There is also a general release bar for	0.3929	0.0145
+0.2906	0.0883	1.000	instruction. When these codes are sent to the console	0.3929	0.0118
+0.3036	0.5056	1.000	each of the two banks.	0.1635	0.0147
+0.3052	0.0865	1.000	during writing, they perform the indicated function	0.3947	0.0176
+0.3212	0.5207	1.000	When a READ instruction is issued, the setting of	0.3797	0.0161
+0.3212	0.0883	1.000	but do not cause any printing. The code can be en-	0.3947	0.0161
+0.3358	0.0865	1.000	tered by depressing the appropriate key during read-	0.3966	0.0161
+0.3372	0.5056	1.000	the 16 numerical switches makes up the 64 bits of	0.3947	0.0161
+0.3501	0.0864	1.000	ing. The following list describes these codes.	0.3348	0.0184
+0.3532	0.5056	1.000	the second input word, from left to right, the four	0.3929	0.0147
+0.3677	0.5075	1.000	bits of the leftmost column occupying bit positions	0.3910	0.0145
+0.3836	0.5056	1.000	O through 3.	0.0959	0.0147
+0.3836	0.3459	1.000	KEY THAT GENER-	0.1203	0.0118
+0.3837	0.2011	1.000	INTERPRETATION	0.1165	0.0116
+0.3967	0.3534	1.000	ATES CODE DUR-	0.1071	0.0118
+0.3967	0.2049	1.000	OF CODE DURING	0.1109	0.0118
+0.4012	0.5244	1.000	The keys in each column are arranged from bot-	0.3741	0.0146
+0.4080	0.3627	1.000	ING READING	0.0904	0.0139
+0.4083	0.2311	1.000	WRITING	0.0584	0.0134
+0.4099	0.0921	1.000	BINARY CODE	0.0902	0.0116
+0.4172	0.5075	1.000	tom to top in the order: reset, 0-9. Reset and digits	0.3910	0.0147
+0.4282	0.2008	1.000	Blank	0.0475	0.0143
+0.4285	0.3476	1.000	Erase	0.0436	0.0137
+0.4286	0.0958	1.000	1111 0111	0.0828	0.0134
+0.4317	0.5075	1.000	8 and 9 are distinguished in appearance from digits	0.3910	0.0147
+0.4462	0.0958	1.000	Il1l 1011	0.0827	0.0132
+0.4462	0.2011	1.000	Tabulate	0.0714	0.0131
+0.4462	0.3477	1.000	Tabulate	0.0714	0.0131
+0.4476	0.5056	1.000	0-7 to facilitate entry of octal data. The rightmost	0.3947	0.0146
+0.4602	0.3475	1.000	Backspace	0.0794	0.0186
+0.4618	0.2010	1.000	Backspace	0.0792	0.0167
+0.4621	0.5056	1.000	two columns in each bank are similarly distinguished	0.3929	0.0146
+0.4651	0.0959	1.000	1111 1100	0.0846	0.0116
+0.4782	0.3421	1.000	Carriage Return	0.1278	0.0176
+0.4782	0.5075	1.000	from the first six. The banks are grouped together	0.3910	0.0131
+0.4797	0.2011	1.000	Carriage Return	0.1222	0.0161
+0.4824	0.0959	1.000	11l1 1101	0.0827	0.0118
+0.4941	0.5056	1.000	physically.	0.0809	0.0147
+0.4985	0.2011	1.000	End	0.0338	0.0131
+0.4985	0.3477	1.000	End	0.0338	0.0131
+0.5000	0.0959	1.000	1111 1110	0.0846	0.0116
+0.5479	0.5075	1.000	Numerical Display	0.1372	0.0146
+0.5682	0.0883	1.000	Binary Keys and Key-Lights	0.2030	0.0147
+0.5697	0.5075	1.000	A group of sixteen positions is used to display num-	0.3929	0.0161
+0.5858	0.5056	1.000	bers in decimal or octal form. Each position con-	0.3947	0.0161
+0.5900	0.0865	1.000	The console has 64 keys, arranged in two banks of 32	0.3947	0.0147
+0.6003	0.5075	1.000	sists of a device for displaying one of twelve char-	0.3910	0.0146
+0.6045	0.0865	1.000	each, and grouped by fours within each bank. Asso-	0.3947	0.0176
+0.6162	0.5075	1.000	acters, or a blank. The twelve characters that can be	0.3911	0.0134
+0.6191	0.0865	1.000	ciated with each key is a binary key-light that can be	0.3947	0.0176
+0.6321	0.7989	1.000	and decimal	0.0996	0.0118
+0.6321	0.5056	1.000	displayed are the digits 0-9, minus,	0.2970	0.0161
+0.6352	0.0865	1.000	set by the output word from the computer or by the	0.3947	0.0161
+0.6467	0.5056	1.000	point. The character to be displayed at any position	0.3929	0.0161
+0.6497	0.0865	1.000	key. Each group of keys and key-lights has a frame	0.3947	0.0176
+0.6627	0.5056	1.000	is selected by decoding four bits sent from the com-	0.3947	0.0161
+0.6657	0.0865	1.000	for a single labeling strip which can be readily	0.3947	0.0174
+0.6773	0.5075	1.000	puter. Codes 0000-1001 are decoded as 0-9; 1010 is	0.3910	0.0146
+0.6817	0.0883	1.000	changed. The key has a toggle action with a center	0.3929	0.0147
+0.6933	0.5075	1.000	decoded as a point; 1011 is decoded as minus (-);	0.3910	0.0146
+0.6976	0.0883	1.000	neutral position and two extreme latching positions.	0.3929	0.0146
+0.7050	0.5092	1.000	1100, 1101, 1110, and 1111 are all decoded as blanks.	0.3894	0.0193
+0.7136	0.0883	1.000	In one extreme position the key turns the light on;	0.3929	0.0146
+0.7267	0.5244	1.000	When a WRITE instruction is issued, the contents of	0.3759	0.0132
+0.7282	0.0883	1.000	in the other extreme position it turns the light off	0.3891	0.0146
+0.7412	0.5075	1.000	the second output word are displayed in the numeri-	0.3929	0.0146
+0.7442	0.0883	1.000	When latched in either position, it holds the light on	0.3910	0.0146
+0.7573	0.5075	1.000	cal display, from left to right, starting with bits O	0.3910	0.0146
+0.7587	0.0883	1.000	or off so that it cannot be changed by the computer.	0.3929	0.0131
+0.7718	0.5075	1.000	through 3 for the leftmost digit. A character remains	0.3929	0.0146
+0.7747	0.0883	1.000	When the key is in the neutral position, the corre-	0.3929	0.0147
+0.7878	0.5075	1.000	displayed on the numerical display until it is changed	0.3910	0.0146
+0.7892	0.0883	1.000	sponding light can be set on or off by a WRITE	0.3910	0.0145
+0.8022	0.5075	1.000	by a subsequent wRITE instruction. The numerical	0.3911	0.0165
+0.8064	0.0883	1.000	instruction.	0.0847	0.0122
+0.8182	0.5056	1.000	display is aligned digit by digit with the sixteen nu-	0.3947	0.0161
+0.8227	0.2801	1.000	to the states of the 64 bi-	0.1992	0.0116
+0.8241	0.1071	1.000	The bits corresponding	0.1748	0.0131
+0.8327	0.5075	1.000	merical switches. There is no direct physical or elec-	0.3910	0.0147
+0.8387	0.0902	1.000	nary key-lights make up the first input word when	0.3910	0.0147
+0.8503	0.5075	1.000	trical connection, however.	0.1936	0.0116
+0.8532	0.0883	1.000	a READ instruction is issued and the first output word	0.3910	0.0132
+0.8662	0.5244	1.000	The following list describes the code set used in	0.3742	0.0150
+0.8691	0.0883	1.000	when a WrITE instruction is issued. The upper row	0.3929	0.0132
+0.8793	0.5074	1.000	decoding the information sent to the numerical dis-	0.3913	0.0182
+0.8852	0.0883	1.000	corresponds to bit positions 0 through 31, from left	0.3929	0.0146
+0.9200	0.7575	1.000	External Units	0.0940	0.0103
+0.9201	0.8759	1.000	151	0.0244	0.0087

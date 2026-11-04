@@ -1,0 +1,103 @@
+0.0654	0.1034	1.000	Control (CTL)	0.0959	0.0131
+0.0669	0.5207	1.000	device is so selected, all operations giving this chan-	0.3872	0.0147
+0.0827	0.5207	1.000	nel address refer to the same device until a LOCATE	0.3872	0.0118
+0.0842	0.1053	1.000	This instruction is used to initiate the performance of	0.3891	0.0146
+0.0970	0.1032	1.000	certain functions at the external devices. Among	0.3914	0.0189
+0.0973	0.5207	1.000	is given to select another device on that control unit.	0.3872	0.0133
+0.1133	0.5376	1.000	The right effective address of the instruction con-	0.3703	0.0131
+0.1163	0.1034	1.000	these functions are:	0.1429	0.0102
+0.1257	0.5205	1.000	tains the selection address for the channel specified	0.3875	0.0172
+0.1336	0.1353	1.000	Turning on the ResErveD light	0.2293	0.0132
+0.1439	0.5207	1.000	by the left effective address. The selection address is	0.3872	0.0131
+0.1497	0.1353	1.000	Sounding the gong	0.1372	0.0131
+0.1584	0.5207	1.000	three bits long and appears in bit positions 47 through	0.3853	0.0146
+0.1642	0.1353	1.000	Rewinding of tape	0.1353	0.0131
+0.1730	0.5188	1.000	49 of the instruction. It is sent to and decoded at the	0.3891	0.0131
+0.1802	0.1353	1.000	Backspacing of tape	0.1429	0.0131
+0.1903	0.5188	1.000	addressed control unit. The remainder of the right	0.3891	0.0146
+0.1948	0.1353	1.000	Writing of tape mark	0.1541	0.0131
+0.2048	0.5188	1.000	effective address is ignored. An EoP indication is given	0.3872	0.0146
+0.2151	0.1184	1.000	The right effective address contains control infor-	0.3741	0.0131
+0.2194	0.5188	1.000	when the operation is completed as specified.	0.3195	0.0161
+0.2260	0.1013	1.000	mation that is decoded at the device specified by the	0.3914	0.0197
+0.2354	0.5337	1.000	In the case of the LocATe, an exception to the regu-	0.3724	0.0151
+0.2456	0.1015	1.000	channel address. If more than one device is accom-	0.3891	0.0116
+0.2497	0.5167	1.000	lar instruction rejection occurs. Since it may be de-	0.3875	0.0170
+0.2615	0.1015	1.000	modated by a channel address; the instruction may	0.3891	0.0133
+0.2674	0.5169	1.000	sired to switch from a device that is in the not-ready	0.3872	0.0132
+0.2761	0.1015	1.000	apply to the control unit or the device last selected by	0.3891	0.0146
+0.2833	0.5169	1.000	status to one that is ready, the LocATE is accepted re-	0.3872	0.0132
+0.2921	0.0996	1.000	a LOCATE instruction, depending upon the control	0.3910	0.0131
+0.2979	0.5169	1.000	gardless of the state of the unit-ready status bit in the	0.3872	0.0132
+0.3067	0.0996	1.000	function. The code specifying the control function	0.3910	0.0146
+0.3124	0.5169	1.000	control word. Thus, a Unit Not Ready Reject will	0.3872	0.0146
+0.3212	0.0959	1.000	appears in the rightmost byte of the address, bits 42	0.3947	0.0161
+0.3270	0.5169	1.000	not be given for a LoCATe when the device originally	0.3872	0.0146
+0.3372	0.0977	1.000	through 49. Only this byte is sent to the unit; the	0.3929	0.0161
+0.3409	0.5130	1.000	selected is not ready, or the new device addressed by	0.3913	0.0190
+0.3532	0.0977	1.000	rest of the right effective address is ignored. An EoP	0.3929	0.0132
+0.3590	0.5169	1.000	the right effective address of the instruction is not	0.3872	0.0131
+0.3653	0.0957	1.000	indication is given when operation is completed as	0.3932	0.0189
+0.3735	0.5150	1.000	ready. Normally, the common control unit will be	0.3891	0.0146
+0.3836	0.0977	1.000	specified. No distinction is made between instructions	0.3929	0.0132
+0.3894	0.5150	1.000	ready and will terminate the instruction. The control	0.3872	0.0147
+0.3997	0.0996	1.000	that cause some operations to be performed and those	0.3910	0.0131
+0.4038	0.5149	1.000	word in exchange storage must be manually cleared	0.3874	0.0180
+0.4142	0.0996	1.000	that are superfluous. The latter case can arise when	0.3891	0.0131
+0.4200	0.5150	1.000	from the exchange maintenance console.	0.2932	0.0131
+0.4288	0.0996	1.000	the instruction specifies a state or a mode of operation	0.3891	0.0146
+0.4448	0.0996	1.000	that is already set up in the addressed unit.	0.3139	0.0146
+0.4606	0.1165	1.000	An exception to the normal process of the execu-	0.3741	0.0133
+0.4608	0.5132	1.000	INDICATORS	0.0827	0.0116
+0.4752	0.0996	1.000	tion of an instruction takes place in the case of re-	0.3891	0.0147
+0.4797	0.5301	1.000	Exchange check reject (EKJ), channel busy reject	0.3722	0.0161
+0.4897	0.0977	1.000	windling of tape. In order that another tape unit con-	0.3929	0.0147
+0.4956	0.5150	1.000	(CBJ), exchange program check (EPGK), unit check	0.3853	0.0160
+0.5058	0.0977	1.000	nected to the same control unit may be used while	0.3910	0.0131
+0.5102	0.5169	1.000	(UK), and end of operation (EOP).	0.2444	0.0147
+0.5218	0.0977	1.000	rewinding takes place, the Eop indication is given and	0.3891	0.0131
+0.5348	0.5132	1.000	PROGRAMMING NOTE	0.1485	0.0117
+0.5363	0.0977	1.000	the operation at the exchange is regarded as com-	0.3910	0.0131
+0.5523	0.0977	1.000	pleted immediately after the initiation of the opera-	0.3891	0.0131
+0.5536	0.5132	1.000	When a parity error is discovered on transmitting the	0.3872	0.0147
+0.5669	0.0977	1.000	tion. The unit subsequently proceeds with rewinding	0.3891	0.0147
+0.5697	0.5113	1.000	selection address from the exchange to the unit, the	0.3891	0.0146
+0.5827	0.0959	1.000	and is in the not-ready status. When rewinding is	0.3910	0.0133
+0.5842	0.5113	1.000	execution of the LOCATE instruction is suppressed, but	0.3891	0.0161
+0.5973	0.0959	1.000	completed, a channel signal is given and the unit	0.3910	0.0146
+0.6003	0.5113	1.000	an EoP indication always accompanies the uk indica-	0.3891	0.0146
+0.6133	0.0959	1.000	automatically assumes the ready status. After the EOP	0.3910	0.0131
+0.6148	0.5113	1.000	tion.	0.0395	0.0145
+0.6279	0.0921	1.000	indication following the initiation of the instruction	0.3929	0.0161
+0.6439	0.0940	1.000	is received, another tape unit can be selected by means	0.3929	0.0146
+0.6551	0.5112	1.000	Release (REL)	0.0998	0.0153
+0.6584	0.0940	1.000	of a LOCATE instruction.	0.1711	0.0131
+0.6744	0.5113	1.000	This instruction immediately terminates any opera-	0.3872	0.0174
+0.6800	0.0902	1.000	INDICATORS	0.0866	0.0164
+0.6901	0.5130	1.000	tion in progress at the external unit specified by the	0.3856	0.0174
+0.6976	0.0940	1.000	All input-output reject and status indicators.	0.3195	0.0176
+0.7048	0.5130	1.000	channel address and resets to zero the EPGK, UK, EE,	0.3857	0.0168
+0.7194	0.0921	1.000	PROGRAMMING NOTE	0.1523	0.0176
+0.7224	0.5113	1.000	EOP, cS and SEOP status bits in the control word. When	0.3872	0.0131
+0.7384	0.5113	1.000	the activities at the unit due to the released operation	0.3872	0.0131
+0.7393	0.0939	1.000	When a parity error is discovered on transmitting the	0.3912	0.0156
+0.7529	0.5113	1.000	have ceased, the EOP indication is given.	0.2838	0.0132
+0.7542	0.0921	1.000	control code from the exchange to the unit, the execu-	0.3929	0.0161
+0.7674	0.5263	1.000	If the addressed channel is reading or writing, data	0.3722	0.0147
+0.7703	0.0921	1.000	tion of the coNtroL instruction is suppressed. The	0.3910	0.0146
+0.7833	0.5113	1.000	transfer is terminated at the completion of the cur-	0.3853	0.0146
+0.7848	0.0902	1.000	uK indication in this case is always accompanied by	0.3929	0.0146
+0.7994	0.0902	1.000	EOP, but an EPGK indication due to an invalid code is	0.3929	0.0146
+0.7994	0.5094	1.000	rent word. The unit then proceeds to the end of the	0.3891	0.0131
+0.8137	0.0901	1.000	suppressed.	0.0848	0.0180
+0.8139	0.5113	1.000	block, whereupon all control word status bits except	0.3872	0.0145
+0.8299	0.5113	1.000	unit ready are reset to zero, and the EOP status bit is	0.3853	0.0131
+0.8459	0.5094	1.000	turned on. If a CONTROL Or LOCATE is in progress at	0.3872	0.0132
+0.8536	0.0881	1.000	Locate (LOC)	0.0964	0.0167
+0.8605	0.5094	1.000	the specified unit, the released operation is executed	0.3872	0.0147
+0.8750	0.0902	1.000	This instruction is used to select one of several devices	0.3910	0.0132
+0.8764	0.5094	1.000	normally except that at the completion of the opera-	0.3872	0.0132
+0.8877	0.0883	1.000	accommodated by a single channel address. Once a	0.3929	0.0154
+0.8909	0.5094	1.000	tion all control word status bits indirating special con-	0.3872	0.0146
+0.9258	0.1372	1.000	IBM 7030	0.0677	0.0133
+0.9273	0.0883	1.000	120	0.0244	0.0116

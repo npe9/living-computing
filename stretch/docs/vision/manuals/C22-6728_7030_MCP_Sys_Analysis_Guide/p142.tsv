@@ -1,0 +1,108 @@
+0.0727	0.0677	1.000	removal from the WT queue, it forces the phase 1	0.3703	0.0116
+0.0727	0.5094	1.000	1. The command dispatcher is set as if in the	0.3440	0.0131
+0.0872	0.0658	1.000	tape termination procedure, provided that the write	0.3872	0.0116
+0.0887	0.4944	1.000	bypass mode.	0.1015	0.0116
+0.1017	0.0658	1.000	tape has not, by itself, just applied this procedure.	0.3835	0.0131
+0.1032	0.5094	1.000	2. Phase 1 is in a bypass configuration; namely,	0.3647	0.0117
+0.1163	0.0658	1.000	Should this be the case, VSSREW just returns to	0.3609	0.0131
+0.1177	0.4962	1.000	CR to SC to E and back. The VREQ routine is set to	0.3891	0.0117
+0.1308	0.0677	1.000	VSETX to get the next parameter from the WT queue.	0.3966	0.0116
+0.1321	0.4944	1.000	service requests from E.	0.1898	0.0118
+0.1467	0.5094	1.000	3. The VTSA queue contains two tape IOD numbers,	0.3947	0.0118
+0.1467	0.0677	1.000	VSSREW is able to make the distinction by testing	0.3684	0.0103
+0.1612	0.4944	1.000	VRTP and VWTP, and the tapes have ST destinations.	0.3985	0.0133
+0.1612	0.0677	1.000	the record and file counts, both of which would be	0.3684	0.0118
+0.1758	0.0677	1.000	zero if - VSSREW were picked up when a new tape was	0.3985	0.0118
+0.1773	0.4962	1.000	VTSA is blocked with a non-zero VX1.	0.2820	0.0103
+0.1903	0.5113	1.000	4. All functions programs are devoid of assigned	0.3665	0.0133
+0.1903	0.0677	1.000	being attached.	0.1128	0.0118
+0.2064	0.4944	1.000	buffer areas except CR, ST, RT. These are ultimate	0.3985	0.0131
+0.2194	0.0677	1.000	The System Input EOF Command	0.2425	0.0118
+0.2209	0.4944	1.000	sources of information for the buffers and have a	0.3628	0.0103
+0.2355	0.4944	1.000	full complement of 34 cards assigned.	0.2838	0.0116
+0.2485	0.0677	1.000	The EOF command is received in either of the two	0.3741	0.0103
+0.2500	0.5113	1.000	If the command dispatcher is set as if in the bypass	0.3816	0.0131
+0.2630	0.0677	1.000	card reader modes from a card which should be the	0.3853	0.0103
+0.2645	0.4944	1.000	mode, one of the three routines, VONLIB, VOFFLB,	0.3929	0.0131
+0.2791	0.0658	1.000	last card in the file. A file terminated in this way	0.3759	0.0103
+0.2805	0.4944	1.000	and VBSTRT will be addressed by the initial transi-	0.3835	0.0102
+0.2921	0.2744	1.000	"Service the card reader,"	0.2068	0.0131
+0.2936	0.0658	1.000	will not cause the message,	0.2086	0.0116
+0.2951	0.4944	1.000	tion command entry. The VBSTRT routine is used	0.3797	0.0116
+0.3081	0.0658	1.000	to be printed, as would a card reader file terminated	0.3947	0.0116
+0.3096	0.4944	1.000	when a bypass command is received in the bypass	0.3684	0.0116
+0.3227	0.0658	1.000	by EE alone. It will set a bit, VEOFX, to 1, to	0.3571	0.0116
+0.3241	0.4944	1.000	mode.	0.0489	0.0116
+0.3241	0.5432	1.000	This routine starts up the card reader by	0.3139	0.0116
+0.3372	0.0658	1.000	indicate that the card reader will be inactive for an	0.3816	0.0102
+0.3387	0.4944	1.000	using the VACT routine for CR. As a safeguard it	0.3759	0.0116
+0.3517	0.0677	1.000	extended period. The procedure for restarting the	0.3778	0.0131
+0.3532	0.4944	1.000	also modified the particular entry in the command	0.3703	0.0117
+0.3663	0.0677	1.000	card reader is unaffected, however.	0.2669	0.0131
+0.3677	0.4944	1.000	dispatcher which addressed it, so that BSTRT will	0.3741	0.0132
+0.3807	0.0826	1.000	Internally, the EOF command works in conjunction	0.3779	0.0135
+0.3821	0.4944	1.000	never be addressed again. Since the program is all	0.3853	0.0118
+0.3967	0.0658	1.000	with -VEES parameter which is forwarded from CR	0.3872	0.0118
+0.3967	0.4944	1.000	set up for bypass operation, no other action is	0.3440	0.0133
+0.4112	0.0658	1.000	when an EE is received on the card reader. This	0.3703	0.0103
+0.4125	0.4943	1.000	required.	0.0716	0.0122
+0.4258	0.0658	1.000	parameter propagates itself to the ultimate destination	0.4060	0.0118
+0.4273	0.5113	1.000	The VONLIB and VOFFLB routines are able to	0.3459	0.0103
+0.4403	0.0677	1.000	of the cards, which would be WT in the online mode,	0.3891	0.0133
+0.4418	0.4944	1.000	initiate their respective modes as they normally	0.3571	0.0118
+0.4548	0.0658	1.000	and E in the bypass mode. When it is picked up at the	0.4023	0.0118
+0.4564	0.4944	1.000	would, except that the VOFFLB routine must set a	0.3741	0.0131
+0.4694	0.0658	1.000	final destination, it tests VEOFX and puts out the	0.3684	0.0132
+0.4709	0.4944	1.000	bit, VCSAW, to 1 to satisfy the test for the last card	0.3910	0.0131
+0.4839	0.0677	1.000	service message through the commentator only if the	0.3929	0.0132
+0.4855	0.4944	1.000	in the card reader file despite the fact that the	0.3440	0.0116
+0.5000	0.0677	1.000	bit is zero. By thus delaying the message, the EOF	0.3872	0.0116
+0.5015	0.4962	1.000	command did not originate from a card.	0.2951	0.0102
+0.5145	0.0677	1.000	routine gets a chance to suppress the printing of the	0.3853	0.0116
+0.5160	0.5132	1.000	The ST destinations of the tapes in the VTSA queue	0.3741	0.0116
+0.5305	0.4944	1.000	is significant because either overlapped mode will	0.3722	0.0116
+0.5320	0.0658	1.000	message.	0.0714	0.0087
+0.5436	0.0827	1.000	When the VEOF routine gets control, it first tests	0.3722	0.0131
+0.5451	0.4944	1.000	accept such tapes. However, if the destinations were	0.3985	0.0116
+0.5581	0.0658	1.000	to see if it was the last card in the file. If it was not,	0.4023	0.0131
+0.5596	0.4962	1.000	WT, the offline mode would reject the tapes, putting	0.3872	0.0146
+0.5741	0.0658	1.000	the command is ignored, otherwise the VEOFX bit	0.3778	0.0116
+0.5741	0.4944	1.000	them through an unload cycle. This would be a	0.3496	0.0131
+0.5884	0.0657	1.000	is set.	0.0565	0.0121
+0.5887	0.1278	1.000	The VEOFX bit is also set by the VOFFLB	0.3195	0.0116
+0.5887	0.4962	1.000	nuisance to the operator in starting up the system in	0.3872	0.0116
+0.6032	0.0658	1.000	and VOFFLN routines. After setting the VEOFX, the	0.4004	0.0117
+0.6032	0.4962	1.000	the offline mode. Phase 4 operation is started in	0.3647	0.0132
+0.6177	0.4962	1.000	the normal way by the tape switch mechanism when	0.3778	0.0132
+0.6177	0.0677	1.000	VEOFB routine, (corresponding to EOF in bypass	0.3816	0.0132
+0.6321	0.0677	1.000	mode), just gives a normal return to commands. The	0.4004	0.0133
+0.6336	0.4944	1.000	and if the first tape is attached to RT.	0.2838	0.0118
+0.6467	0.0677	1.000	VEOFN, corresponding to EOF in online mode, then	0.3872	0.0133
+0.6612	0.0677	1.000	gives control to the VSREW routine as if it had been	0.3853	0.0118
+0.6642	0.4962	1.000	The Input Program Fixup Routines	0.2632	0.0145
+0.6758	0.0677	1.000	a rewind command. The VBSTRT routine, corres-	0.3853	0.0133
+0.6918	0.5000	1.000	The input program normally uses three I-O tables	0.3684	0.0131
+0.6918	0.0677	1.000	ponding to a BYPASS command received in the bypass	0.4004	0.0131
+0.7064	0.0695	1.000	mode, is a special routine used in starting the sys-	0.3835	0.0131
+0.7078	0.5000	1.000	of exits, and uses certain others during error recov-	0.3929	0.0131
+0.7224	0.0677	1.000	tem.	0.0376	0.0102
+0.7224	0.5000	1.000	ery. EOP, EE, and CS interrupts relate directly to	0.3872	0.0131
+0.7369	0.5000	1.000	the functional programs, and no special fixup routines	0.3985	0.0131
+0.7515	0.0677	1.000	The Initial Start of the Input Program	0.2820	0.0116
+0.7515	0.5000	1.000	are provided. The input program fixup routines are	0.3872	0.0131
+0.7660	0.5000	1.000	confined to UK and EPGK error recovery routines	0.3684	0.0116
+0.7805	0.0695	1.000	The input program starts when the command package	0.3929	0.0131
+0.7820	0.4981	1.000	for the various pseudo-ops.	0.2068	0.0117
+0.7951	0.0677	1.000	issues one of the transition commands to it. The	0.3665	0.0116
+0.7964	0.5169	1.000	The basic purpose of the input program UK pro-	0.3571	0.0118
+0.8078	0.0694	1.000	command sets the mode of operation. The program	0.3837	0.0154
+0.8109	0.5000	1.000	cedure is to complete successfully any I-O pseudo-ops	0.4023	0.0118
+0.8255	0.4981	1.000	initiated by the input program. There are two possi-	0.3966	0.0118
+0.8255	0.0677	1.000	is initially set up so that some of the normal transi-	0.3872	0.0103
+0.8400	0.4981	1.000	ble results of the UK procedure:	0.2425	0.0118
+0.8400	0.0695	1.000	tion routines can start the system. Specifically, it	0.3835	0.0133
+0.8545	0.0677	1.000	is made to appear as if the current mode were bypass	0.3985	0.0118
+0.8545	0.5150	1.000	1. A successful retry of the pseudo-op. This has	0.3741	0.0118
+0.8691	0.5000	1.000	no net effect on the input program.	0.2575	0.0118
+0.8691	0.0677	1.000	and the previous mode were offline, that is:	0.3252	0.0132
+0.9259	0.0695	1.000	142	0.0226	0.0087

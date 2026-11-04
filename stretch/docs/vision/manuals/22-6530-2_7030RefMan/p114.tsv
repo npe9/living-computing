@@ -1,0 +1,102 @@
+0.0596	0.4962	1.000	a selection address (LOCATE), control information	0.3947	0.0131
+0.0624	0.0883	1.000	tion address, is used for selecting one of a set of de-	0.3853	0.0146
+0.0755	0.4981	1.000	which is decoded by the external unit (CONTROL) OF	0.3929	0.0161
+0.0799	0.0883	1.000	vices connected to a control unit.	0.2312	0.0116
+0.0900	0.4981	1.000	it can be left blank (RELEASE). The right effective	0.3929	0.0147
+0.1061	0.0883	1.000	CHANNEL ADDRESS	0.1241	0.0103
+0.1061	0.4981	1.000	address is 18 bits long, and it appears in bit positions	0.3929	0.0161
+0.1202	0.0882	1.000	The channel addresses correspond to the 32 physical	0.3856	0.0183
+0.1206	0.4981	1.000	32 through 49. Some instructions use only part of	0.3947	0.0161
+0.1366	0.0883	1.000	exchange channels and are assigned the numbers 32	0.3853	0.0146
+0.1380	0.4981	1.000	this field.	0.0696	0.0132
+0.1526	0.0883	1.000	through 63. Within the range 32 through 63 the spe-	0.3853	0.0147
+0.1539	0.5188	1.000	The addresses of both half-words of the instruction	0.3722	0.0133
+0.1672	0.0883	1.000	cific assignment of the addresses is arbitrary and de-	0.3853	0.0160
+0.1700	0.5000	1.000	can be indexed. In the first half-word, index arith-	0.3929	0.0131
+0.1830	0.0883	1.000	pends upon the specific units in an installation. Once	0.3853	0.0161
+0.1845	0.5000	1.000	metic extends over the full 24 bits of the channel	0.3910	0.0146
+0.1973	0.0882	1.000	installed, the channel address of a specific unit (or	0.3856	0.0181
+0.2006	0.5019	1.000	address field of the instruction and the whole value	0.3910	0.0131
+0.2122	0.0863	1.000	a set of units when more than one unit is accommo-	0.3875	0.0161
+0.2151	0.5000	1.000	field of the index word, including its sign, but only	0.3929	0.0161
+0.2297	0.0883	1.000	dated by a control unit) remains fixed. The channel	0.3853	0.0146
+0.2311	0.5019	1.000	bits 12 through 18 of the effective address are used.	0.3891	0.0147
+0.2442	0.0883	1.000	address is specified by the left effective address of all	0.3872	0.0146
+0.2456	0.5037	1.000	The rest is ignored by the exchange. In the second	0.3893	0.0167
+0.2580	0.5017	1.000	half-word, index arithmetic extends over bits 32	0.3914	0.0191
+0.2615	0.0883	1.000	input-output instructions.	0.1842	0.0146
+0.2741	0.5017	1.000	through 50 of the instruction word and the whole	0.3913	0.0187
+0.2776	0.1015	1.000	The channel address determines the priority a unit	0.3741	0.0146
+0.2921	0.5019	1.000	value field of the index word, including its sign, but	0.3929	0.0146
+0.2921	0.0883	1.000	receives from the exchange in response to its service	0.3872	0.0146
+0.3044	0.0881	1.000	requests for bytes of data: the lower the channel ad-	0.3877	0.0200
+0.3081	0.5000	1.000	only bits 32 through 49 are used.	0.2350	0.0161
+0.3241	0.0865	1.000	dress of a unit, the higher is its priority. Conse-	0.3891	0.0160
+0.3387	0.0865	1.000	quently, units which cannot interrupt their operation	0.3891	0.0174
+0.3518	0.0881	1.000	will normally have lower channel addresses than those	0.3877	0.0199
+0.3690	0.0864	1.000	having weights of zero. The same priority applies	0.3912	0.0184
+0.3691	0.5019	1.000	Input-Output Instruction Indicators	0.3252	0.0176
+0.3852	0.0883	1.000	also to the transmission of words of data between the	0.3872	0.0146
+0.3967	0.5019	1.000	In order to permit effective simultaneous operation	0.3929	0.0161
+0.4026	0.0902	1.000	exchange and the core storage.	0.2180	0.0131
+0.4127	0.5038	1.000	of the computer and several external units, all input-	0.3910	0.0161
+0.4288	0.0883	1.000	SELECTION ADDRESS	0.1335	0.0103
+0.4288	0.5038	1.000	output operations are interlocked with the central	0.3910	0.0146
+0.4433	0.5038	1.000	program interruption system. This interlocking is	0.3910	0.0161
+0.4462	0.0902	1.000	The selection address selects one unit among a set of	0.3872	0.0132
+0.4593	0.5038	1.000	accomplished by means of two types of indicators: the	0.3910	0.0146
+0.4606	0.0883	1.000	units accommodated by a channel address. The selec-	0.3891	0.0161
+0.4752	0.5038	1.000	input-output reject indicators and the input-output	0.3929	0.0147
+0.4767	0.0902	1.000	tion addresses are assigned to a set of units indepen-	0.3872	0.0146
+0.4897	0.5038	1.000	status indicators. Indicators belonging to these two	0.3910	0.0133
+0.4912	0.0882	1.000	dently of other such sets, usually as 0, 1, 2, 3, etc., and	0.3875	0.0178
+0.5041	0.5055	1.000	groups can be turned on only as a result of an input-	0.3893	0.0168
+0.5058	0.0883	1.000	are specified by means of the right effective address	0.3891	0.0176
+0.5203	0.5038	1.000	output instruction or some operator interference. In	0.3929	0.0146
+0.5218	0.0883	1.000	of a LOCATE instruction. All READ, WRITE and CONTROL	0.3891	0.0161
+0.5363	0.5056	1.000	addition to the above, input-output operations can ac-	0.3910	0.0146
+0.5378	0.0865	1.000	instructions apply to units last selected by means of	0.3929	0.0174
+0.5509	0.5056	1.000	tivate other indicators of a more general nature. The	0.3910	0.0131
+0.5536	0.0902	1.000	a LOCATE instruction.	0.1504	0.0133
+0.5669	0.5056	1.000	latter indicators are described in this section only as	0.3910	0.0131
+0.5814	0.5038	1.000	far as they apply to input-output instructions.	0.3327	0.0174
+0.5974	0.0883	1.000	Format	0.0508	0.0131
+0.6163	0.0902	1.000	All instructions related to external units use a full-	0.3891	0.0131
+0.6177	0.5056	1.000	General Indicators	0.1391	0.0117
+0.6336	0.0883	1.000	word format, as shown below.	0.2124	0.0146
+0.6352	0.5226	1.000	Exchange Control Check (EK). Exchange control	0.3759	0.0146
+0.6497	0.5056	1.000	check is used to indicate that the exchange has failed	0.3910	0.0161
+0.6641	0.5055	1.000	to function properly in a manner that cannot be	0.3931	0.0174
+0.6695	0.1589	1.000	'CHANNEL !	0.0504	0.0127
+0.6730	0.2331	1.000	11000	0.0357	0.0116
+0.6730	0.4154	1.000	10000	0.0395	0.0131
+0.6744	0.3083	1.000	ADDRESS	0.0470	0.0087
+0.6802	0.5056	1.000	identified with any particular channel. It usually	0.3929	0.0161
+0.6817	0.1617	1.000	¡ADDRESS1	0.0451	0.0087
+0.6962	0.5075	1.000	signals the discovery of major control and addressing	0.3910	0.0160
+0.7106	0.5075	1.000	errors such as inserting a byte of data into another	0.3929	0.0147
+0.7151	0.1053	1.000	The effective address of the first half-word, called	0.3741	0.0131
+0.7282	0.5094	1.000	channel's control word. The turning on of ek does not	0.3891	0.0131
+0.7311	0.0883	1.000	the left effective address, of all input-output instruc-	0.3910	0.0147
+0.7442	0.5075	1.000	terminate the performance of the current input-output	0.3929	0.0146
+0.7444	0.0901	1.000	tions specifies the channel address. The address is	0.3912	0.0162
+0.7602	0.5094	1.000	operations, if any, in the exchange.	0.2575	0.0147
+0.7615	0.1278	1.000	bits long and appears in bit positions 12	0.3515	0.0146
+0.7747	0.5263	1.000	Address Invalid (AD). The purpose of this indicator	0.3722	0.0147
+0.7776	0.0902	1.000	through 18. The channel address register in the pro-	0.3910	0.0146
+0.7856	0.5073	1.000	is to signal errors in the information contained in an	0.3914	0.0204
+0.7921	0.0902	1.000	gram interruption mechanism is also seven bits long	0.3910	0.0161
+0.8036	0.5075	1.000	instruction. In the case of input-output instructions,	0.3910	0.0147
+0.8081	0.0902	1.000	and corresponds to bit positions 12 through 18 when	0.3910	0.0146
+0.8197	0.5094	1.000	this indicator is turned on if the right effective address	0.3891	0.0146
+0.8227	0.0902	1.000	addressed. The effective word address of the second	0.3910	0.0131
+0.8358	0.5094	1.000	of a READ, WRITE Or COPY CONTROL WORD is 0 through 31	0.3891	0.0145
+0.8387	0.0902	1.000	half-word of the instruction, called the right effective	0.3910	0.0132
+0.8517	0.5094	1.000	or exceeds the largest address of main storage. When	0.3891	0.0131
+0.8532	0.0902	1.000	address, contains information peculiar to the particu-	0.3929	0.0147
+0.8663	0.5094	1.000	an error causing the AD indication is found, the process-	0.3891	0.0146
+0.8691	0.0902	1.000	lar instruction: it can specify a control word address	0.3929	0.0132
+0.8795	0.5073	1.000	ing of the instruction is terminated. The unit is never	0.3913	0.0176
+0.8852	0.0902	1.000	in the core storage (READ, WRITE, COPY CONTROL WORD),	0.3929	0.0131
+0.9200	0.7237	1.000	IBM 7619 Exchange	0.1259	0.0103
+0.9201	0.8797	1.000	111	0.0207	0.0087

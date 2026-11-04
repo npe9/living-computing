@@ -1,0 +1,90 @@
+0.0814	0.7274	1.000	MDIMRE (AND MDIMRT)	0.1917	0.0189
+0.1450	0.0995	1.000	LINKAGE	0.0716	0.0123
+0.1612	0.5226	1.000	Boxes 1, 2, 3; 26, 24	0.1617	0.0147
+0.1743	0.1015	1.000	On Entry	0.0659	0.0119
+0.1903	0.5207	1.000	If the primitive dimension entry is to be set up as	0.3684	0.0146
+0.2020	0.1147	1.000	1. The calling sequence -- SIC, Mdimrz; B,	0.3327	0.0146
+0.2048	0.5207	1.000	part of a vle, the MDIMRE's index words which define	0.4023	0.0161
+0.2194	0.1015	1.000	MDIMRF -- is used to put just the dimension infor-	0.3759	0.0088
+0.2194	0.5207	1.000	its buffer area can be set up inside of the subroutine.	0.3947	0.0132
+0.2339	0.5207	1.000	MDIMRT get these bounds from the table management	0.4023	0.0161
+0.2339	0.0996	1.000	mation into the available area of the expanded instruc-	0.4004	0.0088
+0.2456	0.0977	1.000	tion unit located by the index word, Mdimrx. (The	0.3816	0.0189
+0.2500	0.5207	1.000	control block of the symbol table. Of course, when	0.3835	0.0131
+0.2615	0.0996	1.000	dimension data for a DR or a DRZ without a name is	0.3853	0.0118
+0.2630	0.5244	1.000	the dimension entry is part of the vle other informa-	0.3872	0.0118
+0.2776	0.0996	1.000	put into the unit.)	0.1297	0.0118
+0.2791	0.5207	1.000	tion (pertinent to the vle) must also be set up by	0.3571	0.0131
+0.2906	0.1147	1.000	2. The calling sequence -- SIC, Mdimrz; B,	0.3327	0.0146
+0.2936	0.5226	1.000	MDIMRF. The starting position of the vle is saved	0.3797	0.0146
+0.3067	0.0996	1.000	MDIMRT -- is used to make an entire dimension	0.3571	0.0116
+0.3067	0.5207	1.000	so later the total length can be computed and inserted	0.3966	0.0161
+0.3197	0.0996	1.000	entry in the vle portion of the symbol table. (The	0.3665	0.0132
+0.3212	0.5207	1.000	in the 13-bit field reserved for this purpose in the	0.3722	0.0161
+0.3358	0.0996	1.000	dimension data for a DR or DRZ with a name or for	0.3797	0.0116
+0.3372	0.5207	1.000	vle because the vle by its vary name is not of constant	0.4041	0.0146
+0.3517	0.0996	1.000	a SYN is put in the symbol table.)	0.2481	0.0116
+0.3517	0.5226	1.000	length. Since the vle contains dimension information	0.3929	0.0131
+0.3662	0.5225	1.000	in the function (i. e., the vle is not in the format of	0.3780	0.0152
+0.3663	0.1165	1.000	3. The value field of $3 contains the character	0.3459	0.0116
+0.3779	0.5226	1.000	the regular symbol table vle), the Dcharacter is	0.3684	0.0189
+0.3808	0.0996	1.000	appearing just before the dimension in the statement	0.3872	0.0116
+0.3953	0.0977	1.000	field.	0.0432	0.0131
+0.3967	0.5226	1.000	put in the six-bit ID field. Note a regular symbol	0.3684	0.0118
+0.4099	0.1165	1.000	4. The value field of the index word, Mdimrx,	0.3440	0.0131
+0.4112	0.5226	1.000	table entry (with an entry in the dictionary portion as	0.3929	0.0118
+0.4244	0.0977	1.000	locates the available area in the expanded instruction	0.3929	0.0116
+0.4258	0.5226	1.000	well as in the vle portion of the symbol table) will be	0.3910	0.0133
+0.4403	0.5244	1.000	made later at the end of Pass 1 for the name on the	0.3778	0.0118
+0.4403	0.0996	1.000	unit of the DR or the DRZ without a name.	0.3102	0.0103
+0.4548	0.5244	1.000	DR. The vle entry being built up now does not have	0.3816	0.0132
+0.4694	0.0996	1.000	On Exit	0.0583	0.0118
+0.4694	0.5226	1.000	a corresponding dietionary portion.	0.2632	0.0132
+0.4855	0.5395	1.000	MAIN will take the location of the dimension infor-	0.3741	0.0116
+0.4985	0.1165	1.000	1. The value field of $3 will contain the character	0.3703	0.0118
+0.4985	0.5243	1.000	mation supplied by MDIMRE and put this dimension	0.3780	0.0152
+0.5130	0.0996	1.000	immediately following the last dimension field.	0.3477	0.0131
+0.5145	0.5226	1.000	reference address in the unit. Then later when	0.3515	0.0116
+0.5276	0.1147	1.000	2. The value field of the index word, Mdimrx, will	0.3797	0.0161
+0.5305	0.5226	1.000	MAIN is setting up the symbol table entry for the	0.3628	0.0116
+0.5436	0.0996	1.000	be updated accordingly.	0.1748	0.0116
+0.5451	0.5226	1.000	name on the unit, MAIN inserts the dimension refer-	0.3929	0.0116
+0.5581	0.1165	1.000	3. The value field of $1 contains the location (dimen-	0.3929	0.0116
+0.5596	0.5244	1.000	ence address in the field reserved for it in the func-	0.3853	0.0102
+0.5727	0.0996	1.000	sion reference address) of the dimension information	0.3910	0.0116
+0.5741	0.5244	1.000	tion portion of the symbol table entry, Of course, the	0.4004	0.0131
+0.5872	0.0996	1.000	whether the dimension information is in the vle entry	0.3910	0.0116
+0.5887	0.5244	1.000	final housekeeping of MDIMRE must include updating	0.3891	0.0116
+0.6017	0.0996	1.000	or in the expanded instruction unit.	0.2575	0.0116
+0.6032	0.5244	1.000	the index words locating the available area in the vle	0.3891	0.0117
+0.6192	0.5226	1.000	table.	0.0451	0.0116
+0.6304	0.0995	1.000	USERS	0.0510	0.0124
+0.6482	0.5207	1.000	Boxes 4, 5, 16	0.1165	0.0132
+0.6612	0.1127	1.000	MQR, MQS	0.0865	0.0134
+0.6758	0.5226	1.000	The five bit count field in the dimension vle is incre-	0.3929	0.0146
+0.6903	0.1015	1.000	FLOW CHART DESCRIPTION	0.2180	0.0088
+0.6903	0.5226	1.000	mented by one after GETFLD encodes each dimen-	0.3778	0.0146
+0.7026	0.5224	1.000	sion. The if-evaluated indicator in the vle is set to	0.3913	0.0186
+0.7194	0.0977	1.000	Boxes 1, 4	0.0827	0.0146
+0.7194	0.5226	1.000	zero to indicate the dimension vle contains the	0.3515	0.0146
+0.7339	0.5207	1.000	un-evaluated coded expression for each dimension.	0.3797	0.0161
+0.7485	0.5226	1.000	Later after VDIMEN has evaluated and formed the	0.3722	0.0161
+0.7485	0.0996	1.000	Why must the dimension information be set up in a	0.3703	0.0118
+0.7645	0.0996	1.000	new vle rather than in the current unit when the	0.3534	0.0103
+0.7645	0.5207	1.000	product of the dimensions, VDIMEN will turn this	0.3703	0.0146
+0.7776	0.0996	1.000	dimension is on a SYN or on a named DR instruction?	0.3947	0.0131
+0.7805	0.5207	1.000	indicator on.	0.0996	0.0116
+0.7921	0.1015	1.000	The answer is that the dimension information must	0.3759	0.0131
+0.8036	0.0996	1.000	always be in memory for these cases since a reference	0.4079	0.0161
+0.8096	0.5150	1.000	Boxes 11-15	0.1015	0.0131
+0.8227	0.0996	1.000	to the name of the SYN or of the DR may occur any-	0.3835	0.0131
+0.8356	0.0976	1.000	where in the source program. The entire symbol	0.3725	0.0218
+0.8372	0.5207	1.000	In the dimension entry a coded expression is made	0.3759	0.0146
+0.8517	0.5207	1.000	for each of the n dimensions specified. Each coded	0.3910	0.0161
+0.8532	0.0996	1.000	table remains in memorv throughout the assembly;	0.3722	0.0102
+0.8624	0.5224	1.000	expression must be at least 24-bits in length because	0.3949	0.0200
+0.8659	0.1015	1.000	the buffer of the units is not necessarily entirelv in	0.3741	0.0124
+0.8821	0.5207	1.000	later in the same area previously occupied by the	0.3703	0.0147
+0.8821	0.0996	1.000	memory during any phase of the assembly.	0.3158	0.0133
+0.9390	0.7162	1.000	MDIMRF (AND MIDIMRT)	0.1579	0.0132
+0.9404	0.8929	1.000	119	0.0226	0.0087

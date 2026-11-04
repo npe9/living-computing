@@ -1,0 +1,44 @@
+0.1352	0.2030	1.000	PRNTALL - Print all symbols	0.2519	0.0146
+0.1381	0.1842	1.000	3.	0.0188	0.0116
+0.1510	0.2406	1.000	PRNTALL	0.0865	0.0148
+0.1612	0.1823	1.000	If this pseudo-operation is specified anywhere in the program, a list of all symbols will	0.6992	0.0206
+0.1756	0.1821	1.000	be printed at the end of the program, with the address at which they were defined.	0.6526	0.0239
+0.2107	0.1822	1.000	4. NOSEQ - No sequence numbers in binary output	0.4120	0.0190
+0.2297	0.2425	1.000	NOSEQ	0.0583	0.0116
+0.2379	0.1840	1.000	This pseudo-operation will cause immediate punching of any data remaining in the punch	0.6996	0.0237
+0.2536	0.1822	1.000	buffer, and eliminate punching the sequence number in all binary cards produced there-	0.6997	0.0244
+0.2718	0.1823	1.000	after until the end of the program or a RESEQ.	0.3759	0.0176
+0.3036	0.2030	1.000	RESEQ - Renumber sequence numbers in binary output	0.4492	0.0161
+0.3081	0.1842	1.000	5.	0.0207	0.0116
+0.3212	0.2425	1.000	RESEQ	0.0602	0.0131
+0.3297	0.1840	1.000	This pseudo-operation will cause immediate punching of any data remaining in the punch	0.7015	0.0252
+0.3468	0.1840	1.000	buffer, and begin punching sequence numbers starting with 1 in all subsequent binary	0.6752	0.0221
+0.3627	0.1840	1.000	cards produced thereafter until the end of the program or a NOSEQ.	0.5417	0.0221
+0.3944	0.2048	1.000	The next two pseudo-ops are not recent additions, but were not included in the STRAP	0.6807	0.0181
+0.4138	0.1860	1.000	manual.	0.0642	0.0125
+0.4419	0.1859	1.000	6. INDMK - Create one word of binary output	0.3668	0.0161
+0.4593	0.2444	1.000	INDMK, A, B, C, D,........	0.2406	0.0146
+0.4705	0.1841	1.000	This pseudo-operation provides a convenient way of producing one full word of binary	0.6788	0.0212
+0.4864	0.1841	1.000	output beginning at a full word address, with a bit pattern as specified in the address	0.6751	0.0212
+0.5015	0.3139	1.000	These integers may also be specified symbolically if desired. A	0.5263	0.0174
+0.5073	0.1861	1.000	field, bits 0-63.	0.1297	0.0131
+0.5161	0.1840	1.000	sample usage is the creation of an indicator mask, using the mnemonics for the desired	0.6996	0.0228
+0.5333	0.1840	1.000	bits in the address field of the INDMK, e.g., INDMK, $ZM, $EXE, $IF.	0.5812	0.0218
+0.5682	0.1880	1.000	7. PRNNOR - Print Normally	0.2406	0.0133
+0.5842	0.2443	1.000	PRNNOR	0.0734	0.0119
+0.5948	0.1879	1.000	This pseudo-operation restores printing in double-spaced format after a NOPRNT or	0.6751	0.0193
+0.6148	0.1861	1.000	PRNS.	0.0526	0.0145
+0.6453	0.1842	1.000	RELOCATABLE OUTPUT	0.2086	0.0131
+0.6758	0.1842	1.000	Special Relocatable Pseudo-Operations	0.3120	0.0161
+0.7064	0.1879	1.000	1. PUNREL - Punch relocatable binary output	0.3723	0.0146
+0.7238	0.2425	1.000	PUNREL	0.0752	0.0118
+0.7355	0.1861	1.000	This pseudo-operation puts STRAP in relocatable mode, and must be specified before	0.6805	0.0176
+0.7487	0.1840	1.000	any other relocatable pseudo-operations; they will be ignored by STRAP unless it has	0.6808	0.0216
+0.7649	0.1841	1.000	already received a PUNREL. An assembly can be specified to produce partially	0.6431	0.0192
+0.7805	0.1861	1.000	relocatable and partially absolute output, since as in the case of all other punch modes,	0.6974	0.0174
+0.7961	0.1860	1.000	STRAP produces output in accordance with the current punch mode request.	0.6036	0.0182
+0.8284	0.1841	1.000	2. ORIGIN - Punch origin card	0.2541	0.0162
+0.8459	0.2444	1.000	ORIGIN, N	0.0902	0.0147
+0.8576	0.1880	1.000	This command produces a special origin card to be used in execution by the loader. N	0.6880	0.0174
+0.8746	0.1878	1.000	may be either absolute or symbolic.	0.2879	0.0167
+0.9169	0.5957	1.000	N28-1081 (C28-6129) Page 2 of 20	0.2898	0.0158

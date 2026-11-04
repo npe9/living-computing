@@ -1,0 +1,123 @@
+0.0654	0.5188	1.000	is received, the exchange obtains the specified control	0.3891	0.0131
+0.0654	0.3571	1.000	violated, a unit's	0.1335	0.0131
+0.0669	0.0977	1.000	nel addresses. If this sequence is	0.2575	0.0131
+0.0799	0.0977	1.000	byte and word weights have to be set equal to those of	0.3931	0.0168
+0.0799	0.5169	1.000	word from core storage and stores it in the exchange.	0.3891	0.0146
+0.0959	0.0977	1.000	the unit having the largest weights at a higher channel	0.3910	0.0147
+0.0959	0.5188	1.000	The desired unit is then started, and reading or writ-	0.3891	0.0132
+0.1105	0.5169	1.000	ing proceeds, using the storage area indicated by the	0.3910	0.0145
+0.1134	0.0977	1.000	address.	0.0583	0.0116
+0.1279	0.1165	1.000	The two weight count systems provide a program-	0.3741	0.0131
+0.1279	0.5188	1.000	control word.	0.0977	0.0103
+0.1386	0.5356	1.000	As each data word is read or written, the contro!	0.3725	0.0179
+0.1424	0.0977	1.000	ming means of keeping the total input-output data	0.3929	0.0146
+0.1570	0.5188	1.000	word in the exchange is modified: the data word ad-	0.3872	0.0131
+0.1584	0.0977	1.000	transmission rate below the maximum safe limit. When	0.3929	0.0116
+0.1725	0.0995	1.000	one of the weight counts is exceeded, there is danger	0.3912	0.0157
+0.1730	0.5188	1.000	dress is advanced by one, and the word count is de-	0.3872	0.0131
+0.1875	0.5188	1.000	creased by one. The control word in the exchange	0.3891	0.0146
+0.1890	0.0996	1.000	of losing some information. However, it should be	0.3910	0.0147
+0.1995	0.5186	1.000	always contains the data word address of the next core	0.3894	0.0174
+0.2035	0.0996	1.000	noted that in specifying the weight systems, the maxi-	0.3910	0.0145
+0.2179	0.5169	1.000	storage reference and a count of the number of words	0.3891	0.0133
+0.2180	0.0977	1.000	mum possible instantaneous load on the exchange is	0.3930	0.0166
+0.2339	0.0996	1.000	considered. In the case of chaining, the doubling of	0.3910	0.0132
+0.2339	0.5169	1.000	remaining to be transferred to or from the external	0.3891	0.0132
+0.2485	0.5188	1.000	unit. The control word in core storage, however, is	0.3872	0.0131
+0.2500	0.0996	1.000	the word weight of a unit affords a further factor of	0.3929	0.0145
+0.2630	0.5188	1.000	not affected during the data transfer. Thus, the con-	0.3872	0.0146
+0.2645	0.0977	1.000	safety in that it permits chaining to occur after each	0.3929	0.0146
+0.2776	0.5188	1.000	trol word in the core storage unit retains the initial	0.3872	0.0146
+0.2805	0.0996	1.000	word transmitted to or received from core storage.	0.3929	0.0131
+0.2951	0.5188	1.000	data word address and count, and it can be used re-	0.3853	0.0116
+0.2951	0.0996	1.000	Thus, on the average, the exchange will not operate	0.3910	0.0146
+0.3096	0.5188	1.000	peatedly to transfer data to or from the same storage	0.3872	0.0146
+0.3109	0.0996	1.000	as close to capacity as indicated by the weight counts.	0.3929	0.0147
+0.3227	0.0977	1.000	Unless many channels are installed and units with	0.3947	0.0189
+0.3270	0.5188	1.000	area.	0.0357	0.0087
+0.3372	0.0977	1.000	high data transmission rates are used, in some instal-	0.3947	0.0204
+0.3400	0.5357	1.000	There are four basic variations of a read or write	0.3703	0.0103
+0.3532	0.0959	1.000	lations it may not be possible to exceed the exchange	0.3966	0.0189
+0.3561	0.5188	1.000	operation depending on the setting of certain flag bits	0.3853	0.0131
+0.3705	0.0977	1.000	capacity at all.	0.1073	0.0193
+0.3706	0.5188	1.000	in the control word:	0.1447	0.0117
+0.3909	0.5338	1.000	1. The operation may be terminated by the ex-	0.3703	0.0132
+0.3909	0.0959	1.000	WEIGHT GOUNT ExAMPLE	0.1861	0.0191
+0.4055	0.5602	1.000	change upon reaching a count of zero or by the	0.3440	0.0146
+0.4099	0.0977	1.000	Consider a system at an instant when the following	0.3947	0.0189
+0.4215	0.5602	1.000	unit upon reaching the end of the block, which-	0.3440	0.0131
+0.4244	0.0977	1.000	units are executing READ Or WRITE instructions:	0.3534	0.0189
+0.4360	0.5583	1.000	ever happens first. (Single block operation with-	0.3459	0.0161
+0.4459	0.3909	1.000	WEIGHT COUNTS	0.0979	0.0153
+0.4520	0.5564	1.000	out chaining)	0.1015	0.0146
+0.4578	0.4023	1.000	BYTE	0.0357	0.0116
+0.4593	0.4530	1.000	WORD	0.0338	0.0073
+0.4694	0.5338	1.000	2. After the core storage area defined by a control	0.3703	0.0146
+0.4695	0.4098	1.000	64	0.0207	0.0131
+0.4709	0.0977	1.000	729 high dens.	0.0883	0.0131
+0.4709	0.4643	1.000	34	0.0150	0.0087
+0.4810	0.0977	1.000	729 low dens.	0.0828	0.0148
+0.4811	0.3647	1.000	6	0.0132	0.0145
+0.4826	0.3139	1.000	9	0.0113	0.0102
+0.4826	0.2519	1.000	yes	0.0263	0.0145
+0.4826	0.4173	1.000	9	0.0113	0.0116
+0.4840	0.4643	1.000	12	0.0150	0.0087
+0.4855	0.5602	1.000	word is exhausted, it is possible for the exchange	0.3440	0.0131
+0.4954	0.0977	1.000	Card reader	0.0753	0.0136
+0.4956	0.2519	1.000	no	0.0226	0.0131
+0.4956	0.4624	1.000	10	0.0169	0.0087
+0.4956	0.3628	1.000	5	0.0132	0.0131
+0.5000	0.5583	1.000	to substitute another control word and con-	0.3440	0.0116
+0.5073	0.0977	1.000	Card punch	0.0752	0.0189
+0.5102	0.2500	1.000	yes	0.0263	0.0160
+0.5102	0.2086	1.000	1	0.0113	0.0131
+0.5116	0.4624	1.000	10	0.0169	0.0087
+0.5116	0.3647	1.000	5	0.0113	0.0102
+0.5160	0.5602	1.000	tinue data transfer without stopping, using the	0.3440	0.0131
+0.5262	0.3609	1.000	3	0.0150	0.0116
+0.5276	0.0977	1.000	Console	0.0489	0.0116
+0.5276	0.2519	1.000	no	0.0207	0.0102
+0.5305	0.5583	1.000	core storage area defined by the new control	0.3440	0.0146
+0.5392	0.2820	1.000	Total weight counts 73	0.1466	0.0160
+0.5422	0.4624	1.000	69	0.0169	0.0087
+0.5451	0.5564	1.000	word. (Chaining)	0.1353	0.0160
+0.5609	0.0996	1.000	Both the byte and word weight counts are well below	0.3910	0.0161
+0.5639	0.5338	1.000	3. More than one block may be read or written	0.3684	0.0131
+0.5753	0.0977	1.000	the maximum limits, and hence there is no danger	0.3948	0.0152
+0.5785	0.5583	1.000	with one instruction, until the specified core	0.3440	0.0145
+0.5915	0.0977	1.000	of exceeding exchange capacity.	0.2312	0.0176
+0.5945	0.5583	1.000	area has been used. (Multiple block operation)	0.3440	0.0131
+0.6105	0.5320	1.000	4. During reading, it is possible to suppress entry	0.3684	0.0145
+0.6264	0.5583	1.000	into storage of selected portions of the informa-	0.3440	0.0146
+0.6424	0.5583	1.000	tion. (Skipping)	0.1259	0.0161
+0.6570	0.0977	1.000	Reading and Writing	0.1992	0.0176
+0.6627	0.5320	1.000	A block of data is defined for each type of unit as	0.3703	0.0146
+0.6773	0.5169	1.000	the amount of information recorded in the interval	0.3835	0.0146
+0.6903	0.0996	1.000	Data are transferred between external units and core	0.3929	0.0133
+0.6933	0.5169	1.000	between adjacent starting and stopping points of the	0.3853	0.0161
+0.7064	0.0996	1.000	storage by read and write operations. A read or write	0.3929	0.0146
+0.7078	0.5169	1.000	unit. The length of a block depends upon the type of	0.3853	0.0161
+0.7209	0.0959	1.000	instruction is first given by the program. This instruc-	0.3947	0.0161
+0.7216	0.5168	1.000	unit used; e.g., it can be a card, a line of printing, or	0.3837	0.0187
+0.7354	0.0995	1.000	tion specifies the external unit (channel address) and	0.3912	0.0177
+0.7369	0.5167	1.000	the information between two consecutive gaps on tape.	0.3820	0.0183
+0.7515	0.0996	1.000	the location of a control word, which defines the be-	0.3929	0.0146
+0.7674	0.0995	1.000	ginning and end of the core storage area to be used	0.3912	0.0134
+0.7776	0.5169	1.000	Control Word Format	0.1579	0.0131
+0.7831	0.0996	1.000	for the data transfer. These two pieces of intormation	0.3910	0.0123
+0.7964	0.5169	1.000	The control word format follows that of an index	0.3816	0.0147
+0.7979	0.0996	1.000	are sent to the exchange, and the computer then pro-	0.3910	0.0132
+0.8124	0.0996	1.000	ceeeds to the execution of the next instruction in the	0.3910	0.0132
+0.8124	0.5169	1.000	word: the data word address occupies the word address	0.3835	0.0146
+0.8270	0.5169	1.000	portion of an index word value field while the count	0.3835	0.0161
+0.8310	0.1014	1.000	program.	0.0660	0.0124
+0.8430	0.5150	1.000	and refill fields of control and index words are the	0.3835	0.0131
+0.8445	0.1165	1.000	The control word defines the core storage area to	0.3741	0.0116
+0.8590	0.0977	1.000	be used in data transfer by specifying the initial data	0.3929	0.0146
+0.8590	0.5150	1.000	same. This facilitates the use of control words for	0.3835	0.0131
+0.8735	0.5150	1.000	indexing. In addition, the control word contains a	0.3835	0.0160
+0.8735	0.0996	1.000	word address in the storage and a count of the num-	0.3929	0.0146
+0.8881	0.5169	1.000	number of bits which describe the status of the exter-	0.3816	0.0146
+0.8894	0.0996	1.000	ber of words to be transferred. After READ Or a WRITE	0.3910	0.0118
+0.9288	0.0977	1.000	106	0.0244	0.0087
+0.9288	0.1485	1.000	IBM 7030	0.0639	0.0088

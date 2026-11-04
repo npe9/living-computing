@@ -1,0 +1,25 @@
+0.1105	0.2143	1.000	MULTIply-defined symbols	0.2011	0.0174
+0.1119	0.0695	1.000	MULTI	0.0621	0.0161
+0.1133	0.4793	1.000	Adjusts the symbol table after MAIN has discovered that	0.4154	0.0131
+0.1272	0.4923	1.000	a symbol is multiply-defined.	0.2221	0.0150
+0.1409	0.2143	1.000	Main's eXtract procedure	0.1936	0.0146
+0.1424	0.0695	1.000	MX	0.0357	0.0145
+0.1439	0.4793	1.000	Has the expressions formed for the extract parameters	0.4079	0.0102
+0.1584	0.4944	1.000	in their own unit; then has the statement of the	0.3440	0.0102
+0.1730	0.4962	1.000	EXTract pseudo-op set up in a second unit.	0.3177	0.0116
+0.1842	0.0694	1.000	TAILOR	0.0717	0.0182
+0.1860	0.2143	1.000	TAIL OR untail procedure	0.1955	0.0146
+0.1875	0.4812	1.000	Updates the information determining the special tailing	0.4023	0.0116
+0.2020	0.4925	1.000	configuration appended by MAIN or by CPLTSY	0.3515	0.0131
+0.2166	0.4944	1.000	during Pass 1 to each symbol in the sphere of	0.3402	0.0116
+0.2311	0.4944	1.000	influence of a TAIL pseudo-op.	0.2312	0.0116
+0.2412	0.2143	1.000	INITialization for input/output	0.2293	0.0191
+0.2427	0.0714	1.000	XINIT	0.0489	0.0174
+0.2456	0.4774	1.000	Initializes the Input-Output routines for Pass 1.	0.3534	0.0116
+0.2600	0.2293	1.000	subroutines	0.0922	0.0135
+0.2718	0.2143	1.000	INPUT another card image	0.2030	0.0161
+0.2723	0.0711	1.000	XINPUT	0.0684	0.0178
+0.2728	0.4792	1.000	Brings into memory each new card image; has each new	0.4118	0.0162
+0.2906	0.4962	1.000	card image converted into the internal A8 processing	0.3910	0.0118
+0.3052	0.4962	1.000	code.	0.0414	0.0102
+0.9172	0.0695	1.000	64	0.0150	0.0087

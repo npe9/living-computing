@@ -1,0 +1,98 @@
+0.1017	0.1034	1.000	APPENDIX B - FLOW CHART STANDARDS	0.3402	0.0146
+0.1526	0.5263	1.000	Input/Output (I-O)	0.1410	0.0174
+0.1612	0.1053	1.000	The seven functional symbols used to represent	0.3515	0.0118
+0.1758	0.1034	1.000	logical groupings of instructions on the flow charts	0.3759	0.0118
+0.1830	0.5282	1.000	A brief statement of I-O func-	0.2256	0.0146
+0.1875	0.7876	1.000	***7*#*##*#7#	0.1278	0.0087
+0.1903	0.1053	1.000	are as follows:	0.1109	0.0118
+0.1976	0.5282	1.000	tion is printed in this block.	0.2105	0.0146
+0.1977	0.7688	1.000	.*	0.0188	0.0102
+0.2121	0.5282	1.000	An I-O block may have multiple *	0.2481	0.0146
+0.2208	0.1052	1.000	Processing	0.0828	0.0119
+0.2267	0.5282	1.000	entries and multiple exits. The*	0.2481	0.0161
+0.2355	0.7763	1.000	#	0.0113	0.0102
+0.2427	0.5301	1.000	exits are labeled when neces-	0.2218	0.0131
+0.2456	0.7876	1.000	#***44447	0.0865	0.0087
+0.2500	0.1053	1.000	A brief statement of an opera-	0.2237	0.0103
+0.2586	0.5282	1.000	sary.	0.0433	0.0118
+0.2587	0.3383	1.000	#o##: +6774774777	0.1673	0.0073
+0.2645	0.1053	1.000	tion or function is in the	0.1786	0.0103
+0.2776	0.1053	1.000	bloek. A processing block may*	0.2425	0.0131
+0.2878	0.5282	1.000	Logical Connectors	0.1466	0.0131
+0.2936	0.1053	1.000	have multiple entries but only	0.2218	0.0131
+0.3093	0.1052	1.000	one exit.	0.0640	0.0107
+0.3138	0.7970	1.000	**7**	0.0489	0.0089
+0.3169	0.5301	1.000	Connectors are represented by	0.2293	0.0147
+0.3169	0.3365	1.000	#***********	0.1673	0.0087
+0.3241	0.8421	1.000	7	0.0150	0.0102
+0.3241	0.7838	1.000	#.	0.0207	0.0087
+0.3314	0.5282	1.000	a circle. All connectors used	0.2274	0.0132
+0.3387	0.1053	1.000	Subroutine	0.0789	0.0087
+0.3459	0.5301	1.000	in the MCP flow charts have	0.2124	0.0116
+0.3605	0.5301	1.000	logical significance in terms of *	0.2650	0.0132
+0.3677	0.1053	1.000	The primary function of this	0.2086	0.0117
+0.3721	0.7951	1.000	***77	0.0489	0.0087
+0.3764	0.5301	1.000	program flow. The names	0.1992	0.0118
+0.3821	0.1053	1.000	block is to represent a complex *- #	0.2650	0.0118
+0.3909	0.5301	1.000	used are program symbols as found in branch	0.3402	0.0118
+0.3967	0.1034	1.000	logical program unit without	0.2124	0.0133
+0.4055	0.5301	1.000	addresses in the code.	0.1673	0.0118
+0.4112	0.1053	1.000	undue detail. The name of the	0.2256	0.0118
+0.4200	0.5489	1.000	A connector may be an entry connector, an exit	0.3515	0.0131
+0.4273	0.1053	1.000	program symbol, taken directly	0.2350	0.0131
+0.4345	0.5320	1.000	connector, or both. Any program symbol can be	0.3628	0.0131
+0.4418	0.1053	1.000	from the code, is printed in the upper section of the	0.3835	0.0118
+0.4491	0.5301	1.000	used at most once in an entry connector. An entry	0.3778	0.0117
+0.4564	0.1053	1.000	block, above the broken line. A brief description of	0.3872	0.0131
+0.4636	0.5320	1.000	connector has only one exit, and may or may not	0.3609	0.0131
+0.4709	0.1053	1.000	the usage of the subroutine is printed in the lower	0.3665	0.0116
+0.4782	0.5301	1.000	have entries. The symbol used in an entry connector	0.3966	0.0116
+0.4855	0.1053	1.000	section. A subroutine block may have multiple	0.3477	0.0116
+0.4927	0.5301	1.000	is the symbol used to start the corresponding section	0.3947	0.0131
+0.5000	0.1053	1.000	entries and multiple exits. The exits are labeled	0.3647	0.0116
+0.5084	0.5319	1.000	of code.	0.0604	0.0123
+0.5160	0.1034	1.000	when necessary.	0.1241	0.0102
+0.5233	0.5489	1.000	An exit connector may have multiple entries. If	0.3590	0.0131
+0.5378	0.5301	1.000	it has an exit, it is also an entry connector and the	0.3778	0.0131
+0.5450	0.1053	1.000	Decision	0.0639	0.0103
+0.5523	0.5320	1.000	symbol used will not be used elsewhere as an entry	0.3797	0.0131
+0.5682	0.5320	1.000	connector. The symbol used in an exit connector	0.3665	0.0118
+0.5727	0.4041	1.000	*****	0.0489	0.0087
+0.5741	0.1071	1.000	Brief statements of comparison,	0.2368	0.0116
+0.5827	0.5320	1.000	may be used in other exit connectors.	0.2782	0.0118
+0.5887	0.1053	1.000	decision, choice or tests are	0.2143	0.0132
+0.5959	0.5489	1.000	When a phrase such as ENTER ROUTINE, repre-	0.3665	0.0132
+0.6032	0.1053	1.000	printed in this block in the form	0.2368	0.0117
+0.6118	0.5320	1.000	sented in the code by BR, 0.0($XR) is used in an exit	0.3947	0.0133
+0.6157	0.1069	1.000	of a question. A decision	0.1884	0.0159
+0.6264	0.5320	1.000	connector, the actual branch point is computed (for	0.3797	0.0132
+0.6308	0.4023	1.000	#****	0.0508	0.0087
+0.6336	0.1053	1.000	block may have multiple entries	0.2350	0.0118
+0.6409	0.5301	1.000	instance, a branch table). When $RET appears as	0.3759	0.0146
+0.6482	0.1053	1.000	and has multiple exits. The exits are always labeled	0.3910	0.0132
+0.6539	0.5281	1.000	an exit connector, the pseudo-op is being used to	0.3686	0.0182
+0.6612	0.1053	1.000	to show the paths of flow available for the various	0.3665	0.0133
+0.6700	0.5301	1.000	determine subsequent flow. (See the Return Routine.)	0.4023	0.0146
+0.6773	0.1034	1.000	conditions labeled.	0.1410	0.0131
+0.6991	0.5263	1.000	Halt	0.0451	0.0174
+0.7166	0.1071	1.000	Modification	0.0959	0.0102
+0.7282	0.5301	1.000	A brief statement of the condi-	0.2312	0.0146
+0.7427	0.5301	1.000	tion of the halt or an appropriate	0.2462	0.0161
+0.7442	0.7763	1.000	#57777*7****	0.1541	0.0073
+0.7456	0.1071	1.000	A brief statement of internal	0.2124	0.0131
+0.7500	0.3797	1.000	#***7**7*#7	0.1090	0.0087
+0.7573	0.5320	1.000	exit is printed in this block.	0.2105	0.0161
+0.7602	0.1071	1.000	modification to program instruc-	0.2444	0.0147
+0.7703	0.5301	1.000	A halt block may have multiple *	0.2538	0.0176
+0.7747	0.1071	1.000	tions is printed in this block.	0.2162	0.0147
+0.7791	0.5075	1.000	*	0.0113	0.0073
+0.7820	0.7820	1.000	***#*#**7******	0.1485	0.0087
+0.7856	0.5317	1.000	entries. A halt box with an exit	0.2392	0.0174
+0.7892	0.1071	1.000	A modification block may have	0.2256	0.0145
+0.8023	0.5282	1.000	implies external intervention (interrupt or operator)	0.3910	0.0146
+0.8036	0.1071	1.000	multiple entries but has only	0.2124	0.0147
+0.8081	0.3816	1.000	***#****###	0.1071	0.0087
+0.8182	0.5301	1.000	to utilize the exit.	0.1372	0.0133
+0.8196	0.1071	1.000	one exit.	0.0640	0.0119
+0.9399	0.6802	1.000	Appendix B - Flow Chart Standards	0.1997	0.0138
+0.9419	0.9004	1.000	261	0.0244	0.0102

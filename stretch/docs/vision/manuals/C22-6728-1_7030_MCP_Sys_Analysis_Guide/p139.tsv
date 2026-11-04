@@ -1,0 +1,103 @@
+0.0930	0.5132	1.000	EOP and I-O Actuation: The EOP procedure, per-	0.3910	0.0161
+0.0973	0.1071	1.000	Upon completion of the $WEF, control passes to	0.3628	0.0146
+0.1090	0.5226	1.000	formed by the VEOP subroutine, is standard. The	0.3816	0.0131
+0.1105	0.0921	1.000	VWFEOP (Figure 75) which determines, from the	0.3722	0.0145
+0.1235	0.5226	1.000	actuation routine, VRTIO, derives the next control	0.3835	0.0131
+0.1264	0.0902	1.000	zero record count, that this is a job-terminating end	0.3966	0.0132
+0.1381	0.5226	1.000	word, updates the record count (RCNT), and issues	0.3872	0.0131
+0.1408	0.0901	1.000	of file. After updating the file count, VFCNT, the	0.3799	0.0150
+0.1518	0.5225	1.000	the $RD pseudo-op. The control word is obtained by	0.3968	0.0158
+0.1555	0.0901	1.000	tape switch criteria are tested and in the usual case	0.3912	0.0148
+0.1672	0.5226	1.000	refilling the present control word, R, VCWR(VU),	0.3778	0.0147
+0.1715	0.0902	1.000	when none are satisfied, the table of exits is restored	0.4060	0.0131
+0.1830	0.5226	1.000	which in turn alternately selects one of the two con-	0.3910	0.0118
+0.1860	0.0902	1.000	to normal and parameter flow resumed by going to	0.3816	0.0131
+0.1962	0.5224	1.000	trol words referring to the top and bottom halves of	0.3894	0.0160
+0.2031	0.0901	1.000	VACT.	0.0549	0.0140
+0.2114	0.5242	1.000	the phase 4 buffer. It would seem that the control	0.3782	0.0173
+0.2282	0.5244	1.000	words bear no relation to the VX parameter, but	0.3684	0.0131
+0.2311	0.0902	1.000	The Tape Switch Criteria and Procedure: The tape	0.3872	0.0147
+0.2442	0.5244	1.000	actually the parameter flow is controlled so that	0.3647	0.0131
+0.2451	0.0845	1.000	switch procedure consists of writing a tape terminating	0.4231	0.0155
+0.2579	0.5262	1.000	only positive parameters having the value 17 are	0.3650	0.0158
+0.2600	0.0845	1.000	file mark, and, upon completion of the operation,	0.3799	0.0156
+0.2733	0.5244	1.000	inserted in the RT queue. Since this is so, the VMD	0.3966	0.0131
+0.2736	0.0920	1.000	restoring the table of exits to normal and going to the	0.4025	0.0163
+0.2891	0.0920	1.000	WT tape switch routine, VWTTS. Since VX1 is still	0.3950	0.0151
+0.2892	0.5263	1.000	subroutine need not be used.	0.2124	0.0117
+0.3023	0.5414	1.000	Since RT control words have the multiple bit on,	0.3647	0.0131
+0.3044	0.0920	1.000	non-zero, all write tape activity is blocked until	0.3630	0.0145
+0.3141	0.5261	1.000	the reading of short records is terminated with an	0.3763	0.0186
+0.3197	0.0921	1.000	restarted by an outside stimulus, namely the tape	0.3759	0.0132
+0.3314	0.5263	1.000	EE interrupt caused by detecting the tape mark which	0.4004	0.0132
+0.3473	0.5244	1.000	follows short records. Thus an EOP termination	0.3722	0.0118
+0.3488	0.1109	1.000	The tape switch (TS) criteria are tested (VWFEOP),	0.3872	0.0131
+0.3618	0.5263	1.000	occurs only when a full block (17 cards) has been	0.3684	0.0132
+0.3633	0.0921	1.000	immediately after each job-terminating file mark	0.3741	0.0131
+0.3779	0.2406	1.000	Whenever the TS procedure is	0.2331	0.0131
+0.3794	0.0921	1.000	has been written.	0.1353	0.0116
+0.3794	0.5263	1.000	read.	0.0414	0.0102
+0.3924	0.0921	1.000	used in these circumstances, the result will be	0.3628	0.0131
+0.3948	0.5243	1.000	The EE Fixup: The EE fixup (VREE, Figure 76) will	0.4007	0.0191
+0.4084	0.0921	1.000	two consecutive tape marks.	0.2143	0.0116
+0.4112	0.5263	1.000	be entered N+1 times if there are Njobs on the read	0.3929	0.0133
+0.4230	0.1109	1.000	The TS criteria for terminating a tape are designed	0.3835	0.0116
+0.4252	0.5262	1.000	tape. There are N entries corresponding to tape	0.3687	0.0155
+0.4375	0.0940	1.000	to meet two conflicting objectives: first, to start write	0.4154	0.0131
+0.4418	0.5263	1.000	marks terminating jobs and the Nt1th entry for the	0.3816	0.0131
+0.4513	0.0939	1.000	tape rewinding sufficiently in advance of exhausting	0.3856	0.0154
+0.4564	0.5263	1.000	tape mark terminating the tape. The RT program	0.3778	0.0131
+0.4651	0.0938	1.000	the read tape program to maintain an uninterrupted	0.3857	0.0173
+0.4672	0.5261	1.000	distinguishes the last entry by testing whether any	0.3765	0.0206
+0.4811	0.0940	1.000	supply of data, and second, to put sufficient informa-	0.4023	0.0147
+0.4855	0.5263	1.000	cards were read subsequent to the last EE interrupt.	0.3966	0.0131
+0.4956	0.0940	1.000	tion on each write tape so that rewinding time does	0.3816	0.0131
+0.4985	0.5450	1.000	VREE first decrements a count in VFCNX of the	0.3630	0.0147
+0.5115	0.0940	1.000	not become a large negative factor in overall per-	0.3778	0.0118
+0.5145	0.5244	1.000	RT table, and when the count reaches zero, sets up	0.3872	0.0146
+0.5261	0.1842	1.000	The first criterion is that a tape is not	0.2914	0.0118
+0.5291	0.5244	1.000	VTSQ, which influences when WT starts tape switch.	0.3966	0.0146
+0.5378	0.0957	1.000	terminated until a specified minimum number of jobs	0.3988	0.0180
+0.5436	0.5244	1.000	Initially, VFCNX is set to N-VFCD for each new read	0.4004	0.0146
+0.5536	0.0957	1.000	(VMI "B) have been written on it, and the second is	0.3837	0.0154
+0.5596	0.5244	1.000	tape received.	0.1090	0.0116
+0.5697	0.0959	1.000	that it is always terminated when a specified maxi-	0.3835	0.0132
+0.5727	0.5432	1.000	To establish the significance of the tape mark the	0.3684	0.0131
+0.5842	0.0959	1.000	mum number of jobs (VMXJB) have been written.	0.3684	0.0131
+0.5872	0.5263	1.000	VTEE subroutine is entered which starts by making	0.3853	0.0131
+0.5988	0.0977	1.000	Between these extremes, in addition, the tape is	0.3628	0.0131
+0.6045	0.5244	1.000	two tests:	0.0752	0.0103
+0.6120	0.0957	1.000	terminated after the read tape has VFCD or fewer	0.3762	0.0146
+0.6155	0.5412	1.000	1. Was this the first read instruction in a new job?	0.3912	0.0154
+0.6274	0.0939	1.000	jobs left to read. VFCD is a parameter defined by	0.3855	0.0151
+0.6308	0.5414	1.000	2. Were there no cards read by this instruction?	0.3741	0.0131
+0.6424	0.0959	1.000	a SYN card. At present, VFCD is 2, VMXJB con-	0.3816	0.0131
+0.6453	0.5432	1.000	Affirmative answers to both mean the end of tape	0.3665	0.0131
+0.6584	0.0959	1.000	tains 10, and VMNJB contains 5.	0.2481	0.0146
+0.6599	0.5226	1.000	has been reached, and the procedure discussed in	0.3778	0.0174
+0.6744	0.5244	1.000	the next section is followed. Otherwise, VTEE pro-	0.3966	0.0160
+0.6903	0.5244	1.000	ceeds with bookkeeping functions:	0.2538	0.0146
+0.7048	0.5414	1.000	1. It updates the VX parameter to the next half	0.3609	0.0146
+0.7106	0.0996	1.000	The Read Tape (RT) Program	0.2218	0.0118
+0.7184	0.5248	1.000	buffer.	0.0556	0.0180
+0.7323	0.5393	1.000	2. It sets VRCNT to zero and updates the file	0.3499	0.0158
+0.7367	0.0995	1.000	RT reads cards from tape into phase 4 buffers,	0.3535	0.0149
+0.7500	0.5244	1.000	count, VFCNT.	0.1184	0.0145
+0.7525	0.0976	1.000	identifying the job boundaries to the request proc-	0.3780	0.0145
+0.7630	0.5450	1.000	3. It enters VACT, in an attempt to reactuate the	0.3761	0.0155
+0.7669	0.0995	1.000	essor (Q) as they occur. It also indicates when it	0.3744	0.0157
+0.7820	0.0977	1.000	has read all but VFCD jobs on a tape (part of the WT	0.3966	0.0132
+0.7936	0.5414	1.000	4. It passes a parameter to the successor pro-	0.3628	0.0146
+0.7961	0.0976	1.000	tape switch criteria). The RT routine consists of a	0.3893	0.0151
+0.8058	0.5261	1.000	gram giving the number of cards successfully read.	0.3895	0.0189
+0.8085	0.0974	1.000	queue entry, VRQ; the I-O fixup routines, VREOP and	0.4086	0.0224
+0.8212	0.5414	1.000	5. It returns to the calling program (in this case	0.3741	0.0161
+0.8255	0.0996	1.000	VREE; and the I-O actuation routine, VRTIO. The	0.3835	0.0147
+0.8372	0.5263	1.000	VREE), which passes a negative parameter, VQEND,	0.4041	0.0174
+0.8399	0.0994	1.000	queue entry is identical to that of WT since block	0.3707	0.0164
+0.8517	0.5244	1.000	signifying job end. This is followed by a positive	0.3741	0.0161
+0.8537	0.0994	1.000	recording must correspond to the blocked format of	0.3896	0.0182
+0.8646	0.5242	1.000	parameter which is the number of cards not read	0.3726	0.0178
+0.8735	0.0996	1.000	the write or scan tape.	0.1729	0.0116
+0.9462	0.7669	1.000	System Input-Output	0.1203	0.0102
+0.9477	0.9098	1.000	139	0.0226	0.0073

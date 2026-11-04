@@ -1,0 +1,121 @@
+0.0596	0.5113	1.000	Load Value with Sum (LVS)	0.2049	0.0146
+0.0608	0.2330	1.000	STATEMENT	0.0829	0.0166
+0.0639	0.1052	1.000	NAME	0.0414	0.0118
+0.0640	0.4361	1.000	NOTES	0.0470	0.0145
+0.0785	0.5132	1.000	The address parts, bits 0-24, of the index registers	0.3929	0.0176
+0.0901	0.4474	0.500	H N	0.0094	0.0189
+0.0959	0.5150	1.000	which participate are added and replace bits 0-24 of	0.3910	0.0132
+0.1076	0.1053	1.000	LOOP	0.0414	0.0145
+0.1090	0.5132	1.000	the index word specified by J. The addition is alge-	0.3910	0.0146
+0.1119	0.4474	1.000	3	0.0094	0.0087
+0.1235	0.4474	1.000	4	0.0094	0.0087
+0.1235	0.5132	1.000	braic, taking into account the sign, bit 24, of all quan-	0.3929	0.0174
+0.1336	0.2293	1.000	LWF (U), 0.0($X14	0.1071	0.0118
+0.1352	0.4474	1.000	5	0.0094	0.0087
+0.1394	0.5132	1.000	tities. Bits 25-63 of the index word specified by J re-	0.3929	0.0176
+0.1439	0.2293	1.000	RNX, $X14, CTLWD1($X15	0.1541	0.0116
+0.1539	0.5113	1.000	main unchanged. If bits 0-15 of the address part of	0.3966	0.0176
+0.1685	0.5113	1.000	the instruction are all zero, the value field of the index	0.3947	0.0176
+0.1686	0.4474	1.000	8	0.0094	0.0087
+0.1860	0.5113	1.000	register specified by J is cleared.	0.2331	0.0161
+0.1903	0.2274	1.000	RNX, $X14, CTLWD(	0.1241	0.0118
+0.1904	0.4474	1.000	2	0.0094	0.0102
+0.2006	0.2274	1.000	CB+, $X14, LOOP	0.1090	0.0131
+0.2006	0.5282	1.000	The index flag and index result indicators are set	0.3778	0.0146
+0.2020	0.4380	1.000	10	0.0188	0.0116
+0.2166	0.5132	1.000	according to the new contents of the index register	0.3910	0.0131
+0.2209	0.1052	1.000	ERROR	0.0489	0.0146
+0.2224	0.2237	1.000	Start of error routine for too	0.1673	0.0146
+0.2308	0.5112	1.000	specified by J.	0.1073	0.0166
+0.2339	0.2406	1.000	many words in block	0.1222	0.0118
+0.2555	0.1052	1.000	CTLWDO	0.0566	0.0151
+0.2572	0.2237	1.000	XW, DATA, 100	0.0997	0.0147
+0.2684	0.1032	1.000	CTLWD1	0.0567	0.0126
+0.2688	0.2218	1.000	XW, A, na	0.0714	0.0146
+0.2863	0.5113	1.000	Indirect Addressing	0.1842	0.0174
+0.3008	0.1034	1.000	CTLWD8	0.0583	0.0147
+0.3036	0.2218	1.000	XW, H, nh	0.0714	0.0133
+0.3232	0.5130	1.000	The effective address of an instruction is normally	0.3913	0.0185
+0.3255	0.1015	1.000	Notes: 2. Slears index for DaXo.	0.2199	0.0234
+0.3372	0.1711	1.000	Sets up index for DATA.	0.1485	0.0131
+0.3400	0.5113	1.000	used to address the data upon which the instruction	0.3929	0.0161
+0.3503	0.1560	1.000	3.	0.0132	0.0087
+0.3503	0.1767	1.000	Loads flags in accumulator.	0.1598	0.0088
+0.3561	0.5132	1.000	operation is performed. In another mode of address-	0.3910	0.0131
+0.3618	0.1767	1.000	Places flags in word address portion of X15.	0.2594	0.0103
+0.3619	0.1560	1.000	4.	0.0132	0.0073
+0.3721	0.5132	1.000	ing, the effective address can be used to address an-	0.3910	0.0116
+0.3735	0.1560	1.000	5.	0.0132	0.0073
+0.3735	0.1767	1.000	Loads floating point data.	0.1485	0.0102
+0.3852	0.1767	1.000	Places control word for proper block in X14.	0.2613	0.0103
+0.3852	0.1560	1.000	6.	0.0132	0.0073
+0.3866	0.5132	1.000	other instruction. This instruction, in turn, contains	0.3910	0.0131
+0.3967	0.1748	1.000	Branches to error routine if block is full.	0.2444	0.0103
+0.3968	0.1560	1.000	7.	0.0132	0.0087
+0.4026	0.5132	1.000	an operand address and index which can be used to	0.3910	0.0131
+0.4070	0.1748	1.000	Stores floating point data.	0.1523	0.0103
+0.4084	0.1560	1.000	8.	0.0132	0.0073
+0.4172	0.5132	1.000	form a second level effective address. In some appli-	0.3910	0.0147
+0.4185	0.1729	1.000	Increments and counts control word for block.	0.2708	0.0106
+0.4186	0.1541	1.000	9.	0.0169	0.0087
+0.4302	0.1710	1.000	Increments and counts control word for DATA.	0.2821	0.0118
+0.4302	0.1485	1.000	10.	0.0244	0.0087
+0.4312	0.5131	1.000	cations, it is desirable to address the operand by the	0.3911	0.0156
+0.4418	0.1767	1.000	Tests for last word.	0.1184	0.0088
+0.4476	0.5132	1.000	second level effective address rather than by the effec-	0.3910	0.0132
+0.4615	0.5149	1.000	tive address of the original instruction. The process	0.3893	0.0171
+0.4666	0.0959	1.000	Figure 9. Rename Program Example	0.2256	0.0116
+0.4782	0.5132	1.000	of using a first level effective address to obtain a sec-	0.3910	0.0131
+0.4927	0.5132	1.000	ond level effective address is called indirect address-	0.3910	0.0131
+0.5058	0.0940	1.000	to update only the basic quantities and form a derived	0.3910	0.0146
+0.5087	0.5113	1.000	ing. The second level effective address, of course, can	0.3929	0.0146
+0.5218	0.0940	1.000	sum when that particular sum is required. In order	0.3929	0.0146
+0.5233	0.5113	1.000	refer to another instruction of which, again, the effec-	0.3910	0.0146
+0.5349	0.5130	1.000	tive address can be obtained. In this manner it is pos.	0.3914	0.0193
+0.5363	0.0940	1.000	to facilitate this mode of operation, it should be pos-	0.3929	0.0131
+0.5508	0.6331	1.000	indirect addressing through many	0.2714	0.0205
+0.5509	0.0940	1.000	sible to specify in one instruction a group of index	0.3929	0.0161
+0.5536	0.5113	1.000	sible to extend	0.1222	0.0118
+0.5669	0.0921	1.000	registers and indicate which registers of the group	0.3929	0.0147
+0.5698	0.5094	1.000	levels.	0.0489	0.0116
+0.5814	0.0921	1.000	should be used in forming the derived sum. This	0.3929	0.0147
+0.5842	0.5282	1.000	Indirect addressing is made possible by the instruc-	0.3741	0.0146
+0.5973	0.0921	1.000	mode of indexing is called multiple indexing. The	0.3929	0.0146
+0.5988	0.5132	1.000	tion LOAD VALUE EFFECTIVE whose format is shown be-	0.3910	0.0131
+0.6118	0.0921	1.000	index registers which participate in multiple indexing	0.3929	0.0146
+0.6148	0.5113	1.000	low.	0.0338	0.0116
+0.6260	0.0920	1.000	are named XO-X15. They are the words in storage	0.3931	0.0176
+0.6439	0.0921	1.000	locations 16-31.	0.1147	0.0116
+0.6465	0.5563	1.000	ADDRESS	0.0472	0.0108
+0.6599	0.6955	1.000	28 31	0.0282	0.0116
+0.6612	0.1071	1.000	In multiple indexing, bits 0-15 of the address part	0.3778	0.0161
+0.6613	0.6372	1.000	19	0.0113	0.0073
+0.6628	0.6635	1.000	23	0.0132	0.0058
+0.6758	0.0921	1.000	of the instruction are used to indicate which index	0.3929	0.0118
+0.6918	0.0921	1.000	registers participate in the operation. When bit posi-	0.3929	0.0131
+0.6962	0.5094	1.000	Load Value Effective (LVE)	0.1936	0.0132
+0.7078	0.0940	1.000	tion n contains a one, the register Xn participates.	0.3910	0.0131
+0.7136	0.5094	1.000	Bits 0-24 of the index word specified by J are replaced	0.3910	0.0161
+0.7224	0.0921	1.000	When bit position n contains a zero, the register Xn	0.3910	0.0131
+0.7297	0.5094	1.000	by the effective value plus sign of the instruction found	0.3910	0.0161
+0.7355	0.0921	1.000	does not participate. Bits 16-19 of the address part	0.3929	0.0161
+0.7456	0.5094	1.000	at the location specified by the effective address. When	0.3910	0.0147
+0.7529	0.0921	1.000	of the instruction are ignored.	0.2162	0.0132
+0.7602	0.5075	1.000	the instruction found at the location specified by the	0.3947	0.0160
+0.7688	0.1109	1.000	The multiple indexing operation makes use of the	0.3741	0.0146
+0.7747	0.5113	1.000	effective address is another LOAD VALUE EFFECTIVE	0.3891	0.0132
+0.7834	0.0901	1.000	instruction format shown below. The index field J	0.3931	0.0161
+0.7906	0.5056	1.000	instruction, the process is repeated with that instruc-	0.3947	0.0161
+0.8009	0.0921	1.000	contains the address of the index to which the opera-	0.3929	0.0146
+0.8050	0.5074	1.000	tion. The final effective value plus sign is placed in	0.3930	0.0180
+0.8169	0.0921	1.000	tion LOAD VALUE WITH SUM applies. No address modi-	0.3929	0.0131
+0.8197	0.5075	1.000	the index register specified by the field J of the origi-	0.3929	0.0176
+0.8314	0.0921	1.000	fication is available for this operation.	0.2726	0.0132
+0.8358	0.5075	1.000	nal instruction.	0.1147	0.0145
+0.8491	0.5223	1.000	All instructions encountered in a multiple level in-	0.3802	0.0215
+0.8677	0.5094	1.000	direct addressing process, except for the last one, are	0.3929	0.0160
+0.8749	0.1315	1.000	ADDRESS	0.0433	0.0075
+0.8750	0.2519	1.000	OP.	0.0169	0.0073
+0.8807	0.5093	1.000	LOAD VALUE EFFECTIVE instructions. The instruction	0.3932	0.0180
+0.9215	0.0865	1.000	28	0.0188	0.0102
+0.9215	0.1316	1.000	IBM 7030	0.0658	0.0088

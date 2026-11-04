@@ -1,0 +1,156 @@
+0.0900	0.5320	1.000	Appendix C) is saved, and the linkage examined for a	0.3985	0.0147
+0.0973	0.0921	1.000	Available to MCP	0.1091	0.0177
+0.1003	0.2951	1.000	Available to MCP Only	0.1372	0.0146
+0.1061	0.5320	1.000	valid IF interrupt. If the instruction causing the inter-	0.4135	0.0131
+0.1133	0.0902	1.000	and PP	0.0432	0.0146
+0.1206	0.5320	1.000	rupt was not a B, $MCP, control is given to dispatcher	0.4098	0.0131
+0.1221	0.0921	1.000	Pseudo-op	0.0658	0.0203
+0.1265	0.4380	1.000	Code	0.0338	0.0160
+0.1265	0.1711	1.000	Code	0.0357	0.0160
+0.1279	0.2237	1.000	Pseudo-Op	0.0639	0.0145
+0.1279	0.3120	1.000	Name	0.0395	0.0145
+0.1366	0.5320	1.000	error control (SDISP) with error code 1 in $14. If	0.3816	0.0116
+0.1512	0.3120	1.000	Job Control 1	0.0846	0.0161
+0.1512	0.1711	1.000	64.00	0.0395	0.0145
+0.1512	0.5320	1.000	the op code is less than 1.0, or has ones in any of	0.3778	0.0131
+0.1526	0.4342	1.000	79.32	0.0395	0.0116
+0.1526	0.0902	1.000	$DUMP	0.0489	0.0131
+0.1526	0.2218	1.000	SJC1	0.0338	0.0131
+0.1628	0.1692	1.000	64.32	0.0414	0.0160
+0.1641	0.2217	1.000	SOUTPT	0.0547	0.0149
+0.1641	0.3139	1.000	Output Command	0.1035	0.0148
+0.1651	0.0900	1.000	$EDUMP	0.0550	0.0143
+0.1657	0.4361	1.000	80.00	0.0376	0.0102
+0.1657	0.5320	1.000	bits 19 through 22, control is given to dispatcher	0.3684	0.0131
+0.1772	0.3139	1.000	Output EOJ	0.0677	0.0162
+0.1773	0.1692	1.000	65.00	0.0414	0.0160
+0.1773	0.0902	1.000	$EOJ	0.0338	0.0145
+0.1773	0.2237	1.000	SSPEOJR	0.0470	0.0145
+0.1788	0.4361	1.000	80.32	0.0376	0.0116
+0.1802	0.5320	1.000	error control with error code 2 in $14. If the op code	0.4079	0.0116
+0.1904	0.1692	1.000	65.32	0.0414	0.0145
+0.1916	0.0901	1.000	$HOLD	0.0454	0.0136
+0.1919	0.2237	1.000	SDDT	0.0376	0.0131
+0.1933	0.3139	1.000	Debugger	0.0583	0.0131
+0.1933	0.4380	1.000	81.00	0.0357	0.0087
+0.1948	0.5320	1.000	is in the range of the service ops (less than 64.0),	0.3778	0.0131
+0.2032	0.3120	1.000	IPL Entry to JC4	0.0979	0.0151
+0.2035	0.1692	1.000	66.00	0.0414	0.0145
+0.2035	0.2237	1.000	SJC4	0.0357	0.0145
+0.2035	0.0902	1.000	$RESLD	0.0526	0.0145
+0.2064	0.4380	1.000	81.32	0.0357	0.0087
+0.2093	0.5320	1.000	control is given to the identifier routine (KFRONT).	0.3891	0.0131
+0.2151	0.1692	1.000	66.32	0.0414	0.0160
+0.2166	0.3120	1.000	First Card Request	0.1109	0.0146
+0.2180	0.2218	1.000	SSCR4	0.0452	0.0117
+0.2180	0.4361	1.000	82.00	0.0395	0.0102
+0.2180	0.0902	1.000	$FETCH	0.0508	0.0131
+0.2238	0.5489	1.000	If PP is requesting a major package pseudo-op,	0.3590	0.0131
+0.2297	0.1692	1.000	67.00	0.0414	0.0160
+0.2310	0.2180	1.000	SKOM	0.0471	0.0119
+0.2311	0.3120	1.000	Input Commands	0.1015	0.0131
+0.2311	0.0902	1.000	$SPU	0.0338	0.0116
+0.2311	0.4380	1.000	82.32	0.0357	0.0102
+0.2397	0.5320	1.000	the MCP mask and boundaries replace those of PP	0.3797	0.0118
+0.2413	0.1692	1.000	67.32	0.0432	0.0160
+0.2427	0.0846	1.000	•$SPR	0.0395	0.0131
+0.2441	0.2161	1.000	SCOMD	0.0565	0.0118
+0.2442	0.3139	1.000	System Commands	0.1109	0.0131
+0.2442	0.4380	1.000	83.00	0.0376	0.0102
+0.2542	0.5320	1.000	and the registers saved (STLR) are moved to the	0.3665	0.0118
+0.2544	0.1692	1.000	68.00	0.0432	0.0145
+0.2557	0.2124	1.000	SLOG4	0.0565	0.0133
+0.2566	0.3118	1.000	Logger 4	0.0569	0.0144
+0.2573	0.4380	1.000	83.32	0.0376	0.0102
+0.2573	0.0789	1.000	SABEO)	0.0583	0.0145
+0.2674	0.2237	1.000	SIOGZ	0.0452	0.0146
+0.2674	0.1692	1.000	68.32	0.0414	0.0160
+0.2688	0.5320	1.000	backup buffer, SLRBU. The op code is tested to	0.3684	0.0133
+0.2688	0.3120	1.000	Logger 2	0.0545	0.0146
+0.2703	0.0902	1.000	$SCR	0.0357	0.0116
+0.2718	0.4380	1.000	84.00	0.0376	0.0087
+0.2820	0.2237	1.000	SIOG1	0.0432	0.0131
+0.2833	0.5320	1.000	determine whether PP may legally request it (must	0.3872	0.0118
+0.2833	0.3120	1.000	Logger 1	0.0545	0.0146
+0.2834	0.4361	1.000	84.32	0.0395	0.0116
+0.2979	0.5320	1.000	be less than SJC1). If PP is trying to use an MCP	0.3797	0.0132
+0.3081	0.0921	1.000	Figure 15. Major Package Pseudo-Ops	0.2274	0.0146
+0.3139	0.5320	1.000	pseudo-op, control is given to dispatcher error con-	0.3966	0.0116
+0.3285	0.5320	1.000	trol with error code 2 in $14.	0.2218	0.0103
+0.3299	0.0940	1.000	tentacle tables for linkage and return control. When	0.3929	0.0161
+0.3430	0.5489	1.000	The foregoing steps are skipped if the disabled	0.3515	0.0116
+0.3459	0.0977	1.000	a major package uses another major package, the	0.3722	0.0132
+0.3576	0.5320	1.000	entry was used (SIC, STIC; B,SIFAD). In this case	0.3816	0.0131
+0.3604	0.0958	1.000	latter must perform any necessary saving and re-	0.3779	0.0136
+0.3750	0.5320	1.000	Iow registers are saved in STLR and a full word is	0.3835	0.0132
+0.3764	0.0977	1.000	storing of registers	0.1466	0.0118
+0.3894	0.5338	1.000	subtracted from the address saved upon entry. Then,	0.4041	0.0133
+0.4055	0.5320	1.000	for either method of entry, the entry in the IF ana-	0.3853	0.0118
+0.4055	0.0959	1.000	The Tentacle Table	0.1523	0.0146
+0.4200	0.5320	1.000	lyzer operation table corresponding to the pseudo-op	0.3966	0.0118
+0.4345	0.5320	1.000	is located, and, in turn, gives the address of the	0.3684	0.0131
+0.4360	0.0996	1.000	Each major package program has an associated ten-	0.3910	0.0116
+0.4491	0.6504	1.000	If the busy bit in this table is 1, the	0.2707	0.0131
+0.4506	0.0977	1.000	tacle table located in its program area. The tentacle	0.4023	0.0116
+0.4506	0.5320	1.000	tentacle table.	0.1090	0.0102
+0.4636	0.5338	1.000	return address is set as the location of the B,$MCP	0.3891	0.0131
+0.4651	0.0977	1.000	table provides operating control information for the	0.3891	0.0131
+0.4782	0.5338	1.000	(or the SIC, STIC, if a disabled entry), Iow registers	0.3947	0.0146
+0.4797	0.0996	1.000	major package program, and is used for linkage,	0.3684	0.0131
+0.4924	0.5319	1.000	are restored, and control is returned to the linkage	0.3893	0.0155
+0.4956	0.0977	1.000	return, and priming control.	0.2180	0.0116
+0.5087	0.5320	1.000	via the service op return routine.	0.2538	0.0116
+0.5087	0.1165	1.000	The tentacle table (Figure 16) is composed of two	0.3703	0.0131
+0.5233	0.5489	1.000	If an MCP fixup routine tries to use a major pack-	0.3797	0.0131
+0.5247	0.0977	1.000	and one-half words plus N half-word linkage param-	0.3929	0.0160
+0.5365	0.5337	1.000	age, an error code 80 is put in $14 and exit is made	0.3912	0.0146
+0.5523	0.1165	1.000	To determine the number of half word parameters	0.3741	0.0116
+0.5523	0.5338	1.000	to error control (SDISP). A fixup routine may prime	0.3985	0.0116
+0.5666	0.5338	1.000	a major routine, but may not attempt to give it con-	0.3892	0.0139
+0.5669	0.0996	1.000	(N) in the pseudo-op linkage, $OP is counted as the	0.3835	0.0131
+0.5814	0.5338	1.000	trol directly, since the interrupt may have occurred	0.3929	0.0132
+0.5827	0.0996	1.000	first half word, then a half word is reserved in the	0.3816	0.0118
+0.5924	0.5317	1.000	while a major package was operating.	0.2861	0.0203
+0.5973	0.0996	1.000	table for each parameter in the linkage. An additional	0.4079	0.0118
+0.6105	0.5508	1.000	The required information is put in the tentacle	0.3496	0.0132
+0.6118	0.0977	1.000	two and one-half full words are in the tentacle table.	0.3947	0.0103
+0.6250	0.5338	1.000	table according to the parameter descriptors. The	0.3853	0.0117
+0.6264	0.0996	1.000	Therefore, the size of each table is two and one-half	0.3966	0.0132
+0.6394	0.5320	1.000	level bit (SL) is set to denote MCP ownership of the	0.3891	0.0118
+0.6409	0.0977	1.000	words plus Nhalf words.	0.1898	0.0118
+0.6539	0.5320	1.000	IC. The entry address is selected (MTC1), the entry	0.4023	0.0147
+0.6555	0.1165	1.000	Each linkage parameter will be processed as	0.3365	0.0118
+0.6685	0.5320	1.000	modes are preset (MTC2A), and the routine is entered.	0.4192	0.0147
+0.6700	0.0996	1.000	controlled by its parameter descriptor. For each	0.3759	0.0118
+0.6830	0.5508	1.000	The IF analyzer operation table starts at MIFTTT	0.3759	0.0133
+0.6843	0.0977	1.000	parameter in the linkage following the half word for	0.3893	0.0134
+0.6976	0.5338	1.000	and is used by the IF analyzer to determine the loca-	0.4004	0.0132
+0.6988	0.0977	1.000	$OP, there will be a corresponding half word slot in	0.3949	0.0137
+0.7136	0.5338	1.000	tion of the tentacle table pertaining to the pseudo-op	0.3910	0.0117
+0.7151	0.0996	1.000	the tentacle table.	0.1353	0.0116
+0.7255	0.5337	1.000	requested. The table is constructed so that each half	0.4044	0.0149
+0.7427	0.5338	1.000	word contains the address of the pertinent tentacle	0.3797	0.0116
+0.7442	0.0977	1.000	The IF Analyzer	0.1259	0.0131
+0.7573	0.5338	1.000	table. It is arranged in order of pseudo-op codes.	0.3816	0.0131
+0.7733	0.0996	1.000	When an IF interrupt occurs, the IF analyzer receives	0.4098	0.0131
+0.7878	0.5338	1.000	Identifier Routine	0.1372	0.0116
+0.7878	0.0996	1.000	control in the disabled mode from the interrupt table.	0.4023	0.0131
+0.8023	0.0996	1.000	The IF analyzer itself may also be entered by a dis-	0.3929	0.0131
+0.8154	0.5338	1.000	When a service-operation is requested, the identifier	0.4023	0.0131
+0.8182	0.0996	1.000	abled MCP program requesting a major package, or	0.3910	0.0118
+0.8299	0.5357	1.000	routine is entered disabled from the IF analyzer.	0.3703	0.0116
+0.8327	0.0977	1.000	by the return routine entering a primed major pack-	0.3929	0.0118
+0.8459	0.5338	1.000	The functions of the identifier routine are to:	0.3402	0.0102
+0.8473	0.0996	1.000	age. The IF analyzer channels all requests for the	0.3853	0.0118
+0.8605	0.5489	1.000	1. Identify the specific unit assigned to the sym-	0.3722	0.0132
+0.8618	0.0996	1.000	service-ops to the identifier routine. Table 1	0.3496	0.0118
+0.8750	0.5320	1.000	bolic file referenced in the calling sequence,	0.3383	0.0117
+0.8764	0.0996	1.000	summarizes the entries to and exits from the IF	0.3609	0.0103
+0.8894	0.5489	1.000	2. Check the calling sequence for a legal request,	0.3816	0.0133
+0.8924	0.0977	1.000	analyzer.	0.0733	0.0102
+0.9055	0.5733	1.000	Transfer control to the proper service routine	0.3534	0.0118
+0.9055	0.1165	1.000	The IF analyzer (Figure 17) saves low registers in	0.3816	0.0132
+0.9200	0.0977	1.000	the STLR buffer. The multiplier register ($MR; see	0.3966	0.0118
+0.9200	0.5320	1.000	for the performance of the operation requested.	0.3590	0.0118
+0.9491	0.7914	1.000	Interrupt Control	0.1015	0.0103
+0.9491	0.8947	1.000	31	0.0357	0.0087

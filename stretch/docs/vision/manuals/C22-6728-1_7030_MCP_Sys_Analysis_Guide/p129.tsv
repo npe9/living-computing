@@ -1,0 +1,138 @@
+0.0959	0.5395	1.000	It was mentioned previously that a functional pro-	0.3741	0.0132
+0.0973	0.0921	1.000	The VSETX Subroutine: The VSETX routine (Figure	0.3910	0.0133
+0.1104	0.5225	1.000	gram would, after inserting a parameter, remove and	0.4081	0.0150
+0.1108	0.0920	1.000	70) performs the function of removing from a queue	0.3874	0.0158
+0.1250	0.5226	1.000	act upon the next parameter if it were not already busy.	0.4192	0.0132
+0.1279	0.0902	1.000	a single parameter, returning to the calling program	0.3985	0.0131
+0.1381	0.5226	1.000	This action centers about the active parameter, VX1,	0.4023	0.0131
+0.1424	0.0902	1.000	with the parameter if it is positive, or branching to	0.3891	0.0131
+0.1539	0.5226	1.000	whose value has a double significance. First, zero	0.3891	0.0133
+0.1570	0.0921	1.000	the location addressed by the absolute value of the	0.3741	0.0131
+0.1685	0.5226	1.000	or non-zero respectively indicates whether the pro-	0.3891	0.0133
+0.1715	0.0902	1.000	parameter if it is negative. The cell containing the	0.3872	0.0131
+0.1831	0.5224	1.000	gram is not busy or busy. Second, the value, if	0.3649	0.0156
+0.1875	0.0902	1.000	parameter removed is set to zero. VSETX uses	0.3647	0.0116
+0.1991	0.5207	1.000	positive, is the number of cards in the bufier area	0.3797	0.0131
+0.2020	0.0921	1.000	VX2R in removing parameters from the queue and	0.3759	0.0116
+0.2136	0.5226	1.000	being processed, and if negative, identifies the special	0.4117	0.0131
+0.2157	0.0901	1.000	updates VX2R in a manner that preserve the order	0.3799	0.0140
+0.2282	0.5226	1.000	operation now in progress. If VX1 is zero, the inter-	0.4060	0.0146
+0.2311	0.0921	1.000	and continuity of the queue. First, like VX2S, VX2R	0.3985	0.0131
+0.2442	0.5207	1.000	face routine enters VSETX, which will remove a	0.3665	0.0116
+0.2470	0.0921	1.000	never remains on a queue entry, which is negative.	0.3853	0.0118
+0.2587	0.5226	1.000	single parameter from VX2. If the parameter is non-	0.4060	0.0131
+0.2602	0.0921	1.000	If VSETX finds a positive parameter, it is removed	0.3872	0.0132
+0.2733	0.5226	1.000	negative, control returns with the parameter index	0.3816	0.0131
+0.2761	0.0921	1.000	and VX2R remains unchanged. If the entry is zero,	0.3891	0.0118
+0.2878	0.5226	1.000	register VT2, which is stored in VX1, and then the	0.3853	0.0131
+0.2906	0.0921	1.000	the next entry is tested and if zero, then zero is	0.3609	0.0132
+0.3023	0.5226	1.000	function characteristic of the program is performed	0.3910	0.0131
+0.3052	0.0921	1.000	returned to the calling program and VX2R again	0.3609	0.0146
+0.3182	0.5226	1.000	on the buffer area. If the parameter is negative,	0.3684	0.0118
+0.3197	0.0883	1.000	remains the same. If the next entry is positive VXZR	0.4079	0.0161
+0.3305	0.0863	1.000	is advanced to that slot and the parameter is removed.	0.4157	0.0210
+0.3314	0.5244	1.000	VSETX makes a CBt type entry to the location given	0.3910	0.0132
+0.3458	0.5225	1.000	by the parameter. Since VSETX is entered by a	0.3630	0.0150
+0.3459	0.0883	1.000	If the entry is negative, it is removed and VX2R	0.3703	0.0204
+0.3605	0.0883	1.000	advances to the following slot. The following example	0.4117	0.0189
+0.3618	0.5226	1.000	SIC,..;B,..; sequence, the net effect is as it the	0.3741	0.0132
+0.3764	0.5226	1.000	program calling VSETX had instead made a CBt type	0.3985	0.0132
+0.3779	0.0883	1.000	illustrates this process:	0.1898	0.0161
+0.3909	0.5226	1.000	entry to the special sequence addressed by the nega-	0.3966	0.0132
+0.4045	0.3550	1.000	Parameter Just	0.0889	0.0180
+0.4070	0.5226	1.000	tive parameter. Each special sequence can thereby	0.3910	0.0131
+0.4184	0.3552	1.000	Removed by VSETX	0.1223	0.0179
+0.4200	0.0883	1.000	Queue after Parameter has Been Removed	0.2462	0.0161
+0.4215	0.5244	1.000	maintain the continuity of control. There are various	0.4023	0.0131
+0.4360	0.5226	1.000	alternatives that may be used depending mainly on	0.3778	0.0116
+0.4448	0.3816	1.000	Initially	0.0545	0.0160
+0.4462	0.1335	1.000	-WEFT	0.0451	0.0131
+0.4477	0.0902	1.000	3+	0.0150	0.0116
+0.4506	0.5226	1.000	whether the special sequence completes its operation	0.4004	0.0131
+0.4561	0.1314	1.000	-WEFT	0.0473	0.0166
+0.4593	0.4004	1.000	3	0.0113	0.0102
+0.4608	0.0883	1.000	O+	0.0188	0.0102
+0.4651	0.5226	1.000	immediately or only initiates it. In the former case,	0.4004	0.0131
+0.4724	0.3289	1.000	Step 1 -WEFT	0.0959	0.0116
+0.4724	0.1466	1.000	Ot	0.0188	0.0145
+0.4797	0.5244	1.000	the instruction CB-, VP, SETX may terminate the	0.3778	0.0146
+0.4837	0.3288	1.000	Step 2	0.0398	0.0137
+0.4942	0.5244	1.000	sequence. That is, a CB- type entry to VSETX is	0.3759	0.0146
+0.5087	0.4004	1.000	6	0.0113	0.0131
+0.5115	0.5226	1.000	effected, the net effect being as if a SIC, ..; B,...	0.3741	0.0133
+0.5131	0.0902	1.000	0	0.0094	0.0087
+0.5247	0.2387	1.000	O+	0.0188	0.0116
+0.5261	0.5226	1.000	type entry was made from the original calling pro-	0.3816	0.0133
+0.5401	0.5789	1.000	This preserves the continuity of both program	0.3479	0.0140
+0.5431	0.5224	1.000	gram.	0.0473	0.0111
+0.5494	0.0883	1.000	+ Indicates position of VX2R pointer	0.2124	0.0131
+0.5532	0.5224	1.000	control and parameter flow. In the case when a	0.3593	0.0162
+0.5712	0.5226	1.000	special sequence only initiates an operation, param-	0.3947	0.0116
+0.5858	0.5226	1.000	eter flow must be suspended until the operation is	0.3741	0.0103
+0.5959	0.1034	1.000	The interaction of the entry and removal process	0.3722	0.0160
+0.5988	0.5226	1.000	complete. This may be done by "faking" a return	0.3741	0.0131
+0.6105	0.0883	1.000	is exhibited in the following example:	0.2857	0.0160
+0.6148	0.5226	1.000	from VSETX with a zero parameter, or, subject to	0.3853	0.0116
+0.6279	0.5226	1.000	certain conditions, by returning one level higher than	0.4023	0.0131
+0.6439	0.7650	1.000	Here, the continuity	0.1523	0.0116
+0.6439	0.5207	1.000	the program that called SETX.	0.2350	0.0161
+0.6584	0.5226	1.000	of control is maintained but that of parameter must	0.3872	0.0131
+0.6626	0.0883	1.000	Parameter	0.0659	0.0149
+0.6642	0.4098	1.000	Parameter	0.0620	0.0116
+0.6730	0.5207	1.000	be held over in VX1, thus suspending flow continu-	0.3929	0.0146
+0.6758	0.2030	1.000	Queue After Parameter has	0.1560	0.0146
+0.6772	0.0883	1.000	Just Entered	0.0734	0.0148
+0.6773	0.4079	1.000	Just Removed	0.0827	0.0118
+0.6874	0.4097	1.000	by VSETX	0.0640	0.0176
+0.6875	0.5207	1.000	ity until an operation is completed.	0.2744	0.0146
+0.6890	0.0883	1.000	by VCOM	0.0658	0.0160
+0.6890	0.2068	1.000	Been Removed or Entered	0.1523	0.0147
+0.7137	0.4173	1.000	Initially	0.0545	0.0145
+0.7149	0.0882	1.000	Initially	0.0547	0.0150
+0.7166	0.1786	1.000	O+*	0.0263	0.0102
+0.7166	0.5207	1.000	The VSETUP Subroutine: VSETUP (Figure 70) is the	0.4023	0.0146
+0.7282	0.1786	1.000	3+*	0.0282	0.0131
+0.7311	0.5207	1.000	subroutine usually used to maintain parameter flow.	0.3947	0.0147
+0.7413	0.1786	1.000	5+*	0.0282	0.0131
+0.7427	0.1053	1.000	2	0.0132	0.0087
+0.7470	0.5207	1.000	It is entered by a SIC,...;B,... type entry, and	0.3665	0.0147
+0.7544	0.2143	1.000	0	0.0132	0.0102
+0.7544	0.4380	1.000	5	0.0094	0.0102
+0.7558	0.1786	1.000	O+*	0.0263	0.0116
+0.7602	0.5226	1.000	returns a zero parameter to the calling program if	0.3853	0.0147
+0.7660	0.0902	1.000	-WEFT	0.0470	0.0145
+0.7674	0.2143	1.000	-WEFT	0.0451	0.0131
+0.7689	0.1786	1.000	O+	0.0188	0.0102
+0.7747	0.5226	1.000	the program is busy; otherwise, it behaves like	0.3590	0.0160
+0.7803	0.2142	1.000	-WEFT	0.0453	0.0135
+0.7805	0.1109	1.000	4	0.0113	0.0116
+0.7805	0.2613	0.500	4 0	0.0451	0.0116
+0.7805	0.1786	1.000	O+	0.0188	0.0131
+0.7892	0.5226	1.000	VSETX. The normal calling sequence is:	0.3139	0.0145
+0.7936	0.2688	1.000	4* 0	0.0376	0.0116
+0.7936	0.4192	1.000	-WEFT	0.0432	0.0087
+0.8052	0.5395	1.000	SIC, (VP); B, VSETUP	0.1748	0.0146
+0.8067	0.2707	1.000	0+* 0	0.0357	0.0088
+0.8197	0.2688	1.000	2+* 0	0.0376	0.0103
+0.8197	0.5376	1.000	SV, VT2, VX1 (VU)	0.1523	0.0146
+0.8327	0.2707	1.000	0+* 0	0.0357	0.0088
+0.8354	0.5413	1.000	BXVZ, ---	0.0960	0.0138
+0.8358	0.6391	1.000	do no more work	0.1391	0.0103
+0.8445	0.2688	1.000	1+*0	0.0376	0.0116
+0.8488	0.6523	1.000	'process new active parameter	0.2368	0.0146
+0.8517	0.5414	0.500	_--	0.0263	0.0073
+0.8576	0.2669	1.000	O+ -WEFT	0.0733	0.0116
+0.8590	0.0921	1.000	-WEFT	0.0432	0.0116
+0.8633	0.5395	1.000	VSETX is normally used when it is desired to	0.3459	0.0146
+0.8692	0.2162	1.000	0	0.0113	0.0116
+0.8692	0.4380	1.000	1	0.0150	0.0116
+0.8706	0.3421	0.500	0* 0	0.0451	0.0088
+0.8706	0.2669	1.000	O+	0.0188	0.0116
+0.8706	0.2895	1.000	-WEFT	0.0508	0.0116
+0.8779	0.5226	1.000	resume parameter flow after an extended operation	0.3872	0.0146
+0.8924	0.5226	1.000	has been completed. In this case the normal envi-	0.3853	0.0146
+0.8953	0.0902	1.000	+ Indicates position of VX2R	0.1692	0.0147
+0.9070	0.0902	1.000	* Indicates position of VXZS	0.1692	0.0161
+0.9084	0.5226	1.000	ronment is:	0.0902	0.0131
+0.9506	0.7632	1.000	System Input-Output	0.1203	0.0116
+0.9520	0.9079	1.000	129	0.0207	0.0073

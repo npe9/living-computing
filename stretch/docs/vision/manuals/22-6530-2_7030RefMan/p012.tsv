@@ -1,0 +1,75 @@
+0.0652	0.5225	1.000	For simplicity, the arithmetic unit may be consid-	0.3762	0.0170
+0.0682	0.0902	1.000	the arithmetic and logical unit to operate at its maxi-	0.3891	0.0147
+0.0807	0.5074	1.000	ered to be composed of four one-word registers and a	0.3912	0.0174
+0.0825	0.0882	1.000	mum speed. From this point of view, look-ahead acts	0.3913	0.0180
+0.0973	0.5056	1.000	short register. This conceptual structure is shown in	0.3929	0.0146
+0.0988	0.0902	1.000	as a virtual storage for the arithmetic unit, effectively	0.3891	0.0146
+0.1117	0.0900	1.000	cutting the core storage reference rate to a small frac-	0.3895	0.0183
+0.1118	0.5075	1.000	Figure 2, where the full-length registers are labeled	0.3910	0.0146
+0.1264	0.5056	1.000	A, B, C, and D and the short register is labeled S. The	0.3929	0.0161
+0.1294	0.0902	1.000	tion of the actual time required for sequential storage	0.3891	0.0146
+0.1422	0.5074	1.000	registers marked A and B constitute the left and right	0.3930	0.0148
+0.1481	0.0902	1.000	accesses.	0.0564	0.0089
+0.1584	0.5075	1.000	halves of the accumulator. The registers marked C	0.3910	0.0131
+0.1599	0.1053	1.000	If the result of an arithmetic operation is to be re-	0.3759	0.0131
+0.1730	0.5075	1.000	and D serve as storage registers, receiving words from	0.3910	0.0146
+0.1758	0.0902	1.000	turned to storage, it is first placed in look-ahead, from	0.3891	0.0146
+0.1890	0.5075	1.000	core storage via look-ahead and assembling results	0.3929	0.0147
+0.1918	0.0902	1.000	whence it returns to storage. Frequently, subsequent	0.3910	0.0131
+0.2034	0.5074	1.000	to be placed in storage again by way of look-ahead.	0.3930	0.0163
+0.2048	0.0902	1.000	instructions will require data that are already in look-	0.3891	0.0146
+0.2189	0.0901	1.000	ahead, so that data references are eliminated in these	0.3913	0.0170
+0.2194	0.5094	1.000	The short register stores the accumulator sign bit,	0.3910	0.0132
+0.2339	0.5075	1.000	data flag bits, and zone bits, collectively called the	0.3929	0.0146
+0.2500	0.5075	1.000	accumulator sign byte.	0.1692	0.0145
+0.2511	0.3890	1.000	the overlap-	0.0904	0.0138
+0.2515	0.1053	1.000	In spite of the internal complexities,	0.2857	0.0146
+0.2643	0.5244	1.000	In floating point MULTIPLY and ADD, one factor	0.3761	0.0166
+0.2674	0.0902	1.000	ping of fetching, modification, and execution of in-	0.3910	0.0147
+0.2766	0.5091	1.000	comes from storage to register C while the other comes	0.3914	0.0205
+0.2820	0.0883	1.000	structions as well as the simultaneous fetching and	0.3929	0.0132
+0.2964	0.5094	1.000	from the factor register (FT) to register D. The two	0.3910	0.0133
+0.2979	0.0902	1.000	storing of data does not place any constraints on the	0.3910	0.0132
+0.3078	0.5092	1.000	are multiplied and added to the accumulator con-	0.3913	0.0189
+0.3113	0.0900	1.000	programmer. The only external difference in system	0.3914	0.0187
+0.3270	0.5075	1.000	tents. In ordinary multiplication, one factor comes	0.3929	0.0131
+0.3299	0.0902	1.000	operation due to look-ahead is a higher operation	0.3891	0.0131
+0.3415	0.5094	1.000	from storage to C and the other is taken from A to D.	0.3910	0.0146
+0.3445	0.0883	1.000	speed. The look-ahead unit takes care of the usual	0.3910	0.0131
+0.3576	0.5094	1.000	The product is developed in the cleared accumulator.	0.3910	0.0146
+0.3590	0.0883	1.000	conditions which overlapping causes, and makes the	0.3929	0.0131
+0.3735	0.5226	1.000	In variable field length operations, the core storage	0.3778	0.0131
+0.3750	0.0902	1.000	machine appear as if it were dealing with only one	0.3910	0.0132
+0.3881	0.5094	1.000	word or words containing the data are placed in C	0.3910	0.0131
+0.3890	0.0883	1.000	instruction at a time.	0.1524	0.0127
+0.4026	0.5094	1.000	and D. The data are selected a few bits at a time	0.3910	0.0131
+0.4185	0.5094	1.000	and processed. The result either replaces the accumu-	0.3910	0.0147
+0.4288	0.0902	1.000	Arithmetic Unit	0.1128	0.0131
+0.4331	0.5075	1.000	lator contents, or replaces selected bits of C and D	0.3911	0.0152
+0.4491	0.5094	1.000	whose contents are then returned to core storage. Bi-	0.3910	0.0131
+0.4506	0.0883	1.000	The arithmetic unit consists of an apparatus for per-	0.3947	0.0161
+0.4636	0.5094	1.000	nary multiplication and division data are stepped	0.3910	0.0146
+0.4666	0.0883	1.000	forming floating point arithmetic upon a data word	0.3929	0.0131
+0.4779	0.0883	1.000	in parallel and a closely associated mechanism for per-	0.3929	0.0166
+0.4797	0.5075	1.000	into the parallel mechanism a few bits at a time, then	0.3929	0.0131
+0.4942	0.0883	1.000	forming arithmetic and logical functions upon arbi-	0.3947	0.0189
+0.4956	0.5094	1.000	the actual operation is performed in parallel.	0.3327	0.0131
+0.5070	0.0901	1.000	trary fields of bits. In the latter case, the bits may be	0.3930	0.0207
+0.5102	0.5244	1.000	In division, the quotient appears in the accumula-	0.3778	0.0132
+0.5247	0.0902	1.000	operated upon as individual entities or as numbers	0.3929	0.0174
+0.5247	0.5094	1.000	tor and the remainder is developed in C and D from	0.3910	0.0147
+0.5406	0.0902	1.000	encoded in binary or decimal.	0.2162	0.0161
+0.5406	0.5094	1.000	whence it returns to the remainder register (RR). Reg-	0.3910	0.0146
+0.5814	0.0921	1.000	To or from Storage	0.0959	0.0132
+0.6468	0.5564	1.000	63	0.0169	0.0102
+0.6468	0.3233	1.000	630	0.0282	0.0116
+0.6759	0.4173	1.000	7	0.0169	0.0131
+0.7195	0.4286	1.000	ADDER	0.0395	0.0116
+0.8328	0.2180	1.000	A	0.0132	0.0102
+0.8416	0.3252	1.000	630	0.0282	0.0145
+0.8445	0.5545	1.000	63	0.0169	0.0116
+0.8734	0.5883	1.000	Word 10	0.0471	0.0119
+0.8735	0.4398	1.000	Word 9	0.0395	0.0116
+0.8735	0.2124	1.000	Word 8	0.0395	0.0131
+0.8982	0.0921	1.000	Figure 2. Conceptual Register Organization	0.2650	0.0132
+0.9302	0.7368	1.000	System Organization	0.1278	0.0131

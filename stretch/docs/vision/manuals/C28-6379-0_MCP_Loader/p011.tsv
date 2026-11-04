@@ -1,0 +1,103 @@
+0.0827	0.5695	1.000	The BSS processor determines whether illegal	0.3477	0.0118
+0.0988	0.5470	1.000	overlay can occur, and gives an error message if an	0.3947	0.0118
+0.1017	0.1184	1.000	A	0.0094	0.0087
+0.1017	0.1598	1.000	A	0.0094	0.0087
+0.1133	0.5451	1.000	illegal transfer exists. There are two exceptions to	0.3947	0.0118
+0.1264	0.2406	1.000	8 C	0.0263	0.0103
+0.1279	0.5451	1.000	the BSS processor checking procedure:	0.2951	0.0117
+0.1352	0.2162	1.000	B	0.0094	0.0087
+0.1424	0.5677	1.000	1. No check is made to determine if illegal over-	0.3778	0.0116
+0.1570	0.5451	1.000	lay is caused by a called subprogram which appears	0.3910	0.0116
+0.1715	0.5451	1.000	in an argument list by way of an EXTERNAL statement.	0.4173	0.0116
+0.1860	0.5677	1.000	2. No check is made to see if named commons are	0.3853	0.0116
+0.2003	0.5450	1.000	overlaid.	0.0735	0.0122
+0.2035	0.2086	1.000	5	0.0094	0.0102
+0.2151	0.5677	1.000	A named common cannot be expected to be pre-	0.3590	0.0116
+0.2297	0.5451	1.000	served when the segment with which it is associated	0.3910	0.0116
+0.2339	0.1147	1.000	FIGURE 6. TREE STRUCTURE OF A JOB REQUIRING THE SEG-	0.3778	0.0132
+0.2456	0.5451	1.000	has been overlaid.	0.1391	0.0102
+0.2470	0.1861	1.000	MENTATION FEATURE OF THE BSS PROCESSOR	0.2895	0.0118
+0.2602	0.5658	1.000	The total of all subprograms and common asso-	0.3609	0.0116
+0.2747	0.5432	1.000	ciated with the segments of any storage load must not	0.4023	0.0102
+0.2791	0.1316	1.000	Notes: Segment 5 is the primary segment and con-	0.3985	0.0161
+0.2892	0.5432	1.000	exceed in size the storage available. An error	0.3553	0.0117
+0.2936	0.1147	1.000	tains the subprogram with entry point *MAIN*, all	0.3853	0.0146
+0.3009	0.5451	1.000	message is given by the BSS processor if the limit is	0.4004	0.0116
+0.3081	0.1147	1.000	library subprograms, the FIOD subprogram, and the	0.4041	0.0146
+0.3154	0.5451	1.000	exceeded.	0.0771	0.0116
+0.3227	0.1147	1.000	link subprogram. Segment 5 is allocated starting at	0.3985	0.0146
+0.3387	0.1128	1.000	location 33.0 and remains in storage at all times.	0.3797	0.0132
+0.3488	0.5489	1.000	Detail of Segmentation Function	0.2368	0.0131
+0.3532	0.1410	1.000	The NODE card in front of segment 5 should con-	0.3703	0.0117
+0.3677	0.1165	1.000	tain T NODE, 05, 00 in the NODE card format. (See	0.3947	0.0132
+0.3794	0.5489	1.000	There are two parts to the segmentation feature. The	0.4060	0.0116
+0.3821	0.1165	1.000	card formats, Appendix A.) The NODE card in front	0.3967	0.0137
+0.3939	0.5489	1.000	first part operates as a departure from the normal	0.3816	0.0116
+0.3967	0.1165	1.000	of segment 2 should contain T NODE, 02, 04.	0.3440	0.0133
+0.4084	0.5489	1.000	path of the BSS processor, and its function is to set	0.3891	0.0116
+0.4127	0.1391	1.000	Segments 10 and 11 are allocated storage begin-	0.3628	0.0118
+0.4230	0.5489	1.000	up the node table, which contains information neces-	0.3966	0.0116
+0.4273	0.1165	1.000	ning at the same location, and therefore will not be	0.3853	0.0118
+0.4375	0.5489	1.000	sary for segmentation, and to form the relocation	0.3703	0.0131
+0.4418	0.1165	1.000	in storage at the same time. Segment 9 is allocated	0.3947	0.0118
+0.4520	0.5470	1.000	table, used by the MCP loader. The second part of	0.3910	0.0131
+0.4564	0.1165	1.000	storage higher than segment 6 in the diagram. Seg-	0.3947	0.0117
+0.4666	0.5470	1.000	the segmentation feature is the link program, which	0.3929	0.0116
+0.4709	0.1165	1.000	ments 5, 6, 8, and 11, with their associated named	0.3872	0.0131
+0.4811	0.5489	1.000	operates at execution time, and performs the super-	0.3947	0.0131
+0.4853	0.1165	1.000	commons, may make up one storage load.	0.3178	0.0146
+0.4956	0.5470	1.000	visory function of calling for the proper segment to	0.3872	0.0116
+0.5102	0.5470	1.000	be loaded by the MCP loader. (Refer to the Link	0.3703	0.0116
+0.5102	0.1391	1.000	Since only segments 2 and 3 use named common A,	0.3835	0.0132
+0.5247	0.1165	1.000	named common A is associated with segment 4 and is	0.4023	0.0117
+0.5247	0.5489	1.000	Program section.)	0.1391	0.0132
+0.5406	0.1165	1.000	available for storage whenever segment 4 is called	0.3816	0.0118
+0.5552	0.5470	1.000	BSS Processor Deviation For Segmentation Function	0.3910	0.0103
+0.5552	0.1165	1.000	in. Named common B is associated with segment 6.	0.3947	0.0118
+0.5697	0.1165	1.000	Named common C is associated with segment 8.	0.3609	0.0118
+0.5827	0.5489	1.000	When the BSS processor has completed its scan of	0.3778	0.0133
+0.5842	0.1391	1.000	If A were a block data subprogram contained in	0.3534	0.0118
+0.5988	0.1165	1.000	segment 3 and referenced by segment 2, an error	0.3741	0.0131
+0.5988	0.5470	1.000	the input deck, the segmentation portion of code is	0.3797	0.0131
+0.6133	0.1165	1.000	would be indicated.	0.1447	0.0117
+0.6133	0.5470	1.000	entered if a NODE card had been encountered. The	0.3872	0.0118
+0.6252	0.1390	1.000	Named common B would be allocated spacehigher	0.3743	0.0167
+0.6294	0.5470	1.000	node table, which at this time contains the segment	0.3872	0.0116
+0.6424	0.5470	1.000	numbers and the segments to which they are attached	0.3985	0.0131
+0.6439	0.1147	1.000	in storage than named common C.	0.2575	0.0116
+0.6570	0.1391	1.000	The number of segments contained in a single	0.3421	0.0131
+0.6584	0.5451	1.000	(taken from the NODE cards), is expanded in the	0.3684	0.0131
+0.6703	0.1164	1.000	storage load cannot exceed 8. The total number of	0.3837	0.0146
+0.6730	0.5451	1.000	following way: successive scans of the node table are	0.4023	0.0116
+0.6875	0.1165	1.000	segments cannot exceed 99.	0.2086	0.0116
+0.6875	0.5470	1.000	made, picking up the chain of attachment of the seg-	0.3947	0.0131
+0.7020	0.1372	1.000	Some types of transfer are illegal. The general	0.3628	0.0116
+0.7020	0.5470	1.000	ments. (For example, if a table entry shows that	0.3741	0.0116
+0.7166	0.5470	1.000	segment 5 is attached to segment 2, a search is made	0.4004	0.0116
+0.7166	0.1165	1.000	rule is made that no transfer is legal which causes	0.3816	0.0116
+0.7311	0.5451	1.000	to find out to what segment segment 2 is attached.)	0.3835	0.0116
+0.7311	0.1147	1.000	the originating segment to be overlaid. Hence, trans-	0.4079	0.0131
+0.7456	0.1147	1.000	fers from a subprogram in one storage load to a sub-	0.4023	0.0116
+0.7456	0.5470	1.000	When the primary segment is encountered (attached	0.3872	0.0116
+0.7602	0.1147	1.000	program in another storage load are illegal. A trans-	0.4098	0.0116
+0.7602	0.5451	1.000	to segment number 00), the lower limit for available	0.3966	0.0132
+0.7747	0.1147	1.000	fer from one segment of a storage load to another seg-	0.4098	0.0117
+0.7761	0.5451	1.000	storage is placed in the node table, and an entry is	0.3835	0.0118
+0.7906	0.5470	1.000	made in the second intermediate table for the segment	0.4060	0.0103
+0.7906	0.1165	1.000	ment of that storage load is legal provided no transfer	0.4060	0.0118
+0.8052	0.5470	1.000	number of blank common. A link table mask is set	0.3853	0.0118
+0.8052	0.1147	1.000	is made by the second segment which can cause the	0.3853	0.0118
+0.8197	0.5451	1.000	up in the communication region of MCP (Figure 7) to	0.3985	0.0118
+0.8197	0.1147	1.000	originating segment to be overlaid, since the return	0.3910	0.0118
+0.8327	0.1147	1.000	cannot be executed. In Figure 6, a transfer from	0.3741	0.0133
+0.8342	0.5451	1.000	indicate which is the primary segment. This mask	0.3872	0.0118
+0.8488	0.5451	1.000	is a bit string used by the link program to determine	0.3966	0.0118
+0.8488	0.1147	1.000	segment 6 to segment 4 is illegal. A transfer from	0.3872	0.0118
+0.8633	0.5470	1.000	which segments are currently in storage. (See in-	0.3816	0.0117
+0.8633	0.1147	1.000	segment 11 to segment 8 is illegal if segment 8 at-	0.3835	0.0117
+0.8779	0.5451	1.000	formation on the link program.) The scan for at-	0.3759	0.0117
+0.8779	0.1147	1.000	tempts to transfer control to segment 10 before the	0.3853	0.0117
+0.8924	0.5451	1.000	tached segments continues until all segments are	0.3703	0.0116
+0.8939	0.1147	1.000	return to segment 11.	0.1598	0.0116
+0.9360	0.8346	1.000	BSS Processor	0.0789	0.0088
+0.9375	0.9173	1.000	11	0.0226	0.0058

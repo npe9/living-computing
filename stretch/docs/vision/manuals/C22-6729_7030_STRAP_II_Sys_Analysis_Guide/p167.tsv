@@ -1,0 +1,76 @@
+0.0916	0.8553	1.000	OPLIST	0.0602	0.0131
+0.1526	0.1015	1.000	LINKAGE	0.0733	0.0116
+0.1539	0.5282	1.000	System Output, to A8 code. The blocking control	0.3647	0.0133
+0.1685	0.5282	1.000	index (Olblk), which contains the working location in	0.3853	0.0133
+0.1817	0.1034	1.000	On Entry	0.0677	0.0116
+0.1830	0.5282	1.000	the listing buffer, and the number of available posi-	0.3835	0.0133
+0.1991	0.5282	1.000	tions in the buffer, is stepped over the line image.	0.3722	0.0131
+0.2121	0.1391	1.000	The calling sequence is:	0.1842	0.0132
+0.2151	0.1184	1.000	1.	0.0188	0.0102
+0.2281	0.1672	1.000	CNOP	0.0452	0.0118
+0.2397	0.5263	1.000	Box 5	0.0432	0.0133
+0.2426	0.1654	1.000	SIC, Oplisz	0.0884	0.0163
+0.2602	0.1673	1.000	B, UPLIS!	0.0808	0.0116
+0.2686	0.5280	1.000	Oprien is checked to see if the current entry is the	0.3744	0.0175
+0.2733	0.1692	1.000	CW, Location of data, number of words.	0.2951	0.0116
+0.2848	0.5620	1.000	If yes, the buffer will be written regardless	0.3346	0.0131
+0.2849	0.5263	1.000	last.	0.0357	0.0102
+0.2878	0.1184	1.000	2. In order to terminate the listing, bit Oprien	0.3496	0.0131
+0.2979	0.5282	1.000	of the blocking control count.	0.2143	0.0132
+0.3023	0.1015	1.000	must be set to one before branching to OPLIST.	0.3515	0.0131
+0.3270	0.5263	1.000	Boxes 6, 7	0.0827	0.0161
+0.3415	0.0996	1.000	On Exit	0.0602	0.0118
+0.3576	0.5244	1.000	The count in Olblk is decremented and checked for	0.3741	0.0146
+0.3706	0.1165	1.000	1. If STRAP II is the last compiler in a chain,	0.3459	0.0146
+0.3735	0.5244	1.000	zero. I so, the buffer is full and ready for output.	0.3797	0.0131
+0.3847	0.5112	1.000	If not zero, the blocking control is saved, and	0.3553	0.0169
+0.3866	0.0996	1.000	the listing will be written on the System Output ($SPR);	0.4135	0.0161
+0.3978	0.5243	1.000	return is made.	0.1205	0.0184
+0.4012	0.1015	1.000	if not last in a chain, the listing will be written on	0.3703	0.0116
+0.4142	0.0996	1.000	either the disk or System Output as specified in word	0.3929	0.0145
+0.4288	0.0996	1.000	9 of the Communication Region (COMREC). If the	0.3722	0.0161
+0.4302	0.5226	1.000	Boxes 8-10	0.0902	0.0146
+0.4433	0.1015	1.000	listing is to disk, the location of the first are where	0.3816	0.0146
+0.4593	0.0996	1.000	the listing is to be placed is specified by the pre-pro-	0.3947	0.0174
+0.4606	0.5244	1.000	If bit Spooll has been turned on by OPLIPU, the	0.3534	0.0161
+0.4735	0.5206	1.000	listing will be written on the System Output; the	0.3574	0.0180
+0.4767	0.1015	1.000	cessor.	0.0564	0.0087
+0.4884	0.1165	1.000	2. STRAP II will place succeeding listing ar	0.3402	0.0147
+0.4884	0.5226	1.000	buffer will be blanked.	0.1711	0.0160
+0.5058	0.1015	1.000	numbers in word 0 (bits 0-17) of each listing arc.	0.3628	0.0103
+0.5172	0.5225	1.000	Boxes 12-15	0.0960	0.0165
+0.5185	0.1034	1.000	The number of lines of listing in the are is placed in	0.3816	0.0124
+0.5333	0.1015	1.000	bits 28-45. Bit 25 on indicates the final arc of the	0.3703	0.0118
+0.5479	0.5226	1.000	Bit Oldisk will have been set to one if the listing is	0.3759	0.0161
+0.5494	0.0996	1.000	listing.	0.0564	0.0102
+0.5623	0.5224	1.000	to disk. If on, the next available arc for listing is	0.3744	0.0186
+0.5770	0.5226	1.000	obtained from Oarcx and placed in the first word of	0.3816	0.0161
+0.5785	0.0996	1.000	FLOW CHART DESCRIPTION	0.2199	0.0116
+0.5930	0.5226	1.000	the buffer. Oarcx is stepped to the next available	0.3684	0.0161
+0.6076	0.5207	1.000	are for listing or binary output. The number of	0.3590	0.0146
+0.6076	0.0977	1.000	Box 1	0.0451	0.0131
+0.6206	0.5207	1.000	lines of listing is stored in the count field of the	0.3571	0.0161
+0.6352	0.0996	1.000	The program waits for bit Olfull to be reset by the	0.3722	0.0161
+0.6366	0.5207	1.000	first word, and the are is written on the disk.	0.3402	0.0161
+0.6497	0.0977	1.000	write EOP interrupt, indicating that the listing buffer	0.3966	0.0161
+0.6657	0.0977	1.000	is ready to accept data.	0.1767	0.0146
+0.6672	0.5188	1.000	Box 11	0.0564	0.0160
+0.6958	0.0995	1.000	Boxes 2, 3	0.0848	0.0139
+0.6962	0.5226	1.000	The blocking control is reset, indicating an empty	0.3684	0.0160
+0.7121	0.5207	1.000	buffer (i.e., starting at word 2, and maximum line	0.3797	0.0146
+0.7252	0.0977	1.000	Switch 1 is a NOP-Branch switch which is set to a	0.3703	0.0133
+0.7265	0.5206	1.000	count).	0.0547	0.0136
+0.7381	0.0976	1.000	branch by OPLIPU. There is an identical switch in	0.3818	0.0166
+0.7529	0.0977	1.000	OPPUN. The first time thru either OPLISI or	0.3496	0.0160
+0.7556	0.5187	1.000	Box 16	0.0565	0.0149
+0.7688	0.0977	1.000	OPPUN will cause OPLIPU to initialize both routines.	0.3985	0.0146
+0.7791	0.5207	1.000	Bit 25 in word O of the listing buffer is set to one,	0.3684	0.0218
+0.7993	0.0977	1.000	Box 4	0.0489	0.0132
+0.7994	0.5188	1.000	indicating EOF. The count in the blocking control	0.3741	0.0161
+0.8154	0.5188	1.000	is subtracted from one less than the maximum number	0.4060	0.0116
+0.8274	0.5205	1.000	of lines that can be placed in the buffer. The result	0.3875	0.0170
+0.8285	0.0977	1.000	The data is moved to the listing buffer and converted	0.3891	0.0145
+0.8412	0.5187	1.000	is stored in the count field of word o.	0.2785	0.0179
+0.8415	0.0977	1.000	to the code specified by COMREC, or in the case of	0.3816	0.0161
+0.9433	0.8252	1.000	OPLIST	0.0677	0.0131
+0.9448	0.8891	1.000	167	0.0282	0.0116

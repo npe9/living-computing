@@ -1,0 +1,105 @@
+0.0959	0.4962	1.000	The Rewind Routine	0.1579	0.0147
+0.0959	0.0695	1.000	at KRITET from the verify routine, and at KUNLDI	0.3872	0.0132
+0.1105	0.0695	1.000	from the free routine (Figure 108).	0.2650	0.0117
+0.1235	0.4962	1.000	The rewind routine is entered at ZREWST (Figure	0.3778	0.0160
+0.1250	0.0883	1.000	The unload is always performed in the SEOP mode,	0.3835	0.0132
+0.1409	0.0714	1.000	since the EOP would normally occur when the ex-	0.3722	0.0118
+0.1409	0.4981	1.000	108) when the pseudo-op is requested. After attend-	0.3891	0.0118
+0.1539	0.4962	1.000	ing to bookkeeping, a rewind SEOP is performed. The	0.4060	0.0147
+0.1539	0.0695	1.000	change accepts the instruction. The channel signal	0.3797	0.0133
+0.1685	0.0714	1.000	occurring when a new tape is mounted is given to the	0.3929	0.0133
+0.1700	0.4944	1.000	I-O reject (MIOREJ) and SEOP test (KSEOPT) rou-	0.3891	0.0118
+0.1844	0.0695	1.000	user or the actuator, according to the SEOP and set	0.3893	0.0144
+0.1845	0.4944	1.000	tines are used, and when the instruction is accepted,	0.4004	0.0146
+0.1976	0.4962	1.000	control is returned via KSUPP. When the rewind is	0.3910	0.0146
+0.2006	0.0714	1.000	up controls in effect.	0.1560	0.0116
+0.2098	0.0864	1.000	When the unload pseudo-op is requested, the rou-	0.3743	0.0171
+0.2106	0.4962	1.000	complete, the channel signal will be given to the re-	0.3985	0.0191
+0.2264	0.0695	1.000	tine (ZUNLDB) uses the subroutine ZCOMRT to adjust	0.4025	0.0166
+0.2267	0.4962	1.000	questor.	0.0677	0.0174
+0.2410	0.0694	1.000	the return address, check for tape equipment, adjust	0.3912	0.0166
+0.2555	0.4961	1.000	Unit Lights	0.0924	0.0225
+0.2587	0.0695	1.000	the control tables, and set up for and enter status	0.3759	0.0102
+0.2730	0.0714	1.000	evaluation. The SBDTA subroutine is entered to com-	0.4042	0.0107
+0.2863	0.4981	1.000	The unit lights routine is entered at separate points	0.3891	0.0174
+0.2878	0.0714	1.000	pute the location for this reel in the current reel on	0.3835	0.0102
+0.3023	0.4944	1.000	for each of the light pseudo-ops (Figure 109):	0.3496	0.0160
+0.3023	0.0714	1.000	drive table. The SBCDP subroutine is used to de-	0.3778	0.0102
+0.3130	0.0695	1.000	termine the final disposition of the tape to be unloaded	0.4062	0.0157
+0.3146	0.7742	1.000	Entry Point	0.0983	0.0205
+0.3160	0.4922	1.000	Pseudo-Op	0.0945	0.0192
+0.3297	0.0713	1.000	(by means of the specified disposition), the disposi-	0.3857	0.0164
+0.3459	0.7744	1.000	BKLNR	0.0621	0.0161
+0.3459	0.0695	1.000	tion setup in the current reel on drive table, the sta-	0.3985	0.0132
+0.3482	0.5976	1.000	Check light on	0.1074	0.0158
+0.3487	0.4980	1.000	$KLN	0.0453	0.0134
+0.3618	0.0695	1.000	tus of the job, and the status of the reel itself. The	0.3835	0.0118
+0.3629	0.4979	1.000	$RLN	0.0456	0.0141
+0.3633	0.7744	1.000	BRLNR	0.0584	0.0133
+0.3633	0.5977	1.000	Reserve light on	0.1241	0.0146
+0.3764	0.0714	1.000	routine then sets up a mount message and updates	0.3703	0.0118
+0.3779	0.5977	1.000	Reserve light off	0.1278	0.0146
+0.3779	0.4981	1.000	$RLF	0.0432	0.0131
+0.3779	0.7744	1.000	BRLFR	0.0583	0.0131
+0.3909	0.0695	1.000	the reel table. The message is modified (KRITET)	0.3778	0.0118
+0.3923	0.7744	1.000	BTIFR	0.0547	0.0135
+0.3939	0.4981	1.000	$TIF	0.0395	0.0116
+0.3939	0.5996	1.000	Tape indicator off	0.1353	0.0116
+0.4055	0.0695	1.000	to specify either the required reel number or a	0.3534	0.0118
+0.4200	0.0714	1.000	scratch tape. If the next reel request is for a	0.3440	0.0118
+0.4230	0.4981	1.000	Each selects the appropriate control code and enters	0.3966	0.0131
+0.4345	0.0714	1.000	scratch tape (SBSCRT), and the reel to be unloaded	0.3816	0.0118
+0.4375	0.4981	1.000	the common routine at BTFOK. The routine fakes an	0.3947	0.0102
+0.4491	0.0695	1.000	is a usable scratch (i.e., originally a scratch tape	0.3835	0.0117
+0.4520	0.4981	1.000	EPGK interrupt if tape equipment is not specified for	0.3985	0.0131
+0.4636	0.0695	1.000	that is not saved), the reel is rewound via the rewind	0.3929	0.0131
+0.4666	0.4981	1.000	the TIF operation, or if disk or tape equipment is	0.3759	0.0146
+0.4782	0.0695	1.000	routine (ZREWST) and reused as the next scratch	0.3722	0.0116
+0.4797	0.4981	1.000	specified for the other operations. The control tables	0.4023	0.0146
+0.4927	0.0714	1.000	request instead of being unloaded.	0.2538	0.0131
+0.4956	0.5000	1.000	are updated, the tape unit is selected if necessary,	0.3835	0.0131
+0.5102	0.4981	1.000	and the control operation is performed. Control is	0.3797	0.0132
+0.5102	0.0865	1.000	If the new reel is to be file protected, the message	0.3741	0.0132
+0.5247	0.4981	1.000	returned via KSUPP after using the I-O reject routine	0.4041	0.0132
+0.5247	0.0677	1.000	is changed accordingly. The absolute channel and unit	0.4041	0.0117
+0.5392	0.0695	1.000	numbers are placed in the table (KUNLD2) and an un-	0.4004	0.0117
+0.5392	0.4981	1.000	(MIOREJ) to verify acceptance of the instruction.	0.3703	0.0145
+0.5536	0.0677	1.000	load (SEOP) performed. The I-O reject routine	0.3609	0.0118
+0.5682	0.0714	1.000	(MIOREJ) is used to perform retries if necessary,	0.3816	0.0133
+0.5698	0.4981	1.000	Gong	0.0414	0.0145
+0.5842	0.0695	1.000	and the SEOP test routine (KSEOPT) entered to wait	0.3910	0.0103
+0.5973	0.5000	1.000	The gong routine is entered at WGONG (Figure 109).	0.3929	0.0133
+0.5986	0.0695	1.000	for EOP.	0.0697	0.0121
+0.6118	0.5000	1.000	An EPGK interrupt is faked if equipment other than	0.3835	0.0133
+0.6133	0.0865	1.000	When the next reel request is established (SCBMNR),	0.3966	0.0131
+0.6264	0.4981	1.000	console is specified. The routine updates the control	0.3966	0.0146
+0.6279	0.0695	1.000	the current reel on drive table is updated to indicate	0.3929	0.0117
+0.6424	0.5000	1.000	tables, performs the sound gong instruction, and uses	0.4041	0.0116
+0.6424	0.0695	1.000	the name and type of reel to be mounted on the speci-	0.3985	0.0131
+0.6555	0.4981	1.000	the I-O reject routine (MIOREJ) to check acceptance.	0.4004	0.0132
+0.6570	0.0695	1.000	fied channel and unit.	0.1617	0.0116
+0.6700	0.4981	1.000	Control is returned via KSUPP.	0.2406	0.0131
+0.6700	0.0865	1.000	When the operation has been accepted, the mount	0.3684	0.0131
+0.6843	0.0694	1.000	message is typed and control returned via KSUPP.	0.3801	0.0200
+0.6991	0.0695	1.000	When the routine is entered at KRITET or KUNLD1	0.3835	0.0131
+0.6991	0.4981	1.000	Density Change	0.1184	0.0176
+0.7151	0.0695	1.000	by verify or free, the setup bit and SRETAD must	0.3759	0.0131
+0.7282	0.4981	1.000	The density change pseudo-ops are allowed only on	0.3835	0.0161
+0.7297	0.0695	1.000	have been set, in order for control to return to these	0.3985	0.0131
+0.7456	0.0695	1.000	routines when the channel signal occurs.	0.3045	0.0116
+0.7456	0.4962	1.000	a tape at load point, otherwise, an EPGK is faked.	0.3816	0.0131
+0.7582	0.4981	1.000	If the tape is at load point, the density bits in the file	0.3986	0.0155
+0.7703	0.4981	1.000	area table and the verify bit in the unit status table	0.3853	0.0191
+0.7761	0.0714	1.000	The Alter Tape Disposition Routine	0.2650	0.0103
+0.7863	0.4981	1.000	are set, the PP return address is updated, and an	0.3797	0.0174
+0.8020	0.4980	1.000	EOP is faked.	0.1073	0.0167
+0.8052	0.0695	1.000	Entry is at SCABLT where STIC is updated. The	0.3647	0.0118
+0.8197	0.0714	1.000	check is made for a tape IOD, if not a tape IOD, error	0.4023	0.0118
+0.8314	0.0714	1.000	code 10 is given to the error control routine (SDISP).	0.3966	0.0132
+0.8314	0.4944	1.000	Even and Odd Parity	0.1617	0.0189
+0.8488	0.0714	1.000	Otherwise, the new disposițion is loaded and the	0.3609	0.0118
+0.8590	0.4981	1.000	These pseudo-ops are defined only for tape, but the	0.3891	0.0189
+0.8618	0.0695	1.000	three bit code is stored into the appropriate file area	0.3985	0.0132
+0.8735	0.4962	1.000	tape need not be at load point. The file area mode bits	0.4117	0.0174
+0.8779	0.0695	1.000	table. Return is made via KSUPP.	0.2575	0.0117
+0.9535	0.0658	1.000	190	0.0226	0.0087

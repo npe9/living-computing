@@ -1,0 +1,112 @@
+0.0669	0.0959	1.000	Store Low Order (SLO)	0.1541	0.0116
+0.0681	0.8439	1.000	NOTES	0.0453	0.0107
+0.0683	0.6335	1.000	STATEMENT	0.0827	0.0116
+0.0695	0.5112	1.000	NAME	0.0397	0.0122
+0.0852	0.0938	1.000	The low-order part of a double-length accumulator	0.3858	0.0191
+0.0930	0.6297	1.000	DL (U), 101	0.0865	0.0116
+0.1003	0.0940	1.000	fraction with appropriate exponent is placed in the	0.3853	0.0189
+0.1017	0.6635	1.000	(N), 103	0.0545	0.0131
+0.1032	0.6316	1.000	D-	0.0207	0.0116
+0.1148	0.6316	1.000	D+	0.0207	0.0116
+0.1148	0.6579	1.000	(N), 100	0.0620	0.0131
+0.1177	0.0940	1.000	location specified by the effective address.	0.2876	0.0145
+0.1250	0.6541	1.000	(N), 102	0.0658	0.0145
+0.1265	0.6316	1.000	D-	0.0263	0.0116
+0.1321	0.1090	1.000	The low-order bits of the accumulator fraction,	0.3703	0.0133
+0.1381	0.6316	1.000	ST	0.0188	0.0116
+0.1381	0.6579	1.000	(U), 104	0.0602	0.0116
+0.1451	0.0957	1.000	bits 60-107, become the fraction of the value to be	0.3840	0.0203
+0.1482	0.6297	1.000	SLO (U), 105	0.0883	0.0118
+0.1599	0.0940	1.000	stored. The exponent is obtained by subtracting 48	0.3853	0.0204
+0.1730	0.5132	1.000	Notes:	0.0395	0.0102
+0.1767	0.0937	1.000	from the exponent in bits 0-11 of the accumulator.	0.3708	0.0216
+0.1918	0.1053	1.000	When normalized operation is specified, the low-	0.3759	0.0189
+0.2093	0.0940	1.000	order fraction is shifted left until a high-order one	0.3872	0.0160
+0.2194	0.5056	1.000	Figure 28. Double-Precision Subtract Example	0.2838	0.0146
+0.2238	0.0940	1.000	bit is leftmost. If noisy mode is also specified, ones	0.3872	0.0174
+0.2355	0.5282	1.000	The operand specified by the effective address, the	0.3797	0.0161
+0.2397	0.0940	1.000	are entered from the right during the normalization	0.3853	0.0147
+0.2503	0.5112	1.000	multiplicand, is multiplied by the operand in the	0.3930	0.0168
+0.2549	0.0938	1.000	shifting; otherwise, zeros. When unnormalized op-	0.3856	0.0174
+0.2645	0.5113	1.000	accumulator bits 0-59, the multiplier. The product	0.3966	0.0189
+0.2697	0.0938	1.000	eration is specified, the low-order exponent and frac-	0.3858	0.0204
+0.2791	0.5113	1.000	exponent and fraction replace accumulator bits 0-107.	0.3966	0.0189
+0.2848	0.0959	1.000	tion remain unchanged. The exponent and fraction	0.3835	0.0161
+0.2979	0.5113	1.000	The product sign replaces the accumulator sign, bit	0.3947	0.0176
+0.2988	0.0937	1.000	are subsequently placed in storage bits 0-59. The	0.3878	0.0217
+0.3124	0.5113	1.000	4 of the sign byte register.	0.1917	0.0161
+0.3169	0.0921	1.000	accumulator sign, as modified by the sign modifiers,	0.3891	0.0174
+0.3223	0.7629	0.300	nuecrmodiae prod	0.1505	0.0618
+0.3266	0.5282	1.000	The detailed operation of the multiplication is	0.3779	0.0169
+0.3314	0.0921	1.000	and the accumulator flag bits, sign byte register bit	0.3891	0.0174
+0.3445	0.5132	1.000	similar to that of MULTIPIY. An intermediate prod-	0.3929	0.0131
+0.3488	0.0940	1.000	positions 4-7, are placed in bits 60-63 of the storage	0.3872	0.0161
+0.3605	0.5132	1.000	uct exponent and 96-bit fraction are obtained.	0.3402	0.0145
+0.3663	0.0959	1.000	word. The entire accumulator and sign byte register	0.3835	0.0146
+0.3750	0.5263	1.000	When normalized operation is specified, the 96-bit	0.3797	0.0160
+0.3821	0.0959	1.000	remain unchanged throughout the operation unless	0.3835	0.0147
+0.3909	0.5113	1.000	intermediate product fraction is normalized and the	0.3929	0.0146
+0.3997	0.0959	1.000	used as the effective address.	0.1974	0.0116
+0.4054	0.5131	1.000	product exponent adjusted accordingly. Low-order	0.3912	0.0165
+0.4142	0.1071	1.000	When the exponent, accumulator bit positions	0.3741	0.0161
+0.4215	0.5113	1.000	fraction zeros are supplied. If the noisy mode is also	0.3929	0.0145
+0.4285	0.0956	1.000	0-11, is flagged, the same exponent is set with the	0.3858	0.0196
+0.4375	0.5113	1.000	specified, the final normalization introduces low-order	0.3929	0.0146
+0.4434	0.0937	1.000	low-order fraction when stored. The indicator set-	0.3858	0.0176
+0.4487	0.5131	1.000	ones instead of zeros. When unnormalized operation	0.3912	0.0183
+0.4591	0.0956	1.000	tings are for propagated flags. For this case normali-	0.3859	0.0195
+0.4679	0.5113	1.000	is specified, the intermediate product becomes the	0.3929	0.0147
+0.4762	0.0956	1.000	zation, if specified, is suppressed.	0.2317	0.0177
+0.4839	0.5131	1.000	final product.	0.1015	0.0132
+0.4892	0.1069	1.000	When the exponent with the low order fraction	0.3745	0.0199
+0.4970	0.5282	1.000	When either or both of the operands are values in	0.3759	0.0147
+0.5058	0.0959	1.000	has EF of 1 as a result of the operation, the indicator	0.3853	0.0161
+0.5130	0.5113	1.000	the XEP or XEN range, the operation is performed as	0.3929	0.0146
+0.5208	0.0938	1.000	settings are for generated exponent flags. Normaliza-	0.3895	0.0190
+0.5276	0.5112	1.000	described in MULTIPLy except that a 96-bit fraction is	0.3930	0.0170
+0.5392	0.0959	1.000	tion, if specified in this case, does occur.	0.2801	0.0145
+0.5436	0.5113	1.000	obtained. Normalization, if specified, is suppressed	0.3910	0.0146
+0.5609	0.5113	1.000	for these cases.	0.1109	0.0118
+0.5653	0.0940	1.000	INDICATORS	0.0752	0.0103
+0.5755	0.1071	1.000	To-Memory Operation (MOP); Arithmetic Result	0.3759	0.0176
+0.5843	0.5113	1.000	INDICATORS	0.0808	0.0102
+0.5892	0.0917	1.000	(RLZ, RZ, RGZ, RN); Exponent Range (XPFP, ХРH,	0.3916	0.0225
+0.6003	0.5263	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3759	0.0161
+0.6070	0.0937	1.000	XPL, XPU); Zero Multiply (ZM). The above indi-	0.3877	0.0214
+0.6163	0.5075	1.000	(MOP); Arithmetic Range (RLZ, RZ, RGZ, RN);	0.3947	0.0160
+0.6264	0.0959	1.000	cators are set as in sTORE.	0.1786	0.0132
+0.6308	0.5094	1.000	Exponent Range (XPFP, XPO, XPH, XPL, XPU);	0.3910	0.0160
+0.6453	0.5075	1.000	Zero Multiply (ZM). The above indicators are set as	0.3929	0.0174
+0.6482	0.0921	1.000	PROGRAMMING EXAMPLE	0.1692	0.0132
+0.6584	0.0921	1.000	Given two double-precision floating point numbers,	0.3910	0.0189
+0.6627	0.5056	1.000	in MULTIPLY.	0.1053	0.0131
+0.6744	0.0937	1.000	A and B stored at the following locations:	0.3126	0.0192
+0.6845	0.5075	1.000	PROGRAMMING NOTE	0.1504	0.0146
+0.6962	0.2368	1.000	C (100) == a1	0.0921	0.0132
+0.7006	0.5075	1.000	The exponent range indicators are set for the final	0.3947	0.0174
+0.7107	0.2368	1.000	C (101) =az	0.0903	0.0147
+0.7166	0.5075	1.000	result as it appears in the accumulator or in storage.	0.3929	0.0174
+0.7250	0.2386	1.000	C (102) = b,	0.0923	0.0166
+0.7298	0.5073	1.000	In general, exponent overflow or underflow occurring	0.3952	0.0205
+0.7398	0.2384	1.000	C (103) =bz	0.0947	0.0174
+0.7470	0.5075	1.000	in an intermediate stage of an operation may be cor-	0.3947	0.0161
+0.7573	0.1090	1.000	Here A = ay + az and exponent ay = exponent	0.3759	0.0161
+0.7611	0.5073	1.000	rected and thus does not cause the XPo or xPu indi-	0.3951	0.0183
+0.7711	0.0937	1.000	az + 48; B = b, + b, and exponent b, = exponent	0.3918	0.0228
+0.7791	0.5075	1.000	cators to be turned on.	0.1711	0.0146
+0.7921	0.0940	1.000	ba + 48.	0.0602	0.0161
+0.7936	0.5226	1.000	In order that double underflow carry in the prod-	0.3797	0.0161
+0.8003	0.1086	1.000	Form the double precision difference A - B and	0.3768	0.0240
+0.8068	0.5073	1.000	uct exponent will not occur during multiplication	0.3953	0.0225
+0.8197	0.0940	1.000	store it in locations 104 and 105 (Figure 28).	0.3158	0.0161
+0.8241	0.5094	1.000	when both original operands were values in the N	0.3929	0.0160
+0.8384	0.5073	1.000	range, the following rule is applied. If the product	0.3970	0.0199
+0.8400	0.0940	1.000	Multiply Double (D*)	0.1504	0.0161
+0.8545	0.5075	1.000	exponent, from operands both in the N range, has	0.3947	0.0176
+0.8584	0.0938	1.000	The operation is the same as MULTIPLy, except that the	0.3896	0.0200
+0.8706	0.5094	1.000	EF of 1 and es of 1, prior to post-normalization, nor-	0.3929	0.0161
+0.8743	0.0919	1.000	96-bit product fraction is placed in accumulator bits	0.3914	0.0188
+0.8829	0.5091	1.000	malization, if specified, is suppressed. The xpu indi-	0.3953	0.0224
+0.8939	0.0921	1.000	12-107.	0.0508	0.0131
+0.9230	0.6992	1.000	Floating-Point Arithmetic	0.1598	0.0116
+0.9230	0.8853	1.000	97	0.0188	0.0102

@@ -1,0 +1,119 @@
+0.0596	0.0977	1.000	Chain and Multiple Flag Examples	0.2519	0.0116
+0.0654	0.5677	1.000	BLOCK OF DATA	0.0658	0.0102
+0.0669	0.6936	1.000	BLOCK OF DATA	0.0620	0.0087
+0.0682	0.8177	1.000	BLOCK OF DATA	0.0545	0.0103
+0.0727	0.5846	1.000	I5 WORDS	0.0395	0.0073
+0.0740	0.7048	1.000	15 WORDS	0.0414	0.0090
+0.0755	0.8271	1.000	IS WORD:	0.0338	0.0074
+0.0842	0.0959	1.000	In Figures 37 and 38, a section of a continuous line	0.3929	0.0131
+0.0959	0.5508	0.300	C:0 ent=10	0.0639	0.0174
+0.0988	0.0977	1.000	bounded by arrow heads indicates data transfer under	0.3910	0.0146
+0.1148	0.0977	1.000	control of one control word. A dashed line indicates	0.3910	0.0116
+0.1264	0.5489	0.500	cio ent-is	0.0620	0.0146
+0.1294	0.0959	1.000	skipping over the remainder of a block without any	0.3929	0.0146
+0.1381	0.6485	1.000	-*	0.0169	0.0102
+0.1381	0.5207	1.000	(2)	0.0150	0.0102
+0.1439	0.0977	1.000	data transfer and without any control word modifica-	0.3910	0.0161
+0.1537	0.5506	0.300	CiXontz1s	0.0605	0.0153
+0.1599	0.0959	1.000	tion taking place. The latter happens after a discon-	0.3929	0.0160
+0.1657	0.5207	1.000	(3)-	0.0338	0.0087
+0.1758	0.0940	1.000	nect signal on units where the length of the blocks is	0.3947	0.0161
+0.1830	0.5714	1.000	, ont=45	0.0414	0.0118
+0.1903	0.0959	1.000	fixed. The vertical lines at the ends of arrows indicate	0.3929	0.0133
+0.1933	0.5188	1.000	(4)	0.0169	0.0102
+0.2038	0.0957	1.000	the start or the termination of the operation.	0.3274	0.0180
+0.2089	0.6314	0.300	10 0n8=30	0.0643	0.0168
+0.2093	0.5583	0.500	19 cn8=10	0.0526	0.0146
+0.2209	0.5188	1.000	(3)	0.0169	0.0102
+0.2355	0.0959	1.000	WRITING	0.0620	0.0102
+0.2369	0.5526	1.000	m=0	0.0207	0.0058
+0.2382	0.6296	0.300	Eil ent=o	0.0640	0.0148
+0.2384	0.5733	1.000	cnt =10	0.0395	0.0131
+0.2397	0.7857	0.300	"=0 cnt=0	0.0659	0.0133
+0.2485	0.5207	1.000	(6)	0.0150	0.0087
+0.2542	0.0977	1.000	Figure 37 shows the use of the chain and multiple	0.3910	0.0147
+0.2660	0.5733	1.000	ent = 10	0.0357	0.0116
+0.2674	0.7068	0.300	Ei0 ont = 10	0.0677	0.0132
+0.2703	0.0959	1.000	flags on writing. The operation is assumed to be per-	0.3910	0.0146
+0.2762	0.5188	1.000	(7)	0.0150	0.0102
+0.2834	0.6692	1.000	cnt=5	0.0282	0.0087
+0.2834	0.6259	1.000	cnt=5	0.0263	0.0087
+0.2863	0.0940	1.000	formed on a type of unit where the length of the	0.3929	0.0131
+0.3009	0.0940	1.000	blocks is not fixed (e.g., magnetic tape). Note that a	0.3929	0.0161
+0.3052	0.5132	1.000	Figure 38. Reading with Chain and Multiple Flags	0.3177	0.0146
+0.3146	0.0957	1.000	new block is started whenever the count goes to zero	0.3912	0.0162
+0.3314	0.0940	1.000	and both the multiple and chain flags are on. When	0.3929	0.0160
+0.3430	0.5132	1.000	Addressing of Input-Output Instructions	0.3684	0.0176
+0.3473	0.0959	1.000	the length of the blocks is fixed, as in the case of	0.3929	0.0133
+0.3618	0.0940	1.000	printers and card punches, the writing operation is	0.3947	0.0146
+0.3750	0.5150	1.000	The basic operations involving external units are	0.3891	0.0145
+0.3779	0.0959	1.000	the same as for reading.	0.1692	0.0131
+0.3894	0.5132	1.000	reading and writing, initiated by READ and WRITE in-	0.3910	0.0147
+0.4052	0.0958	1.000	READING	0.0622	0.0123
+0.4055	0.5132	1.000	structions. A number of other functions are necessary	0.3910	0.0146
+0.4200	0.5130	1.000	for the purpose of setting up the external units for	0.3912	0.0174
+0.4258	0.0940	1.000	In Figure 38, there are three blocks of data, each	0.3929	0.0146
+0.4359	0.5131	1.000	reading and writing and for monitoring these proc-	0.3893	0.0163
+0.4403	0.0959	1.000	block containing 15 words. Cases 2 and 3 are iden-	0.3910	0.0146
+0.4520	0.5132	1.000	esses after they have been initiated. These tasks are	0.3910	0.0146
+0.4578	0.0959	1.000	tical as far as transfer of information is concerned, but	0.3910	0.0116
+0.4679	0.5132	1.000	accomplished by means of CONTROL, LOCATE, RELEASE,	0.3891	0.0133
+0.4724	0.0940	1.000	two different methods are used to terminate the op-	0.3929	0.0146
+0.4824	0.5132	1.000	and COPY CONTROL WORD instructions. In addition to	0.3891	0.0118
+0.4851	0.1146	0.300	count dipro e nar bier counonwtert thc coun	0.3733	0.0782
+0.4985	0.5150	1.000	the above, there are five seop (suppress end of opera-	0.3891	0.0146
+0.5029	0.0940	1.000	the count since the multiple flag is 1 and the opera-	0.3929	0.0147
+0.5125	0.5130	1.000	tion) instructions: READ SEOP, WRITE SEOP, CONTROL	0.3894	0.0177
+0.5291	0.5132	1.000	SEOP, LOCATE SEOP, and RELEASE SEOP. The seoP in-	0.3891	0.0131
+0.5333	0.0940	1.000	In 3 the termination is under block control; the count	0.3929	0.0132
+0.5414	0.5130	1.000	structions are identical to the corresponding instruc-	0.3894	0.0180
+0.5474	0.0939	1.000	may specify more than the block contains, but a new	0.3930	0.0156
+0.5596	0.5132	1.000	tions without the seop specification except that the	0.3910	0.0146
+0.5639	0.0940	1.000	block is not started because the multiple bit is 0.	0.3910	0.0145
+0.5741	0.5132	1.000	end-of-operation indication in the control word, and	0.3891	0.0147
+0.5799	0.0959	1.000	Note also that in order to read contiguous ten-word	0.3891	0.0131
+0.5900	0.5113	1.000	therefore in the indicator register, is not turned on at	0.3929	0.0161
+0.5945	0.0921	1.000	sections of the first two blocks of data into three	0.3947	0.0116
+0.6061	0.5132	1.000	the normal and successful completion of the opera-	0.3891	0.0146
+0.6105	0.0940	1.000	different locations in memory, four control words are	0.3929	0.0132
+0.6206	0.5132	1.000	tion. As a group, the instructions related to the ex-	0.3891	0.0146
+0.6264	0.0940	1.000	required with chaining taking place also at the end	0.3910	0.0132
+0.6366	0.5132	1.000	ternal units are called input-output instructions.	0.3609	0.0146
+0.6409	0.0940	1.000	of the first block. This is illustrated by case 7.	0.3477	0.0146
+0.6512	0.5282	1.000	The above instructions are all that are needed to	0.3741	0.0146
+0.6685	0.5113	1.000	control any external unit regardless of speed or type.	0.3891	0.0147
+0.6812	0.5094	1.000	The computer and exchange, in general, do not dif-	0.3910	0.0156
+0.6976	0.5094	1.000	ferentiate among units which have different charac-	0.3929	0.0161
+0.6991	0.1090	0.500	C3O cne=20	0.0640	0.0161
+0.7121	0.5094	1.000	teristics. The exact interpretation of how a unit re-	0.3910	0.0176
+0.7179	0.3271	1.000	= chain f1	0.0376	0.0103
+0.7267	0.3327	1.000	multible 11	0.0451	0.0073
+0.7282	0.1504	1.000	BLOCK OF DATA	0.0658	0.0103
+0.7282	0.5094	1.000	sponds to each instruction is a function of the design	0.3910	0.0161
+0.7355	0.1598	1.000	20 WORDS	0.0451	0.0103
+0.7427	0.3214	0.300	ent= cirnte sof oh ceunt fiel	0.1259	0.0176
+0.7442	0.5113	1.000	of the external unit and will be described in connec-	0.3891	0.0146
+0.7571	0.1090	0.300	C:0 CNt=10	0.0584	0.0163
+0.7586	0.1936	0.300	CEi cne=10	0.0621	0.0148
+0.7587	0.5113	1.000	tion with each unit.	0.1447	0.0131
+0.7587	0.2782	1.000	TED ene=10	0.0620	0.0146
+0.7878	0.1917	1.000	BLOCK OF DATA	0.0658	0.0087
+0.7951	0.2011	1.000	30 WORDS	0.0470	0.0087
+0.7994	0.5113	1.000	External Unit Addresses	0.1786	0.0131
+0.8169	0.1071	0.300	T=l cnt=15	0.0602	0.0160
+0.8197	0.3778	1.000	C30 ent =15	0.0715	0.0147
+0.8212	0.2744	1.000	ent = 13	0.0414	0.0116
+0.8212	0.5094	1.000	There are two levels of external unit addresses. The	0.3910	0.0145
+0.8358	0.5094	1.000	first level address is called channel address. This ad	0.3891	0.0161
+0.8470	0.2593	1.000	BLOCK OF DATA	0.0641	0.0109
+0.8473	0.1278	1.000	BLOCK OF DATA	0.0658	0.0088
+0.8488	0.3853	1.000	BLOCK OF DATA	0.0658	0.0103
+0.8545	0.5094	1.000	dress is used in all input-output instructions to specify	0.3891	0.0133
+0.8545	0.1410	1.000	15 WORDS.	0.0414	0.0088
+0.8561	0.2688	1.000	15 WORDS	0.0432	0.0073
+0.8561	0.3966	1.000	15 WORDS	0.0414	0.0103
+0.8648	0.5094	1.000	the external device or set of devices to which the in-	0.3891	0.0161
+0.8836	0.0902	1.000	Figure 37. Writing with Chain and Multiple Flags	0.3233	0.0146
+0.8836	0.5094	1.000	struction applies. A second level address, called selec.	0.3891	0.0146
+0.9184	0.1409	1.000	IBM 7030	0.0659	0.0134
+0.9186	0.0902	1.000	110	0.0244	0.0116

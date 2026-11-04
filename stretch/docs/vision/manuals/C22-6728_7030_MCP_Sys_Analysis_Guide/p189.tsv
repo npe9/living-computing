@@ -1,0 +1,106 @@
+0.0915	0.5301	1.000	Change I-O Table of Exits	0.2049	0.0161
+0.0930	0.2293	1.000	Write tape mark failure	0.1955	0.0131
+0.0937	0.1220	1.000	4. KRWEF	0.0999	0.0146
+0.1061	0.1222	1.000	5. KREPET Locate or change density failure	0.3647	0.0161
+0.1196	0.1238	1.000	Each path uses some of a set of specialized small	0.3670	0.0192
+0.1206	0.5320	1.000	This routine is entered at CCHEX (Figure 111) when	0.3891	0.0146
+0.1352	0.5301	1.000	$CHEX is requested. The location of the new TOE is	0.3985	0.0146
+0.1381	0.1071	1.000	routines to perform the retry. The routine at	0.3421	0.0131
+0.1497	0.5320	1.000	loaded into the CF of $O. I$AD or $USA occurred,	0.3891	0.0161
+0.1510	0.1069	1.000	JNEWTE (Figure 109) is used if it is necessary to	0.3707	0.0174
+0.1639	0.5318	1.000	dispateher error control (SDISP) is entered with	0.3611	0.0165
+0.1658	0.1069	1.000	unload a tape and try a new one. The routine at	0.3556	0.0169
+0.1802	0.5357	1.000	error code 9 in $14. IÍ PP boundaries are in effect	0.3816	0.0174
+0.1813	0.1070	1.000	JWRITL (Figure 110) is used when a write label	0.3538	0.0160
+0.1948	0.5338	1.000	(the boundary control bit, 3.57=1), the new TOE	0.3553	0.0146
+0.1957	0.1069	1.000	operation fails, or when a rewrite of the label is	0.3594	0.0168
+0.2093	0.5320	1.000	address is compared to see whether it is within the	0.3816	0.0146
+0.2106	0.1071	1.000	required. The short subroutines JBSPE, KIOREJ,	0.3778	0.0147
+0.2245	0.1050	1.000	JSEOPT, KKEOP, and KKDENS have the following	0.3764	0.0206
+0.2252	0.5320	1.000	bounds, and if not, dispatcher error control is	0.3496	0.0161
+0.2344	0.5335	1.000	entered with type 11 error. The new TOE is stored	0.3859	0.0218
+0.2438	0.1071	1.000	functions:	0.0735	0.0109
+0.2529	0.5320	1.000	in the file area table, and return is made via KSUPP.	0.4004	0.0160
+0.2558	0.2068	1.000	Backspace the tape over the label to the	0.2932	0.0131
+0.2584	0.1221	1.000	JBSPE	0.0528	0.0122
+0.2732	0.2049	1.000	load point.	0.0790	0.0118
+0.2847	0.5338	1.000	Free Routine	0.1035	0.0163
+0.2863	0.2068	1.000	Retry an I-O operation and verify its	0.2707	0.0116
+0.2878	0.1241	1.000	KIOREJ	0.0602	0.0116
+0.3009	0.2068	1.000	acceptance by the exchange and unit.	0.2707	0.0131
+0.3124	0.5338	1.000	The free routine is entered at ZFREE (Figure 112).	0.3853	0.0161
+0.3136	0.2084	1.000	Continually copy control word until the	0.2843	0.0174
+0.3179	0.1239	1.000	JSEOPT	0.0623	0.0124
+0.3285	0.5338	1.000	If another unit on the channel is operating, an enabled	0.4004	0.0116
+0.3299	0.2049	1.000	SEOP bit is off (all retries are SEOP);	0.2876	0.0146
+0.3415	0.5338	1.000	Ioop to the linkage is set up via KELOOP and KSUPP.	0.3985	0.0161
+0.3439	0.2066	1.000	then check the indicators and return	0.2672	0.0139
+0.3560	0.5356	1.000	If the channel specified by the $FREE is operating and	0.4025	0.0163
+0.3619	0.2068	1.000	accordingly.	0.0940	0.0116
+0.3719	0.5375	1.000	the I-O set up bit is on in the UST, the same enabled	0.3893	0.0164
+0.3750	0.2086	1.000	A common routine to retry control	0.2538	0.0117
+0.3765	0.1241	1.000	KKEOP	0.0583	0.0131
+0.3881	0.5357	1.000	loop is entered. If the unit is operating on a non-set	0.3929	0.0131
+0.3924	0.2086	1.000	operations.	0.0827	0.0102
+0.4026	0.5357	1.000	up request, the set up I-O bit is turned on and the	0.3703	0.0147
+0.4027	0.2085	1.000	Verify that the unit is in the desired	0.2654	0.0151
+0.4068	0.1240	1.000	KKDENS	0.0678	0.0120
+0.4155	0.5374	1.000	return address (SRETAD) set in the UAT as ZZFREE.	0.4025	0.0148
+0.4168	0.2084	1.000	density, and change density if nec-	0.2580	0.0174
+0.4317	0.5376	1.000	Normal return is made via KSUPP.	0.2632	0.0116
+0.4375	0.2086	1.000	essary.	0.0564	0.0087
+0.4462	0.5526	1.000	If the channel is not operating, or when the setup	0.3628	0.0132
+0.4470	0.1258	1.000	In addition, the subroutines, KKLOOP, KRETRY,	0.3706	0.0177
+0.4607	0.5375	1.000	I-O operation is complete, the routine continues at	0.3781	0.0159
+0.4636	0.1090	1.000	and KCLEAR in the I-O reject routine (MIOREJ) are	0.3891	0.0131
+0.4750	0.5375	1.000	ZZFREE. The routine at' ZCOMRT is used to per-	0.3780	0.0138
+0.4797	0.1090	1.000	utilized.	0.0639	0.0131
+0.4893	0.5374	1.000	form error checking and to control status evaluation,	0.3950	0.0163
+0.4927	0.1278	1.000	In attempting retries due to an initial EPGK or UK,	0.3797	0.0131
+0.5058	0.5376	1.000	and the unit not-assigned bit (SUNASG) is turned on	0.3797	0.0131
+0.5062	0.1108	1.000	there are many occasions for additional errors to be	0.3894	0.0153
+0.5183	0.5375	1.000	in the unit status table. If the tape is not to be saved	0.3932	0.0160
+0.5217	0.1108	1.000	detected. In general, error indications are tested	0.3725	0.0159
+0.5334	0.5375	1.000	and is not file protected, it is marked as scratch and	0.3931	0.0161
+0.5378	0.1128	1.000	throughout a retry attempt, and dispatcher error con-	0.3985	0.0131
+0.5494	0.5395	1.000	exit is made through the rewind routine. Otherwise,	0.3910	0.0131
+0.5523	0.1109	1.000	trol is entered if the original or any subsequent	0.3534	0.0131
+0.5614	0.5374	1.000	the appropriate "save" or "do not save" message is	0.3837	0.0175
+0.5654	0.1126	1.000	operation cannot be successfully performed.	0.3274	0.0162
+0.5778	0.5375	1.000	set up and exit is made through the unload routine.	0.3762	0.0156
+0.6003	0.1109	1.000	SYMBOLIC I-O CONTROL ROUTINES	0.2820	0.0131
+0.6075	0.5374	1.000	INTERRUPT MODE CONTROL ROUTINES	0.3143	0.0155
+0.6294	0.1128	1.000	Three service pseudo-ops are provided for flexibility	0.3947	0.0131
+0.6381	0.5395	1.000	The service-ops $SIO, $RIO and $WAIT are used to	0.3816	0.0146
+0.6453	0.1128	1.000	in the use of symbolic I-O:	0.1992	0.0116
+0.6526	0.5376	1.000	control stacking, releasing, selection, and synchro-	0.3891	0.0147
+0.6599	0.1297	1.000	$IODEF -- I-O definition report	0.2368	0.0116
+0.6668	0.5395	1.000	nization of I-O interrupts. The routines operate	0.3609	0.0152
+0.6744	0.1297	1.000	$CHEX -- Change table of exits	0.2331	0.0116
+0.6788	0.5376	1.000	disabled and are entered from the identifer.	0.3289	0.0176
+0.6860	0.1297	1.000	$FREE —- Free a tape unit for other assignment	0.3590	0.0146
+0.7006	0.1128	1.000	All are entered in the disabled mode from the identi-	0.3929	0.0161
+0.7106	0.5376	1.000	SIO and RIO Routines	0.1692	0.0191
+0.7151	0.1128	1.000	fier with the index registers set as specified in table	0.3910	0.0161
+0.7311	0.1147	1.000	AM (The Identifier Routine - Interrupt Control).	0.3553	0.0147
+0.7397	0.5395	1.000	The SIO routine is entered at KSIO. It identifies the	0.3891	0.0176
+0.7542	0.5395	1.000	requestor by the status of the level bit (SI) and turns	0.3947	0.0191
+0.7718	0.5395	1.000	on the SIO bit (SSIO) in the corresponding program	0.3759	0.0131
+0.7761	0.1128	1.000	I-O Definition Report	0.1598	0.0118
+0.7860	0.5394	1.000	status table (SPROGS). It adjusts the address in	0.3611	0.0150
+0.7975	0.5393	1.000	STIC, and returns via the service op return routine	0.3837	0.0196
+0.8036	0.1128	1.000	The I-O definition report routine (JZIOR, Figure 111)	0.3985	0.0161
+0.8154	0.5395	1.000	(KSUPP).	0.0771	0.0160
+0.8182	0.1147	1.000	obtains the storage address from the'linkage, con-	0.3741	0.0147
+0.8299	0.5526	1.000	The RIO routine is entered at KRIO (Figure 113).	0.3684	0.0131
+0.8314	0.1128	1.000	verts the channel and unit numbers to IQS, and stores	0.3985	0.0174
+0.8445	0.5395	1.000	It turns off the SIO bit (SSIO) in the requestors pro-	0.3816	0.0146
+0.8459	0.1128	1.000	them in the specified location. If $AD or $USA come	0.3947	0.0174
+0.8590	0.5395	1.000	gram status table (SPROGS), and if the requestor is	0.3853	0.0160
+0.8605	0.1128	1.000	on while computing the storage address, control is	0.3797	0.0174
+0.8735	0.5395	1.000	auto-stacked or has no interrupts stacked, returns	0.3778	0.0146
+0.8738	0.1124	1.000	given to dispatcher error control (SDISP) with error	0.3899	0.0250
+0.8866	0.5395	1.000	via the service-op return routine (KSUPP). Other-	0.3853	0.0189
+0.8939	0.1147	1.000	code 9 in $14. Return is made to KSUPP.	0.3102	0.0116
+0.9448	0.9079	1.000	189	0.0226	0.0087
+0.9462	0.7857	1.000	Service Routines	0.0996	0.0087

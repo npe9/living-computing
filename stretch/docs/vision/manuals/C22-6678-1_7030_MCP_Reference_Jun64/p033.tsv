@@ -1,0 +1,103 @@
+0.0727	0.1053	1.000	3. Minimize the handling of jobs by the operator.	0.3684	0.0116
+0.0741	0.5113	1.000	the writing of the tape overlaps the running of jobs	0.3816	0.0160
+0.0872	0.1071	1.000	4. Maximize the use of I/O units on-line.	0.3102	0.0116
+0.0887	0.5094	1.000	from a previously processed tape (READ tape).	0.3609	0.0174
+0.1003	0.1053	1.000	Input is scanned to detect boundaries between	0.3402	0.0131
+0.1142	0.0826	1.000	jobs. When input is being read from tape, job	0.3499	0.0155
+0.1294	0.0827	1.000	boundaries are detected by tape marks. These tapes	0.3910	0.0131
+0.1337	0.6147	1.000	On-line	0.0489	0.0116
+0.1410	0.0825	1.000	were originally prepared from card input, however,	0.3914	0.0199
+0.1424	0.6090	1.000	Card Reader	0.0658	0.0131
+0.1581	0.0845	1.000	which did not provide such boundaries. Therefore,	0.3799	0.0164
+0.1730	0.0827	1.000	whenever cards are being read by the IBM 1401 for	0.3853	0.0131
+0.1860	0.8327	1.000	Table	0.0338	0.0116
+0.1890	0.0827	1.000	the ofi-line overlapped mode, or by the card reader	0.3891	0.0117
+0.1903	0.5320	1.000	Buffer 1	0.0395	0.0103
+0.1916	0.7067	1.000	Buffer 2	0.0415	0.0106
+0.1933	0.7801	1.000	--→	0.0376	0.0116
+0.1962	0.8327	1.000	of 1/0	0.0414	0.0117
+0.2035	0.0827	1.000	when in either the on-line overlapped mode, or	0.3534	0.0145
+0.2064	0.8327	1.000	Requests	0.0470	0.0116
+0.2179	0.0827	1.000	bypass mode, the following rule is used to detect	0.3703	0.0118
+0.2398	0.5395	1.000	Write	0.0301	0.0087
+0.2398	0.7105	1.000	Read	0.0282	0.0102
+0.2461	0.1014	1.000	The first card of a job is that which is either a	0.3536	0.0142
+0.2485	0.5376	1.000	Tape	0.0282	0.0131
+0.2500	0.7086	1.000	Tape	0.0301	0.0116
+0.2615	0.0827	1.000	JOB card or a COMD card. A job extends up to the	0.3872	0.0133
+0.2761	0.0827	1.000	next JOB or COMD card.	0.1880	0.0118
+0.2921	0.1034	1.000	The System Input Program can operate in one of	0.3647	0.0117
+0.3009	0.5338	1.000	Buffer 3	0.0414	0.0116
+0.3023	0.7049	1.000	Buffer 4	0.0414	0.0087
+0.3067	0.0827	1.000	three modes:	0.0977	0.0103
+0.3197	0.1241	1.000	Off-line Overlapped	0.1523	0.0146
+0.3342	0.1241	1.000	On-line Overlapped	0.1504	0.0146
+0.3401	0.6974	1.000	Job	0.0226	0.0131
+0.3445	0.5357	1.000	Problem	0.0376	0.0131
+0.3445	0.8233	1.000	1/0	0.0244	0.0131
+0.3487	0.1240	1.000	Bypass	0.0546	0.0148
+0.3517	0.6974	1.000	Control	0.0395	0.0102
+0.3561	0.5357	1.000	Progran	0.0357	0.0102
+0.3561	0.8289	1.000	Assignment	0.0602	0.0131
+0.3619	0.6992	1.000	Loader	0.0338	0.0087
+0.3779	0.0789	1.000	Off-line Overlapped	0.1523	0.0161
+0.3983	0.8365	1.000	Console	0.0414	0.0116
+0.4054	0.0788	1.000	An input tape (SCAN tape) is prepared off-line by an	0.3932	0.0193
+0.4084	0.8383	1.000	Printer	0.0357	0.0102
+0.4215	0.0789	1.000	IBM 1401. The scanning of this tape overlaps the	0.3778	0.0176
+0.4375	0.0789	1.000	running of jobs from a previously processed tape	0.3741	0.0131
+0.4488	0.5074	1.000	Bypass	0.0585	0.0180
+0.4506	0.0789	1.000	(READ tape). MCP allows a maximum of twenty	0.3647	0.0146
+0.4636	0.0752	1.000	jobs for each SCAN tape because of core storage	0.3703	0.0176
+0.4765	0.0768	1.000	limitations on the scanning tables.	0.2600	0.0193
+0.4782	0.5056	1.000	Input from the card reader bypasses the overlapped	0.3910	0.0176
+0.4927	0.5056	1.000	tape, if any. Scanning of the input is done before	0.3741	0.0161
+0.5073	0.5056	1.000	running the job from the card reader buffer.	0.3365	0.0189
+0.5233	0.1823	1.000	Scan Tape	0.0526	0.0131
+0.5727	0.6316	1.000	n-lin	0.0282	0.0102
+0.5741	0.3966	0.300	olle	0.0432	0.0262
+0.5814	0.6316	1.000	ard Reade	0.0470	0.0116
+0.5841	0.2744	1.000	Buffer 2	0.0415	0.0105
+0.5842	0.1090	1.000	Buffer 1	0.0432	0.0118
+0.5959	0.3985	1.000	Requests	0.0470	0.0116
+0.6192	0.8271	1.000	Table	0.0357	0.0131
+0.6279	0.8271	1.000	of 1/0	0.0414	0.0146
+0.6294	0.2782	1.000	Read	0.0301	0.0116
+0.6294	0.1109	1.000	Scan	0.0282	0.0102
+0.6321	0.5376	1.000	Buffer 1	0.0395	0.0089
+0.6321	0.7274	1.000	Buffer 2	0.0451	0.0133
+0.6381	0.1109	1.000	Tape	0.0282	0.0131
+0.6395	0.2820	1.000	Tape	0.0263	0.0116
+0.6410	0.8271	1.000	Requests	0.0489	0.0116
+0.6730	0.8271	1.000	1/0	0.0244	0.0131
+0.6730	0.7218	1.000	Job	0.0244	0.0131
+0.6759	0.5320	1.000	Problem	0.0451	0.0116
+0.6860	0.7237	1.000	Control	0.0395	0.0087
+0.6875	0.8289	1.000	Assignment	0.0602	0.0131
+0.6886	0.5337	1.000	Program	0.0416	0.0095
+0.6903	0.2707	1.000	Buffer 4	0.0451	0.0133
+0.6903	0.1109	1.000	Buffer 3	0.0414	0.0118
+0.6962	0.7237	1.000	Loader	0.0357	0.0087
+0.7311	0.2650	1.000	Job	0.0226	0.0116
+0.7311	0.8365	1.000	Console	0.0432	0.0116
+0.7311	0.3891	1.000	1/0	0.0226	0.0131
+0.7369	0.1015	1.000	Program	0.0432	0.0102
+0.7413	0.8365	1.000	Printer	0.0376	0.0116
+0.7427	0.2669	1.000	Control	0.0376	0.0102
+0.7456	0.1034	1.000	Problem	0.0432	0.0102
+0.7467	0.3946	1.000	Assignment	0.0604	0.0124
+0.7529	0.2650	1.000	Loader	0.0376	0.0102
+0.7892	0.4041	1.000	Console	0.0451	0.0131
+0.7994	0.5263	1.000	The mode of the input program affects the sequence	0.3872	0.0189
+0.7994	0.4060	1.000	Printer	0.0395	0.0116
+0.8147	0.5092	1.000	in which the jobs are to be run and the sequence in	0.3801	0.0199
+0.8299	0.5094	1.000	which their I/O requirements will be assigned. How-	0.3966	0.0161
+0.8430	0.0789	1.000	On-line Overlapped	0.1504	0.0161
+0.8459	0.5075	1.000	ever, programs can be written without regard to the	0.3947	0.0147
+0.8578	0.5074	1.000	mode in which the input program is operating: the	0.3818	0.0167
+0.8721	0.0789	1.000	An input tape (WRITE tape) is prepared on-line	0.3571	0.0161
+0.8735	0.5075	1.000	method of giving cards to the problem program is	0.3759	0.0160
+0.8852	0.5056	1.000	the same for all modes.	0.1842	0.0189
+0.8866	0.0789	1.000	using a card reader. The scanning of the input and	0.3853	0.0161
+0.9200	0.7274	1.000	Operating With MCP	0.1259	0.0146
+0.9230	0.8910	1.000	33	0.0188	0.0116

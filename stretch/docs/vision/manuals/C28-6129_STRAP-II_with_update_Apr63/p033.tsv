@@ -1,0 +1,107 @@
+0.0682	0.4831	1.000	than 10. A decimal fraction must have a controlling	0.3966	0.0147
+0.0682	0.0732	1.000	c. (F15)DD(U), 767.52, (F20) 767.52 S11 X-12, 398	0.3837	0.0182
+0.0842	0.4850	1.000	(Fn) entry mode. There is no obvious way to convert	0.3966	0.0146
+0.0858	0.1090	1.000	This example is identical to example b except	0.3477	0.0131
+0.0988	0.4831	1.000	to a fixed point number without specifying the binary	0.3966	0.0146
+0.1003	0.1090	1.000	that in the second field the operation entry	0.3440	0.0146
+0.1148	0.4831	1.000	scaling. In the data description either the field length	0.3966	0.0146
+0.1148	0.1071	1.000	mode (F15) is overruled by a field entry mode	0.3477	0.0146
+0.1294	0.1053	1.000	(F20), and the order of Sand X is interchanged,	0.3515	0.0161
+0.1294	0.4831	1.000	or byte size or both may be omitted. The implied	0.3966	0.0146
+0.1453	0.4812	1.000	field length in this case is 64; the implied byte size	0.3985	0.0160
+0.1453	0.1071	1.000	which makes no difference. (F15) still applies	0.3496	0.0147
+0.1579	0.4830	1.000	is 1. The sign byte need not be specified unless the	0.3969	0.0187
+0.1612	0.1071	1.000	to 398, however.	0.1241	0.0133
+0.1758	0.4831	1.000	programmer desires to have flag or zone bits different	0.3985	0.0146
+0.1845	0.0752	1.000	If the entry mode is omitted, two cases arise:	0.3402	0.0146
+0.1903	0.4831	1.000	from zero. Note that the sign bit position changes for	0.3985	0.0146
+0.2020	0.0771	1.000	1) If the number entered is an integer, (FO) is	0.3797	0.0131
+0.2046	0.4830	1.000	a byte size less than 4. To make a number negative,	0.3986	0.0165
+0.2166	0.0996	1.000	understood.	0.0865	0.0131
+0.2209	0.4812	1.000	specify the sign byte as:	0.1786	0.0161
+0.2339	0.0752	1.000	2) If the number entered is a decimal fraction, it	0.3816	0.0132
+0.2397	0.6241	1.000	BS = 1,	0.0583	0.0161
+0.2398	0.7086	1.000	S1	0.0207	0.0131
+0.2500	0.0977	1.000	is converted to an unnormalized floating point	0.3590	0.0131
+0.2558	0.7086	1.000	S2	0.0226	0.0131
+0.2573	0.6241	1.000	BS =2,	0.0564	0.0131
+0.2658	0.1015	1.000	number.	0.0602	0.0119
+0.2718	0.7086	1.000	S4	0.0226	0.0116
+0.2730	0.6258	1.000	BS = 3,	0.0547	0.0135
+0.2878	0.7086	1.000	S10	0.0301	0.0131
+0.2891	0.0770	1.000	Examples:	0.0753	0.0148
+0.2892	0.6259	1.000	BS = 4,	0.0545	0.0117
+0.3067	0.0733	1.000	a. DD(U), 17, 17X-35	0.1673	0.0146
+0.3081	0.4831	1.000	If a number has no entry mode at all, it must be a	0.3966	0.0161
+0.3212	0.1071	1.000	In the first case 17 is converted to binary and	0.3477	0.0145
+0.3241	0.4812	1.000	decimal integer, but may in this case be written with	0.3985	0.0160
+0.3355	0.1070	1.000	placed in the fraction with its rightmost bit in	0.3480	0.0177
+0.3400	0.4793	1.000	the aid of the E notation.	0.1880	0.0133
+0.3514	0.1070	1.000	position 60 and an exponent of 48 supplied. In	0.3480	0.0168
+0.3590	0.4981	1.000	Examples:	0.0789	0.0160
+0.3677	0.1090	1.000	the second field the same thing is done except	0.3477	0.0132
+0.3794	0.5000	1.000	a. (F7)DD(B, ,4), . 005E3S13, - 17, 143. 2S11, (8) 77760, 777	0.3778	0.0116
+0.3821	0.1089	1.000	that the exponent is set to -35.	0.2352	0.0154
+0.3939	0.5301	1.000	Implied field length is 64. Octal specification in	0.3496	0.0161
+0.4025	0.0733	1.000	b. DD(U), 17.5	0.1203	0.0162
+0.4084	0.5301	1.000	the fourth D field overrules (F7) written before	0.3515	0.0146
+0.4185	0.1071	1.000	In this example 17.5 is converted to normalized	0.3477	0.0133
+0.4230	0.5301	1.000	DD, but (F7) still applies to 777.	0.2632	0.0161
+0.4330	0.1071	1.000	floating binary and stored as	0.2237	0.0146
+0.4330	0.3308	1.000	such. However,	0.1241	0.0133
+0.4418	0.5000	1.000	b. (2)DD(B, 16, 8) 110101S377, (10) -972, H101110S201	0.3515	0.0118
+0.4444	0.1070	1.000	instructions whose normalization bits depend	0.3480	0.0181
+0.4548	0.5320	1.000	Binary entry, overruled in only the second D	0.3459	0.0176
+0.4636	0.1071	1.000	on the symbol in the name field of this pseudo-	0.3477	0.0161
+0.4709	0.5301	1.000	field.	0.0376	0.0131
+0.4797	0.1071	1.000	operation will have them set to unnormalized.	0.3477	0.0131
+0.4884	0.4962	1.000	c. (F12)DD(B, 24), 1.324E3, -72. 1E-4, 3.4E-4S1	0.3835	0.0174
+0.4985	0.2049	1.000	is an integer and will be recog-	0.2500	0.0161
+0.5000	0.0771	1.000	Note: 17 E 5	0.1015	0.0116
+0.5042	0.5301	1.000	Implied byte size is 1.	0.1654	0.0161
+0.5160	0.2068	1.000	nized as such.	0.1034	0.0102
+0.5218	0.5000	1.000	d. DD(B), 1489, -1272, 1491, (F13) -972.16, 13948S1, 1265	0.3665	0.0116
+0.5320	0.2049	1.000	is a decimal fraction and will be	0.2500	0.0117
+0.5333	0.1221	1.000	17 E-5	0.0565	0.0118
+0.5348	0.5320	1.000	Decimal integers, except where a field entry	0.3477	0.0146
+0.5480	0.2068	1.000	normalized.	0.0865	0.0102
+0.5509	0.5320	1.000	mode is written.	0.1203	0.0116
+0.5651	0.1221	1.000	17.5 E 5	0.0735	0.0151
+0.5654	0.1974	1.000	is an integer but will be treated as	0.2575	0.0131
+0.5799	0.2068	1.000	a fraction and normalized. Thus,	0.2481	0.0131
+0.5842	0.4850	1.000	Binary Unsigned VFL	0.1523	0.0131
+0.5959	0.2049	1.000	a normalized integer can be as-	0.2500	0.0147
+0.6074	0.4999	1.000	Formats:	0.0659	0.0120
+0.6074	0.2065	1.000	signed use mode "unnormalized."	0.2505	0.0178
+0.6250	0.4962	1.000	(Fn)DD(BU, FL, BS), xx.•x.xxE+yy	0.3120	0.0160
+0.6294	0.1259	1.000	An integer greater than 21s is stored as a	0.3289	0.0146
+0.6424	0.4962	1.000	DD(BU, FL, BS), (Fn) xx..•x.x••xE+yy	0.3177	0.0161
+0.6453	0.1241	1.000	normalized number.	0.1485	0.0116
+0.6612	0.4962	1.000	(R)DD(BU, FL, BS), xx..• xx	0.2199	0.0147
+0.6773	0.0620	1.000	Binary Signed VFL	0.1335	0.0131
+0.6788	0.4981	1.000	DD(BU, FL, BS), (R) xx... xx	0.2180	0.0161
+0.6909	0.4959	1.000	(Az)DD(BU, FL, BS), alphabetic information to "z"	0.3841	0.0227
+0.7006	0.0752	1.000	Formats:	0.0677	0.0116
+0.7121	0.4962	1.000	(IQSz)DD(BU, FL, BS), alphabetic information to "ż"	0.3835	0.0176
+0.7179	0.0752	1.000	(Fn)DD(B, FL, BS), ‡ xx..x.x••xE+yy Sn	0.3440	0.0147
+0.7295	0.4961	1.000	(Pz)DD(BU, FL, BS), alphabetic information to "2"	0.3838	0.0192
+0.7339	0.0752	1.000	DD(B, FL, BS), (Fn) Ixx..x.x•.xE+yy Sn	0.3459	0.0161
+0.7485	0.4962	1.000	(CCz)DD(BU, FL, BS), alphabetic information to "z"	0.3778	0.0176
+0.7500	0.0733	1.000	(R)DD(B, FL, BS), ‡xx...xx Sn	0.2500	0.0161
+0.7660	0.0771	1.000	DD(B, FL, BS), (R) +xx..xx Sn	0.2444	0.0161
+0.7718	0.5000	1.000	Numerical entry is exactly the same as in binary	0.3778	0.0161
+0.7863	0.4811	1.000	signed data except that no sign byte is formed, and	0.3969	0.0189
+0.7892	0.0789	1.000	A data definition of binary signed data may have	0.3759	0.0145
+0.8036	0.4812	1.000	if the byte size is left out of the dds, it is set to 8. Any	0.3966	0.0147
+0.8052	0.0602	1.000	either (Fn) or (R) entry modes, but not both at the	0.3947	0.0132
+0.8182	0.4812	1.000	sign or sign byte (with S) written with mode BU is	0.3985	0.0161
+0.8197	0.0602	1.000	same time. (Fn) implies that the data following it are	0.3947	0.0132
+0.8327	0.4812	1.000	ignored. The alphabetic modes are permitted here;	0.3985	0.0147
+0.8358	0.0602	1.000	written in a decimal radix, whereas (R) implies that	0.3966	0.0131
+0.8473	0.4793	1.000	they are explained under "Entry Modes." Note that	0.4004	0.0191
+0.8503	0.0602	1.000	the number following it is an integer. An integer sub-	0.3966	0.0146
+0.8627	0.0581	1.000	ject to a radix entry mode must be written without the	0.3969	0.0183
+0.8633	0.4812	1.000	the alphabetic entry mode must precede the DD, that	0.3985	0.0161
+0.8794	0.4831	1.000	there can be only one D field per statement, and that	0.3966	0.0146
+0.8808	0.0583	1.000	aid of E because E is not defined for a radix other	0.3985	0.0116
+0.9157	0.7632	1.000	Section II 29	0.1165	0.0088

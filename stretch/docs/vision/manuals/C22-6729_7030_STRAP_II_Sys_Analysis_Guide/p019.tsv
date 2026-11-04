@@ -1,0 +1,113 @@
+0.0900	0.5508	1.000	8. The ZM bit and the EXE bit in the mask regi-	0.3684	0.0147
+0.0900	0.1128	1.000	portion of the new symbol table entry to indicate the	0.3835	0.0133
+0.1045	0.5357	1.000	ster are turned on so that MCP will give these inter-	0.3929	0.0146
+0.1061	0.1128	1.000	cascading of the relative location STRAP II special	0.3759	0.0118
+0.1191	0.1842	1.000	The second iteration will establish the	0.2914	0.0132
+0.1191	0.5357	1.000	rupts to STRAP II.	0.1410	0.0146
+0.1215	0.1126	1.000	symbols.	0.0698	0.0127
+0.1352	0.1128	1.000	values of these STRAP II special symbols along with	0.3853	0.0131
+0.1482	0.5338	1.000	Box 2	0.0489	0.0161
+0.1497	0.1109	1.000	the values of the other symbols in the symbol table,	0.3835	0.0161
+0.1642	0.1128	1.000	Pass 2b will then combine the absolute and evaluated	0.3891	0.0145
+0.1788	0.5357	1.000	The action of this box is performed at the beginning	0.3835	0.0146
+0.1788	0.1128	1.000	symbolie value, if any, so that each actual location	0.3778	0.0131
+0.1933	0.1128	1.000	counter value can be put into the absolute field of	0.3628	0.0131
+0.1933	0.5357	1.000	of the Pass 1 processing for each new instruction.	0.3722	0.0146
+0.2078	0.5526	1.000	Buffers are reset: The two word buffer, Bem,	0.3477	0.0161
+0.2106	0.1128	1.000	each unit for the output program.	0.2462	0.0118
+0.2224	0.5357	1.000	containing the entry mode control data is zeroed.	0.3647	0.0146
+0.2238	0.1297	1.000	The attempt to assemble takes place when the	0.3365	0.0131
+0.2384	0.5357	1.000	The collection buffer, Bop, for the primary op is	0.3665	0.0147
+0.2384	0.1128	1.000	decoding procedure gets values which can be selec-	0.3816	0.0131
+0.2529	0.5357	1.000	blanked. Thus, Bop will contain the proper back-	0.3703	0.0147
+0.2529	0.1128	1.000	tively inserted into the skeleton word provided in the	0.3891	0.0132
+0.2674	0.5357	1.000	ground characters for the later table-lookup. The	0.3741	0.0132
+0.2688	0.1128	1.000	unit. This is done during Pass 2a if all datums in	0.3703	0.0118
+0.2803	0.5356	1.000	field counter which the error message routine uses	0.3799	0.0166
+0.2820	0.1147	1.000	the coded expressions for the instruction fields can	0.3759	0.0132
+0.2948	0.5338	1.000	in locating the field of the error is set to zero. On	0.3836	0.0166
+0.2979	0.1128	1.000	be evaluated. Otherwise, the filling in of the binary	0.3872	0.0132
+0.3109	0.5357	1.000	the other hand, the unit counter, initially defined as	0.3853	0.0147
+0.3124	0.1147	1.000	output is done during Pass 2b. If while evaluating a	0.3816	0.0132
+0.3241	0.5357	1.000	one, is incremented by Pass 1 during its end proc-	0.3797	0.0160
+0.3270	0.1128	1.000	coded expression the evaluating subroutine cannot	0.3684	0.0118
+0.3400	0.5357	1.000	essing of the former unit rather than during the	0.3534	0.0147
+0.3415	0.1109	1.000	establish a value, Pass 2a still has the entire coded	0.3853	0.0146
+0.3561	0.5357	1.000	initialization of the new unit about to be processed.	0.3778	0.0118
+0.3576	0.1147	1.000	expression scanned (by a special re-entry into the	0.3703	0.0116
+0.3706	0.5376	1.000	The fixed format part of the current expanded instruc-	0.4023	0.0117
+0.3721	0.1128	1.000	evaluating subroutine) so that any undefined symbols	0.3853	0.0116
+0.3852	0.5376	1.000	tion unit is set to zero. (See Appendix A.) This fixed	0.4004	0.0131
+0.3866	0.1128	1.000	used in the coded expression can be detected and	0.3590	0.0116
+0.3997	0.5357	1.000	format will contain the specifie information about the	0.3947	0.0116
+0.4012	0.1128	1.000	inserted in the symbol table.	0.2124	0.0116
+0.4157	0.5376	1.000	instruction, the binary output, the dimension refer-	0.3853	0.0131
+0.4302	0.5376	1.000	ence address, the ID, etc..	0.2068	0.0116
+0.4317	0.1147	1.000	DESCRIPTION OF THE ACTION INDICATED ON THE	0.3947	0.0102
+0.4448	0.1297	1.000	FLOW CHART OF PASS 1	0.1917	0.0116
+0.4448	0.5526	1.000	Indicators and flags are reset: The if-modifier and	0.3816	0.0116
+0.4593	0.5376	1.000	if-pseudo-dds indicators are initially set off. (These	0.3947	0.0131
+0.4724	0.5376	1.000	'if' indicators are not in the unit.) The if-all-evalu-	0.3891	0.0131
+0.4767	0.1128	1.000	Box 1	0.0432	0.0132
+0.4884	0.5376	1.000	ated indicator in the fixed format part of this unit is	0.3835	0.0131
+0.5042	0.5376	1.000	now initially set on. The mask containing the five	0.3703	0.0118
+0.5042	0.1147	1.000	The entry procedure for STRAP II includes the	0.3440	0.0118
+0.5188	0.1128	1.000	following actions:	0.1316	0.0118
+0.5188	0.5376	1.000	error symbol indicators and the suppress-error-	0.3647	0.0118
+0.5333	0.5376	1.000	message indicator is zeroed. The bit setting of these	0.3966	0.0118
+0.5348	0.1278	1.000	1. The entry procedure saves the current setting	0.3684	0.0117
+0.5479	0.5376	1.000	six indicators is put into the fixed format part of the	0.3872	0.0118
+0.5494	0.1147	1.000	of the time clock. In Pass 2, OUTPUT uses this	0.3609	0.0117
+0.5624	0.5376	1.000	unit during the final processing of the unit in each	0.3684	0.0118
+0.5639	0.1128	1.000	value to mark the binary cards; the end-of-assembly	0.3891	0.0116
+0.5770	0.5376	1.000	phase. Also, the indicators, flags, and a radix for	0.3816	0.0131
+0.5785	0.1128	1.000	procedure uses it to compute the total time of the	0.3647	0.0116
+0.5915	0.5376	1.000	GETFLD are reset.	0.1485	0.0118
+0.5929	0.1127	1.000	assembly.	0.0790	0.0120
+0.6061	0.5564	1.000	Control index words are reset: Bop's controlling	0.3647	0.0131
+0.6074	0.1277	1.000	2. The entry procedure writes the current pass	0.3573	0.0146
+0.6221	0.1147	1.000	indication on the numeric display lights of the console.	0.4023	0.0131
+0.6221	0.5395	1.000	index word, Bopx, is reset. The index word, Bsystx,	0.4004	0.0146
+0.6366	0.5395	1.000	which controls the collection buffer for the statement	0.3947	0.0102
+0.6381	0.1316	1.000	3. The entry procedure also has MCP change two	0.3684	0.0116
+0.6497	0.5376	1.000	field characters that shall appear on the listing with	0.3872	0.0145
+0.6512	0.1147	1.000	of its IOD addresses, the one for the console and the	0.3872	0.0131
+0.6657	0.5376	1.000	the instruction is reset. (GETCHA collects the	0.3534	0.0146
+0.6672	0.1147	1.000	one for the disk.	0.1222	0.0116
+0.6802	0.5395	1.000	characters; MAIN puts them into the unit.) The index	0.3985	0.0131
+0.6817	0.1297	1.000	4. By checking $UB, the entry procedure deter-	0.3609	0.0116
+0.6948	0.5395	1.000	word, Ibuffw, locates available area in the buffer	0.3647	0.0146
+0.6962	0.1147	1.000	mines the size of the machine, and then sets the	0.3553	0.0132
+0.7093	0.5414	1.000	reserved for the units. Since Ibuffw is now addressing	0.4041	0.0131
+0.7106	0.1128	1.000	limits of the STRAP II internal symbol table accord-	0.3891	0.0118
+0.7238	0.5376	1.000	the starting location of a new unit, MAIN adjusts this	0.3947	0.0146
+0.7267	0.1128	1.000	ingly.	0.0452	0.0103
+0.7384	0.5395	1.000	address to a full word location and saves this address	0.3985	0.0116
+0.7397	0.1466	1.000	The ERR and VALUE subroutines are initialized	0.3665	0.0133
+0.7413	0.1297	1.000	5.	0.0169	0.0102
+0.7542	0.5395	1.000	in $6. (The fixed format fields in the unit are refer-	0.3929	0.0118
+0.7573	0.1128	1.000	now.	0.0357	0.0087
+0.7688	0.5395	1.000	enced by $6 during Pass 1.) Next MAIN updates Ibuffw	0.4060	0.0146
+0.7703	0.1297	1.000	6. During the assembly many of the index registers	0.3853	0.0118
+0.7833	0.5395	1.000	to address the available area after the fixed format	0.3835	0.0118
+0.7848	0.1128	1.000	have fixed uses. The refill field of $15 has a special	0.3910	0.0117
+0.7979	0.5395	1.000	where the coded expression(s), if any, followed by	0.3741	0.0146
+0.7994	0.1128	1.000	function and is now set up with the location of STRAP	0.3910	0.0117
+0.8134	0.1146	1.000	Il's table of exits for maskable interrupts.	0.3122	0.0138
+0.8139	0.5414	1.000	the statement field characters will be put. This	0.3553	0.0116
+0.8285	0.1297	1.000	7. After having fetched the Communication Record	0.3778	0.0116
+0.8285	0.5395	1.000	location of the starting point of the coded expression(s)	0.4060	0.0116
+0.8430	0.5395	1.000	is saved for the later computation of the total length	0.3853	0.0116
+0.8445	0.1147	1.000	from MCP, the entry procedure determines STRAP	0.3778	0.0116
+0.8576	0.5414	1.000	of the coded expression(s) in this unit. The upper	0.3703	0.0131
+0.8590	0.1128	1.000	II's position in the chain. If STRAP II is first in the	0.3872	0.0116
+0.8721	0.5414	1.000	limit of the buffer reserved for the units is put in	0.3647	0.0116
+0.8735	0.1147	1.000	chain, the entry procedure sets the Communication	0.3759	0.0116
+0.8866	0.5395	1.000	GETFLD's index word, Beixtx, since this is one of	0.3816	0.0161
+0.8881	0.1147	1.000	Record to indicate input is System Input. In any	0.3553	0.0131
+0.9012	0.5414	1.000	the index words that have to be set up for using the	0.3759	0.0131
+0.9026	0.1147	1.000	event, the entry procedure goes to MAIN to begin the	0.3910	0.0116
+0.9172	0.5414	1.000	encoding subroutine. Besides knowing where to put	0.3816	0.0116
+0.9185	0.1128	1.000	processing of the input.	0.1729	0.0103
+0.9448	0.8045	1.000	Assembly Phases	0.0959	0.0116
+0.9462	0.9154	1.000	19	0.0169	0.0073

@@ -1,0 +1,19 @@
+0.1148	0.0752	1.000	PREFACE	0.0808	0.0131
+0.1599	0.0789	1.000	This manual was prepared by Programming Systems	0.3929	0.0131
+0.1740	0.0563	1.000	• to provide detailed information on the internal logic	0.4080	0.0135
+0.1890	0.0771	1.000	of the IBM 7030 Master Control Program (MCP).	0.3722	0.0132
+0.2048	0.0771	1.000	It is intended for systems programming personnel	0.3759	0.0118
+0.2194	0.0752	1.000	who are responsible for diagnosing system operation	0.3966	0.0132
+0.2339	0.0771	1.000	or for adapting the programming system to special	0.3816	0.0118
+0.2645	0.0959	1.000	Certain knowledge is prerequisite for the full uti-	0.3703	0.0116
+0.2791	0.0752	1.000	lization of this manual. It is assumed that the reader	0.4060	0.0103
+0.2936	0.0771	1.000	has a basic knowledge of the IBM 7030 and its basic	0.3872	0.0116
+0.3081	0.0752	1.000	language, STRAP II. Such background knowledge can	0.4023	0.0131
+0.3227	0.0771	1.000	be obtained from the IBM 7030 Data Processing Sys-	0.3966	0.0131
+0.3387	0.0752	1.000	tem Reference Manual, Form A22-6530-2, and from	0.3966	0.0116
+0.3532	0.0771	1.000	the IBM Reference Manual, STRAP II 7030 Assembly	0.3985	0.0117
+0.3663	0.0771	1.000	Program, Form C28-6129. It is also assumed that	0.3891	0.0131
+0.3821	0.0771	1.000	the reader has a general knowledge of MCP as des-	0.3872	0.0118
+0.3967	0.0771	1.000	cribed in the IBM 7030 Data Processing System	0.3571	0.0118
+0.4112	0.0771	1.000	Master Control Program Reference Manual,	0.3346	0.0118
+0.4258	0.0771	1.000	Form C22-6678.	0.1241	0.0118

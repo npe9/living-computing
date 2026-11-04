@@ -1,0 +1,106 @@
+0.0682	0.4305	1.000	IBM 7030 Data Processing System	0.4774	0.0234
+0.1279	0.1015	1.000	The IBM 7030 Data Processing System substantially in-	0.3910	0.0146
+0.1292	0.5187	1.000	ties built into the 7030 exchange and associated chan-	0.3930	0.0155
+0.1439	0.0996	1.000	creases over-all performance on large technical com-	0.3910	0.0131
+0.1453	0.5188	1.000	nels permit the simultaneous operation of many in-	0.3929	0.0147
+0.1584	0.0996	1.000	puting problems. It solves important problems that	0.3910	0.0146
+0.1612	0.5188	1.000	put-output units together with computation. Eight	0.3929	0.0147
+0.1744	0.0996	1.000	earlier computers do not have the capacity and speed	0.3910	0.0147
+0.1758	0.5168	1.000	input-output channels with an aggregate rate of about	0.3949	0.0152
+0.1903	0.0996	1.000	to complete in a reasonable time. The power and gen-	0.3910	0.0146
+0.1918	0.5188	1.000	6 million bits per second are provided with the ex-	0.3910	0.0146
+0.2048	0.0996	1.000	eral-purpose design of the 7030 also permit the effi-	0.3910	0.0146
+0.2064	0.5169	1.000	change. These rates insure that high computational	0.3929	0.0146
+0.2194	0.0996	1.000	cient solution of large data-processing and business-	0.3910	0.0146
+0.2224	0.5169	1.000	speeds can be maintained when dealing with data that	0.3947	0.0131
+0.2346	0.5168	1.000	cannot all be held in internal storage.	0.2767	0.0171
+0.2355	0.0996	1.000	oriented problems, as well as a more rapid completion	0.3910	0.0145
+0.2515	0.5338	1.000	The input-output system is flexible enough so that	0.3759	0.0146
+0.2515	0.0996	1.000	of many lesser problems.	0.1786	0.0131
+0.2660	0.1147	1.000	Impressive speed increases have been realized in the	0.3759	0.0131
+0.2674	0.5169	1.000	almost any kind of device furnishing or accepting	0.3929	0.0147
+0.2805	0.0977	1.000	design of new components and circuits in the 7030	0.3929	0.0146
+0.2833	0.5169	1.000	digital information can be connected to the computer.	0.3929	0.0146
+0.2962	0.0977	1.000	system. To match and fully utilize this technological	0.3911	0.0150
+0.2979	0.5338	1.000	Large high-speed magnetic disk storage units, each	0.3741	0.0146
+0.3109	0.0977	1.000	development, a high degree of overlapped operation,	0.3929	0.0147
+0.3139	0.5169	1.000	with multi-million word capacity, are available to	0.3929	0.0161
+0.3270	0.0977	1.000	new input-output facilities, a more powerful instruc-	0.3929	0.0146
+0.3285	0.5150	1.000	store large data arrays and read or write at rates of a	0.3929	0.0131
+0.3415	0.0940	1.000	tion set, and other logical organization improvements	0.3947	0.0176
+0.3430	0.5150	1.000	few microseconds per word.	0.2011	0.0146
+0.3528	0.0974	1.000	have been made to reach the very high over-all per-	0.3916	0.0219
+0.3588	0.5337	1.000	The instruction set which has been developed for	0.3742	0.0164
+0.3711	0.0973	1.000	formance of the system.	0.1737	0.0167
+0.3735	0.5150	1.000	this system exhibits new and powerful features. As a	0.3929	0.0146
+0.3881	0.1128	1.000	For example, the 7030 is equipped with the high-	0.3759	0.0160
+0.3894	0.5150	1.000	result, fewer instructions are usually required to write	0.3929	0.0147
+0.4039	0.5149	1.000	a given program. Moreover, most of the instructions	0.3930	0.0171
+0.4039	0.0959	1.000	speed IBM 7302 Core Storage units. These units, when	0.3929	0.0133
+0.4185	0.0959	1.000	used with the 7030, will contain 16,384 words of 72	0.3929	0.0147
+0.4190	0.5149	1.000	used in the inner loops of floating point arithmetic	0.3932	0.0183
+0.4322	0.0975	1.000	bits each. Several storage units can be cycled con-	0.3914	0.0178
+0.4360	0.5150	1.000	problems will be only half a word, or 32 bits, long.	0.3910	0.0146
+0.4494	0.5148	1.000	Fewer and shorter instructions mean less storage space	0.3933	0.0180
+0.4506	0.0959	1.000	currently. Results produced can be placed in storage	0.3929	0.0131
+0.4615	0.0957	1.000	and one or more new instructions and operands can	0.3914	0.0194
+0.4679	0.5150	1.000	Ior programs, fewer accesses to core storage, and fewer	0.3910	0.0118
+0.4797	0.0959	1.000	be fetched from storage, while the arithmetic unit is	0.3929	0.0146
+0.4825	0.5149	1.000	instructions executed. All of this contributes to high	0.3911	0.0132
+0.4942	0.0959	1.000	busy executing an instruction with data already in	0.3910	0.0161
+0.4956	0.5150	1.000	performance. Fewer instructions written also means	0.3929	0.0147
+0.5102	0.0959	1.000	its registers. Indexing of instructions is carried on in	0.3910	0.0147
+0.5115	0.5132	1.000	less programming effort.	0.1767	0.0146
+0.5247	0.0959	1.000	a separate index arithmetic unit; some instructions	0.3929	0.0147
+0.5276	0.5301	1.000	Much of the emphasis in the instruction set is on	0.3759	0.0146
+0.5372	0.0956	1.000	can even be executed entirely in that unit while a pre-	0.3915	0.0212
+0.5421	0.5150	1.000	efficient floating point, indexing, and branching in-	0.3929	0.0161
+0.5567	0.0959	1.000	vious operation is being completed in the main arith-	0.3929	0.0146
+0.5570	0.5130	1.000	structions, which form the heart of a great many pro-	0.3932	0.0174
+0.5687	0.0957	1.000	metic section. Automatic interlocks and safeguards ad-	0.3913	0.0180
+0.5704	0.5129	1.000	grams in the technical field. It is equally important,	0.3935	0.0229
+0.5857	0.0938	1.000	just the flow of information and assure that the pro-	0.3950	0.0163
+0.5887	0.5150	1.000	though, to have available good instructions for house-	0.3910	0.0147
+0.6017	0.0940	1.000	gram is executed correctly.	0.1955	0.0146
+0.6032	0.5132	1.000	keeping functions, for editing input-output data, and	0.3929	0.0160
+0.6177	0.1109	1.000	Because of the overlapped operation of many parts	0.3759	0.0160
+0.6191	0.5132	1.000	tor processing data other than floating point numbers.	0.3947	0.0146
+0.6321	0.0940	1.000	of the system, it is quite difficult to predict the exact	0.3929	0.0147
+0.6352	0.5301	1.000	The use of solid-state components throughout makes	0.3759	0.0146
+0.6467	0.0902	1.000	speed at which a given program will be executed. The	0.3966	0.0176
+0.6497	0.5132	1.000	the system inherently reliable. Automatic error de-	0.3929	0.0161
+0.6612	0.0919	1.000	duration of each operation depends on the data, on	0.3951	0.0205
+0.6640	0.5111	1.000	tection, together with means for localizing faults and	0.3950	0.0189
+0.6788	0.0940	1.000	the availability of various units, and on the instruc-	0.3929	0.0131
+0.6802	0.5132	1.000	other maintenance aids, serves to reduce the time re-	0.3929	0.0131
+0.6928	0.0938	1.000	tions which preceded it. While a time can be given	0.3913	0.0168
+0.6962	0.5132	1.000	quired to identify and repair those machine malfunc-	0.3929	0.0145
+0.7078	0.0940	1.000	for each operation alone, in terms of a formula or as	0.3929	0.0146
+0.7106	0.5132	1.000	tions which do arise. Automatic error correction is	0.3929	0.0133
+0.7252	0.0940	1.000	an average, the over-all time is not the sum of these	0.3929	0.0118
+0.7252	0.5132	1.000	provided in areas where this is expected to improve	0.3929	0.0161
+0.7372	0.0938	1.000	times. Representative time estimates for a problem	0.3914	0.0179
+0.7411	0.5131	1.000	performance materially. Automatic checking will pro-	0.3930	0.0167
+0.7528	0.0919	1.000	can only be obtained by simulating the many de-	0.3932	0.0185
+0.7573	0.5132	1.000	vide continuous monitoring to insure that a reliable	0.3929	0.0131
+0.7685	0.0919	1.000	tailed time relationships in terms of that program or	0.3932	0.0172
+0.7689	0.5111	1.000	machine continues to be reliable. By reducing rerun	0.3934	0.0209
+0.7848	0.0921	1.000	by actually running it. The computer is effective in	0.3929	0.0146
+0.7878	0.5113	1.000	time, checking enhances computer performance.	0.3590	0.0146
+0.7994	0.0921	1.000	adjusting the flow	0.1429	0.0146
+0.8003	0.2386	1.000	of information between various	0.2466	0.0142
+0.8024	0.5280	1.000	Another contribution to performance is made by	0.3763	0.0176
+0.8154	0.0921	1.000	units during the execution of a program. Thus the	0.3929	0.0146
+0.8173	0.5111	1.000	features to improve operating techniques. Routine	0.3933	0.0188
+0.8288	0.0919	1.000	programmer is relieved of the burden of optimizing	0.3933	0.0193
+0.8322	0.5111	1.000	operating functions are, as much as possible, placed	0.3933	0.0201
+0.8443	0.0921	1.000	his program.	0.0941	0.0149
+0.8444	0.5110	1.000	under direct control of the stored program. Input-	0.3935	0.0248
+0.8604	0.1088	1.000	Another factor contributing to high performance is	0.3763	0.0184
+0.8648	0.5113	1.000	output units require a minimum of manual set-up.	0.3929	0.0161
+0.8764	0.0921	1.000	the efficient handling of input-output and external	0.3929	0.0161
+0.8789	0.5111	1.000	Control panels are omitted entirely; all rearrangement	0.3932	0.0178
+0.8896	0.0918	1.000	devices. Extensive buffering and multiplexing facili-	0.3915	0.0197
+0.8907	0.5110	1.000	and control of data is under the more general and	0.3915	0.0222
+0.9345	0.7387	1.000	System Organization	0.1259	0.0118
+0.9360	0.8929	1.000	5	0.0113	0.0102

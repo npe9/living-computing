@@ -1,0 +1,44 @@
+0.0609	0.0639	1.000	into logical as well as physical sections determined	0.3910	0.0191
+0.0654	0.4944	1.000	containing reference information for Pass 1, another	0.3872	0.0146
+0.0770	0.4962	1.000	reserved for both phases of Pass 2 as well as for	0.3590	0.0161
+0.0799	0.0677	1.000	by the phase in which the information is used. One	0.3816	0.0131
+0.0915	0.0677	1.000	section is used both for the information referred to	0.3816	0.0146
+0.0945	0.4906	1.000	the iteration phases, and a final section containing	0.3759	0.0131
+0.1076	0.0658	1.000	by more than one phase and for the subroutines used	0.3891	0.0131
+0.1090	0.4906	1.000	the large buffers (e.g., Isymba-symbol table,	0.3496	0.0160
+0.1206	0.4906	1.000	Ibufa-buffer for units).	0.1748	0.0176
+0.1221	0.0658	1.000	in more than one phase. Then there is a section	0.3628	0.0131
+0.1918	0.3684	1.000	Sections of STRAP II	0.1617	0.0131
+0.2193	0.0977	1.000	Type Area	0.0828	0.0177
+0.2208	0.5037	1.000	Contents	0.0659	0.0149
+0.2209	0.3609	1.000	Section	0.0564	0.0146
+0.2353	0.3609	1.000	Designation	0.0922	0.0148
+0.2384	0.1184	1.000	on	0.0244	0.0116
+0.2515	0.1090	1.000	Disk	0.0376	0.0131
+0.2907	0.5000	1.000	-	0.0207	0.0218
+0.2936	0.3609	1.000	Bootstrap	0.0771	0.0160
+0.2948	0.0996	1.000	SCSTRAPO	0.0828	0.0136
+0.3227	0.5019	1.000	Those subroutines of STRAP II common to Pass 1	0.3722	0.0146
+0.3241	0.0977	1.000	SCSTRAP1	0.0827	0.0131
+0.3387	0.5169	1.000	and Pass 2.	0.0921	0.0132
+0.3532	0.3609	1.000	AO	0.0244	0.0131
+0.3545	0.5075	1.000	Constants and work areas common to Pass 1 and	0.3553	0.0103
+0.3691	0.5207	1.000	Pass 2.	0.0583	0.0103
+0.3836	0.5075	1.000	Constants and work areas for the input-output routines.	0.4060	0.0118
+0.3982	0.5056	1.000	Error messages common to Pass 1 and Pass 2, all	0.3759	0.0132
+0.4127	0.5207	1.000	control words for serious and non-serious error	0.3590	0.0103
+0.4273	0.5226	1.000	messages, and all serious error messages for	0.3459	0.0131
+0.4403	0.5207	1.000	STRAP II.	0.0771	0.0133
+0.4564	0.5075	1.000	Constants and work areas for Pass 1.	0.2744	0.0117
+0.4564	0.3628	1.000	A1	0.0207	0.0116
+0.4855	0.5056	1.000	Subroutines unique to Pass 1.	0.2143	0.0116
+0.4855	0.3628	1.000	1	0.0094	0.0116
+0.5116	0.3609	1.000	A2	0.0263	0.0160
+0.5131	0.0996	1.000	SCSTRAP2	0.0827	0.0131
+0.5160	0.5075	1.000	Constants and work areas unique to Pass 2.	0.3195	0.0116
+0.5305	0.5075	1.000	All non-serious error messages.	0.2425	0.0102
+0.5581	0.3628	1.000	2	0.0113	0.0116
+0.5596	0.5056	1.000	Subroutines unique to Pass 2.	0.2180	0.0116
+0.5886	0.5075	1.000	Buffers.	0.0602	0.0117
+0.5887	0.3628	1.000	A3	0.0226	0.0116
+0.9172	0.0677	1.000	174	0.0226	0.0087

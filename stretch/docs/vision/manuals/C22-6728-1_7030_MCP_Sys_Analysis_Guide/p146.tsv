@@ -1,0 +1,118 @@
+0.1017	0.0789	1.000	of Q or SC, return a zero parameter to Q or SC after	0.3985	0.0131
+0.1032	0.5113	1.000	The Tape Operation Routine (VIOP): The operation	0.3891	0.0117
+0.1163	0.0771	1.000	calling VTOP. Thus, Q and SC are starved and their	0.4023	0.0131
+0.1163	0.5113	1.000	of VTOP is governed by the appropriate table, VTSA	0.3947	0.0131
+0.1308	0.0789	1.000	operation ceases. Meanwhile, RT and ST are blocked	0.4041	0.0131
+0.1321	0.5113	1.000	or VTSB, the origin of which is provided in index	0.3722	0.0133
+0.1453	0.0771	1.000	by the parameter 17 in VXI which represents the	0.3684	0.0116
+0.1467	0.5113	1.000	register VU by the TS initiating routine which called	0.3929	0.0118
+0.1599	0.0771	1.000	$RD that could not be completed because the end of	0.3835	0.0131
+0.1612	0.5113	1.000	VTOP. The IOD reference number is obtained from	0.3929	0.0118
+0.1758	0.0771	1.000	tape was reached. When a new tape is assigned, the	0.3966	0.0133
+0.1758	0.5113	1.000	VX1 (VTSX)* locating an entry in VSURT. The VOP	0.3929	0.0133
+0.1918	0.5113	1.000	(VTSX) bit determines whether a $REW or ŞUNLD	0.3759	0.0103
+0.1918	0.0771	1.000	processing is resumed simply by reissuing this ŞRD.	0.4004	0.0118
+0.2064	0.0959	1.000	Operation in the WT program would be inhibited by	0.3797	0.0117
+0.2064	0.5113	1.000	operation is given and this setting is placed in VOPB	0.3966	0.0117
+0.2209	0.5113	1.000	(VSURT) where it is the basis of the operation to be	0.3872	0.0116
+0.2209	0.0771	1.000	some negative parameter in VX1, usually WEFT, and	0.4041	0.0131
+0.2355	0.0771	1.000	when the time comes to resume, this would be done	0.3872	0.0116
+0.2355	0.5094	1.000	performed. The VSQNC (VTSX) bit is tested and if 1,	0.4060	0.0131
+0.2500	0.5094	1.000	information relating to the order of rewinding must	0.3872	0.0116
+0.2500	0.0771	1.000	by using the VACT subroutine.	0.2312	0.0116
+0.2645	0.0959	1.000	Once a TS initiation routine has called VTOP, the	0.3722	0.0131
+0.2660	0.5113	1.000	be preserved. This is done by using a linking	0.3459	0.0116
+0.2805	0.5094	1.000	mechanism in which each VSURT entry involved points	0.4117	0.0116
+0.2805	0.0771	1.000	tape switch routine proceeds independently of the	0.3684	0.0116
+0.2936	0.0771	1.000	functional programs and their tables until it is time	0.3872	0.0116
+0.2936	0.5094	1.000	to the next VSURT entry in the queue. The 'vf'	0.3571	0.0131
+0.3096	0.5094	1.000	portion of VSURT is used for this purpose and the	0.3759	0.0116
+0.3096	0.0771	1.000	to actually attach a tape to a tape program.	0.3271	0.0116
+0.3241	0.5075	1.000	relative location of the queue is in VTQ(VTSA).	0.3590	0.0131
+0.3400	0.5263	1.000	Next, the VTMV subroutine is entered, which sets	0.3797	0.0133
+0.3459	0.0789	1.000	The Tape Switch Routines	0.1917	0.0116
+0.3545	0.5094	1.000	the TS origin in VU into 'rf' (VSURT), sets bit	0.3496	0.0133
+0.3706	0.5113	1.000	VRDY (VSURT) to zero indicating unit not ready, and	0.3966	0.0131
+0.3750	0.0789	1.000	The TS routines (Figure 80) proper are a single set of	0.4079	0.0132
+0.3852	0.5094	1.000	on the basis of VOPB (VSURT) issues either a $REW	0.3966	0.0117
+0.3909	0.0771	1.000	routines which serve both VTSA and VTSB. There-	0.3891	0.0103
+0.3997	0.5094	1.000	or $UNLD operation.	0.1579	0.0116
+0.4055	0.0771	1.000	fore, rather than discuss VTSA and VTSB separately,	0.4060	0.0118
+0.4142	0.5282	1.000	Control now returns to VTOP which directly	0.3308	0.0116
+0.4215	0.0771	1.000	the routines of which they are both composed will be	0.3929	0.0116
+0.4288	0.5094	1.000	branches to VACT in order to attach a new unit if one	0.4023	0.0116
+0.4360	0.0771	1.000	discussed.	0.0809	0.0118
+0.4433	0.5075	1.000	is available. The mechanism involved in this action	0.3966	0.0116
+0.4506	0.0940	1.000	As the tape units proceed through the successive	0.3647	0.0116
+0.4593	0.5075	1.000	is similar to that in which the VEOP routine, as one	0.3966	0.0116
+0.4666	0.0771	1.000	stages of tape switch certain information must be	0.3722	0.0102
+0.4724	0.5094	1.000	of its last acts, branches to VACT. VACT ends by	0.3853	0.0131
+0.4811	0.0771	1.000	carried over between stages. For this purpose a	0.3703	0.0116
+0.4869	0.5094	1.000	branching to VIO (VTSX) if it finds another parameter	0.4060	0.0131
+0.4942	0.0771	1.000	single full word is set aside for each IOD number.	0.3778	0.0116
+0.5015	0.5094	1.000	in the queue, and since VIO (VTSX) contains B, VTA,	0.4041	0.0146
+0.5087	0.0771	1.000	These are arranged in a symbolic unit reference	0.3647	0.0116
+0.5174	0.5094	1.000	the tape attachment procedure is initiated.	0.3195	0.0116
+0.5233	0.0771	1.000	table (VSURT), so that they may be directly accessed	0.4004	0.0131
+0.5378	0.0752	1.000	with the IOD number. For the tape IOD's the format	0.3985	0.0131
+0.5464	0.5094	1.000	The VTDSP Routine:	0.1541	0.0118
+0.5464	0.6617	1.000	VTDSP (Figure 80) is entered	0.2350	0.0118
+0.5536	0.0771	1.000	of an entry is as follows:	0.1880	0.0103
+0.5609	0.5094	1.000	from the CS slot in the table of exits with the IOD	0.3722	0.0103
+0.5755	0.5094	1.000	number set into index register VTS. First the VRDY	0.4023	0.0118
+0.5900	0.5113	1.000	(VSURT) bit is set to 1 and then using the "rf' entry	0.3853	0.0133
+0.5900	0.2206	1.000	Format	0.0630	0.0180
+0.6045	0.5094	1.000	in VSURT the applicable TS table is located. The	0.3741	0.0118
+0.6076	0.0771	1.000	XW, VF, CF, RF, Flags	0.1898	0.0131
+0.6177	0.5075	1.000	'rf's (VSURT) slot is set equal to VDS (VTSX) so that	0.4004	0.0132
+0.6336	0.5093	1.000	the VSURT contains now the ultimate destination pro-	0.4005	0.0134
+0.6379	0.2180	1.000	Content	0.0622	0.0135
+0.6482	0.0733	1.000	Symbol Position	0.1466	0.0176
+0.6497	0.5094	1.000	gram of the unit. It is significant to the transition	0.3797	0.0116
+0.6512	0.2556	1.000	Use	0.0395	0.0145
+0.6642	0.5094	1.000	routine VONLIN that the destination is set at unit	0.3703	0.0103
+0.6773	0.2575	1.000	Used for maintaining sequence	0.2331	0.0191
+0.6773	0.5094	1.000	ready time (CS) rather than at unready time.	0.3365	0.0131
+0.6788	0.1523	1.000	VF	0.0282	0.0145
+0.6802	0.0752	1.000	'vf'	0.0301	0.0116
+0.6918	0.5263	1.000	The VSQNC (VTSX) bit is then tested to see whether	0.3910	0.0131
+0.6918	0.2575	1.000	information for VISA.	0.1729	0.0204
+0.7064	0.0752	1.000	'of'	0.0320	0.0160
+0.7078	0.5094	1.000	sequence of actuation is to have a bearing on the	0.3647	0.0116
+0.7078	0.2594	1.000	Contains file count for use	0.1992	0.0174
+0.7078	0.1523	1.000	CF	0.0282	0.0160
+0.7216	0.2571	1.000	by RT.	0.0591	0.0191
+0.7224	0.5094	1.000	sequencing of forwarding to the other TS routine.	0.3684	0.0116
+0.7369	0.2594	1.000	Contains TS routine table	0.1955	0.0174
+0.7369	0.1504	1.000	RE	0.0301	0.0160
+0.7369	0.0733	1.000	'rf'	0.0320	0.0145
+0.7369	0.5094	1.000	Should it not, then this is the phase 4 to phase 1 inter-	0.4098	0.0131
+0.7500	0.2575	1.000	origin while a $REW or a	0.1974	0.0189
+0.7515	0.5094	1.000	face and a special compatibility test, VTDP1, must	0.3891	0.0131
+0.7674	0.5094	1.000	be made before forwarding can occur. Otherwise,	0.3816	0.0116
+0.7674	0.2556	1.000	$UNLD is in progress.	0.1805	0.0174
+0.7805	0.2575	1.000	Contains the destination of	0.2030	0.0174
+0.7820	0.5094	1.000	the linked queue of rewinding tapes is scanned, using	0.3985	0.0117
+0.7820	0.0733	1.000	'rf'	0.0320	0.0131
+0.7834	0.1485	1.000	RF	0.0282	0.0131
+0.7951	0.2575	1.000	this unit after $REW or	0.1805	0.0174
+0.7964	0.5094	1.000	VTQ (VTSA) to locate the front of the queue, until a	0.3872	0.0133
+0.8109	0.5094	1.000	unit ready bit (VRDY) is found to be zero or the end	0.3891	0.0118
+0.8139	0.2575	1.000	$UNLD is completed (i. e.,	0.2030	0.0131
+0.8255	0.2594	1.000	RT, WT, or ST.)	0.1335	0.0147
+0.8255	0.5113	1.000	of the queue is reached. As the queue is scanned all	0.3947	0.0118
+0.8387	0.2519	1.000	Distinguishes $REW and	0.1917	0.0174
+0.8400	0.5094	1.000	the tapes with VRDY (VSURT) equal to 1 are removed	0.4023	0.0118
+0.8401	0.0733	1.000	VOPB	0.0508	0.0160
+0.8411	0.1446	1.000	Flag Bit. 25	0.1017	0.0169
+0.8531	0.2556	1.000	$UNLD.	0.0659	0.0162
+0.8532	0.5094	1.000	from the queue and forwarded to the successor	0.3515	0.0132
+0.8691	0.5094	1.000	through the standard interface.	0.2331	0.0118
+0.8706	0.1353	1.000	Flag Bit.26 Used to indicate unit ready.	0.3308	0.0161
+0.8706	0.0752	1.000	VRDY	0.0639	0.0145
+0.8852	0.0846	1.000	The two main routines in TS are VTOP, which	0.3571	0.0146
+0.8968	0.0733	1.000	initiates a $REW or $UNLD; and VTDSP, which is	0.3798	0.0172
+0.9012	0.5075	1.000	* The VTSX indicates the preceding symbol refers	0.3853	0.0131
+0.9157	0.0733	1.000	entered when a channel signal interrupt is released.	0.3929	0.0131
+0.9172	0.5075	1.000	to a table entry for VTSA or VTSB.	0.2688	0.0116
+0.9520	0.0733	1.000	146	0.0244	0.0131

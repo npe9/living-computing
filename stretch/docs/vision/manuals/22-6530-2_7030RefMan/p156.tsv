@@ -1,0 +1,106 @@
+0.0639	0.5093	1.000	console printer as an 8-bit byte. Out of the total of	0.3930	0.0163
+0.0680	0.0882	1.000	Keyboard	0.0735	0.0151
+0.0799	0.5094	1.000	256 codes possible with eight bits, 175 distinct codes	0.3929	0.0146
+0.0909	0.5092	1.000	are assigned to the character codes that can be entered	0.3915	0.0205
+0.0914	0.0920	1.000	The keyboard is arranged in the usual fashion of a	0.3912	0.0176
+0.1075	0.0920	1.000	typewriter keyboard. There are 44 character keys and	0.3912	0.0164
+0.1105	0.5094	1.000	by means of the 44 character keys in conjunction with	0.3910	0.0145
+0.1235	0.0902	1.000	a shift key which indicates lower or upper case. As a	0.3929	0.0146
+0.1247	0.5093	1.000	the upper and lower case shift key, and the ribbon	0.3912	0.0166
+0.1378	0.0920	1.000	character key is depressed, the associated character is	0.3913	0.0175
+0.1395	0.5093	1.000	shift key. One code corresponds to the space bar, and	0.3913	0.0176
+0.1530	0.5111	1.000	five codes are assigned to the control functions asso-	0.3913	0.0190
+0.1539	0.0920	1.000	automatically typed on the console printer. An 8-bit	0.3931	0.0170
+0.1700	0.0921	1.000	character code is associated with each character for	0.3910	0.0118
+0.1715	0.5094	1.000	ciated with the operation of the keyboard and the	0.3929	0.0145
+0.1845	0.0920	1.000	entry to and exit from the computer. The space bar	0.3912	0.0166
+0.1875	0.5094	1.000	printing mechanism. The remaining codes are re	0.3910	0.0146
+0.1989	0.0920	1.000	causes the printing mechanism to skip one printing	0.3913	0.0184
+0.2020	0.5113	1.000	dundant and cannot be entered through the keyboard.	0.3910	0.0131
+0.2148	0.0919	1.000	position and enter a blank character consisting of all	0.3932	0.0178
+0.2165	0.5262	1.000	If the bits in each byte are numbered from 0 through	0.3762	0.0156
+0.2320	0.5112	1.000	7, starting with the leftmost (most significant bit) a	0.3912	0.0168
+0.2355	0.0902	1.000	zeros.	0.0395	0.0087
+0.2432	0.5091	1.000	code for an upper or lower case character not modified	0.3915	0.0220
+0.2456	0.1090	1.000	Besides the character keys, the keyboard has several	0.3759	0.0147
+0.2615	0.0921	1.000	function keys. In addition to causing the indicated	0.3910	0.0146
+0.2630	0.5113	1.000	by the depression of the ribbon shift key occupies the	0.3910	0.0146
+0.2775	0.5093	1.000	seven bit positions 1 through 7. The bit numbered 0	0.3931	0.0167
+0.2776	0.0921	1.000	action on the printing mechanism, depression of each	0.3910	0.0146
+0.2921	0.0921	1.000	function key generates a corresponding function code	0.3929	0.0146
+0.2926	0.5111	1.000	always has the value zero. Bit position 7 indicates case	0.3913	0.0175
+0.3081	0.0921	1.000	for entry into the computer. The following are the	0.3929	0.0146
+0.3096	0.5113	1.000	shift, with O representing lower case and 1 represent-	0.3891	0.0146
+0.3236	0.0920	1.000	function keys:	0.1036	0.0156
+0.3241	0.5094	1.000	ing upper case. This set, consisting of 89 codes which	0.3929	0.0174
+0.3361	0.5110	1.000	correspond to 88 distinct non-blank characters and	0.3897	0.0209
+0.3399	0.1070	1.000	1. Carriage Return. The carriage return key	0.3781	0.0170
+0.3522	0.1313	1.000	causes the printing mechanism to advance to	0.3539	0.0215
+0.3545	0.5113	1.000	blank, is shown in the Appendix. The blank code,	0.3910	0.0146
+0.3706	0.5113	1.000	corresponding to the space bar on the keyboard,	0.3910	0.0161
+0.3721	0.1335	1.000	the first printing position on the next line.	0.3214	0.0146
+0.3848	0.5111	1.000	prints a blank space when sent to the console printer.	0.3913	0.0179
+0.3865	0.1089	1.000	2. Backspace. The backspace key causes the print-	0.3742	0.0165
+0.4010	0.1315	1.000	ing mechanism to return to the previous print-	0.3536	0.0162
+0.4012	0.5282	1.000	When a character is entered with the ribbon shift	0.3741	0.0131
+0.4172	0.5113	1.000	key depressed, the code corresponding to the character	0.3910	0.0147
+0.4185	0.1316	1.000	ing position on the same line.	0.2143	0.0147
+0.4313	0.1089	1.000	3. Tabulate. The tabulate key causes the printing	0.3762	0.0178
+0.4317	0.5113	1.000	is modified to cause ribbon shift when the code is sub-	0.3910	0.0132
+0.4443	0.5111	1.000	sequently sent to the console printer for writing. This	0.3933	0.0215
+0.4476	0.1316	1.000	mechanism to skip to the next preset tabulate	0.3534	0.0146
+0.4621	0.5132	1.000	modification is limited to the three high-order bit po-	0.3910	0.0132
+0.4635	0.1333	1.000	position to the right, on the same line.	0.2916	0.0156
+0.4782	0.5113	1.000	sitions of the byte, but the particular bits that are	0.3929	0.0146
+0.4811	0.1090	1.000	When certain keys are held down, the action is re-	0.3759	0.0147
+0.4924	0.5130	1.000	changed depend upon the character. Bit position 7	0.3913	0.0176
+0.4954	0.0938	1.000	peated at top speed until the key is released. The fol-	0.3932	0.0177
+0.5087	0.5132	1.000	always indicates case shift, with O representing lower-	0.3929	0.0146
+0.5113	0.0920	1.000	lowing keys are provided with repeat action:	0.3255	0.0176
+0.5203	0.5128	1.000	case shift and 1 representing upper-case shift.	0.3313	0.0224
+0.5392	0.5301	1.000	One ribbon-shift code corresponds to each of the 88	0.3741	0.0145
+0.5435	0.1165	1.000	Space Bar	0.0752	0.0132
+0.5533	0.5130	1.000	regular character codes. The ampersand (&) in con-	0.3932	0.0175
+0.5581	0.1165	1.000	Carriage Return (only line feeding is repeated)	0.3534	0.0146
+0.5694	0.5130	1.000	junction with the ribbon shift, however, produces on	0.3913	0.0165
+0.5756	0.1165	1.000	Backspace	0.0733	0.0131
+0.5850	0.5112	1.000	input the same code as the space bar and, conse-	0.3931	0.0169
+0.5973	0.1128	1.000	All of the keys, including the character keys, are	0.3741	0.0146
+0.5983	0.5147	1.000	quently, on output this code cannot be printed. Thus	0.3897	0.0208
+0.6118	0.0940	1.000	locked whenever the console is in the ready status but	0.3929	0.0146
+0.6146	0.5130	1.000	the ribbon-shift code set consists of 87 distinct codes	0.3931	0.0154
+0.6279	0.0940	1.000	the keyboard is not active. The keyboard is active	0.3929	0.0146
+0.6321	0.5132	1.000	that can be entered through the keyboard.	0.3026	0.0133
+0.6439	0.0940	1.000	when the enter light is on, indicating that information	0.3929	0.0131
+0.6462	0.5300	1.000	Figure 47 shows codes that are generated when a	0.3743	0.0167
+0.6570	0.0940	1.000	can be entered. Manual operation is then possible	0.3929	0.0161
+0.6627	0.5113	1.000	character is entered with the ribbon shift key de-	0.3947	0.0146
+0.6730	0.0940	1.000	until the end or erase key is depressed, which causes	0.3929	0.0146
+0.6745	0.5110	1.000	pressed. When these codes are sent to the console	0.3952	0.0205
+0.6890	0.0921	1.000	the keyboard to be locked again. The keyboard re-	0.3947	0.0160
+0.6925	0.5111	1.000	printer during writing, the corresponding character is	0.3950	0.0184
+0.7035	0.0940	1.000	mains locked during a write operation. The keyboard	0.3910	0.0145
+0.7053	0.5110	1.000	printed in the color associated with ribbon shift. It	0.3952	0.0202
+0.7194	0.0940	1.000	is unlocked when the console is not ready so that the	0.3929	0.0132
+0.7238	0.5094	1.000	should be noted that because the ampersand in con-	0.3966	0.0146
+0.7355	0.0959	1.000	typewriter may be used for typing without entry to	0.3910	0.0145
+0.7380	0.5111	1.000	junction with ribbon shift produces on input the same	0.3950	0.0185
+0.7530	0.5130	1.000	code as the space bar, it cannot be printed on output.	0.3931	0.0182
+0.7542	0.0959	1.000	the computer.	0.1034	0.0118
+0.7645	0.1090	1.000	If the shift lock is left in the upper shift position	0.3778	0.0161
+0.7799	0.0957	1.000	during manual entry, the action of locking the key-	0.3912	0.0170
+0.7951	0.5132	1.000	Entry of Information	0.1523	0.0160
+0.7964	0.0959	1.000	board at the end of the operation automatically re-	0.3910	0.0133
+0.8109	0.0940	1.000	leases the shift lock. Thus, the keyboard is always in	0.3929	0.0147
+0.8139	0.5132	1.000	In order to enter information through the console, the	0.3929	0.0161
+0.8270	0.0959	1.000	the lower shift after termination of manual entry.	0.3628	0.0131
+0.8283	0.5112	1.000	console must have received a READ instruction from	0.3949	0.0165
+0.8439	0.5130	1.000	the computer. The operator can request such a READ	0.3931	0.0185
+0.8590	0.5113	1.000	instruction at any time by causing a channel-signal in-	0.3947	0.0174
+0.8605	0.0959	1.000	Printer Mechanism Character and Function Codes	0.3571	0.0132
+0.8746	0.5112	1.000	dication, provided the program so interprets the chan-	0.3968	0.0184
+0.8779	0.0959	1.000	Each character of function code is sent from the key-	0.3929	0.0131
+0.8924	0.5132	1.000	nel-signal indication.	0.1541	0.0146
+0.8938	0.0958	1.000	board to the exchange and from the exchange to the	0.3930	0.0153
+0.9288	0.7613	1.000	External Units	0.0940	0.0116
+0.9288	0.8853	1.000	153	0.0226	0.0087

@@ -1,0 +1,75 @@
+0.0712	0.0714	1.000	APPENDIX A - SYMBOLIC I-O CONTROL TABLES	0.3872	0.0116
+0.1293	0.0732	1.000	CHANNEL AND UNIT STATUS TABLES	0.2953	0.0133
+0.1308	0.5038	1.000	distinct forms, depending upon whether a channel has	0.3947	0.0131
+0.1453	0.5038	1.000	a single logical or physical unit (Figure 137), or	0.3590	0.0131
+0.1599	0.0752	1.000	The channel and unit status tables reflect the opera-	0.3872	0.0116
+0.1599	0.5038	1.000	multi-units (Figure 138). The form for any particu-	0.3891	0.0131
+0.1744	0.5019	1.000	lar channel is determined by an indicator which is in a	0.4041	0.0116
+0.1744	0.0752	1.000	tional status of all I-O channels and units logically	0.3759	0.0116
+0.1890	0.0733	1.000	attached to the system. The tables are constructed	0.3835	0.0117
+0.1903	0.5038	1.000	constant position for both types of tables. If the	0.3590	0.0118
+0.2019	0.0751	1.000	by the Initializer program at IPL time from IOCD	0.3705	0.0148
+0.2048	0.5038	1.000	channel is a single-unit entity, the channel and unit	0.3797	0.0132
+0.2179	0.0752	1.000	cards defining the I-O configuration. Because MCP	0.3853	0.0133
+0.2194	0.5038	1.000	status indicators are described in a single entry in	0.3759	0.0118
+0.2324	0.0733	1.000	initiates all I-O and accepts all I-O interrupts for	0.3722	0.0118
+0.2339	0.5038	1.000	the channel status tables. If a channel is a multi-	0.3703	0.0103
+0.2485	0.0752	1.000	both MCP and the problem program, it is necessary	0.3872	0.0118
+0.2485	0.5038	1.000	unit entry, the channel status table entry will contain	0.3929	0.0118
+0.2630	0.5038	1.000	information pertaining to the channel, while a sepa-	0.3835	0.0131
+0.2630	0.0733	1.000	for MCP to have complete information on the status	0.3853	0.0118
+0.2776	0.5038	1.000	rate table, referred to by the channel status table,	0.3759	0.0131
+0.2776	0.0752	1.000	of all channels and units. The channel and unit status	0.3985	0.0118
+0.2921	0.5038	1.000	will contain information about each of the units in	0.3665	0.0117
+0.2921	0.0752	1.000	tables provide this information in the form of specific	0.4004	0.0131
+0.3067	0.5019	1.000	distinct entries in the table. An entry in these tables	0.3966	0.0131
+0.3081	0.0752	1.000	indicators contained in the tables.	0.2519	0.0102
+0.3212	0.0902	1.000	The channel and unit status tables will exist in two	0.3778	0.0131
+0.3212	0.5000	1.000	consists of one word.	0.1635	0.0131
+0.3618	0.0752	1.000	Unit Status Table	0.1034	0.0132
+0.3721	0.6729	1.000	E SUNDENS	0.0301	0.0610
+0.3750	0.6917	1.000	ESMOUNT	0.0282	0.0567
+0.3808	0.8365	1.000	-SOVRES	0.0263	0.0509
+0.3808	0.6466	0.500	ESCNSSC	0.0320	0.0567
+0.3823	0.7838	1.000	- SWACE	0.0320	0.0494
+0.3852	0.7237	1.000	SIMNT	0.0226	0.0465
+0.3881	0.1278	1.000	SUNAA	0.0526	0.0131
+0.3910	0.7162	1.000	SREW	0.0169	0.0305
+0.3910	0.6391	1.000	SSEOP	0.0169	0.0407
+0.4012	0.0940	1.000	Address of Unit Area Table	0.1579	0.0131
+0.4157	0.2030	0.300	нишіи	0.1992	0.0203
+0.4317	0.4098	1.000	2628	0.0451	0.0160
+0.4331	0.4812	1.000	32	0.0207	0.0131
+0.4346	0.5564	1.000	39	0.0169	0.0116
+0.4346	0.8120	1.000	60	0.0207	0.0116
+0.4346	0.6786	1.000	49	0.0188	0.0116
+0.4346	0.2838	1.000	17	0.0207	0.0131
+0.4462	0.0733	1.000	Figure 137. Channel Status Table Entry for Single-Unit Channel'	0.3872	0.0160
+0.5233	0.0752	1.000	Single-Unit Channel	0.1203	0.0146
+0.5421	0.1391	1.000	SUNAA	0.0489	0.0118
+0.5422	0.6992	1.000	SCMODE	0.0150	0.0451
+0.5422	0.4718	1.000	W SOWNER	0.0132	0.0596
+0.5465	0.8383	1.000	SUNRES	0.0132	0.0378
+0.5465	0.8496	1.000	SOVRES	0.0132	0.0407
+0.5480	0.4586	1.000	SSETUP	0.0113	0.0378
+0.5494	0.7368	1.000	SEQUIP	0.0169	0.0392
+0.5536	0.1015	1.000	Address of Unit Area Table	0.1579	0.0147
+0.5538	0.6410	1.000	SSEOP	0.0169	0.0334
+0.5567	0.8083	1.000	ISCTI	0.0226	0.0349
+0.5581	0.8271	1.000	SREL	0.0132	0.0276
+0.5610	0.7876	1.000	SWR	0.0150	0.0247
+0.5640	0.7763	1.000	SRD	0.0113	0.0218
+0.5814	0.0846	0.300	ПННННИШ	0.2105	0.0131
+0.5916	0.2838	1.000	17	0.0188	0.0102
+0.6250	0.0733	1.000	Multi-Unit Channel	0.1184	0.0132
+0.6395	0.6805	1.000	SEMODE	0.0207	0.0436
+0.6395	0.8233	1.000	SUNITK	0.0188	0.0422
+0.6453	0.7143	1.000	SEQUIP	0.0169	0.0378
+0.6467	0.1409	1.000	SUNAA	0.0471	0.0118
+0.6497	0.7744	1.000	SUNIT	0.0169	0.0320
+0.6584	0.0996	1.000	Address of Unit Status Table	0.1654	0.0131
+0.6584	0.5395	1.000	SARCAD	0.0545	0.0131
+0.6948	0.4079	1.000	27	0.0150	0.0102
+0.6948	0.4680	1.000	32	0.0169	0.0087
+0.7078	0.0752	1.000	Figure 138. Channel Status and Unit Status Table Entries for Multi-Unit Channels	0.4680	0.0116
+0.9230	0.0677	1.000	245	0.0282	0.0116

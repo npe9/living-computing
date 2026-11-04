@@ -1,0 +1,108 @@
+0.0727	0.5150	1.000	Display Information	0.1485	0.0116
+0.0741	0.0846	1.000	sensed, it causes the problem program to start,	0.3647	0.0131
+0.0887	0.0846	1.000	beginning at the location currently in the instruction	0.3910	0.0132
+0.1017	0.5150	1.000	The display-on-binary-key-lights switch (16) ena-	0.3759	0.0131
+0.1032	0.0865	1.000	counter. If the set-instruction-counter binary key	0.3703	0.0117
+0.1163	0.5132	1.000	bles the programmer to display 64 bits on the	0.3459	0.0131
+0.1177	0.0846	1.000	has not been used, the start key serves as a means	0.3835	0.0132
+0.1308	0.5132	1.000	binary key lights, beginning at the bit address	0.3477	0.0131
+0.1321	0.0846	1.000	of restarting the program from where it had been	0.3703	0.0118
+0.1453	0.5132	1.000	specified in the left bank of numeric switches. If	0.3722	0.0131
+0.1467	0.0865	1.000	stopped. This key provides the only way of returning	0.3947	0.0118
+0.1599	0.5132	1.000	any binary key is not in a neutral position when a	0.3703	0.0131
+0.1612	0.0846	1.000	to the problem program once MCP has been placed	0.3816	0.0118
+0.1758	0.5150	1.000	display is requested, the action will not be carried	0.3816	0.0118
+0.1758	0.0846	1.000	in a check-out mode. Its action includes turning off	0.3853	0.0118
+0.1890	0.5150	1.000	out and binary light 17, to be labeled incompatible	0.3759	0.0132
+0.1903	0.0846	1.000	the binary light hold (16).	0.1917	0.0133
+0.2035	0.5132	1.000	combination, will be turned on. If both the enter-	0.3778	0.0117
+0.2179	0.5132	1.000	from-binary-keys switch and the display-on-binary-	0.3947	0.0133
+0.2224	0.0865	1.000	Stop	0.0320	0.0102
+0.2325	0.5150	1.000	key-lights switch are on at the same time, neither	0.3798	0.0134
+0.2470	0.5132	1.000	displaying nor entering may be accomplished. In	0.3741	0.0133
+0.2483	0.0883	1.000	Complementary to the problem of starting is the	0.3610	0.0136
+0.2615	0.5132	1.000	this case too, the binary light incompatible combina-	0.4004	0.0133
+0.2630	0.0865	1.000	problem of stopping. One may randomly halt the	0.3665	0.0131
+0.2761	0.5150	1.000	tion will be turned on.	0.1635	0.0103
+0.2791	0.0865	1.000	execution of the problem program by depressing the	0.3891	0.0116
+0.2936	0.0865	1.000	binary key hold (47). When it is initiated, a corre-	0.3891	0.0116
+0.3052	0.5150	1.000	Dump	0.0432	0.0116
+0.3067	0.0865	1.000	sponding binary light, labeled hold, is turned on and	0.3929	0.0131
+0.3212	0.0865	1.000	the contents of the next problem program instruction	0.3966	0.0116
+0.3342	0.5150	1.000	The programmer may request a dump from the	0.3553	0.0118
+0.3358	0.0865	1.000	to be executed are displayed in octal in the right	0.3628	0.0116
+0.3488	0.5150	1.000	console by setting the dump binary key (46). The	0.3703	0.0131
+0.3503	0.0865	1.000	half of the numeric display. If both the start and	0.3665	0.0116
+0.3633	0.5150	1.000	range of the dump is specified in the numeric	0.3459	0.0117
+0.3648	0.0865	1.000	hold binary keys are set, the binary light hold will	0.3778	0.0131
+0.3759	0.5149	1.000	switches; the starting location is entered in the left	0.3856	0.0158
+0.3794	0.0865	1.000	be turned on and the problem program's instruction	0.3853	0.0131
+0.3924	0.5132	1.000	bank of switches, and the last location to be dumped	0.3929	0.0131
+0.3953	0.0865	1.000	counter will be displayed; but the actions related to	0.3835	0.0116
+0.4067	0.5131	1.000	is placed in the right bank. If either address is	0.3610	0.0135
+0.4076	0.0845	1.000	the start key will then occur. The primary function	0.3912	0.0144
+0.4230	0.5150	1.000	partially blank; either address is invalid; either	0.3590	0.0131
+0.4230	0.0865	1.000	of the hold key is to randomly halt the problem	0.3496	0.0131
+0.4375	0.5150	1.000	address is totally blank, or the left address is	0.3496	0.0131
+0.4375	0.0865	1.000	program from the console without initiating any other	0.4004	0.0131
+0.4520	0.5150	1.000	greater than the right address; then the binary light	0.3891	0.0116
+0.4535	0.0865	1.000	action. If any other action were requested, then the	0.3910	0.0132
+0.4666	0.5132	1.000	to be labeled incorrect address will be turned on	0.3684	0.0102
+0.4679	0.0846	1.000	hold key need not be set because it would be redun-	0.3872	0.0118
+0.4811	0.5150	1.000	and the dump will not be given.	0.2312	0.0116
+0.4824	0.0865	1.000	dant. Stopping at a specific location can be accom-	0.3872	0.0118
+0.4956	0.5376	1.000	The lower registers will always be included in	0.3477	0.0116
+0.4970	0.0846	1.000	plished by use of the pseudo-operation $HOLD. In	0.3797	0.0118
+0.5102	0.5150	1.000	the dump request unless the suppress lower registers	0.4041	0.0132
+0.5115	0.0846	1.000	any event, restarting is accomplished by means of	0.3797	0.0133
+0.5217	0.6726	1.000	The formats are: octal hex,	0.2111	0.0162
+0.5247	0.5150	1.000	binary switch is on.	0.1598	0.0132
+0.5261	0.0846	1.000	the start key and the Enter key and End key com-	0.3722	0.0118
+0.5392	0.5150	1.000	floating point, index word, or octal hex suppressing	0.3910	0.0145
+0.5405	0.0843	1.000	bination.	0.0666	0.0121
+0.5536	0.5169	1.000	mnemonics.	0.0903	0.0119
+0.5682	0.5376	1.000	To select one of the last three formats, the cor-	0.3665	0.0133
+0.5827	0.5150	1.000	responding binary switch labeled:	0.2538	0.0133
+0.5858	0.0865	1.000	Enter Information	0.1335	0.0103
+0.5973	0.5583	1.000	FP FORMAT (13)	0.1335	0.0133
+0.6118	0.5583	1.000	OHS FORMAT (14)	0.1429	0.0132
+0.6118	0.0865	1.000	The enter-from-binary-keys switch (17) enables the	0.3891	0.0118
+0.6264	0.0865	1.000	programmer to enter up to 64 bits into his program,	0.3929	0.0132
+0.6264	0.5583	1.000	XW FORMAT (15)	0.1353	0.0132
+0.6394	0.0846	1.000	beginning at the location specified in the left bank	0.3722	0.0133
+0.6409	0.5169	1.000	must be selected. If none of the format switches is	0.3853	0.0118
+0.6493	0.5131	1.000	set, the format will be octal hex. If more than one	0.3893	0.0209
+0.6539	0.0846	1.000	of numeric switches. The decimal number of bits,	0.3835	0.0147
+0.6657	0.5113	1.000	format switch are set, the binary light labeled in-	0.3835	0.0174
+0.6685	0.0827	1.000	n, to be entered is placed right, justified in the	0.3609	0.0147
+0.6802	0.5132	1.000	compatible combination will be turned on and the	0.3703	0.0174
+0.6830	0.3233	1.000	Only the rightmost	0.1523	0.0133
+0.6845	0.0865	1.000	right bank of numeric switches.	0.2387	0.0103
+0.6948	0.5132	1.000	dump will not be given.	0.1786	0.0174
+0.6976	0.0865	1.000	two columns of switches are sensed. If 64<n<99.	0.3759	0.0103
+0.7093	0.0865	1.000	an error indication is given by means of binary light	0.3929	0.0160
+0.7267	0.0865	1.000	18, to be labeled as the incorrect address, and no	0.3778	0.0132
+0.7267	0.5150	1.000	EOJ	0.0338	0.0131
+0.7412	0.0865	1.000	information will be entered. If n= 0, 64, or blank,	0.3816	0.0147
+0.7512	0.0864	1.000	a full word will be entered. Bits entered are taken	0.3856	0.0182
+0.7558	0.5150	1.000	The binary key, end of job (EOJ) (58), enables the	0.3759	0.0176
+0.7703	0.0865	1.000	from the binary keys in a left to right fashion.	0.3477	0.0131
+0.7718	0.5132	1.000	operator to end the current problem program with-	0.3853	0.0131
+0.7788	0.1068	1.000	Note: I n=103, three bits of information will	0.3619	0.0279
+0.7848	0.5132	1.000	out using the console typewriter. The operator	0.3609	0.0146
+0.7994	0.0865	1.000	be entered with no error indication.	0.2669	0.0117
+0.8009	0.5132	1.000	should not have other check-out options indicated on	0.3910	0.0116
+0.8121	0.5130	1.000	the console because binary keys 58 and 59 will be	0.3743	0.0183
+0.8122	0.1070	1.000	By the nature of the action requested, no further	0.3687	0.0202
+0.8255	0.5132	1.000	interrogated first and action taken immediately. If	0.3891	0.0191
+0.8285	0.0846	1.000	actions can be implemented through the binary keys.	0.3966	0.0161
+0.8400	0.5132	1.000	the programmer wishes a check-out dump and EOJ,	0.3929	0.0191
+0.8445	0.0865	1.000	Therefore, the binary keys must be reset and a	0.3590	0.0116
+0.8590	0.0865	1.000	second channel signal must be generated. Mean-	0.3722	0.0116
+0.8590	0.5132	1.000	the operator should perform the dump function and	0.3816	0.0131
+0.8702	0.0882	1.000	while, the problem program will act as if a $HOLD	0.3837	0.0170
+0.8715	0.5131	1.000	then the EOJ function. Neither the hold nor display	0.3892	0.0142
+0.8852	0.5150	1.000	actions will occur for this console option.	0.3158	0.0161
+0.8881	0.0865	1.000	had been issued.	0.1241	0.0102
+0.9185	0.7331	1.000	Operating With MCP	0.1259	0.0133
+0.9201	0.8985	1.000	35	0.0169	0.0087

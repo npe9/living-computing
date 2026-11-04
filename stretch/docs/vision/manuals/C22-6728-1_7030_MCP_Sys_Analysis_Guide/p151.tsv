@@ -1,0 +1,109 @@
+0.0930	0.1128	1.000	queue is scanned and the 'rf' (VSURT) entry is set	0.3778	0.0131
+0.0945	0.5620	1.000	The tape switch mechanism operates normally. It	0.3797	0.0116
+0.1090	0.1109	1.000	to WT for every IOD number found in the TSA queue.	0.3985	0.0116
+0.1090	0.5432	1.000	is possible for the read tape to switch over and attach	0.4060	0.0116
+0.1235	0.1128	1.000	The scanning operation does not affect the TSA queue.	0.4041	0.0131
+0.1250	0.5432	1.000	to WI, but it will not actuate because by this time WI	0.4079	0.0117
+0.1381	0.1128	1.000	Then the VACT subroutine is applied to VTSA to	0.3628	0.0131
+0.1394	0.5451	1.000	will be devoid of assigned buffer area. In this situa-	0.3985	0.0118
+0.1539	0.1109	1.000	unblock it and resume parameter flow. This com-	0.3816	0.0118
+0.1539	0.5451	1.000	tion, the write tape just terminated would attach to	0.3835	0.0133
+0.1685	0.1109	1.000	pletes the compound transition. However, there is	0.3853	0.0118
+0.1685	0.5432	1.000	RT, fill up VBF2 and then stop because of the block-	0.3966	0.0118
+0.1830	0.1109	1.000	one additional step, namely, VACTX is used in order	0.4023	0.0118
+0.1830	0.5432	1.000	age of the Q program. Observe that in this situation	0.3966	0.0133
+0.1976	0.5451	1.000	the resumption of the online mode would be rather	0.3759	0.0118
+0.1976	0.1109	1.000	to start the card reader. This step is normally	0.3609	0.0118
+0.2136	0.1109	1.000	redundant since in the bypass mode which had just	0.3778	0.0103
+0.2137	0.5432	1.000	straightforward.	0.1259	0.0116
+0.2282	0.1109	1.000	been operating, the card reader is active and nothing	0.3985	0.0116
+0.2427	0.5451	1.000	Bypass from Offline -- VBYPAF	0.2444	0.0116
+0.2427	0.1109	1.000	has been done in the VONLIB transition to upset this.	0.4004	0.0131
+0.2573	0.1128	1.000	But this step is included for the benefit of the initial	0.3891	0.0116
+0.2718	0.5451	1.000	Like the ONLINE command, the BYPASS command	0.3797	0.0131
+0.2733	0.1109	1.000	starting procedure, a subject covered in a later	0.3609	0.0102
+0.2876	0.1108	1.000	section.	0.0603	0.0106
+0.2878	0.5414	1.000	is received through the console and command packages.	0.4211	0.0102
+0.3023	0.5451	1.000	The time it occurs is significant in that tapes coming	0.3966	0.0116
+0.3169	0.5432	1.000	ready at VTSA will not be scanned; their ultimate	0.3722	0.0131
+0.3241	0.1109	1.000	Bypass from Online -- VBYPAN	0.2425	0.0102
+0.3314	0.5414	1.000	disposition depends on what overlapped mode is	0.3571	0.0116
+0.3459	0.5414	1.000	resumed later. Tapes already in line at TSA are	0.3722	0.0116
+0.3532	0.1109	1.000	The VBYPAN routine (Figure 82) receives control	0.3759	0.0117
+0.3605	0.5414	1.000	scanned in order to free VBF1 for BYPASS operation.	0.4060	0.0117
+0.3677	0.1090	1.000	from the command package when a BYPASS command	0.4023	0.0117
+0.3750	0.5583	1.000	Since the bypass mode may not be instated until	0.3571	0.0117
+0.3821	0.1090	1.000	card is detected by JC1. The transition entails three	0.4023	0.0118
+0.3894	0.5432	1.000	VBF1 is free, no action is taken upon entering the	0.3759	0.0133
+0.3982	0.1090	1.000	steps:	0.0471	0.0104
+0.4039	0.5414	1.000	VBYPAF routine (Figure 82) except to insert the	0.3647	0.0133
+0.4185	0.5414	1.000	negative parameter, -VCBR, into the VTSA queue.	0.3835	0.0147
+0.4230	0.1241	1.000	1. Forward a negative parameter to WT to termi-	0.3835	0.0116
+0.4330	0.5432	1.000	VCBR, being entered only after all tapes in the VTSA	0.3985	0.0133
+0.4390	0.1090	1.000	nate the write tape.	0.1466	0.0102
+0.4491	0.5414	1.000	queue have been scanned, then proceeds with the	0.3665	0.0117
+0.4520	0.1241	1.000	2. Modify SC for bypass operation, connect it to	0.3703	0.0131
+0.4636	0.5413	1.000	transition.	0.0809	0.0118
+0.4666	0.1090	1.000	E, and resume scanning as if for a SCAN command.	0.3910	0.0131
+0.4782	0.5583	1.000	VCBR (Figure 82) first sets VXI (VTSA) non-zero	0.3759	0.0116
+0.4824	0.1241	1.000	3. Direct the attention of the VREQ routine to the	0.3778	0.0103
+0.4927	0.5414	1.000	thereby blocking any tapes coming ready at VTSA	0.3703	0.0131
+0.4956	0.1090	1.000	E table instead of the Q table.	0.2237	0.0131
+0.5073	0.5414	1.000	from attaching to ST. Such tapes will merely line	0.3759	0.0116
+0.5212	0.1259	1.000	The parameter -VBREW is forwarded to WT. In	0.3686	0.0139
+0.5218	0.5414	1.000	up in the VTSA queue where they will be available	0.3741	0.0116
+0.5363	0.5395	1.000	when an overlapped mode is resumed. The phase of	0.3966	0.0131
+0.5378	0.1090	1.000	addition to starting the tape termination procedure,	0.3853	0.0131
+0.5508	0.5413	1.000	SC is set equal to that of CR by restoring the phase	0.3855	0.0135
+0.5523	0.1109	1.000	VBREW sets a bit, VBYON to 1.	0.2519	0.0116
+0.5523	0.3665	1.000	This setting of	0.1090	0.0131
+0.5669	0.5395	1.000	parameter which existed when in the last previous	0.3759	0.0116
+0.5669	0.1109	1.000	VBYON will cause the SCR4 routine to modify VREQ	0.3910	0.0131
+0.5814	0.1090	1.000	to process requests from E when the next SCR4	0.3553	0.0116
+0.5814	0.5395	1.000	card reader mode. The CR phase will have been	0.3684	0.0116
+0.5959	0.5395	1.000	unaffected by the offline mode. Concurrently, the	0.3778	0.0116
+0.5959	0.1090	1.000	command is received. Thus, step 3 can only occur	0.3872	0.0132
+0.6096	0.1070	1.000	after all of VBF1 has been written onto tape.	0.3367	0.0142
+0.6105	0.5395	1.000	present phase of SC is saved for later use in restoring	0.4117	0.0117
+0.6250	0.1259	1.000	After - VBREW has been forwarded, step 2 is per-	0.3778	0.0132
+0.6250	0.5395	1.000	the SC, ST phase relation whenever the offline mode	0.3947	0.0174
+0.6394	0.1071	1.000	formed by the VSCBY routine. Then the BYPASS	0.3722	0.0118
+0.6394	0.5395	1.000	is restored.	0.0921	0.0103
+0.6539	0.1053	1.000	linkage is complete and ready to process but may not	0.4023	0.0133
+0.6539	0.5564	1.000	Next, SC is connected to E, SC is modified for	0.3515	0.0133
+0.6685	0.1071	1.000	do so yet because VBF1 may still have some cards	0.3835	0.0133
+0.6685	0.5395	1.000	bypass operation, and the phase of E is set equal to	0.3891	0.0133
+0.6830	0.5395	1.000	that of SC. The sequence is the same as for the	0.3647	0.0133
+0.6845	0.1071	1.000	which are being written or are waiting to be written	0.3872	0.0118
+0.6991	0.1071	1.000	on tape. Notice that if requests were processed	0.3628	0.0117
+0.6991	0.5414	1.000	VBYPAN routine and the subroutine VSCBY does this	0.3966	0.0103
+0.7136	0.1071	1.000	from E, it is possible that CR would read over cards	0.3985	0.0117
+0.7136	0.5395	1.000	for both transitions. In addition, for the VBYPAF	0.3797	0.0131
+0.7282	0.1071	1.000	not completely written on tape or, to put it another	0.3816	0.0131
+0.7282	0.5395	1.000	routine, SC must be initialized to scan through B	0.3684	0.0131
+0.7427	0.1071	1.000	way, E could act as a "short circuit", recycling	0.3628	0.0131
+0.7427	0.5395	1.000	cards since it is left scanning for a B card by the	0.3722	0.0116
+0.7573	0.1071	1.000	parameters back to CR before WT could send its	0.3647	0.0116
+0.7573	0.5395	1.000	offline scanning operation just completed.	0.3139	0.0131
+0.7718	0.5583	1.000	Finally, the VBYON bit is set to 1 and control goes	0.3816	0.0131
+0.7733	0.1053	1.000	parameters, which logically precede those of E, back	0.4060	0.0116
+0.7863	0.1053	1.000	to CR. The interlock mentioned above prevents this.	0.4004	0.0116
+0.7863	0.5395	1.000	to the VRDCSX routine. The VRDCSX routine starts	0.3966	0.0116
+0.8009	0.5395	1.000	up the card reader just as it did for the ONLINE	0.3628	0.0116
+0.8009	0.1071	1.000	Once the VBYON bit has been set, the next SCR4 will	0.3985	0.0131
+0.8154	0.5395	1.000	command and the setting of VBYON will interrupt	0.3722	0.0116
+0.8169	0.1071	1.000	set VREQ so that it processes requests under control	0.4004	0.0102
+0.8314	0.5376	1.000	phase 4 and complete the transition to bypass just as	0.3966	0.0116
+0.8314	0.1071	1.000	of the E tables.	0.1147	0.0102
+0.8459	0.1241	1.000	Except for this, the phase 4 operation is unaffected;	0.3891	0.0116
+0.8459	0.5376	1.000	it did for VBYPAN.	0.1485	0.0102
+0.8590	0.5564	1.000	The tape switch mechanism is left in almost the	0.3590	0.0116
+0.8605	0.1053	1.000	parameters will line up at the Qprogram, which is	0.3853	0.0117
+0.8750	0.5395	1.000	same state as in the VBYPAN command, except that	0.3947	0.0117
+0.8750	0.1053	1.000	now dormant. In this situation it is very simple to	0.3835	0.0132
+0.8887	0.1052	1.000	resume phase 4 operation later by directing the VREQ	0.4081	0.0144
+0.8894	0.5376	1.000	tape attachment is blocked at VTSA. If a tape attach-	0.4060	0.0118
+0.9039	0.5395	1.000	ment to ST were allowed to occur, ST would read	0.3703	0.0133
+0.9055	0.1053	1.000	routine to Q.	0.0977	0.0103
+0.9491	0.7707	1.000	System Input-Output	0.1203	0.0088
+0.9491	0.9135	1.000	151	0.0244	0.0073

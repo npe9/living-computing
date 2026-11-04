@@ -1,0 +1,129 @@
+0.0741	0.5282	1.000	piling a FORTRAN program produces a Function sub-	0.3947	0.0160
+0.0825	0.3796	1.000	EXAMPLES	0.0641	0.0110
+0.0858	0.1579	1.000	GENERAL FORM	0.0940	0.0073
+0.0915	0.5282	1.000	routine in exactly the form required for object pro-	0.3947	0.0131
+0.1003	0.3214	1.000	FIRSTF(X)=A*X+B	0.1429	0.0116
+0.1003	0.1071	1.000	"a=b" where a is a name fol-	0.1974	0.0116
+0.1061	0.5282	1.000	gram execution. Such a FORTRAN Program must be	0.3947	0.0131
+0.1119	0.3233	1.000	SECOND(X,B)=A*X+B	0.1617	0.0102
+0.1133	0.1053	1.000	lowed by parentheses enclosing	0.1992	0.0117
+0.1191	0.5282	1.000	headed by a FUNCTION statement, whose definition	0.3947	0.0176
+0.1221	0.3214	1.000	THIRDF(D) =FIRST	0.1410	0.0146
+0.1250	0.1053	1.000	its arguments (which must be	0.1992	0.0117
+0.1349	0.3345	1.000	F(E)/D	0.0566	0.0121
+0.1352	0.1053	1.000	distinct nonsubscripted vari-	0.1992	0.0117
+0.1381	0.5263	1.000	follows:	0.0620	0.0131
+0.1467	0.3214	1.000	FOURTH(F,G) =SECOND	0.1786	0.0118
+0.1478	0.1519	1.000	separated	0.0648	0.0119
+0.1481	0.1052	1.000	ables)	0.0415	0.0104
+0.1482	0.2162	1.000	by commas,	0.0883	0.0103
+0.1584	0.1053	1.000	and b is an expression which	0.1992	0.0116
+0.1584	0.3346	1.000	(F, THIRDF(G))	0.1203	0.0131
+0.1593	0.5281	1.000	FUNCTION	0.0962	0.0157
+0.1698	0.2311	1.000	subscripted	0.0735	0.0122
+0.1700	0.3214	1.000	FIFTH(I,A) =3.0*A**J	0.1504	0.0118
+0.1715	0.1053	1.000	does not involve	0.1259	0.0088
+0.1813	0.2082	1.000	Functions ap-	0.0985	0.0138
+0.1817	0.3214	1.000	SIXTH(J)=J+K	0.1109	0.0102
+0.1830	0.1053	1.000	variables. Any	0.1053	0.0103
+0.1845	0.5789	1.000	GENERAL FORM	0.0977	0.0118
+0.1846	0.8026	1.000	EXAMPLES	0.0639	0.0087
+0.1933	0.1053	1.000	pearing in b must be built-in,	0.1992	0.0116
+0.1933	0.3195	1.000	SEVNF (A,B) =A.AND.B	0.1617	0.0116
+0.2006	0.5282	1.000	"FUNCTION Name (a1,...aj)"	0.2011	0.0146
+0.2020	0.7331	1.000	FUNCTION KRUM	0.1410	0.0116
+0.2048	0.1053	1.000	or available, or already defined	0.1992	0.0118
+0.2166	0.1034	1.000	by preceding arithmetic state-	0.2011	0.0116
+0.2238	0.7444	1.000	REAL FUNCTION	0.1241	0.0116
+0.2252	0.5282	1.000	"REAL FUNCTION Name	0.1729	0.0118
+0.2282	0.1053	1.000	ment Functions.	0.0996	0.0103
+0.2340	0.5451	1.000	(a1,...aj)"	0.0639	0.0131
+0.2355	0.7594	1.000	ARCSIN (RADIAN)	0.1335	0.0116
+0.2466	0.1051	1.000	The right-hand side of an arithmetic statement Func-	0.3950	0.0169
+0.2470	0.5263	1.000	"INTEGER FUNCTION Name	0.2030	0.0118
+0.2470	0.7406	1.000	INTEGER FUNCTION	0.1541	0.0133
+0.2573	0.5432	1.000	(a1....aj)"	0.0677	0.0131
+0.2587	0.7594	1.000	INTRST (RATE,	0.1147	0.0131
+0.2645	0.1053	1.000	tion may be any expression, not involving subscripted	0.3947	0.0146
+0.2699	0.7574	1.000	YEARS)	0.0586	0.0139
+0.2791	0.1053	1.000	variables, that meets the requirements specified for	0.3966	0.0146
+0.2820	0.5263	1.000	"LOGICAL FUNCTION Name	0.2011	0.0132
+0.2950	0.4248	1.000	Functions	0.0771	0.0133
+0.2951	0.1053	1.000	expressions. In particular, it may involve	0.3214	0.0146
+0.3109	0.1034	1.000	freely, provided that any such Function, if it is not	0.3985	0.0147
+0.3255	0.1015	1.000	built-in or available, has been defined in a preceding	0.3985	0.0161
+0.3384	0.5263	1.000	of which there must be at least	0.2012	0.0137
+0.3400	0.1015	1.000	arithmetic statement Function. As many as desired of	0.4004	0.0161
+0.3514	0.5282	1.000	one are non-subscripted vari-	0.1974	0.0109
+0.3561	0.1034	1.000	the variables appearing in the expression on the right-	0.3966	0.0146
+0.3633	0.5282	1.000	able names, or the names of	0.1992	0.0103
+0.3721	0.1034	1.000	hand side may be stated on the left-hand side to be	0.3966	0.0131
+0.3750	0.5282	1.000	closed Functions or Subroutines.	0.1974	0.0102
+0.3852	0.5432	1.000	The Function name consists	0.1842	0.0117
+0.3881	0.1034	1.000	the arguments of the Function. Since the arguments	0.3966	0.0131
+0.3967	0.5282	1.000	of one to six alphameric char-	0.1992	0.0118
+0.4026	0.1034	1.000	are only dummy variables, their names are unim-	0.3985	0.0147
+0.4084	0.5282	1.000	acters the first of which must be	0.1992	0.0116
+0.4172	0.1034	1.000	portant (except as indicating fixed or floating point	0.3985	0.0147
+0.4200	0.5282	1.000	alphabetic and is defined (by	0.1992	0.0118
+0.4317	0.5282	1.000	this statement) to be the same	0.1992	0.0116
+0.4345	0.1034	1.000	mode) and may even be the same as names appearing	0.3966	0.0118
+0.4433	0.5282	1.000	type as the first word of the	0.1992	0.0116
+0.4491	0.1053	1.000	elsewhere in the program.	0.1955	0.0131
+0.4548	0.5282	1.000	function statement (unless the	0.1992	0.0118
+0.4636	0.1203	1.000	Those variables on the right-hand side which are	0.3797	0.0131
+0.4666	0.5282	1.000	first form illustrated is used, in	0.1992	0.0116
+0.4797	0.1034	1.000	not stated as arguments are treated as parameters.	0.3985	0.0131
+0.4884	0.5282	1.000	shows the type).	0.1109	0.0131
+0.4956	0.1034	1.000	Thus, if FirstF is defined in an arithmetic statement	0.3966	0.0116
+0.5015	0.5432	1.000	The Function name must not	0.1842	0.0102
+0.5102	0.1034	1.000	Function as FIRSTF(X)=A*x+B then a later reference to	0.3966	0.0116
+0.5115	0.5280	1.000	occur in a DIMENSION state-	0.1977	0.0128
+0.5233	0.5282	1.000	ment of the subprogram, or ir	0.1955	0.0116
+0.5247	0.1034	1.000	FIRSTF(Y) will cause ay + b, based on the current values	0.3966	0.0132
+0.5348	0.5244	1.000	a DIMENSION statement in	0.2030	0.0131
+0.5406	0.1015	1.000	of a, b, and y, to be computed. The naming of param-	0.3985	0.0161
+0.5464	0.5244	1.000	any program which uses the	0.2030	0.0147
+0.5552	0.1034	1.000	eters, therefore, must follow the normal rules of	0.3966	0.0146
+0.5595	0.5282	1.000	Function.	0.0584	0.0105
+0.5711	0.1034	1.000	uniqueness.	0.0846	0.0133
+0.5769	0.5261	1.000	The FUNCTION statement must be the first statement of	0.3970	0.0176
+0.5858	0.1203	1.000	A Function of this type may be used just as any	0.3797	0.0145
+0.5893	0.5261	1.000	a FORTRAN Function subprogram and defines it to be	0.3971	0.0237
+0.6017	0.1034	1.000	other Function. In particular, its arguments may be	0.3966	0.0146
+0.6119	0.5263	1.000	such.	0.0376	0.0103
+0.6161	0.1033	1.000	expressions and may involve subscripted variables;	0.3968	0.0154
+0.6235	0.5414	1.000	In a Function subprogram, the name of the Function	0.3797	0.0174
+0.6321	0.1034	1.000	thus, a reference to FIRSTE (7+Y()), with the above	0.3966	0.0147
+0.6392	0.5261	1.000	must appear at least once as the variable on the left-	0.3933	0.0188
+0.6467	0.1015	1.000	definition of FIRSTF, will cause a(z+ yi) +b to be com-	0.3985	0.0161
+0.6539	0.5244	1.000	hand side of an arithmetic or logical statement, or	0.3985	0.0147
+0.6612	0.1015	1.000	puted on the basis of the current values of a, b, y, and z.	0.3966	0.0161
+0.6685	0.5263	1.000	alternately in an input statement list, e.g.,	0.3158	0.0191
+0.6773	0.1184	1.000	Functions defined by arithmetic or logical statements	0.3816	0.0161
+0.6845	0.5526	1.000	FUNCTION NAME (A, B)	0.1823	0.0191
+0.6933	0.1034	1.000	are always compiled as closed subroutines.	0.3177	0.0131
+0.7078	0.1184	1.000	NOTE: All the Function definitions in a program	0.3797	0.0161
+0.7093	0.5545	0.500	. .	0.0113	0.0160
+0.7224	0.1015	1.000	must precede the first executable statement of the	0.3985	0.0161
+0.7325	0.5564	1.000	NAME=Z+B	0.0903	0.0147
+0.7427	0.1034	1.000	program.	0.0658	0.0102
+0.7602	0.1034	1.000	CLOSED FUNCTIONS	0.1353	0.0102
+0.7776	0.5526	1.000	RETURN	0.0695	0.0160
+0.7805	0.1034	1.000	These are Functions that are prewritten and/or pre-	0.3966	0.0131
+0.7936	0.5244	1.000	By this means, the output value of the Function is	0.3985	0.0161
+0.7946	0.1015	1.000	compiled and may exist on the library tape or in	0.3967	0.0154
+0.8081	0.5244	1.000	returned to the calling program.	0.2481	0.0161
+0.8096	0.1015	1.000	prepared card decks. These Functions are compiled	0.3966	0.0160
+0.8236	0.1014	1.000	as "closed" subroutines; instead of appearing in the	0.3969	0.0184
+0.8241	0.5376	1.000	This type of program may either be compiled in-	0.3853	0.0160
+0.8382	0.1014	1.000	object program for every reference that has been made	0.3969	0.0193
+0.8400	0.5244	1.000	dependently or multiple-compiled with others. A	0.3966	0.0147
+0.8532	0.0996	1.000	to them in the source program, they appear only once	0.3985	0.0189
+0.8545	0.5263	1.000	Function subprogram must never be inserted between	0.3947	0.0161
+0.8706	0.5244	1.000	two statements of any other single program.	0.3327	0.0161
+0.8721	0.1015	1.000	regardless of the number of references.	0.2932	0.0131
+0.8836	0.5226	0.500	statemeng may tbe lonsideth as mlimmy vatatx	0.4023	0.0350
+0.8866	0.1184	1.000	Closed Functions may be conveniently defined by a	0.3797	0.0174
+0.9026	0.1015	1.000	conventional FORTRAN program. In this instance com-	0.3985	0.0160
+0.9317	0.1015	1.000	16	0.0188	0.0116

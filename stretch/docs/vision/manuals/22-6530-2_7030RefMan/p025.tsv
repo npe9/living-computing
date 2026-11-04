@@ -1,0 +1,108 @@
+0.0654	0.0996	1.000	index modification portion of the operation is per-	0.3929	0.0131
+0.0669	0.5150	1.000	Index Arithmetic	0.1805	0.0147
+0.0799	0.0996	1.000	formed. If an exception condition is detected during	0.3910	0.0146
+0.0945	0.0996	1.000	the variable field length portion of the operation, the	0.3910	0.0146
+0.1105	0.0996	1.000	entire operation will be suppressed, and the appro-	0.3910	0.0145
+0.1133	0.5188	1.000	The three fields of an index word are intended for	0.3910	0.0117
+0.1250	0.0996	1.000	priate indicator will be turned on. However, if an ex-	0.3929	0.0145
+0.1279	0.5169	1.000	three distinct purposes. The value field contains the	0.3929	0.0146
+0.1409	0.0977	1.000	ception condition is detected during the index modifi-	0.3929	0.0132
+0.1439	0.5169	1.000	quantity which is combined with the instruction ad-	0.3929	0.0131
+0.1549	0.5167	1.000	dress in order to obtain the effective operand address	0.3933	0.0197
+0.1555	0.0977	1.000	cation portion of the operation, only this portion will	0.3929	0.0146
+0.1715	0.0996	1.000	be suppressed, the variable field length portion having	0.3910	0.0145
+0.1744	0.5169	1.000	in instruction address modification. The value can be	0.3929	0.0116
+0.1844	0.0992	1.000	been executed already.	0.1643	0.0164
+0.1890	0.5169	1.000	changed by increment operations. The count field reg-	0.3929	0.0147
+0.2011	0.5148	1.000	isters the number of times an increment is to be ap-	0.3933	0.0186
+0.2020	0.1128	1.000	If the index register specified by the I field of an	0.3759	0.0146
+0.2166	0.0977	1.000	operation using progressive indexing is an operand in	0.3929	0.0146
+0.2191	0.5168	1.000	plied. The contents of the count field are reduced by	0.3912	0.0164
+0.2324	0.0977	1.000	the variable field length portion of that operation, the	0.3929	0.0133
+0.2355	0.5169	1.000	one whenever a count is specified. The count field	0.3929	0.0131
+0.2470	0.0977	1.000	original value of this index register will be used.	0.3517	0.0152
+0.2475	0.5148	1.000	contains no sign. On reaching zero, the count pro-	0.3933	0.0221
+0.2618	0.1145	1.000	A CONNECT operation with connective 0101, with a	0.3743	0.0162
+0.2660	0.5132	1.000	ceeds to 262,143 (218 — 1). The refill field contains	0.3947	0.0131
+0.2791	0.0977	1.000	progressive indexing operation, can be used as an im-	0.3929	0.0131
+0.2795	0.5167	1.000	the address of a new index word that can replace the	0.3913	0.0177
+0.2923	0.0958	1.000	mediate increment operation without disturbing the	0.3931	0.0162
+0.2952	0.5168	1.000	original index word. A refill operation will occur only	0.3912	0.0159
+0.3096	0.0959	1.000	accumulator. The progressive indexing mode of op-	0.3929	0.0146
+0.3109	0.5150	1.000	if it is specified by an instruction. The refill can be	0.3929	0.0133
+0.3241	0.0940	1.000	eration is the only means for obtaining an immediate	0.3947	0.0147
+0.3270	0.5150	1.000	made conditional on the count's reaching zero, or it can	0.3929	0.0146
+0.3387	0.0940	1.000	increment of 24 bits.	0.1504	0.0147
+0.3415	0.5132	1.000	be specified to occur unconditionally. A refill address	0.3947	0.0161
+0.3576	0.5132	1.000	of zero will replace the index word with all zeros.	0.3929	0.0131
+0.3705	0.5148	1.000	The instruction set takes full advantage of the use of	0.3932	0.0175
+0.3779	0.0959	1.000	PROGRAMMING EXAMPLE	0.1729	0.0103
+0.3881	0.5150	1.000	the index fields for the above purposes. However, a	0.3929	0.0146
+0.3953	0.0959	1.000	Stored in core storage starting at location LIst is a list	0.3929	0.0147
+0.4012	0.5148	1.000	different use of the index fields is possible if desired,	0.3933	0.0175
+0.4099	0.0940	1.000	of ten data records. Each record consists of three	0.3929	0.0131
+0.4185	0.5132	1.000	and sufficient operations are available to permit flexi-	0.3947	0.0147
+0.4244	0.0940	1.000	fields, R, S, and T, each an unsigned binary integer.	0.3947	0.0174
+0.4328	0.5147	1.000	bility in this respect.	0.1491	0.0155
+0.4375	0.0919	1.000	Field R is seven bits long, field S is eight bits long,	0.3971	0.0205
+0.4724	0.5583	1.000	VALUE	0.0320	0.0087
+0.4738	0.7162	1.000	COUNT	0.0338	0.0073
+0.4753	0.8289	1.000	REFILL	0.0338	0.0058
+0.5115	0.5301	1.000	The set of operations provided for index arithmetic	0.3778	0.0146
+0.5276	0.5132	1.000	can be divided into seven groups: direct index arith-	0.3929	0.0146
+0.5421	0.5132	1.000	metic, immediate index arithmetic, refill operations,	0.3929	0.0146
+0.5436	0.0921	1.000	and field T is five bits long. For each record add field	0.3947	0.0146
+0.5535	0.5129	1.000	count and branch operations, named index loading,	0.3953	0.0217
+0.5576	0.0919	1.000	I to field R and place the result in field S. Figure 7	0.3932	0.0183
+0.5727	0.5132	1.000	multiple index loading and indirect index loading.	0.3741	0.0146
+0.5741	0.0921	1.000	illustrates the use of progressive indexing.	0.3083	0.0160
+0.5887	0.5301	1.000	Direct index arithmetic permits loading, storing, in-	0.3759	0.0147
+0.6032	0.5113	1.000	crementing, and comparing of index quantities.	0.3553	0.0147
+0.6047	0.8722	1.000	The	0.0338	0.0116
+0.6168	0.5111	1.000	operand is specified in the instruction by the effective	0.3932	0.0180
+0.6264	0.0977	1.000	NAME	0.0433	0.0103
+0.6265	0.2406	1.000	STATEMENT	0.0808	0.0116
+0.6290	0.5111	1.000	address. The effective address may be obtained by	0.3934	0.0215
+0.6291	0.4304	1.000	NOTES	0.0452	0.0091
+0.6482	0.5094	1.000	modifying the instruction address part with an index	0.3947	0.0176
+0.6497	0.1936	1.000	LX, $X12, CTLWD	0.1203	0.0131
+0.6599	0.1053	1.000	LOOP	0.0376	0.0116
+0.6612	0.1955	1.000	L(V+I) (BU, 7, 8), 0.15 ($X12), 0	0.2030	0.0118
+0.6642	0.5113	1.000	quantity. The operand is obtained from storage or	0.3947	0.0145
+0.6720	0.1953	1.000	+ (V-I) (BU, 5, 8), 0.08 ($X12), 0	0.1940	0.0128
+0.6786	0.5109	1.000	stored in storage.	0.1268	0.0154
+0.6833	0.1953	1.000	ST(V+ICR)(BU, 8, 8), 0.13($X12), 0	0.2184	0.0132
+0.6946	0.1955	1.000	BZXCZ, LOOP	0.0903	0.0120
+0.6948	0.5282	1.000	Immediate index arithmetic permits loading, incre-	0.3759	0.0146
+0.7106	0.5113	1.000	menting, and comparing of index quantities. The op-	0.3929	0.0147
+0.7165	0.0977	1.000	CTLWD	0.0490	0.0118
+0.7179	0.1936	1.000	XW, LIST, 10, CTLWD	0.1429	0.0103
+0.7246	0.5112	1.000	erand is contained in the instruction itself and not	0.3931	0.0143
+0.7397	0.5113	1.000	subject to further modification.	0.2256	0.0133
+0.7515	0.0996	1.000	Notes:	0.0395	0.0087
+0.7529	0.1711	1.000	Loads index register from control word.	0.2350	0.0102
+0.7529	0.1504	1.000	1.	0.0169	0.0087
+0.7558	0.5282	1.000	The count and branch instructions combine an in-	0.3759	0.0131
+0.7605	0.1708	1.000	Loads field R into the accumulator, increments	0.2768	0.0178
+0.7631	0.1504	1.000	2.	0.0150	0.0102
+0.7703	0.5113	1.000	dex arithmetic operation with a conditional branch	0.3910	0.0146
+0.7747	0.1729	1.000	index register to address field T.	0.1936	0.0117
+0.7863	0.1504	1.000	3. Adds field T, increments index register back to	0.3026	0.0102
+0.7863	0.5113	1.000	operation. The branch is conditioned by the result	0.3929	0.0146
+0.7979	0.1711	1.000	address field S.	0.0921	0.0088
+0.8023	0.5113	1.000	of an index count. The indexing operation is a special	0.3929	0.0146
+0.8096	0.1504	1.000	4. Stores result in field S, increments index register	0.3139	0.0102
+0.8150	0.5092	1.000	case of the immediate increment operation.	0.3256	0.0175
+0.8212	0.1711	1.000	to address field R of next record, counts down in-	0.2914	0.0103
+0.8313	0.1709	1.000	dex, and tests count. If count is zero, refills in-	0.2897	0.0126
+0.8327	0.5263	1.000	The remaining groups of indes arithmetic permit	0.3778	0.0147
+0.8430	0.1711	1.000	dex to its original value, thus permitting repetition	0.2970	0.0116
+0.8473	0.5094	1.000	loading of an index register only.	0.2387	0.0146
+0.8545	0.1711	1.000	of program to start at LOOP.	0.1711	0.0103
+0.8597	0.5279	1.000	The index word to be modified by index arithmetic	0.3765	0.0206
+0.8663	0.1504	1.000	5. Test for last record in list.	0.1805	0.0102
+0.8764	0.5092	1.000	is specified in the field marked J, instruction bits 19-	0.3933	0.0189
+0.8939	0.5094	1.000	22. When one of the numbers 1-15 is specified in field	0.3929	0.0146
+0.8953	0.0902	1.000	Figure 7. Progressive Indexing	0.1842	0.0116
+0.9288	0.0846	1.000	22	0.0207	0.0116
+0.9288	0.1316	1.000	IBM 7030	0.0639	0.0088

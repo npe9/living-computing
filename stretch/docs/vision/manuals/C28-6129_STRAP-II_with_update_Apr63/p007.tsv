@@ -1,0 +1,97 @@
+0.0695	0.5300	1.000	Example:	0.0735	0.0164
+0.0697	0.0583	1.000	BEGIN L(N), DATA; +(N), FIRSTI; -(N), ANGLE	0.3966	0.0161
+0.0842	0.6128	1.000	B, START($X12)	0.1353	0.0161
+0.0930	0.0583	1.000	The number of instructions that may be written on	0.3985	0.0161
+0.1045	0.5301	1.000	This STraP instruction means, "Branch to, or	0.3496	0.0146
+0.1089	0.0601	1.000	one line is limited only by the number of columns	0.3949	0.0126
+0.1177	0.5282	1.000	transfer control to, the instruction whose loca-	0.3534	0.0160
+0.1221	0.0583	1.000	available in the statement field of the card. The sym-	0.3947	0.0146
+0.1321	0.5301	1.000	tion is symbolized by start modified by index	0.3515	0.0176
+0.1381	0.0602	1.000	bol in the name field of a card having more than one	0.3947	0.0160
+0.1459	0.5298	1.000	register 12."	0.0983	0.0221
+0.1512	0.0564	1.000	instruction in the statement field is associated with the	0.3985	0.0161
+0.1685	0.0602	1.000	first instruction only. The remaining instructions are	0.3966	0.0147
+0.1730	0.4868	1.000	3. Direct Index Arithmetic	0.2086	0.0174
+0.1845	0.0583	1.000	treated as if they appeared on separate cards having	0.3966	0.0161
+0.1933	0.5677	1.000	OP, J, A1o (I) or OP, J, A1s(I)	0.2237	0.0174
+0.1991	0.0602	1.000	blank name fields.	0.1353	0.0131
+0.2151	0.0733	1.000	The name field and/or the statement field of a sym-	0.3835	0.0161
+0.2165	0.5300	1.000	Example:	0.0753	0.0162
+0.2282	0.0602	1.000	bolic input card can be continued on subsequent cards	0.3966	0.0161
+0.2339	0.5959	1.000	LX, $3, XWORD ($6)	0.1654	0.0161
+0.2427	0.0583	1.000	by use of a continuation card. A continuation card is	0.3985	0.0189
+0.2542	0.5301	1.000	This instruction, when executed, tells the 7030	0.3496	0.0147
+0.2602	0.0564	1.000	identified by an * punched in column one. In all other	0.3985	0.0160
+0.2688	0.5301	1.000	computer to, "Load index register 3 with the	0.3515	0.0161
+0.2745	0.0563	1.000	respects it is identical to the symbolic input card. In	0.3987	0.0190
+0.2833	0.5301	1.000	contents of the word found at the location sym-	0.3496	0.0161
+0.2901	0.0601	1.000	STRAP-II, a card block is defined as the initial symbolic	0.3949	0.0154
+0.2964	0.5301	1.000	bolized by xword modified by index register 6."	0.3534	0.0206
+0.3067	0.0583	1.000	input card plus all its continuation cards.	0.2989	0.0146
+0.3255	0.4887	1.000	4. Immediate Index Arithmetic	0.2387	0.0147
+0.3285	0.0658	1.000	REALLONG L(N), DATAWORD; * (N), FACTOR	0.3891	0.0176
+0.3430	0.5921	1.000	OP, J, Aro Or OP, J, A1s	0.1767	0.0176
+0.3445	0.0564	1.000	*NAME	0.0639	0.0131
+0.3648	0.5301	1.000	Example:	0.0733	0.0160
+0.3677	0.0583	1.000	If continuation cards are used to extend the name	0.3966	0.0132
+0.3791	0.6240	1.000	V+I, $10, 1024	0.1148	0.0164
+0.3808	0.0583	1.000	field, one restriction applies-the first character of the	0.3966	0.0174
+0.3982	0.5320	1.000	The meaning of this instruction is "Add the	0.3477	0.0176
+0.3997	0.0602	1.000	name must appear in the name field of the first card	0.3929	0.0103
+0.4122	0.0582	1.000	in the card block. A name, regardless of its length,	0.3948	0.0143
+0.4142	0.5282	1.000	address of this instruction to the value field of	0.3515	0.0131
+0.4256	0.0581	1.000	is always attached to the first statement of the card	0.3969	0.0183
+0.4288	0.5282	1.000	index register 10."	0.1410	0.0176
+0.4448	0.0583	1.000	block.	0.0432	0.0116
+0.4548	0.4868	1.000	5. Count and Branch	0.1654	0.0161
+0.4738	0.6259	1.000	OP, J, B1o(K)	0.1071	0.0160
+0.4883	0.5300	1.000	Example:	0.0734	0.0162
+0.4912	0.0583	1.000	Expression of Machine Instructions	0.2876	0.0161
+0.5042	0.6015	1.000	CB, $8, BEGIN ($1)	0.1560	0.0161
+0.5203	0.0752	1.000	Symbolic machine instructions are written in the	0.3797	0.0146
+0.5233	0.5301	1.000	This instruction directs the computer to "Sub-	0.3496	0.0161
+0.5345	0.0581	1.000	statement field of the coding sheet. Symbolic instruc-	0.3969	0.0167
+0.5392	0.5282	1.000	tract one from the count field of index register	0.3496	0.0145
+0.5517	0.0564	1.000	tions are divided into several fields (operation mne-	0.3967	0.0142
+0.5536	0.5301	1.000	8, then test the count field. If it is not zero,	0.3496	0.0147
+0.5654	0.0583	1.000	monic, data description, address, offset, etc.) by	0.3947	0.0161
+0.5697	0.5301	1.000	branch to the location specified by the sym-	0.3496	0.0161
+0.5814	0.0583	1.000	commas. These major fields may in turn be further	0.3966	0.0147
+0.5842	0.5282	1.000	bolic location BEGIN modified by index register	0.3515	0.0161
+0.5973	0.0583	1.000	divided into subfields or modified by expressions con-	0.3966	0.0146
+0.6003	0.5301	1.000	1. If the count field is zero, do not branch but	0.3496	0.0146
+0.6118	0.0583	1.000	tained in parentheses, such as index register specifica-	0.3966	0.0146
+0.6148	0.5282	1.000	proceed to the next instruction in sequence."	0.3365	0.0161
+0.6279	0.0583	1.000	tions, secondary operations in progressive indexing,	0.3947	0.0146
+0.6409	0.4868	1.000	6. Indicator Branch	0.1523	0.0146
+0.6424	0.0583	1.000	and so on.	0.0789	0.0116
+0.6583	0.6334	1.000	OP, B1 (K)	0.0903	0.0163
+0.6584	0.0752	1.000	The format of the symbolic instruction varies with	0.3778	0.0131
+0.6702	0.0581	1.000	the class of STRETCH instructions to which it belongs.	0.3951	0.0190
+0.6741	0.5281	1.000	Example:	0.0736	0.0167
+0.6890	0.6071	1.000	BZM, ERROR($7)	0.1429	0.0160
+0.6890	0.0602	1.000	There are twelve symbolie instruction formats for	0.3947	0.0132
+0.7063	0.0582	1.000	STRAP-II.	0.0621	0.0090
+0.7093	0.5282	1.000	This instruction, whose operation code mne-	0.3496	0.0160
+0.7252	0.5282	1.000	monic is partially constructed from the name	0.3496	0.0161
+0.7267	0.0677	1.000	1. Floating Point	0.1297	0.0146
+0.7397	0.5301	1.000	of the indicator, says "Branch to the instruc-	0.3477	0.0147
+0.7442	0.1898	1.000	OP(dds), Ars (I)	0.1278	0.0161
+0.7558	0.5301	1.000	tion located at the location symbolized by	0.3477	0.0146
+0.7598	0.1051	1.000	Example:	0.0717	0.0154
+0.7703	0.5282	1.000	ERROR modified by index register 7 if the Zero	0.3496	0.0161
+0.7776	0.1673	1.000	ST(U), BUCKET ($2)	0.1711	0.0146
+0.7848	0.5282	1.000	Multiply indicator is on. If it is not on, pro-	0.3496	0.0176
+0.7951	0.1071	1.000	This instruction says, "Store the contents of the	0.3459	0.0146
+0.7958	0.5299	1.000	ceed to the next instruction in sequence."	0.3123	0.0203
+0.8076	0.1051	1.000	accumulator as an unnormalized floating point	0.3500	0.0188
+0.8254	0.1089	1.000	number in the storage location symbolized by	0.3461	0.0163
+0.8270	0.4868	1.000	7. VFL Arithmetic, Connect, Convert	0.2763	0.0161
+0.8400	0.1071	1.000	BUCKET modified by index register 2."	0.2726	0.0161
+0.8430	0.5677	1.000	OP (dds), Az (I), OF, (I')	0.2105	0.0176
+0.8623	0.0675	1.000	2. Miscellaneous, unconditional branch, sic	0.3236	0.0159
+0.8645	0.5281	1.000	Example:	0.0735	0.0167
+0.8816	0.2122	1.000	OP, Aro (I)	0.0831	0.0173
+0.8821	0.5338	1.000	M+ (BU, 24, 8), DUMMY($9), 6($4)	0.2876	0.0161
+0.9171	0.7744	1.000	Section I	0.0602	0.0103
+0.9186	0.8665	1.000	3	0.0113	0.0087

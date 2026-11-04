@@ -1,0 +1,77 @@
+0.0795	0.1071	1.000	Index Registers	0.1205	0.0168
+0.0814	0.5376	1.000	of the assembly. Therefore, these index registers,	0.3853	0.0132
+0.0959	0.5357	1.000	the ones other than $7, §8, and $9, are not used	0.3590	0.0147
+0.1090	0.5338	1.000	generally in STRAP II unless their contents are	0.3553	0.0160
+0.1235	0.5357	1.000	saved on entrance into and restored on exit from	0.3628	0.0146
+0.1235	0.1071	1.000	In STRAP II index registers other than $7, $8, and	0.3778	0.0160
+0.1381	0.1090	1.000	$9 are at the special disposal of specific routines	0.3665	0.0146
+0.1394	0.5357	1.000	the routine using them.	0.1748	0.0147
+0.2064	0.3759	1.000	Index Register Assignment in STRAP II	0.2951	0.0146
+0.2354	0.1635	1.000	Index	0.0470	0.0161
+0.2369	0.2688	1.000	Contents or Use during	0.1729	0.0146
+0.2369	0.6071	1.000	Contents or Use during	0.1729	0.0131
+0.2497	0.1634	1.000	Register	0.0698	0.0166
+0.2515	0.2688	1.000	Pass 1 Phase	0.1015	0.0131
+0.2515	0.6071	1.000	Pass 2 Phase	0.1015	0.0116
+0.2805	0.2688	1.000	Value field used for calling sequence	0.2744	0.0146
+0.2805	0.6071	1.000	Value field used for calling sequence	0.2744	0.0146
+0.2951	0.6222	1.000	reads in TABMAN; refill field used	0.2650	0.0146
+0.2951	0.2820	1.000	reads in IABMAN; refill field used	0.2650	0.0146
+0.3096	0.6241	1.000	during the execution of a RNX	0.2237	0.0146
+0.3096	0.2838	1.000	during the execution of a RNX	0.2218	0.0131
+0.3253	0.6221	1.000	instruction.	0.0904	0.0137
+0.3253	0.2838	1.000	instruction.	0.0922	0.0136
+0.3547	0.1673	1.000	1	0.0094	0.0131
+0.3561	0.6504	1.000	-----	0.0639	0.0073
+0.3590	0.3120	0.300	--- --	0.0620	0.0044
+0.3836	0.2688	1.000	Used in the RNX instruction.	0.2143	0.0146
+0.3837	0.1673	1.000	2	0.0094	0.0131
+0.3852	0.6109	1.000	Used in the RNX instruction.	0.2124	0.0103
+0.4127	0.6090	1.000	Address of the unit being processed.	0.2707	0.0146
+0.4142	0.2688	1.000	A8 character from GETCHA.	0.2162	0.0145
+0.4142	0.1673	1.000	3	0.0113	0.0116
+0.4433	0.1673	1.000	4	0.0113	0.0116
+0.4433	0.6071	1.000	Absolute portion of the location counter.	0.3008	0.0131
+0.4462	0.3102	1.000	---- -	0.0677	0.0074
+0.4709	0.2707	1.000	Address of the question bits for	0.2368	0.0161
+0.4724	0.6090	1.000	Address of the question bits for	0.2350	0.0131
+0.4738	0.1673	1.000	5	0.0113	0.0102
+0.4855	0.6241	1.000	instruction being processed.	0.2124	0.0161
+0.4869	0.2838	1.000	instruction being processed	0.2068	0.0161
+0.5145	0.6071	1.000	Symbolie portion of the location counter	0.2989	0.0176
+0.5160	0.2707	1.000	Address of unit being processed.	0.2425	0.0161
+0.5291	0.6241	1.000	(i. e., current 3 character STRAP II	0.2744	0.0174
+0.5451	0.6241	1.000	special symbol).	0.1259	0.0146
+0.5755	0.2688	1.000	Used randomly.	0.1203	0.0147
+0.5755	0.6090	1.000	Used randomly.	0.1184	0.0133
+0.5756	0.1692	1.000	7	0.0094	0.0116
+0.6045	0.2688	1.000	Used randomly.	0.1203	0.0146
+0.6045	0.6071	1.000	Used randomly:	0.1203	0.0146
+0.6047	0.1654	1.000	8	0.0132	0.0145
+0.6352	0.2669	1.000	Used randomly.	0.1203	0.0146
+0.6352	0.6071	1.000	Used randomly.	0.1203	0.0146
+0.6352	0.1673	1.000	g	0.0113	0.0116
+0.6628	0.1560	1.000	10	0.0226	0.0145
+0.6642	0.2688	1.000	Used by VALUE.	0.1278	0.0145
+0.6642	0.6071	1.000	Used by VALUE.	0.1278	0.0161
+0.6919	0.1560	1.000	11	0.0244	0.0145
+0.6933	0.6090	1.000	Used by VALUE.	0.1259	0.0146
+0.6948	0.2707	1.000	Used by VALUE.	0.1278	0.0131
+0.7195	0.1560	1.000	12	0.0244	0.0160
+0.7238	0.6090	1.000	Used by NAMEIN.	0.1335	0.0146
+0.7267	0.3120	0.300	---_-	0.0620	0.0044
+0.7500	0.1560	1.000	13	0.0244	0.0160
+0.7515	0.2707	1.000	Used by INTOUT.	0.1316	0.0161
+0.7529	0.6090	1.000	Used by OUTPUT.	0.1353	0.0147
+0.7791	0.1579	1.000	14	0.0226	0.0160
+0.7820	0.6090	1.000	Used by NAMEIN.	0.1335	0.0145
+0.7820	0.2707	1.000	Used by GETCHA.	0.1372	0.0160
+0.8096	0.1579	1.000	15	0.0226	0.0145
+0.8109	0.2707	1.000	Value field used for subroutine linkages;	0.3008	0.0161
+0.8124	0.6090	1.000	Value field used for subroutine linkages;	0.3008	0.0132
+0.8255	0.2838	1.000	refill field used to point to the table of	0.2895	0.0161
+0.8255	0.6222	1.000	refill field used to point to the table of	0.2876	0.0133
+0.8372	0.6259	1.000	exits for maskable interrupts.	0.2274	0.0189
+0.8400	0.2876	1.000	exits for maskable interrupts.	0.2237	0.0147
+0.9343	0.7819	1.000	Servicability Aids	0.1035	0.0137
+0.9346	0.9060	1.000	175	0.0244	0.0116

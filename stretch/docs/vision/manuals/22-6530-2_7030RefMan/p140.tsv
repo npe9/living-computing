@@ -1,0 +1,114 @@
+0.0624	0.0921	1.000	READ instruction from the exchange. The time at which	0.3910	0.0132
+0.0624	0.5113	1.000	the block. The speed of the backward motion is the	0.3929	0.0132
+0.0770	0.5094	1.000	same as that during forward motion, or 112.5 inches	0.3947	0.0146
+0.0785	0.0902	1.000	reading actually commences, however, depends upon	0.3929	0.0131
+0.0920	0.5105	1.000	per second.	0.0822	0.0159
+0.0930	0.0921	1.000	when data are available. This in turn is a function	0.3910	0.0131
+0.1076	0.5282	1.000	The above timing of backward motion applies both	0.3741	0.0146
+0.1090	0.0921	1.000	of the length of the inter-block gap. When the gap	0.3910	0.0131
+0.1235	0.0902	1.000	has been produced by a wRiTe operation following a	0.3929	0.0146
+0.1235	0.5094	1.000	to backspacing blocks and files, except that on back-	0.3929	0.0146
+0.1381	0.5094	1.000	spacing files the Eop indication is given only after	0.3947	0.0146
+0.1394	0.0921	1.000	WRITE operation, the gap is somewhat longer than the	0.3910	0.0147
+0.1539	0.5113	1.000	moving over a tape mark. It should be noted, how-	0.3910	0.0147
+0.1555	0.0921	1.000	average ¾ of an inch, and the first data pass the read	0.3910	0.0132
+0.1669	0.0900	1.000	gap approximately 7.7 milliseconds after the instruc-	0.3951	0.0197
+0.1700	0.5094	1.000	ever, that on backspacing files, unlike on forward	0.3929	0.0146
+0.1817	0.0919	1.000	tion is received at the unit. The gap produced by a	0.3913	0.0201
+0.1845	0.5094	1.000	spacing files, the tape comes to a stop after spacing	0.3929	0.0146
+0.1991	0.5113	1.000	over each block. Thus, the total time for backspacing	0.3910	0.0146
+0.2020	0.0921	1.000	write-after-read sequence is slightly less than ¾ of an	0.3910	0.0131
+0.2166	0.0902	1.000	inch and in this case the delay between the acceptance	0.3929	0.0131
+0.2166	0.5113	1.000	over a file is the same as the sum of the times required	0.3910	0.0131
+0.2324	0.5113	1.000	to backspace over each block separately, provided the	0.3910	0.0118
+0.2324	0.0921	1.000	of the instruction at the unit and the encountering	0.3910	0.0133
+0.2470	0.0921	1.000	of the first data on tape is approximately 6.7 milli-	0.3910	0.0133
+0.2485	0.5132	1.000	time to issue the instruction is negligible.	0.3045	0.0088
+0.2615	0.5282	1.000	Any time after EoP has been received for an opera-	0.3759	0.0146
+0.2630	0.0921	1.000	seconds. These times apply to the case when the tape	0.3910	0.0131
+0.2776	0.0921	1.000	is stationary at the time the instruction is received at	0.3929	0.0131
+0.2776	0.5113	1.000	tion involving forward motion of tape, a new instruc-	0.3910	0.0131
+0.2921	0.5113	1.000	tion can be issued to the unit. If the next instruction	0.3910	0.0131
+0.2936	0.0921	1.000	the unit and the preceding operation was reading or	0.3910	0.0131
+0.3067	0.5094	1.000	involves moving tape in the same direction in which	0.3929	0.0146
+0.3081	0.0921	1.000	forward spacing. Reading after writing is not recom-	0.3929	0.0146
+0.3227	0.5094	1.000	it is already moving, the motion continues at full	0.3947	0.0146
+0.3241	0.0921	1.000	mended since it cannot be guaranteed that the tape	0.3910	0.0131
+0.3387	0.0883	1.000	after writing will have stopped in the proper place	0.3947	0.0160
+0.3387	0.5075	1.000	speed. If the next instruction is received while the	0.3966	0.0147
+0.3532	0.5113	1.000	tape is slowing down, it is immediately accelerated	0.3910	0.0147
+0.3545	0.0902	1.000	in the gap. It should be noted, however, that the	0.3929	0.0146
+0.3691	0.5113	1.000	again. In case of write operations, the inter-block gap	0.3910	0.0146
+0.3706	0.0921	1.000	above times are only approximate, since they depend	0.3910	0.0131
+0.3852	0.0921	1.000	upon mechanical devices and thus can vary from day	0.3910	0.0146
+0.3852	0.5094	1.000	is made the same length regardless of whether or not	0.3947	0.0131
+0.4012	0.5113	1.000	the tape comes to a stop.	0.1748	0.0131
+0.4012	0.0921	1.000	to day and from unit to unit.	0.2068	0.0131
+0.4135	0.1089	1.000	The end-of-operation at the completion of a READ	0.3743	0.0177
+0.4157	0.5282	1.000	The execution time for all control functions con-	0.3759	0.0102
+0.4302	0.5113	1.000	trolling lights or the mode of operation in the tape	0.3910	0.0146
+0.4317	0.0921	1.000	operation is initiated at the unit 136 microseconds	0.3929	0.0132
+0.4462	0.0921	1.000	following the reading of the last data byte. The tape	0.3929	0.0145
+0.4462	0.5658	1.000	(remove end of tape condition, erase long	0.3365	0.0132
+0.4606	0.5113	1.000	gap, ecc mode and odd parity, no-ecc mode and even	0.3910	0.0147
+0.4621	0.0921	1.000	subsequently runs at full speed for about 1.4 milli-	0.3910	0.0132
+0.4744	0.0919	1.000	seconds. It stops within 3.0 milliseconds after EOP.	0.3931	0.0182
+0.4767	0.5094	1.000	parity, no-ecc mode and odd parity) is 28 us. This ap-	0.3910	0.0161
+0.4927	0.5113	1.000	plies also to the LOCATE operation selecting a unit on a	0.3910	0.0131
+0.4927	0.0921	1.000	When the multiple block mode of reading or writing	0.3910	0.0145
+0.5073	0.0921	1.000	is used, the tape traverses the inter-block gap at full	0.3929	0.0146
+0.5073	0.5113	1.000	tape control. The control functions specifying the den-	0.3929	0.0146
+0.5233	0.5094	1.000	sity of recording (high density mode and low density	0.3929	0.0146
+0.5247	0.0902	1.000	speed.	0.0451	0.0145
+0.5378	0.5094	1.000	mode) apply to the tape unit and the execution time	0.3947	0.0160
+0.5392	0.1090	1.000	The timing considerations of READ apply also to the	0.3759	0.0132
+0.5536	0.5113	1.000	for these instructions is approximately 10 millisec-	0.3929	0.0133
+0.5536	0.0921	1.000	control functions which involve forward spacing or	0.3929	0.0147
+0.5682	0.5639	1.000	These execution times do not depend upon	0.3383	0.0147
+0.5697	0.0921	1.000	recording of information. These are the SPACE BLOCK,	0.3929	0.0132
+0.5698	0.5113	1.000	onds.	0.0526	0.0102
+0.5842	0.0921	1.000	SPACE FILE, and WRITE TAPE MARK control functions.	0.3910	0.0131
+0.5842	0.5132	1.000	whether or not the instructions are superfluous.	0.3609	0.0131
+0.6003	0.0940	1.000	On forward spacing files, the tape does not	0.3553	0.0146
+0.6003	0.5282	1.000	In the case of the REWIND and the REWIND AND UN-	0.3759	0.0116
+0.6003	0.4474	1.000	slow	0.0376	0.0102
+0.6148	0.5113	1.000	LOAD control functions, end-of-operation indication is	0.3929	0.0131
+0.6163	0.0940	1.000	down in the inter-block gap.	0.2011	0.0131
+0.6308	0.5113	1.000	initiated by the unit approximately 20 milliseconds	0.3929	0.0131
+0.6308	0.1090	1.000	On backspacing, the timing depends upon the pre-	0.3759	0.0146
+0.6436	0.5093	1.000	after the acceptance of the instruction, which is the	0.3950	0.0201
+0.6467	0.0921	1.000	ceding instruction involving tape motion. When	0.3929	0.0133
+0.6612	0.5094	1.000	time necessary to initiate rewinding. The unit sub-	0.3947	0.0147
+0.6612	0.0940	1.000	backspacing follows READ or another forward or back-	0.3910	0.0133
+0.6757	0.0920	1.000	ward spacing operation, the tape unit is immediately	0.3930	0.0164
+0.6758	0.5113	1.000	sequently is not ready. The time to complete the re-	0.3929	0.0146
+0.6892	0.0920	1.000	set in the backward status and the read gap encoun-	0.3931	0.0179
+0.6903	0.5113	1.000	winding is approximately 1.2 minutes for any tape	0.3929	0.0146
+0.7064	0.5094	1.000	lengths between 450 and 2400 feet. For tape lengths	0.3947	0.0161
+0.7078	0.0921	1.000	ters the first recorded byte, which in this case is the	0.3929	0.0131
+0.7209	0.5113	1.000	less than 450 feet, the tape is not unloaded and re-	0.3929	0.0146
+0.7238	0.0921	1.000	longitudinal parity check byte, approximately 11 mil-	0.3947	0.0131
+0.7369	0.5113	1.000	winding takes place at the regular tape speed of 112.5	0.3929	0.0161
+0.7369	0.0921	1.000	liseconds after the instruction is received at the unit.	0.3910	0.0131
+0.7529	0.0940	1.000	When backspacing follows wRIte, the tape is first	0.3910	0.0147
+0.7529	0.5113	1.000	inches per second. When a REWIND Or REWIND AND	0.3929	0.0132
+0.7653	0.5130	1.000	UNLOAD instruction is issued with the tape already at	0.3931	0.0176
+0.7688	0.0940	1.000	moved forward for approximately five milliseconds to	0.3910	0.0146
+0.7833	0.5094	1.000	the load point, the Eor indication is initiated at the	0.3947	0.0161
+0.7848	0.0940	1.000	erase the information ahead of the head before back-	0.3910	0.0117
+0.7953	0.5130	1.000	unit 28 microseconds after the acceptance of the in-	0.3931	0.0186
+0.7994	0.0940	1.000	ward motion is initiated. Because of this delay, the	0.3910	0.0131
+0.8139	0.5094	1.000	struction with the channel signal preceding the end-	0.3966	0.0161
+0.8154	0.0921	1.000	longitudinal check byte is encountered only approxi-	0.3947	0.0131
+0.8299	0.0940	1.000	mately 25 milliseconds after the backspace instruction	0.3910	0.0146
+0.8299	0.5113	1.000	of-operation by eight microseconds.	0.2594	0.0146
+0.8445	0.5301	1.000	All of the above timing considerations as well as	0.3759	0.0146
+0.8459	0.0940	1.000	is received at the unit. The EoP indication indicating	0.3910	0.0132
+0.8605	0.0940	1.000	the completion of the operation is generated in either	0.3910	0.0160
+0.8605	0.5132	1.000	the execution times given for the control functions	0.3929	0.0132
+0.8750	0.5113	1.000	do not include the instruction processing time in the	0.3929	0.0160
+0.8764	0.0940	1.000	case only after the tape has come to a full stop. This	0.3910	0.0146
+0.8909	0.0940	1.000	is 16 milliseconds after passing over the beginning of	0.3929	0.0146
+0.8909	0.5132	1.000	exchange. The above execution times are defined as	0.3929	0.0132
+0.9288	0.7613	1.000	External Units	0.0921	0.0103
+0.9302	0.8835	1.000	137	0.0226	0.0087

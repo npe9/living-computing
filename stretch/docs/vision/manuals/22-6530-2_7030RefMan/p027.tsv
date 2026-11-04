@@ -1,0 +1,92 @@
+0.0624	0.0977	1.000	Load Count (LC)	0.1184	0.0146
+0.0654	0.5188	1.000	PROGRAMMING NOTES	0.1541	0.0116
+0.0811	0.0994	1.000	The count field, bits 28-45, of the index word speci-	0.3932	0.0189
+0.0814	0.5188	1.000	The refill does not occur if the count was zero prior to	0.3910	0.0160
+0.0959	0.5169	1.000	the operation, since in that case the count reaches the	0.3929	0.0132
+0.0970	0.0976	1.000	fied by J is replaced by bits 0-17 of the half-word speci-	0.3932	0.0180
+0.1116	0.0976	1.000	fied by bits 0-18 of the effective address.	0.2822	0.0149
+0.1118	0.5188	1.000	value 218 — 1 as a result of this operation.	0.2932	0.0146
+0.1294	0.5357	1.000	The index-flag and index-result indicators are set	0.3741	0.0131
+0.1438	0.5168	1.000	in all of the preceding direct index arithmetic opera-	0.3931	0.0169
+0.1512	0.0959	1.000	Load Refill (LR)	0.1165	0.0146
+0.1599	0.5188	1.000	tions. The index-comparison indicators are un-	0.3891	0.0147
+0.1699	0.0976	1.000	The refill field, bits 46-63, of the index word specified	0.3932	0.0195
+0.1757	0.5150	1.000	changed.	0.0678	0.0150
+0.1860	0.0977	1.000	by J is replaced by bits 0-17 of the half-word specified	0.3910	0.0176
+0.2006	0.0977	1.000	by bits 0-18 of the effective address.	0.2519	0.0161
+0.2121	0.5169	1.000	Compare Value (KV)	0.1523	0.0118
+0.2282	0.5188	1.000	The address part, bits 0-24, of the half-word addressed	0.3891	0.0146
+0.2397	0.0959	1.000	Store Index (SX)	0.1222	0.0133
+0.2442	0.5150	1.000	by bits 0-18 of the effective address is compared with	0.3929	0.0174
+0.2584	0.5130	1.000	the address part, bits 0-24, of the index word specified	0.3931	0.0183
+0.2602	0.0977	1.000	The index word specified by J is stored in the full-	0.3929	0.0160
+0.2747	0.0959	1.000	word memory location specified by bits 0-17 of the	0.3947	0.0174
+0.2747	0.5150	1.000	by J. Comparison is algebraic, taking into account	0.3929	0.0147
+0.2906	0.5169	1.000	the sign, bit 24, of both addresses. Positive and nega-	0.3910	0.0146
+0.2906	0.0959	1.000	effective address.	0.1241	0.0132
+0.3018	0.5148	1.000	tive zero are considered equal.	0.2188	0.0188
+0.3281	0.0955	1.000	Store Value (SV)	0.1247	0.0151
+0.3415	0.5150	1.000	Compare Count (KC)	0.1541	0.0118
+0.3473	0.0956	1.000	The value field, bits 0-24, of the index word specified	0.3915	0.0197
+0.3575	0.5149	1.000	Bits 0-17 of the half-word specified by bits 0-18 of the	0.3931	0.0186
+0.3633	0.0938	1.000	by J replaces bits 0-24 of the half-word specified by	0.3933	0.0191
+0.3735	0.5150	1.000	effective address are compared with the count field,	0.3929	0.0146
+0.3794	0.0959	1.000	bits 0-18 of the effective address.	0.2293	0.0146
+0.3880	0.5149	1.000	bits 28-45, of the index word specified by J. The com-	0.3931	0.0171
+0.4039	0.5150	1.000	parison is unsigned and for magnitude only.	0.3177	0.0147
+0.4157	0.0940	1.000	Store Count (SC)	0.1241	0.0146
+0.4215	0.5320	1.000	The index-flag and index-comparison indicators are	0.3741	0.0145
+0.4334	0.0956	1.000	The count field, bits 28-45, of the index word specified	0.3914	0.0210
+0.4357	0.5130	1.000	set in each of the last two operations; the index result	0.3950	0.0182
+0.4487	0.5128	1.000	indicators are not set in these operations.	0.2939	0.0210
+0.4490	0.0938	1.000	by J replaces bits 0-17 of the half word specified by	0.3933	0.0199
+0.4651	0.0940	1.000	bits 0-18 of the effective address. Bits 18-24 of the	0.3929	0.0161
+0.4752	0.5150	1.000	PROGRAMMING NOTES	0.1541	0.0118
+0.4797	0.0936	1.000	half word are set to zero.	0.1793	0.0161
+0.4870	0.5148	1.000	The LOAD INDEX and STORE INDEX operations involve	0.3915	0.0209
+0.5051	0.5149	1.000	transmission of full words. In all other operations the	0.3912	0.0173
+0.5160	0.0940	1.000	Store Refill (SR)	0.1147	0.0146
+0.5203	0.5132	1.000	effective operand address refers to a half-word. Of this	0.3929	0.0146
+0.5363	0.0940	1.000	The refill field, bits 46-63, of the index word specified	0.3929	0.0174
+0.5363	0.5132	1.000	half-word, either the first 18 or the first 25 bits are	0.3929	0.0131
+0.5497	0.0937	1.000	by J replaces bits 0-17 of the half word specified by	0.3934	0.0210
+0.5503	0.5130	1.000	used, depending on the operation to be performed.	0.3932	0.0183
+0.5669	0.0940	1.000	bits 0-18 of the effective address. Bits 18-24 of the half	0.3929	0.0160
+0.5669	0.5150	1.000	The remaining bits are ignored and unchanged. When	0.3891	0.0147
+0.5810	0.0957	1.000	word are set to zero.	0.1432	0.0136
+0.5827	0.5132	1.000	instructions or data are used as the operand in incre-	0.3910	0.0147
+0.5973	0.5132	1.000	ment and compare operations, proper care should be	0.3929	0.0146
+0.6093	0.5129	1.000	taken that the left 25 bits are usable as a signed quan-	0.3915	0.0207
+0.6177	0.0921	1.000	Add to Value (V+)	0.1429	0.0145
+0.6279	0.5132	1.000	tity. Note further that the first 25 bits of the half-	0.3910	0.0131
+0.6366	0.0921	1.000	The address part, bits 0-24, of the half-word addressed	0.3929	0.0174
+0.6439	0.5113	1.000	word have been numbered 0.24. However, the actual	0.3929	0.0161
+0.6526	0.0921	1.000	by bits 0-18 of the effective address is added to the ad-	0.3947	0.0174
+0.6570	0.5094	1.000	bit address of this field may be either 0 or 32.	0.3252	0.0176
+0.6658	0.0918	1.000	dress part, bits 0-24, of the index word specified by J.	0.3935	0.0221
+0.6730	0.5207	1.000	The overflow which may occur in index arithmetic	0.3835	0.0161
+0.6830	0.0918	1.000	Addition is algebraic, taking into account the sign,	0.3953	0.0206
+0.6869	0.5073	1.000	is ignored.	0.0849	0.0171
+0.6991	0.0921	1.000	bit 24, of both addresses.	0.1786	0.0146
+0.7248	0.5092	1.000	Immediate Index Arithmetic	0.2654	0.0167
+0.7349	0.0938	1.000	Add to Value and Count (V+C)	0.2277	0.0139
+0.7434	0.5108	1.000	The immediate index arithmetic operations make use	0.3918	0.0243
+0.7542	0.0937	1.000	This operation is identical to ADD IO VALUE, except	0.3915	0.0199
+0.7605	0.5073	1.000	of the format shown below. The index field J con-	0.3972	0.0207
+0.7677	0.0900	1.000	that in addition the count field of the index word	0.3934	0.0205
+0.7776	0.5094	1.000	tains the address of the index to which the operation	0.3929	0.0176
+0.7863	0.0902	1.000	specified by J is counted down by one.	0.2744	0.0161
+0.7917	0.5091	1.000	applies. The address part contains the operand. A	0.3933	0.0209
+0.8060	0.5090	1.000	19-bit operand can be specified. In some operations,	0.3954	0.0219
+0.8223	0.5092	1.000	only 18 of these 19 bits are used. In this class of op-	0.3933	0.0209
+0.8227	0.0902	1.000	Add to Value, Count and Refill (V+CR)	0.2876	0.0161
+0.8387	0.5094	1.000	erations, the index field I is not available and no ad-	0.3929	0.0160
+0.8408	0.0918	1.000	This operation is identical to ADD TO VALUE AND COUNT,	0.3935	0.0212
+0.8532	0.5075	1.000	dress modification by indexing takes place.	0.3083	0.0174
+0.8557	0.0900	1.000	except that in addition the index word specified by J	0.3934	0.0210
+0.8707	0.0881	1.000	is refilled if the count reaches zero as a result of this	0.3952	0.0189
+0.8852	0.5489	1.000	ADDRESS	0.0432	0.0087
+0.8852	0.6673	1.000	OP.	0.0188	0.0087
+0.8875	0.0882	1.000	operation.	0.0793	0.0142
+0.9230	0.0865	1.000	24	0.0226	0.0145
+0.9244	0.1109	1.000	IBM 7030	0.0865	0.0102

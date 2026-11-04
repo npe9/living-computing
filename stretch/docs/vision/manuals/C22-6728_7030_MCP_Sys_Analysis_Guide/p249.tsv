@@ -1,0 +1,62 @@
+0.0943	0.6409	1.000	Content	0.0659	0.0164
+0.0945	0.3102	1.000	Symbol	0.0620	0.0174
+0.0959	0.1598	1.000	Bits	0.0357	0.0131
+0.1235	0.5000	1.000	the user. It is set by the identifier and tested by the	0.3929	0.0160
+0.1405	0.5018	1.000	receptor.	0.0717	0.0126
+0.1698	0.3138	1.000	SCMODE	0.0678	0.0121
+0.1700	0.5000	1.000	00 - Illegal	0.0977	0.0131
+0.1700	0.1598	1.000	.50 - .51	0.0714	0.0146
+0.1845	0.5000	1.000	01 - ECC, ODD parity	0.1805	0.0176
+0.1991	0.5000	1.000	10 - EVEN parity	0.1447	0.0146
+0.2121	0.5000	1.000	11 - NOECC, ODD parity	0.2011	0.0176
+0.2427	0.5019	1.000	This indicator exists in the channel status table of	0.3722	0.0145
+0.2573	0.5000	1.000	either a single or multi-unit channel. It is set initially	0.4117	0.0146
+0.2703	0.5019	1.000	at IPL to illegal (00), and subsequently by the actuator.	0.4117	0.0161
+0.2992	0.3138	1.000	SEQUIP	0.0622	0.0164
+0.3008	0.1597	1.000	.52 -.55	0.0715	0.0161
+0.3019	0.4999	1.000	0 - Illegal	0.0905	0.0154
+0.3023	0.6748	1.000	5 - Printer	0.0977	0.0131
+0.3169	0.6767	1.000	6 - None	0.0771	0.0116
+0.3182	0.5018	1.000	1 - Disk	0.0734	0.0105
+0.3311	0.6766	1.000	7 - None	0.0753	0.0121
+0.3314	0.5000	1.000	2 - Console	0.0996	0.0132
+0.3459	0.5019	1.000	3 - Card Reader	0.1335	0.0116
+0.3470	0.6691	1.000	10 - Tape	0.0847	0.0123
+0.3618	0.5019	1.000	4 - Punch	0.0846	0.0103
+0.3618	0.6692	1.000	11-17 - None	0.1071	0.0103
+0.3909	0.5019	1.000	This field exists in the channel status tables of either	0.3947	0.0118
+0.4055	0.5000	1.000	a single or multi-unit channel. It is set by the initial-	0.4060	0.0146
+0.4215	0.5000	1.000	izing program and it may be changed by the I-O change	0.4079	0.0161
+0.4345	0.5000	1.000	command for single-unit channels.	0.2594	0.0146
+0.4651	0.3139	1.000	SRD	0.0338	0.0116
+0.4651	0.1598	1.000	•57	0.0301	0.0131
+0.4651	0.5019	1.000	0 - Non-read operation	0.1823	0.0131
+0.4811	0.5019	1.000	1 - Read operation	0.1504	0.0116
+0.5102	0.5000	1.000	This indicator exists in the channel status tables of a	0.3947	0.0132
+0.5247	0.5000	1.000	single unit channel, and the unit status table of a multi-	0.4135	0.0160
+0.5392	0.5000	1.000	unit channel. The indicator is set by the actuator when-	0.4173	0.0145
+0.5531	0.5017	1.000	ever a read operation, which is not a setup operation,	0.3988	0.0172
+0.5697	0.5019	1.000	is in progress. It is reset by the receptor. It may also	0.4173	0.0132
+0.5842	0.5019	1.000	be cleared by the I-O change command.	0.2914	0.0131
+0.6119	0.1598	1.000	.58	0.0282	0.0131
+0.6119	0.3120	1.000	SWR	0.0376	0.0131
+0.6133	0.5000	1.000	0 - Non-write operation	0.1898	0.0117
+0.6279	0.5188	1.000	- Write operation	0.1372	0.0117
+0.6294	0.5019	1.000	1	0.0169	0.0073
+0.6570	0.5000	1.000	This indicator exists in the channel status table of a	0.3853	0.0145
+0.6715	0.4981	1.000	single unit channel, and the unit status table of a multi-	0.4154	0.0145
+0.6875	0.4981	1.000	unit channel. It is set by the actuator whenever a write	0.4154	0.0131
+0.7006	0.5000	1.000	operation, other than a setup operation, is in progress	0.4079	0.0161
+0.7166	0.4981	1.000	and is reset by the receptor. It may also be cleared by	0.4154	0.0146
+0.7324	0.5000	1.000	the I-O change command.	0.1898	0.0118
+0.7601	0.3139	1.000	SCTL	0.0433	0.0102
+0.7602	0.1617	1.000	.60	0.0244	0.0116
+0.7615	0.5000	1.000	0 - Non-control operation	0.2011	0.0133
+0.7761	0.5000	1.000	1 - Control operation	0.1692	0.0118
+0.8067	0.5000	1.000	This indicator is found in the channel status table of a	0.3985	0.0116
+0.8212	0.4981	1.000	single unit channel or the unit status table of a multi-	0.3985	0.0131
+0.8358	0.4981	1.000	unit channel. It is set by the actuator whenever a con-	0.4079	0.0131
+0.8503	0.4981	1.000	trol operation other than a setup operation is initiated	0.4004	0.0146
+0.8648	0.4981	1.000	and is tested and reset by the receptor.	0.2951	0.0146
+0.9506	0.6278	1.000	Appendix A - Symbolic I-O Control Tables	0.2462	0.0102
+0.9506	0.8891	1.000	249	0.0301	0.0087

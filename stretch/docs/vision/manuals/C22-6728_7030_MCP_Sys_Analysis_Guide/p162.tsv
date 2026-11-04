@@ -1,0 +1,126 @@
+0.0682	0.5094	1.000	occur in one of the five output program tables of exits	0.4041	0.0161
+0.0727	0.1015	1.000	Bit 5 of the one word trailer record (CTRAIL. t.5)	0.3741	0.0131
+0.0827	0.5113	1.000	previously described. These routines are:	0.3233	0.0176
+0.0884	0.0845	1.000	indicates whether or not the physical end of tape is	0.3780	0.0148
+0.1032	0.0827	1.000	also the logical end of tape (EOJ. On entry from the	0.3985	0.0132
+0.1163	0.0846	1.000	print and punch fixups, the bit will have been set to	0.3816	0.0146
+0.1250	0.3548	0.300	ne bitwil trave	0.1183	0.0375
+0.1305	0.0844	1.000	zero, indicating only physical EOT. On entry from	0.3838	0.0183
+0.1352	0.5094	1.000	Symbol	0.0508	0.0160
+0.1377	0.7988	1.000	Table(s) of Exits	0.0960	0.0153
+0.1381	0.5808	1.000	Occassion for Use	0.1034	0.0131
+0.1453	0.0845	1.000	output EOJ, and output commands, the bit will have	0.3838	0.0184
+0.1625	0.5111	1.000	AEPGK	0.0454	0.0152
+0.1627	0.0846	1.000	been set to one, indicating logical EOT (EOJ).	0.3421	0.0118
+0.1642	0.5808	1.000	EPGK occurs on write	0.1259	0.0145
+0.1667	0.8006	1.000	CUKUK, CKWRIT	0.1056	0.0242
+0.1744	0.5113	1.000	CKUK	0.0414	0.0146
+0.1744	0.5789	1.000	UK occurs with EOP on write	0.1711	0.0160
+0.1773	0.1015	1.000	After saving the return address, the routine (Fig-	0.3703	0.0118
+0.1858	0.5093	1.000	ALNUKC	0.0567	0.0166
+0.1890	0.5771	1.000	UK occurs without EOP on write	0.1880	0.0132
+0.1903	0.0846	1.000	ure 84) sets ATSXIT in AOP as the current table of	0.3835	0.0133
+0.1933	0.8252	1.000	----	0.0320	0.0073
+0.1991	0.5094	1.000	AUKEF	0.0470	0.0160
+0.2005	0.7988	1.000	ATSWIK	0.0584	0.0162
+0.2006	0.5789	1.000	UK occurs on WEF	0.1109	0.0131
+0.2048	0.0846	1.000	exits, writes a tape mark, restores index registers,	0.3929	0.0146
+0.2120	0.5093	1.000	AERRUN	0.0585	0.0165
+0.2121	0.5789	1.000	UK without EOP occurs on writing	0.1992	0.0176
+0.2194	0.0846	1.000	and executes $RET. Depending on the entry condi-	0.3797	0.0132
+0.2244	0.5862	1.000	trailer record	0.0870	0.0177
+0.2338	0.0845	1.000	tions, this may or may not be in auto stack mode.	0.3724	0.0166
+0.2397	0.5808	1.000	Announce unusual end of tape	0.1748	0.0176
+0.2398	0.5113	1.000	ANFM	0.0414	0.0145
+0.2427	0.8252	1.000	----	0.0301	0.0116
+0.2470	0.0846	1.000	The rest of the routine operates entirely in the auto	0.3835	0.0161
+0.2515	0.5113	1.000	AGFM	0.0414	0.0145
+0.2542	0.5808	1.000	Announce unusual end of tape	0.1729	0.0133
+0.2558	0.8271	1.000	----	0.0282	0.0087
+0.2659	0.0846	1.000	stack mode.	0.0903	0.0118
+0.2776	0.1015	1.000	Upon EOP, the control bit ATMI is reset and, if it	0.3759	0.0161
+0.2951	0.0846	1.000	had been set, another tape mark written. If it was	0.3778	0.0131
+0.3081	0.0846	1.000	not set, a new table of exits, ASTRA, is set into AOP,	0.4060	0.0161
+0.3227	0.0846	1.000	and the trailer record is written. (Note: For EPGK	0.3929	0.0131
+0.3387	0.0846	1.000	and UK fixups for tables ATSXIT and ASTRA, see	0.3703	0.0132
+0.3517	0.0846	1.000	description of the error routines.) $RET is then	0.3647	0.0146
+0.3532	0.5207	1.000	The error routines are entered as follows for the	0.3741	0.0189
+0.3677	0.5094	1.000	various combinations of error interrupts and tables	0.3853	0.0189
+0.3690	0.0845	1.000	executed.	0.0716	0.0121
+0.3808	0.1015	1.000	When the EOP occurs for the trailer record, the	0.3609	0.0146
+0.3834	0.5093	1.000	of exits:	0.0679	0.0166
+0.3966	0.0845	1.000	tape is unloaded. If another tape is ready, as evi-	0.3781	0.0173
+0.4111	0.0845	1.000	denced by a CS having been received (ATARI or	0.3555	0.0153
+0.4256	0.0863	1.000	ATBRI-1), the corresponding IOD name (CT11 or	0.3668	0.0178
+0.4259	0.6842	1.000	Interrupt	0.0583	0.0131
+0.4375	0.5132	1.000	Original TOE EPGK	0.1316	0.0146
+0.4384	0.6784	1.000	UK-not-EOP	0.0736	0.0127
+0.4398	0.7818	1.000	UK- EOP	0.0568	0.0129
+0.4403	0.0865	1.000	CT21) is set into AMR as the current tape, the tape	0.3835	0.0146
+0.4548	0.0827	1.000	busy bit (CATUB) is reset, the new tape bit is reset	0.3910	0.0161
+0.4621	0.6089	1.000	AEPGK	0.0453	0.0163
+0.4633	0.7836	1.000	CKUK	0.0418	0.0167
+0.4637	0.6786	1.000	ALNUKC	0.0564	0.0145
+0.4651	0.5132	1.000	CEXN	0.0357	0.0116
+0.4709	0.0845	1.000	(CXY+.19), and control returned to the return	0.3479	0.0150
+0.4752	0.6767	1.000	ALUNUKC	0.0677	0.0161
+0.4753	0.6090	1.000	AEPGK	0.0451	0.0160
+0.4766	0.5112	1.000	AWEXIT	0.0527	0.0119
+0.4766	0.7838	1.000	CKUK	0.0415	0.0148
+0.4834	0.1520	1.000	If a new tape is not ready, the tape switch	0.3201	0.0214
+0.4867	0.0845	1.000	address.	0.0678	0.0121
+0.4869	0.5113	1.000	ATSXIT	0.0526	0.0160
+0.4883	0.6090	1.000	AUKEF	0.0451	0.0161
+0.4884	0.6748	1.000	AUKEF	0.0508	0.0160
+0.4898	0.7820	1.000	AUKEF	0.0489	0.0145
+0.4997	0.0863	1.000	request bit (ATSWCR) is set and $RET is executed.	0.3799	0.0159
+0.4998	0.6709	1.000	AERRUN	0.0641	0.0179
+0.4998	0.6070	1.000	AERRUN	0.0585	0.0164
+0.5013	0.5112	1.000	ASTRA	0.0490	0.0148
+0.5029	0.7820	1.000	CKUK	0.0432	0.0145
+0.5129	0.6071	1.000	AUKEF	0.0472	0.0163
+0.5145	0.7820	1.000	AUKEF	0.0470	0.0160
+0.5145	0.6748	1.000	AUKEF	0.0508	0.0160
+0.5145	0.5113	1.000	CEXEF	0.0451	0.0145
+0.5160	0.0865	1.000	With the tape switch request bit set, the CS fixup	0.3665	0.0146
+0.5285	0.0862	1.000	routines (ATPACS, ATPBCS) will give control to the	0.3934	0.0215
+0.5436	0.0865	1.000	tape switch routine (ATSWC4 or ATSWC6) to reset	0.3778	0.0146
+0.5596	0.0883	1.000	the bit and complete the tape switch as previously	0.3684	0.0146
+0.5725	0.5131	1.000	AEPGK	0.0603	0.0163
+0.5770	0.0883	1.000	described.	0.0789	0.0102
+0.5883	0.1032	1.000	The logic described for tape switch is dependent	0.3613	0.0182
+0.6017	0.5150	1.000	The EPGK error routine, AEPGK, is entered with the	0.4023	0.0174
+0.6061	0.0883	1.000	upon the following:	0.1372	0.0118
+0.6177	0.5113	1.000	actuated address in $2 when the interrupt is received	0.3966	0.0132
+0.6177	0.1034	1.000	1. The tape ready bits, ATARI and ATBRI, are	0.3590	0.0160
+0.6304	0.5131	1.000	by tables CEXN or AWEXIT. The EPGK is assumed	0.3929	0.0168
+0.6352	0.0883	1.000	assembled as 0 and 1, respectively.	0.2688	0.0131
+0.6482	0.5132	1.000	to have been caused by a file protected tape being	0.3684	0.0146
+0.6482	0.1015	1.000	2. The initial tape selection is CT11, with I-O	0.3534	0.0161
+0.6605	0.5131	1.000	mounted on an output unit. A message is typed via	0.3798	0.0176
+0.6642	0.0865	1.000	TOE AXITA.	0.0977	0.0131
+0.6758	0.5132	1.000	the commentator, and the tape switch routine is	0.3609	0.0176
+0.6773	0.1034	1.000	3. The MCP receptor will pass a CS interrupt to	0.3684	0.0161
+0.6903	0.5113	1.000	entered at ATSWCH5 to unload the tape and select a	0.3853	0.0161
+0.6918	0.0865	1.000	the program table of exits only if it is received after	0.3929	0.0161
+0.7048	0.5132	1.000	new one. Return is set to try the write operation	0.3684	0.0176
+0.7093	0.0883	1.000	an unload operation on the same unit.	0.2763	0.0116
+0.7209	0.1015	1.000	4. Upon entry, and until completion of tape switch,	0.3872	0.0176
+0.7224	0.5113	1.000	again. In all other cases, EPGK is treated as UK-	0.3816	0.0146
+0.7352	0.5112	1.000	not EOP.	0.0754	0.0166
+0.7369	0.0865	1.000	the output tape busy bit (CATUB) is set. Thus, if a	0.3853	0.0161
+0.7529	0.0883	1.000	$SPU or $SPR is given, the corresponding programs	0.3910	0.0132
+0.7644	0.5150	1.000	CHUK	0.0490	0.0162
+0.7660	0.0883	1.000	will wait for a free output tape and will not destroy	0.3778	0.0146
+0.7801	0.0863	1.000	the contents of AOP, which specify a tape switch table	0.4044	0.0192
+0.7951	0.5150	1.000	The general UK routine is entered when UK and EOP	0.3891	0.0160
+0.7975	0.0882	1.000	of exits.	0.0642	0.0126
+0.8124	0.5132	1.000	(UK-EOP) occur on a write operation. It is entered	0.3853	0.0132
+0.8241	0.5132	1.000	with the address of the TOE in $1, and with $3 speci-	0.3985	0.0160
+0.8268	0.0864	1.000	Error Control	0.1091	0.0151
+0.8400	0.5132	1.000	fying the return to be used if retries are unsuccessful.	0.4079	0.0133
+0.8543	0.5282	1.000	The routine tries the sequence $BSP, $ERGS, $W,	0.3798	0.0168
+0.8545	0.0902	1.000	A set of error control routines with their own I-O	0.3665	0.0133
+0.8691	0.5132	1.000	using the original control word for the write. The	0.3759	0.0161
+0.8706	0.0883	1.000	tables of exits is used when UK or EPGK interrupts	0.3835	0.0131
+0.9273	0.0827	1.000	162	0.0244	0.0102

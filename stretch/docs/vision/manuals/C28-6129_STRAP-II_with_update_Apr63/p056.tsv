@@ -1,0 +1,116 @@
+0.0669	0.5827	1.000	ueeressadia dobyrol voad instruction). A18	0.2368	0.0204
+0.0682	0.8177	1.000	(I') is th	0.0526	0.0061
+0.0696	0.0563	1.000	Swap Backward	0.0866	0.0134
+0.0871	0.0676	1.000	SWAPB	0.0470	0.0118
+0.0872	0.1353	1.000	(M.) <(M,)	0.1034	0.0089
+0.0956	0.4792	1.000	Write	0.0341	0.0093
+0.0974	0.1353	1.000	(M.-1)<→(M,-1)	0.1203	0.0102
+0.1090	0.1805	1.000	etc.	0.0207	0.0073
+0.1133	0.5789	1.000	Initiates a writing operation. Analogous to RD except	0.2989	0.0103
+0.1134	0.4906	1.000	W	0.0169	0.0087
+0.1235	0.5789	1.000	that the skip flag of the control word is ignored.	0.2613	0.0087
+0.1336	0.0564	1.000	Swap Backward Immediate	0.1466	0.0103
+0.1438	0.4812	1.000	Release	0.0414	0.0089
+0.1512	0.0677	1.000	SWAPBI	0.0526	0.0116
+0.1512	0.1316	1.000	(N1,)<(M,)	0.1090	0.0087
+0.1611	0.1334	1.000	(M1-1)4→(Mz-1)	0.1223	0.0121
+0.1612	0.5789	1.000	Immediately terminates any operation in progress at the	0.2989	0.0088
+0.1613	0.4925	1.000	REL	0.0282	0.0087
+0.1685	0.5771	1.000	unit specified in A,(I), the channel address, or in the	0.3008	0.0147
+0.1715	0.1805	1.000	etc.	0.0207	0.0087
+0.1802	0.5789	1.000	last unit at Ay(I) selected by a LOC instruction, if	0.2990	0.0136
+0.1918	0.5808	1.000	A, (I) consists of more than one unit.	0.1974	0.0118
+0.1991	0.0564	1.000	MISCELLANEOUS OPERATIONS: OP, AJp(I)	0.2669	0.0146
+0.2136	0.4812	1.000	Copy Control Word	0.1053	0.0117
+0.2179	0.0564	1.000	Store Instruction Counter If	0.1485	0.0118
+0.2311	0.5789	1.000	The current control word corresponding to the addressed	0.2989	0.0102
+0.2326	0.4925	1.000	CCW	0.0320	0.0073
+0.2355	0.2650	1.000	1. SIC; NOP will not store the IC.	0.1880	0.0103
+0.2355	0.1165	1.000	IC, +1.0→→ (0-18) of	0.1297	0.0131
+0.2412	0.5789	1.000	channel A, (I) is sent to A1s(I').	0.1805	0.0131
+0.2452	0.1164	0.300	hailt 1) oird thralln in	0.1281	0.0227
+0.2573	0.1410	1.000	word branch in-	0.1053	0.0103
+0.2587	0.5771	1.000	Same as LOC, SU, RD, W, REL, CTL except the SEOP	0.3008	0.0102
+0.2602	0.4944	1.000	LOC(SEOP)	0.0714	0.0087
+0.2660	0.1165	1.000	struction is executed.	0.1128	0.0102
+0.2688	0.5789	1.000	bit in control word is set to 1; thus, program interruption	0.2989	0.0118
+0.2703	0.4925	1.000	RD (SEOP)	0.0639	0.0088
+0.2798	0.4942	1.000	W(SEOP)	0.0586	0.0102
+0.2805	0.5827	1.000	on completion of an operation is suppressed, provided no	0.2914	0.0102
+0.2849	0.0564	1.000	Refill	0.0320	0.0102
+0.2888	0.4924	1.000	REL(SEOP)	0.0717	0.0125
+0.2892	0.5827	1.000	exception conditions, such as unit check and end ex-	0.2914	0.0102
+0.3009	0.2650	1.000	1. Ryr = refill field of word M.	0.1617	0.0116
+0.3009	0.5789	1.000	ception, are encountered.	0.1353	0.0088
+0.3009	0.4925	1.000	CTL(SEOP)	0.0714	0.0087
+0.3023	0.0639	1.000	R	0.0188	0.0116
+0.3023	0.2068	1.000	→ (M)	0.0395	0.0116
+0.3023	0.1128	1.000	(Rar)	0.0357	0.0145
+0.3107	0.4924	1.000	SU (SEOP)	0.0641	0.0108
+0.3197	0.0564	1.000	Refill If Count Is Zero	0.1184	0.0118
+0.3342	0.4812	1.000	Control	0.0414	0.0074
+0.3372	0.0695	1.000	RCZ	0.0282	0.0116
+0.3387	0.2049	1.000	→ (M)	0.0376	0.0102
+0.3387	0.1147	1.000	ifc Aeld or M=D	0.1015	0.0189
+0.3503	0.5789	1.000	Initiates performance of certain functions at the chan-	0.2989	0.0103
+0.3517	0.4925	1.000	CTL	0.0282	0.0102
+0.3605	0.5789	1.000	nel indicated by A,(I), or at the last unit selected by	0.2989	0.0117
+0.3647	0.0563	1.000	Execute	0.0452	0.0133
+0.3706	0.6880	1.000	The functions are indicated:	0.1541	0.0088
+0.3721	0.5789	1.000	an LOC instruction.	0.1071	0.0073
+0.3808	0.5808	1.000	General I/O Unit (Standard for A18(I))	0.2162	0.0116
+0.3808	0.2594	1.000	1. The instruction located at M is	0.1936	0.0131
+0.3820	0.1164	1.000	Execute	0.0434	0.0107
+0.3823	0.0677	1.000	EX	0.0226	0.0116
+0.3837	0.2105	1.000	>(M)	0.0376	0.0087
+0.3909	0.5789	1.000	A18(I') = 016g Reserved Light Off	0.1936	0.0118
+0.3923	0.2800	1.000	executed.	0.0546	0.0119
+0.4012	0.2613	1.000	2. Control then goes to the instruc-	0.1917	0.0131
+0.4026	0.6372	1.000	017g Reserved Light On	0.1335	0.0102
+0.4112	0.2820	1.000	tion following EX.	0.1015	0.0133
+0.4112	0.6391	1.000	116g Read-Write Check Light On	0.1823	0.0118
+0.4215	0.6372	1.000	057g ECC Mode	0.0959	0.0116
+0.4302	0.0583	1.000	Execute Indirect and Count	0.1466	0.0131
+0.4317	0.6372	1.000	157g No ECC Mode	0.1147	0.0116
+0.4418	0.5789	1.000	Card Reader and Card Punch	0.1560	0.0088
+0.4470	0.0694	1.000	EXIC Execute	0.0905	0.0145
+0.4491	0.2218	1.000	(M)I 1. The instruction whose addres	0.2162	0.0103
+0.4520	0.6053	1.000	Standard, except A18 (I') = 2 also causes a card to	0.2613	0.0116
+0.4578	0.1147	1.000	(M) + 1	0.0489	0.0131
+0.4578	0.2951	1.000	cated in M is execut	0.1071	0.0102
+0.4593	0.2030	1.000	(M)	0.0432	0.0116
+0.4636	0.6053	1.000	be offset in the stacker.	0.1222	0.0073
+0.4738	0.5789	1.000	Tape Units	0.0602	0.0087
+0.4749	0.0562	1.000	Store Zero	0.0586	0.0139
+0.4824	0.6053	1.000	Standard, but in addition:	0.1391	0.0089
+0.4927	0.5789	1.000	A18(I') = 057g ECC Mode, Odd Parity	0.2180	0.0116
+0.4927	0.2030	1.000	→(M) 1. Full word of zeros.	0.1805	0.0131
+0.5029	0.6391	1.000	157g No ECC Mode, Odd Parity	0.1729	0.0116
+0.5130	0.6372	1.000	156g No ECC Mode, Even Parity	0.1805	0.0118
+0.5174	0.0564	1.000	INPUT-OUTPUT INSTRUCTIONS: OF, A,(I), Ays(I)	0.3102	0.0160
+0.5233	0.6372	1.000	136g Rewind Tape	0.1053	0.0116
+0.5333	0.6372	1.000	076g Space Block (record)	0.1485	0.0118
+0.5392	0.0564	1.000	Locate	0.0451	0.0131
+0.5406	0.1466	0.300	A;4!) The eschres chaneel aeveral nts 17) chedl se nhan-	0.3045	0.0233
+0.5436	0.6372	1.000	176g Backspace Block (record)	0.1711	0.0116
+0.5536	0.6372	1.000	077g Space File	0.0903	0.0119
+0.5581	0.0808	1.000	LOC	0.0301	0.0131
+0.5595	0.1784	1.000	nel A,(I); in this case LOC or SU must be giver	0.2710	0.0150
+0.5639	0.6372	1.000	177g Backspace File	0.1128	0.0116
+0.5741	0.6372	1.000	117g Write Tape Mark (EOF mark)	0.1992	0.0116
+0.5797	0.0563	1.000	Select Unit	0.0603	0.0120
+0.5828	0.1560	1.000	2.	0.0132	0.0116
+0.5842	0.6372	1.000	056g Erase Long Gap	0.1222	0.0118
+0.5945	0.6372	1.000	036g High-Density Mode (556 bits/inch)	0.2274	0.0116
+0.6003	0.0808	1.000	SU	0.0207	0.0116
+0.6045	0.6372	1.000	037g Low-Density Mode (200 bits/inch)	0.2274	0.0118
+0.6148	0.6673	1.000	Remove End of Tape Condition	0.1711	0.0088
+0.6148	0.6372	1.000	016g	0.0301	0.0116
+0.6250	0.6372	1.000	137g Rewind and Unload	0.1410	0.0117
+0.6279	0.0564	1.000	Read	0.0301	0.0116
+0.6352	0.5771	1.000	Inquiry Station, Printer, Console	0.1729	0.0103
+0.6439	0.1523	0.300	1s () red ten thi chand ador eor a uendtinge operaton	0.3026	0.0262
+0.6468	0.0695	1.000	RD	0.0207	0.0087
+0.6657	0.1523	1.000	this channel if more than one unit is available and has	0.3008	0.0116
+0.9183	0.7668	1.000	Appendix	0.0603	0.0122
+0.9186	0.8571	1.000	53	0.0207	0.0131

@@ -1,0 +1,67 @@
+0.0799	0.4718	1.000	same manner as from an absolute dump card, with	0.3816	0.0131
+0.0814	0.0395	1.000	non-FORTRAN environment, however, no space is pro-	0.4041	0.0116
+0.0973	0.4699	1.000	the additional feature that the parameters are relo-	0.3891	0.0118
+0.0973	0.0395	1.000	vided for relocatable patch cards, and the limit must	0.3966	0.0118
+0.1118	0.4699	1.000	cated according to the relocation columns on the card.	0.4098	0.0118
+0.1118	0.0395	1.000	be extended by the programmer. It may bedesirable	0.3985	0.0103
+0.1264	0.0395	1.000	to extend the size of a subprogram or to force the	0.3759	0.0118
+0.1264	0.4699	1.000	(See also card formats - Appendix A.) It should be	0.3853	0.0118
+0.1409	0.0395	1.000	patch area to begin at a location higher than the high-	0.4004	0.0118
+0.1409	0.4699	1.000	noted that, like the relocatable correction and patch	0.3910	0.0118
+0.1555	0.0414	1.000	est location loaded by the subprogram. This exten-	0.3891	0.0118
+0.1555	0.4699	1.000	cards, only three half-words are allowed. Additional	0.4060	0.0118
+0.1700	0.0414	1.000	sion may be accomplished by a relocatable correction	0.4041	0.0118
+0.1700	0.4699	1.000	dump requests at the same location may be given by	0.3910	0.0118
+0.1845	0.4699	1.000	using continuation relocatable dump cards, charac-	0.3891	0.0131
+0.1845	0.0414	1.000	card at a relative origin higher than the highest loca-	0.4004	0.0118
+0.1991	0.0395	1.000	tion within the subprogram. At the patch area, up to	0.3985	0.0117
+0.1991	0.4699	1.000	terized by the absence of a relative origin on the card.	0.4098	0.0117
+0.2136	0.4699	1.000	Storage allocation for the relocatable dump card is	0.3835	0.0117
+0.2136	0.0395	1.000	three half-words which appear on the card are placed	0.3985	0.0117
+0.2276	0.4699	1.000	similar to that for the relocatable patch card; i.e.,	0.3874	0.0138
+0.2282	0.0414	1.000	after the half or full-word instruction replaced by the	0.4004	0.0116
+0.2427	0.0414	1.000	branch or the branch; NOP. The instructions making	0.4004	0.0116
+0.2442	0.4699	1.000	storage is automatically allocated in a FORTRAN	0.3722	0.0116
+0.2587	0.0414	1.000	up the patch are followed by a branch instruction that	0.3835	0.0116
+0.2587	0.4699	1.000	environment only.	0.1353	0.0116
+0.2733	0.0395	1.000	transfers to the next instruction after the one that	0.3759	0.0102
+0.2863	0.0414	1.000	was replaced by the branch to the patch area. If	0.3684	0.0116
+0.2863	0.4944	1.000	15. I card. No information is loaded from a T	0.3628	0.0116
+0.3009	0.4718	1.000	card. When the next binary card is encountered, its	0.3966	0.0116
+0.3023	0.0395	1.000	there is no origin on the patch card, the card is in-	0.3891	0.0116
+0.3154	0.4718	1.000	sequence number is not checked. Instead, the se-	0.3797	0.0116
+0.3169	0.0395	1.000	terpreted as a continuation patch card, from which	0.3835	0.0131
+0.3299	0.4718	1.000	quence counter is reset to that sequence number. T	0.3929	0.0131
+0.3314	0.0414	1.000	up to three half-words are loaded, beginning at the	0.3816	0.0116
+0.3445	0.4718	1.000	cards are printed by either the MCP loader or the	0.3778	0.0116
+0.3459	0.0395	1.000	location following the highest location in the patch	0.3741	0.0116
+0.3605	0.4643	1.000	BSS processor.	0.1278	0.0102
+0.3605	0.0414	1.000	area loaded from the previous card. Each half-word	0.3985	0.0132
+0.3735	0.4887	1.000	16. Super I Card. A Super I card has the effect	0.3816	0.0131
+0.3750	0.0395	1.000	from a relocatable patch or continuation relocatable	0.3947	0.0117
+0.3894	0.4699	1.000	of stopping sequence checking for the entire job. Super	0.4098	0.0118
+0.3894	0.0413	1.000	patch card is relocated according to the relocation	0.3780	0.0133
+0.4039	0.4699	1.000	T cards are printed by either the MCP loader or the	0.3910	0.0118
+0.4055	0.0414	1.000	columns on the card. (See also card formats -	0.3534	0.0103
+0.4185	0.4699	1.000	BSS processor.	0.1184	0.0118
+0.4200	0.0432	1.000	Appendix A.)	0.1034	0.0118
+0.4330	0.4906	1.000	17. Loader adjustment (O) card. In a FORTRAN	0.3778	0.0118
+0.4345	0.0620	1.000	14. Relocatable dump (Z) card. The effective	0.3534	0.0118
+0.4476	0.4699	1.000	environment, the loader adjustment card has no	0.3628	0.0118
+0.4491	0.0414	1.000	origin is formed by relocating the relative origin on	0.3910	0.0117
+0.4621	0.4718	1.000	function in the MCP loader. In a non-FORTRAN	0.3665	0.0118
+0.4636	0.0395	1.000	the card with respect to the subprogram specified	0.3741	0.0117
+0.4767	0.4699	1.000	environment, however, a FORTRAN program card	0.3835	0.0132
+0.4782	0.0395	1.000	(or the named common, although it seems unlikely	0.3797	0.0116
+0.4912	0.4699	1.000	is not accepted, and the loader adjustment card is	0.3778	0.0118
+0.4927	0.0395	1.000	that the origin would be relocated with respect to	0.3684	0.0116
+0.5058	0.4699	1.000	used to set the origin for the subprogram that follows	0.4004	0.0118
+0.5073	0.0414	1.000	named common). The relocatable dump card has the	0.3985	0.0116
+0.5203	0.4699	1.000	it. The origin on the card is checked to see if it is	0.3853	0.0131
+0.5218	0.0414	1.000	same instruction displacement property as the relo-	0.3947	0.0116
+0.5363	0.4699	1.000	within bounds.	0.1090	0.0102
+0.5363	0.0414	1.000	catable patch card. However, the loader places in	0.3816	0.0131
+0.5494	0.4925	1.000	18. B card. A B card is ignored by the MCP	0.3571	0.0117
+0.5509	0.0414	1.000	the patch area a calling sequence to the MCP dump	0.3816	0.0116
+0.5636	0.0412	1.000	routine, and inserts parameters from the card in the	0.3987	0.0154
+0.5650	0.4679	1.000	loader.	0.0585	0.0124

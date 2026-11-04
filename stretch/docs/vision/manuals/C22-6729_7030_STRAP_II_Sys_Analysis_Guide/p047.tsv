@@ -1,0 +1,39 @@
+0.0870	0.8740	1.000	SEARCH	0.0678	0.0135
+0.1526	0.1071	1.000	PURPOSE	0.0752	0.0116
+0.1526	0.5320	1.000	table search routines to use, linear or binary. These	0.4023	0.0116
+0.1672	0.5338	1.000	routines select a table argument, and then branch to	0.3872	0.0132
+0.1817	0.5338	1.000	a common routine which compares the given and table	0.3985	0.0116
+0.1817	0.1053	1.000	The main objective of SEARCH is to ascertain	0.3421	0.0132
+0.1933	0.1053	1.000	whether or not a given piece of information is con-	0.3778	0.0161
+0.1976	0.5338	1.000	arguments. If an equal comparison is not made, the	0.3891	0.0118
+0.2106	0.5338	1.000	specific SEARCH routine will continue to select other	0.3947	0.0118
+0.2106	0.1053	1.000	tained within a table.	0.1579	0.0147
+0.2267	0.5338	1.000	table arguments until either an equal table argument	0.3891	0.0118
+0.2397	0.5320	1.000	is found or the entire table has been processed. Only	0.3985	0.0133
+0.2413	0.1071	1.000	LINKAGE	0.0714	0.0102
+0.2558	0.5320	1.000	if the table is ordered and greater than six entries long	0.4117	0.0118
+0.2703	0.5338	1.000	will a binary search be conducted.	0.2538	0.0118
+0.2703	0.1222	1.000	LVI, 15, $+2; B, SEARCH	0.1955	0.0146
+0.2848	0.5489	1.000	The index words in the control block will contain one	0.3910	0.0103
+0.2849	0.1391	1.000	tbl	0.0244	0.0116
+0.2994	0.5338	1.000	of two locations, depending on whether or not an argu-	0.4023	0.0131
+0.3008	0.1222	1.000	, arg (I)	0.0677	0.0132
+0.3139	0.1222	1.000	, al (I)	0.0583	0.0145
+0.3154	0.5320	1.000	ment in the table equal to the given argument was found.	0.4154	0.0116
+0.3285	0.5301	1.000	If an equal argument was found, the location of that	0.3835	0.0145
+0.3285	0.3383	1.000	'not found return.	0.1335	0.0131
+0.3285	0.1222	1.000	B, a fix-up subroutine	0.1673	0.0145
+0.3430	0.1222	1.000	Normal Return	0.1128	0.0131
+0.3430	0.5301	1.000	argument and its function will be in the control table	0.3910	0.0146
+0.3571	0.5300	1.000	index words. If an equal argument was not found, one	0.4043	0.0167
+0.3720	0.1071	1.000	DETAILS	0.0715	0.0133
+0.3721	0.5301	1.000	of two results may appear in the index words. In the	0.3966	0.0146
+0.3866	0.5320	1.000	case of an ordered table search, the location of the	0.3797	0.0161
+0.4026	0.1053	1.000	The SEARCH objective is accomplished through the	0.3797	0.0131
+0.4026	0.5320	1.000	entry with the next higher argument will be in the index	0.4117	0.0147
+0.4157	0.1053	1.000	use of a main program and several key subroutines.	0.3872	0.0146
+0.4172	0.5320	1.000	words. For a non-ordered table search, the next loc-	0.4041	0.0147
+0.4273	0.1053	1.000	The main program will decide which of two specific	0.3853	0.0191
+0.4317	0.5320	1.000	ation after the table will be given in the index words.	0.3929	0.0132
+0.9388	0.8345	1.000	SEARCH	0.0508	0.0104
+0.9404	0.9098	1.000	47	0.0150	0.0073

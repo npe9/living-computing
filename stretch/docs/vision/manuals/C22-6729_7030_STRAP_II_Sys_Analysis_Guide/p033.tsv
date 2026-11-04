@@ -1,0 +1,105 @@
+0.0858	0.1109	1.000	used VALUE to evaluate a coded expression	0.3233	0.0103
+0.0858	0.5338	1.000	for field identification in the error message is	0.3459	0.0145
+0.0986	0.1090	1.000	tormed by GETFLD, it was allowable for VALUE	0.3667	0.0135
+0.1003	0.5376	1.000	zeroed; the unit counter is incremented and the	0.3496	0.0116
+0.1148	0.1128	1.000	not to find the svmbol in the svmbol table since the	0.3722	0.0088
+0.1148	0.5357	1.000	symbol counter is updated. (The field counter is	0.3647	0.0131
+0.1264	0.1109	1.000	symbol table was incomplete during Pass 1. But at	0.3816	0.0146
+0.1294	0.5357	1.000	incremented during the Pass 2 procedures which	0.3628	0.0146
+0.1439	0.5357	1.000	process address fields, e.g., generally by DECODE.)	0.4041	0.0146
+0.1439	0.1109	1.000	the end of Pass 1, the symbol table contains an entry	0.3910	0.0131
+0.1584	0.5300	1.000	'$3 is set up with the location of the new unit.	0.3441	0.0132
+0.1584	0.1109	1.000	for each name that has appeared in the name field .	0.3835	0.0116
+0.1730	0.1109	1.000	of a card block.) Note that all the regular symbol	0.3703	0.0116
+0.1744	0.5376	1.000	$5 is set up with the location of the op index for the	0.3853	0.0116
+0.1875	0.1109	1.000	table entries have been made before Pass 2a, but	0.3647	0.0131
+0.1890	0.5376	1.000	new instruction. The five error flags for an	0.3308	0.0117
+0.2035	0.5376	1.000	erroneous symbol are zeroed. If the unit has a	0.3515	0.0117
+0.2035	0.1128	1.000	Pass 2a does make entries in the symbol table for	0.3684	0.0102
+0.2166	0.1090	1.000	the undefined symbols appearing in non-SYN	0.3271	0.0116
+0.2179	0.5376	1.000	name associated with it, the location of the function	0.3816	0.0133
+0.2311	0.1090	1.000	address fields, for the location counter values that	0.3759	0.0131
+0.2324	0.5357	1.000	portion of the vle part of the symbol table is	0.3289	0.0147
+0.2456	0.1109	1.000	are candidates for hi-lo values, and for the	0.3195	0.0131
+0.2470	0.5357	1.000	computed and saved.	0.1560	0.0147
+0.2602	0.1109	1.000	STRAP II symbolic counter symbols that are needed	0.3816	0.0116
+0.2733	0.5320	1.000	Boxes 9,10, 26	0.1278	0.0146
+0.2761	0.1090	1.000	until absolute increments are known. Whenever	0.3553	0.0103
+0.2906	0.1109	1.000	VALUE is asked to evaluate a symbol, VALUE	0.3440	0.0118
+0.3023	0.5338	1.000	Master control program's units are processed during	0.3966	0.0146
+0.3048	0.1109	1.000	marks the svmbol as having been referenced from	0.3666	0.0110
+0.3169	0.5338	1.000	Pass 2b. At this point in Pass 2a, the first op that	0.3816	0.0147
+0.3197	0.1071	1.000	an address field. The multiply-defined symbols	0.3553	0.0146
+0.3314	0.5320	1.000	is not an MCP op (comments excepted) causes a	0.3571	0.0147
+0.3342	0.1090	1.000	are detected in _ADDORD and are resolved and	0.3441	0.0137
+0.3473	0.5357	1.000	switch to be set which will prevent non-contiguous	0.3722	0.0133
+0.3503	0.1109	1.000	marked in _MULTI during Pass 1. On the final	0.3477	0.0116
+0.3618	0.5338	1.000	MCP ops from being punched in Pass 2b, although	0.3722	0.0146
+0.3648	0.1109	1.000	scanning of the symbol table, NUNDSY can easily	0.3628	0.0131
+0.3764	0.5338	1.000	they will be listed.	0.1410	0.0132
+0.3794	0.1109	1.000	recognize the error symbols marked for special	0.3553	0.0116
+0.3939	0.1109	1.000	listing. Of the five different type of irregular	0.3383	0.0116
+0.4055	0.5320	1.000	Box 11	0.0620	0.0146
+0.4084	0.1109	1.000	symbols, only the multiply defined and the multiply	0.3759	0.0131
+0.4208	0.1108	1.000	defined with contraditions are mutually exclusive.	0.3725	0.0162
+0.4280	0.5337	1.000	During the processing of EXTract units, the location	0.3912	0.0159
+0.4448	0.5357	1.000	counter is adjusted only for the first of the two units.	0.3910	0.0116
+0.4534	0.1090	1.000	Boxes 3, 4	0.0884	0.0163
+0.4738	0.5320	1.000	Boxes 12A, 12B	0.1391	0.0160
+0.4824	0.1109	1.000	Because of the overlapping functions of Pass 2a and	0.3797	0.0118
+0.4912	0.5338	1.000	Since the processing of a previous instruction only	0.3741	0.0118
+0.4970	0.1109	1.000	Pass 2b, there are unique indicators associated	0.3515	0.0118
+0.5058	0.5338	1.000	incremented the location counter by the length of the	0.3872	0.0118
+0.5130	0.1109	1.000	with each of the phases of Pass 2. The Pass 2a	0.3534	0.0103
+0.5203	0.5338	1.000	binary output, rounding tests must be made at the	0.3684	0.0131
+0.5276	0.1109	1.000	indicator, Np2ind, is set on now. It will be turned	0.3741	0.0118
+0.5348	0.5338	1.000	beginning of processing of each new unit in Pass 2a.	0.3853	0.0131
+0.5421	0.1090	1.000	off between Pass 2a and Pass 2b.	0.2462	0.0117
+0.5509	0.5357	1.000	If the unit is one for a DD or for a DR in a non-	0.3496	0.0102
+0.5567	0.1278	1.000	Pass 2a goes to INTIN an additional time after	0.3402	0.0116
+0.5654	0.5320	1.000	floating point mode, there is no rounding necessary.	0.3891	0.0131
+0.5712	0.1109	1.000	receiving the END unit, so INTIN by its end-of-file	0.3759	0.0116
+0.5799	0.5357	1.000	Either of these type of units is sent on to the next	0.3647	0.0116
+0.5858	0.1109	1.000	condition thus obtained, can set up the recycling	0.3553	0.0131
+0.5945	0.5338	1.000	processing step. If not, tests are made by using	0.3628	0.0131
+0.6003	0.1109	1.000	through the units during Pass 2b. The entry into	0.3609	0.0116
+0.6090	0.5338	1.000	the op question bits to see if the instruction in the	0.3684	0.0116
+0.6148	0.1109	1.000	the between passes procedure is made from INTIN.	0.3778	0.0131
+0.6235	0.5338	1.000	unit must have a full or half word address. Once	0.3665	0.0116
+0.6294	0.1109	1.000	This re-entry location is set now.	0.2500	0.0116
+0.6381	0.5338	1.000	the type of op has been established, the counter can	0.3816	0.0131
+0.6453	0.1278	1.000	Also included in this initialization process is the	0.3553	0.0102
+0.6526	0.5320	1.000	be rounded, if necessary, immediately if $6 is	0.3590	0.0160
+0.6538	0.1109	1.000	saving of the location of the ($ )symbol table entry	0.3666	0.0165
+0.6672	0.5320	1.000	zero, i.e., if there is no symbolic portion of the	0.3647	0.0160
+0.6744	0.1109	1.000	since the setting of the location counter for each	0.3534	0.0102
+0.6830	0.5338	1.000	location counter.	0.1259	0.0118
+0.6890	0.1090	1.000	instruction must be put into this entry. The	0.3346	0.0117
+0.6976	0.5470	1.000	If however there is a symbolie counter portion,	0.3534	0.0146
+0.7020	0.1109	1.000	subroutine for bringing in the units into internal	0.3571	0.0131
+0.7121	0.5338	1.000	changes may have to be made on the symbolic	0.3421	0.0146
+0.7179	0.1109	1.000	storage and the error message subroutines are	0.3459	0.0118
+0.7267	0.5320	1.000	counter. If the present symbolic counter symbol is	0.3835	0.0146
+0.7324	0.1109	1.000	initialized. Miscellaneous indicators are set. The	0.3797	0.0118
+0.7412	0.5320	1.000	at the required type location, then only the absolute	0.3835	0.0161
+0.7434	0.1089	1.000	unit counter of the error message routine and $4	0.3650	0.0189
+0.7573	0.5320	1.000	counter is adjusted for any necessary rounding.	0.3571	0.0131
+0.7615	0.1108	1.000	and $6 are set to zero. The absolute counter is	0.3629	0.0134
+0.7718	0.5320	1.000	Otherwise a new symbolic counter symbol is	0.3308	0.0131
+0.7775	0.1127	1.000	set to its initial 41.g location (0 if in PUNREL	0.3498	0.0167
+0.7863	0.5320	1.000	entered into the symbol table marked with the	0.3421	0.0131
+0.7936	0.1128	1.000	mode). This initial setting of the absolute counter	0.3684	0.0102
+0.8009	0.5338	1.000	appropriate full or half word indicator; $4 will be	0.3759	0.0146
+0.8067	0.1090	1.000	is entered into the hi-lo table now as the first entry.	0.3891	0.0131
+0.8169	0.5320	1.000	set to zero again; and $6 will contain the location	0.3759	0.0131
+0.8212	0.1109	1.000	If the first unit is that of an SLC pseudo op, this	0.3534	0.0145
+0.8299	0.5320	1.000	of the new STRAP symbolie counter symbol.	0.3308	0.0146
+0.8352	0.1089	1.000	low entry will be overruled.	0.2090	0.0137
+0.8605	0.5320	1.000	Boxes 12C - 12E	0.1447	0.0132
+0.8663	0.1090	1.000	Boxes 5A - 6	0.1184	0.0131
+0.8881	0.5320	1.000	Further adjustment to the location counter may be	0.3722	0.0146
+0.8894	0.1109	1.000	For each new unit INTIN brings into process, the	0.3628	0.0133
+0.9039	0.5320	1.000	necessary if the present unit is a CNOP. The	0.3421	0.0147
+0.9039	0.1090	1.000	following takes place at this point: The field counter	0.3891	0.0118
+0.9418	0.7932	1.000	Assembly Phases	0.0996	0.0103
+0.9419	0.9117	1.000	33	0.0169	0.0087

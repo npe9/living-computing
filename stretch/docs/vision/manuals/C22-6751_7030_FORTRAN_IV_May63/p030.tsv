@@ -1,0 +1,108 @@
+0.0741	0.5226	1.000	A STRAP subprogram, unlike a FORTRAN-coded routine,	0.3947	0.0147
+0.0756	0.1316	1.000	Binary	0.0432	0.0116
+0.0855	0.1334	1.000	Subprogram	0.0772	0.0136
+0.0900	0.5207	1.000	may have more than one entry point. For such routines,	0.3966	0.0133
+0.1003	0.1165	1.000	SUBTYPE, DATA	0.1259	0.0146
+0.1017	0.0959	1.000	T	0.0132	0.0116
+0.1045	0.5207	1.000	items (c) and (d) are repeated as many times as	0.3966	0.0146
+0.1192	0.1335	1.000	Data	0.0320	0.0087
+0.1206	0.5207	1.000	required.	0.0695	0.0131
+0.1294	0.1823	1.000	deck	0.0338	0.0116
+0.1467	0.5226	1.000	COMMON DEFINITION CARD	0.1955	0.0103
+0.1495	0.0977	1.000	ExAMPLE 4	0.0809	0.0121
+0.1657	0.5226	1.000	A Common Definition card informs the loader of the	0.3929	0.0131
+0.1672	0.0959	1.000	A straight co job, with two previously compiled binary	0.3966	0.0147
+0.1817	0.5207	1.000	names and sizes of the named common blocks utilized	0.3947	0.0116
+0.1817	0.0959	1.000	decks, and a processed IoD-deck.	0.2387	0.0160
+0.1962	0.5207	1.000	by this program, of which there may be arbitrarily	0.3947	0.0145
+0.1976	0.1259	1.000	JOB, ORBITAL CALCULATION 376. (VULCAN)	0.3271	0.0132
+0.2078	0.1259	1.000	TYPE, GO, FORTRAN	0.1466	0.0146
+0.2093	0.0977	1.000	B	0.0094	0.0102
+0.2121	0.5207	1.000	many. For each such block, the information given is:	0.3947	0.0132
+0.2209	0.0977	1.000	B	0.0094	0.0102
+0.2282	0.5376	1.000	(a) Common block name.	0.1898	0.0116
+0.2326	0.0977	1.000	B	0.0094	0.0087
+0.2427	0.5376	1.000	(b) Total number of full words required for this	0.3778	0.0131
+0.2456	0.1278	1.000	----	0.0338	0.0073
+0.2587	0.5677	1.000	block.	0.0508	0.0131
+0.2645	0.1391	1.000	inary deck pro	0.0921	0.0088
+0.2729	0.1371	1.000	luced by IOI	0.0791	0.0123
+0.2733	0.5207	1.000	If a given subprogram references more common blocks	0.3947	0.0146
+0.2860	0.1315	1.000	compilation	0.0753	0.0108
+0.2892	0.5207	1.000	than can be defined on one common definition card,	0.3947	0.0132
+0.3035	0.5206	1.000	then as many more additional cards of this type as are	0.3949	0.0153
+0.3095	0.1334	1.000	Binary Subprogram	0.1204	0.0206
+0.3197	0.5188	1.000	necessary may follow. There is no difference in formats	0.3966	0.0146
+0.3327	0.5207	1.000	between the first and any "continuation" common def-	0.3966	0.0161
+0.3459	0.1335	1.000	Binary Subprogram	0.1203	0.0102
+0.3503	0.5188	1.000	inition cards; however, it is vital that the original	0.3966	0.0146
+0.3576	0.1842	1.000	2	0.0094	0.0087
+0.3663	0.5207	1.000	ordering of these cards (i.e., as produced by the Com-	0.3966	0.0146
+0.3808	0.5188	1.000	piling System) be preserved.	0.2124	0.0160
+0.3808	0.1335	1.000	FORTRAN Branch Card	0.1523	0.0102
+0.3924	0.1635	1.000	Data deck	0.0639	0.0103
+0.4070	0.5226	1.000	RELOCATABLE INSTRUCTIONS AND DATA CARDS	0.3195	0.0116
+0.4258	0.5207	1.000	Relocatable binary instruction and relocatable binary	0.3947	0.0133
+0.4273	0.0959	1.000	Chapter 13. STRAP Subprograms and	0.3158	0.0161
+0.4403	0.5207	1.000	data cards contain the executable instructions of a sub-	0.3947	0.0118
+0.4432	0.0958	1.000	Binary Decks	0.1110	0.0163
+0.4564	0.5207	1.000	program and its associated data, respectively. The in-	0.3947	0.0131
+0.4621	0.0959	1.000	Provided certain rules are followed, it is possible to	0.3966	0.0132
+0.4690	0.5206	1.000	struction card also contains a relative loading origin	0.3950	0.0169
+0.4767	0.0959	1.000	write subprograms (either Function-type, or Subrou-	0.3966	0.0146
+0.4869	0.5207	1.000	for the card, plus relocation bits, specifying how the	0.3947	0.0131
+0.4927	0.0959	1.000	tine-type) in STRAP, that may be continued with FOR-	0.3966	0.0131
+0.5015	0.5207	1.000	individual instruction address references are to be	0.3947	0.0116
+0.5087	0.0959	1.000	TRAN-coded routines to form a job. This chapter ex-	0.3985	0.0131
+0.5141	0.5187	1.000	relocated. The data card contains the data bits, a load-	0.3969	0.0184
+0.5233	0.0959	1.000	plains these rules after first reviewing the constitution	0.3947	0.0131
+0.5333	0.5207	1.000	ing base (which specifies whether the data is to be	0.3947	0.0132
+0.5392	0.0959	1.000	of a typical binary subprogram deck.	0.2632	0.0132
+0.5479	0.5207	1.000	loaded into the program region of memory, or into a	0.3947	0.0146
+0.5639	0.5188	1.000	named common block), and a relative loading origin	0.3966	0.0161
+0.5696	0.0958	1.000	Binary Deck	0.0884	0.0135
+0.5799	0.5207	1.000	(with respect to the loading base).	0.2575	0.0131
+0.5842	0.0959	1.000	The usual binary deck consists of the following cards,	0.3966	0.0131
+0.6003	0.0940	1.000	in the order given:	0.1410	0.0131
+0.6105	0.5207	1.000	Compatibility Requirements	0.2049	0.0132
+0.6148	0.1128	1.000	1. A FORTRAN Program card.	0.2162	0.0131
+0.6279	0.5188	1.000	STRAP subprograms must observe certain rules in con-	0.3966	0.0131
+0.6294	0.1128	1.000	2. One or more Common Definition cards.	0.3158	0.0131
+0.6439	0.5188	1.000	nection with the production of:	0.2368	0.0146
+0.6453	0.1090	1.000	3. An arbitrary number of Relocatable Instruction	0.3835	0.0147
+0.6570	0.5357	1.000	1. The FORTRAN Program Card.	0.2237	0.0161
+0.6599	0.1316	1.000	cards, and/or Relocatable Data cards.	0.2820	0.0147
+0.6730	0.5338	1.000	2. Any necessary Common Definition cards.	0.3158	0.0161
+0.6830	0.0959	1.000	PROGRAM CARD	0.1090	0.0118
+0.6890	0.5188	1.000	Moreover, certain conventions must be followed in	0.3947	0.0160
+0.7020	0.0959	1.000	The FortraN Program card provides certain descrip-	0.3947	0.0131
+0.7035	0.5188	1.000	connection with the following additional points:	0.3571	0.0160
+0.7166	0.0959	1.000	tive information about the subprogram to the loader.	0.3947	0.0131
+0.7194	0.5338	1.000	3. The calling of lower level routines (if any).	0.3346	0.0146
+0.7297	0.0940	1.000	After the routine has been loaded into memory and	0.3966	0.0174
+0.7339	0.5338	1.000	4. The acquisition of input arguments (if any).	0.3402	0.0161
+0.7470	0.0959	1.000	during execution, the Program card occupies no space.	0.3966	0.0147
+0.7500	0.5338	1.000	5. Index register saving and restoring.	0.2726	0.0161
+0.7630	0.0959	1.000	The information carried by this card is:	0.2951	0.0131
+0.7660	0.5338	1.000	6. The production of output results (if any).	0.3214	0.0146
+0.7776	0.1128	1.000	The number of full words of memory required by	0.3778	0.0131
+0.7805	0.5338	1.000	7. The returning of control to the calling routine.	0.3496	0.0160
+0.7951	0.0940	1.000	this routine.	0.0921	0.0102
+0.8067	0.5169	1.000	PRODUCTION OF A PROGRAM CARD	0.2368	0.0131
+0.8081	0.1109	1.000	(a) The number of full words of memory required	0.3797	0.0146
+0.8255	0.1466	1.000	by this routine.	0.1109	0.0118
+0.8255	0.5188	1.000	A FORTRAN Program Card may be obtained by the fol-	0.3966	0.0161
+0.8387	0.1128	1.000	(b) The number of full words of blank common re-	0.3778	0.0132
+0.8415	0.5169	1.000	lowing sequence of instructions:	0.2444	0.0146
+0.8561	0.1485	1.000	quired by this routine.	0.1598	0.0131
+0.8587	0.6108	1.000	PUNFPC, S, C	0.0941	0.0137
+0.8706	0.1128	1.000	(c) The "name" of this routine.	0.2274	0.0131
+0.8706	0.6015	1.000	ENTER, addressi	0.1203	0.0131
+0.8721	0.5470	1.000	Name1	0.0489	0.0116
+0.8821	0.5996	1.000	ENTER, addressz	0.1241	0.0133
+0.8823	0.5489	1.000	Namez	0.0451	0.0116
+0.8866	0.1128	1.000	(d) The entry point, relative to zero, associated	0.3778	0.0131
+0.8981	0.6109	1.000	ENTER, addressn	0.1129	0.0206
+0.9025	0.1466	1.000	with (c).	0.0696	0.0134
+0.9041	0.5470	1.000	Namen	0.0489	0.0145
+0.9302	0.0940	1.000	30	0.0188	0.0102

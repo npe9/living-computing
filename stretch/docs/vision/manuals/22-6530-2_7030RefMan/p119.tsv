@@ -1,0 +1,112 @@
+0.0609	0.1034	1.000	not affected by any exceptional conditions as indi-	0.3910	0.0147
+0.0619	0.5393	1.000	As a result of the above, cs can be the only input-	0.3688	0.0171
+0.0760	0.5205	1.000	output status indicator turned on in an input-output	0.3895	0.0202
+0.0770	0.1034	1.000	cated by the presence of the EE status bit.	0.3083	0.0131
+0.0905	0.1201	1.000	In the case of coNTrOL and LOCATE instructions, the	0.3744	0.0160
+0.0921	0.5205	1.000	status report, or it can come on together with any	0.3875	0.0178
+0.1076	0.1034	1.000	EOP status bit is turned on when the specified opera-	0.3910	0.0146
+0.1077	0.5205	1.000	combination of the other status indicators. In the	0.3875	0.0165
+0.1213	0.5204	1.000	latter case the cs status bit normally is not associated	0.3877	0.0204
+0.1219	0.1033	1.000	tion is completed, except in the case of rewinding of	0.3911	0.0163
+0.1381	0.1034	1.000	tape, which is completed after disconnecting from the	0.3910	0.0146
+0.1409	0.5207	1.000	with the operation whose termination is signalled by	0.3853	0.0146
+0.1524	0.1032	1.000	exchange. In the case of this exception, the EoP bit	0.3913	0.0161
+0.1555	0.5207	1.000	the other status indicators. When more than one	0.3872	0.0132
+0.1685	0.1015	1.000	signals the initiation of the operation at the unit, and	0.3910	0.0147
+0.1693	0.5205	1.000	external unit is connected to a common control unit,	0.3857	0.0168
+0.1831	0.1013	1.000	it follows soon after acceptance of the corresponding	0.3913	0.0165
+0.1860	0.5207	1.000	there is no way of identifying the unit which sends	0.3853	0.0146
+0.1991	0.1015	1.000	instruction by the exchange.	0.2030	0.0146
+0.2020	0.5207	1.000	the channel signal. To the program, the cs appears	0.3853	0.0160
+0.2136	0.1201	1.000	The EoP indication signalling the completion of a	0.3725	0.0168
+0.2140	0.5186	1.000	to come from the common control unit regardless of	0.3876	0.0196
+0.2297	0.1015	1.000	RELEASE instruction is given at the time	0.3158	0.0146
+0.2311	0.5188	1.000	which unit caused it.	0.1541	0.0131
+0.2322	0.4153	1.000	when the	0.0772	0.0108
+0.2456	0.1015	1.000	execution of the released operation is terminated; if	0.3929	0.0131
+0.2602	0.1015	1.000	the unit was not operating at the time the RELEASE	0.3910	0.0147
+0.2717	0.5186	1.000	SUMMARY OF INPUT-OUTPUT STATUS INDICATION	0.3462	0.0150
+0.2740	0.1014	1.000	was given, the EoP indication comes on immediately	0.3912	0.0168
+0.2906	0.5188	1.000	When an input-output instruction is terminated, the	0.3872	0.0146
+0.2906	0.0996	1.000	after the control word is reset to zero.	0.2838	0.0132
+0.3029	0.1182	1.000	The COPY CONTROL WORD instruction is always com-	0.3745	0.0191
+0.3067	0.5188	1.000	status bits can appear in various combinations: it is	0.3853	0.0131
+0.3198	0.5187	1.000	possible to have none of the above status bits on (an	0.3856	0.0176
+0.3208	0.0995	1.000	pleted at the time the exchange allows the computer	0.3931	0.0186
+0.3372	0.5150	1.000	SEOP type of instruction), any one of the above four	0.3891	0.0161
+0.3372	0.0996	1.000	to proceed to the next instruction. No EoP indication	0.3910	0.0146
+0.3504	0.5186	1.000	can be on, or a few of them can be on simultaneously	0.3819	0.0174
+0.3532	0.0996	1.000	results from the execution of this instruction.	0.3459	0.0132
+0.3677	0.5338	1.000	If the Eop bit alone is on, the operation has been	0.3703	0.0145
+0.3677	0.1165	1.000	When any of the five seop instructions are given,	0.3759	0.0160
+0.3808	0.0995	1.000	the sEoP bit in the control word is set to one during	0.3914	0.0176
+0.3817	0.5168	1.000	completed successfully as specified without detecting	0.3875	0.0181
+0.3975	0.5168	1.000	any errors other than those corrected by the Ecc sys.	0.3856	0.0175
+0.3982	0.0996	1.000	the initiation of the operation. As a result of this,	0.3929	0.0146
+0.4118	0.0995	1.000	the EoP bit in the control word and the indicator reg-	0.3895	0.0171
+0.4157	0.5169	1.000	tem.	0.0338	0.0087
+0.4267	0.5336	1.000	The EPGK, UK, and EE indications provide for ex-	0.3689	0.0196
+0.4280	0.0994	1.000	ister is not turned on upon completion of the opera-	0.3913	0.0170
+0.4414	0.0994	1.000	tion unless a uk or EE indication accompanies	0.3651	0.0186
+0.4423	0.5167	1.000	ceptions to the normal ending of the operation. Some	0.3857	0.0182
+0.4477	0.4605	1.000	the	0.0301	0.0116
+0.4593	0.0996	1.000	EOP indication.	0.1109	0.0131
+0.4593	0.5169	1.000	of the exception indications, however, do not pre-	0.3835	0.0160
+0.4737	0.5168	1.000	clude an Eop indication. When a data error occurs,	0.3836	0.0147
+0.4825	0.2322	0.300	when the emny key ge tom nol	0.2575	0.0685
+0.4839	0.0996	1.000	CHANNEL SIGNAL (CS)	0.1598	0.0132
+0.4897	0.5150	1.000	or an exceptional condition is discovered that does	0.3853	0.0147
+0.5029	0.0996	1.000	This bit comes on when the signaL key on the unit is	0.3891	0.0147
+0.5058	0.5150	1.000	not prohibit complete execution of the instruction,	0.3872	0.0131
+0.5188	0.0977	1.000	depressed, and whenever the unit changes from not-	0.3910	0.0133
+0.5203	0.5150	1.000	the uk and Et indications can be accompanied by EOP.	0.3853	0.0161
+0.5333	0.0977	1.000	ready to ready status. This change of status can be	0.3910	0.0146
+0.5363	0.5169	1.000	Examples of such cases are a byte parity error (UK and	0.3835	0.0146
+0.5494	0.0977	1.000	the result of a manual intervention or can be caused	0.3910	0.0131
+0.5496	0.5148	1.000	EOP) and spacing over a tape mark (EE and EOP).	0.3726	0.0191
+0.5639	0.0977	1.000	by the completion of rewinding of tape. The main	0.3910	0.0145
+0.5649	0.5318	1.000	EPGK always indicates a type of error that interferes	0.3688	0.0183
+0.5799	0.0977	1.000	purpose of channel signal is to provide a means of	0.3929	0.0146
+0.5814	0.5150	1.000	with proper execution of the instruction. Hence,	0.3853	0.0147
+0.5893	0.0975	1.000	communication from the operator servicing the ex-	0.3915	0.0236
+0.5940	0.5148	1.000	EPGK and EoP are never on together. The same applies	0.3840	0.0209
+0.6091	0.5130	1.000	to uk if the indication is caused by a condition other	0.3857	0.0191
+0.6105	0.0959	1.000	ternal units to the computer. The cs indication can	0.3929	0.0132
+0.6248	0.0976	1.000	be interpreted by means of programming as a request	0.3931	0.0166
+0.6279	0.5150	1.000	than a data error (e.g., a card jam). In the case of EE,	0.3835	0.0146
+0.6409	0.0959	1.000	for READ or WRITE instructions. It is	0.2838	0.0118
+0.6421	0.5130	1.000	EoP is absent if the condition causing the EE indication	0.3857	0.0189
+0.6424	0.3816	1.000	also used for	0.1071	0.0116
+0.6555	0.0940	1.000	initial program loading.	0.1748	0.0161
+0.6584	0.5132	1.000	precludes proper completion of the, operation, such	0.3872	0.0146
+0.6715	0.1147	1.000	Channel signal is treated in the same way as other	0.3741	0.0145
+0.6744	0.5132	1.000	as running out of material prematurely.	0.3008	0.0147
+0.6854	0.0957	1.000	input-output status indicators, but is not necessarily	0.3913	0.0168
+0.6887	0.5299	1.000	When more than one exceptional condition is dis-	0.3687	0.0162
+0.7020	0.0959	1.000	related to the initiation, execution, or termination of	0.3929	0.0131
+0.7048	0.5132	1.000	covered, the exchange turns on all the exceptional in-	0.3853	0.0146
+0.7179	0.0959	1.000	any external unit operations. It can originate at any	0.3910	0.0147
+0.7194	0.5112	1.000	dications which apply to the individual conditions.	0.3875	0.0161
+0.7324	0.0977	1.000	time regardless of whether or not the unit is operating	0.3891	0.0147
+0.7339	0.5150	1.000	The Eop bit, however, is never actuated when EPGK iS	0.3835	0.0146
+0.7473	0.5129	1.000	on or a uk has been caused by conditions other than	0.3858	0.0203
+0.7485	0.0959	1.000	and has been previously selected by a LOCATE instruc-	0.3910	0.0131
+0.7615	0.0959	1.000	tion. If a cs is sent by a unit while the same unit or	0.3910	0.0146
+0.7660	0.5113	1.000	data errors. Thus, there is no distinction between	0.3872	0.0131
+0.7773	0.5109	1.000	data errors and equipment malfunctioning once a	0.3878	0.0225
+0.7791	0.0940	1.000	another unit connected to the same channel is en-	0.3947	0.0116
+0.7936	0.0940	1.000	gaged in data transmission, the cs status bit in the	0.3929	0.0146
+0.7957	0.5111	1.000	programming error has been discovered, as in either	0.3856	0.0177
+0.8096	0.0940	1.000	control word is turned on immediately without wait-	0.3929	0.0146
+0.8124	0.5113	1.000	case EPGk is accompanied only by uK. Multiple indi-	0.3872	0.0146
+0.8241	0.0940	1.000	ing for the end of the operation or the end of the	0.3929	0.0147
+0.8243	0.5111	1.000	cations can arise in cases such as when the exchange	0.3877	0.0189
+0.8400	0.0940	1.000	block. This bit, however, never affects the progress	0.3929	0.0147
+0.8413	0.5111	1.000	discovers an invalid data word address in the same	0.3876	0.0156
+0.8541	0.5110	1.000	block in which a data error occurs (EPGK and UK), the	0.3877	0.0202
+0.8545	0.0940	1.000	of the current operation, and the corresponding indi-	0.3929	0.0146
+0.8686	0.0938	1.000	cator bit in the indicator register is turned on only	0.3913	0.0166
+0.8707	0.5111	1.000	unit runs out of material (EPGK and EE), or both con-	0.3857	0.0189
+0.8813	0.0938	1.000	after the termination of the operation.	0.2861	0.0164
+0.8881	0.5113	1.000	ditions occur together (EPGK, UK and EE). Note that	0.3872	0.0146
+0.9230	0.0921	1.000	116 IBM 7030	0.1147	0.0089

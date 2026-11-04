@@ -1,0 +1,70 @@
+0.1030	0.3176	1.000	Symbol	0.0603	0.0178
+0.1046	0.6485	1.000	Content	0.0602	0.0117
+0.1061	0.1654	1.000	Bits	0.0395	0.0174
+0.1321	0.5075	1.000	This field contains the binary number, located at a half	0.4117	0.0133
+0.1336	0.3195	1.000	SCHANN	0.0659	0.0133
+0.1345	0.1652	1.000	0.12 - 0.18	0.0887	0.0159
+0.1463	0.5074	1.000	word address, representing the channel number to which	0.4212	0.0156
+0.1627	0.5075	1.000	the unit area is attached. The field is set by I-O assign-	0.4229	0.0118
+0.1773	0.5094	1.000	ment and sometimes by I-O change and special assign-	0.4060	0.0118
+0.1918	0.5094	1.000	ment. It is used by the actuator, receptor and I-O	0.3759	0.0131
+0.2078	0.5094	1.000	change.	0.0564	0.0116
+0.2354	0.3195	1.000	SUNITN	0.0640	0.0147
+0.2355	0.5094	1.000	This field contains the binary number, located at a full	0.4060	0.0131
+0.2384	0.1654	1.000	0.47 - 0.49	0.0902	0.0147
+0.2515	0.5094	1.000	word address, representing the unit number to which	0.3929	0.0131
+0.2660	0.5094	1.000	this unit area is attached. Setting and testing of this	0.3910	0.0116
+0.2820	0.5094	1.000	field is the same as for SCHANN.	0.2481	0.0102
+0.3095	0.3195	1.000	SIODK	0.0546	0.0161
+0.3096	0.5094	1.000	This field specifies the number of IOD requests or file	0.4041	0.0131
+0.3121	0.1672	1.000	1.06 - 1.17	0.0886	0.0153
+0.3241	0.5075	1.000	area tables attached to the unit specified, as a binary	0.3985	0.0160
+0.3400	0.8045	1.000	The field is	0.0996	0.0118
+0.3415	0.5075	1.000	number, Iocated at a full word address.	0.2989	0.0118
+0.3517	0.5094	1.000	set by I-O assignment.	0.1673	0.0146
+0.3837	0.3214	1.000	SRMTC	0.0620	0.0160
+0.3852	0.5094	1.000	Time of the last mount message.	0.2444	0.0131
+0.3865	0.1691	1.000	1.32 - 1.56	0.0884	0.0148
+0.4124	0.3213	1.000	SUUNAS	0.0680	0.0168
+0.4142	0.5094	1.000	Unassign indicator	0.1410	0.0145
+0.4142	0.1692	1.000	1.62	0.0395	0.0174
+0.4288	0.5414	1.000	1 = already unassigned.	0.1767	0.0146
+0.4578	0.3195	1.000	SRMIND	0.0696	0.0161
+0.4578	0.1692	1.000	1.63	0.0395	0.0189
+0.4593	0.5094	1.000	Remind bit:	0.0883	0.0131
+0.4752	0.5526	1.000	- Mount reminder message not sen	0.2744	0.0176
+0.4869	0.5526	1.000	- Mount reminder message sen	0.2462	0.0131
+0.5160	0.5094	1.000	This field specifies the base address of the evaluation	0.4004	0.0174
+0.5160	0.3214	1.000	SEVLTB	0.0714	0.0160
+0.5186	0.1691	1.000	2.00 - 2.18	0.0904	0.0151
+0.5305	0.5094	1.000	table for the pseudo-operation currently being processed	0.4229	0.0160
+0.5457	0.5092	1.000	for the unit.	0.0925	0.0162
+0.5755	0.5113	1.000	This field contains the address of the evaluation mask for	0.4267	0.0147
+0.5770	0.1711	1.000	2.32 - 2.50	0.0883	0.0161
+0.5770	0.3214	1.000	SEVLMK	0.0733	0.0131
+0.5900	0.5094	1.000	the pseudo-operation currently being processed for the	0.4098	0.0161
+0.6045	0.5094	1.000	unit. It is set and used by the actuator.	0.2970	0.0161
+0.6336	0.3233	1.000	SFIAAC	0.0640	0.0162
+0.6336	0.5094	1.000	This field specifies the address of the file area table	0.3929	0.0161
+0.6364	0.1710	1.000	3.00 - 3.17	0.0885	0.0150
+0.6482	0.5094	1.000	presently attached to the unit. It is set and used by the	0.4135	0.0161
+0.6655	0.5093	1.000	actuator.	0.0716	0.0135
+0.6933	0.5113	1.000	This field contains the address of the first control word	0.4135	0.0146
+0.6958	0.3251	1.000	SCWADR	0.0698	0.0125
+0.6961	0.1729	1.000	3.32 - 3.49	0.0865	0.0148
+0.7093	0.5113	1.000	of a requested operation. It is set by the control word	0.4060	0.0146
+0.7238	0.5113	1.000	checking routine in the actrator, and is used by the	0.3816	0.0160
+0.7398	0.5113	1.000	actuator.	0.0696	0.0132
+0.7687	0.3232	1.000	SRETRY	0.0697	0.0135
+0.7688	0.5132	1.000	I-O instruction retry control bit. If 1, retry.	0.3383	0.0133
+0.7703	0.1692	1.000	3.60	0.0395	0.0145
+0.7979	0.5113	1.000	This indicator is set by the tape label verification	0.3703	0.0146
+0.7980	0.1711	1.000	3.61	0.0395	0.0174
+0.7987	0.3250	1.000	SREMNT	0.0681	0.0145
+0.8124	0.5113	1.000	routine. It indicates to the verification routine whether	0.4135	0.0161
+0.8270	0.5113	1.000	or not a problem program tape has failed to verify and	0.4060	0.0161
+0.8415	0.5113	1.000	the operator has been informed.	0.2406	0.0161
+0.8576	0.5451	1.000	0 - New tape not requested	0.2124	0.0146
+0.8721	0.5451	1.000	1 - New tape requested	0.1842	0.0146
+0.9503	0.6407	1.000	Appendix A - Symbolic I-O Control Tables	0.2486	0.0152
+0.9520	0.9117	1.000	255	0.0226	0.0087

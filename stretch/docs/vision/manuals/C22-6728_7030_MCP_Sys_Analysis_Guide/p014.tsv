@@ -1,0 +1,109 @@
+0.0669	0.4981	1.000	It consists of 4+k full words as follows:	0.2970	0.0160
+0.0696	0.1165	1.000	Indicator	0.0678	0.0105
+0.0712	0.2613	1.000	Тype	0.0357	0.0102
+0.0813	0.6635	1.000	Content	0.0621	0.0161
+0.0814	0.5526	1.000	Word	0.0470	0.0160
+0.0988	0.2613	1.000	Time Signal (TS)	0.1222	0.0118
+0.0988	0.1485	1.000	4	0.0094	0.0102
+0.1083	0.3226	0.300	косрнао (еx)	0.1237	0.0500
+0.1118	0.6635	1.000	Saved IC	0.0696	0.0162
+0.1133	0.2613	1.000	Execute Exception (EXE)	0.1842	0.0131
+0.1134	0.5677	1.000	1	0.0169	0.0131
+0.1148	0.1372	1.000	18	0.0207	0.0102
+0.1262	0.6635	1.000	Saved $IND	0.0885	0.0165
+0.1265	0.5677	1.000	2	0.0150	0.0145
+0.1279	0.2613	1.000	Data Fetch (DF)	0.1184	0.0117
+0.1294	0.1391	1.000	20	0.0188	0.0087
+0.1392	0.6616	1.000	Saved $MASK	0.1055	0.0182
+0.1424	0.2613	1.000	Result Exceptions	0.1316	0.0116
+0.1424	0.5677	1.000	3	0.0169	0.0131
+0.1439	0.1391	1.000	22-34	0.0432	0.0087
+0.1555	0.6635	1.000	Pattern word, containing k	0.2011	0.0176
+0.1570	0.5677	1.000	4	0.0169	0.0145
+0.1577	0.2590	1.000	Flagging	0.0665	0.0128
+0.1582	0.1409	1.000	35-38	0.0415	0.0091
+0.1725	0.1408	1.000	39-40	0.0416	0.0096
+0.1726	0.2612	1.000	Transits	0.0641	0.0109
+0.1730	0.6748	1.000	ones	0.0414	0.0131
+0.1845	0.6635	1.000	First instruction for the first	0.2218	0.0176
+0.1860	0.5677	1.000	4+1	0.0338	0.0145
+0.1873	0.2593	1.000	Program	0.0678	0.0134
+0.1991	0.0883	1.000	Time signal and execute exception are permanently	0.3816	0.0161
+0.2035	0.6729	1.000	special interrupt routine.	0.1955	0.0117
+0.2151	0.5677	1.000	4+i	0.0320	0.0145
+0.2166	0.6635	1.000	First instruction for the ith	0.2030	0.0116
+0.2166	0.0752	1.000	masked on, but to give the problem program more	0.3741	0.0116
+0.2294	0.0713	1.000	control, they are treated as pseudo-maskable (see	0.3781	0.0176
+0.2311	0.6748	1.000	special interrupt routine.	0.1992	0.0131
+0.2439	0.6635	1.000	First instruction for the last	0.2125	0.0152
+0.2456	0.0733	1.000	the description of the maskable interrupt routine,	0.3703	0.0131
+0.2471	0.5677	1.000	4+k	0.0320	0.0116
+0.2587	0.6729	1.000	special interrupt routine.	0.2030	0.0174
+0.2587	0.2500	1.000	The IF indicator, the mask	0.2124	0.0161
+0.2602	0.0714	1.000	and the EXE interrupt).	0.1805	0.0132
+0.2717	0.0750	1.000	of which must always be 1, is not included in this	0.3670	0.0192
+0.2718	0.5132	1.000	The pattern word indicates whether the PP furnishes	0.3947	0.0189
+0.2921	0.4981	1.000	a special interrupt routine or desires to use the stand-	0.4060	0.0117
+0.3009	0.0883	1.000	Interrupts caused by these indicators are routed	0.3609	0.0161
+0.3036	0.4944	1.000	ard fixup routine. There is a one-to-one correspond-	0.4041	0.0147
+0.3165	0.0712	1.000	via the parallel interrupt table to the maskable inter-	0.3990	0.0211
+0.3182	0.4962	1.000	ence between positions in the indicator register and in	0.4041	0.0147
+0.3327	0.4981	1.000	the pattern word. When a pattern word bit is set to	0.3853	0.0161
+0.3327	0.0733	1.000	rupt routine, or, in the case of TS, to a special entry	0.4004	0.0147
+0.3503	0.0733	1.000	in the maskable interrupt routine. Control then passes	0.4098	0.0116
+0.3503	0.5019	1.000	one, it means that a special interrupt routine is to be	0.3947	0.0131
+0.3625	0.0732	1.000	to a program table of exits (PTOE) in either PP or	0.3799	0.0144
+0.3648	0.5000	1.000	used for the corresponding interrupt. The first	0.3553	0.0116
+0.3794	0.0752	1.000	MCP. In the case of MCP, the standard fixup routine	0.3985	0.0116
+0.3794	0.5000	1.000	instruction for the routine must be in the PTOE at	0.3741	0.0102
+0.3939	0.0733	1.000	is entered from the PTOE, and control returned to	0.3797	0.0116
+0.3939	0.5000	1.000	word 4ti, where the interrupt indicator register posi-	0.4004	0.0131
+0.4084	0.0733	1.000	the point of interrupt via the return after maskable	0.3797	0.0116
+0.4084	0.5000	1.000	tion corresponds to the ith one in the pattern word.	0.3778	0.0131
+0.4244	0.5019	1.000	Only bits 4. 18, 20, and 22 through 47 may be set to	0.3853	0.0116
+0.4244	0.0733	1.000	interrupt routine.	0.1335	0.0102
+0.4360	0.5019	1.000	one in the pattern word. All others are treated as	0.3722	0.0116
+0.4506	0.5000	1.000	zero. The PP must set the appropriate mask bits in	0.3891	0.0131
+0.4520	0.0752	1.000	The Program Table of Exits (PTOE)	0.2669	0.0116
+0.4666	0.5000	1.000	the mask register (SMASK). The IF mask bit, 21,	0.3741	0.0131
+0.4811	0.5000	1.000	must always be left as one.	0.2030	0.0116
+0.4811	0.0752	1.000	When any maskable interrupts are masked on, fixup	0.3835	0.0131
+0.4956	0.0733	1.000	routines must be available to handle the resulting	0.3665	0.0131
+0.4956	0.5169	1.000	When MCP enters the problem program PTOE, the	0.3778	0.0131
+0.5102	0.5000	1.000	IC, $IND, and $MASK are stored in the word specified.	0.4098	0.0116
+0.5102	0.0733	1.000	interrupts. The problem program has the option of	0.3872	0.0132
+0.5247	0.5019	1.000	The remaining low registers are unchanged. $IND is	0.3929	0.0117
+0.5261	0.0733	1.000	providing special fixup routines or of using the MCP	0.3891	0.0118
+0.5392	0.5000	1.000	cleared to zero, and $MASK is cleared to zero except	0.3985	0.0132
+0.5406	0.0733	1.000	standard fixup routine, or a combination of both.	0.3628	0.0118
+0.5524	0.4998	1.000	for the IF bit and those permanently on.	0.2955	0.0149
+0.5552	0.0902	1.000	If the problem program is to use special fixup	0.3421	0.0132
+0.5682	0.5169	1.000	Maskable interrupts $TS and $EXE are considered	0.3722	0.0118
+0.5712	0.0733	1.000	routines, it must provide MCP with a program table	0.3891	0.0116
+0.5827	0.5000	1.000	as masked off unless a PP PTOE is specified, and the	0.4004	0.0133
+0.5842	0.0733	1.000	of exits (PTOE) to these routines. The refill field	0.3759	0.0118
+0.5988	0.5000	1.000	corresponding pattern bits are on.	0.2538	0.0118
+0.6003	0.0752	1.000	(RF) of index register 15 ($15) is reserved for this	0.3778	0.0116
+0.6148	0.0733	1.000	purpose. If the problem program is to use any spe-	0.3891	0.0116
+0.6279	0.5000	1.000	The MCP PTOE and the Standard Fixup	0.2914	0.0131
+0.6294	0.0733	1.000	cial fixup routines for maskable interrupts, it must	0.3853	0.0116
+0.6439	0.0733	1.000	load the RF of $15 with the first word (18 bit) address	0.3985	0.0116
+0.6570	0.4981	1.000	Since PP may elect to take maskable interrupts with-	0.3966	0.0131
+0.6584	0.0752	1.000	of a PTOE. The RF of $15 will be zero when MCP	0.3778	0.0116
+0.6685	0.4961	1.000	out providing special interrupt routines, MCP is pre-	0.4007	0.0187
+0.6730	0.0733	1.000	initially gives control to PP. It will also be zero when	0.4079	0.0116
+0.6860	0.4981	1.000	pared to take any maskable interrupt. MCP provides	0.3947	0.0131
+0.6875	0.0752	1.000	MCP gives control to any PP I-O table of exits. It	0.3778	0.0146
+0.7006	0.4981	1.000	its own PTOE, which is entered when PP does not pro-	0.4079	0.0131
+0.7020	0.0733	1.000	is the responsibility of the PP that $15 RF be correct	0.4004	0.0116
+0.7151	0.4962	1.000	vide a PTOE, or when the appropriate pattern bit in	0.3872	0.0131
+0.7166	0.0752	1.000	whenever PP has control. PP may provide as many	0.3910	0.0116
+0.7311	0.5000	1.000	the PP PTOE is off.	0.1504	0.0116
+0.7311	0.0752	1.000	special PTOE's as are necessary, changing $15 RF	0.3816	0.0131
+0.7456	0.0752	1.000	when desired.	0.1034	0.0116
+0.7456	0.5169	1.000	The MCP PTOE is located at SFPTE. It has the	0.3590	0.0116
+0.7602	0.0902	1.000	The PTOE reserves storage for the IC, the indica-	0.3797	0.0132
+0.7602	0.5000	1.000	same structure as the PP PTOE, and contains ones in	0.3985	0.0132
+0.7747	0.0733	1.000	tor register and the mask register ($IND and $MASK).	0.4098	0.0132
+0.7747	0.4850	1.000	the pattern word corresponding to each of the maskable	0.4229	0.0132
+0.9230	0.0714	1.000	14	0.0169	0.0102

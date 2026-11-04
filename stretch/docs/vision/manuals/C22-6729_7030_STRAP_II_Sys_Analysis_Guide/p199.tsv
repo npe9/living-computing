@@ -1,0 +1,29 @@
+0.0887	0.5414	1.000	3. Each datum is followed by a "0", the end of a	0.3609	0.0132
+0.0900	0.1015	1.000	Examples of a Coded Expression	0.2406	0.0118
+0.1032	0.5244	1.000	datum indicator, or by more complete coded expres-	0.3929	0.0132
+0.1191	0.5244	1.000	sions representing subseripts. The last datum is	0.3684	0.0118
+0.1206	0.1015	1.000	Figures 28 and 29 illustrate coded expressions.	0.3515	0.0117
+0.1336	0.5244	1.000	followed by a "0", the end-of-datums indicator, in	0.3741	0.0118
+0.1482	0.5244	1.000	addition to end-of-datum indicator. Since each	0.3496	0.0118
+0.1495	0.0996	1.000	Footnotes	0.0753	0.0135
+0.1600	0.5243	1.000	expression starts with a 1-bit, a "0" end of datums	0.3782	0.0174
+0.1773	0.5244	1.000	indicator is all that is needed to show that there are	0.3835	0.0103
+0.1788	0.1165	1.000	1. See the detail write-up and example for defini-	0.3722	0.0116
+0.1918	0.5244	1.000	no more expressions and that datum(s) is (are) com-	0.3891	0.0118
+0.1933	0.1015	1.000	tions of these codes.	0.1523	0.0116
+0.2078	0.1165	1.000	2. This item is actually 1A of a coded expression	0.3703	0.0131
+0.2209	0.1015	1.000	within the coded expression. Voilà la cereal box! If	0.3910	0.0131
+0.2209	0.5677	1.000	Priority of an operator is defined so that the	0.3308	0.0116
+0.2355	0.5244	1.000	more parentheses the operator is inside, the higher	0.3835	0.0131
+0.2369	0.1015	1.000	this seems confusing, think of the box of cereal that	0.3835	0.0131
+0.2515	0.5244	1.000	its priority. Within the same pair of parentheses,	0.3741	0.0116
+0.2529	0.1015	1.000	has a picture of a boy holding a box of cereal with a	0.3778	0.0116
+0.2660	0.5244	1.000	the order is essentially that given in the table.	0.3459	0.0116
+0.2674	0.1015	1.000	picture of a boy holding a box of cereal with a picture	0.3929	0.0116
+0.2805	0.5395	1.000	5. Actually, the 0-bit setting of item 4A is	0.3233	0.0131
+0.2820	0.1053	1.000	... This "cereal box" idea is a key to both the	0.3515	0.0145
+0.2951	0.5263	1.000	equivalent to the 0-bit setting of item 1A in its own	0.3741	0.0116
+0.2979	0.1053	1.000	ormats, and the subroutines which create and inter-	0.3816	0.0088
+0.3096	0.5263	1.000	coded expression.	0.1316	0.0116
+0.9433	0.6917	1.000	Appendix C - Coded Expressions	0.1842	0.0103
+0.9433	0.8985	1.000	199	0.0226	0.0087

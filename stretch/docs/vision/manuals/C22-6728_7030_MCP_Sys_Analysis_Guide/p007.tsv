@@ -1,0 +1,48 @@
+0.0916	0.8083	1.000	INTRODUCTION	0.1259	0.0145
+0.1582	0.5525	1.000	For purposes of exposition, MCP has been divideci	0.3818	0.0172
+0.1584	0.1184	1.000	The IBM Programming System for the IBM 7030	0.3553	0.0131
+0.1715	0.1165	1.000	Data Processing System consists of the Master Con-	0.3891	0.0161
+0.1860	0.1147	1.000	trol Program (MCP), the assembly program (STRAP	0.3929	0.0176
+0.2035	0.1147	1.000	II), FORTRAN, and the System Macro Language,	0.3628	0.0132
+0.2166	0.1165	1.000	SMAC I. MCP is the system control program; the	0.3703	0.0116
+0.2324	0.5602	1.000	4. Service routines	0.1429	0.0147
+0.2339	0.1165	1.000	other three programs are language processors. The	0.3910	0.0103
+0.2442	0.5583	1.000	5. Debugging aids	0.1372	0.0146
+0.2467	0.1164	1.000	programs constituting the system are described in	0.3705	0.0132
+0.2597	0.5525	1.000	Each area is described in a section of the Analysis	0.3819	0.0183
+0.2630	0.1165	1.000	detail in their respective Programming Systems	0.3534	0.0103
+0.2751	0.1165	1.000	Analysis Guides. This manual, then, is one of a set	0.3892	0.0153
+0.2761	0.5414	1.000	Guide. Additional sections provide a general descrip-	0.4023	0.0146
+0.2906	0.5395	1.000	tion of MCP, and descriptions of the supporting pro-	0.3929	0.0161
+0.2921	0.1165	1.000	of four Analysis Guides which describe the IBM 7030	0.3872	0.0103
+0.3023	0.5395	1.000	«*aow charts have been included in context for ease	0.3947	0.0334
+0.3067	0.1165	1.000	Programming System completely.	0.2500	0.0116
+0.3332	0.5412	1.000	of reference. They are drawn at a functional level,	0.3838	0.0186
+0.3372	0.1316	1.000	How MCP is used with respect to computer opera-	0.3722	0.0116
+0.3517	0.1165	1.000	tions and problem programs is described in the IBM	0.3872	0.0116
+0.3517	0.5414	1.000	and conform to the standards specified in Appendix	0.3778	0.0131
+0.3648	0.5432	1.000	A. Program symbols are used freely in both the text	0.3947	0.0131
+0.3663	0.1165	1.000	7030 Data Processing System Master Control Pro-	0.3741	0.0131
+0.3792	0.5412	1.000	and the flow charts in order to relate the Analysis	0.3705	0.0150
+0.3821	0.1165	1.000	gram Reference Manual, Form C22-6678: Detailed	0.3816	0.0118
+0.3953	0.1147	1.000	information about the functions performed by MCP is	0.3929	0.0131
+0.3953	0.5414	1.000	Guide and the listing as closely as possible.	0.3252	0.0131
+0.4099	0.5564	1.000	The subprograms of MCP are closely interrelated.	0.3797	0.0131
+0.4112	0.1165	1.000	described in the Analysis Guide, together with mis-	0.3816	0.0118
+0.4258	0.1165	1.000	cellaneous programming information. This, together	0.3966	0.0133
+0.4258	0.5414	1.000	In order to avoid diversionary discussions through-	0.3816	0.0118
+0.4403	0.1147	1.000	with the program listing, enables the systems pro-	0.3778	0.0133
+0.4403	0.5395	1.000	out the Analysis Guide, each section has been written	0.3985	0.0146
+0.4548	0.5414	1.000	presuming knowledge of the other sections whenever	0.3872	0.0132
+0.4564	0.1147	1.000	grammer to determine how MCP accomplishes any	0.3759	0.0103
+0.4694	0.5414	1.000	necessary. The reader with the responsibilities	0.3590	0.0132
+0.4709	0.1147	1.000	given task, and to adapt MCP to such special usage	0.3778	0.0116
+0.4839	0.5414	1.000	outlined in the preface should read the entire Analy-	0.3872	0.0132
+0.4855	0.1147	1.000	as the installation may require. The Analysis Guide,	0.3966	0.0131
+0.4976	0.5393	1.000	sis Guide once to become familiar with content,	0.3537	0.0170
+0.5000	0.1147	1.000	designed to complement the program listing, is a	0.3647	0.0116
+0.5130	0.5376	1.000	terminology, and level of discussion, before attempt-	0.4004	0.0161
+0.5145	0.1147	1.000	tool for the systems programmer to help him make	0.3778	0.0116
+0.5247	0.5376	1.000	ing to put it to use.	0.1466	0.0174
+0.5291	0.1147	1.000	most effective use of the MCP program listing.	0.3496	0.0116
+0.9462	0.8271	1.000	Introduction	0.0714	0.0087

@@ -1,0 +1,101 @@
+0.0596	0.1128	1.000	The arithmetic result indicators are set according	0.3759	0.0131
+0.0609	0.5263	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3797	0.0147
+0.0755	0.5113	1.000	(MOP). These indicators are set as in ADD.	0.3120	0.0147
+0.0755	0.0959	1.000	to the entire contents of the accumulator when the	0.3910	0.0118
+0.0915	0.1955	1.000	complete, and not according to the	0.2914	0.0131
+0.0915	0.0959	1.000	operation is	0.0996	0.0131
+0.0945	0.5282	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). In a bi-	0.3778	0.0161
+0.1076	0.0959	1.000	product.	0.0620	0.0131
+0.1089	0.5150	1.000	nary operation, these indicators are set as in ADD. In a	0.3911	0.0138
+0.1250	0.5132	1.000	decimal operation, they are set as in LOAD TRANSIT	0.3929	0.0145
+0.1423	0.5131	1.000	AND SET.	0.0621	0.0105
+0.1453	0.0940	1.000	Divide (/)	0.0752	0.0131
+0.1657	0.5132	1.000	PROGRAMMING NOTES	0.1560	0.0102
+0.1730	0.0959	1.000	If a binary operation is specified, the entire accumu-	0.3929	0.0131
+0.1830	0.5150	1.000	The divide operation takes place and produces the	0.3910	0.0133
+0.1875	0.0940	1.000	lator contents to the left of the offset are divided by	0.3929	0.0131
+0.1976	0.5132	1.000	correct result in every situation in which the oper-	0.3947	0.0146
+0.2035	0.0959	1.000	the addressed storage field. Accumulator positions to	0.3910	0.0132
+0.2136	0.5113	1.000	ands do not exceed the maximum allowable length	0.3947	0.0146
+0.2179	0.0959	1.000	the right of the offset are ignored. At the completion	0.3910	0.0147
+0.2297	0.5132	1.000	with the exception of the case of a zero divisor. The	0.3929	0.0131
+0.2339	0.0959	1.000	of the operation, the quotient is placed in the cleared	0.3910	0.0132
+0.2420	0.5130	1.000	programmer need not be concerned with the relative	0.3931	0.0170
+0.2485	0.0959	1.000	accumulator at the specified offset, and the remainder	0.3910	0.0146
+0.2602	0.5113	1.000	magnitudes of the divisor and the dividend. The only	0.3947	0.0147
+0.2630	0.0959	1.000	with sign is placed in the remainder register (RM).	0.3910	0.0161
+0.2747	0.5132	1.000	scaling necessary is that always required to assure	0.3929	0.0147
+0.2805	0.0959	1.000	Both dividend and divisor are treated as integers,	0.3910	0.0131
+0.2906	0.5113	1.000	sufficient zeros on the right end of the dividend so	0.3947	0.0146
+0.2951	0.0940	1.000	and only the integral part of the quotient is devel-	0.3929	0.0146
+0.3067	0.5113	1.000	that the desired length of quotient can be developed.	0.3929	0.0146
+0.3109	0.0940	1.000	oped. The length of the dividend to the left of the	0.3929	0.0133
+0.3212	0.5132	1.000	This is readily accomplished by loading the dividend	0.3929	0.0161
+0.3229	0.0938	1.000	offset cannot exceed 96 significant bits, and the di-	0.3932	0.0194
+0.3372	0.5113	1.000	from storage with the proper offset. To divide two	0.3929	0.0146
+0.3415	0.0940	1.000	visor cannot exceed 48 significant numeric bits. The	0.3929	0.0131
+0.3517	0.5132	1.000	integers and obtain only the integral part of the	0.3929	0.0146
+0.3561	0.0940	1.000	sign of the quotient replaces the sign bit in the ac-	0.3929	0.0146
+0.3663	0.5132	1.000	quotient, no scaling is necessary. A meaningful quo-	0.3910	0.0160
+0.3721	0.0940	1.000	cumulator sign byte register. Bits 60-63 of RM form	0.3929	0.0131
+0.3821	0.5150	1.000	tient will be obtained in every case without scaling.	0.3891	0.0147
+0.3881	0.0940	1.000	a four-bit remainder sign byte with bit 60, the sign	0.3929	0.0131
+0.3982	0.5150	1.000	The integral quotient is found in the accumulator at	0.3910	0.0146
+0.4026	0.0959	1.000	bit, set to the original accumulator sign. Bits 61-63	0.3910	0.0131
+0.4127	0.5132	1.000	the completion of the operation with its low-order	0.3929	0.0146
+0.4185	0.0940	1.000	are set to zero. Bits 0-59 of RM are replaced by the	0.3929	0.0133
+0.4288	0.5132	1.000	position at the specified offset.	0.2199	0.0146
+0.4330	0.0940	1.000	integer remainder with the low-order remainder bit	0.3929	0.0146
+0.4462	0.5282	1.000	The rightmost digit of the quotient is always found	0.3759	0.0160
+0.4491	0.0940	1.000	in bit position 59 of the remainder register.	0.3083	0.0146
+0.4621	0.5132	1.000	at the offset specified in the instruction. The bits to	0.3910	0.0132
+0.4636	0.1109	1.000	If a decimal operation is specified, this operation	0.3741	0.0146
+0.4782	0.5132	1.000	the right of the offset are zero.	0.2180	0.0131
+0.4797	0.0940	1.000	has the same action as LOAD TRANSIT AND SET, except	0.3929	0.0131
+0.4956	0.0940	1.000	that the two high-order bits of the left zeros counter	0.3929	0.0131
+0.4956	0.5301	1.000	The arithmetic result indicators describe the quo-	0.3741	0.0131
+0.5115	0.0940	1.000	are set to 01.	0.0977	0.0118
+0.5115	0.5132	1.000	tient, and not the remainder.	0.2105	0.0118
+0.5291	0.5282	1.000	Binary point location is exceptionally simple in	0.3759	0.0131
+0.5360	0.0939	1.000	MODIFIERS	0.0753	0.0108
+0.5417	0.5112	1.000	this division operation. The rules used in ordinary	0.3930	0.0184
+0.5523	0.1128	1.000	Unsigned; Negative Sign. These modifiers operate	0.3741	0.0146
+0.5596	0.5113	1.000	long division as performed by hand suffice. Thus, the	0.3929	0.0131
+0.5680	0.0939	1.000	as in ADD.	0.0735	0.0122
+0.5741	0.5132	1.000	ratio is expressed in a form in which the divisor	0.3910	0.0147
+0.5827	0.1109	1.000	Radix. This modifier operates as in ADD. It also	0.3759	0.0133
+0.5900	0.5132	1.000	appears as an integer. Effectively, the number of	0.3929	0.0147
+0.5988	0.0940	1.000	determines whether a binary division is performed or	0.3929	0.0131
+0.6045	0.5113	1.000	places to the right of the binary point in the quotient	0.3947	0.0176
+0.6133	0.0940	1.000	whether instead the action is like that of a decimal	0.3929	0.0117
+0.6206	0.5132	1.000	is equal to the number of places in the dividend minus	0.3910	0.0146
+0.6321	0.0940	1.000	LOAD TRANSIT AND SET.	0.1635	0.0089
+0.6366	0.5132	1.000	the number of places in the divisor. For example, in	0.3910	0.0146
+0.6511	0.5112	1.000	decimal:	0.0640	0.0133
+0.6555	0.0940	1.000	INDICATORS	0.0808	0.0102
+0.6679	0.1089	1.000	Partial Field (PF). In a binary DIVIDE, this indica-	0.3762	0.0188
+0.6830	0.0921	1.000	tor is turned on if there are more than 96 significant	0.3947	0.0176
+0.6845	0.5846	1.000	32. / 56352.401 = 321 r 63524,01	0.2293	0.0161
+0.6976	0.0940	1.000	bits in the accumulator to the left of the offset or if	0.3929	0.0161
+0.7166	0.0940	1.000	the divisor exceeds 48 significant bits. In such a case,	0.3929	0.0131
+0.7252	0.5226	1.000	The following examples illustrate the ease of de-	0.3816	0.0161
+0.7311	0.0921	1.000	only the low-order 96 or 48 bits are used in the opera-	0.3947	0.0160
+0.7397	0.5094	1.000	termining the divisor offset required. By divisor off-	0.3947	0.0176
+0.7470	0.0921	1.000	tion and higher-order bits are ignored. Such high-	0.3947	0.0147
+0.7558	0.5075	1.000	set is meant the offset specified in the DIvIDe instruc-	0.3966	0.0161
+0.7600	0.0939	1.000	order dividend bits in the accumulator are lost in the	0.3930	0.0148
+0.7718	0.5094	1.000	tion.	0.0395	0.0145
+0.7768	0.0939	1.000	operation. In a decimal operation this indicator is	0.3931	0.0155
+0.7921	0.5244	1.000	1. Divide 1010.110 by 100.1 and obtain two binary	0.3778	0.0161
+0.7951	0.0940	1.000	set as in LOAD TRANSIT AND SET.	0.2218	0.0102
+0.8062	0.1089	1.000	Zero Divisor (ZD). This indicator is turned on if	0.3782	0.0196
+0.8062	0.5037	1.000	places in the result. Assume. that the dividend is al-	0.4006	0.0180
+0.8207	0.0919	1.000	the binary divisor is zero. The division is not at-	0.3952	0.0227
+0.8227	0.5056	1.000	ready loaded into the accumulator at zero offset.	0.3985	0.0174
+0.8385	0.0920	1.000	tempted, and both the accumulator and the remain-	0.3949	0.0178
+0.8387	0.5075	1.000	Thus, the divisor may be considered as an integer:	0.3797	0.0160
+0.8561	0.0940	1.000	der register remain unchanged.	0.2274	0.0118
+0.8691	0.1090	1.000	Decimal Transit (DTR). This indicator is turned	0.3759	0.0146
+0.8794	0.5883	1.000	100.1 V1010.110 = 100yV1010110	0.2237	0.0174
+0.8852	0.0940	1.000	on if decimal is specified.	0.1805	0.0131
+0.9230	0.0921	1.000	70 IBM 7030	0.1090	0.0102

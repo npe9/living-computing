@@ -1,0 +1,45 @@
+0.0814	0.5357	1.000	2. A mode change to off-line has been requested,	0.3741	0.0160
+0.0827	0.0977	1.000	status tables of PP information, set a new unit area	0.3835	0.0133
+0.0959	0.5207	1.000	and the card,reader must be unassigned to be made	0.3835	0.0160
+0.0973	0.0977	1.000	address in the unit status table, new unit and channel	0.3929	0.0133
+0.1105	0.5207	1.000	available to problem program.	0.2312	0.0160
+0.1118	0.0977	1.000	numbers in the unit area, and put out a message to	0.3759	0.0132
+0.1264	0.5376	1.000	3. An IOCHANGE command has been requested	0.3571	0.0146
+0.1279	0.0977	1.000	the operator to change units. A return is then made	0.3853	0.0117
+0.1394	0.0977	1.000	to the user of the scan routine within IOCHANGE.	0.3628	0.0133
+0.1409	0.5207	1.000	which requires re-assignment of MCP units.	0.3346	0.0161
+0.1539	0.5376	1.000	The special assignment subroutine consists of two	0.3741	0.0161
+0.1555	0.0977	1.000	Within ZSETAS there is a branch switeh at ZLODLP	0.3872	0.0132
+0.1700	0.5226	1.000	routines using a common subroutine. When assign-	0.3872	0.0161
+0.1730	0.0977	1.000	for use by special assignment. This permits a	0.3477	0.0116
+0.1845	0.5226	1.000	ment is required, the linkage is:	0.2444	0.0161
+0.1860	0.0977	1.000	branch out before the regular message generator of	0.3816	0.0131
+0.1989	0.5375	1.000	SIC, ZCOM9O	0.1073	0.0180
+0.2020	0.0977	1.000	ZCHSCN is used.	0.1278	0.0116
+0.2146	0.1145	1.000	At ZAVLUN, if it was not the second pass through	0.3706	0.0169
+0.2151	0.5395	1.000	B, ZASNO1	0.0865	0.0147
+0.2297	0.0977	1.000	the scan, and the unit being examined is assigned,	0.3703	0.0146
+0.2297	0.5395	1.000	VF, (IOD number)	0.1410	0.0161
+0.2442	0.5226	1.000	When disassignment is required, the linkage is:	0.3571	0.0146
+0.2456	0.0977	1.000	a branch is made to ZTSTUN to test for more units.	0.3835	0.0116
+0.2552	0.0958	1.000	If an unassigned unit is found, unit ownership is set	0.3837	0.0199
+0.2597	0.5300	1.000	SIC, ZCOM9O	0.1149	0.0170
+0.2746	0.5394	1.000	B, ZDSNO1	0.0865	0.0162
+0.2761	0.0959	1.000	to MCP, and the above cleanup routine of tables, etc.,	0.4041	0.0133
+0.2892	0.5395	1.000	VF, (IOD number)	0.1429	0.0174
+0.2906	0.0940	1.000	is entered at ZSETAS.	0.1692	0.0118
+0.3023	0.5357	1.000	The two routines, ZASNO1 and ZDSNO1, use a	0.3459	0.0160
+0.3067	0.0977	1.000	The Special Assignment Routine	0.2350	0.0116
+0.3169	0.5226	1.000	common subroutine, ZCOM01, to save indicies and	0.3816	0.0174
+0.3327	0.5226	1.000	set up status table references. Dispatcher error	0.3703	0.0161
+0.3342	0.0977	1.000	The special assignment routine (Figure 54) is used by	0.3966	0.0131
+0.3488	0.0959	1.000	the command package or the input program under the	0.3929	0.0131
+0.3488	0.5263	1.000	control is entered if the IOD number is zero (type 4),	0.3929	0.0118
+0.3633	0.5263	1.000	or if either a unit cannot be found to assign, or the	0.3759	0.0131
+0.3648	0.0959	1.000	following circumstances:	0.1861	0.0131
+0.3764	0.5226	1.000	unit to be disassigned is not presently assigned or is	0.3929	0.0146
+0.3794	0.1128	1.000	1. A mode change has been requested which requires	0.3966	0.0116
+0.3939	0.0959	1.000	that tapes be assigned for use by the input program.	0.3853	0.0131
+0.3939	0.5244	1.000	suppressed (type 82).	0.1617	0.0131
+0.9375	0.8966	1.000	107	0.0226	0.0087
+0.9375	0.7180	1.000	System Operation Programs	0.1560	0.0102

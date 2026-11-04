@@ -1,0 +1,72 @@
+0.0941	0.1051	1.000	2. Scan the short dictionary for the requested type	0.3838	0.0157
+0.0968	0.5300	1.000	6. Check for the requested RELFWA of the type	0.3687	0.0168
+0.1105	0.0883	1.000	area entry. It it is there go to step 4. The short	0.3684	0.0132
+0.1133	0.5169	1.000	area being on an arc boundary for direct read to core	0.4004	0.0131
+0.1229	0.0882	1.000	dictionary is filled at IPL time with the first 110	0.3650	0.0153
+0.1279	0.5169	1.000	storage. If it is, go to step 17.	0.2387	0.0131
+0.1394	0.0883	1.000	entries from the full dictionary. Generally, there	0.3722	0.0147
+0.1420	0.5299	1.000	7. Read an arc into the disk buffer containing the	0.3762	0.0166
+0.1539	0.0883	1.000	are less than 110 entries, thus completely eliminating	0.4041	0.0147
+0.1570	0.5132	1.000	first X words of the type area (0 < X≤ 511).	0.3496	0.0161
+0.1685	0.0883	1.000	the $LOC and $RD time for each different type area's	0.4004	0.0147
+0.1715	0.5320	1.000	8. The X words read into the disk buffer may be	0.3684	0.0161
+0.1814	0.0863	1.000	use of the full dictionary.	0.1941	0.0152
+0.1875	0.5150	1.000	sufficient to satisfy the $FETCH request, N. If it	0.3778	0.0146
+0.1976	0.1032	1.000	3. Read the full dictionary if the requested type	0.3650	0.0163
+0.2020	0.5132	1.000	is, go to step 19.	0.1335	0.0131
+0.2120	0.0863	1.000	area is not in the short dictionary.	0.2617	0.0150
+0.2166	0.5320	1.000	9. A transmission to the user's core storage is	0.3609	0.0146
+0.2281	0.1032	1.000	4. Place the type area two word dictionary entry	0.3706	0.0165
+0.2289	0.5129	1.000	done of the X words in the buffer.	0.2562	0.0184
+0.2423	0.0863	1.000	in CFOT and CFOT+1.0 for a possible later use by	0.3837	0.0156
+0.2470	0.5226	1.000	10. If one of the $FETCH optimization attempts	0.3628	0.0147
+0.2587	0.0864	1.000	step 1.	0.0545	0.0117
+0.2615	0.5129	1.000	is partially successful as per steps 15 and 17, a	0.3632	0.0177
+0.2731	0.1033	1.000	5. The request parameters are checked for validity.	0.4005	0.0162
+0.2761	0.5000	1.000	$LOC must be done here.	0.2068	0.0146
+0.2869	0.0881	1.000	There are five types of exits from the validity check	0.3914	0.0175
+0.2921	0.5226	1.000	11. The remainder (N-X) of the $FETCH request is	0.3929	0.0131
+0.3036	0.0865	1.000	routine (CHKPAR).	0.1429	0.0118
+0.3067	0.5132	1.000	honored by a $RD directly to the user's core storage.	0.4023	0.0146
+0.3182	0.1297	1.000	a. The RELFWA of the type area is greater	0.3346	0.0133
+0.3201	0.5224	1.000	12. The type of return to the $FETCH calling	0.3518	0.0180
+0.3327	0.1579	1.000	than the type area -- immediate END	0.2782	0.0118
+0.3345	0.5149	1.000	sequence has been set by CHKPAR (step 5 or 14).	0.3782	0.0182
+0.3488	0.1579	1.000	RETURN, no transmission.	0.2086	0.0118
+0.3502	0.5186	1.000	The registers are restored and $RET is issued.	0.3593	0.0171
+0.3617	0.1295	1.000	b. The FWA of the type area violates the prob-	0.3593	0.0151
+0.3642	0.5618	1.000	$FETCH may be refetching the same type area	0.3501	0.0174
+0.3663	0.5244	1.000	13.	0.0376	0.0102
+0.3764	0.1560	1.000	lem program boundaries -- immediate	0.2914	0.0132
+0.3791	0.5167	1.000	but may not have the correct arc of the type area in	0.3876	0.0158
+0.3909	0.1577	1.000	ERROR RETURN, no transmission.	0.2674	0.0150
+0.3932	0.5166	1.000	its buffer. In this case, go to step 5.	0.2824	0.0166
+0.4046	0.1295	1.000	c. The requested count N is either 0 or greater	0.3613	0.0164
+0.4070	0.5244	1.000	14. The parameters for the $FETCH are checked	0.3759	0.0131
+0.4212	0.1559	1.000	than the type area size -- END RETURN is	0.3235	0.0136
+0.4230	0.5150	1.000	via CHKPAR. (See step 5 for details.)	0.2876	0.0131
+0.4360	0.1560	1.000	set up in the tentacle table and the param-	0.3177	0.0131
+0.4375	0.5244	1.000	15. The material in the buffer may not be sufficient	0.3929	0.0131
+0.4520	0.1560	1.000	eters are changed so that the user gets the	0.3195	0.0131
+0.4535	0.5150	1.000	to cover the request. If the previous $FETCH re-	0.3778	0.0117
+0.4666	0.1560	1.000	entire type area beyond RELFWA.	0.2575	0.0116
+0.4679	0.5150	1.000	quired a $RD to core storage, the disk is improperly	0.3891	0.0133
+0.4781	0.1276	1.000	d. The requested count, N when added to the	0.3406	0.0164
+0.4786	0.5148	1.000	located. A bit is set for use in step 10. If the buffer	0.3952	0.0189
+0.4942	0.1579	1.000	FWA violates the user's upper bound --	0.2970	0.0131
+0.4970	0.5150	1.000	can fulfill the request (X≥ N), control never gets	0.3778	0.0147
+0.5087	0.1579	1.000	ERROR RETURN is set up in the tentacle	0.3064	0.0131
+0.5111	0.5130	1.000	to step 10.	0.0829	0.0126
+0.5226	0.1540	1.000	table and the parameters are changed so	0.3029	0.0142
+0.5261	0.5226	1.000	16. Go to step 8.	0.1335	0.0118
+0.5378	0.1541	1.000	that the user gets transmission up to the	0.3045	0.0131
+0.5392	0.5242	1.000	17. Set parameters so that X effectively equals 0.	0.3801	0.0170
+0.5523	0.1541	1.000	upper bound.	0.0977	0.0116
+0.5552	0.5226	1.000	18. Go to step 10.	0.1429	0.0118
+0.5662	0.1258	1.000	e. If the parameters are correct, the user	0.3274	0.0155
+0.5697	0.5226	1.000	19. Transmit N words from the disk buffer to the	0.3759	0.0118
+0.5814	0.1541	1.000	gets exactly what is specified with NORMAL	0.3308	0.0132
+0.5820	0.5148	1.000	user's core storage.	0.1548	0.0159
+0.5953	0.1540	1.000	RETURN set up in the tentacle table.	0.2767	0.0139
+0.5988	0.5226	1.000	20. Go to step 12.	0.1410	0.0131
+0.9491	0.0695	1.000	180	0.0226	0.0087

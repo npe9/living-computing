@@ -1,0 +1,107 @@
+0.0842	0.5414	1.000	The low registers are saved in STLR upon entry	0.3647	0.0161
+0.0858	0.1071	1.000	interrupts. The last 27 full word entry points are all	0.3947	0.0131
+0.1017	0.1071	1.000	of the form	0.0846	0.0102
+0.1017	0.5338	1.000	into the maskable interrupt routine (Figure 4). I	0.3628	0.0131
+0.1109	0.5336	1.000	the interrupt was TS (entry at JWLODE), the system	0.3840	0.0220
+0.1163	0.2086	1.000	**	0.0207	0.0073
+0.1163	0.1391	1.000	LVI, $1,	0.0658	0.0146
+0.1294	0.5301	1.000	mode control bits are tested and the TS either stacked	0.4023	0.0161
+0.1307	0.1409	1.000	B, YMSF	0.0678	0.0134
+0.1424	0.5301	1.000	or given to a PTOE. It will be given to a PTOE only	0.3910	0.0161
+0.1439	0.1391	1.000	(** denotes the location of the A8 indicator	0.3158	0.0131
+0.1730	0.1222	1.000	NOTE: The first two, TS and EXE, are treated as	0.3778	0.0161
+0.2006	0.6936	1.000	Stacked by	0.0827	0.0189
+0.2019	0.8157	1.000	Unstackéd	0.0828	0.0163
+0.2048	0.1071	1.000	maskable routine (WRAM).	0.1992	0.0118
+0.2151	0.5827	1.000	in	0.0244	0.0160
+0.2180	0.7049	1.000	Setting	0.0564	0.0160
+0.2180	0.8459	1.000	by	0.0244	0.0160
+0.2194	0.1241	1.000	Thus, control passes to a standard fixup routine with	0.3891	0.0118
+0.2339	0.1071	1.000	the location of the A8 indicator mnemonic in $1. The	0.3947	0.0103
+0.2454	0.6898	1.000	STSBIT	0.0660	0.0164
+0.2455	0.5620	1.000	PP special	0.0866	0.0177
+0.2456	0.8346	1.000	$RAM	0.0526	0.0174
+0.2485	0.1090	1.000	maskable interrupt standard fixup routine, YMSF,	0.3684	0.0118
+0.2587	0.1090	1.000	saves the low registers in SLRBU, and puts the indica-	0.4023	0.0161
+0.2630	0.5620	1.000	fixup (PP PTOE	0.1203	0.0131
+0.2776	0.5620	1.000	in use)	0.0526	0.0131
+0.2776	0.1071	1.000	tor mnemonic and the IC in a message skeleton. The	0.3968	0.0149
+0.2892	0.1034	1.000	program changes the level to MCP and branches to the	0.4060	0.0160
+0.3048	0.8362	1.000	$RET	0.0475	0.0168
+0.3052	0.1053	1.000	system short message routine to print the following	0.3835	0.0176
+0.3081	0.5752	1.000	Pauto-stacked SLRPP+8.	0.1955	0.0131
+0.3196	0.5752	1.000	10 PP PTO	0.0790	0.0148
+0.3241	0.1053	1.000	message on the output tape:	0.2068	0.0116
+0.3352	0.5619	1.000	provided in A/S)	0.1243	0.0171
+0.3372	0.1372	1.000	INTERRUPT **. INSTRUCTION COUNTER	0.3252	0.0146
+0.3532	0.1729	1.000	CONTENTS XXXXXX.X	0.1767	0.0102
+0.3676	0.8364	1.000	$RET	0.0452	0.0118
+0.3677	0.6955	1.000	SLRBU+8.4	0.0865	0.0132
+0.3677	0.5639	1.000	MCP	0.0376	0.0116
+0.3677	0.1053	1.000	Since the level bit (SL) is set to MCP, the return	0.3628	0.0132
+0.3821	0.1071	1.000	routine will return to PP rather than to the short	0.3628	0.0103
+0.3967	0.1071	1.000	message routine. (See the description of the short	0.3759	0.0118
+0.3967	0.5489	1.000	The first case (PP special fixup) is provided	0.3308	0.0133
+0.4112	0.1071	1.000	message routine and the return routine.)	0.3008	0.0118
+0.4127	0.5320	1.000	because of the asynchronous nature of the TS interrupt,	0.4098	0.0118
+0.4258	0.1241	1.000	If PP has entered the standard fixup routine 50	0.3440	0.0118
+0.4273	0.5320	1.000	to keep an uncontrollable maskable interrupt from	0.3722	0.0118
+0.4418	0.5320	1.000	occurring during a maskable interrupt fixup. To pre-	0.4004	0.0118
+0.4418	0.1053	1.000	times, the dispatcher error control routine (SDISP)	0.3797	0.0118
+0.4564	0.1053	1.000	is entered with error code 13 in $14. This will result	0.4023	0.0117
+0.4564	0.5320	1.000	vent this, MCP stacks the TS and releases it to the	0.3797	0.0131
+0.4709	0.5338	1.000	PTOE when the PP executes $RAM. The second case	0.3966	0.0116
+0.4709	0.1053	1.000	in ABEOJ for the PP.	0.1617	0.0116
+0.4869	0.5320	1.000	(PP auto-stacked) provides for holding the TS inter-	0.3872	0.0116
+0.5015	0.5320	1.000	rupt until return to PP mainstream, unless PP has	0.3797	0.0116
+0.5160	0.1071	1.000	The Maskable Interrupt Routine	0.2331	0.0102
+0.5174	0.5338	1.000	specifically provided for taking the interrupt by	0.3515	0.0116
+0.5320	0.5320	1.000	loading $15 RF in the I-O fixup routine. The third	0.3741	0.0132
+0.5451	0.3571	1.000	the maskable inter-	0.1504	0.0102
+0.5451	0.1071	1.000	From the parallel interrupt table,	0.2519	0.0131
+0.5464	0.5320	1.000	case is simply an exercise of MCP priority over PP.	0.3947	0.0133
+0.5596	0.1053	1.000	rupt routine is entered disabled at WLODE for all	0.3684	0.0116
+0.5609	0.5338	1.000	As with any other PP interrupt, the TS interrupt is	0.3778	0.0133
+0.5741	0.1053	1.000	maskable interrupts except TS. It is entered at	0.3553	0.0116
+0.5770	0.5320	1.000	stacked until MCP returns control to PP.	0.3064	0.0118
+0.5887	0.1053	1.000	JWLODE when a TS interrupt occurs. The routine	0.3759	0.0116
+0.5915	0.5489	1.000	In the first case, the stacking mechanism is simply	0.3816	0.0131
+0.6018	0.1052	1.000	selects either the PP or the MCP PTOE, performs	0.3781	0.0152
+0.6061	0.5320	1.000	a bit (STSBIT) reserved for that specific purpose. In	0.3966	0.0118
+0.6191	0.1053	1.000	the necessary set-up, and enters the table.	0.3195	0.0118
+0.6206	0.5320	1.000	the last two cases, the stacking mechanism involves	0.3872	0.0131
+0.6333	0.5318	1.000	the basic return logie in MCP.	0.2298	0.0151
+0.6366	0.7594	1.000	The buffers SLRPP	0.1541	0.0102
+0.6482	0.1053	1.000	TS Maskable Interrupt	0.1673	0.0132
+0.6497	0.5320	1.000	and SLRBU are used to save PP low registers when	0.3835	0.0131
+0.6642	0.5301	1.000	transfer of control among programs is involved.	0.3628	0.0145
+0.6773	0.1071	1.000	The TS interrupt is the only maskable interrupt	0.3515	0.0131
+0.6788	0.5320	1.000	SLRPP contains PP mainstream registers while PP	0.3853	0.0131
+0.6933	0.1071	1.000	occurring asynchronously with the program in con-	0.3759	0.0116
+0.6948	0.5320	1.000	is in an I-O fixup, or when MCP has control after	0.3684	0.0131
+0.7078	0.1053	1.000	trol, therefore, the system modes must be deter-	0.3703	0.0116
+0.7093	0.5320	1.000	having interrupted the PP I-O fixup. In any case	0.3628	0.0116
+0.7224	0.1053	1.000	mined before the interrupt is released to a PTOE.	0.3703	0.0116
+0.7238	0.5320	1.000	where the program level is changed from PP to MCP,	0.4004	0.0131
+0.7369	0.1053	1.000	If TS interrupts MCP, the TS is stacked until control	0.3910	0.0131
+0.7379	0.5319	1.000	the PP registers at the point where the level changed	0.3930	0.0137
+0.7515	0.1053	1.000	is returned to PP. If TS interrupts a PP I-O fixup	0.3759	0.0116
+0.7529	0.5320	1.000	are saved in SLRBU. Thus, SLRBU may contain regi-	0.4060	0.0132
+0.7660	0.1053	1.000	(PP auto-stacked), the TS will be stacked until con-	0.3835	0.0131
+0.7688	0.5320	1.000	sters from either PP mainstream or a PP I-O fixup.	0.3910	0.0146
+0.7820	0.1053	1.000	trol is returned to PP mainstream, unless PP has	0.3722	0.0117
+0.7833	0.5320	1.000	When the level is returned to PP, it always returns	0.3816	0.0132
+0.7949	0.1052	1.000	provided a PTOE effective in auto-stack mode.	0.3479	0.0133
+0.7979	0.5320	1.000	via SLRBU. Return via SLRPP occurs when a PP I-O	0.4023	0.0103
+0.8109	0.1071	1.000	(Recall that MCP sets $15 to zero before entering a	0.3797	0.0118
+0.8124	0.5320	1.000	fixup returns to PP mainstream.	0.2425	0.0118
+0.8255	0.1071	1.000	PP I-O table of exits.) If TS occurs while a PP	0.3515	0.0118
+0.8268	0.5469	1.000	When the return routine is returning to PP via either	0.3949	0.0139
+0.8400	0.1053	1.000	PTOE has control (SSPFIX = 1), it will be stacked,	0.3759	0.0133
+0.8415	0.5320	1.000	SLRBU or SLRPP, it examines bit 8.4 of the buffer to	0.4023	0.0131
+0.8537	0.1052	1.000	requiring that PP leave the PTOE with a $RAM pseu-	0.3931	0.0149
+0.8561	0.5320	1.000	determine if a TS has been stacked. If so, it restores	0.4023	0.0131
+0.8706	0.5301	1.000	low registers and exits to the TS entry in the parallel	0.3966	0.0131
+0.8706	0.1053	1.000	do-op (return after maskable) to unstack TS interrupt.	0.4023	0.0117
+0.9433	0.7876	1.000	Interrupt Control	0.0996	0.0103
+0.9448	0.9079	1.000	15	0.0169	0.0073

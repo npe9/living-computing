@@ -1,0 +1,107 @@
+0.0900	0.5451	1.000	In addition, the appropriate mode indicator in the	0.3703	0.0161
+0.0915	0.1090	1.000	op. For these operations, MAIN would attempt to	0.3665	0.0131
+0.1045	0.1090	1.000	look up the corresponding argument ISEOPbbb or	0.3590	0.0118
+0.1061	0.5301	1.000	unit format is turned on, a null field length or a null	0.3910	0.0146
+0.1177	0.5320	1.000	byte size causes the specified number to be substituted	0.4079	0.0160
+0.1177	0.1071	1.000	4V+Ibbbb, respectively, in the secondary op table.	0.3741	0.0174
+0.1321	0.5320	1.000	by STRAP II.	0.1015	0.0176
+0.1336	0.1090	1.000	Since neither argument is in the table, the illegal	0.3628	0.0146
+0.1497	0.5470	1.000	Once again the ambiguity of an "ambiguous" op may	0.3835	0.0145
+0.1497	0.1090	1.000	op would be detected without further cross checking.	0.3853	0.0131
+0.1657	0.5301	1.000	be resolved. If at this point an explicit dds has just	0.3891	0.0116
+0.1657	0.1071	1.000	(See Appendix A.)	0.1335	0.0116
+0.1773	0.1222	1.000	If the op is an ambiguous-type op, the presence of	0.3722	0.0161
+0.1788	0.5301	1.000	been detected, the appropriate changes are made to	0.3853	0.0131
+0.1918	0.5301	1.000	the unit, etc..	0.1147	0.0161
+0.1918	0.1090	1.000	a secondary op establishes the op as a variable field	0.3853	0.0131
+0.2078	0.1071	1.000	type op; the variable field length skeleton bit pattern	0.3872	0.0161
+0.2224	0.5320	1.000	Box 27	0.0564	0.0161
+0.2224	0.1071	1.000	is set up in the unit now; the location of the op index	0.3853	0.0146
+0.2369	0.1071	1.000	for a variable field length op is put in the unit and	0.3684	0.0131
+0.2529	0.5320	1.000	The index word, Befldx, which indicates to GETFLD	0.3910	0.0147
+0.2536	0.1069	1.000	into $5.	0.0587	0.0117
+0.2640	0.1221	1.000	In the processing of the data description in Pass 1,	0.3762	0.0195
+0.2660	0.5282	1.000	where a coded expression is to be placed is now reset	0.4041	0.0161
+0.2791	0.5301	1.000	by Ibuffw. GETFLD will shortly start to encode the	0.3910	0.0203
+0.2833	0.1071	1.000	MAIN treats a specified P-mode, absolute, symbolic	0.3929	0.0161
+0.2964	0.1071	1.000	or absolute-symbolie data description in the following	0.3966	0.0133
+0.2964	0.5301	1.000	address fields which will probably go into the unit.	0.3778	0.0161
+0.3096	0.5301	1.000	If the coded expression for the address fields are not	0.3966	0.0174
+0.3124	0.1128	1.000	nanner. MAIN has the complete symbol routine,	0.3590	0.0132
+0.3240	0.1108	1.000	CPLTSY, collect the characters of the P-mode sym-	0.3836	0.0164
+0.3241	0.5301	1.000	to go into unit, Befldx will be changed later appropri-	0.4004	0.0174
+0.3400	0.1071	1.000	bol and put them in the area of the unit reserved for	0.3835	0.0133
+0.3416	0.5301	1.000	ately.	0.0470	0.0131
+0.3561	0.1090	1.000	the coded expressions. This symbol becomes the	0.3647	0.0131
+0.3721	0.5301	1.000	Boxes 30A, 30B, 31, 32	0.1842	0.0161
+0.3721	0.1090	1.000	coded expression for the data description of this	0.3553	0.0116
+0.3866	0.1071	1.000	instruction. MAIN computes the length of the P-mode	0.3985	0.0116
+0.4012	0.5338	1.000	Tests are made for a master control program op or	0.3835	0.0116
+0.4012	0.1090	1.000	symbol by subtracting the value field of index word,	0.3797	0.0131
+0.4157	0.1053	1.000	Ibuffw, from the value field of CPLTSY's updated	0.3665	0.0146
+0.4157	0.5338	1.000	a pseudo-op now because the processing of the address	0.4041	0.0131
+0.4302	0.1071	1.000	index word, Bsymbx, which was set equal to Ibuffw	0.3778	0.0131
+0.4302	0.5338	1.000	fields of each is handled by specialized subroutines.	0.3853	0.0131
+0.4462	0.1071	1.000	prior to the entrance into CPLTSY. This length is	0.3759	0.0117
+0.4462	0.5338	1.000	If it is not a master control op and not a comment,	0.3722	0.0117
+0.4606	0.5338	1.000	then the Fiod switch is set so any subsequent master	0.3891	0.0118
+0.4606	0.1090	1.000	saved in the fixed format part of the unit so DECODE	0.3891	0.0118
+0.4752	0.1090	1.000	will know how long this special type of coded express-	0.3966	0.0118
+0.4752	0.5338	1.000	control op will receive an error message because any	0.3966	0.0118
+0.4897	0.5320	1.000	later MCP instruction will be out of order. (MCP	0.3722	0.0118
+0.4897	0.1071	1.000	ion is during the Pass 2 evaluation.	0.2594	0.0118
+0.5042	0.1241	1.000	If the data description is not P-mode, MAIN has	0.3553	0.0133
+0.5042	0.5320	1.000	instructions that are out of order will be printed on	0.3797	0.0133
+0.5188	0.5320	1.000	the listing, but not punched.) Therefore, comments	0.3872	0.0133
+0.5188	0.1090	1.000	GETFLD encode the byte size and field length and	0.3665	0.0133
+0.5333	0.1071	1.000	put the coded expressions in the unit MAIN calls	0.3684	0.0132
+0.5348	0.5338	1.000	excepted, the initial instructions of the program being	0.4004	0.0117
+0.5494	0.1090	1.000	on VALUE to evaluate the coded expressions.	0.3327	0.0117
+0.5494	0.5320	1.000	assembled by STRAP II must be master control ops	0.3835	0.0117
+0.5639	0.1259	1.000	For the coded expression of each dds field that	0.3440	0.0103
+0.5639	0.5320	1.000	if all the master control ops specified in the program	0.3966	0.0116
+0.5785	0.5338	1.000	being assembled are to be punched. MIOD handles	0.3741	0.0116
+0.5785	0.1090	1.000	VALUE can evaluate now, the following oceurs:	0.3477	0.0131
+0.5930	0.1090	1.000	Erroneously specified parameters are adjusted.	0.3515	0.0116
+0.5930	0.5338	1.000	the MCP ops, REEL and IOD, during Pass 1.	0.3365	0.0131
+0.6076	0.1090	1.000	The absolute value of the dds field is put in its speci-	0.3929	0.0116
+0.6220	0.4398	1.000	The dds-	0.0752	0.0103
+0.6221	0.1090	1.000	fied field in the fixed format part of the unit.	0.3308	0.0116
+0.6221	0.5320	1.000	Box 33	0.0526	0.0146
+0.6366	0.1090	1.000	field-filled indicator is turned on. The coded expression	0.4192	0.0131
+0.6497	0.5301	1.000	See description under Box 67.	0.2237	0.0161
+0.6497	0.1053	1.000	is erased (by resetting Ibuffw) if there was no general	0.3985	0.0161
+0.6642	0.5301	1.000	Box 34	0.0602	0.0176
+0.6672	0.1053	1.000	parenthetical entry with the dds field. However, if	0.3872	0.0116
+0.6783	0.1071	1.000	this is a DD op and if there is a general parenthetical	0.3929	0.0154
+0.6933	0.5188	1.000	The length of the binary output of a non-ambiguous	0.3872	0.0174
+0.6933	0.1071	1.000	entry with the dds field, the coded expression of the dds	0.4154	0.0161
+0.7078	0.1071	1.000	remains in the unit, and Ibuffw is updated to space over	0.4117	0.0174
+0.7093	0.5169	1.000	binary producing instruction (DD and DR are handled	0.4060	0.0146
+0.7238	0.5301	1.000	separately) is put in the unit. Also the indicators	0.3703	0.0160
+0.7238	0.1053	1.000	this dds coded expression. (The coded expression of	0.3947	0.0146
+0.7355	0.5282	1.000	frequently referenced in Pass 2 can be turned on	0.3647	0.0176
+0.7369	0.1090	1.000	a general parenthetical entry will be evaluated by	0.3628	0.0161
+0.7529	0.5301	1.000	now, Zifbo on because the unit has binary output;	0.3647	0.0147
+0.7542	0.1071	1.000	OUTPUT in Pass 2b.)	0.1635	0.0118
+0.7657	0.1258	1.000	For the coded expression of each dds field that	0.3444	0.0190
+0.7672	0.5301	1.000	and Zifp2 on because the unit will contain coded ex-	0.3835	0.0151
+0.7820	0.1071	1.000	VALUE cannot evaluate, that is, for a symbolie byte	0.3891	0.0160
+0.7833	0.5301	1.000	pressions which must be decoded in Pass 2. Note	0.3722	0.0132
+0.7964	0.5301	1.000	both these indicators are in the format part of the	0.3703	0.0147
+0.7979	0.1053	1.000	size or for a symbolic field length, the following	0.3609	0.0146
+0.8139	0.1071	1.000	occurs: The appropriate symbolic-field-length or	0.3703	0.0116
+0.8140	0.5301	1.000	unit.	0.0357	0.0131
+0.8270	0.1071	1.000	symbolic-byte-size indicator in the fixed format part	0.3910	0.0131
+0.8400	0.1090	1.000	of the unit is turned on. The coded expression is	0.3647	0.0133
+0.8414	0.5300	1.000	Boxes 35-37	0.0960	0.0164
+0.8545	0.1053	1.000	left in the unit for DECODE to have evaluated in Pass	0.3947	0.0146
+0.8691	0.5301	1.000	The get-a-field subroutine, GETFLD, is now called	0.3872	0.0191
+0.8706	0.1053	1.000	2. Ibuffw is updated to space over the dds coded	0.3609	0.0161
+0.8852	0.1071	1.000	expression. The Zifall indicator is turned off to	0.3590	0.0161
+0.8852	0.5301	1.000	upon to encode in the unit each of the allowed address	0.3985	0.0189
+0.8982	0.5301	1.000	fields in this op. GETFLD performs a legality test	0.3853	0.0191
+0.9012	0.1071	1.000	indicate to Pass 2a that it will have to evaluate a	0.3590	0.0131
+0.9172	0.1090	1.000	coded expression in this unit.	0.2162	0.0116
+0.9448	0.7876	1.000	Assembly Phases	0.0977	0.0131
+0.9462	0.9041	1.000	23	0.0207	0.0087

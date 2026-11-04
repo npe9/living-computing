@@ -1,0 +1,63 @@
+0.0654	0.1410	1.000	The four OD cards that have instructions on	0.3346	0.0131
+0.0654	0.5338	1.000	E. The MCPP card must be made by the instal-	0.3797	0.0189
+0.0799	0.1391	1.000	them to "pull card before updating."	0.2763	0.0131
+0.0827	0.5169	1.000	lation. The MCPP card determines the normal mode	0.4041	0.0147
+0.0945	0.1372	1.000	BRANCH card	0.1109	0.0116
+0.0973	0.5169	1.000	that the IPL program will leave in control after it	0.3797	0.0146
+0.1090	0.1034	1.000	D. Each installation must make up IOCD cards.	0.3703	0.0146
+0.1118	0.5169	1.000	has initialized the system. This mode can be over-	0.3929	0.0146
+0.1235	0.0846	1.000	There must be an IOCD card for each channel used	0.3816	0.0146
+0.1264	0.5169	1.000	ridden at IPL time (see "Abnormal MCP Mode Re-	0.3853	0.0146
+0.1380	0.0807	1.000	by the system. The IOCD card gives the channel	0.3780	0.0162
+0.1409	0.5169	1.000	port") or after IPL by issuing a system command.	0.3759	0.0146
+0.1526	0.0789	1.000	number, the type of equipment attached to the chan-	0.3947	0.0160
+0.1555	0.5169	1.000	The format of the MCPP card is as follows:	0.3308	0.0146
+0.1672	0.0789	1.000	nel, the availability of the channel, and the number	0.3891	0.0174
+0.1787	0.0807	1.000	of units attached to the channel and their status. The	0.4027	0.0183
+0.1976	0.0789	1.000	format of a typical OCD card is as follows:	0.3327	0.0132
+0.2282	0.6429	1.000	9 10	0.0301	0.0131
+0.2297	0.8929	1.000	80	0.0188	0.0116
+0.2297	0.5508	1.000	2	0.0094	0.0102
+0.2485	0.6541	1.000	MCPP'mode'	0.0695	0.0131
+0.2762	0.4568	1.000	801	0.0188	0.0116
+0.2762	0.2124	1.000	10	0.0207	0.0087
+0.2965	0.2162	1.000	IOCD32TPUUUDUU	0.1053	0.0087
+0.3459	0.5169	1.000	Where 'MODE' is one of the following: BYPASS,	0.3665	0.0160
+0.3618	0.5169	1.000	ONLINE, OFFLINE. Place the MCPP card after the	0.3891	0.0133
+0.3746	0.5149	1.000	IOD cards.	0.0829	0.0125
+0.3851	0.0787	1.000	Punch a B in column 1, IOCD in columns 10-13, the	0.3858	0.0196
+0.3909	0.5695	1.000	Place the IOCD cards, IOD cards, and MCPP	0.3459	0.0146
+0.3997	0.0769	1.000	channel number in columns 14 and 15, and the type	0.3820	0.0191
+0.4055	0.5169	1.000	card in that order, after the IPL binary deck.	0.3402	0.0132
+0.4172	0.0771	1.000	of equipment attached to the channel in columns 16	0.3797	0.0116
+0.4183	0.5375	1.000	G. Insert any C and P cards after the binary deck	0.3837	0.0151
+0.4300	0.0769	1.000	and 17 using the appropriate codes: DK for disk,	0.3763	0.0163
+0.4330	0.5150	1.000	of the Type Area to which they pertain. It is advised	0.3985	0.0133
+0.4462	0.0789	1.000	CN for console; PU for punch; PR for printer; RD	0.3741	0.0132
+0.4476	0.5150	1.000	that C cards be placed before P cards in order to	0.3722	0.0132
+0.4606	0.0771	1.000	for reader; TP for tape.	0.1823	0.0133
+0.4621	0.5150	1.000	eliminate possible errors should a P card reference	0.3929	0.0132
+0.4752	0.0996	1.000	The initial state of the channel is given in column	0.3703	0.0118
+0.4761	0.5130	1.000	the same location as a C card. Any corrections to	0.3837	0.0148
+0.4897	0.0771	1.000	18; punch a D for down or a U for up. The status of	0.3929	0.0118
+0.4912	0.5132	1.000	the IPL program should be placed after the MCPP	0.3759	0.0131
+0.5042	0.0771	1.000	each unit on the channel is given, starting in column	0.3929	0.0118
+0.5058	0.5150	1.000	card. It is not recommended to use P cards in IPL	0.3872	0.0118
+0.5166	0.0769	1.000	19. Punch a D for every down unit and a U for every	0.3988	0.0170
+0.5203	0.5150	1.000	as they are loaded above the IPL upper limit where	0.3853	0.0131
+0.5348	0.0752	1.000	up unit on the channel. The order of the Ds and Us	0.3853	0.0103
+0.5363	0.5132	1.000	the IOCD and IOD cards are located.	0.2763	0.0116
+0.5479	0.0751	1.000	is important as columns 19 through 27 represent	0.3724	0.0140
+0.5509	0.5376	1.000	H. Be certain that each Type Area of MCP is	0.3477	0.0131
+0.5624	0.0752	1.000	units 0-7, respectively. A single unit channel needs	0.3966	0.0132
+0.5654	0.5132	1.000	preceded by the proper HED card.	0.2594	0.0116
+0.5779	0.5675	1.000	The deck is now ready for updating the sys-	0.3330	0.0161
+0.5785	0.0771	1.000	only a Dor a U punched in column 18. The status of	0.3966	0.0116
+0.5889	0.0769	1.000	channels and units can be altered during the running	0.3895	0.0186
+0.5945	0.5132	1.000	tem with the UPDATE 30 program. On subsequent	0.3872	0.0146
+0.6076	0.0771	1.000	of the MCP program by using the IOCHANGE com-	0.3797	0.0116
+0.6090	0.5132	1.000	updates, once the deck is prepared, it is only neces-	0.4004	0.0146
+0.6221	0.0752	1.000	mand. Place the IOCD cards before the IOD cards.	0.3891	0.0131
+0.6250	0.5150	1.000	sary to update those Type Areas that have changes.	0.3853	0.0117
+0.9185	0.7312	1.000	Operating With MCP	0.1222	0.0103
+0.9186	0.8891	1.000	41	0.0150	0.0087

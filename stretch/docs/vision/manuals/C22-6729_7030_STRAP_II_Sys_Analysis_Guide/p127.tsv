@@ -1,0 +1,80 @@
+0.0823	0.8663	1.000	MULTI	0.0607	0.0186
+0.1381	0.5301	1.000	FLOW CHART DESCRIPTION	0.2237	0.0160
+0.1409	0.1052	1.000	DETAILS	0.0715	0.0117
+0.1685	0.5301	1.000	Boxes 14-22	0.0977	0.0176
+0.1700	0.1071	1.000	Multiply-defined symbols are detected in Pass 1 and	0.3853	0.0131
+0.1860	0.1053	1.000	MULTI is the specialized subroutine which treats	0.3665	0.0131
+0.1991	0.5301	1.000	MAIN has already set up in the Msyte intermediate	0.3778	0.0176
+0.1991	0.1053	1.000	them. A'multiply-defined symbol may be either a	0.3703	0.0146
+0.2136	0.1034	1.000	legally multiply-defined symbol or an illegally	0.3496	0.0161
+0.2151	0.5282	1.000	buffer the function part of the vle portion of the	0.3534	0.0131
+0.2282	0.5282	1.000	current symbol table entry. Of course, none of the	0.3853	0.0131
+0.2311	0.1053	1.000	multiply-detined symbol with contradictions.	0.3308	0.0087
+0.2412	0.5282	1.000	current vle material is in the symbol table because	0.3835	0.0161
+0.2442	0.1203	1.000	If the symbol is legally multiply-defined, MULTI	0.3647	0.0131
+0.2558	0.5282	1.000	after the subroutine, ADDORD discovered the symbol	0.4004	0.0191
+0.2602	0.1034	1.000	will change the dictionary portion of the symbol table	0.3947	0.0102
+0.2730	0.1052	1.000	entry to locate in the vle portion of the symbol table	0.3854	0.0136
+0.2733	0.5282	1.000	was multiply-defined, ADDORD effectively went to	0.3778	0.0131
+0.2878	0.5282	1.000	MULTI. MULTI now makes use of the information	0.3778	0.0131
+0.2892	0.1071	1.000	the new updated vle. This updated vle contains all	0.3703	0.0117
+0.2991	0.5299	1.000	already set up in forming the new vle that will go into	0.3969	0.0181
+0.3036	0.1071	1.000	the accumulated information so far specified on the	0.3778	0.0103
+0.3139	0.5320	1.000	the vle table. On a multiply-defined symbol without	0.3853	0.0161
+0.3169	0.1053	1.000	symbol. Any of the properties given on a previous	0.3759	0.0147
+0.3285	0.5301	1.000	contradictions, it is not possible to overrule a data	0.3816	0.0176
+0.3327	0.1071	1.000	definition will still hold.	0.1805	0.0118
+0.3430	0.5301	1.000	description, dimension property, and/or index	0.3515	0.0189
+0.3473	0.1222	1.000	If the symbol is an illegal multiply-defined-with-	0.3628	0.0118
+0.3590	0.5301	1.000	previously specified.	0.1598	0.0174
+0.3618	0.1053	1.000	contradictions symbol, then MULTI will not change	0.3816	0.0146
+0.3750	0.1053	1.000	the dictionary portion of the symbol table entry. The	0.3966	0.0174
+0.3894	0.1053	1.000	dietionary portion of the illegal multiply-defined	0.3590	0.0161
+0.3909	0.5300	1.000	Boxes 16, 19	0.1016	0.0176
+0.4055	0.1071	1.000	symbol will still locate that vle which contains the	0.3703	0.0132
+0.4185	0.5320	1.000	The dimension reference (dimref) address field in	0.3722	0.0161
+0.4200	0.1090	1.000	old parameters.	0.1184	0.0131
+0.4345	0.5301	1.000	the function of the vle locates the dimension informa-	0.3966	0.0131
+0.4360	0.1222	1.000	In either case, there will be at least a basic vle	0.3534	0.0103
+0.4476	0.5301	1.000	tion usually in another part of the same function.	0.3665	0.0146
+0.4500	0.1090	1.000	entry made in the symbol table for each name	0.3385	0.0109
+0.4621	0.5320	1.000	The data description reference (dds ref) address	0.3628	0.0176
+0.4651	0.1071	1.000	encountered. (For the subroutine, ANEXI, in Pass	0.3853	0.0131
+0.4752	0.5301	1.000	locates the beginning of the function portion of that	0.3797	0.0191
+0.4797	0.1071	1.000	2 there must be a corresponding vle in the svmbol	0.3741	0.0102
+0.4927	0.5301	1.000	vle which contains the needed data description infor-	0.3929	0.0161
+0.4927	0.1053	1.000	table associated with each expanded instruction unit	0.3835	0.0131
+0.5058	0.1053	1.000	marked as having a name.) MULTI has the additional	0.4004	0.0191
+0.5095	0.5317	1.000	mation.	0.0606	0.0145
+0.5233	0.1053	1.000	entry made in the vle table for the multiply-defined	0.3797	0.0146
+0.5391	0.1071	1.000	symbol.	0.0602	0.0104
+0.5523	0.5301	1.000	Box 8	0.0508	0.0160
+0.5523	0.1222	1.000	MULTI also marks a multiply-defined symbol with	0.3741	0.0160
+0.5654	0.1053	1.000	(or without) contradictions as such in its vle entry.	0.3797	0.0174
+0.5814	0.5320	1.000	The address of available area in the vle table is	0.3553	0.0147
+0.5827	0.1071	1.000	NUNDSY in Pass 2b will then be able to detect the	0.3703	0.0118
+0.5959	0.5301	1.000	updated. The count of the number of symbols remains	0.4060	0.0147
+0.5970	0.1052	1.000	appropriate entries in the symbol table to be printed	0.3873	0.0138
+0.6090	0.5301	1.000	the same.	0.0789	0.0160
+0.6133	0.1071	1.000	on the listing.	0.1034	0.0117
+0.6264	0.1203	1.000	It is possible to add a data description, dimension	0.3741	0.0146
+0.6394	0.5414	1.000	The following case illustrates an illegal multiply-	0.3759	0.0161
+0.6424	0.1071	1.000	properties, and/or index to a quantity previously	0.3628	0.0103
+0.6525	0.1049	1.000	defined. Consider the following example where the	0.3802	0.0215
+0.6539	0.5301	1.000	defined symbol with contradictions:	0.2669	0.0176
+0.6714	0.5977	1.000	L, JOE	0.0565	0.0147
+0.6715	0.1071	1.000	symbol is a legal multiply-defined symbol:	0.3158	0.0116
+0.6854	0.1596	1.000	SYN, 32.0	0.0905	0.0130
+0.6856	0.5976	1.000	L, JOE($2)	0.0829	0.0154
+0.6860	0.1241	1.000	A	0.0113	0.0102
+0.6991	0.5320	1.000	Here the illegal symbol 'B' has different values	0.3515	0.0161
+0.7006	0.1673	1.000	SYN (BU, 32), 32.0 ($2)	0.1823	0.0131
+0.7020	0.1241	1.000	A	0.0207	0.0087
+0.7136	0.7556	1.000	The symbol table entry	0.1786	0.0146
+0.7151	0.5301	1.000	during the assembly process.	0.2237	0.0146
+0.7151	0.1090	1.000	However, it must be noted that the values for the	0.3590	0.0131
+0.7279	0.5319	1.000	for the first 'B' is used in all references to this	0.3554	0.0137
+0.7297	0.1071	1.000	symbol, i.e., for 'A' in the example, during	0.3308	0.0131
+0.7456	0.1071	1.000	assembly time are the same.	0.2162	0.0116
+0.9360	0.8327	1.000	MULTI	0.0470	0.0116
+0.9375	0.9004	1.000	127	0.0226	0.0087

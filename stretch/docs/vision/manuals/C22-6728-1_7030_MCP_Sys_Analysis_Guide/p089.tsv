@@ -1,0 +1,133 @@
+0.0999	0.5319	1.000	if a previous quantity has not been saved. These	0.3629	0.0151
+0.1015	0.1014	1.000	load BSS jobs. KSILO+10.0 contains the branch ad-	0.3913	0.0172
+0.1163	0.5338	1.000	cards are ignored for BSS jobs.	0.2387	0.0131
+0.1177	0.1033	1.000	dress which will be inserted in the resume load	0.3574	0.0148
+0.1336	0.1034	1.000	loader calling sequence when loading is finished, and	0.3947	0.0132
+0.1409	0.5320	1.000	Absolute Branch Card: The branch address on the	0.3741	0.0146
+0.1482	0.1053	1.000	the rest of the PP memory, (i.e., blank common) is	0.3891	0.0132
+0.1555	0.5320	1.000	card is checked to see if it is within bounds. If so,	0.3816	0.0118
+0.1642	0.1034	1.000	set to plus (+) infinity for non-segmented jobs.	0.3496	0.0131
+0.1700	0.5338	1.000	it is inserted into the calling sequence. If it is not,	0.3872	0.0131
+0.1788	0.1222	1.000	The format of the relocation tables is shown in	0.3496	0.0116
+0.1845	0.5338	1.000	an error return is made to the calling sequence. If	0.3816	0.0131
+0.1961	0.1052	1.000	Figure 44.	0.0790	0.0119
+0.1990	0.5318	1.000	there is no branch address, a check is made to see if	0.4044	0.0164
+0.2078	0.1222	1.000	The loader (MLOADR, Figure 45) checks bit num-	0.3778	0.0131
+0.2136	0.5338	1.000	an initial origin has been saved, which will then be-	0.3891	0.0146
+0.2224	0.1053	1.000	ber 25 of the lower limit. If this bit is 1, MLOADR	0.3872	0.0131
+0.2297	0.5338	1.000	come the branch address. If no origin has been	0.3590	0.0131
+0.2384	0.1053	1.000	turns it off, initializes its counters, and sets up its	0.3853	0.0147
+0.2456	0.5338	1.000	saved, an error return is made. This routine gives	0.3853	0.0147
+0.2529	0.1053	1.000	internal boundary limits for the new job. A check is	0.3891	0.0132
+0.2587	0.5338	1.000	control to the branch return in the loader calling	0.3647	0.0131
+0.2674	0.1053	1.000	made on bit 25 of the upper limit to see if a I card	0.3816	0.0132
+0.2787	0.5338	1.000	sequence.	0.0772	0.0108
+0.2820	0.1053	1.000	has been saved for this job. If one has, MTCRDI	0.3703	0.0132
+0.2964	0.1053	1.000	is turned on and the sequence number of the first	0.3703	0.0133
+0.2979	0.5357	1.000	Common Definition Card, Fortran Branch Card, and.	0.4023	0.0132
+0.3120	0.1052	1.000	binary card is used as the base sequence number.	0.3742	0.0139
+0.3124	0.5338	1.000	Fortran Program Card: These card types use the	0.3759	0.0161
+0.3255	0.1071	1.000	Column 1 is tested to determine the card type, and	0.3797	0.0133
+0.3270	0.5338	1.000	routine MFPCRD (Figure 46). A check is made on	0.3778	0.0146
+0.3412	0.1070	1.000	control is transferred to the appropriate routine.	0.3667	0.0139
+0.3415	0.5357	1.000	MFPCI to determine whether or not a Fortran pro-	0.3835	0.0131
+0.3544	0.1070	1.000	These routines return to MNORMR to make a normal	0.3969	0.0152
+0.3561	0.5357	1.000	gram card had previously been handled. If so, the	0.3759	0.0146
+0.3688	0.1070	1.000	return, or to MERR3 to set up an appropriate error	0.3876	0.0170
+0.3702	0.5356	1.000	card is counted in the routine MRNRM1. If the card	0.3931	0.0140
+0.3826	0.1069	1.000	message and make an error return. A branch return	0.3951	0.0178
+0.3852	0.5357	1.000	count for this BSS job is not zero, normal return is	0.3872	0.0131
+0.3997	0.1053	1.000	is made when the validity of the branch is verified.	0.3835	0.0131
+0.3997	0.5357	1.000	made to the loader's calling sequence. Il the card	0.3778	0.0145
+0.4117	0.5355	1.000	count equals zero, a test is made on the count field	0.3840	0.0196
+0.4302	0.5357	1.000	of the second word of the current relocation table to	0.3891	0.0131
+0.4424	0.1107	1.000	Loader Card Classes: The loader handles 18 classes	0.3989	0.0170
+0.4433	0.5357	1.000	determine how many transfer vectors are to be trans-	0.4079	0.0131
+0.4550	0.1068	1.000	of cards, identified by the punches in column 1:	0.3597	0.0232
+0.4578	0.5376	1.000	mitted to problem program storage. If SRNXAD is	0.3835	0.0131
+0.4724	0.5376	1.000	zero, the branch address is picked up from KSILO	0.3778	0.0146
+0.4753	0.3647	1.000	(7,8,9)	0.0658	0.0116
+0.4767	0.1259	1.000	Absolute origin	0.1165	0.0118
+0.4869	0.5357	1.000	and stored in the branch address slot of the calling	0.3835	0.0116
+0.4898	0.3647	1.000	(7,9)	0.0414	0.0116
+0.4912	0.1259	1.000	Absolute flow	0.1034	0.0118
+0.5015	0.5376	1.000	sequence and branch return is made. If SRNXAD is	0.3891	0.0131
+0.5042	0.3891	1.000	7, 9)	0.0414	0.0118
+0.5044	0.3628	1.000	(6,	0.0226	0.0131
+0.5058	0.1259	1.000	Absolute branch	0.1203	0.0118
+0.5132	0.5374	1.000	not zero, $RESLD is set up to fetch the next sub-	0.3707	0.0183
+0.5189	0.3910	1.000	7,8,9)	0.0620	0.0116
+0.5189	0.3628	1.000	(6,	0.0226	0.0131
+0.5203	0.1241	1.000	Relocatable data	0.1259	0.0118
+0.5299	0.5355	1.000	program and normal return is made.	0.2785	0.0152
+0.5334	0.3891	1.000	7,	0.0207	0.0116
+0.5334	0.3628	1.000	(5,	0.0282	0.0131
+0.5334	0.4060	1.000	9)	0.0244	0.0131
+0.5348	0.1259	1.000	Relocatable instruction	0.1748	0.0103
+0.5451	0.5545	1.000	If no Fortran program card has been received, a	0.3665	0.0131
+0.5464	0.3647	1.000	(5, 6, 7, 8, 9)	0.1109	0.0133
+0.5494	0.1278	1.000	Fortran branch	0.1184	0.0103
+0.5595	0.3909	1.000	6, 7,9)	0.0621	0.0162
+0.5596	0.5376	1.000	test is made to see if this is a BSS job. If not, error	0.4004	0.0131
+0.5625	0.3665	1.000	(5,	0.0263	0.0116
+0.5639	0.1297	1.000	Fortran program	0.1259	0.0103
+0.5741	0.5376	1.000	return is made. If this is a BSS job, MFPCI is set	0.3835	0.0131
+0.5753	0.3665	1.000	(5, 7, 8, 9)	0.0866	0.0137
+0.5770	0.1278	1.000	Common definition	0.1391	0.0118
+0.5887	0.5376	1.000	to one and the address of the first relocation table is	0.3966	0.0116
+0.5916	0.3665	1.000	(12,3)	0.0508	0.0116
+0.5930	0.1297	1.000	Correction	0.0808	0.0102
+0.6031	0.5375	1.000	picked up from KSILO. This table gives the origin	0.3818	0.0146
+0.6061	0.3665	1.000	(11, 7)	0.0508	0.0131
+0.6076	0.1297	1.000	Patch	0.0414	0.0102
+0.6177	0.5376	1.000	to the loader and enables it to compute the width of	0.3835	0.0117
+0.6206	0.3647	1.000	(12, 4)	0.0526	0.0146
+0.6221	0.1278	1.000	Dump	0.0432	0.0116
+0.6321	0.5376	1.000	the set of relocation bits for each half word. This	0.3797	0.0118
+0.6352	0.3647	1.000	(0,3)	0.0451	0.0131
+0.6381	0.1278	1.000	T	0.0113	0.0102
+0.6458	0.5374	1.000	width is 1, 4, or 4ti where iis the field size neces-	0.3894	0.0165
+0.6497	0.3665	1.000	(0,2,3)	0.0658	0.0145
+0.6506	0.1258	1.000	Super I	0.0624	0.0142
+0.6591	0.5374	1.000	sary to express the highest-numbered labeled com-	0.3895	0.0193
+0.6642	0.3647	1.000	(11,6)	0.0545	0.0131
+0.6657	0.1297	1.000	Loader adjustment (O)	0.1654	0.0116
+0.6758	0.5395	1.000	mon block. For non-BSS jobs, the width of the set is	0.4004	0.0133
+0.6799	0.3683	1.000	(12, 2)	0.0491	0.0123
+0.6817	0.1278	1.000	B	0.0132	0.0102
+0.6918	0.5395	1.000	either 1 or 4. If the current subprogram is not a	0.3703	0.0118
+0.6948	0.3684	1.000	(11, 2)	0.0508	0.0102
+0.6948	0.1297	1.000	Relocatable correction (K)	0.1974	0.0116
+0.7048	0.5394	1.000	library routine, the card count is stored in MRCDCT.	0.4043	0.0155
+0.7089	0.3683	1.000	(12, 1)	0.0510	0.0123
+0.7093	0.1297	1.000	Relocatable patch (A)	0.1598	0.0116
+0.7209	0.5414	1.000	Control is passed to the card count routine and	0.3496	0.0131
+0.7238	0.3684	1.000	(0, 9)	0.0414	0.0116
+0.7252	0.1297	1.000	Relocatable dump (Z)	0.1598	0.0118
+0.7369	0.5395	1.000	eventually normal return is given.	0.2575	0.0116
+0.7542	0.1128	1.000	B, I, and Super I Cards: These cards are not	0.3571	0.0133
+0.7660	0.5376	1.000	Absolute Origin, Absolute Flow, and Relocatable	0.3703	0.0146
+0.7688	0.1128	1.000	loaded. For T and super T cards, indicator	0.3346	0.0133
+0.7791	0.5395	1.000	Binary Data Cards: These card types eventually are	0.3966	0.0146
+0.7833	0.1128	1.000	MTCRDI or MSTCRD is turned on. These indicators	0.3929	0.0118
+0.7932	0.5394	1.000	treated as one, and use MORG1 to load the informa-	0.3912	0.0158
+0.7960	0.1126	1.000	are later tested by the sequence test routine MSEQ.	0.3875	0.0166
+0.8096	0.5414	1.000	tion from the card.	0.1429	0.0116
+0.8241	0.5583	1.000	The absolute flow card routine (MFLOW, Figure	0.3647	0.0131
+0.8253	0.1145	1.000	Loader Adjustment Card: Loader adjustment cards	0.3856	0.0155
+0.8365	0.5412	1.000	46) checks to see if an origin has been saved. If not,	0.3988	0.0178
+0.8415	0.1147	1.000	(O in column 1) are handled by MLDADJ. This rou-	0.3872	0.0131
+0.8532	0.5414	1.000	error return is given. The next location table loaded	0.4004	0.0132
+0.8541	0.1145	1.000	tine picks up the 8 Hollerith characters in columns	0.3801	0.0163
+0.8666	0.5412	1.000	into is picked up from MLDCTR and put in $1 for	0.3650	0.0164
+0.8692	0.1145	1.000	2-9, converts them to octal, and checks to see if	0.3688	0.0170
+0.8821	0.5414	1.000	MORG1. $6 is set up for the boundary test made in	0.3853	0.0133
+0.8835	0.1145	1.000	they set an origin which is within the program's	0.3594	0.0173
+0.8967	0.5414	1.000	MORG1 and set-up is done so that a partial word will	0.3966	0.0133
+0.8997	0.1147	1.000	bounds. If the origin is within bounds, the loader's	0.3853	0.0131
+0.9127	0.5414	1.000	be loaded. Control is then passed to the absolute	0.3722	0.0118
+0.9128	0.1145	1.000	origin counter MLDCTR is set to the value on the	0.3707	0.0164
+0.9273	0.5432	1.000	origin card routine at the boundary test instructions.	0.3966	0.0131
+0.9290	0.1164	1.000	O card. The branch address is also set to this value	0.3931	0.0148
+0.9535	0.9211	1.000	89	0.0188	0.0087
+0.9548	0.7425	1.000	System Operation Programs	0.1805	0.0103

@@ -1,0 +1,104 @@
+0.0799	0.1090	1.000	MAJOR LOGIC AREAS IN THE PASS 1 PHASE OF STRAP II	0.4474	0.0146
+0.1105	0.5150	1.000	Includes the Processing in the Following Subroutines	0.3891	0.0117
+0.1221	0.2481	1.000	MAIN flow for Pass 1	0.1654	0.0161
+0.1235	0.1090	1.000	MAIN	0.0489	0.0160
+0.1245	0.6257	1.000	and Subprocedures	0.1396	0.0150
+0.1512	0.2519	1.000	Binary OPeration SEaRch	0.1917	0.0174
+0.1524	0.1071	1.000	BOPSER	0.0716	0.0178
+0.1555	0.5150	1.000	Performs the binary search on the operation tables and	0.4079	0.0118
+0.1700	0.5301	1.000	on the system symbol table.	0.2086	0.0118
+0.1817	0.1090	1.000	CCA8	0.0489	0.0174
+0.1817	0.2500	1.000	conversion of CC to A8 code	0.2124	0.0147
+0.1845	0.5169	1.000	Converts code of card input to the A8 internal processing	0.4211	0.0118
+0.1991	0.5320	1.000	code of STRAP II.	0.1335	0.0117
+0.2106	0.1071	1.000	CPLINM	0.0753	0.0164
+0.2121	0.2519	1.000	ComPLeTe a NuMber	0.1617	0.0146
+0.2136	0.5169	1.000	Fetches the remaining characters of the number from	0.3966	0.0117
+0.2282	0.5320	1.000	the card image input and computes, using the radix	0.3797	0.0116
+0.2427	0.5301	1.000	specified, the number represented.	0.2632	0.0131
+0.2544	0.1071	1.000	CPLTSY	0.0714	0.0160
+0.2558	0.2519	1.000	ComPLeTe a SYmbol	0.1579	0.0146
+0.2587	0.5169	1.000	Fetches and collects in a specified buffer the remaining	0.4098	0.0116
+0.2718	0.5320	1.000	characters of a programmer's symbol with its tail	0.3722	0.0131
+0.2878	0.5320	1.000	or gets the value and data description of a system	0.3684	0.0116
+0.3021	0.5300	1.000	symbol.	0.0621	0.0120
+0.3121	0.1070	1.000	GETCHA	0.0737	0.0198
+0.3124	0.2500	1.000	GET a CHAracter	0.1372	0.0161
+0.3169	0.5150	1.000	Gets a character from the input card image for main	0.3891	0.0116
+0.3314	0.5320	1.000	flow to process.	0.1203	0.0116
+0.3430	0.1071	1.000	GETFLD	0.0733	0.0174
+0.3445	0.2500	1.000	GET a FieLD encoded	0.1654	0.0131
+0.3459	0.5150	1.000	Does the Pass 1 encoding put in the expanded instruction	0.4173	0.0132
+0.3619	0.5301	1.000	units.	0.0451	0.0102
+0.3706	0.2500	1.000	Get Name LOADed	0.1429	0.0176
+0.3720	0.1090	1.000	GNLOAD	0.0734	0.0190
+0.3764	0.5169	1.000	Creates the name file and writes it on disk.	0.3195	0.0118
+0.3866	0.2500	1.000	OUTput the INTermediate	0.2011	0.0174
+0.3866	0.1071	1.000	INTOUT	0.0695	0.0174
+0.3909	0.5150	1.000	Buffers the expanded instruction units and writes them	0.4023	0.0118
+0.3997	0.2632	1.000	expanded instruction unit	0.1936	0.0204
+0.4055	0.5320	1.000	on disk for later processing during Pass 2.	0.3195	0.0118
+0.4142	0.2500	1.000	Main's SPECial character	0.2011	0.0189
+0.4156	0.1071	1.000	MBSPEC	0.0734	0.0176
+0.4200	0.5150	1.000	Scans an illegal op or an illegal system symbol for a	0.3891	0.0118
+0.4302	0.2631	1.000	substitution	0.0940	0.0161
+0.4345	0.5301	1.000	possible error character and substitutes in its	0.3440	0.0118
+0.4491	0.5301	1.000	place the corresponding option character.	0.3102	0.0131
+0.4593	0.2500	1.000	Main's Indicator Branch	0.1823	0.0174
+0.4605	0.1070	1.000	MIBA	0.0510	0.0165
+0.4651	0.5150	1.000	Performs the branch-on indicator analysis on any opera-	0.4211	0.0116
+0.4752	0.2632	1.000	instruction Analysis	0.1579	0.0161
+0.4797	0.5301	1.000	tion which MAIN does not find in the operation table.	0.3891	0.0116
+0.4884	0.2500	1.000	Main's IOD processing	0.1729	0.0189
+0.4898	0.1071	1.000	MIOD	0.0489	0.0174
+0.4942	0.5150	1.000	Processes the Master Control Program (MCP) pseudo-	0.4079	0.0131
+0.5087	0.5320	1.000	ops during Pass 1.	0.1372	0.0116
+0.5187	0.1070	1.000	MQDD	0.0547	0.0178
+0.5203	0.2500	1.000	Main's DD procedure	0.1598	0.0161
+0.5219	0.5149	1.000	Processes the DD during Pass 1; takes care of the radix,	0.4232	0.0147
+0.5378	0.5301	1.000	entry mode, multiple-numeric cases, the special	0.3665	0.0131
+0.5523	0.5301	1.000	sign (S), and the special (X) in particular.	0.3102	0.0131
+0.5639	0.1184	1.000	MQDALE	0.0753	0.0162
+0.5639	0.2500	1.000	Main's ALPHabetic Data	0.1861	0.0161
+0.5682	0.5150	1.000	Converts the alphabetic data definition statement from	0.4004	0.0103
+0.5785	0.2669	1.000	definition procedure	0.1523	0.0161
+0.5827	0.5301	1.000	the internal A8 code to the code specified in the entry	0.3966	0.0118
+0.5973	0.5301	1.000	mode; puts results in the expanded instruction unit.	0.3797	0.0118
+0.6073	0.1183	1.000	MQDNUM	0.0791	0.0165
+0.6090	0.2500	1.000	Main's processing for a	0.1805	0.0146
+0.6118	0.5150	1.000	Evaluates the statement field of a numerie DD to the	0.3853	0.0103
+0.6221	0.2669	1.000	NUMeric Data definition	0.1823	0.0146
+0.6264	0.5301	1.000	terminal character, to the special sign or the special	0.3947	0.0132
+0.6424	0.5301	1.000	exponent.	0.0715	0.0103
+0.6497	0.2481	1.000	complete a Data definition's	0.2105	0.0189
+0.6526	0.1165	1.000	DNUM	0.0583	0.0161
+0.6555	0.5132	1.000	Collects the characters of an operand from the D field	0.4023	0.0132
+0.6654	0.2668	1.000	NUMeric field	0.1092	0.0166
+0.6700	0.5301	1.000	of a numeric DD and transforms the specified operand	0.4023	0.0131
+0.6845	0.5263	1.000	into a double precision floating point number.	0.3402	0.0146
+0.6948	0.2500	1.000	Main's DD Precision Arith-	0.2086	0.0174
+0.6962	0.1184	1.000	MQDDPA	0.0771	0.0176
+0.6991	0.5150	1.000	Performs the precision arithmetic specified between the	0.4154	0.0131
+0.7106	0.2613	1.000	metic subroutines	0.1410	0.0176
+0.7151	0.5263	1.000	fields of a numerie DD.	0.1786	0.0131
+0.7238	0.2500	1.000	Main's Punsym procedure	0.1974	0.0189
+0.7253	0.1071	1.000	MQP	0.0414	0.0189
+0.7297	0.5132	1.000	Colleets in the unit the symbols specified by the PUNSYM.	0.4305	0.0131
+0.7384	0.2500	1.000	Main's data Reservation	0.1823	0.0174
+0.7398	0.1071	1.000	MQR	0.0432	0.0160
+0.7442	0.5132	1.000	Processes the address field of a DR or a DRZ, that is,	0.4079	0.0146
+0.7543	0.2594	1.000	procedure	0.0865	0.0176
+0.7587	0.5226	1.000	sets up the dimension information.	0.2650	0.0131
+0.7685	0.1164	1.000	MDIMRE	0.0736	0.0197
+0.7733	0.5113	1.000	Makes a primitive dimension reference entry for a	0.3778	0.0146
+0.7833	0.2481	1.000	Main's DIMension ReFerence	0.2218	0.0176
+0.7878	0.5263	1.000	dimension specified by a DR or DRZ without a name.	0.3947	0.0146
+0.7977	0.1164	1.000	MDIMRT	0.0754	0.0179
+0.7990	0.2630	1.000	procedure	0.0811	0.0169
+0.8023	0.5113	1.000	Makes a primitive dimension reference entry for a	0.3778	0.0146
+0.8182	0.5263	1.000	dimension specified by a SYN or by a DR or DRZ with	0.4004	0.0133
+0.8327	0.5263	1.000	a name.	0.0620	0.0118
+0.8430	0.1071	1.000	MQS	0.0395	0.0174
+0.8445	0.2481	1.000	Main's Syn procedure	0.1617	0.0161
+0.9345	0.7274	1.000	Major Logic Areas -- Pass 1	0.1598	0.0088
+0.9346	0.9117	1.000	63	0.0150	0.0087

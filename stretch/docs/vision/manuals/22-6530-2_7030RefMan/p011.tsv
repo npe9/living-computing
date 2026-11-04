@@ -1,0 +1,107 @@
+0.0712	0.0977	1.000	cuting instructions specified by the central processing	0.3910	0.0145
+0.0727	0.5301	1.000	Instructions are taken in succession under control	0.3778	0.0116
+0.0871	0.0977	1.000	unit.	0.0340	0.0104
+0.0872	0.5150	1.000	of an instruction counter. Alteration of the succes-	0.3929	0.0131
+0.1017	0.1147	1.000	Using these disk units, large volumes of information	0.3722	0.0131
+0.1032	0.5150	1.000	sion of instructions is possible by branching opera-	0.3929	0.0147
+0.1177	0.5150	1.000	tions, which can be controlled by a wide variety of	0.3930	0.0151
+0.1177	0.0959	1.000	can be continuously and rapidly transferred in and	0.3910	0.0132
+0.1321	0.0977	1.000	out of core storage without affecting the rates of any	0.3891	0.0147
+0.1336	0.5150	1.000	conditions. Automatic interruption of the normal	0.3910	0.0146
+0.1467	0.0959	1.000	other input-output operations being carried	0.3647	0.0147
+0.1497	0.5132	1.000	sequence can also be caused by many conditions. The	0.3947	0.0131
+0.1512	0.4624	1.000	on	0.0244	0.0073
+0.1619	0.5130	1.000	conditions for interruption and control of branching	0.3931	0.0171
+0.1627	0.0959	1.000	through the exchange or noticeably slowing computa-	0.3929	0.0146
+0.1773	0.0977	1.000	tion in the CPU.	0.1165	0.0118
+0.1788	0.5132	1.000	are represented by bits in an indicator register. The	0.3929	0.0146
+0.1933	0.5132	1.000	interruption system also includes a mask register for	0.3929	0.0161
+0.2077	0.5130	1.000	controlling interruption and a base address register	0.3950	0.0187
+0.2252	0.5470	1.000	selecting suitable	0.1466	0.0133
+0.2253	0.5132	1.000	for	0.0338	0.0102
+0.2253	0.8590	1.000	When	0.0470	0.0131
+0.2267	0.6936	1.000	alternate programs.	0.1523	0.0132
+0.2355	0.0940	1.000	Central Processing Unit	0.2199	0.0161
+0.2397	0.5132	1.000	needed, the address of the input or output unit caus-	0.3929	0.0147
+0.2558	0.5132	1.000	ing an interruption can be read from a channel ad-	0.3947	0.0131
+0.2703	0.5131	1.000	dress register which can only be set up by the ex-	0.3949	0.0165
+0.2747	0.0959	1.000	The central processing unit consists basically of three	0.3910	0.0132
+0.2874	0.5126	1.000	change.	0.0574	0.0114
+0.2892	0.0940	1.000	functional units: the instruction processor, look-ahead,	0.3929	0.0145
+0.2979	0.5299	1.000	The instruction counter contents can be stored by	0.3763	0.0191
+0.3052	0.0940	1.000	and the arithmetic and logical unit. The central proc-	0.3910	0.0146
+0.3152	0.5112	1.000	a specific operation. The indicator, mask, interrup-	0.3930	0.0163
+0.3197	0.0921	1.000	essing unit performs arithmetic and logical operations	0.3947	0.0176
+0.3314	0.5132	1.000	tion address and unit address registers are assigned	0.3910	0.0147
+0.3358	0.0940	1.000	upon operands taken from storage. Operations are	0.3929	0.0145
+0.3473	0.5132	1.000	certain of the first sixteen addresses.	0.2575	0.0133
+0.3503	0.0940	1.000	specified one at a time by instructions, which are	0.3929	0.0146
+0.3572	0.5299	1.000	The interpretation and execution of instructions	0.3762	0.0201
+0.3630	0.0939	1.000	also taken from storage. Each instruction fundamen-	0.3931	0.0177
+0.3764	0.5112	1.000	is also controlled by an address monitoring system.	0.3949	0.0164
+0.3808	0.0940	1.000	tally specifies an operation and an operand. The	0.3910	0.0146
+0.3924	0.5113	1.000	This provides two boundary registers which define a	0.3929	0.0146
+0.3953	0.0940	1.000	operand specification is made up of an address and	0.3910	0.0147
+0.4084	0.5113	1.000	protected storage region. The boundary registers are	0.3929	0.0131
+0.4112	0.0940	1.000	an index word address. Part of the index word con-	0.3929	0.0118
+0.4230	0.5113	1.000	also assigned certain of the first sixteen addresses.	0.3703	0.0131
+0.4273	0.0940	1.000	tents are added to the address to obtain an effective	0.3910	0.0118
+0.4390	0.5282	1.000	Special control bits are provided for signalling	0.3759	0.0147
+0.4418	0.0940	1.000	address. The effective address actually designates the	0.3910	0.0146
+0.4535	0.5113	1.000	other computers in multi-computer systems and for	0.3929	0.0145
+0.4578	0.0940	1.000	operand used. The additions needed to derive the	0.3910	0.0116
+0.4694	0.5113	1.000	causing the machine to simulate malfunctions. These	0.3929	0.0132
+0.4724	0.0940	1.000	effective address and to modify index words are per-	0.3910	0.0146
+0.4827	0.5112	1.000	bits lie in certain of the first sixteen word addresses.	0.3931	0.0146
+0.4869	0.0921	1.000	formed in the instruction processor by an independent	0.3929	0.0146
+0.5000	0.5132	1.000	Others of these special addresses are used for a time	0.3910	0.0131
+0.5014	0.0919	1.000	index arithmetic unit.	0.1639	0.0132
+0.5127	0.5112	1.000	clock and an interval timer whose values are stored	0.3931	0.0153
+0.5275	0.5107	1.000	in a high-speed core storage.	0.2078	0.0197
+0.5421	0.0921	1.000	Instruction Processor	0.1504	0.0103
+0.5583	0.0919	1.000	Since the arithmetic and logical unit operates very	0.3915	0.0185
+0.5708	0.5093	1.000	Look-Ahead	0.0885	0.0139
+0.5741	0.0921	1.000	rapidly, it needs to receive data and decoded and	0.3910	0.0147
+0.5915	0.0921	1.000	modified instructions at high speed. The decoding	0.3929	0.0146
+0.5945	0.5113	1.000	The parallelism or overlap in the modification and	0.3910	0.0131
+0.6054	0.0920	1.000	and modifying are performed in the instruction proc-	0.3912	0.0172
+0.6085	0.5112	1.000	execution of instructions is extended to include fur-	0.3930	0.0139
+0.6221	0.0921	1.000	essor, using the index arithmetic unit, while the arith-	0.3929	0.0146
+0.6226	0.5111	1.000	ther overlapping of the fetching of instructions and	0.3913	0.0185
+0.6363	0.0901	1.000	metic and logical unit is executing some preceding	0.3931	0.0169
+0.6372	0.5111	1.000	data from core storage. In the previous description of	0.3913	0.0177
+0.6526	0.0902	1.000	instruction. Several types of instructions can actually	0.3929	0.0147
+0.6539	0.5113	1.000	the core storage units, mention was made of the fact	0.3910	0.0133
+0.6635	0.0899	1.000	be executed in the instruction processor without re-	0.3934	0.0226
+0.6700	0.5094	1.000	that several core storage units can be referenced for	0.3929	0.0131
+0.6830	0.0921	1.000	quiring the use or time of the main arithmetic unit.	0.3778	0.0133
+0.6860	0.5094	1.000	instructions and data simultaneously. The device	0.3929	0.0146
+0.6950	0.1069	1.000	The index arithmetic unit consists of registers for	0.3765	0.0198
+0.7020	0.5094	1.000	which coordinates and controls the overlapping of	0.3947	0.0146
+0.7136	0.0921	1.000	holding instructions to be modified and the index	0.3910	0.0131
+0.7151	0.5094	1.000	instruction processing is known as the Look-Ahead.	0.3778	0.0146
+0.7277	0.0920	1.000	words that are used in the modification. When index	0.3912	0.0145
+0.7311	0.5263	1.000	When the instruction processor has finished de-	0.3759	0.0147
+0.7415	0.0901	1.000	words themselves are modified, some of these regis-	0.3932	0.0179
+0.7470	0.5075	1.000	coding and modifying an instruction, a fetch request	0.3947	0.0161
+0.7583	0.0901	1.000	ters also hold the operand data. The possible modi-	0.3913	0.0173
+0.7615	0.5094	1.000	is made to core storage for the data associated with	0.3910	0.0146
+0.7728	0.0900	1.000	fications to index registers include loading, storing,	0.3932	0.0172
+0.7776	0.5094	1.000	this instruction. The instruction and its data are then	0.3910	0.0118
+0.7892	0.0902	1.000	adding, and comparing. The index arithmetic unit	0.3929	0.0145
+0.7907	0.5073	1.000	loaded into one of four look-ahead levels, preparatory	0.3932	0.0169
+0.8037	0.0882	1.000	includes gates for selecting the necessary fields in in-	0.3950	0.0173
+0.8081	0.5094	1.000	to being executed in turn by the arithmetic and logi-	0.3910	0.0146
+0.8159	0.0900	1.000	dex and instruction words and a 24-bit algebraic	0.3916	0.0207
+0.8193	0.5074	1.000	cal unit. The arithmetic and logical unit operates	0.3933	0.0201
+0.8358	0.0902	1.000	adder. The index words themselves are addressable as	0.3910	0.0131
+0.8387	0.5075	1.000	very rapidly, much more rapidly than single instruc-	0.3929	0.0147
+0.8468	0.0880	1.000	locations 16 to 31 in a special high-speed core storage.	0.3935	0.0227
+0.8519	0.5092	1.000	tions could be fetched from the relatively slow stor-	0.3913	0.0167
+0.8648	0.1071	1.000	An instruction may be one word or one-half word	0.3741	0.0146
+0.8691	0.5075	1.000	age units. The instruction processor and look-ahead	0.3929	0.0146
+0.8793	0.0881	1.000	in length. Full and half-length instructions can be	0.3933	0.0187
+0.8833	0.5074	1.000	function together to maintain a reservoir of pre-proc-	0.3931	0.0168
+0.8953	0.0883	1.000	intermixed without regard to word boundaries.	0.3477	0.0147
+0.8997	0.5075	1.000	essed instructions together with their data to allow	0.3929	0.0131
+0.9345	0.0865	1.000	8 IBM 7030	0.1015	0.0088

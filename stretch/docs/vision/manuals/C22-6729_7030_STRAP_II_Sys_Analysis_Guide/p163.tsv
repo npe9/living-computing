@@ -1,0 +1,82 @@
+0.0828	0.8609	1.000	OPPUN	0.0639	0.0160
+0.1526	0.5320	1.000	on OPLIST. The first time through either OPLIST	0.3759	0.0147
+0.1536	0.1089	1.000	LINKAGE	0.0698	0.0111
+0.1672	0.5320	1.000	or OPPUN will cause OPLIPU to initialize both	0.3515	0.0147
+0.1785	0.1089	1.000	On Entry	0.0660	0.0123
+0.1815	0.5319	1.000	routines.	0.0697	0.0150
+0.2064	0.5320	1.000	Box 4	0.0451	0.0146
+0.2078	0.1241	1.000	1. The usual calling sequence is:	0.2481	0.0116
+0.2207	0.1728	1.000	CNOP	0.0454	0.0136
+0.2339	0.5320	1.000	The card image is moved to the binary output buffer	0.3910	0.0161
+0.2367	0.1710	1.000	SIC, Oppunz	0.0941	0.0150
+0.2470	0.5301	1.000	under control of the blocking control index word	0.3590	0.0176
+0.2513	0.1729	1.000	B, OPPUN	0.0847	0.0134
+0.2563	0.5298	1.000	(Opblk), which contains the working location in the	0.3784	0.0247
+0.2628	0.1747	1.000	CW, Location of data, number of words.	0.2992	0.0166
+0.2776	0.5320	1.000	binary buffer and the number of available positions	0.3778	0.0161
+0.2805	0.1203	1.000	2. In order to terminate the binary output, bit	0.3515	0.0131
+0.2920	0.1069	1.000	Orien must be set to one before using the above	0.3538	0.0201
+0.2921	0.5301	1.000	in the buffer.	0.1015	0.0147
+0.3096	0.1090	1.000	calling sequence to OPPUN.	0.2049	0.0116
+0.3212	0.5301	1.000	Box 5	0.0489	0.0161
+0.3227	0.1222	1.000	3. In order to terminate the binary output when	0.3571	0.0146
+0.3372	0.1053	1.000	a card is not given to OPPUN, the following calling	0.3816	0.0161
+0.3488	0.5320	1.000	Orien is cheeked to see if the current entry is the	0.3703	0.0191
+0.3545	0.1090	1.000	sequence must be used:	0.1729	0.0103
+0.3633	0.5301	1.000	last. II so, the buffer will be written regardless	0.3684	0.0204
+0.3690	0.1729	1.000	CNOP	0.0453	0.0120
+0.3794	0.5320	1.000	of the blocking control count.	0.2199	0.0161
+0.3836	0.1711	1.000	SIC, Oppunz	0.0940	0.0146
+0.3982	0.1729	1.000	B, Opриnx	0.0789	0.0146
+0.4084	0.5320	1.000	Box 6	0.0489	0.0189
+0.4127	0.1729	1.000	NOP; NOP	0.0789	0.0131
+0.4375	0.5320	1.000	The blocking control is stepped over the card image	0.3872	0.0174
+0.4413	0.1089	1.000	On Exit	0.0567	0.0114
+0.4531	0.5300	1.000	in the buffer.	0.1036	0.0168
+0.4694	0.1241	1.000	1. If STRAP II is the last compiler in a chain,	0.3515	0.0146
+0.4835	0.1089	1.000	the binary output will be written on the System Out-	0.3800	0.0167
+0.4839	0.5300	1.000	Box 7	0.0490	0.0176
+0.5009	0.1089	1.000	put tape.	0.0642	0.0112
+0.5102	0.5320	1.000	The count in Opblk is decremented and checked for	0.3797	0.0219
+0.5115	0.1560	1.000	If compile and go, the output will also be	0.3083	0.0176
+0.5261	0.1090	1.000	written on the disk starting in relative are 0. If	0.3571	0.0161
+0.5261	0.5320	1.000	zero. If zero, the buffer is full and ready for	0.3440	0.0191
+0.5421	0.5320	1.000	output. If not zero, Opblk is saved and return is made.	0.4135	0.0189
+0.5436	0.1071	1.000	STRAP II is other than last in a chain, the binary	0.3665	0.0161
+0.5567	0.1109	1.000	output will be written on the disk as specified in	0.3534	0.0146
+0.5712	0.1071	1.000	word 10 of the Communication Region. If the binary	0.3853	0.0176
+0.5871	0.1089	1.000	is to disk, the location of the first are where the	0.3611	0.0155
+0.5872	0.5320	1.000	Boxes 8-10	0.0865	0.0161
+0.6017	0.1071	1.000	binary is to be placed is specified by the pre-pro-	0.3722	0.0161
+0.6148	0.5320	1.000	If bit Opdisk has been turned on by OPLIPU, the	0.3628	0.0189
+0.6205	0.1108	1.000	cessor.	0.0565	0.0105
+0.6303	0.1577	1.000	STRAP II will place suceeding binary output	0.3256	0.0208
+0.6308	0.5320	1.000	next available are for binary output is obtained	0.3515	0.0146
+0.6337	0.1259	1.000	3.	0.0169	0.0116
+0.6416	0.5318	1.000	from Darex and placed in the first word of the	0.3444	0.0203
+0.6467	0.1071	1.000	are numbers in word 0 (bits 0-17) of each output	0.3571	0.0147
+0.6612	0.5376	1.000	buffer. Oarex is stepped to the next available ax‹	0.3628	0.0161
+0.6612	0.1071	1.000	are. The number of card images in the are is	0.3477	0.0147
+0.6730	0.1071	1.000	placed in bits 28-45. Bit 25 on indicates the final	0.3703	0.0161
+0.6730	0.5376	1.000	for listing or binary output. The number of cardi	0.3628	0.0161
+0.6855	0.5319	1.000	in the buffer is stored in the count field of the first	0.3817	0.0185
+0.6890	0.1071	1.000	are of binary output.	0.1541	0.0174
+0.7011	0.5336	1.000	word, and the are is written on the disk.	0.3013	0.0232
+0.7209	0.1090	1.000	FLOW CHART DESCRIPTION	0.2199	0.0131
+0.7321	0.5318	1.000	Boxes 12, 13	0.0999	0.0198
+0.7500	0.1053	1.000	Box 1	0.0508	0.0161
+0.7615	0.5320	1.000	If bit Spool2 has been turned on by OPLIPU, the	0.3590	0.0191
+0.7761	0.1071	1.000	The program waits for bit Opfull to be reset by the	0.3797	0.0191
+0.7776	0.5338	1.000	binary output buffer will be written on the System	0.3684	0.0176
+0.7921	0.5338	1.000	Output tape.	0.0940	0.0176
+0.7921	0.1071	1.000	write EOP interrupt, indicating that the binary buffer	0.4004	0.0176
+0.8052	0.1071	1.000	is ready to accept data.	0.1786	0.0191
+0.8241	0.5320	1.000	Box 11	0.0583	0.0160
+0.8400	0.1090	1.000	Boxes 2, 3	0.0828	0.0147
+0.8503	0.5357	1.000	The blocking control is reset, indicating an empty	0.3722	0.0189
+0.8633	0.5338	1.000	buffer (i. e. starting at word 2, and maximum card	0.3816	0.0204
+0.8663	0.1090	1.000	Switeh 2 is a NOP-Branch switch which is set to a	0.3703	0.0160
+0.8805	0.5356	1.000	count).	0.0548	0.0166
+0.8808	0.1090	1.000	branch by OPLIPU. There is an identical switch	0.3628	0.0174
+0.9402	0.8420	1.000	OPPUN	0.0434	0.0121
+0.9404	0.9060	1.000	163	0.0263	0.0116

@@ -1,0 +1,113 @@
+0.0842	0.5338	1.000	essor tries to match the transfer names in the third	0.3910	0.0118
+0.0858	0.1034	1.000	define immediate card is opposite to that of the de-	0.3853	0.0116
+0.0988	0.5320	1.000	intermediate table with the entry points in the first	0.3853	0.0131
+0.1003	0.1034	1.000	fine card. A define immediate card is interpreted	0.3797	0.0131
+0.1163	0.5320	1.000	intermediate table. If a name is not found, the BSS	0.3891	0.0116
+0.1163	0.1034	1.000	so that the second common named replaces the name	0.3966	0.0102
+0.1308	0.1034	1.000	of the first common named only within the subprogram	0.4098	0.0116
+0.1308	0.5320	1.000	processor tries to fetch that subprogram from the	0.3778	0.0116
+0.1453	0.1015	1.000	in which the card appears. The second common	0.3665	0.0116
+0.1453	0.5338	1.000	FORTRAN library on disk, and proceeds to set up	0.3759	0.0131
+0.1598	0.5319	1.000	tables for library material in the same manner as for	0.4061	0.0137
+0.1599	0.1034	1.000	named may be a new name, not occurring anywhere	0.3872	0.0131
+0.1744	0.1034	1.000	else in the deck. A define immediate card may be	0.3797	0.0116
+0.1744	0.5320	1.000	the input deck. The search for matching transfer	0.3741	0.0116
+0.1878	0.1032	1.000	used, then, to dissociate two named commons in-	0.3800	0.0151
+0.1903	0.5320	1.000	names continues until all entries in the third inter-	0.3872	0.0103
+0.2035	0.5320	1.000	mediate table are linked to the first intermediate table.	0.4173	0.0117
+0.2048	0.1034	1.000	tended to be dissimilar.	0.1823	0.0103
+0.2166	0.1259	1.000	NODE cards are a signal to the BSS processor	0.3477	0.0116
+0.2209	0.5583	1.000	At this point, the BSS processor has all the in-	0.3534	0.0116
+0.2311	0.1034	1.000	that the job uses the overlay feature of the system.	0.3835	0.0116
+0.2355	0.5338	1.000	formation it needs to construct the relocation tables	0.3891	0.0103
+0.2470	0.1015	1.000	(Refer to the Segmentation section. )	0.2726	0.0118
+0.2500	0.5338	1.000	and allocate storage for the MCP loader. The BSS	0.3835	0.0116
+0.2600	0.1259	1.000	5. Relocatable binary instruction card. These	0.3573	0.0134
+0.2645	0.5338	1.000	processor performs the following functions in con-	0.3835	0.0131
+0.2761	0.1034	1.000	cards are scanned by the BSS processor only to com-	0.4023	0.0118
+0.2791	0.5357	1.000	nection with storage allocation:	0.2331	0.0116
+0.2906	0.1034	1.000	pute the size of each subprogram, except for thefirst	0.4023	0.0132
+0.2936	0.5564	1.000	1. Computes the upper limit of storage available	0.3722	0.0116
+0.3052	0.1034	1.000	relocatable binary instruction card, which must con-	0.3985	0.0118
+0.3081	0.5338	1.000	for the job, the size of the relocation table, and the	0.3891	0.0131
+0.3182	0.1015	1.000	tain an index word in the first 64 bits. The length of	0.4004	0.0133
+0.3241	0.5357	1.000	origin of blank common.	0.1823	0.0116
+0.3342	0.1015	1.000	the transfer vector (number of entry points to rou-	0.3853	0.0118
+0.3372	0.5564	1.000	2. Places the origin of blank common in the MCP	0.3778	0.0131
+0.3488	0.1015	1.000	tines called by the subprogram) is contained in the	0.3816	0.0131
+0.3532	0.5357	1.000	communication region.	0.1729	0.0102
+0.3648	0.1034	1.000	count field of this index word.	0.2256	0.0102
+0.3663	0.5564	1.000	3. Computes the absolute origins for the subpro-	0.3741	0.0131
+0.3794	0.1429	1.000	Relocatable binary data card. These cards	0.3365	0.0116
+0.3821	0.5338	1.000	grams and places them in the first intermediate table.	0.4079	0.0118
+0.3939	0.1034	1.000	are scanned by the BSS processor only to compute	0.3759	0.0116
+0.3967	0.5583	1.000	4. Eliminates commons declared to have iden-	0.3571	0.0118
+0.4084	0.1034	1.000	the size of each subprogram, except for the data cards	0.4098	0.0116
+0.4099	0.5338	1.000	tical names and reserves space for the largest of the	0.4004	0.0131
+0.4230	0.1015	1.000	immediately following the first relocatable binary in-	0.4041	0.0116
+0.4258	0.5338	1.000	identically named commons.	0.2143	0.0118
+0.4375	0.1034	1.000	struction card. The BSS processor saves the trans-	0.3966	0.0116
+0.4403	0.5583	1.000	5. Computes absolute named common origins	0.3459	0.0118
+0.4520	0.1034	1.000	fer vector from these data cards and makes an entry	0.3966	0.0116
+0.4548	0.5357	1.000	and places them in the second intermediate table.	0.3722	0.0118
+0.4679	0.1034	1.000	for each name in the third intermediate table.	0.3459	0.0103
+0.4694	0.5583	1.000	6. Checks for common and program overlap of	0.3590	0.0118
+0.4810	0.1259	1.000	7. Absolute binary cards and absolute correction,	0.3798	0.0147
+0.4855	0.5357	1.000	space allocated.	0.1222	0.0116
+0.4951	0.1032	1.000	patch, and dump cards. These cards are ignored by	0.3969	0.0155
+0.5015	0.5602	1.000	The BSS processor constructs the relocation table	0.3759	0.0131
+0.5130	0.1034	1.000	the BSS processor.	0.1447	0.0118
+0.5160	0.5357	1.000	from the three intermediate tables. One entry in	0.3741	0.0116
+0.5239	0.1258	1.000	8. Relocatable correction, patch, and dump cards	0.3800	0.0164
+0.5305	0.5357	1.000	the relocation table is created for each subprogram,	0.3966	0.0116
+0.5406	0.1034	1.000	(K, A, Z cards). These cards are scanned by the	0.3759	0.0132
+0.5464	0.5357	1.000	and contains the following information: (1) subpro-	0.3797	0.0118
+0.5552	0.1053	1.000	BSS processor in order to compute the size of each	0.3835	0.0132
+0.5588	0.5374	1.000	gram origin, (2) number of named commons used,	0.3763	0.0163
+0.5685	0.1032	1.000	subprogram. A relocatable correction card con-	0.3725	0.0154
+0.5755	0.5357	1.000	(3) absolute origins of named commons, (4) length	0.3778	0.0133
+0.5822	0.1014	1.000	taining an origin higher than the highest location used	0.4045	0.0171
+0.5880	0.5374	1.000	of transfer vector (number of branches to other sub-	0.3969	0.0150
+0.5988	0.1504	1.000	subprogram itself has the effect of extending	0.3383	0.0131
+0.6001	0.1033	1.000	by the	0.0490	0.0120
+0.6045	0.5376	1.000	programs), (5) transfer vector (actual branch instruc-	0.4098	0.0133
+0.6133	0.1034	1.000	the subprogram to the origin specified. Relocatable	0.3947	0.0131
+0.6191	0.5376	1.000	tions to absolute storage locations), (6) pointer to the	0.3985	0.0132
+0.6279	0.1034	1.000	patch and dump cards cause the subprogram to be	0.3741	0.0131
+0.6336	0.5376	1.000	next entry in the relocation table, and either (7) ad-	0.3891	0.0132
+0.6439	0.1034	1.000	extended to allow space for the additional instructions	0.4060	0.0116
+0.6482	0.5357	1.000	dress of the subprogram on the disk and the number	0.3929	0.0146
+0.6595	0.5355	1.000	of cards (if the subprogram is not a library subpro-	0.3951	0.0197
+0.6599	0.1034	1.000	or dump calling sequence.	0.1992	0.0102
+0.6715	0.1241	1.000	9. FORTRAN branch card. The FORTRANbranch	0.3872	0.0145
+0.6740	0.5355	1.000	gram), or (8) the entry point name (if the subprogram	0.4064	0.0199
+0.6860	0.1034	1.000	card is used to signal end-of-deck to the BSS proc-	0.3872	0.0131
+0.6933	0.5338	1.000	is a library subprogram).	0.1992	0.0146
+0.7002	0.1033	1.000	essor. The job may not be run in the absence of such	0.4025	0.0153
+0.7136	0.5564	1.000	The BSS processor leaves the relocation table in	0.3665	0.0161
+0.7176	0.1051	1.000	a card.	0.0548	0.0111
+0.7252	0.5335	1.000	storage, beginning at the base address of blank com-	0.3990	0.0210
+0.7311	0.1184	1.000	10. B cards. IOD cards and REEL cards cause	0.3665	0.0131
+0.7442	0.5338	1.000	mon. The BSS processor completes its function by	0.3872	0.0161
+0.7456	0.1053	1.000	the amount of storage available to the problem pro-	0.3891	0.0131
+0.7587	0.5338	1.000	placing the main entry point address in the MCP	0.3647	0.0174
+0.7587	0.1053	1.000	gram to be reduced by the BSS processor, which allo-	0.4041	0.0146
+0.7733	0.5338	1.000	communication region, sorting the relocation table	0.3853	0.0146
+0.7742	0.1051	1.000	cates necessary space to IOD tables. All other B	0.3743	0.0149
+0.7878	0.5338	1.000	entries so that library subprograms are loaded in	0.3778	0.0146
+0.7906	0.1053	1.000	cards are ignored by the BSS processor.	0.3064	0.0118
+0.8023	0.5338	1.000	the order in which they appear on the disk, and printing	0.3947	0.0146
+0.8036	0.1183	1.000	11. Super I card. A super I card is a signal to	0.3724	0.0158
+0.8169	0.5338	1.000	out a mapping of the storage allocation scheme.	0.3609	0.0160
+0.8180	0.1033	1.000	the BSS processor to stop sequence checking on all	0.3856	0.0161
+0.8314	0.5338	1.000	(See example 4.)	0.1297	0.0147
+0.8327	0.1053	1.000	binary cards for the entire job. Otherwise, the BSS	0.3929	0.0147
+0.8459	0.5545	1.000	Control is passed from the BSS processor to MCP	0.3778	0.0160
+0.8471	0.1051	1.000	processor verifies sequence numbers and computes	0.3894	0.0173
+0.8618	0.5338	1.000	and then to the MCP loader, which loads the sub-	0.3759	0.0132
+0.8648	0.1053	1.000	check sums of all binary cards.	0.2406	0.0102
+0.8764	0.5338	1.000	programs from the disk into storage, using informa-	0.4004	0.0132
+0.8779	0.1316	1.000	Upon finishing the scan of the input deck (en-	0.3383	0.0131
+0.8909	0.5338	1.000	tion from the relocation tables.	0.2387	0.0132
+0.8924	0.1053	1.000	countering a FORTRAN branch card), the BSS proc-	0.3929	0.0131
+0.9345	0.8346	1.000	BSS Processor 9	0.1034	0.0088

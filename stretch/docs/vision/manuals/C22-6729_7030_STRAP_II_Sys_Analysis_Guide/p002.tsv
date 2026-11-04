@@ -1,0 +1,24 @@
+0.1032	0.0846	1.000	PREFACE	0.0771	0.0102
+0.1467	0.0827	1.000	Machine Oriented Programming has written this	0.3571	0.0118
+0.1612	0.0846	1.000	manual describing the functions of the STRAP II	0.3534	0.0118
+0.1758	0.0827	1.000	(STRETCH Assembly Program) in order to aid	0.3459	0.0118
+0.1903	0.0827	1.000	technical personnel in gaining a better understanding	0.3891	0.0133
+0.2044	0.0841	1.000	of the program.	0.1174	0.0151
+0.2209	0.0996	1.000	Since initial release of the program, modifica-	0.3515	0.0116
+0.2355	0.0827	1.000	tions have been made; these should not affect the	0.3609	0.0116
+0.2500	0.0827	1.000	technical accuracy at this level of documentation.	0.3684	0.0116
+0.2645	0.1015	1.000	Certain knowledge concerning the programming	0.3515	0.0131
+0.2776	0.0826	1.000	system is a prerequisite for full utilization of this	0.3724	0.0147
+0.2936	0.0827	1.000	manual. Such background can be obtained from the	0.3797	0.0116
+0.3096	0.0827	1.000	IBM 7030 Reference Manual, Form A22-6530-2,	0.3590	0.0116
+0.3227	0.0827	1.000	7030 STRAP II Reference Manual, Form C28-6129,	0.3797	0.0131
+0.3387	0.0827	1.000	STRAP II Assembly Listing, and IBM Master	0.3346	0.0132
+0.3532	0.0846	1.000	Control Program, Form C22-6678.	0.2613	0.0117
+0.3677	0.0996	1.000	The reader must note that this analysis guide	0.3346	0.0117
+0.3821	0.0827	1.000	does not offer a complete technical picture of	0.3365	0.0118
+0.3967	0.0827	1.000	STRAP II, but does furnish valuable background and	0.3835	0.0133
+0.4112	0.0827	1.000	a general look at some of the more important	0.3365	0.0133
+0.4258	0.0827	1.000	aspects of the program.	0.1786	0.0133
+0.8953	0.0827	1.000	Copies of this and other IBM publications can be obtained through IBM Branch Offices	0.4850	0.0087
+0.9084	0.0827	1.000	Address comments concerning the content of this publication to:	0.3647	0.0088
+0.9200	0.0827	1.000	IBM Corporation, Department B71, PO Box 390, Poughkeepsie, N. Y.	0.3985	0.0118

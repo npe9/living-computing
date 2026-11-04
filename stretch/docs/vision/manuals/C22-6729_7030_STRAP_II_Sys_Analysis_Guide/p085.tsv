@@ -1,0 +1,83 @@
+0.0915	0.5320	1.000	countered, and the bit is turned on. If on, the error	0.3891	0.0131
+0.0915	0.1053	1.000	field, the GETFLD buffer is pulled up. If null, the	0.3797	0.0146
+0.1061	0.5320	1.000	message (Syntax Error) will be given.	0.2801	0.0131
+0.1061	0.1053	1.000	null field indicator (Gfnul]) is turned on.	0.2970	0.0146
+0.1362	0.1033	1.000	Boxes 34, 35	0.0998	0.0155
+0.1377	0.5280	1.000	Box 63	0.0548	0.0139
+0.1656	0.5300	1.000	If the test for a comma (box 62) is negative, the	0.3554	0.0147
+0.1657	0.1034	1.000	If the parentheses count is zero, and Ginull is on,	0.3684	0.0174
+0.1802	0.1015	1.000	the null prefix is stored in the intermediate buffer,	0.3778	0.0146
+0.1817	0.5301	1.000	character is checked for a closed parenthesis. If	0.3684	0.0116
+0.1948	0.1034	1.000	and $2 is spaced six bits.	0.1898	0.0131
+0.1962	0.5301	1.000	yes, an error message is given. If no, the program	0.3891	0.0132
+0.2106	0.5282	1.000	will request the next character from GETCHA.	0.3459	0.0133
+0.2252	0.1034	1.000	Boxes 36, 45, 50	0.1278	0.0147
+0.2397	0.5301	1.000	Boxes 43, 44, 49	0.1278	0.0147
+0.2542	0.1034	1.000	If a GP is not allowed (indicated by Gfnogp on), and	0.3778	0.0147
+0.2688	0.1034	1.000	a GP does not follow (Gfgenp off), exit is made. If	0.3778	0.0161
+0.2689	0.5319	1.000	If the field is not null (box 34), the program branches	0.3930	0.0153
+0.2805	0.1034	1.000	a GP does follow, GETCHA is requested to space to	0.3835	0.0174
+0.2833	0.5301	1.000	to Gfza. If there was no operator to make the par-	0.3778	0.0132
+0.2979	0.1053	1.000	the end of the instruction unit.	0.2218	0.0118
+0.2994	0.5301	1.000	entheses arithmetic, the coded expression is set to	0.3778	0.0131
+0.3139	0.5301	1.000	indicate a sub-expression.	0.1974	0.0116
+0.3285	0.1034	1.000	Boxes 37, 46	0.0996	0.0145
+0.3427	0.5281	1.000	Boxes 64, 73	0.1017	0.0153
+0.3576	0.1034	1.000	If a GP is allowed, but no GP follows, the bit at the	0.3797	0.0131
+0.3691	0.1034	1.000	end of the coded expression is set to zero to indicate	0.3872	0.0146
+0.3706	0.5282	1.000	If there is only one absolute datum, and a GP or	0.3590	0.0161
+0.3852	0.1034	1.000	no GP entry exit.	0.1278	0.0131
+0.3852	0.5282	1.000	radix has already been processed (Gisfxa on), an	0.3665	0.0189
+0.3997	0.5301	1.000	error message is given.	0.1842	0.0161
+0.4155	0.1033	1.000	Boxes 38	0.0716	0.0150
+0.4288	0.5282	1.000	Boxes 76-78, 82,83	0.1523	0.0189
+0.4433	0.1034	1.000	If a GP follows, the heading for a GP entry is stored	0.3910	0.0174
+0.4593	0.1015	1.000	in the buffer. $2 is spaced 8 bits, and the Ist word	0.3816	0.0174
+0.4621	0.5282	1.000	If the parenthesis could not be arithmetic, Gfsfxb	0.3647	0.0132
+0.4752	0.1034	1.000	if the GETFLD buffer reset to zeros.	0.2763	0.0147
+0.4763	0.5282	1.000	(processing-subscript indicator) is turned on and the	0.3910	0.0124
+0.4897	0.5282	1.000	program branches to Giza. I the parentheses could	0.3891	0.0161
+0.5025	0.1033	1.000	Boxes 12,48	0.0961	0.0183
+0.5029	0.5282	1.000	be arithmetic, but the character is not a closed par-	0.3910	0.0174
+0.5203	0.5282	1.000	enthesis, the error message (Inappropriate Character)	0.4060	0.0131
+0.5341	0.5262	1.000	is given. If a closed parenthesis, the operator and	0.3818	0.0158
+0.5348	0.1034	1.000	If the parentheses count is not zero (box 33), the	0.3590	0.0161
+0.5494	0.1034	1.000	null field indicator is turned off. If the character is	0.3816	0.0146
+0.5509	0.5263	1.000	the number of the datum are placed in the GETFLD	0.3797	0.0131
+0.5609	0.1034	1.000	not aDandD,the error message (Inappropriate	0.3534	0.0206
+0.5639	0.5263	1.000	buffer. GETCHA supplies the next character and the	0.3947	0.0131
+0.5785	0.1053	1.000	Character) is given.	0.1485	0.0145
+0.5799	0.5282	1.000	opening arithmetie parenthesis; indicator (Gfspas)	0.3722	0.0131
+0.5915	0.5282	1.000	is turned on.	0.1016	0.0147
+0.6059	0.1033	1.000	Boxes 56, 60	0.1016	0.0193
+0.6221	0.5282	1.000	Boxes 65, 66, 79-81, 74	0.1861	0.0161
+0.6366	0.1034	1.000	If the character is a, or) and a subscript has already	0.4023	0.0161
+0.6497	0.5301	1.000	The expression is tested for the possibility of being	0.3835	0.0176
+0.6526	0.1015	1.000	been encounter (Gfsfxb on), a branch is made to	0.3553	0.0160
+0.6657	0.5282	1.000	a GP or radix. If neither, Gisfsb (subscript-allowed	0.3947	0.0174
+0.6657	0.1015	1.000	Gfza. In the case of aO, one is subtracted from	0.3590	0.0161
+0.6817	0.5282	1.000	indicator) is tested. If off, and the number of oper-	0.3872	0.0160
+0.6817	0.1015	1.000	the parenthesis count. Gfza stores the operators in-	0.3835	0.0160
+0.6962	0.5282	1.000	ators is equal to zero, the radix indicator (Gfrads)	0.3778	0.0160
+0.6962	0.1015	1.000	to the coded expression from the GETFLD buffer.	0.3553	0.0145
+0.7093	0.5263	1.000	is turned on. If it is already on, the error message	0.3910	0.0174
+0.7121	0.1053	1.000	The expression is given the prefix 1000.	0.2951	0.0118
+0.7252	0.5263	1.000	(Syntax Error) is given.	0.1823	0.0147
+0.7426	0.1033	1.000	Bоx 61	0.0527	0.0133
+0.7699	0.5243	1.000	Box 74	0.0605	0.0168
+0.7718	0.1053	1.000	Set coded expression to indicate no more operators	0.3816	0.0116
+0.7863	0.1053	1.000	$2 is spaced 1 bit.	0.1316	0.0116
+0.7994	0.5244	1.000	The value of the radix is stored in Gfsrad.	0.3158	0.0146
+0.8154	0.1053	1.000	Boxes 62, 57, 51	0.1278	0.0146
+0.8294	0.5243	1.000	Boxes 67-70	0.0980	0.0157
+0.8445	0.1053	1.000	The character is checked for a comma indicating	0.3609	0.0146
+0.8590	0.1034	1.000	a subscript. Bit Gfsfxb, if on indicates a subscript	0.3835	0.0146
+0.8605	0.5244	1.000	If the syntax is correct for terminating and a GP	0.3609	0.0145
+0.8721	0.1034	1.000	has already been processed and the program branches	0.4023	0.0161
+0.8764	0.5207	1.000	has not already been processed, Gigend is turned	0.3703	0.0146
+0.8864	0.5243	1.000	on. The value of the GP is stored in Gigpv, and	0.3593	0.0176
+0.8866	0.1034	1.000	to process the subscript. If off, a check is made on	0.3872	0.0174
+0.9039	0.5244	1.000	the operator is deleted from the GETFLD buffer.	0.3665	0.0161
+0.9039	0.1034	1.000	bit Gfsixa. If off, a GP or radix has not been en-	0.3684	0.0147
+0.9441	0.8288	1.000	GETFLD	0.0718	0.0130
+0.9448	0.9004	1.000	85	0.0188	0.0102

@@ -1,0 +1,97 @@
+0.0654	0.7331	1.000	OPERATING WITH MCP	0.1880	0.0189
+0.1090	0.5338	1.000	6. Mount the system tapes as directed by the	0.3477	0.0189
+0.1105	0.0883	1.000	INITIALIZING THE SYSTEM	0.2162	0.0132
+0.1250	0.5169	1.000	mounting messages issued by the initialization	0.3534	0.0174
+0.1381	0.0883	1.000	The 7030 Programming System must be initialized	0.3797	0.0160
+0.1381	0.5169	1.000	program. (If key 28 is on, the IPL mounting	0.3440	0.0204
+0.1539	0.5169	1.000	messages are suppressed.)	0.2124	0.0176
+0.1539	0.0865	1.000	whenever the power has been turned on; the pro-	0.3665	0.0147
+0.1685	0.0865	1.000	gramming system or disk is suspected of being	0.3571	0.0161
+0.1830	0.0865	1.000	contaminated; or a machine error has made it	0.3496	0.0146
+0.1831	0.5169	1.000	Options	0.0620	0.0203
+0.1991	0.0865	1.000	impossible for MCP to continue.	0.2462	0.0146
+0.2136	0.1071	1.000	At the time of initialization, the minimum	0.3177	0.0161
+0.2136	0.5188	1.000	Any or all of the five options and their related	0.3477	0.0146
+0.2267	0.0865	1.000	machine configuration is assumed to be available.	0.3759	0.0176
+0.2282	0.5169	1.000	parameters should be selected before pressing the	0.3835	0.0146
+0.2412	0.5169	1.000	IPL key.	0.0733	0.0204
+0.2442	0.0883	1.000	Basically, the initialization program reads the	0.3515	0.0116
+0.2573	0.0883	1.000	MCP portion of the master system tape into core	0.3665	0.0131
+0.2688	0.0865	1.000	storage and writes a copy of the entire tape on the	0.3759	0.0176
+0.2703	0.5414	1.000	Console Binary Key	0.1504	0.0176
+0.2848	0.0865	1.000	disk in the PROSA area.	0.1842	0.0161
+0.2861	0.7818	1.000	Options	0.0585	0.0194
+0.2877	0.5676	1.000	Latched On	0.0865	0.0133
+0.3081	0.7162	1.000	Time	0.0451	0.0160
+0.3081	0.6015	1.000	0-23	0.0414	0.0145
+0.3227	0.7162	1.000	Date	0.0395	0.0160
+0.3227	0.5940	1.000	32-55	0.0489	0.0145
+0.3372	0.7162	1.000	Suppress Messages	0.1485	0.0174
+0.3372	0.5940	1.000	28	0.0226	0.0160
+0.3459	0.2481	1.000	Master	0.0395	0.0116
+0.3517	0.7162	1.000	I/O Status Report	0.1410	0.0174
+0.3576	0.2500	1.000	System	0.0376	0.0102
+0.3663	0.5940	1.000	30	0.0244	0.0160
+0.3663	0.7162	1.000	Rejected Job Count Report	0.2011	0.0160
+0.3706	0.2481	1.000	Tape	0.0301	0.0102
+0.3794	0.7162	1.000	Abnormal MCP Mode	0.1635	0.0174
+0.3794	0.5940	1.000	31	0.0226	0.0160
+0.3947	0.7140	1.000	Report	0.0588	0.0172
+0.4141	0.2255	1.000	Initialization	0.0771	0.0119
+0.4157	0.1071	1.000	Console	0.0433	0.0103
+0.4230	0.1090	1.000	Options	0.0414	0.0116
+0.4244	0.5169	1.000	Suppress Messages	0.1485	0.0160
+0.4273	0.2481	1.000	Program	0.0432	0.0087
+0.4360	0.4117	1.000	Storage	0.0432	0.0131
+0.4520	0.5169	1.000	If binary key 28 is latched on, all initialization	0.3553	0.0189
+0.4709	0.5169	1.000	program messages will be suppressed except the	0.3703	0.0131
+0.4724	0.2444	1.000	MCP in	0.0414	0.0116
+0.4797	0.2500	1.000	Core	0.0338	0.0145
+0.4824	0.5169	1.000	system tape "Date Verification Message" and the	0.3703	0.0147
+0.4927	0.2425	1.000	Storage	0.0432	0.0131
+0.4985	0.5169	1.000	invalid Date Time message, if applicable. (See	0.3628	0.0161
+0.5113	0.5150	1.000	"'Time and Date.")	0.1618	0.0153
+0.5406	0.5169	1.000	I/O Status Report	0.1372	0.0176
+0.5436	0.0865	1.000	Input	0.0414	0.0160
+0.5697	0.5169	1.000	Io place a unit, or an entire channel, in the not	0.3647	0.0191
+0.5712	0.0865	1.000	The current MCP master system tape is file pro-	0.3759	0.0176
+0.5842	0.5150	1.000	available status, binary key 29 and the numeric	0.3628	0.0176
+0.5887	0.0846	1.000	tected and mounted on any tape unit dialed to zero.	0.3816	0.0147
+0.5988	0.5169	1.000	switches are used, as explained in the following	0.3628	0.0176
+0.6017	0.0846	1.000	Density for this unit is set to HIGH and the unit is	0.3759	0.0161
+0.6162	0.5169	1.000	steps.	0.0527	0.0147
+0.6177	0.0846	1.000	made READY.	0.1109	0.0145
+0.6294	0.5301	1.000	1. The unavailable device is identified in the	0.3459	0.0146
+0.6407	0.5169	1.000	numeric switches.	0.1430	0.0181
+0.6497	0.0865	1.000	Procedure	0.0827	0.0160
+0.6817	0.1090	1.000	1. Select initialization options as outlined in	0.3327	0.0116
+0.6817	0.5150	1.000	Numeric Switch	0.1222	0.0147
+0.6947	0.0826	1.000	"Options" if an abnormal start of MCP is to be	0.3742	0.0162
+0.6959	0.7367	1.000	Contents	0.0698	0.0181
+0.6962	0.5508	1.000	Column	0.0658	0.0160
+0.7106	0.0865	1.000	executed. Otherwise, binary keys 28, 29, 30, and	0.3816	0.0161
+0.7238	0.5470	1.000	7and 8	0.0602	0.0160
+0.7238	0.6485	1.000	Channel number of the device.	0.2312	0.0189
+0.7252	0.0865	1.000	31 should be latched off and the operator should	0.3590	0.0147
+0.7382	0.5394	1.000	15 and 16	0.0772	0.0163
+0.7383	0.0882	1.000	proceed immediately to step 2.	0.2335	0.0147
+0.7384	0.6485	1.000	Tape unit number. If the device	0.2444	0.0174
+0.7529	0.6466	1.000	is not a tape unit, these two	0.2162	0.0189
+0.7542	0.1071	1.000	2. Set up the time in binary keys 0-23, and the	0.3534	0.0161
+0.7674	0.6485	1.000	columns are not used. If an	0.2162	0.0189
+0.7688	0.0883	1.000	date in binary keys 32-55. (See Figure 2.)	0.3214	0.0133
+0.7820	0.6485	1.000	entire tape channel is unavailable,	0.2613	0.0189
+0.7833	0.1071	1.000	3. Press IPL key.	0.1410	0.0132
+0.7964	0.6485	1.000	put 08 in columns 15 and 16.	0.2180	0.0191
+0.7979	0.1090	1.000	4. Press Signal key on the adapter unit for the	0.3477	0.0132
+0.8124	0.0883	1.000	channel on which the master system tape is	0.3233	0.0132
+0.8255	0.5150	1.000	Note that the numbers on the numeric switch col-	0.3741	0.0176
+0.8268	0.0864	1.000	mounted.	0.0697	0.0136
+0.8415	0.5150	1.000	umns run from 1 to 16; there is no numeric switeh	0.3835	0.0176
+0.8415	0.1034	1.000	5. If the I/O status report option is desired,	0.3383	0.0161
+0.8545	0.5150	1.000	column O as with the binary keys. (See Figure 2.)	0.3816	0.0191
+0.8561	0.0865	1.000	proceed as directed in step 3 under "I/O Status	0.3534	0.0131
+0.8706	0.0865	1.000	Report"; otherwise, omit this step and continue.	0.3647	0.0161
+0.8706	0.5150	1.000	The contents of these switches will appear in the	0.3684	0.0176
+0.9142	0.7312	1.000	Operating With MCP	0.1259	0.0145
+0.9172	0.8966	1.000	29	0.0188	0.0102

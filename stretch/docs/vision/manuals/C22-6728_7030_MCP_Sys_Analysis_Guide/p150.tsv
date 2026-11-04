@@ -1,0 +1,113 @@
+0.0682	0.5357	1.000	b. A single UK appears on the last card of the	0.3553	0.0133
+0.0682	0.2782	1.000	If a UK-EOP was	0.1335	0.0103
+0.0682	0.0695	1.000	Card Reader Read Failure:	0.2086	0.0161
+0.0827	0.0733	1.000	received, a read failure is possible. The operator is	0.3985	0.0133
+0.0828	0.5695	1.000	read.	0.0451	0.0131
+0.0988	0.0733	1.000	notified to service the card reader. After reloading	0.3872	0.0103
+0.1118	0.0732	1.000	the cards, the operator pushes the ready button and	0.3818	0.0139
+0.1118	0.5056	1.000	UK on Read Tape/Scan Tape	0.2086	0.0133
+0.1264	0.0714	1.000	tries again. The operator is expected to retry the	0.3759	0.0132
+0.1409	0.0733	1.000	read at the request of the input fixups, then if the	0.3665	0.0132
+0.1424	0.5038	1.000	If a failure occurs on either a scan or read tape, the	0.3891	0.0131
+0.1554	0.0713	1.000	attempt is not successful, the job may be abandoned.	0.3930	0.0160
+0.1555	0.5038	1.000	same fixup procedure takes place. A $BSP-$RD series	0.4117	0.0132
+0.1715	0.5038	1.000	is initiated and continued until an arbitrary count is	0.3816	0.0116
+0.1848	0.0713	1.000	Card Reader Total Failure: In case of a total UK	0.3687	0.0144
+0.1860	0.5019	1.000	exhausted (Figure 80). If the UK is still present, it	0.3872	0.0146
+0.2006	0.0714	1.000	failure where none of the job can be saved, the fixup	0.3891	0.0131
+0.2006	0.5038	1.000	might be caused by a dust particle. The tape is now	0.3872	0.0131
+0.2151	0.5038	1.000	backspaced three times and then spaced to its original	0.4004	0.0116
+0.2151	0.0714	1.000	program must reject the job. It first checks to see	0.3835	0.0131
+0.2297	0.0714	1.000	whether the card reader is on-line or not (Figure 79).	0.4023	0.0131
+0.2297	0.5038	1.000	position in an attempt to dispose of any dust particles.	0.4004	0.0131
+0.2442	0.5019	1.000	The $BSP-$RD series is reinitiated and a triple back-	0.4023	0.0146
+0.2456	0.0733	1.000	If not, it looks to see whether: (1) the UK came when	0.3947	0.0131
+0.2602	0.0733	1.000	the system was in transit from bypass to online, in	0.3797	0.0116
+0.2602	0.5019	1.000	space again takes place. The triple backspace pro-	0.3853	0.0132
+0.2747	0.5019	1.000	cedure is also controlled by an arbitrary count. A	0.3759	0.0132
+0.2747	0.0733	1.000	which case it gives control back to the input transition	0.4004	0.0117
+0.2878	0.5019	1.000	total UK failure is assumed when the triple backspace	0.3985	0.0146
+0.2892	0.0733	1.000	routine, or (2) the job was finished, in which case	0.3722	0.0132
+0.3036	0.5019	1.000	count is exhausted.	0.1429	0.0133
+0.3036	0.0733	1.000	there is no reason to reject it and control can be given	0.4041	0.0118
+0.3169	0.5169	1.000	If the UK had occurred sufficiently close to the	0.3515	0.0147
+0.3182	0.0714	1.000	up normally, or (3) the MCP asked for the card, in	0.3816	0.0133
+0.3327	0.5019	1.000	beginning of the tape, backspacing might cross the	0.3741	0.0147
+0.3327	0.0733	1.000	which case a bit is set and control is given back to	0.3741	0.0133
+0.3473	0.5019	1.000	label file mark, giving an EPGK. This resets the	0.3722	0.0133
+0.3488	0.0733	1.000	the input program. If the card reader is not online	0.3797	0.0118
+0.3618	0.5038	1.000	space count and causes entry into the space procedure.	0.4060	0.0132
+0.3633	0.0733	1.000	and none of these conditions hold, the fixup program	0.3872	0.0117
+0.3779	0.0714	1.000	primes EOJ and gives $RET.	0.2180	0.0131
+0.3908	0.5037	1.000	RT/ST Total Failure: A total failure on a scan tape	0.3836	0.0133
+0.3924	0.0902	1.000	If the card reader is online, the fixup program	0.3459	0.0131
+0.4070	0.5038	1.000	might have happened at an inopportune time for the	0.3741	0.0116
+0.4070	0.0733	1.000	makes the read failure look like a write tape total	0.3684	0.0116
+0.4215	0.5019	1.000	input scanning and I-O preassignment in Job Control	0.3891	0.0116
+0.4215	0.0733	1.000	failure to simplify Job Control communication. The	0.3872	0.0131
+0.4360	0.5019	1.000	whereas a total failure on a read tape has no problem	0.3947	0.0131
+0.4375	0.0733	1.000	WT is given a SBSFL, the RESRCH routine is entered,	0.4041	0.0131
+0.4506	0.0733	1.000	and parameters are stripped from the WT queue. If	0.3891	0.0131
+0.4506	0.5019	1.000	in this respect. In any event, a $SPFL is given.	0.3609	0.0131
+0.4619	0.5186	1.000	If the failure occurred on a scan tape, a $BSFL is	0.3707	0.0190
+0.4666	0.0733	1.000	the card reader total failure was passed to the write	0.3872	0.0116
+0.4811	0.5038	1.000	given (Figure 81), then a negative parameter	0.3308	0.0116
+0.4811	0.0733	1.000	tape so as to occur on the first job on tape, a $BSFL	0.3891	0.0116
+0.4956	0.5038	1.000	(-RKSCNN) is put in the SC parameter queue and	0.3571	0.0116
+0.4956	0.0733	1.000	would result in EPGK. Control therefore goes to	0.3665	0.0102
+0.5102	0.5038	1.000	control is given to the input program.	0.2801	0.0116
+0.5102	0.0733	1.000	REDUMP to reject the tape.	0.2086	0.0116
+0.5102	0.7838	1.000	The input pro-	0.1147	0.0116
+0.5247	0.5019	1.000	gram must always be given a first B card to be able	0.3853	0.0117
+0.5392	0.5019	1.000	to terminate a previous job, while preassignment	0.3665	0.0132
+0.5392	0.0733	1.000	UK Card Dropped or Retained: The fixup program	0.3741	0.0132
+0.5535	0.5037	1.000	must be given the B- non-B break to round up pre-	0.3742	0.0136
+0.5536	0.0714	1.000	will only reject jobs in which there is no doubt that	0.3816	0.0133
+0.5682	0.5019	1.000	assignment correctly within a job. A test is made to	0.3929	0.0133
+0.5697	0.0733	1.000	a total UK failure occurred. In some cases a UK	0.3665	0.0103
+0.5799	0.5017	1.000	see whether JC1 has gotten the first B card. If not,	0.3857	0.0175
+0.5842	0.0733	1.000	card is left in the buffer so that no more jobs than	0.3722	0.0103
+0.5973	0.5019	1.000	a blank card except for a B in column one is given to	0.3910	0.0133
+0.5988	0.0733	1.000	necessary are rejected. The UK card will either be	0.3872	0.0118
+0.6118	0.5019	1.000	JCI, followed by 16 blank cards. If it has gotten the	0.3891	0.0132
+0.6133	0.0733	1.000	read over in core or will be left in the buffer to be	0.3741	0.0118
+0.6279	0.0733	1.000	tested by the input program according to the	0.3271	0.0117
+0.6279	0.5019	1.000	first B card, then 17 blank cards are given to JC1.	0.3778	0.0117
+0.6381	0.5016	1.000	Control is returned to the input program.	0.3051	0.0188
+0.6439	0.0733	1.000	following situations:	0.1504	0.0116
+0.6555	0.0865	1.000	1. The UK card will be read over in core if:	0.3308	0.0118
+0.6555	0.5169	1.000	If the failure occurred on a read tape, a check is	0.3609	0.0146
+0.6700	0.1034	1.000	a. A total UK oceurs but the UK card is pre-	0.3440	0.0131
+0.6700	0.5019	1.000	made to see whether an EOJ has been issued. If it	0.3759	0.0118
+0.6860	0.5000	1.000	has, the fixup program will not reject the job but	0.3684	0.0116
+0.6860	0.1391	1.000	ceded by a B card. The current job is	0.2857	0.0116
+0.7006	0.1391	1.000	rejected and the UK card is immediately	0.3008	0.0116
+0.7006	0.5000	1.000	will instead return control to the input program. If	0.3835	0.0116
+0.7151	0.5000	1.000	an EOJ has not been issued, a -RTDOWN is put in	0.3741	0.0116
+0.7151	0.1391	1.000	read over.	0.0789	0.0102
+0.7297	0.5000	1.000	the Q parameter queue causing the correct job to be	0.3853	0.0116
+0.7297	0.1297	1.000	The UK card is preceded by another UK card.	0.3477	0.0116
+0.7297	0.0996	1.000	b.	0.0207	0.0131
+0.7442	0.1391	1.000	The first UK card will determine which job	0.3177	0.0116
+0.7442	0.5000	1.000	rejected, and the input job boundary is set up. Con-	0.3891	0.0131
+0.7587	0.1372	1.000	is rejected and the second UK card is read	0.3177	0.0116
+0.7587	0.5000	1.000	trol is then given back to the input program.	0.3271	0.0116
+0.7733	0.5150	1.000	In addition to the cases previously described, an	0.3609	0.0131
+0.7762	0.1391	1.000	over.	0.0395	0.0087
+0.7867	0.4999	1.000	extreme case of RT/ST total failure is also provided	0.3893	0.0145
+0.7892	0.1278	1.000	There are two or more UK cards with good	0.3289	0.0117
+0.7907	0.1015	1.000	0.	0.0188	0.0087
+0.8036	0.5000	1.000	for. Should a one or two card file consisting only of	0.3891	0.0133
+0.8036	0.1372	1.000	cards in between on the same input read.	0.3045	0.0118
+0.8182	0.5000	1.000	command cards be read successfully in one phase but	0.3966	0.0118
+0.8182	0.1391	1.000	Treated as in (b) above.	0.1767	0.0118
+0.8327	0.0865	1.000	2. The UK card is left in the buffer to be tested by	0.3778	0.0118
+0.8327	0.5000	1.000	not the other, JC will expect an entry in its tables for	0.3966	0.0118
+0.8473	0.5000	1.000	the phase in which the failure occurred but will not	0.3778	0.0118
+0.8488	0.0695	1.000	the input program if:	0.1560	0.0103
+0.8618	0.1259	1.000	There is a single UK card followed by good	0.3308	0.0133
+0.8633	0.5000	1.000	recognize this file as a job in the successful phase.	0.3797	0.0117
+0.8648	0.1015	1.000	a.	0.0244	0.0087
+0.8764	0.5000	1.000	The extra table entry would put JC out of phase,	0.3553	0.0146
+0.8779	0.1391	1.000	cards.	0.0489	0.0102
+0.9230	0.0714	1.000	150	0.0226	0.0087

@@ -1,0 +1,12 @@
+0.0872	0.1071	1.000	A, the refill field of the last control word is updated	0.3853	0.0131
+0.1017	0.1053	1.000	to retlect this, and a new control word is set up in	0.3741	0.0131
+0.1161	0.1071	1.000	buffer A.	0.0678	0.0105
+0.1451	0.1014	1.000	Box 11	0.0585	0.0150
+0.1744	0.1071	1.000	Bit 25 of the last control word is flagged to indicate	0.3797	0.0116
+0.1890	0.1053	1.000	last control word in buffer.	0.2030	0.0117
+0.2207	0.1033	1.000	Boxes 12-14	0.0904	0.0150
+0.2500	0.1053	1.000	If buffer A has just been completed, the area A in-	0.3741	0.0131
+0.2645	0.1053	1.000	dicator is turned on. The completed buffer is	0.3402	0.0131
+0.2805	0.1053	1.000	written on the disk.	0.1429	0.0102
+0.9387	0.8289	1.000	INTOUT	0.0509	0.0092
+0.9404	0.9023	1.000	91	0.0169	0.0087

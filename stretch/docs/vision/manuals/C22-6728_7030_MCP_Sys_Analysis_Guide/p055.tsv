@@ -1,0 +1,102 @@
+0.0758	0.5412	1.000	verification. If it is a JOB card, one more hurdle	0.3744	0.0173
+0.0770	0.1165	1.000	JC4 Operations	0.1147	0.0103
+0.0930	0.5395	1.000	must be passed: the WREJJB routine which checks	0.3816	0.0131
+0.1061	0.1165	1.000	JC4 will be described in 6 general areas: end-of-job,	0.4004	0.0146
+0.1076	0.5395	1.000	for phase 1 rejects (see JC4 error control). Then	0.3759	0.0146
+0.1206	0.1147	1.000	beginning-of-job, bypass I-O assignment, overlapped	0.3985	0.0146
+0.1221	0.5414	1.000	the job card is converted to A8, given to the logger,	0.3872	0.0131
+0.1351	0.1165	1.000	I-O assignment, compiler control, and error control.	0.4005	0.0147
+0.1366	0.5414	1.000	converted to IQS, and printed and punched on the out-	0.3966	0.0131
+0.1526	0.5414	1.000	put tape. A message is printed, using the commenta-	0.4023	0.0131
+0.1657	0.1184	1.000	End-of-Job	0.0827	0.0102
+0.1672	0.5395	1.000	tor, with the job name and the time of day. With this	0.3985	0.0132
+0.1817	0.5414	1.000	message, the job is fully annotated, and JC4 turns to	0.3947	0.0132
+0.1948	0.1184	1.000	The code from the entry point of JC4, YC4NO	0.3365	0.0131
+0.1962	0.5395	1.000	the succeeding B-cards. Iwo separate logie flows	0.3797	0.0145
+0.2093	0.1147	1.000	(Figure 27), through YC4B2 is essentially concerned	0.3910	0.0146
+0.2106	0.5395	1.000	exist, one (for the bypass mode) beginning at YTCSR,	0.3985	0.0147
+0.2252	0.1165	1.000	with terminating the previous job. First, to prevent	0.3910	0.0118
+0.2252	0.5395	1.000	the other (for the overlapped modes) at WJ4PA. The	0.3947	0.0147
+0.2397	0.1165	1.000	the operator from entering spurious EOJ commands	0.3835	0.0118
+0.2397	0.5414	1.000	flow converges again at WJC4G.	0.2368	0.0133
+0.2542	0.1165	1.000	through the console while JC4 has control, the initial	0.3929	0.0147
+0.2688	0.5414	1.000	Bypass I-O Assignment	0.1748	0.0133
+0.2688	0.1165	1.000	entry bit to the loader is checked to make sure the	0.3741	0.0118
+0.2833	0.1165	1.000	entry is valid. Next, the PP's I-O location table is	0.3816	0.0132
+0.2979	0.1165	1.000	checked to make sure that JC4 will not conflict with	0.3816	0.0118
+0.2979	0.5375	1.000	In bypass I-O assignment (Figure 27), the TYPE card	0.4024	0.0165
+0.3124	0.1165	1.000	PP I-O when it calls itself in from disk. If $ABEOJ	0.3872	0.0132
+0.3139	0.5376	1.000	is read and uncoded using the Uncode routine. If it	0.3853	0.0145
+0.3285	0.5395	1.000	contained COMPILE or COMPILGO, the compiler	0.3703	0.0145
+0.3285	0.1165	1.000	was the pseudo-op, the dump program is entered and	0.3910	0.0116
+0.3415	0.5376	1.000	set-up routine is entered at YCOJBI. If not, the	0.3665	0.0161
+0.3415	0.1147	1.000	YEOJS and SPINCL are set aceordingly. YEOJS, if	0.3853	0.0161
+0.3576	0.1165	1.000	set to one, will prevent further compiling and SPINCL	0.4004	0.0131
+0.3590	0.5414	1.000	LIM card is read at YC4B5. The read source routine	0.3985	0.0116
+0.3721	0.1147	1.000	affects the conditional saving of tapes in SFREE (see	0.3910	0.0131
+0.3735	0.5395	1.000	is used because the flow is rejoined at this point for	0.3872	0.0116
+0.3866	0.1165	1.000	Unassign). After calling itself in from disk, JC4	0.3628	0.0131
+0.3881	0.5414	1.000	compiler LIM and IOD cards. The limits are saved	0.3835	0.0116
+0.3996	0.1164	1.000	checks the op code for SJC4 to skip the end-of-job	0.3705	0.0157
+0.4026	0.5395	1.000	in all the necessary places: YEDLL, the $EDUMP	0.3778	0.0147
+0.4172	0.1147	1.000	procedure it it has already been effected, i.e., JC4	0.3835	0.0132
+0.4185	0.5414	1.000	buffer; SLRBU, the eventual boundary control regi-	0.3816	0.0118
+0.4317	0.1147	1.000	is looping waiting for a new job card.	0.2744	0.0116
+0.4317	0.5395	1.000	ster; and SMARK, to establish the upper extent of the	0.3966	0.0147
+0.4462	0.5414	1.000	PP's I-O tables. Before the upper limit is used to	0.3759	0.0132
+0.4462	0.1316	1.000	The next step is to reset SSYRFT, the temporary	0.3647	0.0132
+0.4606	0.1147	1.000	arc assignment pointer, to SDKMCP, the permanent	0.3891	0.0133
+0.4621	0.5395	1.000	establish the PP I-O location table base address	0.3571	0.0103
+0.4764	0.5413	1.000	(SBAPP), JC4 makes sure it is greater than YMAX,	0.3836	0.0149
+0.4767	0.1147	1.000	reset are (see description of move routine later in	0.3741	0.0103
+0.4912	0.1147	1.000	this section). Now the compiler routine YC4INT is	0.3778	0.0118
+0.4927	0.5395	1.000	to prevent any possible memory conflict. The next	0.3816	0.0116
+0.5042	0.1147	1.000	entered if a compiler was running, otherwise, the	0.3703	0.0133
+0.5058	0.5395	1.000	step by JC4 is to string out all the IOD cards in mem-	0.4023	0.0131
+0.5188	0.1147	1.000	input program is instructed to "scan" to the next	0.3609	0.0118
+0.5218	0.5414	1.000	ory in the format required by the decode and move	0.3722	0.0116
+0.5333	0.1147	1.000	JOB or COMD card. The PP's I-O is then	0.3158	0.0118
+0.5363	0.5414	1.000	subroutines. This is done in a loop beginning at	0.3571	0.0131
+0.5479	0.1128	1.000	"unassigned", and the output program instructed to	0.3816	0.0132
+0.5509	0.5414	1.000	YIODSO (Figure 28) which is broken normally when	0.3778	0.0131
+0.5624	0.1147	1.000	empty its buffers (SSPEOJ), provided there is some-	0.3910	0.0146
+0.5654	0.5395	1.000	the first binary card is encountered. The code from	0.3910	0.0131
+0.5770	0.1147	1.000	thing in them (YSSPBT = zero). In addition, several	0.3891	0.0146
+0.5799	0.5414	1.000	YC4C9 to WJC4G effects successively the decoding	0.3741	0.0131
+0.5930	0.1147	1.000	items are reset, among them the commentator buffer	0.3947	0.0116
+0.5959	0.5395	1.000	of the IOD and REEL cards, the actual I-O assign-	0.3759	0.0132
+0.6061	0.1147	1.000	(PONOUT) and the maskable interrupt counter	0.3383	0.0131
+0.6103	0.8890	1.000	This	0.0359	0.0119
+0.6105	0.5395	1.000	ment, and the construction of tables by Move.	0.3402	0.0117
+0.6221	0.1147	1.000	(YMISCO). At this point termination of the current	0.3797	0.0116
+0.6250	0.5395	1.000	whole sequence is skipped for jobs with no IOD cards.	0.4004	0.0132
+0.6366	0.1128	1.000	job is complete, and JC4 is ready to begin a new job.	0.3947	0.0131
+0.6394	0.5395	1.000	At the end SCORG is checked so that special action	0.3778	0.0133
+0.6555	0.5395	1.000	may be taken for compiler at YC4INT.	0.2857	0.0118
+0.6657	0.1128	1.000	Beginning-of-Job	0.1297	0.0131
+0.6845	0.5414	1.000	Overlapped I-O Assignment	0.2049	0.0118
+0.6948	0.1147	1.000	At YC4B2 (Figure 27), the LFINB bit is checked to	0.3759	0.0131
+0.7093	0.1147	1.000	see if decode is currently processing B cards for	0.3647	0.0131
+0.7106	0.5395	1.000	This logic starts at WJ4PA (Figure 29) by checking	0.3797	0.0133
+0.7252	0.1147	1.000	JC1. If so JC4 effects a waiting loop by priming	0.3590	0.0133
+0.7252	0.5376	1.000	the TYPE card, as in the bypass mode. It proceeds	0.3891	0.0147
+0.7372	0.1144	1.000	itself and issuing $RET. If this were not done,	0.3501	0.0172
+0.7397	0.5376	1.000	to YCOJB if compiler setup is necessary. At WJ4PF	0.3966	0.0147
+0.7542	0.1147	1.000	decode might possibly construct a fictitious PPREF	0.3797	0.0133
+0.7558	0.5357	1.000	the read source is set to $SCR, because WJ4PFF is	0.3872	0.0161
+0.7703	0.1147	1.000	slot in phase 1, or too large an IOREQ table in phase	0.3910	0.0118
+0.7703	0.5357	1.000	the entry point for go phases of overlapped COMPILGO	0.4098	0.0146
+0.7833	0.5357	1.000	jobs. Now the logic differs from that of the bypass	0.3816	0.0161
+0.7848	0.1147	1.000	4. The SSCR4 pseudo-op is then used to ask for a	0.3703	0.0117
+0.7993	0.5356	1.000	mode. Since the IOD cards were decoded by JC1,	0.3724	0.0162
+0.7994	0.1128	1.000	job card. If the input program gives end return, JC4	0.3966	0.0131
+0.8139	0.1128	1.000	again waits via a prime SJC4-$RET sequence, but	0.3741	0.0131
+0.8154	0.5357	1.000	the PP is ready to be assigned. If all goes well, the	0.3929	0.0146
+0.8285	0.5376	1.000	LIM card will be read (at WJ4PG) and uncoded. If	0.3759	0.0145
+0.8285	0.1147	1.000	first it checks SJIFUL to make sure phase 1 is not	0.3759	0.0131
+0.8445	0.1128	1.000	stopped for lack of table space. If the input program	0.3929	0.0116
+0.8445	0.5357	1.000	assignment comes back with a reject, a diagnosing	0.3797	0.0146
+0.8590	0.5357	1.000	message will be printed. After uncoding the LIM	0.3703	0.0146
+0.8590	0.1128	1.000	gives normal return, the card is sent to uncode for	0.3797	0.0131
+0.9345	0.7368	1.000	System Operation Programs	0.1579	0.0103
+0.9346	0.9117	1.000	55	0.0188	0.0087

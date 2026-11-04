@@ -1,0 +1,137 @@
+0.0814	0.1109	1.000	buffer (SLRBU). If PP interrupts are stacked, the	0.3759	0.0132
+0.0827	0.5376	1.000	code is converted from A8 to IQS. It is placed in an	0.3891	0.0133
+0.0924	0.1107	1.000	contents of SLRBU are moved to SLRPP, and an	0.3575	0.0189
+0.0973	0.5357	1.000	IQS message which is typed (TYPE XX ERROR), and	0.3929	0.0146
+0.1118	0.5376	1.000	a BD, $ executed.	0.1297	0.0132
+0.1118	0.1109	1.000	interrupt is unstacked.	0.1692	0.0118
+0.1264	0.5545	1.000	If SDISP is entered at PP level with a PP error	0.3534	0.0132
+0.1264	0.1278	1.000	If return is to be from the backup buffer, it must	0.3628	0.0132
+0.1409	0.1109	1.000	be examined (CRETBU) to determine that TS and	0.3590	0.0118
+0.1424	0.5376	1.000	code in $14VF, the MCP mask and boundaries are	0.3722	0.0131
+0.1546	0.1127	1.000	EXE are not set. (See the maskable interrupts.) If	0.3836	0.0142
+0.1570	0.5376	1.000	selected, SLRBU is filled from STLR, and MCP level	0.3985	0.0131
+0.1700	0.1109	1.000	either is on, the corresponding interrupt is faked by	0.3872	0.0131
+0.1715	0.5376	1.000	is set. ABEOJ is primed, the error code placed in	0.3835	0.0131
+0.1845	0.1109	1.000	entry to the parallel interrupt table (SIPT) at the	0.3590	0.0118
+0.1860	0.5376	1.000	the message skeleton, and control given to the short	0.3891	0.0131
+0.2006	0.1109	1.000	appropriate point. If both are off, control is returned	0.4004	0.0116
+0.2020	0.5357	1.000	message routine (ZSPLPR).	0.2105	0.0131
+0.2151	0.1090	1.000	to PP with registers restored from the backup buffer.	0.4004	0.0116
+0.2151	0.5545	1.000	The error control routine may be entered at	0.3289	0.0131
+0.2274	0.5374	1.000	SDSPDS if PP accomplishes a branch to 40.0(8) Or	0.3745	0.0188
+0.2442	0.1071	1.000	IC at PP Level (SI=O): II ȘRET is requested by PP	0.3835	0.0146
+0.2456	0.5376	1.000	40.40(8). In this case, low registers are saved in	0.3741	0.0131
+0.2587	0.1128	1.000	(SIFO), the return routine (CRETPP, Figure 22)	0.3571	0.0131
+0.2602	0.5376	1.000	STLR, error code 16 put in $14VF, and control given	0.3966	0.0132
+0.2733	0.1109	1.000	examines the PP auto-stack bit in the program status	0.3947	0.0131
+0.2745	0.5357	1.000	to SDISP.	0.0715	0.0120
+0.2878	0.1109	1.000	table (SPROGS). If PP requested $RET in main	0.3534	0.0116
+0.2892	0.5526	1.000	When the error routine branches to the short	0.3365	0.0117
+0.3023	0.1109	1.000	stream, STIC is adjusted to the half word after the	0.3759	0.0131
+0.3036	0.5376	1.000	message routine, the flow of control is predetermined	0.4023	0.0133
+0.3169	0.1109	1.000	$RET pseudo-op and the service op return routine	0.3703	0.0131
+0.3180	0.5337	1.000	all the way to the ABEOJ package. The short message	0.4119	0.0169
+0.3327	0.1090	1.000	(KSUPP) is used to return immediately. When $RET	0.3929	0.0133
+0.3342	0.5357	1.000	routine enters the system print program, a major	0.3722	0.0131
+0.3473	0.1090	1.000	is requested by PP I-O fixup, PP is taken out of	0.3590	0.0133
+0.3485	0.5337	1.000	package.	0.0698	0.0138
+0.3488	0.6034	1.000	The tentacle table for the system print pro-	0.3346	0.0131
+0.3618	0.1090	1.000	stack mode. Then, if PP is in SIO mode and waiting	0.3910	0.0132
+0.3633	0.5357	1.000	gram will have the user bit set to MCP, and the FWA	0.3966	0.0131
+0.3764	0.1090	1.000	for an interrupt, the search subroutine (KSERCH) is	0.3872	0.0132
+0.3779	0.5376	1.000	of the last tentacle table used will be zero, since	0.3628	0.0131
+0.3909	0.1090	1.000	entered to determine if the waited interrupt has been	0.3910	0.0132
+0.3924	0.5357	1.000	none was used since PP last had control. When $RET	0.4023	0.0131
+0.4069	0.5356	1.000	is requested by the system print routine, the return	0.3855	0.0150
+0.4070	0.1090	1.000	stacked. If it has, it is unstacked and control given	0.3853	0.0116
+0.4213	0.5337	1.000	routine will decide that system print had been primed,	0.4044	0.0162
+0.4215	0.1090	1.000	to the receptor at KINTTY. If PP is not in SIO mode	0.3929	0.0116
+0.4344	0.5356	1.000	and examine the prime queue for other primed	0.3443	0.0168
+0.4360	0.1090	1.000	and has interrupts stacked, one is unstacked: either	0.3891	0.0116
+0.4506	0.1090	1.000	the one waited (if PP is waiting and the waited inter-	0.3891	0.0116
+0.4506	0.5357	1.000	routines. ABEOJ was primed when the level was	0.3647	0.0131
+0.4649	0.1090	1.000	rupt has occurred) or the next one to be unstacked.	0.3779	0.0133
+0.4651	0.5338	1.000	changed, and thus will be unprimed immediately, and	0.3985	0.0161
+0.4797	0.1259	1.000	If PP is in SIO mode and not waiting, or not in SIO	0.3722	0.0131
+0.4811	0.5357	1.000	control never returned to the short message routine.	0.3929	0.0131
+0.4942	0.1090	1.000	mode and has no interrupt stacked, the routine	0.3459	0.0131
+0.5096	0.5337	1.000	Error Codes - Problem Program Errors:	0.3236	0.0181
+0.5102	0.1090	1.000	(CPSNOW) uses the JTSEXE subroutine to determine	0.3891	0.0116
+0.5247	0.1090	1.000	if the TS indicator had been set in SLRPP since the	0.3778	0.0117
+0.5392	0.1090	1.000	I-O interrupt, or if the EXE indicator had been set	0.3778	0.0132
+0.5407	0.5338	1.000	Error	0.0470	0.0131
+0.5536	0.1090	1.000	with the I-O interrupt. In either case, the interrupt	0.3872	0.0133
+0.5552	0.5338	1.000	Type	0.0395	0.0131
+0.5552	0.6090	1.000	$14VF	0.0508	0.0131
+0.5565	0.7086	1.000	Meaning	0.0640	0.0135
+0.5682	0.1071	1.000	is faked by entering the parallel interrupt table (SIPT)	0.4004	0.0133
+0.5842	0.6090	1.000	10001.0	0.0603	0.0148
+0.5842	0.7086	1.000	Illegal IF Interrupt	0.1447	0.0146
+0.5842	0.1090	1.000	at the appropriate point.	0.1786	0.0118
+0.5842	0.2895	1.000	(See maskable interrupts.)	0.2086	0.0118
+0.5843	0.5508	1.000	1	0.0094	0.0102
+0.5984	0.6089	1.000	10002.0	0.0605	0.0154
+0.5988	0.1090	1.000	If neither is on in SLRPP, low registers are restored	0.3966	0.0131
+0.5988	0.5508	1.000	2	0.0094	0.0102
+0.6003	0.7086	1.000	Pseudo-Op code invalid	0.1748	0.0131
+0.6133	0.1071	1.000	from SLRPP and control returned to the location	0.3609	0.0103
+0.6134	0.5508	1.000	3	0.0113	0.0116
+0.6146	0.6089	1.000	10003.0	0.0603	0.0135
+0.6148	0.7086	1.000	Channel not available	0.1598	0.0131
+0.6279	0.1090	1.000	specified in SICPP.	0.1429	0.0117
+0.6279	0.5508	1.000	3	0.0094	0.0116
+0.6293	0.6090	1.000	10003.0	0.0602	0.0133
+0.6294	0.7086	1.000	Unit not available	0.1316	0.0131
+0.6424	0.1259	1.000	Figure 23 tabulates the exits from the return	0.3308	0.0116
+0.6438	0.6090	1.000	10004.0	0.0621	0.0132
+0.6439	0.7049	1.000	IOD invalid, or Unit not	0.1842	0.0161
+0.6439	0.5489	1.000	4	0.0113	0.0102
+0.6553	0.7217	1.000	assigned	0.0716	0.0178
+0.6570	0.1090	1.000	routine.	0.0602	0.0116
+0.6697	0.6070	1.000	10005.0	0.0642	0.0182
+0.6715	0.5489	1.000	5	0.0113	0.0116
+0.6715	0.7068	1.000	I-O TOE address on IOD	0.1842	0.0161
+0.6844	0.7161	1.000	card invalid	0.1035	0.0177
+0.6875	0.1090	1.000	Error Control	0.1034	0.0089
+0.6990	0.6071	1.000	10006.0	0.0640	0.0177
+0.7006	0.7068	1.000	Request for too many scratch	0.2199	0.0174
+0.7006	0.5489	1.000	6	0.0132	0.0145
+0.7151	0.1071	1.000	The dispatcher error control is entered when errors	0.3910	0.0146
+0.7180	0.7199	1.000	tapes	0.0451	0.0131
+0.7282	0.7068	1.000	Control word invalid	0.1560	0.0176
+0.7295	0.6071	1.000	10007.0	0.0640	0.0177
+0.7297	0.5508	1.000	7	0.0094	0.0131
+0.7297	0.1053	1.000	generated by program execution are detected by MCP.	0.4023	0.0161
+0.7442	0.1071	1.000	The routine determines the program responsible for	0.3872	0.0161
+0.7456	0.7068	1.000	Control word address invalid	0.2162	0.0160
+0.7464	0.6106	1.000	10010.0	0.0550	0.0145
+0.7567	0.6107	1.000	10011.0	0.0549	0.0127
+0.7587	0.7086	1.000	Communication with protected	0.2237	0.0161
+0.7587	0.1071	1.000	the error. I PP generated the error, ABEOJ is	0.3628	0.0146
+0.7718	0.7180	1.000	area	0.0451	0.0160
+0.7718	0.1090	1.000	primed, and a message written on the output tape.	0.3703	0.0146
+0.7847	0.6221	1.000	412.0	0.0491	0.0179
+0.7848	0.1089	1.000	If MCP generated the error, a message is written	0.3706	0.0178
+0.7848	0.7086	1.000	Dump format invalid	0.1541	0.0176
+0.7878	0.5395	1.000	10	0.0188	0.0102
+0.7994	0.6222	1.000	401.0	0.0489	0.0174
+0.8009	0.5395	1.000	11	0.0188	0.0116
+0.8009	0.7068	1.000	$Chex linkage specifies an	0.1992	0.0174
+0.8023	0.1090	1.000	on the typewriter and a BD, $ executed.	0.2895	0.0116
+0.8106	0.1239	1.000	The error control routine is entered disabled at	0.3575	0.0199
+0.8135	0.7179	1.000	illegal address	0.1205	0.0197
+0.8284	0.6240	1.000	402.0	0.0471	0.0177
+0.8296	0.7067	1.000	Unit suppressed	0.1242	0.0180
+0.8299	0.1071	1.000	SDISP (Figure 24) with the A8 error code in $14VF.	0.3816	0.0161
+0.8314	0.5395	1.000	12	0.0188	0.0102
+0.8445	0.7049	1.000	50 maskable interrupts	0.1767	0.0189
+0.8457	0.6220	1.000	403.0	0.0454	0.0151
+0.8459	0.5376	1.000	13	0.0207	0.0102
+0.8459	0.1071	1.000	If the error occurred at MCP level, or if the error	0.3797	0.0160
+0.8588	0.6221	1.000	404.0	0.0472	0.0178
+0.8605	0.7068	1.000	OP, AD, USA or DS inter-	0.1992	0.0174
+0.8605	0.1071	1.000	is an MCP error (denoted by the magnitude of the	0.3684	0.0145
+0.8750	0.7199	1.000	rupts	0.0451	0.0160
+0.8750	0.1071	1.000	error code), the console is released and the error	0.3741	0.0160
+0.9357	0.7875	1.000	Interrupt Control	0.1016	0.0151
+0.9390	0.9098	1.000	41	0.0169	0.0102

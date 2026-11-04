@@ -1,0 +1,106 @@
+0.0662	0.5073	1.000	refill address which can specify the address of another	0.3932	0.0187
+0.0726	0.0902	1.000	Branching	0.0715	0.0133
+0.0799	0.5073	1.000	control word. Control words can thus be chained to-	0.3933	0.0189
+0.0915	0.0921	1.000	The branching operations either conditionally or un-	0.3891	0.0146
+0.0968	0.5073	1.000	gether to define storage areas which are not adjacent.	0.3932	0.0185
+0.1076	0.0902	1.000	conditionally alter the instruction counter so as to	0.3910	0.0131
+0.1133	0.5244	1.000	Control words have the same format as index words	0.3759	0.0131
+0.1221	0.0921	1.000	change the course of a program. The number of opera-	0.3891	0.0146
+0.1279	0.5075	1.000	and can be used for indexing. This important feature	0.3929	0.0146
+0.1366	0.0921	1.000	tions is not large, but modifiers are available to pro-	0.3891	0.0146
+0.1439	0.5075	1.000	means that the same word can first be used for read-	0.3929	0.0131
+0.1539	0.0921	1.000	vide a great deal of flexibility.	0.2162	0.0133
+0.1578	0.5074	1.000	ing new data, then for indexing while processing those	0.3931	0.0177
+0.1672	0.1071	1.000	All machine state indicators such as sign, overflow,	0.3759	0.0132
+0.1758	0.5094	1.000	data, and finally for writing the data from the same	0.3910	0.0146
+0.1815	0.0901	1.000	error, and input-output conditions are collected in	0.3913	0.0172
+0.1903	0.5075	1.000	storage area. This technique greatly speeds up the	0.3929	0.0146
+0.1991	0.0902	1.000	one 64-bit indicator register. The BRANCH ON INDICA-	0.3929	0.0117
+0.2064	0.5094	1.000	processing and sorting of large files.	0.2556	0.0146
+0.2121	0.0921	1.000	TOR instruction may specify any one of these 64 indi-	0.3891	0.0146
+0.2209	0.5263	1.000	Various modifications of READ and WRITE are pro-	0.3741	0.0131
+0.2282	0.0902	1.000	cators as the condition to be tested. A modifier speci-	0.3910	0.0131
+0.2355	0.5094	1.000	vided to fit different circumstances. Other instructions	0.3929	0.0131
+0.2424	0.0920	1.000	fies whether branching is to occur when the indi-	0.3912	0.0177
+0.2515	0.5094	1.000	perform external controlling and switching functions	0.3929	0.0161
+0.2587	0.0921	1.000	cator is on or off. Another modifier may cause the	0.3910	0.0131
+0.2674	0.5094	1.000	which do not cause data to be transferred.	0.3158	0.0132
+0.2761	0.0921	1.000	tested indicator to be reset to zero.	0.2462	0.0103
+0.2820	0.5263	1.000	All instructions for operating external units are	0.3759	0.0145
+0.2892	0.1090	1.000	A second operation, BRANCH ON BIT, permits testing	0.3741	0.0145
+0.2964	0.5093	1.000	issued by the computer program but are executed in-	0.3949	0.0166
+0.3035	0.0920	1.000	a single bit anywhere in storage with one instruction.	0.3912	0.0172
+0.3124	0.5113	1.000	dependently of the program. A number of data trans-	0.3910	0.0161
+0.3196	0.0920	1.000	The tested bit may also be modified. This instruction	0.3912	0.0168
+0.3266	0.5093	1.000	fers can thus take place simultaneously, all sharing	0.3931	0.0177
+0.3358	0.0902	1.000	places a virtually unlimited number of indicators	0.3929	0.0161
+0.3415	0.5113	1.000	access to storage. Signalling functions inform the	0.3910	0.0161
+0.3517	0.0940	1.000	under the direct control of the program.	0.2857	0.0131
+0.3590	0.5113	1.000	program when each external process is completed.	0.3684	0.0146
+0.3622	0.1087	1.000	Among the unconditional branches	0.2788	0.0196
+0.3648	0.3853	1.000	is a BRANCH	0.0977	0.0116
+0.3735	0.5282	1.000	All external units, regardless of their characteris-	0.3759	0.0146
+0.3799	0.0920	1.000	RELATIVE operation which causes the address part to	0.3913	0.0190
+0.3881	0.5113	1.000	tics, are controlled by the same set of instructions.	0.3929	0.0160
+0.3967	0.0921	1.000	be added to the current contents of the instruction	0.3910	0.0118
+0.4035	0.5112	1.000	They are distinguished by a number assigned to each	0.3912	0.0167
+0.4112	0.0921	1.000	counter, so as to simplify relative addressing.	0.3177	0.0147
+0.4200	0.5113	1.000	unit. Still, the complete set of functions needed to	0.3910	0.0146
+0.4257	0.1089	1.000	A hybrid operation combines advancing of an index	0.3762	0.0171
+0.4345	0.5113	1.000	control external devices is rather complex. It is rarely	0.3910	0.0146
+0.4433	0.0940	1.000	word with testing and branching. Thus, the most	0.3910	0.0131
+0.4506	0.5113	1.000	necessary, though, to take care of all conditions relat-	0.3910	0.0146
+0.4578	0.0921	1.000	common program loops may be closed with one half-	0.3910	0.0146
+0.4651	0.5113	1.000	ing to external units in every program. In a specific	0.3929	0.0146
+0.4738	0.0921	1.000	length instruction.	0.1353	0.0131
+0.4811	0.5094	1.000	set of applications, it is possible to have a common	0.3929	0.0147
+0.4884	0.1090	1.000	Branch instructions may be coupled with an op-	0.3759	0.0147
+0.4944	0.5111	1.000	supervisory program to take care of most of the excep-	0.3912	0.0175
+0.5042	0.0940	1.000	eration to store the instruction counter contents at	0.3910	0.0103
+0.5115	0.5113	1.000	tional conditions in a predefined manner, thus greatly	0.3910	0.0146
+0.5188	0.0921	1.000	any desired location before branching. This simplifies	0.3929	0.0146
+0.5261	0.5113	1.000	reducing the amount of information to be specified in	0.3910	0.0146
+0.5348	0.0921	1.000	re-entry to a program from a subprogram.	0.3083	0.0131
+0.5436	0.5113	1.000	each operating program.	0.1786	0.0131
+0.5565	0.5281	1.000	The apparent complexity of input-output functions	0.3761	0.0165
+0.5727	0.0921	1.000	Internal Data Transmission	0.1992	0.0116
+0.5727	0.5113	1.000	is really an unavoidable consequence of the complex	0.3929	0.0146
+0.5887	0.5113	1.000	environment in which a powerful computer must op-	0.3929	0.0132
+0.5915	0.0940	1.000	The operation TRANSMIT provides the facilities to	0.3910	0.0146
+0.6032	0.5113	1.000	erate. By using a supervisory program, rather than	0.3929	0.0147
+0.6076	0.0940	1.000	move a block of data from one set of addresses to an-	0.3929	0.0116
+0.6177	0.5113	1.000	restrictive built-in controls, the flexibility is retained	0.3929	0.0145
+0.6221	0.0940	1.000	other. One use of this operation is to preserve the	0.3910	0.0146
+0.6336	0.5113	1.000	to adapt the computer to a wide range of applications.	0.3929	0.0146
+0.6381	0.0940	1.000	contents of addressable registers, including index reg-	0.3910	0.0131
+0.6526	0.0940	1.000	isters, in storage when it is necessary to bring in an-	0.3929	0.0147
+0.6672	0.0921	1.000	other program, and later to reload those registers to	0.3929	0.0174
+0.6758	0.5132	1.000	Miscellaneous Operations	0.1880	0.0118
+0.6830	0.0940	1.000	restore them to their earlier state before restarting	0.3929	0.0133
+0.6976	0.5132	1.000	The miscellaneous category includes: EXECUTE, NO OP-	0.3929	0.0132
+0.6991	0.0959	1.000	the interrupted program.	0.1823	0.0146
+0.7136	0.5113	1.000	ERATION, and BRANCH ENABLED AND WAIT.	0.3083	0.0146
+0.7151	0.1109	1.000	A second operation, swaP, interchanges the contents	0.3759	0.0131
+0.7282	0.5301	1.000	ExecuTe gives the address of an instruction which	0.3759	0.0131
+0.7293	0.0937	1.000	of two storage areas.	0.1472	0.0154
+0.7427	0.5132	1.000	the computer then executes. It permits tracing of pro-	0.3929	0.0145
+0.7587	0.5113	1.000	grams at high speed.	0.1504	0.0161
+0.7703	0.0940	1.000	Input-Output	0.0959	0.0116
+0.7747	0.5263	1.000	By changing a single bit in the operation code, a	0.3797	0.0147
+0.7892	0.0959	1.000	There are basically two operations for controlling in-	0.3910	0.0145
+0.7892	0.5132	1.000	branch instruction can be converted to NO OPERATION,	0.3947	0.0132
+0.8036	0.5132	1.000	and vice versa. This technique is a convenient way	0.3929	0.0147
+0.8067	0.0959	1.000	put-output and external storage units: READ and WRITE.	0.3929	0.0146
+0.8197	0.5113	1.000	of altering the future course of a program.	0.3177	0.0161
+0.8212	0.0959	1.000	Each instruction specifies the unit desired and a stor-	0.3929	0.0131
+0.8358	0.5320	1.000	BRANCH ENABLED AND WAIT replaces the familiar	0.3741	0.0131
+0.8372	0.0959	1.000	age area for the data to be read or written.	0.3008	0.0131
+0.8496	0.5130	1.000	STOP instruction. Although the computer ceases to	0.3931	0.0162
+0.8517	0.1109	1.000	The storage area is specified by giving the address	0.3759	0.0146
+0.8648	0.5132	1.000	process instructions after setting a new value into the	0.3929	0.0146
+0.8663	0.0959	1.000	of a control word which contains the first data ad-	0.3910	0.0116
+0.8808	0.5113	1.000	instruction counter, the interruption system is enabled	0.3947	0.0160
+0.8821	0.0959	1.000	dress in storage and a count of the number of words	0.3910	0.0133
+0.8967	0.5132	1.000	and it is ready for an external signal to restart the	0.3947	0.0133
+0.8967	0.0959	1.000	to be transferred. The control word also contains a	0.3910	0.0118
+0.9330	0.7368	1.000	System Organization 13	0.1711	0.0118

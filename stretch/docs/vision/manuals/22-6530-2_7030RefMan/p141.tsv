@@ -1,0 +1,88 @@
+0.0596	0.0940	1.000	the time intervals between the instants the instruc-	0.3929	0.0174
+0.0609	0.5226	1.000	At the second reading station, the card contents are	0.3816	0.0161
+0.0741	0.0921	1.000	tions are received at the units and the times the units	0.3947	0.0174
+0.0755	0.5075	1.000	transferred to a 960-bit transposition buffer. This	0.3966	0.0176
+0.0872	0.5094	1.000	buffer changes the information from a row-by-row	0.3966	0.0204
+0.0900	0.0940	1.000	signal to the exchange the completion of the opera-	0.3929	0.0176
+0.1045	0.5094	1.000	representation to a column-by-column representation	0.3947	0.0191
+0.1076	0.0921	1.000	tions.	0.0432	0.0131
+0.1221	0.5113	1.000	before sending it to the exchange and core storage.	0.3910	0.0146
+0.1366	0.5113	1.000	After the reading of a card is completed, the card	0.3929	0.0161
+0.1453	0.0940	1.000	Manual Operating Procedure	0.2143	0.0131
+0.1497	0.5094	1.000	contents occupy up to 960 consecutive bits in core	0.3947	0.0204
+0.1642	0.0940	1.000	The steps required to load, unload, and otherwise	0.3929	0.0161
+0.1657	0.5094	1.000	storage. This constitutes a card image. The sequence	0.3947	0.0189
+0.1817	0.5094	1.000	of bits, in ascending order of bit addresses is:	0.3383	0.0174
+0.1817	0.0921	1.000	operate a tape unit manually are the same as for any	0.3929	0.0116
+0.1962	0.0921	1.000	IBM 729 tape units. They will be found in any exist-	0.3929	0.0132
+0.2106	0.0921	1.000	ing reference manual for systems using these tape	0.3947	0.0161
+0.2106	0.6297	1.000	Column 1, Row 12	0.1560	0.0161
+0.2267	0.0940	1.000	units.	0.0433	0.0117
+0.2311	0.6297	1.000	Column 1, Row 11	0.1541	0.0160
+0.2500	0.6297	1.000	Column 1, Row 0	0.1560	0.0176
+0.2645	0.0940	1.000	Summary of Status Indications	0.2256	0.0131
+0.2747	0.6992	1.000	to	0.0169	0.0087
+0.2833	0.0921	1.000	Figure 41 outlines the various status indications, due	0.3947	0.0161
+0.2906	0.6297	1.000	Column 1, Row 9	0.1560	0.0176
+0.2994	0.0902	1.000	to exceptional conditions, that are given when an in-	0.3966	0.0161
+0.3096	0.6297	1.000	Column 2, Row 12	0.1560	0.0189
+0.3154	0.0921	1.000	struction addressed to a tape unit is terminated by or	0.3929	0.0131
+0.3264	0.6296	1.000	Column 2, Row 11	0.1563	0.0216
+0.3281	0.0921	1.000	after sensing the corresponding condition.	0.3064	0.0152
+0.3473	0.1071	1.000	Instructions are no-seor unless otherwise specified.	0.3778	0.0161
+0.3485	0.6784	1.000	etc., to	0.0567	0.0153
+0.3633	0.6259	1.000	Column 80, Row 9	0.1598	0.0204
+0.3939	0.0883	1.000	IBM 7503 Card Reader	0.2180	0.0161
+0.4258	0.0921	1.000	The IBM 7503 Card Reader operates at 1000 cards per	0.3929	0.0176
+0.4418	0.0902	1.000	minute. Cards are loaded in the hopper face down,	0.3947	0.0161
+0.4535	0.0902	1.000	9 edge first. They feed past a first reading station	0.3947	0.0205
+0.4738	0.0921	1.000	where the checking bufter is loaded, past a second	0.3910	0.0116
+0.4884	0.0902	1.000	reading station for data entry, and from there to the	0.3929	0.0131
+0.5015	0.0902	1.000	stacker. A clutch permits intermittent starting and	0.3947	0.0161
+0.5160	0.0902	1.000	stopping as far as the second reading station; from	0.3947	0.0189
+0.5302	0.5074	1.000	weight of 5.	0.0961	0.0196
+0.5320	0.0902	1.000	there the cards feed continuously to the stacker.	0.3703	0.0160
+0.5899	0.3966	1.000	CONDITIONS	0.0790	0.0134
+0.6003	0.6259	1.000	File	0.0282	0.0145
+0.6032	0.5489	1.000	nd of Ta	0.0414	0.0117
+0.6032	0.4380	1.000	End of Tape	0.0602	0.0132
+0.6116	0.3476	1.000	Tape Mark	0.0660	0.0152
+0.6127	0.4190	1.000	Reflective Strip*	0.1036	0.0130
+0.6133	0.2725	1.000	Load Point	0.0564	0.0118
+0.6134	0.6241	1.000	Protect	0.0395	0.0116
+0.6134	0.5470	1.000	lechanical	0.0545	0.0116
+0.6148	0.0977	1.000	Instruction	0.0602	0.0102
+0.6321	0.3496	1.000	EOP & EE	0.0564	0.0147
+0.6323	0.5432	1.000	UK	0.0244	0.0145
+0.6336	0.0996	1.000	Read -- Single Record Mode	0.1466	0.0146
+0.6352	0.4417	1.000	-	0.0113	0.0102
+0.6539	0.1410	1.000	Multiple Record Mode	0.1184	0.0147
+0.6541	0.5451	1.000	UK	0.0207	0.0131
+0.6555	0.3853	1.000	EE	0.0188	0.0116
+0.6570	0.4417	1.000	---	0.0188	0.0087
+0.6744	0.0996	1.000	Write, Write Tape Mark	0.1259	0.0160
+0.6756	0.6221	1.000	UK & EOP	0.0604	0.0137
+0.6757	0.4341	1.000	EOP & EE	0.0547	0.0135
+0.6759	0.5432	1.000	UK	0.0226	0.0131
+0.6948	0.0996	1.000	Incomplete Multiple Write	0.1391	0.0160
+0.6958	0.6220	1.000	UK & EOP	0.0604	0.0139
+0.6962	0.4718	1.000	EE	0.0169	0.0116
+0.6962	0.5432	1.000	UK	0.0226	0.0131
+0.7151	0.0996	1.000	Space Block, Space File	0.1297	0.0174
+0.7176	0.3495	1.000	EOP & EE	0.0548	0.0125
+0.7180	0.5451	1.000	UK	0.0207	0.0116
+0.7397	0.1015	1.000	Backspace Block,	0.0883	0.0103
+0.7482	0.2799	1.000	EPGK	0.0343	0.0138
+0.7485	0.1015	1.000	Backspace File	0.0752	0.0118
+0.7485	0.3496	1.000	EOP & EE	0.0545	0.0131
+0.7660	0.0996	1.000	Rewind**	0.0602	0.0160
+0.7686	0.2706	1.000	CS & EOP	0.0566	0.0136
+0.7733	0.4380	1.000	--------	0.0564	0.0058
+0.7876	0.0996	1.000	Rewind SEOP***	0.0904	0.0164
+0.7892	0.3026	1.000	CS	0.0188	0.0131
+0.7922	0.6241	0.300	-----	0.0432	0.0073
+0.8052	0.1222	1.000	* An end-of-tape reflective strip turns on the tape indicator light. A multiple-block write operation i	0.5188	0.0118
+0.8154	0.1335	1.000	terminated after completion of the first block in which this light is on	0.3515	0.0116
+0.8866	0.0865	1.000	Figure 41. Status Indication Summary	0.2331	0.0161
+0.9229	0.1372	1.000	IBM 7030	0.0658	0.0132
+0.9230	0.0865	1.000	138	0.0244	0.0131

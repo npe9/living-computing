@@ -1,0 +1,101 @@
+0.0785	0.0977	1.000	interrupt table, faking the TS interrupt. Thus, the	0.3797	0.0131
+0.0785	0.5226	1.000	set). If this will not be the case, $EXE must be	0.3590	0.0145
+0.0930	0.0996	1.000	TS eventually gets unstacked while PP has control.	0.3759	0.0116
+0.0930	0.5226	1.000	turned off, and a mechanism established to fake the	0.3835	0.0146
+0.1076	0.5226	1.000	interrupt at a proper time.	0.2030	0.0146
+0.1221	0.5414	1.000	The combinations of interrupts of concern are as	0.3628	0.0131
+0.1235	0.0996	1.000	Other Maskable Interrupts	0.1936	0.0102
+0.1381	0.5226	1.000	follows: EXE interrupt by itself, TS with SEXE set,	0.3910	0.0146
+0.1512	0.0996	1.000	Maskable interrupts other than TS, together with TS	0.3853	0.0146
+0.1526	0.5226	1.000	I-O with $EXE set, and TS with both I-O and ŞEXE	0.3797	0.0147
+0.1672	0.5244	1.000	set. These may occur only in PP; however, they	0.3665	0.0132
+0.1672	0.0977	1.000	interrupts being taken, are processed by the routine	0.3872	0.0147
+0.1795	0.0976	1.000	Which starts at WLODE (Figure 4). If $15 RF is zero	0.3988	0.0201
+0.1817	0.5263	1.000	must be considered separately for the three levels	0.3722	0.0132
+0.1976	0.5263	1.000	of PP: mainstream, auto-stacked, and special fixup.	0.3966	0.0118
+0.1976	0.0996	1.000	(no PP PTOE provided), the routine selects the MCP	0.3910	0.0132
+0.2121	0.0996	1.000	PTOE and sets the exit branch to disabled. If $15 RF	0.3966	0.0103
+0.2267	0.5226	1.000	EXE Interrupt Alone	0.1560	0.0132
+0.2267	0.0977	1.000	is not zero, it is checked for being in PP boundaries,	0.3966	0.0132
+0.2412	0.0996	1.000	and the exit branch set to enabled. If the PTOE is	0.3722	0.0118
+0.2558	0.0996	1.000	outside PP bounds, control is given to dispatcher error	0.4117	0.0131
+0.2558	0.5113	1.000	If the EXE interrupt occurs by itself (no higher	0.3628	0.0146
+0.2703	0.0996	1.000	control (SDISP) with error code 17 in $14.	0.3102	0.0118
+0.2703	0.5226	1.000	priority indicators) in PP mainstream, it is either	0.3797	0.0146
+0.2848	0.1165	1.000	The program checks the pattern word of the PTOE	0.3703	0.0131
+0.2863	0.5226	1.000	taken by the PP PTOE (if one exists with the EXE	0.3703	0.0131
+0.3009	0.0996	1.000	selected. If the required bit is off, it loops back to	0.3797	0.0116
+0.3009	0.5226	1.000	pattern bit on) or is ignored and return is to the point	0.4004	0.0131
+0.3139	0.0996	1.000	select the MCP PTOE and change the exit to disabled.	0.3985	0.0131
+0.3154	0.5244	1.000	of interrupt in PP.	0.1410	0.0131
+0.3299	0.0996	1.000	(The MCP PTOE pattern word has a one for every	0.3684	0.0116
+0.3299	0.5395	1.000	If the EXE occurs in a PP special fixup, it is	0.3383	0.0146
+0.3445	0.0996	1.000	maskable interrupt.) It then computes the exit address	0.4079	0.0116
+0.3445	0.5263	1.000	treated as though it were mainstream. The PP has	0.3816	0.0131
+0.3590	0.0996	1.000	and stores it in the preset BD or BE. If the required	0.3947	0.0116
+0.3590	0.5244	1.000	control of PTOE specification and should be prepared	0.3966	0.0146
+0.3735	0.0996	1.000	bit is on in the PP PTOE selected, a bit is set	0.3440	0.0131
+0.3750	0.5244	1.000	for this eventuality.	0.1485	0.0117
+0.3881	0.0996	1.000	(SSPFIX) to indicate to MCP that PP is in a special	0.3778	0.0116
+0.3894	0.5414	1.000	If the EXE occurs in PP auto-stacked, it is again	0.3665	0.0133
+0.4026	0.0996	1.000	fixup. The IC, $IND, and $MASK are stored in the	0.3778	0.0147
+0.4039	0.5244	1.000	treated as though it were mainstream. If PP may	0.3722	0.0118
+0.4172	0.0996	1.000	PTOE, $EXE is reset (see the following description	0.3835	0.0147
+0.4185	0.5263	1.000	cause EXE in an I-O fixup, then the fixup routine	0.3628	0.0133
+0.4317	0.0996	1.000	of the EXE interrupt), the used registers are restored,	0.4098	0.0132
+0.4330	0.5132	1.000	must provide a PTOE if the EXE is to be taken.	0.3647	0.0118
+0.4476	0.0996	1.000	and the PTOE is entered.	0.1880	0.0118
+0.4767	0.1015	1.000	The EXE Interrupt and Combinations	0.2688	0.0132
+0.4767	0.5244	1.000	TS Interrupt, $EXE Set	0.1767	0.0146
+0.5073	0.1015	1.000	The EXE interrupt, although permanently masked on,	0.3947	0.0131
+0.5073	0.5263	1.000	If a TS interrupt occurs with $EXE set, the handling	0.3872	0.0131
+0.5218	0.0996	1.000	is treated as pseudo-maskable by MCP. Since 18	0.3684	0.0116
+0.5218	0.5263	1.000	of the EXE is influenced by the disposition of the TS.	0.3910	0.0116
+0.5363	0.5263	1.000	If the TS is stacked (for instance with PP in auto-	0.3703	0.0116
+0.5378	0.1015	1.000	other interrupts have priority over EXE, the simul-	0.3853	0.0116
+0.5509	0.5263	1.000	stack with no PTOE) or in special fixup, $EXE may	0.3816	0.0146
+0.5523	0.0996	1.000	taneous occurrence of $EXE and the higher priority	0.3816	0.0116
+0.5669	0.5263	1.000	remain on and be allowed to occur on return to the	0.3741	0.0102
+0.5669	0.0996	1.000	indicators must be considered. Not all of these	0.3534	0.0116
+0.5814	0.5263	1.000	point of TS interrupt. If the TS is taken, the $IND is	0.3929	0.0132
+0.5814	0.0996	1.000	simultaneous occurrences are significant, in view of	0.3910	0.0132
+0.5959	0.1015	1.000	the following analysis:	0.1635	0.0116
+0.5959	0.5263	1.000	saved with the EXE bit set in the PTOE (MCP or PP),	0.4004	0.0132
+0.6105	0.1165	1.000	1. $EXE is off if an interrupt is caused by DS or	0.3647	0.0132
+0.6105	0.5244	1.000	$EXE itself turned off, and the EXE interrupt faked	0.3835	0.0147
+0.6250	0.1015	1.000	a lower priority indicator.	0.1955	0.0132
+0.6250	0.5263	1.000	when $RAM is executed after the TS fixup (MCP or	0.3778	0.0132
+0.6394	0.1165	1.000	2. $EXE will not be set while MCP has control.	0.3571	0.0133
+0.6410	0.5244	1.000	PP).	0.0376	0.0131
+0.6555	0.1165	1.000	3. Interrupts caused by indicators MK, IK, IJ,	0.3515	0.0132
+0.6685	0.5226	1.000	I-O Interrupt, $EXE Set	0.1842	0.0147
+0.6700	0.0996	1.000	EK, and CPUS (0-3, 5) always result in a BD, $, and	0.3891	0.0131
+0.6845	0.0996	1.000	the status of $EXE is of no concern.	0.2669	0.0118
+0.6991	0.5244	1.000	When an I-O interrupt occurs, the receptor will either	0.4060	0.0146
+0.7006	0.1147	1.000	4. Interrupts caused by indicators EKJ, UNRJ,	0.3571	0.0131
+0.7136	0.5244	1.000	enter the appropriate I-O table of exits or return to	0.3835	0.0131
+0.7136	0.1015	1.000	CBJ, OP, AD, and USA (6-8, 15-17) result in ABEOJ	0.3966	0.0131
+0.7282	0.0996	1.000	or BD, $, so the only concern is that $EXE be off if	0.3797	0.0131
+0.7282	0.5244	1.000	the point of interrupt with the I-O interrupt stacked,	0.3872	0.0146
+0.7427	0.5244	1.000	depending on the modes (SIO or A/S) of the programs	0.3947	0.0145
+0.7442	0.1015	1.000	ABEOJ is to be taken.	0.1635	0.0102
+0.7587	0.5263	1.000	and the owner of the interrupt. If the receptor is to	0.3853	0.0116
+0.7587	0.1147	1.000	5. The remaining interrupts with higher priority	0.3665	0.0131
+0.7733	0.5244	1.000	return to the point of the interrupt, then $EXE may	0.3816	0.0146
+0.7733	0.0996	1.000	than EXE are TS (4) and the I-O (9-13).	0.2932	0.0131
+0.7863	0.5263	1.000	remain on to occur when the return is attempted. If	0.3891	0.0131
+0.7878	0.1165	1.000	6. Since EXE is treated as pseudo-maskable, it	0.3590	0.0131
+0.8023	0.0996	1.000	is considered as masked off unless there is a PP	0.3609	0.0116
+0.8023	0.5263	1.000	a table of exits is to be entered, the PP low registers	0.3985	0.0131
+0.8168	0.1014	1.000	PTOE with the EXE pattern bit on.	0.2596	0.0139
+0.8169	0.5244	1.000	are saved in SLRPP (including $IND with $EXE on),	0.3853	0.0147
+0.8299	0.5244	1.000	and $EXE must be turned off to enter the I-O fixup	0.3759	0.0146
+0.8314	0.1165	1.000	7. If $EXE is on when a higher priority interrupt	0.3684	0.0132
+0.8459	0.5244	1.000	enabled. The EXE will be detected by the return	0.3647	0.0147
+0.8473	0.0996	1.000	occurs, it cannot be allowed to remain on and cause	0.3835	0.0118
+0.8605	0.5244	1.000	routine ($RET) when attempting to restore low regi-	0.3891	0.0145
+0.8618	0.0996	1.000	the interrupt on any subsequent BE; the BE must be	0.3797	0.0118
+0.8750	0.5244	1.000	sters from SLRPP, and an EXE interrupt faked at	0.3741	0.0160
+0.8764	0.0996	1.000	to the point of original interrupt (where $EXE was	0.3703	0.0118
+0.9346	0.9023	1.000	17	0.0169	0.0087
+0.9360	0.7838	1.000	Interrupt Control	0.0977	0.0088

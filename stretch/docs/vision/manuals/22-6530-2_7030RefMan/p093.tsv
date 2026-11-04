@@ -1,0 +1,201 @@
+0.0581	0.5075	1.000	unchanged throughout the operation unless address 8	0.3966	0.0161
+0.0581	0.0940	1.000	ADD TO MEMORY, with the constraint that it cannot be	0.3910	0.0131
+0.0741	0.0940	1.000	changed in sign. Where a sign change would occur	0.3910	0.0131
+0.0741	0.5113	1.000	is the effective address.	0.1673	0.0116
+0.0887	0.5263	1.000	When normalized operation is specified, the 48-bit	0.3778	0.0160
+0.0887	0.0921	1.000	in ADD TO MEMORY, a forced zero occurs in ADD MAG-	0.3947	0.0132
+0.1032	0.5094	1.000	operand fraction in the accumulator is normalized	0.3929	0.0160
+0.1045	0.0940	1.000	NITUDE TO MEMORY. Furthermore, this operation uses	0.3910	0.0146
+0.1191	0.5113	1.000	before being placed in storage. If the noisy mode is	0.3929	0.0161
+0.1191	0.0940	1.000	only the magnitude of the accumulator contents in-	0.3910	0.0146
+0.1352	0.0921	1.000	stead of the signed accumulator contents used by ADD	0.3929	0.0131
+0.1352	0.5113	1.000	also specified, ones enter the low-order fraction bit	0.3929	0.0146
+0.1497	0.5094	1.000	positions as they are shifted left on normalization.	0.3947	0.0161
+0.1526	0.0921	1.000	TO MEMORY.	0.0921	0.0102
+0.1657	0.5094	1.000	Normalization is suppressed when the 48 fraction bits	0.3947	0.0161
+0.1657	0.1071	1.000	In contrast to the operation ADD TO MAGNITUDE,	0.3778	0.0131
+0.1802	0.0921	1.000	where the accumulator operand is assumed always	0.3929	0.0146
+0.1830	0.5113	1.000	are zero.	0.0639	0.0103
+0.1962	0.5282	1.000	When the exponent flag is 1, in the accumulator	0.3759	0.0145
+0.1962	0.0921	1.000	positive, the ADD MAGNITUDE TO MEMORY can operate	0.3929	0.0132
+0.2121	0.5094	1.000	operand, normalization, if specified, is suppressed and	0.3929	0.0161
+0.2121	0.0921	1.000	with positive or negative operands in storage.	0.3440	0.0132
+0.2267	0.1090	1.000	The table of arithmetic actions shown in Figure 13	0.3741	0.0132
+0.2282	0.5019	1.000	•the exponent range indicators are set in accordance	0.4023	0.0131
+0.2427	0.5113	1.000	with the rules for propagated EF of 1. If an EF of 1	0.3910	0.0145
+0.2427	0.0921	1.000	is reproduced in Figure 25 for floating point opera-	0.3929	0.0131
+0.2564	0.5093	1.000	is generated during normalization, the exponent range	0.3931	0.0172
+0.2573	0.0940	1.000	tions and operands. Results which do not correspond	0.3891	0.0146
+0.2718	0.0921	1.000	to the integer arithmetic results are underlined. The	0.3929	0.0146
+0.2733	0.5094	1.000	indicator XPU is turned on. Thus, for values with ini-	0.3929	0.0146
+0.2878	0.0921	1.000	mnemonic symbols N and A refer to the sign modi-	0.3929	0.0146
+0.2892	0.5094	1.000	tially flagged exponent, the value in storage is the	0.3929	0.0145
+0.3036	0.5113	1.000	same value as appears in the accumulator.	0.3102	0.0147
+0.3182	0.1109	1.000	The differences between Figures 13 and 25 are due	0.3722	0.0147
+0.3270	0.5094	1.000	INDICATORS	0.0827	0.0131
+0.3327	0.0921	1.000	to a difference in the unsigned integer storage field	0.3910	0.0147
+0.3445	0.5263	1.000	To-Memory Operation (MOP); Arithmetic Result	0.3759	0.0161
+0.3488	0.0921	1.000	and the absolute floating point storage field. In the	0.3910	0.0146
+0.3605	0.5075	1.000	(RLZ, RZ, RGZ, RN); Exponent Range (XPFP, ХРH,	0.3966	0.0145
+0.3648	0.0902	1.000	integer case, no sign is available. The result must be	0.3929	0.0131
+0.3779	0.5113	1.000	XPL, XPU); Zero Multiply (ZM). These indicators	0.3891	0.0176
+0.3794	0.0921	1.000	a magnitude only, and the lost carry indicator signals	0.3910	0.0146
+0.3936	0.0920	1.000	a negative sign. In the floating point case, a sign is al-	0.3912	0.0175
+0.3939	0.5113	1.000	are set as in ADD TO MEMORY.	0.2086	0.0116
+0.4112	0.0921	1.000	ways available, even though it may be ignored and a	0.3910	0.0133
+0.4258	0.0921	1.000	negative sign can be recorded as such.	0.2763	0.0146
+0.4315	0.5112	1.000	Compare (K)	0.0922	0.0134
+0.4564	0.5113	1.000	The operand in the left half of the accumulator is	0.3891	0.0146
+0.4666	0.0902	1.000	Store (ST)	0.0714	0.0116
+0.4724	0.5094	1.000	compared with the operand specified in the effective	0.3929	0.0146
+0.4869	0.0921	1.000	The operand in the left half of the accumulator is	0.3929	0.0146
+0.4869	0.5094	1.000	address. The action of the specified sign modifiers	0.3910	0.0146
+0.5029	0.5094	1.000	on the addressed operand is completed before the	0.3929	0.0132
+0.5029	0.0902	1.000	placed in the location specified by the effective address.	0.3929	0.0147
+0.5174	0.0921	1.000	The exponent and fraction of the operand are taken	0.3910	0.0147
+0.5188	0.5094	1.000	comparison is made.	0.1504	0.0118
+0.5333	0.5263	1.000	The two numbers are compared algebraically by	0.3741	0.0146
+0.5333	0.0921	1.000	from accumulator bits 0-59 and replace bits 0-59 of	0.3910	0.0132
+0.5479	0.5094	1.000	subtraction. However, the operands in storage and	0.3910	0.0146
+0.5479	0.0921	1.000	the storage word. The accumulator sign, sign byte	0.3910	0.0146
+0.5639	0.5094	1.000	the accumulator are not altered. In the intermediate	0.3910	0.0116
+0.5639	0.0902	1.000	register bit position 4, as modified by the sign modi-	0.3929	0.0145
+0.5785	0.0921	1.000	fiers, and the accumulator flag bits, sign byte register	0.3910	0.0145
+0.5799	0.5094	1.000	stage the subtraction operation is identical to ADD ex-	0.3910	0.0131
+0.5945	0.0902	1.000	bits 5-7, replace bits 60-63 of the storage word. The	0.3929	0.0146
+0.5945	0.5094	1.000	cept for a sign inversion. The result is discarded and	0.3910	0.0131
+0.6090	0.0902	1.000	entire accumulator and its sign byte register remain	0.3910	0.0146
+0.6105	0.5094	1.000	the comparison result indicators rather than the arith-	0.3910	0.0132
+0.6264	0.5094	1.000	metic result indicators are set.	0.2143	0.0103
+0.6424	0.5263	1.000	When the exponent difference between the operands	0.3741	0.0103
+0.6482	0.1053	1.000	Storage Operand	0.0789	0.0088
+0.6497	0.1034	1.000	Accumulato Operand =	0.1335	0.0176
+0.6555	0.2857	1.000	3+ 5- 3-	0.0789	0.0103
+0.6555	0.3929	1.000	3+ 5-	0.0508	0.0103
+0.6555	0.2669	1.000	5+	0.0150	0.0116
+0.6570	0.5075	1.000	exceeds 48, the algebraically larger of the two numbers,	0.3929	0.0131
+0.6715	0.5075	1.000	judged by exponent and fraction sign, is considered	0.3929	0.0161
+0.6758	0.0959	1.000	1 Operation and Modifiers	0.1241	0.0146
+0.6875	0.5094	1.000	high. This statement is true when one or both of	0.3929	0.0131
+0.6948	0.3214	1.000	2-	0.0150	0.0116
+0.6948	0.4586	1.000	8-	0.0132	0.0087
+0.6948	0.1034	1.000	Add	0.0226	0.0102
+0.6948	0.3496	1.000	2+	0.0150	0.0102
+0.6948	0.3759	1.000	2+	0.0150	0.0116
+0.6948	0.3929	1.000	2-	0.0263	0.0102
+0.6948	0.4229	1.000	8-	0.0226	0.0087
+0.6962	0.2932	0.300	đ N	0.0169	0.0189
+0.7020	0.5094	1.000	the numbers are zero. When the exponent difference	0.3910	0.0146
+0.7033	0.1014	1.000	Add, N	0.0416	0.0135
+0.7049	0.3233	1.000	8-	0.0132	0.0087
+0.7049	0.4586	1.000	2+	0.0132	0.0087
+0.7049	0.3759	1.000	8+	0.0169	0.0087
+0.7049	0.4041	1.000	8+	0.0150	0.0087
+0.7049	0.4267	1.000	2-	0.0169	0.0087
+0.7049	0.3496	1.000	8-	0.0150	0.0087
+0.7136	0.1034	1.000	Add, A	0.0395	0.0103
+0.7151	0.3741	1.000	8t	0.0169	0.0087
+0.7151	0.4267	1.000	2-	0.0188	0.0087
+0.7151	0.3496	1.000	2+	0.0150	0.0102
+0.7151	0.2932	1.000	8+	0.0169	0.0087
+0.7151	0.3195	1.000	2-	0.0169	0.0087
+0.7151	0.4586	1.000	2+	0.0132	0.0087
+0.7151	0.4023	1.000	8t	0.0169	0.0116
+0.7151	0.2688	0.300	đ đ	0.0150	0.0203
+0.7166	0.5094	1.000	is 48 or less, a zero result is considered an equality,	0.3910	0.0146
+0.7237	0.1033	1.000	Add, N, A	0.0565	0.0133
+0.7238	0.3477	1.000	8-	0.0188	0.0116
+0.7238	0.3741	1.000	2+	0.0169	0.0116
+0.7238	0.4023	1.000	2-	0.0150	0.0116
+0.7238	0.3214	1.000	8-	0.0169	0.0116
+0.7238	0.2895	1.000	2-	0.0207	0.0102
+0.7253	0.4229	1.000	8-	0.0226	0.0087
+0.7253	0.4586	1.000	8-	0.0132	0.0087
+0.7339	0.5094	1.000	and for this case + O is equal to - 0.	0.2650	0.0132
+0.7427	0.1015	1.000	Add to Magnitude	0.0883	0.0116
+0.7427	0.3459	1.000	8-	0.0169	0.0116
+0.7427	0.4568	1.000	0-	0.0132	0.0087
+0.7427	0.3722	1.000	2t	0.0188	0.0116
+0.7427	0.4154	1.000	•2-	0.0282	0.0102
+0.7427	0.2838	1.000	8t	0.0263	0.0102
+0.7427	0.3195	1.000	8-	0.0169	0.0102
+0.7427	0.3966	1.000	ot	0.0207	0.0102
+0.7442	0.2669	1.000	đo đi đo	0.0169	0.0276
+0.7485	0.5263	1.000	In an ADD operation, the normalization modifier	0.3741	0.0131
+0.7515	0.3722	1.000	8t	0.0188	0.0116
+0.7515	0.3177	1.000	2-	0.0188	0.0116
+0.7515	0.4004	1.000	8+ 8-	0.0432	0.0116
+0.7515	0.3440	1.000	0-	0.0188	0.0116
+0.7515	0.2914	1.000	o+	0.0188	0.0102
+0.7515	0.1015	1.000	Add to Magnitude, N	0.1071	0.0131
+0.7529	0.4568	1.000	8-	0.0132	0.0087
+0.7597	0.5092	1.000	specifies post-normalization. Since there is no stored	0.3913	0.0186
+0.7616	0.3722	1.000	8+	0.0188	0.0116
+0.7616	0.2932	1.000	8+	0.0169	0.0087
+0.7616	0.3177	1.000	8-	0.0188	0.0102
+0.7630	0.1015	1.000	Add to Magnitude, A	0.1053	0.0103
+0.7631	0.4004	1.000	8t	0.0169	0.0102
+0.7631	0.3477	1.000	8-	0.0150	0.0073
+0.7631	0.4586	1.000	8-	0.0113	0.0073
+0.7631	0.4286	1.000	8-	0.0150	0.0087
+0.7701	0.1033	1.000	Add to Magnitude, N, A	0.1185	0.0121
+0.7703	0.2669	1.000	2+	0.0150	0.0116
+0.7718	0.3477	1.000	0-	0.0150	0.0087
+0.7718	0.3195	1.000	2-	0.0169	0.0102
+0.7718	0.4004	1.000	o+	0.0169	0.0102
+0.7718	0.4568	1.000	0-	0.0132	0.0073
+0.7718	0.3722	1.000	2+	0.0188	0.0102
+0.7718	0.2876	1.000	o+	0.0226	0.0087
+0.7718	0.4248	1.000	2-	0.0188	0.0087
+0.7791	0.5094	1.000	arithmetic result in a comparison operation, the nor-	0.3910	0.0146
+0.7906	0.1015	1.000	Add to Memory	0.0771	0.0118
+0.7907	0.3459	1.000	2t	0.0244	0.0087
+0.7907	0.4586	1.000	8-	0.0113	0.0087
+0.7907	0.2876	1.000	8t	0.0207	0.0087
+0.7907	0.2669	1.000	8+	0.0150	0.0116
+0.7907	0.3177	1.000	2-	0.0188	0.0087
+0.7951	0.5094	1.000	malization modifier affects the operation only during	0.3910	0.0131
+0.7994	0.3402	1.000	8t 8-	0.0489	0.0103
+0.7994	0.1015	1.000	Add to Memory, N	0.0940	0.0131
+0.7994	0.2669	1.000	2-	0.0150	0.0116
+0.8009	0.2876	1.000	2t	0.0226	0.0087
+0.8009	0.3214	1.000	8+	0.0150	0.0073
+0.8096	0.2669	1.000	8+	0.0150	0.0102
+0.8096	0.1034	1.000	Add to Memory, A	0.0883	0.0116
+0.8096	0.2951	1.000	8+	0.0150	0.0087
+0.8096	0.5113	1.000	noisy mode operation. When noisy mode and normal-	0.3891	0.0146
+0.8110	0.3195	1.000	2-	0.0169	0.0102
+0.8182	0.1034	1.000	Add to Memory, N, A	0.1071	0.0133
+0.8183	0.3195	1.000	8F	0.0282	0.0102
+0.8198	0.2914	1.000	2+	0.0169	0.0102
+0.8198	0.2650	1.000	2-	0.0169	0.0131
+0.8255	0.5075	1.000	ized operation are specified, the operand having the	0.3947	0.0161
+0.8367	0.1030	1.000	Add Magnitude to Memory	0.1285	0.0153
+0.8372	0.3872	0.300	:5 8-	0.0583	0.0219
+0.8387	0.4586	1.000	2-	0.0113	0.0087
+0.8387	0.2688	1.000	8+ 8+ 8t	0.0695	0.0102
+0.8387	0.3402	1.000	8+	0.0244	0.0087
+0.8415	0.5094	1.000	higher exponent, or the accumulator operand, if both	0.3910	0.0131
+0.8459	0.1015	1.000	Add Magnitude to Memory, N	0.1523	0.0147
+0.8473	0.2632	1.000	Ot 2+ Ot	0.0752	0.0103
+0.8474	0.4568	1.000	8-	0.0132	0.0102
+0.8474	0.3365	1.000	2t	0.0263	0.0087
+0.8561	0.5094	1.000	operands have equal exponents, is extended with 48	0.3910	0.0131
+0.8576	0.3741	1.000	8-	0.0150	0.0116
+0.8576	0.4586	1.000	8-	0.0113	0.0087
+0.8576	0.4004	1.000	8-8-	0.0432	0.0102
+0.8576	0.2914	1.000	8t	0.0188	0.0102
+0.8576	0.2650	1.000	8t	0.0169	0.0087
+0.8576	0.3195	1.000	8+	0.0169	0.0087
+0.8576	0.3459	1.000	8+	0.0169	0.0087
+0.8590	0.1071	1.000	Add Magnitude to Memory, A	0.1353	0.0102
+0.8663	0.1071	1.000	Add Magnitude to Memory, N, A Ot 2+	0.1992	0.0116
+0.8663	0.3214	1.000	o+ 2+	0.0414	0.0087
+0.8663	0.3741	1.000	о-	0.0150	0.0116
+0.8663	0.4286	1.000	0-	0.0150	0.0087
+0.8677	0.4586	1.000	2-	0.0113	0.0073
+0.8677	0.4023	1.000	2-	0.0150	0.0087
+0.8706	0.5094	1.000	low-order ones prior to forming the intermediate dif-	0.3910	0.0146
+0.8866	0.5094	1.000	ference, as in ADD.	0.1316	0.0131
+0.8881	0.0883	1.000	Figure 25. Floating Point Operation Results	0.2707	0.0146
+0.9225	0.1258	1.000	IBM 7030	0.0698	0.0139

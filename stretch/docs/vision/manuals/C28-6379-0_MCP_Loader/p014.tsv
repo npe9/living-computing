@@ -1,0 +1,21 @@
+0.0814	0.4868	1.000	The link program determines from the link table	0.3647	0.0132
+0.0842	0.0320	1.000	to the link program is to pick up the communication	0.3891	0.0118
+0.0973	0.4643	1.000	mask whether the required segment is currently in	0.3853	0.0118
+0.1003	0.0338	1.000	region, with the link table mask, trom MCP. The	0.3797	0.0131
+0.1118	0.4643	1.000	storage. If the segment is already in storage, the	0.3797	0.0118
+0.1148	0.0338	1.000	link program then gives control to the object program	0.4060	0.0116
+0.1264	0.4643	1.000	link program passes control to the absolute address	0.3910	0.0118
+0.1294	0.0338	1.000	at the main entry point.	0.1805	0.0116
+0.1409	0.4643	1.000	contained in the transfer vector. If the desired seg-	0.3985	0.0118
+0.1555	0.4662	1.000	ment is not currently in storage, the link program	0.3797	0.0118
+0.1570	0.0564	1.000	The link program receives control again through	0.3647	0.0131
+0.1700	0.4643	1.000	searches the node table entry for that segment num-	0.3947	0.0118
+0.1715	0.0338	1.000	the transfer vector, as described above. The trans-	0.4004	0.0131
+0.1845	0.4643	1.000	ber. The link program calls for the loading of each	0.3910	0.0131
+0.1860	0.0338	1.000	fer vector contains, in addition to the branch to the	0.3853	0.0131
+0.1995	0.0319	1.000	link program, the absolute address to which the trans-	0.4157	0.0166
+0.2006	0.4624	1.000	of the segments in that node table entry until all the	0.3910	0.0116
+0.2128	0.4660	1.000	segments in that entry are loaded. Control is then	0.3818	0.0144
+0.2151	0.0338	1.000	fer is requested and the segment number of the seg-	0.3966	0.0131
+0.2297	0.4662	1.000	passed to the required address.	0.2387	0.0116
+0.2311	0.0338	1.000	ment to which the transfer is made.	0.2707	0.0116

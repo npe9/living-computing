@@ -1,0 +1,116 @@
+0.0785	0.5244	1.000	As in this example, the field widths may be made	0.3797	0.0161
+0.0827	0.0865	1.000	Format Specifications	0.1541	0.0118
+0.0926	0.5092	1.000	greater than necessary so as to provide spacing blanks	0.3951	0.0184
+0.1032	0.0846	1.000	FORMAT	0.0752	0.0116
+0.1090	0.5075	1.000	between numbers. In this case, there is one blank fol-	0.3966	0.0146
+0.1250	0.5056	1.000	lowing the 27, one blank after the E (automatically	0.3985	0.0160
+0.1278	0.3684	1.000	EXAMPLES	0.0640	0.0104
+0.1294	0.1579	1.000	GENERAL FORM	0.0921	0.0073
+0.1391	0.5074	1.000	supplied except in cases of a negative exponent, when	0.3968	0.0167
+0.1453	0.0865	1.000	"FORMAT (Specification)" where	0.2180	0.0116
+0.1468	0.3214	1.000	FORMAT	0.0639	0.0087
+0.1555	0.5056	1.000	a minus sign will appear), and three blanks after the	0.3985	0.0161
+0.1570	0.3195	1.000	(12/(E12.4,F10.4))	0.1278	0.0131
+0.1584	0.0846	1.000	Specification is as described below.	0.2162	0.0116
+0.1700	0.5056	1.000	03. Within each field the printed output will always	0.3985	0.0161
+0.1789	0.1822	1.000	input/output and general READ/WRITE	0.2992	0.0176
+0.1830	0.0865	1.000	The system	0.0959	0.0118
+0.1875	0.5056	1.000	appear in the rightmost positions.	0.2425	0.0146
+0.1962	0.0846	1.000	statements may contain, in addition to the list of quan-	0.3966	0.0145
+0.2121	0.0846	1.000	tities to be transmitted, the statement number of a FOR-	0.3966	0.0132
+0.2179	0.5094	1.000	ALPHAMERIC FIELDS	0.1429	0.0118
+0.2267	0.0846	1.000	MAT statement describing the information format to be	0.3947	0.0146
+0.2377	0.5093	1.000	There are two ways of reading or writing alphameric	0.3950	0.0182
+0.2427	0.0846	1.000	used. Alternatively, the name of an array containing	0.3947	0.0145
+0.2542	0.5075	1.000	information; the specifications for this purpose are	0.3966	0.0147
+0.2569	0.0863	1.000	A-type data may be supplied. In this case, this data is	0.3950	0.0178
+0.2688	0.5075	1.000	Aw and wH. Both result in storing the information	0.3966	0.0161
+0.2747	0.0846	1.000	to be interpreted (at object time) as a FORMAT speci-	0.3966	0.0132
+0.2821	0.5073	1.000	internally in A8 form. The basic difference is that in-	0.3969	0.0180
+0.2892	0.0846	1.000	fication. It also specifies the type of conversion to be	0.3947	0.0145
+0.3009	0.5056	1.000	formation handled with the A specification is given a	0.3985	0.0161
+0.3037	0.0845	1.000	performed between the internal machine-language and	0.3949	0.0147
+0.3154	0.5075	1.000	variable or array name and hence can be referred to	0.3966	0.0146
+0.3197	0.0846	1.000	external notation. FORMAT statements are not executed;	0.3966	0.0132
+0.3299	0.5056	1.000	by means of this name for processing and/or modifica-	0.4004	0.0174
+0.3342	0.0827	1.000	their function is merely to supply information to the	0.3985	0.0161
+0.3455	0.5055	1.000	tion. Information handled with the H specification is	0.3987	0.0166
+0.3503	0.0846	1.000	object program. Therefore, they may be placed any-	0.3966	0.0146
+0.3596	0.5074	1.000	not given a name and cannot be referred to or mani-	0.3988	0.0173
+0.3677	0.0865	1.000	where in the source program.	0.2105	0.0117
+0.3794	0.5075	1.000	pulated in storage in any way.	0.2312	0.0116
+0.3808	0.1015	1.000	For the sake of clarity, the details of writing a FOR-	0.3797	0.0146
+0.3913	0.5242	1.000	The specification Aw causes w characters to be read	0.3801	0.0192
+0.3967	0.0846	1.000	MAT specification are given below for use with PRINT	0.3947	0.0133
+0.4102	0.0845	1.000	statements. The description is valid for any case, how-	0.3969	0.0171
+0.4112	0.5075	1.000	into, or written from, a variable or array.	0.3102	0.0133
+0.4258	0.0846	1.000	ever, simply by generalizing the concept of "printed	0.3947	0.0161
+0.4265	0.5244	1.000	The specification wH is followed in the FORMAT	0.3799	0.0171
+0.4418	0.0846	1.000	line" to that of unit record in the input-output medium.	0.3966	0.0146
+0.4433	0.5075	1.000	statement by w alphameric characters. Example:	0.3609	0.0146
+0.4578	0.1015	1.000	A unit record may be:	0.1692	0.0131
+0.4606	0.5376	1.000	32HSHE WAS POOR, BUT SHE WAS HONEST	0.3064	0.0118
+0.4712	0.1014	1.000	1. A printed line with a maximum of 132 characters.	0.3780	0.0161
+0.4767	0.5226	1.000	Note that blanks are considered alphameric charac-	0.3816	0.0146
+0.4866	0.1014	1.000	2. A punched card with a maximum of 72 characters.	0.3781	0.0167
+0.4927	0.5075	1.000	ters, and must be included as part of the count w.	0.3628	0.0131
+0.5042	0.1015	1.000	3. A всд tape record with a maximum of 132	0.3252	0.0133
+0.5102	0.5226	1.000	It is possible to read and write alphameric informa-	0.3835	0.0160
+0.5202	0.1203	1.000	characters.	0.0790	0.0120
+0.5261	0.5075	1.000	tion only, by giving no list with the input-output state-	0.3966	0.0161
+0.5406	0.5056	1.000	ment and specifying no I, E, or F fields in the FORMAT	0.3985	0.0176
+0.5464	0.0846	1.000	NUMERIC FIELDS	0.1165	0.0103
+0.5596	0.5075	1.000	statement.	0.0752	0.0102
+0.5654	0.0846	1.000	Three basic types of decimal-to-binary or binary-to-	0.3947	0.0131
+0.5741	0.5244	1.000	Consider an alphameric field in a FORMAT statement	0.3797	0.0147
+0.5799	0.0846	1.000	decimal conversion are available:	0.2425	0.0131
+0.5887	0.5075	1.000	at the time of execution of the object program. If the	0.3966	0.0147
+0.6061	0.5075	1.000	FORMAT statement is used with an input statement,	0.3947	0.0118
+0.6061	0.1316	1.000	INTERNAL	0.0695	0.0087
+0.6061	0.3665	1.000	EXTERNAL	0.0733	0.0087
+0.6061	0.2876	1.000	TYPE	0.0357	0.0087
+0.6163	0.5073	1.000	the alphameric text listed in the FORMAT statement	0.3970	0.0196
+0.6191	0.0977	1.000	Floating point variable	0.1692	0.0161
+0.6191	0.3515	1.000	Floating point,	0.1109	0.0146
+0.6192	0.2989	1.000	E	0.0150	0.0116
+0.6332	0.3645	1.000	decimal	0.0605	0.0142
+0.6352	0.5075	1.000	will be replaced by whatever text is read in from the	0.3966	0.0146
+0.6483	0.2970	1.000	F	0.0169	0.0160
+0.6496	0.3515	1.000	Fixed point,	0.0903	0.0148
+0.6497	0.0977	1.000	Floating point variable	0.1673	0.0145
+0.6497	0.5056	1.000	corresponding field in the input-output medium. When	0.3985	0.0176
+0.6642	0.5056	1.000	that same FORMAT statement is used for output, what-	0.3985	0.0161
+0.6642	0.3628	1.000	decimal	0.0620	0.0131
+0.6788	0.3421	1.000	Decimal integer	0.1297	0.0161
+0.6802	0.0977	1.000	Fixed point variable	0.1466	0.0161
+0.6817	0.5056	1.000	ever information is then in the FORMAT statement will	0.3985	0.0147
+0.6962	0.5056	1.000	appear in the output data. Thus, text can be originated	0.3966	0.0160
+0.7006	0.0827	1.000	The FORMAT specification describes the line to be	0.3966	0.0174
+0.7089	0.5036	1.000	in the source program, or as input to the object	0.4007	0.0204
+0.7149	0.0825	1.000	printed by giving for each field in the line (from left	0.3970	0.0202
+0.7293	0.5055	1.000	program.	0.0697	0.0137
+0.7339	0.0827	1.000	to right, beginning with the first type wheel):	0.3365	0.0146
+0.7470	0.0996	1.000	I. The type of conversion (E, F, or I) to be used.	0.3628	0.0176
+0.7602	0.5056	1.000	BLANK FIELDS	0.1015	0.0132
+0.7645	0.0996	1.000	2. The width (w) of the field.	0.2237	0.0146
+0.7767	0.0976	1.000	3. For the E- and F-type conversion, the number of	0.3820	0.0200
+0.7833	0.5019	1.000	Blank characters may be provided in an output record	0.4004	0.0146
+0.7914	0.1181	1.000	places (d) after the decimal point that are to be	0.3614	0.0211
+0.7979	0.5038	1.000	and characters of an input record may be skipped by	0.3985	0.0161
+0.8109	0.1203	1.000	printed (d is treated modulo 14).	0.2462	0.0133
+0.8139	0.5038	1.000	means of the specifications wX where 0<w≤132 (w	0.4004	0.0145
+0.8241	0.0827	1.000	These basic field specifications are given in the forms	0.3966	0.0160
+0.8285	0.5056	1.000	is the number of blanks provided or characters	0.3985	0.0161
+0.8430	0.5056	1.000	skipped). When the specification is used with an	0.3966	0.0176
+0.8430	0.1128	1.000	Iw, Ew.d, and Fw.d	0.1241	0.0116
+0.8590	0.5056	1.000	input record, w characters are considered to be blank	0.3966	0.0160
+0.8590	0.0827	1.000	with the specification for successive fields separated	0.3947	0.0160
+0.8750	0.5056	1.000	regardless of what they actually are, and are skipped	0.3966	0.0145
+0.8750	0.0846	1.000	by commas. Thus, the statement FORMAT (12, E12.4,	0.3947	0.0132
+0.8894	0.5056	1.000	over. (The control character X need not be separated	0.3966	0.0161
+0.8909	0.0827	1.000	F10.4) might give the line:	0.2030	0.0146
+0.9055	0.5056	1.000	by a comma from the specification of the next field.)	0.3797	0.0161
+0.9082	0.2668	1.000	-0.0076	0.0565	0.0093
+0.9084	0.1109	1.000	27	0.0188	0.0102
+0.9084	0.1560	1.000	-0.9321E 03	0.0846	0.0102
+0.9331	0.8835	1.000	11	0.0188	0.0102

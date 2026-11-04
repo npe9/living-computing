@@ -1,0 +1,108 @@
+0.0654	0.0996	1.000	cator is turned on in accordance with the rules for	0.3910	0.0102
+0.0654	0.5169	1.000	Multiply and Add (*+)	0.1711	0.0161
+0.0799	0.0996	1.000	generated exponent flags. However, if the generated	0.3910	0.0146
+0.0887	0.5188	1.000	The operand in the FT register, designated as the mul-	0.3891	0.0147
+0.0959	0.0996	1.000	EF is 1 and Es is 0, normalization of the product frac-	0.3910	0.0132
+0.1032	0.5169	1.000	tiplicand, is multiplied by the operand specified by	0.3910	0.0174
+0.1105	0.1015	1.000	tion, if specified, occurs and the xPo or хPн indicators	0.3891	0.0132
+0.1191	0.5188	1.000	the effective address, designated as the multiplier.	0.3910	0.0146
+0.1264	0.0996	1.000	may be turned on in accordance with the final expo-	0.3929	0.0146
+0.1352	0.5188	1.000	The product is added to the contents of the accumu-	0.3891	0.0131
+0.1439	0.0996	1.000	nent range.	0.0846	0.0116
+0.1497	0.5169	1.000	lator, bit positions 0-107. The sum exponent and	0.3910	0.0145
+0.1612	0.0977	1.000	Load Factor (LFT)	0.1241	0.0118
+0.1657	0.5169	1.000	fraction replace accumulator bits 0-107. The sign of	0.3929	0.0131
+0.1802	0.5169	1.000	the sum replaces the accumulator sign, sign byte reg-	0.3891	0.0146
+0.1830	0.0996	1.000	The operand specified by the effective address is	0.3910	0.0133
+0.1962	0.5169	1.000	ister bit 4. Accumulator bits 108-127 remain un-	0.3910	0.0132
+0.1976	0.0977	1.000	placed in the factor register, FT. The accumulator	0.3929	0.0146
+0.2122	0.5188	1.000	changed.	0.0639	0.0131
+0.2136	0.0977	1.000	does not participate in the operation and remains	0.3929	0.0146
+0.2282	0.5338	1.000	The intermediate product consists of an exponent	0.3741	0.0131
+0.2293	0.0977	1.000	unchanged.	0.0848	0.0138
+0.2427	0.5168	1.000	formed from the sum of the operand exponents and	0.3911	0.0152
+0.2470	0.1128	1.000	When normalized operation is specified, the expo-	0.3778	0.0147
+0.2549	0.5167	1.000	a 96-bit fraction formed as the product of the two	0.3895	0.0205
+0.2630	0.0977	1.000	nent and fraction of the addressed operand are normal-	0.3929	0.0131
+0.2733	0.5169	1.000	48-bit operand fractions. The intermediate product	0.3891	0.0146
+0.2776	0.0959	1.000	ized and subsequently are placed in FT bits 0-59. If	0.3947	0.0146
+0.2892	0.5169	1.000	fraction remains unnormalized throughout the addi-	0.3891	0.0132
+0.2921	0.0977	1.000	noisy mode is also specified, ones instead of zeros will	0.3929	0.0146
+0.3052	0.5188	1.000	tion. The sign of this product is developed by the	0.3891	0.0132
+0.3081	0.0977	1.000	enter the low-order bits of the fraction during normal-	0.3947	0.0161
+0.3197	0.5150	1.000	rules of algebra using the sign of the FT register and	0.3910	0.0146
+0.3241	0.0977	1.000	ization. If a shift of 48 or more is required, normaliza-	0.3929	0.0131
+0.3358	0.5169	1.000	the effective sign of the addressed operand as devel-	0.3910	0.0131
+0.3387	0.0959	1.000	tion is suppressed and the order of magnitude zero is	0.3947	0.0160
+0.3503	0.5169	1.000	oped through modification of the operand sign by	0.3891	0.0146
+0.3527	0.0976	1.000	stored in bits 0-59.	0.1376	0.0136
+0.3663	0.5169	1.000	the sign modifiers.	0.1335	0.0131
+0.3721	0.1128	1.000	When unnormalized operation is specified, the ex-	0.3778	0.0131
+0.3808	0.5320	1.000	Subsequent to the multiplication, an addition is	0.3741	0.0174
+0.3881	0.0977	1.000	ponent and fraction of the addressed operand are	0.3929	0.0131
+0.3982	0.5169	1.000	performed similar to that described in ADD DOUBLE.	0.3872	0.0132
+0.4026	0.0977	1.000	placed unaltered in FT bits 0-59.	0.2368	0.0147
+0.4127	0.5150	1.000	When the difference in exponents exceeds 48, the in-	0.3910	0.0161
+0.4200	0.1128	1.000	The sign of the addressed operand as modified by	0.3759	0.0146
+0.4288	0.5169	1.000	dicator preparatory shift greater than 48, PSH, is set	0.3891	0.0146
+0.4360	0.0977	1.000	the sign modifiers is placed in FT bits 60. FT bits 61-63	0.3910	0.0131
+0.4433	0.5169	1.000	to one. When the difference in exponents exceeds 95,	0.3891	0.0146
+0.4593	0.5169	1.000	the number with the smaller exponent is not added.	0.3853	0.0131
+0.4694	0.1128	1.000	When the operand is a value in the XEP or XEN	0.3759	0.0132
+0.4752	0.5169	1.000	In this case the result is the number with the high	0.3872	0.0133
+0.4839	0.0959	1.000	ranges, normalization, if specified, is suppressed.	0.3571	0.0146
+0.4897	0.5169	1.000	exponent. Addition of two 96-bit fractions yields a	0.3872	0.0147
+0.5015	0.0977	1.000	INDICATORS	0.0789	0.0102
+0.5058	0.5169	1.000	96-bit sum fraction and possibly an overflow bit.	0.3872	0.0131
+0.5188	0.1147	1.000	Data Flags (TF, UF, VF). These indicators are set	0.3759	0.0146
+0.5203	0.5169	1.000	When normalized operation is specified, the sum is	0.3872	0.0146
+0.5333	0.0977	1.000	according to the flag bits of the addressed operand.	0.3741	0.0146
+0.5348	0.5169	1.000	shifted so that the high-order bits of the sum, includ-	0.3872	0.0146
+0.5509	0.1128	1.000	To-Memory Operation (MOP). This indicator is	0.3778	0.0161
+0.5509	0.5169	1.000	ing the overflow bit, are placed in the accumulator	0.3872	0.0146
+0.5669	0.5169	1.000	bit positions 12-107. The sum exponent is adjusted	0.3872	0.0131
+0.5697	0.0959	1.000	set to zero.	0.0789	0.0088
+0.5827	0.5169	1.000	by the amount of the shift. When noisy mode is	0.3872	0.0133
+0.5858	0.1109	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). These	0.3778	0.0145
+0.5973	0.5169	1.000	specified with normalized operation, one bits are en-	0.3872	0.0146
+0.6003	0.0959	1.000	indicators are	0.1071	0.0116
+0.6003	0.2030	1.000	set according to the arithmetic result	0.2876	0.0131
+0.6133	0.5169	1.000	tered in the low-order bit positions of the 96-bit sum	0.3872	0.0131
+0.6163	0.0977	1.000	which appears in the FT register.	0.2368	0.0131
+0.6279	0.5150	1.000	fraction during the left shifting associated with	0.3891	0.0161
+0.6321	0.1128	1.000	Exponent Range (XPFP, XPH, XPL, XPU).	0.3741	0.0176
+0.6439	0.5132	1.000	normalization.	0.1090	0.0131
+0.6497	0.0902	1.000	These indicators are set according to the exponent	0.3966	0.0145
+0.6599	0.5320	1.000	This operation initially specifies three operands.	0.3722	0.0160
+0.6642	0.0940	1.000	range of the result which appears in the FT register.	0.3741	0.0161
+0.6758	0.5169	1.000	They are the operand in the FT register, the operand	0.3872	0.0146
+0.6830	0.1128	1.000	Zero Multiply (ZM). This indicator will be turned	0.3722	0.0146
+0.6903	0.5132	1.000	specified by the effective address, and the operand in	0.3910	0.0161
+0.6991	0.0940	1.000	off, if on.	0.0734	0.0161
+0.7064	0.5150	1.000	the accumulator. The description above considered	0.3891	0.0146
+0.7166	0.0977	1.000	PROGRAMMING NOTE	0.1466	0.0102
+0.7209	0.5150	1.000	the details of operation when all operands were in	0.3891	0.0161
+0.7339	0.0977	1.000	This operation is required for loading the multipli-	0.3929	0.0132
+0.7369	0.5150	1.000	the N range and all intermediate results remained	0.3891	0.0146
+0.7485	0.0959	1.000	cand of a subsequent MULTIPLY AND ADD operation.	0.3929	0.0146
+0.7529	0.5150	1.000	in the N range. When values of the operands or in-	0.3891	0.0132
+0.7645	0.0977	1.000	The operation is not used to load either factor of a	0.3910	0.0146
+0.7662	0.5149	1.000	termediate results fall in the XEP or XFN ranges, the	0.3893	0.0176
+0.7798	0.0975	1.000	MULTIPLY operation.	0.1490	0.0156
+0.7833	0.5150	1.000	following action is taken.	0.1861	0.0146
+0.7979	0.1128	1.000	The factor register, FT, is addressable and, there-	0.3759	0.0132
+0.7994	0.5320	1.000	During multiplication, the operands used are the	0.3722	0.0161
+0.8124	0.0977	1.000	fore, can be addressed as the storage operand of any	0.3910	0.0146
+0.8154	0.5150	1.000	operand in the FT register and the operand specified	0.3891	0.0146
+0.8285	0.0977	1.000	operation. FT is a 64-bit register with word address 14.	0.3910	0.0145
+0.8299	0.5150	1.000	by the effective address. If either operand exponent	0.3891	0.0161
+0.8459	0.5169	1.000	has EF of 1, the product exponent has a propagated	0.3872	0.0147
+0.8459	0.1109	1.000	LOAD FACtOR is the only operation which changes	0.3778	0.0160
+0.8605	0.5169	1.000	EF of 1. When both operands are in the XFP range	0.3872	0.0145
+0.8618	0.0977	1.000	the contents of FT as an integral part of its perform-	0.3929	0.0132
+0.8764	0.0959	1.000	ance. FT is not changed by any other operation unless	0.3947	0.0161
+0.8764	0.5150	1.000	or both in the XEN range, the product exponent is	0.3891	0.0161
+0.8909	0.5169	1.000	the exponent of the operand specified by the effective	0.3872	0.0146
+0.8924	0.0940	1.000	it is addressed explicitly.	0.1842	0.0146
+0.9300	0.1409	1.000	IBM 7030	0.0640	0.0105
+0.9302	0.0959	1.000	98	0.0188	0.0116

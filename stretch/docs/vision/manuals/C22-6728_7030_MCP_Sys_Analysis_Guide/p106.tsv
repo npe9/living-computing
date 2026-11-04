@@ -1,0 +1,108 @@
+0.0669	0.5000	1.000	type to replace the MCP unit being made unavailable.	0.3947	0.0131
+0.0682	0.0714	1.000	it is tested. If illegal, the channel is made available,	0.4023	0.0133
+0.0814	0.5000	1.000	If unassigned units are not to be had, the PP will be	0.3853	0.0132
+0.0827	0.0733	1.000	the configuration bit is reset, and an error exit is	0.3722	0.0133
+0.0959	0.5000	1.000	given a $ABEOJ and one of its units will be assigned	0.3872	0.0132
+0.0973	0.0733	1.000	made. If the code is legal, a switch is set PG6	0.3534	0.0133
+0.1118	0.5000	1.000	to MCP. If even removal of the PP will not produce	0.3872	0.0133
+0.1118	0.0733	1.000	(ZOPTST) to show that it has been tested. At ZQUES2	0.4041	0.0132
+0.1264	0.5000	1.000	a unit for MCP, the operator will be told by SCOMM,	0.3947	0.0132
+0.1279	0.0733	1.000	a test is made to see if there are more units to test	0.3835	0.0103
+0.1409	0.5019	1.000	the VF of $9 will be cleared to indicate an error and	0.3853	0.0118
+0.1424	0.0733	1.000	on the channel. If so, a branch is made back to	0.3553	0.0131
+0.1555	0.5019	1.000	control returned to the user. These objectives are	0.3778	0.0118
+0.1555	0.0733	1.000	ZQUESI to see if the next unit is assigned. If there	0.3853	0.0132
+0.1700	0.2688	1.000	a switch PG5 (ZASUIN) is	0.1917	0.0118
+0.1715	0.5000	1.000	accomplished in the following manner.	0.2857	0.0116
+0.1730	0.0733	1.000	are no more units to test,	0.1955	0.0102
+0.1845	0.5169	1.000	Indexes are initialized for the channel and unit	0.3459	0.0118
+0.1860	0.0733	1.000	tested to determine if any units on the channel were	0.3835	0.0116
+0.1987	0.0732	1.000	assigned. If not, the code is tested at ZMAIND for	0.3800	0.0162
+0.1991	0.5019	1.000	status tables as necessary. At ZLOPO a test of	0.3571	0.0131
+0.2123	0.0732	1.000	validity, and error or normal exit is taken, depending	0.4026	0.0180
+0.2151	0.5019	1.000	equipment iș made on the indexed channel status	0.3571	0.0131
+0.2267	0.5019	1.000	entry against the type of equipment on the channel to	0.3872	0.0132
+0.2297	0.0752	1.000	on the outcome. PG2 (ZPPCHD) is tested; if there	0.3778	0.0116
+0.2427	0.5019	1.000	which the deletion has reference. If not equal, the	0.3759	0.0116
+0.2442	0.0733	1.000	were assigned units on the channel and at least one	0.3797	0.0131
+0.2568	0.0732	1.000	was PP owned, a SABEOJ should have been given for	0.3951	0.0179
+0.2573	0.5019	1.000	channel entry index is incremented at ZLOPI and a	0.3778	0.0116
+0.2718	0.5019	1.000	new channel is examined until no more channels	0.3534	0.0116
+0.2747	0.0752	1.000	the PP. In either case, whether or not there were	0.3778	0.0132
+0.2863	0.5019	1.000	exist, at which point it would branch to ZREMOV.	0.3722	0.0146
+0.2876	0.0751	1.000	PP units on the channel, a comment is made to the	0.3781	0.0160
+0.3009	0.5019	1.000	At ZREMOV if no more channels exist to be examined	0.3966	0.0116
+0.3022	0.0751	1.000	operator about the change, and a normal return made	0.3969	0.0164
+0.3154	0.5019	1.000	and no available channels had equivalent equipment,	0.3816	0.0131
+0.3299	0.5019	1.000	an error exit is made with the appropriate comment	0.3853	0.0116
+0.3314	0.0921	1.000	Previously, at ZQUESI, if the indexed unit tested	0.3684	0.0147
+0.3426	0.5017	1.000	to the operator at ZNTFND. If there are available	0.3762	0.0155
+0.3473	0.0752	1.000	was assigned, a switch PG5 (ZASUIN) was set for	0.3703	0.0118
+0.3605	0.5019	1.000	channels of the same type of equipment, they must	0.3741	0.0117
+0.3618	0.0752	1.000	later use and the code is tested for legality. If	0.3515	0.0118
+0.3750	0.5019	1.000	have had assigned units. Therefore, a second pass	0.3816	0.0117
+0.3764	0.0752	1.000	illegal, a branch is made to ZMNERX and the channel	0.4004	0.0132
+0.3894	0.5019	1.000	must be made through the scan to remove the PP	0.3628	0.0118
+0.3909	0.0752	1.000	is made available again, the configuration change bit	0.3929	0.0132
+0.4039	0.5019	1.000	units and give them to MCP. A switch is set at	0.3534	0.0118
+0.4055	0.0752	1.000	is reset, and an error exit is made. If the code is a	0.3910	0.0132
+0.4185	0.5038	1.000	ZREMVI so that this sequence is followed only once,	0.3891	0.0118
+0.4200	0.0752	1.000	legal DELETE, the question of ownership arises for	0.3891	0.0131
+0.4330	0.5019	1.000	since the assigned units could have been MCP and	0.3722	0.0133
+0.4360	0.0771	1.000	the unit under examination. If PP owned, a switch	0.3759	0.0116
+0.4476	0.5038	1.000	would not have been obtainable, and a branch is made	0.3947	0.0132
+0.4506	0.0771	1.000	PG2 (ZPPCHD) is set for later use, and then a test	0.3797	0.0116
+0.4636	0.5019	1.000	back to ZCHSCN.	0.1297	0.0117
+0.4651	0.0752	1.000	is made for any more units to be examined on the	0.3665	0.0116
+0.4782	0.5188	1.000	If similar equipment is found in the search at	0.3365	0.0116
+0.4797	0.0771	1.000	channel at ZQUES2, described previously.	0.3139	0.0131
+0.4927	0.5038	1.000	ZLOPO, then (at ZOKEQP) the channel availability is	0.3929	0.0131
+0.4942	0.0921	1.000	If the indexed unit was owned by MCP and not PP.	0.3703	0.0131
+0.5073	0.5038	1.000	tested. If the channel is not available, the search is	0.3891	0.0131
+0.5087	0.0771	1.000	the unit is set unassigned, and a branch is made to	0.3759	0.0131
+0.5218	0.5038	1.000	continued at ZLOP1. If the channel is available, the	0.3891	0.0131
+0.5247	0.0752	1.000	find a replacement via the ZCHSCN scan routine.	0.3665	0.0117
+0.5363	0.5038	1.000	availability of a unit is queried at ZIGZAG. If the	0.3703	0.0131
+0.5392	0.0771	1.000	Upon return, a branch is made back to ZQUESZ to	0.3722	0.0117
+0.5523	0.5038	1.000	unit is not available, other units on the channel are	0.3778	0.0116
+0.5536	0.0771	1.000	determine if there are more units to examine on	0.3571	0.0103
+0.5669	0.5038	1.000	examined, until either a unit is found which is avail-	0.3891	0.0131
+0.5697	0.0771	1.000	the channel.	0.0902	0.0103
+0.5814	0.5038	1.000	able or no more units exist on the channel. In the	0.3703	0.0116
+0.5827	0.0940	1.000	For the ADD code, a test is made at ZADDCH or	0.3628	0.0133
+0.5959	0.5038	1.000	latter case, return is made to ZLOP1 to determine	0.3797	0.0132
+0.5973	0.0771	1.000	ZADDUN of unit or channel availability. If already	0.3797	0.0118
+0.6105	0.5038	1.000	whether any more channels exist for test.	0.3083	0.0117
+0.6118	0.0771	1.000	available, an error return is given via ZEREXI. If	0.3853	0.0146
+0.6249	0.0769	1.000	not, the unit or channel is made available and the	0.3668	0.0149
+0.6250	0.5207	1.000	When an available unit is found, control passes to	0.3684	0.0132
+0.6394	0.5056	1.000	ZAVLUN and again the question must be asked if this	0.3910	0.0133
+0.6409	0.0771	1.000	status table is cleared. If a single-unit channel, the	0.3910	0.0118
+0.6539	0.5038	1.000	is the second pass through the scan. If it is, the first	0.4023	0.0133
+0.6555	0.0789	1.000	type of equipment on the IOCHANGE request is entered	0.4041	0.0132
+0.6685	0.5038	1.000	PP assigned unit found will be taken. If the unit is	0.3759	0.0147
+0.6700	0.0771	1.000	in the status table via ZINSRT, and a comment is	0.3665	0.0131
+0.6845	0.5056	1.000	owned by MCP, a branch is made to ZTSTPP to	0.3534	0.0131
+0.6860	0.0771	1.000	made to the operator before normal exit.	0.3045	0.0116
+0.6991	0.5056	1.000	determine if any more units are to be tested. When	0.3835	0.0117
+0.7006	0.0940	1.000	At ZDSKCH, the disk routine tests if the request	0.3628	0.0131
+0.7136	0.5038	1.000	a PP unit is found, the ownership bit is set to MCP	0.3797	0.0131
+0.7151	0.0771	1.000	is for an entire channel. If not, an error exit is	0.3609	0.0131
+0.7282	0.5038	1.000	and the unit is protected from unassignment when the	0.3929	0.0131
+0.7297	0.0771	1.000	made. If so, a test for ADD code is made. If it is	0.3797	0.0131
+0.7427	0.5019	1.000	eventual $ABEOJ is implemented. $ABEOJ is	0.3459	0.0131
+0.7442	0.0771	1.000	an ADD request, and the channel is already available,	0.4004	0.0131
+0.7573	0.5019	1.000	primed and a switch PG3 (ZPRABJ) is set to tell	0.3628	0.0146
+0.7587	0.0771	1.000	an error return is made via ZEREX1. If unavailable,	0.4004	0.0131
+0.7718	0.5056	1.000	other sections that the PP has been already primed	0.3778	0.0116
+0.7747	0.0771	1.000	the channel is made available, the configuration change	0.4117	0.0117
+0.7863	0.5056	1.000	for $ABEOJ. A message is also put out through the	0.3835	0.0131
+0.7892	0.0789	1.000	bit is set, and a normal return is given via ZDONE.	0.3853	0.0132
+0.8023	0.5056	1.000	output program and a comment made to the operator.	0.3929	0.0131
+0.8169	0.5056	1.000	If the channel is in operation or in setup, the program	0.4004	0.0116
+0.8182	0.0752	1.000	Replacing an Unavailable MCP Unit: The scan	0.3477	0.0161
+0.8314	0.5056	1.000	will loop until the channel is not operating. A branch	0.3947	0.0132
+0.8327	0.0789	1.000	routine (ZCHSCN, Figure 53) for MCP unit replace-	0.3872	0.0133
+0.8459	0.5056	1.000	is then made to ZSETAS which will clean out the	0.3571	0.0116
+0.8488	0.0789	1.000	ment attempts to find an unassigned unit of the same	0.3872	0.0118
+0.9230	0.0752	1.000	106	0.0244	0.0087

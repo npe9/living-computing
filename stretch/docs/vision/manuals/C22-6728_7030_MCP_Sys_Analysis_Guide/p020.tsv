@@ -1,0 +1,121 @@
+0.0581	0.5075	1.000	NOTE: The disk and the console are considered as	0.3797	0.0146
+0.0581	0.0677	1.000	The exits from the receptor are as follows:	0.3271	0.0189
+0.0741	0.2387	1.000	Circumstances	0.1147	0.0160
+0.0741	0.4906	1.000	multi-unit channels, since they may have more than	0.3872	0.0147
+0.0753	0.0957	1.000	Exit To	0.0623	0.0165
+0.0887	0.4925	1.000	one logical unit.	0.1222	0.0147
+0.1017	0.2387	1.000	The set-up I-0 bit (SSETUP)	0.2162	0.0174
+0.1032	0.5056	1.000	Whether a single or a multi-unit channel, the unit	0.3722	0.0147
+0.1043	0.0958	1.000	The address	0.0961	0.0167
+0.1177	0.4906	1.000	and file area table addresses are set up at KDOOL.	0.3835	0.0132
+0.1183	0.0956	1.000	specified in	0.0926	0.0191
+0.1206	0.2368	1.000	is on in the unit status table	0.2162	0.0146
+0.1321	0.0958	1.000	SRETAD in the	0.1166	0.0193
+0.1321	0.4925	1.000	The index registers at this point locate the control	0.3741	0.0147
+0.1321	0.2387	1.000	(UST), indicating that it was	0.2143	0.0161
+0.1467	0.2387	1.000	a set-up operation.	0.1485	0.0176
+0.1482	0.4906	1.000	tables as follows:	0.1335	0.0118
+0.1483	0.0977	1.000	UAT.	0.0451	0.0174
+0.1612	0.5902	1.000	Address of CST	0.1316	0.0147
+0.1613	0.5244	1.000	$IOVF	0.0677	0.0174
+0.1758	0.2406	1.000	The interrupt is a channel	0.1974	0.0176
+0.1758	0.5244	1.000	$11VF Address of UST	0.1992	0.0146
+0.1771	0.0976	1.000	PCONE1	0.0679	0.0179
+0.1903	0.5244	1.000	$12VF Address of UAT	0.1992	0.0146
+0.1903	0.2387	1.000	signal from the console.	0.1861	0.0191
+0.1933	0.0977	1.000	(the conceptor)	0.1147	0.0161
+0.2032	0.5243	1.000	$13VF	0.0566	0.0165
+0.2064	0.5959	1.000	Address of FAT	0.1297	0.0131
+0.2179	0.2406	1.000	The interrupt owner is MCP,	0.2199	0.0191
+0.2209	0.5094	1.000	If the set-up bit is on (SSETUP) in the UST, control	0.3816	0.0146
+0.2220	0.0995	1.000	The I-O table	0.1036	0.0168
+0.2339	0.2406	1.000	or PP at PP level, and is not	0.2237	0.0191
+0.2355	0.4906	1.000	is given to the address specified in SRETAD in the	0.3778	0.0145
+0.2368	0.0977	1.000	of exits speci-	0.1129	0.0178
+0.2479	0.2404	1.000	stacking I-O.	0.1019	0.0202
+0.2496	0.0976	1.000	fied in the FAT	0.1186	0.0182
+0.2500	0.4925	1.000	UAT. Otherwise, $1 is set for an ultimate branch to	0.3947	0.0145
+0.2630	0.4925	1.000	KNORM at KLEVEL, and control passes to KGATE	0.3816	0.0161
+0.2805	0.0977	1.000	KSUPP	0.0602	0.0161
+0.2805	0.2462	1.000	The interrupt is stacked,	0.1823	0.0146
+0.2805	0.4906	1.000	after performing the following bookkeeping:	0.3252	0.0131
+0.2951	0.5075	1.000	1. If the operation is read or write, CCW into	0.3496	0.0146
+0.2964	0.2444	1.000	because the owner cannot	0.1861	0.0147
+0.2965	0.0977	1.000	(service-op	0.0921	0.0160
+0.3096	0.4944	1.000	SCCW in the FAT.	0.1353	0.0131
+0.3109	0.0996	1.000	return)	0.0565	0.0162
+0.3124	0.2425	1.000	take it now.	0.0883	0.0118
+0.3241	0.5075	1.000	2. If tape, update the file count (SFILEK) in the	0.3647	0.0147
+0.3255	0.2425	1.000	Either OP, AD, USA, or DS	0.2105	0.0147
+0.3387	0.4925	1.000	UAT according to the interrupt and the I-O operation.	0.3966	0.0147
+0.3415	0.2425	1.000	indicators occurred simul-	0.2105	0.0131
+0.3532	0.5113	1.000	3. If disk, update the current are address (SCUARC)	0.3929	0.0147
+0.3545	0.2425	1.000	taneously with the I-O inter-	0.2143	0.0146
+0.3677	0.4944	1.000	in the FAT, and the located arc address (SARCAD)	0.3741	0.0132
+0.3691	0.2444	1.000	rupt, and are being allowed	0.2086	0.0176
+0.3852	0.2425	1.000	to interrupt.	0.0959	0.0131
+0.3936	0.5130	1.000	The receptor is entered at KGATE from the actua-	0.3743	0.0156
+0.3997	0.2444	1.000	An EOP interrupt occurred	0.2030	0.0131
+0.4112	0.4962	1.000	tor and the conceptor with the index registers set as	0.3853	0.0118
+0.4142	0.2425	1.000	for an operation which had	0.1992	0.0145
+0.4258	0.4962	1.000	though KSTORE had been entered. The actuator enters	0.4079	0.0133
+0.4288	0.2444	1.000	been requested in the SEOP	0.2086	0.0146
+0.4403	0.4962	1.000	the receptor either with the index registers set as	0.3703	0.0133
+0.4462	0.2462	1.000	mode.	0.0451	0.0102
+0.4548	0.4981	1.000	though an EPGK had occurred (when, for example, a	0.3872	0.0132
+0.4561	0.2462	1.000	Type 5 error, a PP TOE is	0.2068	0.0137
+0.4593	0.1203	1.000	SDISP	0.0489	0.0131
+0.4694	0.4962	1.000	read request is received for a file protected tape) or	0.3891	0.0132
+0.4724	0.2462	1.000	out of PP bounds.	0.1316	0.0116
+0.4738	0.1222	1.000	(dispatcher	0.0865	0.0147
+0.4839	0.4962	1.000	with EOP faked when a $REL is requested. The con-	0.3966	0.0118
+0.4869	0.2462	1.000	Type 78 error, there is no	0.1992	0.0146
+0.4897	0.1240	1.000	error	0.0452	0.0133
+0.4985	0.4981	1.000	ceptor enters the receptor when a console read is	0.3703	0.0131
+0.5015	0.2462	1.000	more room in the interrupt	0.2049	0.0116
+0.5044	0.1241	1.000	control)	0.0602	0.0131
+0.5111	0.4979	1.000	given after a console channel signal had been passed	0.3859	0.0183
+0.5189	0.2443	1.000	queue.	0.0508	0.0132
+0.5271	0.4980	1.000	to the user. Since the read had already been done by	0.3912	0.0161
+0.5305	0.2462	1.000	Type 76 error, a locate or	0.2011	0.0160
+0.5415	0.4980	1.000	the conceptor, it is necessary to fake an EOP to the	0.3837	0.0161
+0.5464	0.2462	1.000	CCW attempted by the recep-	0.2180	0.0133
+0.5596	0.2444	1.000	tor has been repeatedly	0.1786	0.0146
+0.5609	0.4981	1.000	using program.	0.1147	0.0103
+0.5709	0.5149	1.000	At KGATE (Figure 7) the I-O indicators are saved	0.3706	0.0159
+0.5741	0.2462	1.000	rejected.	0.0695	0.0160
+0.5872	0.4981	1.000	in the FAT, and the status indicators are cleared in	0.3853	0.0146
+0.6017	0.5658	1.000	The release and SEOP bits are examined	0.3120	0.0116
+0.6061	0.0714	1.000	The Receptor Main Flow	0.1842	0.0146
+0.6163	0.4981	1.000	in the UST. If the release bit is on, the code at W23K	0.4023	0.0131
+0.6301	0.4980	1.000	is used to return to KGATE with an EOP faked for	0.3724	0.0146
+0.6336	0.0714	1.000	The receptor (KSTORE, Figure 6) saves the low regi-	0.4041	0.0161
+0.6453	0.4981	1.000	the release. If the SEOP bit is on, a check is made	0.3853	0.0131
+0.6482	0.0714	1.000	sters in STLR, clears the I-O indicators, and com-	0.3872	0.0176
+0.6599	0.4981	1.000	for indicators other than EOP (at KFREE) and if none	0.3966	0.0131
+0.6616	0.0711	1.000	putes the address of the channel status table. If the	0.3877	0.0187
+0.6724	0.4979	1.000	are on, the service op return routine is entered	0.3558	0.0190
+0.6788	0.0733	1.000	interrupt is CS alone, and occurs in a multi-unit	0.3628	0.0146
+0.6890	0.5000	1.000	(KSUPP). If others are on, or if the SEOP bit was	0.3759	0.0147
+0.6914	0.0750	1.000	channel, control is given to KSIGNL to find the unit.	0.3857	0.0173
+0.7044	0.4980	1.000	not on, control passes to KQIN.	0.2371	0.0158
+0.7059	0.0750	1.000	If the interrupt was not CS, but CS is on, subroutine	0.3877	0.0180
+0.7194	0.5169	1.000	At KQIN, the interrupt is stacked in the interrupt	0.3665	0.0146
+0.7206	0.0750	1.000	KCSIN is used to stack the CS and set KSUPP to	0.3575	0.0165
+0.7339	0.5019	1.000	queue (SQUE), which consists of 128 nineteen-bit	0.3628	0.0146
+0.7369	0.0752	1.000	unstack it. In either case, address of the UST is	0.3665	0.0146
+0.7473	0.5017	1.000	fields containing the 18 bit address of the FAT and a	0.3857	0.0156
+0.7540	0.0751	1.000	obtained.	0.0697	0.0123
+0.7623	0.5017	1.000	bit identifying the owner of the unit. PP and MCP	0.3725	0.0164
+0.7674	0.0902	1.000	If the channel is a single unit channel, the unit	0.3496	0.0116
+0.7791	0.5000	1.000	interrupts are intermixed in the same queue. How-	0.3853	0.0131
+0.7820	0.0752	1.000	status table (actually the CST) address is set up	0.3571	0.0132
+0.7936	0.5038	1.000	ever, a separate count of stacked interrupts is main-	0.3929	0.0146
+0.7948	0.0769	1.000	(KSINGL). If the unit was not assigned, it is assumed	0.4008	0.0163
+0.8061	0.4999	1.000	tained for the two levels and is stored in the value field	0.4101	0.0151
+0.8096	0.0752	1.000	that the interrupt was a stray CS from the card reader,	0.4117	0.0146
+0.8224	0.0749	1.000	printer, or punch, and an exit is made via the service	0.4047	0.0203
+0.8227	0.5038	1.000	of the second half word (SQK) of the program status	0.3797	0.0116
+0.8357	0.5018	1.000	table (SPROGS) for the level. The unit suppressed	0.3763	0.0161
+0.8415	0.0771	1.000	op return routine (KSUPP).	0.2030	0.0131
+0.9186	0.0733	1.000	20	0.0169	0.0102

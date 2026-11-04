@@ -1,0 +1,40 @@
+0.1279	0.1861	1.000	ADDITIONS TO APPENDIX B	0.2350	0.0131
+0.1294	0.4192	1.000	. - Messages - Page 39	0.2030	0.0116
+0.1890	0.1842	1.000	PROGRAMMER MESSAGES	0.2199	0.0147
+0.2194	0.1823	1.000	The first message of every job on the system output tape is usually a job card. It is	0.6748	0.0161
+0.2369	0.1823	1.000	possible that a COMD, COMMENT card may be in the deck and then a comment will	0.6635	0.0131
+0.2515	0.1823	1.000	appear before the job card. After the job card another message is given with the TIME,	0.7049	0.0146
+0.2660	0.1842	1.000	RUN DATE, and VERSION of the system tape.	0.3684	0.0174
+0.2994	0.1842	1.000	ERRORS DURING EXECUTION	0.2481	0.0131
+0.3299	0.1842	1.000	YOUR PROGRAM WAS ENDED BECAUSE OF A TYPE XX ERROR. New error codes:	0.6842	0.0146
+0.3445	0.2519	1.000	05 - Problem Program IOD Table of Exits is out of bounds.	0.4887	0.0161
+0.3605	0.3026	1.000	Illegal $FIXUP word (i.e., I/O Instruction, BD, SIC;BD).	0.4643	0.0174
+0.3618	0.2538	1.000	19 -	0.0508	0.0103
+0.3764	0.2538	1.000	20 - Attempt has been made to use $STLR when not auto-stacked.	0.5338	0.0132
+0.4084	0.1805	1.000	INITIALIZATION MESSAGES - Page 40	0.3289	0.0146
+0.4390	0.1842	1.000	The following two messages have been removed because the improved input routine will	0.6955	0.0117
+0.4548	0.1842	1.000	operate with only one input tape in the overlapped mode.	0.4455	0.0132
+0.4694	0.2500	1.000	$FIRST JOB TO BE RUN WILL BE ON CHANNEL XX UNIT X	0.4962	0.0132
+0.4855	0.2500	1.000	$OTHER INPUT TAPE WILL BE ON CHANNEL XX UNIT X	0.4774	0.0131
+0.5174	0.1823	1.000	NEW MESSAGES	0.1335	0.0116
+0.5464	0.2500	1.000	$DATE/TIME INVALID RETRY VIA COMD, CLOCK	0.4135	0.0161
+0.5624	0.1823	1.000	An illegal time and/or date has been entered. Unless a time and date is put in by	0.6504	0.0161
+0.5785	0.1842	1.000	COMD, CLOCK none will appear on the output tape.	0.4041	0.0145
+0.5945	0.2500	1.000	$SERVICE RD/FD CHECK ON CARD READER	0.3722	0.0131
+0.6090	0.1974	1.000	If the reader's FEED CHECK light is off it is a read check. The procedure then is to	0.6842	0.0160
+0.6250	0.1805	1.000	push the STOP button on the reader and remove the remaining cards from the hopper.	0.6842	0.0160
+0.6381	0.1805	1.000	Then unload the reader and take the last 4 cards which have unloaded and put them in	0.6767	0.0174
+0.6570	0.1805	1.000	the hopper before loading the remaining cards and starting the reader.	0.5620	0.0145
+0.6730	0.1992	1.000	For a feed check the procedure may vary. It is possible that a serious card jam may	0.6805	0.0146
+0.6875	0.1786	1.000	have occurred, and it is best to let the engineers remove the cards to avoid damage to	0.6917	0.0161
+0.7006	0.1805	1.000	the brushes. If it is only a minor feed check usually feeding through the last two cards	0.6936	0.0174
+0.7194	0.1805	1.000	that were inside the reader will correct the situation.	0.4267	0.0132
+0.7339	0.2481	1.000	$CH XX UN X UNLOADING, REUSE TAPE.	0.3496	0.0161
+0.7500	0.1955	1.000	This message indicates that an uncorrectible card reader error has occurred. The	0.6711	0.0145
+0.7660	0.1805	1.000	bad card has been written on the tape. When this error is detected the tape is unloaded	0.6955	0.0146
+0.7820	0.1805	1.000	but may be reused because the tape was not at fault.	0.4135	0.0145
+0.7962	0.2480	1.000	$STRIP CH XX UN X BEFORE REUSING.	0.3330	0.0178
+0.8124	0.1992	1.000	An uncorrectible tape error has occurred on the designated tape.	0.5169	0.0132
+0.8270	0.2406	1.000	$CH XX UN X IS UNLOADING, INPUT FOUND END OF TAPE.	0.5113	0.0161
+0.8428	0.1973	1.000	The End of Tape reflective spot has been sensed while writing tape.	0.5396	0.0164
+0.9230	0.7688	1.000	Page 8 of 12	0.1053	0.0116

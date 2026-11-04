@@ -1,0 +1,56 @@
+0.1177	0.1222	1.000	Step Three	0.0865	0.0117
+0.1453	0.1184	1.000	MCP determines if the problem program is in the stacked or released mode. When a	0.6861	0.0160
+0.1612	0.1184	1.000	program is in the released mode, the problem programmer wishes to process immed-	0.6955	0.0176
+0.1758	0.1184	1.000	iately any I-O interrupt that may occur. When a program is placed in the stacked mode,	0.7162	0.0161
+0.1918	0.1184	1.000	the intention is to place any I-O interrupts that may occur in a queue and have them held	0.7068	0.0176
+0.2078	0.1184	1.000	in that status until such time as the released mode is entered. Then interrupts that have	0.7124	0.0161
+0.2223	0.1202	1.000	been stacked will be processed, one at atime, inthe order in which they were stacked.	0.6768	0.0186
+0.2558	0.1241	1.000	Pseudo-operations are used to invoke these modes:	0.4060	0.0131
+0.2876	0.2612	1.000	В, $МСР	0.0791	0.0150
+0.3038	0.2726	1.000	$SIO	0.0451	0.0102
+0.3327	0.1203	1.000	causes the program to operate in the stacked mode,	0.4135	0.0161
+0.3647	0.2612	1.000	B, $MCP	0.0772	0.0163
+0.3808	0.2613	1.000	• $RIO	0.0602	0.0160
+0.4110	0.1202	1.000	places the program in the released mode.	0.3347	0.0149
+0.4402	0.1184	1.000	If a program is in the released mode and an I-O interrupt is being processed, any	0.6561	0.0178
+0.4552	0.1183	1.000	further interrupts that occur during that interrupt will automatically invoke the stacked	0.6976	0.0194
+0.4694	0.1183	1.000	mode. Restoration to the released mode is also accomplished automatically by MCP	0.6807	0.0209
+0.4897	0.1184	1.000	and actually need not be of any concern to the programmer.	0.4774	0.0147
+0.5216	0.1202	1.000	Step Four	0.0791	0.0149
+0.5492	0.1202	1.000	MCP determines the appropriate I-O Table of Exits. Every IOD has a table of exits	0.6713	0.0186
+0.5654	0.1203	1.000	associated with it; several IOD's may, however, share a table of exits. Thus, if a	0.6692	0.0174
+0.5814	0.1184	1.000	program has N IOD statements, there may be as many as N or as few as one I-O	0.6466	0.0174
+0.5988	0.1184	1.000	tables of exits.	0.1241	0.0146
+0.6272	0.1202	1.000	The purpose of an I-O table of exits is to provide storage space for information pertin-	0.6976	0.0199
+0.6432	0.1183	1.000	ent to an I-O interrupt. Each table is composed of six full words, and must begin at a	0.6863	0.0191
+0.6561	0.1183	1.000	full word address. Each of the last four words contains instructions supplied by the	0.6675	0.0194
+0.6759	0.1203	1.000	programmer.	0.1128	0.0160
+0.7034	0.6522	1.000	50/51	0.0397	0.0177
+0.7048	0.3890	1.000	17/18	0.0397	0.0177
+0.7049	0.4737	1.000	31/32	0.0395	0.0160
+0.7078	0.7256	1.000	63	0.0207	0.0145
+0.7224	0.4248	1.000	blank	0.0414	0.0145
+0.7224	0.2613	1.000	Reference Number	0.1203	0.0161
+0.7238	0.6898	1.000	blank	0.0432	0.0131
+0.7252	0.1748	1.000	word o	0.0451	0.0118
+0.7252	0.5263	1.000	Actuated Addr.	0.0977	0.0133
+0.7442	0.3045	1.000	8/9	0.0263	0.0174
+0.7471	0.4756	1.000	31|32	0.0395	0.0131
+0.7485	0.3816	1.000	1314	0.0432	0.0116
+0.7485	0.7274	1.000	63	0.0207	0.0116
+0.7485	0.6504	1.000	50|51	0.0376	0.0116
+0.7655	0.1746	1.000	word 1	0.0475	0.0169
+0.7660	0.4173	1.000	blank	0.0489	0.0145
+0.7660	0.6880	1.000	blank	0.0432	0.0145
+0.7674	0.4981	1.000	Interrupted Addr.	0.1109	0.0147
+0.7674	0.3214	1.000	I-OInds.	0.0639	0.0145
+0.7689	0.2500	1.000	blank	0.0395	0.0116
+0.7848	0.1747	1.000	word 2	0.0471	0.0177
+0.7878	0.2707	1.000	ERROR RETURN INSTRUCTION	0.2049	0.0146
+0.8051	0.1747	1.000	word 3	0.0472	0.0178
+0.8081	0.2688	1.000	END EXCEPTION RETURN INSTRUCTION	0.2650	0.0161
+0.8255	0.1747	1.000	word 4	0.0471	0.0177
+0.8285	0.2707	1.000	SIGNAL RETURN INSTRUCTION	0.2049	0.0131
+0.8471	0.1747	1.000	word 5	0.0473	0.0165
+0.8488	0.2688	1.000	NORMAL RETURN INSTRUCTION	0.2180	0.0146
+0.9433	0.9117	1.000	13	0.0263	0.0174

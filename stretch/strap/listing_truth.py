@@ -42,15 +42,15 @@ def _first_octal(printed):
     return t[0] if t and re.fullmatch(OCT, t[0]) else None
 
 
-def truth(page, root=ROOT):
-    """{line: (location, binary_half1_octal_or_None)} for one printed page."""
+def printed(page, root=ROOT):
+    """{line: (location, printed binary field)} for one printed page."""
     out = {}
     deck = os.path.join(root, "decks", "mcp_bootstrap_p%d.strap" % page)
     if os.path.exists(deck):
         for ln in open(deck, errors="replace"):
             m = _CHK.match(ln.strip())
             if m:
-                out.setdefault(int(m.group(3)), (m.group(1), _first_octal(m.group(2))))
+                out.setdefault(int(m.group(3)), (m.group(1), m.group(2)))
     for ver in _verify_files(page, root):
         multi = _MULTI.search(ver) is not None
         for m in _ROW.finditer(open(ver, errors="replace").read()):
@@ -58,7 +58,53 @@ def truth(page, root=ROOT):
             # a row that does not name it cannot be placed, so it is skipped.
             if multi and (m.group(3) is None or int(m.group(3)) != page):
                 continue
-            out.setdefault(int(m.group(4)), (m.group(1), _first_octal(m.group(2))))
+            out.setdefault(int(m.group(4)), (m.group(1), m.group(2)))
+    return out
+
+
+def truth(page, root=ROOT):
+    """{line: (location, binary_half1_octal_or_None)} for one printed page."""
+    return {line: (loc, _first_octal(pr)) for line, (loc, pr) in printed(page, root).items()}
+
+
+def half2(page, root=ROOT):
+    """{line: binary half word 2 octal} -- only for lines that print a full
+    word, "h1 hex h2 hex" (e.g. "000053.40 80 023000.22 B0")."""
+    out = {}
+    for line, (loc, pr) in printed(page, root).items():
+        t = pr.split()
+        if len(t) == 4 and re.fullmatch(OCT, t[0]) and re.fullmatch(OCT, t[2]):
+            out[line] = t[2]
+    return out
+
+
+_SRC = re.compile(r"^([^!]*?)\s*!\s*line\s+(\d+)\b")
+
+
+def statements(page, root=ROOT):
+    """{line: STATEMENT} from the deck's source cards ("LX,$2,XERRIN  ! line 5").
+
+    The STATEMENT only, label dropped: decks rename labels (printed
+    "S ROOF" is the deck's XSROOF), but an operand differs from the page
+    only by its spaces (printed "X IPLK" is XIPLK).  So compare with all
+    spaces removed, and never compare NAMEs this way."""
+    out = {}
+    deck = os.path.join(root, "decks", "mcp_bootstrap_p%d.strap" % page)
+    if not os.path.exists(deck):
+        return out
+    for ln in open(deck, errors="replace"):
+        if ln.startswith("!"):
+            continue
+        m = _SRC.match(ln.rstrip())
+        if not m or not m.group(1).strip():
+            continue
+        code = m.group(1).rstrip()
+        parts = code.split(None, 1)
+        if not code[0].isspace():
+            if len(parts) < 2:
+                continue                 # a label alone on its card
+            code = parts[1]
+        out.setdefault(int(m.group(2)), code.strip())
     return out
 
 

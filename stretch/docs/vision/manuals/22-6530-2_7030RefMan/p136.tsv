@@ -1,0 +1,112 @@
+0.0581	0.5038	1.000	less than a full set of eight units, or none of the avail-	0.3910	0.0131
+0.0588	0.0901	1.000	Operation of Tape under Computer Control	0.3122	0.0154
+0.0741	0.5038	1.000	able units may have its address selection switch set	0.3929	0.0131
+0.0799	0.0902	1.000	All information on tape is arranged in blocks, one	0.3872	0.0131
+0.0852	0.5036	1.000	to the specified address. If the LOCATE instruction	0.3913	0.0190
+0.0959	0.0902	1.000	block normally being separated from the adjacent one	0.3872	0.0132
+0.1032	0.5038	1.000	specifies a non-existent address, the previously selected	0.3910	0.0147
+0.1105	0.0902	1.000	by a blank gap of tape approximately / inch long.	0.3872	0.0145
+0.1176	0.5036	1.000	unit is disconnected, but no other unit is selected in	0.3912	0.0159
+0.1264	0.0902	1.000	Consequently, reading in the single-block mode trans-	0.3872	0.0132
+0.1352	0.5038	1.000	its place. As a result, the channel becomes not ready.	0.3929	0.0131
+0.1409	0.0902	1.000	fers the information located between two consecutive	0.3872	0.0118
+0.1497	0.5038	1.000	In any case, regardless of how the LOCATE instruction	0.3910	0.0145
+0.1570	0.0902	1.000	gaps. When the end of the last block of an operation	0.3872	0.0131
+0.1642	0.5038	1.000	is executed, an end-of-operation indication is given	0.3910	0.0145
+0.1714	0.0902	1.000	is reached, the tape control causes an end-of-operation	0.3873	0.0151
+0.1802	0.5056	1.000	upon the termination of the operation.	0.2820	0.0146
+0.1890	0.0902	1.000	indication.	0.0752	0.0116
+0.1962	0.5207	1.000	If more than one unit is set to a selection address	0.3759	0.0117
+0.2048	0.1053	1.000	A gap, however, can be longer than ¾ inch. Such	0.3722	0.0146
+0.2106	0.5038	1.000	specified by a LocaTE instruction, all units having this	0.3929	0.0147
+0.2209	0.0902	1.000	a gap can be obtained by means of the ERASE LONG	0.3872	0.0146
+0.2252	0.5038	1.000	address are selected. The channel is in ready status	0.3929	0.0147
+0.2369	0.0902	1.000	GAP control instruction. When a longer gap is encoun-	0.3891	0.0131
+0.2427	0.5038	1.000	as long as at least one of the selected units is in ready	0.3910	0.0131
+0.2515	0.0902	1.000	tered during reading, the tape is automatically moved	0.3872	0.0131
+0.2573	0.5620	1.000	If a READ instruction is issued to a channel	0.3346	0.0116
+0.2602	0.5038	1.000	status.	0.0583	0.0102
+0.2674	0.0902	1.000	ahead until data are reached. When a ReaD instruc-	0.3872	0.0102
+0.2733	0.5038	1.000	having more than one tape unit selected and ready,	0.3929	0.0146
+0.2805	0.0902	1.000	tion or an instruction involving forward spacing is	0.3891	0.0146
+0.2878	0.5038	1.000	the information received is meaningless and is ac-	0.3910	0.0146
+0.2964	0.0902	1.000	given at a point beyond the recorded data, the tape is	0.3891	0.0147
+0.3036	0.5056	1.000	companied by a unit check that designates data errors.	0.3891	0.0147
+0.3139	0.0902	1.000	moved until it is pulled off the reel.	0.2538	0.0131
+0.3182	0.5056	1.000	If a WRITE instruction is issued under the same con-	0.3910	0.0133
+0.3299	0.1053	1.000	Normally, new data are recorded only so that the	0.3741	0.0161
+0.3342	0.5056	1.000	ditions, data are recorded on all units but the check	0.3891	0.0131
+0.3438	0.0901	1.000	new block follows the previously recorded useful data,	0.3893	0.0178
+0.3503	0.5038	1.000	reading phase causes a uk and EoP indication regard-	0.3929	0.0131
+0.3618	0.0921	1.000	not by replacing a block located between other blocks.	0.3853	0.0132
+0.3648	0.5038	1.000	less of whether or not actual errors have occurred.	0.3910	0.0116
+0.3764	0.0921	1.000	Because magnetic tape involves mechanical devices,	0.3872	0.0146
+0.3808	0.5075	1.000	The system is not designed for simultaneous operation	0.3872	0.0146
+0.3924	0.0902	1.000	the variations in speed and distances are relatively	0.3891	0.0131
+0.3967	0.5056	1.000	of more than one unit, and hence such operation is	0.3891	0.0133
+0.4070	0.0902	1.000	large, and the tape cannot be guaranteed to stop al-	0.3891	0.0145
+0.4112	0.5056	1.000	not recommended. If more than one unit is selected	0.3891	0.0118
+0.4230	0.0921	1.000	ways in the same place in the gap. If these variations	0.3872	0.0146
+0.4258	0.5056	1.000	at a time, but only one of them is in the ready status,	0.3910	0.0146
+0.4369	0.0920	1.000	happen to be of a cumulative nature, it is possible to	0.3874	0.0153
+0.4418	0.5056	1.000	the operation is performed only on the unit which is	0.3910	0.0146
+0.4535	0.0921	1.000	damage the following block or leave information that	0.3872	0.0145
+0.4578	0.5056	1.000	ready. The effect is the same as if it were the only	0.3910	0.0131
+0.4679	0.0902	1.000	should have been erased. Replacement of a block of	0.3910	0.0147
+0.4724	0.5075	1.000	unit selected.	0.0977	0.0131
+0.4839	0.0921	1.000	data that precedes another useful block is not recom-	0.3872	0.0146
+0.4884	0.5226	1.000	The mode specifying even or odd parity and ECC	0.3741	0.0131
+0.5000	0.0921	1.000	mended. This is the reason for the special treatment	0.3891	0.0131
+0.5015	0.5075	1.000	or no-ecc type of operation is set up in the tape con-	0.3891	0.0146
+0.5145	0.0921	1.000	of all backspacing operations when the preceding op-	0.3872	0.0146
+0.5174	0.5075	1.000	trol and applies to all the tape units accommodated	0.3891	0.0147
+0.5305	0.0921	1.000	eration involving tape motion has been a WRITE. In	0.3872	0.0131
+0.5333	0.5075	1.000	by that control. Thus, to switch between a tape unit	0.3910	0.0146
+0.5451	0.0921	1.000	order to insure that no noise is left on tape in the in-	0.3891	0.0146
+0.5494	0.5056	1.000	operating in one mode and another tape unit operat-	0.3910	0.0131
+0.5609	0.0902	1.000	ter-block gap when the next block is recorded, a	0.3891	0.0147
+0.5639	0.5075	1.000	ing in a different mode, a coNtroL instruction to	0.3891	0.0145
+0.5755	0.0921	1.000	BACKSPACE-BLOCK Or BACKSPACE-FILE control function,	0.3891	0.0118
+0.5799	0.5113	1.000	change modes must accompany each LOCATE instruction	0.3853	0.0131
+0.5915	0.0921	1.000	following a WRITE operation, always causes the tape	0.3891	0.0146
+0.5945	0.5075	1.000	to switch units. The mode specifying high or low den-	0.3910	0.0146
+0.6061	0.0921	1.000	first to be erased forward for approximately half an	0.3872	0.0146
+0.6090	0.5075	1.000	sity, on the other hand, is set up in the tape unit it-	0.3891	0.0146
+0.6221	0.0902	1.000	inch before backward motion is initiated. This erasing	0.3910	0.0131
+0.6250	0.5056	1.000	self. Consequently, this setting in a given unit is not	0.3929	0.0145
+0.6381	0.0902	1.000	does not affect programming in any way, since the	0.3910	0.0146
+0.6409	0.5056	1.000	affected by any changes in the recording density that	0.3947	0.0176
+0.6525	0.0920	1.000	erased information follows the last recorded block and	0.3874	0.0135
+0.6570	0.5056	1.000	are made on other units on the same control.	0.3459	0.0116
+0.6673	0.0901	1.000	therefore is of no consequence to the program.	0.3462	0.0166
+0.6700	0.5244	1.000	The tape always must be read in the same density	0.3722	0.0161
+0.6859	0.5074	1.000	in which it has been recorded. The same applies to	0.3893	0.0150
+0.6860	0.1053	1.000	In the case of rewinding, such erasing does not take	0.3759	0.0146
+0.7020	0.5094	1.000	all spacing operations and to the sensing of tape marks.	0.3872	0.0146
+0.7020	0.0921	1.000	place. Consequently, if the tape is rewound following	0.3872	0.0146
+0.7139	0.0919	1.000	the recording of the last block, it is not safe to add	0.3876	0.0182
+0.7166	0.5075	1.000	If read in the other density, the data are meaningless	0.3910	0.0146
+0.7322	0.0902	1.000	later any more data on the tape without first erasing	0.3911	0.0152
+0.7324	0.5075	1.000	and a data error indication results in most cases.	0.3891	0.0133
+0.7485	0.5075	1.000	Consequently, a tape mark cannot be recognized un-	0.3910	0.0146
+0.7485	0.0902	1.000	and rewriting the last block of the preceding run.	0.3910	0.0131
+0.7630	0.0921	1.000	Normally this last block will be a tape mark, which	0.3872	0.0146
+0.7630	0.5056	1.000	less it is read or spaced over in the correct density.	0.3929	0.0146
+0.7791	0.5075	1.000	Furthermore, whenever a reading or a spacing opera-	0.3910	0.0146
+0.7791	0.0902	1.000	may be removed when more data are added.	0.3252	0.0131
+0.7949	0.1071	1.000	A LOCATE instruction is used to select one of the	0.3742	0.0134
+0.7951	0.5075	1.000	tion is performed in the high density mode over data	0.3910	0.0131
+0.8096	0.5075	1.000	that have been recorded in the low density mode, the	0.3910	0.0146
+0.8108	0.0901	1.000	set of tape units accommodated by a control. Since	0.3911	0.0152
+0.8255	0.5075	1.000	tape stops after moving over the first byte the head	0.3910	0.0147
+0.8270	0.0921	1.000	the maximum number of units attachable to the con-	0.3891	0.0118
+0.8400	0.5075	1.000	encounters, and the heads may remain over the re-	0.3910	0.0133
+0.8415	0.0921	1.000	trol is eight, only the three low-order bits of the right	0.3891	0.0146
+0.8561	0.5075	1.000	corded data. No error indications, however, are given	0.3910	0.0131
+0.8576	0.0902	1.000	effective address, bits 47 through 49, are decoded by	0.3891	0.0131
+0.8706	0.5075	1.000	when spacing is attempted in the wrong density mode.	0.3910	0.0146
+0.8721	0.0921	1.000	the control; the rest of the address is ignored. A tape	0.3891	0.0131
+0.8852	0.5226	1.000	When the power in the tape control is turned on	0.3759	0.0146
+0.8881	0.0902	1.000	system connected to a channel may, however, have	0.3910	0.0146
+0.9215	0.7575	1.000	External Units	0.0921	0.0088
+0.9215	0.8741	1.000	133	0.0263	0.0087

@@ -1,0 +1,88 @@
+0.0814	0.8534	1.000	NQBTP	0.0602	0.0174
+0.1536	0.5168	1.000	Boxes 2,3	0.0868	0.0183
+0.1555	0.0996	1.000	This subroutine is the PUNSYM procedure in Pass 2b.	0.3985	0.0118
+0.1797	0.5205	1.000	If the pseudo-op, PUNALL, has been specified in	0.3707	0.0230
+0.1859	0.0977	1.000	LINKAGE	0.0734	0.0119
+0.1976	0.5207	1.000	the program, PUNSYM bypasses testing NQBTP to	0.3816	0.0161
+0.2093	0.5207	1.000	determine those symbols marked to be punched, and	0.3929	0.0174
+0.2106	0.0977	1.000	After all binary cards have been punched, OUTPUT	0.3816	0.0191
+0.2252	0.5207	1.000	punches the entire symbol table. N. B.: STRAP	0.3571	0.0161
+0.2282	0.0977	1.000	branches to the NQBTP (Branch Io PUNSYM) only	0.3741	0.0161
+0.2397	0.5226	1.000	does not punch cards for undefined symbol table	0.3571	0.0176
+0.2412	0.0959	1.000	if the switch at Opsym is a Branch. This switch is	0.3797	0.0191
+0.2586	0.5206	1.000	entries.	0.0640	0.0134
+0.2602	0.0996	1.000	converted to a Branch by the normal processing of	0.3741	0.0116
+0.2733	0.0977	1.000	either PUNSYM or PUNALL pseudo-ops by OUTPUT,	0.3947	0.0146
+0.2874	0.5206	1.000	Boxes 10-12	0.0942	0.0168
+0.2892	0.0959	1.000	and is restored to a NOP by the NQBTP subroutine.	0.3872	0.0160
+0.3052	0.0977	1.000	NQBTP branches directly back to OUTPUT.	0.3252	0.0146
+0.3139	0.5207	1.000	If there are more symbol table entries, NQBTP	0.3628	0.0218
+0.3327	0.5226	1.000	spaces over to the next vle entry; if not, it restores	0.3853	0.0147
+0.3488	0.5226	1.000	the original buffer and switch settings, and branches	0.3910	0.0146
+0.3605	0.5207	1.000	back to Pass 2b.	0.1297	0.0174
+0.3677	0.1053	1.000	DETAILS	0.0695	0.0116
+0.3924	0.5207	1.000	Box 1	0.0526	0.0161
+0.3939	0.1071	1.000	The pseudo-op, PUNSYM, initiates the punching of	0.3741	0.0146
+0.4084	0.1071	1.000	SYN cards for only those symbols specified by the	0.3816	0.0146
+0.4200	0.5226	1.000	Eight characters of the symbol name are stored in	0.3759	0.0176
+0.4208	0.1049	1.000	pseudo-op. PUNALL requests punching SYN cards	0.3804	0.0232
+0.4354	0.1050	1.000	for the entire symbol table. For PUNALL a switch	0.3822	0.0227
+0.4360	0.5207	1.000	the buffer, and if more characters remain, a switch	0.3910	0.0161
+0.4503	0.5188	1.000	is set to indicate the necessity for a continuation	0.3666	0.0152
+0.4515	0.1050	1.000	at Napall, in addition to the switch at Opsym, must	0.3803	0.0222
+0.4621	0.5207	1.000	card. The ads, bit and integer values, and index	0.3703	0.0204
+0.4666	0.1053	1.000	be converted to a Branch by OUTPUT. Both will	0.3647	0.0160
+0.4797	0.5226	1.000	value are obtained from the symbol table entry and	0.3778	0.0146
+0.4839	0.1071	1.000	be restored to NOP's by NQBTP.	0.2444	0.0118
+0.4940	0.5225	1.000	stored in the buffer.	0.1523	0.0164
+0.4950	0.1220	1.000	The SYN cards punched by STRAP II for symbols	0.3634	0.0216
+0.5087	0.1071	1.000	requested by the program are in the following format:	0.3966	0.0189
+0.5243	0.5224	1.000	Boxes 5, 6	0.0868	0.0183
+0.5287	0.2047	1.000	Name	0.0417	0.0109
+0.5305	0.1147	1.000	2 - 9	0.0357	0.0089
+0.5436	0.2049	1.000	Operation Code SYN	0.1466	0.0116
+0.5450	0.1053	1.000	10 - 12	0.0545	0.0088
+0.5523	0.5207	1.000	If dimension properties are attached to the symbol,	0.3853	0.0174
+0.5581	0.2049	1.000	(Mode, FL, BS),	0.1241	0.0131
+0.5596	0.1053	1.000	13 - 22	0.0545	0.0103
+0.5669	0.5207	1.000	they must be recalculated by NQBTP. Since the	0.3741	0.0189
+0.5710	0.3590	1.000	Bit Value	0.0696	0.0120
+0.5739	0.1071	1.000	23 - 38	0.0528	0.0106
+0.5741	0.2030	1.000	(8) IXXXXXX. XX	0.1203	0.0131
+0.5840	0.3552	1.000	Integer Value	0.1035	0.0151
+0.5842	0.5226	1.000	original dimensions have already been multiplied to	0.3835	0.0146
+0.5872	0.2049	1.000	(8) +xxxxxxxX	0.1071	0.0131
+0.5884	0.1071	1.000	42 - 53	0.0528	0.0106
+0.5957	0.5205	1.000	produce the final product of the dimensions, NQBTP	0.3894	0.0190
+0.5996	0.3570	1.000	Index Value	0.0887	0.0144
+0.6031	0.1071	1.000	56 - 60	0.0527	0.0103
+0.6032	0.2030	1.000	($xx)	0.0376	0.0116
+0.6118	0.5207	1.000	divides the last value by the penultimate value, etc.,	0.3929	0.0161
+0.6177	0.2068	1.000	, (Dim.1, Dim. 2,...,Dim.x)	0.2180	0.0132
+0.6188	0.1070	1.000	61 - 72	0.0529	0.0095
+0.6294	0.5207	1.000	to arrive at the original values.	0.2387	0.0146
+0.6323	0.2049	1.000	Identification	0.0977	0.0087
+0.6337	0.1071	1.000	73-80	0.0526	0.0087
+0.6439	0.0977	1.000	Continuation cards (if required for name, dimension	0.3872	0.0161
+0.6612	0.0959	1.000	reference, or both):	0.1523	0.0161
+0.6729	0.5225	1.000	Box 7	0.0489	0.0161
+0.6758	0.2030	1.000	Asterisk	0.0659	0.0133
+0.6773	0.1147	1.000	1	0.0113	0.0102
+0.6901	0.2029	1.000	Name	0.0473	0.0136
+0.6903	0.1147	1.000	2 - 9	0.0376	0.0118
+0.7006	0.5226	1.000	Opunsa sets up the control word and branches to	0.3609	0.0203
+0.7048	0.2049	1.000	Dimension reference	0.1541	0.0132
+0.7048	0.1071	1.000	10 - xx	0.0545	0.0118
+0.7151	0.5226	1.000	OPPUN for the actual punching	0.2331	0.0174
+0.7339	0.0996	1.000	FLOW CHART DESCRIPTION	0.2237	0.0132
+0.7452	0.5224	1.000	Boxes 8,9	0.0831	0.0199
+0.7644	0.0977	1.000	Box 1	0.0415	0.0134
+0.7761	0.5207	1.000	If one or more continuation cards are required be-	0.3797	0.0146
+0.7906	0.5226	1.000	cause of a name longer than 8 characters and/or an	0.3853	0.0146
+0.7906	0.0996	1.000	The address of the first symbol table entry is picked	0.3891	0.0161
+0.8033	0.5225	1.000	extra number of dimensions, the card image is con-	0.3892	0.0184
+0.8048	0.0976	1.000	up from the control block (Tsymb + Azíw) and spaced	0.3932	0.0196
+0.8169	0.5226	1.000	structed and NQBTP branches back to box 7.	0.3383	0.0189
+0.8241	0.1015	1.000	over to the vle entry.	0.1598	0.0102
+0.9360	0.8327	1.000	NỌBTP	0.0432	0.0131
+0.9360	0.8966	1.000	169	0.0263	0.0116

@@ -1,0 +1,111 @@
+0.0609	0.0959	1.000	Field Definition	0.1128	0.0133
+0.0624	0.5150	1.000	then remain as set until the execution of another	0.3910	0.0132
+0.0785	0.5150	1.000	operation that affects them. The indicators that are	0.3910	0.0131
+0.0828	0.0975	1.000	The storage operand in LOAD CONVERTED and LOAD	0.3913	0.0185
+0.0929	0.5149	1.000	affected by the radix conversion operations are de-	0.3912	0.0170
+0.1003	0.0959	1.000	TRANSIT CONVERTED is defined by the effective address,	0.3929	0.0146
+0.1087	0.5131	1.000	scribed below.	0.1073	0.0152
+0.1148	0.0959	1.000	field length, and byte size in the same manner as in	0.3910	0.0146
+0.1250	0.5301	1.000	Partial Field (PF). This indicator is turned on if a	0.3741	0.0145
+0.1293	0.0939	1.000	integer arithmetic. Immediate addressing is also han-	0.3950	0.0168
+0.1394	0.5132	1.000	radix conversion operation does not use all of the	0.3929	0.0147
+0.1453	0.0959	1.000	dled in the same way in these radix conversion opera-	0.3929	0.0147
+0.1555	0.5132	1.000	operand data provided. This may occur if significant	0.3929	0.0161
+0.1571	0.0955	1.000	tions as in the arithmetic operations.	0.2658	0.0204
+0.1700	0.5132	1.000	result bits extend beyond the left end of the accumu-	0.3929	0.0146
+0.1732	0.1107	1.000	In the accumulator conversion operations, CONVERT	0.3764	0.0192
+0.1860	0.5132	1.000	lator or if either the operand or result contains more	0.3929	0.0146
+0.1918	0.0940	1.000	and CONVERT DOUBLE, no storage operand is required,	0.3929	0.0146
+0.2005	0.5131	1.000	significant bits than can be handled by the process-	0.3912	0.0167
+0.2078	0.0940	1.000	and the word address, bit address, length, and byte	0.3929	0.0146
+0.2161	0.5130	1.000	ing unit. The conditions that will cause a partial	0.3931	0.0167
+0.2185	0.0938	1.000	size fields of the instruction are not normally used. If	0.3933	0.0195
+0.2280	0.5148	1.000	field indication are listed in the description of each	0.3896	0.0207
+0.2384	0.0940	1.000	the conversion is from binary to decimal, the binary	0.3910	0.0147
+0.2469	0.5131	1.000	operation.	0.0772	0.0135
+0.2529	0.0940	1.000	field is taken from a fixed position in the accumula-	0.3929	0.0147
+0.2630	0.5301	1.000	Data Flags (TF, UF, VF). In a radix conversion	0.3741	0.0146
+0.2688	0.0940	1.000	tor, and the decimal result is put back at a position	0.3910	0.0146
+0.2791	0.5132	1.000	operation using a storage operand, these indicators	0.3910	0.0146
+0.2833	0.0940	1.000	specified by the offset. If the conversion is from deci-	0.3929	0.0146
+0.2936	0.5132	1.000	are set according to the data flag bits, if any, of the	0.3910	0.0146
+0.2994	0.0940	1.000	mal to binary, the decimal field is taken from the	0.3929	0.0131
+0.3096	0.5113	1.000	storage operand. Any operation that normally affects	0.3929	0.0146
+0.3139	0.0921	1.000	position in the accumulator specified by the offset,	0.3947	0.0161
+0.3227	0.5094	1.000	these indicators will turn them off if the unsigned	0.3947	0.0189
+0.3299	0.0921	1.000	and the binary result is put back at a fixed position.	0.3929	0.0161
+0.3372	0.5094	1.000	modifier is designated in the operation. These indi-	0.3929	0.0161
+0.3494	0.5111	1.000	cators are not affected by CONVERT Or CONVERT DOUBLE.	0.3914	0.0206
+0.3659	0.0939	1.000	Sign Control	0.0923	0.0138
+0.3691	0.5282	1.000	To-Memory Operation (MOP). This indicator is	0.3759	0.0146
+0.3836	0.5094	1.000	turned off by all radix conversion operations.	0.3421	0.0161
+0.3881	0.0921	1.000	The radix conversion operations include iwo sign	0.3929	0.0174
+0.3982	0.5207	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). These	0.3835	0.0176
+0.4026	0.0902	1.000	modifier bits which operate in the same manner as	0.3947	0.0174
+0.4112	0.5094	1.000	indicators are set according to the final result of the	0.3947	0.0191
+0.4200	0.0902	1.000	in the integer arithmetic operations. In all cases these	0.3929	0.0131
+0.4288	0.5075	1.000	radix conversion operation.	0.2068	0.0189
+0.4360	0.0902	1.000	moditiers apply to the original field before conversion	0.3929	0.0116
+0.4491	0.0902	1.000	and specify how its sign is to be modified during the	0.3947	0.0176
+0.4666	0.0902	1.000	conversion. All possible values may be obtained for	0.3947	0.0146
+0.4811	0.0921	1.000	the sign of the result.	0.1504	0.0131
+0.4869	0.5094	1.000	Operations	0.1090	0.0189
+0.5188	0.5094	1.000	The four radix conversion operations are shown in	0.3929	0.0191
+0.5200	0.0901	1.000	Radix	0.0454	0.0123
+0.5363	0.5075	1.000	the table below, which indicates the source of the	0.3947	0.0161
+0.5421	0.0921	1.000	Bit 53 of the instruction, the radix modifier, specifies	0.3910	0.0146
+0.5468	0.5091	1.000	operand and the register in which the result is placed.	0.3934	0.0221
+0.5566	0.0902	1.000	the radix of the operand to be converted, and hence	0.3911	0.0151
+0.5712	0.8064	0.300	PARED IN	0.0714	0.0276
+0.5725	0.7142	1.000	OPERAN	0.0397	0.0135
+0.5741	0.0902	1.000	also whether binary-to-decimal or decimal-to-binary	0.3910	0.0116
+0.5827	0.7067	1.000	AKEN FRO	0.0565	0.0120
+0.5887	0.0883	1.000	conversion is to be performed. If this bit is zero, the	0.3929	0.0132
+0.5958	0.5770	1.000	Load Converted	0.1034	0.0162
+0.5959	0.6861	1.000	Storage	0.0639	0.0174
+0.5959	0.5075	1.000	LCV	0.0357	0.0145
+0.5972	0.8026	1.000	Accumulator	0.0810	0.0164
+0.6045	0.0902	1.000	original held is binary; if this bit is one, the original	0.3929	0.0133
+0.6099	0.6952	1.000	Storage	0.0550	0.0170
+0.6101	0.5073	1.000	LTRCV	0.0549	0.0168
+0.6118	0.5789	1.000	Load Transit	0.0827	0.0132
+0.6119	0.8008	1.000	Transit	0.0526	0.0145
+0.6191	0.0883	1.000	field is decimal. This modifier also specifies the in.	0.3910	0.0132
+0.6215	0.5919	1.000	Converted	0.0606	0.0156
+0.6352	0.0883	1.000	terpretation of the byte size field in the same manner	0.3929	0.0131
+0.6352	0.5056	1.000	CV	0.0263	0.0160
+0.6365	0.5751	1.000	Convert	0.0546	0.0162
+0.6380	0.7988	1.000	Accumulator	0.0846	0.0162
+0.6381	0.6936	1.000	Accumulator	0.0827	0.0131
+0.6497	0.0883	1.000	as in integer arithmetic operations. Byte size four is	0.3929	0.0145
+0.6505	0.7986	1.000	Accumulator	0.0832	0.0187
+0.6508	0.5751	1.000	Convert Double	0.1036	0.0167
+0.6512	0.5075	1.000	DCV	0.0338	0.0160
+0.6512	0.6786	1.000	Accumulator	0.0959	0.0145
+0.6623	0.0863	1.000	assumed in the accumulator conversion operation.	0.3800	0.0185
+0.6875	0.5056	1.000	Load Converted (LCV)	0.1635	0.0146
+0.7088	0.5073	1.000	The addressed storage field is converted as an integer	0.3914	0.0195
+0.7162	0.0864	1.000	Indicators	0.0961	0.0153
+0.7197	0.5053	1.000	from decimal to binary or from binary to decimal	0.3955	0.0251
+0.7384	0.5056	1.000	depending on the setting of the radix modifier. The	0.3947	0.0189
+0.7500	0.0883	1.000	A number of indicators in the indicator register are	0.3929	0.0145
+0.7558	0.5038	1.000	accumulator is cleared and the converted field is	0.3947	0.0146
+0.7660	0.0883	1.000	set as a result of radix conversion operations. These	0.3929	0.0131
+0.7688	0.5056	1.000	placed into it at the specified offset. The four low-	0.3931	0.0181
+0.7805	0.0865	1.000	include the partial-field indicator and the data-flag	0.3947	0.0146
+0.7848	0.5038	1.000	order bits of the sign byte register are cleared. The	0.3966	0.0176
+0.7951	0.0883	1.000	and arithmetic-result indicators. The partial-field in-	0.3910	0.0146
+0.7986	0.5036	1.000	sign bit in the sign byte register is set according to	0.3951	0.0201
+0.8096	0.0865	1.000	dicator is permanent. If it is turned on by any opera-	0.3947	0.0189
+0.8144	0.5036	1.000	the sign of the data as affected by the sign modifiers.	0.3933	0.0194
+0.8270	0.0883	1.000	tion it will remain on until it either causes an inter-	0.3929	0.0146
+0.8385	0.5037	1.000	MODIFIERS	0.0809	0.0162
+0.8394	0.0883	1.000	ruption or is explicitly set to zero. The data-flag and	0.3911	0.0175
+0.8576	0.5150	1.000	Unsigned; Negative Sign. These modifiers operate	0.3835	0.0174
+0.8590	0.0865	1.000	arithmetic-result indicators are temporary. Those af-	0.3929	0.0116
+0.8721	0.0865	1.000	fected by a given operation are set at the end of the	0.3947	0.0146
+0.8732	0.5018	1.000	as in ADD.	0.0754	0.0152
+0.8866	0.0865	1.000	operation to reflect the result of that operation. They	0.3929	0.0174
+0.8881	0.5132	1.000	Radix. If decimal is specified, the storage operand	0.3835	0.0174
+0.9244	0.1316	1.000	IBM 7030	0.0639	0.0102
+0.9259	0.0846	1.000	72	0.0188	0.0102

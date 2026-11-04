@@ -1,0 +1,122 @@
+0.0624	0.1015	1.000	when the unit runs out of material and a data error	0.3872	0.0118
+0.0639	0.5564	1.000	terial, operator stop, power off, control error or	0.3515	0.0145
+0.0743	0.1012	1.000	is discovered in the last block, the eop bit accompa-	0.3896	0.0196
+0.0799	0.5564	1.000	mechanical malfunctioning.	0.2030	0.0131
+0.0930	0.1015	1.000	nies uk and Ee regardless of whether or not the opera-	0.3891	0.0146
+0.0943	0.5280	1.000	2. No unit is attached to the channel.	0.2785	0.0207
+0.1090	0.1015	1.000	tion is completed.	0.1297	0.0131
+0.1235	0.5169	1.000	When a unit is not ready, it remains inoperative until	0.3910	0.0146
+0.1250	0.1147	1.000	figure 39 lists all the possible causes of termination	0.3741	0.0132
+0.1394	0.5150	1.000	an operator intervenes. An exception occurs during	0.3929	0.0147
+0.1394	0.0996	1.000	of input-output operations and the corresponding sets	0.3891	0.0147
+0.1555	0.1015	1.000	of status bits that signal the termination. The chan-	0.3872	0.0132
+0.1555	0.5150	1.000	certain operations such as rewinding of tape; the unit	0.3929	0.0132
+0.1700	0.5150	1.000	may be in the not-ready status while the operation	0.3910	0.0146
+0.1700	0.0996	1.000	nel signal indication is caused independently of the	0.3891	0.0146
+0.1860	0.5150	1.000	takes place, but the unit-ready bit is turned on again	0.3910	0.0146
+0.1860	0.0996	1.000	current operation and can accompany any of the sets	0.3891	0.0131
+0.2006	0.0996	1.000	of bits.	0.0470	0.0116
+0.2020	0.5150	1.000	at the completion of the operation.	0.2613	0.0131
+0.2166	0.5320	1.000	The unit-ready status bit cannot directly give rise	0.3759	0.0146
+0.2324	0.5132	1.000	to program interruption, but it can cause other indi-	0.3929	0.0133
+0.2427	0.0977	1.000	Input-Output Status Bits Not Represented by Indicators	0.3891	0.0131
+0.2485	0.5150	1.000	cators to be turned on. When an instruction is given	0.3910	0.0131
+0.2582	0.0994	1.000	Two of the control word status bits, unit-ready and	0.3876	0.0185
+0.2630	0.5132	1.000	to a unit which is not ready, the UNRJ indication is sent	0.3947	0.0131
+0.2776	0.0996	1.000	suppress end of operation, are not represented by indi-	0.3872	0.0146
+0.2791	0.5132	1.000	to the computer. Once the operation is initiated, how-	0.3929	0.0131
+0.2921	0.0996	1.000	cators in the indicator register, but they affect the	0.3872	0.0146
+0.2936	0.5150	1.000	ever, the exchange ignores the status of the unit-ready	0.3910	0.0146
+0.3064	0.0976	1.000	turning on of other indicators reflecting the progress	0.3894	0.0182
+0.3081	0.5150	1.000	bit. It depends upon the design of each unit whether	0.3910	0.0146
+0.3227	0.0959	1.000	of input-output operations. These two bits are lo-	0.3910	0.0146
+0.3241	0.5132	1.000	changing to not-ready status during an operation gen-	0.3929	0.0147
+0.3348	0.0957	1.000	cated in the control words in the exchange, and are	0.3914	0.0208
+0.3359	0.5130	1.000	erates a corresponding indication. On most units the	0.3932	0.0194
+0.3532	0.0977	1.000	always accessible to the program by means of the	0.3891	0.0147
+0.3544	0.5131	1.000	manual stop key will merely remove the ready status	0.3930	0.0162
+0.3672	0.0976	1.000	COPY CONTROL WORD instruction.	0.2335	0.0152
+0.3706	0.5132	1.000	at the end of the current block without forcing unit	0.3929	0.0131
+0.3851	0.5131	1.000	check. Thus, the operator may stop the unit between	0.3911	0.0157
+0.3924	0.0959	1.000	UNIT READY	0.0902	0.0116
+0.4012	0.5132	1.000	blocks and hold up a multiple-block operation until	0.3910	0.0146
+0.4099	0.0996	1.000	The unit-ready bit indicates whether or not the unit	0.3872	0.0131
+0.4172	0.5132	1.000	he presses the start key, without cancelling the opera-	0.3929	0.0132
+0.4258	0.0959	1.000	currently selected on the channel is in a condition	0.3891	0.0133
+0.4317	0.5113	1.000	tion. On the other hand, if the unit becomes not	0.3929	0.0132
+0.4403	0.0959	1.000	to be operated. The bit is on whenever the unit can	0.3891	0.0133
+0.4476	0.5113	1.000	ready because of running out of material, it always	0.3929	0.0132
+0.4564	0.0959	1.000	accept an instruction from the computer or is execut-	0.3891	0.0131
+0.4621	0.5113	1.000	causes the end-exception indication, while not-ready	0.3929	0.0132
+0.4694	0.0957	1.000	ing an operation. When the bit is off, the unit is in	0.3894	0.0170
+0.4782	0.5113	1.000	status due to any malfunctioning is always accom-	0.3929	0.0131
+0.4869	0.0959	1.000	the not-ready status and cannot be operated by the	0.3910	0.0146
+0.4927	0.5113	1.000	panied by UK. If uk or Ee accompanies the change to	0.3929	0.0145
+0.5015	0.0959	1.000	computer. A channel can be in the not-ready status	0.3891	0.0146
+0.5073	0.5113	1.000	the not-ready status, the current operation is always	0.3929	0.0146
+0.5146	0.0956	1.000	because of the following reasons:	0.2449	0.0173
+0.5228	0.5112	1.000	terminated.	0.0867	0.0125
+0.5363	0.1090	1.000	1. The unit accommodated by the channel cannot	0.3759	0.0146
+0.5464	0.5094	1.000	SUPPRESS END OF OPERATION (SEOP)	0.2669	0.0147
+0.5523	0.1316	1.000	operate because of conditions such as out of ma-	0.3553	0.0131
+0.5639	0.5113	1.000	The suppress-end-of-operation bit is turned on in the	0.3929	0.0145
+0.5799	0.5113	1.000	control word whenever an seop type operation is ini-	0.3910	0.0131
+0.5900	0.1090	1.000	Cause of Termination	0.1053	0.0088
+0.5945	0.5113	1.000	tiated at the corresponding channel. Its purpose is to	0.3910	0.0146
+0.6016	0.2443	1.000	Operation	0.0527	0.0105
+0.6038	0.0976	1.000	EPGK UK2Un!	0.1019	0.0148
+0.6073	0.5111	1.000	suppress the turning on of the EOP status bit in the	0.3913	0.0181
+0.6076	0.3402	1.000	Indication Given	0.0883	0.0103
+0.6105	0.2086	1.000	EE	0.0169	0.0087
+0.6119	0.2406	1.000	Completed?	0.0602	0.0103
+0.6264	0.5113	1.000	control word and the corresponding indicator in the	0.3910	0.0132
+0.6308	0.3120	1.000	EOP, no indication for SEOP instr.	0.1635	0.0102
+0.6323	0.2575	1.000	Yes	0.0207	0.0073
+0.6393	0.5093	1.000	indicator register when an seop instruction is com-	0.3930	0.0166
+0.6410	0.2575	1.000	Yes	0.0188	0.0102
+0.6410	0.2105	1.000	X	0.0094	0.0102
+0.6410	0.3327	1.000	EOP	0.0244	0.0102
+0.6512	0.2556	1.000	No	0.0188	0.0116
+0.6570	0.5094	1.000	pleted without encountering any exceptional condi-	0.3929	0.0131
+0.6612	0.3102	1.000	UK, EOP	0.0508	0.0147
+0.6613	0.2556	1.000	Yes	0.0226	0.0087
+0.6715	0.5113	1.000	tions. The seop bit is always turned off at the time	0.3910	0.0131
+0.6744	0.3365	1.000	EOF	0.0207	0.0073
+0.6817	0.2068	1.000	xx	0.0150	0.0218
+0.6875	0.5094	1.000	the operation is terminated. This is the instant when	0.3929	0.0131
+0.7020	0.5094	1.000	in the case of successful completion the Eop bit in the	0.3929	0.0146
+0.7121	0.3102	1.000	UK, EE	0.0432	0.0219
+0.7179	0.5094	1.000	exchange control word is normally turned on.	0.3271	0.0133
+0.7224	0.1692	1.000	X	0.0132	0.0102
+0.7324	0.5263	1.000	When a data error is encountered or some other ex-	0.3759	0.0118
+0.7326	0.1711	1.000	X	0.0113	0.0087
+0.7326	0.3327	1.000	EE	0.0188	0.0116
+0.7485	0.5094	1.000	ceptional condition is discovered (which in the case	0.3929	0.0146
+0.7529	0.3102	1.000	EPGK,	0.0395	0.0102
+0.7630	0.3101	1.000	EPGK, UK	0.0565	0.0133
+0.7630	0.5094	1.000	of the non-seop instructions does not preclude the Eop	0.3910	0.0146
+0.7727	0.3100	1.000	EPGK, UK, EE	0.0793	0.0157
+0.7791	0.5075	1.000	indication upon the completion of the operation),	0.3947	0.0146
+0.7846	0.3101	1.000	EPGK, UK	0.0584	0.0121
+0.7951	0.5094	1.000	the EOP indication is not suppressed. In this case the	0.3910	0.0131
+0.7951	0.3102	1.000	EPGK, UK, EE	0.0771	0.0131
+0.8035	0.3100	1.000	EPGK, UK	0.0585	0.0152
+0.8096	0.5094	1.000	EOP bit as well as the bit indicating the exceptional	0.3910	0.0131
+0.8136	0.3082	1.000	EPGK, UK, EE	0.0810	0.0138
+0.8140	0.2068	1.000	X	0.0132	0.0116
+0.8154	0.2556	1.000	No*	0.0244	0.0102
+0.8255	0.5075	1.000	condition (UK or EE) are turned on, and program in-	0.3929	0.0133
+0.8328	0.0959	1.000	UK	0.0169	0.0116
+0.8358	0.1523	1.000	ata errors (causes listed in paragraph | of "Unit Check"	0.2744	0.0116
+0.8400	0.5075	1.000	terruption is permitted. Similarly, an input-output	0.3929	0.0147
+0.8430	0.0959	1.000	UKL	0.0226	0.0102
+0.8445	0.1504	1.000	K due to causes other than those listed in paragraph 1,	0.2707	0.0131
+0.8545	0.1372	1.000	"Unit Check"	0.0752	0.0118
+0.8561	0.5075	1.000	status report is permitted when an seop instruction	0.3910	0.0131
+0.8648	0.0959	1.000	*	0.0094	0.0102
+0.8663	0.1391	1.000	See Programming Note in "Exchange Program Check"	0.2669	0.0160
+0.8706	0.5075	1.000	is terminated prematurely because of conditions such	0.3910	0.0146
+0.8852	0.5075	1.000	as discovery of invalid core storage addresses, equip-	0.3910	0.0146
+0.8881	0.0883	1.000	Figure 39. Termination Causes	0.1898	0.0131
+0.9244	0.7218	1.000	IBM 7619 Exchange	0.1259	0.0102
+0.9244	0.8759	1.000	117	0.0226	0.0087

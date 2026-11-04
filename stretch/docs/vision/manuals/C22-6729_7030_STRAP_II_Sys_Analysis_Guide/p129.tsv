@@ -1,0 +1,41 @@
+0.0872	0.9004	1.000	MX	0.0282	0.0131
+0.1438	0.1109	1.000	LINKAGE	0.0715	0.0132
+0.1730	0.5376	1.000	Boxes 3, 6, 9, 11	0.1353	0.0131
+0.1742	0.1108	1.000	On Entry	0.0659	0.0134
+0.2020	0.5414	1.000	For the EXT statement Pass 1 creates 2 units. The	0.3853	0.0116
+0.2020	0.1109	1.000	MX is entered from the pseudo-op digit select table	0.3816	0.0146
+0.2166	0.5395	1.000	first unit is for the parameters, i.e., the GETFLD	0.3816	0.0131
+0.2166	0.1090	1.000	with the left parenthesis still in the value field of $3.	0.3947	0.0146
+0.2324	0.5395	1.000	coded expressions for the parameters are put in the	0.3853	0.0103
+0.2469	0.1108	1.000	On Exit	0.0584	0.0135
+0.2470	0.5395	1.000	variable part of the first unit. The second unit is for	0.3947	0.0118
+0.2615	0.5395	1.000	the binary output producing instruction on which the	0.3835	0.0118
+0.2747	0.1090	1.000	MX returns to the main flow of MAIN with the right	0.3816	0.0160
+0.2761	0.5414	1.000	EXT op is to operate. Note the statement to be	0.3515	0.0133
+0.2892	0.1090	1.000	parenthesis in the value field of $3.	0.2650	0.0160
+0.2906	0.5395	1.000	included in the first unit is considered complete after	0.3966	0.0118
+0.3052	0.5414	1.000	the right parenthesis has been received from GETCHA	0.4041	0.0132
+0.3172	0.1106	1.000	FLOW CHART DESCRIPTION	0.2223	0.0188
+0.3197	0.5395	1.000	The statement to be included in the second unit is con-	0.4041	0.0146
+0.3327	0.5376	1.000	sidered complete when the usual terminating semi-	0.3835	0.0147
+0.3459	0.5376	1.000	colon is received from GETCHA. When the second	0.3835	0.0160
+0.3517	0.1109	1.000	Box 1	0.0433	0.0117
+0.3618	0.5395	1.000	unit is being processed of course it will be treated	0.3741	0.0161
+0.3750	0.5395	1.000	in Pass 1 as if it were a regular unit. Pass 2 will	0.3741	0.0160
+0.3773	0.1108	1.000	The Zifp? indicator is turned on to show that there	0.3744	0.0199
+0.3881	0.1109	1.000	are coded expressions in this unit to be decoded by	0.3778	0.0204
+0.3894	0.5376	1.000	evaluate the expression and save their values. The	0.3872	0.0176
+0.4039	0.5395	1.000	OUTPUT routine performs the necessary extracting	0.3872	0.0206
+0.4070	0.1109	1.000	DECODE; Zifall indicator is turned off to indicate	0.3703	0.0145
+0.4185	0.5376	1.000	on the binary output of the second unit.	0.2932	0.0176
+0.4230	0.1109	1.000	that not all the values of this unit are obtained.	0.3459	0.0116
+0.4534	0.1128	1.000	Boxes 2, 5, 8	0.1053	0.0133
+0.4797	0.5376	1.000	Box 16	0.0545	0.0146
+0.4824	0.1128	1.000	To prevent a general parenthetical field integer entry	0.3947	0.0147
+0.4956	0.1109	1.000	from being allowed on the parameter, an indicator is	0.3947	0.0160
+0.5071	0.1108	1.000	turned on before entry into the encoding subroutine,	0.3855	0.0191
+0.5087	0.5395	1.000	The only processing of the remaining characters will	0.3947	0.0161
+0.5230	0.1127	1.000	GETFLD.	0.0754	0.0179
+0.5247	0.5395	1.000	be to collect them in the unit for later listing purposes.	0.4060	0.0147
+0.9419	0.8628	1.000	MX	0.0244	0.0087
+0.9419	0.9117	1.000	129	0.0207	0.0073

@@ -1,0 +1,103 @@
+0.0624	0.5019	1.000	indicators are set according to the final result in the	0.3966	0.0161
+0.0639	0.0959	1.000	is converted from decimal to binary after conversion	0.3835	0.0145
+0.0784	0.0938	1.000	of the decimal field to byte size four. If binary is	0.3857	0.0202
+0.0785	0.5038	1.000	transit register.	0.1165	0.0145
+0.0958	0.0938	1.000	specihed, the storage operand is converted from bi-	0.3838	0.0167
+0.1087	0.0938	1.000	nary to decimal, with the decimal result in byte size	0.3857	0.0197
+0.1162	0.5056	1.000	Convert (CV)	0.0959	0.0147
+0.1279	0.0940	1.000	four.	0.0320	0.0102
+0.1409	0.5056	1.000	A field from the accumulator is converted as an	0.3929	0.0146
+0.1525	0.0940	1.000	INDICATORS	0.0734	0.0104
+0.1555	0.5038	1.000	integer from binary to decimal or from decimal to	0.3947	0.0176
+0.1700	0.1071	1.000	Partial Field (PF). This indicator is actuated when	0.3722	0.0131
+0.1715	0.5056	1.000	binary depending on the setting of the radix modi-	0.3929	0.0161
+0.1844	0.0957	1.000	signihcant bits of the converted field extend beyond	0.3837	0.0149
+0.1875	0.5056	1.000	fier. If the original field is binary, it is obtained at	0.3929	0.0161
+0.1990	0.0958	1.000	the left end of the accumulator. In such a case, the	0.3855	0.0159
+0.2006	0.5038	1.000	an implied offset of 68 and its length is 48 numeric	0.3947	0.0174
+0.2132	0.0938	1.000	accumulator is filled up to its left end, and higher-	0.3875	0.0193
+0.2179	0.5056	1.000	bits. The decimal result is loaded into the cleared	0.3929	0.0147
+0.2297	0.0940	1.000	order bits are lost. In a decimal-to-binary conversion,	0.3853	0.0146
+0.2339	0.5056	1.000	accumulator at the specified offset. If the original	0.3929	0.0146
+0.2456	0.0959	1.000	this indicator is also actuated if the storage field ex-	0.3835	0.0131
+0.2485	0.5056	1.000	field is decimal, it is obtained at the specified offset.	0.3929	0.0161
+0.2602	0.0940	1.000	ceeds 15 decimal digits (as could be specified using a	0.3872	0.0160
+0.2645	0.5075	1.000	The binary result, which can be a maximum of 48	0.3910	0.0146
+0.2743	0.0957	1.000	byte size of less than four). Meaningless results are	0.3857	0.0181
+0.2791	0.5056	1.000	significant bits, is loaded into the cleared accumula-	0.3947	0.0161
+0.2921	0.0959	1.000	then obtained.	0.1015	0.0117
+0.2936	0.5056	1.000	tor at offset 68. The sign modifiers operate on the	0.3929	0.0161
+0.3067	0.1071	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3741	0.0161
+0.3096	0.5056	1.000	sign bit in the sign byte register; all other positions	0.3947	0.0160
+0.3211	0.0901	1.000	(MOP); Arithmetic Result (RLZ, RZ, RGZ, RN).	0.3893	0.0180
+0.3255	0.5056	1.000	of the sign byte register remain unchanged.	0.3102	0.0161
+0.3387	0.0959	1.000	These indicators are set as in ADD.	0.2406	0.0116
+0.3517	0.5094	1.000	MODIFIERS	0.0752	0.0118
+0.3677	0.5263	1.000	Unsigned. If the unsigned modifier is zero, the ac-	0.3741	0.0145
+0.3794	0.0940	1.000	Load Transit Converted (LTRCV)	0.2237	0.0116
+0.3836	0.5075	1.000	cumulator sign is taken as-is before the negative sign	0.3929	0.0146
+0.3997	0.5094	1.000	modifier is applied. If the modifier is one, the accu-	0.3910	0.0145
+0.4039	0.0959	1.000	The addressed storage field is converted as an integer	0.3853	0.0133
+0.4142	0.5094	1.000	mulator sign is taken as positive before the negative	0.3910	0.0145
+0.4185	0.0940	1.000	from decimal to binary or from binary to decimal	0.3872	0.0147
+0.4317	0.5075	1.000	sign modifier is applied.	0.1786	0.0147
+0.4345	0.0940	1.000	depending on the setting of the radix modifier. The	0.3891	0.0146
+0.4448	0.5263	1.000	Negative Sign. If the negative sign modifier is zero,	0.3759	0.0146
+0.4491	0.0959	1.000	transit register, storage location 15, is cleared. The	0.3872	0.0146
+0.4606	0.5094	1.000	the accumulator sign is taken as-is after modification	0.3910	0.0133
+0.4651	0.0940	1.000	four low-order bits of the transit register form a sign	0.3872	0.0131
+0.4752	0.5094	1.000	by the unsigned modifier. If the negative sign modi-	0.3910	0.0147
+0.4811	0.0959	1.000	byte in which the leftmost bit is the sign of the ad-	0.3853	0.0147
+0.4912	0.5094	1.000	fier is one, the accumulator sign after modification by	0.3910	0.0131
+0.4956	0.0940	1.000	dressed storage operand as modified by the negative	0.3891	0.0147
+0.5073	0.5094	1.000	the unsigned modifier is inverted.	0.2406	0.0131
+0.5102	0.0940	1.000	sign modifier. The remaining three bits of the sign	0.3872	0.0147
+0.5218	0.5263	1.000	Radix. If binary is specified, the 48-bit accumula-	0.3759	0.0146
+0.5261	0.0940	1.000	byte are zero. The converted field is placed in the	0.3891	0.0146
+0.5378	0.5094	1.000	tor field at offset 68 is converted from binary to deci-	0.3910	0.0131
+0.5406	0.0940	1.000	transit register positioned to the left of the four-bit	0.3891	0.0146
+0.5536	0.5094	1.000	mal. Higher-order bits (positions 0-11 of the accu-	0.3929	0.0133
+0.5567	0.0940	1.000	sign byte. The accumulator is not altered by this	0.3891	0.0146
+0.5682	0.5094	1.000	mulator) are ignored and lost. No indication of this	0.3929	0.0133
+0.5693	0.0938	1.000	operation, and the offset field of the instruction is	0.3894	0.0181
+0.5827	0.5094	1.000	loss is retained. The decimal result in byre size four	0.3929	0.0147
+0.5887	0.0902	1.000	ignored.	0.0602	0.0145
+0.5988	0.5094	1.000	is placed into the accumulator at the specified offset.	0.3910	0.0146
+0.6148	0.0940	1.000	MODIFIERS	0.0714	0.0102
+0.6148	0.5094	1.000	If decimal is specified, the accumulator field at the	0.3929	0.0131
+0.6279	0.5094	1.000	specified offset is converted from decimal to binary	0.3891	0.0161
+0.6308	0.1090	1.000	Unsigned; Negative Sign; Radix. These modifiers	0.3741	0.0146
+0.6437	0.0936	1.000	operate as in LOAD CONVERTED.	0.2149	0.0180
+0.6439	0.5094	1.000	The binary result is placed into the accumulator at	0.3929	0.0161
+0.6584	0.5094	1.000	offset 68. The original decimal field is assumed to be	0.3929	0.0161
+0.6726	0.0939	1.000	INDICATORS	0.0772	0.0109
+0.6758	0.5094	1.000	byte size four.	0.1053	0.0146
+0.6890	0.1071	1.000	Partial Field (PF). This indicator is actuated if the	0.3759	0.0160
+0.7005	0.5094	1.000	INDICATORS	0.0828	0.0147
+0.7031	0.0938	1.000	result in a binary-to-decimal conversion exceeds 15	0.3894	0.0176
+0.7179	0.5244	1.000	Partial Field (PF). This indicator is actuated in a	0.3778	0.0161
+0.7194	0.0921	1.000	significant decimal digits or if the result of a decimal	0.3910	0.0161
+0.7339	0.5075	1.000	decimal-to-binary conversion if the binary result ex-	0.3947	0.0161
+0.7355	0.0921	1.000	to binary conversion exceeds 48 significant bits. In	0.3929	0.0161
+0.7470	0.5075	1.000	ceeds 48 significant bits. In such a case, the low-order	0.3966	0.0176
+0.7496	0.0939	1.000	the former case the result is placed in the transit reg-	0.3912	0.0168
+0.7640	0.0938	1.000	ister up to its left end. In the latter case, only the	0.3913	0.0183
+0.7645	0.5094	1.000	18 bits of the result are placed in the accumulator.	0.3929	0.0161
+0.7805	0.0940	1.000	48 low-order bits of the result are placed in the tran-	0.3910	0.0146
+0.7805	0.5094	1.000	Any higher-order bits are lost. The indicator is actu-	0.3947	0.0146
+0.7947	0.0938	1.000	sit register. This indicator is also actuated if the	0.3913	0.0168
+0.7951	0.5075	1.000	ated in a binary-to-decimal conversion if significant	0.3966	0.0160
+0.8109	0.5094	1.000	bits of the decimal result extend beyond the left end	0.3929	0.0147
+0.8124	0.0940	1.000	storage field specified in a decimal-to-binary conver-	0.3910	0.0161
+0.8241	0.5075	1.000	of the accumulator when this result is placed into the	0.3966	0.0160
+0.8270	0.0921	1.000	sion exceeds 15 decimal digits. Meaningless results	0.3929	0.0146
+0.8415	0.5094	1.000	accumulator at the specified offset.	0.2500	0.0146
+0.8430	0.0940	1.000	are then obtained.	0.1278	0.0116
+0.8561	0.5263	1.000	To-Memory Operation (MOP); Arithmetic Result	0.3778	0.0161
+0.8576	0.1090	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3741	0.0161
+0.8716	0.0937	1.000	(MOP). These indicators are set as in ADD.	0.3049	0.0170
+0.8721	0.5094	1.000	(RLZ, RZ, RGZ, RN). These indicators are set as in	0.3929	0.0161
+0.8881	0.1090	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). These	0.3759	0.0160
+0.8895	0.5113	1.000	ADD.	0.0320	0.0116
+0.9244	0.7218	1.000	Variable Field Length	0.1372	0.0147
+0.9259	0.8872	1.000	73	0.0169	0.0087

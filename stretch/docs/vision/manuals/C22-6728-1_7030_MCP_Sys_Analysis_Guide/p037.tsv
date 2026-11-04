@@ -1,0 +1,126 @@
+0.0973	0.5132	1.000	"is operating, the pseudo-op is treated in the same	0.3759	0.0146
+0.1017	0.0996	1.000	The base address of the user's I-O table is added	0.3684	0.0116
+0.1093	0.5167	1.000	manner as with a tape unit in mount or rewind status	0.3933	0.0200
+0.1163	0.0808	1.000	to $1 to locate the entry for the IOD RN. (If MCP is	0.3929	0.0131
+0.1304	0.5130	1.000	(KNOGO).	0.0773	0.0139
+0.1308	0.0826	1.000	requesting SFREE, it is referring to a PP unit and	0.3801	0.0160
+0.1409	0.5320	1.000	If the unit has not been assigned, and the pseudo-op	0.3872	0.0146
+0.1467	0.0827	1.000	the PP base address is added.) The unit area address	0.4079	0.0118
+0.1561	0.5149	1.000	is not SFREE, dispatcher error control is entered	0.3782	0.0165
+0.1612	0.0827	1.000	for the IOD RN is loaded into $12 from the I-O table.	0.3947	0.0118
+0.1715	0.5150	1.000	with error code 4 in $14. Control is returned to the	0.3929	0.0131
+0.1758	0.0846	1.000	A zero address denotes the absence of an IOD card	0.3797	0.0118
+0.1845	0.5167	1.000	point after the linkage if MCP has requested SFREE	0.3877	0.0166
+0.1885	0.0826	1.000	for the IOD RN, in which case error control is entered	0.4119	0.0162
+0.2020	0.5169	1.000	for a unit already unassigned.	0.2237	0.0116
+0.2064	0.0827	1.000	with error code 4 in $14. The file area table is	0.3590	0.0117
+0.2149	0.5356	1.000	For pseudo-ops other than $CCW, the appropriate	0.3725	0.0155
+0.2194	0.0827	1.000	loaded into $13 from the I-O table. Index register 2	0.3929	0.0132
+0.2297	0.5169	1.000	count ($RD, $W, control) is updated if the pseudo-op	0.3947	0.0146
+0.2320	0.0825	1.000	is adjusted to point to the first instruction of the	0.3650	0.0185
+0.2438	0.5149	1.000	is for a tape unit, otherwise the unit suppressed bit	0.3894	0.0168
+0.2500	0.0827	1.000	linkage (B,$MCP), $14 is loaded with the channel	0.3703	0.0131
+0.2587	0.5169	1.000	is examined in the status table. If the requested unit	0.3985	0.0131
+0.2620	0.0844	1.000	number, and $10 with the reference address for the	0.3857	0.0179
+0.2721	0.5167	1.000	has an interrupt stacked, and the pseudo-op is $REL,	0.3988	0.0187
+0.2790	0.0845	1.000	channel status word in the channel status table. The	0.3949	0.0132
+0.2892	0.5188	1.000	$FREE, or SFREE, the interrupt is unstacked and	0.3759	0.0145
+0.2935	0.0863	1.000	equipment code is loaded into $4, and $11 is loaded	0.3818	0.0150
+0.3036	0.5188	1.000	discarded and the pseudo-op entered. A stacked CS	0.3816	0.0133
+0.3081	0.0846	1.000	with the correct unit status word reference, depending	0.4098	0.0131
+0.3182	0.5188	1.000	interrupt is always discarded. Otherwise, error con-	0.4004	0.0147
+0.3241	0.0827	1.000	on whether or not the channel is a multiple unit channel.	0.4248	0.0147
+0.3323	0.5186	1.000	trol is entered with type 12 error selected.	0.3217	0.0157
+0.3370	0.0845	1.000	The index registers except $2, are now ready for	0.3705	0.0178
+0.3471	0.5356	1.000	The actuated address is stored in the file area	0.3462	0.0154
+0.3532	0.0846	1.000	entry into any of the routines.	0.2274	0.0160
+0.3620	0.5205	1.000	(KKNI), the actuated file address is stored in the	0.3613	0.0180
+0.3691	0.0996	1.000	The status of index registers when identifier enters	0.3891	0.0161
+0.3761	0.5186	1.000	unit area, and the SEOP bit originally specified is	0.3745	0.0176
+0.3836	0.0865	1.000	routine (pseudo-op less than 32.0) is as follows:	0.3665	0.0161
+0.3924	0.5188	1.000	stored in the SEOP bit for the unit. Index register 2	0.3891	0.0131
+0.4061	0.5186	1.000	is adjusted for the return address (KOРOK) and	0.3556	0.0159
+0.4185	0.2293	1.000	Value Field Contains	0.1241	0.0147
+0.4200	0.0865	1.000	Index Register	0.0865	0.0161
+0.4230	0.5188	1.000	stored in STIC and the routine is entered.	0.3120	0.0116
+0.4448	0.2293	1.000	Control word address.	0.1259	0.0131
+0.4462	0.1222	1.000	$0	0.0188	0.0102
+0.4564	0.2274	1.000	IOD RN entry in I-O table.	0.1617	0.0146
+0.4593	0.1222	1.000	$1	0.0169	0.0102
+0.4606	0.5207	1.000	The Service-Op Return Routine	0.2350	0.0118
+0.4694	0.2293	1.000	Return address if service op routine entered.	0.2575	0.0146
+0.4724	0.1222	1.000	$2	0.0188	0.0102
+0.4824	0.2293	1.000	The pseudo-op code.	0.1241	0.0147
+0.4855	0.1222	1.000	$3	0.0188	0.0116
+0.4867	0.5224	1.000	The disabled routines in MCP need to return to the	0.3800	0.0150
+0.4985	0.2293	1.000	Equipment code.	0.0996	0.0118
+0.4985	0.1222	1.000	$4	0.0188	0.0102
+0.5014	0.5205	1.000	point of the most recent interrupt, or, in the case of	0.3971	0.0180
+0.5073	0.2350	1.000	Channel status word reference	0.1692	0.0146
+0.5102	0.1222	1.000	$10	0.0263	0.0131
+0.5174	0.5207	1.000	an IF interrupt, to the beginning or end of the calling	0.3985	0.0147
+0.5203	0.2331	1.000	Unit status word reference.	0.1504	0.0131
+0.5233	0.1222	1.000	$11	0.0263	0.0116
+0.5315	0.5224	1.000	sequence. In all instances, the low register buffer	0.3838	0.0160
+0.5340	0.2311	1.000	Unit area table address.	0.1375	0.0135
+0.5363	0.1222	1.000	$12	0.0263	0.0116
+0.5479	0.5244	1.000	(STLR) contains the information necessary to return.	0.3966	0.0118
+0.5479	0.2293	1.000	File area table address.	0.1391	0.0118
+0.5480	0.1222	1.000	$13	0.0263	0.0131
+0.5609	0.5226	1.000	The service-op return routine, KSUPP, is used for	0.3853	0.0133
+0.5729	0.5223	1.000	this purpose. It includes an unstacking mechanism	0.3838	0.0187
+0.5887	0.0996	1.000	If the unit is a tape in mount or rewind status, con-	0.3929	0.0132
+0.5900	0.5226	1.000	for console EOP and for tape unit channel signals.	0.3759	0.0133
+0.6010	0.0883	1.000	trol is returned (KNOGO) to the linkage via the serv-	0.3986	0.0144
+0.6045	0.5395	1.000	When the routine is entered, STIC must contain the	0.3835	0.0133
+0.6163	0.0883	1.000	ice op return routine to establish an enabled loop,	0.3759	0.0146
+0.6191	0.5226	1.000	address to which return is desired. If no unstacking	0.3947	0.0132
+0.6306	0.0883	1.000	unless the pseudo-op is one which will not require a	0.3911	0.0153
+0.6352	0.5226	1.000	is required, that is, the first two instructions are	0.3759	0.0146
+0.6439	0.0883	1.000	hardware I-O instruction. If the pseudo-op is $CCW,	0.4041	0.0146
+0.6482	0.5207	1.000	NOP's, the address in STIC is placed in a BE instruc-	0.4098	0.0176
+0.6612	0.0921	1.000	$CHEX, or $IODEF, the appropriate routine may be	0.3891	0.0133
+0.6621	0.5223	1.000	tion, the multiplier register ($MR; see Appendix C)	0.3876	0.0176
+0.6744	0.0959	1.000	entered, and control is given to KOPOK to accomplist	0.3966	0.0132
+0.6773	0.5207	1.000	and the low registers restored from STLR, and the	0.3853	0.0146
+0.6859	0.0957	1.000	he entry. If the pseudo-op is $REL or $FREE (in	0.3708	0.0179
+0.6932	0.5225	1.000	BE executed.	0.1016	0.0148
+0.7016	0.0919	1.000	the non-rewind status), the actuated address and the	0.3914	0.0186
+0.7028	0.5373	1.000	When a disabled routine decides to return via	0.3426	0.0205
+0.7166	0.0921	1.000	SEOP bit must be stored before entering the routine,	0.3966	0.0146
+0.7168	0.5222	1.000	KSUPP, STIC is not always correct for the desired	0.3860	0.0225
+0.7331	0.5223	1.000	return, and must be adjusted before control goes to	0.3897	0.0221
+0.7355	0.0921	1.000	and control is given to KKNI.	0.2180	0.0116
+0.7483	0.1108	1.000	For a single unit channel, or a tape unit not in	0.3461	0.0139
+0.7515	0.5226	1.000	KSUPP. Occasionally, this is done in the routine.	0.3816	0.0146
+0.7630	0.0940	1.000	mount or rewind status (KNI), the pseudo-op code is	0.3891	0.0131
+0.7635	0.5242	1.000	Other times, the disabled routine branches to a short	0.4027	0.0194
+0.7761	0.0921	1.000	examined for $WAIT, $CHEX, or $IODEF, which	0.3703	0.0146
+0.7791	0.5226	1.000	routine to make the proper adjustment and branch to	0.3947	0.0161
+0.7903	0.0938	1.000	may be entered immediately via KOPOK. A pseudo-	0.3895	0.0185
+0.7936	0.5226	1.000	KSUPP. The most commonly used of these short	0.3741	0.0161
+0.8048	0.0938	1.000	op code greater than 17.0 is detected at this point,	0.3782	0.0199
+0.8096	0.5244	1.000	routines are as follows:	0.1805	0.0146
+0.8180	0.0938	1.000	and control given to dispatcher error control with	0.3726	0.0188
+0.8314	0.6898	1.000	Quantity Placed in STIC	0.1842	0.0160
+0.8325	0.5788	1.000	Symbol	0.0623	0.0181
+0.8336	0.0937	1.000	error code 2 in $14. If the op code is associated with	0.4028	0.0201
+0.8488	0.0938	1.000	density, mode or alter disposition pseudo-ops, these	0.3970	0.0181
+0.8617	0.5807	1.000	KCBUSY	0.0678	0.0150
+0.8617	0.7349	1.000	$2VF-2.0	0.0866	0.0135
+0.8663	0.0940	1.000	routines are given control immediately.	0.2989	0.0131
+0.8749	0.7368	1.000	$2VF - 1.32	0.0941	0.0148
+0.8749	0.5808	1.000	KELOOP	0.0715	0.0148
+0.8779	0.1090	1.000	If the channel and unit selected are not physically	0.3703	0.0176
+0.8894	0.5808	1.000	KSUPP2	0.0678	0.0163
+0.8907	0.7368	1.000	$2VF+.32	0.0866	0.0136
+0.8936	0.2648	1.000	the appropriate bit in the	0.1998	0.0148
+0.8967	0.0938	1.000	available, as indicated	0.1714	0.0140
+0.9053	0.5826	1.000	KCHOPN	0.0697	0.0150
+0.9054	0.7612	1.000	$2VF	0.0433	0.0132
+0.9073	0.0956	1.000	corresponding status word, dispatcher error control	0.3933	0.0178
+0.9198	0.5827	1.000	KSUPP2 +.32	0.1073	0.0150
+0.9201	0.7613	1.000	$2VF	0.0432	0.0131
+0.9211	0.0938	1.000	is entered with error code 3 in $14. If the channel	0.3819	0.0169
+0.9491	0.7857	1.000	Interrupt Control	0.0996	0.0117
+0.9506	0.9041	1.000	37	0.0207	0.0102

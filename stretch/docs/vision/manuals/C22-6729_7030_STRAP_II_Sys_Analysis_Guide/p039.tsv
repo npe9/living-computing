@@ -1,0 +1,28 @@
+0.0857	0.8364	1.000	ERRNUM	0.0752	0.0162
+0.1453	0.5150	1.000	error entry are set to zero.) In addition ERRNUM	0.3835	0.0189
+0.1497	0.0921	1.000	ERRNUM looks through the five lists for an entry	0.3665	0.0145
+0.1612	0.5150	1.000	puts the second and fourth lists in chronological	0.3628	0.0191
+0.1642	0.0921	1.000	with either a unit number corresponding to the con-	0.3797	0.0131
+0.1773	0.5056	1.000	order, the other lists are built up in chronological	0.3853	0.0146
+0.1788	0.0902	1.000	tents of the Unit counter (if an item in the first, third,	0.4023	0.0146
+0.1903	0.5132	1.000	order originally.	0.1297	0.0146
+0.1930	0.0938	1.000	or fifth list), or a symbol number corresponding to	0.3781	0.0167
+0.2078	0.0921	1.000	the contents of the Symbol counter (if an item in the	0.3816	0.0161
+0.2209	0.0921	1.000	second or fourth list). Then using the page and line	0.3835	0.0176
+0.2369	0.0921	1.000	information supplied by OUTPUT, ERRNUM trans-	0.3797	0.0161
+0.2542	0.0940	1.000	forms the error entry into the new format.	0.3158	0.0118
+0.2586	0.8251	1.000	Number of	0.0715	0.0148
+0.2674	0.1090	1.000	The 12-bit page number is made available by	0.3327	0.0132
+0.2718	0.6823	1.000	Line Number Field Error Message	0.2218	0.0146
+0.2732	0.5470	1.000	Page Number	0.0809	0.0161
+0.2801	0.0919	1.000	OUTPUT in the accumulator at offset 8; the 8-bit line	0.3951	0.0179
+0.2950	0.0939	1.000	number is in the accumulator at offset 0. (If the	0.3592	0.0146
+0.3096	0.8496	1.000	8 bits	0.0338	0.0102
+0.3096	0.5677	1.000	12 bits	0.0470	0.0131
+0.3096	0.6992	1.000	8 bits	0.0395	0.0131
+0.3096	0.7726	1.000	4 bits	0.0414	0.0131
+0.3107	0.0938	1.000	found error entry is one from either the second or	0.3725	0.0165
+0.3227	0.5169	1.000	Figure 6. Final Enor Message Record for ERRPRT	0.2951	0.0189
+0.3241	0.0902	1.000	fourth list, the field designations in the transformed	0.3891	0.0174
+0.9403	0.8176	1.000	ERRNUM	0.0565	0.0090
+0.9419	0.8985	1.000	39	0.0150	0.0073

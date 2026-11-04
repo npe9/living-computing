@@ -1,0 +1,78 @@
+0.0654	0.4981	1.000	DD PROCESSING IN OUTPUT	0.2237	0.0174
+0.0669	0.0714	1.000	symbols if PUNALL was specified. The SYN card	0.3759	0.0147
+0.0814	0.0695	1.000	format is included in the NQBTP subroutine descrip-	0.3947	0.0147
+0.0959	0.4981	1.000	Box 1	0.0470	0.0174
+0.0974	0.0714	1.000	tion.	0.0357	0.0102
+0.1235	0.4981	1.000	Numeric DD's are identified by the bit Ziotpt.25 being	0.4041	0.0189
+0.1264	0.0695	1.000	Box 34	0.0526	0.0118
+0.1409	0.4981	1.000	on in the instruction unit. This was turned on by the	0.3929	0.0132
+0.1526	0.4981	1.000	MQDD subroutine in Pass 1.	0.2143	0.0160
+0.1555	0.0714	1.000	NUNDSY scans the symbol table and prints lists of	0.3759	0.0132
+0.1685	0.0695	1.000	undefined, multiply and circularly defined symbols,	0.3853	0.0176
+0.1829	0.4962	1.000	Boxes 2, 3	0.0885	0.0193
+0.1830	0.0695	1.000	plus a list of the entire symbol table with the location	0.3985	0.0146
+0.1991	0.0695	1.000	at which each symbol is defined, if PRNTALL was	0.3778	0.0146
+0.2106	0.4981	1.000	If a general parenthetical field integer entry (gp) was	0.3947	0.0191
+0.2136	0.0714	1.000	specified in the assembly.	0.1955	0.0117
+0.2267	0.4981	1.000	specified in the dds of an alphabetic DD, it is OR'ed	0.3872	0.0176
+0.2386	0.4962	1.000	at 06pal into the alphabetic data in the instruction unit,	0.4138	0.0190
+0.2427	0.0714	1.000	Box 35	0.0508	0.0131
+0.2573	0.4981	1.000	which is then picked up and stored in the punch buffer.	0.4041	0.0146
+0.2718	0.0695	1.000	ERRPRT sorts the error list into page and line number	0.4117	0.0146
+0.2863	0.0695	1.000	sequence and lists it via OPLIST, followed if necessary	0.4135	0.0161
+0.2863	0.4944	1.000	Box 4	0.0508	0.0174
+0.3009	0.0714	1.000	by a message stating the number of errors not listed	0.3891	0.0131
+0.3154	0.5000	1.000	OPNOUT is used to determine whether or not a card	0.3872	0.0174
+0.3154	0.0714	1.000	because of exceeding the error buffer.	0.2838	0.0131
+0.3270	0.4981	1.000	should be punched, based on the type of card being	0.3780	0.0187
+0.3444	0.4981	1.000	punched.	0.0696	0.0162
+0.3454	0.0713	1.000	Boxes 36, 39	0.0980	0.0157
+0.3735	0.4981	1.000	Box 5	0.0451	0.0174
+0.3735	0.0695	1.000	OEDIT now prints a time message and the number of	0.3947	0.0174
+0.3894	0.0695	1.000	units in the assembly, after which control reverts to	0.3910	0.0147
+0.4023	0.0695	1.000	MCP for a normal EOJ.	0.1768	0.0123
+0.4055	0.4981	1.000	A gp specified in the dds field of a DD must be OR'ed	0.3929	0.0146
+0.4185	0.4962	1.000	into each unit of a multiple unit DD; it is therefore	0.3797	0.0147
+0.4317	0.0695	1.000	DR PROCESSING IN OUTPUT	0.2218	0.0160
+0.4330	0.4981	1.000	stored in a temporary area to be used for each unit.	0.3872	0.0146
+0.4620	0.4980	1.000	Boxes 6, ?	0.0847	0.0179
+0.4621	0.0695	1.000	Boxes 1, 2	0.0828	0.0148
+0.4912	0.0695	1.000	Since no control information can be punched in a	0.3590	0.0161
+0.4927	0.4981	1.000	If a multiple unit DD is in process, Zinfld in the	0.3609	0.0161
+0.5038	0.4960	1.000	instruction unit will show the number of units, and	0.3802	0.0209
+0.5042	0.0695	1.000	PUNFUL card, blank words and/or cards must be	0.3722	0.0176
+0.5203	0.5000	1.000	OUTPUT turns on the indicator bit Oenm so that after	0.3966	0.0161
+0.5203	0.0695	1.000	punched equivalent to the DR length.	0.2688	0.0161
+0.5363	0.4981	1.000	the first field is printed, OUTPUI can return to	0.3609	0.0161
+0.5494	0.0695	1.000	Bоx 3	0.0470	0.0161
+0.5509	0.4962	1.000	process the others instead of returning to the main	0.3797	0.0146
+0.5639	0.4981	1.000	flow of Pass 2b.	0.1241	0.0161
+0.5799	0.0677	1.000	If there is a DRZ already waiting when a DR is speci-	0.4023	0.0161
+0.5944	0.4981	1.000	Box 8	0.0471	0.0176
+0.5959	0.0695	1.000	fied, an origin card must be punched immediately	0.3703	0.0132
+0.6076	0.0695	1.000	before the DR can be processed.	0.2406	0.0146
+0.6235	0.4981	1.000	All the gp fields are OR'ed into the data itself, which	0.3947	0.0174
+0.6379	0.0695	1.000	Boxes 6-8	0.0809	0.0148
+0.6394	0.4962	1.000	is then stored in the punch buffer, updating the bit	0.3797	0.0147
+0.6526	0.4962	1.000	count accordingly. For signed data the sign byte is	0.3835	0.0174
+0.6672	0.4962	1.000	stored separately in the punch buffer.	0.2820	0.0147
+0.6685	0.0677	1.000	If a DR is waiting when another DR is specified, and	0.3910	0.0147
+0.6830	0.0714	1.000	there is data in the buffer, an origin card must be	0.3703	0.0133
+0.6975	0.4980	1.000	Box 9	0.0453	0.0163
+0.6976	0.0695	1.000	punched immediately; if there is no data, the DR	0.3609	0.0132
+0.7121	0.0677	1.000	length can be added to the previous DR length.	0.3459	0.0132
+0.7252	0.4981	1.000	OPNOUT determines whether to punch a card, and if	0.3929	0.0191
+0.7412	0.4962	1.000	so, fills in the control data such as ID sequence, card	0.4023	0.0176
+0.7427	0.0677	1.000	Boxes 10-13	0.0977	0.0131
+0.7558	0.4962	1.000	type code, origin, etc..	0.1861	0.0176
+0.7703	0.0695	1.000	If no DR is waiting and no data in the buffer, the card	0.3966	0.0146
+0.7863	0.4962	1.000	Box 10	0.0565	0.0161
+0.7863	0.0695	1.000	indicators are set to "skip before loading." If there	0.3891	0.0116
+0.8009	0.0695	1.000	is some data, the indicators are set to "skip after	0.3722	0.0131
+0.8131	0.4961	1.000	The DD output is converted and stored in the print	0.3800	0.0200
+0.8154	0.0695	1.000	loading. " If there is more than enough data to fill an	0.3947	0.0131
+0.8285	0.4944	1.000	line according to the type of DD. DD's are not	0.3534	0.0176
+0.8314	0.0714	1.000	origin card, a card is punched before the new DR is	0.3853	0.0116
+0.8430	0.4962	1.000	printed in octal-hex format, but in the following:	0.3628	0.0189
+0.8457	0.0714	1.000	processed.	0.0828	0.0120
+0.9215	0.0658	1.000	158	0.0244	0.0102

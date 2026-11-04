@@ -1,0 +1,109 @@
+0.0578	0.5056	1.000	ever possible. In a decimal store, the byte size refers	0.3930	0.0152
+0.0596	0.1071	1.000	Negative Sign. This modifier specifies the sign of the	0.3703	0.0131
+0.0741	0.5056	1.000	to the size of each byte in the storage field, including	0.3929	0.0131
+0.0755	0.0921	1.000	one to be added. If the modifier is zero, a plus one	0.3872	0.0118
+0.0887	0.0940	1.000	is algebraically added to the storage operand; if it is	0.3853	0.0147
+0.0887	0.5075	1.000	the sign byte if the operation is signed. Each 4-bit	0.3910	0.0147
+0.1045	0.5056	1.000	byte of the accumulator replaces the four low-order	0.3929	0.0133
+0.1061	0.0940	1.000	one, a minus one is added.	0.1842	0.0118
+0.1191	0.5075	1.000	bits of each byte of the storage field except the sign	0.3910	0.0146
+0.1206	0.1090	1.000	Radix. This modifier operates as in ADD TO MEM-	0.3703	0.0131
+0.1352	0.5075	1.000	byte. Il the specified byte size is greater than four,	0.3929	0.0146
+0.1395	0.0940	1.000	ORY.	0.0301	0.0087
+0.1512	0.5075	1.000	the remaining high-order bits of each byte are re-	0.3929	0.0131
+0.1584	0.0940	1.000	INDICATORS	0.0733	0.0087
+0.1657	0.5075	1.000	placed by the corresponding zone bits in the accumu-	0.3929	0.0146
+0.1715	0.1090	1.000	Lost Carry (LC); Data Flags (TF, UF, VF); To-	0.3703	0.0145
+0.1817	0.5056	1.000	lator sign byte register.	0.1805	0.0132
+0.1817	0.6842	1.000	If the specified byte size is	0.2162	0.0132
+0.1875	0.0940	1.000	Memory Operation (MOP); Arithmetic Result (RLZ,	0.3872	0.0131
+0.1962	0.5075	1.000	less than four, only the low-order bits from each ac-	0.3910	0.0145
+0.2018	0.0939	1.000	RZ, RGZ, RN). These indicators operate as in ADD	0.3855	0.0152
+0.2121	0.5075	1.000	cumulator byte replace each byte in the storage field.	0.3929	0.0146
+0.2209	0.0940	1.000	TO MEMORY.	0.0846	0.0103
+0.2340	0.5075	1.000	INDICATORS	0.0808	0.0102
+0.2384	0.0940	1.000	PROGRAMMING NOTES	0.1466	0.0116
+0.2455	0.5243	1.000	Partial Field (PF). The partial field indicator is	0.3762	0.0177
+0.2542	0.0940	1.000	ADD ONE TO MEMORY is identical to an ADD TO MEM-	0.3853	0.0103
+0.2630	0.5075	1.000	turned on in a binary store if there is any one-bit in the	0.3929	0.0131
+0.2674	0.0940	1.000	oRy in which the accumulator operand is +1, except	0.3872	0.0147
+0.2775	0.5074	1.000	accumulator to the left of the last bit position stored.	0.3930	0.0164
+0.2833	0.0939	1.000	that the partial field indicator is not affected. This	0.3874	0.0164
+0.2909	0.5074	1.000	In a decimal STORE, this indicator is turned on if	0.3951	0.0174
+0.2984	0.0939	1.000	operation can be used for ordinary adding or count-	0.3874	0.0157
+0.3096	0.5094	1.000	there is a non-zero byte to the left of the high-order	0.3910	0.0131
+0.3139	0.0940	1.000	ing by ones in signed or unsigned fields. Counting	0.3872	0.0161
+0.3241	0.5075	1.000	byte stored. Il the field length is not a multiple of	0.3947	0.0160
+0.3299	0.0940	1.000	by any power of the specified radix (2 or 10) can be	0.3872	0.0146
+0.3400	0.5094	1.000	the byte size in a decimal STORE, only part of the	0.3910	0.0133
+0.3434	0.0938	1.000	performed in fields whose signs are known by using	0.3876	0.0186
+0.3545	0.5075	1.000	high-order digit is stored so that only the addressed	0.3929	0.0146
+0.3605	0.0940	1.000	an unsigned operation with proper bit address.	0.3553	0.0145
+0.3706	0.5094	1.000	field is replaced in storage. If all accumulator bytes	0.3929	0.0131
+0.3764	0.1090	1.000	The offset field in ADD ONE TO MEMORY has no mean-	0.3722	0.0118
+0.3841	0.5074	1.000	to the left of the entire high-order accumulator byte	0.3931	0.0174
+0.3924	0.0940	1.000	ing and is ignored.	0.1278	0.0131
+0.4012	0.5094	1.000	taking part in the operation are zero, the partial field	0.3910	0.0146
+0.4172	0.5094	1.000	indicator is not turned on even if the high-order bits	0.3929	0.0116
+0.4285	0.0920	1.000	Store (ST)	0.0679	0.0137
+0.4317	0.5094	1.000	of the high-order byte that were not stored are non-	0.3929	0.0132
+0.4491	0.0959	1.000	The addressed field in storage is replaced by the	0.3872	0.0131
+0.4621	0.5282	1.000	To-Memory Operation (MOP). This indicator is	0.3741	0.0146
+0.4651	0.0940	1.000	accumulator field specified by the offset. If a signed	0.3872	0.0131
+0.4781	0.5094	1.000	turned on.	0.0771	0.0118
+0.4793	0.0939	1.000	operation is specified, a sign byte ol proper size is	0.3893	0.0164
+0.4927	0.5244	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). These	0.3778	0.0161
+0.4956	0.0940	1.000	obtained from the accumulator sign byte register and,	0.3891	0.0131
+0.5087	0.5094	1.000	indicators are set according to the data field stored.	0.3929	0.0131
+0.5102	0.0940	1.000	alter modification by the negative sign modifier, this	0.3891	0.0147
+0.5233	0.5113	1.000	The sign of the accumulator, as modified by the nega-	0.3929	0.0146
+0.5276	0.0940	1.000	sign byte replaces the rightmost byte of the storage	0.3891	0.0131
+0.5392	0.5094	1.000	tive sign modifier, affects the setting whether it is	0.3947	0.0132
+0.5421	0.0940	1.000	field. The accumulator and the sign byte register	0.3891	0.0131
+0.5554	0.5094	1.000	stored or not.	0.1037	0.0116
+0.5567	0.0940	1.000	remain unchanged.	0.1372	0.0146
+0.5770	0.5113	1.000	PROGRAMMING NOTES	0.1541	0.0103
+0.5799	0.0940	1.000	MODIFIERS	0.0714	0.0087
+0.5900	0.5112	1.000	The field length and offset specified in a store in-	0.3931	0.0164
+0.5945	0.1109	1.000	Unsigned. This modifier determines whether the	0.3741	0.0131
+0.6026	0.5110	1.000	struction may be such that the field to be stored	0.3915	0.0195
+0.6090	0.0940	1.000	stored field is signed or unsigned. When the field is	0.3910	0.0131
+0.6235	0.0940	1.000	signed, the contents of the accumulator sign byte	0.3891	0.0146
+0.6366	0.5113	1.000	this event, the accumulator operand is lengthened for	0.3929	0.0131
+0.6393	0.0939	1.000	register replace the rightmost byte of the addressed	0.3894	0.0143
+0.6526	0.5113	1.000	the operation by the addition of high-order zeros. In	0.3929	0.0147
+0.6539	0.0959	1.000	field. If the byte size is less than eight, only part of	0.3872	0.0133
+0.6672	0.5113	1.000	a binary operation, this results in replacing the left	0.3929	0.0147
+0.6700	0.0959	1.000	the contents of the sign byte register is stored. The	0.3891	0.0131
+0.6817	0.8008	1.000	In a decimal	0.1034	0.0116
+0.6830	0.5113	1.000	end of the storage field with zeros.	0.2820	0.0146
+0.6845	0.0940	1.000	number of bits in the sign byte stored is determined	0.3910	0.0146
+0.6976	0.5113	1.000	operation, the high-order part of the storage field is	0.3929	0.0146
+0.7020	0.0959	1.000	by the specified byte size.	0.1805	0.0131
+0.7115	0.7009	1.000	numeric part is zero and	0.2036	0.0173
+0.7151	0.5113	1.000	replaced by bytes whose	0.1898	0.0131
+0.7166	0.1109	1.000	Negative Sign. If this modifier is one, the sign bit	0.3741	0.0146
+0.7282	0.5113	1.000	whose zones, if any, are those provided from the sign	0.3929	0.0146
+0.7311	0.0940	1.000	from the accumulator sign byte register is inverted	0.3910	0.0147
+0.7456	0.5113	1.000	register.	0.0602	0.0131
+0.7470	0.0959	1.000	before being placed in the storage field. The contents	0.3910	0.0147
+0.7602	0.5301	1.000	A signed STORE operation always stores sign bytes	0.3759	0.0147
+0.7615	0.0959	1.000	of the accumulator sign byte register remain un-	0.3910	0.0146
+0.7728	0.5130	1.000	with the data flag bits and zone bits that are in the	0.3931	0.0164
+0.7776	0.0940	1.000	changed. If the unsigned modifier is specified, the	0.3910	0.0146
+0.7896	0.0957	1.000	negative sign modifier has no effect on the field	0.3895	0.0181
+0.7906	0.5132	1.000	accumulator sign byte register. To maintain the	0.3929	0.0132
+0.8067	0.5132	1.000	original flag bits on a data field which is to be proc-	0.3910	0.0131
+0.8081	0.0940	1.000	stored. However, the result indicators are set accord-	0.3910	0.0131
+0.8212	0.5132	1.000	essed and then stored, LOAD WITH FLAG should be used	0.3910	0.0131
+0.8226	0.0939	1.000	ing to the modified accumulator sign, whether it is	0.3930	0.0162
+0.8358	0.5132	1.000	when the field is initially obtained. It should be	0.3929	0.0145
+0.8400	0.0940	1.000	stored or not.	0.0977	0.0118
+0.8517	0.5132	1.000	remembered that LOAD clears the data flag positions	0.3929	0.0131
+0.8545	0.1109	1.000	Radix. In a binary store, the byte size refers only	0.3741	0.0133
+0.8677	0.5132	1.000	in the sign byte register and does not place the flag	0.3929	0.0132
+0.8691	0.0959	1.000	to the length of the sign byte stored. The specified	0.3910	0.0146
+0.8821	0.5132	1.000	bits of the addressed operand into these positions.	0.3910	0.0147
+0.8852	0.0940	1.000	accumulator data field is stored in 8-bit bytes where-	0.3929	0.0131
+0.9200	0.7274	1.000	Variable Field Length	0.1335	0.0118
+0.9201	0.8872	1.000	63	0.0188	0.0087

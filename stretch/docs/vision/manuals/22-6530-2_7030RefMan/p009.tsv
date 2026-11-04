@@ -1,0 +1,86 @@
+0.0654	0.5169	1.000	munication between man and machine where human	0.3910	0.0116
+0.0654	0.0959	1.000	flexible control of the stored program. Multiple in-	0.3929	0.0146
+0.0799	0.5132	1.000	intervention and supervision is desired. These facili-	0.3947	0.0161
+0.0814	0.0977	1.000	put-output channels, buffering, and multiprogram-	0.3910	0.0132
+0.0959	0.0940	1.000	ming facilities make it possible to do independent in-	0.3966	0.0160
+0.0959	0.5150	1.000	ties are included because planned intervention and	0.3929	0.0160
+0.1118	0.5150	1.000	supervision can often bring a problem to completion	0.3929	0.0146
+0.1118	0.0977	1.000	put-output data conversion efficiently on units at-	0.3910	0.0132
+0.1264	0.0959	1.000	tached to the computer without significantly increasing	0.3929	0.0146
+0.1264	0.5150	1.000	more quickly than computation alone. Of course,	0.3929	0.0161
+0.1409	0.5150	1.000	matching a high performance computer directly to	0.3929	0.0146
+0.1424	0.0959	1.000	the computing time on the major job. Physical switch.	0.3891	0.0131
+0.1570	0.5150	1.000	the thinking and reaction times of a human user is	0.3929	0.0131
+0.1570	0.0959	1.000	ing of units or manual transfer of tape reels is thus	0.3929	0.0131
+0.1728	0.0958	1.000	avoided.	0.0602	0.0105
+0.1730	0.5132	1.000	very costly in wasted machine power. With facilities	0.3947	0.0146
+0.1875	0.5150	1.000	provided for multiprogramming, however, the eco-	0.3929	0.0146
+0.1875	0.1128	1.000	The console is separated from the main computer	0.3759	0.0146
+0.1995	0.5168	1.000	nomics of human intervention may be radically	0.3895	0.0183
+0.2035	0.0940	1.000	and becomes an optional input-output device.	0.3553	0.0132
+0.2179	0.0940	1.000	keyboard, switches, lights, digital display, and console	0.3947	0.0161
+0.2179	0.5150	1.000	changed. With two or more programs ready for op-	0.3929	0.0147
+0.2339	0.5150	1.000	eration, the machine need not wait idly while the	0.3929	0.0132
+0.2339	0.0959	1.000	printer are all subject to programmed interpretation	0.3910	0.0146
+0.2485	0.0959	1.000	and control. The interpretive program may endow	0.3910	0.0146
+0.2485	0.5113	1.000	user thinks. All console facilities are designed to take	0.3966	0.0146
+0.2645	0.0959	1.000	these devices with sophisticated control functions or	0.3929	0.0131
+0.2645	0.5132	1.000	advantage of the intervention techniques made pos-	0.3947	0.0146
+0.2791	0.5113	1.000	sible by multiprogramming.	0.2105	0.0161
+0.2791	0.0959	1.000	may ignore them altogether. This interpretive ap-	0.3910	0.0146
+0.2951	0.0940	1.000	proach to the console gives exceptional flexibility and	0.3929	0.0146
+0.3077	0.0939	1.000	makes possible console facilities which will not be-	0.3931	0.0170
+0.3227	0.5113	1.000	System Organization	0.2011	0.0189
+0.3241	0.0940	1.000	come inadequate as new operating techniques are	0.3929	0.0160
+0.3387	0.0940	1.000	developed. The use of programmed definition of con-	0.3947	0.0160
+0.3544	0.5093	1.000	The basic system is composed of a central processing	0.3987	0.0181
+0.3545	0.0921	1.000	sole functions also permits protective and logging	0.3947	0.0161
+0.3671	0.0938	1.000	functions which would be quite uneconomical in hard-	0.3932	0.0213
+0.3691	0.5113	1.000	unit, one or more core storage units, an exchange, and	0.3947	0.0176
+0.3821	0.5113	1.000	input-output devices.	0.1598	0.0206
+0.3881	0.0959	1.000	ware.	0.0395	0.0087
+0.3995	0.5261	1.000	Information moves between the input-output de-	0.3802	0.0204
+0.4012	0.1090	1.000	These facilities are provided to permit close com-	0.3778	0.0161
+0.4244	0.2538	1.000	Magnetic Core Storage	0.1184	0.0102
+0.4404	0.4850	1.000	16,384	0.0432	0.0131
+0.4404	0.1203	1.000	16,384	0.0414	0.0131
+0.4419	0.2256	1.000	16,384	0.0414	0.0116
+0.4419	0.3289	1.000	16,384	0.0414	0.0116
+0.4520	0.4887	1.000	Words	0.0395	0.0116
+0.4520	0.3346	1.000	Words	0.0357	0.0116
+0.4520	0.2293	1.000	Words	0.0338	0.0102
+0.4520	0.1184	1.000	Words	0.0357	0.0087
+0.4606	0.4793	1.000	2.18 usec.	0.0620	0.0133
+0.4619	0.1127	1.000	2.18 usec.	0.0603	0.0122
+0.4621	0.3233	1.000	2.18 usec	0.0565	0.0119
+0.4621	0.2237	1.000	2.18 usec.	0.0583	0.0103
+0.5160	0.2763	1.000	Storage Bus Control	0.0996	0.0102
+0.5392	0.3835	1.000	Central Processing Uhit	0.1316	0.0247
+0.5654	0.1955	1.000	Disk	0.0244	0.0102
+0.5756	0.1861	1.000	Synchro-	0.0489	0.0116
+0.5872	0.1955	1.000	nizer	0.0301	0.0087
+0.5887	0.3665	1.000	Instruction	0.0583	0.0116
+0.5887	0.4850	1.000	Look-	0.0282	0.0116
+0.5973	0.3684	1.000	Processor	0.0490	0.0119
+0.5974	0.4887	1.000	Ahead	0.0282	0.0131
+0.6336	0.0921	1.000	Disk Storage	0.0677	0.0118
+0.6424	0.3797	1.000	Index	0.0320	0.0087
+0.6439	0.0921	1.000	2,097,152 Words	0.0902	0.0131
+0.6496	0.3590	1.000	Registers	0.0603	0.0134
+0.6539	0.0902	1.000	125,000 Words/sec.	0.1090	0.0133
+0.6642	0.4624	1.000	Arithmetic And	0.0827	0.0103
+0.6744	0.4793	1.000	Logical	0.0414	0.0116
+0.6860	0.4868	1.000	Unit	0.0263	0.0073
+0.7306	0.2912	1.000	Exchange	0.0492	0.0111
+0.7951	0.1880	1.000	Mag	0.0263	0.0102
+0.7951	0.3289	1.000	1000 cpm	0.0470	0.0131
+0.8021	0.4717	1.000	Console and	0.0622	0.0106
+0.8023	0.1880	1.000	Thits	0.0357	0.0174
+0.8036	0.2519	1.000	600 lpm	0.0432	0.0133
+0.8052	0.3233	1.000	Card Reader	0.0583	0.0118
+0.8109	0.4699	1.000	Console Printer	0.0808	0.0133
+0.8154	0.2538	1.000	Printer	0.0395	0.0087
+0.8314	0.3835	1.000	250 cpm	0.0489	0.0116
+0.8415	0.3816	1.000	Card Punch	0.0620	0.0131
+0.8953	0.0883	1.000	Figure 1. Iypical IBM 7030 System	0.2124	0.0147
+0.9288	0.1259	1.000	IBM 7030	0.0658	0.0116

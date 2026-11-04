@@ -1,0 +1,122 @@
+0.0669	0.1297	1.000	Counter) or special bits in storage (§Lc, the Lost	0.3966	0.0160
+0.0814	0.1278	1.000	Carry indicator) are bit addresses. All others are real	0.3985	0.0160
+0.0971	0.1296	1.000	numbers.	0.0678	0.0121
+0.1366	0.6165	1.000	NAME	0.0470	0.0189
+0.1381	0.8515	1.000	BIT ADDRESS	0.0977	0.0146
+0.1392	0.7687	1.000	MNEMONIC	0.0829	0.0137
+0.1394	0.1278	1.000	substitute in place of a namè for the current state	0.3929	0.0176
+0.1570	0.1297	1.000	ment. That is, the character $ is a bit address which	0.3910	0.0145
+0.1599	0.8966	1.000	0.0	0.0282	0.0145
+0.1599	0.7989	1.000	$Z	0.0226	0.0145
+0.1744	0.8966	1.000	1.0	0.0320	0.0145
+0.1744	0.1335	1.000	n any particular statement where it appears, fun	0.3835	0.0147
+0.1773	0.7989	1.000	$IT	0.0301	0.0116
+0.1860	0.1335	1.000	ions as if it had been defined by being written in th	0.3853	0.0146
+0.1904	0.7989	1.000	$TC	0.0338	0.0145
+0.1919	0.8966	1.000	1.28	0.0357	0.0145
+0.2078	0.8947	1.000	2.0	0.0301	0.0131
+0.2078	0.7989	1.000	SIA	0.0282	0.0131
+0.2195	0.8947	1.000	3.0	0.0338	0.0160
+0.2224	0.7970	1.000	$UB	0.0376	0.0131
+0.2353	0.8947	1.000	3.32	0.0396	0.0148
+0.2355	0.7970	1.000	$LB	0.0376	0.0145
+0.2500	0.7970	1.000	$BC	0.0376	0.0160
+0.2515	0.8947	1.000	3.57	0.0395	0.0160
+0.2630	0.1278	1.000	ance of the $ as follows:	0.1786	0.0131
+0.2660	0.8947	1.000	4.32	0.0395	0.0160
+0.2660	0.7970	1.000	$MB	0.0414	0.0145
+0.2805	0.8947	1.000	5.12	0.0395	0.0160
+0.2820	0.7970	1.000	$CA	0.0376	0.0160
+0.2829	0.2986	1.000	B, $-2.	0.0531	0.0157
+0.2965	0.8947	1.000	6.0	0.0338	0.0160
+0.2965	0.7970	1.000	$CPU	0.0489	0.0160
+0.3009	0.1259	1.000	means "Branch to the instruction which begins two	0.3987	0.0165
+0.3110	0.8947	1.000	7.17	0.0395	0.0174
+0.3125	0.7970	1.000	$LZC	0.0470	0.0145
+0.3182	0.1259	1.000	full words before this branch instruction." In another	0.3985	0.0133
+0.3255	0.5733	1.000	All ones count	0.1034	0.0147
+0.3270	0.7970	1.000	$AOC	0.0508	0.0160
+0.3285	0.8947	1.000	7.44	0.0395	0.0145
+0.3343	0.1278	1.000	illustration:	0.0865	0.0102
+0.3384	0.2875	1.000	B, $t.32	0.0735	0.0165
+0.3430	0.7970	1.000	$L	0.0244	0.0145
+0.3430	0.8966	1.000	8.0	0.0282	0.0145
+0.3573	0.1277	1.000	the meaning is "Branch to the next instruction," effec-	0.3968	0.0166
+0.3590	0.5677	1.000	Right half of accumulator	0.1955	0.0160
+0.3605	0.8947	1.000	9.0	0.0282	0.0131
+0.3605	0.7970	1.000	$R	0.0244	0.0131
+0.3735	0.1278	1.000	tively a "no operation."	0.1729	0.0146
+0.3747	0.5676	1.000	Sign byte	0.0735	0.0166
+0.3765	0.7970	1.000	$SB	0.0320	0.0116
+0.3765	0.8872	1.000	10.0	0.0376	0.0131
+0.3894	0.1447	1.000	Another special use of the $ character is to prefix	0.3797	0.0147
+0.3909	0.5658	1.000	Indicator register	0.1316	0.0146
+0.3910	0.7989	1.000	$IND	0.0432	0.0131
+0.3910	0.8872	1.000	11.0	0.0376	0.0131
+0.4053	0.7969	1.000	$MASK	0.0603	0.0135
+0.4055	0.1278	1.000	any operation code in this manner: Sop. This directs	0.3966	0.0132
+0.4055	0.8872	1.000	12.20	0.0451	0.0145
+0.4055	0.5658	1.000	Mask	0.0432	0.0131
+0.4200	0.1259	1.000	the compiler to suppress any error indications that	0.3985	0.0146
+0.4215	0.7970	1.000	$RM	0.0395	0.0131
+0.4215	0.8872	1.000	13.0	0.0376	0.0131
+0.4215	0.5658	1.000	Remainder register	0.1447	0.0145
+0.4360	0.7970	1.000	$FT	0.0338	0.0131
+0.4360	0.5658	1.000	Factor register	0.1128	0.0161
+0.4360	0.1259	1.000	arise in connection with the compilation of this state-	0.3985	0.0131
+0.4373	0.8852	1.000	14.0	0.0379	0.0135
+0.4520	0.1259	1.000	ment.	0.0414	0.0087
+0.4520	0.7970	1.000	$TR	0.0338	0.0116
+0.4520	0.5658	1.000	Transit register	0.1165	0.0146
+0.4520	0.8872	1.000	15.0	0.0357	0.0131
+0.4651	0.1429	1.000	STRAP assigns a dds to every system symbol. The	0.3816	0.0146
+0.4767	0.5489	1.000	A use of the system symbol for the Indicator Register	0.3985	0.0161
+0.4811	0.1259	1.000	system symbols can be classified in five groups. These	0.3985	0.0147
+0.4927	0.5489	1.000	is illustrated in the following instruction:	0.3008	0.0145
+0.4985	0.1259	1.000	are:	0.0320	0.0087
+0.5102	0.7143	1.000	L, ŞIND	0.0677	0.0160
+0.5218	0.1410	1.000	1. Index Register Symbols. The system symbols $O	0.3835	0.0161
+0.5305	0.5508	1.000	No data description need be explicitly written in the	0.3947	0.0160
+0.5363	0.1241	1.000	through $15, or $XO through $X15, represent index	0.4004	0.0161
+0.5451	0.5508	1.000	Load instruction because the dds (BU, 64, 8) has been	0.3947	0.0160
+0.5523	0.1241	1.000	registers O through 15, addresses 16.0 through 31.0 in	0.3985	0.0160
+0.5609	0.5508	1.000	attached to the system symbol. This instruction is	0.3966	0.0147
+0.5669	0.1259	1.000	STRETCH storage. The advantage of using a system	0.3966	0.0147
+0.5741	0.5508	1.000	thus complied by strap to mean, "Load the contents	0.3966	0.0160
+0.5827	0.1259	1.000	symbol is that STRAP always compiles the correct	0.3985	0.0147
+0.5915	0.5489	1.000	of the entire 64-bit Indicator Register into the right	0.3985	0.0161
+0.5973	0.1241	1.000	value, regardless of the size of the field in which the	0.3985	0.0161
+0.6061	0.5508	1.000	half of the accumulator at zero offset.".	0.2820	0.0118
+0.6118	0.1259	1.000	symbol is written. Therefore, in the instruction	0.3496	0.0146
+0.6294	0.5658	1.000	3. Indicator Bit Symbols. The complete list of the	0.3797	0.0161
+0.6308	0.2444	1.000	*+(N), ABLE($5)	0.1579	0.0160
+0.6439	0.5470	1.000	system symbols for the indicator bits are listed in	0.3985	0.0161
+0.6497	0.1241	1.000	the index specification involving the system symbol	0.4004	0.0176
+0.6599	0.5508	1.000	Appendix A. Each system symbol, when prefaced	0.3947	0.0160
+0.6657	0.1241	1.000	$5 directs sTRAP to correctly compile the binary integer	0.3985	0.0161
+0.6744	0.5508	1.000	with a dollar sign and placed in a programmer sym-	0.3947	0.0147
+0.6789	0.1258	1.000	5 in the 4-bit index subfield. In a similar fashion,	0.3988	0.0160
+0.6903	0.5489	1.000	bolized field, will represent the correct bit position in	0.3966	0.0161
+0.6976	0.1241	1.000	STRAP correctly interprets the system symbol when	0.3985	0.0132
+0.7048	0.5508	1.000	word I1 of the indicator named.	0.2331	0.0132
+0.7106	0.1259	1.000	used as an address as in	0.1748	0.0118
+0.7282	0.5677	1.000	The system symbols for the indicator bits are also	0.3778	0.0131
+0.7297	0.2744	1.000	ST(BU),$X5	0.0977	0.0131
+0.7427	0.5508	1.000	used as part of the mnemonic for the Branch on In-	0.3947	0.0145
+0.7500	0.1222	1.000	and compiles the standard binary bit address 21.0 in	0.4004	0.0161
+0.7587	0.5508	1.000	dicator instruction. In this usage, however, the $ is	0.3947	0.0146
+0.7645	0.1241	1.000	the address field of the Store instruction.	0.2932	0.0146
+0.7747	0.5489	1.000	not required. The mnemonic for this instruction is	0.3966	0.0132
+0.7892	0.5489	1.000	composed of the B (representing Branch) followed	0.3966	0.0145
+0.8036	0.5489	1.000	by the system symbol for the indicator being inter-	0.3966	0.0161
+0.8197	0.5489	1.000	rogated minus the dollar sign. Thus, вxн is the opera-	0.3966	0.0146
+0.8309	0.5486	1.000	tion mnemonic for Branch on Index High, while Bxvcz	0.3971	0.0212
+0.8327	0.1241	1.000	register, and the bit address assigned to each system	0.3966	0.0161
+0.8488	0.1241	1.000	symbol. STRAP also assigns a data description to each	0.3966	0.0146
+0.8503	0.5470	1.000	is the operation mnemonic for the 7030 instruction	0.3966	0.0131
+0.8648	0.5489	1.000	Branch on Index Value Greater Than Zero.	0.3177	0.0131
+0.8663	0.1222	1.000	symbol with a use mode of binary unsigned (BU), a	0.3966	0.0131
+0.8797	0.1258	1.000	byte size of 8 and a field length equal to the length	0.3930	0.0133
+0.8808	0.5658	1.000	All the system symbols in classes 1, 2, and 3 are	0.3797	0.0146
+0.9139	0.1729	1.000	IBM 7030	0.0641	0.0108
+0.9157	0.1241	1.000	10	0.0263	0.0087

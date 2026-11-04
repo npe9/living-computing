@@ -1,0 +1,113 @@
+0.0639	0.1203	1.000	All double-precision	0.1598	0.0145
+0.0654	0.2801	1.000	results can be stored with	0.2143	0.0116
+0.0682	0.5226	1.000	DIVIDE, the contents of the left zeros counter are	0.3891	0.0118
+0.0799	0.1034	1.000	rounding as single-precision values, by using the	0.3910	0.0146
+0.0827	0.5207	1.000	greater than zero. In unnormalized operation the	0.3910	0.0147
+0.0959	0.1034	1.000	STORE ROUNDED operation. In order to allow the quo-	0.3910	0.0147
+0.0973	0.5226	1.000	partial field indicator (PF) is set to one when these	0.3891	0.0146
+0.1105	0.1034	1.000	tient of a double-precision division to be rounded,	0.3910	0.0145
+0.1133	0.5207	1.000	conditions exist.	0.1184	0.0117
+0.1264	0.1034	1.000	a 49th quotient fraction bit is developed after the	0.3910	0.0146
+0.1279	0.5376	1.000	When either or both of the operands are values in	0.3722	0.0146
+0.1409	0.1015	1.000	remainder is preserved.	0.1711	0.0146
+0.1439	0.5226	1.000	the XFP or XFN range, the quotient exponent and	0.3872	0.0146
+0.1584	0.5207	1.000	quotient fraction are developed as described under	0.3910	0.0146
+0.1672	0.1034	1.000	DETAILS OF OPERATION	0.1673	0.0102
+0.1744	0.5207	1.000	DIVIDE except that the dividend fraction is initially	0.3891	0.0160
+0.1860	0.1034	1.000	The details of pre-division normalization and the	0.3910	0.0146
+0.1890	0.5207	1.000	bits 12-107 of the accumulator. When either or both	0.3891	0.0132
+0.2020	0.1015	1.000	generation of the first 48 bits of the quotient fraction	0.3910	0.0146
+0.2032	0.5205	1.000	of the operands are flagged with EF of 1, prior to pre-	0.3894	0.0187
+0.2165	0.1014	1.000	in normalized and unnormalized division follow the	0.3912	0.0142
+0.2209	0.5207	1.000	division normalization, the quotient exponent always	0.3891	0.0146
+0.2324	0.1015	1.000	description given for DIvIde except for the introduc-	0.3910	0.0147
+0.2353	0.5206	1.000	has a propagated EF of 1. For this case divisor pre-	0.3874	0.0163
+0.2485	0.1015	1.000	tion of noisy mode ones into the dividend. In the	0.3910	0.0131
+0.2494	0.5205	1.000	division normalization will always be complete.	0.3876	0.0170
+0.2630	0.1015	1.000	double-precision handling, pre-division normalization	0.3891	0.0146
+0.2660	0.5207	1.000	However, dividend pre-division normalization of the	0.3891	0.0146
+0.2791	0.1015	1.000	for the dividend is permitted to have up to 96 posi-	0.3910	0.0161
+0.2820	0.5188	1.000	fraction follows the procedure for unnormalized op-	0.3891	0.0145
+0.2936	0.1015	1.000	tions of shift. Ones	0.1579	0.0116
+0.2951	0.2613	1.000	are introduced in noisy mode	0.2312	0.0146
+0.2961	0.5187	1.000	eration; i.e., the maximum left-shift permitted is the	0.3893	0.0171
+0.3096	0.1015	1.000	operation only in positions vacated at the low-order	0.3910	0.0160
+0.3139	0.5188	1.000	same amount as the divisor left-shift. However, the	0.3891	0.0131
+0.3241	0.0996	1.000	end of the double length fraction as it is shifted left.	0.3910	0.0160
+0.3267	0.5168	1.000	partial field indicator (PF) is turned on only if un-	0.3913	0.0195
+0.3400	0.5169	1.000	normalized operation is specified and the izc has a	0.3910	0.0191
+0.3401	0.1146	1.000	In DIVIDE DOUBLE, the remainder is preserved. When	0.3761	0.0151
+0.3545	0.1015	1.000	the divisor fraction is equal to or smaller than the 48	0.3891	0.0146
+0.3590	0.5188	1.000	value after pre-division normalization greater than	0.3891	0.0146
+0.3706	0.0996	1.000	high-order bits of the dividend fraction, a remainder	0.3929	0.0146
+0.3735	0.5188	1.000	one. If normalized operation is specified, pF is not	0.3891	0.0160
+0.3852	0.0996	1.000	of 49 bits is obtained. Otherwise a 48-bit remainder	0.3910	0.0131
+0.3894	0.5188	1.000	turned on through incomplete dividend shifting.	0.3571	0.0147
+0.4012	0.0996	1.000	fraction is obtained. The intermediate remainder	0.3910	0.0131
+0.4040	0.5337	1.000	When the quotient has a propagated EF of 1, the	0.3724	0.0168
+0.4172	0.0996	1.000	exponent is obtained by subtracting 48 from the ad-	0.3929	0.0147
+0.4200	0.5169	1.000	remainder exponent is the same as the original divi-	0.3891	0.0146
+0.4317	0.0996	1.000	justed exponent of the shifted dividend.	0.3026	0.0132
+0.4344	0.5168	1.000	dend exponent, prior to pre-division normalization.	0.3875	0.0175
+0.4476	0.1165	1.000	When normalized operation is specified, the re-	0.3741	0.0161
+0.4506	0.5188	1.000	Normalization of the remainder fraction, if specified,	0.3872	0.0161
+0.4606	0.0995	1.000	mainder is normalized and placed in Rm bit positions	0.3913	0.0183
+0.4651	0.5168	1.000	is suppressed. When the remainder has a propagated	0.3893	0.0165
+0.4782	0.0996	1.000	0-59. In the case of a 49-bit remainder, the low-order	0.3910	0.0146
+0.4811	0.5169	1.000	EF of 1 and Es of 1, setting of the remainder under-	0.3872	0.0147
+0.4907	0.0976	1.000	remainder bit is lost. When unnormalized operation	0.3914	0.0188
+0.4956	0.5169	1.000	flow indicator (RU) is suppressed.	0.2387	0.0147
+0.5072	0.0976	1.000	is specified, the remainder is not normalized, but the	0.3931	0.0175
+0.5115	0.5338	1.000	When both operands are originally in the N range,	0.3703	0.0146
+0.5233	0.0977	1.000	48 high-order remainder fraction bits and the remain-	0.3929	0.0131
+0.5276	0.5169	1.000	either or both may acquire exponent flag, EF of 1, prior	0.3872	0.0146
+0.5385	0.0976	1.000	der exponent are placed unnormalized in RM bit po-	0.3931	0.0169
+0.5421	0.5150	1.000	to the division. The divisor may become a value in	0.3891	0.0146
+0.5536	0.0977	1.000	sitions 0-59. Again, if a 49-bit remainder was devel-	0.3929	0.0147
+0.5581	0.5169	1.000	the XEN range through pre-division normalization.	0.3872	0.0146
+0.5697	0.0977	1.000	oped, the low-order bit is lost. Lost carry indicator	0.3929	0.0146
+0.5727	0.5188	1.000	The dividend may become a value in the XFP range	0.3853	0.0146
+0.5842	0.1015	1.000	(LC) is set to one if the lost bit is one.	0.2857	0.0131
+0.5887	0.5169	1.000	through quotient overflow adjustment or a value in	0.3872	0.0132
+0.5983	0.1145	1.000	Before normalization, the remainder is compared	0.3743	0.0169
+0.6032	0.5169	1.000	the XEN range through pre-division normalization and	0.3872	0.0147
+0.6163	0.0977	1.000	with the divisor to obtain a 49th quotient fraction	0.3910	0.0146
+0.6191	0.5169	1.000	quotient overflow adjustment, if required. When a	0.3872	0.0146
+0.6308	0.0977	1.000	bit. The 49-bit fraction is placed in accumulator bits	0.3910	0.0146
+0.6336	0.5169	1.000	generated EF of 1 is developed, division proceeds nor-	0.3853	0.0146
+0.6467	0.0959	1.000	12-60. The quotient exponent is placed in accumula-	0.3929	0.0161
+0.6497	0.5132	1.000	mally except for the following cases. If the dividend	0.3891	0.0161
+0.6612	0.0940	1.000	tor bits 0-11. The sign of the quotient, obtained by	0.3947	0.0176
+0.6642	0.5132	1.000	has a generated EF of 1 and Es of 1 while the divisor	0.3910	0.0145
+0.6773	0.0977	1.000	the rules of algebra, using the dividend sign and the	0.3910	0.0146
+0.6802	0.5169	1.000	has EF of 0 and es of 0, the quotient exponent is the	0.3872	0.0146
+0.6918	0.0977	1.000	effective divisor sign, replaces the accumulator sign,	0.3910	0.0161
+0.6948	0.5169	1.000	adjusted dividend exponent. If the divisor has a gen-	0.3853	0.0146
+0.7078	0.0977	1.000	sign byte register bit 4. Accumulator bits 61-107 are	0.3910	0.0131
+0.7081	0.5149	1.000	erated EF of 1 and es of 0 and the dividend has a gener-	0.3875	0.0177
+0.7238	0.0959	1.000	set to zero. The accumulator flag bits, sign byte reg.	0.3891	0.0146
+0.7252	0.5150	1.000	ated EF of'0 or 1 and Es of 0, the quotient exponent will	0.3872	0.0147
+0.7369	0.0959	1.000	ister bits 5-7, remain unchanged.	0.2387	0.0146
+0.7412	0.5169	1.000	be the divisor exponent with Es set to 0. This action	0.3853	0.0131
+0.7542	0.1128	1.000	When normalized operation is specified, the final	0.3759	0.0133
+0.7558	0.5150	1.000	is required to avoid double overflow or double under-	0.3853	0.0131
+0.7688	0.0959	1.000	quotient placed in the accumulator is normalized,	0.3929	0.0146
+0.7718	0.5150	1.000	flow. The quotient for all cases just discussed may	0.3872	0.0146
+0.7834	0.0976	1.000	because of the complete normalization of the divi-	0.3913	0.0165
+0.7863	0.5150	1.000	have a generated EF of 1 and the indicators xPo and	0.3853	0.0146
+0.7994	0.0959	1.000	dend during pre-division normalization. When un-	0.3929	0.0131
+0.7996	0.5149	1.000	xPu will be set in accordance with the rules for gen-	0.3857	0.0175
+0.8154	0.0959	1.000	normalized operation is specified, the quotient may	0.3910	0.0146
+0.8182	0.5150	1.000	erated EF of I.	0.1034	0.0118
+0.8299	0.0959	1.000	or may not be normalized, depending on the extent	0.3929	0.0146
+0.8327	0.5301	1.000	When both operands, prior to pre-division normali-	0.3703	0.0147
+0.8459	0.0959	1.000	of pre-division normalization shifting of the dividend.	0.3910	0.0147
+0.8488	0.5132	1.000	zation, are in the N range, the remainder exponent	0.3891	0.0146
+0.8602	0.0958	1.000	If the divisor shift for normalization exceeds the divi-	0.3911	0.0135
+0.8618	0.5130	1.000	is the dividend exponent (after pre-division normali-	0.3875	0.0175
+0.8764	0.0959	1.000	dend shift for relative normalization or if the quo-	0.3910	0.0146
+0.8772	0.5130	1.000	zation and quotient overflow adjustment) minus 48.	0.3856	0.0181
+0.8890	0.0957	1.000	tient had an overflow condition corrected, as in	0.3913	0.0171
+0.8939	0.5150	1.000	Normalization, if specified. occurs. If the final remain-	0.3853	0.0131
+0.9302	0.0959	1.000	100	0.0338	0.0087
+0.9302	0.1447	1.000	IBM 7030	0.0658	0.0073

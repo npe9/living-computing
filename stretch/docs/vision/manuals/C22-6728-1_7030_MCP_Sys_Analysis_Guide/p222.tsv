@@ -1,0 +1,63 @@
+0.0949	0.0788	1.000	error control routine (SDISP) is entered with error	0.3837	0.0145
+0.0988	0.5113	1.000	within PP bounds, exit via the error routine (SDISP)	0.3929	0.0131
+0.1078	0.0787	1.000	code 9 if the PP boundaries are violated, otherwise,	0.3934	0.0188
+0.1133	0.5113	1.000	with a type 9 error code.	0.1898	0.0131
+0.1250	0.0789	1.000	the PP lower registers, the base address of the I-O	0.3891	0.0132
+0.1279	0.5243	1.000	Store the pattern word from B(J) into A(I), if the	0.3686	0.0177
+0.1409	0.0789	1.000	tables, and the converted IOD number are stored into	0.4004	0.0132
+0.1424	0.5094	1.000	latter is non-zero. Remove all extraneous ones from	0.3985	0.0131
+0.1550	0.0788	1.000	the PP table. Return is made via KSUPP.	0.3198	0.0137
+0.1584	0.5075	1.000	the pattern word, and return via $RET if the result is	0.4060	0.0131
+0.1730	0.5113	1.000	zero, otherwise, save the count of the number of fix-	0.4004	0.0131
+0.1845	0.0789	1.000	The Store Lower Registers Routine	0.2632	0.0131
+0.1875	0.5094	1.000	ups to be handled.	0.1372	0.0116
+0.2035	0.5263	1.000	At FCKBT, adjust the control indices and test the	0.3741	0.0145
+0.2151	0.0789	1.000	The store lower registers routine is entered at	0.3534	0.0116
+0.2179	0.5113	1.000	pattern bits. For each one bit, save the contents of	0.3835	0.0133
+0.2284	0.0788	1.000	TSTLR where the mode is checked for auto-stacked.	0.3932	0.0151
+0.2324	0.5075	1.000	the relative interrupt table location at A(I), if A(I) is	0.3966	0.0161
+0.2442	0.0771	1.000	If not auto-stacked mode, the error control routine	0.3835	0.0131
+0.2485	0.5094	1.000	non-zero. Test the corresponding fixup word and if	0.3910	0.0118
+0.2572	0.0769	1.000	is entered (SDISP) with a type 20 error code; other-	0.3895	0.0169
+0.2614	0.5093	1.000	illegal, exit via the error routine (SDISP) with a type	0.3986	0.0149
+0.2747	0.0771	1.000	wise, the boundary checking routine (RSVCODE)	0.3628	0.0132
+0.2749	0.5090	1.000	19 error code.	0.1119	0.0146
+0.2892	0.0771	1.000	checks the PP bounds and, if violated by the STLR	0.3778	0.0117
+0.2921	0.5263	1.000	Store the legal fixup word directly into the relative	0.3816	0.0117
+0.3036	0.0752	1.000	table, enters error control (SDISP) with a type 9	0.3665	0.0133
+0.3067	0.5075	1.000	interrupt table location and decrement the count. When	0.4098	0.0146
+0.3182	0.0771	1.000	error code. The return from STLR is checked for	0.3759	0.0118
+0.3212	0.5056	1.000	the count becomes zero, return via $RET, otherwise	0.4023	0.0161
+0.3327	0.0771	1.000	boundary violation. If a boundary violation exists,	0.3797	0.0147
+0.3358	0.5075	1.000	continue at FCKBT.	0.1504	0.0131
+0.3473	0.0752	1.000	the routine exits at KGOOF; otherwise, the indicator	0.3966	0.0146
+0.3633	0.0771	1.000	register is saved and the lower registers from the STLR	0.4004	0.0131
+0.3764	0.0752	1.000	table are stored into the PP backup registers (SLRPP)	0.4117	0.0146
+0.3764	0.5056	1.000	ENTRY POINT NA	0.1128	0.0132
+0.3895	0.7086	1.000	Registers	0.0545	0.0145
+0.3909	0.0771	1.000	The IF Mask register bit (21) is set to one, TS and	0.3816	0.0132
+0.3994	0.5036	1.000	Exits To:	0.0586	0.0195
+0.4010	0.5808	1.000	Condition	0.0678	0.0178
+0.4026	0.7782	1.000	Remarks	0.0564	0.0160
+0.4026	0.7068	1.000	Restore	0.0508	0.0131
+0.4054	0.0770	1.000	EXE are reset according to the saved indicator reg-	0.3912	0.0150
+0.4200	0.0752	1.000	ister contents in SLRPP, and return is made via	0.3665	0.0131
+0.4244	0.5038	1.000	SDISP	0.0414	0.0145
+0.4269	0.7799	1.000	error possible:	0.0849	0.0184
+0.4273	0.5827	1.000	error; code in $14	0.1072	0.0147
+0.4302	0.7068	1.000	none	0.0320	0.0102
+0.4381	0.7799	1.000	Type 9 - parameters	0.1226	0.0191
+0.4535	0.7782	1.000	not with PP bounds	0.1147	0.0160
+0.4564	0.0733	1.000	The Fixup Routine	0.1391	0.0146
+0.4666	0.7801	1.000	Type 19 - illegal	0.1034	0.0146
+0.4782	0.7801	1.000	FIXUP word	0.0733	0.0131
+0.4869	0.0752	1.000	Enter $FIXUP at FFXP (Figure 127) and save the re-	0.4004	0.0116
+0.4892	0.5826	1.000	$FIXUP complete	0.1074	0.0172
+0.4910	0.4980	1.000	$RET	0.0417	0.0137
+0.4942	0.6974	1.000	none	0.0414	0.0116
+0.4942	0.7782	1.000	1 - zero pattern word	0.1241	0.0131
+0.5000	0.0733	1.000	turn address in STIC. Compute the effective param-	0.3985	0.0131
+0.5021	0.7780	1.000	2 - all changes	0.0925	0.0175
+0.5145	0.0714	1.000	eter addresses, checking for legal boundaries. If not	0.4060	0.0161
+0.5189	0.7970	1.000	completed	0.0658	0.0145
+0.9506	0.0658	1.000	222	0.0244	0.0102

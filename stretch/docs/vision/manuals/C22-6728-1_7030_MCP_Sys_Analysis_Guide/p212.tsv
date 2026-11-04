@@ -1,0 +1,104 @@
+0.0959	0.0902	1.000	The program uses two bits to identify the entry. It	0.3797	0.0132
+0.0988	0.5075	1.000	Control is given to MPPBSY to wait for the operation	0.3966	0.0118
+0.1091	0.0732	1.000	also uses a bit to inhibit return until all output is	0.3668	0.0148
+0.1118	0.5055	1.000	to finish and stack the resulting interrupt if necessary.	0.4156	0.0147
+0.1239	0.0731	1.000	complete, a bit to indicate that it was necessary to	0.3819	0.0175
+0.1279	0.5075	1.000	The write operation is then performed. The sub-	0.3722	0.0131
+0.1409	0.0733	1.000	stack console interrupts and a bit to indicate the com-	0.4060	0.0118
+0.1439	0.5075	1.000	routine MSETIO is used to update the I-O control	0.3684	0.0102
+0.1555	0.0733	1.000	mentator is writing. These bits are:	0.2782	0.0118
+0.1584	0.5056	1.000	tables and place MRETAD in SRETAD in the unit area	0.4041	0.0116
+0.1700	0.1710	1.000	O -- entry from enabled user (through	0.2953	0.0132
+0.1701	0.0883	1.000	JIF	0.0282	0.0116
+0.1730	0.5056	1.000	table. If the wait bit is on, MBSY is entered to wait	0.3947	0.0131
+0.1860	0.2312	1.000	IF analyzer).	0.1034	0.0116
+0.1875	0.5056	1.000	for the write to finish and, if the stack is not empty,	0.3947	0.0146
+0.2006	0.1729	1.000	I -- entry from disabled user.	0.2387	0.0116
+0.2020	0.5056	1.000	initiate another write. If the wait bit is off, control	0.3911	0.0148
+0.2133	0.0901	1.000	JRECEP 0 -- entry by requestor.	0.2748	0.0141
+0.2179	0.5038	1.000	is given to JEXITD to return.	0.2237	0.0118
+0.2297	0.1729	1.000	1--	0.0338	0.0087
+0.2297	0.2086	1.000	entry from receptor on comple-	0.2481	0.0131
+0.2324	0.5244	1.000	At JEXITD (Figure 122), the program returns to	0.3647	0.0133
+0.2442	0.2331	1.000	tion of I-O operation.	0.1617	0.0116
+0.2469	0.5074	1.000	KSUPP if entry was from the receptor. Otherwise,	0.3874	0.0148
+0.2587	0.0902	1.000	JWAIT 0 -- do not wait to perform output if	0.3628	0.0131
+0.2630	0.5075	1.000	controls are set, if necessary, to insure unstacking	0.3891	0.0131
+0.2747	0.2331	1.000	another commentator output is	0.2274	0.0117
+0.2776	0.5075	1.000	of interrupts before returning to PP, and at JTSTEX	0.3966	0.0131
+0.2892	0.2331	1.000	in progress and there is room	0.2256	0.0117
+0.2921	0.5075	1.000	return is made to KSUPP or to MCP according to the	0.3985	0.0131
+0.3036	0.2331	1.000	to stack this request.	0.1598	0.0118
+0.3182	0.1729	1.000	1 -- do not return until the stack buffer	0.3026	0.0118
+0.3227	0.5226	1.000	When a commentator I-O interrupt occurs, the pro-	0.3910	0.0131
+0.3327	0.2312	1.000	is empty.	0.0733	0.0118
+0.3372	0.5075	1.000	gram is entered at MRETAD from the receptor. The	0.4004	0.0131
+0.3473	0.1711	1.000	O -- no outside interrupts were stacked.	0.3102	0.0118
+0.3474	0.0865	1.000	JSTACK	0.0658	0.0102
+0.3517	0.5075	1.000	receptor bit is set, the control word copied, and the	0.3929	0.0131
+0.3618	0.1729	1.000	1 -- console interrupts have been	0.2575	0.0118
+0.3663	0.5075	1.000	MBSY flow joined at MFIXUP.	0.2256	0.0131
+0.3775	0.2330	1.000	stacked.	0.0622	0.0109
+0.3907	0.0883	1.000	JIOBSY	0.0565	0.0092
+0.3909	0.1709	1.000	0 -- commentator idle.	0.1826	0.0118
+0.3953	0.5056	1.000	Commentator Subroutines	0.1974	0.0147
+0.4055	0.1711	1.000	1--	0.0376	0.0087
+0.4070	0.2143	1.000	commentator busy.	0.1447	0.0103
+0.4200	0.0883	1.000	When a request is received from a disabled user	0.3647	0.0118
+0.4233	0.5074	1.000	There are ten commentator subroutines. All are	0.3706	0.0148
+0.4345	0.0714	1.000	(SCOMM), the JIF bit is set to identify the entry and	0.3910	0.0146
+0.4390	0.5075	1.000	entered with linkage of the general form:	0.3064	0.0132
+0.4491	0.0714	1.000	to force completion of the output before returning.	0.3778	0.0131
+0.4548	0.5244	1.000	LVI, XR, (return address or first parameter)	0.3440	0.0132
+0.4651	0.0714	1.000	When a request is received from an enabled user	0.3665	0.0102
+0.4694	0.5226	1.000	B, (Subroutine)	0.1147	0.0132
+0.4797	0.0714	1.000	(JCOMM), the JIF and JWAIT bits are reset to identi-	0.4117	0.0116
+0.4825	0.5055	1.000	Some have multiple returns, and some require	0.3517	0.0152
+0.4942	0.0714	1.000	fy the entry and to permit stacking the request and	0.3778	0.0131
+0.4985	0.5056	1.000	parameters either in the linkage or index registers.	0.3910	0.0131
+0.5087	0.0714	1.000	returning if a commentator output is in progress.	0.3703	0.0131
+0.5130	0.5075	1.000	Most are short and straightforward.	0.2707	0.0118
+0.5259	0.0919	1.000	The flow for the two entries comes together at	0.3499	0.0155
+0.5417	0.0751	1.000	JJOIN, where the receptor and stack bits are reset,	0.3912	0.0159
+0.5421	0.5075	1.000	The Stack Subroutine, JSTKR	0.2199	0.0131
+0.5567	0.0733	1.000	and the parameters evaluated.	0.2293	0.0116
+0.5581	0.3120	1.000	The stacking sub-	0.1353	0.0116
+0.5688	0.5054	1.000	JSTKR picks up the request parameters, branching	0.3857	0.0180
+0.5712	0.0752	1.000	routine, JSTKR is used to stack the message, entering	0.4117	0.0131
+0.5858	0.0733	1.000	dispatcher error control if a PP request had a FWA	0.3891	0.0116
+0.5872	0.5056	1.000	immediately to JTSTEX if a zero word count is	0.3534	0.0102
+0.6003	0.0733	1.000	out of bounds. The JDWTST subroutine is entered	0.3797	0.0116
+0.6017	0.5056	1.000	specified. It prefaces all messages with a carriage	0.3910	0.0116
+0.6148	0.0733	1.000	to decide whether or not to write. It will return to	0.3816	0.0131
+0.6163	0.5056	1.000	return and all MCP messages with a red $. It checks	0.4041	0.0116
+0.6294	0.0733	1.000	the write return if:	0.1429	0.0102
+0.6308	0.5056	1.000	a PP FWA against PP bounds, entering dispatcher	0.3797	0.0131
+0.6440	0.0882	1.000	1. the commentator has no output in progress: or,	0.3837	0.0145
+0.6453	0.5056	1.000	error control on an error. It checks the word count	0.3947	0.0116
+0.6578	0.0899	1.000	2. the wait bit is on; or,	0.1885	0.0153
+0.6599	0.5056	1.000	to be sure it is 10 or less, and moves the words to	0.3816	0.0131
+0.6728	0.5054	1.000	the stack. It adds a terminating carriage return,	0.3726	0.0170
+0.6742	0.0901	1.000	3. the message stack is full, that is, a message	0.3668	0.0143
+0.6886	0.5055	1.000	stores the new stack pointer (JSTKP), and returns..	0.3950	0.0163
+0.6890	0.0733	1.000	of maximum length, 10 words, could not be added.	0.3797	0.0132
+0.7035	0.0752	1.000	Otherwise, the subroutine will return to the Do Not	0.3835	0.0132
+0.7179	0.0713	1.000	Write return, which sends control to the exit sequence,	0.4212	0.0147
+0.7194	0.4925	1.000	The Write Test Subroutine, JDWTST	0.2895	0.0118
+0.7326	0.0733	1.000	JTSTEX.	0.0677	0.0116
+0.7442	0.0882	1.000	If the commentator has an output operation in pro-	0.3799	0.0148
+0.7470	0.5056	1.000	The function of this subroutine is to decide whether or	0.4060	0.0118
+0.7602	0.0733	1.000	gress, MBSY is entered. Control will ultimately	0.3703	0.0132
+0.7630	0.5056	1.000	not to do a write now. It has two returns, one for	0.3759	0.0131
+0.7734	0.0732	1.000	return to MCTL when the operation is complete.	0.3630	0.0144
+0.7776	0.5056	1.000	Write and one for Do Not Write. If the commentator	0.3947	0.0118
+0.7892	0.0733	1.000	Otherwise, at MCTL, JSTCW is used to set up a	0.3628	0.0132
+0.7921	0.5056	1.000	has no write operation in progress, or if the wait bit	0.3966	0.0131
+0.8052	0.0714	1.000	two-word control word chain, and JIOGO is used to	0.3853	0.0118
+0.8067	0.5038	1.000	is on, it will return to the write return. Otherwise,	0.3947	0.0131
+0.8197	0.0714	1.000	perform the write operation and check EKJ and UNRJ.	0.4079	0.0118
+0.8212	0.5038	1.000	it will select the return on the basis of whether or not	0.4060	0.0116
+0.8342	0.0714	1.000	If CBJ is encountered, the console was being used by	0.4004	0.0131
+0.8358	0.5056	1.000	the stack has room for another message. If not, it	0.3853	0.0131
+0.8488	0.5055	1.000	turns on the wait bit and takes the write return.	0.3574	0.0147
+0.8488	0.0714	1.000	another program, and JIOGO returns accordingly.	0.3778	0.0131
+0.9506	0.0658	1.000	212	0.0226	0.0087

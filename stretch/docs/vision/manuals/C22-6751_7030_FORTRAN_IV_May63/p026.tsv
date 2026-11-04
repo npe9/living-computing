@@ -1,0 +1,95 @@
+0.0770	0.1015	1.000	unit will be put, even parity specification will not be	0.3985	0.0191
+0.0843	0.8327	1.000	62:	0.0207	0.0131
+0.0858	0.8985	1.000	80	0.0169	0.0116
+0.0872	0.5395	1.000	112	0.0226	0.0131
+0.0959	0.0996	1.000	rejected. If a binary READ or WRITE references this	0.4004	0.0132
+0.1081	0.1013	1.000	IOD at execution time, the operation will be rejected	0.3971	0.0207
+0.1133	0.5338	1.000	B IA-UHIOD, DISK	0.1466	0.0161
+0.1264	0.1015	1.000	and the job terminated. Similarly, the density field may	0.3966	0.0132
+0.1393	0.1015	1.000	be left void; this will result in a labeled tape being	0.3985	0.0165
+0.1539	0.1015	1.000	read in the density indicated by the label, while a	0.3985	0.0161
+0.1584	0.5244	1.000	The 'w is some fixed point number	0.1748	0.0161
+0.1696	0.0995	1.000	labeled tape will be written, and an unlabeled tape	0.4007	0.0198
+0.1730	0.5263	1.000	Figure7	0.0583	0.0145
+0.1875	0.1015	1.000	written or read, in installation standard (high density).	0.3966	0.0131
+0.1983	0.2780	0.300	e or bomnye for kie esto	0.2165	0.0726
+0.2013	0.1165	1.000	4. The Disposition Field: If the assumption is made	0.3835	0.0146
+0.2166	0.0996	1.000	that the most frequent use of binary tapes is to provide	0.4004	0.0160
+0.2311	0.0996	1.000	temporary external storage to be used for the duration	0.4004	0.0174
+0.2311	0.8308	1.000	621	0.0226	0.0160
+0.2355	0.5414	1.000	1,2	0.0188	0.0116
+0.2355	0.8947	1.000	80	0.0188	0.0102
+0.2453	0.0995	1.000	of a job, but not preserved thereafter, it may be said	0.4007	0.0203
+0.2558	0.5489	0.500	u;→OD, DISK,..n;	0.1598	0.0161
+0.2573	0.5320	1.000	B	0.0094	0.0087
+0.2611	0.0994	1.000	that usually this field may also be left void. A void	0.3989	0.0205
+0.2776	0.0996	1.000	disposition field implies that the tape is, under no cir-	0.4004	0.0176
+0.2951	0.1015	1.000	cumstances, to be saved (removed from the machine).	0.3966	0.0131
+0.3067	0.5263	1.000	IThe u's are fixed point numbers	0.1654	0.0146
+0.3076	0.1014	1.000	Unce again, the programmer is at liberty to fill in this	0.3970	0.0187
+0.3212	0.0996	1.000	field in any of the ways specified in the MCP manual.	0.4023	0.0189
+0.3299	0.5244	1.000	Figure 8	0.0602	0.0161
+0.3387	0.1090	1.000	In summary, many binary tape usages can be sat-	0.3910	0.0160
+0.3526	0.0977	1.000	isfied by the simplest possible tape oD (Figure 5).	0.3723	0.0172
+0.3691	0.5282	1.000	Group 3: Decimal I-O Statements	0.2406	0.0132
+0.3852	0.5263	1.000	The two statements of Group 3 are:	0.2707	0.0146
+0.3968	0.1823	1.000	9110	0.0282	0.0160
+0.4012	0.1109	1.000	12	0.0226	0.0160
+0.4026	0.4737	1.000	80	0.0188	0.0102
+0.4039	0.5545	1.000	READ (u, f) list	0.1071	0.0133
+0.4142	0.5526	1.000	WRITE (u, f)list	0.1184	0.0145
+0.4317	0.5263	1.000	where u is a fixed point integer or variable denoting	0.3966	0.0147
+0.4328	0.1785	1.000	-IOD, TAPE	0.0772	0.0137
+0.4440	0.5243	1.000	the unit, and f is a format specification. These state-	0.3988	0.0203
+0.4621	0.5244	1.000	ments are for the transmission of decimal information,	0.3985	0.0146
+0.4782	0.5244	1.000	to or from magnetic tape, non-system printer, or, under	0.3985	0.0161
+0.4797	0.0996	1.000	u is some fixed point number	0.1504	0.0146
+0.4895	0.0995	1.000	Figure 5	0.0567	0.0153
+0.4927	0.5263	1.000	special circumstances, the system card-reader, card-	0.3966	0.0145
+0.5068	0.5243	1.000	punch, and printer. The specific device actuated de-	0.3988	0.0199
+0.5247	0.5244	1.000	pends upon the associated IOD cards.	0.2763	0.0160
+0.5375	0.0995	1.000	DISK IOD's	0.0867	0.0166
+0.5479	0.5244	1.000	DECIMAL TAPES	0.1184	0.0132
+0.5596	0.0996	1.000	A disk IOD, in the most general case, has the form	0.3985	0.0174
+0.5669	0.5263	1.000	Magnetic tapes may be considered first. As in the	0.3966	0.0147
+0.5741	0.0977	1.000	shown in Figure 6.	0.1523	0.0160
+0.5827	0.5263	1.000	case of binary tapes, for each possible object-time	0.3966	0.0147
+0.5973	0.5244	1.000	value of "u," a tape 1oD card must be prepared, with	0.3966	0.0161
+0.6134	0.1090	1.000	112	0.0263	0.0131
+0.6134	0.4060	1.000	62!	0.0226	0.0131
+0.6148	0.5244	1.000	the decimal value of u punched in the Iod name field.	0.3966	0.0146
+0.6148	0.1786	1.000	9 |10	0.0301	0.0131
+0.6163	0.4756	1.000	80	0.0169	0.0102
+0.6294	0.5244	1.000	Again, the exit, channel and unit fields may be void.	0.3985	0.0161
+0.6439	0.5244	1.000	The mode and density field requirements, though,	0.3985	0.0161
+0.6439	0.1090	1.000	BfIOD-name {IOD, DISK, exit, channel, number	0.2707	0.0161
+0.6478	0.1078	1.000	rumber specifies the number of dlisk aresto be reserved for this ymbolie	0.3776	0.0376
+0.6599	0.5244	1.000	are slightly different. A decimal (BCD) tape written	0.3985	0.0147
+0.6758	0.5263	1.000	through the locs output routine is not blocked; each	0.3947	0.0133
+0.6873	0.5262	1.000	WRITE statement creates a series of records, from 1	0.3950	0.0182
+0.6991	0.1015	1.000	Figure 6	0.0508	0.0103
+0.7064	0.5244	1.000	to 17 words in length, which are not only logical, but	0.3985	0.0146
+0.7183	0.5262	1.000	also physical records on tape. No control information	0.3950	0.0177
+0.7369	0.5226	1.000	is generated, or written, by the locs routines. The use	0.4004	0.0146
+0.7515	0.5263	1.000	of a decimal READ or WRITE, as opposed to a binary	0.3966	0.0146
+0.7674	0.1147	1.000	For identical reasons to those given for Tape IOD'S,	0.3835	0.0147
+0.7674	0.5263	1.000	READ or WRITE, actually implies two things to the Iocs	0.3947	0.0132
+0.7820	0.0977	1.000	the exit and channel fields may be omitted. The	0.4004	0.0145
+0.7833	0.5263	1.000	routines: first, that a conversion process must be ap-	0.3947	0.0132
+0.7979	0.0977	1.000	number field may be omitted, if the job for which this	0.4004	0.0161
+0.7979	0.5263	1.000	plied to the data transmitted, and second, that the	0.3947	0.0146
+0.8124	0.0977	1.000	IOD is prepared requires only one disk file. In this case	0.4004	0.0161
+0.8139	0.5244	1.000	tapes concerned are not to be blocked. There are no	0.3966	0.0131
+0.8267	0.0976	1.000	all of disk is available to problem programs. Thus,	0.4007	0.0193
+0.8285	0.5244	1.000	requirements on the mode or density of the tape to	0.3966	0.0131
+0.8445	0.0977	1.000	the single disk Iod required is as shown in Figure 7.	0.4004	0.0146
+0.8445	0.5263	1.000	be written (or read). The mode and density, in fact,	0.3966	0.0131
+0.8590	0.1147	1.000	For more than one disk file, each 1od has the form	0.3816	0.0160
+0.8605	0.5244	1.000	are determined by the use to which this tape is ulti-	0.3985	0.0132
+0.8750	0.0977	1.000	shown in Figure 8. Note that an attempt to read or	0.4004	0.0160
+0.8750	0.5244	1.000	mately put. If it is to be used by subsequent FORTRAN	0.3966	0.0132
+0.8890	0.0977	1.000	write beyond the limits of the disk file will result in	0.4005	0.0169
+0.8909	0.5263	1.000	codes, running on the IBM 7030, or by the off-line IBM	0.3966	0.0132
+0.9055	0.5263	1.000	1401 list and/or punch routines, any mode and any	0.3947	0.0146
+0.9055	0.0977	1.000	an abnormal termination of the object program.	0.3553	0.0146
+0.9331	0.0977	1.000	26	0.0207	0.0116

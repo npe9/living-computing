@@ -1,0 +1,115 @@
+0.0842	0.6786	1.000	entry from enabled user (through	0.2500	0.0176
+0.0843	0.5545	1.000	JIF	0.0320	0.0145
+0.0872	0.1372	1.000	AC = Accumulator	0.1485	0.0089
+0.1017	0.6955	1.000	IF analyzer).	0.1034	0.0131
+0.1017	0.1372	1.000	RM = Remainder register	0.1992	0.0102
+0.1148	0.6786	1.000	entry from disabled user.	0.1974	0.0146
+0.1163	0.6410	1.000	1	0.0094	0.0116
+0.1177	0.1353	1.000	Upon entry at ZTIME, the routine adjusts the	0.3346	0.0145
+0.1292	0.5563	1.000	JRECEP	0.0696	0.0148
+0.1308	0.6410	1.000	0	0.0094	0.0116
+0.1308	0.6786	1.000	entry by requestor.	0.1504	0.0146
+0.1336	0.1184	1.000	return address and calculates the storage address	0.3703	0.0132
+0.1466	0.6786	1.000	entry from receptor on completion	0.2575	0.0120
+0.1468	0.6391	1.000	1	0.0113	0.0102
+0.1482	0.1165	1.000	from the calling sequence. If an AD or USA occur,	0.3797	0.0176
+0.1599	0.6917	1.000	of I-O operation.	0.1335	0.0147
+0.1627	0.1184	1.000	or if a PP storage address is outside PP bounds,	0.3647	0.0146
+0.1726	0.6785	1.000	do not wait to perform output if	0.2350	0.0167
+0.1726	0.5562	1.000	JWAIT	0.0567	0.0167
+0.1758	0.1147	1.000	dispatcher error control is entered with error code	0.3853	0.0176
+0.1759	0.6372	1.000	0	0.0132	0.0116
+0.1875	0.6936	1.000	another commentator output is	0.2312	0.0189
+0.1900	0.1146	1.000	9 in $14. Otherwise, the clock reading is converted	0.3912	0.0188
+0.2020	0.6936	1.000	in progress and there is room	0.2293	0.0189
+0.2078	0.1165	1.000	according to the algorithm, and return is made via	0.3778	0.0131
+0.2194	0.6898	1.000	to stack this request.	0.1673	0.0132
+0.2238	0.1184	1.000	the service op return routine (KSUPP).	0.2895	0.0116
+0.2336	0.6767	1.000	do not return until the stack buffer	0.2613	0.0139
+0.2355	0.6372	1.000	1	0.0132	0.0131
+0.2441	0.6879	1.000	is empty.	0.0828	0.0205
+0.2485	0.1165	1.000	The ŞSIT Service Oe Routine	0.2143	0.0161
+0.2589	0.5540	1.000	JSTACK	0.0687	0.0200
+0.2645	0.6748	1.000	no outside interrupts were stacked.	0.2707	0.0146
+0.2776	0.6767	1.000	console interrupts have been	0.2180	0.0146
+0.2776	0.1165	1.000	This routine is entered disabled from the identifier	0.3778	0.0146
+0.2918	0.6897	1.000	stacked.	0.0717	0.0167
+0.2921	0.1165	1.000	at JSITX. It adjusts the return address in STIC,	0.3609	0.0146
+0.3067	0.1165	1.000	calculates the address of the timer setting, and	0.3571	0.0176
+0.3212	0.1147	1.000	stores the setting in $IT. If AD or USA occurs while	0.3947	0.0161
+0.3285	0.5508	1.000	When a request is received from a disabled user	0.3665	0.0145
+0.3387	0.1165	1.000	calculating the address of the timer setting, control	0.3853	0.0132
+0.3430	0.5395	1.000	(MCOMD), the JIF and JWAIT bits are set to identify	0.3947	0.0161
+0.3532	0.1165	1.000	is given to dispatcher error control with error code	0.3835	0.0117
+0.3590	0.5395	1.000	the entry and to force completion of the outout before	0.3947	0.0131
+0.3677	0.1165	1.000	9 in $14. Otherwise, return is made via the service	0.3891	0.0117
+0.3735	0.5414	1.000	returning. When a request is received from an enabled	0.4117	0.0116
+0.3821	0.1165	1.000	op return routine (KSUPP).	0.2030	0.0118
+0.3875	0.5394	1.000	user (JCOMD), the JIF and JWAIT bits are reset to	0.3837	0.0172
+0.4026	0.5395	1.000	identify the entry and to permit stacking the request	0.3872	0.0131
+0.4127	0.1165	1.000	THE COMMENTATOR	0.1654	0.0103
+0.4185	0.5395	1.000	and returning if a commentator output is in progress.	0.3966	0.0118
+0.4330	0.5564	1.000	The flow for the two entries comes together at	0.3440	0.0118
+0.4418	0.1165	1.000	The commentator service routine is entered from the	0.3947	0.0103
+0.4476	0.5395	1.000	JJOIN, where the receptor and stack bits are reset,	0.3853	0.0132
+0.4564	0.1147	1.000	identifier when the $COMM pseudo-op is requested.	0.3835	0.0117
+0.4620	0.5394	1.000	and the parameters evaluated. The stacking sub-	0.3686	0.0141
+0.4709	0.1147	1.000	It may also be entered by a disabled MCP user, and	0.3853	0.0131
+0.4767	0.5395	1.000	routine, JSTKR is used to stack the message, entering	0.4060	0.0132
+0.4869	0.1165	1.000	from the receptor when a commentator output opera-	0.3910	0.0102
+0.4912	0.5395	1.000	dispatcher error control if a PP request had a FWA	0.3835	0.0131
+0.5015	0.1165	1.000	tion is completed. The function of the commentator	0.3835	0.0116
+0.5073	0.5395	1.000	out of bounds. The JDWTST subroutine is entered	0.3741	0.0116
+0.5160	0.1147	1.000	is to type messages of up to 10 words in IQS code on	0.3872	0.0116
+0.5218	0.5395	1.000	to decide whether or not to write. It will return to	0.3759	0.0116
+0.5305	0.1165	1.000	the console typewriter.	0.1711	0.0116
+0.5363	0.5395	1.000	the write return if:	0.1410	0.0102
+0.5451	0.1335	1.000	The commentator write operation is performed as	0.3684	0.0116
+0.5496	0.5544	1.000	1. the commentator has no output in progress; or,	0.3781	0.0159
+0.5609	0.1165	1.000	setup I-O. The console may be used in a PP IOD,	0.3703	0.0133
+0.5648	0.5543	1.000	2. the wait bit is on; or:	0.1885	0.0153
+0.5755	0.1165	1.000	and is used in an MCP IOD by the debugging package.	0.3929	0.0118
+0.5814	0.5564	1.000	3. the message stack is full, that is, a message	0.3628	0.0132
+0.5900	0.1165	1.000	Thus, the commentator may receive a request and	0.3722	0.0133
+0.5944	0.5394	1.000	of maximum length, 10 words, could not be added.	0.3742	0.0153
+0.6045	0.1165	1.000	find the console busy with an unrelated operation.	0.3647	0.0118
+0.6105	0.5395	1.000	Otherwise, the subroutine will return to the Do Not	0.3797	0.0132
+0.6206	0.1165	1.000	The commentator must then be prepared to take over	0.3910	0.0103
+0.6250	0.5395	1.000	Write return, which sends control to the exit sequence,	0.4098	0.0132
+0.6336	0.1165	1.000	the console, stack another user's interrupt, attend	0.3741	0.0132
+0.6395	0.5376	1.000	JTSTEX.	0.0695	0.0116
+0.6482	0.1147	1.000	to its own function, and arrange the eventual unstacking	0.4135	0.0132
+0.6604	0.5543	1.000	If the commentator has an output operation in pro-	0.3744	0.0168
+0.6642	0.1165	1.000	of the original user's interrupt.	0.2331	0.0116
+0.6773	0.5395	1.000	gress, MBSY is entered. Control will ultimately	0.3647	0.0131
+0.6903	0.1127	1.000	Main Flow	0.0847	0.0162
+0.6918	0.5395	1.000	return to MCTL when the operation is complete.	0.3571	0.0131
+0.7078	0.5395	1.000	Otherwise, at MCTL, JSTCW is used to set up a	0.3590	0.0131
+0.7194	0.1165	1.000	The commentator program uses a series of sub-	0.3590	0.0132
+0.7224	0.5395	1.000	two-word control word chain, and JIOGO is used to	0.3797	0.0131
+0.7339	0.1165	1.000	routines. It is entered at JCOMM (Figure 114)	0.3477	0.0132
+0.7369	0.5376	1.000	perform the write operation and check EKJ and UNRJ.	0.4023	0.0116
+0.7485	0.1165	1.000	when the pseudo-op $COMM is requested, and at	0.3590	0.0131
+0.7515	0.5376	1.000	If CBJ is encountered, the console was being used by	0.3929	0.0131
+0.7645	0.1165	1.000	MCOMD when being used by a disabled MCP program.	0.4004	0.0131
+0.7674	0.5376	1.000	another program, and JIOGO returns accordingly.	0.3722	0.0116
+0.7791	0.1165	1.000	In the latter case, the linkage is:	0.2444	0.0131
+0.7820	0.5395	1.000	Control is given to MPPBSY to wait for the operation	0.3910	0.0117
+0.7936	0.1297	1.000	SIC, SCOMIC	0.1034	0.0146
+0.7964	0.5376	1.000	to finish and stack the resulting interrupt if necessary.	0.4079	0.0118
+0.8077	0.1315	1.000	BD, MCOMD	0.0980	0.0155
+0.8099	0.5393	1.000	The write operation is then performed. The sub-	0.3668	0.0148
+0.8241	0.1335	1.000	(parameters as for $COMM)	0.2068	0.0116
+0.8255	0.5376	1.000	routine MSETIO is used to update the I-O control	0.3647	0.0118
+0.8372	0.1335	1.000	The program uses two bits to identify the entry.	0.3534	0.0131
+0.8400	0.5376	1.000	tables and place MRETAD in SRETAD in the unit area	0.3985	0.0133
+0.8532	0.1165	1.000	It also uses another bit to inhibit return until all	0.3553	0.0102
+0.8545	0.5376	1.000	table. If the wait bit is on, MBSY is entered to wait	0.3891	0.0133
+0.8677	0.1165	1.000	output is complete, and one more bit to indicate that	0.3872	0.0117
+0.8706	0.5376	1.000	for the write to finish and, if the stack is not empty,	0.3891	0.0131
+0.8821	0.1147	1.000	it was necessary to stack console interrupts. These	0.3910	0.0118
+0.8852	0.5376	1.000	initiate another write. If the wait bit is off, control	0.3853	0.0131
+0.8967	0.1165	1.000	bits are:	0.0640	0.0105
+0.8997	0.5376	1.000	is given to JEXITD to return.	0.2199	0.0116
+0.9448	0.7632	1.000	System Input-Output	0.1222	0.0102
+0.9462	0.9060	1.000	199	0.0226	0.0073

@@ -1,0 +1,107 @@
+0.0887	0.1109	1.000	The Job Boundary Scan (SC) Program	0.2763	0.0132
+0.0900	0.5376	1.000	at symbolic location VSC5 determines which action is	0.3985	0.0147
+0.1045	0.5376	1.000	to be taken.	0.0922	0.0134
+0.1191	0.1109	1.000	The scan routine (Figure 63) scans the column 1	0.3553	0.0118
+0.1321	0.5376	1.000	The Write Tape (WT) Program	0.2331	0.0161
+0.1336	0.1090	1.000	positions of cards in 'the buffer for job boundaries	0.3684	0.0118
+0.1497	0.1109	1.000	which are indicated by the presence of a B, JOB or	0.3703	0.0116
+0.1612	0.5376	1.000	The WT program (Figure 64) writes card images onto	0.4023	0.0176
+0.1642	0.1128	1.000	B, COMD card following a non-B card. Cards up to	0.3778	0.0103
+0.1773	0.1090	1.000	and including the non-B belong to the previous job,	0.3741	0.0131
+0.1773	0.5376	1.000	the write tape in a blocked format, separating jobs	0.3778	0.0161
+0.1918	0.1090	1.000	and a positive parameter representing cards up to	0.3703	0.0131
+0.1933	0.5376	1.000	with tape marks. The blocks within a job consist of	0.3891	0.0161
+0.2064	0.1090	1.000	that point is passed on to the successor program:	0.3647	0.0131
+0.2078	0.5376	1.000	17 cards each, except for the last block of a job,	0.3628	0.0161
+0.2224	0.5376	1.000	which may contain fewer cards. The number of jobs	0.3929	0.0161
+0.2224	0.1090	1.000	card request (bypass), write tape, or scan tape.	0.3590	0.0131
+0.2355	0.1090	1.000	A negative parameter follows in order to establish	0.3741	0.0145
+0.2369	0.5376	1.000	written on a tape is limited by a tape switch criterion.	0.4041	0.0161
+0.2500	0.1071	1.000	a definite break, since otherwise subsequent positive	0.3947	0.0176
+0.2529	0.5376	1.000	When this criterion is satisfied, an extra tape is	0.3628	0.0160
+0.2630	0.1071	1.000	parameters would add into the parameter representing	0.4060	0.0176
+0.2674	0.5357	1.000	written, making two consecutive tape marks, and	0.3703	0.0160
+0.2805	0.5357	1.000	the tape switch routine is entered.	0.2613	0.0160
+0.2805	0.1071	1.000	the previous job in successor's queue, thereby losing	0.3966	0.0160
+0.2964	0.1090	1.000	the identity of the jobs.	0.1729	0.0118
+0.3109	0.5376	1.000	The EOP Entry: The WT end of operation routine,	0.3759	0.0176
+0.3109	0.1259	1.000	After the job boundary, SC action depends on	0.3308	0.0133
+0.3177	0.5373	1.000	WWEOP, updates an in-job record count and then	0.3651	0.0260
+0.3255	0.1071	1.000	whether the mode of operation is bypass or over-	0.3647	0.0133
+0.3400	0.1071	1.000	lapped. If bypass, SC scans through the B cards	0.3628	0.0133
+0.3400	0.5357	1.000	gives control to the subroutine, VEOP, which com-	0.3853	0.0176
+0.3561	0.1071	1.000	until a non-B card is encountered, at which point	0.3647	0.0118
+0.3576	0.5376	1.000	pletes the standard EOP procedure. The in-job	0.3553	0.0116
+0.3702	0.5375	1.000	record count is maintained in the WT table at VRCNT.	0.4025	0.0151
+0.3706	0.1071	1.000	scanning to a B card is resumed to identify the next	0.3835	0.0117
+0.3852	0.1071	1.000	job boundary. If overlapped, SC primes JC1, enters	0.3929	0.0131
+0.3997	0.1071	1.000	the SCRI mode and returns, doing no further scanning	0.4023	0.0131
+0.4012	0.5376	1.000	The Queue Entry: The queue entry routine, VWQ,	0.3741	0.0146
+0.4137	0.1071	1.000	until a SCAN pseudo-op is received. JC1 gives an	0.3742	0.0143
+0.4172	0.5376	1.000	maintains the queue in a manner different from the	0.3778	0.0116
+0.4288	0.1071	1.000	SCR1 command in order to get the actual address of	0.3853	0.0131
+0.4300	0.5393	1.000	VCOM subroutine due to the blocking function which	0.3819	0.0161
+0.4433	0.1071	1.000	the next card in the buffer. (This enables JC1 to	0.3628	0.0131
+0.4462	0.5395	1.000	WT performs. The subroutine VBLOC is used to	0.3647	0.0132
+0.4593	0.1071	1.000	look at certain cards for control purposes while	0.3534	0.0116
+0.4621	0.5395	1.000	control the entries.	0.1447	0.0118
+0.4738	0.1071	1.000	they are still in transit to their ultimate destination.)	0.3947	0.0131
+0.4764	0.5544	1.000	When the negative parameter, -VWEFT, repre-	0.3574	0.0152
+0.4884	0.1071	1.000	JC1 may continue to issue the SCR1 command until	0.3759	0.0116
+0.4912	0.5376	1.000	senting the end of a job, is given to WT, the contents	0.3929	0.0146
+0.5029	0.1071	1.000	SC has no more cards in its buffer, and the end	0.3496	0.0132
+0.5058	0.5376	1.000	of VRQB, if not zero, are placed into the queue and	0.3835	0.0146
+0.5174	0.1071	1.000	return is given. However, receipt of more cards by	0.3891	0.0132
+0.5203	0.5395	1.000	VRQB is set to zero. Then the negative parameter	0.3778	0.0131
+0.5303	0.1070	1.000	SC while in the SCRI mode will cause it to again	0.3574	0.0151
+0.5363	0.5357	1.000	is inserted into the queue. Following this procedure	0.3929	0.0131
+0.5479	0.1053	1.000	prime an entry into JC1.	0.1842	0.0118
+0.5509	0.5376	1.000	of entering parameters, the parameters removed by	0.3891	0.0131
+0.5624	0.1222	1.000	When JC1 finds the first non-B card following a B	0.3684	0.0118
+0.5654	0.5376	1.000	VSETX will be a succession of, (1) an arbitrary	0.3553	0.0131
+0.5770	0.1071	1.000	card, or rejects a job, it issues the SCAN pseudo-	0.3741	0.0131
+0.5799	0.5376	1.000	number of 17's, (2) a single parameter between 1	0.3647	0.0131
+0.5915	0.1071	1.000	op which causes SC to resume scanning until it finds	0.3853	0.0131
+0.5945	0.5376	1.000	and 17 (inclusive); and (3) the negative parameter.	0.3703	0.0131
+0.6054	0.1052	1.000	another B card. As each SCR1 command except the	0.3855	0.0140
+0.6090	0.5376	1.000	After the incoming parameter has been entered into	0.3816	0.0131
+0.6221	0.1053	1.000	first is executed, the parameter 1, representing the	0.3872	0.0116
+0.6250	0.5357	1.000	the queue as described, control is transferred to	0.3647	0.0132
+0.6366	0.1053	1.000	previous card, is passed on to the successor program,	0.4079	0.0131
+0.6394	0.5376	1.000	VACTX in order to actuate the write tape if it is not	0.3853	0.0133
+0.6497	0.1053	1.000	and VX is updated. By retaining custody of the card	0.3872	0.0145
+0.6548	0.5355	1.000	then active.	0.0888	0.0103
+0.6657	0.1034	1.000	last introduced to JCI, SC prevents that buffer area	0.3853	0.0131
+0.6730	0.5357	1.000	The End of Job Routine: The end of job routine is	0.3703	0.0161
+0.6817	0.1053	1.000	from being reused prematurely. It also takes into	0.3741	0.0116
+0.6890	0.5376	1.000	entered when VSETX removes the negative param-	0.3759	0.0117
+0.6962	0.1053	1.000	account the possibility that the disposition of such a	0.3816	0.0117
+0.7035	0.5376	1.000	eter, -VWEFT, from the queue in the normal course	0.3929	0.0132
+0.7106	0.1053	1.000	card may be affected by its own contents. For	0.3477	0.0118
+0.7179	0.5376	1.000	of WT processing. Accordingly, control goes to the	0.3872	0.0133
+0.7252	0.1053	1.000	example, if the card contained a BYPASS command,	0.3853	0.0133
+0.7324	0.5376	1.000	subroutine VWEFT (Figure 64), which (1) sets VX1	0.3778	0.0133
+0.7397	0.1053	1.000	it would have to go to E rather than WT.	0.2970	0.0118
+0.7485	0.5376	1.000	non-zero, making WT busy; (2) zeros the in-job	0.3553	0.0118
+0.7542	0.1241	1.000	The specific negative parameter passed on by SC	0.3590	0.0133
+0.7630	0.5376	1.000	record count, VRCNT; (3) alters the table of exits of	0.3910	0.0118
+0.7703	0.1053	1.000	at job boundary time depends on the mode of opera-	0.3816	0.0118
+0.7776	0.5376	1.000	the symbolie tape unit currently acting as the write	0.3797	0.0131
+0.7829	0.1051	1.000	tion in force. If offline, then no parameter is passed	0.3950	0.0155
+0.7919	0.5375	1.000	tape so that control will be returned to the write tape	0.3930	0.0134
+0.7994	0.1053	1.000	on to the scan tape program inasmuch as the job	0.3553	0.0117
+0.8057	0.5375	1.000	mark EOP procedure, VWFEOP; and then, (4) issues	0.3950	0.0161
+0.8139	0.1053	1.000	boundary condition has no phase 1 significance in	0.3609	0.0131
+0.8212	0.5376	1.000	the $WEF pseudo-op.	0.1579	0.0131
+0.8285	0.1053	1.000	this mode. In the online mode, SC passes the param-	0.3985	0.0131
+0.8372	0.5526	1.000	Upon completion of the $WEF, control passes to	0.3590	0.0131
+0.8430	0.1053	1.000	eter -VWEFT to the WT program, which will cause a	0.3929	0.0131
+0.8517	0.5376	1.000	VWFEOP (Figure 64) which determines, from the	0.3684	0.0131
+0.8590	0.1034	1.000	tape mark to be written on the write tape when it is	0.3797	0.0116
+0.8663	0.5357	1.000	zero record count, that this is a job-terminating end	0.3910	0.0131
+0.8735	0.1034	1.000	removed from the WT queue. The parameter, - VNOP,	0.4135	0.0131
+0.8808	0.5188	1.000	of file. After updating the file count, VFCNT, the	0.3910	0.0146
+0.8881	0.1034	1.000	is passed to E in the bypass mode. The instruction	0.3816	0.0116
+0.8953	0.5357	1.000	tape switch criteria are tested and in the usual case	0.3853	0.0116
+0.9491	0.7594	1.000	System Input-Output	0.1203	0.0103
+0.9491	0.8985	1.000	121	0.0226	0.0087

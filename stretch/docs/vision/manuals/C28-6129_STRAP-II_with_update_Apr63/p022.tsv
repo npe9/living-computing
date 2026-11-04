@@ -1,0 +1,110 @@
+0.0680	0.1315	1.000	this dds is invoked in the same manner as with DD and	0.3968	0.0138
+0.0682	0.5564	1.000	be taken to include the period unless an integer ex-	0.3947	0.0133
+0.0827	0.5545	1.000	pression is specifically intended.	0.2368	0.0161
+0.0858	0.1316	1.000	DDI statements. Thus:	0.1635	0.0103
+0.0973	0.5677	1.000	Any symbol appearing in the name field is ettec-	0.3835	0.0176
+0.1017	0.2274	1.000	SAVE DR(BU, 8, 8), 10	0.2011	0.0161
+0.1133	0.5545	1.000	tively ignored by strap, but the symbol is placed in	0.3966	0.0161
+0.1221	0.1974	1.000	10 8-bit fields (skips the location counter	0.3308	0.0146
+0.1265	0.1297	1.000	reserves	0.0677	0.0087
+0.1294	0.5545	1.000	the symbol table.	0.1316	0.0161
+0.1381	0.1297	1.000	forward 80 bits). The dds (Bu, 8, 8) is attached to	0.3985	0.0131
+0.1526	0.1297	1.000	SAVE. SAVE is attached to the first 8-bit field reserved.	0.3966	0.0116
+0.1672	0.1485	1.000	When either one of the floating point use modes is	0.3797	0.0147
+0.1700	0.5545	1.000	STRAP-II Output Listing	0.1955	0.0161
+0.1830	0.1316	1.000	given in the data description, the floating point data	0.3966	0.0146
+0.1933	0.5564	1.000	Basically, the output listing produced by STRAP-Il con-	0.3947	0.0146
+0.1976	0.1315	1.000	block being reserved is forced to begin at a full word	0.3968	0.0163
+0.2078	0.5563	1.000	tains two types of information. On the right half of	0.3950	0.0166
+0.2136	0.1297	1.000	address. StraP will automatically round the location	0.3985	0.0146
+0.2234	0.5544	1.000	the page, each sTRaP statement is reproduced as it	0.3968	0.0166
+0.2282	0.1316	1.000	counter up to the next full word address to accomplish	0.3966	0.0146
+0.2397	0.5564	1.000	was punched on the symbolic input card. Thus, each	0.3947	0.0147
+0.2442	0.1316	1.000	this, thereby insuring that each floating point data	0.3966	0.0161
+0.2542	0.5545	1.000	line of the listing represents one symbolic card. On	0.3966	0.0147
+0.2602	0.1316	1.000	word will begin at a full word address.	0.2782	0.0147
+0.2703	0.5564	1.000	the left half of the page, the location assigned each	0.3929	0.0146
+0.2747	0.1466	1.000	If no dds is given, the symbol appearing in the	0.3816	0.0147
+0.2848	0.5545	1.000	statement is displayed in octal, followed by an octal-	0.3966	0.0146
+0.2892	0.1297	1.000	name field is assigned the normalized floating point	0.3985	0.0160
+0.3009	0.5545	1.000	hex representation of the compiled information. A	0.3947	0.0146
+0.3067	0.1316	1.000	use mode by STRAP.	0.1466	0.0131
+0.3154	0.5526	1.000	sample listing appears in Figure 3.	0.2556	0.0174
+0.3212	0.1447	1.000	By appending a z to the Dr mnemonic, a slightly	0.3816	0.0161
+0.3314	0.5695	1.000	The octal-hex representation is one which, as the	0.3816	0.0132
+0.3358	0.1316	1.000	different pseudo operation, Data Reservation and Set	0.3966	0.0145
+0.3473	0.5545	1.000	name implies, uses two different radices to represent	0.3966	0.0133
+0.3517	0.1297	1.000	to Zero, is formed. This operation is identical to DR,	0.3985	0.0131
+0.3618	0.5545	1.000	each half-word instruction compiled by STRAP-II. The	0.3966	0.0146
+0.3663	0.1297	1.000	but it performs the additional function of setting all	0.3985	0.0160
+0.3764	0.5545	1.000	first 24 bits of the half word are displayed in octal,	0.3966	0.0146
+0.3821	0.1297	1.000	reserved fields to zero. DR reserves fields but makes no	0.3985	0.0118
+0.3924	0.5564	1.000	with a period supplied between the sixth and seventh	0.3929	0.0146
+0.3982	0.1297	1.000	attempt to clear them to zero.	0.2180	0.0146
+0.4084	0.5545	1.000	octal character (between the 18th and 19th bits in	0.3966	0.0116
+0.4127	0.1466	1.000	DR can also define arrays. (See Section II).	0.3346	0.0146
+0.4230	0.5545	1.000	binary) to facilitate reading STRAP bit addresses. An	0.3947	0.0146
+0.4360	0.1278	1.000	13. END-End	0.1165	0.0146
+0.4375	0.5545	1.000	economy can be effected by representing the last 8	0.3947	0.0146
+0.4506	0.2951	1.000	END, Y	0.0639	0.0161
+0.4535	0.5526	1.000	binary bits of the half-word by 2 hexadecimal charac-	0.3985	0.0160
+0.4694	0.5545	1.000	ters. (Any 4-bit binary integer, that is any number	0.3966	0.0132
+0.4709	0.1466	1.000	A card containing the pseudo operation code END	0.3816	0.0146
+0.4839	0.5545	1.000	from 0-151o, can be represented by one of the hexa-	0.3966	0.0146
+0.4869	0.1297	1.000	signals the end of an assembly. Theretore, an END	0.3985	0.0146
+0.5000	0.5564	1.000	decimal characters 0-9, A-F. Thus,	0.2481	0.0131
+0.5015	0.1297	1.000	card must appear as the last card of every symbolic	0.3985	0.0146
+0.5160	0.1297	1.000	program deck. When STRAP recognizes an END card,	0.3985	0.0161
+0.5174	0.6184	1.000	00012=116	0.0846	0.0145
+0.5174	0.7707	1.000	1010g=A16	0.0883	0.0131
+0.5320	0.1278	1.000	it punches out a branch card with an address y. This	0.4004	0.0160
+0.5330	0.6202	1.000	10012 = 916	0.0848	0.0154
+0.5479	0.1297	1.000	branch card is included as the last card of the binary	0.3966	0.0132
+0.5523	0.5545	1.000	The subscript 2 refers to the binary radix, while 16	0.3966	0.0146
+0.5624	0.1297	1.000	output deck produced by sTraP. When the binary	0.3966	0.0146
+0.5669	0.5545	1.000	refers to hexademical.) If a full word instruction has	0.3966	0.0131
+0.5770	0.1297	1.000	deck is loaded, the branch card causes control to be	0.3966	0.0161
+0.5827	0.5545	1.000	been compiled, two half-word octal-hex expressions	0.3966	0.0147
+0.5930	0.1297	1.000	transferred to the instruction located at y.	0.3195	0.0131
+0.5986	0.5544	1.000	are used	0.0659	0.0121
+0.6076	0.1466	1.000	Since the instruction located at y will be the first	0.3816	0.0131
+0.6133	0.5695	1.000	The octal-hex notation is used only for displaying	0.3797	0.0146
+0.6235	0.1278	1.000	instruction in the program to be executed, y usually	0.3985	0.0146
+0.6279	0.5545	1.000	compiled instructions. At least four other print for-	0.3966	0.0146
+0.6381	0.1297	1.000	specifies the location of the first instruction in a pro-	0.3966	0.0160
+0.6439	0.5545	1.000	mats are available:	0.1410	0.0131
+0.6539	0.1278	1.000	gram. This use of END is illustrated in the following	0.3985	0.0161
+0.6603	0.5674	1.000	1. Floating Point. When a Data Definition state-	0.3838	0.0209
+0.6698	0.1296	1.000	example.	0.0659	0.0135
+0.6773	0.5921	1.000	ment with a floating point use mode is specified,	0.3590	0.0176
+0.6788	0.2951	1.000	SLC, 1050.	0.0827	0.0146
+0.6930	0.2104	1.000	BEGIN	0.0566	0.0137
+0.6933	0.2951	1.000	L(BU, 24), DATA	0.1466	0.0161
+0.6948	0.5940	1.000	the compiled data entry is printed in octal but	0.3553	0.0146
+0.7093	0.5921	1.000	it is separated into the components of the 7030	0.3571	0.0146
+0.7093	0.2951	1.000	(intervening code)	0.1410	0.0146
+0.7238	0.2970	1.000	END, BEGIN	0.1071	0.0160
+0.7252	0.5940	1.000	floating point format- exponent, exponent sign,	0.3571	0.0161
+0.7397	0.5921	1.000	fraction, fraction sign and data flags. See lines	0.3571	0.0176
+0.7427	0.1278	1.000	Of course, the END statement does not have to address	0.3985	0.0161
+0.7558	0.5940	1.000	14 and 15 in Figure 3.	0.1635	0.0161
+0.7602	0.1353	1.000	he first instruction in a program. The programmer i	0.3853	0.0116
+0.7733	0.5677	1.000	2. Index Word. When the xw pseudo operation is	0.3835	0.0161
+0.7733	0.1335	1.000	ree to select anv instruction he wishes to be executer	0.3872	0.0116
+0.7875	0.3656	0.300	proseammary bmbal	0.1559	0.0375
+0.7892	0.5921	1.000	employed to create storage elements in the for-	0.3571	0.0160
+0.7906	0.1278	1.000	first. If the END address is a programmer symbol,	0.3966	0.0118
+0.8034	0.1259	1.000	STRAP correctly substitutes the strap binary bit ad-	0.3985	0.0152
+0.8052	0.5921	1.000	mat of 7030 index words, the printed display	0.3571	0.0132
+0.8182	0.5940	1.000	of the compiled information is clearly divided	0.3534	0.0147
+0.8212	0.1297	1.000	dress equivalent. If the address is a numeric entry,	0.3966	0.0103
+0.8342	0.5921	1.000	into the four fields comprising the index word-	0.3590	0.0161
+0.8358	0.1259	1.000	the programmer is cautioned that the address follows	0.4004	0.0145
+0.8503	0.1278	1.000	the rules of any 24-bit address field. An integer writ-	0.3985	0.0161
+0.8517	0.5921	1.000	value tield plus sign, index flag and two un-	0.3571	0.0131
+0.8645	0.5921	1.000	used bits, count field and refill field. See line 17	0.3572	0.0153
+0.8663	0.1259	1.000	ten in this field is interpreted as a number of bits.	0.4004	0.0160
+0.8805	0.5920	1.000	in Figure 3.	0.0923	0.0166
+0.8808	0.1278	1.000	A bit address will be compiled correctly, so care must	0.3985	0.0160
+0.9141	0.1785	1.000	IBM 7030	0.0640	0.0105
+0.9157	0.1278	1.000	18	0.0207	0.0102

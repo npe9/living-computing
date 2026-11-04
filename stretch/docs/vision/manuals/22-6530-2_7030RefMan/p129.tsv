@@ -1,0 +1,111 @@
+0.0639	0.1184	1.000	As a result of the above, a program can be loaded	0.3722	0.0131
+0.0654	0.5357	1.000	5. The computer, upon receipt of the initial-start	0.3741	0.0146
+0.0799	0.1015	1.000	by the initial loading technique only from a unit	0.3910	0.0131
+0.0799	0.5188	1.000	signal, fetches and executes the instruction in the la	0.3891	0.0131
+0.0945	0.1015	1.000	having the selection address 0. However, since the	0.3910	0.0131
+0.0959	0.5188	1.000	cation specified by the data word address field of the	0.3910	0.0132
+0.1105	0.5188	1.000	control word in core storage location 4. The address	0.3891	0.0147
+0.1105	0.1015	1.000	exchange does not differentiate between the channel	0.3910	0.0132
+0.1250	0.1015	1.000	signals sent by different units connected to the same	0.3910	0.0132
+0.1264	0.5188	1.000	of this instruction, however, is not placed in the in-	0.3891	0.0146
+0.1391	0.5187	1.000	struction counter. Unless specified otherwise by this	0.3894	0.0168
+0.1394	0.1015	1.000	control unit, the initial program loading is started by	0.3910	0.0147
+0.1539	0.5188	1.000	instruction, the interruption system after the comple-	0.3891	0.0161
+0.1555	0.1015	1.000	a channel upon the depression of the SIGNAL or START	0.3910	0.0132
+0.1700	0.1015	1.000	key on any unit accommodated by that channel	0.3910	0.0146
+0.1730	0.5188	1.000	tion of this instruction returns to the state it was in	0.3891	0.0102
+0.1860	0.1015	1.000	address.	0.0564	0.0116
+0.1875	0.5188	1.000	at the time the INITIAL PROGRAM LOAD key was de-	0.3872	0.0131
+0.2035	0.5188	1.000	pressed. This completes the initial program loading	0.3872	0.0132
+0.2179	0.1184	1.000	The first channel signal indication received after	0.3741	0.0133
+0.2321	0.1014	1.000	the depression of the INITIAL PROGRAM LOAD key from	0.3893	0.0152
+0.2339	0.5357	1.000	The second instruction executed after the initial	0.3703	0.0103
+0.2485	0.5188	1.000	program loading is the one specified by the instruc-	0.3872	0.0146
+0.2485	0.0996	1.000	a unit accommodated by the exchange initiates the	0.3929	0.0131
+0.2630	0.0994	1.000	following sequence of events:	0.2090	0.0158
+0.2630	0.5188	1.000	tion counter at the time the first instruction is com-	0.3872	0.0118
+0.2791	0.5188	1.000	pleted. If the first instruction did not alter the con-	0.3872	0.0131
+0.2863	0.1165	1.000	1. The exchange automatically stores in the con-	0.3759	0.0131
+0.2951	0.5545	1.000	of the instruction counter by a branching	0.3515	0.0146
+0.3023	0.0996	1.000	trol word location for the channel responsible for the	0.3929	0.0131
+0.3096	0.5169	1.000	instruction, the instruction counter at this time refers	0.3891	0.0131
+0.3169	0.1015	1.000	channel signal a fixed control word with the follow-	0.3910	0.0131
+0.3241	0.5169	1.000	to the instruction following the one which was in-	0.3872	0.0147
+0.3327	0.0996	1.000	ing contents:	0.0959	0.0118
+0.3415	0.5169	1.000	terrupted by the depression of the INITIAL PROGRAM	0.3891	0.0131
+0.3545	0.1316	1.000	Data word address	0.1410	0.0118
+0.3547	0.2838	1.000	=4	0.0320	0.0131
+0.3561	0.5169	1.000	LOAD key. Normally this instruction, however, can-	0.3872	0.0146
+0.3721	0.5188	1.000	not be properly executed. When the INITIAL PROGRAM	0.3853	0.0131
+0.3730	0.1295	1.000	Chain flag	0.0793	0.0171
+0.3750	0.2838	1.000	=1	0.0320	0.0116
+0.3866	0.5169	1.000	LOAD key is depressed, the execution of the current	0.3872	0.0131
+0.3924	0.1316	1.000	Multiple flag	0.0978	0.0161
+0.3939	0.2838	1.000	=0	0.0320	0.0116
+0.4012	0.5169	1.000	instruction is immediately terminated. Similarly, the	0.3872	0.0146
+0.4110	0.1315	1.000	Skip flag	0.0679	0.0166
+0.4113	0.2838	1.000	=0	0.0338	0.0145
+0.4164	0.5168	1.000	system terminates the interpretation and preparation	0.3874	0.0167
+0.4301	0.1297	1.000	Count	0.0508	0.0133
+0.4302	0.2838	1.000	=1	0.0320	0.0145
+0.4330	0.5169	1.000	for execution of the succeeding instructions. In doing	0.3872	0.0133
+0.4469	0.1295	1.000	Refill address	0.1037	0.0161
+0.4476	0.5169	1.000	this, the storage locations and registers that are altered	0.3853	0.0132
+0.4506	0.2838	1.000	=4	0.0320	0.0131
+0.4636	0.5188	1.000	by the execution of the current instruction and the	0.3853	0.0131
+0.4782	0.5188	1.000	preparation of the following instructions are not re-	0.3835	0.0146
+0.4942	0.5169	1.000	stored to the former or any other predetermined state.	0.3835	0.0146
+0.5087	0.1165	1.000	2. The exchange initiates a READ for the indicated	0.3741	0.0116
+0.5102	0.5188	1.000	Therefore, it is not possible to continue the program.	0.3835	0.0147
+0.5233	0.0996	1.000	channel, using the fixed control word.	0.2744	0.0131
+0.5247	0.5338	1.000	As the result, the first instruction of a program	0.3684	0.0147
+0.5392	0.5169	1.000	loaded by means of the initial program loading tech-	0.3853	0.0145
+0.5479	0.1165	1.000	3. The first word read from the unit is stored in	0.3741	0.0103
+0.5552	0.5169	1.000	nique must be BRANCH DISABLED. This instruction re-	0.3853	0.0132
+0.5623	0.0995	1.000	the special core storage location referred to by means	0.3912	0.0150
+0.5712	0.5169	1.000	places the contents of the instruction counter and	0.3853	0.0131
+0.5785	0.0996	1.000	of address 4. Since the fixed control word is then	0.3910	0.0116
+0.5858	0.5169	1.000	insures that the system does not return to the enabled	0.3853	0.0145
+0.5930	0.0977	1.000	exhausted, its refill address causes the next control	0.3929	0.0131
+0.6003	0.5150	1.000	state. If the BRANCH DISABLeD is preceded by STORE	0.3872	0.0146
+0.6090	0.0977	1.000	word to be fetched from location 4. Location 4 at	0.3929	0.0131
+0.6177	0.5169	1.000	INSTRUCTION COUNTER IF, the original contents of the	0.3853	0.0132
+0.6214	0.0995	1.000	this time should contain another control word speci-	0.3913	0.0170
+0.6287	0.5167	1.000	instruction counter can be made available to the pro-	0.3839	0.0184
+0.6409	0.0977	1.000	iying the address at which the word immediately fol-	0.3910	0.0132
+0.6482	0.5150	1.000	grammer. This may be useful in diagnosing programs	0.3872	0.0146
+0.6539	0.0959	1.000	lowing should be stored, and the number of words	0.3929	0.0147
+0.6607	0.5130	1.000	in cases where the initial program loading technique	0.3894	0.0189
+0.6700	0.0996	1.000	to be read from the unit. Reading then proceeds	0.3910	0.0146
+0.6788	0.5169	1.000	must be resorted to because of a failure of some pro-	0.3835	0.0131
+0.6860	0.0996	1.000	normally.	0.0714	0.0131
+0.6933	0.5169	1.000	gram previously loaded into the computer.	0.3064	0.0146
+0.7078	0.1147	1.000	4. If and when the READ operation is completed	0.3741	0.0131
+0.7093	0.5320	1.000	If the rEAD as described in 3 and 4 is not success-	0.3684	0.0102
+0.7224	0.0977	1.000	as specified by the control word or words without	0.3929	0.0131
+0.7238	0.5169	1.000	ful, the input-output unit comes to a stop. In order	0.3835	0.0146
+0.7384	0.0977	1.000	causing the exchange-program-check or unit-check in-	0.3929	0.0131
+0.7397	0.5150	1.000	to restart initial program loading, the INITIAL PRO.	0.3853	0.0133
+0.7529	0.0977	1.000	dications, the exchange sends an initial start signal	0.3930	0.0147
+0.7542	0.5169	1.000	GRAM LOAD key has to be pressed again. The next	0.3835	0.0147
+0.7688	0.0977	1.000	to the computer. The encountering of an end-excep-	0.3910	0.0146
+0.7703	0.5169	1.000	channel signal then repeats the listed sequence of	0.3835	0.0146
+0.7834	0.0977	1.000	tion condition during the reading does not affect a	0.3911	0.0152
+0.7834	0.5167	1.000	events, starting with step 1.	0.1959	0.0163
+0.7994	0.0977	1.000	successful completion of initial loading as long as all	0.3910	0.0131
+0.8009	0.5338	1.000	The first channel signal received at the exchange	0.3665	0.0146
+0.8110	0.0976	1.000	the conditions are satisfied that would normally cause	0.3914	0.0196
+0.8154	0.5150	1.000	following the depression of the INITIAL PROGRAM LOAD	0.3853	0.0146
+0.8299	0.0977	1.000	EOP to be given. The EOP as well as the EE indica-	0.3929	0.0131
+0.8314	0.5150	1.000	key starts initial program loading, but it does not	0.3835	0.0147
+0.8459	0.0977	1.000	tions, however, are not turned on upon the comple-	0.3910	0.0132
+0.8473	0.5489	1.000	on the cs status bit in the control word. All	0.3515	0.0118
+0.8602	0.0995	1.000	tion of the operation. The sending of the initial-start	0.3912	0.0155
+0.8618	0.5150	1.000	subsequent channel signals are interpreted in the nor-	0.3835	0.0146
+0.8764	0.0977	1.000	signal to the computer completes the initial program	0.3910	0.0146
+0.8779	0.5150	1.000	mal way. If a channel signal is received by the ex.	0.3835	0.0131
+0.8909	0.0977	1.000	loading cycle in the exchange.	0.2162	0.0132
+0.8924	0.5695	1.000	during the initial program loading, the cs	0.3289	0.0146
+0.8934	0.5149	1.000	change	0.0549	0.0140
+0.9287	0.1504	1.000	IBM 7030	0.0621	0.0089
+0.9288	0.0996	1.000	126	0.0226	0.0102

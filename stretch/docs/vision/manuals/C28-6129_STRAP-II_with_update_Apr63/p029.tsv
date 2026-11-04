@@ -1,0 +1,103 @@
+0.0712	0.0526	1.000	pears first in the field. The meaning is the same as	0.3947	0.0145
+0.0712	0.4737	1.000	an integer is written on the card but says nothing	0.4004	0.0145
+0.0858	0.4737	1.000	about the one to which it is converted. At the com-	0.4004	0.0131
+0.0872	0.0508	1.000	when it appears as a statement entry mode; however,	0.3966	0.0131
+0.1017	0.4718	1.000	pletion of every STRAP statement, the radix is auto-	0.4023	0.0161
+0.1017	0.0508	1.000	that meaning applies only to the data entry in the field	0.3947	0.0146
+0.1157	0.0485	1.000	in which it appears.	0.1455	0.0167
+0.1163	0.4699	1.000	matically reset to 10 and remains 10 for the following	0.4041	0.0160
+0.1321	0.0677	1.000	Statement entry modes and field entry modes may	0.3778	0.0147
+0.1321	0.4718	1.000	statement unless it is changed therein.	0.2801	0.0161
+0.1467	0.4906	1.000	One note of caution applies to the use of radix 16.	0.3835	0.0161
+0.1482	0.0526	1.000	both appear in the same statement. When there are	0.3947	0.0132
+0.1627	0.4737	1.000	An address expression written in hexadecimal must	0.4004	0.0161
+0.1627	0.0526	1.000	contradictory properties by the statement and field	0.3929	0.0146
+0.1772	0.4716	1.000	begin with a numeric character.	0.2354	0.0179
+0.1788	0.0508	1.000	entry modes, the field entry mode overrules for the	0.3947	0.0146
+0.1933	0.0508	1.000	case of the particular field on hand. Entry modes may	0.3947	0.0146
+0.2093	0.0508	1.000	not appear in a manner that cause parentheses within	0.3966	0.0146
+0.2194	0.4737	1.000	Field Entry Mode	0.1259	0.0146
+0.2252	0.0508	1.000	parentheses. In the following example:	0.2951	0.0133
+0.2412	0.0996	1.000	(F6)DD(BU), 12.36, (F3) 166.3, 1776	0.2951	0.0176
+0.2485	0.4737	1.000	A final STRAP entry mode that is used as a field entry	0.4004	0.0161
+0.2602	0.0508	1.000	the F6 entry mode rules for data entry fields one and	0.3947	0.0132
+0.2630	0.4737	1.000	mode is the parenthetical integer entry mode. This	0.4004	0.0146
+0.2747	0.0508	1.000	three, while the F3 specification temporarily overrules	0.3966	0.0132
+0.2906	0.0508	1.000	the statement entry mode for the second data entry	0.3947	0.0132
+0.3067	0.0489	1.000	only.	0.0395	0.0145
+0.3096	0.4718	1.000	operation that produces binary output. The general	0.4023	0.0160
+0.3241	0.4699	1.000	format for this entry mode is:	0.2180	0.0160
+0.3285	0.0508	1.000	RADIX SPECIFIER The radix specifier is another entry	0.3947	0.0131
+0.3426	0.6371	1.000	(.n) An+1	0.0661	0.0140
+0.3430	0.0508	1.000	mode that may be used as a statement entry mode or	0.3947	0.0146
+0.3590	0.4718	1.000	The symbol.n represents the bit address of the right-	0.4023	0.0160
+0.3590	0.0508	1.000	a field entry mode. In any programmer symbolized	0.3947	0.0146
+0.3735	0.0508	1.000	field not enclosed by parentheses, numerical integers	0.3947	0.0146
+0.3750	0.4718	1.000	most bit of the field into which the integer oi bit pat-	0.4023	0.0160
+0.3894	0.0508	1.000	and bit addresses may be written in any radix from	0.3947	0.0147
+0.3894	0.4718	1.000	tern is to be entered. The integer Anti is formed as	0.4023	0.0147
+0.4055	0.4737	1.000	an unsigned field, nt1 bits in length (because of the	0.4004	0.0146
+0.4055	0.0489	1.000	two through 16. The radix is specified by enclosing	0.3966	0.0146
+0.4200	0.4737	1.000	7030 custom of addressing bits starting with zero),	0.4004	0.0146
+0.4200	0.0508	1.000	the appropriate decimal integer in parentheses and	0.3947	0.0146
+0.4345	0.0508	1.000	placing it either before the operation code if state-	0.3966	0.0146
+0.4360	0.4737	1.000	and inserted into the leftmost nt1 bits of the ad-	0.4004	0.0116
+0.4506	0.0508	1.000	ment entry mode action is desired, or at some appro-	0.3966	0.0146
+0.4520	0.4737	1.000	dressed instruction or data entry field by means of a	0.4004	0.0146
+0.4666	0.4718	1.000	logical or type operation. Logical or is used so that	0.4023	0.0146
+0.4666	0.0526	1.000	priate place in the field to which it refers when it is	0.3947	0.0131
+0.4811	0.0508	1.000	employed as a field entry mode. (Usually, but not	0.3947	0.0147
+0.4824	0.4737	1.000	the parenthetical entry may be combined with the	0.4004	0.0133
+0.4970	0.0508	1.000	always, the radix specifier is the first item to appear	0.3947	0.0147
+0.4970	0.4718	1.000	existing contents of the particular field addressed or	0.4023	0.0161
+0.5130	0.4737	1.000	with other parenthetical entries.	0.2368	0.0131
+0.5130	0.0489	1.000	in the field.)	0.0959	0.0131
+0.5276	0.0658	1.000	If used as a statement entry mode, the radix speci-	0.3797	0.0146
+0.5276	0.4868	1.000	The field selected by theparenthetical integer entry	0.3872	0.0161
+0.5421	0.0508	1.000	fied applies to the entire statement unless individual	0.3947	0.0146
+0.5436	0.4737	1.000	mode may cross field lines within a statement as de-	0.4004	0.0131
+0.5581	0.4718	1.000	termined by the format of the statement. However,	0.4023	0.0146
+0.5581	0.0508	1.000	fields contain their own radix specifier, in which case	0.3947	0.0146
+0.5727	0.0508	1.000	the field entry mode overrules the statement entry	0.3947	0.0146
+0.5741	0.4737	1.000	the parenthetical entry mode is not permitted to cross	0.4004	0.0147
+0.5887	0.4737	1.000	statement lines. The specification of the rightmost	0.4004	0.0147
+0.5887	0.0508	1.000	mode for that field only. If used as a field entry mode,	0.3947	0.0132
+0.6032	0.0508	1.000	the radix applies to the entire field unless it is reset	0.3947	0.0147
+0.6032	0.4737	1.000	boundary of the addressed field via .n must therefore	0.3966	0.0147
+0.6177	0.0508	1.000	before the end of the field is reached. If no radix	0.3966	0.0132
+0.6191	0.4737	1.000	be less than or equal to 31 in a half word instruction,	0.3966	0.0146
+0.6336	0.4737	1.000	or 63 in a full word instruction. Nevertheless, a maxi-	0.4004	0.0132
+0.6352	0.0508	1.000	is specified, the base 10 is assumed.	0.2500	0.0131
+0.6497	0.4699	1.000	mum of 24 significant bits can be converted in a par-	0.4041	0.0161
+0.6539	0.0489	1.000	1. (8)573-34+50 (all numbers are in octal)	0.3271	0.0147
+0.6642	0.4699	1.000	enthetical entry. If necessary, zeros are added to ex-	0.4041	0.0161
+0.6730	0.0508	1.000	2. (2) 11011011100011.111100 ( bit address written in	0.3947	0.0116
+0.6802	0.4699	1.000	pand to the desired length. When the bit address is	0.4041	0.0161
+0.6875	0.1053	1.000	binary)	0.0564	0.0160
+0.6948	0.4718	1.000	specified as n, the parenthetical integer expression	0.3966	0.0146
+0.7048	0.0489	1.000	3. (5) SAM-342 (the symbol sam is not aftected by	0.3947	0.0146
+0.7106	0.4718	1.000	is assigned a field length of nt1 and is evaluated	0.3985	0.0147
+0.7209	0.1053	1.000	the radix, having been previously converted to	0.3402	0.0131
+0.7252	0.4718	1.000	modulo 2*+1. All parenthetical fields are regarded as	0.4023	0.0147
+0.7369	0.1053	1.000	binary. The integer 342 is written in the num-	0.3402	0.0131
+0.7427	0.4718	1.000	unsigned by STRAP, so that a negative number is com-	0.4023	0.0116
+0.7515	0.1053	1.000	ber system of the base 5.)	0.1880	0.0131
+0.7573	0.4737	1.000	piled as the complement, re 2*+1 of the magnitude of	0.3966	0.0116
+0.7688	0.0489	1.000	1. (8)7436. (10)60+9 (the full word portion of this	0.3966	0.0146
+0.7717	0.4718	1.000	the number.	0.0922	0.0119
+0.7848	0.1053	1.000	bit address is written in octal, whereas the bit	0.3421	0.0117
+0.7863	0.4887	1.000	In the following instruction:	0.2086	0.0146
+0.8009	0.1053	1.000	address portion and the integer 9 are written	0.3383	0.0131
+0.8046	0.6220	1.000	E+I, (.8)41	0.0943	0.0159
+0.8152	0.1052	1.000	in decimal.)	0.0922	0.0121
+0.8227	0.4718	1.000	the integer 41 is converted to binary and or'ed into	0.3985	0.0146
+0.8327	0.0489	1.000	5. (2)DD (B, 16, 8), (10)-972, I11011110 (the first »	0.3966	0.0133
+0.8372	0.4718	1.000	the first nine bits of the Etr instruction. In the case	0.3966	0.0116
+0.8488	0.1053	1.000	field is written in decimal, the second one is	0.3383	0.0131
+0.8532	0.4699	1.000	of an instruction, the position of the entry is deter-	0.3985	0.0160
+0.8630	0.1032	1.000	binary.)	0.0624	0.0168
+0.8677	0.4699	1.000	mined by counting bits from the beginning of the in-	0.4004	0.0160
+0.8836	0.4699	1.000	struction, starting with bit zero, no matter in which	0.3985	0.0161
+0.8836	0.0658	1.000	The entry mode radix specifies the radix in which	0.3778	0.0146
+0.9199	0.7500	1.000	Section II	0.0678	0.0120
+0.9201	0.8383	1.000	25	0.0282	0.0087

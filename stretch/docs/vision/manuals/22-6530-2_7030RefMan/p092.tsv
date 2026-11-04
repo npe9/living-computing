@@ -1,0 +1,106 @@
+0.0596	0.5019	1.000	of exponents is greater than 48, this indicator is turned	0.3910	0.0146
+0.0609	0.0902	1.000	contents of the entire accumulator and its sign byte	0.3855	0.0164
+0.0755	0.5019	1.000	on. When both operands are values in the XFP or XFN	0.3910	0.0147
+0.0770	0.0902	1.000	register remain unchanged throughout the operation,	0.3853	0.0131
+0.0900	0.5019	1.000	ranges or when one operand is a value in the XFP	0.3910	0.0147
+0.0930	0.0902	1.000	unless these registers are used as the addressed operand.	0.3853	0.0131
+0.1061	0.5019	1.000	range while the other is a value in the N or XEN range,	0.3929	0.0146
+0.1076	0.1034	1.000	The addition of the two operands is identical to	0.3722	0.0131
+0.1206	0.5038	1.000	the result has a propagated EF of 1 and this indicator	0.3891	0.0146
+0.1221	0.0902	1.000	the addition described in ADD. The intermediate re-	0.3853	0.0116
+0.1366	0.5019	1.000	is not turned on. This indicator is permanent.	0.3440	0.0131
+0.1381	0.0883	1.000	sult is a 96-bit fraction and a possible overflow bit.	0.3872	0.0146
+0.1526	0.0902	1.000	When normalized operation is specified, the sum is	0.3853	0.0147
+0.1539	0.5226	1.000	Exponent Range (XPFP, XPO, ХPH, XPL,	0.3741	0.0161
+0.1672	0.0902	1.000	shifted so that the 48 high-order bits of the sum, in-	0.3853	0.0147
+0.1685	0.5056	1.000	XPU). These indicators are set according to the ex-	0.3872	0.0133
+0.1845	0.0902	1.000	cluding the overflow bit, are placed in storage bits	0.3853	0.0131
+0.1845	0.5056	1.000	ponent range of the hnal result appearing in storage.	0.3872	0.0103
+0.1962	0.5075	1.000	When this result has a propagated EF of 1, XPFN Will	0.3853	0.0132
+0.1991	0.0902	1.000	12-59. The exponent of the sum is adjusted by the	0.3853	0.0146
+0.2106	0.5038	1.000	be set. When this result has a generated EF of 1, XPO	0.3910	0.0147
+0.2151	0.0902	1.000	amount of the shift.	0.1353	0.0116
+0.2252	0.5056	1.000	or xpu will be set.	0.1297	0.0118
+0.2297	0.1034	1.000	When unnormalized operation is specified, the 48	0.3722	0.0146
+0.2412	0.5207	1.000	Zero Multiply (ZM). If on, this indicator will be	0.3759	0.0146
+0.2456	0.0902	1.000	high-order bits of the sum are placed in storage bits	0.3853	0.0131
+0.2539	0.5036	1.000	turned off.	0.0830	0.0141
+0.2602	0.0902	1.000	12-59. The overflow bit does not enter the storage	0.3853	0.0132
+0.2733	0.5038	1.000	PROGRAMMING NOTE	0.1485	0.0102
+0.2747	0.0902	1.000	word, but turns on the indicator lost carry (LC).	0.3534	0.0147
+0.2892	0.5038	1.000	In contrast to unsigned ADD TO MEMORY in integer	0.3910	0.0145
+0.2906	0.1034	1.000	When noisy mode and normalized operation are	0.3741	0.0146
+0.3052	0.5038	1.000	arithmetic, this operation causes the result sign to re-	0.3910	0.0132
+0.3067	0.0883	1.000	specified, the fraction of the operand associated with	0.3891	0.0131
+0.3212	0.0883	1.000	the larger exponents, or the accumulator fraction if	0.3891	0.0145
+0.3212	0.5038	1.000	place the sign of the storage operand. This constitutes	0.3910	0.0131
+0.3358	0.5038	1.000	the essential difference between unsigned operation, as	0.3910	0.0145
+0.3372	0.0902	1.000	the exponents are equal, is extended with 48 low-order	0.3872	0.0131
+0.3503	0.5038	1.000	in integer arithmetic, and absolute operation as in	0.3910	0.0146
+0.3517	0.0902	1.000	ones before the sum is formed. The result fraction is	0.3872	0.0131
+0.3663	0.0902	1.000	truncated to 48 bits prior to storing in storage.	0.3402	0.0146
+0.3677	0.5019	1.000	floating point.	0.1053	0.0145
+0.3821	0.1053	1.000	If either or both of the operands lie in the XEP or	0.3722	0.0147
+0.3982	0.0883	1.000	XEN range, the operands are added, after modification	0.3872	0.0146
+0.4099	0.5056	1.000	Add Magnitude to Memory (M + MG)	0.2650	0.0147
+0.4142	0.0902	1.000	of the fraction signs as stated above, in accordance	0.3872	0.0131
+0.4288	0.0902	1.000	with the rules specified under ADD. When the result	0.3891	0.0131
+0.4302	0.5075	1.000	Same operation as ADD TO MEMORY except the accumu-	0.3891	0.0146
+0.4433	0.0902	1.000	has a propagated EF of 1, normalization, if specified,	0.3891	0.0146
+0.4448	0.5056	1.000	lator operand sign is assumed positive before the nega-	0.3910	0.0146
+0.4558	0.5073	1.000	tive sign modification occurs, and the sum fraction is	0.3895	0.0202
+0.4592	0.0902	1.000	is suppressed.	0.0940	0.0147
+0.4752	0.5056	1.000	replaced by forced zeros when its sign differs from the	0.3910	0.0147
+0.4912	0.5075	1.000	sign of the addressed operand developed after its modi-	0.3891	0.0131
+0.5042	0.1034	1.000	Data Flags (TF, UF, VF). These indicators are set	0.3759	0.0147
+0.5073	0.5075	1.000	fication by the absolute sign modifier.	0.2726	0.0131
+0.5188	0.0902	1.000	according to the flag bits of the addressed operand.	0.3872	0.0133
+0.5218	0.5244	1.000	The sum sign is compared with the addressed oper-	0.3722	0.0146
+0.5329	0.0918	1.000	These indicators are temporary	0.2205	0.0159
+0.5363	0.5056	1.000	and effective sign. With equal signs, the sum replaces	0.3910	0.0146
+0.5479	0.1071	1.000	To-Memory Operation (MOP). This indicator is	0.3741	0.0146
+0.5509	0.5075	1.000	the addressed storage operand. With opposite signs,	0.3891	0.0161
+0.5654	0.0902	1.000	set to one. This indicator is temporary.	0.2951	0.0131
+0.5682	0.5075	1.000	the result fraction is a forced zero in storage. The	0.3891	0.0133
+0.5799	0.1053	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). These	0.3741	0.0161
+0.5827	0.5056	1.000	forced zero sign is the same as the addressed operands	0.3910	0.0147
+0.5945	0.0902	1.000	indicators are set according to the final arithmetic	0.3891	0.0146
+0.5988	0.5075	1.000	original sign. The sign and exponent of the storage	0.3891	0.0146
+0.6105	0.0902	1.000	result fraction which appears in storage. These indi-	0.3891	0.0145
+0.6148	0.5075	1.000	operand become the sign and exponent of the forced	0.3891	0.0146
+0.6272	0.5074	1.000	order-of-magnitude zero result. For a forced zero, the	0.3894	0.0176
+0.6279	0.0921	1.000	cators are temporary.	0.1523	0.0117
+0.6409	0.1071	1.000	Lost Carry (LC). This indicator is turned on if a	0.3722	0.0146
+0.6418	0.5036	1.000	lost significance (Ls) indicator is not set. This action	0.3932	0.0201
+0.6555	0.0921	1.000	fraction overflow occurred in unnormalized addition.	0.3891	0.0118
+0.6599	0.5056	1.000	distinguishes it from a zero sum.	0.2350	0.0160
+0.6715	0.0921	1.000	This indicator is permanent.	0.2030	0.0131
+0.6858	0.5037	1.000	INDICATORS	0.0847	0.0164
+0.6860	0.1053	1.000	Lost Significance (LS). This indicator is set on when	0.3741	0.0161
+0.7006	0.0902	1.000	at least one operand fraction is non-zero if the high-	0.3891	0.0161
+0.7064	0.5207	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3759	0.0146
+0.7162	0.0901	1.000	order 48 bits of the intermediate sum and overflow bit	0.3912	0.0165
+0.7209	0.5056	1.000	(MOP); Arithmetic Result (RLZ, RZ, RGZ, RN);	0.3929	0.0161
+0.7324	0.0902	1.000	are zero and the intermediate result exponent flag is	0.3891	0.0118
+0.7355	0.5056	1.000	Lost Carry (LC); Preparatory Shift Gieater than 48	0.3929	0.0161
+0.7470	0.0921	1.000	zero. The final sum fraction is zero, and a normal or-	0.3872	0.0133
+0.7515	0.5038	1.000	(PSH); Exponent Range (XPFP, XPO, XPH, XPL,	0.3966	0.0161
+0.7615	0.0921	1.000	der of magnitude zero is formed with no further nor-	0.3853	0.0133
+0.7674	0.5075	1.000	XPU); Zero Multiply (ZM). The above indicators	0.3910	0.0160
+0.7776	0.0902	1.000	malization or exponent change. This indicator is not	0.3910	0.0146
+0.7848	0.5075	1.000	are set as in ADD TO MEMORY.	0.2068	0.0117
+0.7921	0.0902	1.000	turned on when both operand fractions are zero origi-	0.3910	0.0176
+0.7979	0.5226	1.000	Lost Significance (LS). This indicator is set as in	0.3741	0.0132
+0.8067	0.0921	1.000	nally, or if the intermediate result exponent flag has	0.3891	0.0161
+0.8124	0.5056	1.000	ADD TO MEMORY except that a forced zero does not	0.3947	0.0161
+0.8226	0.0901	1.000	a propagated EF of 1. This indicator is permanent.	0.3763	0.0194
+0.8265	0.5055	1.000	turn it on.	0.0812	0.0170
+0.8387	0.1053	1.000	Preparatory Shift Greater than 48 (PSH). When	0.3759	0.0160
+0.8488	0.5075	1.000	PROGRAMMING NOTES	0.1579	0.0176
+0.8532	0.0902	1.000	both operands are values in the N range, or if one	0.3910	0.0174
+0.8639	0.5072	1.000	The ADD MAGNITUDE TO MEMORY operation allows the	0.3915	0.0234
+0.8706	0.0921	1.000	operand is in the N range while the other operand is	0.3872	0.0117
+0.8836	0.5056	1.000	storage operand, or its magnitude, to be altered as in	0.3929	0.0161
+0.8846	0.0921	1.000	a value in the XFN range and the algebraic difference	0.3873	0.0128
+0.9215	0.6936	1.000	Floating-Point Arithmetic	0.1617	0.0131
+0.9230	0.8816	1.000	89	0.0169	0.0102

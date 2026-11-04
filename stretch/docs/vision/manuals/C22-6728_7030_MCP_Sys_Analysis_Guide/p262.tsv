@@ -1,0 +1,15 @@
+0.0730	0.0977	1.000	The general flow on the charts proceeds to the	0.3442	0.0146
+0.0741	0.5226	1.000	On some of the charts a program symbol from the	0.3703	0.0116
+0.0887	0.5056	1.000	code is printed to the left and above the functional	0.3684	0.0116
+0.0887	0.0808	1.000	right and/or down. The functional symbols are	0.3534	0.0132
+0.1032	0.5038	1.000	symbol to help the reader relate the flow chart to	0.3703	0.0117
+0.1032	0.0789	1.000	logically linked by the use of flow lines, represented	0.3929	0.0132
+0.1177	0.0808	1.000	by dotted lines terminating in arrowheads (printed as	0.3947	0.0132
+0.1191	0.5038	1.000	the code. Sometimes a line of text is printed in the	0.3835	0.0103
+0.1336	0.0808	1.000	X) showing the direction of the flow. Arrowheads	0.3722	0.0118
+0.1336	0.5056	1.000	vicinity of a block as an aide to the reader. All sym-	0.3966	0.0118
+0.1482	0.0808	1.000	are always placed at the point of entry to a functional	0.3947	0.0118
+0.1482	0.5056	1.000	bols referred to in any of the blocks are taken	0.3402	0.0103
+0.1627	0.5056	1.000	directly from the program.	0.2030	0.0118
+0.1627	0.0827	1.000	symbol and at junctions with major flow lines.	0.3440	0.0118
+0.9259	0.0789	1.000	262	0.0226	0.0087

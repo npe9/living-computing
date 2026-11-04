@@ -1,0 +1,113 @@
+0.0770	0.5301	1.000	in a second pair of parentheses; e.g., FORMAT (12,	0.3966	0.0146
+0.0814	0.1090	1.000	REPETITION OF FIELDS	0.1541	0.0102
+0.0905	0.5318	1.000	3E12.1/2F10.3, 3F9.4/(10F12.4)). If data items remain to	0.3951	0.0183
+0.0996	0.1051	1.000	It may be desired to print n successive fields within	0.3989	0.0202
+0.1076	0.5301	1.000	be transmitted after the format specification has been	0.3966	0.0146
+0.1177	0.1090	1.000	one record, in the same fashion. This may be specified	0.3947	0.0145
+0.1221	0.5301	1.000	completely "used," the format repeats from the last	0.3985	0.0174
+0.1321	0.1071	1.000	by giving n (an unsigned fixed point constant) before	0.3966	0.0176
+0.1394	0.5301	1.000	open parenthesis.	0.1297	0.0161
+0.1497	0.1071	1.000	E, F, I or A. Thus, the statement:	0.2444	0.0161
+0.1539	0.5470	1.000	As these examples show, both the slash and the	0.3797	0.0161
+0.1672	0.1353	1.000	FORMAT (I2, 3E12.4)	0.1485	0.0116
+0.1700	0.5320	1.000	closing parenthesis of the FORMAT statement indicate	0.3947	0.0146
+0.1845	0.1052	1.000	might give	0.0809	0.0148
+0.1845	0.5301	1.000	termination of a record.	0.1805	0.0131
+0.1991	0.5489	1.000	Blank lines may be introduced into a multi-line	0.3778	0.0146
+0.2002	0.4003	1.000	0.5536E 00	0.0754	0.0124
+0.2006	0.2914	1.000	-0.7580E-02	0.0865	0.0102
+0.2020	0.1372	1.000	27	0.0169	0.0087
+0.2020	0.1805	1.000	-0.9321E 02	0.0865	0.0087
+0.2151	0.5320	1.000	FORMAT statement, by listing consecutive slashes. N +	0.3929	0.0146
+0.2252	0.1071	1.000	REPETITION OF GROUPS	0.1635	0.0118
+0.2311	0.5301	1.000	1 consecutive slashes produce N blank lines.	0.3177	0.0147
+0.2455	0.1070	1.000	A limited parenthetical expression is permitted in	0.3969	0.0192
+0.2587	0.5320	1.000	FORMAT AND INPUT-OUTPUT STATEMENT LISTS	0.3421	0.0116
+0.2630	0.1071	1.000	order to permit repetition of data fields according to	0.3966	0.0146
+0.2776	0.1071	1.000	certain format specifications within a longer FORMAT	0.3966	0.0146
+0.2791	0.5320	1.000	The ForMAt statement indicates, among other things,	0.3947	0.0131
+0.2936	0.1071	1.000	statement specification. Thus, FORMAT (2(F10.6, E10.2),	0.3985	0.0146
+0.2936	0.5320	1.000	the size of each record to be transmitted. In this con-	0.3947	0.0131
+0.3096	0.5320	1.000	nection, it must be remembered that the FORMAT state-	0.3947	0.0146
+0.3096	0.1090	1.000	1t) is equivalent to FORMAT (F10.6, E10.2, F10.6, E10.2, 14).	0.3947	0.0131
+0.3241	0.5301	1.000	ment is used in connection with the list of some par-	0.3966	0.0147
+0.3372	0.1053	1.000	SCALE FACTORS	0.1109	0.0146
+0.3387	0.5282	1.000	ticular input-output statement, except when a FORMAT	0.3985	0.0160
+0.3545	0.5320	1.000	statement consists entirely of alphameric fields. In all	0.3947	0.0146
+0.3561	0.1071	1.000	To permit more general use of F-type conversion, a	0.3966	0.0146
+0.3690	0.5319	1.000	other cases, control in the object program switches	0.3950	0.0167
+0.3721	0.1071	1.000	scale factor followed by the letter P may precede the	0.3966	0.0146
+0.3852	0.5320	1.000	back and forth between the list (which specifies	0.3947	0.0131
+0.3881	0.1071	1.000	specification. The scale factor is defined such that:	0.3966	0.0146
+0.3997	0.5320	1.000	whether data remains to be transmitted) and the	0.3947	0.0131
+0.4026	0.1241	1.000	Printed number = Internal number X 10scalefactor.	0.3797	0.0116
+0.4127	0.5317	1.000	FORMAT statement ( which gives the specifications for	0.3952	0.0212
+0.4167	0.1089	1.000	Thus, the statement FORMAT (I2, 1P3F1 1.3) used with	0.3950	0.0170
+0.4317	0.5320	1.000	transmission of that data).	0.1992	0.0132
+0.4330	0.1071	1.000	the data of the preceding example would give:	0.3553	0.0146
+0.4520	0.3477	1.000	5.536	0.0338	0.0087
+0.4520	0.1372	1.000	27	0.0169	0.0102
+0.4520	0.1786	1.000	-932.096	0.0658	0.0087
+0.4520	0.2688	1.000	-0.076	0.0508	0.0087
+0.4593	0.5320	1.000	ENDING A FORMAT STATEMENT	0.2312	0.0131
+0.4679	0.1071	1.000	whereas FORMAT (12, - 1P3F11.3) would give:	0.3064	0.0147
+0.4797	0.5320	1.000	During input-output of data, the object program scans	0.3947	0.0146
+0.4855	0.3327	1.000	0.055	0.0338	0.0102
+0.4868	0.1823	1.000	-9.321	0.0471	0.0090
+0.4868	0.2575	1.000	- 0.001	0.0471	0.0090
+0.4869	0.1372	1.000	27	0.0150	0.0087
+0.4942	0.5320	1.000	the FORMAT statement to which the relevant input-	0.3947	0.0131
+0.5015	0.1259	1.000	A positive scale factor may also be used with E-type	0.3778	0.0146
+0.5084	0.5318	1.000	output statement refers. When a specification for a	0.3950	0.0168
+0.5174	0.1880	1.000	to increase the number and decrease the	0.3158	0.0116
+0.5203	0.1071	1.000	conversion	0.0789	0.0087
+0.5247	0.5320	1.000	numeric field is found and list items remain to be	0.3947	0.0132
+0.5320	0.1071	1.000	exponent. Thus, FORMAT (12, 1P3E12.4) would produce	0.3966	0.0160
+0.5406	0.5320	1.000	transmitted, input-output takes place according to the	0.3947	0.0146
+0.5494	0.1071	1.000	with the same data:	0.1466	0.0117
+0.5567	0.5301	1.000	specification and scanning of the FORMAT statement	0.3966	0.0146
+0.5649	0.4021	1.000	5.5361E-01	0.0736	0.0127
+0.5654	0.2932	1.000	-7.5804E-03	0.0827	0.0102
+0.5669	0.1335	1.000	27	0.0188	0.0102
+0.5669	0.1805	1.000	-9.3210E 01	0.0827	0.0087
+0.5712	0.5301	1.000	resumes. If no items remain, transmission ceases and	0.3947	0.0145
+0.5827	0.1241	1.000	The scale factor is assumed to be zero if no other	0.3797	0.0118
+0.5872	0.5320	1.000	execution of that particular input-output statement is	0.3947	0.0146
+0.5973	0.1071	1.000	value has been given. However, once a value has	0.3966	0.0146
+0.6017	0.5320	1.000	terminated. Thus, a decimal input-output operation	0.3947	0.0146
+0.6133	0.1071	1.000	been given, it will hold for all E- and F-type conver-	0.3966	0.0146
+0.6163	0.5320	1.000	will be brought to an end when a specification for	0.3947	0.0146
+0.6279	0.1071	1.000	sions following the scale factor within the same	0.3966	0.0146
+0.6321	0.5320	1.000	a numeric field or the end of the FOrMAT statement is	0.3947	0.0133
+0.6453	0.1053	1.000	FORMAT statement. (This applies to both single-record	0.3966	0.0131
+0.6467	0.5300	1.000	encountered, and there are no items remaining in the	0.3968	0.0180
+0.6582	0.1052	1.000	and multiple-record formats.) Once a scale factor has	0.3987	0.0153
+0.6642	0.5282	1.000	list.	0.0320	0.0145
+0.6715	0.1053	1.000	been given, a subsequent scale factor of zero in the	0.3985	0.0176
+0.6875	0.1053	1.000	same FORMAT statement must be specified by P. Scale	0.3985	0.0174
+0.6903	0.5301	1.000	FORMAT STATEMENTS READ IN AT OBJECT TIME	0.3308	0.0161
+0.7048	0.1071	1.000	factors have no effect on I-conversion.	0.2820	0.0118
+0.7093	0.5301	1.000	FORTRAN Will accept a variable FORMAT address. This	0.3985	0.0160
+0.7224	0.5301	1.000	provides the facility of specifying a record format at	0.3985	0.0174
+0.7324	0.1090	1.000	MULTIPLE-RECORD FORMATS	0.1992	0.0118
+0.7397	0.5301	1.000	object time. Examples:	0.1692	0.0176
+0.7602	0.5883	1.000	DIMENSION FMT (9), C(5)	0.1898	0.0160
+0.7733	0.5658	1.000	1 FORMAT (9A8)	0.1316	0.0116
+0.7848	0.5789	1.000	READ 1,(FMT(I),I=1,9)	0.1861	0.0146
+0.7951	0.5583	1.000	10 READ FMT, A,B,(C(I), I=1,5)	0.2350	0.0131
+0.7979	0.1053	1.000	beginning of a new line. Thus, FORMAT (3F9.2, 2F10.4/	0.4004	0.0161
+0.8124	0.5301	1.000	Thus, A, B, and the array C would be converted and	0.3966	0.0161
+0.8124	0.1053	1.000	8E14.5) Would specify a multi-line block of print in	0.3985	0.0161
+0.8285	0.1053	1.000	which lines 1, 3, 5, ... have format (3F9.2, 2F10.4), and	0.3985	0.0161
+0.8285	0.5282	1.000	stored, according to the FORMAT specification read into	0.3985	0.0131
+0.8427	0.5300	1.000	the array FMT, by statement 5.	0.2369	0.0153
+0.8445	0.1053	1.000	lines 2, 4, 6,... have format 8E14.5.	0.2650	0.0131
+0.8576	0.1222	1.000	If a multiple-line format is desired such that the	0.3816	0.0174
+0.8576	0.5432	1.000	The format read in at object time must take the	0.3835	0.0146
+0.8735	0.5282	1.000	same form as a source program FORMAT statement,	0.3985	0.0160
+0.8750	0.1071	1.000	first two lines will be printed according to a special	0.3985	0.0160
+0.8881	0.5301	1.000	except that the word Format is omitted, ie., the vari-	0.3966	0.0160
+0.8894	0.1053	1.000	format and all remaining lines according to another	0.4004	0.0161
+0.9026	0.5282	1.000	able format begins with a left parenthesis.	0.3177	0.0174
+0.9040	0.1051	1.000	format, the last line-specification should be enclosed	0.3988	0.0194
+0.9346	0.1071	1.000	12	0.0169	0.0102

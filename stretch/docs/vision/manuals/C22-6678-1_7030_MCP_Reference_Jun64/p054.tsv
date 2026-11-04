@@ -1,0 +1,116 @@
+0.0669	0.5338	1.000	22 The problem program requested a tapt: that	0.3571	0.0160
+0.0697	0.0827	1.000	Errors During Execution	0.1936	0.0118
+0.0814	0.5602	1.000	could not be verified.	0.1654	0.0132
+0.0959	0.5338	1.000	23 The problem program specified an error in a	0.3703	0.0147
+0.0988	0.0827	1.000	JOB ENDED, - ERROR TYPE YY	0.2575	0.0131
+0.1090	0.5602	1.000	$SCR, $SPR, or $SPU calling sequence.	0.3083	0.0189
+0.1133	0.1053	1.000	Where YY is one of the following:	0.2575	0.0103
+0.1250	0.5508	1.000	For error types 15 and 22, REEL 'NAME' is	0.3459	0.0145
+0.1264	0.1053	1.000	01 The problem program caused an IF interrupt,	0.3703	0.0132
+0.1377	0.5338	1.000	added to the JOB ENDED message to indicate which	0.3891	0.0153
+0.1409	0.1335	1.000	and the contents of the instruction counter	0.3158	0.0118
+0.1497	0.5338	1.000	reel caused the problem.	0.1936	0.0189
+0.1570	0.1353	1.000	-.32 is not a B, ŞMCP.	0.1654	0.0116
+0.1685	0.5508	1.000	The preceding error type numbers correspond	0.3571	0.0133
+0.1685	0.1052	1.000	02 The problem program issued an invalid	0.3330	0.0161
+0.1830	0.5320	1.000	to the $ABEX error code. Currently, codes 24-64	0.3853	0.0146
+0.1846	0.1335	1.000	pseudo-operation.	0.1335	0.0131
+0.1960	0.5300	1.000	are unused.	0.0978	0.0163
+0.1976	0.1053	1.000	03 The problem program's last referenced IOD,	0.3647	0.0161
+0.2106	0.5113	1.000	XXXX INTERRUPT AT LOCATION 'location'	0.3459	0.0161
+0.2121	0.1316	1.000	addressed a channel which is not available to	0.3383	0.0146
+0.2267	0.5545	1.000	where XXXX is one of the following:	0.2820	0.0161
+0.2297	0.1335	1.000	the problem program.	0.1635	0.0116
+0.2412	0.5902	1.000	(ABEX error code 65)	0.1692	0.0161
+0.2412	0.1034	1.000	04 The problem program issued an I/O request	0.3628	0.0161
+0.2427	0.5338	1.000	MK	0.0301	0.0131
+0.2558	0.5902	1.000	(ABEX error code 66)	0.1711	0.0161
+0.2573	0.5338	1.000	IK	0.0226	0.0131
+0.2587	0.1335	1.000	that referred to an illegal IOD reference	0.3064	0.0116
+0.2688	0.5921	1.000	(ABEX error code 67)	0.1692	0.0176
+0.2718	0.5320	1.000	IJ	0.0207	0.0116
+0.2729	0.1334	1.000	number.	0.0622	0.0108
+0.2834	0.5338	1.000	EK	0.0301	0.0160
+0.2863	0.1053	1.000	05 The problem program specified an illegal	0.3440	0.0146
+0.2863	0.5921	1.000	(ABEX error code 68)	0.1673	0.0146
+0.2992	0.5336	1.000	CPUS (ABEX error code 69)	0.2260	0.0188
+0.3009	0.1316	1.000	problem program I/O Table of Exits on an	0.3252	0.0161
+0.3125	0.5338	1.000	EKJ	0.0376	0.0160
+0.3154	0.5902	1.000	(ABEX error code 70)	0.1692	0.0131
+0.3178	0.1333	1.000	IOD card.	0.0735	0.0112
+0.3266	0.5789	1.000	(ABEX erroi code 71)	0.1806	0.0169
+0.3270	0.5357	1.000	UNRJ	0.0489	0.0161
+0.3299	0.1034	1.000	06 The problem program's last unload request	0.3571	0.0161
+0.3415	0.5921	1.000	(ABEX error code 72)	0.1692	0.0176
+0.3416	0.5338	1.000	CBJ	0.0376	0.0160
+0.3445	0.1335	1.000	could not be honored because problem pro-	0.3252	0.0146
+0.3561	0.5338	1.000	OP	0.0301	0.0160
+0.3576	0.5921	1.000	(ABEX error code 73)	0.1692	0.0176
+0.3582	0.1313	1.000	gram core storage, for the Reel Pool Table,	0.3371	0.0224
+0.3706	0.5338	1.000	AD	0.0301	0.0160
+0.3721	0.5921	1.000	(ABEX error code 74)	0.1692	0.0161
+0.3764	0.1335	1.000	was exhausted.	0.1128	0.0103
+0.3852	0.5357	1.000	USA	0.0357	0.0160
+0.3866	0.5921	1.000	(ABEX error code 75)	0.1692	0.0161
+0.3894	0.1053	1.000	07 The problem program's last I/O reference,	0.3553	0.0133
+0.4012	0.5902	1.000	(ABEX error code 76)	0.1711	0.0161
+0.4026	0.5338	1.000	DS	0.0244	0.0131
+0.4055	0.1353	1.000	specified an invalid Control word.	0.2538	0.0118
+0.4172	0.1034	1.000	08 The problem program's last I/O reference,	0.3571	0.0160
+0.4172	0.5620	1.000	Note: Both types of "Errors During Execution'	0.3515	0.0132
+0.4288	0.5207	1.000	vill cause a SABEOJ dump which will include the	0.3609	0.0161
+0.4330	0.1353	1.000	specified an invalid Control word address.	0.3214	0.0133
+0.4429	0.5131	1.000	location of the instruction following the one that	0.3835	0.0169
+0.4476	0.1053	1.000	09 The problem program attempted to communi-	0.3722	0.0132
+0.4589	0.1351	1.000	cate with protected storage, with one of the	0.3276	0.0212
+0.4752	0.1316	1.000	following pseudo-operations: $FIXUP, $TIME,	0.3496	0.0176
+0.4927	0.1335	1.000	$STLR, $FELR, $STRG, $FECRG.	0.2650	0.0116
+0.5042	0.1071	1.000	10 The problem program specified a non-tape	0.3477	0.0147
+0.5087	0.5150	1.000	Operation Rejection	0.1560	0.0161
+0.5218	0.1335	1.000	IOD in a $ATID calling sequence.	0.2500	0.0103
+0.5332	0.1070	1.000	11 The problem program specified an invalid	0.3424	0.0160
+0.5363	0.5150	1.000	EOJ REQUESTED BY OPERATOR	0.2594	0.0161
+0.5494	0.1353	1.000	exit address in a $CHEX calling sequence.	0.3177	0.0131
+0.5494	0.5150	1.000	ABNORMAL EOJ REQUESTED BY OPERATOR	0.3609	0.0176
+0.5623	0.1070	1.000	12 The problem program attempted to actuate	0.3480	0.0163
+0.5669	0.5564	1.000	(ABEX error code 0)	0.1598	0.0116
+0.5761	0.5167	1.000	ABNORMAL EOJ TO P. P. MCP NEEDS CHANNEL.	0.3913	0.0208
+0.5770	0.1335	1.000	an I/O unit that had an interrupt stacked.	0.3083	0.0131
+0.5887	0.1071	1.000	13 The problem program exceeded the limit of	0.3553	0.0160
+0.5930	0.5564	1.000	(ABEX error code 80)	0.1711	0.0176
+0.6090	0.1372	1.000	maskable interrupts that MCP will process.	0.3252	0.0089
+0.6206	0.1071	1.000	14 The problem program caused either an OP,	0.3534	0.0131
+0.6350	0.1371	1.000	AD, USA, or DS interrupt while in the auto	0.3217	0.0146
+0.6366	0.5150	1.000	Miscellaneous Messages	0.1880	0.0174
+0.6512	0.1353	1.000	stacked mode.	0.1071	0.0116
+0.6657	0.5094	1.000	COMD, COMMENT, maximum 40 character message	0.4079	0.0161
+0.6657	0.1053	1.000	15 MCP encountered repeated UKs while verifying	0.3835	0.0146
+0.6802	0.1353	1.000	a problem program tape label.	0.2293	0.0131
+0.6802	0.5620	1.000	Entered either by a COMD card or by the	0.3120	0.0131
+0.6948	0.1071	1.000	16 The problem program executed a successful	0.3590	0.0131
+0.6959	0.5600	1.000	operator's console.	0.1487	0.0135
+0.7078	0.5150	1.000	XXXX INTERRUPT AT LOCATION 'location'	0.3459	0.0146
+0.7093	0.1353	1.000	branch to location 32.0 or 32.32.	0.2425	0.0116
+0.7252	0.5583	1.000	XXXX may be any of the maskable interrupts.	0.3477	0.0133
+0.7252	0.1071	1.000	17 The problem program specified an illegal	0.3421	0.0118
+0.7384	0.5150	1.000	$ABEX TABLE IS OUT OF PP BOUNDS	0.3008	0.0147
+0.7397	0.1353	1.000	PTOE address in the refill field of $15.	0.2951	0.0118
+0.7542	0.5602	1.000	$ABEX specified a bad address, the problem	0.3383	0.0147
+0.7542	0.1071	1.000	18 The problem program specified an invalid FWA	0.3853	0.0118
+0.7688	0.1335	1.000	in a $COMM calling sequence.	0.2274	0.0133
+0.7688	0.5620	1.000	program will continue but cannot regain control	0.3553	0.0118
+0.7820	0.5583	1.000	if a $ABEOJ occurs.	0.1579	0.0145
+0.7820	0.1053	1.000	19 The problem program specified an illegal	0.3477	0.0145
+0.7964	0.5150	1.000	YOU HAVE BEEN GIVEN CONTROL VIA $ABEX,	0.3722	0.0161
+0.7964	0.1335	1.000	instruction in a $FIXUP calling sequence	0.3102	0.0147
+0.8109	0.1353	1.000	(either a SIC;BD, BD or an I/O instruction).	0.3308	0.0133
+0.8109	0.5188	1.000	AT LOCATION 'location'.	0.1936	0.0118
+0.8270	0.5188	1.000	OUTPUT AT IPL TIME FOLLOWS, SOME OUTPUT	0.3910	0.0118
+0.8270	0.1090	1.000	20 The problem program issued a $STLR when	0.3553	0.0118
+0.8415	0.5169	1.000	MAY BE REPEATED...	0.1823	0.0118
+0.8415	0.1353	1.000	not in the Auto Stacked mode.	0.2218	0.0103
+0.8561	0.1071	1.000	21 MCP encountered repeated UKs while reading	0.3703	0.0118
+0.8561	0.5620	1.000	Restart gives this message before listing the	0.3365	0.0118
+0.8706	0.1353	1.000	the problem program's input.	0.2199	0.0117
+0.8706	0.5620	1.000	contents of the output buffer.	0.2162	0.0117
+0.9157	0.0865	1.000	54	0.0188	0.0102

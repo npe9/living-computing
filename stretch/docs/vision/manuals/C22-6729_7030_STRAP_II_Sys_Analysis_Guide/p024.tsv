@@ -1,0 +1,109 @@
+0.0799	0.0733	1.000	to detect syntatical errors in a field. If the datums	0.3853	0.0116
+0.0799	0.5150	1.000	During Pass 2 in the initial processing of each	0.3440	0.0146
+0.0873	0.0731	1.000	in a field are combined in an illegal manner, GETFLD	0.4065	0.0218
+0.0945	0.4981	1.000	unit, Pass 2 OR's into the fields (reserved for the	0.3722	0.0146
+0.1076	0.4981	1.000	symbolic and absolute portions of the location counter	0.3985	0.0161
+0.1090	0.0733	1.000	encodes a null coded expression which later will be	0.3797	0.0116
+0.1235	0.4981	1.000	in the function portion of the $00's variable length	0.3703	0.0146
+0.1235	0.0733	1.000	evaluated as zero for the field. Since GETFLD encodes	0.4135	0.0131
+0.1381	0.5000	1.000	entry) the current setting of $6 and $7 respectively.	0.3816	0.0146
+0.1381	0.0733	1.000	only one field per request, MAIN sets up a counter of	0.3966	0.0131
+0.1526	0.5132	1.000	Thus, later whenever VALUE is called upon by	0.3515	0.0160
+0.1526	0.0733	1.000	the maximum number of times it should go to GETFLD.	0.4098	0.0147
+0.1672	0.0733	1.000	The initial contents of this counter is determined by	0.3853	0.0132
+0.1685	0.5000	1.000	DECODE to establish the value of a coded expression	0.3929	0.0147
+0.1817	0.0733	1.000	the first of this op's fill index words which is located	0.3966	0.0132
+0.1830	0.4981	1.000	in the unit and VALUE encounters the symbolic datum	0.4004	0.0146
+0.1962	0.5000	1.000	$00, VALUE recognizes the $ situation and does the	0.3835	0.0160
+0.1962	0.0733	1.000	by the value fieid of the op index word. For each	0.3665	0.0132
+0.2121	0.4981	1.000	following:	0.0771	0.0148
+0.2121	0.0733	1.000	address field encountered, MAIN increments the	0.3609	0.0132
+0.2267	0.5658	1.000	VALUE looks up the $00 in the symbol	0.2838	0.0146
+0.2267	0.0733	1.000	field counter which is used by the error message sub-	0.4004	0.0132
+0.2412	0.5658	1.000	table to obtain the current absolute and	0.2895	0.0131
+0.2412	0.0733	1.000	routines to identify the field of an occuring error.	0.3703	0.0118
+0.2558	0.5658	1.000	symbolic values to be associated with	0.2782	0.0146
+0.2558	0.0752	1.000	Also a field counter in the format part of the unit is	0.3816	0.0118
+0.2703	0.0733	1.000	updated for each field encoded so DECODE will know	0.3910	0.0118
+0.2703	0.5658	1.000	this $.	0.0508	0.0131
+0.2806	0.5655	1.000	VALUE inserts these values into the	0.2807	0.0227
+0.2820	0.5150	1.000	2.	0.0226	0.0203
+0.2848	0.0733	1.000	how many times to go to VALUE to get a coded ex-	0.3759	0.0117
+0.2994	0.5658	1.000	corresponding absoute and symbolie	0.2726	0.0161
+0.3009	0.0733	1.000	pression encoded during Pass 2. On each re-entry	0.3797	0.0116
+0.3139	0.0733	1.000	into GETFLD through this loop, MAIN does not have	0.3872	0.0131
+0.3154	0.5658	1.000	datums of the coded expression in this	0.2838	0.0131
+0.3285	0.0714	1.000	to reset Befxtx because GETFLD updates this index	0.3853	0.0145
+0.3299	0.5658	1.000	unit.	0.0357	0.0131
+0.3445	0.0733	1.000	word. MAIN turns the Zifall indicator off so Pass 2a	0.3966	0.0116
+0.3445	0.5639	1.000	If there is no symbolic portion in the current	0.3365	0.0131
+0.3590	0.0752	1.000	will know that there are coded expressions in this	0.3665	0.0116
+0.3590	0.5677	1.000	contents of the $00 symbol table entry,	0.2876	0.0131
+0.3735	0.0752	1.000	unit to be evaluated.	0.1466	0.0116
+0.3750	0.5677	1.000	VALUE changes the symbolic field in the	0.3008	0.0117
+0.3881	0.0902	1.000	If GETFLD is called upon to encode more than one	0.3741	0.0102
+0.3894	0.5677	1.000	unit's coded expression from $00 to all	0.2876	0.0118
+0.4012	0.0752	1.000	statement field for an "ambiguous op" then the "ambig-	0.4079	0.0131
+0.4039	0.5677	1.000	zeros. Later if VALUE has to look at this	0.3139	0.0118
+0.4172	0.0752	1.000	uous op" must be of the vfl type and MAIN changes	0.3741	0.0132
+0.4185	0.5677	1.000	coded expression again, VALUE makes a	0.3064	0.0133
+0.4330	0.5677	1.000	special check for a symbolic datum of all	0.3064	0.0118
+0.4330	0.0733	1.000	the unit, etc., accordingly.	0.2049	0.0118
+0.4476	0.5695	1.000	zeroes, so that VALUE will ignore this	0.2895	0.0132
+0.4476	0.0902	1.000	Whenever GETFLD encounters a dollar sign chara-	0.3816	0.0118
+0.4621	0.0752	1.000	eter in an address field followed by a semicolon,	0.3609	0.0132
+0.4621	0.5677	1.000	type of symbolie datum rather than looking	0.3158	0.0146
+0.4767	0.0752	1.000	comma, plus, minus, asterisk, or slash character,	0.3853	0.0132
+0.4782	0.5677	1.000	it up in the symbol table.	0.1861	0.0116
+0.4912	0.0752	1.000	GETFLD forms a coded expression which contains at	0.3929	0.0118
+0.5043	0.0732	1.000	least the two datums to represent the dollar sign	0.3612	0.0147
+0.5070	0.5018	1.000	Box 38	0.0529	0.0136
+0.5203	0.0752	1.000	character. One datum is a symbolic datum containing	0.4004	0.0131
+0.5348	0.0752	1.000	the $ symbol itself represented internally by the	0.3571	0.0131
+0.5363	0.5038	1.000	After MAIN has processed all the characters con-	0.3703	0.0116
+0.5494	0.0752	1.000	STRAP II special symbol $00. The 24 bits occupied	0.3853	0.0131
+0.5509	0.5038	1.000	tributing to the instruction itself, the comment	0.3459	0.0131
+0.5654	0.0752	1.000	by the $00 configuration now, will later contain the	0.3778	0.0116
+0.5654	0.5038	1.000	character (or any characters of the instruction	0.3440	0.0116
+0.5799	0.5038	1.000	that are to be treated as a comment) must now be	0.3628	0.0116
+0.5799	0.0752	1.000	contents of the symbolie portion, if any, of the	0.3459	0.0116
+0.5945	0.5019	1.000	processed. Their only processing consists of having	0.3929	0.0116
+0.5945	0.0752	1.000	associated location counter value.	0.2613	0.0102
+0.5945	0.3383	1.000	The second datum	0.1297	0.0102
+0.6076	0.0733	1.000	is an absolute datum presently containing 24 bits of	0.3816	0.0116
+0.6090	0.5019	1.000	them included in the symbolic statement buffer being	0.3891	0.0116
+0.6221	0.0752	1.000	all zeros but eventually holding the absolute portion	0.3816	0.0116
+0.6221	0.5000	1.000	built up by GETCHA. MAIN accomplishes this by	0.3703	0.0146
+0.6352	0.0733	1.000	of the location counter value. The operator to be	0.3665	0.0131
+0.6381	0.5000	1.000	relooping into GETCHA until GETCHA gives MAIN a	0.3891	0.0131
+0.6470	0.0713	1.000	later used with these two datums during the decoding	0.3931	0.0173
+0.6497	0.5000	1.000	semicolon in the value field of $3. This semicolon	0.3778	0.0161
+0.6657	0.5000	1.000	may be either one picked up from the card image or	0.3872	0.0174
+0.6657	0.0733	1.000	is set up as a "L and plus" operation, so that the	0.3647	0.0131
+0.6802	0.0752	1.000	two datums will be combined to give the bit value of	0.3816	0.0131
+0.6802	0.5000	1.000	the "false" semicolon indicating an end of card block.	0.3966	0.0146
+0.6948	0.0733	1.000	the $ setting, i.e., the present setting of the location	0.3966	0.0131
+0.6962	0.5019	1.000	Later the symbolic statement buffer, i.e., the pic-	0.3797	0.0145
+0.7093	0.0752	1.000	counter value when the value of the field is established	0.4041	0.0131
+0.7106	0.5000	1.000	ture of the statement field of the card image, is	0.3553	0.0147
+0.7246	0.0732	1.000	by VALUE.	0.0849	0.0131
+0.7252	0.5000	1.000	transmitted into the unit.	0.1880	0.0133
+0.7412	0.0921	1.000	For such cases, MAIN enters the $ symbol into the	0.3778	0.0103
+0.7542	0.5018	1.000	Box 39	0.0528	0.0148
+0.7542	0.0752	1.000	symbol table after all the units have been processed	0.3835	0.0118
+0.7703	0.0733	1.000	in Pass 1. The symbol entry will be for the symbol	0.3835	0.0118
+0.7833	0.5019	1.000	Using GETFLD's index word, Bofldx, MAIN updates	0.3853	0.0161
+0.7848	0.0752	1.000	$00, with the function portion of the variable length	0.3778	0.0117
+0.7979	0.0752	1.000	entry part of the entry containing a SYN-like coded	0.3778	0.0132
+0.7979	0.5000	1.000	Ibuffw to address the first bit after the coded expres-	0.3966	0.0146
+0.8124	0.5000	1.000	sions with which GETFLD has been loading the unit	0.3816	0.0161
+0.8139	0.0752	1.000	expression made up of two datums, one for the sy-	0.3778	0.0131
+0.8285	0.5000	1.000	under the control of the index word Bofldx. Note	0.3703	0.0145
+0.8285	0.0752	1.000	mbolic portion and one for the absolute portion of	0.3665	0.0116
+0.8415	0.5000	1.000	GETFLD does not update Ibuffw; the user program	0.3741	0.0161
+0.8430	0.0752	1.000	the current Pass 2 setting of the running location	0.3628	0.0116
+0.8576	0.5000	1.000	must do this. Just as Ibuffw was used to locate the	0.3816	0.0146
+0.8590	0.0752	1.000	counter value (maintained in $6 and $7 respectively	0.3778	0.0116
+0.8721	0.5000	1.000	initially available area in the unit for the coded	0.3496	0.0131
+0.8735	0.0752	1.000	during Pass 2).	0.1147	0.0116
+0.9288	0.0733	1.000	24	0.0150	0.0087

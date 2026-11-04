@@ -1,0 +1,107 @@
+0.0872	0.5357	1.000	routine (KSEOPT) for SEOP I-O instruction, and by	0.3835	0.0174
+0.0887	0.1147	1.000	KSPTM. The space label must be performed in two	0.3835	0.0147
+0.1017	0.1147	1.000	operations, one to space the label block, and one to	0.3816	0.0174
+0.1032	0.5357	1.000	the I-O indicator check routine (KIOIND) for non-	0.3684	0.0132
+0.1163	0.1128	1.000	space the label tape mark, since the tape mark is	0.3703	0.0174
+0.1177	0.5432	1.000	SEOP set up I-O instructions. The following cod	0.3609	0.0145
+0.1308	0.1128	1.000	written in the file density which may differ from the	0.3853	0.0174
+0.1308	0.5451	1.000	night appear following a SEOP set up I-O instruction	0.3872	0.0146
+0.1450	0.1126	1.000	label density. The sign of the file count is used to	0.3746	0.0232
+0.1526	0.5526	1.000	LVI, 1, KSEOPT	0.1316	0.0189
+0.1612	0.1128	1.000	distinguish whether the tape is positioned at the	0.3553	0.0161
+0.1730	0.5526	1.000	SIC, KEOPR	0.0959	0.0146
+0.1788	0.1147	1.000	beginning (file count minus zero) or end (file count	0.3722	0.0103
+0.1916	0.1145	1.000	plus zero) of the tape label. If the label must be	0.3611	0.0153
+0.1998	0.5487	1.000	(return at EOP)	0.1206	0.0147
+0.2076	0.1146	1.000	passed, a set up I-O space block operation is per-	0.3686	0.0137
+0.2151	0.5357	1.000	for non-SEOP setup I-O, this code might appear:	0.3647	0.0146
+0.2221	0.1146	1.000	formed in the density of the label, and control	0.3440	0.0137
+0.2277	0.6352	1.000	LVI, 1, KSUPP	0.1205	0.0184
+0.2315	0.1125	1.000	returned via KSUPP. When the interrupt occurs, the	0.3974	0.0288
+0.2427	0.6353	1.000	SIC, SRETAD($12)	0.1410	0.0189
+0.2500	0.1128	1.000	density is changed to the file density (KSPTM) and a	0.3872	0.0161
+0.2586	0.6353	1.000	B, MIOREJ	0.0903	0.0176
+0.2645	0.1128	1.000	set up I-O space file operation performed. When the	0.3947	0.0176
+0.2728	0.6352	1.000	SIC, KKIND	0.0943	0.0198
+0.2762	0.5526	1.000	A	0.0150	0.0131
+0.2802	0.1145	1.000	interrupt for the space file occurs, control is	0.3424	0.0174
+0.2875	0.6334	1.000	B, KIOIND	0.0885	0.0180
+0.2890	0.1127	1.000	returned to the location specified in scratch memory	0.3932	0.0224
+0.3036	0.5451	1.000	In this case, control is returned to KSUPP by	0.3459	0.0147
+0.3124	0.1147	1.000	in the UAT, SSCRPM.	0.1635	0.0118
+0.3182	0.5376	1.000	MIOREJ and to A by the receptor when the interrupt	0.3872	0.0147
+0.3358	0.5376	1.000	from the set up I-O oceurs.	0.2049	0.0116
+0.3404	0.1144	1.000	Set Density	0.0851	0.0139
+0.3648	0.5395	1.000	EOP Test for SEOP I-O	0.1767	0.0102
+0.3706	0.1165	1.000	The set density routine is entered at KDENST (Fig-	0.3778	0.0117
+0.3836	0.1165	1.000	ure 104) with the desired density code in the VF of	0.3722	0.0132
+0.3939	0.5395	1.000	The SEOP test routine (KSEOPT, Figure 106) is used	0.3947	0.0131
+0.3997	0.1147	1.000	$1 and the return address in SRETAD. The routine	0.3816	0.0116
+0.4084	0.5395	1.000	to wait for completion of a SEOP set up I-O opera-	0.3759	0.0116
+0.4142	0.1165	1.000	returns immediately if the unit is in the desired den-	0.3891	0.0116
+0.4244	0.5395	1.000	tion. The routine is entered with the linkage:	0.3383	0.0116
+0.4288	0.1165	1.000	sity. Otherwise, a set up change density operation	0.3778	0.0131
+0.4390	0.5526	1.000	SIC, KEOPR	0.0977	0.0147
+0.4433	0.1147	1.000	is performed and control returned via KSUPP. The	0.3853	0.0131
+0.4535	0.5545	1.000	B, KSEOPT	0.0902	0.0145
+0.4593	0.1165	1.000	density codes are:	0.1335	0.0116
+0.4679	0.5395	1.000	or its equivalent (see the I-O reject routine, MIOREJ).	0.4041	0.0133
+0.4738	0.1692	1.000	Low	0.0357	0.0087
+0.4824	0.5395	1.000	The routine copies the control word repeatedly until	0.3853	0.0118
+0.4855	0.1316	1.000	• High	0.0771	0.0145
+0.4985	0.5395	1.000	the SEOP bit is off, returning when all indicators are	0.3947	0.0118
+0.5115	0.5395	1.000	off. If other indicators are on when SEOP is off, the	0.3929	0.0133
+0.5174	0.1165	1.000	Change Mode	0.0959	0.0116
+0.5276	0.5395	1.000	channel is cleared and the operation repeated, unless	0.3947	0.0118
+0.5421	0.5395	1.000	the indicator is EE on a locate or a mode change	0.3609	0.0117
+0.5464	0.1165	1.000	The change mode routine is entered at KMODE (Fig-	0.3872	0.0118
+0.5567	0.5395	1.000	operation. Since the EE indication results when	0.3571	0.0116
+0.5609	0.1147	1.000	ure 104) with the code for the desired mode in the	0.3684	0.0118
+0.5712	0.5395	1.000	these operations are performed while the tape indica-	0.3966	0.0116
+0.5755	0.1165	1.000	VF of $1 and the return address in KKMODE. If the	0.3853	0.0118
+0.5858	0.5395	1.000	tor is on, the EE indication is ignored.	0.2895	0.0131
+0.5915	0.1165	1.000	unit is set to the desired mode, the routine returns	0.3759	0.0118
+0.6017	0.5564	1.000	If it is necessary to repeat the operation, control	0.3647	0.0116
+0.6061	0.1165	1.000	immediately. Otherwise, a SEOP change mode	0.3496	0.0131
+0.6148	0.5395	1.000	is given to KRETRY with the VF of $1 still containing	0.3947	0.0131
+0.6206	0.1147	1.000	instruction is set up and performed, and the SEOP	0.3722	0.0117
+0.6308	0.5395	1.000	the return address just used by the I-O reject routine	0.3966	0.0116
+0.6352	0.1165	1.000	test routine, KSEOPT, used to wait for its comple-	0.3797	0.0131
+0.6453	0.5376	1.000	MIOREJ. Thus, the operation will be repeated and	0.3816	0.0147
+0.6497	0.1165	1.000	tion. Control is then returned. The mode codes are:	0.3966	0.0116
+0.6584	0.5375	1.000	KSEOPT entered again. A count is set up by MIOREJ	0.4005	0.0166
+0.6656	0.1785	1.000	ECC odd	0.0677	0.0118
+0.6657	0.1297	1.000	01	0.0207	0.0116
+0.6744	0.5395	1.000	in $11 to limit retries. The counting is done at	0.3534	0.0116
+0.6802	0.1805	1.000	No ECC even	0.0977	0.0102
+0.6802	0.1316	1.000	10	0.0188	0.0087
+0.6887	0.5394	1.000	ZTSEOP.	0.0716	0.0136
+0.6948	0.1335	1.000	11	0.0169	0.0102
+0.6948	0.1805	1.000	No ECC odd	0.0902	0.0102
+0.7166	0.1165	1.000	I-O Reject Test	0.1184	0.0116
+0.7194	0.5376	1.000	I-O Indicator Check	0.1504	0.0118
+0.7442	0.1184	1.000	The I-O reject test routine is entered at MIOREJ	0.3590	0.0131
+0.7470	0.5376	1.000	After a non-SEOP set up I-O operation, the I-O indi-	0.3947	0.0161
+0.7615	0.1184	1.000	(Figure 105) with the return address in $1 and the	0.3647	0.0133
+0.7630	0.5376	1.000	cator check routine (KIOIND, Figure 107) is used to	0.3872	0.0161
+0.7761	0.1165	1.000	I-O instruction in SIOINS in the unit area table. The	0.3891	0.0118
+0.7776	0.5376	1.000	test the EPGK and UK indicators. If both are off, it	0.3910	0.0146
+0.7906	0.1165	1.000	function of the routine is to test indicators EKJ,	0.3553	0.0132
+0.7921	0.5395	1.000	returns; if either is on, the routine determines the	0.3778	0.0161
+0.8052	0.1184	1.000	UNRJ and CBRJ after an I-O instruction to determine	0.3929	0.0103
+0.8067	0.5376	1.000	nature of the I-O operation and initiates a series of	0.3835	0.0146
+0.8197	0.1165	1.000	its acceptance, and to retry it if it is rejected. The	0.3872	0.0132
+0.8227	0.5395	1.000	retries, ultimately returning or entering dispatcher	0.3853	0.0146
+0.8342	0.1184	1.000	routine will return to the address specified if the	0.3609	0.0118
+0.8372	0.5395	1.000	error control. The five main paths (Figures 107,	0.3703	0.0146
+0.8503	0.1165	1.000	instruction is accepted. If the instruction is not	0.3571	0.0116
+0.8517	0.5395	1.000	108) through the routine are:	0.2143	0.0146
+0.8648	0.1165	1.000	accepted after a number of retries, dispatcher error	0.3929	0.0116
+0.8779	0.5564	1.000	1. KKSPAC Space file failure	0.2556	0.0146
+0.8794	0.1184	1.000	control is entered.	0.1372	0.0102
+0.8924	0.5564	1.000	2. KLABWL Write label failure	0.2650	0.0146
+0.8939	0.1335	1.000	When the MIOREJ routine is used after set up I-O	0.3665	0.0116
+0.9070	0.5564	1.000	3. KRREAD Read label failure	0.2613	0.0145
+0.9084	0.1165	1.000	instruction, it is always followed by the SEOP test	0.3741	0.0131
+0.9433	0.9079	1.000	183	0.0244	0.0102
+0.9433	0.7895	1.000	Service Routines	0.0977	0.0103

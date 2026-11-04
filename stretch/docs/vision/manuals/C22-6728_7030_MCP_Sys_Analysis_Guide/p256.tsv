@@ -1,0 +1,68 @@
+0.0680	0.2799	1.000	Symbol	0.0624	0.0181
+0.0683	0.1259	1.000	Bits	0.0395	0.0189
+0.0711	0.6128	1.000	Content	0.0602	0.0104
+0.0974	0.2820	1.000	SIOINS	0.0545	0.0145
+0.0985	0.1277	1.000	4.00 - 4.63	0.0886	0.0167
+0.1003	0.4718	1.000	This field contains the last I-O instruction actuated for	0.4060	0.0116
+0.1148	0.4699	1.000	the unit. It is set and used by the actuator.	0.3233	0.0131
+0.1408	0.2800	1.000	SRETAD	0.0697	0.0163
+0.1421	0.1259	1.000	5.00- 5.18	0.0904	0.0166
+0.1439	0.4699	1.000	This field contains the address in the actuator to which	0.4060	0.0131
+0.1584	0.4699	1.000	the receptor will return control if the terminated opera-	0.4173	0.0131
+0.1744	0.4699	1.000	tion was a setup operation. The field is set by the	0.3741	0.0116
+0.1890	0.4699	1.000	actuator and used by the receptor.	0.2538	0.0117
+0.2135	0.2819	1.000	SCTLOP	0.0678	0.0163
+0.2148	0.1258	1.000	5.42 - 5.49	0.0904	0.0181
+0.2179	0.4718	1.000	This field contains the control operation code, in binary,	0.4192	0.0133
+0.2324	0.4699	1.000	for the last control operation given to the unit. It is	0.3872	0.0133
+0.2470	0.4699	1.000	set and used by the actuator.	0.2143	0.0133
+0.2730	0.2819	1.000	SSCRPM	0.0698	0.0165
+0.2737	0.1257	1.000	6.00 - 6.63	0.0908	0.0180
+0.2776	0.4699	1.000	This field is used by several actuator routines as an	0.3872	0.0103
+0.2902	0.4698	1.000	intermediate storage media assigned expressly to the	0.3968	0.0154
+0.3052	0.4680	1.000	unit being acted upon.	0.1635	0.0146
+0.3314	0.1259	1.000	7.16 - 7.17	0.0921	0.0174
+0.3328	0.2801	1.000	SLABM	0.0620	0.0145
+0.3358	0.4680	1.000	This field indicates the mode specified in the label of a	0.4079	0.0145
+0.3503	0.4680	1.000	system tape after said tape has been verified. The field	0.4192	0.0161
+0.3618	0.4662	1.000	is set by the verify routine and used by the actuator.	0.3929	0.0176
+0.3808	0.5000	1.000	00 - Illegal	0.0996	0.0131
+0.3939	0.5207	1.000	- ECC - ODD	0.1147	0.0131
+0.3953	0.5019	1.000	01	0.0188	0.0102
+0.4099	0.5019	1.000	10 - EVEN	0.0940	0.0102
+0.4244	0.5019	1.000	11 - ODD - NOECC	0.1541	0.0116
+0.4477	0.1241	1.000	7.25	0.0414	0.0218
+0.4506	0.2801	1.000	SSYSTM	0.0677	0.0145
+0.4535	0.4680	1.000	This indicator tells whether the tape presently mounted	0.4098	0.0145
+0.4694	0.4680	1.000	on the unit is a labelled tape, or not. It is set by I-O	0.4004	0.0132
+0.4811	0.4680	1.000	assignment and altered by the receptor when new tapes	0.4060	0.0147
+0.4970	0.4662	1.000	are mounted. It is tested by the receptor and by the	0.3910	0.0147
+0.5273	0.5000	1.000	0 - Non-labeled	0.1279	0.0108
+0.5406	0.5000	1.000	1 - Labeled	0.0996	0.0132
+0.5654	0.1259	1.000	7.29	0.0395	0.0189
+0.5669	0.2801	1.000	SLABD	0.0583	0.0160
+0.5712	0.4680	1.000	This indicator specifies the density found in the label	0.3929	0.0131
+0.5858	0.4662	1.000	after verification. It is set, tested, and used by the	0.3891	0.0145
+0.6003	0.4662	1.000	actuator.	0.0714	0.0131
+0.6141	0.4998	1.000	0 - High	0.0755	0.0130
+0.6292	0.5018	1.000	1 - Low	0.0696	0.0105
+0.6534	0.2779	1.000	SFILEK	0.0644	0.0173
+0.6539	0.1259	1.000	7.38 - 7.49	0.0922	0.0178
+0.6584	0.4662	1.000	This fieid specifies the file position of the tape for the	0.4023	0.0161
+0.6744	0.4680	1.000	unit. If the tape is labelled, file zero is the label file.	0.4060	0.0132
+0.6890	0.4680	1.000	The file count will be -0 if before the label record and	0.4004	0.0117
+0.7035	0.4680	1.000	+0 if after the label record but before the label file	0.3759	0.0117
+0.7179	0.4680	1.000	mark. The field is set by I-O assignment and tested	0.3891	0.0133
+0.7320	0.4679	1.000	and altered by the actuator and receptor.	0.3048	0.0140
+0.7581	0.2761	1.000	SFREEL	0.0719	0.0172
+0.7602	0.1259	1.000	8.00 - 8.17	0.0883	0.0147
+0.7630	0.4680	1.000	This field contains the address of the first reel entry	0.3910	0.0131
+0.7776	0.4662	1.000	in the reel pool table for a tape unit. It is set by I-O	0.3929	0.0146
+0.7921	0.4662	1.000	assignment and used and modified by the actuator and	0.3966	0.0131
+0.8078	0.4680	1.000	receptor.	0.0697	0.0108
+0.8331	0.4678	1.000	This field contains the address in the reel pool table of	0.4065	0.0185
+0.8339	0.1258	1.000	8.32 - 8.49	0.0867	0.0153
+0.8342	0.2763	1.000	SCREEL	0.0696	0.0132
+0.8517	0.4662	1.000	the currently mounted tape. It is set by I-O assignment	0.4154	0.0131
+0.8663	0.4662	1.000	and altered by the actuator.	0.2049	0.0116
+0.9172	0.0602	1.000	256	0.0282	0.0131

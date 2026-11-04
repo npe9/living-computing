@@ -1,0 +1,104 @@
+0.0607	0.5205	1.000	is normalized and zero bits enter the low-order posi-	0.3913	0.0182
+0.0624	0.1053	1.000	Add to Magnitude (+MG)	0.1974	0.0146
+0.0785	0.5207	1.000	tions. If the address operand has a zero fraction,	0.3910	0.0145
+0.0842	0.1034	1.000	This operation is performed in the same manner as	0.3910	0.0146
+0.0945	0.5207	1.000	normalization is suppressed because the result is an	0.3910	0.0146
+0.1003	0.1034	1.000	ADD, with the following exceptions:	0.2538	0.0146
+0.1090	0.5207	1.000	order of magnitude zero. If noisy mode is also speci-	0.3910	0.0146
+0.1148	0.1184	1.000	The fraction sign of the operand in the accumula-	0.3759	0.0146
+0.1249	0.5206	1.000	fied, ones enter the low-order fraction bits during	0.3911	0.0147
+0.1308	0.1015	1.000	tor is assumed positive and the result fraction is	0.3929	0.0146
+0.1410	0.5207	1.000	normalization.	0.1071	0.0102
+0.1467	0.1015	1.000	made a forced zero when a negative sum is obtained.	0.3910	0.0133
+0.1555	0.5376	1.000	When the specified operand is a value in the XEP or	0.3741	0.0146
+0.1612	0.1165	1.000	When the fraction sign of the sum is positive, the	0.3759	0.0147
+0.1715	0.5207	1.000	XEN range, normalization, if specified, is suppressed.	0.3891	0.0145
+0.1758	0.0996	1.000	sum is placed in accumulator bits 0-59 and the accu-	0.3947	0.0146
+0.1860	0.5207	1.000	The propagated EF of 1 causes exponent range indi-	0.3891	0.0146
+0.1918	0.0996	1.000	mulator sign remains unchanged. When the fraction	0.3929	0.0146
+0.2035	0.5226	1.000	cator, XPFP, to be set on. When the EF of 1 is gener-	0.3891	0.0145
+0.2078	0.0996	1.000	sign of the sum is negative, a zero fraction is placed	0.3910	0.0161
+0.2179	0.5207	1.000	ated by normalization, the exponent range indicator	0.3910	0.0176
+0.2208	0.0994	1.000	in accumulator bits 12-59. The sign and exponent	0.3933	0.0183
+0.2324	0.5226	1.000	xpu is turned on.	0.1259	0.0133
+0.2382	0.0995	1.000	of the accumulator operand become the sign and ex-	0.3930	0.0151
+0.2542	0.0996	1.000	ponent of the forced order of magnitude zero result.	0.3910	0.0133
+0.2558	0.5188	1.000	INDICATORS	0.0808	0.0102
+0.2688	0.0996	1.000	For this forced zero, the indicator lost significance	0.3910	0.0146
+0.2697	0.3201	1.000	uishing t in, the	0.1375	0.0583
+0.2733	0.5338	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3741	0.0161
+0.2833	0.1015	1.000	(LS) is not turned on, distinguishing it from a zero	0.3891	0.0146
+0.2878	0.5150	1.000	(MOP); Arithmetic Result (RLZ, RZ, RGZ, RN);	0.3929	0.0174
+0.2961	0.0976	1.000	sum. In an ADD TO MAGNITUDE operation, the sign	0.3932	0.0195
+0.3036	0.5169	1.000	Exponent Range (XPFP, XPH, XPL, XPU); Zero	0.3891	0.0176
+0.3154	0.0996	1.000	byte register bit position 4 never changes.	0.2914	0.0146
+0.3212	0.5150	1.000	Multiply (ZM). These indicators are set as in ADD.	0.3722	0.0145
+0.3299	0.1147	1.000	When either or both operands lie in the XEP or XEN	0.3741	0.0146
+0.3445	0.0977	1.000	ranges, the operation is performed as described in ADD.	0.3929	0.0146
+0.3576	0.5150	1.000	Load with Flag (LWF)	0.1560	0.0146
+0.3605	0.0996	1.000	The fraction sign of the accumulator operand is as-	0.3910	0.0145
+0.3764	0.0977	1.000	sumed positive and the result fraction is made a	0.3910	0.0132
+0.3794	0.5169	1.000	This operation is the same as LoAD except that the	0.3891	0.0161
+0.3909	0.0977	1.000	forced zero when a negative sign is obtained. As de-	0.3910	0.0146
+0.3953	0.5132	1.000	data flag bits T, U, and V of the addressed operand	0.3929	0.0160
+0.4070	0.0959	1.000	scribed above, the sign and exponent of the accumu-	0.3947	0.0145
+0.4112	0.5150	1.000	sign bytes set the flag bits in positions 5-7 of the accu-	0.3910	0.0161
+0.4198	0.0956	1.000	lator operand become the sign and exponent of the	0.3933	0.0189
+0.4258	0.5169	1.000	mulator sign byte register as well as the data flag in-	0.3872	0.0146
+0.4375	0.0959	1.000	forced order of magnitude result.	0.2387	0.0131
+0.4418	0.5169	1.000	dicators TF, UF, and VF.	0.1654	0.0131
+0.4608	0.0959	1.000	INDICATORS	0.0808	0.0102
+0.4651	0.5150	1.000	INDICATORS	0.0808	0.0102
+0.4782	0.1109	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3759	0.0161
+0.4824	0.5301	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3741	0.0161
+0.4927	0.0940	1.000	(MOP); Lost Carry (LC); Preparatory Shift Greater	0.3947	0.0161
+0.4970	0.5113	1.000	(MOP); Arithmetic Result (RLZ, RZ, RGZ, RN);	0.3929	0.0176
+0.5072	0.0938	1.000	than 48 (PSH); Exponent Range (XPFP, XPO, XPH,	0.3969	0.0195
+0.5145	0.5132	1.000	Exponent Range (XPFP, XPH, XPL, XPU); Zero	0.3891	0.0161
+0.5247	0.0959	1.000	XPL, XPU; Zero Multiply (ZM). These indicators	0.3910	0.0160
+0.5305	0.5132	1.000	Multiply (ZM). These indicators are set as in ADD.	0.3741	0.0160
+0.5392	0.0959	1.000	are set as in ADD.	0.1203	0.0132
+0.5509	0.5150	1.000	PROGRAMMING NOTE	0.1485	0.0116
+0.5567	0.1128	1.000	Lost Significance (LS). This indicator is set as in	0.3741	0.0146
+0.5682	0.5148	1.000	The operations LOAD, LOAD WITH FLAG, LOAD DOUBLE	0.3894	0.0180
+0.5727	0.0959	1.000	ADD, with the additional exception that if the interme-	0.3910	0.0146
+0.5806	0.5130	1.000	and LOAD DOUBLE WITH FLAG are the only floating	0.3914	0.0192
+0.5872	0.0940	1.000	diate sum is negative, which gives as a final result a	0.3929	0.0146
+0.6003	0.5132	1.000	point operations which affect the data flag positions	0.3910	0.0146
+0.6032	0.0940	1.000	forced zero fraction, it is not turned on.	0.2820	0.0132
+0.6148	0.5132	1.000	in the accumulator sign byte register. No floating	0.3910	0.0146
+0.6264	0.0940	1.000	PROGRAMMING NOTE	0.1466	0.0103
+0.6293	0.5150	1.000	point operation changes the zone bits, bit positions	0.3893	0.0164
+0.6439	0.0959	1.000	The ADD TO MAGNITUDE operation allows arithmetic to	0.3910	0.0146
+0.6453	0.5132	1.000	0-3, of the accumulator sign byte register, unless ad-	0.3910	0.0147
+0.6584	0.0921	1.000	be performed on the magnitude of the accumulator	0.3929	0.0174
+0.6599	0.5113	1.000	dress 10 is used as the addressed operand in a to-stor-	0.3929	0.0174
+0.6758	0.0940	1.000	contents. Since the arithmetic action of the accumu-	0.3891	0.0118
+0.6773	0.5113	1.000	age operation.	0.1090	0.0131
+0.6903	0.0921	1.000	lator operand is restricted to positive magnitude, sign	0.3910	0.0133
+0.7048	0.0921	1.000	change is not allowed; instead, a forced zero replaces	0.3929	0.0146
+0.7136	0.5113	1.000	Add to Memory (M+)	0.1598	0.0161
+0.7190	0.0939	1.000	the result.	0.0717	0.0126
+0.7355	0.5113	1.000	The operand in the left half of the accumulator is	0.3891	0.0161
+0.7427	0.0921	1.000	Load (L)	0.0620	0.0131
+0.7515	0.5094	1.000	added to the operand specified by the effective ad-	0.3929	0.0161
+0.7660	0.5094	1.000	dress. The exponent and fraction of the sum replace	0.3929	0.0174
+0.7660	0.0921	1.000	The operand specified by the effective address is placed	0.3910	0.0161
+0.7789	0.0919	1.000	in the left half of the accumulator. The exponent	0.3933	0.0182
+0.7818	0.5112	1.000	bits 0-59 of the storage word. When normalized opera-	0.3893	0.0178
+0.7951	0.0921	1.000	and fraction of the operand replace accumulator bits	0.3929	0.0160
+0.7961	0.5092	1.000	tion is specified, the sum is normalized before it is	0.3914	0.0208
+0.8109	0.0921	1.000	0-59. Accumulator bits 60-127 are not changed. The	0.3929	0.0147
+0.8139	0.5094	1.000	placed in storage. The sign of the addressed operand	0.3910	0.0161
+0.8252	0.0901	1.000	sign of the operand, as changed by the sign modifiers,	0.3951	0.0195
+0.8285	0.5094	1.000	is used as modified by the absolute sign modifier only.	0.3929	0.0161
+0.8415	0.0902	1.000	replaces the accumulator sign, bit position 4 in the	0.3947	0.0176
+0.8445	0.5113	1.000	The negative sign modifier is used to modify the sign	0.3891	0.0161
+0.8590	0.5094	1.000	of the accumulator. The sign of the sum is placed in	0.3910	0.0174
+0.8590	0.0921	1.000	accumulator sign byte register. The accumulator flag	0.3910	0.0131
+0.8733	0.0921	1.000	bits are set to zero. When normalized operation is	0.3910	0.0136
+0.8750	0.5094	1.000	bit position 60 of the storage word. The flag bits,	0.3910	0.0160
+0.8881	0.0902	1.000	specified, the result in the left half of the accumulator	0.3929	0.0146
+0.8894	0.5094	1.000	61-63, of the storage word remain unchanged. The	0.3910	0.0161
+0.9244	0.0902	1.000	88	0.0207	0.0116
+0.9258	0.1335	1.000	IBM 7030	0.0658	0.0088

@@ -1,0 +1,44 @@
+0.1045	0.2237	1.000	UNIT represents a programmer symbol which specifies an I-O unit of the type specified. The symbol may	0.6579	0.0161
+0.1179	0.2236	1.000	not be longer than eight characters. It is associated with a channel by means of the CHANNEL symbol.	0.6393	0.0166
+0.1321	0.2256	1.000	UNIT is assigned an absolute value by MCP after CHANNEL has been examined. The method of requestin	0.6560	0.0161
+0.1453	0.2256	1.000	several units on different channels has been explained under CHANNEL above. Except where TYPE is TAPE,	0.6654	0.0147
+0.1599	0.2256	1.000	all channels are one-unit channels; thus, in most cases, CHANNEL and UNIT are synonymous.	0.5865	0.0160
+0.1847	0.2534	1.000	MODE is either ODD - odd parity, no ECC	0.2638	0.0231
+0.2035	0.3628	1.000	VEN - even parity, no EC	0.1541	0.0145
+0.2151	0.3609	1.000	CC - odd parity, EC	0.1241	0.0116
+0.2427	0.2538	1.000	Density is either HD - high density	0.2162	0.0145
+0.2573	0.3571	1.000	LD - low density	0.1071	0.0131
+0.2820	0.2237	1.000	If MODE and/or DENSITY are null, the missing information is taken from the reel label (see Reel Labeling	0.6617	0.0160
+0.2964	0.2237	1.000	section). If the information cannot be obtained in this manner, the program is removed from the computer.	0.6711	0.0161
+0.3241	0.2538	1.000	DISPOSITION may be NSAVE - do not save reels in any case	0.3759	0.0147
+0.3387	0.3891	1.000	CSAVE - save reels only if job is complete	0.2688	0.0116
+0.3488	0.3891	1.000	ISAVE - save reels only if job is incomplete	0.2801	0.0146
+0.3618	0.3966	1.000	SAVE - save reels in any case	0.1898	0.0191
+0.3894	0.2519	1.000	IF DISPOSITION is null, NSAVE is assumed.	0.2801	0.0176
+0.4666	0.1880	1.000	A REEL card must immediately follow the tape IOD card to which it refers, unless	0.6673	0.0189
+0.4839	0.1861	1.000	there are more than one IOD for the same unit and channel. In this latter case, the	0.6729	0.0161
+0.4956	0.1880	1.000	REEL card must immediately follow one of the IOD cards for that unit and channel. A	0.6936	0.0219
+0.5115	0.1861	1.000	REEL card may follow another REEL card that refers to the same unit and channel.	0.6767	0.0191
+0.5291	0.1880	1.000	A REEL card is punched in the format:	0.3139	0.0174
+0.5916	0.3365	1.000	910	0.0338	0.0174
+0.5928	0.7047	1.000	72/73	0.0435	0.0193
+0.5974	0.2500	1.000	2	0.0113	0.0102
+0.5974	0.5695	1.000	68/69	0.0395	0.0131
+0.6003	0.8195	1.000	80	0.0207	0.0116
+0.6059	0.3421	1.000	REEL, REEL1, REEL2, etc.	0.1674	0.0236
+0.6076	0.2726	1.000	blank	0.0451	0.0160
+0.6090	0.7575	1.000	blank	0.0432	0.0160
+0.6119	0.6090	1.000	blank	0.0470	0.0131
+0.6366	0.2199	1.000	REEL represents a pseudo operation code that identifies a card that lists reel numbers of tapes	0.5789	0.0174
+0.6497	0.2180	1.000	associated with a TAPE IOD statement.	0.2444	0.0161
+0.6802	0.2199	1.000	REELi represents any symbol up to eight characters in length. The first three characters are	0.5695	0.0131
+0.6908	0.2180	1.000	not part of the reel identification, but specify whether the tape is labelled or unlabelled and	0.5790	0.0167
+0.7064	0.2180	1.000	whether the tape is protected (ring out) or not protected. The remaining 5 characters agree with	0.5977	0.0146
+0.7179	0.2180	1.000	the identification shown on the physical reel. Thus REELi may be:	0.4173	0.0147
+0.7467	0.2950	1.000	PLBxxxxx	0.0604	0.0124
+0.7470	0.4154	1.000	protected, labelled	0.1241	0.0147
+0.7574	0.4150	1.000	protected, unlabelled	0.1380	0.0190
+0.7602	0.2932	1.000	PULxxxxx	0.0639	0.0131
+0.7733	0.4154	1.000	unprotected, labelled	0.1372	0.0161
+0.7733	0.2932	1.000	NLBxxxxx	0.0639	0.0145
+0.8009	0.2162	1.000	II REELi is null, a labelled, unprotected tape is assumed.	0.3609	0.0146

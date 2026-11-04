@@ -1,0 +1,78 @@
+0.0785	0.8609	1.000	MOVE	0.0526	0.0174
+0.1423	0.5188	1.000	Boxes 3-14	0.0903	0.0177
+0.1451	0.0958	1.000	LINKAGE	0.0735	0.0136
+0.1715	0.5207	1.000	For situation #3, MOVE,by progressively indexed Load	0.4023	0.0176
+0.1758	0.0959	1.000	The calling sequence is:	0.1805	0.0133
+0.1860	0.5188	1.000	and STore operations, moves I words forward (or	0.3703	0.0176
+0.1890	0.1128	1.000	LVI, 15, $+2; B, MOVE	0.1823	0.0160
+0.2020	0.5188	1.000	backward) from location A (or A + N) to location B	0.3741	0.0131
+0.2035	0.1109	1.000	, from address (D)	0.1353	0.0160
+0.2035	0.2895	1.000	'referred to as A or P.Q	0.1880	0.0145
+0.2151	0.5188	1.000	(or B+ N) if A<B (or if A >B).	0.2538	0.0146
+0.2179	0.2914	1.000	'referred to as B or R.S	0.1823	0.0147
+0.2194	0.1109	1.000	, to address (D)	0.1128	0.0146
+0.2297	0.5338	1.000	Then if U#0, MOVE picks up the U odd data bits	0.3703	0.0174
+0.2305	0.1123	1.000	, number of bits to be	0.1642	0.0182
+0.2339	0.2895	1.000	'referred to as Nor T.U	0.1880	0.0132
+0.2456	0.5207	1.000	from location A + T (or A) and puts them in location	0.3853	0.0131
+0.2456	0.1259	1.000	moved (D)	0.0752	0.0189
+0.2602	0.5226	1.000	B + T ( or B) if A <B (or if A >B).	0.2782	0.0132
+0.2630	0.1128	1.000	Normal Return	0.1109	0.0131
+0.2907	0.0959	1.000	RESTRICTION	0.1128	0.0160
+0.2993	0.5207	1.000	Boxes 15, 16	0.1034	0.0147
+0.3212	0.0977	1.000	Currently MOVE destructively uses the accumulator,	0.3929	0.0161
+0.3270	0.5226	1.000	To handle situation #2 MOVE does the following:	0.3571	0.0161
+0.3372	0.0959	1.000	the arithmetic result indicators, the comparison	0.3609	0.0146
+0.3415	0.5226	1.000	First, MOVE saves the words at locations P.O and X.O	0.4079	0.0176
+0.3532	0.0977	1.000	result indicators, and the result indicators.	0.3233	0.0117
+0.3561	0.5207	1.000	in the storage words at locations V and W, respec-	0.3797	0.0161
+0.3721	0.5207	1.000	tively, to protect against overlapping.	0.2838	0.0161
+0.3822	0.0977	1.000	USERS	0.0508	0.0117
+0.3866	0.5395	1.000	Then since Q = S and a straight Transmit operation	0.3797	0.0131
+0.4012	0.5226	1.000	may be able to be used, MOVE computes how many	0.3797	0.0146
+0.4112	0.0977	1.000	OEDIT, OUTPUT, OPLIST, VALUE, TABMAN	0.3515	0.0161
+0.4157	0.5226	1.000	full words are in the data by the formula:	0.3064	0.0146
+0.4302	0.5395	1.000	I=N-Y-(64-Q)/64.	0.1485	0.0145
+0.4416	0.0977	1.000	DETAILS	0.0716	0.0121
+0.4694	0.0977	1.000	In the description of MOVE's method of moving data,	0.3910	0.0146
+0.4736	0.5206	1.000	Boxes 19-22	0.0979	0.0150
+0.4839	0.0996	1.000	the following nomenclature and examples are referred	0.3985	0.0132
+0.4990	0.5205	1.000	If I= 0, as is the case in ex. b, then MOVE moves	0.3838	0.0200
+0.5015	0.0996	1.000	to:	0.0207	0.0102
+0.5130	0.2650	1.000	= the 'from' address	0.1504	0.0118
+0.5145	0.1805	1.000	A = P.Q	0.0620	0.0116
+0.5160	0.5226	1.000	the last 64-Q bits of the word V to location B. And	0.3797	0.0146
+0.5291	0.2650	1.000	= the 'to' address	0.1297	0.0116
+0.5305	0.1823	1.000	B = R.S	0.0564	0.0089
+0.5305	0.5226	1.000	then if Y*0, MOVE moves the first X bits of word	0.3797	0.0174
+0.5411	0.2630	1.000	= the number of bits to be moved	0.2430	0.0197
+0.5436	0.1823	1.000	N= T.U	0.0602	0.0116
+0.5464	0.5207	1.000	W to location B + N - Y.	0.1842	0.0133
+0.5555	0.1184	1.000	A + N = 7=X.Y = the address of the next bit	0.3554	0.0139
+0.5697	0.2876	1.000	following the data in the	0.1805	0.0161
+0.5871	0.5225	1.000	Boxes 17, 18	0.1016	0.0162
+0.5872	0.2876	1.000	'from' buffer	0.0996	0.0131
+0.6003	0.1147	1.000	A storage word V is used for storing 64 bits of data	0.3816	0.0161
+0.6140	0.5224	1.000	If I<0, as is the case in ex. a, then MOVE moves	0.3857	0.0204
+0.6163	0.0996	1.000	beginning at P.O. A storage word W is used for	0.3571	0.0131
+0.6308	0.5226	1.000	to location B the N bits which are in the word V at an	0.3947	0.0146
+0.6321	0.0996	1.000	storing 64 bits of data beginning at X.O.	0.2951	0.0133
+0.6453	0.5226	1.000	offset of 64-(Q + N) bits. There is no boundary	0.3534	0.0147
+0.6467	0.1165	1.000	The possible situations that can occur are:	0.3158	0.0118
+0.6608	0.5224	1.000	crossover.	0.0849	0.0155
+0.6627	0.1165	1.000	1. N= 0 0I A= B.	0.1410	0.0118
+0.6744	0.1165	1.000	2. Q = S either with A<B or with A>B, and N#0.	0.3835	0.0147
+0.6888	0.5244	1.000	Boxes 23-25	0.0960	0.0178
+0.6903	0.1165	1.000	3. Q= S, and N$ 0.	0.1541	0.0146
+0.7179	0.5244	1.000	If L>0, as is the case in ex. c, then MOVE transmits	0.4098	0.0176
+0.7209	0.0996	1.000	FLOW CHART DESCRIPTION	0.2199	0.0131
+0.7339	0.5226	1.000	forward (or backward) L full words from location P. 64	0.4079	0.0132
+0.7485	0.5244	1.000	(or P.O + L) to location R. 64 (or R.0) if A < B (or	0.3797	0.0131
+0.7498	0.0996	1.000	Boxes 1, 2	0.0828	0.0150
+0.7628	0.5244	1.000	if A > B). (	0.0868	0.0165
+0.7761	0.5376	1.000	Then MOVE moves the odd number of data bits in	0.3703	0.0176
+0.7776	0.0995	1.000	For situation #1,MOVE does not move any data and	0.3762	0.0197
+0.7921	0.5244	1.000	the words, Vand W, as described above.	0.3083	0.0176
+0.7951	0.0996	1.000	returns directly back to the user program.	0.3158	0.0131
+0.9331	0.8402	1.000	MOVE	0.0414	0.0118
+0.9346	0.9023	1.000	41	0.0169	0.0087

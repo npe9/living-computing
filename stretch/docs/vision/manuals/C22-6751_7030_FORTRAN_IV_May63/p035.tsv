@@ -1,0 +1,97 @@
+0.0752	0.1991	1.000	B, 0.0($15)	0.0773	0.0152
+0.0755	0.5056	1.000	Storage for a segmented program will be allocated	0.3778	0.0133
+0.0887	0.1992	1.000	В, $МСР	0.0602	0.0132
+0.0900	0.4868	1.000	in the following way: One segment, called the primary	0.3966	0.0147
+0.0988	0.1974	1.000	,$ABEOJ	0.0677	0.0160
+0.1061	0.4887	1.000	segment, will remain in storage at all times. This seg-	0.3966	0.0131
+0.1119	0.2011	1.000	CNOP	0.0432	0.0116
+0.1192	0.0921	1.000	ZERO	0.0432	0.0160
+0.1213	0.2009	1.000	DD (N), O.	0.0700	0.0146
+0.1221	0.4887	1.000	ment must contain the main subprogram, to which	0.3947	0.0131
+0.1336	0.2011	1.000	(F10)DD(U), 1.0 X 38	0.1541	0.0146
+0.1352	0.0921	1.000	ONE	0.0357	0.0102
+0.1366	0.4868	1.000	control will be initially transferred. All library sub-	0.3985	0.0146
+0.1451	0.2010	1.000	DR (N), 1	0.0660	0.0136
+0.1468	0.0865	1.000	SAVE	0.0489	0.0233
+0.1526	0.4887	1.000	programs which are called, as well as the link sub-	0.3966	0.0131
+0.1554	0.2011	1.000	DR (N), 3	0.0659	0.0148
+0.1684	0.1992	1.000	SLERCOM,	0.0772	0.0136
+0.1685	0.7237	1.000	Bss to the primary	0.1598	0.0118
+0.1685	0.4887	1.000	program, will be assigned by	0.2368	0.0133
+0.1772	0.0921	1.000	ANAME1	0.0677	0.0161
+0.1799	0.2010	1.000	DR (N), 10	0.0735	0.0138
+0.1830	0.4887	1.000	segment. The user must assign the IoD subprogram to	0.3966	0.0133
+0.1874	0.0921	1.000	COMMON	0.0734	0.0177
+0.1903	0.1992	1.000	SYN, $	0.0489	0.0132
+0.1976	0.4887	1.000	the primary segment. Commons will be allocated space	0.3947	0.0146
+0.2020	0.1992	1.000	SLCRCOM, BLOCKI	0.1410	0.0131
+0.2135	0.0921	1.000	ANAME2	0.0678	0.0133
+0.2136	0.4868	1.000	higher in storage than the program, but commons will	0.3966	0.0131
+0.2136	0.2011	1.000	DR(N), 1	0.0658	0.0146
+0.2236	0.0920	1.000	BLOCKIND	0.0829	0.0151
+0.2249	0.1991	1.000	SYN, $	0.0492	0.0138
+0.2282	0.4887	1.000	be properly associated with the segments which refer-	0.3966	0.0146
+0.2369	0.2011	1.000	SLCRCOM, BLOCK2	0.1391	0.0146
+0.2442	0.4887	1.000	ence them. Block data will be associated with the	0.3947	0.0116
+0.2452	0.0900	1.000	ANAME3	0.0699	0.0169
+0.2466	0.2009	1.000	DR(N), 10	0.0774	0.0171
+0.2587	0.0902	1.000	BLOCK2ND	0.0865	0.0145
+0.2602	0.4868	1.000	segment which contains that block data subprogram.	0.3985	0.0132
+0.2602	0.2011	1.000	SYN, $	0.0470	0.0147
+0.2718	0.1992	1.000	SLC, SAVE + 3.0	0.1071	0.0131
+0.2820	0.0921	1.000	LAST	0.0395	0.0131
+0.2832	0.2010	1.000	SYN, $	0.0472	0.0136
+0.2906	0.4887	1.000	Node Card Format	0.1372	0.0103
+0.2951	0.2011	1.000	END	0.0338	0.0131
+0.3067	0.4887	1.000	The node control card, which indicates to Bss whether	0.3947	0.0131
+0.3241	0.4850	1.000	segmentation is to be used and how the segments are	0.3985	0.0131
+0.3372	0.0639	1.000	Appendix D: Segmentation on the IBM 7030	0.3853	0.0174
+0.3387	0.4868	1.000	divided, has the following format:	0.2594	0.0147
+0.3561	0.6015	1.000	T	0.0169	0.0102
+0.3561	0.5470	1.000	1	0.0132	0.0102
+0.3576	0.5169	1.000	col	0.0282	0.0087
+0.3576	0.0658	1.000	Segmentation is a method of overlay designed to han-	0.3947	0.0131
+0.3663	0.5150	1.000	col 10-19 NODE, XX, YY	0.1898	0.0146
+0.3735	0.0658	1.000	dle the situation in which the entire problem program	0.3947	0.0131
+0.3836	0.5019	1.000	xx is the two-digit segment number for the group	0.3816	0.0161
+0.3881	0.0658	1.000	is too large to be held in internal storage at one time.	0.3947	0.0131
+0.3997	0.4868	1.000	of subprograms preceding the next node card. Yy is a	0.3947	0.0131
+0.4026	0.0677	1.000	As a part of the FORTRAN chain, the 7030 segmentation	0.3929	0.0147
+0.4151	0.4868	1.000	two-digit segment number of the segment to which	0.3948	0.0143
+0.4185	0.0620	1.000	is implemented through the BSS-MCP loader. Internally,	0.3985	0.0161
+0.4302	0.4850	1.000	the current segment, xx, is to be attached. The value	0.3985	0.0146
+0.4345	0.0658	1.000	the segmentation portion of Bss will set up in the re-	0.3947	0.0131
+0.4448	0.4868	1.000	of yy should be 00 on the node card for the primary	0.3966	0.0146
+0.4491	0.0639	1.000	location tables the information required by the MCP	0.3966	0.0146
+0.4634	0.4868	1.000	segment.	0.0659	0.0121
+0.4651	0.0639	1.000	loader to load the segmented program in the desired	0.3947	0.0131
+0.4797	0.0658	1.000	fashion. A special link program operates during execu-	0.3947	0.0146
+0.4927	0.4868	1.000	Notes	0.0451	0.0116
+0.4956	0.0658	1.000	tion of the problem program to determine when a new	0.3929	0.0147
+0.5087	0.4981	1.000	1. The number of segments cannot exceed 99.	0.3477	0.0161
+0.5102	0.0658	1.000	portion of the problem program is to be loaded and	0.3929	0.0147
+0.5261	0.0639	1.000	to transfer control to the McP loader at that time.	0.3628	0.0133
+0.5261	0.5019	1.000	2. Care must be taken in setting up the segmenta-	0.3816	0.0118
+0.5392	0.4868	1.000	tion deck. A call from one segment to another will be	0.3947	0.0132
+0.5421	0.0808	1.000	Segmentation is used in the following manner: a seg-	0.3778	0.0131
+0.5536	0.4850	1.000	illegal if the call causes the originating segment to be	0.3985	0.0161
+0.5567	0.0658	1.000	ment is defined by placing in front of the binary deck	0.3929	0.0146
+0.5711	0.4849	1.000	overlaid.	0.0658	0.0118
+0.5727	0.0639	1.000	for a group of subprograms a node control card, of the	0.3966	0.0131
+0.5842	0.5019	1.000	3. Neither named common nor block data will be	0.3816	0.0146
+0.5850	0.0656	1.000	card format given below. No node card is needed for	0.3950	0.0177
+0.6003	0.4850	1.000	preserved when a segment associated with it is over-	0.3985	0.0161
+0.6024	0.0638	1.000	a program consisting of a single segment.	0.3084	0.0155
+0.6163	0.4812	1.000	laid.	0.0395	0.0131
+0.6177	0.0808	1.000	All of the subprograms defined as a segment by a	0.3778	0.0145
+0.6308	0.4962	1.000	4. An error will be indicated if any group of seg-	0.3872	0.0160
+0.6352	0.0658	1.000	node card will be loaded into storage whenever any	0.3929	0.0131
+0.6467	0.4850	1.000	ments which are to be in storage at the same time will	0.3985	0.0161
+0.6497	0.0620	1.000	part of that segment has to be loaded. Since a certain	0.3966	0.0145
+0.6657	0.0620	1.000	amount of time will be required during execution to	0.3966	0.0131
+0.6788	0.0639	1.000	bring in the various segments, the most efficient deck	0.3947	0.0146
+0.6918	0.0620	1.000	arrangement for segmentation will be that which re-	0.3966	0.0189
+0.7106	0.0620	1.000	quires the smallest number of transfers between seg-	0.3966	0.0161
+0.7179	0.4850	1.000	node cards are inserted in the program deck.	0.3365	0.0176
+0.7282	0.0620	1.000	ments.	0.0489	0.0116
+0.9288	0.8628	1.000	35	0.0207	0.0116

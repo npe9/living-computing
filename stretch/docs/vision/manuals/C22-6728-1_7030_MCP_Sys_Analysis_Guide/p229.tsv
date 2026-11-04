@@ -1,0 +1,110 @@
+0.0973	0.5526	1.000	2. SMREPLAC, A	0.1447	0.0161
+0.0988	0.0996	1.000	HED Control Cards	0.1466	0.0131
+0.1118	0.6034	1.000	Replaces generator "A" with the following	0.3177	0.0161
+0.1279	0.6034	1.000	generator. The sort field remains the same.	0.3440	0.0131
+0.1279	0.1015	1.000	Changes to the program are initiated by HED control	0.3947	0.0161
+0.1409	0.0996	1.000	cards punched as follows:	0.1974	0.0176
+0.1424	0.5526	1.000	3. SMDELETE, A	0.1504	0.0146
+0.1570	0.6034	1.000	Deletes generator "A" and its synonyms	0.3026	0.0145
+0.1701	0.1955	1.000	10	0.0207	0.0116
+0.1715	0.1184	1.000	1	0.0094	0.0087
+0.1730	0.6034	1.000	from the library.	0.1335	0.0131
+0.1830	0.1955	1.000	HED, operation, ttaaaaaa, LOAD	0.1992	0.0146
+0.1860	0.5714	1.000	SMRENAME, A, B	0.1560	0.0161
+0.1875	0.5526	1.000	4.	0.0207	0.0145
+0.2020	0.6034	1.000	Changes the name of "A" to "B'. Also	0.2951	0.0146
+0.2166	0.6034	1.000	changes any synonyms of "A" to synonyms	0.3195	0.0146
+0.2166	0.1147	1.000	The second field (op) may contain one of four opera-	0.3947	0.0146
+0.2310	0.6034	1.000	of "B".	0.0583	0.0147
+0.2324	0.0996	1.000	tion codes:	0.0865	0.0133
+0.2456	0.1823	1.000	delete	0.0546	0.0147
+0.2456	0.5526	1.000	5. SMYNONYM, A, B	0.1748	0.0160
+0.2471	0.1165	1.000	DEL	0.0376	0.0131
+0.2587	0.1165	1.000	REP	0.0376	0.0160
+0.2613	0.1841	1.000	replace	0.0642	0.0152
+0.2615	0.6034	1.000	Arbitrarily assigns generator "A" a sort	0.3102	0.0146
+0.2717	0.6030	1.000	field of "X" for optimal I-O times, where	0.3146	0.0233
+0.2762	0.1165	1.000	ADD	0.0376	0.0131
+0.2762	0.1823	1.000	add	0.0357	0.0131
+0.2892	0.1165	1.000	LIB	0.0338	0.0160
+0.2906	0.5996	1.000	"X" is a 4-digit number between 1-1000.	0.3120	0.0146
+0.2907	0.1823	1.000	librarian	0.0771	0.0145
+0.3036	0.1147	1.000	The third field (tag name) contains the name of the	0.3835	0.0161
+0.3067	0.5545	1.000	6. SMARANGE	0.1184	0.0131
+0.3182	0.0996	1.000	type area on the disk being operated upon.	0.3214	0.0176
+0.3212	0.6034	1.000	Orders the generators by ascending sort	0.3083	0.0131
+0.3342	0.6560	1.000	SMARANGE may not be used during	0.2782	0.0146
+0.3342	0.1165	1.000	The fourth field (LOAD) is optional and only affects	0.3853	0.0161
+0.3353	0.6032	1.000	fields.	0.0530	0.0154
+0.3488	0.6034	1.000	an update in which SMADDMAC or SMREPLAC	0.3534	0.0161
+0.3488	0.1015	1.000	REP and ADD operations. If present, the deck which	0.4023	0.0161
+0.3618	0.0996	1.000	follows the HED card will be loaded, and the new type	0.4060	0.0176
+0.3648	0.6015	1.000	have also been used. A zero field has	0.2914	0.0146
+0.3794	0.6034	1.000	highest priority.	0.1259	0.0146
+0.3794	0.1015	1.000	area will contain the information in memory image.	0.3891	0.0131
+0.3935	0.1033	1.000	Otherwise, the deck will be read, and the new type	0.3818	0.0159
+0.4099	0.1015	1.000	area will be in card image.	0.2068	0.0116
+0.4157	0.5470	1.000	If a HED, LIB card is followed immediately by	0.3496	0.0161
+0.4302	0.5338	1.000	another HED card, the only action taken by the	0.3534	0.0146
+0.4370	0.1030	1.000	Operation Codes	0.1229	0.0155
+0.4448	0.5320	1.000	librarian will be a review of the contents of that	0.3647	0.0146
+0.4608	0.5320	1.000	library.	0.0639	0.0145
+0.4666	0.1034	1.000	The following codes may appear in the second field	0.3816	0.0146
+0.4738	0.5451	1.000	The librarian has its own loader which is restricted	0.3966	0.0146
+0.4839	0.1034	1.000	of a HED control card:	0.1711	0.0103
+0.4884	0.5320	1.000	to standard generator decks, as defined by the SMAC	0.4023	0.0160
+0.4968	0.1371	1.000	Delete (DEL): The named type area will be	0.3255	0.0187
+0.5040	0.5318	1.000	language.	0.0754	0.0153
+0.5145	0.1034	1.000	deleted from the current system.	0.2500	0.0103
+0.5276	0.1353	1.000	Replace (REP): The deck which follows, up to	0.3496	0.0176
+0.5406	0.1034	1.000	the next HED card, will be read or loaded from the	0.3853	0.0146
+0.5536	0.5357	1.000	Operating Procedure for the Master Update Program	0.3966	0.0147
+0.5548	0.1033	1.000	input source and its contents will replace the named	0.3912	0.0151
+0.5727	0.1053	1.000	type area in the current system.	0.2425	0.0116
+0.5827	0.5338	1.000	UPDATE-30 operates as an ordinary problem pro-	0.3816	0.0161
+0.5858	0.1335	1.000	Add (ADD): The deck which follows, up to the	0.3496	0.0161
+0.5988	0.5320	1.000	gram and is loaded by MCP from the system input.	0.3835	0.0146
+0.6017	0.1034	1.000	next HED card, will be read or loaded from the input	0.3985	0.0116
+0.6118	0.5489	1.000	The change deck is prepared as follows: The first	0.3816	0.0161
+0.6148	0.1053	1.000	source and its contents will be added to the current	0.3835	0.0102
+0.6264	0.5320	1.000	card must be a date card containing xx/yy in columns	0.4023	0.0161
+0.6308	0.1034	1.000	svstem as a new type area with the given name.	0.3590	0.0102
+0.6424	0.5320	1.000	10 through 14, where xx is the current month and yy	0.3966	0.0161
+0.6433	0.1353	1.000	Librarian (LIB): The named type area specifies	0.3629	0.0158
+0.6555	0.5320	1.000	is the current day. It may also have COMM punched	0.3985	0.0161
+0.6584	0.1015	1.000	the generator library to be updated according to the	0.3910	0.0146
+0.6715	0.5338	1.000	in columns 2 through 5. (See section on Print-Out).	0.3910	0.0131
+0.6744	0.1034	1.000	control cards and generator decks which follow, up	0.3853	0.0116
+0.6848	0.5356	1.000	Following the date card are the HED cards and new	0.3837	0.0150
+0.6872	0.1033	1.000	to the next HED card. The updated library and its	0.3800	0.0175
+0.7020	0.5357	1.000	decks for all type area changes.	0.2406	0.0116
+0.7035	0.1034	1.000	associated table of contents, which is a separate type	0.4023	0.0132
+0.7166	0.5526	1.000	The change deck may be put on system input	0.3327	0.0116
+0.7179	0.1053	1.000	area automatically updated by the librarian, will	0.3647	0.0118
+0.7311	0.5357	1.000	directly following the program deck, or it may be	0.3741	0.0131
+0.7324	0.1053	1.000	then replace the two corresponding type areas in the	0.3929	0.0133
+0.7456	0.5357	1.000	put on a separate tape as a single file, (odd parity,	0.3835	0.0147
+0.7500	0.1053	1.000	current system.	0.1222	0.0103
+0.7602	0.5357	1.000	high density). For the first option, the third IOD	0.3703	0.0147
+0.7747	0.5357	1.000	card (for the change tape, named CHT) should be	0.3684	0.0147
+0.7776	0.1053	1.000	Librarian: The four generator library type areas	0.3722	0.0131
+0.7906	0.1051	1.000	are: LFORTRAN, LPASSONE, LPASSTWO, and	0.3687	0.0157
+0.7906	0.5357	1.000	removed from the program deck to eliminate unnec-	0.3929	0.0118
+0.8036	0.5376	1.000	essary tape mounting. For the second option, a	0.3665	0.0147
+0.8067	0.1071	1.000	LSMACONE. The names of their associated tables	0.3816	0.0116
+0.8182	0.5376	1.000	REEL card must be added behind the third IOD. The	0.3966	0.0133
+0.8197	0.1052	1.000	of contents are: TFORTRAN, TPASSONE, TPASSTWC	0.4138	0.0170
+0.8342	0.5357	1.000	program will automatically determine the input source	0.4098	0.0146
+0.8358	0.1053	1.000	and TSMACONE. The library control cards (punched	0.4004	0.0131
+0.8485	0.1051	1.000	starting in column 10) are defined as follows:	0.3405	0.0155
+0.8488	0.5357	1.000	by trying to read initially from the system input	0.3628	0.0131
+0.8645	0.5337	1.000	($SCR).	0.0623	0.0138
+0.8691	0.1203	1.000	1. SMADDMAC, A	0.1466	0.0118
+0.8779	0.5545	1.000	The program deck includes IOD and REEL cards	0.3647	0.0131
+0.8821	0.1729	1.000	Adds the following generator to the library,	0.3252	0.0118
+0.8939	0.5376	1.000	for the new IPL tape to be written, which is unpro-	0.3853	0.0131
+0.8951	0.1709	1.000	naming it "A". The sort field is assigned a	0.3293	0.0163
+0.9084	0.5376	1.000	tected, unlabeled, and named NWIPL.	0.2857	0.0131
+0.9127	0.1729	1.000	zero value.	0.0846	0.0103
+0.9506	0.7744	1.000	Supporting Programs	0.1184	0.0102
+0.9506	0.9079	1.000	229	0.0282	0.0087

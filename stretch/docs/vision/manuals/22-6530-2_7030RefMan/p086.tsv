@@ -1,0 +1,146 @@
+0.0596	0.1015	1.000	than addition is determined from the rules of alge-	0.3835	0.0146
+0.0609	0.5113	1.000	or XFN ranges is through normal overflow or underflow	0.3910	0.0133
+0.0735	0.0995	1.000	bra. Computation of the exponent for a multiplica-	0.3874	0.0170
+0.0770	0.5113	1.000	produced by the action of operands in the N range.	0.3891	0.0146
+0.0880	0.1013	1.000	tion, division, or square root operation is not changed	0.3838	0.0176
+0.0915	0.5132	1.000	The second way that a flagged exponent appears in the	0.3891	0.0146
+0.1045	0.0996	1.000	when magnitude-zero result fraction is obtained. In	0.3853	0.0133
+0.1061	0.5113	1.000	result is through forced action associated with the use	0.3910	0.0146
+0.1206	0.1015	1.000	these cases, the intermediate result exponent becomes	0.3835	0.0146
+0.1221	0.5113	1.000	of operands having flagged exponents.	0.2801	0.0146
+0.1352	0.0996	1.000	the final result exponent without further modifica-	0.3872	0.0146
+0.1381	0.5282	1.000	An exponent flag is said to be generated whenever	0.3722	0.0131
+0.1521	0.5112	1.000	original operands, with eF of 0, develop a result having	0.3893	0.0165
+0.1672	0.1147	1.000	The add magnitude operations replace the sum of	0.3703	0.0147
+0.1685	0.5094	1.000	EF of 1, through overflow or underflow from the N	0.3910	0.0147
+0.1793	0.0995	1.000	an addition with a zero fraction when a fraction sign	0.3856	0.0171
+0.1845	0.5094	1.000	range. An exponent flag is said to be propagated when-	0.3910	0.0146
+0.1959	0.0995	1.000	reversal is obtained during the addition operation.	0.3836	0.0166
+0.1991	0.5113	1.000	ever an original operand, with EF of 1, forced the result	0.3891	0.0146
+0.2121	0.0996	1.000	This type of order of magnitude zero is called a	0.3853	0.0146
+0.2151	0.5094	1.000	to have EF of 1. For arithmetic operations, when one or	0.3910	0.0146
+0.2267	0.0996	1.000	"forced zero." The fraction sign of the forced zero is	0.3853	0.0146
+0.2311	0.5094	1.000	more operands are in the XFP or XEN range, the result	0.3910	0.0131
+0.2427	0.0995	1.000	the unmodified original fraction sign of the accumu-	0.3856	0.0161
+0.2456	0.5094	1.000	always has a propagated exponent flag of 1, except for	0.3910	0.0147
+0.2550	0.0975	1.000	lator in ADD TO MAGNITUDE and the unmodified orig-	0.3876	0.0184
+0.2615	0.5094	1.000	addition, where one operand is in the N range and the	0.3910	0.0146
+0.2733	0.0977	1.000	inal fraction of the addressed operand in ADD MAGNI-	0.3853	0.0146
+0.2741	0.5092	1.000	other is in the XEN range. In such additions the result	0.3913	0.0187
+0.2892	0.0996	1.000	TUDE TO MEMORY. A forced zero turns on the result	0.3853	0.0117
+0.2921	0.5094	1.000	may pass from the N range to the XEN range through	0.3891	0.0146
+0.3036	0.0977	1.000	zero indicator, Rz, but not the lost significance indi-	0.3853	0.0147
+0.3067	0.5094	1.000	post-normalization, and a generated EF of 1 is de-	0.3891	0.0146
+0.3223	0.0976	1.000	cator, Ls.	0.0622	0.0109
+0.3227	0.5075	1.000	veloped.	0.0639	0.0145
+0.3358	0.1128	1.000	The Rz indicator is set for all operations with a zero	0.3703	0.0131
+0.3387	0.5244	1.000	Figure 23 summarizes the result exponent ranges for	0.3759	0.0147
+0.3503	0.0996	1.000	fraction result. The Is indicator is set when a zero re-	0.3853	0.0131
+0.3532	0.5094	1.000	the initial operand ranges as specified. The underlined	0.3891	0.0147
+0.3663	0.0977	1.000	sults from cancellations or shifting. In additions, Ls	0.3853	0.0131
+0.3691	0.5094	1.000	values represent arbitrary choices selected to propagate	0.3891	0.0146
+0.3813	0.5093	1.000	extreme values in the most noticeable range. The result	0.3913	0.0179
+0.3821	0.0977	1.000	may be set only when at least one operand is not zero.	0.3853	0.0133
+0.3997	0.5075	1.000	values in the N range, shown as N*, may be values in	0.3891	0.0145
+0.4055	0.1109	1.000	In comparisons, order-of-magnitude zeros are con-	0.3722	0.0132
+0.4103	0.5072	1.000	the XFP of XFN ranges owing to normal exponent over-	0.3916	0.0241
+0.4200	0.0977	1.000	sidered equal only when their exponents differ by 48 or	0.3853	0.0146
+0.4302	0.5075	1.000	flow or underflow.	0.1335	0.0116
+0.4360	0.0959	1.000	less. When a divisor has a zero fraction, the zD indi-	0.3835	0.0131
+0.4462	0.5244	1.000	When the result contains a propagated EF of 1,	0.3759	0.0145
+0.4506	0.0977	1.000	cator is set. Division is not executed and accumulator	0.3835	0.0116
+0.4636	0.5056	1.000	normalization, if specified, will be suppressed. When	0.3929	0.0146
+0.4666	0.0959	1.000	and storage contents remain unchanged.	0.2857	0.0131
+0.4782	0.5075	1.000	the result contains a generated EF of 1, normalization	0.3910	0.0131
+0.4884	0.1090	1.000	To leave a negative zero exponent in the accumu-	0.3703	0.0147
+0.4942	0.5056	1.000	will usually occur, if specified.	0.2218	0.0146
+0.5042	0.0940	1.000	lator as a result of a floating point operation, a nega-	0.3872	0.0147
+0.5087	0.5226	1.000	When two operands originally with EF of 0 gen-	0.3759	0.0161
+0.5203	0.0959	1.000	tive zero exponent must be in the accumulator when a	0.3816	0.0131
+0.5247	0.5075	1.000	erate an EF of 1 and the subsequent normalization	0.3891	0.0132
+0.5348	0.0940	1.000	divide by zero is attempted (divisor fraction zero). If	0.3853	0.0146
+0.5392	0.5075	1.000	could produce a double carry, the normalization will	0.3910	0.0145
+0.5509	0.0940	1.000	so, the zd indicator is set and division is ended.	0.3327	0.0131
+0.5710	0.1070	1.000	COMPARE Or COMPARE FOR RANGE leaves a negative	0.3706	0.0166
+0.5799	0.6165	1.000	ADDITION TABLE	0.0959	0.0102
+0.5887	0.0921	1.000	zero exponent in the accumulator if the following in-	0.3872	0.0147
+0.6017	0.6767	1.000	Addend	0.0395	0.0087
+0.6045	0.0921	1.000	structions are unnormalized and specify no sign modi-	0.3853	0.0146
+0.6105	0.7782	1.000	XEN	0.0282	0.0116
+0.6119	0.5207	1.000	Augend	0.0414	0.0116
+0.6119	0.6917	1.000	N	0.0150	0.0102
+0.6119	0.6053	1.000	XFP	0.0244	0.0102
+0.6206	0.0921	1.000	fication (a minus O exponent is loaded into the	0.3853	0.0131
+0.6323	0.7782	1.000	XFP	0.0244	0.0087
+0.6323	0.6842	1.000	XFP	0.0244	0.0087
+0.6323	0.6034	1.000	XEP	0.0263	0.0131
+0.6337	0.5207	1.000	XFP	0.0226	0.0087
+0.6347	0.0919	1.000	accumulator): FLOATING POINT LOAD, LOAD DOUBLE,	0.3857	0.0177
+0.6424	0.6917	1.000	N*	0.0207	0.0102
+0.6424	0.7838	1.000	N*	0.0226	0.0102
+0.6439	0.6071	1.000	XFP	0.0226	0.0087
+0.6439	0.5282	1.000	N	0.0113	0.0087
+0.6497	0.0883	1.000	LOAD DOUBLE WITH FLAG, and LOAD WITH FLAG. A minus	0.3891	0.0161
+0.6512	0.7763	1.000	XFN	0.0320	0.0116
+0.6526	0.5169	1.000	XFN	0.0301	0.0116
+0.6526	0.6053	1.000	XFP	0.0244	0.0116
+0.6642	0.0883	1.000	O exponent can be stored by an unnormalized FLOATING	0.3891	0.0176
+0.6802	0.0902	1.000	POINT STORE which specifies no sign modification.	0.3477	0.0174
+0.6830	0.5959	1.000	MULTIPLICATION TABLE	0.1353	0.0133
+0.7020	0.6711	1.000	Mutiplicand	0.0733	0.0233
+0.7137	0.7763	1.000	XEN	0.0301	0.0116
+0.7151	0.6034	1.000	XFP	0.0263	0.0116
+0.7151	0.5207	1.000	Multiplier	0.0564	0.0131
+0.7209	0.0883	1.000	Range Definition and Handling	0.2876	0.0161
+0.7355	0.6053	1.000	XFP	0.0263	0.0116
+0.7355	0.6823	1.000	XFP	0.0263	0.0116
+0.7355	0.7763	1.000	XFP	0.0263	0.0116
+0.7369	0.5169	1.000	XFP	0.0263	0.0116
+0.7412	0.0883	1.000	As outlined in "Data Format," three classes of ex-	0.3872	0.0146
+0.7456	0.7763	1.000	XEN	0.0301	0.0116
+0.7456	0.6053	1.000	XFP	0.0244	0.0116
+0.7456	0.6880	1.000	N*	0.0244	0.0116
+0.7471	0.5263	1.000	N	0.0150	0.0116
+0.7558	0.6823	0.500	XEN	0.0301	0.0116
+0.7558	0.7782	1.000	XFN	0.0282	0.0116
+0.7573	0.6034	1.000	XFP	0.0263	0.0116
+0.7573	0.5188	1.000	XFN	0.0282	0.0116
+0.7587	0.0883	1.000	ponent ranges are provided. These are classified XEP,	0.3891	0.0146
+0.7733	0.0883	1.000	N, and XFN, and are defined as follows:	0.2763	0.0146
+0.7878	0.6184	1.000	DIVISION TABLE	0.0940	0.0116
+0.7980	0.0977	1.000	RANGE	0.0338	0.0087
+0.7980	0.2274	1.000	ES	0.0150	0.0102
+0.7980	0.1579	1.000	EF	0.0169	0.0073
+0.7980	0.3327	1.000	DEFINITION	0.0639	0.0087
+0.8052	0.6767	1.000	Dividend	0.0508	0.0247
+0.8081	0.0996	1.000	XFP	0.0301	0.0116
+0.8096	0.3590	1.000	Exponent ≥ +1024	0.1165	0.0131
+0.8183	0.6053	1.000	XFP	0.0244	0.0131
+0.8183	0.7763	1.000	XEN	0.0301	0.0102
+0.8197	0.5207	1.000	Divisor	0.0376	0.0117
+0.8198	0.1034	1.000	N	0.0169	0.0116
+0.8212	0.2162	1.000	0 or 1	0.0357	0.0088
+0.8212	0.2876	1.000	+1024 >	0.0583	0.0116
+0.8212	0.3590	1.000	Exponent>-1024	0.1165	0.0102
+0.8299	0.1617	1.000	1	0.0075	0.0116
+0.8314	0.0977	1.000	XFN	0.0301	0.0116
+0.8327	0.2895	1.000	-1024 =	0.0583	0.0088
+0.8328	0.3609	1.000	Exponent	0.0602	0.0102
+0.8358	0.5188	0.500	XFP	0.0320	0.0160
+0.8372	0.6053	1.000	XEP	0.0301	0.0145
+0.8387	0.7782	1.000	XFN	0.0357	0.0116
+0.8387	0.6823	1.000	XFN	0.0320	0.0131
+0.8488	0.0996	1.000	Result values, determined by floating point opera-	0.3741	0.0176
+0.8503	0.6053	1.000	XFP	0.0263	0.0116
+0.8503	0.7782	1.000	XFN	0.0301	0.0116
+0.8503	0.6917	1.000	N*	0.0207	0.0116
+0.8517	0.5263	1.000	N	0.0150	0.0102
+0.8605	0.6842	1.000	XFP	0.0244	0.0116
+0.8605	0.7763	1.000	XFP	0.0282	0.0116
+0.8619	0.5188	1.000	XFN	0.0301	0.0102
+0.8619	0.6053	1.000	XFP	0.0263	0.0102
+0.8648	0.0865	1.000	tions, may have flagged exponents from two distinct	0.3872	0.0161
+0.8808	0.0846	1.000	occurrences. The first way a result may fall in the XFP	0.3891	0.0146
+0.8881	0.5056	1.000	Figure 23. Result Exponent Ranges	0.2162	0.0146
+0.9215	0.6898	1.000	Floating-Point Arithmetic	0.1654	0.0161
+0.9230	0.8778	1.000	83	0.0188	0.0131

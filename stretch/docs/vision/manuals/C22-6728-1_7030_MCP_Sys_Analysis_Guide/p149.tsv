@@ -1,0 +1,107 @@
+0.0959	0.1259	1.000	VTDP1 makes a test to see if tapes about to be	0.3496	0.0132
+0.0959	0.5376	1.000	reader VX because an intervening bypass mode may	0.3929	0.0147
+0.1105	0.1071	1.000	forwarded to the phase 1 program, ST, have come	0.3797	0.0132
+0.1105	0.5376	1.000	have destroyed the phase equality of these two pro-	0.3872	0.0145
+0.1233	0.1051	1.000	ready as the result of an $UNLD and not a $REW.	0.3744	0.0216
+0.1265	0.5376	1.000	grams.	0.0583	0.0145
+0.1394	0.1053	1.000	Obviously ST does not want to scan an old ready tape,	0.4041	0.0161
+0.1394	0.5489	1.000	2. Restart the card reader by branching to a por-	0.3872	0.0161
+0.1509	0.1033	1.000	which could occur if an VOFFLN transition is received	0.3969	0.0195
+0.1539	0.5376	1.000	tion of the CR channel signal routine (so that the unit	0.4004	0.0161
+0.1700	0.5376	1.000	ready bit of the control word is not tested).	0.3308	0.0146
+0.1700	0.1071	1.000	after a tape is started rewinding. Should the test	0.3722	0.0131
+0.1845	0.1053	1.000	fail, the VOPB (VSURT) bit is set equal to 1 and the	0.3929	0.0146
+0.1845	0.5508	1.000	3. Re-enter VSETX to attempt to attach a tape	0.3609	0.0161
+0.1976	0.1071	1.000	VTMV routine will be entered causing the $UNLD	0.3722	0.0146
+0.1991	0.5376	1.000	through VTSA to WT. Phase 4 operation is not	0.3590	0.0161
+0.2136	0.1071	1.000	command to be issued. Tapes which pass compati-	0.3853	0.0131
+0.2136	0.5376	1.000	affected at all by this transition.	0.2481	0.0189
+0.2297	0.1071	1.000	bility are forwarded in the usual way.	0.2820	0.0116
+0.2442	0.5395	1.000	Online from Bypass -- VONLIB	0.2387	0.0146
+0.2587	0.1071	1.000	VTA Routine: The tape attachment routine (Figure	0.3910	0.0131
+0.2733	0.5395	1.000	The VONLIB routine (Figure 81) is entered as the	0.3741	0.0161
+0.2747	0.1053	1.000	80) is entered through the VIO slot in the TS tables	0.3816	0.0117
+0.2878	0.5376	1.000	result of an ONLINE command card having been	0.3628	0.0160
+0.2892	0.1053	1.000	which in turn is entered from VACT. Attaching a	0.3741	0.0132
+0.3023	0.5376	1.000	received in response to an SCR4 command in the by-	0.3966	0.0160
+0.3036	0.1053	1.000	unit is very simple:	0.1523	0.0118
+0.3166	0.1221	1.000	1. Obtain the destination program from the 'rf'	0.3650	0.0167
+0.3169	0.5357	1.000	pass mode. The VONLIB routine reactivates phase	0.3910	0.0160
+0.3285	0.5374	1.000	À and reroutes the cards following to WT, initiating	0.3914	0.0211
+0.3326	0.1051	1.000	slot in VSURT.	0.1150	0.0120
+0.3472	0.1221	1.000	2. Store the IOD number in the VSU slot in the	0.3554	0.0134
+0.3503	0.5395	1.000	phase 1. By the simple act of letting VREQ process	0.3947	0.0116
+0.3633	0.1071	1.000	table of the destination program.	0.2462	0.0117
+0.3648	0.5414	1.000	subsequent requests from the Q tables; the phase 4	0.3835	0.0131
+0.3779	0.1241	1.000	3. Store the program table origin above the table	0.3741	0.0131
+0.3794	0.5414	1.000	operation is reinstated. The rest of the transition is	0.3985	0.0131
+0.3924	0.1071	1.000	of exits where it will be used to control the destina-	0.3891	0.0116
+0.3939	0.5414	1.000	concerned with getting the phase 1 operation under-	0.3872	0.0131
+0.4084	0.1071	1.000	tion of interrupt. (Refer to the code to see how this	0.3891	0.0116
+0.4228	0.1052	1.000	works.)	0.0602	0.0119
+0.4230	0.5583	1.000	The SC routine is connected to WT, SC is modified	0.3816	0.0131
+0.4375	0.1222	1.000	4. Set VRCNT and VFCNT equal to zero.	0.3139	0.0116
+0.4390	0.5395	1.000	for online operation, and the phase of WT is set equal	0.4060	0.0117
+0.4520	0.1222	1.000	5. Branch to the VSTR slot in the program table	0.3684	0.0116
+0.4535	0.5395	1.000	to that of CR. At the time the VONLIB routine is	0.3722	0.0117
+0.4666	0.1053	1.000	to restart the program.	0.1786	0.0116
+0.4679	0.5414	1.000	entered, the E program most likely has some buffer	0.3929	0.0118
+0.4824	0.5395	1.000	area assigned to it, since phase 1 must obviously	0.3722	0.0118
+0.4956	0.1071	1.000	The Transition Routines	0.1805	0.0116
+0.4970	0.5395	1.000	proceed on the assumption of no transition until the	0.3872	0.0133
+0.5115	0.5414	1.000	command card is actually delivered by the request	0.3797	0.0133
+0.5261	0.1071	1.000	The six transition routines are initially entered from	0.3985	0.0118
+0.5276	0.5395	1.000	processor to the package which recognizes it. It is	0.3891	0.0118
+0.5406	0.1071	1.000	the input command dispatcher when the appropriate	0.3835	0.0132
+0.5421	0.5395	1.000	therefore necessary to recover the remaining buffer	0.3947	0.0117
+0.5552	0.1053	1.000	pseudo-op is given by the command package. If the	0.3891	0.0132
+0.5567	0.5414	1.000	area assigned to E and return it to SC for rescanning	0.3985	0.0116
+0.5697	0.1053	1.000	requested transition cannot be immediately effected,	0.3947	0.0132
+0.5712	0.5395	1.000	in the online mode. The recovery is accomplished by	0.4060	0.0116
+0.5858	0.5414	1.000	the VSWEEP subroutine (Figure 81) which repeatedly	0.3985	0.0116
+0.5858	0.1071	1.000	controls are set for subsequent re-entry when the	0.3741	0.0103
+0.6003	0.1071	1.000	command can be effected.	0.1936	0.0103
+0.6003	0.5414	1.000	applies VSETX until a zero parameter is returned,	0.3835	0.0131
+0.6148	0.5395	1.000	totaling up all positive parameters returned and	0.3609	0.0116
+0.6163	0.1090	1.000	Online from Offline -- VONLIN	0.2350	0.0102
+0.6274	0.5393	1.000	ignoring negative parameters. The total is returned	0.3969	0.0156
+0.6439	0.5395	1.000	to VONLIB which forwards it to SC and, most	0.3459	0.0131
+0.6453	0.1090	1.000	The VONLIN routine (Figure 81) is entered when the	0.3929	0.0116
+0.6584	0.5414	1.000	importantly, backs up to the SC phase parameter,	0.3741	0.0131
+0.6599	0.1090	1.000	ONLINE command is given through the console.	0.3571	0.0116
+0.6599	0.4756	1.000	The	0.0320	0.0102
+0.6744	0.5414	1.000	VTX, to compensate.	0.1598	0.0116
+0.6744	0.1090	1.000	routine occurs at some time after the command is	0.3741	0.0102
+0.6875	0.5564	1.000	The VOP (VTSB) bit is next tested to see if the	0.3534	0.0131
+0.6890	0.1090	1.000	given because the implementation of the command	0.3722	0.0117
+0.7020	0.5414	1.000	previous overlapped command was online or offline.	0.3910	0.0131
+0.7035	0.1090	1.000	must await a convenient break point in the offline	0.3684	0.0117
+0.7166	0.5395	1.000	Recall that VOP (VTSB) determines whether phase 4	0.3947	0.0146
+0.7179	0.1090	1.000	mode operation. The time the 'command occurs is	0.3778	0.0118
+0.7323	0.1089	1.000	significant because all tapes subsequently readied at	0.3930	0.0134
+0.7324	0.5414	1.000	was unloading or rewinding tapes and that in the online	0.4098	0.0118
+0.7470	0.5414	1.000	mode, phase 4 would be rewinding tapes. If the	0.3609	0.0133
+0.7470	0.1090	1.000	TSB will be online mode tapes. This is accomplished	0.4041	0.0133
+0.7615	0.5414	1.000	previous overlapped mode was online, then the	0.3515	0.0133
+0.7616	0.4511	1.000	Also,	0.0470	0.0145
+0.7630	0.1071	1.000	by changing VDS (VTSB) to WT immediately.	0.3383	0.0118
+0.7776	0.5414	1.000	transition is complete because the tape switch	0.3459	0.0118
+0.7776	0.1090	1.000	a negative parameter, VCCR (commence card reading	0.4079	0.0131
+0.7906	0.5414	1.000	mechanism was unaltered by the VBYPAN transition	0.3929	0.0132
+0.7921	0.1071	1.000	is put into the TSA queue.	0.1955	0.0117
+0.8052	0.5414	1.000	and is free to supply WT with a tape if, indeed, it	0.3778	0.0132
+0.8067	0.1259	1.000	After this point, tapes becoming ready at TSB will	0.3778	0.0131
+0.8212	0.1090	1.000	be given WT destinations and be forwarded to the	0.3684	0.0116
+0.8212	0.5395	1.000	has not already done so.	0.1861	0.0116
+0.8342	0.5564	1.000	If the previous overlapped mode was different, that	0.3872	0.0131
+0.8358	0.1090	1.000	queue where they will fall in behind VCCR in the TSA	0.3966	0.0131
+0.8488	0.5414	1.000	is, offline, the transition is deemed compound and	0.3797	0.0131
+0.8503	0.1090	1.000	queue. When VTSA picks up -VCCR the online mode	0.3966	0.0116
+0.8633	0.5414	1.000	further action is required. The VBYPAF routine has	0.4004	0.0131
+0.8648	0.1071	1.000	is actually started. This consists of 3 steps:	0.3421	0.0131
+0.8791	0.1240	1.000	1. Perform bookkeeping which connects CR to SC	0.3779	0.0135
+0.8794	0.5395	1.000	left VTSA blocked and therefore some tapes may be	0.3910	0.0116
+0.8924	0.5414	1.000	queued up in ST destinations. Therefore, the VTSA	0.3891	0.0131
+0.8953	0.1071	1.000	to WT. The write tape VX is set equal to the card	0.3816	0.0116
+0.9476	0.7707	1.000	System Input-Output	0.1203	0.0103
+0.9491	0.9135	1.000	149	0.0226	0.0087

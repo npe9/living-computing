@@ -1,0 +1,135 @@
+0.0581	0.5169	1.000	ized operation is also specified. Unnormalized floating	0.3891	0.0146
+0.0596	0.0996	1.000	be suppressed. These cases occur in multiplication	0.3910	0.0146
+0.0722	0.0995	1.000	of values with large EM and the same es, and in divi-	0.3912	0.0177
+0.0741	0.5188	1.000	point operations are not affected by the noisy mode.	0.3872	0.0147
+0.0887	0.5188	1.000	Therefore, many incidental operations associated	0.3891	0.0147
+0.0915	0.0996	1.000	sion where the values have large EM and difterent ES.	0.3929	0.0118
+0.1045	0.5169	1.000	with a calculation may be performed without chang	0.3891	0.0133
+0.1061	0.1015	1.000	This definition insures that overflowed or under-	0.3910	0.0118
+0.1191	0.5169	1.000	ing the status of the NM indicator, yet still using	0.3910	0.0146
+0.1221	0.1015	1.000	flowed values will remain in that range.	0.2857	0.0116
+0.1335	0.5187	1.000	the higher speed floating-point instructions.	0.3160	0.0165
+0.1366	0.1165	1.000	For comparison operations, Figure 24 shows	0.3440	0.0131
+0.1381	0.4605	1.000	the	0.0301	0.0087
+0.1497	0.5338	1.000	With normalized operation specified, noisy mode	0.3741	0.0145
+0.1526	0.0996	1.000	result relative to the accumulator. Comparisons are	0.3910	0.0131
+0.1650	0.5187	1.000	operation differs from standard operation at the start	0.3893	0.0153
+0.1672	0.0996	1.000	made algebraically so that the effective signs of the	0.3910	0.0132
+0.1817	0.0996	1.000	operand fractions are the primary consideration. A	0.3910	0.0147
+0.1817	0.5188	1.000	of execution and during final normalization. At the	0.3891	0.0132
+0.1962	0.5169	1.000	start of execution in noisy mode, single-precision 48-	0.3891	0.0145
+0.1976	0.0996	1.000	value with a positive fraction sign is considered larger	0.3929	0.0146
+0.2121	0.5188	1.000	bit fractions are extended with 48 ones. The oper-	0.3891	0.0132
+0.2136	0.0996	1.000	than a value with a negative fraction sign, except that	0.3929	0.0131
+0.2282	0.0996	1.000	plus zero is equal to negative zero under certain con-	0.3929	0.0146
+0.2282	0.5169	1.000	ands in all single-precision operations, except MUL-	0.3910	0.0131
+0.2427	0.5169	1.000	TIPLY and STORE ROOT, are extended. In additions,	0.3891	0.0145
+0.2442	0.0996	1.000	ditions. When the values have the same fraction sign,	0.3929	0.0131
+0.2570	0.5168	1.000	only the operand with the greater exponent is ex-	0.3893	0.0167
+0.2602	0.0996	1.000	comparison is based on the relative magnitudes of the	0.3910	0.0132
+0.2733	0.5169	1.000	tended with ones. (For operands with equal expo-	0.3910	0.0146
+0.2747	0.0996	1.000	exponents and exponent signs and, finally, on the	0.3910	0.0147
+0.2892	0.5188	1.000	nents the accumulator operand is extended.) In divi-	0.3891	0.0132
+0.2906	0.0996	1.000	fraction magnitudes. An asterisk indicates a result	0.3929	0.0132
+0.3020	0.5187	1.000	sions, both the divisor and dividend are extended for	0.3893	0.0166
+0.3067	0.0996	1.000	which further depends on the relative magnitudes of	0.3929	0.0116
+0.3197	0.5150	1.000	the normalization preceding the actual division. The	0.3929	0.0161
+0.3212	0.0996	1.000	the fractions.	0.0959	0.0116
+0.3317	0.5187	1.000	divisor is truncated to 48 bits for the division opera-	0.3893	0.0174
+0.3503	0.5188	1.000	tion. The effect of the extension on addends (or	0.3891	0.0131
+0.3648	0.5169	1.000	augends) and dividends is to provide one bits instead	0.3891	0.0146
+0.3763	0.0996	1.000	Noisy Mode	0.1129	0.0163
+0.3808	0.5169	1.000	of the zero bits normally provided when forming the	0.3891	0.0160
+0.3967	0.5188	1.000	96-bit intermediate operand. The effect of this exten.	0.3853	0.0133
+0.4070	0.0996	1.000	The normalization process used with floating-point	0.3929	0.0145
+0.4112	0.5188	1.000	sion is to provide low order one-bits on left shifts in	0.3872	0.0147
+0.4230	0.0996	1.000	operations introduces zeros into the low-order bit po.	0.3929	0.0146
+0.4273	0.5188	1.000	normalizing of 48-bit fractions for divisors and other	0.3872	0.0146
+0.4375	0.0996	1.000	sitions of the fraction as left shifting occurs. This	0.3910	0.0146
+0.4418	0.5169	1.000	operands. When the final normalization is specified,	0.3891	0.0146
+0.4535	0.0996	1.000	process may result in a loss of significance through-	0.3929	0.0145
+0.4545	0.5187	1.000	the extended ones are truncated so that only 48 bits	0.3875	0.0184
+0.4694	0.0996	1.000	out the course of a program. Assistance in the study	0.3910	0.0132
+0.4738	0.5169	1.000	appear in the single-precision results.	0.2688	0.0160
+0.4855	0.1015	1.000	of such effects has been provided through an al	0.3872	0.0116
+0.4897	0.5357	1.000	At the start of execution for double-precision op-	0.3684	0.0133
+0.4981	0.1014	1.000	ternative method of operation called the "noisy	0.3875	0.0187
+0.5042	0.5188	1.000	erations, all operands are assumed to be 96 bits in	0.3872	0.0147
+0.5145	0.0996	1.000	mode." Noisy mode operation provides for the intro-	0.3929	0.0146
+0.5203	0.5169	1.000	length. Only those operands requiring pre-execution	0.3872	0.0131
+0.5305	0.3853	1.000	the low-order	0.1071	0.0116
+0.5305	0.0996	1.000	duction of ones, rather than zeros, in	0.2876	0.0131
+0.5348	0.5188	1.000	normalization will acquire one-bits rather than zero	0.3872	0.0146
+0.5464	0.1015	1.000	bit positions during the left shift associated with nor-	0.3910	0.0133
+0.5509	0.5188	1.000	bits in the process. The operand in LOAD FACTOR and	0.3853	0.0146
+0.5609	0.0996	1.000	malization. Processing the program both in the stand-	0.3929	0.0147
+0.5654	0.5188	1.000	the divisor in DIVIDE DOUBLE are extended. After the	0.3872	0.0131
+0.5770	0.0996	1.000	ard mode and in the noisy mode provides an esti-	0.3929	0.0131
+0.5814	0.5169	1.000	subsequent normalization they are truncated to 48-bit	0.3891	0.0132
+0.5898	0.1014	1.000	mate for the study of significance loss due to fraction	0.3894	0.0175
+0.5947	0.5187	1.000	operand fractions. When the final normalization is	0.3874	0.0159
+0.6076	0.1015	1.000	truncation.	0.0789	0.0116
+0.6105	0.5150	1.000	specified, the 96-bit intermediate result, when shifted	0.3910	0.0174
+0.6235	0.1165	1.000	The choice of standard or noisy mode operation is	0.3759	0.0131
+0.6279	0.5169	1.000	left, is extended on the right with ones. The operand	0.3891	0.0146
+0.6381	0.0996	1.000	specified by the setting of the noisy-mode indicator,	0.3947	0.0146
+0.6424	0.5150	1.000	in SHIFT FRACtION is not affected with noisy mode bits.	0.3891	0.0161
+0.6482	0.0977	1.000	NM. When the indicator is zero, standard operation	0.3947	0.0204
+0.6657	0.0977	1.000	is used; when it is set to one, noisy mode operation	0.3966	0.0189
+0.6802	0.0996	1.000	will be used. Noisy mode is used only when normal-	0.3947	0.0189
+0.6958	0.5149	1.000	Indicators	0.0980	0.0169
+0.7193	0.3101	1.000	Storage	0.0415	0.0106
+0.7282	0.2030	1.000	XFP, +| N, +| XFN, +| XEN, - | N, -| XFP, -	0.2763	0.0161
+0.7297	0.1278	1.000	Accumulator	0.0658	0.0116
+0.7311	0.5169	1.000	The indicators that may be turned on by floating	0.3891	0.0160
+0.7470	0.5169	1.000	point operations can be divided into two groups. The	0.3891	0.0147
+0.7512	0.1258	1.000	XFP, +	0.0416	0.0135
+0.7513	0.3985	1.000	High| High	0.0696	0.0133
+0.7515	0.2519	1.000	High	0.0282	0.0131
+0.7515	0.2143	1.000	=	0.0132	0.0116
+0.7515	0.2838	1.000	High	0.0357	0.0131
+0.7529	0.3440	1.000	High	0.0301	0.0116
+0.7602	0.5169	1.000	first group of indicators is of a general nature and	0.3891	0.0160
+0.7703	0.2895	1.000	High	0.0301	0.0160
+0.7703	0.2049	1.000	Low	0.0263	0.0145
+0.7718	0.2575	1.000	*	0.0113	0.0087
+0.7718	0.1259	1.000	N,+	0.0301	0.0131
+0.7733	0.4004	1.000	High	0.0376	0.0116
+0.7733	0.3440	1.000	High	0.0282	0.0116
+0.7733	0.4342	1.000	High	0.0320	0.0116
+0.7761	0.5169	1.000	can be turned on by variable field-length operations	0.3891	0.0161
+0.7920	0.1259	1.000	XFN,+	0.0453	0.0134
+0.7921	0.5150	1.000	as well as floating-point operations. The description	0.3891	0.0176
+0.7922	0.2932	1.000	=	0.0150	0.0131
+0.7935	0.4003	1.000	High High	0.0659	0.0119
+0.7936	0.2030	1.000	Low	0.0244	0.0116
+0.7936	0.2500	1.000	Low	0.0244	0.0116
+0.7936	0.3440	1.000	High	0.0282	0.0116
+0.8081	0.5150	1.000	here is with respect to the floating point operations	0.3891	0.0161
+0.8124	0.1241	1.000	XFN, -	0.0451	0.0132
+0.8125	0.2049	1.000	Low	0.0244	0.0145
+0.8140	0.2500	1.000	Low	0.0244	0.0131
+0.8140	0.2838	1.000	Low	0.0301	0.0131
+0.8153	0.3985	1.000	High | High	0.0678	0.0134
+0.8154	0.3477	1.000	=	0.0132	0.0102
+0.8241	0.5150	1.000	only. The second group of indicators are specifically	0.3891	0.0147
+0.8328	0.2030	1.000	Low	0.0263	0.0145
+0.8342	0.1259	1.000	N, -	0.0301	0.0131
+0.8343	0.4023	1.000	*	0.0150	0.0116
+0.8343	0.3421	1.000	Low	0.0263	0.0131
+0.8358	0.2500	1.000	Low	0.0244	0.0116
+0.8358	0.4361	1.000	High	0.0301	0.0116
+0.8358	0.2876	1.000	Low	0.0263	0.0116
+0.8387	0.5169	1.000	associated only with floating-point operations.	0.3365	0.0147
+0.8532	0.5282	1.000	Indicators are either permanent or temporary. The	0.3759	0.0160
+0.8545	0.1240	1.000	XFP, -	0.0415	0.0134
+0.8561	0.2462	1.000	Low Low	0.0658	0.0146
+0.8561	0.3966	1.000	Low	0.0244	0.0131
+0.8561	0.3421	1.000	Low	0.0244	0.0131
+0.8561	0.2011	1.000	Low	0.0301	0.0131
+0.8576	0.4417	1.000	=	0.0150	0.0073
+0.8706	0.5244	1.000	ermanent indicators are turned on by certain spec	0.3741	0.0146
+0.8836	0.5244	1.000	ied operation conditions. Once on, they stay on unt	0.3722	0.0146
+0.8866	0.0977	1.000	Figure 24. Comparison Results	0.1898	0.0146
+0.9215	0.1335	1.000	IBM 7030	0.0752	0.0131
+0.9230	0.0996	1.000	84	0.0169	0.0102

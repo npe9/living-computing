@@ -1,0 +1,119 @@
+0.0887	0.1278	1.000	5. Absolute patch card. The instruction at the	0.3590	0.0116
+0.0900	0.5376	1.000	adjustment card in a non-FORTRAN environment.	0.3759	0.0118
+0.1045	0.5395	1.000	The absolute origin is computed by adding the sub-	0.3816	0.0118
+0.1045	0.1071	1.000	origin specified on the card is replaced by a branch	0.3872	0.0103
+0.1191	0.1053	1.000	(or a branch; NOP, depending on the length of the in-	0.4004	0.0118
+0.1191	0.5376	1.000	program origin to the relative origin on the card.	0.3741	0.0118
+0.1321	0.5395	1.000	Addresses are computed from the relocation bits on	0.3910	0.0118
+0.1336	0.1071	1.000	struction replaced) to a patch area, which starts at	0.3872	0.0118
+0.1482	0.5376	1.000	the card, using the relocation table for loading bases.	0.4060	0.0118
+0.1482	0.1053	1.000	the lowest location above all previously loaded loca-	0.3966	0.0103
+0.1627	0.1053	1.000	tions. The upper limit of the program may have to	0.3872	0.0118
+0.1627	0.5602	1.000	9. FORTRAN program card. The FORTRAN	0.3477	0.0118
+0.1773	0.5376	1.000	program card furnishes information to the BSS proc-	0.3985	0.0103
+0.1773	0.1053	1.000	be extended by the programmer to allow space for the	0.4023	0.0118
+0.1918	0.1053	1.000	patch area. At the patch area the following is placed:	0.4041	0.0118
+0.1918	0.5376	1.000	essor regarding the size of blank common and names	0.3985	0.0118
+0.2048	0.5376	1.000	of entry points. When the MCP loader encounters a	0.3910	0.0132
+0.2064	0.1053	1.000	(1) the instruction replaced by the branch to the patch	0.4004	0.0117
+0.2206	0.1052	1.000	area, (2) the half-words which appear on the patch	0.3799	0.0139
+0.2209	0.5395	1.000	FORTRAN program card, it takes the origin of the	0.3797	0.0116
+0.2355	0.5376	1.000	subprogram and the number of cards in the subpro-	0.3891	0.0116
+0.2355	0.1053	1.000	card, (3) a branch instruction which transfers to the	0.3929	0.0116
+0.2500	0.5376	1.000	gram from the relocation table and computes the	0.3665	0.0116
+0.2515	0.1053	1.000	next instruction after the one which was replaced by	0.3910	0.0116
+0.2645	0.5376	1.000	number of relocation bits to describe the number of	0.3891	0.0103
+0.2660	0.1034	1.000	the branch to the patch area. If there is no origin	0.3797	0.0116
+0.2791	0.5376	1.000	named commons within the subprogram. A FORTRAN	0.4098	0.0116
+0.2805	0.1053	1.000	on the patch card, the card is interpreted as a con-	0.3891	0.0116
+0.2936	0.5376	1.000	program card is accepted by the MCP loader only in	0.3929	0.0116
+0.2951	0.1053	1.000	tinuation patch card, from which up to four half-	0.3665	0.0116
+0.3081	0.5376	1.000	a FORTRAN environment.	0.1955	0.0116
+0.3096	0.1071	1.000	words are loaded beginning at the location following	0.3891	0.0116
+0.3241	0.5583	1.000	10. Common detinition card. The common def-	0.3684	0.0116
+0.3241	0.1034	1.000	the highest location in the patch area loaded from the	0.3985	0.0116
+0.3368	0.5356	1.000	inition card contains common names and sizes, in-	0.3874	0.0139
+0.3387	0.1053	1.000	previous card.	0.1109	0.0116
+0.3532	0.1278	1.000	6. Absolute dump card. The absolute dump card	0.3741	0.0117
+0.3532	0.5357	1.000	formation used by the BSS processor.	0.2857	0.0117
+0.3532	0.8308	1.000	A common	0.0808	0.0102
+0.3677	0.1034	1.000	has the same instruction displacement property as the	0.4098	0.0117
+0.3677	0.5357	1.000	definition card is not accepted by the MCP loader in	0.3910	0.0117
+0.3821	0.5357	1.000	a non-FORTRAN environment, and is ignored in a	0.3778	0.0118
+0.3821	0.1053	1.000	absolute patch card. However, the loader places a	0.3853	0.0133
+0.3967	0.5376	1.000	FORTRAN environment.	0.1823	0.0118
+0.3967	0.1053	1.000	calling sequence to the MCP dump routine in the patch	0.4041	0.0118
+0.4112	0.1560	1.000	The first and second half-words on the dump	0.3365	0.0118
+0.4112	0.5583	1.000	11. FORTRAN branch card. The FORTRAN	0.3402	0.0118
+0.4141	0.1033	1.000	area.	0.0527	0.0091
+0.4258	0.5357	1.000	branch card is used to terminate the input phase of	0.3835	0.0118
+0.4258	0.1034	1.000	card are inserted as the lower and upper limit dump	0.3947	0.0118
+0.4391	0.1032	1.000	parameters, and the third half-word is inserted as	0.3837	0.0152
+0.4403	0.5357	1.000	the BSS processor. It is ignored by the MCP loader.	0.3985	0.0118
+0.4548	0.5583	1.000	12. Relocatable correction (K) card. Up tothree	0.3741	0.0118
+0.4564	0.1034	1.000	the format parameter. The dump calling sequence iş	0.4023	0.0131
+0.4694	0.1034	1.000	followed'by a branch to the instruction that follows	0.3797	0.0118
+0.4694	0.5357	1.000	half-words are loaded, beginning at the effective ori-	0.3985	0.0132
+0.4839	0.5357	1.000	gin formed by relocating the relative origin on the	0.3759	0.0132
+0.4855	0.1034	1.000	the one which appears at the origin on the dump card,	0.4004	0.0116
+0.4985	0.5357	1.000	card with respect to the subprogram or the named	0.3759	0.0118
+0.5000	0.1034	1.000	in the same manner as a patch.	0.2425	0.0116
+0.5000	0.3515	1.000	More than one dump	0.1485	0.0103
+0.5130	0.5357	1.000	common specified. Each half-word is relocated ac-	0.3947	0.0131
+0.5145	0.1034	1.000	request may be given for the same location, by placing	0.4041	0.0131
+0.5291	0.1034	1.000	the lower limit for the second request as the fourth	0.3853	0.0116
+0.5291	0.5357	1.000	cording to the reloeation columns on the card. (See	0.3910	0.0116
+0.5421	0.5357	1.000	also card formats - Appendix A.) If there is no ori-	0.4023	0.0117
+0.5436	0.1034	1.000	half-word on the card and continuing the upper limit	0.3910	0.0116
+0.5567	0.5338	1.000	gin on the correction card, the card is interpreted as	0.4041	0.0131
+0.5581	0.1034	1.000	and format, and subsequent dump requests, on con-	0.3929	0.0131
+0.5712	0.5357	1.000	a continuation card, from which up to three half-words	0.4117	0.0131
+0.5727	0.1034	1.000	tinuation absolute dump cards (characterized by hav-	0.3985	0.0116
+0.5872	0.5357	1.000	of information are loaded, beginning at the location	0.3853	0.0116
+0.5872	0.1015	1.000	ing no origin on the card). (See dump card format	0.3816	0.0131
+0.6017	0.5357	1.000	following the highest location loaded from the previous	0.4098	0.0116
+0.6032	0.1034	1.000	in Appendix A.)	0.1184	0.0117
+0.6163	0.5357	1.000	card. A correction card is ignored by the MCP	0.3609	0.0116
+0.6177	0.1259	1.000	7. Relocatable data card. The relocatable data	0.3628	0.0117
+0.6308	0.5338	1.000	loader if a 1 punch is found in the decimal point of	0.3797	0.0116
+0.6321	0.1034	1.000	card contains data information (up to 744 bits) and a	0.3910	0.0118
+0.6453	0.5357	1.000	the origin. A half-word correction is ignored if a 1	0.3910	0.0131
+0.6467	0.1015	1.000	count of the number of bits to be skipped or zeroed	0.3853	0.0118
+0.6599	0.5338	1.000	punch is found in the decimal point column for that	0.3835	0.0116
+0.6612	0.1015	1.000	before or after loading. Data may be loaded into prob-	0.3985	0.0133
+0.6744	0.5338	1.000	half-word. The loading address is stepped whether	0.3891	0.0116
+0.6758	0.0996	1.000	lem program storage or into a commonblockin a FOR-	0.4023	0.0133
+0.6903	0.5357	1.000	or not the half-word correction is ignored by the	0.3665	0.0103
+0.6903	0.1034	1.000	TRAN environment. (Common blocks are meaningful	0.3966	0.0118
+0.7035	0.5338	1.000	loader (except if the half-word ignored is the last	0.3741	0.0117
+0.7064	0.1015	1.000	to the loader only in the FORTRAN environment.)	0.3741	0.0103
+0.7179	0.5338	1.000	half-word on the card). It should be noted that a re-	0.3966	0.0133
+0.7194	0.1034	1.000	The card is checked to insure that the data will be	0.3759	0.0118
+0.7339	0.5338	1.000	locatable correction card at an origin higher thanthe	0.3985	0.0118
+0.7355	0.1015	1.000	loaded within bounds. The origin of the subprogram	0.3947	0.0116
+0.7485	0.5338	1.000	highest origin in the subprogram has the effect of re-	0.4023	0.0118
+0.7500	0.1034	1.000	and the origins of common blocks are taken from the	0.3947	0.0116
+0.7630	0.5338	1.000	setting the patch area to the highest origin encountered.	0.4173	0.0118
+0.7645	0.1034	1.000	relocation table in a FORTRAN environment; the ori-	0.4004	0.0116
+0.7776	0.5564	1.000	13. Relocatable patch (A) card. The effective	0.3534	0.0118
+0.7791	0.1034	1.000	gin of the subprogram in a non-FORTRAN environ-	0.3835	0.0116
+0.7921	0.5338	1.000	origin is formed by relocating the relative origin on	0.3929	0.0117
+0.7951	0.1015	1.000	ment is taken from the preceding loader adjustment	0.3891	0.0102
+0.8081	0.5338	1.000	the card with respect to the subprogram origin. The	0.4004	0.0102
+0.8096	0.1034	1.000	card.	0.0414	0.0102
+0.8212	0.5338	1.000	instruction at the effective origin is replaced by a	0.3759	0.0116
+0.8227	0.1241	1.000	8. Relocatable instruction card. A variable a-	0.3609	0.0116
+0.8358	0.5338	1.000	branch (or a branch; NOP, depending on the length of	0.4004	0.0131
+0.8372	0.1034	1.000	mount of information is loaded. (The amount of in-	0.3872	0.0116
+0.8503	0.5338	1.000	the instruction replaced) to a patch area at the end of	0.4004	0.0116
+0.8532	0.1015	1.000	formation that can be punched on a card depends on	0.3853	0.0102
+0.8663	0.5338	1.000	the subprogram. The size of the subprogram is ex-	0.3947	0.0116
+0.8677	0.1015	1.000	the number of relocation bits necessary to describe	0.3872	0.0102
+0.8794	0.5320	1.000	tended when storage allocation takes place in BSS, so	0.4004	0.0131
+0.8821	0.1015	1.000	the instruction on the card.) The origin of the sub-	0.3891	0.0118
+0.8953	0.5320	1.000	that storage for relocatable patch cards is automati-	0.3985	0.0116
+0.8967	0.1015	1.000	program is taken from the relocation table in a FOR-	0.4041	0.0118
+0.9099	0.5338	1.000	cally provided in a FORTRAN environment. In a	0.3684	0.0116
+0.9112	0.1034	1.000	TRAN environment and from the previous loader	0.3647	0.0118
+0.9390	0.8289	1.000	MCP Loader	0.0733	0.0087
+0.9390	0.9229	1.000	5	0.0113	0.0087

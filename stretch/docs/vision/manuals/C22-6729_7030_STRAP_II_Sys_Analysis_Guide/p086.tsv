@@ -1,0 +1,6 @@
+0.0755	0.0695	1.000	Box 71	0.0545	0.0133
+0.1032	0.0714	1.000	If the character is neither a closed parenthesis, nor	0.3872	0.0132
+0.1177	0.0713	1.000	a comma, an error message is given. If a closed	0.3724	0.0140
+0.1336	0.0714	1.000	parenthesis, it is checked for a GP. If a comma,	0.3703	0.0132
+0.1482	0.0714	1.000	and the parenthesis count is not one, an error	0.3421	0.0118
+0.1642	0.0733	1.000	message is given.	0.1335	0.0103

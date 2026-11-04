@@ -1,0 +1,90 @@
+0.1003	0.2274	1.000	.7	0.0188	0.0131
+0.1017	0.1598	1.000	.4	0.0169	0.0087
+0.1017	0.1823	1.000	.5	0.0150	0.0087
+0.1017	0.2500	1.000	.8	0.0150	0.0102
+0.1032	0.5038	1.000	.38	0.0226	0.0116
+0.1032	0.3102	1.000	1.11 .12.13	0.0677	0.0087
+0.1032	0.4850	1.000	•37	0.0169	0.0102
+0.1032	0.7387	1.000	.63	0.0282	0.0145
+0.1047	0.5564	1.000	.45	0.0226	0.0116
+0.1515	0.2056	1.000	Entry	0.0191	0.0254
+0.1627	0.5789	1.000	FWA of Pseudo-Op	0.0996	0.0131
+0.1757	0.5902	1.000	Routine	0.0452	0.0119
+0.1802	0.1165	1.000	Linkage Parameters(n)	0.0150	0.0916
+0.1817	0.1015	1.000	Number of Half-Word	0.0150	0.0901
+0.2149	0.5343	1.000	Positions 39 through 44 - Not Used	0.0199	0.1428
+0.2337	0.4978	1.000	Parameter 15	0.0160	0.0557
+0.2355	0.4192	1.000	Parameter 4	0.0113	0.0538
+0.2369	0.3271	1.000	Parameter 2	0.0113	0.0494
+0.2369	0.3741	1.000	Parameter 3	0.0113	0.0509
+0.2485	0.2068	1.000	Disabled	0.0132	0.0392
+0.2485	0.2481	1.000	Not Used	0.0150	0.0392
+0.2485	0.2914	1.000	Not Used	0.0150	0.0392
+0.2515	0.2256	1.000	Enabled	0.0132	0.0363
+0.2602	0.4586	1.000	Parameter 5 through 14	0.0169	0.0959
+0.2616	0.1842	1.000	Same	0.0150	0.0262
+0.2660	0.1598	1.000	User	0.0150	0.0218
+0.2674	0.2688	1.000	Busy	0.0132	0.0189
+0.3110	0.4060	1.000	Form Eff	0.0169	0.0451
+0.3169	0.3139	1.000	Form Eff	0.0150	0.0378
+0.3169	0.3590	1.000	Form Eff	0.0150	0.0392
+0.3169	0.4850	1.000	Form Eff	0.0150	0.0407
+0.3212	0.3365	1.000	Restore	0.0150	0.0334
+0.3219	0.5067	1.000	Restore	0.0188	0.0363
+0.3221	0.4297	1.000	Restore	0.0187	0.0361
+0.3227	0.3835	1.000	Restore	0.0150	0.0334
+0.3576	0.4211	1.000	.32	0.0244	0.0131
+0.3691	0.1165	1.000	FWA of Last Tentacle Table Used	0.1748	0.0132
+0.3721	0.5451	1.000	Return Address	0.0789	0.0131
+0.4039	0.1147	1.000	FWA of Pseudo-Op Linkage	0.1429	0.0133
+0.4070	0.5451	1.000	Pseudo-Op Parameter	0.1128	0.0131
+0.4418	0.1297	1.000	Parameter 2	0.0677	0.0118
+0.4439	0.5505	1.000	Parameter 3	0.0681	0.0133
+0.4737	0.1296	1.000	Parameter 4	0.0678	0.0120
+0.4767	0.5508	1.000	Parameter 5	0.0677	0.0132
+0.5291	0.4154	1.000	T	0.0132	0.0174
+0.5664	0.1296	1.000	Parameter 14	0.0716	0.0125
+0.5706	0.5506	1.000	Parameter 15	0.0717	0.0128
+0.5959	0.0827	1.000	Word O	0.0414	0.0132
+0.6061	0.0846	1.000	bit 0.4 - the user bit defines the identity of the instruction counter	0.3402	0.0118
+0.6076	0.5583	1.000	eters not including the SOP parameter.	0.2011	0.0116
+0.6172	0.0827	1.000	owner at the time the IF analyzer was entered. If 1, owner is MCP;	0.3497	0.0127
+0.6264	0.0827	1.000	if O, owner is problem program.	0.1673	0.0132
+0.6409	0.0902	1.000	its 0. 5 through 0. 7 - entry mode bits determine whether the pro	0.3271	0.0118
+0.6512	0.0902	1.000	ram is to be entered disabled, enabled-SIO'd, or enabled non-SIO'o	0.3459	0.0116
+0.6657	0.5602	1.000	bits 0. 45 through 0. 63 - FWA of pseudo-op routine - Word zero, bit	0.3459	0.0102
+0.6744	0.1823	1.000	Non-SIO, enabled entry mode	0.1748	0.0102
+0.6773	0.5602	1.000	positions 0.45 through 0. 63, contains the location for the first word	0.3459	0.0088
+0.6860	0.2011	1.000	SIO enabled entry mode	0.1259	0.0103
+0.6890	0.5602	1.000	address of the pseudo-op routine pertinent to the tentacle table. The	0.3534	0.0087
+0.6986	0.5600	1.000	IF analyzer utlimately transfers to this address in the specified entry	0.3442	0.0122
+0.7093	0.1992	1.000	Same as user is entry mode (for PP user, this	0.2293	0.0102
+0.7224	0.5602	1.000	Word 1, bits O through 23, Value field - FWA of last tentacle Table	0.3477	0.0102
+0.7324	0.0846	1.000	bit 0.9 - busy bit - A 1 in bit position 0.9 indicates that the pseudo-	0.3515	0.0089
+0.7339	0.5583	1.000	used - contains the first word address of the last tentacle table and	0.3421	0.0088
+0.7427	0.0827	1.000	op program is in use. The IF analyzer will continuously return to the	0.3534	0.0103
+0.7456	0.5602	1.000	locates the tentacle table pertinent to the user's routine. If the	0.3252	0.0087
+0.7542	0.0846	1.000	beginning of the user's linkage via the service op return routine. The	0.3553	0.0103
+0.7558	0.5602	1.000	problem program is the user, this half word will be a zero.	0.2970	0.0103
+0.7660	0.0846	1.000	user must be in the non-SIO enabled mode, because the busy signal	0.3459	0.0102
+0.7674	0.5602	1.000	bits 32 through 55, Value field - return address - contains the normal	0.3553	0.0102
+0.7776	0.0846	1.000	can only be turned off by an I-O routine receiving control upon I-O	0.3459	0.0088
+0.7791	0.5583	1.000	return as computed by the IF analyzer unless otherwise modified by'	0.3459	0.0103
+0.7906	0.5583	1.000	the pseudo-operation routine. The return service pseudo-op ($RET)	0.3477	0.0103
+0.7994	0.0846	1.000	bit 0. 11, 0.13,...,0. 37 - parameter descriptor (form effective) -	0.3402	0.0103
+0.8007	0.5601	1.000	will transfer control to this address when requested by the pseudo-	0.3348	0.0122
+0.8109	0.0846	1.000	If a 1 is in bit position O.11, the effective address of the first param-	0.3534	0.0103
+0.8139	0.5602	1.000	program owning the tentacle table.	0.1805	0.0088
+0.8211	0.0845	1.000	eter will be formed and saved in the proper tentacle table position.	0.3423	0.0118
+0.8241	0.5602	1.000	Word 2, bits O through 23, Value Field - FWA of pseudo-op linkage -	0.3553	0.0116
+0.8327	0.0846	1.000	With a O'in bit position O.11, the first parameter will be saved.	0.3233	0.0103
+0.8335	0.5600	1.000	contains the address of the first half word in the user's pseudo-operation	0.3631	0.0150
+0.8445	0.0846	1.000	Bit positions O.11 through O. 38 are reserved for parameter descriptors,	0.3553	0.0102
+0.8473	0.5602	1.000	linkage (B, $MCP).	0.0977	0.0103
+0.8561	0.0846	1.000	with two bit positions for each parameter. Except for the $OP param-	0.3571	0.0103
+0.8563	0.5600	1.000	bits 32 through 55, Value Field - pseudo-op parameter - the identifi-	0.3556	0.0144
+0.8677	0.0846	1.000	eter, there are two parameter descriptors (form effective or restore)	0.3459	0.0102
+0.8688	0.5582	1.000	cation of the pseudo-op as indicated in the second half of the linkage	0.3555	0.0121
+0.8794	0.0827	1.000	for each parameter in the pseudo-op linkage, allowing for 14 param-	0.3553	0.0102
+0.9185	0.0808	1.000	Figure 16. Tentacle Table Structure	0.2143	0.0103
+0.9535	0.0771	1.000	34	0.0188	0.0116

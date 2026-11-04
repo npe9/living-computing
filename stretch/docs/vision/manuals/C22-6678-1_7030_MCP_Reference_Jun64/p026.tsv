@@ -1,0 +1,109 @@
+0.0682	0.5226	1.000	branch to a special routine for the second Pattern	0.3778	0.0133
+0.0682	0.0902	1.000	problem program table of exits (PTOE), in the	0.3553	0.0161
+0.0814	0.0902	1.000	following format:	0.1353	0.0174
+0.0827	0.5244	1.000	bit set to one, and so on. One full word must be	0.3609	0.0147
+0.0973	0.5226	1.000	provided for each Pattern bit that is set to one.	0.3590	0.0146
+0.1264	0.5244	1.000	Maskable Interrupt Linkages: If the programmer	0.3722	0.0146
+0.1279	0.2895	1.000	18	0.0207	0.0131
+0.1294	0.1278	1.000	10	0.0132	0.0116
+0.1409	0.5226	1.000	is supplying a PTOE, he must tell MCP where the	0.3797	0.0161
+0.1497	0.0902	1.000	Word1	0.0395	0.0117
+0.1497	0.1391	1.000	INSTRUCTION COUNTER	0.1429	0.0116
+0.1512	0.3853	1.000	zero	0.0282	0.0116
+0.1555	0.5226	1.000	table is located. This is done by placing the address	0.3947	0.0146
+0.1700	0.5226	1.000	of the first word of the PTOE in the refill field of	0.3759	0.0131
+0.1817	0.0902	1.000	Word 2	0.0395	0.0132
+0.1830	0.2312	1.000	INDICATOR REGISTER	0.1241	0.0133
+0.1845	0.5226	1.000	Index Register 15 ($15) which is reserved for this	0.3759	0.0131
+0.1991	0.5244	1.000	purpose. The PTOE must begin at a full-word ad-	0.3759	0.0131
+0.2135	0.2424	1.000	MASK REGISTER	0.0903	0.0134
+0.2136	0.5244	1.000	dress, because the refill field is 18 bits long.	0.3459	0.0131
+0.2151	0.0902	1.000	Word 3	0.0395	0.0116
+0.2282	0.5451	1.000	MCP initially sets the refill of $15 to zero.	0.3289	0.0146
+0.2423	0.5243	1.000	Therefore, whenever the problem program reaches	0.3875	0.0174
+0.2424	0.2424	1.000	PATTERN WORD	0.0904	0.0137
+0.2456	0.0883	1.000	Word 4	0.0395	0.0102
+0.2587	0.5244	1.000	a phase where the mask that is in effect permits	0.3647	0.0116
+0.2733	0.5244	1.000	maskable interrupts to be taken, and any special	0.3665	0.0131
+0.2747	0.1504	1.000	INSTRUCTION FOR FIRST PATTERN BIT SET TO ONE	0.2838	0.0132
+0.2762	0.0902	1.000	Word5	0.0376	0.0116
+0.2863	0.5243	1.000	fix-ups are to be used, the initial location of the	0.3629	0.0154
+0.2983	0.5224	1.000	PTOE must be in the refill field of $15. If this	0.3519	0.0193
+0.3052	0.1466	1.000	INSTRUCTION FOR SECOND PATTERN BIT SET TO ONE	0.3064	0.0132
+0.3081	0.0902	1.000	Word6	0.0395	0.0102
+0.3169	0.5244	1.000	field is zero, MCP assumes that no PTOE is	0.3383	0.0131
+0.3305	0.5204	1.000	provided.	0.0757	0.0150
+0.3503	0.5451	1.000	Because the refill field of $15 is permanently un-	0.3703	0.0131
+0.3648	0.5207	1.000	protected, it may be addressed by any program at	0.3797	0.0146
+0.3765	0.2801	1.000	-----	0.0526	0.0073
+0.3794	0.5207	1.000	any time. The programmer can change the address	0.3872	0.0131
+0.3939	0.5207	1.000	of the PTOE several times during a single run in	0.3703	0.0146
+0.3953	0.2782	0.300	т----	0.0526	0.0029
+0.4084	0.5226	1.000	order to have different sets of special fix-ups avail-	0.3947	0.0116
+0.4230	0.5207	1.000	able during different phases of the job. Fox example,	0.4023	0.0161
+0.4375	0.5226	1.000	if a programmer wishes to use a particular set of	0.3759	0.0131
+0.4404	0.0902	1.000	*Word	0.0338	0.0087
+0.4448	0.1504	1.000	INSTRUCTION FOR THE Nth PATTERN BIT SET TO ONE	0.2989	0.0116
+0.4506	0.0940	1.000	n+4	0.0282	0.0102
+0.4520	0.5226	1.000	special fix-ups to handle any maskable interrupts that	0.4060	0.0131
+0.4666	0.5226	1.000	may occur while a special fix-up is already in prog-	0.3929	0.0131
+0.4709	0.0901	1.000	*N=The number of bits in the pattern set to one	0.2428	0.0126
+0.4783	0.5205	1.000	ress, it is his responsibility to load the initial loca-	0.3950	0.0192
+0.4956	0.5207	1.000	tion of the new PTOE into the refill field of $15 at the	0.4023	0.0147
+0.5102	0.1165	1.000	The PTOE is a table provided by the programmer.	0.3609	0.0147
+0.5115	0.5207	1.000	appropriate time.	0.1353	0.0133
+0.5247	0.0940	1.000	The first three words of the table provide storage	0.3741	0.0147
+0.5378	0.0940	1.000	space in which MCP can save the instruction coun-	0.3835	0.0160
+0.5392	0.5207	1.000	Standard Fix-Up Routines: Standard fix-up routines	0.3929	0.0145
+0.5536	0.0921	1.000	ter, indicator register, and mask register when-	0.3741	0.0161
+0.5536	0.5207	1.000	are provided by MCP to handle maskable interrupts	0.3891	0.0147
+0.5669	0.0921	1.000	ever the PTOE is used. The saved indicator regis-	0.3872	0.0160
+0.5697	0.5207	1.000	when either the refill field of $15 is zero, or the	0.3665	0.0146
+0.5814	0.0921	1.000	ter does not include the bit that caused the interrupt.	0.3985	0.0147
+0.5827	0.5207	1.000	corresponding problem program pattern bit is zero.	0.3947	0.0147
+0.5965	0.5224	1.000	The standard fix-up routines produce the following	0.3800	0.0169
+0.6118	0.0940	1.000	Pattern Word: The selection of a standard or	0.3440	0.0146
+0.6133	0.5207	1.000	results for maskable interrupts:	0.2462	0.0131
+0.6264	0.0921	1.000	special correction routine is made in the pattern	0.3684	0.0146
+0.6409	0.0921	1.000	word of the PTOE. In Word 4 of the PTOE, there	0.3778	0.0146
+0.6423	0.5432	1.000	Indicator	0.0696	0.0119
+0.6525	0.5450	1.000	Number	0.0734	0.0207
+0.6537	0.7667	1.000	Result	0.0549	0.0168
+0.6541	0.6278	1.000	Symbol	0.0658	0.0189
+0.6555	0.0921	1.000	is one bit which corresponds to each indicator in	0.3665	0.0132
+0.6685	0.0921	1.000	the maskable interrupt group. Each of these bits	0.3741	0.0147
+0.6830	0.0921	1.000	is in the same position of Word 4 as are the indi-	0.3759	0.0161
+0.6830	0.7068	1.000	No Operation	0.1053	0.0161
+0.6831	0.6410	1.000	TS	0.0263	0.0160
+0.6846	0.5639	1.000	4	0.0150	0.0145
+0.6976	0.7086	1.000	No Operation	0.1053	0.0146
+0.6976	0.0940	1.000	cators in the indicator register. If the programmer	0.3891	0.0161
+0.6977	0.6410	1.000	EXE	0.0395	0.0160
+0.6977	0.5545	1.000	18	0.0244	0.0145
+0.7107	0.5545	1.000	20 and	0.0565	0.0176
+0.7136	0.0940	1.000	wishes to use a special routine for a particular	0.3571	0.0131
+0.7136	0.7105	1.000	A message is printed,	0.1692	0.0161
+0.7250	0.5563	1.000	22-47	0.0491	0.0165
+0.7266	0.0920	1.000	maskable interrupt, he sets to one, the bit in Word	0.3894	0.0192
+0.7267	0.7086	1.000	through the output program	0.2086	0.0161
+0.7393	0.7086	1.000	giving the name of the inter-	0.2163	0.0186
+0.7397	0.0940	1.000	4 that corresponds to that indicator. If he desires	0.3759	0.0176
+0.7552	0.7105	1.000	rupt and its location. If this	0.2107	0.0171
+0.7557	0.0939	1.000	to use a standard routine, the appropriate bit in	0.3668	0.0178
+0.7701	0.7085	1.000	is done more than 50 times,	0.2147	0.0166
+0.7703	0.0921	1.000	Word 4 is left as zero. Il the programmer is willing	0.3966	0.0176
+0.7833	0.0921	1.000	to use only standard correction routines, no PTOE	0.3853	0.0191
+0.7847	0.7086	1.000	a $ABEOJ is given.	0.1505	0.0164
+0.8020	0.0939	1.000	is required.	0.0922	0.0122
+0.8109	0.5376	1.000	Note that MCP makes two permanently	0.3289	0.0206
+0.8124	0.1147	1.000	Word 5 of the PTOE contains the instruction re-	0.3665	0.0176
+0.8299	0.5188	1.000	masked indicators appear to function as mask-	0.3910	0.0146
+0.8299	0.0921	1.000	lated to the first bit in the pattern word (proceeding	0.3910	0.0161
+0.8413	0.5206	1.000	able indicators in the system -- indicator 4,	0.3648	0.0177
+0.8459	0.0921	1.000	from left to right) that is set to one. This instruc-	0.3816	0.0132
+0.8590	0.5226	1.000	Time Signal, (TS): and indicator 18, Execute	0.3778	0.0146
+0.8605	0.0940	1.000	tion will normally be a branch to the special routine	0.3910	0.0117
+0.8691	0.6880	1.000	Time signal causes a	0.1748	0.0176
+0.8721	0.5226	1.000	Exception (EXE).	0.1391	0.0161
+0.8735	0.0921	1.000	provided by the programmer. Word 6 contains a	0.3647	0.0146
+0.9172	0.0940	1.000	26	0.0188	0.0116

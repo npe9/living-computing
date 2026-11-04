@@ -1,0 +1,106 @@
+0.0712	0.5132	1.000	changed as a result of the operation, and the index re-	0.3910	0.0145
+0.0727	0.0959	1.000	Data Transmission	0.1936	0.0161
+0.0872	0.5150	1.000	sult indicators are not affected. A zero J field refers to	0.3910	0.0131
+0.1032	0.5132	1.000	location 16, XO.	0.1184	0.0132
+0.1133	0.0977	1.000	A set of instructions is available to transmit data from	0.3910	0.0117
+0.1177	0.5301	1.000	In immediate count operations, the full word count	0.3778	0.0132
+0.1294	0.0977	1.000	one storage location to another. One word or a group	0.3910	0.0146
+0.1321	0.5150	1.000	is specified by instruction bits 51-54. A zero count field	0.3910	0.0147
+0.1453	0.0977	1.000	of words may be transmitted in a single operation.	0.3910	0.0131
+0.1482	0.5150	1.000	indicates the maximum count of 16 full words.	0.3477	0.0118
+0.1599	0.0996	1.000	The number of words to be transmitted is specified by	0.3891	0.0147
+0.1627	0.5301	1.000	In forward transmission, the sending and receiving	0.3759	0.0146
+0.1758	0.0977	1.000	a count. The count may be immediate, or it may be	0.3910	0.0133
+0.1788	0.5150	1.000	addresses of each successive word transmitted are ob-	0.3910	0.0116
+0.1903	0.0959	1.000	contained in an index word. Up to 218 - 1 (262,143)	0.3929	0.0146
+0.1933	0.5150	1.000	tained by incrementing the previous addresses by one.	0.3910	0.0146
+0.2038	0.0957	1.000	full words may be transmitted in one operation.	0.3574	0.0162
+0.2078	0.5132	1.000	The starting addresses specified in the instruction are	0.3947	0.0174
+0.2209	0.1128	1.000	Transmission may be unidirectional or bidirectional.	0.3741	0.0131
+0.2252	0.5150	1.000	therefore the addresses of the first word in each of the	0.3929	0.0103
+0.2369	0.0977	1.000	In unidirectional transmission, data are moved from	0.3891	0.0116
+0.2412	0.5150	1.000	two storage areas.	0.1278	0.0118
+0.2515	0.0977	1.000	one storage location to another storage location. After	0.3910	0.0131
+0.2558	0.5301	1.000	In backward transmission, the sending and receiving	0.3759	0.0131
+0.2660	0.0977	1.000	completion of the operation, the data remain un-	0.3910	0.0146
+0.2703	0.5150	1.000	addresses of each successive word transmitted are ob-	0.3910	0.0118
+0.2820	0.0977	1.000	changed in the original storage locations. The data	0.3891	0.0132
+0.2848	0.5150	1.000	tained by decrementing the previous addresses by one.	0.3910	0.0146
+0.2979	0.0977	1.000	which were originally in the receiving storage loca-	0.3929	0.0132
+0.3009	0.5150	1.000	The starting addresses specified in the instruction are	0.3929	0.0146
+0.3124	0.0977	1.000	tions are destroyed. In bidirectional transmission,	0.3910	0.0132
+0.3152	0.5131	1.000	therefore the addresses of the last word in each of the	0.3949	0.0148
+0.3270	0.0959	1.000	data are interchanged. Following this operation, both	0.3910	0.0161
+0.3284	0.5125	1.000	two storage areas.	0.1310	0.0198
+0.3430	0.0940	1.000	sets of data are preserved, but they have interchanged	0.3947	0.0161
+0.3576	0.0977	1.000	their locations. Unidirectional transmission of full	0.3910	0.0131
+0.3706	0.5131	1.000	Transmit (T)	0.0903	0.0133
+0.3735	0.0977	1.000	words is specified by the TRANSMIT operation. Bidirec-	0.3891	0.0146
+0.3848	0.0976	1.000	tional transmission of full words is specified by the	0.3914	0.0198
+0.3894	0.5132	1.000	The number of full words specified by the count is	0.3929	0.0161
+0.4031	0.0955	1.000	SWAP operation.	0.1191	0.0165
+0.4055	0.5132	1.000	transmitted from the area which starts at the location	0.3910	0.0118
+0.4200	0.5132	1.000	addressed by bits 0-17 of the left effective address to	0.3910	0.0131
+0.4317	0.5132	1.000	the area which starts at the location specified by bits	0.3947	0.0189
+0.4404	0.4248	1.000	FDTT	0.0282	0.0116
+0.4448	0.1335	1.000	ADDRESS	0.0432	0.0073
+0.4462	0.4455	1.000	OP	0.0132	0.0087
+0.4462	0.3195	1.000	ADDRESS	0.0451	0.0073
+0.4491	0.5132	1.000	0-17 of the right effective address.	0.2425	0.0176
+0.4520	0.4267	1.000	BISL	0.0263	0.0087
+0.4578	0.2425	1.000	24	0.0132	0.0073
+0.4593	0.4568	1.000	60 63	0.0263	0.0074
+0.4839	0.1127	1.000	A full-length instruction is used for transmit opera-	0.3761	0.0163
+0.4882	0.5112	1.000	Swap (SWAP)	0.1054	0.0164
+0.5000	0.0977	1.000	tions. The format contains two addresses. Each ad-	0.3910	0.0131
+0.5102	0.5150	1.000	The number of full words specified by the count is	0.3891	0.0116
+0.5145	0.0940	1.000	dress can be modified by the index word specified by	0.3929	0.0161
+0.5214	0.5131	1.000	transmitted from the area which starts at the location	0.3910	0.0154
+0.5305	0.0977	1.000	the I field in its respective half-word. The two effec-	0.3910	0.0131
+0.5378	0.5113	1.000	addressed by bits 0-17 of the left effective address to	0.3947	0.0174
+0.5464	0.0977	1.000	tive addresses obtained as a result of the modification	0.3910	0.0118
+0.5552	0.5132	1.000	the area which starts at the location specified by bits	0.3910	0.0132
+0.5609	0.0959	1.000	specify the starting addresses of the two storage areas	0.3929	0.0147
+0.5697	0.5132	1.000	0-17 of the right effective address. At the same time,	0.3910	0.0146
+0.5755	0.0959	1.000	which participate in the word transmission. Only 18	0.3929	0.0147
+0.5858	0.5132	1.000	the full words of the area which starts at the right	0.3929	0.0116
+0.5915	0.0977	1.000	bits of each effective address are used.	0.2707	0.0118
+0.5988	0.5132	1.000	effective address are transmitted to the area which	0.3929	0.0161
+0.6076	0.1128	1.000	Bits 55-57 of the data transmission instructions are	0.3759	0.0116
+0.6163	0.5132	1.000	starts at the left effective address.	0.2387	0.0146
+0.6206	0.0940	1.000	used as modifiers. The choice between unidirectional	0.3947	0.0146
+0.6366	0.0959	1.000	and bidirectional transmission is specified by modifier	0.3910	0.0146
+0.6526	0.5132	1.000	PROGRAMMING NOTES	0.1541	0.0131
+0.6526	0.0959	1.000	bit 57. A zero specifies unidirectional transmission;	0.3929	0.0131
+0.6685	0.0940	1.000	a one specifies bidirectional transmission. The choice	0.3947	0.0147
+0.6715	0.5150	1.000	The difference between backward and forward trans-	0.3910	0.0131
+0.6805	0.0975	1.000	between an immediate or a direct count is specified by	0.3895	0.0180
+0.6875	0.5150	1.000	mission is important. When the receiving area overlaps	0.3910	0.0131
+0.6991	0.0959	1.000	modifier bit 56. A zero specifies a direct count; a one	0.3929	0.0131
+0.7035	0.5150	1.000	the upper end of the sending area, backward transmis-	0.3891	0.0132
+0.7136	0.0940	1.000	specifies an immediate count. The choice between for-	0.3947	0.0146
+0.7179	0.5150	1.000	sion must be used; if the receiving area overlaps the	0.3910	0.0147
+0.7297	0.0959	1.000	ward and backward transmission is specified by modi-	0.3929	0.0131
+0.7339	0.5132	1.000	lower end of the sending area, forward transmission	0.3929	0.0132
+0.7442	0.0959	1.000	fier bit 55. A zero specifies forward transmission; a one	0.3910	0.0131
+0.7500	0.5150	1.000	must be used.	0.1015	0.0116
+0.7602	0.0959	1.000	specifies backward transmission.	0.2312	0.0132
+0.7622	0.5318	1.000	All full-length instructions are assumed to have a	0.3744	0.0178
+0.7734	0.1108	1.000	In direct count operations, the field J, bits 51-54,	0.3781	0.0166
+0.7805	0.5132	1.000	24-bit address part in the left half-word. Since data	0.3910	0.0131
+0.7906	0.0940	1.000	specifies an index register. The count field, bits 28-45,	0.3947	0.0146
+0.7951	0.5132	1.000	transmission instructions are full length, 24 bits of the	0.3929	0.0146
+0.8052	0.0959	1.000	of the index word in this register is used as a full	0.3929	0.0132
+0.8109	0.5132	1.000	left half-word of the instruction are used in forming	0.3929	0.0147
+0.8212	0.0977	1.000	word count. A count field of zero is interpreted as 218.	0.3910	0.0145
+0.8270	0.5132	1.000	the effective address. However, only 18 bits of the	0.3929	0.0131
+0.8372	0.0959	1.000	Since this many words cannot be transmitted without	0.3929	0.0131
+0.8415	0.5150	1.000	effective address are used by these operations.	0.3383	0.0146
+0.8517	0.0959	1.000	encountering an invalid address, such a count is never	0.3929	0.0131
+0.8648	0.5150	1.000	PROGRAMMING EXAMPLE	0.1748	0.0116
+0.8677	0.0959	1.000	valid. It is not detected, however, until the data trans-	0.3929	0.0117
+0.8821	0.5132	1.000	Storage locations 112, 113, and 114 contain the float-	0.3910	0.0133
+0.8821	0.0959	1.000	mission actually encounters an invalid or protected	0.3910	0.0133
+0.8967	0.0959	1.000	address. The count field in the index register is not	0.3929	0.0133
+0.8967	0.5132	1.000	ing point constants a, b, and c. It is desired to rotate	0.3929	0.0147
+0.9345	0.0940	1.000	30 IBM 7030	0.1090	0.0088

@@ -1,0 +1,91 @@
+0.0826	0.5281	1.000	Boxes. 32-37	0.0941	0.0150
+0.0827	0.1034	1.000	of-tail counter is decremented, so the control data	0.3741	0.0133
+0.0988	0.1034	1.000	of TAILOR will always contain the highest tail	0.3402	0.0118
+0.1133	0.5301	1.000	After a non-alphameric character has appeared in the	0.3966	0.0117
+0.1133	0.1034	1.000	number currently used in the table of tails.	0.3195	0.0117
+0.1264	0.1203	1.000	The number associated with the tail just collected	0.3665	0.0132
+0.1279	0.5282	1.000	collection of a system symbol, then CPLTSY has the	0.3910	0.0131
+0.1409	0.1015	1.000	is stored aiso with the CPLTSY tailing control data	0.3797	0.0146
+0.1424	0.5282	1.000	symbol looked up in the table of system symbois by	0.3797	0.0116
+0.1570	0.1034	1.000	in the field representing the level effected. The	0.3571	0.0131
+0.1570	0.5282	1.000	BOPSER. Note the collection buffer for the system	0.3835	0.0145
+0.1715	0.1034	1.000	contents of the level-of-tailing indicator set is used	0.3797	0.0116
+0.1715	0.5282	1.000	symbol was blanked in the initialization to insure the	0.3910	0.0145
+0.1860	0.5263	1.000	proper background characters for a short system	0.3684	0.0146
+0.1860	0.1034	1.000	to select the proper field in the string of fields	0.3477	0.0131
+0.2006	0.5282	1.000	symbol.	0.0639	0.0145
+0.2006	0.1034	1.000	representing the levels. If just a($were specified	0.3778	0.0146
+0.2151	0.5451	1.000	An entry for a mathematical constant-type system	0.3703	0.0146
+0.2166	0.1034	1.000	for the tail, the appropriate field in CPLTSY's control	0.4023	0.0116
+0.2297	0.5282	1.000	symbol contains the location within STRAP of the	0.3647	0.0146
+0.2297	0.1034	1.000	data will be zeroed to indicate that on this level there	0.3947	0.0131
+0.2456	0.1034	1.000	is no tailing for this symbol.	0.2124	0.0116
+0.2456	0.5282	1.000	double precision floating point constant, while an	0.3647	0.0147
+0.2602	0.5282	1.000	entry for just a system symbol contains the machine	0.3891	0.0132
+0.2602	0.1203	1.000	The number of levels of tailing now in effect for	0.3534	0.0116
+0.2747	0.5263	1.000	location assigned to the system symbol.	0.2989	0.0132
+0.2747	0.1034	1.000	this symbol is recomputed after the level control data	0.3966	0.0132
+0.2892	0.5432	1.000	If the system symbol in its evaluated form is in	0.3553	0.0132
+0.2892	0.1034	1.000	has been adjusted. Also, the level-of-tailing counter	0.3947	0.0132
+0.3036	0.5282	1.000	the table, CPLTSY does the following: Using the dds	0.3929	0.0147
+0.3052	0.1034	1.000	is incremented in anticipation of a new tail with the	0.3778	0.0118
+0.3169	0.5263	1.000	information, also in each entry, CPLTSY inserts this	0.4004	0.0160
+0.3191	0.1049	1.000	programmer symbol.	0.1603	0.0159
+0.3327	0.5282	1.000	data in the location, Coldds, where the user program	0.3966	0.0161
+0.3342	0.1241	1.000	After all the level control data effecting this pro-	0.3609	0.0118
+0.3488	0.1053	1.000	grammer symbol has been adjusted, then CPLISY	0.3722	0.0146
+0.3488	0.5301	1.000	may have access to it. Furthermore, before exiting	0.3891	0.0118
+0.3633	0.1053	1.000	takes the necessary steps to append the special char-	0.3947	0.0131
+0.3633	0.5301	1.000	CPLTSY sets up in the accumulator at offset zero,	0.3741	0.0131
+0.3779	0.1071	1.000	acters to the programmer symbol collected.	0.3252	0.0131
+0.3779	0.5301	1.000	the datum for the coded expression being built up by	0.3835	0.0117
+0.3924	0.5301	1.000	the user program.	0.1372	0.0116
+0.4070	0.5470	1.000	If the system symbol is not in the system symbol	0.3628	0.0131
+0.4084	0.1052	1.000	Bоx 30	0.0527	0.0132
+0.4230	0.5282	1.000	table, CPLTSY tries to get the symbol adjusted by	0.3759	0.0131
+0.4360	0.5301	1.000	MBSPEC. If still the adjusted symbol is not in the	0.3759	0.0131
+0.4375	0.1053	1.000	CPLTSY inspects its tailing control data to see if	0.3665	0.0131
+0.4520	0.1053	1.000	any tails should be appended to this programmer	0.3590	0.0131
+0.4520	0.5301	1.000	table, then the system symbol in its original form is	0.3891	0.0131
+0.4663	0.1052	1.000	symbol.	0.0604	0.0137
+0.4679	0.5282	1.000	put in the area located by Bsymbx and Bsymbx is	0.3647	0.0147
+0.4824	0.5940	1.000	The latter storing is also done if the	0.2820	0.0118
+0.4826	0.5282	1.000	updated.	0.0677	0.0131
+0.4970	0.5320	1.000	corresponding symbol in the system table is marked	0.3853	0.0133
+0.4970	0.1053	1.000	Box 31	0.0508	0.0118
+0.5115	0.5320	1.000	as one unavailable at the installation. (Of course,	0.3703	0.0133
+0.5261	0.1071	1.000	The length of the actual programmer symbol deter-	0.3797	0.0118
+0.5276	0.5301	1.000	CPLTSY inserts the collected programmer symbol	0.3759	0.0131
+0.5406	0.1071	1.000	mines whether none, some, or all of the tails in	0.3553	0.0132
+0.5421	0.5282	1.000	in the area located by Bsymbx too.)	0.2669	0.0131
+0.5552	0.1071	1.000	effect can be indicated on the programmer symbol by	0.3910	0.0118
+0.5567	0.5470	1.000	The fact that Bsymbx has been updated indicates to	0.3759	0.0146
+0.5697	0.1071	1.000	the appended special characters.	0.2425	0.0132
+0.5712	0.5320	1.000	the routine using CPLTSY that a system symbol has	0.3835	0.0116
+0.5842	0.1241	1.000	Thus, if there are tails in effect, the programmer	0.3703	0.0131
+0.5858	0.5320	1.000	been collected for which there is no value or that a	0.3759	0.0116
+0.5988	0.1071	1.000	symbol may be appended with n t 1 eight bit char-	0.3684	0.0131
+0.6003	0.5301	1.000	programmer symbol has been collected.	0.2989	0.0116
+0.6148	0.1071	1.000	acters, a $-character to indicate a tail is present,	0.3722	0.0116
+0.6294	0.1071	1.000	and then n eight-bit characters. This 'n' is deter-	0.3797	0.0116
+0.6424	0.5301	1.000	Boxes 12, 13a, 13b	0.1447	0.0146
+0.6439	0.1053	1.000	mined by the last calculated number of actual levels	0.3835	0.0131
+0.6570	0.1053	1.000	of tailing now in effect for this programmer symbol.	0.3891	0.0145
+0.6700	0.1053	1.000	Each of these n fields contains the number of the tail	0.3910	0.0146
+0.6700	0.5301	1.000	After CPLTSY collects a symbol that turns out to be	0.3891	0.0176
+0.6810	0.5280	1.000	a single $-character, then CPLTSY sets up a special	0.4008	0.0229
+0.6845	0.1034	1.000	associated with the level concerned. In fact, these	0.3853	0.0146
+0.6976	0.1034	1.000	n consecutive fields are taken from CPLTST's tailing	0.4004	0.0191
+0.6976	0.5282	1.000	configuration of bits in the area located by Bsymbx	0.3835	0.0191
+0.7128	0.5298	1.000	(Figure 14).	0.0945	0.0192
+0.7164	0.1052	1.000	control data.	0.0959	0.0148
+0.7645	0.5451	1.000	Datum	0.0470	0.0131
+0.7761	0.6165	1.000	Location of Constant or Value of System Symbol	0.2763	0.0103
+0.7922	0.1109	0.500	TTTTTTTTTTTT	0.1748	0.0131
+0.8168	0.4361	1.000	Accumulator	0.0752	0.0104
+0.8400	0.2350	1.000	S=0, If regular system symbol	0.1673	0.0147
+0.8532	0.2331	1.000	S=1, If mathematical constant	0.1748	0.0147
+0.8805	0.1427	1.000	Sign byte	0.0547	0.0137
+0.9026	0.1071	1.000	Figure 13. Format of CPLTNM's Output in $R	0.2669	0.0131
+0.9345	0.8364	1.000	CPLT8Y	0.0508	0.0118
+0.9346	0.9060	1.000	75	0.0150	0.0087

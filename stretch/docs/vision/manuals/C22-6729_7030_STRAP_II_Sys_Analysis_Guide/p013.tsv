@@ -1,0 +1,107 @@
+0.0827	0.1053	1.000	table which remains in memory during the entire	0.3609	0.0133
+0.0840	0.5262	1.000	Pass 2	0.0567	0.0152
+0.0988	0.1053	1.000	assembly. The symbol table entry recording the	0.3609	0.0118
+0.1118	0.5282	1.000	Pass 2a assigns location counter values to the instruc-	0.4041	0.0132
+0.1133	0.1053	1.000	occurrence of a name with the first instruction of a	0.3759	0.0103
+0.1279	0.5282	1.000	tions and attempts to assemble them. Following Pass	0.4004	0.0117
+0.1279	0.1053	1.000	card block is made of two parts: the fixed or diction-	0.3947	0.0117
+0.1394	0.5282	1.000	2a there is a second pass of the symboi table which	0.3816	0.0147
+0.1424	0.1034	1.000	ary portion contains at least part of the symbol and	0.3797	0.0116
+0.1570	0.5301	1.000	establishes the absolute value for each symbol in the	0.3891	0.0116
+0.1570	0.1053	1.000	the address of its variable length entry, the variable	0.3891	0.0131
+0.1715	0.1034	1.000	length entry portion contains the remaining char-	0.3647	0.0116
+0.1715	0.5282	1.000	symbol table. As in Pass 1, each of the units passes	0.3966	0.0131
+0.1860	0.1034	1.000	acters, if any, of the name, information about the	0.3703	0.0116
+0.1860	0.5301	1.000	through Pass 2a singularly and then through Pass 2b.	0.3929	0.0131
+0.1982	0.5281	1.000	When each unit reaches the end of Pass 2b, Pass 2b	0.3856	0.0161
+0.2006	0.1034	1.000	symbol such as its data description, and its value or	0.3891	0.0116
+0.2151	0.1034	1.000	the coded expression of the value of the symbol.	0.3553	0.0116
+0.2166	0.5282	1.000	gives it to the output program for its inclusion in the	0.3910	0.0116
+0.2280	0.1033	1.000	format of the function section of the variable length	0.3799	0.0149
+0.2311	0.5282	1.000	final documents.	0.1241	0.0116
+0.2456	0.1053	1.000	entry portion of a symbol table entry is defined in	0.3665	0.0116
+0.2456	0.5451	1.000	To establish each location counter value, STRAP II	0.3797	0.0131
+0.2602	0.1034	1.000	terms of its relative location by the symbols begin-	0.3816	0.0116
+0.2602	0.5282	1.000	maintains an absolute and symbolic value, each in its	0.3947	0.0132
+0.2747	0.1034	1.000	ning with Zst.	0.1034	0.0117
+0.2747	0.5301	1.000	own index register during Pass 2. The contents of	0.3759	0.0117
+0.2892	0.5282	1.000	these counters are put into the unit and into the func-	0.3929	0.0117
+0.2892	0.1222	1.000	Another dictionary table, the one for the tail, also	0.3703	0.0132
+0.3036	0.5301	1.000	tion part of the variable length entry portion of the	0.3741	0.0133
+0.3036	0.1034	1.000	uses the same vle table for the remainder, if any, of	0.3929	0.0133
+0.3171	0.1033	1.000	its dictionary entries. Furthermore one type of	0.3573	0.0146
+0.3197	0.5282	1.000	corresponding symbol table entry, if any, during the	0.3910	0.0118
+0.3327	0.1053	1.000	entry - namely the one built up for any possible candi-	0.4004	0.0133
+0.3327	0.5282	1.000	final processing in Pass 2b just before the output	0.3647	0.0133
+0.3473	0.1034	1.000	date for the highest or lowest assembly value - is	0.3665	0.0133
+0.3488	0.5282	1.000	procedure prints and punches the documents for the	0.3816	0.0118
+0.3633	0.1034	1.000	recorded only in the vle table with no portion in a	0.3647	0.0117
+0.3633	0.5282	1.000	instruction represented in the unit. The field in the	0.3853	0.0117
+0.3779	0.1034	1.000	dictionary table. Other entries in the vle table which	0.3947	0.0117
+0.3779	0.5282	1.000	unit reserved for the contents of the absolute counter	0.3947	0.0103
+0.3924	0.1034	1.000	do not have a corresponding dictionary portion include	0.4004	0.0116
+0.3924	0.5282	1.000	is the source of the location counter value for the	0.3665	0.0116
+0.4070	0.1053	1.000	old vle portion(s) of any multiply-defined symbol with	0.3929	0.0116
+0.4084	0.5282	1.000	output procedure in Pass 2b.	0.2143	0.0116
+0.4215	0.1034	1.000	no contradictions and any dimension entry made in	0.3722	0.0116
+0.4230	0.5451	1.000	Two counters have to be maintained during Pass 2a	0.3778	0.0116
+0.4360	0.1034	1.000	addition to its corresponding regular symbol table	0.3703	0.0116
+0.4375	0.5282	1.000	because there are occasions during Pass 2a when the	0.3929	0.0116
+0.4506	0.1034	1.000	entry for a name on a DR, DRZ, or SYN. (Material	0.3853	0.0131
+0.4520	0.5282	1.000	value of the yet unevaluated programmer's symbol is	0.3929	0.0116
+0.4645	0.1033	1.000	marked with an ID character and stacked chronologi-	0.3911	0.0138
+0.4666	0.5282	1.000	needed in establishing a particular location counter	0.3797	0.0116
+0.4811	0.5771	1.000	When this situation arises, the absolute	0.3026	0.0131
+0.4811	0.1034	1.000	cally in the unordered vle table is fetehed by table	0.3703	0.0131
+0.4956	0.5282	1.000	counter is set to zero, a unique STRAP II special	0.3665	0.0116
+0.4956	0.1034	1.000	management with a linear search.	0.2519	0.0116
+0.4956	0.3628	1.000	Material alpha-	0.1184	0.0116
+0.5102	0.1034	1.000	betically inserted in any ordered dictionary table is	0.3797	0.0116
+0.5115	0.5282	1.000	symbol is put in the symbolic counter, and an entry	0.3816	0.0118
+0.5229	0.1032	1.000	fetched with a binary search.) Note in regard to the	0.3856	0.0155
+0.5247	0.5282	1.000	made in the symbol table for the special symbol.	0.3609	0.0132
+0.5392	0.5301	1.000	This STRAP II symbol is a three A8 character, the	0.3778	0.0132
+0.5406	0.1034	1.000	symbol table, each entry in the dictionary portion	0.3665	0.0118
+0.5552	0.5282	1.000	first character of which is the all ones A8 character	0.3872	0.0103
+0.5552	0.1034	1.000	table must have a corresponding vle portion because	0.3872	0.0118
+0.5697	0.5282	1.000	reserved for STRAP II. (Taking advantage of the	0.3647	0.0132
+0.5697	0.1034	1.000	of the way a unit marked as having a name is coordi-	0.3910	0.0118
+0.5842	0.5282	1.000	fact that each of these relative address symbols will	0.3872	0.0118
+0.5842	0.1034	1.000	nated with its symbol table entry for Pass 2 proc-	0.3684	0.0131
+0.5988	0.5282	1.000	necessarily be the currently last symbol in the sym-	0.3891	0.0118
+0.6133	0.1203	1.000	Note the information for a unit is built-up during	0.3590	0.0131
+0.6133	0.5282	1.000	bol table, Pass 2 has the symbol inserted unordered	0.3872	0.0131
+0.6279	0.1034	1.000	the analyzation of its instruction, while the symbolic	0.3891	0.0131
+0.6279	0.5282	1.000	into the symbol table since fewer subroutines in table	0.3966	0.0117
+0.6424	0.1034	1.000	argument for the dictionary portion of the regular	0.3665	0.0131
+0.6439	0.5282	1.000	management are involved in the unordered type of	0.3703	0.0131
+0.6570	0.1034	1.000	symbol table entry is collected over the analyzation	0.3797	0.0131
+0.6578	0.5281	1.000	insertion.)	0.0811	0.0129
+0.6715	0.1034	1.000	of all the instructions in the card block. At the end	0.3797	0.0116
+0.6730	0.5414	1.000	In function part of the variable length entry portion	0.3797	0.0131
+0.6875	0.1034	1.000	of the card block the symbol information is coordi-	0.3778	0.0102
+0.6875	0.5263	1.000	of the STRAP II special symbol, a SYN-like coded	0.3722	0.0146
+0.7006	0.1034	1.000	nated, and the symbol table entry is made. The infor-	0.4041	0.0131
+0.7006	0.5263	1.000	expression is built up to represent what the location	0.3853	0.0146
+0.7166	0.5263	1.000	counter value should be. This STRAP II special	0.3590	0.0131
+0.7166	0.1034	1.000	mation common to the unit and its corresponding	0.3590	0.0131
+0.7311	0.1034	1.000	symbol table entry, if any, are the name check digit	0.3872	0.0131
+0.7311	0.5263	1.000	symbol will be evaluated during the second iteration.	0.3929	0.0131
+0.7436	0.1014	1.000	and the contents from the absolute and symbolic	0.3555	0.0157
+0.7456	0.5263	1.000	Once a STRAP II symbol is put in the symbolie	0.3496	0.0131
+0.7602	0.1034	1.000	counters, i.e., the counters that determine the value	0.3947	0.0132
+0.7615	0.5263	1.000	counter, the STRAP II symbol remains there while	0.3778	0.0146
+0.7746	0.1033	1.000	of the location counter.	0.1713	0.0119
+0.7761	0.5282	1.000	the absolute incrementing is done on the absolute	0.3628	0.0118
+0.7906	0.1203	1.000	After Pass 1 there is the first iteration of the sym-	0.3797	0.0118
+0.7906	0.5282	1.000	counter. If Pass 2a reaches another instance where	0.3872	0.0118
+0.8052	0.5282	1.000	the absolute increment is not available for updating,	0.3853	0.0132
+0.8052	0.1034	1.000	bol table, which both resolves the data description	0.3722	0.0118
+0.8180	0.5280	1.000	the absolute counter is set to zero again, a new	0.3518	0.0157
+0.8197	0.1034	1.000	associated with each symbol and tries to establish	0.3684	0.0118
+0.8342	0.5282	1.000	STRAP II special symbol is put in the symbolic	0.3477	0.0131
+0.8342	0.1015	1.000	values for the symbols, particularly the values of the	0.3947	0.0131
+0.8482	0.1033	1.000	SYN chains.	0.0905	0.0128
+0.8503	0.5282	1.000	counter, and a coded expression built up in the vle	0.3741	0.0116
+0.9375	0.7876	1.000	Assembly Phases	0.0940	0.0102
+0.9390	0.9041	1.000	13	0.0150	0.0073

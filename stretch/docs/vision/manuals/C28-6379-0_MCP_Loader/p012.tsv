@@ -1,0 +1,110 @@
+0.0814	0.4699	1.000	process continues until all origins of entry points are	0.4041	0.0147
+0.0842	0.0376	1.000	traced to the primary segment. If a segment is not	0.3929	0.0118
+0.0988	0.0395	1.000	attached properly in this phase, an error message is	0.3985	0.0118
+0.0988	0.4699	1.000	complete, and all storage addresses for the beginning	0.4041	0.0131
+0.1133	0.0395	1.000	given. A node table entry would show 08, 04, 02, 01,	0.4023	0.0117
+0.1133	0.4699	1.000	and end of each segment have been computed.	0.3421	0.0117
+0.1279	0.0395	1.000	00, where segment 8 was attached to segment 4, seg-	0.4004	0.0117
+0.1424	0.0395	1.000	ment 4 was attached to segment 2, etc., at the end of	0.3985	0.0131
+0.1577	0.0374	1.000	the scan.	0.0718	0.0102
+0.1584	0.4680	1.000	Phase 2 -- Elimination of commons of the same name	0.4004	0.0116
+0.1730	0.0526	1.000	The expansion of the node table is followed by the	0.3741	0.0102
+0.1744	0.4643	1.000	and adjustment of the segment in which the duplicate.	0.4023	0.0147
+0.1860	0.0395	1.000	normal scan of the library subprograms called by	0.3722	0.0116
+0.1890	0.4680	1.000	appears: A scan of the second intermediate table is	0.3910	0.0117
+0.2020	0.0376	1.000	the input deck.	0.1147	0.0102
+0.2020	0.4680	1.000	made. The segment number of the segment in which	0.3929	0.0131
+0.2151	0.0583	1.000	The remaining functions of the segmentation fea-	0.3703	0.0116
+0.2179	0.4662	1.000	the common was declared has been filled in when the	0.3985	0.0103
+0.2311	0.0376	1.000	ture of the BSS processor are divided into 8 phases,	0.3929	0.0116
+0.2324	0.4680	1.000	common definition card was encountered in the input	0.3947	0.0103
+0.2456	0.0395	1.000	described below.	0.1278	0.0116
+0.2470	0.4680	1.000	deck. When two named commons are found which	0.3703	0.0118
+0.2615	0.4662	1.000	have the same name (but are not necessarily in the	0.3835	0.0118
+0.2761	0.4680	1.000	same segment), the size of the larger of the two	0.3628	0.0133
+0.2776	0.0902	1.000	Communication Region Format	0.1823	0.0088
+0.2906	0.4680	1.000	named commons is substituted in the entry in the sec-	0.4060	0.0118
+0.2964	0.0395	1.000	Word 0	0.0489	0.0089
+0.3052	0.4680	1.000	ond intermediate table for the size of the smaller.	0.3778	0.0118
+0.3197	0.4680	1.000	A search of the node table is initiated for the entries	0.3947	0.0118
+0.3285	0.2011	1.000	Defined by MCP	0.0996	0.0131
+0.3342	0.4680	1.000	which have the same segment numbers as the seg-	0.3797	0.0118
+0.3488	0.4680	1.000	ment numbers of the duplicate commons. Pointers	0.3835	0.0131
+0.3576	0.0395	1.000	Word 7	0.0451	0.0116
+0.3633	0.4680	1.000	are moved across the entries in the node table until	0.3872	0.0117
+0.3691	0.0414	1.000	Word 8	0.0432	0.0118
+0.3735	0.2913	1.000	Problem Program	0.1015	0.0147
+0.3735	0.0921	1.000	Problem Program	0.1053	0.0146
+0.3794	0.4680	1.000	a match is made of associated (attached) segment	0.3722	0.0102
+0.3862	0.2912	1.000	Upper Limit	0.0736	0.0154
+0.3880	0.0958	1.000	Lower Limit	0.0734	0.0118
+0.3939	0.4680	1.000	numbers.	0.0733	0.0116
+0.3939	0.5395	1.000	When the match is found, that segment	0.3026	0.0116
+0.4070	0.0959	1.000	Origin of	0.0583	0.0131
+0.4081	0.2987	1.000	ddress o	0.0491	0.0123
+0.4084	0.4680	1.000	number is placed in one of the duplicate named com-	0.3966	0.0116
+0.4139	0.0356	1.000	Word 9	0.0548	0.0137
+0.4152	0.0920	1.000	Blank Common	0.0942	0.0154
+0.4171	0.2989	1.000	elocation Tabl	0.0884	0.0132
+0.4230	0.4680	1.000	mon entries in the second intermediate table. The	0.3816	0.0116
+0.4375	0.4680	1.000	segment number of the duplicate entry is set to zero,	0.3966	0.0116
+0.4396	0.2893	1.000	Main Entry Point	0.1019	0.0162
+0.4403	0.0865	1.000	Branch Address	0.0977	0.0133
+0.4462	0.0357	1.000	Word 10	0.0508	0.0132
+0.4520	0.4680	1.000	and a pointer is set up in the entry that has been	0.3628	0.0116
+0.4666	0.4680	1.000	eliminated in this way. A check is made for duplicate	0.4060	0.0116
+0.4709	0.0357	1.000	Word 11 Address of Node Table	0.1917	0.0146
+0.4811	0.4662	1.000	block data commons and for an attempt to associate	0.3891	0.0116
+0.4956	0.4680	1.000	a block data common with a segment other than the	0.3816	0.0116
+0.4985	0.0357	1.000	Word	0.0338	0.0116
+0.5102	0.0338	1.000	12-13	0.0395	0.0131
+0.5115	0.4662	1.000	one in which it occurs.	0.1748	0.0118
+0.5115	0.6429	1.000	If either of the two conditions	0.2312	0.0088
+0.5115	0.1974	1.000	Link Table Mask	0.0996	0.0133
+0.5252	0.4679	1.000	occurs, an error message is given.	0.2691	0.0164
+0.5392	0.4906	1.000	The scan is continued until all commons of iden-	0.3647	0.0117
+0.5434	0.0356	1.000	Word 14	0.0509	0.0134
+0.5536	0.4662	1.000	tical names have been handled and the associated seg-	0.4079	0.0118
+0.5639	0.1560	1.000	Defined by Chain of Processors	0.1805	0.0131
+0.5697	0.4680	1.000	ment numbers have been filled in.	0.2556	0.0118
+0.5988	0.0357	1.000	Word 24 L	0.0583	0.0176
+0.6177	0.2368	1.000	32	0.0207	0.0116
+0.6206	0.3816	1.000	63	0.0188	0.0102
+0.6264	0.4680	1.000	Phase 3 -- Computation of absolute common origins:	0.3947	0.0118
+0.6409	0.4662	1.000	The end of blank common is computed and placed in	0.3891	0.0118
+0.6409	0.0320	1.000	FIGURE 7. MCP COMMUNICATION REGION	0.2688	0.0146
+0.6555	0.4662	1.000	the node table entry for the primary segment. The	0.3853	0.0118
+0.6700	0.4662	1.000	second intermediate table is scanned to find all com-	0.4004	0.0103
+0.6831	0.0356	1.000	Phase 1 -- Computation of storage addresses for the	0.4005	0.0161
+0.6845	0.4662	1.000	mons associated with the primary segment. The	0.3684	0.0118
+0.6991	0.0357	1.000	beginning and end of each segment and computation	0.3816	0.0131
+0.7006	0.4662	1.000	origins of these commons are computed by subtract-	0.3966	0.0102
+0.7136	0.0357	1.000	of absolute locations of entry points: A scan is made	0.4023	0.0131
+0.7151	0.4662	1.000	ing the amount of common from the origin of the	0.3647	0.0116
+0.7282	0.0357	1.000	of the node table for the primary segment entry.	0.3628	0.0116
+0.7297	0.4662	1.000	common previously computed, starting from the base	0.3985	0.0116
+0.7427	0.0376	1.000	This discovery initiates scanning the first interme-	0.3891	0.0116
+0.7442	0.4662	1.000	address of blank common. In the primary segment	0.3853	0.0116
+0.7573	0.0357	1.000	diate table, picking up all subprograms in the pri-	0.3797	0.0116
+0.7587	0.4662	1.000	the common origins are lowered, if necessary, to	0.3778	0.0131
+0.7718	0.0357	1.000	mary segment, and computing absolute origins of	0.3722	0.0116
+0.7733	0.4662	1.000	allow space for the relocation table for the primary	0.3872	0.0116
+0.7863	0.0357	1.000	entry points in all subprograms of that segment.	0.3628	0.0116
+0.7878	0.4662	1.000	segment. When all commons associated with a seg-	0.3947	0.0116
+0.8006	0.0375	1.000	When all entries in the first intermediate table have	0.3967	0.0119
+0.8023	0.4662	1.000	ment have been treated, the beginning and end ad-	0.3778	0.0116
+0.8154	0.0357	1.000	been scanned, the storage address of the end of the	0.3853	0.0131
+0.8169	0.4662	1.000	dresses of common for that segment are placed in	0.3778	0.0116
+0.8299	0.4662	1.000	the node table. The above•process is repeated for	0.3778	0.0131
+0.8314	0.0357	1.000	segment is placed in the node table. (A pointer which	0.4004	0.0102
+0.8459	0.0357	1.000	contains the address of the sum of the subprogram	0.3778	0.0116
+0.8459	0.4662	1.000	each entry in the node table.	0.2143	0.0116
+0.8590	0.0357	1.000	originand its length is kept during the scan of the first	0.3816	0.0131
+0.8605	0.4887	1.000	A second scan of the second intermediate table is	0.3703	0.0102
+0.8750	0.0338	1.000	intermediatetable. ) The storage address of the begin-	0.3966	0.0117
+0.8750	0.4662	1.000	made in order to complete the origins of duplicate	0.3778	0.0117
+0.8894	0.0357	1.000	ning of the next segment is placed in the nodetable. The	0.3947	0.0118
+0.8894	0.4662	1.000	commons. The origin of the duplicate common is	0.3741	0.0118
+0.9039	0.0357	1.000	node table is scanned for that segment number, and the	0.3891	0.0133
+0.9039	0.4662	1.000	obtained from the entry of the same name.	0.3195	0.0118
+0.9360	0.0357	1.000	12	0.0150	0.0087

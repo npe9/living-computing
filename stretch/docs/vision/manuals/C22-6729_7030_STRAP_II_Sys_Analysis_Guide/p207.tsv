@@ -1,0 +1,60 @@
+0.0842	0.5451	1.000	APPENDIX F - PROGRAMMING WITH STRAP II	0.3778	0.0161
+0.1439	0.1109	1.000	An index specification, if used, must be the last	0.3553	0.0131
+0.1439	0.5489	1.000	The following remarks concern the radix under	0.3515	0.0146
+0.1584	0.5338	1.000	which operands in an 'address' field of a numeric	0.3665	0.0131
+0.1599	0.1090	1.000	entry in the field.	0.1297	0.0116
+0.1744	0.2124	1.000	B, JOE + 1.32 ($3)	0.1560	0.0116
+0.1744	0.1429	1.000	Correct:	0.0714	0.0102
+0.1744	0.5338	1.000	DD are processed:	0.1391	0.0116
+0.1890	0.5470	1.000	1. If a radix is specified in the leading entry mode	0.3835	0.0117
+0.1890	0.1410	1.000	Incorrect: B, JOE ($3) + 1. 32	0.2293	0.0117
+0.2020	0.5320	1.000	before the DD mnemonic and no radix is specified	0.3703	0.0146
+0.2035	0.1259	1.000	A subscript, if used, must immediately follow the	0.3703	0.0132
+0.2166	0.5338	1.000	before the first operand in the field, then all the	0.3590	0.0131
+0.2179	0.1090	1.000	symbol to which it refers.	0.1936	0.0118
+0.2311	0.5338	1.000	operands in the field will be processed under this	0.3665	0.0147
+0.2324	0.1429	1.000	Correct: BB, JACK(1, 2) + . 32, BILL	0.3008	0.0133
+0.2456	0.5338	1.000	radix specified in the leading entry mode.	0.3083	0.0131
+0.2470	0.1410	1.000	Incorrect: BB, JACK + . 32(1, 2), BILL	0.3026	0.0133
+0.2602	0.5489	1.000	2. If a radix is specified before the first operand	0.3703	0.0132
+0.2615	0.1278	1.000	A gp must follow all other (type) information in the	0.3722	0.0133
+0.2747	0.5338	1.000	in the 'address' field, this radix overrules the	0.3459	0.0147
+0.2761	0.1090	1.000	field in which the gp appears. Therefore an index	0.3703	0.0133
+0.2906	0.5320	1.000	leading entry mode, if any, for the current field only	0.3947	0.0146
+0.2921	0.1090	1.000	and a gp cannot both be specified in the same field.	0.3759	0.0117
+0.3052	0.5320	1.000	and all operands of the current field will be processed	0.4041	0.0146
+0.3081	0.1429	1.000	Ilegal:	0.0639	0.0116
+0.3081	0.2162	1.000	L, JOE ($2) (.31) 3	0.1579	0.0116
+0.3197	0.5320	1.000	under the radix specified before the first operand.	0.3741	0.0132
+0.3212	0.1447	1.000	Legal: L, JOE (. 63) 2 (. 31) 3	0.2519	0.0131
+0.3342	0.5489	1.000	3. If there is no leading entry mode and there is	0.3647	0.0146
+0.3372	0.2256	1.000	L, JOE ($2), 0 (.31) 3	0.1711	0.0131
+0.3503	0.5338	1.000	no radix specified before the first operand in an	0.3571	0.0116
+0.3503	0.1259	1.000	A general parenthetical field integer entry cannot	0.3665	0.0116
+0.3648	0.1090	1.000	be the first entry in a field.	0.2049	0.0116
+0.3648	0.5338	1.000	'address' field then all the operands in the field will	0.3853	0.0116
+0.3794	0.5357	1.000	be processed under the STRAP II assigned radix of 10.	0.4041	0.0116
+0.3808	0.1259	1.000	The . n in the gp format must be absolute; the	0.3346	0.0116
+0.3939	0.5508	1.000	When a general parenthetical integer entry is	0.3365	0.0131
+0.3953	0.1090	1.000	binary pattern may be absolute or symbolic.	0.3271	0.0116
+0.4084	0.5338	1.000	specified on the field length or on the byte size of a	0.3797	0.0131
+0.4099	0.1259	1.000	A gp cannot be specified inside another set of	0.3365	0.0116
+0.4230	0.5357	1.000	DD, the gp will be OR'ed into each of the data fields.	0.3891	0.0146
+0.4244	0.1090	1.000	parentheses except in the DD case where a gp can	0.3665	0.0116
+0.4390	0.5677	1.000	Example: DD(BU, 32 (. 6)7), 0, 1, 2, 3, 4	0.3102	0.0132
+0.4403	0.1090	1.000	appear in the data description.	0.2256	0.0103
+0.4534	0.1240	1.000	STRAP II will make a symbol table entry for all	0.3554	0.0134
+0.4535	0.5357	1.000	The gp will be OR'ed into each of the data fields.	0.3590	0.0117
+0.4679	0.5489	1.000	The dds associated with a particular system	0.3289	0.0118
+0.4694	0.1090	1.000	symbolic statement names, even if they appear in an	0.3891	0.0118
+0.4808	0.5318	1.000	symbol can be specified in an instruction with a	0.3536	0.0150
+0.4839	0.1090	1.000	instruction where a name is not normally meaningful,	0.3966	0.0118
+0.4983	0.5338	1.000	P-mode.	0.0659	0.0107
+0.4985	0.1090	1.000	i.e., SKIP, TAIL, etc..	0.1842	0.0131
+0.5115	0.5658	1.000	Example: L(P, $LZC), ALPHA	0.2368	0.0161
+0.5130	0.1241	1.000	Implied multiplication is not allowed in field arith-	0.3759	0.0118
+0.5276	0.5357	1.000	The dds assembled in the load instruction will be	0.3609	0.0103
+0.5286	0.1089	1.000	metic.	0.0492	0.0112
+0.5418	0.5337	1.000	(BU, 7, 8).	0.0866	0.0138
+0.9371	0.6296	1.000	. Appendix F - Programming with STRAP II	0.2540	0.0124
+0.9375	0.9079	1.000	207	0.0207	0.0087

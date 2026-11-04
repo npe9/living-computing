@@ -1,0 +1,111 @@
+0.0915	0.0865	1.000	type of pseudo-op is identified and is retried an arbi-	0.4004	0.0146
+0.0949	0.5110	1.000	tion on the tape at EOJ, and responds to the system	0.3915	0.0202
+0.1060	0.0863	1.000	trary number of times, after which MCP halts on a	0.3839	0.0171
+0.1118	0.5150	1.000	command: COMD, OUTPUT.	0.2180	0.0146
+0.1192	0.0879	1.000	TYPE 76 error.	0.1212	0.0148
+0.1245	0.5279	1.000	The program consists of four major package (print,	0.3935	0.0210
+0.1409	0.5150	1.000	punch, EOJ, output command) and a common sub-	0.3778	0.0161
+0.1504	0.0881	1.000	Fixup Program Significant Counts and Bits	0.3181	0.0164
+0.1548	0.5148	1.000	routine to accomplish tape switching when required.	0.3933	0.0192
+0.1700	0.5132	1.000	In addition, fixup routines are provided to handle	0.3722	0.0161
+0.1802	0.0846	1.000	I. JC Communication	0.1654	0.0116
+0.1860	0.5150	1.000	interrupts from the output tape.	0.2406	0.0131
+0.1948	0.1034	1.000	1. WT	0.0526	0.0116
+0.2106	0.1633	1.000	REJJOB=1., JC rejects one job	0.2373	0.0155
+0.2224	0.5132	1.000	The Output Tape	0.1259	0.0146
+0.2267	0.1617	1.000	REJJOB=2., JC rejects tape	0.2162	0.0132
+0.2398	0.0996	1.000	2. RT	0.0527	0.0132
+0.2515	0.5150	1.000	The tape prepared by the output program is intended	0.3910	0.0146
+0.2558	0.1617	1.000	REJJOB. 60 on, JC rejects current job	0.2914	0.0146
+0.2656	0.5129	1.000	to be processed by the system peripheral output pro-	0.3989	0.0176
+0.2688	0.0977	1.000	3. ST	0.0508	0.0133
+0.2820	0.5132	1.000	gram on the IBM 1401. It consists of a mixture of	0.3816	0.0132
+0.2838	0.1613	1.000	REJJOB.61 on, JC rejects current job	0.2920	0.0174
+0.2953	0.5110	1.000	printer and punch records. Each physical printer	0.3783	0.0197
+0.2979	0.0996	1.000	4. CR	0.0526	0.0132
+0.3074	0.5128	1.000	record contains twelve full lines, and each physical	0.3879	0.0227
+0.3132	0.1614	1.000	REJJOB. 60 on, JC rejects current job	0.2919	0.0167
+0.3236	0.5092	1.000	punch record contains ten card images.	0.3012	0.0183
+0.3265	0.0824	1.000	II. Internal Fixup Program	0.2055	0.0158
+0.3396	0.5279	1.000	A record is written at EOJ and whenever the speci-	0.3877	0.0185
+0.3415	0.0956	1.000	1. REJJOB. 17 on, indicates a UK total failure on	0.3783	0.0190
+0.3548	0.5129	1.000	fied number of units of output has accumulated. Jobs	0.3989	0.0168
+0.3576	0.0827	1.000	a $W or $WEF.	0.1165	0.0116
+0.3714	0.0975	1.000	2. REJJOB. 63 on, an ERG is to be given upon	0.3519	0.0170
+0.3721	0.5113	1.000	are separated by tape marks, the end of output on the	0.4004	0.0131
+0.3846	0.5111	1.000	tape being indicated by a double tape mark. This is	0.3895	0.0158
+0.3852	0.0808	1.000	completion of a backspace op.	0.2237	0.0146
+0.3982	0.5110	1.000	followed by a trailer record indicating whether or not	0.4027	0.0178
+0.4011	0.0976	1.000	3. REJJOB.62 on, a UK total failure has occurred.	0.3895	0.0161
+0.4135	0.5110	1.000	the tape was terminated at the same time as the job.	0.3933	0.0169
+0.4157	0.0940	1.000	4. REJJOB.59 on, a UK total failure has occurred	0.3872	0.0146
+0.4267	0.5279	1.000	In order to expedite physical tape switching, two	0.3652	0.0187
+0.4300	0.0806	1.000	in the middle of an ONLIB transition.	0.2806	0.0151
+0.4428	0.5110	1.000	output tapes (CT11 and CT21), are defined by IOD	0.3726	0.0184
+0.4448	0.0808	1.000	III. Retry Count Fields	0.1767	0.0131
+0.4557	0.5111	1.000	cards as distinct units on the same channel. The	0.3708	0.0190
+0.4606	0.0959	1.000	1. RWTRY/ - (WT) limits the number of $BSP -	0.3741	0.0133
+0.4720	0.5092	1.000	I-O tables of exits (TOE) for these two units are	0.3651	0.0165
+0.4767	0.2575	1.000	$OP procedures to RKD SYN -.	0.2331	0.0118
+0.4863	0.5091	1.000	AXITA and AXITB, respectively. Since the output	0.3801	0.0184
+0.4884	0.0921	1.000	2. RETRY/ - (WT)	0.1504	0.0147
+0.4912	0.2556	1.000	limits the number of $ERG	0.2011	0.0118
+0.5029	0.5094	1.000	tape may be referenced by any of the output programs	0.4023	0.0147
+0.5053	0.2554	1.000	following RWTRY failures to	0.2166	0.0144
+0.5157	0.5092	1.000	and by error control routines, five parallel TOE's	0.3783	0.0184
+0.5203	0.2556	1.000	RKC SYN --	0.0921	0.0103
+0.5293	0.5073	1.000	are used to direct control to the various fixup routines.	0.4178	0.0188
+0.5326	0.0938	1.000	3. RTTRY/ - (ST & RT) limits the number of	0.3593	0.0157
+0.5444	0.5091	1.000	Additional TOE's are used by the error control	0.3520	0.0177
+0.5492	0.2929	1.000	$BSP - $RD procedures	0.1792	0.0151
+0.5598	0.5073	1.000	routines. Any time the output tape is referenced by	0.3895	0.0174
+0.5654	0.2932	1.000	to RKB SYN --	0.1128	0.0088
+0.5749	0.5073	1.000	one of the output programs, the location of the appli-	0.3970	0.0174
+0.5770	0.0902	1.000	4. RTSP3X/ - (ST & RT)	0.1955	0.0146
+0.5776	0.2836	1.000	limits the number of	0.1660	0.0146
+0.5884	0.5073	1.000	cable TOE is stored in AOP. The basic TOE's, AXITA	0.4159	0.0188
+0.5945	0.2932	1.000	triple spacing procedure	0.1842	0.0131
+0.6044	0.5055	1.000	and AXITB, pass all interrupts except CS to the table	0.4026	0.0168
+0.6090	0.2914	1.000	to RKH SYN --	0.1128	0.0102
+0.6201	0.0919	1.000	5. RBSP3X/ - (ST & RT) controls spacing ops to	0.3745	0.0174
+0.6206	0.5056	1.000	specified in AOP, along with the two control words.	0.3872	0.0146
+0.6327	0.5072	1.000	On receipt of a CS interrupt, control is given to the	0.3859	0.0203
+0.6394	0.2914	1.000	give 4 $BSP and 3 $SP	0.1673	0.0103
+0.6497	0.5038	1.000	fixup routines ATPACS and ATPBCS respectively	0.3722	0.0176
+0.6539	0.2914	1.000	to reposition tape to	0.1523	0.0118
+0.6626	0.5035	1.000	(Figure 91). If a tape switch is in process, these	0.3764	0.0199
+0.6672	0.2876	1.000	give $RD	0.0714	0.0132
+0.6765	0.5016	1.000	routines give control to the tape switch routine to	0.3746	0.0210
+0.6794	0.0882	1.000	6. RCOUNT/- (CR) limits the number of retries	0.3800	0.0170
+0.6925	0.5035	1.000	complete its function. Otherwise they set a bit	0.3557	0.0178
+0.6962	0.2556	1.000	done by the operator to	0.1748	0.0145
+0.7072	0.5034	1.000	(ATARI, ATBRI) to indicate that the tape is ready,	0.3805	0.0224
+0.7093	0.2556	1.000	RKF SYN --	0.0940	0.0146
+0.7238	0.5019	1.000	and they issue a $RET.	0.1767	0.0146
+0.7252	0.0902	1.000	7. RCJAM/ - (CR)	0.1466	0.0133
+0.7267	0.2481	1.000	an infinite count of card feed	0.2199	0.0146
+0.7389	0.2497	1.000	operations used by fixup pro-	0.2224	0.0193
+0.7544	0.5033	1.000	The Print and Punch Programs	0.2358	0.0185
+0.7558	0.2500	1.000	gram to control changing of	0.2105	0.0161
+0.7703	0.2500	1.000	TOE	0.0357	0.0116
+0.7833	0.1053	1.000	RPTRY/- (WT,ST or RT)	0.2105	0.0161
+0.7834	0.0902	1.000	8.	0.0169	0.0116
+0.7860	0.3137	1.000	limits the number	0.1490	0.0137
+0.7860	0.5035	1.000	The print and punch programs are logically identical,	0.4028	0.0193
+0.7998	0.5016	1.000	except for titling. (See Figures 95, 96.) Since printer	0.4067	0.0210
+0.8005	0.3251	1.000	of pseudo-op	0.0979	0.0153
+0.8154	0.5019	1.000	and punch output cannot be predicted, they are written	0.4041	0.0174
+0.8166	0.3251	1.000	retries to	0.0772	0.0121
+0.8299	0.3233	1.000	RKA SYN --	0.0959	0.0116
+0.8299	0.5019	1.000	as separate programs, andare to be buffered and con-	0.3985	0.0161
+0.8445	0.5000	1.000	trolled separately.	0.1447	0.0146
+0.8561	0.0714	1.000	SYSTEM OUTPUT	0.1391	0.0131
+0.8592	0.5166	1.000	Pseudo-ops $SPR and $SPU, respectively, cause	0.3692	0.0229
+0.8744	0.4995	1.000	the print and punch programs to receive control from	0.4031	0.0234
+0.8850	0.0712	1.000	The system output program performs the writing	0.3688	0.0182
+0.8885	0.4995	1.000	the IF analyzer with tentacle table linkage set up.	0.3749	0.0236
+0.8991	0.0694	1.000	required by the system pseudo-ops $SPR and $SPU.	0.3913	0.0185
+0.9032	0.4995	1.000	The print program begins at CSTART, the punch pro-	0.4050	0.0242
+0.9142	0.0695	1.000	In addition, it provides logical control of the informa-	0.4079	0.0161
+0.9185	0.4979	1.000	gram at ASPUO. The respective tentacle tables are	0.3953	0.0205
+0.9491	0.0639	1.000	170	0.0244	0.0116

@@ -1,0 +1,106 @@
+0.0943	0.0808	1.000	• set by a BYPASS command, appearing at the end of a	0.4193	0.0159
+0.0945	0.5244	1.000	Job Control Commands	0.1786	0.0146
+0.1067	0.1013	1.000	scan tape, in the offline mode. STRANB would not be	0.4045	0.0196
+0.1235	0.5301	1.000	Five commands are available to operations personnel	0.4004	0.0131
+0.1235	0.1015	1.000	reset since the BYPASS command card in offline mode	0.4098	0.0131
+0.1381	0.5263	1.000	to control the flow of work through the system. They	0.3985	0.0146
+0.1394	0.1015	1.000	is not passed on to JC4 as the first card of the bypass	0.4041	0.0133
+0.1526	0.5282	1.000	provide the following capabilities:	0.2556	0.0147
+0.1555	0.1015	1.000	job. Control then passes to ZONO1X.	0.2857	0.0132
+0.1672	0.5432	1.000	1. Change the time clock ($TC) calibration con-	0.3684	0.0147
+0.1685	0.1184	1.000	If the source is IPL, a branch is made to ZONO1X,	0.3853	0.0147
+0.1830	0.5282	1.000	stant (CLOCK).	0.1184	0.0133
+0.1845	0.1015	1.000	where SYSMOD is set to online mode (00), followed	0.3853	0.0131
+0.1976	0.5470	1.000	2. Cause the rejection of a job already on or par-	0.3778	0.0132
+0.1991	0.1015	1.000	by a test of SPPBT2 to determine if tape IOD's have	0.3910	0.0131
+0.2121	0.5282	1.000	tially on the scan tape (REJECT).	0.2556	0.0146
+0.2136	0.1015	1.000	been assigned. If so, a branch is made to ZOFFO2,	0.3947	0.0146
+0.2267	0.5451	1.000	3. Cause the termination of the job in progress :	0.3797	0.0146
+0.2297	0.1015	1.000	a subroutine consisting of two calling linkages to the	0.3929	0.0116
+0.2412	0.5282	1.000	with or without an error dump (ABEOJ or EOJ.	0.3628	0.0146
+0.2425	0.0995	1.000	special assignment routine. Both branches go to	0.3726	0.0179
+0.2599	0.0920	1.000	. ZON001.	0.0772	0.0121
+0.2703	0.5282	1.000	The CLOCK Command	0.1692	0.0131
+0.2733	0.1184	1.000	If the source is JCI or operator's source and the	0.3684	0.0131
+0.2874	0.1033	1.000	mode is offline, a direct branch is made to ZON001	0.3856	0.0144
+0.2994	0.5282	1.000	The CLOCK command may be primed by setting the	0.3891	0.0146
+0.3036	0.1015	1.000	which is an MCP calling linkage requesting the input	0.3947	0.0133
+0.3139	0.5282	1.000	binary keys at IPL time, or entered via the console	0.3891	0.0161
+0.3182	0.1014	1.000	program to make a transition to the online mode.	0.3705	0.0147
+0.3285	0.5282	1.000	typewriter or system input after IPL. If the command	0.4060	0.0145
+0.3342	0.1015	1.000	This is followed by setting up of the acceptance	0.3534	0.0118
+0.3445	0.5282	1.000	is accepted, the difference between the time in the	0.3797	0.0146
+0.3488	0.1015	1.000	message and a branch to ZEXITX.	0.2575	0.0131
+0.3605	0.5301	1.000	command and STC will be stored in STIMEK for use	0.3891	0.0102
+0.3633	0.1165	1.000	If the source was JC4 overlapped, the NOP exit	0.3590	0.0117
+0.3750	0.5301	1.000	on all subsequent STIME operations.	0.2744	0.0117
+0.3779	0.1015	1.000	JNOPX is taken. Otherwise the command is in error	0.4004	0.0131
+0.3894	0.5470	1.000	The program (ZTCC, Figure 58) prints on the con-	0.3835	0.0133
+0.3939	0.1015	1.000	and a branch is made to ZEREX2.	0.2556	0.0102
+0.4039	0.5301	1.000	sole typewriter the time computed using both the old	0.3929	0.0118
+0.4185	0.5301	1.000	and new calibration constants and the date. The new	0.3910	0.0118
+0.4345	0.5301	1.000	time and date are saved to be written on the output	0.3797	0.0103
+0.4360	0.1034	1.000	The OFFLINE Command	0.1823	0.0103
+0.4491	0.5301	1.000	tape with the job card.	0.1692	0.0117
+0.4651	0.1034	1.000	The OFFLINE command (ZOFFLN, Figure 57) is also	0.4060	0.0116
+0.4782	0.5320	1.000	The COMMENT Command	0.1936	0.0103
+0.4797	0.1034	1.000	source-dependent for its actions. If the source is	0.3741	0.0116
+0.4942	0.1015	1.000	JC4 in the bypass mode, a branch is made to ZOFF09	0.4041	0.0131
+0.5073	0.5320	1.000	The COMMENT command is used for communication	0.3929	0.0116
+0.5087	0.1015	1.000	to turn off STRANB. This is the same situation as	0.3816	0.0131
+0.5218	0.5301	1.000	between the operator and the programmer.	0.3214	0.0116
+0.5233	0.1034	1.000	ZONOIY in the ONLINE command. SPPBT1 is then	0.3891	0.0116
+0.5363	0.5489	1.000	The matrix mask determines the actions taken by	0.3684	0.0116
+0.5392	0.1015	1.000	tested for previously assigned system tapes, and it	0.3872	0.0102
+0.5523	0.5301	1.000	the command (VVCOMJ, Figure 58). If the source	0.3816	0.0116
+0.5523	0.1015	1.000	not assigned, control is given to ZOFF02. An indi-	0.3910	0.0131
+0.5643	0.1014	1.000	cator, SPPBT3, is also set for test later to show that	0.4063	0.0169
+0.5654	0.5301	1.000	is the operator, a branch is made to the VVOPTP	0.3741	0.0146
+0.5799	0.5320	1.000	routine where the message is converted to A8 and	0.3722	0.0131
+0.5827	0.1015	1.000	the tapes were assigned by this command. In either	0.3929	0.0118
+0.5956	0.1014	1.000	case, control eventually goes to ZOFFIX. If the	0.3686	0.0137
+0.5959	0.5301	1.000	written on the output tape. Exit is made via ZEXITX.	0.3985	0.0116
+0.6105	0.5301	1.000	If the command comes from Job Control 1, online or	0.3966	0.0117
+0.6118	0.1015	1.000	source was IPL or JC1, online control is given	0.3553	0.0132
+0.6250	0.5301	1.000	offline, a normal return is made via JNOPX. A re-	0.3872	0.0132
+0.6264	0.1015	1.000	directly to ZOFFIX. ZOFF1X is an MCP calling	0.3703	0.0118
+0.6387	0.5300	1.000	quest from Job Control 4 overlapped causes the com-	0.4024	0.0141
+0.6409	0.1015	1.000	sequence to the input program requesting initiation of	0.4041	0.0118
+0.6520	0.5318	1.000	ment to be given to the operator as well as written	0.3781	0.0161
+0.6539	0.1015	1.000	a transition to the offline mode of operation. There	0.3910	0.0133
+0.6685	0.5301	1.000	on the output tape.	0.1410	0.0118
+0.6700	0.1015	1.000	are two returns from the input program: one for nor-	0.4079	0.0118
+0.6845	0.1034	1.000	mal and an end return if the command card is not the	0.3985	0.0118
+0.6976	0.5301	1.000	The REJECT Command	0.1767	0.0132
+0.7006	0.1015	1.000	last card in the card reader.	0.2162	0.0102
+0.7136	0.1184	1.000	If the normal return is reached, a test of mode is	0.3741	0.0131
+0.7267	0.5320	1.000	The operator may pre-reject a job by use of the	0.3590	0.0132
+0.7282	0.1034	1.000	made; if online, the return address to JCI is altered	0.3947	0.0131
+0.7412	0.5338	1.000	REJECT command. This should be used only in the	0.3816	0.0118
+0.7427	0.1015	1.000	to go to a $RET sequence to JC1. In either case mode	0.4117	0.0131
+0.7558	0.5301	1.000	overlapped mode via system input, but it will act like	0.4023	0.0146
+0.7587	0.1015	1.000	is then tested for IPL. If not IPL, the card reader is	0.4041	0.0116
+0.7688	0.5320	1.000	the EOJ command if entered via the operator's source	0.4060	0.0146
+0.7733	0.1015	1.000	disassigned via the special disassignment routine	0.3722	0.0131
+0.7863	0.5301	1.000	in the bypass mode.	0.1523	0.0116
+0.7878	0.1034	1.000	ZDSN01. Both branches now lead to ZOFF10 which	0.3872	0.0131
+0.8009	0.5489	1.000	The matrix mask is tested for validity of the re-	0.3647	0.0116
+0.8023	0.1034	1.000	sets SYSMOD to OFFLINE (01), sets the present-	0.3665	0.0131
+0.8154	0.5320	1.000	quest (ZREJCT, Figure 59). If the source is opera-	0.3947	0.0131
+0.8169	0.1034	1.000	command-assigned-tape indicators off (SPPBT3) and	0.3947	0.0131
+0.8299	0.5320	1.000	tor and the mode is bypass, a branch is made to the	0.3891	0.0116
+0.8327	0.1034	1.000	exits via ZEXITX.	0.1391	0.0103
+0.8445	0.5338	1.000	$EOJ routine for processing of end-of-job. If the	0.3703	0.0131
+0.8473	0.1203	1.000	If the end return is given by the input program, a	0.3684	0.0118
+0.8581	0.5318	1.000	request is from Job Control 4 overlapped, a normal	0.3894	0.0163
+0.8605	0.1015	1.000	branch to ZOFF72 is made. If tapes were assigned	0.3891	0.0132
+0.8735	0.5320	1.000	return is made via JNOPX; if from the input program	0.4004	0.0116
+0.8750	0.1034	1.000	earlier by this command, they are disassigned and	0.3816	0.0132
+0.8894	0.5320	1.000	card reader in the unoverlapped mode, an error mes-	0.4060	0.0133
+0.8894	0.1034	1.000	the assigned tape indicators SPPBT1 and SPPBT2 are	0.4041	0.0133
+0.9039	0.5320	1.000	sage is sent to the operator via ZEREX2. If the com-	0.4079	0.0133
+0.9055	0.1034	1.000	reset to 1. Either branch leads to the error exit	0.3684	0.0118
+0.9185	0.5338	1.000	mand is entered through Job Control 1, the return	0.3741	0.0133
+0.9215	0.1034	1.000	ZEREX2.	0.0714	0.0116
+0.9491	0.7256	1.000	System Operation Programs	0.1598	0.0117
+0.9506	0.9079	1.000	111	0.0226	0.0087

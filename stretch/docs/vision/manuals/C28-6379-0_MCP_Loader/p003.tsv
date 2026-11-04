@@ -1,0 +1,29 @@
+0.0842	0.7256	1.000	IBM 7030 SYSTEM LOADER	0.2162	0.0146
+0.1206	0.5395	1.000	specified routines from the FORTRAN library, and	0.3872	0.0146
+0.1221	0.1316	1.000	The IBM 7030 system loader consists of two pro-	0.3741	0.0116
+0.1366	0.1090	1.000	grams: (1) the resume load program of MCP, with	0.3797	0.0131
+0.1366	0.5414	1.000	computes all subprogram cross references. The	0.3722	0.0131
+0.1497	0.5395	1.000	BSS processor gives control to the resume load pro-	0.3985	0.0145
+0.1512	0.1090	1.000	the loader as a subroutine, and (2) the Binary and	0.3759	0.0116
+0.1657	0.5414	1.000	gram and provides information necessary to complete	0.4041	0.0116
+0.1657	0.1090	1.000	Symbolic Subroutine (BSS) processor. These two	0.3722	0.0116
+0.1788	0.5376	1.000	the loading function.	0.1541	0.0146
+0.1800	0.1089	1.000	programs allow the programmer to submit an input	0.3874	0.0139
+0.1948	0.1090	1.000	deck containing subprograms written in FORTRAN	0.3797	0.0131
+0.2093	0.5583	1.000	The programmer may specify that he wishes to	0.3590	0.0116
+0.2093	0.1090	1.000	(which produces relocatable binary cards) or STRAP	0.3966	0.0131
+0.2238	0.1071	1.000	(which produces relocatable or absolute binary cards,	0.4060	0.0131
+0.2238	0.5395	1.000	operate in a non-FORTRAN environment. In this	0.3722	0.0131
+0.2364	0.1089	1.000	as specified), or to submit a mixture of FORTRAN	0.3838	0.0162
+0.2384	0.5395	1.000	case, the BSS processor is not involved, and control	0.3966	0.0131
+0.2529	0.5376	1.000	is passed to the resume load program. Storage allo-	0.4004	0.0132
+0.2542	0.1090	1.000	and STRAP subprograms. The programmer may re-	0.3985	0.0118
+0.2674	0.5395	1.000	cation for relocatable subprograms may be specified	0.3966	0.0116
+0.2688	0.1090	1.000	ceive automatic storage allocation by specifying that	0.3947	0.0118
+0.2833	0.1090	1.000	he wishes to operate in the FORTRAN environment.	0.3891	0.0118
+0.2833	0.5395	1.000	by control cards which are meaningful to the loader.	0.3929	0.0118
+0.2964	0.5395	1.000	No storage allocation is necessary for absolute sub-	0.3947	0.0133
+0.2979	0.1090	1.000	In this case, the BSS processor assigns storage,	0.3665	0.0132
+0.3109	0.5395	1.000	programs, whose locations are specified on the cards.	0.4098	0.0133
+0.3124	0.1089	1.000	processes relocatable and absolute binary input, calls	0.4043	0.0136
+0.9330	0.7650	1.000	IBM 7030 System Loader	0.1447	0.0103

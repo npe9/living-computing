@@ -1,0 +1,32 @@
+0.0858	0.8647	1.000	OEDIT	0.0526	0.0131
+0.1560	0.5261	1.000	Boxes 7-14	0.0870	0.0165
+0.1584	0.1015	1.000	LINKAGE	0.0733	0.0102
+0.1860	0.5263	1.000	Note that the line count maintained by OEDIT is for	0.3797	0.0146
+0.2020	0.5263	1.000	the physical number of lines allowed per page. (The	0.3910	0.0116
+0.2106	0.1053	1.000	OEDIT is entered by the calling sequence --	0.3233	0.0133
+0.2151	0.5244	1.000	line count maintained by OUTPUT is for the purpose	0.3910	0.0146
+0.2252	0.1034	1.000	SIC, Oedita; B, OEDIT -- with certain indicators set	0.3929	0.0147
+0.2282	0.5244	1.000	of numbering the lines of the instructions.) The	0.3590	0.0146
+0.2412	0.1034	1.000	according to the type of entry:	0.2218	0.0118
+0.2442	0.5244	1.000	number of lines allowed per page is set up in the	0.3628	0.0146
+0.2558	0.2011	1.000	1 if the end time message is to be printed.	0.3120	0.0118
+0.2573	0.5263	1.000	Communication Region of STRAP II.	0.2688	0.0161
+0.2573	0.1184	1.000	Ogend =	0.0658	0.0146
+0.2718	0.1184	1.000	Oginit =	0.0677	0.0146
+0.2718	0.1974	1.000	1 if initial entry.	0.1278	0.0103
+0.2848	0.1992	1.000	I if new page is to be started (e.g., for	0.2951	0.0131
+0.2904	0.5262	1.000	Box 5	0.0454	0.0137
+0.3009	0.2162	1.000	a SKIP).	0.0620	0.0116
+0.3154	0.1203	1.000	Odbsp = 1 if double spacing is in effect.	0.3064	0.0146
+0.3182	0.5263	1.000	The page heading includes the initial time clock	0.3534	0.0147
+0.3327	0.5263	1.000	reading, the card identification from columns 73-80	0.3853	0.0147
+0.3459	0.1034	1.000	FLOW CHART DESCRIPTION	0.2180	0.0116
+0.3488	0.5282	1.000	of the card, the identification from the most recent	0.3797	0.0118
+0.3633	0.5282	1.000	PRNID pseudo-op, the page number, the setting of	0.3741	0.0131
+0.3750	0.1015	1.000	Boxes 1, 2, 1, 8	0.1259	0.0145
+0.3764	0.5263	1.000	location counter (within a word) at the start of this	0.3741	0.0132
+0.3924	0.5282	1.000	page, and the title headings for the columns on the	0.3741	0.0131
+0.4039	0.1015	1.000	These tests are determined by the indicator(s) set by	0.3929	0.0118
+0.4169	0.1014	1.000	OUTPUI.	0.0772	0.0165
+0.9419	0.8383	1.000	OEDIT	0.0376	0.0102
+0.9433	0.9023	1.000	165	0.0207	0.0073

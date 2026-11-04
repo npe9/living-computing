@@ -184,3 +184,66 @@ number is read twice. 20 printed pages >= 197 do not pair (200 235
 239 245 252 275 285 286 296 310 360 383 390 391 393 394 410 411 416
 417); PDF vol 2 pp.190-195 (SYMBOLS NEVER USED, statistics) are not
 listing pages.
+
+## THE PROGRAMMING-ENVIRONMENT MANUALS (2026-11-03)
+
+`tools/read_manuals.py` reads eleven manuals, 1,166 PDF pages, into
+`docs/vision/manuals/STEM/pNNN.tsv` (every box, with width and height:
+`tools/vision_ocr.swift --boxes`) and `docs/vision/manuals/STEM.txt` in
+reading order: a page is cut into bands at each line that crosses the
+gutter, and each band is read left column then right (C22-6729 p.10
+has a full-width table above two-column prose). Language correction
+OFF. **A finding aid, like docs/ocr/: not a source** (docs/ocr/README.md).
+
+No ground truth exists for these, so the measure is comparative --
+the share of words of four or more letters that are in
+/usr/share/dict/words, and the share of Vision's distinct words on a
+page that tesseract also found on that page:
+
+| manual | pages | Vision dict | tesseract dict | Vision in tesseract |
+|---|---|---|---|---|
+| 22-6530-2 7030 Reference Manual | 175 | 78.2% | 78.3% | 98.3% |
+| C22-6678-1 MCP Reference | 57 | 76.7% | 76.3% | 98.1% |
+| C22-6728-1 MCP SAG | 280 | **74.3%** | 65.1% | 94.5% |
+| C22-6728 MCP SAG | 270 | **73.8%** | 64.4% | 93.2% |
+| C22-6729 STRAP II SAG | 211 | **75.4%** | 70.1% | 94.5% |
+| C22-6751 FORTRAN IV | 37 | 76.3% | **none -- never OCR'd** | -- |
+| C28-6129 STRAP II | 79 | 78.0% | 78.0% | 95.8% |
+| C28-6379-0 MCP Loader | 24 | 77.8% | 77.9% | 96.7% |
+| J22-6559 MCP User's Guide | 19 | 77.3% | 77.8% | 97.2% |
+| N22-0085 MCP Ref update | 12 | 78.7% | 78.3% | 99.0% |
+| X28-6131 MCP pocket card | 2 | 83.3% | 79.9% | 74.4% |
+
+Vision is level with tesseract on the typeset manuals and clearly
+better on the TYPEWRITTEN System Analysis Guides (+5 to +9 points),
+which are the ones that specify MCP's and STRAP II's internals. The
+FORTRAN IV manual has a text layer for the first time. Known misreads:
+small capitals (FORTRAN's "READ" in small caps reads "BEAD").
+
+## BINARY HALF WORD 2 AND THE STATEMENT DRAFT (2026-11-03)
+
+**Half word 2** sits 14 cells right of half word 1 on both volumes (330
+of 331 vol 1 groups, 216 of 220 vol 2). It is a third column crop,
+read like the other two. On 1,628 landed full-word lines: agreed 72.4%
+/ **100.00%**, vision-only 16.4% / 98.50%. On 3,511 HALF-word lines a
+half word 2 was reported 14 times; the nine `agreed` ones are all
+full-word instructions (CM, BB, BZB, LF, TI) whose deck `!CHECK`
+records only half word 1 -- the truth is short, not the reading.
+
+**NAME + STATEMENT** is read from bin + 28 to bin + 76.5 cells (the
+NAME heading is at +31, the right-hand LOCATION heading at +77, on 199
+/ 181 page headers). Folded onto the printer's character set (no
+lowercase, accents or Cyrillic: Vision returns `В,2.0($15)` and
+`CМОCОС`). Scored against the decks' source STATEMENTS, labels
+dropped because decks rename them (`XSROOF` for printed `S ROOF`),
+spaces and remark dropped: **41.5% of 6,001 lines** end with the
+deck's statement. Typical misses: `(` read `I`/`1`, `(8)` read `[8]`,
+`*` read `#`, `$0` read `$O`, a run of the statement dropped.
+
+**There is no second engine for text.** Tesseract on the same crop
+reads 8% of statements exactly (10 pages, 423 lines), and when it
+agrees with Vision it is right 20 times in 26. So the statement column
+is a DRAFT for rule 3, never a reading. The check on a draft is the
+assembler: transcribe, assemble, and compare against the BINARY the
+two engines read at ~99.9%. That closes the loop the image cannot,
+including C against 0 in the hex byte.

@@ -1,0 +1,111 @@
+0.0598	0.5055	1.000	been read correctly. A card constitutes a block of in-	0.3932	0.0194
+0.0669	0.0865	1.000	Keys, Switches and Lights	0.1898	0.0147
+0.0784	0.6484	1.000	the exchange is concerned.	0.2032	0.0154
+0.0799	0.5056	1.000	formation as far as	0.1429	0.0116
+0.0858	0.1034	1.000	Power On, Power Of, Master Power, Start, Stop,	0.3778	0.0145
+0.0930	0.5226	1.000	As soon as the buffer has been emptied, a new card	0.3741	0.0146
+0.0994	0.0882	1.000	Signal, Unload. These keys have standard functions.	0.3894	0.0173
+0.1090	0.5056	1.000	cycle is started to place the next card in the buffer.	0.3929	0.0146
+0.1163	0.0883	1.000	If the stop key is depressed during the execution of a	0.3910	0.0146
+0.1225	0.5074	1.000	The timing of the next READ instruction, however, does	0.3913	0.0184
+0.1307	0.0882	1.000	multiple-block read instruction, the operation is in-	0.3912	0.0165
+0.1394	0.5075	1.000	not have to be related to the state of the buffer. If it	0.3929	0.0133
+0.1458	0.0882	1.000	terrupted at the end of the current card cycle but no	0.3913	0.0172
+0.1555	0.5056	1.000	is given early, the data transfer is delayed until the	0.3929	0.0146
+0.1627	0.0883	1.000	information is lost and, hence, unit check is not sent	0.3910	0.0131
+0.1682	0.5055	1.000	buffer is full again. If the next instruction is late, the	0.3932	0.0177
+0.1788	0.0883	1.000	to the exchange. When the start key is depressed, the	0.3910	0.0131
+0.1860	0.5056	1.000	card reader comes to a stop and waits for the instruc-	0.3929	0.0146
+0.1933	0.0883	1.000	original operation is resumed, provided the power has	0.3910	0.0146
+0.2020	0.5075	1.000	tion to cause the buffer to empty.	0.2387	0.0131
+0.2079	0.0882	1.000	been on continuously.	0.1640	0.0147
+0.2166	0.5226	1.000	When infrequent READ instructions are given in the	0.3759	0.0146
+0.2238	0.1034	1.000	Motor. This toggle switch controls the power for	0.3759	0.0146
+0.2304	0.5055	1.000	single block mode, the unit may have finished the	0.3931	0.0172
+0.2397	0.0883	1.000	the feed drive motor and is provided as a safety meas-	0.3910	0.0133
+0.2470	0.5074	1.000	physical moving of the card by the time the next in-	0.3930	0.0161
+0.2542	0.0883	1.000	ure. When the switch is off, the motor is disconnected	0.3910	0.0133
+0.2630	0.5056	1.000	struction is accepted. If a card jam occurs in such a	0.3929	0.0146
+0.2703	0.0883	1.000	and the unit cannot be placed in the ready status.	0.3910	0.0131
+0.2776	0.5075	1.000	case, the unit is not ready when the next instruction	0.3910	0.0146
+0.2848	0.0902	1.000	Normally, it is on. This switch does not have to be	0.3910	0.0146
+0.2936	0.5056	1.000	is issued, and the instruction is rejected. In the mul-	0.3929	0.0131
+0.3009	0.0902	1.000	used during the normal operation of the unit.	0.3440	0.0131
+0.3081	0.5074	1.000	tiple-block mode, however, the exchange restarts the	0.3930	0.0166
+0.3154	0.1034	1.000	Power On, Ready, Read Check, Reserved, Out of	0.3778	0.0146
+0.3241	0.5075	1.000	unit as soon as the data transfer for the preceding	0.3929	0.0131
+0.3299	0.0865	1.000	Material. These lights are standard. The out-of-	0.3929	0.0161
+0.3387	0.5056	1.000	block has been completed. If a card jam occurs after	0.3947	0.0160
+0.3445	0.0883	1.000	material light goes on whenever the hopper and feed	0.3929	0.0174
+0.3545	0.5075	1.000	the unit has accepted the instruction, the instruction	0.3929	0.0133
+0.3618	0.0865	1.000	are empty, or whenever the stacker is full.	0.3233	0.0161
+0.3691	0.5056	1.000	is terminated with a unit check. Any future instruc-	0.3947	0.0146
+0.3764	0.1034	1.000	Feed Check. This light is turned on automatically	0.3759	0.0161
+0.3852	0.5075	1.000	tions then are rejected because of the not-ready status.	0.3910	0.0146
+0.3924	0.0883	1.000	whenever misfeeding of cards has made the reader in-	0.3929	0.0146
+0.3997	0.5244	1.000	Checking of reading is done by comparing the card	0.3759	0.0161
+0.4058	0.0882	1.000	operative. When this occurs, a unit-check indication	0.3931	0.0173
+0.4153	0.5074	1.000	contents as sensed by the first and second reading sta-	0.3931	0.0159
+0.4230	0.0865	1.000	terminates the instruction in progress, if any, and the	0.3947	0.0146
+0.4317	0.5075	1.000	tions. This is performed at the time the card image	0.3929	0.0147
+0.4375	0.0883	1.000	reader becomes not ready. After clearing the card	0.3929	0.0146
+0.4462	0.5075	1.000	is transferred from the transposition buffer to main	0.3910	0.0145
+0.4535	0.0865	1.000	jam, the feed-check light is turned off by lifting the	0.3947	0.0160
+0.4596	0.5073	1.000	core storage. When any uncorrectable errors are dis-	0.3914	0.0183
+0.4679	0.0883	1.000	cards in the hopper and pressing the unload key,	0.3947	0.0161
+0.4767	0.5075	1.000	covered, a unit check and end-of-operation are given,	0.3929	0.0146
+0.4824	0.0883	1.000	thereby running out the cards remaining in the feed.	0.3929	0.0176
+0.4927	0.5075	1.000	and the operation is terminated at the end of the	0.3910	0.0145
+0.5073	0.5075	1.000	current block. In order to avoid error indications for	0.3929	0.0131
+0.5203	0.0902	1.000	Control Functions	0.1259	0.0118
+0.5211	0.5074	1.000	correctable errors, in the ecc mode a unit check is	0.3931	0.0165
+0.5392	0.0883	1.000	The following controL instructions, giving standard	0.3929	0.0160
+0.5392	0.5075	1.000	given and the operation is terminated only when	0.3929	0.0145
+0.5523	0.5075	1.000	more than one bit per word is read incorrectly.	0.3496	0.0160
+0.5552	0.0883	1.000	functions, can be executed by the card reader:	0.3459	0.0146
+0.5808	0.3025	1.000	FUNCTION	0.0699	0.0142
+0.5814	0.1372	1.000	OCTAL CODE	0.0846	0.0116
+0.5945	0.5075	1.000	Error Correction	0.1184	0.0116
+0.6003	0.2575	1.000	Reserved Light Off	0.1466	0.0161
+0.6017	0.1598	1.000	016	0.0282	0.0116
+0.6133	0.5094	1.000	The card reader can be operated either in the ECC	0.3910	0.0146
+0.6206	0.2575	1.000	Reserved Light On	0.1466	0.0146
+0.6206	0.1598	1.000	017	0.0282	0.0145
+0.6279	0.5094	1.000	mode or the no-ecc mode by means of the correspond-	0.3929	0.0146
+0.6409	0.2575	1.000	ECC Mode	0.0865	0.0132
+0.6410	0.1598	1.000	057	0.0282	0.0145
+0.6439	0.5056	1.000	ing control instructions.	0.1805	0.0161
+0.6572	0.5243	1.000	In the no-ecc mode, which must be used for com-	0.3762	0.0175
+0.6612	0.2575	1.000	Check Light On	0.1259	0.0161
+0.6613	0.1598	1.000	116	0.0282	0.0131
+0.6744	0.5075	1.000	municating with devices external to the system, a	0.3929	0.0160
+0.6817	0.2613	1.000	No-ECC Mode	0.1090	0.0116
+0.6831	0.1617	1.000	157	0.0263	0.0116
+0.6890	0.5075	1.000	word consists of 64 bits and occupies 5⅓ columns of	0.3947	0.0160
+0.7048	0.5094	1.000	a card. When these cards are read, all of the 64 bits	0.3929	0.0146
+0.7179	0.0921	1.000	Operation of Card Reader under Program Control	0.3647	0.0133
+0.7209	0.5094	1.000	are sent to core storage as data, and all of them are	0.3929	0.0131
+0.7369	0.5094	1.000	accessible to the program.	0.1880	0.0131
+0.7369	0.0902	1.000	When the card reader is initially loaded, the first card	0.3910	0.0146
+0.7515	0.5244	1.000	In the ecc mode, 72 consecutive bits, or six adja-	0.3778	0.0146
+0.7542	0.0902	1.000	is read and the card image is stored in the transposi-	0.3929	0.0133
+0.7660	0.5094	1.000	cent columns, are sent to core storage as one word.	0.3929	0.0146
+0.7688	0.0921	1.000	tion buffer. A subsequent READ instruction from the	0.3910	0.0146
+0.7819	0.0901	1.000	computer then causes the buffer contents to be trans-	0.3913	0.0164
+0.7820	0.5075	1.000	This word consists of the 64 data bits preceded by	0.3947	0.0160
+0.7964	0.5094	1.000	eight Ecc bits. The ecc bits permit automatic cor-	0.3947	0.0161
+0.7979	0.0902	1.000	ferred to core storage. Because the card has previously	0.3910	0.0146
+0.8124	0.5075	1.000	rection of single errors and detection of double errors	0.3947	0.0146
+0.8139	0.0902	1.000	been read for checking, the check is complete at the	0.3929	0.0145
+0.8270	0.5056	1.000	in a word. They are provided during writing by the	0.3966	0.0176
+0.8299	0.0902	1.000	time the entire card image has been stored in core	0.3929	0.0131
+0.8430	0.5094	1.000	exchange, and may be punched automatically on the	0.3929	0.0146
+0.8445	0.0902	1.000	storage. In the single-block mode, an end-of-operation	0.3910	0.0146
+0.8590	0.5094	1.000	card punch, to provide checking and error correction	0.3929	0.0146
+0.8605	0.0902	1.000	is given when the transfer from buffer to core storage	0.3929	0.0132
+0.8721	0.5093	1.000	by means of the Ecc checking circuits when cards are	0.3949	0.0161
+0.8730	0.0901	1.000	is completed, and the absence of unit check at this	0.3931	0.0170
+0.8894	0.5094	1.000	read. A data error indication is given if the check	0.3947	0.0133
+0.8909	0.0902	1.000	time indicates that the card now in core storage has	0.3929	0.0132
+0.9273	0.7613	1.000	External Units	0.0921	0.0103
+0.9273	0.8797	1.000	139	0.0244	0.0087

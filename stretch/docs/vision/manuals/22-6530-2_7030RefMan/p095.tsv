@@ -1,0 +1,109 @@
+0.0682	0.1258	1.000	Accumulator High (AH). This indicator remains	0.3762	0.0169
+0.0697	0.5451	1.000	If a normalized product is specified, the 96-bit inter-	0.3722	0.0132
+0.0842	0.1090	1.000	one if the accumulator operand is equal or high when	0.3891	0.0146
+0.0842	0.5301	1.000	mediate product fraction is normalized. The product	0.3872	0.0146
+0.1003	0.5301	1.000	exponent may be diminished by a value up to 96.	0.3853	0.0146
+0.1003	0.1090	1.000	compared with the addressed operand. This indicator	0.3910	0.0146
+0.1148	0.5282	1.000	Following the normalization, the intermediate prod-	0.3891	0.0146
+0.1148	0.1071	1.000	is set to zero when the accumulator operand is low	0.3910	0.0146
+0.1307	0.1070	1.000	compared with the addressed operand.	0.2765	0.0149
+0.1308	0.5301	1.000	uct fraction is truncated to 48 bits to form the result	0.3872	0.0116
+0.1453	0.5301	1.000	product fraction that is placed in accumulator bits	0.3872	0.0147
+0.1467	0.1090	1.000	PROGRAMMING NOTE	0.1466	0.0103
+0.1612	0.5301	1.000	12-59. Low-order zeros are inserted in the low-order	0.3872	0.0133
+0.1627	0.1090	1.000	Following a COMPARE operation, the operation coM-	0.3910	0.0146
+0.1758	0.5301	1.000	positions of the 96-bit intermediate product fraction	0.3872	0.0146
+0.1768	0.1089	1.000	PARE FOR RANGE can be used to determine whether a	0.3912	0.0148
+0.1918	0.1089	1.000	quantity falls within a given range. The addressed	0.3894	0.0165
+0.1918	0.5282	1.000	as normalization occurs. If noisy mode is also speci-	0.3891	0.0146
+0.2068	0.1089	1.000	operand of the coMPARE operation may be considered	0.3894	0.0172
+0.2078	0.5301	1.000	fied, low-order ones instead of zeros will be inserted	0.3872	0.0131
+0.2224	0.5301	1.000	during normalization. The zeros or ones do not ap	0.3853	0.0146
+0.2238	0.1090	1.000	as the lower bound of the range. The addressed oper-	0.3910	0.0131
+0.2384	0.1090	1.000	and of the COMPARE FOR RANGE operation may be con-	0.3910	0.0147
+0.2384	0.5301	1.000	pear in the result product fraction unless the amount	0.3891	0.0131
+0.2542	0.5301	1.000	of post-normalization shift is greater than 48.	0.3383	0.0133
+0.2542	0.1090	1.000	sidered as the upper bound of the range.	0.2895	0.0147
+0.2688	0.1259	1.000	When both operations have been performed, the set-	0.3759	0.0146
+0.2688	0.5451	1.000	When unnormalized operation is specified, the 48	0.3722	0.0133
+0.2833	0.5282	1.000	high-order bits of the intermediate product fraction	0.3891	0.0146
+0.2848	0.1090	1.000	tings of the comparison result indicators are inter-	0.3929	0.0146
+0.2994	0.5301	1.000	are used as the result product fraction and are placed	0.3872	0.0131
+0.3023	0.1090	1.000	preted as follows:	0.1259	0.0131
+0.3154	0.5282	1.000	in accumulator bits 12-59.	0.1861	0.0102
+0.3154	0.1222	1.000	Accumulator low (AL) is one when the operand in	0.3778	0.0146
+0.3299	0.5470	1.000	For values of the operands in the XEP or XEN range,	0.3703	0.0131
+0.3314	0.1090	1.000	the accumulator is below the range.	0.2556	0.0132
+0.3445	0.5301	1.000	the following action is taken. When both operands	0.3872	0.0146
+0.3459	0.1259	1.000	Accumulator equal (AE) is one when the operand	0.3741	0.0147
+0.3605	0.1090	1.000	in the accumulator is within the range or equal to the	0.3929	0.0145
+0.3605	0.5282	1.000	are in the XFP range or both in the XEN range, the re-	0.3872	0.0132
+0.3764	0.5282	1.000	sult exponent is the exponent of the accumulator	0.3891	0.0132
+0.3794	0.1090	1.000	lower boundary.	0.1184	0.0116
+0.3909	0.1241	1.000	Accumulator high (aн) is one when the operand in	0.3759	0.0146
+0.3909	0.5940	1.000	The result fraction is the unnormalized	0.3233	0.0118
+0.3923	0.5281	1.000	operand.	0.0678	0.0134
+0.4070	0.1090	1.000	the accumulator is above the range or equal to the up-	0.3929	0.0145
+0.4070	0.5301	1.000	product of the operand fractions. If one operand is	0.3891	0.0131
+0.4212	0.5281	1.000	in the XFP range and the other is in the N or XEN	0.3892	0.0154
+0.4243	0.1109	1.000	per boundary.	0.1034	0.0133
+0.4375	0.1278	1.000	The lower boundary is included in the range while	0.3741	0.0146
+0.4375	0.5301	1.000	range, the result exponent is the exponent of the oper-	0.3872	0.0131
+0.4520	0.5282	1.000	and in the XFP range and the result fraction is the	0.3891	0.0131
+0.4535	0.1090	1.000	the upper boundary is presumed to be outside the	0.3929	0.0160
+0.4679	0.5301	1.000	unnormalized product of the operand fractions. If	0.3891	0.0133
+0.4737	0.1090	1.000	range.	0.0471	0.0104
+0.4839	0.5301	1.000	one of the operands is in the N range while the second	0.3872	0.0132
+0.4884	0.1090	1.000	Compare Magnitude for Range (KMGR)	0.2838	0.0131
+0.4985	0.5301	1.000	is in the XFN range, the result exponent is the expo-	0.3872	0.0131
+0.5073	0.1090	1.000	This operation is the same as COMPARE FOR RANGE eX-	0.3910	0.0131
+0.5130	0.5282	1.000	nent of the operand in the XEN range and the result is	0.3891	0.0146
+0.5218	0.1071	1.000	cept that the comparison is performed as if the sign	0.3929	0.0146
+0.5291	0.5301	1.000	the unnormalized product of the operand fractions.	0.3872	0.0146
+0.5363	0.1071	1.000	of the accumulator were positive.	0.2387	0.0146
+0.5451	0.5301	1.000	For all these cases normalization, if specified, is sup-	0.3872	0.0131
+0.5567	0.1071	1.000	INDICATORS	0.0789	0.0102
+0.5596	0.5301	1.000	pressed. Thus, whenever either operand in a multi-	0.3872	0.0146
+0.5697	0.1222	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3759	0.0146
+0.5755	0.5301	1.000	plication has an EF of 1, the result exponent always	0.3891	0.0133
+0.5842	0.1034	1.000	(MOP); Comparison Result (AL, AE, AH); Prepara-	0.3966	0.0161
+0.5900	0.5301	1.000	has a propagated EF of 1.	0.1805	0.0147
+0.6003	0.1053	1.000	tory Shift Greater than 48 (PSH). These indicators	0.3947	0.0131
+0.6061	0.5451	1.000	When both operands are values in the N range, a	0.3741	0.0131
+0.6148	0.1071	1.000	are set as in COMPARE FOR RANGE.	0.2331	0.0116
+0.6206	0.5301	1.000	generated EF of 1 may be produced because of over-	0.3891	0.0146
+0.6308	0.1052	1.000	Multiply (*)	0.0903	0.0147
+0.6366	0.5282	1.000	flow or underflow. With underflow, when EF of 1 and	0.3891	0.0131
+0.6482	0.1034	1.000	The operand specified by the effective address, the	0.3966	0.0146
+0.6512	0.5263	1.000	Es of 1 are part of the result exponent, normalization	0.3929	0.0161
+0.6627	0.1034	1.000	multiplicand, is multiplied by the operand in the left	0.3966	0.0161
+0.6657	0.5263	1.000	of the result fraction, if specified, is suppressed in order	0.3929	0.0174
+0.6788	0.1034	1.000	half of the accumulator, the multiplier. The product	0.3966	0.0161
+0.6821	0.5338	1.000	o prevent occurrence of a double carry. However, th	0.3799	0.0145
+0.6933	0.1053	1.000	exponent and fraction replace accumulator bits 0-59.	0.3947	0.0146
+0.6962	0.5320	1.000	indicator settings follow the rules for generated expo	0.3816	0.0145
+0.7093	0.1053	1.000	Accumulator bits 60-127 remain unchanged. The sign	0.3929	0.0131
+0.7121	0.5263	1.000	nent flags.	0.0789	0.0161
+0.7252	0.1071	1.000	of the product replaces the accumulator sign in bit	0.3929	0.0133
+0.7323	0.5262	1.000	INDICATORS	0.0828	0.0136
+0.7397	0.1090	1.000	position 4 of the sign byte register.	0.2444	0.0147
+0.7500	0.5414	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3759	0.0145
+0.7543	0.1240	1.000	Multiplication of floating point numbers consists	0.3742	0.0157
+0.7645	0.5226	1.000	(MOP); Arithmetic Result (RLZ, RZ, RGZ, RN); Ex-	0.3947	0.0161
+0.7703	0.1071	1.000	of an exponent addition and a fraction multiplication.	0.3929	0.0161
+0.7820	0.5282	1.000	ponent Range (XPFP, ХPO, ХPH, XPL, XPU).	0.3891	0.0160
+0.7848	0.1071	1.000	The sum of the exponents is used as the exponent of	0.3929	0.0146
+0.7964	0.5301	1.000	These indicators are set for the final arithmetic result	0.3910	0.0147
+0.8009	0.1071	1.000	the unnormalized result. The two 48-bit operand frac-	0.3929	0.0131
+0.8123	0.5300	1.000	as in ADD.	0.0753	0.0134
+0.8154	0.1071	1.000	tions are multiplied to form a 96-bit intermediate	0.3910	0.0146
+0.8285	0.1053	1.000	product. The product sign is determined by the rules	0.3929	0.0176
+0.8342	0.5489	1.000	Zero Multiply (ZM). If normalized operation is	0.3703	0.0176
+0.8445	0.1053	1.000	of algebra, using the accumulator sign and the effec-	0.3929	0.0146
+0.8488	0.5282	1.000	specified and an order of magnitude zero results with	0.3910	0.0161
+0.8605	0.1071	1.000	tive sign of the addressed operand. The sign of the	0.3929	0.0145
+0.8633	0.5301	1.000	exponent greater than - 1024, this indicator will be	0.3891	0.0161
+0.8730	0.5298	1.000	turned on. Otherwise it will be turned off, if already	0.3898	0.0235
+0.8750	0.1071	1.000	addressed operand is modified according to the speci-	0.3929	0.0145
+0.8909	0.1071	1.000	fications of the sign modifiers.	0.2199	0.0146
+0.9330	0.1109	1.000	92 IBM 7030	0.1090	0.0103

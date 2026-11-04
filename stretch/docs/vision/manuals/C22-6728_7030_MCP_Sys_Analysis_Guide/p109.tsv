@@ -1,0 +1,102 @@
+0.0842	0.1013	1.000	SYSTEM INPUT-OUTPUT	0.1939	0.0147
+0.1279	0.5301	1.000	job; and Phase 4, the execution of the job. * The	0.3628	0.0146
+0.1294	0.1053	1.000	The three major packages in MCP that perform sys-	0.3891	0.0116
+0.1439	0.1034	1.000	tem I-O functions for both PP and MCP are:	0.3271	0.0116
+0.1439	0.5301	1.000	overlapped mode is further divided into two modes:	0.3797	0.0116
+0.1584	0.5301	1.000	online and offline, according to the phase 1 input	0.3628	0.0116
+0.1599	0.1203	1.000	1. The input program	0.1654	0.0116
+0.1730	0.5301	1.000	source. If the phase 1 input source consists of cards	0.3966	0.0131
+0.1744	0.1203	1.000	2. The output program	0.1748	0.0116
+0.1875	0.5301	1.000	from the online card reader, the overlapped mode is	0.3910	0.0131
+0.1890	0.1203	1.000	3. The disk fetch program	0.2011	0.0117
+0.2035	0.1053	1.000	The input program is designed to overlap preproc-	0.3741	0.0117
+0.2035	0.5301	1.000	online. If the phase 1 input source consists of card	0.3835	0.0117
+0.2179	0.5301	1.000	images from a magnetic tape prepared by one of the	0.3853	0.0118
+0.2179	0.1053	1.000	essing with input data transmission. It keeps two	0.3665	0.0133
+0.2315	0.1033	1.000	input sources active, one for phase 1 and one for	0.3630	0.0143
+0.2324	0.5301	1.000	system peripheral input programs on the IBM 1401,	0.3853	0.0133
+0.2470	0.1034	1.000	phase 4, and handles the details of tape switch for	0.3722	0.0133
+0.2470	0.5301	1.000	the overlapped mode is offline.	0.2312	0.0133
+0.2608	0.1033	1.000	the input sources and mode change. It performs one	0.3911	0.0142
+0.2615	0.5470	1.000	The second of the two logical system input modes	0.3665	0.0133
+0.2761	0.5301	1.000	is the bypass mode. The bypass mode is so named	0.3816	0.0133
+0.2776	0.1034	1.000	pseudo-op, $SCR, for both PP and MCP; and two	0.3628	0.0131
+0.2921	0.1053	1.000	others, SCR4 and SKOM, available only to MCP.	0.3590	0.0131
+0.2921	0.5301	1.000	because the phase 1 function of scanning I-O requests	0.3966	0.0117
+0.3067	0.1222	1.000	The output program blocks information into print	0.3609	0.0116
+0.3067	0.5301	1.000	is bypassed. All I-O assignment is done on a per	0.3703	0.0116
+0.3212	0.5301	1.000	job basis, immediately prior to execution of the job.	0.3910	0.0131
+0.3212	0.1034	1.000	and punch records on the output tape, and attends to	0.3872	0.0131
+0.3358	0.1053	1.000	output tape control and separation of the output of	0.3665	0.0131
+0.3358	0.5320	1.000	The bypass mode is provided to allow interruption of	0.3910	0.0131
+0.3503	0.5320	1.000	overlapped operation under priority or emergency	0.3722	0.0116
+0.3503	0.1034	1.000	jobs. It performs the pseudo-ops $SPR and $SPU;	0.3741	0.0131
+0.3648	0.1053	1.000	the output command; and its special EOJ pseudo-op,	0.3853	0.0131
+0.3663	0.5301	1.000	circumstances.	0.1184	0.0102
+0.3663	0.6485	1.000	Accordingly, the only input source	0.2650	0.0116
+0.3794	0.5301	1.000	in the bypass mode is the online card reader.	0.3383	0.0131
+0.3808	0.1053	1.000	SSPEOJ.	0.0639	0.0116
+0.3939	0.1203	1.000	The disk fetch program performs the $FETCH	0.3440	0.0131
+0.4099	0.5320	1.000	Overlapped Operation	0.1617	0.0116
+0.4099	0.1034	1.000	pseudo-op to read named material from PROSA.	0.3590	0.0116
+0.4390	0.1034	1.000	THE INPUT PROGRAM	0.1767	0.0117
+0.4390	0.5320	1.000	The input programs use two buffers, the phase 1	0.3590	0.0132
+0.4535	0.5320	1.000	buffer (VBF1) and the phase 4 buffer (VBF4). Each	0.3797	0.0132
+0.4679	0.1053	1.000	The input program is a major package which performs	0.4023	0.0133
+0.4694	0.5301	1.000	handles the buffering requirements of its phase. Each	0.4060	0.0118
+0.4839	0.1053	1.000	three pseudo-ops. It uses two tentacle tables, and	0.3741	0.0118
+0.4839	0.5301	1.000	has a capacity of 34 card images, or two 17-column	0.3872	0.0132
+0.4982	0.4153	1.000	Its basic	0.0735	0.0109
+0.4985	0.1053	1.000	operates enabled but usually in SIO mode.	0.3083	0.0118
+0.4985	0.5320	1.000	binary card blocked records.	0.2162	0.0118
+0.5130	0.5489	1.000	Input from the phase 1 source is read into the phase	0.3853	0.0131
+0.5130	0.1053	1.000	funetion is to pass input (cards) to JC1 and JC4 (see	0.3835	0.0118
+0.5276	0.1053	1.000	system operation programs), and to the PP.	0.3271	0.0131
+0.5276	0.5320	1.000	1 buffer as buffer space becomes available. If job	0.3741	0.0131
+0.5421	0.5320	1.000	control 1 is not currently processing cards, the SJC1	0.3947	0.0146
+0.5421	0.1222	1.000	The logic of the input program is almost completely	0.3835	0.0131
+0.5578	0.4003	1.000	Therefore,	0.0923	0.0124
+0.5581	0.1053	1.000	determined by system mode definitions.	0.2951	0.0116
+0.5581	0.5301	1.000	pseudo-op is primed. This results in an entry to JC1,	0.4079	0.0116
+0.5727	0.5301	1.000	which will resume its scanning of B cards. The buffer	0.4079	0.0116
+0.5727	0.1053	1.000	before discussing the program itself, system input	0.3778	0.0131
+0.5872	0.1053	1.000	modes will be reviewed from the point of view of the	0.3872	0.0116
+0.5872	0.5301	1.000	is used (scan pointer moved) only by SCR1 and SCAN	0.3929	0.0131
+0.6030	0.5319	1.000	requests.	0.0715	0.0120
+0.6032	0.1053	1.000	input program.	0.1128	0.0117
+0.6177	0.5489	1.000	The phase 4 input source is the read tape. All	0.3459	0.0117
+0.6321	0.1034	1.000	System Input Modes	0.1466	0.0133
+0.6321	0.5320	1.000	information on the read tape has passed through phase	0.4023	0.0118
+0.6467	0.5320	1.000	1. Input is read from the read tape as space in the	0.3797	0.0118
+0.6612	0.1071	1.000	There are two logical modes of system input: over-	0.3835	0.0118
+0.6612	0.5301	1.000	phase 4 buffer becomes available. However, a pro-	0.3891	0.0133
+0.6758	0.5282	1.000	gram will not be primed as a result of phase 4 input.	0.3947	0.0146
+0.6758	0.1034	1.000	lapped and bypass. The overlapped mode is so named	0.4023	0.0133
+0.6890	0.5301	1.000	The buffer is used (card request pointer moved) by	0.3778	0.0147
+0.6903	0.1053	1.000	because two functions are being performed at one	0.3647	0.0133
+0.7048	0.5301	1.000	phase 4 card requests ($SCR, SSCR4) and by the	0.3609	0.0146
+0.7064	0.1053	1.000	time:	0.0414	0.0102
+0.7209	0.1222	1.000	1. Scanning of input (jobs) for purposes of pre-	0.3534	0.0116
+0.7209	0.5320	1.000	SEJSCN request.	0.1278	0.0116
+0.7339	0.5470	1.000	If the overlapped mode is offline, the phase 1 input	0.3797	0.0146
+0.7355	0.1053	1.000	assignment of tape units.	0.1861	0.0116
+0.7500	0.5320	1.000	source is the scan tape. This tape will become the	0.3797	0.0116
+0.7500	0.1203	1.000	2. Buffering of input (jobs) in order to execute	0.3496	0.0116
+0.7645	0.5320	1.000	read tape for phase 4 when it has been completely	0.3703	0.0131
+0.7658	0.1052	1.000	jobs.	0.0378	0.0105
+0.7791	0.5320	1.000	scanned and the current read tape is completely	0.3571	0.0116
+0.7791	0.1203	1.000	The processing of a given job is considered in two	0.3722	0.0131
+0.7936	0.1053	1.000	phases: Phase 1, scanning the I-O requests for the	0.3816	0.0131
+0.7951	0.5320	1.000	processed.	0.0846	0.0116
+0.8096	0.5489	1.000	If the overlapped mode is online, a tape must be	0.3590	0.0116
+0.8241	0.5320	1.000	prepared for use as the phase 4 read tape. This tape	0.3966	0.0116
+0.8372	0.1034	1.000	* The titles "Phase 1'' and "'Phase 4'' were chosen to	0.3910	0.0116
+0.8387	0.5301	1.000	is called the write tape. In the online mode, phase 1	0.3947	0.0116
+0.8532	0.1222	1.000	allow insertion of intermediate phases for multi-	0.3609	0.0117
+0.8532	0.5320	1.000	input is blocked onto the write tape as a part of phase	0.3966	0.0117
+0.8677	0.5320	1.000	1 operation. In this mode, all tape mounting for the	0.3891	0.0132
+0.8691	0.1203	1.000	programming purposes at such time as this is	0.3402	0.0103
+0.8815	0.5300	1.000	input tapes is eliminated since the read tape becomes	0.3986	0.0142
+0.8820	0.1221	1.000	desired.	0.0622	0.0108
+0.9403	0.7594	1.000	System Input-Output	0.1203	0.0103
+0.9404	0.9023	1.000	109	0.0226	0.0073

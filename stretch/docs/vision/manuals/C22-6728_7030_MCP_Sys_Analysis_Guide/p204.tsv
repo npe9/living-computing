@@ -1,0 +1,103 @@
+0.0712	0.0714	1.000	DEBUGGING AIDS	0.1391	0.0131
+0.1003	0.0733	1.000	MCP includes four major packages to provide de-	0.3684	0.0116
+0.1003	0.5019	1.000	The $DUMP Program	0.1654	0.0146
+0.1163	0.0733	1.000	bugging facilities for the problem program:	0.3214	0.0116
+0.1294	0.5038	1.000	The $DUMP routine prints via $SPR a requested	0.3571	0.0131
+0.1308	0.0902	1.000	$EDUMP - the error dump routine	0.2669	0.0102
+0.1439	0.5038	1.000	number of memory locations in a format specified	0.3703	0.0131
+0.1453	0.0902	1.000	$DUMP - the dump routine	0.2199	0.0116
+0.1599	0.0902	1.000	$HOLD - the instruction counter hold routine	0.3571	0.0116
+0.1599	0.5038	1.000	by the user. The calling sequence B, $MCP;, SDUMP;,	0.4079	0.0131
+0.1744	0.1654	1.000	- the console debugging package	0.2444	0.0116
+0.1744	0.5056	1.000	FWA(1) specifies the location of a string of 3 half	0.3628	0.0132
+0.1759	0.0902	1.000	SDDT	0.0432	0.0087
+0.1890	0.0733	1.000	These programs include both dynamic and console	0.3722	0.0132
+0.1890	0.5038	1.000	word parameters of the form: , A.(I);, B. (1);;	0.3477	0.0132
+0.2035	0.0733	1.000	debugging features. (Note: it is recommended that	0.3797	0.0132
+0.2035	0.5056	1.000	Format(I), where A. (I) is the first location to be	0.3571	0.0132
+0.2179	0.0733	1.000	the reader review those portions of the MCP Ref-	0.3703	0.0133
+0.2194	0.5038	1.000	dumped, B. (I) is the last location and the format can	0.3891	0.0118
+0.2339	0.5038	1.000	be either octal-hex with or without mnemonics, index	0.3966	0.0118
+0.2339	0.0733	1.000	erence Manual concerned with checkout facilities	0.3628	0.0118
+0.2485	0.5038	1.000	word or floating point. The format also requests	0.3665	0.0118
+0.2500	0.0733	1.000	and console usage.)	0.1485	0.0103
+0.2616	0.0902	1.000	The $EDUMP is used to override the automatically	0.3761	0.0133
+0.2630	0.5038	1.000	panel or no panel and indicates whether or not this	0.3741	0.0118
+0.2776	0.0733	1.000	provided dump parameters used when ABEOJ occurs.	0.3966	0.0118
+0.2776	0.5038	1.000	is the last request.	0.1429	0.0118
+0.2921	0.0752	1.000	On ABEOJ, Job Control 4 uses the dump parameters	0.3891	0.0146
+0.2921	0.5207	1.000	The routine is entered at AWDUMP (Figure 117)	0.3553	0.0117
+0.3067	0.5038	1.000	with the tentacle table, PDUMPJ, set up. The lower	0.3929	0.0131
+0.3067	0.0752	1.000	most recently specified by the $EDUMP pseudo-op,	0.3797	0.0116
+0.3212	0.5038	1.000	registers are picked up from SLRBU and saved in the	0.3947	0.0131
+0.3212	0.0733	1.000	or if $EDUMP was not used, JC4 specifies a dump	0.3759	0.0131
+0.3358	0.0733	1.000	in octal-hex format from the PP lower bound to	0.3534	0.0116
+0.3358	0.5038	1.000	dump buffer. A check is made on the parameter,	0.3703	0.0145
+0.3498	0.5056	1.000	FWA(I) to make sure it is within bounds if the user is	0.3930	0.0139
+0.3517	0.0752	1.000	the PP upper bound.	0.1466	0.0116
+0.3648	0.0921	1.000	A dump is provided any time $DUMP is requested	0.3684	0.0131
+0.3663	0.5038	1.000	a PP. (The user may also be JC4 and the console	0.3703	0.0116
+0.3787	0.0750	1.000	by the PP. The $DUMP routine is used by the	0.3442	0.0153
+0.3808	0.5056	1.000	debugging package.) In case of error a panel dump	0.3759	0.0131
+0.3953	0.0752	1.000	debugging package to perform dumps which are re-	0.3797	0.0131
+0.3953	0.5038	1.000	is given and control is returned to the PP.	0.3158	0.0131
+0.4099	0.5226	1.000	If the user is the PP a set of dump parameters is	0.3628	0.0116
+0.4099	0.0752	1.000	quested from the console in checkout mode. The	0.3628	0.0131
+0.4244	0.5056	1.000	checked for validity. If A(I) <SPPLB the pro-	0.3477	0.0116
+0.4244	0.0752	1.000	console debugging package (SDDT) may be used by	0.3703	0.0132
+0.4390	0.0752	1.000	itself or in conjunction with the $HOLD pseudo-op	0.3684	0.0117
+0.4390	0.5056	1.000	grammer's lower boundary is substituted for A(I),	0.3703	0.0132
+0.4535	0.5056	1.000	or if B(I) > SMARK the programmer's upper	0.3289	0.0132
+0.4535	0.0771	1.000	so that the debugging is performed at a particular	0.3665	0.0132
+0.4679	0.5056	1.000	boundary is substituted for B(D). If A(I)> B(I), or	0.3722	0.0133
+0.4694	0.0752	1.000	point in the PP. The console debugging package	0.3590	0.0118
+0.4824	0.5056	1.000	A(I) = B(D), or if the format is not one of the existing	0.3891	0.0147
+0.4839	0.0771	1.000	may be used to examine the flow of the program,	0.3609	0.0132
+0.4970	0.5056	1.000	formats, only a panel dump is given. Only one sub-	0.3853	0.0133
+0.4970	0.0769	1.000	change the flow of the program, dump as desired,	0.3686	0.0163
+0.5130	0.0752	1.000	and examine and change words in PP memory.	0.3459	0.0118
+0.5130	0.5056	1.000	stitution per dump request for A(I) or B(I) will be	0.3647	0.0118
+0.5276	0.5056	1.000	made. If a second such error occurs in the PP's	0.3647	0.0118
+0.5421	0.5038	1.000	parameters only a panel dump will be performed.	0.3684	0.0117
+0.5536	0.0771	1.000	THE DUMP ROUTINES	0.1711	0.0103
+0.5567	0.5226	1.000	A check is made on the suppress panel bit and the	0.3665	0.0116
+0.5700	0.5055	1.000	last request bit and corresponding indicators are	0.3630	0.0148
+0.5814	0.0771	1.000	Of the two dump pseudo-ops, $DUMP and $EDUMP,	0.3835	0.0132
+0.5858	0.5056	1.000	set up within the dump program. The panel is	0.3421	0.0131
+0.5970	0.3928	1.000	$EDUMP	0.0678	0.0108
+0.5973	0.0771	1.000	only $DUMP is a bonafide dump request.	0.2989	0.0133
+0.6017	0.5056	1.000	dumped, if requested, one line at a time by setting	0.3759	0.0131
+0.6104	0.0769	1.000	only specifies dump parameters to be used in the	0.3612	0.0149
+0.6148	0.5056	1.000	up a print image in buffer AMNTOP and writing it	0.3684	0.0131
+0.6264	0.0771	1.000	event ABEOJ occurs. Both routines are available	0.3703	0.0118
+0.6294	0.5075	1.000	out via $SPR. After the panel has been dumped con-	0.3872	0.0131
+0.6409	0.0771	1.000	to PP which operates in the non-SIO enabled mode.	0.3778	0.0118
+0.6453	0.5056	1.000	trol is given to one of three format subroutines,	0.3553	0.0131
+0.6599	0.5075	1.000	AOCTLH, AFLPNT, or ANDXWD, which follow the	0.3797	0.0131
+0.6739	0.5056	1.000	basic pattern stated below. Mnemonics are printed	0.3817	0.0138
+0.6788	0.0733	1.000	The $EDUMP Program	0.1767	0.0146
+0.6879	0.5074	1.000	if requested after each line of octal-hex has been	0.3630	0.0144
+0.7049	0.5075	1.000	printed.	0.0602	0.0116
+0.7179	0.5244	1.000	The print buffer, APCOLI, is initialized with a	0.3496	0.0133
+0.7209	0.0752	1.000	The $EDUMP program (AEDUMP, Figure.116)	0.3459	0.0146
+0.7325	0.5074	1.000	single space carriage control character and a line of	0.3894	0.0143
+0.7355	0.0771	1.000	receives control with the location of a string of	0.3515	0.0131
+0.7485	0.5075	1.000	blanks. Next a check is made for equal consecutive	0.3835	0.0118
+0.7515	0.0771	1.000	dump parameters in its tentacle table. The string	0.3759	0.0116
+0.7630	0.5075	1.000	memory locations. If more than four are found, the	0.3872	0.0118
+0.7660	0.0771	1.000	may contain as many as six distinct dump specific-	0.3797	0.0116
+0.7776	0.5075	1.000	message xxxxxx. x TO xxxxxx. x ALL CONTAIN	0.3496	0.0131
+0.7805	0.0771	1.000	ations. The string is examined; if no errors are	0.3647	0.0116
+0.7921	0.5075	1.000	is printed. If fewer than four are found the location	0.3835	0.0131
+0.7951	0.0771	1.000	detected, is placed in the JC4 buffer, YEDLL, for	0.3759	0.0131
+0.8081	0.5075	1.000	counter is set up in the print image followed by four	0.3835	0.0116
+0.8096	0.0789	1.000	subsequent use if an ABEOJ occurs. If the location	0.3816	0.0116
+0.8212	0.5075	1.000	words of dump. Each line is printed as it is formed	0.3872	0.0131
+0.8241	0.0771	1.000	of the string or any of the addresses in the string	0.3665	0.0131
+0.8372	0.5075	1.000	via $SPR. When the line containing the last location	0.3853	0.0116
+0.8387	0.0789	1.000	violate PP bounds, or if any format specification	0.3628	0.0132
+0.8503	0.5075	1.000	requested has been printed, control is either returned	0.4004	0.0146
+0.8532	0.0752	1.000	is invalid, $RET is given and the request effectively	0.3910	0.0147
+0.8663	0.5075	1.000	to the user (at APUMP1) if this was the last request,	0.3891	0.0116
+0.8688	0.0770	1.000	ignored.	0.0641	0.0124
+0.9230	0.0771	1.000	204	0.0226	0.0087

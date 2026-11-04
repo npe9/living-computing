@@ -1,0 +1,104 @@
+0.0842	0.5414	1.000	ESTOP 2 - A card reader error has occurred	0.3440	0.0118
+0.0872	0.0902	1.000	mark and the tape is unloaded. Operator procedures	0.3985	0.0116
+0.0968	0.5243	1.000	during the reading of the first card. The error card	0.3970	0.0172
+0.1011	0.0901	1.000	are printed and a temporary stop condition occurs.	0.3836	0.0149
+0.1148	0.5244	1.000	falls into the normal read stacker, and a message is	0.3966	0.0116
+0.1294	0.5244	1.000	printed by the printer. To continue, the card reader	0.3985	0.0131
+0.1321	0.0883	1.000	System Peripheral Input I	0.1992	0.0147
+0.1439	0.5244	1.000	must be cleared, and the error card plus all succeeding	0.4211	0.0131
+0.1584	0.5244	1.000	cards placed in the hopper with the error card first.	0.3947	0.0131
+0.1612	0.0902	1.000	System Peripheral Input I is a 1401 program used to	0.3947	0.0133
+0.1730	0.5263	1.000	Proper card sequence must be maintained. The	0.3628	0.0131
+0.1758	0.0921	1.000	create a system input tape for MCP. The tape is	0.3703	0.0133
+0.1867	0.5243	1.000	printed message is: CARD READER ERROR RESTART	0.4176	0.0154
+0.1903	0.0902	1.000	blocked into 17 card records. Jobs are separated by	0.3985	0.0118
+0.2035	0.5244	1.000	WITH CD IN NORM STACKR.	0.2237	0.0132
+0.2064	0.0902	1.000	file marks, with a limit of N jobs per tape, where the	0.4041	0.0131
+0.2179	0.5432	1.000	ESTOP 3 - The first card read was not a B-JOB or	0.3835	0.0118
+0.2209	0.0921	1.000	nominal value of Nis ten. (See the MCP System Input	0.4079	0.0116
+0.2324	0.5263	1.000	B-COMD card. An error message is printed and the	0.3966	0.0133
+0.2355	0.0921	1.000	Program.)	0.0827	0.0116
+0.2470	0.5263	1.000	operation stops. The message is as follows: THE	0.3797	0.0133
+0.2500	0.1071	1.000	The first card of each job must be a B card (a B	0.3628	0.0116
+0.2615	0.5263	1.000	FIRST CARD IS NOT A B-COMD OR B-JOB CARD,	0.3853	0.0133
+0.2645	0.0902	1.000	punched in column 1), with either JOB or COMD	0.3647	0.0131
+0.2761	0.5263	1.000	REJECT THIS JOB AND RESTART WITH THE NEXT	0.3968	0.0132
+0.2791	0.0921	1.000	starting in column 10. This type of card separates jobs	0.4192	0.0131
+0.2921	0.5263	1.000	JOB. This error condition may be corrected by	0.3628	0.0131
+0.2951	0.0921	1.000	and causes end of file marks to be written on the input	0.4079	0.0102
+0.3067	0.5244	1.000	having the operator punch a B-JOB or B-COMD card	0.3966	0.0131
+0.3096	0.0902	1.000	tape. When the last card of the last job has been	0.3703	0.0116
+0.3212	0.5244	1.000	and reinsert the job in the reader hopper. If no cor-	0.3985	0.0131
+0.3241	0.0921	1.000	written on tape, two end of file marks are written on	0.3947	0.0131
+0.3358	0.5263	1.000	rection is made, the remainder of the job must be	0.3778	0.0145
+0.3400	0.0921	1.000	the input tape. If the I-O check switch (on the console)	0.4117	0.0133
+0.3503	0.5282	1.000	removed and the program restarted with the next job.	0.4004	0.0131
+0.3545	0.0808	1.000	is in the off (down) position, tape and reader errors	0.4023	0.0133
+0.3646	0.5450	1.000	ESTOP 4 - A card reader error has occurred during	0.3949	0.0133
+0.3691	0.0921	1.000	are handled internally by the program. The only input	0.4117	0.0132
+0.3808	0.5282	1.000	the reading of any card after the first. The error	0.3759	0.0131
+0.3836	0.0921	1.000	source for the program is the card reader.	0.3271	0.0132
+0.3953	0.5282	1.000	card falls into the normal read stacker, and a mes-	0.3891	0.0116
+0.4099	0.7669	1.000	To continue, the card	0.1617	0.0116
+0.4112	0.5282	1.000	sage is printed by the printer.	0.2406	0.0118
+0.4154	0.0920	1.000	Input Deck	0.0810	0.0122
+0.4244	0.5282	1.000	reader must be cleared, and the error card plus all	0.3910	0.0132
+0.4390	0.5282	1.000	succeeding cards placed in the hopper with the error	0.3947	0.0132
+0.4433	0.0940	1.000	The input deck to be written must consist of a sequence	0.4154	0.0131
+0.4535	0.5282	1.000	card first. Proper card sequence must be maintained.	0.4135	0.0132
+0.4578	0.0940	1.000	of jobs, each job starting with a job card. COMD	0.3722	0.0131
+0.4679	0.5301	1.000	The printed message is as follows: CARD READER	0.3872	0.0133
+0.4724	0.0940	1.000	cards may occur only between jobs (ahead of a job	0.3759	0.0131
+0.4824	0.5282	1.000	ERROR RESTART WITH CD IN NORM STACKR.	0.3628	0.0133
+0.4896	0.0939	1.000	card).	0.0472	0.0122
+0.4985	0.5470	1.000	ESTOP 5 - During the writing of tape, il it becomes	0.3872	0.0131
+0.5114	0.5281	1.000	necessary to erase tape more than three consecutive	0.3969	0.0155
+0.5188	0.0959	1.000	Operator Instructions	0.1598	0.0118
+0.5276	0.5282	1.000	times to rewrite the same record, ESTOP 5 occurs.	0.3947	0.0131
+0.5421	0.5301	1.000	This stop condition may be construed as an equipment	0.4041	0.0131
+0.5441	0.1108	1.000	1. Ready scratch tape (with a label) on tape unit 2	0.3781	0.0156
+0.5567	0.5301	1.000	malfunction. The following message is printed:	0.3590	0.0131
+0.5609	0.0940	1.000	in high density. This will now become the input tape.	0.4023	0.0133
+0.5712	0.5282	1.000	TAPE TROUBLES, RELOAD - RESTART ON NEW	0.3816	0.0161
+0.5738	0.1108	1.000	2. Ready the printer, reader and console. Place	0.3762	0.0163
+0.5887	0.5301	1.000	TAPE DRIVE.	0.1071	0.0102
+0.5900	0.0940	1.000	I-O check switch off, and Sense Switch A in the on	0.3778	0.0133
+0.6003	0.5470	1.000	ESTOP 6 - When an end of reel condition occurs,	0.3665	0.0131
+0.6045	0.0940	1.000	position. NOTE: Sense Switch A, the last card	0.3609	0.0133
+0.6129	0.5280	1.000	a printed message shows which job must be rewritten	0.4026	0.0182
+0.6189	0.0939	1.000	indicator, must always be in the on (up) position.	0.3686	0.0154
+0.6294	0.5301	1.000	on a new loaded tape. The message is as follows:	0.3759	0.0131
+0.6336	0.1127	1.000	3. Load the reader hopper with the system input	0.3686	0.0133
+0.6439	0.5282	1.000	END OF REEL, LOAD NEW LABELED TAPE ON	0.3759	0.0161
+0.6497	0.0940	1.000	program, followed by the jobs.	0.2350	0.0131
+0.6584	0.5282	1.000	UNIT 2. RELOAD PROGRAM AND JOBS STARTING	0.3966	0.0161
+0.6642	0.1109	1.000	4. Push the reader Load key.	0.2274	0.0116
+0.6728	0.5282	1.000	WITH JOB	0.0828	0.0134
+0.7006	0.5301	1.000	Program Flow	0.1109	0.0131
+0.7035	0.0977	1.000	Programmed Halts	0.1429	0.0117
+0.7258	0.5224	1.000	When the system input program has read the first	0.3838	0.0194
+0.7297	0.1128	1.000	STOP 1 - The last card of the last job has been read,	0.4004	0.0131
+0.7392	0.5279	1.000	card, the buffers are reset and the tape label passed.	0.4065	0.0216
+0.7456	0.0996	1.000	end of file marks are written on the input tape and the	0.4041	0.0131
+0.7567	0.5300	1.000	See Figure 142.	0.1243	0.0171
+0.7615	0.0996	1.000	tape is unloaded.	0.1259	0.0133
+0.7718	0.5451	1.000	If the first card containing a B in column 1 is a job	0.3853	0.0161
+0.7731	0.1146	1.000	ESTOP 1 - A card reader error occurred during the	0.3949	0.0162
+0.7863	0.5301	1.000	or command card, and is error free, a branch to R3	0.3966	0.0161
+0.7878	0.0959	1.000	Ioading of the object deck. For this condition, there	0.3985	0.0174
+0.7998	0.5298	1.000	occurs. The branch to R3 sets C1 into the instruc-	0.3895	0.0200
+0.8036	0.0977	1.000	is no program recovery. To restart, the card reader	0.4079	0.0133
+0.8169	0.5301	1.000	tion and the first card is moved into the buffer. If the	0.4098	0.0147
+0.8184	0.1014	1.000	must be cleared, and the system input program rein-	0.3988	0.0159
+0.8314	0.5301	1.000	card read is not the 17th card of the record, Cl is	0.3816	0.0147
+0.8342	0.1015	1.000	serted in the card hopper and the Load key pressed.	0.3910	0.0131
+0.8441	0.5300	1.000	stepped one count and the program is looped back to	0.3931	0.0180
+0.8488	0.1015	1.000	Proper card sequence must be maintained. If the	0.3741	0.0131
+0.8618	0.1015	1.000	error condition is repeated, the programmer should	0.3929	0.0146
+0.8634	0.5094	1.000	R1.	0.0508	0.0102
+0.8735	0.5000	1.000	•If a card has a B punch, a branch to WRT is again	0.4267	0.0174
+0.8764	0.0996	1.000	reload the program with the I-O Check Switch in the	0.3910	0.0161
+0.8894	0.5301	1.000	performed to determine if the card is a new job or	0.3816	0.0161
+0.8939	0.1015	1.000	on (up) position to ascertain which card is incorrect.	0.3966	0.0116
+0.9462	0.7669	1.000	Supporting Programs	0.1184	0.0102
+0.9462	0.9079	1.000	251	0.0226	0.0087

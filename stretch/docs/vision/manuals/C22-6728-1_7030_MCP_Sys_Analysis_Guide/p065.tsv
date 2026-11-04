@@ -1,0 +1,109 @@
+0.0952	0.5412	1.000	The code beginning at YC4INT (Figure 29) performs	0.3895	0.0179
+0.1016	0.0901	1.000	card, the overlapped mode logic borrows some by-	0.3837	0.0150
+0.1103	0.5242	1.000	the loading of the next compiler in the compiling	0.3632	0.0177
+0.1157	0.0882	1.000	pass code, at YLI, to process the limits. The by-	0.3857	0.0175
+0.1246	0.5242	1.000	chain. It is entered whenever a compiler gives $EOJ	0.4026	0.0169
+0.1294	0.0881	1.000	pass code returns to WJCV-1.0 at which point JC4	0.3895	0.0175
+0.1399	0.5242	1.000	or $ABEOJ, and when the I-O has been assigned	0.3633	0.0184
+0.1444	0.0881	1.000	goes into a loop from WJCV to WMOVIO+1. 0 to	0.3651	0.0172
+0.1570	0.5244	1.000	initially for the chain by JC4. It will terminate	0.3590	0.0145
+0.1612	0.3515	1.000	In addition to	0.1109	0.0103
+0.1627	0.0883	1.000	"'move" the IOD and REEL cards.	0.2594	0.0103
+0.1683	0.5261	1.000	compilation immediately if an abnormal EOJ is given	0.3989	0.0192
+0.1758	0.0902	1.000	constructing I-O tables for the PP, Move checks	0.3778	0.0133
+0.1845	0.5261	1.000	(YEOJS = 1), proceeding, if the job is an overlapped	0.3933	0.0187
+0.1892	0.0901	1.000	the job name against the name in the PP reference	0.3800	0.0169
+0.1985	0.5261	1.000	COMPILGO, to Move at WJC4Q to advance TPPRUN	0.3952	0.0194
+0.2027	0.0900	1.000	table, and steps the TPPRUN pointer to the next table	0.4046	0.0189
+0.2151	0.5263	1.000	over the GO phase. Otherwise, KSILO, YDFCS and	0.3891	0.0146
+0.2194	0.0902	1.000	siot (see I-O assignment). It is therefore necessary	0.3966	0.0146
+0.2296	0.5262	1.000	$13 (read source) are set appropriately, and exit is	0.3875	0.0150
+0.2339	0.0902	1.000	for JC4 to enter Move even if there are no IOD cards.	0.4079	0.0132
+0.2420	0.5260	1.000	made to WJC4G. The flow continues to YLASTC when	0.4084	0.0203
+0.2483	0.0920	1.000	This is done at WTEST, the normal exit from the	0.3707	0.0184
+0.2602	0.5263	1.000	the last link in a chain has run, at which point it	0.3647	0.0132
+0.2636	0.0901	1.000	loop, if the initial entry to Move is still on. When	0.3819	0.0173
+0.2747	0.5263	1.000	might be necessary to run the GO phase of a	0.3327	0.0147
+0.2791	0.0883	1.000	the IOD cards are exhausted, the overlapped mode	0.3835	0.0131
+0.2881	0.5280	1.000	COMPILGO job. This is accomplished (after setting	0.3951	0.0167
+0.2934	0.0882	1.000	logic rejoins the bypass logic at WJC4G.	0.3105	0.0165
+0.3028	0.5262	1.000	the necessary parameters) by branching to the appro-	0.4063	0.0176
+0.3173	0.5261	1.000	priate logic (overlapped or bypass) by way of Unassign,	0.4177	0.0179
+0.3227	0.0936	1.000	Compiler Control	0.1325	0.0172
+0.3332	0.5260	1.000	going directly to YLI for BSS jobs.	0.2655	0.0180
+0.3514	0.0938	1.000	During their execution, compilers are treated by	0.3670	0.0185
+0.3662	0.0938	1.000	MCP exactly as any other problem program.	0.3463	0.0177
+0.3663	0.4380	1.000	How-	0.0414	0.0102
+0.3663	0.5282	1.000	Error Control	0.1071	0.0102
+0.3800	0.0937	1.000	ever, JC4 treats them in a special way for three	0.3652	0.0189
+0.3939	0.5282	1.000	Much of the JC4 code exists to handle error returns	0.3910	0.0116
+0.3967	0.0940	1.000	reasons: (1) their binary decks, LIM and IOD cards	0.3929	0.0147
+0.4061	0.5280	1.000	from the various subroutines of JC4. These error	0.3837	0.0150
+0.4112	0.0940	1.000	are in PROSA on the disk, (2) they may be chained	0.3778	0.0147
+0.4230	0.5301	1.000	returns may be categorized as follows:	0.2932	0.0131
+0.4239	0.0938	1.000	together, (3) their output may be executable programs	0.4066	0.0207
+0.4390	0.5451	1.000	1. Bypass and compiler errors	0.2425	0.0132
+0.4400	0.0938	1.000	(COMPILGO). Because of reason 1 above, JC1 does	0.3970	0.0178
+0.4548	0.0938	1.000	not scan the LIM and IOD cards in the overlapped	0.3726	0.0184
+0.4548	0.5451	1.000	2. Overlapped errors	0.1692	0.0118
+0.4677	0.5713	1.000	a. Before I-O assignment	0.2034	0.0136
+0.4685	0.0956	1.000	mode, meaning that IOD cards must be decoded and	0.3877	0.0193
+0.4824	0.5695	1.000	b. During and after I-O assignment	0.2763	0.0133
+0.4853	0.0957	1.000	assigned from scratch by JC4. Therefore, all	0.3538	0.0168
+0.4985	0.5451	1.000	3. Special (WREJJB)	0.1635	0.0131
+0.5015	0.0959	1.000	compiler IOD's are assigned by JC4 in the bypass	0.3722	0.0146
+0.5130	0.5489	1.000	In Case 1, a message diagnosing the error is	0.3402	0.0146
+0.5135	0.1539	1.000	When a COMPILE or COMPILGO TYPE card	0.3369	0.0160
+0.5189	0.0959	1.000	mode.	0.0470	0.0116
+0.5259	0.5317	1.000	printed via YPR, followed by an exit to YRESTR	0.3631	0.0164
+0.5305	0.0959	1.000	is uncoded by JC4, the compiler setup routine is	0.3647	0.0146
+0.5400	0.5318	1.000	(SYN, WRESTR), which sets the YEOJS and SPINCL	0.3932	0.0170
+0.5429	0.0975	1.000	entered at YCOJB (overlapped mode) or at YCOJB1	0.3820	0.0163
+0.5567	0.5320	1.000	appropriately and exits by priming SEOJ and giving	0.3853	0.0131
+0.5570	0.0975	1.000	(bypass mode). At YCOJB (Figure 26), JC4 must	0.3782	0.0178
+0.5712	0.5301	1.000	a $RET. Case 2a is handled similarly, except	0.3609	0.0131
+0.5725	0.0976	1.000	first determine whether the job was pre-rejected by	0.3893	0.0153
+0.5842	0.5301	1.000	that here the TPPRUN pointer must be stepped	0.3571	0.0131
+0.5866	0.0975	1.000	JC1 (TRJECT = 1). A COMPILGO job will be run in	0.3933	0.0171
+0.6003	0.5320	1.000	past the current job. This is accomplished by exiting	0.4041	0.0146
+0.6015	0.0976	1.000	the compile phase in this case only if the pre-reject	0.3932	0.0175
+0.6135	0.5318	1.000	to WJC4Q, which goes to Move and then to YRESTR.	0.3950	0.0166
+0.6177	0.0977	1.000	was due to decode, and both list and punch options	0.3759	0.0145
+0.6273	0.5336	1.000	Error returns from Assign and Move make up Case	0.3876	0.0185
+0.6300	0.0975	1.000	called for, since the compiled deck may then be	0.3596	0.0195
+0.6426	0.5299	1.000	2b. Here the TPPRUN index will already have been	0.3932	0.0176
+0.6459	0.0994	1.000	easily corrected. Otherwise, the pre-reject will be	0.3913	0.0163
+0.6584	0.5338	1.000	stepped (although Move normally steps TPPRUN,	0.3703	0.0146
+0.6600	0.0975	1.000	diagnosed at WJ4PFF (I-O assignment will return	0.3745	0.0178
+0.6727	0.5337	1.000	Assign does it when the job is pre-rejected or	0.3461	0.0156
+0.6741	0.0994	1.000	with reject disposition set). If the job is a COMPILE	0.4009	0.0180
+0.6890	0.5338	1.000	rejected in Assign). JC4 diagnoses Assign rejects	0.3816	0.0132
+0.6894	0.0976	1.000	job and was not pre-rejected by JC1, the TPPRUN	0.3802	0.0186
+0.7014	0.5337	1.000	by picking up the address of a message from the	0.3668	0.0169
+0.7040	0.0993	1.000	pointer is stepped by entering Move at YCPREJ.	0.3633	0.0185
+0.7165	0.5356	1.000	TPREFT slot, the address of which in turn is found	0.3856	0.0169
+0.7194	0.1015	1.000	This must be done to keep the pointer in phase with	0.3835	0.0146
+0.7339	0.5320	1.000	in TNEXT (see JC1).	0.1617	0.0132
+0.7342	0.0995	1.000	the jobs being executed, since a slot for this job was	0.3951	0.0177
+0.7435	0.5524	1.000	Finally, the WREJJB routine is entered each time	0.3764	0.0192
+0.7500	0.1015	1.000	created by JCI. The compiler setup begins in ear-	0.3853	0.0145
+0.7615	0.5357	1.000	the first non-COMD card of a job is read. First,	0.3703	0.0133
+0.7642	0.1013	1.000	nest at YCOJB1. After fetching the processor chain	0.3932	0.0166
+0.7761	0.5357	1.000	the IPL reject count (SREJJB) is checked. If it is	0.3759	0.0133
+0.7769	0.1012	1.000	type-area for the compiler chain named on the TYPE	0.3972	0.0185
+0.7906	0.5357	1.000	non-zero, it is decremented, and the job skipped	0.3684	0.0146
+0.7916	0.1012	1.000	card, JC4 converts the individual compiler names to	0.3971	0.0188
+0.8036	0.5355	1.000	over by exiting to YRESTR. TPPRUN is not stepped,	0.4026	0.0186
+0.8073	0.1032	1.000	BCD and "breaks out" the names in order to set up	0.3800	0.0159
+0.8197	0.5357	1.000	because no entry was made by JC1. If it is zero, the	0.4023	0.0146
+0.8211	0.1013	1.000	the communication region. When KSILO is initialized,	0.4119	0.0166
+0.8321	0.5373	1.000	current job in the PP reference table is checked for	0.3896	0.0194
+0.8362	0.1013	1.000	JC4 sets up $13 to cause the read source routine	0.3651	0.0186
+0.8482	0.5374	1.000	YTRB = 1. If it is, it means that although the job	0.3744	0.0185
+0.8502	0.1031	1.000	(YRDFSO) to transmit LIM and IOD cards from lower	0.3991	0.0188
+0.8648	0.5357	1.000	was entered in the tables by JC1, the input program	0.3910	0.0131
+0.8677	0.1034	1.000	memory. The bypass logic for I-O assignment is	0.3722	0.0145
+0.8794	0.5357	1.000	was unable to bring it to phase four (repeated tape	0.3778	0.0131
+0.8852	0.1034	1.000	then entered at YC4B5.	0.1748	0.0117
+0.9491	0.9192	1.000	65	0.0169	0.0087
+0.9506	0.7368	1.000	System Operation Programs	0.1598	0.0102

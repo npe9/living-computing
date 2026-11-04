@@ -1,0 +1,16 @@
+0.0658	0.0880	1.000	Reel History Messages	0.1774	0.0160
+0.0697	0.5376	1.000	AAA = one of the following tape descriptors	0.3365	0.0146
+0.0842	0.5526	1.000	NLB, NUL, PLB, PUL	0.1842	0.0131
+0.0959	0.5357	1.000	NNNNN = 'reel' or ***** for an unused scratch	0.3609	0.0147
+0.0959	0.1090	1.000	The following lines are added to a job's output if	0.3628	0.0132
+0.1118	0.0865	1.000	any tapes were requested in the GO phase:	0.3177	0.0118
+0.1250	0.5320	1.000	Line 3 is repeated for as many reels as were	0.3477	0.0174
+0.1250	0.0865	1.000	JOB 'ppname' - REELS. .. (Line 1)	0.2594	0.0132
+0.1409	0.0846	1.000	CHXX UNY LAST IOD NO. ('number') 8 (Line 2)	0.3609	0.0132
+0.1424	0.5169	1.000	requested for this channel and unit.	0.2632	0.0131
+0.1539	0.5357	1.000	Lines 2 and 3 are repeated for each channel anc	0.3571	0.0147
+0.1555	0.0846	1.000	AAANNNNN 'no.' UKS 'no.' UK-EOPS 'no.' RDS	0.3590	0.0132
+0.1685	0.1071	1.000	'no.' WRTS 'no.' CTLS. 'saved' (Line 3)	0.3026	0.0133
+0.1695	0.5150	1.000	unit requested by this problem program.	0.3046	0.0142
+0.9172	0.8929	1.000	55	0.0169	0.0073
+0.9172	0.8008	1.000	Appendix	0.0526	0.0102

@@ -1,0 +1,116 @@
+0.1014	0.0883	1.000	If UPDATE-30 is kept as a type area on the disk,	0.3686	0.0135
+0.1017	0.5226	1.000	Messages for input-output errors are as follows:	0.3665	0.0131
+0.1163	0.0714	1.000	it is called in as a compiler by using a job card, type	0.3985	0.0131
+0.1163	0.5188	1.000	1. REPEATED DATA ERRORS ON DISK.	0.3158	0.0146
+0.1308	0.5188	1.000	2. REPEATED READ ERRORS ON CHANGE TAPE.	0.3966	0.0146
+0.1308	0.0714	1.000	card, and date card ahead of the binary decks of the	0.3891	0.0131
+0.1467	0.0714	1.000	type areas to be updated. The type card is punched	0.3872	0.0118
+0.1467	0.5226	1.000	3. END OF REEL ON NEW MASTER TAPE.	0.3383	0.0118
+0.1612	0.0714	1.000	as follows:	0.0827	0.0103
+0.1612	0.5188	1.000	4. I-O HARDWARE FAILURE. (UNIT)	0.2989	0.0133
+0.1758	0.5207	1.000	Data errors will be retried three times for the	0.3534	0.0118
+0.1788	0.1617	1.000	10	0.0169	0.0087
+0.1903	0.5038	1.000	disk and ten times for the change tape (if used) before	0.4060	0.0118
+0.1991	0.1635	1.000	TYPE, COMPILE, UPDATE30, NWIPL	0.2199	0.0103
+0.1991	0.0921	1.000	B	0.0094	0.0087
+0.2048	0.5038	1.000	termination. Data errors in writing the new master	0.3947	0.0118
+0.2194	0.5038	1.000	tape will be retried three times before erasing a long	0.4023	0.0132
+0.2311	0.0883	1.000	The NWIPL field is optional. If NWIPL is punched	0.3816	0.0116
+0.2339	0.5056	1.000	gap and continuing. UK without EOP, and EPGK,	0.3703	0.0146
+0.2456	0.0714	1.000	in the type card, MCP sets bit KSILO+1.30 in the	0.3703	0.0131
+0.2500	0.5038	1.000	are considered I-O hardware failures. The name of	0.3947	0.0116
+0.2615	0.0714	1.000	communication region. This bit is checked by	0.3477	0.0118
+0.2645	0.5056	1.000	the unit (disk, change tape, or new master tape) will	0.3947	0.0131
+0.2761	0.0733	1.000	UPDATE-30 at the end of a successful update. If the	0.3966	0.0118
+0.2805	0.5056	1.000	be included.	0.0902	0.0102
+0.2906	0.0714	1.000	bit is on, UPDATE-30 changes the update completed	0.3929	0.0132
+0.2936	0.5226	1.000	Messages for change deck errors are as follows:	0.3665	0.0146
+0.3047	0.0714	1.000	message to also state that a new IPL is starting. Then .	0.4325	0.0155
+0.3096	0.5188	1.000	1. NO INPUT CHANGE DECK.	0.2387	0.0116
+0.3212	0.0733	1.000	UPDATE-30 gives an EOJ and MCP executes an auto-	0.4023	0.0116
+0.3241	0.5188	1.000	2. FIRST CARD IS NOT DATE CARD.	0.2932	0.0131
+0.3358	0.0714	1.000	matic IPL of the NWIPL tape if the NWIPL option	0.3703	0.0116
+0.3387	0.5188	1.000	3. SECOND CARD IS NOT A HED CARD.	0.3158	0.0132
+0.3517	0.0733	1.000	was requested.	0.1128	0.0102
+0.3517	0.6823	1.000	IS ILLEGAL.	0.1015	0.0131
+0.3532	0.5207	1.000	4. HED,..	0.0846	0.0132
+0.3658	0.5206	1.000	5. NO HED CARD AFTER DELETE	0.2728	0.0136
+0.3764	0.0733	1.000	Print-Out: UPDATE-30 will list on system output	0.3797	0.0132
+0.3808	0.7538	1.000	_HAS ZERO WORD	0.1429	0.0131
+0.3821	0.5207	1.000	6. NEW TYPE AREA	0.1635	0.0118
+0.3909	0.0714	1.000	($SPR) the following information:	0.2500	0.0118
+0.3966	0.5469	1.000	COUNT.	0.0659	0.0134
+0.4055	0.0883	1.000	1. A title line including original date of current	0.3647	0.0118
+0.4109	0.7236	1.000	(reason)	0.0679	0.0110
+0.4112	0.5207	1.000	7. LOADER REJECTED	0.1880	0.0118
+0.4200	0.5470	1.000	SEQUENCE NO. OF LAST CORRECT BINARY	0.3496	0.0191
+0.4200	0.0714	1.000	system and current date for the new IPL tape.	0.3477	0.0118
+0.4345	0.0883	1.000	2. HED cards as they appear in the change deck.	0.3722	0.0131
+0.4403	0.5489	1.000	CARD WAS	0.0846	0.0118
+0.4491	0.0733	1.000	For LOAD options, all T, C, D, and P cards will	0.3722	0.0146
+0.4548	0.5677	1.000	The reason for loader rejection will be one	0.3214	0.0103
+0.4651	0.0733	1.000	be printed as they are encountered.	0.2669	0.0116
+0.4651	0.3421	1.000	For librarian	0.1109	0.0102
+0.4694	0.5658	1.000	of the following:	0.1222	0.0118
+0.4758	0.0731	1.000	operations, individual changes and a review of the	0.3762	0.0179
+0.4839	0.5827	1.000	CHECK SUM ERROR	0.1579	0.0118
+0.4942	0.0733	1.000	new contents of the library will be printed.	0.3214	0.0116
+0.4985	0.5808	1.000	SEQUENCE ERROR	0.1504	0.0131
+0.5087	0.0902	1.000	3. The new MCP dictionary, containing the name,	0.3778	0.0131
+0.5130	0.5808	1.000	ILLEGAL CARD TYPE	0.1748	0.0131
+0.5233	0.0733	1.000	aro-word location and size of each type area on the	0.3835	0.0116
+0.5275	0.5845	1.000	CARD BELOW 1ST ORIGIN	0.2032	0.0119
+0.5392	0.0733	1.000	disk.	0.0395	0.0102
+0.5421	0.5808	1.000	DECK EXCEEDED BUFFER	0.2143	0.0131
+0.5523	0.1184	1.000	B cards in the IPL program which define the	0.3346	0.0131
+0.5581	0.5827	1.000	COR P CARD MISPUNCHED	0.2180	0.0102
+0.5669	0.0714	1.000	individual system configuration.	0.2425	0.0131
+0.5727	0.5808	1.000	NO ORIGIN ON 1ST CARD	0.1974	0.0116
+0.5814	0.0902	1.000	5. UPDATE COMPLETED.	0.2105	0.0132
+0.5872	0.5808	1.000	NO ORIGIN CARD	0.1353	0.0116
+0.5973	0.0902	1.000	The following information will be printed on the	0.3553	0.0118
+0.6017	0.5827	1.000	BSS FUNCTION ILLEGAL	0.1955	0.0116
+0.6118	0.0733	1.000	console typewriter:	0.1466	0.0118
+0.6163	0.5207	1.000	8. TWO HED CARDS HAVE TYPE AREA	0.3120	0.0146
+0.6250	0.0883	1.000	1. A title line including original date of current	0.3647	0.0132
+0.6308	0.5489	1.000	NAME_	0.0602	0.0116
+0.6409	0.0733	1.000	system and current date for the new IPL tape.	0.3459	0.0118
+0.6453	0.7086	1.000	—, ALREADY ON PROSA.	0.2143	0.0147
+0.6453	0.5188	1.000	9. TRIED TO ADD_	0.1654	0.0131
+0.6555	0.0883	1.000	2._xxxxxxxx LIBRARY UPDATE WAS SUCCESSFUL	0.3947	0.0132
+0.6597	0.7462	1.000	→, NOT ON	0.1279	0.0179
+0.6612	0.5132	1.000	10. DELETE OR REPLACE_	0.2218	0.0118
+0.6700	0.0733	1.000	for each librarian request, where xxxxxxxx is the	0.3741	0.0118
+0.6758	0.5488	1.000	PROSA.	0.0621	0.0132
+0.6860	0.0733	1.000	type area name.	0.1222	0.0103
+0.6903	0.5132	1.000	11. FIRST FOUR TYPE AREAS ARE —,.	0.3139	0.0133
+0.6976	0.0902	1.000	3. UPDATE COMPLETED.	0.2105	0.0132
+0.7136	0.0902	1.000	4. UPDATE COMPLETED NWIPL STARTING if	0.3647	0.0117
+0.7179	0.5113	1.000	12. IOO MANY TYPE AREAS IN TYPE_. MAX	0.3872	0.0161
+0.7282	0.0733	1.000	the NWIPL option was called for on the type card.	0.3741	0.0116
+0.7339	0.5488	1.000	IS 256.	0.0528	0.0149
+0.7427	0.0921	1.000	If the date card contains COMM in columns 2	0.3346	0.0116
+0.7485	0.5132	1.000	13. TOO MANY TYPES. MAX IS 40.	0.2857	0.0118
+0.7573	0.0733	1.000	through 5, the following additional information will	0.3816	0.0131
+0.7630	0.5113	1.000	14. CHDIC BUFFER WAS EXCEEDED.	0.3026	0.0131
+0.7733	0.0733	1.000	be printed on the typewriter:	0.2143	0.0102
+0.7791	0.5132	1.000	15. NEW DIC BUFFER WAS EXCEEDED.	0.3195	0.0116
+0.7863	0.0902	1.000	1. Individual changes to each generator library.	0.3628	0.0116
+0.7936	0.5132	1.000	16. P CARD PRIOR TO IOCD CARDS.	0.2914	0.0116
+0.8023	0.0902	1.000	2. The new MCP dictionary.	0.2199	0.0102
+0.8081	0.5226	1.000	Messages 4 through 12 will have specific information	0.3966	0.0131
+0.8154	0.0902	1.000	3. B cards in the IPL program.	0.2444	0.0116
+0.8241	0.5038	1.000	inserted, in most cases the type area name. Mes-	0.3853	0.0116
+0.8387	0.5056	1.000	sages 5 and 6 refer to the restrictions that a HED, DEL	0.4154	0.0132
+0.8532	0.5056	1.000	card must be followed by another HED card, and a	0.3778	0.0132
+0.8677	0.5056	1.000	HED, ADD card, or HED, REP card must not be	0.3553	0.0132
+0.8677	0.0752	1.000	Errors: Input-output errors and any detected errors	0.3966	0.0132
+0.8821	0.0733	1.000	in the change deck will cause an explanatory error	0.3797	0.0118
+0.8821	0.5038	1.000	immediately followed by another HED card. Messages	0.4135	0.0118
+0.8967	0.0733	1.000	message to be printed on both system output and the	0.3910	0.0118
+0.8967	0.5056	1.000	11, 12 and 13 refer to MCP restrictions. If the	0.3609	0.0133
+0.9112	0.5056	1.000	sequence of the first four type areas is violated (refer	0.4098	0.0118
+0.9112	0.0733	1.000	console typewriter. UPDATE-30 will then be termi-	0.3985	0.0118
+0.9258	0.5038	1.000	to the following section on Notes and Restrictions),	0.3853	0.0146
+0.9258	0.0733	1.000	nated with an abnormal end-of-job.	0.2632	0.0118
+0.9549	0.0677	1.000	230	0.0226	0.0087

@@ -1,0 +1,99 @@
+0.0654	0.0959	1.000	full words. The six low-order bits address the bit in	0.3910	0.0116
+0.0654	0.5056	1.000	ProGraMMIng NoTE	0.1579	0.0131
+0.0785	0.0940	1.000	the addressed word which corresponds to the left end	0.3929	0.0176
+0.0872	0.5113	1.000	In the section "Address Insertion," the operation STORE	0.3966	0.0174
+0.0959	0.0940	1.000	of the field. The variable field length operations are	0.3947	0.0147
+0.1045	0.5094	1.000	VALUE IN ADDRESS is described. This operation permits	0.3966	0.0133
+0.1090	0.0921	1.000	specified in a full-length instruction. The length of	0.3966	0.0174
+0.1171	0.5093	1.000	convenient insertion of an address part of proper	0.3969	0.0199
+0.1250	0.0940	1.000	the field is specified in bits 35-40 of the instruction and	0.3929	0.0160
+0.1321	0.5094	1.000	length in an instruction.	0.1823	0.0161
+0.1409	0.0959	1.000	completes the definition of the operand location. Zero	0.3910	0.0146
+0.1570	0.0940	1.000	in bits 35-40 indicates a 64-bit field.	0.2556	0.0116
+0.1976	0.2932	1.000	P LENGTH BS OFFSET	0.1071	0.0074
+0.2017	0.5104	1.000	Indexing	0.0995	0.0212
+0.2326	0.1126	1.000	The address part of the instruction may be modified	0.3743	0.0182
+0.2456	0.5113	1.000	In most half-length instructions, an index address field,	0.3947	0.0147
+0.2500	0.0940	1.000	by indexing as described in the next section. The final	0.3929	0.0161
+0.2602	0.5113	1.000	I, is available for indexing operations. In full-length	0.3947	0.0160
+0.2645	0.0921	1.000	address thus obtained is called the effective address.	0.3947	0.0161
+0.2747	0.5094	1.000	instructions, two fields I are available, one in each	0.3966	0.0174
+0.2805	0.0940	1.000	When no indexing occurs, the address part of the in-	0.3929	0.0146
+0.2906	0.5113	1.000	half-word. The field I normally contains four bits.	0.3947	0.0176
+0.2964	0.0902	1.000	struction, extended with the necessary low-order zeros,	0.3947	0.0147
+0.3067	0.5113	1.000	The index address, when zero, normally indicates that	0.3947	0.0146
+0.3124	0.0940	1.000	is the effective address.	0.1654	0.0118
+0.3207	0.5094	1.000	no indexing is to take place. When the index address	0.3948	0.0155
+0.3270	0.1090	1.000	There are three modes of addressing. The most fre-	0.3778	0.0146
+0.3358	0.5113	1.000	is not zero, it indicates which of the 15 available index	0.3947	0.0161
+0.3412	0.0920	1.000	quently used mode is direct addressing. In this mode,	0.3949	0.0178
+0.3516	0.5112	1.000	registers XI-X15 is to be used in the indexing opera-	0.3949	0.0152
+0.3576	0.0940	1.000	the effective address is used to specify the storage lo-	0.3929	0.0146
+0.3677	0.5132	1.000	tion. Each index register occupies one full-word stor-	0.3929	0.0145
+0.3735	0.0940	1.000	cation of the operand. A second mode of addressing	0.3910	0.0131
+0.3821	0.5132	1.000	age location. The registers X1-X15 have addresses 17-	0.3929	0.0147
+0.3869	0.0920	1.000	is immediate addressing. In this mode, the effective	0.3931	0.0165
+0.3966	0.5130	1.000	31. The use of a storage location for an index register	0.3931	0.0165
+0.4039	0.0921	1.000	address itself constitutes the operand. Up to 24 bits	0.3929	0.0133
+0.4127	0.5132	1.000	does not preclude its being addressed and used in the	0.3929	0.0146
+0.4185	0.0940	1.000	of information may be available in the effective ad-	0.3929	0.0133
+0.4270	0.5112	1.000	standard fashion. In conditional branch instructions,	0.3930	0.0149
+0.4345	0.0940	1.000	dress. Zeros are supplied to the right of the effective	0.3910	0.0131
+0.4433	0.5113	1.000	the indexing choice is limited between O (no index-	0.3929	0.0146
+0.4491	0.0940	1.000	operand field when a field length of more than 24 is	0.3910	0.0146
+0.4593	0.5094	1.000	ing) and 1 (use index register XI). In this class of	0.3966	0.0160
+0.4651	0.0902	1.000	specified. The sign of the effective address is ignored.	0.3947	0.0161
+0.4731	0.5111	1.000	instructions, the index field is only one bit.	0.3180	0.0159
+0.4811	0.0921	1.000	Immediate addressing is available for some operations.	0.3929	0.0131
+0.4927	0.5282	1.000	When an index register is specified in the index	0.3759	0.0145
+0.4956	0.0940	1.000	A third mode of addressing is indirect addressing.	0.3703	0.0131
+0.5073	0.5113	1.000	field I of an instruction, its contents may be used for	0.3929	0.0146
+0.5090	0.0939	1.000	this mode, the effective address is used to obtain a sec-	0.3911	0.0161
+0.5233	0.5113	1.000	address modification or for progressive indexing. The	0.3929	0.0146
+0.5261	0.0921	1.000	ond level effective address, which subsequently can be	0.3929	0.0133
+0.5378	0.5113	1.000	modification of the address part of the instruction is	0.3929	0.0146
+0.5406	0.0940	1.000	used for addressing the operand. The indirect mode	0.3910	0.0146
+0.5536	0.5113	1.000	possible in almost all instructions. One group of in-	0.3929	0.0147
+0.5567	0.0921	1.000	of addressing is made possible by the operation LOAD	0.3929	0.0146
+0.5682	0.5113	1.000	structions do not permit address modification. In these	0.3929	0.0147
+0.5683	0.0938	1.000	VALUE EFFECTIVE. The immediate, direct, and indirect	0.3914	0.0193
+0.5827	0.5113	1.000	instructions, the index address field I is not available.	0.3929	0.0133
+0.5872	0.0921	1.000	mode of addressing, taken in this order, require an	0.3910	0.0146
+0.5988	0.5132	1.000	Progressive indexing is possible only for the variable-	0.3910	0.0146
+0.6017	0.0921	1.000	increasing number of storage references.	0.3045	0.0146
+0.6032	0.3966	1.000	The exact	0.0883	0.0102
+0.6148	0.5113	1.000	field-length operations.	0.1673	0.0146
+0.6177	0.0921	1.000	number of storage references for each mode depends	0.3929	0.0132
+0.6336	0.0921	1.000	upon the amount of indexing which is specified.	0.3609	0.0132
+0.6482	0.1071	1.000	Besides the specified operand, a second operand is	0.3797	0.0161
+0.6627	0.0902	1.000	required in most operations. In the majority of op-	0.3947	0.0161
+0.6788	0.1541	1.000	the second operand is implied. In floating	0.3308	0.0161
+0.6830	0.5094	1.000	Address Modification	0.1992	0.0161
+0.6933	0.0940	1.000	point arithmetic, the implied operand is in the ac-	0.3891	0.0146
+0.7093	0.0921	1.000	cumulator unless otherwise stated. In branch opera-	0.3929	0.0146
+0.7252	0.5075	1.000	In address modification, the value part of the index	0.3947	0.0176
+0.7252	0.0921	1.000	tions, the implied operand may be considered to be in	0.3910	0.0133
+0.7397	0.0921	1.000	the instruction counter. In index arithmetic, the sec-	0.3910	0.0133
+0.7412	0.5113	1.000	is added to the address part of the instruction in order	0.3929	0.0146
+0.7532	0.5073	1.000	to obtain the effective address. The addition is alge-	0.3952	0.0203
+0.7558	0.0921	1.000	ond operand must be stated specifically by the second	0.3910	0.0131
+0.7703	0.0902	1.000	index field. In transmit operations,	0.2782	0.0131
+0.7718	0.5094	1.000	braic. The value field of the index is interpreted as a	0.3929	0.0161
+0.7718	0.3647	1.000	the second op	0.1165	0.0146
+0.7863	0.5094	1.000	signed 24-bit field. The address part of the instruction	0.3929	0.0161
+0.7863	0.0921	1.000	erand is stated explicitly in the second half of the in-	0.3929	0.0131
+0.7987	0.0919	1.000	struction. In integer arithmetic and connect opera-	0.3932	0.0180
+0.8023	0.5075	1.000	is interpreted as a positive unsigned field. The length	0.3947	0.0160
+0.8169	0.0921	1.000	tions, the contents of the accumulator is implied as	0.3929	0.0131
+0.8182	0.5094	1.000	of the address field depends upon the instruction class.	0.3929	0.0161
+0.8314	0.0921	1.000	the second operand. The offset field is used to specify	0.3910	0.0147
+0.8327	0.5113	1.000	The missing low-order bits, if any, are always assumed	0.3910	0.0147
+0.8469	0.5093	1.000	to be zero. In the addition of index and instruction	0.3930	0.0152
+0.8473	0.0902	1.000	the number of bits between the low-order bit of the	0.3929	0.0118
+0.8618	0.0902	1.000	field and the low-order end of the accumulator. An	0.3929	0.0132
+0.8633	0.5075	1.000	address, an overflow bit may be produced. This over-	0.3947	0.0161
+0.8779	0.0902	1.000	offset of zero indicates that the field lines up at the	0.3929	0.0131
+0.8779	0.5094	1.000	flow bit, which is a carry produced in the high-order	0.3947	0.0161
+0.8924	0.0902	1.000	right end of the accumulator.	0.2143	0.0131
+0.8939	0.5094	1.000	bit position, is ignored. The overflow bit may occur	0.3947	0.0146
+0.9302	0.0902	1.000	20 IBM 7030	0.1071	0.0089

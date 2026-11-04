@@ -1,0 +1,110 @@
+0.0842	0.1052	1.000	Flag Symbols:	0.1110	0.0206
+0.0999	0.1709	1.000	Symbol	0.0586	0.0182
+0.1000	0.2894	1.000	Set Means	0.0829	0.0179
+0.1017	0.5977	1.000	Control	0.0602	0.0131
+0.1278	0.1729	1.000	DSKBT	0.0565	0.0162
+0.1292	0.2913	1.000	Disk in use.	0.0922	0.0149
+0.1308	0.6015	1.000	Turned on before I-O call to DSK.	0.2519	0.0116
+0.1467	0.6015	1.000	Turned off by successful EOP.	0.2256	0.0118
+0.1565	0.1727	1.000	NMTBT	0.0606	0.0169
+0.1584	0.2914	1.000	New master tape being written.	0.2350	0.0161
+0.1612	0.6015	1.000	Turned on before I-O eall to NMT.	0.2556	0.0118
+0.1758	0.6015	1.000	Turned off by suceessful EOP.	0.2256	0.0118
+0.1874	0.1729	1.000	CHTBT	0.0584	0.0162
+0.1875	0.2932	1.000	Change tape being read.	0.1805	0.0174
+0.1903	0.6015	1.000	Turned on before I-O call to CHT.	0.2538	0.0118
+0.2048	0.6015	1.000	Turned off by successful EOP.	0.2256	0.0118
+0.2166	0.2914	1.000	Card just read in change deck	0.2237	0.0174
+0.2178	0.1728	1.000	HEDBT	0.0566	0.0150
+0.2194	0.6015	1.000	Turned on in READ1 routine.	0.2143	0.0118
+0.2339	0.6015	1.000	Turned off by instructions which test it.	0.2932	0.0118
+0.2339	0.2895	1.000	was HED card (or EOF condition).	0.2575	0.0132
+0.2485	0.6015	1.000	Turned on in READI routine (or EE on	0.2857	0.0118
+0.2485	0.2932	1.000	Change deck - END OF FILE	0.2143	0.0118
+0.2485	0.1729	1.000	EOFBT	0.0564	0.0131
+0.2614	0.2913	1.000	condition.	0.0772	0.0164
+0.2645	0.6165	1.000	change tape).	0.0996	0.0116
+0.2791	0.6015	1.000	Turned off by instructions which test it.	0.2932	0.0116
+0.2906	0.2914	1.000	Disk I-O was a read.	0.1617	0.0161
+0.2906	0.1710	1.000	DSRBT	0.0583	0.0161
+0.2936	0.6015	1.000	Turned on in mainstream after all disk	0.2895	0.0102
+0.3081	0.6128	1.000	writing has been finished.	0.1955	0.0116
+0.3198	0.1711	1.000	IPLBT	0.0564	0.0160
+0.3227	0.2914	1.000	IPL main program or bootstrap	0.2368	0.0146
+0.3241	0.5977	1.000	Turned on before ENTRY or in IPL3 routine.	0.3365	0.0131
+0.3372	0.5996	1.000	Turned off by instruction which tests it in	0.3102	0.0146
+0.3372	0.2895	1.000	is being loaded into the buffer.	0.2312	0.0146
+0.3532	0.6147	1.000	ENTRY routine.	0.1222	0.0132
+0.3675	0.1728	1.000	BSPBT	0.0528	0.0121
+0.3677	0.6015	1.000	Turned on in IPL3.	0.1410	0.0117
+0.3677	0.2932	1.000	Bootstrap is being Ioaded into	0.2218	0.0145
+0.3818	0.2912	1.000	the buffer.	0.0811	0.0139
+0.3967	0.5977	1.000	Turned on in FETCHO.	0.1729	0.0147
+0.3967	0.2914	1.000	A PROSA fetch has been made.	0.2312	0.0133
+0.3968	0.1729	1.000	FETBT	0.0564	0.0131
+0.4112	0.5977	1.000	Turned off if "normal" fetch return.	0.2688	0.0133
+0.4236	0.6013	1.000	Turned on when date card is read.	0.2523	0.0154
+0.4244	0.2914	1.000	On if "COMM" in date card.	0.2086	0.0147
+0.4259	0.1711	1.000	COMBT	0.0602	0.0116
+0.4694	0.1128	1.000	Generator Librarian	0.1504	0.0103
+0.4724	0.5376	1.000	the table of contents to reflect new record numbers	0.3797	0.0116
+0.4884	0.5376	1.000	within the file: size, number of entries, ete.. Error	0.4060	0.0131
+0.4985	0.1071	1.000	The librarian section of UPDATE-30 deals with the	0.3797	0.0118
+0.5029	0.5395	1.000	checking is done on the commands and logic to avoid	0.3872	0.0116
+0.5130	0.1090	1.000	maintenance of the four generator libraries:	0.3271	0.0118
+0.5174	0.5376	1.000	duplication, illegal origin or size, etc. .	0.3026	0.0132
+0.5261	0.1071	1.000	LFORTRAN, LPASSONE, LPASSTWO, LSMACONE.	0.3929	0.0161
+0.5320	0.5545	1.000	3. Merge of Old and New Libraries - At the end of	0.3816	0.0117
+0.5421	0.1071	1.000	It also automatically updates their tables of contents:	0.3929	0.0131
+0.5464	0.5376	1.000	the change file (B card) the old library, minus any	0.3759	0.0133
+0.5567	0.1071	1.000	TFORTRAN, TPASSONE, TPASSTWO, TSMACONE.	0.3929	0.0161
+0.5610	0.5375	1.000	deletions, is re-blocked after the new generators on	0.3892	0.0145
+0.5724	0.6127	1.000	Old generators are re-numbered to reflect	0.3217	0.0167
+0.5727	0.1090	1.000	The libraries and their tables of contents each	0.3440	0.0102
+0.5769	0.5376	1.000	the disk.	0.0771	0.0103
+0.5872	0.1090	1.000	occupy a type area on disk.	0.2011	0.0116
+0.5915	0.5376	1.000	new positions.	0.1071	0.0118
+0.6045	0.1203	1.000	Generator libraries are composed of variable length	0.3891	0.0146
+0.6163	0.5545	1.000	4. Cleanup and Print-out - The new table of con-	0.3684	0.0116
+0.6191	0.1071	1.000	blocked records, each generator being a record.	0.3609	0.0132
+0.6206	0.4699	1.000	They	0.0451	0.0116
+0.6308	0.5376	1.000	tents is written on the disk, the print-out of the	0.3534	0.0131
+0.6352	0.1053	1.000	are blocked in memory image form, after being loaded	0.4079	0.0131
+0.6453	0.5357	1.000	changes is made, and the table of contents is written	0.3929	0.0147
+0.6497	0.1034	1.000	at update time. In the related type area, the table of	0.3966	0.0145
+0.6584	0.5357	1.000	on $SPR. Appropriate changes are made to the master	0.4117	0.0161
+0.6642	0.1053	1.000	contents keeps track of the position of each record	0.3741	0.0145
+0.6744	0.5357	1.000	update change dictionary, and control is returned to	0.3872	0.0160
+0.6758	0.1034	1.000	within the generator file and is used by compilers to	0.3910	0.0176
+0.6885	0.5374	1.000	HEDCTL.	0.0736	0.0155
+0.6918	0.1052	1.000	locate generators for expansion of FORTRAN and	0.3667	0.0148
+0.7093	0.1071	1.000	MACRO statements.	0.1485	0.0102
+0.7209	0.5150	1.000	Errors: Error conditions of any kind terminate the	0.4004	0.0161
+0.7238	0.1241	1.000	Binary decks of generators to be added to a library,	0.3853	0.0131
+0.7369	0.5301	1.000	update. Information necessary to correct the situa-	0.3891	0.0146
+0.7384	0.1071	1.000	or to replace existing generators, follow a control	0.3722	0.0131
+0.7515	0.5301	1.000	tion is typed and written on $SPR.	0.2538	0.0146
+0.7515	0.1071	1.000	card in the change deck. Logical sequencing of	0.3515	0.0146
+0.7660	0.5658	1.000	SMADDMAC errors	0.1579	0.0146
+0.7674	0.1071	1.000	changes within a library is important if more than	0.3684	0.0116
+0.7805	0.5677	1.000	a. Name too long or blank.	0.2199	0.0146
+0.7819	0.1071	1.000	one operation is performed on a single name. A	0.3573	0.0145
+0.7964	0.5733	1.000	b. Name duplicated.	0.1673	0.0147
+0.7979	0.1053	1.000	library may be updated only once per update run.	0.3628	0.0118
+0.8096	0.5752	1.000	c. Any error in binary deck.	0.2256	0.0160
+0.8124	0.1241	1.000	The updating of a library requires four phases:	0.3477	0.0118
+0.8241	0.5677	1.000	SMREPLAC errors	0.1541	0.0160
+0.8270	0.1222	1.000	1. Initialization - All control bits are set to zero,	0.3741	0.0131
+0.8270	0.5470	1.000	2.	0.0188	0.0131
+0.8415	0.1071	1.000	the table of contents is fetched, and the library name	0.3910	0.0131
+0.8415	0.5733	1.000	a. Name too long or blank.	0.2143	0.0118
+0.8545	0.5733	1.000	b. Name not in table.	0.1729	0.0133
+0.8576	0.1053	1.000	is verified and stored in messages.	0.2632	0.0116
+0.8691	0.5752	1.000	c. New library being generated.	0.2500	0.0161
+0.8706	0.1222	1.000	2. Read-in of Changes - The control cards and	0.3534	0.0117
+0.8821	0.5752	1.000	d. Attempt to replace a new or a replaced	0.3233	0.0176
+0.8866	0.1071	1.000	binary decks are read, loaded, and blocked on the	0.3703	0.0131
+0.8953	0.6241	1.000	generator, or any synonym.	0.2124	0.0204
+0.8982	0.1070	1.000	new master file on the disk. Changes are made to	0.3725	0.0171
+0.9433	0.7632	1.000	Supporting Programs	0.1165	0.0116
+0.9448	0.9023	1.000	227	0.0226	0.0073

@@ -1,0 +1,101 @@
+0.0639	0.1203	1.000	The load point reflective strip is used to position the	0.3703	0.0145
+0.0654	0.5207	1.000	MARK. The absence of the file protection ring on the	0.3872	0.0161
+0.0771	0.5167	1.000	reel mounted on a unit is indicated by turning on the	0.3916	0.0228
+0.0799	0.1015	1.000	tape during loading and rewinding. Upon completion	0.3891	0.0146
+0.0945	0.1015	1.000	of either of these operations, the tape is positioned so	0.3891	0.0146
+0.0959	0.5188	1.000	file-protect-on light on that unit.	0.2368	0.0160
+0.1105	0.1015	1.000	that the whole usable tape is ahead of the read-write	0.3891	0.0132
+0.1250	0.1015	1.000	heads. The tape cannot be moved by any means under	0.3891	0.0145
+0.1409	0.1015	1.000	program control beyond the load point. Any back-	0.3872	0.0146
+0.1555	0.0996	1.000	space instructions given with the tape in this position	0.3891	0.0161
+0.1715	0.0996	1.000	are terminated with an exchange-program-check indi-	0.3891	0.0145
+0.1817	0.5150	1.000	Channel Signal	0.1147	0.0147
+0.2020	0.1165	1.000	The end-of-tape reflective spot is used to indicate	0.3741	0.0146
+0.2034	0.5168	1.000	The channel-signal indication on tape units is caused	0.3874	0.0166
+0.2153	0.5148	1.000	whenever the unit changes from not-ready status to	0.3897	0.0235
+0.2179	0.1015	1.000	during writing that the end of the tape is approaching.	0.3872	0.0147
+0.2325	0.0977	1.000	It is usually placed five to ten feet before the physical	0.3911	0.0163
+0.2339	0.5150	1.000	ready status. This change can be the result of either	0.3891	0.0146
+0.2485	0.0977	1.000	end of the tape. When the end-of-tape reflective strip	0.3891	0.0146
+0.2500	0.5150	1.000	a depression of the start key or the completion of a	0.3891	0.0145
+0.2630	0.0977	1.000	is sensed, the tape-indicator-on light is turned on and	0.3891	0.0146
+0.2660	0.5150	1.000	REWIND control operation. There is no signal key on	0.3891	0.0161
+0.2805	0.5150	1.000	the tape units to generate a channel-signal indication.	0.3872	0.0146
+0.2805	0.0996	1.000	the operation is terminated with an end-exception	0.3872	0.0146
+0.2951	0.0977	1.000	indication upon the completion of the current block.	0.3910	0.0146
+0.2964	0.5301	1.000	When more than one tape unit is attached to a	0.3741	0.0147
+0.3090	0.5111	1.000	single control unit, a channel-signal indication may	0.3933	0.0211
+0.3096	0.0977	1.000	If this is also the last block to be written with the	0.3910	0.0131
+0.3270	0.5132	1.000	be given by any of the units regardless of whether or	0.3910	0.0161
+0.3270	0.0977	1.000	WRITE operation, end-of-operation accompanies end-	0.3910	0.0131
+0.3415	0.5113	1.000	not the unit is currently selected by a locate instruc-	0.3910	0.0176
+0.3415	0.0940	1.000	exception; otherwise end-of-operation is absent. The	0.3929	0.0161
+0.3542	0.5148	1.000	tion. No distinction is made between channel-signal	0.3877	0.0198
+0.3561	0.0977	1.000	unit remains ready so that control instructions may be	0.3891	0.0146
+0.3713	0.5129	1.000	indications coming from different tape units attached	0.3895	0.0182
+0.3721	0.0977	1.000	given to write a tape mark and then to rewind or back-	0.3891	0.0131
+0.3870	0.5130	1.000	to the same control unit.	0.1828	0.0143
+0.3881	0.0977	1.000	space. The end-of-tape reflective strip is ignored during	0.3891	0.0146
+0.4026	0.0959	1.000	reading and spacing, and the program must rely upon	0.3910	0.0147
+0.4185	0.0977	1.000	tape marks to indicate the extent of the useful recorded	0.3891	0.0133
+0.4258	0.5150	1.000	Magnetic Tape Timing	0.1617	0.0146
+0.4327	0.0958	1.000	information.	0.0923	0.0125
+0.4482	0.5130	1.000	The main physical parameters affecting the timing of	0.3894	0.0171
+0.4491	0.1128	1.000	The tape-indicator-on light stays on until it is	0.3741	0.0131
+0.4630	0.5130	1.000	READ and WRITE operations on tape are tape speed	0.3875	0.0178
+0.4633	0.0958	1.000	turned off either by the initiation of rewinding, by	0.3893	0.0165
+0.4783	0.5111	1.000	and the spacing between the read and write gaps of	0.3913	0.0179
+0.4797	0.0959	1.000	giving REMOVE END OF TAPE CONDITION control instruc-	0.3910	0.0131
+0.4942	0.5132	1.000	the head. As mentioned previously, the speed of the	0.3872	0.0161
+0.4956	0.0977	1.000	tion, or manually. As long as the light is on, all WRITE	0.3872	0.0147
+0.5100	0.0958	1.000	instructions given to the tape unit are terminated by	0.3893	0.0162
+0.5102	0.5113	1.000	tapes in the 729 Iv units is 112.5 inches per second.	0.3872	0.0160
+0.5247	0.5113	1.000	The spacing between the read and write gaps is re-	0.3891	0.0160
+0.5261	0.0959	1.000	end-exception after recording one block. The effect is	0.3910	0.0146
+0.5401	0.5111	1.000	sponsible for the difference in the delay of the execu-	0.3894	0.0173
+0.5421	0.0959	1.000	the same as if the end-of-tape reflective strip had been	0.3891	0.0146
+0.5531	0.5110	1.000	tion of READ and WRIte instructions. This spacing is	0.3896	0.0200
+0.5567	0.0959	1.000	sensed in the first block. However, it is not advisable	0.3891	0.0131
+0.5690	0.0957	1.000	to write more blocks once the reflective strip has been	0.3895	0.0193
+0.5693	0.5110	1.000	0.3 inches. Since the tape system is not buffered, data	0.3896	0.0193
+0.5839	0.5111	1.000	transfer between the unit and the exchange is concur-	0.3877	0.0191
+0.5868	0.0939	1.000	reached in order to avoid pulling the end of the tape	0.3912	0.0165
+0.6032	0.5094	1.000	rent with the reading or writing at the unit, and	0.3891	0.0147
+0.6032	0.0959	1.000	off the reel. When the tape is pulled off the reel, either	0.3891	0.0147
+0.6163	0.5092	1.000	hence the following delays apply to the operation of	0.3913	0.0183
+0.6177	0.0957	1.000	by writing beyond the end-of-tape mark or by reading	0.3894	0.0173
+0.6322	0.5093	1.000	the unit as well as to the data transmission.	0.3180	0.0147
+0.6352	0.0940	1.000	or spacing beyond the recorded data, a unit-check indi-	0.3891	0.0131
+0.6482	0.5244	1.000	When a WRITE instruction is initiated, the record-	0.3741	0.0176
+0.6497	0.0921	1.000	cation is given and the unit becomes not ready. Opera-	0.3929	0.0161
+0.6627	0.5056	1.000	ing of information commences five milliseçonds after	0.3929	0.0161
+0.6642	0.0902	1.000	tor intervention is subsequently required.	0.3045	0.0161
+0.6772	0.5092	1.000	the instruction is received at the unit. This delay	0.3895	0.0177
+0.6940	0.5093	1.000	does not depend upon whether the tape is moving or	0.3893	0.0169
+0.7091	0.5074	1.000	is at a standstill at the instant the instruction is re-	0.3894	0.0150
+0.7136	0.0940	1.000	File Protection	0.1015	0.0103
+0.7221	0.5073	1.000	ceived. When a wrIte instruction is completed, the	0.3914	0.0205
+0.7355	0.0940	1.000	File protection on the IBM 729 Iv units is accomplished	0.3872	0.0145
+0.7397	0.5075	1.000	end-of-operation indication is initiated by the unit	0.3910	0.0161
+0.7500	0.0921	1.000	by means of a special ring on the tape reel. When this	0.3910	0.0145
+0.7531	0.5092	1.000	136 microseconds after the last data byte of the	0.3877	0.0183
+0.7658	0.0920	1.000	ring is absent, a pin on the tape drive rides freely in	0.3893	0.0163
+0.7718	0.5075	1.000	recorded information is read for checking purposes	0.3891	0.0161
+0.7820	0.0921	1.000	the groove normally occupied by the ring, and a	0.3891	0.0145
+0.7857	0.5074	1.000	by the read gap. Because of the spacing between the	0.3894	0.0174
+0.7964	0.0920	1.000	writing interlock is automatically set so that it is im-	0.3911	0.0169
+0.8023	0.5056	1.000	read and write gaps, this is 2.8 milliseconds after the	0.3910	0.0131
+0.8124	0.0921	1.000	possible to record any information on tape. WrITe and	0.3891	0.0146
+0.8158	0.5054	1.000	last byte has been recorded. The tape runs at full	0.3913	0.0182
+0.8252	0.0919	1.000	WRITE TAPE MARK instructions issued to a tape unit	0.3914	0.0186
+0.8321	0.5055	1.000	speed for about 0.4 milliseconds after generating end-	0.3894	0.0171
+0.8430	0.0921	1.000	with the tape reel in the protected status are	0.3571	0.0161
+0.8473	0.5056	1.000	of-operation and stops within 2.0 milliseconds after	0.3910	0.0146
+0.8572	0.0882	1.000	executed and cause an EPGK indication. A tape unit in	0.3932	0.0184
+0.8663	0.5056	1.000	EOP.	0.0338	0.0102
+0.8750	0.0902	1.000	protected status, however, can execute READ instruc-	0.3891	0.0132
+0.8794	0.5226	1.000	On reading, the tape unit is ready to sense the	0.3722	0.0146
+0.8884	0.0881	1.000	tions and all control instructions except WRITE TAPE	0.3933	0.0184
+0.8915	0.5054	1.000	recorded data three milliseconds after accepting the	0.3914	0.0194
+0.9288	0.0846	1.000	136	0.0244	0.0102
+0.9288	0.1372	1.000	IBM 7030	0.0639	0.0088

@@ -1,0 +1,110 @@
+0.0938	0.1052	1.000	are set for later use, the PP return address is up-	0.3837	0.0153
+0.0956	0.5337	1.000	in the unit area table, and the first location of a table	0.4043	0.0162
+0.1090	0.1071	1.000	dated, and an EOP is faked.	0.2105	0.0131
+0.1105	0.5357	1.000	of branch instructions in SEVLTB in the 'unit area	0.3722	0.0117
+0.1264	0.5357	1.000	table. The table of branch instructions consists of a	0.3947	0.0118
+0.1392	0.5337	1.000	half word branch instruction for each one in the mask.	0.4082	0.0149
+0.1394	0.1034	1.000	NOECC Mode	0.1053	0.0133
+0.1570	0.5357	1.000	The status evaluation routine performs an AND opera-	0.4079	0.0116
+0.1685	0.1071	1.000	The NOECC pseudo-op is defined only for reader or	0.3872	0.0133
+0.1715	0.5338	1.000	tion with the half word mask and the second half word	0.4023	0.0116
+0.1830	0.1071	1.000	punch. A tape NOECC pseudo-op results in a faked	0.3797	0.0133
+0.1860	0.5357	1.000	of the selected unit status table, and enters the branch	0.4079	0.0131
+0.1962	0.1070	1.000	EPGK. Either ODD or EVEN should be used for tape	0.3932	0.0162
+0.2006	0.5357	1.000	table at a position corresponding to the first masked	0.3910	0.0131
+0.2115	0.1051	1.000	in this case. The mode bits on the file area table are	0.3950	0.0143
+0.2166	0.5357	1.000	status bit which was on. Thus, the routine performs	0.3985	0.0146
+0.2267	0.1053	1.000	set for later setup operations use, the PP return	0.3665	0.0132
+0.2324	0.5357	1.000	the specified status test, and if the masked status bits	0.4060	0.0118
+0.2412	0.1051	1.000	address is updated, and an EOP is faked.	0.3085	0.0158
+0.2470	0.5357	1.000	are not all off, enters the proper routine to correct	0.3891	0.0133
+0.2615	0.5357	1.000	the status. These routines perform the required	0.3665	0.0133
+0.2715	0.1033	1.000	ECC Mode	0.0848	0.0166
+0.2761	0.5357	1.000	function, turn off the status bit, and return to status	0.3910	0.0133
+0.2921	0.5357	1.000	evaluation. When all the masked status bits are off,	0.3929	0.0131
+0.3009	0.1053	1.000	The ECC mode is defined for tape, reader and punch.	0.4004	0.0131
+0.3067	0.5357	1.000	the routine branches to the instruction following the	0.3872	0.0116
+0.3153	0.1033	1.000	Any other device causes a faked EPGK. The mode	0.3761	0.0151
+0.3212	0.5320	1.000	branch table.	0.1034	0.0131
+0.3299	0.1015	1.000	bits are set in the file area table, the PP return ad-	0.3947	0.0161
+0.3342	0.5489	1.000	For example, the write routine requires that the	0.3684	0.0146
+0.3459	0.1034	1.000	dress is updated, and an EOP is faked.	0.2951	0.0147
+0.3488	0.5320	1.000	unit be selected, and the tape label verified. It enters	0.4117	0.0146
+0.3605	0.5320	1.000	the status evaluation routine with EMKIA in SEVLMK	0.4060	0.0189
+0.3735	0.1071	1.000	Actuator Subroutines	0.1560	0.0116
+0.3750	0.5320	1.000	and EWR18 in SEVLTB. These are defined as:	0.3590	0.0205
+0.3919	0.5468	1.000	EMKIA	0.0625	0.0156
+0.3935	0.6334	1.000	VF, (8)3000	0.1017	0.0168
+0.4039	0.1053	1.000	Subroutines are used to perform functions common to	0.4023	0.0147
+0.4051	0.5487	1.000	EWR18	0.0586	0.0168
+0.4084	0.6353	1.000	B, KKLOC	0.0921	0.0147
+0.4185	0.1053	1.000	several actuator routines. Most of the subroutines	0.3853	0.0147
+0.4213	0.6428	1.000	B, RVFY	0.0754	0.0179
+0.4317	0.1034	1.000	assume that index register 4 and 10 through 13 con-	0.3910	0.0160
+0.4375	0.5470	1.000	EMKIA has ones corresponding to the bits SSEL	0.3684	0.0146
+0.4476	0.1034	1.000	tain the same information as when control is received	0.4060	0.0146
+0.4485	0.5319	1.000	and SVER in thé unit status table. Thus, if the unit	0.3911	0.0187
+0.4636	0.1034	1.000	from the identifier.	0.1504	0.0131
+0.4666	0.5320	1.000	is not selected, KKLOC will be entered to perform	0.3835	0.0160
+0.4791	0.5319	1.000	a locate, and if the label is not verified, RVFY will	0.3910	0.0170
+0.4927	0.1071	1.000	Control Word Check	0.1504	0.0103
+0.4927	0.5320	1.000	be entered, prior to performing the requested write.	0.3985	0.0204
+0.5102	0.5320	1.000	The status test for the various pseudo-ops is:	0.3459	0.0174
+0.5218	0.1034	1.000	The read and write operations use control words, with	0.4117	0.0146
+0.5348	0.1034	1.000	the location of the first control word given in the	0.3684	0.0161
+0.5500	0.1043	1.000	linkage.	0.0638	0.0141
+0.5509	0.1654	1.000	These are hardware control words, and,	0.3139	0.0146
+0.5651	0.1034	1.000	for PP requests, must meet the following specifications:	0.4154	0.0137
+0.5799	0.5395	1.000	Pseudo-Oj	0.0545	0.0131
+0.5814	0.1184	1.000	1. They must be in PP storage when the operation	0.3835	0.0116
+0.5940	0.1033	1.000	is started.	0.0811	0.0126
+0.5943	0.5338	1.000	Requested	0.0622	0.0134
+0.5943	0.7969	1.000	SVER	0.0378	0.0134
+0.5945	0.8872	1.000	SCNSSG	0.0526	0.0145
+0.5945	0.7011	1.000	SSEL	0.0320	0.0131
+0.6090	0.1184	1.000	2. They must not cause reading or writing out of	0.3741	0.0146
+0.6176	0.7011	1.000	KKLOC	0.0490	0.0162
+0.6191	0.5338	1.000	Read	0.0340	0.0133
+0.6205	0.8871	1.000	PCSRD	0.0453	0.0134
+0.6206	0.7951	1.000	RVFY	0.0414	0.0131
+0.6245	0.1052	1.000	PP bounds.	0.0848	0.0126
+0.6394	0.1203	1.000	3. The chain bit in the last control word must be	0.3703	0.0118
+0.6424	0.5320	1.000	Write	0.0395	0.0160
+0.6439	0.7011	1.000	KKLOC	0.0489	0.0160
+0.6453	0.7970	1.000	RVFY	0.0414	0.0145
+0.6555	0.1034	1.000	zero.	0.0414	0.0087
+0.6632	0.1164	1.000	The control word check subroutine checks the con-	0.3876	0.0215
+0.6699	0.7969	1.000	RVFY	0.0416	0.0149
+0.6701	0.5301	1.000	WEF	0.0320	0.0131
+0.6715	0.7011	1.000	KKLOC	0.0451	0.0131
+0.6845	0.1034	1.000	trol words specified, and makes the appropriate entries	0.4173	0.0131
+0.6929	0.1015	1.000	in the controi tables. The control word check routine	0.4061	0.0182
+0.6948	0.5320	1.000	Space	0.0414	0.0160
+0.6958	0.7009	1.000	KKLOC	0.0455	0.0139
+0.6977	0.7989	1.000	RVFY	0.0376	0.0131
+0.7136	0.1034	1.000	(Figure 110) is entered with the calling sequence SIC,	0.3929	0.0117
+0.7209	0.7011	1.000	KKLOC	0.0470	0.0160
+0.7224	0.5320	1.000	REW, Unload, Free	0.1184	0.0146
+0.7252	0.1034	1.000	BIRA; B, BCWCR, with the location of the first con-	0.3910	0.0147
+0.7427	0.1034	1.000	trol word in the VF of $0. The routine performs the	0.3947	0.0116
+0.7573	0.1034	1.000	necessary checking for PP request, entering dis-	0.3741	0.0131
+0.7688	0.0996	1.000	patcher error control with error code 7 in $14 if the	0.3966	0.0161
+0.7863	0.1034	1.000	control word(s) are not correct. At JPICKI, the	0.3684	0.0131
+0.7994	0.5451	1.000	Note that the control linkage used with the status	0.3703	0.0176
+0.8009	0.1034	1.000	control word information is placed in the control	0.3647	0.0116
+0.8139	0.5301	1.000	evaluation routine permits returning control to the	0.3835	0.0176
+0.8154	0.1034	1.000	tables, and the routine returns to the preset address.	0.4004	0.0131
+0.8299	0.5320	1.000	requestor after initiating a setup I-O operation. Since	0.4098	0.0161
+0.8430	0.5301	1.000	SRETAD is set in the unit status table on set up I-O	0.3891	0.0161
+0.8459	0.1015	1.000	Status Evaluation	0.1297	0.0087
+0.8590	0.5301	1.000	operations, control will be returned to the proper	0.3759	0.0160
+0.8735	0.5301	1.000	unit by the receptor to continue processing the request.	0.4192	0.0146
+0.8735	0.1034	1.000	The status evaluation routine checks the status of the	0.3966	0.0131
+0.8881	0.5320	1.000	Furthermore, intermediate I-O requeșts on other	0.3741	0.0160
+0.8881	0.0996	1.000	requested unit against a desired status provided by	0.3835	0.0160
+0.9012	0.0996	1.000	the requesting program. It is entered at ZSTEVL with	0.4135	0.0161
+0.9026	0.5282	1.000	units may use the status evaluation routine while a	0.3835	0.0147
+0.9172	0.5301	1.000	set up I-O is in progress.	0.1974	0.0174
+0.9172	0.1015	1.000	the location of a status evaluation mask in SEVLMK	0.3872	0.0132
+0.9506	0.7857	1.000	Service Routines	0.1015	0.0131
+0.9520	0.9098	1.000	191	0.0226	0.0087

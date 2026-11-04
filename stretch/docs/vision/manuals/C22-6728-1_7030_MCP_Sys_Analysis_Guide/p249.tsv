@@ -1,0 +1,118 @@
+0.0900	0.5395	1.000	5. What (WHAT) - Converts Hollerith card code to	0.3853	0.0118
+0.0915	0.0921	1.000	the new. Tests PG bits 1, 8, tests table of contents	0.3910	0.0118
+0.1045	0.5207	1.000	IQS format, packing 72 columns left justified in AXX.	0.4041	0.0146
+0.1061	0.0921	1.000	bits 1.48, 1.49, 1.53, tests and sets bit 1.55 and	0.3647	0.0118
+0.1191	0.5226	1.000	Using READI to read, it checks HEDBT for an end of	0.4041	0.0146
+0.1221	0.0921	1.000	exits to RAPUP.	0.1259	0.0102
+0.1336	0.5207	1.000	file, exiting to EXIT if HEDBT is on. The converted	0.4004	0.0146
+0.1352	0.1071	1.000	6. Start (STARTA) - The point to which control is	0.3797	0.0117
+0.1497	0.0921	1.000	relinquished from the main section of master update.	0.3985	0.0131
+0.1497	0.5226	1.000	Hollerith characters are moved to AXX from CARD.	0.3947	0.0131
+0.1642	0.0902	1.000	Initializes symbol file tables, clears all PG bits,	0.3703	0.0131
+0.1642	0.5244	1.000	The first eight characters after the last non-blank are	0.4060	0.0116
+0.1786	0.5225	1.000	made zero.	0.0865	0.0134
+0.1802	0.0921	1.000	fetches table of contents, and checks validity of	0.3571	0.0116
+0.1933	0.5564	1.000	Entry sequence: LVI,$1,$+1.0	0.2312	0.0131
+0.1948	0.0902	1.000	library being updated. Initializes TCTLD, clears	0.3759	0.0131
+0.2089	0.6860	1.000	B, WHAT	0.0717	0.0125
+0.2093	0.0940	1.000	PUTER, changes DSK exit to PETXIT, and generates	0.3966	0.0131
+0.2237	0.8007	1.000	Return	0.0508	0.0104
+0.2238	0.0921	1.000	change dictionary entries.	0.1992	0.0116
+0.2253	0.6842	1.000	------	0.0789	0.0073
+0.2384	0.1090	1.000	7. Wrap Up (RAPUP) - Final phase of librarian	0.3609	0.0116
+0.2384	0.5395	1.000	6. Graph O (GRAPHO) - Converts a given number	0.3797	0.0116
+0.2529	0.0921	1.000	update. Forces the write-out of any partial buffers	0.3853	0.0116
+0.2529	0.5226	1.000	of IQS words to A8 format and prints a $SPR line.	0.3759	0.0132
+0.2674	0.5226	1.000	Checks COMBT for $COMM option.	0.2669	0.0147
+0.2688	0.0921	1.000	of blocked generators, establishes ARCIOC, and	0.3684	0.0118
+0.2799	0.0920	1.000	changes DSK exit to DSKEX. Writes the table of con-	0.4006	0.0154
+0.2820	0.5583	1.000	Entry sequence: CNOP	0.1711	0.0132
+0.2978	0.6823	1.000	SIC, $15	0.0678	0.0148
+0.2979	0.0902	1.000	tents on disk, types the final message, and returns	0.3853	0.0118
+0.3124	0.6861	1.000	B, GRAPHO	0.0921	0.0132
+0.3124	0.0921	1.000	to HEDCTL.	0.0940	0.0103
+0.3270	0.6842	1.000	XW, Ist character,	0.1466	0.0131
+0.3412	0.7236	1.000	# of words,	0.0848	0.0138
+0.3414	0.0902	1.000	Subroutines:	0.0960	0.0150
+0.3561	0.1071	1.000	1. New Name Finder (NNFDR) - The new name	0.3571	0.0118
+0.3576	0.7237	1.000	carriage control	0.1222	0.0103
+0.3699	0.0920	1.000	finder subroutine scans AXX for a single name, or	0.3799	0.0140
+0.3720	0.8007	1.000	Return	0.0508	0.0088
+0.3852	0.5583	1.000	PUTT - Blocks one record, starting at IOWRD,	0.3684	0.0131
+0.3852	0.0902	1.000	the second of two names. It checks for a blank field	0.3947	0.0117
+0.4012	0.5226	1.000	on the new library file. Turns on PG bit 8, and keeps	0.4079	0.0116
+0.4012	0.0921	1.000	or for parameters greater than 8 characters. It also	0.4004	0.0116
+0.4157	0.0940	1.000	builds the name left justified in SYNM5 and assumes	0.3929	0.0116
+0.4157	0.5226	1.000	a running account of the number of records in the new	0.4041	0.0116
+0.4288	0.5226	1.000	file (PUTER). This number is stored in the record	0.3872	0.0131
+0.4302	0.0940	1.000	$2 points to the first character of the parameter, and	0.4004	0.0131
+0.4448	0.5226	1.000	number field of the table of contents entry. Uses	0.3703	0.0116
+0.4462	0.0940	1.000	that blank is the terminating character.	0.2951	0.0102
+0.4593	0.5244	1.000	ZPUT. XR2 is assumed to point to the entry.	0.3459	0.0116
+0.4593	0.1278	1.000	Entry sequence: LVI,$1, $+1.	0.2199	0.0131
+0.4737	0.2556	1.000	B, NNFDR	0.0809	0.0120
+0.4738	0.5564	1.000	Entry sequence: SIC, PUTX	0.2124	0.0131
+0.4883	0.6823	1.000	B, PUTT	0.0715	0.0148
+0.4884	0.3722	1.000	Error return	0.0977	0.0102
+0.4898	0.2556	1.000	В,	0.0169	0.0102
+0.5029	0.3684	1.000	Normal return	0.1128	0.0102
+0.5042	0.8007	1.000	Return	0.0508	0.0104
+0.5058	0.6842	1.000	- - - - --	0.0789	0.0073
+0.5073	0.2538	0.300	--_--	0.0789	0.0044
+0.5188	0.1090	1.000	2. Old Name Finder (ONFDR) - This subroutine	0.3665	0.0118
+0.5188	0.5395	1.000	8. Generator Loader (JLOAD) - In addition to nor-	0.3872	0.0103
+0.5333	0.0940	1.000	scans AXX for the first of two parameters and checks	0.4023	0.0118
+0.5333	0.5226	1.000	mal loading, it checks for origin, which must start	0.3853	0.0118
+0.5479	0.5226	1.000	at 1000 (10), with subsequent cards not exceeding	0.3647	0.0132
+0.5479	0.0921	1.000	for a null field and parameter larger than 8 char-	0.3741	0.0118
+0.5624	0.5226	1.000	2045(10), and the absence of P, I, or super I cards.	0.4023	0.0132
+0.5624	0.0940	1.000	acters. A comma is the terminating character. It	0.3853	0.0118
+0.5770	0.0940	1.000	builds parameter left justified in SYNM5. If an error	0.4041	0.0118
+0.5770	0.5226	1.000	There are 9 error exits for illegal binary decks,	0.3665	0.0118
+0.5915	0.5226	1.000	JER1 through JER9. It uses READI to read cards	0.3778	0.0118
+0.5915	0.0921	1.000	is detected, it exits to WRONG.	0.2406	0.0131
+0.6061	0.5226	1.000	and exits to DABLE in ADDA routine.	0.2820	0.0118
+0.6061	0.1278	1.000	Entry sequence: LVI,$1, $+1.0	0.2350	0.0131
+0.6206	0.2556	1.000	B, ONFDR	0.0808	0.0131
+0.6206	0.5376	1.000	9. Wrong (WRONG) - Common error print-out	0.3571	0.0117
+0.6352	0.5226	1.000	routine. Prints the entire command and the param-	0.3929	0.0117
+0.6352	0.3722	1.000	Return	0.0508	0.0102
+0.6497	0.1090	1.000	3. Add Entry (ADNTY) - Adds an entry to the table	0.3891	0.0131
+0.6497	0.5226	1.000	eter error or logical error message on both $COMM	0.3966	0.0131
+0.6642	0.5188	1.000	and $SPR (using GRAPHO). Exit is to FINI.	0.3365	0.0145
+0.6642	0.0940	1.000	of contents. Entry is assumed to be 3 words starting	0.4004	0.0116
+0.6773	0.0959	1.000	at location ABUF. It increases the count of entries	0.3872	0.0118
+0.6788	0.5226	1.000	(WRONG has 3 synonyms: ERROR, GOOF, and	0.3571	0.0131
+0.6918	0.0940	1.000	in the table of contents (TCTLD+.28) and in addition,	0.3985	0.0118
+0.6948	0.5207	1.000	ERROR1.)	0.0808	0.0116
+0.7064	0.0959	1.000	checks the total number of entries for overflow,	0.3609	0.0131
+0.7093	0.5301	1.000	10. Final Error (FINI) - Final error message	0.3515	0.0116
+0.7209	0.0977	1.000	(Maximum is 300(10)), with exit to OVRFLO if an	0.3684	0.0161
+0.7238	0.5226	1.000	print-out for all error messages. Prints on $COMM	0.3985	0.0116
+0.7369	0.0959	1.000	overflow condition exists.	0.1936	0.0102
+0.7384	0.5226	1.000	and $SPR, and exits to $ABEOJ.	0.2444	0.0116
+0.7529	0.5301	1.000	11. Blocking Routines - The blocking routines,	0.3590	0.0132
+0.7602	0.1259	1.000	Entry sequence: SIC, ADNTYX	0.2331	0.0116
+0.7674	0.5226	1.000	ZPUT, ZTAKE, and ZENDFILE are the I-O routines	0.3966	0.0132
+0.7745	0.2556	1.000	B, ADNTY	0.0809	0.0121
+0.7820	0.5226	1.000	that fetch the old library file through $FETCH, and	0.3835	0.0132
+0.7892	0.3703	1.000	Return	0.0508	0.0102
+0.7964	0.5226	1.000	write the new library file on the disk using DSK IOD.	0.3966	0.0133
+0.8036	0.1090	1.000	4. Find Table Name (FDTNM) - Performs a linear	0.3872	0.0118
+0.8124	0.5226	1.000	They maintain information about the two files in	0.3590	0.0103
+0.8182	0.0921	1.000	search of the table of contents for the name in SYNM5.	0.4135	0.0118
+0.8255	0.5226	1.000	tables called DFILE and FILEI.	0.2425	0.0118
+0.8327	0.0921	1.000	It checks for zero entries and deleted names. XR3	0.3853	0.0118
+0.8443	0.5563	1.000	ZPUT - Moves a logical record from IOWRD to	0.3574	0.0149
+0.8488	0.0921	1.000	points to the entry if found.	0.2049	0.0118
+0.8605	0.5226	1.000	a buffer (BUFF). When records fill a buffer, 2045	0.3816	0.0132
+0.8633	0.1241	1.000	Entry sequence: LVI, $1, $+1.0	0.2387	0.0117
+0.8764	0.5226	1.000	words, the routine writes the block on disk, updates	0.3929	0.0132
+0.8779	0.2538	1.000	B, FDTNM	0.0865	0.0117
+0.8909	0.5226	1.000	ARCLOC and the count of words within the file.	0.3553	0.0103
+0.8924	0.3703	1.000	Not found return	0.1241	0.0103
+0.8924	0.2538	1.000	В,	0.0188	0.0116
+0.9049	0.5224	1.000	(1.28($5))	0.0774	0.0144
+0.9070	0.3722	1.000	Found return	0.0959	0.0103
+0.9448	0.7556	1.000	Supporting Programs	0.1222	0.0102
+0.9462	0.8985	1.000	249	0.0226	0.0073

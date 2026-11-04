@@ -1,0 +1,103 @@
+0.0654	0.1128	1.000	When the interruption system is disabled, address	0.3778	0.0174
+0.0669	0.5150	1.000	obtained, it is monitored in the usual manner for an	0.3910	0.0160
+0.0814	0.0959	1.000	monitoring is ineffective. In the disabled mode, core	0.3947	0.0174
+0.0827	0.5150	1.000	instruction of its type.	0.1654	0.0161
+0.0945	0.0959	1.000	storage protection as specified by the address bound-	0.3947	0.0189
+0.1118	0.0959	1.000	ary registers in conjunction with the boundary control	0.3947	0.0176
+0.1264	0.0977	1.000	bit does not take place, and the address monitoring	0.3910	0.0176
+0.1352	0.5150	1.000	Addresses Monitored	0.1992	0.0176
+0.1424	0.0959	1.000	signal is ignored. As a result, the Ds, DE and IF indica-	0.3947	0.0161
+0.1570	0.0977	1.000	tors cannot be turned on when the system is disabled.	0.3910	0.0145
+0.1700	0.5150	1.000	All storage addresses actually used by the ceu in the	0.3910	0.0131
+0.1758	0.1109	1.000	When the interruption system is enabled, any refer-	0.3778	0.0176
+0.1845	0.5150	1.000	course of an operation are subject to address monitor	0.3891	0.0146
+0.1903	0.0977	1.000	ence to the protected storage area causes one of these	0.3929	0.0146
+0.1962	0.5150	1.000	ing. If an address which is associated with an opera	0.3872	0.0160
+0.2078	0.0959	1.000	three indicators to be turned on, the choice depending	0.3929	0.0131
+0.2131	0.5150	1.000	tion is not actually used, it will not be monitored by	0.3930	0.0157
+0.2209	0.0977	1.000	upon the type of storage reference. The subsequent	0.3910	0.0146
+0.2267	0.5132	1.000	the contents of the boundary registers. For example,	0.3929	0.0176
+0.2338	0.0957	1.000	action depends upon the status of the mask bit. If the	0.3950	0.0204
+0.2470	0.5094	1.000	the store instruction counter address prefixed to a	0.3966	0.0133
+0.2529	0.0959	1.000	mask bit is one, the operation is terminated and an	0.3929	0.0132
+0.2587	0.5132	1.000	branch operation is not monitored unless the branch	0.3910	0.0146
+0.2660	0.0940	1.000	interruption occurs; if the mask bit is zero, the indi-	0.3966	0.0174
+0.2730	0.5112	1.000	is successful.	0.0979	0.0164
+0.2820	0.0959	1.000	cator is set, but the operation proceeds. The sub-	0.3929	0.0160
+0.2906	0.5320	1.000	Core storage addresses used by the exchange are not	0.3759	0.0161
+0.2962	0.0939	1.000	sequent description of the action of the address moni-	0.3950	0.0186
+0.3052	0.5132	1.000	subject to address monitoring.	0.2274	0.0146
+0.3124	0.0940	1.000	toring system applies only when the interruption sys-	0.3947	0.0176
+0.3193	0.5319	1.000	An address which actuates indicator AD, address in-	0.3741	0.0168
+0.3280	0.0976	1.000	tem is in the enabled state.	0.1996	0.0136
+0.3358	0.5150	1.000	valid, is not compared with the contents of the bound.	0.3910	0.0161
+0.3430	0.1125	1.000	When an address alarm is caused by a data address	0.3782	0.0190
+0.3517	0.5132	1.000	ary registers and cannot actuate any of the addresss	0.3947	0.0161
+0.3618	0.0959	1.000	used in a store-type operation, indicator ds is turned	0.3929	0.0132
+0.3677	0.5169	1.000	alarm indicators.	0.1241	0.0117
+0.3764	0.0959	1.000	on. Since this indicator is permanently masked on,	0.3929	0.0146
+0.3907	0.0958	1.000	storing in core storage is always suppressed, and the	0.3930	0.0169
+0.3909	0.5169	1.000	Address monitoring for Instruction Fetch includes:	0.3722	0.0132
+0.4070	0.5320	1.000	1. The location of each instruction to be executed	0.3759	0.0145
+0.4070	0.0977	1.000	operation is always terminated. A store-type operation	0.3910	0.0145
+0.4230	0.5545	1.000	with the exception of the single instructions at	0.3534	0.0161
+0.4230	0.0959	1.000	is one in which the contents of an addressed storage	0.3929	0.0146
+0.4375	0.0959	1.000	location are subject to change.	0.2237	0.0146
+0.4390	0.5564	1.000	the effective interruption address which are ex.	0.3496	0.0132
+0.4517	0.5562	1.000	ecuted when an interruption occurs.	0.2637	0.0179
+0.4564	0.1128	1.000	When an address alarm is caused by a data address	0.3759	0.0131
+0.4709	0.5301	1.000	2. The branch address of all successful branch	0.3759	0.0146
+0.4709	0.0959	1.000	used in a fetch-type operation, indicator De is turned	0.3929	0.0146
+0.4867	0.5542	1.000	operations.	0.0833	0.0156
+0.4869	0.0977	1.000	on. If the DF mask bit is one, the data fetch is sup-	0.3910	0.0131
+0.5015	0.0977	1.000	pressed and the operation terminated. If the DF mask	0.3910	0.0131
+0.5028	0.5299	1.000	3. The location of the subject instruction of the	0.3763	0.0192
+0.5160	0.0977	1.000	bit is zero, the operation proceeds normally. A fetch-	0.3910	0.0146
+0.5193	0.5562	1.000	EXECUTE and EXECUTE INDIRECT AND COUNT opera-	0.3499	0.0159
+0.5305	0.0977	1.000	type operation is one in which the contents of an	0.3910	0.0146
+0.5337	0.5543	1.000	tions when this location is in main storage.	0.3218	0.0174
+0.5464	0.0959	1.000	addressed storage location are read out for use but are	0.3929	0.0133
+0.5581	0.5150	1.000	Address monitoring for Data Store includes:	0.3233	0.0146
+0.5624	0.0977	1.000	not subject to change by the operation.	0.2857	0.0132
+0.5741	0.5299	1.000	1. The effective address of all store-type operations.	0.3763	0.0189
+0.5799	0.1128	1.000	When an address alarm is caused by the location of	0.3778	0.0146
+0.5930	0.5301	1.000	2. The address of the location which receives the	0.3778	0.0146
+0.5945	0.0959	1.000	the instruction which is to be executed next, indicator	0.3929	0.0131
+0.6090	0.5545	1.000	original contents of the index register specified	0.3515	0.0161
+0.6105	0.0959	1.000	IF is turned on. If the indicator is masked for inter-	0.3929	0.0117
+0.6208	0.5559	1.000	in the RENAME operation.	0.1852	0.0190
+0.6250	0.0959	1.000	ruption, the interruption occurs before execution of	0.3947	0.0145
+0.6394	0.0959	1.000	the instruction causing the indication and after execu-	0.3929	0.0147
+0.6409	0.5301	1.000	3. All addresses encountered during the swar op.	0.3759	0.0176
+0.6555	0.0940	1.000	tion of all preceding instructions has been completed	0.3929	0.0161
+0.6567	0.5544	1.000	eration.	0.0603	0.0136
+0.6682	0.0939	1.000	or terminated. If the branch address of a successful	0.3950	0.0183
+0.6730	0.5301	1.000	4. Each address that receives data during the TRANS-	0.3759	0.0174
+0.6860	0.0958	1.000	branch operation is such that control would pass into	0.3930	0.0163
+0.6903	0.5545	1.000	MIT operation.	0.1109	0.0146
+0.7020	0.0959	1.000	a protected area, the entire branch operation, includ-	0.3929	0.0131
+0.7078	0.5263	1.000	5. The effective address of EXECUTE INDIRECT AND	0.3797	0.0131
+0.7166	0.0940	1.000	ing any counting, bit changing, or index alteration, is	0.3947	0.0146
+0.7238	0.5545	1.000	COUNT.	0.0545	0.0131
+0.7324	0.0940	1.000	suppressed. The address boundaries are ignored if the	0.3947	0.0133
+0.7456	0.5132	1.000	Address monitoring for Data Fetch includes:	0.3308	0.0160
+0.7485	0.0940	1.000	mask bit is zero.	0.1241	0.0103
+0.7630	0.5301	1.000	1. The effective address of all fetch-type operations	0.3759	0.0161
+0.7660	0.1109	1.000	The three address alarm indicators, DS, DE, and IF,	0.3778	0.0161
+0.7776	0.5545	1.000	with a direct address.	0.1579	0.0161
+0.7805	0.0959	1.000	are permanent. Once turned on, they remain on until	0.3929	0.0131
+0.7951	0.0959	1.000	they cause an interruption or are turned off by pro-	0.3929	0.0146
+0.7964	0.5301	1.000	2. The effective address at each level of the LOAD	0.3741	0.0161
+0.8124	0.0959	1.000	gram control.	0.0977	0.0118
+0.8124	0.5545	1.000	VALUE EFFECTIVE operation with the exception of	0.3515	0.0161
+0.8285	0.5526	1.000	the final effective address which is loaded into	0.3496	0.0116
+0.8299	0.1090	1.000	When an interruption occurs, the resulting inter-	0.3797	0.0161
+0.8423	0.5526	1.000	the specified index register.	0.2050	0.0144
+0.8445	0.0940	1.000	ruption address is not monitored for instruction fetch.	0.3929	0.0161
+0.8576	0.5280	1.000	3. The refill address used in index refill operations	0.3782	0.0195
+0.8590	0.0940	1.000	Consequently, the interruption table of instructions	0.3929	0.0174
+0.8735	0.0940	1.000	need not be in the same area of storage as the program.	0.3929	0.0189
+0.8750	0.5526	1.000	and the operations REFILL and REFILL ON COUNT	0.3515	0.0160
+0.8894	0.0940	1.000	After the instruction at the interruption address is	0.3947	0.0161
+0.8924	0.5526	1.000	ZERO.	0.0414	0.0116
+0.9288	0.0940	1.000	32 IBM 7030	0.1071	0.0088

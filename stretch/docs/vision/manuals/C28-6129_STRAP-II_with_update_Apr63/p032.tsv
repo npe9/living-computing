@@ -1,0 +1,104 @@
+0.0669	0.6541	1.000	1. $PI	0.0470	0.0131
+0.0669	0.1184	1.000	and division (/). SIRAP will perform the arithmetic	0.3985	0.0160
+0.0827	0.6523	1.000	2. $E	0.0451	0.0133
+0.0842	0.1203	1.000	and compile a single constant. Multiplications are	0.3966	0.0118
+0.0959	0.7368	1.000	logiue	0.0508	0.0174
+0.0973	0.6523	1.000	3. $M	0.0489	0.0133
+0.0973	0.1203	1.000	performed first, proceeding from left to right, and then	0.3966	0.0133
+0.1086	0.1183	1.000	the additions and subtractions are completed.	0.3480	0.0184
+0.1130	0.6521	1.000	4. $N	0.0455	0.0139
+0.1134	0.7406	1.000	10g.2	0.0395	0.0160
+0.1260	0.7399	1.000	o (infinity)	0.0935	0.0189
+0.1275	0.6521	1.000	5. $INF	0.0623	0.0138
+0.1294	0.1353	1.000	STRAP does the necessary bookkeeping to insure that	0.3816	0.0116
+0.1439	0.1203	1.000	foating point data entries are always compiled at	0.3966	0.0116
+0.1512	0.5602	1.000	Thus, one can enter a number such as 4 + X 10-:	0.3797	0.0131
+0.1570	0.1203	1.000	addressable full words; the location counter is rounded	0.3947	0.0131
+0.1672	0.5583	1.000	by writing:	0.0883	0.0160
+0.1744	0.1184	1.000	up to the nearest full word, if necessary, in order to	0.3985	0.0147
+0.1817	0.6485	1.000	DD(N), 4*$PI * IE - 7.	0.1861	0.0174
+0.1886	0.1165	1.000	accomplish this.	0.1224	0.0168
+0.2209	0.5432	1.000	Unnormalized Floating Point	0.2143	0.0146
+0.2224	0.1203	1.000	Normalized Floating Point	0.1936	0.0116
+0.2439	0.1371	1.000	Format:	0.0585	0.0122
+0.2470	0.5583	1.000	Format:	0.0621	0.0132
+0.2645	0.1504	1.000	Name DD(N), ‡xx..•xx.x•.•xxE=yyySn	0.3327	0.0161
+0.2688	0.5583	1.000	Name (Fn)DD(U), =xx..x.x...xE+yyySn X+n	0.3797	0.0191
+0.2848	0.1353	1.000	The number is converted to a normalized floating	0.3797	0.0161
+0.2892	0.5583	1.000	or	0.0188	0.0116
+0.3009	0.2331	1.000	consisting of an Il-bit signed ex-	0.2820	0.0161
+0.3009	0.1184	1.000	binary number	0.1165	0.0131
+0.3052	0.5733	1.000	DD(U),(Fn)=xxxx.x•xE=yyySnX=n,	0.3327	0.0145
+0.3154	0.1165	1.000	ponent, a 48-bit fraction, and a 4-bit sign byte. It	0.4004	0.0161
+0.3212	0.5695	1.000	(Fn)=xx•etc.	0.1184	0.0116
+0.3314	0.1165	1.000	no sign byte has been entered by means of an s, the	0.3985	0.0147
+0.3402	0.5561	1.000	The number is converted to binary with the correct	0.3820	0.0206
+0.3459	0.1165	1.000	sign preceding the number is used with the flag bits	0.3985	0.0160
+0.3590	0.5432	1.000	number of binary fractional places as specified by the	0.3947	0.0146
+0.3618	0.1165	1.000	set to zero. If a different binary exponent is desired,	0.3985	0.0146
+0.3735	0.5414	1.000	(Fn) entry mode, and a correct exponent is computed	0.3966	0.0146
+0.3761	0.1145	1.000	it can be entered following an X, as follows:	0.3348	0.0172
+0.3894	0.5414	1.000	and entered. This exponent is overruled and replaced	0.3947	0.0147
+0.3967	0.1334	1.000	Format:	0.0602	0.0119
+0.4038	0.5413	1.000	by that following the X if X is used (necessary only	0.3949	0.0165
+0.4156	0.1316	1.000	Name	0.0470	0.0103
+0.4157	0.2049	1.000	DD(N), Ixx.•xx.x•.xxE‡yyySnXzzz	0.2951	0.0161
+0.4200	0.5414	1.000	if, for some reason, the programmer desires an in-	0.3947	0.0146
+0.4301	0.1315	1.000	Examples:	0.0791	0.0163
+0.4360	0.5414	1.000	correct exponent). The entry mode (Fn) can come	0.3947	0.0131
+0.4490	0.5394	1.000	before the DD, in which case it applies to all D fields	0.3987	0.0182
+0.4506	0.1297	1.000	a. DD(N), 54.73 E 4	0.1635	0.0161
+0.4649	0.1653	1.000	54.73 X 10* is converted to floating binary. The	0.3480	0.0167
+0.4651	0.5413	1.000	of the statement, or it may form the first element of a	0.3949	0.0169
+0.4811	0.1654	1.000	sign bit is zero (= plus), and the flag bits are	0.3477	0.0160
+0.4811	0.5414	1.000	D field, in which case it overrules one given before	0.3947	0.0147
+0.4956	0.5414	1.000	the DD. Either the X or the S or both may be omitted	0.3947	0.0160
+0.4970	0.1654	1.000	zero (i. e., entire sign byte is zero).	0.2688	0.0133
+0.5115	0.5376	1.000	or their order may be interchanged. Omitting S has	0.4004	0.0161
+0.5158	0.1296	1.000	b. DD(N), -54.73 E 4, or DD(N), 54.73 E 4 S 10	0.3837	0.0183
+0.5258	0.5413	1.000	the same effect here as in the normalized case. Omit-	0.3930	0.0137
+0.5320	0.1635	1.000	In this case the sign bit is set to one (negative)	0.3477	0.0145
+0.5421	0.5395	1.000	ting X simply allows the correct exponent to remain	0.3966	0.0146
+0.5479	0.1635	1.000	and the flag bits are zero.	0.1861	0.0132
+0.5581	0.5395	1.000	as computed. Leaving out the sign, decimal point, or	0.3966	0.0131
+0.5669	0.1297	1.000	c. DD(N), -54.73 E 4 S 5	0.1936	0.0160
+0.5727	0.5414	1.000	E is permitted as in normalized numbers.	0.3083	0.0146
+0.5819	0.1634	1.000	The sign bit is one, since the number is nega-	0.3499	0.0173
+0.5957	0.5563	1.000	Examples:	0.0791	0.0136
+0.5988	0.1635	1.000	tive, and flag bits T and V are one. U is zero.	0.3496	0.0131
+0.6133	0.5545	1.000	a. DD(U), (F21) - 343.7, (F10) 432	0.2744	0.0161
+0.6177	0.1297	1.000	d. DD(N), 1, 3E-5, -45.7, 12 S 17	0.2688	0.0160
+0.6308	0.5883	1.000	Two numbers are compiled. In the first, 343 is	0.3459	0.0146
+0.6336	0.1635	1.000	This example illustrates the multiple entry fea-	0.3477	0.0161
+0.6467	0.5883	1.000	converted as an integer and .7 is converted to a	0.3459	0.0133
+0.6497	0.1598	1.000	ture. This single DD statement compiles four	0.3534	0.0161
+0.6612	0.5865	1.000	21-bit fraction. They are joined and placed in	0.3477	0.0176
+0.6657	0.1617	1.000	64-bit Hloating point words and advances the	0.3496	0.0146
+0.6758	0.5865	1.000	the rightmost bits of the fraction portion of the	0.3477	0.0161
+0.6788	0.1597	1.000	location counter accordingly.	0.2202	0.0131
+0.6933	0.5865	1.000	Hoating point word, and the correct exponent	0.3477	0.0116
+0.6991	0.1278	1.000	e. DD(N), 1/3, 472*351, 4-7*5/21 S 4	0.2932	0.0161
+0.7078	0.5883	1.000	(in this case 27) and sign are supplied. In the	0.3440	0.0131
+0.7136	0.1598	1.000	Note: Sign byte entered in last D field.	0.3102	0.0161
+0.7224	0.5865	1.000	second D field, 432 is converted to a binary	0.3477	0.0146
+0.7339	0.1259	1.000	f. DD(N), 27.9/31.4/12/14 E 5, 4+3*7/5*6	0.3327	0.0161
+0.7369	0.5865	1.000	integer. Because ten fractional bits are speci-	0.3477	0.0146
+0.7500	0.1635	1.000	The number produced in the first case is:	0.3064	0.0145
+0.7514	0.5863	1.000	fied, but no decimal fraction is written, the	0.3481	0.0188
+0.7660	0.2932	1.000	27.9	0.0338	0.0116
+0.7674	0.5846	1.000	ten rightmost bits of the fraction field are set	0.3496	0.0160
+0.7801	0.5863	1.000	to zero and the number is entered with its right-	0.3463	0.0183
+0.7805	0.2256	1.000	31.4 X 12 × 14 X 10°	0.1692	0.0146
+0.7979	0.5865	1.000	most bit in position 50.	0.1692	0.0146
+0.7994	0.1598	1.000	in the second: 4+3X7X6	0.2312	0.0189
+0.8182	0.5508	1.000	b. (F15)DD(U), 767.52, 767.52 X-12 S11	0.3177	0.0161
+0.8342	0.1429	1.000	g. DD(N), 1/7 - 3/11 + 1.4321 E - 2, .12 + 1/144	0.3665	0.0146
+0.8358	0.5846	1.000	The (F15) applies to both D fields. In the sec-	0.3496	0.0161
+0.8448	0.1613	1.000	As an extra convenience, certain system sym-	0.3484	0.0237
+0.8517	0.5865	1.000	ond, the computed exponent is overruled by	0.3477	0.0161
+0.8625	0.1594	1.000	bols are defined by which constants involving	0.3503	0.0211
+0.8663	0.5865	1.000	the specified one and the number is made nega-	0.3477	0.0160
+0.8776	0.1577	1.000	irrational numbers can be entered. They are:	0.3500	0.0169
+0.8821	0.5846	1.000	tive by means of the specified sign byte.	0.3102	0.0176
+0.9142	0.1109	1.000	28	0.0188	0.0116
+0.9157	0.1617	1.000	IBM 7030	0.0639	0.0088

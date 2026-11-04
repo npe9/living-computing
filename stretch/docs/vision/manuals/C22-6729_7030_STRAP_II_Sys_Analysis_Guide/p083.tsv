@@ -1,0 +1,108 @@
+0.0843	0.8459	1.000	GETFLD	0.0714	0.0160
+0.1424	0.5451	1.000	Each coded expression which GETFLD is called	0.3553	0.0146
+0.1436	0.1014	1.000	LINKAGE	0.0735	0.0123
+0.1584	0.5301	1.000	upon to make is usually saved in the current expanded	0.3985	0.0116
+0.1730	0.5301	1.000	instruction unit. During Pass 1 the coded expression	0.3966	0.0116
+0.1743	0.1033	1.000	On Entry	0.0677	0.0105
+0.1875	0.5301	1.000	for each field of an instruction producing binary	0.3534	0.0116
+0.2020	0.5301	1.000	output is sequentially stacked in the variable length	0.3797	0.0116
+0.2035	0.1165	1.000	1. The calling sequence is:	0.2124	0.0117
+0.2166	0.5301	1.000	portion of the current unit. During Pass 2 these	0.3609	0.0131
+0.2179	0.1034	1.000	SIC, Getilz; B, GETFLD.	0.1898	0.0133
+0.2311	0.5301	1.000	coded expressions will be sequentially decoded and	0.3759	0.0116
+0.2311	0.1485	1.000	Since the index words, Befldx and Befxtx,	0.3083	0.0131
+0.2326	0.1184	1.000	2.	0.0207	0.0102
+0.2456	0.1053	1.000	define the buffer area where the coded expression	0.3647	0.0116
+0.2456	0.5282	1.000	evaluated by the routine DECODE and its VALUE	0.3647	0.0147
+0.2602	0.5301	1.000	subroutine in order to obtain the values to be inserted	0.3966	0.0116
+0.2615	0.1034	1.000	is to be built up,	0.1241	0.0133
+0.2761	0.5301	1.000	in the binary output. (The binary output for an	0.3459	0.0118
+0.2761	0.1353	1.000	a. the value field of Befldx locates the full	0.3233	0.0118
+0.2906	0.5301	1.000	instruction is also saved in the unit.)	0.2744	0.0103
+0.2906	0.1673	1.000	word address of the buffer and	0.2274	0.0103
+0.3036	0.5451	1.000	GETFLD performs a legality test to detect syn-	0.3553	0.0176
+0.3052	0.1372	1.000	b. the value field of Befxtx locates the first	0.3308	0.0118
+0.3197	0.1692	1.000	bit after the buffer.	0.1429	0.0118
+0.3197	0.5282	1.000	tactical errors in a field. If the combination of	0.3553	0.0132
+0.3342	0.5282	1.000	datums is specified in an illegal manner, GETFLD	0.3778	0.0146
+0.3342	0.1504	1.000	The bit, Gichar, is on if the user has already	0.3365	0.0131
+0.3358	0.1184	1.000	3.	0.0188	0.0131
+0.3488	0.5320	1.000	encodes a null coded expression which will be	0.3383	0.0118
+0.3488	0.1053	1.000	set up $3 with the first character of the field.	0.3365	0.0118
+0.3633	0.1523	1.000	The bit, Gfnogp, is on if the user does not	0.3139	0.0161
+0.3648	0.5320	1.000	evaluated later as zero for the field.	0.2688	0.0102
+0.3648	0.1203	1.000	4.	0.0150	0.0102
+0.3794	0.5470	1.000	A code number is associated with the type of infor-	0.3778	0.0116
+0.3794	0.1053	1.000	allow a general parenthetical integer entry on the	0.3628	0.0116
+0.3939	0.5320	1.000	mation that either precedes or follows the arithmetie	0.3910	0.0116
+0.3939	0.1053	1.000	field about to be encoded.	0.1861	0.0116
+0.4039	0.5282	1.000	separators: @O..O.C.OO.Ans-code	0.3929	0.0191
+0.4225	0.1032	1.000	On Exit	0.0586	0.0140
+0.4230	0.5301	1.000	(syntax code) is a number associated with what pre-	0.3835	0.0116
+0.4375	0.5301	1.000	cedes a separator; a syntax code describes either a	0.3816	0.0116
+0.4520	0.5301	1.000	datum or another arithmetic separator. A U-code	0.3741	0.0116
+0.4520	0.1184	1.000	1. The value field of Befldx will have been up-	0.3534	0.0131
+0.4679	0.1053	1.000	dated accordingly.	0.1353	0.0118
+0.4679	0.5301	1.000	is a number associated with what follows an arith-	0.3741	0.0103
+0.4824	0.5320	1.000	metic separator; a U-code describes either a datum	0.3835	0.0118
+0.4824	0.1541	1.000	The value field of $3 will contain the first	0.3083	0.0103
+0.4970	0.5320	1.000	or another arithmetic separator, one separator or	0.3722	0.0133
+0.4970	0.1053	1.000	character after the field.	0.1842	0.0118
+0.5115	0.1541	1.000	The flag, Fsymb, will be on if a symbol	0.2989	0.0133
+0.5115	0.5301	1.000	two separators can determine an arithmetic opera-	0.3797	0.0118
+0.5131	0.1184	1.000	3.	0.0207	0.0116
+0.5261	0.1053	1.000	(which was not an absolute system symbol) appeared	0.3910	0.0133
+0.5276	0.5301	1.000	tion.	0.0376	0.0102
+0.5421	0.5470	1.000	With the S- and U-codes, GETFLD looks up an	0.3459	0.0117
+0.5421	0.1034	1.000	in the field.	0.0883	0.0117
+0.5567	0.5320	1.000	element in its two dimensional syntax matrix. Each	0.3853	0.0116
+0.5712	0.5301	1.000	look up in the syntax matrix accomplishes two things:	0.3947	0.0116
+0.5719	0.1069	1.000	USER(s)	0.0626	0.0147
+0.5858	0.5338	1.000	First, the look up establishes whether or not the cur-	0.3929	0.0131
+0.6003	0.1053	1.000	The most frequent use of GETFLD is from the place	0.3853	0.0116
+0.6003	0.5320	1.000	rent operation, or the current datum is syntactically	0.3891	0.0131
+0.6148	0.5320	1.000	correct depending on the value of the isolated element.	0.4041	0.0116
+0.6148	0.1015	1.000	in main flow where MAIN calls on GETFLD to put	0.3722	0.0131
+0.6294	0.1034	1.000	into the unit the encoding of the address field(s)	0.3515	0.0131
+0.6294	0.5320	1.000	Second, the look-up establishes the S-code, the value	0.3947	0.0131
+0.6439	0.5301	1.000	of the isolated element to be used for the next look-	0.3816	0.0146
+0.6439	0.1034	1.000	from an instruction that produces binary output.	0.3553	0.0146
+0.6539	0.5282	1.000	up in the syntax matrix. Initially each S- and U-code	0.4004	0.0206
+0.6584	0.1034	1.000	(See Appendix C.) However, instructions that are	0.3759	0.0161
+0.6715	0.5282	1.000	is zero. Thereafter, each U-code is determined by	0.3872	0.0161
+0.6730	0.1034	1.000	re-routed around this area of MAIN for special	0.3496	0.0146
+0.6845	0.5282	1.000	the current datum or by the current arithmetic	0.3515	0.0161
+0.6860	0.1053	1.000	treatment in one of the sub-procedures of MAIN	0.3534	0.0146
+0.7006	0.5282	1.000	separator; each S-code is determined by the previous	0.3985	0.0146
+0.7035	0.1053	1.000	have their address fields encoded (If necessary)	0.3534	0.0132
+0.7131	0.5281	1.000	look-up in the syntax mateix.	0.2201	0.0171
+0.7179	0.1053	1.000	from that particular subroutine. Subroutines using	0.3778	0.0118
+0.7324	0.1034	1.000	GETFLD include: MQM, MDIMRE, MDIMRT,	0.3421	0.0147
+0.7442	0.1015	1.000	MIOD, MDUP, VIX, MQS. MAIN also uses GETFLD	0.3966	0.0189
+0.7542	0.5301	1.000	Syntax Codes (what precedes)	0.2256	0.0176
+0.7615	0.1071	1.000	during the processing of the byte size and field	0.3459	0.0133
+0.7776	0.1034	1.000	length.	0.0545	0.0131
+0.7827	0.5317	1.000	Value(s)	0.0645	0.0174
+0.7834	0.7387	1.000	Meaning	0.0658	0.0161
+0.7834	0.6259	1.000	Symbol	0.0620	0.0160
+0.8065	0.1052	1.000	DETAILS	0.0715	0.0120
+0.8124	0.7387	1.000	Beginning of expression,	0.1861	0.0176
+0.8154	0.6410	1.000	B	0.0150	0.0131
+0.8299	0.7387	1.000	or unitary minus.	0.1372	0.0131
+0.8342	0.1071	1.000	A coded expression for one field will be set up in	0.3609	0.0131
+0.8429	0.7368	1.000	Symbol, number, or	0.1561	0.0163
+0.8445	0.5489	1.000	1	0.0113	0.0131
+0.8486	0.1071	1.000	the beginning of the buffer. The end of the buffer	0.3649	0.0156
+0.8572	0.7367	1.000	parameter.	0.0942	0.0167
+0.8628	0.1051	1.000	may have been used for intermediate storage. More-	0.3914	0.0212
+0.8687	0.7386	1.000	Symbol etc. preceded by	0.1844	0.0184
+0.8721	0.6391	1.000	SZ	0.0282	0.0145
+0.8735	0.5470	1.000	2	0.0132	0.0145
+0.8778	0.1051	1.000	over, if the value field of Bcfxtx does not contain	0.3632	0.0192
+0.8865	0.7387	1.000	a decimal.	0.0828	0.0148
+0.8924	0.1052	1.000	a full word address, the address will be rounded	0.3593	0.0174
+0.8995	0.7387	1.000	Operation.	0.0847	0.0193
+0.9041	0.5470	1.000	3	0.0132	0.0131
+0.9099	0.1071	1.000	down.	0.0414	0.0102
+0.9404	0.9060	1.000	83	0.0207	0.0116
+0.9416	0.8364	1.000	GETFLD	0.0491	0.0121

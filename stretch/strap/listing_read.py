@@ -80,8 +80,16 @@ def geometry(obs, w_px=5100, h_px=3300):
             "line_x": (lx - 6.5 * cw, lx - 1.5 * cw),
             "loc_x": (lx - 2.0 * cw, lx + 3.5 * cw),
             "bin_x": (bx - 2.0 * cw, bx + 3.5 * cw),
+            # BINARY half word 2: 14 cells right of half word 1 (period at
+            # k=69 against k=55), measured on both volumes: 330 of 331 vol 1
+            # groups, 216 of 220 vol 2 groups sit at +14.
+            "bin2_x": (bx + 12.0 * cw, bx + 17.5 * cw),
+            # NAME + STATEMENT: the NAME heading sits at bin + 31 cells and
+            # the right-hand LOCATION heading at bin + 77 on both volumes
+            # (median of 199 / 181 page headers; 169 / 161).
+            "text_x": (bx + 28.0 * cw, bx + 76.5 * cw),
             "pitch": (PITCH_PX[0] / h_px, PITCH_PX[1] / h_px),
-            "loc_cell": loc, "bin_cell": b}
+            "loc_cell": loc, "bin_cell": b, "bin2_cell": b + 14}
 
 
 def groups(x, tok, char_w=None):
@@ -203,3 +211,28 @@ def bit_address(loc):
     """'221515.40' -> word * 64 + bit; the bit field is two octal digits."""
     w, b = loc.split(".")
     return int(w, 8) * 64 + int(b, 8)
+
+
+_LOOKALIKE = str.maketrans({
+    "В": "B", "А": "A", "Е": "E", "К": "K", "М": "M", "Н": "H", "О": "O",
+    "Р": "P", "С": "C", "Т": "T", "Х": "X", "х": "X", "У": "Y", "у": "Y",
+    "Г": "T", "З": "3", "×": "X", "İ": "I", "ı": "I"})
+
+
+def printer_charset(t):
+    """Fold a reading onto the 7030 printer's character set: it prints no
+    lowercase, no accents, no Cyrillic, so those are MISREADS of the
+    uppercase ASCII glyph they resemble (Vision returns "В,2.0($15)" and
+    "CМОCОС").  Like the octal constraint, it guesses nothing that is
+    printable."""
+    import unicodedata
+    t = t.translate(_LOOKALIKE)
+    t = "".join(ch for ch in unicodedata.normalize("NFKD", t) if not unicodedata.combining(ch))
+    return t.upper()
+
+
+def text_at(obs, y, pitch, xwin):
+    """The NAME + STATEMENT text Vision read on one line, left to right."""
+    toks = sorted((x, t) for oy, x, t in obs
+                  if abs(oy - y) < 0.45 * pitch and xwin[0] <= x < xwin[1])
+    return printer_charset(" ".join(t for _, t in toks)).strip()

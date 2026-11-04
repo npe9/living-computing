@@ -1,0 +1,88 @@
+0.0620	0.0769	1.000	CPLTSY	0.0661	0.0155
+0.1221	0.0771	1.000	LINKAGE	0.0714	0.0131
+0.1243	0.5014	1.000	Boxes 2-9	0.0781	0.0148
+0.1516	0.0787	1.000	On Entry	0.0663	0.0136
+0.1539	0.5038	1.000	As CPLTSY gets each of the characters from	0.3346	0.0118
+0.1685	0.5038	1.000	GETCHA, CPLTSY collects the alphamerie char-	0.3703	0.0147
+0.1817	0.0940	1.000	1. The calling sequence is:	0.2068	0.0116
+0.1822	0.5037	1.000	acters of the symbol in one of two buffers depending	0.3837	0.0144
+0.1962	0.1729	1.000	SIC, Coltsz; B, CPLTSY.	0.1936	0.0160
+0.1991	0.5038	1.000	on whether the symbol is a system symbol or a pro-	0.3853	0.0117
+0.2106	0.0921	1.000	2. The first character of the symbol, i.e., a $	0.3571	0.0147
+0.2136	0.5038	1.000	grammer symbol.	0.1335	0.0103
+0.2238	0.0752	1.000	or an alphabetic is in the value field of $3.	0.3158	0.0146
+0.2282	0.5207	1.000	If the symbol is a programmer symbol, it is	0.3289	0.0131
+0.2397	0.0921	1.000	3. The location where the symbol is to be placed	0.3665	0.0133
+0.2427	0.5038	1.000	immediately collected in the area located by the	0.3534	0.0116
+0.2542	0.0733	1.000	is in the value field of Bsymbx.	0.2350	0.0176
+0.2573	0.5038	1.000	index word, Bsymbx. (This area will usually be in	0.3778	0.0131
+0.2718	0.5038	1.000	the variable portion of the current expanded instruc-	0.3891	0.0116
+0.2847	0.0789	1.000	On Exit	0.0565	0.0090
+0.2863	0.5038	1.000	tion unit where GETFLD is building up a coded	0.3459	0.0131
+0.3009	0.5056	1.000	expression.) CPLTSY maintains a character length	0.3816	0.0116
+0.3139	0.0921	1.000	See details under boxes 32-37.	0.2274	0.0103
+0.3154	0.5056	1.000	counter so CPLTSY can determine later how much of	0.3929	0.0116
+0.3299	0.5038	1.000	the current tails in effect, if any, can be appended to	0.3929	0.0131
+0.3399	0.0751	1.000	USERS	0.0547	0.0164
+0.3445	0.5038	1.000	the programmer symbol. On detection of a non-	0.3590	0.0131
+0.3590	0.5038	1.000	alphameric character, _CPLTSY stops getting char-	0.3797	0.0131
+0.3706	0.1823	1.000	to collect the characters of a symbol	0.2726	0.0161
+0.3706	0.0902	1.000	MAIN:	0.0526	0.0160
+0.3735	0.5038	1.000	acters from the input for the programmer symbol.	0.3741	0.0131
+0.3866	0.1974	1.000	which is in a P-mode data descrip-	0.2632	0.0146
+0.3894	0.5207	1.000	If the symbol is a system symbol, it is collected in	0.3778	0.0133
+0.3997	0.1955	1.000	tion;	0.0432	0.0160
+0.4039	0.5038	1.000	a buffer area of CPLTSY in preparation for the later	0.3891	0.0147
+0.4083	0.1774	0.300	Wicis s hn tho atdes teat or .l	0.2796	0.0375
+0.4157	0.0902	1.000	MQP:	0.0470	0.0160
+0.4185	0.5019	1.000	look up of the symbol in the system symbol table.	0.3665	0.0133
+0.4330	0.5038	1.000	Afterwards, _CPLTSY may or may not put the system	0.3910	0.0133
+0.4448	0.1955	1.000	PUNSYM pseudo-op;	0.1598	0.0131
+0.4476	0.5038	1.000	symbol in the area located by the index word	0.3289	0.0118
+0.4578	0.0921	1.000	MQDD:	0.0564	0.0175
+0.4593	0.1842	1.000	to get the value of a system symbol	0.2575	0.0160
+0.4619	0.5037	1.000	Bsymbx. On detection of a non-alphameric character,	0.4024	0.0134
+0.4709	0.2011	1.000	which is in the address field of a	0.2368	0.0146
+0.4767	0.5038	1.000	CPLTSY has the presently collected symbol looked up.	0.4023	0.0132
+0.4884	0.1955	1.000	numeric DD pseudo-op;	0.1823	0.0147
+0.4912	0.5188	1.000	CPLTSY cannot use all this information directly	0.3571	0.0131
+0.5026	0.0902	1.000	GETFLD: to collect the characters of a pro-	0.3459	0.0152
+0.5073	0.5038	1.000	from the TAILOR table because the information may	0.3853	0.0116
+0.5160	0.1974	1.000	grammer symbol or get the value of	0.2707	0.0161
+0.5203	0.5038	1.000	have to be temporarily adjusted just for this pro-	0.3628	0.0131
+0.5363	0.5038	1.000	grammer symbol if the programmer symbol being	0.3703	0.0131
+0.5509	0.5038	1.000	collected has any tails specified with the symbol.	0.3628	0.0116
+0.5624	0.0752	1.000	FLOW CHART DESCRIPTION	0.2218	0.0132
+0.5654	0.5038	1.000	Any tail specified with a programmer symbol over-	0.3797	0.0131
+0.5799	0.5038	1.000	rules any existing tail on the same level.	0.3026	0.0131
+0.5915	0.0733	1.000	Box 1	0.0489	0.0161
+0.6105	0.5019	1.000	Box 15	0.0526	0.0132
+0.6191	0.0733	1.000	During the initialization CPLTSY does the following:	0.3910	0.0176
+0.6362	0.5036	1.000	This test determines whether there is any tail speci-	0.3894	0.0159
+0.6366	0.0733	1.000	zeros the length-of-symbol counter, zeros the number	0.4041	0.0131
+0.6482	0.0752	1.000	of levels counter, zeros the if-a-system-symbol	0.3628	0.0161
+0.6517	0.5036	1.000	fied with the programmer symbol.	0.2522	0.0140
+0.6642	0.0733	1.000	switch, sets the initial setting of NOP/B-type	0.3421	0.0161
+0.6802	0.0752	1.000	switches, and sets up index registers with the loca-	0.3853	0.0131
+0.6817	0.5019	1.000	Boxes 16-29	0.0977	0.0132
+0.6962	0.0771	1.000	tion of the buffer located by Bsymbx and the location	0.3853	0.0117
+0.7093	0.0752	1.000	of CPLTSY's word buffer.	0.1955	0.0116
+0.7106	0.5038	1.000	The cycle through these blocks is performed for each	0.3929	0.0133
+0.7224	0.0921	1.000	If the character in $3 is a$ indicating a system	0.3609	0.0146
+0.7252	0.5019	1.000	tail specified after the programmer symbol.	0.3289	0.0133
+0.7397	0.5188	1.000	(The first character of the tail is checked to be an	0.3703	0.0118
+0.7397	0.0752	1.000	symbol is to be collected, then the if-a-system-	0.3571	0.0118
+0.7542	0.0752	1.000	symbol switch is turned on, the collection buffer of	0.3816	0.0118
+0.7558	0.5019	1.000	alphabetic character.) The characters of the tail are	0.3947	0.0118
+0.7688	0.0752	1.000	the system symbol is blanked, and the maximum	0.3609	0.0118
+0.7703	0.5019	1.000	collected. The number-of-tail counter is incre-	0.3590	0.0118
+0.7833	0.0752	1.000	count of system symbol characters is set to eight	0.3665	0.0132
+0.7834	0.5676	1.000	Then the tail with this new number is	0.2803	0.0134
+0.7834	0.5000	1.000	mented.	0.0620	0.0145
+0.7956	0.0750	1.000	(excluding)) Otherwise the symbol to be collected	0.3876	0.0199
+0.7994	0.5019	1.000	entered into the table of tails. However, if the tail	0.3778	0.0131
+0.8124	0.0752	1.000	is a programmer symbol and the maximum character	0.3947	0.0118
+0.8124	0.5019	1.000	itself is in the table already, the new tail with the	0.3684	0.0132
+0.8285	0.0752	1.000	count is set to 128.	0.1429	0.0103
+0.8285	0.5019	1.000	new number is not put in the table of tails; the number-	0.4060	0.0131
+0.9157	0.0752	1.000	74	0.0169	0.0087

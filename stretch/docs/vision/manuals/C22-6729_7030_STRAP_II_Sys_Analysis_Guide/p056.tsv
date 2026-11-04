@@ -1,0 +1,95 @@
+0.0669	0.2162	1.000	= I if the value and index	0.2086	0.0147
+0.0682	0.5658	1.000	Bit Vibdds. = 1 if dds information is	0.2744	0.0147
+0.0682	0.1053	1.000	c. Bit Vfbv	0.1109	0.0147
+0.0827	0.2462	1.000	information is affected.	0.1786	0.0147
+0.0945	0.2237	1.000	= 1 if S/Xtype of information	0.2331	0.0174
+0.0972	0.1390	1.000	Bit Vfbsx	0.0753	0.0163
+0.0973	0.5564	1.000	Bits Vebe, Yebsx, Vebdim. Vebdds, are	0.3195	0.0161
+0.1111	0.2479	1.000	is affected.	0.0869	0.0161
+0.1115	0.5619	1.000	not changed.	0.0979	0.0154
+0.1250	0.1391	1.000	Bit Vfbdim = 1 if dimension information	0.3139	0.0174
+0.1264	0.5113	1.000	2. When VALUE exits to the normal return,	0.3365	0.0161
+0.1404	0.2480	1.000	is affected.	0.0868	0.0158
+0.1409	0.5000	1.000	VALUE provides the using program with the follow-	0.3835	0.0146
+0.1509	0.4980	1.000	ing information:	0.1242	0.0195
+0.2121	0.2255	1.000	Location	0.0696	0.0162
+0.2122	0.5996	1.000	Contents	0.0677	0.0160
+0.2137	0.4173	1.000	dds	0.0357	0.0145
+0.2412	0.0714	1.000	value and index	0.1203	0.0161
+0.2427	0.2237	1.000	Sini	0.0395	0.0160
+0.2438	0.5977	1.000	integer value	0.1017	0.0152
+0.2442	0.4173	1.000	(B, 25)	0.0620	0.0146
+0.2573	0.2256	1.000	Sinb	0.0395	0.0174
+0.2586	0.0733	1.000	information	0.0903	0.0134
+0.2587	0.4173	1.000	(B, 25)	0.0620	0.0146
+0.2587	0.5959	1.000	bit style value	0.1109	0.0146
+0.2731	0.4229	1.000	(BU, 4)	0.0584	0.0148
+0.2733	0.2256	1.000	Sinx	0.0414	0.0160
+0.2747	0.5977	1.000	index	0.0432	0.0116
+0.2878	0.2274	1.000	Sinxg	0.0432	0.0160
+0.2878	0.4229	1.000	(BU, 1)	0.0602	0.0160
+0.2878	0.5996	1.000	= 1 if there is an index	0.1692	0.0146
+0.3036	0.5996	1.000	= O if there is no index	0.1692	0.0133
+0.3312	0.4228	1.000	(BU, 1)	0.0584	0.0164
+0.3314	0.2256	1.000	Sinrll	0.0508	0.0174
+0.3372	0.5996	1.000	relocation indicators*	0.1635	0.0146
+0.3459	0.2256	1.000	Sinrl2	0.0508	0.0174
+0.3473	0.4173	1.000	(BU, 1)	0.0658	0.0161
+0.3732	0.0732	1.000	S/Xtype	0.0698	0.0181
+0.3750	0.2274	1.000	Sinsx	0.0451	0.0160
+0.3750	0.5977	1.000	00 integer style	0.1316	0.0160
+0.3764	0.4173	1.000	(BU, 2)	0.0658	0.0161
+0.3765	0.7462	1.000	(S)	0.0226	0.0145
+0.3877	0.0732	1.000	information	0.0923	0.0167
+0.3909	0.5977	1.000	10 bit style	0.0977	0.0146
+0.3910	0.7481	0.500	(x)	0.0263	0.0145
+0.4041	0.5977	1.000	01	0.0226	0.0145
+0.4201	0.5977	1.000	11	0.0207	0.0131
+0.4477	0.2274	1.000	Sindim	0.0545	0.0174
+0.4477	0.0733	1.000	dimension	0.0808	0.0145
+0.4491	0.5959	1.000	dimension reference	0.1560	0.0146
+0.4491	0.4173	1.000	(B, 25)	0.0620	0.0161
+0.4619	0.0732	1.000	information	0.0923	0.0151
+0.4913	0.2274	1.000	Sindds	0.0526	0.0174
+0.4927	0.0733	1.000	dds	0.0301	0.0145
+0.4942	0.4173	1.000	(B, 25)	0.0620	0.0146
+0.4942	0.5977	1.000	dds reference	0.1053	0.0131
+0.5057	0.0714	1.000	information	0.0941	0.0162
+0.5058	0.4229	1.000	(BU, 1)	0.0620	0.0176
+0.5073	0.2274	1.000	Sindsq	0.0489	0.0160
+0.5073	0.5996	1.000	= 1 if the dls reference is known	0.2425	0.0161
+0.5218	0.5996	1.000	= O if it is not known	0.1541	0.0146
+0.5507	0.2255	1.000	Sinser	0.0547	0.0163
+0.5509	0.5977	1.000	symbol crror flags	0.1466	0.0161
+0.5521	0.4172	1.000	(BU, 4)	0.0660	0.0164
+0.5857	0.0713	1.000	* See Section on relocation ops.	0.2390	0.0161
+0.6627	0.0883	1.000	3. If VALUE had been unable to find some of the	0.3665	0.0161
+0.6642	0.5150	1.000	1. changing the setting of Vcbv, Vebsx. Vebdim	0.3628	0.0145
+0.6788	0.0752	1.000	desired information, the bit Vfbnot will be on to indi-	0.3947	0.0146
+0.6788	0.5038	1.000	and Vebdds to show that certain information is no	0.3628	0.0131
+0.6914	0.5014	1.000	longer desired, or	0.1400	0.0171
+0.6933	0.0752	1.000	cate this fact and the appropriate Vfb bits will be set	0.3910	0.0146
+0.7078	0.0733	1.000	to show what information could not be found.	0.3289	0.0131
+0.7093	0.5395	1.000	filling in missing information into the symbol	0.3402	0.0116
+0.7224	0.0902	1.000	4. If the using program had turned on bit Vcunfd.	0.3703	0.0161
+0.7384	0.5019	1.000	If desired, VALUE may be used at this time to eval-	0.3891	0.0116
+0.7384	0.0752	1.000	VALUE also will have made a symbol table entry for	0.3910	0.0147
+0.7529	0.0752	1.000	any undefined symbol encountered in the coded	0.3440	0.0132
+0.7529	0.5038	1.000	uate other coded expressions. Eventually, the using	0.3872	0.0132
+0.7674	0.5038	1.000	program must return to one of the locations, Vpunt	0.3778	0.0132
+0.7685	0.0770	1.000	expression.	0.0867	0.0125
+0.7801	0.0938	1.000	5. Valinx will be updated to locate the first bit	0.3480	0.0154
+0.7820	0.5000	1.000	or Vrtrn. after the break exit from VALUE.	0.3271	0.0145
+0.7961	0.5037	1.000	Vrtrn return if the situation has improved (i.e., if	0.3742	0.0137
+0.7979	0.0771	1.000	after the coded expression.	0.2011	0.0103
+0.8124	0.5019	1.000	any of the Veb bits have been turned on, or if further	0.3929	0.0118
+0.8266	0.0770	1.000	DETAILS	0.0698	0.0124
+0.8270	0.5019	1.000	information has been added to the symbol table or	0.3684	0.0118
+0.8415	0.5038	1.000	both): then VALUE tries again where it previously ran	0.4004	0.0131
+0.8561	0.5019	1.000	into trouble. If the situation has not been improved,	0.3872	0.0118
+0.8561	0.0771	1.000	Break exit: Following a break exit, the using pro-	0.3759	0.0118
+0.8706	0.5038	1.000	VALUE notes what items can no longer be evaluated,	0.3891	0.0131
+0.8706	0.0771	1.000	gram may take any action it desires, including (per-	0.3910	0.0131
+0.8852	0.5038	1.000	and then proceeds with the evaluation of the others,	0.3778	0.0131
+0.8866	0.0752	1.000	haps):	0.0470	0.0131
+0.9215	0.0733	1.000	56	0.0188	0.0102

@@ -1,0 +1,36 @@
+0.1056	0.1277	1.000	LIM CARDS	0.0980	0.0156
+0.1366	0.1410	1.000	his card is present only in a GO deck, i.e., it can only follow a GO definition car‹	0.6541	0.0131
+0.1512	0.1410	1.000	he LIM card, which is part of the output of STRAP II, is punched in the forma	0.6203	0.0131
+0.1933	0.3214	1.000	9,10	0.0338	0.0189
+0.1977	0.7669	1.000	80	0.0226	0.0145
+0.1991	0.1767	1.000	1	0.0188	0.0116
+0.1991	0.1936	1.000	2	0.0150	0.0131
+0.2006	0.6466	1.000	68/69	0.0357	0.0116
+0.2130	0.3269	1.000	LIM, A.O, B.O	0.1075	0.0188
+0.2412	0.1692	1.000	A and B are six-digit octal integers.	0.2218	0.0118
+0.2515	0.1936	0.300	A = the iull word ades whice conely n thewing ghe promem b higher bit ale e 418.	0.5338	0.0307
+0.3067	0.1278	1.000	MCP uses the information contained in a LIM card for storage assignment; at load time,	0.7105	0.0161
+0.3212	0.1259	1.000	MCP loads A and B into the boundary registers.	0.3891	0.0176
+0.3561	0.1259	1.000	IOD CARD	0.0865	0.0118
+0.3866	0.1297	1.000	The configuration of I-O devices can vary not only from installation to installation, but	0.6917	0.0131
+0.4011	0.1278	1.000	also within a single installation from time to time. MCP assumes the responsibility	0.6749	0.0149
+0.4172	0.1297	1.000	of maintaining an up-to-date record of the status and availability of all I-O devices that	0.6955	0.0147
+0.4330	0.1297	1.000	are attached to the exchange. The system can then assign I-O devices to problem pro-	0.6955	0.0146
+0.4476	0.1278	1.000	grams and prevent conflicting assignments of these devices. Moreover, the I-O re-	0.6767	0.0146
+0.4636	0.1297	1.000	quirements for any problem program may change from one run to another. To provide	0.6936	0.0131
+0.4811	0.1297	1.000	greatest flexibility, the problem program describes its I-O requirements by means	0.6654	0.0131
+0.4970	0.1278	1.000	of symbolic I-O definitions, the IOD cards.	0.3459	0.0133
+0.5320	0.1297	1.000	An IOD card describes an I-O requirement by giving parameters that specify the type	0.6786	0.0132
+0.5464	0.1296	1.000	of I-O device to be used, how the device is to be used, and the exit to be taken when	0.6674	0.0161
+0.5622	0.1296	1.000	the I-O operation is terminated. Several files may share one IOD statement.	0.6166	0.0151
+0.5945	0.1297	1.000	STRAP II reproduces IOD cards exactly as they are submitted and includes them in the	0.6917	0.0146
+0.6096	0.1296	1.000	punched output. STRAP punches two additional fields in each duplicate IOD card: the	0.6825	0.0164
+0.6264	0.1297	1.000	I-O Reference Number field (columns 69-72), and the Absolute Exit field (columns	0.6560	0.0146
+0.6422	0.1297	1.000	73-80). Thus, when writing an IOD statement, the programmer can use only columns	0.6862	0.0151
+0.6890	0.1297	1.000	The problem program names each IOD card with a symbol and thereafter refers to the	0.6880	0.0160
+0.7032	0.1277	1.000	particular I-O device by using this symbol as a parameter in the calling sequence for	0.6807	0.0177
+0.7209	0.1297	1.000	a pseudo I-O operation. (See Pseudo I-O Operations.)	0.4342	0.0131
+0.7529	0.1316	1.000	The IOD card is divided into five fields:	0.3158	0.0116
+0.7810	0.1521	1.000	1. Class: column 1 contains the single character "B" to identify the card as a	0.6300	0.0194
+0.8009	0.1805	1.000	definition provided by the problem program.	0.3553	0.0131
+0.9375	0.9154	1.000	3	0.0113	0.0116

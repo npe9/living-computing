@@ -1,0 +1,108 @@
+0.0776	0.5505	1.000	Part I. The Language of FORTRAN IV	0.3521	0.0249
+0.1730	0.5056	1.000	Where a fixed point constant is used for the value	0.3985	0.0161
+0.1778	0.0843	1.000	Chapter 1. General Definitions	0.2581	0.0197
+0.1890	0.5056	1.000	of a subscript, it is treated modulo 218,	0.2838	0.0160
+0.1962	0.0865	1.000	A FORTRAN source program consists of a sequence of	0.3929	0.0160
+0.2166	0.0846	1.000	FORTRAN statements.	0.1504	0.0102
+0.2179	0.5038	1.000	FLOATING POINT CONSTANT	0.1992	0.0176
+0.2267	0.0996	1.000	Each statement is a string of characters grouped	0.3797	0.0176
+0.2442	0.0846	1.000	into records of 72 characters. If a statement is too	0.3947	0.0131
+0.2456	0.7782	1.000	EXAMPLES	0.0677	0.0131
+0.2587	0.0827	1.000	long to fit into a single 72-character record, it may	0.3966	0.0174
+0.2660	0.7143	1.000	17.	0.0320	0.0102
+0.2718	0.0865	1.000	be continued on up to nine successive records. The	0.3929	0.0176
+0.2747	0.7274	1.000	5.0	0.0282	0.0116
+0.2863	0.7331	1.000	.0003	0.0432	0.0131
+0.2868	0.0844	1.000	first through fifth characters of a continuation record	0.3952	0.0208
+0.2979	0.7237	1.000	5.0E3 (meaning 5.0x10°)	0.1692	0.0132
+0.3035	0.0844	1.000	should not be used, and the sixth character of a con-	0.3952	0.0206
+0.3108	0.7218	1.000	5.0E+3 (meaning	0.1241	0.0121
+0.3197	0.0827	1.000	tinuation record must contain a non-blank, non-zero	0.3966	0.0161
+0.3212	0.7500	1.000	5.0×103)	0.0677	0.0131
+0.3336	0.0844	1.000	character. A record which is not a continuation record	0.3952	0.0195
+0.3342	0.7350	1.000	5.0E-7 (meanins	0.1053	0.0118
+0.3430	0.7613	1.000	5.0x10-7	0.0564	0.0131
+0.3445	0.5075	1.000	A decimal exponent preceded	0.2011	0.0146
+0.3532	0.0865	1.000	must have a zero or blank sixth character.	0.2970	0.0117
+0.3544	0.5056	1.000	by an E may follow a floating	0.2031	0.0165
+0.3663	0.0996	1.000	The order of the statements is governed solely by the	0.3797	0.0160
+0.3706	0.5056	1.000	point constant.	0.0977	0.0117
+0.3808	0.5244	1.000	+ or - sign between E a	0.1654	0.0116
+0.3836	0.0846	1.000	order of records.	0.1184	0.0118
+0.3909	0.5226	1.000	e exponent is option	0.1259	0.0118
+0.3953	0.1015	1.000	A number, less than six digits long, may be used to	0.3778	0.0174
+0.4127	0.0827	1.000	label any statement. This would appear among the	0.3966	0.0161
+0.4200	0.5056	1.000	LOCICAL CONSTANTS	0.1485	0.0191
+0.4258	0.0846	1.000	first five characters of the first 72-character record.	0.3722	0.0176
+0.4418	0.0996	1.000	If the first character is a "C" the record is treated	0.3797	0.0161
+0.4444	0.7987	1.000	EXAMPLES	0.0698	0.0167
+0.4468	0.5712	1.000	GENERAL FORM	0.1058	0.0206
+0.4593	0.0846	1.000	as a comment and does not affect the object program	0.3947	0.0146
+0.4662	0.7611	1.000	.TRUE.	0.0530	0.0139
+0.4666	0.5188	1.000	here are only two forms of logic	0.2180	0.0146
+0.4764	0.0839	1.000	in any way.	0.0914	0.0154
+0.4782	0.7631	1.000	.FALSE	0.0527	0.0103
+0.4782	0.5188	1.000	nstants: TRUE. and .FALS	0.1805	0.0131
+0.4874	0.1013	1.000	The seventh through 72nd characters of the record	0.3783	0.0202
+0.5073	0.0865	1.000	contain the statement proper.	0.2180	0.0116
+0.5203	0.1015	1.000	Blanks are simply ignored by FORTRAN and may be	0.3778	0.0176
+0.5216	0.5056	1.000	Variables	0.0772	0.0150
+0.5363	0.0846	1.000	used freely to improve the readability of the listings.	0.3947	0.0161
+0.5385	0.5055	1.000	Three types of variables are permissible: fixed point,	0.3988	0.0192
+0.5503	0.0844	1.000	(An exception is that blanks within an alphameric	0.3951	0.0195
+0.5532	0.5075	1.000	floating point, and logical. References to variables	0.3986	0.0187
+0.5679	0.5073	1.000	are made in the FORTRAN source language by symbolic	0.3988	0.0199
+0.5682	0.0846	1.000	field are significant.)	0.1541	0.0147
+0.5827	0.5075	1.000	names consisting of alphabetic and numeric characters.	0.3947	0.0191
+0.6075	0.0844	1.000	Chapter 2. Constants, Variables, Subscripts, and	0.3951	0.0203
+0.6192	0.5075	1.000	NAMES	0.0545	0.0145
+0.6248	0.0845	1.000	Expressions	0.0979	0.0165
+0.6409	0.5770	1.000	GENERAL FORM	0.0997	0.0163
+0.6424	0.8008	1.000	EXAMPLES	0.0658	0.0131
+0.6439	0.0846	1.000	As required of any programming language, FORTRAN	0.3929	0.0146
+0.6584	0.0846	1.000	provides a means of expressing numerical constants	0.3947	0.0146
+0.6613	0.7500	1.000	R	0.0263	0.0131
+0.6627	0.5132	1.000	- to 6 alphabetic or numeric char-	0.2312	0.0131
+0.6713	0.7555	1.000	M23A	0.0491	0.0150
+0.6730	0.0846	1.000	and variable quantities. In addition, a subscript nota-	0.3966	0.0174
+0.6730	0.5132	1.000	cters, the first of which is alphabetic	0.2274	0.0131
+0.6799	0.7611	1.000	SOBNO	0.0567	0.0181
+0.6875	0.0846	1.000	tion is provided for expressing one-, two, or three-	0.3947	0.0174
+0.7048	0.0865	1.000	dimensional arrays of variables.	0.2331	0.0132
+0.7166	0.5075	1.000	FIXED POINT VARIABLES	0.1692	0.0146
+0.7340	0.0865	1.000	Constants	0.0714	0.0102
+0.7412	0.5771	1.000	GENERAL FORM	0.0977	0.0146
+0.7412	0.7989	1.000	EXAMPLES	0.0677	0.0132
+0.7485	0.0846	1.000	Three types of constants are permissible in the FORTRAN	0.3947	0.0176
+0.7602	0.5132	0.500	2, L, able N if noa dieglaredh ther	0.2293	0.0262
+0.7602	0.7575	1.000	111114	0.0451	0.0131
+0.7638	0.0844	1.000	source program language: fixed point (restricted to	0.3970	0.0195
+0.7639	0.5128	1.000	1 variable	0.0626	0.0105
+0.7718	0.7575	1.000	M23A	0.0470	0.0131
+0.7791	0.0846	1.000	integers), floating point (characterized by being writ-	0.3947	0.0174
+0.7820	0.5056	1.000	WiFECy arable name declared JOBNO	0.3083	0.0247
+0.7947	0.0844	1.000	ten with a decimal point), and logical (one of the	0.3952	0.0198
+0.8124	0.0865	1.000	values, .TRUE. Or .FALSE.).	0.1917	0.0132
+0.8255	0.5075	1.000	FLOATING POINT VARIABLES	0.1992	0.0176
+0.8358	0.0865	1.000	FIXED POINT CONSTANTS	0.1711	0.0103
+0.8496	0.5788	1.000	GENERAL FORM	0.0981	0.0173
+0.8503	0.8008	1.000	EXAMPLES	0.0658	0.0145
+0.8558	0.3721	1.000	EXAMPLES	0.0659	0.0108
+0.8576	0.1579	1.000	GENERAL FORM	0.0921	0.0073
+0.8706	0.7575	1.000	ABC	0.0395	0.0131
+0.8721	0.5244	1.000	variable name starting with any le	0.2105	0.0116
+0.8735	0.0883	1.000	I to 11 decimal digits. A preceding 3	0.2632	0.0116
+0.8804	0.5204	1.000	r but I-N, if not declared otherwi	0.2148	0.0155
+0.8823	0.7556	1.000	B9	0.0301	0.0116
+0.8866	0.1222	1.000	- sign is optional. The magni-	0.2011	0.0102
+0.8866	0.3365	1.000	+1	0.0301	0.0087
+0.8881	0.0902	1.000	+ or	0.0338	0.0074
+0.8910	0.7556	1.000	DELTA	0.0639	0.0160
+0.8939	0.5207	1.000	r a type declaration, or any variab	0.2162	0.0146
+0.8966	0.3420	1.000	- 28987	0.0546	0.0106
+0.8982	0.0865	1.000	tude or absolute value of the constant	0.2387	0.0103
+0.9039	0.5207	1.000	ume declared REA	0.1128	0.0133
+0.9041	0.7632	1.000	R	0.0132	0.0131
+0.9084	0.3421	1.000	+31415928535	0.0940	0.0116
+0.9084	0.0865	1.000	must be less than 298.	0.1316	0.0116
+0.9302	0.8929	1.000	5	0.0132	0.0145

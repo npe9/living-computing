@@ -1,0 +1,107 @@
+0.0682	0.0752	1.000	PROGRAM ORGANIZATION	0.2086	0.0118
+0.0682	0.5226	1.000	2. A mechanism for translating IOD reference	0.3515	0.0133
+0.0842	0.5508	1.000	numbers (logical I-O units) into the specific	0.3233	0.0103
+0.0973	0.0752	1.000	In general, the order of the MCP programs are inter-	0.4023	0.0133
+0.0988	0.5508	1.000	channels and units used to perform I-O requests.	0.3628	0.0118
+0.1133	0.5226	1.000	3. A mechanism for translating a channel and unit	0.3778	0.0117
+0.1133	0.0771	1.000	rupt control, service routines, then major packages.	0.3929	0.0117
+0.1279	0.5489	1.000	into an IOD reference number to determine the	0.3477	0.0103
+0.1279	0.0771	1.000	All of MCP resides permanently on the Permanent	0.3759	0.0117
+0.1424	0.0771	1.000	Read Only Storage Area of the disk (PROSA). Most	0.3835	0.0116
+0.1424	0.5508	1.000	I-O table of exits for which an interrupt is	0.3120	0.0116
+0.1565	0.5506	1.000	intended.	0.0679	0.0126
+0.1570	0.0771	1.000	of it also resides permanently in upper core storage,	0.3947	0.0116
+0.1715	0.0771	1.000	the rest being called in from the disk as needed.	0.3571	0.0116
+0.1730	0.5226	1.000	4. A mechanism which can differentiate between	0.3628	0.0102
+0.1860	0.0752	1.000	Some of the part called in from the disk operates in	0.3835	0.0116
+0.1875	0.5489	1.000	interrupts resulting from I-O operations per-	0.3383	0.0116
+0.2006	0.0771	1.000	the overlay area at the upper end of the permanent	0.3759	0.0131
+0.2020	0.5489	1.000	formed by the owner of a unit and set-up opera-	0.3553	0.0116
+0.2151	0.0771	1.000	core storage portion, while part of phase 4 of job	0.3647	0.0131
+0.2166	0.5508	1.000	tions performed by MCP for the owner of the	0.3308	0.0116
+0.2297	0.0771	1.000	control operates in PP memory, since it is required	0.3891	0.0131
+0.2326	0.5489	1.000	unit.	0.0357	0.0102
+0.2456	0.0771	1.000	only between jobs.	0.1372	0.0116
+0.2456	0.5226	1.000	5. A bookkeeping system to keep track of activi-	0.3647	0.0116
+0.2602	0.5508	1.000	ties both at the physical unit level and at the	0.3252	0.0116
+0.2747	0.0771	1.000	Memory Allocation	0.1410	0.0117
+0.2747	0.5489	1.000	logical unit level.	0.1316	0.0117
+0.2892	0.5226	1.000	These functions are performed by the I-O control	0.3647	0.0117
+0.3036	0.5075	1.000	tables. MCP uses six distinct types of I-O control	0.3741	0.0118
+0.3036	0.0771	1.000	MCP occupies five type areas on PROSA. One is the	0.3929	0.0133
+0.3182	0.0771	1.000	main portion of MCP, the others are major packages	0.3929	0.0133
+0.3198	0.5056	1.000	tables:	0.0526	0.0116
+0.3327	0.5226	1.000	1. A Channel Status Table (CST) exists for each	0.3590	0.0118
+0.3327	0.0771	1.000	called into core when required. They are:	0.3158	0.0118
+0.3485	0.0958	1.000	Type Area	0.0754	0.0123
+0.3488	0.5056	1.000	channel; it contains the operational status for the	0.3628	0.0118
+0.3488	0.2312	1.000	Content	0.0564	0.0102
+0.3618	0.5075	1.000	channel. For single unit channels, the CST also	0.3590	0.0132
+0.3779	0.5075	1.000	contains the operational status of the unit, and locates	0.3985	0.0117
+0.3779	0.2312	1.000	Main portion of MCP	0.1541	0.0117
+0.3779	0.0921	1.000	11D11MCP|	0.0827	0.0116
+0.3924	0.5075	1.000	the unit area table. For other channels, the CST	0.3665	0.0116
+0.3924	0.2312	1.000	Command package	0.1353	0.0116
+0.3924	0.0921	1.000	22SCOMD	0.0752	0.0116
+0.4055	0.2331	1.000	Loader and resume load	0.1767	0.0118
+0.4070	0.5056	1.000	locates each unit status table.	0.2218	0.0116
+0.4070	0.0921	1.000	22LOADER	0.0865	0.0116
+0.4212	0.0920	1.000	22$DUMP	0.0753	0.0122
+0.4215	0.2331	1.000	Debug and dump packages	0.1880	0.0116
+0.4215	0.5226	1.000	2. The Unit Status Table (UST) provides the opera-	0.3835	0.0116
+0.4360	0.2312	1.000	JC4, assign move	0.1335	0.0116
+0.4360	0.0921	1.000	22$EOJ	0.0583	0.0131
+0.4375	0.5075	1.000	tional status for units on a multi-unit channel. It	0.3665	0.0102
+0.4506	0.5056	1.000	locates the unit area table. Each such unit has a	0.3628	0.0116
+0.4506	0.0959	1.000	An overlay area is provided for major packages	0.3534	0.0116
+0.4651	0.0789	1.000	which are infrequently used, for example, once per	0.3816	0.0131
+0.4666	0.5075	1.000	UST.	0.0376	0.0116
+0.4797	0.0771	1.000	job. Once a program is in the overlay area, it need	0.3891	0.0131
+0.4811	0.5226	1.000	3. The Unit Area Table (UAT) serves as an inter-	0.3759	0.0116
+0.4942	0.0789	1.000	not be called in again unless it has been overlayed by	0.3929	0.0131
+0.4956	0.5056	1.000	face between tables oriented toward physical units	0.3703	0.0116
+0.5087	0.0771	1.000	another program. The overlay area is controlled by	0.3910	0.0131
+0.5102	0.5075	1.000	and tables oriented toward logical units. It contains	0.3853	0.0116
+0.5233	0.0789	1.000	the major package fetcher, a subroutine of JC4, and	0.3872	0.0131
+0.5247	0.5075	1.000	current information on unit usage, and locates both	0.3778	0.0132
+0.5378	0.0771	1.000	is also used as the buffer for the disk fetch ($FETCH)	0.3985	0.0116
+0.5392	0.5075	1.000	the file area table and the channel status table. One	0.3853	0.0117
+0.5536	0.5075	1.000	UAT exists for each physical unit defined by IOD's.	0.3778	0.0118
+0.5567	0.0789	1.000	program.	0.0714	0.0087
+0.5682	0.0977	1.000	The core region from the overlay area to the top	0.3571	0.0118
+0.5682	0.5226	1.000	4. A File Area Table (FAT) exists for each logical	0.3816	0.0133
+0.5827	0.0789	1.000	of memory is available for patches and special	0.3477	0.0118
+0.5842	0.5075	1.000	I-O unit: that is, each unit requested by an IOD card.	0.3966	0.0118
+0.5988	0.0789	1.000	installation packages.	0.1617	0.0118
+0.5988	0.5094	1.000	The FAT contains information in terms of operations	0.3891	0.0103
+0.6133	0.5075	1.000	on the logical unit. It contains the information from	0.3853	0.0117
+0.6279	0.0789	1.000	The MCP Communication Region	0.2444	0.0131
+0.6279	0.5075	1.000	the IOD card, and locates the proper entry in the	0.3609	0.0131
+0.6404	0.5073	1.000	symbolic I-O location table.	0.2071	0.0153
+0.6555	0.0808	1.000	The MCP communication region consists of 14 words	0.3910	0.0132
+0.6570	0.5226	1.000	5. The Symbolic I-O Location Table contains one	0.3684	0.0116
+0.6715	0.0789	1.000	from SMCP to SMCP + (16)8 reserved for control bits	0.3985	0.0131
+0.6730	0.5075	1.000	entry for each IOD reference number. The entry	0.3665	0.0116
+0.6860	0.0789	1.000	and words to be used by any part of MCP. The sym-	0.3929	0.0116
+0.6875	0.5056	1.000	locates the UAT and FAT.	0.1955	0.0102
+0.7006	0.0789	1.000	bols associated with this region are listed in the early	0.4023	0.0116
+0.7020	0.5226	1.000	6. The Reel Pool Table is used to record the	0.3402	0.0102
+0.7179	0.5075	1.000	sequence of reels used by a physical unit. It contains	0.3966	0.0133
+0.7179	0.0789	1.000	pages of the listing. They are further defined in	0.3628	0.0118
+0.7324	0.0808	1.000	subsequent sections of the Analysis Guide as they	0.3647	0.0118
+0.7339	0.5075	1.000	the labeling information from the REEL cards.	0.3459	0.0103
+0.7467	0.0789	1.000	are used.	0.0735	0.0109
+0.7485	0.5244	1.000	The channel and unit status tables are originally	0.3553	0.0118
+0.7630	0.5075	1.000	set up by the initialization program at initial pro-	0.3665	0.0118
+0.7761	0.0808	1.000	CONTROL OF SYMBOLIC I-O	0.2237	0.0103
+0.7776	0.5075	1.000	gram load. They may be changed by the IOCHANGE	0.3853	0.0131
+0.7921	0.5075	1.000	command, and are initialized by job control. They	0.3778	0.0131
+0.8052	0.0808	1.000	To utilize its symbolie I-O feature, MCP requires	0.3722	0.0132
+0.8067	0.5075	1.000	are updated by the actuator and receptor.	0.3045	0.0116
+0.8197	0.0808	1.000	the following:	0.0996	0.0118
+0.8212	0.5244	1.000	The unit and file area tables, along with the sym-	0.3647	0.0131
+0.8358	0.0959	1.000	1. Precise knowledge of the I-O equipment con-	0.3590	0.0116
+0.8358	0.5075	1.000	bolic I-O location lable and reel pool table, are set	0.3778	0.0131
+0.8503	0.1241	1.000	figuration of the machine.	0.1898	0.0116
+0.8503	0.5056	1.000	up by phase 4 of job control, immediately prior to	0.3722	0.0131
+0.9230	0.0733	1.000	10	0.0169	0.0087

@@ -1,0 +1,67 @@
+0.0959	0.2932	1.000	Symbol	0.0639	0.0189
+0.0974	0.1391	1.000	Bits	0.0395	0.0174
+0.1003	0.6259	1.000	Content	0.0620	0.0131
+0.1172	0.1389	1.000	4.00 - 4.63	0.0887	0.0171
+0.1191	0.2932	1.000	SIOINS	0.0546	0.0133
+0.1206	0.4850	1.000	This field contains thé last I-O instruction actuated for	0.4117	0.0103
+0.1352	0.4850	1.000	the unit. It is set and used by the actuator.	0.3289	0.0117
+0.1539	0.1372	1.000	5.00 - 5.18	0.0921	0.0176
+0.1555	0.2932	1.000	SRETAD	0.0696	0.0147
+0.1584	0.4850	1.000	This field contains the address in the actuator to which	0.4117	0.0102
+0.1730	0.4831	1.000	the receptor will return control if the terminated opera-	0.4248	0.0131
+0.1890	0.4831	1.000	tion was a setup operation. The field is set by the	0.3759	0.0117
+0.2035	0.4850	1.000	actuator and used by the receptor.	0.2575	0.0117
+0.2237	0.1390	1.000	5.42 - 5.49	0.0884	0.0149
+0.2237	0.2932	1.000	SCTLOP	0.0697	0.0163
+0.2267	0.4850	1.000	This field contains the control operation code, in binary,	0.4267	0.0118
+0.2412	0.4831	1.000	for the last control operation given to the unit. It is	0.3947	0.0118
+0.2558	0.4850	1.000	set and used by the actuator.	0.2162	0.0131
+0.2819	0.1391	1.000	6.00 - 6.31	0.0903	0.0177
+0.2834	0.2932	1.000	SSCRPM	0.0695	0.0145
+0.2863	0.4850	1.000	This field is used by several actuator routines as an	0.3910	0.0116
+0.3009	0.4831	1.000	intermediate storage media assigned expressly to the	0.4023	0.0116
+0.3154	0.4850	1.000	unit being acted upon.	0.1635	0.0116
+0.3324	0.1371	1.000	6.32 - 6.63	0.0924	0.0184
+0.3325	0.2931	1.000	RMCPLB	0.0754	0.0166
+0.3473	0.2932	1.000	(if MCPUAT)	0.1090	0.0176
+0.3691	0.2951	1.000	RPPLB	0.0583	0.0147
+0.3836	0.2932	1.000	(if PP UAT)	0.0960	0.0163
+0.4181	0.1352	1.000	7.16- 7.17	0.0943	0.0198
+0.4185	0.2894	1.000	SLABM	0.0659	0.0177
+0.4230	0.4831	1.000	This field indicates the mode specified in the label of a	0.4135	0.0146
+0.4375	0.4831	1.000	system tape after said tape has been verified. The field	0.4248	0.0161
+0.4506	0.4812	1.000	is set by the verify routine and used by the actuator.	0.3985	0.0174
+0.4660	0.5168	1.000	00 - Illegal	0.0999	0.0156
+0.4811	0.5150	1.000	01 - ECC - ODD	0.1372	0.0131
+0.4970	0.5150	1.000	10 - EVEN	0.0977	0.0133
+0.5115	0.5150	1.000	11 - ODD - NOECC	0.1598	0.0133
+0.5363	0.1353	1.000	7.25	0.0414	0.0189
+0.5378	0.4812	1.000	This indicator tells whether the tape presently mounted	0.4211	0.0189
+0.5378	0.2914	1.000	SSYSTM	0.0695	0.0145
+0.5567	0.4812	1.000	on the unit is a labelled tape, or not. It is set by I-O	0.4041	0.0131
+0.5697	0.4812	1.000	assignment and altered by the receptor when new tapes	0.4135	0.0146
+0.5842	0.4812	1.000	are mounted. It is tested by the receptor and by the	0.3947	0.0131
+0.5990	0.4810	1.000	verify routine.	0.1152	0.0154
+0.6133	0.5150	1.000	0 - Non-labeled	0.1316	0.0146
+0.6278	0.5150	1.000	1 - Labeled	0.1016	0.0147
+0.6526	0.1353	1.000	7.29	0.0414	0.0189
+0.6538	0.2912	1.000	SLABD	0.0585	0.0165
+0.6570	0.4831	1.000	This indicator specifies the density found in the label	0.4004	0.0161
+0.6730	0.4831	1.000	after verification. It is set, tested, and used by the	0.3929	0.0131
+0.6890	0.4831	1.000	actuator.	0.0695	0.0102
+0.7020	0.5169	1.000	0 - High	0.0733	0.0116
+0.7410	0.2912	1.000	SFILEK	0.0642	0.0166
+0.7425	0.1372	1.000	7.38- 7.49	0.0903	0.0149
+0.7456	0.4850	1.000	This field specifies the file position of the tape for the	0.4041	0.0147
+0.7615	0.4831	1.000	unit. If the tape is labelled, file zero is the label file.	0.4098	0.0133
+0.7761	0.4831	1.000	The file count will be -0 if before the label record and	0.4079	0.0133
+0.7906	0.4831	1.000	+0 if after the label record but before the label file	0.3835	0.0118
+0.8052	0.4831	1.000	mark. The field is set by I-O assignment and tested	0.3947	0.0132
+0.8197	0.4812	1.000	and altered by the actuator and receptor.	0.3083	0.0132
+0.8426	0.1352	1.000	8.00 - 8.17	0.0924	0.0184
+0.8442	0.2894	1.000	SFREEL	0.0716	0.0165
+0.8475	0.4829	1.000	This field contains the address of the first reel entry	0.3988	0.0160
+0.8648	0.4812	1.000	in the reel pool table for a tape unit. It is set by I-O	0.4004	0.0146
+0.8794	0.4812	1.000	assignment and used and modified by the actuator and	0.4023	0.0131
+0.8936	0.4811	1.000	receptor.	0.0735	0.0109
+0.9506	0.0639	1.000	270	0.0263	0.0131

@@ -1,0 +1,139 @@
+0.0898	0.0977	1.000	their input from the disk as it is left by a prior link	0.3818	0.0153
+0.0914	0.5206	1.000	where	0.0490	0.0120
+0.1032	0.5395	1.000	FWA. (D) is the first word (18 bit) address of a	0.3421	0.0160
+0.1045	0.0977	1.000	in the chain. This information is obtained through use	0.4041	0.0133
+0.1191	0.6034	1.000	25-word block of storage in the processor	0.3139	0.0146
+0.1221	0.0996	1.000	of disk I-O pseudo-ops.	0.1729	0.0116
+0.1321	0.6034	1.000	from which the entire communication	0.2782	0.0161
+0.1482	0.6053	1.000	region is transmitted.	0.1654	0.0146
+0.1584	0.0996	1.000	Intermediate Disk Storage	0.1936	0.0102
+0.1840	0.0976	1.000	The disk, except for permanent working storage and	0.3894	0.0189
+0.1860	0.5226	1.000	Communication Region Format	0.2350	0.0146
+0.2003	0.1014	1.000	PROSA, is available to processors for intermediate	0.3818	0.0153
+0.2136	0.5226	1.000	The format of the communication region is as follows:	0.4023	0.0146
+0.2147	0.0995	1.000	storage and for output to the next link in the chain.	0.3725	0.0157
+0.2311	0.0996	1.000	In the communication region, MCP will enter the	0.3647	0.0116
+0.2442	0.6297	1.000	Number of links in the chain.	0.2180	0.0146
+0.2451	0.5224	1.000	0.0 - 0.17	0.0886	0.0127
+0.2452	0.0996	1.000	number of arcs available in this temporary working	0.3816	0.0125
+0.2585	0.6296	1.000	Not used.	0.0734	0.0136
+0.2587	0.0977	1.000	storage. At the end of the chain, MCP expects to	0.3722	0.0174
+0.2599	0.5244	1.000	0.18 - 0.24	0.0866	0.0121
+0.2703	0.6297	1.000	Last link flag.	0.1109	0.0176
+0.2717	0.0995	1.000	find in the communication region the number of arcs	0.3874	0.0162
+0.2744	0.5205	1.000	0.25	0.0379	0.0137
+0.2876	0.6296	1.000	Not used.	0.0734	0.0149
+0.2878	0.1015	1.000	occupied by the compiled program. On this basis,	0.3741	0.0160
+0.2891	0.5206	1.000	0.26 - 0.31	0.0903	0.0133
+0.3023	0.1015	1.000	MCP can then assign disk areas for the use of the	0.3684	0.0146
+0.3023	0.6297	1.000	Position number of current link.	0.2444	0.0146
+0.3032	0.5224	1.000	0.32 - 0.49	0.0886	0.0142
+0.3154	0.6278	1.000	Not used.	0.0771	0.0174
+0.3197	0.5244	1.000	0.50 - 0.63	0.0865	0.0118
+0.3212	0.0996	1.000	compiled program.	0.1447	0.0116
+0.3327	0.6278	1.000	Number of arcs in temporary working	0.2838	0.0147
+0.3341	0.5244	1.000	1.0 - 1.17	0.0865	0.0120
+0.3342	0.1184	1.000	References to temporary working storage by proc-	0.3741	0.0131
+0.3438	0.6446	1.000	storage (TWS).	0.1187	0.0188
+0.3488	0.1015	1.000	essors is made through the disk I-O pseudo-ops	0.3534	0.0131
+0.3618	0.6297	1.000	Type of run:	0.0959	0.0146
+0.3633	0.5225	1.000	1.18 - 1.20	0.0884	0.0147
+0.3633	0.1015	1.000	whose IODNAME is $TWS. This is a permanently	0.3703	0.0131
+0.3746	0.7085	1.000	Compile	0.0680	0.0167
+0.3765	0.6447	1.000	100	0.0301	0.0131
+0.3794	0.1015	1.000	assigned I-O definition, equivalent to:	0.2801	0.0131
+0.3909	0.7105	1.000	Compile and Go	0.1184	0.0146
+0.3910	0.6466	1.000	010	0.0301	0.0145
+0.3949	0.2499	1.000	TRACK	0.0604	0.0096
+0.3953	0.1184	1.000	TWS	0.0395	0.0116
+0.3953	0.1823	1.000	IOD,	0.0526	0.0131
+0.4041	0.6447	1.000	001	0.0320	0.0160
+0.4070	0.7086	1.000	Go	0.0244	0.0116
+0.4084	0.1015	1.000	where the number of ares which is at the beginning	0.3759	0.0116
+0.4200	0.5226	1.000	1.21 -	0.0545	0.0161
+0.4212	0.6315	1.000	List option:	0.0885	0.0152
+0.4244	0.1034	1.000	of a track is given in the communication region.	0.3534	0.0116
+0.4359	0.7104	1.000	No list	0.0528	0.0135
+0.4504	0.7104	1.000	List	0.0341	0.0135
+0.4506	0.6485	1.000	1	0.0094	0.0116
+0.4549	0.1015	1.000	Output	0.0508	0.0132
+0.4636	0.5226	1.000	1.22 -	0.0545	0.0189
+0.4666	0.6316	1.000	Punch option:	0.1015	0.0131
+0.4767	0.7105	1.000	No punch	0.0714	0.0191
+0.4811	0.6485	1.000	0	0.0113	0.0102
+0.4811	0.1034	1.000	Print or punch output may be transmitted to system	0.3816	0.0147
+0.4942	0.7086	1.000	Punch	0.0508	0.0145
+0.4956	0.6485	1.000	1	0.0094	0.0102
+0.4956	0.1034	1.000	output through the use of the appropriate pseudo-ops.	0.3929	0.0147
+0.5087	0.6297	1.000	Reserved for relocation flags.	0.2274	0.0161
+0.5099	0.1032	1.000	Systems output must be used to produce the listing	0.3743	0.0179
+0.5115	0.5244	1.000	1.23 - 1.63	0.0884	0.0148
+0.5247	0.6241	1.000	Name of the Ist link.	0.1654	0.0147
+0.5260	0.5225	1.000	2.0 - 2.47	0.0903	0.0148
+0.5276	0.1034	1.000	and punched output.	0.1447	0.0131
+0.5378	0.6241	1.000	Not used.	0.0808	0.0160
+0.5391	0.5225	1.000	2.48 - 2.63	0.0903	0.0163
+0.5536	0.6259	1.000	Name of the 2nd link.	0.1654	0.0147
+0.5550	0.5244	1.000	3.0 - 3.47	0.0885	0.0149
+0.5567	0.1034	1.000	Communication Region	0.1711	0.0131
+0.5668	0.6297	1.000	Not used.	0.0771	0.0176
+0.5695	0.5244	1.000	3.48 - 3.63	0.0885	0.0150
+0.5827	0.6297	1.000	Name of the 3rd link.	0.1598	0.0161
+0.5827	0.1053	1.000	A common communication region is located in core	0.3778	0.0147
+0.5841	0.5244	1.000	4.0 - 4.47	0.0885	0.0150
+0.5973	0.6297	1.000	Not used.	0.0771	0.0161
+0.5983	0.1032	1.000	storage. It is used by MCP to communicate with the	0.3913	0.0170
+0.6003	0.5244	1.000	4.48-4.63	0.0883	0.0131
+0.6118	0.6297	1.000	Name of the 4th link.	0.1598	0.0161
+0.6127	0.1032	1.000	processors, by the processors to communicate with	0.3858	0.0183
+0.6148	0.5244	1.000	5.0 - 5.47	0.0902	0.0131
+0.6261	0.6296	1.000	Not used.	0.0773	0.0168
+0.6281	0.1051	1.000	each other, and by the processors to communicate	0.3725	0.0154
+0.6289	0.5243	1.000	5.48 - 5.63	0.0904	0.0139
+0.6394	0.6259	1.000	Name of the 5th link.	0.1654	0.0191
+0.6438	0.5244	1.000	6.0 - 6.47	0.0903	0.0133
+0.6447	0.1015	1.000	with MCP. The communication region consists of	0.3723	0.0131
+0.6549	0.6220	1.000	Not used.	0.0850	0.0173
+0.6579	0.5243	1.000	6.48 - 6.63	0.0905	0.0142
+0.6599	0.1034	1.000	25 full words and may be fetched by processors	0.3515	0.0116
+0.6700	0.6241	1.000	Number of arcs occupied by compiled	0.2876	0.0161
+0.6730	0.5263	1.000	7.0 - 7.17	0.0883	0.0116
+0.6744	0.1034	1.000	through the following linkage:	0.2180	0.0147
+0.6858	0.6390	1.000	program.	0.0829	0.0165
+0.6887	0.1202	1.000	B, $МСР	0.0716	0.0165
+0.7006	0.5244	1.000	7.18-7.24 Notused.	0.1805	0.0161
+0.7045	0.1202	1.000	, $FECRG	0.0792	0.0154
+0.7174	0.5261	1.000	7.25 -	0.0493	0.0114
+0.7191	0.1202	1.000	,FWA.(1)	0.0773	0.0137
+0.7311	0.5244	1.000	7.26 - 24.63 Defined by chain of processors.	0.3440	0.0147
+0.7355	0.1203	1.000	(return)	0.0602	0.0116
+0.7442	0.5263	1.000	For the BSS processor chain, words 8 through 13	0.3647	0.0146
+0.7497	0.1052	1.000	where	0.0472	0.0107
+0.7614	0.1220	1.000	FWA. (I) is the first word (18 bit) address of a	0.3406	0.0177
+0.7615	0.5244	1.000	are defined as follows:	0.1711	0.0118
+0.7744	0.5432	1.000	PP LOWER LIMIT	0.1373	0.0136
+0.7761	0.1861	1.000	25-word block of storage in the processor	0.3120	0.0161
+0.7762	0.8534	1.000	8.0	0.0282	0.0116
+0.7878	0.5432	1.000	PP UPPER LIMIT	0.1391	0.0174
+0.7904	0.8532	1.000	8.28	0.0361	0.0137
+0.7921	0.1842	1.000	to which the entire region is transmitted.	0.3083	0.0131
+0.8052	0.5432	1.000	ORIGIN OF BLANK COMMON	0.2218	0.0132
+0.8067	0.1203	1.000	The current contents of the communication region	0.3684	0.0131
+0.8067	0.8534	1.000	9.0	0.0282	0.0116
+0.8182	0.5432	1.000	ADDRESS OF RELOCATION TABLES	0.2782	0.0161
+0.8194	0.1051	1.000	may be replaced by means of the following linkage:	0.3764	0.0205
+0.8212	0.8534	1.000	9.32	0.0357	0.0116
+0.8358	0.5432	1.000	BRANCH ADDRESS	0.1447	0.0131
+0.8358	0.8459	1.000	10.0	0.0357	0.0131
+0.8370	0.1221	1.000	в, $МСР	0.0716	0.0164
+0.8502	0.8458	1.000	10.32	0.0452	0.0119
+0.8503	0.5432	1.000	MAIN ENTRY POINT	0.1579	0.0131
+0.8532	0.1203	1.000	, $STRG	0.0677	0.0147
+0.8648	0.5432	1.000	ADDRESS OF NODE TABLE	0.2105	0.0131
+0.8663	0.8440	1.000	11.0	0.0376	0.0102
+0.8677	0.1241	1.000	, FWA. (D)	0.0733	0.0132
+0.8779	0.5414	1.000	MASK FOR LINK TABLE	0.1917	0.0146
+0.8794	0.8440	1.000	12.0-13.63	0.0865	0.0116
+0.8823	0.1241	1.000	(return)	0.0583	0.0116
+0.9419	0.8985	1.000	197	0.0263	0.0116
+0.9433	0.7820	1.000	Service Routines	0.0977	0.0088

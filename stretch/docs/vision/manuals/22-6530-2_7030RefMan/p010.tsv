@@ -1,0 +1,99 @@
+0.0654	0.5000	1.000	isters are transistor registers; others are in a fast mag	0.3929	0.0174
+0.0682	0.0846	1.000	vices and the core storage under control of the ex-	0.3929	0.0161
+0.0813	0.5018	1.000	netic core storage. These special registers are assigned	0.3931	0.0184
+0.0842	0.0846	1.000	change. The central processing unit consists of the	0.3929	0.0161
+0.0968	0.0844	1.000	registers, arithmetic devices, and control circuits neces-	0.3933	0.0215
+0.0973	0.5019	1.000	addresses 1 to 15.	0.1297	0.0146
+0.1133	0.0846	1.000	sary for performing operations upon data taken from	0.3929	0.0176
+0.1321	0.0883	1.000	core storage. The central processing unit is con-	0.3872	0.0118
+0.1438	0.0863	1.000	trolled by a succession of instructions which them-	0.3894	0.0168
+0.1584	0.0846	1.000	selves come from core storage, and a special set of	0.3947	0.0174
+0.1657	0.5000	1.000	Input and Output	0.1654	0.0174
+0.1728	0.0844	1.000	registers and controls permits the instructions to be	0.3934	0.0221
+0.1918	0.0865	1.000	obtained and modified at high speed.	0.2669	0.0161
+0.2063	0.1033	1.000	A typical system configuration is shown in Figure 1.	0.3761	0.0177
+0.2064	0.5019	1.000	Input to the system passes from the input devices to	0.3929	0.0176
+0.2219	0.5036	1.000	core storage through the exchange. The exchange as	0.3875	0.0164
+0.2355	0.5038	1.000	sembles complete 64-bit words from the flow of input	0.3910	0.0161
+0.2506	0.5018	1.000	information and stores the assembled words in core	0.3931	0.0162
+0.2630	0.0865	1.000	Storage Units	0.1278	0.0161
+0.2688	0.5019	1.000	storage locations without tying up the central process-	0.3929	0.0133
+0.2833	0.5019	1.000	ing unit. The cpu specifies the starting location and	0.3929	0.0146
+0.2979	0.5019	1.000	the number of input words to be read. While the cPu	0.3929	0.0146
+0.3021	0.0864	1.000	Core Storage	0.0960	0.0149
+0.3139	0.5094	1.000	oroceeds with computation, the exchange complete	0.3797	0.0161
+0.3212	0.0883	1.000	The computing system uses IBM 7302 Core Storage	0.3910	0.0161
+0.3270	0.5113	1.000	he input operation and signals the cPu when th	0.3778	0.0161
+0.3358	0.0865	1.000	units with a read-write cycle time of 2.18 micro-	0.3929	0.0161
+0.3445	0.5075	1.000	transmission is finished.	0.1711	0.0131
+0.3512	0.0883	1.000	seconds. A word consists of 64 information bits and 8	0.3912	0.0140
+0.3575	0.5224	1.000	The same exchange operates similarly for output,	0.3744	0.0195
+0.3677	0.0902	1.000	non-addressable redundancy bits. Storage and bus ac-	0.3872	0.0132
+0.3750	0.5056	1.000	fetching core storage words and disassembling them	0.3910	0.0145
+0.3821	0.0902	1.000	tion is checked, and any single-bit errors are automa-	0.3891	0.0147
+0.3894	0.5056	1.000	for the output devices independently of the cPu. Ex-	0.3910	0.0161
+0.3982	0.0902	1.000	tically corrected without slowing the speed of opera-	0.3891	0.0132
+0.4055	0.5056	1.000	ternal storage devices, such as tapes, may be operated	0.3910	0.0146
+0.4142	0.0902	1.000	tion.	0.0338	0.0116
+0.4200	0.5056	1.000	via the exchange as if they were input and output	0.3929	0.0161
+0.4288	0.1053	1.000	The address space in instructions provides for ad-	0.3722	0.0146
+0.4375	0.5075	1.000	units.	0.0414	0.0116
+0.4418	0.0902	1.000	dressing directly any of 218 (262,144) word locations	0.3891	0.0161
+0.4520	0.5226	1.000	The exchange can operate eight independent input-	0.3759	0.0160
+0.4573	0.0882	1.000	on any operations. Storage addresses are numbered	0.3913	0.0175
+0.4666	0.5075	1.000	output units. This eight-channel exchange can be en-	0.3910	0.0146
+0.4738	0.0902	1.000	from O to 218-1 consecutively, although addresses 0	0.3891	0.0146
+0.4824	0.5056	1.000	larged by adding other eight-channel groups. The ex-	0.3929	0.0147
+0.4897	0.0883	1.000	to 31 are reserved for index words and other special	0.3929	0.0133
+0.4970	0.5075	1.000	change can address up to 32 channels. Each of the	0.3910	0.0147
+0.5072	0.0883	1.000	registers.	0.0659	0.0119
+0.5096	0.5073	1.000	exchange channels has a nominal information rate of	0.3914	0.0188
+0.5203	0.1071	1.000	Each unit of storage consists of 16,384 (214) words.	0.3741	0.0131
+0.5276	0.5075	1.000	500,000 bits per second. However, for special require-	0.3910	0.0146
+0.5363	0.0902	1.000	A typical system will contain several such units with	0.3910	0.0131
+0.5436	0.5075	1.000	ments, higher information rates are possible. The ex-	0.3891	0.0146
+0.5509	0.0902	1.000	each storage unit operating independently. In sys-	0.3891	0.0146
+0.5576	0.5074	1.000	change as a whole can reach a peak rate of 100,000	0.3912	0.0168
+0.5669	0.0902	1.000	tems with two or more units, several storage references	0.3891	0.0131
+0.5755	0.5075	1.000	words or 6,400,000 bits per second.	0.2481	0.0133
+0.5814	0.0902	1.000	may be in process at the same time. In order that ad	0.3872	0.0147
+0.5887	0.5244	1.000	A wide variety of input-output units can be oper-	0.3741	0.0147
+0.5973	0.0902	1.000	dressing may take advantage of this, successive ad-	0.3910	0.0133
+0.6045	0.5075	1.000	ated by the exchange. These include card readers and	0.3910	0.0146
+0.6118	0.0902	1.000	dresses are distributed among different units. When a	0.3910	0.0132
+0.6206	0.5075	1.000	punches, printers, magnetic tape units, and operator's	0.3929	0.0146
+0.6264	0.0902	1.000	system includes two units, successive addresses alter-	0.3910	0.0146
+0.6352	0.5075	1.000	consoles. Most control units permit only one input-	0.3910	0.0146
+0.6424	0.0902	1.000	nate between the two. When a system includes four	0.3910	0.0146
+0.6489	0.5073	1.000	output device to be attached to a channel. The mag-	0.3913	0.0186
+0.6570	0.0902	1.000	or more units, successive addresses are distributed	0.3910	0.0131
+0.6657	0.5056	1.000	netic tape control unit, however, is designed to allow	0.3947	0.0174
+0.6730	0.0921	1.000	within groups of four units.	0.1992	0.0146
+0.6817	0.5094	1.000	up to eight tape units to be attached to a single ex-	0.3910	0.0160
+0.6953	0.5074	1.000	change channel. When this is done, of course, only	0.3931	0.0176
+0.7121	0.5094	1.000	one of these units can be operated at a time.	0.3252	0.0132
+0.7121	0.0902	1.000	Index Word Storage	0.1485	0.0118
+0.7282	0.5263	1.000	Many of the problems to be solved by the 7030 re-	0.3741	0.0146
+0.7324	0.0940	1.000	The number of index registers used in the 7030 sys-	0.3872	0.0133
+0.7427	0.5094	1.000	quire auxiliary storage capacity and transfer rates in	0.3910	0.0161
+0.7470	0.0921	1.000	tem is 16. A separate fast magnetic core storage with a	0.3891	0.0147
+0.7573	0.5094	1.000	excess of those available in magnetic tape units to	0.3910	0.0146
+0.7630	0.0902	1.000	read-out cycle of .4 us is used for index words. The	0.3929	0.0131
+0.7733	0.5075	1.000	fully utilize the very high computational speeds of the	0.3947	0.0174
+0.7776	0.0902	1.000	index words have addresses 16 to 31. These registers	0.3929	0.0146
+0.7892	0.5113	1.000	7030 system. To take care of this requirement, a	0.3910	0.0145
+0.7936	0.0921	1.000	are located in the central processing unit for use by	0.3910	0.0131
+0.8036	0.5094	1.000	large volume magnetic disk storage unit is available,	0.3929	0.0147
+0.8081	0.0921	1.000	the instruction processor.	0.1861	0.0131
+0.8197	0.5075	1.000	capable of writing a full 64-bit word each 8 micro-	0.3929	0.0161
+0.8342	0.5094	1.000	seconds. Each disk unit has a capacity of 2,097,152	0.3929	0.0131
+0.8473	0.0921	1.000	Special Registers	0.1241	0.0118
+0.8503	0.5113	1.000	words. One or more disk units may be attached di-	0.3910	0.0131
+0.8648	0.5094	1.000	rectly to the system by means of a disk synchronizer	0.3929	0.0146
+0.8663	0.0940	1.000	Many of the special registers of the machine are di-	0.3910	0.0131
+0.8808	0.5113	1.000	unit which functions like the exchange to control the	0.3910	0.0116
+0.8821	0.0902	1.000	rectly addressable to lend increased programming and	0.3929	0.0147
+0.8953	0.5113	1.000	flow of information to and from the disk unit by exe-	0.3929	0.0131
+0.8967	0.0940	1.000	operating flexibility to the system. Some of these reg-	0.3910	0.0133
+0.9317	0.7387	1.000	System Organization	0.1297	0.0116
+0.9331	0.8929	1.000	7	0.0113	0.0087

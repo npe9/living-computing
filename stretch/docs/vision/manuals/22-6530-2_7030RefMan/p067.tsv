@@ -1,0 +1,112 @@
+0.0639	0.0977	1.000	Desired zone bits must be placed into the zone bit	0.3929	0.0145
+0.0654	0.5132	1.000	starting at location 1774.40. The notation A repre-	0.3929	0.0146
+0.0799	0.0959	1.000	positions of the sign byte register by explicitly ad-	0.3929	0.0131
+0.0814	0.5150	1.000	sents the unsigned quantity.	0.2105	0.0132
+0.0945	0.0977	1.000	dressing these positions as the operand of a to-mem-	0.3910	0.0146
+0.1105	0.0959	1.000	ory operation. These positions will then remain un-	0.3929	0.0132
+0.1221	0.5132	1.000	Store Rounded (SRD)	0.1523	0.0116
+0.1264	0.0959	1.000	changed until they are once again explicitly addressed	0.3910	0.0132
+0.1409	0.0959	1.000	in a to-memory operation.	0.1936	0.0132
+0.1467	0.5150	1.000	The field from the accumulator is rounded by adding	0.3910	0.0147
+0.1555	0.1128	1.000	Since data flow into storage in a decimal STORE is	0.3759	0.0146
+0.1612	0.5132	1.000	to its magnitude one-half of the proper radix in the	0.3929	0.0147
+0.1715	0.0959	1.000	controlled by the byte size in the instruction, while	0.3929	0.0131
+0.1756	0.5149	1.000	position to the right of the offset. Carries are propa-	0.3912	0.0177
+0.1875	0.0959	1.000	data flow from the accumulator takes place in four-	0.3929	0.0131
+0.1903	0.5132	1.000	gated as in any addition in that radix. This rounded	0.3929	0.0161
+0.2020	0.0959	1.000	bit bytes, store can be used to store decimal data in	0.3910	0.0131
+0.2078	0.5150	1.000	field replaces the addressed storage field. If a signed	0.3910	0.0161
+0.2166	0.0959	1.000	any required byte size. This action is the reverse of	0.3929	0.0146
+0.2224	0.5132	1.000	operation is specified, the contents of the accumulator	0.3929	0.0146
+0.2324	0.0959	1.000	a decimal LoAd in which only the four low-order bits	0.3929	0.0133
+0.2384	0.5132	1.000	sign byte register replace the rightmost byte of the	0.3929	0.0147
+0.2485	0.0959	1.000	of each storage byte are placed into the accumulator.	0.3929	0.0131
+0.2526	0.5131	1.000	storage field after the sign bit has been modified by	0.3912	0.0164
+0.2594	0.0957	1.000	This feature provides a convenient means of convert-	0.3912	0.0193
+0.2688	0.5451	1.000	negative sign modifier. The contents of the	0.3609	0.0146
+0.2689	0.5132	1.000	the	0.0338	0.0102
+0.2791	0.0940	1.000	ing decimal data from one byte size to another. Thus,	0.3929	0.0131
+0.2848	0.5132	1.000	accumulator and the sign byte register are not changed	0.3910	0.0146
+0.2951	0.0940	1.000	it is a simple programming operation to keep numer-	0.3929	0.0131
+0.2994	0.5132	1.000	by this operation. The accumulator sign is ignored in	0.3910	0.0146
+0.3096	0.0940	1.000	ical files in space-conserving four-bit bytes and still	0.3929	0.0146
+0.3154	0.5132	1.000	the actual rounding process.	0.2086	0.0131
+0.3241	0.0940	1.000	receive input or prepare output in six- or eight-bit	0.3929	0.0147
+0.3369	0.5112	1.000	MODIFIERS	0.0772	0.0136
+0.3400	0.0921	1.000	code without extra program steps for the conversion.	0.3947	0.0147
+0.3532	0.5301	1.000	Unsigned; Negative Sign. These modifiers operate	0.3759	0.0147
+0.3561	0.0940	1.000	The byte size conversion takes place automatically	0.3910	0.0131
+0.3675	0.5112	1.000	as in STORE.	0.0885	0.0136
+0.3721	0.0940	1.000	during processing of the data when the proper byte	0.3929	0.0131
+0.3834	0.5300	1.000	Radix. This modifier acts in the same manner as	0.3742	0.0135
+0.3866	0.0940	1.000	sizes are specified in the instructions used in the	0.3929	0.0131
+0.3935	0.5110	1.000	in STORE, except that in addition it governs the	0.3935	0.0248
+0.4026	0.0940	1.000	processing. Note, however, that any zone bits present	0.3929	0.0131
+0.4142	0.5113	1.000	rounding process. If a binary operation is specified,	0.3929	0.0145
+0.4172	0.0940	1.000	with the decimal digits would be lost if data were	0.3929	0.0132
+0.4290	0.0939	1.000	converted in this fashion. The connective operations	0.3931	0.0178
+0.4302	0.5113	1.000	a binary one is added to the field from the accumula-	0.3929	0.0131
+0.4446	0.5112	1.000	tor in the bit position immediately to the right of	0.3930	0.0154
+0.4476	0.0940	1.000	provide a more general means of converting data	0.3910	0.0132
+0.4606	0.5113	1.000	the specified offset. Carries are propagated as in any	0.3929	0.0147
+0.4636	0.0940	1.000	from one byte size to another.	0.2180	0.0131
+0.4753	0.5130	1.000	binary addition. If a decimal operation is specified, a	0.3912	0.0164
+0.4782	0.1109	1.000	The data flag indicators are not changed as a result	0.3759	0.0131
+0.4912	0.5113	1.000	four-bit byte with value five is added to the four-bit	0.3929	0.0131
+0.4942	0.0940	1.000	of STORE. These indicators remain as set before the	0.3910	0.0116
+0.5058	0.5113	1.000	byte immediately to the right of the offset in the field	0.3910	0.0146
+0.5102	0.0921	1.000	operation. The lost carry indicator cannot be turned	0.3929	0.0132
+0.5218	0.5113	1.000	from the accumulator. Carries are propagated as in	0.3910	0.0146
+0.5247	0.0921	1.000	on by a stoRe operation.	0.1748	0.0132
+0.5358	0.5111	1.000	any decimal addition. This action is equivalent to	0.3913	0.0180
+0.5451	0.0940	1.000	PROGRAMMING EXAMPLE	0.1729	0.0102
+0.5523	0.5113	1.000	adding the five one decimal position to the right of	0.3929	0.0146
+0.5596	0.0940	1.000	Figure 14 shows the use of the variable-field-length	0.3910	0.0146
+0.5682	0.5113	1.000	the offset.	0.0695	0.0103
+0.5755	0.0921	1.000	features and sign modifiers. Let A and B be two	0.3910	0.0133
+0.5900	0.0921	1.000	binary numbers stored in consecutive positions in	0.3929	0.0147
+0.5916	0.5113	1.000	INDICATORS	0.0808	0.0102
+0.6045	0.0921	1.000	storage starting at location 1776.00. Each number	0.3929	0.0146
+0.6061	0.5244	1.000	Partial Field (PF); To-Memory Operation (MOP);	0.3778	0.0161
+0.6177	0.0920	1.000	contains sixteen numeric bits and a sign byte of	0.3931	0.0183
+0.6221	0.5094	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). These in-	0.3929	0.0161
+0.6364	0.5111	1.000	dicators are set as in STORE.	0.1940	0.0134
+0.6366	0.0902	1.000	eight bits. Form A-- B, |A- B|, - |A- BJ, and	0.3929	0.0174
+0.6526	0.0902	1.000	À- B and store in consecutive memory positions	0.3947	0.0174
+0.6526	0.5282	1.000	Lost Carry (LC). This indicator is turned on when	0.3722	0.0131
+0.6685	0.5094	1.000	the rounding process causes a carry to be propagated	0.3929	0.0147
+0.6816	0.5112	1.000	beyond the left end of the field stored.	0.2934	0.0147
+0.6875	0.4173	1.000	TNOTES	0.0545	0.0131
+0.6889	0.2199	1.000	STATEMENT	0.0809	0.0147
+0.6918	0.0958	1.000	NAME	0.0433	0.0118
+0.7048	0.5113	1.000	PROGRAMMING NOTES	0.1541	0.0118
+0.7166	0.1805	1.000	L (B, 24,8), 1776.0,0	0.1391	0.0116
+0.7197	0.5111	1.000	The STORE ROUNDED operation does not change the	0.3913	0.0161
+0.7267	0.1805	1.000	- (В, 24, 8), 1776.24, 0	0.1447	0.0132
+0.7369	0.5094	1.000	contents of the accumulator. This is convenient in	0.3910	0.0116
+0.7384	0.4417	1.000	1	0.0113	0.0087
+0.7384	0.1842	1.000	ST (B, 24, 8), 1774.40, 0	0.1466	0.0116
+0.7485	0.1842	1.000	L (BU, 16, 8), 1774.40, (	0.1485	0.0131
+0.7515	0.5113	1.000	those problems in which it is desirable to store part	0.3910	0.0161
+0.7602	0.4417	1.000	2	0.0113	0.0102
+0.7602	0.1786	1.000	ST (B, 24, 8), 1775.0, 0	0.1485	0.0132
+0.7646	0.5093	1.000	of the accumulator contents rounded while retaining	0.3914	0.0174
+0.7716	0.1804	1.000	STN (B, 24, 8), 1775.24, 0	0.1617	0.0120
+0.7718	0.4417	1.000	3	0.0113	0.0087
+0.7820	0.5094	1.000	full precision in the accumulator for further calcula-	0.3910	0.0145
+0.7846	0.1785	1.000	STN (BU, 16, 8), 1775.48, 0	0.1730	0.0122
+0.7849	0.4417	1.000	4	0.0113	0.0087
+0.7965	0.5093	1.000	tion. The accumulator contents can be rounded by	0.3913	0.0160
+0.8124	0.0940	1.000	Notes: 1. Stores A-B	0.1429	0.0146
+0.8139	0.5094	1.000	using ADD TO MAGNITUDE with an immediate address	0.3929	0.0116
+0.8285	0.5094	1.000	of 1 or 5 with the proper offset. An unsigned STORE	0.3910	0.0145
+0.8372	0.1466	1.000	3. Stores - IA-BI	0.1053	0.0131
+0.8437	0.5093	1.000	ROUNDED addressing the accumulator as the storage	0.3912	0.0154
+0.8473	0.1447	1.000	4. Stores A-B. The same result would have been	0.2970	0.0133
+0.8561	0.1090	0.300	exeipt tor the sefinive the arilieti resut bedictoe.	0.3365	0.0291
+0.8590	0.5094	1.000	operand can also be used for this purpose.	0.2970	0.0146
+0.8750	0.5263	1.000	A STORE ROUNDED with zero offset specified is equiva-	0.3759	0.0145
+0.8881	0.0883	1.000	Figure 14. Sign Modifier Example	0.2124	0.0174
+0.8908	0.5092	1.000	dent to a STORE.	0.1169	0.0119
+0.9242	0.1315	1.000	IBM 7030	0.0697	0.0150
+0.9244	0.0883	1.000	64	0.0207	0.0145

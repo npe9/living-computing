@@ -1,0 +1,108 @@
+0.0973	0.1034	1.000	When it is necessary to stack a non-commentator	0.3703	0.0118
+0.0988	0.5169	1.000	from PP to MCP. It is filled from STLR by any	0.3628	0.0131
+0.1118	0.0865	1.000	EOP from the console, the first instruction of	0.3477	0.0132
+0.1148	0.5188	1.000	MCP program which changes the level bit (SL) from	0.3891	0.0116
+0.1262	0.0863	1.000	KSUPP, that is, NOP, KCOMMR, is changed to a	0.3725	0.0165
+0.1294	0.5188	1.000	zero to one. (Note that this excludes the service	0.3665	0.0116
+0.1424	0.0865	1.000	branch by the commentator. The next entry to	0.3515	0.0116
+0.1439	0.5169	1.000	pseudo-ops, which operate at the level of the	0.3383	0.0131
+0.1570	0.0865	1.000	KSUPP results in the release of the EOP to the	0.3534	0.0116
+0.1584	0.5169	1.000	requestor, and which return via the service op return	0.4060	0.0131
+0.1705	0.0863	1.000	receptor. (See description of commentator.)	0.3405	0.0160
+0.1743	0.5188	1.000	routine.)	0.0658	0.0104
+0.1875	0.5357	1.000	The PP low register buffer (SLRPP) is used to	0.3515	0.0131
+0.1875	0.1034	1.000	The second instruction of KSUPP, that is, NOP,	0.3628	0.0131
+0.2006	0.0865	1.000	KMTCSQ, is changed to a branch by the receptor	0.3665	0.0131
+0.2020	0.5169	1.000	hold PP main stream registers when a PP I-O Table	0.3966	0.0116
+0.2166	0.0865	1.000	when a CS arrives with a higher priority I-O inter-	0.3835	0.0116
+0.2179	0.5188	1.000	of Exits is to be entered. It is filled from STLR when	0.4060	0.0118
+0.2311	0.0865	1.000	rupt. It is unstacked on a subsequent entry to KSUPP.	0.4135	0.0131
+0.2324	0.5169	1.000	a PP I-O interrupt occurs in non-SIO'd PP main	0.3628	0.0118
+0.2427	0.0863	1.000	(See description of receptor, channel signal, and	0.3669	0.0179
+0.2470	0.5169	1.000	stream. (Note that a PP I-O interrupt occurring at	0.3891	0.0118
+0.2615	0.0865	1.000	console unstack control.)	0.1898	0.0133
+0.2615	0.5169	1.000	any other time is always stacked, and unstacked when	0.4060	0.0133
+0.2739	0.5168	1.000	SIO'd PP main stream requests $RIO.) It may be	0.3744	0.0163
+0.2906	0.5169	1.000	filled by the return routine from SLRBU when MCP	0.3853	0.0132
+0.2906	0.0865	1.000	The Return Routine	0.1504	0.0132
+0.3067	0.5169	1.000	has requested $RET and PP interrupts must be	0.3571	0.0116
+0.3197	0.0883	1.000	The identifier gives control to the return routine in	0.3816	0.0132
+0.3212	0.5169	1.000	unstacked.	0.0808	0.0116
+0.3358	0.5338	1.000	The MCP low register buffer (SLRMCP) is used to	0.3797	0.0131
+0.3358	0.0865	1.000	the disabled mode when the pseudo-op $RET is	0.3496	0.0116
+0.3498	0.0864	1.000	requested.	0.0810	0.0125
+0.3503	0.5169	1.000	hold MCP main stream low registers when MCP inter-	0.4117	0.0116
+0.3503	0.1692	1.000	The problem program (PP) must use	0.2838	0.0116
+0.3633	0.0846	1.000	$RET to end its fixup routines in order to release	0.3741	0.0117
+0.3648	0.5169	1.000	rupts MCP. It is filled from STLR by the receptor	0.3853	0.0131
+0.3794	0.0865	1.000	stacked interrupts, and to permit MCP to restore	0.3722	0.0116
+0.3794	0.5169	1.000	when the interrupt oceurs, or by the return routine	0.3853	0.0131
+0.3939	0.0865	1.000	the lower registers and instruction counter (IC).	0.3665	0.0131
+0.3939	0.5169	1.000	when an MCP program requests $RET and an MCP	0.3816	0.0131
+0.4084	0.0865	1.000	Only in this way can the PP be taken out of the auto-	0.3891	0.0116
+0.4099	0.5169	1.000	interrupt is unstacked.	0.1711	0.0116
+0.4216	0.1841	1.000	MCP must use $RET to end MCP fixup	0.2935	0.0145
+0.4230	0.0846	1.000	stack mode.	0.1015	0.0116
+0.4244	0.5338	1.000	Word 9 of each buffer holds $MASK when the buffer	0.3853	0.0102
+0.4375	0.0846	1.000	routines, and to end any major pseudo-op routine.	0.3778	0.0131
+0.4390	0.5169	1.000	is in use. With respect to buffers SLRMCP and	0.3609	0.0117
+0.4520	0.1034	1.000	The ultimate function of the return routine is to	0.3553	0.0116
+0.4535	0.5169	1.000	SLRBU, bit 0 of word 9 is used to denote that the	0.3684	0.0132
+0.4647	0.0845	1.000	return control to the main stream of the problem	0.3687	0.0155
+0.4679	0.5169	1.000	buffer is in use. The corresponding position of	0.3590	0.0133
+0.4811	0.1598	1.000	A $RET request in PP main stream results	0.3346	0.0116
+0.4817	0.0844	1.000	program.	0.0755	0.0119
+0.4824	0.5169	1.000	$MASK is permanently 1, so the bit is set whenever	0.3910	0.0133
+0.4956	0.0846	1.000	in immediate return to the point of request via the	0.3759	0.0131
+0.4970	0.5169	1.000	the buffer is filled. The return routine resets bit	0.3741	0.0118
+0.5115	0.5169	1.000	9.0 of the buffer whenever it restores registers from	0.4023	0.0133
+0.5115	0.0846	1.000	service op return routine. If the $RET is given else-	0.4023	0.0118
+0.5240	0.0845	1.000	where (PP fixup, MCP fixup, MCP routine), the	0.3630	0.0155
+0.5261	0.5168	1.000	SLRMCP or SLRBU.	0.1563	0.0118
+0.5392	0.0846	1.000	routine must insure that there are no stacked inter-	0.3891	0.0117
+0.5552	0.0846	1.000	rupts that can be unstacked, and no interrupted or	0.3759	0.0118
+0.5567	0.5169	1.000	Primed Routines: A pseudo-op is said to be primed	0.3891	0.0131
+0.5697	0.0827	1.000	primed MCP routines which should be given control.	0.3966	0.0132
+0.5712	0.5150	1.000	when delayed entry has been designated for it. (See	0.3929	0.0116
+0.5858	0.5169	1.000	description of prime routine.) The need to prime a	0.3872	0.0131
+0.5988	0.0865	1.000	MCP Features and the Return Routine	0.2820	0.0103
+0.6003	0.5169	1.000	major pseudo-op arises in two situations:	0.3120	0.0116
+0.6148	0.5320	1.000	1. An MCP auto-stacked routine must use the	0.3496	0.0116
+0.6279	0.0846	1.000	In order to follow the logic of the return routine,	0.3684	0.0146
+0.6294	0.5150	1.000	pseudo-op, but major pseudo-ops may not be used in	0.3985	0.0131
+0.6424	0.0846	1.000	certain basic features of MCP must be understood.	0.3816	0.0116
+0.6439	0.5169	1.000	the auto-stack mode.	0.1579	0.0116
+0.6554	0.0863	1.000	These features are described on the following pages.	0.3932	0.0152
+0.6584	0.5338	1.000	2. An MCP major package requires that another	0.3665	0.0131
+0.6730	0.5169	1.000	major package (or itself) be entered at some time	0.3741	0.0116
+0.6730	0.1015	1.000	1. The utilization of buffers to store low registers.	0.3910	0.0116
+0.6875	0.5169	1.000	subsequent to its $RET.	0.1805	0.0116
+0.6875	0.0996	1.000	2. The priming of major pseudo-op routines.	0.3440	0.0116
+0.7020	0.1015	1.000	3. The use of the program status table.	0.3008	0.0116
+0.7035	0.5301	1.000	In these cases, the prime routine is used to enter	0.3759	0.0117
+0.7179	0.5169	1.000	the request in a revolving queue which the return	0.3684	0.0118
+0.7311	0.0846	1.000	Low Register Buffers: There are four buffers used	0.3853	0.0116
+0.7324	0.5169	1.000	routine must empty before returning to PP. When a	0.3910	0.0118
+0.7456	0.0827	1.000	to store low registers: STLR, SLRBU, SLRPP, and	0.3966	0.0147
+0.7470	0.5169	1.000	major pseudo-op routine is given control by the return	0.4098	0.0133
+0.7615	0.0827	1.000	SLRMCP. Each is thirty words long, and the last	0.3778	0.0118
+0.7630	0.5169	1.000	routine because it was primed, its tentacle table has	0.3947	0.0118
+0.7761	0.0827	1.000	word of each is used to hold the IC associated with	0.3797	0.0103
+0.7761	0.5169	1.000	the following unique characteristics which remain when	0.4135	0.0133
+0.7906	0.0827	1.000	the low registers (STIC,, SICBU, SICPP, SICMCP).	0.3872	0.0132
+0.7921	0.5150	1.000	the pseudo-op routine requests $RET, and are used	0.3891	0.0131
+0.8067	0.0996	1.000	The low register buffer, STLR, always contains	0.3609	0.0131
+0.8067	0.5132	1.000	by the return routine to determine subsequent control.	0.4098	0.0131
+0.8212	0.0827	1.000	the registers from the most recent interrupt. When	0.3929	0.0116
+0.8227	0.5301	1.000	1. The user is MCP.	0.1654	0.0102
+0.8343	0.4906	0.500	2.	0.0583	0.0131
+0.8372	0.0827	1.000	the return routine receives control, STLR contains	0.3853	0.0116
+0.8372	0.5470	1.000	The FWA of the last tentacle table used is zero.	0.3741	0.0116
+0.8517	0.5338	1.000	3. The return address is zero.	0.2387	0.0116
+0.8517	0.0827	1.000	the registers at the B, SMCP which requested the	0.3703	0.0116
+0.8661	0.0826	1.000	return.	0.0546	0.0106
+0.8794	0.1015	1.000	The back up buffer, SLRBU, is used to hold PP	0.3553	0.0146
+0.8808	0.5150	1.000	The Program Status Table: The program status table	0.4079	0.0146
+0.8939	0.0827	1.000	low registers as they were when the level changed	0.3759	0.0131
+0.8953	0.5132	1.000	is a two word table used to record the various modes	0.4023	0.0116
+0.9506	0.0771	1.000	38	0.0188	0.0102

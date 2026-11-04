@@ -1,0 +1,104 @@
+0.0972	0.4961	1.000	if the source is the console. The pseudo-op,	0.3387	0.0177
+0.1003	0.0695	1.000	address parameter in the tentacle table is set to error	0.4098	0.0131
+0.1163	0.5019	1.000	SOUTPT, is given to the output program. Upon re-	0.3891	0.0116
+0.1163	0.0695	1.000	return and exit is made via ZEXITX. This will return	0.4041	0.0116
+0.1308	0.5019	1.000	turn from the output program, KSILO+1.30 is tested	0.3929	0.0131
+0.1308	0.0695	1.000	control to Job Control, which will note the error re-	0.3947	0.0131
+0.1467	0.0695	1.000	turn and the code, and reject the previous job.	0.3496	0.0118
+0.1467	0.5000	1.000	to determine if the NWIPL option is requested. If not,	0.4060	0.0118
+0.1612	0.5019	1.000	a normal exit is made via ZEXITX. The request for	0.3947	0.0103
+0.1758	0.5019	1.000	the NWIPL option causes an automatie IPL of the	0.3665	0.0118
+0.1758	0.0695	1.000	The EOJ Command	0.1429	0.0103
+0.1903	0.5019	1.000	NWIPL tape after a successful Update 30 run. The	0.3797	0.0118
+0.2048	0.5000	1.000	tentacle table for the MVDISK routine is entered at	0.3835	0.0103
+0.2048	0.0714	1.000	The End of Job command is used to terminate the	0.3684	0.0103
+0.2194	0.0695	1.000	presently operating problem program without pro-	0.3816	0.0118
+0.2209	0.5019	1.000	RNWIPL.	0.0715	0.0103
+0.2339	0.0695	1.000	ducing a dump.	0.1147	0.0118
+0.2355	0.5188	1.000	If the matrix shows that Job Control I is the source	0.3853	0.0103
+0.2485	0.0865	1.000	The matrix mask is tested for the valid conditions	0.3741	0.0103
+0.2500	0.5019	1.000	of the command, a normal exit via JNOPX is given	0.3797	0.0116
+0.2630	0.0695	1.000	for EOJ (JEOJ, Figure 59). These consist of a re-	0.3835	0.0131
+0.2645	0.5019	1.000	since the command will be executed in phase 4. Any	0.3891	0.0116
+0.2776	0.0695	1.000	quest from the console or from Job Control 1 in the	0.3872	0.0131
+0.2791	0.5000	1.000	other matrix is an error and an error exit will be	0.3741	0.0116
+0.2936	0.0695	1.000	online mode. If either of these conditions are met,	0.3853	0.0116
+0.2951	0.5000	1.000	made via ZEREX2.	0.1466	0.0102
+0.3081	0.0714	1.000	$EOJ is primed, a message is printed through the	0.3741	0.0116
+0.3227	0.0695	1.000	output program, and the operator is informed of the	0.3891	0.0131
+0.3241	0.5000	1.000	The EOF Command	0.1466	0.0102
+0.3372	0.0695	1.000	operation. Bit YEOJS is set to permit JC4 to termi-	0.3929	0.0131
+0.3517	0.0695	1.000	nate a processor chain. A normal exit is then made	0.3872	0.0116
+0.3532	0.5019	1.000	The EOF command is used to permit the input pro-	0.3835	0.0117
+0.3677	0.5000	1.000	gram to rewind the write tape at tape switch time if	0.3872	0.0117
+0.3677	0.0695	1.000	through the mainstream exit routine via ZEXITX.	0.3722	0.0102
+0.3821	0.5000	1.000	necessary. It is a substitute for a non-existing job	0.3853	0.0118
+0.3821	0.0865	1.000	If the matrix mask shows that Job Control 4 is the	0.3759	0.0103
+0.3967	0.0695	1.000	source and the online mode is in control, the com-	0.3835	0.0118
+0.3967	0.5019	1.000	and means that there are no more cards available at	0.3929	0.0103
+0.4112	0.0695	1.000	mand has already been executed, and a normal return	0.4023	0.0118
+0.4127	0.5000	1.000	the present time through the card reader, and that an	0.4004	0.0118
+0.4258	0.0695	1.000	is made via JNOPX. For any other masks, an error	0.3910	0.0118
+0.4258	0.5019	1.000	end of file may be written. It also is used by the	0.3665	0.0118
+0.4403	0.5000	1.000	logger entries as an accounting device for idle time.	0.3947	0.0133
+0.4403	0.0695	1.000	exit is made via ZEREX2. If EOJ is given between	0.3835	0.0118
+0.4548	0.5169	1.000	If the source is JC1 in online mode, an entry to	0.3571	0.0132
+0.4548	0.0695	1.000	jobs or before the first job, an error exit to ZEREX2	0.4004	0.0118
+0.4691	0.0694	1.000	is made.	0.0679	0.0110
+0.4694	0.5019	1.000	SLOG1 is made at ZEOF19 (JEOF, Figure 60). Fol-	0.3910	0.0132
+0.4855	0.5000	1.000	lowing this, a branch is made to JDOIT which is an	0.3853	0.0116
+0.4985	0.0714	1.000	The ABEOJ Command	0.1635	0.0103
+0.5000	0.5019	1.000	MCP calling linkage to the input program to indicate	0.3910	0.0116
+0.5145	0.5019	1.000	an EOF condition. If there are more cards following	0.3966	0.0116
+0.5276	0.0714	1.000	The ABEOJ command is implemented in the same way	0.4023	0.0118
+0.5291	0.5000	1.000	the EOF card, an end return will be made, which	0.3741	0.0131
+0.5421	0.0695	1.000	as EOJ, except that $ABEOJ is primed; if $ABEX is	0.3910	0.0131
+0.5451	0.5019	1.000	causes the EOF command to take an error exit	0.3515	0.0102
+0.5567	0.0695	1.000	in effect, control is returned to the PP. If $ABEX is	0.4004	0.0131
+0.5596	0.5038	1.000	ZEREX2. Otherwise, the normal exit (ZEXITX) is	0.3816	0.0131
+0.5712	0.0695	1.000	to get control, the problem programmer is informed	0.3947	0.0131
+0.5741	0.5019	1.000	made.	0.0489	0.0116
+0.5741	0.5526	1.000	If the source is JC4 in bypass mode, an entry	0.3496	0.0116
+0.5872	0.0695	1.000	that the operator requested an abnormal end of job	0.3797	0.0116
+0.5872	0.5000	1.000	to SLOG4 is made at ZEOF10; upon return, control	0.3872	0.0131
+0.6017	0.0695	1.000	and the operator is told that the PP has been given	0.3778	0.0116
+0.6032	0.5000	1.000	is given to JDOIT.	0.1410	0.0132
+0.6163	0.0695	1.000	control through ABEX. The PP is only given one re-	0.3947	0.0116
+0.6177	0.5188	1.000	If JC1 in offline mode is the source, ZEOF19 is	0.3590	0.0132
+0.6308	0.0695	1.000	turn through ABEX from an ABEOJ command	0.3402	0.0116
+0.6321	0.5019	1.000	entered and then exit made via JNOPX. If JC4 over-	0.3966	0.0118
+0.6453	0.0677	1.000	(ZABEND, Figure 59).	0.1748	0.0147
+0.6467	0.5000	1.000	lapped is the source, ZEOF10 is entered and then	0.3778	0.0147
+0.6627	0.5000	1.000	exit made via JNOPX. Any other source causes error	0.4041	0.0131
+0.6758	0.0695	1.000	I-O Control Commands	0.1729	0.0103
+0.6758	0.5000	1.000	exit via ZEREX2.	0.1353	0.0146
+0.7048	0.0714	1.000	Four commands influence I-O operations. Two of	0.3684	0.0118
+0.7064	0.5019	1.000	The REWIND Command	0.1767	0.0131
+0.7194	0.0695	1.000	these, OUPUT and REWIND, are concerned with	0.3647	0.0118
+0.7339	0.0677	1.000	terminating operations of the system input and output	0.4004	0.0118
+0.7355	0.5038	1.000	The REWIND command is a request to terminate and	0.3929	0.0131
+0.7485	0.0677	1.000	tapes. The EOF command is used to indicate an	0.3665	0.0118
+0.7515	0.5019	1.000	rewind the present online write tape.	0.2782	0.0131
+0.7630	0.0677	1.000	intentional EOF at the card reader in the online mode.	0.4079	0.0118
+0.7645	0.5169	1.000	The console is not considered a legal source for	0.3628	0.0146
+0.7776	0.0695	1.000	The fourth, IOCHANGE, is concerned with changes	0.3835	0.0131
+0.7791	0.5000	1.000	this command. The input program card reader is the .	0.4192	0.0146
+0.7921	0.0677	1.000	in the availability of physical I-O devices.	0.3177	0.0117
+0.7951	0.5019	1.000	only source, and the parameter REWIND is the only	0.3910	0.0146
+0.8096	0.5000	1.000	one following COMD, as in: COMD, REWIND.	0.3459	0.0146
+0.8212	0.0695	1.000	The OUTPUT Command	0.1786	0.0103
+0.8241	0.5169	1.000	The only acceptable matrix for the REWIND com-	0.3759	0.0147
+0.8387	0.5019	1.000	mand is the Job Control 1 source and the online mode	0.4004	0.0132
+0.8503	0.0695	1.000	The OUTPUT command is designed to permit the	0.3665	0.0116
+0.8532	0.5000	1.000	(ZREWCD, Figure 60). The pseudo-op, SKOM, is	0.3816	0.0147
+0.8648	0.0695	1.000	operator to force a change of the output tape before	0.3835	0.0116
+0.8677	0.5038	1.000	given to the input program and a comment to the op-	0.3929	0.0132
+0.8794	0.0695	1.000	the beginning of the next job, thus starting the next	0.3835	0.0131
+0.8821	0.5038	1.000	erator precedes a normal exit from the routine. If	0.3835	0.0133
+0.8953	0.0677	1.000	job on a new output tape.	0.1861	0.0116
+0.8967	0.5000	1.000	the matrix is Job Control 4 online, a normal exit is	0.3891	0.0147
+0.9099	0.0846	1.000	The command is accepted (JOUTP, Figure 60) if	0.3684	0.0131
+0.9112	0.5019	1.000	made since the command has been executed already.	0.3947	0.0133
+0.9244	0.0677	1.000	the matrix mask shows Job Control 4 in any mode, or	0.4041	0.0132
+0.9258	0.5000	1.000	All other matrices are considered in error.	0.3327	0.0133
+0.9564	0.0677	1.000	112	0.0244	0.0087

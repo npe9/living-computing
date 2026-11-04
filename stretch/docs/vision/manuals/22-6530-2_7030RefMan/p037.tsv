@@ -1,0 +1,105 @@
+0.0596	0.5056	1.000	Interval Timer	0.1071	0.0116
+0.0596	0.1297	1.000	tion can be executed as the subject instruction	0.3534	0.0131
+0.0741	0.1297	1.000	of an EXECUTE operation, however.	0.2481	0.0131
+0.0814	0.5075	1.000	The interval timer is intended to measure elapsed	0.3910	0.0132
+0.0887	0.1090	1.000	2. Location O is not a valid refill address for con-	0.3741	0.0116
+0.0973	0.5075	1.000	time over relatively short intervals. It can be set to	0.3910	0.0133
+0.1045	0.1278	1.000	trol words used in input-output operations.	0.3158	0.0133
+0.1118	0.5075	1.000	any value at any time, and indicator Ts, time signal,	0.3910	0.0146
+0.1177	0.1090	1.000	3. The control word for an input-output operation	0.3722	0.0145
+0.1264	0.5056	1.000	is actuated when the time period has ended.	0.3233	0.0146
+0.1321	0.1278	1.000	cannot be taken from location 0.	0.2368	0.0118
+0.1424	0.5244	1.000	The value of the interval timer reading is stored in	0.3741	0.0131
+0.1467	0.1071	1.000	4. Data cannot be transmitted to or from location	0.3741	0.0103
+0.1570	0.5075	1.000	core storage and occupies bit positions 0 through 18	0.3910	0.0145
+0.1599	0.1278	1.000	0 in an input-output operation.	0.2256	0.0131
+0.1730	0.5075	1.000	of location 1. It is continually stepped down by pulses	0.3929	0.0131
+0.1744	0.1071	1.000	5. Execute indirect pseudo-instruction counters may	0.3741	0.0132
+0.1851	0.1273	1.000	not occupy location O.	0.1588	0.0191
+0.1875	0.5075	1.000	originating from a stable oscillator. Each time the	0.3910	0.0146
+0.2014	0.5074	1.000	oscillator delivers a pulse, the value of the timer is	0.3913	0.0182
+0.2020	0.1071	1.000	6. The STORE INSTRUCTION COUNTER instruction may	0.3722	0.0146
+0.2166	0.1259	1.000	not store into location 0.	0.1861	0.0116
+0.2194	0.5075	1.000	read out, decremented by one, and returned to core	0.3910	0.0132
+0.2311	0.1071	1.000	7. The effective address of the READ, WRITe, and	0.3722	0.0116
+0.2339	0.5075	1.000	storage. The oscillator operates at 1,024 (21°) cycles	0.3929	0.0132
+0.2422	0.1127	1.000	• COPY CONTROL WORD instructions may not refer	0.3687	0.0158
+0.2461	0.5073	1.000	per second, or a pulse about every millisecond. Bits	0.3914	0.0186
+0.2587	0.1259	1.000	to location 0.	0.0977	0.0102
+0.2645	0.5075	1.000	0-8 show time in seconds. A full cycle is about 8½	0.3910	0.0131
+0.2733	0.1071	1.000	8. Neither the old nor the new name in a RENAME	0.3722	0.0116
+0.2805	0.5075	1.000	minutes.	0.0620	0.0102
+0.2848	0.1278	1.000	instruction may refer to location 0.	0.2519	0.0131
+0.2951	0.5244	1.000	The timer runs whenever the machine is operating,	0.3759	0.0131
+0.3096	0.5075	1.000	which includes also the execution of BRANCH ENABLED	0.3910	0.0116
+0.3241	0.5094	1.000	AND WAIT. Whenever it goes from one to zero, it turns	0.3910	0.0147
+0.3387	0.0883	1.000	Special Registers	0.1579	0.0160
+0.3399	0.5037	1.000	on the time signal indicator in the indicator register.	0.3949	0.0167
+0.3561	0.5075	1.000	The next oscillator pulse then sets the timer to all	0.3910	0.0131
+0.3706	0.5075	1.000	ones unless the program in the meantime has changed	0.3910	0.0146
+0.3735	0.0921	1.000	Addresses 1 through 15 are used for all addressable	0.3891	0.0146
+0.3866	0.5056	1.000	its contents. The timer does not stop after reaching	0.3929	0.0131
+0.3881	0.0902	1.000	special registers employed by the central processing	0.3910	0.0160
+0.4055	0.0902	1.000	unit.	0.0357	0.0116
+0.4055	0.5075	1.000	zero.	0.0357	0.0087
+0.4172	0.5263	1.000	The interval timer is in the permanently protected	0.3722	0.0132
+0.4200	0.1071	1.000	Except as noted in connection with the individual	0.3741	0.0146
+0.4317	0.5075	1.000	area of storage, and cannot be read if indicator DE,	0.3929	0.0147
+0.4326	0.0900	1.000	registers, addresses 1-15 are valid word addresses in all	0.3932	0.0171
+0.4462	0.5075	1.000	data fetch, is masked on and the interruption system	0.3910	0.0145
+0.4506	0.0921	1.000	but the following cases, in which they cause an address-	0.3910	0.0146
+0.4608	0.5074	1.000	is enabled, nor can it be set if the system is enabled.	0.3912	0.0166
+0.4666	0.0902	1.000	invalid or exchange-program-check indication:	0.3421	0.0131
+0.4782	0.5075	1.000	The only store-type operations that may store in the	0.3929	0.0146
+0.4869	0.1071	1.000	1. Instructions cannot be executed from the special	0.3741	0.0131
+0.4927	0.5075	1.000	left half of location 1, and hence may be used to set	0.3929	0.0131
+0.5009	0.0901	1.000	registers, either normally or as part of an EXECUTE	0.3911	0.0154
+0.5083	0.5093	1.000	the interval timer, are STORE VALUE, STORE COUNT, STORE	0.3892	0.0137
+0.5153	0.0901	1.000	INDIRECT AND COUNT operation. The subject instruc-	0.3913	0.0171
+0.5233	0.5075	1.000	REFILL, and STORE VALUE IN ADDRESS, and these opera-	0.3929	0.0131
+0.5305	0.0902	1.000	tion of an EXECUTE operation may be located in the	0.3929	0.0146
+0.5392	0.5075	1.000	tions can be performed only when the interruption	0.3910	0.0132
+0.5479	0.0902	1.000	special registers, however.	0.1898	0.0132
+0.5536	0.5075	1.000	system is disabled. When enabled, these operations	0.3929	0.0133
+0.5669	0.1071	1.000	2. The special registers are not valid refill ad-	0.3759	0.0147
+0.5682	0.5075	1.000	will turn on indicator Ds, data store, and be suppressed.	0.3910	0.0147
+0.5827	0.0902	1.000	dresses for index or control words.	0.2519	0.0118
+0.5842	0.5094	1.000	An attempt by any other operation to store into the	0.3891	0.0146
+0.6003	0.5094	1.000	first half of location I will be suppressed and indicator	0.3891	0.0131
+0.6032	0.1071	1.000	3. The control word for an input-output operation	0.3741	0.0132
+0.6148	0.5094	1.000	AD, address invalid, will be turned on.	0.2763	0.0131
+0.6177	0.0902	1.000	cannot be located in a special register.	0.2820	0.0145
+0.6381	0.5094	1.000	PROGRAMMING NOTE	0.1466	0.0116
+0.6381	0.1071	1.000	4. Data cannot be transmitted to or from the spe-	0.3741	0.0146
+0.6539	0.0902	1.000	cial registers in an input-output operation.	0.3158	0.0133
+0.6555	0.5094	1.000	Core storage provides valid and usable storage loca-	0.3891	0.0146
+0.6700	0.5075	1.000	tions for each bit position of location 1, including bit	0.3929	0.0161
+0.6715	0.1071	1.000	5. The instruction counter cannot be stored in a	0.3759	0.0116
+0.6860	0.5094	1.000	positions 19 through 27 which are unused and appear	0.3910	0.0146
+0.6875	0.0902	1.000	special register.	0.1147	0.0131
+0.7020	0.5094	1.000	between the interval timer and the time clock. When	0.3891	0.0116
+0.7032	0.1070	1.000	6. The pseudo-instruction counter used in EXECUTE	0.3744	0.0185
+0.7166	0.5094	1.000	the interval timer is reset, storing into these bit posi-	0.3910	0.0131
+0.7191	0.0901	1.000	INDIRECT AND COUNT cannot be located in a special	0.3931	0.0167
+0.7311	0.5094	1.000	tions is not suppressed, and, consequently, it is pos-	0.3891	0.0147
+0.7382	0.0920	1.000	register.	0.0584	0.0135
+0.7456	0.5075	1.000	sible that some information may appear there tem-	0.3929	0.0147
+0.7573	0.1071	1.000	7. In the operation ReNAMe, neither the old nor	0.3759	0.0146
+0.7615	0.5094	1.000	porarily. Specifically, when STORE VALUE is used to	0.3910	0.0146
+0.7733	0.0921	1.000	new name of the index register can be in the range	0.3910	0.0131
+0.7776	0.5075	1.000	reset the interval timer and bits 19 through 24 of the	0.3929	0.0131
+0.7882	0.0919	1.000	1 through 15.	0.1000	0.0151
+0.7921	0.5094	1.000	value placed in the interval timer contain any one-bits,	0.3891	0.0146
+0.8081	0.5451	1.000	bits are set into the corresponding bit positions	0.3553	0.0131
+0.8081	0.1090	1.000	Not all bit positions in locations 0-15 are assigned	0.3722	0.0146
+0.8227	0.0883	1.000	to specific functions. Those bit positions that are not	0.3947	0.0174
+0.8227	0.5094	1.000	of location 1, and remain there until the first time the	0.3910	0.0146
+0.8387	0.5075	1.000	interval timer is stepped down. The length of the	0.3929	0.0132
+0.8387	0.0902	1.000	so assigned are always zero. Information stored in	0.3910	0.0147
+0.8532	0.0921	1.000	these positions is not recoverable. (However, for an	0.3891	0.0147
+0.8532	0.5075	1.000	address modified by STORE VALUE IN ADDRESS depends	0.3929	0.0147
+0.8691	0.5094	1.000	upon the contents of bit position 24 of the word being	0.3910	0.0132
+0.8691	0.0921	1.000	exception see the programming note in the next	0.3910	0.0146
+0.8831	0.0876	1.000	section.)	0.0658	0.0171
+0.8836	0.5094	1.000	changed. Once bit position 24 of location 1 has been	0.3910	0.0146
+0.9215	0.0883	1.000	34 IBM 7030	0.1090	0.0103

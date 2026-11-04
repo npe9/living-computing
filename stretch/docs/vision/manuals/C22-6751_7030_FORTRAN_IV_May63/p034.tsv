@@ -1,0 +1,113 @@
+0.0814	0.5357	1.000	4. The concept of "named" common storage has	0.3778	0.0147
+0.0827	0.0940	1.000	FORTRAN Branch Card	0.1654	0.0147
+0.0973	0.5188	1.000	been introduced, together with the ability to specify	0.3929	0.0146
+0.1133	0.5188	1.000	dimension information in comMon statements.	0.3365	0.0117
+0.1294	0.1128	1.000	2 34.56	0.0677	0.0146
+0.1294	0.5338	1.000	5. The ability to write subprograms operating upon	0.3778	0.0131
+0.1420	0.5168	1.000	arrays of varying size specified by means of a variable	0.3969	0.0175
+0.1599	0.5169	1.000	DIMENSION statement, has been added.	0.2726	0.0131
+0.1701	0.2105	1.000	6-72	0.0207	0.0131
+0.1744	0.5338	1.000	6. A new statement, DATA, has been added, to per-	0.3797	0.0147
+0.1802	0.2068	1.000	Jnusec	0.0301	0.0102
+0.1903	0.5150	1.000	mit initialization of data objects at compile time.	0.3459	0.0146
+0.1977	0.1222	1.000	SEQUENCE NUMBER	0.0169	0.0872
+0.2195	0.0959	1.000	o ∞ v a ur	0.0132	0.0640
+0.2340	0.1504	1.000	BIT COUNT	0.0150	0.0509
+0.2355	0.1372	1.000	CHECKSUM	0.0169	0.0494
+0.2397	0.5169	1.000	Appendix C: A STRAP Coded Subprogram	0.3628	0.0176
+0.2592	0.5186	1.000	Suppose the programmer wishes to code a STRAP sub-	0.3951	0.0187
+0.2791	0.5188	1.000	program analogous to the following FORTRAN program:	0.3929	0.0131
+0.2979	0.5451	1.000	SUBROUTINE STRAP	0.1485	0.0132
+0.3096	0.5470	1.000	COMMON ANAMEI (10)	0.1654	0.0131
+0.3212	0.5451	1.000	COMMON/BLOCK1/ANAME2,/BLOCK2/ANAME3(10)	0.3647	0.0116
+0.3327	0.5470	1.000	ANAME2 = SIN (0.0)	0.1410	0.0133
+0.3445	0.5470	1.000	DO 1I = 1,10	0.0959	0.0116
+0.3545	0.5451	1.000	ANAME3(I) = I	0.1147	0.0146
+0.3545	0.0940	1.000	Appendix B: Principal Differences Between the	0.3947	0.0161
+0.3677	0.5451	1.000	ANAME1(I) = COS (ANAME3(I))	0.2350	0.0102
+0.3706	0.0921	1.000	IBM 709/90 FORTRAN II and the IBM 7030	0.3985	0.0131
+0.3793	0.5225	1.000	1 CONTINUE	0.1034	0.0104
+0.3852	0.0921	1.000	FORTRAN IV	0.1109	0.0131
+0.3892	0.5450	1.000	RETURN	0.0642	0.0153
+0.4012	0.5451	1.000	END	0.0376	0.0145
+0.4039	0.0940	1.000	The differences between FORTRAN II and FORTRAN IV	0.3947	0.0133
+0.4200	0.0940	1.000	may be considered under two headings: changes to	0.3966	0.0131
+0.4200	0.5132	1.000	then the strap program should be similar to the	0.3985	0.0176
+0.4342	0.0939	1.000	existing facilities, and addition of new features.	0.3498	0.0157
+0.4375	0.5150	1.000	following:	0.0771	0.0145
+0.4505	0.6541	1.000	PUNREL	0.0640	0.0133
+0.4621	0.6541	1.000	SEM, 92, 114, 116	0.1165	0.0132
+0.4705	0.0931	1.000	Changes	0.0635	0.0148
+0.4738	0.6541	1.000	PUNFPC, LAST, COMMON	0.1805	0.0131
+0.4855	0.6541	1.000	ENTER, ENTER	0.1109	0.0116
+0.4855	0.5451	1.000	STRAP	0.0489	0.0131
+0.4884	0.1090	1.000	1. The IF statement has been redefined, to reflect a	0.3797	0.0131
+0.4966	0.6540	1.000	PUNCDC	0.0661	0.0140
+0.5042	0.0921	1.000	logical decision making process, rather than an arith-	0.3966	0.0133
+0.5087	0.6541	1.000	COMBLOCK, BLOCKIND	0.1729	0.0116
+0.5101	0.5451	1.000	BLOCKI	0.0583	0.0103
+0.5188	0.6541	1.000	COMBLOCK, BLOCK2ND	0.1729	0.0146
+0.5203	0.0940	1.000	metic sign test, although the IBM 7030 FOrTRAN Iv com-	0.3966	0.0131
+0.5217	0.5451	1.000	BLOCK2	0.0602	0.0105
+0.5320	0.6523	1.000	XW,, 2	0.0526	0.0132
+0.5348	0.0902	1.000	piler will accept the arithmetie-iF without flow analysis.	0.3966	0.0146
+0.5422	0.8139	1.000	:	0.0150	0.0218
+0.5436	0.5451	1.000	COS	0.0320	0.0131
+0.5436	0.6541	1.000	(A*)DD(BU), COS	0.1316	0.0131
+0.5509	0.1090	1.000	2. The I-o tape-oriented statements have been	0.3797	0.0131
+0.5552	0.6560	1.000	(A*)DD(BU), SIN	0.1241	0.0118
+0.5552	0.5432	1.000	SIN	0.0301	0.0116
+0.5667	0.6541	1.000	SX, $0, SAVE	0.0884	0.0134
+0.5668	0.5432	1.000	ENTER	0.0546	0.0133
+0.5669	0.0940	1.000	changed, to make them more general.	0.2820	0.0131
+0.5785	0.6541	1.000	SX, $1, SAVE +1.0	0.1203	0.0131
+0.5814	0.1090	1.000	3. The machine dependent statements referencing	0.3797	0.0132
+0.5900	0.6523	1.000	SX, $15, SAVE +2.0	0.1297	0.0133
+0.5973	0.0921	1.000	sense lights, sense switches, and machine triggers have	0.3966	0.0133
+0.6017	0.6541	1.000	CNOP	0.0432	0.0116
+0.6118	0.0902	1.000	been dropped.	0.1110	0.0163
+0.6133	0.6523	1.000	LVI, $15, $ + 1.0	0.1071	0.0131
+0.6221	0.6523	1.000	B, SIN	0.0470	0.0146
+0.6279	0.1090	1.000	4. The EQUIVALENCE statement is no longer per-	0.3797	0.0131
+0.6365	0.6541	1.000	VF, ZERO	0.0658	0.0118
+0.6439	0.0921	1.000	mitted to re-order commoN storage.	0.2632	0.0131
+0.6467	0.6541	1.000	VF, ZERO	0.0677	0.0133
+0.6570	0.1071	1.000	5. Function naming rules have been changed, to	0.3816	0.0161
+0.6584	0.6523	1.000	ST(U), ANAME2	0.1165	0.0146
+0.6699	0.0900	1.000	unify the various conventions applicable to the differ-	0.3990	0.0219
+0.6700	0.6541	1.000	LVI, $1, 0.0	0.0771	0.0118
+0.6817	0.6523	1.000	L(U), ONE	0.0789	0.0132
+0.6875	0.0902	1.000	ent kinds of functions.	0.1635	0.0146
+0.6918	0.6523	1.000	ST(U), I	0.0620	0.0131
+0.7006	0.1071	1.000	6. The B and F modal punch conventions have been	0.3816	0.0174
+0.7040	0.6520	1.000	LCI, $0, 10	0.0738	0.0135
+0.7120	0.5450	1.000	BEGINI	0.0584	0.0163
+0.7150	0.6541	1.000	L(U), I	0.0527	0.0132
+0.7193	0.0902	1.000	dropped.	0.0640	0.0149
+0.7267	0.6523	1.000	ST(U), ANAME3($1)	0.1466	0.0132
+0.7339	0.1090	1.000	7. Implicit multiplication is not accepted.	0.3083	0.0146
+0.7384	0.6523	1.000	LV, $0, $L +0.32	0.1109	0.0131
+0.7500	0.6651	1.000	+, $0, ARG1 +0.:	0.1080	0.0136
+0.7602	0.6654	1.000	V. $0. ARC	0.0620	0.0116
+0.7703	0.0921	1.000	Additions	0.0715	0.0103
+0.7832	0.6522	1.000	LVI, $15, $ + 1.0	0.1035	0.0135
+0.7848	0.1053	1.000	1. Three type declarations have been added to the	0.3835	0.0176
+0.8036	0.0902	1.000	language to enable the nature of variable and function	0.3966	0.0118
+0.8038	0.5432	1.000	ARGI	0.0432	0.0174
+0.8067	0.6523	1.000	VF, ANAME3	0.0921	0.0131
+0.8181	0.6522	1.000	VF, ANAME3	0.0941	0.0136
+0.8182	0.0902	1.000	names to be (optionally) declared rather than estab-	0.3947	0.0133
+0.8285	0.6523	1.000	ST(U), ANAMEI($1)	0.1447	0.0161
+0.8342	0.0902	1.000	lished by declension.	0.1541	0.0146
+0.8409	0.6521	1.000	V+I, $1, 1.0	0.0831	0.0145
+0.8455	0.1069	1.000	2. Logical and relational operators have been added,	0.3819	0.0213
+0.8543	0.6522	1.000	L(U), ONE	0.0772	0.0123
+0.8646	0.6503	1.000	CB,S0, BEGINI	0.1092	0.0266
+0.8648	0.0921	1.000	to facilitate decision making processes.	0.2838	0.0131
+0.8764	0.1071	1.000	3. A special statement, EXTERNAL, has been provided	0.3816	0.0191
+0.8873	0.6521	1.000	LX, $0, SAVE	0.0905	0.0132
+0.8924	0.0883	1.000	to permit the passing of subprogram names as argu-	0.3985	0.0189
+0.8997	0.6541	1.000	LX, $1, SAVE+1.0	0.1165	0.0145
+0.9112	0.6541	1.000	LX, $15, SAVE + 2.(	0.1222	0.0133
+0.9128	0.0902	1.000	ments.	0.0489	0.0102
+0.9390	0.0883	1.000	34	0.0207	0.0116

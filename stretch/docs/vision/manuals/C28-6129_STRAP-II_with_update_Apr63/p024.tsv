@@ -1,0 +1,102 @@
+0.0669	0.1541	1.000	3. Octal. Binary signed and unsigned data com-	0.3816	0.0147
+0.0669	0.5752	1.000	The leftmost column on the STRAP-Il listing contains	0.3816	0.0131
+0.0814	0.5620	1.000	line numbers-the printed lines on each page are num-	0.3947	0.0147
+0.0827	0.1786	1.000	piled via a DD statement are printed on the out-	0.3553	0.0147
+0.0973	0.5602	1.000	bered sequentially, beginning with 1. Each page is	0.3966	0.0161
+0.0973	0.1786	1.000	put listing in a straight octal format. See lines	0.3571	0.0146
+0.1118	0.5620	1.000	also numbered, and this number appears at the top of	0.3947	0.0146
+0.1133	0.1767	1.000	19 or 20 in Figure 3.	0.1504	0.0146
+0.1279	0.5620	1.000	the page, just below the time clock display. STRAP	0.3947	0.0146
+0.1381	0.1523	1.000	4. Decimal. A decimal use mode in a DD state-	0.3816	0.0116
+0.1424	0.5602	1.000	can easily refer to any line of printed output by page	0.3966	0.0161
+0.1526	0.1767	1.000	ment cause the compiled data to be displayed in	0.3571	0.0147
+0.1584	0.5620	1.000	and line number.	0.1297	0.0131
+0.1683	0.1766	1.000	decimal.	0.0623	0.0137
+0.1758	0.5695	1.000	Certain error conditions can be detected by sTRAP	0.3853	0.0146
+0.1903	0.5620	1.000	during compilation. At the completion of an assembly,	0.3947	0.0161
+0.1933	0.1523	1.000	Pseudo operations that do not cause any binary in-	0.3816	0.0146
+0.2055	0.5600	1.000	then, straP can list error messages and in each mes-	0.3949	0.0164
+0.2093	0.1353	1.000	formation to be compiled give rise to certain unique	0.3985	0.0146
+0.2209	0.5602	1.000	sage reference the statement by page, line number	0.3966	0.0146
+0.2238	0.1353	1.000	printing formats. Dr compiles no binary information,	0.3985	0.0146
+0.2369	0.5602	1.000	and field wherein the error occurred. Since many	0.3947	0.0146
+0.2397	0.1353	1.000	SO STRAP prints the number of words and bits reserved	0.3966	0.0147
+0.2497	0.5600	1.000	statements occupy more than one line on the listing	0.3951	0.0188
+0.2542	0.1353	1.000	by the pseudo-operation as an octal bit address. sYN,	0.3985	0.0161
+0.2660	0.5620	1.000	(see lines 11 and 12 on the sample listing), an error	0.3947	0.0161
+0.2703	0.1353	1.000	on the other hand, can define a symbol in terms of	0.3985	0.0131
+0.2824	0.1352	1.000	either an integer value or a straP bit address value.	0.3987	0.0181
+0.2833	0.5602	1.000	message will reference only the last line occupied by	0.3947	0.0132
+0.2964	0.5602	1.000	the statement's binary output. Consult Appendis D	0.3947	0.0161
+0.3009	0.1353	1.000	When the symbol is defined as a bit address, an octal	0.3985	0.0146
+0.3124	0.5602	1.000	for a complete list of error messages.	0.2632	0.0146
+0.3154	0.1353	1.000	bit address equivalent is printed in the column where	0.3966	0.0146
+0.3314	0.1335	1.000	the location counter setting is usually displayed. It	0.4004	0.0160
+0.3314	0.5695	1.000	Five other error conditions, all caused by incorrect	0.3872	0.0147
+0.3445	0.5583	1.000	definition of programmer symbols, can be detected by	0.3966	0.0174
+0.3473	0.1353	1.000	the symbol is defined as an integer, a straight octal	0.3985	0.0133
+0.3605	0.5602	1.000	STRAP and reported on the output listing by means of	0.3947	0.0160
+0.3618	0.1335	1.000	representation of the converted integer is printed	0.3985	0.0146
+0.3764	0.5602	1.000	error flags. These flags are five or six character sym-	0.3947	0.0161
+0.3779	0.1353	1.000	where all other compiled statements and data are	0.3966	0.0131
+0.3909	0.5602	1.000	bols that appear on the listing on the line immedi-	0.3966	0.0146
+0.3924	0.1353	1.000	shown. If the pseudo operation suc is used, the con-	0.3985	0.0146
+0.4070	0.5602	1.000	ately preceding the first line of the statement that con-	0.3947	0.0145
+0.4084	0.1335	1.000	tents of the location counter resulting from the ap-	0.4004	0.0131
+0.4230	0.5564	1.000	tains the symbol erroneously defined. The five flags	0.3985	0.0161
+0.4230	0.1353	1.000	pearance of the suc are displayed in the usual column	0.3966	0.0146
+0.4375	0.5602	1.000	and the meaning of each are:	0.2124	0.0146
+0.4390	0.1335	1.000	as an octal bit address.	0.1711	0.0117
+0.4564	0.1504	1.000	Some additional information is supplied on the list-	0.3816	0.0146
+0.4651	0.5583	1.000	(1) UNDEF. An undefined symbol has been detected	0.3929	0.0161
+0.4709	0.1335	1.000	ing which will prove helpful to the programmer. The	0.3985	0.0146
+0.4797	0.5902	1.000	STRAP has assigned to this symbol the bit address	0.3647	0.0161
+0.4884	0.1353	1.000	first item to appear on each assembly listing is a binary	0.3929	0.0116
+0.4956	0.5921	1.000	value of the first full word location following the	0.3628	0.0147
+0.5015	0.1335	1.000	representation of the 7030 internal time clock when	0.3966	0.0116
+0.5102	0.5902	1.000	highest full word used by the program in which	0.3647	0.0174
+0.5174	0.1335	1.000	the assembly began. The time clock can be used for	0.3985	0.0147
+0.5261	0.5921	1.000	this symbol appears. If several symbols are un-	0.3628	0.0146
+0.5317	0.1315	1.000	identification purposes. The time required to complete	0.4005	0.0168
+0.5406	0.5901	1.000	defined, they are assigned sequential full word lo-	0.3649	0.0186
+0.5479	0.1335	1.000	the assembly is displayed in seconds as the last item	0.3985	0.0146
+0.5567	0.5902	1.000	cations from this starting point, in the order in	0.3647	0.0146
+0.5624	0.1335	1.000	printed on the listing. Headings are also given over	0.3985	0.0146
+0.5712	0.5921	1.000	which they are encountered by STRAP.	0.2782	0.0161
+0.5785	0.1335	1.000	each column of information to clarify where Loca-	0.3985	0.0145
+0.5945	0.1335	1.000	tion, Binary Output, Name and Statement appear.	0.3778	0.0131
+0.5988	0.5583	1.000	(2) QUEST. A multiply defined symbol has been en-	0.3947	0.0146
+0.6118	0.1504	1.000	Also, at the beginning of the listing, four lists of	0.3816	0.0132
+0.6148	0.5902	1.000	countered. However, the definitions are not con-	0.3628	0.0131
+0.6264	0.1335	1.000	symbols are supplied by sTRaP. The first list is a tabu-	0.3985	0.0146
+0.6294	0.5902	1.000	tradictory, that is, two or more definitions of the	0.3628	0.0146
+0.6409	0.1316	1.000	lation of those programmer symbols that were not de-	0.3985	0.0161
+0.6467	0.5865	1.000	same programmer symbol have been found and	0.3665	0.0161
+0.6584	0.1316	1.000	fined by the programmer, along with the definitions	0.3985	0.0131
+0.6612	0.5883	1.000	all definitions assign the identical value to the	0.3647	0.0133
+0.6715	0.1316	1.000	supplied by sTRaP. The second list contains all pro-	0.3966	0.0145
+0.6744	0.5883	1.000	symbol. This situation could occur in this se-	0.3647	0.0147
+0.6890	0.5902	1.000	quence of instructions:	0.1729	0.0147
+0.7075	0.7198	1.000	SLC, 1000.0	0.0942	0.0167
+0.7252	0.6372	1.000	SYMBOL LI, ANOTHERSYMBOL	0.2726	0.0161
+0.7323	0.1316	1.000	defined with contradictions and pseudo defined.	0.3572	0.0152
+0.7427	0.7218	1.000	+I, STILLANOTHER	0.1673	0.0145
+0.7529	0.1466	1.000	Immediately following the column headings, upper	0.3835	0.0147
+0.7587	0.6372	1.000	SYMBOL SYN, 1000.0	0.1767	0.0174
+0.7688	0.1316	1.000	and lower storage bounds are printed as octal bit ad-	0.4004	0.0133
+0.7805	0.5883	1.000	STRAP accepts the definition as legal and does	0.3647	0.0160
+0.7833	0.1316	1.000	dresses. The boundaries for each program are de-	0.3947	0.0161
+0.7951	0.5883	1.000	assign the specified value. The appearance of the	0.3647	0.0160
+0.7994	0.1297	1.000	termined by stRap in the following way-the lower	0.4004	0.0176
+0.8109	0.5883	1.000	fag is to warn the programmer of the unneces-	0.3647	0.0147
+0.8154	0.1297	1.000	memory bound is the address of the full word in stor-	0.3985	0.0174
+0.8255	0.5883	1.000	sary multiple definition.	0.1805	0.0161
+0.8327	0.1316	1.000	age immediately preceding the first word used by the	0.3966	0.0147
+0.8488	0.1297	1.000	program, while the upper memory bound is the ad-	0.3985	0.0161
+0.8532	0.5545	1.000	(3) MULTI. This flag signals a more serious case of	0.3985	0.0147
+0.8633	0.1316	1.000	dress of the full word in storage that immediately fol-	0.3966	0.0161
+0.8677	0.5865	1.000	multiple definition where the definitions are con-	0.3665	0.0145
+0.8794	0.1316	1.000	lows the last word used by the program.	0.3102	0.0161
+0.8821	0.5883	1.000	tradictory. If the following two statements were	0.3647	0.0176
+0.9157	0.1335	1.000	20	0.0207	0.0087
+0.9157	0.1842	1.000	IBM 7030	0.0639	0.0088

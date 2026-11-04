@@ -1,0 +1,110 @@
+0.0596	0.5188	1.000	Zero Multiply (ZM). This indicator will be turned	0.3741	0.0160
+0.0609	0.1034	1.000	For values of the operand in the N range the square	0.3722	0.0147
+0.0769	0.5018	1.000	off, it on.	0.0734	0.0148
+0.0770	0.0902	1.000	root operation consists of an exponent division and a	0.3853	0.0131
+0.0900	0.5019	1.000	PROGRAMMING NOTE	0.1485	0.0147
+0.0915	0.0902	1.000	fraction square root operation. The exponent is di-	0.3853	0.0146
+0.1060	0.0901	1.000	vided by two. When the exponent is odd, a one is	0.3856	0.0178
+0.1076	0.5019	1.000	The negative sign modifier permits selection of the	0.3929	0.0161
+0.1221	0.0902	1.000	added to the exponent prior to the division and the	0.3853	0.0146
+0.1250	0.5038	1.000	sign to be attached to the root. The absolute sign	0.3891	0.0117
+0.1381	0.0902	1.000	fraction is shifted right one position. Subsequently,	0.3872	0.0146
+0.1394	0.5019	1.000	modifier governs whether the sign of the radicand	0.3910	0.0147
+0.1509	0.0901	1.000	the square root of the 48- or 49-bit fraction is obtained.	0.3837	0.0166
+0.1539	0.5019	1.000	is to be checked.	0.1222	0.0147
+0.1685	0.0902	1.000	During the process the fraction is extended with low-	0.3872	0.0147
+0.1788	0.5000	1.000	Add Double (D+)	0.1335	0.0146
+0.1845	0.0902	1.000	order zeros. The result is a 48-bit fraction.	0.3102	0.0118
+0.1903	0.5000	1.000	The operand specified by the effective address is added	0.3929	0.0176
+0.1976	0.1033	1.000	When normalized operation is specified, the result is	0.3743	0.0179
+0.2048	0.5000	1.000	to the operand in the accumulator bits 0-107. The	0.3929	0.0191
+0.2151	0.0902	1.000	normalized and placed in storage. When unnormal-	0.3853	0.0131
+0.2206	0.4999	1.000	addressed operand is extended with 48 zeros during	0.3932	0.0192
+0.2297	0.0902	1.000	ized operation is specified, the result is placed un-	0.3872	0.0146
+0.2369	0.5000	1.000	the operation. The exponent and fraction of the sum	0.3929	0.0174
+0.2442	0.0902	1.000	changed in storage. In both cases the result is placed	0.3855	0.0165
+0.2503	0.4997	1.000	replace the accumulator bits 0-107. Accumulator bits	0.3933	0.0204
+0.2602	0.0883	1.000	in bit positions 0-59 of the storage location specified	0.3872	0.0147
+0.2674	0.5000	1.000	108-127 remain unchanged. The sign of the addressed	0.3947	0.0160
+0.2747	0.0902	1.000	by the effective address. No noisy mode 1-bits are en-	0.3853	0.0147
+0.2848	0.5000	1.000	operand is modified by the sign moditiers prior to	0.3929	0.0146
+0.2906	0.0883	1.000	tered when normalizing and noisy mode are specified.	0.3853	0.0146
+0.2994	0.5019	1.000	the addition. The sign of the sum replaces the accu-	0.3910	0.0146
+0.3067	0.1053	1.000	The absolute sign modifier is applied to the accumu-	0.3703	0.0131
+0.3150	0.4999	1.000	mulator sign.	0.1017	0.0169
+0.3205	0.0882	1.000	lator sign prior to the extraction of the square root.	0.3875	0.0179
+0.3285	0.5188	1.000	The detailed operation of the addition is similar to	0.3741	0.0176
+0.3358	0.0902	1.000	When this modifier is zero, the accumulator sign is	0.3872	0.0161
+0.3445	0.5038	1.000	that of ADD. When the difference between the expo-	0.3891	0.0146
+0.3532	0.0902	1.000	used unchanged. If the accumulator sign is negative,	0.3853	0.0132
+0.3605	0.5038	1.000	nents exceeds 48, preparatory shift greater than 48	0.3910	0.0145
+0.3677	0.0902	1.000	the imaginary root indicator (IR) is turned on. When	0.3853	0.0145
+0.3764	0.5019	1.000	indicator, PSH, is turned on. When the difference	0.3929	0.0146
+0.3836	0.0902	1.000	the absolute sign modifier is one, the accumulator sign	0.3853	0.0146
+0.3909	0.5038	1.000	between the exponents exceeds 95 the number with	0.3910	0.0146
+0.3997	0.0902	1.000	is assumed positive and IR cannot be turned on. The	0.3853	0.0131
+0.4026	0.5035	1.000	the lower exponent is not added. The result is then	0.3914	0.0205
+0.4142	0.0902	1.000	negative sign modifier is applied to the result of the	0.3853	0.0131
+0.4215	0.5038	1.000	the number with the higher exponent. The fraction	0.3910	0.0145
+0.4302	0.0883	1.000	square root process as in the store operation. When	0.3872	0.0146
+0.4375	0.5019	1.000	addition yields a 96-bit sum and possible fraction	0.3929	0.0146
+0.4448	0.0902	1.000	this modifier is zero,, the sign of the stored result is	0.3853	0.0146
+0.4533	0.5037	1.000	overflow bit.	0.0922	0.0120
+0.4606	0.0902	1.000	positive. When this modifier is one, the sign of the	0.3853	0.0147
+0.4679	0.5207	1.000	When normalized operation is specified, the sum	0.3741	0.0147
+0.4730	0.0899	1.000	stored result is negative.	0.1700	0.0180
+0.4824	0.5038	1.000	fraction is normalized and replaces bits 12-107. II	0.3929	0.0147
+0.4897	0.1053	1.000	As with other store operations, the accumulator	0.3703	0.0147
+0.4985	0.5038	1.000	noisy mode is also specified, one bits enter the low-	0.3929	0.0146
+0.5058	0.0902	1.000	flag bits, sign byte register bits 5-7, are placed in the	0.3872	0.0146
+0.5105	0.5036	1.000	order bit positions when the 96-bit intermediate re-	0.3914	0.0198
+0.5218	0.0902	1.000	flag bit positions, bits 61-63 of the addressed storage	0.3872	0.0131
+0.5291	0.5038	1.000	sult is shifted left during normalization. Noisy mode	0.3929	0.0146
+0.5359	0.0882	1.000	location.	0.0604	0.0124
+0.5451	0.5038	1.000	one bits are not added to either operand prior to the	0.3929	0.0131
+0.5523	0.1034	1.000	When the operand is a value in the XFP or XFN	0.3741	0.0131
+0.5609	0.5038	1.000	addition as is done in ADD.	0.1917	0.0133
+0.5669	0.0902	1.000	range, the result exponent is the same as the operand	0.3872	0.0147
+0.5755	0.5207	1.000	When unnormalized operation is specified, the 96-	0.3759	0.0147
+0.5814	0.0902	1.000	exponent. The result fraction is the square root of the	0.3872	0.0147
+0.5915	0.5056	1.000	bit intermediate sum fraction is placed in accumula-	0.3910	0.0131
+0.5973	0.0883	1.000	accumulator fraction. Normalization, if specified, is	0.3891	0.0133
+0.6061	0.5038	1.000	tor bits 12-107. The overflow bit does not enter the	0.3929	0.0131
+0.6133	0.0883	1.000	suppressed. Note that when the operand exponent	0.3910	0.0131
+0.6221	0.5056	1.000	accumulator, but turns on the lost carry indicator.	0.3759	0.0146
+0.6279	0.0865	1.000	is odd the fraction is shifted one position to the right	0.3910	0.0146
+0.6365	0.5206	1.000	If the 96-bit intermediate sum has a zero fraction,	0.3761	0.0137
+0.6439	0.0883	1.000	prior to taking the square root. However, the expo-	0.3891	0.0146
+0.6494	0.5035	1.000	normalization, if specified, will be suppressed. The	0.3933	0.0219
+0.6584	0.0902	1.000	nent is not modified as a result of the shift for oper-	0.3872	0.0131
+0.6672	0.5038	1.000	exponent replacing accumulator bits 0-11 will be the	0.3929	0.0174
+0.6739	0.0900	1.000	ands in the XFP or XEN range.	0.2034	0.0145
+0.6830	0.5038	1.000	exponent of the intermediate result. The lost sig-	0.3947	0.0161
+0.6991	0.5038	1.000	nificance indicator (LS) is set to one.	0.2594	0.0146
+0.7002	0.0901	1.000	INDICATORS	0.0753	0.0109
+0.7136	0.5188	1.000	When the operand values lie in the XEP or XEN	0.3778	0.0161
+0.7194	0.1034	1.000	To-Memory Operation (MOP). This indicator is	0.3741	0.0161
+0.7297	0.5038	1.000	range, the adlition process follows the operation out-	0.3929	0.0161
+0.7331	0.0881	1.000	set to one. It is temporary.	0.1941	0.0168
+0.7442	0.5038	1.000	lined under ADD except that the accumulator fraction	0.3929	0.0161
+0.7485	0.1015	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). These	0.3759	0.0176
+0.7587	0.5038	1.000	is 96 bits and the operand specified by the effective	0.3929	0.0174
+0.7645	0.0883	1.000	indicators are set according to the arithmetic result	0.3910	0.0146
+0.7747	0.5038	1.000	address is extended with 48 zeros prior to the	0.3947	0.0160
+0.7771	0.0881	1.000	which appears in storage. They are temporary.	0.3445	0.0225
+0.7921	0.5037	1.000	addition.	0.0696	0.0132
+0.7951	0.0996	1.000	Imaginary Root (IR). This indicator is turned on	0.3778	0.0160
+0.8079	0.5018	1.000	INDICATORS	0.0828	0.0136
+0.8109	0.0865	1.000	when the accumulator sign, as modified by the ab-	0.3910	0.0161
+0.8255	0.5188	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3759	0.0161
+0.8270	0.0883	1.000	solute sign modifier, is negative. It is permanent.	0.3609	0.0131
+0.8400	0.1034	1.000	Exponent Range (XPFP, XPH, XPL). These in-	0.3741	0.0206
+0.8415	0.5019	1.000	(MOP); Arithmetic Result (RLZ, RZ, RGZ, RN);	0.3947	0.0161
+0.8545	0.5038	1.000	Lost Carry (LC); Preparatory Shift Greater than 48	0.3929	0.0176
+0.8576	0.0865	1.000	dicators are set according to the exponent range of	0.3910	0.0174
+0.8735	0.5056	1.000	XPU); Zero Multiply (ZMI). These indicators are	0.3910	0.0174
+0.8735	0.0865	1.000	the result which appears in storage. These indicators	0.3910	0.0174
+0.8894	0.5019	1.000	set as in ADD.	0.0977	0.0133
+0.8924	0.0865	1.000	are permanent.	0.1109	0.0131
+0.9244	0.6936	1.000	Floating-Point Arithmetic	0.1579	0.0102
+0.9244	0.8797	1.000	95	0.0150	0.0087

@@ -1,0 +1,84 @@
+0.0823	0.8513	1.000	MBSPEC	0.0718	0.0157
+0.1453	0.1052	1.000	LINKAGE	0.0733	0.0118
+0.1467	0.5282	1.000	Boxes 3, 4, 11	0.1147	0.0147
+0.1758	0.1052	1.000	On Entry	0.0677	0.0119
+0.1758	0.5357	1.000	MBSPEC maintains a string of eight consecutive	0.3590	0.0133
+0.1887	0.5356	1.000	indicators, each one represents the status of its	0.3593	0.0168
+0.2048	0.5357	1.000	corresponding character in the test word.	0.3102	0.0146
+0.2048	0.1504	1.000	The calling sequence is:	0.1805	0.0118
+0.2049	0.1222	1.000	1.	0.0132	0.0102
+0.2194	0.5357	1.000	MBSPEC uses and sets these indicators to deter-	0.3665	0.0146
+0.2339	0.1071	1.000	SIC, $15; B, MBSPEC	0.1617	0.0132
+0.2355	0.5376	1.000	mine whether each character in an op or system	0.3571	0.0116
+0.2485	0.3440	1.000	• no further help	0.1241	0.0118
+0.2485	0.1071	1.000	, address of the test word (I)	0.2124	0.0146
+0.2500	0.5357	1.000	symbol is the original character or the substitute	0.3665	0.0131
+0.2630	0.1071	1.000	B, a fix-up subroutine	0.1654	0.0146
+0.2645	0.5376	1.000	character: 0 if the character is the original	0.3233	0.0116
+0.2645	0.3590	1.000	possible return	0.1147	0.0103
+0.2776	0.3459	1.000	' possible help re-	0.1372	0.0131
+0.2791	0.1071	1.000	Normal Return	0.1109	0.0103
+0.2791	0.5357	1.000	character; 1 if the character is the newly substituted	0.3891	0.0146
+0.2936	0.5357	1.000	option character. Pass 1 zeroes these indicators	0.3665	0.0146
+0.2950	0.3571	1.000	turn	0.0320	0.0089
+0.3067	0.5357	1.000	before the first entry into MBSPEC. But during	0.3609	0.0176
+0.3081	0.1222	1.000	2.	0.0169	0.0131
+0.3081	0.1410	1.000	Astring of 8 MBSPEC indicators, Libts,	0.3158	0.0146
+0.3208	0.1033	1.000	must be preset to zero by the user program before	0.3781	0.0190
+0.3227	0.5338	1.000	the ping-ponging back and forth while MBSPEC is	0.3684	0.0146
+0.3342	0.5357	1.000	supplying Pass 1 with a new substitute test word,	0.3647	0.0191
+0.3387	0.1034	1.000	MBSPEC works on an op or system symbol.	0.3252	0.0116
+0.3466	0.1201	1.000	3. The op or system symbol (i. e., any test	0.3352	0.0264
+0.3488	0.5357	1.000	these eight control indicators remain as last set	0.3628	0.0191
+0.3641	0.5355	1.000	by MBSPEC.	0.1000	0.0188
+0.3648	0.1053	1.000	word) must be eight A8 characters in length.	0.3308	0.0131
+0.3948	0.5354	1.000	Bоx 6	0.0476	0.0170
+0.3966	0.1052	1.000	On Exit	0.0584	0.0121
+0.4208	0.1202	1.000	1. Whenever MBSPEC makes a substitution, it	0.3574	0.0198
+0.4230	0.5320	1.000	Let each character in the test word be a possible	0.3647	0.0189
+0.4390	0.1053	1.000	turns on a special indicator, Llbts. 8, for the user	0.3741	0.0174
+0.4390	0.5357	1.000	error character. If we represent an original	0.3402	0.0160
+0.4530	0.5357	1.000	character in the test word by an X and a substitute	0.3779	0.0156
+0.4535	0.1034	1.000	program as well as exiting through the possible	0.3553	0.0160
+0.4666	0.5357	1.000	character by an S, the following list represents the	0.3835	0.0189
+0.4679	0.1034	1.000	help return. (MBSPEC turns this indicator off in	0.3684	0.0161
+0.4811	0.5357	1.000	order of the possible test word given to the using	0.3665	0.0189
+0.4839	0.1034	1.000	its initial housekeeping.)	0.1880	0.0146
+0.4956	0.5357	1.000	program by MBSPEC:	0.1692	0.0189
+0.5000	0.1222	1.000	2. When MBSPEC exits through the no further	0.3496	0.0116
+0.5115	0.5789	1.000	SXXXXXXX, XSXXXXXX, SSXXXXXX,	0.2932	0.0206
+0.5130	0.1053	1.000	help possible return, the op or system symbol is in	0.3797	0.0131
+0.5255	0.5788	1.000	XXSXXXXX, ete.	0.1338	0.0203
+0.5276	0.1034	1.000	its original illegal form.	0.1861	0.0146
+0.5552	0.5338	1.000	Boxes 7-9	0.0828	0.0219
+0.5727	0.1053	1.000	FLOW CHART DESCRIPTION	0.2199	0.0116
+0.5872	0.5414	1.000	The updating and incrementing are only significant	0.3665	0.0161
+0.6003	0.5414	1.000	if the option character is being replaced by the	0.3383	0.0161
+0.6032	0.0996	1.000	Box 1	0.0489	0.0132
+0.6148	0.5357	1.000	original character.	0.1466	0.0174
+0.6308	0.1053	1.000	Initialization includes turning of a substitution-has-	0.3816	0.0160
+0.6453	0.5338	1.000	Box 10	0.0545	0.0174
+0.6467	0.1034	1.000	been-made indicator, setting the indices to locate	0.3703	0.0161
+0.6584	0.1034	1.000	the starting location of the test word and of the	0.3496	0.0174
+0.6744	0.5338	1.000	Whenever main flow makes a successful search	0.3534	0.0160
+0.6758	0.1053	1.000	eight control indicators, and resetting the counter.	0.3759	0.0146
+0.6903	0.5338	1.000	on the op table or system symbol table, main flow	0.3759	0.0146
+0.7006	0.5338	1.000	tests the indicator, Llbts.8. If it is on, main flow	0.3797	0.0203
+0.7063	0.1014	1.000	Box 2	0.0490	0.0133
+0.7179	0.5357	1.000	will give an error message informing the pro-	0.3477	0.0176
+0.7311	0.5338	1.000	Doanmmor a change has hesr midke to lis utigions	0.3647	0.0320
+0.7468	0.1051	1.000	During Pass 1 after the main flow has diseovered	0.3650	0.0195
+0.7660	0.1053	1.000	that the second or any subsequent character of an	0.3647	0.0116
+0.7774	0.5300	1.000	Boxes 15, 19	0.0960	0.0179
+0.7791	0.1053	1.000	op or of a system symbol is illegal, Pass 1 goes to	0.3778	0.0131
+0.7907	0.1089	1.000	the MBSPEC to see if a (0) was punched for an (O)	0.3744	0.0175
+0.8052	0.1090	1.000	a 1 for an D, a 2 for a 2, a 5 for an S, os	0.3778	0.0176
+0.8081	0.5338	1.000	Once MBSPEC returns to the using program by its	0.3778	0.0161
+0.8227	0.5432	1.000	10 help exit, the using program ceases coming t	0.3496	0.0146
+0.8241	0.1034	1.000	vice versa on the original input. More characters	0.3741	0.0131
+0.8358	0.5451	1.000	IBSPEC for help on the particular illegal op o	0.3383	0.0161
+0.8387	0.1053	1.000	can be included in the possible error character set	0.3759	0.0116
+0.8502	0.5338	1.000	system symbol.	0.1241	0.0191
+0.8517	0.1034	1.000	by adjusting two tables of MBSPEC.	0.2650	0.0161
+0.9329	0.8326	1.000	MBSPEC	0.0529	0.0151
+0.9375	0.9041	1.000	93	0.0188	0.0087

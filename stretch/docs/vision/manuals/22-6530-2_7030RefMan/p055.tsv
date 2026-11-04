@@ -1,0 +1,105 @@
+0.0639	0.0996	1.000	Execution Suppressed	0.1560	0.0131
+0.0654	0.5545	1.000	zero. Indicator DF is actuated but does not	0.3515	0.0102
+0.0814	0.5545	1.000	cause suppression of the instruction.	0.2669	0.0132
+0.0872	0.0977	1.000	Generally, the execution of an instruction in progress	0.3891	0.0146
+0.1032	0.0959	1.000	will be suppressed in the event of an alert which:	0.3609	0.0132
+0.1061	0.5301	1.000	A third example is that, when the instruction counter	0.3759	0.0131
+0.1206	0.1128	1.000	1. Indicates that the operation is not properly de-	0.3741	0.0146
+0.1206	0.5132	1.000	contents are stepped in normal fashion beyond the	0.3929	0.0146
+0.1325	0.1370	1.000	fined or cannot be executed because of the pres-	0.3500	0.0177
+0.1366	0.5132	1.000	limit of storage addresses, the instruction counter	0.3929	0.0131
+0.1486	0.1370	1.000	ent state of the machine (OP, AD, EKJ, UNRJ, Or	0.3500	0.0183
+0.1512	0.5132	1.000	addresses a void location and indicator AD is actuated.	0.3929	0.0131
+0.1672	0.1353	1.000	CBJ)•	0.0357	0.0131
+0.1672	0.5132	1.000	Il the address is protected, indicator IF is actuated,	0.3929	0.0147
+0.1817	0.5132	1.000	instead. The instruction is suppressed.	0.2782	0.0147
+0.1830	0.1109	1.000	2. Indicates that completion of the execution	0.3759	0.0146
+0.1976	0.1353	1.000	might destroy information (IJ, EXE, DS, DE, IF,	0.3534	0.0161
+0.1976	0.5301	1.000	Since an instruction is fully interpreted before it	0.3759	0.0146
+0.2136	0.5150	1.000	can be suppressed, more than one alert of Class S can	0.3891	0.0131
+0.2166	0.1353	1.000	Or XF).	0.0508	0.0116
+0.2282	0.5150	1.000	be caused by the instruction. For example, if a STORE	0.3891	0.0146
+0.2324	0.1109	1.000	3. Indicates that the execution of EXECUTE, EXE-	0.3759	0.0133
+0.2456	0.5132	1.000	INSTRUCTION COUNTER IF COUNT, BRANCH AND REFILL	0.3910	0.0116
+0.2500	0.1353	1.000	CUTE INDIRECT AND COUNT, OI LOAD VALUE EFFEC-	0.3496	0.0116
+0.2587	0.5131	1.000	is executed as the subject instruction of EXECUTE, it	0.3930	0.0147
+0.2630	0.1353	1.000	TIVE has exceeded one millisecond (the alert is	0.3515	0.0146
+0.2747	0.5113	1.000	is possible for (1) the condition for branching to be	0.3929	0.0147
+0.2791	0.1353	1.000	USA). Any pseudo-instruction counters referred	0.3515	0.0131
+0.2892	0.5132	1.000	met, (2) the effective sic address to be invalid, (3)	0.3910	0.0145
+0.2935	0.1353	1.000	to by ExIc instructions will have been stepped.	0.3517	0.0149
+0.3052	0.5132	1.000	the effective branch address and the refill address to	0.3910	0.0132
+0.3182	0.0959	1.000	The indicators actuated in these cases are of Class S	0.3910	0.0133
+0.3197	0.5132	1.000	be protected, and (4) the count to reach zero. An	0.3929	0.0146
+0.3340	0.0958	1.000	(Figure 11).	0.0885	0.0152
+0.3358	0.5132	1.000	attempt to execute this instruction causes the entire	0.3910	0.0131
+0.3503	0.5113	1.000	subject instruction to be suppressed and the actuation	0.3929	0.0146
+0.3517	0.1109	1.000	In order to allow continuous computer operation,	0.3759	0.0161
+0.3663	0.5132	1.000	of all the indicators EXE, AD, IF, and DF. The pro-	0.3910	0.0146
+0.3677	0.0959	1.000	the suppression of an instruction must necessarily	0.3891	0.0145
+0.3821	0.5132	1.000	tected effective branch address and the invalid effec-	0.3910	0.0118
+0.3821	0.0940	1.000	exclude the following operations:	0.2481	0.0147
+0.3967	0.5132	1.000	tive sia address are encountered because the condi-	0.3910	0.0118
+0.3997	0.1108	1.000	1. The actuation of those indicators, associated	0.3743	0.0169
+0.4102	0.5130	1.000	tion for branching is met. When, however, in this	0.3912	0.0176
+0.4156	0.1334	1.000	with the instruction, of Class S, and indicators	0.3535	0.0152
+0.4273	0.5132	1.000	example, the condition for branching is not met, the	0.3910	0.0146
+0.4296	0.1352	1.000	DF and IF when their mask bits are zero.	0.2973	0.0153
+0.4433	0.5113	1.000	entire subject instruction is still suppressed but only	0.3929	0.0146
+0.4491	0.1090	1.000	2. The actuation of indicators that were caused	0.3759	0.0131
+0.4578	0.5113	1.000	indicator De is actuated (the DF mask bit is assumed	0.3929	0.0146
+0.4632	0.1353	1.000	by conditions unrelated to the instruction in	0.3498	0.0151
+0.4738	0.5113	1.000	to be one). Indicator DF is actuated since the test for	0.3929	0.0131
+0.4794	0.1353	1.000	execution.	0.0753	0.0122
+0.4884	0.5113	1.000	the refilling is independent of the test for a success-	0.3910	0.0147
+0.4970	0.1090	1.000	3. The stepping of the instruction counter.	0.3233	0.0147
+0.5037	0.5111	1.000	ful branch.	0.0830	0.0129
+0.5145	0.1089	1.000	4. The changing of the state of the interruption	0.3761	0.0162
+0.5203	0.5301	1.000	The occurrence of an alert of Class S during a	0.3722	0.0146
+0.5305	0.1335	1.000	system which occurred as specification of BRANCH	0.3515	0.0146
+0.5325	0.5130	1.000	transmission in TRANSMIT Or SWAP or during the execu-	0.3913	0.0180
+0.5479	0.1335	1.000	ENABLED, BRANCH DISABLED, Or BRANCH ENABLED	0.3515	0.0118
+0.5509	0.5113	1.000	tion of a subject instruction of EXECUTE Or EXECUTE	0.3910	0.0131
+0.5633	0.1333	1.000	AND WAIT.	0.0755	0.0115
+0.5669	0.5113	1.000	INDIRECT AND COUNT may not cause full suppression	0.3910	0.0147
+0.5799	0.5113	1.000	of the instruction.	0.1335	0.0131
+0.5872	0.1090	1.000	For example, an invalid effective bit address in	0.3759	0.0131
+0.6032	0.0921	1.000	BRANCH ON BIT causes the actuation of indicator AD	0.3929	0.0117
+0.6177	0.5113	1.000	Execution Terminated	0.1579	0.0117
+0.6177	0.0940	1.000	and the suppression of the instruction, since no bit	0.3910	0.0132
+0.6321	0.0921	1.000	can be tested to complete its execution. Indicator IF	0.3929	0.0147
+0.6366	0.5113	1.000	The execution of the instruction in progress will be	0.3910	0.0161
+0.6482	0.0902	1.000	cannot be actuated.	0.1447	0.0132
+0.6526	0.5094	1.000	terminated when one of these three types of alert	0.3929	0.0174
+0.6657	0.1090	1.000	Another example is that, since a protected effective	0.3759	0.0161
+0.6697	0.5093	1.000	occurs:	0.0528	0.0094
+0.6817	0.0940	1.000	bit address in BRANcH oN BIT could result in the de-	0.3891	0.0147
+0.6845	0.5226	1.000	1. The alert indicates that a machine malfunction	0.3797	0.0146
+0.6962	0.0921	1.000	struction of information, alert Ds or DF may occur if:	0.3910	0.0160
+0.7006	0.5094	1.000	occurred during the instruction in progress in such	0.3929	0.0161
+0.7151	0.1090	1.000	1. The addressed bit is not specified to remain un-	0.3741	0.0116
+0.7166	0.5075	1.000	a way that suppression or completion of the execu-	0.3947	0.0160
+0.7297	0.1316	1.000	conditionally unchanged; that is, bits 60 and 61	0.3496	0.0146
+0.7311	0.5075	1.000	tion will not eliminate destruction of information.	0.3929	0.0147
+0.7456	0.1335	1.000	of the instruction are not both zero. The in-	0.3515	0.0131
+0.7470	0.5094	1.000	The indicators actuated in this case are of Class H	0.3929	0.0147
+0.7602	0.1316	1.000	struction is suppressed without a test of the	0.3515	0.0147
+0.7628	0.5093	1.000	(Figure 11).	0.0904	0.0150
+0.7761	0.1316	1.000	addressed bit, and indicator Ds is actuated.	0.3214	0.0133
+0.7787	0.5242	1.000	2. The alert is of Class S but has occurred during	0.3763	0.0179
+0.7926	0.5092	1.000	a transmission in TRANSMIT or SWAP or during the exe-	0.3914	0.0209
+0.7936	0.1071	1.000	2. The addressed bit is specified to remain uncon-	0.3778	0.0161
+0.8096	0.1316	1.000	ditionally unchanged, and the DF mask bit is	0.3515	0.0131
+0.8109	0.5075	1.000	cution of a subject instruction in EXECUTE Or EXECUTE	0.3929	0.0147
+0.8255	0.1297	1.000	one. The instruction is suppressed without a	0.3534	0.0147
+0.8255	0.5074	1.000	INDIRECT AND COUNT. Such an alert has the following	0.3932	0.0176
+0.8415	0.1297	1.000	test of the addressed bit, and indicator DF is	0.3553	0.0131
+0.8416	0.5056	1.000	effect:	0.0489	0.0131
+0.8559	0.1315	1.000	actuated.	0.0677	0.0105
+0.8590	0.5226	1.000	a. An alert of Class S during a transmission causes	0.3797	0.0160
+0.8735	0.1090	1.000	3. The addressed bit is specified to remain uncon-	0.3741	0.0131
+0.8750	0.5470	1.000	suppression of that transmission and all that	0.3553	0.0160
+0.8881	0.1297	1.000	ditionally unchanged, and the DF mask bit is	0.3534	0.0146
+0.8893	0.5469	1.000	follow; prior transmissions cannot be suppressed.	0.3518	0.0180
+0.9258	0.1335	1.000	IBM 7030	0.0658	0.0088
+0.9259	0.0883	1.000	52	0.0188	0.0102

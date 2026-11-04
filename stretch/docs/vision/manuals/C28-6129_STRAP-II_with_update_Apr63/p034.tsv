@@ -1,0 +1,105 @@
+0.0639	0.5489	1.000	signed mode except for the omission of the sign byte.	0.3947	0.0176
+0.0669	0.1222	1.000	if the field length is omitted, it is set equal to 64. It	0.4004	0.0160
+0.0785	0.5489	1.000	Alphabetic conversion is exactly as in the binary un-	0.3966	0.0176
+0.0827	0.1222	1.000	the byte size is omitted in entry mode CC, BS= 12 is	0.4004	0.0161
+0.0959	0.5470	1.000	signed mode, except that instructions reterring to these	0.3966	0.0147
+0.0986	0.1221	1.000	implied.	0.0641	0.0165
+0.1076	0.5470	1.000	data are compiled as decimal operations. For alpha-	0.3966	0.0174
+0.1191	0.1410	1.000	Examples:	0.0771	0.0132
+0.1250	0.5470	1.000	betic entry, implied field length is equal to byte size.	0.3966	0.0174
+0.1381	0.1391	1.000	a. (F13)DD(BU, 30), 17. 2, 183, (8) 70707	0.3139	0.0160
+0.1434	0.5637	1.000	Examples:	0.0831	0.0200
+0.1555	0.1410	1.000	b. (A*)DD(BU, 48, 6), GLORIOUS FRIDAY, THE 13TH.*	0.3759	0.0191
+0.1657	0.5639	1.000	a. DD(DU), 8430051, (8) 77241, 82E10	0.2970	0.0174
+0.1758	0.1729	1.000	The mode and field length have no effect on	0.3496	0.0161
+0.1845	0.5977	1.000	Field length = 64; byte size =4.	0.2387	0.0146
+0.1890	0.1711	1.000	the conversion and storage; they are used in	0.3496	0.0189
+0.2020	0.5959	1.000	An octal-to-decimal conversion is inserted be-	0.3496	0.0146
+0.2064	0.1729	1.000	compiling instructions that refer to the name	0.3477	0.0146
+0.2166	0.5959	1.000	tween two decimal-to-decimal conversions.	0.3177	0.0146
+0.2203	0.1710	1.000	of this statement. Field length 48 indicates that	0.3497	0.0157
+0.2355	0.1711	1.000	the programmer wants to process these char-	0.3515	0.0176
+0.2355	0.5620	1.000	b. (IQS3)DD(DU, , 8), PUSH PANIC BUTTON 3	0.3816	0.0176
+0.2524	0.1726	1.000	acters in groups of 8.	0.1567	0.0175
+0.2542	0.5959	1.000	Field length = 8.	0.1297	0.0161
+0.2718	0.1372	1.000	c. (IQSS)DD(BU, 32, 8) DOG EAT DOG S	0.3383	0.0176
+0.2863	0.5489	1.000	Summary of Rules for DD Statements	0.2707	0.0174
+0.3036	0.1259	1.000	Decimal Signed VFL	0.1447	0.0133
+0.3095	0.6015	1.000	ENTRY MODE	0.0922	0.0162
+0.3124	0.7199	1.000	APPROPRIATE USE MODES	0.1711	0.0118
+0.3270	0.1222	1.000	Formats: (B)DD(D, FL, BS), = xx .xxx Sn	0.3327	0.0161
+0.3328	0.6297	1.000	Fn	0.0244	0.0145
+0.3342	0.7236	1.000	U, B, BU	0.0753	0.0162
+0.3430	0.1936	1.000	DD(D, FL, BS), = (R) xx••xx Sn	0.2594	0.0146
+0.3488	0.7237	1.000	B, BU, D, DU, N, U	0.1635	0.0176
+0.3503	0.6297	1.000	R	0.0169	0.0131
+0.3576	0.1955	1.000	DD(D, FL, BS), = xx.••xxEyy Sn	0.2594	0.0161
+0.3648	0.7237	1.000	BU, DU, U	0.0902	0.0161
+0.3648	0.6278	1.000	A	0.0169	0.0131
+0.3735	0.1955	1.000	(Fn) has no meaning for mode = D or DU.	0.3252	0.0146
+0.3808	0.7237	1.000	BU, DU, U	0.0902	0.0146
+0.3808	0.6278	1.000	IQS	0.0320	0.0145
+0.3951	0.7236	1.000	BU, DU, U	0.0904	0.0165
+0.3953	0.1410	1.000	The two decimal modes in DD and DDI state-	0.3797	0.0116
+0.3968	0.6297	1.000	CC	0.0263	0.0116
+0.4100	0.1221	1.000	ments represent the only cases in which sTRAP-II con-	0.3988	0.0177
+0.4112	0.7237	1.000	BU, DU, U	0.0902	0.0147
+0.4113	0.6278	1.000	P	0.0132	0.0116
+0.4244	0.1222	1.000	verts numbers to an internal decimal radix. The radix	0.3985	0.0132
+0.4317	0.5620	1.000	Note: Use mode N should have no entry mode.	0.3590	0.0160
+0.4418	0.1222	1.000	entry mode indicates the radix in which the numbers	0.3985	0.0146
+0.4578	0.5677	1.000	SPECIAL FIELD ENTRY	0.1504	0.0131
+0.4578	0.1222	1.000	are written on the card. Thus, it is possible to write	0.3985	0.0131
+0.4593	0.7481	1.000	APPROPRIATE USE MODES	0.1692	0.0102
+0.4724	0.1222	1.000	an integer in binary or octal and have it converted to	0.3985	0.0146
+0.4811	0.6372	1.000	S	0.0113	0.0102
+0.4811	0.7838	1.000	N,	0.0188	0.0131
+0.4811	0.8008	1.000	, U, B, D	0.0733	0.0147
+0.4847	0.1220	1.000	decimal for machine use. If no entry mode is given,	0.3989	0.0182
+0.4956	0.8045	1.000	U	0.0188	0.0102
+0.4956	0.6353	1.000	X	0.0169	0.0131
+0.4971	0.7857	1.000	N,	0.0150	0.0102
+0.5029	0.1222	1.000	decimal to decimal is implied. The E notation can be	0.3985	0.0132
+0.5174	0.5620	1.000	The floating decimal notation, using E to designate	0.3797	0.0174
+0.5188	0.1222	1.000	used to multiply an integer by positive powers of 10.	0.3947	0.0146
+0.5333	0.1203	1.000	If either the field length or byte size is omitted, the	0.3985	0.0161
+0.5333	0.5451	1.000	multiplication by powers of 10, is appropriate to all	0.3985	0.0161
+0.5479	0.1222	1.000	implied values are FL = 64, and BS = 4.	0.3008	0.0161
+0.5494	0.5451	1.000	modes.	0.0527	0.0117
+0.5669	0.5620	1.000	If the field length is omitted from the dds, it will	0.3816	0.0160
+0.5711	0.1372	1.000	Examples:	0.0790	0.0161
+0.5827	0.5470	1.000	be assigned a value of 64. The maximum permissible	0.3947	0.0133
+0.5915	0.1353	1.000	a. DD(D), -9534812, +173E5, 18E10S13	0.3045	0.0161
+0.5973	0.5451	1.000	field length for a DD statement is 64.	0.2707	0.0161
+0.6061	0.1692	1.000	Field length = 64; byte size = 4. A 4-bit sign	0.3496	0.0161
+0.6148	0.5620	1.000	The parenthetical integer entry mode is appropriate	0.3797	0.0161
+0.6221	0.1692	1.000	byte is formed. Decimal-to-decimal conversion.	0.3496	0.0161
+0.6308	0.5451	1.000	in any DD statement, no matter what use mode has	0.3966	0.0131
+0.6424	0.1353	1.000	b. (2)DD(D, 20), 11101000110157	0.2538	0.0146
+0.6453	0.5432	1.000	been written. The following examples illustrate the	0.3985	0.0174
+0.6584	0.1692	1.000	Byte size = 4. Binary-to-decimal conversion.	0.3271	0.0161
+0.6599	0.5451	1.000	use of general parenthetical integer entry with DD:	0.3966	0.0174
+0.6773	0.1372	1.000	c. DD(D,, 8), 432E3	0.1579	0.0161
+0.6788	0.5602	1.000	a. DD(N), 572(.59)1, 347. 89E12(. 63, 2)1011	0.3402	0.0176
+0.6933	0.1692	1.000	Field length = 64. Decimal-to-decimal conver-	0.3496	0.0161
+0.6948	0.5902	1.000	In the second case the sign byte is specified by	0.3515	0.0174
+0.7078	0.1673	1.000	sion. Four binary zeros are inserted in the zone	0.3496	0.0161
+0.7089	0.5917	1.000	means of (.n) entry.	0.1549	0.0186
+0.7238	0.1692	1.000	positions of each byte.	0.1654	0.0131
+0.7297	0.5602	1.000	b. DD(B), (F9)-35. 7(.24) SAM + 4	0.2726	0.0174
+0.7456	0.5921	1.000	The address SAM + 4 is placed in the first part	0.3496	0.0174
+0.7542	0.1241	1.000	Decimal Unsigned VFL	0.1635	0.0118
+0.7602	0.5921	1.000	of the 64-bit field, followed by the converted	0.3477	0.0174
+0.7761	0.5921	1.000	number -35.7.	0.1109	0.0146
+0.7773	0.1390	1.000	Formats:	0.0660	0.0123
+0.7951	0.1353	1.000	(R)DD(DU, FL, BS), xx..xx	0.2199	0.0160
+0.7964	0.5602	1.000	c. (8)DD(BU), 4762(. 10)707(10, . 20)34	0.2895	0.0161
+0.8109	0.1353	1.000	DD(DU, FL, BS), (R) xx..xx	0.2293	0.0147
+0.8124	0.5921	1.000	707 is written in octal, 34 in decimal.	0.2820	0.0146
+0.8255	0.1353	1.000	DD(DU, FL, BS), xx•••xxxEyyy	0.2406	0.0161
+0.8415	0.1335	1.000	(Az)DD(DU, FL, BS), alphabetie information to "Z"	0.3835	0.0146
+0.8561	0.1335	1.000	(IQSz)DD(DU,FL, BS), alphabetie information to "z"	0.3816	0.0161
+0.8750	0.5921	1.000	12-bit data field created.	0.1842	0.0189
+0.8779	0.1372	1.000	The numerical conversion is just as in decimal	0.3797	0.0131
+0.9126	0.1691	1.000	IBM 7030	0.0640	0.0106
+0.9128	0.1165	1.000	30	0.0207	0.0116

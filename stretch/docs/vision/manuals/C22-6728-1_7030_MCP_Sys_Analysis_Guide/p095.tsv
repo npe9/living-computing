@@ -1,0 +1,113 @@
+0.1045	0.5545	1.000	SIC, Z COM 90 EJ	0.1391	0.0146
+0.1061	0.1071	1.000	Accounting Program Procedures (Logger)	0.3139	0.0131
+0.1191	0.5677	1.000	B, Z ASNO1EJ	0.1203	0.0146
+0.1264	0.1053	1.000	The accounting program to be used must be supplied	0.3947	0.0176
+0.1321	0.5602	1.000	VF, IOD NUMBER	0.1410	0.0176
+0.1439	0.1071	1.000	by the installation, and will occupy storage in excess	0.3966	0.0116
+0.1495	0.5526	1.000	return	0.0547	0.0120
+0.1570	0.1071	1.000	of that allocated directly to MCP. Since MCP will	0.3778	0.0131
+0.1612	0.5395	1.000	The S LOG 2 function might be to calculate the time	0.3891	0.0161
+0.1715	0.1071	1.000	have reference to the accounting program, and vice	0.3872	0.0145
+0.1735	0.5374	1.000	for the job, and then punch this information into a	0.3763	0.0203
+0.1855	0.1050	1.000	versa, appropriate addresses must be available upon	0.4009	0.0218
+0.1890	0.5395	1.000	card along with the job name and other data, such as	0.3966	0.0189
+0.2020	0.1090	1.000	compilation of both systems, or correction cards may	0.4041	0.0146
+0.2064	0.5376	1.000	number of units used, etc.. It cannot be assumed	0.3816	0.0176
+0.2194	0.1090	1.000	be used when an MCP update is done.	0.2782	0.0118
+0.2209	0.5376	1.000	that any of PP storage or associated IOD tables will	0.3947	0.0161
+0.2317	0.1239	1.000	In this section, the calling sequences for the account-	0.4026	0.0165
+0.2355	0.5376	1.000	contain valid information at this time.	0.2914	0.0161
+0.2466	0.1070	1.000	ing program entries will be given, as well as an	0.3631	0.0165
+0.2510	0.5563	1.000	B, D MCP	0.0811	0.0168
+0.2599	0.1088	1.000	explanation of the kinds of information that are avail-	0.4008	0.0192
+0.2660	0.5658	1.000	,S LOG4	0.0789	0.0174
+0.2761	0.1053	1.000	able at the specific times used. The accounting pro-	0.4004	0.0161
+0.2820	0.5658	1.000	, Hollerith card FWA(D)	0.1805	0.0160
+0.2917	0.1089	1.000	gram must have an initial state, since the system will	0.4044	0.0145
+0.2963	0.5639	1.000	, A8 FWA(J)	0.1016	0.0178
+0.3059	0.1090	1.000	start in the IPL phase. The job control sequence of	0.3892	0.0131
+0.3124	0.5545	1.000	return	0.0527	0.0133
+0.3210	0.1070	1.000	events is critical, and will affect how the accounting	0.3951	0.0182
+0.3255	0.5395	1.000	The S LOG 4 entry to the accounting program is used	0.4004	0.0147
+0.3387	0.1071	1.000	program receives control.	0.2011	0.0116
+0.3415	0.5376	1.000	by the job control 4 at the beginning of a job or by	0.3797	0.0146
+0.3532	0.1259	1.000	B, D MCP	0.0771	0.0132
+0.3561	0.5414	1.000	commands to indicate an EOF condition arising when	0.3966	0.0118
+0.3668	0.1351	1.000	, S LOG 1	0.0776	0.0149
+0.3706	0.5414	1.000	an EOF card appears as the last file on a system read	0.4060	0.0131
+0.3821	0.1353	1.000	, Hollerith card FWA(I)	0.1786	0.0133
+0.3847	0.5412	1.000	tape or in the card reader as the last card in the	0.3667	0.0138
+0.3996	0.1259	1.000	return	0.0489	0.0089
+0.3997	0.6579	1.000	The Hollerith and A8 FWA's make	0.2688	0.0116
+0.4012	0.5432	1.000	BYPASS mode.	0.1128	0.0116
+0.4157	0.5414	1.000	the contents of the card available if the accounting	0.3759	0.0116
+0.4200	0.1071	1.000	The entry through an S LOG 1 will provide a Hollerith	0.4060	0.0118
+0.4302	0.5414	1.000	program wants to note the job name or determine	0.3703	0.0131
+0.4338	0.1069	1.000	card image address.	0.1564	0.0152
+0.4345	0.2707	1.000	The card will be either a JOB	0.2274	0.0103
+0.4462	0.5414	1.000	whether the system is now idle.	0.2387	0.0117
+0.4491	0.1071	1.000	card or a COMD, EOF card. One of the initial set-	0.3853	0.0131
+0.4606	0.5564	1.000	It is the responsibility of S LOG 4 to disassign the	0.3778	0.0118
+0.4636	0.1071	1.000	tings of the accounting program may be to make use	0.3910	0.0131
+0.4752	0.5414	1.000	punch or printer at this time. When the system is	0.3797	0.0133
+0.4782	0.1090	1.000	of the S LOG 1 JOB card entry to determine the time	0.3947	0.0131
+0.4897	0.5395	1.000	initially started, the initializing program will have	0.3835	0.0133
+0.4927	0.1071	1.000	spent in the unoverlapped scanning of the original sys-	0.4098	0.0131
+0.5042	0.5414	1.000	assigned the unit to the accounter. Since S LOG 2 is	0.3966	0.0133
+0.5087	0.1071	1.000	tem input tape when the system is starting up in the	0.3872	0.0116
+0.5188	0.5414	1.000	not entered before the first job is started, the dis-	0.3816	0.0133
+0.5206	0.1089	1.000	overlapped mode. This procedure may be terminated	0.4026	0.0164
+0.5333	0.5414	1.000	assignment must be done by S LOG 4 when job control	0.4041	0.0132
+0.5363	0.1071	1.000	when the first job is started by entry in S LOG 4	0.3628	0.0131
+0.5479	0.5413	1.000	4 gives it control just before the first or new job is	0.3855	0.0133
+0.5523	0.1090	1.000	(described later), which will communicate to Ș LOG 1	0.4023	0.0131
+0.5624	0.5414	1.000	started. The S LOG 4 entry is made before assign-	0.3891	0.0132
+0.5654	0.1090	1.000	the fact that overlapping is now in effect. The COMD,	0.4079	0.0146
+0.5770	0.5414	1.000	ments are made to the PP so that the unit will be free	0.4041	0.0118
+0.5814	0.1090	1.000	EOF card will be transmitted by the command pack-	0.3929	0.0116
+0.5930	0.5414	1.000	when assignments are made.	0.2180	0.0116
+0.5930	0.7575	1.000	The calling sequence	0.1692	0.0116
+0.5959	0.1090	1.000	age upon receipt of an EOF command card. This	0.3703	0.0132
+0.6076	0.5414	1.000	for the special disassignment package is:	0.3102	0.0116
+0.6105	0.1090	1.000	transmission will take place only if the EOF card is	0.3891	0.0132
+0.6221	0.5583	1.000	SIC, Z COM 90 EJ	0.1372	0.0131
+0.6250	0.1090	1.000	the last card in the card reader when in the online	0.3759	0.0117
+0.6366	0.5714	1.000	B, Z DSN 01 EJ	0.1203	0.0131
+0.6394	0.1090	1.000	mode of operation, or the EOF card is the last file	0.3835	0.0133
+0.6512	0.1071	1.000	on a scan tape if in the off-line mode. This EOF will	0.4023	0.0174
+0.6512	0.5602	1.000	VF, IOD NUMBER	0.1429	0.0161
+0.6672	0.1071	1.000	signify that the system is no longer overlapping the	0.3872	0.0160
+0.6672	0.5545	1.000	return	0.0545	0.0131
+0.6788	0.5282	1.000	. The accounting program may also wish to make use	0.4023	0.0161
+0.6817	0.1090	1.000	scanning and running of jobs, since it will come	0.3590	0.0147
+0.6933	0.5395	1.000	of the $TIME pseudo-operation afforded by the sys-	0.3891	0.0161
+0.6991	0.1090	1.000	through job control 1 and S LOG 1.	0.2613	0.0131
+0.7106	0.5394	1.000	tem.	0.0396	0.0133
+0.7149	0.1259	1.000	B, D MCP	0.0790	0.0135
+0.7295	0.1372	1.000	, S LOG 2	0.0772	0.0134
+0.7369	0.5395	1.000	INITIAL PROGRAM LOAD (IPL)	0.2462	0.0161
+0.7452	0.1258	1.000	return	0.0491	0.0096
+0.7660	0.5395	1.000	Initial Program Load (IPL) is used to read MCP into	0.4004	0.0161
+0.7674	0.1090	1.000	The S LOG 2 entry indicates that a job is completed.	0.3947	0.0160
+0.7805	0.5395	1.000	storage at the beginning of a work period or after an	0.3966	0.0174
+0.7820	0.1090	1.000	No addresses are provided since the accounting pro-	0.3966	0.0174
+0.7936	0.5414	1.000	emergency shut-down. IPL is in two parts: the IPL	0.4004	0.0189
+0.7955	0.1087	1.000	gram should have a record, from the last S LOG 4	0.3804	0.0227
+0.8124	0.5414	1.000	bootstrap and the initialization program. It performs	0.4041	0.0132
+0.8134	0.1108	1.000	entry, of the job name of the job just completed.	0.3631	0.0144
+0.8261	0.1126	1.000	There exists, for convenience of accounting purposes,	0.4045	0.0193
+0.8270	0.5414	1.000	the following functions:	0.1786	0.0118
+0.8386	0.5563	1.000	1. Fulfills the requirements of a power-on initial	0.3799	0.0162
+0.8415	0.1184	1.000	special program to assign a card punch or printe	0.3741	0.0131
+0.8545	0.1184	1.000	nit to the accounting program for use between jobs	0.3778	0.0146
+0.8561	0.5414	1.000	program loading (IPL).	0.1767	0.0161
+0.8691	0.1109	1.000	The IOD tables will be set up at IPL time by having	0.3853	0.0176
+0.8706	0.5564	1.000	2. Constructs I-O status tables according to the	0.3684	0.0146
+0.8852	0.5414	1.000	configuration at IPL time.	0.2011	0.0131
+0.8861	0.1089	1.000	inserted an appropriate IOD card in the IPL tape for	0.3931	0.0147
+0.8997	0.5564	1.000	3. Assigns absolute I-O units to symbolic MCP	0.3628	0.0131
+0.9003	0.1108	1.000	the desired unit. The calling sequence to the special	0.3969	0.0165
+0.9157	0.5432	1.000	requests.	0.0733	0.0145
+0.9185	0.1109	1.000	assignment routine is:	0.1692	0.0118
+0.9564	0.7425	1.000	System Operation Programs	0.1579	0.0117
+0.9564	0.9229	1.000	95	0.0169	0.0102

@@ -1,0 +1,105 @@
+0.0682	0.1015	1.000	started and the contents of the channel's control word	0.3910	0.0103
+0.0682	0.5357	1.000	When an input-output instruction is rejected, the	0.3741	0.0147
+0.0827	0.1015	1.000	location in the exchange storage are not altered.	0.3515	0.0133
+0.0842	0.5207	1.000	unit is not started, the control word for a READ or	0.3891	0.0131
+0.1003	0.5188	1.000	WRITE is not fetched, and the contents of the channel's	0.3910	0.0116
+0.1045	0.1015	1.000	PROGRAMMING NOTE	0.1447	0.0118
+0.1140	0.5186	1.000	control word location in the exchange storage are not	0.3913	0.0170
+0.1206	0.1015	1.000	The data-store and data-fetch indicators are never	0.3910	0.0131
+0.1308	0.5169	1.000	altered. The following is a description of the reject	0.3929	0.0146
+0.1352	0.0996	1.000	turned on by an input-output operation. Address	0.3929	0.0146
+0.1421	0.5167	1.000	indicators in the order of decreasing interruption	0.3914	0.0191
+0.1512	0.0996	1.000	monitoring is not eflective on input-output opera-	0.3929	0.0146
+0.1609	0.5168	1.000	priority.	0.0642	0.0154
+0.1672	0.1015	1.000	tions, and data can be read into and written from the	0.3891	0.0116
+0.1758	0.5320	1.000	Exchange Check Reject (EKJ). This indicator is	0.3759	0.0161
+0.1808	0.0995	1.000	protected core storage area as defined by the upper	0.3912	0.0171
+0.1878	0.5186	1.000	turned on when an error is detected by the exchange	0.3896	0.0203
+0.1976	0.0996	1.000	and lower boundary registers in conjunction with the	0.3910	0.0132
+0.2047	0.5167	1.000	in the course of testing and setting up the present	0.3914	0.0190
+0.2109	0.0994	1.000	boundary control bit. The exchange, however, can-	0.3913	0.0177
+0.2194	0.5166	1.000	instruction. It can be caused by:	0.2338	0.0178
+0.2249	0.0995	1.000	not transfer data to or from locations 0 through 31.	0.3914	0.0184
+0.2427	0.5338	1.000	1. Any malfunctioning of equipment that is de-	0.3722	0.0145
+0.2427	0.0996	1.000	Similarly, all control words, including the first one	0.3910	0.0145
+0.2587	0.5564	1.000	tected during initiation of the operation.	0.3120	0.0146
+0.2587	0.0977	1.000	specified by the input-output instruction, can be	0.3929	0.0146
+0.2602	0.8665	1.000	This	0.0395	0.0102
+0.2730	0.0976	1.000	fetched from any existing core storage location, ex-	0.3930	0.0164
+0.2733	0.5564	1.000	includes parity errors in the portions of the	0.3496	0.0146
+0.2892	0.0996	1.000	cept locations 0 through 31.	0.2011	0.0132
+0.2892	0.5564	1.000	instruction word sent to the exchange and errors	0.3496	0.0145
+0.3036	0.5564	1.000	discovered during the unit's status test.	0.2914	0.0133
+0.3212	0.0959	1.000	Input-Output Reject Indicators	0.2237	0.0131
+0.3212	0.5301	1.000	2. Specification of channel addresses that are not	0.3759	0.0161
+0.3372	0.5545	1.000	available to the programmer. An unavailable	0.3515	0.0161
+0.3400	0.0977	1.000	When the computer sends an input-output instruction	0.3910	0.0161
+0.3508	0.5562	1.000	channel is one that is not installed in the par-	0.3481	0.0172
+0.3561	0.0977	1.000	to the exchange,	0.1297	0.0131
+0.3561	0.2256	1.000	it usually must wait a few micro-	0.2632	0.0131
+0.3677	0.5564	1.000	ticular system. It does not include channels that	0.3496	0.0145
+0.3706	0.0977	1.000	seconds until the exchange has interrogated the status	0.3910	0.0146
+0.3821	0.5545	1.000	are installed but are not operative because no	0.3496	0.0147
+0.3852	0.0977	1.000	of the addressed unit to determine that the instruction	0.3910	0.0131
+0.3982	0.5564	1.000	units have been provided for them. The test	0.3477	0.0146
+0.4010	0.0976	1.000	can be accepted. As soon as the exchange signals the	0.3912	0.0165
+0.4142	0.5545	1.000	applies only to the 7-bit channel address por-	0.3496	0.0145
+0.4172	0.0977	1.000	acceptance of the instruction, the computer proceeds	0.3910	0.0147
+0.4252	0.5562	1.000	tion of the left effective address, bit positions 12	0.3482	0.0209
+0.4305	0.0957	1.000	to the next instruction. If the exchange cannot accept	0.3932	0.0174
+0.4447	0.5563	1.000	through 18. The remaining bits of the field are	0.3479	0.0153
+0.4459	0.0976	1.000	the instruction, it responds by means of one of the	0.3894	0.0184
+0.4588	0.5543	1.000	ignored.	0.0624	0.0155
+0.4636	0.0959	1.000	three reject signals, turning on the corresponding in-	0.3929	0.0146
+0.4782	0.0959	1.000	dicator in the indicator register:	0.2312	0.0131
+0.4797	0.5301	1.000	Unit Not Ready Reject (UNRJ). This indicator is	0.3722	0.0161
+0.4925	0.5130	1.000	turned on when an instruction is given to a channel	0.3894	0.0177
+0.4970	0.1278	1.000	EKJ Exchange Check Reject	0.2256	0.0133
+0.5102	0.5150	1.000	that is not ready to be operated. The unit-ready status	0.3872	0.0147
+0.5145	0.1278	1.000	UNRJ Unit Not Ready Reject	0.2162	0.0146
+0.5220	0.5148	1.000	bit in the control word is zero. This happens when	0.3858	0.0199
+0.5333	0.1278	1.000	CBJ Channel Busy Reject	0.2068	0.0132
+0.5406	0.5132	1.000	the unit accommodated by the channel is in the not-	0.3872	0.0146
+0.5520	0.1126	1.000	The reject indicators have a mask bit that is per-	0.3743	0.0170
+0.5567	0.5132	1.000	ready status or no unit is attached to the channel.	0.3684	0.0131
+0.5667	0.0938	1.000	manently set to one. Consequently, if the program	0.3913	0.0183
+0.5712	0.5301	1.000	Channel Busy Reject (CBJ). This indicator is	0.3703	0.0145
+0.5828	0.0938	1.000	interruption system is enabled, any of the three reject	0.3932	0.0178
+0.5872	0.5132	1.000	turned on when an instruction is addressed to a chan-	0.3853	0.0116
+0.5987	0.0939	1.000	indicators will always interrupt the program. This	0.3930	0.0165
+0.6032	0.5132	1.000	nel that is still busy performing a previous instruc-	0.3872	0.0147
+0.6148	0.0940	1.000	interruption occurs before the computer has pro-	0.3929	0.0146
+0.6177	0.5132	1.000	tion or which is waiting to make a program inter-	0.3872	0.0145
+0.6270	0.0938	1.000	ceeded to the next instruction. It may, however, not	0.3933	0.0200
+0.6336	0.5112	1.000	ruption.	0.0621	0.0133
+0.6453	0.0902	1.000	follow immediately after the input-output instruction	0.3947	0.0160
+0.6464	0.5261	1.000	Certain operations, such as rewinding tape, may be	0.3744	0.0200
+0.6627	0.5094	1.000	completed by the unit after disconnecting from the	0.3910	0.0161
+0.6627	0.0921	1.000	causing it it another indicator having a higher pri-	0.3910	0.0146
+0.6738	0.5073	1.000	exchange. New instructions for channels performing	0.3933	0.0219
+0.6750	0.3871	0.300	cu in of t	0.0914	0.0375
+0.6773	0.0921	1.000	ority is also turned on during the execution of the	0.3929	0.0131
+0.6918	0.0921	1.000	input-output instruction. In such a case the higher	0.3929	0.0118
+0.6918	0.5113	1.000	such operations can be accepted, provided another	0.3853	0.0176
+0.7064	0.5132	1.000	unit is selected by means of a LOCATE instruction. In	0.3835	0.0176
+0.7078	0.0940	1.000	priority indicator will interrupt first.	0.2707	0.0146
+0.7224	0.5094	1.000	these cases cBJ is not turned on.	0.2331	0.0174
+0.7224	0.1071	1.000	The reject indicators are permanent and hence,	0.3778	0.0174
+0.7369	0.0902	1.000	once they have been turned on, they remain on until	0.3947	0.0161
+0.7529	0.0902	1.000	they cause a program interruption or are explicitly	0.3929	0.0174
+0.7688	0.0921	1.000	set to zero by means of BRANCH ON INDICATOR. They	0.3910	0.0161
+0.7820	0.0902	1.000	are not reset by an input-output instruction that is	0.3947	0.0174
+0.7994	0.0921	1.000	accepted by the exchange.	0.1917	0.0131
+0.8096	0.5056	1.000	Input-Output Status Indicators	0.2274	0.0174
+0.8139	0.1053	1.000	If more than one condition exists that could reject	0.3778	0.0176
+0.8314	0.5075	1.000	When an operation concerning an external unit has	0.3929	0.0174
+0.8314	0.0921	1.000	an input-output instruction, only the reject having	0.3891	0.0160
+0.8408	0.0919	1.000	the higher priority is given. As an example, if an in	0.3876	0.0201
+0.8445	0.5075	1.000	been terminated, the status at that time is recorded	0.3910	0.0161
+0.8585	0.0883	1.000	struction is given to a channel which is not ready and	0.3929	0.0169
+0.8605	0.5038	1.000	in the control word. When certain input-output con-	0.3947	0.0160
+0.8747	0.5054	1.000	ditions are satisfied, the status bits turn on the cor-	0.3914	0.0199
+0.8764	0.0902	1.000	is busy or waiting to make an interruption, only the	0.3910	0.0146
+0.8909	0.0921	1.000	UNRJ indicator is set up.	0.1711	0.0146
+0.8924	0.5056	1.000	responding status indicators to cause program inter-	0.3910	0.0176
+0.9288	0.0921	1.000	112 IBM 7030	0.1128	0.0103

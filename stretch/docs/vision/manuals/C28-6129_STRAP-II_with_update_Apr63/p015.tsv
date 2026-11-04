@@ -1,0 +1,111 @@
+0.0712	0.4699	1.000	These five symbols may only be used in a data field of	0.3985	0.0161
+0.0727	0.0470	1.000	bit addresses and are assigned standard data descrip-	0.3966	0.0146
+0.0872	0.4699	1.000	a Data Definition pseudo operation where normalized	0.3966	0.0146
+0.0887	0.0470	1.000	tions with mode Bu, byte size & and a tield length	0.3947	0.0147
+0.1032	0.0470	1.000	equal to the length of the particular register or bit.	0.3947	0.0147
+0.1032	0.4699	1.000	floating point (N) has been specified in the use mode	0.3985	0.0147
+0.1177	0.4680	1.000	field of the dds. The following data definition pseudo	0.4004	0.0160
+0.1250	0.0601	1.000	4. Input-Output Address Symbols. Since the actual	0.3836	0.0179
+0.1366	0.4680	1.000	op	0.0226	0.0116
+0.1381	0.5620	1.000	CONSTANT DD(N), ŞPI	0.2105	0.0160
+0.1409	0.0470	1.000	numeric addresses which are to identity particular	0.3947	0.0146
+0.1570	0.0451	1.000	I/o units and channels may be chosen arbitrarily, sys-	0.3966	0.0131
+0.1584	0.4680	1.000	assigns the floating point equivalent of the quantity *	0.4004	0.0174
+0.1715	0.0470	1.000	tem symbols that represent integers are provided by	0.3947	0.0145
+0.1730	0.4680	1.000	to the symbol coNSTANT. When coNstaNt is used in	0.4004	0.0146
+0.1875	0.0470	1.000	sTRAP for use in addressing I/o equipment. The nu-	0.3947	0.0146
+0.1890	0.4699	1.000	the address of a streTcH instruction such as	0.3252	0.0117
+0.2018	0.0469	1.000	merie values of symbols in this class, unlike all other	0.3949	0.0154
+0.2091	0.6071	1.000	+, CONSTANT	0.1204	0.0163
+0.2179	0.0470	1.000	system symbols, may vary from one installation to an-	0.3947	0.0147
+0.2297	0.4699	1.000	the normalized floating point data description is in-	0.3985	0.0146
+0.2339	0.0470	1.000	other in order that RDR, for example, may represent the	0.3947	0.0132
+0.2442	0.4662	1.000	voked and the full word floating point equivalent of	0.4004	0.0161
+0.2485	0.0470	1.000	card reader channel address independently of what	0.3966	0.0146
+0.2602	0.4699	1.000	+ is added into the accumulator.	0.2331	0.0116
+0.2645	0.0470	1.000	that address, in any particular installation, may be.	0.3947	0.0131
+0.2747	0.4850	1.000	Index modification of an address field is performed	0.3816	0.0147
+0.2805	0.0489	1.000	The I/o system symbols are:	0.2068	0.0131
+0.2906	0.4680	1.000	in standard fashion. The index register to be used is	0.4004	0.0146
+0.3038	0.2989	1.000	MEANING	0.0658	0.0087
+0.3052	0.4680	1.000	specified as a sub-field of the address field. The index	0.3985	0.0146
+0.3052	0.0470	1.000	SYMBOL	0.0564	0.0089
+0.3212	0.4680	1.000	field is a 4-bit field, enclosed in parentheses, immedi-	0.4004	0.0131
+0.3241	0.0451	1.000	$PCH	0.0470	0.0131
+0.3241	0.2199	1.000	Punch (Channel Address)	0.1992	0.0147
+0.3358	0.4680	1.000	ately following the address expression. StRAP bit ad-	0.4004	0.0161
+0.3445	0.2199	1.000	Printer (Channel Address)	0.2011	0.0146
+0.3459	0.0451	1.000	$PRT	0.0451	0.0116
+0.3517	0.4680	1.000	dresses, system symbols and programmer symbols that	0.4004	0.0161
+0.3648	0.2218	1.000	Reader (Channel Address)	0.1992	0.0146
+0.3652	0.4698	1.000	are defined as bit addresses are all legal entries in an	0.3968	0.0164
+0.3662	0.0470	1.000	$RDR	0.0471	0.0118
+0.3821	0.4662	1.000	index field.	0.0846	0.0118
+0.3852	0.2218	1.000	Disk Unit (Channel Address)	0.2180	0.0146
+0.3852	0.0470	1.000	$DISK	0.0508	0.0131
+0.3967	0.4850	1.000	In the case of a bit address entry, the period is as-	0.3816	0.0147
+0.4055	0.2237	1.000	Note: The arcs of a disk may	0.2180	0.0132
+0.4127	0.4662	1.000	sumed to line up at the right end of the field. Thus,	0.4004	0.0161
+0.4200	0.2218	1.000	be addressed by any legal	0.2218	0.0161
+0.4273	0.4680	1.000	when converted to binary, the rightmost six bits of the	0.3985	0.0161
+0.4360	0.2218	1.000	symbolic integer expression	0.2199	0.0131
+0.4433	0.4699	1.000	entry are truncated, as are the leftmost 14 bits.	0.3515	0.0131
+0.4506	0.2237	1.000	that is evaluated by STRAP	0.2180	0.0146
+0.4578	0.4868	1.000	System symbols are the simplest to use and act as if	0.3797	0.0146
+0.4666	0.2237	1.000	modulo 212 to assure a valid	0.2180	0.0116
+0.4738	0.4699	1.000	a bit address had been entered. All of the following	0.3966	0.0146
+0.4824	0.2236	1.000	arc address.	0.0884	0.0120
+0.4857	0.4698	1.000	entries are equivalent in an index subfied of an ad-	0.3969	0.0182
+0.5015	0.2237	1.000	Console (Channel or Unit	0.2180	0.0131
+0.5027	0.0469	1.000	$CNSL	0.0546	0.0120
+0.5041	0.4698	1.000	dress:	0.0453	0.0106
+0.5087	0.5602	1.000	4.32 = 4.0 = $4 = 20.0= 52.0	0.2124	0.0131
+0.5169	0.2216	1.000	Address)	0.0681	0.0157
+0.5291	0.4680	1.000	and all are translated by sTRaP to mean index regis-	0.3985	0.0146
+0.5378	0.0489	1.000	$TCO, TCI, .. TCK Tape channels 0, 1, 2, ... K	0.3929	0.0146
+0.5596	0.0620	1.000	If more than one punch, printer, console or any	0.3797	0.0146
+0.5596	0.4850	1.000	If an integer is written in the index field, the mean-	0.3816	0.0146
+0.5755	0.4680	1.000	ing is entirely different. The integer tells sTRaP that	0.4004	0.0147
+0.5755	0.0470	1.000	other input-output unit is attached to the computer,	0.3947	0.0147
+0.5900	0.4680	1.000	the symbol in the address field proper has been de-	0.3985	0.0161
+0.5900	0.0489	1.000	the same numbering system used in tape channel	0.3929	0.0147
+0.6061	0.0489	1.000	addresses should be adopted where $PRT=$PRIO for	0.3929	0.0146
+0.6061	0.4699	1.000	fined as an array and the integer is addressing an ele-	0.3966	0.0146
+0.6206	0.4680	1.000	ment in that array. (See Data Reservation Pseudo	0.3985	0.0146
+0.6221	0.0470	1.000	example; thus one may have $PRTI, $PRT2, etc.	0.3477	0.0146
+0.6365	0.4680	1.000	Operation.)	0.0884	0.0148
+0.6366	0.0639	1.000	Thus, a programmer may write the following Write	0.3778	0.0146
+0.6512	0.4831	1.000	In the case of progressive indexing in a vEL instruc-	0.3816	0.0146
+0.6540	0.0470	1.000	operation:	0.0752	0.0132
+0.6672	0.4680	1.000	tion, it is the index register specified within the ad-	0.3966	0.0132
+0.6700	0.1222	1.000	W, $PRT, CONTROL WORDI	0.2387	0.0161
+0.6802	0.4680	1.000	dress field that is stepped by the immediate address.	0.4004	0.0174
+0.6903	0.0451	1.000	STRAP Will compile the correct 19-bit channel address	0.3985	0.0146
+0.7035	0.0451	1.000	for the printer at that installation.	0.2462	0.0174
+0.7282	0.0620	1.000	5. Symbols For Mathematical Constants. Five math-	0.3797	0.0161
+0.7311	0.4699	1.000	Offset Field	0.0865	0.0116
+0.7442	0.0451	1.000	ematical constants, useful in many scientific and engi-	0.3985	0.0174
+0.7558	0.0451	1.000	neering problems, can be represented by system sym-	0.3985	0.0191
+0.7615	0.4680	1.000	Offset fields are similar in content to address fields.	0.3985	0.0133
+0.7733	0.0451	1.000	bols. These system symbols and their values are:	0.3741	0.0161
+0.7774	0.4680	1.000	STRAP bit addresses, integers, system symbols and pro-	0.4005	0.0149
+0.7910	0.4679	1.000	grammer symbols are all acceptable entries in an oftset	0.4006	0.0157
+0.8016	0.1051	1.000	SYMBOL	0.0587	0.0116
+0.8023	0.1936	1.000	MATHEMATICAL CONSTANT	0.1861	0.0087
+0.8038	0.4680	1.000	field.	0.0414	0.0160
+0.8227	0.4831	1.000	An offset field has a fixed length of 7 bits. Probably	0.3835	0.0174
+0.8227	0.1184	1.000	$E	0.0226	0.0116
+0.8256	0.2425	1.000	e	0.0094	0.0087
+0.8372	0.4680	1.000	the most common entry for an offset specification is	0.3985	0.0174
+0.8372	0.1184	1.000	$M	0.0282	0.0131
+0.8387	0.2387	1.000	logioe	0.0470	0.0145
+0.8517	0.4680	1.000	an integer. An integer specifies a count of the number	0.3985	0.0161
+0.8532	0.1184	1.000	$N	0.0244	0.0116
+0.8532	0.2387	1.000	log.2	0.0414	0.0160
+0.8671	0.4680	1.000	of bits to offset a field from the right end of the ac-	0.3967	0.0158
+0.8677	0.1184	1.000	$PI	0.0301	0.0131
+0.8721	0.2406	1.000	" (infinity)	0.0921	0.0276
+0.8836	0.4680	1.000	cumulator. An integer entry is converted to a 24-bit	0.4004	0.0161
+0.8837	0.1184	1.000	$INF	0.0414	0.0131
+0.9198	0.7537	1.000	Section I	0.0622	0.0120
+0.9201	0.8477	1.000	11	0.0169	0.0116

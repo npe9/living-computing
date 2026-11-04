@@ -1,0 +1,105 @@
+0.0596	0.5207	1.000	56. Result Less than Zero (RLZ). The result of	0.3778	0.0146
+0.0609	0.0977	1.000	modification operation, including reFIlL, was zero	0.3816	0.0133
+0.0740	0.5056	1.000	the integer or floating-point arithmetic operation	0.3912	0.0193
+0.0770	0.0977	1.000	before a refill, if any, but after any other modifica-	0.3835	0.0131
+0.0900	0.5038	1.000	just executed was non-zero and negative. This indi-	0.3929	0.0161
+0.0915	0.0977	1.000	tions. This indicator is turned off by any index modi-	0.3816	0.0146
+0.1045	0.5038	1.000	cator is turned off by any non-comparative arithmetic	0.3947	0.0161
+0.1076	0.0977	1.000	fication operation whose result does not have a zero	0.3816	0.0131
+0.1206	0.5056	1.000	operation whose result is zero or positive, or by any	0.3910	0.0176
+0.1231	0.0976	1.000	count field.	0.0754	0.0111
+0.1361	0.5072	1.000	connective operation.	0.1584	0.0170
+0.1407	0.1089	1.000	49. Index Value Less than Zero (XVLZ). The	0.3706	0.0192
+0.1584	0.0959	1.000	value field resulting from the index modification op-	0.3835	0.0131
+0.1599	0.5226	1.000	57. Result Zero (RZ). The result of the non-	0.3741	0.0147
+0.1723	0.0976	1.000	eration just executed was non-zero and negative. This	0.3818	0.0155
+0.1741	0.5055	1.000	comparative arithmetic or connective operation just	0.3931	0.0166
+0.1890	0.0959	1.000	indicator is turned off by any index modification	0.3835	0.0132
+0.1903	0.5038	1.000	executed was zero. This indicator is turned off by	0.3929	0.0146
+0.2022	0.0957	1.000	operation whose result has a value field which is zero	0.3837	0.0160
+0.2064	0.5056	1.000	any non-comparative arithmetic or connective opera-	0.3929	0.0146
+0.2209	0.0959	1.000	or positive.	0.0771	0.0131
+0.2224	0.5075	1.000	tion whose result was non-zero.	0.2274	0.0116
+0.2397	0.1090	1.000	50. Index Value Zero (XVZ). The value field re-	0.3703	0.0133
+0.2456	0.5207	1.000	58. Result Greater than Zero (RGZ). The result	0.3778	0.0160
+0.2542	0.0959	1.000	sulting from the index modification operation just	0.3853	0.0147
+0.2615	0.5056	1.000	of the non-comparative arithmetic operation just ex-	0.3910	0.0146
+0.2703	0.0959	1.000	executed was zero. This indicator is turned off by	0.3835	0.0131
+0.2776	0.5056	1.000	ecuted was non-zero and positive or the result of the	0.3929	0.0146
+0.2863	0.0959	1.000	any index modification operation whose result has a	0.3853	0.0131
+0.2921	0.5056	1.000	connective operation just executed was non-zero. This	0.3929	0.0146
+0.3009	0.0959	1.000	value field which is non-zero.	0.2011	0.0116
+0.3081	0.5056	1.000	indicator is turned off by a non-comparative arith-	0.3929	0.0146
+0.3182	0.1053	1.000	51. Index Value Greater than Zero (XVGZ). The	0.3759	0.0176
+0.3221	0.5037	1.000	metic operation whose result is zero or negative, or	0.3949	0.0184
+0.3358	0.0921	1.000	value field resulting from the index modification op-	0.3872	0.0161
+0.3362	0.5036	1.000	by a connective operation whose result is zero. One	0.3950	0.0186
+0.3517	0.0959	1.000	eration just executed was non-zero and positive. This	0.3835	0.0146
+0.3526	0.5055	1.000	and only one of indicators RLZ, RZ, and RGz is on at	0.3931	0.0171
+0.3677	0.0959	1.000	indicator is turned off by any index modification	0.3835	0.0132
+0.3681	0.5055	1.000	any one time, unless they have been changed by	0.3912	0.0173
+0.3793	0.0938	1.000	operation whose result has a value field which is zero	0.3857	0.0192
+0.3842	0.5054	1.000	programming.	0.1038	0.0164
+0.3982	0.0940	1.000	or negative. One and only one of indicators XVLZ,	0.3853	0.0146
+0.4099	0.5226	1.000	59. Result Negative (RN). The result of the non-	0.3741	0.0147
+0.4127	0.0940	1.000	xvz, xvGz is on at any time, unless they have been	0.3853	0.0146
+0.4231	0.5055	1.000	comparative arithmetic operation just executed was	0.3932	0.0185
+0.4302	0.0940	1.000	changed by programming.	0.1861	0.0131
+0.4389	0.5074	1.000	negative whether zero or not. This indicator is turned	0.3894	0.0163
+0.4491	0.1071	1.000	52. Index Low (XL). The result of the index	0.3722	0.0131
+0.4542	0.5055	1.000	off by a non-comparative arithmetic operation whose	0.3932	0.0180
+0.4636	0.0940	1.000	comparison operation just executed	0.2726	0.0146
+0.4636	0.3741	1.000	was that the	0.1053	0.0117
+0.4707	0.5056	1.000	result is positive, whether zero or not, or by any	0.3911	0.0166
+0.4797	0.0940	1.000	compared field of the index word was lower than that	0.3872	0.0146
+0.4869	0.5056	1.000	connective operation.	0.1579	0.0146
+0.4942	0.0940	1.000	of the comparand specified by the effective address.	0.3853	0.0146
+0.5102	0.0940	1.000	This indicator is turned off by an index comparison	0.3853	0.0147
+0.5115	0.5226	1.000	60. Accumulator Low (AL). The result of the	0.3759	0.0146
+0.5261	0.0940	1.000	whose result is not low.	0.1635	0.0118
+0.5276	0.5056	1.000	arithmetic comparison operation just executed was	0.3929	0.0146
+0.5421	0.5075	1.000	that the accumulator contents were less than the com-	0.3910	0.0131
+0.5451	0.1071	1.000	53. Index Equal (XE). The result of the index	0.3722	0.0146
+0.5581	0.5075	1.000	parand specified by the effective address. The arith-	0.3910	0.0146
+0.5609	0.0940	1.000	comparison just executed was that the compared field	0.3853	0.0147
+0.5741	0.5056	1.000	metic comparison operations are COMPARE, COMPARE	0.3929	0.0147
+0.5770	0.0921	1.000	of the index word was equal to that of the compa-	0.3891	0.0131
+0.5892	0.5055	1.000	FIELD, COMPARE MAGNITUDE, COMPARE FOR RANGE, COM-	0.3931	0.0143
+0.5915	0.0921	1.000	rand. This indicator is turned off by an index com-	0.3891	0.0146
+0.6061	0.5075	1.000	PARE FIELD FOR RANGE, COMPARE MAGNITUDE FOR RANGE,	0.3910	0.0118
+0.6069	0.0920	1.000	parison whose result is not equal.	0.2352	0.0153
+0.6170	0.5073	1.000	COMPARE IF EQUAL, and COMPARE FIELD IF EQUAL. This	0.3914	0.0188
+0.6262	0.1033	1.000	54. Index High (XH). The result of the index	0.3762	0.0184
+0.6336	0.5056	1.000	indicator is turned off by a comparison operation	0.3910	0.0146
+0.6424	0.0921	1.000	comparison just executed was that the compared field	0.3872	0.0146
+0.6497	0.5038	1.000	whose result is not low.	0.1711	0.0145
+0.6584	0.0921	1.000	of the index word was higher than that of the com-	0.3891	0.0131
+0.6730	0.0921	1.000	parand. This indicator is turned off by an index	0.3872	0.0161
+0.6744	0.5169	1.000	61. Accumulator Equal (AE). The result of the	0.3816	0.0160
+0.6885	0.5036	1.000	arithmetic comparison operation just executed was	0.3951	0.0196
+0.6890	0.0921	1.000	comparison whose result is not high.	0.2575	0.0132
+0.7035	0.1071	1.000	One and only one of indicators XL, XE, and XH is	0.3741	0.0145
+0.7048	0.5056	1.000	that the accumulator contents were equal to the com-	0.3929	0.0161
+0.7177	0.0919	1.000	on at any time, unless they have been changed by	0.3876	0.0190
+0.7204	0.5036	1.000	parand or within the compared range. This indica-	0.3932	0.0178
+0.7355	0.5056	1.000	tor is turned off by a comparison operation whose	0.3929	0.0145
+0.7355	0.0921	1.000	programming.	0.0996	0.0145
+0.7515	0.5038	1.000	result is not equal or within the compared range.	0.3703	0.0161
+0.7747	0.0921	1.000	Arithmetic Result	0.1222	0.0102
+0.7757	0.5205	1.000	62. Accumulator High (AH). The result of the	0.3781	0.0181
+0.7906	0.5038	1.000	arithmetic comparison operation just executed was	0.3947	0.0176
+0.7935	0.1032	1.000	55. To-Memory Operation (MOP). The result of	0.3782	0.0198
+0.8067	0.5038	1.000	that the accumulator contents were greater than the	0.3947	0.0161
+0.8108	0.0920	1.000	the arithmetic or connective operation last executed	0.3875	0.0160
+0.8197	0.5017	1.000	comparand. This indicator is turned off by a com-	0.3970	0.0217
+0.8269	0.0901	1.000	was placed in storage. This indicator is actuated by	0.3892	0.0141
+0.8382	0.5036	1.000	parison operation whose result is not high. One and	0.3932	0.0160
+0.8415	0.0883	1.000	integer and floating point to-memory operations, in-	0.3910	0.0146
+0.8545	0.0902	1.000	cluding STORE, ADD TO MEMORY and its variants, and	0.3891	0.0146
+0.8545	0.5019	1.000	only one of indicators AL, AE, and AH is on at any	0.3947	0.0133
+0.8677	0.5019	1.000	time, unless they have been changed by program-	0.3985	0.0174
+0.8721	0.0921	1.000	CONNECT TO MEMORY. It is turned off by any other	0.3872	0.0116
+0.8852	0.5038	1.000	ming.	0.0470	0.0160
+0.8866	0.0883	1.000	arithmetic, connective, or comparison operation.	0.3647	0.0161
+0.9215	0.8797	1.000	47	0.0207	0.0102
+0.9230	0.7124	1.000	Instruction Sequencing	0.1429	0.0102

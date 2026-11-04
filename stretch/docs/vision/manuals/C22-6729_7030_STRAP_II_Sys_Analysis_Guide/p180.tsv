@@ -1,0 +1,108 @@
+0.0697	0.0771	1.000	INCLUDING A COPROCESSOR SUBROUTINE WITH STRAP II	0.4586	0.0132
+0.1175	0.6183	1.000	B, entry D	0.0829	0.0165
+0.1191	0.0808	1.000	There can be included with the assembly program a	0.3816	0.0118
+0.1320	0.6165	1.000	B, entry E	0.0847	0.0179
+0.1336	0.0808	1.000	coprocessor subroutine which Pass 1 can enter when-	0.3947	0.0132
+0.1467	0.0808	1.000	ever any one of six conditions occurs during the Pass 1	0.4060	0.0133
+0.1467	0.6184	1.000	B, entry F	0.0828	0.0177
+0.1606	0.6181	1.000	B, entry G	0.0833	0.0204
+0.1641	0.0789	1.000	phase.	0.0490	0.0105
+0.1642	0.7143	1.000	'where entry G is the	0.1598	0.0131
+0.1642	0.1391	1.000	The conditions are:	0.1447	0.0103
+0.1773	0.7162	1.000	entrance into the co-	0.1579	0.0161
+0.1788	0.1259	1.000	An illegal STRAP or MCP character in column	0.3459	0.0116
+0.1788	0.0959	1.000	1.	0.0132	0.0102
+0.1890	0.7162	1.000	processor subroutine	0.1579	0.0174
+0.1918	0.0771	1.000	1 of the input.(This condition is detected by GETCHA. )	0.4041	0.0131
+0.2048	0.7143	1.000	for the 'WANT ANOTHER	0.1917	0.0161
+0.2078	0.0959	1.000	2. An illegal programmer symbol in columns	0.3477	0.0116
+0.2209	0.0808	1.000	2-9 of the input--where the first character of a name	0.3929	0.0146
+0.2224	0.7162	1.000	CARD' option.	0.1090	0.0146
+0.2339	0.0808	1.000	must be alphabetic; the subsequent characters of the	0.3872	0.0146
+0.2339	0.5226	1.000	NOTE: When Hheom4 is on and the coprocessor	0.3571	0.0161
+0.2500	0.5094	1.000	does not wish control after Pass 1 detects a coprocessor	0.4192	0.0145
+0.2515	0.0808	1.000	name must be alphamerie. (This condition is detected	0.4041	0.0116
+0.2641	0.5111	1.000	condition, the corresponding slot in the transfer table	0.3988	0.0178
+0.2660	0.0789	1.000	by GETCHA.)	0.1034	0.0131
+0.2791	0.5094	1.000	for the unwanted condition must be a B, 0($15). If	0.3741	0.0161
+0.2791	0.0959	1.000	3. A non-IBM card code character punched on	0.3534	0.0131
+0.2921	0.5038	1.000	Hhcom4 is off, the STRAP II transfer vector must be	0.4004	0.0176
+0.2951	0.0808	1.000	the card input. (This condition is detected by XINPUT.)	0.4173	0.0131
+0.3081	0.5094	1.000	in the transfer table.	0.1579	0.0146
+0.3109	0.1278	1.000	Immediately before the pseudo-op END is	0.3102	0.0118
+0.3110	0.0977	1.000	4.	0.0150	0.0102
+0.3212	0.5263	1.000	GETCHA informs and enters the coprocessor through	0.3985	0.0189
+0.3241	0.0752	1.000	processed. (This condition is detected by GETCHA.)	0.3985	0.0160
+0.3358	0.5094	1.000	a special calling sequence after having set up $6 and $7	0.4117	0.0189
+0.3387	0.0921	1.000	5. An illegal operation code. (This condition is	0.3628	0.0147
+0.3488	0.5094	1.000	accordingly.	0.0977	0.0189
+0.3561	0.0789	1.000	detected by MAIN.)	0.1429	0.0118
+0.3706	0.1316	1.000	An inappropriate character in an entrv mode	0.3289	0.0088
+0.3706	0.0977	1.000	6.	0.0150	0.0102
+0.3794	0.5113	1.000	Calling Sequence	0.1278	0.0174
+0.3814	0.0808	1.000	--where the current entry modes allowed by STRAP II	0.4005	0.0133
+0.3953	0.0788	1.000	are: Radix, IQS, CC, A, and Fn. (This condition is	0.3857	0.0180
+0.4084	0.5094	1.000	GETCHA exits to the coprocessor through the following	0.4135	0.0204
+0.4127	0.0789	1.000	detected by MAIN.)	0.1447	0.0146
+0.4244	0.5113	1.000	calling sequence:	0.1316	0.0174
+0.4390	0.5244	1.000	SIC, $15; B, entry X	0.1560	0.0160
+0.4433	0.0808	1.000	COMMUNICATION SPECIFICATIONS	0.2744	0.0103
+0.4520	0.5282	1.000	B, -...	0.0677	0.0160
+0.4548	0.7049	1.000	""CONDITION NOT WANTED"	0.2368	0.0161
+0.4709	0.7199	1.000	return from the coprocessor	0.2162	0.0146
+0.4724	0.0808	1.000	Entry into Coprocessor	0.1748	0.0116
+0.4824	0.7049	1.000	W''INSERT CARDS" return from	0.2368	0.0176
+0.4853	0.5262	1.000	B, ----	0.0659	0.0149
+0.5015	0.0789	1.000	In order for Pass 1 to enter the coprocessor sub-	0.3665	0.0116
+0.5015	0.7199	1.000	the coprocessor.	0.1297	0.0131
+0.5130	0.7049	1.000	""WANT ANOTHER CARD"	0.2068	0.0161
+0.5145	0.0789	1.000	routine certain information must be preset in STRAP II's B, ----	0.5132	0.0161
+0.5276	0.7199	1.000	return from the coprocessor.	0.2237	0.0176
+0.5305	0.0808	1.000	common work area section. If this information is not	0.4004	0.0131
+0.5406	0.5113	1.000	The address entry X corresponds to the appropriate	0.3853	0.0191
+0.5436	0.0808	1.000	there when the Pass 1 phase detects one of these six	0.3872	0.0146
+0.5567	0.5094	1.000	entry address in the previous table.	0.2688	0.0189
+0.5596	0.0808	1.000	conditions, Pass 1 will treat any possible coprocessor	0.4023	0.0131
+0.5727	0.0808	1.000	condition strictly as an error condition, and will not	0.3891	0.0146
+0.5900	0.0808	1.000	consult the coprocessor subroutine at all.	0.3083	0.0118
+0.6133	0.5019	1.000	Index Register 7	0.1241	0.0146
+0.6191	0.0808	1.000	Transfer Vector	0.1222	0.0103
+0.6409	0.5019	1.000	Index register 7 contains information to be used by	0.3816	0.0176
+0.6467	0.0771	1.000	Therefore, if the coprocessor wants control under any	0.4079	0.0161
+0.6582	0.5018	1.000	the coprocessor.	0.1335	0.0178
+0.6627	0.0808	1.000	of the above conditions, the common work area of	0.3722	0.0146
+0.6744	0.5508	1.000	VF of $7 contains the location of the card image	0.3534	0.0116
+0.6773	0.0808	1.000	STRAP II must be set up as follows:	0.2669	0.0131
+0.6873	0.5056	1.000	with the trouble condition.	0.1937	0.0121
+0.6918	0.1259	1.000	The bit, Hheom4, must be on to indicate to	0.3233	0.0161
+0.6933	0.0959	1.000	1.	0.0150	0.0087
+0.6991	0.5376	1.000	CF of $7 contains the number of bits which	0.3383	0.0176
+0.7020	0.5188	1.000	2.	0.0188	0.0131
+0.7064	0.0789	1.000	STRAP II that the coprocessor wants control during	0.3835	0.0161
+0.7151	0.5038	1.000	STRAP II has processed on the error card image.	0.3703	0.0161
+0.7209	0.0789	1.000	Pass 1 whenever a coprocessor condition is detected	0.3891	0.0146
+0.7282	0.5038	1.000	(VF + CF = position of pertinent character).	0.3289	0.0176
+0.7365	0.0789	1.000	on the input.	0.0923	0.0139
+0.7442	0.5132	1.000	3. RF of $7 contains a value corresponding to the	0.3853	0.0174
+0.7500	0.1297	1.000	The transfer table at Hheopr must contain the	0.3383	0.0161
+0.7529	0.0977	1.000	2.	0.0150	0.0102
+0.7602	0.5056	1.000	code of the card image being given to the coprocessor.	0.4023	0.0160
+0.7657	0.0788	1.000	following when Hheom4 is on:	0.2202	0.0153
+0.7747	0.5376	1.000	Value	0.0432	0.0131
+0.7747	0.6692	1.000	Character Code Set	0.1447	0.0147
+0.7906	0.1128	1.000	Hheopr B, entry A 'where entry A is the	0.3346	0.0161
+0.8050	0.6860	1.000	CC code	0.0622	0.0150
+0.8067	0.2895	1.000	entrance into the co-	0.1560	0.0131
+0.8169	0.5470	1.000	2	0.0132	0.0160
+0.8196	0.6841	1.000	A6 code	0.0622	0.0135
+0.8212	0.2876	1.000	processor subroutine	0.1598	0.0145
+0.8357	0.2892	1.000	for the condition 1.	0.1433	0.0162
+0.8358	0.6842	1.000	A8	0.0226	0.0116
+0.8358	0.5470	1.000	3	0.0132	0.0116
+0.8488	0.6842	1.000	Not used	0.0677	0.0132
+0.8488	0.5508	1.000	4	0.0113	0.0116
+0.8510	0.1916	1.000	B, entry B	0.0793	0.0131
+0.8631	0.6822	1.000	IQS code	0.0697	0.0151
+0.8634	0.5470	1.000	5	0.0132	0.0131
+0.8663	0.1917	1.000	B, entry C	0.0808	0.0116
+0.9201	0.0752	1.000	180	0.0263	0.0116

@@ -1,0 +1,102 @@
+0.0799	0.0395	1.000	APPENDIX B. REJECT MESSAGES	0.2744	0.0131
+0.1086	0.0394	1.000	MCP Loader	0.0961	0.0168
+0.1105	0.4756	1.000	SEQ. NO. X ID Y IN Z SUBPROGRAM. (X is the	0.3647	0.0117
+0.1235	0.4737	1.000	sequence number from column 3, Y is the identifi-	0.3835	0.0116
+0.1381	0.4756	1.000	cation in column 4, and Z is the subprogram name.)	0.3929	0.0116
+0.1381	0.0414	1.000	MCP loader diagnostics are usually of the following	0.3872	0.0116
+0.1521	0.0369	1.000	form:	0.0502	0.0141
+0.1539	0.4981	1.000	2. JOB REJECTED - COMMON AND PROGRAM	0.3703	0.0118
+0.1672	0.0620	1.000	LOD, REJ, CD. XXXX ID YYYYYYYY	0.2914	0.0147
+0.1685	0.4774	1.000	OVERLAP. (The total size of subprograms and	0.3590	0.0118
+0.1816	0.0620	1.000	(Reason)	0.0659	0.0133
+0.1830	0.4774	1.000	commons is greater than the size of available storage.)	0.4173	0.0118
+0.1962	0.0620	1.000	LAST CORRECT CARD LOADED IS SEQUENCE	0.3609	0.0132
+0.2006	0.4962	1.000	3. BSS TERMINATED JOB - PROGRAMMER	0.3440	0.0102
+0.2106	0.0414	1.000	NO. XXXX ID YYYYYYYY	0.1974	0.0118
+0.2151	0.4774	1.000	ERROR (The above message appears on the console	0.3853	0.0116
+0.2251	0.0620	1.000	where:	0.0528	0.0106
+0.2297	0.4756	1.000	only, for any of the errors below.)	0.2632	0.0131
+0.2397	0.0620	1.000	1. XXXX is the sequence number taken from	0.3402	0.0118
+0.2500	0.4756	1.000	JOB TERMINATED - (REASON) (This message ap-	0.3853	0.0116
+0.2542	0.0414	1.000	column 3 of the binary card.	0.2124	0.0118
+0.2645	0.5263	1.000	pears on the output listing, where (reason)	0.3195	0.0116
+0.2688	0.0583	1.000	2. YYYYYYYY is the identification taken from	0.3590	0.0118
+0.2791	0.5244	1.000	is one of the following:)	0.1767	0.0103
+0.2833	0.0414	1.000	columns 73-80 of the binary card.	0.2556	0.0118
+0.2936	0.4774	1.000	T.V. XX INCOMPLETE IN YY SUBPROGRAM	0.3477	0.0116
+0.2979	0.0620	1.000	3. (Reason) is one of the following:	0.2688	0.0118
+0.3081	0.5244	1.000	(Entry point XX cannot be found, either in the	0.3440	0.0116
+0.3139	0.0902	1.000	CHECK SUM ERROR	0.1560	0.0116
+0.3227	0.5226	1.000	input deck or in the FORTRAN library. YY is	0.3459	0.0116
+0.3285	0.0883	1.000	SEQUENCE ERROR	0.1504	0.0131
+0.3372	0.5244	1.000	the name of the subprogram in which the trans-	0.3571	0.0116
+0.3415	0.0883	1.000	ILLEGAL TYPE OF CARD	0.2030	0.0131
+0.3517	0.5244	1.000	fer vector appears. A missing subprogram	0.3233	0.0116
+0.3576	0.0902	1.000	ILLEGAL NON-BSS FUNCTION (I.e., a card	0.3402	0.0116
+0.3663	0.5244	1.000	may have to be added to the input deck.)	0.3026	0.0116
+0.3721	0.0620	1.000	was encountered in a non-BSS environment which	0.3684	0.0102
+0.3808	0.4756	1.000	TOO MANY NAMED COMMONS IN YY SUBPROGRAM	0.4041	0.0102
+0.3881	0.0620	1.000	may only be used in a BSS environment.)	0.3083	0.0116
+0.3953	0.5244	1.000	(The number of entries in the second inter-	0.3271	0.0116
+0.4026	0.0921	1.000	TRIED TO LOAD OUTSIDE LIMITS (This	0.3064	0.0102
+0.4099	0.5244	1.000	mediate table has exceeded available storage.)	0.3515	0.0116
+0.4172	0.0639	1.000	message is also given if the address specified on	0.3665	0.0116
+0.4244	0.4756	1.000	TOO MANY TRANSFER VECTORS IN YY	0.3102	0.0102
+0.4317	0.0620	1.000	the branch card is outside the problem program	0.3609	0.0116
+0.4403	0.4737	1.000	SUBPROGRAM (The number of entries in the third	0.3797	0.0103
+0.4448	0.0620	1.000	limits. Normally, it means that a binary, C, P,	0.3703	0.0131
+0.4535	0.5244	1.000	intermediate table has exceeded available	0.3139	0.0117
+0.4606	0.0639	1.000	D, K, A, or Z card, if loaded, would have gone	0.3590	0.0118
+0.4705	0.5243	1.000	storage.)	0.0716	0.0111
+0.4752	0.0639	1.000	outside the boundaries specified on the LIM card.	0.3722	0.0118
+0.4839	0.4737	1.000	ILLEGAL TYPE OF CARD IN YY SUBPROGRAM	0.3703	0.0103
+0.4897	0.0639	1.000	The programmer can probably correct the error	0.3647	0.0118
+0.4985	0.5244	1.000	(The column 1 code is not acceptable to the	0.3233	0.0118
+0.5042	0.0619	1.000	by extending the limits.)	0.1845	0.0133
+0.5130	0.5263	1.000	BSS processor.)	0.1222	0.0118
+0.5188	0.0902	1.000	C, P, D, K, A, or Z CD PUNCH ERR (There	0.3440	0.0133
+0.5276	0.4756	1.000	RELOCATION TABLES ARE TOO LARGE (The	0.3534	0.0118
+0.5333	0.0620	1.000	is an illegal character in one of the fields.)	0.3271	0.0118
+0.5421	0.5244	1.000	number of entries in the relocation table has	0.3346	0.0117
+0.5479	0.0902	1.000	NO ORIGIN ON FIRST C OR K CARD	0.2763	0.0103
+0.5581	0.5244	1.000	exceeded available storage.)	0.2162	0.0102
+0.5624	0.0902	1.000	NO ORIGIN IN FIRST CARD (In an absolute	0.3233	0.0103
+0.5712	0.4756	1.000	INCORRECT CARD ORDER IN YY SUBPROGRAM	0.3741	0.0116
+0.5770	0.0620	1.000	deck, this message may mean that the first card	0.3665	0.0118
+0.5872	0.5244	1.000	(See Card Order in section on BSS processor.)	0.3515	0.0102
+0.5915	0.0620	1.000	was a flow card. A non-BSS relocatable deck	0.3440	0.0118
+0.6061	0.0620	1.000	without a loader adjustment card will also cause	0.3628	0.0103
+0.6087	0.4961	1.000	4. ILLEGAL DISK INPUT TO BSS LOADER	0.3329	0.0135
+0.6221	0.0620	1.000	the above error message.)	0.2011	0.0102
+0.6232	0.4962	1.000	5. LOADER ADJUSTMENT HAS LOW ORIGIN	0.3498	0.0135
+0.6352	0.0620	1.000	4. If the last correct card loaded was in card	0.3459	0.0117
+0.6374	0.4736	1.000	(The origin specified on the loader adjustment card	0.3856	0.0146
+0.6497	0.0414	1.000	code, the entire card is printed, instead of the	0.3496	0.0131
+0.6539	0.4737	1.000	would cause this subprogram, if loaded, to overlay	0.3853	0.0133
+0.6657	0.0414	1.000	sequence number and identification.	0.2688	0.0102
+0.6685	0.4737	1.000	a subprogram previously loaded. The origin on the	0.3816	0.0133
+0.6788	0.0602	1.000	Other messages given by the loader are:	0.3064	0.0146
+0.6830	0.4737	1.000	loader adjustment card should be changed.)	0.3271	0.0118
+0.6948	0.0602	1.000	JOB CANNOT BE RUN BECAUSE OF INPUT	0.3365	0.0116
+0.6976	0.4962	1.000	6. REPEATED UK INTERRUPTS FROM DISK	0.3496	0.0118
+0.7093	0.0414	1.000	DIFFICULTIES (An uncorrectable UK was encountered	0.4117	0.0116
+0.7121	0.4962	1.000	7. EPGK INTERRUPT FROM DISK	0.2671	0.0119
+0.7238	0.0376	1.000	in the reading of this deck by MCP.)	0.2763	0.0146
+0.7267	0.4962	1.000	8. COMMON XX WAS NOT IN THE SYMBOL	0.3421	0.0118
+0.7369	0.0602	1.000	NO BRANCH CARD IN CURRENT DECK--JOB	0.3496	0.0146
+0.7412	0.4756	1.000	TABLE WHEN THE DEFINE CARD WAS	0.3045	0.0118
+0.7544	0.0395	1.000	REJECTED	0.0883	0.0116
+0.7558	0.4756	1.000	ENCOUNTERED IN SUBPROGRAM YY (The first	0.3684	0.0118
+0.7703	0.4756	1.000	named common specified on the define card has not	0.3835	0.0118
+0.7835	0.4736	1.000	yet been declared on a common definition card in the	0.4006	0.0145
+0.7863	0.0414	1.000	BSS Processor	0.1109	0.0102
+0.8006	0.4736	1.000	input deck.)	0.0922	0.0122
+0.8154	0.0414	1.000	The following error messages may be given by	0.3496	0.0116
+0.8154	0.4962	1.000	9. THE 50TH DEFINE CARD HAS BEEN	0.3120	0.0102
+0.8285	0.4756	1.000	ENCOUNTERED. THE REST (IF ANY) WILL BE	0.3703	0.0116
+0.8314	0.0414	1.000	the BSS processor:	0.1429	0.0102
+0.8430	0.4737	1.000	IGNORED (No more than 50 significant define cards	0.3891	0.0131
+0.8445	0.0620	1.000	1. JOB TERMINATED DUE TO SEQUENCE (OR	0.3665	0.0116
+0.8590	0.4756	1.000	may be used.)	0.1071	0.0116
+0.8590	0.0432	1.000	CHECK SUM) ERROR. LAST CORRECT CARD IS	0.3684	0.0131
+0.9302	0.0376	1.000	22	0.0188	0.0116

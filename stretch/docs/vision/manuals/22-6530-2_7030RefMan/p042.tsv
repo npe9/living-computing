@@ -1,0 +1,82 @@
+0.0567	0.6635	1.000	Instruction Sequencing	0.2425	0.0189
+0.1088	0.5131	1.000	Branching	0.0941	0.0179
+0.1105	0.0996	1.000	Normal Sequential Operation	0.3064	0.0174
+0.1453	0.5094	1.000	The normal sequence of instructions may be altered	0.3947	0.0160
+0.1505	0.0995	1.000	Normally, the operation of the computer is controlled	0.3874	0.0171
+0.1612	0.5075	1.000	by the use of branching instructions. These are of	0.3985	0.0176
+0.1672	0.1015	1.000	by instructions taken in sequential order. An in-	0.3853	0.0147
+0.1788	0.5056	1.000	four types: unconditional, indicator, index, and bit	0.4004	0.0161
+0.1845	0.0977	1.000	struction is fetched from a core storage location whose	0.3891	0.0146
+0.1945	0.5093	1.000	branching. Any of these instruction types may cause	0.3950	0.0180
+0.2006	0.0977	1.000	address is specified by the contents of the instruction	0.3891	0.0161
+0.2121	0.5094	1.000	a new value to be transferred to the instruction coun-	0.3966	0.0146
+0.2163	0.0976	1.000	counter. Any required address modification on the	0.3894	0.0175
+0.2282	0.5094	1.000	ter, thereby causing the instruction sequence to pro-	0.3966	0.0176
+0.2355	0.0959	1.000	instruction is then performed and when execution	0.3891	0.0131
+0.2442	0.5094	1.000	ceed from the newly addressed location.	0.2895	0.0161
+0.2500	0.0977	1.000	of the previous instruction is sufficiently completed,	0.3872	0.0145
+0.2615	0.5282	1.000	The addresses between 0.0 and 31.32 are invalid	0.3759	0.0133
+0.2674	0.0996	1.000	execution of the modified instruction is begun. In-	0.3853	0.0116
+0.2776	0.5113	1.000	branching addresses. All other available 19-bit ad-	0.3947	0.0161
+0.2815	0.0957	1.000	structions are taken in sequences other than normal	0.3894	0.0170
+0.2935	0.5110	1.000	dresses are valid.	0.1246	0.0148
+0.2994	0.0959	1.000	as a result of branching operations, interruptions, and	0.3891	0.0161
+0.3169	0.0977	1.000	execution operations.	0.1541	0.0131
+0.3241	0.5094	1.000	PROGRAMMING NOTES	0.1560	0.0147
+0.3473	0.5132	1.000	After an instruction is fetched, but before its execu-	0.3910	0.0133
+0.3590	0.0959	1.000	Instruction Counter	0.1372	0.0102
+0.3648	0.5132	1.000	tion, the instruction counter contents are stepped in	0.3891	0.0146
+0.3821	0.0977	1.000	The instruction counter is a 19-bit register that speci-	0.3872	0.0147
+0.3821	0.5113	1.000	ordinary fashion. Accordingly, with branching opera-	0.3929	0.0133
+0.3982	0.5113	1.000	tions, this is done prior to any attempt to replace the	0.3910	0.0132
+0.3997	0.0977	1.000	fies the location of the next instruction to be exe-	0.3872	0.0103
+0.4109	0.5110	1.000	instruction counter contents. For example, if the in-	0.3933	0.0192
+0.4157	0.0959	1.000	cuted. When the nineteenth bit is a one, the full	0.3891	0.0131
+0.4317	0.5113	1.000	struction counter contents are 231.32 and a half-word	0.3910	0.0116
+0.4317	0.0977	1.000	word taken from storage will start at bit 32 of the	0.3872	0.0132
+0.4462	0.5113	1.000	branch instruction is fetched from the addressed loca-	0.3929	0.0132
+0.4491	0.0959	1.000	addressed location and continue to bit 31 of the next	0.3891	0.0103
+0.4636	0.5113	1.000	tion, before execution of the fetched instruction, the	0.3910	0.0146
+0.4651	0.0959	1.000	higher location. When the nineteenth bit is a zero, the	0.3872	0.0161
+0.4797	0.5094	1.000	instruction counter is stepped to 232.0.	0.2782	0.0146
+0.4824	0.0959	1.000	full word will start at bit 0 and continue to bit 63 of	0.3891	0.0118
+0.4985	0.0959	1.000	the addressed location.	0.1635	0.0131
+0.5174	0.1090	1.000	Some instruction words are full length occupying	0.3741	0.0132
+0.5333	0.0959	1.000	64 bits while others are half length of 32 bits. Both	0.3872	0.0132
+0.5451	0.5094	1.000	Unconditional Branching	0.2293	0.0160
+0.5494	0.0940	1.000	full and half-word instructions may be intermixed in	0.3891	0.0146
+0.5643	0.0938	1.000	storage. Each time an instruction	0.2635	0.0162
+0.5669	0.3553	1.000	is executed, the	0.1278	0.0116
+0.5827	0.0940	1.000	instruction counter is stepped to specify the location	0.3891	0.0147
+0.5842	0.5094	1.000	There are five unconditional branching operations,	0.3910	0.0131
+0.5988	0.0940	1.000	of the next instruction. If the fetched instruction is	0.3891	0.0118
+0.6003	0.5094	1.000	all of which provide for normal modification of the	0.3910	0.0146
+0.6148	0.0940	1.000	half length, the instruction counter is stepped once	0.3891	0.0146
+0.6177	0.5094	1.000	branch address by the contents of an index register.	0.3910	0.0132
+0.6321	0.0940	1.000	at its nineteenth position. If full length, the counter	0.3891	0.0133
+0.6336	0.5113	1.000	Unconditional branching instructions are specified	0.3872	0.0132
+0.6482	0.5056	1.000	in the half-word format shown. The address field,	0.3985	0.0176
+0.6482	0.0921	1.000	is stepped twice.	0.1184	0.0146
+0.6627	0.5056	1.000	bits 0-18, represents the branch address. Unconditional	0.3966	0.0191
+0.6672	0.1071	1.000	The instruction counter is not addressable by the	0.3759	0.0160
+0.6802	0.5056	1.000	branching is specified by bits 19-27, where bits 19-21,	0.3966	0.0161
+0.6830	0.0921	1.000	program, but its contents can be changed by a branch-	0.3910	0.0161
+0.6948	0.5056	1.000	the op field, select the particular operation. Bits 28-31	0.3947	0.0174
+0.6976	0.0902	1.000	type operation or stored at any storage location by	0.3910	0.0191
+0.7121	0.5075	1.000	name the index register used for address modification.	0.3910	0.0161
+0.7166	0.0921	1.000	prefixing a half-length branch instruction with the	0.3910	0.0160
+0.7339	0.0921	1.000	half-length instruction STORE INSTRUCTION COUNTER IF.	0.3910	0.0132
+0.7587	0.0940	1.000	PROGRAMMING NOTE	0.1429	0.0102
+0.7645	0.6165	0.300	Top 000	0.0695	0.0161
+0.7718	0.5432	1.000	ADDRESS	0.0451	0.0102
+0.7791	0.0921	1.000	If an instruction causes its own modification (other	0.3891	0.0146
+0.7820	0.6241	1.000	19 22	0.0320	0.0102
+0.7936	0.0902	1.000	than that caused by index registers), that modifica-	0.3910	0.0174
+0.8212	0.5056	1.000	Branch (B)	0.0827	0.0176
+0.8430	0.5056	1.000	This operation replaces the instruction counter con-	0.3966	0.0189
+0.8445	0.0883	1.000	instruction modifies any succeeding instruction, the	0.3929	0.0174
+0.8590	0.5056	1.000	tents with bits 0-18 of the effective address of the	0.3966	0.0189
+0.8605	0.0883	1.000	modification is effected before the execution of that	0.3929	0.0160
+0.8758	0.5036	1.000	instruction.	0.0906	0.0173
+0.9142	0.7105	1.000	Instruction Sequencing	0.1447	0.0161
+0.9172	0.8816	1.000	39	0.0188	0.0102

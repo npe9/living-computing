@@ -1,0 +1,117 @@
+0.0566	0.0956	1.000	been completed by the exchange and the unit and,	0.3933	0.0180
+0.0610	0.5149	1.000	is one, the sum of the current data word address and	0.3893	0.0147
+0.0726	0.0938	1.000	if an operation is currently in progress, specifies the	0.3932	0.0177
+0.0763	0.5149	1.000	count is always two greater than the sum of the origi-	0.3894	0.0180
+0.0887	0.0940	1.000	location of the word that is currently being processed	0.3929	0.0160
+0.0930	0.5150	1.000	nally specified contents of these two fields. This rela-	0.3891	0.0131
+0.1027	0.5147	1.000	tion holds also whenever the control word is copied	0.3897	0.0229
+0.1031	0.0958	1.000	by the unit.	0.0828	0.0147
+0.1186	0.1127	1.000	The count in the above case is decreased from the	0.3743	0.0151
+0.1235	0.5150	1.000	during the execution of a WRITE.	0.2331	0.0131
+0.1336	0.0937	1.000	initial count by the number of words received from	0.3933	0.0191
+0.1380	0.5299	1.000	When all data words specified by the control word	0.3725	0.0171
+0.1488	0.0937	1.000	the unit. Since the exchange executes a COPY CONTROL	0.3933	0.0191
+0.1539	0.5132	1.000	have been fetched, further core storage references are	0.3910	0.0147
+0.1657	0.0940	1.000	word only after all pending word transfers to or from	0.3910	0.0146
+0.1700	0.5132	1.000	suppressed. Writing, however, still proceeds until the	0.3910	0.0146
+0.1804	0.5128	1.000	last two words contained in the exchange buffer have	0.3916	0.0222
+0.1817	0.0940	1.000	core storage have been completed, this number is al-	0.3929	0.0147
+0.1962	0.0940	1.000	ways the same as the number of words transmitted to	0.3929	0.0132
+0.1991	0.5130	1.000	been written. As each of these words is sent to the	0.3895	0.0162
+0.2121	0.0940	1.000	core storage, and the current count is equal to the	0.3929	0.0146
+0.2150	0.5131	1.000	unit, the count is stepped down until it finally reaches	0.3893	0.0165
+0.2267	0.0940	1.000	number of words remaining to be read. If the area	0.3910	0.0146
+0.2311	0.5583	1.000	At the same time the data word address is	0.3440	0.0131
+0.2427	0.0940	1.000	described by the control word has been fully used,	0.3929	0.0145
+0.2456	0.5113	1.000	stepped up, even though it is not used. When the	0.3910	0.0147
+0.2573	0.0940	1.000	the count is zero. The sum of the current values of	0.3929	0.0131
+0.2602	0.5113	1.000	operation is completed, the count is zero and the	0.3910	0.0160
+0.2693	0.0937	1.000	the data word address and count fields is always equal	0.3915	0.0210
+0.2776	0.5132	1.000	data word address refers to a location that is three	0.3891	0.0131
+0.2892	0.0921	1.000	to the sum of the original values of these fields. When	0.3929	0.0132
+0.2921	0.5132	1.000	words ahead of the one from which the last word was	0.3891	0.0131
+0.3036	0.0940	1.000	the operation is terminated within a word, no infor-	0.3910	0.0147
+0.3066	0.5112	1.000	fetched. The unused data word addresses are not	0.3912	0.0151
+0.3197	0.0921	1.000	mation is available as to how many bytes of the last	0.3947	0.0146
+0.3227	0.5094	1.000	tested for invalidity and hence cannot interfere with	0.3910	0.0161
+0.3341	0.0920	1.000	word have actually been read and how many have	0.3931	0.0165
+0.3400	0.5094	1.000	a proper termination of the operation.	0.2801	0.0133
+0.3503	0.0921	1.000	been provided by the exchange.	0.2274	0.0146
+0.3517	0.5282	1.000	The following rules summarize the relation be-	0.3703	0.0161
+0.3663	0.1090	1.000	For wRITE, the data word address in the control	0.3759	0.0116
+0.3691	0.5094	1.000	tween the data word specified by the control word and	0.3910	0.0161
+0.3794	0.0921	1.000	word is always one word ahead of the location from	0.3910	0.0146
+0.3830	0.5092	1.000	that last handled by the unit when an operation is	0.3895	0.0203
+0.3935	0.0919	1.000	which the last data word was fetched. Normally, how-	0.3932	0.0185
+0.3997	0.5094	1.000	terminated.	0.0883	0.0145
+0.4127	0.0921	1.000	ever, the word last fetched is not the one currently	0.3910	0.0146
+0.4227	0.5507	1.000	OPERATION	0.0791	0.0137
+0.4230	0.6805	1.000	CONTENTS OF CONTROL WORD	0.1974	0.0146
+0.4273	0.0921	1.000	being processed by the unit. In order to insure con-	0.3929	0.0131
+0.4387	0.5451	1.000	TERMINATED	0.0903	0.0136
+0.4390	0.6692	1.000	DATA WORD ADDRESS	0.1391	0.0132
+0.4403	0.0919	1.000	tinuous data transmission, each exchange channel pro-	0.3932	0.0179
+0.4415	0.8401	1.000	COUNT	0.0454	0.0124
+0.4577	0.5676	1.000	READ	0.0377	0.0118
+0.4578	0.0921	1.000	vides a buffer for storing two data words for the cur-	0.3929	0.0146
+0.4578	0.8308	1.000	G,-N	0.0526	0.0160
+0.4724	0.5677	1.000	WRITE	0.0451	0.0116
+0.4724	0.7293	1.000	An+2	0.0545	0.0160
+0.4738	0.0902	1.000	rent operation. On writing, one of these buffer posi-	0.3929	0.0146
+0.4738	0.8289	1.000	G,-N	0.0545	0.0145
+0.4851	0.0919	1.000	tions contains the word currently being disassembled	0.3914	0.0201
+0.4897	0.5414	1.000	An = address of next data word to be handled by	0.3553	0.0161
+0.5042	0.0921	1.000	while the other position in the meantime is loaded	0.3910	0.0147
+0.5058	0.5977	1.000	an external unit	0.1222	0.0131
+0.5188	0.0921	1.000	with the next word to be sent to the unit. When a	0.3910	0.0133
+0.5188	0.5602	1.000	= 1 + address of last word read or written	0.3177	0.0161
+0.5329	0.0901	1.000	WRITE is terminated by the unit, each of these buffer	0.3931	0.0186
+0.5362	0.5639	1.000	=A,+N	0.0772	0.0148
+0.5509	0.0902	1.000	positions contains a complete new data word. The	0.3929	0.0131
+0.5523	0.5414	1.000	A, = initial data word address	0.2237	0.0174
+0.5654	0.0902	1.000	exchange always replenishes the buffer position last	0.3929	0.0146
+0.5712	0.5395	1.000	N = number of words transmitted between the	0.3571	0.0145
+0.5814	0.0902	1.000	used, even if only part of the word contained in it has	0.3929	0.0132
+0.5858	0.5959	1.000	exchange and the unit	0.1654	0.0161
+0.5959	0.0902	1.000	been sent to the unit. Consequently, since the control	0.3910	0.0147
+0.6032	0.5395	1.000	C, = initial count	0.1372	0.0160
+0.6118	0.0902	1.000	word always refers to the core storage location from	0.3910	0.0146
+0.6279	0.0902	1.000	which the next data word will be fetched, the data	0.3910	0.0131
+0.6279	0.5226	1.000	It a reading or writing operation is terminated by	0.3722	0.0161
+0.6414	0.0901	1.000	word address is three addresses ahead of the last word	0.3912	0.0145
+0.6424	0.5056	1.000	a RELEASE, these rules do not hold to the extent that	0.3910	0.0161
+0.6570	0.5075	1.000	the last word read by the unit may not be transferred	0.3872	0.0176
+0.6584	0.0883	1.000	handled by the unit. The program cannot determine	0.3929	0.0131
+0.6730	0.0883	1.000	if the whole word or only a few bytes of the last word	0.3929	0.0146
+0.6744	0.5075	1.000	to core storage and, on writing, both of the buffer	0.3872	0.0132
+0.6890	0.0902	1.000	have been sent to the unit.	0.1898	0.0102
+0.6890	0.5075	1.000	registers may not be filled up.	0.2143	0.0147
+0.7048	0.5244	1.000	When an inaccessible core storage location for data	0.3703	0.0132
+0.7048	0.1053	1.000	When a COPY CONTROL WORD is issued to a channel	0.3759	0.0103
+0.7194	0.0883	1.000	executing a WRITE, one of the buffer positions normally	0.3929	0.0146
+0.7194	0.5094	1.000	transmission is specified, the error is discovered at the	0.3853	0.0146
+0.7338	0.0882	1.000	is in the process of being disassembled. Consequently,	0.3931	0.0165
+0.7355	0.5075	1.000	time the exchange attempts to transmit data to or	0.3872	0.0131
+0.7399	0.5109	0.300	ori begonc theimne speciaes natiah ed o	0.3804	0.1120
+0.7500	0.0883	1.000	the data word address in this case is two words ahead	0.3910	0.0116
+0.7515	0.5075	1.000	from that location. This takes place after the control	0.3872	0.0131
+0.7645	0.0883	1.000	of the word currently being handled by the unit. The	0.3929	0.0146
+0.7660	0.5075	1.000	word has been modified, and hence the data word	0.3853	0.0131
+0.7805	0.5075	1.000	address at this time specifies a location that is one	0.3853	0.0146
+0.7805	0.0883	1.000	count on writing indicates the number of words trans-	0.3910	0.0131
+0.7964	0.0865	1.000	ferred between the exchange and the unit. It includes	0.3947	0.0133
+0.7964	0.5075	1.000	word beyond the invalid location. The status of the	0.3853	0.0133
+0.8109	0.0865	1.000	also any words whose handling has been interrupted	0.3929	0.0147
+0.8112	0.5074	1.000	unit and the contents of the control word for the lat-	0.3856	0.0145
+0.8270	0.0865	1.000	and which have not been completely recorded at the	0.3929	0.0131
+0.8285	0.5056	1.000	ter case are described in more detail in "Exchange	0.3872	0.0145
+0.8430	0.0883	1.000	unit. Except for the initial loading of the two buffer	0.3910	0.0131
+0.8430	0.5056	1.000	Program Check."	0.1278	0.0131
+0.8576	0.0865	1.000	positions during the initiation of an operation, the	0.3929	0.0146
+0.8590	0.5207	1.000	When chaining is specified, the exchange obtains	0.3722	0.0146
+0.8690	0.5054	1.000	the new control word immediately before referring	0.3859	0.0212
+0.8735	0.0865	1.000	count field is stepped down whenever the data word	0.3910	0.0131
+0.8854	0.5054	1.000	to the first core storage location specified by the new	0.3858	0.0196
+0.8881	0.0865	1.000	address is stepped up. Thus, unless the initial count	0.3929	0.0131
+0.9258	0.1372	1.000	IBM 7030	0.0639	0.0088
+0.9259	0.0865	1.000	124	0.0244	0.0087

@@ -1,0 +1,95 @@
+0.0639	0.5282	1.000	32. Exponent Underflow: Exponent ≤-21°(XPU).	0.3778	0.0161
+0.0639	0.1128	1.000	c. The decimal operand of a single-length decimal-	0.3778	0.0145
+0.0785	0.1391	1.000	to-binary conversion instruction is over 64 bits	0.3515	0.0131
+0.0785	0.5150	1.000	The result of a floating point operation had a nega-	0.3910	0.0161
+0.0945	0.5150	1.000	tive exponent with an exponent flag of 1, generated	0.3910	0.0146
+0.0945	0.1372	1.000	long when translated to byte size four.	0.2782	0.0131
+0.1105	0.5150	1.000	from operands with exponent flags of 0.	0.2876	0.0147
+0.1118	0.1147	1.000	d. A binary multiplier, multiplicand, divisor, or	0.3759	0.0146
+0.1279	0.1372	1.000	result of a decimal-to-binary LOAD TRANSIT CON-	0.3534	0.0131
+0.1294	0.5301	1.000	33. Zero Multiply (ZM). The final result of a	0.3741	0.0174
+0.1439	0.1372	1.000	VERTED or CONVERT exceeds 48 bits.	0.2462	0.0102
+0.1467	0.5132	1.000	normalized floating point operation using multiplica-	0.3929	0.0161
+0.1599	0.1128	1.000	e. A binary dividend or result of a CONVERT DOU-	0.3778	0.0131
+0.1612	0.5113	1.000	tion is an order of magnitude zero with exponent not	0.3947	0.0161
+0.1756	0.5108	1.000	in the XFN range.	0.1307	0.0170
+0.1758	0.1372	1.000	BLE exceeds 96 bits.	0.1391	0.0103
+0.1933	0.1128	1.000	f. In unnormalized floating-point division, the	0.3759	0.0146
+0.1962	0.5282	1.000	34. Remainder Underflow (RU). The remainder	0.3778	0.0160
+0.2093	0.1372	1.000	magnitude of the dividend fraction is larger	0.3515	0.0131
+0.2106	0.5113	1.000	developed during a floating point division had a	0.3947	0.0161
+0.2238	0.1372	1.000	than or equal to the magnitude of the divisor	0.3515	0.0131
+0.2267	0.5113	1.000	negative exponent with an exponent flag of 1, gen-	0.3947	0.0161
+0.2396	0.1372	1.000	fraction.	0.0622	0.0120
+0.2412	0.5113	1.000	erated from a dividend with exponent flag of 0.	0.3609	0.0161
+0.2602	0.1109	1.000	24. Zero Divisor (ZD). The divisor or divisor frac-	0.3759	0.0147
+0.2747	0.0959	1.000	tion of the division just attempted consisted only of	0.3929	0.0147
+0.2906	0.0959	1.000	zero bits. 'The division was not attempted.	0.3064	0.0132
+0.2918	0.5130	1.000	Flagging	0.0661	0.0168
+0.3149	0.5261	1.000	35. Data Flag I (TF). The data flag bit T (im-	0.3782	0.0208
+0.3285	0.0959	1.000	Result Exceptions, Floating Point Only	0.2726	0.0131
+0.3314	0.5113	1.000	mediately to the right of the sign bit) of the operand	0.3929	0.0174
+0.3473	0.5132	1.000	of the instruction just executed was 1. The indicator	0.3929	0.0146
+0.3532	0.1109	1.000	25. Imaginary Root (IR). A sToRE rOoT operation	0.3759	0.0147
+0.3633	0.5132	1.000	is turned off by any arithmetic instruction whose	0.3929	0.0146
+0.3691	0.0959	1.000	was performed on the magnitude of a negative	0.3910	0.0146
+0.3794	0.5132	1.000	operand from storage is not so flagged.	0.2782	0.0131
+0.3847	0.0938	1.000	operand.	0.0642	0.0140
+0.3967	0.5263	1.000	36. Data Flag U (UF). The second of the possible	0.3778	0.0176
+0.4070	0.1109	1.000	26. Lost Significance (LS). In a floating point add-	0.3759	0.0145
+0.4112	0.5132	1.000	data flag bits of the operand just used was 1. The	0.3910	0.0147
+0.4230	0.0940	1.000	type operation in which at least one operand was	0.3929	0.0146
+0.4273	0.5113	1.000	indicator is turned off by any arithmetic instruction	0.3929	0.0146
+0.4345	0.0938	1.000	non-zero, both the final result placed in the accumu-	0.3933	0.0201
+0.4433	0.5132	1.000	whose operand from storage is not so flagged.	0.3252	0.0146
+0.4535	0.0940	1.000	lator and the overflow bit were zero. This indicator	0.3910	0.0117
+0.4606	0.5263	1.000	37. Data Flag V (VF). The third and rightmost	0.3778	0.0161
+0.4680	0.0939	1.000	is not turned on when both operands have zero frac-	0.3911	0.0153
+0.4767	0.5113	1.000	of the possible data flag bits of the operand just used	0.3910	0.0161
+0.4839	0.0940	1.000	tions prior to the pre-addition shifting, when the re-	0.3910	0.0132
+0.4912	0.5113	1.000	was 1. The indicator is turned off by any arithmetic	0.3929	0.0146
+0.4985	0.0921	1.000	sult is a forced zero produced in add to magnitude	0.3929	0.0146
+0.5073	0.5113	1.000	instruction whose operand from storage is not so	0.3929	0.0131
+0.5145	0.0940	1.000	type operations, or when the result has a propagated	0.3910	0.0146
+0.5218	0.5094	1.000	flagged.	0.0583	0.0145
+0.5303	0.0921	1.000	exponent flag.	0.1053	0.0135
+0.5406	0.5263	1.000	38. Index Flag (XF). The index flag bit (bit 25)	0.3759	0.0161
+0.5523	0.1090	1.000	27. Preparatory Shift Greater than 48 (PSH). A	0.3759	0.0146
+0.5552	0.5094	1.000	of the index word just modified was 1, before any	0.3929	0.0161
+0.5666	0.0920	1.000	floating point add-type operation, using operands	0.3931	0.0167
+0.5712	0.5094	1.000	refill operation was performed. The indicator is	0.3929	0.0131
+0.5827	0.0921	1.000	with exponent flags of zero, required a preparatory	0.3910	0.0161
+0.5858	0.5113	1.000	turned off by any index arithmetic or refill operation	0.3910	0.0145
+0.5979	0.5111	1.000	whose modificand does not have its flag on.	0.3087	0.0189
+0.5988	0.0921	1.000	shift of the operands relative to one	0.2801	0.0131
+0.6003	0.3703	1.000	another by an	0.1128	0.0131
+0.6148	0.0921	1.000	amount greater than 48 places.	0.2180	0.0131
+0.6366	0.1034	1.000	28. Exponent Flag Positive: Exponent ≥21° (XPFP).	0.3797	0.0174
+0.6424	0.5075	1.000	Transit Operations	0.1391	0.0146
+0.6526	0.0902	1.000	The result of a floating point operation had a posi-	0.3947	0.0160
+0.6672	0.0902	1.000	tive exponent with an exponent flag of 1 propagated	0.3929	0.0174
+0.6672	0.5207	1.000	39. Binary Transit (BTR). A binary LOAD TRANSIT	0.3816	0.0160
+0.6824	0.0920	1.000	from an operand with an exponent flag of 1.	0.3386	0.0156
+0.6830	0.5075	1.000	AND SET operation was executed.	0.2331	0.0161
+0.6976	0.5169	1.000	40. Decimal Iransit (DTR). A decimal MULTIPLY,	0.3872	0.0191
+0.7064	0.1053	1.000	29. Exponent Overflow: Exponent ≥ 210 (XPO).	0.3778	0.0161
+0.7151	0.5056	1.000	DIVIDE, MULTIPLY AND ADD, OF LOAD TRANSIT AND SET	0.3966	0.0161
+0.7224	0.0921	1.000	The result of a floating point operation had a positive	0.3910	0.0146
+0.7297	0.5056	1.000	operation was executed.	0.1823	0.0174
+0.7369	0.0883	1.000	exponent with an exponent flag of 1, generated from	0.3947	0.0161
+0.7529	0.0902	1.000	operands with exponent flags of 0.	0.2500	0.0132
+0.7689	0.5056	1.000	Program	0.0677	0.0174
+0.7761	0.1034	1.000	30. Exponent Range High: 210 > Exponent ≥2°	0.3797	0.0146
+0.7906	0.0883	1.000	(XPH). The result of a floating point operation had	0.3929	0.0161
+0.7936	0.5150	1.000	4147. Program Indicators Zero through Six (PGO.	0.3872	0.0189
+0.8067	0.0883	1.000	a positive exponent with an exponent flag of 0, in the	0.3947	0.0161
+0.8109	0.5075	1.000	PG6). These indicators are set by programming only.	0.3910	0.0176
+0.8212	0.0902	1.000	range 2° through 210 — 1, inclusive.	0.2481	0.0131
+0.8445	0.1053	1.000	31. Exponent Range Low: 2° > Exponent ≥ 26	0.3778	0.0131
+0.8514	0.5037	1.000	Index Result	0.0979	0.0152
+0.8590	0.0865	1.000	(XPL). The result of a floating point operation had	0.3947	0.0174
+0.8750	0.0865	1.000	a positive exponent, with an exponent flag of 0, in	0.3947	0.0160
+0.8764	0.5132	1.000	48. Index Gount Zero (XCZ). The result count	0.3872	0.0176
+0.8909	0.5056	1.000	field of the index word last modified by an index	0.3947	0.0176
+0.8909	0.0902	1.000	the range 26 through 29 - 1, inclusive.	0.2744	0.0118
+0.9273	0.0883	1.000	46 IBM 7030	0.1071	0.0088

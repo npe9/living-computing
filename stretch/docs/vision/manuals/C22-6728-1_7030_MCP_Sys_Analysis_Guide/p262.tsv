@@ -1,0 +1,59 @@
+0.0974	0.1429	1.000	Bits	0.0395	0.0174
+0.0988	0.2970	1.000	Symbol	0.0658	0.0174
+0.1045	0.6259	1.000	Content	0.0696	0.0133
+0.1279	0.1429	1.000	.29	0.0301	0.0145
+0.1307	0.3007	1.000	SUNASG	0.0640	0.0118
+0.1321	0.4906	1.000	0 - Unit is assigned	0.1617	0.0133
+0.1467	0.4904	1.000	1 - Unit is not assigned	0.1882	0.0149
+0.1773	0.4906	1.000	A unit is assigned if it is logically connected at present	0.4154	0.0146
+0.1933	0.4906	1.000	to either MCP or the currently operating problem pro-	0.4117	0.0146
+0.2068	0.4905	1.000	gram. This indicator exists in the channel status table	0.4138	0.0149
+0.2224	0.4887	1.000	of single unit channels, and in the unit status table of	0.4004	0.0131
+0.2333	0.4904	1.000	multi-unit channels. It is set by I-O assignment and	0.3952	0.0195
+0.2529	0.4887	1.000	sometimes by special assignment and the I-O change	0.3966	0.0147
+0.2674	0.4887	1.000	command. It is tested by the identifier, I-O assign-	0.3947	0.0147
+0.2820	0.4887	1.000	ment, I-O change command, special assignment and	0.3929	0.0132
+0.2979	0.4887	1.000	some actuator routines.	0.1805	0.0103
+0.3197	0.1410	1.000	. 30	0.0301	0.0146
+0.3226	0.2951	1.000	SUNSUP	0.0658	0.0118
+0.3241	0.4868	1.000	0 - Unit is not suppressed	0.2086	0.0147
+0.3400	0.4868	1.000	1 - Unit is suppressed	0.1805	0.0133
+0.3691	0.4885	1.000	This indicator exists in the channel status table of	0.3763	0.0152
+0.3835	0.4866	1.000	single unit channels, and in the unit status tables of	0.3895	0.0175
+0.3969	0.4847	1.000	multi-unit channels.	0.1549	0.0146
+0.4012	0.6429	1.000	The unit suppressed indicator	0.2312	0.0116
+0.4115	0.4847	1.000	is set to 1 when an I-O interrupt has not been taken	0.3896	0.0187
+0.4272	0.4847	1.000	for a specific unit. It is set by the receptor, and tested	0.4215	0.0188
+0.4433	0.4868	1.000	by the identifier and the I-O change command.	0.3459	0.0146
+0.4662	0.2931	1.000	SSETUP	0.0661	0.0167
+0.4666	0.1391	1.000	.31	0.0263	0.0131
+0.4724	0.4850	1.000	0 - Not Setup operation	0.1861	0.0116
+0.4855	0.4850	1.000	1 - Setup operation	0.1541	0.0131
+0.5153	0.4848	1.000	This indicator exists in the channel status tables of	0.3875	0.0154
+0.5305	0.4850	1.000	single unit channels, and in the unit status tables of	0.3891	0.0146
+0.5430	0.4847	1.000	multi-unit channels. The setup indicator is turned on	0.4046	0.0196
+0.5595	0.4829	1.000	by the actuator whenever control is to be returned to	0.3970	0.0156
+0.5755	0.4831	1.000	the actuator for further processing of an I-O request.	0.4023	0.0147
+0.5890	0.4828	1.000	It is set by the actuator, and tested by the receptor	0.3858	0.0182
+0.6025	0.4827	1.000	and I-O change.	0.1193	0.0144
+0.6279	0.1353	1.000	• 32	0.0282	0.0131
+0.6294	0.2914	1.000	SOWNER	0.0695	0.0131
+0.6325	0.4809	1.000	0 - Problem program	0.1754	0.0152
+0.6467	0.4812	1.000	1 - MCP	0.0790	0.0118
+0.6759	0.4828	1.000	This indicator exists in the channel status tables of a	0.3971	0.0175
+0.6917	0.4810	1.000	single unit channel, and in the unit status table of a	0.3858	0.0181
+0.7067	0.4791	1.000	multi-unit channel and shows what level of program is	0.4083	0.0180
+0.7210	0.4810	1.000	the current owner of a particular unit. It is set by I-O	0.4121	0.0179
+0.7366	0.4792	1.000	assignment, I-O change command, and special assign-	0.4138	0.0166
+0.7529	0.4793	1.000	ment, and is tested by the receptor, identifier, 1-0	0.3891	0.0160
+0.7653	0.4791	1.000	change command and special assignment.	0.3106	0.0160
+0.7892	0.1316	1.000	•46	0.0301	0.0145
+0.7919	0.2875	1.000	SSEOP	0.0528	0.0122
+0.7951	0.4793	1.000	0 - Allow EOP	0.1203	0.0102
+0.8096	0.4793	1.000	1 - Suppress EOP	0.1447	0.0116
+0.8377	0.4791	1.000	This indicator exists in the channel status table of a	0.3896	0.0169
+0.8525	0.4772	1.000	single unit channel, and in the unit status table of a	0.3859	0.0194
+0.8671	0.4772	1.000	multi-unit channel and shows that the I-O operation has	0.4159	0.0182
+0.8821	0.4771	1.000	been requested in the SEOP mode. If the operation is	0.4047	0.0187
+0.8967	0.4753	1.000	terminated with an EOP, no indication will be given to	0.4084	0.0200
+0.9477	0.0620	1.000	262	0.0226	0.0087

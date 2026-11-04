@@ -1,0 +1,107 @@
+0.0794	0.4961	1.000	perform the necessary sCHEx operation for any given	0.3968	0.0166
+0.0827	0.0733	1.000	"GoOD STOPs"	0.0996	0.0118
+0.0959	0.4962	1.000	IOD-defined device, at the time that the first operation	0.3966	0.0147
+0.1032	0.0733	1.000	A successful termination is characterized by the empty-	0.3966	0.0147
+0.1105	0.4962	1.000	for that device is encountered in the running of the	0.3985	0.0147
+0.1191	0.0733	1.000	ing-out of any 1-o buffers containing as yet unwritten	0.3947	0.0132
+0.1246	0.4942	1.000	object program. The i-o Table of Exits, whose address	0.4007	0.0188
+0.1336	0.0714	1.000	information, the closing-out of any files on which the	0.3966	0.0146
+0.1406	0.4942	1.000	is supplied to Mcp in this fashion, is located inside the	0.4007	0.0184
+0.1497	0.0733	1.000	last activity was a wRITE, the writing of a tape mark on	0.3947	0.0131
+0.1584	0.4962	1.000	Iocs Subroutine, with the result that the various ac-	0.3985	0.0131
+0.1642	0.0733	1.000	the system output tape, the release of all i-o equipment	0.3966	0.0145
+0.1730	0.4962	1.000	tions appropriate to the different possible returns can	0.3985	0.0161
+0.1802	0.0714	1.000	utilized by the job, and the issuance of appropriate	0.3985	0.0146
+0.1875	0.4962	1.000	be taken, independent of the main-stream of the prob-	0.3985	0.0161
+0.1948	0.0733	1.000	messages to the operator. A successful termination	0.3947	0.0146
+0.2060	0.4958	1.000	lem program.	0.1003	0.0130
+0.2106	0.0733	1.000	may be achieved by any of the following:	0.2970	0.0133
+0.2267	0.0902	1.000	1. The execution of a ReTUrN statement, in a main	0.3797	0.0118
+0.2324	0.4962	1.000	MASKABLE INTERRUPTS	0.1635	0.0103
+0.2515	0.4944	1.000	Some further initialization of the maskable interrupt	0.4004	0.0146
+0.2573	0.0902	1.000	2. An attempt to read data from the system input	0.3797	0.0131
+0.2674	0.4962	1.000	mechanism is required for FORTRAN object programs.	0.3985	0.0132
+0.2705	0.1089	1.000	tape, when all data from that source has been	0.3612	0.0162
+0.2820	0.4962	1.000	The Stretch Compiling System inserts a call to an	0.3985	0.0160
+0.2874	0.1089	1.000	exhausted.	0.0791	0.0124
+0.2943	0.4961	1.000	initializing routine as the first executable statement of	0.3989	0.0175
+0.3006	0.0901	1.000	3. Operator action following the execution of a	0.3800	0.0178
+0.3124	0.4981	1.000	each main program compiled. This results in the rou-	0.3966	0.0146
+0.3197	0.1090	1.000	PAUSE statement.	0.1241	0.0103
+0.3270	0.4962	1.000	tine being fetched from the library at load time, and	0.3985	0.0161
+0.3399	0.0733	1.000	"BAD STOPS"	0.0885	0.0121
+0.3430	0.4962	1.000	control being given to it before the true problem pro-	0.3985	0.0161
+0.3590	0.4981	1.000	gram gets under way. The routine replaces the con-	0.3985	0.0146
+0.3605	0.0752	1.000	An unsuccessful finish point is characterized by all	0.3947	0.0147
+0.3735	0.4962	1.000	tents of the Mask Register with the required FORTRAN	0.3985	0.0131
+0.3764	0.0733	1.000	the actions of the preceding section, but in addition, a	0.3947	0.0132
+0.3849	0.4979	1.000	mask, and places the address of a Program Table of	0.3990	0.0204
+0.3924	0.0733	1.000	memory dump is supplied on the system output tape.	0.3966	0.0131
+0.4039	0.4962	1.000	Exits (if required) in the refill field of sx15. This table	0.3985	0.0161
+0.4055	0.0752	1.000	An unsuccessful finish is defined by any of the fol-	0.3929	0.0146
+0.4200	0.4962	1.000	is itself contained in the initializing routine, as are	0.3985	0.0131
+0.4219	0.0704	1.000	lowing:	0.0601	0.0152
+0.4345	0.4962	1.000	any correction routines accessed through the table.	0.3985	0.0146
+0.4360	0.3741	1.000	in a subpro-	0.0959	0.0146
+0.4375	0.0902	1.000	1. The execution of a stop statement,	0.2838	0.0131
+0.4491	0.4962	1.000	It is possible for an installation to change this routine,	0.3985	0.0176
+0.4518	0.1103	1.000	gram at any level.	0.1254	0.0180
+0.4676	0.4978	1.000	if necessary.	0.0927	0.0118
+0.4679	0.0902	1.000	2. An erroneous, illegal, or undefined I-o operation.	0.3797	0.0147
+0.4811	0.5132	1.000	In summary, no interrupt indicator of any kind is	0.3816	0.0147
+0.4824	0.3102	1.000	the execution of a	0.1598	0.0133
+0.4839	0.0902	1.000	3. Operator action following	0.2199	0.0132
+0.4956	0.4981	1.000	accessible to the ForTraN-language programmer. It is,	0.3985	0.0147
+0.5000	0.1090	1.000	PAUSE statement.	0.1222	0.0103
+0.5115	0.4962	1.000	however, entirely possible to strap-code routines that	0.4004	0.0161
+0.5145	0.0902	1.000	Note that neither a (main program) RETURN, nor	0.3797	0.0131
+0.5254	0.0731	1.000	any sToP, actually causes the IBm 7030 to halt its ac-	0.3970	0.0209
+0.5276	0.4962	1.000	reference the indicators, and to cALL such routines	0.4004	0.0131
+0.5406	0.4957	1.000	in a FORTRAN-program.	0.1701	0.0181
+0.5436	0.0733	1.000	tivities; in both cases, control is returned to McP. The	0.3947	0.0146
+0.5596	0.0733	1.000	only instruction capable of suspending machine ac-	0.3966	0.0146
+0.5712	0.4962	1.000	INTERNAL REPRESENTATION	0.1955	0.0103
+0.5755	0.0714	1.000	tivity indefinitely is the pause operation.	0.2989	0.0161
+0.5900	0.4981	1.000	The IBM 7030 FORTRAN IV compiler handles three basic	0.3966	0.0147
+0.6003	0.0733	1.000	FORTRAN INTERRUPT HANDLING	0.2387	0.0103
+0.6061	0.4981	1.000	kinds of data, in two different ways. So-called real	0.3966	0.0146
+0.6191	0.0733	1.000	Like all programs operational under MCP control, a	0.3947	0.0146
+0.6206	0.4962	1.000	numbers and integers are operated on by the opera-	0.3985	0.0146
+0.6315	0.0731	1.000	FORTRAN-compiled code runs with the 7030 "enabled."	0.3970	0.0179
+0.6352	0.4981	1.000	tions of addition, subtraction, multiplication and divi-	0.3985	0.0146
+0.6482	0.5000	1.000	sion, while "logical quantities" may be manipulated by	0.3910	0.0191
+0.6497	0.0714	1.000	It will be recalled that prior to execution of a problem	0.3966	0.0161
+0.6627	0.5000	1.000	the operations of "and-ing." "or-ing," and "negation?	0.3910	0.0176
+0.6646	0.0731	1.000	program, McP has placed the required (MCP) interrupt	0.3969	0.0162
+0.6782	0.0712	1.000	table address in cell 2, and loaded the standard MCP	0.3970	0.0187
+0.6917	0.4943	1.000	REAL NUMBERS	0.1166	0.0178
+0.6933	0.0733	1.000	mask (all maskable interrupts except IF off) into cell	0.3966	0.0174
+0.7090	0.0713	1.000	12. Furthermore, the refill field of sx15 has been set	0.3987	0.0184
+0.7121	0.4962	1.000	A real number is represented internally by a nor-	0.4004	0.0191
+0.7234	0.0712	1.000	to zero, thus indicating the absence of a Program	0.3972	0.0228
+0.7282	0.4962	1.000	malized floating-point binary number, that is, a full-	0.4004	0.0161
+0.7394	0.0731	1.000	Table of Exits. With respect to i-o interrupts, MCP	0.3970	0.0195
+0.7427	0.4944	1.000	word containing a 12-bit signed exponent, a 48-bit	0.4023	0.0176
+0.7542	0.0731	1.000	expects the address of an I-o Table of Exits to be	0.3970	0.0189
+0.7587	0.4962	1.000	fraction, a fraction sign, and 3 (unused) flag bits. The	0.4004	0.0161
+0.7703	0.0731	1.000	punched on each IoD card loaded, or, at worst, set up	0.3970	0.0208
+0.7733	0.4962	1.000	conventional floating point instructions of the IBM	0.4023	0.0204
+0.7860	0.0731	1.000	by a schex pseudo-op before any activity on an 1-0	0.3969	0.0189
+0.7892	0.4962	1.000	7030 are used to manipulate such data.	0.2932	0.0174
+0.8050	0.0751	1.000	device.	0.0528	0.0122
+0.8285	0.0733	1.000	I-O INTERRUPTS	0.1128	0.0103
+0.8400	0.8177	1.000	Fraction Sign	0.0733	0.0147
+0.8415	0.6128	1.000	Position of Binary Point	0.1259	0.0118
+0.8430	0.5320	1.000	Exponent Sign	0.0827	0.0116
+0.8458	0.0732	1.000	The implication of these facts, for FORTRAN programs,	0.3969	0.0185
+0.8633	0.0714	1.000	is as follows: All object program input-output is han-	0.3985	0.0131
+0.8735	0.5338	1.000	Exponent	0.0545	0.0189
+0.8750	0.6936	1.000	Fraction	0.0451	0.0131
+0.8792	0.0733	1.000	dled through the Input-Output Control Subroutine	0.3967	0.0130
+0.8923	0.0731	1.000	(actually a whole family of library subroutines linked	0.3951	0.0162
+0.8967	0.5770	1.000	101112	0.0508	0.0118
+0.8968	0.8252	1.000	5960	0.0320	0.0116
+0.8968	0.8759	1.000	63	0.0188	0.0102
+0.9055	0.0713	1.000	in a fairly complex fashion). This subroutine will	0.4007	0.0204
+0.9070	0.5921	1.000	A FORTRAN real number	0.1316	0.0161
+0.9317	0.8759	1.000	23	0.0226	0.0145

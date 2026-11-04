@@ -1,0 +1,95 @@
+0.0900	0.5357	1.000	Each transition routine has two basic functions:	0.3665	0.0176
+0.0915	0.1071	1.000	A boakkeeping system involving control tables and	0.3797	0.0161
+0.1076	0.5244	1.000	to put the requested mode in effect, and to insure that	0.4098	0.0161
+0.1090	0.0940	1.000	queues is used by the functional programs to keep	0.3741	0.0131
+0.1206	0.0940	1.000	track of information and control flow through the	0.3665	0.0146
+0.1221	0.5263	1.000	operation in the previous mode is terminated in an	0.3816	0.0174
+0.1352	0.0902	1.000	input program. Each of the seven functional pro-	0.3759	0.0176
+0.1366	0.5263	1.000	orderly manner with no information lost. This will	0.3910	0.0174
+0.1519	0.0938	1.000	grams has an associated control table and queue.	0.3707	0.0175
+0.1539	0.5338	1.000	enerally require that the transition routines intluenc	0.3966	0.0161
+0.1672	0.5338	1.000	he operation of the functional programs and the tap	0.3835	0.0132
+0.1700	0.0940	1.000	All control tables have the same format and usage,	0.3816	0.0118
+0.1817	0.5263	1.000	switch routines.	0.1241	0.0147
+0.1830	0.0921	1.000	unless a type of information does not apply to the	0.3703	0.0133
+0.1976	0.0921	1.000	functional program. The seven queues are of vari-	0.3891	0.0132
+0.2093	0.5282	1.000	The I-O Fixups	0.1165	0.0131
+0.2121	0.0940	1.000	ous lengths, but all use half word entries of similar	0.3891	0.0146
+0.2281	0.0919	1.000	information.	0.0964	0.0119
+0.2384	0.5282	1.000	The input program uses three I-O units: the card	0.3741	0.0147
+0.2515	0.0940	1.000	The Tape Switch Routines	0.1917	0.0116
+0.2542	0.5263	1.000	reader, the phase 1 tape, and the phase 4 tape. The	0.3985	0.0133
+0.2688	0.5244	1.000	fixup routines must attend to error recovery, and	0.3778	0.0133
+0.2820	0.0940	1.000	The input program has two tape switch routines:	0.3609	0.0117
+0.2833	0.5263	1.000	must notify the appropriate functional program of the	0.4023	0.0118
+0.2951	0.0902	1.000	VTSA for the phase 1 tape, and VTSB for the phase	0.3872	0.0131
+0.2964	0.5263	1.000	end of an I-O operation, either by EOP or EE.	0.3515	0.0147
+0.3096	0.0921	1.000	4 tape. VTSA rewinds the phase 1 tape and notifies	0.3872	0.0131
+0.3227	0.0902	1.000	the phase 4 programs of the availability of a new	0.3703	0.0174
+0.3270	0.5263	1.000	Program Operation	0.1485	0.0146
+0.3372	0.0883	1.000	read tape. VTSB rewinds the phase 4 (read) tape,	0.3835	0.0204
+0.3517	0.0883	1.000	and either (online mode) makes it available as a new	0.3985	0.0174
+0.3576	0.5301	1.000	The input program receives control by two means:	0.3778	0.0131
+0.3677	0.0883	1.000	write tape or (offline mode) makes the drive available	0.4117	0.0174
+0.3721	0.5282	1.000	a pseudo-op request, and an I-O interrupt. Control	0.3910	0.0131
+0.3836	0.0883	1.000	for mounting a new scan tape. Interlocks are provided	0.4154	0.0161
+0.3866	0.5282	1.000	is given to the functional program most directly	0.3609	0.0131
+0.3967	0.0883	1.000	between the tape switch routines and the functional	0.3853	0.0176
+0.4012	0.5282	1.000	affected by that entry (e.g., the buffer scan program	0.4004	0.0131
+0.4120	0.0881	1.000	programs.	0.0869	0.0189
+0.4172	0.5282	1.000	is entered when SCRI or any scan operation is	0.3496	0.0102
+0.4317	0.5282	1.000	requested). If that program does anything to change	0.3947	0.0132
+0.4345	0.0921	1.000	The Transition Routines	0.1842	0.0131
+0.4462	0.5282	1.000	the buffer situation, then control must be given to	0.3759	0.0132
+0.4606	0.5301	1.000	other programs affected by that change. When it is	0.3853	0.0118
+0.4621	0.0921	1.000	There are six transition routines in the input pro-	0.3778	0.0161
+0.4752	0.5301	1.000	established that nothing further can be done by any	0.3778	0.0118
+0.4782	0.0902	1.000	gram; one for transition from each mode to each of	0.3872	0.0131
+0.4897	0.5282	1.000	programs, the input program gives up control with	0.3835	0.0133
+0.4912	0.0902	1.000	the other two. The choices, along with the names of	0.4023	0.0161
+0.5052	0.0901	1.000	the routines, are summarized in Figure 66.	0.3349	0.0201
+0.5188	0.5470	1.000	Note that the same programs will be used whether	0.3759	0.0133
+0.5348	0.5301	1.000	the entry is a pseudo-op request or an I-O interrupt.	0.3947	0.0117
+0.5446	0.5299	1.000	Thus, it is necessary to run in the SIO mode so that	0.3913	0.0184
+0.5639	0.5301	1.000	input I-O interrupts will not be released.	0.3083	0.0116
+0.5843	0.1485	1.000	Mode	0.0395	0.0145
+0.5856	0.3646	1.000	Transition	0.0640	0.0133
+0.5930	0.5301	1.000	The Functional Program Operation	0.2632	0.0131
+0.6115	0.0957	1.000	Requested	0.0642	0.0140
+0.6117	0.2743	1.000	Name	0.0379	0.0136
+0.6119	0.4154	1.000	Symbol	0.0470	0.0131
+0.6129	0.1934	1.000	Present	0.0455	0.0126
+0.6221	0.5301	1.000	Each functional program has a control table and a	0.3722	0.0131
+0.6366	0.5301	1.000	queue. The control words for the queue are stored	0.3835	0.0131
+0.6366	0.0959	1.000	Online	0.0451	0.0145
+0.6381	0.1936	1.000	Bypass	0.0414	0.0131
+0.6381	0.2744	1.000	Online from Bypass	0.1147	0.0116
+0.6381	0.4154	1.000	VONLIB	0.0489	0.0116
+0.6479	0.2744	1.000	Offline from Bypass	0.1186	0.0152
+0.6483	0.1936	1.000	Bypass	0.0432	0.0160
+0.6483	0.0902	1.000	offline	0.0526	0.0160
+0.6493	0.5262	1.000	in the control table. The control table is referenced	0.3988	0.0163
+0.6497	0.4154	1.000	VOFFLB	0.0489	0.0131
+0.6609	0.5318	1.000	by use of the symbolic index register, VU. In general	0.4082	0.0201
+0.6613	0.1955	1.000	Online	0.0433	0.0146
+0.6625	0.4153	1.000	VBYPAN	0.0547	0.0137
+0.6628	0.0921	1.000	Bypass	0.0451	0.0145
+0.6634	0.2705	1.000	Bypass from Online	0.1187	0.0133
+0.6744	0.2726	1.000	Offline from Online	0.1203	0.0132
+0.6744	0.1955	1.000	Online	0.0432	0.0145
+0.6744	0.4154	1.000	VOFFLN	0.0545	0.0145
+0.6744	0.0940	1.000	Offline	0.0489	0.0145
+0.6773	0.5320	1.000	a functional program is entered when it is necessars	0.3891	0.0161
+0.6860	0.4154	1.000	VBYPAF	0.0545	0.0160
+0.6875	0.1955	1.000	Offline	0.0451	0.0131
+0.6875	0.2726	1.000	Bypass from Offline	0.1165	0.0131
+0.6875	0.0940	1.000	Bypass	0.0451	0.0160
+0.6903	0.5282	1.000	to make entries in its queue, and, once entered, it	0.3835	0.0191
+0.6977	0.4154	1.000	VONLIN	0.0545	0.0174
+0.7006	0.0921	1.000	Online	0.0489	0.0160
+0.7020	0.1955	1.000	Offline	0.0432	0.0116
+0.7020	0.2744	1.000	Online from Offline	0.1165	0.0116
+0.7048	0.5282	1.000	performs as much processing as possible before	0.3665	0.0176
+0.7282	0.0940	1.000	Figure 66. The Six Transition Routines	0.2368	0.0131
+0.9462	0.7613	1.000	System Input-Output	0.1203	0.0102
+0.9477	0.9060	1.000	125	0.0226	0.0073

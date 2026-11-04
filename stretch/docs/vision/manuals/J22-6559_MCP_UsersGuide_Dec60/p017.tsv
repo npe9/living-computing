@@ -1,0 +1,74 @@
+0.1045	0.1203	1.000	If the programmer is supplying a Program Table of Exits, he must tell MCP where the	0.6936	0.0146
+0.1206	0.1203	1.000	table is located. This is accomplished by placing the location of the first word of the	0.6805	0.0131
+0.1349	0.1221	1.000	PTE in the refill field of index register 15, which is reserved for this purpose. (Obvi-	0.6881	0.0163
+0.1504	0.1202	1.000	ously, then, the PTE must begin at a full-word address since the refill field of $15 is	0.6825	0.0173
+0.1664	0.1202	1.000	18 bits in length.) Whenever the program reaches a phase where the mask that is in	0.6731	0.0162
+0.1817	0.1203	1.000	effect permits program interrupts to be taken, the initial location of the PTE must be	0.6823	0.0147
+0.1957	0.1202	1.000	in $15. Normally, then, one of the first instructions of a problem program would load	0.6920	0.0195
+0.2130	0.1202	1.000	this location, or zero, into the refill field of $15. If this field is zero, MCP assumes	0.6863	0.0177
+0.2297	0.1203	1.000	no PTE is provided. If the programmer wishes the use of special correction routines	0.6861	0.0131
+0.2442	0.1203	1.000	for an interrupt that occurs while a special correction routine is in progress, it is his	0.6880	0.0146
+0.2586	0.1202	1.000	responsibility to load the initial location of the new PTE (if one is required) in $15 at	0.6769	0.0175
+0.2791	0.1203	1.000	the appropriate time.	0.1711	0.0116
+0.2979	0.1203	1.000	When a program interrupt is taken, MCP saves the instruction counter, the indicator	0.6786	0.0146
+0.3132	0.1202	1.000	register and the mask register in the first three words of the PTE, which must be re-	0.6881	0.0155
+0.3255	0.1184	1.000	served by the programmer for this purpose. At the conclusion of a special correction	0.6898	0.0191
+0.3400	0.1184	1.000	routine the programmer may elect to restore these three registers himself or have MCP	0.7105	0.0206
+0.3576	0.1184	1.000	restore the registers. To specify the latter choice, the programmer must provide a	0.6786	0.0174
+0.4009	0.2837	1.000	В, $МСP	0.0791	0.0166
+0.4172	0.2838	1.000	, ŞRAM	0.0695	0.0174
+0.4328	0.2837	1.000	(Return )	0.0791	0.0138
+0.4506	0.1184	1.000	When the $RAM pseudo-operation is encountered, MCP restores the instruction counter,	0.7105	0.0189
+0.4666	0.1184	1.000	the indicator register and the mask register, and returns control to the problem program.	0.7237	0.0174
+0.5115	0.2538	1.000	APPENDIX: INPUT-OUTPUT CALLING SEQUENCES	0.4286	0.0146
+0.5360	0.6859	1.000	B, SMCP	0.0623	0.0181
+0.5392	0.5000	1.000	COPY CONTROL WORD	0.1523	0.0145
+0.5403	0.1483	1.000	READ	0.0417	0.0138
+0.5421	0.2350	1.000	B, $MCP	0.0602	0.0131
+0.5529	0.2331	1.000	, $RD	0.0484	0.0177
+0.5536	0.6879	1.000	,$CCW	0.0546	0.0134
+0.5663	0.6878	1.000	,IODNAME(I)	0.0924	0.0143
+0.5683	0.2350	1.000	,IODNAME(I)	0.0940	0.0160
+0.5770	0.6861	1.000	,CTLWDII')	0.0865	0.0203
+0.5827	0.2368	1.000	, CTLWD(I')	0.0846	0.0118
+0.5945	0.6861	1.000	(Return )	0.0677	0.0131
+0.5973	0.2368	1.000	(Return )	0.0602	0.0088
+0.6185	0.6858	1.000	B, $MCP	0.0648	0.0172
+0.6192	0.4981	1.000	RELEASE	0.0620	0.0160
+0.6234	0.2349	1.000	B, $MCP	0.0621	0.0133
+0.6235	0.1504	1.000	WRITE	0.0451	0.0116
+0.6337	0.6861	1.000	,SREL	0.0526	0.0145
+0.6366	0.2350	0.300	, sW	0.0395	0.0174
+0.6497	0.2350	1.000	,IODNAME(I)	0.0940	0.0160
+0.6656	0.2349	1.000	, CTIWD(I')	0.0827	0.0132
+0.6772	0.2365	1.000	( Return)	0.0609	0.0105
+0.6890	0.6861	1.000	B, $MCP	0.0620	0.0147
+0.6903	0.4981	1.000	RESERVED LIGHT OFF	0.1447	0.0133
+0.7020	0.6861	1.000	, $RLF	0.0508	0.0160
+0.7063	0.1503	1.000	LOCATE	0.0546	0.0090
+0.7064	0.2368	1.000	В, $MCP	0.0583	0.0103
+0.7132	0.6859	1.000	, IODNAME(I)	0.0962	0.0198
+0.7194	0.2368	1.000	, $LOC	0.0489	0.0118
+0.7209	0.1541	1.000	(for	0.0263	0.0087
+0.7308	0.6860	1.000	(Return )	0.0641	0.0136
+0.7320	0.2367	1.000	, IODNAME(I)	0.0905	0.0142
+0.7340	0.1617	1.000	Disk)	0.0320	0.0087
+0.7470	0.2368	1.000	, ARC(I')	0.0639	0.0133
+0.7570	0.6860	1.000	B, $MCP	0.0604	0.0151
+0.7573	0.4981	1.000	RESERVED LIGHT ON	0.1391	0.0131
+0.7599	0.2368	1.000	(Return )	0.0622	0.0107
+0.7703	0.6861	1.000	, $RLN	0.0526	0.0176
+0.7828	0.6878	1.000	,IODNAME(I)	0.0906	0.0159
+0.7863	0.2368	1.000	Here ARC(I') is an indexed decimal	0.2218	0.0116
+0.7964	0.6880	1.000	( Return)	0.0602	0.0147
+0.8023	0.2368	1.000	integer which is relative to the	0.1880	0.0087
+0.8109	0.2350	1.000	number of ares requested by the IOD.	0.2312	0.0147
+0.8227	0.6861	1.000	B, SMCP	0.0620	0.0174
+0.8255	0.4981	1.000	CHECK LIGHT ON	0.1165	0.0133
+0.8270	0.2350	1.000	That is, ARC(I') is less than or equal	0.2312	0.0131
+0.8372	0.6861	1.000	, $KLN	0.0545	0.0174
+0.8400	0.2368	1.000	to the NUMBER field of the disk IOD	0.2256	0.0118
+0.8528	0.6935	1.000	IODNAME	0.0773	0.0138
+0.8545	0.2350	1.000	for IODNAME(I).	0.1053	0.0118
+0.8648	0.6936	1.000	Return	0.0470	0.0131
+0.9390	0.9098	1.000	17	0.0263	0.0189

@@ -1,0 +1,98 @@
+0.0967	0.0695	1.000	that point, which reduces to the case of an EXE inter-	0.4062	0.0156
+0.0988	0.5207	1.000	Channel șignal (CS) interrupts from the console are	0.3891	0.0176
+0.1118	0.5038	1.000	given by the receptor to the conceptor because the owner	0.4286	0.0161
+0.1133	0.0695	1.000	rupt by itself.	0.1053	0.0117
+0.1264	0.4925	1.000	of a CS from the console cannot be identified until a	0.4004	0.0132
+0.1409	0.5038	1.000	read is performed. The conceptor is used to perform	0.4079	0.0146
+0.1424	0.0714	1.000	TS Interrupt, an I-O Indicator On, $EXE On	0.3289	0.0131
+0.1555	0.5019	1.000	this identification.	0.1410	0.0146
+0.1715	0.0695	1.000	If a TS interrupt occurs and an I-O indicator and $EXE	0.4117	0.0131
+0.1860	0.0695	1.000	come on simultaneously, the TS interrupt is processed	0.4137	0.0154
+0.2020	0.0695	1.000	in the normal manner.	0.1692	0.0116
+0.2020	0.2519	1.000	If a PTOE is to be entered,	0.2049	0.0131
+0.2166	0.0695	1.000	$EXE is turned off (on in the PTOE), and the situation	0.4079	0.0131
+0.2179	0.5018	1.000	The Receptor	0.1053	0.0162
+0.2324	0.0695	1.000	is reduced to a simultaneous TS and EXE with a sub-	0.4004	0.0103
+0.2448	0.0714	1.000	sequent I-O. If the TS is to be stacked, the I-O occurs	0.4117	0.0134
+0.2470	0.5019	1.000	The receptor is entered disabled from the parallel	0.3816	0.0147
+0.2602	0.0714	1.000	on attempt to return to the point of interrupt, and the	0.3985	0.0132
+0.2602	0.5019	1.000	interrupt table with a bit set in SPSIOI corresponding	0.4004	0.0160
+0.2761	0.0714	1.000	situation is that of simultaneous I-0 and EXE.	0.3459	0.0118
+0.2761	0.5019	1.000	to the interrupt. The functions of the receptor are:	0.3891	0.0146
+0.2921	0.5188	1.000	1. To identify the interrupt and its owner and	0.3553	0.0117
+0.3052	0.0695	1.000	Return After Maskable Interrupt	0.2462	0.0146
+0.3067	0.5019	1.000	decide whether to stack the interrupt or pass it to the	0.4023	0.0116
+0.3212	0.5019	1.000	proper program.	0.1297	0.0131
+0.3342	0.0714	1.000	The return after maskable interrupt routine is entered	0.4079	0.0118
+0.3358	0.5188	1.000	2. To stack all channel signal interrupts occurring	0.3891	0.0145
+0.3488	0.0695	1.000	from the MCP PTOE or when the pseudo-op $RAM is	0.3985	0.0131
+0.3503	0.5038	1.000	simultaneously with other interrupts. CS interrupts	0.3929	0.0116
+0.3643	0.5037	1.000	will be treated at a later time as separate interrupts.	0.4024	0.0137
+0.3648	0.0714	1.000	executed. Its function is to return to the point at which	0.4135	0.0116
+0.3794	0.0714	1.000	a maskable interrupt occurred, after first releasing	0.3929	0.0116
+0.3808	0.5207	1.000	3. To pass console signals to the conceptor.	0.3383	0.0116
+0.3939	0.0714	1.000	a stacked TS or EXE interrupt. It operates entirely	0.3929	0.0116
+0.3953	0.5207	1.000	4. To update tape file and disk arc records in the	0.3759	0.0116
+0.4079	0.0713	1.000	disabled.	0.0698	0.0126
+0.4099	0.5038	1.000	control tables.	0.1109	0.0116
+0.4230	0.0865	1.000	When $RAM is executed, the routine is entered from	0.3966	0.0131
+0.4244	0.5207	1.000	An I-O interrupt may be owned by PP, an MCP	0.3534	0.0116
+0.4390	0.0714	1.000	the identifier at WRAMPP (Figure 5). The current	0.3853	0.0117
+0.4403	0.5056	1.000	major package, or by a set-up operation being per-	0.3853	0.0118
+0.4535	0.0714	1.000	PP PTOE specified by $15 RF is compared with the PP	0.4135	0.0117
+0.4535	0.5038	1.000	formed by a disabled MCP routine (e.g., change	0.3647	0.0132
+0.4679	0.0714	1.000	boundaries, and if it is not within PP boundaries,	0.3703	0.0118
+0.4679	0.5038	1.000	density). If it is a set-up operation, control will be	0.3891	0.0133
+0.4824	0.5038	1.000	given to the appropriate routine at the address speci-	0.4004	0.0133
+0.4824	0.0714	1.000	dispatcher error control is entered (SDISP) with error	0.4079	0.0118
+0.4970	0.5038	1.000	fied in SRETAD in the unit area table, UAT. (See	0.3759	0.0133
+0.4970	0.0714	1.000	code 17 in $14. The PP special fixup bit is reset	0.3722	0.0118
+0.5115	0.0714	1.000	(SSPFIX), and STSBIT tested for a stacked TS inter-	0.3947	0.0133
+0.5130	0.5038	1.000	Control of Symbolic I-O.)	0.1936	0.0118
+0.5261	0.0714	1.000	rupt. If a TS occurred while the special fixup was in	0.3985	0.0118
+0.5276	0.5207	1.000	Interrupts caused by non-set-up operations will be	0.3797	0.0118
+0.5406	0.0695	1.000	progress (STSBIT one), the saved IC is stored in STIC,	0.4173	0.0132
+0.5421	0.5038	1.000	stacked if the owner is in a stack I-O mode, or if the	0.4004	0.0131
+0.5567	0.0714	1.000	the used registers are restored, and the TS interrupt	0.4023	0.0116
+0.5567	0.5056	1.000	owner is PP and the system is at MCP level. Stacked	0.4041	0.0116
+0.5712	0.0714	1.000	faked by a branch to the parallel interrupt table at	0.3778	0.0116
+0.5712	0.5038	1.000	interrupts are eventually unstacked by the dispatcher	0.3985	0.0131
+0.5872	0.5056	1.000	return routine, which enters the receptor by way of	0.3872	0.0116
+0.5988	0.0883	1.000	If STSBIT is off, bit 18 of the saved indicator regi-	0.3835	0.0146
+0.6017	0.5019	1.000	'the unstack subroutine.	0.1786	0.0116
+0.6118	0.0714	1.000	ster is tested to determine if an EXE had been stacked	0.4079	0.0146
+0.6163	0.5226	1.000	The receptor is entered at KSTORE from the par-	0.3741	0.0116
+0.6294	0.0714	1.000	due to the simultaneous occurrence of TS. If so, con-	0.4079	0.0116
+0.6308	0.5038	1.000	allel interrupt table, and also at three other points	0.3816	0.0116
+0.6439	0.0714	1.000	ditions are restored and control returned enabled to	0.3910	0.0116
+0.6453	0.5019	1.000	in the following circumstances:	0.2387	0.0147
+0.6561	0.5467	1.000	Entry Point	0.0945	0.0206
+0.6568	0.6917	1.000	Circumstances	0.1166	0.0178
+0.6570	0.0714	1.000	the point at which the maskable interrupt occurred.	0.3853	0.0145
+0.6715	0.0883	1.000	When the routine is entered at WRAM by the MCP	0.3722	0.0131
+0.6845	0.6898	1.000	The return routine is	0.1654	0.0176
+0.6854	0.5468	1.000	KUNSTC	0.0700	0.0158
+0.6860	0.0714	1.000	PTOE as a result of a TS or EXE interrupt which was	0.4041	0.0131
+0.7020	0.0695	1.000	logically masked off, the MCP PTOE address is	0.3647	0.0116
+0.7035	0.6898	1.000	unstacking an interrupt.	0.1842	0.0117
+0.7150	0.6898	1.000	$RIO has been given, and	0.1955	0.0163
+0.7151	0.0714	1.000	selected, and control is given to the main line of the	0.3929	0.0131
+0.7294	0.6879	1.000	stacked interrupts must be	0.2049	0.0150
+0.7311	0.0714	1.000	routine at the point of the EXE test.	0.2688	0.0116
+0.7440	0.6898	1.000	unstacked.	0.0866	0.0178
+0.7615	0.0695	1.000	I-O INTERRUPTS	0.1372	0.0103
+0.7747	0.5470	1.000	KQIN	0.0451	0.0160
+0.7761	0.6898	1.000	Entered by the conceptor to	0.2105	0.0146
+0.7901	0.6897	1.000	fake a CS.	0.0812	0.0157
+0.7906	0.0733	1.000	The I-O interrupts correspond to the five indicators:	0.3929	0.0118
+0.8036	0.0714	1.000	$EPGK, $UK, $EE, $EOP, and $CS. When any of	0.3816	0.0147
+0.8181	0.5450	1.000	KGATE	0.0622	0.0163
+0.8182	0.6898	1.000	Entered by the actuator and	0.2124	0.0176
+0.8182	0.0714	1.000	these interrupts occur, the MCP receptor is entered.	0.4004	0.0147
+0.8296	0.0713	1.000	The receptor must identify the owner of the interrupt	0.3987	0.0179
+0.8314	0.6898	1.000	conceptor to fake an inter-	0.2068	0.0189
+0.8473	0.6898	1.000	rupt under certain circum-	0.2086	0.0176
+0.8473	0.0714	1.000	and either pass it to the proper program or stack it,	0.3929	0.0146
+0.8619	0.6898	1.000	stances.	0.0695	0.0160
+0.8633	0.0714	1.000	according to program mode.	0.2143	0.0117
+0.9520	0.0695	1.000	18	0.0150	0.0087

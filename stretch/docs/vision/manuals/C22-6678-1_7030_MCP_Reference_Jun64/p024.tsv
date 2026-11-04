@@ -1,0 +1,126 @@
+0.0654	0.5150	1.000	Error Dump Pseudo-Operation (§EDUMP): An error	0.4023	0.0146
+0.0682	0.1015	1.000	The only means of continuing the problem pro-	0.3534	0.0161
+0.0770	0.5169	1.000	dump is automatically executed by MCP whenever an	0.4004	0.0161
+0.0826	0.0787	1.000	gram after a $HOLD has taken effect, is via the	0.3652	0.0199
+0.0915	0.5169	1.000	abnormal end of job occurs. A pseudo-operation need	0.4117	0.0161
+0.1003	0.0808	1.000	operator's console in the following manner:	0.3289	0.0116
+0.1043	0.5168	1.000	not be supplied by the programmer. The error dump	0.4044	0.0210
+0.1148	0.0996	1.000	1. Set the start Key (Binary Key 48)	0.2763	0.0131
+0.1235	0.5169	1.000	will include the entire problem program if no	0.3496	0.0131
+0.1294	0.1034	1.000	2. Press the Enter Key	0.1767	0.0116
+0.1381	0.5169	1.000	$EDUMP has been issued. The format of the dump	0.3872	0.0146
+0.1409	0.1015	1.000	3. When the Enter light comes on, press the End	0.3722	0.0161
+0.1497	0.5169	1.000	is fixed as octal-hex with the panel, no mnemonics.	0.3929	0.0161
+0.1589	0.0814	1.000	Key.	0.0382	0.0132
+0.1657	0.5320	1.000	If the programmer wishes to change the error	0.3553	0.0189
+0.1797	0.5130	1.000	dump limits or format, he may issue a $EDUMP as	0.3950	0.0221
+0.1830	0.0808	1.000	Dump Pseudo-Operation ($DUMP): $DUMP provides	0.3985	0.0176
+0.1926	0.5127	1.000	a macro-instruction	0.1589	0.0232
+0.2006	0.0827	1.000	a means of performing breakpoint dumps of the	0.3590	0.0131
+0.2102	0.0804	1.000	problem program's core storage. The dump(s) may	0.3919	0.0269
+0.2106	0.5545	1.000	MEDUMP, FWA. (D)	0.1523	0.0176
+0.2267	0.5150	1.000	which is expanded to the calling sequence	0.3120	0.0161
+0.2277	0.0806	1.000	be taken in one of four formats, described indir-	0.3727	0.0210
+0.2394	0.5581	1.000	B,$MCP	0.0737	0.0197
+0.2439	0.0826	1.000	ectly by a parameter. The macro-instruction	0.3405	0.0164
+0.2558	0.5602	1.000	,$EDUMP	0.0808	0.0174
+0.2602	0.1241	1.000	MDUMP, ADDR(I)	0.1353	0.0147
+0.2689	0.5583	1.000	,FWA.(D)	0.0771	0.0189
+0.2747	0.0827	1.000	is expanded to the calling sequence	0.2632	0.0117
+0.2857	0.5562	1.000	(return)	0.0663	0.0159
+0.2892	0.1259	1.000	В, $МСР	0.0677	0.0161
+0.2994	0.5150	1.000	where:	0.0564	0.0160
+0.3038	0.1259	1.000	,$DUMP	0.0677	0.0160
+0.3109	0.5376	1.000	FWA. (D) is the first word (19 bit) address of a	0.3741	0.0191
+0.3198	0.1259	1.000	,ADDR(L)	0.0714	0.0145
+0.3285	0.5376	1.000	string of dump requests similar to that used by	0.3590	0.0161
+0.3343	0.1241	1.000	(return)	0.0639	0.0131
+0.3438	0.5394	1.000	$DUMP. The dump descriptors at FWA. (I) replace	0.3817	0.0151
+0.3487	0.0808	1.000	where:	0.0565	0.0120
+0.3574	0.1201	1.000	ADDR (1) is the (19 bit) address of the first	0.3350	0.0200
+0.3590	0.5414	1.000	those originally set up by MCP based on the pro-	0.3684	0.0131
+0.3735	0.5414	1.000	blem program limits, or any descriptors pre-	0.3515	0.0146
+0.3764	0.1053	1.000	word in a string of dump requests, as illustrated	0.3703	0.0132
+0.3881	0.1034	1.000	by the following example.	0.1955	0.0160
+0.3894	0.5395	1.000	viously set up by another $EDUMP.	0.2688	0.0118
+0.4026	0.5414	1.000	A maximum of six dump requests is permitted for	0.3778	0.0131
+0.4040	0.1278	1.000	ADDR	0.0489	0.0146
+0.4185	0.5188	1.000	$EDUMP. If there is an error in the calling sequence,	0.4154	0.0133
+0.4185	0.2162	1.000	, B. (1)	0.0508	0.0176
+0.4328	0.2161	1.000	,FORMAT (D)	0.1036	0.0195
+0.4330	0.5188	1.000	the $EDUMP will be ignored, and the previously set	0.3929	0.0118
+0.4476	0.5188	1.000	conditions will remain in effect.	0.2406	0.0118
+0.4535	0.2256	0.300	..aaao	0.0752	0.0073
+0.4606	0.5414	1.000	$EDUMP does not cause a dump to be executed; it	0.3759	0.0133
+0.4622	0.2180	1.000	,C.(D)	0.0470	0.0145
+0.4764	0.2178	1.000	,D. (D)	0.0493	0.0182
+0.4767	0.5188	1.000	only sets parameters for the dump to be executed at	0.3929	0.0132
+0.4912	0.5188	1.000	ABEOJ time. If $EDUMP is accepted, and the param-	0.4154	0.0131
+0.4927	0.2162	1.000	NOP, FORMAT (D)	0.1372	0.0161
+0.5058	0.5188	1.000	eters are set, control is returned to the return slot	0.3910	0.0131
+0.5087	0.0846	1.000	where:	0.0545	0.0131
+0.5218	0.5188	1.000	in the calling sequence.	0.1786	0.0116
+0.5218	0.1297	1.000	A. (D) is the first location to be dumped	0.2914	0.0161
+0.5331	0.1257	1.000	B. (I) is the last location to be dumped	0.2918	0.0194
+0.5348	0.5432	1.000	Figure 1 illustrates and explains a typical panel	0.3609	0.0131
+0.5479	0.1071	1.000	and FORMA T mal hex with onten folloa, pai-.	0.3271	0.0321
+0.5494	0.5207	1.000	dump as well as lines from a typical core storage	0.3741	0.0131
+0.5639	0.1955	1.000	Octal hex with mnemonics, panel	0.2538	0.0145
+0.5639	0.5207	1.000	dump in various possible formats.	0.2594	0.0131
+0.5781	0.5468	1.000	The panel dump indicates the contents of the	0.3311	0.0153
+0.5799	0.1372	1.000	0.32	0.0376	0.0160
+0.5799	0.1974	1.000	Octal hex with mnemonies, no panel	0.2726	0.0146
+0.5945	0.1372	1.000	1.	0.0207	0.0145
+0.5945	0.1974	1.000	Floating point with panel	0.1880	0.0146
+0.5945	0.5207	1.000	lower registers. A description of the registers	0.3628	0.0131
+0.6061	0.1974	1.000	Floating point without panel	0.2124	0.0176
+0.6088	0.1390	1.000	1.32	0.0378	0.0134
+0.6090	0.5226	1.000	can be found in the 7030 Data Processing System	0.3665	0.0116
+0.6206	0.1974	1.000	Index word with panel	0.1673	0.0176
+0.6235	0.1391	1.000	2.	0.0207	0.0131
+0.6235	0.5226	1.000	Reference Manual (A22-6530-2, pages 34-38). An	0.3797	0.0146
+0.6366	0.2049	1.000	ndex word without pane.	0.1748	0.0146
+0.6381	0.5207	1.000	identification of the registers from the abbreviations	0.3985	0.0116
+0.6381	0.1372	1.000	2.32	0.0395	0.0131
+0.6497	0.2068	1.000	ctal hex with panel, no mnemonics	0.2594	0.0145
+0.6512	0.5207	1.000	in the panel dump and a description of the format	0.3741	0.0146
+0.6526	0.1316	1.000	15.	0.0338	0.0131
+0.6657	0.1297	1.000	15.32 Octal hex without panel, no	0.2744	0.0161
+0.6657	0.5207	1.000	and interpretation of each follows. The registers	0.3778	0.0146
+0.6788	0.5207	1.000	are dumped in octal format unless otherwise	0.3383	0.0161
+0.6831	0.1992	1.000	mnemonics	0.0865	0.0102
+0.6932	0.5225	1.000	specified.	0.0791	0.0177
+0.6948	0.1109	1.000	More than one dump request may be specified	0.3459	0.0146
+0.7093	0.0865	1.000	with each $DUMP issued. The additional parameters	0.4004	0.0146
+0.7122	0.5451	1.000	LC	0.0338	0.0174
+0.7136	0.5959	1.000	The Location Counter where the dump	0.2951	0.0176
+0.7224	0.0883	1.000	immediately follow the first dump request param-	0.3797	0.0174
+0.7310	0.5996	1.000	was taken.	0.0847	0.0134
+0.7367	0.0881	1.000	eters (C. (D, D. (I) in preceding example), until the	0.3840	0.0222
+0.7442	0.5470	1.000	IT	0.0244	0.0145
+0.7442	0.5977	1.000	The value of the Interval Timer at the	0.2914	0.0131
+0.7515	0.0883	1.000	requests are terminated by a NOP, FORMAT (D).	0.3684	0.0174
+0.7573	0.6015	1.000	time of the dump.	0.1410	0.0176
+0.7688	0.0902	1.000	The specified dump information will be written in	0.3741	0.0146
+0.7703	0.5977	1.000	Upper Boundary Register.	0.2068	0.0191
+0.7733	0.5470	1.000	UB	0.0301	0.0145
+0.7820	0.0883	1.000	the problem program file on the system output tape	0.3872	0.0160
+0.7848	0.5977	1.000	Lower Boundary Register.	0.2105	0.0189
+0.7863	0.5489	1.000	LB	0.0282	0.0160
+0.7992	0.0883	1.000	by MCP.	0.0697	0.0136
+0.7994	0.5508	1.000	LZC Léft Zeros Counter.	0.2124	0.0189
+0.8109	0.1109	1.000	If an error is detected in a dump request, only	0.3553	0.0191
+0.8154	0.5489	1.000	AOC All Ones Counter.	0.1974	0.0189
+0.8255	0.0920	1.000	the panel will be dumped. Possible errors are:	0.3574	0.0155
+0.8314	0.5489	1.000	FT	0.0338	0.0160
+0.8327	0.6034	1.000	Factor Register.	0.1335	0.0147
+0.8430	0.1109	1.000	1. Illegal format	0.1316	0.0131
+0.8445	0.5508	1.000	AC	0.0282	0.0160
+0.8459	0.6034	1.000	Accumulator. When interpreting the	0.2820	0.0147
+0.8576	0.1128	1.000	2. A. (I) = B. (I)	0.1147	0.0131
+0.8605	0.6071	1.000	contents of the accumulator, ignore the	0.2989	0.0145
+0.8721	0.6071	1.000	first bit in the left most octal digit. In	0.2932	0.0161
+0.8735	0.1165	1.000	Control is returned to the $DUMP calling sequence	0.3741	0.0131
+0.8855	0.6069	1.000	the example, the left half of the accumu-	0.3088	0.0213
+0.8866	0.0940	1.000	return slot after all requests have been processed.	0.3853	0.0131
+0.9172	0.0940	1.000	24	0.0150	0.0087

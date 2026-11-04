@@ -1,0 +1,108 @@
+0.0872	0.5508	1.000	3. Place the labeling program deck and label cards	0.3835	0.0116
+0.0872	0.1391	1.000	Entry sequence: LVI, $14, $+1.	0.2350	0.0131
+0.1014	0.2650	1.000	B, ZENDFILE	0.1054	0.0138
+0.1017	0.5320	1.000	in the card reader hopper, then push Load key.	0.3515	0.0131
+0.1163	0.2632	1.000	, DFILE1	0.0714	0.0116
+0.1163	0.5338	1.000	NOTE: IBM 1401 binary tapes are always written in	0.3853	0.0116
+0.1308	0.5902	1.000	the odd parity mode, therefore, if the tape is	0.3365	0.0131
+0.1321	0.3796	1.000	Return	0.0490	0.0105
+0.1453	0.5902	1.000	to be used by the 1401 System Input Program	0.3346	0.0131
+0.1612	0.1053	1.000	PERIPHERAL INPUT-OUTPUT	0.2331	0.0103
+0.1612	0.5902	1.000	I, column 15 must contain an H for high density	0.3534	0.0118
+0.1758	0.5902	1.000	and column 16 must contain an O for odd parity	0.3496	0.0118
+0.1903	0.1053	1.000	Peripheral input-output programs consist of four IBM	0.3985	0.0118
+0.1904	0.5902	1.000	mode.	0.0470	0.0116
+0.2048	0.1053	1.000	1401 programs:	0.1165	0.0118
+0.2194	0.5338	1.000	Stop Conditions	0.1128	0.0118
+0.2194	0.1203	1.000	1. Tape Labeling	0.1335	0.0118
+0.2339	0.1203	1.000	2. System Peripheral Input I	0.2180	0.0118
+0.2485	0.5338	1.000	Non-Error Stops: Two non-error stops are possible:	0.3949	0.0166
+0.2500	0.1203	1.000	3. System Peripheral Input II	0.2237	0.0103
+0.2630	0.5470	1.000	1. STOP 1 - After a label is written on tape and	0.3647	0.0118
+0.2645	0.1203	1.000	4. System Peripheral Output	0.2199	0.0116
+0.2791	0.1053	1.000	These programs prepare tape labels and input tapes to	0.4041	0.0116
+0.2791	0.5338	1.000	concluded with an end of file, the tape is rewound and	0.3947	0.0116
+0.2936	0.1053	1.000	be used by MCP. In addition, the System Peripheral	0.3929	0.0116
+0.2936	0.5320	1.000	unloaded. The information on the label card associated	0.4135	0.0116
+0.3081	0.1053	1.000	Output program prints or punches data from MCP-	0.3759	0.0116
+0.3081	0.5338	1.000	with the tape is printed by the 1403 printer, in addition	0.4079	0.0131
+0.3241	0.1015	1.000	generated output tapes.	0.1748	0.0116
+0.3241	0.5301	1.000	to operator instructions as follows:	0.2650	0.0131
+0.3387	0.6053	1.000	Write the above information onto outer label	0.3327	0.0102
+0.3401	0.5639	1.000	a.	0.0301	0.0102
+0.3532	0.1034	1.000	Tape Labeling (1401)	0.1560	0.0132
+0.3532	0.6071	1.000	of tape on unit 1.	0.1297	0.0117
+0.3677	0.5658	1.000	b. Ready new tape on unit 1 - High Density.	0.3459	0.0117
+0.3821	0.6090	1.000	Push Start to continue.	0.1711	0.0118
+0.3821	0.1053	1.000	The IBM 1401 Tape Labeling program labels tapes	0.3722	0.0133
+0.3837	0.5658	1.000	C.	0.0169	0.0102
+0.3967	0.1034	1.000	used by the MCP. Input for the label files is supplied	0.3985	0.0133
+0.3967	0.5489	1.000	2. STOP 2 - A message is printed to end the opera-	0.3910	0.0118
+0.4112	0.1034	1.000	by a card reader.	0.1335	0.0118
+0.4112	0.2368	1.000	A label file consists of 11 six-bit	0.2556	0.0118
+0.4113	0.5320	1.000	tion.	0.0376	0.0131
+0.4258	0.1053	1.000	characters written in high-density, BCD code, using	0.3891	0.0133
+0.4403	0.1053	1.000	the even parity mode. Label cards follow the labeling	0.4004	0.0133
+0.4418	0.5320	1.000	Error Stop: Only one error stop may be encountered.	0.4004	0.0131
+0.4564	0.5489	1.000	1. ESTOP - A card reader error has occurred.	0.3590	0.0117
+0.4564	0.1034	1.000	program and specify the labels to be written. There	0.3910	0.0117
+0.4709	0.5338	1.000	The last card in the N/R stacker should be checked, .	0.4004	0.0116
+0.4709	0.1034	1.000	is one label card for each tape.	0.2331	0.0116
+0.4839	0.1202	1.000	The format for a label card is as follows:	0.3086	0.0147
+0.4855	0.5338	1.000	repunched if necessary, and reloaded into the hopper.	0.3985	0.0131
+0.5015	0.5320	1.000	When an error card is reloaded, make certain proper	0.4004	0.0116
+0.5085	0.1221	1.000	Column 1	0.0678	0.0106
+0.5087	0.3252	1.000	L punch (all non-L cards	0.1823	0.0116
+0.5160	0.5320	1.000	card sequence is maintained.	0.2180	0.0131
+0.5233	0.3233	1.000	are ignored).	0.0996	0.0116
+0.5378	0.3252	1.000	Blank.	0.0489	0.0116
+0.5378	0.1222	1.000	Columns 2 through 9	0.1504	0.0116
+0.5523	0.3252	1.000	Label (5 BCD characters).	0.1955	0.0116
+0.5523	0.1222	1.000	Columns 10 through 14	0.1673	0.0131
+0.5567	0.5338	1.000	Program Flow,	0.1128	0.0116
+0.5669	0.3252	1.000	Density (H=high, L=low).	0.1842	0.0131
+0.5682	0.1241	1.000	Column 15	0.0752	0.0089
+0.5814	0.3233	1.000	If column 15 is blank, an	0.1842	0.0132
+0.5842	0.5338	1.000	Label cards are read, partially checked (columns 15	0.3891	0.0131
+0.5973	0.3252	1.000	H for high density is	0.1504	0.0118
+0.6003	0.5320	1.000	and 16), and the information in columns 10 through 20	0.3985	0.0131
+0.6118	0.3233	1.000	inserted by the program.	0.1861	0.0118
+0.6148	0.5320	1.000	printed by the printer. See Figure 133. Columns 10	0.3947	0.0116
+0.6264	0.1241	1.000	Column 16	0.0752	0.0103
+0.6264	0.3252	1.000	Mode (O=odd, E=even,	0.1654	0.0118
+0.6294	0.5320	1.000	through 20 are recorded on tape with an end of file	0.3759	0.0116
+0.6409	0.3252	1.000	C=odd with ECC). If	0.1523	0.0118
+0.6439	0.5320	1.000	mark and the tape is unloaded. Operator procedures	0.3947	0.0146
+0.6539	0.3233	1.000	column 16 is blank, odd	0.1767	0.0133
+0.6584	0.5301	1.000	are printed and a temporary stop condition occurs.	0.3816	0.0146
+0.6680	0.3212	1.000	parity is assumed and an	0.1865	0.0153
+0.6845	0.3250	1.000	O is inserted.	0.1020	0.0119
+0.6875	0.5301	1.000	System Peripheral Input I	0.1974	0.0161
+0.7006	0.3252	1.000	Blank.	0.0470	0.0102
+0.7006	0.1222	1.000	Columns 17 through 24	0.1673	0.0116
+0.7121	0.3214	1.000	Information contained in	0.1823	0.0161
+0.7151	0.1222	1.000	Columns 25 through 80	0.1673	0.0116
+0.7179	0.5301	1.000	System Peripheral Input I is a 1401 program used to	0.3910	0.0147
+0.7267	0.3214	1.000	these columns is printed	0.1842	0.0161
+0.7311	0.5301	1.000	create a system input tape for MCP. The tape is	0.3684	0.0160
+0.7427	0.3214	1.000	but not recorded on tape.	0.1880	0.0161
+0.7456	0.5301	1.000	blocked into 17 card records. Jobs are separated by	0.3966	0.0160
+0.7615	0.5320	1.000	file marks, with a limit of Njobs per tape, where the	0.4004	0.0146
+0.7743	0.5319	1.000	nominal value of N is ten. (See the MCP System Input	0.4042	0.0154
+0.7747	0.1071	1.000	Operator Instructions	0.1579	0.0117
+0.7870	0.5317	1.000	Program.)	0.0852	0.0205
+0.7906	0.1203	1.000	1. Ready the card reader, printer, and console;	0.3647	0.0161
+0.8036	0.5414	1.000	The first card of each job must be a B card (a B	0.3665	0.0176
+0.8052	0.1053	1.000	place Sense Switch A in the on (up) position and I-O	0.3797	0.0146
+0.8197	0.5301	1.000	punched in column 1), with either JOB or COMD	0.3609	0.0146
+0.8212	0.1090	1.000	Check Stop switch in off (down) position. (Sense	0.3553	0.0116
+0.8353	0.5319	1.000	starting in column 10. This type of card separates jobs	0.4155	0.0141
+0.8358	0.1071	1.000	Switch A must be on because it is used as the last	0.3684	0.0116
+0.8503	0.1071	1.000	card indicator.)	0.1184	0.0116
+0.8503	0.5320	1.000	and causes end of file marks to be written on the input	0.4041	0.0131
+0.8648	0.1203	1.000	2. Ready the first tape to be labeled and all suc-	0.3665	0.0161
+0.8648	0.5320	1.000	tape. When the last card of the last job has been	0.3647	0.0131
+0.8779	0.5301	1.000	written on tape, two end of file marks are written on	0.3947	0.0176
+0.8808	0.1071	1.000	ceeding tapes in turn, on unit 1 in high density.	0.3477	0.0131
+0.9403	0.7632	1.000	Supporting Programs	0.1184	0.0103
+0.9404	0.9041	1.000	237	0.0226	0.0087

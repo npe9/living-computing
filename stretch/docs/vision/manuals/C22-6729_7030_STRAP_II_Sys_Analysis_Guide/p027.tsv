@@ -1,0 +1,110 @@
+0.0887	0.1071	1.000	processing, any code that produces a single piece of	0.3872	0.0132
+0.0900	0.5320	1.000	SYN: The main purpose of MQS, which processes	0.3703	0.0133
+0.1003	0.5299	1.000	each SYN in Pass 1, is to build up the symbol entry in	0.4026	0.0192
+0.1032	0.1071	1.000	binary output of predetermined length is not con sidered	0.4117	0.0132
+0.1191	0.1071	1.000	a pseudo-op. Thus the operations such as XW, CF,	0.3853	0.0132
+0.1191	0.5301	1.000	the Msyte area. (The symbol is actually entered in	0.3835	0.0146
+0.1336	0.1090	1.000	RF, VF, CW, INDMK, and CNOP are not in the pseudo- the symbol table at the end of the card block.) The	0.8026	0.0132
+0.1482	0.5320	1.000	dds information of the SYN op is transferred from the	0.3985	0.0118
+0.1482	0.1071	1.000	op branch table. (See Appendix B.)	0.2632	0.0118
+0.1627	0.5320	1.000	unit to the Msyte area. If any coded expression exits	0.3947	0.0118
+0.1627	0.1259	1.000	For many of the pseudo-ops, all that MAIN has yet	0.3741	0.0131
+0.1773	0.5320	1.000	for an undetermined byte size and/or field length, it	0.3891	0.0131
+0.1773	0.1071	1.000	to do before performing the end-of-instruction pro-	0.3797	0.0118
+0.1918	0.1071	1.000	cedure is to collect the statement characters. This is	0.4023	0.0118
+0.1918	0.5320	1.000	is moved to the Msyte area from the unit. Since the	0.3872	0.0118
+0.2064	0.5320	1.000	only coded expressions that could be in the variable	0.3816	0.0117
+0.2078	0.1071	1.000	accomplished by a tight reloop into GETCHA until	0.3665	0.0102
+0.2209	0.5320	1.000	part of the unit now are those for the dds, and these	0.3853	0.0131
+0.2209	0.1071	1.000	GETCHA "kicks out" a semicolon character. The	0.3703	0.0131
+0.2369	0.1071	1.000	pseudo-ops are: PUNFUL, PUNNOR, PUNORG, PRNS,	0.4098	0.0116
+0.2369	0.5301	1.000	are now in Msyte, the available area in the unit	0.3553	0.0146
+0.2515	0.5320	1.000	buffer is redefined to be the first bit after the fixed	0.3797	0.0116
+0.2515	0.1090	1.000	PRND, PRINID, SKIP, NOPUN, NOPRNT, PRNOR,	0.3835	0.0146
+0.2660	0.5320	1.000	portion of the current unit. Since MQS wants the	0.3628	0.0116
+0.2660	0.1090	1.000	PUNALL, SPNUS, PRNTALL, NOSEQ, and RESEQ.	0.3853	0.0131
+0.2805	0.5320	1.000	coded expression to be made by GETFLD for the single	0.4098	0.0116
+0.2951	0.5301	1.000	address field of the SYN op put in Msyte, the upper	0.3816	0.0146
+0.2951	0.1090	1.000	DUPLI: For a DUPLI, MDUP saves the pseudo-op's	0.3816	0.0131
+0.3096	0.5338	1.000	boundary location of the buffer for the encoding has to	0.3966	0.0116
+0.3096	0.1071	1.000	parameters, n and d. The index word Xrepl, in	0.3571	0.0131
+0.3241	0.1053	1.000	positions 0-17 will contain the number (n) of the input	0.3947	0.0147
+0.3241	0.5320	1.000	be changed because the encoding is not going into	0.3647	0.0131
+0.3400	0.1053	1.000	cards to be duplicated; the count field, Xrep2, will	0.3778	0.0147
+0.3400	0.5301	1.000	the unit. The previous setting of Befxtx does not	0.3665	0.0133
+0.3545	0.1071	1.000	contain the number (d) of duplications for each of the	0.3891	0.0118
+0.3545	0.5320	1.000	have to be saved because no more coded expressions	0.3910	0.0118
+0.3677	0.5320	1.000	will go into this unit for this instruction. Besides	0.3703	0.0117
+0.3691	0.1071	1.000	n input cards. MDUP also turns on the indicator,	0.3684	0.0132
+0.3821	0.5320	1.000	changing the upper buffer limit, an indicator has to	0.3797	0.0133
+0.3836	0.1053	1.000	Xsp3, to tell XINPUT that it is in the duplicating mode.	0.4117	0.0132
+0.3967	0.5320	1.000	be turned on to tell GETFLD that the encoding is not	0.3891	0.0118
+0.3982	0.1259	1.000	XINPUT will stack each of the next n card images	0.3703	0.0118
+0.4112	0.5320	1.000	being put in the usual unit area because GFLONG is	0.3816	0.0147
+0.4127	0.1071	1.000	in a special memory block before giving each of these	0.3966	0.0118
+0.4258	0.5338	1.000	only set up to handle the overflow of the unit buffer	0.3741	0.0133
+0.4273	0.1071	1.000	n card images to GETCHA. After XINPUT has	0.3477	0.0131
+0.4418	0.1071	1.000	stacked n card images, then ZINPUT gets the next	0.3741	0.0131
+0.4418	0.5320	1.000	area, but not the overflow of Msyte.	0.2688	0.0118
+0.4549	0.5488	1.000	STRAP II main flow knows that there is only one	0.3573	0.0133
+0.4564	0.1071	1.000	n times d card images from its own duplicating block	0.3929	0.0117
+0.4709	0.1071	1.000	rather than from the regular input source. XINPUT	0.3872	0.0131
+0.4709	0.5320	1.000	address field to be considered on a SYN unit, but	0.3647	0.0116
+0.4855	0.5320	1.000	the error message routine does not; the error mes-	0.3835	0.0116
+0.4869	0.1090	1.000	resumes fetching card images from the regular	0.3496	0.0116
+0.5000	0.5320	1.000	sage field counter must be incremented. The Zifall	0.3853	0.0116
+0.5015	0.1090	1.000	source after it has cycled through its duplicating	0.3571	0.0116
+0.5145	0.5320	1.000	indicator is turned off to indicate to Pass 2 that there	0.3947	0.0103
+0.5160	0.1090	1.000	block d times.	0.1053	0.0116
+0.5305	0.5320	1.000	are coded expressions associated with this instruction	0.4004	0.0116
+0.5451	0.5320	1.000	which are not yet evaluated. Zifp2 is not turned on	0.3797	0.0116
+0.5451	0.1090	1.000	PUNID: For the PUNID, MPUNID gets the characters	0.3985	0.0131
+0.5596	0.5320	1.000	because the coded expressions will get directly	0.3477	0.0116
+0.5596	0.1071	1.000	from the address field for the ID from GETCHA and	0.3835	0.0116
+0.5741	0.5301	1.000	decoded in UITER through VALUE rather than in	0.3628	0.0131
+0.5755	0.1090	1.000	stores them in the available work area of the current	0.3929	0.0103
+0.5887	0.5338	1.000	Pass 2 through DECODE. If there is a dimension in	0.3853	0.0116
+0.5900	0.1071	1.000	unit. The value field of Ziotpt in the unit is set to	0.3703	0.0118
+0.6032	0.5338	1.000	the address field, MQS uses the MDIMRT subroutine	0.3891	0.0132
+0.6045	0.1090	1.000	contain the location of the ID in the unit which	0.3365	0.0103
+0.6177	0.5320	1.000	to make the separate dimension entry in the vle	0.3515	0.0132
+0.6191	0.1090	1.000	OUTPUT will later pick up. Blanks are significant in	0.3966	0.0118
+0.6336	0.1090	1.000	the ID symbol, so MPUNID has the Gcaz indicator on	0.3910	0.0132
+0.6336	0.5338	1.000	table. The dimension reference address will be saved	0.4023	0.0118
+0.6482	0.1053	1.000	while requesting characters from GETCHA. An ID	0.3816	0.0146
+0.6482	0.5301	1.000	in the vle entry of the SYN. (See Appendix A.)	0.3477	0.0132
+0.6627	0.1090	1.000	of less than eight characters is padded with blanks.	0.3778	0.0131
+0.6627	0.5489	1.000	During MQR which handles the DR pseudo-op, the	0.3684	0.0146
+0.6773	0.5320	1.000	presence of a null dds will cause the dds, (N, 64, 4)	0.3872	0.0131
+0.6918	0.5320	1.000	to be assigned to the unit of the DR. If the address	0.3797	0.0118
+0.6933	0.1090	1.000	TLB, SLC, END, SLCR: For the pseudo-ops, TLB,	0.3891	0.0131
+0.7064	0.5320	1.000	field is not null, MQR has the basic dimension entry	0.3872	0.0131
+0.7078	0.1090	1.000	SLC, END, and SLCR, Pass 1 has the Pass 2 indica-	0.3929	0.0116
+0.7224	0.5320	1.000	made by MDIMRE. This entry is put in the unit. If	0.3872	0.0116
+0.7224	0.1071	1.000	tors set on and then has the statement field of the op	0.3872	0.0116
+0.7369	0.5338	1.000	the DR has a name, the basic dimension entry pre-	0.3778	0.0116
+0.7369	0.1090	1.000	encoded by GETFLD. Note since there is not a set of	0.3966	0.0116
+0.7515	0.5320	1.000	fixed by the appropriate header bits will also be put	0.3835	0.0116
+0.7515	0.1071	1.000	INSERT index words for these pseudo-ops, this sub-	0.3910	0.0131
+0.7660	0.1090	1.000	routine sets up here the counter for the number of	0.3703	0.0116
+0.7660	0.5320	1.000	later into the vle table. (See Appendix A.) The loca-	0.3966	0.0116
+0.7805	0.1090	1.000	times to go to GETFLD. (The END instruction must	0.3891	0.0116
+0.7805	0.5320	1.000	tion of the basic portion of the vle dimension entry in	0.3929	0.0116
+0.7951	0.1090	1.000	be the only instruction in its card block whenever	0.3628	0.0116
+0.7951	0.5320	1.000	the unit is saved in Ziotpt field of the unit. Before	0.3778	0.0131
+0.8096	0.1090	1.000	STRAP II is running with the indicator, Hhcom4, on.)	0.3947	0.0131
+0.8096	0.5338	1.000	returning to main flow to complete the processing of	0.3872	0.0116
+0.8241	0.5301	1.000	the statement, MQR has VDIMEN try to evaluate the	0.3891	0.0147
+0.8387	0.5320	1.000	products of the dimensions. The intermediary pro-	0.3835	0.0116
+0.8400	0.1090	1.000	EXT: For the pseudo-op, EXT, STRAP II forms two	0.3910	0.0133
+0.8532	0.5338	1.000	ducts of the dimensions are kept in the dimension	0.3647	0.0117
+0.8545	0.1090	1.000	internal processing units. The EXTract procedure	0.3778	0.0118
+0.8677	0.5338	1.000	entry. When the final product is available (now	0.3515	0.0132
+0.8691	0.1071	1.000	in MAIN, MX, builds up the first unit with the coded	0.3872	0.0132
+0.8836	0.1090	1.000	expressions of the parameters. After MX has	0.3440	0.0118
+0.8836	0.5320	1.000	possibly or later in Pass 2), it is put as a negative	0.3778	0.0132
+0.8982	0.1090	1.000	returned to main flow, MAIN will form another unit	0.3816	0.0132
+0.8982	0.5301	1.000	number into the value field of Ziotpt. The negative	0.3816	0.0146
+0.9142	0.1090	1.000	for the material being extracted upon.	0.2801	0.0116
+0.9418	0.7932	1.000	Assembly Phases	0.0959	0.0118
+0.9419	0.9079	1.000	27	0.0188	0.0087

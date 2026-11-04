@@ -1,0 +1,101 @@
+0.0560	0.1125	1.000	Facilities needed for maintenance of the computer	0.3764	0.0203
+0.0597	0.5167	1.000	is active enters an ERASE function code, terminates	0.3895	0.0184
+0.0737	0.0976	1.000	are provided separately and are not part of the oper-	0.3931	0.0171
+0.0756	0.5148	1.000	the READ operation with an end-exception indication,	0.3933	0.0188
+0.0855	0.0957	1.000	ator's console. The console has a byte weight of zero	0.3915	0.0214
+0.0930	0.5132	1.000	locks and disables the keyboard, and turns off the en-	0.3947	0.0146
+0.1061	0.0959	1.000	and a word weight of 3.	0.1711	0.0131
+0.1090	0.5150	1.000	ter light. During writing on the console printer, the	0.3910	0.0146
+0.1235	0.5150	1.000	key immediately terminates the wrIte operation with	0.3910	0.0146
+0.1394	0.5150	1.000	an end-exception indication. In both cases the end-	0.3910	0.0133
+0.1439	0.0940	1.000	Keys	0.0376	0.0131
+0.1538	0.5131	1.000	exception is accompanied by end-of-operation unless	0.3930	0.0173
+0.1656	0.1127	1.000	Power On, Power Off. These keys are standard.	0.3499	0.0153
+0.1700	0.5150	1.000	the multiple block flag in the control word is on.	0.3910	0.0131
+0.1817	0.1109	1.000	Signal. Depression of this key when the unit is	0.3759	0.0147
+0.1845	0.5150	1.000	When the keyboard is not active for entry of data or	0.3891	0.0146
+0.1952	0.0938	1.000	ready generates a channel-signal and disables the key-	0.3950	0.0171
+0.1999	0.5149	1.000	the console printer is not writing, the key is inopera-	0.3893	0.0169
+0.2121	0.0959	1.000	board. The key is inoperative when the unit is in	0.3910	0.0146
+0.2151	0.5150	1.000	tive. The key is inoperative also when the console	0.3891	0.0146
+0.2246	0.0935	1.000	the not-ready status.	0.1496	0.0189
+0.2311	0.5132	1.000	is in the not-ready status.	0.1823	0.0131
+0.2427	0.1109	1.000	Ready. If all the conditions necessary for operation	0.3741	0.0145
+0.2456	0.5301	1.000	Ribbon Shift. Depression of this key causes ribbon	0.3741	0.0147
+0.2587	0.0940	1.000	are satisfied, depression of this key puts the unit in	0.3910	0.0146
+0.2615	0.5132	1.000	shift. If the console printer is equipped with a two-	0.3910	0.0161
+0.2733	0.0940	1.000	the ready status. The ready key has the same func-	0.3910	0.0146
+0.2776	0.5132	1.000	color ribbon, all characters that are entered through	0.3891	0.0146
+0.2892	0.0940	1.000	tion as the start key on standard units, except that it	0.3929	0.0145
+0.2910	0.5130	1.000	the keyboard while the ribbon shift key is depressed	0.3894	0.0176
+0.3037	0.0938	1.000	does not automatically generate a channel-signal	0.3913	0.0163
+0.3067	0.5113	1.000	are printed in the color associated with the ribbon	0.3910	0.0146
+0.3193	0.0901	1.000	indication.	0.0829	0.0139
+0.3227	0.5094	1.000	shift. In addition, when a character is entered through	0.3929	0.0174
+0.3342	0.1090	1.000	Not Ready. This key is the same as the stop key	0.3759	0.0176
+0.3377	0.5111	1.000	the keyboard with the ribbon shift key depressed, the	0.3913	0.0175
+0.3503	0.0921	1.000	on standard units; it places the unit in not-ready	0.3929	0.0146
+0.3545	0.5113	1.000	character code sent to core storage is modified so as	0.3910	0.0146
+0.3651	0.5091	1.000	to cause ribbon shift when the code is subsequently	0.3935	0.0225
+0.3663	0.0921	1.000	status. If the console is reading or writing at the time	0.3929	0.0146
+0.3804	0.5091	1.000	sent to the console printer for writing.	0.2808	0.0222
+0.3808	0.0921	1.000	the not-ready key is pressed, the operation is inter-	0.3929	0.0146
+0.3953	0.0921	1.000	rupted, but no interrupt indication is sent to the	0.3929	0.0160
+0.4112	0.0921	1.000	computer. The operation is resumed again when the	0.3929	0.0161
+0.4230	0.5094	1.000	Lights	0.0451	0.0145
+0.4273	0.0921	1.000	unit returns to the ready status.	0.2293	0.0131
+0.4433	0.1090	1.000	Enter. Depression of this key enables the keyboard	0.3741	0.0146
+0.4462	0.5263	1.000	Power On, Ready, Check, Reserved. These lights	0.3759	0.0160
+0.4578	0.0921	1.000	and generates a channel-signal indication. If the key-	0.3929	0.0146
+0.4606	0.5113	1.000	are standard.	0.0940	0.0118
+0.4724	0.0921	1.000	board has been enabled, it becomes active when the	0.3910	0.0146
+0.4767	0.5263	1.000	Enter. This light indicates that the keyboard is ac-	0.3741	0.0161
+0.4883	0.0901	1.000	subsequent READ operation has completed reading of	0.3949	0.0166
+0.4912	0.5094	1.000	tive. The light goes off when the keyboard becomes	0.3929	0.0161
+0.5042	0.0921	1.000	the three words from the console switches. The active	0.3910	0.0118
+0.5056	0.5074	1.000	inactive.	0.0659	0.0149
+0.5188	0.0902	1.000	state of the keyboard permits information to be en-	0.3929	0.0146
+0.5218	0.5263	1.000	Wait. This light goes on when the signal or enter	0.3741	0.0176
+0.5348	0.0902	1.000	tered thereby and is indicated when the enter light is	0.3929	0.0146
+0.5360	0.5092	1.000	key is depressed and is turned off by completion of	0.3913	0.0180
+0.5494	0.0902	1.000	on and the keyboard is unlocked. A READ instruction	0.3910	0.0131
+0.5523	0.5094	1.000	the first three words of a READ operation. It indicates	0.3910	0.0146
+0.5654	0.0902	1.000	received by the console with the keyboard not en-	0.3929	0.0146
+0.5672	0.5092	1.000	to the user that the computer has not yet accepted	0.3913	0.0180
+0.5799	0.0902	1.000	abled is automatically terminated when the three	0.3929	0.0146
+0.5827	0.5075	1.000	the information set up on the switches, which there-	0.3929	0.0161
+0.5944	0.0901	1.000	words scanned from the switches have been sent to	0.3931	0.0154
+0.5965	0.5073	1.000	fore should not be changed. An audible click is gen-	0.3933	0.0207
+0.6118	0.0902	1.000	the exchange.	0.1015	0.0132
+0.6148	0.5075	1.000	erated each time the wait light is turned off.	0.3308	0.0146
+0.6264	0.1071	1.000	The enter key enables the keyboard and generates	0.3759	0.0146
+0.6424	0.0883	1.000	a channel-signal regardless of any reading or writing	0.3929	0.0176
+0.6478	0.5055	1.000	Control Functions	0.1337	0.0199
+0.6570	0.0883	1.000	currently taking place at the console. The key is in-	0.3947	0.0176
+0.6706	0.0882	1.000	effective when the console is in the not-ready status.	0.3913	0.0175
+0.6715	0.5075	1.000	The console has two sets of control functions. One	0.3929	0.0189
+0.6875	0.5038	1.000	set is initiated by means of coNTror instructions, the	0.3966	0.0189
+0.6880	0.1052	1.000	End. Depression of this key when the keyboard is	0.3742	0.0150
+0.7035	0.5056	1.000	other during wRItE instructions.	0.2444	0.0174
+0.7048	0.0883	1.000	active (the enter light is on) enters the END function	0.3910	0.0118
+0.7188	0.0864	1.000	code, locks and disables the keyboard, and turns off	0.3929	0.0144
+0.7194	0.5188	1.000	The set of control functions initiated by CONTROL	0.3797	0.0176
+0.7267	0.0789	0.500	EBA	0.4098	0.1366
+0.7355	0.5056	1.000	instructions is listed below. These control functions	0.3929	0.0161
+0.7485	0.5038	1.000	are similar to those used on other input-output units.	0.3947	0.0191
+0.7776	0.5056	1.000	OCTAL CODE	0.0865	0.0146
+0.7791	0.5883	1.000	FUNCTION	0.0996	0.0131
+0.7951	0.5188	1.000	016	0.0338	0.0160
+0.7951	0.5714	1.000	Reserved Light Off	0.1485	0.0189
+0.8182	0.5771	1.000	Reserved Light On	0.1410	0.0161
+0.8183	0.5188	1.000	017	0.0301	0.0145
+0.8372	0.5188	1.000	116	0.0338	0.0145
+0.8503	0.5771	1.000	These functions are standard	0.2180	0.0176
+0.8561	0.0865	1.000	key is inoperative when the console is in the not-	0.3929	0.0146
+0.8717	0.5752	1.000	Sound Gong. This function causes a clearly	0.3215	0.0183
+0.8721	0.5207	1.000	177	0.0301	0.0160
+0.8735	0.0846	1.000	ready status.	0.0921	0.0118
+0.8881	0.5771	1.000	audible gong to sound a single stroke.	0.2857	0.0174
+0.8881	0.1015	1.000	Erase. Depression of this key when the keyboard	0.3759	0.0160
+0.9258	0.1353	1.000	IBM 7030	0.0639	0.0088
+0.9259	0.0865	1.000	150	0.0263	0.0087

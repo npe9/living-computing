@@ -12,10 +12,15 @@ Reads docs/vision/all/ (tools/read_every_page.py) and writes
                                    its neighbours and SAID so), frame
                                    found, line fit, counts by status
   docs/vision/listing_reading.tsv  one row per printed LINE: LOCATION
-                                   and BINARY half word 1 (octal part),
-                                   each with a status
+                                   and BINARY half words 1 and 2 (octal
+                                   parts), each with a status
 
 STATUS of a field, from the two engines:
+
+NAME + STATEMENT is a Vision DRAFT only (name_statement_draft): tesseract
+reads 8% of statements exactly and is right only 20 of 26 times when it
+agrees with Vision, so there is no second engine for text.  Measured
+against the decks' source (--score): see tools/README_vision.md.
 
   agreed          Vision and tesseract read the same value
   conflict        the readings differ -- every value recorded
@@ -84,6 +89,13 @@ def read_page(stem):
     if gl == "none":
         return page
     g = json.loads(gl)
+    if "bin2_x" not in g:         # frames stored before half word 2 was read
+        cw = g["char_w"]
+        bx = g["bin_cell"] * cw
+        g["bin2_x"] = (bx + 12.0 * cw, bx + 17.5 * cw)
+    if "text_x" not in g:
+        bx = g["bin_cell"] * g["char_w"]
+        g["text_x"] = (bx + 28.0 * g["char_w"], bx + 76.5 * g["char_w"])
     f = R.fit_lines(vis, g)
     if f is None:
         return page
@@ -96,11 +108,12 @@ def read_page(stem):
     for line in range(1, min(last, 60) + 1):
         y = y0 + (line - 1) * pitch
         row = {}
-        for fld, xw in (("loc", g["loc_x"]), ("bin", g["bin_x"])):
+        for fld, xw in (("loc", g["loc_x"]), ("bin", g["bin_x"]), ("bin2", g["bin2_x"])):
             row[fld] = status((R.field_at(vis, y, pitch, xw, cw),
                                R.field_at(vcol, y, pitch, xw, cw)),
                               R.field_at(tes, y, pitch, xw, cw))
-        if row["loc"][0] != "unread" or row["bin"][0] != "unread":
+        row["text"] = R.text_at(vis, y, pitch, g["text_x"])
+        if any(row[k][0] != "unread" for k in row if k != "text") or row["text"]:
             page["lines"][line] = row
     # ORDER CHECK on agreed locations: out of order with BOTH agreed
     # neighbours, which are in order with each other
@@ -147,7 +160,8 @@ def tables(pages):
     """(listing_pages.tsv, listing_reading.tsv) as text."""
     a = ["vol\tpdf\tprinted\tprinted_from\tframe\tline_fit\tlines\t"
          "loc_agreed\tloc_other\tbin_agreed\tbin_other\n"]
-    b = ["vol\tpdf\tprinted\tline\tlocation\tloc_status\tbinary_h1\tbin_status\n"]
+    b = ["vol\tpdf\tprinted\tline\tlocation\tloc_status\tbinary_h1\tbin_status\t"
+         "binary_h2\tbin2_status\tname_statement_draft\n"]
     for (vol, pdf), p in sorted(pages.items()):
         ls = p["lines"].values()
         la = sum(r["loc"][0] == "agreed" for r in ls)
@@ -157,7 +171,8 @@ def tables(pages):
                  f"{la}\t{len(p['lines']) - la}\t{ba}\t{len(p['lines']) - ba}\n")
         for line, r in sorted(p["lines"].items()):
             b.append(f"{vol}\t{pdf}\t{p['printed'] or ''}\t{line}\t{r['loc'][1]}\t"
-                     f"{r['loc'][0]}\t{r['bin'][1]}\t{r['bin'][0]}\n")
+                     f"{r['loc'][0]}\t{r['bin'][1]}\t{r['bin'][0]}\t"
+                     f"{r['bin2'][1]}\t{r['bin2'][0]}\t{r['text']}\n")
     return "".join(a), "".join(b)
 
 
@@ -182,9 +197,14 @@ def summary(pages):
         print(f"  {k:28s} {c[k]}")
 
 
+def _stmt(t):
+    """Spaces and the remark dropped; the remark starts at a spaced '-'."""
+    return re.sub(r"\s+", "", re.split(r"\s-", R.printer_charset(t))[0])
+
+
 def score(pages):
     """Each status, against what the landed decks assert, nine of nine."""
-    c = collections.Counter()
+    c, tx = collections.Counter(), collections.Counter()
     seen = set()
     for (vol, pdf), p in sorted(pages.items()):
         if vol != 1 or p["printed_how"] != "header" or p["printed"] in seen:
@@ -193,9 +213,16 @@ def score(pages):
         if not truth:
             continue
         seen.add(p["printed"])
+        h2 = listing_truth.half2(p["printed"])
+        for line, want in listing_truth.statements(p["printed"]).items():
+            r = p["lines"].get(line)
+            got = r["text"] if r else ""
+            tx["n"] += 1
+            tx["empty"] += not got
+            tx["ok"] += bool(got) and _stmt(got).endswith(_stmt(want))
         for line, (loc, b1) in truth.items():
             r = p["lines"].get(line)
-            for fld, want in (("loc", loc), ("bin", b1)):
+            for fld, want in (("loc", loc), ("bin", b1), ("bin2", h2.get(line))):
                 if not want:
                     continue
                 st, v = r[fld] if r else ("not-paired", "")
@@ -205,9 +232,14 @@ def score(pages):
                 elif st == "conflict":
                     c[(fld, st, "ok")] += want in v.split("|")
     print(f"scored against {len(seen)} landed pages (vol 1, header-read)")
-    for fld in ("loc", "bin"):
+    print(f"  NAME+STATEMENT draft  ({tx['n']} lines with a deck statement)")
+    print(f"     ends with the deck's statement, spaces and remark dropped: "
+          f"{tx['ok']}  {100 * tx['ok'] / max(1, tx['n']):.1f}%")
+    print(f"     empty: {tx['empty']}")
+    for fld in ("loc", "bin", "bin2"):
         tot = sum(n for (f, s, k), n in c.items() if f == fld and k == "n")
-        print(f"  {'LOCATION' if fld == 'loc' else 'BINARY h1'}  ({tot} rows with truth)")
+        name = {"loc": "LOCATION", "bin": "BINARY h1", "bin2": "BINARY h2"}[fld]
+        print(f"  {name}  ({tot} rows with truth)")
         for st in ("agreed", "agreed-out-of-order", "conflict", "vision-only",
                    "tesseract-only", "unread", "not-paired"):
             n = c[(fld, st, "n")]

@@ -1,0 +1,60 @@
+0.0959	0.6466	1.000	Content	0.0714	0.0160
+0.0974	0.3120	1.000	Symbol	0.0639	0.0174
+0.0988	0.1579	1.000	Bits	0.0414	0.0160
+0.1250	0.5056	1.000	O - 178 indicates the number of logical or physical unit	0.4154	0.0174
+0.1265	0.3158	1.000	SUNITK	0.0639	0.0160
+0.1279	0.1598	1.000	.59 -.62	0.0733	0.0161
+0.1381	0.5056	1.000	status table entries attached to the channel to which the	0.4192	0.0189
+0.1512	0.5056	1.000	channel status entry refers. This field exists only in	0.4060	0.0204
+0.1700	0.5056	1.000	a multi-unit channel status table entry. It is set by the	0.4173	0.0161
+0.1875	0.5056	1.000	initializing program.	0.1617	0.0131
+0.2166	0.3177	1.000	Not Used	0.0695	0.0146
+0.2179	0.1617	1.000	• 63	0.0282	0.0161
+0.2442	0.0959	1.000	Unit Status Table Entry - Multi-Unit Channel	0.3440	0.0189
+0.2747	0.3158	1.000	Symbol	0.0620	0.0174
+0.2762	0.6504	1.000	Content	0.0620	0.0131
+0.2762	0.1598	1.000	Bits	0.0414	0.0174
+0.3023	0.5056	1.000	This field contains the address of the unit area table	0.3966	0.0160
+0.3049	0.3175	1.000	SUNAA	0.0548	0.0137
+0.3067	0.1617	1.000	.00 -.17	0.0733	0.0146
+0.3154	0.5056	1.000	(UAT) attached to it. If the unit has never been assigned,	0.4380	0.0189
+0.3327	0.5056	1.000	the entry will be blank. The field is controlled at IPL,	0.4154	0.0161
+0.3488	0.5094	1.000	and by I-O assignment, the I-O change command, and	0.4041	0.0131
+0.3633	0.5094	1.000	the special assignment package. It is referred to by	0.3966	0.0131
+0.3794	0.5094	1.000	the I-O identifier, the receptor, the I-O change com-	0.4023	0.0131
+0.3924	0.5094	1.000	mand, the special assignment package and I-O assign-	0.4079	0.0146
+0.4375	0.5094	1.000	• - Scratch tape	0.1316	0.0116
+0.4387	0.3195	1.000	STATI	0.0509	0.0107
+0.4390	0.1635	1.000	.26	0.0282	0.0145
+0.4535	0.5094	1.000	1 - Specific tape	0.1353	0.0117
+0.4811	0.5094	1.000	This indicator is found in the unit status table of a	0.3759	0.0116
+0.4970	0.5094	1.000	multi-unit channel. If a tape channel, this indicator	0.3929	0.0133
+0.5115	0.5094	1.000	shows whether a scratch tape is mounted or a specif-	0.4004	0.0118
+0.5276	0.5094	1.000	ically designated tape is mounted for the given unit.	0.3891	0.0118
+0.5421	0.5113	1.000	This indicator is set and tested by I-O assignment. It	0.4079	0.0103
+0.5567	0.5113	1.000	may be reset by I-O change.	0.2124	0.0116
+0.5856	0.3195	1.000	SDISPO	0.0584	0.0119
+0.5858	0.5094	1.000	0 - Tape mounted	0.1447	0.0116
+0.5858	0.1635	1.000	.27	0.0301	0.0160
+0.6003	0.5094	1.000	1 - No tape mounted	0.1635	0.0116
+0.6294	0.5113	1.000	This indicator exists in the unit status table of a multi-	0.4135	0.0102
+0.6453	0.5094	1.000	unit channel. It indicates whether a tape reei is	0.3647	0.0116
+0.6570	0.5075	1.000	mounted on a particular unit, or not mounted. It is set	0.4173	0.0145
+0.6690	0.5074	1.000	and tested by I-O assignment, UNLOAD, FREE, and	0.3968	0.0177
+0.6860	0.5075	1.000	IOCHANGE command.	0.1692	0.0131
+0.7166	0.3195	1.000	Same as in Single Unit Channel Status.	0.2895	0.0146
+0.7179	0.1654	1.000	.28 - .32	0.0715	0.0119
+0.7456	0.5094	1.000	0 - Density never set	0.1729	0.0147
+0.7470	0.3195	1.000	SSETDN	0.0640	0.0119
+0.7471	0.1635	1.000	.33	0.0301	0.0131
+0.7602	0.5094	1.000	1 - Density set	0.1278	0.0147
+0.7892	0.5094	1.000	This indicator forces the density of a tape unit to be set	0.4211	0.0145
+0.8036	0.5094	1.000	the first time the unit is referenced after IPL.	0.3515	0.0147
+0.8342	0.5113	1.000	0 - Selected	0.1015	0.0103
+0.8343	0.3195	1.000	SSEL	0.0432	0.0131
+0.8358	0.1635	1.000	.39	0.0301	0.0131
+0.8488	0.5094	1.000	1 - Not selected	0.1335	0.0131
+0.8779	0.5094	1.000	This indicator exists in the unit status table of a multi-	0.4154	0.0146
+0.8924	0.5094	1.000	unit channel. It indicates which unit is presently located	0.4286	0.0146
+0.9459	0.6370	1.000	Appendix A - Symbolic I-O Control Tables	0.2541	0.0137
+0.9462	0.9117	1.000	265	0.0226	0.0087

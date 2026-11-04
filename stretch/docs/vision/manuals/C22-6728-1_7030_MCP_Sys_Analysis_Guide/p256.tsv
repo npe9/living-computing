@@ -1,0 +1,105 @@
+0.0959	0.0865	1.000	buffer are written on the input tape, and another 17	0.3853	0.0132
+0.0973	0.5338	1.000	STOP 2 - If a tape error is detected, the tape is	0.3609	0.0133
+0.1105	0.0865	1.000	records are read and written, continuing until the	0.3741	0.0132
+0.1118	0.5169	1.000	backspaced and the tape record is read again. If the	0.3947	0.0132
+0.1250	0.0865	1.000	input specification is satisfied. If the end of the	0.3665	0.0132
+0.1279	0.5169	1.000	error occurs five successive times, the operation	0.3759	0.0117
+0.1409	0.0865	1.000	master tape has been reached, as indicated by two	0.3797	0.0132
+0.1424	0.5169	1.000	stops and the following error message is printed:	0.3703	0.0116
+0.1552	0.0864	1.000	end of file marks, it is rewound and unloaded. Any	0.3874	0.0135
+0.1555	0.5150	1.000	BAD TAPE RECORD, IF START IS PUSHED, NEXT	0.3929	0.0161
+0.1700	0.0865	1.000	further reference to the master tape causes a machine	0.4098	0.0118
+0.1715	0.5169	1.000	TAPE RECORD WILL BE READ. The operator may	0.3947	0.0131
+0.1843	0.0845	1.000	hangup.	0.0603	0.0121
+0.1860	0.5169	1.000	either continue the operation by depressing the Start	0.3929	0.0116
+0.1991	0.1015	1.000	If the input tape reaches its physical end during the	0.3853	0.0131
+0.2006	0.5150	1.000	key or stop the operation. However, if the Start key	0.3966	0.0131
+0.2151	0.5150	1.000	is depressed, the error tape record will be ignored.	0.3947	0.0131
+0.2151	0.0865	1.000	writing of a file, the entire tape must be done over,	0.3872	0.0131
+0.2296	0.5318	1.000	STOP 3 - If a print error is detected, an error	0.3536	0.0150
+0.2297	0.0865	1.000	removing the last job processed. An ESTOP 6 error	0.3985	0.0116
+0.2442	0.0865	1.000	message is indicative of this condition. When the	0.3741	0.0116
+0.2456	0.5150	1.000	message is printed, the printer carriage is restored	0.3966	0.0116
+0.2587	0.0846	1.000	last card is read, the input program ends the input	0.3835	0.0131
+0.2602	0.5150	1.000	and the operation stops. The error message is:	0.3628	0.0132
+0.2747	0.5150	1.000	PREVIOUS LINE HAD A PRINT CHECK - PUSH	0.3609	0.0102
+0.2747	0.0865	1.000	tape by placing a second end of file mark on the tape	0.3929	0.0132
+0.2892	0.5150	1.000	START TO PROCESS NEXT LINE.	0.2613	0.0117
+0.2892	0.0846	1.000	and then unloads the tape (STOP 1).	0.2669	0.0117
+0.3036	0.5320	1.000	STOP 4 - If a punch error is detected, a new card	0.3759	0.0133
+0.3169	0.0827	1.000	System Peripheral Outout	0.1974	0.0147
+0.3182	0.5150	1.000	is punched. The card containing the error is stacked	0.4004	0.0133
+0.3342	0.5132	1.000	in the NP stacker. If five successive attempts to	0.3722	0.0131
+0.3457	0.0864	1.000	The System Peripheral Output program is a 1401 pro-	0.4043	0.0149
+0.3488	0.5132	1.000	punch card correctly have failed, the operation stops	0.3985	0.0146
+0.3618	0.0846	1.000	gram used to print and punch (unblock) the records	0.3816	0.0118
+0.3633	0.5132	1.000	and the following error message is printed: PUNCH	0.3947	0.0131
+0.3779	0.0827	1.000	from the MCP-generated output tape. The output tape	0.4079	0.0131
+0.3779	0.5150	1.000	GOOFED 5 TIMES ON THE SAME CARD - IF START	0.3966	0.0117
+0.3924	0.5132	1.000	IS PUSHED, NEXT CARD WILL BE PUNCHED. The	0.3985	0.0131
+0.3939	0.0827	1.000	will be read and each record will be printed or	0.3515	0.0116
+0.4084	0.0827	1.000	punched. When a punched file is completed, a blank	0.3947	0.0116
+0.4084	0.5132	1.000	operator may either continue the operation by pressing	0.4135	0.0131
+0.4230	0.0846	1.000	card is read from the card read hopper to be used as	0.3966	0.0116
+0.4230	0.5132	1.000	the Start key and omitting the error card, or halt the	0.3985	0.0131
+0.4375	0.5132	1.000	operation to determine the area of malfunction and	0.3797	0.0102
+0.4375	0.0827	1.000	a file separator. When a file is printed, the printer	0.3929	0.0131
+0.4519	0.0845	1.000	carriage is restored. Errors are handled internally	0.3930	0.0133
+0.4520	0.5132	1.000	correct the malfunction.	0.1842	0.0116
+0.4666	0.0827	1.000	by the program if the I-O check switch on the console	0.4023	0.0116
+0.4811	0.0827	1.000	is off.	0.0470	0.0102
+0.4956	0.1015	1.000	The punched card output is stacked in stacker 8/2	0.3703	0.0116
+0.5073	0.5169	1.000	Program Flow	0.1109	0.0103
+0.5115	0.0827	1.000	(middle stacker). To allow the last card of a file to	0.3910	0.0118
+0.5247	0.0827	1.000	be stacked in stacker 8/2, an extra card is punched.	0.3929	0.0132
+0.5363	0.5169	1.000	As the output tape records are read, a tape read error	0.4117	0.0131
+0.5406	0.0846	1.000	This extra card is stacked in the normal punch (NP)	0.3872	0.0132
+0.5509	0.5169	1.000	check is performed. See Figure 144. If a tape read	0.3947	0.0131
+0.5552	0.0827	1.000	stacker. Any mispunched cards are also stacked in	0.3891	0.0118
+0.5654	0.5169	1.000	error is detected, the tape record is backspaced, the	0.4004	0.0131
+0.5697	0.0827	1.000	the NP stacker; therefore, all cards in the NP stacker	0.4079	0.0132
+0.5814	0.5169	1.000	error counter is incremented by one, and the record	0.3947	0.0132
+0.5842	0.0827	1.000	should be ignored and discarded.	0.2462	0.0131
+0.5939	0.5130	1.000	is read again. If, after five successive attempts at	0.3894	0.0164
+0.6087	0.5149	1.000	reading the tape record, the error still exists, an	0.3800	0.0152
+0.6133	0.0827	1.000	Operator Instructions	0.1617	0.0131
+0.6250	0.5150	1.000	error message is printed and the operation stops	0.3684	0.0117
+0.6378	0.5149	1.000	(STOP 1). With no tape read error detected, the first	0.4081	0.0154
+0.6424	0.0996	1.000	1. Ready output tape on tape unit 2 in high density.	0.3835	0.0131
+0.6526	0.5150	1.000	character of each record is checked to select the	0.3665	0.0116
+0.6570	0.0977	1.000	2. Ready the punch, reader and console; set sense	0.3835	0.0131
+0.6685	0.5132	1.000	output media, either printer or card punch. If C is	0.3872	0.0133
+0.6707	0.0807	1.000	switch A on, I-O check switch off.	0.2578	0.0139
+0.6814	0.5149	1.000	the first character, the record (ten cards) will be	0.3744	0.0170
+0.6875	0.0977	1.000	3. Load object deck and separator cards in reader	0.3853	0.0116
+0.6976	0.5150	1.000	punched. The absence of a C indicates the record	0.3759	0.0118
+0.7005	0.0808	1.000	hopper.	0.0602	0.0133
+0.7121	0.5150	1.000	(12 lines) will be printed.	0.1917	0.0118
+0.7166	0.0959	1.000	4. Load blank cards in punch hopper. (Separator	0.3778	0.0116
+0.7297	0.5320	1.000	With the card punch selected as the output media,	0.3703	0.0131
+0.7311	0.0808	1.000	cards should be a different color and different corner	0.4023	0.0102
+0.7442	0.5150	1.000	the data is punched, error checked, and, if error	0.3741	0.0131
+0.7456	0.0808	1.000	cut than cards to be punched.)	0.2274	0.0116
+0.7587	0.5150	1.000	free, stacked in stacker 8/2. If a punch error is	0.3703	0.0131
+0.7602	0.0977	1.000	5. Press Load key on console.	0.2350	0.0116
+0.7730	0.5149	1.000	detected, the error card is dropped in stacker NP,	0.3818	0.0149
+0.7842	0.5148	1.000	the error counter is incremented by one, and the	0.3670	0.0191
+0.7878	0.0846	1.000	Programmed Halts	0.1429	0.0116
+0.8036	0.5150	1.000	same card is re-punched. Five attempts are made	0.3835	0.0118
+0.8168	0.0844	1.000	For all programmed halts, a message is printed	0.3649	0.0160
+0.8182	0.5132	1.000	to punch the card correctly. If all five attempts fail,	0.4004	0.0133
+0.8327	0.0846	1.000	giving procedures for the operator to follow in order	0.3947	0.0118
+0.8327	0.5132	1.000	an error message is printed and the operation stops	0.3910	0.0118
+0.8473	0.5150	1.000	(STOP 4). With the card punch operation error-free,	0.4004	0.0133
+0.8473	0.0827	1.000	to correct errors and resume operation.	0.3064	0.0118
+0.8603	0.0976	1.000	STOP 1 - When the output tape reaches its physical	0.3875	0.0151
+0.8618	0.5132	1.000	the punch address is incremented by 160 and the next	0.4004	0.0118
+0.8764	0.5150	1.000	card is punched. This operation continues until the	0.3853	0.0118
+0.8764	0.0846	1.000	end, a trailer record is read which tells whether or	0.3891	0.0118
+0.8881	0.0827	1.000	not the job is continued on another tape.	0.3045	0.0131
+0.8909	0.5132	1.000	last (tenth) card is punched. After the tenth card is	0.3910	0.0118
+0.9026	0.0827	1.000	sages are: TAPE END - JOB CONT ON NEXT PAGE,	0.4079	0.0147
+0.9052	0.5131	1.000	punched, checked, and stacked, the program branches	0.4100	0.0160
+0.9172	0.0808	1.000	or TAPE END.	0.1147	0.0132
+0.9215	0.5132	1.000	to NEXT and reads the next record.	0.2707	0.0116
+0.9506	0.0789	1.000	256	0.0207	0.0087

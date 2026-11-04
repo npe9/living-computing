@@ -1,0 +1,107 @@
+0.0923	0.1370	1.000	If an EE appears after a backspace, the implication	0.3857	0.0164
+0.0971	0.5525	1.000	(Figure 88). If the operation that failed was a $WEF,	0.4024	0.0148
+0.1056	0.1126	1.000	is that case 1 above was attempted and the tape did	0.3838	0.0171
+0.1118	0.5526	1.000	the job is completely on tape and a $BSFL will elimi-	0.4004	0.0132
+0.1228	0.1145	1.000	not move on the second WEF. After a $SPFL, the	0.3781	0.0155
+0.1279	0.5526	1.000	nate it. If it was ȘW, the buffer position pointer (VX)	0.4023	0.0131
+0.1381	0.1147	1.000	second $WEF may be reinitiated.	0.2500	0.0131
+0.1409	0.5526	1.000	must be moved beyond the offending job's cards as	0.3778	0.0132
+0.1513	0.1351	1.000	If an EOP appears after a backspace, any of the	0.3594	0.0169
+0.1557	0.5525	1.000	each parameter is removed from the write tape	0.3574	0.0145
+0.1672	0.1128	1.000	other three WEF cases are possible. The record	0.3684	0.0132
+0.1730	0.5508	1.000	parameter queue. As the cards are skipped over,	0.3778	0.0131
+0.1812	0.1145	1.000	count VRCNT must now be tested (Figure 87). If	0.3668	0.0159
+0.1860	0.5508	1.000	their space is made available to the card reader to	0.3835	0.0116
+0.1976	0.1128	1.000	greater than zero, the UK occurred in case 2 above.	0.3947	0.0132
+0.2006	0.5508	1.000	refill. The number of cards being skipped over is	0.3797	0.0131
+0.2121	0.1147	1.000	The tape did move but the $BSP has put the tape in	0.3816	0.0132
+0.2166	0.5508	1.000	contained in VT5, which is added to VX. Each param-	0.4117	0.0131
+0.2252	0.1126	1.000	position for $WEF to be reinitiated. If, however, the	0.4008	0.0180
+0.2311	0.5508	1.000	eter is examined as it is passed to the WT queue until	0.4041	0.0131
+0.2408	0.1126	1.000	record count is equal to zero, only single WEF,	0.3575	0.0166
+0.2456	0.5489	1.000	-VWEFT is found. This is done by RESRCH and its	0.3929	0.0131
+0.2573	0.1128	1.000	cases 3 and 4, need be considered. To determine	0.3741	0.0131
+0.2602	0.5508	1.000	associated routines.	0.1523	0.0116
+0.2718	0.1109	1.000	whether or not the tape has moved, a one card read	0.3872	0.0131
+0.2746	0.5657	1.000	After the preceding backspace, a $SPFL is given	0.3686	0.0154
+0.2863	0.1090	1.000	is initiated. If the $RD gives UK-EOP or EOP alone	0.3966	0.0131
+0.2906	0.5489	1.000	and the terminating tape end of file mark is written.	0.3910	0.0118
+0.3002	0.1108	1.000	then $CCW is given and the word count is tested. If	0.3894	0.0155
+0.3052	0.5489	1.000	If the original failure was a tape terminating WEF	0.3778	0.0132
+0.3149	0.1108	1.000	zero, the tape did not move and the WEF may be re-	0.3950	0.0166
+0.3197	0.5489	1.000	which did not move the tape, a REDOBL entry is	0.3665	0.0132
+0.3295	0.1089	1.000	tried; if not zero, the tape moved and a bad tape mark	0.4063	0.0157
+0.3327	0.5508	1.000	made (Figure 87). The program cannot $SPFL and	0.3835	0.0133
+0.3459	0.1109	1.000	was written on tape. A backspace must be given be-	0.3947	0.0132
+0.3488	0.5489	1.000	SWEF as in other cases, but must $BSFL over a com-	0.4098	0.0131
+0.3590	0.1089	1.000	fore reissuing $WEF. If the $RD gave a UK alone,	0.3838	0.0164
+0.3633	0.5489	1.000	pleted job, $SPFL and then $WEF. Since a good job	0.3929	0.0146
+0.3750	0.1090	1.000	the tape is rejected.	0.1541	0.0117
+0.3764	0.5489	1.000	has been eliminated, the file count must be reduced	0.3872	0.0146
+0.3937	0.5488	1.000	by one.	0.0546	0.0105
+0.4055	0.1128	1.000	Retry of $WEF or ȘW: When a UK appears on a $W,	0.3947	0.0146
+0.4084	0.5639	1.000	In any case, should the second attempt to write end	0.3853	0.0131
+0.4200	0.1128	1.000	only a backspace need be given before retrying the	0.3778	0.0131
+0.4230	0.5489	1.000	of file fail to terminate the tape, the entire tape is	0.3778	0.0146
+0.4345	0.1128	1.000	$W. The retry operation for $W or $WEF is very	0.3759	0.0131
+0.4375	0.5489	1.000	rejected via REDUMP and the appropriate job reject	0.3929	0.0131
+0.4491	0.1128	1.000	much alike. The tape is now in position and the $W or	0.4079	0.0131
+0.4519	0.5468	1.000	information given to job control. The entire tape will	0.4044	0.0157
+0.4651	0.1128	1.000	$WEF is given. The EOP slot in TOE is changed to	0.3891	0.0131
+0.4679	0.5470	1.000	also be rejected immediately after the ERG count is	0.3910	0.0118
+0.4797	0.1128	1.000	RESTOR, and if on the interrupt an EOP is received,	0.3985	0.0131
+0.4824	0.5470	1.000	exhausted if there was a previous total failure on the	0.3966	0.0118
+0.4942	0.1128	1.000	TOE is restored and control is given back to the input	0.4041	0.0131
+0.4956	0.5470	1.000	same tape or if the failure occurred on the first file	0.3910	0.0131
+0.5081	0.1108	1.000	program. If, however, a UK is received, the entire	0.3968	0.0157
+0.5115	0.5470	1.000	(to prevent backspacing into the label).	0.2914	0.0133
+0.5230	0.1108	1.000	fixup routine is repeated again. The tape is again	0.3761	0.0138
+0.5378	0.1108	1.000	backspaced and the type of operation, W or WEF,	0.3705	0.0150
+0.5406	0.5470	1.000	UK on Card Reader	0.1447	0.0103
+0.5523	0.1109	1.000	again established. A $W or $WEF is rewritten	0.3571	0.0116
+0.5656	0.1108	1.000	the program restored. If a UK is received again, the	0.4044	0.0162
+0.5682	0.5451	1.000	In general, there are three types of card reader	0.3628	0.0147
+0.5814	0.1109	1.000	fixup routine is begun once more. A count of the	0.3684	0.0132
+0.5818	0.5449	1.000	failures: a mechanical feed failure, a read failure,	0.3895	0.0172
+0.5967	0.5468	1.000	or a mixture of both. The card reader fixup program	0.4026	0.0171
+0.5973	0.1109	1.000	number of tape backspaces is maintained, and when	0.3872	0.0133
+0.6118	0.1090	1.000	an arbitrary limit is reached, an erase gap ($ERG)	0.3835	0.0132
+0.6148	0.5451	1.000	can handle card jams, misfeeds, and misreads mixed	0.4041	0.0131
+0.6264	0.1090	1.000	pseudo-op is performed. The backspace count is	0.3703	0.0118
+0.6278	0.5449	1.000	in any order. Five UK cases are possible:	0.3236	0.0152
+0.6409	0.1109	1.000	reset and the $W or $WEF again retried. An ERG	0.3778	0.0132
+0.6439	0.5620	1.000	1. A single UK following a B card.	0.2650	0.0131
+0.6555	0.1090	1.000	count is also maintained, and when its arbitrary limit	0.4060	0.0132
+0.6570	0.5602	1.000	2. A consecutive total UK failure.	0.2613	0.0161
+0.6685	0.1090	1.000	is reached, a total UK failure is assumed.	0.3195	0.0147
+0.6730	0.5602	1.000	3. Iwo or more total UK failures with cards	0.3402	0.0131
+0.6860	0.5432	1.000	between on the same input read.	0.2444	0.0161
+0.7035	0.5639	1.000	4. A single UK followed by cards.	0.2613	0.0145
+0.7035	0.1109	1.000	Total UK Failure on $W or $WEF: When a total UK	0.3872	0.0160
+0.7179	0.5658	1.000	5. A single UK on the last card of the read.	0.3327	0.0133
+0.7179	0.1109	1.000	failure occurs, the fixup program must eliminate the	0.3985	0.0133
+0.7324	0.1109	1.000	offending job both from the tape and parameter queue	0.3985	0.0133
+0.7470	0.1109	1.000	as well as terminate the input tape with two consecu-	0.3985	0.0118
+0.7470	0.5469	1.000	Card Reader Feed Failure: The fixup program deter-	0.4081	0.0187
+0.7630	0.1109	1.000	tive tape marks (Figure 87). Notice that the input	0.3778	0.0118
+0.7630	0.5489	1.000	mines whether a UK or a UK-EOP occurred on the	0.3797	0.0118
+0.7776	0.5470	1.000	card reader. If UK, a feed failure is assumed. The	0.4004	0.0146
+0.7776	0.1109	1.000	program rather than the fixup program puts on the	0.3797	0.0118
+0.7921	0.1109	1.000	second tape mark. This is done because if the fixup	0.3929	0.0131
+0.7921	0.5470	1.000	operator is notified (Figure 89) and he pushes the	0.3741	0.0161
+0.8046	0.5468	1.000	ready key if he can clear the jam, or the channel	0.3689	0.0195
+0.8067	0.1090	1.000	program put the $WEF on tape and a UK should occur,	0.4079	0.0131
+0.8203	0.1108	1.000	the fixup program would consider this as a very	0.3592	0.0140
+0.8212	0.5470	1.000	signal (CS) key if he cannot. The card reader is in	0.3853	0.0131
+0.8358	0.1109	1.000	special case, necessitating a great deal of extra	0.3609	0.0131
+0.8358	0.5451	1.000	the not-ready status when the CS is generated. The	0.3929	0.0145
+0.8517	0.1109	1.000	coding. By giving the input program this chore, a	0.3778	0.0116
+0.8517	0.5470	1.000	fixup program takes this as a signal to go into offline	0.3985	0.0131
+0.8648	0.5489	1.000	operation. If the card jam has been cleared and the	0.3891	0.0131
+0.8663	0.1109	1.000	UK here can be handled by the general $WEF fixup.	0.3835	0.0116
+0.8794	0.5470	1.000	cards reloaded, the operator pushes the ready key,	0.3853	0.0146
+0.8808	0.1278	1.000	The fixup program must now dispose of all traces	0.3703	0.0102
+0.8939	0.1109	1.000	of the job from the input program tables, queues, etc.	0.4060	0.0131
+0.8953	0.5470	1.000	causing another $RD to be issued.	0.2575	0.0116
+0.9506	0.7744	1.000	System Input-Output	0.1222	0.0102
+0.9520	0.9173	1.000	161	0.0244	0.0087

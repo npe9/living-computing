@@ -1,0 +1,49 @@
+0.1337	0.1053	1.000	ERRATA	0.0771	0.0189
+0.1788	0.1053	1.000	The introduction to the STRAP manual gives alternate system requirements for running	0.6974	0.0161
+0.1933	0.1034	1.000	STRAP without a disk. Since STRAP now functions as a problem program of MCP, this	0.6992	0.0174
+0.2093	0.1034	1.000	is no longer possible. The current system requirements are listed in this bulletin.	0.6654	0.0160
+0.2416	0.1050	1.000	page 1 - column 2 - line 1	0.2298	0.0158
+0.2427	0.4154	1.000	not Spool Tape	0.1090	0.0131
+0.2528	0.4171	1.000	ut System Input and System Output Tape	0.3143	0.0194
+0.2848	0.4098	1.000	eliminate and one new restriction on the use of	0.3797	0.0189
+0.2892	0.1053	1.000	page 1 - column 2 - line 12	0.2387	0.0132
+0.3018	0.4284	1.000	radix 16.	0.0868	0.0185
+0.3341	0.1032	1.000	page 3 - column 2 - line 36	0.2410	0.0164
+0.3342	0.4060	1.000	not BZM, ERROR($7)	0.1805	0.0161
+0.3486	0.4041	1.000	but BZM, ERROR($1)	0.1824	0.0165
+0.3808	0.1034	1.000	page 3 - column 2 - line 41	0.2406	0.0160
+0.3808	0.4060	1.000	not by index register?	0.1880	0.0204
+0.3953	0.4079	1.000	but by index register 1	0.1880	0.0147
+0.4236	0.4029	0.300	DO: BB, ONEBIT(85, FIXUS)	0.2695	0.0403
+0.4273	0.1034	1.000	page 4 - column 1 - line 36	0.2406	0.0146
+0.4708	0.3978	0.500	not ter 9.	0.0914	0.0375
+0.4738	0.1034	1.000	page 4 - column 1 - line 41	0.2387	0.0160
+0.5145	0.4079	1.000	The sentence should read: The dds immediately	0.3853	0.0189
+0.5203	0.1034	1.000	page 6 - column 2 - line 4	0.2312	0.0146
+0.5348	0.4079	1.000	follows the operation mnemonic, except in pro-	0.3741	0.0146
+0.5451	0.4098	1.000	gressive indexing, where it may precede or	0.3440	0.0189
+0.5613	0.4059	1.000	follow the secondary operation.	0.2521	0.0184
+0.5945	0.4041	1.000	not thus complied.	0.1523	0.0174
+0.5973	0.1015	1.000	page 10 - column 2 - line 32	0.2500	0.0161
+0.6072	0.4059	1.000	but thus compiled.	0.1524	0.0210
+0.6424	0.4060	1.000	The diagram showing index modification of the	0.3722	0.0161
+0.6439	0.1015	1.000	page 12 - column 2	0.1654	0.0161
+0.6551	0.4060	1.000	second half word is out of proportion. The	0.3459	0.0168
+0.6715	0.4060	1.000	corrected diagram is:	0.1786	0.0176
+0.6976	0.5319	1.000	OFFSET	0.0715	0.0176
+0.6991	0.4380	1.000	FL	0.0301	0.0160
+0.6999	0.6370	1.000	Instruction	0.0925	0.0187
+0.7006	0.4868	1.000	BS	0.0263	0.0131
+0.7108	0.5959	1.000	50	0.0263	0.0160
+0.7122	0.4793	1.000	41	0.0244	0.0145
+0.7122	0.5244	1.000	44	0.0207	0.0131
+0.7122	0.4135	1.000	35	0.0244	0.0145
+0.7644	0.7011	1.000	Index Value	0.0997	0.0162
+0.7791	0.7237	1.000	Field	0.0470	0.0160
+0.7805	0.3891	0.300	D/3	0.0432	0.0160
+0.8081	0.4023	0.500	Bot tines 18 ad 15.	0.1617	0.0379
+0.8139	0.1034	1.000	page 18 - column 2	0.1617	0.0131
+0.8139	0.2688	1.000	- line 43	0.0827	0.0103
+0.8583	0.3978	1.000	bot tine 13	0.0968	0.0375
+0.8605	0.1015	1.000	page 18 - column 2 - line 50	0.2481	0.0132
+0.9157	0.5094	1.000	N28-1081 (C28-6129) Page 17 of 20	0.2914	0.0174

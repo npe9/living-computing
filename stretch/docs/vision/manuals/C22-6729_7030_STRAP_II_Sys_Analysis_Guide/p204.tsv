@@ -1,0 +1,83 @@
+0.0683	0.0752	1.000	Expression	0.0827	0.0102
+0.0697	0.5038	1.000	Op Index	0.0620	0.0118
+0.0973	0.0752	1.000	A STRAP II expression (constructed according to the	0.3891	0.0118
+0.0988	0.5019	1.000	In STRAP II there is a table of op index words. For	0.3872	0.0118
+0.1118	0.0733	1.000	rules for the field of the instruction in which the	0.3590	0.0103
+0.1133	0.5038	1.000	each type of instruction, there is a corresponding op	0.3872	0.0131
+0.1264	0.0752	1.000	expression is located) is a sequence of constants and	0.3891	0.0118
+0.1279	0.5019	1.000	index or question bit string. The op index contains:	0.3853	0.0131
+0.1409	0.0733	1.000	of variables, subscripted or not subscripted, separa-	0.3985	0.0118
+0.1424	0.5188	1.000	1. Location of fill index word chains for this type	0.3703	0.0116
+0.1521	0.0732	1.000	ted by operation symbols and parentheses, and	0.3479	0.0153
+0.1584	0.5038	1.000	of instruction.	0.1053	0.0102
+0.1700	0.0733	1.000	followed by either an index or by a general paren-	0.3722	0.0118
+0.1715	0.5188	1.000	2. Masked set of bits whose status indicate	0.3271	0.0116
+0.1845	0.0733	1.000	thetical field integer entry, but not both.	0.3026	0.0131
+0.1875	0.5019	1.000	answers to certain yes-no questions about this type	0.3797	0.0116
+0.2020	0.5038	1.000	of op.	0.0432	0.0116
+0.2136	0.0752	1.000	Fill Control Words	0.1410	0.0103
+0.2166	0.5188	1.000	3. A. code number if the op is a secondary op.	0.3440	0.0116
+0.2427	0.0752	1.000	They are a chained list of index words for each	0.3477	0.0131
+0.2456	0.5038	1.000	Pass 1	0.0489	0.0102
+0.2587	0.0752	1.000	instruction. These XW's are used by INSERT's sub-	0.3910	0.0131
+0.2733	0.0752	1.000	routines for inserting the values into the binary	0.3515	0.0116
+0.2747	0.5019	1.000	This is the phase of STRAP II that processes the	0.3609	0.0147
+0.2878	0.0752	1.000	output of the instruction.	0.1842	0.0116
+0.2892	0.5000	1.000	input statements and builds up an intermediate	0.3459	0.0145
+0.3036	0.5019	1.000	expanded instruction unit for each instruction, a	0.3571	0.0147
+0.3169	0.0752	1.000	f.1.	0.0320	0.0116
+0.3182	0.5000	1.000	symbol table, and a name file.	0.2293	0.0161
+0.3457	0.5018	1.000	Pass 2a	0.0622	0.0164
+0.3459	0.0752	1.000	This stands for field length.	0.2068	0.0116
+0.3735	0.5019	1.000	This is the phase of STRAP II that assigns memory	0.3816	0.0189
+0.3764	0.0714	1.000	General Parenthetical Field Integer Entry	0.3120	0.0146
+0.3894	0.5000	1.000	addresses to location counter dependent statements.	0.3872	0.0161
+0.4055	0.0733	1.000	This is the method of OR'ing a pattern of bits into	0.3703	0.0146
+0.4197	0.5017	1.000	Pass 2b	0.0604	0.0153
+0.4200	0.0733	1.000	an instruction or into a pseudo instruction which	0.3590	0.0131
+0.4317	0.0714	1.000	produces binary output. Such pseudo instructions	0.3703	0.0147
+0.4462	0.0714	1.000	as SYN, DR, DDI, and DRZ cannot have a gp.	0.3421	0.0174
+0.4491	0.5019	1.000	This is the phase of STRAP II that checks memory	0.3741	0.0161
+0.4651	0.5000	1.000	assignments, completes binary output, and produces	0.3929	0.0146
+0.4751	0.5018	1.000	final documents.	0.1261	0.0194
+0.4782	0.0733	1.000	g. p. (or gp, or GP)	0.1504	0.0131
+0.5059	0.0751	1.000	This stands for general parenthetical integer entry.	0.3819	0.0150
+0.5087	0.5019	1.000	Phoney Symbol Table Entry	0.2049	0.0146
+0.5363	0.0733	1.000	Initial Card of a Card Block	0.2086	0.0116
+0.5378	0.5000	1.000	If a name is attached to an operation which does not	0.3853	0.0146
+0.5536	0.5019	1.000	produce binary output and which is not an MCP op,	0.3741	0.0133
+0.5654	0.0752	1.000	This is a card which does not have a continuation	0.3628	0.0131
+0.5679	0.5019	1.000	a SYN, DR, nor a DDI op, a "phoney" or specially	0.3722	0.0154
+0.5799	0.0733	1.000	mark in the first column.	0.1898	0.0131
+0.5814	0.5019	1.000	marked entry is made in the STRAP II symbol table.	0.3872	0.0147
+0.5957	0.5018	1.000	Then the instruction will receive an error message	0.3780	0.0148
+0.6076	0.5000	1.000	for the unnecessary name. Note that address refer-	0.3947	0.0189
+0.6105	0.0714	1.000	Integer Style Number	0.1617	0.0132
+0.6221	0.5019	1.000	ence to this symbol will receive the setting of the	0.3703	0.0189
+0.6394	0.0733	1.000	This is a number which does not have a decimal	0.3571	0.0133
+0.6394	0.5000	1.000	location counter of the next instruction (with or	0.3534	0.0161
+0.6526	0.5019	1.000	without possible truncation).	0.2143	0.0174
+0.6539	0.0714	1.000	point. Since a subscript is an example of this, an	0.3759	0.0147
+0.6672	0.0714	1.000	integer style datum may also be called an S-datum.	0.3835	0.0147
+0.6860	0.5038	1.000	Primitive Dimension Reference Entry	0.2801	0.0131
+0.6975	0.0733	1.000	I-value	0.0546	0.0105
+0.7151	0.5019	1.000	This is the initial unevaluated entry made for a	0.3477	0.0131
+0.7282	0.0752	1.000	This stands for integer value.	0.2199	0.0116
+0.7297	0.5019	1.000	dimension specified on a DR or DRZ either in the unit	0.3985	0.0131
+0.7442	0.5019	1.000	or in the vle table. See Appendix A for format.	0.3515	0.0131
+0.7573	0.0752	1.000	Location Counter Dependent Symbol	0.2650	0.0116
+0.7733	0.5019	1.000	Priority of Operations	0.1673	0.0146
+0.7863	0.0752	1.000	This is a symbol whose value in the symbol table	0.3628	0.0116
+0.7964	0.5019	1.000	When arithmetic operations are specified in an	0.3477	0.0147
+0.8023	0.0752	1.000	entry depends on the location counter.	0.2820	0.0116
+0.8109	0.5019	1.000	instruction field, there is a definite order by which	0.3797	0.0147
+0.8255	0.5019	1.000	they are combined. The following describes the	0.3590	0.0147
+0.8270	0.0733	1.000	Name	0.0451	0.0116
+0.8400	0.5019	1.000	operations in descending order of combination.	0.3477	0.0147
+0.8561	0.0752	1.000	This consists of the legal name characters appearing	0.3929	0.0131
+0.8576	0.5226	1.000	1st order operation + and -	0.1955	0.0088
+0.8648	0.5244	1.000	nd order operation *and/	0.1992	0.0161
+0.8706	0.0714	1.000	in columns 2-9 of a card block including the	0.3308	0.0146
+0.8852	0.0752	1.000	embedded blanks.	0.1316	0.0131
+0.8852	0.5207	1.000	3rd order operation **.	0.1748	0.0117
+0.9201	0.0677	1.000	204	0.0263	0.0116

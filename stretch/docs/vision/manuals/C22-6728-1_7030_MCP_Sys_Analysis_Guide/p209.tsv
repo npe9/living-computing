@@ -1,0 +1,150 @@
+0.1003	0.8459	1.000	10.0	0.0376	0.0131
+0.1003	0.5395	1.000	BRANCH ADDRESS	0.1485	0.0146
+0.1017	0.1184	1.000	The current contents of the communication region	0.3741	0.0116
+0.1133	0.5395	1.000	MAIN ENTRY POINT	0.1635	0.0161
+0.1163	0.0902	1.000	• may be replaced by means of the following linkage:	0.3947	0.0131
+0.1163	0.8477	1.000	10.32	0.0451	0.0145
+0.1294	0.5395	1.000	ADDRESS OF NODE TABLE	0.2143	0.0146
+0.1308	0.8477	1.000	11.0	0.0357	0.0131
+0.1321	0.1184	1.000	B, ŞMCP	0.0715	0.0135
+0.1452	0.8477	1.000	12.0-13.63	0.0866	0.0149
+0.1453	0.5395	1.000	MASK FOR LINK TABLE	0.1917	0.0131
+0.1467	0.1184	1.000	, $STRG	0.0658	0.0133
+0.1612	0.1184	1.000	, FWA. (1)	0.0752	0.0133
+0.1759	0.1203	1.000	(return)	0.0583	0.0116
+0.1817	0.5263	1.000	Communication Region Usage	0.2218	0.0147
+0.1917	0.1014	1.000	where	0.0471	0.0106
+0.2048	0.1203	1.000	FWA. (I) is the first word (18 bit) address of a	0.3440	0.0132
+0.2078	0.5263	1.000	The first seven words of the communication region are	0.4135	0.0189
+0.2209	0.1842	1.000	25-word block of storage in the processor	0.3158	0.0146
+0.2267	0.5244	1.000	initially provided by MCP, and are used by MCP when	0.4098	0.0146
+0.2339	0.1842	1.000	from which the entire communication	0.2801	0.0132
+0.2412	0.5263	1.000	control is passed from one link to another. If a link is	0.4135	0.0146
+0.2500	0.1861	1.000	region is transmitted.	0.1654	0.0116
+0.2558	0.5244	1.000	to modify any of these seven words, any change must	0.4023	0.0146
+0.2718	0.5244	1.000	be consistent with subsequent usage by MCP (See	0.3703	0.0131
+0.2848	0.5244	1.000	JC4). The use of the remainder of the communica-	0.3891	0.0146
+0.2878	0.1015	1.000	Communication Region Format	0.2350	0.0116
+0.3009	0.5244	1.000	tion region is determined by the requirements of the	0.3947	0.0116
+0.3169	0.1034	1.000	The format of the communication region is as follows:	0.4041	0.0116
+0.3270	0.5414	1.000	The number of links in the chain of processors	0.3534	0.0176
+0.3445	0.2086	1.000	Number of links in the chain.	0.2199	0.0146
+0.3457	0.1015	1.000	0.0 - 0.17	0.0884	0.0135
+0.3459	0.5263	1.000	and the position number of the current link are not	0.3816	0.0116
+0.3590	0.2086	1.000	Not used.	0.0733	0.0146
+0.3600	0.0995	1.000	0.18 - 0.24	0.0904	0.0154
+0.3605	0.5263	1.000	greater than 5. The position number of the current	0.3891	0.0117
+0.3732	0.2086	1.000	Last link flag.	0.1073	0.0152
+0.3750	0.5263	1.000	link is initially set to 1 and is updated by MCP at the	0.3966	0.0117
+0.3750	0.0996	1.000	0.25	0.0376	0.0145
+0.3881	0.2086	1.000	Not used.	0.0714	0.0131
+0.3892	0.0995	1.000	0.26 - 0.31	0.0885	0.0153
+0.3894	0.5263	1.000	end of each link in the chain. The last link flag is	0.3759	0.0118
+0.4020	0.5262	1.000	set to 1 by MCP when the current link is the last	0.3668	0.0159
+0.4026	0.2086	1.000	Position number of current link.	0.2444	0.0147
+0.4050	0.1014	1.000	0.32 - 0.49	0.0867	0.0128
+0.4184	0.2086	1.000	Not used.	0.0734	0.0149
+0.4200	0.1015	1.000	0.50 - 0.63	0.0884	0.0118
+0.4201	0.5263	1.000	link.	0.0376	0.0116
+0.4330	0.2086	1.000	Number of arcs in temporary working	0.2857	0.0146
+0.4344	0.1015	1.000	1.0 - 1.17	0.0884	0.0120
+0.4345	0.5432	1.000	The number of ares (at the beginning of a track) in	0.3797	0.0103
+0.4476	0.2199	1.000	storage (TWS).	0.1203	0.0146
+0.4491	0.5282	1.000	TWS is the number available on the disk to the chain.	0.3966	0.0103
+0.4634	0.2086	1.000	Type of run:	0.0941	0.0137
+0.4636	0.5263	1.000	This is not changed by MCP during processing. The	0.3966	0.0117
+0.4636	0.1015	1.000	1.18 - 1.20	0.0865	0.0117
+0.4782	0.5263	1.000	links in the chain must communicate to other links	0.3797	0.0103
+0.4782	0.2895	1.000	Compile	0.0639	0.0131
+0.4782	0.2237	1.000	100	0.0301	0.0131
+0.4898	0.2237	1.000	010	0.0320	0.0160
+0.4927	0.2895	1.000	Compile and Go	0.1203	0.0131
+0.4927	0.5263	1.000	about how this total area is utilized. This may be	0.3759	0.0116
+0.5073	0.2237	1.000	001	0.0301	0.0131
+0.5073	0.5263	1.000	done in the remainder of the communication region.	0.3891	0.0116
+0.5087	0.2914	1.000	Go	0.0207	0.0087
+0.5214	0.0976	1.000	1.21 -	0.0530	0.0153
+0.5218	0.5432	1.000	The type of run was given to MCP on the type of	0.3609	0.0131
+0.5231	0.2105	1.000	List option:	0.0865	0.0133
+0.5378	0.5263	1.000	problem card. It is the responsibility of the last	0.3703	0.0116
+0.5378	0.2256	1.000	0	0.0094	0.0102
+0.5378	0.2838	1.000	No list	0.0602	0.0116
+0.5509	0.2876	1.000	List	0.0376	0.0131
+0.5523	0.2256	1.000	1	0.0113	0.0102
+0.5523	0.5263	1.000	link in the chain to leave the binary output on the	0.3647	0.0116
+0.5667	0.0995	1.000	1.22-	0.0509	0.0149
+0.5669	0.2086	1.000	Punch option:	0.1034	0.0131
+0.5669	0.5263	1.000	disk if the run was Compile and Go and the reject	0.3722	0.0116
+0.5794	0.2874	1.000	No punch	0.0718	0.0157
+0.5814	0.5263	1.000	flag is not on.	0.1053	0.0116
+0.5945	0.2876	1.000	Punch	0.0489	0.0145
+0.5959	0.5432	1.000	The list and punch options were given to MCP on	0.3647	0.0116
+0.5959	0.2256	1.000	1	0.0094	0.0102
+0.6090	0.2068	1.000	Type card option bits.	0.1673	0.0160
+0.6101	0.1014	1.000	1.23 - 1.63	0.0885	0.0137
+0.6105	0.5263	1.000	the type of problem card. These refer to output for	0.3891	0.0117
+0.6235	0.2086	1.000	Name of the Ist link.	0.1579	0.0146
+0.6259	0.0995	1.000	2.0 - 2.47	0.0905	0.0142
+0.6264	0.5263	1.000	the problem program via system output and are	0.3571	0.0118
+0.6394	0.5263	1.000	independent of the binary output used for Compile	0.3703	0.0133
+0.6394	0.2086	1.000	Not used.	0.0734	0.0148
+0.6408	0.1015	1.000	2.48 - 2.63	0.0884	0.0120
+0.6539	0.2086	1.000	Name of the 2nd link.	0.1617	0.0147
+0.6552	0.1014	1.000	3.0 - 3.47	0.0885	0.0123
+0.6554	0.5263	1.000	and Go.	0.0583	0.0119
+0.6685	0.5432	1.000	The names of the links in (A6) BCD are used by	0.3571	0.0118
+0.6695	0.2085	1.000	Not used.	0.0736	0.0113
+0.6699	0.1015	1.000	3.48 - 3.63	0.0884	0.0119
+0.6830	0.5263	1.000	MCP to call in the links in the given sequence and are	0.4041	0.0118
+0.6845	0.2105	1.000	Name of the 3rd link.	0.1598	0.0103
+0.6846	0.1353	1.000	-4.47	0.0545	0.0116
+0.6860	0.1015	1.000	4.0	0.0282	0.0102
+0.6988	0.2105	1.000	Not used.	0.0716	0.0107
+0.6990	0.1015	1.000	4.48 - 4.63	0.0884	0.0119
+0.6991	0.5263	1.000	put in the communication region for reference by the	0.3966	0.0117
+0.7136	0.1372	1.000	-5.47	0.0527	0.0117
+0.7136	0.2105	1.000	Name of the 4th link.	0.1579	0.0117
+0.7136	0.5263	1.000	links in the chain. The number of the current link	0.3797	0.0103
+0.7151	0.1015	1.000	5.0	0.0263	0.0102
+0.7282	0.5263	1.000	acts as a pointer to the name of the current link.	0.3665	0.0116
+0.7282	0.2105	1.000	Not used.	0.0714	0.0103
+0.7282	0.1015	1.000	5.48-5.63	0.0883	0.0116
+0.7427	0.2105	1.000	Name of the 5th link.	0.1579	0.0103
+0.7427	0.5432	1.000	The number of arcs occupied by the compiled prob-	0.3853	0.0116
+0.7427	0.1372	1.000	-6.47	0.0526	0.0116
+0.7442	0.0996	1.000	6.0	0.0282	0.0116
+0.7570	0.2086	1.000	Not used.	0.0734	0.0135
+0.7573	0.5263	1.000	lem program must be entered by the last link in the	0.3872	0.0116
+0.7587	0.1015	1.000	6.48 - 6.63	0.0883	0.0102
+0.7718	0.5263	1.000	chain if the type of problem is Compile and Go and	0.3797	0.0116
+0.7718	0.2105	1.000	Number of arcs occupied by compiled	0.2801	0.0116
+0.7731	0.1334	1.000	- 7.17	0.0565	0.0120
+0.7733	0.0996	1.000	7.0	0.0282	0.0116
+0.7863	0.5263	1.000	the reject flag is not on. MCP assumes that the	0.3628	0.0116
+0.7892	0.2256	1.000	program.	0.0714	0.0087
+0.8009	0.2105	1.000	Not used.	0.0714	0.0116
+0.8009	0.5263	1.000	compiled problem program is left in card form and	0.3835	0.0116
+0.8019	0.1014	1.000	7.18 - 7.24	0.0885	0.0125
+0.8154	0.5263	1.000	may be loaded from the first are up to and including	0.3910	0.0131
+0.8169	0.1015	1.000	7.25-	0.0489	0.0116
+0.8169	0.2086	1.000	Reject flag.	0.0902	0.0131
+0.8295	0.1014	1.000	7.26 - 24.63 Defined by chain of processors.	0.3478	0.0136
+0.8299	0.5263	1.000	the number of arcs occupied in TWS. This field is	0.3816	0.0116
+0.8445	0.1034	1.000	For the BSS processor chain, words 8 through 13	0.3684	0.0131
+0.8459	0.5263	1.000	tested by MCP only after the last link is completed.	0.3891	0.0102
+0.8590	0.5263	1.000	It may be used for inter-communication between	0.3628	0.0116
+0.8605	0.1015	1.000	are defined as follows:	0.1711	0.0102
+0.8735	0.5263	1.000	links as long as the last link enters the number of	0.3759	0.0146
+0.8750	0.1165	1.000	PP LOWER LIMIT	0.1429	0.0117
+0.8750	0.4323	1.000	8.0	0.0282	0.0116
+0.8894	0.5263	1.000	arcs occupied by the compiled problem program.	0.3684	0.0118
+0.8894	0.1165	1.000	PP UPPER LIMIT	0.1391	0.0118
+0.8895	0.4342	1.000	8.28	0.0357	0.0102
+0.9039	0.5432	1.000	The reject flag is set to 1 (on) if the Go phase of a	0.3759	0.0118
+0.9039	0.1184	1.000	ORIGIN OF BLANK COMMON	0.2237	0.0118
+0.9041	0.4323	1.000	9.0	0.0282	0.0116
+0.9185	0.5282	1.000	COMPILGO job is not to be executed.	0.2801	0.0118
+0.9185	0.1165	1.000	ADDRESS OF RELOCATION TABLES	0.2838	0.0133
+0.9186	0.4323	1.000	9.32	0.0376	0.0131
+0.9520	0.9117	1.000	209	0.0226	0.0087
+0.9520	0.7895	1.000	Service Routines	0.0996	0.0087

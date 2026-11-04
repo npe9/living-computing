@@ -1,0 +1,113 @@
+0.0652	0.0958	1.000	Operations	0.1073	0.0194
+0.0682	0.5131	1.000	INDICATORS	0.0846	0.0147
+0.0872	0.5301	1.000	Exchange Check Reject (EKJ)	0.2162	0.0174
+0.1002	0.0958	1.000	The input-output instructions used for the operation	0.3931	0.0165
+0.1017	0.5301	1.000	Channel Busy Reject (cBJ)	0.1974	0.0174
+0.1133	0.0921	0.300	of the dicte ygsicm art aescibed ehe trovich se ph anie	0.4004	0.0364
+0.1175	0.5316	1.000	Unit Not Ready Reject (UNRJ)	0.2207	0.0172
+0.1321	0.5320	1.000	Exchange Program Check (EPGK)	0.2368	0.0161
+0.1439	0.0921	1.000	same instructions with the exchange. They are sum-	0.3966	0.0174
+0.1439	0.5298	1.000	Unit Check (UK)	0.1306	0.0202
+0.1593	0.0939	1.000	marized below:	0.1187	0.0185
+0.1627	0.5301	1.000	End of Operation (EOP)	0.1748	0.0176
+0.1767	0.5297	1.000	Address Invalid (AD)	0.1568	0.0186
+0.1827	0.4228	1.000	CONTROL	0.0661	0.0140
+0.1931	0.2950	1.000	ACTION	0.0585	0.0150
+0.1947	0.1278	1.000	OPERATION	0.0771	0.0118
+0.1962	0.4323	1.000	WORD	0.0451	0.0116
+0.2106	0.0940	1.000	RD Read (SEOP)	0.1316	0.0161
+0.2108	0.2497	1.000	Data from disk storage yes	0.2186	0.0163
+0.2252	0.2632	1.000	to core storage	0.1184	0.0176
+0.2267	0.5132	1.000	Write (W); Write SEOP (WSEOP)	0.2331	0.0146
+0.2410	0.0935	1.000	W Write (SEOP)	0.1363	0.0173
+0.2412	0.2406	1.000	Data from core storage yes	0.2256	0.0161
+0.2485	0.5132	1.000	These instructions initiate a writing operation to the	0.3910	0.0176
+0.2567	0.2630	1.000	to disk storage	0.1168	0.0143
+0.2643	0.5130	1.000	disk specified by the channel address, bit positions	0.3913	0.0174
+0.2747	0.1034	1.000	OC Locate (SEOP) Set access mechanism t	0.3064	0.0147
+0.2762	0.4398	1.000	no	0.0244	0.0116
+0.2791	0.5113	1.000	12 through 18, in the left effective address of these	0.3910	0.0161
+0.2841	0.5240	0.300	Hrcio, bilt Poions	0.1640	0.0667
+0.2848	0.2763	1.000	nitial arc for late	0.1372	0.0161
+0.2921	0.5094	1.000	instructions. The right effective address of the in-	0.3929	0.0176
+0.3036	0.2632	1.000	data transmission	0.1391	0.0133
+0.3096	0.5094	1.000	struction, bit positions 32 through 49, specifies the	0.3966	0.0160
+0.3197	0.0921	1.000	REL Release (SEOP) Terminate data trans-	0.3289	0.0146
+0.3227	0.4417	1.000	no	0.0207	0.0102
+0.3270	0.5113	1.000	core storage location of the control word associated	0.3910	0.0131
+0.3327	0.2632	1.000	mission immediately	0.1598	0.0191
+0.3415	0.5113	1.000	with these operations.	0.1617	0.0161
+0.3503	0.0921	1.000	ccw Copy Control	0.1429	0.0161
+0.3503	0.2387	1.000	Data word address field	0.1805	0.0146
+0.3532	0.4417	1.000	no	0.0207	0.0087
+0.3576	0.5301	1.000	Data are transferred from	0.2049	0.0116
+0.3590	0.7331	1.000	successive locations in	0.1692	0.0116
+0.3619	0.1485	1.000	Word	0.0470	0.0160
+0.3648	0.2632	1.000	and word count field	0.1579	0.0146
+0.3735	0.5132	1.000	core storage beginning with the location specified in	0.3891	0.0146
+0.3821	0.2632	1.000	of control word to	0.1579	0.0133
+0.3881	0.5132	1.000	the data word address field of the control word. The	0.3910	0.0131
+0.3997	0.2632	1.000	core storage	0.0902	0.0116
+0.4019	0.5130	1.000	number of words of data written is given by the value	0.3894	0.0180
+0.4172	0.1071	1.000	When the seor modification is used it means sup-	0.3797	0.0147
+0.4185	0.5113	1.000	in the count field of the control word.	0.2707	0.0133
+0.4330	0.0902	1.000	PRESS END OF OPERATIONS. The normal Eop indication	0.3947	0.0146
+0.4345	0.5301	1.000	Used with a disk storage, these instructions differ	0.3722	0.0146
+0.4476	0.0902	1.000	given at the successful conclusion of an operation will	0.3947	0.0161
+0.4476	0.5110	1.000	from the operations as used with the exchange in	0.3914	0.0195
+0.4621	0.0921	1.000	be suppressed. The coNTROL and CONTROL (SEOP) in-	0.3929	0.0176
+0.4630	0.5111	1.000	that the control word flag bits and refill field are	0.3914	0.0187
+0.4771	0.0901	1.000	structions have no meaning for disk storage and will	0.3932	0.0165
+0.4797	0.5113	1.000	ignored. Data will be written into successive arcs of	0.3929	0.0131
+0.4911	0.0902	1.000	set the EPGK indicator.	0.1673	0.0149
+0.4937	0.5111	1.000	the disk until the count field is reduced to zero. The	0.3914	0.0170
+0.5101	0.5111	1.000	data written need not be a multiple of the number of	0.3931	0.0172
+0.5236	0.5111	1.000	words contained in an arc. In this case, however, the	0.3914	0.0190
+0.5348	0.0902	1.000	Read (RD); Read SEOP (RDSEOP)	0.2312	0.0146
+0.5421	0.5113	1.000	remainder of the last arc will be automatically filled	0.3891	0.0161
+0.5563	0.5112	1.000	with zeros.	0.0791	0.0123
+0.5596	0.0940	1.000	These instructions initiate a reading operation from	0.3891	0.0146
+0.5727	0.5263	1.000	WRItE seoP differs from WRITE in that the EOP indi-	0.3741	0.0131
+0.5755	0.0902	1.000	the disk specified by the channel address, bit positions	0.3947	0.0161
+0.5862	0.5111	1.000	cation will be suppressed when the operation is com-	0.3913	0.0181
+0.5900	0.0902	1.000	12 through 18, in the left effective address of these	0.3929	0.0147
+0.6032	0.5113	1.000	pleted normally. Otherwise they are the same.	0.3327	0.0147
+0.6059	0.0883	1.000	instructions.	0.0922	0.0135
+0.6061	0.1805	1.000	The right effective address of the in-	0.3045	0.0131
+0.6206	0.0883	1.000	struction, bit positions 32 through 49, specifies the	0.3947	0.0161
+0.6265	0.5113	1.000	INDICATORS	0.0808	0.0102
+0.6366	0.0902	1.000	core storage location of the control word associated	0.3929	0.0146
+0.6439	0.5244	1.000	Exchange Check Reject (EKJ)	0.2180	0.0174
+0.6526	0.0902	1.000	with these operations.	0.1617	0.0160
+0.6571	0.5240	1.000	Channel Busy Reject (CBJ)	0.1981	0.0195
+0.6652	0.1051	1.000	Data are transferred to successive locations in core	0.3782	0.0186
+0.6744	0.5244	1.000	Unit Not Ready Reject (UNRJ)	0.2274	0.0160
+0.6830	0.0883	1.000	storage beginning with the location specified in the	0.3947	0.0161
+0.6890	0.5244	1.000	Exchange Program Check (EPGK)	0.2444	0.0174
+0.6930	0.0882	1.000	data word address field of the control word. The num-	0.3951	0.0210
+0.7048	0.5244	1.000	Unit Check (UK)	0.1278	0.0161
+0.7106	0.0902	1.000	ber of words of data read and stored is given by the	0.3929	0.0191
+0.7194	0.5244	1.000	End Of Operation (EOP)	0.1786	0.0161
+0.7279	0.0902	1.000	value in the count field of the control word.	0.3254	0.0135
+0.7342	0.5241	1.000	Address Invalid (AD)	0.1587	0.0181
+0.7442	0.1034	1.000	Used with disk storage, these instructions differ	0.3797	0.0161
+0.7587	0.0883	1.000	from the operations as used with the exchange in that	0.3947	0.0174
+0.7733	0.5094	1.000	Locate (LOC); Locate SEOP (LOCSEOP)	0.2669	0.0161
+0.7747	0.0883	1.000	the control word flag bits and refill fields are ignored.	0.3929	0.0160
+0.7903	0.5071	1.000	These operations are used to initiate setting of the	0.3917	0.0247
+0.7906	0.0902	1.000	Data will be transmitted from successive arcs of the	0.3910	0.0132
+0.8067	0.0883	1.000	disk until the count field is reduced to zero. How-	0.3929	0.0146
+0.8070	0.5073	1.000	access mechanism to the track which contains the	0.3915	0.0181
+0.8212	0.0902	1.000	ever, the data read need not be a multiple of the num-	0.3910	0.0145
+0.8223	0.5056	1.000	specified arc. The disk is specified by the channel ad-	0.3910	0.0181
+0.8372	0.0902	1.000	ber of words contained in an arc.	0.2368	0.0116
+0.8387	0.5075	1.000	dress, bit positions 12 through 18, in the left effective	0.3910	0.0174
+0.8512	0.5053	1.000	address of these instructions. The right effective ad-	0.3935	0.0230
+0.8532	0.1034	1.000	READ sEoP differs from READ in that the EoP indi-	0.3778	0.0132
+0.8677	0.0902	1.000	cation will be suppressed when the operation is com-	0.3910	0.0145
+0.8691	0.5056	1.000	dress, bit positions 32 through 49, of the instruction	0.3910	0.0176
+0.8821	0.0883	1.000	pleted normally. Otherwise, the operations are the	0.3929	0.0147
+0.8844	0.5036	1.000	specifies the arc address. Positions 32-37 must be 0 bits	0.3932	0.0164
+0.8956	0.5070	1.000	while positions 38-49 specify the arc address.	0.3224	0.0247
+0.9012	0.0865	1.000	same.	0.0451	0.0087
+0.9360	0.0883	1.000	160 IBM 7030	0.1128	0.0103

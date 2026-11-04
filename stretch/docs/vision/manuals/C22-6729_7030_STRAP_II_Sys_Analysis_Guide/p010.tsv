@@ -1,0 +1,78 @@
+0.0682	0.3440	1.000	STRAP II's Intermediate File 1 Data	0.2726	0.0133
+0.1119	0.0771	1.000	Bits	0.0320	0.0131
+0.1132	0.2951	1.000	Purpose	0.0640	0.0134
+0.1407	0.0751	1.000	11.00 - 11.63	0.1073	0.0165
+0.1409	0.2932	1.000	(STRAP II only uses a half of this word.)	0.3064	0.0146
+0.1627	0.6241	1.000	This file always goes on the disk.	0.2500	0.0131
+0.1697	0.1089	1.000	11.00 - 11.17	0.1054	0.0167
+0.1715	0.2951	1.000	Relative arc number.	0.1598	0.0131
+0.1813	0.1089	1.000	11.18 - 11.63	0.1074	0.0182
+0.1860	0.2970	1.000	-----	0.0639	0.0087
+0.2297	0.3440	1.000	STRAP II's Intermediate File 2 Data	0.2726	0.0131
+0.2731	0.2950	1.000	Purpose	0.0641	0.0149
+0.2733	0.0771	1.000	Bits	0.0320	0.0131
+0.3020	0.0751	1.000	12.00 - 12.63	0.1073	0.0153
+0.3023	0.2951	1.000	(STRAP II only uses a half of this word.)	0.3045	0.0146
+0.3241	0.6241	1.000	This file always goes on the disk.	0.2500	0.0160
+0.3299	0.2951	1.000	Relative are number.	0.1617	0.0161
+0.3299	0.1090	1.000	12.00 - 12.17	0.1071	0.0189
+0.3440	0.1089	1.000	12.18 - 12.63	0.1074	0.0184
+0.3473	0.2970	1.000	--- --	0.0639	0.0088
+0.3881	0.3421	1.000	STRAP II's Intermediate Name File	0.2707	0.0160
+0.4346	0.0771	1.000	Bits	0.0338	0.0131
+0.4346	0.2914	1.000	Purpose	0.0677	0.0145
+0.4636	0.0752	1.000	13.00 - 13.63	0.1071	0.0146
+0.4636	0.2951	1.000	(STRAP II only uses half of this word.)	0.2914	0.0146
+0.4869	0.6241	1.000	This file always goes on the disk.	0.2500	0.0146
+0.4910	0.1089	1.000	13.00 - 13.17	0.1073	0.0181
+0.4912	0.2951	1.000	Relative are number.	0.1617	0.0176
+0.5055	0.1090	1.000	13.18 - 13.63	0.1073	0.0166
+0.5102	0.2970	1.000	----_	0.0639	0.0073
+0.5362	0.0752	1.000	14.00- 24.63	0.1072	0.0163
+0.5407	0.2970	0.300	---	0.0376	0.0073
+0.6177	0.0789	1.000	FORMAT OF STRAP II's OUTPUT ON DISK	0.3289	0.0160
+0.6204	0.6278	1.000	not used.	0.0716	0.0135
+0.6206	0.5056	1.000	Bit 23	0.0620	0.0146
+0.6335	0.5037	1.000	Bit 24	0.0622	0.0150
+0.6336	0.6278	1.000	if off, indicates present record is	0.2519	0.0176
+0.6467	0.0771	1.000	STRAP II will place the first block of listing and the	0.3910	0.0176
+0.6482	0.6259	1.000	listing; if on, binary output.	0.2162	0.0176
+0.6599	0.6278	1.000	if on, indicates this is the last record	0.2838	0.0189
+0.6641	0.5037	1.000	Bit 25	0.0621	0.0133
+0.6657	0.0846	1.000	irst block of binary output in the arcs specified.	0.3534	0.0131
+0.6758	0.6278	1.000	of the type of output specified by	0.2481	0.0176
+0.6758	0.0865	1.000	Che first word of each arc written will be an inde	0.3609	0.0146
+0.6903	0.6278	1.000	bit 24.	0.0545	0.0176
+0.6918	0.0789	1.000	word that has the following configuration:	0.3083	0.0161
+0.7075	0.5055	1.000	Bit 26	0.0623	0.0153
+0.7078	0.6278	1.000	if on, indicates present record is in	0.2688	0.0146
+0.7207	0.6277	1.000	IQS code.	0.0772	0.0164
+0.7224	0.1372	1.000	Format of Header Index Word Before	0.2763	0.0131
+0.7317	0.6331	1.000	not used.	0.0740	0.0206
+0.7368	0.5056	1.000	Bit 27	0.0621	0.0148
+0.7369	0.1767	1.000	Each Arc of STRAP Output	0.2030	0.0146
+0.7512	0.5056	1.000	Bits 28 - 45	0.0960	0.0151
+0.7515	0.6316	1.000	contains the number of 'unit records'	0.2801	0.0161
+0.7645	0.6316	1.000	per are (lines per arc, cards per	0.2538	0.0176
+0.7674	0.1992	1.000	contains the relative are number	0.2481	0.0132
+0.7674	0.0789	1.000	Bits 0 - 17	0.0959	0.0132
+0.7803	0.6333	1.000	arc).	0.0473	0.0165
+0.7820	0.2011	1.000	where the current output is continued.	0.2838	0.0132
+0.7936	0.6335	1.000	in the case of a listing arc, contains	0.2726	0.0174
+0.7950	0.2030	1.000	not used.	0.0696	0.0147
+0.7964	0.0789	1.000	Bits 18 - 19	0.0959	0.0133
+0.7964	0.5056	1.000	Bits 46 - 63	0.0977	0.0133
+0.8096	0.6335	1.000	the relative are number of the previ-	0.2763	0.0160
+0.8109	0.2011	1.000	if on, indicates present record is in	0.2707	0.0147
+0.8109	0.0789	1.000	Bit 20	0.0602	0.0133
+0.8241	0.6353	1.000	ous are of listing.	0.1372	0.0160
+0.8245	0.2008	1.000	binary code.	0.0965	0.0195
+0.8387	0.2011	1.000	if on, indicates present record is in	0.2707	0.0174
+0.8400	0.0789	1.000	Bit 21	0.0602	0.0133
+0.8532	0.2030	1.000	A6 code.	0.0677	0.0160
+0.8677	0.5188	1.000	The second word of each record will be a "dummy"	0.3853	0.0160
+0.8691	0.2011	1.000	if on, indicates present record is in	0.2707	0.0161
+0.8691	0.0789	1.000	Bit 22	0.0620	0.0132
+0.8836	0.5075	1.000	word. The data begins in the third word.	0.3083	0.0146
+0.8845	0.2028	1.000	A8 code.	0.0681	0.0143
+0.9172	0.0752	1.000	10	0.0226	0.0145

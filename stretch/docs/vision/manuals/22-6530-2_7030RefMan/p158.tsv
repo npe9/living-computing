@@ -1,0 +1,68 @@
+0.0567	0.0902	1.000	of the output message addressed to the console are in-	0.3929	0.0131
+0.0567	0.5094	1.000	tion concerning the end of the printing line is given	0.3910	0.0146
+0.0712	0.5094	1.000	to the computer. The maximum length of the print-	0.3910	0.0145
+0.0727	0.0902	1.000	terpreted by the binary lights and the numerical dis-	0.3929	0.0131
+0.0872	0.5075	1.000	ing line is 83 characters, but the actual length at any	0.3929	0.0131
+0.0872	0.0902	1.000	play. The remainder of the message, regardless of	0.3929	0.0146
+0.1017	0.5094	1.000	time depends upon the manual setting of margin con-	0.3910	0.0146
+0.1032	0.0902	1.000	its length, is always used to actuate the console printer	0.3929	0.0132
+0.1177	0.0902	1.000	mechanism.	0.0865	0.0116
+0.1177	0.5075	1.000	trols.	0.0395	0.0131
+0.1321	0.1071	1.000	The block of information sent to the console can	0.3741	0.0118
+0.1321	0.5263	1.000	When the number of character and function codes	0.3741	0.0118
+0.1482	0.5094	1.000	needed for one operation does not correspond to an	0.3910	0.0146
+0.1482	0.0902	1.000	have any character and function codes in any order.	0.3929	0.0146
+0.1627	0.0902	1.000	The part of the message applying to the binary lights	0.3929	0.0146
+0.1627	0.5075	1.000	integral number of core storage words, the last char-	0.3947	0.0146
+0.1788	0.0902	1.000	and the numerical display is decoded in accordance	0.3929	0.0146
+0.1788	0.5094	1.000	acter sent to the console printer should be followed	0.3910	0.0146
+0.1933	0.5094	1.000	with an end code. In the single-block mode the end	0.3910	0.0146
+0.1948	0.0902	1.000	with the rules applicable to the respective display de-	0.3910	0.0131
+0.2077	0.0901	1.000	vices, as described above. All the subsequent bytes are	0.3931	0.0179
+0.2093	0.5094	1.000	code causes the wrIte operation to be terminated with	0.3910	0.0146
+0.2252	0.5094	1.000	an end-of-operation regardless of whether or not the	0.3910	0.0133
+0.2252	0.0883	1.000	interpreted by the console printer and are decoded	0.3929	0.0147
+0.2397	0.5094	1.000	word count has reached zero. In the multiple-block	0.3910	0.0147
+0.2412	0.0902	1.000	either as control functions or characters. The three	0.3929	0.0118
+0.2558	0.5094	1.000	mode printing on the console printer is terminated,	0.3891	0.0146
+0.2558	0.0902	1.000	control functions carriage return, backspace, and tabu-	0.3929	0.0146
+0.2718	0.5094	1.000	but a new wrIte is immediately initiated at the con-	0.3910	0.0116
+0.2718	0.0883	1.000	late initiate the same action as the corresponding keys,	0.3929	0.0131
+0.2863	0.0902	1.000	and the function codes are the same as those gener-	0.3910	0.0131
+0.2863	0.5075	1.000	sole with the next full word in core storage as long	0.3929	0.0131
+0.2990	0.5093	1.000	as the count is not zero. From then on the operation	0.3893	0.0169
+0.3023	0.0883	1.000	ated by these keys during manual entry. The key-	0.3947	0.0131
+0.3182	0.1316	1.000	is locked while printing under computer con-	0.3515	0.0147
+0.3296	0.0883	1.000	trol is in progress.	0.1336	0.0195
+0.3299	0.5056	1.000	the first three words, which are interpreted by the	0.3947	0.0161
+0.3459	0.5000	1.000	binary lights and the numerical display, printing is	0.4004	0.0160
+0.3459	0.1015	1.000	The console printer message can consist of any	0.3816	0.0160
+0.3590	0.0865	1.000	number of lines of printing, but a carriage-return	0.3966	0.0174
+0.3605	0.5094	1.000	resumed. In either case, the end code itself does no	0.3853	0.0160
+0.3721	0.5094	1.000	cause any printing or spacing. If the erase code is sen!	0.3853	0.0189
+0.3764	0.0959	1.000	unction code must be given on every line at or befor	0.3797	0.0176
+0.3894	0.0959	1.000	he end of the printing line. Otherwise, overprintins	0.3797	0.0161
+0.3909	0.5056	1.000	from the computer during writing, it is decoded as	0.3947	0.0161
+0.4067	0.0864	1.000	of characters occurs at the extreme right. No indica-	0.3967	0.0152
+0.4070	0.5056	1.000	blank.	0.0508	0.0160
+0.4738	0.2951	1.000	INPUT	0.0432	0.0131
+0.4971	0.2932	1.000	TTTITTT	0.0489	0.0102
+0.5029	0.2914	1.000	NARY KEY	0.0545	0.0147
+0.5446	0.2574	1.000	NUMERICAL SWITCHES	0.1243	0.0170
+0.5842	0.1147	1.000	"'BINARY SWITCHES AND™	0.1654	0.0161
+0.5887	0.3346	1.000	LEFT	0.0320	0.0102
+0.5973	0.1203	1.000	PLUGGABLE ENTRY POSITIONS	0.1654	0.0118
+0.6366	0.1241	1.000	TYPEWRITER INPUT	0.1071	0.0102
+0.6903	0.2913	1.000	OUTPUT	0.0546	0.0133
+0.7137	0.1034	0.300	PATTTMNTTTTTTTTTTTTITHTT	0.4380	0.0087
+0.7209	0.2613	1.000	BINARY KEY LIGHTS	0.1109	0.0146
+0.7601	0.2575	1.000	NUMERICAL DISPLAY	0.1185	0.0191
+0.8023	0.2387	0.300	тtтiTITn	0.0752	0.0073
+0.8035	0.1560	1.000	BINARY LiGHTS AND	0.1054	0.0150
+0.8038	0.1015	0.300	тlitTiTTTTf	0.0921	0.0058
+0.8078	0.3890	1.000	NOT DISPLAYED	0.0885	0.0138
+0.8154	0.1278	1.000	PLUGGABLE EXIT POSITIONS	0.1579	0.0116
+0.8486	0.1184	1.000	TYPEWRITER OUTPUT	0.1242	0.0194
+0.8866	0.0865	1.000	Figure 48. Console Message Formats	0.2237	0.0131
+0.9215	0.7575	1.000	External Units	0.0921	0.0088
+0.9215	0.8797	1.000	155	0.0207	0.0087

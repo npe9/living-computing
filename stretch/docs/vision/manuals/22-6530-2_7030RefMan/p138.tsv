@@ -1,0 +1,117 @@
+0.0682	0.1034	1.000	During writing, parity checking is accomplished by	0.3722	0.0161
+0.0682	0.5207	1.000	In order that a tape mark may be recognized in any	0.3722	0.0147
+0.0827	0.5056	1.000	operation, including spacing and backspacing, the	0.3891	0.0147
+0.0842	0.0902	1.000	making use of the double-gap read-write head. A tape	0.3872	0.0146
+0.0988	0.5056	1.000	byte must be read and properly decoded. This can be	0.3891	0.0146
+0.1003	0.0883	1.000	that is being written passes first over the write gap to	0.3872	0.0146
+0.1148	0.5038	1.000	assured only if the reading, spacing or backspacing	0.3910	0.0146
+0.1148	0.0883	1.000	record the data and then over the read gap to read	0.3872	0.0146
+0.1294	0.5056	1.000	operation is performed in the same density mode in	0.3891	0.0146
+0.1294	0.0883	1.000	what has been written. All recorded information is	0.3891	0.0131
+0.1453	0.0883	1.000	thus automatically read for checking purposes. If at	0.3891	0.0147
+0.1453	0.5056	1.000	which the tape mark has been recorded. Otherwise the	0.3891	0.0147
+0.1596	0.5055	1.000	tape mark may appear as a regular block of data.	0.3517	0.0164
+0.1612	0.0883	1.000	any time a 6-bit data byte is read back which does not	0.3891	0.0147
+0.1729	0.5224	1.000	The vertical parity bit accompanying the tape mark	0.3707	0.0199
+0.1758	0.0882	1.000	have the correct vertical parity, unit-check and end-of-	0.3875	0.0175
+0.1888	0.0900	1.000	operation status bits are turned on at the end of the	0.3876	0.0193
+0.1903	0.5056	1.000	is always recorded in the even parity mode. On read-	0.3891	0.0146
+0.2064	0.5038	1.000	ing, however, all error indications due to incorrect	0.3910	0.0146
+0.2078	0.0883	1.000	current block. This checking is not applied to the	0.3891	0.0146
+0.2205	0.0882	1.000	longitudinal check character written at the end of a	0.3894	0.0183
+0.2224	0.5056	1.000	vertical or longitudinal parity check bits in the tape	0.3891	0.0131
+0.2369	0.5056	1.000	mark are suppressed. Thus the mode of parity check-	0.3891	0.0146
+0.2384	0.0883	1.000	block. The above checking with possible error indi-	0.3872	0.0147
+0.2529	0.5038	1.000	ing set up in the control unit does not apply to the	0.3910	0.0147
+0.2542	0.0883	1.000	cation takes places regardless of whether writing is in	0.3891	0.0147
+0.2674	0.5038	1.000	recording and checking of tape marks. When a parity	0.3891	0.0147
+0.2703	0.0883	1.000	the no-ecc or Ecc mode.	0.1748	0.0118
+0.2833	0.5056	1.000	error (resulting from a READ WHILE WRITING operation)	0.3893	0.0152
+0.2848	0.1053	1.000	The setting of the mode of parity checking is irrele-	0.3703	0.0146
+0.2979	0.5056	1.000	occurs, the unit check indication is suppressed.	0.3327	0.0146
+0.3009	0.0883	1.000	vant when spacing or backspacing tape. All data errors	0.3891	0.0146
+0.3139	0.5207	1.000	It should be noted that the byte 0001111 may occur	0.3722	0.0131
+0.3169	0.0883	1.000	in these operations are ignored.	0.2274	0.0131
+0.3285	0.5056	1.000	in ordinary data being read, where it is not interpreted	0.3872	0.0145
+0.3314	0.1034	1.000	To summarize treatment of tape data errors:	0.3271	0.0147
+0.3430	0.5056	1.000	as a tape mark. The distinction between a tape mark	0.3872	0.0161
+0.3530	0.0883	1.000	During Writing	0.0941	0.0134
+0.3590	0.5056	1.000	and a data block is that the tape mark is a single-byte	0.3872	0.0146
+0.3618	0.1053	1.000	Longitudinal parity error:	0.1560	0.0146
+0.3632	0.3308	1.000	Ignored	0.0490	0.0119
+0.3733	0.3308	1.000	UK and EOP	0.0678	0.0121
+0.3750	0.5075	1.000	block. Data blocks must contain more than one byte. .	0.3985	0.0145
+0.3750	0.1053	1.000	Vertical parity error:	0.1259	0.0132
+0.3881	0.0883	1.000	During Reading	0.0977	0.0116
+0.3982	0.1053	1.000	No-Ecc Mode:	0.0846	0.0118
+0.4098	0.3270	1.000	UK and EOr	0.0696	0.0118
+0.4099	0.1241	1.000	Longitudinal parity error:	0.1560	0.0131
+0.4215	0.3308	1.000	uk and EOP	0.0658	0.0088
+0.4215	0.1241	1.000	Vertical parity error:	0.1241	0.0116
+0.4225	0.5056	1.000	Defective Tape	0.1073	0.0139
+0.4329	0.1033	1.000	EcC Mode:	0.0660	0.0122
+0.4403	0.5056	1.000	Persistent unit-check indications, after repeated at-	0.3872	0.0146
+0.4431	0.3270	1.000	Ignored	0.0509	0.0135
+0.4448	0.1241	1.000	Longitudinal parity error:	0.1654	0.0116
+0.4544	0.5054	1.000	tempts to write a given block, usually indicate some	0.3876	0.0184
+0.4548	0.3271	1.000	Ignored if only one per	0.1523	0.0132
+0.4564	0.1259	1.000	Vertical parity error:	0.1222	0.0117
+0.4666	0.3440	1.000	word; UK and EoP if	0.1353	0.0102
+0.4709	0.5056	1.000	imperfections on tape. The ERASE LONG GAP control	0.3891	0.0161
+0.4782	0.3816	1.000	than one	0.0714	0.0088
+0.4797	0.4549	1.000	per	0.0244	0.0102
+0.4797	0.3402	1.000	more	0.0357	0.0102
+0.4869	0.5038	1.000	instruction is provided to permit skipping over the	0.3910	0.0146
+0.4898	0.3421	1.000	word.	0.0339	0.0102
+0.5010	0.5055	1.000	defective area. This control function turns on the erase	0.3893	0.0155
+0.5086	0.0864	1.000	Tape Mark	0.0809	0.0163
+0.5174	0.5056	1.000	trigger in the tape control unit. When this trigger has	0.3891	0.0160
+0.5247	0.0902	1.000	A tape mark consists of a block containing the single	0.3872	0.0147
+0.5298	0.5054	1.000	been turned on, the next wRs or WTM instruction	0.3895	0.0202
+0.5406	0.0865	1.000	byte 0001111 and the associated longitudinal parity	0.3910	0.0161
+0.5477	0.5055	1.000	causes an eight-inch gap to be erased on tape before	0.3894	0.0180
+0.5567	0.0865	1.000	check bits. It is preceded and followed by the regular	0.3910	0.0161
+0.5639	0.5056	1.000	recording the information specified in the associated	0.3891	0.0161
+0.5712	0.0865	1.000	¾ inch inter-record gap. The tape mark is written on	0.3910	0.0161
+0.5799	0.5056	1.000	control word. This eight-inch gap is in addition to the	0.3891	0.0146
+0.5847	0.0900	1.000	tape by means of a WRITE TAPE MARK control instruc-	0.3875	0.0176
+0.5910	0.5054	1.000	regular inter-record gap. A WrITE instruction executed	0.3897	0.0211
+0.6017	0.0865	1.000	tion and is used to indicate the end of a series of blocks	0.3929	0.0146
+0.6074	0.5054	1.000	for a tape unit at load point results in an effective	0.3895	0.0185
+0.6191	0.0865	1.000	(sometimes called a file).	0.1767	0.0146
+0.6250	0.5075	1.000	ERASE LONG GAP. The erase trigger is always reset by the	0.3891	0.0145
+0.6336	0.1034	1.000	Whenever a tape mark is encountered on a reading,	0.3741	0.0146
+0.6394	0.5075	1.000	next instruction that involves tape motion; if this in-	0.3891	0.0161
+0.6482	0.0865	1.000	spacing or backspacing operation, an end-exception	0.3929	0.0176
+0.6555	0.5038	1.000	struction is not WRS or WIM, the trigger is ineffective.	0.3910	0.0161
+0.6642	0.0865	1.000	indication is caused. In case of reading, no informa-	0.3929	0.0145
+0.6715	0.5226	1.000	Normally, backspacing a block and then writing the	0.3741	0.0161
+0.6771	0.0901	1.000	tion is transferred to core storage and the operation	0.3875	0.0181
+0.6860	0.5038	1.000	long gap should place the imperfection within a gap	0.3910	0.0176
+0.6948	0.0883	1.000	is always immediately terminated. The end-exception	0.3910	0.0146
+0.7017	0.5055	1.000	where it will be ignored during subsequent reading. If	0.3912	0.0185
+0.7106	0.0883	1.000	in this case is accompanied by end-of-operation unless	0.3910	0.0133
+0.7179	0.5075	1.000	the block containing the imperfection is more than	0.3891	0.0147
+0.7252	0.0902	1.000	the EE causes à termination of a multiple read before	0.3891	0.0133
+0.7320	0.5074	1.000	eight inches long, more than one gap may have to be	0.3893	0.0167
+0.7412	0.0902	1.000	the required number of records has been read. Since	0.3891	0.0146
+0.7485	0.5075	1.000	written so as to cover the required distance of tape.	0.3891	0.0146
+0.7556	0.0901	1.000	no data are sent to the exchange, the control word in	0.3893	0.0163
+0.7622	0.5055	1.000	This can be accomplished by repeating the sequence	0.3931	0.0194
+0.7718	0.0902	1.000	the exchange is not modified. In the case of spacing or	0.3891	0.0146
+0.7805	0.5075	1.000	BACKSPACE, ERASE LONG GAP, and WRITE.	0.2782	0.0131
+0.7863	0.0902	1.000	backspacing, the end-exception always is accompanied	0.3891	0.0146
+0.8009	0.0902	1.000	by end-of-operation. If a tape mark (in single record	0.3891	0.0161
+0.8148	0.0901	1.000	mode) is read, both an EE and an EoP are set into the	0.3894	0.0176
+0.8270	0.5094	1.000	Beginning and End of Tape	0.1936	0.0131
+0.8327	0.0902	1.000	indicator register. If a tape mark (in multiple record	0.3891	0.0147
+0.8445	0.5075	1.000	Both the load point (beginning of tape) and the physi-	0.3891	0.0174
+0.8473	0.0902	1.000	mode) is read, an tE only is set into the indicator regis-	0.3891	0.0146
+0.8605	0.5075	1.000	cal end of tape are marked by reflective aluminum	0.3910	0.0145
+0.8633	0.0902	1.000	ter. A more detailed description of the effect of tape	0.3910	0.0146
+0.8746	0.5055	1.000	strips. These strips are attached to the back side of the	0.3931	0.0188
+0.8779	0.0902	1.000	marks on these operations is given in the descriptions	0.3910	0.0161
+0.8909	0.5056	1.000	tape and are photoelectrically sensed by the tape unit.	0.3929	0.0176
+0.8953	0.0921	1.000	of the respective control functions.	0.2481	0.0147
+0.9185	0.7481	1.000	External Units	0.0940	0.0118
+0.9186	0.8759	1.000	135	0.0226	0.0087

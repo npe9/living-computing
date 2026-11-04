@@ -1,0 +1,55 @@
+0.0709	0.0841	1.000	found in a program	0.1456	0.0174
+0.0727	0.5094	1.000	MULTI flag would appear on the listing on the line	0.3647	0.0146
+0.0872	0.5075	1.000	immediately preceding the Add statement, and the	0.3665	0.0146
+0.0898	0.2105	1.000	A SYN, 100.0	0.1035	0.0151
+0.1032	0.5075	1.000	coNTAG flag would be found on the line preced-	0.3665	0.0147
+0.1061	0.2105	1.000	A SYN, 100.32	0.1109	0.0146
+0.1191	0.5075	1.000	ing the Load statement. STRAP would assign the	0.3665	0.0132
+0.1206	0.0846	1.000	the multi error flag would appear on the output	0.3684	0.0146
+0.1336	0.5094	1.000	value 500.0 to A and B.	0.1673	0.0118
+0.1366	0.0846	1.000	listing on the line immediately preceding the sec-	0.3647	0.0146
+0.1512	0.0846	1.000	ond sYN statement. When contradictory defini-	0.3684	0.0146
+0.1570	0.4925	1.000	Because strAp-Il has provisions for very long pro-	0.3816	0.0145
+0.1672	0.0846	1.000	tions occur, STRAP assigns the first value encoun-	0.3647	0.0132
+0.1730	0.4756	1.000	grammer symbols and continuation cards, the sym-	0.3985	0.0131
+0.1817	0.0846	1.000	tered and discards all subsequent definitions.	0.3346	0.0147
+0.1875	0.4756	1.000	bolic listing of the contents of the input cards may	0.3985	0.0146
+0.2020	0.4756	1.000	extend over two or more lines. If the name of the	0.3985	0.0131
+0.2048	0.0526	1.000	(4) PSEUDO. Pseudo definitions are often called circu-	0.3947	0.0118
+0.2172	0.0826	1.000	lar definitions and are best illustrated by the illus-	0.3650	0.0177
+0.2179	0.4737	1.000	statement is too long to fit in the name column, it ex-	0.4004	0.0133
+0.2324	0.4737	1.000	tends into the statement column, and the remainder	0.4004	0.0133
+0.2355	0.0846	1.000	trations below.	0.1109	0.0116
+0.2485	0.4737	1.000	of the statement is printed on the next line. An illus-	0.4004	0.0146
+0.2500	0.2162	1.000	A SYN, B	0.0752	0.0161
+0.2630	0.4737	1.000	tration of this is found on line 20 and line 21 of the	0.4004	0.0118
+0.2660	0.2143	1.000	B SYN, A+5	0.0996	0.0146
+0.2791	0.4737	1.000	sample listing. Note that even though the statement	0.4004	0.0161
+0.2863	0.0827	1.000	STRAP-II assigns a value of zero to A and a value	0.3647	0.0131
+0.2951	0.4737	1.000	uses two lines, the compiled binary intormation is	0.4004	0.0146
+0.3007	0.0845	1.000	of 5 to B.	0.0696	0.0120
+0.3096	0.4737	1.000	printed on the first line. In another instance, the pro-	0.4004	0.0146
+0.3241	0.0489	1.000	(5) CONTAG. A contagious error occurs wherever a	0.4041	0.0147
+0.3241	0.4737	1.000	grammer may use a continuation card to append a	0.4004	0.0147
+0.3387	0.0808	1.000	programmer symbol is defined in terms of another	0.3684	0.0160
+0.3400	0.4699	1.000	very long comment to a statement. An example of a	0.4041	0.0161
+0.3532	0.0808	1.000	programmer symbol which has been erroneously	0.3684	0.0174
+0.3545	0.4718	1.000	long comment forcing a format change in the listing	0.4023	0.0161
+0.3691	0.0808	1.000	defined in one of the four ways described above.	0.3665	0.0161
+0.3706	0.4737	1.000	is seen on lines 11 and 12 in the sample listing.	0.3515	0.0146
+0.3810	0.0801	1.000	In the following case	0.1593	0.0226
+0.3881	0.4887	1.000	The reverse situation occurs when several D fields	0.3853	0.0116
+0.4004	0.4717	1.000	are written on one DD card or multiple statements are	0.4025	0.0183
+0.4021	0.2198	1.000	SLC, 500.0	0.0868	0.0169
+0.4172	0.2049	1.000	A SYN, 1000.0	0.1109	0.0147
+0.4185	0.4718	1.000	written on a card. Then the binary output will be	0.4023	0.0161
+0.4325	0.2029	1.000	A SYN, 500.0	0.1055	0.0158
+0.4345	0.4737	1.000	spread over two or more lines, while the symbolic	0.4004	0.0131
+0.4491	0.2030	1.000	B SYN, A	0.0771	0.0146
+0.4491	0.4737	1.000	duplication of the input card appears on one line.	0.4004	0.0146
+0.4631	0.2216	1.000	L(N), B	0.0700	0.0171
+0.4651	0.4718	1.000	Lines 14 and 15 illustrate a DD with more than one	0.4023	0.0116
+0.4793	0.2217	1.000	+(N), A	0.0698	0.0168
+0.4810	0.4737	1.000	data entry.	0.0828	0.0133
+0.9185	0.7519	1.000	Section I	0.0658	0.0103
+0.9201	0.8440	1.000	21	0.0188	0.0087

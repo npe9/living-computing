@@ -1,0 +1,80 @@
+0.0988	0.6823	1.000	Title	0.0357	0.0116
+0.1191	0.5526	1.000	Release, Feed Card, Erase Gap Routine	0.2331	0.0146
+0.1308	0.5508	1.000	Unload and Rewind Routines	0.1729	0.0146
+0.1437	0.5526	1.000	Unit Lights and Gong Routines	0.1786	0.0134
+0.1570	0.5526	1.000	Control Word Check Routine	0.1711	0.0161
+0.1699	0.5526	1.000	Verify Routine	0.0922	0.0164
+0.1817	0.5526	1.000	Check Density, Check Mode and Write	0.2312	0.0174
+0.1958	0.1559	0.300	e Tr ble Fr ra manad Symbol,	0.1667	0.0292
+0.1976	0.5658	1.000	Label Routines	0.0959	0.0132
+0.2078	0.5508	1.000	Space Label and SEOP Test Routines	0.2162	0.0146
+0.2209	0.5526	1.000	Disabled Service Routines	0.1560	0.0161
+0.2339	0.5508	1.000	1-O Indicator Check Routine - Chart 1	0.2293	0.0176
+0.2384	0.1241	1.000	Input Chart 1 - Queue Manipulation	0.2068	0.0102
+0.2470	0.5508	1.000	I-O Indicator Check Routine - Chart 2	0.2293	0.0161
+0.2515	0.1241	1.000	Input Chart 2 - I-O Actuation	0.1729	0.0102
+0.2615	0.5508	1.000	I-O Indicator Check Routine - Chart 3	0.2274	0.0146
+0.2645	0.1241	1.000	Input Chart 3 - Card Reader Program	0.2143	0.0103
+0.2747	0.5526	1.000	CHEX and IODEF Routines	0.1617	0.0132
+0.2776	0.1241	1.000	Input Chart 4 - Scan and SCR1 Programs	0.2350	0.0103
+0.2875	0.5507	1.000	Free Routine	0.0791	0.0136
+0.2906	0.1222	1.000	Input Chart 5 - Scanning Subroutines	0.2162	0.0103
+0.3009	0.5508	1.000	RIO and Wait Routines	0.1372	0.0146
+0.3036	0.1241	1.000	Input Chart 6 - Write Tape Program	0.2086	0.0103
+0.3154	0.5526	1.000	Commentator - Chart 1	0.1391	0.0116
+0.3169	0.1222	1.000	Input Chart 7 - Tape EE Fixup	0.1786	0.0102
+0.3238	0.5526	1.000	Commentator - Chart 2	0.1392	0.0152
+0.3299	0.1241	1.000	Input Chart 8 - Card Request Processors	0.2274	0.0088
+0.3415	0.1222	1.000	Input Chart 9 - EOJ Scan	0.1447	0.0103
+0.3415	0.5526	1.000	Error Dump Routine	0.1165	0.0103
+0.3529	0.5526	1.000	$DUMP Routine	0.0941	0.0121
+0.3545	0.1241	1.000	Input Chart 10 - Tape Switch 1	0.1805	0.0103
+0.3663	0.5545	1.000	Console Debugging Package - Chart 1	0.2180	0.0116
+0.3677	0.1222	1.000	Input Chart 11 - Tape Switch 2	0.1823	0.0102
+0.3808	0.5545	1.000	Console Debugging Package - Chart 2	0.2199	0.0102
+0.3808	0.1241	1.000	Input Chart 12 - Transition to Online	0.2143	0.0102
+0.3909	0.5508	1.000	$FIXUP Routine	0.0977	0.0132
+0.3939	0.1241	1.000	Input Chart 13 - Transition to Bypass	0.2124	0.0102
+0.4070	0.5545	1.000	Symbolic Update Program	0.1504	0.0116
+0.4070	0.1241	1.000	Input Chart 14 - Transition to Offline	0.2162	0.0103
+0.4200	0.1241	1.000	Input Chart 15 - Transition Subroutines	0.2256	0.0088
+0.4200	0.5545	1.000	Update 30 - Chart 1	0.1165	0.0088
+0.4330	0.5545	1.000	Update 30 - Chart 2	0.1165	0.0103
+0.4330	0.1241	1.000	Input Chart 16 - UK Fixup Entry	0.1880	0.0088
+0.4448	0.1241	1.000	Input Chart 17 - Write Tape UK	0.1861	0.0102
+0.4462	0.5526	1.000	Update 30 - Chart 3	0.1184	0.0087
+0.4578	0.1241	1.000	Input Chart 18 - Erase Gap UK Procedure 1	0.2500	0.0102
+0.4578	0.5545	1.000	Update 30 - Chart 4	0.1165	0.0116
+0.4709	0.1222	1.000	Input Chart 19 - Erase Gap UK Procedure 2	0.2519	0.0103
+0.4709	0.5526	1.000	Update 30 - Chart 5	0.1184	0.0103
+0.4824	0.1222	1.000	Input Chart 20 - Card Reader UK 1	0.2049	0.0103
+0.4839	0.5526	1.000	Update 30 - Chart 6	0.1184	0.0103
+0.4956	0.5545	1.000	Table of Contents (TOFC)	0.1504	0.0116
+0.4956	0.1241	1.000	Input Chart 21 - Card Reader UK 2	0.2030	0.0102
+0.5087	0.1241	1.000	Input Chart 22 - Read/Scan Tape UK 1	0.2274	0.0102
+0.5087	0.5545	1.000	Generator Librarian - Chart 1	0.1692	0.0116
+0.5218	0.1222	1.000	Input Chart 23 - Read/Scan Tape UK 2	0.2293	0.0103
+0.5218	0.5526	1.000	Generator Librarian - Chart 2	0.1711	0.0103
+0.5348	0.5508	1.000	Generator Librarian - Chart 3	0.1729	0.0117
+0.5348	0.1241	1.000	Input Chart 24 - Control Op UK Failure	0.2293	0.0103
+0.5479	0.5508	1.000	Generator Librarian - Chart 4	0.1729	0.0132
+0.5596	0.5508	1.000	Generator Librarian - Chart 5	0.1711	0.0146
+0.5609	0.1241	1.000	System Print Routine	0.1241	0.0103
+0.5741	0.1241	1.000	System Punch Routine	0.1278	0.0087
+0.5741	0.5508	1.000	Tape Labeling Program	0.1353	0.0116
+0.5854	0.5507	1.000	System Peripheral Input I	0.1486	0.0138
+0.5858	0.1241	1.000	Print and Punch Control Symbols	0.1880	0.0103
+0.5973	0.5545	1.000	System Peripheral Input I1	0.1447	0.0146
+0.5988	0.1241	1.000	EE, EOP, Fixups for Print and Punch	0.2105	0.0118
+0.6076	0.5545	1.000	System Peripheral Output	0.1429	0.0161
+0.6118	0.1241	1.000	Output EOJ and Output Command Programs	0.2481	0.0103
+0.6215	0.5507	1.000	Channel Status Table Entry for Single	0.2201	0.0158
+0.6250	0.1222	1.000	Typical Fetch Dictionary Entry	0.1805	0.0102
+0.6334	0.5676	1.000	Unit Channel	0.0810	0.0166
+0.6381	0.1241	1.000	Disk Fetch Package	0.1128	0.0087
+0.6497	0.5489	1.000	Channel Status and Unit Status Table Entries	0.2613	0.0145
+0.6642	0.5658	1.000	for Multi-Unit Channels	0.1429	0.0116
+0.6744	0.1222	1.000	Copy Control Word Routine	0.1617	0.0147
+0.6875	0.1203	1.000	Write Tape Mark and Spacing Routines	0.2293	0.0131
+0.6890	0.5508	1.000	File Area Table	0.0921	0.0102
+0.7006	0.1203	1.000	Locate Routine	0.0921	0.0116

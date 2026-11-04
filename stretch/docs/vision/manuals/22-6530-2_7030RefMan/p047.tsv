@@ -1,0 +1,98 @@
+0.0587	0.1013	1.000	the result of the most recent comparison performed,	0.3916	0.0222
+0.0669	0.5094	1.000	Attention Request	0.1410	0.0160
+0.0799	0.0996	1.000	unless they have been changed by programming.	0.3571	0.0146
+0.0900	0.5320	1.000	4. Time Signal (TS). The interval timer has	0.3797	0.0161
+0.0959	0.1147	1.000	The input-output status indicators EPGK, UK, EE,	0.3759	0.0147
+0.1043	0.5182	1.000	become zero.	0.0952	0.0151
+0.1105	0.1015	1.000	EOP, and cs are controlled as a group, so they collec-	0.3910	0.0145
+0.1206	0.5320	1.000	5. CPU Signal (CPUS). Some other instruction	0.3778	0.0161
+0.1250	0.0996	1.000	tively describe the status of a single unit at any time.	0.3929	0.0174
+0.1348	0.5149	1.000	execution system in another central processing unit	0.3969	0.0187
+0.1409	0.0996	1.000	These indicators are set to describe a unit status and	0.3910	0.0161
+0.1502	0.5148	1.000	desires the attention of this cPU.	0.2336	0.0160
+0.1555	0.0977	1.000	the channel address register is set to the address of	0.3947	0.0161
+0.1715	0.0977	1.000	the unit. As interruptions occur, the indicators are	0.3929	0.0161
+0.1875	0.0959	1.000	reset. When all five are zero and if the interruption	0.3947	0.0161
+0.1903	0.5132	1.000	Input-Output Reject	0.1466	0.0133
+0.2020	0.0959	1.000	mechanism is enabled, the exchange may set the whole	0.3947	0.0160
+0.2151	0.5301	1.000	6. Exchange Check Reject (EKJ). An error was	0.3797	0.0174
+0.2179	0.0959	1.000	group to describe another unit. This group of indi-	0.3947	0.0161
+0.2285	0.5147	1.000	detected by the exchange in the course of testing and	0.3953	0.0201
+0.2324	0.0977	1.000	cators is described in detail in the Exchange section.	0.3929	0.0147
+0.2449	0.5130	1.000	setting up the present instruction. This reject may	0.3951	0.0186
+0.2584	0.5128	1.000	indicate equipment malfunction or attempted selec-	0.3953	0.0232
+0.2745	0.5148	1.000	tion of a channel which is not available to the pro-	0.3933	0.0193
+0.2921	0.5169	1.000	grammer. The instruction is not executed, and th	0.3872	0.0161
+0.3023	0.0959	1.000	Definitions of Indicators	0.2199	0.0146
+0.3032	0.5149	1.000	indicator is actuated before the computer proceeds	0.3914	0.0199
+0.3227	0.5132	1.000	to the next instruction.	0.1729	0.0146
+0.3363	0.5280	1.000	7. Unit Not Ready Reject (UNRJ). An instruc-	0.3802	0.0196
+0.3401	0.0958	1.000	The 64 indicators are defined below in terms of the	0.3931	0.0149
+0.3524	0.5149	1.000	tion was given for a unit which was not ready to be	0.3932	0.0173
+0.3557	0.0957	1.000	conditions which would actuate the indicator, and	0.3913	0.0168
+0.3691	0.5150	1.000	operated. The unit ready status bit is zero. The in-	0.3929	0.0146
+0.3721	0.0959	1.000	the peculiar conditions by which the indicator is	0.3929	0.0146
+0.3819	0.5131	1.000	struction is not executed, and the indicator is actu-	0.3949	0.0164
+0.3881	0.0959	1.000	turned off. Any indicator is turned off by interrup-	0.3910	0.0146
+0.3997	0.5132	1.000	ated before the computer proceeds to the next	0.3947	0.0145
+0.4011	0.0957	1.000	tion upon it, and can be turned off or left unchanged	0.3913	0.0177
+0.4133	0.5128	1.000	instruction.	0.0872	0.0129
+0.4163	0.0956	1.000	when testing it with a BRANCH ON INDICATOR opera-	0.3933	0.0203
+0.4302	0.5301	1.000	8. Channel Busy Reject (CBJ). An instruction was	0.3759	0.0146
+0.4330	0.0959	1.000	tion. Indicators 20 through 63 may also be turned	0.3910	0.0146
+0.4448	0.5132	1.000	given for a unit which was still connected to the ex-	0.3929	0.0146
+0.4491	0.0940	1.000	on or off by a BRANCH ON BIT operation or by operat-	0.3929	0.0146
+0.4606	0.5132	1.000	change or which is still waiting to give a program	0.3929	0.0161
+0.4636	0.0940	1.000	ing upon the indicator register contents as a field in	0.3910	0.0146
+0.4767	0.5132	1.000	interruption as a result of a previous instruction.	0.3929	0.0146
+0.4786	0.1634	1.000	Except where noted, these are the only	0.3218	0.0172
+0.4912	0.5130	1.000	The instruction is not executed, and the indicator is	0.3932	0.0159
+0.4942	0.0921	1.000	means of turning indicators off. The indicators are	0.3947	0.0146
+0.5073	0.5113	1.000	actuated before the computer proceeds to the next	0.3947	0.0146
+0.5102	0.0940	1.000	listed in the order of their priority.	0.2575	0.0147
+0.5212	0.5111	1.000	instruction. Certain operations, such as rewinding	0.3933	0.0186
+0.5368	0.5111	1.000	tape, are completed by the unit after disconnecting	0.3932	0.0173
+0.5509	0.0940	1.000	Equipment Check	0.1259	0.0131
+0.5523	0.5113	1.000	from the exchange. New instructions for channels	0.3947	0.0146
+0.5675	0.5111	1.000	performing such operations can be accepted; they do	0.3932	0.0178
+0.5755	0.1090	1.000	O. Machine Check (MK). An error has been de-	0.3759	0.0147
+0.5827	0.5113	1.000	not cause busy rejects.	0.1617	0.0147
+0.5915	0.0921	1.000	tected by the machine checking circuits. There is no	0.3910	0.0131
+0.6061	0.0921	1.000	guarantee that any specific element in the machine is	0.3929	0.0146
+0.6206	0.0902	1.000	in either its original or correct state.	0.2594	0.0146
+0.6235	0.5075	1.000	Input-Output Status	0.1485	0.0146
+0.6453	0.1071	1.000	1. Instruction Check (IK). An error has been de-	0.3759	0.0131
+0.6482	0.5226	1.000	9. Fxchange Program Check (EPGK). The last	0.3816	0.0176
+0.6599	0.0921	1.000	tected during the performance of the current instruc-	0.3910	0.0147
+0.6642	0.5075	1.000	operation initiated for the unit specified by the chan-	0.3966	0.0161
+0.6758	0.0902	1.000	tion. Only elements usually affected by the operation	0.3929	0.0161
+0.6781	0.5092	1.000	nel address register has been terminated by a pro-	0.3932	0.0184
+0.6900	0.0901	1.000	can be in error. The instruction counter (which can-	0.3950	0.0171
+0.6945	0.5093	1.000	gramming error. Such errors include giving a unit	0.3949	0.0167
+0.7057	0.5092	1.000	an instruction it cannot execute or specifying core	0.3934	0.0212
+0.7064	0.0921	1.000	not be in error) contains the address of the next in-	0.3910	0.0131
+0.7224	0.0902	1.000	struction in storage after the one during which the	0.3929	0.0131
+0.7241	0.5092	1.000	storage locations to which the exchange does	0.3632	0.0180
+0.7297	0.8741	1.000	not	0.0301	0.0087
+0.7369	0.0902	1.000	error was detected.	0.1410	0.0116
+0.7397	0.5094	1.000	have access.	0.0865	0.0119
+0.7558	0.1071	1.000	2. Instruction Reject (IJ). An error has been de-	0.3741	0.0176
+0.7558	0.5226	1.000	10. Unit Check (UK). The last operation initiated	0.3797	0.0161
+0.7703	0.5074	1.000	for the unit specified by the channel address register	0.3950	0.0177
+0.7745	0.0902	1.000	tected which was identified with the current instruc-	0.3911	0.0135
+0.7822	0.5073	1.000	encountered malfunctioning of the equipment or de-	0.3934	0.0222
+0.7906	0.0902	1.000	tion. The instruction has been executed as though it	0.3929	0.0161
+0.8009	0.5075	1.000	fects of the recording medium. These malfunctions	0.3947	0.0146
+0.8067	0.0902	1.000	were a NO OPERATION instruction. The instruction	0.3910	0.0116
+0.8169	0.5038	1.000	include uncorrectable data errors, card jams, broken	0.3966	0.0189
+0.8205	0.0901	1.000	counter contains the address of the next instruction	0.3912	0.0142
+0.8327	0.5075	1.000	tapes, and so on.	0.1259	0.0133
+0.8377	0.0881	1.000	in storage.	0.0813	0.0109
+0.8473	0.5226	1.000	11. End Exception (EE). The last operation in-	0.3778	0.0176
+0.8605	0.1034	1.000	3. Exchange Control Check (EK). The exchange	0.3778	0.0160
+0.8633	0.5056	1.000	itiated for the unit specified by the channel address	0.3966	0.0161
+0.8750	0.0883	1.000	has failed to function properly in a manner that is	0.3929	0.0160
+0.8794	0.5056	1.000	register encountered an exceptional condition, usu-	0.3966	0.0174
+0.8909	0.0902	1.000	not identified with any particular unit.	0.2763	0.0146
+0.8939	0.5056	1.000	ally associated with the recording medium or some	0.3966	0.0174
+0.9288	0.0883	1.000	44 IBM 7030	0.1090	0.0116

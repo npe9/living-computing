@@ -1,0 +1,105 @@
+0.0581	0.5056	1.000	within the bounds of numbers generally acceptable to	0.3910	0.0146
+0.0596	0.0883	1.000	negative values of the fraction having minimum ex-	0.3929	0.0131
+0.0727	0.5056	1.000	the arithmetic unit. The only and obvious exception	0.3910	0.0146
+0.0741	0.0902	1.000	ponent. Included in this range is the number zero. A	0.3872	0.0147
+0.0887	0.0883	1.000	control or flag bit has been incorporated in the ex-	0.3910	0.0147
+0.0887	0.5056	1.000	is a zero divisor. This greater freedom eliminates	0.3929	0.0132
+0.1032	0.5056	1.000	much of the scaling previously required before a DIVIDE	0.3910	0.0147
+0.1045	0.0883	1.000	ponent field to provide a straightforward control of	0.3910	0.0146
+0.1191	0.5056	1.000	instruction could be accepted.	0.2180	0.0132
+0.1191	0.0902	1.000	data which exceeds the exponent range or falls within	0.3891	0.0146
+0.1352	0.0902	1.000	the range of discontinuity.	0.1917	0.0146
+0.1366	0.5226	1.000	Alphabetic and other non-numeric fields of various	0.3759	0.0146
+0.1526	0.5056	1.000	lengths may be handled by integer arithmetic opera-	0.3929	0.0131
+0.1672	0.5075	1.000	tions as if they were unsigned binary numbers, re-	0.3910	0.0132
+0.1788	0.0883	1.000	Integer Arithmetic	0.1353	0.0131
+0.1803	0.5055	1.000	gardless of the character code or the number of bits	0.3931	0.0159
+0.1976	0.5075	1.000	used for each character. In fact, there is no fixed char-	0.3910	0.0132
+0.2035	0.0902	1.000	The class of integer arithmetic operations is designed	0.3891	0.0132
+0.2136	0.5075	1.000	acter code built into the computer. Alphameric high-	0.3929	0.0131
+0.2194	0.0902	1.000	to facilitate all data arithmetic on other than the	0.3891	0.0103
+0.2282	0.5056	1.000	low comparisons are made by a simple binary subtrac-	0.3929	0.0146
+0.2339	0.0883	1.000	specialized floating point numbers. The emphasis here	0.3910	0.0146
+0.2442	0.5075	1.000	tion of two fields. The only requirement is that the	0.3910	0.0131
+0.2485	0.0902	1.000	is on versatility and economy of storage. Arithmetic	0.3891	0.0146
+0.2587	0.5075	1.000	binary numbers representing each character fall into	0.3910	0.0131
+0.2645	0.0902	1.000	may be performed directly in either decimal or binary	0.3891	0.0131
+0.2747	0.5075	1.000	the comparing sequence desired for the application.	0.3910	0.0132
+0.2791	0.0902	1.000	radix. Individual numbers or fields, may be of any	0.3891	0.0146
+0.2892	0.5075	1.000	If the code used for input or output does not con-	0.3910	0.0145
+0.2951	0.0883	1.000	length, from 1 to 64 bits. Fields of different lengths	0.3929	0.0131
+0.3036	0.5075	1.000	form to this comparing requirement, special provisions	0.3910	0.0147
+0.3096	0.0902	1.000	may be assigned to adjacent locations in core storage,	0.3910	0.0146
+0.3197	0.5038	1.000	facilitate translating the code to any other form by	0.3947	0.0161
+0.3241	0.0902	1.000	even if this means that a field lies partly in one word	0.3891	0.0147
+0.3358	0.5056	1.000	programming a table look-up.	0.2199	0.0161
+0.3400	0.0883	1.000	and partly in the next. Each field may be addressed	0.3910	0.0147
+0.3532	0.5244	1.000	Another use for the integer arithmetic operation is	0.3759	0.0132
+0.3545	0.0883	1.000	directly by specifying its position and length in the in-	0.3929	0.0176
+0.3677	0.5075	1.000	to perform general arithmetic on portions of floating	0.3910	0.0145
+0.3721	0.0902	1.000	struction; the computer takes care of selecting the	0.3910	0.0131
+0.3821	0.5075	1.000	point words, instruction words, or index words. The	0.3929	0.0161
+0.3866	0.0902	1.000	words required and altering only the desired informa-	0.3929	0.0146
+0.3997	0.5075	1.000	floating point and index arithmetic instruction classes	0.3929	0.0131
+0.4026	0.0902	1.000	tion. Since the field length is explicitly stated in each	0.3910	0.0131
+0.4142	0.5075	1.000	do contain addition and comparison instructions to	0.3929	0.0131
+0.4172	0.0902	1.000	instruction, rather than being implied by the data or	0.3910	0.0132
+0.4288	0.5075	1.000	cover the most frequent cases; the integer operations	0.3929	0.0146
+0.4317	0.0902	1.000	by previous length-setting instructions, there is no re-	0.3910	0.0147
+0.4433	0.5075	1.000	provide a complete set for all purposes.	0.2989	0.0161
+0.4476	0.0902	1.000	striction on the coding of variable field length data.	0.3703	0.0132
+0.4621	0.5244	1.000	An operation is provided that causes an automatic	0.3759	0.0146
+0.4651	0.1053	1.000	Individual characters, or bytes, in a field may also	0.3759	0.0146
+0.4782	0.5075	1.000	entry to a subroutine. A field of this instruction may	0.3929	0.0131
+0.4811	0.0921	1.000	be varied in length. Thus a decimal digit may be com-	0.3891	0.0131
+0.4927	0.5094	1.000	be used to distinguish up to 128 pseudo-operations.	0.3703	0.0145
+0.4956	0.0921	1.000	pactly represented by a binary code of 4 bits, or it may	0.3891	0.0147
+0.5102	0.5244	1.000	All integer operations are available in either deci-	0.3759	0.0147
+0.5115	0.0902	1.000	be expanded to 6 or more bits when intermixed with	0.3910	0.0133
+0.5247	0.5075	1.000	mal or binary form by setting one modifier bit. Deci-	0.3929	0.0147
+0.5260	0.0902	1.000	alphabetic information. Decimal arithmetic may be	0.3911	0.0148
+0.5406	0.5075	1.000	mal multiplication and division, however, are not	0.3929	0.0146
+0.5421	0.0902	1.000	performed directly on a decimal number, regardless of	0.3929	0.0131
+0.5553	0.0901	1.000	how many bits are used to encode a digit. Because	0.3930	0.0164
+0.5567	0.5094	1.000	built into the computer directly; their operation codes	0.3910	0.0131
+0.5712	0.5075	1.000	are instead used to cause an automatic entry to a sub-	0.3929	0.0131
+0.5727	0.0902	1.000	decimal digits, alphabetic characters, and other single	0.3929	0.0131
+0.5872	0.0902	1.000	symbols may be encoded several different ways, the	0.3929	0.0146
+0.5872	0.5075	1.000	routine which can take advantage of high-speed radix	0.3929	0.0131
+0.6017	0.5094	1.000	conversion and binary multiplication or division. Deci-	0.3910	0.0146
+0.6032	0.0902	1.000	term byte is introduced to denote a single group of	0.3929	0.0132
+0.6177	0.0902	1.000	bits processed together, regardless of the meaning. A	0.3910	0.0145
+0.6177	0.5094	1.000	mal multiplication and division are thus as convenient	0.3910	0.0132
+0.6321	0.5075	1.000	to program as if they had been built in, and they are	0.3929	0.0147
+0.6336	0.0921	1.000	field may consist of one or more bytes.	0.2726	0.0132
+0.6482	0.5075	1.000	faster this way.	0.1128	0.0146
+0.6497	0.1053	1.000	The name integer arithmetic derives from the fact	0.3778	0.0161
+0.6639	0.0901	1.000	that in multiplication and division the results are	0.3932	0.0195
+0.6657	0.5207	1.000	The integer instruction set is similar to the floating	0.3797	0.0161
+0.6788	0.5056	1.000	point set; most of the operations in both sets have the	0.3966	0.0161
+0.6817	0.0921	1.000	normally aligned as if the numbers were integers. It	0.3910	0.0116
+0.6948	0.5075	1.000	same names and analogous meanings.	0.2744	0.0146
+0.6960	0.0883	1.000	is possible, though, to specify that numbers be offset so	0.3930	0.0152
+0.7121	0.0883	1.000	as to obtain any desired alignment of the radix point.	0.3929	0.0132
+0.7264	0.0921	1.000	An offset can be specified in every instruction, and	0.3891	0.0152
+0.7369	0.5075	1.000	Radix Conversion	0.1316	0.0146
+0.7412	0.0921	1.000	there is no need for separate instructions to shift the	0.3910	0.0146
+0.7558	0.5075	1.000	A group of radix conversion operations is provided to	0.3947	0.0191
+0.7573	0.0921	1.000	contents of the accumulator.	0.2049	0.0116
+0.7761	0.5056	1.000	facilitate the use of decimal input and output while	0.3947	0.0118
+0.7873	0.5056	1.000	retaining the advantages of binary operation within	0.3967	0.0169
+0.7906	0.0902	1.000	signed data, the sign is simply omitted in storage, thus	0.3929	0.0146
+0.8023	0.5075	1.000	the machine. These operations are also used in im-	0.3947	0.0174
+0.8049	0.0901	1.000	saving space and avoiding the task of assigning signs	0.3914	0.0204
+0.8182	0.0921	1.000	where there are none to begin with. Unsigned num	0.3872	0.0161
+0.8182	0.5075	1.000	plementing the decimal multiplication and division	0.3947	0.0161
+0.8320	0.0902	1.000	bers are treated arithmetically as if they were positive	0.3893	0.0178
+0.8327	0.5094	1.000	pseudo-operations mentioned in the preceding section.	0.3947	0.0191
+0.8503	0.5207	1.000	Several operations are provided to allow a variety	0.3835	0.0189
+0.8517	0.1071	1.000	A significant feature of the integer DIVIDE operation	0.3741	0.0161
+0.8677	0.0902	1.000	is that it will produce meaningful results provided	0.3929	0.0160
+0.8677	0.5075	1.000	of locations for the operand and the result. A field	0.3947	0.0160
+0.8821	0.5075	1.000	from storage may be converted and placed in either	0.3947	0.0176
+0.8852	0.0902	1.000	the magnitudes of the dividend and the divisor fall	0.3947	0.0146
+0.9215	0.7293	1.000	System Organization	0.1297	0.0131
+0.9230	0.8872	1.000	11	0.0150	0.0087

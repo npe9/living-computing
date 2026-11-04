@@ -1,0 +1,82 @@
+0.0827	0.1090	1.000	Print Buffer	0.0883	0.0103
+0.0827	0.5301	1.000	remaining sixteen bits are determined at the time the	0.3985	0.0147
+0.0988	0.5301	1.000	symbol is made. The STRAP II special symbol --	0.3759	0.0118
+0.1105	0.1071	1.000	Listing data that is to be printed by OUTPUT is built	0.3910	0.0160
+0.1118	0.5301	1.000	111111110000000000000000 -- is the one made for a	0.3835	0.0132
+0.1264	0.5301	1.000	programmer's $ symbol. STRAP II also makes	0.3628	0.0146
+0.1279	0.1071	1.000	up in the print buffer.	0.1598	0.0117
+0.1391	0.5301	1.000	these symbois during the establishing of the iocation	0.3910	0.0153
+0.1526	0.5301	1.000	counter value in Pass 2.	0.1842	0.0189
+0.1570	0.1090	1.000	Pseudo-Defined Symbol	0.1729	0.0116
+0.1830	0.5300	1.000	Symbol	0.0603	0.0163
+0.1830	0.1053	1.000	If a symbol is undefined in the program, the symbol	0.3872	0.0161
+0.1991	0.1053	1.000	will be assigned a data description of (N), and a loca-	0.4004	0.0161
+0.2106	0.5320	1.000	This consists of the legal name characters appearing	0.3947	0.0191
+0.2136	0.1053	1.000	tion of the next available full word above the upper	0.3778	0.0161
+0.2252	0.5301	1.000	in columns 2-9 of a card block excluding the	0.3327	0.0176
+0.2282	0.1071	1.000	limit of the assembled program. Such a symbol will	0.3910	0.0161
+0.2397	0.5320	1.000	embedded blanks.	0.1353	0.0176
+0.2427	0.1089	1.000	be frequently referred to as a pseudo-defined	0.3348	0.0152
+0.2600	0.1090	1.000	symbol.	0.0584	0.0119
+0.2703	0.5320	1.000	TOE	0.0376	0.0160
+0.2892	0.1090	1.000	Pseudo-Op	0.0808	0.0116
+0.3023	0.5320	1.000	This stands for table of exits.	0.2237	0.0146
+0.3182	0.1071	1.000	STRAP II considers an instruction a pseudo-op if	0.3647	0.0133
+0.3297	0.5319	1.000	Types of dds's	0.1110	0.0165
+0.3314	0.1071	1.000	binary output is not to be inserted in STRAP II's	0.3571	0.0132
+0.3459	0.1071	1.000	expanded instruction unit for the instruction.	0.3327	0.0160
+0.3590	0.1090	1.000	Generally, this means that if the instruction does not	0.3947	0.0174
+0.3605	0.5320	1.000	The types of dds's will be defined by example.	0.3440	0.0160
+0.3733	0.1071	1.000	produce binary output, STRAP II considers the	0.3497	0.0166
+0.3894	0.5470	1.000	Explicit dds	0.0941	0.0163
+0.3909	0.1053	1.000	instruction a pseudo-op.	0.1842	0.0146
+0.4185	0.5470	1.000	Regardless of the dds associated with the symbol,	0.3722	0.0161
+0.4317	0.5489	1.000	CONSTANT, in the instruction --	0.2519	0.0189
+0.4360	0.1071	1.000	Punch Buffer	0.0977	0.0131
+0.4462	0.5620	1.000	L(BU, 64), CONSTANT --,	0.2180	0.0204
+0.4606	0.5489	1.000	the explicit data description for the Load instruc-	0.3722	0.0191
+0.4636	0.1071	1.000	When enough binary output for a binary card has been	0.3966	0.0161
+0.4767	0.5489	1.000	tion is clearly, (BU, 64).	0.1917	0.0176
+0.4811	0.1071	1.000	accumulated in the intermediate binary storage	0.3496	0.0131
+0.4937	0.1071	1.000	buffer, OUTPUT transfers the binary output to the	0.3741	0.0154
+0.5072	0.5470	1.000	Implicit dds	0.0959	0.0176
+0.5102	0.1071	1.000	punch buffer.	0.0996	0.0132
+0.5363	0.5489	1.000	When CONSTANT has been defined as --	0.3026	0.0161
+0.5392	0.1071	1.000	S-Datum	0.0677	0.0132
+0.5509	0.5658	1.000	CONSTANT	0.0902	0.0160
+0.5536	0.6842	1.000	DD(BU, 7,7-	0.1335	0.0147
+0.5669	0.5489	1.000	in the instruction -	0.1523	0.0147
+0.5682	0.1090	1.000	See integer style number.	0.1917	0.0133
+0.5799	0.5583	1.000	L, CONSTANT -,	0.1523	0.0189
+0.5959	0.5470	1.000	the implicit data description attached to the Load	0.3665	0.0160
+0.5988	0.1090	1.000	Serious Error Messages	0.1823	0.0118
+0.6076	0.5470	1.000	instruction is (BU, 7).	0.1729	0.0203
+0.6264	0.1090	1.000	Those are the numbered error messages 1-28 which	0.3872	0.0146
+0.6381	0.5489	1.000	Pseudo dds	0.0883	0.0174
+0.6409	0.1071	1.000	indicate the most serious error conditions detected	0.3816	0.0146
+0.6555	0.1071	1.000	in the program being assembled.	0.2444	0.0161
+0.6700	0.5470	1.000	When CONSTANT has not been defined by the pro-	0.3741	0.0161
+0.6845	0.5489	1.000	grammer, the pseudo dds associated with the	0.3402	0.0146
+0.6875	0.1109	1.000	Special Floating Point Ops	0.1936	0.0116
+0.6959	0.5488	1.000	instruction -	0.1092	0.0167
+0.7106	0.5620	1.000	L, CONSTANT --	0.1410	0.0191
+0.7151	0.1109	1.000	These are the floating point operations, E and EtI,	0.3759	0.0161
+0.7282	0.5489	1.000	will be (N) which is the data description assigned to	0.3835	0.0161
+0.7297	0.1109	1.000	to which is assigned a data description of U by	0.3421	0.0131
+0.7412	0.5489	1.000	the undefined symbol CONSTANT.	0.2556	0.0176
+0.7442	0.1128	1.000	DECODE if the op does not have an implieit or	0.3402	0.0146
+0.7602	0.1109	1.000	explicit dds stated.	0.1429	0.0116
+0.7718	0.5338	1.000	Types of Symbols	0.1335	0.0176
+0.8023	0.5338	1.000	undefined: A symbol is undefined if it is used in an	0.3816	0.0131
+0.8052	0.1109	1.000	STRAP II Special Symbol	0.1842	0.0118
+0.8169	0.5338	1.000	address field but has never appeared in a name field	0.3891	0.0147
+0.8285	0.5301	1.000	to specify either a datum or an instruction.	0.3271	0.0204
+0.8312	0.1089	1.000	STRAP II makes one of its 24-bit special symbols in	0.3894	0.0203
+0.8473	0.1090	1.000	the symbol table whenever an internal cross refer-	0.3816	0.0161
+0.8605	0.5320	1.000	unused: A symbol is unused if it has appeared in a	0.3797	0.0145
+0.8618	0.1090	1.000	encing symbol is needed. The first eight bits of the	0.3853	0.0161
+0.8760	0.5319	1.000	name field referring to a datum or to an instruction	0.3854	0.0139
+0.8764	0.1090	1.000	STRAP II special symbol is always eight one bits; the	0.3966	0.0161
+0.8881	0.5338	1.000	but has not been referenced by an address field.	0.3590	0.0160
+0.9360	0.7669	1.000	Appendix E - Terms	0.1165	0.0116
+0.9360	0.9041	1.000	205	0.0244	0.0102

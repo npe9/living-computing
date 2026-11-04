@@ -1,0 +1,57 @@
+0.0682	0.0714	1.000	MQDD	0.0508	0.0147
+0.1303	0.0713	1.000	LINKAGE	0.0736	0.0126
+0.1321	0.4981	1.000	Boxes 6, 7, 14, 19, 22	0.1692	0.0147
+0.1599	0.4981	1.000	If there was a left parenthesis, it is followed by	0.3553	0.0160
+0.1599	0.0733	1.000	MQDD does not have a calling sequence linkage.	0.3534	0.0147
+0.1744	0.0733	1.000	After main Pass 1 had determined that it is process-	0.3891	0.0116
+0.1744	0.4962	1.000	either a radix or GP. This number is evaluated by	0.3816	0.0160
+0.1860	0.4981	1.000	Mademb, using CPLTNM, and stored accordingly '	0.3737	0.0189
+0.1890	0.0695	1.000	ing a DD unit and has completed the data description,	0.3966	0.0147
+0.2017	0.0694	1.000	it branches directly to MQDD, which used MQDNUM	0.3913	0.0196
+0.2048	0.4962	1.000	in the unit. If it was a GP, MQDD assumes that	0.3609	0.0146
+0.2136	0.0695	1.000	and DNUM as subroutines. MQDD's final exit bran-	0.3893	0.0206
+0.2194	0.4962	1.000	there was no data, and stores a zero coded ex-	0.3515	0.0146
+0.2339	0.4981	1.000	pression in the DD unit.	0.1786	0.0146
+0.2339	0.0714	1.000	ches back to main Pass 1 at Medaf where the final	0.3684	0.0132
+0.2485	0.0733	1.000	details of processing the unit are accomplished.	0.3534	0.0118
+0.2776	0.0714	1.000	DETAILS	0.0714	0.0116
+0.2788	0.4961	1.000	Box 8	0.0491	0.0136
+0.3067	0.0714	1.000	MQDD sets up the variable portion of the unit for	0.3628	0.0161
+0.3081	0.4962	1.000	If there was a Fn-entry mode, the bit Bemv was	0.3590	0.0146
+0.3212	0.4962	1.000	turned on by main Pass1.	0.1936	0.0161
+0.3227	0.0695	1.000	a numeric DD in the format specified in Appendix A.	0.3910	0.0131
+0.3488	0.0714	1.000	FLOW CHART DESCRIPTION	0.2237	0.0161
+0.3500	0.4980	1.000	Boxes 9, 16, 20	0.1205	0.0181
+0.3794	0.0695	1.000	Boxes 2, 10, 17, I1	0.1466	0.0161
+0.3794	0.4981	1.000	The DD numerie data is evaluated by MQDNUM and	0.3816	0.0174
+0.3953	0.4981	1.000	stored in the DD unit.	0.1617	0.0147
+0.4070	0.0714	1.000	If no dds is given by the programmer, the dds will	0.3778	0.0176
+0.4200	0.0714	1.000	be set to BU for alphabetic DD's and N for others.	0.3741	0.0161
+0.4225	0.4980	1.000	Boxes 13, 14	0.0980	0.0198
+0.4518	0.0713	1.000	Bоx 3	0.0491	0.0164
+0.4520	0.4962	1.000	If there is a special sign byte, evaluate and store in	0.3872	0.0189
+0.4679	0.4962	1.000	the DD entry.	0.1053	0.0161
+0.4811	0.0714	1.000	The location in the control word Ibuffw is stored in	0.3835	0.0160
+0.4956	0.0714	1.000	the DD unit at relative location Ziotpt. 32. This	0.3590	0.0160
+0.4970	0.4981	1.000	Boxes 26, 32	0.1034	0.0176
+0.5115	0.0714	1.000	will be the location at which the coded expression	0.3684	0.0133
+0.5233	0.0714	1.000	of the DD is placed.	0.1504	0.0189
+0.5261	0.4981	1.000	Special exponents are evaluated by MQDNUM and	0.3647	0.0176
+0.5392	0.4962	1.000	stored in the unit.	0.1372	0.0174
+0.5552	0.0714	1.000	Boxes 4, 12, 18	0.1203	0.0161
+0.5712	0.4981	1.000	Boxes 27, 33, 36, 28, 29.	0.1936	0.0176
+0.5858	0.0695	1.000	If there is not enough room in the intermediate buffer	0.4004	0.0131
+0.5988	0.0695	1.000	to contain the entire unit, IOFULL is used to move	0.3853	0.0146
+0.6003	0.4981	1.000	The remaining characters are analyzed. Additional	0.3853	0.0176
+0.6133	0.0695	1.000	the previously set up portion of the DD unit to the	0.3722	0.0161
+0.6163	0.4981	1.000	GP's, exponents, or sign bytes if any, return to	0.3571	0.0146
+0.6264	0.0714	1.000	beginning of the buffer, and the control word address-	0.4023	0.0176
+0.6308	0.4962	1.000	the proper section of MQDD; another radix at this	0.3703	0.0131
+0.6453	0.4962	1.000	point would be an error, and is error flagged.	0.3421	0.0160
+0.6744	0.0714	1.000	Box 5	0.0470	0.0146
+0.6744	0.4981	1.000	Boxes 30, 34	0.1034	0.0174
+0.7035	0.0714	1.000	If the unit is an alphabetic DD, control is immediately	0.4023	0.0132
+0.7048	0.4944	1.000	The final exit from MQDD returns to Medaf in main	0.3835	0.0146
+0.7179	0.0714	1.000	transferred to MQDALF.	0.1880	0.0147
+0.7194	0.4981	1.000	Pass 1.	0.0545	0.0132
+0.9215	0.0695	1.000	100	0.0244	0.0116

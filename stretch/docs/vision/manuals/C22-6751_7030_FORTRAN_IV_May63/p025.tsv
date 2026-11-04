@@ -1,0 +1,103 @@
+0.0727	0.4944	1.000	nature, then the appropriate corrections will be made	0.4023	0.0204
+0.0785	0.0733	1.000	the case of the disk, a distinct region (sometimes re-	0.3966	0.0161
+0.0900	0.4981	1.000	in flight. However, if the first operation is non-decimal.	0.3929	0.0161
+0.0915	0.0714	1.000	ferred to as a symbolic file). Therefore, for each actual	0.3985	0.0176
+0.1017	0.5000	1.000	binary usage will be confirmed, and a subsequent	0.3929	0.0189
+0.1061	0.0733	1.000	or possible value that u may assume at object time,	0.3966	0.0189
+0.1191	0.4944	1.000	decimal operation will cause job rejection.	0.3083	0.0176
+0.1232	0.0731	1.000	it is necessary to prepare an IoD card. Before examining	0.3970	0.0181
+0.1394	0.0733	1.000	the two possible types of I0D (tape or disk), it may be	0.3966	0.0147
+0.1424	0.4906	1.000	BINARY TAPE IOD's	0.1523	0.0189
+0.1526	0.0733	1.000	stated that in both cases, the correspondence between	0.3947	0.0160
+0.1627	0.4944	1.000	The tape tod card format is shown in Figure 4.	0.3459	0.0191
+0.1695	0.0751	1.000	the FORTRAN statement or statements, and the related	0.3933	0.0186
+0.1860	0.0714	1.000	IoD cards, is established by punching the appropriate	0.3966	0.0146
+0.1919	0.7989	1.000	62163	0.0395	0.0160
+0.1948	0.5150	1.000	7	0.0132	0.0160
+0.1976	0.5677	1.000	9 n0	0.0357	0.0118
+0.1997	0.0714	1.000	decimal value of u in the iod-name field. Thus, if a	0.3967	0.0164
+0.2166	0.0752	1.000	given job contains the following statements:	0.3214	0.0146
+0.2238	0.5056	1.000	B 'IOD-name ,IOD, TAPE, exit, channel, unit,	0.2575	0.0131
+0.2355	0.1090	1.000	2 READ (3) list	0.1222	0.0103
+0.2355	0.5846	1.000	imode, density, dispositior	0.1391	0.0131
+0.2660	0.1109	1.000	4 WRITE (5) list	0.1297	0.0131
+0.2802	0.4942	1.000	Figure 4	0.0604	0.0166
+0.3009	0.1410	1.000	DO 10 I= 2, 10, 3	0.1090	0.0131
+0.3052	0.5056	1.000	(See the Mcp manual for a detailed description of	0.3910	0.0191
+0.3197	0.4944	1.000	each field indicated.) A right-to-left drop-out is per-	0.4023	0.0191
+0.3342	0.1034	1.000	10 WRITE (I) list	0.1353	0.0146
+0.3372	0.4944	1.000	mitted on the fields as shown. A TAPE IOD card pre-	0.3966	0.0161
+0.3517	0.1391	1.000	etc.	0.0244	0.0087
+0.3532	0.4962	1.000	pared by a FORTRAN programmer may have every field	0.3966	0.0147
+0.3663	0.0902	1.000	It will be necessary to prepare a total of four IOD	0.3778	0.0131
+0.3691	0.4962	1.000	shown above punched (although it will become ap-	0.3966	0.0146
+0.3821	0.0733	1.000	cards, defining units 2, 3, 5 and 8. (If, however, the	0.3947	0.0133
+0.3852	0.4962	1.000	parent that punching in the exit field is meaningless).	0.3985	0.0131
+0.3967	0.0733	1.000	parameters characterizing a particular run are such	0.3947	0.0133
+0.3997	0.4981	1.000	Anything acceptable to McP is acceptable to the FOR-	0.3947	0.0145
+0.4101	0.0732	1.000	that statement 4 in the example above will not be	0.3950	0.0181
+0.4157	0.4962	1.000	TRAN compiler.	0.1109	0.0131
+0.4273	0.0733	1.000	executed, then the iod card defining unit 4 may be re-	0.3966	0.0131
+0.4302	0.5132	1.000	1. The exit field: For stRAP programs, the contents	0.3797	0.0146
+0.4418	0.0733	1.000	moved before loading the job deck, thus avoiding the	0.3947	0.0146
+0.4448	0.4962	1.000	of this field indicate to the assembler the address of the	0.3966	0.0131
+0.4578	0.0733	1.000	scheduling of unnecessary equipment for this run.)	0.3947	0.0146
+0.4606	0.4962	1.000	appropriate 1-o Table of Exits for this symbolic unit.	0.3947	0.0147
+0.4724	0.0733	1.000	This requirement, that the IoD-name field be numeric,	0.3966	0.0146
+0.4767	0.4962	1.000	However, FORTRAN object programs communicate with	0.3966	0.0146
+0.4884	0.0714	1.000	is the only required difference between FORTRAN-	0.3985	0.0147
+0.4911	0.4962	1.000	MCP via the locs routine, and the necessary Table of	0.3968	0.0157
+0.5042	0.0733	1.000	oriented IOd's and strap-oriented IOD'S.	0.2838	0.0118
+0.5073	0.4962	1.000	Exits is embodied therein. It is impractical for the	0.3966	0.0131
+0.5217	0.4961	1.000	programmer to determine where this (relocated) table	0.3968	0.0152
+0.5320	0.0733	1.000	GENERAL RULES FOR CONSTRUCTING IOD CARDS	0.3252	0.0117
+0.5378	0.4962	1.000	will be at execution time; therefore, Iocs is so con-	0.3985	0.0131
+0.5536	0.4962	1.000	structed that it will dynamically perform a sCHEX	0.3966	0.0133
+0.5536	0.0883	1.000	1. A binary-type IOD (disk, or binary tape) should	0.3797	0.0147
+0.5664	0.4960	1.000	pseudo-op, at object time, just before the first reference	0.3969	0.0171
+0.5665	0.0732	1.000	contain the decimal value of unit, followed by a B,	0.3969	0.0182
+0.5827	0.4962	1.000	to the file. Even if there is punching in the exit field,	0.3966	0.0147
+0.5858	0.0733	1.000	punched in the name field.	0.1974	0.0131
+0.5988	0.4962	1.000	the compiling system will delete the field, and by STRAP	0.3966	0.0146
+0.6003	0.0883	1.000	2. A decimal-type IoD (printer, decimal tape, or	0.3797	0.0146
+0.6148	0.4962	1.000	time, it will be void. Therefore, it is suggested that	0.3966	0.0131
+0.6148	0.0733	1.000	system "pseudo-IOD's") should contain the decimal	0.3947	0.0146
+0.6294	0.4962	1.000	the FORTRAN programmer never fill in this field.	0.3571	0.0146
+0.6308	0.0733	1.000	value of unit, followed by a D, punched in the name	0.3947	0.0146
+0.6453	0.5094	1.000	2. The Channel and Unit Fields: An attempt by a	0.3835	0.0147
+0.6468	0.0695	1.000	field.	0.0395	0.0131
+0.6596	0.4961	1.000	FORTRAN programmer to associate more than one IOD	0.3969	0.0159
+0.6612	0.0883	1.000	3. If an I0D-name is seen, of which the first charac-	0.3797	0.0147
+0.6758	0.4962	1.000	with a given physical tape unit is an error. Therefore,	0.3966	0.0133
+0.6758	0.0714	1.000	ter is alphabetic, the compiler will assume that this	0.3966	0.0146
+0.6903	0.4944	1.000	to simplify the preparation of tape IOD's for FORTRAN,	0.3985	0.0146
+0.6918	0.0714	1.000	IOD is for the benefit of a straP subprogram wishing	0.3966	0.0131
+0.7064	0.4962	1.000	MCP has been designed to assign distinct tape units	0.3947	0.0131
+0.7078	0.0714	1.000	to perform its own I-o operations. While the IoD will	0.3947	0.0131
+0.7191	0.4942	1.000	to each tape Iod with both channel and unit void.	0.3968	0.0172
+0.7224	0.0733	1.000	be passed through the system (and thus be assigned	0.3929	0.0146
+0.7369	0.4962	1.000	Note that if it is desired to force two or more tape	0.3966	0.0131
+0.7384	0.0714	1.000	an I-o reference number equal to its relative placement	0.3966	0.0131
+0.7515	0.0714	1.000	in the Iod-deck excluding "pseudo-IOD's"), it will be ig	0.3910	0.0161
+0.7515	0.4944	1.000	IOD's to reference a given tape unit, the standard MCP	0.3985	0.0146
+0.7674	0.4944	1.000	procedure of punching identical non-void symbols in	0.3966	0.0147
+0.7688	0.0714	1.000	nored by the FORTRAN IOCS routines, except for the	0.3966	0.0133
+0.7833	0.4944	1.000	these fields may be followed. However, this is not	0.3985	0.0132
+0.7833	0.0714	1.000	insertion of the letter "K" before the IOD-name.	0.3421	0.0118
+0.7979	0.4944	1.000	usual for FoRTraN; these fields will most often be blank.	0.3966	0.0146
+0.7994	0.0865	1.000	It will be possible for the system to accept a DISK	0.3797	0.0131
+0.8139	0.0714	1.000	IOD, without the terminal B in the name field; similarly,	0.3966	0.0131
+0.8139	0.5113	1.000	3. The Mode and Density Fields: Binary tapes,	0.3816	0.0131
+0.8285	0.4944	1.000	which are automatically blocked in the FORTRAN sys-	0.3966	0.0131
+0.8285	0.0714	1.000	a PRINTER, Or "pseudo"-IOD can be handled without a	0.3947	0.0145
+0.8430	0.4944	1.000	tem, must be written in odd parity. As this is the instal-	0.3985	0.0146
+0.8454	0.0713	1.000	terminal D.	0.0867	0.0127
+0.8590	0.0865	1.000	If a TAPE IOD with a pure integer in the name field is	0.3797	0.0146
+0.8590	0.4944	1.000	lation standard in the MCP system as distributed, it	0.3985	0.0146
+0.8750	0.4944	1.000	is not necessary for the programmer to specify this	0.3966	0.0132
+0.8764	0.0714	1.000	encountered, it will be assumed to be binary and the	0.3947	0.0132
+0.8909	0.0714	1.000	appropriate control mechanisms set up. If, at object	0.3966	0.0146
+0.8909	0.4944	1.000	mode on the IOD card. Note, however, that as the com-	0.3985	0.0132
+0.9055	0.4944	1.000	piling system is not aware of the use to which the	0.3966	0.0146
+0.9070	0.0714	1.000	time, the first reference to this device is decimal in	0.3947	0.0145
+0.9331	0.8722	1.000	25	0.0188	0.0116

@@ -1,0 +1,109 @@
+0.0639	0.5414	1.000	1. He may disregard all stacked I/O interrupts	0.3571	0.0161
+0.0669	0.0902	1.000	The unused bits of the first two words are reset to	0.3797	0.0102
+0.0785	0.5188	1.000	for a logical unit by issuing the Release pseudo-	0.3665	0.0145
+0.0799	0.0902	1.000	zero each time the table is used by MCP. The I/O	0.3816	0.0131
+0.0945	0.5207	1.000	operation. (See Appendix B.)	0.2256	0.0131
+0.0959	0.0902	1.000	reference number is that of the logical unit for	0.3515	0.0116
+0.1076	0.5451	1.000	2. He may selectively process the stacked inter-	0.3665	0.0131
+0.1090	0.0883	1.000	which the interrupt occurred. The actuated address	0.3947	0.0131
+0.1218	0.5205	1.000	rupts, on a per unit basis, by issuing the Wait	0.3537	0.0171
+0.1250	0.0883	1.000	is the location of the macro-instruction (actually the	0.3947	0.0117
+0.1366	0.5207	1.000	pseudo-operation. (See "Support I/O Pseudo-	0.3515	0.0161
+0.1394	0.0883	1.000	location of the first instruction of the calling	0.3383	0.0133
+0.1526	0.0902	1.000	sequence) used to actuate the unit. The status bits	0.3816	0.0131
+0.1526	0.5226	1.000	Operations.")	0.1053	0.0131
+0.1672	0.0902	1.000	contain all indicators turned on at the time of the	0.3684	0.0116
+0.1672	0.5451	1.000	3. He may process the stacked interrupts on a	0.3496	0.0132
+0.1806	0.0882	1.000	interrupt, including the high-order indicator that	0.3725	0.0164
+0.1817	0.5226	1.000	first-come first-served basis, by issuing the Return	0.3966	0.0132
+0.1961	0.0901	1.000	directly caused the interrupt. The interrupted	0.3536	0.0159
+0.1962	0.5207	1.000	pseudo-operation, (See "Support I/O Pseudo-	0.3515	0.0145
+0.2106	0.5225	1.000	Operations.")	0.1053	0.0148
+0.2121	0.0902	1.000	address is the location of the next instruction to be	0.3816	0.0103
+0.2252	0.5451	1.000	The Return pseudo-operation is the only means of	0.3741	0.0147
+0.2267	0.0902	1.000	executed at the time of the interrupt. It is given	0.3665	0.0132
+0.2397	0.5226	1.000	removing the problem program from the auto-	0.3515	0.0133
+0.2412	0.0902	1.000	for programmer reference only; MCP does not use	0.3835	0.0131
+0.2558	0.5207	1.000	stacked mode.	0.1090	0.0131
+0.2573	0.0902	1.000	it on return.	0.0940	0.0103
+0.2688	0.5451	1.000	The problem program's lower registers, 3-31,	0.3553	0.0133
+0.2696	0.1127	1.000	MCP gives control to the error interrupt instruc-	0.3742	0.0142
+0.2832	0.0901	1.000	tion when the high-order status bit is either EPGK	0.3818	0.0157
+0.2833	0.5207	1.000	are saved in protected storage upon entry into the	0.3759	0.0146
+0.2979	0.5226	1.000	auto-stacked mode. Whenever control is given to	0.3741	0.0132
+0.2994	0.0921	1.000	(.9) or UK (.10); to the end interrupt instruction	0.3609	0.0131
+0.3124	0.5207	1.000	an I/O table of exits, the indicator register is zero;	0.3929	0.0146
+0.3139	0.0902	1.000	when the high-order bit is EE (.11); to the signal	0.3704	0.0135
+0.3270	0.5226	1.000	the mask register is zero except for the IF bit; index	0.3985	0.0131
+0.3285	0.0902	1.000	interrupt instruction when CS (. 13) is on alone; or	0.3778	0.0131
+0.3415	0.5207	1.000	register 15 is zero; and the remaining lower regis-	0.3910	0.0146
+0.3430	0.0883	1.000	to the normal interrupt instruction when the high-	0.3759	0.0131
+0.3560	0.5225	1.000	ters contain insignificant information. Thus, when	0.3855	0.0164
+0.3576	0.0902	1.000	order bit is EOP (.12) with or without CS.	0.3177	0.0116
+0.3721	0.5226	1.000	going from mainstream to auto-stacked mode, the	0.3778	0.0131
+0.3721	0.1147	1.000	Normally, the last four words of an I/O table of	0.3609	0.0146
+0.3852	0.5226	1.000	problem programmer cannot depend upon his main-	0.3891	0.0131
+0.3866	0.0921	1.000	exits will contain branch instructions that provide	0.3741	0.0116
+0.4012	0.5226	1.000	stream lower registers until he has returned to the	0.3853	0.0116
+0.4012	0.0921	1.000	entry into fix-up routines. It is the responsibility of	0.3985	0.0131
+0.4136	0.0920	1.000	the fix-up routines to determine the combination of	0.3837	0.0159
+0.4142	0.5226	1.000	mainstream mode via the Return pseudo-operation.	0.3853	0.0131
+0.4288	0.5244	1.000	The converse is also true. In the mainstream mode,	0.3985	0.0131
+0.4317	0.0921	1.000	status bits that are on in order to correctly evaluate	0.3929	0.0116
+0.4433	0.5226	1.000	he cannot depend upon the lower registers that he	0.3722	0.0131
+0.4462	0.0921	1.000	the interrupt and to provide appropriate corrective	0.3816	0.0117
+0.4593	0.5244	1.000	set up in the auto-stacked mode. If the programmer	0.3947	0.0116
+0.4593	0.0921	1.000	action. (Appendix B contains summaries of I/O	0.3609	0.0131
+0.4738	0.5244	1.000	requires the contents of his mainstream registers	0.3759	0.0116
+0.4738	0.0921	1.000	status indicators with their interpretations for dif-	0.3835	0.0116
+0.4869	0.5244	1.000	while operating in the auto-stacked mode, a Fetch	0.3759	0.0131
+0.4884	0.0921	1.000	ferent types of I/O units.) Occasionally, some of	0.3759	0.0131
+0.5015	0.5244	1.000	Lower Registers pseudo-operation may be issued.	0.3759	0.0131
+0.5042	0.0921	1.000	these last four words will be one-word fix-up rou-	0.3797	0.0103
+0.5174	0.5244	1.000	The registers will be placed into the program speci-	0.3947	0.0132
+0.5188	0.0921	1.000	tines themselves.	0.1335	0.0118
+0.5305	0.5244	1.000	fied buffer and the auto-stacked fixup may then load	0.3872	0.0131
+0.5320	0.1147	1.000	I/O operations with suppress end of operation	0.3440	0.0132
+0.5464	0.0921	1.000	(SEOP) specified, function the same as non-SEOPed	0.3910	0.0133
+0.5464	0.5244	1.000	any registers that it requires from the appropriate	0.3816	0.0133
+0.5596	0.5226	1.000	location within the buffer. (See "Fetch Lower Reg-	0.3891	0.0131
+0.5609	0.0921	1.000	operations, except that interrupts are not issued for	0.3947	0.0133
+0.5755	0.5226	1.000	isters Pseudo-Operation.")	0.2086	0.0133
+0.5770	0.0940	1.000	an end of operation (EOP) condition.	0.2707	0.0118
+0.6032	0.0940	1.000	I/O OPERATING MODES: There are three modes of	0.3985	0.0117
+0.6032	0.5226	1.000	Mainstream Stack I/O (SIO) Mode: The second I/O	0.3853	0.0132
+0.6177	0.5263	1.000	operating mode causes all I/O interrupts to be	0.3477	0.0132
+0.6191	0.0940	1.000	running in conjunction with I/O operations; only two	0.3891	0.0118
+0.6321	0.5263	1.000	stacked in a queue, as they oceur, while the problem	0.3966	0.0133
+0.6336	0.0940	1.000	are under problem program control.	0.2763	0.0118
+0.6482	0.5226	1.000	program is executing instructions in mainstream.	0.3778	0.0132
+0.6612	0.0940	1.000	Auto-Stacked Mode: The problem program is placed	0.3966	0.0161
+0.6612	0.5244	1.000	The interrupts are not released to the problem pro-	0.3891	0.0133
+0.6730	0.5244	1.000	gram until requested by a Release I/0 pseudo-	0.3515	0.0161
+0.6773	0.0940	1.000	in the auto-stacked mode whenever an I/O interrupt	0.3910	0.0118
+0.6890	0.5244	1.000	operation or a Wait pseudo-operation.	0.2857	0.0147
+0.6903	0.0959	1.000	occurs for that problem program during mainstream	0.3947	0.0118
+0.6996	0.0920	1.000	and control is passed to an I/O table of exits. This	0.3876	0.0219
+0.7166	0.5226	1.000	Mainstream Mode: The third mode is the normal	0.3759	0.0189
+0.7209	0.0940	1.000	is known as an I/O fix-up.	0.1974	0.0116
+0.7339	0.5244	1.000	operating mode, where an I/O interrupt is released	0.3891	0.0146
+0.7339	0.1184	1.000	The auto-stacked mode is a pseudo-disabled	0.3346	0.0118
+0.7470	0.5226	1.000	to the problem program immediately upon receipt,	0.3816	0.0147
+0.7485	0.0940	1.000	mode; the problem program is effectively disabled	0.3816	0.0146
+0.7602	0.5244	1.000	invoking the auto-stacked mode.	0.2444	0.0174
+0.7630	0.0940	1.000	while MCP proceeds enabled. All additional prob-	0.3835	0.0161
+0.7791	0.0940	1.000	lem program I/O interrupts are automatically	0.3496	0.0116
+0.7906	0.5226	1.000	Support I/O Pseudo-Operations	0.2387	0.0161
+0.7921	0.0940	1.000	stacked in an interrupt queue as they occur. This is	0.3966	0.0146
+0.8052	0.0959	1.000	done in the same manner as the exchange would	0.3609	0.0146
+0.8195	0.0957	1.000	stack them when in the disabled mode, except that	0.3782	0.0205
+0.8197	0.5226	1.000	In order to further facilitate machine I/O processing	0.4004	0.0161
+0.8342	0.0959	1.000	MCP may still process MCP interrupts immediately.	0.4023	0.0161
+0.8358	0.5207	1.000	for the programmer, ten support I/O pseudo-	0.3534	0.0145
+0.8503	0.1165	1.000	Once the programmer has processed the initial	0.3590	0.0146
+0.8503	0.5244	1.000	operations are available, which do not require hard-	0.3966	0.0146
+0.8633	0.0940	1.000	I/O interrupt, there are several options for handling	0.3985	0.0176
+0.8633	0.5263	1.000	ware I/O instructions, (except in the case of the	0.3628	0.0161
+0.8750	0.5263	1.000	Free tape drive pseudo-operation) and which, in	0.3647	0.0205
+0.8794	0.0977	1.000	any remaining stacked I/O interrupts.	0.2838	0.0131
+0.9128	0.0996	1.000	16	0.0169	0.0073

@@ -1,0 +1,59 @@
+0.0623	0.0676	1.000	XERR	0.0490	0.0149
+0.1278	0.4943	1.000	Box 12	0.0565	0.0163
+0.1294	0.0677	1.000	LINKAGE	0.0733	0.0116
+0.1539	0.4944	1.000	This is location Xerr4a and is entered upon successful	0.4079	0.0191
+0.1555	0.0695	1.000	The user routine, when receiving a unit check, must	0.3929	0.0146
+0.1685	0.4944	1.000	completion of the I-O operation initiated by XERR.	0.3759	0.0191
+0.1699	0.0694	1.000	set up in the UK fixup the error arc number in the	0.3744	0.0169
+0.1844	0.0694	1.000	value field of $8, and the address of the I-O control	0.3837	0.0168
+0.1989	0.4905	1.000	Boxes 13, 14	0.1035	0.0208
+0.1991	0.0677	1.000	word in the value field of $9. If the error occurred	0.3853	0.0146
+0.2151	0.0695	1.000	during a read operation, the unit check fixup must	0.3797	0.0131
+0.2282	0.4944	1.000	The original table of exits is restored as set up by	0.3816	0.0189
+0.2282	0.0677	1.000	branch to Xerrrd, or to Xerrwr if it occurred during	0.3966	0.0161
+0.2456	0.4944	1.000	the user routine, and XERR branches to the EOP fixup	0.4041	0.0131
+0.2470	0.0695	1.000	a write operation.	0.1353	0.0103
+0.2573	0.4944	1.000	which would have been taken if the I-O error had not	0.3891	0.0131
+0.2701	0.4961	1.000	occurred.	0.0773	0.0165
+0.2733	0.0695	1.000	DETAILS	0.0714	0.0116
+0.3009	0.0695	1.000	The operation will be retried a maximum of 100 times. Box 15	0.4812	0.0161
+0.3182	0.0714	1.000	If not corrected in this time, the assembly will be	0.3741	0.0103
+0.3314	0.4944	1.000	This is location Xerr2 and is entered upon XERR	0.3684	0.0147
+0.3327	0.0677	1.000	terminated (in the case of read errors) or continued	0.3872	0.0103
+0.3459	0.0695	1.000	with error (in the case of write errors).	0.3008	0.0147
+0.3459	0.4962	1.000	receiving a unit check from its I-O operation.	0.3402	0.0132
+0.3733	0.4961	1.000	Box 16	0.0567	0.0180
+0.3750	0.0695	1.000	FLOW CHART DESCRIPTION	0.2218	0.0145
+0.4026	0.4944	1.000	$7, $8, and $9 are refilled with the I-O parameters	0.3835	0.0174
+0.4066	0.0676	1.000	Boxes 1, 9	0.0829	0.0152
+0.4172	0.4944	1.000	saved in location Xerr5.	0.1842	0.0174
+0.4345	0.0695	1.000	The Wrop indicator is set according to the operation	0.3910	0.0161
+0.4460	0.4961	1.000	Box 17	0.0566	0.0179
+0.4491	0.0695	1.000	to be retried. If on, a write operation is indicated;	0.3853	0.0146
+0.4618	0.0694	1.000	if off, a read.	0.1074	0.0183
+0.4897	0.4962	1.000	The count in $8 is decremented by one. If the count	0.3891	0.0191
+0.4938	0.0695	1.000	Boxes 2, 3, 10	0.1167	0.0167
+0.5058	0.4979	1.000	is not zero, the I-O operation will be attemptec	0.3463	0.0189
+0.5218	0.4981	1.000	again. If zero, the error has not been successfu	0.3628	0.0146
+0.5218	0.0714	1.000	The I-O operation is loaded into the value field of $7.	0.3947	0.0161
+0.5331	0.4943	1.000	after 100 tries.	0.1204	0.0180
+0.5378	0.0733	1.000	A count of 100 is placed in the count field of $8, and	0.3853	0.0131
+0.5488	0.0714	1.000	the table of exits set up by the user routine is saved	0.3854	0.0158
+0.5654	0.4962	1.000	Boxes 18, 11, 21, 19	0.1654	0.0189
+0.5669	0.0714	1.000	in location Xerr9.	0.1335	0.0147
+0.5959	0.4981	1.000	An appropriate message "Uncorrected Error Reading/	0.4004	0.0132
+0.5959	0.0695	1.000	Boxes 4-8	0.0827	0.0174
+0.6090	0.4962	1.000	Writing Disk, " and "Relative Arc Number XXXXXX"	0.3910	0.0146
+0.6235	0.4944	1.000	is written via System Output.	0.2199	0.0160
+0.6250	0.0733	1.000	The arc in error is located; the EOP interrupt is	0.3628	0.0145
+0.6409	0.0714	1.000	suppressed. A new table of exits is set up specifying	0.3966	0.0132
+0.6539	0.0714	1.000	a branch to Xerrta in the case. of an EOP interrupt,	0.3835	0.0133
+0.6539	0.4962	1.000	Boxes 20, 22	0.1016	0.0177
+0.6672	0.0714	1.000	and a branch to Xerrz in the case of unit check. The	0.3947	0.0147
+0.6830	0.0714	1.000	I-O operation is initiated, $7, $8, and $9 are saved	0.3853	0.0146
+0.6845	0.4944	1.000	If a write operation, return will be made to the user	0.3910	0.0146
+0.6962	0.4962	1.000	routine's EOP fixup. If a read operation, the	0.3402	0.0174
+0.6976	0.0714	1.000	in location Xerr5, and return to the interrupted	0.3553	0.0176
+0.7121	0.4962	1.000	assembly is terminated.	0.1823	0.0146
+0.7121	0.0714	1.000	address is made via $RET.	0.2049	0.0146
+0.9157	0.0695	1.000	62	0.0188	0.0116

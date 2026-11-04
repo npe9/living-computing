@@ -1,0 +1,101 @@
+0.0594	0.5074	1.000	address 2.0, which places it in the protected area of	0.3969	0.0195
+0.0609	0.0920	1.000	Mode	0.0415	0.0134
+0.0785	0.5075	1.000	storage.	0.0602	0.0131
+0.0814	0.1071	1.000	63. Noisy Mode (NM). This indicator can only be	0.3778	0.0160
+0.0959	0.0902	1.000	turned on by program control, through the use of a	0.3929	0.0160
+0.1105	0.0902	1.000	connective operation, a loading of the indicator reg-	0.3947	0.0160
+0.1163	0.5075	1.000	Interruption Action	0.1429	0.0131
+0.1279	0.0921	1.000	ister, or BRANCH ON BIT. When on, all floating point	0.3929	0.0131
+0.1381	0.5094	1.000	When a program interruption occurs, a mechanism	0.3947	0.0146
+0.1409	0.0921	1.000	operations are performed in the noisy mode, as de-	0.3910	0.0132
+0.1526	0.5094	1.000	develops the number of the leftmost actuated indi-	0.3947	0.0160
+0.1570	0.0902	1.000	fined in "Floating Point Arithmetic."	0.2707	0.0161
+0.1672	0.5000	1.000	. cator whose mask bit is one. After this leftmost indi-	0.4041	0.0147
+0.1830	0.5094	1.000	cator has been turned off, the developed number is	0.3947	0.0161
+0.1991	0.5094	1.000	added to the contents of the interruption address	0.3947	0.0161
+0.2121	0.0902	1.000	Mask Register	0.1353	0.0161
+0.2136	0.5075	1.000	register to form the effective interruption address.	0.3947	0.0161
+0.2297	0.5094	1.000	This address does not replace the contents of ine	0.3947	0.0146
+0.2440	0.5074	1.000	instruction counter but is used to fetch a single in-	0.3968	0.0164
+0.2470	0.0940	1.000	The mask word consists of 64 bits. Each bit corre-	0.3891	0.0103
+0.2602	0.5075	1.000	struction which is executed before a second inter-	0.3966	0.0132
+0.2615	0.0902	1.000	sponds to an indicator in the indicator register. If	0.3947	0.0146
+0.2745	0.0901	1.000	the bit of the mask is 1 and the interruption system	0.3932	0.0186
+0.2761	0.5094	1.000	ruption can occur. The instruction fetch indicator	0.3947	0.0146
+0.2906	0.5113	1.000	(IF) cannot be turned on when this instruction is	0.3929	0.0161
+0.2921	0.0921	1.000	enabled, occurrence of the corresponding condition	0.3910	0.0146
+0.3067	0.5075	1.000	fetched even though it might lie in the protected	0.3947	0.0161
+0.3067	0.0921	1.000	will cause program interruption at the end of the	0.3929	0.0146
+0.3200	0.5091	1.000	area of core storage.	0.1474	0.0162
+0.3227	0.0902	1.000	operation during which the indicator is turned on.	0.3947	0.0161
+0.3358	0.5244	1.000	The instruction counter is stepped neither before	0.3797	0.0176
+0.3387	0.0902	1.000	If the bit of the mask is 0, turning on the indicator	0.3929	0.0147
+0.3532	0.5113	1.000	nor during the execution of the instruction at the	0.3929	0.0117
+0.3532	0.0921	1.000	does not cause program interruption. Thus, inter-	0.3929	0.0147
+0.3645	0.5111	1.000	effective interruption address; however, the instruc-	0.3913	0.0188
+0.3677	0.0921	1.000	ruption requires the mask bit to be 1, the indicator	0.3910	0.0145
+0.3821	0.5113	1.000	tion counter can be replaced as the result of a suc-	0.3929	0.0147
+0.3852	0.0921	1.000	bit to be 1, and the mechanism to be enabled.	0.3233	0.0131
+0.3982	0.5094	1.000	cessful branching operation.	0.2086	0.0132
+0.3997	0.1090	1.000	Not all of the 64 mask bits can be set by program	0.3741	0.0145
+0.4142	0.5263	1.000	When interruption occurs and an instruction at	0.3778	0.0131
+0.4157	0.0921	1.000	control. Those corresponding to indicators 0-19 are	0.3910	0.0131
+0.4273	0.5094	1.000	the effective interruption address is executed (it may	0.3929	0.0161
+0.4302	0.0921	1.000	permanently set to 1. Those corresponding to indi-	0.3929	0.0146
+0.4448	0.5113	1.000	be of the branch type), the next instruction executed	0.3910	0.0131
+0.4462	0.0921	1.000	cators 20-47 can be set to 0 or 1 by program control.	0.3910	0.0132
+0.4578	0.5075	1.000	will be one of the following:	0.2068	0.0161
+0.4606	0.0921	1.000	Those corresponding to indicators 48-63 are perma-	0.3929	0.0147
+0.4767	0.0921	1.000	nently set to 0. Thus, when the interruption mecha-	0.3929	0.0146
+0.4797	0.5263	1.000	1. The instruction then addressed by the instruc-	0.3759	0.0131
+0.4904	0.0901	1.000	nism is enabled, some indicators always cause pro-	0.3931	0.0162
+0.4956	0.5508	1.000	tion counter in case a second interruption has	0.3534	0.0147
+0.5073	0.0902	1.000	gram interruption, some may or may not, and others	0.3929	0.0131
+0.5084	0.5507	1.000	not occurred	0.0922	0.0136
+0.5208	0.0901	1.000	can never cause interruption. Figure I1 shows the	0.3931	0.0171
+0.5305	0.5244	1.000	2. The instruction at the new effective interrup-	0.3759	0.0146
+0.5378	0.0902	1.000	masking property of each indicator.	0.2632	0.0131
+0.5426	0.5506	1.000	tion address in case a second interruption has	0.3518	0.0177
+0.5523	0.1071	1.000	The mask has address 12 and can be loaded and	0.3741	0.0116
+0.5625	0.5508	1.000	occurred	0.0620	0.0102
+0.5682	0.0902	1.000	stored by transmission instructions. When the mask	0.3929	0.0133
+0.5827	0.5244	1.000	If the interruption system is enabled and an indi-	0.3759	0.0147
+0.5842	0.0902	1.000	contents are read, the permanently set bits read out	0.3929	0.0131
+0.5988	0.0902	1.000	as 1 or O according to their type, regardless of what	0.3929	0.0131
+0.5988	0.5094	1.000	cator and its corresponding mask bit are both on,	0.3929	0.0146
+0.6148	0.0902	1.000	may have been loaded into those positions earlier.	0.3910	0.0131
+0.6148	0.5094	1.000	interruption will follow as early as possible but never	0.3929	0.0146
+0.6287	0.5093	1.000	during the execution of an instruction. Interruption	0.3911	0.0153
+0.6294	0.0902	1.000	Individual mask bits with addresses 12.20 through	0.3910	0.0146
+0.6422	0.5074	1.000	is permitted after the execution of an instruction is	0.3949	0.0179
+0.6453	0.0883	1.000	12.47 can be set or changed by connective operations,	0.3947	0.0160
+0.6599	0.5056	1.000	completed, terminated, or suppressed and before ex-	0.3966	0.0160
+0.6599	0.0865	1.000	arithmetic operations, or BRANCH ON BIT.	0.2932	0.0147
+0.6758	0.5075	1.000	ecution of the next instruction.	0.2256	0.0133
+0.7006	0.5094	1.000	PROGRAMMING NOTES	0.1523	0.0116
+0.7136	0.0883	1.000	Interruption Address Register	0.2763	0.0176
+0.7179	0.5075	1.000	The leftmost one identification defines the relative	0.3947	0.0147
+0.7339	0.5075	1.000	priority of actuated indicators if more than one has	0.3947	0.0161
+0.7485	0.5055	1.000	its corresponding mask bit turned on when interrup-	0.3949	0.0179
+0.7485	0.0883	1.000	Because of the varied conditions which turn on in-	0.3947	0.0131
+0.7630	0.0882	1.000	dicators, varied correction routines are required to	0.3930	0.0178
+0.7645	0.5056	1.000	tion occurs. If the interruption instruction does not	0.3966	0.0161
+0.7776	0.0865	1.000	meet the needs created by the conditions. There can	0.3947	0.0161
+0.7805	0.5075	1.000	disable the system in such a case, then another suc-	0.3929	0.0131
+0.7951	0.5056	1.000	ceeding interruption will be caused by the new left-	0.3947	0.0160
+0.7951	0.0883	1.000	be up to 48 such routines tailored to the program in	0.3929	0.0160
+0.8096	0.0883	1.000	execution, and each corresponding to an indicator.	0.3929	0.0160
+0.8109	0.5056	1.000	most selected indicator before the execution of an	0.3947	0.0147
+0.8241	0.0883	1.000	The initial instruction for a routine occupies all or	0.3929	0.0174
+0.8255	0.5056	1.000	instruction addressed by the instruction counter. This	0.3947	0.0161
+0.8400	0.0865	1.000	half of a location in a table of 48 successive full-	0.3947	0.0147
+0.8415	0.5056	1.000	is true even if the first interruption instruction is a	0.3947	0.0146
+0.8561	0.0902	1.000	word locations.	0.1128	0.0118
+0.8561	0.2011	1.000	The address of the first location is	0.2820	0.0146
+0.8561	0.5056	1.000	branch instruction. The instruction counter is not	0.3947	0.0146
+0.8706	0.0865	1.000	contained in the interruption address register. The	0.3947	0.0161
+0.8721	0.5038	1.000	stepped during execution of either interruption in-	0.3966	0.0161
+0.8852	0.5056	1.000	struction.	0.0752	0.0160
+0.8866	0.0865	1.000	interruption address register contains 18 bits and has	0.3947	0.0146
+0.9244	0.0865	1.000	48	0.0188	0.0116
+0.9244	0.1259	1.000	IBM 7030	0.0695	0.0087

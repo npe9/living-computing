@@ -1,0 +1,107 @@
+0.0973	0.0714	1.000	Table 3. Exits from the Return Routine	0.2350	0.0146
+0.1308	0.4473	1.000	Registers	0.0583	0.0161
+0.1439	0.6579	1.000	Remarks	0.0602	0.0218
+0.1453	0.4492	1.000	Restored	0.0526	0.0145
+0.1453	0.0695	1.000	Exit to	0.0508	0.0189
+0.1465	0.2329	1.000	Conditions	0.0679	0.0181
+0.1698	0.2251	1.000	An MCP or PP interrupt	0.1494	0.0177
+0.1715	0.4455	1.000	(1) If return to a major	0.1447	0.0145
+0.1728	0.0733	1.000	KUNSTC	0.0565	0.0119
+0.1730	0.6617	1.000	An I-O table of exits will get	0.1729	0.0131
+0.1845	0.4474	1.000	package from a major	0.1316	0.0131
+0.1845	0.2350	1.000	must be unstacked.	0.1147	0.0131
+0.1860	0.6617	1.000	control in the auto-stack mode.	0.1880	0.0131
+0.1991	0.4530	1.000	package is being post-	0.1222	0.0131
+0.2078	0.4549	1.000	oned to take an MC	0.1184	0.0146
+0.2220	0.4473	1.000	interrupt, (STLR) are	0.1279	0.0138
+0.2369	0.4530	1.000	noved to (SLRMCP).	0.1165	0.0131
+0.2485	0.4492	1.000	(2) If retum to PP fron	0.1335	0.0131
+0.2630	0.4474	1.000	MCP is being postponed	0.1410	0.0131
+0.2761	0.4511	1.000	to take a PP interrupt,	0.1241	0.0133
+0.2892	0.4474	1.000	(SLRBU) are moved to	0.1278	0.0117
+0.3009	0.4474	1.000	SIRPP).	0.0489	0.0145
+0.3241	0.6579	1.000	MCP or PP is waiting, and the	0.1805	0.0174
+0.3254	0.0732	1.000	KINTTY	0.0566	0.0149
+0.3255	0.2350	1.000	A waited interrupt must	0.1410	0.0161
+0.3400	0.6598	1.000	waited interrupt has been found	0.1861	0.0147
+0.3400	0.2331	1.000	be taken.	0.0602	0.0132
+0.3416	0.4474	1.000	None.	0.0395	0.0116
+0.3517	0.6597	1.000	stacked.	0.0546	0.0147
+0.3764	0.4474	1.000	Tentacle table linkage	0.1372	0.0176
+0.3779	0.0733	1.000	MTC1	0.0432	0.0145
+0.3794	0.6598	1.000	The routine is entered via the IF	0.1917	0.0146
+0.3794	0.2350	1.000	There are no MCP interrupts	0.1673	0.0131
+0.3909	0.2350	1.000	to be unstacked, but a primed	0.1786	0.0146
+0.3909	0.6598	1.000	analyzer which sets up entry ad-	0.1898	0.0146
+0.3924	0.4455	1.000	set up.	0.0451	0.0131
+0.4039	0.6616	1.000	dress and modes.	0.0997	0.0150
+0.4039	0.2350	1.000	routine must be entered.	0.1447	0.0147
+0.4288	0.0733	1.000	MTCZA	0.0526	0.0160
+0.4288	0.6598	1.000	When an MCP routine uses another	0.2068	0.0161
+0.4302	0.4474	1.000	Retum address set in	0.1222	0.0146
+0.4302	0.2350	1.000	Returing to the MCP routine	0.1729	0.0146
+0.4433	0.6598	1.000	MCP routine the latter must per-	0.1936	0.0146
+0.4433	0.2350	1.000	which was using the routine	0.1617	0.0146
+0.4447	0.4473	1.000	MTCЗА.	0.0546	0.0132
+0.4547	0.2349	1.000	that gave $RET.	0.0979	0.0151
+0.4578	0.6654	1.000	form any necessary saving anc	0.1692	0.0131
+0.4694	0.6654	1.000	restoring of registers	0.1147	0.0132
+0.4942	0.2350	1.000	Retum to location is STIC.	0.1598	0.0146
+0.4942	0.4474	1.000	All by KSUPP from	0.1128	0.0146
+0.4942	0.0733	1.000	KSUPP	0.0432	0.0131
+0.4942	0.6598	1.000	Retur to linkage at B, $MCP is	0.1898	0.0161
+0.5058	0.6598	1.000	made if the next primed routine	0.1917	0.0161
+0.5073	0.4474	1.000	STIR.	0.0414	0.0145
+0.5188	0.6579	1.000	is busy. Retum after the linkage	0.1992	0.0161
+0.5291	0.6579	1.000	is made if $RET is given in PP	0.1842	0.0189
+0.5464	0.6598	1.000	main stream. See the service op	0.1955	0.0147
+0.5576	0.6596	1.000	return routine.	0.0886	0.0157
+0.5827	0.2331	1.000	An OP, AD, DS, or USA:	0.1711	0.0161
+0.5842	0.6598	1.000	No retum will be made. Control	0.1955	0.0146
+0.5843	0.0733	1.000	SDISP	0.0395	0.0131
+0.5858	0.4455	1.000	Error code in $14.	0.1090	0.0131
+0.5959	0.6598	1.000	given to error control.	0.1335	0.0160
+0.5988	0.2331	1.000	interrupt occurred simultan-	0.1654	0.0131
+0.6087	0.2349	1.000	eously with the interrupt	0.1448	0.0137
+0.6233	0.2349	1.000	which caused the change to	0.1598	0.0121
+0.6336	0.2330	1.000	MCP level.	0.0734	0.0148
+0.6612	0.2331	1.000	$RET given by an MCP fixup.	0.1767	0.0147
+0.6627	0.0751	1.000	Retum to	0.0565	0.0119
+0.6627	0.4474	1.000	All from SIRMCP.	0.1109	0.0131
+0.6627	0.6598	1.000	Normal retur when MCP is	0.1635	0.0146
+0.6744	0.0733	1.000	MCP at	0.0489	0.0116
+0.6744	0.2331	1.000	MCP has no interrupts to be	0.1617	0.0147
+0.6755	0.6578	1.000	interrupted.	0.0735	0.0138
+0.6871	0.0732	1.000	location of	0.0698	0.0139
+0.6873	0.2330	1.000	unstacked.	0.0659	0.0134
+0.7020	0.0733	1.000	interrupt	0.0564	0.0116
+0.7252	0.4474	1.000	All from SIRBU or	0.1109	0.0147
+0.7252	0.2312	1.000	No interrupts to be unstacked,	0.1786	0.0147
+0.7265	0.6578	1.000	Ultimate retum,	0.0979	0.0150
+0.7265	0.0732	1.000	Retum to	0.0584	0.0121
+0.7379	0.4453	1.000	SIRPP.	0.0493	0.0154
+0.7384	0.2331	1.000	no MCP routine to be unprimed,	0.1880	0.0147
+0.7397	0.6598	1.000	Registers restored from SLRBU	0.1767	0.0133
+0.7397	0.0733	1.000	PP at	0.0376	0.0118
+0.7513	0.0714	1.000	location of	0.0715	0.0149
+0.7515	0.2331	1.000	no unfinished MCP routines, no	0.1842	0.0146
+0.7529	0.6598	1.000	if MCP gave $RET, and from	0.1729	0.0160
+0.7645	0.0733	1.000	interrupt	0.0564	0.0131
+0.7645	0.6598	1.000	SLRPP if PP gave $RET.	0.1429	0.0161
+0.7657	0.2330	1.000	error interrupts.	0.0941	0.0137
+0.7892	0.6598	1.000	These are treated as maskable	0.1786	0.0160
+0.7906	0.4455	1.000	All from SLRBU.	0.1015	0.0132
+0.7907	0.0752	1.000	SIPT	0.0301	0.0131
+0.7921	0.2350	1.000	TS occurred while in PP fixup	0.1729	0.0103
+0.8008	0.0733	1.000	(Parallel	0.0565	0.0161
+0.8036	0.2331	1.000	or at MCP level or EXE	0.1392	0.0121
+0.8036	0.6579	1.000	interrupts. They require special	0.1936	0.0147
+0.8140	0.0733	1.000	interrupt	0.0583	0.0160
+0.8154	0.6598	1.000	handling since they are permanent-	0.2086	0.0174
+0.8154	0.2331	1.000	occurred simultaneously with	0.1729	0.0146
+0.8299	0.0733	1.000	table)	0.0395	0.0131
+0.8299	0.2331	1.000	the I-O interrupt.	0.1034	0.0131
+0.8299	0.6598	1.000	ly masked on. Entry to the para-	0.1974	0.0131
+0.8430	0.6579	1.000	llel interrupt table releases the	0.1823	0.0116
+0.8542	0.6577	1.000	interrupt.	0.0605	0.0154
+0.9506	0.0714	1.000	44	0.0207	0.0131

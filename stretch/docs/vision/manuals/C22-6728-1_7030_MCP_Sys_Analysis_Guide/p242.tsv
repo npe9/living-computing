@@ -1,0 +1,104 @@
+0.1250	0.0902	1.000	TCTLD	0.0451	0.0116
+0.1250	0.7068	1.000	N	0.0150	0.0131
+0.1250	0.6165	1.000	TOFC	0.0395	0.0131
+0.1265	0.7594	1.000	TCTLD	0.0451	0.0131
+0.1294	0.4023	1.000	V	0.0113	0.0102
+0.1308	0.5620	1.000	R	0.0113	0.0102
+0.1526	0.3797	1.000	Record	0.0733	0.0145
+0.1541	0.5414	1.000	Control	0.0489	0.0160
+0.1570	0.4850	1.000	Sort	0.0263	0.0116
+0.1570	0.6165	1.000	Mem	0.0357	0.0131
+0.1584	0.6861	1.000	Size ir	0.0320	0.0131
+0.1584	0.7556	1.000	Unused	0.0470	0.0131
+0.1639	0.0900	1.000	TOFD	0.0361	0.0109
+0.1657	0.1861	1.000	NAME 1	0.0508	0.0116
+0.1672	0.3778	1.000	Number	0.0508	0.0131
+0.1686	0.4850	1.000	Field	0.0338	0.0116
+0.1686	0.6861	1.000	Nord:	0.0282	0.0145
+0.1701	0.6165	1.000	Addr	0.0320	0.0131
+0.1701	0.5376	1.000	Bits	0.0282	0.0116
+0.2020	0.1861	1.000	NAME 2	0.0508	0.0117
+0.2410	0.1860	1.000	NAME 3	0.0509	0.0121
+0.2455	0.6804	1.000	NAMEX	0.0546	0.0134
+0.2946	0.1840	1.000	NAME N	0.0530	0.0126
+0.3183	0.3534	1.000	63,0	0.0301	0.0131
+0.3183	0.4173	1.000	17	0.0207	0.0131
+0.3212	0.4737	1.000	28	0.0150	0.0087
+0.3212	0.5188	1.000	45	0.0169	0.0102
+0.3212	0.5789	1.000	6310	0.0320	0.0131
+0.3342	0.2274	1.000	WORD 1	0.0508	0.0103
+0.3386	0.4455	1.000	WORD 2	0.0527	0.0089
+0.3415	0.6823	1.000	WORD 3	0.0527	0.0104
+0.3677	0.0883	1.000	Figure 135. Table of Contents (TOFC)	0.2218	0.0117
+0.4094	0.5693	1.000	PG 20 - This is a new library. No old library	0.3519	0.0166
+0.4230	0.0921	1.000	There are two classes of bits used by the librarian:	0.3853	0.0131
+0.4235	0.5205	1.000	file exists. Delete and replace operations are illegal.	0.4102	0.0176
+0.4362	0.5222	1.000	Final merge is skipped. Set in STARTA, tested in	0.3822	0.0217
+0.4375	0.0902	1.000	the PG bits and the control bits in each table of con-	0.3929	0.0146
+0.4509	0.0900	1.000	tents entry. PG bits are within the librarian code,	0.3839	0.0163
+0.4548	0.5207	1.000	TAPMRG and ARANG.	0.1692	0.0146
+0.4679	0.0902	1.000	and initialized each cycle through the librarian. Con-	0.4060	0.0118
+0.4692	0.5224	1.000	PG bits are initialized to zero in STARTA by a Z, PG	0.3969	0.0179
+0.4811	0.0902	1.000	trol bits are used for update and the FORTRAN com-	0.3985	0.0131
+0.4845	0.5205	1.000	instruction.	0.0887	0.0108
+0.4956	0.0883	1.000	piler.	0.0451	0.0131
+0.4970	0.5526	1.000	Control Bits - Bits 1.47 through 1.55 in each	0.3421	0.0161
+0.5115	0.1222	1.000	PG Bits - PG is a word reserved in memory for	0.3628	0.0133
+0.5115	0.5226	1.000	table of contents entry are used to maintain informa-	0.3966	0.0133
+0.5261	0.0883	1.000	use as switches, indicators, etc. by the librarian.	0.3816	0.0133
+0.5276	0.5226	1.000	tion relating to a particular generator for use by the	0.3929	0.0131
+0.5406	0.0902	1.000	Bit meanings are:	0.1335	0.0118
+0.5406	0.5207	1.000	librarian and the compiler. Control bits are stored	0.3910	0.0132
+0.5552	0.1391	1.000	PG 1 - There has been a SMADDMAC or	0.3026	0.0132
+0.5567	0.5207	1.000	temporarily or permanently as specified:	0.3102	0.0131
+0.5682	0.0882	1.000	SMREPLAC command accepted. Donot allow a	0.3575	0.0160
+0.5708	0.5694	1.000	1.47 - Delete this entry. Set by DELETE,	0.3236	0.0150
+0.5837	0.0882	1.000	SMARANGE command. Set by RETURN, tested by	0.3819	0.0172
+0.5858	0.5207	1.000	tested in ALPH. (temporary)	0.2237	0.0131
+0.5973	0.0865	1.000	ARNG and ARANG.	0.1466	0.0146
+0.6003	0.5677	1.000	1.48 - This generator has been added. The	0.3327	0.0131
+0.6133	0.1372	1.000	PG 5 - A SMARANGE command has been	0.3083	0.0131
+0.6148	0.5207	1.000	record number in bits 1.0 through 1.17 is the number	0.4041	0.0131
+0.6279	0.0865	1.000	accepted. Set by ARANG, tested by TAPMRG.	0.3534	0.0131
+0.6287	0.5186	1.000	on the NEW file. Set by ADDA, tested by EXIT and	0.3894	0.0181
+0.6409	0.1335	1.000	PG 7 - Print "added" heading. Additions have	0.3515	0.0176
+0.6449	0.5166	1.000	TAPMRG (temporary).	0.1755	0.0169
+0.6570	0.0865	1.000	been made to the file. Set by ADDA, tested by EXIT.	0.4023	0.0145
+0.6612	0.5677	1.000	1.49 - This generator has been replaced.	0.3102	0.0147
+0.6701	0.1370	1.000	PG 8 - Additions have been made to generator	0.3463	0.0171
+0.6729	0.5185	1.000	Record number refers to new file. Set by REPLC,	0.3822	0.0190
+0.6860	0.0865	1.000	file. Set by PUTT, tested by TAPMRG.	0.3026	0.0131
+0.6893	0.5148	1.000	tested by EXIT and TAPMRG (temporary).	0.3238	0.0174
+0.7020	0.1370	1.000	PG 9 - Deletion of a generator has taken place	0.3481	0.0161
+0.7047	0.5675	1.000	1.50 - This synonym has been added. Set by	0.3387	0.0163
+0.7179	0.0865	1.000	and re-numbering of the generator file is necessary.	0.3966	0.0133
+0.7193	0.5149	1.000	SYNM, tested by EXIT. (temporary)	0.2822	0.0163
+0.7308	0.0863	1.000	Set by DELETE and REPLC, tested in TAPMRG.	0.3688	0.0163
+0.7337	0.5656	1.000	1.51 - This entry has been renamed. Set by	0.3368	0.0156
+0.7470	0.1372	1.000	PG 10 - A rename has taken place. Set by	0.3195	0.0133
+0.7483	0.5168	1.000	RENAME, tested by EXIT. The new name is in the	0.3893	0.0148
+0.7615	0.0846	1.000	RENAME, tested by EXIT.	0.2049	0.0146
+0.7623	0.5166	1.000	third word (temporary).	0.1811	0.0153
+0.7761	0.1372	1.000	PG 11 - A replace has taken place. Set by	0.3195	0.0146
+0.7791	0.5658	1.000	1.52 - This entry has synonyms. Set by	0.3083	0.0146
+0.7906	0.0865	1.000	REPLC, tested by EXIT.	0.1880	0.0132
+0.7921	0.5167	1.000	SYNM, tested by DELETE, RENAME and the	0.3407	0.0179
+0.8052	0.1372	1.000	PG 12 - Set by REPLC to cause return from	0.3308	0.0132
+0.8081	0.5169	1.000	FORTRAN compiler (permanent).	0.2538	0.0116
+0.8192	0.0863	1.000	JLOAD. Set and turned off by REPLC, tested by	0.3668	0.0157
+0.8241	0.5639	1.000	1.53 - This entry is a synonym of the parent	0.3383	0.0131
+0.8343	0.0865	1.000	ADDA.	0.0526	0.0116
+0.8346	0.5148	1.000	name in word three. Set by SYNM, tested by	0.3426	0.0190
+0.8463	0.1351	1.000	PG 13 - A synonym has been added. Set by	0.3274	0.0173
+0.8504	0.5148	1.000	UPDATE, REVUE, REPLC, ALPH, ARNG, and the	0.3915	0.0197
+0.8633	0.0846	1.000	SYNM, tested by EXIT.	0.1786	0.0131
+0.8655	0.5166	1.000	FORTRAN compiler (permanent).	0.2524	0.0160
+0.8754	0.1351	1.000	PG 14 - Print "deleted" heading. Set by	0.3049	0.0172
+0.8812	0.5637	1.000	1.54 - Used by ARNG to indicate a generator	0.3387	0.0165
+0.8924	0.0865	1.000	DELETE, tested by ALPH.	0.2030	0.0131
+0.8940	0.5147	1.000	has been arranged.	0.1455	0.0152
+0.9069	0.1352	1.000	PG 15 - A synonym has been deleted. Set by	0.3367	0.0146
+0.9112	0.5639	1.000	1.55 - Used by TAPMRG to indicate a generator	0.3571	0.0147
+0.9215	0.0846	1.000	DELETE, tested by EXIT.	0.1992	0.0131
+0.9244	0.5132	1.000	has been merged.	0.1353	0.0132
+0.9506	0.0808	1.000	242	0.0244	0.0102

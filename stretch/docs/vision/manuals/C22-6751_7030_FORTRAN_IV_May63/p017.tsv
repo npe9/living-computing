@@ -1,0 +1,117 @@
+0.0741	0.5132	1.000	If an argument is an array name, it must appear in	0.3872	0.0189
+0.0770	0.0789	1.000	names. That is, during object program execution other	0.3966	0.0161
+0.0915	0.5113	1.000	DIMENSION statement in the subroutine	0.2876	0.0146
+0.0929	0.0789	1.000	actual arguments are substituted for them. Therefore,	0.3949	0.0150
+0.1017	0.5094	0.300	tatementf the de sibros me suppraram PtresczNc	0.3835	0.0349
+0.1060	0.0789	1.000	the arguments which follow the Function reference in	0.3968	0.0164
+0.1204	0.0806	1.000	the calling program must agree with those in the	0.3952	0.0192
+0.1352	0.5019	1.000	programs may be compiled independently or multiple-	0.3966	0.0161
+0.1366	0.0789	1.000	FUNCTION statement in the subprogram in number,	0.3966	0.0174
+0.1497	0.5019	1.000	compiled with others.	0.1692	0.0189
+0.1555	0.0808	1.000	order, and type. Furthermore, when a dummy argu-	0.3947	0.0146
+0.1678	0.0807	1.000	ment is an array name, the corresponding actual argu-	0.3933	0.0193
+0.1831	0.5019	1.000	CALL	0.0508	0.0160
+0.1845	0.0789	1.000	ment must also be an array name. Each of these array	0.3966	0.0161
+0.1984	0.0806	1.000	names must appear in DIMENSION statements of their	0.3952	0.0196
+0.2135	0.7763	1.000	EXAMPLES	0.0659	0.0120
+0.2136	0.5545	1.000	GENERAL FORM	0.0959	0.0117
+0.2151	0.0808	1.000	respective programs with the same dimensions, unless	0.3947	0.0146
+0.2311	0.0808	1.000	the dimensions are variable.	0.2068	0.0116
+0.2427	0.7312	1.000	(X,5,10,Y,7,Z)	0.0959	0.0131
+0.2456	0.0959	1.000	None of the dummy variables may appear in EQUIVA-	0.3797	0.0160
+0.2542	0.7199	1.000	CALL QDRTIC	0.1034	0.0133
+0.2601	0.0808	1.000	LENCE OI COMMON statements in the Function sub-	0.3967	0.0147
+0.2660	0.7331	1.000	(P*9.732,Q/4.536,	0.1203	0.0145
+0.2776	0.7350	1.000	R-S**2, X1, X2)	0.1034	0.0146
+0.2820	0.0808	1.000	program.	0.0658	0.0102
+0.2906	0.0977	1.000	Hand-coded closed Functions may be added to the	0.3778	0.0146
+0.3062	0.0788	1.000	library. Among the closed functions distributed in the	0.3970	0.0189
+0.3154	0.5019	1.000	This statement is used to call Subroutine subprograms;	0.3985	0.0131
+0.3241	0.0789	1.000	FORTRAN library are:	0.1541	0.0160
+0.3268	0.5019	1.000	the cALL transfers control to the subprograms and	0.3985	0.0165
+0.3415	0.1955	1.000	TYPE OF FUNCTION	0.1316	0.0131
+0.3416	0.1090	1.000	NAME	0.0451	0.0131
+0.3425	0.5036	1.000	presents it with the parenthesized arguments. Each	0.3970	0.0183
+0.3561	0.1974	1.000	Natural Logarithm	0.1372	0.0146
+0.3590	0.1109	1.000	ALOG	0.0376	0.0116
+0.3605	0.5019	1.000	argument may be one of the following:	0.2857	0.0145
+0.3721	0.1974	1.000	Trigonometric Sine	0.1391	0.0146
+0.3750	0.5188	1.000	1. Fixed point constant, floating point constant,	0.3816	0.0145
+0.3765	0.1128	1.000	SIN	0.0226	0.0073
+0.3866	0.1974	1.000	Trigonometric Cosine	0.1579	0.0161
+0.3909	0.5038	1.000	logical constant.	0.1184	0.0132
+0.3910	0.1128	1.000	COS	0.0244	0.0073
+0.4021	0.1972	1.000	Exponential	0.0905	0.0156
+0.4055	0.5207	1.000	2. A variable, with or without subscripts, fixed, float-	0.3778	0.0146
+0.4055	0.1128	1.000	EXP	0.0263	0.0087
+0.4179	0.1972	1.000	Arctangent	0.0831	0.0160
+0.4200	0.1128	1.000	ATAN	0.0376	0.0103
+0.4215	0.5038	1.000	ing or logical types.	0.1447	0.0131
+0.4330	0.1955	1.000	Hyperbolic Tangent	0.1504	0.0146
+0.4357	0.1127	1.000	TANH	0.0397	0.0095
+0.4360	0.5188	1.000	3. Arithmetic expression, or logical expression.	0.3553	0.0131
+0.4520	0.5207	1.000	4. Alphameric characters. Such arguments must be	0.3797	0.0131
+0.4637	0.0789	1.000	Subroutines	0.0883	0.0131
+0.4642	0.5035	1.000	preceded by nH where n is the count of characters	0.3969	0.0178
+0.4824	0.5019	1.000	included in the arguments, e.g., 9HEND POINT. Note that	0.3985	0.0133
+0.4826	0.0789	1.000	SUBROUTINE	0.1147	0.0145
+0.4970	0.5038	1.000	blank space and special characters are considered	0.3947	0.0147
+0.5102	0.3534	1.000	EXAMPLES	0.0639	0.0073
+0.5102	0.1316	1.000	GENERAL FORM	0.0940	0.0102
+0.5130	0.5038	1.000	characters when used in alphameric fields.	0.3139	0.0146
+0.5245	0.0785	1.000	"SUBROUTINE Name (a1, a2,	0.2000	0.0182
+0.5261	0.2838	1.000	SUBROUTINE MATMPY	0.1767	0.0133
+0.5276	0.5207	1.000	5. The name of a Closed Function or another Sub-	0.3797	0.0131
+0.5366	0.0804	1.000	...,an)where Name is the sym-	0.1961	0.0159
+0.5378	0.3083	1.000	(A,N,M,B,L,C)	0.1015	0.0131
+0.5436	0.5038	1.000	routine subprogram (in which case an EXTERNAL state-	0.3947	0.0146
+0.5479	0.2932	1.000	SUBROUTINE QDRTIC	0.1635	0.0132
+0.5509	0.0808	1.000	bolic	0.0357	0.0116
+0.5596	0.5038	1.000	ment is required).	0.1372	0.0131
+0.5609	0.3083	1.000	(B,A,C, ROOTI,	0.1090	0.0133
+0.5726	0.3083	1.000	ROOT2)	0.0602	0.0117
+0.5741	0.5207	1.000	The arguments presented by the caLL statement	0.3797	0.0131
+0.5836	0.0789	1.000	able names, or the names of	0.1994	0.0144
+0.5887	0.5038	1.000	must agree in number, order, type and array size with	0.3947	0.0147
+0.5959	0.0771	1.000	lower level subprograms. The	0.2011	0.0147
+0.6061	0.5038	1.000	the corresponding arguments in the suBrouTINe state-	0.3966	0.0118
+0.6076	0.0789	1.000	name of the subprogram may	0.1992	0.0131
+0.6206	0.0789	1.000	consist of one to six alphameric	0.1974	0.0103
+0.6206	0.5038	1.000	ment of the called subprogram.	0.2274	0.0131
+0.6303	0.0789	1.000	characters, the first of which is	0.1975	0.0142
+0.6352	0.5188	1.000	A subprogram may contain a DIMENSION statement	0.3816	0.0146
+0.6405	0.1447	1.000	. Also, the name of	0.1336	0.0140
+0.6482	0.5000	1.000	for an array with variable dimensions. The actual	0.4023	0.0161
+0.6539	0.0789	1.000	the subprogram must not be	0.1974	0.0120
+0.6627	0.5019	1.000	dimensions of the array must be given in the calling	0.3985	0.0176
+0.6657	0.0771	1.000	listed in a DIMENSION state-	0.2011	0.0116
+0.6739	0.5016	1.000	program and passed along in the Subroutine CALL.	0.3971	0.0237
+0.6773	0.0789	1.000	ment of any program which	0.1992	0.0118
+0.6890	0.0789	1.000	calls the subprogram, or in a	0.1992	0.0102
+0.6930	0.5018	1.000	(See Chapter 7.)	0.1355	0.0195
+0.6991	0.0808	1.000	DIMENSION statement of the	0.1974	0.0103
+0.7121	0.0789	1.000	subprogram itself.	0.1147	0.0103
+0.7238	0.5019	1.000	EXTERNAL	0.0996	0.0174
+0.7339	0.0808	1.000	This statement is used as the first statement of a sub-	0.3947	0.0132
+0.7485	0.0789	1.000	routine subprogram and defines it to be such. A sub-	0.3947	0.0176
+0.7510	0.5525	1.000	GENERAL FORM	0.0999	0.0183
+0.7529	0.7744	1.000	EXAMPLES	0.0695	0.0160
+0.7660	0.0789	1.000	program introduced by the subroutINe statement must	0.3966	0.0161
+0.7688	0.7086	1.000	EXTERNAL SIN, COS,	0.1673	0.0191
+0.7805	0.0789	1.000	be a FORTRAN program and may contain any FORTRAN	0.3966	0.0160
+0.7833	0.7143	1.000	EXTENNAL. BOB, JOE	0.1617	0.0292
+0.7964	0.0771	1.000	statements except FUNCTION Or another SUBROUTINE	0.3985	0.0147
+0.8137	0.0789	1.000	statement.	0.0772	0.0107
+0.8197	0.5019	1.000	Whenever a subroutine or function name appears in	0.3966	0.0161
+0.8252	0.0957	1.000	Unlike the Function-type subprogram which returns	0.3801	0.0198
+0.8338	0.4999	1.000	the argument list of:	0.1674	0.0169
+0.8387	0.0789	1.000	only a single numerical value, the Subroutine sub-	0.3966	0.0189
+0.8516	0.5150	1.000	1) a CALL.	0.0866	0.0177
+0.8570	0.0788	1.000	program uses one or more of its arguments to return	0.3970	0.0192
+0.8691	0.5132	1.000	2) a function name in an expression	0.2707	0.0176
+0.8735	0.0789	1.000	output. The arguments so used must, therefore, appear	0.3966	0.0160
+0.8836	0.5000	1.000	all such names must appear in an EXTERNAL statement.	0.4004	0.0191
+0.8866	0.0789	1.000	on the left side of an arithmetic statement within the	0.3966	0.0161
+0.8979	0.5017	1.000	Example:	0.0755	0.0210
+0.9084	0.0808	1.000	program.	0.0658	0.0102
+0.9259	0.8759	1.000	17	0.0263	0.0174

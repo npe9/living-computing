@@ -1,0 +1,157 @@
+0.0640	0.5338	1.000	Convert	0.0451	0.0131
+0.0669	0.1128	1.000	Compare Field for Range	0.1335	0.0102
+0.0827	0.7124	1.000	if mode = Dor DU	0.1015	0.0133
+0.0827	0.8402	1.000	1. In binary	0.0733	0.0133
+0.0828	0.5357	1.000	CV	0.0207	0.0102
+0.0842	0.2293	1.000	(I) 1. The accumulator comparand is the same as	0.2801	0.0118
+0.0843	0.1711	1.000	à:m	0.0244	0.0116
+0.0843	0.6259	1.000	→2868	0.0602	0.0131
+0.0872	0.1128	1.000	KFR	0.0263	0.0087
+0.0930	0.7143	1.000	if mode = B or BU	0.0977	0.0103
+0.0930	0.8571	1.000	field of 48 bit	0.0677	0.0103
+0.0945	0.5959	1.000	2B68 → aD	0.0808	0.0116
+0.0959	0.2688	1.000	in Compare Field, KF.	0.1165	0.0102
+0.0988	0.1109	1.000	KERN	0.0357	0.0102
+0.1017	0.5357	1.000	CVN	0.0301	0.0116
+0.1032	0.8534	1.000	is used.	0.0451	0.0117
+0.1047	0.5940	0.500	-ay	0.0244	0.0102
+0.1047	0.6278	1.000	→2B68	0.0583	0.0131
+0.1076	0.2519	1.000	2. The indicators are set as in Compare Range,	0.2556	0.0116
+0.1128	0.5675	1.000	ox -aB68→a,	0.1093	0.0157
+0.1132	0.8383	1.000	2. The entire	0.0734	0.0120
+0.1192	0.2688	1.000	KR.	0.0207	0.0087
+0.1235	0.8534	1.000	accumulator	0.0695	0.0116
+0.1333	0.8533	1.000	to the left of	0.0773	0.0125
+0.1436	0.8533	1.000	the offset is	0.0660	0.0122
+0.1453	0.1109	1.000	Compare Field If Equal	0.1278	0.0087
+0.1541	0.8534	1.000	used.	0.0320	0.0116
+0.1628	0.1711	1.000	a:m	0.0244	0.0116
+0.1642	0.2293	1.000	(I) 1. The accumulator comparand is the same as	0.2782	0.0103
+0.1657	0.1109	1.000	KFE	0.0263	0.0087
+0.1730	0.5338	1.000	Double Convert	0.0883	0.0131
+0.1744	0.1692	1.000	à:-m	0.0338	0.0116
+0.1744	0.2669	1.000	in Compare Field, KF.	0.1241	0.0102
+0.1773	0.1128	1.000	KFEN	0.0338	0.0087
+0.1845	0.2519	1.000	2. The indicators are set as in Compare If	0.2575	0.0131
+0.1904	0.5338	1.000	DCV	0.0320	0.0131
+0.1933	0.8421	1.000	I. In binary, ¿	0.0733	0.0103
+0.1933	0.6316	1.000	→ 2820	0.0545	0.0131
+0.1976	0.2688	1.000	Equal, KE.	0.0602	0.0103
+0.1994	0.8550	1.000	field of 96 bits	0.0720	0.0139
+0.2020	0.5677	1.000	or	0.0244	0.0116
+0.2035	0.5977	1.000	2B20 →aD	0.0789	0.0117
+0.2108	0.5338	1.000	DCVN	0.0414	0.0131
+0.2121	0.8496	1.000	is used.	0.0526	0.0118
+0.2136	0.6297	0.300	→→ 2в20	0.0564	0.0131
+0.2137	0.5921	1.000	-aD	0.0263	0.0116
+0.2222	0.8364	1.000	2. The entire	0.0753	0.0119
+0.2224	0.5677	1.000	or-2820aD	0.1090	0.0131
+0.2238	0.1109	1.000	Logical Connectives OP(dds), A24 (I), OF- (I)	0.2707	0.0116
+0.2340	0.8515	1.000	accumulator	0.0695	0.0102
+0.2397	0.1222	1.000	Note: If the operand from storage has a byte size (BS) less than eight,	0.3853	0.0103
+0.2423	0.8533	1.000	to the left of	0.0698	0.0124
+0.2500	0.1109	1.000	then eight minus BS (8 - BS) leading zeros are added to each byte from	0.3966	0.0103
+0.2528	0.8534	1.000	the offset is	0.0659	0.0119
+0.2602	0.1090	1.000	storage before the connect takes place. However, the storage operand is	0.3985	0.0116
+0.2631	0.8553	1.000	used.	0.0282	0.0102
+0.2718	0.1090	1.000	not changed in Cxxxx or CTxxxx.	0.1729	0.0103
+0.2820	0.5320	1.000	Load Converted	0.0883	0.0117
+0.2964	0.1109	1.000	Connect to Accumulator	0.1297	0.0089
+0.2994	0.5320	1.000	LCV	0.0301	0.0131
+0.3009	0.8064	1.000	1. s(m)→s(a)	0.0921	0.0116
+0.3009	0.6842	1.000	(I)	0.0301	0.0131
+0.3023	0.5977	0.300	myaB	0.0771	0.0116
+0.3109	0.8064	1.000	2. O->FI(a)	0.0808	0.0118
+0.3110	0.5320	1.000	LCVN°	0.0526	0.0218
+0.3125	0.5959	0.300	mBaD	0.0789	0.0131
+0.3154	0.1109	0.300	С×]XzXзX4	0.0545	0.0102
+0.3154	0.2500	1.000	Result→›a	0.0602	0.0087
+0.3212	0.8064	1.000	3. The entire accumu-	0.1222	0.0131
+0.3212	0.6898	1.000	(I)	0.0244	0.0116
+0.3227	0.5940	1.000	-my > aB	0.0789	0.0102
+0.3327	0.5846	0.300	-m, aD	0.0902	0.0103
+0.3327	0.8327	1.000	ator is cleared b	0.0865	0.0103
+0.3400	0.1109	1.000	Connect to Memory	0.1034	0.0103
+0.3400	0.8327	1.000	ore the loac	0.0564	0.0118
+0.3576	0.1090	0.300	СM×1Ж2*3*4	0.0677	0.0131
+0.3576	0.2462	1.000	Result→m	0.0677	0.0102
+0.3605	0.5320	1.000	Load Transit Converted	0.1297	0.0132
+0.3779	0.5320	1.000	LTRCYY	0.0545	0.0233
+0.3788	0.1089	1.000	Connect for Test	0.0924	0.0142
+0.3794	0.8083	1.000	1. The accumulator	0.1071	0.0131
+0.3808	0.5921	1.000	mp→ $TRB (I)	0.1203	0.0116
+0.3893	0.8251	1.000	and offset are	0.0734	0.0121
+0.3894	0.6372	1.000	→ $TR,	0.0526	0.0147
+0.3965	0.5313	1.000	LTRCVN-mp	0.0991	0.0172
+0.3967	0.2444	1.000	Result is not stored.	0.1090	0.0118
+0.3983	0.1090	1.000	СTxy×2*3*4	0.0639	0.0131
+0.3997	0.8233	1.000	ignored.	0.0508	0.0131
+0.4012	0.6353	1.000	→ $ТRв (I)	0.0771	0.0116
+0.4084	0.8064	1.000	2. O→FI($TR)	0.0959	0.0131
+0.4093	0.5901	1.000	-mB→$TRD	0.0999	0.0143
+0.4099	0.5658	1.000	or	0.0188	0.0116
+0.4157	0.1109	1.000	mective; it is sua four-bid binary configuration to describe the type of con-	0.3929	0.0204
+0.4433	0.1297	1.000	et: m = a bit from storage (may be an inserted leading zero if th	0.3684	0.0116
+0.4506	0.8214	1.000	load.	0.0320	0.0116
+0.4520	0.1861	1.000	yte size is less than 8.	0.1165	0.0116
+0.4621	0.5320	1.000	Progressive Indexing	0.1128	0.0176
+0.4666	0.1635	1.000	= a bit from the accumulator corresponding to m. The acc	0.3308	0.0116
+0.4752	0.1861	1.000	ulator byte size always =	0.1429	0.0103
+0.4824	0.5526	1.000	ny VFL or Connective operation (when not immedidate) may have	0.3665	0.0147
+0.4859	0.1521	1.000	xy = desired result if m = 0 and a = 0	0.1976	0.0145
+0.4912	0.5395	1.000	7:1, V P IC or y Cosed in parentheses. Tthe second operation may b	0.3816	0.0233
+0.4996	0.1522	1.000	*z = desired result if m = 0 and a = 1	0.1956	0.0139
+0.5108	0.1501	1.000	*z = desired result if m = 1 and a = 0	0.1998	0.0171
+0.5188	0.5432	1.000	Format: OP(OP,) (dds), A21 (J), OF, (I)	0.2425	0.0176
+0.5261	0.1504	1.000	*q = desired result if m = 1 and a = 1	0.1974	0.0133
+0.5378	0.5432	1.000	Notes: 1. The original value field J is the effective address of operation.	0.3835	0.0131
+0.5392	0.1203	1.000	Example: C1010 (BU, 64, 4), O will complement the entire 128-bit	0.3853	0.0132
+0.5492	0.1785	1.000	accumulator.	0.0696	0.0105
+0.5494	0.5940	0.300	. Az, in dhe sald ael orans aeelal bd ad	0.3308	0.0276
+0.5712	0.6147	1.000	note 1o:I. The inerementing takes place subsequent *	0.3083	0.0218
+0.5741	0.1071	1.000	Pseudo-Connectives	0.1071	0.0116
+0.5915	0.1071	1.000	LF (Load Field)	0.1071	0.0131
+0.5930	0.2444	1.000	LF = C0011	0.0677	0.0088
+0.5930	0.5808	1.000	..3. J may be $XO.	0.1109	0.0146
+0.6017	0.1353	1.000	(Store Field)	0.0771	0.0131
+0.6032	0.1090	1.000	SF	0.0188	0.0087
+0.6032	0.2444	1.000	SF = CM0101	0.0789	0.0087
+0.6264	0.1053	1.000	Immediate Connects	0.1128	0.0146
+0.6294	0.5282	1.000	INDEXING OPERATIONS	0.1541	0.0131
+0.6439	0.1071	1.000	and i.indicate immediate addressing, wite: Clxyxgkgky: CHX, 42435	0.4004	0.0234
+0.6512	0.5301	1.000	Notation for symbolizing the Indexing Operations	0.2613	0.0146
+0.6715	0.5432	1.000	Index Word Operands	0.1241	0.0131
+0.6744	0.1090	1.000	$AOC = All ones count register.	0.1673	0.0087
+0.6845	0.1090	1.000	$LZC = Left zeros count register.	0.1786	0.0088
+0.6903	0.5583	1.000	J =bits (0 - 63) of the index word	0.1898	0.0103
+0.7006	0.1222	1.000	After a connective operation the two registers, $AOC and $LZC contain	0.3835	0.0116
+0.7006	0.5583	1.000	V = bits (0- 24) of J.	0.1222	0.0102
+0.7106	0.1090	1.000	the indicated counts of the result. Because ihe result may not occupy the	0.3966	0.0133
+0.7106	0.5583	1.000	C= bits (28- 45) of J.	0.1278	0.0103
+0.7209	0.5564	1.000	R= bits (46 -63) of J.	0.1297	0.0116
+0.7224	0.1203	1.000	tire accumulator, $AOC and $LZC may not give the total count of on	0.3722	0.0102
+0.7323	0.1203	1.000	d left zeros of the accumulator. Howerer, these counts alwavs give t	0.3723	0.0093
+0.7427	0.1071	1.000	correct count in CM or SF.	0.1485	0.0088
+0.7456	0.5432	1.000	Storage Word Operands	0.1297	0.0131
+0.7645	0.5620	1.000	n = bits (0 - 63) of a storage word	0.1861	0.0116
+0.7660	0.1090	1.000	Convert Instructions	0.1071	0.0089
+0.7733	0.5620	1.000	V (m) = bits (0- 24) of m if the second operand is V. (sign of V i	0.3590	0.0116
+0.7834	0.1090	1.000	Definitions:	0.0639	0.0087
+0.7848	0.6015	1.000	in bit 24)	0.0583	0.0103
+0.7921	0.5564	1.000	V(m) =bits (O - 17) of m if the second operand is Cor R.	0.3177	0.0146
+0.7951	0.1184	1.000	ay = accumulator in decimal, four-bit bytes with specified offset.	0.3496	0.0116
+0.8042	0.1202	1.000	an = accumulator in binary with specified offset.	0.2502	0.0132
+0.8154	0.1203	1.000	2B20 = accumulator in binary with offset = 20.	0.2425	0.0116
+0.8182	0.5414	1.000	Immediate Operands	0.1165	0.0133
+0.8246	0.1202	1.000	aB68 = accumulator in binary with offset = 68.	0.2408	0.0129
+0.8342	0.1203	1.000	M=storage operand in binary with specified byte size and field length.	0.3835	0.0131
+0.8358	0.5545	1.000	m= bits (0 - 18) of the effective address if the second operand is V.	0.3741	0.0145
+0.8459	0.1203	1.000	my = storage operand in decimal with specified byte size and field length.	0.3816	0.0116
+0.8488	0.5545	1.000	* - bifR (° - 11) of the efective address if the second operand 1s C	0.3722	0.0233
+0.8561	0.1222	1.000	$TR = 64-bit transit register with a sign byte in the rightmost four bits.	0.3797	0.0103
+0.8721	0.1241	1.000	Vote: The conversion goes: from decimal to binary if the mode giver	0.3759	0.0102
+0.8721	0.5470	1.000	Notes: 1. For clarity, the titles to the indexing and the branch opera-	0.3778	0.0131
+0.8808	0.1128	1.000	s decimal; from binary to decimal if the given mode is binary	0.3271	0.0102
+0.8821	0.6109	1.000	tions have been omitted	0.1278	0.0118
+0.9157	0.1071	1.000	50	0.0188	0.0102
+0.9157	0.1579	1.000	IBM 7030	0.0639	0.0088

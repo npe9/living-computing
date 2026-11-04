@@ -1,0 +1,30 @@
+0.0741	0.0658	1.000	NEXT	0.0508	0.0160
+0.1335	0.0657	1.000	LINKAGE	0.0772	0.0150
+0.1394	0.4944	1.000	Box 4	0.0451	0.0133
+0.1672	0.4944	1.000	Set up branch to determine what fields are given.	0.3647	0.0147
+0.1773	0.0639	1.000	Pass 2 enters the extract procedure from the digit	0.3816	0.0191
+0.1933	0.0658	1.000	select pseudo-op table.	0.1786	0.0174
+0.1976	0.4925	1.000	Boxes 7, 9, 12, 13	0.1466	0.0146
+0.2252	0.4925	1.000	Determine if Zifall is on to verify that there are	0.3609	0.0161
+0.2397	0.4944	1.000	values for all parameters.	0.1992	0.0161
+0.2542	0.0677	1.000	FLOW CHART DESCRIPTION	0.2218	0.0147
+0.2688	0.4944	1.000	Box 5	0.0489	0.0161
+0.2833	0.0677	1.000	Box 1	0.0451	0.0161
+0.2994	0.4944	1.000	The value of N has been determined; insert this value	0.3966	0.0146
+0.3139	0.4925	1.000	in the expanded instruction unit, and return.	0.3308	0.0161
+0.3154	0.0658	1.000	Modify Pass 2 to skip rounding the location counter,	0.3872	0.0131
+0.3299	0.0677	1.000	and branch to a special location counter updating.	0.3647	0.0131
+0.3400	0.0695	1.000	Also modify Pass 2 to stop the extract of a pseudo-op.	0.4004	0.0161
+0.3445	0.4925	1.000	Box 8	0.0451	0.0131
+0.3721	0.0677	1.000	Box 2	0.0470	0.0161
+0.3721	0.4944	1.000	Set up symbolie counter when the Nparameter is not	0.3910	0.0161
+0.3866	0.4944	1.000	specified and when the other parameters cannot be	0.3741	0.0161
+0.4012	0.0677	1.000	Check to see if DECODE has already handled the	0.3609	0.0161
+0.4012	0.4944	1.000	evaluated at this point.	0.1711	0.0146
+0.4172	0.0658	1.000	unit. Zifp2 is always on in Pass 2.	0.2669	0.0160
+0.4326	0.4942	1.000	Boxes 10, 11	0.0980	0.0155
+0.4476	0.0658	1.000	Bож 3	0.0470	0.0146
+0.4621	0.4962	1.000	Set up symbolie counter. The expression for N	0.3496	0.0118
+0.4767	0.4962	1.000	cannot be evaluated at this point.	0.2406	0.0118
+0.4767	0.0677	1.000	Store N value in Zilbo for updating, and return.	0.3534	0.0118
+0.9288	0.0658	1.000	146	0.0226	0.0087

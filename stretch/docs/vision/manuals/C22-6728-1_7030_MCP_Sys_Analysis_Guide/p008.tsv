@@ -1,0 +1,94 @@
+0.0930	0.0677	1.000	GENERAL DESCRIPTION OF MCP	0.2613	0.0131
+0.1539	0.0714	1.000	The Master Control Program (MCP) for the IBM	0.3647	0.0118
+0.1539	0.5056	1.000	disabled, and are effectively an extension of the	0.3628	0.0147
+0.1685	0.5056	1.000	requesting program. They receive control from the	0.3947	0.0147
+0.1700	0.0714	1.000	7030 is composed of many small programs whose	0.3703	0.0118
+0.1830	0.5056	1.000	dispatcher and return to the point of request.	0.3402	0.0146
+0.1845	0.0695	1.000	overall purpose is to expedite the flow of work	0.3496	0.0118
+0.1991	0.0695	1.000	through the 7030 system. They total approximately	0.3872	0.0117
+0.2136	0.0695	1.000	11,000 words, most of which remain in core storage	0.3966	0.0131
+0.2162	0.5074	1.000	Major Packages	0.1223	0.0167
+0.2282	0.1635	1.000	They rely on a set of supporting pro-	0.2895	0.0146
+0.2297	0.0695	1.000	at all times.	0.0959	0.0102
+0.2427	0.0695	1.000	grams to perform peripheral I-O operations and	0.3629	0.0135
+0.2456	0.5093	1.000	The remaining programs in MCP are major pack-	0.3761	0.0163
+0.2602	0.5075	1.000	ages. In terms of pseudo-ops, a major package is a	0.3966	0.0160
+0.2602	0.0695	1.000	system update.	0.1165	0.0102
+0.2747	0.5075	1.000	program which services a pseudo-op whose code is	0.3853	0.0160
+0.2878	0.0714	1.000	THE LOGICAL STRUCTURE OF MCP	0.2820	0.0102
+0.2889	0.5073	1.000	64.O or greater. A major package has characteris-	0.3932	0.0202
+0.3036	0.5075	1.000	tics similar to those of a problem program. It may	0.3929	0.0161
+0.3169	0.0714	1.000	MCP is composed of three kinds of programs:	0.3440	0.0131
+0.3197	0.5075	1.000	operate enabled, may suppress I-O interrupts, may	0.3929	0.0161
+0.3327	0.0865	1.000	1. Interrupt control programs	0.2312	0.0118
+0.3342	0.5056	1.000	perform I-O (but must use symbolic I-O and the serv-	0.4098	0.0146
+0.3473	0.0865	1.000	2. Service routines	0.1523	0.0118
+0.3503	0.5075	1.000	ice routines), may use other major packages, and	0.3778	0.0131
+0.3618	0.0883	1.000	3. Major packages	0.1447	0.0118
+0.3648	0.5094	1.000	has priority over a problem program and its inter-	0.3835	0.0131
+0.3764	0.0883	1.000	These three categories constitute distinct logical	0.3665	0.0118
+0.3794	0.5094	1.000	rupts. A major package may be primed; that is,	0.3647	0.0146
+0.3909	0.0695	1.000	levels within MCP. They operate within the frame-	0.3910	0.0118
+0.3939	0.5075	1.000	have its pseudo-op and parameters entered into a	0.3722	0.0131
+0.4055	0.0695	1.000	work of a few basic priority and control concepts.	0.3759	0.0118
+0.4081	0.5093	1.000	queue for execution at a later time.	0.2652	0.0134
+0.4360	0.0695	1.000	Interrupt Control Programs	0.2105	0.0116
+0.4390	0.5094	1.000	Program Control and Priority	0.2256	0.0132
+0.4651	0.0714	1.000	One of the design features of the 7030 is its interrupt	0.3985	0.0116
+0.4679	0.5094	1.000	MCP receives control only when an interrupt occurs.	0.3985	0.0118
+0.4782	0.0714	1.000	system. MCP takes all interrupts, although some	0.3816	0.0131
+0.4809	0.5093	1.000	Pseudo-op requests enter MCP via the IF interrupts.	0.3987	0.0134
+0.4942	0.0714	1.000	may be subsequently routed to a problem program	0.3759	0.0116
+0.4970	0.5075	1.000	Since the service routines are considered a logical	0.3835	0.0118
+0.5073	0.0714	1.000	(PP). Included in the category of interrupt control	0.3816	0.0131
+0.5112	0.5093	1.000	extension of the requesting program (MCP or PP), it	0.3986	0.0151
+0.5233	0.0714	1.000	programs are those programs which receive control	0.3910	0.0131
+0.5261	0.5074	1.000	is necessary to introduce the concept of level of pro-	0.3986	0.0137
+0.5378	0.0714	1.000	directly or almost directly from an interrupt table.	0.3835	0.0116
+0.5421	0.5075	1.000	gram operation. The program level, or instruction	0.3910	0.0131
+0.5523	0.0714	1.000	These programs operate with the interrupt system	0.3797	0.0116
+0.5567	0.5075	1.000	counter owner, is MCP when an MCP major package	0.3966	0.0116
+0.5669	0.0714	1.000	disabled, and, except for interrupts due to non-recov-	0.4079	0.0131
+0.5712	0.5075	1.000	is in control or about to receive control. At all other	0.4041	0.0116
+0.5814	0.0714	1.000	erable errors, they route control to some other pro-	0.3966	0.0132
+0.5858	0.5075	1.000	times the level is PP. The system level (SL) bit is	0.3872	0.0116
+0.5959	0.0714	1.000	gram. Since MCP uses the IF interrupt as a basic	0.3816	0.0116
+0.6003	0.5075	1.000	used by MCP for control logic. Note that the service	0.4004	0.0116
+0.6105	0.0714	1.000	means of communication, the interrupt control pro-	0.3872	0.0117
+0.6148	0.5075	1.000	routines operate at either level, depending on the	0.3703	0.0131
+0.6247	0.0713	1.000	grams concerned with the IF interrupt are referred	0.3874	0.0138
+0.6286	0.5074	1.000	level of the program requesting the service pseudo-	0.3893	0.0142
+0.6409	0.0714	1.000	to collectively as the dispatcher. Similarly, the	0.3647	0.0118
+0.6439	0.5376	1.000	Thus, an MCP service routine may be in con-	0.3515	0.0131
+0.6453	0.5056	1.000	op.	0.0263	0.0116
+0.6539	0.0714	1.000	interrupt programs concerned with handling I-O	0.3590	0.0133
+0.6584	0.5056	1.000	trol, but may be operating at PP level. However,	0.3797	0.0161
+0.6700	0.0714	1.000	interrupts are referred to as the receptor.	0.3214	0.0131
+0.6730	0.5056	1.000	all portions of MCP in which this is possible (i.e.,	0.3835	0.0146
+0.6890	0.5056	1.000	non-major packages) operate with the interrupt sys-	0.3929	0.0117
+0.7005	0.5053	1.000	tem disabled.	0.1044	0.0149
+0.7006	0.0677	1.000	Service Routines	0.1297	0.0131
+0.7297	0.5207	1.000	Interrupts other than IF may occur only while the	0.3741	0.0131
+0.7311	0.0695	1.000	MCP permits the problem program (PP) to use sym-	0.3966	0.0116
+0.7427	0.5075	1.000	PP or an MCP major package is operating. Consid-	0.3947	0.0161
+0.7456	0.0695	1.000	bolie I-O, and performs I-O operations on the proper	0.4004	0.0131
+0.7587	0.5075	1.000	ering only I-O interrupts, four situations are possible:	0.4135	0.0146
+0.7615	0.0695	1.000	unit when requested by the PP. The programs which	0.3985	0.0118
+0.7761	0.0695	1.000	actually accomplish these services (i.e., read, write,	0.4098	0.0133
+0.7776	0.5244	1.000	1. An MCP I-O unit interrupts an MCP major	0.3496	0.0118
+0.7906	0.0695	1.000	rewind, ete.) are called service routines. The group	0.4023	0.0118
+0.7915	0.5506	1.000	package.	0.0680	0.0130
+0.8052	0.0695	1.000	of service routines concerned exclusively with sym-	0.3929	0.0118
+0.8067	0.5244	1.000	2. A PP I-O unit interrupts an MCP major pack-	0.3722	0.0116
+0.8197	0.0695	1.000	bolie I-O operations is called the actuator. Additional	0.4098	0.0118
+0.8227	0.5526	1.000	age.	0.0320	0.0102
+0.8327	0.5244	1.000	3. An MCP Í-O unit interrupts the PP.	0.2970	0.0147
+0.8342	0.0695	1.000	service routines perform such functions as suppression	0.4173	0.0131
+0.8488	0.0677	1.000	and release of I-O interrupts, setting of the interval	0.3947	0.0118
+0.8503	0.5244	1.000	4. A PP I-O unit interrupts the PP.	0.2744	0.0116
+0.8633	0.0677	1.000	timer, etc.. The service routines may be explicitly	0.3985	0.0131
+0.8648	0.5226	1.000	These situations may arise in any order and at any	0.3835	0.0131
+0.8794	0.0695	1.000	defined as those routines which accomplish pseudo-ops	0.4098	0.0116
+0.8794	0.5075	1.000	rate. In addition, one interrupt may immediately	0.3741	0.0131
+0.8939	0.0695	1.000	for pseudo-op codes less than 64.0. They operate	0.3797	0.0116
+0.8939	0.5075	1.000	follow another interrupt, in which case response to	0.3853	0.0131

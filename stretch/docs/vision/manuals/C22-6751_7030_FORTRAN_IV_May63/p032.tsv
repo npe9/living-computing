@@ -1,0 +1,47 @@
+0.0814	0.1015	1.000	registers, it is imperative that any registers liable to be	0.3966	0.0174
+0.0814	0.5338	1.000	2. Branching to the location immediately following	0.3872	0.0160
+0.0959	0.5545	1.000	the last word in the argument list (if present).	0.3421	0.0174
+0.1003	0.1034	1.000	changed should be preserved. It may be convenient	0.3947	0.0116
+0.1085	0.5242	1.000	The appropriate instruction for a routine with n argu-	0.3970	0.0213
+0.1144	0.1033	1.000	for this to be done in a similar fashion to that in which	0.3949	0.0126
+0.1291	0.5225	1.000	ments is:	0.0735	0.0150
+0.1294	0.1034	1.000	FORTRAN-coded routines perform this action; here, 16	0.3947	0.0131
+0.1424	0.5526	1.000	B, n.O($X15)	0.0902	0.0176
+0.1452	0.1032	1.000	memory words are set aside,	0.2221	0.0152
+0.1467	0.3214	1.000	, following the transter	0.1767	0.0118
+0.1579	0.1013	1.000	vector (if any) for the preservation of the index regis-	0.3989	0.0205
+0.1642	0.5263	1.000	ARRAX STORACE	0.1147	0.0161
+0.1788	0.1034	1.000	ter contents.	0.0883	0.0103
+0.1830	0.5244	1.000	Note that data is stored in a forward direction in pro-	0.3985	0.0176
+0.1991	0.5244	1.000	grams compiled by the IBM 7030 FORTRAN. Given an	0.3985	0.0189
+0.2049	0.1034	1.000	RESULTS	0.0602	0.0116
+0.2109	0.5242	1.000	array A(2, 3, 4) the memory cells allocated are:	0.3538	0.0220
+0.2252	0.1034	1.000	A Function subprogram must always place its (single)	0.3947	0.0147
+0.2338	0.7800	1.000	CONTENTS	0.0640	0.0120
+0.2351	0.5769	1.000	ADDRESS	0.0529	0.0124
+0.2397	0.0996	1.000	result in the left part of the accumulator ($L). A Sub-	0.3985	0.0161
+0.2469	0.7819	1.000	A (1, 1,1)	0.0640	0.0134
+0.2558	0.1015	1.000	routine subprogram must place each of its results in	0.3966	0.0161
+0.2587	0.5846	1.000	X+1	0.0338	0.0131
+0.2602	0.7820	1.000	A (2,1,1)	0.0620	0.0116
+0.2681	0.1012	1.000	a memory location. (Note that it is not required that	0.3991	0.0236
+0.2716	0.7819	1.000	A (1,2,1)	0.0640	0.0120
+0.2718	0.5827	1.000	X+2	0.0357	0.0116
+0.2833	0.7801	1.000	A (2,2,1)	0.0658	0.0118
+0.2834	0.5846	1.000	X+3	0.0338	0.0116
+0.2878	0.1034	1.000	a Subroutine produce any results.) A result repre-	0.3947	0.0116
+0.2979	0.7801	1.000	A (2,3,4)	0.0658	0.0132
+0.2993	0.5845	1.000	X+23	0.0415	0.0118
+0.3022	0.1033	1.000	sented by the nth argument of a CALL statement is to	0.3950	0.0145
+0.3154	0.1015	1.000	be stored in the location specified by the first 18 bits of	0.3985	0.0174
+0.3154	0.5244	1.000	An array is stored forward by columns. Furthermore,	0.3947	0.0174
+0.3285	0.5244	1.000	the various items in a common block (including blank	0.3966	0.0176
+0.3342	0.0996	1.000	location (n-1).0($X15).	0.1805	0.0146
+0.3459	0.5282	1.000	common) are also stored in a forward direction. That	0.3947	0.0132
+0.3601	0.5241	1.000	is, given the statement	0.1680	0.0185
+0.3618	0.1034	1.000	RETURN OF CONTROL	0.1466	0.0118
+0.3808	0.5545	1.000	COMMON A, B, C, D	0.1391	0.0116
+0.3821	0.1053	1.000	Control may be returned to the calling routine by:	0.3628	0.0147
+0.3953	0.5282	1.000	A occupies a lower memory address than B, C, or D.	0.3778	0.0147
+0.3982	0.1184	1.000	1. Restoring any altered index register.	0.2914	0.0132
+0.9404	0.1034	1.000	32	0.0169	0.0087

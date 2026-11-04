@@ -1,0 +1,109 @@
+0.0858	0.5282	1.000	$W, go to RGWUK (Figure 75); if $RD, go to RDUK	0.3816	0.0161
+0.0872	0.1203	1.000	2. An unsuccessful retry of the pseudo-op, and	0.3534	0.0131
+0.1015	0.5281	1.000	(Figure 80).	0.0922	0.0122
+0.1017	0.1034	1.000	subsequent rejection of the jobs involved in order to	0.3853	0.0131
+0.1163	0.5451	1.000	3. A test is made to see if the UK dia or did not	0.3628	0.0116
+0.1177	0.1034	1.000	keep the system running.	0.1880	0.0117
+0.1308	0.5282	1.000	have an EOP. If not, go to RGNOGD (Figure 82).	0.3684	0.0116
+0.1321	0.1203	1.000	Thus, the UK procedure consists of two distinct	0.3571	0.0133
+0.1453	0.5451	1.000	4. The pseudo-op is again tested to see if $WEF.	0.3703	0.0131
+0.1467	0.1034	1.000	phases for each error source: the retry of the	0.3496	0.0133
+0.1585	0.1031	1.000	pseudo-op, and the internal adjustment if it is	0.3425	0.0174
+0.1599	0.5301	1.000	If not, go to RPUKLI (Figure 82). If it is, enter	0.3628	0.0131
+0.1758	0.5282	1.000	write end of file procedure.	0.2068	0.0118
+0.1773	0.1034	1.000	unsuccessful.	0.1034	0.0116
+0.1890	0.5451	1.000	Notice that the test for EOP is made after checking	0.3816	0.0132
+0.1903	0.1203	1.000	This approach is used separately for each of the	0.3571	0.0133
+0.2035	0.5282	1.000	for a $W or $RD pseudo-op. If a UK- no EOP condi-	0.3947	0.0132
+0.2052	0.1031	1.000	following:	0.0739	0.0140
+0.2194	0.5301	1.000	tion appears with $W, it may be a data error in a	0.3684	0.0132
+0.2209	0.1203	1.000	1. UK/EPGK on tape write	0.2049	0.0116
+0.2339	0.5301	1.000	chained op on a write tape, which can be fixed by	0.3628	0.0132
+0.2355	0.1203	1.000	2. UK/EPGK on card read	0.2011	0.0116
+0.2485	0.5282	1.000	RGWUK. On the other hand, if a UK- no EOP condi-	0.3947	0.0146
+0.2500	0.1203	1.000	3. UK/EPGK on tape read	0.1992	0.0131
+0.2630	0.5301	1.000	tion appears with a $RD, it could be a card reader	0.3741	0.0131
+0.2645	0.1203	1.000	4. UK/EPGK on WEF	0.1654	0.0131
+0.2776	0.5244	1.000	jam, which is taken care of by RDNOTP. A ȘWEF or	0.4041	0.0161
+0.2791	0.1203	1.000	5. UK/EPGK on other pseudo-ops	0.2556	0.0131
+0.2936	0.5301	1.000	pseudo-op lack of EOP is a unit down type condition.	0.3910	0.0116
+0.3096	0.1053	1.000	The Input I-O Tables of Exits	0.2162	0.0116
+0.3227	0.5282	1.000	EPGK Condition	0.1222	0.0116
+0.3387	0.1034	1.000	Three I-O tables of exits are associated with the	0.3609	0.0132
+0.3517	0.5320	1.000	The input program may cause a legitimate EPGK in	0.3816	0.0131
+0.3545	0.1053	1.000	input functional programs:	0.1974	0.0118
+0.3663	0.5301	1.000	the following situation (Figure 74): If the input pro-	0.3853	0.0116
+0.3670	0.1351	1.000	IODNAME	0.0812	0.0146
+0.3677	0.2462	1.000	TOE	0.0357	0.0116
+0.3692	0.3346	1.000	Program	0.0677	0.0102
+0.3808	0.5301	1.000	gram was in the offline mode, any scan tape to be	0.3703	0.0131
+0.3953	0.5301	1.000	saved would be file protected. If caught in a transi-	0.3891	0.0131
+0.3977	0.3345	1.000	Card reader	0.0923	0.0127
+0.3980	0.2462	1.000	VCREXT	0.0697	0.0122
+0.3983	0.1372	1.000	VCRD	0.0470	0.0116
+0.4112	0.5320	1.000	tion to online, this tape would be used as a write tape.	0.4004	0.0133
+0.4127	0.2481	1.000	VWTEXT Write tape	0.1654	0.0118
+0.4128	0.1391	1.000	VWTP	0.0470	0.0116
+0.4258	0.5301	1.000	When the $W attempts to write on this tape, an EPGK	0.3966	0.0133
+0.4273	0.2500	1.000	VRTEXT Read tape	0.1579	0.0103
+0.4285	0.1390	1.000	VRTP	0.0454	0.0122
+0.4402	0.1221	1.000	The tables of exits are permanently associated with	0.3818	0.0163
+0.4403	0.5301	1.000	would be given. The tape must be unloaded and a	0.3665	0.0133
+0.4548	0.5301	1.000	scratch tape mounted before $W can be reissued.	0.3665	0.0118
+0.4564	0.1071	1.000	the IOD names specified; however, the two tape tables	0.3985	0.0131
+0.4709	0.1053	1.000	alternate between the read and write (scan) tape	0.3553	0.0116
+0.4855	0.5320	1.000	UK on Write or Write End-of-File	0.2538	0.0103
+0.4876	0.1069	1.000	functions.	0.0737	0.0103
+0.5015	0.1222	1.000	Each tape table has the following form:	0.2895	0.0116
+0.5145	0.5320	1.000	A retry of both the $W or $WEF pseudo-ops will	0.3571	0.0131
+0.5160	0.1560	1.000	VF, (Functional program table name)	0.2763	0.0131
+0.5291	0.5301	1.000	follow the same general procedure (Figure 75). The	0.3929	0.0131
+0.5305	0.1071	1.000	(I-O DRZ, (BU, 64), 2	0.1805	0.0131
+0.5433	0.4172	1.000	'UK, EPGK	0.0904	0.0151
+0.5451	0.5301	1.000	tape will be repeatedly backspaced to the preceding	0.3816	0.0116
+0.5451	0.1071	1.000	TOE SIC, RKSBRC; B, RKSUK	0.2387	0.0131
+0.5581	0.5320	1.000	record gap and the write pseudo-op retried. When an	0.3985	0.0131
+0.5596	0.4192	1.000	'EE	0.0357	0.0131
+0.5609	0.1071	1.000	name) LV, VU, A; B, -. 32 (VU)	0.2331	0.0133
+0.5741	0.5301	1.000	arbitrary number of retries has been made, an erase	0.3966	0.0116
+0.5741	0.1579	1.000	LVI, VT5, (IOD name); B, VTDSP 'CS	0.2951	0.0147
+0.5887	0.5320	1.000	gap SEOP (ERGS) is performed whereupon the back-	0.3872	0.0132
+0.5887	0.4192	1.000	'EOP	0.0470	0.0131
+0.5900	0.1579	1.000	LV, VU, A; B, -1. (VU)	0.1786	0.0133
+0.6032	0.5320	1.000	space-write retry count is reset and the retry series	0.3929	0.0132
+0.6032	0.1241	1.000	The card reader table differs only in that the CS	0.3553	0.0132
+0.6177	0.1051	1.000	position contains a branch to VRDCSS.	0.2860	0.0146
+0.6191	0.5338	1.000	begins again further along the tape. The ERG pro-	0.3797	0.0132
+0.6336	0.1241	1.000	As previously mentioned, it is the function of the	0.3609	0.0132
+0.6336	0.5320	1.000	cedure is also limited by an arbitrary count, and	0.3647	0.0146
+0.6482	0.5301	1.000	when the count is exhausted the situation is considered	0.4079	0.0132
+0.6482	0.1053	1.000	tape switch routines to enter the proper IOD name in	0.3929	0.0146
+0.6612	0.1053	1.000	the VSU position of the tape program tables, and to	0.3816	0.0161
+0.6612	0.5320	1.000	a total UK failure.	0.1410	0.0161
+0.6788	0.1090	1.000	put the corresponding table name in the VF at A	0.3553	0.0146
+0.6933	0.1109	1.000	ahead of the TOE. Thus, when either I-O TOE is	0.3665	0.0146
+0.7093	0.1090	1.000	entered with EOP or EE, control is given to the	0.3571	0.0146
+0.7093	0.5338	1.000	Setting Up a Retry of $WEF: UK is possible on any	0.3835	0.0204
+0.7209	0.5338	1.000	of the following WEF cases:	0.2124	0.0204
+0.7224	0.1071	1.000	proper functional program table at the slot corres-	0.3816	0.0161
+0.7369	0.1071	1.000	ponding to the interrupt. When CS occurs, control	0.3797	0.0189
+0.7384	0.5451	1.000	1. There were two consecutive WEF's and the tape	0.3910	0.0174
+0.7515	0.1071	1.000	is returned to the tape switch routines, and when an	0.3872	0.0174
+0.7529	0.5338	1.000	did not move.	0.1090	0.0174
+0.7670	0.5412	1.000	2. There were two consecutive WEF's and the tape	0.3951	0.0198
+0.7674	0.1090	1.000	error interrupt occurs, the fixup routine is entered	0.3816	0.0160
+0.7817	0.5337	1.000	did move.	0.0791	0.0180
+0.7833	0.1090	1.000	at RKSUK.	0.0808	0.0118
+0.7979	0.5470	1.000	3. There was one WEF and the tape did not move.	0.3816	0.0176
+0.8036	0.1109	1.000	Generalized Dispatcher	0.1729	0.0118
+0.8139	0.5451	1.000	4. There was one WEF and the tape did move.	0.3553	0.0161
+0.8270	0.5451	1.000	The first step in handling a UK in any of these cases	0.3966	0.0176
+0.8299	0.1071	1.000	When an error interrupt occurs during an input pro-	0.3872	0.0161
+0.8400	0.5320	1.000	is to backspace the tape, after which a $RET is given.	0.4098	0.0206
+0.8443	0.1108	1.000	gram, the following steps are taken (Figure 74):	0.3555	0.0163
+0.8561	0.5357	1.000	On the next interrupt another $WEF is attempted,	0.3703	0.0189
+0.8618	0.1259	1.000	1. A test is made for EPGK or UK.	0.2688	0.0118
+0.8721	0.5320	1.000	after which the program is restored.	0.2801	0.0161
+0.8744	0.1239	1.000	2. The pseudo-op is identified as $W or $RD. If	0.3688	0.0185
+0.9375	0.9041	1.000	143	0.0244	0.0102
+0.9375	0.7613	1.000	System Input-Output	0.1222	0.0146

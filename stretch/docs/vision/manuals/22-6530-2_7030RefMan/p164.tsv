@@ -1,0 +1,104 @@
+0.0596	0.1090	1.000	Specification of the arc automatically identifies the	0.3778	0.0131
+0.0596	0.5094	1.000	disk unit specified by the channel address, bit posi-	0.3929	0.0131
+0.0741	0.0940	1.000	access mechanism to be used on that arc. These in-	0.3910	0.0116
+0.0741	0.5132	1.000	tions 12 through 18 of the left effective address.	0.3571	0.0147
+0.0887	0.0921	1.000	structions cause the proper access mechanism of the	0.3929	0.0147
+0.0900	0.5282	1.000	When a disk unit is released, the arc address regis-	0.3741	0.0133
+0.1045	0.5113	1.000	ter is left at the address of the last arc used unless	0.3910	0.0118
+0.1045	0.0940	1.000	pair attached to each disk storage to be positioned at	0.3910	0.0146
+0.1206	0.0921	1.000	the track containing the specified arc. Concurrently,	0.3929	0.0131
+0.1206	0.5113	1.000	transmission of that arc has been completed. If the	0.3910	0.0131
+0.1352	0.0940	1.000	the other access mechanism is positioned on the track	0.3891	0.0146
+0.1366	0.5113	1.000	disk unit was writing, the remainder of the arc, in	0.3910	0.0131
+0.1512	0.5113	1.000	which the RELease operation was accepted, will have	0.3891	0.0146
+0.1512	0.0921	1.000	immediately following the specified track. When both	0.3929	0.0131
+0.1672	0.5113	1.000	zeros recorded. A LOCATE operation will proceed to its	0.3891	0.0132
+0.1672	0.0940	1.000	access mechanisms have been positioned, an EoP indi-	0.3891	0.0132
+0.1786	0.5111	1.000	normal end and the arc address register will be set as	0.3913	0.0192
+0.1817	0.0921	1.000	cation is given. The starting arc within the track is	0.3929	0.0132
+0.1975	0.5074	1.000	specified.	0.0697	0.0164
+0.1976	0.0921	1.000	retained within the disk unit.	0.2105	0.0118
+0.2091	0.1107	1.000	A LOCATE Or LOCATE SEOP may be given to any disk	0.3726	0.0191
+0.2121	0.5282	1.000	If the disk unit is not ready, the disk system will	0.3741	0.0146
+0.2282	0.5113	1.000	not accept the instruction. Instead, the unit-not-ready.	0.3910	0.0131
+0.2282	0.0921	1.000	attached to the data synchronizer at any time if the	0.3929	0.0131
+0.2427	0.0940	1.000	disk specified is not busy with data transmission or a	0.3910	0.0145
+0.2442	0.5113	1.000	reject indicator is turned on. In this respect these	0.3910	0.0131
+0.2585	0.0939	1.000	prior LOCATE.	0.0997	0.0135
+0.2587	0.5113	1.000	operations are different from the exchange.	0.3064	0.0146
+0.2747	0.1109	1.000	These operations specify an initial arc for which	0.3722	0.0132
+0.2747	0.5282	1.000	RELEASE SEOP differs from RELEASE in that the EOP	0.3722	0.0102
+0.2892	0.0921	1.000	data transmission may occur. Because of these in-	0.3929	0.0145
+0.2892	0.5113	1.000	indication will be suppressed when the operation is	0.3910	0.0145
+0.3036	0.0921	1.000	structions, the disk units are randomly addressable by	0.3910	0.0147
+0.3052	0.5113	1.000	completed normally. This instruction resets all status	0.3910	0.0132
+0.3197	0.5075	1.000	indications during its execution.	0.2368	0.0146
+0.3197	0.0921	1.000	arc. Whenever successive arcs are to be read or writ-	0.3929	0.0118
+0.3358	0.0921	1.000	ten, only the initial arc need be specified.	0.2970	0.0131
+0.3471	0.5093	1.000	INDICATORS	0.0828	0.0136
+0.3503	0.1090	1.000	LOCATE SEOP differs from LOCATE in that th : EOP	0.3759	0.0131
+0.3648	0.5263	1.000	Unit Not Ready Reject (UNRJ)	0.2256	0.0146
+0.3663	0.0921	1.000	indication is suppressed when the operation is com-	0.3947	0.0146
+0.3821	0.5263	1.000	End of Operation (EOP)	0.1767	0.0161
+0.3821	0.0940	1.000	pleted normally. Otherwise they are the same.	0.3346	0.0133
+0.4055	0.0921	1.000	INDICATORS	0.0808	0.0102
+0.4230	0.1090	1.000	Exchange Check Reject (EKJ)	0.2162	0.0146
+0.4317	0.5113	1.000	Copy Control Word (CCW)	0.1898	0.0160
+0.4403	0.1071	1.000	Channel Busy Reject (cBJ)	0.1955	0.0146
+0.4548	0.5132	1.000	The left effective address, bit positions 12 through 18,	0.3872	0.0132
+0.4578	0.1090	1.000	Unit Not Ready Reject (UNRJ)	0.2256	0.0146
+0.4694	0.5113	1.000	of the instruction specify the channel address.	0.3496	0.0146
+0.4695	0.8684	1.000	The	0.0338	0.0116
+0.4752	0.1109	1.000	Exchange Program Check (EPGK)	0.2425	0.0147
+0.4839	0.5094	1.000	right effective address, bit positions 32 through 49, of	0.3929	0.0161
+0.4942	0.1090	1.000	Unit Check (UK)	0.1259	0.0146
+0.5000	0.5113	1.000	the instruction specify the core storage location to	0.3910	0.0145
+0.5115	0.1090	1.000	End of Operation (EOP)	0.1767	0.0146
+0.5160	0.5113	1.000	which the information is to be sent.	0.2594	0.0131
+0.5274	0.5299	1.000	The disk synchronizer does not have control word	0.3725	0.0187
+0.5378	0.0940	1.000	PROGRAMMING NOTE	0.1466	0.0102
+0.5464	0.5113	1.000	storage as does the exchange. The data word address	0.3910	0.0147
+0.5536	0.0940	1.000	The arc address specified in the LOCATE instructions	0.3910	0.0147
+0.5624	0.5113	1.000	and word count fields are retained in registers in the	0.3910	0.0118
+0.5697	0.0940	1.000	may be considered as having two parts:	0.2763	0.0132
+0.5770	0.5113	1.000	disk synchronizer and are used to control core storage	0.3910	0.0131
+0.5887	0.1090	1.000	1. Track address: high-order nine bits, bit posí-	0.3741	0.0160
+0.5915	0.5113	1.000	references. Since only one disk unit may transmit	0.3929	0.0146
+0.6061	0.1335	1.000	tions 38 through 46.	0.1485	0.0131
+0.6076	0.5113	1.000	at a time, these registers are associated with the last	0.3929	0.0131
+0.6196	0.6632	1.000	performing a data transmission	0.2393	0.0186
+0.6235	0.5113	1.000	channel which was	0.1523	0.0116
+0.6235	0.1090	1.000	2. Arc within track address: low-order three bits,	0.3759	0.0116
+0.6381	0.1335	1.000	bit positions 47 through 49.	0.1992	0.0146
+0.6381	0.5113	1.000	operation. The contents of these registers are placed	0.3910	0.0146
+0.6526	0.5094	1.000	in a full-word format, corresponding to their location	0.3929	0.0160
+0.6584	0.0921	1.000	The LOCATE operations position the read-write heads	0.3929	0.0161
+0.6685	0.5094	1.000	in a control word. Since the execution of a copy	0.3929	0.0147
+0.6730	0.0921	1.000	of the access mechanism to the track specified in the	0.3929	0.0161
+0.6845	0.5094	1.000	CONTROL WORD instruction uses the transmission chan-	0.3947	0.0131
+0.6903	0.0921	1.000	arc address. Subsequent READ or WRITE operations	0.3929	0.0103
+0.6976	0.5094	1.000	nel of the disk synchronizer, the instruction is not	0.3947	0.0161
+0.7035	0.0940	1.000	will then cause the arc within the track to be found	0.3891	0.0117
+0.7136	0.5094	1.000	executed when a disk storage is reading or writing,	0.3929	0.0161
+0.7179	0.0902	1.000	and data transmission will begin. Associated with	0.3947	0.0161
+0.7297	0.5094	1.000	and the channel-busy indicator will be turned on.	0.3703	0.0146
+0.7355	0.0940	1.000	each disk is an arc address register. As successive arcs	0.3910	0.0145
+0.7456	0.5207	1.000	The normal completion of this instruction will not	0.3835	0.0160
+0.7500	0.0921	1.000	are used, this register is increased by one for each	0.3929	0.0145
+0.7572	0.5091	1.000	give an Eop indication, since when this instruction is	0.3952	0.0205
+0.7660	0.0921	1.000	arc. When required, the access mechanism will be	0.3929	0.0146
+0.7747	0.5075	1.000	used with the disk system it must be completed before	0.3966	0.0174
+0.7820	0.0940	1.000	automatically repositioned to the next higher track.	0.3891	0.0117
+0.7921	0.5075	1.000	the computer proceeds with the next instruction.	0.3741	0.0161
+0.7962	0.0958	1.000	Thus the alternating access mechanisms may provide	0.3891	0.0137
+0.8124	0.0940	1.000	continuous data flow.	0.1560	0.0118
+0.8180	0.5093	1.000	INDICATORS	0.0829	0.0137
+0.8358	0.5263	1.000	Exchange Check Reject (EKJ)	0.2180	0.0145
+0.8503	0.0921	1.000	Release (REL); Release SEOP (RELSEOP)	0.2820	0.0146
+0.8517	0.5263	1.000	Channel Busy Reject (CBJ)	0.1974	0.0146
+0.8677	0.5263	1.000	Unit Not Ready Reject (UNRJ)	0.2274	0.0145
+0.8691	0.0921	1.000	These instructions immediately terminate any data	0.3929	0.0161
+0.8852	0.0940	1.000	transmission operation currently in process, at the	0.3910	0.0146
+0.8852	0.5282	1.000	Address Invalid (AD)	0.1541	0.0146
+0.9258	0.7011	1.000	High-Speed Disk System	0.1504	0.0133
+0.9259	0.8797	1.000	161	0.0226	0.0087

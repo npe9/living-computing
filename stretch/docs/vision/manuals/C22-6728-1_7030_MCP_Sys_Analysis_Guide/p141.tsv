@@ -1,0 +1,109 @@
+0.1003	0.5451	1.000	The Request Processors (E and Q)	0.2594	0.0116
+0.1003	0.1090	1.000	because of the tape mark. This completes the job	0.3778	0.0116
+0.1148	0.1109	1.000	end procedure within RT.	0.1917	0.0116
+0.1294	0.5451	1.000	The card request processors provide cards under	0.3741	0.0131
+0.1294	0.1278	1.000	After the procedure above the queue of the card	0.3553	0.0131
+0.1453	0.1090	1.000	request program (overlapped) would contain K,	0.3534	0.0116
+0.1453	0.5432	1.000	control of externally generated requests, with the	0.3759	0.0147
+0.1599	0.5432	1.000	process governed by the parameter flow mechanism.	0.3985	0.0131
+0.1599	0.1090	1.000	-VQEND, 17-K if the number of cards read success-	0.3985	0.0131
+0.1744	0.5432	1.000	The input program is entered at VSCR when $SCR or	0.3985	0.0147
+0.1744	0.1090	1.000	fully was K. The parameter K will become an active	0.3985	0.0132
+0.1863	0.1088	1.000	parameter in Q making K cards available for trans-	0.3914	0.0181
+0.1903	0.5432	1.000	SSCR4 is requested (Figure 77).	0.2425	0.0133
+0.2035	0.1109	1.000	mission. When this is exhausted, -VQEND will be	0.3816	0.0132
+0.2048	0.5602	1.000	The queue entry routines perform the standard	0.3515	0.0132
+0.2179	0.1109	1.000	removed from the queue and control will go to QEND,	0.4004	0.0133
+0.2194	0.5432	1.000	functions except that the actuation phase consists	0.3684	0.0146
+0.2355	0.5451	1.000	simply of placing a non-zero parameter into VX1.	0.3741	0.0116
+0.2355	0.1090	1.000	which will remove the next parameter, 17-K from	0.3778	0.0131
+0.2483	0.1089	1.000	the queue and pass it back to RT at the same time	0.3761	0.0165
+0.2485	0.5432	1.000	That amount of cards is then transmitted under the	0.3835	0.0131
+0.2645	0.1109	1.000	updating VX(Q). Thus the parametric represențation	0.3985	0.0131
+0.2645	0.5414	1.000	control of and to memory areas designated by one or	0.3985	0.0131
+0.2791	0.1109	1.000	of one entire buffer half will have passed through Q in	0.4060	0.0116
+0.2791	0.5414	1.000	more externally generated requests. The equivalent	0.4004	0.0131
+0.2936	0.5414	1.000	of EOP is not so clear. Recall that normal EOP	0.3703	0.0131
+0.2942	0.1089	1.000	proper sequence though the parameter division pro-	0.3913	0.0156
+0.3081	0.1109	1.000	vides that only a specified portion will be made avail-	0.4041	0.0131
+0.3081	0.5414	1.000	procedure consists of passing on the contents of VXI,	0.4060	0.0161
+0.3241	0.5414	1.000	updating VX, and reactuating. The request proc-	0.3759	0.0131
+0.3241	0.1090	1.000	able for transmission. Finally, VQEND returns to	0.3853	0.0147
+0.3387	0.1071	1.000	the program which called VSETX with a negative	0.3684	0.0147
+0.3387	0.5414	1.000	essors perform the first two functions on a piece-	0.3778	0.0132
+0.3532	0.5432	1.000	meal basis depending on the occurrence of requests.	0.3947	0.0117
+0.3545	0.1109	1.000	parameter, which is recognized by the request proc-	0.3985	0.0133
+0.3677	0.5432	1.000	In other words, for every transmission, VXI is	0.3609	0.0132
+0.3691	0.1109	1.000	essor as a job boundary.	0.1861	0.0132
+0.3836	0.5414	1.000	decremented and VX incremented by the amount of	0.3816	0.0132
+0.3997	0.5414	1.000	cards just transmitted, and a parameter representing	0.4041	0.0131
+0.4112	0.1090	1.000	The Tape End Procedure: The tape end procedure,	0.3853	0.0133
+0.4142	0.5414	1.000	this amount is forwarded to the successor program.	0.3929	0.0116
+0.4258	0.1090	1.000	culminating in tape switch, is initiated from the	0.3609	0.0133
+0.4288	0.5432	1.000	However, when VX1 is reduced to zero, reactuation	0.3891	0.0146
+0.4418	0.1109	1.000	VTEE routine when the tape switch criteria are met.	0.3947	0.0103
+0.4433	0.5432	1.000	occurs, consisting of obtaining the next parameter	0.3778	0.0131
+0.4564	0.1109	1.000	The routine, VSTTSX, simply sends to the successor	0.4004	0.0131
+0.4578	0.5414	1.000	from the queue and putting it in VX1.	0.2782	0.0131
+0.4698	0.1089	1.000	program a negative parameter which it finds in the	0.3837	0.0145
+0.4849	0.5431	1.000	The Request Processor Subroutine: The work of	0.3650	0.0157
+0.4855	0.1109	1.000	VTS slot of the program table. This parameter,	0.3647	0.0131
+0.5000	0.1090	1.000	- VRTTS, causes an entry to VRTTS to occur only	0.3741	0.0145
+0.5029	0.5414	1.000	processing requests is done by the subroutine VREQ	0.3929	0.0116
+0.5160	0.1090	1.000	after the last job read from the read tape has been	0.3797	0.0116
+0.5174	0.5414	1.000	(Figure 77). Externally, the routine has the following	0.4079	0.0132
+0.5305	0.1109	1.000	completed with an SEJSCN command given to the	0.3647	0.0116
+0.5320	0.5432	1.000	characteristics:	0.1203	0.0102
+0.5451	0.1090	1.000	input program.	0.1147	0.0116
+0.5464	0.5583	1.000	1. It is entered with the following quantities:	0.3421	0.0118
+0.5609	0.5695	1.000	a. The program table origin (E or Q) in index	0.3609	0.0118
+0.5755	0.6071	1.000	register VU and location VREQXT.	0.2669	0.0118
+0.5770	0.1128	1.000	The Scan Tape (ST) Program	0.2162	0.0118
+0.5900	0.5695	1.000	b. The first word address (FWA) and number	0.3571	0.0118
+0.6045	0.6090	1.000	of cards (VNREQ) of the request in the SCR-	0.3346	0.0118
+0.6061	0.1128	1.000	The scan tape program is virtually identical to the	0.3778	0.0131
+0.6191	0.6090	1.000	SCR4 tentacle table, VVSCR.	0.2218	0.0132
+0.6206	0.2688	1.000	This is because both perform	0.2218	0.0131
+0.6235	0.1128	1.000	read tape program.	0.1560	0.0102
+0.6336	0.5714	1.000	c. The location of the M slot of the originating	0.3647	0.0132
+0.6366	0.1109	1.000	an almost identical function, namely; (1) to supply a	0.3910	0.0116
+0.6497	0.6071	1.000	calling sequence in $0.	0.1748	0.0131
+0.6497	0.1128	1.000	buffer with card images read from a tape of standard	0.3966	0.0131
+0.6642	0.5564	1.000	2. When control is returned:	0.2237	0.0131
+0.6657	0.1109	1.000	format; (2) pass on parameters representing the	0.3647	0.0116
+0.6788	0.5695	1.000	a. The number of cards requested has been	0.3440	0.0116
+0.6802	0.1128	1.000	buffer areas to a successor program, identifying to	0.3872	0.0116
+0.6933	0.6090	1.000	transmitted unless the number overlaps the	0.3271	0.0103
+0.6948	0.1128	1.000	the successor the occurrence of each job boundary as	0.4004	0.0116
+0.7078	0.6090	1.000	end of job file, in which case only the	0.2820	0.0146
+0.7093	0.1128	1.000	it is detected; (3) to recognize the logical end of tape;	0.4004	0.0131
+0.7224	0.6090	1.000	remainder of the file was transmitted.	0.2895	0.0116
+0.7238	0.1128	1.000	and (4) initiate the tape switch procedure. Whatever	0.3947	0.0131
+0.7369	0.5695	1.000	b. $0 contains the location of the normal return	0.3741	0.0131
+0.7397	0.1128	1.000	differences exist are absorbed in the tables, such as	0.3947	0.0118
+0.7515	0.6109	1.000	or end return in the originating calling	0.2895	0.0116
+0.7542	0.1128	1.000	operating buffer (VCWR), tape switch routine, sym-	0.3910	0.0133
+0.7660	0.6090	1.000	sequence, according to whether or not the	0.3158	0.0131
+0.7688	0.1128	1.000	bolic I-O unit (VSU) and successor program (VNX).	0.3853	0.0118
+0.7805	0.6109	1.000	requested number of cards was delivered.	0.3158	0.0131
+0.7833	0.1297	1.000	The job end procedure, however, differs in two	0.3571	0.0132
+0.7951	0.5977	1.000	If the request was terminated due to file	0.3139	0.0131
+0.7994	0.1128	1.000	points:	0.0508	0.0116
+0.8109	0.6109	1.000	end, the number of cards actually trans-	0.3045	0.0133
+0.8124	0.1278	1.000	1. The count down of jobs and communication to	0.3665	0.0118
+0.8255	0.6109	1.000	mitted is placed in the calling sequence at	0.3158	0.0118
+0.8270	0.1128	1.000	the WT for tape switch purposes is omitted.	0.3289	0.0131
+0.8400	0.6109	1.000	the M slot.	0.0884	0.0118
+0.8430	0.1297	1.000	2. Instead of VQEND, the negative parameter,	0.3553	0.0131
+0.8576	0.1128	1.000	- VSCEND, is used for parameter partitioning of	0.3628	0.0131
+0.8576	0.5602	1.000	In its internal operation, VREQ first tests VX1 to	0.3741	0.0131
+0.8721	0.1109	1.000	incompletely read buffer areas. In the offline mode,	0.3966	0.0131
+0.8721	0.5432	1.000	see if it is greater than zero. If it is not, control	0.3778	0.0131
+0.8881	0.1109	1.000	SC is adjusted so as not to feed any negative param-	0.3910	0.0116
+0.8881	0.5414	1.000	goes to VREQ2 for further tests described later. If	0.3966	0.0131
+0.9026	0.5432	1.000	VX1 is greater than zero, the VMD routine is entered	0.4041	0.0116
+0.9026	0.1109	1.000	eters to its successor at job boundaries, since ST,	0.3816	0.0131
+0.9157	0.5432	1.000	to construct the control words for transmission, the	0.3947	0.0116
+0.9172	0.1109	1.000	in effect, already knows of job boundaries.	0.3214	0.0116
+0.9506	0.9154	1.000	141	0.0226	0.0087
+0.9520	0.7726	1.000	System Input-Output	0.1259	0.0102

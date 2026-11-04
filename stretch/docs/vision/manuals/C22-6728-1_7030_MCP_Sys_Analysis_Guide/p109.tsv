@@ -1,0 +1,109 @@
+0.0915	0.5301	1.000	hard copy maker converts from BCD to IQS for the	0.3872	0.0176
+0.0930	0.1147	1.000	The format of the command message is essentially	0.3835	0.0161
+0.1061	0.5320	1.000	commentator, using the SAGIQS routine.	0.3064	0.0191
+0.1090	0.0996	1.000	the same for all sources. Commands coming via	0.3722	0.0146
+0.1235	0.0977	1.000	cards must have a B punch in column 1 but the state-	0.4004	0.0160
+0.1366	0.5320	1.000	Mode Control Commands	0.1955	0.0174
+0.1373	0.0975	1.000	ment field, columns 10-72, contains the command	0.3784	0.0212
+0.1555	0.0996	1.000	statement as it is entered via the console:	0.3177	0.0118
+0.1672	0.5338	1.000	The operating mode of the system (bypass, online,	0.3816	0.0174
+0.1715	0.1184	1.000	COMD, command and parameters	0.2519	0.0131
+0.1817	0.5320	1.000	offline) may be altered by the operators at any time	0.3891	0.0147
+0.1830	0.1147	1.000	Upon receipt of control, JCOMD (Figure 56) saves	0.3797	0.0161
+0.1948	0.5318	1.000	via the system command package. The mode control	0.4007	0.0188
+0.1991	0.0996	1.000	the index registers and then proceeds to construct	0.3778	0.0131
+0.2121	0.5320	1.000	commands may be entered via any of the sources,	0.3759	0.0146
+0.2121	0.0996	1.000	the matrix mask from information in the calling	0.3609	0.0146
+0.2238	0.5320	1.000	and the IPL source serves as the initiator for the	0.3853	0.0189
+0.2282	0.0996	1.000	sequence and thé system mode bits, SYSMOD. Be-	0.3872	0.0131
+0.2412	0.5320	1.000	system input program.	0.1767	0.0176
+0.2427	0.1015	1.000	cause the command message may be any one of three	0.3966	0.0131
+0.2573	0.0996	1.000	different formats depending on the source, a multi-	0.3891	0.0146
+0.2703	0.5320	1.000	The BYPASS Command	0.1786	0.0161
+0.2736	0.1014	1.000	way branch must be made to specific calling sequence	0.4043	0.0129
+0.2857	0.1013	1.000	sets for conversion, breakout and/or moving routines.	0.4101	0.0191
+0.3009	0.5338	1.000	The BYPASS command (ZBYPASS, Figure 57) will be	0.4023	0.0161
+0.3036	0.1015	1.000	These sets of calling sequences will transform the	0.3797	0.0118
+0.3139	0.5320	1.000	actuated in several different ways, depending upon	0.3835	0.0189
+0.3166	0.1014	1.000	message, if necessary, into BCD format, break it	0.3800	0.0166
+0.3304	0.1013	1.000	out, and eventually store it in an area JFLDB. The	0.3914	0.0191
+0.3314	0.5338	1.000	the source. If the source is IPL, SYSMOD is set to	0.3929	0.0174
+0.3488	0.5376	1.000	BYPASS(10), and the SPPBT1 indicators are set to	0.3816	0.0131
+0.3503	0.1034	1.000	message in JFLDB is in eight-character broken-out	0.3910	0.0131
+0.3632	0.5357	1.000	11. These indicators are tested by the overlapped	0.3798	0.0133
+0.3648	0.1523	1.000	If the number of fields is less than two, the	0.3383	0.0131
+0.3661	0.1014	1.000	fields.	0.0527	0.0119
+0.3794	0.5376	1.000	mode change commands to determine whether tape	0.3778	0.0116
+0.3794	0.1034	1.000	command request is in error, and the common error	0.3985	0.0131
+0.3924	0.5357	1.000	IOD's have been previously assigned or not. The IPL	0.4060	0.0131
+0.3939	0.1034	1.000	exit routine is entered with an explanatory message.	0.3947	0.0131
+0.4084	0.1184	1.000	If there are two or more fields and the command	0.3665	0.0116
+0.4084	0.5376	1.000	sequence then leads to ZBA1.	0.2218	0.0116
+0.4230	0.5526	1.000	If the source was Job Control 1 and the present	0.3571	0.0116
+0.4244	0.1015	1.000	is entered through a source other than the Job Con-	0.3891	0.0116
+0.4375	0.5376	1.000	mode is overlapped, the STRANB indicator is set so	0.3929	0.0131
+0.4390	0.1034	1.000	trol source, the first field will be tested for COMD	0.3835	0.0132
+0.4520	0.5376	1.000	that on $RET, Job Control 1 will stop requesting	0.3647	0.0131
+0.4535	0.1034	1.000	at ZCMCRD. If rejected, exit will be made via the	0.3835	0.0132
+0.4666	0.5376	1.000	cards from System Input. A branch is then made to	0.3910	0.0131
+0.4679	0.1034	1.000	common error exit routine. After determining that	0.3872	0.0118
+0.4822	0.5393	1.000	ZBAI.	0.0491	0.0123
+0.4824	0.1034	1.000	a command message is acceptable, a table lookup is	0.3910	0.0133
+0.4956	0.5545	1.000	If the operator's console is the source and the	0.3459	0.0131
+0.4985	0.1034	1.000	made to compare the second broken-out field, the	0.3722	0.0118
+0.5086	0.5355	1.000	present mode is offline overlapped a branch is made	0.3950	0.0162
+0.5115	0.1034	1.000	command request op code, with a table of legal op	0.3759	0.0133
+0.5261	0.5376	1.000	to ZBA1. ZBAI is an MCP calling sequence linkage	0.3929	0.0118
+0.5276	0.1034	1.000	codes for the commands.	0.1898	0.0118
+0.5276	0.2951	1.000	If the command request is	0.2030	0.0118
+0.5406	0.5376	1.000	to the input program, requesting a transition to the	0.3853	0.0132
+0.5421	0.1034	1.000	not found in the legal list, the common error exit is	0.3891	0.0117
+0.5552	0.5376	1.000	bypass mode. Upon return, the index linkage is set	0.3929	0.0132
+0.5567	0.1034	1.000	entered, with an appropriate message. For all error	0.4041	0.0131
+0.5686	0.1032	1.000	messages, a hard copy is made on the console if the	0.3932	0.0183
+0.5697	0.5376	1.000	for the command acceptance message and exit is	0.3665	0.0118
+0.5855	0.1033	1.000	input source was not console. If an equal comparison	0.4044	0.0150
+0.5858	0.5376	1.000	made to ZEXITX.	0.1335	0.0116
+0.5976	0.1032	1.000	was found, a branch is made to the requested indi-	0.3820	0.0183
+0.5988	0.5545	1.000	If the source was Job Control 4 in the bypass mode	0.3816	0.0131
+0.6148	0.5376	1.000	and STRANB is 1, STRANB is set to 0 and a branch	0.3891	0.0131
+0.6163	0.1034	1.000	vidual command routine for further processing.	0.3571	0.0116
+0.6294	0.5376	1.000	made to JNOPX (Figure 57). This is done because	0.3835	0.0116
+0.6294	0.1222	1.000	The common error exit routine, JHARD, will make	0.3853	0.0131
+0.6439	0.5395	1.000	the input program will give the BYPASS command	0.3722	0.0131
+0.6453	0.1034	1.000	a hard copy of the command message on the console	0.3910	0.0131
+0.6584	0.5395	1.000	card to JC4 as the first card of the first bypass job.	0.3910	0.0116
+0.6599	0.1034	1.000	typewriter, if the console was not the source. The	0.3853	0.0131
+0.6730	0.1053	1.000	routine uses the SAGIQS conversion routine to convert	0.4041	0.0131
+0.6730	0.5357	1.000	Since this command has already been actuated, it	0.3759	0.0131
+0.6875	0.5376	1.000	must be ignored. I STRANB were =0, an error exit	0.3985	0.0146
+0.6890	0.1053	1.000	the original command message to IQS code. This,	0.3797	0.0132
+0.7006	0.5376	1.000	ZEREX2 branch would be made. If the source was	0.3835	0.0146
+0.7029	0.1033	1.000	together with an amplifying error message is then	0.3780	0.0151
+0.7151	0.5376	1.000	JC4 in an overlapped mode, the BYPASS command	0.3797	0.0146
+0.7179	0.1053	1.000	sent to the console typewriter via ihe commentator.	0.3872	0.0133
+0.7297	0.1053	1.000	The normal exit routine, ZEXIT, is then used, which	0.4004	0.0161
+0.7311	0.5376	1.000	was on an offline tape, and return to overlapped has	0.3910	0.0147
+0.7470	0.5376	1.000	been accomplished after entering bypass from phase 1,	0.4117	0.0147
+0.7485	0.1053	1.000	resets the console reserved light, if necessary,	0.3590	0.0118
+0.7587	0.1053	1.000	restores the index registers, and gives $RET. The	0.3891	0.0161
+0.7602	0.5376	1.000	JNOPX is entered. Any other source or mode is in	0.3816	0.0147
+0.7747	0.5376	1.000	error and branches to ZEREX2.	0.2425	0.0147
+0.7759	0.1051	1.000	general exit routine provides for handling normal	0.3706	0.0149
+0.7921	0.1053	1.000	exit messages as well as error exit messages by use	0.3985	0.0131
+0.8081	0.1053	1.000	of index registers.	0.1410	0.0116
+0.8197	0.1222	1.000	The major system subroutines used by the com-	0.3609	0.0132
+0.8212	0.5395	1.000	The ONLINE Command	0.1748	0.0131
+0.8341	0.1052	1.000	mand mainstream are the conversion routines from	0.3874	0.0134
+0.8486	0.1051	1.000	one format to another, and the breakout routine. The	0.4044	0.0162
+0.8488	0.5395	1.000	The ONLINE command (ZONLIN, Figure 57), like	0.3778	0.0146
+0.8633	0.1053	1.000	inputs can be in IQS, BCD broken out, or BCD. These	0.4117	0.0146
+0.8633	0.5395	1.000	BYPASS, is source-dependent for its actions. If the	0.3966	0.0176
+0.8779	0.5376	1.000	source is Job Control 4 in the bypass mode, a branch	0.4041	0.0131
+0.8794	0.1053	1.000	must be transformed to broken out BCD fields.	0.3515	0.0116
+0.8919	0.5376	1.000	is made to ZONO1Y where STRANB is turned off.	0.3760	0.0127
+0.8922	0.1221	1.000	The reserved light off pseudo-op is the only pseudo-	0.3931	0.0160
+0.9068	0.1051	1.000	op used, and the commentator is used for output. The	0.4101	0.0167
+0.9070	0.5395	1.000	This is necessary because STRANB might have been	0.3947	0.0161
+0.9491	0.7293	1.000	System Operation Programs	0.1598	0.0117
+0.9491	0.9098	1.000	109	0.0226	0.0087

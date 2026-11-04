@@ -1,0 +1,103 @@
+0.0596	0.0883	1.000	program at any time. The start signal may come from	0.3929	0.0160
+0.0624	0.5075	1.000	than taking a full word for each entry. Look-up of	0.3947	0.0132
+0.0741	0.0883	1.000	an operator or from an external mechanism.	0.3252	0.0160
+0.0770	0.5075	1.000	such a table involves merely offsetting the argument to	0.3929	0.0146
+0.0866	0.1012	1.000	Since the computer may be set up to execute sev-	0.3803	0.0224
+0.0930	0.5075	1.000	attach three zero bits on the right and indexing this	0.3947	0.0146
+0.1060	0.5074	1.000	number with the starting address of the table.	0.3480	0.0162
+0.1061	0.0883	1.000	eral programs on a time-shared basis, it is important	0.3929	0.0146
+0.1205	0.5243	1.000	Most of the internal machine registers are directly	0.3763	0.0177
+0.1206	0.0865	1.000	that the computer be able to continue after one of	0.3947	0.0146
+0.1352	0.0865	1.000	the programs has come to an end or has run into	0.3929	0.0146
+0.1363	0.5074	1.000	addressable. For instance, the accumulator may be	0.3931	0.0167
+0.1485	0.0882	1.000	trouble. BRANCH ENABLED AND WAIT is a program stop;	0.3914	0.0183
+0.1526	0.5075	1.000	added to itself by giving its address as the operand of	0.3929	0.0147
+0.1642	0.0865	1.000	there is no machine stop in the repertoire.	0.3045	0.0176
+0.1666	0.5074	1.000	an ADD instruction. An important use of the register	0.3931	0.0169
+0.1831	0.5074	1.000	addressability is for preserving and restoring the con-	0.3930	0.0164
+0.1991	0.5075	1.000	tents of internal registers by transmitting them as a	0.3929	0.0146
+0.2119	0.5091	1.000	block to or from some storage area with one TRANSMIT	0.3914	0.0193
+0.2295	0.5075	1.000	instruction.	0.0847	0.0119
+0.2369	0.0864	1.000	Features	0.0827	0.0132
+0.2442	0.5226	1.000	Instead of selecting a location from which to fetch	0.3778	0.0146
+0.2602	0.5075	1.000	data, a modifier bit in the instruction may be set to	0.3929	0.0147
+0.2747	0.5075	1.000	specify that the address itself serve as data in the op-	0.3929	0.0147
+0.2761	0.0865	1.000	New programming features not identified with specific	0.3947	0.0161
+0.2906	0.5075	1.000	eration. It is then called an immediate address. Such	0.3929	0.0118
+0.2921	0.0846	1.000	instructions are summarized below.	0.2632	0.0131
+0.3067	0.5075	1.000	data are limited to 24 bits. This feature is very con-	0.3929	0.0146
+0.3212	0.5056	1.000	venient for defining short constants without having to	0.3947	0.0145
+0.3298	0.0864	1.000	Addressing	0.0847	0.0149
+0.3358	0.5075	1.000	provide the space and time for separate access to	0.3929	0.0145
+0.3517	0.0883	1.000	In instructions where this is meaningful, the position	0.3929	0.0146
+0.3532	0.5075	1.000	storage.	0.0564	0.0116
+0.3677	0.0883	1.000	of a single bit in any word of storage can be addressed	0.3929	0.0132
+0.3677	0.5244	1.000	The term direct address is used to distinguish the	0.3759	0.0145
+0.3821	0.5075	1.000	usual type of address which defines the location of data	0.3910	0.0147
+0.3821	0.0883	1.000	directly. A complete word and bit address forms a	0.3929	0.0147
+0.3967	0.5075	1.000	for an operation or of an instruction to be executed.	0.3759	0.0147
+0.3982	0.0883	1.000	24-bit number. The word address (18 bits) is on the	0.3929	0.0146
+0.4127	0.5244	1.000	The term indirect address refers to an address which	0.3741	0.0118
+0.4127	0.0865	1.000	left and the bit address (6 bits) is on the right of that	0.3947	0.0146
+0.4273	0.5075	1.000	defines the location of another address. An indirect	0.3929	0.0131
+0.4288	0.0883	1.000	number. For the purpose of bit addressing, the entire	0.3929	0.0146
+0.4433	0.5075	1.000	address may select an immediate address, a direct ad-	0.3929	0.0131
+0.4448	0.0883	1.000	core storage can be considered as a set of consecutively	0.3910	0.0146
+0.4593	0.0883	1.000	numbered bits. Since the number of bits in a word	0.3910	0.0131
+0.4593	0.5075	1.000	dress, or another indirect address. Indirect addresses	0.3929	0.0131
+0.4738	0.5075	1.000	are obtained in this system by the instruction LOAD	0.3929	0.0146
+0.4752	0.0921	1.000	(64) is a power of 2 and all addressing is binary, the	0.3891	0.0133
+0.4897	0.0883	1.000	address of the last bit of one word is followed immedi-	0.3910	0.0118
+0.4927	0.5056	1.000	VALUE EFFECTIVE which places the effective address	0.3910	0.0131
+0.5058	0.0883	1.000	ately by the address of the first bit of the next word.	0.3891	0.0131
+0.5058	0.5037	1.000	found at the specified storage location into an index	0.3931	0.0170
+0.5203	0.5056	1.000	register for indexing on a subsequent instruction.	0.3910	0.0161
+0.5203	0.0883	1.000	If appropriate, word boundaries may be ignored by	0.3910	0.0146
+0.5372	0.0897	1.000	the program.	0.0928	0.0132
+0.5378	0.5038	1.000	Multiple-level indirect addressing is obtained when	0.3929	0.0160
+0.5523	0.1071	1.000	Other instructions use only full words as data, and	0.3722	0.0160
+0.5536	0.5056	1.000	LOAD VALUE EFFECTIVE finds at the selected location	0.3910	0.0118
+0.5657	0.0902	1.000	these provide space for only 18 bits of address. The	0.3892	0.0139
+0.5664	0.5055	1.000	another instruction LOAD VALUE EFFECTIVE which	0.3893	0.0154
+0.5804	0.5055	1.000	causes the indirect addressing process to be repeated.	0.3914	0.0192
+0.5814	0.0883	1.000	bit address is assumed to be zero. Still other instruc-	0.3929	0.0116
+0.5973	0.0883	1.000	tions refer to half-words and use 19 bits of address.	0.3910	0.0118
+0.6118	0.0902	1.000	The extra bit is immediately to the right of the word	0.3891	0.0146
+0.6191	0.5075	1.000	Program Interruption	0.1560	0.0132
+0.6264	0.0883	1.000	address and the remaining five bits of the bit address	0.3929	0.0146
+0.6439	0.0883	1.000	are treated as zeros.	0.1410	0.0102
+0.6439	0.5038	1.000	A program interruption system is provided for two	0.3947	0.0161
+0.6583	0.5055	1.000	quite distinct purposes. The first of these is to provide	0.3950	0.0184
+0.6584	0.1034	1.000	Index words provide space tor sign and 24 bits in	0.3759	0.0146
+0.6730	0.0865	1.000	the value field, so that all addresses may be fully in-	0.3947	0.0146
+0.6740	0.5055	1.000	a means by which a computer can respond rapidly to	0.3931	0.0169
+0.6890	0.0865	1.000	dexed to the bit level. The entire signed 24-bit ad-	0.3947	0.0132
+0.6903	0.5056	1.000	extra-program circumstances which occur at arbitrary	0.3929	0.0146
+0.7033	0.0864	1.000	dress, with zeros inserted where instructions have fewer	0.3930	0.0135
+0.7048	0.5075	1.000	times, performing useful work while waiting for such	0.3910	0.0146
+0.7194	0.0865	1.000	address bits, participates in the algebraic addition dur-	0.3929	0.0132
+0.7209	0.5075	1.000	circumstances. These circumstances will most often be	0.3929	0.0116
+0.7339	0.0865	1.000	ing modification. Where less than 24 bits are needed	0.3929	0.0132
+0.7355	0.5056	1.000	signals from the exchange that some interrogation has	0.3947	0.0145
+0.7500	0.0865	1.000	in the effective address, the low-order bits are dropped	0.3891	0.0145
+0.7515	0.5075	1.000	been received or that an input-output operation is	0.3929	0.0146
+0.7660	0.5056	1.000	complete. For efficiency in real-time operation, the	0.3929	0.0146
+0.7660	0.1034	1.000	The ability to address and index to any bit position	0.3759	0.0146
+0.7805	0.0865	1.000	in storage is a powerful new programming feature.	0.3929	0.0131
+0.7820	0.5056	1.000	computer must quickly respond to these signals. This	0.3929	0.0145
+0.7964	0.5075	1.000	demands a system by which such signals cause a trans-	0.3929	0.0147
+0.7964	0.0865	1.000	Data need not be unpacked and packed to fit an ar-	0.3929	0.0133
+0.8109	0.0865	1.000	bitrary word length imposed by storage for structural	0.3929	0.0133
+0.8124	0.5056	1.000	fer of control to a suitable special program.	0.3195	0.0146
+0.8270	0.5226	1.000	The second purpose is to permit the computer to	0.3759	0.0161
+0.8270	0.0865	1.000	reasons. Data can be addressed directly at the location	0.3910	0.0131
+0.8415	0.0865	1.000	at which they are stored for input-output handling	0.3891	0.0146
+0.8430	0.5056	1.000	make rapid and facile selection of alternate instruc-	0.3929	0.0131
+0.8576	0.0865	1.000	Storage space can be assigned for greatest efficiency.	0.3929	0.0131
+0.8590	0.5075	1.000	tions when program-activated indicators signal that	0.3929	0.0146
+0.8721	0.0865	1.000	For example, tables of character codes may be stored	0.3929	0.0131
+0.8735	0.5056	1.000	special circumstances have occurred. For example, it	0.3929	0.0146
+0.8881	0.0865	1.000	most conveniently in consecutive 8-bit locations, rather	0.3929	0.0131
+0.8894	0.5038	1.000	is clearly desirable to have such a system for arithmetic	0.3947	0.0161
+0.9258	0.1278	1.000	IBM 7030	0.0658	0.0088
+0.9259	0.0827	1.000	14	0.0188	0.0102

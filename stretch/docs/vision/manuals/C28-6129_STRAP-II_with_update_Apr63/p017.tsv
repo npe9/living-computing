@@ -1,0 +1,105 @@
+0.0624	0.4774	1.000	program takes the first 8 characters following the	0.3985	0.0176
+0.0639	0.0545	1.000	grams. Definition of data, definition of symbols and	0.3985	0.0161
+0.0785	0.5395	1.000	that terminates the operation field, and	0.3346	0.0161
+0.0799	0.0545	1.000	setting a program origin are three examples of func-	0.3985	0.0161
+0.0930	0.4756	1.000	punches them in columns 73-80 of every binary card	0.4004	0.0176
+0.0959	0.0564	1.000	tions performed by pseudo operations.	0.2763	0.0147
+0.1090	0.4756	1.000	produced as output of that assembly. The following	0.4004	0.0174
+0.1105	0.0714	1.000	Pseudo operations are not 7030 instructions; they	0.3816	0.0145
+0.1249	0.0563	1.000	do not exist in 7030 circuitry, but they resemble 7030	0.3969	0.0183
+0.1263	0.4755	1.000	statement	0.0753	0.0120
+0.1352	0.5996	1.000	PUNID, IBMSINEI	0.1523	0.0146
+0.1397	0.0544	1.000	instructions in format. The general format for STRAP-II	0.3988	0.0178
+0.1555	0.4756	1.000	causes the characters IBMSINEl to be punched in the	0.4004	0.0161
+0.1570	0.0564	1.000	pseudo operations is	0.1504	0.0145
+0.1700	0.4756	1.000	last 8 columns of each binary card produced in that	0.4023	0.0161
+0.1744	0.1541	1.000	NAME POP(dds), A(I)	0.1936	0.0160
+0.1871	0.4754	1.000	assembly.	0.0735	0.0152
+0.1948	0.0545	1.000	The pseudo operation code field appears first in the	0.3985	0.0146
+0.2035	0.4925	1.000	The identifying characters represented by x's above	0.3835	0.0174
+0.2093	0.0545	1.000	statement. The operation mnemonie is symbolized by	0.3985	0.0146
+0.2194	0.4774	1.000	may be any legal card code characters except the	0.3985	0.0146
+0.2252	0.0545	1.000	PoP. A complete list of mnemonics is given in Ap-	0.3985	0.0147
+0.2339	0.4774	1.000	; and '. Every assembly must contain a PUNID state-	0.3985	0.0146
+0.2397	0.0545	1.000	pendix B. A dds, if appropriate, appears as a sub-field	0.3985	0.0147
+0.2500	0.4774	1.000	ment or the binary cards will contain no identifica-	0.3985	0.0145
+0.2558	0.0545	1.000	of the operation field and is enclosed in parentheses.	0.3985	0.0146
+0.2645	0.4756	1.000	tion other than the time clock setting as described	0.4004	0.0161
+0.2702	0.0714	1.000	The address field may contain a wide variety of en-	0.3817	0.0154
+0.2781	0.4773	1.000	under strap-Il Punched Output.	0.2335	0.0174
+0.2863	0.0545	1.000	tries that are not always addresses in the strict sense	0.3985	0.0131
+0.2982	0.0544	1.000	of the word. Some addresses can include index reg-	0.3987	0.0173
+0.3036	0.4756	1.000	3. SLC-Set Location Counter	0.2331	0.0161
+0.3169	0.0526	1.000	ister specifications.	0.1391	0.0160
+0.3204	0.6314	1.000	A SLC, Y	0.0869	0.0161
+0.3415	0.0526	1.000	1. PRNID-Print ID	0.1560	0.0146
+0.3415	0.4944	1.000	In normal assembly operations, cards are read in	0.3816	0.0146
+0.3541	0.4773	1.000	sequence and the number of bits needed for each in-	0.3988	0.0167
+0.3590	0.1165	1.000	PRNID, XXXXXXXXXХХХX..XX	0.2688	0.0161
+0.3686	0.4773	1.000	struction or piece of data is added to a location counter	0.3989	0.0193
+0.3794	0.0714	1.000	Normally, the first statement to appear in a program	0.3816	0.0146
+0.3865	0.4774	1.000	maintained by straP to aid in the assigning of ad-	0.3986	0.0166
+0.3939	0.0545	1.000	is the PRNID pseudo operation. The appearance of this	0.3985	0.0161
+0.4026	0.4774	1.000	dresses to instructions and data. A principle of round-	0.3985	0.0147
+0.4099	0.0545	1.000	statement instructs the assembly program to write im-	0.3985	0.0147
+0.4168	0.4755	1.000	ing upward is followed, guaranteeing that an instruc-	0.3987	0.0180
+0.4258	0.0545	1.000	mediately the entire contents of this card block on the	0.3985	0.0146
+0.4316	0.4754	1.000	tion, value, count or refill will begin exactly at a half-	0.3988	0.0184
+0.4403	0.0545	1.000	output tape. PRNID provides a means of heading the	0.3985	0.0146
+0.4476	0.4774	1.000	word address, and that index words, control words	0.3966	0.0146
+0.4564	0.0545	1.000	assembly listing with such information as the prob-	0.3985	0.0131
+0.4636	0.4756	1.000	and floating point data will begin only at full word	0.3985	0.0161
+0.4709	0.0526	1.000	lem name, programmer, and so on. A typical PRNID	0.3985	0.0146
+0.4795	0.4755	1.000	addresses.	0.0772	0.0135
+0.4869	0.0545	1.000	statement might be	0.1410	0.0146
+0.4956	0.4944	1.000	The sic pseudo operation provides a means of set-	0.3797	0.0147
+0.5042	0.0677	1.000	PRNID, BCD CONVERSION ROUTINE BY JOE ZILCH	0.3665	0.0118
+0.5115	0.4774	1.000	ting the assembly location counter to any value at any	0.3966	0.0146
+0.5218	0.0714	1.000	If a PRNID appears in the middle of a program, it	0.3816	0.0146
+0.5276	0.4774	1.000	point in the code, thus giving the programmer com-	0.3966	0.0146
+0.5363	0.0545	1.000	will appear both at the beginning of the listing and	0.3985	0.0161
+0.5402	0.4773	1.000	plete control over the location of his code. sLc resets	0.3969	0.0165
+0.5523	0.0545	1.000	at the point where it actually appeared in the code.	0.3985	0.0146
+0.5567	0.4774	1.000	the location counter to the value of the bit address y.	0.3966	0.0131
+0.5682	0.0545	1.000	When several PRNID statements appear in one pro-	0.3985	0.0147
+0.5727	0.4774	1.000	The next instruction will be compiled at this address,	0.3966	0.0131
+0.5827	0.0545	1.000	gram, they are listed sequentially in one group at the	0.3985	0.0161
+0.5872	0.4756	1.000	subject only to rounding upwards conventions. Fol-	0.3985	0.0146
+0.5988	0.0545	1.000	top of the listing and each one is listed in its appro-	0.3985	0.0131
+0.6032	0.4756	1.000	lowing an sLc, the location counter is advanced once	0.3985	0.0147
+0.6133	0.0526	1.000	priate place in the program. The practice of writing	0.3966	0.0161
+0.6177	0.4774	1.000	more in normal fashion until another sLc card resets it.	0.3966	0.0132
+0.6294	0.0526	1.000	all PRNID statements at the beginning of the listing	0.3966	0.0131
+0.6366	0.4925	1.000	y must be a bit address expression, either numeric	0.3816	0.0131
+0.6439	0.0508	1.000	is useful, for example, when a program being assem-	0.3985	0.0161
+0.6512	0.4756	1.000	or symbolic, whose value is positive. If an integer is	0.3985	0.0161
+0.6584	0.0545	1.000	bled is composed of many subroutines, and each sub-	0.3985	0.0146
+0.6672	0.4737	1.000	specified in this field, it is treated as an integer in a	0.4004	0.0160
+0.6728	0.0526	1.000	routine begins with a PRNID statement. The PRNID'S,	0.4005	0.0166
+0.6817	0.4756	1.000	24-bit address field, i.e., it is interpreted as specifying	0.3985	0.0160
+0.6903	0.0545	1.000	when they appear at the top of the listing, will form	0.3966	0.0133
+0.6976	0.4756	1.000	a number of bits. Subject to this interpretation, it is	0.3985	0.0146
+0.7048	0.0545	1.000	an index of the names of the subroutines included in	0.3985	0.0118
+0.7121	0.4737	1.000	evaluated correctly, but an error indication is given	0.4004	0.0161
+0.7206	0.0544	1.000	that assembly.	0.1073	0.0138
+0.7252	0.4769	1.000	on the listing.	0.1030	0.0180
+0.7355	0.0714	1.000	A very long message may be written following a	0.3778	0.0145
+0.7456	0.4944	1.000	Any symbol in the name field will be effectively	0.3797	0.0147
+0.7515	0.0545	1.000	PRNID; if the message overflows the card, a continua-	0.3985	0.0131
+0.7602	0.4737	1.000	ignored, but will be entered in the symbol table.	0.3759	0.0160
+0.7642	0.0525	1.000	tion card or cards may be used. An alternate spelling	0.3950	0.0167
+0.7761	0.4906	1.000	If the following statement appeared in a program:	0.3835	0.0161
+0.7820	0.0545	1.000	of the mnemonic, PRINID, is also accepted by STRAP-II.	0.3966	0.0132
+0.7944	0.6258	1.000	SLC, 100.32	0.0943	0.0158
+0.8096	0.0526	1.000	2. PUNID-Punch ID	0.1654	0.0102
+0.8154	0.4756	1.000	it would cause the sTRaP location counter to be reset	0.3985	0.0116
+0.8270	0.1673	1.000	PUNID, XXXXXXXX	0.1635	0.0146
+0.8299	0.4756	1.000	to 100.32. If the instruction following the suc were a	0.3985	0.0131
+0.8445	0.4756	1.000	vFL instruction, it would be compiled at 100.32. It	0.3985	0.0146
+0.8459	0.0695	1.000	PUNID fulfills the same basic function as PRNID ex-	0.3797	0.0116
+0.8605	0.4756	1.000	it were a floating point data word, it would be com-	0.3985	0.0145
+0.8618	0.0545	1.000	cept that the identifying information is punched on	0.3929	0.0146
+0.8764	0.4756	1.000	piled at 101.0.	0.1071	0.0161
+0.8779	0.0545	1.000	the binary cards produced by STRAP-II. The assembly	0.3929	0.0131
+0.9112	0.7631	1.000	Section I	0.0583	0.0089
+0.9113	0.8553	1.000	13	0.0188	0.0087

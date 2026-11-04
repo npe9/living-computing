@@ -1,0 +1,203 @@
+0.0596	0.0940	1.000	INDICATORS	0.0808	0.0102
+0.0609	0.5113	1.000	positive when the negative sign modifier is zero and	0.3929	0.0133
+0.0741	0.1109	1.000	Lost Carry (LG). This indicator is actuated by a	0.3759	0.0147
+0.0770	0.5113	1.000	negative when the modifier is one.	0.2538	0.0118
+0.0900	0.0940	1.000	carry beyond the leftmost digit, either binary or deci-	0.3929	0.0147
+0.0915	0.5282	1.000	Radix. This modifier operates as in ADD TO MEM-	0.3759	0.0146
+0.1061	0.0921	1.000	mal, of the addressed field. This indicator is also	0.3929	0.0118
+0.1090	0.5113	1.000	ORY.	0.0338	0.0102
+0.1206	0.0921	1.000	turned on if the result of an unsigned operation is	0.3929	0.0146
+0.1277	0.5091	1.000	INDICATORS	0.0834	0.0132
+0.1352	0.0921	1.000	negative. In such a case, the magnitude of the result	0.3929	0.0146
+0.1439	0.5244	1.000	Lost Carry (LC); Partial Field (PF); Data Flags	0.3797	0.0161
+0.1494	0.0917	1.000	is stored in storage.	0.1399	0.0154
+0.1584	0.5075	1.000	(TF, UF, VF); To-Memory Operation (MOP). These	0.3947	0.0161
+0.1672	0.1090	1.000	Partial Field (PF). This indicator is turned on if	0.3759	0.0132
+0.1730	0.5094	1.000	indicators are set as in ADD TO MEMORY.	0.2801	0.0131
+0.1817	0.0921	1.000	there are non-zero digits, either binary or decimal,	0.3929	0.0147
+0.1890	0.5244	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). These	0.3778	0.0160
+0.1976	0.0921	1.000	in the accumulator to the left of the highest order	0.3929	0.0132
+0.2048	0.5094	1.000	indicators are set according to the final result stored.	0.3910	0.0132
+0.2121	0.0921	1.000	digit that is participating in the operation.	0.3064	0.0146
+0.2267	0.5113	1.000	PROGRAMMING NOTE	0.1485	0.0103
+0.2282	0.1090	1.000	Data Flags (TF, UF, VF). These indicators are set	0.3759	0.0146
+0.2395	0.5110	1.000	The four operations ADD, ADD TO MAGNITUDE, ADD TO	0.3914	0.0193
+0.2427	0.0921	1.000	according to the data flag bits of the storage operand.	0.3910	0.0145
+0.2546	0.5111	1.000	MEMORY, and ADD MAGNITUDE TO MEMORY allow a	0.3912	0.0178
+0.2587	0.1071	1.000	To-Memory Operation (MOP). This indicator is	0.3778	0.0161
+0.2718	0.5075	1.000	flexible handling of the signs of the factors and the	0.3947	0.0161
+0.2744	0.0920	1.000	turned on.	0.0772	0.0108
+0.2878	0.5075	1.000	result. Not all possible combinations are provided,	0.3929	0.0160
+0.2892	0.1071	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). These	0.3759	0.0160
+0.3014	0.5092	1.000	however, and in some cases the results may not be	0.3932	0.0183
+0.3036	0.0902	1.000	indicators are set according to the algebraic sum of	0.3947	0.0147
+0.3182	0.5094	1.000	obvious.	0.0659	0.0104
+0.3182	0.5752	1.000	Figure 13 shows the storage or accumulator	0.3271	0.0161
+0.3212	0.0921	1.000	the two operands, whether the sign is stored or not.	0.3835	0.0131
+0.3327	0.5075	1.000	field that is produced by all possible combinations of	0.3947	0.0161
+0.3400	0.0921	1.000	PROGRAMMING NOTES	0.1541	0.0118
+0.3488	0.5075	1.000	operations, sign modifiers, operand signs, and rela-	0.3947	0.0161
+0.3561	0.0921	1.000	The data flag bits of a signed operand in storage are	0.3910	0.0131
+0.3648	0.5075	1.000	tive magnitudes of operands.	0.2143	0.0146
+0.3676	0.0901	1.000	not altered by ADD TO MEMORY. The accumulator	0.3931	0.0187
+0.3794	0.5263	1.000	The storage field is assumed to be signed in all	0.3741	0.0146
+0.3837	0.0900	1.000	contents are not altered by ADD TO MEMORY.	0.3313	0.0181
+0.3939	0.5583	1.000	When the unsigned modifier is specified, the	0.3421	0.0174
+0.3968	0.5075	1.000	cases.	0.0414	0.0087
+0.4026	0.1071	1.000	If the negative sign modifier is one, ADD TO MEMORY	0.3759	0.0131
+0.4099	0.5075	1.000	field length is adjusted accordingly and the absolute	0.3929	0.0160
+0.4172	0.0902	1.000	performs an algebraic subtraction of the accumulator	0.3929	0.0147
+0.4258	0.5075	1.000	value of the storage field is used in the operation.	0.3910	0.0146
+0.4299	0.0901	1.000	contents from the addressed field. Although the nega-	0.3931	0.0172
+0.4403	0.5094	1.000	However, in an unsigned to-memory operation, the	0.3910	0.0161
+0.4476	0.0902	1.000	tive sign modifier applies to the accumulator sign in	0.3910	0.0146
+0.4564	0.5056	1.000	original sign of the field remains in storage and is	0.3947	0.0161
+0.4636	0.0883	1.000	to-memory operations, the unsigned modifier always	0.3947	0.0131
+0.4724	0.5075	1.000	therefore shown as part of the result field.	0.2989	0.0146
+0.4782	0.0902	1.000	applies to the operand in storage. Unsigned storage	0.3929	0.0146
+0.4905	0.0899	1.000	fields are considered positive.	0.2131	0.0179
+0.5102	0.8477	0.300	m in	0.0150	0.0189
+0.5102	0.1053	1.000	In operations to storage, the length of the accumu-	0.3778	0.0116
+0.5102	0.7707	1.000	5+	0.0132	0.0073
+0.5102	0.7406	1.000	3+	0.0150	0.0102
+0.5102	0.5207	1.000	Storage operand	0.0752	0.0074
+0.5102	0.6861	1.000	3+ 3+	0.0432	0.0189
+0.5174	0.7406	1.000	5-	0.0150	0.0116
+0.5188	0.5188	1.000	Accumulator operand →	0.1222	0.0074
+0.5189	0.7688	1.000	3-	0.0150	0.0087
+0.5247	0.0883	1.000	lator field between the specified offset and the left end	0.3929	0.0132
+0.5348	0.5109	1.000	tOperation and Modifiers	0.1229	0.0140
+0.5392	0.0902	1.000	of the accumulator can be less than the number of	0.3929	0.0117
+0.5552	0.0902	1.000	bits from the storage operand which are to take part	0.3910	0.0146
+0.5567	0.7406	1.000	2-	0.0150	0.0116
+0.5567	0.7669	1.000	2+	0.0169	0.0102
+0.5567	0.5169	1.000	Add	0.0207	0.0073
+0.5581	0.8477	1.000	8-	0.0150	0.0102
+0.5581	0.8741	1.000	8-	0.0150	0.0102
+0.5581	0.7932	1.000	2t	0.0169	0.0102
+0.5581	0.7162	1.000	81	0.0094	0.0087
+0.5596	0.8195	1.000	2-	0.0150	0.0058
+0.5654	0.7406	1.000	8-	0.0150	0.0116
+0.5654	0.8459	1.000	2-	0.0169	0.0116
+0.5654	0.7951	1.000	8+	0.0150	0.0116
+0.5654	0.5169	1.000	Add, N	0.0376	0.0088
+0.5654	0.7162	1.000	2-	0.0094	0.0087
+0.5669	0.8759	1.000	2+	0.0132	0.0087
+0.5669	0.7669	1.000	8-	0.0150	0.0102
+0.5669	0.8233	1.000	8+	0.0113	0.0073
+0.5697	0.0883	1.000	in the operation. In this event the accumulator	0.3929	0.0132
+0.5741	0.5169	1.000	Add, U	0.0376	0.0102
+0.5756	0.6861	1.000	8+	0.0169	0.0102
+0.5756	0.7124	1.000	8t	0.0169	0.0102
+0.5770	0.8496	1.000	2-	0.0132	0.0087
+0.5770	0.7406	1.000	2-	0.0150	0.0102
+0.5770	0.7932	1.000	8t	0.0169	0.0102
+0.5770	0.7688	1.000	•2+	0.0113	0.0087
+0.5770	0.8741	1.000	2+	0.0150	0.0087
+0.5770	0.8214	1.000	8+	0.0150	0.0087
+0.5842	0.5432	1.000	U, N	0.0263	0.0103
+0.5843	0.6842	1.000	2t	0.0188	0.0102
+0.5843	0.5169	1.000	Add,	0.0263	0.0087
+0.5858	0.7143	1.000	2-	0.0132	0.0102
+0.5858	0.7932	1.000	2t	0.0150	0.0102
+0.5858	0.7425	1.000	8-	0.0113	0.0087
+0.5858	0.0902	1.000	operand is lengthened for the operation by the addi-	0.3910	0.0145
+0.5858	0.8459	1.000	8-	0.0169	0.0102
+0.5858	0.8195	1.000	.2-	0.0169	0.0087
+0.5872	0.8759	1.000	8-	0.0132	0.0073
+0.5968	0.0896	1.000	tion of high-order zeros.	0.1760	0.0225
+0.6032	0.6842	1.000	8+	0.0188	0.0102
+0.6032	0.5169	1.000	Add to Magnitude	0.0846	0.0102
+0.6047	0.7688	1.000	8-	0.0132	0.0087
+0.6047	0.7932	1.000	2+	0.0169	0.0102
+0.6047	0.7143	1.000	8+	0.0150	0.0073
+0.6047	0.7425	1.000	8-	0.0113	0.0087
+0.6061	0.8195	1.000	o+	0.0169	0.0087
+0.6061	0.8477	1.000	2-	0.0150	0.0073
+0.6061	0.8741	1.000	0-	0.0150	0.0087
+0.6118	0.5169	1.000	Add to Magnitude, N	0.1015	0.0118
+0.6119	0.6842	1.000	2+	0.0188	0.0116
+0.6134	0.7124	1.000	Ot	0.0169	0.0102
+0.6148	0.8741	1.000	8-	0.0150	0.0087
+0.6148	0.7406	1.000	2-	0.0132	0.0087
+0.6148	0.8477	1.000	8-	0.0150	0.0087
+0.6148	0.7951	1.000	8+	0.0150	0.0073
+0.6148	0.7688	1.000	0-	0.0113	0.0073
+0.6148	0.8214	1.000	8+	0.0150	0.0073
+0.6221	0.6842	1.000	8t	0.0188	0.0116
+0.6235	0.7951	1.000	8+	0.0132	0.0087
+0.6235	0.8722	1.000	8-	0.0169	0.0102
+0.6235	0.7143	1.000	8+	0.0150	0.0073
+0.6235	0.7688	1.000	8-	0.0113	0.0087
+0.6235	0.8214	1.000	8+	0.0150	0.0087
+0.6235	0.5169	1.000	Add to Magnitude,	0.0902	0.0087
+0.6235	0.7406	1.000	8-	0.0132	0.0087
+0.6250	0.8477	1.000	8-	0.0150	0.0073
+0.6308	0.6842	1.000	2+	0.0169	0.0116
+0.6321	0.5169	1.000	Add to Magnitude, U, N	0.1165	0.0089
+0.6323	0.7932	1.000	2+	0.0150	0.0116
+0.6323	0.7406	1.000	2-	0.0132	0.0102
+0.6323	0.7669	1.000	0-	0.0150	0.0102
+0.6323	0.7124	1.000	O+	0.0169	0.0102
+0.6323	0.8741	1.000	O-	0.0132	0.0116
+0.6323	0.8195	1.000	O+	0.0169	0.0102
+0.6337	0.8477	1.000	2-	0.0150	0.0087
+0.6424	0.0883	1.000	Add Magnitude to Memory (M†MG)	0.2688	0.0146
+0.6497	0.5132	1.000	Add to Memory	0.0752	0.0131
+0.6504	0.7592	0.300	3te฿ 22	0.1301	0.0247
+0.6526	0.6861	1.000	8+	0.0169	0.0087
+0.6526	0.7368	1.000	2- 2+	0.0451	0.0087
+0.6526	0.7068	1.000	8t	0.0207	0.0087
+0.6599	0.7387	1.000	8t	0.0188	0.0116
+0.6613	0.6861	1.000	2-	0.0132	0.0116
+0.6613	0.7105	1.000	2+	0.0169	0.0102
+0.6642	0.0883	1.000	The magnitude of the accumulator field as specified	0.3929	0.0161
+0.6700	0.8459	1.000	2-* 2-	0.0414	0.0131
+0.6700	0.7368	0.300	** 3t	0.0451	0.0204
+0.6701	0.6842	1.000	8t	0.0188	0.0102
+0.6701	0.7105	1.000	8t	0.0188	0.0102
+0.6788	0.7914	1.000	2-* 22	0.0414	0.0116
+0.6788	0.6842	1.000	2+* 2+	0.0451	0.0116
+0.6788	0.0883	1.000	by the offset is algebraically added to the addressed	0.3929	0.0161
+0.6802	0.8722	1.000	8-	0.0150	0.0116
+0.6817	0.8459	1.000	8-	0.0169	0.0102
+0.6948	0.5113	0.300	Ael Mapiude to Memary, N	0.1485	0.0277
+0.6948	0.0865	1.000	operand. A positive sign is assumed for the accumu-	0.3947	0.0160
+0.6975	0.7086	0.300	3t0383	0.1298	0.0235
+0.6991	0.6842	1.000	8+	0.0188	0.0102
+0.7006	0.8459	1.000	0-	0.0132	0.0087
+0.7020	0.8722	1.000	2-	0.0132	0.0073
+0.7064	0.7086	1.000	2t Ot	0.0489	0.0117
+0.7064	0.6786	1.000	o+	0.0244	0.0102
+0.7078	0.8440	1.000	8-	0.0169	0.0102
+0.7078	0.8665	1.000	8-	0.0188	0.0087
+0.7106	0.0865	1.000	lator field before the negative sign modifier is applied.	0.3929	0.0161
+0.7165	0.6748	0.300	8 { 0t	0.1072	0.0220
+0.7179	0.5169	1.000	Add Magnitude to Memory, L	0.1353	0.0118
+0.7180	0.8421	1.000	8-	0.0188	0.0116
+0.7180	0.7876	1.000	á ó	0.0207	0.0203
+0.7195	0.8665	1.000	8-	0.0207	0.0087
+0.7267	0.5169	1.000	Add Magnitude to Memory, U, r	0.1504	0.0118
+0.7267	0.0902	1.000	The actual accumulator sign is not used or changed	0.3891	0.0118
+0.7282	0.8741	1.000	2-	0.0132	0.0087
+0.7282	0.8459	1.000	0-	0.0150	0.0102
+0.7412	0.0902	1.000	by the operation. If the sum has the same sign as the	0.3891	0.0131
+0.7427	0.5996	1.000	*The Lost Carry indicator is turned on	0.1823	0.0145
+0.7573	0.0883	1.000	sign of the storage operand, it replaces that operand	0.3910	0.0116
+0.7660	0.5056	1.000	Figure 13. Sign Condition Results	0.2068	0.0146
+0.7718	0.0865	1.000	in storage. If the sum is of opposite sign, zero bytes	0.3929	0.0131
+0.7848	0.0883	1.000	replace the numeric part of the storage field. In	0.3910	0.0161
+0.7936	0.5056	1.000	Add One to Memory (M+1)	0.2105	0.0189
+0.8023	0.0865	1.000	either case the sign byte, if any, of the storage operand	0.3929	0.0160
+0.8154	0.5038	1.000	A plus or minus one is algebraically added to the ad-	0.3947	0.0189
+0.8182	0.0865	1.000	is not changed.	0.1109	0.0133
+0.8299	0.5038	1.000	dressed storage field.	0.1541	0.0189
+0.8386	0.0883	1.000	MODIFIERS	0.0752	0.0104
+0.8531	0.5037	1.000	MODIFIERS	0.0790	0.0147
+0.8532	0.1015	1.000	Unsigned. This modifier operates as in ADD TO	0.3778	0.0147
+0.8677	0.5207	1.000	Unsigned. This modifier operates as in ADD IO	0.3759	0.0174
+0.8703	0.0864	1.000	MEMORY.	0.0678	0.0108
+0.8836	0.1015	1.000	Negative Sign. The accumulator sign is considered	0.3778	0.0161
+0.8850	0.5018	1.000	MEMORY.	0.0697	0.0150
+0.9214	0.1165	1.000	IBM 7030	0.0771	0.0103
+0.9230	0.0865	1.000	62	0.0150	0.0087

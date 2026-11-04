@@ -1,0 +1,107 @@
+0.0624	0.1147	1.000	Lost Significance (LS). This indicator is set to one	0.3759	0.0132
+0.0629	0.5148	1.000	INDICATORS	0.0812	0.0109
+0.0785	0.0977	1.000	when at least one operand is non-zero and when the	0.3910	0.0131
+0.0785	0.5320	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3759	0.0161
+0.0930	0.5132	1.000	(MOP); Arithmetic Result (RLZ, RZ, RGZ, RN);	0.3929	0.0176
+0.0930	0.0977	1.000	96 bits of the result fraction are zero. This indicator	0.3910	0.0116
+0.1090	0.0977	1.000	is not set to one if the result exponent has a propa-	0.3929	0.0146
+0.1105	0.5169	1.000	Exponent Range (XPFP, XPH, XPL, XPU); Zero	0.3910	0.0174
+0.1233	0.0958	1.000	gated flag or if both operands have 96 bit zero frac-	0.3911	0.0158
+0.1250	0.5150	1.000	Multiply (ZM). The above indicators are set as in	0.3910	0.0160
+0.1392	0.0958	1.000	tions initially.	0.1035	0.0138
+0.1410	0.5169	1.000	ADD.	0.0338	0.0102
+0.1539	0.5132	1.000	Load Double with Flag (DLWF)	0.2199	0.0147
+0.1753	0.5149	1.000	The operation is the same as LOAD DOUBLE except that	0.3930	0.0168
+0.1802	0.0940	1.000	Add Double to Magnitude (D+MG)	0.2556	0.0146
+0.1918	0.5150	1.000	the flag bits T, U, and V of the addressed operand	0.3910	0.0146
+0.2018	0.0957	1.000	This operation is the same as ADD DOUBLE except that	0.3913	0.0176
+0.2078	0.5132	1.000	set the accumulator flag bits in the sign byte register	0.3929	0.0146
+0.2179	0.0940	1.000	the sign of the accumulator operand is assumed posi-	0.3929	0.0147
+0.2224	0.5132	1.000	bit positions 5-7 as well as the data flag indicators	0.3929	0.0146
+0.2323	0.0939	1.000	tive and the result is made a forced zero when a nega-	0.3931	0.0150
+0.2397	0.5131	1.000	TF, UF, VF.	0.0790	0.0119
+0.2485	0.0940	1.000	tive sum is obtained.	0.1504	0.0118
+0.2573	0.5150	1.000	INDICATORS	0.0808	0.0102
+0.2645	0.1109	1.000	When the sign of the sum is positive, the sum is	0.3759	0.0146
+0.2718	0.5301	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3759	0.0146
+0.2805	0.0940	1.000	placed in the accumulator bits 0-107 and the sign re-	0.3910	0.0131
+0.2878	0.5132	1.000	(MOP); Arithmetic Result (RLZ, RZ, RGZ, RN);	0.3929	0.0146
+0.2949	0.0939	1.000	mains unchanged. When the sign of the sum is nega-	0.3930	0.0154
+0.2958	0.3333	0.300	aporen dr hese	0.1505	0.0459
+0.3023	0.5132	1.000	Exponent Range (XPFP, XPH, XPL, XPU); Zero	0.3910	0.0174
+0.3109	0.0940	1.000	tive, a zero fraction is placed into bits 12-107 of the	0.3910	0.0133
+0.3169	0.5113	1.000	Multiply (ZM). The above indicators are set as in	0.3929	0.0160
+0.3270	0.0921	1.000	accumulator and the sign and exponent of the accu-	0.3947	0.0131
+0.3342	0.5131	1.000	ADD.	0.0358	0.0089
+0.3415	0.0921	1.000	mulator operand remain equal to the original ac-	0.3929	0.0146
+0.3517	0.5113	1.000	Store Rounded (SRD)	0.1523	0.0131
+0.3576	0.0921	1.000	cumulator sign and exponent.	0.2199	0.0131
+0.3721	0.1090	1.000	Normalization, noisy mode, and values in the XFP	0.3741	0.0131
+0.3735	0.5132	1.000	The contents of the accumulator after rounding are	0.3910	0.0146
+0.3881	0.5113	1.000	placed in the location specified by the effective	0.3929	0.0146
+0.3881	0.0921	1.000	or XEN range are handled as in ADD DOUBLE.	0.3083	0.0131
+0.4041	0.5094	1.000	address.	0.0602	0.0131
+0.4105	0.0901	1.000	INDICATORS	0.0810	0.0103
+0.4200	0.5301	1.000	The rounding is performed by adding one to the	0.3722	0.0146
+0.4288	0.1090	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3741	0.0131
+0.4345	0.5113	1.000	fraction in the accumulator in bit position 60. This	0.3910	0.0146
+0.4433	0.0883	1.000	(MOP); Arithmetic Result (RLZ, RZ, RGZ, RN);	0.3947	0.0161
+0.4492	0.5112	1.000	addition results in a 96-bit sum and a possible over-	0.3912	0.0167
+0.4593	0.0921	1.000	Lost Carry (LC); Preparatory Shift Greater than 48	0.3910	0.0131
+0.4666	0.5113	1.000	flow bit. The 48 low-order bits are discarded. When	0.3910	0.0116
+0.4738	0.0883	1.000	(PSH); Exponent Range (XPFP, XPO, XPH, XPL,	0.3985	0.0160
+0.4811	0.5132	1.000	normalized operation is specified, the 48-bit sum is	0.3891	0.0147
+0.4897	0.0902	1.000	XPU); Zero Multiply (ZM). These indicators are set	0.3929	0.0161
+0.4970	0.5132	1.000	then normalized and placed in bit positions 12-59.	0.3872	0.0147
+0.5039	0.0919	1.000	as in ADD TO MAGNITUDE.	0.1790	0.0136
+0.5115	0.5132	1.000	Low-order zeros are always supplied in the case of	0.3891	0.0146
+0.5233	0.1090	1.000	Lost Significance (LS). This indicator is actuated	0.3741	0.0131
+0.5276	0.5132	1.000	the left shift. Noisy mode does not affect this	0.3891	0.0146
+0.5378	0.0921	1.000	as in ADD DOUBLE except that a forced zero does not	0.3929	0.0146
+0.5418	0.5130	1.000	operation.	0.0754	0.0153
+0.5533	0.0901	1.000	turn it on.	0.0810	0.0125
+0.5581	0.5263	1.000	When unnormalized operation is specified, the 48	0.3759	0.0161
+0.5741	0.5132	1.000	high-order bits of the sum are placed in storage bits	0.3891	0.0147
+0.5900	0.5132	1.000	12-59. The overflow bit does not enter storage but	0.3910	0.0133
+0.5930	0.0883	1.000	Load Double (DL)	0.1297	0.0116
+0.6045	0.5113	1.000	sets the lost carry indicator (LC) on.	0.2613	0.0133
+0.6148	0.0921	1.000	This operation is the same as LOAD except that the	0.3910	0.0146
+0.6206	0.5301	1.000	The sign of the accumulator, as changed by the	0.3722	0.0131
+0.6288	0.0902	1.000	accumulator bits 60-107 are set to zero.	0.2784	0.0137
+0.6336	0.5132	1.000	sign modifiers, is placed in storage bit 60. The accu-	0.3891	0.0161
+0.6453	0.1071	1.000	The operand specified by the effective address is	0.3759	0.0147
+0.6497	0.5113	1.000	mulator flag bits are placed in storage bits 61-63. The	0.3910	0.0161
+0.6612	0.0902	1.000	placed in the accumulator. The exponent and frac-	0.3929	0.0147
+0.6672	0.5132	1.000	entire accumulator and its sign byte, register remain	0.3891	0.0132
+0.6758	0.0902	1.000	tion replace bits 0-59. Accumulator bits 60-107 are	0.3929	0.0133
+0.6817	0.5113	1.000	unchanged throughout the operation unless used as	0.3891	0.0147
+0.6918	0.0902	1.000	set to zero. Accumulator bits 108-127 remain un-	0.3929	0.0118
+0.6962	0.5094	1.000	the effective address.	0.1523	0.0145
+0.7064	0.0902	1.000	changed. The sign of the operand, modified by the	0.3929	0.0146
+0.7106	0.5263	1.000	It the value of the operand lies in the XFP or XFN	0.3741	0.0147
+0.7224	0.0902	1.000	sign modifiers, is placed in bit position 4 of the sign	0.3929	0.0146
+0.7267	0.5094	1.000	range, the rounding process is performed, but the ex-	0.3910	0.0146
+0.7369	0.0902	1.000	byte register. The flag bits, bit positions 5-7 of the	0.3929	0.0146
+0.7427	0.5113	1.000	ponent is not changed. Normalization, if specified, is	0.3891	0.0145
+0.7529	0.0902	1.000	sign byte register, are set to zero.	0.2331	0.0132
+0.7573	0.5094	1.000	suppressed. If, as a result of rounding, the fraction	0.3910	0.0146
+0.7688	0.1071	1.000	When normalized operation is specified, the 96-bit	0.3759	0.0133
+0.7733	0.5113	1.000	has an overflow bit set, the overflow bit is lost. How-	0.3891	0.0131
+0.7833	0.0902	1.000	fraction is shifted left and the exponent is adjusted	0.3910	0.0146
+0.7892	0.5113	1.000	ever, the lost carry indicator (LC) is not set if over-	0.3891	0.0132
+0.7994	0.0902	1.000	before being placed in the accumulator. If noisy	0.3929	0.0146
+0.7999	0.5110	1.000	flow occurs when normalization is specified.	0.3183	0.0194
+0.8154	0.0902	1.000	mode is also specified, one bits are introduced into	0.3929	0.0131
+0.8183	0.5113	1.000	INDICATORS	0.0808	0.0102
+0.8299	0.0902	1.000	the low-order positions of the 96-bit fraction as it is	0.3929	0.0131
+0.8327	0.5282	1.000	To-Memory Operation (MOP); Arithmetic Result	0.3722	0.0147
+0.8459	0.0902	1.000	shifted left during normalization.	0.2406	0.0132
+0.8473	0.5075	1.000	(RLZ, RZ, RGZ, RN); Lost Garry (LC); Exponent	0.3947	0.0176
+0.8604	0.1071	1.000	Values in the xEP or XFN ranges are handled as in	0.3742	0.0152
+0.8633	0.5113	1.000	Range (XPFP, XPO, XPH, XPL, XPU); Zero	0.3853	0.0161
+0.8764	0.0902	1.000	LOAD. Normalization of these operands, if specified,	0.3929	0.0146
+0.8779	0.5113	1.000	Multiply (ZM). These indicators are set as in ADD TO	0.3835	0.0131
+0.8909	0.0883	1.000	is suppressed.	0.0996	0.0132
+0.8938	0.5094	1.000	MEMORY.	0.0696	0.0103
+0.9288	0.0902	1.000	96	0.0169	0.0087
+0.9288	0.1297	1.000	IBM 7030	0.0677	0.0088

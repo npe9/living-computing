@@ -1,0 +1,118 @@
+0.1003	0.0827	1.000	(see JC4) are set to indicate the job has been com-	0.3853	0.0131
+0.1025	0.5281	1.000	LVI, $15, $+1.0	0.1243	0.0174
+0.1163	0.0827	1.000	pleted.	0.0508	0.0102
+0.1177	0.5282	1.000	B, MLOADR	0.0959	0.0160
+0.1321	0.0808	1.000	Tables and Flags Used by Resume Load: Below is a	0.3910	0.0147
+0.1336	0.5263	1.000	, FWA	0.0545	0.0146
+0.1482	0.0789	1.000	list of the various tables and flags used by resume	0.3797	0.0118
+0.1483	0.5282	1.000	,L	0.0263	0.0131
+0.1612	0.0789	1.000	load and their definitions. The first four items are	0.3891	0.0133
+0.1627	0.5301	1.000	, U	0.0244	0.0131
+0.1773	0.0789	1.000	all preset by phase 4 of job control, prior to priming	0.3985	0.0131
+0.1788	0.5282	1.000	(Error return)	0.1090	0.0116
+0.1910	0.0768	1.000	ŞRESLD.	0.0720	0.0133
+0.1918	0.5301	1.000	VF, D	0.0470	0.0131
+0.2064	0.0959	1.000	SREADS - the read source control is an XW whose	0.3797	0.0117
+0.2078	0.5282	1.000	(Branch return)	0.1165	0.0116
+0.2208	0.0789	1.000	flag bit is zero if the source is $SCR. If the flag is	0.3874	0.0134
+0.2221	0.5281	1.000	VF, A	0.0491	0.0121
+0.2355	0.0789	1.000	one, the source is disk and the value field contains	0.3816	0.0131
+0.2369	0.5263	1.000	(Normal return)	0.1222	0.0131
+0.2500	0.0789	1.000	the relative FWA in the disk type-area. Further,	0.3759	0.0131
+0.2513	0.5075	1.000	where	0.0508	0.0119
+0.2660	0.0789	1.000	count field, for compiled PP, contains the number of	0.4004	0.0116
+0.2660	0.5282	1.000	FWA is the first word (18-bit) address of the card	0.3759	0.0116
+0.2805	0.0789	1.000	cards left on the current arc of disk. This XW is	0.3741	0.0116
+0.2805	0.5414	1.000	to be loaded.	0.0996	0.0131
+0.2951	0.0789	1.000	loaded into $13 by resume load. When the afore-	0.3722	0.0116
+0.2951	0.5263	1.000	L is the lower limit of the PP. If XF=1, this is a	0.3741	0.0160
+0.3096	0.0789	1.000	mentioned count reaches zero, the value field is	0.3628	0.0116
+0.3096	0.5414	1.000	new job and the loader must initialize.	0.2914	0.0146
+0.3241	0.5263	1.000	U is the upper limit (protected) of the PP. If	0.3477	0.0160
+0.3241	0.0789	1.000	stepped 2 words and the count is reset to 34, the	0.3722	0.0147
+0.3387	0.0789	1.000	number of cards on one arc of disk.	0.2688	0.0116
+0.3400	0.5414	1.000	XF=1, the sequence counter is reset to contain	0.3553	0.0147
+0.3529	0.5431	1.000	the information in column 3 of the first binary	0.3481	0.0164
+0.3529	0.0976	1.000	YLLSAV - contains loader limits, i.e., those	0.3442	0.0151
+0.3691	0.0789	1.000	limits outside which the loader must not load. In	0.3741	0.0103
+0.3706	0.5432	1.000	card encountered.	0.1372	0.0117
+0.3836	0.5282	1.000	Error return is a half-word location to which the	0.3665	0.0118
+0.3836	0.0789	1.000	addition, it contains the initial entry bit (.25), the	0.3759	0.0132
+0.3982	0.0789	1.000	I-card indicator (YTBIT, see JC4), and bit. 57.	0.3647	0.0132
+0.3997	0.5414	1.000	loader returns when it cannot correctly load the	0.3628	0.0116
+0.4127	0.0789	1.000	This word is transmitted directly into the loader	0.3647	0.0118
+0.4142	0.5432	1.000	card.	0.0414	0.0116
+0.4273	0.0789	1.000	calling sequence by resume load.	0.2500	0.0118
+0.4288	0.5263	1.000	Half-word error code, D contains the sequence	0.3553	0.0131
+0.4418	0.0959	1.000	YDFCS - contains the A6 type-area name to be	0.3515	0.0131
+0.4433	0.5432	1.000	number, in bits 0-11, of the binary card in error	0.3703	0.0131
+0.4564	0.0771	1.000	loaded from, if disk is the source for cards.	0.3383	0.0131
+0.4593	0.5432	1.000	or zero for an octal card. Bits 13-17 contain	0.3440	0.0102
+0.4709	0.0959	1.000	SCORG - a bit in SCOMRG, which equals 1 when	0.3609	0.0131
+0.4724	0.5432	1.000	the following error codes:	0.1955	0.0131
+0.4839	0.5451	1.000	1 -- Checksum error	0.1598	0.0118
+0.4869	0.0789	1.000	the current deck is a compiler and 0 when it is a go	0.3872	0.0116
+0.4985	0.5451	1.000	2 - Sequence or ID error	0.1955	0.0118
+0.5015	0.0771	1.000	phase.	0.0508	0.0116
+0.5130	0.5451	1.000	3 -- Illegal card type	0.1598	0.0131
+0.5130	0.0959	1.000	REJJOB - Bit 60 of this word is set by the input	0.3590	0.0131
+0.5276	0.0771	1.000	program when an uncorrectable unit check occurs	0.3759	0.0118
+0.5291	0.5432	1.000	4 -- Illegal non-BSS function	0.2162	0.0116
+0.5421	0.0771	1.000	during the reading of a job.	0.2049	0.0117
+0.5436	0.5432	1.000	5 -- Out of bounds	0.1372	0.0102
+0.5560	0.5448	1.000	6 -- C or P card incorrectly punched, e.g.,	0.3314	0.0176
+0.5566	0.0957	1.000	YBCBU - This 15-word buffer is used by both JC4	0.3743	0.0152
+0.5707	0.0769	1.000	and resume load to read cards into.	0.2691	0.0137
+0.5725	0.5900	1.000	hex character is not a 0-9 or A-F.	0.2673	0.0138
+0.5845	0.0938	1.000	KSILO - The processor communication region.	0.3538	0.0163
+0.5854	0.5431	1.000	7 -- Blank location in first octal card.	0.2899	0.0150
+0.6000	0.0788	1.000	The Fortran BSS loader and resume load define words	0.4044	0.0138
+0.6006	0.5430	1.000	8 - First binary card not an origin card.	0.3144	0.0168
+0.6159	0.5280	1.000	Branch return is a half-word location to which the	0.3744	0.0146
+0.6163	0.0771	1.000	8.0-10.O of this region jointly (see description of	0.3722	0.0116
+0.6291	0.5411	1.000	loader returns when it encounters a branch card,	0.3709	0.0178
+0.6308	0.0771	1.000	Processor Communication Region).	0.2650	0.0116
+0.6453	0.1090	1.000	lower limit of PP	0.1335	0.0102
+0.6457	0.5412	1.000	or when the card count equals zero and there are	0.3705	0.0144
+0.6467	0.3609	1.000	(BU, 18)	0.0695	0.0133
+0.6468	0.2989	1.000	8.0	0.0263	0.0102
+0.6599	0.1090	1.000	upper limit of PP	0.1335	0.0102
+0.6610	0.3627	1.000	(BU, 18)	0.0660	0.0138
+0.6613	0.2970	1.000	8.32	0.0357	0.0116
+0.6627	0.5414	1.000	no more relocation tables in a BSS job.	0.2989	0.0118
+0.6730	0.1090	1.000	base address of blank	0.1635	0.0116
+0.6749	0.5261	1.000	Half-word branch address is given unless the	0.3406	0.0155
+0.6894	0.5412	1.000	branch address field of the branch card is zero.	0.3613	0.0156
+0.6903	0.3628	1.000	(BU, 18)	0.0658	0.0118
+0.6904	0.2970	1.000	9.0	0.0282	0.0116
+0.6904	0.1241	1.000	common	0.0658	0.0087
+0.7035	0.1090	1.000	address of relocation	0.1598	0.0102
+0.7049	0.5412	1.000	In that case, A is the origin of the first origin	0.3462	0.0153
+0.7180	0.1222	1.000	tables	0.0489	0.0116
+0.7191	0.2968	1.000	9.32	0.0436	0.0124
+0.7194	0.3553	1.000	(BU, 18)	0.0752	0.0132
+0.7194	0.5414	1.000	card, or in a BSS job the branch address is	0.3271	0.0132
+0.7324	0.1090	1.000	branch address	0.1147	0.0103
+0.7332	0.5393	1.000	taken from the communication region.	0.2881	0.0160
+0.7340	0.2895	1.000	10.0	0.0395	0.0116
+0.7353	0.3590	1.000	(BU, 19)	0.0697	0.0135
+0.7470	0.0921	1.000	MRCDCT - loader card counter for BSS jobs. It	0.3647	0.0133
+0.7485	0.5261	1.000	The Ioader does not save or restore index regis-	0.3669	0.0150
+0.7615	0.0752	1.000	is set to 1 by resume load upon end return from	0.3609	0.0133
+0.7628	0.5074	1.000	ters. A blank checksum means that the checksum	0.3857	0.0154
+0.7762	0.0733	1.000	$FETCH.	0.0733	0.0131
+0.7791	0.5075	1.000	is not to be used. The sequence number on reloca-	0.3872	0.0131
+0.7936	0.5075	1.000	table cards is not checked.	0.2030	0.0116
+0.8052	0.0752	1.000	The MCP Loader	0.1278	0.0103
+0.8227	0.5056	1.000	BSS Jobs: For BSS jobs the MCP loader uses the	0.3722	0.0146
+0.8342	0.0752	1.000	The MCP loader, MLOADR, is a binary, correction,	0.3966	0.0146
+0.8387	0.5056	1.000	communication region, KSILO, which has been set up	0.4004	0.0147
+0.8488	0.0733	1.000	dump, and patch card loader. It is used as a sub-	0.3797	0.0131
+0.8517	0.5056	1.000	by BSS. KSILO+2. contains the A6 name "BSSbbbbb"	0.4004	0.0131
+0.8633	0.0733	1.000	routine of the Resume Load pseudo-op, $R ESLD.	0.3703	0.0131
+0.8677	0.5056	1.000	which is used by the loader to decide if the current	0.3853	0.0145
+0.8774	0.0901	1.000	$RESLD fetches the cards to be loaded and enters	0.3724	0.0139
+0.8821	0.5038	1.000	job is a BSS job. KSILO+9.32 contains the address of	0.4079	0.0118
+0.8917	0.0731	1.000	MLOADR, one card at a time, by the following linkage:	0.4027	0.0185
+0.8964	0.5036	1.000	the relocation tables which are used by the loader to	0.3951	0.0160
+0.9564	0.0695	1.000	88	0.0169	0.0102

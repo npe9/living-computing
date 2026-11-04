@@ -1,0 +1,98 @@
+0.0858	0.5338	1.000	SEM, REM: For a SEM or a REM the message	0.3477	0.0176
+0.0885	0.1109	1.000	PRNID:	0.0715	0.0105
+0.0887	0.1823	1.000	For PRNID, the unit must also be given	0.2951	0.0102
+0.1003	0.1109	1.000	to' the output phase in Pass 2a as well as in Pass	0.3590	0.0131
+0.1017	0.5338	1.000	numbers in the major error mask of the error	0.3459	0.0131
+0.1148	0.1109	1.000	2b. The setting of the error flags are OR'ed into	0.3628	0.0131
+0.1163	0.5338	1.000	subroutine are adjusted by the intermediate error	0.3703	0.0146
+0.1294	0.5338	1.000	mask in the current unit.	0.1898	0.0174
+0.1308	0.1109	1.000	the unit before the output phase gets control.	0.3346	0.0131
+0.1439	0.1109	1.000	Since the PRNID statements are the only assembly	0.3722	0.0161
+0.1599	0.5338	1.000	SPNUS: For a SPNUS, all that Pass 2a does in	0.3515	0.0174
+0.1599	0.1109	1.000	material printed during Pass 2a, all the PRNID's	0.3647	0.0147
+0.1742	0.1089	1.000	Will precede the major listing; the PRNID will also	0.3762	0.0168
+0.1758	0.5320	1.000	turn on an indicator for NUNDSY before performing	0.3872	0.0146
+0.1886	0.5319	1.000	the end of Pass 2a procedure.	0.2277	0.0150
+0.1903	0.1109	1.000	appear in its specified location through the Pass 2b	0.3759	0.0133
+0.2063	0.1090	1.000	printing.	0.0659	0.0119
+0.2179	0.5320	1.000	Box 24	0.0658	0.0161
+0.2355	0.1109	1.000	SLC: For SLC, Pass 2a adjusts the absolute	0.3327	0.0116
+0.2485	0.5282	1.000	If an end-of-file condition occurs when INTIN is	0.3628	0.0131
+0.2485	0.1090	1.000	and symbolic counters and makes an entry in the	0.3590	0.0131
+0.2624	0.5319	1.000	fetching the next unit for Pass 2a to process,	0.3441	0.0159
+0.2629	0.1108	1.000	hi-lo table. (The SCLR indicator is turned off,	0.3461	0.0163
+0.2747	0.5338	1.000	INTIN will branch to the between passes procedure.	0.3853	0.0174
+0.2791	0.1109	1.000	and the hi-lo-entry can-be-made indicator will be	0.3647	0.0103
+0.2906	0.5338	1.000	(This EOF exit was set up at the beginning of Pass	0.3759	0.0176
+0.2949	0.1090	1.000	set on.)	0.0602	0.0105
+0.3036	0.5338	1.000	2a.) Between Pass 2a and Pass 26, UITER	0.3308	0.0219
+0.3182	0.5338	1.000	concludes the evaluation of the data description and	0.3835	0.0206
+0.3212	0.1071	1.000	SLCR: For an SLCR, Pass 2a adjusts the absolute	0.3778	0.0161
+0.3372	0.5338	1.000	the value of the symbols in the symbol table. In	0.3609	0.0146
+0.3372	0.1090	1.000	and symbolic counters. No entry is made in the	0.3571	0.0131
+0.3532	0.1090	1.000	hi-lo table. (The SCLR indicator is turned on and	0.3703	0.0117
+0.3532	0.5338	1.000	addition, at this time UITER evaluates the memory	0.3797	0.0147
+0.3677	0.1090	1.000	the hi-lo-entry-can-be-made indicator is turned	0.3571	0.0117
+0.3677	0.5357	1.000	bounds of the program being assembled by using	0.3571	0.0132
+0.3823	0.1071	1.000	off.)	0.0376	0.0131
+0.3836	0.5338	1.000	the Uhl subroutine which inspects each hi-lo entry	0.3703	0.0118
+0.3982	0.5357	1.000	in the vle table. On completion of the iteration,	0.3553	0.0132
+0.4099	0.1108	1.000	END: For the END unit Pass 2a enters the	0.3161	0.0146
+0.4127	0.5338	1.000	UITER, returns to Pass 2b with the Pass 2a	0.3214	0.0161
+0.4258	0.1090	1.000	location of the END as a possible hi-lo candidate	0.3590	0.0133
+0.4273	0.5320	1.000	indicator, Npzind, off and Pass 2b indicator, Epass3,	0.4023	0.0161
+0.4385	0.1088	1.000	into the hi-lo table.	0.1454	0.0152
+0.4418	0.5338	1.000	on. At this time all the names of the assembly are	0.3816	0.0146
+0.4563	0.5338	1.000	evaluated.	0.0790	0.0133
+0.4709	0.1128	1.000	EXT: For an EXT unit Pass 2a has evaluated the	0.3609	0.0116
+0.4855	0.1109	1.000	coded expressions for the parameters and saved	0.3553	0.0131
+0.4869	0.5526	1.000	Again we shall follow the flow through the Pass 2	0.3628	0.0116
+0.5015	0.5338	1.000	flow chart. Only this time we shall take all the	0.3534	0.0131
+0.5015	0.1090	1.000	their values in the unit. The location counter is	0.3553	0.0116
+0.5160	0.1109	1.000	incremented by the length indicated by the N	0.3233	0.0116
+0.5160	0.5357	1.000	Pass 26 branches.	0.1372	0.0131
+0.5305	0.1090	1.000	parameter and the rounding procedure for the	0.3383	0.0116
+0.5305	0.5526	1.000	By the beginning of Pass 2b all the symbols will	0.3534	0.0131
+0.5451	0.5357	1.000	have been evaluated in the symbol table. During	0.3609	0.0131
+0.5451	0.1090	1.000	next of the EXT units will not be performed. The	0.3665	0.0131
+0.5596	0.1090	1.000	output phase will pick up the value of the parameter	0.3816	0.0131
+0.5609	0.5357	1.000	Pass 2b the floating point format of all numeric	0.3515	0.0118
+0.5741	0.1090	1.000	and do the actual extracting from the next unit	0.3440	0.0131
+0.5755	0.5357	1.000	DD's will be adjusted and any general parenthetical	0.3797	0.0133
+0.5887	0.1090	1.000	later in Pass 2b. If the statement of the EXT op	0.3590	0.0147
+0.5900	0.5338	1.000	field entries on the DD's will be treated, the binary	0.3835	0.0133
+0.6045	0.5357	1.000	output for an EXTract will be extracted, and finally	0.3816	0.0133
+0.6045	0.1090	1.000	is a multiple field DD, then the location counter	0.3534	0.0133
+0.6191	0.1090	1.000	will be incremented the extra amount.	0.2801	0.0118
+0.6191	0.5357	1.000	the documents for the program being assembled will	0.3872	0.0132
+0.6319	0.5337	1.000	be produced.	0.0979	0.0153
+0.6482	0.1090	1.000	SYN: For a SYN op, Pass 2a tests if the value is	0.3628	0.0146
+0.6563	0.5334	1.000	Boxes 7, 8, 25	0.1251	0.0216
+0.6642	0.1090	1.000	complete; it so, then Pass 2a now performs the	0.3534	0.0116
+0.6773	0.1090	1.000	action as described in box 21. If the SYN is not	0.3534	0.0118
+0.6903	0.1071	1.000	completely evaluated at this point, then there is	0.3553	0.0161
+0.6903	0.5338	1.000	On the first cycle through Pass 26 the GO and the	0.3684	0.0146
+0.7048	0.5357	1.000	LIM cards are produced and punched by NMCPA1.	0.3684	0.0161
+0.7048	0.1071	1.000	another try to get the value of the SYN by using a	0.3628	0.0161
+0.7194	0.5338	1.000	This is the only output that is not punched by	0.3383	0.0161
+0.7209	0.1090	1.000	section of UITER.	0.1316	0.0116
+0.7339	0.5338	1.000	OUTPUT. The GO and LIM cards will not appear	0.3703	0.0161
+0.7485	0.1090	1.000	PUNSYM: For each symbol appearing in a PUNSYM	0.3872	0.0161
+0.7500	0.5320	1.000	on the listing (nor will the SKIP and NOPRNT	0.3440	0.0145
+0.7623	0.5318	1.000	pseudo ops appear on the listing). Note that the	0.3613	0.0198
+0.7660	0.1071	1.000	pseudo op, the corresponding symbol table entry	0.3628	0.0146
+0.7761	0.5320	1.000	GO and LIM cards precede each binary deck	0.3327	0.0205
+0.7791	0.1071	1.000	must be marked for the later punching (to be more	0.3741	0.0161
+0.7921	0.5320	1.000	produced by STRAP.	0.1579	0.0176
+0.7930	0.1070	1.000	exact a bit must be turned on in the function portion	0.3819	0.0213
+0.8081	0.1071	1.000	of the vle Since by Pass 2a all the symbols have	0.3684	0.0161
+0.8224	0.5319	1.000	Boxes 14E, 27	0.1223	0.0195
+0.8241	0.1071	1.000	been entered into the symbol table, the necessary	0.3684	0.0160
+0.8415	0.1128	1.000	de's can be marked now during NPUNSYM in	0.3289	0.0103
+0.8517	0.1786	1.000	The SYN cards will be punched in Pass	0.2895	0.0146
+0.8517	0.5320	1.000	In Pass 2b, the location counter value previously	0.3665	0.0189
+0.8545	0.1090	1.000	Pass 2a.	0.0659	0.0104
+0.8677	0.5320	1.000	stored in the unit and in the symbol table entry are	0.3816	0.0174
+0.8691	0.1071	1.000	2b during the OUTPUT subroutine through NQBTP.	0.3741	0.0161
+0.9418	0.7913	1.000	Assembly Phases	0.0959	0.0147
+0.9433	0.9098	1.000	35	0.0169	0.0087

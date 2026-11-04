@@ -1,0 +1,94 @@
+0.0826	0.8439	1.000	MQDNUM	0.0791	0.0165
+0.1422	0.1033	1.000	LINKAGE	0.0716	0.0121
+0.1424	0.5282	1.000	Boxes 45, 49, 51, 55	0.1598	0.0146
+0.1700	0.5282	1.000	These are double precision arithmetic subroutines	0.3759	0.0146
+0.1729	0.1034	1.000	On Entry	0.0677	0.0118
+0.1845	0.5338	1.000	whose specifications will be described shortly.	0.3402	0.0161
+0.1962	0.5357	1.000	l'hese double precision arithmetic subroutines as wel	0.3910	0.0160
+0.2020	0.1184	1.000	1. The calling sequence is: SIC, Mgdnuz; B,	0.3383	0.0116
+0.2114	0.5281	1.000	as DNUM give the using program the results in the	0.3873	0.0176
+0.2163	0.1033	1.000	MQDNUM.	0.0791	0.0151
+0.2297	0.5282	1.000	accumulator.	0.1015	0.0145
+0.2311	0.1391	1.000	The first character of the field is in the value	0.3440	0.0102
+0.2311	0.1165	1.000	2.	0.0207	0.0131
+0.2455	0.1015	1.000	field of $3.	0.0847	0.0134
+0.2602	0.5282	1.000	Box 33.	0.0602	0.0147
+0.2761	0.1053	1.000	On Exit	0.0564	0.0103
+0.2892	0.5282	1.000	A radix may be 2-16.	0.1617	0.0145
+0.3036	0.1184	1.000	1. The non-blank character following the field is	0.3647	0.0147
+0.3168	0.5282	1.000	Box 15 ff.	0.0790	0.0176
+0.3182	0.1015	1.000	in the value field of $3.	0.1729	0.0147
+0.3327	0.1184	1.000	2. The double precision result is in the accumulator.	0.3985	0.0147
+0.3488	0.5320	1.000	While operating within a level, as each new operator	0.3872	0.0118
+0.3633	0.1034	1.000	FLOW CHART DESCRIPTION	0.2199	0.0131
+0.3633	0.5301	1.000	is encountered, MQDNUM combines the intermediate	0.3929	0.0131
+0.3779	0.5301	1.000	results of an entry in the following manner:	0.3233	0.0117
+0.3924	0.5470	1.000	1. For any operator, MQDNUM combines the	0.3402	0.0131
+0.3939	0.1015	1.000	Boxes 6-14	0.0865	0.0116
+0.4070	0.5320	1.000	results of the fourth order with that of the third order	0.3966	0.0116
+0.4230	0.1053	1.000	For each level in the arithmetie operations MQDNUM	0.3929	0.0116
+0.4230	0.5301	1.000	according to the corresponding operator indicators;	0.3835	0.0102
+0.4375	0.1053	1.000	makes an eight word entry in its push down list at	0.3665	0.0116
+0.4375	0.5320	1.000	MQDNUM then enters this result in the third order	0.3741	0.0102
+0.4520	0.5320	1.000	result area and resets the operator indicators of the	0.3872	0.0116
+0.4520	0.1034	1.000	Monnd. In this entry two words are reserved for the	0.3910	0.0131
+0.4663	0.5319	1.000	fourth and the third orders to the transfer setting.	0.3705	0.0134
+0.4666	0.1053	1.000	result from each of the first, second, and third order	0.3947	0.0131
+0.4811	0.1992	1.000	The remaining two words are for mis-	0.2838	0.0131
+0.4824	0.5320	1.000	(Initially all the operator indicators are in the	0.3421	0.0118
+0.4826	0.1034	1.000	operations.	0.0865	0.0116
+0.4956	0.1034	1.000	cellaneous indicators including those designating the	0.3872	0.0131
+0.4970	0.5320	1.000	transfer setting.)	0.1316	0.0118
+0.5102	0.8214	1.000	,) MQDNUM	0.1128	0.0160
+0.5102	0.5470	1.000	2. For a second order operation	0.2462	0.0132
+0.5115	0.1053	1.000	type of arithmetic combination between these inter-	0.3778	0.0118
+0.5247	0.1053	1.000	mediate result areas in the entry. MQDNUM main-	0.3816	0.0132
+0.5261	0.5301	1.000	also combines the result of the third order with that	0.3872	0.0103
+0.5392	0.1034	1.000	tains a common storage area for the result of the	0.3647	0.0132
+0.5406	0.5320	1.000	of the second order according to the corresponding	0.3741	0.0118
+0.5552	0.1034	1.000	fourth order, i.e., each new operand from DNUM.	0.3741	0.0118
+0.5552	0.5320	1.000	indicators; MQDNUM then enters this result in the	0.3722	0.0118
+0.5697	0.1222	1.000	The current arithmetic operations which may be	0.3553	0.0118
+0.5697	0.5320	1.000	second order result area and resets the operator	0.3609	0.0118
+0.5842	0.1034	1.000	specified on a numeric DD are:	0.2331	0.0131
+0.5842	0.5320	1.000	indicators of the third and second orders to the	0.3477	0.0103
+0.5981	0.3701	1.000	Third order	0.0906	0.0145
+0.5988	0.1053	1.000	First order	0.0846	0.0103
+0.5988	0.2274	1.000	Second order	0.0959	0.0118
+0.6003	0.5320	1.000	transfer setting.	0.1222	0.0116
+0.6118	0.5752	1.000	For a first order operator G.) MQDNUM	0.3383	0.0191
+0.6144	0.2273	1.000	operations	0.0773	0.0125
+0.6146	0.3721	1.000	operations	0.0771	0.0105
+0.6147	0.1052	1.000	operations	0.0771	0.0104
+0.6148	0.5489	1.000	3.	0.0169	0.0116
+0.6294	0.5320	1.000	further combines the result of the second order with	0.3853	0.0102
+0.6439	0.2256	1.000	*(multiplication)	0.1222	0.0131
+0.6439	0.1034	1.000	+(addition)	0.0789	0.0131
+0.6439	0.3703	1.000	**(powering)	0.0921	0.0145
+0.6453	0.5301	1.000	that of the tirst order, etc..	0.2143	0.0131
+0.6539	0.5432	1.000	4. After combining the appropriate results in a	0.3590	0.0176
+0.6570	0.1015	1.000	- (subtraction) / (division)	0.2030	0.0145
+0.6700	0.5301	1.000	Mqdnnd entry, MQDNUM adjusts the arithmetic	0.3553	0.0176
+0.6715	0.1034	1.000	Note that in powering the exponent must be an integer	0.3947	0.0161
+0.6860	0.1053	1.000	in the range 2-18 <n <2+18.	0.2180	0.0146
+0.6860	0.5282	1.000	indicators in the entry to the operation just encountered.	0.4211	0.0131
+0.7006	0.1184	1.000	While operating within a level, as each new datum	0.3703	0.0161
+0.7146	0.5299	1.000	Boxes 32-42	0.0980	0.0171
+0.7151	0.1015	1.000	is encountered, MQDNUM has it made into a double	0.3835	0.0161
+0.7311	0.1034	1.000	precision floating point word by DNUM, and then	0.3590	0.0160
+0.7422	0.1013	1.000	MQDNUM enters the result into the fourth order	0.3595	0.0202
+0.7427	0.5301	1.000	This routine evaluates the field to the terminal char-	0.3947	0.0176
+0.7555	0.6163	1.000	@, or) or to the special sign or	0.2769	0.0247
+0.7602	0.5301	1.000	acter (O,	0.0902	0.0160
+0.7615	0.1052	1.000	result area.	0.0884	0.0118
+0.7728	0.5300	1.000	exponent (Sor (x)).	0.1693	0.0154
+0.7921	0.1033	1.000	Box 13	0.0527	0.0118
+0.8036	0.5301	1.000	Box 37	0.0564	0.0176
+0.8182	0.1034	1.000	Remember that CPLTSY sets up the location of the	0.3759	0.0161
+0.8314	0.5301	1.000	As each non-initial level is completed, the result	0.3703	0.0174
+0.8342	0.1034	1.000	system symbol mathematical constant as a negative	0.3816	0.0146
+0.8488	0.5301	1.000	becomes the contents of the fourth order area in the	0.3853	0.0146
+0.8503	0.1034	1.000	quantity in the accumulator.	0.2086	0.0131
+0.8618	0.5282	1.000	previous level.	0.1184	0.0161
+0.9331	0.8158	1.000	MODNUM	0.0658	0.0174
+0.9360	0.8966	1.000	107	0.0263	0.0116

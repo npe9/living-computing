@@ -1,0 +1,35 @@
+0.1468	0.1071	1.000	ERRAȚA	0.0789	0.0189
+0.2073	0.1071	1.000	Page 9 - column 1 - line 14: The word immediately should be stricken from the	0.6637	0.0186
+0.2252	0.1071	1.000	following sentence as the tables are not always immediately above the problem program.	0.7086	0.0161
+0.2384	0.1071	1.000	"'The tables that the problem program requires will be immediately above n, in pro-	0.6767	0.0189
+0.2558	0.1071	1.000	tected storage."	0.1391	0.0176
+0.2844	0.1070	1.000	Page 10 - column 2 - line 19: Strike out the sentence: "The same unit symbol on	0.6732	0.0204
+0.3001	0.1088	1.000	several tape IOD's unconditionally associates them with the same tape unit. "	0.6131	0.0195
+0.3358	0.1090	1.000	Page 13 - column 1 - line 7b:	0.2594	0.0161
+0.3488	0.1259	1.000	not "The loader handles eight classes of cards."	0.3910	0.0191
+0.3590	0.1259	1.000	but "'The loader handles fourteen classes of cards."	0.4173	0.0219
+0.3953	0.1090	1.000	Page 18 - column 1 - line 5b: The dump format for octal hex without panel:	0.6259	0.0189
+0.4141	0.1259	1.000	not 4. 32	0.0678	0.0133
+0.4302	0.1259	1.000	but 0.32	0.0677	0.0146
+0.4578	0.1090	1.000	Page 20 - column 2 - 3rd line, under Error Interrupts:	0.4662	0.0189
+0.4738	0.1259	1.000	not "For interrupts 0.3 and 5,"	0.2556	0.0160
+0.4838	0.1257	1.000	but "For interrupts 0-3 and 5,"	0.2542	0.0236
+0.5188	0.1090	1.000	Page 25 - column 2 - line 5: The option for binary key 30 should read: REJECTED	0.6917	0.0191
+0.5378	0.1090	1.000	JOB COUNT REPORT	0.1767	0.0131
+0.5641	0.1107	1.000	Page 25 - column 2 - line 34: The following two messages and the paragraph	0.6394	0.0224
+0.5789	0.1089	1.000	following them are no longer valid. These messages are not given as the system now	0.6845	0.0226
+0.5959	0.1109	1.000	can run with one input tape in the overlapped mode.	0.4117	0.0189
+0.6102	0.1257	1.000	$FIRST JOB TO BE RUN WILL BE ON CHANNEL XX UNIT X.	0.5022	0.0223
+0.6279	0.1278	1.000	$OTHER INPUT TAPE WILL BE ON CHANNEL XX UNIT X.	0.4812	0.0176
+0.6612	0.1109	1.000	Page 26 - column 1 - line 9 after Rejected Job Count Report:	0.5094	0.0176
+0.6714	0.1276	1.000	not "The number of jobs to be rejected (1-9) is inserted in numeric switch column 11."	0.6978	0.0264
+0.6897	0.1277	1.000	but "The number of jobs to be rejected is inserted in numeric switches columns 10	0.6600	0.0213
+0.7078	0.2030	1.000	and 11."	0.0752	0.0146
+0.7377	0.1108	1.000	Page 28 - column 1 - line 34: Delete the paragraph referring to the reserve light	0.6750	0.0170
+0.7533	0.1127	1.000	being used to indicate that the console input has been processed. The reserve light is	0.6807	0.0173
+0.7688	0.1109	1.000	no longur turned on.	0.1635	0.0176
+0.7988	0.1108	1.000	Page 33 and 34 - may be entirely deleted: A complete writeup of the 7030 update	0.6563	0.0198
+0.8125	0.1107	1.000	program may be found in the MCP Programming Systems Analysis Guide (C22-6678)	0.6733	0.0220
+0.8301	0.1108	1.000	starting on page 215. A bulletin has also been published explaining the Update 30	0.6449	0.0154
+0.8488	0.1109	1.000	program. (C22-6718)	0.1767	0.0161
+0.9387	0.7011	1.000	Page 11 of 12	0.1073	0.0164

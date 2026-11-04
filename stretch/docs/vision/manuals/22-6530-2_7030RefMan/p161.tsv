@@ -1,0 +1,112 @@
+0.0609	0.0977	1.000	track, however, requires 51 ms. provided the tracks	0.3910	0.0147
+0.0639	0.5320	1.000	All word and byte transfers are checked for errors	0.3759	0.0145
+0.0753	0.0976	1.000	are in the same group of 16. Moving sequentially from	0.3894	0.0170
+0.0799	0.5150	1.000	through the use of the error check and correction cir-	0.3910	0.0131
+0.0915	0.0977	1.000	the last track in one 16 group to the first track of the	0.3891	0.0146
+0.0945	0.5150	1.000	cuits associated with each type of register in the Ds.	0.3910	0.0146
+0.1061	0.0977	1.000	next 16 group, requires 117 ms.	0.2199	0.0146
+0.1105	0.5150	1.000	These circuits use the error check and correction bits	0.3929	0.0117
+0.1250	0.5132	1.000	associated with the data bits during transfer.	0.3195	0.0160
+0.1377	0.5299	1.000	Whenever data are assembled or disassembled, the	0.3763	0.0182
+0.1381	0.1128	1.000	After the access mechanism is first positioned, a	0.3759	0.0146
+0.1535	0.5149	1.000	associated Ecc bits are not valid for the newly-formed	0.3894	0.0171
+0.1539	0.0959	1.000	rotational delay may be expected when a reading or	0.3929	0.0147
+0.1685	0.0977	1.000	writing operation is started. This may take a maxi-	0.3910	0.0147
+0.1715	0.5150	1.000	word or byte. A new set of ecc bits must be generated	0.3910	0.0145
+0.1828	0.0958	1.000	mum of 34 ms. although an average of 17 ms. may be	0.3911	0.0165
+0.1875	0.5132	1.000	to fit the new word or byte just formed. Through a	0.3910	0.0131
+0.1991	0.0959	1.000	expected. If certain conditions of addressing and data	0.3910	0.0146
+0.2020	0.5132	1.000	mathematical relationship existing between old and	0.3910	0.0146
+0.2151	0.0977	1.000	block length are met, the rotational delay is reduced	0.3891	0.0131
+0.2179	0.5150	1.000	new correction bits, the continuity of checking is pre-	0.3910	0.0147
+0.2274	0.0957	1.000	to a maximum of 4.2 ms. and an average of 2.1 ms.	0.3913	0.0178
+0.2324	0.5132	1.000	served by tests made in the Ds before further process-	0.3910	0.0161
+0.2426	0.0976	1.000	This feature is called "automatic access elimination."	0.3912	0.0163
+0.2485	0.5113	1.000	ing of the data.	0.1128	0.0146
+0.2602	0.1109	1.000	While capacity of a disk unit is normally expressed	0.3759	0.0160
+0.2746	0.0938	1.000	in full words, 2,097,152 (221) words, the 7030 system	0.3932	0.0177
+0.2863	0.5150	1.000	Data Transmission	0.1335	0.0116
+0.2906	0.0959	1.000	uses binary-coded decimal (four bits per digit) and	0.3910	0.0146
+0.3067	0.0940	1.000	binary-coded alphameric (six bits per digit) data rep-	0.3929	0.0161
+0.3067	0.5132	1.000	The disk system and the exchange differ in their op-	0.3910	0.0161
+0.3199	0.5110	1.000	eration in the following ways:	0.2168	0.0183
+0.3227	0.0921	1.000	resentations also. Therefore, the disk storage capacity	0.3929	0.0161
+0.3367	0.0939	1.000	can also be expressed as 134,217,728 (227) binary bits:	0.3912	0.0157
+0.3415	0.5263	1.000	1. Only one disk storage at a time may be reading	0.3778	0.0161
+0.3500	0.0937	1.000	33,554,432 binary-coded decimal digits or 22,369,621	0.3915	0.0196
+0.3575	0.5507	1.000	or writing.	0.0809	0.0147
+0.3633	0.0940	1.000	binary-coded alphameric characters.	0.2688	0.0204
+0.3779	0.5263	1.000	2. No use is made of control word flag bits or refill	0.3778	0.0161
+0.3822	0.1089	1.000	A summary of the physical characteristics of the	0.3761	0.0146
+0.3903	0.5505	1.000	field and they are discarded after checking the	0.3538	0.0215
+0.3981	0.0940	1.000	disk storage is:	0.1053	0.0134
+0.4084	0.5508	1.000	control word error correction and check bits.	0.3515	0.0146
+0.4127	0.1090	1.000	Faces per disk storage	0.1617	0.0191
+0.4142	0.3158	1.000	78	0.0226	0.0145
+0.4230	0.5526	1.000	Only the data word address field and word	0.3496	0.0161
+0.4302	0.1071	1.000	Tracks per set of 39	0.1560	0.0189
+0.4390	0.5508	1.000	count field of the control word are retained and	0.3515	0.0147
+0.4462	0.1222	1.000	disk faces	0.0771	0.0176
+0.4462	0.3045	1.000	256	0.0338	0.0174
+0.4535	0.5508	1.000	used by the disk synchronizer.	0.2199	0.0160
+0.4629	0.1088	1.000	Arcs per track	0.1076	0.0203
+0.4666	0.3233	1.000	8	0.0132	0.0145
+0.4737	0.5261	1.000	3. In executing COPY CONTROL WORD, only the	0.3763	0.0185
+0.4807	0.1071	1.000	Data bits per byte	0.1374	0.0211
+0.4897	0.5508	1.000	data word address and word count fields will be	0.3496	0.0147
+0.4992	0.1069	1.000	Bytes per word	0.1169	0.0205
+0.5015	0.3214	1.000	2	0.0150	0.0145
+0.5025	0.5488	1.000	returned to core storage. COPY CONTROL WORD is	0.3516	0.0153
+0.5173	0.1071	1.000	Words per arc	0.1091	0.0191
+0.5174	0.3045	1.000	512	0.0338	0.0174
+0.5188	0.5526	1.000	executed only if the system is not reading or	0.3477	0.0146
+0.5318	0.1071	1.000	Words per track	0.1186	0.0222
+0.5349	0.5508	1.000	writing.	0.0583	0.0160
+0.5363	0.2989	1.000	4096	0.0376	0.0160
+0.5521	0.1071	1.000	Arcs per file	0.0979	0.0209
+0.5552	0.2989	1.000	4096	0.0357	0.0145
+0.5667	0.1052	1.000	Words per file	0.1110	0.0221
+0.5708	0.2649	1.000	2,097,512 (221)	0.1130	0.0198
+0.5754	0.5075	1.000	Indicators	0.0753	0.0119
+0.5872	0.1071	1.000	Maximum track access	0.1617	0.0204
+0.5915	0.3045	1.000	180 ms.	0.0620	0.0146
+0.5929	0.5092	1.000	The indicators and conditions which turn them on	0.3913	0.0181
+0.6045	0.1071	1.000	Maximum rotational	0.1541	0.0176
+0.6105	0.5094	1.000	are reviewed in this section, with emphasis on condi-	0.3910	0.0160
+0.6235	0.3139	1.000	33.3ms.	0.0658	0.0160
+0.6235	0.1184	1.000	access	0.0508	0.0145
+0.6250	0.5094	1.000	tions resulting from operation of the disk system.	0.3647	0.0174
+0.6393	0.1052	1.000	Data transfer to	0.1204	0.0179
+0.6539	0.5094	1.000	GENERAL INDICATORS	0.1504	0.0133
+0.6555	0.1203	1.000	storage (instantaneous	0.1692	0.0176
+0.6715	0.5188	1.000	Address Invalid (AD). The purpose of this indi-	0.3816	0.0161
+0.6715	0.3214	1.000	8 microseconds/word	0.1560	0.0145
+0.6730	0.1222	1.000	rate)	0.0395	0.0116
+0.6860	0.5075	1.000	cator, when on in conjunction with input-output	0.3929	0.0176
+0.6957	0.0920	1.000	Data Paths	0.0848	0.0126
+0.7006	0.5056	1.000	instructions, signals that the right effective address of	0.3947	0.0174
+0.7179	0.5056	1.000	a READ, WRITE, Or COPY CONTROL WORD instruction is	0.3929	0.0147
+0.7194	0.0902	1.000	The Disk Synchronizer (Ds) contains control fea-	0.3929	0.0146
+0.7311	0.5019	1.000	.O through 31. When an error is found which turns	0.3966	0.0174
+0.7320	0.0901	1.000	tures necessary to regulate the information flow over	0.3913	0.0198
+0.7485	0.5056	1.000	on this indicator, the processing of the instruction is	0.3929	0.0161
+0.7485	0.0883	1.000	a single data channel linking core storage to disk stor-	0.3947	0.0161
+0.7630	0.5056	1.000	terminated in the cPu.	0.1673	0.0146
+0.7645	0.0883	1.000	age. This is the read and write path for data to and	0.3929	0.0161
+0.7787	0.0898	1.000	from disk storage.	0.1325	0.0155
+0.7921	0.5056	1.000	INPUT-OUTPUT REJECT INDICATORS	0.2519	0.0131
+0.7951	0.1034	1.000	Since data transfers between the Ds and core storage	0.3778	0.0174
+0.8081	0.5207	1.000	Exchange Check Reject (EKJ). This indicator is	0.3778	0.0174
+0.8096	0.0883	1.000	are on a full-word basis, the facility for word assembly	0.3929	0.0174
+0.8238	0.5074	1.000	turned on when an error is detected by the disk syn-	0.3894	0.0175
+0.8270	0.0883	1.000	and disassembly is provided in the Disk Synchronizer.	0.3910	0.0146
+0.8380	0.5056	1.000	chronizer or disk storage in the course of setting up	0.3892	0.0188
+0.8415	0.0883	1.000	Two words are buffered, one in a full-word register,	0.3910	0.0161
+0.8545	0.5056	1.000	the present instruction. The error detected may be	0.3910	0.0176
+0.8561	0.0865	1.000	the second in two half-word byte registers. Through	0.3929	0.0176
+0.8691	0.5037	1.000	caused by:	0.0809	0.0176
+0.8706	0.0902	1.000	the use of the three registers the data flow is syn-	0.3910	0.0146
+0.8866	0.0883	1.000	chronized between core storage and disk storage.	0.3684	0.0146
+0.8881	0.5207	1.000	1. Parity errors in the information contained in	0.3759	0.0160
+0.9258	0.1391	1.000	IBM 7030	0.0639	0.0088
+0.9259	0.0883	1.000	158	0.0226	0.0087

@@ -1,0 +1,57 @@
+0.0856	0.8721	1.000	CCA8	0.0490	0.0163
+0.1497	0.5244	1.000	FLOW CHART DESCRIPTION	0.2218	0.0161
+0.1525	0.1015	1.000	LINKAGE	0.0734	0.0133
+0.1831	0.0996	1.000	Initially	0.0621	0.0146
+0.1976	0.5244	1.000	Boxes 1, 8, 11, 12	0.1447	0.0146
+0.2121	0.1015	1.000	The calling sequence is:	0.1786	0.0146
+0.2234	0.1165	1.000	SIC, $15; B, CCA8	0.1430	0.0197
+0.2252	0.5263	1.000	Indicator bits, mask bits, and index registers are	0.3665	0.0161
+0.2397	0.2838	1.000	'address of IBM card code	0.1974	0.0147
+0.2397	0.5282	1.000	preserved and restored by CCA8	0.2406	0.0133
+0.2427	0.1165	1.000	, A(D	0.0432	0.0145
+0.2558	0.2989	1.000	character buffer.	0.1335	0.0146
+0.2674	0.2838	1.000	'address of A8 character	0.1880	0.0174
+0.2718	0.1165	0.300	,BД)	0.0432	0.0145
+0.2846	0.2987	1.000	buffer.	0.0548	0.0137
+0.2979	0.2838	1.000	'n = an integer (without radix	0.2180	0.0161
+0.2979	0.5150	1.000	Box 5.	0.0583	0.0176
+0.3023	0.1165	1.000	; n(l)	0.0414	0.0131
+0.3139	0.2989	1.000	point) specifying count of	0.1955	0.0161
+0.3255	0.3008	1.000	IBM card code characters	0.1974	0.0176
+0.3270	0.5244	1.000	The table of A8 characters has a field of eight zeros	0.3872	0.0161
+0.3415	0.5244	1.000	for each position in the table that can be referenced by	0.4041	0.0161
+0.3445	0.3026	1.000	to be converted.	0.1203	0.0116
+0.3581	0.1202	1.000	B, a fixup subroutine 'error return.	0.2728	0.0156
+0.3590	0.5244	1.000	an illegal IBM card code character. (Note that if	0.3684	0.0131
+0.3735	0.5282	1.000	this generalized subroutine -- and it definitely is one --	0.4098	0.0131
+0.3750	0.1184	1.000	Normal Return	0.1128	0.0117
+0.3881	0.5263	1.000	should be used out of STRAP II, the subroutine could be	0.4117	0.0146
+0.4026	0.5282	1.000	easily adjusted to do a slower conversion with a much	0.3966	0.0116
+0.4035	0.1032	1.000	Re-entry	0.0680	0.0128
+0.4172	0.5263	1.000	shorter table of A8 characters by inserting instruc-	0.3835	0.0132
+0.4330	0.1203	1.000	1. The contents of $15 must be preserved outside	0.3684	0.0133
+0.4330	0.5282	1.000	tions before those for the table look-up to test for	0.3665	0.0118
+0.4462	0.5244	1.000	illegal multiple punches in the high-order three posi-	0.3947	0.0132
+0.4476	0.1053	1.000	of CCA8 because the contents of $15 are used in the	0.3778	0.0132
+0.4606	0.5244	1.000	tions of each IBM card code character.)	0.2970	0.0133
+0.4636	0.1053	1.000	re-entry linkage.	0.1259	0.0117
+0.4767	0.1184	1.000	2. The legal 12-bit character to be substituted for	0.3759	0.0146
+0.4912	0.1034	1.000	the illegal IBM card code must be loaded into the	0.3609	0.0146
+0.5073	0.1034	1.000	accumulator at offset 107 before re-entry.	0.3120	0.0131
+0.5087	0.5244	1.000	Boxes 9-11	0.0865	0.0132
+0.5203	0.1184	1.000	3. After re-entering the CCA8 subroutine with a	0.3609	0.0161
+0.5348	0.1034	1.000	B, O ($15) instruction, CCA8 will resume the converting	0.4041	0.0161
+0.5363	0.5244	1.000	If an illegal IBM card code character is detected by	0.3835	0.0146
+0.5479	0.1015	1.000	process with the substitute IBM card code character.	0.3929	0.0161
+0.5523	0.5263	1.000	CCA8 during the table look-up, a reference index	0.3665	0.0146
+0.5669	0.5263	1.000	word is set up in the right half of the accumulator.	0.3741	0.0131
+0.5814	0.5282	1.000	The value field contains the address of the next IBM	0.3835	0.0116
+0.5959	0.5282	1.000	card code character; the count field contains the	0.3571	0.0132
+0.6105	0.5263	1.000	number of characters yet to be converted (excluding	0.3835	0.0147
+0.6118	0.1147	1.000	XINPUT: to convert the card image of each card	0.3703	0.0146
+0.6250	0.1974	1.000	type input into a card image in A8 code,	0.2970	0.0160
+0.6264	0.5263	1.000	the illegal one). CCA& then exits back into the user	0.3853	0.0132
+0.6394	0.1992	1.000	the processing code of STRAP II.	0.2462	0.0147
+0.6423	0.5282	1.000	routine.	0.0602	0.0104
+0.9390	0.8421	1.000	CCA8	0.0376	0.0116
+0.9404	0.9023	1.000	69	0.0169	0.0073

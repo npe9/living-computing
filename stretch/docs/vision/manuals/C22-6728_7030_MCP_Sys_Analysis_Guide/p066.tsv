@@ -1,0 +1,125 @@
+0.0741	0.5395	1.000	TPRINI -- 1 bit, set to one when (if tape request)	0.3759	0.0204
+0.0770	0.0996	1.000	The table control words are as follows:	0.2932	0.0118
+0.0872	0.6316	1.000	the tape mounting message has been	0.2707	0.0189
+0.0915	0.1165	1.000	TPPREF —- a constant index word for the	0.3083	0.0131
+0.1045	0.6316	1.000	sent to the operator via the commen-	0.2763	0.0161
+0.1061	0.2105	1.000	TPREFT table, used for refill.	0.2331	0.0131
+0.1191	0.1147	1.000	TPPRUN -- an index word pointing to the next PP	0.3722	0.0161
+0.1191	0.6090	1.000	__a bits, indieating the equipment types	0.3045	0.0321
+0.1337	0.5394	1.000	TYPE	0.0489	0.0161
+0.1370	0.2085	1.000	to be run.	0.0756	0.0103
+0.1497	0.6316	1.000	being requested.	0.1259	0.0145
+0.1497	0.1015	1.000	The format of the first of the two 64-bit words for	0.3703	0.0131
+0.1497	0.5526	1.000	(.3)	0.0357	0.0160
+0.1642	0.6466	1.000	0001 - Disk request	0.1617	0.0161
+0.1672	0.0846	1.000	eech PP is as follows:	0.1654	0.0087
+0.1770	0.1182	1.000	TCRREF -- 18 bits, an address of the first word	0.3632	0.0195
+0.1788	0.6485	1.000	0010 - Console request	0.1861	0.0161
+0.1926	0.2085	1.000	used within the I-O request table for	0.2712	0.0178
+0.1933	0.6485	1.000	0011 - Card reader request	0.2180	0.0161
+0.1962	0.1316	1.000	(0.0)	0.0376	0.0131
+0.2106	0.2105	1.000	the PP.	0.0565	0.0106
+0.2106	0.6485	1.000	0100 - Card punch request	0.2086	0.0118
+0.2238	0.1184	1.000	TUNCT -- 8 bits, is the number of words used	0.3571	0.0131
+0.2252	0.6466	1.000	0101 - Printer request	0.1842	0.0118
+0.2384	0.6466	1.000	1000 - Tape request	0.1673	0.0147
+0.2384	0.2086	1.000	within the I-O request table for the	0.2613	0.0147
+0.2398	0.1335	1.000	(.28)	0.0357	0.0131
+0.2529	0.5395	1.000	TABSUN -- 3 bits, indicating the absolute unit	0.3477	0.0160
+0.2558	0.2105	1.000	PP.	0.0301	0.0102
+0.2671	0.1183	1.000	TJBPRO -- 1 bit, is zero if the PP has not been	0.3611	0.0166
+0.2674	0.6316	1.000	number to which the request has been	0.2801	0.0160
+0.2689	0.5508	1.000	(.7)	0.0338	0.0145
+0.2791	0.6316	1.000	assigned. (Multi-unit channels only.)	0.2838	0.0189
+0.2812	0.2103	1.000	run or processed. It is one if the PP	0.2788	0.0191
+0.2849	0.1335	1.000	(.36)	0.0357	0.0131
+0.2964	0.5395	1.000	TRLSYM -- 7 bits, is a number relative to a posi-	0.3759	0.0161
+0.2994	0.2105	1.000	has been run.	0.1015	0.0103
+0.3124	0.6316	1.000	tion within the symbolic channel table.	0.2838	0.0132
+0.3124	0.1184	1.000	TRJECT -- 1 bit, is zero if the PP has not been	0.3590	0.0132
+0.3125	0.5526	1.000	(.11)	0.0414	0.0145
+0.3267	0.6316	1.000	Hence, this number is relative to the	0.2782	0.0151
+0.3270	0.2104	1.000	rejected, a one if the PP has been	0.2540	0.0137
+0.3285	0.1335	1.000	(.37)	0.0357	0.0131
+0.3415	0.6316	1.000	symbolic channel field of the IOD card	0.2838	0.0131
+0.3430	0.2105	1.000	rejected in phase 1.	0.1485	0.0116
+0.3560	0.1183	1.000	TASGNP -- 1 bit, is zero if any one or more of	0.3574	0.0172
+0.3561	0.6335	1.000	which is used for channel separation.	0.2744	0.0131
+0.3721	0.2086	1.000	the I-O requests are not pre-assigned	0.2838	0.0146
+0.3735	0.1316	1.000	(.38)	0.0395	0.0131
+0.3881	0.2105	1.000	for the PP, is one if all requests	0.2462	0.0116
+0.3967	0.2105	1.000	have been pre-assigned for the PP.	0.2632	0.0176
+0.3983	0.5395	1.000	TLAST	0.0583	0.0174
+0.4026	0.6053	1.000	-- 1 bit, indicates the last plus one	0.2688	0.0147
+0.4142	0.6316	1.000	word of this I-O request table, used	0.2707	0.0189
+0.4157	0.5526	1.000	(.18)	0.0432	0.0160
+0.4172	0.1203	1.000	TLPPEN -- 1 bit, is zero if this word is not the	0.3553	0.0132
+0.4288	0.6316	1.000	only to note when to refill the value	0.2650	0.0176
+0.4313	0.2104	1.000	last plus one entry within the	0.2277	0.0138
+0.4331	0.1335	1.000	(.39)	0.0395	0.0116
+0.4418	0.6316	1.000	field of the TIOREQ tables control	0.2575	0.0189
+0.4440	0.2104	1.000	TPREFT table, is one if this is the	0.2637	0.0213
+0.4593	0.2105	1.000	last plus one entry made by decode	0.2613	0.0146
+0.4608	0.6316	1.000	index.	0.0489	0.0145
+0.4752	0.6015	1.000	-- 9 bits, denotes the sequence in	0.2650	0.0161
+0.4752	0.5395	1.000	TIODSQ	0.0621	0.0132
+0.4767	0.2105	1.000	within the TPREFT.	0.1523	0.0118
+0.4897	0.6316	1.000	which the IOD for this request was	0.2575	0.0147
+0.4912	0.1203	1.000	TLREFN —- 12 bits, contains the largest refer-	0.3534	0.0131
+0.4913	0.5526	1.000	(.19)	0.0414	0.0131
+0.5038	0.6314	1.000	received.	0.0736	0.0156
+0.5042	0.2124	1.000	ence number found on any one of the	0.2669	0.0118
+0.5058	0.1335	1.000	(.40)	0.0395	0.0131
+0.5188	0.5395	1.000	TFREEL -- 18 bits, is the cross-reference	0.3252	0.0161
+0.5203	0.2105	1.000	IOD's submitted for this PP.	0.2162	0.0131
+0.5333	0.6297	1.000	address of the reel label within the	0.2632	0.0146
+0.5334	0.5545	1.000	(.28)	0.0414	0.0160
+0.5348	0.1203	1.000	TIODCT -- 12 bits, the total number of IOD's	0.3421	0.0131
+0.5464	0.6316	1.000	TESTRE table. (Tape IOD's only)	0.2556	0.0176
+0.5494	0.2105	1.000	submitted to decode for this PP.	0.2444	0.0117
+0.5509	0.1335	1.000	(.52)	0.0395	0.0116
+0.5624	0.5395	1.000	TABSCH -- 18 bits, is the absolute channel	0.3289	0.0132
+0.5654	0.1034	1.000	The second of the two words, TPNAME, is the	0.3459	0.0116
+0.5770	0.6297	1.000	addres to to lohate the Chastea states	0.2801	0.0291
+0.5785	0.0846	1.000	name of the PP taken from the first 8 characters of	0.3853	0.0116
+0.5785	0.5545	1.000	(.46)	0.0395	0.0145
+0.5945	0.0865	1.000	the JOB card in A6 format.	0.2011	0.0102
+0.6046	0.6316	1.000	assigned.	0.0752	0.0176
+0.6221	0.0846	1.000	THE I-O REQUEST TABLE (TIOREQ): This table	0.3741	0.0146
+0.6352	0.5056	1.000	THE FIRST REEL NUMBER TABLE (TFSTRE): This	0.4004	0.0176
+0.6380	0.0864	1.000	contains one word for each unique I-O unit requested	0.3893	0.0136
+0.6523	0.0846	1.000	by the PP. The length of the table is controlled by	0.3797	0.0122
+0.6526	0.5056	1.000	table contains one word for each reel label requested	0.3929	0.0131
+0.6655	0.0826	1.000	the parameter TIOC, which is the maximum number	0.3931	0.0179
+0.6657	0.5056	1.000	by a REEL card. The reel label is 8 characters long	0.3966	0.0146
+0.6817	0.0865	1.000	of problem programs multiplied by an estimated	0.3571	0.0132
+0.6830	0.5075	1.000	and is in A6 format, using only 48 of the 64 bits.	0.3628	0.0118
+0.6976	0.0846	1.000	average number of units used by each problem pro-	0.3835	0.0118
+0.6976	0.5075	1.000	The size of the table is determined by the parameter	0.3891	0.0118
+0.7121	0.5075	1.000	TFRC, presently 50.	0.1579	0.0132
+0.7121	0.0865	1.000	gram. Presently the parameter is 80. The format	0.3835	0.0118
+0.7267	0.5226	1.000	The table entry, TREELN, is the name of the tape	0.3741	0.0146
+0.7267	0.0865	1.000	of each word is as follows:	0.1992	0.0103
+0.7412	0.1184	1.000	TASGNI -- 1 bit, is zero if this request word	0.3440	0.0131
+0.7412	0.5075	1.000	reel to be mounted on a tape unit. The first three	0.3703	0.0118
+0.7558	0.5056	1.000	characters specify whether the tape is labelled or	0.3703	0.0131
+0.7558	0.2086	1.000	has not been pre-assigned, and will	0.2688	0.0118
+0.7573	0.1353	1.000	(0.0)	0.0489	0.0102
+0.7703	0.2124	1.000	be set to one when pre-assignment	0.2575	0.0131
+0.7703	0.5075	1.000	unlabelled and whether the tape is protected or not	0.3741	0.0131
+0.7863	0.5056	1.000	protected. The remaining five characters are the	0.3722	0.0116
+0.7863	0.2105	1.000	has been made.	0.1165	0.0116
+0.8009	0.1203	1.000	TUNOBT -- 1 bit, is zero for normal pre-assign-	0.3703	0.0116
+0.8009	0.5038	1.000	label.	0.0489	0.0131
+0.8154	0.5244	1.000	The preceding three tables are duplicated to handle	0.3778	0.0116
+0.8154	0.2124	1.000	ment case. It will be set to one if	0.2556	0.0102
+0.8154	0.1335	1.000	(.1)	0.0301	0.0131
+0.8299	0.5075	1.000	problem programs in the bypass mode. They are	0.3684	0.0116
+0.8299	0.2124	1.000	this request was once pre-assigned	0.2613	0.0116
+0.8445	0.2105	1.000	and the unit to which it was pre-	0.2425	0.0116
+0.8445	0.5075	1.000	only for one job, however, and the table sizes are	0.3703	0.0131
+0.8590	0.5056	1.000	chosen accordingly. The formats of the tables are	0.3778	0.0131
+0.8590	0.2105	1.000	assigned was taken from the machine	0.2782	0.0116
+0.8735	0.5075	1.000	the same as for the overlapped mode.	0.2801	0.0131
+0.8750	0.2124	1.000	configuration.	0.1053	0.0116
+0.9331	0.0808	1.000	66	0.0169	0.0087

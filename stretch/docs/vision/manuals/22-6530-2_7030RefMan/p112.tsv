@@ -1,0 +1,114 @@
+0.0639	0.0959	1.000	retained at the exchange and is not apparent at the	0.3891	0.0145
+0.0678	0.6878	1.000	End of Block	0.0661	0.0142
+0.0682	0.5169	1.000	Multiple Chain/Count	0.1278	0.0133
+0.0756	0.8064	1.000	Action	0.0357	0.0131
+0.0799	0.6955	1.000	0= Yes	0.0432	0.0131
+0.0799	0.5244	1.000	Flag	0.0282	0.0131
+0.0814	0.5865	1.000	lag | 0 = Zer	0.0658	0.0087
+0.0814	0.0977	1.000	unit.	0.0320	0.0102
+0.0900	0.6974	1.000	1= No	0.0395	0.0118
+0.0900	0.6165	1.000	1 = Not Zer	0.0583	0.0118
+0.0973	0.1109	1.000	A multiple block operation may, however, be ter-	0.3741	0.0146
+0.1118	0.0959	1.000	minated before reaching the last block specified by	0.3872	0.0146
+0.1119	0.5846	1.000	0000	0.0113	0.0407
+0.1119	0.5282	1.000	0000	0.0150	0.0422
+0.1119	0.6353	1.000	:	0.0094	0.0189
+0.1119	0.7086	1.000	-0-0	0.0132	0.0422
+0.1264	0.0959	1.000	the instruction. If an exchange program check, a	0.3872	0.0146
+0.1308	0.6335	1.000	1	0.0113	0.0203
+0.1410	0.7575	1.000	Continue	0.0489	0.0131
+0.1439	0.0959	1.000	unit check, or an end exception is caused, the opera-	0.3891	0.0131
+0.1584	0.0959	1.000	tion never proceeds beyond the end of the block in	0.3872	0.0146
+0.1627	0.7650	1.000	nd operatio	0.0564	0.0131
+0.1628	0.5301	1.000	00	0.0113	0.0218
+0.1730	0.7650	1.000	hain and continu	0.0827	0.0102
+0.1744	0.0959	1.000	which the condition is discovered.	0.2444	0.0116
+0.1826	0.7555	1.000	End operation	0.0736	0.0141
+0.1831	0.5282	1.000	00	0.0113	0.0203
+0.1918	0.1090	1.000	Whenever the end of a block is reached and a new	0.3741	0.0118
+0.1933	0.7556	1.000	Continue	0.0508	0.0131
+0.2078	0.0959	1.000	block is started, data transfer continues with the next	0.3872	0.0131
+0.2151	0.6335	1.000	00	0.0094	0.0189
+0.2151	0.5808	1.000	•000	0.0132	0.0407
+0.2166	0.7707	1.000	d operati	0.0432	0.0102
+0.2195	0.5301	1.000	i	0.0075	0.0145
+0.2224	0.0940	1.000	full word in core storage. If a block is not an integral	0.3891	0.0131
+0.2238	0.7707	1.000	sconnect, then end o	0.1015	0.0102
+0.2323	0.7556	1.000	Restart and continue	0.1073	0.0151
+0.2355	0.6335	1.000	--	0.0094	0.0189
+0.2355	0.5282	1.000	!	0.0094	0.0145
+0.2384	0.0940	1.000	number of full words long, on reading, the missing	0.3891	0.0131
+0.2510	0.0939	1.000	bytes of the last word are filled with zeros. On writ-	0.3893	0.0166
+0.2660	0.7650	1.000	hain, restart and contin	0.1222	0.0131
+0.2688	0.1203	1.000	the bytes remaining after completion of the block	0.3628	0.0146
+0.2761	0.7650	1.000	isconnect and chai	0.0921	0.0103
+0.2833	0.0921	1.000	are ignored.	0.0865	0.0148
+0.2848	0.7556	1.000	Restart and confinue	0.1071	0.0131
+0.2951	0.7575	1.000	Continue	0.0451	0.0116
+0.3009	0.1090	1.000	The case when both the multiple and the chain	0.3741	0.0146
+0.3169	0.0921	1.000	flags are on and the control word is exhausted any-	0.3910	0.0160
+0.3255	0.5075	1.000	Figure 36. Multiple and Chain Flag Operations	0.2914	0.0176
+0.3314	0.0921	1.000	where within a block (i.e., not upon the transmission	0.3910	0.0160
+0.3473	0.0940	1.000	of the last word of a block) is treated in a special	0.3891	0.0133
+0.3633	0.0940	1.000	way. When the count reaches zero, the exchange	0.3891	0.0131
+0.3779	0.0921	1.000	sends a disconnect signal to the unit indicating that	0.3910	0.0146
+0.3939	0.0940	1.000	it does not expect to transfer any more data to or	0.3891	0.0146
+0.4084	0.0940	1.000	from the unit until the end of the current block is	0.3891	0.0116
+0.4244	0.0921	1.000	reached. The unit proceeds upon the receipt of the	0.3910	0.0147
+0.4403	0.0940	1.000	signal to the end of the current block without any	0.3891	0.0146
+0.4548	0.0940	1.000	data transfer and without any control word modifica-	0.3910	0.0132
+0.4651	0.5094	1.000	propriately modified by incrementing its address and	0.3910	0.0161
+0.4708	0.1667	0.300	( oi mli moai bax 1 marcdi. Wai	0.3118	0.0458
+0.4811	0.5113	1.000	decrementing the count, and, if necessary, a new con-	0.3891	0.0131
+0.4942	0.5113	1.000	trol word is fetched in chained operations. The	0.3891	0.0146
+0.5115	0.5113	1.000	assembled data words, however, are not transferred	0.3891	0.0133
+0.5160	0.0940	1.000	the end of the block is reached, the unit is restarted,	0.3910	0.0146
+0.5276	0.5094	1.000	to core storage. By setting the appropriate control	0.3929	0.0131
+0.5320	0.0940	1.000	the new control word is fetched and the operation	0.3891	0.0132
+0.5421	0.5113	1.000	words in a chain to skip or not, any selected portion	0.3891	0.0146
+0.5464	0.0921	1.000	is resumed with the next block. Thereafter, chaining	0.3910	0.0133
+0.5581	0.5094	1.000	of data may thus be suppressed during reading	0.3421	0.0161
+0.5624	0.0921	1.000	and block control take place in accordance with the	0.3910	0.0146
+0.5727	0.5282	1.000	Since the testing for data word addresses that ex-	0.3722	0.0146
+0.5785	0.0940	1.000	chain and multiple flags of the next control word.	0.3891	0.0131
+0.5887	0.8722	1.000	the	0.0282	0.0102
+0.5887	0.5113	1.000	ceed the available core storage is performed in	0.3609	0.0132
+0.5915	0.0940	1.000	Thus, in this mode of operation, it is possible to	0.3891	0.0161
+0.6045	0.5094	1.000	core storage controls, reference to non-existent core	0.3910	0.0133
+0.6076	0.0921	1.000	force a gap on tape at the end of any selected control	0.3910	0.0161
+0.6206	0.5113	1.000	storage locations cannot cause an exchange-program-	0.3891	0.0117
+0.6250	0.0940	1.000	word in a chain.	0.1165	0.0117
+0.6352	0.5113	1.000	check indication when reading with the skip flag on.	0.3891	0.0146
+0.6409	0.1090	1.000	Successive control words in a chain may have dif-	0.3759	0.0146
+0.6497	0.5094	1.000	The exchange-program-check indication is always	0.3910	0.0161
+0.6570	0.0902	1.000	ferent chain and multiple flag bits. The precise oper-	0.3947	0.0161
+0.6657	0.5075	1.000	given when an attempt is made to fetch a control word	0.3929	0.0161
+0.6715	0.0940	1.000	ation may be determined from Figure 36. The exact	0.3891	0.0145
+0.6802	0.5094	1.000	from a core storage address that is not accessible to the	0.3910	0.0161
+0.6829	0.0920	1.000	contents of the control word in the exchange depends	0.3913	0.0210
+0.6977	0.5075	1.000	exchange.	0.0752	0.0145
+0.7003	0.0938	1.000	upon the type and the stage of the operation. A more	0.3895	0.0195
+0.7136	0.5263	1.000	As a result of the above, the program can specify	0.3741	0.0161
+0.7165	0.0939	1.000	detailed description of the exact state of the control	0.3894	0.0169
+0.7297	0.5075	1.000	any address above 31 when reading with the skip	0.3929	0.0161
+0.7339	0.0940	1.000	word in the exchange is given later.	0.2556	0.0132
+0.7442	0.5075	1.000	flag on. If in the process of control word modification	0.3929	0.0174
+0.7602	0.5075	1.000	the address 218 is reached, the next cycle resets the	0.3929	0.0160
+0.7761	0.5075	1.000	address to O. Since address 0 is invalid, the operation	0.3929	0.0146
+0.7762	0.0902	1.000	Skipping	0.0639	0.0145
+0.7906	0.5075	1.000	is terminated when an attempt is made to store a	0.3929	0.0146
+0.7963	0.0920	1.000	The skip flag, when zero, specifies normal reading.	0.3912	0.0182
+0.8067	0.5075	1.000	word in this location.	0.1579	0.0146
+0.8122	0.0938	1.000	On writing, the flag is meaningless and is ignored	0.3856	0.0163
+0.8224	0.5242	1.000	The presence of the skip flag does not affect the	0.3764	0.0201
+0.8266	0.0940	1.000	When the skip flag is one, no data words are trans-	0.3816	0.0140
+0.8400	0.5075	1.000	treatment of the unit-check and endexception indica-	0.3947	0.0147
+0.8415	0.0921	1.000	ferred to core storage. The operation of the unit is	0.3910	0.0131
+0.8545	0.5075	1.000	tions. When a unit check or end exception occurs,	0.3947	0.0161
+0.8576	0.0921	1.000	still continued, and the system goes through all the	0.3910	0.0146
+0.8706	0.5075	1.000	the operation is terminated in accordance with the	0.3929	0.0161
+0.8725	0.0920	1.000	sequences associated with data transfer between the	0.3912	0.0162
+0.8861	0.5074	1.000	general rules.	0.1018	0.0170
+0.8881	0.0940	1.000	exchange and the unit. The control word is also ap-	0.3891	0.0146
+0.9215	0.7237	1.000	IBM 7619 Exchange	0.1278	0.0131
+0.9230	0.8778	1.000	109	0.0244	0.0102

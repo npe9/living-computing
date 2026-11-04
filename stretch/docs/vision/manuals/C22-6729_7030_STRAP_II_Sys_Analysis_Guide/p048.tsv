@@ -1,0 +1,44 @@
+0.0683	0.0733	1.000	ADDORD	0.0733	0.0160
+0.1337	0.0752	1.000	PURPOSE	0.0771	0.0116
+0.1352	0.5056	1.000	certain that adding an entry will not overflow the	0.3590	0.0117
+0.1497	0.5056	1.000	table and possibly overlap other information or tables.	0.4023	0.0131
+0.1627	0.0752	1.000	The objective of ADDORD is to add an entry in its	0.3684	0.0131
+0.1788	0.5038	1.000	DETAILS	0.0714	0.0116
+0.1788	0.0733	1.000	proper place in an ordered table, if the entry is not	0.3872	0.0131
+0.1890	0.0752	1.000	already in the table.	0.1504	0.0147
+0.2078	0.5056	1.000	An initial check is made to see if the table is ordered.	0.4004	0.0116
+0.2207	0.0770	1.000	LINKAGE	0.0716	0.0136
+0.2238	0.5038	1.000	It not, the entry will be added out of order. If the	0.3722	0.0116
+0.2369	0.5038	1.000	table is ordered, the location of a table argument	0.3703	0.0131
+0.2500	0.0921	1.000	LVI, 15, $+2; B, ADDORD	0.2011	0.0161
+0.2529	0.5056	1.000	equal to or next higher than the given argument is	0.3684	0.0116
+0.2645	0.0921	1.000	, tbl	0.0376	0.0176
+0.2674	0.5056	1.000	obtained by use of the SEARCH routine. If no equal	0.3797	0.0116
+0.2761	0.0921	1.000	, arg(I)	0.0583	0.0191
+0.2820	0.5038	1.000	argument is found, the table will be moved up the	0.3665	0.0132
+0.2951	0.0921	1.000	, al(1)	0.0470	0.0160
+0.2964	0.5056	1.000	correct amount to permit insertion of the new entry	0.3797	0.0118
+0.3067	0.0921	1.000	,funct(1)	0.0695	0.0174
+0.3109	0.5038	1.000	in order. All this will be done in conformation to	0.3703	0.0118
+0.3241	0.0921	0.500	, Il(D)	0.0451	0.0160
+0.3241	0.5038	1.000	the control block specifications. The control block	0.3797	0.0131
+0.3387	0.0921	1.000	B, a fix-up subroutine	0.1692	0.0147
+0.3387	0.3045	1.000	'Already there exit.	0.1504	0.0147
+0.3400	0.5019	1.000	will then be updated.	0.1560	0.0133
+0.3532	0.0921	1.000	B, a fix-up subroutine	0.1692	0.0147
+0.3532	0.5226	1.000	On return to the 'already there' exit, the index words	0.3929	0.0132
+0.3532	0.3045	1.000	'Error exit, unordered	0.1729	0.0160
+0.3677	0.3214	1.000	table, item not in	0.1335	0.0145
+0.3706	0.5038	1.000	in the control block will locate the equal item. If a	0.3797	0.0103
+0.3836	0.3233	1.000	order.	0.0508	0.0133
+0.3836	0.5038	1.000	'normal return' is made, the control block will refleet	0.4060	0.0132
+0.3982	0.0921	1.000	Normal Return	0.1128	0.0132
+0.3997	0.5056	1.000	the change in the number of entries in the table, and	0.3853	0.0116
+0.4127	0.5056	1.000	the location of the properly inserted entry. The 'error	0.4060	0.0131
+0.4273	0.0771	1.000	RESTRICTIONS	0.1165	0.0131
+0.4288	0.5056	1.000	return' exit will be made from the ADDUNO routine	0.3797	0.0103
+0.4433	0.5038	1.000	if an unordered table had been detected, and the entry	0.3985	0.0116
+0.4578	0.5038	1.000	will be added to the end of the table.	0.2688	0.0116
+0.4578	0.1090	1.000	The table must be in ascending order.	0.2932	0.0131
+0.4709	0.0921	1.000	2. It is the programmer's responsibility to make	0.3703	0.0131
+0.9244	0.0733	1.000	48	0.0150	0.0073

@@ -1,0 +1,135 @@
+0.0973	0.3571	1.000	Unassign (or	0.0959	0.0133
+0.0973	0.6259	1.000	The first reel table is full.	0.2086	0.0118
+0.0974	0.5695	1.000	3.0	0.0508	0.0116
+0.1117	0.1804	1.000	Assign	0.0528	0.0150
+0.1118	0.3571	1.000	SFREE-SUNLD)	0.1222	0.0163
+0.1118	0.5695	1.000	4.0 The internal tape channel and unit	0.3177	0.0133
+0.1119	0.0808	1.000	Bits	0.0338	0.0116
+0.1119	0.2801	1.000	Move	0.0414	0.0145
+0.1279	0.6466	1.000	tables are full.	0.1165	0.0117
+0.1423	0.0808	1.000	0.61-0.63	0.0771	0.0119
+0.1424	0.5282	1.000	The I-O request and first reel tables will be cleared	0.3910	0.0116
+0.1424	0.1898	1.000	NU	0.0263	0.0116
+0.1424	0.2895	1.000	NU	0.0263	0.0116
+0.1424	0.4004	1.000	NU	0.0263	0.0131
+0.1554	0.0789	1.000	24.0-24.63	0.0865	0.0148
+0.1570	0.5094	1.000	for the job in question prior to the error return when	0.4004	0.0116
+0.1570	0.1898	1.000	NU	0.0263	0.0116
+0.1570	0.2895	1.000	NU	0.0263	0.0116
+0.1570	0.4004	1.000	NU	0.0263	0.0131
+0.1730	0.5094	1.000	the error is due to the first reason. When error re-	0.3947	0.0102
+0.1773	0.0789	1.000	The Decode Routine: The decode routine is used by	0.3891	0.0176
+0.1875	0.5094	1.000	turn is given to JC1 for the second reason, JCI sets	0.3929	0.0116
+0.1933	0.0771	1.000	job control to enter information from IOD and REEL	0.3966	0.0131
+0.2020	0.5113	1.000	SJ1FUL and issues $RET.	0.1974	0.0116
+0.2078	0.0789	1.000	cards into the I-O assignment tables. It is entered	0.3872	0.0161
+0.2166	0.5263	1.000	The decode routine (Figure 33) checks the system	0.3722	0.0116
+0.2209	0.0789	1.000	by JCI in the overlapped modes, and by JC4 in the	0.3835	0.0161
+0.2311	0.5113	1.000	mode to set up the program for the correct table	0.3628	0.0131
+0.2369	0.0789	1.000	bypass mode, with the following linkage:	0.3064	0.0146
+0.2456	0.5113	1.000	entry. A mode change is allowed only between jobs:	0.3947	0.0116
+0.2529	0.1466	1.000	LVI, 15, X	0.0865	0.0147
+0.2615	0.5113	1.000	It the entry is an initial entry, the routine clears and	0.3985	0.0118
+0.2670	0.1465	1.000	B, LDECOD	0.0942	0.0154
+0.2761	0.5113	1.000	sets up certain internal tables. Then, if overlap, a	0.3891	0.0118
+0.2819	0.1466	1.000	VF, ALPHA	0.0921	0.0147
+0.2906	0.5113	1.000	check is made to see whether or not a slot is available	0.4098	0.0103
+0.2964	0.1466	1.000	CF, B	0.0489	0.0147
+0.3052	0.5113	1.000	within the PP reference table (PPREF). If not, a	0.3741	0.0132
+0.3109	0.1465	1.000	VF, C	0.0490	0.0148
+0.3197	0.5113	1.000	type 1 condition is set up in the linkage, indicies are	0.3947	0.0132
+0.3270	0.1466	1.000	error return	0.0977	0.0118
+0.3342	0.5113	1.000	restored, and the error return is made. If a slot is	0.3929	0.0131
+0.3415	0.1447	1.000	normal return	0.1109	0.0118
+0.3488	0.5113	1.000	available, the program proceeds to check if the entry	0.4023	0.0131
+0.3561	0.0808	1.000	where ALPHA locates the information (see following),	0.4060	0.0131
+0.3611	0.5093	1.000	is a final entry (IOD/REEL zero in ALPHA+1). If so,	0.4082	0.0169
+0.3696	0.0826	1.000	B identifies the system mode (zero is overlapped,	0.3724	0.0144
+0.3794	0.5113	1.000	the PP to be entered is a PP without IOD cards, or	0.3853	0.0116
+0.3866	0.0808	1.000	non-zero is bypass), and C is used to contain the	0.3684	0.0116
+0.3939	0.5094	1.000	possibly a PP that was rejected by job control.	0.3534	0.0116
+0.4012	0.0827	1.000	error code in the event the error return is used.	0.3647	0.0116
+0.4084	0.5263	1.000	If the entry is not a final entry, the flow follows	0.3609	0.0131
+0.4157	0.0996	1.000	The table at ALPHA contains the information for	0.3628	0.0102
+0.4230	0.5113	1.000	one of two paths depending on whether the card is IOD	0.4041	0.0131
+0.4302	0.0808	1.000	the IOD or REEL card as follows:	0.2538	0.0102
+0.4375	0.5113	1.000	or REEL. If it is IOD (LIODRN), the I-O request	0.3741	0.0131
+0.4447	0.1146	1.000	Location	0.0658	0.0103
+0.4462	0.2594	1.000	Content	0.0583	0.0087
+0.4520	0.5113	1.000	table is checked for room, and LIODTP entered if the	0.4023	0.0131
+0.4666	0.5113	1.000	type is tape. A tape IOD has both channel and unit	0.3797	0.0116
+0.4694	0.2575	1.000	Job name in A6 code.	0.1617	0.0118
+0.4695	0.1147	1.000	ALPHA-1.0	0.0883	0.0102
+0.4811	0.5113	1.000	fields for separation, while the remaining I-O types	0.3891	0.0131
+0.4824	0.1147	1.000	ALPHA (.28-.46)	0.1297	0.0118
+0.4839	0.2481	1.000	Number of broken out fields	0.2199	0.0103
+0.4956	0.5094	1.000	have only a channel field for separation. The I-O	0.3741	0.0131
+0.4985	0.2744	1.000	following.	0.0752	0.0116
+0.5115	0.5113	1.000	request table (TIOREQ) is then set up with proper	0.3722	0.0118
+0.5129	0.1748	1.000	(.52-.63)	0.0696	0.0105
+0.5130	0.2556	1.000	IOD reference number.	0.1767	0.0118
+0.5247	0.5113	1.000	entries. For each non-tape IOD card with a unique	0.3835	0.0132
+0.5270	0.1145	1.000	ALPHA+1.0	0.0886	0.0128
+0.5276	0.2575	1.000	IOD or REEL.	0.1090	0.0118
+0.5406	0.5094	1.000	type or channel field, there will be an entry made	0.3741	0.0132
+0.5419	0.1690	1.000	+2.0	0.0341	0.0122
+0.5421	0.2594	1.000	Type or first label.	0.1447	0.0117
+0.5552	0.5094	1.000	in the TIOREQ table. For a tape IOD an entry will	0.3835	0.0118
+0.5564	0.2593	1.000	PTOE or second label etc.	0.1995	0.0119
+0.5567	0.1692	1.000	+3.0	0.0338	0.0116
+0.5697	0.5094	1.000	be made in the TIOREQ table for each IOD card with	0.3929	0.0118
+0.5727	0.0959	1.000	When all the requests for a job have been proc-	0.3571	0.0131
+0.5842	0.5113	1.000	a null channel and unit field, and each IOD card with	0.3947	0.0131
+0.5872	0.0789	1.000	essed, decode must be notified in order to separate	0.3891	0.0131
+0.5988	0.5113	1.000	unique channel and unit fields. In the case where	0.3703	0.0118
+0.6011	0.0788	1.000	I-O requests from successive jobs. This final entry	0.3968	0.0144
+0.6133	0.5132	1.000	channel fields are alike and unit fields differ a	0.3459	0.0117
+0.6163	0.0789	1.000	is accomplished by setting the word at ALPHA+1.0	0.3816	0.0131
+0.6279	0.5132	1.000	TIOREQ table entry is made requesting the same	0.3665	0.0131
+0.6308	0.0789	1.000	to zero. Also, after several entries have been made	0.3985	0.0131
+0.6424	0.5113	1.000	channel as the previous IOD card with that channel.	0.3853	0.0131
+0.6453	0.0789	1.000	in the tables, it may be necessary to reject the job	0.3816	0.0131
+0.6570	0.5113	1.000	Making a table entry consists of setting up the	0.3459	0.0131
+0.6599	0.0789	1.000	and clear these entries. This is accomplished by	0.3741	0.0131
+0.6715	0.5113	1.000	following fields in the TIOREQ word:	0.2763	0.0131
+0.6744	0.0789	1.000	setting bit. 26 of X in the linkage and using the final	0.3910	0.0132
+0.6860	0.5451	1.000	TYPE	0.0451	0.0116
+0.6875	0.6429	1.000	identifying the equipment type.	0.2312	0.0116
+0.6890	0.0789	1.000	entry procedure. This bit must be zero for a normal	0.4004	0.0117
+0.7008	0.6239	1.000	for channel separation (tape only).	0.2804	0.0144
+0.7020	0.5451	1.000	TRLSYM	0.0771	0.0118
+0.7047	0.0789	1.000	entry.	0.0472	0.0106
+0.7164	0.5432	1.000	TIODSQ	0.0602	0.0133
+0.7179	0.6429	1.000	the sequence number in which the	0.2538	0.0103
+0.7179	0.0977	1.000	The decode routine will use the error return for	0.3590	0.0118
+0.7296	0.6595	1.000	IOD was received.	0.1416	0.0148
+0.7339	0.0789	1.000	one of two reasons:	0.1466	0.0103
+0.7440	0.5280	1.000	If the IOD card has a TYPE field requesting a disk,	0.3857	0.0163
+0.7485	0.0940	1.000	1. The IOD or REEL card is invalid. The corre-	0.3797	0.0118
+0.7615	0.5113	1.000	a check is made to see if it is an illegal request for	0.3872	0.0118
+0.7630	0.0789	1.000	sponding error codes are:	0.1955	0.0118
+0.7761	0.5113	1.000	infinity disk. If so, the error return is made. Other-	0.4079	0.0118
+0.7776	0.1391	1.000	5.0 A REEL card following a non-tape IOD.	0.3440	0.0131
+0.7906	0.5113	1.000	wise, a normal return is made.	0.2387	0.0118
+0.7921	0.1729	1.000	Invalid type field on IOD.	0.2049	0.0117
+0.7936	0.1391	1.000	6.0	0.0263	0.0087
+0.8036	0.5263	1.000	If the card is a REEL card, it will be processed	0.3628	0.0133
+0.8067	0.1861	1.000	Two IOD's requesting infinity disk on	0.2801	0.0131
+0.8067	0.1391	1.000	7.0	0.0263	0.0116
+0.8197	0.5113	1.000	only if it is the first REEL card following a tape IOD.	0.4023	0.0132
+0.8227	0.2030	1.000	the same channel.	0.1353	0.0102
+0.8342	0.5113	1.000	If the last IOD was not a tape IOD, the error return	0.3872	0.0131
+0.8358	0.1861	1.000	The first card submitted was not an	0.2688	0.0116
+0.8358	0.1372	1.000	8.0	0.0282	0.0131
+0.8488	0.5094	1.000	procedure is followed. If the card is not the first	0.3759	0.0118
+0.8515	0.2011	1.000	IOD card.	0.0772	0.0107
+0.8648	0.0940	1.000	2. One of the I-O assignment tables is full. The	0.3703	0.0131
+0.8663	0.5113	1.000	reel card for the IOD, it is ignored. The multi-reel	0.3947	0.0116
+0.8808	0.0771	1.000	error codes used are:	0.1654	0.0102
+0.8808	0.5094	1.000	bit is set to one in the first reel table, and the normal	0.4060	0.0131
+0.8953	0.1805	1.000	The PP reference table is full.	0.2368	0.0116
+0.8953	0.1391	1.000	1.0	0.0263	0.0102
+0.8953	0.5113	1.000	return made. (On a single unit, mounting instruc-	0.3853	0.0131
+0.9099	0.1391	1.000	2.0 The I-O request table is full.	0.2650	0.0116
+0.9112	0.5094	1.000	tions for tape reels other than the first are of no value	0.4117	0.0103
+0.9506	0.0695	1.000	70	0.0207	0.0116

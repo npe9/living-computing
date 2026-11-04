@@ -1,0 +1,110 @@
+0.0973	0.5075	1.000	JNOPX. If the source is operator or Job Control 1	0.3853	0.0118
+0.0988	0.0771	1.000	The IOCHANGE Command	0.1936	0.0103
+0.1118	0.5094	1.000	online, or unoverlapped Job Control 4, the command	0.3947	0.0133
+0.1264	0.5075	1.000	will be implemented. If these conditions do not exist,	0.4060	0.0132
+0.1279	0.0771	1.000	The IOCHANGE command is the method by which the	0.3947	0.0131
+0.1424	0.5075	1.000	an error return is given via ZEREX2.	0.2895	0.0116
+0.1439	0.0771	1.000	operator may make a unit or an entire channel avail-	0.3985	0.0116
+0.1570	0.5263	1.000	After validity checking of the command request,	0.3590	0.0116
+0.1584	0.0752	1.000	able or not available to the system. If an MCP unit	0.3891	0.0116
+0.1715	0.5075	1.000	the channel number is obtained from the command	0.3778	0.0103
+0.1730	0.0771	1.000	or channel is made not available, an attempt will be	0.3910	0.0131
+0.1860	0.5094	1.000	message. If a disk channel, a branch is made to a	0.3816	0.0131
+0.1875	0.0752	1.000	made to assign a similar piece of equipment to MCP.	0.4004	0.0116
+0.2020	0.5094	1.000	special disk routine ZDSKCH. If it is not a disk	0.3647	0.0116
+0.2035	0.0752	1.000	A unit or channel is available if it is physically	0.3553	0.0117
+0.2166	0.5094	1.000	channel, the channel number is tested for a valid	0.3665	0.0131
+0.2179	0.0752	1.000	capable of being operated by the system. A unit is	0.3816	0.0118
+0.2311	0.5075	1.000	basic exchange channel number. An error exit is	0.3741	0.0116
+0.2324	0.0752	1.000	assigned if it is presently logically connected to	0.3609	0.0118
+0.2456	0.5094	1.000	made if the channel number is not possible for the	0.3778	0.0116
+0.2470	0.0752	1.000	either MCP, or the PP which is presently operating.	0.3985	0.0118
+0.2602	0.5075	1.000	present configuration. This is determined by refer-	0.3966	0.0132
+0.2615	0.0921	1.000	The format for both console and card is:	0.3064	0.0103
+0.2747	0.5094	1.000	ence to SXCHAN.	0.1297	0.0117
+0.2761	0.1090	1.000	COMD, IOCHANGE, Channel, Unit, Code, Type	0.3628	0.0146
+0.2922	0.0752	1.000	where:	0.0526	0.0087
+0.3036	0.5075	1.000	Unit or Entire Channel Change: Upon completion of	0.3891	0.0161
+0.3052	0.0940	1.000	Channel is the decimal number of the channel.	0.3477	0.0118
+0.3197	0.5094	1.000	validity testing of the channel number, it must be	0.3703	0.0118
+0.3212	0.0940	1.000	Unit is the decimal number, 0-7, of the unit. It	0.3628	0.0116
+0.3327	0.5094	1.000	determined if the request is for a unit change or an	0.3835	0.0133
+0.3358	0.1090	1.000	is applicable only when a unit is being acted upon	0.3684	0.0116
+0.3488	0.5094	1.000	entire channel change. If the request is for a unit	0.3778	0.0118
+0.3503	0.1090	1.000	as distinct from a command relating to an entire	0.3665	0.0116
+0.3648	0.5094	1.000	change, the unit number is tested against the number	0.3985	0.0116
+0.3648	0.1090	1.000	channel. In the latter case, the symbol ALL	0.3383	0.0131
+0.3794	0.1090	1.000	should be used.	0.1165	0.0116
+0.3794	0.5094	1.000	of unit status table entries for the channel. If the	0.3741	0.0102
+0.3939	0.5075	1.000	unit number is high, an error exit is made. If the	0.3816	0.0116
+0.3939	0.0940	1.000	Code permits one of three available options to be	0.3665	0.0131
+0.4084	0.5113	1.000	request is for an entire channel change, a switch PG1	0.4023	0.0116
+0.4095	0.1089	1.000	requested:	0.0810	0.0124
+0.4230	0.5094	1.000	is set, and in either case, unit or channel, control	0.3835	0.0131
+0.4244	0.1090	1.000	ADD -- this makes a unit or channel available.	0.3515	0.0102
+0.4375	0.5094	1.000	is returned to the next test at ZACTON.	0.3008	0.0116
+0.4390	0.1090	1.000	DELETE -- this makes a unit or channel unavail-	0.3741	0.0102
+0.4535	0.5282	1.000	If the channel is a multi-unit channel, the system	0.3684	0.0117
+0.4535	0.2030	1.000	able and is normally given in	0.2180	0.0117
+0.4679	0.5113	1.000	configuration change bit SCHFCG is set on. At this	0.3797	0.0118
+0.4679	0.2030	1.000	response to a service request from	0.2650	0.0118
+0.4810	0.2029	1.000	a program which has had repeated	0.2578	0.0137
+0.4811	0.5113	1.000	point, a test is made of the entire channel change	0.3684	0.0131
+0.4970	0.5113	1.000	switch. The action for a unit or entire channel is very	0.4023	0.0118
+0.4970	0.2011	1.000	failures on a unit or channel. .	0.2293	0.0103
+0.5102	0.1053	1.000	DELETM -- this makes a unit or channel unavail-	0.3778	0.0116
+0.5115	0.5113	1.000	similar, but the two must be performed separately	0.3797	0.0118
+0.5261	0.5094	1.000	because of minor differences. They will be discussed	0.4023	0.0118
+0.5261	0.2030	1.000	able for maintenance purposes. It	0.2613	0.0118
+0.5406	0.2030	1.000	is restricted to units or channels	0.2500	0.0103
+0.5406	0.5094	1.000	jointly, with minor differences noted.	0.2838	0.0132
+0.5552	0.2030	1.000	which are not assigned to MCP or	0.2538	0.0132
+0.5552	0.5282	1.000	The operation code is tested, and if it is ADD, a	0.3647	0.0132
+0.5697	0.2030	1.000	to an operating PP. An error	0.2274	0.0132
+0.5712	0.5094	1.000	branch is made to the unit or channel add routines	0.3759	0.0103
+0.5842	0.2030	1.000	return will be given if DELETM is	0.2594	0.0118
+0.5858	0.5132	1.000	ZADDCH or ZADDUN (Figure 61). If not ADD, the	0.3759	0.0116
+0.6003	0.5094	1.000	op code must be DELETE or DELETM. The available	0.4041	0.0116
+0.6003	0.2011	1.000	requested for an assigned unit.	0.2331	0.0116
+0.6127	0.0902	1.000	Type is used only if the Code is ADD. It must be	0.3704	0.0139
+0.6148	0.5094	1.000	bit for the unit or channel is tested, and if not pres-	0.3929	0.0116
+0.6294	0.5113	1.000	ently available an error exit is made to ZEREXI. If	0.3872	0.0116
+0.6294	0.0733	1.000	one of the following:	0.1504	0.0116
+0.6438	0.0902	1.000	READER	0.0677	0.0104
+0.6439	0.5113	1.000	it is available, the channel or unit is made not avail-	0.3966	0.0131
+0.6579	0.0882	1.000	PRINTER	0.0755	0.0128
+0.6584	0.5094	1.000	able. At this point, if the request is to delete an	0.3684	0.0131
+0.6729	0.0902	1.000	PUNCH	0.0564	0.0104
+0.6730	0.5113	1.000	entire multi-unit channel, a branch is made to	0.3477	0.0131
+0.6875	0.0902	1.000	If the operation is ADD and the channel is a single-	0.3853	0.0116
+0.6875	0.5094	1.000	ZMULCH (Figure 62). If the unit is not assigned	0.3647	0.0131
+0.7020	0.0714	1.000	unit channel, a different type of equipment may be	0.3797	0.0131
+0.7020	0.5094	1.000	(ZQUES1, Figure 62), a test is made for DELETE or	0.3985	0.0131
+0.7166	0.0733	1.000	attached. If the subfield is null, the Channel Status	0.3872	0.0131
+0.7166	0.5113	1.000	DELETM at ZMAIND. If either, a normal exit is	0.3703	0.0131
+0.7311	0.5113	1.000	made; if neither, error exit ZEREXI is made.	0.3477	0.0131
+0.7324	0.0733	1.000	Table will reflect the same type of equipment. For	0.3872	0.0118
+0.7456	0.0733	1.000	both channel and unit numbers, if a request is given	0.3891	0.0131
+0.7456	0.5263	1.000	If the unit is assigned, a test is made for DELETE.	0.3872	0.0131
+0.7615	0.5113	1.000	If not DELETE, an error has occurred, since an	0.3647	0.0118
+0.7615	0.0714	1.000	for a piece of equipment which has no corresponding	0.3947	0.0118
+0.7747	0.5094	1.000	attempt was made to delete an assigned unit for main-	0.4060	0.0132
+0.7761	0.0752	1.000	Channel or Unit Status Table entry, an error return	0.3872	0.0118
+0.7906	0.4944	1.000	• tenance. In this case, at ZMNERX (Figure 62), the	0.4041	0.0132
+0.7921	0.0714	1.000	will be given.	0.1053	0.0103
+0.8052	0.5094	1.000	unit or channel is made available again, the configu-	0.3966	0.0132
+0.8052	0.0902	1.000	Note: If a deletion of an MCP unit is requested, it	0.3797	0.0132
+0.8182	0.0733	1.000	may cause the ending of the currently operating PP.	0.3910	0.0133
+0.8197	0.5094	1.000	ration change bit is reset, and if DELETM, exit is	0.3797	0.0132
+0.8342	0.5094	1.000	made to ZEREX2, otherwise to ZEREXI. If the unit	0.3966	0.0118
+0.8488	0.5094	1.000	was owned by the problem program, a branch is made	0.4060	0.0118
+0.8488	0.0733	1.000	Validity Testing: The matrix mask for source and	0.3797	0.0146
+0.8633	0.0733	1.000	operating mode is tested for valid IOCHANGE situa-	0.3929	0.0131
+0.8633	0.5094	1.000	to ZABEOJ, $ABEOJ is primed, a message is written	0.4060	0.0131
+0.8779	0.0733	1.000	tions (ZIOCH, Figure 61). If the request is from	0.3722	0.0131
+0.8779	0.5094	1.000	through the output program, a comment is made to the	0.4079	0.0131
+0.8924	0.5094	1.000	operator about the change, and a normal exit is made.	0.4079	0.0131
+0.8924	0.0733	1.000	Job Control 4 in the overlapped mode, it has already	0.3966	0.0131
+0.9084	0.0733	1.000	been processed, and a normal exit is made via	0.3515	0.0116
+0.9084	0.5075	1.000	If the unit was owned by MCP, a scan of the status	0.3797	0.0116
+0.9520	0.0714	1.000	116	0.0244	0.0087

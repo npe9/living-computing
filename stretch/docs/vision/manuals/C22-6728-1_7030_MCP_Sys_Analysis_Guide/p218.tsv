@@ -1,0 +1,111 @@
+0.0959	0.0902	1.000	or to the beginning of the dump program (APUML7)	0.3835	0.0132
+0.0971	0.5074	1.000	APNLI:	0.0641	0.0136
+0.0973	0.6147	1.000	O -- indicates normal floating point dump.	0.3177	0.0161
+0.1105	0.0883	1.000	to pick up another set of parameters. Four words	0.3797	0.0132
+0.1118	0.6147	1.000	1 -- used to tell floating point conversion	0.3102	0.0176
+0.1235	0.6485	1.000	routine that $MR is being dumped	0.2556	0.0204
+0.1250	0.0902	1.000	are printed in each line of the dump except the first	0.3872	0.0145
+0.1346	0.0881	1.000	and last lines, which include only the locations speci-	0.4066	0.0230
+0.1409	0.6485	1.000	and that control should be returned	0.2650	0.0161
+0.1539	0.0883	1.000	fied in the dump limits; the uncalled for words are	0.3797	0.0161
+0.1544	0.6463	1.000	to APNIA.	0.0871	0.0182
+0.1697	0.0883	1.000	blanked out.	0.0941	0.0137
+0.1830	0.0861	1.000	Symbol Definitions	0.1455	0.0173
+0.1875	0.5150	1.000	CONSOLE DEBUGGING	0.1767	0.0131
+0.2104	0.1859	1.000	0 -- no substitution for A. (I) has been	0.2863	0.0187
+0.2135	0.0883	1.000	ASPLBI:	0.0659	0.0105
+0.2179	0.5150	1.000	Console debugging consists of stopping the PP, either	0.4041	0.0147
+0.2311	0.2256	1.000	made for this dump request.	0.2105	0.0102
+0.2311	0.5132	1.000	with a $HOLD request or by putting MCP in the check-	0.4117	0.0174
+0.2456	0.1880	1.000	1 -- SPPLB has been substituted for	0.2726	0.0102
+0.2485	0.5019	1.000	. out mode, performing some sequence of operations at	0.4192	0.0118
+0.2584	0.2254	1.000	A. (D).	0.0416	0.0123
+0.2615	0.5132	1.000	the console, and restarting the PP. The $HOLD opera-	0.4211	0.0146
+0.2696	0.1839	1.000	0 - no substitution for B. (I) has been	0.2882	0.0192
+0.2715	0.0883	1.000	ASPUBI:	0.0678	0.0122
+0.2776	0.5132	1.000	tion is used to stop the PP whether or not PP requests	0.4098	0.0131
+0.2892	0.2237	1.000	made for this dump request.	0.2124	0.0117
+0.2906	0.5132	1.000	it, the distinction being that PP can control the loca-	0.4004	0.0161
+0.3036	0.1880	1.000	1 -- SMARK has been substituted for	0.2744	0.0147
+0.3052	0.5132	1.000	tion of the stop by requesting $HOLD at the desired	0.3872	0.0161
+0.3182	0.2237	1.000	В. (I).	0.0432	0.0133
+0.3211	0.5112	1.000	location.	0.0696	0.0134
+0.3312	0.0882	1.000	APANEL. 19:0 -- changes instruction at APANEL to	0.3912	0.0149
+0.3488	0.2218	1.000	a B, AFORMT-. 32 which causes	0.2406	0.0118
+0.3633	0.2218	1.000	printing of the panel to be sup-	0.2312	0.0117
+0.3779	0.2218	1.000	pressed.	0.0677	0.0116
+0.3924	0.1861	1.000	1 -- changes instruction at APANEL to	0.2932	0.0116
+0.3939	0.5150	1.000	The SHOLD Routine	0.1579	0.0146
+0.4070	0.2218	1.000	a NOP which causes the panel to	0.2425	0.0131
+0.4209	0.5148	1.000	The $HOLD routine (PHOLD, Figure 125) consists	0.3802	0.0200
+0.4214	0.2218	1.000	be printed.	0.0828	0.0119
+0.4344	0.0863	1.000	ANORMP. 19:0 -- changes the instruction at ANORMP	0.4025	0.0150
+0.4375	0.5169	1.000	simply of a routine which primes itself and issues	0.3741	0.0131
+0.4506	0.2199	1.000	to a B, APUMP7 which causes only	0.2613	0.0146
+0.4512	0.5148	1.000	$RET. On initial entry (PP user, not primed), it sets	0.4101	0.0178
+0.4661	0.5148	1.000	the hold bit, PHOLDB. On any primed entry, if the	0.3914	0.0194
+0.4666	0.2218	1.000	the panel to be dumped.	0.1767	0.0116
+0.4803	0.5148	1.000	bit is on it primes itself and issues $RET. When the	0.3989	0.0173
+0.4811	0.1842	1.000	1 - changes the instruction at ANORMP	0.3045	0.0116
+0.4942	0.2199	1.000	to a NOP which permits dumping of	0.2669	0.0131
+0.4953	0.5149	1.000	bit is off on a primed entry, it issues $RET without	0.3894	0.0167
+0.5102	0.2199	1.000	memory in the specified format.	0.2444	0.0116
+0.5115	0.5132	1.000	priming itself, thus allowing the return routine to	0.3759	0.0146
+0.5233	0.0846	1.000	ANDX4.19: O -- the instruction becomes a B, APNLI	0.4060	0.0146
+0.5242	0.5149	1.000	consider returning to PP. The PHOLDB bit is only	0.3876	0.0174
+0.5392	0.2199	1.000	and indicates that ANDXWD is being	0.2707	0.0132
+0.5406	0.5150	1.000	turned off by the console debugging program when a	0.3853	0.0132
+0.5531	0.2198	1.000	used to dump the panel index regi-	0.2578	0.0142
+0.5567	0.5150	1.000	restart request is received. The initial entry to the	0.3910	0.0131
+0.5698	0.2199	1.000	sters.	0.0470	0.0102
+0.5712	0.5150	1.000	routine may be a primed entry, the priming being done	0.4117	0.0131
+0.5823	0.1841	1.000	1 -- the instruction is a NOP and means	0.2991	0.0128
+0.5842	0.5113	1.000	by the console debugging routine, which also turned	0.3891	0.0161
+0.5973	0.2199	1.000	that ANDXWD is being used for	0.2331	0.0133
+0.5988	0.5113	1.000	the hold bit on.	0.1165	0.0131
+0.6133	0.2199	1.000	index word format.	0.1429	0.0103
+0.6250	0.0827	1.000	ADHMN. 19: 1 -- a check is made to see if mnemonics	0.4117	0.0132
+0.6409	0.2180	1.000	have been requested.	0.1579	0.0118
+0.6499	0.1821	1.000	0- the statement xxxxxx.x TO xxxxxx.x	0.3108	0.0211
+0.6553	0.5109	1.000	The Console Debugging Package	0.2491	0.0208
+0.6700	0.2199	1.000	ALL CONTAIN	0.1109	0.0103
+0.6711	0.4059	1.000	is to be	0.0585	0.0124
+0.6860	0.2180	1.000	printed in octal-hex and mnemonics	0.2669	0.0116
+0.6868	0.5130	1.000	The console debugging major package is made up of	0.3875	0.0154
+0.7006	0.2180	1.000	are to be suppressed.	0.1635	0.0116
+0.7010	0.5110	1.000	its tentacle table, a main line to handle testing and	0.3839	0.0177
+0.7122	0.0827	1.000	ACTLBT:	0.0733	0.0116
+0.7151	0.1805	1.000	0 -- not an octal-hex request.	0.2237	0.0116
+0.7177	0.5130	1.000	returning, a set of subroutines, and an I-O table of	0.3856	0.0160
+0.7297	0.1805	1.000	1 -- used by ACMP1 to print out the	0.2744	0.0116
+0.7324	0.5602	1.000	The I-O unit is PCDEF2, defined as console	0.3383	0.0147
+0.7326	0.5132	1.000	exits.	0.0451	0.0116
+0.7456	0.2180	1.000	above-mentioned statement in octal-	0.2688	0.0102
+0.7456	0.5111	1.000	with TOE PDBEX. The initial entry to the debugging	0.3989	0.0175
+0.7587	0.2162	1.000	hex format.	0.0883	0.0116
+0.7630	0.5113	1.000	package is at the CS entry in the TOE (PDBO, Figure	0.4004	0.0146
+0.7733	0.0789	1.000	AFLPTI:	0.0695	0.0116
+0.7747	0.1805	1.000	0 -- not a floating point request.	0.2425	0.0117
+0.7752	0.5110	1.000	126) when the ENTER, END sequence is recognized by	0.4027	0.0188
+0.7873	0.1803	1.000	1 -- used by ACMP1, to print out the	0.2729	0.0148
+0.7906	0.5111	1.000	the conceptor. This fixup reads the console entry into	0.4101	0.0172
+0.8036	0.2162	1.000	above-mentioned statement in	0.2237	0.0103
+0.8047	0.5111	1.000	the input buffer and primes the debugging package.	0.3801	0.0169
+0.8169	0.2162	1.000	floating point format.	0.1598	0.0116
+0.8203	0.5111	1.000	This is the only way in which control is given to the	0.3875	0.0163
+0.8313	0.1766	1.000	0 -- used in the mnemonics routine and	0.2991	0.0135
+0.8313	0.0789	1.000	AHLFWD:	0.0790	0.0118
+0.8342	0.5113	1.000	debugging package.	0.1429	0.0131
+0.8452	0.2160	1.000	assumes that the half-word currently	0.2786	0.0155
+0.8503	0.5263	1.000	The program (PDBBEG, Figure 126) operates in	0.3647	0.0131
+0.8596	0.5091	1.000	the same memory as JC4, and on initial entry must	0.3897	0.0227
+0.8618	0.2162	1.000	being processed is a half word	0.2293	0.0118
+0.8773	0.2159	1.000	instruction.	0.0888	0.0101
+0.8794	0.5094	1.000	fetch itself from PROSA using the major package fetch	0.4098	0.0146
+0.8889	0.1784	1.000	1 -- the half-word currently being proc-	0.3030	0.0160
+0.8935	0.5092	1.000	routine in JC4. The main line of the program consists	0.4120	0.0172
+0.9055	0.2162	1.000	essed is the second half of a full	0.2406	0.0118
+0.9076	0.5092	1.000	of examining the keys and switches for requests (PDB1),	0.4253	0.0184
+0.9196	0.2141	1.000	word instruction.	0.1301	0.0122
+0.9230	0.5075	1.000	ultimately (PE1) writing to the console displays if	0.3759	0.0146
+0.9520	0.0733	1.000	218	0.0226	0.0102

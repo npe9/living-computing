@@ -1,0 +1,55 @@
+0.0669	0.4831	1.000	4. This VFL operation code may have the following suffixes:	0.3327	0.0131
+0.0683	0.1579	1.000	Foot-	0.0414	0.0116
+0.0683	0.1090	1.000	Mne-	0.0338	0.0116
+0.0785	0.2368	1.000	Name	0.0357	0.0116
+0.0785	0.1090	1.000	monic	0.0376	0.0116
+0.0785	0.0677	1.000	Type	0.0301	0.0131
+0.0799	0.1673	1.000	note	0.0263	0.0087
+0.0840	0.5619	1.000	Immediate	0.0641	0.0137
+0.1294	0.4793	1.000	5. This operation code may be suffixed by the letter "N" to invoke the	0.4041	0.0131
+0.1409	0.4831	1.000	negative sign modifier.	0.1278	0.0132
+0.1512	0.1974	1.000	Write End-of-File	0.1015	0.0131
+0.1657	0.5094	1.000	This floating point operation code may be suffixed by the letter "A'	0.3684	0.0131
+0.1758	0.4868	1.000	to invoke the absolute sign modifier	0.1898	0.0118
+0.2006	0.4831	1.000	7. This floating point operation code may have the following suffixes:	0.3797	0.0146
+0.2195	0.5094	1.000	N	0.0150	0.0116
+0.2195	0.5620	1.000	Negative	0.0508	0.0102
+0.2267	0.5620	1.000	Absolute	0.0489	0.0160
+0.2297	0.5094	1.000	A	0.0169	0.0116
+0.2324	0.2199	1.000	FOOTNOTES	0.0790	0.0120
+0.2384	0.5094	1.000	NA	0.0226	0.0116
+0.2384	0.5620	1.000	Negative Absolute	0.1034	0.0131
+0.2587	0.0639	1.000	1. This mnemonic is a system symbol. It must be prefixed by the char-	0.3947	0.0102
+0.2660	0.4831	1.000	8.	0.0169	0.0116
+0.2660	0.5019	1.000	Count and Branch operation may have the following suffixes:	0.3271	0.0131
+0.2674	0.0620	1.000	acter «§" whenever used.	0.1391	0.0102
+0.2833	0.5639	1.000	Add one to value	0.0959	0.0118
+0.2849	0.5094	1.000	+	0.0132	0.0189
+0.2936	0.5620	1.000	Subtract one from value	0.1372	0.0116
+0.2936	0.0620	1.000	2. This mnemonic is both an indicator mnemonic and a system symbol.	0.3947	0.0116
+0.3028	0.0620	1.000	It must be prefixed by the "f" whenever it is used as a system symbol in	0.3948	0.0135
+0.3036	0.5639	1.000	Add half to value	0.0977	0.0118
+0.3038	0.5075	1.000	H	0.0169	0.0116
+0.3154	0.0658	1.000	a symbolic field of some instruction. This mnemonic may also be use	0.3853	0.0116
+0.3241	0.0677	1.000	lirectly to express a Branch on Indicator instruction by being substitute	0.3835	0.0102
+0.3285	0.5019	1.000	This operation code may be used to indicate either an immediate	0.3816	0.0145
+0.3327	0.0620	1.000	for the letter «f" in any of the following four formats:	0.2914	0.0103
+0.3387	0.4812	1.000	indexing operation or the secondary operation of any VFL instruction.	0.3929	0.0132
+0.3532	0.1410	1.000	Branch on Indicator	0.1090	0.0074
+0.3547	0.0902	1.000	BI	0.0132	0.0058
+0.3633	0.1372	1.000	Branch on Indicator and Zero	0.1617	0.0088
+0.3634	0.0883	1.000	BIZ	0.0320	0.0073
+0.3735	0.1410	1.000	Branch on Zero Indicator	0.1372	0.0087
+0.3735	0.0883	1.000	BZI	0.0226	0.0087
+0.3836	0.1410	1.000	Branch on Zero Indicator and Zero	0.1861	0.0088
+0.3837	0.0883	1.000	BZIZ	0.0301	0.0087
+0.3967	0.4925	1.000	Iso subiect to Footnote :	0.1259	0.0074
+0.3997	0.0902	1.000	The mnemonics BI, BIZ, BZI, BZIZ are not in themselves legal	0.3684	0.0116
+0.4099	0.0620	1.000	operation codes. Any of the integers 0 through 63 may also be substituted	0.3966	0.0116
+0.4200	0.4831	0.500	ordes hnat ade maye be tusendas apecond ay orpepation with I-o select	0.4023	0.0233
+0.4215	0.0620	1.000	for I if it is desired to designate an indicator numerically.	0.3102	0.0088
+0.4462	0.0827	1.000	This operation code may be suffixed by the letter "I" to invoke	0.3759	0.0102
+0.4549	0.0637	1.000	immediate addressing.	0.1170	0.0118
+0.4564	0.4850	1.000	12. These mnemonies are mathematical constants.	0.2669	0.0103
+0.9157	0.8590	1.000	45	0.0207	0.0116
+0.9157	0.7669	1.000	Appendix	0.0620	0.0102

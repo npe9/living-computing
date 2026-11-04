@@ -1,0 +1,19 @@
+0.1352	0.2068	1.000	The MCP pseudo-operations are included in the STRAP system symbol table, and	0.6598	0.0176
+0.1512	0.2180	1.000	may be assembled as with any other system symbol, by preceding the reference	0.6372	0.0174
+0.1657	0.2180	1.000	with a $; e.g., $WAIT, $ABEOJ.	0.2650	0.0174
+0.1976	0.1823	1.000	6. The output listing format has been somewhat changed, and a revised version of	0.6654	0.0161
+0.2121	0.2162	1.000	page 19 in the STRAP manual is included in Appendix E.	0.4492	0.0161
+0.2456	0.1842	1.000	CODING SUGGESTIONS	0.1861	0.0116
+0.2747	0.1823	1.000	Three simple coding hints are suggested, which will increase assembly speed.	0.6259	0.0160
+0.3052	0.2180	1.000	Pack as many instructions as will fit on a card.	0.3778	0.0161
+0.3081	0.1842	1.000	1.	0.0188	0.0116
+0.3372	0.2049	1.000	If there is only one instruction on a card or blank columns following the last	0.6165	0.0146
+0.3532	0.2180	1.000	instruction, put a comment mark (4-8 punch) immediately after the last character	0.6504	0.0132
+0.3691	0.2180	1.000	of the final instruction.	0.1842	0.0103
+0.3982	0.2180	1.000	Use an absolute number instead of a system symbol in a J field only.	0.5451	0.0161
+0.3997	0.1842	1.000	3.	0.0150	0.0116
+0.4142	0.3139	1.000	LX, 5, BOX @ is faster than	0.2256	0.0145
+0.4288	0.3120	1.000	LX, $5, BOX @ or	0.1485	0.0161
+0.4448	0.3120	1.000	LX, $X5, BOX@	0.1410	0.0160
+0.9230	0.5695	1.000	N28-1081 (C28-6129) Page 8	0.2425	0.0116
+0.9230	0.8195	1.000	of 20	0.0432	0.0089

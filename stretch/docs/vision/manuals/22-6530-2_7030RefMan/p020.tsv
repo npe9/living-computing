@@ -1,0 +1,120 @@
+0.0637	0.0920	1.000	Flag bits permit special identification of numbers.	0.3913	0.0190
+0.0639	0.5263	1.000	A standard data format is provided for floating	0.3759	0.0161
+0.0785	0.5094	1.000	point arithmetic (Figure 5). The field corresponds	0.3929	0.0176
+0.0785	0.0959	1.000	Also, from zero to four zone bits may be used with	0.3872	0.0161
+0.0940	0.0920	1.000	the sign. The zone bits have no special function, but	0.3931	0.0185
+0.0945	0.5094	1.000	to a core storage word. It has a length of 64 and starts	0.3929	0.0161
+0.1085	0.0920	1.000	may be used as code bits to obtain an alphameric rep-	0.3913	0.0193
+0.1090	0.5094	1.000	at bit address 0. The two portions of the floating point	0.3947	0.0160
+0.1250	0.0940	1.000	resentation of the sign. Flag bits are placed to the	0.3910	0.0145
+0.1264	0.5113	1.000	word are: lett, the 12-bit exponent; and right, the 52	0.3872	0.0146
+0.1382	0.5093	1.000	bit fraction. Both of these are signed binary numbers.	0.3912	0.0170
+0.1409	0.0940	1.000	right of the sign bit, zone bits to the left of the sign	0.3891	0.0146
+0.1539	0.5094	1.000	The exponent has a flag bit, ten numeric bits, and a	0.3929	0.0176
+0.1555	0.0959	1.000	bit. Zone bits, sign bit, and flag bits are treated as a	0.3872	0.0146
+0.1700	0.5094	1.000	one-bit sign byte. The fraction has 48 numeric bits	0.3947	0.0161
+0.1715	0.0940	1.000	single information unit, or byte. The sign byte can	0.3891	0.0145
+0.1825	0.5092	1.000	and a four-bit sign byte. The three flag bits of the frac-	0.3933	0.0214
+0.1875	0.0940	1.000	be from one to eight bits long.	0.2124	0.0131
+0.2006	0.5094	1.000	tion serve for the entire floating point word.	0.3402	0.0161
+0.2020	0.1109	1.000	For unsigned numbers, the sign is assumed to be	0.3741	0.0146
+0.2163	0.0939	1.000	plus. During arithmetic operations, all numbers are	0.3912	0.0163
+0.2324	0.0921	1.000	handled as if they were signed. When unsigned op-	0.3910	0.0161
+0.2355	0.5451	1.000	WORD BOUNDARY	0.0658	0.0073
+0.2470	0.5470	1.000	EXPONENT FLAG	0.0714	0.0088
+0.2470	0.0921	1.000	erands are obtained from storage, the implied sign is	0.3929	0.0161
+0.2587	0.8477	0.300	Tsruy	0.0301	0.0189
+0.2602	0.5508	1.000	EXPONENT 4	0.0602	0.0102
+0.2630	0.0940	1.000	supplied as specified by the instruction. Thus, an	0.3910	0.0146
+0.2660	0.6861	1.000	FRACTION (48 BITS)	0.0846	0.0073
+0.2688	0.5545	1.000	(10 BITS)	0.0338	0.0074
+0.2761	0.7820	0.500	PRACTION SIOM POSTo	0.1015	0.0191
+0.2776	0.0959	1.000	operand can be brought in without sign and the re-	0.3891	0.0161
+0.2776	0.5977	1.000	712	0.0188	0.0116
+0.2878	0.5695	1.000	EXPONENT SIGN	0.0658	0.0087
+0.2951	0.8308	1.000	3 FLAG BITS	0.0508	0.0074
+0.2951	0.0940	1.000	sult stored with sign, or vice versa.	0.2444	0.0131
+0.3081	0.1109	1.000	In binary integer arithmetic, the data fields speci-	0.3741	0.0146
+0.3109	0.5094	1.000	Figure 5. Floating Point Data Format	0.2368	0.0133
+0.3227	0.0940	1.000	fied have variable field length. For unsigned data, the	0.3910	0.0174
+0.3358	0.5282	1.000	Floating point instructions may specify absolute	0.3759	0.0161
+0.3400	0.0921	1.000	entire field is treated as a positive binary integer. For	0.3947	0.0147
+0.3503	0.5132	1.000	value arithmetic. In absolute value floating point op-	0.3891	0.0146
+0.3545	0.0940	1.000	signed data, the low-order byte is interpreted as a sign	0.3910	0.0146
+0.3640	0.5130	1.000	erations, the sign bit of the fraction is ignored. The	0.3912	0.0177
+0.3706	0.0959	1.000	byte. The number of bits in the sign byte, the byte	0.3891	0.0146
+0.3821	0.5132	1.000	remainder of the fraction sign byte and the exponent	0.3910	0.0133
+0.3852	0.0940	1.000	size, must be specified in the arithmetic instructions.	0.3910	0.0146
+0.3967	0.5132	1.000	sign are used as in the signed arithmetic operations.	0.3759	0.0147
+0.4012	0.1090	1.000	In decimal integer arithmetic, the digits 0 through	0.3759	0.0146
+0.4112	0.5301	1.000	Byte size, field length, and bit address need not be	0.3741	0.0147
+0.4137	0.0957	1.000	9 are represented by the ten four-bit binary integers	0.3913	0.0183
+0.4217	0.5128	1.000	specified in floating point operation since a standard	0.3916	0.0231
+0.4302	0.0959	1.000	0000 through 1001. To these four bits, extra high-	0.3910	0.0146
+0.4433	0.5132	1.000	format is used.	0.1109	0.0103
+0.4462	0.0959	1.000	order bits (zone bits) may be added to permit alpha-	0.3910	0.0145
+0.4578	0.5301	1.000	The programmer has the option to specify normal-	0.3759	0.0146
+0.4586	0.0957	1.000	meric representation. A maximum of four zone bits	0.3895	0.0190
+0.4724	0.5132	1.000	ized or unnormalized operation. These two modes dif-	0.3929	0.0146
+0.4767	0.0959	1.000	can be used, which makes the decimal character size,	0.3910	0.0132
+0.4884	0.5132	1.000	fer in the way in which the exponent and fraction of	0.3929	0.0147
+0.4927	0.0959	1.000	or byte size, a maximum of eight bits. Decimal arith-	0.3910	0.0145
+0.5042	0.5132	1.000	the result of an operation are adjusted.	0.2801	0.0133
+0.5073	0.0959	1.000	metic makes use of variable length fields. For un-	0.3910	0.0131
+0.5188	0.5301	1.000	For the non-arithmetic operations of the connect	0.3759	0.0133
+0.5218	0.0958	1.000	signed data, the entire field is treated as a group of	0.3911	0.0161
+0.5333	0.5132	1.000	type, it is possible to specify the byte size of the data.	0.3929	0.0176
+0.5378	0.0959	1.000	numeric bytes. All bytes have the same byte size,	0.3910	0.0131
+0.5479	0.5150	1.000	The accumulator byte size is always eight for connect	0.3910	0.0146
+0.5523	0.0959	1.000	with a possible exception of the high-order byte. For	0.3910	0.0146
+0.5632	0.5131	1.000	operations. The accumulator sign byte register is not	0.3931	0.0169
+0.5682	0.0959	1.000	signed data, the low-order byte is interpreted as a	0.3910	0.0147
+0.5799	0.5132	1.000	used as part of the accumulator in these operations.	0.3929	0.0146
+0.5842	0.0959	1.000	sign byte. The sign byte has the same size as the nu-	0.3910	0.0131
+0.5945	0.5150	1.000	The byte size of the data in storage may be one	0.3910	0.0146
+0.5988	0.0959	1.000	meric bytes. Figure 4 shows possible data formats.	0.3759	0.0146
+0.6102	0.5131	1.000	through eight.	0.1091	0.0164
+0.6133	0.1127	1.000	Decimal information placed in the accumulator al-	0.3742	0.0152
+0.6294	0.0959	1.000	ways has byte size 4. The zone bits of decimal bytes	0.3910	0.0146
+0.6394	0.5132	1.000	PROGRAMMING NOTE	0.1504	0.0103
+0.6453	0.0940	1.000	do not enter the accumulator or the accumulator sign	0.3929	0.0160
+0.6570	0.0959	1.000	byte register. The zone bits of the sign byte register	0.3929	0.0189
+0.6584	0.5075	1.000	The choice of byte size in decimal arithmetic and con-	0.3966	0.0131
+0.6724	0.5112	1.000	nect operations permits convenient byte expansion	0.3929	0.0156
+0.6730	0.0959	1.000	may be used to set the zone bits of decimal bytes in	0.3910	0.0174
+0.6830	0.5113	1.000	and contraction in code translation.	0.2650	0.0206
+0.6904	0.0940	1.000	storage.	0.0564	0.0145
+0.7136	0.3816	1.000	WORD BOUNDARY	0.0921	0.0103
+0.7552	0.1538	1.000	000100000010010/0110/100001/100/11010Ó/10010111011	0.4951	0.0282
+0.7805	0.6429	1.000	136	0.0169	0.0102
+0.7834	0.3496	1.000	63|0	0.0282	0.0116
+0.7849	0.2368	1.000	47	0.0132	0.0073
+0.7936	0.6128	1.000	-	0.0188	0.0131
+0.7951	0.5244	1.000	4	0.0094	0.0102
+0.7980	0.3910	1.000	6	0.0094	0.0087
+0.7980	0.3271	1.000	2	0.0169	0.0116
+0.7980	0.3590	1.000	5	0.0169	0.0102
+0.7994	0.2444	1.000	42	0.0226	0.0116
+0.7994	0.1786	1.000	256	0.0263	0.0116
+0.7994	0.0959	1.000	FIELD	0.0376	0.0131
+0.8140	0.4962	0.500	DECIMAL	0.0526	0.0218
+0.8181	0.3138	1.000	UNSIGNED	0.0509	0.0121
+0.8197	0.2406	1.000	SIGNED	0.0377	0.0104
+0.8198	0.0959	1.000	TYPE	0.0320	0.0116
+0.8198	0.1711	1.000	INSIGNE	0.0395	0.0102
+0.8270	0.3158	1.000	DECIMAL.	0.0432	0.0087
+0.8270	0.1729	1.000	INAR	0.0282	0.0102
+0.8270	0.2406	1.000	BINARY	0.0376	0.0102
+0.8430	0.5000	1.000	30 BITS	0.0451	0.0146
+0.8445	0.3233	1.000	16 BITS	0.0432	0.0161
+0.8488	0.1692	1.000	10 BITS	0.0432	0.0131
+0.8488	0.2387	1.000	7 BITS	0.0357	0.0118
+0.8488	0.0977	1.000	LENGTH	0.0432	0.0131
+0.8648	0.5244	1.000	6	0.0132	0.0131
+0.8676	0.0996	1.000	BYTE SIZE	0.0527	0.0133
+0.8677	0.2575	1.000	1	0.0094	0.0116
+0.8677	0.3365	1.000	4	0.0094	0.0102
+0.8692	0.1861	1.000	-	0.0150	0.0087
+0.8909	0.0959	1.000	Figure 4. Data Formats	0.1466	0.0146
+0.9230	0.7293	1.000	Operand Designation	0.1335	0.0161
+0.9230	0.8891	1.000	17	0.0188	0.0131

@@ -1,0 +1,126 @@
+0.0912	0.5355	1.000	CKUK	0.0473	0.0152
+0.0930	0.1184	1.000	The logic described for tape switch is dependent	0.3647	0.0116
+0.1090	0.1015	1.000	upon the following:	0.1391	0.0116
+0.1206	0.5375	1.000	The general UK routine is entered when UK and EOP	0.3949	0.0133
+0.1235	0.1184	1.000	1. The tape ready bits, ATARI and ATBRI, are	0.3628	0.0116
+0.1366	0.5376	1.000	(UK-EOP) occur on a write operation. It is entered	0.3910	0.0131
+0.1381	0.1015	1.000	assembled as 0 and 1, respectively.	0.2726	0.0116
+0.1512	0.5357	1.000	with the address of the TOE in $1, and with $3 speci-	0.4023	0.0131
+0.1526	0.1184	1.000	2. The initial tape selection is CT11, with I-O	0.3553	0.0116
+0.1672	0.5357	1.000	fying the return to be used if retries are unsuccessful.	0.4117	0.0116
+0.1685	0.1034	1.000	TOE AXITA.	0.0959	0.0103
+0.1817	0.5545	1.000	The routine tries the sequence SBSP, SERGS, SW,	0.3797	0.0132
+0.1830	0.1203	1.000	3. Upon entry, and until completion of tape switch,	0.3891	0.0133
+0.1962	0.5357	1.000	using the original control word for the write. The	0.3816	0.0132
+0.1976	0.1034	1.000	the output tape busy bit (CATUB) is set. Thus, if a	0.3872	0.0132
+0.2106	0.5376	1.000	$BSP is given with TOE CUKUK set in AOP, and the	0.3947	0.0133
+0.2121	0.1053	1.000	$SPU or $SPR is given, the corresponding programs	0.3929	0.0132
+0.2252	0.5376	1.000	$ERGS and $W are given by the $BSP EOP fixup,	0.3684	0.0118
+0.2265	0.1033	1.000	will wait for a free output tape and will not destroy	0.3836	0.0134
+0.2397	0.5376	1.000	which changes the TOE selected to CKWRIT. If this	0.3929	0.0133
+0.2427	0.1034	1.000	the contents of AOP, which specify a tape switch table	0.4060	0.0131
+0.2542	0.5395	1.000	table receives an EOP or EE, it is passed to the	0.3665	0.0147
+0.2573	0.0977	1.000	of exits.	0.0714	0.0116
+0.2688	0.5395	1.000	corresponding entry in the original TOE. Otherwise,	0.4023	0.0133
+0.2833	0.5395	1.000	the $BSP is tried again. The sequence of retries will	0.4041	0.0132
+0.2878	0.1053	1.000	Error Control	0.1053	0.0102
+0.2994	0.5395	1.000	be attempted ten times. If the write is still not suc-	0.3966	0.0117
+0.3139	0.5395	1.000	cessful, control is given to the specified failure	0.3609	0.0131
+0.3169	0.1053	1.000	A set of error control routines with their own I-O	0.3703	0.0102
+0.3270	0.5376	1.000	return. This return is ANFM if a print or punch	0.3703	0.0161
+0.3270	0.1015	1.000	tables of exits is used when UK or EPGK interrupts	0.3910	0.0191
+0.3415	0.5376	1.000	record is being written, and C2FM if a trailer record	0.4060	0.0176
+0.3415	0.1015	1.000	occur in one of the five output program tables of exits	0.4079	0.0191
+0.3540	0.5374	1.000	is being written. These routines are discussed under	0.4063	0.0198
+0.3576	0.0996	1.000	previously described. These routines are:	0.3308	0.0174
+0.3735	0.5376	1.000	error message routines.	0.1880	0.0131
+0.3936	0.1729	1.000	Occassion for Use	0.1054	0.0165
+0.3939	0.1015	1.000	Symbol	0.0489	0.0160
+0.3967	0.3947	1.000	Table(s) of Exits	0.0977	0.0133
+0.4012	0.5376	1.000	AUKEF	0.0583	0.0131
+0.4230	0.1015	1.000	AEPGK	0.0451	0.0131
+0.4243	0.3947	1.000	CUKUK, CKWRIT	0.1072	0.0249
+0.4244	0.1767	1.000	EPGK occurs on write	0.1184	0.0116
+0.4302	0.5376	1.000	This routine is entered if UK or EPGK occurs when	0.3891	0.0146
+0.4331	0.1015	1.000	CKUK	0.0414	0.0160
+0.4345	0.1767	1.000	UK occurs with EOP on write	0.1617	0.0131
+0.4462	0.1015	1.000	ALNUKC	0.0564	0.0145
+0.4462	0.5376	1.000	attempting to write a tape mark. If EOP did not	0.3665	0.0145
+0.4476	0.1711	1.000	UK occurs without EOP on write	0.1898	0.0118
+0.4593	0.1015	1.000	AUKEF	0.0470	0.0145
+0.4606	0.3947	1.000	ATSW1K	0.0584	0.0135
+0.4606	0.1729	1.000	UK occurs on WEF	0.1109	0.0133
+0.4606	0.5376	1.000	occur, control is given to AERRN. If EOP did occur,	0.4060	0.0147
+0.4737	0.1015	1.000	AERRUN	0.0565	0.0133
+0.4750	0.1710	1.000	UK without EOP occurs on writing	0.1974	0.0123
+0.4752	0.5376	1.000	the routine will attempt the sequence $ERGS, $WEF,	0.3985	0.0147
+0.4869	0.1786	1.000	trailer record	0.0865	0.0131
+0.4897	0.5357	1.000	using TOE ATSWIK. On EOP or EE, control is	0.3647	0.0161
+0.4982	0.1729	1.000	Announce unusual end of tape	0.1768	0.0137
+0.4985	0.1015	1.000	ANFM	0.0414	0.0145
+0.5042	0.5376	1.000	returned to the corresponding entry in the original	0.3816	0.0147
+0.5073	0.4211	0.300	...	0.0301	0.0160
+0.5102	0.1015	1.000	AGFM	0.0432	0.0160
+0.5102	0.1729	1.000	Announce unusual end of tape	0.1767	0.0160
+0.5203	0.5376	1.000	TOE. On ten consecutive failures, control is given	0.3891	0.0146
+0.5333	0.5376	1.000	to the failure return originally specified in $13. This	0.4041	0.0146
+0.5421	0.1147	1.000	The error routines are entered as follows for the	0.3778	0.0176
+0.5494	0.5376	1.000	return is A1FM if a WEF was being attempted by tape	0.4041	0.0131
+0.5581	0.0996	1.000	various combinations of error interrupts and tables	0.3891	0.0161
+0.5614	0.5375	1.000	switch, and AOFM if the WEF was being attempted	0.3799	0.0166
+0.5709	0.0995	1.000	of exits:	0.0680	0.0182
+0.5755	0.5357	1.000	by EOJ.	0.0659	0.0162
+0.6032	0.2801	1.000	Interrupt	0.0602	0.0174
+0.6174	0.2743	1.000	UK-not-EOP	0.0792	0.0166
+0.6175	0.1052	1.000	Original TOE	0.0829	0.0164
+0.6191	0.1936	1.000	EPGK	0.0452	0.0132
+0.6192	0.3797	1.000	UK-EOP	0.0583	0.0145
+0.6294	0.5357	1.000	Error Message Routines	0.1861	0.0131
+0.6402	0.2740	1.000	ALNUKC	0.0572	0.0190
+0.6439	0.1052	1.000	CEXN	0.0414	0.0146
+0.6450	0.2028	1.000	AEPGK	0.0454	0.0138
+0.6466	0.3796	1.000	CKUK	0.0415	0.0120
+0.6554	0.2725	1.000	ALUNUKC	0.0678	0.0176
+0.6555	0.2030	1.000	AEPCK	0.0470	0.0174
+0.6570	0.1053	1.000	AWEXIT	0.0545	0.0160
+0.6570	0.3816	1.000	CKUK	0.0414	0.0160
+0.6584	0.5338	1.000	In the event of failure to write, a message is printed	0.3985	0.0146
+0.6685	0.1052	1.000	ATSXIT	0.0527	0.0162
+0.6701	0.2030	1.000	AUKEF	0.0470	0.0145
+0.6714	0.2688	1.000	AUKEF	0.0508	0.0133
+0.6715	0.3797	1.000	AUKEF	0.0451	0.0131
+0.6744	0.5376	1.000	via the commentator. The message specifies data	0.3778	0.0116
+0.6827	0.2029	1.000	AERRUN	0.0567	0.0139
+0.6831	0.3797	1.000	CKUK	0.0433	0.0146
+0.6840	0.2611	1.000	AERRUN	0.0680	0.0129
+0.6846	0.1053	1.000	ASTRA	0.0451	0.0116
+0.6890	0.5376	1.000	or unit failure, the channel and unit, and the number	0.3947	0.0132
+0.6958	0.2742	1.000	AUKEF	0.0437	0.0140
+0.6962	0.2030	1.000	AUKEF	0.0452	0.0132
+0.6962	0.3797	1.000	AUKEF	0.0451	0.0131
+0.6962	0.1053	1.000	CEXEF	0.0414	0.0131
+0.7035	0.5376	1.000	of file marks on the end of the tape. Two routines	0.3778	0.0117
+0.7179	0.5376	1.000	may be used to print the message. Both print the	0.3741	0.0133
+0.7324	0.5357	1.000	message, and enter tape switch to unload the bad	0.3684	0.0133
+0.7470	0.5357	1.000	unit. However, they set different returns from tape	0.3947	0.0133
+0.7542	0.1033	1.000	AEPGK	0.0603	0.0149
+0.7616	0.5338	1.000	switch.	0.0583	0.0131
+0.7833	0.1034	1.000	The EPGK error routine, AEPGK, is entered with the	0.4098	0.0176
+0.7994	0.5338	1.000	ANFM.32: is used when a print or punch record	0.3665	0.0146
+0.7994	0.1034	1.000	actuated address in $2 when the interrupt is received	0.4004	0.0146
+0.8139	0.5338	1.000	could not be written. Tape switch return is set to	0.3778	0.0145
+0.8139	0.1034	1.000	by tables CEXN or AWEXIT. The EPGK is assumed	0.3966	0.0131
+0.8253	0.1034	1.000	to have been caused by a file protected tape being	0.3760	0.0166
+0.8270	0.5338	1.000	retry the original write. It is entered via ALNUKC,	0.3947	0.0161
+0.8400	0.1034	1.000	mounted on an output unit. A message is typed via	0.3853	0.0161
+0.8430	0.5320	1.000	and directly at ANFM.	0.1729	0.0131
+0.8540	0.1032	1.000	the commentator, and the tape switch routine is	0.3613	0.0195
+0.8706	0.1034	1.000	entered at ATSWC5 to unload the tape and select a	0.3816	0.0161
+0.8721	0.5338	1.000	AERRUN. 32: is used when no further attempts will	0.3835	0.0131
+0.8852	0.1034	1.000	new one. Return is set to try the write operation	0.3741	0.0161
+0.8866	0.5338	1.000	be made to accomplish the output operation. It sets	0.3853	0.0146
+0.9012	0.5338	1.000	the tape switch return to$RET. It is entered via	0.3665	0.0146
+0.9012	0.1034	1.000	again. In all other cases, EPGK is treated as UK-	0.3853	0.0146
+0.9142	0.5338	1.000	AOFM, AIFM, C2FM, AERRN, and AERRUN.	0.3515	0.0161
+0.9168	0.1033	1.000	not EOP.	0.0717	0.0153
+0.9491	0.7707	1.000	System Input-Output 177	0.1654	0.0103

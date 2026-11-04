@@ -1,0 +1,80 @@
+0.0814	0.3064	1.000	64	0.0207	0.0116
+0.0827	0.5545	1.000	- 24	0.0357	0.0088
+0.0842	0.7180	1.000	- 13_	0.0320	0.0073
+0.1047	0.6504	1.000	abcde	0.0526	0.0102
+0.1264	0.6485	0.300	0 00	0.0565	0.0133
+0.1628	0.6504	1.000	11111	0.0526	0.0087
+0.1817	0.6692	1.000	Model F.L.I B.S.	0.1034	0.0132
+0.1991	0.2124	1.000	System Symbol without the $	0.1692	0.0131
+0.2006	0.5244	1.000	Location	0.0526	0.0116
+0.2020	0.6673	1.000	-DDS Information	0.1053	0.0116
+0.2439	0.2687	1.000	Argument	0.0603	0.0122
+0.2440	0.6146	1.000	Function	0.0546	0.0120
+0.2622	0.1146	1.000	a = O, if the location is the machine location corresponding to the system symbol.	0.4701	0.0169
+0.2761	0.1147	1.000	a = 1, if the location is an address within STRAP II where the floating point constant for the system symbol is stored.	0.6654	0.0146
+0.3023	0.1128	1.000	b = O, if the location for the system symbol is available at this IBM 7030 machine installation.	0.5432	0.0160
+0.3154	0.1147	1.000	b = 1, if the location for the system symbol is not available at this IBM 7030 machine installation.	0.5620	0.0146
+0.3415	0.1128	1.000	c = 0, if mode is floating poirt.	0.1861	0.0131
+0.3545	0.1147	1.000	c = 1, if mode is not floating point.	0.2068	0.0133
+0.3794	0.1147	1.000	d = O, if mode is either unnormalized or unsigned.	0.2876	0.0146
+0.3924	0.1147	1.000	d = 1, if mode is either normalized or signed.	0.2594	0.0146
+0.4185	0.1147	1.000	e = 0, if mode is decimal.	0.1541	0.0133
+0.4317	0.1147	1.000	e = 1, if mode is binary.	0.1447	0.0147
+0.4535	0.1109	1.000	Figure 25. Entry in the Table of System Symbols	0.2820	0.0132
+0.5145	0.2030	1.000	12	0.0169	0.0116
+0.5160	0.4135	1.000	96	0.0188	0.0116
+0.5174	0.7086	1.000	12	0.0169	0.0102
+0.5174	0.6297	1.000	8	0.0150	0.0102
+0.5174	0.6617	1.000	bc	0.0226	0.0131
+0.5392	0.6635	1.000	00	0.0226	0.0102
+0.5494	0.7387	1.000	1	0.0094	0.0131
+0.5523	0.6635	1.000	1,1	0.0226	0.0116
+0.5872	0.7425	0.300	IG.P..Is	0.0526	0.0160
+0.5887	0.4004	1.000	Fraction	0.0526	0.0131
+0.5887	0.1823	1.000	Expo-	0.0414	0.0131
+0.5901	0.8346	1.000	Ife=1,	0.0432	0.0145
+0.5901	0.6222	1.000	Sign	0.0338	0.0131
+0.5901	0.6842	1.000	'Special'	0.0545	0.0131
+0.6017	0.7707	1.000	d=1, there the format	0.1316	0.0161
+0.6032	0.6259	1.000	Byte	0.0282	0.0116
+0.6032	0.1917	1.000	nent	0.0282	0.0073
+0.6032	0.6842	1.000	Exponent	0.0564	0.0131
+0.6148	0.7688	1.000	is acoded isrepeated	0.1335	0.0146
+0.6294	0.7688	1.000	expression	0.0620	0.0116
+0.6409	0.7669	1.000	for G.P.	0.0526	0.0118
+0.6539	0.6184	0.300	13 be	0.0733	0.0292
+0.6569	0.7030	0.300	12 al6 1	0.0828	0.0263
+0.6686	0.1579	1.000	11	0.0169	0.0102
+0.6686	0.2011	1.000	12	0.0207	0.0102
+0.6701	0.1259	1.000	al	0.0188	0.0087
+0.6701	0.4154	1.000	96	0.0188	0.0145
+0.7355	0.6504	1.000	Tl 1 special G.p. ir H	0.1711	0.0204
+0.7355	0.8252	1.000	--.	0.0226	0.0073
+0.7425	0.4040	1.000	Fraction	0.0528	0.0150
+0.7425	0.1372	1.000	'Fraction Expo-	0.0941	0.0135
+0.7427	0.6184	1.000	Sign	0.0357	0.0131
+0.7442	0.8477	1.000	Ife=1,	0.0451	0.0145
+0.7554	0.6859	1.000	Exponent	0.0567	0.0140
+0.7556	0.1409	1.000	Length	0.0434	0.0135
+0.7558	0.7744	1.000	d=1, there the format	0.1410	0.0131
+0.7558	0.6222	1.000	Byte	0.0301	0.0131
+0.7573	0.1917	1.000	nent	0.0338	0.0087
+0.7688	0.7763	1.000	is a coded isrepeated	0.1391	0.0133
+0.7818	0.7763	1.000	expression	0.0621	0.0120
+0.7863	0.4774	1.000	d = 1, if the numeric DD has a general paren-	0.2669	0.0146
+0.7863	0.1128	1.000	a = 1, if the numeric DD is in the Fn entry mode.	0.2857	0.0131
+0.7934	0.7744	1.000	for the G.P.	0.0715	0.0135
+0.7979	0.1128	1.000	a = 0, if the numeric DD is not in the Fn entry mode.	0.3083	0.0146
+0.7994	0.5188	1.000	thetical field integer entry (G.P.).	0.1974	0.0131
+0.8124	0.4793	1.000	d = O, if the numeric DD does not have a general	0.2838	0.0118
+0.8241	0.1128	1.000	b = 1, if the numeric DD is in the normalized mode.	0.3008	0.0147
+0.8241	0.5169	1.000	parenthetical field integer entry.	0.1917	0.0160
+0.8387	0.1128	1.000	b = 0, if the numeric DD is not in the normalized mode.	0.3233	0.0132
+0.8503	0.4774	1.000	e = 1, if the format is repeated for another field	0.2801	0.0146
+0.8648	0.1128	1.000	c = 1, if the numeric DD has a special exponent.	0.2801	0.0116
+0.8648	0.5169	1.000	in a multiple field numeric DD.	0.1880	0.0116
+0.8759	0.4774	1.000	e = 0, if this is the end of the encoding.	0.2313	0.0143
+0.8764	0.1128	1.000	c = 0, if the mimeric DD does not have a special exponent.	0.3402	0.0118
+0.9026	0.1109	1.000	Figure 26. Entry Made in the Variable Portion of a Numeric DD's Expanded Instruction Unit	0.5263	0.0147
+0.9390	0.7556	1.000	Appendix A - Formats	0.1278	0.0132
+0.9390	0.9023	1.000	193	0.0282	0.0131

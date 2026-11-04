@@ -1,0 +1,102 @@
+0.0654	0.0977	1.000	isters A, B, FT, RR, and the sign byte register are as-	0.3910	0.0146
+0.0682	0.5150	1.000	mulative multiplication, comparison, and other varia-	0.3929	0.0147
+0.0814	0.0959	1.000	signed certain of the first sixteen addresses. Registers	0.3929	0.0147
+0.0827	0.5169	1.000	tions of the standard add operation.	0.2613	0.0147
+0.0959	0.0996	1.000	G and D always hold copies of the contents of storage	0.3891	0.0147
+0.0988	0.5338	1.000	One of these variations is a new add-type operation,	0.3741	0.0146
+0.1102	0.0976	1.000	words or of FT or RR and thus need no addresses. In	0.3893	0.0151
+0.1148	0.5150	1.000	ADD TO MAGNITUDE, that is like ADD when numbers of	0.3947	0.0116
+0.1279	0.0977	1.000	some operations, other registers are used in the devel-	0.3910	0.0117
+0.1294	0.5150	1.000	like signs are involved. With numbers of unlike signs,	0.3929	0.0146
+0.1424	0.0977	1.000	oping of results at high speeds, but the operation is	0.3910	0.0131
+0.1438	0.5149	1.000	the ADD IO MAGNITUDE operation is different from a	0.3930	0.0157
+0.1570	0.0977	1.000	always equivalent to that described above.	0.3083	0.0131
+0.1575	0.5149	1.000	subtraction in that it does not allow the sign of the	0.3932	0.0176
+0.1730	0.1147	1.000	The transit register, a full-word core location, is	0.3741	0.0131
+0.1744	0.5150	1.000	augend to change. Instead, the result is set to zero.	0.3910	0.0132
+0.1864	0.0977	1.000	used in some automatic subroutine entries.	0.3517	0.0143
+0.1890	0.4492	1.000	Two	0.0376	0.0102
+0.1903	0.5150	1.000	This operation is useful when dealing with non-nega-	0.3929	0.0146
+0.2035	0.0959	1.000	seven-bit registers are used in connective operations	0.3929	0.0145
+0.2048	0.5150	1.000	tive numbers or computing with discontinuous rates.	0.3910	0.0146
+0.2179	0.0959	1.000	to hold bit counts developed upon the results. These,	0.3929	0.0147
+0.2209	0.5320	1.000	Most arithmetic operations are available in the float-	0.3741	0.0131
+0.2318	0.0957	1.000	the all-ones counter and left-zeros counter, are also	0.3913	0.0160
+0.2339	0.5130	1.000	ing point mode as well as the fixed point or integer	0.3951	0.0184
+0.2485	0.0959	1.000	assigned certain of the first sixteen addresses.	0.3327	0.0131
+0.2515	0.5132	1.000	mode. The floating point set includes additional in-	0.3947	0.0131
+0.2660	0.5132	1.000	structions to handle portions of a floating point num-	0.3947	0.0146
+0.2820	0.5150	1.000	ber and multiple precision numbers with ease. A float-	0.3910	0.0132
+0.2950	0.5129	1.000	ing point square root is provided.	0.2448	0.0175
+0.3109	0.0921	1.000	Instruction Set	0.1372	0.0133
+0.3372	0.5132	1.000	Floating Point Arithmetic	0.1823	0.0146
+0.3503	0.0940	1.000	The instruction set is summarized in this section. De-	0.3929	0.0131
+0.3605	0.5132	1.000	Floating point arithmetic is done at very high speed	0.3910	0.0145
+0.3648	0.0940	1.000	tails will be found in the appropriate sections.	0.3346	0.0146
+0.3750	0.5113	1.000	in parallel binary arithmetic using a specialized data	0.3929	0.0145
+0.3909	0.5113	1.000	format wherein numbers are represented as a signed	0.3929	0.0146
+0.4039	0.0940	1.000	Classes of Operations	0.1617	0.0133
+0.4070	0.5113	1.000	exponent, + E (a power of 2), and a signed fraction,	0.3947	0.0131
+0.4215	0.5150	1.000	- F, which together occupy a full 64-bit word.	0.3383	0.0145
+0.4273	0.0940	1.000	The operations available may be divided into these	0.3929	0.0131
+0.4360	0.5300	1.000	The emphasis in the design of the floating point	0.3761	0.0162
+0.4418	0.0940	1.000	broad categories:	0.1241	0.0131
+0.4520	0.5113	1.000	arithmetic is on high-speed computation of large	0.3929	0.0146
+0.4651	0.1598	1.000	Floating point arithmetic operations	0.2669	0.0131
+0.4679	0.5113	1.000	mathematical problems. Simplification of the floating	0.3929	0.0147
+0.4811	0.1560	1.000	Integer arithmetic operations	0.2180	0.0147
+0.4824	0.5113	1.000	point instruction set is achieved through full utiliza-	0.3947	0.0133
+0.4948	0.5111	1.000	tion of the uniform nature of the floating point data.	0.3933	0.0195
+0.4956	0.1560	1.000	Radix conversion operations	0.2105	0.0160
+0.5113	0.5129	1.000	Two floating point instructions may be stored per	0.3914	0.0181
+0.5115	0.1579	1.000	Connective operations	0.1635	0.0146
+0.5254	0.5111	1.000	word which results in an increase in storage efficiency	0.3915	0.0194
+0.5261	0.1560	1.000	Index arithmetic operations	0.2068	0.0146
+0.5406	0.1560	1.000	Branching operations	0.1598	0.0161
+0.5418	0.5111	1.000	and reduces the number of storage accesses.	0.3163	0.0176
+0.5567	0.1560	1.000	Transmission operations	0.1805	0.0161
+0.5596	0.5282	1.000	Floating point instructions contain sign modifiers	0.3759	0.0146
+0.5712	0.1560	1.000	Input-output operations	0.1786	0.0161
+0.5741	0.5113	1.000	which permit any desired combination of operand	0.3910	0.0160
+0.5872	0.1579	1.000	Miscellaneous operations	0.1823	0.0131
+0.5887	0.5113	1.000	signs. They also contain a normalization modifier	0.3929	0.0147
+0.6045	0.5113	1.000	which specifies the choice between normalized and un-	0.3929	0.0133
+0.6206	0.5113	1.000	normalized operation.	0.1617	0.0131
+0.6250	0.0902	1.000	Summary of Data Arithmetic Operations	0.2970	0.0160
+0.6352	0.5282	1.000	The 48-bit fraction makes it possible to compute in	0.3741	0.0146
+0.6468	0.0919	1.000	The arithmetic instruction set includes the elementary	0.3913	0.0175
+0.6489	0.5093	1.000	single precision mode for a number of problems which	0.3932	0.0189
+0.6642	0.0902	1.000	operations LOAD, ADD, STORE, MULTIPLY, and DIVIDE.	0.3929	0.0145
+0.6657	0.5094	1.000	would have to be done in double precision on earlier	0.3929	0.0146
+0.6788	0.0921	1.000	Modifier bits are available to control the sign of the	0.3910	0.0146
+0.6817	0.5094	1.000	computers. When required, however, the floating	0.3929	0.0147
+0.6933	0.0921	1.000	data. Thus the operations "subtract" or "add abso-	0.3929	0.0146
+0.6952	0.5093	1.000	point instruction set contains a number of operations	0.3931	0.0176
+0.7075	0.0900	1.000	lute" are obtained by use of sign modifiers with an	0.3932	0.0186
+0.7121	0.5094	1.000	which provide double precision results. These opera-	0.3929	0.0146
+0.7231	0.0920	1.000	ADD instruction, and are not provided as separate	0.3913	0.0173
+0.7267	0.5093	1.000	tions have been designed to facilitate the program-	0.3930	0.0164
+0.7395	0.0901	1.000	operations. These same modifiers permit controlling	0.3931	0.0156
+0.7427	0.5094	1.000	ming of double or multiple precision operations.	0.3571	0.0145
+0.7558	0.0902	1.000	the sign of a number to be loaded, stored, multiplied,	0.3929	0.0146
+0.7573	0.5244	1.000	In order to simplify significance studies, a mode of	0.3778	0.0146
+0.7718	0.5094	1.000	operation called "noisy mode" is provided in which	0.3910	0.0161
+0.7718	0.0902	1.000	or divided.	0.0789	0.0103
+0.7863	0.1071	1.000	A convenient feature of the MULTIPLY operation is	0.3759	0.0146
+0.7892	0.5075	1.000	results are altered in a specified fashion. Consecutive	0.3947	0.0132
+0.8009	0.0902	1.000	that one of the factors is taken from the accumulator	0.3929	0.0131
+0.8036	0.5075	1.000	runs of the same problem in standard and noisy mode	0.3947	0.0147
+0.8169	0.0883	1.000	rather than a separate register and, therefore, may be	0.3947	0.0147
+0.8197	0.5094	1.000	permit an estimate of the significance of the results to	0.3910	0.0132
+0.8327	0.0902	1.000	the result of previous computation. Similarly, DIVIDE	0.3910	0.0147
+0.8340	0.5075	1.000	be obtained.	0.0941	0.0137
+0.8473	0.0902	1.000	places the quotient in the accumulator, thus making	0.3910	0.0161
+0.8497	0.5243	1.000	Floating point numbers cover a range between the	0.3762	0.0159
+0.8618	0.0883	1.000	it directly available for further operations.	0.3177	0.0146
+0.8663	0.5075	1.000	positive and negative value of the fraction having the	0.3929	0.0146
+0.8779	0.1053	1.000	Extensions of the basic set of arithmetic operations	0.3778	0.0146
+0.8808	0.5075	1.000	maximum exponent. Since the exponent range is	0.3929	0.0146
+0.8939	0.0883	1.000	permit adding and counting in storage, rounding, cu-	0.3947	0.0146
+0.8952	0.5074	1.000	finite, a discontinuity exists between the positive and	0.3930	0.0165
+0.9317	0.0865	1.000	10	0.0376	0.0087
+0.9317	0.1278	1.000	IBM 7030	0.0677	0.0087

@@ -1,0 +1,107 @@
+0.0945	0.5226	1.000	The three entry points are: PCONE1, when a CS	0.3722	0.0189
+0.0945	0.0771	1.000	associated with the unit in select, but the channel	0.3703	0.0131
+0.1105	0.0771	1.000	signat may have originated at any unit on the channel.	0.3947	0.0132
+0.1105	0.5056	1.000	is received; PCONE2, when the read is complete;	0.3797	0.0189
+0.1235	0.5075	1.000	PCSRD, when the $READ is given.	0.2650	0.0189
+0.1250	0.0940	1.000	The receptor uses the subroutine KCSIN to stack	0.3647	0.0132
+0.1394	0.0752	1.000	the CS until a later time. The stacking consists of	0.3778	0.0133
+0.1539	0.0752	1.000	setting a bit corresponding to the channel number in	0.3891	0.0133
+0.1555	0.5075	1.000	The Channel Signal Entry	0.1917	0.0161
+0.1685	0.0733	1.000	the word KCSREG. The NOP at KSUPCS in the serv-	0.3966	0.0147
+0.1830	0.0752	1.000	ice op return routine is changed to a branch, and the	0.3947	0.0133
+0.1860	0.5056	1.000	When a console channel signal is received (or un-	0.3759	0.0146
+0.1976	0.0752	1.000	CS will be unstacked on the next entry to the service	0.3929	0.0161
+0.2020	0.5056	1.000	stacked) by the receptor, the conceptor is entered at	0.3966	0.0131
+0.2121	0.0752	1.000	op return routine. When this occurs, control passes	0.3985	0.0161
+0.2136	0.5075	1.000	PCONE1 (Figure 12). The conceptor sets up the	0.3684	0.0161
+0.2267	0.5056	1.000	addresses of the MCP console tables and gives a	0.3703	0.0191
+0.2282	0.0733	1.000	to KMICSQ (Figure 8). The channel number for the	0.3891	0.0131
+0.2427	0.0771	1.000	first 1 in KCSREG is computed, and if the channel is	0.3929	0.0116
+0.2442	0.5056	1.000	set-up console read, with PCONE2 in SRETAD in the	0.3985	0.0146
+0.2558	0.0733	1.000	not operating, the receptor is entered at SFAKEI with	0.4060	0.0161
+0.2587	0.5056	1.000	UAT. It exits to KSUPP.	0.1936	0.0161
+0.2733	0.0733	1.000	registers set up as though the CS had just occurred by	0.4060	0.0116
+0.2848	0.0733	1.000	itself. If, after resetting the bit in KCSREG, the word	0.4041	0.0146
+0.2878	0.5056	1.000	The Set-Up Interrupt Entry	0.2068	0.0160
+0.3023	0.0752	1.000	Is all zeros, the instruction at KSUPCS is changed to	0.3966	0.0102
+0.3139	0.5056	1.000	When the interrupt occurs from the set up read, the	0.3929	0.0176
+0.3153	0.0752	1.000	a NOP.	0.0564	0.0118
+0.3299	0.5056	1.000	conceptor is entered at PCONE2. The program re-	0.3872	0.0174
+0.3299	0.0883	1.000	If the channel is operating the KOSREG is examined	0.3891	0.0161
+0.3425	0.0731	1.000	for additional I's. If 1 is found for a non-operating	0.3820	0.0188
+0.3473	0.5075	1.000	sets the set up, read, and channel operating bits,	0.3722	0.0133
+0.3605	0.0752	1.000	channel, control goes to SFAKEI as described. Other-	0.4041	0.0132
+0.3618	0.5075	1.000	and tests the interrupt indicators. An error message	0.3966	0.0133
+0.3764	0.5056	1.000	is printed if EPGK or UK is on, and control returned	0.4004	0.0132
+0.3764	0.0752	1.000	wise, the service op return routine is used, and un-	0.3929	0.0118
+0.3909	0.5056	1.000	via KSUPP. PCONE1 is entered if CS is on, and if	0.3816	0.0132
+0.3909	0.0752	1.000	stacking of the CS is deferred until the channel is	0.3703	0.0118
+0.4049	0.0732	1.000	not busy.	0.0717	0.0115
+0.4070	0.5075	1.000	EE is on, a message is printed acknowledging the	0.3722	0.0116
+0.4200	0.0940	1.000	The service op return routine is also used to un-	0.3647	0.0118
+0.4225	0.5074	1.000	erase.	0.0511	0.0112
+0.4325	0.0732	1.000	stack console interrupts in certain circumstances.	0.3800	0.0162
+0.4360	0.5244	1.000	If EOP is the only indicator on, the message is	0.3534	0.0116
+0.4491	0.0752	1.000	If the $COMM pseudo-op had been given while the	0.3703	0.0131
+0.4506	0.5075	1.000	examined to determine the owner. The owner may	0.3759	0.0116
+0.4631	0.0732	1.000	console was being used for non-commentator I-O,	0.3761	0.0151
+0.4651	0.5056	1.000	be PP, the debugging package, or the command pack-	0.4041	0.0131
+0.4782	0.0733	1.000	the commentator suppresses the console user's inter-	0.4023	0.0116
+0.4797	0.5075	1.000	age as follows:	0.1128	0.0116
+0.4927	0.0752	1.000	rupts and changes KSUPP to abranchto KCOMMR to	0.3872	0.0116
+0.4942	0.5207	1.000	1. The owner is PP if either:	0.2274	0.0116
+0.5055	0.0731	1.000	release them. Furthermore, if the commentator	0.3650	0.0169
+0.5102	0.5658	1.000	The keyboard was not enabled (CS key) and	0.3195	0.0132
+0.5233	0.0733	1.000	suppressed a conceptor EOP, it changed the instruc-	0.3985	0.0116
+0.5247	0.5658	1.000	the message consists of the switches and keys	0.3440	0.0132
+0.5378	0.0733	1.000	tion at KCONCP to a NOP, and stored the copied	0.3647	0.0116
+0.5382	0.5656	1.000	(the end code is in the third word).	0.2597	0.0143
+0.5509	0.0733	1.000	control word at KCOMCW. If the suppressed inter-	0.3891	0.0131
+0.5536	0.5658	1.000	The first two non-control characters of the	0.3233	0.0118
+0.5654	0.0733	1.000	rupt was not the conceptor's, then the commentator	0.3872	0.0146
+0.5697	0.5639	1.000	message are PP.	0.1316	0.0103
+0.5791	0.0732	1.000	stored the UAT address in KCOMMR.	0.2823	0.0140
+0.5827	0.5188	1.000	2. The owner is the debugging package if the end	0.3722	0.0133
+0.5959	0.0902	1.000	When the service op return routine is entered with	0.3778	0.0102
+0.5966	0.5036	1.000	code is the first character of the fourth word (the	0.3706	0.0141
+0.6084	0.0732	1.000	KSUPP (Figure 8) set to a branch, the switch is re-	0.3893	0.0148
+0.6118	0.5038	1.000	ENTER, END sequence).	0.1823	0.0132
+0.6235	0.0733	1.000	set and the UAT address (if any) is picked up. If the	0.3891	0.0131
+0.6261	0.5187	1.000	3. Otherwise, the owner is the command package.	0.3837	0.0153
+0.6361	0.0731	1.000	interrupt is the conceptor's (KCONCP a NOP), the	0.3800	0.0169
+0.6406	0.5205	1.000	The flow separates according to the owner, and	0.3556	0.0162
+0.6524	0.0732	1.000	registers are set up as though the interrupt had been	0.3949	0.0156
+0.6570	0.5019	1.000	converges again at PMAIN for the two MCP owners,	0.3910	0.0145
+0.6683	0.5017	1.000	and at PEXI for all owners. If a typewritten message	0.4064	0.0189
+0.6685	0.0733	1.000	received by the receptor and recognized as a con-	0.3759	0.0118
+0.6830	0.0733	1.000	ceptor set-up operation. Control is given to PCONE2.	0.4041	0.0133
+0.6860	0.5000	1.000	had been read, it is edited for backspace codes by	0.3778	0.0131
+0.6976	0.0733	1.000	If the interrupt is not the conceptor's, then registers	0.3966	0.0118
+0.7006	0.5019	1.000	the subroutine GEDIT, and, according to owner, the'	0.4023	0.0146
+0.7121	0.0733	1.000	are set up as though the interrupt had been received	0.3891	0.0118
+0.7151	0.5000	1.000	proper tables and registers are set up. MCP messages	0.4211	0.0146
+0.7267	0.0733	1.000	by the receptor, and the receptor is entered at	0.3515	0.0118
+0.7276	0.4999	1.000	are stored in the buffer PMCPBF, and PP messages	0.3969	0.0169
+0.7412	0.0733	1.000	KNORM. The return function of the service op re-	0.3797	0.0131
+0.7435	0.5018	1.000	are stored in PPPBF. At PEX1, the console signal	0.3912	0.0155
+0.7540	0.0732	1.000	turn routine is discussed with the dispatcher pro-	0.3725	0.0159
+0.7587	0.5019	1.000	bit, SCNSSG, is set in the UST, and control given to	0.3929	0.0146
+0.7726	0.0713	1.000	grams.	0.0567	0.0101
+0.7729	0.5017	1.000	KQIN with registers set as though a CS had just	0.3593	0.0152
+0.7856	0.5017	1.000	occurred and with $1 set to KNORM.	0.2749	0.0168
+0.8009	0.0733	1.000	The Conceptor	0.1090	0.0102
+0.8120	0.4866	1.000	The Actuator Entry	0.1601	0.0171
+0.8299	0.0733	1.000	The conceptor is a special program to receive con-	0.3853	0.0131
+0.8445	0.0733	1.000	sole channel signals. It performs a set-up console	0.3835	0.0131
+0.8473	0.5019	1.000	The recipient of the faked channel signal is expected	0.3910	0.0146
+0.8605	0.0733	1.000	read, and, upon completion, identifies the owner of	0.3872	0.0117
+0.8616	0.4998	1.000	to issue a $READ for the console. When the actuator	0.4007	0.0149
+0.8750	0.0714	1.000	the CS and sets up a fake CS for that owner. When	0.3778	0.0117
+0.8753	0.4998	1.000	read routine receives a console read request with	0.3745	0.0168
+0.8894	0.0714	1.000	the subsequent $READ is issued, the actuator enters	0.3947	0.0118
+0.8909	0.5000	1.000	SCNSSG set in the UST, it enters the conceptor at	0.3741	0.0146
+0.9039	0.0714	1.000	the conceptor, which performs a data transmission	0.3835	0.0118
+0.9055	0.5000	1.000	PCSRD, since the hardware read has already been	0.3778	0.0146
+0.9164	0.0714	1.000	and enters the receptor with an EOP faked for the read.	0.4043	0.0139
+0.9201	0.4981	1.000	done.	0.0432	0.0116
+0.9477	0.0639	1.000	28	0.0188	0.0102

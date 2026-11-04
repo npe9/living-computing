@@ -1,0 +1,56 @@
+0.0872	0.1109	1.000	APPENDIX C - THE IBM 7030 MULTIPLIER	0.3477	0.0174
+0.1032	0.2387	1.000	REGISTER	0.0846	0.0116
+0.1612	0.1109	1.000	K2 and subsequent machines contain in the E-box a	0.3759	0.0147
+0.1612	0.5489	1.000	VFL instructions are unaltered, but $MR, aside	0.3609	0.0161
+0.1758	0.1109	1.000	transistor register used as a floating point multiplier	0.3947	0.0161
+0.1758	0.5320	1.000	from its shared $R bits, is part of the VFL accumu-	0.3929	0.0146
+0.1890	0.1109	1.000	register ($MR). This register is not available on	0.3684	0.0160
+0.1903	0.5338	1.000	lator and is on the path of data flow for some VFL	0.3741	0.0146
+0.2048	0.5338	1.000	instructions. Thus:	0.1523	0.0146
+0.2064	0.1128	1.000	X-1 (LASL), the 7950, or K-1 (LRL).	0.2782	0.0131
+0.2209	0.1297	1.000	The fraction and sign bits of $MR occupy the last	0.3609	0.0131
+0.2339	0.5489	1.000	1. VFL fetch type instructions with offset less than	0.3891	0.0146
+0.2355	0.1128	1.000	52 bits of the D register in the arithmetic unit. Its	0.3778	0.0131
+0.2485	0.5357	1.000	16 will alter the exponent bits of $MR. The corres-	0.3872	0.0161
+0.2500	0.1109	1.000	exponent occupies $R. 48 through $R.59. The multi-	0.3891	0.0145
+0.2630	0.5357	1.000	ponding store type instructions may store $MR expo-	0.3929	0.0161
+0.2630	0.1128	1.000	plier register has no address and can be referred to	0.3853	0.0146
+0.2761	0.5357	1.000	nent bits.	0.0752	0.0161
+0.2805	0.1147	1.000	only through floating point instructions LMR, STM,	0.3759	0.0116
+0.2906	0.5451	1.000	2. VFL load (L) and load with flag (LWF) auto-	0.3609	0.0176
+0.2951	0.1128	1.000	and *. The instruction LMR loads $MR in the same	0.3910	0.0116
+0.3067	0.5357	1.000	matically clears the $MR exponent to all zeros before	0.4004	0.0161
+0.3081	0.1109	1.000	way as LFT loads $FT on the K-1 machine; similarly,	0.4023	0.0161
+0.3212	0.1128	1.000	*+ behaves in the same way as the corresponding	0.3609	0.0176
+0.3227	0.5357	1.000	the loading operation.	0.1617	0.0146
+0.3372	0.5508	1.000	3. The fraction and sign byte parts of $MR are	0.3553	0.0161
+0.3400	0.1109	1.000	instruction in K-1, but $MR instead of $FT will	0.3534	0.0133
+0.3532	0.5357	1.000	replaced whenever a VFL instruction calling for word	0.3985	0.0147
+0.3545	0.1128	1.000	furnish the implied operand. Bit configurations for	0.3797	0.0118
+0.3677	0.5376	1.000	boundary crossover is executed, because the D regi-	0.3929	0.0132
+0.3691	0.1147	1.000	LMR and LFT are the same (10010), as are bit	0.3477	0.0132
+0.3821	0.5376	1.000	ster is needed in all such cases to house the second	0.3816	0.0118
+0.3836	0.1128	1.000	configurations for *t and its corresponding instruc-	0.3816	0.0132
+0.3956	0.5355	1.000	full word temporarily.	0.1734	0.0146
+0.3982	0.1128	1.000	tion (01110). The floating point instruction Store	0.3609	0.0118
+0.4112	0.5508	1.000	4. Due to bit-sharing with $R, the $MR exponent	0.3684	0.0161
+0.4127	0.1128	1.000	Multiplier (STM) with bit configuration 11110, stores	0.3910	0.0131
+0.4258	0.5357	1.000	will be altered by a VFL instruction which changes	0.3761	0.0133
+0.4273	0.1128	1.000	the contents of $MR into the full word specified by	0.3703	0.0118
+0.4403	0.5338	1.000	the sign of the accumulator.	0.2105	0.0146
+0.4418	0.1128	1.000	the effective address, and is added to K-2 and sub-	0.3759	0.0131
+0.4548	0.5489	1.000	MCP saves and restores $MR along with other low	0.3778	0.0132
+0.4578	0.1128	1.000	sequent machines. On these machines LMR,	0.3327	0.0116
+0.4578	0.4455	1.000	*t, and	0.0620	0.0131
+0.4709	0.5357	1.000	registers. It takes the precaution of resetting $OP	0.3797	0.0131
+0.4724	0.1128	1.000	STM are capable of being modified by modifier bits,	0.3835	0.0116
+0.4855	0.5357	1.000	in the event the machine has no multiplier register.	0.3816	0.0131
+0.4869	0.1128	1.000	as are other floating point instructions. These new	0.3797	0.0116
+0.5000	0.5338	1.000	Note that by using the $MR option, arithmetic time in	0.3966	0.0161
+0.5015	0.1128	1.000	instructions occupy only one level of the lookahead	0.3722	0.0116
+0.5145	0.5338	1.000	matrix multiplication can be cut in half as compared	0.3891	0.0146
+0.5160	0.1128	1.000	rather than two, as do the original corresponding	0.3647	0.0131
+0.5291	0.5338	1.000	with the corresponding $FT operation.	0.2857	0.0146
+0.5320	0.1128	1.000	instructions.	0.0959	0.0102
+0.9433	0.9060	1.000	263	0.0226	0.0087
+0.9433	0.6917	1.000	Appendix C - Multiplier Register	0.1917	0.0103

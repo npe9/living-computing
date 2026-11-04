@@ -1,0 +1,59 @@
+0.0980	0.3117	1.000	Symbol	0.0609	0.0177
+0.0987	0.6503	1.000	Content	0.0583	0.0104
+0.0988	0.1579	1.000	Bits	0.0357	0.0160
+0.1279	0.3139	1.000	SMOUNT	0.0695	0.0131
+0.1294	0.5056	1.000	0 - Not awaiting tape mounting	0.2406	0.0116
+0.1294	0.1579	1.000	•51	0.0282	0.0131
+0.1439	0.5056	1.000	1 - Awaiting tape mounting signal	0.2613	0.0116
+0.1730	0.5075	1.000	This indicator exists in the unit status table of a multi-	0.4135	0.0116
+0.1890	0.5056	1.000	unit channel. It is set by the actuator, I-O assignment,	0.4192	0.0132
+0.2020	0.5056	1.000	I-O change command, and special assignment. It indi-	0.4154	0.0146
+0.2179	0.5056	1.000	cates that a channel signal can be expected from the	0.3910	0.0118
+0.2324	0.5056	1.000	reading of a tape unit after mounting of a reel. The	0.3910	0.0133
+0.2470	0.5056	1.000	indicator is tested and reset by the receptor, I-O change	0.4267	0.0133
+0.2630	0.5056	1.000	command, and the actuator.	0.2105	0.0131
+0.2916	0.3137	1.000	SREW	0.0493	0.0126
+0.2921	0.5056	1.000	0 - Not rewind tape operation	0.2331	0.0131
+0.2922	0.1598	1.000	•52	0.0282	0.0145
+0.3081	0.5056	1.000	1 - Rewind tape operation	0.2049	0.0116
+0.3372	0.5075	1.000	This indicator exists in the unit status table of a multi-	0.4135	0.0102
+0.3517	0.5056	1.000	unit channel. The indicator is set to 1 by the actuator	0.4079	0.0116
+0.3663	0.5056	1.000	whenever a rewind operation, other than a setup opera-	0.4173	0.0131
+0.3821	0.5056	1.000	tion, is in progress, and is tested and reset by the	0.3835	0.0118
+0.3966	0.5056	1.000	receptor.	0.0734	0.0121
+0.4241	0.3138	1.000	SIMNT	0.0547	0.0136
+0.4258	0.5056	1.000	0 - Not initial mount status	0.2143	0.0103
+0.4259	0.1598	1.000	•53	0.0282	0.0131
+0.4403	0.5056	1.000	1 - Initial mount status	0.1842	0.0103
+0.4694	0.5056	1.000	This indicator is found in the unit status tables of a	0.3853	0.0103
+0.4839	0.5056	1.000	multi-unit channel. The indicator shows that the first	0.4079	0.0118
+0.5000	0.5056	1.000	mounting request has been made for program tape I-O	0.4079	0.0116
+0.5130	0.5056	1.000	request, and the channel signal has not been received	0.4023	0.0118
+0.5275	0.5056	1.000	indicating that the tape reel has been mounted. The	0.3911	0.0135
+0.5436	0.5056	1.000	indicator is set by the I-O assignment package, and	0.3872	0.0116
+0.5567	0.5056	1.000	sometimes by the I-O change and special assignment	0.3985	0.0131
+0.5727	0.5056	1.000	programs. The indicator is tested and reset by the	0.3891	0.0116
+0.5872	0.5056	1.000	receptor.	0.0714	0.0116
+0.6148	0.1617	1.000	.57 - .58	0.0695	0.0131
+0.6148	0.3158	1.000	Same as Single Channel Status.	0.2331	0.0131
+0.6450	0.3138	1.000	SSPACE	0.0641	0.0109
+0.6453	0.5038	1.000	• - Non-space operation	0.1955	0.0116
+0.6453	0.1579	1.000	•59	0.0301	0.0131
+0.6599	0.5056	1.000	1 - Space operation	0.1579	0.0116
+0.6890	0.5056	1.000	This indicator is found in the unit status table of a	0.3759	0.0117
+0.7048	0.5056	1.000	multi-unit channel. It indicates that a spacing opera-	0.4041	0.0118
+0.7194	0.5056	1.000	tion, other than a setup operation, is in progress on a	0.4060	0.0118
+0.7339	0.5056	1.000	tape unit. The indicator is set by the actuator and	0.3797	0.0146
+0.7485	0.5056	1.000	tested and reset by the receptor.	0.2481	0.0118
+0.7776	0.1617	1.000	.60 -	0.0432	0.0118
+0.7776	0.3158	1.000	Same as Single Channel Status.	0.2350	0.0118
+0.7776	0.2030	1.000	•63	0.0301	0.0116
+0.8067	0.0940	1.000	THE UNIT AREA TABLE	0.1898	0.0131
+0.8342	0.0940	1.000	The unit area tables contain information about assigned physical units. I-O assignment builds the	0.7350	0.0161
+0.8503	0.0921	1.000	tables and then the actuator and receptor store in and use significant information from the tables	0.7293	0.0146
+0.8648	0.0921	1.000	during the execution of I-O operations. There is one unit area table for each existing unit; its	0.7086	0.0146
+0.8779	0.0902	1.000	address can be obtained from either the I-O location table or the channel or unit status table to	0.7162	0.0146
+0.8922	0.0920	1.000	which it is attached. A unit area table consists of nine words (Figure 147), and its format is as	0.7220	0.0189
+0.9080	0.0901	1.000	follows:	0.0642	0.0139
+0.9476	0.6353	1.000	Appendix A - Symbolic I-O Control Tables	0.2519	0.0103
+0.9491	0.9098	1.000	267	0.0226	0.0087

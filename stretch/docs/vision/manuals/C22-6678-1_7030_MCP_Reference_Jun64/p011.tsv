@@ -1,0 +1,109 @@
+0.0639	0.0865	1.000	more than one IOD for the same unit and channel. In	0.3947	0.0176
+0.0697	0.5376	1.000	5. Write pseudo-operation count	0.2462	0.0132
+0.0785	0.0846	1.000	this latter case, the REEL card must immediately	0.3835	0.0176
+0.0842	0.5395	1.000	6. Control pseudo-operation count	0.2575	0.0118
+0.0900	0.0846	1.000	follow one of the IOD cards for that unit and channel.	0.3985	0.0206
+0.0988	0.5395	1.000	7. Actual tape disposition	0.1936	0.0118
+0.1076	0.0865	1.000	A REEL card may also follow another REEL card	0.3759	0.0174
+0.1191	0.0846	1.000	that refers to the same unit and channel. AREEL	0.3816	0.0204
+0.1307	0.5205	1.000	REEL LABELING: When a tape is required by the	0.3781	0.0166
+0.1366	0.0846	1.000	card is punched in the format:	0.2274	0.0174
+0.1482	0.5207	1.000	problem program, it is identified by a REEL card.	0.3816	0.0132
+0.1607	0.5186	1.000	This identification is given to the operator by MCP	0.3838	0.0171
+0.1773	0.5188	1.000	in mounting instructions typed on the console	0.3571	0.0118
+0.1831	0.2857	1.000	6263	0.0376	0.0189
+0.1875	0.1523	0.500	9|0	0.0263	0.0131
+0.1890	0.1071	1.000	2	0.0113	0.0102
+0.1904	0.4605	1.000	80	0.0188	0.0116
+0.1918	0.5207	1.000	typewriter. The operator matches this identifica-	0.3778	0.0118
+0.2048	0.5207	1.000	tion with that appearing externally on the tape and	0.3722	0.0132
+0.2093	0.3722	1.000	blank	0.0357	0.0145
+0.2106	0.1598	1.000	REEL, reely, reelz, etc	0.1184	0.0133
+0.2108	0.1128	1.000	blank	0.0320	0.0116
+0.2209	0.5207	1.000	mounts the required tape. If the tape is labeled,	0.3647	0.0131
+0.2355	0.5207	1.000	MCP verifies that the tape requested is the tape	0.3590	0.0131
+0.2498	0.5206	1.000	mounted.	0.0697	0.0120
+0.2645	0.5432	1.000	A labeled tape contains a magnetic identification	0.3609	0.0116
+0.2791	0.5188	1.000	that corresponds to the external identification on the	0.3929	0.0116
+0.2876	0.0845	1.000	where:	0.0566	0.0164
+0.2936	0.5188	1.000	tape. The magnetic identification is contained in	0.3684	0.0116
+0.3009	0.1071	1.000	REEL represents a pseudo-operation code	0.3346	0.0174
+0.3081	0.5188	1.000	the reel label. The reel label is written as the	0.3553	0.0116
+0.3154	0.1071	1.000	that identifies a card which lists reel numbers of	0.3741	0.0189
+0.3227	0.5188	1.000	first record on the tape and is followed by a tape	0.3647	0.0146
+0.3299	0.1071	1.000	tapes associated with a tape IOD statement. Reeli	0.3778	0.0189
+0.3372	0.5188	1.000	mark. A reel label consists of one (tape) BCD rec-	0.3872	0.0131
+0.3488	0.1090	1.000	are subfields that identify tapes in the order in	0.3534	0.0118
+0.3496	0.5187	1.000	ord of at most 15 words and at least 66 bits (11 six-	0.3874	0.0155
+0.3633	0.1090	1.000	which they are to be mounted. Each reeli repre-	0.3647	0.0117
+0.3648	0.5169	1.000	bit bytes) as follows:	0.1598	0.0146
+0.3779	0.1109	1.000	sents a symbol eight characters in length. The	0.3496	0.0131
+0.3794	0.5470	1.000	0-29 Reel name	0.1316	0.0146
+0.3924	0.1090	1.000	first three characters are not part of the reel	0.3440	0.0131
+0.3935	0.5394	1.000	30-35 Density	0.1186	0.0168
+0.4070	0.1090	1.000	identification, but specify whether the tape is	0.3440	0.0131
+0.4083	0.5394	1.000	36-41 Mode	0.1016	0.0149
+0.4197	0.1089	1.000	labeled or unlabeled and whether the tape is pro-	0.3687	0.0152
+0.4230	0.5169	1.000	with the remaining bits of the record unused.	0.3383	0.0161
+0.4360	0.1090	1.000	tected (ring out) or not protected. If the entire	0.3496	0.0131
+0.4506	0.1090	1.000	subfield is not null, the reeli may be:	0.2838	0.0131
+0.4535	0.5169	1.000	Reel Name: The reel name consists of five charac-	0.3910	0.0145
+0.4651	0.1541	1.000	PLBXXXXX	0.0902	0.0116
+0.4651	0.2650	1.000	Protected, labeled	0.1391	0.0131
+0.4679	0.5150	1.000	ters that correspond to the exterior reel identifica-	0.3891	0.0147
+0.4796	0.1559	1.000	PULXXXXX Protected, unlabeled	0.2652	0.0136
+0.4797	0.5169	1.000	tion. If less than five nonblank characters are used	0.3910	0.0174
+0.4956	0.1541	1.000	NLBXXXXX	0.0940	0.0087
+0.4956	0.2632	1.000	Unprotected, labeled	0.1579	0.0116
+0.4956	0.5169	1.000	on the REEL card, rightmost blanks are provided	0.3741	0.0160
+0.5102	0.2650	1.000	Unprotected, unlabeled	0.1729	0.0116
+0.5102	0.5169	1.000	when it is decoded'so that five characters are	0.3440	0.0147
+0.5102	0.1541	1.000	NULXXXXX	0.1090	0.0087
+0.5247	0.1109	1.000	The remaining five characters, XXXXX, are	0.3496	0.0132
+0.5262	0.5150	1.000	verified.	0.0695	0.0145
+0.5392	0.1090	1.000	the same as those shown externally on the tape	0.3515	0.0117
+0.5536	0.1090	1.000	container. If it is a labeled tape, they are the	0.3440	0.0118
+0.5567	0.5169	1.000	Density: The density, as coded in the reel label, is	0.3891	0.0131
+0.5665	0.5169	1.000	that in which the remainder of the tape, including	0.3722	0.0166
+0.5682	0.1090	1.000	same as those on the (magnetic) reel label file.	0.3553	0.0133
+0.5827	0.5150	1.000	the tape mark following the label, is written. It	0.3665	0.0176
+0.5827	0.1070	1.000	If the entire subfield is null, any labeled, unpro-	0.3669	0.0160
+0.5971	0.5150	1.000	must be either:	0.1185	0.0166
+0.5988	0.0846	1.000	tected tape will be used. Therefore, it is impossible	0.4004	0.0131
+0.6118	0.5376	1.000	H (111000)2 High, or	0.1767	0.0176
+0.6133	0.0846	1.000	to specify an unlabeled scratch tape. If all tapes tobe	0.3985	0.0131
+0.6264	0.5395	1.000	L (100011)2 Low	0.1429	0.0176
+0.6279	0.0846	1.000	mounted on the same physical unit are to be labeled	0.3872	0.0131
+0.6409	0.0865	1.000	and unprotected, no REEL card is necessary.	0.3402	0.0146
+0.6546	0.5148	1.000	Mode: The mode, as coded in the reel label, is that	0.3970	0.0205
+0.6686	0.0845	1.000	REEL HISTORY: A reel history is added by MCP to	0.3949	0.0167
+0.6700	0.5132	1.000	of the current IOD used when the label is written. It	0.3929	0.0161
+0.6845	0.0865	1.000	the end of the problem program output. For every	0.3816	0.0131
+0.6845	0.5150	1.000	must be one of the following:	0.2162	0.0161
+0.7006	0.0846	1.000	physical tape unit assigned to the problem program,	0.3910	0.0116
+0.7020	0.5376	1.000	O (100110)2 Odd parity, no ECC	0.2575	0.0131
+0.7121	0.5395	1.000	C (110011)2 Odd parity, ECO	0.2331	0.0176
+0.7121	0.0865	1.000	Nt 1 lines of output will appear where N is the num-	0.3947	0.0146
+0.7282	0.0865	1.000	ber of tape reels that have operated on this tape unit.	0.3929	0.0116
+0.7297	0.5376	1.000	E (110101)2 Even parity	0.1974	0.0161
+0.7427	0.0865	1.000	The first line of each N+ 1 group contains the actual	0.3929	0.0131
+0.7573	0.0865	1.000	channel and unit number assigned to the tape request	0.3947	0.0131
+0.7587	0.5169	1.000	Label Tape Mark: The reel label record is followed	0.3910	0.0146
+0.7718	0.0846	1.000	as well as the IOD number (in octal) that last sym-	0.3835	0.0146
+0.7733	0.5150	1.000	by a tape mark which is the problem program's logi-	0.3910	0.0146
+0.7848	0.0865	1.000	bolically referenced this unit.	0.2218	0.0131
+0.7878	0.5132	1.000	cal load point. The first tape mark is written in the	0.3947	0.0131
+0.8009	0.1090	1.000	Each subsequent line of the N + 1 group contains	0.3609	0.0131
+0.8034	0.5150	1.000	density as coded in the reel label record. The reel	0.3873	0.0139
+0.8138	0.0862	1.000	the following tape reel information:	0.2636	0.0169
+0.8169	0.5132	1.000	label, including the first tape mark, is rewritten	0.3703	0.0160
+0.8299	0.1090	1.000	1. Reel name	0.0996	0.0116
+0.8314	0.5150	1.000	on-line only if all the following conditions are met:	0.3816	0.0147
+0.8445	0.1090	1.000	2. UK interrupt count	0.1635	0.0116
+0.8459	0.5357	1.000	1. The tape is labeled.	0.1748	0.0147
+0.8590	0.5357	1.000	2. The first problem program operation that	0.3383	0.0160
+0.8590	0.1090	1.000	3. UK-EOP interrupt count	0.2030	0.0116
+0.8735	0.1090	1.000	4. Read pseudo-operation count	0.2368	0.0131
+0.8750	0.5150	1.000	moves the tape is either a write or write end of file.	0.3947	0.0160
+0.9157	0.7143	1.000	Programming With MCP	0.1485	0.0116
+0.9172	0.8985	1.000	11	0.0169	0.0073

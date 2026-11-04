@@ -1,0 +1,130 @@
+0.0799	0.0357	1.000	MCP LOADER	0.1128	0.0131
+0.1177	0.7274	1.000	(12,3)	0.0526	0.0160
+0.1206	0.4737	1.000	4. Absolute correction (C)	0.2030	0.0146
+0.1221	0.0376	1.000	The resume load program of MCP may be used by	0.3741	0.0131
+0.1336	0.4718	1.000	5. Absolute patch (P)	0.1654	0.0161
+0.1352	0.7293	1.000	(11,7)	0.0489	0.0131
+0.1381	0.0376	1.000	the problem programmer who wishes to load and ex-	0.3947	0.0102
+0.1497	0.4737	1.000	6. Absolute dump (D)	0.1617	0.0131
+0.1497	0.7293	1.000	(12,4)	0.0489	0.0131
+0.1526	0.0376	1.000	ecute his program in sections. In a non-FORTRAN	0.3872	0.0102
+0.1612	0.4737	1.000	7. Relocatable data	0.1523	0.0161
+0.1628	0.7293	1.000	(6,7,8,9)	0.0752	0.0145
+0.1672	0.0376	1.000	environment, this procedure is accomplished with	0.3759	0.0132
+0.1752	0.4733	1.000	8. Relocatable instruction	0.2018	0.0185
+0.1787	0.7293	1.000	(5,7,9)	0.0583	0.0133
+0.1830	0.0376	1.000	the following calling sequence:	0.2293	0.0103
+0.1903	0.5000	1.000	Fortran program	0.1335	0.0176
+0.1932	0.7293	1.000	(5,6,7,9)	0.0753	0.0134
+0.1961	0.1635	1.000	В, $МСР	0.0771	0.0133
+0.1962	0.4737	1.000	9.	0.0282	0.0102
+0.2051	0.4638	1.000	10. Common definition	0.1778	0.0212
+0.2076	0.7293	1.000	(5,7,8,9)	0.0753	0.0150
+0.2096	0.1703	1.000	, $RESLD	0.0878	0.0147
+0.2193	0.5000	1.000	Fortran branch	0.1223	0.0193
+0.2222	0.7293	1.000	(5,6, 7,8,9)	0.0903	0.0148
+0.2252	0.0602	1.000	Loading is resumed with the next binary card from	0.3797	0.0133
+0.2253	0.4662	1.000	11.	0.0263	0.0102
+0.2355	0.7293	1.000	(11,2)	0.0508	0.0160
+0.2384	0.5094	1.000	lelocatable correction (F	0.1805	0.0131
+0.2397	0.0376	1.000	the same source as the previous load (system input	0.3872	0.0118
+0.2398	0.4662	1.000	12.	0.0357	0.0102
+0.2499	0.7312	1.000	(12,1)	0.0508	0.0176
+0.2500	0.4737	1.000	3. Relocatable patch (t	0.1767	0.0145
+0.2542	0.0376	1.000	or disk). Loading is terminated when the next abso-	0.3966	0.0147
+0.2623	0.4642	1.000	14. Relocatable dump (Z)	0.1938	0.0190
+0.2645	0.7312	1.000	(0,9)	0.0432	0.0160
+0.2688	0.0376	1.000	lute branch card is encountered, and control is given	0.3985	0.0133
+0.2791	0.4643	1.000	15.	0.0376	0.0189
+0.2805	0.7312	1.000	(0,3)	0.0414	0.0145
+0.2820	0.4962	1.000	I	0.0244	0.0131
+0.2848	0.0376	1.000	to the address specified on the branch card.	0.3289	0.0117
+0.2936	0.7312	1.000	(0,2,3)	0.0583	0.0160
+0.2979	0.0602	1.000	Care should be taken when $RESLD is issued in	0.3571	0.0118
+0.2979	0.4643	1.000	16. Super T	0.0959	0.0118
+0.3096	0.7312	1.000	(11,6)	0.0489	0.0160
+0.3124	0.4925	1.000	Loader adjustment (O)	0.1767	0.0118
+0.3125	0.4643	1.000	17.	0.0320	0.0131
+0.3139	0.0376	1.000	an I-O fix-up routine. The pseudo-operation does	0.3778	0.0116
+0.3241	0.7312	1.000	(12,2)	0.0489	0.0145
+0.3270	0.4643	1.000	18. B	0.0508	0.0131
+0.3270	0.0376	1.000	nothing to alter any I-O stacking mode that may be in	0.4004	0.0131
+0.3430	0.0376	1.000	effect, so that the next section of the job could be	0.3722	0.0131
+0.3558	0.0374	1.000	given control in the auto-stacked mode. (See Refer-	0.3969	0.0150
+0.3706	0.4906	1.000	The formats for each of the above cards may be	0.3590	0.0117
+0.3721	0.0376	1.000	ence Manual, IBM 7030 Master Control Program,	0.3741	0.0131
+0.3852	0.4662	1.000	found in Appendix A. The function of each card in	0.3797	0.0117
+0.3866	0.0395	1.000	Form C22-6678, for a description of the auto-stacked	0.4041	0.0131
+0.4012	0.4680	1.000	the MCP loader is described below:	0.2688	0.0102
+0.4012	0.0395	1.000	mode.) In this situation the first $RET pseudo-	0.3590	0.0131
+0.4142	0.4887	1.000	1. Absolute origin card. Up to 23 half-words of	0.3741	0.0131
+0.4157	0.0395	1.000	operation issued by the second section would attempt	0.3966	0.0131
+0.4288	0.4680	1.000	information are loaded, beginning at the originspeci-	0.4023	0.0131
+0.4302	0.0376	1.000	to return control to a location in the first section.	0.3759	0.0116
+0.4433	0.4680	1.000	fied on the card. Bits may be skipped or zeroed be-	0.3966	0.0131
+0.4462	0.0602	1.000	In a FORTRAN environment jobs may be seg-	0.3440	0.0102
+0.4578	0.4680	1.000	fore or after loading. The sequence number and	0.3665	0.0131
+0.4593	0.0395	1.000	mented with the use of the segmentation feature of	0.3778	0.0116
+0.4738	0.4680	1.000	check sum are verified.	0.1805	0.0116
+0.4752	0.0376	1.000	the BSS processor. (Refer to the Segmentation sec-	0.3947	0.0118
+0.4863	0.4886	1.000	2. Absolute flow card. Exactly 25 half-words of	0.3724	0.0138
+0.4913	0.0376	1.000	tion.)	0.0451	0.0102
+0.5015	0.4662	1.000	information are loaded, beginning immediately after	0.3966	0.0131
+0.5029	0.0620	1.000	The resume load program also serves as the final	0.3759	0.0132
+0.5173	0.0394	1.000	phase of FORTRAN relocatable BSS loading. Inthis	0.3892	0.0133
+0.5174	0.4680	1.000	the highest location loaded on the previous origin or	0.3910	0.0116
+0.5305	0.4680	1.000	flow card. If no previous origin is found, a diagnos-	0.3985	0.0131
+0.5333	0.0395	1.000	capacity, resume load obtains the loader limits of	0.3778	0.0132
+0.5445	0.4679	1.000	tie message is issued. The sequence number and	0.3744	0.0153
+0.5479	0.0395	1.000	the problem program from the communication region	0.3985	0.0118
+0.5609	0.4680	1.000	check sum are verified.	0.1823	0.0118
+0.5624	0.0395	1.000	of MCP (previously set up by the BSS processor) and	0.3947	0.0132
+0.5737	0.4905	1.000	3. Absolute branch card. The sequence number	0.3686	0.0136
+0.5770	0.0395	1.000	sets them to extend from the lower limit to the base	0.3891	0.0103
+0.5887	0.4680	1.000	and check sum are verified. The branch address is	0.3910	0.0132
+0.5915	0.0395	1.000	address of blank common, inhibiting loading intoblank	0.4060	0.0118
+0.6045	0.4680	1.000	checked to see if it is within bounds. If there is no	0.3853	0.0118
+0.6061	0.0395	1.000	common. Resume load then sets the input source to	0.3929	0.0118
+0.6191	0.4680	1.000	branch address, the origin found on the first origin	0.3853	0.0132
+0.6206	0.0395	1.000	disk, initializes the loader to take information from	0.3891	0.0131
+0.6336	0.4680	1.000	card loaded is used as the branch address. Control	0.3910	0.0118
+0.6352	0.0395	1.000	the relocation tables set up by the BSS processor, and	0.4023	0.0117
+0.6482	0.4643	1.000	is passed, by way of the branch return in resume	0.3759	0.0132
+0.6497	0.0395	1.000	continues the loading function.	0.2256	0.0131
+0.6642	0.4680	1.000	load, to the branch address.	0.2162	0.0116
+0.6657	0.0602	1.000	In a non-BSS environment, problem program stor-	0.3816	0.0116
+0.6773	0.4906	1.000	4. Absolute correction card. Up to four half-	0.3515	0.0131
+0.6802	0.0395	1.000	age is cleared, upon initial entry to resume load,	0.3722	0.0116
+0.6933	0.4680	1.000	words of information are loaded, beginning at the	0.3722	0.0116
+0.6948	0.0395	1.000	from location 33.0 to the upper limit of the problem	0.3985	0.0116
+0.7078	0.4699	1.000	origin specified on the card. If there is no origin	0.3741	0.0116
+0.7093	0.0395	1.000	program. In a BSS environment, problem program	0.3929	0.0131
+0.7224	0.4699	1.000	on the correction card, the card is interpreted as	0.3722	0.0116
+0.7252	0.0395	1.000	storage is not cleared.	0.1748	0.0103
+0.7369	0.4699	1.000	a continuation card, from which up to four half-words	0.4041	0.0131
+0.7384	0.0620	1.000	The MCP loader operates as a subroutine of the	0.3590	0.0116
+0.7515	0.4680	1.000	of information are loaded, beginning at the location	0.3872	0.0131
+0.7529	0.0414	1.000	resume load program. After loading a card, control	0.3947	0.0116
+0.7660	0.4680	1.000	following the highest location loaded from the pre-	0.3797	0.0131
+0.7674	0.0395	1.000	is returned to resume load by way of normal return	0.3947	0.0116
+0.7805	0.4680	1.000	vious card. A correction card is ignored by the	0.3647	0.0131
+0.7833	0.0395	1.000	(which tries to load another card), branch return	0.3703	0.0118
+0.7951	0.4662	1.000	loader if a 1 punch is found in the decimal point	0.3684	0.0116
+0.7979	0.0395	1.000	(which gives control to the problem program), orerror	0.4135	0.0118
+0.8096	0.4680	1.000	column of the origin. A half-word correction is ig-	0.3910	0.0116
+0.8124	0.0414	1.000	return (which terminates loading and gives a diagnos-	0.4041	0.0118
+0.8241	0.4699	1.000	nored if a 1 punch is found in the decimal point col-	0.3872	0.0116
+0.8285	0.0414	1.000	tic message).	0.1053	0.0103
+0.8387	0.4699	1.000	umn for the half-word. The loading address is	0.3553	0.0116
+0.8400	0.0639	1.000	The loader handles 18 classes of cards, identified	0.3759	0.0133
+0.8532	0.4699	1.000	stepped, although the half-word correction is ignored	0.4041	0.0147
+0.8561	0.0414	1.000	by column 1 punches:	0.1579	0.0118
+0.8676	0.4698	1.000	by the loader (except when the half-word ignored is	0.3837	0.0141
+0.8704	0.3270	1.000	(7,8,9)	0.0566	0.0135
+0.8706	0.0714	1.000	1. Absolute origin	0.1429	0.0117
+0.8836	0.4699	1.000	the last half-word on the card, in which case the	0.3647	0.0118
+0.8852	0.0714	1.000	2. Absolute flow	0.1297	0.0117
+0.8852	0.3271	1.000	(7,9)	0.0395	0.0131
+0.8996	0.0713	1.000	3. Absolute branch	0.1469	0.0119
+0.8997	0.4699	1.000	loading address is not stepped).	0.2406	0.0103
+0.8997	0.3252	1.000	(6,7,9)	0.0583	0.0131

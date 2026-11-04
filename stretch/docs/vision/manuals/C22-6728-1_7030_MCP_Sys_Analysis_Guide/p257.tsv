@@ -1,0 +1,17 @@
+0.0945	0.5414	1.000	When a tape mark is read, a separator card is	0.3515	0.0131
+0.0959	0.1090	1.000	If the first character of the record is not a C, the	0.3759	0.0132
+0.1070	0.5224	1.000	passed to stacker 8/2 from the read hopper. The	0.3781	0.0166
+0.1118	0.0940	1.000	printer is readied, a line is printed and then error	0.3816	0.0133
+0.1220	0.5243	1.000	punch operation is delayed until the separator card	0.3837	0.0161
+0.1264	0.0940	1.000	checked. If an error is detected, an error message	0.3929	0.0118
+0.1377	0.5244	1.000	is passed. A second tape mark immediately following	0.4081	0.0155
+0.1409	0.0940	1.000	is printed and the operation stops (STOP 3). As each	0.4023	0.0132
+0.1539	0.5263	1.000	indicates the physical end of data, and the trailer	0.3722	0.0133
+0.1555	0.0940	1.000	line is printed, a line count is maintained.	0.3195	0.0132
+0.1555	0.4117	1.000	When the	0.0827	0.0103
+0.1672	0.5262	1.000	record is read to determine if EOJ coincides with the	0.4006	0.0146
+0.1700	0.0940	1.000	twelfth line is printed the routine loops and the next	0.3891	0.0131
+0.1830	0.5263	1.000	end of tape. A non-zero trailer record specifies EOJ.	0.4098	0.0133
+0.1860	0.0940	1.000	record is read.	0.1165	0.0116
+0.9477	0.9098	1.000	257	0.0207	0.0087
+0.9491	0.7669	1.000	Supporting Programs	0.1184	0.0088

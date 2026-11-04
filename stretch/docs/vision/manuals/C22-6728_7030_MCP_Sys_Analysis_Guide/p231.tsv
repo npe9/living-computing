@@ -1,0 +1,109 @@
+0.0887	0.1071	1.000	Executive Routines:	0.1485	0.0116
+0.0887	0.5376	1.000	on PG bit 1. Exits to EXIT when file is exhausted or	0.3929	0.0116
+0.1017	0.1241	1.000	1. Add (ADDA) - Figure 129 - Adds a generator to	0.3778	0.0131
+0.1032	0.5376	1.000	to ERROR 1 if command is not recognized.	0.3177	0.0117
+0.1177	0.5545	1.000	2. Exit (EXIT) - Figure 131 - Start of the final	0.3515	0.0117
+0.1177	0.1090	1.000	the library, checking for duplication and illegal for-	0.3853	0.0132
+0.1321	0.5376	1.000	phases of the library update. It produces a print-out	0.3947	0.0118
+0.1321	0.1090	1.000	mat. Controls sequence through subroutines NNFDR,	0.3985	0.0118
+0.1467	0.1090	1.000	FDTNM, JLOAD, ADNTY and PUTT. ADDA turns on	0.4004	0.0147
+0.1467	0.5376	1.000	of the changes that have taken place, using the PG	0.3722	0.0133
+0.1612	0.1090	1.000	PG bit 7 and table of contents bit 1.48, tests and turns	0.4023	0.0133
+0.1612	0.5376	1.000	bits, the table of contents, and GRAPHO. Uses ALPH	0.4041	0.0133
+0.1758	0.5376	1.000	to clear the deleted entries (after print-out) and	0.3553	0.0133
+0.1773	0.1090	1.000	off PG bit 12, and exits to RETURN.	0.2688	0.0118
+0.1903	0.1241	1.000	2. Replace (REPLC) - Figure 129 - Replaces a	0.3534	0.0133
+0.1918	0.5376	1.000	alphabetize the new table of contents. Turns off table	0.4004	0.0118
+0.2048	0.1090	1.000	generator already in a library, checking for validity	0.3872	0.0132
+0.2064	0.5395	1.000	of contents bits 1.51, 1.50. Exits to TAPMRG.	0.3553	0.0131
+0.2201	0.1071	1.000	and logic. Controls sequencing through subroutines	0.3855	0.0142
+0.2209	0.5545	1.000	3. Alphabetize (ALPH) - Prints deleted entries	0.3553	0.0116
+0.2355	0.1090	1.000	NNFDR, FDTNM, JLOAD, PUTT. It turns on PG	0.3722	0.0145
+0.2355	0.5376	1.000	using GRAPHO (in conjunction with EXIT) and clears	0.3910	0.0131
+0.2500	0.5376	1.000	the entry from the table of contents. Subtracts one	0.3816	0.0131
+0.2500	0.1090	1.000	bits 9, 11 and 12 and table of contents bit 1.49, tests	0.3910	0.0145
+0.2645	0.5376	1.000	from the count of entries for each deletion. The	0.3628	0.0116
+0.2660	0.1090	1.000	table of contents bits 1.48, 1.49, and 1.50, and exits	0.3947	0.0116
+0.2791	0.5376	1.000	second part, UPD17, tests for a empty table of con-	0.3891	0.0131
+0.2820	0.1090	1.000	to RETURN.	0.0921	0.0102
+0.2936	0.5376	1.000	tents condition, and alphabetizes the table. Tests PG	0.3985	0.0131
+0.2951	0.1259	1.000	3. Delete (DELETE) - Figure 129 - Deletes a	0.3421	0.0116
+0.3081	0.5376	1.000	bits 10, 14 and 15, turns off table of contents bits	0.3703	0.0131
+0.3096	0.1090	1.000	generator and any synonyms from a library. Deletion	0.4004	0.0131
+0.3227	0.5376	1.000	1.52, and exits to ALPHX, within the EXIT routine.	0.3872	0.0146
+0.3241	0.1071	1.000	is immediate, and the name may be used later in the	0.3929	0.0131
+0.3387	0.5545	1.000	4. Tape Merge (TAPMRG) - Figure 132 - Performs	0.3910	0.0116
+0.3387	0.1090	1.000	change deck. Checks for validity and logic. Controls	0.4004	0.0132
+0.3532	0.5395	1.000	the merge of old and new library files. If there have	0.3929	0.0117
+0.3532	0.1090	1.000	sequence through NNFDR, FDTNM. Turns on PG	0.3703	0.0132
+0.3670	0.1089	1.000	bits 9, 14 and 15 (if necessary); table of contents bit	0.3893	0.0156
+0.3677	0.5395	1.000	been no deletions from the old file, the old file is	0.3647	0.0132
+0.3821	0.5395	1.000	moved to the new file following any additions. Record	0.4004	0.0118
+0.3836	0.1090	1.000	1.47, tests table of content bits 1.48, 1.49, 1.50,	0.3722	0.0132
+0.3967	0.5395	1.000	numbers of old records are increased by the number	0.3910	0.0118
+0.3982	0.1090	1.000	1.52, 1.53, and exits to RETURN.	0.2575	0.0132
+0.4112	0.5395	1.000	of additions. If records have been deleted (or	0.3402	0.0133
+0.4127	0.1259	1.000	4. Update (UPDAT) - Figure 129 - Enters an	0.3365	0.0131
+0.4273	0.1090	1.000	arbitrary numeric sort field into the table of contents.	0.4023	0.0131
+0.4273	0.5395	1.000	replaced), the table of contents is searched for each	0.3872	0.0118
+0.4418	0.5395	1.000	record number to determine its validity, and then the	0.3947	0.0131
+0.4418	0.1109	1.000	Checks for validity and range of number. Controls	0.3759	0.0131
+0.4564	0.5395	1.000	record number is added to the new file. Uses ZTAKE	0.4004	0.0117
+0.4578	0.1090	1.000	sequence through ONFDR, FDTNM, tests PG bit	0.3609	0.0116
+0.4709	0.5395	1.000	and PUTT. Tests PG bits 20, 9, 8, tests and turns	0.3835	0.0131
+0.4724	0.1109	1.000	1.53, and exits to RETURN.	0.2086	0.0131
+0.4869	0.5395	1.000	off bit PG 6.. Tests and turns off table of contents	0.3703	0.0102
+0.4869	0.1259	1.000	5. Arrange (ARANG) - Figure 129 - Sets bit for	0.3609	0.0131
+0.5015	0.5395	1.000	bits 1.48, 1.49, 1.55, tests table of contents bit	0.3609	0.0131
+0.5015	0.1109	1.000	eventual arrangement of records by sort field.	0.3440	0.0116
+0.5160	0.1109	1.000	Checks for illegal combination, such as SMARANGE	0.3853	0.0131
+0.5160	0.5395	1.000	1.53, and exits to RAPUP.	0.1992	0.0131
+0.5305	0.5564	1.000	5. Arrange (ARNG) - Figure 131 - Sequences	0.3402	0.0116
+0.5305	0.1090	1.000	used with SMADDMAC or SMREPLAC. Sets PG bit	0.3835	0.0116
+0.5449	0.5394	1.000	generators on the new file by ascending sort fields.	0.3798	0.0143
+0.5450	0.1108	1.000	5, tests PG bits 1 and 20, and exits to RETURN.	0.3592	0.0147
+0.5596	0.5395	1.000	Generators with the same value are arranged alpha-	0.3872	0.0131
+0.5609	0.1278	1.000	6. Synonym (SYNM) - Figure 130 - Enters a macro	0.3835	0.0118
+0.5734	0.1108	1.000	into the table of contents, making it a "synonym" of	0.3818	0.0166
+0.5755	0.5395	1.000	betically. Records starting with value zero are	0.3553	0.0118
+0.5865	0.1088	1.000	another macro. The "parent" macro may not be	0.3613	0.0199
+0.5900	0.5395	1.000	fetched from the old file sequentially and written on	0.3835	0.0118
+0.6045	0.1109	1.000	another synonym. It checks for duplication and logic,	0.3985	0.0133
+0.6045	0.5395	1.000	the new. Tests PG bit 1, tests and sets table of	0.3590	0.0133
+0.6191	0.1109	1.000	and controls sequence through ONFDR, FDTNM,	0.3609	0.0132
+0.6206	0.5432	1.000	contents bits 1.53, 1.54, and exits to RAPUP.	0.3459	0.0131
+0.6352	0.5602	1.000	6. Start (STARTA) - The point to which control is	0.3722	0.0117
+0.6366	0.1109	1.000	NNFDR, FDTNM, ADNTY. Turns on PG bit 13,	0.3609	0.0131
+0.6497	0.1090	1.000	table of contents bits 1.50 and 1.53 in new entry,	0.3647	0.0131
+0.6497	0.5395	1.000	relinquished from the main section of master update.	0.3966	0.0131
+0.6627	0.5395	1.000	Initializes symbol file tables, clears all PG bits,	0.3703	0.0161
+0.6657	0.1109	1.000	1.52 in parent, and exits to RETURN.	0.2820	0.0131
+0.6758	0.5395	1.000	fetches table of contents, and checks validity of	0.3590	0.0176
+0.6788	0.1259	1.000	7. Rename (RENAME) - Figure 130 - Changes the	0.3778	0.0146
+0.6933	0.5395	1.000	library being updated. Initializes TCTLD, clears	0.3741	0.0161
+0.7078	0.5414	1.000	PUTER, changes DSK exit to PETXIT, and generates	0.3966	0.0161
+0.7238	0.5414	1.000	change dictionary entries.	0.1974	0.0131
+0.7352	0.1107	1.000	sequence through ONFDR, FDTNM, NNFDR, FDTNM,	0.4046	0.0234
+0.7369	0.5564	1.000	7. Wrap Up (RAPUP) - Final phase of librarian	0.3609	0.0146
+0.7515	0.5395	1.000	update. Forces the write-out of any partial buffers	0.3853	0.0161
+0.7529	0.1128	1.000	ADNTY. Turns on PG bits 10 and 15, table of con-	0.3797	0.0132
+0.7670	0.1127	1.000	tents bits 1.47 and 1.51 in the old entry, tests table	0.3837	0.0171
+0.7674	0.5414	1.000	of blocked generators, establishes ARCLOC, and	0.3665	0.0147
+0.7791	0.5414	1.000	changes DSK exit to DSKEX. Writes the table of con-	0.3985	0.0161
+0.7820	0.1128	1.000	of contents bits 1.48, 1.49, 1.50, 1.51 in old entry,	0.3872	0.0145
+0.7936	0.5395	1.000	tents on the disk, types the final message, and	0.3515	0.0189
+0.7994	0.1128	1.000	and exits to RETURN.	0.1617	0.0103
+0.8096	0.5395	1.000	returns to HEDCTL.	0.1560	0.0160
+0.8285	0.1128	1.000	Control Routines:	0.1335	0.0131
+0.8400	0.5394	1.000	Subroutines:	0.0997	0.0177
+0.8415	0.1278	1.000	1. Return (RETURN) - Reads and converts a card	0.3741	0.0131
+0.8561	0.1128	1.000	from the change deck to IQS code. By a series of	0.3684	0.0131
+0.8561	0.5545	1.000	1. New Name Finder (NNFDR) - The new name	0.3590	0.0131
+0.8681	0.5392	1.000	finder subroutine scans AXX for a single name, or	0.3801	0.0211
+0.8735	0.1147	1.000	COMPARE instructions, it determines the operation	0.3835	0.0116
+0.8849	0.1108	1.000	to be performed, and branches to the appropriate	0.3688	0.0192
+0.8852	0.5376	1.000	the second of two names. It checks for a blank field	0.3910	0.0146
+0.8969	0.1127	1.000	executive routine. Uses subroutine WHAT, and turns	0.3969	0.0194
+0.8997	0.5395	1.000	or for parameters greater than 8 characters. It also	0.3985	0.0161
+0.9433	0.7669	1.000	Supporting Programs	0.1165	0.0103
+0.9433	0.9060	1.000	231	0.0226	0.0087

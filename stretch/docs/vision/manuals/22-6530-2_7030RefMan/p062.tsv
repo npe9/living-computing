@@ -1,0 +1,165 @@
+0.0624	0.5207	1.000	Data Flag T (TF); Data Flag U (UF); Data Flag V	0.3759	0.0161
+0.0639	0.0940	1.000	either by causing an interruption or by being ex-	0.3853	0.0131
+0.0764	0.5055	1.000	(VF). These indicators are set according to the data	0.3912	0.0154
+0.0785	0.0940	1.000	plicitly made zero by an operation that addresses	0.3853	0.0145
+0.0930	0.5056	1.000	flag bits, if any, of the storage operand. Any opera-	0.3929	0.0146
+0.0945	0.0921	1.000	them as an operand. For example, BRANCH ON INDI-	0.3872	0.0131
+0.1058	0.0920	1.000	CATOR OF CONNECT TO MEMORY can accomplish this	0.3875	0.0184
+0.1090	0.5056	1.000	tion that normally affects these indicators will turn	0.3910	0.0131
+0.1235	0.5056	1.000	them off if the corresponding data flags are not ob-	0.3910	0.0146
+0.1250	0.0921	1.000	function. The data flag and arithmetic result indi-	0.3872	0.0132
+0.1394	0.5056	1.000	tained from storage.	0.1466	0.0133
+0.1394	0.0940	1.000	cators are temporary. At the completion of an integer	0.3853	0.0147
+0.1539	0.5226	1.000	Binary Transit (BTR). This indicator is turned	0.3741	0.0147
+0.1555	0.0921	1.000	arithmetic operation, all indicators of this type that	0.3872	0.0146
+0.1694	0.0920	1.000	apply to the particular operation will be on if the	0.3875	0.0167
+0.1700	0.5056	1.000	on by any binary LOAD TRANSIT AND SET operation.	0.3684	0.0146
+0.1845	0.5207	1.000	Decimal Transit (DTR). This indicator is turned	0.3778	0.0161
+0.1855	0.0920	1.000	necessary condition arose during the operation; other-	0.3874	0.0155
+0.2006	0.5056	1.000	on by any decimal LOAD TRANSIT AND SET, MULTIPLY,	0.3929	0.0146
+0.2020	0.0921	1.000	wise, they will be off. They then remain set until	0.3872	0.0131
+0.2161	0.0920	1.000	another operation which aflects them is executed.	0.3629	0.0155
+0.2166	0.5056	1.000	MULTIPLY AND ADD, or DIVIDE operation.	0.2782	0.0116
+0.2311	0.5226	1.000	To-Memory Operation (MOP). This indicator is	0.3759	0.0160
+0.2324	0.1071	1.000	The indicators that are set as a result of the integer	0.3722	0.0133
+0.2456	0.5056	1.000	turned on by all integer arithmetic operations in	0.3910	0.0147
+0.2485	0.0921	1.000	arithmetic operations are described below.	0.3102	0.0131
+0.2602	0.5075	1.000	which the result is placed in the addressed storage	0.3910	0.0160
+0.2630	0.1071	1.000	Lost Carry (LC). In to-accumulator operations, this	0.3722	0.0131
+0.2776	0.5056	1.000	location. All other integer arithmetic operations turn	0.3910	0.0131
+0.2791	0.0921	1.000	indicator is turned on when a carry attempts to prop-	0.3872	0.0131
+0.2936	0.5075	1.000	this indicator off.	0.1278	0.0102
+0.2936	0.0902	1.000	agate beyond the left end of the accumulator. Ir	0.3891	0.0146
+0.3081	0.0921	1.000	binary to-memory operations, this indicator is actu-	0.3872	0.0146
+0.3081	0.5207	1.000	Result Less than Zero (RLZ); Result Zero (RZ);	0.3778	0.0146
+0.3227	0.5038	1.000	Result Greater than Zero (RGZ); Result Negative	0.3947	0.0161
+0.3241	0.0883	1.000	ated by a carry beyond the leftmost bit of the ad-	0.3929	0.0160
+0.3387	0.0883	1.000	dressed field. In decimal to-memory operations, this	0.3929	0.0160
+0.3387	0.5038	1.000	(RN). These arithmetic result indicators are set ac-	0.3929	0.0160
+0.3503	0.5038	1.000	cordling to the result of all integer arithmetic opera-	0.3947	0.0189
+0.3529	0.0882	1.000	indicator is actuated by a decimal carry beyond the	0.3913	0.0203
+0.3689	0.0882	1.000	leltmost decimal digit of the addressed field. Thus,	0.3912	0.0177
+0.3691	0.5038	1.000	tions except the comparison operations.	0.2838	0.0161
+0.3836	0.5226	1.000	Accumulator Low (AL); Accumulator Equal (AE);	0.3759	0.0161
+0.3852	0.0883	1.000	il the high-order byte of a decimal storage operand	0.3910	0.0161
+0.3973	0.5055	1.000	Accumulator High (AH). These indicators are set	0.3932	0.0197
+0.3997	0.0921	1.000	is less than four bits in length, the lost carry indicator	0.3872	0.0145
+0.4157	0.0902	1.000	is actuated only if the corresponding result byte	0.3891	0.0146
+0.4157	0.5038	1.000	according to the result of the comparison operations.	0.3929	0.0161
+0.4249	0.5055	1.000	They reler to the accumulator operand as compared	0.3931	0.0215
+0.4277	0.0901	1.000	from the processing unit is greater than nine. The	0.3894	0.0193
+0.4462	0.0902	1.000	high-order bits that are dropped in truncating the	0.3891	0.0145
+0.4462	0.5038	1.000	with the storage operand.	0.1917	0.0145
+0.4621	0.0902	1.000	high-order byte for storage cannot actuate this indica-	0.3891	0.0146
+0.4761	0.0901	1.000	tor even if they are non-zero. This indicator is also	0.3893	0.0158
+0.4868	0.5056	1.000	Operations	0.1053	0.0163
+0.4927	0.0902	1.000	actuated when a to-memory operation with an un-	0.3891	0.0131
+0.5073	0.0902	1.000	signed storage operand produces a negative result. In	0.3891	0.0146
+0.5143	0.5056	1.000	It is uselul to classily the twenty integer arithmetic	0.3930	0.0161
+0.5233	0.0902	1.000	all cases, the operation is completed normally except	0.3910	0.0146
+0.5291	0.5038	1.000	operations into categories two different ways.	0.3496	0.0146
+0.5291	0.8496	1.000	. The	0.0489	0.0131
+0.5391	0.0900	1.000	for the loss of the carry.	0.1640	0.0135
+0.5406	0.5038	1.000	classifications are shown in the list below.	0.3102	0.0191
+0.5536	0.2444	1.000	In to-accumulator operations,	0.2350	0.0133
+0.5552	0.1015	1.000	Partial Field (PF).	0.1410	0.0146
+0.5682	0.0902	1.000	this indicator is turned on when significant bits of	0.3910	0.0147
+0.5741	0.6692	1.000	RESULT ALTERS	0.0846	0.0147
+0.5852	0.6728	1.000	Accumulator	0.0774	0.0143
+0.5858	0.0883	1.000	the storage operand overlap the left end of the accu-	0.3910	0.0131
+0.5872	0.7820	1.000	Add	0.0357	0.0131
+0.5887	0.5545	1.000	Addl	0.0282	0.0116
+0.5998	0.5075	1.000	+MG Add to Magnitude Accumulator	0.2444	0.0141
+0.6003	0.0902	1.000	mulator. The accumulator operand is extended with	0.3891	0.0131
+0.6003	0.7857	1.000	Add	0.0320	0.0131
+0.6119	0.7876	1.000	Replace	0.0545	0.0131
+0.6119	0.6729	1.000	Accumulator	0.0789	0.0131
+0.6134	0.5545	1.000	Load	0.0338	0.0116
+0.6148	0.5056	1.000	L	0.0132	0.0116
+0.6148	0.0865	1.000	high-order zeros to combine with the storage operand,	0.3929	0.0161
+0.6235	0.7876	1.000	Replace	0.0545	0.0131
+0.6263	0.6654	1.000	Accumulator	0.0847	0.0105
+0.6264	0.5414	1.000	Load with Flag	0.1090	0.0118
+0.6279	0.5056	1.000	LWF	0.0338	0.0102
+0.6308	0.0902	1.000	but these high-order positions are dropped from the	0.3891	0.0146
+0.6366	0.5564	1.000	Add to Memory	0.0996	0.0146
+0.6366	0.7876	1.000	Add	0.0338	0.0145
+0.6395	0.6711	1.000	Storage	0.0470	0.0116
+0.6410	0.5056	1.000	Mt	0.0282	0.0131
+0.6453	0.0865	1.000	result. Otherwise, the operation is completed nor-	0.3947	0.0160
+0.6497	0.5113	1.000	M+ MGAdd Magnitude	0.1410	0.0145
+0.6584	0.7876	1.000	Add	0.0320	0.0160
+0.6596	0.0863	1.000	mally. In to-memory operations, the indicator is	0.3932	0.0192
+0.6612	0.5602	1.000	o Memor	0.0602	0.0118
+0.6613	0.6711	1.000	Storage	0.0470	0.0131
+0.6715	0.5508	1.000	Add One to	0.0789	0.0161
+0.6730	0.5056	1.000	M+1	0.0414	0.0160
+0.6740	0.0882	1.000	turned on when there are non-zero accumulator posi-	0.3915	0.0223
+0.6802	0.7895	1.000	Add	0.0301	0.0160
+0.6831	0.6711	1.000	Storage	0.0508	0.0145
+0.6845	0.5582	1.000	Memory	0.0452	0.0132
+0.6890	0.0883	1.000	tions to the left of the accumulator field that is par-	0.3910	0.0174
+0.6958	0.7893	1.000	Replace	0.0511	0.0126
+0.6962	0.5019	1.000	ST	0.0244	0.0145
+0.6971	0.6708	1.000	Storage	0.0494	0.0143
+0.6977	0.5526	1.000	Store	0.0376	0.0116
+0.7048	0.5526	1.000	Store Rounded	0.0997	0.0192
+0.7059	0.0882	1.000	ticipating in the operation. In binary operations to	0.3913	0.0190
+0.7078	0.7895	1.000	Replace	0.0508	0.0131
+0.7089	0.6690	1.000	Storage	0.0512	0.0154
+0.7093	0.5038	1.000	SRD	0.0357	0.0145
+0.7194	0.6711	1.000	Indicators only	0.0977	0.0161
+0.7209	0.5545	1.000	Compare	0.0620	0.0160
+0.7209	0.7857	1.000	Add	0.0320	0.0131
+0.7224	0.0883	1.000	storage, this indicator is turned on if there is any one-	0.3910	0.0146
+0.7238	0.5038	1.000	K	0.0226	0.0116
+0.7316	0.6689	1.000	Indicators only	0.1020	0.0180
+0.7320	0.5541	1.000	Compare Fiekl	0.1004	0.0176
+0.7326	0.7876	1.000	Add	0.0320	0.0145
+0.7355	0.5038	1.000	KF	0.0244	0.0131
+0.7369	0.0865	1.000	bit in the accumulator to the left of the participating	0.3929	0.0161
+0.7439	0.6616	1.000	Indicators only	0.1073	0.0179
+0.7442	0.7876	1.000	Add	0.0320	0.0145
+0.7452	0.5525	1.000	Compare if Equal	0.1111	0.0170
+0.7485	0.5019	1.000	KE	0.0263	0.0131
+0.7515	0.0865	1.000	field. In decimal operations to storage, the indicator	0.3929	0.0161
+0.7587	0.5056	1.000	KFE	0.0320	0.0160
+0.7602	0.5545	1.000	Compare Field	0.0977	0.0132
+0.7663	0.6651	1.000	Indicators only	0.1039	0.0183
+0.7674	0.0883	1.000	is turned on if there is any non-zero digit to the left	0.3910	0.0147
+0.7689	0.7838	1.000	Add	0.0338	0.0131
+0.7718	0.5526	1.000	if Equal	0.0564	0.0116
+0.7805	0.5526	1.000	Compare for Range Indicators only	0.2143	0.0160
+0.7805	0.7876	1.000	Add	0.0301	0.0145
+0.7816	0.0863	1.000	of the highest order accumulator digit that is taking	0.3932	0.0197
+0.7834	0.5019	1.000	KR	0.0263	0.0131
+0.7949	0.5601	1.000	Compare Field	0.0866	0.0149
+0.7951	0.5038	1.000	KFR	0.0357	0.0160
+0.7961	0.0862	1.000	part in the operation. Partial field is also turned on	0.3934	0.0214
+0.8023	0.6692	1.000	Indicators only	0.0996	0.0174
+0.8038	0.7876	1.000	Add	0.0301	0.0131
+0.8065	0.5601	1.000	or Rang	0.0546	0.0120
+0.8124	0.0846	1.000	if a binary multiplier, multiplicand, or divisor ex-	0.3947	0.0176
+0.8169	0.4962	1.000	LTS	0.0414	0.0174
+0.8182	0.5602	1.000	Load Transit	0.0714	0.0147
+0.8251	0.7892	1.000	Replace	0.0531	0.0169
+0.8270	0.0865	1.000	ceeds 48 significani bits in length or if a binary divi-	0.3929	0.0176
+0.8283	0.6710	1.000	Transit	0.0509	0.0135
+0.8299	0.5602	1.000	ind Se	0.0395	0.0116
+0.8372	0.7876	1.000	Multiply	0.0583	0.0174
+0.8382	0.6709	1.000	Accumulator	0.0830	0.0169
+0.8429	0.5545	1.000	Multiply	0.0565	0.0119
+0.8459	0.0883	1.000	dend exceeds 96 significant bits.	0.2274	0.0132
+0.8503	0.5019	1.000	LFT	0.0338	0.0160
+0.8516	0.7894	1.000	Replace	0.0527	0.0147
+0.8532	0.6692	1.000	Factor	0.0451	0.0131
+0.8532	0.5545	1.000	Load Factor	0.0808	0.0132
+0.8576	0.1015	1.000	Zero Divisor (ZD). This indicator is turned on	0.3778	0.0174
+0.8618	0.5545	1.000	Multiply and Add Accumulator	0.1992	0.0204
+0.8631	0.7875	1.000	Multiply and add	0.1091	0.0165
+0.8732	0.0863	1.000	when the divisor in a DIvIDe operation is zero. The	0.3933	0.0200
+0.8762	0.6710	1.000	Accumulator and Divide	0.1637	0.0282
+0.8794	0.5545	1.000	Divide	0.0451	0.0131
+0.8909	0.0883	1.000	division is not performed.	0.1861	0.0146
+0.9215	0.7162	1.000	Variable Field Length	0.1391	0.0161
+0.9230	0.8797	1.000	59	0.0188	0.0131

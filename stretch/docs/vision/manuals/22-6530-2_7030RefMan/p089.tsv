@@ -1,0 +1,194 @@
+0.0639	0.1164	1.000	Exponent Underflow (XPU)	0.2089	0.0147
+0.0639	0.3402	1.000	Exponent ≤-1024	0.1504	0.0161
+0.0669	0.8120	1.000	ARITHMETIC	0.0752	0.0131
+0.0738	0.7123	1.000	RESULT ALTERS	0.0923	0.0167
+0.0741	0.5150	1.000	SINGLE-PRECISION OPERATIONS	0.1673	0.0147
+0.0769	0.1163	1.000	This indicator is turned on if the result exponent	0.3764	0.0184
+0.0785	0.8271	1.000	ACTION	0.0470	0.0102
+0.0901	0.8195	1.000	Add	0.0320	0.0145
+0.0901	0.5752	1.000	Add	0.0320	0.0131
+0.0912	0.7142	1.000	Accumulator	0.0810	0.0139
+0.0945	0.0977	1.000	has a generated EF of 1 and es of 1. It is permanent.	0.3853	0.0161
+0.1017	0.5733	1.000	Addl to Magnitude	0.1222	0.0174
+0.1032	0.5150	1.000	tNG	0.0432	0.0262
+0.1032	0.8195	1.000	Add	0.0338	0.0145
+0.1045	0.7143	1.000	Accumulator	0.0809	0.0119
+0.1090	0.1147	1.000	These indicators are collectively referred to as the	0.3759	0.0146
+0.1145	0.7142	1.000	Accumulator	0.0829	0.0181
+0.1148	0.5752	1.000	Load	0.0376	0.0145
+0.1163	0.8214	1.000	Replace	0.0545	0.0174
+0.1250	0.0959	1.000	exponent range indicators. They permit monitoring	0.3947	0.0160
+0.1278	0.7143	1.000	Accumulator	0.0828	0.0161
+0.1279	0.5808	1.000	Load with Flag	0.0883	0.0131
+0.1290	0.5149	1.000	LWF	0.0380	0.0137
+0.1291	0.8213	1.000	Replace	0.0548	0.0165
+0.1381	0.5827	1.000	Add to Memor	0.0902	0.0146
+0.1409	0.0959	1.000	of the result exponents of floating point operations.	0.3910	0.0132
+0.1424	0.7105	1.000	Storage	0.0508	0.0131
+0.1439	0.8214	1.000	Add	0.0301	0.0131
+0.1539	0.5150	1.000	M+MG Add Magnitude to	0.1767	0.0147
+0.1541	0.8195	1.000	Add	0.0320	0.0145
+0.1555	0.0959	1.000	In the case of the overflow and underflow indicators,	0.3910	0.0132
+0.1555	0.7105	1.000	Storage	0.0508	0.0131
+0.1628	0.5883	1.000	Memory	0.0508	0.0145
+0.1700	0.0977	1.000	the occurrence of an incorrect result, because of a	0.3929	0.0146
+0.1759	0.7124	1.000	Storage	0.0508	0.0174
+0.1759	0.5752	1.000	Store	0.0395	0.0145
+0.1772	0.8195	1.000	Replace	0.0565	0.0161
+0.1773	0.5132	1.000	ST	0.0263	0.0116
+0.1845	0.0940	1.000	lost exponent carry, is signalled. However, the expo-	0.3966	0.0176
+0.1903	0.7105	1.000	Indicators only	0.0996	0.0133
+0.1904	0.5150	1.000	K	0.0169	0.0145
+0.1918	0.5733	1.000	Compare	0.0583	0.0117
+0.1919	0.8139	1.000	Add	0.0376	0.0131
+0.2020	0.0977	1.000	nent overflow bit sets EF to i.	0.2086	0.0116
+0.2020	0.7030	1.000	Indicators only	0.1090	0.0160
+0.2025	0.5168	1.000	KMG Compare Magnitude	0.1863	0.0150
+0.2049	0.8083	1.000	Add	0.0414	0.0131
+0.2145	0.5751	1.000	Compare for Range	0.1205	0.0157
+0.2150	0.7124	1.000	Indicators only	0.0959	0.0148
+0.2166	0.5150	1.000	KR	0.0244	0.0116
+0.2166	0.8083	1.000	Add	0.0414	0.0145
+0.2166	0.1128	1.000	The range high indicator signals results which use	0.3778	0.0146
+0.2263	0.5713	0.300	Coi Re Magnieude	0.1319	0.0285
+0.2263	0.7123	1.000	Indicators only	0.0961	0.0154
+0.2282	0.5169	1.000	KMGR	0.0451	0.0131
+0.2297	0.8120	1.000	Add	0.0376	0.0131
+0.2324	0.0959	1.000	all available bit positions in the exponent magnitude.	0.3910	0.0161
+0.2470	0.0977	1.000	Continued computation on these numbers may result	0.3929	0.0147
+0.2485	0.5207	1.000	*	0.0150	0.0160
+0.2497	0.5713	1.000	Multiply	0.0623	0.0166
+0.2500	0.8177	1.000	Multiply	0.0602	0.0174
+0.2527	0.7142	1.000	Accumulator	0.0791	0.0135
+0.2616	0.5733	1.000	Divide	0.0489	0.0160
+0.2626	0.7123	1.000	Accumulator	0.0811	0.0155
+0.2630	0.0959	1.000	in overflow conditions.	0.1673	0.0118
+0.2660	0.8177	1.000	Divide	0.0451	0.0131
+0.2744	0.5732	1.000	Reciprocal Divide	0.1186	0.0181
+0.2757	0.7104	1.000	Accumulator	0.0830	0.0155
+0.2762	0.8177	1.000	Divide	0.0470	0.0160
+0.2791	0.5150	1.000	R/	0.0244	0.0116
+0.2791	0.1109	1.000	The exponent range indicators collectively permit	0.3778	0.0161
+0.2890	0.7123	1.000	Storage	0.0528	0.0135
+0.2892	0.8177	1.000	Square Root	0.0789	0.0160
+0.2892	0.5677	1.000	Store Root	0.0789	0.0145
+0.2907	0.5150	1.000	SRT	0.0301	0.0116
+0.2936	0.0959	1.000	monitoring of computations whose operands and re-	0.3929	0.0131
+0.3096	0.0940	1.000	sults are	0.0808	0.0102
+0.3096	0.3459	1.000	magnitude ranges	0.1429	0.0146
+0.3096	0.1767	1.000	below the respective	0.1673	0.0131
+0.3139	0.5132	1.000	DOUBLI-PRECISION OPERATIONS	0.1729	0.0161
+0.3253	0.0939	1.000	shown.	0.0528	0.0108
+0.3299	0.5677	1.000	Add Double	0.0883	0.0131
+0.3299	0.8177	1.000	Add	0.0320	0.0145
+0.3325	0.5149	1.000	DAMo Add Doubleto	0.1524	0.0254
+0.3328	0.7105	1.000	Accumulator	0.0808	0.0116
+0.3400	0.1128	1.000	The exponent range indicators are set according to	0.3759	0.0133
+0.3445	0.8177	1.000	Add	0.0301	0.0131
+0.3459	0.7124	1.000	Accumulator	0.0789	0.0087
+0.3544	0.5845	1.000	Magnitude	0.0678	0.0121
+0.3545	0.0959	1.000	the final result of all floating point operations except	0.3929	0.0146
+0.3659	0.8175	1.000	Replace	0.0548	0.0153
+0.3677	0.5714	1.000	Load Double	0.0865	0.0117
+0.3677	0.5169	1.000	DL	0.0207	0.0102
+0.3692	0.7124	1.000	Accumulator	0.0789	0.0087
+0.3706	0.0959	1.000	comparisons. The indicators are permanent.	0.3252	0.0146
+0.3791	0.5149	1.000	DLWF	0.0472	0.0122
+0.3803	0.8193	1.000	Replace	0.0512	0.0141
+0.3808	0.5714	1.000	Load Double with	0.1147	0.0116
+0.3808	0.7124	1.000	Accumulator	0.0789	0.0102
+0.3881	0.1109	1.000	Zero Multiply (ZM). This indicator is turned on if	0.3759	0.0160
+0.3910	0.5846	1.000	Flag	0.0301	0.0116
+0.4026	0.8177	1.000	Add	0.0301	0.0145
+0.4039	0.5695	1.000	Store Rounded	0.1015	0.0118
+0.4041	0.5150	1.000	SRD	0.0301	0.0087
+0.4041	0.7086	1.000	Storage	0.0489	0.0131
+0.4055	0.0959	1.000	normalized multiplication or the final result of a norm-	0.3929	0.0146
+0.4142	0.5695	1.000	Store Low Order	0.1109	0.0131
+0.4153	0.8194	1.000	Replace	0.0511	0.0153
+0.4157	0.7086	1.000	Storage	0.0489	0.0145
+0.4172	0.5150	1.000	SLO	0.0282	0.0087
+0.4213	0.0956	1.000	alized multiply and add has an exponent greater than	0.3895	0.0185
+0.4271	0.8157	1.000	Multiply	0.0603	0.0164
+0.4273	0.5677	1.000	Multiply Double	0.1128	0.0131
+0.4288	0.5150	1.000	D*	0.0207	0.0087
+0.4288	0.7105	1.000	Accumulator	0.0808	0.0116
+0.4374	0.0957	1.000	- 1024 and a zero fraction. This indicator is tempo-	0.3913	0.0167
+0.4403	0.5695	1.000	Load Factor	0.0846	0.0118
+0.4415	0.7104	1.000	FT Register	0.0791	0.0138
+0.4419	0.5132	1.000	LFT	0.0320	0.0102
+0.4419	0.8195	1.000	Replace	0.0508	0.0131
+0.4531	0.5714	1.000	Multiply and Add	0.1148	0.0138
+0.4547	0.8176	1.000	Multiply, Aid	0.0866	0.0135
+0.4549	0.7105	1.000	Accumulator	0.0808	0.0116
+0.4549	0.5113	1.000	*t	0.0244	0.0131
+0.4578	0.0940	1.000	rary.	0.0357	0.0102
+0.4666	0.5695	1.000	Divide Double	0.0977	0.0131
+0.4680	0.8176	1.000	Divide	0.0433	0.0118
+0.4680	0.5132	1.000	D/	0.0226	0.0131
+0.4695	0.7124	1.000	Accumulator,	0.0808	0.0087
+0.4738	0.1128	1.000	Remainder Underflow (RU) Exponent ≤ —1024	0.3741	0.0131
+0.4774	0.7122	1.000	RM Register	0.0755	0.0117
+0.4884	0.1109	1.000	When the remainder exponent in DIVIDE DOUBLE has	0.3778	0.0147
+0.4897	0.5714	1.000	Aill to Fraction	0.1015	0.0133
+0.4898	0.8177	1.000	Add	0.0320	0.0131
+0.4913	0.7105	1.000	Accumulator	0.0808	0.0116
+0.4913	0.5113	1.000	Ft	0.0244	0.0116
+0.5011	0.5695	1.000	Shift Fraction	0.0922	0.0137
+0.5029	0.8177	1.000	Shift	0.0338	0.0116
+0.5029	0.7105	1.000	Accumulator	0.0808	0.0116
+0.5042	0.0940	1.000	a generated EF of 1 and es of 1, this indicator is	0.3947	0.0133
+0.5044	0.5132	1.000	SHF	0.0282	0.0087
+0.5145	0.5695	1.000	Add to Exponent	0.1128	0.0146
+0.5145	0.8177	1.000	Add	0.0301	0.0131
+0.5147	0.0957	1.000	turned on. It is not turned on when the remainder	0.3914	0.0212
+0.5157	0.7123	1.000	Accumulator	0.0791	0.0123
+0.5160	0.5132	1.000	Et	0.0226	0.0131
+0.5276	0.7124	1.000	Accumulator	0.0790	0.0117
+0.5276	0.5733	1.000	Add Immediate to	0.1147	0.0131
+0.5276	0.8158	1.000	Add	0.0320	0.0131
+0.5291	0.5132	1.000	EtI	0.0301	0.0116
+0.5348	0.0940	1.000	exponent has a propagated eF of 1. The indicator is	0.3929	0.0131
+0.5390	0.5826	1.000	Exponent	0.0622	0.0121
+0.5654	0.1109	1.000	Noisy Mode (NM). This indicator is on when	0.3759	0.0131
+0.5748	0.5111	1.000	Add (+)	0.0700	0.0146
+0.5799	0.0940	1.000	computations are performed in the noisy mode. The	0.3929	0.0146
+0.5959	0.0940	1.000	indicator must be set to zero or one by programming.	0.3910	0.0147
+0.5988	0.5132	1.000	The operand specified by the effective address is alge-	0.3910	0.0161
+0.6118	0.0940	1.000	In contrast to other indicators, the noisy mode indi-	0.3910	0.0146
+0.6133	0.5132	1.000	braically added to the operand in the left half of the	0.3910	0.0176
+0.6240	0.0938	1.000	cator is never turned on or off automatically. There-	0.3913	0.0178
+0.6278	0.5111	1.000	accumulator. The exponent and fraction of the sum	0.3932	0.0196
+0.6424	0.0940	1.000	fore, it is permanent, except as set by programming.	0.3910	0.0146
+0.6453	0.5094	1.000	replace accumulator bits 0-59. Accumulator bits 60-	0.3947	0.0160
+0.6570	0.1109	1.000	The operation DIVIDE DOUBLE is the only floating	0.3759	0.0145
+0.6612	0.5113	1.000	127 remain unchanged. The fraction sign of the ad-	0.3929	0.0147
+0.6730	0.0940	1.000	point operation which has two results, a quotient and	0.3929	0.0146
+0.6758	0.5132	1.000	dressed operand is modified by the sign modifiers	0.3910	0.0146
+0.6890	0.0940	1.000	a remainder. Most of the above indicators apply to	0.3910	0.0132
+0.6918	0.5132	1.000	prior to the addition. The sign of the sum replaces	0.3910	0.0146
+0.7048	0.0940	1.000	the primary result, the quotient. The indicators	0.3929	0.0132
+0.7078	0.5113	1.000	the accumulator sign, bit position 4, of the accumu-	0.3910	0.0131
+0.7194	0.0940	1.000	which may be turned on to describe the remainder	0.3910	0.0132
+0.7224	0.5113	1.000	lator sign byte register. Bits 0-3 and 5-7 of the accu-	0.3910	0.0146
+0.7339	0.0940	1.000	are lost carry (LC) and remainder underflow (RU).	0.3684	0.0146
+0.7384	0.5113	1.000	mulator sign byte register remain unchanged.	0.3402	0.0131
+0.7500	0.1090	1.000	In the detailed description of the operations, only	0.3759	0.0145
+0.7529	0.5301	1.000	The addition of floating point numbers consists of	0.3741	0.0147
+0.7660	0.0940	1.000	the applicable indicators are listed.	0.2556	0.0116
+0.7688	0.5113	1.000	an exponent comparison and a fraction addition. The	0.3910	0.0146
+0.7833	0.5113	1.000	exponent of the addressed operand is subtracted from	0.3910	0.0146
+0.7994	0.5113	1.000	the exponent of the operand in the accumulator.	0.3891	0.0131
+0.8154	0.5113	1.000	The fraction of the number with the algebraically	0.3910	0.0131
+0.8163	0.0920	1.000	Operations	0.1055	0.0171
+0.8299	0.5113	1.000	smaller exponent is shifted right by the amount of	0.3910	0.0146
+0.8459	0.5113	1.000	the exponent difterence. The exponent of the oper-	0.3910	0.0132
+0.8459	0.0921	1.000	Floating-point operations are divided into single-	0.3929	0.0132
+0.8605	0.5113	1.000	and with the algebraically larger exponent is used as	0.3910	0.0145
+0.8633	0.0921	1.000	precision and double-precision operations. The fol-	0.3891	0.0118
+0.8764	0.5113	1.000	the exponent of the intermediate result prior to post-	0.3891	0.0146
+0.8779	0.0921	1.000	lowing table lists the two groups and the location of	0.3910	0.0117
+0.8909	0.5113	1.000	normalization. The fraction sign of the addressed	0.3891	0.0146
+0.8924	0.0921	1.000	the result and the arithmetic action.	0.2575	0.0116
+0.9302	0.0921	1.000	86	0.0207	0.0087
+0.9302	0.1316	1.000	IBM 7030	0.0677	0.0089

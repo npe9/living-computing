@@ -1,0 +1,89 @@
+0.0682	0.0864	1.000	consists of 11 characters of which only the first is	0.3836	0.0147
+0.0856	0.0845	1.000	used:	0.0434	0.0134
+0.0988	0.1070	1.000	(000000)2 physical and logical end	0.2598	0.0182
+0.1031	0.6654	1.000	UPDATE 30	0.0621	0.0119
+0.1105	0.5432	1.000	Disk	0.0244	0.0102
+0.1105	0.8289	1.000	Changes	0.0451	0.0116
+0.1146	0.6785	1.000	Program	0.0416	0.0107
+0.1148	0.1071	1.000	(000001)2 physical end only	0.2105	0.0161
+0.1395	0.5338	1.000	PROSA	0.0432	0.0116
+0.1599	0.0865	1.000	Processing Output Tapes	0.1898	0.0131
+0.1875	0.0865	1.000	Mount the tape on unit 2 and set density to high.	0.3628	0.0146
+0.2004	0.0864	1.000	Load the punch with blank 7030 binary cards. Set	0.3799	0.0166
+0.2144	0.0881	1.000	printer for 132-character print-out. Set sense	0.3594	0.0167
+0.2195	0.8628	1.000	PROSA	0.0414	0.0102
+0.2224	0.5470	1.000	New	0.0263	0.0087
+0.2282	0.8647	1.000	Listing	0.0376	0.0116
+0.2324	0.0883	1.000	switches and I/O switch off.	0.2124	0.0133
+0.2326	0.5414	1.000	Master	0.0376	0.0087
+0.2413	0.5414	1.000	System	0.0376	0.0102
+0.2424	0.1106	1.000	Load the output program with blank cards follow-	0.3764	0.0206
+0.2515	0.5451	1.000	Tape	0.0263	0.0087
+0.2585	0.0882	1.000	ing. These blank cards should be of a different color	0.4064	0.0179
+0.2747	0.0902	1.000	or corner cut from those on the punch side. These	0.3891	0.0147
+0.2887	0.0882	1.000	cards will be used to separate jobs on the punch side.	0.4063	0.0172
+0.2964	0.5282	1.000	Initial Preparation of the MCP Deck for Updating	0.3741	0.0147
+0.3019	0.1126	1.000	Error comments and operator instructions will be	0.3801	0.0182
+0.3197	0.0902	1.000	printed on the right side of the page.	0.2782	0.0146
+0.3255	0.5301	1.000	Upon receipt of the MCP assembly output tape, the	0.3853	0.0161
+0.3327	0.1128	1.000	The label file is skipped by the output programbe-	0.3853	0.0147
+0.3400	0.5282	1.000	following directions should be followed to prepare	0.3797	0.0147
+0.3488	0.0921	1.000	fore any printing or punching is started.	0.3045	0.0131
+0.3561	0.5301	1.000	the MCP deck for the initial update run.	0.3026	0.0118
+0.3706	0.5545	1.000	A. List and punch the MCP assembly tape. The	0.3722	0.0117
+0.3852	0.5320	1.000	deck after punching will contain these types of cards	0.3966	0.0131
+0.3997	0.5320	1.000	in the following order:	0.1692	0.0131
+0.3997	0.0921	1.000	Format of the Input Tape	0.1898	0.0116
+0.4273	0.0940	1.000	The input tape, written by the IBM 1401 or by the	0.3722	0.0146
+0.4288	0.5902	1.000	1. JOB card	0.0959	0.0116
+0.4392	0.0938	1.000	system input program when in the on-line overlapped	0.4008	0.0173
+0.4432	0.5901	1.000	2. TYPE card	0.1113	0.0120
+0.4564	0.0921	1.000	mode, is a labeled tape (the label is the first file).	0.3835	0.0146
+0.4593	0.5902	1.000	3. LIM card	0.0977	0.0116
+0.4709	0.0940	1.000	The tape is multifile, with each file corresponding to	0.4004	0.0131
+0.4738	0.5902	1.000	4. IOD cards	0.1034	0.0116
+0.4837	0.0938	1.000	a job and with a double tape mark terminating the last	0.4082	0.0162
+0.4864	0.5901	1.000	5. HED card MCP Bootstrap Type Area	0.3047	0.0137
+0.5000	0.0921	1.000	job. Each file consists of one or more records.	0.3665	0.0131
+0.5004	0.5919	1.000	6. Binary cards with PUNID 11E11BSP	0.2974	0.0151
+0.5125	0.0957	1.000	Each record, except the last one, consiets of 17 col-	0.4026	0.0175
+0.5174	0.5902	1.000	7. HED card IPL Type Area	0.2180	0.0116
+0.5291	0.0940	1.000	umn binary card images (160 characters each). The	0.3985	0.0146
+0.5303	0.5920	1.000	8. Binary cards with PUNID 11C11IPL	0.2954	0.0140
+0.5436	0.0940	1.000	last record of each file may contain 17 or fewer card	0.4023	0.0131
+0.5464	0.5921	1.000	9. HED card Restart Type Area	0.2444	0.0118
+0.5608	0.0939	1.000	images.	0.0622	0.0107
+0.5609	0.5846	1.000	10. Binary cards with PUNID 33RESTRT	0.3102	0.0118
+0.5727	0.1165	1.000	Job boundaries are determined by a card with a B	0.3759	0.0131
+0.5755	0.5846	1.000	11. HED card MCP Mainleg Type Area	0.2970	0.0118
+0.5887	0.0959	1.000	in column 1 and either a COMD or a JOB, in col-	0.3722	0.0116
+0.5900	0.5846	1.000	12. Binary cards with PUND 11D11MCP	0.3120	0.0133
+0.6015	0.0957	1.000	umns 10-13. All COMD cards become the first cards	0.4062	0.0140
+0.6041	0.5845	1.000	13. HED card MCP Loader Type Area	0.2915	0.0137
+0.6177	0.0959	1.000	in the next job's file. Any COMD cards on the end	0.3816	0.0117
+0.6191	0.5846	1.000	14. Binary cards with PUNID 22LOADER	0.3139	0.0132
+0.6321	0.0959	1.000	of an input deck will be placed in a file of their own,	0.3947	0.0133
+0.6336	0.5846	1.000	15. HED card MCP Dump Type Area	0.2820	0.0132
+0.6467	0.0921	1.000	followed by two file marks.	0.2086	0.0147
+0.6482	0.5827	1.000	16. Binary cards with PUNID 22$DUMP	0.3064	0.0146
+0.6599	0.5827	1.000	17. HED card MCP System Commands Type	0.3383	0.0174
+0.6772	0.6146	1.000	Area	0.0452	0.0133
+0.6903	0.5827	1.000	18. Binary cards with PUNDD 22SCOMD	0.3045	0.0146
+0.6948	0.0959	1.000	UPDATING THE SYSTEM	0.1955	0.0146
+0.7035	0.5846	1.000	19. HED card MCP Job Control Type Area	0.3252	0.0160
+0.7194	0.5827	1.000	20. Binary cards with PUNID 22$EOJ	0.2914	0.0146
+0.7209	0.0959	1.000	A program called UPDATE 30 is available to facili-	0.3966	0.0189
+0.7324	0.5827	1.000	21. BRANCH card.	0.1523	0.0161
+0.7384	0.0940	1.000	tate the incorporation of changes into the current	0.3759	0.0131
+0.7456	0.5789	1.000	Interpret all B cards	0.1673	0.0204
+0.7500	0.5508	1.000	B.	0.0244	0.0160
+0.7529	0.0959	1.000	system located in the PROSA area of the disk. For	0.3910	0.0147
+0.7615	0.5714	1.000	Discard:	0.0847	0.0177
+0.7645	0.5508	1.000	C.	0.0244	0.0145
+0.7658	0.0958	1.000	a complete writeup of the UPDATE 30 program, see	0.3968	0.0163
+0.7746	0.5827	1.000	JOB card	0.0790	0.0191
+0.7820	0.1015	1.000	age 215 of the MCP Programming Systems Analysis	0.3910	0.0132
+0.7900	0.5862	1.000	TYPE card	0.0888	0.0189
+0.7936	0.1034	1.000	Juide (C22-6728), or the bulletin published on the	0.3590	0.0146
+0.8033	0.5862	1.000	LIM card	0.0756	0.0199
+0.9142	0.0977	1.000	40	0.0226	0.0145

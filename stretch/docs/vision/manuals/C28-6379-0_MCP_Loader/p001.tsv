@@ -1,0 +1,14 @@
+0.0218	0.7256	1.000	File No. 7030-27	0.1391	0.0146
+0.0378	0.7256	1.000	Form C28-6379-0	0.1447	0.0116
+0.1624	0.0914	1.000	IBM Systems Reference Library	0.4516	0.0376
+0.3576	0.0940	1.000	IBM 7030 Data Processing System Bulletin	0.4098	0.0174
+0.3852	0.0940	1.000	Loader and BSS Processor	0.2575	0.0146
+0.4345	0.0883	1.000	This publication describes the 7030 Master Control	0.4098	0.0161
+0.4497	0.0882	1.000	Program (MCP) loader and the FORTRAN Binary and	0.4251	0.0189
+0.4634	0.0881	1.000	Symbolic Subroutine (BSS) processor. The MCP	0.3934	0.0230
+0.4791	0.0881	1.000	loader is capable of processing relocatable or abso-	0.4197	0.0229
+0.4970	0.0883	1.000	lute binary decks. The BSS processor allocates storage,	0.4398	0.0161
+0.5129	0.0882	1.000	calls subprograms from the FORTRAN library, and	0.4176	0.0167
+0.5283	0.0901	1.000	completes subprogram cross references. A segmen-	0.4270	0.0171
+0.5451	0.0902	1.000	tation program, which provides a method of storage	0.4135	0.0146
+0.5609	0.0902	1.000	overlay, is included in the BSS processor.	0.3383	0.0147

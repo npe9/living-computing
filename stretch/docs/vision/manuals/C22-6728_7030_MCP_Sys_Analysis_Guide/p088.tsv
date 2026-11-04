@@ -1,0 +1,111 @@
+0.0581	0.4906	1.000	ard conditions which can be modified through the use	0.3910	0.0116
+0.0596	0.0771	1.000	4. Mounts MCP tapes.	0.1729	0.0116
+0.0727	0.4925	1.000	of console switches at initializing time. The control	0.3910	0.0116
+0.0741	0.0771	1.000	5. Loads MCP into core.	0.1917	0.0116
+0.0872	0.4925	1.000	cards are included with the initializing program, and	0.3929	0.0116
+0.0887	0.0789	1.000	6. Writes PROSA on the disk.	0.2256	0.0116
+0.1017	0.4906	1.000	if they are to be changed, they must be updated on	0.3722	0.0131
+0.1045	0.0789	1.000	7. Starts job control.	0.1635	0.0118
+0.1163	0.4925	1.000	the master tape. Three types of control cards are	0.3778	0.0131
+0.1319	0.4923	1.000	used:	0.0417	0.0109
+0.1336	0.0602	1.000	The Master IPL Tape	0.1673	0.0146
+0.1467	0.5094	1.000	1. I-O Configuration Definitions (IOCD)	0.2951	0.0118
+0.1612	0.0620	1.000	The master IPL tape is prepared by the master update	0.4060	0.0133
+0.1612	0.5094	1.000	2. MCP IOD's (IOD)	0.1541	0.0118
+0.1758	0.5094	1.000	3. MСP Parameters (МСРP)	0.2199	0.0118
+0.1773	0.0620	1.000	program (UPDATE-30). The tape consists of two	0.3722	0.0131
+0.1918	0.0620	1.000	files: (1) a record containing the IPL bootstrap mem-	0.4023	0.0131
+0.2048	0.4925	1.000	I-O Configuration Definitions: The IOCD cards	0.3496	0.0132
+0.2064	0.0620	1.000	ory usage, (2) a series of 513-word records in one-	0.3872	0.0131
+0.2194	0.4925	1.000	define the distribution of I-O units at initializing time.	0.4023	0.0118
+0.2209	0.0602	1.000	to-one correspondence with ares of PROSA (perman-	0.3966	0.0131
+0.2355	0.0639	1.000	ent read only storage area) on the disk. The order of	0.4004	0.0131
+0.2355	0.4925	1.000	Each card describes a channel. Channels which are	0.3891	0.0116
+0.2500	0.4925	1.000	not so defined are assumed to have no attached units.	0.3929	0.0103
+0.2500	0.0620	1.000	the first four type areas in this file is always the	0.3665	0.0131
+0.2645	0.4944	1.000	The IOCD cards, which do not have to be in order of	0.3872	0.0131
+0.2688	0.0620	1.000	same:	0.0471	0.0090
+0.2791	0.4925	1.000	channel number, have the following fixed fields:	0.3553	0.0131
+0.2805	0.2406	1.000	Content	0.0564	0.0102
+0.2815	0.0807	1.000	Type Area	0.0773	0.0126
+0.3009	0.5113	1.000	Cols. 10-13 -- Card Type: contains the char-	0.3421	0.0116
+0.3096	0.2387	1.000	PROSA dictionary	0.1353	0.0102
+0.3108	0.0770	1.000	11A11DIC	0.0753	0.0121
+0.3154	0.4925	1.000	acters, IOCD.	0.1090	0.0131
+0.3236	0.0788	1.000	11B11IND	0.0755	0.0142
+0.3241	0.2368	1.000	PROSA index	0.0996	0.0116
+0.3270	0.5094	1.000	Cols. 14-15 -- Channel Number: contains the	0.3421	0.0176
+0.3387	0.2368	1.000	IPL initialization program	0.1992	0.0132
+0.3396	0.0788	1.000	11C11IPL	0.0754	0.0127
+0.3445	0.4925	1.000	decimal number of the channel.	0.2331	0.0146
+0.3547	0.0808	1.000	11D11MCP	0.0808	0.0102
+0.3547	0.2387	1.000	MСP	0.0376	0.0102
+0.3561	0.5094	1.000	Cols. 16-17 -- Equipment: must contain one of	0.3534	0.0176
+0.3735	0.0827	1.000	The first word on the tape is a control word to	0.3440	0.0131
+0.3735	0.4906	1.000	the following codes:	0.1504	0.0146
+0.3865	0.6672	1.000	Console	0.0640	0.0148
+0.3866	0.4041	1.000	The	0.0338	0.0145
+0.3866	0.5602	1.000	CN	0.0263	0.0145
+0.3894	0.0658	1.000	read in the rest of the IPL bootstrap record.	0.3327	0.0103
+0.4012	0.5583	1.000	DK	0.0282	0.0145
+0.4012	0.6673	1.000	Disk	0.0395	0.0145
+0.4026	0.0639	1.000	tape unit on which this tape is mounted must be on a	0.3891	0.0131
+0.4157	0.6673	1.000	Printer	0.0602	0.0160
+0.4172	0.5583	1.000	PR	0.0263	0.0131
+0.4185	0.0658	1.000	unit dialed to zero.	0.1429	0.0118
+0.4302	0.6673	1.000	Punch	0.0526	0.0174
+0.4317	0.5583	1.000	PU	0.0263	0.0131
+0.4403	0.0639	1.000	The IPL Bootstrap	0.1410	0.0133
+0.4448	0.6673	1.000	Tape	0.0432	0.0174
+0.4462	0.5583	1.000	TP	0.0263	0.0145
+0.4608	0.6673	1.000	Reader	0.0564	0.0145
+0.4622	0.5583	1.000	RD	0.0263	0.0131
+0.4650	0.0656	1.000	The IPL bootstrap (XIPLBS, Figure 43) performs the	0.3970	0.0185
+0.4811	0.0658	1.000	machine initialization necessary at IPL time, locates	0.3947	0.0131
+0.4884	0.4925	1.000	MCP IOD's: The IOD cards define the I-O require-	0.3853	0.0189
+0.4952	0.0656	1.000	the channel with the master tape, and prepares it for	0.3950	0.0178
+0.5073	0.4925	1.000	ments of MCP and perform the same function for	0.3628	0.0116
+0.5115	0.0658	1.000	subsequent reading. The bootstrap consists of the	0.3759	0.0133
+0.5203	0.4925	1.000	MCP as they do for the problem program. The	0.3534	0.0146
+0.5261	0.0658	1.000	code from XIPLBS to XBSEND. The bootstrap reads	0.3929	0.0133
+0.5363	0.4906	1.000	initializing program will assign these symbolic	0.3515	0.0131
+0.5406	0.0658	1.000	as many records from the master tape as core stor-	0.3910	0.0132
+0.5479	0.4925	1.000	requests to absolute units.	0.1974	0.0161
+0.5565	0.0657	1.000	age permits, and then (X9A4) moves the initialization	0.3949	0.0125
+0.5712	0.0658	1.000	program (the third type area) to its operating storage.	0.4023	0.0116
+0.5785	0.4906	1.000	MCP Parameters: This card is used to provide MCP	0.4004	0.0176
+0.5825	0.0675	1.000	Control is given to the initialization program at X10	0.3857	0.0185
+0.5945	0.4925	1.000	with initial parameters. It consists of fixed fields as	0.3966	0.0146
+0.6003	0.0658	1.000	to move MCP (the fourth type area) to its operating	0.3797	0.0131
+0.6076	0.4925	1.000	follows:	0.0639	0.0160
+0.6148	0.0658	1.000	storage. The disk is located to arc zero, and the	0.3703	0.0131
+0.6235	0.5094	1.000	Cols. 10-13 -- Card Type: contains the characters	0.3835	0.0146
+0.6308	0.0658	1.000	input buffer written on the disk. A loop is set up	0.3665	0.0146
+0.6395	0.4943	1.000	MCPP.	0.0565	0.0147
+0.6423	0.0637	1.000	between the read portion of the bootstrap (X9A) and	0.3839	0.0204
+0.6539	0.5075	1.000	Cols. 14-17 -- Mode: defines the mode in which	0.3665	0.0147
+0.6563	0.0656	1.000	the initialization program (X11) to read tape and write	0.4044	0.0191
+0.6685	0.4925	1.000	MCP will ordinarily start operating. It must be one	0.3910	0.0147
+0.6744	0.0677	1.000	PROSA until the tape is exhausted. The IPL tape is	0.3853	0.0132
+0.6845	0.4906	1.000	of the following:	0.1241	0.0131
+0.6873	0.0657	1.000	then unloaded, and initialization begins in earnest(X13).	0.4175	0.0170
+0.6991	0.5602	1.000	OFFLINE - Off-line overlapped	0.2538	0.0131
+0.7106	0.6410	1.000	- On-line overlapped	0.1711	0.0161
+0.7151	0.0658	1.000	The Initialization Program	0.2049	0.0131
+0.7267	0.6410	1.000	- Bypass (Unoverlapped)	0.1974	0.0146
+0.7280	0.5601	1.000	BYPASS	0.0772	0.0135
+0.7427	0.0677	1.000	The initialization process is controlled by certain	0.3684	0.0131
+0.7573	0.4944	1.000	The I-O Status Table Set Up	0.2068	0.0131
+0.7587	0.0677	1.000	control cards, which define the I-O configuration,	0.3684	0.0131
+0.7733	0.0677	1.000	MCP's I-O requirements, and furnish necessary	0.3609	0.0131
+0.7863	0.4944	1.000	At XI3 (Figure 14), the initialization program proc-	0.3872	0.0161
+0.7892	0.0677	1.000	parameters.	0.0940	0.0102
+0.8009	0.4944	1.000	esses the IOCD cards to form the Unit and Channel	0.3797	0.0131
+0.8154	0.4944	1.000	Status Tables (UST and CST). The IOCD cards need	0.3891	0.0146
+0.8182	0.0695	1.000	Control Cards	0.1034	0.0103
+0.8285	0.4944	1.000	not be arranged in channel-number order, but there	0.3853	0.0176
+0.8445	0.4944	1.000	must be one card for each channel physically in the	0.3816	0.0146
+0.8459	0.0677	1.000	Symbolic cards are used to simplify any changes	0.3590	0.0132
+0.8605	0.0677	1.000	which have to be made. These cards describe stand-	0.3966	0.0132
+0.8605	0.4944	1.000	system whether that channel is available or not.	0.3571	0.0132
+0.9128	0.0620	1.000	88	0.0188	0.0116

@@ -1,0 +1,147 @@
+0.0552	0.0846	1.000	A 00010040013 5.124715 56200000 00000000 00000344	0.3045	0.0191
+0.0565	0.3985	0.300	S 010020°CM	0.1260	0.0178
+0.0567	0.1729	1.000	IT 1156166	0.0583	0.0103
+0.0699	0.0995	1.000	IND 00000000000000000000 1001000010000000000000000000 0000000000000100	0.4232	0.0140
+0.0755	0.5733	1.000	+F003	0.0358	0.0088
+0.0785	0.2481	1.000	0100000000000000000000000000	0.1711	0.0116
+0.0827	0.6936	1.000	RID, NOT AUTO-STACKING MODE	0.1598	0.0133
+0.0930	0.1165	1.000	10 000000.00+ 0 000000 00000	0.1673	0.0116
+0.0945	0.3158	1.000	:000051.00+ 0 000000 0000	0.1504	0.0116
+0.0973	0.5000	1.000	(2 000000.00+ 0 000007 000000	0.1692	0.0088
+0.1017	0.1165	1.000	(4 000000.00+ 3 000145 000000	0.1673	0.0073
+0.1032	0.3177	1.000	000000.00+ 0000000 0000	0.1485	0.0074
+0.1061	0.5019	1.000	6 000000.00+ 0 000000 00000	0.1635	0.0073
+0.1118	0.4944	1.000	XA 000010.00+ 0 000000 000000	0.1786	0.0088
+0.1118	0.3120	1.000	9 000000-00+ 0 000000 00000	0.1598	0.0074
+0.1148	0.6880	1.000	XB 000011.00+ 0 000000 000000	0.1711	0.0088
+0.1177	0.3102	1.000	D 000013-00 + 0 000000 00000	0.1617	0.0102
+0.1204	0.6858	1.000	XF 000015.00+ 0 000000 000000	0.1716	0.0142
+0.1206	0.4944	1.000	XE 000014.00+ 0 000000 000000	0.1767	0.0103
+0.1294	0.3252	1.000	+ 002 +-1000000000000	0.1447	0.0161
+0.1294	0.0808	1.000	00004+001+.10000000000000	0.1974	0.0160
+0.1336	0.7068	1.000	+F003 +.120000000000000TUV	0.1692	0.0176
+0.1352	0.5150	1.000	* 003 +.10000000000000	0.1429	0.0103
+0.1439	0.3177	1.000	053517.00+ 7 000005 030071	0.1635	0.0161
+0.1453	0.0808	1.000	000050 000000-00+ 0 567012 345671	0.2086	0.0116
+0.1480	0.5075	1.000	000000-00+ 0567012 345671	0.1655	0.0136
+0.1497	0.7011	1.000	006000.00+ 0001777117771	0.1617	0.0161
+0.1569	0.2049	1.000	560247-1389	0.0978	0.0176
+0.1584	0.3177	1.000	053517.00 70	0.0789	0.0174
+0.1597	0.5037	1.000	000000-00 0B	0.0866	0.0179
+0.1599	0.0808	1.000	000054 000000-00 0B	0.1259	0.0116
+0.1612	0.4060	1.000	000120•60 39	0.0865	0.0161
+0.1639	0.6052	1.000	560247-1389	0.0791	0.0138
+0.1642	0.7011	1.000	006000.00 00	0.0790	0.0161
+0.1649	0.7911	1.000	037777-77 Fr	0.0831	0.0160
+0.1736	0.0806	1.000	000060 05551,07 01	0.1264	0.0220
+0.1744	0.2218	0.300	30071,0703	0.0808	0.0203
+0.1755	0.4115	1.000	000023-31 80	0.0811	0.0153
+0.1758	0.3195	0.300	IGi5,07 02	0.0771	0.0191
+0.1759	0.6992	1.000	000053-0030	0.0808	0.0189
+0.1773	0.6053	0.300	30051,0710	0.0808	0.0203
+0.1814	0.7931	0.300	20200	0.0829	0.0194
+0.2020	0.0808	1.000	FIGURE 1. DUMP EXAMPLE	0.1297	0.0174
+0.2224	0.1617	1.000	lator contains the same number that is	0.2970	0.0174
+0.2311	0.5865	1.000	Class	0.0526	0.0131
+0.2326	0.7838	1.000	Indicators	0.0808	0.0189
+0.2369	0.1617	1.000	shown in locations 54 and 56 in the octal	0.3083	0.0174
+0.2441	0.5376	1.000	1. Error Interrupts	0.1523	0.0148
+0.2470	0.7481	1.000	0-3,5-8,15-17, 19,21	0.1748	0.0206
+0.2515	0.1617	1.000	hex dump.	0.0846	0.0174
+0.2587	0.5357	1.000	2. Input-Output Interrupts	0.2011	0.0174
+0.2631	0.7406	1.000	9-13	0.0451	0.0131
+0.2660	0.1053	1.000	SB	0.0263	0.0160
+0.2660	0.1617	1.000	Accumulator Sign Byte Register. The	0.2932	0.0189
+0.2718	0.5338	1.000	3. Maskable Interrupts	0.1805	0.0189
+0.2761	0.7481	1.000	4, 18,20, 22-47	0.1297	0.0176
+0.2798	0.1614	1.000	first four bits represent the accumulator	0.3144	0.0203
+0.2964	0.1617	1.000	zone bits, the fifth bit is the accumulator	0.3158	0.0176
+0.3109	0.1617	1.000	sign, and the last three bits represent	0.2951	0.0176
+0.3205	0.5108	1.000	Error Interrupts	0.1326	0.0188
+0.3241	0.1598	1.000	the accumulator flags.	0.1767	0.0189
+0.3387	0.5113	1.000	The handling of interrupts in Class 2 has been pre-	0.3872	0.0160
+0.3400	0.1617	1.000	Remainder Register.	0.1617	0.0176
+0.3416	0.1053	1.000	RM	0.0320	0.0116
+0.3529	0.5111	1.000	viously discussed. For interrupts in Classes 1 and 3,	0.4064	0.0179
+0.3590	0.1635	1.000	Indicator Register.	0.1466	0.0116
+0.3590	0.1071	1.000	IND	0.0301	0.0087
+0.3605	0.3120	1.000	Each bit in the indi-	0.1617	0.0102
+0.3687	0.5130	1.000	other than 0-3 and 5, if the error occurs at the prob-	0.4007	0.0175
+0.3750	0.1635	1.000	cator register is represented. In Figure 1,	0.3214	0.0132
+0.3836	0.5113	1.000	lem program level, the identifying message is written	0.4098	0.0146
+0.3879	0.1634	1.000	indicators 20 (DF), 23 (PF), 28 (XPFP), and	0.3254	0.0149
+0.3981	0.5131	1.000	on the output tape and $ABEOJ is issued.	0.3085	0.0133
+0.4017	0.1634	1.000	61 (AE) were on at the time of the dump.	0.3086	0.0156
+0.4127	0.5356	1.000	Interrupts 0-3 and 5, designate equipment checks.	0.3781	0.0164
+0.4200	0.1635	1.000	Multiplier Register. This register is	0.2820	0.0131
+0.4201	0.1071	1.000	MR	0.0282	0.0116
+0.4237	0.5129	1.000	It is not recommended to continue. However, if the	0.3859	0.0206
+0.4345	0.1635	1.000	dumped in floating point format.	0.2425	0.0131
+0.4433	0.5113	1.000	interrupt is at the problem program level, the inter-	0.4004	0.0146
+0.4491	0.1090	1.000	MASK Mask Register. The portion of the mask	0.3628	0.0117
+0.4564	0.5113	1.000	rupt is identified and the operator is instructed to	0.3759	0.0131
+0.4651	0.1635	1.000	register (indicators 20-47) that the pro-	0.3026	0.0116
+0.4724	0.5113	1.000	press the console Signal key if he wishes to continue.	0.4041	0.0131
+0.4797	0.1635	1.000	grammer may set for those interrupts he	0.3120	0.0116
+0.4855	0.5113	1.000	If the channel signal is given, a message is written	0.3853	0.0145
+0.4920	0.1634	1.000	wishes to handle. The IF bit (21) however,	0.3217	0.0154
+0.5015	0.5113	1.000	on the output tape to identify the interrupt, $ABEOJ is	0.4079	0.0146
+0.5068	0.1615	1.000	is always masked to 1 by MCP.	0.2390	0.0136
+0.5160	0.5113	1.000	given to the problem program, and the next job is run.	0.4117	0.0146
+0.5218	0.1090	1.000	TR-16 Transit Register. This register is	0.3214	0.0131
+0.5300	0.5337	1.000	Any error interrupts at the MCP level (except 21,	0.3762	0.0151
+0.5363	0.1635	1.000	dumped in hexadecimal format.	0.2368	0.0131
+0.5451	0.5113	1.000	the IF interrupt) will result in a console message and	0.4023	0.0146
+0.5523	0.1147	1.000	RIO, NOT AUTO-STACKING MODE. This mes-	0.3647	0.0131
+0.5596	0.5113	1.000	a halt. The system must then be reinitialized.	0.3496	0.0131
+0.5697	0.1654	1.000	sage may contain the word SIO instead of	0.2951	0.0103
+0.5785	0.5110	1.000	Maskable Interrupts: The problem program can	0.3633	0.0190
+0.5827	0.1654	1.000	RIO and may say AUTO-STACKING MODE.	0.3158	0.0133
+0.5931	0.5092	1.000	exercise control over interrupts due to any problem	0.3932	0.0185
+0.5955	0.1634	1.000	(See "Support I/O Pseudo-Operations. ")	0.3030	0.0161
+0.6105	0.5094	1.000	program condition which causes the following indica-	0.3985	0.0145
+0.6118	0.1053	1.000	XO - XF Following the special registers, the in-	0.3703	0.0132
+0.6250	0.5094	1.000	tors to be turned on:	0.1560	0.0102
+0.6264	0.0789	1.000	dex registers (0 - 15) are dumped in index word format.	0.4079	0.0132
+0.6394	0.5883	1.000	Time Signal	0.0902	0.0133
+0.6395	0.5414	1.000	4	0.0094	0.0087
+0.6439	0.1015	1.000	Examples of the four dump formats are given after	0.3816	0.0131
+0.6526	0.5301	1.000	18	0.0207	0.0116
+0.6539	0.5865	1.000	Execute Exception	0.1391	0.0147
+0.6570	0.0771	1.000	the panel dump.	0.1222	0.0145
+0.6680	0.5844	1.000	Data Fetch	0.0868	0.0144
+0.6686	0.5301	1.000	20	0.0207	0.0102
+0.6698	0.1013	1.000	Locations 44 - 47 were dumped in floating point	0.3632	0.0184
+0.6830	0.5320	1.000	22-34 Result Exceptions	0.1898	0.0133
+0.6848	0.0769	1.000	format and illustrate respectively the numbers 1, 10,	0.4063	0.0175
+0.6972	0.5788	1.000	Flaggings	0.0830	0.0155
+0.6975	0.5300	1.000	35-38	0.0434	0.0120
+0.7006	0.0771	1.000	100, and a number with exponent flag and the three	0.3835	0.0161
+0.7121	0.5282	1.000	39-40 Transits	0.1259	0.0132
+0.7151	0.0771	1.000	data flags TUV.	0.1222	0.0146
+0.7267	0.5301	1.000	41-47 Programs	0.1335	0.0146
+0.7311	0.0996	1.000	Locations 50 - 53 were dumped in index word	0.3421	0.0147
+0.7426	0.5317	1.000	Time signal and execute exception are perman-	0.3576	0.0185
+0.7441	0.0770	1.000	format. The number in word 52 was loaded into the	0.3874	0.0162
+0.7569	0.5073	1.000	ently masked on, but to give the problem program	0.3801	0.0193
+0.7587	0.0771	1.000	left half of the accumulator and was still there when	0.3929	0.0161
+0.7714	0.5073	1.000	more control, they are treated as pseudo-maskable.	0.3989	0.0196
+0.7733	0.0771	1.000	the dump was taken. This same number was stored	0.3872	0.0146
+0.7862	0.5092	1.000	These, together with indicators 20-47, except for	0.3745	0.0197
+0.7878	0.0771	1.000	into location 50.	0.1241	0.0146
+0.8007	0.5073	1.000	21 (Instruction Fetch), are called the maskable	0.3575	0.0194
+0.8036	0.0996	1.000	Locations 54 - 57 contain the same information as	0.3778	0.0133
+0.8169	0.5075	1.000	interrupts.	0.0883	0.0131
+0.8182	0.0789	1.000	locations 50 - 53 but were dumped in octal hex format.	0.4023	0.0147
+0.8299	0.0996	1.000	Locations 60 - 63 were dumped in octal hex with	0.3647	0.0161
+0.8314	0.5320	1.000	Once a programmer indicates that he wishes to	0.3534	0.0147
+0.8459	0.5075	1.000	take a maskable interrupt (by setting the appropri-	0.3835	0.0160
+0.8473	0.0789	1.000	mnemonics format.	0.1466	0.0133
+0.8605	0.5075	1.000	ate mask bit to one), he may then elect to use either	0.3947	0.0160
+0.8721	0.0789	1.000	Interrupt Classes	0.1335	0.0146
+0.8750	0.5075	1.000	a special fix-up routine that he provides within the	0.3797	0.0145
+0.8881	0.5075	1.000	problem program, or a standard fix-up routine	0.3553	0.0160
+0.9011	0.0788	1.000	Interrupts are divided into the following three classes:	0.4082	0.0169
+0.9026	0.5056	1.000	provided by MCP. This choice is specified within a	0.3872	0.0174
+0.9345	0.7086	1.000	Programming With MCP	0.1485	0.0118
+0.9375	0.8947	1.000	25	0.0169	0.0087

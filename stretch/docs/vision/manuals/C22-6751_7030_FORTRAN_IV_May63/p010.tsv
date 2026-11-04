@@ -1,0 +1,107 @@
+0.0682	0.5526	1.000	A,B (3),C(1),D(1,K),C(2),D(2,K),...,C(10),D(10,K),	0.3440	0.0103
+0.0683	0.1090	1.000	END	0.0414	0.0131
+0.0799	0.5489	1.000	E(1,1),E (3,1),....E (9,1),F (1,3),	0.2068	0.0116
+0.0915	0.5545	1.000	E (1,2),E (3,2),...,E (9,2),F (2,3),...	0.2124	0.0103
+0.0945	0.1635	1.000	GENERAL FORM	0.0940	0.0089
+0.0945	0.3872	1.000	EXAMPLE	0.0602	0.0087
+0.1002	0.5524	1.000	E (1,K),E (3,K),....E(9,K),F (K,3)	0.2092	0.0164
+0.1105	0.1842	1.000	"END"	0.0508	0.0131
+0.1119	0.3985	1.000	END	0.0338	0.0116
+0.1221	0.5508	1.000	Similarly, if this list were used with an input state-	0.3778	0.0131
+0.1353	0.5356	1.000	ment, the successive words, as they were read from	0.3930	0.0161
+0.1366	0.1109	1.000	This statement differs from the previous	0.3139	0.0131
+0.1381	0.4229	1.000	statements	0.0846	0.0102
+0.1512	0.1109	1.000	discussed in this chapter in that it does not affect the	0.3947	0.0131
+0.1526	0.5357	1.000	the external medium, would be placed into the se-	0.3929	0.0131
+0.1672	0.5357	1.000	quence of storage locations just given.	0.2782	0.0132
+0.1672	0.1109	1.000	flow of control in the object program being compiled.	0.3966	0.0132
+0.1817	0.5508	1.000	Thus the list reads from left to right with repetition	0.3778	0.0132
+0.1830	0.1278	1.000	The END statement marks the end of any given	0.3778	0.0133
+0.1962	0.1109	1.000	FORTRAN source program, separating it from the pro-	0.3966	0.0145
+0.1976	0.5320	1.000	for variables enclosed within parentheses. Only vari-	0.3966	0.0161
+0.2121	0.1090	1.000	gram that follows. Each FORTRAN source program must	0.3985	0.0161
+0.2136	0.5338	1.000	ables, and not constants, may be listed. The execution	0.3947	0.0146
+0.2282	0.1109	1.000	be terminated with an END statement.	0.2669	0.0116
+0.2282	0.5338	1.000	is exactly that of a Do-loop, as though each opening	0.3947	0.0131
+0.2442	0.5338	1.000	parentheses (except subscripting parentheses) were a	0.3947	0.0131
+0.2587	0.5320	1.000	DO, with indexing given immediately before the match-	0.3966	0.0161
+0.2718	0.1109	1.000	Chapter 5. Input-Output Statements	0.3026	0.0146
+0.2747	0.5338	1.000	ing closing parentheses, and with the do range extend-	0.3947	0.0132
+0.2881	0.5337	1.000	ing up to that indexing information. The order of the	0.3949	0.0160
+0.2907	0.1089	1.000	Nine statements in IBM 7030 FORTRAN IV specify the	0.3967	0.0149
+0.3052	0.5338	1.000	above list can thus be considered the equivalent of	0.3947	0.0132
+0.3067	0.1090	1.000	transmission of information to or from magnetic tapes,	0.3966	0.0131
+0.3195	0.5300	1.000	the "program":	0.1129	0.0166
+0.3212	0.1071	1.000	disks, card readers, card punches, and printers. These	0.3985	0.0161
+0.3372	0.1053	1.000	statements may be grouped as follows:	0.2914	0.0146
+0.3416	0.5639	1.000	A	0.0094	0.0102
+0.3516	0.5620	1.000	B (3)	0.0359	0.0133
+0.3532	0.1241	1.000	1. System Input and System Output Statements:	0.3797	0.0132
+0.3630	0.5619	1.000	DO 5I=1,10, 1	0.1035	0.0153
+0.3677	0.1090	1.000	Three statements, BEAD, PUNCH and PRINI, cause the	0.3947	0.0174
+0.3836	0.1071	1.000	transmission of edited (decimal) information to or	0.3966	0.0132
+0.3881	0.5508	1.000	5 D(I,K)	0.0583	0.0102
+0.3982	0.1071	1.000	from the system input and system output devices.	0.3647	0.0132
+0.3997	0.5639	1.000	DO 9 J= 1, K, 1	0.0959	0.0103
+0.4094	0.5638	1.000	DO 8 I= 1, 10, 2	0.1017	0.0126
+0.4121	0.1239	1.000	2. General Read/Write Statements: Two statements,	0.3800	0.0152
+0.4215	0.5489	1.000	8E(1,J)	0.0564	0.0131
+0.4288	0.1071	1.000	READ () and WRITE (), cause the transmission of	0.3985	0.0146
+0.4317	0.5508	1.000	9 F(J,3)	0.0545	0.0147
+0.4433	0.1053	1.000	either edited (decimal) or non-edited (binary) data	0.3985	0.0161
+0.4520	0.5470	1.000	Note that indexing information, as in Do's, consists of	0.3816	0.0146
+0.4573	0.1070	1.000	to or from magnetic tapes, disk or, under certain con-	0.3988	0.0181
+0.4666	0.5320	1.000	three constants or fixed point variables, and that the	0.3947	0.0160
+0.4752	0.1071	1.000	ditions, non-system readers, punches, and printers. The	0.3966	0.0147
+0.4824	0.5301	1.000	last of these may be omitted, in which case it is taken	0.3966	0.0161
+0.4897	0.1071	1.000	choice between edited and non-edited transmission is	0.3966	0.0133
+0.4977	0.5298	1.000	to be 1.	0.0626	0.0148
+0.5042	0.1071	1.000	indicated by the presence or absence of a "format"	0.3966	0.0147
+0.5130	0.5489	1.000	For a list of the form K, (A(k»> or K, (A(I), I= 1, K) where	0.3778	0.0131
+0.5203	0.1071	1.000	specification within the parentheses of these so-called	0.3966	0.0146
+0.5291	0.5320	1.000	an index or indexing parameter itself appears earlier in	0.3947	0.0131
+0.5363	0.1071	1.000	generalized Read/Write commands.	0.2650	0.0131
+0.5451	0.5301	1.000	the list of an input statement, the indexing will be	0.3966	0.0146
+0.5523	0.1241	1.000	3. Manipulative Statements: Three statements, END	0.3797	0.0131
+0.5596	0.5301	1.000	carried out with the newly read-in value.	0.2932	0.0146
+0.5669	0.1071	1.000	FILE, BACKSPACE, and REWIND, affect magnetic tapes or	0.3985	0.0147
+0.5816	0.2632	0.300	rowr, ne siting prtem the	0.2431	0.0761
+0.5827	0.1071	1.000	the disk unit.	0.0977	0.0103
+0.5900	0.5301	1.000	INPUT-OUTPUT IN ARRAY FORM	0.2237	0.0118
+0.5973	0.1222	1.000	4. One statement, FORMAT, which is a non-exe-	0.3816	0.0146
+0.6118	0.1071	1.000	cutable statement, specifies the editing process re-	0.3966	0.0161
+0.6133	0.5320	1.000	FORTRAN treats variables according to conventional	0.3947	0.0118
+0.6279	0.5282	1.000	matrix practice. Thus, the input-output statement,	0.3759	0.0161
+0.6279	0.1053	1.000	quired in transmission of information to or from the	0.3985	0.0146
+0.6439	0.1053	1.000	I-o device.	0.0789	0.0116
+0.6467	0.5583	1.000	READ 1 ((A(I,J),I= 1,2),J=1,3)	0.2124	0.0147
+0.6672	0.5282	1.000	causes the reading of I XJ (in this case 2 X3) items of	0.3985	0.0160
+0.6744	0.1071	1.000	Array and List Specifications	0.2086	0.0116
+0.6817	0.5282	1.000	information. The data items will be read into storage	0.3966	0.0160
+0.6933	0.1053	1.000	SPECIFYING LISTS OF QUANTITIES	0.2312	0.0131
+0.6962	0.5263	1.000	in the same order as they are found on the input	0.4004	0.0174
+0.7108	0.5282	1.000	medium.	0.0714	0.0160
+0.7136	0.1053	1.000	Some I-o statements call for the transmission of infor-	0.3966	0.0131
+0.7282	0.1034	1.000	mation and must, therefore, include a list of the quan-	0.3985	0.0176
+0.7427	0.5282	1.000	INPUT-OUTPUT OF ENTIRE ARRAYS	0.2425	0.0145
+0.7442	0.1034	1.000	tities to be transmitted. This list is ordered, and its	0.3985	0.0161
+0.7587	0.1034	1.000	order must be the same as the order in which the	0.3985	0.0146
+0.7660	0.5282	1.000	When input-output of an entire matrix is desired, an	0.3947	0.0161
+0.7747	0.1034	1.000	words of information exist (for input), or will exist	0.3985	0.0160
+0.7820	0.5263	1.000	abbreviated notation may be used for the list of the	0.3985	0.0145
+0.7906	0.1052	1.000	(for output) in the input-output medium.	0.3254	0.0151
+0.7964	0.5263	1.000	input-output statement; only the name of the array	0.3985	0.0161
+0.8052	0.1202	1.000	The formation and meaning of a list is best described	0.3798	0.0168
+0.8109	0.5282	1.000	need be given and the indexing information may be	0.3966	0.0176
+0.8212	0.1053	1.000	by an example:	0.1128	0.0131
+0.8250	0.5261	1.000	omitted.	0.0681	0.0172
+0.8400	0.1222	1.000	A, B(3), (C(I), D(I,K), I=1, 10), ((E(I,J), I=1, 10, 2),	0.3797	0.0133
+0.8415	0.5432	1.000	Thus, if A has previously been listed in a DIMENSION	0.3816	0.0176
+0.8503	0.1335	1.000	F(J,3), J=1, K)	0.1071	0.0131
+0.8534	0.5259	1.000	statement, the statement,	0.1890	0.0243
+0.8648	0.1053	1.000	Suppose that this list is used with an output statement.	0.3947	0.0161
+0.8749	0.5507	1.000	READ 1, A	0.0790	0.0147
+0.8750	0.1202	1.000	Then the information will be written on the input-	0.3800	0.0206
+0.8951	0.1202	1.000	output medium in this order:	0.2220	0.0141
+0.8953	0.5263	1.000	is sufficient to read in all of the elements of the array A.	0.3985	0.0147
+0.9230	0.1053	1.000	10	0.0169	0.0102

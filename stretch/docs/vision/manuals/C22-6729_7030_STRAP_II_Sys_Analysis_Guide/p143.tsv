@@ -1,0 +1,63 @@
+0.0814	0.8778	1.000	INTIN	0.0489	0.0160
+0.1418	0.5318	1.000	Boxes 7-9	0.0811	0.0143
+0.1421	0.1071	1.000	LINKAGE	0.0735	0.0123
+0.1700	0.5338	1.000	Bit 26 of the control word is checked for a one	0.3440	0.0146
+0.1730	0.1090	1.000	On Entry	0.0658	0.0102
+0.1860	0.5320	1.000	indicating the last control word in the file. If so, an	0.3910	0.0131
+0.1976	0.5320	1.000	additional buffer is written indicating end of file.	0.3628	0.0161
+0.1976	0.1241	1.000	1. Initially the calling sequence is:	0.2650	0.0118
+0.2136	0.1071	1.000	SIC, Intiz: B, Ininit.	0.1523	0.0131
+0.2247	0.1238	1.000	2. Subsequently the calling sequence is:	0.3013	0.0216
+0.2297	0.5338	1.000	Boxes 10-12	0.0921	0.0146
+0.2456	0.1071	1.000	SIC, Intiz; B, INTIN.	0.1579	0.0147
+0.2587	0.5320	1.000	If Bit 26 is off in the control word, the read counter	0.3872	0.0146
+0.2745	0.1108	1.000	On Exit	0.0565	0.0107
+0.2747	0.5320	1.000	is checked for a value greater than zero. If not	0.3590	0.0132
+0.2892	0.5338	1.000	greater, the program must wait until a read opera-	0.3816	0.0132
+0.3004	0.5319	1.000	tion is completed. The EOP fix-up will add one to the	0.4042	0.0169
+0.3036	0.1090	1.000	The control word preceding the expanded unit is	0.3534	0.0118
+0.3154	0.5320	1.000	read counter. When the counter is greater than	0.3609	0.0189
+0.3197	0.1053	1.000	placed in Ibufxw for the user routine.	0.2801	0.0132
+0.3299	0.5320	1.000	zero, one is subtracted from it, and return is made.	0.3966	0.0189
+0.3488	0.1090	1.000	FLOW CHART DESCRIPTION	0.2218	0.0131
+0.3605	0.5320	1.000	Box 13	0.0583	0.0189
+0.3794	0.1071	1.000	Box 1	0.0432	0.0131
+0.3909	0.5320	1.000	The buffer just read is checked for the end-of-file	0.3741	0.0146
+0.4026	0.5320	1.000	record. If so, return is made thru $RET.	0.3195	0.0189
+0.4052	0.1070	1.000	A -- BEW, $ -- is encountered which prevents proc-	0.3949	0.0167
+0.4197	0.1070	1.000	essing the first buffer before the read operation has	0.3874	0.0166
+0.4330	0.1071	1.000	been completed. The EOP interrupt fix-up will	0.3534	0.0176
+0.4506	0.1071	1.000	change the BEW to a NOP.	0.1992	0.0146
+0.4621	0.5338	1.000	Boxes 14, 15, 20	0.1316	0.0191
+0.4808	0.1070	1.000	Box 2	0.0454	0.0151
+0.4912	0.5338	1.000	One is added to the read counter. If switch 2 is off	0.3835	0.0176
+0.5073	0.5338	1.000	(first time only), it is turned on.	0.2481	0.0176
+0.5087	0.1071	1.000	Bit 25 of Ibufxw is tested for a one. If one, the	0.3553	0.0161
+0.5233	0.1071	1.000	control word is the last in a buffer, and the buffer is	0.3910	0.0161
+0.5376	0.5338	1.000	Boxes 18, 19	0.1054	0.0164
+0.5392	0.1090	1.000	ready to be written on the disk.	0.2331	0.0145
+0.5654	0.5338	1.000	Read control words are swapped, and another buffer	0.3910	0.0174
+0.5683	0.1071	1.000	Bоx 3	0.0508	0.0161
+0.5827	0.5320	1.000	is read. Return is made thru $RET.	0.2763	0.0147
+0.5973	0.1090	1.000	The next control word is placed in Ibufxw by refilling	0.3929	0.0161
+0.6116	0.5338	1.000	Boxes 16, 17	0.1017	0.0166
+0.6133	0.1071	1.000	$2 and storing.	0.1147	0.0146
+0.6424	0.5338	1.000	Initially on. If on, it is turned off, and a read is	0.3647	0.0131
+0.6439	0.1090	1.000	Box 4	0.0432	0.0131
+0.6535	0.5338	1.000	initiated. If off, read indicator 2 is turned on, thus	0.3854	0.0171
+0.6715	0.1128	1.000	The control word is tested to determine if it is the	0.3703	0.0116
+0.6715	0.5320	1.000	permitting the next write interrupt to initiate the	0.3647	0.0145
+0.6874	0.5338	1.000	read.	0.0434	0.0134
+0.6875	0.2481	1.000	If not, return is made.	0.1748	0.0131
+0.6890	0.1090	1.000	last in the buffer.	0.1410	0.0102
+0.7162	0.5337	1.000	Boxes 21, 22	0.0998	0.0153
+0.7180	0.1128	1.000	Boxes 5, 6	0.0809	0.0117
+0.7442	0.1128	1.000	The write control words (there are three, one for	0.3665	0.0146
+0.7442	0.5338	1.000	Entered as a result of a write interrupt. If on, read	0.3929	0.0161
+0.7577	0.8771	1.000	If off,	0.0529	0.0148
+0.7587	0.1128	1.000	each buffer) are rotated, and the buffer is written	0.3665	0.0146
+0.7602	0.5320	1.000	indicator 2 is turned off, and initiates a read.	0.3459	0.0147
+0.7747	0.5338	1.000	read indicator 1 is turned on.	0.2218	0.0132
+0.7776	0.1128	1.000	on the disk.	0.0865	0.0103
+0.9360	0.8496	1.000	INTIN	0.0376	0.0087
+0.9375	0.9079	1.000	143	0.0244	0.0087

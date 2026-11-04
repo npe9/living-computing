@@ -1,0 +1,41 @@
+0.0791	0.1070	1.000	patches COMD cards to the system command routine;	0.3950	0.0154
+0.0799	0.5338	1.000	$RESLD, SJC4, SCOMD, SEOJ, and SJCI. Ot these,	0.3966	0.0131
+0.0930	0.5320	1.000	$RESLD is primed normally at the end of JC4 when	0.3816	0.0161
+0.0959	0.1071	1.000	and finally, it scans and takes appropriate action on	0.3853	0.0132
+0.1090	0.5320	1.000	a new job or compiler is ready to be loaded. At this	0.3929	0.0146
+0.1090	0.1090	1.000	the I-O assignment tables built by JC1. Thus, JC4	0.3778	0.0131
+0.1235	0.5320	1.000	point the SLRBU buffer will contain the proper	0.3459	0.0146
+0.1250	0.1071	1.000	is partly an end-of-job, mostly a beginning-of-job,	0.3778	0.0132
+0.1381	0.5320	1.000	boundary control, the remainder of the buffer con-	0.3778	0.0146
+0.1409	0.1090	1.000	and only for compilers a control-ot-job program.	0.3665	0.0118
+0.1512	0.5318	1.000	taining all zeros with the exception of the MK and IF	0.3894	0.0178
+0.1539	0.1241	1.000	JC4 has one entry point, YC4NO, and three pseudo-	0.3835	0.0133
+0.1685	0.5338	1.000	mask bits. The next pseudo-op, SJC4, is primed	0.3684	0.0133
+0.1700	0.1090	1.000	ops associated with it:	0.1654	0.0118
+0.1830	0.5338	1.000	when JC4 is unable to read a job card. If a COMD	0.3741	0.0118
+0.1845	0.1241	1.000	1. $EOJ -- the current job (or compiler) has	0.3383	0.0131
+0.1976	0.5338	1.000	card were read instead, SCOMD would be primed as	0.3874	0.0154
+0.2006	0.1090	1.000	finished normally.	0.1391	0.0102
+0.2121	0.5338	1.000	well. $EOJ is primed whenever JC4 detects an error	0.3985	0.0132
+0.2136	0.1241	1.000	2. $ABEOJ -- the current job has finished abnor-	0.3741	0.0117
+0.2282	0.5320	1.000	in the job prohibiting its execution. Finally, SJCI	0.3741	0.0131
+0.2294	0.1108	1.000	mally.	0.0491	0.0121
+0.2427	0.1429	1.000	SJC4 -- the current job does not exist; JC4 has	0.3571	0.0116
+0.2427	0.5320	1.000	is primed (along with $RESLD) whenever JC4 sees	0.3759	0.0145
+0.2573	0.1090	1.000	been trying unsuccessfully to get a JOB card from the	0.3985	0.0131
+0.2573	0.5338	1.000	that the I-O assignment tables have been filled	0.3440	0.0131
+0.2718	0.5338	1.000	(SJIFUL = 1), and some space has been made avail-	0.3891	0.0146
+0.2877	0.5338	1.000	able again.	0.0827	0.0118
+0.2878	0.1278	1.000	Both $EOJ and $ABEOJ may be given either by the	0.3722	0.0116
+0.3023	0.1109	1.000	PP or from an MCP major package via SPRIME.	0.3590	0.0116
+0.3169	0.5338	1.000	Major Package Pseudo-Ops Used by JC4	0.3008	0.0116
+0.3169	0.1109	1.000	However, SJC4, occurs only when JC4 primes itself.	0.3910	0.0131
+0.3314	0.1090	1.000	JC4 runs enabled, in the non-SIO mode, and saves	0.3741	0.0132
+0.3430	0.1090	1.000	and restores no index registers. It runs mostly in	0.3759	0.0146
+0.3459	0.5357	1.000	The major package pseudo-ops used by JC4 are	0.3515	0.0132
+0.3618	0.1090	1.000	PP memory.	0.0977	0.0132
+0.3618	0.5338	1.000	shown on the following page.	0.2124	0.0132
+0.3750	0.1278	1.000	The only exit from JC4 is a $RET with, however,	0.3647	0.0132
+0.3909	0.1109	1.000	one or more of five pseudo-ops primed previously:	0.3741	0.0118
+0.9331	0.9192	1.000	51	0.0150	0.0087
+0.9345	0.7406	1.000	System Operation Programs	0.1560	0.0103

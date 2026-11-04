@@ -1,0 +1,41 @@
+0.0654	0.0695	1.000	DNUM	0.0526	0.0116
+0.1087	0.0695	1.000	LINKAGE	0.0753	0.0136
+0.1366	0.4962	1.000	Box 5,9	0.0714	0.0161
+0.1394	0.0714	1.000	On Entry	0.0695	0.0118
+0.1642	0.4981	1.000	The instruction referred to is the plus part of the	0.3684	0.0176
+0.1657	0.0846	1.000	1. The calling sequence is: SIC, Dnuz; B, DNUM	0.3722	0.0174
+0.1817	0.0883	1.000	2. The first character of the operand is in the	0.3440	0.0116
+0.1817	0.4981	1.000	calculation indicated in box 13.	0.2331	0.0147
+0.2106	0.4943	1.000	Box 19	0.0584	0.0163
+0.2106	0.0883	1.000	3. The radix in effect for this field is in location,	0.3722	0.0147
+0.2238	0.0714	1.000	Drad. (This radix is set up by MQDD before MQDNUM	0.4117	0.0174
+0.2355	0.4981	1.000	Since a radix can be in the range 2-16, the character	0.3910	0.0161
+0.2412	0.0714	1.000	gets control for processing this field.)	0.2876	0.0118
+0.2558	0.4981	1.000	can be one of the set A-F.	0.1955	0.0131
+0.2703	0.0733	1.000	On Exit	0.0564	0.0103
+0.2979	0.4981	1.000	Boxes 18, 31, 34	0.1316	0.0176
+0.2994	0.0883	1.000	1. The double precision floating point result is in	0.3684	0.0117
+0.3154	0.0714	1.000	the accumulator.	0.1259	0.0102
+0.3270	0.4981	1.000	Two exponents are mentioned in the flow chart. The	0.3929	0.0176
+0.3285	0.0883	1.000	2. The next non-blank character after the operand	0.3778	0.0145
+0.3415	0.0695	1.000	is in the value field of $3.	0.1936	0.0146
+0.3445	0.4981	1.000	exponent which DNUM develops to keep count of the	0.3797	0.0146
+0.3590	0.5000	1.000	number of places after the point is referred to as a	0.3759	0.0131
+0.3735	0.0714	1.000	USER	0.0452	0.0117
+0.3750	0.5000	1.000	running exponent. The exponent appearing in the	0.3609	0.0132
+0.3894	0.5000	1.000	source data is referred to as the specified exponent.	0.3853	0.0118
+0.4024	0.0864	1.000	MQDNUM	0.0772	0.0135
+0.4039	0.5000	1.000	The previous result is adjusted by each of these	0.3534	0.0133
+0.4200	0.5000	1.000	exponents to produce the final result.	0.2744	0.0118
+0.4317	0.0714	1.000	FLOW CHART DESCRIPTION	0.2218	0.0132
+0.4631	0.4979	1.000	Box 36	0.0549	0.0129
+0.4633	0.0713	1.000	Box 1	0.0436	0.0137
+0.4897	0.0695	1.000	Indicators A, B, C, and Dare turned off. Note the	0.3835	0.0147
+0.4927	0.5000	1.000	The values to be arithmetically combined by any of	0.3759	0.0116
+0.5042	0.0714	1.000	operand that'is to be collected and evaluated is in the	0.3929	0.0147
+0.5058	0.5000	1.000	the MQDDPA subroutines must be in double precision	0.3929	0.0131
+0.5202	0.0695	1.000	format:	0.0584	0.0120
+0.5218	0.5000	1.000	floating point form.	0.1447	0.0116
+0.5245	0.1917	1.000	En.n, or In.nste).	0.1636	0.0250
+0.5363	0.1372	0.300	(In,	0.0470	0.0145
+0.9186	0.0695	1.000	110	0.0226	0.0073

@@ -1,0 +1,89 @@
+0.0707	0.1314	1.000	Section II	0.0924	0.0156
+0.1612	0.5583	1.000	One such entry mode is the F mode.	0.2594	0.0147
+0.1641	0.1334	1.000	Entry Mode	0.0978	0.0164
+0.1758	0.5583	1.000	F ENTRY MODE. The F mode may appear only in DD or	0.3947	0.0146
+0.1875	0.1335	1.000	STRAP II always assumes that the characters appearing	0.3966	0.0146
+0.1903	0.5583	1.000	DDI statements where an unnormalized floating point	0.3947	0.0146
+0.2014	0.1315	1.000	in the statement on a symbolie card are alphabetic or	0.4006	0.0183
+0.2064	0.5583	1.000	or binary use mode has been specified. If the F mode	0.3947	0.0146
+0.2179	0.1316	1.000	numeric. Furthermore, when the characters are nu-	0.3985	0.0133
+0.2224	0.5564	1.000	is employed as a statement entry mode within such a	0.3966	0.0146
+0.2339	0.1316	1.000	meric, sTraP assumes they are written in the deci-	0.3985	0.0132
+0.2369	0.5564	1.000	statement, it is written enclosed in parentheses im-	0.3966	0.0146
+0.2485	0.1335	1.000	mal radix. Often it is much more convenient to write	0.3966	0.0118
+0.2529	0.5583	1.000	mediately before the operation code.	0.2707	0.0132
+0.2645	0.1316	1.000	a numeric entry in another radix, such as octal or	0.4004	0.0131
+0.2733	0.6748	1.000	(F6)DD(BU), 12.36	0.1598	0.0146
+0.2791	0.1316	1.000	binary. In other cases there are other properties of	0.3985	0.0146
+0.2921	0.5695	1.000	In this case, the entry mode F implies that the data	0.3835	0.0131
+0.2936	0.1316	1.000	the source language that the programmer would like	0.3985	0.0146
+0.3067	0.5583	1.000	which follows are written in the decimal radix, are to	0.3947	0.0131
+0.3096	0.1316	1.000	to describe to strAp. The facility in the stRap lan-	0.3985	0.0146
+0.3212	0.5564	1.000	be converted to binary, and may contain a decimal	0.3966	0.0161
+0.3241	0.1297	1.000	guage that allows the programmer to describe the	0.4004	0.0174
+0.3372	0.5545	1.000	fraction portion. The integer following the F specifies	0.3985	0.0161
+0.3400	0.1297	1.000	source language is called the entry mode.	0.3045	0.0161
+0.3517	0.5583	1.000	the number of fractional binary bits that are desired	0.3929	0.0146
+0.3545	0.1485	1.000	Within the data description field the use mode, field	0.3816	0.0161
+0.3677	0.5564	1.000	to the right of the binary point following conversion.	0.3947	0.0145
+0.3706	0.1316	1.000	length and byte size describe characteristics of the	0.3985	0.0161
+0.3836	0.5583	1.000	In the previous example, the fractional portion to the	0.3947	0.0132
+0.3852	0.1316	1.000	data that determine the conversion of the data and	0.3985	0.0117
+0.3982	0.5564	1.000	right of the binary point will be limited to 6 bits in	0.3947	0.0161
+0.4026	0.1316	1.000	its later use at execution time. These characteristics	0.3985	0.0116
+0.4127	0.5564	1.000	length. The converted 6-bit fractional portion plus the	0.3966	0.0146
+0.4172	0.1316	1.000	are therefore compiled along with the data. The	0.3985	0.0147
+0.4288	0.5545	1.000	integer portion will be right justified in the appropri-	0.3985	0.0161
+0.4295	0.1314	1.000	entry mode, on the other hand, describes the form in	0.3969	0.0176
+0.4433	0.5564	1.000	ate field (in this case a 64-bit field so leading zeros	0.3966	0.0146
+0.4462	0.1316	1.000	which the data appears on the card and, therefore,	0.3985	0.0145
+0.4593	0.5564	1.000	will be supplied by STRAP).	0.2030	0.0160
+0.4621	0.1316	1.000	need not be compiled. The entry mode may be em-	0.3985	0.0146
+0.4738	0.5677	1.000	Conflicts between the field length specified and the	0.3853	0.0160
+0.4782	0.1316	1.000	ployed in one of three ways:	0.2086	0.0146
+0.4897	0.5564	1.000	F entry mode can arise where binary use mode has	0.3966	0.0147
+0.5042	0.5583	1.000	been written. If the converted data entry is too large	0.3947	0.0161
+0.5203	0.5564	1.000	to fit in the field requested, high order bits are dis-	0.3966	0.0131
+0.5261	0.1335	1.000	Statement Entry Mode	0.1617	0.0133
+0.5347	0.5582	1.000	carded. Whenever the converted entry is smaller than	0.3930	0.0153
+0.5509	0.5564	1.000	the field size specified, the problem is less crucial.	0.3947	0.0146
+0.5536	0.1335	1.000	An entry mode may be used to specify the properties	0.3966	0.0147
+0.5654	0.5564	1.000	High order zeros are supplied	0.2218	0.0161
+0.5682	0.1316	1.000	of all data in a DD OI DDI statement. When used in this	0.3985	0.0118
+0.5814	0.5695	1.000	In the case of unnormalized floating point DD state-	0.3835	0.0147
+0.5842	0.1316	1.000	fashion, it is enclosed in parentheses and appears im-	0.3985	0.0131
+0.5973	0.5564	1.000	ments, the rules governing the interpretation of the	0.3966	0.0133
+0.5988	0.1297	1.000	mediately before the DD Or DDI operation code in the	0.3985	0.0146
+0.6118	0.5564	1.000	data and its conversion are identical to the handling	0.3947	0.0132
+0.6148	0.1316	1.000	operation field.	0.1128	0.0131
+0.6264	0.5564	1.000	of binary use mode statements except that the con-	0.3966	0.0146
+0.6336	0.1974	1.000	(EM)DD(dds), D, D', D',..	0.2556	0.0176
+0.6424	0.5545	1.000	verted data entry is always inserted right justified in	0.3966	0.0161
+0.6555	0.1297	1.000	Note that DDI does not have the multiple entry facility.	0.4004	0.0161
+0.6570	0.5545	1.000	the standard fractional portion of the floating point	0.3985	0.0161
+0.6700	0.1466	1.000	When an entry mode is used in connection with the	0.3816	0.0131
+0.6730	0.5564	1.000	format. The correct exponent, as determined by the	0.3966	0.0131
+0.6860	0.1316	1.000	data of a DD Or DDI statement, it may in this instance	0.3966	0.0131
+0.6875	0.5545	1.000	location of the decimal point, is supplied by STRAP.	0.3816	0.0146
+0.7006	0.1316	1.000	—but only in this instance-designate that alphabetic	0.3966	0.0146
+0.7042	0.5538	0.300	o ome parictir ult whth ao as tli	0.3172	0.0458
+0.7150	0.1296	1.000	information is to be compiled. There are only two!	0.4118	0.0163
+0.7311	0.1316	1.000	entry modes that fall into this category, the a entry	0.3966	0.0147
+0.7456	0.1316	1.000	mode and the ios entry mode. These modes have al-	0.3966	0.0131
+0.7485	0.5564	1.000	without influencing the treatment of any other field in	0.3947	0.0161
+0.7615	0.1316	1.000	ready been discussed in the section concerning the DD	0.3966	0.0146
+0.7619	0.5562	1.000	the same statement. In everyday programming situa-	0.3969	0.0177
+0.7761	0.1316	1.000	pseudo operation.	0.1316	0.0146
+0.7805	0.5564	1.000	tions, it is common to write DD statements with several	0.3947	0.0116
+0.7927	0.5563	1.000	data entries in each statement. In this situation, it is	0.3950	0.0157
+0.8096	0.5564	1.000	often desirable to use different entry modes for each	0.3947	0.0146
+0.8227	0.1335	1.000	Statement or Field Entry Modes	0.2274	0.0131
+0.8241	0.5563	1.000	field. Thus, the programmer may write	0.2953	0.0163
+0.8459	0.5639	1.000	DD(BU), (F6) 12.36, (F2) 187.5, (F8) 1005.679	0.3797	0.0147
+0.8503	0.1297	1.000	Some entry modes may be used to specify the proper-	0.3966	0.0146
+0.8648	0.5695	1.000	Note that when the F entry mode is used as a field	0.3816	0.0161
+0.8663	0.1316	1.000	ties of all the fields in a statement or to specify the	0.3966	0.0146
+0.8808	0.5564	1.000	entry mode it is still enclosed in parentheses and ap-	0.3947	0.0146
+0.8821	0.1316	1.000	properties of one specific field within the statement.	0.3947	0.0133
+0.9172	0.1316	1.000	24	0.0188	0.0102
+0.9172	0.1805	1.000	IBM 7030	0.0639	0.0087

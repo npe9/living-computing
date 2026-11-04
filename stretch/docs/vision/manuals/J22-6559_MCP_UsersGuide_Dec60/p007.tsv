@@ -1,0 +1,39 @@
+0.1190	0.4116	1.000	SPOOL	0.0584	0.0120
+0.1482	0.1165	1.000	SPOOL is the routine within MCP that performs the following services for the user:	0.6654	0.0132
+0.1817	0.1410	1.000	1. Preprocesses input (data and programs).	0.3571	0.0132
+0.1962	0.1579	1.000	Attempts to minimize handling of jobs by the operator.	0.4474	0.0145
+0.2121	0.1410	1.000	3. Attempts to optimize use of the high-speed on-line devices.	0.5038	0.0132
+0.2406	0.1165	1.000	The three functions in SPOOL are Read, Punch, and Print. Any of these functions can	0.6881	0.0188
+0.2587	0.1147	1.000	be operating simultaneously with another function or with the problem program.	0.6410	0.0161
+0.2705	0.1183	1.000	Furthermore, SPOOL may be operated in one of two modes, overlapped or not overlapped.	0.7258	0.0201
+0.3036	0.1165	1.000	In the overlapped mode, successive jobs are read in or the results of successive jobs	0.6842	0.0161
+0.3197	0.1147	1.000	are printed out or punched out while the problem program itself, or another problem	0.6805	0.0161
+0.3328	0.1145	1.000	program, isbeing executed. Input and output is performed on, and only on, the I-O	0.6620	0.0236
+0.3476	0.1164	1.000	devices assigned to SPOOL. In the not-overlapped mode, the problem program has the	0.6996	0.0219
+0.3633	0.1165	1.000	exclusive use of SPOOL I-O devices. In effect, a program running in the not-overlapped	0.7124	0.0189
+0.3789	0.1164	1.000	mode is granted top priority and, therefore, by-passes all other jobs which may be in	0.6902	0.0226
+0.3997	0.1184	1.000	queue on SPOOL input and output tapes.	0.3158	0.0131
+0.4288	0.1184	1.000	SPOOL operates in the overlapped mode unless a system command is given by the	0.6523	0.0146
+0.4445	0.1183	1.000	operator which places it in the not overlapped mode.	0.4193	0.0149
+0.4736	0.1164	1.000	Once the mode has been established, the problem program communicates with SPOOL	0.6882	0.0196
+0.4905	0.1146	1.000	by means of pseudo-instructions that use calling sequences to initiate reading, punching	0.7051	0.0177
+0.5020	0.1145	1.000	and printing. These operations move data between SPOOL and the program via SPOOL	0.6997	0.0249
+0.5203	0.2199	1.000	The SPOOL I-O devices in effect at any time are defined by the operator.	0.5959	0.0161
+0.5247	0.1184	1.000	I-O devices.	0.1015	0.0117
+0.5567	0.1165	1.000	SPOOL READER	0.1353	0.0116
+0.5825	0.1164	1.000	The SPOOL reader maintains buffers that contain 15 words for each problem program	0.6882	0.0180
+0.5970	0.1164	1.000	data card. Eighty columns of each card are read. Dataare moved from these buffers	0.6846	0.0215
+0.6146	0.1183	1.000	whenever the problem program uses the following calling sequence:	0.5398	0.0187
+0.6494	0.3063	1.000	B, ŞMCP	0.0792	0.0152
+0.6656	0.3064	1.000	, $SCR	0.0621	0.0147
+0.6799	0.3063	1.000	, FWA(I)	0.0754	0.0152
+0.6976	0.3083	1.000	, N.	0.0395	0.0132
+0.7106	0.3064	1.000	, (N')	0.0508	0.0161
+0.7267	0.3064	1.000	, (End Return)	0.1391	0.0146
+0.7427	0.3421	1.000	(Normal Return)	0.1335	0.0131
+0.7698	0.1202	1.000	The pseudo-operation symbolized by $SCR is interpreted as a request to move N column	0.7051	0.0185
+0.7861	0.1202	1.000	binary card records (15 word records) to the problem program storage area whose	0.6619	0.0194
+0.8023	0.1184	1.000	effective first word address (an 18-bit address field) is specified by the problem pro-	0.6842	0.0174
+0.8143	0.1182	1.000	gram symbol FWA(I). Control is returned to the problem program at the normal return	0.7034	0.0230
+0.8308	0.1183	1.000	in the calling sequence, when 15N words have been moved. N is a decimal integer.	0.6694	0.0211
+0.9419	0.9117	1.000	7	0.0094	0.0116

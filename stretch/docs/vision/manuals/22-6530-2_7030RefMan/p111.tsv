@@ -1,0 +1,108 @@
+0.0624	0.0996	1.000	of information starting at the left end of a full word	0.3891	0.0146
+0.0654	0.5169	1.000	Single- and Multiple-Block Operation	0.2707	0.0161
+0.0785	0.0977	1.000	in core storage and containing an integral number of	0.3929	0.0145
+0.0872	0.5188	1.000	The multiple flag specifies whether a new block of	0.3910	0.0146
+0.0945	0.0996	1.000	words (i.e., multiples of 64 data bits). An external	0.3910	0.0131
+0.1032	0.5169	1.000	data may be started at the end of the current block	0.3910	0.0132
+0.1082	0.0976	1.000	unit may, however, terminate an operation at any	0.3912	0.0162
+0.1204	0.5168	1.000	or not.	0.0509	0.0093
+0.1235	0.0996	1.000	time within a block or even within a word. In both	0.3891	0.0131
+0.1381	0.5338	1.000	When the multiple flag of a control word is zero,	0.3741	0.0146
+0.1394	0.0977	1.000	reading and writing, data transfer takes place a byte	0.3910	0.0147
+0.1539	0.5169	1.000	reading or writing proceeds either until the unit	0.3910	0.0147
+0.1555	0.0977	1.000	at a time, starting with the leftmost byte of a word	0.3910	0.0132
+0.1700	0.5150	1.000	reaches the end of the block or until the control word	0.3910	0.0118
+0.1700	0.0977	1.000	and proceeding to the right. Consequently, an inter-	0.3929	0.0146
+0.1845	0.5150	1.000	reaches a count of zero, whichever happens first. If	0.3929	0.0146
+0.1860	0.0977	1.000	ruption may prevent the low-order bytes of a word	0.3910	0.0146
+0.2002	0.0976	1.000	from being read or written. When a reading opera-	0.3931	0.0152
+0.2006	0.5150	1.000	à new control word in a chained operation is fetched	0.3910	0.0146
+0.2148	0.0976	1.000	tion is interrupted within a word, the exchange al-	0.3913	0.0173
+0.2151	0.5169	1.000	before the end of the block, the multiple flag of the	0.3910	0.0146
+0.2276	0.5149	1.000	new control word determines the mode of operation	0.3914	0.0188
+0.2324	0.0977	1.000	ways completes the word by filling in zero bits to the	0.3910	0.0133
+0.2456	0.5150	1.000	during the time the new control word is in force. It	0.3910	0.0131
+0.2470	0.0977	1.000	right of the data bits before sending it to core storage.	0.3910	0.0147
+0.2615	0.5150	1.000	follows that if all control words in a chain have the	0.3910	0.0118
+0.2645	0.1128	1.000	The exchange has access to data and control words	0.3759	0.0131
+0.2761	0.5150	1.000	multiple flags set to zero, only a single block of data	0.3891	0.0146
+0.2805	0.0959	1.000	at any existing core storage address from 32 up. This	0.3929	0.0146
+0.2921	0.5150	1.000	may be read or written with one instruction. It is	0.3891	0.0131
+0.2951	0.0959	1.000	range does not include internal computer registers	0.3929	0.0146
+0.3067	0.5150	1.000	possible, however, to read or write less than a block	0.3891	0.0146
+0.3081	0.0957	1.000	and index registers. When the exchange discovers	0.3933	0.0198
+0.3227	0.5132	1.000	of data by specifying a count which is less than the	0.3910	0.0161
+0.3253	0.0958	1.000	that a control word address or a data word address	0.3911	0.0136
+0.3372	0.5132	1.000	number of words in the block.	0.2237	0.0146
+0.3405	0.0939	1.000	refers to a core storage location to which the exchange	0.3931	0.0158
+0.3561	0.0959	1.000	does not have access (locations O to 31 or addresses	0.3910	0.0131
+0.3590	0.5301	1.000	When the multiple flag of a control word is one,	0.3741	0.0131
+0.3684	0.0939	1.000	above the maximum available address in a particular	0.3932	0.0192
+0.3735	0.5132	1.000	operation always proceeds, if not terminated prema-	0.3910	0.0146
+0.3866	0.0940	1.000	installation), the operation is stopped and the ex-	0.3910	0.0146
+0.3894	0.5132	1.000	turely by exceptional causes, until the number of	0.3910	0.0133
+0.4026	0.0940	1.000	change-program-check status bit for the appropriate	0.3929	0.0147
+0.4035	0.5131	1.000	words transferred equals the number specified in the	0.3912	0.0157
+0.4151	0.0938	1.000	channel is turned on. When the right effective ad-	0.3932	0.0179
+0.4200	0.5132	1.000	count field. If the unit meanwhile reaches the end	0.3891	0.0118
+0.4325	0.0939	1.000	dress of an input-output instruction specifies a con-	0.3931	0.0159
+0.4341	0.5131	1.000	of the block, a new block is automatically started.	0.3874	0.0154
+0.4491	0.0940	1.000	trol word address in the range O through 31, the	0.3910	0.0146
+0.4506	0.5132	1.000	As before, in a chained operation the multiple flag	0.3891	0.0146
+0.4621	0.5111	1.000	of the control word in force always determines the	0.3914	0.0192
+0.4636	0.0940	1.000	operation is not started, and the address-invalid indi-	0.3929	0.0146
+0.4782	0.0940	1.000	cator is turned on.	0.1579	0.0131
+0.4787	0.2555	1.000	An exception is made during	0.2297	0.0159
+0.4811	0.5113	1.000	mode of operation. With the multiple flag set to one,	0.3891	0.0160
+0.4942	0.0921	1.000	initial program loading,	0.1861	0.0146
+0.4956	0.5113	1.000	it thus becomes possible to read or write more than	0.3891	0.0147
+0.4956	0.2782	1.000	when storage address 4 is	0.2068	0.0131
+0.5081	0.5111	1.000	one block of data with one instruction. By letting the	0.3895	0.0193
+0.5102	0.0940	1.000	used in a special way without giving an error indi-	0.3891	0.0132
+0.5243	0.0919	1.000	cation.	0.0511	0.0125
+0.5276	0.5113	1.000	multiple flags of all control words in a chained oper-	0.3891	0.0146
+0.5421	0.5113	1.000	ation be one, the amount of information transferred	0.3891	0.0131
+0.5567	0.5113	1.000	is completely under control of the control word	0.3891	0.0146
+0.5680	0.0920	1.000	Chaining	0.0660	0.0152
+0.5755	0.5112	1.000	counts.	0.0508	0.0089
+0.5915	0.0940	1.000	The chain flag of each control word specifies whether	0.3910	0.0131
+0.5924	0.5262	1.000	When chaining occurs at the end of a block (i.e.,	0.3743	0.0156
+0.6044	0.0920	1.000	this is the last control word or whether another one	0.3931	0.0149
+0.6058	0.5111	1.000	when the count of a control word reaches zero upon	0.3876	0.0181
+0.6209	0.5111	1.000	the transmission of the last data word of a block),	0.3876	0.0173
+0.6221	0.0921	1.000	follows.	0.0564	0.0116
+0.6394	0.1071	1.000	If the chain flag is zero, the present control word	0.3759	0.0147
+0.6409	0.5113	1.000	the continuation of the operation depends upon the	0.3872	0.0118
+0.6539	0.0902	1.000	is the last one, and the refill address is not used. The	0.3929	0.0133
+0.6539	0.5094	1.000	multiple flag of the old control word. Thus, if the	0.3891	0.0147
+0.6685	0.5113	1.000	chain flag in the old control word is on but the mul-	0.3872	0.0147
+0.6700	0.0921	1.000	operation cannot proceed after the count is exhausted.	0.3910	0.0146
+0.6845	0.5113	1.000	tiple flag is off, the operation is terminated at the end	0.3872	0.0146
+0.6845	0.0921	1.000	If the chain flag is one, the refill address specifies the	0.3910	0.0146
+0.6980	0.5092	1.000	of the block. On the other hand, if both flags are on,	0.3895	0.0176
+0.6984	0.0901	1.000	address of another control word which the exchange	0.3932	0.0169
+0.7151	0.5094	1.000	the operation is continued regardless of the state of	0.3910	0.0146
+0.7166	0.0902	1.000	obtains automatically whenever the count reaches	0.3929	0.0131
+0.7307	0.0901	1.000	zero. In this case, data transfer continues beyond the	0.3930	0.0153
+0.7311	0.5113	1.000	the multiple flag in the new control word.	0.3045	0.0131
+0.7470	0.0921	1.000	portion specified by the current control word, unless	0.3910	0.0133
+0.7515	0.5263	1.000	All signalling between the unit and the exchange	0.3722	0.0146
+0.7615	0.0902	1.000	terminated sooner by other causes.	0.2500	0.0133
+0.7638	0.5074	1.000	is done one block at a time. This applies to the	0.3913	0.0178
+0.7791	0.5074	1.000	status indications from the unit to the exchange as	0.3913	0.0179
+0.7791	0.1053	1.000	The chaining technique is used to permit scatter-	0.3778	0.0146
+0.7936	0.5092	1.000	well as to the control information sent by the ex-	0.3877	0.0198
+0.7951	0.0902	1.000	ing portions of a block of information in different	0.3929	0.0131
+0.8082	0.0901	1.000	areas of core storage. A "chain" of control words is,	0.3931	0.0160
+0.8124	0.5075	1.000	change to the unit. To obtain multiple block opera-	0.3891	0.0146
+0.8255	0.0883	1.000	in effect, formed in core storage by having each con-	0.3929	0.0147
+0.8270	0.5075	1.000	tion, the exchange merely signals the unit to restart	0.3891	0.0146
+0.8415	0.0902	1.000	trol word specify its successor. The exchange then	0.3910	0.0146
+0.8430	0.5075	1.000	as soon as the end of a block is reached, as if a new	0.3891	0.0146
+0.8561	0.0902	1.000	automatically follows this chain until it encounters	0.3910	0.0131
+0.8590	0.5075	1.000	read or write instruction had been given by the com-	0.3891	0.0146
+0.8721	0.0902	1.000	a control word with a zero chain flag, or until the	0.3910	0.0146
+0.8735	0.5075	1.000	puter for each separate block. The distinction be-	0.3872	0.0131
+0.8881	0.5075	1.000	tween single- and multiple-block operation is thus	0.3891	0.0160
+0.8881	0.0883	1.000	external unit stops the process.	0.2199	0.0131
+0.9244	0.0902	1.000	108 IBM 7030	0.1128	0.0102

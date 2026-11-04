@@ -1,0 +1,87 @@
+0.0858	0.6203	1.000	APPENDIX C - CODED EXPRESSIONS	0.3008	0.0145
+0.1453	0.5282	1.000	this is to be added into the integer part, and an error	0.3966	0.0174
+0.1467	0.1071	1.000	PARTICULAR COMPOSITION OF A CODED	0.3233	0.0133
+0.1584	0.5263	1.000	message is to be given.	0.1805	0.0174
+0.1613	0.1222	1.000	EXPRESSION	0.1015	0.0116
+0.1875	0.5263	1.000	1110001 -- Absolute. Following this prefix is the	0.3722	0.0146
+0.1918	0.1071	1.000	Any coded expression begins with a 4 bit prefix, of	0.3759	0.0103
+0.2035	0.5263	1.000	same encoding as that after a normal case prefix,	0.3722	0.0132
+0.2048	0.1071	1.000	which the first bit is 1 (to indicate the existence of	0.3741	0.0118
+0.2151	0.5263	1.000	but after computation of the coded expression, the	0.3741	0.0161
+0.2194	0.1071	1.000	the coded expression). The format of the coded	0.3534	0.0132
+0.2311	0.5282	1.000	values are set positive.	0.1767	0.0160
+0.2355	0.1090	1.000	expression depends on the prefix.	0.2462	0.0116
+0.2602	0.5263	1.000	1110010 - Absolute Integer. This is like the integer	0.3985	0.0189
+0.2645	0.1053	1.000	1000 - Normal Case. Following this prefix there is	0.3929	0.0161
+0.2761	0.5282	1.000	value and absolute cases in that order.	0.2895	0.0146
+0.2791	0.1053	1.000	a list of data, terminated by a 0-bit (after the 0-bit	0.3816	0.0161
+0.2936	0.1071	1.000	terminating the last datum); then there is a list of	0.3684	0.0146
+0.3067	0.5282	1.000	1110011 -- 17-Bit Constant. Following this prefix is	0.3929	0.0161
+0.3096	0.1071	1.000	operators, again terminated by a 0-bit. Finally the	0.3835	0.0131
+0.3195	0.5282	1.000	a 17-bit number and padding. The number is used	0.3741	0.0151
+0.3241	0.1071	1.000	entire coded expression is terminated by a 0-bit.	0.3628	0.0131
+0.3358	0.5282	1.000	for the I value, and the S/X portion is taken as S.	0.3665	0.0131
+0.3400	0.1241	1.000	The operators are in the order in which they are	0.3571	0.0118
+0.3517	0.5301	1.000	(This prefix is intended for internal use by VALUE	0.3759	0.0146
+0.3545	0.1071	1.000	to be performed.	0.1241	0.0118
+0.3663	0.5282	1.000	in dealing with subscripts. The length '17' is chosen	0.3947	0.0116
+0.3808	0.5301	1.000	because this type of expression is now short enough	0.3816	0.0116
+0.3836	0.1071	1.000	1001 -- Special Index Expression. Following this	0.3665	0.0132
+0.3948	0.5280	1.000	to replace any other.)	0.1657	0.0138
+0.3982	0.1071	1.000	prefix and an additional three bits is the same	0.3383	0.0118
+0.4127	0.1071	1.000	encoding as that after a normal case prefix. The	0.3628	0.0131
+0.4258	0.5301	1.000	1111 -- Null Expression. When this prefix appears	0.3797	0.0118
+0.4273	0.1071	1.000	final result is to be considered as an index (with a	0.3684	0.0118
+0.4403	0.5282	1.000	in subscript position after a datum, this prefix	0.3477	0.0133
+0.4418	0.1071	1.000	basic value of 0).	0.1278	0.0131
+0.4548	0.5301	1.000	terminates the datum (i.e., it has the same effect	0.3722	0.0132
+0.4694	0.5282	1.000	as a single 0-bit). When this prefix appears as a	0.3665	0.0118
+0.4724	0.1053	1.000	1010 -- Padded Case. Following this prefix is the	0.3741	0.0116
+0.4839	0.5301	1.000	field in its own right it represents a null field, and	0.3759	0.0132
+0.4869	0.1071	1.000	same encoding as that after a normal case prefix,	0.3665	0.0131
+0.4985	0.5282	1.000	is followed by padding as in padded and special signed	0.3985	0.0131
+0.5015	0.1071	1.000	but after the last 0 of the normal case type encoding	0.3816	0.0131
+0.5145	0.5301	1.000	value cases (i.e., it terminates at the first 0-bit).	0.3741	0.0116
+0.5160	0.1053	1.000	is a padding, that is, an arbitrary number of 1 bits	0.3778	0.0116
+0.5305	0.1053	1.000	and a final 0 bit to end the expression.	0.2838	0.0116
+0.5436	0.5470	1.000	Any encoding of a datum begins with a prefix of	0.3496	0.0116
+0.5581	0.5282	1.000	three bits, of which the first bit is 1 (to indicate a	0.3703	0.0116
+0.5596	0.1053	1.000	1011 -- Special Signed Value. After the prefix is a	0.3778	0.0131
+0.5727	0.5301	1.000	datum exists). The format of the encoding for the	0.3703	0.0116
+0.5741	0.1053	1.000	25 bit (sign included) value followed by a padding that	0.3929	0.0131
+0.5872	0.5301	1.000	datum depends on this 3-bit prefix.	0.2575	0.0116
+0.5874	0.1051	1.000	is an arbitrary number of 1-bits and a 0-bit.	0.3292	0.0144
+0.6163	0.5282	1.000	100 -- Symbolic Datum. This prefix is followed both	0.3929	0.0131
+0.6177	0.1053	1.000	1100 -- Super Special. (Normal case that has been	0.3778	0.0132
+0.6308	0.5282	1.000	by seven bits giving the number of A8 bytes (char-	0.3722	0.0116
+0.6336	0.1053	1.000	finished by DECODE.) Following this prefix is the	0.3741	0.0118
+0.6453	0.5263	1.000	acters) in the symbol and then by the symbol in A8	0.3759	0.0147
+0.6482	0.1034	1.000	same encoding as that after the normal case prefix.	0.3835	0.0146
+0.6584	0.5263	1.000	code.	0.0433	0.0146
+0.6627	0.1053	1.000	(This super special prefix is intended to indicate to	0.3778	0.0146
+0.6758	0.1034	1.000	super-programs, e.g., DECODE, that the informa-	0.3872	0.0176
+0.6863	0.1051	1.000	tion in the coded expression has already been used.)	0.3858	0.0217
+0.6903	0.5263	1.000	110 -- Absolute Datum. This prefix is followed by a	0.3891	0.0161
+0.7045	0.5282	1.000	24-bit binary number (interpreted as integer part).	0.3779	0.0140
+0.7191	0.1032	1.000	1101 -- Fully Evaluated Expression. Following the	0.3838	0.0215
+0.7311	0.5244	1.000	101 -- Sub-Expression. This prefix is followed by a	0.3947	0.0219
+0.7369	0.1034	1.000	prefix are two full words (128 bits) giving the values,	0.3947	0.0161
+0.7456	0.5263	1.000	coded expression whose values are to be used for the	0.3966	0.0174
+0.7500	0.1034	1.000	etc., in the same format as that of the output from	0.3759	0.0161
+0.7609	0.5260	1.000	datum.	0.0570	0.0174
+0.7659	0.1033	1.000	VALUE.	0.0621	0.0133
+0.7906	0.5263	1.000	111 -- Long Prefix. This prefix indicates that two	0.3797	0.0204
+0.8036	0.1034	1.000	1110 - Long Prefix. This prefix indicates that	0.3571	0.0147
+0.8081	0.5263	1.000	more bits are to be looked at as part of the prefix to	0.3891	0.0131
+0.8169	0.1034	1.000	three more bits are to be considered as part of the	0.3778	0.0147
+0.8223	0.5263	1.000	the encoding for the datum.	0.2031	0.0124
+0.8327	0.1053	1.000	prefix for the coded expression.	0.2368	0.0118
+0.8503	0.5263	1.000	11100 -- System Symbol Datum. This prefix is	0.3553	0.0189
+0.8633	0.1015	1.000	1110000 -- Integer Value. Following this prefix is	0.3778	0.0161
+0.8648	0.5244	1.000	followed by a 24-bit binary number (interpreted as the	0.4060	0.0174
+0.8779	0.5244	1.000	bit style part) and by 13 bits of data description infor-	0.4060	0.0189
+0.8794	0.1053	1.000	the same encoding as that after a normal case pre-	0.3778	0.0131
+0.8924	0.1034	1.000	fix, but if the encoding has a non-zero bit style part,	0.3910	0.0176
+0.8939	0.5226	1.000	mation.	0.0658	0.0174
+0.9418	0.6898	1.000	Appendix C - Coded Expressions	0.1861	0.0131
+0.9433	0.8947	1.000	197	0.0263	0.0102

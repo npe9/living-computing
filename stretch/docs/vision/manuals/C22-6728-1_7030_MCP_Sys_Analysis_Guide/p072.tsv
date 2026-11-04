@@ -1,0 +1,111 @@
+0.0988	0.5282	1.000	1. All requests reserving units that have become	0.3722	0.0118
+0.1003	0.0771	1.000	until PP has finished with the first. Since this will	0.3797	0.0116
+0.1133	0.5113	1.000	unavailable due to a machine configuration change,	0.3797	0.0131
+0.1148	0.0771	1.000	not happen until phase 4, pre-assignment is com-	0.3759	0.0131
+0.1293	0.0770	1.000	plete when the first reel is called for.)	0.2934	0.0134
+0.1294	0.5094	1.000	must be relieved of these units. At the same time	0.3759	0.0102
+0.1439	0.5113	1.000	these relieved requests must be marked so that they	0.3929	0.0116
+0.1453	0.0940	1.000	If the REEL card is acceptable, the reel label is	0.3647	0.0116
+0.1584	0.5113	1.000	have priority in re-assignment (pseudo-unoverlapped).	0.4098	0.0116
+0.1599	0.0789	1.000	entered in the first reel table, and its address is	0.3665	0.0131
+0.1730	0.5263	1.000	2. The equipment count is generated for the validity	0.3929	0.0131
+0.1758	0.0771	1.000	entered in the I-O request table. A normal return is	0.3929	0.0118
+0.1890	0.5113	1.000	check table. This table contains the equipment code	0.3853	0.0117
+0.1903	0.0771	1.000	made. If a final entry is made and the reject bit is off,	0.3947	0.0133
+0.2035	0.5113	1.000	and count and a zero field for the requested count	0.3703	0.0117
+0.2048	0.0771	1.000	the PP reference table entry is made for this PP.	0.3722	0.0132
+0.2194	0.0789	1.000	These entries are defined in the preceding section on	0.3966	0.0118
+0.2324	0.5263	1.000	3. The multi-unit count table is generated. This	0.3684	0.0118
+0.2339	0.0789	1.000	I-O assignment tables.	0.1711	0.0118
+0.2485	0.5113	1.000	gives the total number of tapes on a channel. The	0.3722	0.0118
+0.2485	0.0940	1.000	When an invalid card is detected or a reject request	0.3910	0.0118
+0.2630	0.0771	1.000	is received, the program (LERROR) clears any entries	0.4117	0.0118
+0.2630	0.5094	1.000	format of the table is half-word: . 0-. 17 the channel	0.3929	0.0118
+0.2776	0.5113	1.000	number and . 18-.21 the unit count. Along with this,	0.3929	0.0118
+0.2776	0.0771	1.000	it had made in the I-O request and first reel tables for	0.4098	0.0118
+0.2921	0.5113	1.000	the largest count per channel is stored for PP request	0.4079	0.0117
+0.2921	0.0771	1.000	this job, and sets the reject bit in the PP reference	0.3872	0.0117
+0.3066	0.5094	1.000	checking.	0.0733	0.0132
+0.3067	0.0771	1.000	table.	0.0451	0.0116
+0.3372	0.0771	1.000	The Assign Routine: The assign routine (Figures	0.3703	0.0131
+0.3415	0.5263	1.000	Upon returning from the configuration change sec-	0.3816	0.0118
+0.3517	0.0771	1.000	34-39) pre-assigns the problem program requests	0.3759	0.0116
+0.3561	0.5113	1.000	tion (or if there was no change), a mode check and	0.3778	0.0131
+0.3663	0.0771	1.000	which were submitted through IOD cards. This en-	0.3816	0.0116
+0.3706	0.5113	1.000	set up is made. If the mode is overlapped, the index	0.3985	0.0131
+0.3808	0.0771	1.000	ables the operator to set up in advance the tape units	0.3947	0.0116
+0.3831	0.5111	1.000	pointing to the PP reference table is set to the next	0.3856	0.0156
+0.3953	0.0771	1.000	to be used by the problem program. The set up of	0.3759	0.0116
+0.3997	0.5113	1.000	slot in the table. This contains the information about	0.4023	0.0116
+0.4112	0.0771	1.000	tapes as far in advance as possible optimizes set-up	0.3929	0.0103
+0.4142	0.5113	1.000	requests which have not been completely assigned.	0.3797	0.0131
+0.4258	0.0771	1.000	time. The basic rule used for assignment is to utilize	0.4041	0.0118
+0.4302	0.5113	1.000	If the mode is unoverlapped, this index will be set to	0.3947	0.0116
+0.4403	0.0771	1.000	all tape units when they become unassigned. At as-	0.3835	0.0118
+0.4448	0.5113	1.000	the unoverlapped table.	0.1748	0.0116
+0.4548	0.0789	1.000	sign time, all requests are checked for adherence to	0.3929	0.0132
+0.4593	0.5263	1.000	If the mode is overlapped, it is necessary to cycle	0.3797	0.0116
+0.4694	0.0771	1.000	the machine I-O configuration. If there are any dis-	0.3966	0.0118
+0.4724	0.5132	1.000	th rough all preassigned tape requests. As each pre-	0.3910	0.0131
+0.4839	0.0789	1.000	crepancies, the problem program will be rejected.	0.3816	0.0118
+0.4869	0.5113	1.000	assigned tape request is encountered, the channel and	0.4041	0.0131
+0.4985	0.0789	1.000	The assign routine is entered from JC4 with the	0.3571	0.0118
+0.5029	0.5113	1.000	unit numbers in the TIOREQ table (TABSCH and	0.3628	0.0102
+0.5127	0.0763	1.000	linkage:	0.0616	0.0138
+0.5174	0.5132	1.000	TABSUN) are used to turn on the overlapped reserved	0.4023	0.0116
+0.5289	0.1466	1.000	LVI, $15, Y	0.0922	0.0119
+0.5320	0.5113	1.000	bit in the Unit Status Table (SOVRES). This is neces-	0.4023	0.0117
+0.5435	0.1466	1.000	B, TASIGN	0.0827	0.0118
+0.5464	0.5113	1.000	sary because of tape passing from job to job. Con-	0.3816	0.0118
+0.5581	0.1128	1.000	Y XW, А, B, С	0.1335	0.0116
+0.5596	0.5113	1.000	sider the following situation: Job A and Job C both	0.3816	0.0131
+0.5726	0.1447	1.000	(Return)	0.0621	0.0103
+0.5755	0.5113	1.000	use the same tape. Both Job A and C turn on the	0.3665	0.0118
+0.5898	0.0789	1.000	Where	0.0472	0.0093
+0.5900	0.5113	1.000	SOVR ES bit (Job C does so redundantly). Later when	0.3947	0.0133
+0.6039	0.5112	1.000	Job A goes into the running phase, the Move program	0.4006	0.0149
+0.6045	0.0977	1.000	A is the status of the machine:	0.2293	0.0103
+0.6191	0.5113	1.000	sets the SOVR ES bit to zero. Since Job C has al-	0.3778	0.0118
+0.6191	0.1109	1.000	• - no configuration change has taken place.	0.3496	0.0118
+0.6336	0.1053	1.000	f0 - configuration change has taken place.	0.3327	0.0118
+0.6336	0.5113	1.000	ready turned on the SOVRES bit earlier, it cannot do	0.3947	0.0132
+0.6482	0.0977	1.000	B is the exit disposition:	0.1842	0.0103
+0.6497	0.5113	1.000	so now; therefore the tape unit appears to be avail-	0.3853	0.0103
+0.6627	0.1128	1.000	• - next PP has been assigned successfully	0.3402	0.0118
+0.6627	0.5113	1.000	able and is to be reserved for a later Job E.	0.3327	0.0131
+0.6773	0.1729	1.000	and is ready for Move.	0.1729	0.0118
+0.6773	0.5320	1.000	The Assign routine refers to the PP reference table	0.3891	0.0118
+0.6903	0.1034	1.000	#0 - next PP has been rejected and cannot be	0.3553	0.0133
+0.6918	0.5132	1.000	to get the information about the PP: rejected, com-	0.3966	0.0131
+0.7064	0.1729	1.000	given to Move.	0.1128	0.0117
+0.7064	0.5132	1.000	pletely assigned or already processed. If the PP is	0.3910	0.0117
+0.7209	0.0977	1.000	C is the Assign entry mode:	0.2086	0.0116
+0.7209	0.5132	1.000	accepted, the table contains the cross reference	0.3647	0.0131
+0.7355	0.5132	1.000	address to the I-O request table and, if any I-O was	0.3910	0.0131
+0.7369	0.1128	1.000	• - overlapped mode.	0.1786	0.0102
+0.7499	0.5131	1.000	requested by the PP, the count of the number of	0.3874	0.0153
+0.7500	0.1053	1.000	#0 - unoverlapped mode.	0.2030	0.0131
+0.7660	0.0808	1.000	Assign uses SA8IQS to convert and $COMM to output	0.3929	0.0116
+0.7660	0.5132	1.000	individual units requested. This count is used to set	0.3985	0.0116
+0.7805	0.0789	1.000	messages to the operator.	0.1992	0.0116
+0.7805	0.5132	1.000	up the minor index (TIXA) which is used for scanning	0.4004	0.0116
+0.7951	0.5132	1.000	the I-O request table. With the exception of the print	0.4023	0.0116
+0.8052	0.0959	1.000	Upon entry to Assign (TASIGN, Figure 34), the	0.3534	0.0132
+0.8096	0.5132	1.000	bit, the information was computed and stored in the	0.3872	0.0116
+0.8215	0.0788	1.000	first check made is whether or not a machine configu-	0.4081	0.0145
+0.8241	0.5132	1.000	I-O request table by the decode routine. Information	0.3985	0.0116
+0.8387	0.0789	1.000	ration change took place since the last time the assign	0.4079	0.0116
+0.8387	0.5132	1.000	pertaining to the assignment of a unit, such as the	0.3759	0.0132
+0.8532	0.0789	1.000	routine was entered. Conditions for stating a con-	0.3816	0.0117
+0.8532	0.5113	1.000	absolute channel address, the absolute unit number	0.3853	0.0132
+0.8677	0.0789	1.000	figuration change must be set by job control for the	0.3853	0.0117
+0.8677	0.5132	1.000	and the assigned bit, are computed and stored by the	0.3947	0.0132
+0.8821	0.0789	1.000	initial entry to Assign in order that the necessary	0.3741	0.0133
+0.8836	0.5132	1.000	assign routine. The unoverlapped bit that appears in	0.3985	0.0118
+0.8967	0.0789	1.000	tables for I-O validity checking be set up. The con-	0.3929	0.0133
+0.8982	0.5132	1.000	the I-O request table is a special indicator denoting	0.3872	0.0118
+0.9112	0.0808	1.000	figuration change section performs the following	0.3609	0.0133
+0.9127	0.5132	1.000	the fact that this request was once assigned and was	0.3891	0.0118
+0.9257	0.0789	1.000	functions:	0.0753	0.0105
+0.9273	0.5132	1.000	dis-assigned due to a machine configuration change.	0.3910	0.0131
+0.9535	0.0752	1.000	72	0.0188	0.0116

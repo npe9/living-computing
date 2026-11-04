@@ -1,0 +1,56 @@
+0.0683	0.0695	1.000	IBM	0.0752	0.0262
+0.0727	0.1880	1.000	Technical Newsletter	0.2556	0.0204
+0.0770	0.6955	1.000	7030	0.0471	0.0132
+0.0785	0.6222	1.000	System	0.0526	0.0160
+0.1016	0.7518	1.000	C22-6678	0.0753	0.0133
+0.1029	0.6221	1.000	Re: Form No.	0.0979	0.0166
+0.1294	0.6222	1.000	This Newsletter No.	0.1372	0.0146
+0.1306	0.7857	1.000	N22-0085	0.0772	0.0135
+0.1524	0.7011	1.000	May 10, 1963	0.1129	0.0165
+0.1555	0.6222	1.000	Date	0.0395	0.0145
+0.1802	0.8214	1.000	None	0.0414	0.0131
+0.1802	0.6222	1.000	Previous Newsletter Nos.	0.1711	0.0161
+0.2267	0.1391	1.000	ADDITIONS AND CORRECTIONS TO THE MCP REFERENCE MANUAL	0.5733	0.0161
+0.2951	0.1391	1.000	Since the MCP Reference Manual (C22-6678) was published, the MCP program has been	0.6992	0.0160
+0.3124	0.1391	1.000	expanded. It is the purpose of this publication to correct and update the manual.	0.6410	0.0132
+0.3255	0.1410	1.000	Changes have been made in the following areas:	0.3797	0.0147
+0.3749	0.2237	1.000	IPL Options	0.1053	0.0147
+0.3895	0.3120	1.000	TIME/DATE	0.1053	0.0131
+0.3924	0.2707	1.000	a.	0.0207	0.0102
+0.4039	0.3064	1.000	Message Suppression	0.1805	0.0161
+0.4200	0.2688	1.000	c. Rejected Job Count Report	0.2613	0.0146
+0.4330	0.2331	1.000	Reserve Light Eliminated	0.2068	0.0176
+0.4375	0.1842	1.000	4.	0.0207	0.0131
+0.4520	0.2350	1.000	New Commands	0.1241	0.0131
+0.4520	0.1861	1.000	5.	0.0188	0.0131
+0.4666	0.2331	1.000	New List of Loader Cards	0.2086	0.0131
+0.4695	0.1861	1.000	6.	0.0188	0.0116
+0.4826	0.3271	1.000	-Pseudo-Ops	0.1259	0.0145
+0.4837	0.2330	1.000	Appendix A	0.0904	0.0137
+0.4840	0.1861	1.000	7.	0.0188	0.0131
+0.4984	0.3270	1.000	- Messages	0.1072	0.0134
+0.4984	0.2331	1.000	Appendix B	0.0903	0.0148
+0.5000	0.1861	1.000	8.	0.0188	0.0116
+0.5130	0.2331	1.000	Appendix D - MCP Pseudo-Op Codes	0.3045	0.0161
+0.5145	0.1861	1.000	9.	0.0169	0.0116
+0.5290	0.2330	1.000	Errata	0.0546	0.0133
+0.5305	0.1767	1.000	10.	0.0282	0.0131
+0.5755	0.1372	1.000	INPUT CHANGES	0.1429	0.0133
+0.6045	0.1372	1.000	Modifications have been made to both the system input and system output programs to	0.6823	0.0161
+0.6204	0.1371	1.000	facilitate initializing the system. In previous versions of MCP, the IPL program in the	0.6994	0.0175
+0.6358	0.1391	1.000	overlapped mode requested two input tapes. If the operator did not ready the second	0.6711	0.0161
+0.6512	0.1372	1.000	tape, the first tape would never enter the read phase. MCP now allows the input tapes	0.6898	0.0161
+0.6672	0.1372	1.000	to be made ready in any order and if only one tape is to be run the second tape need not	0.6936	0.0147
+0.6831	0.1372	1.000	be made ready. The program no longer asks for system input tapes to be made ready	0.6843	0.0178
+0.6991	0.1372	1.000	but expects a channel signal (caused by ready condition) to begin processing tapes. The	0.6992	0.0161
+0.7136	0.1372	1.000	normal mount messages are still given and a message, "$CH XX UN X IS THE NEW IP	0.6917	0.0176
+0.7311	0.1391	1.000	READ TAPE" refers to the tape that has been made ready.	0.4662	0.0131
+0.7848	0.1391	1.000	OUTPUT CHANGES	0.1579	0.0131
+0.8139	0.1410	1.000	The output program formerly referred to the tape unit assigned to the second output	0.6635	0.0145
+0.8299	0.1372	1.000	tape IOD. The output program now expects the unit associated with the first output	0.6617	0.0161
+0.8445	0.1372	1.000	tape IOD to be ready and after an output command, waits for a channel signal to tell it	0.6861	0.0174
+0.8618	0.1391	1.000	which unit to use next. Therefore, the operator may if he wishes use only a single	0.6598	0.0146
+0.8775	0.1390	1.000	output unit.	0.0923	0.0153
+0.9142	0.0714	1.000	International Business Machines Corp., Advanced Systems Programming Dept., Pougbkeepsie, N.Y.	0.6598	0.0131
+0.9460	0.7218	1.000	Page 1 of 12	0.1053	0.0135
+0.9506	0.0714	1.000	PRINTED IN U.S.A.	0.0846	0.0073

@@ -1,0 +1,112 @@
+0.0596	0.0996	1.000	cannot be fetched because of an invalid address, the	0.3910	0.0131
+0.0609	0.5338	1.000	1. Data errors. These can be errors introduced in	0.3722	0.0118
+0.0755	0.5583	1.000	the information that is read or written or in	0.3477	0.0133
+0.0755	0.0996	1.000	contents of the channel's control word location in the	0.3910	0.0118
+0.0915	0.5564	1.000	control codes or selection addresses associated	0.3496	0.0118
+0.0915	0.0996	1.000	exchange are not modified.	0.1936	0.0131
+0.1048	0.5563	1.000	with controL and LocatE instructions, respec-	0.3499	0.0164
+0.1061	0.1147	1.000	When more than one block is read or written, the	0.3759	0.0131
+0.1221	0.5545	1.000	tively. The following are the ways in which	0.3515	0.0161
+0.1221	0.0977	1.000	restarting of the unit depends upon the operation	0.3929	0.0146
+0.1366	0.0977	1.000	and upon the relative position of the invalid address.	0.3929	0.0146
+0.1381	0.5583	1.000	these errors can be discovered:	0.2199	0.0116
+0.1526	0.0996	1.000	On reading, the invalid address is discovered when	0.3910	0.0131
+0.1555	0.5583	1.000	a. The input-output unit can discover by means	0.3477	0.0146
+0.1667	0.0995	1.000	the word being sent to that address has already been	0.3893	0.0152
+0.1700	0.5808	1.000	of parity, echo or some other type of check-	0.3233	0.0146
+0.1805	0.0976	1.000	assembled in the exchange and, consequently, the	0.3932	0.0178
+0.1860	0.5808	1.000	ing an uncorrectable error in the data read	0.3233	0.0131
+0.1976	0.0977	1.000	block containing the word is always moved at the	0.3929	0.0146
+0.2020	0.5808	1.000	or written. The error condition is signalled	0.3233	0.0131
+0.2136	0.0996	1.000	unit. On writing, the new block is not started if the	0.3910	0.0131
+0.2166	0.5808	1.000	to the exchange at the end of the block in	0.3233	0.0131
+0.2262	0.0975	1.000	invalid data word address specifies	0.2805	0.0173
+0.2278	0.5787	1.000	which it is discovered. On reading in the	0.3276	0.0218
+0.2297	0.3778	1.000	the first word	0.1109	0.0102
+0.2440	0.5806	1.000	Eca mode, correctable error indications are	0.3236	0.0186
+0.2442	0.0977	1.000	of the block; otherwise, the block is started.	0.3271	0.0131
+0.2602	0.1147	1.000	When the chain and multiple flags are on, the new	0.3741	0.0132
+0.2630	0.5808	1.000	suppressed.	0.0809	0.0133
+0.2747	0.0977	1.000	control word applies to the next block, and, as far as	0.3929	0.0147
+0.2776	0.5564	1.000	b. The exchange can discover an uncorrectable	0.3477	0.0146
+0.2888	0.0975	1.000	the unit is concerned, the exchange starts a new oper-	0.3932	0.0179
+0.2936	0.5808	1.000	error in the data read or written. This can	0.3233	0.0131
+0.3052	0.0977	1.000	ation.	0.0451	0.0116
+0.3067	0.1541	1.000	As long as all the data word addresses in the	0.3346	0.0131
+0.3096	0.5808	1.000	be a parity error in the byte received from	0.3233	0.0131
+0.3212	0.0959	1.000	preceding control word are valid, the exchange starts	0.3929	0.0131
+0.3241	0.5789	1.000	the unit or an error discovered at the error	0.3252	0.0116
+0.3372	0.0959	1.000	the block controlled by the new control word. This	0.3929	0.0131
+0.3400	0.5789	1.000	checking and correction station. When an	0.3252	0.0133
+0.3517	0.0959	1.000	restarting does not depend upon the validity of the	0.3929	0.0146
+0.3545	0.5808	1.000	uncorrectable data error is discovered in the	0.3233	0.0118
+0.3677	0.0959	1.000	refill address that specifies the control word.	0.3158	0.0132
+0.3706	0.5789	1.000	Ecc mode, the data word is forwarded with	0.3233	0.0131
+0.3821	0.1128	1.000	The exchange-program-check status bit in the con-	0.3722	0.0147
+0.3852	0.5808	1.000	the Ecc bits unaltered.	0.1635	0.0117
+0.3950	0.0976	1.000	trol word is turned on as soon as the exchange dis-	0.3912	0.0168
+0.4012	0.5545	1.000	c. The exchange can discover a parity error in	0.3477	0.0146
+0.4127	0.0959	1.000	covers the condition responsible for the indication,	0.3910	0.0131
+0.4172	0.5789	1.000	the main core storage address when fetching	0.3233	0.0132
+0.4288	0.0959	1.000	even though the computer can be interrupted only at	0.3929	0.0131
+0.4310	0.5788	1.000	or storing data words. When this happens,	0.3217	0.0158
+0.4428	0.0958	1.000	the end of the block. These errors are always of the	0.3930	0.0154
+0.4476	0.5789	1.000	reference to that core storage location is	0.3233	0.0146
+0.4593	0.0959	1.000	type that preclude a proper completion of the opera-	0.3947	0.0146
+0.4621	0.5771	1.000	suppressed. On reading, the data word be-	0.3233	0.0146
+0.4752	0.0959	1.000	tion. Hence, exchange-program-check and end-of-op-	0.3910	0.0133
+0.4767	0.5771	1.000	ing sent to that address is ignored; on writ-	0.3252	0.0146
+0.4875	0.0957	1.000	eration bits are never on simultaneously. The turn-	0.3931	0.0164
+0.4927	0.5770	1.000	ing, a word consisting of all zeros is written.	0.3235	0.0154
+0.5042	0.0940	1.000	ing on of the EPGk bit is not associated with any	0.3929	0.0147
+0.5087	0.5545	1.000	d. Some data may have been lost because ex-	0.3459	0.0131
+0.5203	0.0959	1.000	change in the unit-ready status bit.	0.2556	0.0131
+0.5233	0.5789	1.000	change capacity is exceeded. This can arise	0.3233	0.0146
+0.5314	0.1108	1.000	Programming Note. When a wrITE is terminated	0.3762	0.0186
+0.5392	0.5789	1.000	when a unit's byte service or data word trans-	0.3214	0.0132
+0.5509	0.0959	1.000	under block control, it is possible to get an invalid	0.3910	0.0146
+0.5537	0.5769	1.000	fer has not been performed on time. When	0.3235	0.0157
+0.5654	0.0940	1.000	address indication even if the operation is completed	0.3929	0.0146
+0.5697	0.5771	1.000	a byte or a word of data is missed on read.	0.3214	0.0146
+0.5814	0.0940	1.000	before the word specified by the invalid address is	0.3929	0.0132
+0.5858	0.5771	1.000	ing, the following data are shifted so as to	0.3233	0.0131
+0.5973	0.0940	1.000	used. On writing, the exchange fetches new data	0.3929	0.0133
+0.6003	0.5771	1.000	fill the gap. On writing, zeros are written in	0.3233	0.0146
+0.6118	0.0940	1.000	words and control words ahead of the time when	0.3929	0.0118
+0.6163	0.5789	1.000	place of the unavailable data.	0.2124	0.0131
+0.6279	0.0940	1.000	these words are actually needed in the operation. As	0.3929	0.0146
+0.6321	0.5526	1.000	e. The input-output unit can discover a parity	0.3459	0.0147
+0.6439	0.0921	1.000	a result, a properly completed operation is terminated	0.3947	0.0146
+0.6467	0.5771	1.000	error in control codes and selection addresses	0.3214	0.0118
+0.6584	0.0940	1.000	by EPck if the address of the word following the one	0.3929	0.0131
+0.6627	0.5752	1.000	associated with CONTROL and LOCATE instruc-	0.3233	0.0131
+0.6744	0.0921	1.000	last written is invalid. If the word last written is the	0.3947	0.0116
+0.6772	0.5749	1.000	tions, respectively.	0.1377	0.0164
+0.6875	0.0921	1.000	last word specified by a control word in a chain of	0.3947	0.0146
+0.6976	0.5244	1.000	2. Malfunctioning of parts of the exchange affect-	0.3741	0.0161
+0.7035	0.0940	1.000	control words, EPGk is given if the refill field of the	0.3929	0.0132
+0.7136	0.5508	1.000	ing this channel only, and introduction of errors	0.3477	0.0161
+0.7194	0.0921	1.000	current control word is invalid and its chain flag is on	0.3929	0.0161
+0.7282	0.5508	1.000	that prohibit the continuation of the operation.	0.3477	0.0161
+0.7339	0.0921	1.000	or if the first data word address specified by the next	0.3947	0.0161
+0.7427	0.5508	1.000	Examples of such errors are parity errors in the	0.3477	0.0176
+0.7485	0.0921	1.000	control word is invalid. Note, however, that EPGK in	0.3929	0.0161
+0.7587	0.5489	1.000	main core storage address when fetching a con-	0.3496	0.0161
+0.7660	0.0921	1.000	the above cases is given only when the unit terminates	0.3947	0.0146
+0.7747	0.5489	1.000	trol word, any uncorrectable errors discovered	0.3496	0.0147
+0.7820	0.0940	1.000	a WRITE. It never occurs on reading or when a WRITE	0.3910	0.0132
+0.7892	0.5489	1.000	in the control word after the control word has	0.3496	0.0145
+0.7964	0.0921	1.000	is completed under count control.	0.2425	0.0133
+0.8052	0.5489	1.000	been fetched, and any parity errors discovered	0.3496	0.0161
+0.8197	0.5489	1.000	during the control word modification cycle.	0.3252	0.0176
+0.8227	0.0921	1.000	UNIT CHECK (UK)	0.1353	0.0146
+0.8387	0.0921	1.000	This bit is concerned with data errors and malfunc-	0.3929	0.0147
+0.8400	0.5244	1.000	3. Malfunctioning of the unit or the control unit.	0.3722	0.0161
+0.8545	0.0921	1.000	tioning of the recording medium or equipment that	0.3947	0.0161
+0.8561	0.5489	1.000	Examples of such malfunctioning are card-feed	0.3496	0.0161
+0.8706	0.5470	1.000	jam, broken magnetic tape, or failure of some	0.3515	0.0161
+0.8706	0.0921	1.000	can be identified with a particular channel. Among	0.3929	0.0146
+0.8852	0.0940	1.000	the causes of unit check are:	0.2030	0.0117
+0.8878	0.5488	1.000	components.	0.0941	0.0150
+0.9244	0.0921	1.000	114	0.0226	0.0087
+0.9244	0.1410	1.000	IBM 7030	0.0639	0.0087

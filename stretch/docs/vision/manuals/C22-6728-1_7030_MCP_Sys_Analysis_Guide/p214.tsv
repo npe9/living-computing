@@ -1,0 +1,89 @@
+0.0930	0.0789	1.000	The Control Word Setup Subroutine, JSTCW	0.3271	0.0131
+0.0945	0.5226	1.000	4. The SEOP bit in the CW if off and the operation	0.3816	0.0116
+0.1105	0.5056	1.000	was a SEOP release by the commentator.	0.3120	0.0117
+0.1163	0.0789	1.000	JSTCW stores blanks in the last partial word, if any,	0.3985	0.0131
+0.1250	0.5226	1.000	In case 1, the routine gives a type 76 error mes-	0.3722	0.0132
+0.1308	0.0771	1.000	in the stack. It sets up a control word to type the	0.3684	0.0131
+0.1394	0.5075	1.000	sage. For the rest, the routine (at JFKCS) tests	0.3665	0.0133
+0.1467	0.0771	1.000	stack from the word specified by the write pointer to	0.3966	0.0118
+0.1539	0.5075	1.000	the CS bit in the CW, and returns if it is off. Other-	0.3929	0.0133
+0.1612	0.0771	1.000	the word before the one specified by the stack pointer.	0.4079	0.0118
+0.1685	0.5075	1.000	wise, it uses the KCSIN subroutine in the receptor	0.3778	0.0118
+0.1758	0.0789	1.000	This control word will be the second of a chain of two.	0.4060	0.0118
+0.1830	0.5075	1.000	to stack the CS, and returns.	0.2199	0.0133
+0.1903	0.0789	1.000	The first will control writing the display lights as	0.3741	0.0133
+0.2048	0.0771	1.000	most recently used by the debugging package. If the	0.3872	0.0118
+0.2194	0.0789	1.000	resulting word count is zero, the chain bit in the first	0.4004	0.0132
+0.2238	0.5094	1.000	The Release Routine, JRECLN	0.2312	0.0131
+0.2355	0.0789	1.000	control word is left off. The routine checks the stack	0.3966	0.0116
+0.2470	0.5094	1.000	This routine is used to release the console when the	0.3891	0.0103
+0.2500	0.0789	1.000	pointer, turning on the wait bit if there is no longer	0.3853	0.0116
+0.2630	0.5094	1.000	commentator has retained control until the operation	0.3929	0.0103
+0.2645	0.0789	1.000	room for one more message, and returns.	0.3177	0.0116
+0.2776	0.5075	1.000	is complete. The routine performs a SEOP release,	0.3929	0.0131
+0.2878	0.0789	1.000	The I-O Routine, JIOGO	0.1805	0.0116
+0.2921	0.5075	1.000	uses JTERM to wait for its completion, and returns.	0.3966	0.0131
+0.3067	0.5094	1.000	If EKJ oceurs, the routine retries the release ten	0.3722	0.0116
+0.3169	0.0789	1.000	The function of JIOGO is to perform a specified I-O	0.3853	0.0131
+0.3212	0.5075	1.000	times before giving a type 76 error.	0.2726	0.0131
+0.3327	0.0771	1.000	instruction, retry if EKJ or UNRJ oceurs, and select	0.4023	0.0118
+0.3459	0.0771	1.000	one of two returns according to whether or not CBJ	0.3835	0.0132
+0.3618	0.0771	1.000	occurs. The routine will retry a EKJ ten times before	0.4060	0.0103
+0.3677	0.5094	1.000	The Interrupt Stack Routine, MSTACK	0.2857	0.0117
+0.3764	0.0771	1.000	giving a type 76 error, and will retry a UNRJ until	0.3816	0.0118
+0.3909	0.0771	1.000	the unit accepts the operation. If CBJ occurs, the	0.3778	0.0132
+0.3967	0.5094	1.000	This routine is used to stack interrupts for another	0.3835	0.0118
+0.4055	0.0771	1.000	routine will try the operation ten times before using	0.3891	0.0118
+0.4112	0.5094	1.000	consoleuse prior to releasing the console for	0.3421	0.0118
+0.4258	0.5094	1.000	commentator use. The routine (MSTACK, Figure	0.3684	0.0133
+0.4403	0.5094	1.000	122) uses the MTABLE routine to set up control	0.3590	0.0118
+0.4418	0.0789	1.000	The I-O Bookkeeping Routine, MSETIO	0.2895	0.0131
+0.4548	0.5075	1.000	table addresses, and then determines whether or not	0.3966	0.0132
+0.4625	0.0788	1.000	This routine is entered after a successful write oper-	0.4007	0.0160
+0.4694	0.5075	1.000	the interrupts must be stacked, and if so how.	0.3477	0.0132
+0.4811	0.0771	1.000	ation. Its function is to update the I-O control tables.	0.4041	0.0102
+0.4839	0.5244	1.000	If the I-O operation was not set up, and if the re-	0.3703	0.0132
+0.4956	0.0771	1.000	It should be noted that there are two unit status tables for	0.4004	0.0102
+0.4985	0.5075	1.000	lease and SEOP bits are on, no interrupt will be	0.3628	0.0118
+0.5079	0.0770	1.000	the console. Although the console is on a single unit	0.3912	0.0142
+0.5126	0.5074	1.000	stacked. The routine returns after updating the	0.3535	0.0137
+0.5247	0.0771	1.000	channel, it is treated as two logical units, one avail-	0.3985	0.0117
+0.5276	0.5075	1.000	tables. If the operation was a conceptor set up op-	0.3853	0.0118
+0.5392	0.0771	1.000	able for PP and one for MCP. The two UST words	0.3759	0.0117
+0.5421	0.5075	1.000	eration, KSUPP and KCONCP are set to cause the	0.3759	0.0131
+0.5536	0.0771	1.000	are consecutive, the first MCP's and the second PP's.	0.4079	0.0118
+0.5581	0.5075	1.000	interrupt to be taken when KSUPP is entered. If the	0.3872	0.0116
+0.5682	0.0940	1.000	The routine sets up the addresses of the control	0.3590	0.0118
+0.5727	0.5075	1.000	operation was SEOP and not set up and the release	0.3778	0.0102
+0.5827	0.0771	1.000	tables, updates as shown below, then returns.	0.3459	0.0118
+0.5858	0.5075	1.000	bit is off, the routine returns after updating the	0.3553	0.0131
+0.5973	0.0940	1.000	1. Sets the select bit (SSEL) in the MCP UST, and	0.3816	0.0133
+0.6017	0.5075	1.000	tables. Otherwise (MSEOPB), the interrupt is	0.3515	0.0131
+0.6118	0.0771	1.000	resets the select bit in the PP UST (SSEL + 1.0).	0.3703	0.0132
+0.6163	0.5075	1.000	stacked in the interrupt queue, the stack bit turned	0.3816	0.0131
+0.6279	0.0940	1.000	2. Sets the channel operating (SCHOP) bit in the	0.3647	0.0103
+0.6308	0.5075	1.000	on, and the routine returns.	0.2105	0.0116
+0.6409	0.0789	1.000	CST, and the set up (SSETUP) and write (SWR) bits	0.3816	0.0132
+0.6561	0.0769	1.000	in the UST.	0.0868	0.0134
+0.6715	0.0921	1.000	3. Stores MRETAD in SRETAD, and the I-O in-	0.3665	0.0116
+0.6860	0.0771	1.000	struction in SIOINS in the UAT.	0.2350	0.0103
+0.6860	0.5132	1.000	The Table Address Routine, MTABLE	0.2838	0.0131
+0.7006	0.0940	1.000	4. Clears the unit field (SUNIT) in the CST.	0.3327	0.0116
+0.7151	0.5132	1.000	The MTABLE routine sets up the addresses of the	0.3741	0.0131
+0.7209	0.0789	1.000	The Wait for I-O Routine, JTERM	0.2556	0.0116
+0.7297	0.5113	1.000	CST, UST, UAT, and FAT according to the current	0.3872	0.0146
+0.7442	0.0789	1.000	The JTERM routine is used to monitor the comple-	0.3816	0.0116
+0.7442	0.5113	1.000	owner of the unit, and returns.	0.2331	0.0131
+0.7587	0.0771	1.000	tion of the current console I-O operation. The routine	0.4023	0.0116
+0.7718	0.0752	1.000	is a copy control word loop which is broken under the	0.4023	0.0131
+0.7733	0.5094	1.000	The EPGK and UK Fixups, MCHECK	0.2782	0.0146
+0.7878	0.0752	1.000	following conditions:	0.1560	0.0116
+0.8021	0.5093	1.000	This routine is entered when EPGK or UK is detected	0.4024	0.0152
+0.8023	0.0940	1.000	1. Ten consecutive EKJ's on a CCW.	0.2820	0.0116
+0.8169	0.5094	1.000	after a commentator I-O operation. It will count up	0.3853	0.0160
+0.8182	0.0940	1.000	2. EPGK, UK, EE, or EOP occur.	0.2650	0.0118
+0.8314	0.0940	1.000	3. The channel operating bit (SCHOP) is off and	0.3609	0.0116
+0.8327	0.5075	1.000	to ten consecutive retries, and then hang up. A suc-	0.3966	0.0147
+0.8459	0.0771	1.000	the commentator is not the source of the operation.	0.3853	0.0116
+0.8473	0.5094	1.000	cessful operation will cause the count to be restarted.	0.4060	0.0146
+0.9506	0.0695	1.000	214	0.0244	0.0073

@@ -1,0 +1,50 @@
+0.1639	0.7593	1.000	Introduction	0.1167	0.0166
+0.2558	0.4699	1.000	Spool Tapes that are part of the 7030 Master Control	0.4079	0.0161
+0.2573	0.0733	1.000	An assembly program for an electronic computer is	0.3797	0.0146
+0.2703	0.4774	1.000	Program.	0.0733	0.0174
+0.2733	0.0564	1.000	actually a translator; it translates a program from a	0.3966	0.0131
+0.2878	0.0545	1.000	language convenient for the programmer to use into a	0.3985	0.0146
+0.3023	0.0564	1.000	language that is easy for the computer to use. An as-	0.3966	0.0160
+0.3169	0.0526	1.000	sembly program, therefore, simplifies the writing of	0.4004	0.0174
+0.3342	0.0564	1.000	programs for a computer.	0.1880	0.0146
+0.3488	0.4774	1.000	STRAP-II without modification. Thus, all the specifica-	0.4004	0.0146
+0.3503	0.0714	1.000	STRAP-II, the STRETCH Assembly Program, defines a	0.3816	0.0146
+0.3633	0.4774	1.000	tions defined in the 704-709-7090 Programming Pack-	0.3985	0.0161
+0.3648	0.0564	1.000	language for programmers for the IBM 7030. The	0.3966	0.0161
+0.3794	0.4793	1.000	age Manual (IBM Form No. C22-6531-1) for STRAP-I	0.3985	0.0131
+0.3808	0.0564	1.000	STRAP-II language is a symbolic language-it provides	0.3966	0.0146
+0.3939	0.4774	1.000	are also applicable to strap-II, with the exception of	0.4004	0.0146
+0.3967	0.0564	1.000	a complete set of mnemonies for the expression of ma-	0.3966	0.0133
+0.4099	0.4793	1.000	the behavior of two pseudo operations that control the	0.3966	0.0131
+0.4112	0.0564	1.000	chine instructions and it permits the use of symbolie	0.3966	0.0147
+0.4244	0.4774	1.000	format of the output listing, and one new restriction	0.3985	0.0147
+0.4258	0.0564	1.000	names for the locations of data and instructions.	0.3966	0.0118
+0.4403	0.4793	1.000	of the use of radix 16.	0.1579	0.0103
+0.4418	0.0564	1.000	STRAP-II also provides mnemonics for a large set of	0.3966	0.0146
+0.4530	0.4942	1.000	STRAP-II is a more elaborate programming system	0.3819	0.0183
+0.4578	0.0564	1.000	pseudo operations, defined by STRAP-II to simplify the	0.3966	0.0146
+0.4709	0.4793	1.000	than straP-I; its specifications contain several new fea-	0.3966	0.0146
+0.4724	0.0564	1.000	definition of data and the issuing of directions to the	0.3966	0.0146
+0.4869	0.4774	1.000	tures not previously available in STRAP-I. These new	0.3985	0.0131
+0.4884	0.0545	1.000	assembly program itself.	0.1805	0.0160
+0.5015	0.4774	1.000	features remove some of the restrictions of STRAP-I,	0.3985	0.0116
+0.5058	0.0714	1.000	STRAP-II is a large program; it must be run on a 7030	0.3816	0.0146
+0.5155	0.4774	1.000	offer more flexibility, and in some cases provide for	0.3987	0.0169
+0.5218	0.0545	1.000	computer with a minimum storage capacity of 24,576	0.3985	0.0146
+0.5303	0.4774	1.000	completely new functions to be performed.	0.3197	0.0167
+0.5392	0.0564	1.000	words. If the 7030 being used has a disk unit attached,	0.3966	0.0132
+0.5464	0.4944	1.000	The remainder of this manual is divided into two	0.3816	0.0118
+0.5552	0.0545	1.000	STRAP-II Will require three tape drives-one input tape	0.3985	0.0146
+0.5624	0.4774	1.000	major sections. The first section will describe input	0.3985	0.0161
+0.5712	0.0545	1.000	and two output tapes. If there is no disk attached, seven	0.3985	0.0145
+0.5770	0.4774	1.000	format, the expression of machine instructions and	0.3966	0.0146
+0.5872	0.0545	1.000	tape drives must be available for assembly-one drive	0.3985	0.0161
+0.5930	0.4774	1.000	pseudo operations, and the output format. The second	0.3966	0.0146
+0.6045	0.0545	1.000	for the system tape, one for input, three intermediate	0.3985	0.0146
+0.6076	0.4774	1.000	section extends the description of some of the features	0.3985	0.0146
+0.6206	0.0545	1.000	tapes and two output tapes. In either case, the input	0.3985	0.0146
+0.6235	0.4756	1.000	in the first section to explain certain less frequently	0.4004	0.0146
+0.6366	0.0545	1.000	tape, the output tape for peripheral punching and the	0.3985	0.0161
+0.6381	0.4774	1.000	used but more advanced and complex procedures that	0.3985	0.0174
+0.6539	0.4774	1.000	are available to the programmer.	0.2387	0.0147
+0.6539	0.0545	1.000	output tape for peripheral printing of the listing are	0.3985	0.0147

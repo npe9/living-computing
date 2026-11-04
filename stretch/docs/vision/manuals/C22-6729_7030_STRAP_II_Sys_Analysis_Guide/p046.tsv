@@ -1,0 +1,37 @@
+0.0697	0.5019	1.000	Azzc bit is on, $15 is increased to point to the	0.3459	0.0146
+0.0697	0.0752	1.000	Box 14	0.0526	0.0132
+0.0842	0.5019	1.000	"normal" return for ADDORD.	0.2293	0.0146
+0.0973	0.0733	1.000	If the item is found and not deleted, $15 is advanced	0.3872	0.0146
+0.1133	0.0733	1.000	to return to the found return for SEARCH.	0.3120	0.0131
+0.1279	0.5019	1.000	Boxes 10, 13, 19, 22, 24	0.1917	0.0146
+0.1424	0.0752	1.000	Boxes 18, 20, 21, 23, 25, 26	0.2199	0.0146
+0.1555	0.5000	1.000	Index register 15 is increased to point to the "normal"	0.4079	0.0146
+0.1715	0.5019	1.000	return. The last entry in the table is placed in $6	0.3722	0.0161
+0.1715	0.0752	1.000	The location of the equal entry is put into the table	0.3778	0.0145
+0.1860	0.5000	1.000	and a branch is made to the find delete mark routine.	0.3947	0.0146
+0.1875	0.0733	1.000	control block. If the entry has a variable length entry	0.4023	0.0116
+0.2006	0.5019	1.000	At exit $2 will contain the address of the last entry,	0.3835	0.0161
+0.2020	0.0733	1.000	portion, its location is obtained using Agetv. In both	0.3947	0.0116
+0.2136	0.5000	1.000	if deleted, or the next available location in the table.	0.3929	0.0161
+0.2151	0.0733	1.000	cases the function address is placed in the table con-	0.3947	0.0116
+0.2296	0.5018	1.000	The table is now marked as unordered.	0.2916	0.0147
+0.2297	0.0733	1.000	trol block.	0.0827	0.0131
+0.2582	0.0751	1.000	Boxes 32, 33	0.0999	0.0170
+0.2738	0.5016	1.000	Boxes 28, 27	0.1001	0.0179
+0.2878	0.0733	1.000	If the Azze bit is on, $15 must be increased by half	0.3835	0.0174
+0.3036	0.0733	1.000	a word to return to the "already there" return.	0.3515	0.0133
+0.3036	0.5019	1.000	If a deleted item is not being replaced it is necessary	0.3947	0.0147
+0.3182	0.5000	1.000	to increase the last word address in the table control	0.3947	0.0133
+0.3314	0.5019	1.000	block by one entry length.	0.1917	0.0160
+0.3328	0.0752	1.000	Box 31	0.0546	0.0132
+0.3618	0.0752	1.000	$0 - $7 are restored and exit is made by a --.	0.3421	0.0118
+0.3776	0.0770	1.000	B, -1($15).	0.0847	0.0123
+0.3923	0.5018	1.000	Boxes 29-31	0.0960	0.0149
+0.4068	0.0751	1.000	Boxes 8, 9	0.0828	0.0134
+0.4200	0.5019	1.000	The number of entries in the table control block is	0.3741	0.0161
+0.4330	0.5000	1.000	increased by one and the new entry is moved to the	0.3816	0.0191
+0.4345	0.0733	1.000	If the item is not found and the Azzc bit is off, $15 is	0.3966	0.0161
+0.4491	0.0752	1.000	increased to point to the "not found" return.	0.3308	0.0131
+0.4491	0.5000	1.000	Iocation specified in $2 and exit is made via Arest.	0.3797	0.0161
+0.4506	0.4098	1.000	If the	0.0432	0.0116
+0.9215	0.0752	1.000	46	0.0132	0.0073

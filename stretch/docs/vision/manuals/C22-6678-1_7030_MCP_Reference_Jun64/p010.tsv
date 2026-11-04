@@ -1,0 +1,125 @@
+0.0669	0.1147	1.000	For both DISK and TRACK, a null number field	0.3553	0.0174
+0.0682	0.5244	1.000	scratch tapes. If PSAVE disposition had betn spec-	0.3910	0.0118
+0.0827	0.5226	1.000	ified in the problem program's tape IOD, the end of	0.3910	0.0147
+0.0827	0.0902	1.000	is a request for all the disk storage available to	0.3628	0.0133
+0.0959	0.0920	1.000	problem programs. Only one such request per	0.3592	0.0167
+0.0973	0.5226	1.000	job procedure would not have unloaded the tape but	0.3816	0.0118
+0.1105	0.0921	1.000	problem program will be honored for an installation	0.3891	0.0132
+0.1118	0.5244	1.000	would have simply rewound it to be used by a later	0.3797	0.0118
+0.1221	0.0902	1.000	with only one disk channel.	0.2068	0.0189
+0.1264	0.5244	1.000	problem program. In the bypass system input oper-	0.3910	0.0132
+0.1381	0.1109	1.000	When both DISK and TRACK IOD cards are used,	0.3722	0.0174
+0.1409	0.5244	1.000	ating mode (to be discussed under " Normal Running	0.3872	0.0132
+0.1555	0.0902	1.000	they should be grouped by type to optimize allocation	0.3966	0.0132
+0.1555	0.5226	1.000	Mode"), PSAVE must be the tape IOD disposition	0.3684	0.0132
+0.1682	0.0902	1.000	of storage on the disk.	0.1693	0.0138
+0.1700	0.5226	1.000	for tape passing to occur.	0.1936	0.0118
+0.1845	0.5470	1.000	In either the on-line or off-line mode operation,	0.3590	0.0131
+0.1948	0.0921	1.000	TAPE IOD CARD:	0.1353	0.0174
+0.1991	0.5226	1.000	MCP prescans the IOD cards and preassigns the	0.3628	0.0131
+0.2136	0.5244	1.000	required tape reels. MCP is therefore in a position	0.3910	0.0117
+0.2282	0.5226	1.000	to accomplish tape passing among those jobs which	0.3816	0.0131
+0.2413	0.3477	1.000	66/67	0.0338	0.0189
+0.2427	0.5226	1.000	have been preassigned without using PSAVE dispo-	0.3816	0.0131
+0.2427	0.2857	1.000	62/63	0.0357	0.0189
+0.2456	0.1485	1.000	910	0.0320	0.0145
+0.2456	0.0921	1.000	12	0.0263	0.0145
+0.2471	0.3966	1.000	7273	0.0414	0.0131
+0.2500	0.4643	1.000	80	0.0150	0.0073
+0.2573	0.5226	1.000	sitions. The number of preassigned jobs may be as	0.3891	0.0131
+0.2674	0.3102	1.000	1/0	0.0338	0.0131
+0.2674	0.0959	1.000	3 IODNAME IOnit,rapode, dit sharnel,	0.2011	0.0247
+0.2674	0.3026	0.300	Reterence bolure	0.1109	0.0247
+0.2718	0.5226	1.000	low as one job. Therefore, to improve the possi-	0.3778	0.0131
+0.2851	0.5224	1.000	bility of tape passing between non-contiguous jobs,	0.3800	0.0161
+0.2878	0.3083	1.000	Number	0.0470	0.0145
+0.2891	0.1766	1.000	dispositio	0.0471	0.0134
+0.3009	0.5226	1.000	the problem program should specify a PSAVE	0.3440	0.0131
+0.3147	0.5224	1.000	disposition.	0.0886	0.0131
+0.3299	0.5470	1.000	For all dispositions except PSAVE, a file pro-	0.3477	0.0146
+0.3445	0.5207	1.000	tected tape will be dismounted. In PSAVE usage, a	0.3891	0.0146
+0.3532	0.0902	1.000	where:	0.0508	0.0102
+0.3590	0.5226	1.000	file protected tape can not be passed to a job that	0.3684	0.0131
+0.3677	0.1128	1.000	unit is a programmer symbol, limited to eight	0.3590	0.0117
+0.3732	0.5225	1.000	requires a non-protected tape and dismounting will	0.3818	0.0151
+0.3821	0.1128	1.000	characters, which corresponds to an absolute unit	0.3703	0.0133
+0.3907	0.5225	1.000	occur.	0.0491	0.0094
+0.3953	0.1128	1.000	number which will be assigned by MCP. The same	0.3684	0.0131
+0.4039	0.5451	1.000	The programmer must allow adequate space for	0.3590	0.0118
+0.4112	0.1128	1.000	unit symbol on several tape IOD cards uncon-	0.3553	0.0118
+0.4185	0.5207	1.000	tables. The amount of space needed is a function of	0.3929	0.0118
+0.4258	0.1147	1.000	ditionally associates them with the same tape	0.3553	0.0118
+0.4330	0.5226	1.000	the number of IOD cards in the program, the number	0.3966	0.0133
+0.4390	0.1128	1.000	unit. A different unit symbol on tape IOD cards	0.3590	0.0132
+0.4462	0.5226	1.000	of I/O units required, and the number of tape reels	0.3835	0.0145
+0.4564	0.1147	1.000	unconditionally associates them with different	0.3440	0.0117
+0.4621	0.5226	1.000	required. If:	0.0996	0.0118
+0.4709	0.1147	1.000	tape units. A tape unit will be assigned for each	0.3647	0.0116
+0.4752	0.5451	1.000	K = Largest I/O reference number	0.2575	0.0133
+0.4855	0.1147	1.000	unique unit symbol, including the null symbol	0.3402	0.0131
+0.4897	0.5432	1.000	I = Number of IOD cards	0.1898	0.0118
+0.5000	0.1147	1.000	(many null unit fields are treated as a single,	0.3402	0.0131
+0.5058	0.5432	1.000	U = Number of units	0.1504	0.0103
+0.5145	0.1147	1.000	unique unit symbol). In turn, tape units will be	0.3571	0.0131
+0.5203	0.5432	1.000	R = Number of reels, including scratch tapes	0.3402	0.0131
+0.5291	0.1147	1.000	grouped by the channel symbol but only condi-	0.3459	0.0131
+0.5348	0.5207	1.000	the number of full words that must be reserved for	0.3816	0.0117
+0.5436	0.1147	1.000	tionally. Where both the channel and unit fields	0.3590	0.0116
+0.5494	0.5207	1.000	tables above the upper limit of the problem program	0.3929	0.0131
+0.5581	0.1147	1.000	are null, there will be unit separation.	0.2895	0.0116
+0.5639	0.5207	1.000	can be computed using the equation:	0.2669	0.0116
+0.5727	0.1165	1.000	The mode field on the IOD card must be one	0.3534	0.0116
+0.5770	0.5432	1.000	K + 7I + 9U + 2R + 1	0.1504	0.0118
+0.5872	0.1165	1.000	of the following:	0.1184	0.0102
+0.5930	0.5226	1.000	The letter R represents not only the number of reels	0.3929	0.0131
+0.6017	0.1391	1.000	ODD	0.0338	0.0087
+0.6017	0.2105	1.000	Odd parity, no ECC	0.1579	0.0131
+0.6076	0.5207	1.000	designated by the REEL cards, but any scratch tapes	0.3985	0.0131
+0.6145	0.2024	1.000	Even parity	0.1063	0.0148
+0.6162	0.1391	1.000	EVEN	0.0583	0.0089
+0.6221	0.5207	1.000	mounted in response to sequential unload pseudo-	0.3872	0.0131
+0.6308	0.1391	1.000	ECC	0.0357	0.0087
+0.6308	0.2180	1.000	Odd parity, ECC	0.1278	0.0131
+0.6366	0.5207	1.000	operations. Although no scratch tape need be spec-	0.3835	0.0131
+0.6453	0.1353	1.000	Null	0.0338	0.0116
+0.6453	0.2180	1.000	See "Reel Labeling"	0.1560	0.0147
+0.6482	0.5169	1.000	ified, requests for tapes beyond those specified on	0.3853	0.0176
+0.6584	0.1147	1.000	The density field on the OD must contain one	0.3496	0.0146
+0.6642	0.5188	1.000	REEL cards will be honored by mounting scratch	0.3703	0.0145
+0.6730	0.1147	1.000	of the following:	0.1203	0.0146
+0.6788	0.5169	1.000	tapes. The identity of such tapes will be placed in	0.3816	0.0146
+0.6875	0.2180	1.000	High density	0.0959	0.0146
+0.6890	0.1335	1.000	HD	0.0282	0.0102
+0.6903	0.5188	1.000	a pool along with those designated by the REEL	0.3571	0.0191
+0.7001	0.2175	1.000	Low density	0.0935	0.0172
+0.7020	0.1372	1.000	LD	0.0244	0.0131
+0.7046	0.5186	1.000	cards.	0.0549	0.0182
+0.7166	0.2143	1.000	See "Reel Labeling"	0.1598	0.0146
+0.7180	0.1335	1.000	Null	0.0376	0.0116
+0.7224	0.5338	1.000	If the computed number of full words is not avail-	0.3778	0.0161
+0.7297	0.1147	1.000	Disposition indicates what is to be done with	0.3496	0.0146
+0.7355	0.5169	1.000	able, the programmer should not attempt to run his	0.3929	0.0189
+0.7441	0.1126	1.000	the tape last mounted when the job is terminated.	0.3725	0.0176
+0.7485	0.5169	1.000	program. 'If he does, MCP will remove his job	0.3609	0.0204
+0.7602	0.1147	1.000	It must be one of the following:	0.2350	0.0147
+0.7660	0.5188	1.000	from the computer as soon as the available space is	0.3910	0.0161
+0.7761	0.2162	1.000	Do not dismount in any case	0.2143	0.0161
+0.7762	0.1353	1.000	NSAVE	0.0564	0.0116
+0.7788	0.5187	1.000	exhausted.	0.0829	0.0165
+0.7892	0.1372	1.000	CSAVE	0.0527	0.0132
+0.7906	0.2143	1.000	Dismount only if job is complete	0.2500	0.0146
+0.8036	0.2143	1.000	Dismount only if job is incomplete	0.2632	0.0161
+0.8052	0.1335	1.000	ISAVE	0.0526	0.0116
+0.8180	0.1352	1.000	SAVE	0.0454	0.0136
+0.8197	0.2162	1.000	Dismount in any case	0.1635	0.0146
+0.8255	0.5188	1.000	Reel Card	0.0790	0.0132
+0.8341	0.1353	1.000	PSAVE	0.0565	0.0135
+0.8342	0.2143	1.000	Do not dismount; tape to be passed	0.2650	0.0146
+0.8473	0.2143	1.000	Equivalent to NSAVE	0.1635	0.0146
+0.8488	0.1335	1.000	NULL	0.0489	0.0131
+0.8537	0.5167	1.000	The REEL card contains the identification of tapes to	0.3989	0.0176
+0.8677	0.1109	1.000	MCP normally unloads those problem program	0.3515	0.0160
+0.8706	0.5169	1.000	be mounted. A REEL card must immediately follow	0.3929	0.0131
+0.8821	0.0883	1.000	tapes which cannot be immediately reused as	0.3383	0.0147
+0.8836	0.5169	1.000	the tape IOD card to which it refers, unless there is	0.3947	0.0176
+0.9128	0.0902	1.000	10	0.0169	0.0116

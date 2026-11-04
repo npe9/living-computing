@@ -1,0 +1,32 @@
+0.0839	0.8607	1.000	ANEXT	0.0586	0.0154
+0.1483	0.5282	1.000	RESTRICTIONS	0.1184	0.0131
+0.1510	0.1033	1.000	PURPOSE	0.0753	0.0120
+0.1788	0.5282	1.000	Initially the bit, Afirst, must be on. ANEXT turns	0.3797	0.0146
+0.1802	0.1053	1.000	The objective of ANEXT is to scan the variable length	0.3966	0.0131
+0.1933	0.5301	1.000	the indicator off. In fact, whenever it is desired to	0.3816	0.0131
+0.1962	0.1053	1.000	entry table for entries associated with a particular	0.3741	0.0102
+0.2078	0.1034	1.000	table control block (i.e., for those entries with the	0.3778	0.0146
+0.2078	0.5301	1.000	restart the scan at the beginning of the vle table,	0.3609	0.0131
+0.2224	0.5282	1.000	Afirst should be turned on.	0.2030	0.0146
+0.2237	0.1033	1.000	same ID).	0.0753	0.0148
+0.2369	0.5451	1.000	Regarding the calling sequence, it should be noted	0.3722	0.0146
+0.2515	0.5301	1.000	that the ID must be placed in bit positions 18-23 of its	0.3985	0.0131
+0.2660	0.5282	1.000	half word and that the 'no more vle' return occupies	0.3872	0.0131
+0.2805	0.5301	1.000	two half words in the calling sequence (for an optional	0.3985	0.0131
+0.2964	0.5282	1.000	linkage to a fix-up subroutine) instead of the usual one	0.4041	0.0147
+0.2972	0.1032	1.000	LINKAGE	0.0737	0.0132
+0.3109	0.5301	1.000	half word for the non-normal return.	0.2744	0.0103
+0.3270	0.1203	1.000	LVI, 15, $+2; B, ANEXT	0.1880	0.0146
+0.3398	0.5281	1.000	DETAILS	0.0735	0.0122
+0.3400	0.3797	1.000	'See restriction.	0.1259	0.0133
+0.3415	0.1203	1.000	, ID	0.0338	0.0146
+0.3545	0.3816	1.000	'See restriction.	0.1222	0.0133
+0.3561	0.1222	1.000	, linkage to a fix-up subroutine	0.2293	0.0146
+0.3691	0.5320	1.000	The location of the first bit of the vle with the same	0.3816	0.0118
+0.3706	0.3835	1.000	No more vle	0.0921	0.0103
+0.3836	0.5301	1.000	ID as that in the calling sequence will be in the value	0.3910	0.0132
+0.3863	0.3834	1.000	return.	0.0547	0.0093
+0.3997	0.5282	1.000	field of the index word, Anextx.	0.2368	0.0131
+0.4012	0.1222	1.000	Normal Return	0.1109	0.0102
+0.9390	0.9117	1.000	51	0.0150	0.0073
+0.9390	0.8440	1.000	ANEXT	0.0432	0.0087

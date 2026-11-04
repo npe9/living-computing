@@ -1,0 +1,75 @@
+0.0712	0.0714	1.000	ERR	0.0395	0.0131
+0.1308	0.0752	1.000	The source of information for ERR are: three	0.3440	0.0116
+0.1308	0.5771	1.000	Number of Errors, If Any,	0.1541	0.0146
+0.1439	0.5658	1.000	Which Have Not Been Listed	0.1748	0.0116
+0.1453	0.0733	1.000	counters, Unit (BU, 20), Field (BU, 4), and Symbol	0.3872	0.0174
+0.1535	0.5092	0.300	ПІПІІЕЕІ І111 oloblolol000	0.3952	0.0267
+0.1597	0.0732	1.000	(BU, 24); a table at Errtab of ordered 64-bit control	0.3911	0.0163
+0.1715	0.0752	1.000	words each of which locates a variable length error	0.3853	0.0161
+0.1788	0.8327	1.000	8 bits	0.0414	0.0131
+0.1802	0.6259	1.000	24 bits	0.0414	0.0116
+0.1903	0.0752	1.000	message; and the bounds, which are contained in	0.3628	0.0118
+0.1962	0.4981	1.000	Figure 5. Initial Error Message Record	0.2256	0.0145
+0.2048	0.0752	1.000	Errfwa and Errtop, of each area for the ERR lists	0.3741	0.0132
+0.2179	0.0752	1.000	containing the 32-bit entries. (See section on service-	0.4060	0.0133
+0.2339	0.0733	1.000	ability aids for a description of the counters: Unit,	0.3797	0.0146
+0.2485	0.0733	1.000	Field, and Symbol.)	0.1504	0.0146
+0.2630	0.5132	1.000	ERR returns to MCP in order to resume assembly	0.3778	0.0161
+0.2645	0.0921	1.000	ERR is responsible for making the 32-bit entry	0.3496	0.0131
+0.2774	0.4980	1.000	processing.	0.0960	0.0165
+0.2791	0.0752	1.000	recording the occurrence of an error detected by	0.3647	0.0116
+0.2906	0.5113	1.000	The number of an error message refers to the rank	0.3910	0.0176
+0.2921	0.0752	1.000	STRAP II either in the problem program or in the	0.3684	0.0131
+0.3067	0.0752	1.000	assembly program. If the error is detected while	0.3722	0.0131
+0.3067	0.5000	1.000	of the corresponding particular control word in the	0.3778	0.0161
+0.3182	0.4962	1.000	Errtab table of control words. The method by which	0.3947	0.0176
+0.3212	0.0733	1.000	Pass 1, Pass 2a, or Pass 2b is in process, the 32-bit	0.4041	0.0161
+0.3372	0.5038	1.000	ERR establishes the rank of the appropriate control	0.3816	0.0116
+0.3372	0.0733	1.000	entry has the following form. (Each of these parts	0.3797	0.0146
+0.3473	0.0733	1.000	of STRAP processes the expanded instruction units	0.3816	0.0191
+0.3517	0.5038	1.000	word should be explained. When STRAP II detects an	0.3947	0.0131
+0.3633	0.0714	1.000	in their chronological order.)	0.2256	0.0176
+0.3663	0.5038	1.000	error condition, STRAP II performs an instruction of	0.3947	0.0131
+0.3821	0.5038	1.000	the type -- EX, A -- where A is the address of a CW	0.3910	0.0118
+0.3967	0.5038	1.000	instruction which locates the message to be given for	0.3929	0.0118
+0.3982	0.3289	1.000	Field Number of	0.1241	0.0118
+0.4070	0.3233	1.000	Number Enor Message	0.1391	0.0161
+0.4112	0.5038	1.000	the condition detected. The request to execute a CW	0.3891	0.0103
+0.4127	0.1523	1.000	Unit Number	0.0808	0.0103
+0.4258	0.5038	1.000	instruction causes an execute exception interrupt to	0.3816	0.0118
+0.4288	0.0789	0.300	TTTTTT77TTTTT	0.2237	0.0131
+0.4403	0.5038	1.000	oceur, whereupon MCP takes immediate control.	0.3628	0.0133
+0.4418	0.1523	1.000	20 bits	0.0432	0.0118
+0.4548	0.5038	1.000	Now the refill field of $15 has the fixed use of pointing	0.4004	0.0118
+0.4621	0.0695	1.000	Figure 3. Error Message Record for Pass1, Pass 2a, and Pass 2b	0.3647	0.0161
+0.4694	0.5038	1.000	to STRAP II's table of exits for maskable interrupts.	0.3891	0.0118
+0.4839	0.5056	1.000	This table includes the address of ERR as the loca-	0.3778	0.0103
+0.4985	0.5038	1.000	tion MCP is to go to whenever MCP receives an	0.3534	0.0118
+0.5130	0.5038	1.000	execute exception interrupt from STRAP II. Then	0.3703	0.0118
+0.5174	0.0883	1.000	On the other hand, if the error is detected while	0.3647	0.0160
+0.5276	0.5038	1.000	after MCP's subsequent entry into the ERR sub-	0.3571	0.0118
+0.5320	0.0733	1.000	either use of UITER is in process, the above 32-bit	0.3853	0.0145
+0.5421	0.5038	1.000	routine, ERR manipulates the interrupt location	0.3534	0.0131
+0.5445	0.0733	1.000	entry has another form. (UITER analyzes the entries	0.4004	0.0157
+0.5567	0.5038	1.000	counter value, which MCP has put in the STRAP II	0.3722	0.0131
+0.5596	0.0714	1.000	in the ordered symbol table.)	0.2237	0.0160
+0.5712	0.5038	1.000	table of exits, to get the address, A. Once ERR	0.3609	0.0131
+0.5872	0.5038	1.000	obtains the location of the control word, its rank in	0.3778	0.0116
+0.6017	0.5038	1.000	the table of control words is obtained by a simple	0.3665	0.0116
+0.6017	0.1241	1.000	Location of Symbol Table Entry	0.1842	0.0131
+0.6148	0.5038	1.000	subtraction. The rank of the CW is used in the 32-bit	0.3985	0.0131
+0.6177	0.0827	0.300	ТITIТIIIIT11111111711 000/00001010	0.3966	0.0218
+0.6321	0.5038	1.000	entry recording the error message.	0.2650	0.0103
+0.6453	0.5207	1.000	Serious error messages printed at the end of the	0.3590	0.0131
+0.6570	0.0733	1.000	Figure 4. Error Message Record for UITER	0.2481	0.0145
+0.6599	0.5038	1.000	listing can also be printed on the console typewriter	0.3835	0.0131
+0.6744	0.5038	1.000	when the error condition occurs under the installation's	0.4117	0.0116
+0.6903	0.5038	1.000	optionable use of a Correction card. These serious	0.3835	0.0118
+0.7048	0.5038	1.000	error messages have their corresponding control	0.3665	0.0118
+0.7194	0.5038	1.000	words at the beginning of the list of error message	0.3759	0.0118
+0.7297	0.0902	1.000	Preceding each list, ERR makes the following	0.3835	0.0174
+0.7339	0.5038	1.000	control words. The number of these type of control	0.3835	0.0132
+0.7456	0.0752	1.000	specialized type entry:	0.1711	0.0147
+0.7485	0.5019	1.000	words is given by the quantity Esss to which ERR	0.3684	0.0161
+0.7581	0.5054	1.000	compares the error message number just calculated.	0.3914	0.0245
+0.9230	0.0733	1.000	38	0.0188	0.0116

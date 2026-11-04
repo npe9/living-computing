@@ -1,0 +1,145 @@
+0.0669	0.1184	1.000	After printing, the carriage automatically advances	0.3722	0.0147
+0.0681	0.5186	1.000	be interpreted as another carriage control byte, thus	0.3913	0.0172
+0.0827	0.1015	1.000	by one line position. This post-spacing feature saves	0.3891	0.0147
+0.0842	0.5188	1.000	making it possible to append line selection informa-	0.3891	0.0146
+0.0988	0.1015	1.000	time because it permits the carriage to advance before	0.3891	0.0131
+0.1003	0.5188	1.000	tion to the control bytes specifying special functions.	0.3759	0.0146
+0.1133	0.1015	1.000	the next carriage control field has arrived. If the next	0.3891	0.0131
+0.1148	0.5357	1.000	Carriage control bytes that initiate functions other	0.3722	0.0146
+0.1294	0.1015	1.000	carriage control field specifies skipping additional	0.3891	0.0146
+0.1308	0.5169	1.000	than skipping are:	0.1353	0.0146
+0.1439	0.0996	1.000	lines, the carriage continues to move to the desired	0.3891	0.0146
+0.1467	0.5357	1.000	1. Codes 224 through 239 operate in conjunction	0.3722	0.0161
+0.1583	0.0995	1.000	line. If the next carriage control field specifies to skip 0	0.3894	0.0177
+0.1627	0.5188	1.000	with the report selection keys on the printer and per-	0.3872	0.0161
+0.1730	0.0962	1.000	lines,	0.0449	0.0168
+0.1744	0.1372	1.000	the previous post-spacing operation	0.2744	0.0147
+0.1758	0.4135	1.000	results in	0.0771	0.0118
+0.1788	0.5188	1.000	mit selective printing of data.	0.2180	0.0131
+0.1903	0.0996	1.000	single spacing. If the carriage control field is delayed,	0.3891	0.0146
+0.1948	0.5338	1.000	2. Code 240 suppresses post-spacing. It allows nor-	0.3741	0.0146
+0.2037	0.1013	1.000	the carriage waits at the next line. The post-spacing,	0.3877	0.0193
+0.2105	0.5187	1.000	mal carriage operation before printing, but the auto-	0.3856	0.0146
+0.2209	0.0996	1.000	however, can be suppressed when the next line is to be	0.3891	0.0146
+0.2267	0.5207	1.000	matic spacing after the printing cycle is omitted. The	0.3853	0.0118
+0.2369	0.0996	1.000	printed on the same line position as the present line.	0.3891	0.0146
+0.2400	0.5168	1.000	suppression of post-spacing makes it possible to print	0.3912	0.0175
+0.2515	0.0996	1.000	A SUPPRESS POST-SPACING carriage control function is	0.3910	0.0146
+0.2573	0.5188	1.000	two blocks of information on one line position. In	0.3872	0.0146
+0.2674	0.0996	1.000	provided for this purpose.	0.1880	0.0147
+0.2713	0.5187	1.000	order for the next line to print in the same line posi-	0.3874	0.0167
+0.2833	0.1165	1.000	The carriage control field permits skipping up to	0.3722	0.0146
+0.2863	0.5187	1.000	tion as the present line, it must have the skip 0 lines	0.3874	0.0165
+0.2979	0.0996	1.000	223 lines in one operation. This skipping command	0.3891	0.0161
+0.2998	0.5165	1.000	carriage control byte.	0.1606	0.0192
+0.3111	0.0975	1.000	is encoded in one 8-bit byte, and if only normal skip-	0.3895	0.0205
+0.3181	0.5318	1.000	3. Codes 242 through 253 do not have any functions	0.3762	0.0182
+0.3270	0.0977	1.000	ping is desired, the carriage control field does not have	0.3910	0.0176
+0.3327	0.5150	1.000	assigned to them and are ignored by the printer. They	0.3910	0.0191
+0.3392	0.0975	1.000	to have more than one 8-bit byte. In addition to the	0.3915	0.0232
+0.3503	0.5169	1.000	have the same effect as the no operation code. For	0.3872	0.0146
+0.3590	0.0977	1.000	skipping codes, however, the carriage control field can	0.3891	0.0146
+0.3648	0.5169	1.000	compatibility with other devices, it is recommended	0.3872	0.0146
+0.3750	0.0977	1.000	specify a number of other functions. In the latter case	0.3910	0.0132
+0.3808	0.5188	1.000	that these codes not be used.	0.2105	0.0116
+0.3909	0.0977	1.000	more than one byte is necessary to specify carriage	0.3910	0.0146
+0.3953	0.5338	1.000	4. Code 254 is the end code. It causes the subse-	0.3703	0.0147
+0.4055	0.0977	1.000	operation.	0.0752	0.0131
+0.4112	0.5169	1.000	quent bytes to be ignored and terminates the current	0.3891	0.0147
+0.4215	0.1147	1.000	Figure 44 shows the coding used in the 8-bit bytes	0.3741	0.0145
+0.4273	0.5168	1.000	block of the operation. Code 254 in the carriage con-	0.3874	0.0163
+0.4360	0.0977	1.000	of the carriage control field.	0.2030	0.0146
+0.4433	0.5150	1.000	trol field suppresses all printing. Carriage control field	0.3891	0.0161
+0.4518	0.1145	1.000	Carriage control bytes with decimal codes 0 through	0.3743	0.0163
+0.4593	0.5169	1.000	bytes preceding END code are decoded and the func-	0.3872	0.0131
+0.4653	0.0975	1.000	223 specify skipping up to 223 lines in one operation.	0.3914	0.0194
+0.4738	0.5169	1.000	tions are executed. For a WRITE operation to cause no	0.3872	0.0146
+0.4824	0.0977	1.000	A skip byte is always the last byte of the carriage con-	0.3891	0.0161
+0.4897	0.5150	1.000	action at all at the printer, the end code must be pre-	0.3891	0.0147
+0.4985	0.0977	1.000	trol field, and the printer interprets the following in-	0.3910	0.0161
+0.5041	0.5149	1.000	ceded by a suppress post-spacing code and followed by	0.3893	0.0166
+0.5114	0.0975	1.000	formation as data to be printed. The remaining car-	0.3914	0.0191
+0.5190	0.5149	1.000	a skip 0 lines code. The end code itself does not sup-	0.3875	0.0174
+0.5277	0.0976	1.000	riage control bytes with decimal codes 224 and up	0.3894	0.0174
+0.5363	0.5150	1.000	press post-spacing or end the carriage control opera-	0.3891	0.0146
+0.5433	0.0976	1.000	provide for special functions. These codes, except for	0.3894	0.0178
+0.5595	0.0976	1.000	the SKIP TO RESTORE code, cause the following byte to	0.3893	0.0164
+0.5668	0.5299	1.000	5. Code 255, no operation, is ignored by the printer	0.3744	0.0186
+0.5823	0.5150	1.000	and may be used as a filler preceding another carriage	0.3893	0.0166
+0.5974	0.1541	1.000	Code	0.0244	0.0073
+0.5988	0.5150	1.000	control byte.	0.0959	0.0131
+0.6076	0.1748	1.000	Decimal	0.0414	0.0087
+0.6076	0.1222	1.000	Binary	0.0301	0.0087
+0.6076	0.2575	1.000	Meaning	0.0451	0.0102
+0.6148	0.5320	1.000	The line spacing can be either one-sixth or one-	0.3703	0.0146
+0.6278	0.1127	1.000	0000 0000	0.0546	0.0090
+0.6279	0.2312	1.000	Skip 0 lines (single space)	0.1316	0.0117
+0.6294	0.5150	1.000	eighth of an inch long, depending upon the manual	0.3872	0.0161
+0.6294	0.1936	1.000	0	0.0094	0.0073
+0.6381	0.1955	1.000	1	0.0056	0.0102
+0.6394	0.2312	1.000	Skip 1 line (double space)	0.1372	0.0103
+0.6394	0.1128	1.000	0000 0001	0.0526	0.0074
+0.6452	0.5112	1.000	setting of the feed clutch. The above carriage control	0.3912	0.0180
+0.6497	0.1128	1.000	0000 0010	0.0545	0.0088
+0.6497	0.2274	1.000	Skip 2 lines (triple space)	0.1353	0.0116
+0.6497	0.1936	1.000	2	0.0113	0.0087
+0.6612	0.5132	1.000	fields apply to either case, the line space being always	0.3891	0.0176
+0.6740	0.1107	1.000	110i 1111	0.0549	0.0182
+0.6757	0.5149	1.000	defined by the current setting of the clutch.	0.3198	0.0169
+0.6759	0.1805	1.000	223	0.0244	0.0160
+0.6771	0.2274	1.000	Skip 223 lines	0.0772	0.0150
+0.6887	0.2293	1.000	Select No Report	0.0904	0.0150
+0.6890	0.1090	1.000	1110 0000	0.0583	0.0132
+0.6904	0.1805	1.000	224	0.0244	0.0102
+0.6933	0.5301	1.000	An overflow feature is provided on the carriage con-	0.3722	0.0146
+0.6991	0.1109	1.000	1110 0001	0.0564	0.0131
+0.7006	0.1805	1.000	225	0.0226	0.0116
+0.7020	0.2274	1.000	Select Report 1	0.0808	0.0102
+0.7087	0.3569	1.000	And suppress	0.0681	0.0157
+0.7093	0.5150	1.000	trol of the printer. A punch in channel 12 of the paper	0.3872	0.0146
+0.7103	0.2292	1.000	Select Report 2	0.0792	0.0126
+0.7106	0.1090	1.000	1110 0010	0.0583	0.0118
+0.7108	0.1805	1.000	226	0.0226	0.0116
+0.7209	0.1109	1.000	1110 0011	0.0564	0.0131
+0.7209	0.1805	1.000	227	0.0226	0.0116
+0.7219	0.2386	1.000	elect Reports 1 or	0.0811	0.0141
+0.7223	0.3571	1.000	post-spacins	0.0621	0.0132
+0.7235	0.5131	1.000	tape designates the line following the last line on	0.3874	0.0157
+0.7297	0.3534	0.300	Epresind"	0.0695	0.0262
+0.7311	0.1805	1.000	228	0.0226	0.0116
+0.7311	0.1109	1.000	1110 0100	0.0564	0.0131
+0.7324	0.2387	1.000	elect Report	0.0583	0.0089
+0.7397	0.5132	1.000	which printing is to appear. Whenever this punch is	0.3891	0.0147
+0.7515	0.1109	1.000	11101000	0.0583	0.0233
+0.7542	0.5132	1.000	sensed, a restore is generated which positions the forms	0.3891	0.0147
+0.7600	0.2293	1.000	Select Report 4	0.0791	0.0164
+0.7703	0.5132	1.000	tractor to the restored position on the next form. The	0.3872	0.0146
+0.7863	0.5132	1.000	restored position is designated by a punch in chan-	0.3872	0.0146
+0.7875	0.2274	1.000	Select Reports 1,2,3 or 4)	0.1298	0.0208
+0.7878	0.1109	1.000	1110 1111	0.0564	0.0174
+0.7878	0.1748	1.000	239	0.0282	0.0174
+0.7977	0.5130	1.000	nel 1. This feature is automatic and no signal is given	0.3876	0.0197
+0.8036	0.1128	1.000	1111 0000	0.0508	0.0118
+0.8038	0.1729	1.000	240	0.0301	0.0131
+0.8052	0.2274	1.000	Suppress Post-Spacing	0.1147	0.0132
+0.8139	0.1128	1.000	1111 0001	0.0508	0.0116
+0.8154	0.2274	1.000	Skip To Restore	0.0827	0.0116
+0.8154	0.1805	1.000	241	0.0226	0.0102
+0.8169	0.5113	1.000	to the program. The overflow feature may be made in-	0.3891	0.0147
+0.8296	0.1106	1.000	mmi 1101	0.0569	0.0283
+0.8327	0.5113	1.000	operative by a switch on the printer.	0.2744	0.0133
+0.8430	0.1805	1.000	253	0.0244	0.0145
+0.8445	0.2274	1.000	Not Used	0.0526	0.0131
+0.8503	0.5301	1.000	A punch in channel 12 designates the end of print-	0.3703	0.0146
+0.8561	0.1090	1.000	1111 1110	0.0583	0.0118
+0.8561	0.1748	1.000	254	0.0282	0.0131
+0.8576	0.2274	1.000	End	0.0226	0.0116
+0.8642	0.5111	1.000	ing on the form and should be present under all condi-	0.3893	0.0163
+0.8674	0.2273	1.000	No Operation	0.0754	0.0138
+0.8677	0.1090	1.000	1111 1111	0.0564	0.0102
+0.8677	0.1805	1.000	255	0.0226	0.0116
+0.8801	0.5131	1.000	tions. When an out-of-material condition exists, the	0.3874	0.0141
+0.8953	0.5130	1.000	12 punch designates the end of printing on the last	0.3874	0.0169
+0.8953	0.0902	1.000	Figure 44. Carriage Control Field Codes	0.2406	0.0147
+0.9184	0.1466	1.000	IBM 7030	0.0640	0.0134
+0.9186	0.0902	1.000	146	0.0263	0.0116

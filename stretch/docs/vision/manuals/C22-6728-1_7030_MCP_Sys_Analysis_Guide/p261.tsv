@@ -1,0 +1,56 @@
+0.0930	0.1015	1.000	Channel Status Table Entry - Single Unit Channel	0.3741	0.0189
+0.1235	0.6579	1.000	Content	0.0639	0.0131
+0.1250	0.1673	1.000	Bits	0.0395	0.0174
+0.1250	0.3214	1.000	Symbol	0.0639	0.0145
+0.1526	0.5150	1.000	This field contains the address of the unit area table	0.3910	0.0116
+0.1532	0.1680	1.000	. 00 -.17	0.0735	0.0173
+0.1540	0.3233	1.000	SUNAA	0.0546	0.0133
+0.1653	0.5130	1.000	(UAT) attached to the channel. If the unit has never	0.3913	0.0165
+0.1787	0.5148	1.000	been assigned, the entry will be zero. This field is	0.3895	0.0192
+0.1962	0.5150	1.000	set at IPL, and by I-O assignment, the I-O change	0.3778	0.0145
+0.2121	0.5150	1.000	command, and the special assignment package. The	0.3947	0.0146
+0.2267	0.5132	1.000	field is referred to by the identifier, the receptor,	0.3816	0.0146
+0.2427	0.5132	1.000	the I-O change command, the special assignment	0.3722	0.0131
+0.2587	0.5150	1.000	package, and I-O assignment.	0.2256	0.0116
+0.2876	0.3251	1.000	SCHAVL	0.0678	0.0134
+0.2878	0.5150	1.000	• - Channel is available	0.1898	0.0102
+0.2878	0.1692	1.000	.25	0.0301	0.0174
+0.3023	0.5150	1.000	1 - Channel is not available	0.2180	0.0102
+0.3314	0.5150	1.000	A channel is available when it is physically attached to	0.4098	0.0116
+0.3459	0.5150	1.000	the exchange and is capable of being actuated by MCP.	0.4079	0.0132
+0.3512	0.5200	0.300	( bimgitd os tor extuni talanel, in na ndt at 1p tested by	0.4129	0.0582
+0.3605	0.5169	1.000	This indicator exists in the channel status table of either	0.4248	0.0117
+0.3894	0.5150	1.000	sometimes by the I-O change command. It is tested by	0.4154	0.0133
+0.4055	0.5169	1.000	the identifier (as an internal MCP check upon actuation),	0.4229	0.0118
+0.4200	0.5150	1.000	by special assignment, I-O assignment and I-O change.	0.4173	0.0131
+0.4491	0.5150	1.000	• - Channel not operating	0.2030	0.0117
+0.4504	0.3270	1.000	SCHOP	0.0527	0.0090
+0.4506	0.1711	1.000	.26	0.0282	0.0145
+0.4651	0.5169	1.000	1 - Channel operating	0.1729	0.0102
+0.4927	0.5169	1.000	This indicator exists in the channel status table of either	0.4248	0.0116
+0.5064	0.5168	1.000	a single or multi-unit channel. It is set by the actuator	0.4175	0.0143
+0.5233	0.5169	1.000	routines and reset by the receptor. It is tested by the	0.4060	0.0116
+0.5378	0.5169	1.000	identifier, I-O change command and special assignment,	0.4248	0.0131
+0.5509	0.5169	1.000	Job Control 4 and UNASSIGN and the $FREE routine.	0.3966	0.0116
+0.5813	0.3270	1.000	SMULTI	0.0640	0.0119
+0.5814	0.5169	1.000	0 - Single-unit channel	0.1823	0.0116
+0.5828	0.1711	1.000	•27	0.0282	0.0145
+0.5959	0.5169	1.000	1 - Multi-unit channel	0.1767	0.0102
+0.6250	0.5188	1.000	This indicator exists in the channel status table of	0.3759	0.0102
+0.6394	0.5188	1.000	either a single or multi-unit channel. It is set at IPL.	0.4098	0.0118
+0.6539	0.5169	1.000	It is tested by most actuator routines, I-O change	0.3741	0.0133
+0.6685	0.5188	1.000	command, special assignment, UNASSIGN, I-O assign-	0.4154	0.0133
+0.6845	0.5188	1.000	ment and receptor.	0.1447	0.0118
+0.7136	0.5188	1.000	• - Unit is available	0.1617	0.0103
+0.7151	0.3289	1.000	SUNAVL	0.0658	0.0102
+0.7166	0.1748	1.000	.28	0.0263	0.0102
+0.7282	0.5188	1.000	1 - Unit is not available	0.1898	0.0103
+0.7573	0.5188	1.000	A unit is available when it is physically attached to a	0.3947	0.0116
+0.7718	0.5169	1.000	channel and is capable of being actuated by MCP. This	0.4154	0.0146
+0.7878	0.5188	1.000	indicator exists in the channel status table for single	0.3947	0.0102
+0.8023	0.5188	1.000	unit channels and in the unit status table for multi-unit	0.4098	0.0102
+0.8169	0.5188	1.000	channels. It is set at IPL and sometimes by the I-O	0.3929	0.0131
+0.8299	0.5188	1.000	change command. It is tested by the identifier, I-O	0.3891	0.0131
+0.8459	0.5188	1.000	change, special assignment and I-O assignment.	0.3628	0.0132
+0.9448	0.6466	1.000	Appendix A - Symbolic I-O Control Tables	0.2538	0.0102
+0.9448	0.9173	1.000	261	0.0263	0.0087

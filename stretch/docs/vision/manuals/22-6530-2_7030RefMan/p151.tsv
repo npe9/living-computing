@@ -1,0 +1,108 @@
+0.0654	0.1015	1.000	a 1-bit in bit position 6, depression of select 3 cor-	0.3891	0.0146
+0.0682	0.5207	1.000	Character Codes	0.1184	0.0118
+0.0814	0.0996	1.000	responds to a 1-bit in bit position 5 and depression of	0.3910	0.0147
+0.0855	0.5206	1.000	The character set that can be printed on the printer	0.3874	0.0164
+0.0973	0.1015	1.000	select 4 corresponds to a 1-bit in bit position 4. When-	0.3891	0.0146
+0.1003	0.5188	1.000	consists of 48 distinct non-blank characters and the	0.3891	0.0131
+0.1133	0.1015	1.000	ever a carriage control byte has bits 1110 in the high-	0.3891	0.0146
+0.1163	0.5188	1.000	character blank, all coded in an 8-bit code. This set is	0.3891	0.0131
+0.1279	0.0996	1.000	order positions, the printing of the line is suppressed	0.3891	0.0146
+0.1321	0.5188	1.000	shown in the Appendix. Of the non-blank characters,	0.3891	0.0147
+0.1439	0.1015	1.000	unless there is a 1-bit in the low-order four bits to	0.3891	0.0116
+0.1466	0.5186	1.000	44 are the same as those that can be printed on the	0.3894	0.0171
+0.1584	0.0996	1.000	match the selective printing key that has been de-	0.3891	0.0146
+0.1612	0.5188	1.000	console printer. These and the blank have common	0.3891	0.0147
+0.1744	0.1015	1.000	pressed. For example, code 225 (1110 0001) permits	0.3891	0.0147
+0.1788	0.5169	1.000	codes on the two devices. The remaining four are	0.3910	0.0146
+0.1903	0.0996	1.000	printing of the current line only if the select 1 key has	0.3910	0.0146
+0.1933	0.5169	1.000	special characters that are provided on the printer	0.3910	0.0161
+0.2048	0.0996	1.000	been depressed while code 227 (1110 to 0011) allows	0.3891	0.0146
+0.2093	0.5169	1.000	only. This code is known as the 48 Ecs set.	0.3045	0.0131
+0.2209	0.0996	1.000	printing for keys select 1 or select 2. On the other	0.3891	0.0131
+0.2252	0.5338	1.000	Each character code is sent to the printer as an 8-bit	0.3741	0.0133
+0.2346	0.0994	1.000	hand, when the key select 1 is depressed, only lines	0.3913	0.0174
+0.2397	0.5169	1.000	byte. If the bits in each byte are numbered from 0	0.3891	0.0147
+0.2515	0.0996	1.000	with the report selection codes 225 (1110 0001), 227	0.3891	0.0146
+0.2558	0.5169	1.000	through 7, starting with the leftmost (most significant)	0.3891	0.0146
+0.2674	0.0977	1.000	(1110 0011), 229 (1110 0101), 231 (1110 0111), 233	0.3910	0.0147
+0.2703	0.5168	1.000	bit, the character code occupies the six bit positions	0.3912	0.0164
+0.2833	0.0977	1.000	(1110 1001), 235 (1|10 1011), 237 (1110 1101), and 239	0.3910	0.0161
+0.2863	0.5169	1.000	1 through 6. The bit numbered 0 always must have	0.3891	0.0146
+0.2979	0.0977	1.000	(I110 11II) can be printed	0.1955	0.0146
+0.3008	0.5168	1.000	the value zero. Bit position 7, which represents case	0.3893	0.0171
+0.3139	0.1147	1.000	When all print selection keys are off, the report	0.3741	0.0145
+0.3169	0.5132	1.000	shift in the console printer, is ignored by the printer	0.3929	0.0174
+0.3285	0.0977	1.000	selection codes are ignored. If there is no report selec-	0.3891	0.0145
+0.3311	0.5149	1.000	in codes for which bits 1 through 6 represent valid	0.3913	0.0175
+0.3415	0.0976	1.000	tion code in the carriage control field, the key setting	0.3895	0.0187
+0.3473	0.5150	1.000	characters.	0.0790	0.0118
+0.3590	0.0976	1.000	is ignored. In either case no selection takes place, and	0.3893	0.0165
+0.3633	0.5338	1.000	Thus code 0010 1100, which represents character a	0.3703	0.0146
+0.3733	0.0976	1.000	all data are printed. If there is more than one report	0.3895	0.0180
+0.3779	0.5149	1.000	in the console printer code, prints as A, and code 0010	0.3894	0.0173
+0.3909	0.0977	1.000	selection code in the carriage control field only the last	0.3910	0.0146
+0.3939	0.5150	1.000	0011, which represents the character = in the console	0.3910	0.0146
+0.4055	0.0977	1.000	line is significant.	0.1297	0.0146
+0.4084	0.5150	1.000	printer, prints as $.	0.1391	0.0146
+0.4215	0.1147	1.000	When a selective printing key is on and a report	0.3722	0.0161
+0.4258	0.5320	1.000	When a I-bit in bit position 0 is encountered or bit	0.3722	0.0133
+0.4375	0.0959	1.000	selection code is encountered that does not match the	0.3910	0.0116
+0.4403	0.5150	1.000	positions 1 through 6 specify an undefined code, the	0.3891	0.0146
+0.4520	0.0977	1.000	key, the remainder of the block, including the follow-	0.3910	0.0160
+0.4545	0.5149	1.000	code is ignored and does not cause any printing. It	0.3893	0.0170
+0.4662	0.0957	1.000	ing carriage control bytes, is ignored, and printing	0.3913	0.0183
+0.4709	0.5150	1.000	has the same effect as the blank code. Its use for this	0.3891	0.0131
+0.4839	0.0977	1.000	does not take place. Transmission of data to the	0.3891	0.0132
+0.4862	0.5150	1.000	purpose, however, is not recommended for compati-	0.3893	0.0168
+0.4985	0.0977	1.000	printer continues, however, until either the end code	0.3891	0.0146
+0.5029	0.5150	1.000	bility reasons. In addition to the 48 ecs set, the 120	0.3891	0.0147
+0.5119	0.5148	1.000	ECS and 48 BCD sets can be used. They are also shown	0.3879	0.0241
+0.5130	0.0959	1.000	is encountered, the control word count is exhausted	0.3891	0.0146
+0.5286	0.0958	1.000	or the buffer is filled up. When printing is suppressed,	0.3912	0.0169
+0.5333	0.5132	1.000	in the Appendix.	0.1241	0.0132
+0.5451	0.0977	1.000	post-spacing of the carriage also is suppressed.	0.3346	0.0146
+0.5609	0.1128	1.000	Normally end of operation is given when printing	0.3722	0.0147
+0.5696	0.5150	1.000	Printer Timing	0.1016	0.0135
+0.5727	0.0957	1.000	of the line is completed. When printing is suppressed,	0.3915	0.0199
+0.5872	0.5150	1.000	The time required to print and space one line is about	0.3872	0.0146
+0.5915	0.0959	1.000	end of operation is sent at the completion of data	0.3891	0.0146
+0.6017	0.5132	1.000	100 milliseconds. Data transmission from the com-	0.3891	0.0131
+0.6051	0.0957	1.000	transfer. No indication concerning the suppression is	0.3894	0.0185
+0.6177	0.5132	1.000	puter to the printer's buffer always follows immedi-	0.3891	0.0145
+0.6191	0.0955	1.000	ever sent to the computer.	0.1907	0.0188
+0.6316	0.5131	1.000	ately after the wrIte instruction is issued and takes	0.3892	0.0154
+0.6482	0.5113	1.000	place at the rate of one 8-bit byte per 64 microseconds.	0.3910	0.0161
+0.6584	0.0977	1.000	Out of Material	0.1109	0.0102
+0.6642	0.5113	1.000	A complete line of printing information is thus trans-	0.3891	0.0161
+0.6758	0.0959	1.000	The printer continues to print in response to WRITE	0.3872	0.0146
+0.6788	0.5132	1.000	mitted in approximately 8.5 milliseconds. The time	0.3891	0.0146
+0.6899	0.0938	1.000	instructions until the last form has passed the form-	0.3913	0.0175
+0.6944	0.5112	1.000	required to space over up to three lines is approxi-	0.3893	0.0166
+0.7064	0.0940	1.000	sensing switch. When the form-sensing switch has been	0.3891	0.0146
+0.7106	0.5132	1.000	mately 20 milliseconds, out of which the first 8.5 milli-	0.3872	0.0133
+0.7204	0.0938	1.000	tripped, the out-of-material light comes on and an	0.3894	0.0185
+0.7252	0.5113	1.000	seconds are overlapped with the data transmission	0.3891	0.0147
+0.7355	0.0938	1.000	end-exception indication is given upon completion	0.3894	0.0180
+0.7397	0.5130	1.000	time. The 20-millisecond period can be occupied	0.3875	0.0178
+0.7513	0.0939	1.000	of the printing of the current line. An end-of-operation	0.3894	0.0171
+0.7552	0.5111	1.000	either by post-spacing due to the preceding print cycle,	0.3895	0.0184
+0.7666	0.0938	1.000	accompanies the end-exception if the completion of	0.3894	0.0176
+0.7718	0.5113	1.000	by skipping for the present cycle or by a combination	0.3891	0.0146
+0.7801	0.0937	1.000	the current line constitutes also completion of the	0.3896	0.0196
+0.7863	0.5113	1.000	of both. When spacing is completed, the contents of	0.3891	0.0161
+0.7979	0.0959	1.000	WRITE operation.	0.1203	0.0132
+0.8023	0.5113	1.000	the buffer are printed. This takes approximately 80	0.3891	0.0160
+0.8132	0.1107	1.000	The punch in channel 12 of the carriage tape is used	0.3706	0.0173
+0.8182	0.5113	1.000	milliseconds. The above timing of the printer is	0.3891	0.0161
+0.8279	0.0919	1.000	in conjunction with the forms sensing switch so that	0.3914	0.0181
+0.8327	0.5094	1.000	shown in Figure 45.	0.1485	0.0147
+0.8445	0.0921	1.000	the current form will be completed when an out-of-	0.3891	0.0146
+0.8488	0.5282	1.000	The end-of-operation indication signifying the com-	0.3722	0.0146
+0.8571	0.0938	1.000	material condition occurs. Because of this feature, the	0.3896	0.0199
+0.8648	0.5113	1.000	pletion of the printing of a line is given at the very	0.3872	0.0146
+0.8750	0.0921	1.000	ability to single-line print under manual control is not	0.3910	0.0145
+0.8789	0.5093	1.000	end of the operation, whereupon post-spacing for this	0.3913	0.0177
+0.8910	0.0902	1.000	provided.	0.0714	0.0145
+0.8953	0.5113	1.000	cycle takes place. Any time thereafter a new WRITE	0.3872	0.0147
+0.9186	0.0902	1.000	148	0.0244	0.0087
+0.9200	0.1410	1.000	IBM 7030	0.0695	0.0088

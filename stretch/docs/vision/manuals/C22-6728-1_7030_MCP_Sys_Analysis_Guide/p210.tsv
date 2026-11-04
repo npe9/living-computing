@@ -1,0 +1,112 @@
+0.0948	0.0917	1.000	The Service Op Routines for Fetch and Store	0.3373	0.0216
+0.1017	0.5432	1.000	K	0.0150	0.0116
+0.1017	0.5808	1.000	= Time clock calibration constant	0.2594	0.0146
+0.1163	0.5451	1.000	S	0.0094	0.0102
+0.1177	0.5808	1.000	= Adjusted seconds	0.1485	0.0132
+0.1262	0.0919	1.000	The communication region is stored in MCP at	0.3537	0.0154
+0.1321	0.5808	1.000	= Adjusted minutes	0.1485	0.0133
+0.1323	0.5414	1.000	M	0.0207	0.0102
+0.1424	0.0902	1.000	KSILO. The service routines for $FECRG and	0.3534	0.0131
+0.1467	0.5808	1.000	= Adjusted hours	0.1316	0.0133
+0.1468	0.5414	1.000	H	0.0169	0.0102
+0.1550	0.0919	1.000	$STRG both receive control disabled from the	0.3443	0.0152
+0.1612	0.5451	1.000	AC = Accumulator	0.1523	0.0103
+0.1705	0.0900	1.000	identifier. They start at KFECRG and KSTRG,	0.3594	0.0171
+0.1758	0.5714	1.000	= Remainder register	0.1767	0.0118
+0.1759	0.5432	1.000	RM	0.0301	0.0116
+0.1875	0.0921	1.000	respectively, and use a common subroutine, KCAB,	0.3910	0.0146
+0.1933	0.5432	1.000	Upon entry at ZTIME, the routine adjusts the	0.3402	0.0146
+0.1976	0.0730	1.000	• to set up the transmission and perform error checking.	0.4349	0.0205
+0.2057	0.5223	1.000	return address and calculates the storage address	0.3785	0.0213
+0.2151	0.1053	1.000	Control is given to dispatcher error control with	0.3665	0.0131
+0.2211	0.5223	1.000	from the calling sequence. If an AD or USA occur,	0.3897	0.0203
+0.2311	0.0902	1.000	error code 9 in $14 if the region specified exceeds	0.3778	0.0131
+0.2350	0.5241	1.000	or if a PP storage address is outside PP bounds,	0.3711	0.0225
+0.2440	0.0900	1.000	PP bounds, or if USA or AD occurs while calculating	0.3990	0.0178
+0.2516	0.5223	1.000	dispatcher error control is entered with error code	0.3915	0.0196
+0.2601	0.0901	1.000	the region address. Otherwise, control is returned	0.3894	0.0157
+0.2668	0.5223	1.000	9 in $14. Otherwise, the clock reading is converted	0.3952	0.0196
+0.2737	0.0882	1.000	to the parent routine which performs the transmission	0.4082	0.0163
+0.2833	0.5226	1.000	according to the algorithm, and return is made via	0.3835	0.0161
+0.2868	0.0900	1.000	and returns via the service op return routine (KSUPP).	0.4139	0.0188
+0.2960	0.5223	1.000	the service op return routine (KSUPP).	0.2957	0.0181
+0.3182	0.0881	1.000	TIME SERVICE OP ROUTINES	0.2335	0.0155
+0.3227	0.5207	1.000	The $SIT Service Op Routine	0.2199	0.0161
+0.3487	0.0882	1.000	There are two service ops dealing with time: $TIME	0.3987	0.0156
+0.3519	0.5224	1.000	This routine is entered disabled from the identifier	0.3857	0.0166
+0.3648	0.0865	1.000	is a request for the current time clock reading in IQS	0.4023	0.0131
+0.3673	0.5224	1.000	at JSITX. It:adjusts the return address in STIC,	0.3669	0.0180
+0.3775	0.0883	1.000	format, and $SIT is a request to set the interval timer	0.4099	0.0150
+0.3806	0.5223	1.000	calculates the address of the timer setting, and	0.3576	0.0185
+0.3939	0.0883	1.000	to a specified value.	0.1523	0.0116
+0.3982	0.5226	1.000	stores the setting in $IT. If AD or USA occurs while	0.3985	0.0132
+0.4112	0.5224	1.000	calculating the address of the timer setting, control	0.3895	0.0172
+0.4230	0.0865	1.000	The STIME Service Op Routine	0.2368	0.0174
+0.4265	0.5205	1.000	is given to dispatcher error control with error code	0.3913	0.0157
+0.4418	0.5226	1.000	9 in $14. Otherwise, return is made via the service	0.3947	0.0146
+0.4505	0.0881	1.000	This routine will read the time clock, adjust the	0.3650	0.0172
+0.4578	0.5207	1.000	op return routine (KSUPP).	0.2068	0.0131
+0.4647	0.0862	1.000	reading by a predetermined calibration constant,	0.3670	0.0179
+0.4805	0.0863	1.000	convert the result into an hours-minutes-seconds	0.3705	0.0142
+0.4949	0.0844	1.000	form, and transmit the result to a requested location.	0.4064	0.0164
+0.5015	0.5226	1.000	THE COMMENTATOR	0.1692	0.0131
+0.5102	0.0865	1.000	The calling sequence is:	0.1823	0.0132
+0.5244	0.1014	1.000	B, ŞMCP	0.0735	0.0152
+0.5304	0.5243	1.000	The commentator service routine is entered from the	0.4006	0.0137
+0.5392	0.0996	1.000	, $TIME	0.0695	0.0145
+0.5451	0.5226	1.000	identifier when the $COMM pseudo-op is requested.	0.3872	0.0146
+0.5536	0.1015	1.000	, A. (I)	0.0508	0.0133
+0.5609	0.5226	1.000	It may also be entered by a disabled MCP user, and	0.3910	0.0147
+0.5698	0.1034	1.000	(Return)	0.0602	0.0102
+0.5741	0.5224	1.000	from the receptor when a commentator output opera-	0.3988	0.0161
+0.5841	0.0845	1.000	where	0.0471	0.0092
+0.5900	0.5226	1.000	tion is completed. The function of the commentator	0.3891	0.0133
+0.5976	0.1014	1.000	A. (I is the full word (18 bit) address to which the	0.3743	0.0144
+0.6045	0.5226	1.000	is to type messages of up to 10 words in IQS code on	0.3929	0.0133
+0.6133	0.1429	1.000	edited reading is transmitted. The edited	0.3158	0.0131
+0.6177	0.5222	1.000	the console typewriter.	0.1754	0.0147
+0.6277	0.1428	1.000	reading will consist of 8 IQS-coded characters	0.3479	0.0137
+0.6306	0.5392	1.000	The commentator write operation is performed as	0.3765	0.0194
+0.6439	0.1429	1.000	and will occupy A. (I) in the format:	0.2632	0.0116
+0.6479	0.5187	1.000	setup I-O. The console may be used in a PP IOD,	0.3800	0.0179
+0.6581	0.1578	1.000	.0 -.15	0.0716	0.0109
+0.6583	0.2612	1.000	hours	0.0433	0.0103
+0.6611	0.5205	1.000	and is used in an MCP IOD by the debugging package.	0.4008	0.0178
+0.6715	0.1579	1.000	.16-.23	0.0733	0.0116
+0.6728	0.2556	1.000	colon	0.0471	0.0106
+0.6772	0.5223	1.000	Thus, the commentator may receive a request and	0.3782	0.0172
+0.6873	0.2594	1.000	minutes	0.0621	0.0105
+0.6875	0.1579	1.000	.24- .39	0.0714	0.0102
+0.6917	0.5205	1.000	find the console busy with an unrelated operation.	0.3725	0.0155
+0.7019	0.1579	1.000	.40 -.47	0.0715	0.0105
+0.7020	0.2575	1.000	colon	0.0451	0.0102
+0.7078	0.5226	1.000	The commentator must then be prepared to take over	0.3966	0.0131
+0.7166	0.1579	1.000	,48-	0.0432	0.0087
+0.7166	0.2594	1.000	seconds	0.0620	0.0102
+0.7166	0.2011	1.000	. 63	0.0282	0.0116
+0.7217	0.5205	1.000	the console, stack another user's interrupt, attend	0.3837	0.0163
+0.7297	0.0996	1.000	The clock reading is adjusted, and successive	0.3459	0.0146
+0.7362	0.5205	1.000	to its own function, and arrange the eventual unstacking	0.4176	0.0163
+0.7432	0.0806	1.000	divisions by 60 are performed to yield seconds,	0.3595	0.0186
+0.7515	0.5207	1.000	of the original user's interrupt.	0.2387	0.0131
+0.7602	0.0808	1.000	minutes, and hours, the first two of which will appear	0.4079	0.0160
+0.7747	0.0808	1.000	in the remainder register. The algorithm is as	0.3609	0.0132
+0.7767	0.5185	1.000	Main Flow	0.0832	0.0163
+0.7892	0.0808	1.000	follows:	0.0602	0.0103
+0.8035	0.0974	1.000	T+K=Qs	0.0834	0.0136
+0.8067	0.5207	1.000	The commentator program uses a series of sub-	0.3647	0.0131
+0.8173	0.0937	1.000	Q5 = Am(AC)+S(RM)	0.1810	0.0297
+0.8201	0.5205	1.000	routines. It is entered at JCOMM (Figure 121)	0.3538	0.0172
+0.8353	0.5186	1.000	when the pseudo-op $COMM is requested, and at	0.3688	0.0173
+0.8482	0.0961	1.000	Qm = H(AC)+ M	0.1378	0.0265
+0.8511	0.5205	1.000	SCOMM when being used by a disabled MCP program.	0.4063	0.0157
+0.8634	0.2293	1.000	(RM)	0.0376	0.0116
+0.8663	0.5188	1.000	In the latter case, the linkage is:	0.2500	0.0131
+0.8764	0.0789	1.000	where:	0.0527	0.0118
+0.8808	0.5357	1.000	SIC, SCOMIC	0.1015	0.0131
+0.8924	0.1335	1.000	= Current time clock reading (26 bits from	0.3233	0.0131
+0.8924	0.0977	1.000	T	0.0113	0.0087
+0.8949	0.5375	1.000	BD, SCOMM	0.0979	0.0139
+0.9070	0.1673	1.000	28-53)	0.0489	0.0116
+0.9112	0.5357	1.000	(parameters as for $COMM)	0.2105	0.0118
+0.9520	0.0789	1.000	210	0.0207	0.0087

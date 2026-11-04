@@ -1,0 +1,19 @@
+0.0669	0.0695	1.000	NUNDSY	0.0677	0.0131
+0.1366	0.0695	1.000	LINKAGE	0.0733	0.0102
+0.1381	0.4981	1.000	other three types of symbols in error are temporarily	0.3985	0.0116
+0.1526	0.4981	1.000	stacked, so that only one iteration of the symbol	0.3571	0.0116
+0.1657	0.0695	1.000	OUTPUT branches directly to NUNDSY.	0.2951	0.0146
+0.1672	0.4962	1.000	table is necessary. After the complete iteration,	0.3665	0.0132
+0.1817	0.4981	1.000	the unused, multiply (with contradictions) and circu-	0.3891	0.0116
+0.1948	0.0695	1.000	DETAILS	0.0714	0.0116
+0.1962	0.4962	1.000	larly defined symbols, if any have been detected, are	0.3966	0.0132
+0.2121	0.4981	1.000	given to the output medium. For unused symbols,	0.3722	0.0118
+0.2238	0.0714	1.000	For symbols multiply-defined without contradiction,	0.3853	0.0131
+0.2252	0.4962	1.000	the address is also printed. Only the first 50 char-	0.3853	0.0133
+0.2364	0.0695	1.000	an error message is executed. Undefined symbols	0.3780	0.0154
+0.2412	0.4962	1.000	acters of the symbol will be printed. The SPNUS	0.3665	0.0118
+0.2529	0.0695	1.000	and their addresses are given immediately to the	0.3647	0.0132
+0.2558	0.4962	1.000	pseudo-op suppresses the listing of the unused	0.3440	0.0118
+0.2688	0.0695	1.000	specified output medium, and the locations of the	0.3647	0.0118
+0.2702	0.4981	1.000	symbol list.	0.0903	0.0120
+0.9186	0.0695	1.000	172	0.0207	0.0087

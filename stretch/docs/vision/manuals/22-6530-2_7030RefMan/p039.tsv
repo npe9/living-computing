@@ -1,0 +1,131 @@
+0.0610	0.0901	1.000	is zero, it has no effect on the associated computer.	0.3930	0.0148
+0.0624	0.5263	1.000	The operations that turn on indicator Bt, binary	0.3684	0.0132
+0.0770	0.1090	1.000	The other cpu register is provided only in com-	0.3741	0.0146
+0.0770	0.5094	1.000	transit, or indicator DT, decimal transit, also place the	0.3872	0.0146
+0.0930	0.5075	1.000	effective offset of the operation in the all-ones counter.	0.3891	0.0161
+0.0930	0.0921	1.000	puters which are to be used in multi-computer sys-	0.3910	0.0146
+0.1054	0.5073	1.000	These operations are LOAD TRANSIT AND SET and decimal	0.3876	0.0188
+0.1076	0.0902	1.000	tems. When not present, these bit positions behave	0.3929	0.0146
+0.1216	0.5092	1.000	MULTIPLY, DIVIDE, and MULTIPLY AND ADD.	0.2973	0.0174
+0.1235	0.0902	1.000	like the bit positions of address 0.	0.2481	0.0131
+0.1497	0.0902	1.000	PROGRAMMING NOTE	0.1485	0.0103
+0.1570	0.5094	1.000	Accumulator and Sign Byte Register	0.2575	0.0131
+0.1655	0.0919	1.000	Consider a system with ten closely coupled computers	0.3914	0.0206
+0.1758	0.5094	1.000	In many operations an implied operand is a field from	0.3872	0.0146
+0.1845	0.0902	1.000	known as cPu 0, cpu 1,.... CPU 9. If the program in	0.3910	0.0131
+0.1918	0.5094	1.000	the accumulator. The accumulator is a 128-bit register	0.3872	0.0131
+0.1991	0.0921	1.000	cpu 4 turns on bit 6.07 in its registers, the cpu indi-	0.3910	0.0131
+0.2078	0.5094	1.000	occupying locations 8 and 9. The left half of the	0.3872	0.0131
+0.2151	0.0902	1.000	cator in cpu 7 is actuated, permitting program inter-	0.3929	0.0131
+0.2224	0.5094	1.000	accumulator is in location 8, and the right half is in	0.3872	0.0131
+0.2311	0.0902	1.000	ruption in machine 7. The program which responds	0.3929	0.0131
+0.2369	0.5075	1.000	location 9. The sign of the accumulator operand is	0.3891	0.0146
+0.2456	0.0902	1.000	to such interruption examines some agreed-upon loca-	0.3929	0.0147
+0.2529	0.5094	1.000	contained in an associated register, the accumulator	0.3891	0.0132
+0.2602	0.0921	1.000	tion in the common core storage to find the full mes-	0.3910	0.0132
+0.2671	0.5093	1.000	sign byte register, an 8-bit register occupying bits 0.7	0.3874	0.0164
+0.2761	0.0902	1.000	sage that cpu 4 desired to send. This message may	0.3929	0.0133
+0.2848	0.5094	1.000	of location 10.	0.1071	0.0103
+0.2906	0.0921	1.000	contain the fact that it is sent by cPu 4.	0.2895	0.0146
+0.2994	0.5263	1.000	Variable field length binary quantities may be posi-	0.3703	0.0131
+0.3067	0.1071	1.000	This technique is necessary only in closely coupled	0.3741	0.0131
+0.3139	0.5075	1.000	tioned at any point in the accumulator. In decimal	0.3891	0.0161
+0.3227	0.0883	1.000	multi-computer systems. In systems where each com-	0.3947	0.0146
+0.3299	0.5056	1.000	operations, the accumulator is considered as 32 digit	0.3929	0.0161
+0.3372	0.0902	1.000	puter has its own core storage units and exchange, the	0.3929	0.0146
+0.3430	0.5075	1.000	positions, each of four bits. A variable field length	0.3891	0.0176
+0.3532	0.0902	1.000	several computers can communicate with one another	0.3929	0.0132
+0.3605	0.5094	1.000	decimal quantity may be positioned at any of these	0.3891	0.0132
+0.3677	0.0902	1.000	through the exchanges, using channel signal to attract	0.3929	0.0132
+0.3750	0.5075	1.000	digit positions, but its digits may not be split between	0.3910	0.0160
+0.3836	0.0921	1.000	the attention of the called computer.	0.2688	0.0132
+0.3909	0.5094	1.000	accumulator digit positions.	0.2030	0.0146
+0.4055	0.5263	1.000	Floating point quantities in the accumulator may	0.3722	0.0146
+0.4215	0.5094	1.000	have either single- or double-precision format. In either	0.3872	0.0131
+0.4244	0.0902	1.000	Left Zeros Counter	0.1353	0.0116
+0.4360	0.5094	1.000	format the exponent and its sign occupy bits 0-11 of	0.3891	0.0146
+0.4462	0.0902	1.000	In the connective operations, a count is developed of	0.3929	0.0145
+0.4520	0.5094	1.000	the left half of the accumulator, location 8. In the	0.3891	0.0131
+0.4606	0.0902	1.000	the number of zeros in the result field which are to the	0.3929	0.0133
+0.4666	0.5094	1.000	single-precision format, the 48-bit fraction occupies	0.3891	0.0146
+0.4767	0.0902	1.000	left of the most significant one-bit. This count is	0.3929	0.0146
+0.4824	0.5094	1.000	bits 12-59 of the left half of the accumulator. The	0.3891	0.0133
+0.4927	0.0902	1.000	placed in the left zeros counter, bits 17-23 of location	0.3929	0.0131
+0.4970	0.5094	1.000	remainder of the accumulator is not used. In the	0.3891	0.0133
+0.5073	0.0902	1.000	7. It remains there until changed by another connec-	0.3929	0.0131
+0.5130	0.5094	1.000	double-precision format, the high-order portion of the	0.3910	0.0146
+0.5218	0.0902	1.000	tive operation or by one of the operations described	0.3930	0.0162
+0.5276	0.5094	1.000	fraction occupies the same position as the single-	0.3891	0.0146
+0.5389	0.0920	1.000	below.	0.0492	0.0124
+0.5421	0.5094	1.000	precision fraction. The remaining low-order 48 bits	0.3891	0.0161
+0.5536	0.1090	1.000	The two high-order bits of the left zeros counter are	0.3741	0.0133
+0.5581	0.5075	1.000	of the 96-bit double precision fraction extend from bit	0.3929	0.0146
+0.5682	0.0902	1.000	also used to distinguish between the four operations	0.3929	0.0147
+0.5741	0.5113	1.000	60 of the left half of the accumulator, location 8,	0.3872	0.0131
+0.5827	0.0921	1.000	that can turn on the indicator DT, decimal transit.	0.3891	0.0147
+0.5887	0.5094	1.000	through bit 107 of the right half of the accumulator,	0.3891	0.0147
+0.5988	0.0921	1.000	These are the decimal operations MULTIPLY, DIVIDE,	0.3910	0.0146
+0.6032	0.5094	1.000	location 9. The sign of the fraction is located in the	0.3910	0.0147
+0.6148	0.0902	1.000	MULTIPLY AND ADD, and LOAD TRANSIT AND SET. The	0.3929	0.0131
+0.6191	0.5094	1.000	accumulator sign byte register in either format.	0.3477	0.0146
+0.6294	0.0902	1.000	remaining bits of the left zeros counter are cleared.	0.3891	0.0146
+0.6336	0.5263	1.000	Operands in storage may have associated with them	0.3741	0.0146
+0.6439	0.0902	1.000	The left zeros counter is similarly set when indicator	0.3929	0.0161
+0.6482	0.5075	1.000	sign bytes ranging in size from one to eight bits. The	0.3947	0.0191
+0.6599	0.0902	1.000	вт, binary transit, is turned on by a binary LOAD TRAN-	0.3929	0.0160
+0.6657	0.5075	1.000	eight possible sign bytes and their corresponding posi-	0.3910	0.0146
+0.6758	0.0883	1.000	SIT AND SET operation.	0.1635	0.0146
+0.6773	0.5094	1.000	tions in the accumulator sign byte register are:	0.3383	0.0161
+0.6890	0.1015	1.000	The contents of the left zeros counter are also	0.3797	0.0147
+0.7005	0.7707	1.000	POSITION IN	0.0846	0.0133
+0.7016	0.5187	1.000	BYTE SIGN	0.0886	0.0139
+0.7048	0.0902	1.000	changed in all floating point division operations. In	0.3929	0.0146
+0.7106	0.7444	1.000	SIGN BYTE REGISTER	0.1335	0.0133
+0.7122	0.5226	1.000	SIZE	0.0320	0.0131
+0.7122	0.5677	1.000	BYTE	0.0451	0.0131
+0.7181	0.0900	1.000	these operations the left zeros counter contains the	0.3933	0.0196
+0.7253	0.7406	1.000	01234567	0.1410	0.0116
+0.7345	0.0883	1.000	amount of shift that is applied in the normalization	0.3948	0.0164
+0.7442	0.5338	1.000	1	0.0113	0.0116
+0.7442	0.7406	1.000	S	0.1429	0.0102
+0.7442	0.5695	1.000	S	0.0169	0.0131
+0.7544	0.0902	1.000	process.	0.0583	0.0145
+0.7587	0.8064	1.000	STOO	0.0771	0.0116
+0.7587	0.5677	1.000	S T	0.0414	0.0131
+0.7602	0.7406	1.000	0	0.0094	0.0087
+0.7602	0.7763	1.000	0	0.0113	0.0087
+0.7602	0.7951	1.000	0	0.0113	0.0087
+0.7602	0.5320	1.000	2	0.0132	0.0131
+0.7745	0.8064	1.000	S TUO	0.0771	0.0105
+0.7747	0.7575	1.000	0	0.0113	0.0102
+0.7747	0.7763	1.000	0	0.0113	0.0102
+0.7747	0.7951	1.000	0	0.0113	0.0102
+0.7747	0.7406	1.000	0	0.0094	0.0102
+0.7747	0.5695	1.000	STU	0.0564	0.0131
+0.7892	0.7500	1.000	OOOSTUV	0.1353	0.0116
+0.7892	0.5695	1.000	STUV	0.0733	0.0131
+0.7907	0.7406	1.000	0	0.0094	0.0087
+0.7922	0.5357	1.000	4	0.0094	0.0087
+0.7936	0.0902	1.000	All-Ones Counter	0.1297	0.0131
+0.8052	0.7406	1.000	OOOZSTUV	0.1447	0.0102
+0.8052	0.5733	1.000	ZSTUV.	0.0996	0.0131
+0.8067	0.5357	1.000	5	0.0075	0.0087
+0.8124	0.0902	1.000	In the connective operations, a count is developed of	0.3947	0.0176
+0.8198	0.7406	1.000	OOZZSTUV	0.1447	0.0116
+0.8212	0.5733	1.000	ZZSTUV	0.1071	0.0131
+0.8212	0.5320	1.000	6	0.0132	0.0131
+0.8285	0.0902	1.000	the total number of ones in the result field. This	0.3947	0.0161
+0.8358	0.7368	1.000	O ZZZSTUV	0.1485	0.0116
+0.8358	0.5320	1.000	7	0.0132	0.0145
+0.8358	0.5677	1.000	ZZZSTUV	0.1297	0.0131
+0.8427	0.0900	1.000	count is placed in the all-ones counter, bits 44-50 of	0.3952	0.0212
+0.8503	0.7406	1.000	ZZZZSTUV	0.1447	0.0116
+0.8517	0.5357	1.000	8	0.0094	0.0116
+0.8517	0.5714	1.000	ZZZZSTUV	0.1447	0.0131
+0.8604	0.0901	1.000	location 7. It remains there until changed by another	0.3949	0.0150
+0.8735	0.5075	1.000	Here S is the sign bit, T, U, and V are flag bits, and	0.3947	0.0160
+0.8743	0.0902	1.000	connective operation or by one of the operations de-	0.3929	0.0144
+0.8866	0.5094	1.000	the bits marked Z. are zone bits. The sign and flag	0.3929	0.0161
+0.8909	0.0902	1.000	scribed below.	0.1090	0.0132
+0.9288	0.0902	1.000	36	0.0188	0.0116
+0.9288	0.1353	1.000	IBM 7030	0.0639	0.0088

@@ -1,0 +1,109 @@
+0.1017	0.0957	1.000	registers restored, and control returned to job control. then the reel history routine is entered. For non-	0.8066	0.0187
+0.1177	0.5282	1.000	tape units, unassign first waits for the unit to be-	0.3741	0.0160
+0.1321	0.5282	1.000	come not busy, after which the unit is released. Any	0.3966	0.0161
+0.1336	0.0959	1.000	THE ACTUATOR TABLES ALLOCATION	0.3102	0.0118
+0.1482	0.5282	1.000	repeated EKJ's result in a type 76 error exit to	0.3590	0.0146
+0.1497	0.0940	1.000	ALGORITHM:	0.1053	0.0131
+0.1627	0.5282	1.000	SDISP. For both kinds of units, the appropriate chan-	0.4023	0.0146
+0.1773	0.5282	1.000	nel and unit status table bits are reset at the end of	0.3872	0.0146
+0.1788	0.1147	1.000	Let B equal the B limit (higher) from the LIM card.	0.3853	0.0116
+0.1918	0.5263	1.000	the loop (at TJTAP and TJNTPS), and the disabled	0.3816	0.0161
+0.1933	0.1147	1.000	Let S equal the first word of the Symbolic I-O Loca-	0.3910	0.0116
+0.2064	0.5282	1.000	modes. After all units are unassigned, any stacked	0.3853	0.0161
+0.2089	0.1296	1.000	tion Table.	0.0829	0.0124
+0.2224	0.1147	1.000	Let R equal the largest Reference Number per prob-	0.3929	0.0131
+0.2224	0.5282	1.000	PP interrupts are discarded from SQUE, and the	0.3684	0.0131
+0.2369	0.5282	1.000	SAS and SSIO bits in the program status table are	0.3703	0.0131
+0.2384	0.1278	1.000	lem program.	0.1071	0.0116
+0.2515	0.1147	1.000	Let F equal the first location of the File Area Table.	0.3947	0.0131
+0.2526	0.5281	1.000	cleared.	0.0660	0.0138
+0.2674	0.1147	1.000	Let I equal the total number of IOD cards for prob-	0.3835	0.0132
+0.2674	0.5451	1.000	Aside from the index saving area, unassign uses	0.3647	0.0132
+0.2805	0.5282	1.000	only one word of working storage, TJCW, to copy	0.3741	0.0146
+0.2833	0.1278	1.000	lem program.	0.1071	0.0118
+0.2951	0.5263	1.000	control word into. It always returns to the address	0.3835	0.0146
+0.2964	0.1147	1.000	Let U equal the first location of the Unit Area Table.	0.3947	0.0133
+0.3109	0.5282	1.000	in $15.	0.0545	0.0133
+0.3109	0.1165	1.000	Let R' equal the total number of unique units	0.3308	0.0133
+0.3270	0.1297	1.000	requested by problem program.	0.2387	0.0118
+0.3415	0.5282	1.000	JC4 Print Program	0.1485	0.0146
+0.3415	0.1090	1.000	Let P equal the first address of the Reel Pool	0.3459	0.0131
+0.3576	0.1278	1.000	Table.	0.0508	0.0102
+0.3691	0.5301	1.000	This program prints out JC4 and $RESLD error	0.3590	0.0161
+0.3706	0.1128	1.000	Let N equal the number of individual REEL requests,	0.3966	0.0131
+0.3852	0.5301	1.000	diagnostics on the system output tape, and allows	0.3703	0.0131
+0.3852	0.1278	1.000	plus one for every IOD card with the type of	0.3289	0.0131
+0.3997	0.5320	1.000	each installation to modify the routine easily so	0.3553	0.0116
+0.3997	0.1297	1.000	TAPE that was submitted without a REEL card.	0.3553	0.0116
+0.4142	0.1128	1.000	Let TMARK equal the next slot available after the	0.3722	0.0131
+0.4142	0.5301	1.000	that these messages may be put out via the commen-	0.3947	0.0131
+0.4288	0.5301	1.000	tator. The unmodified routine (YPR) uses no index	0.3853	0.0131
+0.4302	0.1278	1.000	Reel Pool Table.	0.1278	0.0102
+0.4448	0.1729	1.000	S = MAX (B, 300008)	0.1560	0.0116
+0.4448	0.5301	1.000	registers, and employs the short message routine	0.3759	0.0131
+0.4462	0.0940	1.000	then:	0.0395	0.0087
+0.4578	0.5301	1.000	(ZSPLPR) to effect the printout. All messages must	0.3966	0.0131
+0.4593	0.1729	1.000	S+R=F	0.0695	0.0087
+0.4724	0.1729	1.000	F + (I * 7) = U	0.1053	0.0116
+0.4738	0.5301	1.000	be 8 words long and in A8 code.	0.2387	0.0116
+0.4869	0.1729	1.000	U+(R' *9)=P	0.1184	0.0116
+0.4884	0.5489	1.000	The modified routine uses $2 and does not restore	0.3741	0.0131
+0.5015	0.5301	1.000	it, uses SA8IQS to convert the message, and $COMM	0.4004	0.0146
+0.5015	0.1729	1.000	P + N= Contents of TMARK	0.2086	0.0174
+0.5188	0.5301	1.000	to print the message online.	0.2124	0.0118
+0.5320	0.5489	1.000	The routine may be modified by putting in a NOP	0.3628	0.0132
+0.5320	0.0959	1.000	The Unassign Routine: The unassign routine (Figure	0.3947	0.0132
+0.5463	0.0939	1.000	42) makes the I-O units used by the previous problem	0.4024	0.0134
+0.5464	0.5320	1.000	at location YPR with any of three effective addresses:	0.4041	0.0133
+0.5608	0.0939	1.000	program available again for assignment, unloads and	0.3987	0.0151
+0.5609	0.6748	1.000	produces messages on-line only	0.2425	0.0133
+0.5620	0.5450	1.000	1. NOP, 0.0	0.1055	0.0156
+0.5755	0.6729	1.000	in the BYPASS mode.	0.1635	0.0133
+0.5755	0.0959	1.000	rewinds the tapes used and tells the operator what to	0.3947	0.0133
+0.5900	0.6748	1.000	produces messages on-line in	0.2256	0.0133
+0.5900	0.0959	1.000	do with the unloaded reels. This routine is used only	0.4004	0.0133
+0.5914	0.5451	1.000	2. NOP, 1.0	0.1035	0.0164
+0.6045	0.6748	1.000	both the BYPASS and ONLINE	0.2237	0.0146
+0.6061	0.0959	1.000	by JC4, and is entered by the following calling	0.3477	0.0131
+0.6204	0.6747	1.000	modes.	0.0566	0.0136
+0.6231	0.0958	1.000	sequence:	0.0735	0.0110
+0.6347	0.6728	1.000	produces messages on-line for	0.2352	0.0137
+0.6352	0.1297	1.000	LVI, 15, (return address)	0.1955	0.0146
+0.6366	0.5451	1.000	3. NOP, 2.0	0.1053	0.0146
+0.6497	0.6729	1.000	all modes (BYPASS, ONLINE,	0.2312	0.0145
+0.6512	0.1278	1.000	B, IJUNAS	0.0883	0.0146
+0.6604	0.6727	1.000	OFFLINE).	0.0926	0.0178
+0.6642	0.1128	1.000	It saves and restores the used index registers.	0.3515	0.0116
+0.6773	0.5282	1.000	Major Package Fetcher	0.1805	0.0146
+0.6773	0.0977	1.000	Iwo subroutines are entered: SFREE (an actuator	0.3759	0.0131
+0.6889	0.0958	1.000	op) and the reel history routine (JHISTE). SFREE	0.3780	0.0176
+0.7048	0.0940	1.000	effects the unassignment of tape units, and JHISTE	0.3816	0.0176
+0.7064	0.5301	1.000	This routine calls in segments of MCP from the disk	0.3966	0.0161
+0.7205	0.0956	1.000	prints via the output program a record of the tape	0.3746	0.0200
+0.7224	0.5282	1.000	as required, and keeps track of the current segment	0.3966	0.0131
+0.7355	0.5282	1.000	in core. It is entered at YMPFCH, and on the basis	0.3929	0.0161
+0.7384	0.0959	1.000	reels used by the problem program.	0.2707	0.0116
+0.7500	0.5282	1.000	of the content of $1 and the current value of YMPSAV,	0.4079	0.0145
+0.7515	0.1128	1.000	After saving index registers, unassign initializes	0.3703	0.0146
+0.7630	0.5282	1.000	decides whether or not a fetch is necessary. If not,	0.3947	0.0176
+0.7688	0.0977	1.000	the reel history routine and tests TMAXRF, or	0.3553	0.0103
+0.7776	0.5282	1.000	it reiurns immediately at YFHBR. If necessary, the	0.4004	0.0176
+0.7797	0.0976	1.000	SMAXRN, to see if the previous job had any IOD	0.3593	0.0162
+0.7951	0.5263	1.000	fetch is made via $FETCH, and the fetch parameter	0.3910	0.0146
+0.7964	0.0977	1.000	cards. Starting at TJNEXT, the program loops	0.3571	0.0133
+0.8079	0.5299	1.000	CBUFF, and CFOT are reset to indicate an empty	0.3744	0.0183
+0.8096	0.0959	1.000	through successive entries in the PP symbolic I-O	0.3797	0.0146
+0.8227	0.0959	1.000	location table. Unassignment proceeds on a unit	0.3665	0.0146
+0.8241	0.5263	1.000	fetch buffer. Return is then made to the fetched seg-	0.3985	0.0160
+0.8387	0.5282	1.000	ment at FHBR.	0.1165	0.0160
+0.8387	0.0959	1.000	basis. As a unit is checked out, the SUUNAS bit	0.3684	0.0147
+0.8545	0.0959	1.000	is set to one in the unit area table, preventing re-	0.3759	0.0133
+0.8677	0.0959	1.000	peated unassignment of a unit with several IOD	0.3534	0.0145
+0.8706	0.5301	1.000	The Reel History Routine	0.1898	0.0146
+0.8866	0.0977	1.000	cards attached to it. For tape units, the mount bits	0.3797	0.0116
+0.8997	0.5301	1.000	The reel history routine (JHISTE) prints the job name,	0.4098	0.0131
+0.9012	0.0959	1.000	are set to zero (to guarantee entry to the actuator),	0.3835	0.0116
+0.9142	0.5282	1.000	the Channel and unit number, the IOD number which	0.3853	0.0131
+0.9142	0.0959	1.000	the SFREE routine is used to unassign the unit, and	0.3872	0.0145
+0.9548	0.7293	1.000	System Operation Programs	0.1579	0.0118
+0.9564	0.9060	1.000	83	0.0207	0.0073

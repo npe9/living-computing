@@ -1,0 +1,125 @@
+0.0567	0.0921	1.000	play and in encoding the keys on the numerical	0.3985	0.0189
+0.0609	0.5132	1.000	tion is made between its terminals. This jack does	0.3929	0.0161
+0.0720	0.0937	1.000	switches.	0.0682	0.0173
+0.0755	0.5132	1.000	not disable the signal key.	0.1880	0.0176
+0.0940	0.2179	1.000	CHARACTER DIS-	0.1111	0.0169
+0.0973	0.3815	1.000	CORRESPOND-	0.0922	0.0133
+0.1087	0.3834	1.000	ING KEY ON	0.0847	0.0151
+0.1089	0.2312	1.000	PLAYED ON	0.0790	0.0133
+0.1145	0.5131	1.000	Binary Lights	0.0998	0.0167
+0.1205	0.3853	1.000	NUMERICAL	0.0847	0.0163
+0.1206	0.2293	1.000	NUMERICAL	0.0846	0.0145
+0.1206	0.0883	1.000	BINARY	0.0583	0.0145
+0.1321	0.2405	1.000	DISPLAY	0.0603	0.0163
+0.1351	0.3909	1.000	SWITCHES	0.0696	0.0133
+0.1352	0.1015	1.000	CODE	0.0395	0.0131
+0.1381	0.5113	1.000	For display of machine conditions, flags, indicators,	0.3929	0.0160
+0.1511	0.1014	1.000	0000	0.0377	0.0133
+0.1512	0.2613	1.000	0	0.0113	0.0116
+0.1526	0.5113	1.000	and other binary information, there are 32 indepen-	0.3947	0.0160
+0.1628	0.1015	1.000	0001	0.0376	0.0145
+0.1642	0.4154	1.000	1	0.0113	0.0116
+0.1642	0.2575	1.000	1	0.0132	0.0131
+0.1667	0.5111	1.000	dent binary lights. They are located immediately be-	0.3932	0.0198
+0.1773	0.1015	1.000	0010	0.0357	0.0131
+0.1788	0.4173	1.000	2	0.0094	0.0116
+0.1830	0.5113	1.000	hind the binary switches and are so grouped that	0.3947	0.0176
+0.1890	0.1015	1.000	0011	0.0376	0.0145
+0.1991	0.5113	1.000	there is visual correspondence between the binary	0.3929	0.0176
+0.2035	0.1015	1.000	0100	0.0357	0.0116
+0.2136	0.5094	1.000	lights and binary switches, even though there is no	0.3947	0.0176
+0.2166	0.1015	1.000	0101	0.0357	0.0116
+0.2282	0.1015	1.000	0110	0.0357	0.0131
+0.2297	0.5113	1.000	physical connection. Each of the sets of lights has a	0.3929	0.0161
+0.2297	0.4154	1.000	6	0.0113	0.0131
+0.2413	0.1015	1.000	0111	0.0338	0.0131
+0.2413	0.4135	1.000	7	0.0132	0.0131
+0.2456	0.5113	1.000	frame to hold a labeling strip.	0.2199	0.0160
+0.2515	0.2594	1.000	8	0.0113	0.0131
+0.2542	0.1014	1.000	1000	0.0358	0.0119
+0.2544	0.4154	1.000	8	0.0113	0.0116
+0.2630	0.5282	1.000	When a WRITE instruction is issued, the contents of	0.3759	0.0161
+0.2660	0.1015	1.000	1001	0.0357	0.0131
+0.2674	0.4154	1.000	9	0.0113	0.0116
+0.2674	0.2594	1.000	9	0.0113	0.0102
+0.2761	0.2632	1.000	. (decimal point)	0.1353	0.0219
+0.2771	0.5111	1.000	the first four bytes of the third output word are dis-	0.3932	0.0191
+0.2788	0.0995	1.000	1010	0.0379	0.0137
+0.2906	0.2594	1.000	- (minus sign)	0.1203	0.0176
+0.2907	0.0996	1.000	1011	0.0376	0.0160
+0.2936	0.5113	1.000	played in the binary lights, with those lights illumi-	0.3929	0.0161
+0.3023	0.0996	1.000	1100	0.0395	0.0174
+0.3038	0.2575	1.000	Blank	0.0489	0.0145
+0.3081	0.5094	1.000	nated that receive binary ones. The lights remain on	0.3947	0.0174
+0.3169	0.2575	1.000	BlankR	0.0489	0.0160
+0.3169	0.0996	1.000	1101	0.0376	0.0131
+0.3227	0.5113	1.000	until turned off by another wRITE instruction.	0.3459	0.0174
+0.3285	0.2575	1.000	Blank	0.0489	0.0160
+0.3299	0.1015	1.000	1110	0.0357	0.0116
+0.3414	0.0995	1.000	1111	0.0378	0.0149
+0.3430	0.2575	1.000	Blank	0.0470	0.0131
+0.3459	0.4211	0.300	---#	0.0470	0.0087
+0.3589	0.1106	1.000	* This code is generated when no digit key is de-	0.3764	0.0194
+0.3633	0.5113	1.000	Pluggable Exit Positions	0.1805	0.0146
+0.3735	0.0940	1.000	pressed.	0.0564	0.0132
+0.3848	0.5111	1.000	In order to permit attachment of other display de-	0.3912	0.0170
+0.4009	0.5112	1.000	vices, the console has 32 pluggable exit positions, each	0.3911	0.0167
+0.4135	0.0920	1.000	Binary Switches	0.1187	0.0174
+0.4172	0.5113	1.000	consisting of an output jack. Each pluggable exit cor-	0.3910	0.0147
+0.4317	0.5113	1.000	responds to one of the binary lights described in the	0.3910	0.0147
+0.4375	0.0921	1.000	The console has 32 binary toggle switches, arranged	0.3910	0.0161
+0.4476	0.5113	1.000	previous section. Insertion of a plug in the jack does	0.3910	0.0161
+0.4520	0.0902	1.000	in two sets of 16 each and grouped by fours within	0.3929	0.0174
+0.4592	0.5110	1.000	not disable the corresponding binary light.	0.3108	0.0205
+0.4679	0.0902	1.000	each set. The switches have labels that can readily be	0.3929	0.0176
+0.4797	0.5282	1.000	When a pluggable exit is in use, it is active (pro-	0.3741	0.0161
+0.4819	0.0901	1.000	changed. Each label is illuminated by the associated	0.3932	0.0190
+0.4956	0.5113	1.000	vides current) when it is furnished a one-bit by means	0.3910	0.0160
+0.4970	0.0900	1.000	binary switch light when the corresponding switch	0.3932	0.0195
+0.5115	0.5094	1.000	of a WRITE instruction. The exit remains active until	0.3910	0.0118
+0.5125	0.0919	1.000	is in the on position. When a READ instruction is	0.3932	0.0190
+0.5262	0.0900	1.000	issued, the settings of the binary switches make up	0.3934	0.0207
+0.5276	0.5094	1.000	another wrITe is given. Since the pluggable exits par-	0.3910	0.0146
+0.5421	0.5094	1.000	allel the binary lights, the information addressed to	0.3910	0.0131
+0.5436	0.0902	1.000	the first four bytes of the third input word, from left	0.3929	0.0174
+0.5557	0.5093	1.000	the exits occupies the first four bytes of the third	0.3912	0.0179
+0.5581	0.0902	1.000	to right, with bit 0 reflecting the state of the leftmost	0.3929	0.0161
+0.5725	0.5094	1.000	output word.	0.0997	0.0134
+0.5734	0.0901	1.000	light. In contrast to the keys, the switches have only	0.3932	0.0183
+0.5894	0.5262	1.000	A thirty-third output jack furnishes a momentary	0.3725	0.0174
+0.5900	0.0883	1.000	latching action but no neutral position.	0.2838	0.0161
+0.6061	0.5094	1.000	current whenever the gong is sounded.	0.2782	0.0131
+0.6235	0.5244	1.000	A thirty-fourth output jack parallels the wait light	0.3759	0.0160
+0.6294	0.0902	1.000	Pluggable Entry Positions	0.1898	0.0146
+0.6409	0.5094	1.000	and provides a current when the wait light is on. The	0.3891	0.0118
+0.6512	0.0902	1.000	To permit other switching and selection devices to be	0.3929	0.0161
+0.6532	0.5056	1.000	insertion of a plug in this jack does not disable the	0.3930	0.0162
+0.6666	0.5053	1.000	light.	0.0458	0.0185
+0.6668	0.0883	1.000	attached, there are 32 pluggable entry positions, each	0.3931	0.0166
+0.6830	0.0883	1.000	consisting of an input jack. Each pluggable entry	0.3929	0.0146
+0.7006	0.1015	1.000	prresponds to one of the binary switches describe	0.3684	0.0116
+0.7106	0.5019	1.000	Digital Potentiometers	0.1711	0.0147
+0.7106	0.0996	1.000	a the preceding section. When a plug is in the ia	0.3684	0.0147
+0.7282	0.0883	1.000	for any pluggable entry, the corresponding binary	0.3929	0.0189
+0.7324	0.5056	1.000	To facilitate the entry of inherently analog informa-	0.3929	0.0176
+0.7470	0.5056	1.000	tion, there are three digital potentiometers. Each of	0.3966	0.0176
+0.7615	0.1034	1.000	When a pluggable entry is in use, it is represented	0.3778	0.0176
+0.7630	0.5038	1.000	these is a rotary switch with 128 positions encoded	0.3929	0.0161
+0.7776	0.0883	1.000	by a binary zero if there is no connection between the	0.3929	0.0161
+0.7776	0.5056	1.000	0000000 to I111111 in clockwise order. Each switch	0.3947	0.0161
+0.7906	0.5038	1.000	has a knob with a pointer that indicates the approxi-	0.3966	0.0204
+0.7936	0.0883	1.000	terminals of its jack, and by a binary one if there is a	0.3929	0.0131
+0.8081	0.0883	1.000	closed connection. The bits from the pluggable en-	0.3910	0.0146
+0.8096	0.5038	1.000	mate setting of the potentiometer.	0.2538	0.0146
+0.8249	0.5149	1.000	When a READ instruction is issued, the settings of	0.3857	0.0185
+0.8255	0.0883	1.000	tries substitute for the input bits from the correspond-	0.3910	0.0133
+0.8373	0.5053	1.000	the digital potentiometers constitute the rightmost	0.3954	0.0252
+0.8387	0.0865	1.000	ing switches; they constitute the first four bytes of	0.3947	0.0147
+0.8517	0.5053	1.000	seven bits of the fifth, sixth, and seventh bytes of the	0.3954	0.0264
+0.8545	0.0902	1.000	the third input word.	0.1541	0.0133
+0.8691	0.5038	1.000	third input word. The leftmost bit in each byte is	0.3966	0.0204
+0.8706	0.1034	1.000	There is a thirty-third jack that causes a channel	0.3778	0.0176
+0.8881	0.0883	1.000	signal to be sent to the computer whenever a connec-	0.3929	0.0131
+0.8895	0.5038	1.000	zero.	0.0395	0.0145
+0.9258	0.1372	1.000	IBM 7030	0.0658	0.0088
+0.9259	0.0883	1.000	152	0.0244	0.0087

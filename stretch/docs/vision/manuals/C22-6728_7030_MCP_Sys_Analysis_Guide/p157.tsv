@@ -1,0 +1,107 @@
+0.0945	0.5338	1.000	Iines (or card images) of output. Both programs	0.3628	0.0116
+0.0945	0.1034	1.000	punch, EOJ, output command) and a common sub-	0.3703	0.0131
+0.1090	0.5338	1.000	save and restore index registers 7 to 15, and both	0.3722	0.0116
+0.1090	0.1034	1.000	routine to accomplish tape switching when required.	0.3853	0.0116
+0.1235	0.5338	1.000	exit with $RET, with ABEOJ primed it a PP param-	0.3872	0.0131
+0.1235	0.1034	1.000	In addition, fixup routines are provided to handle	0.3628	0.0131
+0.1381	0.5338	1.000	eter specification exceeded PP boundaries.	0.3214	0.0116
+0.1394	0.1034	1.000	interrupts from the input tape.	0.2274	0.0118
+0.1526	0.5508	1.000	The method of both programs is as follows: Upon	0.3684	0.0116
+0.1672	0.5338	1.000	entry, AEOJ, a special control indicator used at end	0.3966	0.0132
+0.1685	0.1034	1.000	The Output Tape	0.1222	0.0118
+0.1817	0.5357	1.000	of job (see output EOJ, is reset. The index registers	0.4023	0.0132
+0.1962	0.5338	1.000	axe saved and, if PP is the user, subroutine ACHK	0.3816	0.0132
+0.1976	0.1053	1.000	The tape prepared by the output program is intended	0.3853	0.0132
+0.2106	0.5338	1.000	is used to check the parameters with the PP bound-	0.3816	0.0133
+0.2121	0.1034	1.000	to be processed by the system peripheral output pro-	0.3910	0.0132
+0.2252	0.5338	1.000	aries. If the FWA exceeds PP boundaries, SPR and	0.3891	0.0133
+0.2257	0.1051	1.000	gram on the IBM 1401. It consists of a mixture of	0.3743	0.0142
+0.2397	0.5357	1.000	ABEOJ are primed (the former to provide an error	0.3797	0.0133
+0.2427	0.1034	1.000	printer and punch records. Each physical printer	0.3722	0.0131
+0.2558	0.5357	1.000	message), and $RET executed immediately. If the	0.3759	0.0131
+0.2573	0.1053	1.000	record contains twelve full lines, and each physical	0.3797	0.0131
+0.2703	0.5357	1.000	FWA is within PP boundaries but the calculated last	0.3853	0.0103
+0.2718	0.1034	1.000	punch record contains ten card images.	0.2932	0.0131
+0.2863	0.1203	1.000	A record is written at EOJ and whenever the speci-	0.3816	0.0116
+0.2994	0.5338	1.000	parameters modified to stay within PP boundaries.	0.3797	0.0131
+0.3009	0.1053	1.000	fied number of units of output has accumulated. Jobs	0.3929	0.0116
+0.3154	0.5357	1.000	Partial output is performed. If the parameters are	0.3816	0.0116
+0.3169	0.1034	1.000	are separated by tape marks, the end of output on the	0.3947	0.0131
+0.3299	0.5338	1.000	in bounds, the program enters a loop, moving one	0.3722	0.0131
+0.3314	0.1034	1.000	tape being indicated by a double tape mark.	0.3233	0.0116
+0.3314	0.4323	1.000	This is	0.0545	0.0087
+0.3445	0.5320	1.000	unit of output at a time to the print or punch trans-	0.3797	0.0131
+0.3445	0.1034	1.000	followed by a trailer record indicating whether or not	0.3966	0.0131
+0.3576	0.5357	1.000	mit buffer until the output request has been completed	0.3985	0.0131
+0.3590	0.1053	1.000	the tape was terminated at the same time as the job.	0.3872	0.0131
+0.3722	0.1202	1.000	In order to expedite physical tape switching, two	0.3592	0.0162
+0.3735	0.5357	1.000	or the buffer has been filled. When the output is	0.3590	0.0116
+0.3881	0.5357	1.000	completed, buffer control is saved, index registers	0.3816	0.0131
+0.3894	0.1034	1.000	output tapes (CT11 and CT21), are defined by IOD	0.3684	0.0133
+0.4039	0.1053	1.000	cards as distinet units on the same channel. The	0.3647	0.0133
+0.4039	0.5338	1.000	are restored, and $RET is executed. Whenever the	0.3872	0.0133
+0.4185	0.5357	1.000	transmit buffer is filled, the program uses a sub-	0.3703	0.0133
+0.4200	0.1034	1.000	I-O tables of exits (TOE) for these two units are	0.3571	0.0118
+0.4330	0.5357	1.000	routine (CAOS3A for print and AWSCH for punch) to	0.3835	0.0133
+0.4345	0.1053	1.000	AXITA and AXITB, respectively. Since the output	0.3741	0.0131
+0.4476	0.5357	1.000	wait for the output tape to become available, to	0.3496	0.0132
+0.4491	0.1053	1.000	tape may be referenced by any of the output programs	0.3966	0.0117
+0.4621	0.5338	1.000	logically swap the transmit and write buffers by	0.3571	0.0132
+0.4636	0.1053	1.000	and by error control routines, five parallel TOE's	0.3722	0.0131
+0.4782	0.1034	1.000	are used to direct control to the various fixup routines.	0.4098	0.0116
+0.4782	0.5338	1.000	interchanging control words, and to write the full	0.3665	0.0131
+0.4927	0.5357	1.000	buffer on the output tape. In addition, the respective	0.3929	0.0131
+0.4927	0.1053	1.000	Additional TOE's are used by the error control	0.3477	0.0116
+0.5073	0.5357	1.000	subroutines set a control word (AOP) so that the	0.3571	0.0116
+0.5073	0.1053	1.000	routines. Any time the output tape is referenced by	0.3816	0.0131
+0.5218	0.5357	1.000	resulting interrupt will be taken by the proper table	0.3835	0.0131
+0.5233	0.1053	1.000	one of the output programs, the location of the appli-	0.3910	0.0131
+0.5363	0.5357	1.000	of exits (for print, CEXN; for punch, ZWEXIT).	0.3553	0.0131
+0.5363	0.1053	1.000	cable TOE is stored in AOP. The basic TOE's, AXITA	0.4098	0.0146
+0.5509	0.5526	1.000	Figure 86 presents the control symbols used in the	0.3759	0.0131
+0.5523	0.1034	1.000	and AXITB, pass all interrupts except CS to the table	0.3966	0.0131
+0.5669	0.5357	1.000	two programs.	0.1090	0.0116
+0.5669	0.1053	1.000	specified in AOP, along with the two control words.	0.3816	0.0131
+0.5799	0.5545	1.000	The print and punch routines use parallel I-O tables	0.3816	0.0131
+0.5814	0.1053	1.000	On receipt of a CS interrupt, control is given to the	0.3797	0.0132
+0.5959	0.5357	1.000	of exits CEXN and AWEXIT, respectively. These	0.3722	0.0132
+0.5973	0.1053	1.000	fixup routines ATPACS and ATPBCS respeetively	0.3647	0.0118
+0.6105	0.5357	1.000	tables cannot be entered at the channel signal return,	0.3947	0.0117
+0.6118	0.1053	1.000	(Figure 84). If a tape switch is in process, these	0.3665	0.0133
+0.6248	0.1051	1.000	routines give control to the tape switch routine to	0.3649	0.0155
+0.6250	0.5357	1.000	since a CS is taken by the first level table of exits.	0.3778	0.0117
+0.6394	0.5357	1.000	The EOP and EE fixup routines for these tables are	0.3835	0.0133
+0.6409	0.1052	1.000	complete its function. Otherwise they set a bit	0.3498	0.0159
+0.6482	0.5357	1.000	given in Figure 87, and the error return fixup is	0.3647	0.0204
+0.6570	0.1034	1.000	(ATARI, ATBRI) to indicate that the tape is ready,	0.3759	0.0161
+0.6642	0.5376	1.000	described with the error routines.	0.2594	0.0176
+0.6730	0.1053	1.000	and they issue a $RET.	0.1729	0.0116
+0.6944	0.5375	1.000	Output EOJ	0.0905	0.0197
+0.7121	0.1090	1.000	The Print and Punch Programs	0.2312	0.0118
+0.7282	0.5376	1.000	At end of job, the output program is given control to	0.3891	0.0131
+0.7384	0.5357	1.000	complete output for the job being terminated and to	0.3816	0.0160
+0.7397	0.1071	1.000	The print and punch programs are logically identical.	0.3966	0.0161
+0.7529	0.5376	1.000	write a separating tape mark. Output EOJ is a major	0.4004	0.0160
+0.7573	0.1071	1.000	(See Figure 85). Since printer and punch output cannot	0.4079	0.0116
+0.7645	0.5355	1.000	package with an associated tentacle table (SAEOJT).	0.3934	0.0259
+0.7699	0.1070	1.000	be predicted, they are written as separate programs,	0.3968	0.0169
+0.7848	0.1090	1.000	and are to be buffered and controlled separately.	0.3609	0.0131
+0.7848	0.5376	1.000	It is called by the sequence:	0.2124	0.0131
+0.7994	0.5545	1.000	B, $MCP	0.0733	0.0161
+0.8009	0.1241	1.000	Pseudo-ops $SPR and $SPU, respectively, cause	0.3628	0.0146
+0.8123	0.5638	1.000	, SSPEOJ	0.0791	0.0193
+0.8139	0.1071	1.000	the print and punch programs to receive control from	0.3966	0.0161
+0.8285	0.1071	1.000	the IF analyzer with tentacle table linkage set up.	0.3703	0.0161
+0.8299	0.5376	1.000	during processing of $EOJ or SABEOJ by Job Control	0.3985	0.0146
+0.8430	0.5376	1.000	4.	0.0226	0.0145
+0.8445	0.1090	1.000	The print program begins at CSTART, the punch pro-	0.3929	0.0146
+0.8576	0.5508	1.000	The program starts at AEOJ (Figure 88) and oper-	0.3835	0.0174
+0.8591	0.1070	1.000	gram at ASPUO. The respective tentacle tables are	0.3892	0.0136
+0.8721	0.5376	1.000	ates enabled. It saves $7 to $15, and determines	0.3703	0.0174
+0.8735	0.1071	1.000	SCSPRT and SASPUT, each four words in length.	0.3647	0.0160
+0.8866	0.5376	1.000	whether or not there is information in the punch	0.3590	0.0174
+0.8881	0.1090	1.000	Both programs operate enabled, and use parameters	0.3891	0.0160
+0.9012	0.5376	1.000	transmit buffer. If there is, it is written on the	0.3628	0.0174
+0.9020	0.1070	1.000	specifying the FWA of the output and the number of	0.3801	0.0188
+0.9462	0.7669	1.000	System Input-Output	0.1184	0.0117
+0.9462	0.9060	1.000	157	0.0244	0.0087

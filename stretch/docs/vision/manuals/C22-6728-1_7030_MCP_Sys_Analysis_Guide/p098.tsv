@@ -1,0 +1,107 @@
+0.1003	0.0658	1.000	The I-O Status Table Set Up	0.2086	0.0131
+0.1032	0.5113	1.000	3. Normal IPL and Oft-Line Overlapped Mode:	0.3609	0.0160
+0.1177	0.4962	1.000	The input tape units are assigned as in cases 1 and 2.	0.4004	0.0132
+0.1308	0.0658	1.000	At X13 (Figure 49), the initialization program proc-	0.3910	0.0131
+0.1321	0.4962	1.000	However, the mounting messages will be worded	0.3647	0.0133
+0.1453	0.0658	1.000	esses the IOCD cards to form the Unit and Channel	0.3797	0.0116
+0.1467	0.4944	1.000	differently since the scan tape which contains the first	0.4079	0.0133
+0.1612	0.0658	1.000	Status Tables (UST and CST). The IOCD cards need	0.3816	0.0118
+0.1627	0.4944	1.000	job to be run must be mounted on the symbolic unit	0.3835	0.0118
+0.1758	0.0639	1.000	not be arranged in channel-number order, but there	0.3891	0.0133
+0.1773	0.4944	1.000	which will be first referenced by the input program.	0.3910	0.0131
+0.1903	0.0658	1.000	must be one card for each channel physically in the	0.3835	0.0133
+0.1918	0.4962	1.000	The other scan tape will be placed on the second input	0.4023	0.0131
+0.2048	0.0658	1.000	system whether that channel is available or not.	0.3590	0.0132
+0.2064	0.4944	1.000	unit. Output tapes are assigned in the same manner	0.3929	0.0131
+0.2209	0.0827	1.000	The tables are first formed in lower storage and	0.3628	0.0116
+0.2224	0.4944	1.000	as the two prior cases. The input card reader unit	0.3797	0.0116
+0.2339	0.0639	1.000	then relocated (X19, Figure 50) to the area just below	0.4041	0.0132
+0.2345	0.4943	1.000	area and file area tables are formed but not put under	0.4024	0.0145
+0.2500	0.0658	1.000	MCP (toward lower registers). This relocation allows	0.4117	0.0131
+0.2515	0.4944	1.000	MCP ownership until a system command changes the.	0.3966	0.0131
+0.2645	0.0658	1.000	the table size to vary from IPL to IPL. The tables	0.3853	0.0116
+0.2660	0.4944	1.000	operating status to unoverlapped, on-line overlapped,	0.4023	0.0131
+0.2775	0.0638	1.000	which are set up by the assignment phase of the	0.3593	0.0155
+0.2805	0.4944	1.000	or makes the unit the system input source.	0.3233	0.0116
+0.2936	0.0639	1.000	initializing program are just below the I-O tables.	0.3778	0.0131
+0.2951	0.5301	1.000	Abnormal IPL and Off-Line Overlapped Mode:	0.3534	0.0116
+0.3081	0.0658	1.000	The lower boundary of the MCP table area is com-	0.3816	0.0131
+0.3096	0.4944	1.000	The abnormal IPL selection is made at the console and	0.4079	0.0116
+0.3241	0.0620	1.000	puted and saved as a system parameter (S MCP) in	0.3910	0.0131
+0.3241	0.4925	1.000	must be used when restarting with an input spool read	0.4023	0.0131
+0.3387	0.4925	1.000	tape which has been partly exhausted of its jobs, such	0.4023	0.0132
+0.3387	0.0658	1.000	the communication region.	0.1992	0.0116
+0.3532	0.0827	1.000	After processing the IOCD cards, the program types	0.3947	0.0132
+0.3532	0.4944	1.000	as after a system failure or after an end-of-day shut-	0.4041	0.0132
+0.3673	0.4943	1.000	down. While in the on-line or off-line overlapped	0.3667	0.0137
+0.3677	0.0658	1.000	the date of the tape update (XDATE), and reads the	0.3816	0.0132
+0.3812	0.0657	1.000	console to determine if the operator desires any	0.3630	0.0143
+0.3836	0.4925	1.000	mode, the IPL must be made in the off-line overlapped	0.4135	0.0132
+0.3967	0.0639	1.000	options. If binary key 29 is on, the program per-	0.3759	0.0118
+0.3982	0.4944	1.000	mode because the old read tape must be rescanned.	0.3835	0.0132
+0.4112	0.0620	1.000	forms the requested status change and reads the con-	0.4023	0.0118
+0.4127	0.4944	1.000	The assignments and the mountings will be the same	0.3910	0.0131
+0.4258	0.0639	1.000	sole again, repeating until a status change is no	0.3590	0.0118
+0.4273	0.4925	1.000	as case 3 except the second input tape will be an un-	0.3929	0.0131
+0.4390	0.0639	1.000	longer requested.	0.1335	0.0132
+0.4416	0.4924	1.000	used scan tape which will be used later as a writetape.	0.4138	0.0154
+0.4578	0.4944	1.000	A system command must be entéred before tape switch	0.4060	0.0131
+0.4709	0.0639	1.000	MCP I-O Assignment	0.1598	0.0103
+0.4724	0.4925	1.000	time to return to the on-line overlapped mode, if such	0.4060	0.0131
+0.4869	0.4925	1.000	mode is desired. The output tapes and the card reader	0.4079	0.0116
+0.4985	0.0658	1.000	The assignment of absolute units from IOD cards will	0.3985	0.0131
+0.5015	0.4925	1.000	are handled as they were in case 3.	0.2669	0.0131
+0.5130	0.0639	1.000	be done for MCP at IPL time through a modified	0.3609	0.0131
+0.5160	0.5094	1.000	When I-O assignment is complete, the program	0.3553	0.0131
+0.5272	0.0638	1.000	decode-assign-move routine (SB22, Figure 50).	0.3555	0.0150
+0.5305	0.4925	1.000	stores the base address of the I-O location table and	0.3910	0.0116
+0.5436	0.0827	1.000	The assignments are made according to the I-O	0.3553	0.0131
+0.5451	0.4925	1.000	the address of the next available arc on the disk in	0.3816	0.0116
+0.5581	0.0639	1.000	configuration as defined by the I-O tables, the type	0.3816	0.0131
+0.5596	0.4906	1.000	the MCP communication region, and moves the UAT	0.3929	0.0131
+0.5727	0.0639	1.000	of IPL (normal or abnormal), and the operating mode	0.4004	0.0131
+0.5741	0.4925	1.000	and FAT to their proper locations.	0.2613	0.0131
+0.5872	0.0639	1.000	(on or off line overlapped or unoverlapped). A sum-	0.3966	0.0146
+0.6032	0.0639	1.000	mary of the action taken by this decode-assign-move	0.3947	0.0117
+0.6045	0.4925	1.000	Transfer to MCP	0.1278	0.0103
+0.6177	0.0639	1.000	sequence is as follows:	0.1729	0.0117
+0.6336	0.4925	1.000	The program stores the number of jobs to be rejected	0.4023	0.0132
+0.6394	0.0789	1.000	1. Normal IPL and Unoverlapped Mode: The card	0.3816	0.0147
+0.6482	0.4906	1.000	if this is an abnormal IPL, and tests for a mode	0.3628	0.0146
+0.6539	0.0639	1.000	reader is assigned to MCP. A unit area table and	0.3759	0.0118
+0.6627	0.4887	1.000	change request from the operator, (XMODE1, Figure	0.4041	0.0161
+0.6685	0.0620	1.000	file area table are set up for the card reader under	0.3872	0.0118
+0.6773	0.4887	1.000	51). If none, the mode is taken from the MCP param-	0.4117	0.0146
+0.6830	0.0639	1.000	MCP ownership. The output tape units are assigned	0.3910	0.0133
+0.6918	0.4887	1.000	eter card. The necessary bookkeeping is performed,	0.3985	0.0161
+0.6976	0.0620	1.000	to MCP and the necessary tables are constructed.	0.3741	0.0118
+0.7064	0.4887	1.000	and (X37) the command package and JC4 are primed.	0.3985	0.0146
+0.7121	0.0639	1.000	Mounting messages are sent out to operator for	0.3571	0.0132
+0.7183	0.4904	1.000	The MCP boundary register and interrupt address are	0.4046	0.0189
+0.7282	0.0620	1.000	scratch tapes to be placed on the assigned units. The	0.4041	0.0103
+0.7355	0.4887	1.000	stored, and the IPL messages printed if the suppress	0.4023	0.0145
+0.7405	0.0619	1.000	unit and file area tables are formed for the input	0.3668	0.0141
+0.7483	0.4887	1.000	key is not on.	0.1054	0.0150
+0.7573	0.0620	1.000	tapes, but they are not put under MCP ownership until	0.4079	0.0146
+0.7645	0.5056	1.000	Final bookkeeping is done (X378), the disk located	0.3778	0.0161
+0.7718	0.0620	1.000	a system command changes the operating status to	0.3797	0.0116
+0.7791	0.4868	1.000	to arc zero and all tape units selected, and $RET	0.3741	0.0161
+0.7863	0.0620	1.000	overlapped. No mounting requests are made until the	0.4041	0.0116
+0.7936	0.4887	1.000	issued. The system starts when the return routine	0.3797	0.0146
+0.8009	0.0620	1.000	mode changes.	0.1128	0.0116
+0.8081	0.4887	1.000	empties the prime queue.	0.1936	0.0146
+0.8227	0.0771	1.000	2. Normal IPL and On-Line Overlapped Mode:	0.3571	0.0174
+0.8371	0.0620	1.000	The input tape units are assigned to MCP and the	0.3686	0.0132
+0.8372	0.4887	1.000	IPL Error Control	0.1429	0.0131
+0.8508	0.0619	1.000	necessary tables are set up. Mounting messages are	0.4006	0.0155
+0.8663	0.0602	1.000	printed out for tapes to be mounted on two units.	0.3647	0.0131
+0.8677	0.4887	1.000	Any error detected by the IPL initialization or boot-	0.3929	0.0145
+0.8808	0.0620	1.000	These tapes will initially contain no jobs, but will be	0.3947	0.0131
+0.8823	0.4886	1.000	strap programs results in a BD, $, with an accom-	0.3856	0.0161
+0.8953	0.0620	1.000	filled with problem programs read in from the card	0.3872	0.0131
+0.8997	0.4887	1.000	panying error message typed if possible. The error	0.3891	0.0116
+0.9099	0.0620	1.000	reader. Card reader and output tapes are assigned	0.3872	0.0131
+0.9109	0.4867	1.000	control routine, SUCAR, will type an error message	0.3969	0.0188
+0.9244	0.0602	1.000	as they were in case 1.	0.1748	0.0116
+0.9249	0.4866	1.000	if it can identify the error and can access the console.	0.4064	0.0186
+0.9535	0.0583	1.000	98	0.0188	0.0102

@@ -1,0 +1,100 @@
+0.0592	0.5074	1.000	the instruction designates the number of bits used to	0.3911	0.0157
+0.0624	0.0977	1.000	The result obtained is used to develop certain tests.	0.3816	0.0132
+0.0737	0.5056	1.000	represent each character or symbol in the storage	0.3930	0.0165
+0.0770	0.0940	1.000	In CONNECT, the result replaces the accumulator oper-	0.3872	0.0146
+0.0900	0.5075	1.000	field. If the byte size of the storage operand is less	0.3910	0.0147
+0.0930	0.0959	1.000	and; in CONNECT TO MEMORY, the result replaces the	0.3853	0.0131
+0.1061	0.5075	1.000	than eight, each byte is converted into an eight-bit	0.3929	0.0146
+0.1090	0.0959	1.000	storage operand; in CONNECT FOR TEST, the result is	0.3853	0.0131
+0.1206	0.5075	1.000	byte before processing by the addition of high-order	0.3930	0.0165
+0.1235	0.0959	1.000	discarded after developing the tests.	0.2519	0.0131
+0.1366	0.5075	1.000	zeros. The accumulator operand is assumed to have	0.3929	0.0146
+0.1526	0.5094	1.000	a byte size of eight. Any offset may be specified and	0.3891	0.0131
+0.1640	0.0939	1.000	Format	0.0641	0.0136
+0.1672	0.5094	1.000	the field is processed in eight-bit bytes starting with	0.3910	0.0147
+0.1830	0.5094	1.000	the offset. Each byte of the storage field, after con-	0.3910	0.0133
+0.1875	0.0977	1.000	The connective operations use basically the same full-	0.3853	0.0131
+0.1962	0.5094	1.000	version to eight-bit form if necessary, is combined	0.3910	0.0160
+0.2020	0.0959	1.000	word instruction format	0.1861	0.0116
+0.2020	0.2801	1.000	as the integer arithmetic	0.2030	0.0131
+0.2136	0.5094	1.000	with an eight-bit byte from the accumulator accord-	0.3929	0.0146
+0.2166	0.0959	1.000	operations. The word and bit address, the two I	0.3872	0.0160
+0.2297	0.5075	1.000	ing to the specified connective. Consequently, the	0.3929	0.0131
+0.2324	0.0940	1.000	fields, the P field, the field length, byte size, and off-	0.3872	0.0161
+0.2442	0.5094	1.000	result bytes always have a byte size of eight. In con-	0.3910	0.0146
+0.2485	0.0959	1.000	set occupy the same bit positions in the instruction	0.3872	0.0146
+0.2587	0.5094	1.000	NECT, these result bytes replace the accumulator field	0.3910	0.0146
+0.2630	0.0959	1.000	format and have the same function in the connective	0.3872	0.0118
+0.2716	0.5092	1.000	which participated in the operation. In CONNECT	0.3932	0.0189
+0.2791	0.0959	1.000	operations as they do in the integer arithmetic	0.3872	0.0146
+0.2892	0.5094	1.000	FOR TEST, the result field is discarded after develop	0.3891	0.0145
+0.2950	0.0936	1.000	operations.	0.0793	0.0137
+0.3047	0.5093	1.000	ing certain tests. In CONNECT TO MEMORY, the result	0.3930	0.0151
+0.3212	0.5113	1.000	bytes replace the storage operand in accordance with	0.3910	0.0145
+0.3342	0.3571	1.000	OFFSET CONNOP I11	0.0959	0.0103
+0.3355	0.1236	1.000	ADDRESS	0.0441	0.0092
+0.3358	0.5113	1.000	the byte size of that operand. The storage field may	0.3910	0.0145
+0.3358	0.3026	1.000	LENGTH BS	0.0545	0.0073
+0.3517	0.5113	1.000	have any byte size from one to eight. Since each re-	0.3910	0.0161
+0.3663	0.5113	1.000	sult byte replaces the corresponding byte in the stor-	0.3929	0.0146
+0.3764	0.1109	1.000	The operation code in bits 55-59 designates the	0.3741	0.0146
+0.3821	0.5113	1.000	age field, the result byte is truncated before being	0.3929	0.0147
+0.3892	0.0976	1.000	operation to be performed. The connective that is	0.3875	0.0179
+0.3967	0.5113	1.000	placed in storage if the byte size of the storage field	0.3910	0.0147
+0.4070	0.0959	1.000	to be applied is specified in bits 51-54.	0.2726	0.0161
+0.4127	0.5113	1.000	is less than eight. Each byte in the storage field is	0.3929	0.0146
+0.4288	0.5113	1.000	replaced by the number of bits specified by the byte	0.3929	0.0146
+0.4429	0.5112	1.000	size. These bits are the low-order bits of each result	0.3930	0.0137
+0.4462	0.0977	1.000	Field Definition	0.1071	0.0117
+0.4593	0.5132	1.000	byte; the remaining high-order bits of each result byte	0.3910	0.0146
+0.4694	0.0996	1.000	The operand specified explicitly by a connective in-	0.3872	0.0146
+0.4738	0.5113	1.000	are dropped. No indication is given if the bits which	0.3929	0.0146
+0.4855	0.0977	1.000	struction is defined by the effective address in the	0.3891	0.0145
+0.4897	0.5113	1.000	are dropped are significant.	0.2049	0.0147
+0.5015	0.0959	1.000	same manner as in integer arithmetic. Immediate	0.3910	0.0131
+0.5043	0.5300	1.000	Since the field lengths of the storage operand need	0.3742	0.0160
+0.5160	0.0977	1.000	addressing is also handled in the same way in	0.3628	0.0146
+0.5174	0.4586	1.000	the	0.0282	0.0102
+0.5203	0.5132	1.000	not be a multiple of the byte size, the last byte need	0.3910	0.0146
+0.5320	0.0977	1.000	connectives as in the arithmetic operations. The same	0.3891	0.0132
+0.5363	0.5132	1.000	not be of full size. When this is the case, only those	0.3910	0.0131
+0.5463	0.0977	1.000	is true of field extraction from and field insertion to	0.3873	0.0135
+0.5509	0.5132	1.000	bits of the high-order accumulator and storage bytes	0.3929	0.0146
+0.5650	0.5131	1.000	that are included in the field length take part in the	0.3930	0.0157
+0.5668	0.0977	1.000	storage.	0.0527	0.0102
+0.5770	0.1147	1.000	The implied second operand of the connective op-	0.3722	0.0146
+0.5827	0.5132	1.000	processing. No high-order zeros are added to the	0.3929	0.0147
+0.5930	0.0977	1.000	erations is a field from the accumulator. The right	0.3891	0.0131
+0.5973	0.5132	1.000	short byte from storage. However, if the field length	0.3929	0.0146
+0.6090	0.0996	1.000	end of this operand is defined by the offset specified	0.3872	0.0131
+0.6118	0.5132	1.000	is a multiple of the byte size, and if the byte size is	0.3929	0.0146
+0.6235	0.0977	1.000	in the instruction. In contrast to the integer arith-	0.3910	0.0131
+0.6279	0.5132	1.000	less than eight, high-order zeros are added to the	0.3929	0.0146
+0.6394	0.0996	1.000	metic operations, the accumulator operand has a defi-	0.3872	0.0147
+0.6555	0.5113	1.000	all bytes of the field are treated in the same manner.	0.3947	0.0161
+0.6555	0.0977	1.000	nite length; it is composed of as many bytes as there	0.3891	0.0132
+0.6700	0.0977	1.000	are in the addressed storage field. In CONNECT, only	0.3891	0.0131
+0.6715	0.5244	1.000	To combine a group of bits in storage with the	0.3835	0.0161
+0.6830	0.0977	1.000	those accumulator bytes which are combined with	0.3891	0.0146
+0.6875	0.5113	1.000	same number of contiguous bits in the accumulator,	0.3966	0.0161
+0.6985	0.0976	1.000	the storage operand can be affected. The remainder	0.3913	0.0186
+0.7020	0.5094	1.000	a byte size of eight should be specified. This avoids	0.3985	0.0160
+0.7136	0.0996	1.000	of the accumulator contents remains unchanged.	0.3590	0.0146
+0.7166	0.5113	1.000	the addition of high-order zeros to each byte of the	0.3966	0.0174
+0.7309	0.1108	1.000	In CONNECT TO MEMORY, the number of accumula-	0.3762	0.0162
+0.7442	0.0977	1.000	tor bytes between the specified offset and the left end	0.3910	0.0161
+0.7602	0.0977	1.000	of the accumulator can be less than the number of	0.3929	0.0160
+0.7742	0.0994	1.000	bytes in the storage operand. In this event, the accu-	0.3896	0.0218
+0.7892	0.5113	1.000	Counts and Indicators	0.2068	0.0174
+0.7921	0.0977	1.000	mulator operand is lengthened for the operation by	0.3910	0.0161
+0.8081	0.0996	1.000	the addition of high-order zeros.	0.2274	0.0146
+0.8212	0.5150	1.000	Two counts describing the result field are available	0.3966	0.0176
+0.8372	0.5132	1.000	after a connective operation. The seven-bit all-ones	0.3966	0.0161
+0.8473	0.1015	1.000	Byte Size	0.0658	0.0132
+0.8493	0.5130	1.000	counter, bits 11-50 of location 7, contains a count of	0.3987	0.0192
+0.8650	0.5073	1.000	all ones in the result field. The seven-bit left-zeros	0.4026	0.0211
+0.8691	0.0996	1.000	The connective operations process data in eight-bit	0.3910	0.0176
+0.8822	0.5111	1.000	counter, bits 17-23 of location 7, contains a count of	0.4006	0.0195
+0.8846	0.0995	1.000	bytes. In these operations, the byte size specified in	0.3914	0.0193
+0.9215	0.7274	1.000	Variable Field Length	0.1372	0.0131
+0.9230	0.8929	1.000	75	0.0169	0.0087

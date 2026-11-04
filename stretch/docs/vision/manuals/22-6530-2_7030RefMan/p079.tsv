@@ -1,0 +1,111 @@
+0.0639	0.0995	1.000	the number of zeros in the result field that are to the indicators. The high-order bits that are dropped from	0.8085	0.0180
+0.0770	0.0977	1.000	left of the most significant one-bit. These counts are	0.3947	0.0191
+0.0814	0.5132	1.000	each result byte if the byte size is less than eight are	0.3947	0.0147
+0.0930	0.5150	1.000	igmorecit Creater tham Zero (RC2), This indicator is	0.3966	0.0364
+0.0945	0.0996	1.000	positioned so that they can readily be used for index-	0.3929	0.0161
+0.1118	0.1015	1.000	ing. The position of the left-zeros counter in the first	0.3910	0.0103
+0.1256	0.5167	1.000	turned on if the result field contains any one-bit.	0.3689	0.0193
+0.1263	0.1014	1.000	half word of location 7 is such that it corresponds to	0.3892	0.0135
+0.1424	0.0996	1.000	that part of an index value field which indexes the	0.3910	0.0116
+0.1424	0.5320	1.000	Result Less than Zero (RLZ); Result Negative	0.3759	0.0161
+0.1539	0.5132	1.000	(RN). These indicators are turned off by the connec-	0.3966	0.0219
+0.1555	0.0996	1.000	bit address of an instruction. The position of the	0.3910	0.0146
+0.1715	0.0959	1.000	all-ones counter in the second half-word of location 7	0.3947	0.0161
+0.1744	0.5169	1.000	tive operations.	0.1147	0.0147
+0.1860	0.0959	1.000	is such that it facilitates indexing of half-word ad-	0.3947	0.0176
+0.2020	0.0977	1.000	dresses. Both counters operate modulo 128. Each	0.3929	0.0146
+0.2174	0.5149	1.000	Connectives	0.1131	0.0172
+0.2179	0.0977	1.000	count is on the final result field. In CoNNECT and	0.3910	0.0133
+0.2339	0.0977	1.000	CONNECT FOR TEST, the counts are made on the result	0.3929	0.0132
+0.2470	0.5150	1.000	The sixteen connectives that can be specified are	0.3929	0.0191
+0.2485	0.0977	1.000	field with byte size eight. In CONNECT TO MEMORY,	0.3929	0.0146
+0.2630	0.5132	1.000	listed in Figure 20. The storage (memory) operand	0.3929	0.0176
+0.2645	0.0977	1.000	the counts are made on the result field after it is con-	0.3910	0.0131
+0.2762	0.5129	1.000	is denoted by m; the accumulator operand by a.	0.3634	0.0210
+0.2791	0.0977	1.000	verted to the byte size of the storage operand. The	0.3910	0.0146
+0.2951	0.0959	1.000	high-order bits that are dropped from each result	0.3929	0.0131
+0.3109	0.0977	1.000	byte if the byte size is less than eight are ignored in	0.3891	0.0118
+0.3154	0.7180	0.300	Sombolicli fenentaion	0.1297	0.0262
+0.3182	0.6034	1.000	Result Bit f	0.0564	0.0103
+0.3255	0.0959	1.000	developing the counts. Positions in the accumulator	0.3910	0.0118
+0.3270	0.5846	1.000	perand Bit Combinatior	0.1184	0.0118
+0.3400	0.0940	1.000	that do not take part in the operation have no effect	0.3947	0.0161
+0.3561	0.0959	1.000	on the counts. The left-zeros and all-ones counts are	0.3929	0.0118
+0.3706	0.0959	1.000	destroyed by all LOAD TRANSIT AND SET operations and	0.3910	0.0146
+0.3779	0.7632	0.300	m:g	0.0338	0.0247
+0.3794	0.6842	1.000	1	0.0094	0.0102
+0.3862	0.0957	1.000	by decimal MULTIPLY, MULTIPLY AND ADD, and DIVIDE	0.3912	0.0157
+0.4026	0.7744	1.000	m	0.0113	0.0087
+0.4026	0.0959	1.000	operations. The left-zeros count is also destroyed by	0.3910	0.0147
+0.4113	0.6842	1.000	0	0.0094	0.0087
+0.4128	0.7650	1.000	m.a	0.0301	0.0087
+0.4172	0.0959	1.000	all floating-point division operations. These counts	0.3910	0.0147
+0.4330	0.0959	1.000	are not changed as an inherent part of any other	0.3910	0.0146
+0.4345	0.7650	1.000	my a	0.0338	0.0073
+0.4448	0.7650	1.000	mv a	0.0320	0.0074
+0.4491	0.0959	1.000	non-connective operations. The counts are set at the	0.3910	0.0131
+0.4535	0.7650	1.000	m. à	0.0338	0.0102
+0.4636	0.0940	1.000	end of the connective operations, so their previous	0.3929	0.0146
+0.4637	0.5282	1.000	9	0.0094	0.0087
+0.4666	0.7650	1.000	m= a	0.0320	0.0074
+0.4738	0.5244	1.000	10	0.0150	0.0087
+0.4738	0.7744	1.000	ā	0.0094	0.0102
+0.4797	0.0959	1.000	values may be used as operands in the operation.	0.3609	0.0131
+0.4855	0.5244	1.000	11	0.0132	0.0073
+0.4855	0.7632	0.500	mvä	0.0301	0.0087
+0.4869	0.6823	1.000	• - 0-	0.0094	0.0363
+0.4942	0.5226	1.000	12	0.0169	0.0087
+0.4942	0.1109	1.000	The indicators that are affected by the connective	0.3759	0.0146
+0.5058	0.7632	1.000	m v a	0.0301	0.0088
+0.5058	0.5226	1.000	13	0.0150	0.0073
+0.5102	0.0940	1.000	operations are described below.	0.2293	0.0132
+0.5160	0.5207	1.000	14	0.0169	0.0102
+0.5174	0.7632	1.000	m v ā	0.0301	0.0074
+0.5247	0.1090	1.000	Partial Field (PF). This indicator is turned on if	0.3797	0.0147
+0.5262	0.5207	1.000	15	0.0169	0.0102
+0.5392	0.0940	1.000	the storage field attempts to combine with bits be-	0.3929	0.0145
+0.5479	0.5094	1.000	Figure 20. Connectives	0.1372	0.0132
+0.5552	0.0921	1.000	yond the left end of the accumulator. If a partial-	0.3947	0.0146
+0.5712	0.0940	1.000	field condition occurs, the storage operand is com-	0.3929	0.0131
+0.5741	0.5282	1.000	The four-bit code used for the logical connectives	0.3741	0.0160
+0.5858	0.0940	1.000	bined with the accumulator operand up to the left	0.3929	0.0145
+0.5858	0.5094	1.000	is composed of the result bits obtained for each of	0.3947	0.0189
+0.6017	0.0940	1.000	end of the accumulator; higher-order bits in the stor-	0.3929	0.0131
+0.6045	0.5113	1.000	the possible combinations of m and a.	0.2726	0.0146
+0.6177	0.0921	1.000	age operand are dropped. In such a case, the counts	0.3929	0.0132
+0.6206	0.5263	1.000	In this code, the first bit represents the result when	0.3759	0.0161
+0.6321	0.0921	1.000	are developed and the result indicators are set accord-	0.3929	0.0133
+0.6334	0.5092	1.000	m and a are both zero; the second bit represents the	0.3933	0.0202
+0.6468	0.0882	1.000	ing to that portion of the result actually developed.	0.3949	0.0178
+0.6472	0.5092	1.000	result when m is zero and a is one; the third bit rep-	0.3934	0.0216
+0.6612	0.0921	1.000	The partial-field indicator is not affected by CONNECT	0.3929	0.0176
+0.6657	0.5075	1.000	resents the result when m is one and a is zero; and	0.3947	0.0161
+0.6802	0.5094	1.000	the fourth bit represents the result when m and a are	0.3929	0.0174
+0.6802	0.0921	1.000	TO MEMORY.	0.0902	0.0102
+0.6933	0.1090	1.000	To-Memory Operation (MOP). This indicator is	0.3759	0.0161
+0.6962	0.5094	1.000	both one.	0.0752	0.0145
+0.7093	0.0921	1.000	turned on by CONNECT TO MEMORY and turned off by	0.3910	0.0146
+0.7121	0.5207	1.000	For example, if connective 0101 is specified, the	0.3816	0.0176
+0.7238	0.0921	1.000	CONNECT and CONNECT FOR TEST.	0.2274	0.0116
+0.7254	0.5073	1.000	result bit will be a one when and only when the a	0.3951	0.0200
+0.7397	0.1071	1.000	Result Zero (RZ). This indicator is turned on if	0.3778	0.0147
+0.7412	0.5094	1.000	operand is a one-bit. If connective 1011 is specified,	0.3929	0.0191
+0.7542	0.0902	1.000	the final result is all binary zeros. This implies that	0.3947	0.0161
+0.7558	0.5094	1.000	the result bit will be a one for all combinations of m	0.3910	0.0176
+0.7703	0.0902	1.000	the all-ones count is also zero and that the left-zeros	0.3947	0.0161
+0.7730	0.5074	1.000	and a, except m equal to zero and a equal to one.	0.3668	0.0182
+0.7848	0.0921	1.000	count is equal to the number of bits in the final	0.3910	0.0146
+0.7991	0.0901	1.000	result field. In CONNECT and CONNECT FOR TEST, this	0.3931	0.0167
+0.8094	0.5075	1.000	Connect (C)	0.0885	0.0150
+0.8169	0.0921	1.000	number is equal to the number of accumulator bits	0.3910	0.0131
+0.8298	0.5091	1.000	The addressed storage operand is combined with the	0.3933	0.0217
+0.8327	0.0921	1.000	which take part in the operation. In CONNECT TO	0.3910	0.0133
+0.8473	0.0902	1.000	MEMORY, this number is equal to the number of bits	0.3929	0.0133
+0.8473	0.5075	1.000	accumulator field specified by the offset in accordance	0.3929	0.0161
+0.8618	0.0883	1.000	in the storage operand, since this is the length of the	0.3947	0.0146
+0.8633	0.5075	1.000	with the logical connective specified. The result field	0.3929	0.0161
+0.8779	0.0883	1.000	final result field. Only those bits which replace the	0.3947	0.0161
+0.8779	0.5056	1.000	replaces the accumulator operand. The remainder	0.3947	0.0161
+0.8939	0.5075	1.000	of the accumulator remains unchanged.	0.2895	0.0161
+0.8939	0.0902	1.000	storage operand affect the two counts and the result	0.3929	0.0131
+0.9317	0.0902	1.000	76 IBM 7030	0.1071	0.0087

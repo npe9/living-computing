@@ -1,0 +1,14 @@
+0.0654	0.0921	1.000	CPLTSY updates Bsymbx to locate the bit which	0.3571	0.0161
+0.0654	0.5019	1.000	sion being built up by GETFLD. The GETFLD if-a-	0.3872	0.0146
+0.0799	0.0752	1.000	CPLTSY has set to zero, immediately after the $00	0.3835	0.0146
+0.0799	0.4981	1.000	dollar-sign indicator, Gidol, is turned on to distin-	0.3872	0.0146
+0.0945	0.5019	1.000	guish the type of re-entry into GETFLD.	0.3008	0.0146
+0.0945	0.0752	1.000	configuration. Actually this configuration is to be	0.3741	0.0146
+0.1090	0.0733	1.000	part of the symbolic datum portion of a coded expres-	0.4004	0.0146
+0.1540	0.4624	1.000	BSYMBX	0.0527	0.0117
+0.1541	0.0865	1.000	BSYMBX	0.0545	0.0116
+0.1672	0.0902	1.000	Pointer (before CPLTSY)	0.1429	0.0102
+0.1672	0.4624	1.000	Pointer (after CPLTSY)	0.1335	0.0132
+0.1977	0.0902	0.500	00l000100001101102120010010101000101010100000111111111777771T7	0.6297	0.0203
+0.2442	0.0752	1.000	Figure 14. Format of CPLTSY's $ Output	0.2387	0.0116
+0.9157	0.0733	1.000	76	0.0169	0.0087

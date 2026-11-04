@@ -1,0 +1,110 @@
+0.0596	0.5038	1.000	tends the divisor with zeros during left shifting. The	0.3910	0.0131
+0.0639	0.0902	1.000	Divide (/)	0.0658	0.0132
+0.0755	0.5038	1.000	amount of left shift is subtracted from the divisor ex-	0.3910	0.0118
+0.0858	0.0921	1.000	The operand in the left half of the accumulator, the	0.3835	0.0145
+0.0900	0.5038	1.000	ponent and set in izc as a positive quantity. If the	0.3910	0.0161
+0.1003	0.0921	1.000	dividend, is divided by the addressed operand, the di-	0.3853	0.0146
+0.1061	0.5038	1.000	fraction is zero, normalization is suppressed and the	0.3910	0.0146
+0.1148	0.0921	1.000	visor. The sign of the addressed operand is modified	0.3835	0.0146
+0.1206	0.5038	1.000	indicator zero divisor (ZD) is set to one. When the in-	0.3910	0.0146
+0.1305	0.0920	1.000	by the sign modifiers prior to the division. The quo-	0.3836	0.0164
+0.1366	0.5038	1.000	cator zD is set to one, further processing of the division	0.3910	0.0146
+0.1453	0.0920	1.000	tient exponent and fraction replace accumulator bits	0.3836	0.0163
+0.1470	0.5035	1.000	is suspended and the accumulator contents remain	0.3914	0.0209
+0.1612	0.0902	1.000	0-59. Accumulator bits 60-127 remain unchanged. The	0.3853	0.0133
+0.1672	0.5038	1.000	undisturbed. If a normalized quotient is specified and	0.3910	0.0147
+0.1768	0.0920	1.000	quotient sign replaces the accumulator sign in bit po-	0.3856	0.0166
+0.1830	0.5038	1.000	noisy mode is also specified, the divisor normalization	0.3910	0.0146
+0.1900	0.0919	1.000	sition 4 of the sign byte register. No remainder is re-	0.3839	0.0198
+0.1967	0.5036	1.000	extension is made with ones instead of zeros inserted	0.3912	0.0147
+0.2093	0.0921	1.000	tained by this operation.	0.1692	0.0131
+0.2151	0.5038	1.000	in the low-order positions.	0.1898	0.0131
+0.2224	0.1034	1.000	In both the normalized and the unnormalized mode,	0.3741	0.0131
+0.2268	0.5205	1.000	Subsequent to the divisor normalization, the divi-	0.3744	0.0180
+0.2384	0.0921	1.000	divisions will be performed whether the operands are	0.3853	0.0147
+0.2442	0.5056	1.000	dend fraction, extended with 48 low-order bits to form	0.3910	0.0146
+0.2542	0.0921	1.000	initially normalized or not. Since this requirement	0.3853	0.0147
+0.2602	0.5038	1.000	a 96-bit fraction, may be shifted left. When unnor-	0.3929	0.0132
+0.2680	0.0901	1.000	sometimes conflicts with the rule that unnormalized	0.3874	0.0145
+0.2747	0.5056	1.000	malized operation is specified, the amount of the shift	0.3910	0.0147
+0.2848	0.0902	1.000	results are not shifted, the indicator partial field (PF)	0.3872	0.0146
+0.2870	0.5036	1.000	is equal to the shift that occurred in divisor normali-	0.3932	0.0187
+0.3009	0.0902	1.000	is used to identify the case, in unnormalized opera-	0.3872	0.0131
+0.3052	0.5056	1.000	zation, or the left shift required for dividend normali-	0.3910	0.0146
+0.3154	0.0921	1.000	tions, in which the quotient is shifted right to preserve	0.3853	0.0161
+0.3212	0.5038	1.000	zation, whichever is less. In either case, the amount	0.3929	0.0131
+0.3290	0.0901	1.000	high-order bits, and the left zeros counter, Lzc, is used	0.3875	0.0171
+0.3358	0.5038	1.000	of the shift is subtracted from the dividend exponent	0.3947	0.0145
+0.3473	0.0921	1.000	to indicate the amount of the shift. The only excep-	0.3853	0.0118
+0.3503	0.5056	1.000	and from the left zeros counter, Lzc. A zero value in	0.3910	0.0146
+0.3618	0.0921	1.000	tion to the rule that all divisions are performed, is	0.3872	0.0132
+0.3663	0.5056	1.000	the Lzc indicates that both operands were shifted the	0.3910	0.0146
+0.3764	0.0921	1.000	the case of a zero fraction in the divisor, for which	0.3853	0.0132
+0.3852	0.5038	1.000	same amount.	0.1034	0.0103
+0.3909	0.0920	1.000	division is suppressed. Indicator zero divisor (zD) is	0.3875	0.0175
+0.3967	0.5226	1.000	When normalized operation is specified, the divi-	0.3741	0.0147
+0.4053	0.0919	1.000	used to signal the occurrence of a zero divisor frac-	0.3856	0.0169
+0.4127	0.5056	1.000	dend is fully normalized. The value in the Lzc will	0.3910	0.0146
+0.4230	0.0921	1.000	tion. When division is suppressed because of a zero	0.3853	0.0146
+0.4273	0.5038	1.000	remain zero if the left shift for dividend normaliza-	0.3947	0.0131
+0.4375	0.0921	1.000	divisor, the accumulator and the sign byte register re-	0.3853	0.0146
+0.4433	0.5075	1.000	tion exceeds the amount required for divisor normali-	0.3891	0.0146
+0.4520	0.0921	1.000	main unchanged. The data flag and Mop indicators	0.3872	0.0146
+0.4578	0.5056	1.000	zation. If normalized operation and noisy mode are	0.3910	0.0146
+0.4679	0.0921	1.000	will be set but the arithmetic result and exponent range	0.3872	0.0133
+0.4698	0.5054	1.000	specified, the extension to 96 bits is made with 48 ones	0.3933	0.0203
+0.4839	0.0921	1.000	indicators are not changed. With normalized opera-	0.3872	0.0132
+0.4884	0.5056	1.000	instead of zeros and ones are introduced in the low-	0.3929	0.0131
+0.4985	0.0902	1.000	tion (when division is performed), a normalized quo-	0.3891	0.0161
+0.5042	0.5056	1.000	order bits of the 96-bit dividend fraction during	0.3929	0.0133
+0.5145	0.0921	1.000	tient is placed in the accumulator.	0.2387	0.0131
+0.5188	0.5056	1.000	normalization. If the dividend fraction is zero, the	0.3929	0.0146
+0.5305	0.1053	1.000	In the case of unnormalized operation, the quotient	0.3741	0.0146
+0.5348	0.5075	1.000	amount of lett shift is only the amount specified by the	0.3910	0.0146
+0.5451	0.0921	1.000	placed in the accumulator may or may not be normal.	0.3853	0.0160
+0.5523	0.5056	1.000	value in the LZC.	0.1222	0.0102
+0.5596	0.0902	1.000	ized. When the dividend fraction, developed after	0.3891	0.0146
+0.5651	0.5225	1.000	In the division process, as a result of pre-division	0.3743	0.0156
+0.5727	0.0918	1.000	pre-division normalization, is smaller than half the di-	0.3877	0.0190
+0.5814	0.5075	1.000	normalization, the divisor is always normalized and	0.3910	0.0147
+0.5915	0.0921	1.000	visor fraction, developed after pre-division normaliza-	0.3872	0.0146
+0.5973	0.5075	1.000	the dividend may or may not be normalized. Both	0.3910	0.0146
+0.6043	0.0919	1.000	tion, leading zeros will occur in the unnormalized	0.3875	0.0172
+0.6118	0.5075	1.000	operands have adjusted exponents and the uzc con-	0.3910	0.0146
+0.6218	0.0920	1.000	quotient fraction. The quotient exponent, for oper-	0.3874	0.0158
+0.6264	0.5075	1.000	tains a value indicating the excess, if any, of divisor	0.3910	0.0146
+0.6381	0.0921	1.000	ands in the N range initially, is equal to the difference	0.3872	0.0131
+0.6419	0.5055	1.000	shifting over dividend shifting. The divisor has a 48-	0.3931	0.0183
+0.6526	0.0921	1.000	of the dividend and divisor exponents when the mag-	0.3853	0.0131
+0.6584	0.5056	1.000	bit fraction and the dividend, a 96-bit fraction.	0.3421	0.0146
+0.6672	0.0902	1.000	nitude of the divisor fraction is greater than the mag-	0.3891	0.0160
+0.6730	0.5226	1.000	The dividend exponent adjusted for pre-division	0.3759	0.0161
+0.6830	0.0921	1.000	nitude of the dividend fraction after pre-division nor-	0.3891	0.0146
+0.6890	0.5075	1.000	normalization and quotient overflow, if required,	0.3929	0.0147
+0.6991	0.0902	1.000	malization is completed. When the magnitude of the	0.3891	0.0131
+0.7035	0.5075	1.000	minus the adjusted divisor exponent, is the initial	0.3910	0.0145
+0.7151	0.0921	1.000	divisor fraction is equal to or smaller than the magni-	0.3853	0.0131
+0.7194	0.5056	1.000	intermediate quotient exponent. The sign of the	0.3947	0.0146
+0.7297	0.0921	1.000	tude of the dividend fraction after pre-division nor-	0.3891	0.0131
+0.7333	0.5074	1.000	quotient is determined by the rules of algebra using	0.3912	0.0174
+0.7456	0.0921	1.000	malization, an overflow condition exists but a correct	0.3891	0.0131
+0.7500	0.5075	1.000	the accumulator sign and the effective sign of the	0.3929	0.0145
+0.7615	0.0921	1.000	shifted quotient is developed.	0.2105	0.0133
+0.7674	0.5075	1.000	addressed operand.	0.1429	0.0132
+0.7805	0.5244	1.000	If the magnitude of the divisor fraction is greater	0.3759	0.0146
+0.7833	0.0940	1.000	DETAILS OF OPERATION	0.1617	0.0103
+0.7964	0.5094	1.000	than the magnitude of the dividend fraction, 48 quo-	0.3910	0.0147
+0.7979	0.0940	1.000	The operation described below applies when both	0.3872	0.0146
+0.8124	0.5094	1.000	tient bits are obtained. This quotient fraction may	0.3891	0.0132
+0.8139	0.0921	1.000	operands are in the N range at the start of the opera-	0.3891	0.0131
+0.8270	0.5094	1.000	or not may not be normalized depending on the com-	0.3910	0.0146
+0.8430	0.5094	1.000	pleteness of the dividend normalization and the rela-	0.3910	0.0146
+0.8445	0.1071	1.000	Pre-division normalization is applied to both the	0.3741	0.0131
+0.8590	0.5094	1.000	tive magnitudes of the operand fractions.	0.3008	0.0131
+0.8605	0.0921	1.000	divisor and dividend prior to the actual division. Pre-	0.3891	0.0132
+0.8698	0.5243	1.000	If the magnitude of the divisor fraction is less than	0.3762	0.0176
+0.8709	0.0920	1.000	normalization of the divisor is independent of the nor-	0.3894	0.0188
+0.8879	0.0920	1.000	malization modifier. The normalization process ex-	0.3912	0.0169
+0.8881	0.5056	1.000	or equal to the magnitude of the dividend fraction, a	0.3947	0.0146
+0.9258	0.6974	1.000	Floating-Point Arithmetic	0.1579	0.0103
+0.9259	0.8835	1.000	93	0.0169	0.0087

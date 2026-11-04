@@ -1,0 +1,90 @@
+0.0900	0.6598	1.000	SYSTEM OPERATION PROGRAMS	0.2669	0.0176
+0.1599	0.5376	1.000	The system command package must be sensitive to	0.3891	0.0174
+0.1627	0.0996	1.000	In order to accomplish its function as system super-	0.3966	0.0161
+0.1758	0.5244	1.000	both the source of a command and the mode of the sys-	0.4154	0.0133
+0.1788	0.1015	1.000	visor and automatie operator, a substantial portion	0.3853	0.0146
+0.1903	0.5226	1.000	tem. Commands encountered by JCI may require	0.3816	0.0133
+0.1918	0.0996	1.000	of MCP is devoted to programs concerned with sys-	0.3910	0.0176
+0.2048	0.5244	1.000	immediate action, or may have to be deferred until	0.3891	0.0161
+0.2073	0.0995	1.000	tem operation. These programs will be considered	0.3894	0.0169
+0.2190	0.5243	1.000	phase 4. For example, a COMD, OUTPUT will be	0.3818	0.0165
+0.2267	0.1015	1.000	in three general areas:	0.1729	0.0118
+0.2355	0.5263	1.000	performed immediately if the source is JC4 or the	0.3816	0.0145
+0.2369	0.1147	1.000	1. Initial program load - programs concerned	0.3647	0.0174
+0.2471	0.5280	1.000	console, but deferred if the source is JC1.	0.3237	0.0194
+0.2558	0.0996	1.000	with getting the system started.	0.2406	0.0131
+0.2674	0.1165	1.000	2. Job control - programs concerned with	0.3365	0.0147
+0.2791	0.5282	1.000	Bypass Mode	0.1034	0.0189
+0.2816	0.0994	1.000	guiding jobs through the system, making absolute	0.3727	0.0193
+0.2979	0.1015	1.000	assignments for symbolic I-O, providing tape	0.3590	0.0146
+0.3073	0.5262	1.000	In the bypass mode, JC1 has no function. I-O assign-	0.4101	0.0175
+0.3169	0.1128	1.000	ounting instructions ior tne operator, elc•	0.3195	0.0074
+0.3227	0.5301	1.000	ments are made as the jobs are encountered by	0.3534	0.0146
+0.3241	0.1297	1.000	•Sustem commands - programs concerned wit	0.3628	0.0147
+0.3387	0.5263	1.000	phase 4 of job control.	0.1748	0.0160
+0.3415	0.1034	1.000	requests to change some facet of system operation.	0.3835	0.0146
+0.3576	0.1203	1.000	The initializing program, by its very nature, is a	0.3703	0.0131
+0.3691	0.5301	1.000	Use of the Input Program	0.1917	0.0146
+0.3735	0.1034	1.000	one-shot program which must give consideration to	0.3835	0.0116
+0.3881	0.1015	1.000	all aspects of system operation. Iwo other programs	0.4079	0.0131
+0.3982	0.5320	1.000	The system input program provides one system	0.3571	0.0132
+0.4026	0.1034	1.000	are major packages or subroutines of major pack-	0.3778	0.0131
+0.4127	0.5320	1.000	pseudo-op, $SCR, which is available to any program.	0.4023	0.0146
+0.4172	0.1034	1.000	ages. They communicate in the manner previously	0.3835	0.0132
+0.4273	0.5320	1.000	This pseudo-op provides cards from the phase 4	0.3628	0.0161
+0.4317	0.1034	1.000	discussed, using the tentacle tables, the priming	0.3684	0.0132
+0.4418	0.5320	1.000	source (the read tape, or the card reader in the by-	0.3910	0.0131
+0.4462	0.1034	1.000	mechanism, and the return routine. (See the Dis-	0.3797	0.0132
+0.4578	0.5320	1.000	pass mode), provided a job boundary is not encoun-	0.3872	0.0131
+0.4620	0.1033	1.000	patcher.)	0.0697	0.0121
+0.4709	0.5320	1.000	tered. The first card of a job is defined as the first	0.3947	0.0146
+0.4855	0.5320	1.000	JOB or COMD card not preceded by a B card (ex-	0.3741	0.0131
+0.4897	0.1015	1.000	SYSTEM INPUT MODES	0.1842	0.0133
+0.5029	0.5338	1.000	cluding T cards).	0.1316	0.0116
+0.5142	0.5506	1.000	The input program provides a special pseudo-op,	0.3686	0.0154
+0.5188	0.1053	1.000	The first step in the study of system operation pro-	0.3835	0.0133
+0.5276	0.5318	1.000	SSCR4, for the benefit of JC4. The SSCR4 pseudo-op	0.4025	0.0181
+0.5323	0.1032	1.000	grams is to discuss the characteristics of the system	0.4025	0.0157
+0.5451	0.5320	1.000	is a request for the next card. However, it differs	0.3853	0.0131
+0.5494	0.1034	1.000	input modes and the usage of the system input pro-	0.3816	0.0117
+0.5581	0.5338	1.000	from $SCR in calling sequence and the meaning of the	0.4023	0.0146
+0.5624	0.1523	1.000	From the point of view of program logic, sys-	0.3571	0.0132
+0.5666	0.1033	1.000	gram.	0.0490	0.0106
+0.5727	0.5338	1.000	end return. The calling sequence for SSCR4 is:	0.3609	0.0146
+0.5785	0.1034	1.000	tem input may be classified as either being in over-	0.3910	0.0131
+0.5900	0.5658	1.000	B, $MCP	0.0714	0.0147
+0.5908	0.1033	1.000	lapped mode or not overlapped (bypass) mode. (Refer	0.4082	0.0170
+0.6045	0.5752	1.000	, SSCR4	0.0658	0.0146
+0.6060	0.1033	1.000	to the portion of the MCP Reference Manual concerned	0.4100	0.0151
+0.6192	0.5752	1.000	,FWA(I)	0.0695	0.0145
+0.6221	0.1034	1.000	with system modes.) Although there is a distinction	0.3947	0.0131
+0.6335	0.5902	1.000	(end return)	0.0922	0.0135
+0.6366	0.1053	1.000	between on-line and offline overlapped modes, its	0.3722	0.0116
+0.6482	0.5902	1.000	(normal return)	0.1203	0.0132
+0.6512	0.1034	1.000	influence on program logic is not as great.	0.3233	0.0131
+0.6612	0.5508	1.000	The SSCR4 pseudo-op is a request for one card;	0.3609	0.0161
+0.6750	0.5356	1.000	thus, no card count is provided, and a partial trans-	0.3950	0.0158
+0.6817	0.1053	1.000	Overlapped Modes	0.1372	0.0132
+0.6903	0.5338	1.000	mission is not possible. The end return is given by	0.3891	0.0146
+0.7048	0.5338	1.000	the input program when no cards are immediately	0.3741	0.0161
+0.7093	0.1053	1.000	In the overlapped modes, the input program has two	0.3910	0.0131
+0.7194	0.5301	1.000	available from the phase 4 source. This differs from	0.4098	0.0146
+0.7252	0.1053	1.000	input sources operating at the same time. One source	0.4098	0.0133
+0.7339	0.5338	1.000	the end return for $SCR, which is given when no more	0.4079	0.0161
+0.7383	0.1051	1.000	is the read tape, which provides jobs to phase 4 of	0.3819	0.0173
+0.7477	0.5318	1.000	cards are available for that job. JC4 uses SSCR4	0.3781	0.0170
+0.7539	0.1033	1.000	job control (JC4) to run, and the other is either the	0.3874	0.0150
+0.7645	0.5207	1.000	when it is looking for a job card, and only at the	0.3778	0.0131
+0.7672	0.1051	1.000	scan tape or the card reader, which provides cards	0.4120	0.0189
+0.7805	0.5320	1.000	beginning of a job.	0.1429	0.0146
+0.7833	0.1053	1.000	to Phase 1 of job control (JC1). JCI makes prelim-	0.3929	0.0132
+0.7934	0.5526	1.000	The input program provides one other pseudo-op	0.3648	0.0150
+0.7971	0.1052	1.000	inary decisions concerning which jobs can be executed,	0.4119	0.0163
+0.8081	0.5357	1.000	with an eight valued parameter. This pseudo-op,	0.3722	0.0131
+0.8124	0.1053	1.000	and sets up I-O assignment tables to allow tape	0.3553	0.0146
+0.8218	0.5337	1.000	SKOM, is most easily discussed by considering the	0.3875	0.0174
+0.8259	0.1070	1.000	mounting instructions to be given before thé job comes	0.4083	0.0168
+0.8368	0.5375	1.000	eight sub-types as separate pseudo-ops, as follows:	0.3893	0.0156
+0.8445	0.1053	1.000	up for execution.	0.1278	0.0116
+0.9491	0.7387	1.000	System Operation Programs	0.1579	0.0103
+0.9491	0.9192	1.000	47	0.0169	0.0087

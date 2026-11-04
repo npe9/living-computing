@@ -1,0 +1,105 @@
+0.0624	0.0977	1.000	through the punch is by writing one or a few words	0.3910	0.0146
+0.0654	0.5320	1.000	The end-of-operation indication signifying the com-	0.3741	0.0146
+0.0762	0.0957	1.000	consisting of all zeros. When this is done, the card	0.3913	0.0170
+0.0799	0.5150	1.000	pletion of an operation is given upon completion of	0.3910	0.0161
+0.0930	0.0977	1.000	punch has to be in the no-eca mode, since the EcC	0.3910	0.0146
+0.0954	0.5149	1.000	the punching, which is at the end of the card cycle.	0.3912	0.0168
+0.1067	0.0957	1.000	bits associated with an all-zero word are not zero.	0.3687	0.0154
+0.1098	0.5148	1.000	The unit thereupon is in a position to receive a new	0.3913	0.0187
+0.1264	0.5150	1.000	WRITE instruction. Since the punch buffer at this time	0.3910	0.0146
+0.1409	0.5132	1.000	is empty, the data transfer associated with the new	0.3910	0.0146
+0.1482	0.0959	1.000	Cara Offset	0.0865	0.0103
+0.1555	0.5132	1.000	WRITE instruction takes place immediately after the in-	0.3910	0.0161
+0.1665	0.0957	1.000	In addition to turning on the write-check light, the	0.3913	0.0173
+0.1730	0.5132	1.000	struction is issued. If the instruction is issued within	0.3910	0.0131
+0.1811	0.0958	1.000	CHECK LIGHT ON control function causes the next card	0.3912	0.0158
+0.1875	0.5150	1.000	the first 14.3 milliseconds of the cycle, data transfer for	0.3891	0.0146
+0.1991	0.0940	1.000	to be offset in the stacker. This facilitates locating	0.3929	0.0146
+0.2035	0.5132	1.000	that instruction can be completed within the first 22	0.3910	0.0145
+0.2136	0.0959	1.000	the card which is in error.	0.1880	0.0117
+0.2148	0.5129	1.000	milliseconds of the cycle, and the punch operates at	0.3915	0.0218
+0.2297	0.1128	1.000	The card that is offset is the next card to be fed	0.3741	0.0131
+0.2339	0.5132	1.000	the rated speed of 250 cards per minute. If the in-	0.3910	0.0146
+0.2456	0.0959	1.000	to the stacker as a result of a WRITE or a CARD RUN-	0.3910	0.0116
+0.2485	0.5113	1.000	struction is delayed and the buffer is not loaded	0.3910	0.0146
+0.2602	0.0959	1.000	OUT operation. This is the card that passed the check-	0.3910	0.0147
+0.2630	0.5132	1.000	within the 22 milliseconds, the feed clutch is disen-	0.3910	0.0146
+0.2739	0.0938	1.000	ing station in the last card cycle and currently	0.3932	0.0169
+0.2791	0.5132	1.000	gaged. The motor is turned off if no instructions are	0.3910	0.0131
+0.2906	0.0940	1.000	appears in the blank station between the checking	0.3929	0.0146
+0.2951	0.5113	1.000	issued to it for approximately three minutes.	0.3289	0.0146
+0.3067	0.0940	1.000	station and the stacker. Consequently, if the CHECK	0.3910	0.0131
+0.3096	0.5301	1.000	When the punching of a card is initiated with the	0.3741	0.0146
+0.3195	0.0939	1.000	LIGHT ON control instruction is issued after the cycle	0.3931	0.0166
+0.3231	0.5111	1.000	motor stationary, the completion of the first WRITE	0.3932	0.0194
+0.3334	0.0919	1.000	in which unit check accompanies end-of-operation,	0.3952	0.0192
+0.3386	0.5111	1.000	instruction may encounter an indeterminate delay of	0.3932	0.0179
+0.3515	0.0939	1.000	and this unit check has been caused by a punching	0.3912	0.0166
+0.3561	0.5113	1.000	up to approximately 300 milliseconds in addition to	0.3910	0.0146
+0.3663	0.0940	1.000	error, the card in error is offset. If the data error re-	0.3910	0.0146
+0.3706	0.5132	1.000	the usual delay within a card cycle, in order to accel-	0.3891	0.0146
+0.3821	0.0921	1.000	sponsible for the unit check has been introduced dur-	0.3947	0.0147
+0.3866	0.5132	1.000	erate the motor and engage the feed clutch. From the	0.3891	0.0146
+0.3967	0.0920	1.000	ing transmission of the data from the exchange to the	0.3932	0.0175
+0.4026	0.5113	1.000	șecond card on, the operation is synchronized and fol-	0.3891	0.0147
+0.4142	0.0940	1.000	unit, the erroneous card is the one following the	0.3910	0.0145
+0.4172	0.5094	1.000	lows the timing as described above. Note, however,	0.3929	0.0147
+0.4284	0.0939	1.000	offset card.	0.0791	0.0124
+0.4330	0.5113	1.000	that regardless of the above delay, the data transfer	0.3891	0.0146
+0.4476	0.5113	1.000	from the exchange to the punch associated with the	0.3910	0.0146
+0.4636	0.5094	1.000	WRITE instruction follows immediately after the in-	0.3910	0.0146
+0.4667	0.0937	1.000	Card Punch Timing	0.1399	0.0146
+0.4782	0.5113	1.000	struction is issued.	0.1316	0.0131
+0.4869	0.0921	1.000	A card cycle of the punch is 240 milliseconds long.	0.3910	0.0161
+0.4942	0.5282	1.000	The card cycle initiated by a CARD RUN-OUT control	0.3703	0.0131
+0.5028	0.0938	1.000	Data transfer from the computer to the card punch	0.3913	0.0164
+0.5072	0.5092	1.000	instruction has the same format as the one described	0.3913	0.0162
+0.5172	0.0938	1.000	buffer takes place at the rate of one 8-bit byte per 64	0.3894	0.0169
+0.5247	0.5094	1.000	above, except that no data transfer takes place. Be-	0.3891	0.0160
+0.5333	0.0921	1.000	microseconds, thus occupying 7.7 out of the 240 mil-	0.3929	0.0146
+0.5392	0.5113	1.000	cause of this, the card is fed in the current cycle if the	0.3891	0.0160
+0.5494	0.0921	1.000	liseconds. Defining the card cycle as the interval be-	0.3929	0.0131
+0.5536	0.5094	1.000	instruction is issued at any time within the 22-milli-	0.3891	0.0147
+0.5639	0.0921	1.000	tween the instants at which punching of two succes-	0.3910	0.0145
+0.5677	0.5074	1.000	second period following the preceding end-of-opera-	0.3932	0.0193
+0.5785	0.0902	1.000	sive cards is completed, data transfer has to occur	0.3929	0.0161
+0.5858	0.5113	1.000	tion. As in the case of WRITE, the EOP indication for	0.3872	0.0131
+0.5945	0.0921	1.000	within the first 22 milliseconds in order to insure con-	0.3910	0.0131
+0.5981	0.5092	1.000	the CARD RUN-OUT is given upon the completion of the	0.3896	0.0199
+0.6105	0.0921	1.000	tinuous operation. The last 184 milliseconds of the	0.3910	0.0132
+0.6159	0.5093	1.000	card cycle.	0.0773	0.0138
+0.6264	0.0921	1.000	cycle are used for the actual punching of the contents	0.3910	0.0146
+0.6308	0.5263	1.000	The time required for the execution of the RESERVED	0.3722	0.0146
+0.6482	0.5075	1.000	LIGHT OFF, RESERVED LIGHI ON, ECC MODE, NO-ECC MODE	0.3910	0.0146
+0.6555	0.0902	1.000	milliseconds of the cycle, the card preceding the one	0.3947	0.0161
+0.6599	0.5056	1.000	and CHECK LIGHT ON control instructions is 80 micro-	0.3929	0.0174
+0.6685	0.0883	1.000	being punched is checked at the reading station. The	0.3947	0.0176
+0.6758	0.5056	1.000	seconds. This time does not depend on whether the	0.3929	0.0176
+0.6845	0.0883	1.000	relative allotment of time within a card cycle for one	0.3947	0.0161
+0.6918	0.5056	1.000	operations are superfluous or not.	0.2444	0.0161
+0.6962	0.0900	1.000	of a set of consecutive single block operations is shown	0.3915	0.0220
+0.7045	0.5168	1.000	None of the above execution times includes the in-	0.3819	0.0199
+0.7121	0.0865	1.000	in Figure 43. (The cross-hatched area represents the	0.3985	0.0204
+0.7252	0.5132	1.000	truction processing time in the exchange but onl	0.3759	0.0133
+0.7283	0.0881	1.000	actual data transmission time.)	0.2318	0.0204
+0.7369	0.5150	1.000	he interval between the time instructions are receive	0.3741	0.0146
+0.7515	0.5056	1.000	at the unit and the time the unit signals to the ex-	0.3910	0.0189
+0.7630	0.2030	1.000	- ONE CARD CYCLE, 240 MS	0.1523	0.0131
+0.7688	0.5056	1.000	change the completion of the operation.	0.2895	0.0161
+0.7834	0.1053	1.000	EOP	0.0244	0.0116
+0.7849	0.4398	1.000	EOP	0.0263	0.0116
+0.7936	0.1109	1.000	1	0.0132	0.0203
+0.8096	0.5056	1.000	Manual Operating Procedure	0.2180	0.0146
+0.8169	0.1128	0.300	IAI	0.0489	0.0160
+0.8314	0.5075	1.000	The rules for manual operation of the card punch	0.3872	0.0160
+0.8445	0.1015	0.300	→22MS/4	0.0677	0.0174
+0.8473	0.5056	1.000	are analogous to those of the card reader described	0.3891	0.0133
+0.8503	0.2763	1.000	- PUNCHING, 164 MS —	0.1184	0.0103
+0.8576	0.1241	1.000	JATA	0.0226	0.0073
+0.8605	0.5056	1.000	previously.	0.0827	0.0145
+0.8634	0.0921	1.000	TRAPEROSSION	0.0865	0.0203
+0.8778	0.5206	1.000	However, unlike the case of the card reader, it is	0.3742	0.0144
+0.8881	0.0865	1.000	Figure 48. Card Punch Timing	0.1955	0.0174
+0.8909	0.5056	1.000	not always possible to identify the card responsible for	0.3910	0.0176
+0.9256	0.1315	1.000	IBM 7030	0.0735	0.0136
+0.9259	0.0865	1.000	144	0.0282	0.0131

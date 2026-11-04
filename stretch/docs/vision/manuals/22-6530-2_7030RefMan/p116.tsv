@@ -1,0 +1,117 @@
+0.0609	0.5207	1.000	3. An instruction is received that the selected unit	0.3759	0.0133
+0.0624	0.0921	1.000	ruption. At the time of such	0.2256	0.0132
+0.0624	0.3177	1.000	an interruption, the	0.1748	0.0132
+0.0770	0.0921	1.000	channel address of the external unit is entered into	0.3853	0.0118
+0.0770	0.5432	1.000	is unable to perform because of its present con-	0.3534	0.0146
+0.0915	0.0940	1.000	the channel address register. The input-output status	0.3835	0.0146
+0.0915	0.5451	1.000	dition; e.g., a backspace cONTROL given to a tape	0.3515	0.0146
+0.1076	0.5451	1.000	unit with the tape at the load point.	0.2594	0.0131
+0.1090	0.0921	1.000	indicators are permanent and their mask bits are per-	0.3853	0.0131
+0.1235	0.0921	1.000	manently set to one. The following is a list of the	0.3853	0.0146
+0.1279	0.5207	1.000	4. The exchange attempts to transfer a word to	0.3759	0.0131
+0.1394	0.0921	1.000	status indicators in the order of decreasing interrup-	0.3853	0.0133
+0.1424	0.5451	1.000	or from a core storage location to which it does	0.3534	0.0146
+0.1537	0.0920	1.000	tion priority.	0.0923	0.0167
+0.1584	0.5470	1.000	not have access (locations 0 through 3l, or loca-	0.3515	0.0131
+0.1744	0.5451	1.000	tions having addresses above the maximum	0.3515	0.0132
+0.1758	0.2030	1.000	Exchange Program Check	0.1898	0.0133
+0.1773	0.1541	1.000	EPGK	0.0357	0.0087
+0.1890	0.5451	1.000	available address in a particular installation).	0.3515	0.0147
+0.1903	0.2030	1.000	Unit Check	0.0865	0.0118
+0.1933	0.1541	1.000	UK	0.0207	0.0073
+0.2048	0.2011	1.000	End Exception	0.1129	0.0164
+0.2048	0.5470	1.000	This can be caused by an invalid data word ad-	0.3515	0.0132
+0.2078	0.1541	1.000	EE	0.0188	0.0087
+0.2194	0.5470	1.000	dress, an invalid refill field on chaining, or by	0.3496	0.0132
+0.2209	0.2030	1.000	End Of Operation	0.1353	0.0146
+0.2238	0.1541	1.000	EOP	0.0282	0.0073
+0.2313	0.5449	1.000	specifying in a READ or WRITE a control word	0.3538	0.0189
+0.2369	0.2030	1.000	Channel Signal	0.1128	0.0131
+0.2398	0.1541	1.000	CS	0.0169	0.0073
+0.2515	0.5451	1.000	address that exceeds the available core storage.	0.3534	0.0131
+0.2558	0.1053	1.000	The time at which the status bits in the control	0.3741	0.0118
+0.2718	0.0921	1.000	word are turned on depends upon the bits and their	0.3872	0.0146
+0.2733	0.5226	1.000	Programming errors, like invalid instructions, non-	0.3759	0.0131
+0.2863	0.1485	1.000	The most common types of indications are	0.3308	0.0146
+0.2878	0.5056	1.000	existent control codes, or operations that are impos-	0.3929	0.0131
+0.2907	0.0921	1.000	causes.	0.0451	0.0087
+0.3023	0.0921	1.000	those associated with reading or writing which are	0.3872	0.0131
+0.3036	0.5056	1.000	sible because of the current status of the unit, are	0.3929	0.0118
+0.3181	0.5056	1.000	discovered by the external units when the units at-	0.3930	0.0151
+0.3182	0.0921	1.000	discovered by the external devices (data errors, out	0.3872	0.0133
+0.3327	0.0921	1.000	of material, and so on). These conditions are sig-	0.3872	0.0147
+0.3327	0.5056	1.000	tempt to initiate the corresponding operations. The	0.3929	0.0147
+0.3488	0.0921	1.000	nalled to the exchange, a block at a time, at the end	0.3872	0.0131
+0.3503	0.5056	1.000	EPGK status bit in these cases is turned on a short time	0.3929	0.0103
+0.3632	0.5056	1.000	after the instruction is accepted by the exchange. The	0.3930	0.0170
+0.3633	0.0921	1.000	of the block in which the conditions are discovered,	0.3891	0.0117
+0.3794	0.0921	1.000	and, since they always terminate the operation, they	0.3872	0.0131
+0.3808	0.5056	1.000	computer, however, will always have proceeded to the	0.3929	0.0131
+0.3953	0.0940	1.000	cannot be on while the operation is in progress. Other	0.3853	0.0131
+0.3953	0.5056	1.000	following instructions by the time the program in-	0.3929	0.0147
+0.4099	0.0921	1.000	conditions such as specification of an invalid core	0.3872	0.0131
+0.4112	0.5056	1.000	terruption is made. The external unit to which the	0.3929	0.0133
+0.4258	0.0921	1.000	storage address can turn on the corresponding status	0.3872	0.0133
+0.4258	0.5056	1.000	instruction is addressed is never started. Note that	0.3947	0.0118
+0.4403	0.0940	1.000	bit before the operation at the unit has been termi-	0.3853	0.0146
+0.4418	0.5075	1.000	when a READ Or WRITE is issued to a unit that cannot	0.3929	0.0118
+0.4548	0.0921	1.000	nated. The corresponding indicators in the indicator	0.3872	0.0146
+0.4578	0.5075	1.000	perform it, the control word for the addressed chan-	0.3910	0.0131
+0.4709	0.0921	1.000	register, however, can be turned on and the program	0.3872	0.0146
+0.4724	0.5075	1.000	nel still is fetched.	0.1353	0.0116
+0.4869	0.5226	1.000	In the case of invalid control word or data word	0.3759	0.0116
+0.4869	0.0940	1.000	can be interrupted only after termination of the cur-	0.3872	0.0146
+0.5003	0.5074	1.000	addresses, the error is discovered at the time when the	0.3930	0.0162
+0.5028	0.0919	1.000	rent operation.	0.1075	0.0138
+0.5174	0.1053	1.000	If two or more units are accommodated by a single	0.3759	0.0132
+0.5188	0.5075	1.000	exchange attempts to fetch the word specified by the	0.3929	0.0133
+0.5320	0.0940	1.000	channel address (attached to a channel by means of	0.3872	0.0132
+0.5333	0.6335	1.000	The operation always proceeds nor-	0.2650	0.0146
+0.5333	0.5075	1.000	invalid address.	0.1259	0.0118
+0.5479	0.0921	1.000	a single control unit), the status bits can be turned	0.3891	0.0132
+0.5494	0.5075	1.000	mally until the invalid address is encountered. If the	0.3929	0.0131
+0.5624	0.0921	1.000	on only by that unit that has been last selected by	0.3872	0.0146
+0.5639	0.5075	1.000	refill field of a control word specifies an address that	0.3929	0.0145
+0.5770	0.0940	1.000	means of a Locate. (The channel signal is an excep-	0.3872	0.0146
+0.5799	0.5075	1.000	is not accessible to the exchange, the operation pro-	0.3929	0.0131
+0.5945	0.0940	1.000	tion; it can be turned on by any unit.)	0.2650	0.0131
+0.5945	0.5075	1.000	ceeds until the word count in the old control word is	0.3929	0.0116
+0.6090	0.1053	1.000	Since the input-output status is first recorded in the	0.3759	0.0146
+0.6105	0.5075	1.000	exhausted. All data specified by the old control word	0.3910	0.0132
+0.6235	0.0921	1.000	control word and the corresponding indicators in the	0.3891	0.0146
+0.6264	0.5075	1.000	are transferred normally, and the exchange at the	0.3929	0.0132
+0.6394	0.0921	1.000	indicator register are subsequently set up only if the	0.3891	0.0147
+0.6424	0.5094	1.000	time of program interruption contains the old control	0.3891	0.0103
+0.6526	0.0902	1.000	conditions described in "Input-Output Indicators"	0.3929	0.0174
+0.6570	0.5094	1.000	word with a count of zero. If a data word address is	0.3910	0.0103
+0.6685	0.0921	1.000	are satisfied, the cause and meaning of input-output	0.3910	0.0147
+0.6700	0.5075	1.000	invalid, the operation is terminated only after data	0.3929	0.0146
+0.6845	0.5094	1.000	transfer up to the invalid address is completed. The	0.3910	0.0161
+0.6860	0.0921	1.000	status indicators will be explained by describing the	0.3910	0.0131
+0.7006	0.0921	1.000	control word status bits. The following is a detailed	0.3891	0.0131
+0.7020	0.5094	1.000	control word at the time of termination refers to the	0.3910	0.0116
+0.7166	0.0921	1.000	description of the status bits.	0.2086	0.0146
+0.7179	0.5094	1.000	core storage location following the one that is re-	0.3929	0.0133
+0.7315	0.5073	1.000	sponsible for the termination.	0.2165	0.0158
+0.7427	0.0940	1.000	ExCHANGE PROGRAM CHECK (EPGK)	0.2556	0.0131
+0.7485	0.5244	1.000	When a READ or WRITE is terminated with EPGK	0.3759	0.0103
+0.7602	0.0940	1.000	This bit is turned on when an operation concerning	0.3891	0.0132
+0.7630	0.5094	1.000	because of an invalid core storage address, the unit	0.3929	0.0131
+0.7761	0.0921	1.000	an external unit is terminated prematurely by a pro-	0.3891	0.0133
+0.7791	0.5094	1.000	always has been started and at least the first block	0.3910	0.0131
+0.7921	0.0940	1.000	gramming error. Among the causes are:	0.2857	0.0131
+0.7951	0.5094	1.000	of data has been moved at the unit. If the error is	0.3929	0.0102
+0.8072	0.1071	1.000	1. An instruction is received that the selected unit	0.3761	0.0140
+0.8096	0.5094	1.000	such that no data can be fetched for a WRITE, a word	0.3910	0.0131
+0.8241	0.5094	1.000	consisting of zeros is recorded at the unit. This hap-	0.3929	0.0147
+0.8241	0.1316	1.000	is not designed to perform, such as a READ given	0.3515	0.0131
+0.8398	0.1315	1.000	to a printer.	0.0941	0.0137
+0.8400	0.5094	1.000	pens when the original control word address or the	0.3929	0.0147
+0.8545	0.5113	1.000	first data word address is invalid. In the correspond-	0.3929	0.0133
+0.8557	0.1070	1.000	2. The eight low-order bits of the right effective	0.3762	0.0155
+0.8706	0.5094	1.000	ing case during a READ, no data are transmitted to	0.3929	0.0146
+0.8721	0.1316	1.000	address of a controL instruction contain a code	0.3515	0.0116
+0.8866	0.5094	1.000	core storage. In either case, if the first control word	0.3929	0.0131
+0.8881	0.1297	1.000	that is not defined for the unit.	0.2274	0.0131
+0.9244	0.8797	1.000	113	0.0226	0.0087
+0.9244	0.7256	1.000	IBM 7619 Exchange	0.1259	0.0102

@@ -1,0 +1,108 @@
+0.0654	0.1128	1.000	The instruction at the eflective interruption ad-	0.3722	0.0131
+0.0682	0.5075	1.000	Execution Instructions	0.2331	0.0147
+0.0814	0.0996	1.000	dress may be of any type: half-length or full-length;	0.3835	0.0132
+0.0959	0.0996	1.000	an arithmetic, connective, branch, or any other type.	0.3835	0.0132
+0.1045	0.5113	1.000	Three types of instruction sequencing have already	0.3910	0.0146
+0.1148	0.1128	1.000	A half-length instruction in the right half of the	0.3703	0.0131
+0.1221	0.5113	1.000	been explained: normal sequencing by the stepping	0.3891	0.0116
+0.1294	0.0996	1.000	full-word location at the effective interruption ad-	0.3853	0.0131
+0.1381	0.5113	1.000	of the instruction counter, in which the program	0.3872	0.0102
+0.1453	0.0996	1.000	dress will not be executed except by a branch to that	0.3835	0.0131
+0.1512	0.5113	1.000	keeps control of sequencing; branching, in which the	0.3910	0.0146
+0.1598	0.0977	1.000	location.	0.0583	0.0118
+0.1672	0.5113	1.000	program gives control to a second program; and in-	0.3910	0.0147
+0.1773	0.1128	1.000	When an instruction itself causes an indicator to	0.3703	0.0118
+0.1817	0.5094	1.000	terruption, in which a new program takes control.	0.3910	0.0147
+0.1933	0.0996	1.000	be turned on and interruption occurs at the end of	0.3853	0.0131
+0.1976	0.5113	1.000	Since it is often desirable to permit one program to	0.3910	0.0132
+0.2093	0.0996	1.000	the operation in progress, the instruction counter con-	0.3835	0.0131
+0.2121	0.5093	1.000	execute the instructions of a second program with-	0.3930	0.0161
+0.2238	0.0996	1.000	tains the location plus one of that instruction even if	0.3853	0.0146
+0.2282	0.5094	1.000	out losing control to the second program, a fourth	0.3929	0.0146
+0.2384	0.0996	1.000	the instruction is a branch. Instructions at effective	0.3835	0.0131
+0.2427	0.5113	1.000	type of instruction sequencing is provided, which	0.3910	0.0161
+0.2542	0.0977	1.000	interruption addresses are excepted.	0.2538	0.0147
+0.2587	0.5094	1.000	lends control. This is furnished by means of the two	0.3910	0.0146
+0.2718	0.1128	1.000	Four levels of generality and complexity can be	0.3722	0.0146
+0.2747	0.5094	1.000	execution instructions.	0.1654	0.0117
+0.2849	0.0976	1.000	identified in the correction routines selected by the	0.3875	0.0164
+0.2906	0.5282	1.000	One instruction, EXECUTE, directly specifies the loca-	0.3759	0.0132
+0.3023	0.0996	1.000	program interruption mechanism.	0.2406	0.0146
+0.3067	0.5113	1.000	tion of a second instruction, the subject instruction,	0.3910	0.0116
+0.3197	0.1128	1.000	The simplest routine is a single instruction which	0.3722	0.0146
+0.3197	0.5094	1.000	which is executed. The other instruction, EXECUTE	0.3929	0.0146
+0.3352	0.5093	1.000	INDIRECT AND COUNT, specifies a location which imi-	0.3931	0.0169
+0.3358	0.0977	1.000	is suitable for some conditions, such as input-output	0.3872	0.0145
+0.3507	0.5093	1.000	tates the instruction counter, a pseudo-instruction	0.3931	0.0160
+0.3517	0.0977	1.000	or floating-point range exceptions. In this case, the	0.3872	0.0131
+0.3663	0.0959	1.000	instruction is stored in the proper place relative to	0.3872	0.0146
+0.3677	0.5113	1.000	counter. The pseudo-instruction counter addresses the	0.3910	0.0132
+0.3821	0.0977	1.000	the interruption address, and it is executed whenever	0.3872	0.0133
+0.3821	0.5094	1.000	location of a single subject instruction, which is	0.3929	0.0133
+0.3953	0.5094	1.000	fetched and executed. After the subject instruction	0.3929	0.0160
+0.3967	0.0977	1.000	the condition occurs. After this instruction is ex-	0.3872	0.0118
+0.4127	0.5113	1.000	has been fetched, but prior to its execution, the	0.3910	0.0146
+0.4127	0.0977	1.000	ecuted, the program proceeds with the first instruc-	0.3872	0.0146
+0.4288	0.5113	1.000	pseudo-instruction counter is stepped.	0.2763	0.0146
+0.4288	0.0977	1.000	tion after that on which the interrupting condition	0.3872	0.0131
+0.4433	0.5263	1.000	In either of the execution instructions, the subject	0.3759	0.0146
+0.4606	0.1128	1.000	The next simplest type of correction routine con-	0.3741	0.0147
+0.4606	0.5094	1.000	instruction may be of any type and is performed ac-	0.3910	0.0133
+0.4742	0.5093	1.000	cording to the normal rules for an operation of its	0.3930	0.0159
+0.4767	0.0959	1.000	sists of a subroutine sufficiently short and simple that	0.3891	0.0132
+0.4897	0.5113	1.000	type. However, in order that the main program may	0.3891	0.0147
+0.4911	0.0958	1.000	further interruptions can be excluded while it is in	0.3874	0.0151
+0.5058	0.5113	1.000	have full control at all times, the subject instruction	0.3910	0.0131
+0.5073	0.0959	1.000	effect. An unconditional STORE INSTRUCTION COUNTER	0.3891	0.0116
+0.5218	0.0959	1.000	IF BRANCH DISABLED instruction to the subroutine is	0.3891	0.0116
+0.5218	0.5094	1.000	is not allowed to change the state of the interruption	0.3910	0.0131
+0.5335	0.5092	1.000	system or replace the contents of the instruction	0.3932	0.0190
+0.5378	0.0959	1.000	put at the proper place in the interruption address	0.3891	0.0146
+0.5523	0.0959	1.000	table, storing the counter in a suitable address. When	0.3891	0.0146
+0.5523	0.5113	1.000	counter. The execution exception indicator (EXE) is	0.3910	0.0146
+0.5669	0.5113	1.000	turned on by any branch operation of a subject in-	0.3929	0.0147
+0.5682	0.0959	1.000	the subroutine is complete, return is effected by a	0.3891	0.0133
+0.5827	0.0959	1.000	BRANCH ENABLED instruction that uses the suitable	0.3891	0.0118
+0.5827	0.5094	1.000	struction in which the condition for a successful	0.3929	0.0118
+0.5973	0.5113	1.000	branch is met. When indicator EXE is actuated, the	0.3910	0.0146
+0.6003	0.0959	1.000	return address.	0.1053	0.0103
+0.6133	0.5113	1.000	branch and all associated operations are not per-	0.3910	0.0131
+0.6148	0.1090	1.000	In the next most general case, the correction rou-	0.3778	0.0146
+0.6278	0.5093	1.000	formed. The suppressed actions include the disabling	0.3930	0.0167
+0.6294	0.0959	1.000	tine itself must be subjeçt to further interruptions	0.3891	0.0146
+0.6411	0.5092	1.000	in BRANCH DISABLED, the enabling in BRANCH ENABLED	0.3932	0.0192
+0.6423	0.0958	1.000	under control of the same mask and interruption	0.3893	0.0180
+0.6599	0.5113	1.000	Or BRANCH ENABLED AND WAIT, the counting and re-	0.3910	0.0131
+0.6612	0.0940	1.000	address. The entry in the interruption address table	0.3910	0.0147
+0.6736	0.5112	1.000	filling in COUNT, BRANCH AND REFILL, and so on.	0.3554	0.0156
+0.6758	0.0940	1.000	is then a STORE INSTRUCTION COUNTER IF BRANCH in-	0.3910	0.0118
+0.6903	0.5263	1.000	If an execution operation specifies an execution	0.3759	0.0146
+0.6918	0.0940	1.000	struction to the correction routine. Return from the	0.3910	0.0118
+0.7064	0.5075	1.000	instruction as its subject instruction, the subject in-	0.3966	0.0146
+0.7078	0.0959	1.000	correction routine is made with BRANCH.	0.2895	0.0116
+0.7209	0.5094	1.000	struction of the second-level execution operation is	0.3947	0.0146
+0.7238	0.1090	1.000	In the most general case, when interruption con-	0.3778	0.0131
+0.7369	0.5094	1.000	obtained. If this, in turn, is still another execution	0.3929	0.0161
+0.7384	0.0959	1.000	trolled by a new mask and/or interruption address	0.3891	0.0147
+0.7515	0.5094	1.000	instruction, the procedure is carried to succeeding	0.3929	0.0161
+0.7542	0.0940	1.000	must be permitted during the subroutine, it is en-	0.3910	0.0133
+0.7674	0.5094	1.000	levels until an instruction that is not an execution	0.3929	0.0132
+0.7688	0.0940	1.000	tered with STORE INSTRUCTION COUNTER IF BRANCH	0.3910	0.0118
+0.7793	0.0938	1.000	DISABLED. The mask register and/or the interruption	0.3895	0.0216
+0.7833	0.5094	1.000	instruction is obtained.	0.1711	0.0118
+0.7979	0.5263	1.000	When an execution operation is initiated in the	0.3759	0.0146
+0.8009	0.0940	1.000	address register are loaded and the mechanism is	0.3910	0.0116
+0.8139	0.5113	1.000	main program, the instruction counter is stepped in	0.3910	0.0145
+0.8154	0.0940	1.000	enabled. At the end of the subroutine, the mechan-	0.3910	0.0131
+0.8299	0.0940	1.000	ism is disabled, the mask register and/or the inter-	0.3910	0.0146
+0.8299	0.5113	1.000	normal fashion as in all operations of the main pro-	0.3910	0.0131
+0.8445	0.5113	1.000	gram. However, it is never stepped during the execu-	0.3929	0.0146
+0.8459	0.0940	1.000	ruption address register are restored to their original	0.3910	0.0147
+0.8590	0.5094	1.000	tion of any subject instruction even if the subject in-	0.3947	0.0160
+0.8618	0.0940	1.000	values, and return to the main program is made with	0.3910	0.0132
+0.8750	0.5113	1.000	struction is again one of the execution instructions.	0.3910	0.0145
+0.8751	0.0938	1.000	BRANCH ENABLED. This procedure permits any con-	0.3931	0.0178
+0.8909	0.5207	1.000	In general, when the interruption system is dis-	0.3759	0.0146
+0.8924	0.0940	1.000	ceivable priority system to be set up for interruptions.	0.3910	0.0146
+0.9273	0.8835	1.000	49	0.0207	0.0116
+0.9288	0.7180	1.000	Instruction Sequencing	0.1429	0.0103

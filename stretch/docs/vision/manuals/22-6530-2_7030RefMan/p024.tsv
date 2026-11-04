@@ -1,0 +1,108 @@
+0.0609	0.4981	1.000	the store type are not possible with immediate ad	0.3891	0.0161
+0.0639	0.0865	1.000	when a complement notation is used to obtain the	0.3891	0.0131
+0.0760	0.0844	1.000	equivalent of negative instruction addresses.	0.3218	0.0187
+0.0770	0.5019	1.000	dressing, since no storage location is specified. When	0.3910	0.0146
+0.0888	0.4998	1.000	a store type operation is given with immediate ad-	0.3933	0.0209
+0.0930	0.1015	1.000	The index and the address part of an instruction	0.3722	0.0146
+0.1039	0.5017	1.000	dressing, the instruction is executed as a NO OPERATION	0.3913	0.0189
+0.1090	0.0846	1.000	half-word normally are used together. In the variable	0.3910	0.0146
+0.1200	0.5017	1.000	and indicator op (operation code invalid) is turned	0.3913	0.0182
+0.1250	0.0865	1.000	field instructions, the 19 bits which form the length,	0.3891	0.0132
+0.1381	0.5019	1.000	on. For operation classes other than variable-field-	0.3910	0.0146
+0.1394	0.0865	1.000	byte size, and offset field are indexed as a single field.	0.3872	0.0147
+0.1526	0.5000	1.000	length instructions, immediate addressing is specified	0.3929	0.0147
+0.1555	0.0865	1.000	Carries between parts of this field, if present, are not	0.3891	0.0146
+0.1648	0.4998	1.000	for the individual operations in which it is available.	0.3932	0.0218
+0.1710	0.0858	1.000	suppressed.	0.0819	0.0161
+0.1816	0.1013	1.000	Index register XO, storage location 16, is not avail-	0.3745	0.0202
+0.1830	0.5188	1.000	In progressive indexing, the value field, bits 0-24 of	0.3759	0.0161
+0.1991	0.5038	1.000	the index specified by I, is used as the effective address.	0.3891	0.0146
+0.2006	0.0865	1.000	able for address modification. An I field value of zero	0.3891	0.0131
+0.2136	0.5000	1.000	If progressive indexing with index register X0 is speci-	0.3929	0.0161
+0.2166	0.0865	1.000	indicates that no modification is to be applied.	0.3383	0.0131
+0.2282	0.5019	1.000	fied, indicator op (operation code invalid) is set. Sub-	0.3910	0.0161
+0.2311	0.1034	1.000	The effective address which results from an index-	0.3741	0.0131
+0.2440	0.5018	1.000	sequent to this use as the effective address, the address	0.3930	0.0149
+0.2454	0.0863	1.000	ing operation always has 24 numeric bits and a sign.	0.3875	0.0178
+0.2602	0.5038	1.000	part, bits 0-23, of the instruction is added to the value	0.3891	0.0147
+0.2614	0.0883	1.000	Depending upon the operation, a full-word, half-	0.3892	0.0164
+0.2747	0.5038	1.000	field. The address part is used as a positive unsigned	0.3891	0.0147
+0.2776	0.0865	1.000	word, or bit-address may be required. In each case,	0.3910	0.0146
+0.2886	0.5036	1.000	quantity. The addition is algebraic and takes into	0.3895	0.0175
+0.2921	0.0865	1.000	only the applicable part of the effective address is used.	0.3891	0.0146
+0.3067	0.5038	1.000	account the sign, bit 24, of the index value.	0.3120	0.0146
+0.3081	0.0902	1.000	The non-applicable part is ignored. The effective ad-	0.3872	0.0146
+0.3212	0.5207	1.000	For code 1, the addition takes place as defined above.	0.3741	0.0145
+0.3227	0.0883	1.000	dress sign is not used in storage addressing or immedi-	0.3891	0.0161
+0.3358	0.5038	1.000	For code 2, addition takes place and also the index	0.3910	0.0145
+0.3372	0.0865	1.000	ate data fields.	0.1090	0.0131
+0.3517	0.5038	1.000	word is counted down. For code 3, addition and count-	0.3910	0.0131
+0.3561	0.1015	1.000	When an effective word address is obtained which	0.3759	0.0161
+0.3663	0.5038	1.000	ing take place and also the index specified by I is re-	0.3910	0.0146
+0.3709	0.0882	1.000	does not correspond to a core storage location that is	0.3913	0.0184
+0.3821	0.5056	1.000	filled if the count reaches zero.	0.2199	0.0118
+0.3881	0.0865	1.000	physically available in a particular installation, indi-	0.3910	0.0174
+0.3967	0.5207	1.000	For codes 5-7, the operations are identical to those	0.3759	0.0147
+0.4006	0.0881	1.000	cator AD, address invalid, is turned on. An instruction	0.3895	0.0193
+0.4127	0.5038	1.000	for codes 1-3, with the exception that the address part	0.3929	0.0131
+0.4171	0.0882	1.000	with an invalid data address is executed as a NO OP-	0.3912	0.0153
+0.4273	0.5038	1.000	of the instruction is algebraically subtracted rather	0.3929	0.0146
+0.4317	0.0883	1.000	ERATION instruction. A branch instruction with an in-	0.3910	0.0147
+0.4433	0.5056	1.000	than added. The operations then are: 5 subtract from	0.3891	0.0131
+0.4490	0.0883	1.000	valid address is also executed as a NO OPERATION. A	0.3893	0.0134
+0.4561	0.5036	1.000	value; 6 subtract from value and count; and 7 sub-	0.3931	0.0167
+0.4606	0.0900	1.000	negative effective address is not considered to be in-	0.3895	0.0194
+0.4738	0.5056	1.000	tract from value, count and refill.	0.2425	0.0131
+0.4811	0.0883	1.000	valid; its magnitude is used.	0.2011	0.0147
+0.4868	0.5206	1.000	Progressive indexing combines immediate index in-	0.3761	0.0169
+0.4942	0.1053	1.000	The index flag, index result, and index comparison	0.3741	0.0146
+0.5042	0.5038	1.000	crementing with any one of the variable field length	0.3910	0.0133
+0.5102	0.0865	1.000	indicators, XF, XCZ, XVIZ., XVZ, XVGZ, XL, XE, and xH, are	0.3929	0.0160
+0.5188	0.5038	1.000	operations. It is possible only when the effective ad-	0.3929	0.0146
+0.5235	0.0901	1.000	not changed when an index is used in address modi-	0.3894	0.0165
+0.5333	0.5056	1.000	dress can be specified in an index quantity and re-	0.3910	0.0146
+0.5416	0.0882	1.000	fication.	0.0605	0.0142
+0.5475	0.5054	1.000	quires no further address modification.	0.2824	0.0180
+0.5617	0.5224	1.000	The index flag and index result indicators are set	0.3763	0.0180
+0.5799	0.5056	1.000	following each progressive index operation. They are	0.3910	0.0146
+0.5858	0.0883	1.000	Progressive Indexing	0.1974	0.0176
+0.5945	0.5056	1.000	set according to the new contents of the index register	0.3910	0.0146
+0.6105	0.5056	1.000	specified by I. The setting occurs prior to the refill	0.3929	0.0145
+0.6250	0.0865	1.000	In variable-field-length instructions, the field P, bits	0.3929	0.0160
+0.6264	0.5038	1.000	operation which may be specified.	0.2444	0.0161
+0.6390	0.0901	1.000	32-34, is available to specify the choice between ad-	0.3893	0.0175
+0.6409	0.5226	1.000	The index field I controlling progressive indexing	0.3759	0.0146
+0.6522	0.0881	1.000	dress modification and progressive indexing. The	0.3915	0.0218
+0.6526	0.5038	1.000	is that located in the first half of the full-length in-	0.3947	0.0189
+0.6700	0.5038	1.000	struction. The index field I in the second half of the	0.3947	0.0161
+0.6700	0.0883	1.000	codes 0 and 4 in the field P indicate standard address	0.3910	0.0161
+0.6860	0.5038	1.000	instruction may be used to modify bits 35-50 of the	0.3947	0.0161
+0.6860	0.0883	1.000	modification. The codes 1-3 and 5-7 indicate progres-	0.3910	0.0146
+0.7017	0.0883	1.000	sive indexing.	0.0998	0.0152
+0.7020	0.5038	1.000	instruction. On doing this, bit position 3 of the index	0.3947	0.0146
+0.7166	0.5056	1.000	word is aligned with bit position 35 of the instruction;	0.3929	0.0160
+0.7311	0.5056	1.000	the three high-order bits of the index word are ig-	0.3929	0.0174
+0.7427	0.2387	1.000	OP.	0.0169	0.0087
+0.7427	0.3515	1.000	OFFSET	0.0395	0.0073
+0.7427	0.1222	1.000	ADDRESS	0.0432	0.0087
+0.7427	0.4098	1.000	OP.	0.0207	0.0102
+0.7442	0.2932	1.000	LENgTH. BS	0.0564	0.0073
+0.7470	0.5056	1.000	nored. If the same index register is specified in both	0.3929	0.0161
+0.7630	0.5056	1.000	halves of an instruction while using progressive index-	0.3929	0.0146
+0.7776	0.5056	1.000	ing, the value of the index register before modification	0.3929	0.0161
+0.7820	0.1053	1.000	The codes 0 and 4, which both specify standard ad-	0.3759	0.0160
+0.7936	0.5075	1.000	will be used in indexing the second half of the in-	0.3929	0.0161
+0.7964	0.0902	1.000	dress modification, indicate a difference in the mode	0.3910	0.0161
+0.8096	0.5056	1.000	struction.	0.0714	0.0131
+0.8107	0.0900	1.000	of addressing. For code 0, the direct mode is specified	0.3913	0.0196
+0.8270	0.0902	1.000	and the effective address is used to address the op-	0.3910	0.0161
+0.8372	0.5075	1.000	PROGRAMMING NOTES	0.1541	0.0131
+0.8430	0.0902	1.000	erand. For code 4, the immediate mode is specified	0.3910	0.0161
+0.8561	0.5075	1.000	An operation in which progressive indexing is speci-	0.3910	0.0161
+0.8573	0.0901	1.000	and the effective address is used as the operand itself.	0.3893	0.0163
+0.8706	0.5075	1.000	fied is executed in two parts. The variable field length	0.3910	0.0161
+0.8721	0.0921	1.000	This mode is applicable to all operations of the fetch	0.3891	0.0174
+0.8860	0.5074	1.000	part of the operation is prepared and then the	0.3913	0.0182
+0.8881	0.0902	1.000	type in the connect and integer class. Operations of	0.3929	0.0174
+0.9244	0.7256	1.000	Operand Designation	0.1297	0.0116
+0.9244	0.8816	1.000	21	0.0169	0.0102

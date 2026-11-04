@@ -1,0 +1,117 @@
+0.0624	0.1015	1.000	IBM 7619 Exchange	0.2180	0.0176
+0.1235	0.1015	1.000	The IBм 7619 Exchange directs information flow be-	0.3910	0.0131
+0.1269	0.6594	1.000	TCORE STORARO	0.0853	0.0208
+0.1279	0.7970	1.000	CORE STORAGE	0.0733	0.0117
+0.1366	0.7237	1.000	FROM	0.0301	0.0102
+0.1378	0.8044	1.000	ADDRESSES	0.0547	0.0093
+0.1381	0.1015	1.000	tween input-output units and core storage. The ex-	0.3910	0.0146
+0.1539	0.0996	1.000	change relieves the central processing unit of the task	0.3929	0.0161
+0.1685	0.0996	1.000	of communicating with input-output units and enables	0.3929	0.0161
+0.1715	0.7218	1.000	BUFFER	0.0395	0.0073
+0.1730	0.8177	1.000	ADOR	0.0263	0.0058
+0.1788	0.7180	1.000	REGISTER	0.0470	0.0087
+0.1788	0.8214	1.000	REGSR	0.0226	0.0073
+0.1830	0.0996	1.000	processing of data to proceed simultaneously with op-	0.3929	0.0191
+0.1987	0.1014	1.000	eration of a number of these units.	0.2483	0.0136
+0.2078	0.8440	1.000	- CONTROL	0.0508	0.0088
+0.2151	0.1165	1.000	The exchange provides a general method of con-	0.3759	0.0161
+0.2166	0.8496	1.000	WORD	0.0301	0.0087
+0.2238	0.8496	1.000	ADDRESS	0.0433	0.0118
+0.2252	0.6974	1.000	ERROR CHECKING	0.0808	0.0103
+0.2311	0.5808	1.000	ES REGISTER	0.0639	0.0087
+0.2311	0.1015	1.000	necting many different kinds of units to the com-	0.3910	0.0131
+0.2324	0.7011	1.000	AND CORRECTION	0.0808	0.0089
+0.2326	0.8477	1.000	FROM	0.0301	0.0087
+0.2397	0.8496	1.000	COMPUTER	0.0489	0.0089
+0.2456	0.1015	1.000	puter system. It contains the common control facili-	0.3910	0.0147
+0.2602	0.0996	1.000	ties to be time-shared among the external units, thus	0.3929	0.0160
+0.2761	0.0977	1.000	keeping these units as simple as possible, yet main-	0.3947	0.0176
+0.2805	0.6917	1.000	DATA WORD	0.0526	0.0089
+0.2805	0.5865	1.000	EXCHANGE	0.0526	0.0102
+0.2863	0.6974	1.000	SHIFTING	0.0395	0.0087
+0.2892	0.5902	0.300	STOAGE	0.0432	0.0073
+0.2892	0.0977	1.000	taining fully overlapped operation. The exchange	0.3947	0.0189
+0.2965	0.5977	1.000	(ES)	0.0244	0.0087
+0.3052	0.0977	1.000	also does the necessary housekeeping of addresses and	0.3929	0.0176
+0.3227	0.0959	1.000	the assembly or disassembly of information without	0.3966	0.0146
+0.3328	0.7444	1.000	STORAGE	0.0451	0.0102
+0.3372	0.0977	1.000	taking time away from the computer or core storage.	0.3929	0.0161
+0.3401	0.7444	1.000	DRIVERS	0.0451	0.0116
+0.3517	0.0977	1.000	The only computer time involved is that needed to	0.3929	0.0161
+0.3677	0.0959	1.000	start and interlock the operations. The only core	0.3947	0.0160
+0.3821	0.0959	1.000	storage cycles required during external operations are	0.3947	0.0161
+0.3837	0.7218	1.000	OUTPUT,	0.0451	0.0102
+0.3910	0.7237	1.000	BYTE	0.0282	0.0102
+0.3982	0.0996	1.000	those needed to transfer the data to or from the final	0.3910	0.0132
+0.4127	0.0959	1.000	locations in core storage. These cycles are sandwiched	0.3929	0.0161
+0.4128	0.7632	1.000	CHANNEL	0.0470	0.0102
+0.4172	0.5620	1.000	:S ADDRES	0.0451	0.0087
+0.4200	0.7538	1.000	SCANNER AND	0.0658	0.0103
+0.4230	0.5677	1.000	CONTRO	0.0338	0.0102
+0.4273	0.6579	1.000	CHANNEL	0.0508	0.0116
+0.4288	0.0977	1.000	between computing operations without interfering	0.3910	0.0161
+0.4288	0.7669	1.000	SWITCH	0.0414	0.0102
+0.4360	0.6410	1.000	BEING SERVICED	0.0789	0.0116
+0.4433	0.0959	1.000	with the computer program except for the slight delay	0.3929	0.0174
+0.4561	0.5150	1.000	CHANNEL	0.0434	0.0092
+0.4576	0.0957	1.000	involved in the actual core storage references.	0.3312	0.0159
+0.4636	0.7406	1.000	32 33 34 35	0.0545	0.0088
+0.4637	0.5150	1.000	ADDRESS	0.0432	0.0102
+0.4637	0.8195	1.000	63	0.0169	0.0087
+0.4724	0.5150	1.000	FROM	0.0320	0.0087
+0.4752	0.1109	1.000	A common method of program control applies to	0.3778	0.0161
+0.4752	0.7519	1.000	TO AND FROM	0.0695	0.0103
+0.4782	0.5150	1.000	COMPUTER	0.0545	0.0131
+0.4840	0.7613	1.000	EXTERNAL	0.0508	0.0087
+0.4897	0.0940	1.000	all external units. When an input-output instruction	0.3947	0.0161
+0.4912	0.7462	1.000	CONTROL UNITS	0.0771	0.0088
+0.5042	0.0940	1.000	is given, the computer executes all address modifica-	0.3947	0.0161
+0.5058	0.5132	1.000	Figure 34. Exchange Components	0.2049	0.0161
+0.5203	0.0959	1.000	tion. It then sends the addresses and the decoded	0.3910	0.0161
+0.5333	0.0940	1.000	operation to the exchange, which completes the exe-	0.3929	0.0176
+0.5509	0.0940	1.000	cution of the instruction by obtaining the operand	0.3929	0.0174
+0.5594	0.5112	1.000	Capacity	0.0866	0.0192
+0.5654	0.0977	1.000	(control word) from core storage and starting the ex-	0.3891	0.0189
+0.5814	0.0940	1.000	ternal unit. This procedure permits the exchange, be-	0.3929	0.0160
+0.5915	0.5112	1.000	Channels	0.0734	0.0162
+0.5959	0.0959	1.000	fore it accepts an instruction, to determine from its	0.3910	0.0147
+0.6085	0.0919	1.000	stored status indication bits whether the unit is ready,	0.3952	0.0196
+0.6118	0.5132	1.000	The exchange provides up to 32 channels for connect-	0.3910	0.0191
+0.6264	0.0921	1.000	and to sandwich into available time periods the extra	0.3947	0.0176
+0.6264	0.5113	1.000	ing external units directly to the system. These units	0.3910	0.0191
+0.6394	0.5094	1.000	are of the kind that operate serially one 8-bit byte at	0.3947	0.0219
+0.6424	0.0940	1.000	cycles necessary to start an operation. If the unit is	0.3929	0.0146
+0.6570	0.0940	1.000	not ready (for instance, if the unit is out of material	0.3929	0.0145
+0.6584	0.5113	1.000	a time, and thus require eight bytes to transmit a full	0.3910	0.0174
+0.6730	0.0940	1.000	and waiting to be reloaded), the exchange rejects the	0.3929	0.0146
+0.6758	0.5132	1.000	storage word of 64 bits. The channels are nine bits	0.3872	0.0133
+0.6834	0.0936	1.000	instruction and sends a signal to the indicator register.	0.3935	0.0227
+0.6903	0.5132	1.000	wide, accommodating an 8-bit byte and a parity bit	0.3891	0.0146
+0.7019	0.1127	1.000	The computer waits until the exchange has signalled	0.3724	0.0166
+0.7048	0.5132	1.000	to check transmission over the channel. With units	0.3872	0.0132
+0.7179	0.0940	1.000	that it has accepted or rejected the instruction. If	0.3929	0.0147
+0.7209	0.5132	1.000	that are presently available, a channel can achieve	0.3872	0.0146
+0.7313	0.0956	1.000	the exchange is operating near full load, the computer	0.3895	0.0189
+0.7369	0.5132	1.000	data rates of one byte every 16 microseconds, but	0.3872	0.0131
+0.7485	0.0940	1.000	may have to wait some microseconds because it is	0.3929	0.0131
+0.7515	0.5132	1.000	higher rates can be accommodated.	0.2519	0.0131
+0.7616	0.0938	1.000	more flexible in its operation than the external units,	0.3933	0.0188
+0.7674	0.5301	1.000	The exchange can have several combinations of	0.3703	0.0132
+0.7758	0.0938	1.000	most of which cannot wait. It usually does not wait	0.3933	0.0197
+0.7820	0.5113	1.000	channels. The minimum is eight. This minimum	0.3872	0.0145
+0.7900	0.0937	1.000	for the external unit to respond or to finish the opera-	0.3916	0.0217
+0.7979	0.5113	1.000	can be augmented by additional channels in groups	0.3891	0.0146
+0.8080	0.0938	1.000	tion, which may take milliseconds to minutes. The	0.3914	0.0175
+0.8124	0.5132	1.000	of eight up to 24 additional, or a total of 32 channels.	0.3835	0.0146
+0.8230	0.0938	1.000	exchange takes over full control and signals the com-	0.3932	0.0185
+0.8285	0.5282	1.000	Each exchange channel is connected to one control	0.3703	0.0131
+0.8400	0.0940	1.000	puter when the operation is completed. The com-	0.3910	0.0147
+0.8429	0.5112	1.000	unit. Most control units are designed to handle only	0.3855	0.0162
+0.8536	0.0937	1.000	puter can in the meantime proceed with the program.	0.3915	0.0208
+0.8590	0.5113	1.000	one specific external unit and accommodate only that	0.3872	0.0146
+0.8706	0.1109	1.000	An outline of the logical components of the ex-	0.3741	0.0146
+0.8717	0.5111	1.000	one unit. Other control units are capable of handling	0.3876	0.0179
+0.8852	0.0940	1.000	change is shown in Figure 34.	0.2105	0.0146
+0.8894	0.5113	1.000	more than one input-output or external storage device	0.3872	0.0147
+0.9227	0.1428	1.000	IBM 7030	0.0622	0.0093
+0.9230	0.0921	1.000	104	0.0226	0.0087

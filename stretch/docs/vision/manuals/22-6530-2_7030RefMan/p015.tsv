@@ -1,0 +1,109 @@
+0.0669	0.0977	1.000	the accumulator or the transit register. Alternatively,	0.3910	0.0147
+0.0712	0.5113	1.000	Index Arithmetic	0.1278	0.0131
+0.0824	0.0976	1.000	a field from the accumulator may be converted and	0.3893	0.0160
+0.0896	0.5149	1.000	Every instruction may have its address part modified	0.3913	0.0173
+0.0960	0.0975	1.000	the result returned to the accumulator. In all these	0.3914	0.0172
+0.1046	0.5148	1.000	by adding a number in a specified index register be-	0.3913	0.0181
+0.1133	0.0977	1.000	operations the operand is an integer, and it may be	0.3910	0.0146
+0.1201	0.5148	1.000	fore using the address. Normally both the instruction	0.3913	0.0180
+0.1294	0.0977	1.000	converted either from binary to decimal or from deci-	0.3891	0.0131
+0.1352	0.5132	1.000	and the index register remain unchanged. To alter	0.3947	0.0161
+0.1438	0.0958	1.000	mal to binary.	0.1053	0.0133
+0.1512	0.5150	1.000	the index registers is the function of the index arith-	0.3910	0.0146
+0.1672	0.5132	1.000	metic operations.	0.1259	0.0132
+0.1811	0.5318	1.000	The set includes operations for loading, storing, in-	0.3744	0.0171
+0.1844	0.0958	1.000	Connectives	0.0865	0.0119
+0.1976	0.5132	1.000	crementing, and comparing index values. The index	0.3910	0.0146
+0.2055	0.0956	1.000	Instructions which logically combine bits by AND, OR,	0.3914	0.0182
+0.2114	0.5130	1.000	value is a signed number and additions are algebraic.	0.3913	0.0181
+0.2218	0.0958	1.000	and EXCLUSIVE OR have been included in earlier com-	0.3912	0.0139
+0.2282	0.5150	1.000	One of the instructions allows up to 16 index values	0.3910	0.0146
+0.2384	0.0940	1.000	puters. These and many other non-arithmetic data	0.3929	0.0131
+0.2427	0.5132	1.000	to be added together for use in further indexing. An-	0.3929	0.0161
+0.2514	0.0938	1.000	handling operations are here replaced in a simple and	0.3913	0.0174
+0.2560	0.5130	1.000	other indexing instruction provides the function of	0.3933	0.0197
+0.2672	0.0938	1.000	orderly fashion by connective operations which pro-	0.3932	0.0176
+0.2706	0.5127	1.000	indirect addressing.	0.1421	0.0176
+0.2833	0.0940	1.000	vide many logical facilities not previously available.	0.3910	0.0146
+0.2866	0.5298	1.000	Each index word contains a count to keep track of	0.3764	0.0183
+0.2954	0.0954	1.000	The operations are called CONNECT, CONNECT TO MEM-	0.3898	0.0230
+0.3029	0.5111	1.000	the number of times a program loop has been trav-	0.3951	0.0182
+0.3124	0.0936	1.000	ORY, and CONNECT FOR TEST.	0.2018	0.0176
+0.3179	0.5111	1.000	ersed. Counting may be coupled with incrementing	0.3951	0.0190
+0.3284	0.1108	1.000	Each connective operation specifies a storage field	0.3743	0.0170
+0.3325	0.5130	1.000	the index value. A third field in each index word	0.3913	0.0167
+0.3430	0.0940	1.000	of any length from 1 to 64 bits, as in integer arith-	0.3929	0.0176
+0.3488	0.5113	1.000	specifies a refill address from which another index	0.3929	0.0146
+0.3605	0.0940	1.000	metic. Each bit in the storage field is logically com-	0.3910	0.0145
+0.3648	0.5113	1.000	word may be loaded automatically.	0.2500	0.0161
+0.3750	0.0940	1.000	bined with a corresponding bit in the accumulator.	0.3929	0.0145
+0.3779	0.5297	1.000	Together these three fields provide a very conven-	0.3747	0.0206
+0.3894	0.0940	1.000	The result replaces the accumulator bit in CoNNECT	0.3910	0.0133
+0.3938	0.5110	1.000	ient indexing technique. At each traversal of a pro-	0.3934	0.0192
+0.4040	0.0938	1.000	and the storage bit in CONNECT TO MEMORY. These op-	0.3913	0.0176
+0.4112	0.5113	1.000	gram loop, a signed increment is added to the index	0.3929	0.0133
+0.4189	0.0938	1.000	erations make available certain tests and counts of	0.3932	0.0164
+0.4236	0.5111	1.000	value and the count is stepped down by one. When	0.3914	0.0197
+0.4329	0.0919	1.000	zero and one bits. A new operation, CONNECT FOR TEST,	0.3935	0.0215
+0.4418	0.5112	1.000	the count reaches zero, the index register is reset by	0.3912	0.0161
+0.4506	0.0921	1.000	has been added, which is analogous to COMPARE. This	0.3929	0.0146
+0.4547	0.5111	1.000	refilling it from the storage location which contained	0.3914	0.0184
+0.4648	0.0919	1.000	instruction allows fields to be tested and the corre-	0.3932	0.0160
+0.4724	0.5113	1.000	the original value and count. All this may be done	0.3929	0.0146
+0.4824	0.0921	1.000	sponding counts to be made available without alter-	0.3947	0.0133
+0.4869	0.5113	1.000	with one indexing instruction at the appropriate	0.3910	0.0161
+0.4970	0.0921	1.000	ing the content of either operand.	0.2425	0.0147
+0.5015	0.5113	1.000	point in the loop.	0.1278	0.0146
+0.5130	0.1090	1.000	There are sixteen possible ways in which to com-	0.3741	0.0131
+0.5168	0.5280	1.000	The instruction set permits many other indexing	0.3744	0.0167
+0.5275	0.0920	1.000	bine or connect two bits. Each of these connectives	0.3912	0.0137
+0.5305	0.5094	1.000	techniques. An important one is the use of the refill	0.3929	0.0160
+0.5417	0.0920	1.000	can be specified with each of the three connective op-	0.3893	0.0165
+0.5455	0.5093	1.000	address to indicate the next index word in succession	0.3932	0.0170
+0.5581	0.0921	1.000	erations. Besides the connectives AND, OR, and EXCLU-	0.3910	0.0146
+0.5617	0.5092	1.000	in an indexing chain. Such chains permit the com-	0.3951	0.0185
+0.5741	0.0921	1.000	SIVE OR, there are connectives to match bits, to replace	0.3910	0.0160
+0.5785	0.5113	1.000	putation to progress through a series of items or rec-	0.3910	0.0145
+0.5887	0.0921	1.000	bits, and to set bits to zero or one. Either or both of	0.3910	0.0132
+0.5909	0.5092	1.000	ords which are not stored in the order in which they	0.3933	0.0183
+0.6032	0.0921	1.000	the operands may be inverted.	0.2162	0.0147
+0.6090	0.5094	1.000	are to be used. Chaining can greatly simplify inser-	0.3929	0.0160
+0.6191	0.1071	1.000	While the term logical connectives suggests evalua-	0.3759	0.0146
+0.6219	0.5092	1.000	tion, deletion, and sorting of items by not requiring	0.3933	0.0197
+0.6333	0.0920	1.000	tion of elaborate expressions in Boolean algebra, the	0.3913	0.0169
+0.6394	0.5094	1.000	rearrangement of the data in storage.	0.2632	0.0161
+0.6497	0.0902	1.000	connective instructions have important everyday ap-	0.3929	0.0161
+0.6539	0.5226	1.000	Instructions generally specify one of a set of 15	0.3778	0.0161
+0.6639	0.0901	1.000	plications, such as assembling and converting input-	0.3913	0.0180
+0.6672	0.5075	1.000	index registers for address modification, but the num-	0.3947	0.0189
+0.6788	0.0901	1.000	output data. Their power lies in the ability to specify	0.3914	0.0183
+0.6845	0.5094	1.000	ber of available registers may be readily supplemented	0.3929	0.0161
+0.6939	0.0900	1.000	fields of any length and in any position in storage,	0.3915	0.0188
+0.6982	0.5091	1.000	by other index locations in storage through an op-	0.3915	0.0186
+0.7097	0.0920	1.000	whether they be single test bits or strings of adjacent	0.3913	0.0174
+0.7115	0.5092	1.000	eration called RENAME. This operation identifies one	0.3934	0.0213
+0.7253	0.0921	1.000	bits.	0.0301	0.0116
+0.7284	0.5092	1.000	designated index register with one of these storage	0.3933	0.0189
+0.7386	0.1069	1.000	The connective operations also facilitate new pro-	0.3764	0.0196
+0.7456	0.5075	1.000	Locations and does the bookkeeping necessary to cause	0.3947	0.0160
+0.7558	0.0902	1.000	gramming techniques. For example, instead of search-	0.3910	0.0146
+0.7600	0.5092	1.000	this storage location to reflect changes in the index	0.3932	0.0173
+0.7703	0.0883	1.000	ing through a list of items to find the first one which	0.3929	0.0146
+0.7746	0.5056	1.000	register.	0.0621	0.0161
+0.7863	0.0883	1.000	is not zero, it is often faster and more convenient to	0.3929	0.0146
+0.7900	0.5223	1.000	While indexing instructions are provided to change	0.3783	0.0198
+0.8023	0.0883	1.000	maintain a list of yes-no bits. A set of 64 such bits	0.3929	0.0131
+0.8033	0.5072	1.000	index values and counts explicitly, it is possible to	0.3935	0.0212
+0.8169	0.0883	1.000	may be tested with a single connective instruction	0.3929	0.0147
+0.8204	0.5073	1.000	use another mode, called progressive indexing, in	0.3932	0.0190
+0.8327	0.0902	1.000	which provides a count to indicate the position of the	0.3910	0.0147
+0.8358	0.5075	1.000	which the index quantities may be advanced each	0.3910	0.0161
+0.8430	0.0899	1.000	first non-zero bit on the left. This count is easily con-	0.3917	0.0227
+0.8517	0.5092	1.000	time they are used. This mode may be applied to ad-	0.3894	0.0184
+0.8633	0.0883	1.000	verted to an address for indexing to the location of	0.3947	0.0146
+0.8677	0.5075	1.000	vantage for stepping along a string of data of vari-	0.3910	0.0145
+0.8779	0.0883	1.000	the desired item. A second count gives the total num-	0.3929	0.0161
+0.8810	0.5073	1.000	ous lengths without requiring a separate incrementing	0.3933	0.0193
+0.8923	0.0882	1.000	ber of one bits in the result field.	0.2354	0.0148
+0.8966	0.5053	1.000	instruction at each step.	0.1792	0.0157
+0.9317	0.0865	1.000	12 IBM 7030	0.1090	0.0087

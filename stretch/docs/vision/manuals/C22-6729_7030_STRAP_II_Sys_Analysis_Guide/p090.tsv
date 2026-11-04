@@ -1,0 +1,59 @@
+0.0683	0.0752	1.000	INTOUT	0.0658	0.0116
+0.1394	0.5000	1.000	Box 2	0.0470	0.0133
+0.1395	0.0771	1.000	PURPOSE	0.0752	0.0116
+0.1657	0.5038	1.000	A check is made to determine if Ibuffw has left the	0.3741	0.0174
+0.1685	0.0771	1.000	INTOUT buffers the expanded units and writes them	0.3835	0.0118
+0.1802	0.5019	1.000	current buffer by comparing it with the address of	0.3741	0.0174
+0.1845	0.0789	1.000	on the disk for processing during Pass 2.	0.3064	0.0103
+0.1948	0.5019	1.000	the last word of the current buffer plus one.	0.3289	0.0174
+0.2231	0.0769	1.000	LINKAGE	0.0718	0.0130
+0.2297	0.5019	1.000	Boxes 3, 4	0.0883	0.0161
+0.2369	0.0902	1.000	1. The calling sequence is:SIC, Intouz; B, INTOUT.	0.3835	0.0161
+0.2529	0.0940	1.000	2. The index word, Ibuffw, must point to the next	0.3628	0.0132
+0.2587	0.5038	1.000	Each time an EOP interrupt occurs due to the	0.3402	0.0146
+0.2674	0.0771	1.000	available full word location in the unit buffer.	0.3365	0.0116
+0.2733	0.5038	1.000	completion of the write operation, one is added to	0.3722	0.0146
+0.2804	0.0939	1.000	3. When sufficient room is not available for the	0.3479	0.0132
+0.2878	0.5019	1.000	the interrupt counter Intent. This count is checked	0.3816	0.0146
+0.2964	0.0771	1.000	unit in the current buffer, the calling sequence is:	0.3722	0.0133
+0.2994	0.5019	1.000	here to see if it is equal to zero. Il it is equal to	0.3741	0.0176
+0.3124	0.0771	1.000	SIC, Intouz: B, INTOUT.	0.1842	0.0146
+0.3169	0.5038	1.000	zero, a check is made to see if at least ten unused	0.3741	0.0160
+0.3299	0.5038	1.000	words remain in buffer C. If so, return is made.	0.3722	0.0161
+0.3488	0.0771	1.000	DETAILS	0.0715	0.0118
+0.3618	0.5019	1.000	Box 5	0.0489	0.0161
+0.3779	0.0789	1.000	Each expanded unit is preceded by a control index	0.3684	0.0131
+0.3894	0.5038	1.000	The area A indicator is turned on at the beginning	0.3722	0.0161
+0.3924	0.0789	1.000	word having the format shown in Figure 15.	0.3195	0.0131
+0.4055	0.5038	1.000	of writing buffer A, and turned off when writing	0.3534	0.0146
+0.4182	0.5037	1.000	buffer C. It's being off indicates that the last buffer	0.3892	0.0182
+0.4200	0.0959	1.000	The routine uses three buffers (A, B, and C), each	0.3778	0.0146
+0.4317	0.5038	1.000	written was C, and that the last word available	0.3477	0.0160
+0.4345	0.0789	1.000	being written on the disk as it is filled. The location	0.3873	0.0148
+0.4476	0.0771	1.000	in Ibuffw is the location of the next word available to	0.3891	0.0146
+0.4476	0.5019	1.000	Ibulwa must be updated.	0.1823	0.0161
+0.4666	0.0789	1.000	be used by INTOUT or the user routine.	0.2951	0.0116
+0.4782	0.5038	1.000	Box 6	0.0508	0.0161
+0.5073	0.5056	1.000	One is subtracted from the interrupt counter, and	0.3703	0.0176
+0.5115	0.0789	1.000	FLOW CHART DESCRIPTION	0.2218	0.0118
+0.5218	0.5038	1.000	the last word available table is rotated once.	0.3346	0.0161
+0.5405	0.0769	1.000	Box1	0.0435	0.0150
+0.5523	0.5019	1.000	Box Z	0.0526	0.0160
+0.5652	0.0788	1.000	The number of words in the unit is obtained by sub-	0.3800	0.0179
+0.5799	0.5038	1.000	If the interrupt counter is zero, the program waits	0.3797	0.0189
+0.5842	0.0789	1.000	tracting the address of the last control-word Icwa	0.3703	0.0131
+0.5945	0.5038	1.000	until an EOP interrupt occurs.	0.2312	0.0174
+0.5988	0.0771	1.000	from the address of the next word available Ibuffw,	0.3797	0.0146
+0.6133	0.0789	1.000	and is placed in the count field of the control word.	0.3761	0.0134
+0.6250	0.5056	1.000	Boxes 8-10	0.0846	0.0160
+0.6294	0.0808	1.000	The address of the new control word will be the	0.3515	0.0116
+0.6393	0.0769	1.000	address in Ibuffw, and this is stored in the refill	0.3633	0.0209
+0.6555	0.5056	1.000	If the area A indicator is on at this point, it is	0.3440	0.0176
+0.6570	0.0771	1.000	field. Ibuffw is stepped by one to indicate next word	0.3910	0.0145
+0.6664	0.5054	1.000	turned off, the incomplete unit is moved to buffer	0.3688	0.0205
+0.6728	0.0770	1.000	available.	0.0753	0.0135
+0.7295	0.4342	1.000	On, If Last	0.0640	0.0104
+0.7542	0.1071	1.000	(i.e., beginning of Format)	0.1617	0.0103
+0.8139	0.0808	1.000	Figure 15.	0.0602	0.0103
+0.8139	0.1429	1.000	Format of the First Word in a Unit	0.2030	0.0088
+0.9157	0.0752	1.000	90	0.0226	0.0160

@@ -1,0 +1,108 @@
+0.0624	0.0959	1.000	ment malfunctioning or running out of material. In	0.3910	0.0132
+0.0639	0.5132	1.000	of the channel address register after the last indicator	0.3929	0.0131
+0.0770	0.0959	1.000	these cases, the eor bit is off, and only the bit signalling	0.3929	0.0146
+0.0785	0.5150	1.000	belonging to a given set is reset, but before the sub-	0.3910	0.0145
+0.0907	0.5130	1.000	routine whose execution is caused by the indicator has	0.3933	0.0202
+0.0930	0.0959	1.000	the cause of termination (EPGK, UK Or EE) is turned on.	0.3910	0.0131
+0.1048	0.0956	1.000	When an sEoP instruction causes an input-output sta-	0.3933	0.0190
+0.1079	0.5130	1.000	had time to interrogate the channel address register.	0.3933	0.0184
+0.1235	0.0959	1.000	tus report, the seop bit is removed at the time the	0.3910	0.0131
+0.1264	0.5301	1.000	Since the input-output status reports cannot be made	0.3759	0.0146
+0.1381	0.0959	1.000	status bits in the exchange control word are turned on.	0.3929	0.0131
+0.1409	0.5132	1.000	while the interruption system is disabled, it is not	0.3929	0.0146
+0.1570	0.5132	1.000	possible to turn the input-output status indicators on	0.3910	0.0145
+0.1730	0.5132	1.000	without immediately getting an interruption from	0.3910	0.0146
+0.1773	0.0959	1.000	Setting up of Input-Output Indicators	0.2669	0.0131
+0.1875	0.5113	1.000	the highest priority indicator. If, after getting this in-	0.3929	0.0161
+0.2006	0.0977	1.000	The status of an exchange channel at any time is de-	0.3891	0.0131
+0.2035	0.5132	1.000	terruption, successive interruptions due to the same	0.3910	0.0132
+0.2166	0.0940	1.000	scribed by the unit ready, exchange program check	0.3929	0.0131
+0.2194	0.5113	1.000	status report are not desired, the program can test	0.3929	0.0132
+0.2311	0.0977	1.000	(EPGK), unit check (UK), end exception (EE), end of	0.3910	0.0147
+0.2339	0.5132	1.000	and reset the remaining indicators of the set. In any	0.3910	0.0132
+0.2470	0.0940	1.000	operation (EOP), channel signal (cs), and suppress	0.3947	0.0133
+0.2500	0.5132	1.000	case, regardless of how status indicators are turned	0.3910	0.0131
+0.2615	0.0959	1.000	end of operation (SEOP) status bits in the control word.	0.3891	0.0146
+0.2645	0.5132	1.000	off, the enabling of the interruption system after re-	0.3891	0.0146
+0.2776	0.0959	1.000	As mentioned previously, EPGK, UK, EE, EOP, and cs	0.3910	0.0131
+0.2805	0.5113	1.000	setting of the last indicator is used as an indication	0.3910	0.0131
+0.2921	0.0940	1.000	have corresponding indicators in the indicator regis-	0.3929	0.0146
+0.2922	0.5130	1.000	that all the action associated with the status report of	0.3913	0.0179
+0.3081	0.0940	1.000	ter. When an operation concerning an external unit	0.3929	0.0131
+0.3109	0.5113	1.000	a particular channel has been taken, and that a new	0.3910	0.0147
+0.3241	0.0940	1.000	has been terminated and at least one of these five sta-	0.3929	0.0116
+0.3255	0.5094	1.000	set of input-output status indicators can be turned	0.3929	0.0147
+0.3372	0.0940	1.000	tus bits in the control word is on, the exchange at-	0.3910	0.0146
+0.3415	0.5094	1.000	on. The system, therefore, should not be enabled un-	0.3929	0.0146
+0.3545	0.0940	1.000	tempts to set up the corresponding indicator or indi-	0.3910	0.0133
+0.3546	0.5112	1.000	til all information associated with the current input-	0.3912	0.0163
+0.3691	0.0940	1.000	cators and thus cause an interruption of the program.	0.3929	0.0146
+0.3721	0.5113	1.000	output status report has been acted upon or stored	0.3910	0.0146
+0.3852	0.0959	1.000	All of the status indicators for a particular channel are	0.3891	0.0131
+0.3881	0.5113	1.000	elsewhere for later use.	0.1692	0.0116
+0.3997	0.0940	1.000	set up as a group at one time. At the same time, the	0.3910	0.0145
+0.4015	0.5281	1.000	It follows from the above two conditions that only	0.3725	0.0158
+0.4142	0.0940	1.000	address of the channel causing the interruption is en-	0.3929	0.0145
+0.4167	0.5111	1.000	one channel at a time can cause input-output status	0.3913	0.0184
+0.4302	0.0940	1.000	tered into the channel address register.	0.2838	0.0131
+0.4345	0.5113	1.000	interruptions. While interruptions due to one chan-	0.3891	0.0131
+0.4462	0.1109	1.000	The status indicators in the indicator register and	0.3741	0.0132
+0.4491	0.5113	1.000	nel are being processed, the exchange holds up any	0.3891	0.0146
+0.4606	0.0940	1.000	the channel address in the channel address register	0.3929	0.0147
+0.4651	0.5113	1.000	other status reports due to the same or other channels.	0.3872	0.0131
+0.4767	0.0940	1.000	can be set up only if both of the following conditions	0.3910	0.0132
+0.4811	0.5113	1.000	When the computer has cleared the current set of sta-	0.3872	0.0131
+0.4927	0.0921	1.000	are satisfied.	0.0921	0.0103
+0.4940	0.5112	1.000	tus indicators and the interruption system is enabled,	0.3893	0.0170
+0.5076	0.5111	1.000	the exchange presents the next set of status indicators	0.3893	0.0182
+0.5115	0.1090	1.000	1. The five input-output status indicators (EPGK, UK,	0.3759	0.0146
+0.5261	0.5113	1.000	as if they had just occurred.	0.1992	0.0133
+0.5276	0.0940	1.000	EE, EOP, and cs) in the indicator register have previ-	0.3910	0.0146
+0.5421	0.5263	1.000	When, as a result of operating in the disabled mode,	0.3741	0.0146
+0.5421	0.0940	1.000	ously been reset to zero either by permitting an inter-	0.3910	0.0146
+0.5581	0.0921	1.000	ruption to occur or by turning them off by means of	0.3929	0.0146
+0.5596	0.5113	1.000	more than one channel is waiting to make a status re-	0.3872	0.0131
+0.5741	0.0921	1.000	a BRANCH ON INDICATOR instruction.	0.2538	0.0102
+0.5755	0.5094	1.000	port, the order of interruption is determined by a	0.3910	0.0147
+0.5887	0.1090	1.000	2. The interruption system is currently enabled.	0.3590	0.0147
+0.5915	0.5094	1.000	scanner in the exchange. The channel that gets the	0.3891	0.0146
+0.6090	0.5094	1.000	highest priority is the one specified by the current po-	0.3891	0.0160
+0.6090	0.0921	1.000	If either condition is not satisfied, the status bits re-	0.3910	0.0131
+0.6215	0.0920	1.000	main set in the control word, and another attempt to	0.3912	0.0169
+0.6250	0.5113	1.000	sition of the scanner. This order is not related to the	0.3872	0.0132
+0.6394	0.0921	1.000	turn on the indicators is made a short time later.	0.3929	0.0118
+0.6409	0.5094	1.000	sequence in which the corresponding operations were	0.3891	0.0146
+0.6555	0.0921	1.000	While the status bits are in the control word, further	0.3910	0.0161
+0.6584	0.5094	1.000	terminated, and normally is random. However, when	0.3891	0.0131
+0.6700	0.0902	1.000	instructions for this channel are rejected by means of	0.3947	0.0131
+0.6715	0.5094	1.000	an input-output instruction is issued, the scanner is	0.3891	0.0161
+0.6860	0.0921	1.000	a channel busy reject. If both conditions are met,	0.3929	0.0131
+0.6903	0.5620	1.000	the channel to which the instruction is ad-	0.3346	0.0118
+0.6933	0.5094	1.000	set to	0.0527	0.0088
+0.7020	0.0921	1.000	the indicators and the channel address are set up,	0.3929	0.0116
+0.7078	0.5075	1.000	dressed. Consequently, if, while still disabled, the pro-	0.3891	0.0146
+0.7166	0.0921	1.000	and the corresponding status bits in the control word	0.3910	0.0131
+0.7238	0.5094	1.000	gram issues a COPY CONTROL WORD immediately fol-	0.3891	0.0131
+0.7311	0.0921	1.000	are reset to zero. As soon as the status bits in the con-	0.3910	0.0116
+0.7397	0.5075	1.000	lowed by BRANCH ENABLED, the highest interruption	0.3891	0.0161
+0.7470	0.0921	1.000	trol word have been cleared, a new instruction for the	0.3910	0.0133
+0.7573	0.5094	1.000	priority is assigned to the channel to which the copy	0.3872	0.0131
+0.7630	0.0921	1.000	channel can be accepted.	0.1748	0.0131
+0.7733	0.5094	1.000	CONTROL WORD is addressed. If this channel is not ready	0.3872	0.0146
+0.7805	0.1090	1.000	These two conditions permit the program to inter-	0.3741	0.0146
+0.7906	0.5094	1.000	to present its status report, the subsequent priorities	0.3872	0.0132
+0.7964	0.0883	1.000	rogate the channel address register and make any	0.3929	0.0133
+0.8067	0.5075	1.000	are assigned in the order of ascending channel ad-	0.3872	0.0131
+0.8124	0.0902	1.000	other tests without interference from other input-out-	0.3929	0.0132
+0.8227	0.5094	1.000	dresses, looping around to the lowest address once	0.3872	0.0131
+0.8270	0.0902	1.000	put status reports. Condition (I) protects the chan-	0.3929	0.0146
+0.8387	0.5075	1.000	the highest address of the installation is reached. This	0.3891	0.0147
+0.8415	0.0902	1.000	nel address register and prevents any new input-out-	0.3929	0.0146
+0.8561	0.5075	1.000	synchronism is lost when one channel has presented	0.3872	0.0131
+0.8590	0.0902	1.000	put status indicators from being set while at least one	0.3929	0.0131
+0.8685	0.5072	1.000	its status report, since the scanner may continue to	0.3896	0.0210
+0.8735	0.0902	1.000	status indicator due to a previous status report is on.	0.3910	0.0131
+0.8866	0.5074	1.000	scan without being able to interrupt.	0.2673	0.0163
+0.8894	0.0902	1.000	Condition (2) prevents the destruction of the contents	0.3929	0.0133
+0.9273	0.1410	1.000	IBM 7030	0.0639	0.0088
+0.9273	0.0902	1.000	118	0.0244	0.0087

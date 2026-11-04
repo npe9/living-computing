@@ -1,0 +1,110 @@
+0.0755	0.5244	1.000	4. Writes new master tape.	0.2105	0.0118
+0.0755	0.0940	1.000	6. ILLEGAL SITUATION -- LIBRARY IS EMPTY.	0.3778	0.0118
+0.0900	0.0940	1.000	7. TABLE OVERFLOW. LIMIT IS 200 ENTRIES	0.3703	0.0118
+0.1032	0.5056	1.000	Main Flow: Detailed flow of the UPDATE-30 program	0.4041	0.0160
+0.1061	0.1259	1.000	PER LIBRARY.	0.1165	0.0103
+0.1191	0.5075	1.000	is as follows:	0.1034	0.0103
+0.1191	0.0940	1.000	Messages 2 and 6 will include the name of the type	0.3741	0.0132
+0.1321	0.5226	1.000	UPDATE-30 starts at location 12, 400 (octal)	0.3308	0.0147
+0.1335	0.0770	1.000	area, and 4 and 5 will include the library control	0.3648	0.0135
+0.1482	0.5094	1.000	(STARTA, Figure 121), and the dump limits are set	0.3853	0.0132
+0.1497	0.0771	1.000	card which is in error.	0.1729	0.0116
+0.1612	0.5075	1.000	for $ABEOJ. The string of control words are set up	0.3910	0.0133
+0.1642	0.0940	1.000	An error in loading a generator deck will cause	0.3534	0.0131
+0.1773	0.5075	1.000	for writing the new master tape. The input source	0.3778	0.0118
+0.1788	0.0771	1.000	the following message to be printed:	0.2688	0.0116
+0.1918	0.5075	1.000	is determined, the date card is read, the IPL boot-	0.3816	0.0131
+0.1933	0.0959	1.000	ERROR IN BINARY	0.1429	0.0103
+0.1946	0.3082	1.000	(reason)	0.0621	0.0105
+0.2064	0.5075	1.000	strap is fetched from PROSA for the previous date,	0.3816	0.0131
+0.2078	0.0959	1.000	LAST CORRECT SEQUENCE NUMBER WAS.	0.3271	0.0116
+0.2209	0.5075	1.000	and the title line is printed.	0.2068	0.0131
+0.2224	0.0959	1.000	The reasons for an error in binary deck are also	0.3628	0.0116
+0.2355	0.5263	1.000	At HEDCTL (Figure 122), the change deck is read	0.3684	0.0131
+0.2397	0.0771	1.000	printed as follows:	0.1391	0.0103
+0.2515	0.5094	1.000	one card at a time from the input source. For every	0.3910	0.0116
+0.2529	0.0959	1.000	A CARD IS OUT OF SEQUENCE.	0.2425	0.0116
+0.2660	0.5094	1.000	HED card read, an entry (2 words) is made in the	0.3684	0.0116
+0.2674	0.0959	1.000	CHECKSUM ERROR.	0.1560	0.0116
+0.2805	0.5075	1.000	change dictionary. The deck which follows either a	0.3816	0.0116
+0.2820	0.0959	1.000	BITS TO LOAD GREATER THAN 23 HALF WORDS.	0.3816	0.0117
+0.2951	0.5075	1.000	HED, ADD card or a HED, REP card is read or loaded	0.3985	0.0146
+0.2964	0.0959	1.000	ORIGIN IS OUT OF RANGE.	0.2086	0.0118
+0.3096	0.5075	1.000	into the buffer and written on the disk. The word	0.3665	0.0116
+0.3109	0.0959	1.000	FLOW CARD IS OUT OF RANGE.	0.2481	0.0118
+0.3241	0.5056	1.000	count is computed and stored in the change dietionary	0.3985	0.0147
+0.3241	0.0921	1.000	(ORIGIN PLUS MODIFIERS) IS OUT OF RANGE.	0.3628	0.0147
+0.3400	0.0921	1.000	C CARD OUT OF RANGE.	0.1974	0.0133
+0.3400	0.5526	1.000	The word count is set to zero for a delete	0.3214	0.0118
+0.3401	0.5056	1.000	entry.	0.0489	0.0131
+0.3545	0.5094	1.000	operation. When the change deck is exhausted, a	0.3647	0.0133
+0.3561	0.0959	1.000	UNIDENTIFIABLE CARD.	0.1936	0.0103
+0.3691	0.5075	1.000	dummy last entry with type area name)))))))) is	0.3515	0.0118
+0.3706	0.0959	1.000	NO TRANSFER CARD.	0.1692	0.0117
+0.3836	0.5075	1.000	stored in the change dictionary.	0.2368	0.0132
+0.3982	0.5244	1.000	The READI routine (Figure 123a) reads a single	0.3571	0.0118
+0.3997	0.0789	1.000	Notes and Restrictions:	0.1748	0.0116
+0.4127	0.5075	1.000	card from the input source into the card buffer. The	0.3929	0.0131
+0.4142	0.0940	1.000	1. If the date card is the only card in the change	0.3647	0.0116
+0.4258	0.5075	1.000	card is then checked to see if it is a HED card. The	0.3910	0.0133
+0.4288	0.0771	1.000	deck, a new IPL tape will be written containing the	0.3778	0.0131
+0.4433	0.0789	1.000	current system without alterations.	0.2613	0.0116
+0.4433	0.5094	1.000	READI routine is a closed subroutine.	0.2838	0.0103
+0.4578	0.0940	1.000	2. The type areas on PROSA are ordered (in BCD	0.3741	0.0116
+0.4578	0.5244	1.000	The READA routine (Figure 123b) reads a deck	0.3496	0.0116
+0.4724	0.5075	1.000	into the main I-O buffer. When the buffer is filled,	0.3797	0.0116
+0.4724	0.0789	1.000	collating sequence) according to their names. МСР	0.3835	0.0116
+0.4869	0.5075	1.000	the contents of the buffer are written on the disk and	0.3872	0.0102
+0.4869	0.0789	1.000	requires that the first four type areas be:	0.3083	0.0131
+0.5015	0.5075	1.000	the buffer address is initialized. The routine will	0.3703	0.0116
+0.5025	0.1277	1.000	11A11DIC	0.0735	0.0110
+0.5160	0.5075	1.000	continue to read the deck until a HED card is read.	0.3778	0.0116
+0.5168	0.1277	1.000	11B11IND	0.0736	0.0115
+0.5305	0.5094	1.000	The READA routine is a closed subroutine.	0.3195	0.0116
+0.5317	0.1259	1.000	11CI1IPL	0.0753	0.0121
+0.5451	0.5263	1.000	For a librarian operation two entries are made in	0.3665	0.0116
+0.5451	0.1278	1.000	11D11MCP	0.0808	0.0102
+0.5596	0.5075	1.000	the change dictionary, one for the library and one for	0.3947	0.0131
+0.5609	0.1109	1.000	The first two (dictionary and index) are auto-	0.3383	0.0118
+0.5755	0.5075	1.000	its associated table of contents. The library control	0.3910	0.0118
+0.5770	0.1109	1.000	matically updated by the program.	0.2538	0.0118
+0.5900	0.5075	1.000	cards are read and each new generator deck is loaded	0.3985	0.0118
+0.5915	0.0940	1.000	3. The IPL bootstrap program, which UPDATE	0.3590	0.0118
+0.6045	0.5075	1.000	into a special buffer by the librarian. The new library	0.4060	0.0118
+0.6061	0.0771	1.000	writes as the first file on the new tape, is included	0.3778	0.0131
+0.6191	0.5075	1.000	is written on the disk as it is updated. The new table	0.3947	0.0118
+0.6206	0.0789	1.000	as a type area in PROSA named 11#11BSP. It may	0.3759	0.0117
+0.6336	0.5075	1.000	of contents is written on the disk, and the proper	0.3628	0.0132
+0.6352	0.0789	1.000	be updated like any other type area in the system.	0.3703	0.0117
+0.6482	0.5075	1.000	word count is stored in the two change dictionary	0.3665	0.0118
+0.6497	0.0940	1.000	4. When the LOAD option is used the deck must	0.3609	0.0116
+0.6642	0.5075	1.000	entries. From this point, these two type areas are	0.3816	0.0116
+0.6642	0.0752	1.000	fit within the buffer, which is 23, 040 words (55, 000	0.3853	0.0145
+0.6773	0.5075	1.000	treated exactly as if they had been put on the disk by	0.3872	0.0131
+0.6788	0.0789	1.000	octal) in size. For machines with greater than 48K	0.3835	0.0131
+0.6918	0.5075	1.000	two replace operations. See Generator Librarian.	0.3741	0.0131
+0.6948	0.0789	1.000	storage the buffer may be expanded, with the restric-	0.3985	0.0116
+0.7078	0.0789	1.000	tion that the buffer size is evenly divisible by 15 (card	0.4023	0.0116
+0.7179	0.5263	1.000	At ARCNST, the relative arc address of each new	0.3665	0.0133
+0.7238	0.0789	1.000	size) and 512 (arc size). The program buffer for the	0.3929	0.0116
+0.7339	0.5094	1.000	type area on the disk is computed and stored in each	0.3872	0.0118
+0.7369	0.0789	1.000	change dictionary is 1024 words in size and the new	0.3816	0.0131
+0.7485	0.5094	1.000	change dictionary entry. The computation is made	0.3759	0.0118
+0.7515	0.0789	1.000	dictionary is 4096 words. These also may be expanded	0.4098	0.0131
+0.7630	0.5094	1.000	by adding the word count of the previous entry to its	0.3835	0.0131
+0.7688	0.0771	1.000	with a re-assembly.	0.1523	0.0103
+0.7776	0.5094	1.000	relative are address and rounding up to the next full	0.3835	0.0131
+0.7979	0.5075	1.000	arc. The first type area starts at relative arc zero.	0.3910	0.0118
+0.8009	0.0789	1.000	Program Description	0.1579	0.0116
+0.8124	0.5244	1.000	At SORT, the change dictionary entries are sorted	0.3741	0.0132
+0.8270	0.5056	1.000	by type area name and checked for the illegal condi-	0.3910	0.0131
+0.8299	0.0771	1.000	In essence, UPDATE-30 performs the following tasks:	0.4060	0.0131
+0.8411	0.5074	1.000	tion of two entries having the same name.	0.3104	0.0150
+0.8445	0.0940	1.000	1. Reads cards from the change deck, one by one.	0.3778	0.0131
+0.8576	0.5244	1.000	At MERGE, (Figure 124a) the current dictionary is	0.3778	0.0131
+0.8590	0.0940	1.000	2. Makes change dictionary entries as required.	0.3647	0.0116
+0.8721	0.5075	1.000	fetched from PROSA and merged with the change	0.3628	0.0116
+0.8735	0.0940	1.000	3. Merges current dictionary with change dictionary	0.3929	0.0131
+0.8866	0.5075	1.000	dictionary to form the new dictionary (stored in the	0.3797	0.0116
+0.8881	0.0771	1.000	to form new dictionary and new index.	0.2820	0.0131
+0.9288	0.0771	1.000	218	0.0226	0.0073

@@ -1,0 +1,109 @@
+0.0930	0.0977	1.000	fields containing the 18 bit address of the FAT and a	0.3929	0.0116
+0.0930	0.5451	1.000	1. SIMNT and SMOUNT bits on -- This signifies	0.3684	0.0131
+0.1076	0.5282	1.000	initial use of this tape unit. The CS is discarded	0.3647	0.0131
+0.1076	0.0977	1.000	bit identifying the owner of the unit. PP and MCP	0.3759	0.0131
+0.1221	0.5282	1.000	for a PP unit but delivered to MCP if the unit belongs	0.4023	0.0116
+0.1221	0.0977	1.000	interrupts are intermixed in the same queue. How-	0.3853	0.0131
+0.1381	0.0977	1.000	ever, a separate count of stacked interrupts is main-	0.4023	0.0116
+0.1394	0.5282	1.000	to the input or output programs.	0.2425	0.0103
+0.1526	0.0977	1.000	tained for the two levels and is stored in the value	0.3778	0.0102
+0.1526	0.5451	1.000	2. Either SMOUNT or SREW bits on -- This signi-	0.3891	0.0131
+0.1672	0.0977	1.000	field of the second half word (SQK) of the program	0.3759	0.0116
+0.1672	0.5301	1.000	fies the issuance of a $UNLD or $REW. The CS for	0.3835	0.0116
+0.1817	0.0996	1.000	status table (SPROGS) for the level. The unit sup-	0.3759	0.0116
+0.1830	0.5282	1.000	the unit is stacked starting at KQIN and control is	0.3759	0.0118
+0.1976	0.5301	1.000	returned to KHEX.	0.1410	0.0118
+0.1976	0.0996	1.000	pressed bit (SUNSUP) is set, and control given to	0.3684	0.0118
+0.2121	0.5451	1.000	3. SIMNT and SREW bits on -- The MCP unassign	0.3835	0.0118
+0.2121	0.0977	1.000	either KNORM or KHEX, according to $1.	0.3177	0.0118
+0.2267	0.5301	1.000	program has issued a SFREE,which in turn issued	0.3759	0.0132
+0.2267	0.1147	1.000	At KNORM, (Figure 7), a decision is made whether	0.3872	0.0132
+0.2427	0.0977	1.000	or not to unstack the interrupt. I PP is interrupting	0.4004	0.0103
+0.2427	0.5301	1.000	$REW. This combination is used internaily for im-	0.3853	0.0116
+0.2558	0.5301	1.000	proved tape handling. Once the bits have been zeroed,	0.4060	0.0131
+0.2558	0.0977	1.000	MCP, the interrupt remains suppressed and exit is	0.3853	0.0131
+0.2679	0.0976	1.000	made via the service op return routine (KSUPP). If	0.3912	0.0158
+0.2718	0.5301	1.000	the CS is discarded by going directly to KHEX.	0.3534	0.0116
+0.2848	0.0977	1.000	MCP is interrupting PP, the unstack routine (KUNSTC)	0.4154	0.0131
+0.2863	0.5470	1.000	4. SMOUNT and SSETUP bits on -- This is a situ-	0.3835	0.0116
+0.2994	0.5301	1.000	ation where a verify label remount has occurred. If	0.3891	0.0131
+0.3009	0.0977	1.000	is entered after moving low registers to the back-up	0.3929	0.0116
+0.3154	0.0977	1.000	buffer. If the present program level is the same as	0.3891	0.0116
+0.3154	0.5301	1.000	the verify buffer is in use when the remount occurs,	0.3910	0.0131
+0.3285	0.5301	1.000	an indication of the remount is saved in a queue. If	0.3835	0.0131
+0.3285	0.0977	1.000	that of the interrupt owner, and the program is not in	0.4023	0.0145
+0.3430	0.5301	1.000	the buffer is not busy, control will go to the verifica-	0.4023	0.0146
+0.3445	0.0977	1.000	$WAIT status or in auto-stack or SIO mode, the inter-	0.4098	0.0131
+0.3590	0.0977	1.000	rupt will be unstacked. If the program is in $WAIT	0.3872	0.0116
+0.3590	0.5301	1.000	tion process. When the verify buffer becomes not	0.3722	0.0131
+0.3735	0.5301	1.000	busy (signaled by a tape I/O pseudo-op branch to	0.3665	0.0131
+0.3735	0.0977	1.000	status, and is auto-stacked, the service op return	0.3778	0.0131
+0.3881	0.0977	1.000	routine is entered. The $WAIT routine will unstack	0.3910	0.0116
+0.3881	0.5301	1.000	RKSUPP) the unqueuing of remount verifies is initi-	0.3910	0.0131
+0.4026	0.5301	1.000	ated on an MCP first basis.	0.2086	0.0116
+0.4026	0.0977	1.000	this interrupt if it is the one awaited. In all cases	0.3797	0.0131
+0.4172	0.5470	1.000	After testing all the units on the channel, control	0.3684	0.0132
+0.4185	0.0977	1.000	where the interrupt is to be unstacked, low registers	0.3985	0.0118
+0.4330	0.5301	1.000	is returned to KNORM or KSUPP according to	0.3459	0.0103
+0.4330	0.0977	1.000	are saved in the appropriate buffer. (See description	0.4023	0.0118
+0.4462	0.5301	1.000	whether or not a change in ready status was found.	0.3835	0.0132
+0.4475	0.0976	1.000	of the return routine.)	0.1676	0.0118
+0.4600	0.5318	1.000	First, however, the unit originally in select on the	0.3800	0.0165
+0.4636	0.1241	1.000	The unstack routine returns to KINTTY, where the	0.3797	0.0117
+0.4767	0.5301	1.000	channel (SUNIT in the CST) is relocated.	0.3064	0.0118
+0.4782	0.0996	1.000	proper mask and boundaries are set up, and the pro-	0.3985	0.0116
+0.4927	0.0996	1.000	gram put in the auto-stack mode. If a PP PTOE	0.3590	0.0116
+0.5073	0.0996	1.000	is to be entered, it is checked against the PP bounds.	0.4041	0.0116
+0.5073	0.5320	1.000	Search and Unstack	0.1466	0.0103
+0.5218	0.1015	1.000	The unit suppressed bit is reset, and the table of	0.3684	0.0131
+0.5363	0.0996	1.000	exits is set up. If either OP, AD, USA, or DS are	0.3835	0.0146
+0.5363	0.5320	1.000	The search subroutine (KSERCH, Figure 11) is used	0.3929	0.0131
+0.5509	0.5320	1.000	by $WAIT, the return routine, and the receptor to	0.3778	0.0131
+0.5509	0.0996	1.000	on, KSUPP is entered to allow the error interrupt.	0.3853	0.0131
+0.5637	0.5318	1.000	search the interrupt queue for a particular FAT	0.3593	0.0162
+0.5654	0.1015	1.000	Otherwise, the maskable indicators are cleared, $15	0.3947	0.0131
+0.5799	0.0977	1.000	is cleared, $EXE is reset, and the PTOE is entered	0.3947	0.0131
+0.5814	0.5301	1.000	address (the one being waited). It uses the linkage	0.3853	0.0116
+0.5945	0.0996	1.000	enabled according to the highest priority I-O indica-	0.3947	0.0116
+0.5954	0.5676	1.000	LVI, 1, $+1.0	0.1055	0.0141
+0.6090	0.0996	1.000	tor that was on.	0.1203	0.0102
+0.6100	0.5638	1.000	B, KSERCH	0.0923	0.0141
+0.6235	0.1015	1.000	The Channel Signal Search	0.1974	0.0131
+0.6250	0.5658	1.000	(not found return)	0.1297	0.0102
+0.6394	0.5658	1.000	(found return)	0.1034	0.0103
+0.6497	0.1034	1.000	Control is given to KSIGNL (Figure 9) when a channel	0.4004	0.0116
+0.6539	0.5301	1.000	with the desired FAT address in $13VF. If it finds	0.3872	0.0118
+0.6642	0.1015	1.000	signal is received from a multi-unit channel. (The	0.3872	0.0116
+0.6685	0.5301	1.000	the address in the queue, it repacks the queue	0.3477	0.0118
+0.6788	0.1015	1.000	console and disk are considered logically as multi-	0.3853	0.0116
+0.6830	0.5320	1.000	(KPACK) and reduces the proper queue count.	0.3440	0.0133
+0.6933	0.1015	1.000	unit channels.) If the CS is from the console, con-	0.3853	0.0116
+0.6976	0.5508	1.000	The unstack routine (KUNSTC, Figure 11) is entered	0.3929	0.0132
+0.7078	0.1015	1.000	trol is given to the conceptor at PCONE1. If from	0.3797	0.0116
+0.7121	0.5320	1.000	by the receptor, the return routine, and the $RIO	0.3816	0.0132
+0.7224	0.1015	1.000	tape, control passes to KHEX. The function of the	0.3835	0.0131
+0.7282	0.5320	1.000	routine to release interrupts. It will try to obtain the	0.4041	0.0116
+0.7369	0.1015	1.000	code at KHEX is to determine what change, if any,	0.3816	0.0131
+0.7427	0.5320	1.000	first MCP FAT address from the queue, otherwise	0.3835	0.0116
+0.7515	0.1015	1.000	has been made in the ready status of the tape units	0.3797	0.0116
+0.7573	0.5320	1.000	the first PP FAT address. Then it enters the search	0.4023	0.0116
+0.7674	0.1034	1.000	on that channel. If the equipment is neither tape nor	0.3947	0.0116
+0.7718	0.5320	1.000	routine in the vicinity of KPACK with $1 set to	0.3496	0.0116
+0.7820	0.1015	1.000	console, control is returned to the main flow at KKK.	0.4023	0.0117
+0.7863	0.5320	1.000	KINTTY-. 32, to force return to KINTTY after repack-	0.4117	0.0131
+0.7964	0.1203	1.000	The channel signal will be considered valid only for	0.3853	0.0118
+0.8009	0.5320	1.000	ing the queue. If the queue is empty, the unstack	0.3722	0.0131
+0.8109	0.1015	1.000	tape units in a mount or rewind status (SMOUNT,	0.3703	0.0133
+0.8154	0.5320	1.000	routine returns to KSUPP.	0.2011	0.0116
+0.8255	0.1015	1.000	SREW in the UST). For all such units on the channel,	0.4060	0.0133
+0.8415	0.1015	1.000	the unit will be selected, the control word copied,	0.3759	0.0103
+0.8459	0.5301	1.000	Channel Signal and Console Unstack Control	0.3289	0.0116
+0.8545	0.1015	1.000	and the ready bit tested. If the unit is now ready, the	0.4060	0.0133
+0.8721	0.5301	1.000	If the CS indicator is on when a higher priority I-O	0.3835	0.0116
+0.8721	0.1034	1.000	UST is updated, and the receptor takes one of the	0.3684	0.0131
+0.8866	0.1015	1.000	following four courses of action depending on the	0.3665	0.0131
+0.8866	0.5301	1.000	interrupt occurs for a multi-unit channel, the channel	0.4060	0.0131
+0.9012	0.5301	1.000	signal is deferred. The higher priority interrupt is	0.3910	0.0116
+0.9026	0.1015	1.000	status bits:	0.0846	0.0102
+0.9491	0.7914	1.000	Interrupt Control	0.1109	0.0103
+0.9506	0.9079	1.000	21	0.0207	0.0087

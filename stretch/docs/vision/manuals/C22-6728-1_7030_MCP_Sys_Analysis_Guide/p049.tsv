@@ -1,0 +1,105 @@
+0.0953	0.5318	1.000	exhausted. JC1 gives up control via $RET, with the	0.3931	0.0191
+0.1002	0.0977	1.000	Assign: On request from JC4 at the beginning of the	0.3930	0.0148
+0.1090	0.5319	1.000	assurance that it will be given control when the supplý	0.4081	0.0177
+0.1163	0.0959	1.000	next job in the PP reference table, insures that all	0.3835	0.0116
+0.1294	0.5263	1.000	of cards is replenished.	0.1861	0.0116
+0.1308	0.0959	1.000	its I-O requests have been assigned; in addition, it	0.3853	0.0116
+0.1424	0.5489	1.000	Another return is error return from uncode,	0.3365	0.0131
+0.1448	0.0977	1.000	proceeds down the table assigning leftover tape units	0.3949	0.0136
+0.1584	0.5320	1.000	meaning one of four things has been detected: (case	0.3910	0.0131
+0.1599	0.0977	1.000	until either the tape units are all assigned or the tape	0.4004	0.0116
+0.1730	0.5320	1.000	1) a COMD card, (case 2) a I card, (case 3) the first	0.4041	0.0131
+0.1758	0.0977	1.000	requirements of all jobs in the table have been met.	0.3872	0.0118
+0.1875	0.5320	1.000	non-B card, and (case 4) a real error in the B-card	0.3910	0.0131
+0.2020	0.5320	1.000	in question. Case 1, the appearance of a COMD card,	0.4098	0.0131
+0.2048	0.0977	1.000	Move: On request from JC4, constructs the I-O con-	0.4004	0.0132
+0.2166	0.5320	1.000	is handled by going to the system command routine.	0.3891	0.0131
+0.2194	0.0977	1.000	trol tables needed to run the next job in the tables.	0.3797	0.0118
+0.2311	0.5338	1.000	Error return from this routine, in turn, means that	0.3911	0.0147
+0.2470	0.5320	1.000	the COMD card said REJECT. JC1 effects the reject	0.4041	0.0118
+0.2485	0.1147	1.000	Thus, overlapped operation could be pictured as	0.3609	0.0131
+0.2615	0.5320	1.000	by setting the TRJECT (see I-O Assignment) bit to	0.3797	0.0118
+0.2630	0.0977	1.000	JC4 pursuing JC1 around the I-O assignment tables,	0.3929	0.0131
+0.2747	0.5338	1.000	one in the PP reference table for the last job. Case	0.3929	0.0132
+0.2791	0.0977	1.000	one trying to keep them full, one trying to empty	0.3647	0.0116
+0.2906	0.5320	1.000	2, a I card, is ignored by JCI. Case 3, the first	0.3797	0.0146
+0.2936	0.0977	1.000	them, with both making demands on the input pro-	0.3759	0.0131
+0.3052	0.5338	1.000	non-B card, signals that the current job is now com-	0.3966	0.0132
+0.3081	0.0977	1.000	gram for jobs from different sources.	0.2857	0.0116
+0.3197	0.5320	1.000	plete in the I-O assignment tables. A final entry is	0.3891	0.0132
+0.3227	0.1165	1.000	Bypass operation can then be considered as over-	0.3703	0.0131
+0.3342	0.5338	1.000	made to decode, the input program is instructed to	0.3817	0.0152
+0.3372	0.0940	1.000	lapped operation with a set of tables whose capacity	0.3910	0.0131
+0.3479	0.5337	1.000	scan to the next job, and control is given up via $RET.	0.4101	0.0171
+0.3532	0.0977	1.000	is one job.	0.0808	0.0117
+0.3648	0.5338	1.000	Finally, Case 4, a real error in a B-card, causes	0.3778	0.0131
+0.3794	0.5320	1.000	JCI to enter decode with a reject disposition set, and	0.4023	0.0116
+0.3821	0.0959	1.000	Job Control, Phase 1 (JC1)	0.2105	0.0147
+0.3939	0.5338	1.000	from that point it proceeds as in Case 3.	0.3045	0.0131
+0.4070	0.5506	1.000	A third exception occurs when the decode routine	0.3687	0.0156
+0.4112	0.0996	1.000	The job control phase 1 major package performs two	0.3947	0.0133
+0.4225	0.5337	1.000	comes back with error return. If one of the I-O	0.3630	0.0140
+0.4258	0.2669	1.000	it enters symbolic information	0.2331	0.0118
+0.4273	0.0977	1.000	tasks in MCP. First,	0.1673	0.0118
+0.4373	0.5337	1.000	assignment tables is full, SJIFUL is set to one, and	0.3932	0.0163
+0.4403	0.0977	1.000	into the three I-O assignment tables: PP reference,	0.3947	0.0133
+0.4516	0.5337	1.000	control is given up via $RET (see JC4). Other decode	0.4081	0.0158
+0.4548	0.0996	1.000	I-O request, and first reel, for pre-assignment of	0.3797	0.0132
+0.4679	0.5338	1.000	rejects reduce to Cases 3 and 4, as discussed. When-	0.4117	0.0118
+0.4694	0.0996	1.000	I-O. Second, it makes preliminary decisions about	0.3872	0.0132
+0.4824	0.5338	1.000	ever JCI rejects a job, it gives JC4 a reason for it	0.3853	0.0133
+0.4839	0.0996	1.000	the executability of jobs. A subsidiary function is to	0.3947	0.0132
+0.4970	0.5338	1.000	by placing the address of a:4-word diagnosing error	0.3910	0.0133
+0.4977	0.0995	1.000	dispatch COMD cards to the system command pro-	0.3818	0.0156
+0.5115	0.5338	1.000	message in the second word of the PP reference table	0.4041	0.0133
+0.5145	0.0996	1.000	gram. JCI may be considered an interface between	0.3891	0.0131
+0.5218	0.5338	1.000	for that job. This message will then be printed by	0.3797	0.0176
+0.5291	0.0996	1.000	the input program and the decode routine, and between	0.4098	0.0131
+0.5416	0.0995	1.000	the input program and system command package. It	0.3930	0.0155
+0.5421	0.5338	1.000	JC4 in lieu of running the job.	0.2256	0.0117
+0.5581	0.0996	1.000	operates only in the overlapped mode, and scans jobs	0.4004	0.0131
+0.5697	0.5338	1.000	Miscellaneous JC1 Functions	0.2180	0.0118
+0.5727	0.0996	1.000	on the phase 1 system input tape. (See Table 4.)	0.3571	0.0131
+0.5872	0.1165	1.000	JC1 is entered when first used, at YCI1ST, and at	0.3797	0.0131
+0.6003	0.5338	1.000	JC1 has other miscellaneous functions:	0.2951	0.0103
+0.6017	0.3383	1.000	It operates enabled,	0.1560	0.0116
+0.6032	0.1015	1.000	YC1A on subsequent occasions.	0.2350	0.0102
+0.6131	0.5506	1.000	1. JOB cards, in addition to furnishing an ID for	0.3724	0.0155
+0.6163	0.0996	1.000	and is always entered via the unpriming mechanism	0.3872	0.0131
+0.6294	0.5357	1.000	the PP reference table, cause JC1 to enter the	0.3534	0.0131
+0.6308	0.0996	1.000	in the return routine, having been primed by JC4 or	0.3910	0.0131
+0.6424	0.5320	1.000	accounting program, via SLOGI (see description of	0.3891	0.0161
+0.6453	0.0996	1.000	the input program. JC1 uses three other major	0.3590	0.0131
+0.6599	0.0996	1.000	packages and two subroutines, as tabulated:	0.3289	0.0131
+0.6599	0.5338	1.000	accounting procedures).	0.1823	0.0116
+0.6730	0.5508	1.000	2. Any TYPE, COMPILE card will terminate	0.3421	0.0131
+0.6744	0.1165	1.000	Job Control 1 (Figure 23) normally gets control	0.3571	0.0132
+0.6875	0.5357	1.000	analysis of the current job, since the following cards	0.3985	0.0131
+0.6890	0.0996	1.000	from the input program, via the unprimed mechanism,	0.4117	0.0132
+0.7035	0.5357	1.000	are only symbolic input.	0.1823	0.0117
+0.7035	0.0996	1.000	when a new job is sensed in the input Phase 1 buffer.	0.3966	0.0132
+0.7166	0.5526	1.000	3. To accommodate the Fortran IV compiler, IOD	0.3816	0.0131
+0.7194	0.0996	1.000	JC1 then examines the B cards in that job until either	0.4023	0.0118
+0.7311	0.5357	1.000	cards are ignored by JCI if the type field begins with	0.3985	0.0147
+0.7339	0.1015	1.000	the buffer is empty or the job is fully entered in the	0.3853	0.0118
+0.7470	0.5357	1.000	$. Such IOD's are treated as I cards.	0.2914	0.0133
+0.7485	0.0996	1.000	I-O assignment tables. Normally, then, JC1 consists	0.4079	0.0131
+0.7602	0.5526	1.000	4. Before each new job is scanned by JC1, a bit	0.3665	0.0147
+0.7630	0.1015	1.000	of a loop through the calling sequences to the input	0.3797	0.0131
+0.7761	0.5357	1.000	(REJJOB. 61) is checked. If this bit is on, an uncor-	0.3985	0.0133
+0.7765	0.0995	1.000	program and the uncode and decode routines. The	0.3800	0.0157
+0.7884	0.5356	1.000	rectible data error has been associated with the	0.3612	0.0157
+0.7921	0.0996	1.000	remaining code exists essentially to handle special	0.3835	0.0131
+0.8052	0.5357	1.000	previous job (see Input Program). JC1 will reject	0.3816	0.0132
+0.8081	0.0996	1.000	returns from these three routines.	0.2632	0.0116
+0.8197	0.5338	1.000	the previous job just as if a COMD, REJECT has been	0.4041	0.0161
+0.8371	0.5357	1.000	encountered.	0.0978	0.0163
+0.8517	0.5695	1.000	The first time JC1 is entered (at YC11ST) it	0.3440	0.0116
+0.8545	0.1015	1.000	Special Returns for JC1	0.1786	0.0133
+0.8661	0.5356	1.000	saves the IPL reject count, which is a count of the	0.3799	0.0159
+0.8801	0.5356	1.000	number of jobs to be skipped by JC1 and JC4 before	0.3893	0.0160
+0.8836	0.1034	1.000	One such return is end return from the input pro-	0.3722	0.0118
+0.8967	0.5357	1.000	execution is begun. This count is tested and decre-	0.3910	0.0133
+0.8982	0.1015	1.000	gram, meaning that the input buffer is temporarily	0.3816	0.0146
+0.9506	0.9192	1.000	49	0.0150	0.0087
+0.9520	0.7368	1.000	System Operation Programs	0.1598	0.0102

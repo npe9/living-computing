@@ -1,0 +1,106 @@
+0.0624	0.4774	1.000	nition of table formats. In the following sequence	0.4004	0.0176
+0.0639	0.0563	1.000	If, however, the location counter is set to a half-word	0.3967	0.0149
+0.0799	0.0564	1.000	address, the 7030 instruction Nor is compiled. This	0.3966	0.0146
+0.0833	0.6669	1.000	SLCR, 0	0.0685	0.0195
+0.0945	0.0564	1.000	has the effect of advancing the location counter 32	0.3966	0.0161
+0.1031	0.5451	1.000	PRICE	0.0546	0.0133
+0.1032	0.6673	1.000	DD (BU, 24, 8), 0	0.1429	0.0160
+0.1105	0.0583	1.000	bits or one-half word to the next full-word address.	0.3741	0.0117
+0.1201	0.5450	1.000	QUANTITY	0.0943	0.0171
+0.1206	0.6635	1.000	DD(BU, 6, 8), 0	0.1391	0.0161
+0.1250	0.0733	1.000	Any symbol A appearing in the Name field is as-	0.3797	0.0145
+0.1379	0.5451	1.000	ONHAND	0.0790	0.0134
+0.1381	0.6635	1.000	DD (BU, 10, 8), 0	0.1466	0.0174
+0.1409	0.0583	1.000	signed a full-word address when the cnor is ignored,	0.3947	0.0146
+0.1523	0.0563	1.000	or a half-word address when a vor is compiled.	0.3461	0.0182
+0.1584	0.4774	1.000	the evaluation of the symbols will be	0.2707	0.0161
+0.1730	0.0695	1.000	In the following example:	0.1992	0.0146
+0.1758	0.6654	1.000	PRICE = 0.0	0.0996	0.0133
+0.1917	0.2011	1.000	SLC, 100.32	0.0941	0.0162
+0.1918	0.6673	1.000	QUANTITY =0.24	0.1429	0.0161
+0.2078	0.6673	1.000	ONHAND = 0.30	0.1316	0.0131
+0.2107	0.1203	1.000	CASE1	0.0546	0.0118
+0.2108	0.2011	1.000	CNOP	0.0526	0.0116
+0.2267	0.4774	1.000	If the table in question begins at location 2000.0, and	0.3985	0.0161
+0.2282	0.2030	1.000	L(BU, 24, 8), ASSIST	0.1729	0.0161
+0.2427	0.4774	1.000	this address is placed in the value field of index reg-	0.3985	0.0161
+0.2456	0.1203	1.000	CASE2	0.0545	0.0132
+0.2456	0.2011	1.000	CNOP	0.0508	0.0131
+0.2573	0.4756	1.000	ister 6, the relative addressing of items in the table	0.4004	0.0161
+0.2630	0.2030	1.000	+(N), FLOATINGONE	0.1861	0.0161
+0.2715	0.4755	1.000	can be accomplished in simple fashion as shown in	0.4006	0.0187
+0.2833	0.0564	1.000	the appearance of the first CNOP causes a 7030 NoP in-	0.3966	0.0146
+0.2878	0.4774	1.000	these instructions:	0.1372	0.0131
+0.2979	0.0563	1.000	struction to be compiled at location 100.32. The Load	0.3968	0.0152
+0.3081	0.5959	1.000	L, QUANTITY ($6)	0.1523	0.0161
+0.3154	0.0545	1.000	instruction is compiled at 101.0. The symbol CAsEl	0.3985	0.0116
+0.3236	0.5939	1.000	*, PRICE ($6)	0.1093	0.0171
+0.3285	0.0526	1.000	is assigned the value 100.32. When the second CNOP	0.4004	0.0145
+0.3445	0.4774	1.000	These instructions would be compiled by STRAP as	0.3759	0.0161
+0.3445	0.0545	1.000	is encountered, the location counter stands at 102.0.	0.3985	0.0146
+0.3605	0.0564	1.000	The cnop is then ignored, the floating point Add in-	0.3966	0.0145
+0.3641	0.5957	1.000	L,.24($6)	0.0812	0.0159
+0.3750	0.0564	1.000	struction is compiled at storage location 102.0 and the	0.3966	0.0145
+0.3794	0.5959	1.000	*, 0.0($6)	0.0789	0.0161
+0.3909	0.0564	1.000	programmer symbol case2 is assigned the value 102.0.	0.3966	0.0132
+0.3997	0.4793	1.000	One advantage of this method is the ease with which	0.3966	0.0145
+0.4055	0.0564	1.000	Thus cAsE2 becomes the symbolic location of the float-	0.3966	0.0146
+0.4110	0.4791	1.000	the dds of one of the statements can be changed with-	0.3971	0.0201
+0.4215	0.0545	1.000	ing point instruction.	0.1560	0.0131
+0.4302	0.4793	1.000	out requiring changes in any of the others. The defi-	0.3985	0.0161
+0.4462	0.4774	1.000	nitions can be reordered also with no other changes	0.3985	0.0145
+0.4491	0.0545	1.000	4. TLB-Terminate Loading and Branch	0.2951	0.0131
+0.4606	0.4774	1.000	in the statements required and all address assign-	0.3985	0.0161
+0.4666	0.2218	1.000	TLB, Y	0.0583	0.0160
+0.4767	0.4774	1.000	ments are recomputed by STRAP relative to the SLCR	0.3985	0.0146
+0.4855	0.0714	1.000	The pseudo operation TLB is similar to the END state-	0.3816	0.0131
+0.4911	0.4755	1.000	address.	0.0622	0.0135
+0.5015	0.0545	1.000	ment with one major distinction: it does not stop the	0.3985	0.0131
+0.5099	0.4943	0.300	SLCRiS	0.0603	0.0108
+0.5102	0.5526	1.000	allowed to set the location counter to an	0.3214	0.0116
+0.5160	0.0564	1.000	assembly process. Therefore, TLB may be assembled	0.3966	0.0146
+0.5247	0.4774	1.000	address below 41s without causing an error message	0.3985	0.0147
+0.5305	0.0545	1.000	at any point in the symbolic deck where a transition	0.3985	0.0146
+0.5392	0.4774	1.000	to be printed. This is not the case if suc had been	0.3966	0.0145
+0.5464	0.0545	1.000	card is desired. The branch card thus produced will	0.3985	0.0147
+0.5535	0.4754	1.000	used. The locations subsequently assigned will often	0.3988	0.0180
+0.5609	0.0545	1.000	interrupt the loader when encountered in a binary	0.3947	0.0147
+0.5695	0.4773	1.000	be below 41s as well, but they are usually indexed to	0.3968	0.0181
+0.5770	0.0545	1.000	deck and transfer control to the instruction at loca-	0.3985	0.0118
+0.5858	0.4774	1.000	produce addresses above the first 32 storage loca-	0.3966	0.0161
+0.5930	0.0545	1.000	tion y. The remainder of the program must be loaded	0.3947	0.0146
+0.6003	0.4774	1.000	tions. In many ways sLcR is equivalent to sLc fol-	0.3985	0.0146
+0.6076	0.0545	1.000	under program control.	0.1711	0.0131
+0.6148	0.4756	1.000	lowed by a NOPUN. An sLc must be issued to restore	0.3985	0.0146
+0.6307	0.4754	1.000	binary punching of the output deck.	0.2654	0.0180
+0.6352	0.0545	1.000	5. SLCR-Set Location Counter Relative	0.2876	0.0117
+0.6512	0.4756	1.000	6. SEM-Suppress Error Messages	0.2538	0.0174
+0.6520	0.2122	1.000	SLCR, Y	0.0737	0.0171
+0.6678	0.6051	1.000	SEM, 1, 2, 3, ...	0.1394	0.0205
+0.6700	0.0695	1.000	SLCR resets the STRAP location counter to the address	0.3835	0.0131
+0.6844	0.0544	1.000	r in much the same fashion as sLc. However, SLCR	0.3988	0.0167
+0.6890	0.4868	1.000	The pseudo operation code seM, followed by a	0.3872	0.0174
+0.7020	0.0508	1.000	also stops binary punching, so that locations of state-	0.4023	0.0146
+0.7048	0.4756	1.000	blank address field, causes all error messages detected	0.3985	0.0161
+0.7166	0.0545	1.000	ments following sLcr are assigned relative to the loca-	0.3985	0.0146
+0.7179	0.4737	1.000	in statement that follow the sem statement to be sup-	0.4023	0.0176
+0.7324	0.0545	1.000	tion specified in sucr but none of the statements ap-	0.3985	0.0147
+0.7339	0.4718	1.000	pressed on the output listing. Any particular message	0.4041	0.0176
+0.7470	0.0526	1.000	pear in the binary output. This effect is the same as	0.3966	0.0176
+0.7500	0.4756	1.000	or group of messages may be suppressed by writing	0.3966	0.0189
+0.7615	0.0545	1.000	if all symbols in the name field of the statements that	0.3985	0.0146
+0.7630	0.4756	1.000	the numbers identifying the messages in the address	0.3966	0.0176
+0.7776	0.0508	1.000	follow the sLcr were defined by SYN statements, and	0.3985	0.0161
+0.7921	0.0526	1.000	the convenience for the programmer is more desirable.	0.4004	0.0161
+0.7976	0.6277	1.000	SEM, 8, 2	0.0886	0.0197
+0.8080	0.0693	1.000	In the most common usage,	0.2016	0.0136
+0.8197	0.4737	1.000	suppresses the printing of error messages 2 and 8 only.	0.4004	0.0176
+0.8253	0.2142	1.000	SLCR, 0	0.0698	0.0166
+0.8386	0.4735	1.000	7. REM-Resume Error Messages	0.2466	0.0177
+0.8459	0.0508	1.000	will reset the location counter to 0, and all symbols	0.4004	0.0160
+0.8590	0.6015	1.000	REM, 1, 2, 3, ...	0.1410	0.0174
+0.8605	0.0526	1.000	following are assigned locations relative to 0. A useful	0.4004	0.0145
+0.8761	0.4903	1.000	An REM restores normal error message printing on	0.3840	0.0212
+0.8764	0.0508	1.000	application of this use of sLcr might occur in the defi-	0.4023	0.0161
+0.9126	0.7537	1.000	Section II	0.0678	0.0120
+0.9142	0.8534	1.000	39	0.0207	0.0116

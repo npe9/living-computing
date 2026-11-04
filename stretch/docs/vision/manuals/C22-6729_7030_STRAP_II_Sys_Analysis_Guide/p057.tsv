@@ -1,0 +1,121 @@
+0.0769	0.7124	1.000	Purpose	0.0640	0.0162
+0.0770	0.6241	1.000	Type	0.0414	0.0160
+0.0770	0.5188	1.000	Item	0.0432	0.0160
+0.0814	0.0977	1.000	if any. By using the Vpunt return to VALUE aiter a	0.3835	0.0116
+0.0942	0.0977	1.000	break exit, the user program effectively has all the	0.3799	0.0159
+0.1090	0.0977	1.000	Vcb bits turned on and the Vrtrn procedure per-	0.3571	0.0146
+0.1118	0.7068	1.000	Tell VALUE what informa-	0.2049	0.0176
+0.1134	0.5226	1.000	Vcbv	0.0432	0.0174
+0.1134	0.6147	1.000	bits	0.0376	0.0145
+0.1248	0.0996	1.000	formed.	0.0584	0.0119
+0.1279	0.7068	1.000	tion not to attempt to get.	0.1936	0.0161
+0.1294	0.5226	1.000	Vcbsx	0.0526	0.0174
+0.1424	0.5207	1.000	Vobdim	0.0639	0.0189
+0.1497	0.0977	1.000	Ireatment of Undefined Symbols: The treatment is	0.3778	0.0161
+0.1570	0.5226	1.000	VebddsR	0.0583	0.0189
+0.1657	0.0996	1.000	dependent on the setting of the control bit Veundf.	0.3628	0.0102
+0.1803	0.1146	1.000	1. If Veundf is on when an undefined symbol is	0.3478	0.0115
+0.1833	0.3333	0.300	cabit etkey vi rad	0.1505	0.0376
+0.1918	0.7011	1.000	Tell the using program what	0.2199	0.0176
+0.1919	0.6184	1.000	bits	0.0338	0.0174
+0.1929	0.1014	1.000	encountered, a standard symbol table entry will be	0.3725	0.0173
+0.1933	0.5207	1.000	Vnbv	0.0414	0.0189
+0.2078	0.0977	1.000	made, and then VALUE will proceed as though it had	0.3891	0.0161
+0.2078	0.7049	1.000	information could not be	0.1861	0.0146
+0.2093	0.5226	1.000	Vnbsx	0.0526	0.0160
+0.2209	0.7049	1.000	found in the symbol table	0.1898	0.0146
+0.2224	0.0977	1.000	found this entry there. Note: Even if all the Vcb bits	0.3966	0.0174
+0.2238	0.5207	1.000	Ynbdim	0.0620	0.0189
+0.2339	0.7068	1.000	(when a break exit is made).	0.2143	0.0191
+0.2369	0.5207	1.000	VnbddsR	0.0583	0.0189
+0.2384	0.0996	1.000	are on, VALUE will still look at all symbols and	0.3590	0.0131
+0.2542	0.0996	1.000	make this entry when needed.	0.2162	0.0118
+0.2645	0.7049	1.000	Tell the using program what	0.2162	0.0189
+0.2674	0.5226	1.000	Vibv	0.0376	0.0174
+0.2674	0.6165	1.000	bits	0.0357	0.0145
+0.2674	0.1128	1.000	2. If Veundf is off when an undefined symbol is	0.3515	0.0147
+0.2805	0.7030	1.000	is not computable in the	0.1842	0.0160
+0.2819	0.0995	1.000	encountered, VALUE will note what items can no	0.3612	0.0166
+0.2820	0.5226	1.000	Vibsx	0.0451	0.0174
+0.2936	0.7049	1.000	coded expression unless	0.1842	0.0189
+0.2951	0.0977	1.000	longer be computed, and will proceed without making	0.3929	0.0174
+0.2980	0.5226	1.000	Vfbdim	0.0545	0.0131
+0.3081	0.7049	1.000	information stated by the	0.1898	0.0189
+0.3122	0.5224	1.000	Vibdds	0.0529	0.0122
+0.3139	0.0996	1.000	a break.	0.0620	0.0103
+0.3227	0.7049	1.000	Ynb bits is supplied (when a	0.2124	0.0189
+0.3387	0.7049	1.000	break exit is made).	0.1560	0.0174
+0.3415	0.0977	1.000	Example: The coded expression is for A+B. The	0.3684	0.0146
+0.3545	0.0996	1.000	using program wants all the information available	0.3665	0.0146
+0.3677	0.7049	1.000	Is on if anything was not	0.1861	0.0174
+0.3692	0.5226	1.000	Vfbnot	0.0526	0.0174
+0.3692	0.6184	1.000	bit	0.0282	0.0145
+0.3721	0.0996	1.000	from VALUE about the expression.	0.2575	0.0131
+0.3821	0.1147	1.000	Discovering that no information is in the symbol	0.3571	0.0191
+0.3836	0.7049	1.000	found that should have been	0.2068	0.0161
+0.3967	0.7049	1.000	found (when the normal exit	0.2105	0.0176
+0.3982	0.0977	1.000	table for A, VALUE makes a break exit with all the	0.3816	0.0176
+0.4127	0.7049	1.000	is made).	0.0771	0.0176
+0.4142	0.2481	1.000	Then the program fills in	0.1992	0.0145
+0.4172	0.0996	1.000	Vib and Ynb bits on.	0.1504	0.0132
+0.4273	0.7049	1.000	Is on if VALUE is to enter	0.2011	0.0176
+0.4273	0.6147	1.000	bit	0.0320	0.0160
+0.4286	0.5225	1.000	Vcundf	0.0566	0.0178
+0.4302	0.0977	1.000	values into the symbol table, and goes to Vrtrn.	0.3534	0.0161
+0.4418	0.7049	1.000	undefined symbols in the	0.1880	0.0176
+0.4448	0.0977	1.000	Whereupon, VALUE discovers that the situation is	0.3741	0.0160
+0.4549	0.7067	1.000	symbol table.	0.1053	0.0191
+0.4593	0.0977	1.000	improved, but still all the desired information is not	0.3910	0.0160
+0.4752	0.1823	1.000	Again VALUE makes a break exit, now	0.2895	0.0147
+0.4764	0.0995	1.000	yet there.	0.0735	0.0108
+0.4869	0.5188	1.000	FLOW CHART DESCRIPTION	0.2274	0.0161
+0.4884	0.0977	1.000	with the bits Vibsx, Yibdim, Vfbdds, Vnbdim, and	0.3741	0.0174
+0.5042	0.0977	1.000	Vnbdds on. The user program decides to ignore the	0.3872	0.0147
+0.5188	0.1015	1.000	dimension reference and returns to Vrtrn with bit	0.3665	0.0103
+0.5188	0.5226	1.000	VALUE has a 'push' type list with values being	0.3515	0.0146
+0.5333	0.5226	1.000	'pushed' upwards as they are computed or combined.	0.3910	0.0132
+0.5348	0.0996	1.000	Vebdim on. Once again VALUE sees that the situation	0.4004	0.0117
+0.5479	0.5226	1.000	The first five words of the list are called the heading;	0.3985	0.0132
+0.5479	0.0977	1.000	is improved, but still some desired information is	0.3741	0.0146
+0.5609	0.5226	1.000	the workspace follows. After the first workspace	0.3684	0.0161
+0.5609	0.0977	1.000	lacking. Therefore VALUE makes a break exit with	0.3872	0.0161
+0.5770	0.5226	1.000	there is a sequence of headings and workspaces	0.3515	0.0161
+0.5770	0.0977	1.000	the bits Vfbsx, Vfbdds, Vnbsx, and Vnbdds on. On	0.3778	0.0146
+0.5900	0.5226	1.000	determined by the number of existence bits encoun-	0.3816	0.0176
+0.5915	0.0977	1.000	this occasion the user program returns directly back	0.3929	0.0161
+0.6045	0.0977	1.000	to Vrtrn. Seeing that there is no improvement VALUE	0.4041	0.0191
+0.6045	0.5207	1.000	tered by VALUE in the coded expression. $10 points	0.3966	0.0191
+0.6177	0.5226	1.000	to the location of the current heading; $11 points to	0.3797	0.0189
+0.6206	0.0977	1.000	makes note that the S/X type and dds type information	0.3985	0.0146
+0.6349	0.0995	1.000	is not available and continues through the coded	0.3500	0.0172
+0.6366	0.5226	1.000	the location in the workspace.	0.2237	0.0146
+0.6642	0.5226	1.000	Box 12	0.0564	0.0176
+0.6773	0.0977	1.000	if B has a dimension reference, the fact that A was	0.3797	0.0161
+0.6926	0.0977	1.000	ambiguous on this point is no longer relevant. Note:	0.3873	0.0159
+0.6933	0.5226	1.000	Branch-on-zero-bit Valdfg (indicating special entry	0.3853	0.0174
+0.7064	0.5244	1.000	made by YDIMEN) to box 13. The VDIMEN sub-	0.3609	0.0189
+0.7064	0.0996	1.000	When a break is taken, it is not meaningful for the	0.3759	0.0176
+0.7209	0.1015	1.000	user program to turn off any of the Vcb bits. If the	0.3759	0.0161
+0.7224	0.5226	1.000	routine deals with the dimension reference statement	0.3966	0.0146
+0.7339	0.1015	1.000	user program does this, his action will be ignored	0.3665	0.0176
+0.7369	0.5226	1.000	for a user outside of VALUE.	0.2218	0.0146
+0.7540	0.0976	1.000	by VALUE.	0.0848	0.0166
+0.7673	0.5225	1.000	Box 17	0.0584	0.0177
+0.7849	0.1974	1.000	Туре	0.0376	0.0131
+0.7849	0.2820	1.000	Purpose	0.0639	0.0116
+0.7849	0.0959	1.000	Item	0.0395	0.0131
+0.7964	0.5226	1.000	Get address of dimension reference, set control bits,	0.3985	0.0161
+0.8091	0.5225	1.000	and branch to VALUE to evaluate the coded expres-	0.3835	0.0170
+0.8109	0.2838	1.000	Locates coded expression.	0.1992	0.0161
+0.8110	0.0996	1.000	Valinx	0.0508	0.0174
+0.8125	0.1898	1.000	XW	0.0357	0.0131
+0.8241	0.5226	1.000	sion. If VALUE evaluates the expression, form	0.3628	0.0160
+0.8255	0.2838	1.000	Locates the position to which	0.2162	0.0176
+0.8270	0.0996	1.000	Vmovex	0.0620	0.0160
+0.8270	0.1936	1.000	XW	0.0320	0.0131
+0.8400	0.2820	1.000	the coded expression is to	0.1955	0.0161
+0.8400	0.5226	1.000	product of dimensions, and turn on completed bit;	0.3703	0.0161
+0.8545	0.5244	1.000	if not, go to VBREAK.	0.1654	0.0146
+0.8560	0.2819	1.000	be moved.	0.0771	0.0132
+0.9285	0.8344	1.000	VALUE	0.0473	0.0151
+0.9317	0.8985	1.000	57	0.0188	0.0102

@@ -1,0 +1,20 @@
+0.0872	0.0977	1.000	stores the converted characters in the variable portion Boxes 12, 13	0.5207	0.0131
+0.1032	0.0977	1.000	of the expanded instruction unit.	0.2331	0.0117
+0.1133	0.5188	1.000	If the usual area allowed for the variable portion of	0.3816	0.0176
+0.1277	0.0939	1.000	Box 10	0.0528	0.0135
+0.1308	0.5188	1.000	the expanded instruction unit has been exceeded, the	0.3891	0.0131
+0.1439	0.5188	1.000	buffer for the unit has to be adjusted to make room	0.3910	0.0131
+0.1539	0.0938	1.000	MQDALE increments the character counter, the	0.3594	0.0190
+0.1584	0.5188	1.000	for the next unit.	0.1278	0.0146
+0.1685	0.0959	1.000	contents of which will be later transferred to a field	0.3835	0.0161
+0.1845	0.0940	1.000	in the fixed-format portion of this DD's expanded	0.3628	0.0146
+0.2006	0.0959	1.000	instruction unit.	0.1203	0.0116
+0.2151	0.5188	1.000	Box 17	0.0564	0.0174
+0.2307	0.0957	1.000	Box 11	0.0511	0.0140
+0.2427	0.5207	1.000	After the terminating character has been reached,	0.3722	0.0161
+0.2573	0.5188	1.000	MQDALE adjusts the expanded instruction unit as	0.3665	0.0176
+0.2587	0.0959	1.000	The index word containing the location of available	0.3722	0.0146
+0.2703	0.5188	1.000	indicated in the linkage descriptions.	0.2763	0.0161
+0.2747	0.0977	1.000	area in the unit is updated.	0.1974	0.0117
+0.9419	0.8158	1.000	MỌDALF	0.0526	0.0102
+0.9419	0.8929	1.000	103	0.0226	0.0087

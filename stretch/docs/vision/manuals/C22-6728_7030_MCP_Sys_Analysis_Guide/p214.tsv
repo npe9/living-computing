@@ -1,0 +1,92 @@
+0.0596	0.0846	1.000	The symbolic cards which follow will be inserted	0.3722	0.0160
+0.0624	0.4962	1.000	master tape and a double file mark is written. The	0.3853	0.0146
+0.0755	0.0714	1.000	as file BC after file BB on the master tape.	0.3271	0.0161
+0.0785	0.4981	1.000	current master tape is rewound and unloaded, the	0.3722	0.0131
+0.0930	0.4981	1.000	new master tape is rewound, and the program halts.	0.3891	0.0131
+0.0973	0.0733	1.000	Case 3	0.0526	0.0146
+0.1076	0.4981	1.000	This is the normal end card, used in all update	0.3553	0.0131
+0.1192	0.2650	1.000	20	0.0188	0.0116
+0.1192	0.3947	1.000	73	0.0207	0.0116
+0.1206	0.4962	1.000	passes. It may be used as the sole card of a change	0.3910	0.0146
+0.1206	0.1692	1.000	10	0.0188	0.0102
+0.1279	0.0827	1.000	TFILE	0.0432	0.0174
+0.1308	0.2632	1.000	ZZ	0.0207	0.0131
+0.1323	0.1692	1.000	YY	0.0226	0.0116
+0.1323	0.3966	1.000	XX	0.0226	0.0116
+0.1364	0.4981	1.000	deck to copy the current master tape onto a new tape.	0.3968	0.0134
+0.1555	0.5000	1.000	Case 2	0.0508	0.0146
+0.1730	0.5188	1.000	1.	0.0094	0.0102
+0.1830	0.0883	1.000	When columns 10 and 11 contain a file ID and	0.3365	0.0161
+0.1845	0.5075	1.000	;ENDNEW	0.0677	0.0147
+0.1976	0.0714	1.000	columns 20 and 21 contain another file ID, all files	0.3816	0.0161
+0.2136	0.0733	1.000	YY up to and including ZZ will be deleted, and any	0.3797	0.0131
+0.2252	0.5132	1.000	A double file mark is written on the new master	0.3609	0.0133
+0.2272	0.0714	1.000	cards which follow, up to the next control card, will	0.3892	0.0156
+0.2397	0.4981	1.000	tape; it is rewound, and the program halts. Tape	0.3722	0.0161
+0.2397	0.0714	1.000	be inserted as file XX. For this condition a punch	0.3816	0.0176
+0.2529	0.4962	1.000	unit 1 is not touched. This end card is used when	0.3722	0.0160
+0.2542	0.0733	1.000	option is available. If the letters PUNCH appear in	0.3853	0.0176
+0.2671	0.0732	1.000	columns 30 through 34 of the FILE card, the deleted	0.3912	0.0214
+0.2688	0.4962	1.000	creating a master tape for the first time. For	0.3515	0.0161
+0.2818	0.4981	1.000	example:	0.0715	0.0163
+0.2833	0.0714	1.000	files will be punched on line. For example:	0.3308	0.0176
+0.3139	0.4079	0.300	1 73	0.0564	0.0262
+0.3140	0.3571	1.000	30	0.0226	0.0145
+0.3154	0.1654	1.000	10	0.0188	0.0102
+0.3169	0.5150	1.000	1	0.0094	0.0102
+0.3169	0.2632	1.000	20	0.0188	0.0073
+0.3212	0.8703	1.000	73	0.0169	0.0102
+0.3285	0.5056	1.000	/;FILE	0.0414	0.0145
+0.3328	0.8703	1.000	AA	0.0207	0.0102
+0.3794	0.1654	1.000	AA	0.0226	0.0116
+0.3808	0.2613	1.000	AD	0.0226	0.0102
+0.3837	0.8684	1.000	BB	0.0226	0.0131
+0.3837	0.5132	1.000	;FILE	0.0338	0.0116
+0.3909	0.3590	1.000	PUNCH	0.0470	0.0117
+0.3910	0.1654	0.500	cc	0.0226	0.0131
+0.3924	0.2632	1.000	CC	0.0188	0.0102
+0.3924	0.4229	1.000	CD	0.0376	0.0102
+0.4359	0.5131	1.000	;ENDNEW	0.0583	0.0119
+0.4448	0.4380	1.000	CE	0.0226	0.0116
+0.4593	0.5132	1.000	Iwo files, AA and BB, are read from the card	0.3496	0.0174
+0.4709	0.4981	1.000	reader, sequenced and copied onto tape unit 2. A	0.3703	0.0204
+0.4884	0.4981	1.000	double file mark is written after BB.	0.2744	0.0160
+0.5188	0.4981	1.000	Operating Procedures for the Symbolic Update	0.3440	0.0161
+0.5334	0.4981	1.000	Program	0.0714	0.0145
+0.5477	0.0770	1.000	will be deleted and punched on line, and the new files	0.3912	0.0154
+0.5623	0.5149	1.000	1. The deck consists of the self-loading program	0.3687	0.0170
+0.5624	0.0789	1.000	CD and CE will be inserted in its place. The second	0.3872	0.0118
+0.5770	0.0771	1.000	FILE card performs adeletion only, and therefore	0.3778	0.0131
+0.5799	0.4981	1.000	deck followed by the programmer's change deck of	0.3759	0.0116
+0.5900	0.0733	1.000	columns 73 and 74 may be left blank. The last FILE	0.3947	0.0161
+0.5930	0.4962	1.000	control cards, correction cards, and new files. The	0.3947	0.0146
+0.6045	0.4962	1.000	standard 1401 loading procedure is used.	0.3102	0.0205
+0.6090	0.0752	1.000	card also contains blanks in columns 10 and 11,	0.3534	0.0102
+0.6191	0.5132	1.000	2. The current master tape is mounted on tape	0.3590	0.0176
+0.6191	0.0771	1.000	because the tape is already properly positioned for	0.3759	0.0146
+0.6366	0.0752	1.000	insertion of file CE.	0.1523	0.0116
+0.6366	0.4981	1.000	unit 1 and the new master tape is mounted on tape	0.3703	0.0146
+0.6512	0.4981	1.000	unit2.	0.0508	0.0145
+0.6512	0.0883	1.000	Note: The alphameric identification for files on	0.3647	0.0146
+0.6672	0.0733	1.000	the master tape need not follow a collating sequence.	0.3947	0.0132
+0.6817	0.0752	1.000	However, such an arrangement is strongly recom-	0.3778	0.0147
+0.6830	0.5000	1.000	Error Messages	0.1222	0.0118
+0.6962	0.0733	1.000	mended to reduce errors in arranging the change	0.3665	0.0145
+0.7121	0.5000	1.000	Three types of error messages may be printed on-line	0.4023	0.0118
+0.7267	0.5000	1.000	during the running of a Symbolic Update Program:	0.3722	0.0132
+0.7397	0.0752	1.000	End Cards: The last card of the change deck must	0.3778	0.0161
+0.7412	0.4981	1.000	programmer errors, read-write errors, and end-of-	0.3947	0.0131
+0.7558	0.5000	1.000	reel errors.	0.0940	0.0118
+0.7558	0.0752	1.000	be an end control card and may take one of two forms:	0.4004	0.0118
+0.7730	0.0751	1.000	Case 1	0.0528	0.0121
+0.7848	0.5000	1.000	Programmer Errors: Upon finding an error in the	0.3759	0.0146
+0.7878	0.0902	1.000	1	0.0113	0.0087
+0.7994	0.5000	1.000	change deck, the program stops after printing out the	0.3947	0.0131
+0.7994	0.0865	1.000	¡ENDPASS	0.0658	0.0131
+0.8154	0.5000	1.000	error message, and a rerun is required. One of the	0.3891	0.0116
+0.8299	0.4962	1.000	following error messages may be printed:	0.3158	0.0131
+0.8430	0.0902	1.000	The remaining tiles on the current master tape, up	0.3816	0.0161
+0.8445	0.5132	1.000	1. CORRECTION CARD MISPUNCHED OR OUT OF	0.3853	0.0131
+0.8576	0.0733	1.000	to the double file mark, are copied onto the new	0.3571	0.0146
+0.8590	0.5414	1.000	SEQUENCE.	0.0959	0.0131
+0.9157	0.0677	1.000	214	0.0282	0.0160

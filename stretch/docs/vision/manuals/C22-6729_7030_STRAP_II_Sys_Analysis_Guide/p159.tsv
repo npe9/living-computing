@@ -1,0 +1,16 @@
+0.0900	0.5282	1.000	field by a standard 120 bits plus any extra bits for	0.3722	0.0118
+0.0900	0.1222	1.000	Floating point: Exponent, fraction, sign byte.	0.3383	0.0118
+0.1045	0.5301	1.000	Fn, special exponent or gp depending on the format	0.3797	0.0118
+0.1045	0.1222	1.000	Fixed point: Sign byte separate for signed data.	0.3515	0.0118
+0.1191	0.5301	1.000	of the existing field.	0.1485	0.0118
+0.1336	0.5451	1.000	After printing the location counter, binary output	0.3647	0.0118
+0.1352	0.1053	1.000	Boxes 11, 12	0.0959	0.0117
+0.1482	0.5282	1.000	and symbolic statement, if the multiple unit DD bit	0.3797	0.0118
+0.1627	0.1034	1.000	If the bit Oenm is on, there are additional fields in	0.3759	0.0131
+0.1627	0.5263	1.000	(Oenm) is still on, OUTPUT will print the new	0.3477	0.0131
+0.1773	0.5263	1.000	location counter setting and return to box 2 to process	0.4023	0.0118
+0.1773	0.1034	1.000	the DD unit, and the index word pointing to the	0.3440	0.0131
+0.1933	0.1034	1.000	beginning of the D field must be advanced to the next	0.3891	0.0116
+0.1933	0.5282	1.000	the next unit.	0.0996	0.0103
+0.9404	0.8289	1.000	OUTPUT	0.0526	0.0087
+0.9404	0.9060	1.000	159	0.0207	0.0087

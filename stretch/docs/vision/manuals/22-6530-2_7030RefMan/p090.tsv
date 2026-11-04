@@ -1,0 +1,115 @@
+0.0581	0.5038	1.000	normalization, if specified, is performed. This may	0.3910	0.0146
+0.0607	0.0882	1.000	operand is modified by the sign modifiers prior to	0.3875	0.0171
+0.0741	0.5019	1.000	lead to a generated EF of 1 through underflow.	0.3496	0.0131
+0.0770	0.0883	1.000	the addition. The fractions are added after the value	0.3872	0.0131
+0.0914	0.0901	1.000	with the lower exponent has been shifted right by	0.3856	0.0171
+0.0928	0.5016	1.000	INDICATORS	0.0814	0.0106
+0.1045	0.5207	1.000	Data Flags (TF, UF, VF). These indicators are set	0.3759	0.0161
+0.1060	0.0882	1.000	the amount of the difference in exponents. A 96-bit	0.3894	0.0189
+0.1191	0.6333	1.000	flag bits of the addressed operand.	0.2615	0.0165
+0.1221	0.0883	1.000	intermediate sum fraction, and possible overflow bit,	0.3872	0.0146
+0.1221	0.5019	1.000	according to the	0.1316	0.0131
+0.1375	0.0882	1.000	is formed by extending each operand fraction to 96-	0.3893	0.0173
+0.1381	0.5038	1.000	These indicators are temporary.	0.2293	0.0116
+0.1488	0.5186	1.000	To-Memory Operation (MOP). This indicator is	0.3782	0.0196
+0.1508	0.0900	1.000	bit length by the addition of low-order zeros. The	0.3877	0.0204
+0.1672	0.5019	1.000	set to zero. This indicator is temporary.	0.2895	0.0132
+0.1685	0.0883	1.000	low-order bits of the fraction shifted to the right are	0.3891	0.0133
+0.1817	0.5169	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). These	0.3797	0.0160
+0.1845	0.0883	1.000	retained in the intermediate 96-bit fraction and par-	0.3910	0.0131
+0.1962	0.5019	1.000	indicators are set according to the final arithmetic	0.3947	0.0145
+0.1986	0.0901	1.000	ticipate in the addition. When the difference in expo-	0.3894	0.0183
+0.2121	0.5038	1.000	result fraction which appears in the accumulator.	0.3947	0.0146
+0.2151	0.0902	1.000	nents exceeds 48, indicator preparatory shift greater	0.3872	0.0146
+0.2291	0.0901	1.000	than 48 (PSH) is set to one, and the low-order bits of	0.3895	0.0190
+0.2297	0.5056	1.000	These indicators are temporary.	0.2293	0.0131
+0.2413	0.5205	1.000	Lost Carry (LC). This indicator is turned on if a	0.3763	0.0189
+0.2450	0.1784	1.000	having the low exponent which are	0.3011	0.0173
+0.2484	0.0902	1.000	the fraction	0.0884	0.0118
+0.2569	0.5036	1.000	fraction overflow occurred in an unnormalized addi-	0.3950	0.0156
+0.2596	0.0900	1.000	shifted beyond the right end of the 96-bit interme-	0.3876	0.0188
+0.2747	0.5056	1.000	tion. The indicator is permanent.	0.2481	0.0132
+0.2758	0.0901	1.000	diate sum do not take part in the operation. When	0.3894	0.0179
+0.2864	0.5186	1.000	Lost Significance (LS). This indicator is turned on	0.3783	0.0214
+0.2921	0.0902	1.000	the difference in exponents exceeds 95, no addition	0.3891	0.0146
+0.3036	0.5056	1.000	in addition when at least one operand fraction is non-	0.3947	0.0147
+0.3081	0.0902	1.000	is performed and the result is the number with the	0.3891	0.0161
+0.3197	0.5038	1.000	zero if the high-order 48 bits of the intermediate sum	0.3947	0.0161
+0.3255	0.0883	1.000	higher exponent.	0.1222	0.0147
+0.3335	0.5054	1.000	and overflow bit are zero and the intermediate result	0.3951	0.0172
+0.3371	0.1032	1.000	When unnormalized operation is specified, the 48	0.3763	0.0199
+0.3489	0.5055	1.000	exponent flag is 0. In this case, the final sum fraction	0.3932	0.0192
+0.3529	0.0901	1.000	high-order bits of the 96-bit intermediate sum replace	0.3894	0.0164
+0.3677	0.5056	1.000	is zero and a normal order of magnitude zero is pro-	0.3947	0.0117
+0.3691	0.0902	1.000	accumulator bits 12-59. The overflow bit does not	0.3910	0.0132
+0.3807	0.0899	1.000	enter the accumulator, but turns on indicator lost	0.3916	0.0227
+0.3808	0.5075	1.000	duced with no further normalization, if specified, or	0.3910	0.0146
+0.3997	0.5075	1.000	exponent change.	0.1278	0.0131
+0.4038	0.0901	1.000	carry (LC).	0.0772	0.0137
+0.4110	0.5243	1.000	This indicator will not be turned on in addition	0.3743	0.0153
+0.4137	0.1070	1.000	When normalized operation is specified, the entire	0.3744	0.0184
+0.4241	0.5073	1.000	if both operands had zero fractions at the start of the	0.3933	0.0204
+0.4302	0.0902	1.000	96-bit intermediate sum fraction and overflow bit	0.3929	0.0131
+0.4433	0.5075	1.000	operation or if the intermediate result exponent flag	0.3929	0.0161
+0.4450	0.0920	1.000	are shifted to form a normalized fraction and the re-	0.3893	0.0148
+0.4569	0.5074	1.000	has a propagated eF of 1. This indicator is permanent.	0.3913	0.0191
+0.4598	0.0900	1.000	sult exponent is adjusted accordingly. This normali-	0.3932	0.0192
+0.4724	0.5226	1.000	Preparatory Shift Greater than 48 (PSH). When both	0.3759	0.0174
+0.4767	0.0921	1.000	zation is not performed if the overflow bit and high-	0.3891	0.0161
+0.4868	0.5074	1.000	operands are values in the N range and the algebraic	0.3932	0.0189
+0.4927	0.0921	1.000	order 48 bits of the intermediate sum are zero. The	0.3910	0.0131
+0.5035	0.0919	1.000	48 high-order bits of the normalized sum fraction	0.3914	0.0206
+0.5042	0.5094	1.000	difference of the exponents is greater than 48, or if one	0.3910	0.0147
+0.5177	0.5092	1.000	operand is a value in the N range while the other oper-	0.3914	0.0188
+0.5247	0.0921	1.000	replace accumulator bits 12-59.	0.2237	0.0147
+0.5333	0.5094	1.000	and is a value in the XEN range, this indicator is	0.3910	0.0161
+0.5375	0.1070	1.000	When the noisy mode and normalized operation	0.3763	0.0179
+0.5509	0.5075	1.000	turned on. When the operands are both values in the	0.3929	0.0146
+0.5511	0.0919	1.000	are specified, the 48-bit fraction of the number with	0.3914	0.0194
+0.5648	0.0918	1.000	high exponent is extended with 48 low-order one-bits.	0.3914	0.0220
+0.5669	0.5094	1.000	XFP range or both in the XEN range, or when one oper-	0.3910	0.0147
+0.5799	0.5094	1.000	and is a value in the xer range while the other is a	0.3910	0.0161
+0.5858	0.0921	1.000	If the operands have equal exponents, the accumu-	0.3910	0.0145
+0.5973	0.5094	1.000	value in the N or XEN ranges, the result has a propa-	0.3910	0.0146
+0.5990	0.0920	1.000	lator operand is extended. The extension takes place	0.3913	0.0178
+0.6105	0.5091	1.000	gated exponent flag of 1, and this indicator is not	0.3933	0.0192
+0.6148	0.0920	1.000	before the intermediate sum is formed. Post-normal-	0.3912	0.0151
+0.6279	0.5094	1.000	turned on. This indicator is permanent.	0.2914	0.0146
+0.6321	0.0940	1.000	ization occurs as described above.	0.2350	0.0118
+0.6424	0.5263	1.000	Exponent Range (XPFP, XPO, XPH, XPL,	0.3778	0.0176
+0.6467	0.1071	1.000	If either or both operands are values in the XFP or	0.3759	0.0147
+0.6584	0.5113	1.000	XPU). These indicators are set according to the ex-	0.3929	0.0161
+0.6612	0.0921	1.000	XEN range, initially having an exponent flag, EF of 1,	0.3947	0.0176
+0.6744	0.5094	1.000	ponent range of the final result appearing in the	0.3929	0.0160
+0.6746	0.0938	1.000	the operation is performed as follows. Modification	0.3914	0.0194
+0.6903	0.5094	1.000	accumulator. When the result has a propagated EF	0.3929	0.0146
+0.6913	0.0938	1.000	of the fraction sign of the addressed operand is made	0.3913	0.0174
+0.7048	0.5094	1.000	of 1, the XPFP is set. The zm will be turned off if on	0.3929	0.0176
+0.7055	0.0936	1.000	as specified by the sign modifiers.	0.2600	0.0207
+0.7078	0.3553	1.000	If the operands	0.1316	0.0131
+0.7194	0.5094	1.000	as a result of a previous operation.	0.2613	0.0161
+0.7220	0.0939	1.000	have both exponents in the XFP range or both in the	0.3913	0.0175
+0.7369	0.5132	1.000	PROGRAMMING NOTE	0.1485	0.0102
+0.7397	0.0940	1.000	XFN range, the result is the operand in the same range	0.3929	0.0147
+0.7500	0.5132	1.000	For most arithmetic operations, if one of the oper-	0.3929	0.0145
+0.7528	0.0938	1.000	having the algebraically larger exponent. When both	0.3914	0.0181
+0.7660	0.5132	1.000	ands has EF of 1, the result has EF of 1 and the flag is	0.3929	0.0146
+0.7668	0.0937	1.000	operands have the same exponent, the operand ini-	0.3933	0.0197
+0.7791	0.5132	1.000	said to be propagated. In addition operations, how-	0.3947	0.0174
+0.7830	0.0957	1.000	tially in the accumulator is the result. Normalization,	0.3913	0.0184
+0.7964	0.5132	1.000	ever, a value in the N range, EF of 0, added to a value	0.3947	0.0161
+0.7987	0.0938	1.000	if specified, is suppressed. If one operand has an ex-	0.3932	0.0186
+0.8106	0.5130	1.000	in the XFN range, EF of 1, produces an intermediate	0.3950	0.0176
+0.8143	0.0956	1.000	ponent in the XFP range and the other has an expo-	0.3915	0.0186
+0.8270	0.5132	1.000	sum with exponent in the N range. If this result ex-	0.3929	0.0161
+0.8299	0.0959	1.000	nent in the N or XFN range, the result is the operand	0.3910	0.0146
+0.8430	0.5150	1.000	ponent is altered during normalization, when speci-	0.3910	0.0161
+0.8449	0.0938	1.000	in the XEP range. Normalization, if specified, is sup-	0.3932	0.0191
+0.8573	0.5149	1.000	fied, the exponent flag may be set to 1 in the final	0.3931	0.0168
+0.8591	0.0955	1.000	pressed. If one operand is in the N range and the	0.3915	0.0204
+0.8735	0.5113	1.000	result. When this occurs, the exponent flag produced	0.3966	0.0146
+0.8761	0.0957	1.000	other is in the XEN range, the intermediate result is	0.3932	0.0180
+0.8894	0.5150	1.000	is said to be a generated exponent flag.	0.2782	0.0133
+0.8913	0.0957	1.000	the operand in the N range. In this case, however,	0.3950	0.0176
+0.9258	0.7049	1.000	Floating-Point Arithmetic	0.1598	0.0118
+0.9259	0.8910	1.000	87	0.0169	0.0116

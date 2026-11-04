@@ -1,0 +1,52 @@
+0.0828	0.8722	1.000	XINIT	0.0545	0.0189
+0.1424	0.5301	1.000	Box 3	0.0583	0.0161
+0.1449	0.1089	1.000	LINKAGE	0.0735	0.0125
+0.1715	0.5320	1.000	The input are address is obtained from bits 0-17 of	0.3816	0.0145
+0.1742	0.1071	1.000	On Entry	0.0697	0.0136
+0.1860	0.5320	1.000	word 8 of the COMREC and saved in word O of the	0.3722	0.0146
+0.2006	0.5301	1.000	input buffer. The value field of the blocking control	0.3891	0.0146
+0.2035	0.1109	1.000	The calling sequence is:	0.1786	0.0117
+0.2035	0.2914	1.000	SIC, Xret;B, XINIT.	0.1485	0.0145
+0.2151	0.5301	1.000	is initialized to word 1 of the input buffer.	0.3158	0.0146
+0.2336	0.1108	1.000	On Exit	0.0566	0.0095
+0.2717	0.1108	1.000	The following is accomplished before return is	0.3442	0.0152
+0.2718	0.5338	1.000	Box 4	0.0508	0.0161
+0.2892	0.1090	1.000	made:	0.0471	0.0133
+0.2994	0.5320	1.000	The input code specified by bits 25-27 of word 8 of	0.3778	0.0176
+0.3009	0.1222	1.000	1. The input source is determined and proper	0.3477	0.0161
+0.3169	0.5338	1.000	COMREC is determined by digit selection. The	0.3571	0.0147
+0.3197	0.1090	1.000	MCP calling sequences are set up.	0.2594	0.0118
+0.3263	0.5338	1.000	address of the conversion routine is stored in the	0.3667	0.0189
+0.3299	0.1241	1.000	2. The code of the inpuț data is determined and	0.3571	0.0161
+0.3430	0.1071	1.000	linkage to convert routines is set-up.	0.2820	0.0189
+0.3445	0.5338	1.000	branch instruction following Xreada.	0.2726	0.0189
+0.3605	0.1147	1.000	3. The blocking control is set up according to the	0.3835	0.0145
+0.3743	0.1090	1.000	number of cards per arc of input.	0.2501	0.0158
+0.3748	0.5338	1.000	Boxes 5, 6	0.0922	0.0192
+0.3866	0.1241	1.000	4. The input buffer is filled.	0.2199	0.0189
+0.4055	0.5338	1.000	The blocking factor in bits 48-63 is stored in the	0.3628	0.0161
+0.4215	0.5357	1.000	count field of the blocking control (Xblkl), and in	0.3628	0.0145
+0.4317	0.1109	1.000	FLOW CHART DESCRIPTION	0.2218	0.0160
+0.4345	0.5338	1.000	the System Input calling sequence. In the case of	0.3684	0.0146
+0.4506	0.5338	1.000	disk input, it is also multiplied by the number of	0.3628	0.0146
+0.4621	0.1090	1.000	Box 1	0.0545	0.0176
+0.4636	0.5338	1.000	words per card to obtain the word count of the read	0.3816	0.0146
+0.4766	0.5338	1.000	control word.	0.1053	0.0176
+0.4912	0.1109	1.000	The COMREC is examined to determine if STRAP II	0.3853	0.0146
+0.5073	0.1090	1.000	is first in the chain.	0.1523	0.0146
+0.5348	0.5357	1.000	Box 8	0.0470	0.0176
+0.5363	0.1090	1.000	Box 9	0.0545	0.0174
+0.5639	0.1109	1.000	The eighth word in COMREC is set by STRAP II to	0.3741	0.0176
+0.5654	0.5338	1.000	The number of ares in temporary working storage	0.3741	0.0161
+0.5785	0.1090	1.000	indicate System Input, card code, and a blocking	0.3647	0.0189
+0.5799	0.5338	1.000	is obtained from word 1 of COMREC. One is	0.3421	0.0146
+0.5915	0.1090	1.000	factor of one. Spoold is turned on.	0.2632	0.0191
+0.5935	0.5338	1.000	subtracted, and this is used as the starting are	0.3534	0.0164
+0.6090	0.5338	1.000	for the name file. Available arcs on the disk are	0.3703	0.0146
+0.6235	0.1109	1.000	Boxes 2, ]	0.0902	0.0174
+0.6235	0.5357	1.000	divided in the ratio of 1/32; 1/32 assigned to the	0.3590	0.0146
+0.6394	0.5338	1.000	name file, 31/32 assigned to the intermediate file.	0.3778	0.0161
+0.6539	0.1109	1.000	IF System Input is indicated by the COMREC, SpoolO	0.3853	0.0176
+0.6685	0.1128	1.000	is turned on.	0.0940	0.0118
+0.9419	0.9098	1.000	131	0.0226	0.0073
+0.9419	0.8477	1.000	XINIT	0.0357	0.0073

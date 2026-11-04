@@ -1,0 +1,53 @@
+0.0916	0.8026	1.000	INTRODUCTION	0.1278	0.0145
+0.1612	0.5508	1.000	For purposes of exposition, MCP has been divided	0.3797	0.0161
+0.1627	0.1015	1.000	The IBM Programming System for the IBM 7030	0.3609	0.0131
+0.1773	0.5320	1.000	into the following five basic functional areas:	0.3421	0.0131
+0.1788	0.1015	1.000	Data Processing System consists of the Master Con-	0.3947	0.0116
+0.1890	0.5508	1.000	1. Interrupt control	0.1560	0.0160
+0.1916	0.0995	1.000	trol Program (MCP), the assembly program (STRAP	0.3987	0.0175
+0.2060	0.5507	1.000	2. System operation	0.1561	0.0154
+0.2078	0.0996	1.000	II), FORTRAN, and the System Macro Language,	0.3703	0.0146
+0.2238	0.1015	1.000	SMAC I. MCP is the system control program; the	0.3778	0.0102
+0.2369	0.1015	1.000	other three programs are language processors. The	0.3966	0.0116
+0.2369	0.5508	1.000	4. Service routines	0.1504	0.0131
+0.2494	0.5488	1.000	5. Debugging aids	0.1430	0.0156
+0.2515	0.0996	1.000	programs constituting the system are described in	0.3797	0.0131
+0.2660	0.5489	1.000	Each area is described in a section of the Analysis	0.3835	0.0146
+0.2688	0.1015	1.000	detail in their respective Programming Systems	0.3609	0.0088
+0.2791	0.5320	1.000	Guide. Additional sections provide a general descrip-	0.4117	0.0146
+0.2817	0.1015	1.000	Analysis Guides. This manual, then, is one of a set	0.3948	0.0126
+0.2933	0.5300	1.000	tion of MCP, and descriptions of the supporting pro-	0.3986	0.0168
+0.2951	0.0996	1.000	of four Analysis Guides which describe the IBM 7030	0.3966	0.0146
+0.3108	0.5319	1.000	grams.	0.0585	0.0150
+0.3109	0.1015	1.000	Programming System completely.	0.2556	0.0133
+0.3241	0.5508	1.000	Flow charts have been included in context for ease	0.3797	0.0147
+0.3400	0.5320	1.000	of reference. They are drawn at a functional level,	0.3910	0.0133
+0.3415	0.1165	1.000	How MCP is used with respect to computer opera-	0.3778	0.0118
+0.3545	0.5338	1.000	and conform to the standards specified in Appendix	0.3835	0.0133
+0.3576	0.1015	1.000	tions and problem programs is described in the IBM	0.3929	0.0116
+0.3706	0.5357	1.000	A. Program symbols are used freely in both the text	0.4023	0.0117
+0.3721	0.1015	1.000	7030 Data Processing System Master Control Pro-	0.3835	0.0131
+0.3852	0.5338	1.000	and the flow charts in order to relate the Analysis	0.3778	0.0103
+0.3866	0.0996	1.000	gram Reference Manual, Form C22-6678. Detailed	0.3910	0.0146
+0.3997	0.5338	1.000	Guide and the listing as closely as possible.	0.3308	0.0116
+0.4012	0.0996	1.000	information about the functions performed by MCP is	0.3985	0.0116
+0.4142	0.5526	1.000	The subprograms of MCP are closely interrelated.	0.3816	0.0116
+0.4172	0.1015	1.000	described in the Analysis Guide, together with mis-	0.3891	0.0116
+0.4288	0.5338	1.000	In order to avoid diversionary discussions through-	0.3872	0.0116
+0.4317	0.1015	1.000	cellaneous programming information. This, together	0.4041	0.0116
+0.4448	0.5357	1.000	out the Analysis Guide, each section has been written	0.4004	0.0116
+0.4462	0.0996	1.000	with the program listing, enables the systems pro-	0.3853	0.0117
+0.4593	0.5338	1.000	presuming knowledge of the other sections whenever	0.3929	0.0116
+0.4606	0.1015	1.000	grammer to determine how MCP accomplishes any	0.3816	0.0118
+0.4624	0.3387	0.300	tho Aiydle cuilie.,	0.1613	0.0418
+0.4738	0.5338	1.000	necessary. The reader with the responsibilities	0.3665	0.0116
+0.4752	0.1015	1.000	given task, and to adapt MCP to such special usage	0.3835	0.0133
+0.4884	0.5357	1.000	outlined in the preface should read the entire Analy-	0.3910	0.0116
+0.4897	0.1015	1.000	as the installation may require. The Analysis Guide,	0.4004	0.0118
+0.5029	0.5338	1.000	sis Guide once to become familiar with content,	0.3571	0.0116
+0.5042	0.1015	1.000	designed to complement the program listing, is a	0.3684	0.0133
+0.5174	0.5338	1.000	terminology, and level of discussion, before attempt-	0.4041	0.0132
+0.5188	0.0996	1.000	tool for the systems programmer to help him make	0.3853	0.0118
+0.5333	0.5338	1.000	ing to put it to use.	0.1447	0.0118
+0.5348	0.1015	1.000	most effective use of the MCP program listing.	0.3534	0.0103
+0.9477	0.8289	1.000	Introduction	0.0733	0.0073

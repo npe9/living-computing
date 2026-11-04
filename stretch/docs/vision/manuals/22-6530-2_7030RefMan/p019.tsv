@@ -1,0 +1,185 @@
+0.0727	0.0940	1.000	Operand Designation	0.2237	0.0189
+0.1394	0.5056	1.000	all-zero word is obtained at all times. Information	0.3947	0.0147
+0.1409	0.0902	1.000	Information Format	0.2086	0.0161
+0.1555	0.5094	1.000	stored at location zero cannot be recovered.	0.3214	0.0146
+0.1685	0.5226	1.000	Storage locations 1-15 contain various special reg-	0.3797	0.0176
+0.1802	0.0940	1.000	The computer system stores information in core stor-	0.3910	0.0146
+0.1845	0.5094	1.000	isters of the central processing unit. These registers	0.3947	0.0176
+0.1948	0.0902	1.000	age in 64-bit words. Information transmission between	0.3947	0.0160
+0.2006	0.5075	1.000	contain different numbers of bit positions as indi-	0.3966	0.0161
+0.2121	0.0977	1.000	torage, exchange and computer sections, is in par	0.3797	0.0118
+0.2136	0.5075	1.000	cated in Figure 3. All other bits in locations 1-15 are	0.3966	0.0176
+0.2252	0.0977	1.000	illel, a 64-bit word at a time. Information words o	0.3816	0.0133
+0.2311	0.5094	1.000	always zero. They act like the bits of location O.	0.3571	0.0147
+0.2427	0.0940	1.000	64 bits are part of 72-bit machine words. The extra	0.3872	0.0116
+0.2470	0.5207	1.000	The purpose and function of the index registers in	0.3816	0.0133
+0.2573	0.0921	1.000	8 bits are check bits, not available to the program-	0.3891	0.0131
+0.2587	0.5075	1.000	storage locations 16-31 are explained under "Index-	0.3947	0.0161
+0.2700	0.0920	1.000	mer, which permit single-error correction and double	0.3876	0.0183
+0.2762	0.5075	1.000	ing."	0.0414	0.0160
+0.2878	0.0883	1.000	error detection. Within the central processing unit,	0.3947	0.0160
+0.2906	0.5132	1.000	Addresses greater than 31 are used for main core	0.3910	0.0161
+0.3009	0.0902	1.000	the information bits are combined with check bits in	0.3929	0.0161
+0.3052	0.5056	1.000	storage.	0.0639	0.0174
+0.3169	0.0883	1.000	a variety of ways, in order to insure single error	0.3947	0.0174
+0.3227	0.5226	1.000	In some operations, information is processed a word	0.3797	0.0161
+0.3341	0.0921	1.000	detection.	0.0715	0.0120
+0.3369	0.5056	1.000	at a time. In another group of operations, informa-	0.3987	0.0189
+0.3488	0.1071	1.000	Words in storage are specified by a contiguous set of	0.3759	0.0146
+0.3532	0.5113	1.000	tion is processed a half word at a time. A half word	0.3910	0.0147
+0.3648	0.0902	1.000	addresses. Addresses are numbered from 0 to 262,143	0.3929	0.0131
+0.3675	0.5093	1.000	contains 32 bits and corresponds either to the first	0.3949	0.0156
+0.3794	0.0940	1.000	(218 - 1). In each word, the bits are numbered from 0	0.3891	0.0131
+0.3836	0.5075	1.000	half, bits 0-31, or the second half, bits 32-63, of a full	0.3947	0.0161
+0.3953	0.0902	1.000	to 63, left to right. Bit 63 of a word may be considered	0.3910	0.0131
+0.3997	0.5094	1.000	word. In a third group of operations, the variable-	0.3929	0.0145
+0.4112	0.0902	1.000	adjacent to bit 0 of the next higher addressed word.	0.3797	0.0133
+0.4142	0.5094	1.000	field-length operations, information is processed a field	0.3929	0.0145
+0.4258	0.1071	1.000	The set of addresses includes the addresses of reg-	0.3759	0.0133
+0.4302	0.5094	1.000	at a time. A field may have any length from one to	0.3929	0.0146
+0.4403	0.0883	1.000	isters located in the computer. By addressing such a	0.3947	0.0146
+0.4462	0.5094	1.000	64 bits. A field may start at any bit position in a word	0.3910	0.0132
+0.4564	0.0883	1.000	register, its information may be treated as if it were	0.3947	0.0131
+0.4606	0.5075	1.000	in storage and continue through that word and into	0.3947	0.0133
+0.4709	0.0883	1.000	located in core storage. A list of register addresses is	0.3947	0.0146
+0.4725	0.5092	1.000	the word in the next higher addressed storage loca-	0.3932	0.0198
+0.4869	0.0902	1.000	shown in Figure 3, and these registers are described	0.3910	0.0131
+0.4912	0.5094	1.000	tion. Thus, fields of any length from one to 64 bits	0.3910	0.0131
+0.5015	0.0902	1.000	in the storage assignment section.	0.2387	0.0131
+0.5058	0.5075	1.000	may be stored in adjacent storage positions, regardless	0.3947	0.0146
+0.5174	0.1071	1.000	Storage location 0 is not available as standard stor-	0.3741	0.0132
+0.5218	0.5094	1.000	of core storage word boundaries.	0.2331	0.0131
+0.5320	0.0902	1.000	age. When information is taken from location 0, an	0.3910	0.0145
+0.5363	0.5244	1.000	Information, whether a full-word, half-word or	0.3759	0.0146
+0.5509	0.5075	1.000	field, is always addressed by the leftmost bit. The	0.3947	0.0146
+0.5550	0.4191	1.000	Bit Address	0.0565	0.0091
+0.5552	0.2293	1.000	Name	0.0320	0.0087
+0.5552	0.3647	1.000	Length	0.0357	0.0087
+0.5567	0.0996	1.000	Location	0.0451	0.0073
+0.5669	0.5056	1.000	length, in bits, of the information is either implied by	0.3947	0.0160
+0.5756	0.4267	1.000	0-63	0.0263	0.0087
+0.5770	0.1767	1.000	Zero	0.0263	0.0087
+0.5770	0.1297	1.000	ext	0.0188	0.0087
+0.5770	0.3722	1.000	64	0.0132	0.0073
+0.5827	0.5075	1.000	the operation to be performed or specifically stated	0.3929	0.0147
+0.5858	0.3703	1.000	19	0.0169	0.0087
+0.5858	0.4267	1.000	0-18	0.0263	0.0087
+0.5872	0.1297	1.000	ind	0.0188	0.0087
+0.5872	0.1767	1.000	Interval Timer (P,a)	0.1015	0.0089
+0.5973	0.1767	1.000	Time Clock (P,b)	0.0902	0.0088
+0.5973	0.5075	1.000	as part of the instruction.	0.1861	0.0146
+0.5974	0.3722	1.000	36	0.0132	0.0087
+0.5974	0.4173	1.000	28-63	0.0357	0.0102
+0.5974	0.1297	1.000	ind	0.0188	0.0087
+0.6076	0.3703	1.000	18	0.0169	0.0087
+0.6076	0.4286	1.000	0-17	0.0244	0.0087
+0.6076	0.1767	1.000	Interruption Address (P)	0.1184	0.0103
+0.6090	0.1316	1.000	ext	0.0169	0.0073
+0.6177	0.4267	1.000	0-17	0.0263	0.0087
+0.6177	0.1767	1.000	Upper Boundary (P)	0.0977	0.0117
+0.6177	0.3703	1.000	18	0.0169	0.0087
+0.6279	0.3722	1.000	18	0.0150	0.0087
+0.6279	0.4192	1.000	32-49	0.0338	0.0087
+0.6294	0.1316	1.000	int	0.0132	0.0087
+0.6294	0.1767	1.000	Lower Boundary (P)	0.0977	0.0088
+0.6394	0.1767	1.000	Boundary Control Bit (P)	0.1241	0.0103
+0.6395	0.1316	1.000	int	0.0132	0.0087
+0.6395	0.4248	1.000	57	0.0169	0.0087
+0.6395	0.0996	1.000	3	0.0056	0.0087
+0.6497	0.1748	1.000	Maintenance Bits	0.0921	0.0116
+0.6497	0.0977	1.000	4	0.0113	0.0116
+0.6497	0.1278	1.000	ext	0.0207	0.0116
+0.6497	0.3722	1.000	64	0.0150	0.0087
+0.6497	0.4248	1.000	0-63	0.0301	0.0102
+0.6584	0.3759	1.000	7	0.0113	0.0102
+0.6597	0.0949	0.300	н0NA∞a G==	0.0187	0.0949
+0.6599	0.1278	1.000	int	0.0188	0.0116
+0.6599	0.4173	1.000	12-18	0.0357	0.0102
+0.6599	0.1767	1.000	Channel Address (b)	0.1015	0.0116
+0.6599	0.5056	1.000	Data Format	0.1203	0.0147
+0.6686	0.4248	1.000	0-18	0.0301	0.0116
+0.6698	0.1766	1.000	Other CPU	0.0584	0.0106
+0.6701	0.3684	1.000	19	0.0188	0.0102
+0.6715	0.1278	1.000	int	0.0188	0.0102
+0.6797	0.1747	1.000	Left Zeros Count	0.0905	0.0142
+0.6802	0.3741	1.000	7	0.0132	0.0116
+0.6802	0.4173	1.000	17-23	0.0357	0.0102
+0.6817	0.1278	1.000	int	0.0188	0.0102
+0.6903	0.1748	1.000	All Ones Count	0.0865	0.0118
+0.6904	0.4192	1.000	44-50	0.0338	0.0087
+0.6904	0.3741	1.000	7	0.0132	0.0116
+0.6919	0.1278	1.000	int	0.0188	0.0102
+0.6991	0.5075	1.000	Data generally represent alphameric information. For	0.3929	0.0131
+0.7006	0.3703	1.000	64	0.0150	0.0116
+0.7006	0.1748	1.000	Left Half of Accumulator	0.1278	0.0131
+0.7020	0.1278	1.000	int	0.0169	0.0102
+0.7020	0.4267	1.000	0-63	0.0263	0.0102
+0.7105	0.1748	1.000	Right Half of Accumulator	0.1354	0.0121
+0.7108	0.4267	1.000	0-63	0.0263	0.0116
+0.7122	0.1297	1.000	int	0.0169	0.0116
+0.7122	0.3703	1.000	64	0.0169	0.0102
+0.7136	0.5074	1.000	both arithmetic operations and non-arithmetic opera-	0.3930	0.0158
+0.7209	0.3741	1.000	8	0.0150	0.0116
+0.7224	0.1278	1.000	int	0.0188	0.0116
+0.7224	0.1767	1.000	Accumulator Sign	0.0883	0.0116
+0.7224	0.4267	1.000	0-7	0.0263	0.0087
+0.7297	0.5075	1.000	tions, the format of the data needs further specifica-	0.3929	0.0146
+0.7311	0.4267	1.000	0-63	0.0263	0.0116
+0.7311	0.3703	1.000	64	0.0169	0.0116
+0.7324	0.1748	1.000	Indicators (c)	0.0733	0.0118
+0.7340	0.1278	1.000	int	0.0188	0.0102
+0.7427	0.1748	1.000	Mask (d)	0.0508	0.0116
+0.7427	0.3684	1.000	64	0.0188	0.0102
+0.7427	0.1203	1.000	int	0.0263	0.0102
+0.7427	0.4267	1.000	0-63	0.0263	0.0087
+0.7442	0.5056	1.000	tion besides the length of the field.	0.2500	0.0161
+0.7529	0.3703	1.000	64	0.0169	0.0102
+0.7529	0.0959	1.000	13	0.0188	0.0116
+0.7529	0.1748	1.000	Remainder	0.0564	0.0116
+0.7529	0.4267	1.000	0-63	0.0263	0.0116
+0.7544	0.1222	1.000	ext	0.0263	0.0087
+0.7602	0.5226	1.000	Arithmetic instructions specify either binary or	0.3778	0.0160
+0.7631	0.3703	1.000	64	0.0169	0.0116
+0.7631	0.4248	1.000	0-63	0.0282	0.0116
+0.7631	0.0959	1.000	14	0.0188	0.0116
+0.7631	0.1748	1.000	Factor	0.0376	0.0131
+0.7645	0.1241	1.000	ext	0.0263	0.0116
+0.7733	0.3703	1.000	64	0.0169	0.0116
+0.7733	0.4248	1.000	0-63	0.0282	0.0116
+0.7747	0.1259	1.000	ext	0.0244	0.0116
+0.7747	0.5056	1.000	decimal integer arithmetic, or binary floating point	0.3947	0.0174
+0.7747	0.1748	1.000	Transit	0.0395	0.0102
+0.7747	0.0977	1.000	15	0.0169	0.0102
+0.7833	0.1748	1.000	Index Registers XO-X15	0.1222	0.0132
+0.7833	0.0977	1.000	16-31 ind	0.0527	0.0104
+0.7834	0.3703	1.000	64	0.0169	0.0116
+0.7834	0.4248	1.000	0-63	0.0282	0.0116
+0.7870	0.5036	1.000	arithmetic. The adder used in the arithmetic opera-	0.3970	0.0201
+0.7979	0.1729	1.000	Permanently protected area of storage	0.1936	0.0132
+0.8009	0.1523	1.000	=	0.0113	0.0073
+0.8052	0.5056	1.000	tion adjusts its mode of operation accordingly.	0.3477	0.0161
+0.8096	0.1523	1.000	=	0.0113	0.0087
+0.8096	0.1748	1.000	Read-only except for Store Value, Store Count, Store	0.2763	0.0131
+0.8197	0.1767	1.000	Refill, and Store Address	0.1259	0.0118
+0.8212	0.5226	1.000	In integer arithmetic, numbers can be signed or un-	0.3778	0.0145
+0.8297	0.4862	1.000	: signed as specified by the instruction. When present,	0.4128	0.0292
+0.8298	0.1710	1.000	Read-only	0.0602	0.0133
+0.8314	0.1297	1.000	b	0.0150	0.0087
+0.8314	0.1485	1.000	=	0.0150	0.0102
+0.8401	0.1504	1.000	=	0.0132	0.0116
+0.8415	0.1729	1.000	Bit positions 0-19 are read-only	0.1635	0.0118
+0.8503	0.1748	1.000	Bit positions 0-19 are always ones and positions 48-63	0.2744	0.0131
+0.8517	0.5056	1.000	the sign of a number is specified by a single bit. A	0.3929	0.0161
+0.8532	0.1523	1.000	=	0.0113	0.0073
+0.8618	0.1748	1.000	are always zeros	0.0903	0.0133
+0.8659	0.5036	1.000	zero indicates a positive sign; a one indicates a nega-	0.3968	0.0180
+0.8721	0.1692	1.000	External storage location	0.1353	0.0116
+0.8735	0.1297	1.000	ext =	0.0357	0.0087
+0.8821	0.5056	1.000	tive sign.	0.0695	0.0147
+0.8821	0.1297	1.000	ind =	0.0338	0.0103
+0.8835	0.1710	1.000	Index core storage location	0.1448	0.0106
+0.8924	0.1297	1.000	int =Internal registers	0.1353	0.0116
+0.8967	0.5226	1.000	With the sign, up to three flag bits may be used.	0.3759	0.0147
+0.9112	0.0846	1.000	Figure 3. Register Addresses	0.1823	0.0147
+0.9330	0.1278	1.000	IBM 7030	0.0658	0.0133
+0.9331	0.0827	1.000	16	0.0188	0.0131

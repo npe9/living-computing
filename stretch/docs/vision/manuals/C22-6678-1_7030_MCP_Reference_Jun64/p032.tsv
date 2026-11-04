@@ -1,0 +1,109 @@
+0.0639	0.5395	1.000	The Disk IPL program can be used to reinitialize	0.3797	0.0176
+0.0669	0.1184	1.000	The dump limits and format are set in the	0.3139	0.0131
+0.0759	0.5205	1.000	the system quickly, and eliminate the need for the	0.3820	0.0232
+0.0799	0.0921	1.000	numeric switches. The octal address of the lower	0.3816	0.0161
+0.0930	0.5207	1.000	master system tape once there has been a suc-	0.3609	0.0176
+0.0973	0.0940	1.000	Limit is put in numeric switches, columns 1-8; the	0.3778	0.0133
+0.1072	0.5224	1.000	cessful IPL.	0.0980	0.0183
+0.1105	0.0921	1.000	octal address of the upper limit is put in numeric	0.3741	0.0132
+0.1233	0.0920	1.000	switches, columns 9-15. Column 16 is reserved	0.3725	0.0194
+0.1392	0.5243	1.000	Procedure	0.0810	0.0166
+0.1394	0.0940	1.000	for the code that indicates the dump format as	0.3477	0.0133
+0.1554	0.0921	1.000	follows:	0.0640	0.0119
+0.1672	0.5451	1.000	1. Press the IPL key.	0.1692	0.0174
+0.1700	0.1335	1.000	= octal hex with mnemonics	0.2274	0.0103
+0.1830	0.5432	1.000	2. Set up the IPL options as explained in	0.3102	0.0146
+0.1845	0.1654	1.000	floating point	0.1034	0.0131
+0.1975	0.5225	1.000	"Initializing the System."	0.1974	0.0149
+0.1991	0.1165	1.000	2 = index word	0.1335	0.0103
+0.2106	0.5376	1.000	3. Put the binary deck of the Disk IPL program	0.3665	0.0147
+0.2136	0.1372	1.000	= hexadecimal	0.1241	0.0103
+0.2151	0.1165	1.000	3	0.0113	0.0087
+0.2252	0.5207	1.000	in the card reader.	0.1523	0.0176
+0.2263	0.1145	1.000	R, 1-9 or blank = octal hex without mnemonies	0.3499	0.0197
+0.2397	0.5244	1.000	The Disk IPL program has the ability to calculate	0.3759	0.0176
+0.2470	0.1165	1.000	The output device is selected by binary keys 44,	0.3628	0.0176
+0.2542	0.5226	1.000	a check sum of the disk PROSA area. The	0.3271	0.0176
+0.2645	0.0959	1.000	45, 46, 47 as shown by the following table:	0.3233	0.0146
+0.2688	0.5244	1.000	UPDATE30 program computes a check sum of the	0.3759	0.0191
+0.2833	0.5226	1.000	master system tape and places it in a type-area	0.3647	0.0191
+0.2951	0.2387	1.000	Output Unit	0.0883	0.0116
+0.2994	0.5226	1.000	)))))))., which is written on the new master source	0.3835	0.0176
+0.3092	0.1164	1.000	Latched On	0.0867	0.0139
+0.3094	0.2443	1.000	Selected	0.0659	0.0105
+0.3135	0.5263	1.000	tape and is later included in PROSA. If there is no	0.3854	0.0155
+0.3285	0.5244	1.000	type-area )))))))). on the disk, the Disk IPL program	0.3910	0.0161
+0.3372	0.1297	1.000	Key 44	0.0545	0.0146
+0.3387	0.2406	1.000	Printer	0.0583	0.0116
+0.3445	0.5244	1.000	will reinitialize the system without checking the	0.3609	0.0131
+0.3517	0.2425	1.000	CH 32, UNO Unlabeled Tape	0.2368	0.0146
+0.3532	0.1316	1.000	Key 45	0.0508	0.0132
+0.3590	0.5226	1.000	disk. A message will be printed:	0.2556	0.0161
+0.3663	0.3571	1.000	Unlabeled Tape	0.1222	0.0146
+0.3677	0.1297	1.000	Key 46	0.0545	0.0132
+0.3677	0.2425	1.000	CH 33, UN0	0.1034	0.0117
+0.3735	0.5602	1.000	$ NO CHECK SUM	0.1485	0.0146
+0.3771	0.2384	1.000	CH 34, UNO Unlabeled Tape	0.2414	0.0231
+0.3821	0.1296	1.000	Key 47	0.0528	0.0135
+0.3894	0.5244	1.000	The use of Disk IPL without the check sum is not	0.3703	0.0118
+0.4037	0.5244	1.000	recommended because the disk should be checked	0.3703	0.0125
+0.4039	0.0940	1.000	If keys 41-47 are all latched off, the dump is given	0.3835	0.0147
+0.4172	0.5226	1.000	for contamination of PROSA.	0.2199	0.0147
+0.4185	0.0959	1.000	on the printer.	0.1128	0.0118
+0.4317	0.5451	1.000	4. Ready the card reader.	0.1992	0.0160
+0.4330	0.1147	1.000	Ready the tape or printer, set up the limits, and	0.3684	0.0161
+0.4476	0.0940	1.000	give channel signal from the console. Latch off	0.3628	0.0132
+0.4621	0.0940	1.000	key 61 after the channel signal is given for the last	0.3853	0.0146
+0.4636	0.5226	1.000	Error Situations	0.1259	0.0146
+0.4767	0.0959	1.000	dump. The dump can be executed on several	0.3383	0.0118
+0.4912	0.0959	1.000	channels simultaneously. At the end of the last	0.3590	0.0118
+0.4927	0.5226	1.000	Disk IPL gives two error messages:	0.2763	0.0131
+0.5057	0.0958	1.000	dump, a tape mark is written on all dump tapes,	0.3648	0.0146
+0.5073	0.5677	1.000	1. $ CHECKSUM INCORRECT	0.2331	0.0131
+0.5203	0.0959	1.000	the tapes are rewound and unloaded and Restart	0.3590	0.0118
+0.5218	0.5677	1.000	2. $ IPL THE TAPE	0.1617	0.0146
+0.5348	0.0940	1.000	continues. While the last dump is being given, the	0.3835	0.0146
+0.5363	0.5451	1.000	Both messages 1 and 2 are given if the check	0.3402	0.0146
+0.5494	0.0959	1.000	operator will have time to set up the IPL options	0.3665	0.0117
+0.5509	0.5226	1.000	sum computed by Disk IPL does not agree with the	0.3816	0.0146
+0.5639	0.0959	1.000	(time, date, etc.).	0.1429	0.0131
+0.5654	0.5226	1.000	one calculated by UPDATE 30 when the tape was	0.3647	0.0146
+0.5814	0.5226	1.000	made. This means that the disk is contaminated,	0.3759	0.0147
+0.5930	0.0940	1.000	Disk IPL	0.0714	0.0116
+0.5959	0.5226	1.000	so the program halts and the system must be	0.3402	0.0132
+0.6105	0.5226	1.000	rewritten on the disk by a tape IPL.	0.2726	0.0132
+0.6205	0.0976	1.000	If key 60 is latched on, this means Restart will IPL	0.3874	0.0157
+0.6235	0.5450	1.000	If any error interrupts occur, or the disk dic-	0.3517	0.0166
+0.6366	0.0959	1.000	from the disk without calculating the check sum of	0.3797	0.0131
+0.6381	0.5244	1.000	tionary is incorrect, message 2 is given and the	0.3647	0.0160
+0.6512	0.5244	1.000	program halts. The system must be reinitialized	0.3759	0.0161
+0.6526	0.0977	1.000	PROSA.	0.0602	0.0116
+0.6636	0.5224	1.000	by a tape IPL,	0.1131	0.0187
+0.6672	0.0959	1.000	A message is given	0.1466	0.0116
+0.6802	0.1391	1.000	$NO CHECK SUM	0.1353	0.0131
+0.6948	0.5244	1.000	NORMAL RUNNING MODES	0.2180	0.0146
+0.6948	0.0959	1.000	as a reminder that no check was made of the disk.	0.3778	0.0131
+0.7106	0.1203	1.000	For a check sum calculation of PROSA in	0.3102	0.0103
+0.7238	0.5244	1.000	After successful initialization of the 7030 Pro-	0.3722	0.0160
+0.7246	0.0958	1.000	Restart, it is necessary only to keep key 60 off and	0.3854	0.0130
+0.7369	0.0959	1.000	have a type-area on the disk with thename"))))))|)."	0.3929	0.0161
+0.7384	0.5244	1.000	gramming System is completed, MCP is given con-	0.3947	0.0160
+0.7500	0.5244	1.000	trol and begins to read in the first job to be run	0.3628	0.0176
+0.7542	0.0959	1.000	(See explanation of Disk IPL with check sum,	0.3421	0.0133
+0.7674	0.0996	1.000	Procedure, 3. under "Disk Initialization.")	0.3233	0.0147
+0.7688	0.5244	1.000	from the system input source. The MCP System	0.3703	0.0133
+0.7809	0.5262	1.000	Input Program is designed to:	0.2277	0.0168
+0.7964	0.5414	1.000	1. Provide a standard method for buffering card	0.3722	0.0147
+0.7979	0.0959	1.000	DISK INITIALIZATION	0.1729	0.0118
+0.8096	0.5244	1.000	input, regardless of the I/O device utilized by MCP.	0.3985	0.0174
+0.8241	0.5395	1.000	2. Allow MCP to scan the input so that the jobs	0.3665	0.0174
+0.8270	0.1184	1.000	Note: In this section, the initials IPL represent	0.3647	0.0146
+0.8415	0.0959	1.000	the entire initial program loading procedure. A	0.3647	0.0146
+0.8415	0.5320	1.000	an be identified and controlled by type; the symboli	0.3872	0.0146
+0.8532	0.5338	1.000	/O requests can be assigned to absolute units, an	0.3722	0.0147
+0.8545	0.0959	1.000	successful IPL involves placing MCP in core stor-	0.3835	0.0146
+0.8691	0.5244	1.000	system commands can be given by the operator via	0.3872	0.0161
+0.8706	0.0977	1.000	age and writing a copy of the entire master system	0.3835	0.0117
+0.8836	0.5244	1.000	the card reader.	0.1259	0.0146
+0.8852	0.0977	1.000	tape on the disk in the PROSA area.	0.2707	0.0117
+0.9157	0.0977	1.000	32	0.0169	0.0087

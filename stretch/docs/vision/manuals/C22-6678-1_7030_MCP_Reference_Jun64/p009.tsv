@@ -1,0 +1,115 @@
+0.0663	0.5298	1.000	There are four classes of IOD cards. An IOD	0.3558	0.0232
+0.0682	0.0846	1.000	is symbolized either by a channel name if a single-	0.3872	0.0176
+0.0824	0.0863	1.000	unit channel is involved, or by channel and unit	0.3593	0.0163
+0.0827	0.5132	1.000	card is classified by the type of I/O unit to which	0.3722	0.0191
+0.0943	0.5129	1.000	the symbolic file of information is to be assigned.	0.3785	0.0236
+0.0973	0.0865	1.000	names in the case of a multi-unit channel. In the	0.3722	0.0146
+0.1118	0.0865	1.000	latter case, channel name is a request for grouping	0.3853	0.0161
+0.1264	0.5132	1.000	PRINTER OR CONSOLE IOD CARD:	0.2744	0.0176
+0.1279	0.0846	1.000	physical units. There may be many IOD cards for	0.3835	0.0146
+0.1408	0.0864	1.000	each physical unit and their order is important if	0.3704	0.0148
+0.1538	0.0861	1.000	they are indexed by the problem program.	0.3164	0.0207
+0.1672	0.5188	1.000	12	0.0282	0.0174
+0.1672	0.5733	0.300	910	0.0357	0.0189
+0.1686	0.8308	1.000	7273	0.0338	0.0174
+0.1686	0.7180	1.000	62/63	0.0320	0.0174
+0.1701	0.7707	1.000	6667	0.0357	0.0160
+0.1903	0.0827	1.000	Statement: The statement field of an IOD card con-	0.3872	0.0161
+0.1918	0.5207	1.000	B IODNAMEIOD, type, exit, channel	0.1936	0.0146
+0.1933	0.7293	0.500	Retorence Axilure	0.1109	0.0247
+0.2064	0.0827	1.000	tains subfields that vary with the type of I/O unit	0.3703	0.0131
+0.2151	0.7331	1.000	Number	0.0451	0.0116
+0.2209	0.0846	1.000	described. The general format of the statement	0.3647	0.0146
+0.2354	0.0846	1.000	field is:	0.0602	0.0103
+0.2500	0.1034	1.000	IOD, type, exit, channel,....	0.2256	0.0145
+0.2660	0.0827	1.000	in which:	0.0677	0.0089
+0.2747	0.5113	1.000	where type is PRINTER or CONSOLE.	0.2932	0.0189
+0.2805	0.1053	1.000	Type must be one of the following symbols that	0.3515	0.0131
+0.2951	0.0827	1.000	define I/O equipment:	0.1617	0.0116
+0.3036	0.5113	1.000	READER OR PUNCH IOD CARD:	0.2500	0.0161
+0.3095	0.1071	1.000	PRINTER	0.0734	0.0105
+0.3095	0.2143	1.000	READER	0.0752	0.0103
+0.3096	0.4023	1.000	TAPE	0.0508	0.0145
+0.3110	0.3102	1.000	DISK	0.0489	0.0102
+0.3241	0.2030	1.000	PUNCH	0.0696	0.0118
+0.3241	0.1034	1.000	CONSOLE	0.0977	0.0116
+0.3256	0.3120	1.000	TRACK	0.0639	0.0116
+0.3459	0.1034	1.000	Exit is a problem program symbol (used at com-	0.3665	0.0160
+0.3517	0.5150	1.000	12	0.0282	0.0189
+0.3517	0.5752	0.300	91o	0.0301	0.0218
+0.3532	0.8233	1.000	7273	0.0414	0.0189
+0.3561	0.7632	1.000	66/67	0.0414	0.0160
+0.3561	0.7105	1.000	6263	0.0338	0.0160
+0.3603	0.0826	1.000	pilation) that specifies the location of the I/O table	0.3798	0.0147
+0.3605	0.8872	1.000	80	0.0188	0.0116
+0.3749	0.0826	1.000	of exits to be used when an interrupt occurs for the	0.3837	0.0157
+0.3807	0.7875	1.000	Absolute	0.0528	0.0134
+0.3808	0.5169	1.000	B IODNAMEIOD, type, exit, channel, 1/0	0.2462	0.0131
+0.3888	0.7234	1.000	Reference	0.0588	0.0145
+0.3891	0.0807	1.000	logical unit. The symbol may not contain more	0.3575	0.0163
+0.3924	0.7951	1.000	Exit	0.0301	0.0116
+0.4012	0.7274	1.000	Number	0.0470	0.0131
+0.4039	0.0808	1.000	than eight characters.	0.1654	0.0133
+0.4185	0.1053	1.000	Channel is a programmer symbol (it is not used	0.3571	0.0147
+0.4324	0.0807	1.000	for compilation) that corresponds to an absolute	0.3612	0.0155
+0.4448	0.0789	1.000	channel number which will be assigned by MCP. The	0.3891	0.0189
+0.4519	0.5018	1.000	where:	0.0566	0.0163
+0.4636	0.0808	1.000	same channel symbol on several IODcards of the	0.3722	0.0131
+0.4666	0.5244	1.000	type is READER or PUNCH;	0.2180	0.0189
+0.4782	0.0808	1.000	same type of equipment is a request to assign them	0.3835	0.0131
+0.4807	0.5241	1.000	mode is ECC or NOECC. If mode is null, NOECC	0.3803	0.0233
+0.4927	0.0789	1.000	to the same channel.	0.1541	0.0116
+0.4927	0.2406	1.000	A different channel symbol on	0.2293	0.0145
+0.4982	0.5225	1.000	is assumed.	0.0941	0.0151
+0.5058	0.0789	1.000	IOD cards of the same type is a request to assign	0.3741	0.0118
+0.5198	0.0789	1.000	them to different channels. MCP will honor such re-	0.4004	0.0127
+0.5247	0.5094	1.000	DISK OR TRACK IOD CARD:	0.2162	0.0160
+0.5363	0.0808	1.000	quests as the I/O configuration and its current usage	0.3929	0.0102
+0.5509	0.0789	1.000	allow. The symbol may not contain more than eight	0.3910	0.0102
+0.5639	0.0789	1.000	characters. A null symbol indicates that any channel	0.4023	0.0131
+0.5785	0.0789	1.000	of that type may be used.	0.1880	0.0131
+0.5785	0.5771	1.000	910	0.0282	0.0189
+0.5799	0.8271	1.000	7273	0.0357	0.0189
+0.5814	0.7650	1.000	6667	0.0357	0.0160
+0.5822	0.7064	1.000	62/63.	0.0439	0.0158
+0.5858	0.8835	1.000	80	0.0188	0.0116
+0.6045	0.5132	1.000	B IODNAME IOu,ber, exit, channel,	0.2068	0.0234
+0.6061	0.7312	1.000	1/0	0.0320	0.0131
+0.6074	0.7838	1.000	Absolute	0.0509	0.0120
+0.6118	0.0789	1.000	I/O Reference Number: Columns 63-66 are left blank	0.3947	0.0132
+0.6161	0.7218	1.000	Reference	0.0602	0.0134
+0.6177	0.7857	1.000	• Exit	0.0320	0.0102
+0.6264	0.0808	1.000	by the problem program. On the output IOD cards,	0.3778	0.0146
+0.6279	0.7274	1.000	Number	0.0470	0.0116
+0.6409	0.0808	1.000	STRAP II converts the IODNAME to an absolute	0.3628	0.0118
+0.6555	0.0789	1.000	number and punches this four-digit octal number in	0.3853	0.0146
+0.6700	0.0771	1.000	this field. The first IOD card encountered has the	0.3816	0.0161
+0.6845	0.0808	1.000	number 1 punched in this field, the second IOD	0.3515	0.0146
+0.6846	0.5075	1.000	where:	0.0545	0.0160
+0.6967	0.0807	1.000	card has the number 2 punched here, and so on.	0.3594	0.0170
+0.7020	0.5263	1.000	type is either DISK or TRACK;	0.2368	0.0131
+0.7132	0.5299	1.000	number is a decimal integer indicating:	0.2955	0.0180
+0.7261	0.0826	1.000	Absolute Exit: Columns 67-72 are left blank by the	0.3819	0.0156
+0.7311	0.5489	1.000	a. Number of arcs if type is DISK, or	0.2895	0.0147
+0.7411	0.0807	1.000	problem program. On the output IOD cards, STRAP	0.3781	0.0173
+0.7442	0.5526	1.000	b. Number of tracks if type is TRACK. MCP	0.3365	0.0161
+0.7558	0.5677	1.000	reserves the requested multiple of eight	0.3120	0.0191
+0.7558	0.0789	1.000	II punches the six-digit octal equivalent of the evalu-	0.3910	0.0161
+0.7703	0.0808	1.000	ated symbol for the first word address of the I/O	0.3684	0.0146
+0.7718	0.5677	1.000	arcs, the first reserved arc being the first	0.3346	0.0189
+0.7843	0.0805	1.000	table of exits in this field.	0.1961	0.0152
+0.7892	0.5677	1.000	arc of a track. This permits the program-	0.3271	0.0132
+0.8009	0.1015	1.000	The name field and the exit subfield are used	0.3383	0.0131
+0.8023	0.5677	1.000	mer to perform an autoaccess elimination	0.3214	0.0146
+0.8152	0.0807	1.000	only on compilations. Upon running the problem	0.3650	0.0151
+0.8182	0.5677	1.000	operation, but his control word must meet	0.3271	0.0147
+0.8314	0.0808	1.000	program, the absolute values in the I/O reference	0.3741	0.0116
+0.8314	0.5695	1.000	the requirements of the 7030 as stated in the	0.3402	0.0147
+0.8427	0.0806	1.000	number and absolute exit subfields are used,	0.3332	0.0164
+0.8473	0.5677	1.000	Automatic Access Elimination section of the	0.3383	0.0133
+0.8605	0.0808	1.000	respectively, in place of the symbols used for	0.3609	0.0132
+0.8614	0.5676	1.000	Reference Manual, IBM 7030 Data Process-	0.3366	0.0153
+0.8745	0.0788	1.000	compilation.	0.0942	0.0140
+0.8750	0.5677	1.000	ing System, Form A22-6530-2.	0.2444	0.0174
+0.9185	0.7068	1.000	Programming With MCP	0.1485	0.0118
+0.9201	0.8985	1.000	9	0.0094	0.0087

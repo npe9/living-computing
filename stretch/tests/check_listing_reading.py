@@ -17,10 +17,13 @@ CHECKS
                        PDF + 249 then + 250, never going back (printed
                        329 is absent from the scan)
   tables_fresh         the committed tables are what the cache produces
-  agreed_vs_deck       every `agreed` field on a landed page, nine of
+  agreed_vs_deck       every `agreed` field (LOCATION, BINARY h1 and h2)
+                       on a landed page, nine of
                        nine characters, is the deck's -- or the ink was
                        inspected and tests/vision_adjudicated.tsv says the
                        engines misread it ("every-location"/"every-binary")
+  floor_statement_draft  the NAME+STATEMENT draft still reads as well as
+                       measured (Vision only; no second engine for text)
   floors               coverage and accuracy of each status, measured
                        (for `agreed`, adjudicated rows count as right, so
                        the accuracy floor cannot fail on its own: any other
@@ -66,8 +69,13 @@ ADJUDICATED = os.path.join(HERE, "vision_adjudicated.tsv")
 # (field, status): (min share of rows with truth, min accuracy).  Measured
 # 2026-11-03 on 164 pages: loc agreed 67.8% / 100.00%, bin agreed 62.7% /
 # 99.88% before adjudication; vision-only 99.03% / 99.07%.
+# BINARY h2 (2026-11-03, 1,628 rows): agreed 72.4% / 100.00%, vision-only
+# 98.50%.  NAME+STATEMENT draft: 41.5% of 6,001 lines end with the deck's
+# statement (spaces and remark dropped).
 FLOORS = {("loc", "agreed"): (0.60, 0.999), ("bin", "agreed"): (0.55, 0.998),
-          ("loc", "vision-only"): (0.0, 0.98), ("bin", "vision-only"): (0.0, 0.98)}
+          ("loc", "vision-only"): (0.0, 0.98), ("bin", "vision-only"): (0.0, 0.98),
+          ("bin2", "agreed"): (0.65, 0.998), ("bin2", "vision-only"): (0.0, 0.97)}
+TEXT_FLOOR = 0.38
 
 
 def adjudicated():
@@ -136,9 +144,15 @@ def main(root=ROOT):
         if not truth:
             continue
         landed.add(p["printed"])
+        h2 = listing_truth.half2(p["printed"], root)
+        for line, want in listing_truth.statements(p["printed"], root).items():
+            r = p["lines"].get(line)
+            c[("text", "n")] += 1
+            c[("text", "ok")] += bool(r and r["text"]) and \
+                listing_reading._stmt(r["text"]).endswith(listing_reading._stmt(want))
         for line, (loc, b1) in truth.items():
             r = p["lines"].get(line)
-            for fld, want in (("loc", loc), ("bin", b1)):
+            for fld, want in (("loc", loc), ("bin", b1), ("bin2", h2.get(line))):
                 if not want:
                     continue
                 st, v = r[fld] if r else ("not-paired", "")
@@ -147,13 +161,13 @@ def main(root=ROOT):
                 if st in ("agreed", "vision-only"):
                     c[(fld, st, "ok")] += v == want
                 if st == "agreed" and v != want:
-                    key = (p["printed"], "location" if fld == "loc" else "binary", want, v)
+                    key = (p["printed"], {"loc": "location", "bin": "binary", "bin2": "binary2"}[fld], want, v)
                     if key in adj:
                         used += 1
                         c[(fld, st, "ok")] += 1
                         continue
                     print(f"FAIL agreed_vs_deck: p.{p['printed']} line {line} "
-                          f"{'LOCATION' if fld == 'loc' else 'BINARY h1'}: deck {want}, "
+                          f"{ {'loc': 'LOCATION', 'bin': 'BINARY h1', 'bin2': 'BINARY h2'}[fld]}: deck {want}, "
                           f"Vision AND tesseract read {v}")
                     fails += 1
     ok(used == len(adj), "agreed_vs_deck",
@@ -166,6 +180,11 @@ def main(root=ROOT):
            f"{n} of {rows} rows ({100 * n / max(1, rows):.1f}%, floor {100 * share:.0f}%), "
            f"{100 * good / max(1, n):.2f}% right or adjudicated on the ink "
            f"(floor {100 * acc:.1f}%)")
+
+    n, good = c[("text", "n")], c[("text", "ok")]
+    ok(n and good / n >= TEXT_FLOOR, "floor_statement_draft",
+       f"{good} of {n} lines end with the deck's statement "
+       f"({100 * good / max(1, n):.1f}%, floor {100 * TEXT_FLOOR:.0f}%) -- a DRAFT, not a reading")
 
     print("ALL TESTS PASSED" if not fails else f"{fails} FAILURE(S)")
     return 1 if fails else 0

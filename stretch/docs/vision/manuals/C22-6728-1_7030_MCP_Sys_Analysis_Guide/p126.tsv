@@ -1,0 +1,109 @@
+0.0935	0.5130	1.000	initiating a card or tape read or transmitting card	0.3801	0.0206
+0.0973	0.0865	1.000	Control Tables	0.1109	0.0103
+0.1117	0.5131	1.000	images, and	0.0960	0.0165
+0.1264	0.5301	1.000	2. Advising its successor program of changes in	0.3741	0.0132
+0.1279	0.0846	1.000	Every control table has the same format and uses the	0.4023	0.0117
+0.1424	0.5132	1.000	the buffer situation.	0.1541	0.0116
+0.1424	0.0846	1.000	same symbolism to specify a particular field in the	0.3853	0.0131
+0.1570	0.5132	1.000	The first responsibility is peculiar to the particular	0.3929	0.0145
+0.1570	0.0846	1.000	table. Its format and symbolism are shown in Figure	0.4041	0.0131
+0.1715	0.5132	1.000	functional program. The second is standard among	0.3910	0.0145
+0.1715	0.0827	1.000	67.	0.0282	0.0131
+0.1875	0.5132	1.000	all functional programs, and involves the passage of	0.3985	0.0146
+0.2020	0.5132	1.000	parameters to the queue of the successor program.	0.3891	0.0131
+0.2035	0.0865	1.000	Transfer of Control	0.1485	0.0102
+0.2166	0.5320	1.000	Consider operations on the phase 1 buffer in the	0.3609	0.0131
+0.2311	0.5150	1.000	online mode. The three programs involved are the	0.3853	0.0147
+0.2324	0.0865	1.000	All functional programs ultimately return control to	0.3910	0.0133
+0.2456	0.5132	1.000	card reader control, the buffer scan program, and	0.3853	0.0160
+0.2470	0.0846	1.000	their predecessor. For a given mode, at most three	0.4004	0.0133
+0.2602	0.5150	1.000	write tape control. For convenience of discussion,	0.3872	0.0132
+0.2615	0.0846	1.000	functional programs will be involved in a normal pass	0.4041	0.0133
+0.2761	0.5150	1.000	let these programs be represented by the symbols	0.3778	0.0118
+0.2761	0.0865	1.000	through the input program. However, any one of the	0.3947	0.0133
+0.2906	0.5188	1.000	CR, SC, and WT, respectively. Then CR must	0.3553	0.0132
+0.2921	0.0846	1.000	three may have been the one originally entered by a	0.3872	0.0117
+0.3050	0.5150	1.000	advise SC of cards read and available for scanning,	0.3854	0.0119
+0.3067	0.0846	1.000	pseudo-op request or I-O interrupt, and must be the	0.3947	0.0131
+0.3197	0.5132	1.000	and SC must advise WT of cards scanned and avail-	0.3910	0.0146
+0.3212	0.0865	1.000	one to give $RET.	0.1353	0.0116
+0.3342	0.0996	1.000	The functional programs use a scheme for passing	0.3816	0.0161
+0.3342	0.5132	1.000	able for writing, and WT must advise CR of buffer	0.3835	0.0161
+0.3488	0.5132	1.000	space (card positions) available for card reading.	0.3741	0.0146
+0.3503	0.0846	1.000	control to successor programs which insures proper	0.3966	0.0131
+0.3628	0.0864	1.000	flow back through predecessors and, ultimately,	0.3630	0.0167
+0.3633	0.5132	1.000	Control of the phase 1 buffer in online operation may	0.3985	0.0146
+0.3794	0.5132	1.000	be seen as a cyclic passage of parameters from one	0.3947	0.0131
+0.3794	0.0846	1.000	issuance of $RET. Multiple passes are also allowed	0.3966	0.0131
+0.3939	0.5132	1.000	program to the next as illustrated by the circle.	0.3628	0.0131
+0.3953	0.0846	1.000	around the three programs, resulting in multiple	0.3684	0.0116
+0.4099	0.0846	1.000	entries to the same program. The scheme consists	0.3910	0.0116
+0.4128	0.5639	1.000	CR	0.0188	0.0087
+0.4244	0.0846	1.000	simply of a table of return addresses and a pointer	0.3816	0.0116
+0.4390	0.0846	1.000	which (effectively) points to $RET when it reaches	0.3759	0.0132
+0.4448	0.6071	1.000	WT	0.0226	0.0116
+0.4535	0.0846	1.000	zero. An index register, symbolically designated	0.3759	0.0132
+0.4694	0.0865	1.000	VP, is initially loaded with XW, VPDB, 0. A suc-	0.3835	0.0118
+0.4824	0.5320	1.000	The function of the queue now becomes apparent.	0.3665	0.0133
+0.4839	0.0846	1.000	cessor program is entered with the linkage	0.3252	0.0118
+0.4970	0.5132	1.000	A parameter is passed by giving control to a program	0.4060	0.0147
+0.4985	0.1015	1.000	SIC, (VP); CB+, VP, VNX(VU)	0.2312	0.0131
+0.5115	0.5132	1.000	with the parameter specified for entry into its queue.	0.4023	0.0133
+0.5130	0.0846	1.000	or, in the event the table pointer, index VU, is one	0.3853	0.0118
+0.5261	0.5132	1.000	Similarly, the functions of the control table entries	0.3872	0.0146
+0.5261	0.0845	1.000	not permitted in the J field of a CB instruction, the	0.3855	0.0164
+0.5406	0.5150	1.000	VX, VX1, VX2S, VX2R, and VNX should now have	0.3797	0.0146
+0.5436	0.0846	1.000	linkage	0.0545	0.0102
+0.5552	0.5132	1.000	assumed significance. Figure 68 illustrates this	0.3703	0.0132
+0.5567	0.1015	1.000	SIC, (VP); CB+, VP, VNXT	0.2105	0.0131
+0.5697	0.5113	1.000	passage of parameters for both buffers in all modes,	0.4004	0.0146
+0.5712	0.0827	1.000	is used. VNXT is B, VNX(VU).	0.2387	0.0131
+0.5827	0.5132	1.000	using the following symbolisin for the functional pro-	0.4004	0.0161
+0.5858	0.1015	1.000	The result is the development of a table of return	0.3722	0.0116
+0.5974	0.5132	1.000	grams:	0.0602	0.0160
+0.6003	0.0846	1.000	addresses at VPDB. Return linkage then is	0.3289	0.0116
+0.6163	0.1034	1.000	CВ-, VP, -1.0(VP)	0.1466	0.0116
+0.6163	0.5508	1.000	Card reader program	0.1222	0.0146
+0.6177	0.7895	1.000	CR	0.0207	0.0102
+0.6294	0.7895	1.000	sC	0.0188	0.0116
+0.6308	0.5508	1.000	Job boundary scan program	0.1579	0.0116
+0.6424	0.7895	1.000	WT	0.0244	0.0116
+0.6433	0.5507	1.000	Write tape program	0.1130	0.0114
+0.6452	0.0845	1.000	Queues	0.0546	0.0105
+0.6555	0.5508	1.000	Read tape program	0.1128	0.0132
+0.6555	0.7895	1.000	RT	0.0226	0.0116
+0.6686	0.7895	1.000	ST	0.0207	0.0102
+0.6700	0.5508	1.000	Scan tape program	0.1109	0.0118
+0.6744	0.0846	1.000	Each functional program uses a queue. In normal	0.3759	0.0116
+0.6817	0.5526	1.000	Card request program (overlapped)	0.2011	0.0116
+0.6831	0.7914	1.000	Q	0.0113	0.0087
+0.6890	0.0846	1.000	flow, a program is entered with an entry for its	0.3609	0.0117
+0.6948	0.5526	1.000	Card request program (bypass).	0.1748	0.0116
+0.6948	0.7914	1.000	E	0.0113	0.0087
+0.7035	0.0827	1.000	queue specified. It then tries to process as many of	0.3966	0.0132
+0.7194	0.0846	1.000	the entries in the queue as it can.	0.2538	0.0103
+0.7194	0.5301	1.000	When a program receives an item for its queue,	0.3609	0.0132
+0.7324	0.1015	1.000	The length of the queues varies with program. An	0.3778	0.0118
+0.7339	0.5113	1.000	it stores it in the first available position in the queue.	0.4079	0.0118
+0.7470	0.0846	1.000	entry is a half-word, and is either a positive integer	0.3947	0.0118
+0.7485	0.5132	1.000	Then, if the program is not busy on a previous opera-	0.4060	0.0131
+0.7615	0.0846	1.000	or a negative address. A positive integer represents	0.4004	0.0133
+0.7630	0.5132	1.000	tion, the next parameter in the queue (not necessarily	0.4041	0.0131
+0.7761	0.0846	1.000	the number of card positions ready for processing by	0.3985	0.0133
+0.7776	0.5132	1.000	the one just entered) is removed and action based on	0.3929	0.0118
+0.7906	0.0827	1.000	that program in the buffer it uses. A negative address	0.4135	0.0132
+0.7921	0.5132	1.000	the parameter is started. If this action results in a	0.3910	0.0117
+0.8052	0.0808	1.000	indicates the logical end of cards (i. e., job boundary),	0.4154	0.0161
+0.8067	0.4981	1.000	change in the buffer situations, the succeeding pro-	0.4023	0.0131
+0.8212	0.5132	1.000	gram must be notified by an appropriate parameter	0.3853	0.0116
+0.8212	0.0827	1.000	and the location to which the program should branch	0.3910	0.0116
+0.8358	0.0827	1.000	when the entry comes up for processing.	0.3083	0.0116
+0.8358	0.5132	1.000	entry in its queue, and the process repeated.	0.3383	0.0131
+0.8503	0.5244	1.000	There are several situations in which a functional	0.3797	0.0116
+0.8648	0.0846	1.000	Parameter Flow	0.1222	0.0102
+0.8663	0.5113	1.000	program determines that a special action must be	0.3759	0.0131
+0.8808	0.5132	1.000	taken at a time which depends on the operation of its	0.3929	0.0116
+0.8953	0.0846	1.000	Each functional program has two basic responsibilities: successor. The program then may pass a negative	0.8139	0.0116
+0.9084	0.0977	1.000	1. Performance of its basic function, such as	0.3515	0.0131
+0.9099	0.5132	1.000	address to that program identifying the special action	0.4023	0.0116
+0.9491	0.0789	1.000	126	0.0226	0.0087

@@ -1,0 +1,101 @@
+0.1045	0.5188	1.000	changes within a library is important if more than	0.3778	0.0133
+0.1061	0.0865	1.000	Flag Symbols	0.1015	0.0131
+0.1206	0.5188	1.000	one operation is performed on a single name. A	0.3647	0.0117
+0.1352	0.0902	1.000	Table 10 shows flag symbols used by UPDATE-30.	0.3778	0.0131
+0.1352	0.5188	1.000	library may be updated only once per update run.	0.3684	0.0117
+0.1497	0.5376	1.000	The updating of a library requires four phases:	0.3534	0.0131
+0.1657	0.5338	1.000	1. Initialization - All control bits are set to zero,	0.3816	0.0131
+0.1758	0.0902	1.000	Generator Librarian	0.1541	0.0103
+0.1802	0.5188	1.000	the table of contents is fetched, and the library name	0.3985	0.0116
+0.1948	0.5188	1.000	is verified and stored in messages.	0.2669	0.0116
+0.2035	0.0883	1.000	The librarian section of UPDATE-30 deals with the	0.3835	0.0117
+0.2093	0.5338	1.000	2. Read-in of Changes - The control cards and	0.3590	0.0116
+0.2179	0.0883	1.000	maintenance of the four generator libraries:	0.3308	0.0133
+0.2238	0.5188	1.000	binary decks are read, loaded, and blocked on the	0.3778	0.0131
+0.2321	0.0863	1.000	LFORTRAN, LPASSONE, LPASSTWO, LSMACONE.	0.4119	0.0187
+0.2384	0.5169	1.000	new master file on the disk. Changes are made to	0.3816	0.0116
+0.2485	0.0865	1.000	It also automatically updates their tables of contents:	0.3985	0.0118
+0.2542	0.5150	1.000	the table of contents to reflect new record numbers	0.3853	0.0118
+0.2630	0.0865	1.000	TFORTRAN, TPASSONE, TPASSTWO, TSMACONE.	0.3985	0.0161
+0.2688	0.5169	1.000	within the file: size, number of entries, etc.. Error	0.4098	0.0133
+0.2776	0.0883	1.000	The libraries and their tables of contents each	0.3477	0.0118
+0.2833	0.5169	1.000	checking is done on the commands and logic to avoid	0.3929	0.0132
+0.2936	0.0883	1.000	occupy a type area on disk.	0.2049	0.0116
+0.2979	0.5169	1.000	duplication, illegal origin or size, etc. .	0.3045	0.0132
+0.3109	0.1015	1.000	Generator libraries are composed of variable length	0.3929	0.0133
+0.3124	0.5338	1.000	3. Merge of Old and New Libraries - At the end of	0.3853	0.0132
+0.3241	0.0827	1.000	blocked records, each generator being a record. They	0.4192	0.0174
+0.3270	0.4981	1.000	the change file (B card) the old library, minus any	0.3985	0.0161
+0.3400	0.0883	1.000	are blocked in memory image form, after being loadec	0.4041	0.0161
+0.3415	0.5113	1.000	deletions, is re-blocked after the new generators on	0.3985	0.0161
+0.3545	0.0883	1.000	at update time. In the related type area, the table of	0.3910	0.0133
+0.3561	0.5132	1.000	the disk. Old generators are re-numbered to reflect	0.4023	0.0146
+0.3677	0.0827	1.000	contents keeps track of the position of each record	0.3816	0.0160
+0.3721	0.5132	1.000	new positions.	0.1109	0.0131
+0.3836	0.0827	1.000	within the generator file and is used by compilers to	0.3966	0.0161
+0.3866	0.5320	1.000	4. Cleanup and Print-out - The new table of con-	0.3741	0.0116
+0.3953	0.0808	1.000	locate generators for expansion of FORTRAN and	0.3759	0.0174
+0.3997	0.5132	1.000	tents is written on the disk, the print-out of the	0.3609	0.0176
+0.4112	0.0827	1.000	MACRO statements.	0.1541	0.0161
+0.4142	0.5132	1.000	changes is made, and the table of contents is written	0.3985	0.0161
+0.4288	0.0996	1.000	Binary decks of generators to be added to a library,	0.3947	0.0161
+0.4288	0.5094	1.000	on $SPR. Appropriate changes are made to the master	0.4211	0.0161
+0.4433	0.0827	1.000	or to replace existing generators, follow a control	0.3797	0.0131
+0.4448	0.5132	1.000	update change dictionary, and control is returned to	0.3929	0.0146
+0.4548	0.0827	1.000	card in the change deck. Logical sequencing of	0.3609	0.0161
+0.4577	0.5150	1.000	HEDCTL.	0.0753	0.0162
+0.5464	0.0808	1.000	Table 10. Flag Symbols	0.1466	0.0147
+0.5669	0.0808	1.000	Symbol	0.0620	0.0174
+0.5696	0.1917	1.000	Set Means	0.0829	0.0179
+0.5712	0.5019	1.000	Control	0.0639	0.0174
+0.5985	0.0826	1.000	DSKBT	0.0547	0.0137
+0.5999	0.1935	1.000	Disk in use.	0.0923	0.0139
+0.6017	0.5038	1.000	Turned on before I-O call to DSK.	0.2556	0.0131
+0.6148	0.5038	1.000	Turned off by successful EOP.	0.2312	0.0161
+0.6262	0.0807	1.000	NMTBT	0.0641	0.0150
+0.6294	0.1936	1.000	New master tape being written.	0.2368	0.0146
+0.6294	0.5038	1.000	Turned on before I-O call to NMT.	0.2613	0.0146
+0.6429	0.5035	1.000	Turned off by successful EOP.	0.2317	0.0171
+0.6555	0.0827	1.000	CHTBT	0.0602	0.0161
+0.6570	0.1936	1.000	Change tape being read.	0.1805	0.0161
+0.6599	0.5038	1.000	Turned on before I-O call to CHT.	0.2575	0.0131
+0.6744	0.5056	1.000	Turned off by successful EOP.	0.2293	0.0132
+0.6830	0.1898	1.000	Card just read in change deck	0.2312	0.0176
+0.6860	0.0808	1.000	HEDBT	0.0583	0.0132
+0.6890	0.5056	1.000	Turned on in READ1 routine.	0.2180	0.0117
+0.7020	0.1917	1.000	was HED card (or EOF condition).	0.2613	0.0131
+0.7030	0.5055	1.000	Turned off by instructions which test it.	0.2973	0.0136
+0.7121	0.0808	1.000	EOFBT	0.0622	0.0177
+0.7150	0.1936	1.000	Change deck - END OF FILE	0.2162	0.0134
+0.7177	0.5055	1.000	Turned on in READ1 routine (or EE on	0.2878	0.0139
+0.7297	0.1917	1.000	condition.	0.0789	0.0145
+0.7339	0.5207	1.000	change tape).	0.0996	0.0118
+0.7485	0.5056	1.000	Turned off by instructions which test it.	0.2970	0.0118
+0.7573	0.0827	1.000	DSRBT	0.0564	0.0160
+0.7587	0.1917	1.000	Disk I-O was a read.	0.1598	0.0161
+0.7615	0.5056	1.000	Turned on in mainstream after all disk	0.2914	0.0118
+0.7776	0.5188	1.000	writing has been finished.	0.1955	0.0103
+0.7863	0.0789	1.000	IPLBT	0.0564	0.0160
+0.7863	0.1898	1.000	IPL main program or bootstrap	0.2425	0.0189
+0.7921	0.5038	1.000	Turned on before ENTRY or in IPL3 routine.	0.3383	0.0117
+0.8023	0.1898	1.000	is being loaded into the buffer.	0.2350	0.0160
+0.8067	0.5056	1.000	Turned off by instruction which tests it in	0.3102	0.0116
+0.8212	0.5207	1.000	ENTRY routine.	0.1203	0.0116
+0.8312	0.0808	1.000	BSPBT	0.0565	0.0163
+0.8314	0.1898	1.000	Bootstrap is being loaded into	0.2274	0.0174
+0.8358	0.5038	1.000	Turned on in IPL3.	0.1447	0.0116
+0.8457	0.1898	1.000	the buffer.	0.0866	0.0179
+0.8604	0.0808	1.000	FETBT	0.0602	0.0176
+0.8605	0.1917	1.000	A PROSA fetch has been made.	0.2368	0.0189
+0.8617	0.5036	1.000	Turned on in FETCHO.	0.1770	0.0163
+0.8781	0.5036	1.000	Turned off if "normal" fetch return.	0.2710	0.0146
+0.8909	0.0808	1.000	COMBT	0.0621	0.0161
+0.8939	0.1898	1.000	On if "COMM" in date card.	0.2124	0.0116
+0.8953	0.5038	1.000	Turned on when date card is read.	0.2575	0.0116
+0.9055	0.0789	1.000	VABIT	0.0564	0.0145
+0.9070	0.1917	1.000	On if check sum type area available.	0.2744	0.0131
+0.9099	0.5038	1.000	Turned on when check sum type area found.	0.3271	0.0116
+0.9182	0.0788	1.000	VTWSBT	0.0736	0.0182
+0.9185	0.1898	1.000	On if check sum only buffer entry.	0.2650	0.0191
+0.9244	0.5038	1.000	Turned on in END routine.	0.1992	0.0116
+0.9535	0.0752	1.000	240	0.0282	0.0160

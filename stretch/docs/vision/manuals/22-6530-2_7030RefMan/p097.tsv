@@ -1,0 +1,112 @@
+0.0581	0.1034	1.000	quotient overflow condition is produced and cor-	0.3929	0.0131
+0.0596	0.5395	1.000	The quotient exponent is the same as the dividend	0.3684	0.0131
+0.0727	0.1034	1.000	rected. The correction is accomplished by adding one	0.3910	0.0146
+0.0755	0.5226	1.000	exponent. Thus the quotient lies in the XEN range.	0.3853	0.0133
+0.0887	0.1034	1.000	to the adjusted intermediate dividend exponent and	0.3910	0.0147
+0.0889	0.5392	1.000	Divisor: Exponent in the XFN range	0.2749	0.0168
+0.1032	0.1034	1.000	placing a one in the high-order bit position of the	0.3929	0.0147
+0.1045	0.5395	1.000	Dividend: Exponent in the xFP, N or XEN range	0.3571	0.0146
+0.1191	0.1034	1.000	quotient fraction. Subsequently, 47	0.2726	0.0146
+0.1206	0.5376	1.000	The quotient exponent is the divisor exponent	0.3722	0.0146
+0.1206	0.3797	1.000	more quotient	0.1165	0.0131
+0.1352	0.3008	1.000	Also a one is added to the	0.1936	0.0103
+0.1352	0.5226	1.000	with the exponent sign reversed. Thus the quotient	0.3872	0.0161
+0.1352	0.1034	1.000	fraction bits are obtained.	0.1974	0.0117
+0.1497	0.1034	1.000	value of the Lzc.	0.1184	0.0116
+0.1503	0.5203	1.000	lies in the XFP range.	0.1511	0.0145
+0.1657	0.1203	1.000	The final result of the operation above is to pro-	0.3741	0.0146
+0.1672	0.5376	1.000	When either operand in division has EF of 1, the	0.3703	0.0132
+0.1817	0.5207	1.000	exponent of the result always has a propagated EF of I.	0.3853	0.0147
+0.1817	0.1034	1.000	duce a fully normalized quotient fraction when nor-	0.3910	0.0132
+0.1962	0.1015	1.000	malization is specified, except for conditions outlined	0.3910	0.0132
+0.2029	0.5204	1.000	INDICATORS	0.0813	0.0107
+0.2106	0.1034	1.000	below for operands in the XEP or XEN ranges. The re-	0.3910	0.0147
+0.2179	0.5357	1.000	Data Flags (TF, UF, VF). These indicators are set	0.3722	0.0161
+0.2282	0.1015	1.000	sult quotient exponent and fraction are placed in ac-	0.3910	0.0131
+0.2324	0.5207	1.000	according to the flag bits of the addressed operand.	0.3853	0.0147
+0.2427	0.1015	1.000	cumulator bits 0-59. The quotient sign is placed in	0.3910	0.0131
+0.2480	0.5221	1.000	They are temporary.	0.1512	0.0151
+0.2573	0.1015	1.000	bit position 4 of the sign byte register. If unnormalized	0.3910	0.0146
+0.2630	0.5357	1.000	To-Memory Operation (MOP). This indicator is	0.3703	0.0161
+0.2694	0.1013	1.000	operation was specified and the value in the Lzc is	0.3931	0.0184
+0.2744	0.5184	1.000	set to zero. It is temporary.	0.1983	0.0208
+0.2892	0.1015	1.000	greater than zero, the indicator partial field (PF) is set	0.3929	0.0132
+0.2936	0.5338	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). These in-	0.3722	0.0161
+0.3036	0.0996	1.000	to one. With unnormalized operation the result quo-	0.3929	0.0133
+0.3063	0.5186	1.000	dicators are set according to the quotient fraction as	0.3895	0.0199
+0.3197	0.1015	1.000	tient may or may not be normalized.	0.2594	0.0132
+0.3241	0.5169	1.000	it appears in the accumulator. They are temporary.	0.3759	0.0160
+0.3342	0.1184	1.000	The contents of uzc remain available for program	0.3741	0.0131
+0.3400	0.5338	1.000	Partial Field (PF). This indicator is turned on when	0.3722	0.0147
+0.3488	0.1015	1.000	use until the tzc is changed by integer multiplication,	0.3929	0.0146
+0.3561	0.5207	1.000	unnormalized operation is specified, if the left zeros	0.3853	0.0131
+0.3648	0.0996	1.000	LOAD TRANSIT, division or connective operations.	0.3534	0.0131
+0.3706	0.5188	1.000	counter (LzC) is greater than zero.	0.2406	0.0131
+0.3808	0.1184	1.000	Operand pre-normalization may cause an operand	0.3741	0.0131
+0.3866	0.5357	1.000	Zero Division (ZD). This indicator is turned on	0.3684	0.0131
+0.3950	0.0995	1.000	to go from the N range to the XFN range. Division	0.3911	0.0151
+0.3989	0.5187	1.000	when the divisor fraction is zero. In this event, the	0.3875	0.0171
+0.4112	0.1015	1.000	proceeds as described above except for the case when	0.3891	0.0147
+0.4172	0.5188	1.000	division does not take place. This indicator is perma-	0.3853	0.0147
+0.4258	0.0996	1.000	one operand is in the xeN range and the other is in	0.3910	0.0146
+0.4345	0.5188	1.000	nent.	0.0377	0.0089
+0.4418	0.1015	1.000	the N range with es of 0. For this case, if the divisor	0.3891	0.0131
+0.4476	0.5376	1.000	Exponent Range (XPFP, XPO, XPH, XPL,	0.3684	0.0176
+0.4578	0.0996	1.000	has a generated value in the XEN range, the quotient	0.3929	0.0131
+0.4621	0.5188	1.000	XPU). These indicators are set according to the ex-	0.3853	0.0161
+0.4724	0.0996	1.000	exponent has EF of 1, Es of 0 and EM of the exponent	0.3929	0.0146
+0.4767	0.5188	1.000	ponent range of the quotient, and are permanent.	0.3665	0.0146
+0.4867	0.0995	1.000	magnitude of the divisor. If the dividend has the	0.3911	0.0149
+0.4927	0.5338	1.000	Zero Multiply (ZMI). If on, this indicator will be	0.3722	0.0189
+0.5029	0.0977	1.000	generated value in the XEN range, the quotient expon-	0.3929	0.0147
+0.5073	0.5188	1.000	turned off, except for the case of a zero divisor.	0.3553	0.0146
+0.5188	0.0977	1.000	ent is the same as the dividend exponent. For both	0.3929	0.0133
+0.5247	0.5169	1.000	Reciprocal Divide (R/).	0.1748	0.0189
+0.5333	0.0977	1.000	situations the quotient fraction is developed normally	0.3929	0.0132
+0.5449	0.0975	1.000	and indicator settings are set in accordance with the	0.3932	0.0195
+0.5479	0.5188	1.000	The operand specified by the effective address, the	0.3872	0.0132
+0.5624	0.5168	1.000	dividend, is divided by the operand in the left half of	0.3893	0.0173
+0.5633	0.0976	1.000	rules for generated exponent flags.	0.2502	0.0158
+0.5785	0.5188	1.000	the accumulator, the divisor. The sign of the dividend	0.3872	0.0145
+0.5785	0.1147	1.000	When either or both of the operands are in the	0.3759	0.0145
+0.5930	0.5188	1.000	is modified by the sign modifiers prior to the division.	0.3872	0.0146
+0.5945	0.0996	1.000	XEP or XEN range prior to pre-normalization, the pre-	0.3891	0.0131
+0.6090	0.5188	1.000	The quotient exponent and fraction replace accu-	0.3853	0.0146
+0.6105	0.0977	1.000	normalization process follows the rules for unnormal-	0.3929	0.0132
+0.6235	0.5188	1.000	mulator bits 0-59. Accumulator bits 60-127 remain un-	0.3872	0.0131
+0.6250	0.0977	1.000	ized processing. This may result in unnormalized	0.3929	0.0145
+0.6403	0.5168	1.000	changed. The sign of the quotient replaces the accumu-	0.3874	0.0167
+0.6409	0.0996	1.000	quotient fractions. If the divisor fraction is zero, the	0.3910	0.0146
+0.6551	0.0958	1.000	operation is terminated regardless of the exponent and	0.3931	0.0166
+0.6555	0.5132	1.000	lator sign in bit position 4 of the sign byte register.	0.3910	0.0146
+0.6700	0.5320	1.000	The division process is the same as the process de-	0.3722	0.0176
+0.6700	0.0996	1.000	the zero divisor indicator is turned on. When the di-	0.3891	0.0131
+0.6824	0.5149	1.000	scribed in DIvIde with the exception of the interchange	0.3913	0.0198
+0.6845	0.0977	1.000	visor fraction is non-zero, exponent handling follows	0.3929	0.0161
+0.7006	0.5150	1.000	of the operands used for dividends and divisor.	0.3440	0.0161
+0.7020	0.0977	1.000	the following rules.	0.1429	0.0131
+0.7179	0.1786	1.000	Exponent in XEP or Nrange	0.2162	0.0118
+0.7206	0.5150	1.000	INDICATORS	0.0829	0.0137
+0.7324	0.1147	1.000	Dividend: Exponent in the XFP range	0.2763	0.0133
+0.7369	0.5301	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3741	0.0161
+0.7485	0.1147	1.000	The quotient exponent is the same as the exponent	0.3759	0.0131
+0.7515	0.5132	1.000	(MOP); Arithmetic Result (RLZ, RZ, RGZ, RN); Par-	0.3910	0.0161
+0.7630	0.0977	1.000	of the dividend. Thus the quotient lies in the XEP	0.3910	0.0131
+0.7674	0.5132	1.000	tial Field (PF); Zero Divisor (ZD); Exponent Range	0.3910	0.0160
+0.7820	0.0959	1.000	range.	0.0451	0.0102
+0.7848	0.5132	1.000	(ХPFP, ХРО, ХРH, XPL, XPU); Zero Multiply	0.3872	0.0161
+0.7936	0.1147	1.000	Divisor: Exponent in XFP range	0.2444	0.0131
+0.7964	0.5131	1.000	(ZM). These indicators are set as in DIVIDE.	0.3197	0.0160
+0.8096	0.1147	1.000	Dividend: Exponent in N or XEN range	0.2838	0.0131
+0.8169	0.5132	1.000	Store Root (SRT)	0.1203	0.0147
+0.8223	0.1127	1.000	The quotient exponent is the same as the divisor	0.3762	0.0168
+0.8387	0.5150	1.000	The square root of the operand in the left half of the	0.3891	0.0160
+0.8400	0.0959	1.000	exponent with the exponent sign reversed. Thus the	0.3929	0.0133
+0.8545	0.5132	1.000	accumulator is placed in the storage location specified	0.3891	0.0161
+0.8561	0.0977	1.000	quotient lies in the XEN range.	0.2143	0.0131
+0.8663	0.5132	1.000	by the effective address. The entire accumulator and	0.3891	0.0189
+0.8706	0.1805	1.000	Exponent in Nrange	0.1692	0.0131
+0.8706	0.1147	1.000	Divisor:	0.0602	0.0116
+0.8852	0.5132	1.000	its sign byte remain unchanged.	0.2350	0.0161
+0.8866	0.1147	1.000	Dividend: Exponent in the XFN range	0.2726	0.0116
+0.9230	0.0959	1.000	94 IBM 7030	0.1071	0.0102

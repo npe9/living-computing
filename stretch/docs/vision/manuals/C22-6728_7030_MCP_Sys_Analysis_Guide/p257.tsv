@@ -1,0 +1,61 @@
+0.0851	0.3268	1.000	Symbol	0.0627	0.0188
+0.0869	0.6540	1.000	_Content	0.0679	0.0151
+0.0872	0.1748	1.000	Bits	0.0395	0.0174
+0.1147	0.3289	1.000	SREELK	0.0696	0.0162
+0.1148	0.5150	1.000	This field indicates the numerical position of the	0.3628	0.0161
+0.1162	0.1767	1.000	8.57 - 8.63	0.0884	0.0162
+0.1321	0.5150	1.000	currently mounted tape reel in the sequence of reels	0.3910	0.0118
+0.1439	0.5132	1.000	for the tape unit. It is set by I-O assignment and altered	0.4248	0.0146
+0.1595	0.5150	1.000	by the receptor.	0.1223	0.0167
+0.1890	0.1109	1.000	THE FILE AREA TABLE	0.1898	0.0160
+0.2209	0.1128	1.000	A file area table exists for each IOD card, containing the information from the IOD card, and	0.6917	0.0131
+0.2355	0.1147	1.000	also containing information obtained from an interrupt received for the specific file. The file	0.6880	0.0131
+0.2470	0.1147	1.000	area tables are constructed by the Move routine in I-O assignment just before the Go phase of	0.6880	0.0147
+0.2630	0.1109	1.000	a program. File area tables exist for the MCP IOD cards. A file area table consists of seven	0.7030	0.0176
+0.2761	0.1109	1.000	words (Figure 140), and its format is as follows:	0.3665	0.0191
+0.3081	0.3271	1.000	Symbol	0.0620	0.0174
+0.3096	0.1748	1.000	Bits	0.0395	0.0160
+0.3096	0.6541	1.000	Content	0.0658	0.0131
+0.3367	0.1765	1.000	0.00 - 0.17	0.0905	0.0184
+0.3386	0.3289	1.000	SIODRN	0.0621	0.0133
+0.3387	0.5169	1.000	This field contains the IOD reference number, in binary,	0.4211	0.0147
+0.3532	0.5169	1.000	for the file area table. It is set by I-O assignment, and	0.4154	0.0132
+0.3691	0.5169	1.000	used by the receptor.	0.1598	0.0118
+0.3953	0.3271	1.000	SACTAD	0.0714	0.0160
+0.3966	0.1766	1.000	0.32 - 0.50	0.0885	0.0164
+0.3982	0.5188	1.000	This field contains the address of the calling sequence	0.4004	0.0118
+0.4127	0.5169	1.000	which caused the last actuation on this file. The field	0.3985	0.0118
+0.4273	0.5169	1.000	is set by the identifier and transmitted to the table of	0.3966	0.0131
+0.4418	0.5188	1.000	exits when an interrupt is unstacked.	0.2726	0.0131
+0.4679	0.1766	1.000	1.09 - 1.13	0.0903	0.0192
+0.4695	0.3289	1.000	SIOIND	0.0583	0.0145
+0.4724	0.5188	1.000	This field contains the I-O indicators after the receptor	0.4098	0.0102
+0.4869	0.5169	1.000	has processed an interrupt. It is set by the receptor	0.3947	0.0116
+0.5015	0.5188	1.000	and transmitted to the table of exits when an interrupt	0.3985	0.0116
+0.5160	0.5169	1.000	is unstacked.	0.0996	0.0102
+0.5418	0.1766	1.000	1.32 - 1.50	0.0904	0.0181
+0.5422	0.3289	1.000	SINTAD	0.0639	0.0160
+0.5451	0.5188	1.000	This field contains the address in the program at which	0.4079	0.0116
+0.5596	0.5169	1.000	interruption occurred for the I-O interrupt being	0.3609	0.0146
+0.5755	0.5188	1.000	unstacked. It is set by the receptor.	0.2726	0.0118
+0.6017	0.1767	1.000	1.57	0.0395	0.0174
+0.6017	0.3289	1.000	SEWAIL	0.0677	0.0160
+0.6045	0.5188	1.000	This indicator enables the $WAIT routine to not wait	0.3872	0.0103
+0.6191	0.5188	1.000	again on a file which has been reactuated in a fixup. It	0.4060	0.0132
+0.6336	0.5169	1.000	is set and tested and reset by the $WAIT routine.	0.3647	0.0132
+0.6623	0.1766	1.000	2.00 - 2.17	0.0886	0.0155
+0.6627	0.3308	1.000	STOELO	0.0658	0.0132
+0.6642	0.5169	1.000	This field contains the address of the table of exits	0.3778	0.0131
+0.6788	0.5169	1.000	presently attached to this file. It is set by I-O assign-	0.4079	0.0131
+0.6918	0.5169	1.000	ment, but may be altered by the $CHEX routine.	0.3590	0.0161
+0.7223	0.3308	1.000	SFDEN	0.0564	0.0118
+0.7224	0.5188	1.000	The file density is that density specified on the IOD card.	0.4229	0.0131
+0.7224	0.1805	1.000	2.27- 2.28	0.0846	0.0131
+0.7384	0.5169	1.000	It is set in the file area table by the I-O assignment	0.3853	0.0131
+0.7529	0.5188	1.000	routine and used by the actuator.	0.2425	0.0116
+0.7833	0.5508	1.000	01 - High	0.0827	0.0118
+0.7974	0.5694	1.000	- Illegal	0.0773	0.0128
+0.7980	0.5508	1.000	10	0.0207	0.0087
+0.8124	0.5508	1.000	11 - Low	0.0789	0.0088
+0.9390	0.6429	1.000	Appendix A - Symbolic I-O Control Tables	0.2481	0.0102
+0.9404	0.9135	1.000	257	0.0207	0.0087

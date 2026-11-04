@@ -1,0 +1,106 @@
+0.0624	0.0883	1.000	of a delay in issuing the READ instruction or because of	0.3910	0.0132
+0.0624	0.5000	1.000	4. STOPPING TEMPORARILY AND RESTARTING	0.3252	0.0118
+0.0770	0.0883	1.000	excessive load on the exchange, the feed clutch does not	0.3910	0.0131
+0.0799	0.5282	1.000	To stop the reader while it is operating, press the	0.3684	0.0161
+0.0930	0.0883	1.000	engage, and the next card is not fed through the read-	0.3910	0.0131
+0.0945	0.5038	1.000	stop key. The ready light will go out and the reader	0.3929	0.0146
+0.1076	0.0883	1.000	ing station within the current cycle. Consequently, the	0.3910	0.0146
+0.1105	0.5056	1.000	will stop. No indication concerning this interruption	0.3910	0.0132
+0.1235	0.0883	1.000	reader misses one whole card cycle.	0.2462	0.0131
+0.1264	0.5056	1.000	will be sent to the computer.	0.2068	0.0132
+0.1409	0.5226	1.000	To restart, press the start key. The ready light	0.3759	0.0132
+0.1409	0.1034	1.000	When reading of a number of cards is first initiated,	0.3759	0.0132
+0.1555	0.5056	1.000	will come on and the reader will resume the inter-	0.3929	0.0118
+0.1570	0.0883	1.000	the first card image is immediately transferred to the	0.3910	0.0131
+0.1715	0.0883	1.000	exchange, since it already appears in the card reader	0.3910	0.0145
+0.1715	0.5056	1.000	rupted operation without any intervention by the pro-	0.3910	0.0131
+0.1860	0.5056	1.000	gram. The channel signal indication caused by the	0.3910	0.0146
+0.1875	0.1372	1.000	The transfer of the contents of the second	0.3402	0.0116
+0.1875	0.0883	1.000	buffer.	0.0489	0.0131
+0.2020	0.0883	1.000	card, however, can have an indeterminate delay of	0.3910	0.0146
+0.2020	0.5056	1.000	depression of the start key will be presented to the	0.3910	0.0146
+0.2166	0.5056	1.000	computer upon the termination of the reAD operation.	0.3929	0.0160
+0.2179	0.0883	1.000	up to 60 milliseconds in addition to the usual delay	0.3910	0.0147
+0.2339	0.0883	1.000	within a card cycle, depending upon the time in the	0.3910	0.0132
+0.2412	0.5056	1.000	5. FEED CHECK LIGHT ON AND READER STOPPED.	0.3477	0.0118
+0.2485	0.0883	1.000	card feed cycle at which the instruction is given. From	0.3910	0.0146
+0.2587	0.5320	1.000	Remove all cards from the hopper.	0.2481	0.0131
+0.2645	0.0883	1.000	the third card on, the operation is synchronized and	0.3910	0.0131
+0.2733	0.5320	1.000	Remove the cause of the misfeeding.	0.2575	0.0131
+0.2789	0.0883	1.000	follows the timing as described above. If the feed	0.3911	0.0152
+0.2878	0.5301	1.000	Press the unload key to turn off the feed-check	0.3665	0.0146
+0.2951	0.0883	1.000	motor is stationary at the time a READ instruction is	0.3910	0.0131
+0.3036	0.5301	1.000	light and to remove any card left in the feed.	0.3402	0.0147
+0.3096	0.0883	1.000	issued, an additional delay of approximately 230 milli-	0.3910	0.0146
+0.3197	0.5282	1.000	Place it ahead of those removed from the hopper.	0.3703	0.0146
+0.3241	0.0865	1.000	seconds is encountered for starting and accelerating	0.3929	0.0160
+0.3358	0.5301	1.000	Replace the cards in the hopper.	0.2350	0.0145
+0.3415	0.0865	1.000	the motor. The motor is normally turned off by a	0.3929	0.0146
+0.3517	0.5301	1.000	Press the start key.	0.1353	0.0116
+0.3561	0.0902	1.000	timer if no READ instructions are issued for approxi-	0.3891	0.0146
+0.3712	0.0899	1.000	mately one minute.	0.1433	0.0155
+0.3735	0.5075	1.000	6. READ CHECK LIGHT ON	0.1898	0.0116
+0.3894	0.1053	1.000	The time required for the execution of each of the	0.3741	0.0147
+0.3909	0.5320	1.000	Since the read-check light is turned on by the pro-	0.3647	0.0146
+0.4055	0.5075	1.000	gram, its interpretation depends upon the meaning as-	0.3891	0.0146
+0.4055	0.0902	1.000	five cONTrOL instructions is between 62 and 117 micro-	0.3891	0.0118
+0.4200	0.0883	1.000	seconds, depending upon the time of the card reader	0.3910	0.0146
+0.4215	0.5075	1.000	signed to it by the program. The light may be turned	0.3892	0.0151
+0.4360	0.0902	1.000	clock at which the instruction is given. This time does	0.3891	0.0131
+0.4375	0.5075	1.000	on to indicate that the built-in checking circuits have	0.3910	0.0131
+0.4506	0.0902	1.000	not depend on whether the operation is superfluous or	0.3891	0.0146
+0.4520	0.5075	1.000	detected uncorrectable errors in the last card read dur-	0.3910	0.0116
+0.4666	0.5056	1.000	ing the execution of the preceding read instruction,	0.3929	0.0146
+0.4695	0.0902	1.000	not.	0.0263	0.0087
+0.4822	0.5074	1.000	or the program has found the data to be incorrect.	0.3667	0.0152
+0.4839	0.1053	1.000	The above execution times do not include the in-	0.3759	0.0118
+0.4985	0.0883	1.000	struction processing time in the exchange, but only	0.3910	0.0146
+0.4985	0.5263	1.000	Whenever the unit is stopped because of data errors	0.3741	0.0146
+0.5130	0.5094	1.000	discovered by the card reader, the card causing the	0.3891	0.0146
+0.5145	0.0902	1.000	the interval between the time instructions are received	0.3891	0.0116
+0.5291	0.5094	1.000	interruption is the last card fed to the stacker.	0.3346	0.0146
+0.5305	0.0883	1.000	at the unit and the time at which the unit signals to	0.3929	0.0131
+0.5451	0.0902	1.000	the exchange the completion of the operation.	0.3440	0.0146
+0.5581	0.5094	1.000	7. RESERVED LIGHT	0.1447	0.0131
+0.5755	0.5338	1.000	This light is defined entirely by the program. When	0.3647	0.0133
+0.5887	0.0902	1.000	Manual Operating Procedure	0.2124	0.0132
+0.5915	0.5094	1.000	the reserved light is on, cards should be loaded only	0.3891	0.0131
+0.6061	0.5094	1.000	as required by the program currently using the reader.	0.3891	0.0146
+0.6118	0.0902	1.000	1. LOADING CARDS	0.1335	0.0118
+0.6199	0.5818	0.300	of a ic ot astienet to rei ualy asigncd	0.3156	0.0795
+0.6221	0.5094	1.000	When the reserved light is off, the program has finished	0.3891	0.0131
+0.6294	0.1147	1.000	Place the cards in the hopper.	0.2143	0.0131
+0.6366	0.5094	1.000	the job to which the reader was previously assigned,	0.3910	0.0146
+0.6453	0.1128	1.000	Press the start key.	0.1372	0.0131
+0.6526	0.5075	1.000	and the reader may be assigned to a new task.	0.3308	0.0147
+0.6685	0.5226	1.000	Reading of a file of cards is accomplished as follows.	0.3759	0.0161
+0.6700	0.0883	1.000	2. RELOADING	0.1053	0.0118
+0.6845	0.5094	1.000	Cards are loaded and depression of the start key causes	0.3910	0.0146
+0.6875	0.1128	1.000	If the hopper is not completely empty, add the	0.3684	0.0146
+0.6991	0.5094	1.000	ready and channel signal conditions to be set. If a feed	0.3891	0.0146
+0.7035	0.0902	1.000	new cards to those in the hopper.	0.2331	0.0145
+0.7151	0.5075	1.000	check prevents ready, the channel signal is not set.	0.3910	0.0161
+0.7209	0.1109	1.000	If the hopper has become empty, wait until the	0.3703	0.0161
+0.7311	0.5075	1.000	Channel signal should be recognized by the program	0.3929	0.0160
+0.7369	0.0865	1.000	last card is stacked and the reader stops with the out-	0.3947	0.0146
+0.7456	0.5075	1.000	as a signal to copy control word. If the reader is ready,	0.3910	0.0160
+0.7515	0.0883	1.000	of-material light on. Then proceed as in 1. After the	0.3929	0.0161
+0.7615	0.5075	1.000	the reserved light is turned on and reading of the file	0.3929	0.0146
+0.7657	0.0882	1.000	out-of-material status has been reached, reading of any	0.3931	0.0202
+0.7776	0.5075	1.000	begins.	0.0526	0.0145
+0.7820	0.0883	1.000	additional cards requires that a new READ instruction	0.3929	0.0160
+0.7936	0.5263	1.000	Channel not ready reject, after a normal EoP, indi-	0.3741	0.0131
+0.7979	0.0883	1.000	be issued.	0.0753	0.0147
+0.8081	0.5075	1.000	cates that the operator has stopped the reader before	0.3929	0.0161
+0.8241	0.5075	1.000	the hopper is empty. End exception with EOP indi-	0.3929	0.0160
+0.8241	0.0902	1.000	3. EMPTYING STACKER	0.1635	0.0102
+0.8387	0.5075	1.000	cates the hopper is empty or the stacker is full (out-of-	0.3929	0.0160
+0.8415	0.1109	1.000	If the reader stops with the out-of-material light	0.3722	0.0131
+0.8545	0.5075	1.000	material condition) and operation is ended. The start	0.3929	0.0146
+0.8561	0.0902	1.000	on, check to see if the stacker is full. If so, remove	0.3910	0.0131
+0.8706	0.5075	1.000	after operator stop, or out-of-material stop, turns on	0.3929	0.0146
+0.8721	0.0883	1.000	cards and press the start key. In order to continue the	0.3929	0.0161
+0.8852	0.5075	1.000	channel signal. Ready can be treated as the initial	0.3929	0.0161
+0.8881	0.0883	1.000	operation, a new READ instruction must be issued.	0.3647	0.0146
+0.9244	0.7556	1.000	External Units	0.0940	0.0116
+0.9244	0.8778	1.000	141	0.0207	0.0116

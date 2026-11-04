@@ -1,0 +1,59 @@
+0.0712	0.0846	1.000	programmer can restore the original MCP interrupt	0.3985	0.0189
+0.0727	0.5169	1.000	Note that the following sequence of macro-instructions	0.4135	0.0116
+0.0872	0.0846	1.000	table during execution. Control is passed to the return	0.4135	0.0161
+0.0872	0.5620	1.000	MTIME, A. (I)	0.1034	0.0146
+0.1017	0.5620	1.000	MCOMM, FWA. (I), 1.	0.1673	0.0146
+0.1017	0.0846	1.000	slot in the $FIXUP calling sequence when all replace-	0.4079	0.0131
+0.1148	0.0846	1.000	ments to and from the interrupt table have been	0.3684	0.0131
+0.1163	0.5188	1.000	will cause the current reading of the time clock to be	0.4004	0.0116
+0.1277	0.0845	1.000	completed.	0.0885	0.0179
+0.1308	0.5188	1.000	typed on the console typewriter, assuming that A. (1)	0.3947	0.0131
+0.1453	0.5188	1.000	and FWA. (I) specify the same address.	0.2970	0.0131
+0.1715	0.5188	1.000	Set Interval Timer Pseudo-Operation ($SIT): The	0.3778	0.0161
+0.1875	0.5188	1.000	interval timer measures elapsed time over rela-	0.3703	0.0116
+0.1933	0.0846	1.000	Timing Operations	0.1410	0.0146
+0.2020	0.5188	1.000	tively short intervals. It can be set to any time,	0.3703	0.0131
+0.2166	0.5207	1.000	and a TS interrupt occurs when the time period has	0.3853	0.0116
+0.2311	0.5207	1.000	ended. The value of the interval timer occupies bit	0.3910	0.0131
+0.2324	0.0846	1.000	Reading the Time Clock Pseudo-Operation ($TIME):	0.3966	0.0147
+0.2456	0.5207	1.000	positions 0-18 of word 1 in the 7030 special registers.	0.3853	0.0131
+0.2468	0.0864	1.000	$TIME will read the time clock; adjust the reading by	0.4023	0.0138
+0.2602	0.5414	1.000	To simplify the problem of accessing the interval	0.3741	0.0147
+0.2602	0.0846	1.000	a predetermined calibration constant; convert the	0.3741	0.0147
+0.2747	0.5226	1.000	timer, which is permanently protected, MCP pro-	0.3778	0.0147
+0.2761	0.0846	1.000	result into hours, minutes, and seconds; and transmit	0.4135	0.0161
+0.2906	0.5207	1.000	vides $SIT. Through use of $SIT, the programmer	0.3872	0.0132
+0.2906	0.0846	1.000	this information, in an edited form to a requested	0.3778	0.0161
+0.3052	0.0846	1.000	problem program location. The macro-instruction	0.3835	0.0161
+0.3052	0.5226	1.000	can transmit any 19-bit value from core storage to	0.3835	0.0118
+0.3168	0.1297	1.000	MTIME,A.(D)	0.1053	0.0190
+0.3197	0.5207	1.000	the interval timer. The macro-instruction	0.3252	0.0132
+0.3342	0.0846	1.000	is expanded to the calling sequence	0.2650	0.0146
+0.3473	0.5188	1.000	is expanded to the calling sequence	0.2669	0.0133
+0.3474	0.1297	1.000	B,$MСР	0.0695	0.0160
+0.3604	0.5658	1.000	B,$МСР	0.0696	0.0176
+0.3634	0.1297	1.000	,$TIME	0.0620	0.0160
+0.3750	0.5639	1.000	,$SIT	0.0489	0.0189
+0.3794	0.1297	0.500	,A.(I)	0.0470	0.0145
+0.3910	0.5639	1.000	,A.(D)	0.0508	0.0160
+0.3938	0.1297	1.000	(return)	0.0621	0.0132
+0.4082	0.0845	1.000	where:	0.0547	0.0136
+0.4200	0.1090	1.000	A. (I) is the full word (18 bit) address to which	0.3647	0.0161
+0.4200	0.5207	1.000	The 19-bit value at A. (I) (bits 0-18) is stored into	0.3759	0.0146
+0.4340	0.5206	1.000	the interval timer.	0.1430	0.0157
+0.4345	0.1071	1.000	the edited reading is transmitted. The edited read-	0.3891	0.0176
+0.4506	0.5395	1.000	Note: To take advantage of the TS interrupt, the	0.3722	0.0146
+0.4506	0.1071	1.000	ing will consist of eight IQS-coded characters and	0.3778	0.0161
+0.4651	0.1071	1.000	will occupy A. (I) in the format:	0.2387	0.0161
+0.4811	0.1297	1.000	.00 -.15 Hours	0.1241	0.0147
+0.4955	0.1729	1.000	• 23 Colon	0.0772	0.0134
+0.4956	0.1316	1.000	.16-	0.0432	0.0131
+0.5067	0.5243	1.000	return slot in the $SIT calling sequence, when the	0.3725	0.0178
+0.5083	0.1728	1.000	.39 Minutes	0.0942	0.0155
+0.5102	0.1316	1.000	.24-	0.0432	0.0116
+0.5203	0.5244	1.000	interval timer has been set and the timing begins	0.3665	0.0161
+0.5247	0.1316	1.000	.40 -	0.0414	0.0132
+0.5247	0.1729	1.000	.47 Colon	0.0789	0.0132
+0.5359	0.5206	1.000	immediately.	0.1074	0.0169
+0.5392	0.1297	1.000	•48 -.63 Seconds	0.1372	0.0145
+0.9201	0.0883	1.000	28	0.0169	0.0073

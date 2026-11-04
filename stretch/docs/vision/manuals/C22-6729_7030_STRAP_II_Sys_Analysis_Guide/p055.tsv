@@ -1,0 +1,94 @@
+0.0856	0.8571	1.000	VALUE	0.0603	0.0162
+0.1349	0.5243	1.000	VMOVE	0.0622	0.0165
+0.1352	0.1034	1.000	PURPOSE	0.0733	0.0102
+0.1642	0.1034	1.000	VALUE evaluates a coded expression	0.2726	0.0116
+0.1657	0.5282	1.000	On Entry	0.0658	0.0116
+0.1788	0.5395	1.000	1. The calling sequence is:	0.2105	0.0146
+0.1788	0.1184	1.000	VSKIP skips over a coded expression.	0.2801	0.0131
+0.1933	0.1202	1.000	VDIMEN evaluates a dimension statement.	0.3084	0.0132
+0.1933	0.5263	1.000	LVI, 15, $+2: B, VMOVE	0.1917	0.0161
+0.2078	0.1184	1.000	VMOVE moves a coded expression.	0.2613	0.0131
+0.2093	0.5263	1.000	Normal Return	0.1109	0.0116
+0.2224	0.5395	1.000	2. The index word, Valinx, locates the first bit	0.3609	0.0146
+0.2332	0.5241	1.000	of the coded expression.	0.1832	0.0204
+0.2382	0.1015	1.000	LINKAGE	0.0734	0.0119
+0.2515	0.5414	1.000	3. The index word, Vmovex, contains the location	0.3778	0.0161
+0.2674	0.1015	1.000	VSKIP	0.0489	0.0132
+0.2674	0.5263	1.000	where the expression is to be moved.	0.2744	0.0116
+0.2979	0.1034	1.000	On Entry	0.0658	0.0118
+0.2979	0.5263	1.000	On Exit	0.0583	0.0088
+0.3109	0.5414	1.000	1. After the expression has been moved, Valinx	0.3647	0.0133
+0.3241	0.5244	1.000	and Vmovex will be updated accordingly.	0.3026	0.0160
+0.3270	0.1184	1.000	1. The calling sequence is:	0.2068	0.0118
+0.3415	0.1992	1.000	LVI, 15, $+2; B, VSKIP	0.1786	0.0146
+0.3415	0.5395	1.000	2. If the using program has turned on bit, Veundf.	0.3759	0.0131
+0.3545	0.5244	1.000	VMOVE also will have made a symbol table entry for	0.3929	0.0133
+0.3561	0.1184	1.000	2. The index word Valinx locates the first bit of	0.3590	0.0118
+0.3691	0.5244	1.000	any undefined symbol encountered in the coded	0.3459	0.0146
+0.3706	0.1034	1.000	the coded expression.	0.1598	0.0117
+0.3847	0.5243	1.000	expression.	0.0904	0.0140
+0.4006	0.1032	1.000	On Exit	0.0567	0.0114
+0.4112	0.5244	1.000	VALUE	0.0622	0.0177
+0.4288	0.1165	1.000	1. Valinx will be updated to locate the first bit	0.3515	0.0161
+0.4433	0.5244	1.000	On Entry	0.0677	0.0146
+0.4448	0.1015	1.000	after the coded expression.	0.2030	0.0116
+0.4578	0.1165	1.000	2. If the using program has turned on bit, Veundf,	0.3759	0.0174
+0.4724	0.1015	1.000	VSKIP also will have made a symbol table entry for	0.3816	0.0161
+0.4724	0.5376	1.000	1. The calling sequence is:	0.2105	0.0146
+0.4869	0.1015	1.000	any undefined symbol encountered in the coded	0.3440	0.0146
+0.4869	0.5244	1.000	LVI, 15, $t2: B, VALUE	0.1898	0.0161
+0.5029	0.5244	1.000	B, a fix-up subroutine	0.1673	0.0147
+0.5029	0.8064	1.000	@break return	0.1090	0.0132
+0.5042	0.1033	1.000	expression.	0.0865	0.0120
+0.5174	0.5244	1.000	Normal Return	0.1128	0.0132
+0.5320	0.5395	1.000	2. The index word Valinx locates the first bit of	0.3628	0.0145
+0.5334	0.1015	1.000	VDIMEN	0.0658	0.0131
+0.5464	0.5244	1.000	the coded expression.	0.1617	0.0147
+0.5620	0.1032	1.000	On Entry	0.0661	0.0126
+0.5624	0.5414	1.000	3. Bit Vcbv = 1 if VALUE is not to attempt to	0.3703	0.0146
+0.5770	0.6786	1.000	get value and index information.	0.2368	0.0131
+0.5915	0.1184	1.000	1. The calling sequence is:	0.2049	0.0131
+0.5915	0.5677	1.000	Bit Vebsx = 1 if VALUE is not to attempt to	0.3440	0.0146
+0.6061	0.6786	1.000	get S/X type information.	0.1898	0.0146
+0.6206	0.5677	1.000	Bit Vebdim = 1 if VALUE is not to attempt to	0.3440	0.0161
+0.6206	0.1541	1.000	LVI, 15, $+2: B, VDIMEN	0.1992	0.0146
+0.6352	0.1560	1.000	B, a fix-up subroutine	0.1635	0.0131
+0.6352	0.3647	1.000	@not evaluated	0.1090	0.0131
+0.6366	0.6786	1.000	get dimension information.	0.1974	0.0131
+0.6497	0.5677	1.000	Bit Vebdds = 1 if VALUE is not to attempt to	0.3440	0.0161
+0.6497	0.3835	1.000	exit	0.0282	0.0116
+0.6639	0.3646	1.000	@not evaluated	0.1092	0.0152
+0.6657	0.1523	1.000	Normal Return	0.1128	0.0116
+0.6657	0.6767	1.000	get dds information.	0.1523	0.0131
+0.6817	0.3835	1.000	exit	0.0282	0.0087
+0.6946	0.5244	1.000	On Exit	0.0584	0.0119
+0.6948	0.1241	1.000	2. $1 locates the first bit of the dimension	0.3177	0.0116
+0.7078	0.5376	1.000	1. If while attempting to do its job, VALUE dis-	0.3647	0.0161
+0.7105	0.1033	1.000	statement.	0.0772	0.0107
+0.7238	0.5244	1.000	covers that a symbol table entry is lacking needed	0.3722	0.0116
+0.7369	0.5226	1.000	information, VALUE will exit to the break exit and	0.3759	0.0146
+0.7515	0.5226	1.000	provide the using program with the following infor-	0.3797	0.0161
+0.7525	0.1033	1.000	On Exit	0.0566	0.0110
+0.7674	0.5226	1.000	mation:	0.0602	0.0131
+0.7805	0.5808	1.000	$1 will locate the function part of the symbol	0.3383	0.0160
+0.7805	0.1184	1.000	1. If the dimension statement was evaluated, $1	0.3571	0.0131
+0.7834	0.5545	1.000	a.	0.0301	0.0116
+0.7964	0.1034	1.000	contains the location of the product of the dimensions.	0.3947	0.0133
+0.7979	0.5865	1.000	table entry causing the trouble.	0.2368	0.0132
+0.8096	0.1184	1.000	2. If the dimension statement could not be evalu-	0.3647	0.0131
+0.8104	0.6729	1.000	= 1 if value and index informa-	0.2407	0.0144
+0.8106	0.5544	1.000	b. Bit Vnbv	0.1017	0.0154
+0.8255	0.6974	1.000	tion is needed.	0.1128	0.0147
+0.8270	0.1015	1.000	ated, $1 still locates the first bit of the dimension	0.3703	0.0118
+0.8400	0.5883	1.000	Bit Vnbsx = 1 if S/Xtype information is	0.3139	0.0161
+0.8430	0.1015	1.000	statement.	0.0789	0.0087
+0.8545	0.1147	1.000	3. If the using program has turned on bit Veundf,	0.3703	0.0161
+0.8559	0.6973	1.000	needed.	0.0603	0.0149
+0.8706	0.5883	1.000	Bit Vnbdim = 1 if dimension information is	0.3252	0.0146
+0.8706	0.1015	1.000	VDIMEN also will have made a symbol table entry for	0.3966	0.0146
+0.8836	0.1015	1.000	any undefined symbol encountered in the coded	0.3440	0.0132
+0.8851	0.6973	1.000	needed.	0.0583	0.0147
+0.8997	0.5883	1.000	Bit Vnbdds = 1 if dds information is needed.	0.3365	0.0145
+0.9012	0.1034	1.000	expression.	0.0865	0.0102
+0.9375	0.8346	1.000	VALUE	0.0432	0.0116
+0.9390	0.9004	1.000	55	0.0169	0.0102

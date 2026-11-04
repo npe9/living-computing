@@ -1,0 +1,55 @@
+0.0756	0.2914	1.000	Symbol	0.0639	0.0174
+0.0756	0.1372	1.000	Bits	0.0414	0.0174
+0.0785	0.6222	1.000	Content	0.0620	0.0145
+0.1076	0.4831	1.000	or selected to the channel. The select indicator is set	0.4041	0.0116
+0.1221	0.4831	1.000	originally by the initializing program and later by the	0.3947	0.0116
+0.1381	0.4812	1.000	actuator routines.	0.1353	0.0102
+0.1627	0.1391	1.000	• 40	0.0320	0.0176
+0.1628	0.2932	1.000	SVER	0.0470	0.0160
+0.1672	0.4812	1.000	0 - Verified	0.1015	0.0102
+0.1817	0.4831	1.000	1 - Not verified	0.1259	0.0102
+0.2106	0.4831	1.000	This indicator is found in the unit status table of a multi-	0.4211	0.0118
+0.2252	0.4812	1.000	unit channel. It indicates whether a tape label has been	0.4135	0.0133
+0.2397	0.4812	1.000	verified on a particular unit or not. The verify indicator	0.4229	0.0133
+0.2542	0.4793	1.000	is turned on by I-O assignment and sometimes by the	0.3966	0.0147
+0.2688	0.4793	1.000	I-O change command and special assignment. It is	0.3816	0.0146
+0.2833	0.4793	1.000	tested and turned off by the actuator.	0.2763	0.0146
+0.3080	0.2913	1.000	SSEOP	0.0546	0.0162
+0.3096	0.1391	1.000	•46	0.0320	0.0160
+0.3139	0.4812	1.000	0 - Allow EOP	0.1203	0.0103
+0.3285	0.4812	1.000	1 - Suppress EOP	0.1447	0.0103
+0.3576	0.4793	1.000	This indicator exists in the channel status table of a	0.3872	0.0161
+0.3706	0.4793	1.000	single unit channel, and in the unit status table of a	0.3835	0.0161
+0.3852	0.4793	1.000	multi-unit channel. It shows that the I-O operation has	0.4117	0.0161
+0.3997	0.4793	1.000	been requested in the SEOP mode. If the operation is	0.4023	0.0176
+0.4142	0.4793	1.000	terminated with an EOP, no indication will be given to	0.4041	0.0176
+0.4288	0.5489	1.000	The indicator is set by the identifier and	0.3120	0.0161
+0.4323	0.4809	1.000	the user.	0.0700	0.0102
+0.4448	0.4793	1.000	tested by the receptor.	0.1729	0.0146
+0.4709	0.2914	1.000	SCNSSG	0.0620	0.0145
+0.4738	0.1391	1.000	•47	0.0282	0.0131
+0.4752	0.4793	1.000	0 - No console signal	0.1711	0.0133
+0.4897	0.4793	1.000	1 - Console signal	0.1504	0.0133
+0.5188	0.4793	1.000	This indicator exists in the unit status table of a multi-	0.4098	0.0146
+0.5333	0.4793	1.000	unit channel. It is set by the conceptor and is tested by	0.4135	0.0161
+0.5479	0.4793	1.000	the actuator READ routine.	0.2049	0.0176
+0.5756	0.1372	1.000	.49	0.0301	0.0145
+0.5770	0.2914	1.000	SUNDENS	0.0752	0.0116
+0.5785	0.4812	1.000	0 - High	0.0733	0.0116
+0.5928	0.4812	1.000	1- Low	0.0697	0.0106
+0.6221	0.4793	1.000	This indicator exists in the unit status table of a multi-	0.4098	0.0146
+0.6352	0.4774	1.000	unit channel. It reflects the current density setting of	0.4060	0.0176
+0.6512	0.4774	1.000	that unit, if applicable. It is set by the initializing pro-	0.4173	0.0174
+0.6657	0.4774	1.000	gram to high density, and altered thereafter by the	0.3797	0.0161
+0.6817	0.4793	1.000	actuator. It is also tested by the actuator.	0.3177	0.0116
+0.7093	0.2914	1.000	SELG	0.0451	0.0116
+0.7093	0.1391	1.000	.50	0.0263	0.0116
+0.7106	0.4793	1.000	0 - No erase long gap operation	0.2462	0.0118
+0.7252	0.4793	1.000	1 - Erase long gap operation	0.2237	0.0118
+0.7542	0.4812	1.000	This indicator exists in the unit status table of a multi-	0.4060	0.0118
+0.7685	0.4792	1.000	unit channel. It indicates whether or not an erase long	0.4063	0.0150
+0.7848	0.4793	1.000	gap operation, which is not a setup operation, has been	0.4098	0.0131
+0.7994	0.4793	1.000	requested by an $ELG pseudo-op. This indicator is set	0.4135	0.0117
+0.8139	0.4793	1.000	by the actuator, and tested and reset by the actuator	0.3872	0.0131
+0.8285	0.4793	1.000	($Write Routine Only).	0.1673	0.0116
+0.9244	0.0714	1.000	253	0.0263	0.0116

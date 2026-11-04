@@ -1,0 +1,104 @@
+0.0653	0.4923	1.000	The entry in the address field of the syn statement	0.3819	0.0185
+0.0697	0.0677	1.000	In the following example,	0.1936	0.0161
+0.0827	0.4756	1.000	is converted to binary and inserted right justified in	0.3985	0.0147
+0.0872	0.3045	1.000	,4), 4	0.0489	0.0161
+0.0872	0.1391	1.000	IDATA DDI(DU, 4,	0.1692	0.0161
+0.0988	0.4756	1.000	a 24-bit field in the symbol table. In this process, sYn	0.3985	0.0161
+0.1032	0.2105	1.000	LI, IDATA	0.0883	0.0160
+0.1148	0.4774	1.000	is similar to DDI, in that neither pseudo operation com-	0.3966	0.0131
+0.1235	0.0526	1.000	the converted field created in the symbol table is	0.3647	0.0146
+0.1290	0.4773	1.000	piles space in storage. SYN statements may have their	0.3968	0.0164
+0.1424	0.1485	1.000	000000000000000000000100	0.2011	0.0102
+0.1453	0.4774	1.000	own data description; any dds that appears in a sYN	0.3966	0.0147
+0.1599	0.4756	1.000	is attached to the symbol in the name field, but in no	0.3985	0.0147
+0.1612	0.0526	1.000	while the 24-bit address field of the Load Immediate	0.4004	0.0118
+0.1743	0.4774	1.000	way affects the conversion of the entry in the address	0.3968	0.0163
+0.1773	0.0545	1.000	instruction will be compiled as follows:	0.2857	0.0131
+0.1903	0.4774	1.000	field. When a 7030 instruction references the symbolic	0.3966	0.0146
+0.1948	0.1504	1.000	010000000000000000000000	0.1992	0.0116
+0.2064	0.4774	1.000	name of a syn statement, the dds attached to that	0.3985	0.0131
+0.2136	0.0545	1.000	If the Load Immediate instruction had contained an	0.3985	0.0117
+0.2209	0.4774	1.000	symbol is invoked as in DD. If no dds is given in a sYN	0.3966	0.0146
+0.2311	0.0545	1.000	overruling dds, such as	0.1692	0.0131
+0.2369	0.4756	1.000	statement, none is attached to the symbolic name.	0.4004	0.0146
+0.2485	0.1654	1.000	LI(DU, 8, 4), IDATA	0.1692	0.0146
+0.2515	0.4774	1.000	Then a dds must be explicitly written in a 7030 in-	0.3985	0.0146
+0.2674	0.4774	1.000	struction that references a symbol defined by such a	0.3966	0.0147
+0.2688	0.0545	1.000	the address field, after compilation would contain the	0.3985	0.0133
+0.2836	0.0541	1.000	following:	0.0743	0.0123
+0.2848	0.4774	1.000	SYN statement.	0.1071	0.0088
+0.2907	0.1485	1.000	000001000000000000000000	0.1992	0.0116
+0.2979	0.4925	1.000	Index registers may be attached to the expression	0.3816	0.0146
+0.3108	0.4773	1.000	appearing in the address field of a syn statement.	0.3987	0.0169
+0.3109	0.0545	1.000	If a signed use mode is given, such as	0.2688	0.0147
+0.3255	0.4756	1.000	Thus, in the sxn statement:	0.2049	0.0176
+0.3299	0.1654	1.000	LI (D, 8, 4), - IDATA	0.1673	0.0161
+0.3459	0.6147	1.000	A SYN, B ($3)	0.1203	0.0147
+0.3488	0.0526	1.000	then the symbol table entry would be	0.2726	0.0161
+0.3677	0.1504	1.000	000000000000000000000100	0.1992	0.0116
+0.3677	0.4756	1.000	the index register specitication it attached to the ad-	0.3985	0.0132
+0.3821	0.4774	1.000	dress expression, so that, the 7030 instruction	0.3365	0.0118
+0.3866	0.0545	1.000	and the instruction address field would be compiled as	0.3985	0.0146
+0.3993	0.6352	1.000	+(N), A	0.0755	0.0167
+0.4020	0.0525	1.000	follows:	0.0605	0.0114
+0.4084	0.1485	1.000	010010000000000000000000	0.2011	0.0116
+0.4142	0.4737	1.000	is synonymous with	0.1485	0.0161
+0.4302	0.0677	1.000	If the length of the converted data entry is greater	0.3853	0.0161
+0.4316	0.6222	1.000	+(N), B($3)	0.1053	0.0162
+0.4462	0.0564	1.000	than the field length specified, high order bits (trom	0.3947	0.0117
+0.4520	0.4737	1.000	If an index register is specified in the principal ad-	0.4004	0.0160
+0.4599	0.0545	1.000	the left) are truncated before insertion into the ad-	0.3967	0.0119
+0.4679	0.4774	1.000	dress field of the instruction proper, it overrules any	0.3966	0.0147
+0.4752	0.0545	1.000	dress field. Only the decimal or binary use modes,	0.3985	0.0147
+0.4839	0.4774	1.000	other index register specification for that instruction	0.3966	0.0118
+0.4912	0.0526	1.000	and the p mode of course, are legal in a DDI statement.	0.4004	0.0146
+0.4985	0.4774	1.000	only. In the above example, if the normalized Hoat-	0.3966	0.0131
+0.5058	0.0545	1.000	The floating point use modes are not appropriate in	0.3947	0.0146
+0.5108	0.4735	1.000	ing point add instruction had been written	0.3123	0.0187
+0.5218	0.0526	1.000	immediate addressing, and hence are not acceptable.	0.4004	0.0146
+0.5304	0.6203	1.000	+(N), A ($6)	0.1072	0.0162
+0.5363	0.0545	1.000	Any entry mode that is legal in a DD statement, includ-	0.3949	0.0161
+0.5509	0.4737	1.000	this would be synonymous with	0.2312	0.0174
+0.5523	0.0526	1.000	ing the alphabetic entry mode, is accepted in a DDI	0.4004	0.0160
+0.5669	0.0526	1.000	statement as well. If the field length is null in the	0.3985	0.0147
+0.5694	0.6221	1.000	+(N), B ($6)	0.1054	0.0152
+0.5827	0.0526	1.000	specified dds, 24 is assumed by STRAP-II.	0.3026	0.0147
+0.5887	0.4944	1.000	A circular definition may arise through the use of	0.3797	0.0147
+0.5988	0.0695	1.000	In summation, dDI is purely definitive in character;	0.3835	0.0131
+0.6045	0.4774	1.000	a sequence of syn cards, as in the following example:	0.3966	0.0146
+0.6133	0.0545	1.000	it compiles no space or binary output in storage. Data	0.3947	0.0146
+0.6214	0.6351	1.000	A SYN, B	0.0775	0.0159
+0.6279	0.0526	1.000	is converted and entered only in the symbol table.	0.3985	0.0146
+0.6381	0.6335	1.000	B SYN, C	0.0789	0.0146
+0.6439	0.0526	1.000	Data so defined that is referenced symbolically by a	0.4004	0.0161
+0.6526	0.6335	1.000	C SYN, A	0.0808	0.0160
+0.6584	0.0508	1.000	7030 instruction is also inserted in the address field of	0.4023	0.0146
+0.6730	0.4737	1.000	All symbols in such a sequence are assigned a value	0.4004	0.0161
+0.6743	0.0543	1.000	that instruction.	0.1151	0.0118
+0.6882	0.4735	1.000	of 0 by STRAP.	0.1056	0.0159
+0.6976	0.0526	1.000	I1. SYN-Synonym	0.1429	0.0161
+0.7035	0.4737	1.000	12. DR-Data Reservation, DRZ-Data Reservation	0.4004	0.0145
+0.7179	0.1466	1.000	ANYNAME SYN(dds), Y	0.2049	0.0147
+0.7194	0.5075	1.000	and Set to Zero	0.1165	0.0118
+0.7366	0.6108	1.000	A DR(dds), N	0.1242	0.0167
+0.7384	0.0695	1.000	The pseudo operation sYn provides another mechan-	0.3797	0.0131
+0.7529	0.0526	1.000	ism for defining a symbol in terms of an integer, a bit	0.3966	0.0147
+0.7573	0.4925	1.000	A DR reserves storage space for data. The pseudo	0.3816	0.0146
+0.7688	0.0526	1.000	address or another symbol which is eventually defined	0.3947	0.0146
+0.7733	0.4756	1.000	operation causes N fields of the kind described in the	0.3985	0.0131
+0.7827	0.0524	1.000	as an integer or bit address.	0.1996	0.0163
+0.7878	0.4737	1.000	data description to be reserved; that is, the location	0.4004	0.0160
+0.7994	0.0677	1.000	When one writes	0.1297	0.0103
+0.8036	0.4756	1.000	counter is skipped forward a quantity in bits equal	0.3985	0.0118
+0.8139	0.2049	1.000	A SYN, 6	0.0846	0.0161
+0.8176	0.4736	1.000	to the product of n and the field length specified in	0.4005	0.0146
+0.8327	0.4718	1.000	the dds. Any symbol a appearing in the name field	0.4023	0.0161
+0.8342	0.0508	1.000	the meaning of the newly defined symbol a is that	0.3985	0.0146
+0.8488	0.4718	1.000	of a Dr statement is attached to the first field reserved,	0.4023	0.0146
+0.8503	0.0508	1.000	whenever A is written in the program, the effect is	0.3966	0.0146
+0.8648	0.4718	1.000	as is the data description. Thereafter, whenever A ap-	0.4023	0.0146
+0.8648	0.0508	1.000	the same as if 6 had been written. The meaning of	0.3966	0.0146
+0.8794	0.0526	1.000	SYN is always one of exact substitution.	0.2801	0.0146
+0.8794	0.4718	1.000	pears as the principal address in a 7030 instruction,	0.4023	0.0161
+0.9157	0.8496	1.000	17	0.0207	0.0102
+0.9157	0.7594	1.000	Section I	0.0602	0.0102

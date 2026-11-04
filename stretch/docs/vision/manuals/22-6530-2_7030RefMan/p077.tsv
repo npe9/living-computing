@@ -1,0 +1,110 @@
+0.0624	0.5113	1.000	as specified by the progressing indexing code in the	0.3929	0.0146
+0.0639	0.0959	1.000	Convert Double (DCV)	0.1617	0.0116
+0.0785	0.5132	1.000	normal manner.	0.1184	0.0116
+0.0858	0.0959	1.000	A field from the accumulator is converted as an inte-	0.3929	0.0116
+0.0930	0.5301	1.000	The definition of the sign modifiers permits com-	0.3741	0.0131
+0.1017	0.0959	1.000	ger from binary to decimal or from decimal to binary	0.3910	0.0146
+0.1090	0.5132	1.000	plete control over the accumulator sign. It may be	0.3910	0.0131
+0.1163	0.0959	1.000	depending on the setting of the radix modifier. If	0.3929	0.0146
+0.1235	0.5113	1.000	left as-is, inverted, made positive or made negative.	0.3778	0.0146
+0.1321	0.0959	1.000	the original field is binary, it is obtained at an im-	0.3910	0.0147
+0.1381	0.5301	1.000	The fixed offsets used in the accumulator conver-	0.3741	0.0131
+0.1467	0.0959	1.000	plied offset of 20 and its length is 96 numeric bits.	0.3910	0.0147
+0.1539	0.5113	1.000	sion operations are designed to facilitate conversion	0.3929	0.0133
+0.1627	0.0959	1.000	However, no more than 80 significant bits can be con-	0.3910	0.0131
+0.1678	0.5127	1.000	between binary	0.1156	0.0156
+0.1700	0.6278	1.000	floating point and decimal formats.	0.2744	0.0131
+0.1773	0.0959	1.000	verted without causing a partial field condition. The	0.3910	0.0146
+0.1845	0.5150	1.000	Thus, the 48-bit binary field at offset 68 used in con-	0.3891	0.0146
+0.1933	0.0940	1.000	decimal result, which can be a maximum of 24 sig-	0.3929	0.0131
+0.2006	0.5132	1.000	VERT corresponds to the fraction field of a single-	0.3910	0.0131
+0.2054	0.0938	1.000	nificant digits, is loaded into the cleared accumulator	0.3931	0.0178
+0.2166	0.5132	1.000	precision floating point number; and the 96-bit binary	0.3891	0.0131
+0.2238	0.0940	1.000	at the specified offset. If the original field is decimal,	0.3929	0.0131
+0.2311	0.5132	1.000	field at offset 20 used in CONVERT DOUBLE corresponds	0.3910	0.0131
+0.2397	0.0940	1.000	it is obtained at the specified offset. The binary re-	0.3929	0.0133
+0.2456	0.5113	1.000	to the fraction field of a double-precision floating	0.3929	0.0147
+0.2542	0.0940	1.000	sult, which can be a maximum of 96 significant bits,	0.3929	0.0133
+0.2615	0.5113	1.000	point number. This 96-bit field also corresponds to	0.3929	0.0146
+0.2688	0.0940	1.000	is loaded into the cleared accumulator at offset 20	0.3891	0.0118
+0.2776	0.5132	1.000	the result field of a binary integer MULTIPLY instruc-	0.3910	0.0131
+0.2833	0.0959	1.000	The sign modifiers operate on the sign bit in the sign	0.3910	0.0161
+0.2936	0.5132	1.000	tion.	0.0357	0.0116
+0.3009	0.0959	1.000	byte register; all other positions of the sign byte reg-	0.3891	0.0131
+0.3169	0.0959	1.000	ister remain unchanged.	0.1767	0.0116
+0.3182	0.5132	1.000	PROGRAMMING EXAMPLE	0.1729	0.0118
+0.3358	0.5113	1.000	The problem of multiplying two decimal integers il-	0.3929	0.0161
+0.3401	0.0940	1.000	MODIFIERS	0.0771	0.0116
+0.3483	0.5092	1.000	lustrates the use of the radix conversion operations	0.3951	0.0186
+0.3561	0.1128	1.000	Unsigned; Negative Sign. These modifiers operate	0.3741	0.0146
+0.3633	0.5150	1.000	(Figure 19). Given two four-digit signed decimal in-	0.3891	0.0176
+0.3735	0.0940	1.000	as in CONVERT.	0.1053	0.0102
+0.3821	0.5113	1.000	tegers (byte size six) in locations 1900 and 1900.30,	0.3929	0.0147
+0.3866	0.1127	1.000	Radix. If binary is specified, the 96-bit accumula-	0.3742	0.0151
+0.3967	0.5113	1.000	form the eight-digit product and store it in location	0.3929	0.0161
+0.4026	0.0959	1.000	tor field at offset 20 is converted from binary to deci-	0.3910	0.0131
+0.4128	0.5113	1.000	2000.	0.0414	0.0131
+0.4185	0.0940	1.000	mal. Higher-order bits (positions 0-1l of the accu-	0.3929	0.0133
+0.4330	0.0959	1.000	mulator) are ignored and lost. No indication of this	0.3910	0.0133
+0.4491	0.0940	1.000	loss is retained. The decimal result in byte size four	0.3929	0.0131
+0.4506	0.8515	1.000	NOTES	0.0451	0.0145
+0.4519	0.5206	1.000	NAME	0.0415	0.0134
+0.4535	0.6410	1.000	STATEMENT	0.0808	0.0116
+0.4636	0.0940	1.000	is placed into the accumulator at the specified offset.	0.3929	0.0146
+0.4757	0.0957	1.000	If decimal is specified, the accumulator field at the	0.3913	0.0183
+0.4767	0.6109	1.000	LCV (D, 30, 6), 1900.0, 8	0.1541	0.0118
+0.4869	0.6109	1.000	LTRCV (D, 30, 6), 1900.30, 0	0.1767	0.0131
+0.4942	0.0940	1.000	specified offset is converted from decimal to binary.	0.3929	0.0146
+0.4985	0.6109	1.000	* (B, 64, 4), $TR, 8	0.1222	0.0118
+0.5102	0.6109	1.000	DCV (B, 0, 8), 0, 0	0.1184	0.0102
+0.5218	0.6109	1.000	ST (D, 54, 6), 2000.0,0	0.1391	0.0103
+0.5247	0.0940	1.000	mulator at offset 20. The original decimal field is	0.3947	0.0147
+0.5406	0.0959	1.000	assumed to be byte size four.	0.2086	0.0146
+0.5551	0.5188	1.000	Notes:	0.0396	0.0090
+0.5552	0.5827	1.000	Converts multiplier and places it in transit register.	0.2989	0.0118
+0.5552	0.5583	1.000	1.	0.0150	0.0073
+0.5654	0.0959	1.000	INDICATORS	0.0789	0.0102
+0.5654	0.5789	1.000	The offset of the LCV and the * instruction should be	0.3026	0.0146
+0.5669	0.5602	1.000	2.	0.0132	0.0087
+0.5770	0.6410	1.000	A byte size of four is used in * because of	0.2444	0.0118
+0.5785	0.5846	1.000	the same.	0.0545	0.0116
+0.5794	0.1108	1.000	Partial Field (PF). This indicator is actuated if	0.3781	0.0180
+0.5872	0.5846	1.000	the four-bit sign byte in the transit register	0.2462	0.0131
+0.5973	0.0959	1.000	the converted field exceeds 96 significant bits in either	0.3910	0.0133
+0.6003	0.5865	1.000	JCV is used instead of CV because of the offset of	0.2857	0.0116
+0.6003	0.5602	1.000	3.	0.0150	0.0102
+0.6090	0.5921	1.000	coduced by the * instructio	0.1485	0.0116
+0.6133	0.0959	1.000	type of conversion. The 96 low-order bits of the re-	0.3910	0.0146
+0.6294	0.0940	1.000	sult are obtained, and higher-order bits are lost. The	0.3929	0.0131
+0.6366	0.5132	1.000	Figure 19. Radix Conversion	0.1748	0.0116
+0.6439	0.0940	1.000	indicator is also actuated in a binary-to-decimal con-	0.3929	0.0131
+0.6554	0.0957	1.000	version if significant bits of the decimal result extend	0.3913	0.0185
+0.6744	0.0958	1.000	beyond the left end of the accumulator when this	0.3911	0.0132
+0.6903	0.0959	1.000	field is loaded into the accumulator at the specified	0.3910	0.0133
+0.6948	0.5113	1.000	Connective Operations	0.2425	0.0174
+0.7048	0.0959	1.000	offset. Since a maximum of 24 decimal digits can be	0.3910	0.0132
+0.7171	0.0956	1.000	produced, no more than 80 significant bits can be	0.3933	0.0203
+0.7339	0.5132	1.000	Each of three connective operations can specify any	0.3891	0.0132
+0.7369	0.0959	1.000	converted without causing a partial field condition.	0.3759	0.0131
+0.7485	0.5132	1.000	one of the sixteen binary connectives. One operand	0.3891	0.0131
+0.7515	0.1128	1.000	To-Memory Operation (MOP); Arithmetic Result	0.3759	0.0146
+0.7645	0.5132	1.000	of these operations is in the accumulator. The other	0.3910	0.0131
+0.7674	0.0940	1.000	(RLZ, RZ, RGZ, RN). These indicators are set as in	0.3929	0.0132
+0.7776	0.5132	1.000	is in storage or in the instruction itself. The accu-	0.3891	0.0146
+0.7849	0.0959	1.000	ADD.	0.0320	0.0102
+0.7951	0.5132	1.000	mulator operand extends from a low-order position	0.3891	0.0131
+0.8067	0.0959	1.000	PROGRAMMING NOTES	0.1523	0.0103
+0.8096	0.5132	1.000	specified by the offset and consists of the same num-	0.3891	0.0146
+0.8241	0.0977	1.000	The effective address of the first half-word, the byte	0.3910	0.0131
+0.8255	0.5150	1.000	ber of bytes as are in the storage operand. The stor-	0.3872	0.0133
+0.8400	0.0959	1.000	size field, and the length field are not normally used	0.3910	0.0133
+0.8415	0.5132	1.000	age operand is defined by an address and field length	0.3891	0.0131
+0.8561	0.5132	1.000	as in integer arithmetic. In each of the connective	0.3910	0.0131
+0.8561	0.0959	1.000	by either the CONVERT or the CONVERT DOUBLE opera-	0.3947	0.0131
+0.8706	0.1786	1.000	are ignored. If progressive indexing is	0.3102	0.0131
+0.8706	0.0977	1.000	tions and	0.0808	0.0103
+0.8721	0.5132	1.000	operations, the two operands are combined according	0.3891	0.0131
+0.8852	0.0959	1.000	specified, the specified index register will be modified	0.3929	0.0146
+0.8866	0.5132	1.000	to the logical connective specified in the instruction.	0.3891	0.0146
+0.9244	0.0959	1.000	74	0.0338	0.0087
+0.9244	0.1353	1.000	IBM 7030	0.0677	0.0087

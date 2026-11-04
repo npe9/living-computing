@@ -1,0 +1,146 @@
+0.0592	0.5337	1.000	are ignored by the exchange when it obtains a	0.3612	0.0185
+0.0622	0.5016	1.000	they	0.0343	0.0152
+0.0698	0.2556	1.000	Read	0.0320	0.0116
+0.0712	0.4229	1.000	Copy	0.0301	0.0116
+0.0770	0.5038	1.000	control word from core storage; normally bits 18 to	0.3910	0.0131
+0.0799	0.4229	1.000	Control	0.0414	0.0116
+0.0799	0.3628	1.000	Release	0.0508	0.0131
+0.0814	0.3177	1.000	Locate	0.0489	0.0116
+0.0814	0.2556	1.000	Write	0.0357	0.0116
+0.0901	0.4229	1.000	Word	0.0301	0.0116
+0.0901	0.2556	1.000	Control	0.0414	0.0116
+0.0909	0.5037	1.000	24 will be zeros. Bit 25, the chain flag, may set the in-	0.3912	0.0156
+0.1076	0.5019	1.000	dex-flag indicator in the indicator register during in-	0.3947	0.0161
+0.1118	0.0977	1.000	• Reject indicator	0.0883	0.0118
+0.1204	0.1146	1.000	vailable	0.0416	0.0121
+0.1221	0.5038	1.000	dexing operations for use by the program as needed.	0.3910	0.0146
+0.1308	0.1184	1.000	Exchange Check Reject	0.1184	0.0131
+0.1323	0.2632	1.000	Yes	0.0226	0.0116
+0.1323	0.3252	1.000	Yes	0.0244	0.0102
+0.1323	0.4436	1.000	Yes	0.0207	0.0087
+0.1381	0.5038	1.000	Bits 26 and 27 are not used for indexing operations,	0.3929	0.0131
+0.1395	0.2632	1.000	Yes	0.0244	0.0145
+0.1409	0.1184	1.000	Unit Not Ready Reject	0.1165	0.0132
+0.1424	0.3252	1.000	No	0.0207	0.0116
+0.1424	0.4417	1.000	No	0.0188	0.0102
+0.1526	0.2632	1.000	Yes	0.0244	0.0116
+0.1526	0.4417	1.000	No	0.0188	0.0087
+0.1526	0.3252	1.000	Yes	0.0226	0.0116
+0.1526	0.5038	1.000	but they are carried along unchanged when loading,	0.3910	0.0147
+0.1526	0.1184	1.000	Channel Busy Reject	0.1053	0.0131
+0.1685	0.5038	1.000	storing, or refilling index words.	0.2331	0.0147
+0.1701	0.3797	1.000	No	0.0226	0.0145
+0.1715	0.0902	1.000	2. Computer waits until	0.1222	0.0145
+0.1715	0.2632	1.000	No	0.0226	0.0145
+0.1730	0.4417	1.000	Yes	0.0226	0.0087
+0.1730	0.3252	1.000	No	0.0207	0.0116
+0.1815	0.1071	1.000	end of operation	0.0847	0.0148
+0.1845	0.5207	1.000	The control word and index word formats are com-	0.3759	0.0118
+0.2006	0.5038	1.000	pared in Figure 35.	0.1391	0.0146
+0.2048	0.0902	1.000	3. Status indicators	0.0996	0.0103
+0.2136	0.1071	1.000	available at the	0.0827	0.0117
+0.2235	0.1071	1.000	end of operation:	0.0885	0.0138
+0.2339	0.1165	1.000	Exchange Program Check	0.1297	0.0132
+0.2340	0.3797	1.000	No	0.0207	0.0116
+0.2340	0.2632	1.000	Yes	0.0226	0.0131
+0.2340	0.3252	1.000	Yes	0.0226	0.0131
+0.2355	0.4417	1.000	No	0.0188	0.0102
+0.2384	0.5038	1.000	State of Control Word in the Exchange	0.2782	0.0116
+0.2442	0.3252	1.000	Yes	0.0226	0.0116
+0.2442	0.3797	1.000	No	0.0207	0.0116
+0.2442	0.4417	1.000	No	0.0188	0.0116
+0.2442	0.2632	1.000	Yes	0.0226	0.0131
+0.2450	0.1164	1.000	Unit Check	0.0624	0.0114
+0.2544	0.2632	1.000	Yes	0.0226	0.0131
+0.2544	0.3797	1.000	No	0.0207	0.0131
+0.2557	0.1184	1.000	End Exception	0.0715	0.0118
+0.2558	0.4417	1.000	No	0.0188	0.0102
+0.2558	0.3252	1.000	No	0.0226	0.0102
+0.2573	0.5056	1.000	The control word in the exchange always reflects the	0.3891	0.0131
+0.2645	0.2632	1.000	Yes	0.0244	0.0116
+0.2645	0.3252	1.000	Yes	0.0226	0.0116
+0.2645	0.3797	1.000	Yes*	0.0282	0.0116
+0.2645	0.1184	1.000	End of Operation	0.0865	0.0116
+0.2660	0.4436	1.000	No	0.0169	0.0087
+0.2733	0.5038	1.000	current status of a data transfer operation. When the	0.3929	0.0131
+0.2848	0.0883	1.000	4. Channel Signal**	0.1090	0.0131
+0.2863	0.2650	1.000	Available at any time except when	0.1767	0.0116
+0.2864	0.5036	1.000	operation is terminated, the contents of the control	0.3932	0.0175
+0.2949	0.2631	1.000	channel is in operation	0.1203	0.0133
+0.3023	0.5037	1.000	word, except for its status bits, are not changed until	0.3931	0.0165
+0.3109	0.1241	1.000	*The End Of Operation is never turned on in a RELEASE SEOP	0.3120	0.0147
+0.3159	0.5016	1.000	the exchange fetches the control word for the next	0.3952	0.0197
+0.3226	0.1409	1.000	instruction.	0.0659	0.0119
+0.3319	0.5036	1.000	READ or WRITE that is addressed to the same channel.	0.3931	0.0170
+0.3327	0.1165	1.000	**A Channel Signal indication can be caused by the program only	0.3365	0.0147
+0.3424	0.1447	1.000	upon the completion of tape rewinding (inifiated by a CONTROL	0.3290	0.0113
+0.3488	0.5038	1.000	It is not changed if the following READ Or WRITE is re-	0.3929	0.0146
+0.3547	0.1447	1.000	instruction).	0.0658	0.0087
+0.3600	0.5016	1.000	jected or is terminated because the initial control	0.3952	0.0209
+0.3779	0.0902	1.000	Figure 40. Exchange Instruction Response	0.2519	0.0117
+0.3794	0.5038	1.000	word address is not accessible to the exchange. By	0.3929	0.0131
+0.3967	0.5038	1.000	using COPY CONTROL WORD, the program thus can	0.3910	0.0133
+0.4112	0.5038	1.000	always inspect the control word and determine at	0.3929	0.0147
+0.4200	0.0883	1.000	Handling of Control Word	0.2387	0.0161
+0.4246	0.5036	1.000	what point the last operation has been terminated, or	0.3931	0.0177
+0.4418	0.5038	1.000	how far the current operation has progressed.	0.3327	0.0131
+0.4578	0.5244	1.000	If such a reference is to be made, the data	0.3703	0.0146
+0.4606	0.0883	1.000	Zero Initial Word Count	0.1729	0.0103
+0.4724	0.6128	1.000	field in the control word always	0.2838	0.0131
+0.4738	0.5489	1.000	address	0.0620	0.0102
+0.4753	0.5038	1.000	word	0.0376	0.0087
+0.4782	0.0902	1.000	If the count field in the control word is zero initially,	0.3872	0.0131
+0.4869	0.5038	1.000	contains the address of the core storage location to	0.3929	0.0146
+0.4942	0.0883	1.000	it is interpreted as 218. The field is not tested for zero	0.3891	0.0146
+0.5029	0.5038	1.000	which the next data word reference will be made.	0.3910	0.0132
+0.5084	0.0883	1.000	until the first time the control word is modified; the	0.3892	0.0137
+0.5147	0.5054	1.000	This field thus always reflects the current status of	0.3914	0.0194
+0.5247	0.0883	1.000	count at that time is 218 — 1, and counting will con-	0.3910	0.0147
+0.5333	0.5038	1.000	data transter between the exchange and core storage	0.3891	0.0146
+0.5406	0.0902	1.000	tinue. The count field cannot specify less than one	0.3872	0.0132
+0.5494	0.5056	1.000	The count, on the other hand, always indicates how	0.3910	0.0131
+0.5545	0.0901	1.000	word. This treatment of the count field of a control	0.3893	0.0140
+0.5654	0.5056	1.000	many words remain to be transferred between the ex-	0.3910	0.0146
+0.5712	0.0883	1.000	word is compatible with the treatment of the count	0.3910	0.0145
+0.5799	0.5056	1.000	change and the external unit. When any data trans-	0.3910	0.0146
+0.5872	0.0902	1.000	field of an index word.	0.1598	0.0116
+0.5945	0.5038	1.000	fer operation is terminated because of exhausting the	0.3929	0.0146
+0.6001	0.1032	1.000	An initial word count of zero sometimes can be a	0.3743	0.0148
+0.6090	0.5056	1.000	control word count, the count is zero, and the number	0.3910	0.0146
+0.6163	0.0883	1.000	convenient way of indicating that the amount of data	0.3891	0.0146
+0.6264	0.5056	1.000	of words transmitted between the exchange and core	0.3910	0.0132
+0.6321	0.0883	1.000	transfer is to be governed entirely by the external	0.3891	0.0147
+0.6409	0.5038	1.000	storage is always the same as the number of words	0.3929	0.0161
+0.6467	0.0883	1.000	unit. Data transfer, however, is terminated by the ex-	0.3910	0.0147
+0.6555	0.5056	1.000	transmitted between the exchange and the unit. If	0.3929	0.0146
+0.6602	0.0881	1.000	change whenever the data word address exceeds the	0.3914	0.0176
+0.6687	0.5035	1.000	this is the intended type of termination, it is gener-	0.3951	0.0212
+0.6788	0.0865	1.000	largest available address of core storage. It is there-	0.3929	0.0146
+0.6836	0.5054	1.000	ally not necessary to use the information left in the	0.3914	0.0188
+0.6933	0.0883	1.000	fore not possible to loop to address 0.	0.2688	0.0146
+0.7020	0.5056	1.000	control word. Interrogation of the control word, how-	0.3929	0.0131
+0.7166	0.5056	1.000	ever, may be necessary if the operation is terminated	0.3910	0.0146
+0.7324	0.0902	1.000	Use of Control Word for Indexing	0.2425	0.0118
+0.7324	0.5056	1.000	under block control or because of some type of error.	0.3929	0.0133
+0.7466	0.5224	1.000	During a READ operation the data word address in	0.3744	0.0170
+0.7515	0.0883	1.000	While in an index register, a control word may be	0.3910	0.0131
+0.7630	0.5056	1.000	the control word is always one word ahead of the ad.	0.3891	0.0146
+0.7659	0.0882	1.000	used for indexing like any other index quantity. A	0.3894	0.0172
+0.7776	0.5056	1.000	dress of the last word sent to core storage. The last	0.3929	0.0146
+0.7820	0.0883	1.000	common use is to treat the data word address of a con-	0.3910	0.0132
+0.7936	0.5056	1.000	word sent to core storage is the one whose reading has	0.3929	0.0146
+0.7964	0.0883	1.000	trol word as a base address modifying a relative ad-	0.3910	0.0147
+0.8073	0.5054	1.000	just been completed by the unit, regardless of whether	0.3932	0.0179
+0.8124	0.0883	1.000	dress. Indexing instructions may be used to operate	0.3910	0.0146
+0.8241	0.5056	1.000	the whole word has been completed or just a few bytes	0.3929	0.0147
+0.8270	0.0883	1.000	on or with the data word address, the count, or the	0.3910	0.0146
+0.8387	0.5056	1.000	have been read. In the latter case the rest of the word	0.3910	0.0132
+0.8459	0.0865	1.000	refill address.	0.0959	0.0116
+0.8503	0.5053	1.000	is filled up with zeros. The data word address indi-	0.3916	0.0218
+0.8576	0.1034	1.000	Bits 0 to 17 form the word address, both for index-	0.3759	0.0146
+0.8691	0.5055	1.000	cated by the control word thus is always also one word	0.3912	0.0166
+0.8730	0.0863	1.000	ing and for use in the exchange. Bits 18 to 24 form	0.3913	0.0175
+0.8852	0.5056	1.000	ahead of that of the word whose handling has just	0.3929	0.0146
+0.8881	0.0865	1.000	a bit address and sign for the purpose of indexing, but	0.3929	0.0174
+0.9230	0.8759	1.000	123	0.0207	0.0087
+0.9230	0.7199	1.000	IBM 7619 Exchange	0.1278	0.0102

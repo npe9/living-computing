@@ -1,0 +1,106 @@
+0.0581	0.0883	1.000	are always discovered during the current cycle. Thus,	0.3910	0.0146
+0.0596	0.5075	1.000	data bits preceded by eight ecc bits. One such word	0.3910	0.0146
+0.0741	0.0883	1.000	a unit check accompanying end-of-operation means	0.3929	0.0147
+0.0755	0.5056	1.000	occupies six adjacent columns on the card.	0.3158	0.0147
+0.0887	0.0902	1.000	that either a punching error has been discovered in	0.3891	0.0147
+0.0915	0.5207	1.000	In order to provide an integral number of words	0.3797	0.0146
+0.1061	0.5075	1.000	per card, only the first 78 columns of the card can be	0.3929	0.0146
+0.1061	0.0902	1.000	the card preceding the last one, or a transmission	0.3891	0.0131
+0.1206	0.5075	1.000	punched in the ecc mode, the last two columns be-	0.3910	0.0146
+0.1206	0.0902	1.000	error has occurred in the data punched in the last	0.3910	0.0146
+0.1352	0.0883	1.000	card. No error indications are ever suppressed be-	0.3910	0.0161
+0.1366	0.5056	1.000	ing lelt blank. Consequently, when a sequence of	0.3947	0.0161
+0.1478	0.0900	1.000	cause of operating in the Ecc mode.	0.2560	0.0191
+0.1526	0.5056	1.000	cards is punched in the multiple-block mode with a	0.3929	0.0160
+0.1672	0.1053	1.000	When a multiple-block wrIte is given, more than	0.3741	0.0132
+0.1672	0.5056	1.000	single control word, each card contains 13 words in	0.3929	0.0160
+0.1817	0.0902	1.000	one card can be punched with a single instruction.	0.3891	0.0147
+0.1830	0.5056	1.000	the first 78 columns and two blank columns. The last	0.3947	0.0146
+0.1956	0.0901	1.000	A new card image is automatically transferred to the	0.3912	0.0174
+0.1991	0.5075	1.000	two columns are not used, and it is important that	0.3929	0.0131
+0.2136	0.5056	1.000	they be blank before punching because all 80 col-	0.3947	0.0161
+0.2136	0.0902	1.000	transposition buffer as soon as the preceding cycle	0.3910	0.0146
+0.2282	0.0883	1.000	has been completed. Whenever an error is discov-	0.3929	0.0131
+0.2297	0.5056	1.000	umns axe checked at the following reading station.	0.3929	0.0161
+0.2442	0.0902	1.000	ered, the operation is terminated at the end of the	0.3910	0.0131
+0.2456	0.5075	1.000	Any prepunching in these columns causes the check	0.3929	0.0147
+0.2600	0.5056	1.000	to fail.	0.0509	0.0135
+0.2602	0.0902	1.000	current cycle, and both the unit-check and end-of-	0.3891	0.0116
+0.2747	0.0902	1.000	operation indications are given. As in the case of the	0.3910	0.0147
+0.2891	0.0902	1.000	single-block mode, the error could be a transmission	0.3911	0.0152
+0.2994	0.5056	1.000	Out of Material	0.1203	0.0131
+0.3052	0.0902	1.000	error in the last card punched or a punching error	0.3910	0.0146
+0.3197	0.5075	1.000	The card punch continues to feed cards in response	0.3929	0.0176
+0.3212	0.0883	1.000	in the card preceding the last one.	0.2481	0.0131
+0.3337	0.5073	1.000	to WRITE instructions until the hopper becomes empty	0.3914	0.0198
+0.3358	0.1053	1.000	The reason for delaying end-of-operation beyond	0.3759	0.0145
+0.3517	0.0902	1.000	the portion of the card cycle when the buffer is	0.3910	0.0131
+0.3517	0.5094	1.000	or until the stacker becomes full. Either condition	0.3891	0.0116
+0.3677	0.0883	1.000	loaded is to give the earliest opportunity for catch-	0.3929	0.0132
+0.3677	0.5075	1.000	represents an out-of-material status. It is indicated	0.3910	0.0132
+0.3819	0.5074	1.000	by turning on the out-of-material light and giving an	0.3912	0.0155
+0.3821	0.0883	1.000	ing any errors. The checking of a card is completed	0.3929	0.0147
+0.3982	0.0902	1.000	only when the whole card has passed the reading	0.3910	0.0146
+0.3997	0.5094	1.000	end-exception indication.	0.1842	0.0103
+0.4120	0.5262	1.000	As the last card leaves the hopper, the current	0.3725	0.0154
+0.4142	0.0902	1.000	brushes, or at the end of the card cycle. By delaying	0.3910	0.0131
+0.4288	0.0902	1.000	EOP until the end of the cycle, it is possible to notify	0.3891	0.0146
+0.4288	0.5075	1.000	WRITE operation is executed normally except that it	0.3929	0.0146
+0.4433	0.0902	1.000	the computer of any errors in punching upon com-	0.3910	0.0146
+0.4433	0.5075	1.000	is terminated by endexception. The punch then be-	0.3910	0.0146
+0.4593	0.0902	1.000	pletion of the n'ext cycle instead of waiting until the	0.3910	0.0146
+0.4606	0.5075	1.000	comes not ready. Because the cards not yet punched	0.3910	0.0133
+0.4752	0.0902	1.000	third card is punched. Construction of the punch	0.3910	0.0147
+0.4752	0.5075	1.000	are all blank, no attempt is made to empty the feed	0.3910	0.0133
+0.4897	0.0902	1.000	does not permit verification in the same cycle.	0.3440	0.0147
+0.4897	0.5075	1.000	before indicating the out-of-material condition. As	0.3929	0.0133
+0.5042	0.5056	1.000	in the case of the card reader, the end-exception indi-	0.3947	0.0176
+0.5042	0.1053	1.000	When the punch is initially loaded and is set into	0.3759	0.0161
+0.5218	0.0902	1.000	the ready status, blank cards are fed into the punch-	0.3929	0.0146
+0.5218	0.5094	1.000	cation may or may not be accompanied by end-of-	0.3910	0.0131
+0.5343	0.5073	1.000	operation.	0.0774	0.0171
+0.5363	0.0883	1.000	ing station, the blank station preceding the punching	0.3929	0.0146
+0.5509	0.0883	1.000	station, and also into the checking station following	0.3929	0.0146
+0.5523	0.5244	1.000	When the stacker becomes full, the response of the	0.3759	0.0131
+0.5682	0.0902	1.000	the punching station. Since the card fed into the	0.3910	0.0133
+0.5682	0.5094	1.000	card punch is the same as above, and, unlike the case	0.3910	0.0118
+0.5827	0.5075	1.000	of the card reader, the end-exception indication is	0.3929	0.0133
+0.5827	0.0902	1.000	checking station is never punched, the deck of cards	0.3929	0.0147
+0.5973	0.0902	1.000	punched immediately after the manual loading is	0.3910	0.0146
+0.5988	0.5075	1.000	given at the completion of the current operation.	0.3910	0.0131
+0.6115	0.5093	1.000	The punch subsequently becomes not ready. The	0.3911	0.0167
+0.6133	0.0902	1.000	always preceded by a blank card.	0.2368	0.0146
+0.6294	0.5094	1.000	out-of-material light is always turned on at the time	0.3910	0.0131
+0.6294	0.1053	1.000	When a card jam occurs, the unit becomes not	0.3778	0.0146
+0.6439	0.5056	1.000	end-exception is sent to the exchange.	0.2726	0.0161
+0.6453	0.0865	1.000	ready, the feed-check light is turned on, and the cur-	0.3947	0.0147
+0.6599	0.0865	1.000	rent operation is terminated with a unit check. Un-	0.3966	0.0147
+0.6758	0.0883	1.000	like the case of the card reader, a misfeeding of cards	0.3947	0.0146
+0.6830	0.5056	1.000	Card Run-Out	0.1071	0.0133
+0.6890	0.0883	1.000	can occur only while the unit is executing an opera-	0.3929	0.0174
+0.7048	0.5075	1.000	When the punching of a set of cards is finished, the	0.3929	0.0161
+0.7048	0.0883	1.000	tion, and it is always indicated by means of unit	0.3947	0.0161
+0.7194	0.5056	1.000	last card will not have been checked at the time the	0.3947	0.0161
+0.7224	0.0883	1.000	check.	0.0451	0.0116
+0.7339	0.5056	1.000	last wRItE operation is completed. To check and stack	0.3947	0.0176
+0.7500	0.5056	1.000	the last card, which at this time is in the checking	0.3947	0.0161
+0.7602	0.0902	1.000	Error Correction	0.1165	0.0116
+0.7660	0.5056	1.000	station, two more card cycles are needed, since the	0.3966	0.0161
+0.7820	0.5056	1.000	card must pass through the blank station before it	0.3966	0.0160
+0.7833	0.0902	1.000	The card punch can be operated either in the ECC	0.3910	0.0132
+0.7964	0.5056	1.000	reaches the stacker. These two extra cycles may be	0.3966	0.0161
+0.7964	0.0902	1.000	mode or the no-ecc mode by means of the correspond-	0.3891	0.0133
+0.8124	0.0883	1.000	ing control instructions.	0.1786	0.0161
+0.8139	0.5075	1.000	conveniently obtained by giving a CARD RUN-OUT COn.	0.3910	0.0131
+0.8285	0.1034	1.000	In the no-ecc mode only the 64 data bits of a word	0.3778	0.0145
+0.8285	0.5056	1.000	trol instruction. This control instruction causes two	0.3947	0.0131
+0.8427	0.0882	1.000	are punched, and 15 core storage words fill the 80	0.3931	0.0180
+0.8430	0.5075	1.000	blank cards to be fed through the punch. Absence	0.3947	0.0161
+0.8576	0.5075	1.000	of unit check after this operation then verifies the	0.3947	0.0161
+0.8590	0.0883	1.000	columns of a card. This mode is used to punch cards	0.3947	0.0161
+0.8721	0.0880	1.000	to be used outside the system.	0.2131	0.0191
+0.8750	0.5056	1.000	correctness of the last card actually punched.	0.3365	0.0145
+0.8855	0.5187	1.000	An alternative method of feeding a blank card	0.3817	0.0182
+0.8881	0.1034	1.000	In the eca mode each word consists of 72 bits, 64	0.3778	0.0160
+0.9258	0.7575	1.000	External Units	0.0940	0.0133
+0.9273	0.8797	1.000	143	0.0226	0.0087

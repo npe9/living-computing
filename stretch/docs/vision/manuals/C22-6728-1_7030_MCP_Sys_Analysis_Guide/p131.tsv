@@ -1,0 +1,110 @@
+0.0930	0.5263	1.000	The Standard EOP Routine: When an operation is	0.3722	0.0146
+0.0945	0.1128	1.000	3. Scanning to job boundary (SCAN, SEJSCN).	0.3477	0.0131
+0.1074	0.5281	1.000	completed (as signalled by an I-O interrupt, or the	0.3836	0.0148
+0.1105	0.1128	1.000	The first item uses VMD generated control words	0.3722	0.0117
+0.1217	0.5281	1.000	request for the last card of a buffer area by SCRI,	0.3818	0.0169
+0.1235	0.0940	1.000	to control the transmit instruction used to move card	0.4004	0.0116
+0.1381	0.5282	1.000	SCR or SCR4) parameter flow through the program	0.3835	0.0131
+0.1394	0.0940	1.000	images from the buffer. As each request is proc-	0.3816	0.0118
+0.1526	0.5282	1.000	is resumed. The VEOP routine is used to perform	0.3853	0.0131
+0.1539	0.0959	1.000	essed, the VX and VX1 parameters are updated and	0.3872	0.0118
+0.1680	0.0958	1.000	a parameter passed on to the successor. Thus proc-	0.4006	0.0166
+0.1685	0.5301	1.000	the following three steps:	0.1898	0.0118
+0.1817	0.5451	1.000	1. The VX parameter is updated by VX1 to reflect	0.3835	0.0132
+0.1845	0.0959	1.000	essing of a given active parameter takes place on a	0.3835	0.0118
+0.1976	0.5282	1.000	a new buffer origin (If VXI > 0 only).	0.2820	0.0118
+0.1991	0.0940	1.000	piecemeal basis which differs from the I-O situation	0.3947	0.0117
+0.2121	0.5451	1.000	2. A parameter is removed from the queue, there-	0.3910	0.0132
+0.2136	0.0940	1.000	in which an active parameter is processed completely	0.4060	0.0117
+0.2282	0.0940	1.000	in the EOP procedure. However, both are similar in	0.4041	0.0131
+0.2282	0.5263	1.000	by reinstating parameter tlow.	0.2368	0.0116
+0.2412	0.5451	1.000	3. The old parameter is passed on to the successor	0.3929	0.0131
+0.2419	0.0958	1.000	that when processing of a buffer area is complete, an	0.4024	0.0141
+0.2552	0.5281	1.000	program, thereby maintaining parameter flow. This	0.4006	0.0157
+0.2587	0.0959	1.000	attempt to resume parameter flow is made. Notice	0.3872	0.0116
+0.2703	0.5282	1.000	is not done for most negative parameters because	0.3778	0.0131
+0.2733	0.0959	1.000	that a request for more than one card may exhaust the	0.4060	0.0102
+0.2863	0.5301	1.000	these do not propagate continuously around the func-	0.3929	0.0116
+0.2878	0.0940	1.000	present VX1 but still not be completely satisfied, in	0.3910	0.0116
+0.3009	0.5301	1.000	tional program circle, but rather originate within	0.3741	0.0131
+0.3023	0.0940	1.000	which case the updating, resumption of parameter	0.3778	0.0116
+0.3169	0.0959	1.000	flow, etc. must be accomplished before the rest of the	0.4117	0.0116
+0.3169	0.5301	1.000	one and end with the successor.	0.2406	0.0102
+0.3314	0.0959	1.000	request may be processed. Here the flexible linkage	0.3985	0.0132
+0.3445	0.5301	1.000	The Card Reader (CR) Program	0.2406	0.0131
+0.3473	0.0959	1.000	mechanism is very helpful.	0.2049	0.0103
+0.3618	0.1128	1.000	The second item is similar to the first except that	0.3778	0.0118
+0.3750	0.5301	1.000	The first functional program to be discussed is	0.3534	0.0132
+0.3764	0.0959	1.000	control words are not used and the VX parameter	0.3703	0.0118
+0.3894	0.5320	1.000	Card Reader (CR). The CR reads cards into buffer	0.3853	0.0133
+0.3909	0.0959	1.000	does not exist in the integer form previously discussed;	0.4173	0.0118
+0.4039	0.5301	1.000	areas under the control of the parameter flow proc-	0.3891	0.0133
+0.4055	0.0959	1.000	rather, an index word of the format,	0.2744	0.0132
+0.4182	0.5300	1.000	ess. When an out-of-material condition at the card	0.3875	0.0138
+0.4215	0.1560	1.000	XW, BF1, 34, K,	0.1335	0.0116
+0.4215	0.1109	1.000	K	0.0150	0.0102
+0.4345	0.5301	1.000	reader arises, it is recognized and appropriate	0.3571	0.0131
+0.4360	0.0959	1.000	serves the same purpose and is updated singly by the	0.3985	0.0116
+0.4506	0.0959	1.000	instruction V +ICR, VSI, 15. as each card is proc-	0.3929	0.0131
+0.4520	0.5301	1.000	measures taken. The EOP procedure is standard,	0.3797	0.0116
+0.4666	0.5301	1.000	using the VEOP routine.	0.1842	0.0116
+0.4666	0.0977	1.000	essed. The third item is a control process involving	0.3966	0.0131
+0.4811	0.5489	1.000	The out-of-material condition is signalled by a	0.3496	0.0116
+0.4811	0.0977	1.000	the positioning of buffer pointers at job boundaries	0.3778	0.0131
+0.4956	0.5320	1.000	return through the EE slot in the table of exits. Con-	0.4023	0.0116
+0.4985	0.0977	1.000	on request.	0.0846	0.0103
+0.5102	0.1147	1.000	The I-O operations are performed by three I-O	0.3534	0.0132
+0.5115	0.5301	1.000	trol goes from there to the VRDEE routine (Figure 72)	0.4098	0.0118
+0.5261	0.5301	1.000	which effectively passes on to the successor program	0.4023	0.0118
+0.5261	0.0959	1.000	actuation routines: VRTIO, VRDIO, and VWIO	0.3534	0.0133
+0.5392	0.5301	1.000	those cards successfully read, saves in the address	0.3910	0.0132
+0.5406	0.0959	1.000	(Figure 71). All are entered through the VIO siot in	0.3947	0.0132
+0.5536	0.5320	1.000	of VREE1 the number of cards not read (residue),	0.3741	0.0133
+0.5537	0.0977	1.000	the table from the VACT, or VACTX subroutine which	0.4062	0.0156
+0.5682	0.5301	1.000	and updates VX by the amount read but leaves VX1	0.3778	0.0133
+0.5697	0.0977	1.000	sets up appropriate parameters, x and C, in index	0.3778	0.0132
+0.5821	0.0976	1.000	registers VT3 and VT2. Routines VRDIO and VWIO	0.3894	0.0155
+0.5827	0.5301	1.000	unchanged. The last step inhibits the issuance of	0.3741	0.0133
+0.5988	0.0977	1.000	derive the appropriate control words using VMD,	0.3684	0.0131
+0.5988	0.5301	1.000	subsequent read instructions as the result of param-	0.3966	0.0118
+0.6133	0.0977	1.000	and perform the appropriate MCP I-O pseudo-op.	0.3703	0.0131
+0.6133	0.5320	1.000	eters entering the queue. Finally, a special negative	0.4004	0.0117
+0.6279	0.5301	1.000	parameter, -VEES, is passed to the successor pro-	0.3929	0.0131
+0.6294	0.0977	1.000	The VACT, VACTX subroutine and VEOP routine	0.3703	0.0131
+0.6424	0.5301	1.000	gram, job boundary scan (SC).	0.2312	0.0131
+0.6439	0.0959	1.000	perform basic functions in this process.	0.3045	0.0116
+0.6570	0.5489	1.000	This is the first step in a set of events which may	0.3722	0.0116
+0.6677	0.5318	1.000	result in the message, "Service the card reader"'	0.3726	0.0191
+0.6709	0.0938	1.000	The I-O Actuation Subroutines: The VACT and	0.3593	0.0166
+0.6860	0.5320	1.000	being given to the operator. This message cannot be	0.3966	0.0131
+0.6875	0.0977	1.000	VACTX subroutines (Figure 71) perform several	0.3647	0.0116
+0.6994	0.5318	1.000	given immediately because the EOF and OFFLINE	0.3743	0.0143
+0.7020	0.0977	1.000	functions necessary to start an I-O operation on a	0.3722	0.0116
+0.7151	0.0977	1.000	buffer area and are used by the WT, RT, ST, and CR	0.4004	0.0146
+0.7166	0.5320	1.000	commands, which can inhibit the message, are	0.3534	0.0116
+0.7297	0.0977	1.000	functional programs. First either VSETX or VSETUP	0.4098	0.0131
+0.7297	0.5320	1.000	recognized only later in SC, if overlapped, and still	0.3891	0.0131
+0.7456	0.5301	1.000	later in E, if unoverlapped. At the appropriate time,	0.4023	0.0131
+0.7456	0.0996	1.000	(VACT or VACTX) is used and a CB- type return is	0.3853	0.0131
+0.7602	0.5320	1.000	VEES effectively tests whether or not the EOF condi-	0.4004	0.0116
+0.7602	0.0977	1.000	given if a "do no work" condition exists. Otherwise	0.3910	0.0132
+0.7747	0.5320	1.000	tion is in effect and if not, it then puts out the message	0.4135	0.0132
+0.7761	0.0977	1.000	a branch is made to VIO(VU) after VX has been	0.3553	0.0118
+0.7906	0.5320	1.000	via the commentator.	0.1598	0.0103
+0.7906	0.0977	1.000	adjusted. At the VIO slot in the table there is a	0.3590	0.0118
+0.8036	0.5470	1.000	Upon the receipt of a CS, control goes to the	0.3365	0.0133
+0.8052	0.0977	1.000	branch to the appropriate I-O actuation routine.	0.3571	0.0118
+0.8182	0.5320	1.000	VRDCSS routine. This resumes card reading using	0.3872	0.0118
+0.8197	0.1165	1.000	The distinction between VACT and VACTX is that	0.3703	0.0118
+0.8342	0.5320	1.000	the residue previously stored if the unit ready bit in	0.3891	0.0118
+0.8342	0.0996	1.000	VACT presumes that the I-O unit is available for	0.3665	0.0131
+0.8488	0.0977	1.000	actuation if the need exists, whereas VACTX pre-	0.3759	0.0131
+0.8488	0.5320	1.000	the control word is on, and it also removes the EOF	0.3929	0.0118
+0.8618	0.5301	1.000	condition if it existed. The I-O routine, VRDIO, and	0.4004	0.0132
+0.8633	0.0996	1.000	sumes the need exists but that the I-O unit may be	0.3759	0.0117
+0.8779	0.5320	1.000	the queue entry, VRDQ, perform as previously	0.3534	0.0131
+0.8779	0.0977	1.000	in use. The distinction is analogous to that between	0.3910	0.0131
+0.8923	0.5319	1.000	described.	0.0809	0.0118
+0.8939	0.0996	1.000	VSETUP and VSETX.	0.1598	0.0102
+0.9462	0.9079	1.000	131	0.0226	0.0087
+0.9476	0.7632	1.000	System Input-Output	0.1222	0.0088

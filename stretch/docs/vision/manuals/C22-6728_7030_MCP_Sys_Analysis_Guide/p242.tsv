@@ -1,0 +1,105 @@
+0.0697	0.5094	1.000	NOTE: It is possible for a non-programmed halt to	0.3816	0.0146
+0.0697	0.0827	1.000	These cards may be followed by control cards or job	0.3929	0.0132
+0.0858	0.0808	1.000	decks as previously explained to make up the complete	0.4041	0.0116
+0.0858	0.5658	1.000	occur during a program run. The input pro-	0.3346	0.0145
+0.0973	0.0808	1.000	input deck. COMD cards may precede job cards in a	0.3929	0.0133
+0.0988	0.5658	1.000	gram assumes that the input tape files are in	0.3346	0.0146
+0.1133	0.5658	1.000	an ascending order, so that the master tape	0.3271	0.0161
+0.1147	0.0789	1.000	job deck.	0.0715	0.0119
+0.1264	0.5658	1.000	will only go in the forward direction during	0.3233	0.0176
+0.1424	0.5658	1.000	normal operation. When two end of file marks	0.3477	0.0161
+0.1439	0.0827	1.000	Operator Instructions	0.1598	0.0131
+0.1555	0.5658	1.000	are read from the master tape, the master	0.3214	0.0191
+0.1730	0.5658	1.000	tape will be rewound and unloaded. Any	0.3026	0.0146
+0.1730	0.0977	1.000	1. Ready the master tape on tape unit 2 in the	0.3459	0.0131
+0.1875	0.5639	1.000	future reference to the master tape will cause	0.3459	0.0161
+0.1875	0.0808	1.000	density specified by the outer tape label. The input	0.3853	0.0146
+0.2006	0.5658	1.000	machine hangup, because the tape unit is in	0.3252	0.0174
+0.2020	0.0789	1.000	tape should be readied on tape unit 3 in high density.	0.3910	0.0146
+0.2166	0.0977	1.000	2. Ready the printer, reader and console. Set	0.3553	0.0146
+0.2166	0.5658	1.000	the not-ready condition.	0.1805	0.0146
+0.2324	0.0808	1.000	sense switch A and the I-O check switch off.	0.3289	0.0103
+0.2470	0.5094	1.000	Program Flow	0.1109	0.0133
+0.2470	0.0977	1.000	3. Load the object deck and input deck in the	0.3365	0.0118
+0.2628	0.0826	1.000	reader.	0.0566	0.0122
+0.2761	0.0977	1.000	4. Press the reader Load key.	0.2331	0.0118
+0.2761	0.5094	1.000	When the System Peripheral Input II program has	0.3665	0.0146
+0.2906	0.5094	1.000	been loaded, the input program then checks the first	0.3910	0.0146
+0.3052	0.5094	1.000	card to determine if it is a label card. See Figure	0.3778	0.0146
+0.3067	0.0827	1.000	Programmed Halts	0.1410	0.0116
+0.3212	0.5075	1.000	135. If the first card is not a label card, an error	0.3797	0.0145
+0.3358	0.0977	1.000	STOP 1 - When the last card is read, the system	0.3647	0.0116
+0.3358	0.5094	1.000	message is printed and the program stops (ESTOP 1).	0.4023	0.0145
+0.3503	0.0808	1.000	peripheral input is completed. A second end of file	0.3835	0.0116
+0.3503	0.5113	1.000	The operator receives printed instructions and can	0.3759	0.0131
+0.3648	0.0808	1.000	is written on the input tape, the tape is rewound and	0.3872	0.0131
+0.3663	0.5094	1.000	prepare the required label card. The next control	0.3741	0.0116
+0.3794	0.5113	1.000	card indicates the input medium for the input data.	0.3741	0.0131
+0.3794	0.0808	1.000	unloaded. This completes the system input program;	0.3966	0.0131
+0.3939	0.5113	1.000	If the card reader is the input selected, the succeeding	0.4060	0.0131
+0.3953	0.0808	1.000	there is no recovery other than reloading.	0.3139	0.0102
+0.4099	0.5113	1.000	data cards are sequentially stored in the tape buffer	0.3853	0.0116
+0.4099	0.0996	1.000	ESTOP 1 - The first control card of a system input	0.3797	0.0116
+0.4244	0.5094	1.000	until a 17 card record has been accumulated. The	0.3759	0.0116
+0.4244	0.0827	1.000	must be a label card. If the first card is not a label	0.3872	0.0102
+0.4390	0.5113	1.000	contents of the tape buffer are then written on the	0.3647	0.0117
+0.4390	0.0808	1.000	card, NO LABEL CARD is printed and the program	0.3835	0.0117
+0.4535	0.5094	1.000	input tape, and another record accumulated. If a	0.3665	0.0132
+0.4535	0.0808	1.000	halts. A label card must be made, the cards reloaded	0.4060	0.0132
+0.4655	0.5111	1.000	new control card is read, the input program writes	0.3781	0.0180
+0.4679	0.0808	1.000	with the label card first, and the Start Key depressed	0.3966	0.0118
+0.4824	0.5113	1.000	the data accumulated in the buffer followed by an	0.3628	0.0118
+0.4839	0.0808	1.000	to start the operation again.	0.2086	0.0103
+0.4953	0.0995	1.000	ESTOP 2 - If a control card contains an error, or	0.3706	0.0151
+0.4970	0.5113	1.000	EOF on the input tape and loops to CNTL to decode	0.3759	0.0133
+0.5130	0.0808	1.000	is not in correct sequence, an error message is	0.3590	0.0118
+0.5130	0.5113	1.000	the control card.	0.1259	0.0118
+0.5276	0.5263	1.000	If a master tape is the input selected, the tape is	0.3609	0.0131
+0.5276	0.0808	1.000	printed and the operation halts. The error message	0.3891	0.0118
+0.5421	0.0808	1.000	is: CNTRL CD ERR - CORRECT AND RESTART.	0.3741	0.0117
+0.5421	0.5094	1.000	read and passed until it is positioned at the desired	0.3778	0.0131
+0.5567	0.5094	1.000	file. The files indicated on the control card are read	0.3947	0.0116
+0.5581	0.0827	1.000	Because all control cards are printed, the last card	0.3835	0.0131
+0.5712	0.5094	1.000	one record at a time up to a maximum of 17 records,	0.3929	0.0131
+0.5727	0.0808	1.000	printed is the incorrect card and will be stacked in	0.3778	0.0131
+0.5872	0.0827	1.000	the NR stacker. The operator may correct the con-	0.3872	0.0116
+0.5872	0.5094	1.000	and stored in the input tape buffer. When the seven-	0.3891	0.0116
+0.6017	0.5094	1.000	teenth tape record is read, the contents of the input	0.3835	0.0116
+0.6017	0.0827	1.000	trol card in error and press the start key. If the	0.3647	0.0131
+0.6163	0.5094	1.000	buffer are written on the input tape, and another 17	0.3797	0.0131
+0.6163	0.0827	1.000	control card cannot be corrected, the program must	0.3891	0.0131
+0.6308	0.5094	1.000	records are read and written, continuing until the	0.3684	0.0131
+0.6321	0.0827	1.000	be removed.	0.0921	0.0103
+0.6467	0.0996	1.000	ESTOP 3 - If five consecutive tape errors occur	0.3571	0.0118
+0.6467	0.5075	1.000	input specification is satisfied. If the end of the	0.3609	0.0118
+0.6595	0.5075	1.000	master tape has been reached, as indicated by two	0.3741	0.0138
+0.6612	0.0827	1.000	during the reading of the master tape, the program	0.3797	0.0118
+0.6730	0.5075	1.000	end of file marks, it is rewound and unloaded. Any	0.3835	0.0146
+0.6744	0.0827	1.000	prints the following message and the operation stops:	0.3929	0.0132
+0.6860	0.5075	1.000	further reference to the master tape causes a machine	0.4079	0.0176
+0.6890	0.0827	1.000	STOP - BAD MASTER TAPE - STOP. There is no	0.3797	0.0132
+0.7018	0.5074	1.000	hangup.	0.0622	0.0165
+0.7064	0.0827	1.000	recovery via the program.	0.1974	0.0103
+0.7194	0.5244	1.000	If the input tape reaches its physical end during the	0.3797	0.0118
+0.7194	0.0996	1.000	ESTOP 4 or ESTOP 5 - If a reader check error	0.3534	0.0118
+0.7324	0.5075	1.000	writing of a file, the entire tape must be done over,	0.3835	0.0147
+0.7339	0.0827	1.000	occurs during the reading of card files, the message	0.3910	0.0118
+0.7470	0.0808	1.000	READER ERR - START WITH CD IN NR is printed	0.3797	0.0147
+0.7485	0.5075	1.000	removing the last job processed. An ESTOP 6 error	0.3929	0.0131
+0.7628	0.5075	1.000	message is indicative of this condition. When the	0.3703	0.0136
+0.7630	0.0827	1.000	and the program stops. To recover from the stop	0.3722	0.0131
+0.7761	0.0827	1.000	condition, the first card in the NR stacker and all	0.3703	0.0146
+0.7776	0.5113	1.000	last card is read, the input program ends the inpul	0.3703	0.0131
+0.7906	0.0827	1.000	succeeding cards must be reloaded in the reader	0.3628	0.0146
+0.7906	0.5132	1.000	ape by placing a second end of file mark on the tap	0.3778	0.0146
+0.8036	0.5075	1.000	and then unloads the tape (STOP 1).	0.2650	0.0161
+0.8081	0.0827	1.000	hopper, and the Start key pressed.	0.2575	0.0131
+0.8197	0.0959	1.000	ESTOP 6 - If an end of reel condition occurs on the	0.3835	0.0161
+0.8322	0.0806	1.000	input tape, the message END OF REEL is printed and	0.4010	0.0233
+0.8342	0.5075	1.000	System Peripheral Output	0.1974	0.0176
+0.8488	0.0808	1.000	the program stops. The entire tape must be rewritten,	0.4135	0.0176
+0.8632	0.0825	1.000	removing the last job processed. The last control	0.3746	0.0202
+0.8633	0.5075	1.000	The System Peripheral Output program is a 1401 pro-	0.4041	0.0176
+0.8750	0.5075	1.000	gram used to print and punch (unblock) the records	0.3797	0.0189
+0.8791	0.0826	1.000	card printed will identify the last job processed.	0.3593	0.0174
+0.9230	0.0808	1.000	242	0.0226	0.0087

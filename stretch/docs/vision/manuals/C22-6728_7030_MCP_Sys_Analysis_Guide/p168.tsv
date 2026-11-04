@@ -1,0 +1,103 @@
+0.0727	0.5113	1.000	When the control is returned from status evaluation,	0.3853	0.0116
+0.0741	0.0695	1.000	word to be transmitted to or from the disk, and if it	0.3853	0.0116
+0.0872	0.4962	1.000	EWR31 is entered if the equipment is disk or console.	0.3985	0.0131
+0.0887	0.0695	1.000	exceeds the maximum assigned to the IOD, fakes an	0.3853	0.0116
+0.1032	0.0695	1.000	EPGK interrupt. If the disk arm is not properly	0.3609	0.0117
+0.1032	0.4962	1.000	If the equipment is tape, and the label specified pro-	0.3891	0.0117
+0.1177	0.0677	1.000	positioned, the locate routine (KKLOC) performs a	0.3778	0.0132
+0.1177	0.4944	1.000	tected, an EPGK interrupt is faked. If the tape is	0.3741	0.0132
+0.1321	0.4944	1.000	positioned at the label, the label is passed, and con-	0.3910	0.0133
+0.1321	0.0695	1.000	set up locate and ultimately returns to the status	0.3609	0.0118
+0.1467	0.4925	1.000	trol given to EMODE. At EMODE, the file mode is	0.3835	0.0133
+0.1467	0.0695	1.000	evaluation routine. Otherwise, the unit status table	0.3853	0.0133
+0.1612	0.4925	1.000	checked and changed if necessary. For tape, an	0.3628	0.0147
+0.1627	0.0677	1.000	is updated if necessary, and control given to the status	0.4079	0.0118
+0.1758	0.4925	1.000	erase gap operation is performed, if one had been	0.3722	0.0146
+0.1758	0.0695	1.000	evaluation routine (ZSTEVL). The status evaluation	0.3872	0.0118
+0.1903	0.4925	1.000	requested, before giving control to EWR3I to per-	0.3741	0.0146
+0.1918	0.0695	1.000	routine will return to the instruction following the	0.3684	0.0118
+0.2064	0.0677	1.000	last branch in the branch table (SEVLTB). For tape	0.3891	0.0117
+0.2064	0.4944	1.000	form the write.	0.1147	0.0117
+0.2209	0.5113	1.000	At EWR31, the write operation is set up and per-	0.3647	0.0116
+0.2209	0.0695	1.000	equipment, after return from status evaluation, the	0.3835	0.0116
+0.2355	0.4925	1.000	formed, and the control tables are updated. The I-O	0.3947	0.0116
+0.2355	0.0695	1.000	tape label is passed if necessary. Then, for card	0.3722	0.0131
+0.2500	0.0695	1.000	and tape equipment, a check is made of the mode	0.3647	0.0131
+0.2500	0.4925	1.000	reject routine (MIOREJ) verifies acceptance of the	0.3759	0.0131
+0.2645	0.0695	1.000	selected (KTESTM). The read is set up and per-	0.3665	0.0116
+0.2645	0.4944	1.000	write, and control is returned to the requestor via	0.3741	0.0116
+0.2776	0.4944	1.000	the service op return routine, KSUPP.	0.2876	0.0146
+0.2805	0.0695	1.000	formed, control bits adjusted, and control given to	0.3778	0.0116
+0.2951	0.0695	1.000	the I- O reject routine (MIOREJ) with return set to	0.3722	0.0102
+0.3081	0.4925	1.000	Copy Control Word	0.1447	0.0146
+0.3096	0.0695	1.000	the service op return routine, KSUPP.	0.2876	0.0116
+0.3241	0.0865	1.000	When a read request for the console is given in	0.3496	0.0116
+0.3387	0.4944	1.000	The copy control word routine is entered at BCCWR	0.3853	0.0116
+0.3387	0.0695	1.000	response to a console channel signal, a hardware	0.3684	0.0132
+0.3532	0.0714	1.000	read is not performed.	0.1692	0.0132
+0.3532	0.4962	1.000	(Figure 92). If the requestor is PP, the specified	0.3684	0.0132
+0.3545	0.2500	1.000	The status evaluation routine	0.2180	0.0088
+0.3677	0.0714	1.000	finds the bit SCNSSG on in the unit status table and	0.3741	0.0117
+0.3677	0.4944	1.000	address is checked to see whether it is a full word	0.3741	0.0102
+0.3821	0.4944	1.000	within PP bounds; if not, dispatcher error control is	0.3891	0.0133
+0.3836	0.0714	1.000	enters PCSRD, the routine specified by the branch	0.3741	0.0118
+0.3968	0.4944	1.000	entered.	0.0620	0.0116
+0.3982	0.0714	1.000	table. The hardware read instruction was previously	0.3947	0.0118
+0.4112	0.5113	1.000	The control word is copied from the file area table	0.3759	0.0118
+0.4127	0.0695	1.000	performed by MCP in order to identify the owner of	0.3853	0.0131
+0.4249	0.4942	1.000	under the following conditions:	0.2259	0.0152
+0.4273	0.0714	1.000	the channel signal. The routine at PCSRD moves the	0.3929	0.0118
+0.4418	0.0695	1.000	information previously read according to the control	0.3910	0.0118
+0.4418	0.5113	1.000	1. The channel is not operating and the unit is not	0.3741	0.0118
+0.4564	0.4944	1.000	a card reader.	0.1109	0.0103
+0.4564	0.0695	1.000	word specified, turns off SCNSSG, and fakes an EOP	0.3910	0.0131
+0.4709	0.5113	1.000	2. A non-disk channel is operating with a logical	0.3665	0.0116
+0.4709	0.0695	1.000	interrupt by entering the receptor at KGATE. Since	0.3891	0.0131
+0.4855	0.4944	1.000	unit other than the requested one.	0.2500	0.0116
+0.4869	0.0714	1.000	it does not return to status evaluation, control is not	0.3910	0.0116
+0.5000	0.5113	1.000	3. The requested unit is operating on a set up I-O	0.3741	0.0131
+0.5015	0.0714	1.000	returned to the read routine, and a hardware read	0.3703	0.0116
+0.5160	0.0714	1.000	instruction is not performed. A console read request	0.4004	0.0116
+0.5160	0.4944	1.000	instruction.	0.0883	0.0102
+0.5276	0.5111	1.000	If the unit is a disk and the channel is operating, an	0.3818	0.0156
+0.5305	0.0714	1.000	which is not in response to a channel signal will	0.3534	0.0116
+0.5451	0.0714	1.000	result in a hardware read instruction being performed	0.4023	0.0116
+0.5451	0.4962	1.000	enabled loop to the actuating address is set up via	0.3665	0.0102
+0.5596	0.4962	1.000	KCBUSY. If the unit is a card reader, or if it is the	0.3891	0.0116
+0.5596	0.0714	1.000	(SCNSSG is off).	0.1203	0.0116
+0.5741	0.4962	1.000	selected unit on an operating channel, a hardware	0.3684	0.0116
+0.5887	0.4962	1.000	copy control word instruction is executed. It is	0.3534	0.0116
+0.5900	0.0714	1.000	The Write Routine	0.1391	0.0118
+0.6032	0.4962	1.000	repeated twice in the event of exchange rejects.	0.3515	0.0117
+0.6177	0.0714	1.000	The write routine is entered at EWR1 (Figure 91).	0.3741	0.0117
+0.6177	0.4962	1.000	Control is returned to the requestor via the service	0.3816	0.0102
+0.6321	0.4962	1.000	op return routine, KSUPP.	0.1992	0.0133
+0.6321	0.0733	1.000	The control word is checked using the control word	0.3797	0.0133
+0.6467	0.0714	1.000	check subroutine (BCWCR), and SEVLMK and	0.3383	0.0133
+0.6612	0.0714	1.000	SEVLTB are set in the unit area table for subsequent	0.3947	0.0133
+0.6752	0.0732	1.000	entry to the status evaluation routine. The mask and	0.3930	0.0140
+0.6758	0.4944	1.000	Write Tape Mark	0.1316	0.0133
+0.6918	0.0714	1.000	table for the write routine are designed to check unit	0.3929	0.0118
+0.7064	0.4962	1.000	The write tape mark routine is entered at EWT1	0.3553	0.0103
+0.7064	0.0714	1.000	select and label verification. The channel operating	0.3891	0.0117
+0.7209	0.4962	1.000	(Figure 93). The routine adjusts the return address	0.3872	0.0116
+0.7209	0.0714	1.000	bit (SCHOP) is turned on in the channel status table,	0.3872	0.0131
+0.7355	0.4962	1.000	in STIC, and checks to see that the equipment is tape,	0.3985	0.0131
+0.7355	0.0714	1.000	and the routine branches depending on equipment	0.3628	0.0116
+0.7500	0.4962	1.000	faking an EPGK if it is not. An EPGK is also faked	0.3816	0.0116
+0.7500	0.0714	1.000	type ($4). For tape and console equipment, it enters	0.3929	0.0131
+0.7660	0.4962	1.000	if the tape label has specified a file protected reel.	0.3778	0.0116
+0.7660	0.0733	1.000	the status evaluation routine and for disk equipment	0.3835	0.0102
+0.7791	0.0714	1.000	it enters the special routine, ZDISKI. (See the Read	0.3929	0.0131
+0.7805	0.5132	1.000	The status evaluation routine is used to select the	0.3684	0.0102
+0.7951	0.0733	1.000	Routine.) If the equipment is the printer, control is	0.3872	0.0116
+0.7951	0.4962	1.000	unit and verify the tape label, if necessary. A tape	0.3816	0.0131
+0.8096	0.0714	1.000	given to EWR31, where the write is performed. If	0.3816	0.0131
+0.8096	0.4962	1.000	mark is written, first passing over the label file or	0.3816	0.0131
+0.8241	0.4962	1.000	erasing gap if required. Control is given to the I-O	0.3835	0.0131
+0.8241	0.0714	1.000	the equipment is the card punch, EMODE is entered	0.3853	0.0131
+0.8387	0.0714	1.000	to check the mode selected before giving control to	0.3778	0.0116
+0.8387	0.4962	1.000	reject routine (MIOREJ) with return set to the service	0.4004	0.0116
+0.8532	0.4962	1.000	op return routine, KSUPP.	0.1992	0.0132
+0.8545	0.0733	1.000	EWR31 to perform the write.	0.2143	0.0118
+0.9259	0.0677	1.000	168	0.0226	0.0087

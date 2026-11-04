@@ -1,0 +1,97 @@
+0.0814	0.5038	1.000	System Input and System Output Statements	0.3214	0.0160
+0.0827	0.0827	1.000	CARRIAGE CONTROL	0.1372	0.0103
+0.1045	0.5038	1.000	(SYSTEM) READ	0.1278	0.0176
+0.1061	0.0846	1.000	A WRITE statement that includes a FORMAT number	0.3929	0.0103
+0.1206	0.0808	1.000	prepares а всD tape which can be used to obtain off-	0.3947	0.0131
+0.1289	0.7987	1.000	EXAMPLE	0.0643	0.0169
+0.1308	0.5752	1.000	CENERAL FORM	0.0977	0.0146
+0.1352	0.0808	1.000	line printed output. Off-line printing will be done on	0.3947	0.0146
+0.1512	0.7500	1.000	READ 10,A,B (3),	0.1259	0.0116
+0.1512	0.0808	1.000	a 1401 with a program which operates in one of three	0.3966	0.0146
+0.1628	0.7744	1.000	(C(I),I=1,5)	0.0940	0.0116
+0.1672	0.0808	1.000	modes: single space, double space, and program con-	0.3966	0.0147
+0.1817	0.0808	1.000	trol. Under program control, which gives the greatest	0.3985	0.0160
+0.1955	0.0807	1.000	Hexibility, the first character of each BcD record con-	0.3969	0.0174
+0.2105	0.0807	1.000	trols spacing of the 1403 printer and that character is	0.3969	0.0179
+0.2194	0.5038	1.000	The READ statement is used to input decimal informa-	0.3985	0.0161
+0.2252	0.0826	1.000	not printed. The control characters and their effects	0.3951	0.0182
+0.2355	0.5038	1.000	tion from the System reader. Card after card is read	0.3947	0.0161
+0.2456	0.0808	1.000	are:	0.0301	0.0087
+0.2500	0.5056	1.000	until the complete list has been satisfied.	0.2951	0.0145
+0.2615	0.1823	1.000	Single space before printing	0.2049	0.0133
+0.2616	0.1109	1.000	blank	0.0432	0.0116
+0.2761	0.1823	1.000	Double space before printing	0.2143	0.0133
+0.2761	0.5019	1.000	(SYSTEM) PUNCH	0.1447	0.0191
+0.2921	0.1861	1.000	Restore paper before printing	0.2143	0.0131
+0.2922	0.1278	1.000	1	0.0150	0.0102
+0.3052	0.5545	1.000	GENERAL FORM	0.0959	0.0132
+0.3067	0.7782	1.000	EXAMPLE	0.0620	0.0116
+0.3109	0.0827	1.000	Any other control character willl be passed to the	0.3929	0.0147
+0.3241	0.7068	1.000	PUNCH 251, ((Z(I,J),	0.1654	0.0147
+0.3241	0.5075	1.000	'PUNCH f, list" where f is	0.1917	0.0131
+0.3255	0.0789	1.000	output device unchanged. Thus, a FORMAT statement	0.3985	0.0161
+0.3342	0.5038	0.300	a thor ehest tement ent, ore t of	0.1974	0.0277
+0.3353	0.7330	1.000	I=1,5), J=1,I)	0.1073	0.0125
+0.3415	0.0771	1.000	for this type of write statement will usually begin	0.3985	0.0161
+0.3542	0.4995	0.300	pamee daza tarae contais i	0.2083	0.0348
+0.3576	0.0789	1.000	with IH followed by the appropriate control character,	0.3985	0.0161
+0.3735	0.0789	1.000	if the printing is to be done under program control.	0.3816	0.0131
+0.4055	0.0808	1.000	DATA INPUT TO THE OBJECT PROGRAM	0.2650	0.0132
+0.4055	0.5038	1.000	The PUNCH statement causes cards to be punched by	0.3947	0.0132
+0.4182	0.5019	1.000	the systems punch. Cards are punched in accordance	0.3985	0.0167
+0.4273	0.0808	1.000	Decimal input data to be read when the object pro-	0.3966	0.0146
+0.4330	0.5019	1.000	with the specified format until the entire list has been	0.3966	0.0161
+0.4433	0.0808	1.000	gram is executed must be in essentially the same for-	0.3929	0.0161
+0.4520	0.5000	1.000	satisfied.	0.0658	0.0131
+0.4578	0.0808	1.000	mat as given in the previous examples. Thus, a card to	0.3947	0.0146
+0.4738	0.0808	1.000	be read according to FORMAT (12, E12.4, F10.4) might be	0.3947	0.0146
+0.4767	0.5019	1.000	(SYSTEM) PRINT	0.1316	0.0176
+0.4897	0.0808	1.000	punched:	0.0678	0.0134
+0.5000	0.5526	1.000	CENERAL FORM	0.0977	0.0189
+0.5053	0.7743	1.000	EXAMPLES	0.0680	0.0141
+0.5073	0.1071	1.000	27	0.0188	0.0116
+0.5073	0.1485	1.000	-0.8321E 02	0.0883	0.0103
+0.5073	0.2613	1.000	-0.0076	0.0583	0.0102
+0.5233	0.0789	1.000	Within each field, all information must appear at the	0.3947	0.0146
+0.5359	0.7254	1.000	J=M,K,2)	0.0754	0.0139
+0.5392	0.0771	1.000	extreme right. Plus signs may be omitted or indicated	0.3966	0.0160
+0.5479	0.7086	1.000	PRINT 1012,A,B,C,	0.1335	0.0132
+0.5536	0.0771	1.000	by a blank or t. Minus signs may be punched with	0.3966	0.0161
+0.5697	0.0771	1.000	an I1-punch or an 8-4 punch. Blanks in numeric fields	0.3966	0.0161
+0.5858	0.0789	1.000	are regarded as zeros. Numbers for E- and F-type con-	0.3947	0.0161
+0.6017	0.0771	1.000	version may contain any number of digits, but only the	0.3966	0.0146
+0.6061	0.5000	1.000	The PRINT statement causes the object program to pre-	0.3966	0.0146
+0.6163	0.0771	1.000	high-order digits will be retained (no rounding will	0.3966	0.0160
+0.6188	0.5017	1.000	pare a system output tape for subsequent off-line	0.3933	0.0196
+0.6308	0.0771	1.000	be performed). Numbers for I-type conversion will be	0.3966	0.0160
+0.6352	0.5038	1.000	printing. Successive lines are written in accordance	0.3929	0.0161
+0.6482	0.0771	1.000	treated modulo 238	0.1466	0.0132
+0.6485	0.4980	1.000	with the specified format until the complete list has	0.4005	0.0199
+0.6672	0.0921	1.000	To permit economy in punching, certain relaxations	0.3816	0.0160
+0.6830	0.0752	1.000	in input data format are permitted:	0.2594	0.0146
+0.7004	0.0920	1.000	1. Numbers of E-type conversion need not have 5	0.3818	0.0186
+0.7006	0.4944	1.000	General Read/Write Statements	0.2481	0.0161
+0.7166	0.0771	1.000	columns devoted to the exponent field. The start of	0.3966	0.0174
+0.7224	0.4981	1.000	Two basic types of input/output activity are con-	0.4004	0.0146
+0.7324	0.0771	1.000	the exponent field must be marked by an E, or if that	0.3966	0.0161
+0.7348	0.4981	1.000	trolled by the general Read/Write statements: decimal	0.4005	0.0188
+0.7485	0.0752	1.000	is omitted, by a t or - (not a blank). Thus E2, E02,	0.3966	0.0161
+0.7529	0.5019	1.000	(in a format) data transmission, and binary (not in	0.3891	0.0147
+0.7645	0.0789	1.000	+2, + 02, E - 02, and E + 02 are permissible exponent	0.3947	0.0146
+0.7660	0.5038	1.000	format )data transmission. The particular action re	0.3872	0.0174
+0.7803	0.0789	1.000	felds.	0.0415	0.0120
+0.7805	0.4981	1.000	quired is specified by the presence or absence of a	0.4004	0.0204
+0.7964	0.4962	1.000	format specification in the statement concerned.	0.3571	0.0191
+0.8009	0.0921	1.000	2. Numbers for E- or F-type conversion need not	0.3797	0.0131
+0.8137	0.0770	1.000	have their decimal point punched. If it is not punched,	0.3967	0.0151
+0.8238	0.4943	1.000	(BINARY) READ	0.1317	0.0195
+0.8299	0.0752	1.000	the FORMAT specification will supply it; for example,	0.3947	0.0146
+0.8473	0.0752	1.000	the number - 09321 + 2 with the specification E12.4	0.3966	0.0118
+0.8501	0.5507	1.000	GENERAL FORM	0.0978	0.0163
+0.8532	0.7707	1.000	EXAMPLES	0.0677	0.0131
+0.8601	0.0752	1.000	will be treated as though the decimal point had been	0.3967	0.0152
+0.8749	0.0769	1.000	punched between the 0 and the 9. If the decimal point	0.3970	0.0204
+0.8836	0.7068	1.000	READ (J) (M(N,N),	0.1504	0.0146
+0.8909	0.0732	1.000	is punched in the card, its position overrides the in-	0.3988	0.0190
+0.8951	0.7255	1.000	N=1,NMAX)	0.0941	0.0137
+0.9084	0.0771	1.000	dicated position in the FORMAT specification.	0.3214	0.0131

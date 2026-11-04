@@ -1,0 +1,37 @@
+0.1497	0.1617	1.000	IPL OPTIONS	0.1109	0.0131
+0.1802	0.1617	1.000	IPL TIME and DATE Options	0.2312	0.0131
+0.2078	0.1635	1.000	The time and date may be entered through the binary keys on the console at IPL time.	0.6823	0.0161
+0.2236	0.1635	1.000	Any valid time and date will be put on the output tape after the job card. The time is	0.6749	0.0178
+0.2374	0.1653	1.000	entered in the upper row of keys (0-23) and the date in the lower row of keys (32-55).	0.6751	0.0190
+0.2539	0.1653	1.000	Both entries are in decimal. Keys not to be considered as on should be latched off, not	0.6957	0.0180
+0.2695	0.1634	1.000	left in the neutral position. The four IPL options are now located in binary keys (28-31).	0.7107	0.0169
+0.2892	0.1617	1.000	(See Figure 1.)	0.1222	0.0145
+0.3023	0.1805	1.000	An invalid time and/or date will cause the console message:	0.4774	0.0146
+0.3182	0.2538	1.000	$DATE/TIME INVALID RETRY VIA COMD, CLOCK	0.4154	0.0161
+0.3296	0.1634	1.000	The time and date should then be entered through the clock command or no time or date	0.6977	0.0225
+0.3449	0.1615	1.000	will be put on the output tape. Any command clock entry of time and/or date will replace	0.7128	0.0228
+0.3618	0.1635	1.000	that previously entered at IPL time.	0.2914	0.0191
+0.3794	0.1805	1.000	A zero time and valid or zero date entry will produce the typewriter message:	0.6241	0.0161
+0.3953	0.2556	1.000	$TIME AFTER CALIBRATION XX:XX:XX	0.3365	0.0147
+0.4076	0.1634	1.000	The present time clock reading will appear in the message and on the output tape. If a	0.6902	0.0221
+0.4244	0.1635	1.000	valid non-zero time is entered and the date is valid, this time will recalibrate the clock	0.7011	0.0189
+0.4433	0.1635	1.000	and will appear in the message and on the output tape.	0.4305	0.0146
+0.4752	0.1635	1.000	Suppress Messages	0.1560	0.0161
+0.5014	0.1634	1.000	If binary key 28 is latched on, all initializing messages will be suppressed except the	0.6789	0.0207
+0.5174	0.1634	1.000	system tape date message and the invalid time/date message if applicable.	0.5962	0.0206
+0.5523	0.1654	1.000	Rejected Job Count Report	0.2105	0.0146
+0.5793	0.1652	1.000	Binary key 30 determines if any jobs are to be rejected. The number of jobs to be	0.6582	0.0202
+0.5959	0.1654	1.000	rejected should be inserted in the numeric switches columns 10 and 11 instead of only	0.6805	0.0189
+0.6117	0.1653	1.000	column 11.	0.0866	0.0179
+0.6453	0.1654	1.000	RESERVE LIGHT ELIMINATED	0.2538	0.0147
+0.6727	0.1653	1.000	It should be noted that the conceptor, debugger, and command package no longer turn the	0.7089	0.0194
+0.6918	0.1654	1.000	reserve light on or off.	0.1842	0.0146
+0.7238	0.1654	1.000	NEW COMMANDS	0.1429	0.0131
+0.7515	0.1654	1.000	A new command and an addition to a command have been added to the Master Control	0.6767	0.0174
+0.7688	0.1673	1.000	Program. The commands are the following:	0.3534	0.0146
+0.7805	0.2011	1.000	COMD, COMMENT, maximum 40 character message: This command is used to put	0.6654	0.0189
+0.7964	0.2312	1.000	comments on the output tape. The operator's console and/or system input may	0.6372	0.0176
+0.8096	0.2331	1.000	be the source of the command. If system input is the source, the comment will	0.6429	0.0189
+0.8252	0.2330	1.000	appear on the console typewriter as well as on the output tape preceding the job	0.6356	0.0196
+0.8473	0.2349	1.000	card.	0.0452	0.0146
+0.9373	0.7424	1.000	Page 2 of 12	0.1091	0.0149

@@ -1,0 +1,59 @@
+0.0858	0.8816	1.000	MQP	0.0414	0.0160
+0.1292	0.1033	1.000	LINKAGE	0.0734	0.0120
+0.1294	0.5282	1.000	Boxes 3, 4, 5	0.1128	0.0146
+0.1584	0.5282	1.000	MQP must set up the index word, Bsymbx, with the	0.3816	0.0146
+0.1597	0.1015	1.000	On Entry	0.0697	0.0134
+0.1715	0.5282	1.000	location of where the symbol collected by CPLTSY	0.3778	0.0145
+0.1845	0.5263	1.000	is to be stored. MQP is having the collected symbol	0.3966	0.0161
+0.1860	0.1015	1.000	MAIN enters MQP through the Pass 1 digit-select,	0.3722	0.0176
+0.1991	0.1015	1.000	pseudo-op branch table.	0.1823	0.0176
+0.1991	0.5282	1.000	put in the variable portion of the PUNSYM's expanded	0.3985	0.0161
+0.2151	0.5282	1.000	instruction unit. The location given to CPLTSY is	0.3759	0.0146
+0.2293	0.5282	1.000	set up so that MQP can later prefix the symbol with	0.3854	0.0167
+0.2324	0.1034	1.000	On Exit	0.0583	0.0133
+0.2427	0.5282	1.000	an eight-bit byte containing the character count of the	0.3985	0.0161
+0.2584	0.5299	1.000	symbol.	0.0623	0.0180
+0.2587	0.1015	1.000	MQP returns to MAIN where the remaining (non-	0.3665	0.0189
+0.2733	0.1015	1.000	processed) characters of an instruction are collected.	0.4004	0.0174
+0.2890	0.5299	1.000	Box7	0.0454	0.0165
+0.3036	0.1034	1.000	FLOW CHART DESCRIPTION	0.2218	0.0147
+0.3169	0.5282	1.000	Since the PUNSYM instruction will not go through that	0.4041	0.0174
+0.3327	0.5301	1.000	section in MAIN where the GETFLD subroutine is	0.3703	0.0176
+0.3358	0.1015	1.000	Box1	0.0432	0.0131
+0.3503	0.5320	1.000	asked to encode the statement fields, MQP increments	0.4023	0.0131
+0.3648	0.1034	1.000	The character in the value field of $3 is the comma	0.3778	0.0131
+0.3648	0.5320	1.000	the field counters, Zinfld and Field, at this point instead.	0.4229	0.0131
+0.3794	0.1034	1.000	after the op mnemonic since MAIN just came to MQP	0.3910	0.0116
+0.3808	0.5489	1.000	STRAP maintains two counters associated with the	0.3722	0.0102
+0.3890	0.1013	1.000	through the digit-select table. MQP must fetch the	0.3839	0.0199
+0.3953	0.5320	1.000	number of statement fields in the instruction. One	0.3759	0.0116
+0.4039	0.1034	1.000	first character of each symbol before using CPLTSY	0.3929	0.0191
+0.4112	0.5320	1.000	counter, the Zinfld field in the fixed portion of each	0.3797	0.0118
+0.4215	0.1034	1.000	to collect the remaining characters of the symbol.	0.3722	0.0161
+0.4244	0.5320	1.000	expanded instruetion unit, is zeroed during the in-	0.3703	0.0132
+0.4403	0.5301	1.000	itialization of each instruction and is incremented	0.3684	0.0103
+0.4548	0.5320	1.000	every time_MAIN detects a new field during Pass 1.	0.3778	0.0118
+0.4694	0.5320	1.000	Throughout Pass 2 the contents of each Zinfld con-	0.3741	0.0118
+0.4752	0.1015	1.000	Boxes 2; 11-15	0.1109	0.0147
+0.4839	0.5301	1.000	tains the total number of statement fields in the	0.3515	0.0103
+0.4985	0.5320	1.000	corresponding instruction. On the other hand the	0.3647	0.0118
+0.5029	0.1015	1.000	Any field containing a null symbol or a symbol be-	0.3741	0.0160
+0.5130	0.5320	1.000	counter Field is a single counter used for all instruct-	0.4023	0.0118
+0.5188	0.1015	1.000	ginning with a number is skipped over by MQP.	0.3515	0.0161
+0.5291	0.5301	1.000	ions and thus is outside of the expanded instruction	0.3778	0.0103
+0.5421	0.5320	1.000	unit buffer. Field like each Zinfld field during Pass 1	0.3966	0.0131
+0.5479	0.1015	1.000	Boxes 15, 8, 9	0.1147	0.0161
+0.5581	0.5320	1.000	both is zeroed during the initialization of each instruct-	0.4098	0.0116
+0.5727	0.5301	1.000	ion and is incremented for each field detected in the	0.3853	0.0102
+0.5785	0.1034	1.000	Either of two conditions cause VQP to stop collecting	0.3947	0.0145
+0.5872	0.5320	1.000	statement. However, unlike each Zinfld counter,	0.3647	0.0131
+0.5930	0.1015	1.000	any more characters: first, if the symbol in the	0.3534	0.0131
+0.6017	0.5301	1.000	Field is also zeroed during the initialization of each	0.3853	0.0116
+0.6032	0.1015	1.000	statement field of the PUNSYM begins with a non-	0.3684	0.0160
+0.6163	0.5301	1.000	instruction during Pass 2 also. By the contents of	0.3741	0.0131
+0.6206	0.1015	1.000	alphameric character; second, when a terminating	0.3741	0.0161
+0.6308	0.5320	1.000	Field, ERROR can determine the number of the field	0.3891	0.0131
+0.6381	0.1015	1.000	character occurs.	0.1353	0.0116
+0.6467	0.5301	1.000	in which an error occurs.	0.1917	0.0103
+0.9419	0.8459	1.000	MQP	0.0320	0.0116
+0.9433	0.9023	1.000	115	0.0226	0.0073

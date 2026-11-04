@@ -1,0 +1,117 @@
+0.0930	0.5470	1.000	When an invalid card is detected or a reject request	0.3872	0.0116
+0.0945	0.1053	1.000	entry. A mode change is allowed only between jobs:	0.3891	0.0131
+0.1075	0.1052	1.000	If the entry is an initial entry, the routine clears and	0.3912	0.0163
+0.1076	0.5301	1.000	is received, the program (LERROR) clears any entries	0.4098	0.0131
+0.1221	0.5301	1.000	it had made in the I-O request and first reel tables for	0.4041	0.0116
+0.1235	0.1053	1.000	sets up certain internal tables. Then, if overlap, a	0.3835	0.0131
+0.1366	0.5320	1.000	this job, and sets the reject bit in the PP reference	0.3816	0.0131
+0.1381	0.1053	1.000	check is made to see whether or not a slot is available	0.4041	0.0116
+0.1526	0.5301	1.000	table.	0.0451	0.0116
+0.1539	0.1053	1.000	within the PP reference table (PPREF). It not, a	0.3665	0.0118
+0.1672	0.1053	1.000	type 1 condition is set up in the linkage, indicies are	0.3891	0.0132
+0.1804	0.1051	1.000	restored, and the error return is made. If a slot is	0.3875	0.0167
+0.1817	0.5320	1.000	The Assign Routine: The assign routine pre-assigns	0.3891	0.0132
+0.1955	0.1051	1.000	available, the program proceeds to check if the entry	0.3950	0.0167
+0.1962	0.5320	1.000	the problem program requests which were submitted	0.3891	0.0117
+0.2106	0.5320	1.000	through IOD cards. This enables the operator to set	0.3910	0.0133
+0.2121	0.1053	1.000	is a final entry (IOD/REEL zero in ALPHA+1).	0.3477	0.0118
+0.2121	0.4530	1.000	If so,	0.0508	0.0118
+0.2267	0.5301	1.000	up in advance the tape units to be used by the problem	0.4004	0.0118
+0.2267	0.1053	1.000	the PP to be entered is a PP without IOD cards, or	0.3778	0.0118
+0.2412	0.1053	1.000	possibly a PP that was rejected by job control.	0.3477	0.0131
+0.2412	0.5301	1.000	program. The set up of tapes as far in advance as	0.3778	0.0118
+0.2558	0.1203	1.000	If the entry is not a final entry, the flow follows	0.3553	0.0131
+0.2558	0.5301	1.000	possible optimizes set-up time. The basic rule used	0.3947	0.0118
+0.2703	0.5301	1.000	for assignment is to utilize all tape units when they	0.3816	0.0118
+0.2703	0.1071	1.000	one of two paths depending on whether the card is IOD	0.3966	0.0131
+0.2848	0.5320	1.000	become unassigned. At assign time, all requests are	0.3985	0.0131
+0.2863	0.1071	1.000	or REEL. If it is IOD (LIODRN), the I-O request	0.3684	0.0131
+0.2994	0.5320	1.000	checked for adherance to the machine I-O configura-	0.3910	0.0117
+0.3009	0.1071	1.000	table is checked for room, and LIODTP entered if the	0.3966	0.0131
+0.3151	0.1070	1.000	type is tape. A tape IOD has both channel and unit	0.3743	0.0157
+0.3154	0.5320	1.000	tion. If there are any discrepancies, the problem pro-	0.4079	0.0116
+0.3255	0.5301	1.000	gram will be rejected. The assign routine is entered	0.3966	0.0176
+0.3299	0.1071	1.000	fields for separation, while the remaining I-O types	0.3835	0.0131
+0.3415	0.5282	1.000	from JC4 with the linkage:	0.2011	0.0161
+0.3429	0.1052	1.000	have only a channel field for separation. The I-O	0.3705	0.0150
+0.3571	0.5976	1.000	LVI, $15, Y	0.0924	0.0169
+0.3603	0.1071	1.000	request table (TIOREQ) is then set up with proper	0.3667	0.0120
+0.3721	0.5959	1.000	B, TASIGN	0.0865	0.0146
+0.3735	0.1071	1.000	entries. For each non-tape IOD card with a unique	0.3778	0.0131
+0.3875	0.1070	1.000	type or channel field, there will be an entry made	0.3688	0.0159
+0.3881	0.5639	1.000	У XW, А, B, С	0.1335	0.0146
+0.4012	0.2726	1.000	For a tape IOD an entry will	0.2105	0.0174
+0.4036	0.5957	1.000	(Return)	0.0623	0.0125
+0.4055	0.1053	1.000	in the TIOREQ table.	0.1579	0.0118
+0.4172	0.1071	1.000	be made in the TIOREQ table for each IOD card with	0.3872	0.0132
+0.4309	0.1070	1.000	a null channel and unit field, and each IOD card with	0.3876	0.0175
+0.4331	0.5320	1.000	where	0.0489	0.0131
+0.4476	0.3421	1.000	In the case where	0.1297	0.0118
+0.4491	0.5508	1.000	A is the status of the machine:	0.2274	0.0131
+0.4491	0.1071	1.000	unique channel and unit fields.	0.2256	0.0117
+0.4636	0.1071	1.000	channel fields are alike and unit fields differ a	0.3440	0.0117
+0.4636	0.5658	1.000	O - no configuration change has taken place.	0.3440	0.0146
+0.4782	0.1090	1.000	TIOREQ table entry is made requesting the same	0.3609	0.0116
+0.4782	0.5583	1.000	f0 - configuration change has taken place.	0.3289	0.0146
+0.4912	0.1090	1.000	channel as the previous IOD card with that channel.	0.3778	0.0131
+0.4927	0.5508	1.000	B is the exit disposition:	0.1842	0.0145
+0.5073	0.5658	1.000	0 - next PP has been assigned successfully	0.3383	0.0146
+0.5073	0.1090	1.000	Making a table entry consists of setting up the	0.3402	0.0131
+0.5218	0.6259	1.000	and is ready for Move.	0.1729	0.0146
+0.5218	0.1071	1.000	following fields in the TIOREQ word:	0.2726	0.0131
+0.5363	0.2387	1.000	identifying the equipment type.	0.2274	0.0131
+0.5363	0.5564	1.000	f0 - next PP has been rejected and cannot be	0.3534	0.0146
+0.5378	0.1391	1.000	TYPE	0.0470	0.0116
+0.5509	0.2350	1.000	for channel separation (tape only).	0.2575	0.0131
+0.5523	0.1410	0.300	TRLSYM	0.0921	0.0102
+0.5523	0.6278	1.000	given to Move.	0.1109	0.0146
+0.5654	0.2387	1.000	the sequence number in which the	0.2481	0.0131
+0.5666	0.1409	0.300	TIO1Q	0.0678	0.0121
+0.5669	0.5508	1.000	C is the Assign entry mode:	0.2086	0.0147
+0.5814	0.2556	1.000	IOD was received.	0.1372	0.0102
+0.5814	0.5846	1.000	- overlapped mode.	0.1598	0.0147
+0.5917	0.1239	1.000	If the IOD card has a TYPE field requesting a disk,	0.3800	0.0174
+0.5959	0.5583	1.000	#0 - unoverlapped mode.	0.2011	0.0147
+0.6105	0.5338	1.000	Assign uses SA8IQS to convert and $COMM to output	0.3910	0.0145
+0.6105	0.1071	1.000	a check is made to see if it is an illegal request for	0.3816	0.0132
+0.6231	0.1070	1.000	infinity disk. If so, the error return is made. Other-	0.4043	0.0163
+0.6264	0.5338	1.000	messages to the operator.	0.1955	0.0146
+0.6394	0.5508	1.000	Upon entry to Assign, (TASIGN, Figure 35) the	0.3496	0.0161
+0.6409	0.1090	1.000	wise, a normal return is made.	0.2331	0.0132
+0.6526	0.5338	1.000	first check made is whether or not a machine configu-	0.4023	0.0160
+0.6539	0.1241	1.000	If the card is a REEL card, it will be processed	0.3571	0.0133
+0.6685	0.1090	1.000	only if it is the first REEL card following a tape IOD.	0.3966	0.0133
+0.6700	0.5338	1.000	ration change took place since the last time the assign	0.4041	0.0146
+0.6845	0.1090	1.000	If the last IOD was not a tape IOD, the error return	0.3816	0.0131
+0.6845	0.5338	1.000	routine was entered. Conditions for stating a con-	0.3797	0.0146
+0.6991	0.1071	1.000	procedure is followed. If the card is not the first	0.3703	0.0131
+0.6991	0.5338	1.000	figuration change must be set by job control for the	0.3816	0.0146
+0.7136	0.1090	1.000	reel card for the IOD, it is ignored, and the normal	0.3835	0.0131
+0.7136	0.5338	1.000	initial entry to Assign in order that the necessary	0.3703	0.0146
+0.7282	0.1090	1.000	return made. (On a single unit, mounting instructions	0.4023	0.0131
+0.7282	0.5338	1.000	tables for I-O validity checking be set up. The con-	0.3891	0.0146
+0.7427	0.1090	1.000	for tape reels other than the first are of no value	0.3628	0.0131
+0.7442	0.5338	1.000	figuration change section performs the following	0.3590	0.0146
+0.7573	0.1090	1.000	until PP has finished with the first. Since this will	0.3778	0.0116
+0.7583	0.5337	1.000	functions:	0.0754	0.0124
+0.7733	0.5508	1.000	1. All requests reserving units that have become	0.3703	0.0131
+0.7733	0.1090	1.000	not happen until phase 4, pre-assignment is complete	0.3947	0.0131
+0.7878	0.1071	1.000	when the first reel is called for.)	0.2481	0.0116
+0.7878	0.5357	1.000	unavailable due to a machine configuration change,	0.3741	0.0131
+0.8023	0.1241	1.000	If the REEL card is acceptable, the reel label is	0.3609	0.0116
+0.8036	0.5357	1.000	must be relieved of these units. At the same time	0.3741	0.0118
+0.8169	0.1090	1.000	entered in the first reel table, and its address in the	0.3891	0.0131
+0.8182	0.5338	1.000	these relieved requests must be marked so that they	0.3891	0.0133
+0.8313	0.1090	1.000	I-O request table. A normal return is made.	0.3366	0.0134
+0.8314	0.4436	1.000	If a	0.0395	0.0116
+0.8327	0.5357	1.000	have priority in re-assignment (pseudo-unoverlapped).	0.4060	0.0118
+0.8459	0.1090	1.000	final entry is made and the reject bit is off, the PP	0.3778	0.0132
+0.8473	0.5489	1.000	2. The equipment count is generated for the validity	0.3929	0.0146
+0.8618	0.1090	1.000	reference table entry is made for this PP. These	0.3703	0.0118
+0.8618	0.5338	1.000	check table. This table contains the equipment code	0.3891	0.0146
+0.8764	0.1090	1.000	entries are defined in the preceding section on I-O	0.3722	0.0118
+0.8764	0.5338	1.000	and count and a zero field for the requested count	0.3684	0.0132
+0.8924	0.1090	1.000	assignment tables.	0.1391	0.0116
+0.8924	0.5357	1.000	for a PP.	0.0714	0.0116
+0.9476	0.7331	1.000	System Operation Programs	0.1560	0.0103
+0.9491	0.9117	1.000	69	0.0150	0.0073

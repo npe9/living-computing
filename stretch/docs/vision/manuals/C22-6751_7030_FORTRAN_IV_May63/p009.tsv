@@ -1,0 +1,81 @@
+0.0666	0.4961	1.000	ExITS	0.0472	0.0150
+0.0697	0.0752	1.000	DO's WITHIN DO's	0.1372	0.0132
+0.0887	0.4944	1.000	When a CALL statement is executed in the range of	0.4004	0.0174
+0.0899	0.0750	1.000	Among the statements in the range of a Do may be	0.3971	0.0205
+0.1061	0.0733	1.000	other Do statements. When this is so, the following rule	0.3985	0.0161
+0.1061	0.4962	1.000	a Do, care must be taken that the subprogram does nol	0.3947	0.0146
+0.1163	0.5000	1.000	alter the Do index or indexing parameters. This applies	0.3929	0.0174
+0.1235	0.0752	1.000	must be observed:	0.1316	0.0116
+0.1336	0.4962	1.000	as well when a closed function is invoked in the range	0.3985	0.0146
+0.1394	0.0902	1.000	Rule 1: If the range of a Do includes another Do,	0.3816	0.0161
+0.1512	0.4962	1.000	of a Do. (See Chapter 6.)	0.1823	0.0146
+0.1539	0.1090	1.000	then all of the statements in the range of the	0.3628	0.0147
+0.1715	0.1090	1.000	second must also be in the range of the first.	0.3327	0.0131
+0.1788	0.4981	1.000	CONTINUE	0.0977	0.0174
+0.1845	0.0752	1.000	A set of Do's satisfying this rule is called a nest of DO's.	0.3966	0.0176
+0.2093	0.7726	1.000	EXAMPLE	0.0620	0.0116
+0.2106	0.5489	1.000	GENERAL FORM	0.0959	0.0118
+0.2209	0.0771	1.000	TRANSFER OF CONTROL	0.1617	0.0116
+0.2223	0.7631	1.000	CONTINUE	0.0828	0.0176
+0.2258	0.5468	1.000	"CONTINUE"	0.1000	0.0164
+0.2384	0.0789	1.000	Transfers of control from and into the range of a DO	0.3929	0.0147
+0.2558	0.0771	1.000	are subject to the following rule:	0.2406	0.0146
+0.2674	0.5019	1.000	instructions in the object program. It is most fre	0.3853	0.0132
+0.2688	0.0921	1.000	Rule 2: No transfer is permitted into the range of	0.3797	0.0191
+0.2773	0.4999	1.000	quently used as the last statement in the range of	0.3893	0.0193
+0.2878	0.1071	1.000	any Do from outside its range. Thus, in the con-	0.3647	0.0174
+0.3005	0.1070	1.000	figuration (Figure 1), 1, 2, and 3 are permitted	0.3651	0.0216
+0.3197	0.1090	1.000	transfers, but 4, 5, and 6 are not.	0.2462	0.0146
+0.3561	0.2124	1.000	DO	0.0188	0.0073
+0.4142	0.5263	1.000	10 DO 121=1, 100	0.1353	0.0145
+0.4271	0.5601	1.000	IF (ARG.NE.VALUE(I)) GO TO 12	0.2331	0.0120
+0.4402	0.5582	1.000	GO TO 20	0.0678	0.0121
+0.4506	0.5263	1.000	12 CONTINUE	0.1147	0.0131
+0.4637	0.2707	1.000	6	0.0132	0.0102
+0.4695	0.5244	1.000	:	0.0150	0.0276
+0.5029	0.0771	1.000	Figure 1	0.0526	0.0102
+0.5188	0.4981	1.000	an entry at a time until it finds the first entry which	0.3985	0.0176
+0.5363	0.5000	1.000	equals the value of the variable arg, whereupon it	0.3985	0.0146
+0.5421	0.0771	1.000	PRESERVATION OF INDEX	0.1673	0.0117
+0.5457	0.4998	1.000	exits to statement 20 with the value of I available for	0.3952	0.0219
+0.5609	0.0771	1.000	When control leaves the range of a Do in the ordinary	0.3947	0.0176
+0.5649	0.4981	1.000	fixed point use; if no entry in the table equals the value	0.4004	0.0171
+0.5752	0.0768	1.000	way (i.e., when the Do becomes satisfied and control	0.3971	0.0215
+0.5814	0.4962	1.000	of ARG, a normal exit to the statement following the	0.4004	0.0160
+0.5940	0.0769	1.000	passes on to the next statement after the range) the	0.3952	0.0176
+0.6088	0.0770	1.000	exit is said to be a normal exit. After a normal exit	0.3968	0.0148
+0.6235	0.0771	1.000	from a Do occurs, the value of the index controlled by	0.3947	0.0160
+0.6279	0.4981	1.000	PAUSE	0.0602	0.0161
+0.6381	0.0771	1.000	that Do is not defined, and the index cannot be used	0.3947	0.0174
+0.6548	0.0767	1.000	again until it is redefined.	0.1961	0.0184
+0.6553	0.5507	1.000	GENERAL FORM	0.0960	0.0151
+0.6555	0.7763	1.000	EXAMPLE	0.0602	0.0145
+0.6695	0.7798	1.000	PAUSE	0.0532	0.0185
+0.6715	0.5658	1.000	"PAUSE"	0.0677	0.0174
+0.6715	0.0921	1.000	If exit occurs by a transfer out of the range, how-	0.3816	0.0131
+0.6845	0.0826	1.000	ver, the current value of the index remains available	0.3855	0.0150
+0.6958	0.0825	1.000	or any subsequent use. If exit occurs by a transfer	0.3876	0.0197
+0.6973	0.4980	1.000	A PAUSE statement causes a temporary halt in object	0.3987	0.0158
+0.7106	0.4981	1.000	program execution, providing the operator with the	0.4004	0.0191
+0.7119	0.0767	1.000	which is in the ranges of several Do's the current values	0.3955	0.0250
+0.7252	0.4981	1.000	option of resuming or of abandoning the job. The con-	0.4004	0.0176
+0.7297	0.0771	1.000	of all the indexes controlled by those Do's are pre-	0.3966	0.0174
+0.7369	0.4997	1.000	tents of the instruction counter are displayed on the	0.3990	0.0238
+0.7500	0.0789	1.000	served for any subsequent use.	0.2293	0.0131
+0.7833	0.0789	1.000	RESTRICTIONS ON STATEMENTS	0.2105	0.0103
+0.7906	0.4981	1.000	STOP	0.0508	0.0161
+0.8018	0.0787	1.000	Only one type of statement is not permitted in the	0.3952	0.0206
+0.8162	0.0768	1.000	range of a Do, namely, any statement which redefines	0.3972	0.0222
+0.8166	0.7762	1.000	EXAMPLE	0.0623	0.0166
+0.8212	0.5526	1.000	GENERAL FORM	0.0959	0.0131
+0.8343	0.5677	1.000	"STOP"	0.0620	0.0174
+0.8343	0.7857	1.000	STOP	0.0432	0.0160
+0.8358	0.0789	1.000	the value of the index or of any of the indexing param-	0.3929	0.0131
+0.8517	0.0789	1.000	eters. In other words, the indexing of a Do loop must	0.3949	0.0131
+0.8597	0.4998	1.000	This statement causes an "Abnormal End-of-Job" re-	0.3989	0.0188
+0.8643	0.0788	1.000	be completely set before the range is entered and the	0.3951	0.0181
+0.8727	0.4998	1.000	turn to McP ( "Normal End-of-Job" return to MCP is ac-	0.3989	0.0209
+0.8779	0.0771	1.000	initial, terminal, and incremental values of the index	0.3966	0.0189
+0.8908	0.5017	1.000	complished by the RETURN statement. See Chapter 6.)	0.3819	0.0184
+0.8982	0.0789	1.000	may not be altered.	0.1504	0.0132
+0.9201	0.8891	1.000	9	0.0094	0.0102

@@ -1,0 +1,123 @@
+0.0753	0.5280	1.000	If t is.TRuE., statement S is executed; if t is.FALSE., con-	0.3989	0.0220
+0.0792	0.1068	1.000	Chapter 4. Control Statements and	0.2959	0.0219
+0.0945	0.5282	1.000	trol passes to the next statement.	0.2350	0.0161
+0.1003	0.1053	1.000	END Statement	0.1297	0.0131
+0.1147	0.1070	1.000	This class of FORTRAN statements is the set of control	0.3969	0.0181
+0.1235	0.5282	1.000	DO	0.0338	0.0160
+0.1291	0.1050	1.000	statements which enable the programmer to state the	0.3990	0.0220
+0.1482	0.1053	1.000	flow of his program.	0.1466	0.0161
+0.1555	0.6015	1.000	GENERAL FORM	0.0959	0.0118
+0.1555	0.8252	1.000	EXAMPLES	0.0620	0.0087
+0.1685	0.1071	1.000	UNCONDITIONAL GO TO	0.1711	0.0147
+0.1730	0.5301	1.000	"DO n i=mi, mz" or "DO n i=m1,	0.2406	0.0161
+0.1730	0.7838	1.000	DO 30 I= 1, 10	0.0977	0.0102
+0.1845	0.5301	1.000	mz, ms" where n is a statement num-	0.2387	0.0131
+0.1845	0.7895	1.000	DO 30 I= 1, M, 3	0.1034	0.0103
+0.1901	0.3834	1.000	EXAMPLE	0.0603	0.0136
+0.1933	0.1598	1.000	GENERAL FORM	0.0940	0.0088
+0.1948	0.5320	1.000	ber, i is a non-subscripted fixed point	0.2387	0.0146
+0.1962	0.7876	1.000	DO 30 I=N, M	0.0959	0.0102
+0.2064	0.7857	1.000	DO 30 I=N, M, L	0.1128	0.0131
+0.2078	0.5846	1.000	and mi, ma, ms are each	0.1842	0.0146
+0.2092	0.3233	1.000	GO TO 3	0.0621	0.0118
+0.2106	0.1053	1.000	"GO TO n" where n is a state-	0.2030	0.0133
+0.2224	0.1128	1.000	nent number. This statemen	0.1880	0.0131
+0.2311	0.1128	1.000	auses transfer of control to th	0.1880	0.0147
+0.2456	0.1071	1.000	statement with statement num-	0.1974	0.0116
+0.2542	0.5301	1.000	to be 1.	0.0545	0.0133
+0.2573	0.1053	1.000	ber n.	0.0432	0.0116
+0.2776	0.1071	1.000	COMPUTED GO TO	0.1353	0.0146
+0.2833	0.5300	1.000	The Do statement is a command to execute repeatedly	0.3969	0.0179
+0.2979	0.5301	1.000	the statements which follow, up to and including the	0.3985	0.0204
+0.3007	0.3853	1.000	EXAMPLE	0.0583	0.0090
+0.3023	0.1617	1.000	GENERAL FORM	0.0921	0.0087
+0.3139	0.5301	1.000	statement with statement number n.	0.2613	0.0176
+0.3169	0.3233	1.000	GO TO (30, 42, 50, 9), I	0.1598	0.0160
+0.3182	0.1090	1.000	"GO TO (n1, n2, .... nm), i"	0.1992	0.0133
+0.3306	0.5468	1.000	The first time, the statements are executed with i =	0.3801	0.0222
+0.3320	0.1086	1.000	where n1, n2, ....	0.1136	0.0147
+0.3325	0.2462	1.000	are state-	0.0622	0.0094
+0.3343	0.2199	1.000	Nm	0.0207	0.0073
+0.3428	0.1090	1.000	ment numbers and i is a non-	0.1974	0.0105
+0.3473	0.5320	1.000	my. For each succeeding execution, i is increased by	0.3947	0.0161
+0.3545	0.1071	1.000	subscripted fixed point variable.	0.2011	0.0118
+0.3632	0.5318	1.000	mz. After they have been executed with i equal to the	0.3950	0.0171
+0.3770	0.5318	1.000	highest of this sequence of values which does not ex-	0.3951	0.0187
+0.3779	0.1090	1.000	Control is transferred to the statement with statement	0.3966	0.0117
+0.3924	0.1090	1.000	number n1, n2, ng, ... , Nm, depending on the current	0.3966	0.0146
+0.3939	0.5338	1.000	ceed m», control passes to the statement following the	0.3929	0.0161
+0.4070	0.1090	1.000	value of i. Thus, in the example, if i is 3 at the time of	0.3966	0.0145
+0.4112	0.5320	1.000	last statement in the range of the Do.	0.2594	0.0133
+0.4230	0.1090	1.000	execution, a transfer to the third statement of the list,	0.3966	0.0146
+0.4255	0.5487	1.000	The range of a Do is that set of statements which will	0.3802	0.0188
+0.4355	0.1088	1.000	(statement 50), will occur. This statement is used to	0.3970	0.0198
+0.4433	0.5338	1.000	be executed repeatedly, i.e., it is the sequence of con-	0.3947	0.0146
+0.4548	0.1090	1.000	obtain a computed many-way fork.	0.2500	0.0132
+0.4593	0.5320	1.000	secutive statements immediately following the Do, up to	0.3966	0.0131
+0.4707	0.5335	1.000	and including the statement numbered n.	0.2994	0.0213
+0.4782	0.1090	1.000	ASSIGNED GO TO	0.1222	0.0131
+0.4897	0.5489	1.000	The index of a Do is the fixed point variable i, which	0.3778	0.0176
+0.5015	0.3835	1.000	EXAMPLES	0.0658	0.0087
+0.5029	0.1635	1.000	GENERAL FORM	0.0921	0.0087
+0.5053	0.5318	1.000	is controlled by the Do in such a way that its value	0.3970	0.0185
+0.5188	0.1090	1.000	"GO TO i," where i is a non-	0.1992	0.0118
+0.5188	0.3271	1.000	GO TO K	0.0621	0.0103
+0.5233	0.5338	1.000	begins at mı and is increased each time by mo until it	0.3966	0.0146
+0.5305	0.3271	1.000	GO TO JOE, (10, 20, 30)	0.1617	0.0116
+0.5305	0.1090	1.000	subscripted fixed-point variable	0.2011	0.0116
+0.5378	0.5320	1.000	is about to exceed m3. Throughout the range it is avail-	0.3966	0.0146
+0.5436	0.1090	1.000	appearing in a previously	0.1786	0.0116
+0.5451	0.2857	1.000	ex-	0.0226	0.0073
+0.5523	0.5338	1.000	able for computation, either as an ordinary fixed-point	0.3947	0.0160
+0.5536	0.1090	1.000	ecuted ASSIGN statement.	0.1673	0.0118
+0.5682	0.5320	1.000	variable or as the variable of a subscript. After the last	0.3985	0.0161
+0.5741	0.1109	1.000	This statement causes transfer of control to the state-	0.3966	0.0131
+0.5827	0.5336	1.000	execution of the range, the Do is said to be satisfied.	0.3800	0.0179
+0.5887	0.1090	1.000	ment with statement number equal to that value of i	0.3966	0.0147
+0.6017	0.5508	1.000	Suppose, for example, that control has reached state-	0.3778	0.0161
+0.6045	0.1109	1.000	which was last assigned by an ASSIGN. The assigned	0.3947	0.0146
+0.6206	0.5338	1.000	ment 10 of the program:	0.1748	0.0117
+0.6206	0.1109	1.000	co To is used to obtain a pre-set many-way fork. An	0.3947	0.0146
+0.6366	0.1109	1.000	optional form of this statement is co To i, (N1, N2,...,	0.3966	0.0131
+0.6497	0.1109	1.000	nm) where n1, nz,..., Nm are statement numbers.	0.3797	0.0161
+0.6667	0.5600	1.000	iO DO 111=1,10	0.1186	0.0197
+0.6727	0.1089	1.000	ASSIGN	0.0641	0.0136
+0.6845	0.5620	1.000	11 A(I)=I*N(I)	0.1128	0.0131
+0.6961	0.1633	1.000	GENERAL FORM	0.0944	0.0106
+0.6961	0.3872	1.000	EXAMPLE	0.0583	0.0089
+0.6962	0.5620	1.000	12	0.0188	0.0131
+0.7121	0.3158	1.000	ASSIGN 12 to K	0.1147	0.0118
+0.7122	0.5583	0.500	•..	0.0150	0.0305
+0.7136	0.1090	1.000	"ASSIGN n TO i" where n is	0.2011	0.0131
+0.7241	0.1087	1.000	a statement number and i is a	0.2017	0.0163
+0.7369	0.1090	1.000	non-subscripted fixed point vari-	0.1992	0.0131
+0.7470	0.5338	1.000	The range of the Do is statement 11, and the index is I.	0.3947	0.0176
+0.7500	0.1109	1.000	able which appears in an as-	0.1955	0.0103
+0.7600	0.1090	1.000	signed GO TO statement.	0.1636	0.0120
+0.7622	0.5337	1.000	The Do sets I to 1 and control passes into the range.	0.3969	0.0187
+0.7791	0.1090	1.000	This statement causes a subsequent co TO i to transfer	0.3985	0.0174
+0.7791	0.5320	1.000	The value of 1*N(1) is computed, converted to floating	0.3985	0.0161
+0.7936	0.5338	1.000	point, and stored in location A(1). Since statement 11	0.3947	0.0174
+0.7951	0.1090	1.000	control to the statement with the statement number n	0.3947	0.0160
+0.8096	0.5320	1.000	is the last statement in the range of the Do and the Do	0.3966	0.0160
+0.8183	0.1109	1.000	IF	0.0207	0.0116
+0.8255	0.5320	1.000	is unsatisfied, I is increased to 2 and control returns to	0.3985	0.0161
+0.8387	0.3835	1.000	EXAMPLES	0.0695	0.0131
+0.8400	0.5338	1.000	the beginning of the range, statement 11. The value of	0.3966	0.0176
+0.8415	0.1635	1.000	GENERAL FORM	0.0940	0.0088
+0.8561	0.5320	1.000	2*N(2) is then computed and stored in location A(2).	0.3985	0.0161
+0.8576	0.3252	1.000	IF (A.AND.B)F=SIN (R)	0.1692	0.0146
+0.8590	0.1128	1.000	"IF(t)S" where t is a logical	0.1992	0.0116
+0.8691	0.3252	1.000	IF (16.GT.L)GO TO 24	0.1504	0.0132
+0.8706	0.1804	1.000	and S is	0.0658	0.0118
+0.8712	0.5337	1.000	The process continues until statement 11 has been ex-	0.3950	0.0158
+0.8720	0.2462	1.000	any exe-	0.0640	0.0104
+0.8735	0.1222	1.000	xpressior	0.0489	0.0102
+0.8794	0.3252	1.000	IF(D.OR.X.NE.Y)GO TO	0.1673	0.0131
+0.8821	0.1241	1.000	itable FORTRAN statemen	0.1767	0.0103
+0.8872	0.5338	1.000	ecuted with I = 10. Since the Do is satistied, control	0.3967	0.0149
+0.8924	0.3402	1.000	(18,20),I	0.0639	0.0131
+0.8939	0.1128	1.000	except DO, or another IF state-	0.1974	0.0131
+0.9026	0.5338	1.000	then passes to statement 12.	0.1992	0.0160
+0.9055	0.1128	1.000	ment.	0.0338	0.0102
+0.9331	0.1109	1.000	8	0.0132	0.0131

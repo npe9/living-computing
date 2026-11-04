@@ -1,0 +1,134 @@
+0.0988	0.5414	1.000	Working on one PP at a time, each individual I-O	0.3722	0.0131
+0.1003	0.0940	1.000	When the unoverlapped indicator is	0.2650	0.0131
+0.1003	0.3571	1.000	on, this request	0.1259	0.0131
+0.1148	0.5263	1.000	request is compared with each unit in the I-O con-	0.3778	0.0131
+0.1163	0.0940	1.000	has top assignment priority and if there is no unit	0.3759	0.0116
+0.1269	0.5262	1.000	figuration status tables to see whether or not the unit	0.4007	0.0157
+0.1308	0.0940	1.000	available to satisfy this request, the assign routine	0.3853	0.0131
+0.1434	0.0938	1.000	will reject the PP. If there is a unit available	0.3499	0.0156
+0.1439	0.5244	1.000	satisfies the request. If the request is satisfied as	0.3853	0.0131
+0.1568	0.0938	1.000	assigned to a request of a PP that is to run at a later	0.3988	0.0181
+0.1599	0.5244	1.000	far as the type and channel grouping is concerned,	0.3797	0.0116
+0.1744	0.5244	1.000	further checks are made to see if the unit is available,	0.4117	0.0116
+0.1758	0.0940	1.000	time, then the assign routine will relieve that PP of	0.3929	0.0133
+0.1890	0.5244	1.000	unassigned, and not reserved. In the case of tape,	0.3853	0.0132
+0.1903	0.0940	1.000	the unit and give it to the top priority request.. The	0.3872	0.0133
+0.2035	0.5244	1.000	a check is made to determine whether or not optimum	0.4060	0.0117
+0.2048	0.0940	1.000	PP that lost the unit to the priority request will be	0.3797	0.0118
+0.2179	0.5263	1.000	reel mounting (the program tries to place a scratch	0.3872	0.0133
+0.2194	0.0940	1.000	assigned a unit as soon as one becomes available.	0.3741	0.0132
+0.2324	0.5244	1.000	tape on a unit that has a scratch tape already mounted)	0.4098	0.0133
+0.2339	0.1128	1.000	The first reel table is used to provide the first label	0.3910	0.0118
+0.2470	0.5244	1.000	is to take place. If the unit is assigned or not avail-	0.3985	0.0133
+0.2500	0.0940	1.000	or reel name for the mount message. This message	0.3966	0.0116
+0.2617	0.0939	1.000	is printed as soon as there is a unit available for the	0.3968	0.0146
+0.2630	0.5244	1.000	able, it will be ignored. If the unit is reserved, a	0.3816	0.0131
+0.2776	0.5244	1.000	test is made to see if the requesting PP is being	0.3647	0.0118
+0.2791	0.0940	1.000	IOD request. If there was no REEL card after the	0.3797	0.0116
+0.2921	0.5263	1.000	entered in the bypass mode. If it is not, the unit	0.3703	0.0117
+0.2936	0.0940	1.000	tape IOD, the request is then considered to be for a	0.3872	0.0131
+0.3067	0.5263	1.000	will be ignored as this unit is reserved for a PP in	0.3816	0.0131
+0.3081	0.0940	1.000	scratch tape. In this case, the first reel entry in	0.3741	0.0116
+0.3212	0.5263	1.000	queue ahead of this PP. If the mode is bypass and	0.3797	0.0131
+0.3227	0.0940	1.000	the I-O request table will be zero.	0.2594	0.0116
+0.3358	0.1109	1.000	All three of the I-O assignment tables are used in	0.3741	0.0131
+0.3358	0.5244	1.000	the I-O request is otherwise satisfied, then this	0.3609	0.0131
+0.3501	0.5262	1.000	request will override the previous assignment for	0.3742	0.0135
+0.3532	0.0940	1.000	a circular fashion.	0.1429	0.0102
+0.3663	0.1128	1.000	The I-O assignment procedure is as follows:	0.3346	0.0131
+0.3676	0.5263	1.000	that unit.	0.0677	0.0105
+0.3821	0.5470	1.000	The pre-assignment will be carried out, proc-	0.3496	0.0133
+0.3836	0.1128	1.000	1. Each PP is checked to see if the requested	0.3496	0.0118
+0.3967	0.5282	1.000	essing one program at a time, either until there are	0.3947	0.0118
+0.3982	0.0959	1.000	IODs are valid. If not, the PP is rejected.	0.3177	0.0132
+0.4112	0.5282	1.000	no more units available for reservation or there are	0.3929	0.0103
+0.4127	0.1128	1.000	2. If the PP to be assigned has no tape requests,	0.3703	0.0131
+0.4258	0.5282	1.000	no more requests to process. After processing a	0.3741	0.0118
+0.4288	0.0959	1.000	the tape passing mechanism is skipped.	0.2951	0.0116
+0.4403	0.5282	1.000	program, a check is made to see whether or not the	0.3910	0.0118
+0.4418	0.1128	1.000	3. Requests for specific tapes are checked against	0.3816	0.0131
+0.4548	0.5282	1.000	program is completely pre-assigned. If it is, the	0.3759	0.0132
+0.4564	0.0959	1.000	current tape unit mountings (as per the SCRODT	0.3609	0.0131
+0.4694	0.5282	1.000	assigned bit is set to one in the PP reference table,	0.3891	0.0132
+0.4709	0.0959	1.000	table). The I-O request is assigned if the requested	0.3872	0.0131
+0.4839	0.5282	1.000	signifying that all units have been pre-assigned so	0.3778	0.0118
+0.4869	0.0959	1.000	reel is mounted.	0.1241	0.0102
+0.4985	0.5282	1.000	that continual scanning of the PP's I-O request table	0.3947	0.0118
+0.5015	0.1128	1.000	4. If the system is in an overlapped mode, un-	0.3553	0.0116
+0.5130	0.5263	1.000	is not necessary upon entry to the assign routine.	0.3741	0.0131
+0.5143	0.0957	1.000	assigned tape requests are checked against the I-O	0.3800	0.0158
+0.5276	0.5282	1.000	At the same time as the above check, there is another	0.4060	0.0131
+0.5305	0.0959	1.000	request table (TIOR EQ) for the same reel request.	0.3778	0.0116
+0.5421	0.5282	1.000	check to find out whether or not the mode is unover-	0.3929	0.0117
+0.5451	0.0959	1.000	If the reel is matched and protection and label usage	0.3929	0.0102
+0.5581	0.5263	1.000	lapped. If it is, then a quick exit is made from assign	0.4117	0.0116
+0.5596	0.0940	1.000	is correct, the request is marked assigned.	0.3308	0.0131
+0.5727	0.5282	1.000	disregarding the remaining PP's that are in the queue.	0.4098	0.0116
+0.5741	0.1128	1.000	5. If a tape request has been preassigned because	0.3778	0.0116
+0.5872	0.5451	1.000	Before any exit is made, all tape mountings neces-	0.3835	0.0131
+0.5887	0.0959	1.000	of steps 3 or 4, a check is made for another tape	0.3684	0.0132
+0.6017	0.5282	1.000	sary will be printed for the operator via the commen-	0.4041	0.0116
+0.6032	0.0977	1.000	I-O for the same channel within the PP. If such a	0.3741	0.0117
+0.6163	0.5282	1.000	tator. The disposition field of the linkage will also	0.3853	0.0131
+0.6177	0.0959	1.000	request is found, the PP I-O requests are reordered	0.3947	0.0132
+0.6308	0.5282	1.000	be adjusted according to the status of the next PP to	0.3910	0.0116
+0.6321	0.0959	1.000	in an attempt to maintain the channel separation	0.3590	0.0118
+0.6453	0.5263	1.000	be run. If the status is reject, the pointer (TPPRUN)	0.4041	0.0147
+0.6467	0.0940	1.000	mechanism. The following illustrates a typical re-	0.3891	0.0147
+0.6596	0.0939	1.000	ordering.	0.0754	0.0181
+0.6599	0.5244	1.000	will be advanced to the next PP. This pointer is used	0.4079	0.0147
+0.6744	0.5244	1.000	by the move routine and should always be synchronized	0.4154	0.0147
+0.6802	0.3327	1.000	After	0.0583	0.0174
+0.6817	0.1391	0.300	•АРО СН1	0.0940	0.0291
+0.6890	0.5244	1.000	with the incoming problem programs via the input	0.3797	0.0147
+0.6948	0.3289	1.000	DISK	0.0432	0.0145
+0.6962	0.1297	1.000	TAPE	0.0508	0.0160
+0.7045	0.5243	1.000	program.	0.0754	0.0139
+0.7078	0.3308	1.000	CONSOLE	0.0790	0.0191
+0.7108	0.1297	1.000	DISK	0.0432	0.0160
+0.7179	0.5414	1.000	All the information necessary for assignment is	0.3628	0.0147
+0.7224	0.3308	1.000	TAPE	0.0489	0.0174
+0.7238	0.1316	1.000	TAPE	0.0489	0.0174
+0.7250	0.1898	1.000	CH4 UNA	0.0848	0.0152
+0.7267	0.3891	1.000	CH4 UNB	0.0827	0.0118
+0.7339	0.5263	1.000	stored away in the I-O assignment tables. This infor-	0.4117	0.0132
+0.7384	0.3308	1.000	TAPEр	0.0489	0.0160
+0.7398	0.3966	1.000	CH3	0.0338	0.0116
+0.7412	0.1316	1.000	CONSOLE	0.0771	0.0147
+0.7485	0.5244	1.000	mation is later transformed and merged with the IOD	0.4004	0.0118
+0.7529	0.3308	1.000	TAPEр	0.0489	0.0160
+0.7540	0.3927	1.000	CH4 UNA	0.0811	0.0153
+0.7544	0.1316	1.000	TAPE	0.0489	0.0160
+0.7556	0.1879	1.000	CH2 UNZ	0.0866	0.0150
+0.7615	0.5263	1.000	card to form the Actuator tables. This transformation	0.4135	0.0146
+0.7674	0.3308	1.000	TAPEр	0.0489	0.0160
+0.7689	0.1297	1.000	TAPE	0.0508	0.0160
+0.7701	0.3909	1.000	CH1 UN1	0.0810	0.0137
+0.7703	0.1917	1.000	CH1 UN2	0.0808	0.0146
+0.7776	0.5244	1.000	is carried on by the move routine.	0.2632	0.0146
+0.7818	0.3307	1.000	TAPE	0.0491	0.0178
+0.7834	0.1222	1.000	*TAPE	0.0583	0.0174
+0.7842	0.1915	1.000	CH4 UNB	0.0831	0.0159
+0.7848	0.3929	1.000	CH1 UN2	0.0789	0.0131
+0.7979	0.3308	1.000	TAPEр	0.0489	0.0161
+0.7980	0.1917	1.000	CH3	0.0414	0.0174
+0.7990	0.3908	1.000	CH2 UNZ	0.0830	0.0154
+0.7994	0.1203	1.000	*TAPE	0.0602	0.0160
+0.8124	0.1128	1.000	* Indicates that this tape has been matched to	0.3459	0.0176
+0.8197	0.5263	1.000	The Move Routine: The move routine (Figures 40,	0.3797	0.0146
+0.8255	0.0959	1.000	either the SCRODT or TIOREQ tables.	0.2932	0.0191
+0.8327	0.5263	1.000	41) obtains and merges IOD or REEL cards with in-	0.3910	0.0147
+0.8459	0.1090	1.000	6. If any tape requests are found that have the	0.3609	0.0189
+0.8473	0.5244	1.000	formation generated by the assign routine to form the	0.4041	0.0161
+0.8605	0.0977	1.000	same separation as a matched tape, they are pre-	0.3816	0.0204
+0.8618	0.5244	1.000	four actuator tables: symbolic I-O location table, file	0.4023	0.0146
+0.8761	0.0976	1.000	assigned now.	0.1092	0.0210
+0.8779	0.5244	1.000	area tables, unit area tables, and the reel pool table.	0.4041	0.0146
+0.8909	0.5263	1.000	Certain system parameters will also be set up by the	0.4004	0.0161
+0.8936	0.1108	1.000	7. Any other tape requests are preassigned now.	0.3761	0.0150
+0.9070	0.5244	1.000	move routine: the maximum reference number used	0.3910	0.0145
+0.9082	0.0996	1.000	All non-tape requests are assigned when the job is	0.3779	0.0151
+0.9200	0.5244	1.000	by the problem program, the next available full word	0.4023	0.0161
+0.9214	0.0977	1.000	about to be run.	0.1222	0.0177
+0.9520	0.7312	1.000	System Operation Programs	0.1598	0.0116
+0.9520	0.9098	1.000	79	0.0188	0.0087

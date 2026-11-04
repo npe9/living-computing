@@ -1,0 +1,101 @@
+0.0639	0.5451	1.000	STRAP that the reference is to the untailed symbol	0.3947	0.0131
+0.0654	0.1203	1.000	specified, the first level is assumed. Thus,	0.3026	0.0146
+0.0781	0.5431	1.000	BoB, not the Bob defined in the tailed block.	0.3142	0.0196
+0.0872	0.2556	1.000	TAIL, (1)DOG	0.1241	0.0146
+0.1045	0.5414	1.000	2. EXI-Extract	0.1222	0.0146
+0.1076	0.1203	1.000	can also be written	0.1429	0.0116
+0.1206	0.5996	1.000	A EXT, (I, J, COUNT)STATEMENT	0.2857	0.0161
+0.1221	0.2707	1.000	TAIL, DOG	0.0940	0.0146
+0.1409	0.5602	1.000	The Extract pseudo operation has the following	0.3797	0.0146
+0.1424	0.1203	1.000	Omission of the parentheses as in	0.2425	0.0146
+0.1565	0.5412	1.000	meaning:	0.0737	0.0170
+0.1623	0.2649	1.000	TAIL, IDOG	0.1036	0.0169
+0.1715	0.5620	1.000	First, compile stateMeNt as if it were any legal	0.3778	0.0145
+0.1814	0.1202	1.000	will result in an illegal tail symbol and invalidate the	0.3968	0.0170
+0.1875	0.5451	1.000	7030 instruction or pseudo operation that produces	0.3947	0.0146
+0.1988	0.5449	1.000	binary output. Then extract from this statement the	0.3951	0.0188
+0.2005	0.1203	1.000	statement.	0.0752	0.0103
+0.2179	0.5432	1.000	subfield that is equal in length to the number of bits	0.3966	0.0161
+0.2194	0.1353	1.000	The tail will continue to be added to every pro-	0.3816	0.0146
+0.2324	0.5451	1.000	specified by count and begins at bit i of that state-	0.3966	0.0147
+0.2338	0.1202	1.000	grammer symbol encountered at the level specified	0.3969	0.0168
+0.2485	0.5414	1.000	ment and ends at bit J. The extracted subfield is then	0.3985	0.0146
+0.2515	0.1203	1.000	until an untail statement or a tail statement that speci-	0.3966	0.0116
+0.2645	0.5432	1.000	actually compiled in the position in the code where	0.3966	0.0146
+0.2660	0.1203	1.000	fies the same level is found. An untail statement will	0.3966	0.0116
+0.2805	0.5451	1.000	the EXT occurs.	0.1090	0.0102
+0.2805	0.1184	1.000	untail all levels up to and including the level specified	0.3985	0.0174
+0.2936	0.5602	1.000	Any symbol A appearing in the Name field is as-	0.3797	0.0161
+0.2964	0.1184	1.000	in the address field. The statement	0.2594	0.0133
+0.3096	0.5432	1.000	signed a data description Bu, a field length equal to	0.3966	0.0174
+0.3182	0.2650	1.000	AIL, (6)DO(	0.1071	0.0103
+0.3241	0.5432	1.000	cOUNT (or j-It1), and a byte size of 8, and is at-	0.3947	0.0160
+0.3372	0.1165	1.000	specifies dog as a sixth level tail, and	0.2669	0.0161
+0.3400	0.5414	1.000	tached to the subfield compiled.	0.2368	0.0161
+0.3561	0.5620	1.000	Any 2 of the 3 parameters I, J, and couNT are suffi-	0.3797	0.0146
+0.3573	0.2650	1.000	UNTAIL, (6)	0.1072	0.0150
+0.3706	0.5451	1.000	cient to adequately describe the subfield to be ex-	0.3947	0.0146
+0.3779	0.1184	1.000	untails the first six levels. Note that	0.2613	0.0131
+0.3866	0.5451	1.000	tracted. All 3 can be written if the programmer so de-	0.3947	0.0131
+0.3982	0.2632	1.000	UNTAIL, (1)	0.1090	0.0146
+0.4012	0.5451	1.000	sires, but if less than 3 are written, the usual right to	0.3947	0.0146
+0.4142	0.1165	1.000	is equivalent to	0.1203	0.0145
+0.4172	0.5432	1.000	left drop out order rules, as in the dds. Therefore,	0.3966	0.0147
+0.4284	0.2762	1.000	TAIL, (1)	0.0830	0.0168
+0.4330	0.5451	1.000	the permissable alternatives are:	0.2368	0.0133
+0.4491	0.1184	1.000	but	0.0282	0.0116
+0.4535	0.6823	1.000	(I, J, COUNT)	0.1203	0.0145
+0.4634	0.2631	1.000	UNTAIL, (2)	0.1073	0.0165
+0.4693	0.6822	1.000	(I, J)	0.0472	0.0135
+0.4839	0.6823	1.000	(I,, COUNT)	0.1128	0.0161
+0.4839	0.1165	1.000	is not equivalent to	0.1485	0.0146
+0.4998	0.2763	1.000	TAIL, (2)	0.0810	0.0150
+0.5000	0.6823	1.000	(, J, COUNT)	0.1128	0.0145
+0.5188	0.5451	1.000	The terms I, J, and count may contain any number of	0.3966	0.0146
+0.5197	0.1202	1.000	since UNTAIL, (2) will untail the first and second	0.3968	0.0158
+0.5348	0.5432	1.000	symbolie integers. A bit address is improper, how-	0.3985	0.0161
+0.5363	0.1165	1.000	level, while TaIL, (2) tails the second level only with a	0.4004	0.0146
+0.5494	0.5451	1.000	ever, and will be treated as a 24-bit binary integer.	0.3797	0.0146
+0.5494	0.1184	1.000	blank, or effectively untails it. Clearly then, if it is	0.3985	0.0189
+0.5634	0.1183	1.000	desired to untail one level when multi-level tailing	0.3988	0.0181
+0.5639	0.5602	1.000	If ExT is used to specify the extraction of anything	0.3797	0.0161
+0.5814	0.1165	1.000	is being done, the best method is a tail statement that	0.4004	0.0160
+0.5814	0.5451	1.000	beyond the range of the single statement that follows	0.3947	0.0147
+0.5959	0.5432	1.000	it up to 64 zeros will be added.	0.2256	0.0160
+0.5959	0.1165	1.000	specifies the level but has a blank tail symbol field, as	0.4004	0.0160
+0.6119	0.1165	1.000	in	0.0226	0.0131
+0.6163	0.5432	1.000	Example: EXT(18, 47)+ (B, 18, 7), 73.16	0.3440	0.0160
+0.6177	0.2763	1.000	TAIL, (6)	0.0808	0.0145
+0.6366	0.1316	1.000	The normal reference may be made from one sym-	0.3853	0.0161
+0.6366	0.5620	1.000	First the full word instruction + (в, 18, 7), 73.16 is	0.3778	0.0131
+0.6497	0.1184	1.000	bol to another within the same tailed block. How-	0.4004	0.0176
+0.6512	0.5414	1.000	formed. Then bits 18 through 47 (the first bit in the	0.3985	0.0161
+0.6672	0.1165	1.000	ever, when reference is made from a block tailed by	0.4004	0.0160
+0.6672	0.5432	1.000	instruction is numbered zero according to 7030 cus-	0.3966	0.0132
+0.6817	0.1184	1.000	DoG, for example, to a possible multiply defined sym-	0.4004	0.0174
+0.6830	0.5432	1.000	tom) are extracted and placed in the program being	0.3966	0.0133
+0.6976	0.1184	1.000	bol BoB in another block tailed by caT, the 7030 state-	0.4004	0.0176
+0.6976	0.5432	1.000	compiled. The dds (BU, 30, 8) is formed. The loca-	0.3985	0.0161
+0.7121	0.5451	1.000	tion counter is advanced 30 bits.	0.2331	0.0132
+0.7136	0.1203	1.000	ment should read	0.1316	0.0103
+0.7311	0.2481	1.000	+(N), BOB$CAT	0.1372	0.0160
+0.7369	0.5432	1.000	3. CNOP-Conditional No Operation	0.2688	0.0161
+0.7515	0.1203	1.000	If the symbol вoв has been tailed at several levels,	0.3985	0.0146
+0.7543	0.7049	1.000	A CNOP	0.0771	0.0132
+0.7674	0.1203	1.000	they must all be mentioned:	0.2068	0.0132
+0.7718	0.5602	1.000	The pseudo operation cNoP is used to insure that	0.3816	0.0146
+0.7878	0.5432	1.000	the instruction or data immediately following the CNOP	0.3966	0.0160
+0.7878	0.2180	1.000	+(N), BOB$CAT$TAYLE	0.1992	0.0160
+0.8023	0.5432	1.000	will be assigned a full-word address by STRAP II.	0.3553	0.0160
+0.8067	0.1352	1.000	If reference is made from a tailed block to a pos-	0.3838	0.0163
+0.8182	0.5583	1.000	When a crop is encountered, the location counter	0.3835	0.0147
+0.8227	0.1184	1.000	sible multiply defined symbol in an untailed block,	0.3985	0.0161
+0.8327	0.5432	1.000	is immediately rounded up to the nearest half-word	0.3966	0.0147
+0.8387	0.1203	1.000	only the $ is required after the symbol, as in	0.3327	0.0147
+0.8488	0.5432	1.000	address if it is not already at a half-word address.	0.3947	0.0176
+0.8590	0.2650	1.000	+(N), BOB$	0.1053	0.0160
+0.8633	0.5432	1.000	Then straP examines the location counter. If it now	0.3966	0.0146
+0.8794	0.1184	1.000	The $ alone (actually $ followed by a blank) tells	0.3985	0.0161
+0.8794	0.5432	1.000	stands at a full-word address, the cNop is ignored.	0.3966	0.0161
+0.9139	0.1653	1.000	IBM 7030	0.0679	0.0109
+0.9142	0.1184	1.000	38	0.0207	0.0116

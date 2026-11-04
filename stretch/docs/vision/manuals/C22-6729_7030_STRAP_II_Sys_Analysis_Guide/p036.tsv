@@ -1,0 +1,102 @@
+0.0741	0.0771	1.000	checked against the present setting of the location	0.3684	0.0116
+0.0755	0.5038	1.000	SLC, SLCR: For an SLC and SLCR, the location	0.3609	0.0118
+0.0887	0.0771	1.000	counter. For a non-binary producing unit the	0.3383	0.0116
+0.0887	0.5038	1.000	counter is adjusted at this point. The absolute	0.3459	0.0116
+0.1032	0.5038	1.000	value of the location will be available now. (As with	0.3853	0.0117
+0.1032	0.0771	1.000	checking is done later. If a discrepancy occurs,	0.3609	0.0132
+0.1177	0.0771	1.000	an error message will be given and the Pass 2a	0.3515	0.0132
+0.1177	0.5038	1.000	most of the other pseudo-ops, OUTPUT performs a	0.3797	0.0132
+0.1321	0.5038	1.000	specific action later with a SLC and SLCR. If	0.3402	0.0118
+0.1336	0.0771	1.000	setting of the location counter will be used.	0.3195	0.0118
+0.1467	0.5038	1.000	OUTPUT receives a unit of an SLCR, OUTPUT stops	0.3910	0.0133
+0.1612	0.5038	1.000	punching cards until the next SLC unit is encount-	0.3665	0.0118
+0.1627	0.0752	1.000	Boxes 20, 28	0.1053	0.0118
+0.1771	0.5037	1.000	ered.)	0.0491	0.0122
+0.1918	0.0771	1.000	During the processing of a unit which does not	0.3421	0.0118
+0.2064	0.5056	1.000	END: For an END op, the current symbolic and	0.3553	0.0117
+0.2064	0.0771	1.000	contain a binary output producing instruction, the	0.3647	0.0117
+0.2209	0.0771	1.000	checking of the location counter value is done at	0.3553	0.0116
+0.2209	0.5038	1.000	absolute counters are checked and the end of file	0.3590	0.0103
+0.2355	0.5019	1.000	location for INTIN is now set up.	0.2444	0.0116
+0.2364	0.0769	1.000	this point.	0.0773	0.0127
+0.2645	0.5056	1.000	EXT: For an EXT op, similarly as in Pass 2a,	0.3496	0.0131
+0.2657	0.0751	1.000	Boxes 22, 30	0.1073	0.0151
+0.2791	0.5038	1.000	switches are set to prevent rounding and to detect	0.3703	0.0116
+0.2936	0.5038	1.000	extraction from a psuedo-op in the second of the	0.3571	0.0116
+0.2951	0.0789	1.000	Now before bringing in the next unit, Pass 2b gives	0.3778	0.0131
+0.3081	0.5038	1.000	EXTract's units. The length of the binary output	0.3628	0.0116
+0.3096	0.0771	1.000	OUTPUT control at this point. The function of	0.3477	0.0116
+0.3241	0.5000	1.000	has now been established for the EXT instruction	0.3647	0.0116
+0.3241	0.0733	1.000	OUTPUT is to set up the listing and the binary	0.3477	0.0147
+0.3372	0.5019	1.000	and is saved. Then the counters will be checked in	0.3797	0.0131
+0.3387	0.0771	1.000	card images which are printed and punched by the	0.3684	0.0116
+0.3517	0.5019	1.000	box 28.	0.0564	0.0146
+0.3532	0.0789	1.000	I-O subroutines.	0.1335	0.0117
+0.3532	0.2105	1.000	For the listing of the instruction,	0.2481	0.0132
+0.3677	0.0771	1.000	OUTPUT gets the location counter, binary output,	0.3703	0.0132
+0.3821	0.5019	1.000	SYN: For every SYN, its value is now available in	0.3778	0.0147
+0.3821	0.0789	1.000	and symbolic statement including the comment	0.3440	0.0118
+0.3953	0.5019	1.000	Pass 2b. These bit and integer values are taken	0.3628	0.0147
+0.3967	0.0771	1.000	from the corresponding unit. OUTPUT gets the	0.3553	0.0133
+0.4099	0.5019	1.000	from the absolute and symbolie counters of the	0.3459	0.0147
+0.4112	0.0771	1.000	name for each instruction from the name file	0.3327	0.0103
+0.4258	0.5019	1.000	symbol table and put into the absolute and symbolic	0.3797	0.0133
+0.4258	0.0771	1.000	brought into internal storage by NAMEIN. OUTPUT	0.3872	0.0133
+0.4403	0.0771	1.000	has the tilting and the page numbering done by	0.3402	0.0133
+0.4403	0.5019	1.000	counter fields of the corresponding unit of the SYN.	0.3797	0.0146
+0.4548	0.5019	1.000	Also, the setting of the five error symbol flags that	0.3835	0.0146
+0.4564	0.0733	1.000	OEDIT. ERRNUM sets up and ERRPRT has	0.3308	0.0131
+0.4679	0.5019	1.000	have been accumulated with the symbol are now OR'd	0.3929	0.0147
+0.4708	0.2957	0.300	P SEN a ав ва tо	0.1505	0.0417
+0.4709	0.0771	1.000	printed the error messages for OUTPUT. The	0.3496	0.0116
+0.4839	0.5019	1.000	into the unit of the SYN. Furthermore, if the sym-	0.3816	0.0161
+0.4855	0.0771	1.000	I-O subroutines, OPLIST and OPPUN, perform the	0.3797	0.0145
+0.4985	0.5019	1.000	bol has a dimension, the dimension reference ad-	0.3722	0.0146
+0.4985	0.0789	1.000	actual printing and punching. If SYN cards have to	0.3741	0.0131
+0.5145	0.0771	1.000	be made, OUTPUT has the PUNSYM procedure in	0.3684	0.0131
+0.5145	0.5038	1.000	dress is moved to the unit, too.	0.2350	0.0131
+0.5291	0.0789	1.000	Pass 2b, the NQBTP subroutine, make them after	0.3703	0.0131
+0.5436	0.5038	1.000	SEM, REM: For a SEM or REM unit, the same	0.3534	0.0131
+0.5451	0.0789	1.000	all the regular binary cards have been produced.	0.3590	0.0116
+0.5581	0.5019	1.000	action takes place now as happened in Pass 2a.	0.3459	0.0131
+0.5596	0.0771	1.000	NUNDSY is responsible for collecting and having	0.3609	0.0116
+0.5727	0.5038	1.000	Actually the updating of the error mask must take	0.3665	0.0131
+0.5741	0.0771	1.000	printed those symbols in the symbol table which	0.3553	0.0116
+0.5872	0.5019	1.000	place in each pass of STRAP II since a condition	0.3590	0.0131
+0.5887	0.0789	1.000	are undefined, multiply-defined with or without	0.3496	0.0132
+0.6017	0.5019	1.000	causing an error message to be given can be	0.3308	0.0146
+0.6032	0.0789	1.000	contradictions, circularly defined, or never used	0.3647	0.0132
+0.6163	0.5019	1.000	detected in any pass of STRAP II.	0.2481	0.0146
+0.6177	0.0771	1.000	in the program. Since OUTPUT uses a digit select	0.3816	0.0132
+0.6336	0.0771	1.000	type branch technique in determining the appropriate	0.3910	0.0118
+0.6453	0.5019	1.000	Boxes 5B, 23, 31	0.1335	0.0160
+0.6467	0.0771	1.000	pseudo-op procedure, new pseudo-ops can be added	0.3835	0.0133
+0.6612	0.0752	1.000	with a minimum alteration to OUTPUT. Note this	0.3741	0.0147
+0.6758	0.5038	1.000	The end-of-assembly procedure for STRAP II	0.3365	0.0118
+0.6773	0.0752	1.000	is the third of the three digit select type pseudo-op	0.3778	0.0118
+0.6903	0.5038	1.000	includes the following actions:	0.2218	0.0118
+0.6918	0.0771	1.000	tables in STRAP II.	0.1447	0.0118
+0.7194	0.5188	1.000	1. The end-of-assembly procedure prints on the	0.3628	0.0132
+0.7339	0.0714	1.000	Boxes 19A - 19C	0.1410	0.0132
+0.7339	0.5038	1.000	listing the total time and the total number of units	0.3703	0.0118
+0.7485	0.5038	1.000	used.	0.0395	0.0116
+0.7630	0.0789	1.000	During Pass 2b the following pseudo ops will need	0.3665	0.0118
+0.7645	0.5188	1.000	2. The end-of-assembly procedure prints the	0.3402	0.0116
+0.7776	0.0771	1.000	no further treatment at this point: PRNID, PUNID,	0.3816	0.0131
+0.7791	0.5038	1.000	message, THE END, on a page by itself, and by	0.3553	0.0131
+0.7921	0.0771	1.000	PUNFUL, PUNNOR, PUNORG, PRNS, PRND,	0.3459	0.0146
+0.7936	0.5038	1.000	using an additional SKIP pseudo-op, displays the	0.3590	0.0131
+0.8067	0.0789	1.000	SKIP, NOPUN, TLB, DDI, DD, DR, DRZ, NOPRNT,	0.3947	0.0131
+0.8096	0.5038	1.000	message to the operator.	0.1842	0.0102
+0.8212	0.0789	1.000	PUNSYM, TAIL, UNTAIL, PRNOR, PUNALL,	0.3459	0.0131
+0.8227	0.5188	1.000	3. The end-of-assembly procedure updates the	0.3553	0.0116
+0.8358	0.0789	1.000	SPUNS, PRNTALL, DUPLI, NOSEQ, and RESEQ.	0.3703	0.0131
+0.8372	0.5056	1.000	Communication Record with the information where	0.3703	0.0116
+0.8488	0.0771	1.000	Their units will go on to box 20 immediately for	0.3553	0.0131
+0.8517	0.5038	1.000	the STRAP II documents are located.	0.2707	0.0116
+0.8648	0.0771	1.000	processing. Their major effect on the Pass 2b	0.3496	0.0116
+0.8648	0.5207	1.000	4. After returning the Communication Record to	0.3609	0.0131
+0.8794	0.0771	1.000	process happens in OUTPUT.	0.2180	0.0116
+0.8808	0.5056	1.000	MCP, the end-of-assembly procedure gives MCP	0.3609	0.0131
+0.8939	0.5038	1.000	full control to continue the processing.	0.2857	0.0131
+0.9244	0.0714	1.000	36	0.0226	0.0131

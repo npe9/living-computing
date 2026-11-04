@@ -1,0 +1,108 @@
+0.0697	0.5000	1.000	Pass 1 processing is rather straightforward. After	0.3853	0.0132
+0.0697	0.0714	1.000	after Pass 1, the multiply-defined type symbols are	0.3853	0.0118
+0.0827	0.0677	1.000	detected and recorded by MULTI in the symbol table	0.3947	0.0161
+0.0858	0.5000	1.000	some indicator settings are fixed by MQDD, MQDALF	0.4004	0.0131
+0.0988	0.0714	1.000	during Pass 1.	0.1128	0.0118
+0.1003	0.5000	1.000	handles the alphabetic DD's. The comma is in the	0.3741	0.0116
+0.1148	0.4981	1.000	value field of $3 when MQDD goes to MQDALF. After	0.4023	0.0146
+0.1278	0.0733	1.000	Boxes 57-61	0.0903	0.0119
+0.1294	0.5000	1.000	completing the conversion MQDALF returns to main	0.3872	0.0116
+0.1439	0.5000	1.000	flow of Pass 1 with the value field of $3 containing the	0.3985	0.0116
+0.1570	0.0733	1.000	The unit is now given to INTOUT to be put out on an	0.3816	0.0116
+0.1584	0.5000	1.000	next non-blank character after the terminating char-	0.3891	0.0116
+0.1715	0.0733	1.000	external storage unit. The counter of the units is	0.3684	0.0116
+0.1730	0.5000	1.000	acter of the DD. MQDALF converts the characters of	0.4023	0.0116
+0.1860	0.0714	1.000	incremented. (During the trouble-shooting of the	0.3665	0.0116
+0.1875	0.5000	1.000	the alphabetic DD output code and puts the results in	0.3872	0.0116
+0.2006	0.0732	1.000	Pass 1 processing, the contents of this counter is	0.3686	0.0141
+0.2020	0.5000	1.000	the next available area in the variable length portion	0.3872	0.0116
+0.2151	0.0714	1.000	available in the general work area as an indication of	0.3947	0.0116
+0.2166	0.5000	1.000	of the unit. The length and character count will also	0.3891	0.0116
+0.2311	0.5000	1.000	be inserted in the unit.	0.1711	0.0116
+0.2311	0.0714	1.000	which unit is being processed. The counter is also	0.3816	0.0102
+0.2324	0.6748	1.000	The byte size is significant	0.2068	0.0118
+0.2456	0.0714	1.000	available in Pass 2 to give the total number of units	0.3835	0.0102
+0.2470	0.5000	1.000	in the assembling of an alphabetic DD in codes: IQS,	0.3910	0.0118
+0.2602	0.0714	1.000	in the assembly.) If this is not the unit for the END	0.3853	0.0102
+0.2615	0.5000	1.000	A8, and A6. If an absolute byte size of less than eight	0.4041	0.0118
+0.2747	0.0714	1.000	pseudo-op, the Pass 1 procedure repeats itself and	0.3816	0.0132
+0.2761	0.5000	1.000	had been specified, MQDALF truncates the characters	0.4023	0.0118
+0.2892	0.0733	1.000	begins processing the next instruction at MAIN. Now	0.3947	0.0117
+0.2906	0.5000	1.000	accordingly. On the other hand, if a symbolie byte	0.3778	0.0132
+0.3036	0.0714	1.000	if Pass 1 has just received the semicolon character	0.3835	0.0103
+0.3052	0.5000	1.000	size had been specified, truncation if any, will be	0.3684	0.0132
+0.3182	0.0695	1.000	from GETCHA while processing the END unit, Pass 1	0.4023	0.0147
+0.3197	0.4981	1.000	done by OUTPUT in the final pass after the byte size	0.3910	0.0146
+0.3327	0.0714	1.000	will have the file of units terminated by going to the	0.3835	0.0118
+0.3342	0.4981	1.000	has been evaluated. An end of card block terminates	0.3929	0.0118
+0.3470	0.0713	1.000	INTOUT subroutine with a special calling sequence.	0.3855	0.0144
+0.3488	0.5000	1.000	a DD if the terminating character specified in the	0.3665	0.0131
+0.3618	0.0733	1.000	After Pass 1 has processed the unit for the END	0.3590	0.0118
+0.3648	0.5000	1.000	entry mode was not included in the D field. (Also,	0.3741	0.0116
+0.3764	0.0714	1.000	pseudo-op, INTOUT terminates the file of units with	0.3891	0.0132
+0.3794	0.5000	1.000	the value field of $3 still contains the false semicolon	0.3947	0.0102
+0.3924	0.0714	1.000	an index word of particular format. This end-of-file	0.3947	0.0116
+0.3939	0.4981	1.000	when MQDALE returns to MAIN.) While MQDALF is	0.3966	0.0131
+0.4070	0.0714	1.000	indication enables INTIN to know when the last unit	0.3816	0.0103
+0.4084	0.4981	1.000	requesting the A8 characters from GETCHA, MQDALE	0.4079	0.0146
+0.4215	0.0714	1.000	has been processed in Pass 2a and in Pass 2b. The	0.3853	0.0116
+0.4230	0.5000	1.000	has the bit indicator, Gcaz on so that GETCHA will	0.3778	0.0131
+0.4360	0.0714	1.000	final action taken by Pass 1 is to enter the symbol	0.3722	0.0116
+0.4375	0.5000	1.000	give the input blanks to MQDALF.	0.2500	0.0116
+0.4506	0.0714	1.000	$00 in the symbol table.	0.1805	0.0116
+0.4535	0.5150	1.000	Now for the numeric DD's, there are three sub-	0.3590	0.0117
+0.4666	0.5000	1.000	routines responsible for their processing in Pass 1.	0.3797	0.0131
+0.4694	0.0733	1.000	Box 62	0.0489	0.0103
+0.4824	0.4981	1.000	These subroutines are MQDD, MQDNUM, and DNUM.	0.3966	0.0147
+0.4970	0.4981	1.000	MQDD has the responsibility of taking care of the	0.3647	0.0118
+0.4985	0.0733	1.000	The between-passes procedure that occurs after	0.3571	0.0118
+0.5115	0.5000	1.000	radix, which may be 2-16 in STRAP II, the entry	0.3590	0.0133
+0.5130	0.0733	1.000	Pass 1 includes the following actions:	0.2763	0.0118
+0.5261	0.4981	1.000	mode, multiple numeric cases, the special sign (S),	0.3853	0.0133
+0.5276	0.0865	1.000	1. The between-passes procedure has MCP bring	0.3741	0.0118
+0.5406	0.5000	1.000	the special exponent (X), and the regular exponent	0.3741	0.0132
+0.5421	0.0714	1.000	in all of STRAP II's Pass 2 from disk.	0.2857	0.0103
+0.5567	0.5000	1.000	(E). DNUM converts each operand in the statement	0.3816	0.0116
+0.5567	0.0883	1.000	2. The between-passes procedure turns off the	0.3515	0.0116
+0.5712	0.0714	1.000	internal Pass 1 indicator, Fpassl, and turns on its	0.3816	0.0131
+0.5712	0.4981	1.000	(after collecting the characters from GETCHA) to a	0.3816	0.0116
+0.5858	0.4981	1.000	double precision floating point number, and MQDNUM	0.3966	0.0131
+0.5858	0.0733	1.000	Pass 2 counterpart, Fpass2.	0.2086	0.0131
+0.6003	0.0883	1.000	3. The between-passes procedure writes the	0.3365	0.0116
+0.6003	0.5000	1.000	evaluates the field to the semicolon, comma, or	0.3553	0.0131
+0.6148	0.5000	1.000	comment character.	0.1485	0.0116
+0.6148	0.0714	1.000	current pass indication on the numeric display lights	0.3910	0.0116
+0.6291	0.0713	1.000	of the console.	0.1094	0.0119
+0.6294	0.5169	1.000	Note that during Pass 1 the binary output in the	0.3440	0.0116
+0.6439	0.5000	1.000	unit for a numeric DD is in a floating point form. For	0.3966	0.0116
+0.6453	0.0883	1.000	4. The between-passes procedure now enters	0.3421	0.0116
+0.6584	0.5000	1.000	all numeric types of DD's, except for Fn-type, the	0.3741	0.0131
+0.6599	0.0733	1.000	UITER for the iteration of the symbol table.	0.3252	0.0116
+0.6730	0.4981	1.000	form is that of a double precision normalized floating	0.3966	0.0116
+0.6875	0.4981	1.000	point number. For the Fn-type numeric DD, the form	0.4041	0.0146
+0.6890	0.0695	1.000	Boxes 63-66C	0.1090	0.0132
+0.7020	0.4981	1.000	is that of a double precision unnormalized floating	0.3722	0.0116
+0.7166	0.4981	1.000	point number. (See Appendix A.) Therefore, OUTPUT	0.4117	0.0131
+0.7179	0.0733	1.000	The type of processing for DD's during Pass 1, of	0.3722	0.0118
+0.7324	0.5000	1.000	must always adjust the binary output in the unit of	0.3741	0.0118
+0.7324	0.0714	1.000	course, depends on whether the DD is alphabetic or	0.3816	0.0133
+0.7470	0.0714	1.000	numeric. (Even though a DDI unit is marked as such,	0.4004	0.0133
+0.7470	0.4981	1.000	numeric DD to the specified mode, ete., in order to	0.3853	0.0133
+0.7594	0.0713	1.000	the unit of a DDI receives the same processing as	0.3687	0.0164
+0.7615	0.5000	1.000	obtain the final binary output.	0.2180	0.0118
+0.7776	0.0733	1.000	that of a DD during Pass 1.) Since the output of a	0.3665	0.0118
+0.7905	0.4961	1.000	Box 67	0.0528	0.0135
+0.7921	0.0733	1.000	DD is variable in length, the binary output for a DD	0.3816	0.0117
+0.8067	0.0714	1.000	is not built up in the usual skeleton op area in the fixed	0.4079	0.0116
+0.8197	0.4981	1.000	Using the pseudo-op number and a digit-select-type	0.3816	0.0118
+0.8212	0.0714	1.000	format of the unit. Instead the binary output will be	0.3853	0.0116
+0.8342	0.4981	1.000	branch technique, MAIN now determines what action	0.3872	0.0131
+0.8358	0.0714	1.000	built up in the currently available free area in the	0.3703	0.0116
+0.8488	0.4981	1.000	must be taken by Pass 1 on the units of the individual	0.3891	0.0118
+0.8503	0.0714	1.000	unit. The current setting of Ibuffw is saved in the,	0.3816	0.0131
+0.8633	0.4981	1.000	pseudo-ops. Note the pseudo-op term was formerly	0.3872	0.0131
+0.8648	0.0714	1.000	fixed format field at Ziotpt. 32 for the later location	0.3816	0.0116
+0.8779	0.4981	1.000	applied to an instruction that could not be executed	0.3759	0.0117
+0.8794	0.0714	1.000	of the binary output. If it is an alphabetic DD, the	0.3759	0.0131
+0.8924	0.5000	1.000	during the run of a program. However, during STRAP II	0.4173	0.0146
+0.9201	0.0677	1.000	26	0.0188	0.0102

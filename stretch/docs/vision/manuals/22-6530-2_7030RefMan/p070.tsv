@@ -1,0 +1,110 @@
+0.0581	0.0940	1.000	is on, the field is below range; if an is on the field is	0.3910	0.0174
+0.0654	0.8365	1.000	TNOTES	0.0526	0.0145
+0.0683	0.5169	1.000	NAME	0.0414	0.0116
+0.0683	0.6579	1.000	STATEMENT	0.0808	0.0116
+0.0755	0.0959	1.000	above range (Figure 16).	0.1767	0.0147
+0.0870	0.1014	1.000	If a COMPARE FOR RANGE is executed with one or	0.3818	0.0180
+0.0915	0.6297	1.000	I (D, 64, 4), 1936.0, 0	0.1353	0.0118
+0.0916	0.8609	1.000	1	0.0132	0.0087
+0.1017	0.8571	1.000	2	0.0169	0.0116
+0.1017	0.6297	1.000	BRLZ, OUT	0.0752	0.0131
+0.1045	0.0959	1.000	more AL, AE, or AH indicators on, more than one of	0.3891	0.0176
+0.1133	0.6297	1.000	C0011 (B, 64, 8), 1935. 0, 60	0.1673	0.0161
+0.1206	0.0940	1.000	these may be left on after execution of the COMPARE	0.3891	0.0146
+0.1235	0.6278	1.000	BZRGZ, OUT	0.0846	0.0147
+0.1352	0.6278	1.000	K (DU, 64, 4), TENIO, 60	0.1560	0.0161
+0.1366	0.0921	1.000	FOR RANGE. The CoMPARE always causes one and only	0.3891	0.0146
+0.1465	0.6277	1.000	BAH, OUT	0.0698	0.0152
+0.1497	0.0921	1.000	one indicator to be turned on. Therefore, if a COMPARE	0.3910	0.0189
+0.1599	0.6297	1.000	KEI (DU, 60, 4), 0, 0	0.1278	0.0116
+0.1642	0.0921	1.000	FOR RANGE follows a COMPARE, the above case never	0.3910	0.0189
+0.1700	0.6297	1.000	BAH, OUT	0.0658	0.0131
+0.1817	0.0921	1.000	exists and indicators are set as described.	0.2970	0.0174
+0.2006	0.1335	1.000	Lower bound,	0.0752	0.0161
+0.2020	0.5113	1.000	OUT	0.0301	0.0131
+0.2020	0.2650	1.000	Upper bound,	0.0752	0.0131
+0.2121	0.2443	1.000	COMPARE FOR RANGE	0.1298	0.0220
+0.2151	0.1335	1.000	addressed by	0.0658	0.0102
+0.2179	0.3684	1.000	Increasing value	0.0996	0.0176
+0.2224	0.6278	1.000	DD (DU, 64, 4), 10.0 E10	0.1541	0.0174
+0.2224	0.5113	1.000	TENIO	0.0451	0.0160
+0.2238	0.1353	1.000	COMPARE	0.0564	0.0102
+0.2318	0.3814	1.000	of accumulator	0.0775	0.0145
+0.2427	0.3835	1.000	contents	0.0470	0.0102
+0.2587	0.5113	1.000	Notes: 1. Loads low-order part of number.	0.2613	0.0116
+0.2701	0.5620	1.000	2. Tests for negative number.	0.1786	0.0121
+0.2747	0.3816	1.000	Indicator readings	0.0940	0.0117
+0.2820	0.5695	1.000	. Loads high-order part of number	0.1992	0.0117
+0.2833	0.3797	1.000	after COMPARE	0.0865	0.0132
+0.2921	0.5714	1.000	. If number is less than 10-°, then high-order par	0.2857	0.0117
+0.2934	0.3815	1.000	FOR RANGE	0.0715	0.0121
+0.2951	0.2970	1.000	AH	0.0226	0.0102
+0.2951	0.2049	1.000	AE	0.0207	0.0116
+0.2951	0.1147	1.000	AL	0.0188	0.0116
+0.3036	0.5789	1.000	is zero.	0.0545	0.0118
+0.3109	0.0921	1.000	Figure 16. Compare for Range Operation	0.2462	0.0176
+0.3445	0.0902	1.000	PROGRAMMING EXAMPLES	0.1805	0.0161
+0.3517	0.5056	1.000	Figure 18, Compare Example	0.1823	0.0189
+0.3605	0.1034	1.000	1. Given a signed 10-digit decimal integer (byte	0.3797	0.0189
+0.3779	0.0921	1.000	size four) in location 1492. Store it in location 1500	0.3891	0.0131
+0.3794	0.5056	1.000	operand is equal to or higher than the storage oper-	0.3947	0.0189
+0.3914	0.0902	1.000	if it is in the range 103 through 108, inclusive (Fig-	0.3892	0.0181
+0.3967	0.5038	1.000	and, the aH indicator is turned on. If the accumulator	0.3947	0.0161
+0.4095	0.0901	1.000	ure 17).	0.0567	0.0153
+0.4099	0.5056	1.000	operand is less than the storage operand, the At indi-	0.3929	0.0160
+0.4387	0.0920	1.000	NAME	0.0454	0.0164
+0.4419	0.4267	1.000	NOTES	0.0489	0.0145
+0.4431	0.2255	1.000	STATEMENT	0.0828	0.0134
+0.4491	0.5056	1.000	MODIFTERS	0.0789	0.0174
+0.4651	0.5150	1.000	Unsigned; Negative Sign; Radix. These modifiers	0.3835	0.0189
+0.4666	0.2049	1.000	I (D, 44, 4), 1492.0,0	0.1447	0.0131
+0.4782	0.2105	1.000	«I (D, 20, 4), TEN3, O	0.1391	0.0131
+0.4810	0.5037	1.000	operate as in ADD.	0.1298	0.0192
+0.5056	0.5037	1.000	INDICATORS	0.0847	0.0150
+0.5116	0.4455	1.000	1	0.0132	0.0131
+0.5189	0.0977	1.000	OUT	0.0320	0.0160
+0.5233	0.5150	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3816	0.0161
+0.5305	0.0977	1.000	TEN3	0.0376	0.0160
+0.5389	0.5037	1.000	(MOP); Comparison Result (AL, AE, AH). These	0.3948	0.0166
+0.5422	0.0977	1.000	TENS	0.0376	0.0160
+0.5523	0.5038	1.000	indicators are set as in COMPARE FOR RANGE.	0.3214	0.0174
+0.5682	0.1203	1.000	ote: 1. The stored quantity cannot exceed 9 digit.	0.2951	0.0133
+0.5755	0.5038	1.000	PROGRAMMING NOTE	0.1523	0.0176
+0.5785	0.1861	1.000	o a field length of 40 is use	0.1579	0.0131
+0.5945	0.5056	1.000	COMPARE FIELD FOR RANGE can be used with COMPARE	0.3929	0.0174
+0.5945	0.0902	1.000	Figure 17, Compare Example	0.1786	0.0161
+0.6105	0.5038	1.000	FIELD to determine whether a quantity falls within a	0.3947	0.0160
+0.6235	0.0977	1.000	2. Given a signed 31-digit decimal integer stored	0.3816	0.0146
+0.6235	0.5019	1.000	given range in the same manner that COMPARE FOR	0.3947	0.0160
+0.6354	0.0882	1.000	in storage such that the most significant portion is in	0.3931	0.0191
+0.6409	0.5038	1.000	RANGE is used with COMPARE.	0.2068	0.0146
+0.6526	0.0883	1.000	location 1935 and the least significant portion and	0.3910	0.0160
+0.6682	0.0882	1.000	sign are in location 1936. Store this number in loca-	0.3912	0.0166
+0.6788	0.5056	1.000	Load Transit and Set (LTRS)	0.1955	0.0116
+0.6860	0.0902	1.000	tions 2000 and 2001 if it is in the range 1015 through	0.3891	0.0131
+0.7006	0.5075	1.000	The transit register (location 15), the left zeros coun-	0.3891	0.0131
+0.7020	0.0883	1.000	2025, inclusive (Figure 18). Here, because of the	0.3910	0.0146
+0.7166	0.5056	1.000	ter, and the all-ones counter are cleared. A four-bit	0.3910	0.0116
+0.7166	0.0921	1.000	double-length number, COMPARE FOR RANGE cannot be	0.3872	0.0131
+0.7324	0.0902	1.000	used. A combination of BRANCH ON INDICATOR and	0.3891	0.0103
+0.7324	0.5056	1.000	sign byte, in which the leftmost bit is set to the sign	0.3891	0.0133
+0.7467	0.5075	1.000	of the addressed storage operand as modified by the	0.3891	0.0124
+0.7470	0.0902	1.000	COMPARE IE EQUAL is used instead.	0.2406	0.0133
+0.7615	0.5038	1.000	negative sign modifier, is placed in the four low-order	0.3929	0.0161
+0.7776	0.5056	1.000	bits of the transit register. The remaining three bits	0.3910	0.0131
+0.7863	0.0921	1.000	Compare Field for Range (KFR)	0.2199	0.0116
+0.7921	0.5056	1.000	of this sign byte are zero. The numeric part of the	0.3910	0.0146
+0.8067	0.5038	1.000	addressed operand is positioned immediately to the	0.3929	0.0146
+0.8081	0.0902	1.000	If the accumulator-high indicator is off when this	0.3910	0.0131
+0.8227	0.5038	1.000	left of this sign byte in the transit register. The ef-	0.3929	0.0161
+0.8241	0.0902	1.000	operation is interpreted, the comparison is not per-	0.3910	0.0131
+0.8387	0.5056	1.000	fective offset specified by the instruction is placed in	0.3910	0.0147
+0.8387	0.0883	1.000	formed and the comparison result indicators are not	0.3929	0.0147
+0.8532	0.5056	1.000	the all-ones counter (bits 44-50 of location 7). The	0.3910	0.0160
+0.8545	0.0902	1.000	changed. Otherwise, the operation is identical to	0.3891	0.0133
+0.8691	0.0902	1.000	COMPARE FIELD with the exception of the setting of	0.3910	0.0146
+0.8691	0.5056	1.000	two high-order bits of the left zeros counter (bits	0.3910	0.0132
+0.8852	0.5075	1.000	17-18 of location 7) are set to ones.	0.2462	0.0117
+0.8852	0.0902	1.000	the comparison result indicators. If the accumulator	0.3891	0.0131
+0.9214	0.7179	1.000	Variable Field Length	0.1357	0.0120
+0.9230	0.8778	1.000	67	0.0188	0.0087

@@ -1,0 +1,102 @@
+0.0669	0.1316	1.000	dumped with an appropriate message on the	0.3252	0.0131
+0.0682	0.5150	1.000	Checkout Messages	0.1504	0.0176
+0.0827	0.1316	1.000	system output tape.	0.1447	0.0118
+0.0959	0.0865	1.000	ŞNO REPLACEMENT FOR DELETED MCP UNIT.	0.3759	0.0147
+0.0973	0.5357	1.000	Each time that one of the console functions is	0.3440	0.0146
+0.1103	0.1315	1.000	A request was made to delete an MCP unit.	0.3216	0.0133
+0.1118	0.5132	1.000	performed, an appropriate record will be made on	0.3835	0.0146
+0.1241	0.1314	1.000	The unit has been made unavailable but a	0.3067	0.0140
+0.1264	0.5132	1.000	the typewriter.	0.1165	0.0146
+0.1394	0.5132	1.000	$ENT BK 'location' (0/D)	0.2049	0.0161
+0.1409	0.1297	1.000	replacement unit could not be found. The sys-	0.3515	0.0132
+0.1539	0.1278	1.000	tem will try to continue, but if too many tape	0.3402	0.0176
+0.1555	0.5583	1.000	Enter from binary keys.	0.1842	0.0146
+0.1678	0.5129	1.000	$DIS KL 'location' (O/D)	0.1979	0.0171
+0.1685	0.1297	1.000	units are taken from MCP or if key channels	0.3346	0.0147
+0.1830	0.1297	1.000	are deleted, a TYPE 82 error will result.	0.3158	0.0146
+0.1830	0.5583	1.000	Display on binary key lights.	0.2180	0.0161
+0.1976	0.0827	1.000	$ CHANGE MCP UNIT FROM XX-Y TO XX-Y.	0.3515	0.0161
+0.1991	0.5132	1.000	$SET IC 'location' (0/D)	0.1974	0.0161
+0.2136	0.1316	1.000	An IOCHANGE command that deleted a unit or	0.3440	0.0117
+0.2136	0.5526	1.000	Set Instruction Counter	0.1805	0.0146
+0.2266	0.5130	1.000	$DUMP 'location 1' 'location 2' (O/D)	0.2899	0.0176
+0.2282	0.1297	1.000	channel has been accepted.	0.2011	0.0116
+0.2411	0.5582	1.000	Dump.	0.0528	0.0163
+0.2427	0.1297	1.000	The unit and channel number of the deleted	0.3233	0.0116
+0.2573	0.5357	1.000	The addresses typed out are taken from the	0.3289	0.0161
+0.2573	0.1278	1.000	unit, and the unit and channel number of the	0.3308	0.0131
+0.2703	0.5357	1.000	numeric switches. Either the letter O or the	0.3383	0.0176
+0.2733	0.1297	1.000	replacement unit for every unit deleted, is	0.3233	0.0116
+0.2848	0.1297	1.000	given for the operator's information. If the	0.3289	0.0131
+0.2859	0.5337	1.000	letter D will appear in parentheses following the	0.3668	0.0181
+0.3009	0.5357	1.000	address, indicating whether the address is in	0.3421	0.0161
+0.3023	0.1259	1.000	replacement unit was assigned to the problem	0.3440	0.0116
+0.3154	0.1259	1.000	program, the problem program is terminated	0.3459	0.0131
+0.3165	0.5356	1.000	octal or in decimal. This interpretation is	0.3349	0.0164
+0.3285	0.1259	1.000	and dumped, with appropriate messages given	0.3477	0.0145
+0.3295	0.5355	1.000	determined by the setting of the decimal-binary	0.3575	0.0171
+0.3445	0.5357	1.000	switch.	0.0564	0.0145
+0.3445	0.1241	1.000	to the operator, and written on the system out-	0.3571	0.0146
+0.3605	0.1278	1.000	put tape.	0.0658	0.0117
+0.3735	0.0827	1.000	$'command' COMMAND ACCEPTED.	0.2857	0.0131
+0.3821	0.5132	1.000	Console Reject Messages	0.2011	0.0161
+0.3881	0.1278	1.000	This message is given when a command is	0.3195	0.0131
+0.4026	0.1278	1.000	accepted. Another command should not be	0.3214	0.0131
+0.4112	0.5357	1.000	Under certain circumstances, console information	0.3816	0.0176
+0.4172	0.1259	1.000	entered from the console before this acceptance	0.3628	0.0160
+0.4242	0.5111	1.000	will not be accepted. In such a case, a message will	0.4026	0.0206
+0.4302	0.1259	1.000	message or a rejection message for the current	0.3628	0.0161
+0.4418	0.5113	1.000	be typed and MCP will return to the location of the	0.3835	0.0146
+0.4476	0.1278	1.000	command is given.	0.1391	0.0118
+0.4548	0.5132	1.000	console interruption.	0.1598	0.0161
+0.4605	0.0826	1.000	$COMD REJ - ILEGL SITUATN,	0.2446	0.0134
+0.4694	0.5094	1.000	$EPGK ON CONSOLE.	0.1786	0.0161
+0.4767	0.1259	1.000	A legal MCP command was given, but the situ-	0.3571	0.0146
+0.4855	0.5094	1.000	$UK ON CONSOLE.	0.1579	0.0145
+0.4897	0.1259	1.000	ation under which it was given is invalid for the	0.3590	0.0147
+0.4985	0.5113	1.000	$NO PP CONSI IOD.	0.1692	0.0176
+0.5058	0.1278	1.000	command: e.g., COMD, EOJ issued when a	0.3289	0.0131
+0.5160	0.5564	1.000	When the Signal key was depressed, the cur-	0.3402	0.0174
+0.5203	0.1278	1.000	problem program is already terminated.	0.3045	0.0118
+0.5291	0.5564	1.000	rent problem program did not have a console	0.3402	0.0189
+0.5331	0.0825	1.000	$COMD REJ - ILEGL.	0.1695	0.0135
+0.5451	0.5564	1.000	IOD and, therefore, could not accept the chan-	0.3553	0.0174
+0.5464	0.1259	1.000	A command was given that was not recognized	0.3459	0.0176
+0.5596	0.5526	1.000	nel signal.	0.0883	0.0174
+0.5639	0.1278	1.000	as one of the MCP commands. Parameters	0.3289	0.0131
+0.5727	0.5113	1.000	$ MESSAGE ERASED.	0.1711	0.0174
+0.5785	0.1278	1.000	were missing or incorrect, or the format was	0.3440	0.0131
+0.5872	0.5564	1.000	This message is an indication that MCP has	0.3308	0.0189
+0.5959	0.1259	1.000	wrong.	0.0526	0.0087
+0.6011	0.5560	1.000	received the EE (caused by depressing the	0.3221	0.0234
+0.6076	0.0808	1.000	$DISREGARD SYSTEM TAPE MOUNTING REQUESTS.	0.4079	0.0174
+0.6163	0.5564	1.000	console Erase key) and has discarded the	0.3195	0.0189
+0.6235	0.1278	1.000	An off-line command has been received from	0.3365	0.0131
+0.6336	0.5545	1.000	preceding typed information.	0.2199	0.0146
+0.6381	0.1259	1.000	the system input source. The tapes have been	0.3496	0.0131
+0.6482	0.5545	1.000	Note: The problem program is not involved in	0.3515	0.0146
+0.6512	0.1241	1.000	assigned for the off-line mode, but conditions	0.3459	0.0174
+0.6612	0.5075	1.000	any of the above situations. The MCP conceptor	0.3722	0.0176
+0.6672	0.1241	1.000	cause the system to remain in the bypass mode;	0.3609	0.0160
+0.6744	0.5094	1.000	routine handles all of these unusual console	0.3459	0.0189
+0.6817	0.1241	1.000	therefore, the request for off-line tapes must	0.3477	0.0147
+0.6898	0.5092	1.000	situations.	0.0869	0.0186
+0.6962	0.1241	1.000	be ignored. This error can occur if the COMD	0.3553	0.0145
+0.7075	0.1239	1.000	card is not the last card in the card reader.	0.3330	0.0179
+0.7238	0.5113	1.000	Error Messages	0.1316	0.0174
+0.7267	0.0808	1.000	HH: MM: SS-TIME-HH: MM:SS DATE-mm/dd/yy	0.3515	0.0146
+0.7364	0.1277	1.000	This message is issued in response to COMD,	0.3444	0.0180
+0.7529	0.5301	1.000	Error messages are given when an error condi-	0.3703	0.0174
+0.7542	0.1259	1.000	CLOCK which sets the time clock calibration	0.3383	0.0147
+0.7688	0.5113	1.000	tion occurs and MCP cannot continue.	0.2876	0.0176
+0.7688	0.1241	1.000	constant. The time to the right has been com-	0.3515	0.0161
+0.7820	0.5094	1.000	$SYSTEM ERROR. MCP WILL RE-IPL.	0.3308	0.0189
+0.7833	0.1241	1.000	puted using the time value just entered. The	0.3402	0.0132
+0.7979	0.1241	1.000	date is taken from the COMD. The date and	0.3327	0.0161
+0.7994	0.5545	1.000	It is possible to execute an internal Restart	0.3308	0.0146
+0.8116	0.5544	1.000	should an error occur. If this is done, the	0.3272	0.0177
+0.8139	0.1259	1.000	adjusted time are included on each problem	0.3271	0.0131
+0.8285	0.5545	1.000	gong is sounded once, the above message	0.3177	0.0145
+0.8285	0.1241	1.000	program's output.	0.1353	0.0116
+0.9142	0.7989	1.000	Appendix	0.0602	0.0145
+0.9157	0.8947	1.000	51	0.0188	0.0131

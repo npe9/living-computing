@@ -1,0 +1,52 @@
+0.1279	0.4831	1.000	This page is out of date. A new sample output	0.3722	0.0176
+0.1308	0.1786	1.000	page 19	0.0620	0.0131
+0.1424	0.4831	1.000	listing page is found in the section headed	0.3346	0.0189
+0.1599	0.4831	1.000	"General Changes".	0.1617	0.0147
+0.1918	0.4831	1.000	not 19 or 20	0.0996	0.0131
+0.1918	0.1786	1.000	page 20 - column 2 - line 4	0.2406	0.0131
+0.2006	0.4831	1.000	but 20or 21	0.1053	0.0234
+0.2339	0.4793	1.000	Bot fsee lnes 12 and 13)	0.2030	0.0350
+0.2384	0.1786	1.000	page 20 - column 2 - line 14	0.2500	0.0131
+0.2848	0.1786	1.000	page 20 - column 1 - line 35	0.2481	0.0131
+0.2848	0.4812	1.000	not beginning of the listing	0.2180	0.0176
+0.2933	0.4830	1.000	but end of the listing	0.1693	0.0224
+0.3270	0.4831	1.000	Refer to the section headed "General Changes",	0.3816	0.0191
+0.3314	0.1786	1.000	page 20 - column 2 - line 49	0.2481	0.0132
+0.3430	0.4831	1.000	Item 4 for a change in treatment of MULTI error	0.3929	0.0189
+0.3604	0.4830	1.000	flags.	0.0508	0.0176
+0.3881	0.4774	0.300	Bot yal 500.00	0.1429	0.0407
+0.3924	0.1767	1.000	page 21 - column 2 - line 5	0.2406	0.0131
+0.4330	0.4756	0.300	Bot Brougn 72	0.1353	0.0409
+0.4390	0.1767	1.000	page 22 - column 2 - line 36	0.2519	0.0132
+0.4811	0.4793	1.000	not 0 to 748	0.0996	0.0189
+0.4855	0.1767	1.000	page 22 - column 2 - line 38	0.2500	0.0131
+0.4938	0.4792	1.000	but 0 to 736	0.1037	0.0269
+0.5276	0.4812	1.000	not data columns (5.4-7.11)	0.2256	0.0233
+0.5320	0.1767	1.000	page 23 - column 2 - line 4	0.2406	0.0132
+0.5376	0.4807	1.000	but data columns (5.4-71.11)	0.2381	0.0280
+0.5755	0.4812	1.000	The sentence beginning "If no address" is	0.3346	0.0176
+0.5785	0.1767	1.000	page 23 - column 2 - line 30	0.2481	0.0131
+0.5930	0.4793	1.000	incorrect. If no address is specified on the END	0.3966	0.0131
+0.6076	0.4812	1.000	or TLB, 41.g is used.	0.1823	0.0174
+0.6381	0.4793	1.000	The format indicated is incorrect. The format	0.3816	0.0174
+0.6409	0.1767	1.000	page 23 - column 2 - line 36f.	0.2613	0.0132
+0.6521	0.4810	1.000	should read:	0.1018	0.0186
+0.6700	0.6107	1.000	Code column (branch card -	0.2260	0.0191
+0.6715	0.5038	1.000	1.0-1.11	0.0733	0.0145
+0.6860	0.6184	1.000	.8, 1.9, 1.11 punches	0.1805	0.0176
+0.7006	0.6184	1.000	dentification number (binary	0.2237	0.0146
+0.7035	0.5038	1.000	2.0-2.11	0.0733	0.0145
+0.7151	0.6090	1.000	Sequence number (binary)	0.2143	0.0189
+0.7180	0.5019	1.000	3.0-3.11	0.0752	0.0160
+0.7310	0.6109	1.000	Checksum	0.0865	0.0176
+0.7338	0.5018	1.000	4.0-4.11	0.0735	0.0150
+0.7405	0.6088	1.000	Not presently used	0.1545	0.0249
+0.7485	0.5038	1.000	5.0-5.11	0.0733	0.0145
+0.7586	0.5018	1.000	6.0-7.11	0.0772	0.0191
+0.7602	0.6090	1.000	24-bit transfer address	0.1917	0.0174
+0.7936	0.4793	1.000	not There are only two... and the IQS entry	0.3609	0.0189
+0.7951	0.1729	1.000	page 23 - column 1 - line 34f.	0.2632	0.0116
+0.8103	0.4810	1.000	butmodre are three entry modes that fall into	0.3691	0.0321
+0.8364	0.5056	1.000	this category, the A entry mode, the IQS entry	0.3742	0.0204
+0.8561	0.5056	1.000	mode, and the CC entry mode.	0.2462	0.0176
+0.9172	0.5808	1.000	N28-1081 (C28-6129) Page 18 of 20	0.2932	0.0147

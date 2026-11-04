@@ -1,0 +1,109 @@
+0.0712	0.5244	1.000	pilation. The syntax of the statement is checked, but	0.4004	0.0189
+0.0741	0.1015	1.000	The layout of core storage indicated by this example is:	0.3985	0.0160
+0.0872	0.5263	1.000	in all other respects, the statement is ignored.	0.3459	0.0189
+0.0945	0.1316	1.000	A	0.0132	0.0116
+0.1045	0.1316	1.000	B, D(1)	0.0545	0.0146
+0.1163	0.1316	1.000	C, D(2)	0.0545	0.0146
+0.1250	0.1466	1.000	D(3)	0.0432	0.0160
+0.1394	0.1184	1.000	However, a variable may not be made equivalent to	0.3816	0.0161
+0.1409	0.5207	1.000	Chapter 8. Specification Statements	0.3083	0.0176
+0.1539	0.1053	1.000	an element of an array in such a way as to cause the	0.3929	0.0161
+0.1658	0.1012	1.000	array to extend below the beginning of the CoMMoN	0.3990	0.0236
+0.1741	0.5262	1.000	DATA	0.0473	0.0166
+0.1933	0.5282	1.000	By means of the DatA statement, information may be	0.3966	0.0146
+0.1991	0.1297	0.300	CO NCE %. (3))	0.1880	0.0436
+0.2035	0.5263	1.000	obtained in the data areas and/or coMMoN block of	0.4004	0.0174
+0.2209	0.5244	1.000	the object program to be loaded with the program.	0.4004	0.0176
+0.2369	0.5244	1.000	The DATA statement specifies the information and the	0.4004	0.0161
+0.2412	0.1015	1.000	This would cause the following impossible situation:	0.3985	0.0161
+0.2500	0.5282	1.000	variables to which they belong.	0.2312	0.0203
+0.2573	0.1485	1.000	D(1)	0.0414	0.0160
+0.2703	0.1316	1.000	A, D(2)	0.0545	0.0146
+0.2786	0.8006	1.000	EXAMPLES	0.0681	0.0170
+0.2805	0.1278	1.000	B.D(3)	0.0602	0.0247
+0.2833	0.5789	1.000	GENERAL FORM	0.0959	0.0118
+0.3023	0.7368	1.000	DATA A (3HEND), (B(I),	0.1880	0.0116
+0.3135	0.7537	1.000	I=1,15) (/8/4,23)	0.1355	0.0125
+0.3182	0.0996	1.000	Type Statements	0.1278	0.0191
+0.3241	0.7425	1.000	DATA A (1.2), B(3.6),	0.1541	0.0147
+0.3358	0.7594	1.000	C(7.9)	0.0470	0.0131
+0.3387	0.1015	1.000	There are three Type statements: LOGICAL, INTEGER,	0.4004	0.0160
+0.3543	0.1033	1.000	and REAL.	0.0753	0.0122
+0.3779	0.5263	1.000	RULES FOR CONSTRUCTING THE LIST	0.2481	0.0131
+0.3779	0.1015	1.000	LOGICAL, INTEGER, AND REAL	0.2556	0.0146
+0.3967	0.5282	1.000	Variable names in the list follow the same rules as for	0.3947	0.0147
+0.4039	0.3984	1.000	EXAMPLES	0.0640	0.0106
+0.4039	0.1748	1.000	GENERAL FORM	0.0940	0.0089
+0.4127	0.5263	1.000	constructing 1-o lists with the following exceptions:	0.3797	0.0161
+0.4200	0.3590	1.000	LOGICAL F, G, L	0.1410	0.0161
+0.4207	0.1032	1.000	"LOGICAL a, b, c,..."	0.1486	0.0161
+0.4273	0.5432	1.000	1. An array name may not appear unsubscripted.	0.3534	0.0161
+0.4317	0.1015	1.000	"INTEGER a, b, c...	0.1391	0.0116
+0.4317	0.3590	1.000	INTEGER Q, NAME	0.1410	0.0147
+0.4433	0.1015	1.000	"REAL a, b, c,...	0.1165	0.0116
+0.4433	0.5451	1.000	2. Compiling of data into an array area must be	0.3778	0.0146
+0.4446	0.3609	1.000	REAL J, S	0.0734	0.0105
+0.4564	0.1034	1.000	where a, b, c,...are variable and/or	0.2387	0.0103
+0.4578	0.5263	1.000	under control of Do-implying parentheses and asso-	0.3966	0.0161
+0.4679	0.1034	1.000	function names appearing within the	0.2387	0.0103
+0.4738	0.5282	1.000	ciated parameters. The Do-defining parameters must	0.3966	0.0160
+0.4811	0.1034	1.000	program.	0.0545	0.0087
+0.4897	0.5282	1.000	be constants.	0.0959	0.0118
+0.5029	0.1053	1.000	A variable or function name, once declared as a cer-	0.3947	0.0147
+0.5042	0.5432	1.000	3. If a variable appears with a subscript, not under	0.3797	0.0161
+0.5188	0.1034	1.000	tain type, will have that type throughout the program.	0.3966	0.0133
+0.5203	0.5263	1.000	control of Do-implying parentheses, the subscript must	0.3985	0.0161
+0.5333	0.1034	1.000	Real and integer variables take arithmetic values;	0.3966	0.0132
+0.5363	0.5263	1.000	be a constant.	0.1071	0.0131
+0.5479	0.1015	1.000	logical variables take the values ".TRUE." or ".FALSE."	0.3947	0.0146
+0.5581	0.5282	1.000	RULES FOR LITERALS	0.1447	0.0146
+0.5639	0.1015	1.000	A type declaration overrides the implicit declaration	0.3966	0.0161
+0.5785	0.5263	1.000	The d literals may take any of three forms:	0.3158	0.0161
+0.5799	0.1034	1.000	of any variable. For example, IOTA, which is normally	0.3947	0.0131
+0.5930	0.5414	1.000	1. Integers. These are listed in the standard FORTRAN	0.3816	0.0161
+0.5945	0.1034	1.000	an integer because it begins with I, can be declared	0.3947	0.0131
+0.6105	0.1015	1.000	a floating point variable by using the type declaration	0.3966	0.0132
+0.6134	0.5282	1.000	manner.	0.0602	0.0087
+0.6250	0.5432	1.000	2. Floating point numbers. These are listed in the	0.3797	0.0160
+0.6279	0.1034	1.000	REAL IOTA.	0.0789	0.0088
+0.6409	0.1184	1.000	If a variable does not appear in a Type statement,	0.3816	0.0146
+0.6409	0.5263	1.000	standard FORTRAN manner.	0.1992	0.0132
+0.6555	0.5432	1.000	3. Alphameric characters. (These may extend over	0.3816	0.0161
+0.6555	0.1015	1.000	the variable will retain its implicit definition. That is,	0.3985	0.0161
+0.6700	0.5263	1.000	more than one word.) nH precedes the alphameric	0.3966	0.0146
+0.6700	0.1034	1.000	ALPHA is a floating point variable if it is not declared	0.3966	0.0146
+0.6860	0.5282	1.000	characters which are treated in the standard 7030 FOR-	0.3966	0.0116
+0.6873	0.1014	1.000	otherwise.	0.0753	0.0135
+0.7020	0.5282	1.000	TRAN manner (eight per word, left justified, filled out	0.3947	0.0131
+0.7020	0.1203	1.000	A declarative on a name must precede the first	0.3797	0.0131
+0.7166	0.1034	1.000	usage of that name in any executable statement.	0.3571	0.0146
+0.7179	0.5282	1.000	with blanks, etc.). A repeat field preceding an alpha-	0.3966	0.0133
+0.7324	0.1203	1.000	Note that array specifications may not be given in	0.3778	0.0133
+0.7324	0.5282	1.000	meric field covers the entire field.	0.2481	0.0118
+0.7485	0.5432	1.000	With regard to the data list and its associated data:	0.3797	0.0146
+0.7485	0.1034	1.000	these statements.	0.1259	0.0118
+0.7630	0.5263	1.000	if the list is shorter than the data, the redundant data	0.3966	0.0146
+0.7761	0.1015	1.000	FREQUENCY	0.0903	0.0133
+0.7791	0.5244	1.000	is ignored and, conversely, if the list is longer than the	0.3985	0.0161
+0.7936	0.5282	1.000	data the remaining items in the list are ignored.	0.3515	0.0146
+0.8009	0.1560	1.000	GENERAL FORM	0.0940	0.0073
+0.8009	0.3778	1.000	EXAMPLES	0.0639	0.0087
+0.8081	0.5450	1.000	Data may not be in blank comMon. Data which is	0.3780	0.0166
+0.8154	0.1034	1.000	"FREQUENCY n (i, j,...),	0.2011	0.0131
+0.8182	0.3139	1.000	FREQUENCY 30(1, 2, 1),	0.1861	0.0118
+0.8255	0.5244	1.000	to be in a labelled common block may be specified in	0.3985	0.0147
+0.8270	0.1053	1.000	m(k, Ì,...),..." where n, m,	0.1974	0.0146
+0.8299	0.3346	1.000	40(11),	0.0508	0.0116
+0.8299	0.3891	1.000	50(1, 7, 1,1)	0.1109	0.0102
+0.8415	0.1109	1.000	..are statement numbers and	0.1898	0.0103
+0.8415	0.3346	1.000	10 (1, 7, 1, 1)	0.0921	0.0118
+0.8415	0.5282	1.000	a special separate program. This special program may	0.3947	0.0131
+0.8517	0.1034	1.000	i, j, k, 1,... are unsigned fixed	0.1974	0.0131
+0.8561	0.5282	1.000	contain only the DATA and coMMoN statements, as well	0.3947	0.0146
+0.8638	0.1031	1.000	point constants.	0.0984	0.0129
+0.8704	0.5281	1.000	as any required EQUIVALENCE, DIMENSION and Type	0.3949	0.0164
+0.8866	0.5263	1.000	statements, and must be headed by the BLOCK DATA	0.3966	0.0146
+0.8881	0.1034	1.000	The FREQUENCY statement is accepted by the IBM 7030	0.3966	0.0146
+0.9039	0.1034	1.000	FORTRAN IV, but it has absolutely no effect on com-	0.3966	0.0147
+0.9055	0.5263	1.000	statement.	0.0771	0.0087
+0.9317	0.1015	1.000	20	0.0188	0.0116

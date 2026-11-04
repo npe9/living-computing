@@ -1,0 +1,103 @@
+0.0665	0.8325	1.000	TNOTES	0.0529	0.0166
+0.0669	0.0883	1.000	which produces the final effective address is any in-	0.3891	0.0160
+0.0682	0.6503	1.000	STATEMENT	0.0828	0.0162
+0.0724	0.5055	1.000	NAME	0.0435	0.0121
+0.0814	0.0902	1.000	struction other than LOAD VALUE EFFECTIVE. It is as-	0.3872	0.0132
+0.0943	0.6447	1.000	LX, $X1, IC	0.0828	0.0149
+0.0945	0.8459	1.000	1	0.0150	0.0116
+0.0956	0.0882	1.000	sumed to be either a half length instruction or the	0.3895	0.0200
+0.1047	0.8459	1.000	2	0.0150	0.0131
+0.1061	0.6447	1.000	LVE, $X15, -0. 32 ($X1)	0.1466	0.0131
+0.1104	0.0882	1.000	first half of a full length instruction. The final effec-	0.3894	0.0189
+0.1148	0.8459	1.000	3	0.0150	0.0131
+0.1163	0.6466	1.000	L (U), 0.0 ($X15)	0.1034	0.0116
+0.1249	0.0882	1.000	tive address is produced according to the rules which	0.3894	0.0202
+0.1424	0.0883	1.000	apply to that instruction. In particular, the lengths	0.3910	0.0161
+0.1483	0.5094	1.000	Notes:	0.0395	0.0116
+0.1555	0.0883	1.000	of the address and index fields are determined from	0.3891	0.0161
+0.1730	0.0883	1.000	the instruction class to which the instruction belongs.	0.3891	0.0161
+0.1903	0.0902	1.000	No check is made for invalid operation codes.	0.3365	0.0118
+0.2035	0.1034	1.000	Although the address part of the second half word	0.3741	0.0160
+0.2179	0.0883	1.000	of TRANSMIT and SwAP instructions is 19 bits, only the	0.3910	0.0161
+0.2339	0.0883	1.000	first 18 bits of the address field are used when the sec-	0.3891	0.0146
+0.2442	0.5019	1.000	Figure 10. Indirect Addressing Example	0.2462	0.0146
+0.2470	0.0883	1.000	ond half of those instructions is encountered in the	0.3910	0.0161
+0.2645	0.0883	1.000	process. If the second half word of any other type of	0.3910	0.0161
+0.2775	0.0863	1.000	full length instruction is encountered, the full 19 bits	0.3932	0.0212
+0.2892	0.5019	1.000	Address Insertion	0.1880	0.0174
+0.2964	0.0902	1.000	of the second address are used.	0.2162	0.0118
+0.3095	0.1033	1.000	When the first half of any variable field length in-	0.3762	0.0205
+0.3212	0.5019	1.000	The length of the address field of an instruction may	0.3966	0.0189
+0.3255	0.0865	1.000	struction terminates the operation, the address modi-	0.3929	0.0176
+0.3372	0.5019	1.000	be 18, 19, or 24 bits, depending upon the operation	0.3947	0.0174
+0.3415	0.0883	1.000	fication mode of indexing is assumed, even though the	0.3891	0.0161
+0.3545	0.5056	1.000	class of the instruction. In order to facilitate the inser-	0.3910	0.0118
+0.3561	0.0883	1.000	full instruction may use the progressive indexing	0.3891	0.0161
+0.3706	0.5056	1.000	tion of an address of proper length in an instruction,	0.3910	0.0131
+0.3735	0.0902	1.000	mode.	0.0414	0.0102
+0.3852	0.5056	1.000	the operation STORE VALUE IN ADDREsS is provided. This	0.3910	0.0146
+0.3881	0.1053	1.000	Even though the instruction class of the final in-	0.3741	0.0131
+0.3977	0.5036	1.000	operation replaces the address field of an instruction	0.3913	0.0176
+0.4026	0.0883	1.000	struction is determined in order to obtain the proper	0.3910	0.0147
+0.4157	0.5019	1.000	with a field of proper length. The field is obtained	0.3947	0.0161
+0.4185	0.0883	1.000	effective address, the instruction operation is not exe-	0.3910	0.0147
+0.4288	0.5056	1.000	from the value field of an index word. The instruction	0.3891	0.0131
+0.4345	0.0902	1.000	cuted. The operation LOAD VALUE EFFECTIVE, which	0.3872	0.0146
+0.4462	0.5056	1.000	addresses a half word and assumes it to be either a half	0.3910	0.0117
+0.4476	0.0883	1.000	extends the indirect addressing to another level, is	0.3891	0.0146
+0.4606	0.5038	1.000	length instruction or the first half of a full length in-	0.3929	0.0147
+0.4636	0.0902	1.000	always executed. The index register in which the final	0.3872	0.0146
+0.4752	0.5019	1.000	struction. The length of the address field is deter-	0.3966	0.0161
+0.4797	0.0883	1.000	effective address is to be stored is specified by the	0.3891	0.0131
+0.4927	0.5056	1.000	mined from the instruction operation code.	0.3120	0.0131
+0.4942	0.0883	1.000	index field J of the original LOAD VALUE EFFECTIVE in-	0.3910	0.0146
+0.5073	0.5226	1.000	The STORE VALUE IN ADDress operation makes use of	0.3741	0.0146
+0.5102	0.0883	1.000	struction. The fields J of all subsequent instructions	0.3910	0.0147
+0.5218	0.5056	1.000	the format shown below. The index field J specifies	0.3910	0.0146
+0.5247	0.0883	1.000	encountered in the operation are ignored.	0.3008	0.0147
+0.5338	0.5035	1.000	the index register from which the address is to be ob-	0.3914	0.0214
+0.5392	0.1034	1.000	In indirect addressing, it is possible that addresses	0.3741	0.0160
+0.5536	0.5056	1.000	tained. The location of the instruction in which the	0.3910	0.0103
+0.5567	0.0902	1.000	refer to each other in such a way that they form a loop.	0.3872	0.0131
+0.5682	0.5038	1.000	address will be inserted is given by the effective address	0.3929	0.0161
+0.5712	0.0902	1.000	As a result, the computer cannot finish its operation	0.3872	0.0145
+0.5842	0.5056	1.000	of the instruction.	0.1335	0.0118
+0.5872	0.0883	1.000	and no interruption is accepted. This situation would	0.3891	0.0131
+0.6017	0.0902	1.000	be the result of a programmer's error. In order to pre-	0.3872	0.0131
+0.6163	0.6654	1.000	OP.	0.0169	0.0087
+0.6163	0.5489	1.000	ADDRESS	0.0470	0.0087
+0.6163	0.0883	1.000	vent the machine from being locked up in this way,	0.3891	0.0146
+0.6321	0.0883	1.000	the LOAD VALUE EFFECTIVE operation will be termi-	0.3891	0.0133
+0.6467	0.0865	1.000	nated, if still active, after one millisecond and indi-	0.3929	0.0161
+0.6612	0.0865	1.000	cator USA, unended sequence of addresses, will be	0.3910	0.0161
+0.6612	0.5019	1.000	Store Value in Address (SVA)	0.2143	0.0147
+0.6773	0.0883	1.000	turned on. At time of termination, the final effective	0.3891	0.0146
+0.6802	0.5038	1.000	The first 18, 19, or 24 bits of the value field of the in-	0.3929	0.0161
+0.6913	0.0882	1.000	address is placed in the index register specified by the	0.3895	0.0198
+0.6948	0.5038	1.000	dex word specified by J replace the address field of the	0.3929	0.0174
+0.7093	0.0902	1.000	J field of the original instruction.	0.2406	0.0131
+0.7106	0.5019	1.000	instruction specified by the effective address.	0.3327	0.0176
+0.7238	0.1034	1.000	Index flag and index result indicators are set accord-	0.3741	0.0160
+0.7267	0.5188	1.000	The index flag and index result indicators are set	0.3778	0.0161
+0.7397	0.0883	1.000	ing to the new contents ofthe index specified by J.	0.3665	0.0147
+0.7412	0.5019	1.000	according to the contents of the index register speci-	0.3966	0.0176
+0.7587	0.5038	1.000	fied by J.	0.0677	0.0161
+0.7660	0.0902	1.000	PROGRAMMING ExAMPLE	0.1692	0.0102
+0.7820	0.5038	1.000	PROGRAMMING NOTE	0.1485	0.0132
+0.7848	0.0883	1.000	Suppose that a floating point result exception has oc-	0.3891	0.0146
+0.7979	0.5038	1.000	Although the address part of the second half-word of	0.3929	0.0161
+0.7994	0.0865	1.000	curred. The instruction counter was stored in location	0.3910	0.0146
+0.8139	0.5019	1.000	TRANSMIT and swAp instructions is 19 bits, only the first	0.3947	0.0145
+0.8153	0.0864	1.000	IC. As part of the interruption correction routine, it is	0.3893	0.0152
+0.8285	0.5019	1.000	18 bits of the address field are replaced when the sec-	0.3947	0.0145
+0.8299	0.0883	1.000	necessary to obtain the operand of the floating point	0.3891	0.0131
+0.8445	0.5038	1.000	ond half-word is referred to by the STORE VALUE IN AD-	0.3910	0.0146
+0.8459	0.0865	1.000	operation that produced the exception, placing this	0.3910	0.0132
+0.8586	0.0881	1.000	operand in the accumulator. Assume that the operand	0.3895	0.0200
+0.8590	0.5038	1.000	DRESS instruction. If an address is stored in the second	0.3929	0.0146
+0.8735	0.5019	1.000	half-word of any other type of full-length instruction,	0.3947	0.0160
+0.8750	0.0865	1.000	is single precision. The instructions shown in Figure	0.3891	0.0145
+0.8881	0.5038	1.000	the full 19 bits of the second address are replaced.	0.3628	0.0160
+0.8909	0.0883	1.000	10 accomplish this.	0.1353	0.0161
+0.9258	0.7199	1.000	Operand Designation	0.1297	0.0133
+0.9259	0.8778	1.000	29	0.0188	0.0116

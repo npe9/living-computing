@@ -1,0 +1,114 @@
+0.0827	0.5338	1.000	RULES FOR CONSTRUCTING NorMAL ARITHMETIC	0.3402	0.0118
+0.0842	0.1109	1.000	LOGICAL VARIABLES	0.1391	0.0118
+0.0988	0.5338	1.000	EXPRESSIONS	0.0902	0.0102
+0.1119	0.4004	1.000	EXAMPLES	0.0677	0.0116
+0.1148	0.1823	1.000	GENERAL FORM	0.0921	0.0073
+0.1177	0.5489	1.000	1. A normal arithmetic expression may be either	0.3797	0.0160
+0.1308	0.1109	1.000	Any variable name declared LOGI- TRUTH	0.3064	0.0116
+0.1321	0.5320	1.000	fixed point or floating point, but must not be a mixed	0.3947	0.0176
+0.1424	0.1109	1.000	CAL by a type statement (Take on LIES	0.2895	0.0116
+0.1482	0.5320	1.000	expression. This does not mean that a floating-point	0.3966	0.0161
+0.1539	0.1090	1.000	value of .TRUE. or FALSE.)	0.1955	0.0103
+0.1642	0.5320	1.000	quantity cannot appear in a fixed-point expression, but	0.3966	0.0161
+0.1802	0.5320	1.000	rather that a quantity of one type can appear in an	0.3947	0.0146
+0.1948	0.5320	1.000	expression of another type only in certain ways.	0.3571	0.0160
+0.1972	0.1089	1.000	Subscripts	0.0754	0.0125
+0.2121	0.5470	1.000	a. A floating-point quantity can appear in a fixed-	0.3816	0.0161
+0.2151	0.1109	1.000	A variable can be made to represent any element of	0.3947	0.0146
+0.2282	0.5677	1.000	point expression only as an argument of a func-	0.3609	0.0161
+0.2311	0.1090	1.000	a one-, two-, or three-dimensional array of quantities	0.3966	0.0147
+0.2442	0.5677	1.000	tion.	0.0395	0.0145
+0.2456	0.1090	1.000	by appending one, two, or three subscripts to it, re-	0.3966	0.0147
+0.2599	0.5413	1.000	b. A fixed point quantity can appear in a floating-	0.3874	0.0182
+0.2602	0.1071	1.000	spectively. The variable is then a subscripted variable.	0.3985	0.0160
+0.2761	0.5677	1.000	point expression only as an argument of a func-	0.3590	0.0161
+0.2776	0.1109	1.000	These subscripts are fixed-point quantities whose	0.3947	0.0146
+0.2921	0.5677	1.000	tion, or as a subscript, or as an exponent.	0.3177	0.0161
+0.2921	0.1090	1.000	values determine the member of the array to which	0.3947	0.0146
+0.3081	0.1090	1.000	reference is made. The variable in a subscript must	0.3966	0.0131
+0.3096	0.5470	1.000	2. Constants, variables, and subscripted variables	0.3797	0.0160
+0.3241	0.5301	1.000	are also expressions of the same type as the constant	0.3966	0.0160
+0.3241	0.1071	1.000	not itself be subscripted.	0.1898	0.0147
+0.3400	0.5301	1.000	or variable name. For example, the fixed point variable	0.3966	0.0161
+0.3517	0.1786	1.000	GENERAL FORM	0.0959	0.0116
+0.3517	0.3985	1.000	EXAMPLES	0.0658	0.0102
+0.3561	0.5301	1.000	J53 is a fixed point expression.	0.2162	0.0146
+0.3706	0.1128	1.000	et v represent any fixed point vari	0.2274	0.0131
+0.3735	0.5470	1.000	3. Functions are expressions of the same type as	0.3797	0.0131
+0.3794	0.1109	1.000	able and' c (or c') any unsigned fixe	0.2293	0.0146
+0.3881	0.5320	1.000	the function name, provided that the arguments of	0.3947	0.0146
+0.3924	0.1090	1.000	point constant. Then a subscript is an	0.2350	0.0116
+0.3924	0.4060	1.000	I+3	0.0320	0.0116
+0.4039	0.5320	1.000	the function are of the types assumed in the definition	0.3929	0.0147
+0.4039	0.1090	1.000	expression in one of the forms:	0.1992	0.0103
+0.4041	0.4060	1.000	3*1	0.0263	0.0116
+0.4155	0.4059	1.000	3*I+3	0.0471	0.0120
+0.4200	0.5301	1.000	of the function. For example, if SOMEF (A,B) is a func-	0.3966	0.0131
+0.4273	0.4060	1.000	4*1-5	0.0470	0.0116
+0.4345	0.5320	1.000	tion with a floating point name, then soMEF (C, D) is	0.3947	0.0146
+0.4404	0.1222	1.000	v+corv-c	0.0752	0.0087
+0.4491	0.5338	1.000	a floating point expression if C and D are of the same	0.3929	0.0146
+0.4506	0.1222	1.000	c*v	0.0226	0.0102
+0.4608	0.1222	1.000	c*vtcorc*r-c	0.1090	0.0116
+0.4666	0.5338	1.000	types as A and B, respectively.	0.2331	0.0131
+0.4724	0.1222	1.000	(The symbol * denotes multi-	0.1805	0.0116
+0.4824	0.5470	1.000	4. Exponentiation of an expression does not affect	0.3797	0.0147
+0.4855	0.1353	1.000	plication.)	0.0658	0.0102
+0.4985	0.5320	1.000	the type of the expression; however, a fixed point ex-	0.3929	0.0146
+0.5145	0.5320	1.000	pression may not be given a floating point exponent.	0.3929	0.0146
+0.5174	0.1053	1.000	SUBSCRIPTED VARIABLES	0.1692	0.0132
+0.5305	0.5470	1.000	NoTE: The expression 4****c is interpreted as	0.3797	0.0131
+0.5451	0.3797	1.000	EXAMPLES	0.0658	0.0102
+0.5451	0.5301	1.000	((A**B)**C).	0.0883	0.0131
+0.5464	0.1598	1.000	GENERAL FORM	0.0921	0.0089
+0.5624	0.1053	1.000	A variable followed by paren-	0.2011	0.0146
+0.5697	0.5489	1.000	5. Preceding an expression by a t or - does not	0.3778	0.0146
+0.5755	0.1071	1.000	theses enclosing one, two or	0.1974	0.0103
+0.5853	0.1052	1.000	three subscripts which are sep-	0.1993	0.0140
+0.5858	0.3233	1.000	BETA (5*J-2,K +2,L)	0.1447	0.0131
+0.5858	0.5282	1.000	affect the type	0.1165	0.0145
+0.5858	0.6447	1.000	of the expression produced. For ex-	0.2801	0.0145
+0.5959	0.1053	1.000	arated by commas	0.1165	0.0132
+0.6003	0.5301	1.000	ample, E, + E, and - E are all expressions of the same	0.3947	0.0176
+0.6192	0.5301	1.000	type.	0.0395	0.0131
+0.6206	0.1053	1.000	Each variable which appears in subscripted form must	0.3966	0.0161
+0.6336	0.5470	1.000	6. Enclosing an expression in parentheses does not	0.3778	0.0146
+0.6381	0.1071	1.000	have the size of its array (i.e., the maximum values	0.3929	0.0131
+0.6497	0.5282	1.000	affect the type of the expression. For example, A, (A),	0.3985	0.0161
+0.6512	0.1053	1.000	which its subscripts can attain) specified in a DIMEN-	0.3966	0.0146
+0.6657	0.1053	1.000	SION Or COMMON statement preceding the first appear-	0.3966	0.0174
+0.6657	0.5301	1.000	((A)), and (((A))) are all expressions of the same	0.3947	0.0146
+0.6830	0.1053	1.000	ance of the variable in the source program.	0.3158	0.0146
+0.6831	0.5282	1.000	type.	0.0395	0.0116
+0.6976	0.5470	1.000	7. Expressions may be connected by operators to	0.3778	0.0146
+0.7136	0.5282	1.000	form more complex expressions provided:	0.3158	0.0161
+0.7275	0.1069	1.000	Expressions	0.0850	0.0131
+0.7282	0.5451	1.000	a. No two operators appear in sequence. For ex-	0.3797	0.0146
+0.7442	0.5658	1.000	ample, A t - B is illegal but A+ (-B) is legal.	0.3571	0.0161
+0.7456	0.1071	1.000	A FORTRAN expression is any sequence of constants,	0.3947	0.0147
+0.7602	0.5470	1.000	b. Items so connected are all of the same type.	0.3327	0.0132
+0.7615	0.1053	1.000	variables (subscripted or not subscripted), and func-	0.3947	0.0146
+0.7776	0.1034	1.000	tions (see Chapter 6) separated by operation symbols,	0.3985	0.0146
+0.7833	0.5282	1.000	HIERARCHY OF OPERATIONS	0.1955	0.0118
+0.7910	0.1070	1.000	commas, and parentheses so as to form a meaningful	0.3950	0.0174
+0.8023	0.5301	1.000	When the hierarchy of operations in an expression is	0.3947	0.0160
+0.8081	0.1053	1.000	mathematical or logical expression.	0.2613	0.0131
+0.8182	0.5282	1.000	not explicitly specified by the use of parentheses, it	0.3966	0.0161
+0.8314	0.1222	1.000	The arithmetic operation symbols are:	0.2726	0.0132
+0.8327	0.5282	1.000	is understood by FORTRAN to be in the following order	0.3966	0.0161
+0.8488	0.5282	1.000	(from innermost operations to outermost):	0.3195	0.0146
+0.8488	0.2030	1.000	Addition	0.0639	0.0131
+0.8503	0.1391	1.000	+	0.0132	0.0116
+0.8646	0.2011	1.000	Subtraction	0.0866	0.0135
+0.8648	0.5620	1.000	**	0.0188	0.0073
+0.8648	0.6767	1.000	Exponentiation	0.1109	0.0145
+0.8794	0.6767	1.000	Unary minus	0.0959	0.0131
+0.8808	0.2011	1.000	Multiplication	0.1053	0.0145
+0.8953	0.1372	1.000	/	0.0094	0.0116
+0.8953	0.6767	1.000	Multiplication and Division	0.1992	0.0147
+0.8953	0.5583	1.000	*and/	0.0602	0.0131
+0.8953	0.2011	1.000	Division	0.0639	0.0131
+0.9085	0.5633	1.000	tand -	0.0743	0.0149
+0.9099	0.1372	1.000	**	0.0188	0.0087
+0.9099	0.6767	1.000	Addition and Subtraction	0.1842	0.0131
+0.9113	0.2011	1.000	Exponentiation	0.1128	0.0145

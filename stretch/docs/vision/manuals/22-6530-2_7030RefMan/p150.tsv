@@ -1,0 +1,108 @@
+0.0638	0.5093	1.000	mode is specified, any number of lines can be printed	0.3893	0.0164
+0.0669	0.0921	1.000	form. Under these conditions, and when the 12 punch	0.3891	0.0131
+0.0799	0.5094	1.000	with one instruction. In this mode, as long as the	0.3910	0.0146
+0.0814	0.0921	1.000	has been sensed, an end-exception is generated. An end	0.3891	0.0147
+0.0959	0.5094	1.000	count is not exhausted, a new block is automatically	0.3891	0.0132
+0.0973	0.0921	1.000	of operation accompanies the end exception if com-	0.3910	0.0161
+0.1105	0.5094	1.000	started with the next full word in core storage. The	0.3910	0.0145
+0.1117	0.0920	1.000	pletion of a current line also constitutes completion of	0.3912	0.0162
+0.1250	0.5094	1.000	unused bytes of the preceding word are ignored. A	0.3891	0.0160
+0.1278	0.0920	1.000	the write operation. Further attempts to write on the	0.3911	0.0161
+0.1424	0.5094	1.000	carriage control field, however, has to precede the	0.3910	0.0146
+0.1433	0.0919	1.000	printer result in a not-ready status.	0.2578	0.0153
+0.1564	0.5111	1.000	print information for each line. Consequently, if more	0.3893	0.0166
+0.1584	0.1109	1.000	The form may be restored to the position marked by	0.3703	0.0146
+0.1730	0.5113	1.000	than one line is to be printed with one instruction,	0.3891	0.0146
+0.1740	0.0939	1.000	the punch in channel 1 by means of a skip to restore	0.3893	0.0166
+0.1875	0.5113	1.000	every word following the one containing the end code	0.3891	0.0146
+0.1902	0.0901	1.000	(241) in the channel control byte.	0.2465	0.0163
+0.2035	0.5113	1.000	or the 132nd character printed has to start with a	0.3891	0.0145
+0.2209	0.5113	1.000	carriage control field.	0.1560	0.0131
+0.2252	0.0865	1.000	• Printing under Computer Control	0.2425	0.0118
+0.2355	0.5282	1.000	When a WRITE operation has been completed as	0.3722	0.0131
+0.2427	0.0940	1.000	Each line of printing is considered a block of informa-	0.3891	0.0145
+0.2476	0.5092	1.000	specified, an end-of-operation indication is given. In	0.3913	0.0191
+0.2587	0.0940	1.000	tion. This block consists of up to 132 data characters,	0.3891	0.0131
+0.2605	0.5111	1.000	the single-block mode this indication is sent imme-	0.3913	0.0208
+0.2733	0.0940	1.000	coded in an 8-bit code, and a carriage control field,	0.3891	0.0146
+0.2805	0.5113	1.000	diately after the completion of the printing cycle. In	0.3891	0.0146
+0.2886	0.0939	1.000	consisting of one or more 8-bit carriage control bytes.	0.3911	0.0155
+0.2964	0.5113	1.000	the multiple-block mode it is given upon the comple-	0.3891	0.0147
+0.3052	0.0940	1.000	The carriage control field and a full 132-character line	0.3891	0.0132
+0.3124	0.5113	1.000	tion of the last line of the operation. In either case,	0.3891	0.0132
+0.3212	0.0921	1.000	thus occupy at least 1064 contiguous bits or 16%	0.3910	0.0145
+0.3270	0.5132	1.000	the operation is considered to be completed before	0.3872	0.0146
+0.3342	0.0938	1.000	words in core storage. The carriage control field is	0.3894	0.0183
+0.3430	0.5113	1.000	post-spacing, if any, has taken place. The absence of	0.3910	0.0176
+0.3502	0.0920	1.000	merely control information; it bypasses the buffer in	0.3912	0.0164
+0.3590	0.5094	1.000	unit-check at this time indicates that all lines specified	0.3910	0.0146
+0.3663	0.0940	1.000	the control unit and cannot be printed. The eight bits	0.3910	0.0146
+0.3735	0.5113	1.000	by the instruction have been printed correctly. Con-	0.3891	0.0146
+0.3817	0.0939	1.000	of the byte are numbered 0-7 from left to right. In	0.3893	0.0154
+0.3894	0.5113	1.000	versely, a unit-check indication always means that one	0.3891	0.0147
+0.3967	0.0940	1.000	6-bit ECS, 6-bit BCD, and 8-bit BCD, the six rightmost bits	0.3891	0.0147
+0.4039	0.5132	1.000	or more characters of the last line have been printed	0.3872	0.0147
+0.4127	0.0940	1.000	(2-7) are part of the print code. The one remaining	0.3910	0.0146
+0.4200	0.5113	1.000	incorrectly. Such a unit check is always accompanied	0.3891	0.0146
+0.4288	0.0940	1.000	case is 8-bit Ecs. In this case the rightmost seven bits	0.3910	0.0131
+0.4360	0.5113	1.000	by end-of-operation, regardless of whether or not the	0.3910	0.0146
+0.4433	0.0940	1.000	(1-7) are part of the print code. If the printer has a	0.3891	0.0146
+0.4520	0.5113	1.000	operation is completed.	0.1711	0.0160
+0.4593	0.0940	1.000	48 character chain, bit 7 (which selects upper and	0.3910	0.0146
+0.4666	0.5263	1.000	Interlocking between carriage skipping and print-	0.3759	0.0160
+0.4752	0.0921	1.000	lower case characters) is ignored. Regardless of the	0.3929	0.0133
+0.4824	0.5113	1.000	ing is fully automatic. Printing always starts when	0.3910	0.0147
+0.4896	0.0939	1.000	printer mode, the printer parity checks the entire 8-bit	0.3912	0.0163
+0.4970	0.5132	1.000	the data for the line of printing have been loaded into	0.3891	0.0147
+0.5033	0.0939	1.000	byte received from the exchange. It is not necessary	0.3913	0.0193
+0.5130	0.5132	1.000	the buffer and the carriage has come to a stop. The	0.3891	0.0146
+0.5218	0.0940	1.000	that the bits which are not part of the print code be	0.3910	0.0131
+0.5276	0.5132	1.000	timing of a wRItE instruction, however, does not have	0.3891	0.0161
+0.5406	0.0939	1.000	zero.	0.0358	0.0090
+0.5436	0.5132	1.000	to be related to the state of the carriage. If a WRITE	0.3891	0.0131
+0.5523	0.1109	1.000	In order to print a full line of 132 characters, a con-	0.3759	0.0146
+0.5596	0.5132	1.000	instruction causes the buffer to be filled up before	0.3910	0.0131
+0.5669	0.0959	1.000	trol word with a word count of at least 17 is required.	0.3910	0.0147
+0.5741	0.5132	1.000	the carriage has come to a stop, printing is automati-	0.3891	0.0147
+0.5827	0.0959	1.000	A larger word count may be required when long car-	0.3891	0.0147
+0.5900	0.5132	1.000	cally delayed. Normally spacing takes more time than	0.3891	0.0147
+0.5988	0.0940	1.000	riage control fields are used. The last unused bytes,	0.3910	0.0146
+0.6032	0.5132	1.000	data transmission and this delay is reflected in the	0.3910	0.0160
+0.6148	0.0940	1.000	if any, of this block are ignored and are not sent to	0.3910	0.0131
+0.6197	0.5130	1.000	rated printer speed. But if the carriage is already posi-	0.3893	0.0173
+0.6294	0.0959	1.000	the unit. When a shorter line is desired, a smaller	0.3910	0.0131
+0.6349	0.5149	1.000	tioned by the time the buffer is filled, printing is	0.3893	0.0172
+0.6453	0.0940	1.000	word count may be specified. In this case, the opera-	0.3910	0.0147
+0.6526	0.5113	1.000	initiated immediately.	0.1654	0.0147
+0.6598	0.0958	1.000	tion is terminated when the count reaches zero. The	0.3911	0.0134
+0.6758	0.0959	1.000	count provides a means of controlling the line length	0.3891	0.0146
+0.6890	0.5132	1.000	Selective Printing	0.1259	0.0132
+0.6903	0.0940	1.000	in increments of eight characters. If the desired num-	0.3929	0.0146
+0.7048	0.5132	1.000	Selective printing keys in conjunction with report	0.3929	0.0161
+0.7064	0.0959	1.000	ber of characters does not correspond to an integral	0.3910	0.0146
+0.7194	0.5113	1.000	selection carriage control bytes provide for selective	0.3929	0.0176
+0.7224	0.0959	1.000	number of words, the unused byte position can be	0.3910	0.0131
+0.7355	0.5132	1.000	printing of data sent to the printer. This feature makes	0.3929	0.0176
+0.7369	0.0959	1.000	filled with blanks. Alternatively, the last data char-	0.3910	0.0146
+0.7515	0.5113	1.000	it possible for the operator to assemble reports out of	0.3947	0.0161
+0.7529	0.0958	1.000	acter sent to the printer can be followed with an end	0.3893	0.0153
+0.7657	0.5112	1.000	selected lines of print information without modifying	0.3949	0.0184
+0.7688	0.0959	1.000	code, bits 1111 1110. In this case the contents of the	0.3910	0.0133
+0.7820	0.5132	1.000	each time the program that provides the data.	0.3383	0.0160
+0.7833	0.0959	1.000	count field are irrelevant as long as they permit the	0.3910	0.0146
+0.7979	0.5282	1.000	Selection of data to be printed is accomplished by	0.3759	0.0161
+0.7994	0.0959	1.000	end code to be sent to the printer. The end code does	0.3910	0.0146
+0.8123	0.5131	1.000	matching the four rightmost bits of report selection	0.3912	0.0180
+0.8128	0.0976	1.000	not cause printing; it causes the unit to terminate the	0.3894	0.0179
+0.8277	0.0976	1.000	current block regardless of whether or not the word	0.3895	0.0182
+0.8285	0.5132	1.000	codes with a bit map generated by depression of the	0.3929	0.0161
+0.8430	0.5132	1.000	selection keys. Assuming the bits in each byte to be	0.3929	0.0176
+0.8473	0.0977	1.000	count has reached zero.	0.1711	0.0103
+0.8590	0.5132	1.000	numbered from 0 through 7, starting with the leftmost	0.3929	0.0160
+0.8605	0.1147	1.000	One 132-character line is the maximum amount of	0.3741	0.0132
+0.8750	0.5132	1.000	bit, a depression of select 1 key corresponds to a 1-bit	0.3947	0.0160
+0.8764	0.0959	1.000	information that can be printed with one instruction	0.3910	0.0146
+0.8894	0.5132	1.000	in bit position 7, depression of select 2 corresponds to	0.3929	0.0176
+0.8924	0.0940	1.000	in the single-block mode. When the multiple-block	0.3929	0.0161
+0.9172	0.8835	1.000	147	0.0244	0.0087
+0.9185	0.7556	1.000	External Units	0.0940	0.0103

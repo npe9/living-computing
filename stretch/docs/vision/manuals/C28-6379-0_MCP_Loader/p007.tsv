@@ -1,0 +1,108 @@
+0.0872	0.8120	1.000	BSS PROCESSOR	0.1316	0.0131
+0.1279	0.1147	1.000	The Binary and Symbolic Subroutine (BSS) processor	0.3947	0.0131
+0.1294	0.5658	1.000	B. One or more FORTRAN common definition	0.3553	0.0131
+0.1436	0.5431	1.000	cards.	0.0547	0.0137
+0.1439	0.1128	1.000	operates as a preprocessor to the MCP loader in a	0.3835	0.0116
+0.1570	0.1147	1.000	FORTRAN environment. Its function is to create a	0.3853	0.0116
+0.1570	0.5658	1.000	C. A loader adjustment (O) card (if present).	0.3477	0.0161
+0.1730	0.1128	1.000	relocation table, from which the MCP loader obtains	0.3966	0.0116
+0.1730	0.5658	1.000	D. One relocatable binary instruction card, con-	0.3741	0.0146
+0.1860	0.5432	1.000	taining an index word whose count field specifies the	0.3966	0.0146
+0.1860	0.1128	1.000	all the information necessary to assign storage areas	0.4023	0.0131
+0.2006	0.5414	1.000	length of the transfer vector (number of distinct en-	0.3966	0.0146
+0.2020	0.1128	1.000	dynamically to FORTRAN relocatable subprograms.	0.3929	0.0131
+0.2151	0.1147	1.000	The BSS processor may run as the last link in the	0.3722	0.0131
+0.2166	0.5432	1.000	try points to routines called by the subprogram).	0.3703	0.0146
+0.2311	0.5658	1.000	E. One or more relocatable binary data cards,	0.3609	0.0147
+0.2311	0.1147	1.000	FORTRAN chain of processors, or, if the subpro-	0.3778	0.0131
+0.2437	0.1126	1.000	grams are all previously compiled, it may run as a	0.3895	0.0187
+0.2442	0.5414	1.000	containing the transfer vector (A8 names of the entry	0.4023	0.0161
+0.2587	0.5414	1.000	points outside the subprogram to which transfers are	0.4004	0.0161
+0.2587	0.1128	1.000	single processor. In the latter case, it is called by	0.3910	0.0146
+0.2747	0.5414	1.000	made in the subprogram).	0.1974	0.0147
+0.2761	0.1128	1.000	the following TYPE card:	0.1898	0.0103
+0.2892	0.2425	1.000	TYPE, GO, FORTRAN	0.1654	0.0117
+0.2892	0.5658	1.000	F. Subprogram deck (relocatable or absolute).	0.3553	0.0145
+0.2907	0.2011	1.000	B	0.0113	0.0087
+0.3019	0.5637	1.000	G. Correction, patch, or dump cards (relocatable	0.3857	0.0202
+0.3036	0.1335	1.000	Input to the BSS processor consists of a collection	0.3778	0.0133
+0.3182	0.1109	1.000	of subprograms, each of which begins with a FORTRAN or absolute).	0.5320	0.0147
+0.3327	0.1128	1.000	program card. Input is from the disk if the BSS proc-	0.4079	0.0133
+0.3327	0.5658	1.000	No FORTRAN common definition cards are pres-	0.3722	0.0133
+0.3488	0.1128	1.000	essor is operating as the final phase of the FORTRAN	0.4041	0.0118
+0.3488	0.5432	1.000	ent unless there is a common defined. If the count	0.3853	0.0118
+0.3633	0.1128	1.000	chain of processors, or from system input if the BSS	0.3985	0.0117
+0.3633	0.5432	1.000	field of the index word on the first relocatable binary	0.3985	0.0117
+0.3764	0.1126	1.000	processor is running as a single processor. In the	0.3857	0.0164
+0.3794	0.5432	1.000	instruction card is zero, no relocatable binary data	0.3891	0.0116
+0.3924	0.1109	1.000	latter case, the BSS processor places the subpro-	0.3797	0.0131
+0.3924	0.5432	1.000	card containing the transfer vector is expected to be	0.3947	0.0116
+0.4070	0.1128	1.000	grams on the disk, so that the MCP loader, in both	0.3853	0.0131
+0.4079	0.5431	1.000	present.	0.0642	0.0126
+0.4215	0.5677	1.000	K, A, and Z cards are associated only with the	0.3534	0.0131
+0.4230	0.1128	1.000	cases, finds the input on the disk. The last subpro-	0.3929	0.0116
+0.4360	0.1128	1.000	gram must be followed by a FORTRAN branch card.	0.3910	0.0116
+0.4360	0.5432	1.000	subprogram which they follow. K, A, and Z cards	0.3778	0.0131
+0.4520	0.1353	1.000	The BSS processor scans the cards in each sub-	0.3628	0.0116
+0.4520	0.5451	1.000	may be intermixed, but K cards should precede those	0.4004	0.0116
+0.4666	0.5451	1.000	A or Z cards at the same location. Continuation K,	0.3891	0.0116
+0.4666	0.1109	1.000	program and computes the amount of storage to be	0.3797	0.0116
+0.4811	0.1128	1.000	occupied by the program, including storage for re-	0.3835	0.0131
+0.4811	0.5451	1.000	A, and Z cards must immediately follow the cards	0.3816	0.0131
+0.4956	0.1109	1.000	locatable patches and subprogram extension. Three	0.3947	0.0116
+0.4956	0.5432	1.000	which they continue.	0.1523	0.0116
+0.5102	0.5677	1.000	The function of each card accepted by the BSS	0.3421	0.0116
+0.5115	0.1109	1.000	intermediate tables are set up, containing:	0.3214	0.0118
+0.5247	0.5432	1.000	processor is described below. (The column 1 codes	0.3947	0.0117
+0.5247	0.1335	1.000	1. Information from FORTRAN program cards.	0.3647	0.0117
+0.5392	0.5432	1.000	for the various card types are listed under the MCP	0.3910	0.0117
+0.5406	0.1353	1.000	2. Information about blank and named common.	0.3590	0.0103
+0.5536	0.1335	1.000	3. Names of transfer vectors to be filled in. (See	0.3741	0.0118
+0.5537	0.5432	1.000	loader.)	0.0639	0.0117
+0.5669	0.5658	1.000	1. FORTRAN program card. The FORTRAN	0.3477	0.0131
+0.5682	0.1109	1.000	card types for details of information taken from each.)	0.4117	0.0133
+0.5827	0.5432	1.000	program card contains the entry point names and	0.3703	0.0118
+0.5842	0.1316	1.000	If calls are made to library subprograms, the li-	0.3741	0.0118
+0.5973	0.5432	1.000	their relative origins in the subprogram. (See binary	0.4004	0.0118
+0.5988	0.1109	1.000	brary routines are fetched from the library and scan-	0.4060	0.0118
+0.6118	0.5432	1.000	card formats in Appendix A.) The first FORTRAN	0.3835	0.0118
+0.6133	0.1109	1.000	ned, and information from these cards is used to	0.3703	0.0131
+0.6264	0.5432	1.000	program card contains, in addition, the size of blank	0.4004	0.0132
+0.6279	0.1109	1.000	create entries in the three intermediate tables. The	0.3966	0.0117
+0.6424	0.5432	1.000	common. The BSS processor sets up an entry in the	0.3966	0.0116
+0.6424	0.1128	1.000	relocation table is created from the three interme-	0.3835	0.0116
+0.6555	0.5432	1.000	first intermediate table (Figure 1) upon encountering	0.3966	0.0132
+0.6570	0.1109	1.000	diate tables. Absolute origins for subprograms, blank	0.4079	0.0116
+0.6700	0.5432	1.000	a FORTRAN program card. Pointers to the second	0.3910	0.0131
+0.6730	0.1109	1.000	common, and named common are computed. The	0.3741	0.0116
+0.6860	0.5432	1.000	and third intermediate tables (Figures 2 and 3), and	0.3910	0.0116
+0.6875	0.1128	1.000	storage allocation is made as follows: blank common	0.4004	0.0116
+0.7006	0.5414	1.000	the entry point names and their origins relative to	0.3797	0.0116
+0.7020	0.1109	1.000	occupies the highest block of storage and named com-	0.4060	0.0116
+0.7151	0.5414	1.000	the subprogram, are placed in the first intermediate	0.3985	0.0131
+0.7166	0.1128	1.000	mons, the next highest blocks; subprograms are as-	0.3929	0.0131
+0.7297	0.5414	1.000	table. When the entry point name *MAIN* is en-	0.3722	0.0116
+0.7311	0.1109	1.000	signed consecutive blocks starting from address 33.0,	0.4098	0.0116
+0.7442	0.5432	1.000	countered, its origin is placed in MCP's communica-	0.4004	0.0131
+0.7456	0.1090	1.000	in the order in which they are encountered by the BSS	0.4041	0.0116
+0.7587	0.5414	1.000	tion region, and is used as the location to which con-	0.4004	0.0131
+0.7602	0.1109	1.000	processor. Library subprograms are assigned higher	0.4079	0.0116
+0.7733	0.5414	1.000	trol in the problem program will be passed by the	0.3759	0.0131
+0.7747	0.1090	1.000	locations than non-library subprograms, in the order	0.4041	0.0117
+0.7892	0.5432	1.000	MCP loader.	0.0977	0.0117
+0.7906	0.1090	1.000	in which calls to the library routines are encountered;	0.4098	0.0103
+0.8023	0.5658	1.000	The subprogram size on the FORTRAN program	0.3628	0.0131
+0.8052	0.1109	1.000	and there may be unused storage between the highest	0.3966	0.0118
+0.8182	0.5432	1.000	card is either (a) the size computed at assembly	0.3628	0.0118
+0.8197	0.1109	1.000	subprogram and the lowest common block.	0.3195	0.0118
+0.8314	0.5414	1.000	time (if STRAP generates the card) or (b) all I's	0.3684	0.0132
+0.8473	0.5414	1.000	(if FORTRAN generates the card). The BSS proc-	0.3816	0.0118
+0.8485	0.1090	1.000	Card Order	0.0885	0.0137
+0.8618	0.5432	1.000	essor computes the amount of space occupied by the	0.3910	0.0118
+0.8764	0.5432	1.000	subprogram in storage. The FORTRAN program	0.3722	0.0132
+0.8779	0.1109	1.000	The BSS processor requires a rigid ordering of cards	0.4041	0.0117
+0.8909	0.5432	1.000	card is also a signal to the BSS processor to place	0.3797	0.0118
+0.8939	0.1109	1.000	within each subprogram:	0.1842	0.0116
+0.9055	0.5414	1.000	the computed size of the previous subprogram inthat	0.3985	0.0132
+0.9070	0.1335	1.000	A. One or more FORTRAN program cards.	0.3327	0.0116
+0.9390	0.8383	1.000	BSS Processor 7	0.1015	0.0087

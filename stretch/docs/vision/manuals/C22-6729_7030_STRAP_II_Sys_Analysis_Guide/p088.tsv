@@ -1,0 +1,77 @@
+0.0708	0.0769	1.000	GNLOAD	0.0756	0.0198
+0.1305	0.0789	1.000	PURPOSE	0.0772	0.0136
+0.1321	0.5038	1.000	Boxes 3, 4	0.0883	0.0147
+0.1584	0.5038	1.000	A check is made to determine if there is sufficient	0.3778	0.0174
+0.1612	0.0808	1.000	GNLOAD is the subroutine which creates the name	0.3741	0.0133
+0.1730	0.5038	1.000	room remaining in the current buffer for the name.	0.3835	0.0174
+0.1730	0.0789	1.000	file for STRAP II and writes it on the disk. It uses	0.3797	0.0146
+0.1860	0.0789	1.000	two buffers, each being written on the disk as it is	0.3759	0.0189
+0.1903	0.5038	1.000	If so, the number of characters in the name is	0.3459	0.0133
+0.2034	0.0789	1.000	filled.	0.0471	0.0147
+0.2035	0.5056	1.000	stored in the buffer.	0.1504	0.0145
+0.2324	0.5038	1.000	Boxes 5-7	0.0827	0.0161
+0.2326	0.0789	1.000	LINKAGE	0.0752	0.0145
+0.2602	0.5056	1.000	A check is made to determine if the buffer is full.	0.3703	0.0174
+0.2627	0.0788	1.000	On Entry	0.0698	0.0154
+0.2791	0.5038	1.000	If not, each character of the name is stored in the	0.3722	0.0131
+0.2920	0.5037	1.000	buffer in 8-bit bytes.	0.1579	0.0133
+0.2921	0.0789	1.000	The calling sequence is:	0.1823	0.0146
+0.3081	0.1090	1.000	. SIC, Gnexit; B, GNLOAI	0.1974	0.0146
+0.3207	0.1052	1.000	. $7 must contain the location of the name in th	0.3498	0.0155
+0.3209	0.5037	1.000	Boxes 8, 10	0.0942	0.0181
+0.3387	0.0846	1.000	ralue field, and the number of name characters in	0.3628	0.0132
+0.3488	0.5056	1.000	If the flag is on in index register 7 the current	0.3571	0.0176
+0.3488	0.0846	1.000	he count field. The file is terminated when the	0.3440	0.0146
+0.3633	0.5038	1.000	name is the last, and the file is terminated by stor-	0.3872	0.0189
+0.3648	0.0789	1.000	count field is found to be zero.	0.2274	0.0131
+0.3779	0.5038	1.000	ing a character count of zero in the buffer, and	0.3534	0.0189
+0.3924	0.5056	1.000	switch I is turned on.	0.1598	0.0176
+0.3938	0.0789	1.000	On Exit	0.0621	0.0162
+0.4223	0.5036	1.000	Boxes 11-14	0.0925	0.0174
+0.4230	0.0789	1.000	GNLOAD places the name specified by the calling	0.3684	0.0174
+0.4360	0.0789	1.000	sequence in its buffer with the following format:	0.3571	0.0189
+0.4535	0.5038	1.000	The completed buffer is written on the disk.	0.3271	0.0160
+0.4679	0.0789	1.000	Each name record	0.1391	0.0147
+0.4823	0.5036	1.000	Box 15	0.0529	0.0164
+0.4970	0.2312	1.000	8-bit byte, number of A8 char-	0.2350	0.0176
+0.4985	0.0771	1.000	Ist character	0.1034	0.0131
+0.5115	0.5019	1.000	If the Gnflag is on indicating that there had not	0.3496	0.0176
+0.5130	0.2312	1.000	acters in the name + one for the	0.2406	0.0146
+0.5231	0.2312	1.000	check character.	0.1298	0.0192
+0.5291	0.5038	1.000	been room in the second buffer, the flag is turned	0.3703	0.0131
+0.5406	0.2331	1.000	8-bit byte, check character for	0.2368	0.0176
+0.5418	0.5037	1.000	off and return is made to store the name in the	0.3459	0.0137
+0.5420	0.0789	1.000	2nd character	0.1053	0.0148
+0.5571	0.5016	1.000	first buffer.	0.0964	0.0155
+0.5581	0.2331	1.000	the name entry, progresses from	0.2481	0.0131
+0.5682	0.2312	1.000	0-9 and repeats.	0.1222	0.0161
+0.5842	0.2312	1.000	8-bit bytes, name in A8 code.	0.2256	0.0176
+0.5856	0.5037	1.000	Box 16	0.0528	0.0164
+0.5858	0.0789	1.000	next n characters	0.1316	0.0145
+0.5973	0.2312	1.000	Names less than eight characters	0.2500	0.0191
+0.6118	0.2312	1.000	in length are assumed to be eight	0.2500	0.0191
+0.6148	0.5056	1.000	Initialize buffer locator and counter to beginning	0.3684	0.0161
+0.6279	0.2312	1.000	characters long.	0.1353	0.0176
+0.6291	0.5037	1.000	of buffer.	0.0735	0.0165
+0.6409	0.2312	1.000	The end of the second buffer is	0.2331	0.0191
+0.6421	0.0789	1.000	end-of-buffer	0.1035	0.0166
+0.6570	0.2312	1.000	terminated by an 8-bit byte of	0.2256	0.0176
+0.6583	0.5037	1.000	Boxes 17, 18	0.0959	0.0177
+0.6599	0.0789	1.000	character	0.0752	0.0131
+0.6743	0.2312	1.000	all ones.	0.0678	0.0148
+0.6859	0.0770	1.000	end-of-file	0.0865	0.0162
+0.6890	0.5038	1.000	Switch 1, if on, indicates last buffer has been pro-	0.3741	0.0160
+0.6890	0.2331	1.000	The file is terminated by an 8-bit	0.2481	0.0132
+0.7026	0.2311	1.000	byte of all zeros.	0.1281	0.0150
+0.7035	0.5038	1.000	cessed, and a terminating arc is written as end-	0.3590	0.0160
+0.7045	0.0788	1.000	character	0.0754	0.0140
+0.7195	0.5038	1.000	of-file.	0.0564	0.0131
+0.7324	0.0808	1.000	FLOW CHART DESCRIPTION	0.2199	0.0147
+0.7615	0.0789	1.000	Boxes 1, 2	0.0865	0.0176
+0.7718	0.5038	1.000	Boxes 19, 20	0.0977	0.0161
+0.7892	0.0789	1.000	The count field of index register 7 is checked for zero.	0.4098	0.0174
+0.8022	0.4980	1.000	If processing in the second buffer, the end of	0.3404	0.0181
+0.8052	0.0771	1.000	Il zero, end-of-file is initiated. If not zero, the name	0.4098	0.0191
+0.8182	0.0789	1.000	will be entered into the buffer.	0.2293	0.0176
+0.8212	0.5056	1.000	the buffer is flagged with an 8-bit byte of all one bits.	0.3966	0.0161
+0.9201	0.0752	1.000	88	0.0226	0.0160

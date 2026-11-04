@@ -1,0 +1,105 @@
+0.0639	0.0996	1.000	routine. It may be used, for example, to provide a	0.3910	0.0145
+0.0654	0.5169	1.000	operand. The offset field, bits 44 through 50, specifies	0.3929	0.0161
+0.0785	0.0996	1.000	square root operation or any other desired special	0.3929	0.0145
+0.0799	0.5169	1.000	the number of bits by which the right end of the ac-	0.3910	0.0161
+0.0936	0.0992	1.000	function.	0.0685	0.0117
+0.0959	0.5188	1.000	cumulator operand is offset from the right end of the	0.3910	0.0147
+0.1090	0.1184	1.000	A variation on the multiply operation and a related	0.3722	0.0146
+0.1118	0.5169	1.000	accumulator. The byte size field, bits 41 through 43,	0.3929	0.0146
+0.1235	0.0996	1.000	auxiliary function are provided by	0.2462	0.0146
+0.1264	0.5150	1.000	specifies the byte size of the storage operand.	0.3195	0.0161
+0.1409	0.5337	1.000	The operation code designates the operation to be	0.3743	0.0167
+0.1449	0.2950	1.000	Load Factor	0.0904	0.0126
+0.1468	0.2368	1.000	LFT	0.0263	0.0087
+0.1570	0.5169	1.000	performed. All integer arithmetic operations are sub-	0.3910	0.0145
+0.1627	0.1955	1.000	and * + Multiply and Add.	0.2368	0.0131
+0.1700	0.5148	1.000	ject to three modifiers specified in bit positions 51	0.3933	0.0192
+0.1830	0.1165	1.000	The set of operations that is available for integer	0.3741	0.0146
+0.1862	0.5167	1.000	through 53 of the instruction. One modifier, bit 51,	0.3913	0.0178
+0.1969	0.0976	1.000	arithmetic is paralleled by a set of operations that	0.3931	0.0176
+0.2019	0.5167	1.000	designates whether the storage field is signed or not;	0.3895	0.0177
+0.2136	0.0977	1.000	perform arithmetic in a binary floating point mode.	0.3910	0.0146
+0.2179	0.5150	1.000	another, bit 52, designates whether the sign of the	0.3929	0.0161
+0.2297	0.0977	1.000	The floating point operations assume a special data	0.3910	0.0131
+0.2339	0.5169	1.000	unreplaced field is to be taken as-is or inverted; the	0.3910	0.0146
+0.2442	0.0977	1.000	format that allows these operations to be fully speci-	0.3910	0.0146
+0.2485	0.5132	1.000	third, bit 53, designates whether the operation is	0.3947	0.0176
+0.2602	0.0977	1.000	fied in a half-word instruction format. In addition	0.3891	0.0116
+0.2645	0.5132	1.000	decimal or binary.	0.1391	0.0161
+0.2745	0.0976	1.000	to the set of operations that parallels the integer set,	0.3893	0.0164
+0.2906	0.0959	1.000	special floating point operations are also available	0.3929	0.0146
+0.3009	0.5132	1.000	Field Definition	0.1128	0.0131
+0.3067	0.0959	1.000	that simplify double-precision arithmetic and facili-	0.3910	0.0131
+0.3212	0.0959	1.000	tate separate handling of exponents and fractions.	0.3684	0.0145
+0.3227	0.5132	1.000	The operand specified explicitly by an instruction is	0.3929	0.0161
+0.3372	0.5132	1.000	defined by a word address, bit address and field	0.3929	0.0161
+0.3531	0.5130	1.000	length. If direct addressing is specified, the indexed	0.3912	0.0171
+0.3682	0.5131	1.000	word-and-bit addresses are used to define the leftmost	0.3931	0.0149
+0.3801	0.0937	1.000	Format	0.0700	0.0160
+0.3833	0.5130	1.000	bit of a storage field. The field length specifies the	0.3932	0.0174
+0.3987	0.5130	1.000	total length in bits of the storage operand, including	0.3914	0.0184
+0.4127	0.0959	1.000	The integer arithmetic operations use the full-word	0.3910	0.0146
+0.4157	0.5132	1.000	the sign byte when present. A length field of zero	0.3910	0.0146
+0.4288	0.0921	1.000	instruction format shown below.	0.2406	0.0146
+0.4295	0.5130	1.000	in an instruction specifies a 64-bit storage field.	0.3461	0.0171
+0.4462	0.5301	1.000	The storage word or word pair which contains the	0.3741	0.0145
+0.4600	0.5130	1.000	addressed memory field is brought from storage to the	0.3913	0.0183
+0.4767	0.5113	1.000	arithmetic section of the computer. There, the de-	0.3929	0.0146
+0.4839	0.2895	1.000	32 35	0.0282	0.0045
+0.4840	0.3421	1.000	41	0.0132	0.0044
+0.4840	0.3553	1.000	44	0.0169	0.0044
+0.4907	0.5111	1.000	sired field is extracted, starting with the right end of	0.3932	0.0184
+0.5049	0.5129	1.000	the field. Processing is done from right to left, even	0.3896	0.0190
+0.5188	0.1109	1.000	Bits 0-23 may be used as a word and bit address.	0.3722	0.0146
+0.5233	0.5113	1.000	though the bit address in the instruction specifies the	0.3929	0.0146
+0.5348	0.0921	1.000	This field is indexed by the contents of the index	0.3929	0.0161
+0.5378	0.5113	1.000	leftmost bit of the field.	0.1711	0.0116
+0.5509	0.0902	1.000	register specified in the I field of the first half-word,	0.3947	0.0161
+0.5529	0.5280	1.000	In integer arithmetic operations that affect storage,	0.3744	0.0171
+0.5654	0.0940	1.000	bits 28 through 31. The effective address may be	0.3910	0.0146
+0.5659	0.5111	1.000	such as store and ADD TO MEMORY, the result replaces	0.3914	0.0190
+0.5814	0.0921	1.000	used to designate the leftmost bit of a storage field,	0.3929	0.0160
+0.5825	0.5111	1.000	the storage operand in the bit positions specified by	0.3914	0.0187
+0.5953	0.0920	1.000	or it may be used as data. The three high-order bits	0.3930	0.0157
+0.6003	0.5113	1.000	the address and field length. Data to the right or left	0.3910	0.0146
+0.6118	0.1447	1.000	second half-word form the P field of the in-	0.3402	0.0118
+0.6118	0.0921	1.000	of the	0.0508	0.0103
+0.6148	0.5113	1.000	of the specified field in storage are never affected.	0.3628	0.0146
+0.6264	0.0902	1.000	struction and specify the choice between direct and	0.3929	0.0161
+0.6291	0.5242	1.000	If immediate addressing is specified, the effective ad-	0.3763	0.0191
+0.6424	0.0883	1.000	immediate addressing and the method of indexing	0.3947	0.0176
+0.6432	0.5073	1.000	dress itself is used as the operand. The field length spec-	0.3933	0.0212
+0.6570	0.0902	1.000	to be used in modifying the first half-word of the	0.3947	0.0145
+0.6584	0.5072	1.000	ifies the number of bits in the field starting with the	0.3953	0.0203
+0.6706	0.0900	1.000	instruction. Although the second half-word may be	0.3933	0.0188
+0.6718	0.5073	1.000	Ieftmost bit of the effective address. The sign bit of	0.3952	0.0212
+0.6878	0.5092	1.000	the effective address is not used. If the field length	0.3915	0.0205
+0.6890	0.0902	1.000	indexed, the P field is not modified. The index field	0.3929	0.0132
+0.7035	0.0921	1.000	I in bits 60 through 63 specifies the index word that is	0.3910	0.0145
+0.7064	0.5094	1.000	designated is greater than 24, zeros are added to the	0.3910	0.0146
+0.7194	0.0921	1.000	used to modify bits 35 through 50 of the instruction.	0.3910	0.0132
+0.7224	0.5094	1.000	right to obtain a field of proper length. The result-	0.3910	0.0146
+0.7339	0.0921	1.000	On indexing the second half-word, bit position 3 of	0.3910	0.0146
+0.7369	0.5075	1.000	ing field is treated in every respect like a field from	0.3929	0.0161
+0.7500	0.0921	1.000	the index word is aligned with bit position 35 of the	0.3910	0.0145
+0.7542	0.5075	1.000	storage. Immediate addressing is, of course, not possi-	0.3929	0.0147
+0.7660	0.0902	1.000	instruction, the three high-order bits of the index	0.3910	0.0131
+0.7688	0.5094	1.000	ble in operations whose result is placed in storage. If	0.3910	0.0146
+0.7799	0.0901	1.000	word being ignored. If the same index register is	0.3931	0.0156
+0.7822	0.5073	1.000	immediate addressing is specified in a to-memory	0.3914	0.0181
+0.7964	0.0883	1.000	specified in both halves of an instruction while using	0.3929	0.0147
+0.7994	0.5056	1.000	operation, the operation is not performed and the	0.3947	0.0161
+0.8108	0.0902	1.000	progressive indexing, the value of the index register	0.3911	0.0164
+0.8154	0.5075	1.000	operation code invalid (oP) indicator is turned on.	0.3778	0.0131
+0.8270	0.0902	1.000	before modification is used in indexing the second	0.3910	0.0146
+0.8289	0.5261	1.000	The implied second operand of most operations is	0.3726	0.0179
+0.8430	0.0902	1.000	half of the instruction.	0.1692	0.0116
+0.8459	0.5075	1.000	a field from the accumulator. The right end of the	0.3910	0.0147
+0.8576	0.1071	1.000	The field length, bits 35 through 40, defines the	0.3741	0.0146
+0.8618	0.5075	1.000	accumulator operand is defined by the offset specified	0.3910	0.0146
+0.8735	0.0883	1.000	length of the operand from storage, and the length	0.3910	0.0146
+0.8764	0.5075	1.000	in the instruction. The left end is the left end of the	0.3910	0.0132
+0.8881	0.0902	1.000	of the result field when the result replaces the storage	0.3910	0.0146
+0.8909	0.5075	1.000	accumulator. For example, any carries that occur in	0.3910	0.0146
+0.9258	0.1316	1.000	IBM 7030	0.0639	0.0088
+0.9259	0.0865	1.000	56	0.0188	0.0087

@@ -1,0 +1,58 @@
+0.1045	0.5470	1.000	DISK together, then all IOD's with the type field of	0.3797	0.0161
+0.1045	0.0977	1.000	has been requested by another IOD card prior to this	0.3910	0.0118
+0.1187	0.5468	1.000	TRACK.	0.0661	0.0155
+0.1191	0.0977	1.000	IOD card, the construction of the unit area table and	0.3891	0.0132
+0.1336	0.0996	1.000	the modification of the channel unit status table will	0.3835	0.0118
+0.1352	0.5620	1.000	After performing the above functions for each	0.3421	0.0117
+0.1464	0.0995	1.000	be bypassed. All IOD cards will cause the move	0.3611	0.0154
+0.1497	0.5451	1.000	IOD/REEL card submitted, control is returned to	0.3741	0.0145
+0.1627	0.0996	1.000	routine to construct a file area table. If the IOD	0.3609	0.0131
+0.1642	0.5451	1.000	job'control via the TN2 return.	0.2350	0.0131
+0.1788	0.5620	1.000	In the case of a reject entry to Move from job con-	0.3797	0.0146
+0.1788	0.0996	1.000	submitted is for tape, a slot will automatically be	0.3684	0.0131
+0.1948	0.0996	1.000	reserved within the reel pool table whether or not a	0.3816	0.0102
+0.1948	0.5489	1.000	trol there will be no checks made for proper phasing.	0.3985	0.0131
+0.2093	0.0996	1.000	REEL card follows.	0.1466	0.0102
+0.2093	0.5470	1.000	The next PP appearing in queue to be run will be	0.3647	0.0131
+0.2224	0.1165	1.000	When a REEL card is submitted to the move routine	0.3853	0.0116
+0.2238	0.5470	1.000	rejected by clearing out the I-O request table entries	0.3966	0.0146
+0.2384	0.5470	1.000	and reel pool table entries. Then all the non-scratch	0.3985	0.0131
+0.2384	0.0996	1.000	control is then passed to the section that constructs	0.3816	0.0131
+0.2529	0.0996	1.000	the reel pool table (TM6). This section looks back at	0.3966	0.0132
+0.2542	0.5470	1.000	tapes assigned for this PP that were previously	0.3553	0.0133
+0.2674	0.0996	1.000	the last IOD card submitted and finds the unit area	0.3741	0.0116
+0.2688	0.5470	1.000	mounted by the operator must be removed from the	0.3835	0.0133
+0.2819	0.0996	1.000	table constructed for that IOD card. It then takes the	0.3949	0.0133
+0.2833	0.5470	1.000	respective tape drives. The tape unloading procedure	0.4041	0.0146
+0.2951	0.0996	1.000	address of the reserved slot within the reel pool table	0.4004	0.0146
+0.2979	0.5451	1.000	is carried out by using the $FREE service routine.	0.3816	0.0146
+0.3124	0.0977	1.000	and looks to see if this slot is available for a reel	0.3703	0.0118
+0.3124	0.5470	1.000	The reject routine tests the entry mode. If the mode	0.3966	0.0146
+0.3270	0.0996	1.000	name entry. If it is, the reel pool table will continue	0.3966	0.0131
+0.3270	0.5451	1.000	is bypass, the rejection must be made in the not-	0.3703	0.0161
+0.3415	0.5470	1.000	overlapped PP reference (TPURFT), I-O request	0.3703	0.0161
+0.3415	0.0996	1.000	to be constructed until the reel names are exhausted	0.3872	0.0118
+0.3576	0.0996	1.000	from the REEL card. If it is not, the move routine	0.3816	0.0116
+0.3576	0.5489	1.000	(TUIORQ) and reel pool (TUFRE) tables. If the entry	0.3966	0.0131
+0.3721	0.0996	1.000	scans the reel pool table until it can find a vacant	0.3665	0.0116
+0.3735	0.5470	1.000	mode is overlapped, then the rejection is made in the	0.3985	0.0116
+0.3866	0.0996	1.000	slot for the reel name.	0.1692	0.0102
+0.3866	0.5489	1.000	overlapped tables for this particular PP. In the over-	0.4041	0.0131
+0.4012	0.1147	1.000	If a disk IOD card is submitted and the type is	0.3421	0.0116
+0.4012	0.5451	1.000	lapped mode the TPPRUN and TSAV index words are	0.3947	0.0131
+0.4157	0.0996	1.000	DISK, the next available are will be assigned to it.	0.3741	0.0131
+0.4172	0.5470	1.000	stepped to point to the next PP to be run. After the	0.3853	0.0116
+0.4302	0.0977	1.000	If type is TRACK, the next available are address	0.3628	0.0131
+0.4317	0.5470	1.000	rejection is complete the exit from move is from	0.3647	0.0102
+0.4448	0.0977	1.000	will be rounded forward to the next track address,	0.3741	0.0131
+0.4462	0.5470	1.000	normal exit TN2 with no error flag.	0.2669	0.0117
+0.4606	0.0996	1.000	then this IOD request will be assigned to that address.	0.4023	0.0118
+0.4606	0.5639	1.000	The TN2 return sets up SMARK (SYN, TMARK) with	0.3872	0.0133
+0.4752	0.0996	1.000	Hence, for optimum disk assignment or allocation,	0.3778	0.0133
+0.4752	0.5470	1.000	the last memory cell used by move in setting up the	0.3835	0.0133
+0.4897	0.5470	1.000	actuator tables. The preset error flag index is then	0.3891	0.0133
+0.4897	0.0977	1.000	a PP should submit all disk requesting IOD's in a	0.3665	0.0118
+0.5042	0.0977	1.000	grouped fashion, all IOD's within the type field of	0.3684	0.0133
+0.5058	0.5470	1.000	stored in the return linkage to job control, the index	0.3910	0.0131
+0.9636	0.7274	1.000	System Operation Programs	0.1579	0.0103
+0.9651	0.9079	1.000	73	0.0169	0.0073

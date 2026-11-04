@@ -1,0 +1,86 @@
+0.0624	0.7406	1.000	External Units	0.1579	0.0191
+0.1744	0.0940	1.000	Several input-output and external storage devices are only when, as a result of the depression, the unit	0.8064	0.0160
+0.1890	0.5132	1.000	changes from not-ready to ready status.	0.2744	0.0147
+0.1903	0.0940	1.000	described in this chapter. All of these units follow	0.3853	0.0133
+0.2020	0.5244	1.000	Depression of the start key at a time when the uni	0.3722	0.0160
+0.2035	0.0940	1.000	the same general pattern of control.	0.2500	0.0174
+0.2776	0.0940	1.000	Standard Features of Input-Output Units	0.3703	0.0161
+0.2805	0.5150	1.000	Stop. When this key is depressed, the unit is	0.3872	0.0174
+0.2936	0.5056	1.000	stopped and is placed in the not-ready status. No	0.3966	0.0189
+0.3096	0.0940	1.000	This section describes the features that are common	0.3891	0.0160
+0.3109	0.5038	1.000	more instructions are accepted from the computer	0.3985	0.0147
+0.3224	0.0919	1.000	to most input-output units. These features include	0.3914	0.0215
+0.3241	0.5056	1.000	until the start key is pressed. If the unit is in opera-	0.3947	0.0174
+0.3400	0.0921	1.000	keys, lights, and control codes used with the CONTROL	0.3910	0.0176
+0.3400	0.5075	1.000	tion at the time the stop key is pressed, the unit	0.3947	0.0176
+0.3561	0.0959	1.000	instruction. In addition to the common features listed	0.3872	0.0131
+0.3590	0.5094	1.000	finishes the current operation before stopping and	0.3910	0.0131
+0.3721	0.0940	1.000	in this section, some units have special keys, lights	0.3891	0.0131
+0.3735	0.5094	1.000	becoming not ready, unless the operation is a multi-	0.3910	0.0146
+0.3881	0.0959	1.000	and control codes applicable only to that type of	0.3872	0.0146
+0.3894	0.5094	1.000	ple-block data transfer. In the latter case, the opera-	0.3929	0.0133
+0.4002	0.0957	1.000	unit. These special features are described in the sec-	0.3875	0.0181
+0.4039	0.5094	1.000	tion is interrupted and the unit becomes not ready	0.3910	0.0147
+0.4185	0.0959	1.000	tions pertaining to these units.	0.2199	0.0147
+0.4200	0.5094	1.000	upon the completion of the current cycle. On units	0.3910	0.0131
+0.4330	0.1090	1.000	The labeling of some of the keys and lights de-	0.3741	0.0146
+0.4360	0.5094	1.000	that cannot interrupt their operation without losing	0.3910	0.0131
+0.4491	0.0940	1.000	scribed in this section may differ somewhat among	0.3891	0.0131
+0.4506	0.5094	1.000	some information, depression of the stop key will	0.3929	0.0131
+0.4619	0.0957	1.000	the units in order to reflect more accurately the exact	0.3894	0.0171
+0.4666	0.5094	1.000	cause a unit-check indication to be sent to the	0.3929	0.0116
+0.4797	0.0959	1.000	function they perform on those units.	0.2669	0.0146
+0.4837	0.5093	1.000	computer.	0.0753	0.0122
+0.4970	0.5244	1.000	Signal. Depression of the signal key when the unit	0.3778	0.0161
+0.5130	0.5094	1.000	is ready generates a channel-signal indication which	0.3910	0.0131
+0.5291	0.0940	1.000	Keys, Switches, and Lights	0.1898	0.0161
+0.5291	0.5094	1.000	is sent to the computer to interrupt the program as	0.3910	0.0131
+0.5436	0.5094	1.000	soon as conditions permit. If the key is pressed dur-	0.3929	0.0146
+0.5494	0.1090	1.000	Power On, Power Off. Depression of these keys	0.3759	0.0131
+0.5581	0.5094	1.000	ing the execution of an instruction by the unit, the	0.3910	0.0146
+0.5617	0.0956	1.000	turns the power in the unit on or off.	0.2579	0.0180
+0.5741	0.5094	1.000	channel signal is automatically delayed by the ex-	0.3891	0.0147
+0.5799	0.1090	1.000	Master Power. This is a toggle switch for emer-	0.3759	0.0131
+0.5900	0.5113	1.000	change and is sent to the computer together with the	0.3891	0.0133
+0.5945	0.0959	1.000	gency use. When the switch is turned to the oFF po-	0.3891	0.0146
+0.6045	0.5094	1.000	indication that the operation has ended	0.2989	0.0146
+0.6090	0.0959	1.000	sition, all incoming power in the unit is turned off	0.3891	0.0160
+0.6221	0.5282	1.000	Unload. Depression of the unload key causes the	0.3741	0.0146
+0.6250	0.0959	1.000	by releasing the main circuit breakers for the unit.	0.3891	0.0145
+0.6381	0.5113	1.000	material (cards, tape, etc.) remaining in the unit to	0.3910	0.0131
+0.6424	0.0977	1.000	Io turn power on, the switch has to be turned to the	0.3853	0.0103
+0.6514	0.0957	1.000	oN position and the circuit breaker has to be manu-	0.3893	0.0175
+0.6526	0.5094	1.000	be fed through the unit without reading or writing,	0.3929	0.0160
+0.6672	0.5094	1.000	provided the unit is not ready. The unload key is	0.3929	0.0174
+0.6700	0.0959	1.000	ally reset. Normally, the power for the unit is con-	0.3910	0.0146
+0.6708	0.3763	0.300	ро метон со	0.1022	0.0375
+0.6830	0.5075	1.000	inoperative if the unit is in the ready condition. The	0.3947	0.0161
+0.6860	0.0959	1.000	trolled by means of the power-on and power-off keys.	0.3872	0.0146
+0.6991	0.5094	1.000	stop key must then be pressed before unloading.	0.3534	0.0161
+0.7020	0.1090	1.000	Start. Depression of this key readies the unit for	0.3759	0.0131
+0.7151	0.5263	1.000	Power On. This light indicates that the power in	0.3759	0.0161
+0.7166	0.0959	1.000	operation. If the unit is not loaded, the material	0.3891	0.0146
+0.7311	0.5113	1.000	the unit is on.	0.1053	0.0116
+0.7324	0.0977	1.000	(cards, tape, and so on) is fed into position for	0.3872	0.0147
+0.7470	0.5263	1.000	Ready. The ready light is on whenever the unit is	0.3759	0.0161
+0.7485	0.0959	1.000	reading or writing. When all conditions are met, the	0.3891	0.0131
+0.7630	0.0959	1.000	unit assumes ready status and a channel-signal indi-	0.3891	0.0146
+0.7630	0.5113	1.000	in the ready condition. It indicates that the material	0.3910	0.0131
+0.7776	0.5094	1.000	is loaded, all operating conditions have been met,	0.3929	0.0146
+0.7791	0.0959	1.000	cation is sent to the computer. In addition, depres-	0.3891	0.0146
+0.7936	0.5113	1.000	and the start key has been pressed. The ready light	0.3929	0.0131
+0.7951	0.0940	1.000	sion of the start key always extinguishes the check	0.3910	0.0116
+0.8081	0.5094	1.000	is turned off by depressing the stop key, by running	0.3929	0.0161
+0.8096	0.0959	1.000	light if the light is on at the time the key is depressed.	0.3872	0.0131
+0.8241	0.5113	1.000	out of material, or by failure to meet all operating	0.3910	0.0131
+0.8255	0.1090	1.000	If the conditions for operation are not met, the	0.3759	0.0133
+0.8387	0.5113	1.000	conditions. It may be off also during certain opera-	0.3929	0.0147
+0.8400	0.0959	1.000	unit remains in the not-ready status and no channel-	0.3910	0.0133
+0.8545	0.5113	1.000	tions which are completed after disconnecting from	0.3910	0.0133
+0.8545	0.0959	1.000	signal indication is given. The material, however, is	0.3910	0.0146
+0.8706	0.5094	1.000	the exchange, such as tape rewinding.	0.2763	0.0146
+0.8706	0.0940	1.000	still fed, into reading or writing position. Depression	0.3910	0.0131
+0.8832	0.5281	1.000	Select. When more than one unit can be connected	0.3743	0.0155
+0.8852	0.0940	1.000	of the start key causes a channel-signal indication	0.3910	0.0146
+0.9230	0.8797	1.000	129	0.0244	0.0087
+0.9230	0.7613	1.000	External Units	0.0921	0.0089

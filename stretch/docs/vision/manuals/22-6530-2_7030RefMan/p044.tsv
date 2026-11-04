@@ -1,0 +1,116 @@
+0.0567	0.5056	1.000	Branch on Bit (BB)	0.1372	0.0176
+0.0625	0.0940	1.000	INSTRUCTION	0.0677	0.0087
+0.0712	0.3120	1.000	DESCRIPTION OF INDEX VALUE	0.1711	0.0145
+0.0741	0.1128	1.000	BITS	0.0244	0.0073
+0.0799	0.5094	1.000	The bit specified by the effective bit address is tested.	0.3929	0.0161
+0.0828	0.2162	1.000	CODE	0.0301	0.0087
+0.0828	0.3553	1.000	INCREMENTING	0.0865	0.0102
+0.0828	0.1071	1.000	23	0.0150	0.0087
+0.0828	0.1222	1.000	24	0.0226	0.0087
+0.0945	0.5075	1.000	If its status matches that of bit 62 of the instruction,	0.3929	0.0146
+0.1071	0.5073	1.000	bits 0-18 of the effective branch address replace the	0.3951	0.0199
+0.1090	0.3158	1.000	Add one in bit position 18.	0.1579	0.0131
+0.1105	0.1090	1.000	0	0.0094	0.0087
+0.1105	0.1711	1.000	H Add half to value	0.1259	0.0102
+0.1206	0.3139	1.000	Add one in bit position 17.	0.1579	0.0146
+0.1235	0.1711	1.000	+ Add one to value	0.1259	0.0116
+0.1235	0.1316	1.000	0	0.0113	0.0087
+0.1264	0.5075	1.000	instruction counter contents.	0.2143	0.0132
+0.1345	0.3138	1.000	Subtract one in bit position	0.1618	0.0145
+0.1366	0.1692	1.000	- Subtract one from	0.1259	0.0088
+0.1377	0.5167	1.000	Following the above operation, whether branching	0.3857	0.0200
+0.1468	0.1974	1.000	value	0.0357	0.0087
+0.1526	0.5075	1.000	occurs or not, the tested bit is set according to the	0.3947	0.0189
+0.1612	0.0959	1.000	The incrementing takes into account the sign, bit 24,	0.3872	0.0161
+0.1713	0.5056	1.000	table below:	0.1016	0.0178
+0.1758	0.0939	1.000	of the value field of the index register. Then, if the	0.3893	0.0178
+0.1903	0.0940	1.000	status of indicator xcz matches that of instruction bit	0.3891	0.0161
+0.1918	0.5376	1.000	INSTRUCTION BITS	0.1241	0.0161
+0.1933	0.7256	1.000	TESTED BIT WILL BE	0.1335	0.0131
+0.2064	0.0940	1.000	30, bits 0-18 of the effective branch address will re-	0.3891	0.0161
+0.2122	0.5451	1.000	60	0.0226	0.0131
+0.2224	0.0959	1.000	place the instruction counter contents. Indicator XCZ	0.3872	0.0146
+0.2282	0.7462	1.000	Unchanged.	0.0940	0.0189
+0.2384	0.0959	1.000	cannot be reset as in BRANCH ON INDICATOR.	0.3026	0.0116
+0.2455	0.7481	1.000	Set to zero.	0.0884	0.0177
+0.2471	0.6316	1.000	1	0.0132	0.0174
+0.2642	0.7480	1.000	Inverted.	0.0698	0.0167
+0.2660	0.5526	1.000	1	0.0094	0.0145
+0.2776	0.0940	1.000	Count, Branch, and Refill (CBR)	0.2256	0.0146
+0.2805	0.7462	1.000	Set to one.	0.0827	0.0189
+0.2834	0.5526	1.000	1	0.0094	0.0145
+0.3009	0.0977	1.000	This operation is the same as COUNT AND BRANCH eX-	0.3853	0.0102
+0.3096	0.5282	1.000	While any bit in storage can be tested by BRANCI	0.3665	0.0146
+0.3150	0.0940	1.000	cept that, after execution, index register J is refilled	0.3873	0.0139
+0.3212	0.5150	1.000	DN BIT, those bits in read-only locations will remais	0.3797	0.0176
+0.3285	0.0921	1.000	if the index count zero indicator is on (count reached	0.3910	0.0161
+0.3387	0.5094	1.000	unchanged when there is any attempt to change	0.3929	0.0160
+0.3445	0.0940	1.000	zero). The index register is refilled by the contents	0.3891	0.0161
+0.3576	0.5094	1.000	them.	0.0432	0.0131
+0.3605	0.0940	1.000	of the location specified by the refill field of index	0.3891	0.0160
+0.3750	0.0959	1.000	register J. All available 18-bit addresses larger than	0.3872	0.0145
+0.3904	0.0958	1.000	and including 16.0 are valid for refilling.	0.2897	0.0152
+0.4141	0.0957	1.000	PROGRAMMING NOTES	0.1507	0.0124
+0.4185	0.5094	1.000	Storage of Instruction Counter	0.2782	0.0161
+0.4317	0.0977	1.000	All index incrementing and comparing operations set	0.3872	0.0147
+0.4476	0.0959	1.000	indicators that can be tested by the BRANCH ON INDI-	0.3891	0.0132
+0.4548	0.5094	1.000	Any half-length branching operation defined above	0.3929	0.0161
+0.4621	0.0959	1.000	CATOR operation. The generalized functions of incre-	0.3891	0.0146
+0.4694	0.5075	1.000	can be converted to a full-word instruction, which	0.3947	0.0146
+0.4782	0.0959	1.000	menting, counting, conditionally refilling, and testing	0.3891	0.0146
+0.4855	0.5094	1.000	also provides for storing the instruction counter at	0.3929	0.0161
+0.4927	0.0959	1.000	an index register normally require two half-length	0.3891	0.0145
+0.5000	0.5094	1.000	any specified storage location. This is done by pre-	0.3929	0.0176
+0.5087	0.0959	1.000	instructions, such as ADD TO VALUE and BRANCH ON	0.3872	0.0131
+0.5160	0.5094	1.000	fixing any of the above instructions except BRANCH	0.3929	0.0161
+0.5247	0.0959	1.000	INDICATOR. For the common case, when the increment	0.3891	0.0132
+0.5320	0.5094	1.000	ON BIT with the operation STORE INSTRUCTION COUNTER	0.3929	0.0145
+0.5392	0.0940	1.000	is + 1, t ½, 0, or - 1, the index branching opera-	0.3929	0.0160
+0.5430	0.5091	1.000	IF, as in the format shown below. Bits 0-23 constitute	0.3933	0.0212
+0.5552	0.0977	1.000	tion permits all these functions to be specified in a	0.3872	0.0132
+0.5609	0.5094	1.000	the storage address. Bits 24-27, together with the	0.3929	0.0161
+0.5712	0.0940	1.000	single half-length instruction.	0.2162	0.0145
+0.5770	0.5094	1.000	half-word branch instruction operation code, specily	0.3929	0.0161
+0.5915	0.5113	1.000	the full-word operation. Bits 28-31 name the index	0.3929	0.0176
+0.6076	0.5094	1.000	register used for storage address modification. Bits	0.3929	0.0146
+0.6233	0.5113	1.000	32-63 specify the half-word branch instruction used.	0.3891	0.0137
+0.6279	0.0940	1.000	Bit Branching	0.1241	0.0146
+0.6612	0.0959	1.000	Any bit in storage can control branching with the	0.3891	0.0147
+0.6613	0.6541	1.000	11000	0.0357	0.0116
+0.6626	0.5507	1.000	ADDRESS	0.0415	0.0092
+0.6627	0.7218	1.000	HALF LENGTH BRANCH INSTRUCTION	0.1523	0.0103
+0.6628	0.6880	1.000	I	0.0113	0.0102
+0.6758	0.0959	1.000	BRANCH ON BIT instruction. The choice of the tested	0.3891	0.0146
+0.6759	0.6823	1.000	28	0.0113	0.0073
+0.6759	0.8853	1.000	63	0.0113	0.0073
+0.6759	0.6579	1.000	24	0.0132	0.0073
+0.6903	0.0940	1.000	bit may be varied by address modification, and the	0.3929	0.0176
+0.7064	0.0959	1.000	bit may be set to zero, inverted, or set to one if de-	0.3891	0.0146
+0.7093	0.5094	1.000	Store Instruction Counter If (SIC)	0.2368	0.0131
+0.7224	0.0940	1.000	sired. The bit branching instruction is specified in	0.3910	0.0161
+0.7311	0.5094	1.000	This instruction may always be prefixed to one of	0.3947	0.0160
+0.7355	0.0940	1.000	the full-word format shown below. Bits 0-23 consti-	0.3929	0.0161
+0.7456	0.5113	1.000	the half-word branching instructions. It is executed	0.3929	0.0160
+0.7529	0.0940	1.000	tute the bit address. Bits 24-27 and 51-62 designate	0.3910	0.0160
+0.7615	0.5094	1.000	if and only if the associated branching is successful.	0.3929	0.0161
+0.7688	0.0959	1.000	the operation, where bits 60-62 are modifiers. Bits	0.3910	0.0133
+0.7776	0.5113	1.000	When it is executed, it causes the instruction counter	0.3929	0.0146
+0.7833	0.0940	1.000	28-31 name the index register to be used for bit ad-	0.3910	0.0161
+0.7921	0.5113	1.000	contents to be stored in bits 0-18 of the half-word	0.3929	0.0146
+0.8009	0.0940	1.000	dress modification. Bits 32-50 represent the branch	0.3891	0.0116
+0.8067	0.5094	1.000	specified by bits 0-18 of the effective storage address.	0.3929	0.0176
+0.8150	0.0940	1.000	address. Bit 63 determines whether or not there will	0.3910	0.0124
+0.8227	0.5113	1.000	Other bits of the half-word are not disturbed. The	0.3929	0.0146
+0.8299	0.0940	1.000	be branch address modification using index register	0.3929	0.0146
+0.8387	0.5113	1.000	stored instruction counter contents always address the	0.3929	0.0147
+0.8445	0.0940	1.000	XI.	0.0301	0.0145
+0.8517	0.5094	1.000	instruction whose location is next higher in storage	0.3947	0.0174
+0.8691	0.5113	1.000	than that of the branch instruction to which STORE	0.3929	0.0146
+0.8750	0.4023	1.000	111000000	0.0545	0.0116
+0.8763	0.1353	1.000	ADDRESS	0.0396	0.0075
+0.8808	0.4549	0.500	IZN	0.0244	0.0087
+0.8852	0.5113	1.000	INSTRUCTION COUNTER IF is prefixed.	0.2594	0.0146
+0.8924	0.3139	1.000	BRANCH ADDRESS	0.0658	0.0073
+0.8924	0.1278	1.000	BIT ADDRESS	0.0489	0.0073
+0.9230	0.8741	1.000	41	0.0150	0.0087
+0.9230	0.7030	1.000	Instruction Sequencing	0.1410	0.0116

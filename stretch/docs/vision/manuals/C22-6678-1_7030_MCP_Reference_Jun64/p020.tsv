@@ -1,0 +1,114 @@
+0.0959	0.5056	1.000	storage area. $SPR is specified through the macro-	0.3703	0.0174
+0.0981	0.1427	1.000	,FWA. (!)	0.0681	0.0131
+0.1093	0.5034	1.000	instruction	0.0871	0.0183
+0.1133	0.1429	1.000	,N. (L)	0.0432	0.0118
+0.1250	0.5414	1.000	MSPR, IWA. (I), N.(D)	0.1692	0.0160
+0.1264	0.2180	1.000	(described as "M." following)	0.2086	0.0118
+0.1265	0.1429	1.000	,0.	0.0244	0.0116
+0.1366	0.5075	1.000	which is expanded to the calling sequence	0.2932	0.0161
+0.1394	0.1447	1.000	B, END' END RETURN	0.1767	0.0118
+0.1497	0.5432	1.000	B,$MCF	0.0714	0.0174
+0.1539	0.1429	1.000	(normal return)	0.1128	0.0103
+0.1657	0.5470	1.000	,$SPR	0.0508	0.0160
+0.1668	0.1014	1.000	where:	0.0491	0.0094
+0.1784	0.5469	1.000	,FWA. (I)	0.0698	0.0152
+0.1788	0.1222	1.000	FWA. (D) is the first word (18 bit) address of the	0.3421	0.0146
+0.1918	0.1222	1.000	buffer into which the cards are to be transmitted.	0.3496	0.0131
+0.1933	0.5470	1.000	,N. (I)	0.0508	0.0161
+0.2064	0.5451	1.000	(return)	0.0639	0.0160
+0.2078	0.1241	1.000	N. (I) is the number of cards to be transmitted.	0.3289	0.0102
+0.2209	0.1241	1.000	If there are at least N. (I) cards remaining to be	0.3402	0.0116
+0.2221	0.5074	1.000	where:	0.0510	0.0137
+0.2311	0.1203	1.000	transmitted to this job, 15N. (D) words are trans-	0.3496	0.0174
+0.2324	0.5282	1.000	FWA. (D) is the first word address from which the	0.3534	0.0176
+0.2485	0.5263	1.000	lines are moved.	0.1241	0.0146
+0.2485	0.1222	1.000	mitted and the normal return is given.	0.2726	0.0118
+0.2602	0.1241	1.000	END represents a problem program symbol	0.3252	0.0147
+0.2615	0.5282	1.000	N. (D) is the number of lines to be moved.	0.2914	0.0146
+0.2747	0.5282	1.000	Information is not altered in the user's core	0.3177	0.0160
+0.2747	0.1222	1.000	for the location where the programmer wishes	0.3308	0.0132
+0.2892	0.1221	1.000	control returned if less than N. (I) cards are	0.3160	0.0144
+0.2999	0.5224	1.000	In addition to performing the $SPR function, the	0.3501	0.0204
+0.3038	0.1222	1.000	transmitted.	0.0883	0.0102
+0.3164	0.5075	1.000	Output program in MCP can insert a TITLE, a	0.3553	0.0183
+0.3169	0.1203	1.000	The macro-generator reserves a half-word for	0.3365	0.0147
+0.3299	0.5056	1.000	page number, and start a new page in the GO	0.3459	0.0174
+0.3314	0.1015	1.000	M., which will contain the number of cards that	0.3402	0.0147
+0.3445	0.1015	1.000	were actually transmitted if there were fewer than	0.3571	0.0116
+0.3445	0.5056	1.000	phase of a problem program as a TYPE card option.	0.3759	0.0161
+0.3576	0.5056	1.000	II TITLE is specified as an output option, the TYPE	0.3759	0.0161
+0.3576	0.0996	1.000	N. (D) cards remaining. If this situation occurs, the	0.3647	0.0146
+0.3660	0.1013	1.000	end return is given to the half-word preceding the	0.3538	0.0211
+0.3691	0.5056	1.000	card must be followed immediately by a TITLE card	0.3741	0.0176
+0.3850	0.1014	1.000	normal return, where a branch instruction has been	0.3686	0.0138
+0.3997	0.1015	1.000	constructed by the macro-generator, using the	0.3308	0.0131
+0.4142	0.0996	1.000	programmer symbol END as the address.	0.2970	0.0116
+0.4300	0.5976	1.000	{789 |10	0.0622	0.0151
+0.4317	0.5808	1.000	6	0.0132	0.0145
+0.4346	0.8797	1.000	80	0.0188	0.0116
+0.4390	0.1222	1.000	The primary function of the MCP output program	0.3459	0.0147
+0.4506	0.6053	1.000	XYY TITLE ON OUTPUT	0.1748	0.0161
+0.4520	0.5207	1.000	TITLE	0.0338	0.0131
+0.4534	0.0977	1.000	is to provide a standard method of output for both	0.3554	0.0133
+0.4666	0.0996	1.000	printing and punching. Output requests are made	0.3534	0.0131
+0.4811	0.0996	1.000	through two pseudo-operations rather than through	0.3590	0.0131
+0.4956	0.0996	1.000	I/O commands by the user.	0.1936	0.0116
+0.4956	0.2989	1.000	Buffering is used to	0.1485	0.0116
+0.5087	0.0996	1.000	output the data with a minimum of I/O interruption.	0.3647	0.0131
+0.5151	0.5069	1.000	Where X may be:	0.1253	0.0187
+0.5218	0.1015	1.000	The output program prepares a tape for processing	0.3628	0.0131
+0.5304	0.5262	1.000	1 = insert a title if a restore character is	0.3235	0.0156
+0.5363	0.0996	1.000	on the IBM 1401 Data Processing System.	0.2970	0.0116
+0.5436	0.5263	1.000	encountered in a $SPR line. Substitute a double	0.3440	0.0146
+0.5477	0.0976	1.000	System Print Pseudo-Operation ($SPR): $SPR is a	0.3707	0.0217
+0.5581	0.5282	1.000	space character in the output buffer but not in the	0.3515	0.0146
+0.5609	0.0996	1.000	request to move a number of lines to the print buffer	0.3741	0.0147
+0.5712	0.5263	1.000	problem program's core storage for the $SPR	0.3308	0.0145
+0.5770	0.0996	1.000	maintained by the output program. Each line con-	0.3609	0.0131
+0.5872	0.5263	1.000	line.	0.0376	0.0131
+0.5915	0.1015	1.000	sists of 17 full words, 136 eight-bit bytes.	0.3008	0.0118
+0.5978	0.5280	1.000	2 = insert a title and start a new page for every	0.3463	0.0193
+0.6045	0.1015	1.000	first byte of each line must be one of the following	0.3553	0.0133
+0.6118	0.5301	1.000	YY lines of problem program output (including the	0.3534	0.0161
+0.6177	0.1015	1.000	characters, which control spacing before printing	0.3534	0.0145
+0.6264	0.5357	1.000	itle line of output). If YY is blank, 55 will be	0.3177	0.0146
+0.6334	0.0996	1.000	the line:	0.0584	0.0093
+0.6374	0.5337	1.000	ısed. A doublé space character will be used as	0.3292	0.0171
+0.6554	0.5244	1.000	in 1.	0.0396	0.0134
+0.6612	0.2819	1.000	Binary	0.0565	0.0147
+0.6627	0.3816	1.000	8-Bit BCD	0.0789	0.0131
+0.6685	0.5244	1.000	blank = insert a title for either a restore	0.3139	0.0147
+0.6730	0.1372	1.000	Function	0.0714	0.0203
+0.6743	0.2575	1.000	Representation	0.1110	0.0177
+0.6773	0.3985	1.000	Code	0.0470	0.0131
+0.6830	0.5263	1.000	character (as in 1) in the problem program $SPR	0.3496	0.0146
+0.6962	0.5282	1.000	output or for every YY lines (as in 2).	0.2707	0.0160
+0.7018	0.1221	1.000	Restore	0.0603	0.0150
+0.7034	0.2782	1.000	00000001	0.0658	0.0132
+0.7049	0.4041	1.000	1	0.0113	0.0116
+0.7148	0.4021	1.000	-(Minus)	0.0737	0.0296
+0.7149	0.1221	1.000	Single Space	0.0922	0.0164
+0.7178	0.2781	1.000	00100000	0.0678	0.0121
+0.7267	0.5075	1.000	System Punch Pseudo-Operation ($SPU): $SPU is a	0.3609	0.0146
+0.7281	0.1222	1.000	Double Space	0.0978	0.0162
+0.7310	0.2800	1.000	00100001	0.0640	0.0134
+0.7397	0.5056	1.000	request to transmit a number of cards to the punch	0.3609	0.0147
+0.7427	0.1222	1.000	Triple Space	0.0959	0.0161
+0.7456	0.2782	1.000	00100010	0.0677	0.0132
+0.7485	0.4023	1.000	K	0.0169	0.0087
+0.7529	0.5056	1.000	buffer maintained by the output program. Each	0.3402	0.0160
+0.7558	0.1222	1.000	Quadruple Space	0.1203	0.0176
+0.7570	0.2781	1.000	00100011	0.0660	0.0150
+0.7587	0.4060	1.000	L	0.0132	0.0102
+0.7645	0.5056	1.000	card is a column binary card image of 15 full words,	0.3759	0.0176
+0.7776	0.1015	1.000	The 132 bytes which follow, must be 8-bit BCD (A8)	0.3703	0.0146
+0.7791	0.5038	1.000	80 twelve-bit bytes. Each byte is a map of a card	0.3534	0.0161
+0.7904	0.1015	1.000	characters to be printed. The remaining 3 bytes are	0.3722	0.0152
+0.7932	0.5055	1.000	column where bit 0 corresponds to row 12, bit 1 to	0.3612	0.0183
+0.8052	0.1071	1.000	ased for padding and may contain any configuration o	0.3684	0.0146
+0.8081	0.5056	1.000	row 11, etc., and bit 11 to row 9. A one bit corre-	0.3703	0.0146
+0.8169	0.1090	1.000	its. Only complete lines may be moved from con-	0.3477	0.0160
+0.8212	0.5056	1.000	sponds to a punch and a zero bit corresponds to no	0.3590	0.0145
+0.8314	0.0996	1.000	secutive multiples of 17 full words in the user's core	0.3797	0.0147
+0.8358	0.5056	1.000	punch. Only complete cards may be transmitted	0.3477	0.0131
+0.8910	0.1015	1.000	20	0.0226	0.0160

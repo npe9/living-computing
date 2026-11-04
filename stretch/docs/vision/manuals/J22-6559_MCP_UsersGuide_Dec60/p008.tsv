@@ -1,0 +1,43 @@
+0.1076	0.1898	1.000	If N eard records have been specified, but there are fewer than N card records, the	0.6711	0.0131
+0.1221	0.1880	1.000	card records that are in the reader buffer are moved but return of control is made to	0.6823	0.0146
+0.1381	0.1861	1.000	the end return in the calling sequence and the number of cards actually moved is rec-	0.6880	0.0146
+0.1539	0.1880	1.000	orded in bits 0-17 of N'in the same calling sequence.	0.4286	0.0147
+0.1845	0.1880	1.000	Example: At location ABLE, the problem program requests that the 10 cards in the	0.6729	0.0161
+0.2006	0.1861	1.000	reader buffer be moved to locations BAKER to BAKER +149, inclusive.	0.5733	0.0146
+0.2321	0.4698	1.000	В, $МСР	0.0793	0.0155
+0.2326	0.3289	1.000	ABLE	0.0489	0.0131
+0.2485	0.4718	1.000	, $SCR	0.0602	0.0131
+0.2485	0.3308	1.000	+.32	0.0508	0.0131
+0.2644	0.3308	1.000	+1.0	0.0415	0.0119
+0.2645	0.4718	1.000	, BAKER	0.0789	0.0131
+0.2788	0.3288	1.000	+ 1.32	0.0529	0.0151
+0.2805	0.4718	1.000	= 10.	0.0451	0.0131
+0.2951	0.3289	1.000	+2.0	0.0432	0.0131
+0.3108	0.4717	1.000	B, END	0.0659	0.0136
+0.3110	0.3289	1.000	+2.32	0.0526	0.0145
+0.3270	0.3289	1.000	+3.0	0.0432	0.0131
+0.3590	0.4718	1.000	---	0.0282	0.0087
+0.4026	0.1842	1.000	If' the number of cards in the data file ≥ 10, control will be returned at ABLE + 3.0.	0.6805	0.0160
+0.4185	0.1861	1.000	If the number of cards in the data file <10 (8, for example), locations BAKER to BAKER	0.7086	0.0161
+0.4317	0.1861	1.000	+ 119.O inclusive will contain the data moved, bits 0-17 of location ABLE + 2.0 will	0.6729	0.0189
+0.4491	0.1861	1.000	contain 8, and control will be transferred to ABLE + 2.32.	0.4718	0.0161
+0.4824	0.1861	1.000	SPOOL PUNCH	0.1222	0.0118
+0.5115	0.1861	1.000	The SPOOL punch routine maintains buffers to hold output column binary card records	0.6917	0.0146
+0.5248	0.1841	1.000	(80 columns) in preparation for punching on the SPOOL card punch. Data is moved	0.6750	0.0188
+0.5421	0.1842	1.000	from a specified problem program storage area to these buffers whenever the following	0.7030	0.0161
+0.5596	0.1861	1.000	calling sequence is written:	0.2218	0.0146
+0.5915	0.3740	1.000	B, SMCP	0.0790	0.0147
+0.6076	0.3759	1.000	, ŞSPU	0.0602	0.0131
+0.6221	0.3741	1.000	,FWA(I)	0.0789	0.0145
+0.6381	0.3835	1.000	N.	0.0301	0.0116
+0.6453	0.3740	1.000	( Return)	0.0809	0.0220
+0.6845	0.1861	1.000	SPOOL PRINT	0.1147	0.0131
+0.7136	0.1861	1.000	Output data, in the form of 132 - character lines, are moved from the problem program's	0.7143	0.0176
+0.7297	0.1880	1.000	storage area to buffers maintained by the SPOOL printer whenever the following calling	0.6974	0.0161
+0.7468	0.1876	1.000	sequence is issued:	0.1548	0.0169
+0.7775	0.3740	1.000	В, $MCP	0.0809	0.0163
+0.7936	0.3816	1.000	$SPR	0.0545	0.0131
+0.8096	0.3835	1.000	FWA(I)	0.0695	0.0131
+0.8255	0.3759	1.000	, N.	0.0376	0.0133
+0.8400	0.3778	1.000	( Return )	0.0753	0.0119
+0.9419	0.0695	1.000	8	0.0094	0.0116

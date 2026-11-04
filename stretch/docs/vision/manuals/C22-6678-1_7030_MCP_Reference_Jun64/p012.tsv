@@ -1,0 +1,104 @@
+0.0669	0.1109	1.000	3. The density or the mode in the label is differ-	0.3684	0.0147
+0.0669	0.5414	1.000	$WRITE or $WEF, labeled or unlabeled tape: Use	0.3759	0.0160
+0.0814	0.5188	1.000	installation information mode.	0.2293	0.0147
+0.0814	0.0902	1.000	ent from that on the IOD used in the first operation.	0.3853	0.0147
+0.0959	0.5357	1.000	In discussing the null case for the density field, it	0.3853	0.0160
+0.0959	0.0883	1.000	The density or mode stated in the IOD is used when	0.3853	0.0147
+0.1105	0.5188	1.000	must be realized that the density is set for the entire	0.4004	0.0145
+0.1118	0.0902	1.000	rewriting the label.	0.1447	0.0118
+0.1223	0.1126	1.000	Because the information in the reel label is not	0.3575	0.0176
+0.1248	0.5187	1.000	tape by the first operation. Therefore, the following	0.4006	0.0167
+0.1394	0.0902	1.000	used by the problem program, the tape mark follow-	0.3966	0.0133
+0.1409	0.5188	1.000	rules apply only to the first operation:	0.2876	0.0132
+0.1539	0.0883	1.000	ing this initial file is used to simulate the beginning-	0.3966	0.0147
+0.1627	0.5432	1.000	$READ operation, labeled tape: Use density	0.3365	0.0146
+0.1685	0.0902	1.000	of-tape metallic strip. If the programmer attempts	0.3891	0.0133
+0.1773	0.5207	1.000	specified in tape label.	0.1748	0.0146
+0.1831	0.0902	1.000	to backspace over this end-of-file mark to the real	0.3817	0.0134
+0.1903	0.5432	1.000	$READ operation, unlabeled tape: Use installa-	0.3647	0.0161
+0.1971	0.0901	1.000	metallic strip, his action is prohibited by MCP. The	0.3968	0.0158
+0.2064	0.5207	1.000	tion information density.	0.1880	0.0146
+0.2121	0.0902	1.000	tape will be positioned at the end of the reel label and	0.4004	0.0132
+0.2194	0.5414	1.000	$WRITE or $WEF, labeled or unlabeled tape: Use	0.3759	0.0176
+0.2267	0.0902	1.000	a branch will be made to the error return in the I/O	0.3910	0.0132
+0.2355	0.5188	1.000	installation information density.	0.2462	0.0145
+0.2412	0.0883	1.000	table of exits. (See "I/O Interrupts.") Repeated	0.3703	0.0146
+0.2500	0.5432	1.000	On all $READ or $WRITE requests after the first,	0.3778	0.0161
+0.2573	0.0902	1.000	attempts to backspace over the reel identification	0.3722	0.0116
+0.2645	0.5207	1.000	the density request is ignored, and the tape is oper-	0.3929	0.0146
+0.2703	0.0902	1.000	will be met with the same response and signal from	0.3872	0.0131
+0.2791	0.5207	1.000	ated upon in the density established by the first	0.3571	0.0146
+0.2931	0.5205	1.000	operation.	0.0774	0.0155
+0.3009	0.1109	1.000	The mode and density options offered by the sys-	0.3684	0.0116
+0.3067	0.5395	1.000	Note that if a $READ operation is given with a	0.3515	0.0161
+0.3174	0.0900	1.000	tem are:	0.0643	0.0091
+0.3227	0.5207	1.000	density specified by the IOD card, the density for	0.3722	0.0161
+0.3372	0.5188	1.000	the operation performed becomes the density for the	0.3966	0.0146
+0.3445	0.0883	1.000	Label Mode and Density: The mode and density in	0.3778	0.0146
+0.3531	0.5225	1.000	entire tape.	0.0903	0.0119
+0.3532	0.6109	1.000	This density may not agree with the	0.2782	0.0132
+0.3605	0.0902	1.000	which the label is written on the tape.	0.2820	0.0117
+0.3677	0.5207	1.000	information density, in which case errors will occur.	0.4041	0.0132
+0.3821	0.5207	1.000	It is advisable to use a null density and mode on the	0.3891	0.0118
+0.3881	0.0902	1.000	Information Mode and Density: The mode and density	0.4004	0.0131
+0.3939	0.5205	1.000	IOD used for reading the first record, or to use the	0.3894	0.0171
+0.4039	0.0902	1.000	appearing in the label and in which the file mark fol-	0.3966	0.0118
+0.4112	0.5226	1.000	same IOD with which the first information record	0.3703	0.0118
+0.4185	0.0883	1.000	lowing the label and at least the first information	0.3722	0.0118
+0.4258	0.5207	1.000	was written.	0.0940	0.0118
+0.4294	0.0901	1.000	record are written. The information density is the	0.3837	0.0158
+0.4403	0.5451	1.000	Whenever a tape reel is to be written in a density	0.3703	0.0133
+0.4462	0.0902	1.000	density in which the rest of the tape is written.	0.3515	0.0132
+0.4477	0.4436	1.000	The	0.0376	0.0087
+0.4548	0.5207	1.000	other than the current active density, the rewind	0.3665	0.0132
+0.4621	0.0883	1.000	mode used to write a tape may be altered after the	0.3797	0.0118
+0.4694	0.5226	1.000	and change density pseudo-operations must be	0.3440	0.0118
+0.4767	0.0883	1.000	first record. Thus, data following the first record	0.3853	0.0118
+0.4839	0.5207	1.000	issued. The next write pseudo-operation issued to	0.3835	0.0132
+0.4880	0.0901	1.000	can be written in a mode different from that appearing	0.4063	0.0155
+0.4985	0.5207	1.000	that tape will cause a new label and file mark to be	0.3835	0.0118
+0.5058	0.0883	1.000	in the label.	0.0921	0.0103
+0.5145	0.5226	1.000	written prior to writing the requested record.	0.3421	0.0116
+0.5188	0.1128	1.000	The two sets of parameters for label and informa-	0.3759	0.0133
+0.5333	0.0902	1.000	tion mode and density can be altered by compilation.	0.3929	0.0132
+0.5494	0.0902	1.000	All MCP systems will be delivered with the following	0.3966	0.0117
+0.5523	0.5207	1.000	Preparation of the Input Deck	0.2218	0.0116
+0.5624	0.0883	1.000	modes and densities:	0.1560	0.0118
+0.5770	0.1128	1.000	Label -- High density, even parity	0.2575	0.0146
+0.5827	0.5207	1.000	The structure of input decks may be divided into two	0.3929	0.0118
+0.5915	0.1109	1.000	Information -- High density, odd parity	0.2951	0.0146
+0.5973	0.5207	1.000	general classes: (1) those decks which require com-	0.3985	0.0118
+0.6061	0.0883	1.000	Individual installations may elect to alter these	0.3534	0.0131
+0.6105	0.5207	1.000	pilation by one of the language processors before	0.3684	0.0132
+0.6206	0.0883	1.000	modes and densities, in which case they may be	0.3647	0.0146
+0.6264	0.5207	1.000	the job can be loaded and executed, and (2) those	0.3647	0.0132
+0.6352	0.0883	1.000	incompatible with the modes and densities of other	0.3797	0.0117
+0.6390	0.5206	1.000	decks which are output from a previous compilation	0.3856	0.0142
+0.6497	0.0846	1.000	installations.	0.1034	0.0131
+0.6539	0.5169	1.000	and can be loaded and executed without compilation.	0.3891	0.0147
+0.6744	0.0883	1.000	Installation Mode and Density: The mode and	0.3571	0.0147
+0.6903	0.0883	1.000	density established by an installation for either or	0.3816	0.0118
+0.6933	0.5169	1.000	Jobs to be Compiled	0.1541	0.0146
+0.7035	0.0883	1.000	both the label and information modes and densities.	0.3853	0.0132
+0.7166	0.0883	1.000	These modes and densities may or may not be differ-	0.4023	0.0174
+0.7194	0.5113	1.000	For jobs to be compiled, the programmer may re-	0.3910	0.0191
+0.7311	0.0865	1.000	ent from the modes and densities set upon delivery of	0.4041	0.0174
+0.7369	0.5169	1.000	quest that the deck be handled by MCP as a compi-	0.3891	0.0131
+0.7485	0.5169	1.000	lation only (execution is not to be attempted) by	0.3590	0.0176
+0.7485	0.0865	1.000	the MCP system to the installation.	0.2669	0.0146
+0.7568	0.1088	1.000	In the earlier description of the mode and density	0.3727	0.0226
+0.7660	0.5169	1.000	using the COMPILE option on the type card:	0.3308	0.0131
+0.7776	0.0902	1.000	fields on IOD cards, the null case was referred to	0.3741	0.0118
+0.7921	0.5545	1.000	B TYPE, COMPILE, Chain, Options	0.2876	0.0161
+0.7921	0.0883	1.000	this section. For the mode field, the following is	0.3741	0.0131
+0.8067	0.5150	1.000	The programmer may request that the deck be	0.3553	0.0161
+0.8081	0.0865	1.000	true:	0.0395	0.0116
+0.8197	0.5113	1.000	loaded and executed at the completion of compila-	0.3778	0.0146
+0.8212	0.1090	1.000	$READ operation, labeled tape: Use mode speci-	0.3741	0.0145
+0.8358	0.0865	1.000	fied in the label (information mode).	0.2726	0.0145
+0.8358	0.5150	1.000	tion by using the COMPILGO option on the type	0.3571	0.0131
+0.8486	0.5149	1.000	card:	0.0472	0.0164
+0.8503	0.1034	1.000	$READ operation, unlabeled tape. Use installa-	0.3722	0.0146
+0.8618	0.5545	1.000	B IYPE, COMPILGO, Chain, Options	0.3026	0.0204
+0.8648	0.0865	1.000	tion information mode.	0.1748	0.0131
+0.9142	0.0865	1.000	12	0.0188	0.0102

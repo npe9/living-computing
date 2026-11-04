@@ -1,0 +1,125 @@
+0.0792	0.1107	1.000	Pseudo-Calling	0.1394	0.0204
+0.0799	0.6034	1.000	Major	0.0489	0.0174
+0.0943	0.1823	1.000	Sequence	0.0772	0.0177
+0.0945	0.6015	1.000	Package	0.0677	0.0189
+0.0970	0.7875	1.000	Pseudo-Op	0.0867	0.0154
+0.0972	0.3214	1.000	Function	0.0640	0.0134
+0.0974	0.1297	1.000	Op	0.0244	0.0160
+0.1235	0.1880	1.000	B, $MCP	0.0752	0.0189
+0.1235	0.3177	1.000	To be used by JC1 to	0.1617	0.0189
+0.1250	0.5996	1.000	JCI	0.0357	0.0160
+0.1250	0.7951	1.000	SJCI	0.0451	0.0160
+0.1250	0.1109	1.000	SCRI	0.0432	0.0145
+0.1394	0.1954	1.000	, SKOM	0.0678	0.0192
+0.1395	0.7895	1.000	$EOJ	0.0451	0.0160
+0.1395	0.6015	1.000	JC4	0.0338	0.0160
+0.1409	0.3177	1.000	request the address of	0.1729	0.0146
+0.1410	0.1222	1.000	(3.0)	0.0414	0.0160
+0.1525	0.7875	1.000	$ABEOJ	0.0678	0.0178
+0.1526	0.3177	1.000	the next card in the phase	0.1955	0.0160
+0.1683	0.7949	1.000	SJC4	0.0473	0.0166
+0.1715	0.3214	1.000	1 buffer. That address	0.1711	0.0131
+0.1830	0.7894	1.000	$RESLD	0.0659	0.0164
+0.1845	0.3214	1.000	will be placed in A. End	0.1823	0.0146
+0.1845	0.6034	1.000	Resume Load	0.1053	0.0146
+0.1972	0.1898	1.000	(Normal return) return will be used if no	0.3121	0.0170
+0.1988	0.7912	1.000	SLOG1	0.0623	0.0166
+0.2006	0.6034	1.000	The accounting program	0.1805	0.0146
+0.2116	0.8004	1.000	SLOG2R	0.0551	0.0187
+0.2163	0.6371	1.000	(logger)	0.0603	0.0135
+0.2281	0.7988	1.000	SLOGA	0.0565	0.0162
+0.2412	0.3177	1.000	To be used by Jcl to	0.1617	0.0204
+0.2427	0.1128	1.000	SCAN	0.0470	0.0160
+0.2442	0.5508	1.000	Job control will be discussed considering only the	0.3741	0.0161
+0.2452	0.1897	1.000	B, $MCP	0.0699	0.0154
+0.2602	0.3233	1.000	request the input pro-	0.1560	0.0147
+0.2602	0.1222	1.000	(3.32)	0.0470	0.0145
+0.2602	0.1974	1.000	,SKOM	0.0639	0.0160
+0.2602	0.5376	1.000	overlapped mode of operation. It will be shown later	0.3947	0.0132
+0.2703	0.3233	1.000	gram to respond to the	0.1635	0.0191
+0.2733	0.5357	1.000	that operation in the bypass mode actually is a special	0.4060	0.0146
+0.2733	0.1992	1.000	, SCAN	0.0602	0.0189
+0.2878	0.3102	1.000	next SCRI request with	0.1842	0.0146
+0.2878	0.5357	1.000	case of overlapped operation. Remember that the basic	0.4117	0.0146
+0.2892	0.1898	1.000	(Normal return)	0.1184	0.0145
+0.3021	0.3176	1.000	the first card from the	0.1749	0.0165
+0.3023	0.5395	1.000	purpose of overlapped operation is to accomplish tape	0.3947	0.0160
+0.3139	0.5432	1.000	mounting for one job while a preceding job is running	0.3910	0.0189
+0.3152	0.3195	1.000	next job. (SCAN to the	0.1749	0.0178
+0.3299	0.5395	1.000	The following discussion presents the basic concepts	0.3910	0.0161
+0.3314	0.3195	1.000	next job boundary in the	0.1805	0.0189
+0.3441	0.3176	1.000	phase 1 buffer.)	0.1242	0.0196
+0.3503	0.5395	1.000	of preassignment of tape units as done by job control	0.3910	0.0116
+0.3648	0.5395	1.000	in overlapped operation. The actual implementation	0.3872	0.0116
+0.3764	0.1109	1.000	SEJSCN B, $MCP	0.1485	0.0161
+0.3794	0.5395	1.000	may differ in detail due to various environmental	0.3647	0.0116
+0.3794	0.3177	1.000	To be used by JC4 to	0.1579	0.0116
+0.3917	0.1971	1.000	, SKOM	0.0626	0.0175
+0.3923	0.3195	1.000	request the input pro-	0.1636	0.0149
+0.3924	0.1222	1.000	(1.32)	0.0470	0.0145
+0.3953	0.5395	1.000	constraints.	0.0902	0.0102
+0.4055	0.2011	1.000	, SEJSCN	0.0733	0.0146
+0.4068	0.3176	1.000	gram to respond to the	0.1730	0.0149
+0.4084	0.5564	1.000	Overlapped operation is controlled by phase 1 of	0.3590	0.0116
+0.4200	0.1879	1.000	(Normal return)	0.1203	0.0162
+0.4210	0.3101	1.000	next SSCR4 request with	0.1900	0.0156
+0.4230	0.5395	1.000	job control (JC1), phase 4 of job control (JC4) and	0.3722	0.0146
+0.4330	0.3177	1.000	the first card of the next	0.1898	0.0176
+0.4375	0.5395	1.000	the subroutines, decode, unassign, assign, and move.	0.4023	0.0131
+0.4480	0.3155	1.000	job. (SCAN to the next	0.1790	0.0190
+0.4520	0.5414	1.000	These routines are all tied together by a set of tables	0.3947	0.0131
+0.4666	0.3158	1.000	job boundary in the phase	0.1917	0.0131
+0.4679	0.5395	1.000	called the I-O assignment tables. A detailed descrip-	0.4023	0.0118
+0.4782	0.3195	1.000	4 buffer.)	0.0752	0.0161
+0.4824	0.5395	1.000	tion of these tables appears elsewhere in this section.	0.4004	0.0118
+0.4970	0.5414	1.000	For the moment, they will be defined as having one	0.3797	0.0133
+0.5087	0.1109	1.000	SONL	0.0489	0.0146
+0.5099	0.1804	1.000	B, $MCP	0.0791	0.0165
+0.5102	0.3177	1.000	To be used by the system	0.1898	0.0147
+0.5115	0.5395	1.000	entry for each job which has passed through phase 1	0.3835	0.0133
+0.5233	0.1184	1.000	(0.0)	0.0451	0.0160
+0.5233	0.1898	1.000	,SKOM	0.0733	0.0189
+0.5261	0.5414	1.000	(JCI scanning) but not though phase 4 (JC4 EOJ). An	0.3853	0.0133
+0.5261	0.3177	1.000	command program to	0.1617	0.0133
+0.5376	0.3082	1.000	inform the input program	0.1993	0.0164
+0.5377	0.1108	1.000	SOFFL	0.0584	0.0162
+0.5407	0.1936	1.000	,(Parameter)	0.1128	0.0145
+0.5421	0.5414	1.000	entry will be defined as something to identify the job	0.3853	0.0117
+0.5523	0.1880	1.000	(Normal return)	0.1203	0.0146
+0.5538	0.1184	1.000	(.32)	0.0451	0.0145
+0.5552	0.3102	1.000	of a mode change com-	0.1805	0.0132
+0.5567	0.5395	1.000	and its I-O requirements. Then, the functions of the	0.3947	0.0131
+0.5665	0.1107	1.000	SBYP	0.0474	0.0152
+0.5683	0.3177	1.000	mand.	0.0508	0.0160
+0.5712	0.5414	1.000	six routines may be defined as follows in terms of	0.3722	0.0116
+0.5828	0.1184	1.000	(2.0)	0.0451	0.0160
+0.5858	0.5414	1.000	operations on or for the jobs in the tables.	0.3139	0.0116
+0.6119	0.1109	1.000	SEOF	0.0470	0.0145
+0.6133	0.1880	1.000	в, $МСР	0.0714	0.0161
+0.6133	0.3195	1.000	To be used by the system	0.1880	0.0161
+0.6148	0.5395	1.000	Job Control 1: Attempts to keep the I-O assignment	0.3872	0.0146
+0.6279	0.1203	1.000	(1.0)	0.0432	0.0145
+0.6288	0.1915	1.000	, SKOM	0.0699	0.0157
+0.6294	0.3177	1.000	command program to	0.1635	0.0146
+0.6308	0.5414	1.000	tables full by taking input (jobs) from the scan source.	0.4023	0.0116
+0.6394	0.3083	1.000	inform the input program	0.2011	0.0191
+0.6410	0.1109	1.000	SREW	0.0489	0.0160
+0.6539	0.1673	1.000	(Normal return) of an input command.	0.3102	0.0176
+0.6584	0.1222	1.000	(2.32)	0.0470	0.0131
+0.6599	0.5376	1.000	Job Control 4: Attempts to empty the I-O assignment	0.4004	0.0147
+0.6738	0.1297	1.000	Being major packages, any of the operations previ-	0.3798	0.0135
+0.6744	0.5395	1.000	tables by taking jobs from the read source and running	0.4041	0.0147
+0.6875	0.1128	1.000	ously mentioned may be primed instead of entered	0.3703	0.0146
+0.6884	0.5374	1.000	them.	0.0475	0.0141
+0.7035	0.1128	1.000	directly.	0.0658	0.0116
+0.7194	0.5395	1.000	Decode: On request from JC1, decodes IOD cards into	0.4060	0.0191
+0.7324	0.1128	1.000	JOB CONTROL	0.1128	0.0103
+0.7339	0.5376	1.000	an entry in the tables.	0.1673	0.0118
+0.7630	0.5395	1.000	Unassign: On request from JC4 at EOJ, makes the	0.3797	0.0131
+0.7630	0.1128	1.000	Job control consists of four major packages and their	0.3947	0.0118
+0.7755	0.5394	1.000	I-O devices used by the PP being terminated available	0.4023	0.0144
+0.7776	0.1128	1.000	subroutines (decode, unassign, assign, move, etc.)	0.3835	0.0131
+0.7921	0.5376	1.000	to assignment.	0.1128	0.0146
+0.7921	0.1128	1.000	servicing eight pseudo-ops:	0.2049	0.0117
+0.9375	0.7387	1.000	System Operation Programs	0.1560	0.0116
+0.9375	0.9173	1.000	47	0.0150	0.0102

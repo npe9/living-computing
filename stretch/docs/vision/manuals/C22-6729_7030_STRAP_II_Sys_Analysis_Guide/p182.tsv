@@ -1,0 +1,44 @@
+0.0682	0.0959	1.000	NOTE: the extra card image that the coprocessor	0.3703	0.0118
+0.0697	0.5094	1.000	maining information of the "error" card on a new card	0.4004	0.0118
+0.0842	0.0959	1.000	may have requested must be included with the	0.3383	0.0118
+0.0858	0.5075	1.000	image in a group to be inserted.	0.2368	0.0116
+0.0988	0.0959	1.000	material to be inserted into the assembly. The	0.3515	0.0118
+0.1003	0.5583	1.000	The END instruction must be the only instruction	0.3609	0.0131
+0.1133	0.0940	1.000	extra card image, if present, will be the card image	0.3910	0.0131
+0.1148	0.5075	1.000	in its card block whenever STRAP II is running with	0.3835	0.0131
+0.1279	0.0940	1.000	examined for the illegal continuation card situation.	0.3816	0.0117
+0.1294	0.5075	1.000	the indicator, Hheom4, on.	0.2011	0.0131
+0.1424	0.0959	1.000	Any illegal continuation card is made into a comment	0.3929	0.0116
+0.1439	0.5583	1.000	The card image given to the coprocessor under	0.3459	0.0116
+0.1570	0.0940	1.000	and an error message is given.	0.2312	0.0116
+0.1584	0.5075	1.000	the "WANT ANOTHER CARD" option is in the original	0.3985	0.0131
+0.1730	0.5075	1.000	input code, not in the A8 processing code of Pass 1.	0.3816	0.0131
+0.1856	0.5563	1.000	Pass 1 will not have scanned a card image for	0.3368	0.0154
+0.1875	0.0789	1.000	PERTINENT OPERATING FACTORS	0.2707	0.0102
+0.2020	0.5075	1.000	the END instruction before going to the coprocessor	0.3835	0.0131
+0.2143	0.0788	1.000	The following operating factors influence the previous	0.3968	0.0142
+0.2166	0.5075	1.000	if the card image is one for "WANT ANOTHER CARD'	0.4023	0.0116
+0.2297	0.0789	1.000	specifications:	0.1071	0.0116
+0.2311	0.5075	1.000	option or one on which an illegal character is present.	0.3985	0.0131
+0.2456	0.0921	1.000	1. Alter Pass 1 has entered the coprocessor through	0.3966	0.0131
+0.2470	0.5508	1.000	Coprocessor must scan for an END instruction	0.3496	0.0118
+0.2602	0.0771	1.000	any of the possible seven entry points, the coprocessor	0.4098	0.0116
+0.2602	0.5075	1.000	each card image received under the "WANT ANOTHER	0.4041	0.0132
+0.2742	0.5074	1.000	CARD" option or under the illegal card input condition.	0.4026	0.0166
+0.2747	0.0771	1.000	must save the status of the index registers. On re-	0.3835	0.0117
+0.2892	0.0771	1.000	entry into Pass 1, the coprocessor must restore the	0.3835	0.0132
+0.2906	0.5075	1.000	If the coprocessor detects the END pseudo-op, the	0.3722	0.0146
+0.3036	0.0771	1.000	previous status of the index registers, excepting index	0.4041	0.0133
+0.3067	0.5056	1.000	coprocessor must not ask for any more card images	0.3947	0.0116
+0.3197	0.0771	1.000	register 1, Which now contains new communication	0.3759	0.0118
+0.3197	0.5075	1.000	and the subsequent return to Pass 1 must be by the	0.3722	0.0132
+0.3327	0.5056	1.000	"INSERT CARDS" return. The insert group must	0.3684	0.0147
+0.3473	0.1259	1.000	Once the coprocessor has accepted a condition	0.3421	0.0118
+0.3488	0.5056	1.000	at least include the END instruction.	0.2707	0.0146
+0.3618	0.0771	1.000	on an "error" card image, all the remaining information	0.4211	0.0132
+0.3633	0.5207	1.000	7. Control is given to the coprocessor for con-	0.3590	0.0131
+0.3764	0.0771	1.000	on this "error" card image is lost as far as Pass l is	0.3947	0.0132
+0.3766	0.5073	1.000	ditions present in the original input, not those in an	0.3801	0.0173
+0.3909	0.0771	1.000	concerned except if the coprocessor includes the re-	0.3872	0.0118
+0.3924	0.5056	1.000	insert group.	0.0977	0.0116
+0.9215	0.0733	1.000	182	0.0226	0.0087

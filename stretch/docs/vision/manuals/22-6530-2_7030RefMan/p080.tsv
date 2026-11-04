@@ -1,0 +1,102 @@
+0.0624	0.5075	1.000	the connective 0010 should be used. In either case,	0.3929	0.0118
+0.0669	0.0959	1.000	INDICATORS	0.0733	0.0087
+0.0770	0.5056	1.000	satisfaction of the test is indicated by the result-zero	0.3929	0.0131
+0.0827	0.1071	1.000	Partial Field (PF); To-Memory Operation (MOP);	0.3741	0.0147
+0.0915	0.5075	1.000	indicator. If the field to be tested is in storage, the	0.3910	0.0146
+0.0973	0.0940	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). These in-	0.3891	0.0161
+0.1059	0.5074	1.000	mask must be in the accumulator and connectives	0.3931	0.0152
+0.1118	0.0959	1.000	dicators are set as described in "Counts and Indica-	0.3872	0.0132
+0.1235	0.5075	1.000	0001 and 0100, respectively, must be used	0.2970	0.0146
+0.1294	0.0959	1.000	tors."	0.0357	0.0102
+0.1381	0.5226	1.000	In to-accumulator integer arithmetic operations,	0.3778	0.0146
+0.1539	0.5094	1.000	the result indicators are set according to the entire	0.3910	0.0133
+0.1685	0.5075	1.000	contents of the accumulator when the operation is	0.3929	0.0147
+0.1730	0.0959	1.000	Connect to Memory (CM)	0.1748	0.0131
+0.1811	0.5073	1.000	complete. This is not the case in the connective	0.3933	0.0200
+0.1933	0.0977	1.000	The accumulator field specified by the offset is com-	0.3853	0.0146
+0.2004	0.5075	1.000	operations. In CONNECT and CONNECT FOR TEST, these	0.3930	0.0148
+0.2093	0.0959	1.000	bined with the addressed storage operand in accord-	0.3872	0.0146
+0.2151	0.5075	1.000	indicators are not affected by accumulator bits which	0.3929	0.0146
+0.2252	0.0959	1.000	ance with the logical connective specified. The result	0.3872	0.0133
+0.2311	0.5094	1.000	do not participate in the operation. For example, it	0.3929	0.0147
+0.2412	0.0940	1.000	replaces the storage operand. The accumulator con-	0.3891	0.0131
+0.2470	0.5094	1.000	a zero result field is obtained when the storage oper-	0.3929	0.0133
+0.2558	0.0959	1.000	tents are unchanged by the operation.	0.2726	0.0146
+0.2615	0.5094	1.000	and is combined with the accumulator operand, the	0.3910	0.0146
+0.2776	0.5075	1.000	result-zero indicator is turned on even if there are	0.3929	0.0118
+0.2849	0.0940	1.000	INDICATORS	0.0771	0.0102
+0.2921	0.5094	1.000	non-zero bits in the accumulator to the right or left	0.3929	0.0131
+0.3009	0.1090	1.000	To-Memory Operation (MOP); Arithmetic Result	0.3741	0.0161
+0.3081	0.5094	1.000	of the accumulator field that was combined with the	0.3929	0.0116
+0.3169	0.0921	1.000	(RLZ, RZ, RGZ, RN). These indicators are set as	0.3910	0.0160
+0.3237	0.5072	1.000	storage operand.	0.1247	0.0170
+0.3314	0.0959	1.000	described in "Counts and Indicators."	0.2726	0.0132
+0.3371	0.5224	1.000	It is possible for all 128 bits of the accumulator to	0.3800	0.0179
+0.3530	0.5093	1.000	participate in a single connective operation if the	0.3931	0.0165
+0.3682	0.5093	1.000	specified offset is zero and the byte size and field	0.3931	0.0171
+0.3750	0.0959	1.000	Connect for Test (CT)	0.1447	0.0102
+0.3848	0.5093	1.000	length are such that the storage operand equals or	0.3930	0.0151
+0.3953	0.0959	1.000	The addressed storage operand is combined with the	0.3891	0.0147
+0.3997	0.5094	1.000	exceeds 128 bits when converted to byte size eight.	0.3910	0.0145
+0.4112	0.0940	1.000	accumulator field specified by the offset in accord-	0.3910	0.0133
+0.4113	0.5110	1.000	In this event, a zero all-ones count can indicate either	0.3914	0.0204
+0.4258	0.0940	1.000	ance with the logical connective specified, as in coN-	0.3910	0.0146
+0.4302	0.5113	1.000	no ones or 128 ones in the result of a CONNECT Or	0.3910	0.0131
+0.4418	0.0959	1.000	NECT. The result is discarded after the left-zeros and	0.3872	0.0131
+0.4455	0.5093	1.000	CONNECT FOR TEST, because the counter operates mod-	0.3950	0.0164
+0.4578	0.0940	1.000	all-ones counts are developed and the indicators set.	0.3891	0.0131
+0.4606	0.5113	1.000	ulo 128. The two cases may be distinguished by	0.3891	0.0147
+0.4724	0.0959	1.000	Both the accumulator contents and the storage oper-	0.3891	0.0131
+0.4767	0.5094	1.000	interrogation of the result-zero indicator. Similarly, a	0.3929	0.0146
+0.4884	0.0940	1.000	and remain unchanged.	0.1692	0.0131
+0.4927	0.5094	1.000	zero left-zeros count can indicate either no left zeros	0.3929	0.0116
+0.5066	0.5093	1.000	or 128 left zeros in the result. These two cases can	0.3911	0.0139
+0.5144	0.0939	1.000	INDICATORS	0.0771	0.0105
+0.5233	0.5094	1.000	also be distinguished by interrogation of the result-	0.3929	0.0146
+0.5305	0.1090	1.000	Partial Field (PF); To-Memory Operation (MOP);	0.3759	0.0160
+0.5392	0.5094	1.000	zero indicator.	0.1090	0.0117
+0.5464	0.0940	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). These indi-	0.3891	0.0161
+0.5536	0.5282	1.000	The data-flag and lost-carry indicators are not af-	0.3759	0.0147
+0.5595	0.0958	1.000	cators are set as described in "Counts and Indicators."	0.3893	0.0149
+0.5697	0.5113	1.000	fected by the connective operations.	0.2594	0.0146
+0.5915	0.0959	1.000	PROGRAMMING NOTES	0.1504	0.0103
+0.5988	0.5094	1.000	PROGRAMMING EXAMPLE	0.1729	0.0103
+0.6076	0.0959	1.000	The coNNECT operation has many uses other than	0.3891	0.0146
+0.6163	0.5113	1.000	Given a 128-bit quantity in the accumulator, shift	0.3929	0.0146
+0.6235	0.0959	1.000	that of evaluating logical conditions. The connectives	0.3891	0.0131
+0.6316	0.5112	1.000	the entire quantity left ten bits. Discard the high-	0.3912	0.0174
+0.6381	0.0959	1.000	0000 and I111 can be used to set the specified accu-	0.3910	0.0131
+0.6482	0.5094	1.000	order bits that are shifted out of the accumulator	0.3947	0.0146
+0.6523	0.0958	1.000	mulator or storage bits to zero or one. A section of the	0.3893	0.0157
+0.6642	0.5207	1.000	nd shift zeros into the low-order positions. Figu	0.3684	0.0131
+0.6672	0.0940	1.000	accumulator can be replaced by connective 0011,	0.3929	0.0174
+0.6758	0.5207	1.000	I shows the use of the connective operations f	0.3684	0.0146
+0.6830	0.0959	1.000	while connective 0101 has no effect except to test the	0.3910	0.0146
+0.6911	0.5092	1.000	purposes other than the evaluation of logical con-	0.3933	0.0198
+0.6990	0.0958	1.000	accumulator field and develop the counts. Connective	0.3912	0.0158
+0.7093	0.5075	1.000	ditions.	0.0620	0.0145
+0.7166	0.0959	1.000	1010 inverts the accumulator operand.	0.2763	0.0131
+0.7311	0.1109	1.000	Testing of storage fields for all zeros is readily per-	0.3759	0.0174
+0.7426	0.6466	1.000	STATEMENT	0.0828	0.0162
+0.7436	0.8400	1.000	TNOTES	0.0531	0.0143
+0.7470	0.0959	1.000	formed by CONNECT FOR TEST 0011, while testing for	0.3910	0.0161
+0.7471	0.5226	1.000	NAME	0.0414	0.0131
+0.7615	0.0959	1.000	all ones requires connective 1100. In each case, the	0.3910	0.0161
+0.7660	0.6109	0.300	C0 BE. 2, 3 0.0 1°	0.1805	0.0392
+0.7674	0.8590	1.000	1	0.0150	0.0131
+0.7776	0.0940	1.000	result-zero indicator will be set to one if the test is	0.3929	0.0131
+0.7892	0.8590	1.000	2	0.0150	0.0145
+0.7962	0.0939	1.000	satisfied.	0.0622	0.0109
+0.8109	0.1090	1.000	To test certain combinations of bits in the accumu-	0.3778	0.0161
+0.8253	0.0957	1.000	lator for zero or one, a mask must be furnished in an	0.3894	0.0183
+0.8255	0.5320	1.000	tes: 1. Shifts the left half of the accumulator left ten bits.	0.3383	0.0118
+0.8358	0.5940	1.000	eld length of 54 is used to avoid a partial field con	0.2820	0.0116
+0.8400	0.0940	1.000	immediate address or in storage. If the mask uses 1	0.3910	0.0161
+0.8459	0.5677	0.300	• Hop fce the r20 ro h-igh-order bte that are discanded	0.3195	0.0277
+0.8576	0.0940	1.000	for bits to be tested and 0 for bits to be ignored, the	0.3929	0.0146
+0.8677	0.5902	1.000	eros. The address of zero is a dumm	0.2143	0.0132
+0.8714	0.0957	1.000	operation for testing the masked bits for all zeros is	0.3894	0.0168
+0.8866	0.0940	1.000	CONNECT FOR TEST 0001. If a test for ones is desired,	0.3929	0.0161
+0.8866	0.5056	1.000	Figure 21. Connective Operations	0.2180	0.0174
+0.9200	0.7199	1.000	Variable Field Length	0.1410	0.0176
+0.9201	0.8835	1.000	77	0.0226	0.0145

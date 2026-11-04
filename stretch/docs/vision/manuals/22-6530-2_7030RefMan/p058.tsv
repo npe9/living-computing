@@ -1,0 +1,109 @@
+0.0581	0.4981	1.000	Variable Field-Length Data Handling	0.3910	0.0189
+0.1045	0.4944	1.000	A third modifier specifies the choice of binary or	0.3966	0.0161
+0.1076	0.0921	1.000	The variable field-length data handling operations	0.3816	0.0146
+0.1191	0.4962	1.000	decimal arithmetic. Decimal multiplication and di-	0.3947	0.0176
+0.1235	0.0902	1.000	may be divided into three general classes: integer	0.3835	0.0146
+0.1334	0.4979	1.000	vision are not provided directly in the machine, but	0.3951	0.0203
+0.1376	0.0882	1.000	arithmetic operations, radix conversion operations,	0.3857	0.0193
+0.1526	0.0902	1.000	and connective operations. All of these three types	0.3835	0.0160
+0.1526	0.4962	1.000	their operation codes are provided. These may cause	0.3947	0.0131
+0.1657	0.4944	1.000	automatic entry to a subroutine, where the desired	0.3947	0.0161
+0.1680	0.0881	1.000	operate on a variable-length data field, which may	0.3858	0.0208
+0.1817	0.4962	1.000	operation may be rapidly and easily performed using	0.3947	0.0147
+0.1826	0.0881	1.000	start at any bit position in storage. The instruction	0.3858	0.0209
+0.1957	0.4980	1.000	the conversion operations and binary multiplication	0.3913	0.0178
+0.1976	0.0883	1.000	contains a 24-bit word and bit address that defines	0.3853	0.0176
+0.2106	0.4981	1.000	or division.	0.0904	0.0178
+0.2136	0.0883	1.000	the leftmost bit of the storage field. The instruction	0.3853	0.0176
+0.2277	0.5130	1.000	Besides the modifications that are specified by the	0.3781	0.0158
+0.2295	0.0882	1.000	format also includes a field that specifies the length	0.3858	0.0203
+0.2412	0.4981	1.000	modifiers, other variations of the basic operations are	0.3929	0.0161
+0.2456	0.0883	1.000	in bits of the storage field. Another field in the in-	0.3872	0.0160
+0.2573	0.4981	1.000	provided. Variations on the elementary addition	0.3947	0.0176
+0.2595	0.0900	1.000	struction specifies the byte size of the addressed oper-	0.3857	0.0188
+0.2750	0.0882	1.000	and. The term "byte" describes a group of bits that	0.3876	0.0199
+0.2755	0.4999	1.000	operation are:	0.1074	0.0158
+0.2917	0.0882	1.000	represent a digit, alphabetic character, or other sin-	0.3857	0.0177
+0.2936	0.5583	1.000	+MG	0.0526	0.0174
+0.2951	0.6278	1.000	Add to Magnitude	0.1447	0.0160
+0.3046	0.0898	1.000	gle symbol. Data fields in storage may be composed	0.3842	0.0219
+0.3092	0.6296	1.000	Add to Memory	0.1205	0.0169
+0.3096	0.5564	1.000	M+	0.0414	0.0174
+0.3197	0.5564	1.000	M + MG Add Magnitude to Memory	0.2763	0.0219
+0.3241	0.0902	1.000	of bytes of any size from 1 to 8 bits.	0.2519	0.0147
+0.3366	0.1032	1.000	The second operand in most of these operations is	0.3727	0.0200
+0.3400	0.5583	1.000	M+1 Add One to Memory	0.2312	0.0176
+0.3532	0.0902	1.000	a field from the accumulator. Since this field may be	0.3853	0.0147
+0.3605	0.5188	1.000	The last three operations above add a quantity to	0.3741	0.0147
+0.3677	0.0882	1.000	located anywhere in the 128-bit accumulator, the in-	0.3894	0.0184
+0.3743	0.5017	1.000	storage rather than to the accumulator. The two	0.3913	0.0172
+0.3833	0.0900	1.000	struction format contains an offset field that defines	0.3875	0.0155
+0.3902	0.5018	1.000	magnitude operations provide for different treatment	0.3931	0.0169
+0.3997	0.0902	1.000	the low-order bit of the accumulator operand. The	0.3853	0.0131
+0.4055	0.5038	1.000	of the accumulator sign and inhibit sign reversal. In-	0.3910	0.0161
+0.4138	0.0882	1.000	low-order positions of the two operands are aligned	0.3876	0.0184
+0.4230	0.5019	1.000	stead of overdraws they provide a zero result.	0.3327	0.0131
+0.4280	0.0900	1.000	for processing. In some operations, the result re-	0.3877	0.0203
+0.4358	0.5187	1.000	The comparison operations provide a comparison	0.3743	0.0181
+0.4443	0.0900	1.000	places the accumulator operand; in others, the result	0.3877	0.0188
+0.4517	0.5037	1.000	between two operands resulting in a low-equal-high	0.3912	0.0171
+0.4602	0.0900	1.000	replaces the storage operand; in yet others only cer-	0.3876	0.0187
+0.4679	0.5038	1.000	test; no numeric result is produced, and both oper-	0.3910	0.0147
+0.4767	0.0902	1.000	tain indicators are affected, with both operands re-	0.3872	0.0132
+0.4824	0.5038	1.000	ands remain unchanged. Six operations are provided,	0.3910	0.0147
+0.4942	0.0902	1.000	maining unchanged.	0.1429	0.0131
+0.4981	0.5037	1.000	the last four permitting successive comparisons to be	0.3912	0.0170
+0.5160	0.5019	1.000	followed by a single test.	0.1823	0.0146
+0.5362	0.6203	1.000	Compare	0.0734	0.0133
+0.5378	0.5808	1.000	K	0.0169	0.0116
+0.5509	0.6259	1.000	Compare Field	0.1109	0.0146
+0.5538	0.5827	1.000	KF	0.0226	0.0102
+0.5552	0.0883	1.000	Integer Arithmetic Operations	0.3139	0.0204
+0.5654	0.6278	1.000	Compare if Equal	0.1335	0.0146
+0.5683	0.5827	1.000	KE	0.0226	0.0116
+0.5814	0.6259	1.000	Compare Field if Equal	0.1767	0.0147
+0.5843	0.5865	1.000	KFE	0.0432	0.0087
+0.5945	0.0921	1.000	This class includes the elementary arithmetic opera-	0.3872	0.0131
+0.5973	0.6278	1.000	Compare for Range	0.1466	0.0133
+0.6003	0.5865	1.000	KR	0.0188	0.0087
+0.6090	0.0921	1.000	tions. The variable-length data may be signed or un-	0.3872	0.0146
+0.6118	0.5865	1.000	KFR Compare Field for Range	0.2350	0.0132
+0.6241	0.0901	1.000	signed, decimal or binary. When the data are signed,	0.3894	0.0174
+0.6299	0.5224	1.000	The operations COMPARE, COMPARE IF EQUAL, and	0.3744	0.0175
+0.6409	0.0902	1.000	flag bits may be associated with them. The name	0.3891	0.0161
+0.6467	0.5038	1.000	COMPARE FOR RANGE provide a signed comparison be-	0.3947	0.0161
+0.6570	0.0883	1.000	"integer arithmetic" is used because the results of	0.3910	0.0131
+0.6604	0.5035	1.000	tween the storage operand and the entire accumula-	0.3952	0.0202
+0.6707	0.0883	1.000	multiplications and divisions are aligned as if the	0.3892	0.0147
+0.6758	0.5038	1.000	tor contents to the left of the offset. The operations	0.3947	0.0161
+0.6860	0.0883	1.000	operands were integers. The elementary arithmetic	0.3910	0.0146
+0.6899	0.5035	1.000	COMPARE FIELD, COMPARE FIELD IE EQUAL, and COM-	0.3953	0.0235
+0.7018	0.0881	1.000	operations are:	0.1094	0.0166
+0.7093	0.5038	1.000	PARE FIELD FOR RANGE ignore the accumulator sign	0.3929	0.0131
+0.7179	0.2312	1.000	t Add	0.0658	0.0161
+0.7252	0.5038	1.000	and provide a comparison between fields of equal	0.3947	0.0133
+0.7355	0.2632	1.000	Load	0.0395	0.0131
+0.7369	0.2312	1.000	L	0.0150	0.0116
+0.7397	0.5038	1.000	length in digits, either binary or decimal.	0.3102	0.0161
+0.7542	0.2312	1.000	ST Store	0.0734	0.0134
+0.7542	0.5226	1.000	One variation on the LOAD operation is LOAD WITH	0.3759	0.0161
+0.7688	0.5056	1.000	FLAG that loads the data flags into the accumulator	0.3947	0.0161
+0.7702	0.2650	1.000	Multiply	0.0678	0.0162
+0.7718	0.2350	1.000	*	0.0094	0.0087
+0.7808	0.5053	1.000	sign byte register in addition to performing all the	0.3953	0.0242
+0.7892	0.2312	1.000	/ Divide	0.0865	0.0160
+0.7994	0.5056	1.000	functions of LOAD.	0.1372	0.0176
+0.8081	0.1053	1.000	A set of modifiers is provided to alter the operand	0.3741	0.0174
+0.8154	0.5188	1.000	One variation on store combines rounding with	0.3797	0.0161
+0.8228	0.0881	1.000	from storage so that these five operations effectively	0.3914	0.0185
+0.8314	0.5056	1.000	the store operation:	0.1447	0.0160
+0.8400	0.0865	1.000	include a great many others. One modifier changes	0.3947	0.0147
+0.8488	0.6729	1.000	Store Rounded	0.1147	0.0146
+0.8517	0.6184	1.000	SRD	0.0263	0.0116
+0.8540	0.0882	1.000	ADD to an algebraic subtraction; therefore, no sepa-	0.3914	0.0187
+0.8632	0.5186	1.000	The operation LOAD TRANSIT AND SET loads the	0.3820	0.0215
+0.8661	0.0880	1.000	rate SUBTRACT operation is provided. Another modi-	0.3916	0.0212
+0.8821	0.5056	1.000	transit register and provides automatic entry to a sub-	0.3947	0.0161
+0.8852	0.0883	1.000	fier permits integer arithmetic on unsigned numbers.	0.3910	0.0146
+0.9185	0.7199	1.000	Variable Field Length	0.1353	0.0133
+0.9186	0.8835	1.000	55	0.0169	0.0116

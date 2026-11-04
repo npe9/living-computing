@@ -1,0 +1,129 @@
+0.0930	0.0940	1.000	SCSPRT and SASPUT, each four words in length.	0.3703	0.0161
+0.0959	0.5226	1.000	count to 1 and does not insert a title. If a title line is	0.3985	0.0160
+0.1090	0.0959	1.000	Both programs operate enabled, and use parameters	0.3947	0.0131
+0.1105	0.5207	1.000	to be inserted, a double space control character is	0.3835	0.0160
+0.1235	0.5207	1.000	placed in the output buffer for the line that initiated	0.3891	0.0174
+0.1235	0.0940	1.000	specifying the FWA of the output and the number of	0.3853	0.0131
+0.1366	0.0959	1.000	lines (or card images) of output. Both programs	0.3684	0.0131
+0.1407	0.5206	1.000	the insertion.	0.1054	0.0152
+0.1512	0.0959	1.000	save and restore index registers 7 to 15, and both	0.3759	0.0146
+0.1657	0.0940	1.000	exit with $RET, with ABEOJ primed if a PP param-	0.3929	0.0161
+0.1798	0.0958	1.000	eter specification exceeded PP boundaries.	0.3235	0.0136
+0.1919	0.5357	1.000	Symbol	0.0489	0.0145
+0.1976	0.1109	1.000	The method of both programs is as follows: Upon	0.3684	0.0161
+0.2035	0.6429	1.000	Meaning	0.0658	0.0160
+0.2049	0.5677	1.000	Punch	0.0489	0.0116
+0.2049	0.5207	1.000	Print	0.0338	0.0131
+0.2064	0.7970	1.000	Control	0.0489	0.0116
+0.2121	0.0959	1.000	entry, AEOJI, a special control indicator used at end	0.4004	0.0132
+0.2267	0.0939	1.000	of job (see output EOJ), is reset. The index registers	0.4043	0.0148
+0.2297	0.5226	1.000	СВТА АВТА	0.0883	0.0131
+0.2297	0.7876	1.000	Set when buffer is	0.1165	0.0146
+0.2297	0.6429	1.000	If set to 1, the logical	0.1372	0.0146
+0.2411	0.6466	1.000	transmit buffer is full.	0.1316	0.0134
+0.2427	0.7932	1.000	full, reset by buffer	0.1241	0.0161
+0.2427	0.0940	1.000	are saved and, if PP is the user, subroutine ACHK	0.3853	0.0131
+0.2542	0.7951	1.000	switch subroutine.	0.1090	0.0161
+0.2573	0.0940	1.000	is used to check the parameters with the PP bound-	0.3872	0.0131
+0.2718	0.0940	1.000	aries. If the FWA exceeds PP boundaries, SPR and	0.3929	0.0146
+0.2803	0.7913	1.000	Set by the buffer	0.1073	0.0164
+0.2820	0.5207	1.000	CBWA ABWA	0.0921	0.0132
+0.2820	0.6429	1.000	If set to 1, the logical	0.1353	0.0145
+0.2863	0.0959	1.000	ABEOJ are primed (the former to provide an error	0.3816	0.0131
+0.2936	0.7932	1.000	switch subroutine,	0.1109	0.0161
+0.2951	0.6447	1.000	write buffer is being	0.1222	0.0131
+0.3009	0.0940	1.000	message), and $RET executed immediately. If the	0.3778	0.0131
+0.3064	0.7950	1.000	reset by the EOP	0.0998	0.0166
+0.3079	0.6447	1.000	written.	0.0471	0.0106
+0.3169	0.0940	1.000	FWA is within PP boundaries but the calculated last	0.3910	0.0147
+0.3198	0.7932	1.000	fixup.	0.0432	0.0160
+0.3314	0.0940	1.000	word is not, SPR and ABEOJ are primed and $RET	0.3835	0.0132
+0.3458	0.5206	1.000	CATUB CATUB	0.0997	0.0148
+0.3459	0.7951	1.000	Set by both buffer	0.1091	0.0161
+0.3459	0.0940	1.000	executed immediately. If the parameters are i:	0.3590	0.0132
+0.3473	0.6372	1.000	If set to 1, the out-	0.1241	0.0146
+0.3605	0.0940	1.000	bounds, the program enters a loop, moving one unit	0.3910	0.0145
+0.3618	0.7932	1.000	switch subroutines,	0.1128	0.0132
+0.3618	0.6429	1.000	put tape is busy.	0.0996	0.0132
+0.3719	0.7951	1.000	reset by the EOP	0.0997	0.0163
+0.3750	0.0940	1.000	of output at a time to the print or punch transmit buf-	0.4004	0.0132
+0.3852	0.7951	1.000	fixup. (Also used	0.1090	0.0161
+0.3882	0.0920	1.000	fer until the output request has been completed or	0.3762	0.0161
+0.3982	0.7951	1.000	elsewhere in output.)	0.1278	0.0161
+0.4055	0.0921	1.000	the buffer has been filled. When the output is com-	0.3872	0.0132
+0.4200	0.0940	1.000	pleted, buffer control is saved, index registers are	0.3853	0.0131
+0.4215	0.5188	1.000	CCX.17 AACX.17 Flip-flop for control	0.2462	0.0176
+0.4244	0.7895	1.000	Initially 1. Inverted	0.1316	0.0160
+0.4345	0.0940	1.000	restored, and $RET is executed. Whenever the trans-	0.4041	0.0131
+0.4357	0.6428	1.000	word selection.	0.0923	0.0152
+0.4366	0.7930	1.000	by buffer switch	0.0982	0.0163
+0.4491	0.0921	1.000	mit buffer is filled, the program uses a subroutine	0.3816	0.0131
+0.4519	0.7932	1.000	subroutine.	0.0678	0.0134
+0.4636	0.0921	1.000	(CAOS3A for print and AWSCH for punch) to wait for	0.3947	0.0131
+0.4782	0.0921	1.000	the output tape to become available, to logically swap	0.3985	0.0146
+0.4869	0.5150	1.000	Figure 97. Print and Punch Control Symbols	0.2632	0.0161
+0.4927	0.0921	1.000	the transmit and write buffers by interchanging con-	0.3947	0.0145
+0.5073	0.0921	1.000	trol words, and to write the full buffer on the output	0.3910	0.0146
+0.5218	0.0921	1.000	tape. In addition, the respective subroutines set a	0.3778	0.0146
+0.5363	0.0902	1.000	control word (AOP) so that the resulting interrupt will	0.4060	0.0161
+0.5509	0.0902	1.000	be taken by the proper table of exits (for print, CEXN;	0.4079	0.0161
+0.5654	0.0902	1.000	for punch, AWEXIT).	0.1617	0.0131
+0.5799	0.1109	1.000	Figure 97 presents the control symbols used in the	0.3797	0.0131
+0.5959	0.5150	1.000	Table of	0.0564	0.0174
+0.5959	0.0921	1.000	two programs.	0.1109	0.0116
+0.5973	0.6372	1.000	EE Interrupt	0.0789	0.0161
+0.6002	0.7876	1.000	EOP Interrupt	0.0865	0.0148
+0.6090	0.5132	1.000	Exits	0.0376	0.0174
+0.6090	0.1109	1.000	The print and punch routines use parallel I-O tables	0.3872	0.0131
+0.6235	0.0921	1.000	of exits CEXN and AWEXIT, respectively. These	0.3759	0.0146
+0.6366	0.6372	1.000	If EOJ is in process	0.1128	0.0131
+0.6366	0.5075	1.000	CEXN	0.0451	0.0116
+0.6378	0.7894	1.000	The output tape	0.0942	0.0152
+0.6394	0.0921	1.000	tables cannot be entered at the channel signal return,	0.4004	0.0133
+0.6461	0.6368	1.000	(AEOJI set), EE is	0.1099	0.0203
+0.6478	0.7875	1.000	busy bit (CATUB)	0.1093	0.0184
+0.6497	0.5207	1.000	(Print)	0.0432	0.0131
+0.6512	0.0883	1.000	since a CS is taken by the first level table of exits.	0.3872	0.0161
+0.6672	0.0883	1.000	The EOP and EE fixup routines for these tables are	0.3910	0.0160
+0.6744	0.6391	1.000	Otherwise, the Trailer in use bit (CBWA)	0.2594	0.0147
+0.6802	0.0940	1.000	given in Figure 98, and the error return fixup is	0.3665	0.0146
+0.6844	0.6372	1.000	record is set to denote	0.1335	0.0164
+0.6871	0.7856	1.000	are reset. If the	0.1054	0.0167
+0.6962	0.0939	1.000	described with the error routines.	0.2596	0.0122
+0.6989	0.6369	1.000	physical end of tape,	0.1285	0.0155
+0.7005	0.7876	1.000	transmit buffer is	0.1053	0.0162
+0.7106	0.1090	1.000	$SPR provides an additional feature. If the pro-	0.3647	0.0161
+0.7121	0.7895	1.000	full (CBTA=1),	0.0883	0.0176
+0.7224	0.6353	1.000	(ATSWCH) is entered	0.1316	0.0189
+0.7267	0.7876	1.000	control is given to	0.1109	0.0162
+0.7267	0.0977	1.000	rammer wishes to use the TYPE card TITLE option	0.3910	0.0161
+0.7384	0.6372	1.000	with retum set to the	0.1259	0.0147
+0.7397	0.0996	1.000	he output print program does the title line insertion	0.3853	0.0118
+0.7397	0.7895	1.000	CAOS3A to initiate	0.1128	0.0147
+0.7512	0.6352	1.000	EOP fixup.	0.0641	0.0150
+0.7542	0.0921	1.000	The print program does not insert titles for compiler	0.4004	0.0161
+0.7558	0.7876	1.000	another write, and	0.1109	0.0131
+0.7660	0.7876	1.000	$RET is issued.	0.0883	0.0131
+0.7703	0.0921	1.000	output. The output program inserts titles in three	0.3722	0.0118
+0.7805	0.7876	1.000	Otherwise, $RET is	0.1147	0.0131
+0.7824	0.0918	1.000	different situations.	0.1510	0.0142
+0.7921	0.7857	1.000	given immediately.	0.1203	0.0146
+0.7994	0.1090	1.000	1. Insertion on line per page count basis.	0.3158	0.0117
+0.8139	0.1090	1.000	2. Insertion if carriage control character is a re-	0.3778	0.0116
+0.8152	0.5093	1.000	AWEXIT	0.0565	0.0134
+0.8281	0.5186	1.000	(Punch)	0.0511	0.0152
+0.8285	0.0921	1.000	store character.	0.1259	0.0116
+0.8299	0.6353	1.000	Same as for CEXN.	0.1147	0.0146
+0.8309	0.7874	1.000	Same logic as	0.0868	0.0156
+0.8430	0.1071	1.000	3. Insertion on line per page count basis when car-	0.3910	0.0116
+0.8430	0.7876	1.000	CEXN, using punch	0.1165	0.0161
+0.8559	0.7875	1.000	bits ABWA, ABTA,	0.1129	0.0164
+0.8590	0.0940	1.000	riage control character is a restore character.	0.3534	0.0102
+0.8690	0.7857	1.000	and the punch write	0.1166	0.0163
+0.8713	0.1052	1.000	If insert on count is specified (these parameters	0.3647	0.0131
+0.8791	0.7856	1.000	routine, ASWCH.	0.1073	0.0179
+0.8866	0.0902	1.000	are interpreted and placed in output locations by the	0.3910	0.0146
+0.8997	0.0902	1.000	JC4 functions) and a restore carriage control char-	0.3872	0.0161
+0.9157	0.0902	1.000	acter is encountered, output resets the current line	0.3872	0.0131
+0.9172	0.5113	1.000	Figure 98. EE, EOP Fixups for Print and Punch	0.2726	0.0160
+0.9477	0.0789	1.000	174	0.0226	0.0087

@@ -1,0 +1,36 @@
+0.0857	0.8703	1.000	ADDUNO	0.0715	0.0133
+0.1541	0.1053	1.000	PURPOSE	0.0771	0.0116
+0.1555	0.5338	1.000	left to the programmer, and it is the programmer's	0.3853	0.0118
+0.1700	0.5338	1.000	responsibility to avoid obliterating his own memory.	0.3891	0.0118
+0.1845	0.1071	1.000	The objective of ADDUNO is to add an item to a table.	0.3985	0.0118
+0.1991	0.5320	1.000	DETAILS	0.0714	0.0116
+0.2132	0.1070	1.000	LINKAGE	0.0717	0.0126
+0.2282	0.5357	1.000	The routine checks if the last entry in the table is	0.3665	0.0131
+0.2427	0.1598	1.000	15, $+2; B, ADDUNO	0.1617	0.0131
+0.2427	0.1222	1.000	LVI,	0.0376	0.0145
+0.2442	0.5338	1.000	marked for deletion. If it is, it is replaced by the	0.3741	0.0116
+0.2587	0.1222	1.000	, tbl	0.0357	0.0116
+0.2587	0.5338	1.000	given item. If not, the given item is placed immedi-	0.3929	0.0131
+0.2718	0.5338	1.000	ately after the last entry of the table. This routine	0.3797	0.0131
+0.2733	0.1222	1.000	, arg(l)	0.0564	0.0146
+0.2878	0.1222	1.000	, al(1)	0.0451	0.0146
+0.2878	0.5338	1.000	enters the contents of location arg(1) and funct(I) into	0.3910	0.0131
+0.3009	0.1203	1.000	,funct(1)	0.0677	0.0160
+0.3023	0.5338	1.000	the table, adjusts the address of the last vle entry in	0.3910	0.0131
+0.3169	0.1203	1.000	,fl(1)	0.0451	0.0131
+0.3182	0.5338	1.000	the universal control block when necessary, and makes	0.4098	0.0118
+0.3299	0.1222	1.000	Normal Return	0.1109	0.0131
+0.3314	0.5338	1.000	the following adjustments to the table control block to	0.3966	0.0132
+0.3459	0.5338	1.000	correspond to the new status of the table:	0.3045	0.0132
+0.3605	0.1053	1.000	RESTRICTIONS	0.1184	0.0131
+0.3618	0.5508	1.000	1. The count of entries (Azn) is advanced by one.	0.3703	0.0118
+0.3764	0.5508	1.000	2. The table is marked unordered.	0.2632	0.0103
+0.3909	0.1053	1.000	When the given item is added to the table, this routine	0.4004	0.0132
+0.3909	0.5508	1.000	3. The location of the last dictionary entry (Azew)	0.3741	0.0118
+0.4055	0.1071	1.000	does not check for available space. Therefore, the	0.3778	0.0132
+0.4055	0.5338	1.000	is changed when the given item is added at the end of	0.3910	0.0118
+0.4172	0.1071	1.000	beginning of the next table may unwittingly be	0.3402	0.0160
+0.4199	0.5338	1.000	the table.	0.0715	0.0120
+0.4287	0.1052	1.000	destroyed. The overall bookkeeping of all tables is	0.3817	0.0184
+0.9400	0.8289	1.000	ADDUNO	0.0566	0.0095
+0.9404	0.9079	1.000	49	0.0150	0.0087

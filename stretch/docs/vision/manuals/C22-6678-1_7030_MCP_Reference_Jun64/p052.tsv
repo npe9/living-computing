@@ -1,0 +1,96 @@
+0.0682	0.5169	1.000	Restart Messages	0.1391	0.0161
+0.0697	0.1297	1.000	printed, and the Restart program is automat-	0.3421	0.0132
+0.0842	0.1278	1.000	ically given control.	0.1541	0.0118
+0.0945	0.5169	1.000	$READ FROM DISK OK.	0.1823	0.0161
+0.1090	0.5602	1.000	This message is given after Restart has been	0.3421	0.0160
+0.1090	0.0846	1.000	$PP XXXX, IC 'location' CNSL CS TO CONTINUE.	0.3853	0.0146
+0.1250	0.5602	1.000	positioned in core storage and has been given	0.3421	0.0145
+0.1308	0.1278	1.000	XXXX is either MK, IK, IJ, EK, or CPUS	0.3158	0.0160
+0.1408	0.5582	1.000	control.	0.0640	0.0134
+0.1445	0.1277	1.000	interrupt. The instruction counter contents	0.3311	0.0163
+0.1526	0.5169	1.000	$IPL OCCURRED DURING JOB 'ppname' 'system'	0.3778	0.0147
+0.1612	0.1297	1.000	are given and the operator may continue by	0.3233	0.0133
+0.1659	0.5147	1.000	MODE WITH IC = 'location'.	0.2168	0.0190
+0.1758	0.1297	1.000	pressing the Signal key on the console. If the	0.3421	0.0133
+0.1830	0.5620	1.000	This message gives the status of the system	0.3327	0.0133
+0.1903	0.1297	1.000	Signal key is pressed, MCP will issue a	0.3064	0.0133
+0.1976	0.5602	1.000	when Restart was initiated.	0.2086	0.0146
+0.2048	0.1297	1.000	$ABEOJ and the system will continue, A	0.3120	0.0132
+0.2106	0.5169	1.000	$BEGIN WRITE OF $COMM OUTPUT.	0.2895	0.0161
+0.2194	0.1278	1.000	similar message will be written on the system	0.3496	0.0146
+0.2267	0.5620	1.000	This message is given before the commentator	0.3515	0.0146
+0.2339	0.1297	1.000	output tape. In the case of the MK interrupt,	0.3365	0.0132
+0.2427	0.5583	1.000	buffer is written on the typewriter.	0.2669	0.0131
+0.2485	0.1316	1.000	after the channel signal is given, MCP	0.2876	0.0131
+0.2542	0.5169	1.000	$END WRITE OF $COMM OUTPUT.	0.2726	0.0161
+0.2630	0.1297	1.000	removes the MK from core by reloading the	0.3289	0.0131
+0.2703	0.5620	1.000	This message is given after the write of the	0.3308	0.0146
+0.2791	0.1316	1.000	affected location before continuing.	0.2613	0.0116
+0.2863	0.5583	1.000	commentator buffer is completed.	0.2594	0.0131
+0.2979	0.5169	1.000	$BEGIN WRITE OF OUTPUT BUFFERS.	0.3064	0.0161
+0.3067	0.0883	1.000	$MCP XXXX. IC 'location' IPL REQD.	0.2895	0.0116
+0.3139	0.5602	1.000	This message is given before the print and	0.3233	0.0145
+0.3270	0.1316	1.000	An error interrupt has occurred in MCP.	0.3083	0.0118
+0.3285	0.5602	1.000	punch buffers are written on the output tape.	0.3365	0.0145
+0.3415	0.1278	1.000	XXXX represents either MK, IK, IJ, EK,	0.3139	0.0146
+0.3430	0.5150	1.000	$NO OUTPUT	0.1090	0.0146
+0.3561	0.1316	1.000	CPUS, AD, OP, DS, or USA interrupt. It is	0.3346	0.0146
+0.3590	0.5620	1.000	This message means that there is no output	0.3271	0.0131
+0.3721	0.1297	1.000	impossible for MCP to continue and the system	0.3534	0.0116
+0.3735	0.5602	1.000	available in the output buffers.	0.2331	0.0131
+0.3852	0.1297	1.000	must be reinitialized.	0.1635	0.0131
+0.3866	0.5169	1.000	$XXX ON TP WRITE, OUTPUT SKIPPED	0.3139	0.0161
+0.4026	0.5602	1.000	XXX = EKJ or UK	0.1372	0.0116
+0.4157	0.0865	1.000	$COMD ERROR. IPL REQD.	0.2274	0.0131
+0.4172	0.5169	1.000	$MNT AND RDY OUTPUT TP ON CHXX, UNO	0.3459	0.0147
+0.4317	0.5602	1.000	At the time when Restart was initiated, an out-	0.3571	0.0147
+0.4345	0.1297	1.000	The source of the command cannot be deter-	0.3346	0.0118
+0.4462	0.5602	1.000	put tape was not ready. The operator must	0.3289	0.0145
+0.4491	0.1297	1.000	mined or the system was not taken out of the	0.3346	0.0131
+0.4606	0.5602	1.000	ready a tape on unit zero of the requested	0.3139	0.0147
+0.4636	0.1278	1.000	IPL Mode. The system must be reinitialized.	0.3459	0.0146
+0.4750	0.5601	1.000	channel.	0.0660	0.0150
+0.4884	0.5169	1.000	$PUT RING IN TP NOW UNLOADING AND RDY IT.	0.3872	0.0160
+0.4985	0.0865	1.000	$TYPE XX ERROR. IPL REQD.	0.2406	0.0131
+0.5042	0.5620	1.000	The output tape to be used for the buffer write	0.3459	0.0133
+0.5169	0.1295	1.000	XX is one of the following codes:	0.2504	0.0161
+0.5188	0.5602	1.000	was file protected. After this message is	0.3177	0.0161
+0.5333	0.5602	1.000	given, the indicated tape will be unloaded.	0.3177	0.0146
+0.5348	0.1071	1.000	75 Repeated failure of an MCP setup I/O operation	0.3835	0.0117
+0.5479	0.5169	1.000	$END BUFFER WRITE	0.1748	0.0132
+0.5494	0.1090	1.000	76 Repeated rejection by the exchange of some	0.3684	0.0117
+0.5624	0.5620	1.000	This message signals that the output buffers	0.3327	0.0146
+0.5639	0.1353	1.000	I/O command.	0.1109	0.0103
+0.5770	0.5583	1.000	have been successfully written on the tape.	0.3252	0.0146
+0.5785	0.1090	1.000	77 An interrupt was lost in the interrupt queue.	0.3571	0.0131
+0.5915	0.5169	1.000	$OPTR PUSH CNSL CS FOR DUMP.	0.2726	0.0146
+0.5930	0.1090	1.000	78 The available space in the interrupt queue has	0.3722	0.0116
+0.6061	0.5620	1.000	The dump option was selected and the dump	0.3271	0.0146
+0.6076	0.1353	1.000	been exhausted.	0.1184	0.0116
+0.6206	0.5602	1.000	will be executed if the limits are set up cor-	0.3365	0.0131
+0.6221	0.1090	1.000	79 The available space in the prime queue has	0.3496	0.0131
+0.6352	0.5602	1.000	rectly in the numeric switches and the console	0.3515	0.0146
+0.6365	0.1351	1.000	been exhausted.	0.1189	0.0119
+0.6497	0.1053	1.000	80 Attempted transfer from MCP major program	0.3759	0.0161
+0.6497	0.5602	1.000	Signal key is pressed.	0.1692	0.0145
+0.6612	0.5169	1.000	$NO CHECK SUM	0.1391	0.0161
+0.6657	0.1335	1.000	to major program while auto stacked.	0.2838	0.0131
+0.6758	0.5602	1.000	This message is given in response to the option	0.3609	0.0191
+0.6788	0.1071	1.000	81 MCP received an unexpected EPGK interrupt.	0.3703	0.0161
+0.6890	0.5602	1.000	selected by key 60 to disregard calculating the	0.3534	0.0189
+0.6933	0.1071	1.000	82 There is a special assignment error. This	0.3571	0.0146
+0.7064	0.5583	1.000	PROSA check sum.	0.1485	0.0161
+0.7106	0.1335	1.000	error is usually caused by trying to assign a	0.3383	0.0118
+0.7194	0.5150	1.000	SCHECK SUM INCORRECT	0.2086	0.0146
+0.7224	0.1335	1.000	system unit that has already been assigned.	0.3289	0.0146
+0.7324	0.5150	1.000	$IPL THE TAPE	0.1335	0.0176
+0.7369	0.1071	1.000	83 There is an error in the assign routine. MCP	0.3703	0.0131
+0.7485	0.5602	1.000	These two messages are given by Disk IPL and	0.3590	0.0176
+0.7529	0.1335	1.000	may be out of phase assigning jobs.	0.2688	0.0147
+0.7645	0.5602	1.000	by the Restart program in MCP. They signal	0.3477	0.0161
+0.7660	0.1071	1.000	84 There is an error detected in job control. The	0.3778	0.0161
+0.7776	0.5620	1.000	that the system is contaminated and must be	0.3346	0.0161
+0.7791	0.1335	1.000	disk has been written incorrectly.	0.2556	0.0161
+0.7886	0.5600	1.000	reinitialized from the master system tape.	0.3256	0.0211
+0.7951	0.1071	1.000	85 Repeated unit checks on the disk.	0.2763	0.0131
+0.9128	0.0865	1.000	52	0.0207	0.0116

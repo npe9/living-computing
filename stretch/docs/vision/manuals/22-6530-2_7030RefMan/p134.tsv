@@ -1,0 +1,114 @@
+0.0564	0.5036	1.000	speed searching for the load point. The key is in-	0.3969	0.0190
+0.0592	0.0901	1.000	age word boundaries. As a result, the information	0.3911	0.0150
+0.0741	0.5075	1.000	operative if the unit is ready.	0.2086	0.0147
+0.0755	0.0883	1.000	rate at the exchange in terms of 8-bit bytes per sec-	0.3910	0.0147
+0.0887	0.5244	1.000	Start. If the reel door is closed and the tape has	0.3759	0.0147
+0.0900	0.0902	1.000	ond is 75% of the tape rate in terms of 6-bit bytes	0.3911	0.0165
+0.1032	0.5075	1.000	been loaded into the vacuum columns, depression	0.3910	0.0147
+0.1048	0.0901	1.000	per second; the bit or word rates are the same.	0.3273	0.0159
+0.1191	0.5075	1.000	of this key places the unit in ready status. A channel-	0.3929	0.0146
+0.1206	0.1034	1.000	If, during writing, the number of bits in the words	0.3778	0.0146
+0.1337	0.5074	1.000	signal indication is then given. If the start key is	0.3930	0.0161
+0.1366	0.0902	1.000	to be written as one block is not divisible by six, the	0.3910	0.0131
+0.1497	0.5075	1.000	pressed when the unit is in ready status already, noth-	0.3929	0.0145
+0.1526	0.0902	1.000	remaining four or two information bits are combined	0.3891	0.0131
+0.1668	0.5037	1.000	ing happens.	0.0979	0.0153
+0.1685	0.0902	1.000	with two or four zeros, respectively, to form the last	0.3929	0.0133
+0.1817	0.5244	1.000	Change Density. Depression of this key changes the	0.3741	0.0132
+0.1830	0.0902	1.000	6-bit byte to be written. On subsequent reading these	0.3910	0.0133
+0.1925	0.5073	1.000	density mode in the unit. If the unit was set to read	0.3914	0.0189
+0.1991	0.0902	1.000	zeros are treated as information bits. Similarly, dur-	0.3910	0.0131
+0.2106	0.5075	1.000	and write in the low density mode, depression of this	0.3929	0.0147
+0.2136	0.0902	1.000	ing reading, if the number of information bits in the	0.3910	0.0146
+0.2267	0.5075	1.000	key changes the unit to the high density mode, and	0.3910	0.0146
+0.2282	0.0921	1.000	tape block is not divisible by 8, the remaining 6, 4, or	0.3891	0.0146
+0.2439	0.5075	1.000	vice versa.	0.0753	0.0108
+0.2442	0.0902	1.000	2 bits are combined with zeros to form the last 8-bit	0.3929	0.0116
+0.2573	0.5263	1.000	Unload. If the unit is not ready, depression of this	0.3722	0.0131
+0.2602	0.0902	1.000	byte to be sent to the exchange. Thus, it is possible	0.3910	0.0132
+0.2733	0.5075	1.000	key removes the tape from the columns and raises the	0.3910	0.0146
+0.2761	0.0902	1.000	to read an extra word of all zeros.	0.2368	0.0103
+0.2878	0.5075	1.000	upper head assembly, regardless of the distribution	0.3910	0.0146
+0.2892	0.1053	1.000	The seven tracks on tape are usually designated	0.3759	0.0145
+0.3036	0.5075	1.000	of tape on the two reels. In addition, the UNLOAD key	0.3910	0.0147
+0.3052	0.0921	1.000	CBA 8421, where C is the parity track and BA8421 are	0.3891	0.0146
+0.3182	0.5056	1.000	turns off the tape-indicator-on light if the light is on	0.3910	0.0161
+0.3212	0.0883	1.000	information tracks. When these bits are stored, bit B	0.3929	0.0131
+0.3327	0.5075	1.000	at the time the key is depressed. If the tape is to be	0.3910	0.0147
+0.3358	0.0902	1.000	is in the lowest-numbered, or leftmost, bit position.	0.3910	0.0145
+0.3488	0.5075	1.000	unloaded, the tape should first be brought to the	0.3910	0.0146
+0.3517	0.0902	1.000	Successive bytes are stored in the order in which they	0.3910	0.0146
+0.3648	0.5075	1.000	load point by pressing LOAD-REWIND before pressing	0.3910	0.0146
+0.3677	0.0902	1.000	are read, with the B bit adjoining the 1 bit of the pre-	0.3910	0.0132
+0.3794	0.5094	1.000	UNLOAD. The unload key is inoperative when the unit	0.3910	0.0146
+0.3836	0.0902	1.000	ceding byte: BA8421 BA8421 BA.	0.2726	0.0132
+0.3938	0.5074	1.000	is ready; in order to make use of this key, the unit	0.3930	0.0164
+0.3967	0.1053	1.000	Normally, tapes are written and read in the odd-	0.3759	0.0147
+0.4112	0.5094	1.000	must first be made not ready by depressing the reset	0.3910	0.0133
+0.4125	0.0920	1.000	parity mode of checking where the C-bit provides an	0.3893	0.0163
+0.4291	0.1882	0.300	y meteat aeang i mae mitl	0.2903	0.0459
+0.4418	0.5244	1.000	Reset. Depression of this key immediately stops any	0.3759	0.0161
+0.4561	0.5093	1.000	tape operation in progress and places the unit in not-	0.3912	0.0165
+0.4705	0.5074	1.000	ready status. If a high-speed rewind is in progress,	0.3930	0.0166
+0.4738	0.0902	1.000	ing and reading even-parity tapes is provided. Even	0.3910	0.0146
+0.4856	0.5091	1.000	pressing RESET once causes the unit to change to a low-	0.3914	0.0181
+0.4897	0.0921	1.000	parity cannot be used for binary data or with an ECC	0.3910	0.0147
+0.5029	0.5075	1.000	speed rewind; a second depression of ResET will then	0.3929	0.0147
+0.5073	0.0921	1.000	code.	0.0338	0.0102
+0.5188	0.5075	1.000	stop the unit. Note that, unlike the stop key on other	0.3929	0.0146
+0.5203	0.1071	1.000	The weight of the tapes indicating the load on the	0.3759	0.0146
+0.5330	0.0901	1.000	exchange is a function of the information rate and	0.3913	0.0169
+0.5333	0.5094	1.000	units, reseT will stop any reading or writing operation	0.3910	0.0146
+0.5472	0.5074	1.000	immediately without waiting for the end of the block.	0.3931	0.0176
+0.5509	0.0921	1.000	depends upon the recording density. The following	0.3910	0.0146
+0.5639	0.5094	1.000	When, as a result of the depression of the reset key,	0.3929	0.0145
+0.5669	0.0902	1.000	weights are possible:	0.1504	0.0160
+0.5799	0.5075	1.000	an operation other than rewinding is interrupted, a	0.3929	0.0146
+0.5945	0.0940	1.000	INFORMATION RATE	0.1316	0.0089
+0.5945	0.3985	1.000	WORD	0.0395	0.0087
+0.5945	0.2726	1.000	BYTE	0.0357	0.0087
+0.5959	0.5094	1.000	unit check is sent to the exchange.	0.2444	0.0132
+0.6090	0.5263	1.000	Address Selection Switch. This is a rotary switch	0.3741	0.0146
+0.6090	0.0959	1.000	IN 6-BIT BYTES/SEC	0.1278	0.0116
+0.6090	0.3910	1.000	WEIGHT	0.0545	0.0087
+0.6105	0.2632	1.000	WEIGHT	0.0545	0.0073
+0.6219	0.5073	1.000	for assigning a selection address to the unit. It is	0.3950	0.0188
+0.6250	0.4079	1.000	17	0.0188	0.0131
+0.6262	0.1333	1.000	62,550	0.0491	0.0136
+0.6265	0.2801	1.000	32	0.0207	0.0116
+0.6403	0.5093	1.000	mounted horizontally and is operated by a large	0.3912	0.0173
+0.6424	0.4154	1.000	6	0.0094	0.0116
+0.6437	0.1334	1.000	22,500	0.0490	0.0149
+0.6439	0.2895	1.000	9	0.0113	0.0102
+0.6539	0.5075	1.000	knurled disk. Only a small section of the disk pro-	0.3910	0.0161
+0.6665	0.5092	1.000	trudes from the panel. The switch has ten positions	0.3915	0.0239
+0.6830	0.0921	1.000	Keys, Lights and Switches	0.1880	0.0118
+0.6860	0.5094	1.000	marked with the numbers 0 through 9, out of which	0.3910	0.0146
+0.7020	0.5094	1.000	the positions 0 through 7 represent assignable ad-	0.3929	0.0160
+0.7035	0.0921	1.000	The keys and lights on the tape unit perform functions	0.3910	0.0145
+0.7163	0.5093	1.000	dresses. Positions 8 and 9 are invalid and a unit that	0.3930	0.0140
+0.7194	0.0902	1.000	similar to the standard set previously described. The	0.3929	0.0132
+0.7324	0.5094	1.000	has one of these addresses cannot be selected. The ad-	0.3910	0.0133
+0.7355	0.0921	1.000	functions are combined in a different way to agree	0.3910	0.0116
+0.7485	0.5094	1.000	dress assigned to a unit is displayed on an illuminated	0.3910	0.0146
+0.7500	0.0921	1.000	with keys and lights on the IBM 729 Iv tape units.	0.3910	0.0145
+0.7622	0.5093	1.000	translucent band which rotates with the knurled disk.	0.3911	0.0141
+0.7642	0.1071	1.000	Power On, Power Of, Master Power. These keys are	0.3761	0.0167
+0.7791	0.5244	1.000	Power On, Ready, Select. These lights are standard.	0.3778	0.0146
+0.7805	0.0902	1.000	located on the tape control and control the power for	0.3929	0.0146
+0.7935	0.5111	1.000	(The power-on light is located on the tape control.)	0.3912	0.0179
+0.7964	0.0902	1.000	all tape units connected to one exchange channel.	0.3647	0.0133
+0.8096	0.5244	1.000	High-Low Density. This light indicates the density	0.3778	0.0160
+0.8109	0.1071	1.000	Load-Rewind. If the unit is in not-ready status,	0.3759	0.0147
+0.8214	0.5092	1.000	mode of the tape unit. Either the Hich or the LOW	0.3933	0.0189
+0.8270	0.0921	1.000	depression of this key causes loading of the tape into	0.3910	0.0146
+0.8400	0.5094	1.000	portion of the light is illuminated.	0.2481	0.0161
+0.8415	0.0921	1.000	the vacuum columns and searching for the load point	0.3910	0.0131
+0.8561	0.5263	1.000	File Protect On. This light is on whenever the unit	0.3759	0.0131
+0.8561	0.0902	1.000	in a reverse direction. If the tape is more than 450 feet	0.3929	0.0146
+0.8706	0.5094	1.000	is unloaded or is loaded with a reel that does not have	0.3929	0.0131
+0.8721	0.0902	1.000	from its load point, a high-speed rewind is initiated	0.3929	0.0161
+0.8844	0.5092	1.000	the file-protect ring attached. The light is on regard-	0.3932	0.0197
+0.8881	0.0921	1.000	first, with the tape out of the columns, before low-	0.3929	0.0146
+0.9230	0.8797	1.000	181	0.0226	0.0087
+0.9244	0.7594	1.000	External Units	0.0921	0.0087

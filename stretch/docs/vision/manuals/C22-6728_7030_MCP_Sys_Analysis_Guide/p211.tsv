@@ -1,0 +1,99 @@
+0.0814	0.7199	1.000	SUPPORTING PROGRAMS	0.2011	0.0174
+0.1416	0.1033	1.000	The master control program (MCP) is supported by	0.3818	0.0169
+0.1439	0.5282	1.000	or deleted are copied onto the new master tape.	0.3553	0.0146
+0.1584	0.5414	1.000	Each specifie update procedure is initiated by a	0.3571	0.0146
+0.1612	0.1015	1.000	update programs and peripheral input/ output pro-	0.3665	0.0118
+0.1730	0.5263	1.000	control card read from the card reader along with	0.3741	0.0146
+0.1744	0.1579	1.000	The update programs provide a method for	0.3271	0.0132
+0.1773	0.1034	1.000	grams.	0.0564	0.0102
+0.1875	0.5263	1.000	new symbolic cards (change deck). Control cards	0.3741	0.0161
+0.1884	0.1014	1.000	maintaining symbolic tape files, and for updating the	0.3912	0.0173
+0.2020	0.5282	1.000	are identified by a semicolon (an 11-6-8 punch on	0.3684	0.0160
+0.2048	0.1034	1.000	permanent read-only storage area on disk.	0.3158	0.0118
+0.2151	0.5282	1.000	the IBM 1401) in column 1. The program does not	0.3759	0.0174
+0.2194	0.1203	1.000	The peripheral input/output programs prepare	0.3421	0.0118
+0.2324	0.5263	1.000	look at the contents of tape records (except for ID	0.3722	0.0147
+0.2339	0.1053	1.000	tape labels and input tapes for use by MCP and pro-	0.3816	0.0132
+0.2485	0.1034	1.000	vide an off-line output medium for MCP.	0.3008	0.0118
+0.2485	0.5282	1.000	numbers) nor any cards other than control cards.	0.3684	0.0118
+0.2615	0.5282	1.000	Within one update pass, the change deck must be	0.3628	0.0161
+0.2761	0.5282	1.000	ordered aceording to the current master tape. That	0.3910	0.0146
+0.2791	0.1053	1.000	UPDATE PROGRAMS	0.1579	0.0103
+0.2892	0.5263	1.000	is, all intrafile changes must be in numerically	0.3571	0.0174
+0.3052	0.5282	1.000	ascending order and changes to various files must	0.3741	0.0161
+0.3081	0.1053	1.000	The update programs consist of two individual pro-	0.3759	0.0116
+0.3212	0.5282	1.000	be arranged in the same order in which these files	0.3759	0.0145
+0.3241	0.1015	1.000	grams:	0.0564	0.0116
+0.3358	0.5282	1.000	are written on the tape.	0.1767	0.0131
+0.3372	0.1353	1.000	1401 Symbolie Update Program	0.2331	0.0146
+0.3481	0.5432	1.000	Control cards and intrafile symbolic correction	0.3572	0.0159
+0.3532	0.1372	1.000	Master System Update Program	0.2368	0.0117
+0.3633	0.5282	1.000	cards will be printed on-line as they are read. How-	0.4004	0.0176
+0.3663	0.1222	1.000	The 1401 Symbolic Update Program allows the	0.3421	0.0131
+0.3779	0.5282	1.000	ever, the programmer must rely upon the compiler	0.3872	0.0189
+0.3821	0.1053	1.000	programmer to update symbolic programs on tape by	0.3891	0.0103
+0.3924	0.5282	1.000	output for a listing and for new sequence numbering	0.3872	0.0176
+0.3967	0.1034	1.000	merging files on a master tape with changes recorded	0.3966	0.0118
+0.4070	0.5282	1.000	of a file on the new master tape.	0.2462	0.0176
+0.4099	0.1053	1.000	on cards to generate a new master symbolic tape.	0.3684	0.0131
+0.4244	0.1222	1.000	The Master System Update Program provides a	0.3496	0.0132
+0.4390	0.5282	1.000	Usage	0.0508	0.0160
+0.4390	0.1053	1.000	means for updating any system program contained on	0.3929	0.0147
+0.4535	0.1015	1.000	the permanent read-only storage area (PROSA) main-	0.4004	0.0160
+0.4666	0.1034	1.000	tained on disk. The program prepares a new IPL	0.3703	0.0160
+0.4666	0.5263	1.000	Intrafile Changes: Intrafile changes are initiated by	0.3910	0.0204
+0.4824	0.5357	1.000	ILTER control cards, (punched ;ALTER in columns	0.3929	0.0161
+0.4824	0.1034	1.000	(initial program load) tape by merging the current	0.3722	0.0161
+0.4946	0.5356	1.000	- through 6). In addition, the ALTER card may have	0.3838	0.0189
+0.4970	0.1015	1.000	system on the disk with changes read from system	0.3759	0.0176
+0.5115	0.1015	1.000	input or a specially prepared tape. It also includes	0.3835	0.0176
+0.5115	0.5263	1.000	information punched in columns 10 through 17 and 20	0.3966	0.0176
+0.5245	0.5281	1.000	through 27.	0.0885	0.0193
+0.5276	0.1015	1.000	a means for updating FORTRAN generator libraries.	0.3929	0.0161
+0.5509	0.5301	1.000	Case 1	0.0526	0.0146
+0.5596	0.1015	1.000	Symbolic Update Program (1401)	0.2462	0.0146
+0.5770	0.5414	1.000	JALTER	0.0526	0.0189
+0.5872	0.1034	1.000	Symbolic Update (Figure 120) is a IBM 1401 program	0.3929	0.0146
+0.6017	0.1015	1.000	which aids in maintaining symbolic files. Symbolic	0.3853	0.0146
+0.6135	0.1033	1.000	files are recorded on tape in column binary format,	0.3837	0.0175
+0.6279	0.5451	1.000	When columns 10 through 17 are blank, all change	0.3759	0.0189
+0.6321	0.1053	1.000	one card per tape record. Each card image has a	0.3703	0.0133
+0.6439	0.5282	1.000	cards which follow, up to the next control card, are	0.3910	0.0174
+0.6467	0.1015	1.000	unique identification in columns 73 through 80. The	0.3891	0.0147
+0.6599	0.5263	1.000	inserted according to their own ID numbers (columns	0.3966	0.0160
+0.6612	0.1034	1.000	first two, columns 73 and 74, contain two alphameric	0.3966	0.0161
+0.6711	0.5282	1.000	73 through 80). If the change card has no punches	0.3760	0.0168
+0.6744	0.1034	1.000	characters which identify the file. These characters	0.3929	0.0160
+0.6890	0.5263	1.000	in columns 1 through 72, then the corresponding	0.3647	0.0147
+0.6903	0.1034	1.000	are initially selected by the programmer; any com-	0.3835	0.0161
+0.7012	0.5300	1.000	record on the current master tape will be deleted.	0.3723	0.0176
+0.7018	0.1032	1.000	bination of two characters being acceptable except	0.3744	0.0193
+0.7179	0.5301	1.000	All change cards after an ALTER card must refer to	0.3929	0.0147
+0.7194	0.1034	1.000	two blanks. Within each file, cards are numbered	0.3741	0.0161
+0.7311	0.5282	1.000	the same file as follows:	0.1880	0.0189
+0.7339	0.1034	1.000	sequentially, starting with 000001 in columns 75	0.3590	0.0161
+0.7485	0.1034	1.000	through 80. These are called their identification (ID)	0.3947	0.0161
+0.7515	0.8177	1.000	1 73	0.0583	0.0204
+0.7529	0.5451	1.000	1	0.0150	0.0102
+0.7529	0.6222	1.000	10	0.0188	0.0131
+0.7616	0.5338	1.000	TALTER	0.0602	0.0174
+0.7630	0.1034	1.000	numbers. Any number of files may be stored on a	0.3741	0.0161
+0.7791	0.1034	1.000	"master"' tape, restricted only by capacity of the	0.3665	0.0161
+0.7891	0.6184	1.000	IX,$X10, ABLE	0.0978	0.0163
+0.7892	0.8496	1.000	AB000023	0.0620	0.0145
+0.7922	0.5583	1.000	JOE	0.0282	0.0131
+0.7936	0.1015	1.000	tape. The logical end of the master tape is indicated	0.3966	0.0146
+0.8109	0.1053	1.000	by a double file mark.	0.1617	0.0103
+0.8140	0.8496	1.000	AB000046	0.0620	0.0160
+0.8241	0.1203	1.000	By means of the Symbolic Update program the.	0.3440	0.0147
+0.8387	0.1034	1.000	(current) master tape is read from unit 1 and merged	0.3966	0.0147
+0.8400	0.6165	1.000	SX, $X10,BAKER	0.1090	0.0176
+0.8401	0.8496	1.000	AB001057	0.0620	0.0145
+0.8414	0.5582	1.000	SAM	0.0378	0.0148
+0.8532	0.1034	1.000	with changes read from the card reader. Each file	0.3797	0.0147
+0.8648	0.5432	1.000	Record AB000023 on the current master tape will	0.3722	0.0174
+0.8677	0.1053	1.000	is resequenced as it is updated, and a new master	0.3703	0.0145
+0.8808	0.5282	1.000	be replaced by the information on the first card.	0.3628	0.0160
+0.8821	0.1034	1.000	tape is written on unit 2. Files which are not updated	0.3985	0.0161
+0.9375	0.8966	1.000	211	0.0282	0.0131
+0.9403	0.7594	1.000	Supporting Programs	0.1203	0.0133

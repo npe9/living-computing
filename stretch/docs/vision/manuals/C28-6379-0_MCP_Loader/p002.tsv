@@ -1,0 +1,23 @@
+0.1205	0.1127	1.000	PREFACE	0.0790	0.0148
+0.1948	0.1165	1.000	The purpose of this document is to provide a pro-	0.3741	0.0131
+0.2093	0.1147	1.000	grammer's guide to loader functions. Examples of	0.3872	0.0131
+0.2252	0.1147	1.000	various deck arrangements are given in a separate	0.3835	0.0118
+0.2384	0.1147	1.000	section. Appendixes containing card formats and ex-	0.3985	0.0131
+0.2529	0.1147	1.000	planations of diagnostic messages are also provided.	0.3985	0.0132
+0.2674	0.1147	1.000	Considerable detail has been provided in the section	0.3910	0.0132
+0.2813	0.1145	1.000	on segmentation to assist a reader interested in the	0.3894	0.0169
+0.2979	0.1147	1.000	depth of the overlay feature of the IBM 7030 system.	0.3966	0.0118
+0.3124	0.1372	1.000	The discussion in this bulletin assumes the under-	0.3797	0.0118
+0.3285	0.1147	1.000	standing of the following publications:	0.2820	0.0116
+0.3576	0.1147	1.000	Reference Manual, IBM 7030 Data Processing	0.3477	0.0131
+0.3721	0.1353	1.000	System, Form A22-6530.	0.1955	0.0131
+0.3852	0.1128	1.000	Reference Manual, IBM 7030 Master Control	0.3477	0.0176
+0.4012	0.1391	1.000	Program, Form C22-6678.	0.2030	0.0131
+0.4157	0.1147	1.000	Reference Manual, IBM 7030 FORTRAN IV, Form	0.3797	0.0146
+0.4312	0.1371	1.000	C22-6751.	0.0773	0.0111
+0.4606	0.1372	1.000	The segmentation portion of the BSS processor	0.3515	0.0133
+0.4752	0.1147	1.000	described in this bulletin was programmed by the	0.3703	0.0118
+0.4897	0.1147	1.000	Naval Weapons Laboratory, Dahlgren, Virginia.	0.3647	0.0133
+0.8881	0.1147	1.000	Copies of this and other IBM publications can be obtained at IBM Branch Offices.	0.4662	0.0116
+0.9012	0.1128	1.000	Address comments concerning the contents of this publication to:	0.3759	0.0116
+0.9120	0.1127	1.000	IBM Corporation, Programming Systems Publications, Dept. D83, PO Box 390, Poughkeepsie, N.Y. 12602	0.6204	0.0149

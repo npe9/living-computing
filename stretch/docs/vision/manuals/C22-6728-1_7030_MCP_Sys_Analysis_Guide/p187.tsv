@@ -1,0 +1,101 @@
+0.1003	0.5357	1.000	Release	0.0714	0.0174
+0.1017	0.1053	1.000	Locate	0.0545	0.0131
+0.1292	0.1089	1.000	The locate routine serves two distinct functions:	0.3610	0.0134
+0.1294	0.5376	1.000	The release routine is entered at WREL (Figure 107).	0.4060	0.0146
+0.1434	0.1239	1.000	1. Locates the disk when requested by the locate	0.3706	0.0167
+0.1453	0.5376	1.000	It adjusts the return address, and if the channel is	0.3797	0.0131
+0.1612	0.5451	1.000	perating with the specified unit in select, sets th	0.3684	0.0133
+0.1628	0.1071	1.000	pseudo-op.	0.0827	0.0102
+0.1715	0.5432	1.000	celease status bit, and returns via KSUPP. Other	0.3741	0.0145
+0.1744	0.1241	1.000	2. Locates any unit required to perform another	0.3684	0.0132
+0.1831	0.5431	1.000	vise, an EOP is faked for the release by appropriate	0.3895	0.0215
+0.1900	0.1070	1.000	pseudo-op.	0.0848	0.0125
+0.2006	0.5432	1.000	entry to the receptor. The routine does not use :	0.3609	0.0161
+0.2035	0.1241	1.000	All locate operations for the disk are performed	0.3609	0.0132
+0.2166	0.5357	1.000	hardware release instruction. Release functions are	0.4023	0.0160
+0.2194	0.1071	1.000	as non-SEOP set up I-O instructions. All locate	0.3647	0.0118
+0.2324	0.5357	1.000	performed by the receptor.	0.2086	0.0161
+0.2337	0.1071	1.000	operations for other equipment are performed as	0.3686	0.0135
+0.2496	0.1051	1.000	SEOP.	0.0511	0.0140
+0.2629	0.5375	1.000	Feed Card	0.0828	0.0148
+0.2773	0.1052	1.000	The Locate Subroutine, KLOCAT: The locate instruc-	0.4119	0.0197
+0.2906	0.5376	1.000	The feed card routine is entered at WFC (Figure 107).	0.4079	0.0161
+0.2921	0.1053	1.000	tion is performed by the routine starting at KLOCAT	0.3966	0.0161
+0.3063	0.1070	1.000	(Figure 106). This routine performs a non-SEOP	0.3650	0.0169
+0.3081	0.5357	1.000	It adjusts the return address, and, if equipment other	0.4041	0.0131
+0.3186	0.5356	1.000	than punch is specified, fakes an EPGK by appropri-	0.3986	0.0183
+0.3227	0.1053	1.000	locate for disk equipment, turning on the set up I-O	0.3891	0.0131
+0.3342	0.5376	1.000	ate entry to the receptor. The routine updates the	0.3797	0.0161
+0.3371	0.1070	1.000	bit and presuming that SRETAD has been preset in	0.3799	0.0150
+0.3503	0.5376	1.000	control tables, performs a feed card instruction, and	0.4023	0.0161
+0.3517	0.1071	1.000	the control tables, and finally exiting to KSUPP. For	0.4041	0.0146
+0.3663	0.5376	1.000	returns via KSUPP after verifying that the exchange	0.3910	0.0146
+0.3677	0.1071	1.000	non-disk equipment, the KLOCAT routine performs	0.3872	0.0145
+0.3808	0.5357	1.000	accepted the instruction.	0.1880	0.0131
+0.3821	0.1071	1.000	a SEOP locate, waits for its completion in the SEOP	0.3929	0.0133
+0.3967	0.1053	1.000	test routine (KSEOPT), and exits to the preset	0.3515	0.0133
+0.4112	0.5376	1.000	Erase Long Gap	0.1259	0.0147
+0.4127	0.1053	1.000	return address.	0.1203	0.0103
+0.4403	0.5376	1.000	The erase long gap routine is entered at EELG (Fig-	0.3966	0.0146
+0.4418	0.1090	1.000	The Locate Pseudo-Op: When the pseudo-op locate	0.3835	0.0131
+0.4548	0.5376	1.000	ure 107). It adjusts the return address, and fakes an	0.3929	0.0132
+0.4564	0.1071	1.000	is requested, the routine is entered at KSLOC (Fig-	0.3910	0.0131
+0.4694	0.5376	1.000	EPGK if equipment other than tape is specified. The	0.3985	0.0146
+0.4709	0.1090	1.000	ure 106)from the identifier. This routine checks the	0.3910	0.0131
+0.4855	0.5395	1.000	routine sets the erase gap status bit, and exits to	0.3703	0.0116
+0.4869	0.1071	1.000	legality of the r'equest, faking an EPGK if the equip-	0.3929	0.0131
+0.4996	0.1089	1.000	ment is non-disk, or if the arc address is illegal.	0.3742	0.0157
+0.5000	0.5376	1.000	W23K in the release routine to fake an EOP. The	0.3741	0.0116
+0.5145	0.5395	1.000	erase gap instruction is not given until the next write	0.3966	0.0116
+0.5145	0.1090	1.000	If it is disk and the arm is already positioned at the	0.3853	0.0131
+0.5291	0.5376	1.000	is requested for the unit.	0.1898	0.0116
+0.5305	0.1090	1.000	desired arc, it bypasses the locate and fakes a	0.3496	0.0131
+0.5451	0.1090	1.000	channel signal. Otherwise, it stores KMOON in	0.3609	0.0131
+0.5581	0.5376	1.000	The Space Routine	0.1391	0.0131
+0.5596	0.1090	1.000	SRETAD, and enters the KLOCAT routine.	0.3214	0.0160
+0.5741	0.1259	1.000	When the interrupt from the locate occurs, the	0.3515	0.0116
+0.5872	0.5376	1.000	The four spacing pseudo-ops are handled by one	0.3590	0.0146
+0.5887	0.1090	1.000	routine at KMOON is entered. It checks for a suc-	0.3835	0.0116
+0.6017	0.5376	1.000	spacing routine. There are four entries to the	0.3515	0.0116
+0.6032	0.1090	1.000	cessful locate, attends to necessary bookkeeping, and	0.4023	0.0132
+0.6163	0.5376	1.000	routine, one at each full word starting at RI (Figure	0.3929	0.0146
+0.6177	0.1071	1.000	fakes a channel signal by appropriate entry to the	0.3722	0.0132
+0.6308	0.5357	1.000	105). Each entry selects the proper control code for	0.3929	0.0146
+0.6350	0.1090	1.000	receptor.	0.0715	0.0105
+0.6453	0.5357	1.000	the pseudo-op requested, and enters the common	0.3703	0.0160
+0.6580	0.1089	1.000	Set Up Locate Instructions: The KLOCAT routine is	0.3912	0.0153
+0.6597	0.5357	1.000	routine (R2).	0.1016	0.0150
+0.6744	0.1071	1.000	used as a subroutine whenever a set up locate is	0.3628	0.0116
+0.6758	0.5508	1.000	If the equipment is not tape, an EPGK interrupt is	0.3778	0.0146
+0.6890	0.5357	1.000	faked. If the PP verify buffer is idle, the status evalu-	0.3947	0.0160
+0.6890	0.1090	1.000	required by another actuator routine. If the status	0.3797	0.0117
+0.7020	0.1090	1.000	evaluation routine is not being used, KLOCAT may	0.3816	0.0146
+0.7031	0.5356	1.000	ation routine is usedto locate the unit and verify the tape	0.4081	0.0169
+0.7166	0.1090	1.000	be entered with the linkage SIC, KLOCTD; B, KLOCAT,	0.4060	0.0146
+0.7194	0.5357	1.000	label, if necessary, and the tape position is examined.	0.4117	0.0146
+0.7324	0.1090	1.000	with index registers set as usual for actuator routines	0.4060	0.0118
+0.7339	0.5357	1.000	If the tape is positioned at the label and a backspace	0.3910	0.0146
+0.7470	0.1090	1.000	and non-disk equipment. If the status evaluation	0.3647	0.0133
+0.7485	0.5357	1.000	operation was requested, an EPGK interrupt is faked.	0.4041	0.0161
+0.7629	0.1090	1.000	routine is being used, the appropriate entry in the	0.3761	0.0141
+0.7630	0.5357	1.000	Otherwise, the label is spaced over, and the spacing	0.3966	0.0161
+0.7776	0.1071	1.000	branch table should be B, KKLOC, where the routine	0.3947	0.0146
+0.7776	0.5357	1.000	operation is performed. The control tables are up-	0.3872	0.0146
+0.7921	0.1090	1.000	at KKLOC sets the KLOCAT return to ZSTEVL, and	0.3929	0.0131
+0.7921	0.5357	1.000	dated, and control is returned via RKSUPP after	0.3684	0.0146
+0.8052	0.5357	1.000	verifying that the exchange accepted the command.	0.3816	0.0161
+0.8052	0.1090	1.000	sets SRETAD in the event the equipment is disk. If	0.3891	0.0146
+0.8227	0.1090	1.000	the equipment is not disk, KLOCAT will perform a	0.3797	0.0116
+0.8354	0.5375	1.000	Unload	0.0567	0.0152
+0.8358	0.1090	1.000	SEOP locate, check it, and return to ZSTEVL. If	0.3778	0.0131
+0.8497	0.1089	1.000	the equipment is disk, KLOCAT will perform a set	0.3837	0.0164
+0.8648	0.5376	1.000	The unload routine is used to perform the unload	0.3647	0.0146
+0.8663	0.1090	1.000	up non-SEOP locate, and return to KSUPP. The sub-	0.4023	0.0131
+0.8794	0.5357	1.000	pseudo-op, and is also used by the free and verify	0.3778	0.0161
+0.8808	0.1090	1.000	sequent interrupt will return to KKLOC, where nec-	0.3910	0.0131
+0.8931	0.1089	1.000	essary disk bookkeeping will be performed prior to	0.3856	0.0177
+0.8939	0.5376	1.000	routines for unload set up operations. It is entered	0.3872	0.0146
+0.9084	0.5357	1.000	at ZUNLDB when the unload pseudo-op is requested;	0.3966	0.0146
+0.9112	0.1090	1.000	return to ZSTEVL.	0.1447	0.0103
+0.9535	0.7951	1.000	Service Routines	0.0996	0.0102
+0.9535	0.9135	1.000	187	0.0263	0.0102

@@ -1,0 +1,102 @@
+0.0814	0.1071	1.000	SERVICEA BILITY AIDS	0.1786	0.0116
+0.1352	0.5282	1.000	of counters whose contents describe how far the	0.3628	0.0176
+0.1381	0.1090	1.000	ERROR DETECTION AND POST MORTEM DUMPING	0.3947	0.0131
+0.1512	0.5320	1.000	assembly is in process in a particular phase.	0.3440	0.0146
+0.1657	0.5414	1.000	The indicators and the meaning of their on-setting	0.3816	0.0146
+0.1672	0.1090	1.000	As an aid in the original debugging of STRAP II and	0.3797	0.0147
+0.1817	0.1090	1.000	as a subsequent check on the operation of the com-	0.3759	0.0132
+0.1831	0.5320	1.000	are:	0.0376	0.0131
+0.1942	0.1068	1.000	puter, there has been provided in the coding of the	0.3766	0.0230
+0.1962	0.5489	1.000	Epass1 = 1, when Pass 1 is in process.	0.2970	0.0160
+0.2106	0.5489	1.000	Fuiter =1, when the iteration between Pass 1 and	0.3778	0.0161
+0.2106	0.1090	1.000	assembly program tests of various parts of the	0.3515	0.0147
+0.2252	0.6447	1.000	Pass 2a is in process.	0.1729	0.0133
+0.2252	0.1090	1.000	assembly program's logic in terms of the current	0.3703	0.0161
+0.2395	0.6428	1.000	when the iteration between Pass 2a	0.2613	0.0138
+0.2427	0.1090	1.000	instruction being assembled.	0.2143	0.0116
+0.2558	0.6447	1.000	and Pass 2b is in process.	0.2011	0.0131
+0.2558	0.1241	1.000	In certain areas of STRAP II when specific infor-	0.3684	0.0146
+0.2696	0.5507	1.000	Fpass2 = 1, when the iteration between Pass 1 and	0.3761	0.0149
+0.2703	0.1090	1.000	mation should be in the unit according to the instruc-	0.3929	0.0146
+0.2833	0.6447	1.000	and Pass 2a is in process.	0.1992	0.0146
+0.2863	0.1090	1.000	tion being assembled and when specific information	0.3778	0.0131
+0.2994	0.1090	1.000	should be in the symbol table entry according to the	0.3816	0.0131
+0.2994	0.6447	1.000	when Pass 2a is in process.	0.2105	0.0146
+0.3104	0.1087	1.000	symbol on the instruction being assembled, STRAP	0.3805	0.0282
+0.3124	0.6447	1.000	when Pass 2b is in process.	0.2105	0.0161
+0.3270	0.5508	1.000	Epass3 = 1, when the iteration between Pass 2a	0.3553	0.0161
+0.3299	0.1090	1.000	inspects the contents of the unit or of the symbol	0.3628	0.0146
+0.3445	0.1128	1.000	table entry for the specific piece of information. An	0.3872	0.0131
+0.3445	0.6447	1.000	and Pass 2b is in process.	0.1992	0.0131
+0.3605	0.6466	1.000	when Pass 2b is in process.	0.2086	0.0117
+0.3605	0.1109	1.000	unsuccessful inspection (i.e., information is not	0.3590	0.0117
+0.3750	0.5376	1.000	(STRAP II writes the current pass indication on the	0.3778	0.0117
+0.3750	0.1109	1.000	available that should be) causes STRAP to give both	0.3797	0.0117
+0.3894	0.5357	1.000	numeric display lights of the console.)	0.2838	0.0118
+0.3894	0.1109	1.000	an error message containing the location of the test	0.3816	0.0118
+0.4039	0.1109	1.000	just made and a dump. The dump is optional. If the	0.3891	0.0133
+0.4039	0.5526	1.000	The counters and their significances are:	0.3045	0.0118
+0.4179	0.4389	1.000	if taken,	0.0658	0.0143
+0.4185	0.5526	1.000	1. The Unit counter is set to one at the start of	0.3553	0.0133
+0.4185	0.1090	1.000	logic test is made during Pass 1, the dump,	0.3308	0.0133
+0.4311	0.5356	1.000	each pass, and is increased by one for each new unit	0.3912	0.0159
+0.4345	0.1109	1.000	will be of the current unit. If the logic test is made	0.3835	0.0118
+0.4476	0.5338	1.000	processed. This incrementing is done in Pass 1 after	0.4023	0.0132
+0.4491	0.1109	1.000	during UITER or Pass 2, the dump, if taken, will be	0.3891	0.0131
+0.4621	0.5357	1.000	the use of INTOUT, in Pass 2a and Pass 2b after the	0.3910	0.0132
+0.4636	0.1109	1.000	of the vle portion of the current symbol table entry.	0.3835	0.0117
+0.4782	0.5338	1.000	use of INTIN.	0.0996	0.0116
+0.4782	0.1278	1.000	Whether or not there is this dump is determined	0.3553	0.0116
+0.4912	0.5526	1.000	2. The Field counter is set to zero at the start of	0.3703	0.0131
+0.4927	0.1109	1.000	by an indicator in the STRAP II program which	0.3459	0.0131
+0.5073	0.1109	1.000	STRAP II arbitrarily has defined in the not-to-dump	0.3835	0.0116
+0.5073	0.5357	1.000	processing each unit and is increased by one as each	0.3891	0.0116
+0.5218	0.5357	1.000	address field is processed.	0.2030	0.0116
+0.5232	0.1128	1.000	status.	0.0508	0.0103
+0.5363	0.5526	1.000	3. The Symbol counter during the UITER sub-	0.3459	0.0116
+0.5363	0.1278	1.000	MACHER (MACHine ERror) is the subroutine to	0.3534	0.0116
+0.5509	0.1109	1.000	handle this error action.	0.1842	0.0116
+0.5509	0.5357	1.000	routine holds the address of the function portion of	0.3741	0.0116
+0.5523	0.2989	1.000	The calling sequence to	0.1805	0.0102
+0.5654	0.5357	1.000	the variable length entry part of the symbol table	0.3647	0.0116
+0.5654	0.1109	1.000	MACHER is SIC, Machez; B, MACHER. The location	0.4004	0.0146
+0.5799	0.5338	1.000	entry currently being analyzed by UITER; during	0.3609	0.0131
+0.5814	0.1109	1.000	to be inserted in the message is obtained fròm the	0.3703	0.0116
+0.5945	0.5338	1.000	Pass 2a and Pass 2b, Symbol holds the address of	0.3741	0.0174
+0.5959	0.1090	1.000	location, Machez. When used by Pass 1, MACHER	0.3835	0.0147
+0.6090	0.5357	1.000	the function portion of the variable length entry part	0.3853	0.0131
+0.6105	0.1109	1.000	returns control to the wind-up procedure in MAIN,	0.3741	0.0132
+0.6235	0.5357	1.000	of the symbol table entry, if any, associated with the	0.3929	0.0146
+0.6250	0.1128	1.000	not to the user routine as would be expected by the	0.3722	0.0117
+0.6394	0.1128	1.000	calling sequence. Furthermore, when UITER uses	0.3759	0.0133
+0.6394	0.5357	1.000	current unit. Otherwise, Symbol is zero. (During	0.3797	0.0118
+0.6497	0.1109	1.000	MACHER, MACHER marks the vle as completed.	0.3665	0.0189
+0.6512	0.5338	1.000	Pass 1 Symbol always holds the value, Msyte, where	0.3966	0.0161
+0.6657	0.5338	1.000	the variable length entry part of the symbol table	0.3665	0.0161
+0.6700	0.1278	1.000	Another checking feature in the assembly program	0.3722	0.0131
+0.6817	0.1109	1.000	occurs during the matching of files in the Pass 2b	0.3684	0.0147
+0.6938	0.5357	1.000	Furthermore, if the unit has a name, the number	0.3667	0.0178
+0.6991	0.1128	1.000	phase. To guard against errors while matching	0.3534	0.0103
+0.7081	0.5337	1.000	associated with each name is carried in the Ziname	0.3857	0.0187
+0.7126	0.1108	1.000	names with the units, each name from the name file	0.3836	0.0144
+0.7238	0.1109	1.000	has associated with it a digit from 0-9. This digit	0.3759	0.0174
+0.7252	0.5357	1.000	field of the unit and in the Zstent field of the function	0.3910	0.0133
+0.7384	0.5338	1.000	portion of the variable length entry part of the symbol	0.4004	0.0160
+0.7412	0.1128	1.000	is inserted both in the name record and in the	0.3365	0.0118
+0.7542	0.1109	1.000	corresponding unit record by Pass 1. The OUTPUT	0.3853	0.0161
+0.7543	0.5338	1.000	table entry.	0.0921	0.0161
+0.7718	0.1128	1.000	subroutine checks that the files agree.	0.2838	0.0116
+0.7863	0.5357	1.000	LOCATIONS IN STRAP II CONTAINING INFORMA-	0.3797	0.0146
+0.7989	0.1127	1.000	DETERMINATION OF PHASE, UNIT, AND SYMBOL	0.3894	0.0184
+0.8009	0.5508	1.000	TION USED TO ANALYZE ERROR CONDITIONS	0.3590	0.0146
+0.8154	0.1278	1.000	ENTRY BEING PROCESSED	0.2105	0.0116
+0.8285	0.5338	1.000	Work Area	0.0846	0.0161
+0.8430	0.1109	1.000	In the area of the STRAP program that is particularly	0.3985	0.0176
+0.8545	0.5357	1.000	There is an area (commonly referred to as the work	0.3891	0.0191
+0.8590	0.1109	1.000	reserved for control information common to all	0.3534	0.0146
+0.8706	0.5338	1.000	area) within the STRAP II program that is reserved	0.3853	0.0176
+0.8715	0.1107	1.000	phases, there are both a set of indicators whose status	0.4064	0.0199
+0.8852	0.5338	1.000	for control-type information. This area is divided	0.3797	0.0176
+0.8866	0.1090	1.000	indicates the phase of STRAP in process and a set	0.3741	0.0161
+0.9330	0.7801	1.000	Servicability Aids	0.1053	0.0133
+0.9346	0.9079	1.000	173	0.0226	0.0087

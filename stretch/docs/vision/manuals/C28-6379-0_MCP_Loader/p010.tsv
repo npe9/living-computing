@@ -1,0 +1,154 @@
+0.0814	0.4624	1.000	Relocation Table	0.1034	0.0132
+0.0828	0.0320	1.000	SEGMENTATION	0.1316	0.0116
+0.1045	0.6428	1.000	Number of	0.0659	0.0147
+0.1076	0.4662	1.000	Disk Address	0.0752	0.0131
+0.1105	0.7820	1.000	Not	0.0301	0.0145
+0.1118	0.0357	1.000	The function of the segmentation portion of the BSS	0.3797	0.0118
+0.1148	0.5808	1.000	Not	0.0263	0.0116
+0.1191	0.6429	1.000	Cards in	0.0508	0.0118
+0.1206	0.4868	1.000	of	0.0188	0.0116
+0.1221	0.7820	1.000	Used	0.0338	0.0145
+0.1264	0.0338	1.000	processor is to provide a method of subprogram	0.3628	0.0132
+0.1265	0.5808	1.000	Used	0.0320	0.0116
+0.1301	0.6426	1.000	Subprogram	0.0719	0.0160
+0.1322	0.4661	1.000	Subprogram	0.0734	0.0161
+0.1409	0.0357	1.000	overlay for FORTRAN jobs too large to fit into avail-	0.3966	0.0118
+0.1468	0.5414	1.000	17	0.0188	0.0116
+0.1468	0.6335	1.000	28	0.0263	0.0116
+0.1468	0.8496	1.000	63	0.0169	0.0102
+0.1468	0.7237	1.000	47	0.0188	0.0102
+0.1584	0.0338	1.000	able storage.	0.1015	0.0102
+0.1700	0.0564	1.000	In order to use segmentation, the set of subpro-	0.3628	0.0131
+0.1714	0.7406	1.000	Pointer to Next	0.0941	0.0148
+0.1727	0.6446	1.000	Length of	0.0622	0.0150
+0.1773	0.4680	1.000	Absolute	0.0526	0.0102
+0.1802	0.5827	1.000	Not	0.0263	0.0116
+0.1815	0.0354	1.000	grams making up the input deck is first divided into	0.3877	0.0194
+0.1846	0.6429	1.000	Transfer	0.0545	0.0131
+0.1874	0.7425	1.000	Relocation	0.0677	0.0118
+0.1875	0.4680	1.000	Subprogram	0.0677	0.0102
+0.1919	0.5827	1.000	Used	0.0338	0.0131
+0.1957	0.7404	1.000	Table Entry	0.0755	0.0169
+0.1962	0.6466	1.000	Vector	0.0432	0.0116
+0.1976	0.4680	1.000	Origin	0.0395	0.0118
+0.1985	0.0355	1.000	groups (called segments) of subprograms. In front	0.3857	0.0167
+0.2136	0.0357	1.000	of each group of subprograms should be placed a	0.3665	0.0131
+0.2166	0.7143	1.000	45 46	0.0357	0.0116
+0.2180	0.5432	1.000	17	0.0188	0.0116
+0.2180	0.6353	1.000	28	0.0188	0.0116
+0.2180	0.8515	1.000	63	0.0169	0.0102
+0.2282	0.0376	1.000	NODE card which contains its segment number (any	0.3853	0.0103
+0.2410	0.4680	1.000	Number of	0.0679	0.0151
+0.2410	0.0375	1.000	non-zero two-digit number) and the segment number	0.3931	0.0148
+0.2427	0.6805	1.000	First	0.0301	0.0116
+0.2485	0.8026	1.000	Not	0.0263	0.0116
+0.2515	0.5902	1.000	Not	0.0282	0.0116
+0.2543	0.0356	1.000	of another segment to which the first segment listed	0.3914	0.0167
+0.2544	0.6786	1.000	Common	0.0583	0.0145
+0.2566	0.4679	1.000	Commons in	0.0755	0.0129
+0.2602	0.5902	1.000	Used	0.0357	0.0145
+0.2602	0.8026	1.000	Used	0.0338	0.0145
+0.2672	0.6784	1.000	Origin	0.0416	0.0150
+0.2701	0.4680	1.000	Subprograms	0.0753	0.0122
+0.2703	0.0376	1.000	on the card is attached. (See Appendix A for NODE	0.3797	0.0118
+0.2849	0.7594	1.000	50	0.0188	0.0116
+0.2863	0.0376	1.000	card format.) One segment, called the primary	0.3609	0.0116
+0.2863	0.5432	1.000	17	0.0188	0.0116
+0.2863	0.8534	1.000	63	0.0169	0.0087
+0.2878	0.6541	1.000	32	0.0169	0.0116
+0.2978	0.0374	1.000	segment, remains in storage at all times, and should	0.3989	0.0187
+0.3094	0.4680	1.000	Second	0.0453	0.0148
+0.3139	0.7011	1.000	Common Origins	0.1034	0.0145
+0.3154	0.0376	1.000	contain the "main" subprogram (designated by having	0.3985	0.0116
+0.3169	0.5902	1.000	Not	0.0282	0.0116
+0.3225	0.4680	1.000	Common	0.0565	0.0134
+0.3255	0.7142	1.000	Continued	0.0659	0.0162
+0.3270	0.5902	1.000	Used	0.0338	0.0145
+0.3299	0.0376	1.000	an entry point called *MAIN*), and the FIOD subpro-	0.3966	0.0116
+0.3358	0.4699	1.000	Origin	0.0395	0.0131
+0.3430	0.0376	1.000	gram. The NODE card which precedes the primary	0.3910	0.0146
+0.3547	0.5432	1.000	17	0.0188	0.0116
+0.3561	0.6523	1.000	---	0.0320	0.0087
+0.3571	0.0374	1.000	segment should have as its second segment number	0.3838	0.0153
+0.3723	0.0374	1.000	00, since it is attached to no other segment. All	0.3688	0.0160
+0.3877	0.0375	1.000	library routines are assigned storage in the primary	0.3969	0.0153
+0.3934	0.6258	1.000	Transfer Vector	0.0942	0.0141
+0.4055	0.0376	1.000	segment.	0.0696	0.0103
+0.4163	0.0600	1.000	Upper storage is allocated in a particular way in	0.3687	0.0149
+0.4288	0.6523	1.000	---	0.0320	0.0087
+0.4313	0.0375	1.000	a job which requires segmentation. Since the reloca-	0.4044	0.0150
+0.4461	0.0375	1.000	tion table (Figure 4) must remain in storage (except	0.3913	0.0147
+0.4606	0.5883	1.000	Transfer Vector Continued	0.1579	0.0133
+0.4606	0.0376	1.000	for the primary segment) during the execution of	0.3665	0.0133
+0.4735	0.0374	1.000	the object program, so that the table may be available	0.4084	0.0195
+0.4912	0.0376	1.000	for loading bases when another segment is called in,	0.3947	0.0131
+0.5042	0.4643	1.000	FIGURE 4. ENTRY IN THE RELOCATION TABLE	0.2932	0.0147
+0.5058	0.0376	1.000	the relocation table is assigned storage higher than	0.3853	0.0131
+0.5203	0.0395	1.000	blank common. A node table (Figure 5), which con-	0.3947	0.0118
+0.5305	0.4662	1.000	Notes: Bit 63 of the first word is set to 1 if the entry is for a library	0.3929	0.0146
+0.5348	0.0395	1.000	tains information necessary for segmentation, ex-	0.3778	0.0117
+0.5451	0.5094	1.000	subprogram.	0.0752	0.0145
+0.5494	0.0395	1.000	tends from a storage location immediately above the	0.3929	0.0131
+0.5596	0.5094	1.000	The first 48 bits of the first word contain the entry point	0.3271	0.0160
+0.5639	0.0395	1.000	relocation table to the top of storage available to the	0.3929	0.0131
+0.5727	0.5094	1.000	name if the entry is for a library subprogram.	0.2650	0.0146
+0.5814	0.0395	1.000	problem program.	0.1372	0.0116
+0.5945	0.0620	1.000	Storage for named common is reserved below	0.3421	0.0131
+0.6089	0.0394	1.000	blank common. Whether a named common is avail-	0.3892	0.0125
+0.6245	0.0394	1.000	able when a given segment is in storage depends on	0.3836	0.0108
+0.6409	0.0395	1.000	the following:	0.1015	0.0103
+0.6526	0.0620	1.000	1. The given segment must be contained in all	0.3515	0.0131
+0.6672	0.4662	1.000	Node Table (Segmentation Only)	0.1974	0.0147
+0.6672	0.0395	1.000	groups of segments making up a storage load that	0.3722	0.0132
+0.6845	0.0414	1.000	refer to that named common.	0.2162	0.0103
+0.6953	0.0619	1.000	2. The given segment must have been assigned	0.3574	0.0156
+0.6987	0.4735	1.000	Beginning	0.0605	0.0139
+0.6991	0.6635	1.000	End	0.0244	0.0131
+0.7049	0.7914	1.000	Not	0.0263	0.0131
+0.7064	0.5677	1.000	Not	0.0301	0.0116
+0.7121	0.0395	1.000	the highest position in storage, consistent with (1),	0.3835	0.0118
+0.7122	0.6654	1.000	of	0.0207	0.0116
+0.7137	0.4944	1.000	of	0.0188	0.0102
+0.7180	0.7895	1.000	Used	0.0320	0.0116
+0.7195	0.5677	1.000	Used	0.0338	0.0116
+0.7251	0.4736	1.000	Common	0.0565	0.0134
+0.7252	0.0395	1.000	that is not higher than the position of any segment	0.3741	0.0133
+0.7253	0.6466	1.000	Common	0.0564	0.0116
+0.7397	0.0414	1.000	which refers to that named common. (See Figure 6.)	0.3872	0.0133
+0.7413	0.7162	1.000	45	0.0169	0.0116
+0.7413	0.8590	1.000	63	0.0188	0.0116
+0.7427	0.6090	1.000	28	0.0207	0.0116
+0.7427	0.5451	1.000	17	0.0169	0.0116
+0.7558	0.0620	1.000	Block data is associated with the segment that	0.3477	0.0118
+0.7674	0.7030	1.000	Segment	0.0564	0.0145
+0.7688	0.0414	1.000	contains that block data subprogram. Therefore, all	0.3947	0.0133
+0.7689	0.4737	1.000	Beginning	0.0620	0.0145
+0.7703	0.5959	1.000	End	0.0263	0.0116
+0.7747	0.7951	1.000	Attached	0.0602	0.0131
+0.7762	0.6635	1.000	Not	0.0263	0.0116
+0.7815	0.7010	1.000	Number from	0.0792	0.0126
+0.7820	0.4925	1.000	of	0.0188	0.0116
+0.7825	0.0430	1.000	other segments that reference that block data must	0.3820	0.0164
+0.7834	0.5977	1.000	of	0.0188	0.0102
+0.7863	0.7970	1.000	Segments	0.0602	0.0145
+0.7892	0.6654	1.000	Used	0.0301	0.0116
+0.7936	0.7011	1.000	NODE Card	0.0715	0.0146
+0.7961	0.4735	1.000	Program	0.0511	0.0139
+0.7965	0.5827	1.000	Program	0.0526	0.0116
+0.7979	0.0414	1.000	be in the same group of segments that contains that	0.3853	0.0146
+0.8081	0.6955	1.000	40	0.0188	0.0116
+0.8081	0.8590	1.000	63	0.0188	0.0116
+0.8081	0.7632	1.000	47	0.0169	0.0116
+0.8096	0.6429	1.000	35	0.0169	0.0116
+0.8110	0.5451	1.000	1718	0.0357	0.0116
+0.8124	0.0431	1.000	subprogram and must be allocated storage at a higher	0.3988	0.0152
+0.8313	0.0413	1.000	level.	0.0451	0.0103
+0.8430	0.0639	1.000	Storage for named commons associated with seg-	0.3722	0.0131
+0.8517	0.6259	1.000	Attached Segments	0.1128	0.0146
+0.8576	0.0432	1.000	ments which are assigned lower storage locations	0.3722	0.0131
+0.8721	0.0432	1.000	are assigned higher storage locations than named	0.3703	0.0131
+0.8765	0.8590	1.000	63	0.0188	0.0131
+0.8881	0.0432	1.000	commons associated with segments which are as-	0.3722	0.0116
+0.8997	0.4680	1.000	FIGURE 5. ENTRY IN THE NODE TABLE	0.2462	0.0161
+0.9039	0.0432	1.000	signed higher storage locations.	0.2406	0.0118
+0.9360	0.0432	1.000	10	0.0169	0.0073

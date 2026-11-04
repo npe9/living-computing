@@ -1,0 +1,82 @@
+0.0741	0.0714	1.000	INPUT-OUTPUT	0.1297	0.0116
+0.1133	0.5000	1.000	ing tables. The numbers in the tables referring to	0.3797	0.0189
+0.1177	0.0771	1.000	COMMUNICATION RECORD SPECIFICATIONS	0.3459	0.0102
+0.1308	0.5019	1.000	the code and to the unit are defined as follows:	0.3440	0.0146
+0.1453	0.5677	1.000	Code	0.0432	0.0160
+0.1453	0.0771	1.000	A common Communication Record (COMREC) is	0.3590	0.0131
+0.1453	0.6955	1.000	Unit	0.0432	0.0160
+0.1612	0.0752	1.000	located in core storage. It is used by the Master	0.3665	0.0118
+0.1741	0.5657	1.000	Not used 0	0.1017	0.0153
+0.1758	0.6917	1.000	System Input or System	0.1823	0.0146
+0.1758	0.0771	1.000	Control Program (MCP) to communicate with the	0.3628	0.0118
+0.1902	0.0751	1.000	processors, by the processors to communicate with	0.3855	0.0140
+0.1903	0.6954	1.000	Output	0.0546	0.0148
+0.2035	0.5658	1.000	Card code 1-10 Not used	0.1992	0.0160
+0.2049	0.0770	1.000	each other, and by the processors to communicate	0.3761	0.0136
+0.2064	0.5244	1.000	1	0.0113	0.0102
+0.2190	0.5656	1.000	A6 code	0.0623	0.0139
+0.2194	0.0771	1.000	with MCP. The first eight and a half words of the	0.3722	0.0132
+0.2195	0.6523	1.000	11	0.0226	0.0131
+0.2195	0.6917	1.000	Disk	0.0432	0.0131
+0.2209	0.5226	1.000	2	0.0132	0.0116
+0.2339	0.0771	1.000	25 word table are for the exclusive use of MCP. The	0.3966	0.0132
+0.2340	0.5658	1.000	A8 code	0.0621	0.0132
+0.2355	0.5244	1.000	3	0.0113	0.0102
+0.2465	0.5656	1.000	Not used	0.0700	0.0171
+0.2485	0.0752	1.000	use of the remainder of the COMREC is determined	0.3872	0.0118
+0.2485	0.5226	1.000	4	0.0132	0.0131
+0.2613	0.5638	1.000	IQS code	0.0717	0.0166
+0.2645	0.0752	1.000	by the requirements of the compiling chain.	0.3233	0.0116
+0.2645	0.5244	1.000	5	0.0113	0.0102
+0.2758	0.5657	1.000	Binary code	0.0942	0.0182
+0.2776	0.0902	1.000	STRAP II expects words 7.32 through 24. 63 in	0.3515	0.0131
+0.2791	0.5244	1.000	6	0.0113	0.0102
+0.2906	0.5657	1.000	Not used	0.0715	0.0162
+0.2921	0.0771	1.000	the COMREC to be set up as indicated in the follow-	0.3835	0.0131
+0.3517	0.3759	1.000	COMMUNICATION RECORD	0.2124	0.0131
+0.4054	0.2932	1.000	Purpose	0.0659	0.0162
+0.4055	0.0733	1.000	Bits	0.0357	0.0160
+0.4373	0.0714	1.000	0.00 - 7.31	0.0903	0.0149
+0.4433	0.2914	1.000	Reserved for MCP	0.1429	0.0131
+0.4462	0.6222	1.000	-- - - -	0.0658	0.0087
+0.4516	0.0732	1.000	7.32 - 7.63	0.0904	0.0154
+0.4806	0.1051	1.000	7.32-7.39	0.0905	0.0169
+0.4840	0.2951	0.500	-----	0.0639	0.0145
+0.4855	0.6222	0.500	-----	0.0639	0.0073
+0.5073	0.1053	1.000	7.40	0.0395	0.0189
+0.5102	0.2932	1.000	A pre-processor can turn on this bit.	0.2782	0.0160
+0.5115	0.6222	1.000	LAST IN A CHAIN:	0.1429	0.0146
+0.5218	0.6203	1.000	If this bit is on when STRAP II is	0.2556	0.0189
+0.5363	0.6184	1.000	last in a chain, STRAP II turns on	0.2594	0.0203
+0.5523	0.6203	1.000	MCP's reject bit.	0.1335	0.0174
+0.5814	0.2914	1.000	STRAP II turns on this bit if STRAP II	0.2895	0.0174
+0.5828	0.1053	1.000	7.41	0.0414	0.0160
+0.5988	0.2914	1.000	has determined the existence of one or	0.2914	0.0131
+0.6117	0.6108	1.000	LAST IN A CHAIN:	0.1562	0.0310
+0.6118	0.2914	1.000	more undefined, multiply-defined,	0.2613	0.0161
+0.6250	0.2932	1.000	and/or circularly defined symbols.	0.2632	0.0189
+0.6409	0.6184	1.000	In the case of -- COMPILGO, STRAP --	0.3008	0.0191
+0.6541	0.1053	1.000	7.42	0.0395	0.0189
+0.6555	0.6203	1.000	MCP's reject bit will be turned on if	0.2744	0.0191
+0.6570	0.2914	1.000	STRAP II turns on this bit if STRAP II	0.2895	0.0145
+0.6700	0.2914	1.000	has encountered any of the following	0.2726	0.0161
+0.6730	0.6222	1.000	Bit 7.41 and/or Bit 7.42 has been	0.2519	0.0146
+0.6845	0.2932	1.000	conditions:	0.0922	0.0162
+0.6885	0.6202	1.000	turned on.	0.0811	0.0139
+0.6943	0.3078	1.000	Improper operation code	0.1889	0.0248
+0.7136	0.3083	1.000	Improper secondary operation code	0.2650	0.0161
+0.7136	0.6222	1.000	OTHER THAN LAST IN CHAIN:	0.2350	0.0189
+0.7264	0.6217	1.000	These bits are available for examina-	0.2811	0.0250
+0.7276	0.3101	1.000	Entry mode preceding a non-DD	0.2388	0.0171
+0.7442	0.6203	1.000	tion by the post-processor.	0.2049	0.0161
+0.7442	0.3120	1.000	Extra secondary operation code	0.2331	0.0161
+0.7558	0.3120	1.000	More than one DDS	0.1447	0.0161
+0.7733	0.3102	1.000	Location counter does not agree	0.2387	0.0161
+0.7874	0.3082	1.000	Assembly error	0.1261	0.0154
+0.8021	0.3082	1.000	Symbolie statement too long	0.2106	0.0165
+0.8299	0.2914	1.000	STRAP II turns on this bit if any error	0.2932	0.0189
+0.8328	0.1071	1.000	7.13	0.0357	0.0145
+0.8459	0.2914	1.000	condition which has not been suppressed	0.3026	0.0174
+0.8614	0.2912	1.000	has occurred.	0.1074	0.0156
+0.8916	0.1069	1.000	7.44 - 7.63	0.0888	0.0162
+0.9230	0.0789	1.000	8	0.0094	0.0116

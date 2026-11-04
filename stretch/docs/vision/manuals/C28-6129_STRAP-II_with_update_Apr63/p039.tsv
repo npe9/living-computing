@@ -1,0 +1,102 @@
+0.0669	0.5000	1.000	The two numbers are simply assumed to be integers,	0.3816	0.0147
+0.0682	0.0771	1.000	One exceptional condition must be noted here. This	0.3797	0.0161
+0.0787	0.4829	1.000	are aligned with respect to each other and are multi-	0.3988	0.0194
+0.0827	0.0583	1.000	is the case of immediate operation address fields. In	0.3985	0.0147
+0.0973	0.4831	1.000	plied or divided on this basis. The result is also	0.3985	0.0161
+0.0982	0.0601	1.000	this instance, the treatment of a mixed expression con-	0.3968	0.0172
+0.1118	0.4831	1.000	treated as an integer, that is, it is right justified in the	0.3985	0.0161
+0.1148	0.0602	1.000	sisting of both integers and bit addresses differs from	0.3947	0.0146
+0.1249	0.4810	1.000	field in which it is being inserted. If the field is	0.4008	0.0212
+0.1294	0.0602	1.000	the general rules above. The treatment of integers is	0.3966	0.0146
+0.1439	0.4831	1.000	smaller than 24 bits in length, all truncation occurs	0.3985	0.0131
+0.1453	0.0602	1.000	straightforward and the result is left justified before	0.3966	0.0147
+0.1599	0.4831	1.000	on the left.	0.0846	0.0116
+0.1599	0.0602	1.000	insertion in the field. (See DDI). If two or more bit	0.3966	0.0131
+0.1729	0.4999	1.000	The sequence that strAP follows then to multiply	0.3798	0.0163
+0.1758	0.0602	1.000	address terms are being combined, the arithmetic is	0.3966	0.0146
+0.1875	0.5544	1.000	an address expression that is a mixture of	0.3272	0.0167
+0.1889	0.4831	1.000	or divide	0.0733	0.0118
+0.1903	0.0602	1.000	as usual but no left justification is done. The field	0.3947	0.0146
+0.2048	0.4831	1.000	bit addresses and integers is	0.2068	0.0146
+0.2064	0.0602	1.000	length in the dds is ignored and the point is lined up	0.3947	0.0146
+0.2209	0.0602	1.000	between the 18th and 19th bits as in any other field.	0.3966	0.0146
+0.2224	0.4981	1.000	1. Convert all terms to 24-bit binary integers.	0.3496	0.0146
+0.2369	0.0602	1.000	However, when integer and bit address terms are to	0.3947	0.0146
+0.2397	0.5000	1.000	2. Assume all terms are signed integers. Multiply	0.3797	0.0147
+0.2490	0.0600	1.000	be combined, all terms are considered to be bit ad-	0.3969	0.0180
+0.2558	0.5244	1.000	or divide as requested.	0.1729	0.0131
+0.2674	0.0602	1.000	dresses; they are aligned accordingly and the result	0.3966	0.0147
+0.2733	0.5000	1.000	3. The result is complemented if necessary	0.3195	0.0146
+0.2833	0.0602	1.000	is inserted as a bit address. The following immediate	0.3966	0.0132
+0.2906	0.4981	1.000	4. The result is truncated on the left if necessary	0.3835	0.0146
+0.3001	0.0599	1.000	operation	0.0699	0.0115
+0.3036	0.1617	1.000	LI(BU, 24, 8), 2+2.2+6	0.1880	0.0161
+0.3067	0.5244	1.000	to fit the particular field.	0.1805	0.0146
+0.3197	0.0583	1.000	is treated by sTrap as if it had been written	0.3139	0.0146
+0.3241	0.4962	1.000	5. The result is inserted in the field as an integer,	0.3853	0.0147
+0.3358	0.1579	1.000	LI(BU, 24, 8), .2+2.2t.6	0.1974	0.0161
+0.3358	0.5207	1.000	i.e. it is right justified in the field.	0.2462	0.0189
+0.3516	0.0751	1.000	Programmer symbols, defined elsewhere in the code	0.3818	0.0183
+0.3576	0.4981	1.000	An illustration of multiplication in an address field	0.3853	0.0146
+0.3677	0.0602	1.000	as integers or strap bit addresses, may participate in	0.3966	0.0145
+0.3702	0.4791	1.000	will point out how three different expressions using	0.4027	0.0223
+0.3821	0.0602	1.000	the address arithmetic and no restrictions other than	0.3947	0.0133
+0.3866	0.4812	1.000	the same numbers will produce three very different re-	0.3985	0.0161
+0.3982	0.0583	1.000	those already outlined need be observed. System sym-	0.3985	0.0161
+0.4026	0.4793	1.000	sults. In the first case	0.1673	0.0174
+0.4127	0.0583	1.000	bols defined as bit addresses may also be used. There-	0.3985	0.0176
+0.4215	0.5677	1.000	CM1010(BU), 2 * 2($X7)	0.2162	0.0176
+0.4302	0.0602	1.000	fore	0.0301	0.0102
+0.4418	0.4812	1.000	multiplication of two integers proceeds as would be	0.3985	0.0146
+0.4506	0.0602	1.000	ANKLEBONE SYN, 20.2	0.1917	0.0146
+0.4563	0.4812	1.000	expected and the arithmetic	0.2124	0.0148
+0.4651	0.0714	1.000	FOOTBONE SYN, 1	0.1579	0.0161
+0.4774	0.1765	1.000	L (BU),FOOTBONE + ANKLEBONE -2 + 888.08	0.2767	0.0140
+0.4956	0.0583	1.000	is perfectly legal, while	0.1711	0.0160
+0.5130	0.1015	1.000	CIRCLE ST(BU), CIRCLE -$PI	0.2613	0.0161
+0.5131	0.6861	1.000	4	0.0150	0.0145
+0.5333	0.0601	1.000	is not.	0.0433	0.0089
+0.5333	0.4812	1.000	If, however, the instruction had been written	0.3289	0.0191
+0.5494	0.5921	1.000	CM1010(BU), 2.0 • 2	0.1786	0.0204
+0.5552	0.0771	1.000	There is no limitation on the number of terms that	0.3797	0.0132
+0.5712	0.0602	1.000	may appear in an arithmetic expression. Continua-	0.3966	0.0145
+0.5727	0.4774	1.000	the multiplication would now be performed in this	0.4060	0.0174
+0.5842	0.0583	1.000	tion card(s) must be used if the expression exceeds	0.3985	0.0176
+0.5885	0.4793	1.000	manner	0.0640	0.0162
+0.5945	0.6711	1.000	128	0.0320	0.0160
+0.6032	0.0602	1.000	the space available on the symbolic card.	0.2970	0.0132
+0.6161	0.0751	1.000	Arithmetic expressions involving multiplication and	0.3818	0.0183
+0.6321	0.0583	1.000	division are handled somewhat differently by STRAP.	0.3985	0.0176
+0.6352	0.6729	1.000	256	0.0301	0.0131
+0.6467	0.0583	1.000	Here the assembly program recognizes that certain	0.3985	0.0176
+0.6526	0.4793	1.000	In still a third case, this address expression	0.3327	0.0189
+0.6612	0.0583	1.000	combinations (two or more integers or integers and	0.3966	0.0176
+0.6715	0.5883	1.000	CM1010(BU), 2.0 * 2.0	0.1861	0.0176
+0.6773	0.0602	1.000	bit addresses) can have meaningful results while	0.3966	0.0146
+0.6933	0.0602	1.000	multiplying or dividing two or more bit addresses has	0.3966	0.0146
+0.6948	0.4793	1.000	which is multiplied by stRap as	0.2331	0.0146
+0.7093	0.0583	1.000	little meaning so that, although such operations are	0.3985	0.0160
+0.7108	0.6805	1.000	128	0.0301	0.0145
+0.7237	0.6616	1.000	X 128	0.0509	0.0164
+0.7238	0.0602	1.000	not prohibited, arbitrary rules are imposed on the	0.3966	0.0160
+0.7395	0.0601	1.000	arithmetic.	0.0791	0.0136
+0.7499	0.6635	1.000	16384	0.0471	0.0133
+0.7542	0.0771	1.000	The basic precept in multiplication and division is	0.3797	0.0147
+0.7688	0.0602	1.000	that both bit address terms and integer terms are	0.3966	0.0146
+0.7703	0.4793	1.000	The strap bit address, when converted to 24-bit binary	0.4004	0.0161
+0.7848	0.0602	1.000	treated as 24-bit integers and the point is forgotten	0.3947	0.0146
+0.7863	0.4793	1.000	integer form, is specifying an integral number of bits.	0.4004	0.0161
+0.8009	0.4793	1.000	The 24-bit representation of integer terms is also a	0.4004	0.0174
+0.8009	0.0583	1.000	in the bit address once the conversion to binary is	0.3985	0.0131
+0.8154	0.4812	1.000	number of bits. The results, therefore, are also treated	0.3985	0.0174
+0.8154	0.0602	1.000	accomplished. This means that the address expression	0.3947	0.0146
+0.8277	0.4809	1.000	as an integral number of bits. In case one, the an-	0.4009	0.0246
+0.8312	0.2274	1.000	2.0 * 2	0.0584	0.0148
+0.8473	0.4812	1.000	swer is 4 bits as one would expect when multiplying	0.3985	0.0161
+0.8503	0.0602	1.000	is the same as writing	0.1560	0.0131
+0.8618	0.4812	1.000	two bits by two bits. In case two, the answer is 256	0.3985	0.0161
+0.8632	0.2274	1.000	128 * 2	0.0602	0.0119
+0.8779	0.4812	1.000	bits or four words, also to be anticipated when multi-	0.4004	0.0161
+0.8794	0.0583	1.000	No shifting is done.	0.1466	0.0161
+0.9128	0.8609	1.000	35	0.0169	0.0102
+0.9142	0.7613	1.000	Section II	0.0658	0.0103

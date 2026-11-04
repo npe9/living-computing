@@ -1,0 +1,19 @@
+0.0827	0.1165	1.000	STRAP will leave the listing and binary data "sand-	0.3816	0.0147
+0.0988	0.0996	1.000	wiched" or interspersed, on the disk in records of	0.3759	0.0146
+0.1012	0.5450	1.000	Interspersed	0.0736	0.0142
+0.1031	0.6842	1.000	Intermediate	0.0790	0.0133
+0.1142	0.5449	1.000	Binary and	0.0662	0.0144
+0.1158	0.1014	1.000	arc lengths.	0.0904	0.0126
+0.1162	0.8346	1.000	Name File	0.0621	0.0089
+0.1163	0.6842	1.000	Expanded Unit	0.0883	0.0116
+0.1276	0.5450	1.000	Listing Records	0.0923	0.0152
+0.1279	0.1165	1.000	When assembly is complete, the data in word 9 of	0.3703	0.0146
+0.1294	0.6880	1.000	Files	0.0301	0.0087
+0.1396	0.1014	1.000	the Communication Record will be placed in word 8,	0.3856	0.0189
+0.1570	0.0996	1.000	with bits 00 - 18 containing the relative arc number	0.3835	0.0145
+0.1627	0.5451	1.000	- Relative Arc O	0.0959	0.0131
+0.1637	0.8495	1.000	Top of Disk	0.0699	0.0128
+0.1744	0.1015	1.000	of the last arc of listing.	0.1823	0.0116
+0.1773	0.5244	1.000	Figure 2. STRAP II's Output on Disk	0.2162	0.0131
+0.9404	0.8045	1.000	Input-Output	0.0771	0.0087
+0.9404	0.9041	1.000	11	0.0150	0.0073

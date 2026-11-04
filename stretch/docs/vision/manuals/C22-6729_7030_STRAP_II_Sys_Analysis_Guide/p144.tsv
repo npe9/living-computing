@@ -1,0 +1,121 @@
+0.0683	0.0583	1.000	INSERT	0.0620	0.0131
+0.1279	0.5056	1.000	A two's complement is formed to take the place of	0.3703	0.0117
+0.1279	0.0620	1.000	LINKAGE	0.0714	0.0102
+0.1424	0.4887	1.000	a negative result intended for an unsigned field. Bits	0.3929	0.0116
+0.1424	0.0620	1.000	DECODE uses any of the INSERT subroutines by the	0.3872	0.0131
+0.1570	0.0639	1.000	calling sequence: SIC, Sgez: B. an address of one	0.3722	0.0145
+0.1570	0.4887	1.000	are truncated where necessary to fit the field, and the	0.4004	0.0116
+0.1715	0.0639	1.000	of the INSERT subroutines. The address in the	0.3515	0.0116
+0.1715	0.4887	1.000	appropriate error messages are executed. INSERT	0.3872	0.0131
+0.1860	0.4887	1.000	gets the absolute value of the coded fields from three	0.3929	0.0116
+0.1860	0.0639	1.000	Branch instruction is determined by the current fill	0.3816	0.0116
+0.1988	0.4868	1.000	locations:	0.0754	0.0123
+0.2020	0.0620	1.000	index word.	0.0883	0.0102
+0.2165	0.5695	1.000	bit value.	0.0752	0.0103
+0.2166	0.5188	1.000	Sinb:	0.0395	0.0131
+0.2311	0.0639	1.000	DETAILS	0.0695	0.0087
+0.2311	0.5188	1.000	Sini:	0.0357	0.0116
+0.2311	0.5695	1.000	integer value.	0.1071	0.0102
+0.2456	0.5695	1.000	index value.	0.0940	0.0102
+0.2456	0.5169	1.000	Sinx:	0.0395	0.0131
+0.2570	0.5036	1.000	NOTE: In the case of immediate addresses, it	0.3480	0.0150
+0.2602	0.0639	1.000	After DECODE has a coded expression, which is in	0.3778	0.0116
+0.2733	0.4887	1.000	should be noted that the immediate address is filled	0.3797	0.0116
+0.2747	0.0620	1.000	the unit, evaluated by VALUE, a value must be	0.3496	0.0132
+0.2892	0.0620	1.000	inserted into the appropriate field in the binary output.	0.4060	0.0117
+0.2892	0.4850	1.000	into the word according to the given field length,	0.3609	0.0117
+0.3036	0.0808	1.000	For each type of instruction, there has been set up	0.3741	0.0133
+0.3036	0.4868	1.000	unless it contains a bit address or the given field	0.3628	0.0118
+0.3182	0.0639	1.000	a chained set of index words so DECODE can suc-	0.3703	0.0118
+0.3182	0.4868	1.000	length exceeds 24, in which cases the field is filled	0.3797	0.0118
+0.3327	0.4868	1.000	in as a 24-bit address.	0.1711	0.0118
+0.3327	0.0620	1.000	cessively use the appropriate INSERT subroutine after	0.4060	0.0147
+0.3473	0.5056	1.000	The INSERT subroutines are:	0.2180	0.0118
+0.3473	0.0639	1.000	getting each coded expression in the unit evaluated by	0.3947	0.0133
+0.3618	0.5883	1.000	18-bit address and I field.	0.1955	0.0133
+0.3618	0.0639	1.000	VALUE. (Recall that MAIN puts the location of the	0.3778	0.0132
+0.3619	0.5000	1.000	S18A	0.0432	0.0131
+0.3764	0.5883	1.000	18-bit address, no index allowed.	0.2481	0.0132
+0.3765	0.5000	1.000	S18NI	0.0470	0.0145
+0.3779	0.0639	1.000	set of fill index words for this type of op in the unit	0.3797	0.0117
+0.3910	0.5000	1.000	S19NI	0.0489	0.0145
+0.3924	0.5883	1.000	19-bit address, .no index allowed.	0.2481	0.0116
+0.3924	0.0620	1.000	after the look-up in the primary operation table.)	0.3665	0.0116
+0.4055	0.5000	1.000	S19KF	0.0545	0.0145
+0.4070	0.5883	1.000	19-bit address, K field	0.1711	0.0116
+0.4070	0.0808	1.000	The format of each of the fill index words is: Value	0.3835	0.0103
+0.4201	0.5019	1.000	S19IA	0.0470	0.0145
+0.4215	0.5883	1.000	19-bit address, and I field.	0.2011	0.0116
+0.4215	0.0639	1.000	field contains the address of the INSERT subroutine	0.3816	0.0103
+0.4360	0.5000	1.000	S1918A	0.0564	0.0131
+0.4360	0.5883	1.000	19-bit address and I field, error-flagged	0.3008	0.0131
+0.4360	0.0620	1.000	to put value in particular field of the binary output	0.3741	0.0131
+0.4493	0.6050	1.000	if 19th bit not zero.	0.1454	0.0145
+0.4506	0.0639	1.000	skeleton in the unit. Count field contains the number	0.3910	0.0116
+0.4651	0.0639	1.000	of coded expressions each of whose values will be	0.3684	0.0116
+0.4651	0.5883	1.000	24-bit address and I field.	0.1936	0.0116
+0.4651	0.5019	1.000	S24A	0.0395	0.0131
+0.4797	0.5883	1.000	24-bit address and I field, error-flagged	0.3008	0.0131
+0.4811	0.0639	1.000	given to this particular INSERT subroutine. (This	0.3722	0.0116
+0.4811	0.5000	1.000	STTI	0.0414	0.0116
+0.4956	0.0639	1.000	count field is one in almost all type of instructions,	0.3797	0.0116
+0.4956	0.6053	1.000	if more than 18 bits are specified.	0.2538	0.0116
+0.5099	0.4999	1.000	SSICZ4	0.0547	0.0136
+0.5102	0.5883	1.000	24-bit address and I field, error-flagged	0.3008	0.0116
+0.5102	0.0639	1.000	INDMK and LVS being the exceptions.) Refill field	0.3759	0.0116
+0.5247	0.0639	1.000	contains the location of the index word to be used in	0.3816	0.0102
+0.5247	0.6053	1.000	if more than 19 bits are specified.	0.2519	0.0117
+0.5392	0.0639	1.000	filling in the value of the next field in the binary out-	0.3891	0.0117
+0.5392	0.5883	1.000	24-bit signed field with index if any.	0.2669	0.0117
+0.5392	0.5019	1.000	S24SNI	0.0545	0.0131
+0.5536	0.0639	1.000	put skeleton.	0.0959	0.0118
+0.5536	0.5883	1.000	24-bit signed field, error-flagged if	0.2669	0.0133
+0.5538	0.5019	1.000	$24CW	0.0508	0.0131
+0.5682	0.6053	1.000	more than 18 bits are specified.	0.2368	0.0118
+0.5682	0.0808	1.000	Thus, for example, the field types list for a variable	0.3929	0.0133
+0.5827	0.5883	1.000	Flag bits 25-27.	0.1203	0.0133
+0.5827	0.0639	1.000	field length operation would be -- XW, S24A, 1, $ + 1;	0.4041	0.0133
+0.5827	0.5000	1.000	SFLGS	0.0546	0.0133
+0.5969	0.4998	1.000	S19BBK	0.0624	0.0141
+0.5973	0.5865	1.000	19-bit branch address and K field.	0.2556	0.0118
+0.5973	0.0639	1.000	XW, SOFE, 1, 0 -- while for a LVS it would be --	0.3741	0.0133
+0.6089	0.5863	1.000	19-bit transmit address and I field,	0.2637	0.0176
+0.6119	0.5019	1.000	STTI9A	0.0620	0.0145
+0.6133	0.0620	1.000	XW, SJFLD, 1, § + 1; XW, SBIT, 16, 0.	0.3083	0.0146
+0.6279	0.6053	1.000	error-flagged if more than 18 bits	0.2500	0.0117
+0.6279	0.0808	1.000	Algebraic addition of bit and integer addresses is	0.3647	0.0117
+0.6424	0.0620	1.000	performed according to the type of field into which	0.3759	0.0131
+0.6424	0.6034	1.000	are specified in address.	0.1861	0.0103
+0.6539	0.5846	1.000	18-bit count field.	0.1372	0.0147
+0.6570	0.0639	1.000	the sum is to be inserted. For example, if the	0.3496	0.0116
+0.6570	0.5000	1.000	S18CF	0.0508	0.0102
+0.6681	0.5845	1.000	18-bit refill field.	0.1374	0.0155
+0.6700	0.0620	1.000	address SAM + 10 is to be inserted into an 18-bit	0.3665	0.0118
+0.6701	0.5000	1.000	S18RF	0.0526	0.0131
+0.6814	0.4980	1.000	SOFF	0.0511	0.0208
+0.6830	0.0639	1.000	address, the routine adds 10 full words to the address	0.4004	0.0146
+0.6830	0.5865	1.000	Offset and I field.	0.1335	0.0161
+0.6948	0.5826	1.000	7-bit channel address and I field.	0.2521	0.0170
+0.6977	0.5000	1.000	SCHAN	0.0583	0.0189
+0.6990	0.0638	1.000	of SAM; if a 19-bit address, it adds 10 half words; if	0.3931	0.0162
+0.7118	0.0618	1.000	a 21-bit address, it adds 10 bits. Note that the addition	0.4178	0.0214
+0.7122	0.5000	1.000	SXP10	0.0526	0.0174
+0.7136	0.5846	1.000	Signed exponent field or normal fraction	0.2989	0.0161
+0.7267	0.5977	1.000	shift.	0.0489	0.0160
+0.7282	0.0639	1.000	is determined by the function of the address, not the	0.3891	0.0146
+0.7427	0.5846	1.000	Index indicator bits for LVS instruction.	0.2989	0.0145
+0.7427	0.5000	1.000	SBIT	0.0451	0.0160
+0.7442	0.0639	1.000	size of the field. To fill the addresses in the instruc-	0.4004	0.0116
+0.7558	0.5846	1.000	J field.	0.0602	0.0161
+0.7572	0.5000	1.000	SJFLD	0.0565	0.0176
+0.7586	0.0639	1.000	tion TI, 7, SAM + 10, PAT + 10, the routine adds 10	0.3911	0.0153
+0.7701	0.4999	1.000	STJFLD	0.0660	0.0193
+0.7703	0.5827	1.000	J field for transmit and swap instructions.	0.3195	0.0176
+0.7733	0.0639	1.000	full words to both addresses. Although SAM + 10 is a	0.3985	0.0131
+0.7848	0.5827	1.000	Immediate addresses.	0.1711	0.0176
+0.7861	0.4999	1.000	SIMAD	0.0566	0.0178
+0.7892	0.0639	1.000	24-bit field and PAT + 10 is a 19-bit field, both func-	0.3947	0.0117
+0.8007	0.4980	1.000	SINDMK	0.0697	0.0164
+0.8009	0.5846	1.000	Indicator mask.	0.1203	0.0161
+0.8036	0.0639	1.000	tion as 18-bit addresses.	0.1880	0.0118
+0.9215	0.0639	1.000	144	0.0207	0.0073

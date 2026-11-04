@@ -1,0 +1,119 @@
+0.0609	0.1259	1.000	4. XW-Index Word	0.1598	0.0147
+0.0609	0.5526	1.000	are given data descriptions by the compiler, and,	0.3985	0.0176
+0.0748	0.5524	1.000	therefore, cannot be written by the programmer.	0.3951	0.0195
+0.0799	0.1767	1.000	XW, VALUE, COUNT, REFILL, FLAG	0.3008	0.0174
+0.0915	0.5526	1.000	Specifically, the index words or elements created by	0.3947	0.0161
+0.1032	0.1447	1.000	The location counter is rounded up to the next full	0.3835	0.0174
+0.1061	0.5526	1.000	these orders have had the following data descrip-	0.3966	0.0161
+0.1191	0.1297	1.000	word if it is not already at a full word address. The	0.3966	0.0146
+0.1206	0.5526	1.000	tions affixed automatically, and cannot be overruled	0.3966	0.0176
+0.1336	0.1297	1.000	contents of the four fields following the operation are	0.3966	0.0146
+0.1366	0.5508	1.000	in the pseudo operation statement:	0.2556	0.0161
+0.1497	0.1278	1.000	compiled in an index word format. The quantity rep-	0.3985	0.0161
+0.1583	0.6184	1.000	Operation	0.0771	0.0148
+0.1584	0.7500	1.000	Data Description	0.1297	0.0146
+0.1642	0.1297	1.000	resented by the symbol vaLue is compiled in bits 0-24	0.3966	0.0145
+0.1800	0.7499	1.000	(BU)	0.0453	0.0149
+0.1802	0.6184	1.000	XW	0.0320	0.0131
+0.1802	0.1278	1.000	of the full word compiled. COUNT is compiled in bits	0.3985	0.0161
+0.1948	0.7744	1.000	,25)	0.0357	0.0160
+0.1962	0.6184	1.000	VF	0.0263	0.0116
+0.1962	0.7500	1.000	(B,	0.0282	0.0145
+0.1962	0.1297	1.000	28-45 of this word and ReFIlL is compiled in bits 46-	0.3966	0.0132
+0.2101	0.7497	1.000	(BU, 18)	0.0719	0.0174
+0.2106	0.1297	1.000	63. FLAG denotes the index word field composed of	0.3985	0.0147
+0.2120	0.6184	1.000	CF or RF	0.0772	0.0121
+0.2252	0.1278	1.000	bits 25, 26 and 27. An expression in the flag field of	0.4004	0.0161
+0.2369	0.5508	1.000	8. CW-Control Word	0.1729	0.0131
+0.2412	0.1297	1.000	an xw statement is therefore evaluated modulo 23.	0.3741	0.0131
+0.2558	0.5508	1.000	CW(OP), ADDRESS, COUNT, CHAIN ADDRESS	0.3985	0.0176
+0.2573	0.1466	1.000	If the following statement were encountered by	0.3778	0.0146
+0.2716	0.1274	1.000	STRAP in a program:	0.1549	0.0168
+0.2761	0.5677	1.000	The pseudo operation cw is similar in function to	0.3816	0.0176
+0.2921	0.5508	1.000	xW. cW creates a full word in storage, but in the	0.3985	0.0161
+0.2951	0.1917	1.000	XW, 1001.50, TOTAL, XWORD2, 4	0.2707	0.0160
+0.3067	0.5508	1.000	format of an I/o control word. The location counter	0.3985	0.0146
+0.3169	0.1259	1.000	a full word would be compiled in the format of an	0.4004	0.0160
+0.3227	0.5508	1.000	is first rounded up to a full word address unless it is	0.3985	0.0161
+0.3327	0.1259	1.000	index word with 1001.50 in the value field, the quan-	0.4023	0.0161
+0.3387	0.5508	1.000	already at a full word address. The quantity repre-	0.3985	0.0160
+0.3488	0.1297	1.000	tity symbolized by the programmer symbol TOTAL in	0.3947	0.0131
+0.3545	0.5526	1.000	sented by the symbol ADDress is compiled in the first	0.3947	0.0146
+0.3648	0.1278	1.000	the count field and the quantity symbolized by xwORD2	0.3966	0.0131
+0.3689	0.5544	1.000	18 bits of the full word created. count is compiled in	0.3930	0.0122
+0.3794	0.1278	1.000	in the refill field, all converted to binary of course.	0.3966	0.0131
+0.3852	0.5526	1.000	bits 28-45 and CHAIN ADDREss is compiled in 46-63.	0.3741	0.0131
+0.3939	0.1297	1.000	The 4 is interpreted as the octal integer 4 in the three	0.3966	0.0146
+0.3997	0.5695	1.000	In a control word the flag bits (bits 25-27) are the	0.3778	0.0145
+0.4099	0.1297	1.000	bit flag field, which turns on the index flag bit in the	0.3966	0.0147
+0.4142	0.5526	1.000	chain flag, the multiple flag and the skip flag, in that	0.3966	0.0161
+0.4258	0.1278	1.000	index word compiled.	0.1617	0.0133
+0.4302	0.5526	1.000	order. Each of these bits may be set to zero or one	0.3947	0.0146
+0.4426	0.5525	1.000	and each of the combinations of the setting of these	0.3950	0.0174
+0.4448	0.1297	1.000	Note: Bit 24, the 25th bit in the word compiled, is as-	0.3966	0.0146
+0.4606	0.5526	1.000	bits causes certain variations in reading and writing	0.3947	0.0147
+0.4606	0.1278	1.000	sumed to be the sign bit for the value field. All the	0.3966	0.0133
+0.4752	0.5526	1.000	operations. STRAP-II defines 8 pseudo operations to	0.3947	0.0147
+0.4752	0.1278	1.000	other fields are unsigned; a negative sign is interp-	0.3966	0.0147
+0.4897	0.1278	1.000	reted in two's complement form in the usual way.	0.3985	0.0161
+0.4912	0.5526	1.000	specify all combinations of the three flag bits. The	0.3947	0.0146
+0.5073	0.5526	1.000	pseudo operation names indicate the type of I/o op-	0.3947	0.0131
+0.5130	0.1259	1.000	5. VF-Value Field	0.1504	0.0146
+0.5218	0.5526	1.000	eration they specify. These pseudo operation mne-	0.3947	0.0146
+0.5316	0.2762	1.000	VF, VALUE	0.0979	0.0152
+0.5333	0.5525	1.000	monics are written as a secondary operation in the	0.3951	0.0192
+0.5523	0.5526	1.000	cw statement, i.e., the mnemonics are written in par-	0.3947	0.0146
+0.5536	0.1447	1.000	The location counter is rounded to the nearest half-	0.3797	0.0118
+0.5669	0.5526	1.000	entheses immediately following cw. The 8 secondary	0.3947	0.0160
+0.5697	0.1278	1.000	word if it is not already at a half-word address. The	0.3966	0.0132
+0.5827	0.5526	1.000	pseudo operations are:	0.1711	0.0147
+0.5858	0.1278	1.000	quantity symbolized by vaLuE is compiled in bits 0-24	0.3966	0.0131
+0.6003	0.1278	1.000	of the next half word (24 bits plus sign). The loca-	0.3966	0.0146
+0.6121	0.1277	1.000	tion counter stands at bit 25 at the end of the opera-	0.3988	0.0176
+0.6163	0.8158	1.000	Chain Multiple Skip	0.1316	0.0102
+0.6279	0.8289	1.000	Bit	0.0188	0.0087
+0.6279	0.9173	1.000	Flag	0.0301	0.0116
+0.6279	0.8759	1.000	Bit	0.0207	0.0087
+0.6323	0.1278	1.000	tion.	0.0338	0.0102
+0.6468	0.8308	1.000	0	0.0113	0.0087
+0.6468	0.8797	1.000	0	0.0094	0.0087
+0.6468	0.5508	1.000	CR	0.0263	0.0102
+0.6539	0.1259	1.000	6. CF-Count Field	0.1523	0.0133
+0.6555	0.5508	1.000	CCR	0.0395	0.0131
+0.6584	0.8308	1.000	1	0.0094	0.0116
+0.6584	0.8797	1.000	0	0.0094	0.0087
+0.6584	0.9267	1.000	0	0.0094	0.0102
+0.6686	0.8778	1.000	1	0.0094	0.0102
+0.6686	0.5489	1.000	CD	0.0282	0.0131
+0.6712	0.2762	1.000	CF, COUNT	0.0998	0.0167
+0.6773	0.5508	1.000	CDSC	0.0451	0.0160
+0.6919	0.9248	1.000	0	0.0113	0.0102
+0.6919	0.8308	1.000	!	0.0113	0.0218
+0.6925	0.1427	1.000	The location counter is rounded to the next half-	0.3800	0.0175
+0.7006	0.5508	1.000	SCR	0.0338	0.0145
+0.7020	0.9267	1.000	1	0.0094	0.0116
+0.7078	0.1259	1.000	word if necessary. The quantity symbolized by COUNT	0.3985	0.0161
+0.7121	0.5488	1.000	SCCR	0.0452	0.0147
+0.7224	0.1259	1.000	is complied as an 18 bit integer in bits 0-17. The lo-	0.3966	0.0174
+0.7253	0.8308	1.000	1	0.0094	0.0116
+0.7339	0.6071	0.500	*SKeoComnt, Disregarding	0.1786	0.0291
+0.7355	0.5508	1.000	SCD	0.0357	0.0145
+0.7397	0.1259	1.000	cation counter stands at bit 18 at the end of the opera-	0.3966	0.0133
+0.7573	0.1278	1.000	tion.	0.0338	0.0102
+0.7615	0.5620	1.000	CDSC "Skip, Count, Disregardir	0.2105	0.0118
+0.7688	0.6353	1.000	ecord, Skip and Chait	0.1372	0.0146
+0.7718	0.8308	1.000	1	0.0094	0.0102
+0.7733	0.9248	1.000	1	0.0094	0.0087
+0.7791	0.1259	1.000	7. RF-Refill Field	0.1447	0.0131
+0.7833	0.5508	1.000	cw is assigned a data description of (Bu, 64, 8).	0.3008	0.0146
+0.7962	0.2725	1.000	RF, REFILL	0.1017	0.0180
+0.8169	0.5489	1.000	9. DD-Data Definition	0.1823	0.0147
+0.8182	0.1410	1.000	The pseudo operation is treated in exactly the same	0.3835	0.0191
+0.8358	0.1241	1.000	fashion as cF, except the word refill should be sub-	0.3966	0.0161
+0.8372	0.6410	1.000	DD(dds), D, D', D',...	0.2124	0.0174
+0.8482	0.1240	1.000	stituted for the word count.	0.2031	0.0144
+0.8561	0.5583	1.000	The Data Definition pseudo operation provides the	0.3891	0.0189
+0.8721	0.5470	1.000	programmer with the basic method of entering and	0.3985	0.0174
+0.8735	0.1259	1.000	Note: The last four pseudo operations defined above	0.3966	0.0146
+0.9082	0.1766	1.000	TBM 7030	0.0622	0.0093
+0.9084	0.1259	1.000	14	0.0169	0.0087

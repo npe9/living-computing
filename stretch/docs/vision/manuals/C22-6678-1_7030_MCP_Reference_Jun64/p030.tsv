@@ -1,0 +1,100 @@
+0.0706	0.0957	1.000	numerical display for visual verification when the	0.3781	0.0191
+0.0712	0.5244	1.000	selected if key 31 is off or if an invalid code is	0.3571	0.0161
+0.0858	0.5263	1.000	given.	0.0526	0.0160
+0.0858	0.0996	1.000	I/O Status option is used. A logging of the I/O	0.3534	0.0145
+0.1045	0.0996	1.000	status report will be given on the typewriter.	0.3383	0.0103
+0.1134	0.6090	1.000	Mode	0.0451	0.0174
+0.1134	0.8102	1.000	Code	0.0414	0.0174
+0.1163	0.1429	1.000	$ STATUS REPLY: CHXX ZZZ DELETED	0.3195	0.0116
+0.1321	0.0977	1.000	where ZZZ is either UNY or ALL.	0.2632	0.0118
+0.1424	0.5489	1.000	On-line overlapped	0.1485	0.0176
+0.1439	0.1184	1.000	2. Return to step 3 of "Operation of the Initial-	0.3571	0.0161
+0.1468	0.8289	1.000	0	0.0094	0.0087
+0.1570	0.5489	1.000	Off-line overlapped	0.1560	0.0161
+0.1599	0.8271	1.000	1	0.0113	0.0116
+0.1612	0.0977	1.000	ization Program" to continue the initialization	0.3477	0.0118
+0.1724	0.5486	1.000	Bypass	0.0606	0.0171
+0.1744	0.0959	1.000	procedure. Note that since binary key 29 latched	0.3741	0.0147
+0.1845	0.0957	1.000	on indicates that at least one I/O status report is	0.3725	0.0207
+0.1855	0.7799	1.000	R, 3-9, blank	0.1112	0.0200
+0.1860	0.5489	1.000	Mode from MCPP card	0.1786	0.0161
+0.2017	0.0976	1.000	to be made, the initialization program must later	0.3744	0.0195
+0.2166	0.0977	1.000	inquire through a message whether there are addi-	0.3835	0.0160
+0.2166	0.5263	1.000	Time and Date	0.1147	0.0160
+0.2339	0.0996	1.000	tional I/O status reports to be made.	0.2782	0.0118
+0.2442	0.5282	1.000	Binary keys 0-23 and 32-55 are used to enter the	0.3703	0.0189
+0.2470	0.1184	1.000	3. The following message indicates that the next	0.3665	0.0161
+0.2602	0.5263	1.000	time and date. (See Figure 2.) Each number	0.3496	0.0174
+0.2630	0.0996	1.000	I/O status report be made.	0.2030	0.0131
+0.2733	0.5244	1.000	entered must be 9 or less to be valid. If the time	0.3797	0.0174
+0.2743	0.1408	1.000	$ MAKE YOUR NEXT I/O STATUS REPORT.	0.3425	0.0226
+0.2906	0.5244	1.000	and date entries are valid, they are saved by MCP,	0.3910	0.0146
+0.2921	0.1222	1.000	4. Unlatch binary key 29 if there are no addi-	0.3440	0.0131
+0.3021	0.0995	1.000	tional units to be made unavailable. If binary key	0.3725	0.0179
+0.3028	0.5263	1.000	and the date and adjusted time are included on each	0.3892	0.0165
+0.3197	0.5263	1.000	problem program's output listing.	0.2613	0.0146
+0.3212	0.0977	1.000	29 is left on, it will indicate that there is at least	0.3741	0.0145
+0.3326	0.5507	1.000	An invalid time or date entry will cause the	0.3271	0.0151
+0.3342	0.0996	1.000	one more unavailable unit to be specified after the	0.3759	0.0131
+0.3487	0.0995	1.000	current one. Enter next channel and unit numbers	0.3800	0.0167
+0.3488	0.5263	1.000	following IPL message:	0.1842	0.0146
+0.3633	0.5658	1.000	$ DATE/TIME ERROR. USE COMD, CLOCK	0.3515	0.0146
+0.3663	0.0977	1.000	in the numeric switches at this time.	0.2801	0.0102
+0.3764	0.5470	1.000	For the console response to a valid time and date	0.3759	0.0176
+0.3779	0.1184	1.000	5. Activate the sampling of the numeric switches	0.3722	0.0161
+0.3909	0.5263	1.000	setting, see the write-up for "COMD, CLOCK".	0.3647	0.0191
+0.3953	0.0996	1.000	and key 29 by pressing the console Signal key.	0.3477	0.0102
+0.4084	0.1203	1.000	6. Return to step 6 of "Operation of the Initial-	0.3534	0.0131
+0.4197	0.5281	1.000	Messages	0.0773	0.0210
+0.4215	0.0977	1.000	ization Program" if there are no more devices to	0.3722	0.0161
+0.4360	0.0976	1.000	be made unavailable. Otherwise, select the next	0.3725	0.0196
+0.4520	0.5282	1.000	The following messages will be typed on the console	0.3910	0.0146
+0.4520	0.0977	1.000	I/O device to be made unavailable and return to	0.3590	0.0146
+0.4651	0.5263	1.000	typewriter:	0.0921	0.0160
+0.4679	0.0996	1.000	step 3 above.	0.0996	0.0118
+0.4956	0.5263	1.000	Date Verification Message:	0.2086	0.0147
+0.4970	0.0996	1.000	Rejected Job Count Report	0.1992	0.0118
+0.5233	0.5639	1.000	$DATE OF IPL TAPE XX MONTH YY DAY	0.3534	0.0146
+0.5261	0.0996	1.000	In the off-line overlapped mode, key 30 when	0.3383	0.0133
+0.5378	0.0977	1.000	latched on allows MCP to start processing a prob-	0.3797	0.0160
+0.5406	0.5263	1.000	where XX and YY are two-digit numbers. The	0.3534	0.0146
+0.5523	0.5263	1.000	dates should be visually verified by the operator to	0.3853	0.0146
+0.5536	0.0977	1.000	lem program that is not the first job on the system	0.3835	0.0147
+0.5654	0.5263	1.000	determine if the current master system tape has	0.3684	0.0174
+0.5697	0.0996	1.000	input tape. The installation mode option (see	0.3421	0.0118
+0.5814	0.5263	1.000	been used in the initialization.	0.2331	0.0174
+0.5827	0.0959	1.000	"Abnormal MCP Mode Report") may be used to	0.3590	0.0161
+0.5973	0.0977	1.000	select the off-line overlapped mode if it is not the	0.3778	0.0161
+0.6078	0.0976	1.000	normal installation mode. When MCP is in control,	0.3951	0.0202
+0.6118	0.5244	1.000	I/O Assignment Messages:	0.2086	0.0146
+0.6264	0.0977	1.000	the mode can be changed by the system commands	0.3778	0.0161
+0.6381	0.5677	1.000	$MCPIPL*MOUNT-REEL NUMBER 'reel'	0.3233	0.0189
+0.6409	0.0977	1.000	provided for this purpose. (See "Commands.")	0.3590	0.0176
+0.6512	0.5677	1.000	CHANNEL XX UNIT Y	0.1767	0.0189
+0.6555	0.0996	1.000	The number of jobs to be rejected is inserted in	0.3609	0.0146
+0.6683	0.1013	1.000	columns 10 and 11 of the numeric switches.	0.3275	0.0184
+0.6758	0.5301	1.000	The preceding message specifies an I/O assignment	0.3947	0.0206
+0.6933	0.5263	1.000	for the system. Depending upon system require-	0.3759	0.0146
+0.6948	0.1203	1.000	Note: MCP will reject the number of jobs spec-	0.3665	0.0146
+0.7082	0.5281	1.000	ments, other messages of this type may follow.	0.3629	0.0154
+0.7093	0.0996	1.000	ified, but if the first off-line tape has less jobs than	0.3929	0.0146
+0.7194	0.5677	1.000	$READER IS INPUT SOURCE ON CHANNEL	0.3402	0.0191
+0.7238	0.0996	1.000	specified, MCP will reject as many jobs as is	0.3496	0.0146
+0.7384	0.1015	1.000	necessary from the subsequent off-line tapes to	0.3571	0.0116
+0.7529	0.1015	1.000	honor the count.	0.1222	0.0116
+0.7529	0.5301	1.000	In the on-line overlapped and bypass modes, a card	0.3891	0.0160
+0.7674	0.5301	1.000	reader is the system input source.	0.2632	0.0147
+0.7820	0.1034	1.000	Abnormal MCP Mode Report	0.2162	0.0117
+0.7936	0.5301	1.000	Error Messages	0.1278	0.0174
+0.8109	0.1034	1.000	The installation system operating mode may be	0.3534	0.0133
+0.8227	0.5301	1.000	If an error condition is detected, the gong is	0.3459	0.0189
+0.8270	0.1015	1.000	overridden at initialization time by latching on	0.3515	0.0131
+0.8400	0.5320	1.000	sounded and a message stating the error condition	0.3759	0.0147
+0.8413	0.1034	1.000	binary kev 31 and specifving a mode code in	0.3290	0.0093
+0.8503	0.5301	1.000	is typed on the console typewriter. The error	0.3496	0.0189
+0.8545	0.1015	1.000	numeric switch column 13. The installation's	0.3477	0.0146
+0.8663	0.5282	1.000	address is displayed in the accumulator lights on	0.3741	0.0160
+0.8677	0.1015	1.000	normal mode is established from the MCPP card	0.3703	0.0160
+0.8808	0.5301	1.000	the maintenance console. (A complete list of error	0.3910	0.0189
+0.8836	0.1015	1.000	(see "Updating the System"') and this mode is	0.3402	0.0118
+0.9201	0.1034	1.000	30	0.0150	0.0087

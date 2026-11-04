@@ -1,0 +1,111 @@
+0.0930	0.1034	1.000	into VBF1 because, unlike WT, ST would have a full	0.3947	0.0131
+0.0930	0.5357	1.000	that it may be used in restoring the phase identity of	0.3947	0.0131
+0.1076	0.1034	1.000	complement of buffer area assigned to it. When a	0.3759	0.0131
+0.1090	0.5357	1.000	SC and CR when leaving the offline mode (a SWAPI	0.3816	0.0116
+0.1221	0.1034	1.000	mode of operation is suspended, it is generally true	0.3910	0.0116
+0.1235	0.5357	1.000	instruction accomplished both functions). SC is then	0.3966	0.0116
+0.1366	0.1034	1.000	that the buffer parameters will collect at the functional	0.4117	0.0131
+0.1381	0.5357	1.000	modified for offline operation: specifically, it will	0.3835	0.0131
+0.1526	0.1034	1.000	program which is the source of data. Thus, in the	0.3816	0.0116
+0.1526	0.5357	1.000	not forward the parameter, -VWEFT, at job bound-	0.3910	0.0131
+0.1672	0.1053	1.000	online mode the CR is the source of data, and the	0.3703	0.0116
+0.1672	0.5357	1.000	aries to ST. At this point, the phase 1 operation is	0.3872	0.0132
+0.1817	0.1053	1.000	parameters collect here when CR is blocked out by	0.3816	0.0116
+0.1817	0.5357	1.000	set up and ready to operate; however, it is not started	0.4060	0.0132
+0.1962	0.1053	1.000	an out of material condition. Likewise, in the offline	0.4004	0.0132
+0.1976	0.5357	1.000	because provision for supplying tapes must first be	0.3853	0.0118
+0.2106	0.1053	1.000	mode, the parameters collect at the data source,	0.3684	0.0133
+0.2122	0.5357	1.000	made.	0.0470	0.0102
+0.2252	0.1053	1.000	ST, when ST is blocked by not having a tape to read.	0.3929	0.0133
+0.2267	0.5508	1.000	In order that future tapes coming ready from VTSB	0.3853	0.0118
+0.2397	0.1053	1.000	Since the TS switch mechanism would normally pro-	0.3929	0.0118
+0.2412	0.5357	1.000	arrive at ST, the VDS (VTSB) slot must be set to ST.	0.4004	0.0131
+0.2558	0.1053	1.000	vide such a tape, the mechanism must be prevented	0.3872	0.0131
+0.2573	0.5357	1.000	Furthermore, expended read tapes should be unloaded	0.4060	0.0131
+0.2702	0.1049	1.000	from doing so.	0.1116	0.0130
+0.2718	0.5357	1.000	in the offline mode, not rewound, and so VOP (VTSB)	0.3985	0.0131
+0.2848	0.1222	1.000	The philosophy of the BYPASS command is that it	0.3722	0.0131
+0.2863	0.5338	1.000	is set to 1. However, it is possible that some tapes	0.3947	0.0116
+0.3009	0.5357	1.000	have already come ready and been put in the VTSA	0.3778	0.0116
+0.3009	0.1034	1.000	is primarily a temporary interruption of the existing	0.3966	0.0116
+0.3154	0.1053	1.000	overlapped mode. Therefore, the transition routines	0.4004	0.0116
+0.3169	0.5357	1.000	queue with WT destinations. The subroutine VMTTSA	0.4060	0.0116
+0.3299	0.1053	1.000	to bypass alter the prior overlapped mechanism as	0.3816	0.0116
+0.3314	0.5357	1.000	removes these tapes from the queue and recycles	0.3684	0.0116
+0.3445	0.5357	1.000	them through VTMV to be unloaded, whence they will	0.3985	0.0146
+0.3445	0.1034	1.000	little as possible. The compound case, resumption	0.3872	0.0131
+0.3590	0.1053	1.000	of overlapped operation in a mode different from the	0.3929	0.0146
+0.3605	0.5376	1.000	come ready with ST destinations because of the new	0.3872	0.0102
+0.3750	0.1053	1.000	previous overlapped mode is handled by the two	0.3571	0.0117
+0.3750	0.5376	1.000	setting of VDS (VTSB). When the first tape does	0.3647	0.0117
+0.3894	0.1053	1.000	resumption commands on an exception basis.	0.3383	0.0118
+0.3894	0.5376	1.000	come ready it will initiate phase 1 operations through	0.4004	0.0133
+0.4055	0.5376	1.000	the normal tape switch mechanism, the transition	0.3741	0.0118
+0.4200	0.5376	1.000	procedure being completed by then.	0.2669	0.0118
+0.4244	0.1053	1.000	Offline from Online -- VOFFLN	0.2387	0.0102
+0.4345	0.5545	1.000	VFREW must do one more thing, depending on how	0.3797	0.0118
+0.4491	0.5376	1.000	it was removed from the WT queue; whether in the	0.3797	0.0117
+0.4636	0.1053	1.000	The VOFFLN routine (Figure 83) is entered when JC1	0.4023	0.0117
+0.4636	0.5376	1.000	normal continuation of WT processing or in reinitiating	0.4154	0.0117
+0.4782	0.5376	1.000	WT processing upon receipt of a new tape from tape	0.3891	0.0116
+0.4782	0.1053	1.000	identifies an OFFLINE command card. The VOFFLN	0.4041	0.0116
+0.4927	0.5376	1.000	switch. When -VFREW is delivered to WT by the	0.3741	0.0116
+0.4942	0.1053	1.000	routine first determines whether the OFFLINE card	0.3891	0.0102
+0.5073	0.5395	1.000	VOFFLN routine, WT may terminate the tape just	0.3759	0.0131
+0.5087	0.1053	1.000	is the last one of the input file from the card reader.	0.3966	0.0116
+0.5233	0.1053	1.000	If it is not, it gives an end return to the command	0.3741	0.0116
+0.5233	0.5376	1.000	prior to picking up -VFREW from its queue. In this	0.3929	0.0116
+0.5378	0.5376	1.000	case parameter flow would halt at WT until a new	0.3703	0.0116
+0.5378	0.1053	1.000	package which causes the OFFLINE command to be	0.3853	0.0116
+0.5523	0.1053	1.000	ignored and processing of the input file continues in	0.3872	0.0116
+0.5523	0.5376	1.000	tape is delivered to WT, at which time VFREW would	0.4004	0.0116
+0.5669	0.1053	1.000	the online mode. Otherwise, VOFFLN alters the	0.3703	0.0131
+0.5669	0.5376	1.000	be picked up. On the other hand, VFREW may be	0.3703	0.0131
+0.5814	0.5376	1.000	picked up in normal continuation just after the VWEFT	0.4098	0.0116
+0.5814	0.1053	1.000	card reader CS fixup to ignore CS thereby preventing	0.3985	0.0116
+0.5959	0.5376	1.000	procedure has been completed, and VFREW would	0.3759	0.0116
+0.5959	0.1053	1.000	the card reader's possibly reading into the phase 1	0.3797	0.0132
+0.6114	0.1051	1.000	buffer.	0.0529	0.0111
+0.6118	0.5376	1.000	use the write tape termination procedure to send the	0.3929	0.0103
+0.6250	0.5376	1.000	completed write tape to phase 4. VFREW can dis-	0.3816	0.0117
+0.6264	0.1203	1.000	In order to effect the transition to offline the	0.3365	0.0103
+0.6394	0.5376	1.000	tinguish between the two cases by testing the file and	0.3947	0.0118
+0.6409	0.1053	1.000	following steps must be taken:	0.2274	0.0103
+0.6513	0.5355	1.000	record counts, both of which would be zero in the	0.3725	0.0182
+0.6555	0.1203	1.000	1. Modify VTSB so that old phase 4 tapes are	0.3477	0.0118
+0.6672	0.5338	1.000	tape attachment case. In this case VFREW passes	0.3853	0.0160
+0.6685	0.1015	1.000	unloaded and so that tapes coming ready at VTSB are	0.4023	0.0133
+0.6817	0.5338	1.000	back the tape just being attached as it did for the	0.3703	0.0147
+0.6845	0.1053	1.000	given an ST destination.	0.1805	0.0118
+0.6976	0.5357	1.000	tapes found in the VTSA queue. In normal continua-	0.3947	0.0146
+0.6991	0.1203	1.000	2. Modify VSC and connect it up with ST.	0.3139	0.0117
+0.7106	0.1222	1.000	Changing the destination of old read tapes can only	0.3778	0.0147
+0.7121	0.5357	1.000	tion, VFREW goes to the WI tape termination pro-	0.3872	0.0219
+0.7267	0.5357	1.000	cedure.	0.0602	0.0131
+0.7282	0.1053	1.000	be done when it is definite that all of WT assigned	0.3722	0.0116
+0.7412	0.5526	1.000	This completes the OFFLINE transition. It is well	0.3853	0.0146
+0.7427	0.1053	1.000	buffer area has been written on tape. A negative	0.3665	0.0131
+0.7558	0.5357	1.000	at this point to review the status of the old phase 1	0.3797	0.0146
+0.7587	0.1034	1.000	parameter given to WT at this time will be picked up	0.3947	0.0116
+0.7703	0.5357	1.000	configuration. The WT program is now in a position	0.3966	0.0146
+0.7718	0.1053	1.000	only after all prior assigned buffer area has been	0.3703	0.0131
+0.7863	0.1034	1.000	processed. Therefore, the parameter, -VFREW,	0.3778	0.0146
+0.7863	0.5338	1.000	to receive a new tape, although it will not get any	0.3741	0.0146
+0.8009	0.5357	1.000	because VDS (VTSB) is set to ST. Also, WT is in a	0.3910	0.0146
+0.8023	0.1034	1.000	is forwarded to WT.	0.1541	0.0116
+0.8154	0.5338	1.000	position to receive cards from SC, but will not get	0.3835	0.0146
+0.8169	0.1203	1.000	When- VFREW is removed from WT queue,	0.3327	0.0160
+0.8299	0.5357	1.000	any because SC is now feeding ST. All of the phase	0.3891	0.0131
+0.8314	0.1071	1.000	VFREW proceeds with the offline transition. The	0.3703	0.0102
+0.8445	0.5357	1.000	1 buffer parameters have by this time been moved to	0.3985	0.0131
+0.8459	0.1034	1.000	phase of SC is set equal to that of ST by simply	0.3534	0.0116
+0.8590	0.5357	1.000	CR where they are held up because an out of material	0.4023	0.0131
+0.8598	0.1052	1.000	restoring to SC whatever position pointer it last had	0.3873	0.0130
+0.8732	0.1033	1.000	in the offline mode. ST, used only in the offline	0.3649	0.0166
+0.8735	0.5357	1.000	condition exists at CR. This will not be inadvertantly	0.4041	0.0131
+0.8853	0.1032	1.000	mode, will still have the same position. At the same	0.4026	0.0216
+0.8881	0.5357	1.000	removed by readying the card reader, since the CS	0.3853	0.0131
+0.9024	0.1033	1.000	time, the current position pointer of SC is saved so	0.3875	0.0164
+0.9026	0.5357	1.000	fixup has been altered.	0.1748	0.0147
+0.9476	0.7669	1.000	System Input-Output	0.1222	0.0103
+0.9477	0.9098	1.000	153	0.0244	0.0073

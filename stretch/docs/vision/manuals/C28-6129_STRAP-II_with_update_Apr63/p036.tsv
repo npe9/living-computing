@@ -1,0 +1,66 @@
+0.0674	0.6181	1.000	STRAP Bit	0.0796	0.0179
+0.0741	0.2763	1.000	18 bits	0.0602	0.0174
+0.0770	0.5169	1.000	. 6 bits	0.0677	0.0161
+0.0798	0.6165	1.000	Address Term	0.1091	0.0178
+0.1206	0.6146	1.000	Integer Term	0.1072	0.0190
+0.1206	0.2970	1.000	24 bits	0.0583	0.0161
+0.1655	0.1446	1.000	6 bits	0.0509	0.0178
+0.1672	0.3346	1.000	18 bits	0.0583	0.0160
+0.1685	0.5357	1.000	6 bits	0.0489	0.0133
+0.1685	0.5996	1.000	¡ Result	0.0677	0.0162
+0.2209	0.7237	1.000	Floating Point	0.1128	0.0131
+0.2209	0.5282	1.000	N/sl	0.0545	0.0218
+0.2259	0.3081	1.000	Address Field	0.1094	0.0177
+0.2267	0.5789	1.000	Operation	0.0789	0.0174
+0.2355	0.7237	1.000	Instruction Format	0.1410	0.0103
+0.2500	0.6692	1.000	28 31	0.0451	0.0161
+0.2515	0.4906	1.000	17	0.0207	0.0145
+0.2515	0.5150	1.000	18	0.0282	0.0131
+0.2529	0.1955	1.000	0	0.0132	0.0116
+0.2848	0.1278	1.000	Up to this point, discussion has been limited to ad-	0.3910	0.0161
+0.2863	0.5583	1.000	1. Where a bit address has some meaning, the point	0.3853	0.0146
+0.2994	0.5808	1.000	is positioned between the 18th and 19th bits of	0.3609	0.0176
+0.2994	0.1278	1.000	ress fields. În reality, all previous statements appl	0.3816	0.0176
+0.3134	0.1259	1.000	o any field where arithmetic is permitted, that is an	0.3836	0.0181
+0.3136	0.5864	1.000	the field. If a bit address has no meaning, the	0.3517	0.0180
+0.3285	0.1184	1.000	programmer symbolized field. Three restrictions must	0.4004	0.0189
+0.3285	0.5883	1.000	entire 24-bit quantity is treated as an integer and	0.3477	0.0176
+0.3465	0.5826	1.000	right justified in the field. Index fields are an	0.3574	0.0185
+0.3468	0.1202	1.000	be observed.	0.0961	0.0143
+0.3639	0.5824	1.000	exception.	0.0795	0.0164
+0.3691	0.1372	1.000	1. No arithmetie may appear in the operation code	0.3797	0.0146
+0.3836	0.1598	1.000	part of the operation field, the mode subfield of	0.3571	0.0161
+0.3866	0.5602	1.000	2. An integer is always treated as an integer in the	0.3797	0.0146
+0.3997	0.1579	1.000	the data description or any entry mode. All of	0.3590	0.0145
+0.4012	0.5846	1.000	environment that is the size of the particular	0.3553	0.0146
+0.4142	0.1598	1.000	these fields are reserved for designations whose	0.3571	0.0145
+0.4172	0.5827	1.000	field. The integer is right justified so that its	0.3571	0.0147
+0.4302	0.1598	1.000	meanings to strap are absolute and may not be	0.3571	0.0131
+0.4317	0.5846	1.000	units position is aligned with the units position	0.3534	0.0147
+0.4446	0.1578	1.000	symbolized.	0.0903	0.0163
+0.4651	0.1353	1.000	2. No arithmetic may appear in the name field,	0.3797	0.0146
+0.4702	0.5600	1.000	Although the diagrams show the final sum truncated	0.3781	0.0180
+0.4811	0.1579	1.000	which is reserved entirely for the definition of	0.3590	0.0147
+0.4884	0.5395	1.000	to the appropriate length, the bits are not actually	0.3966	0.0160
+0.4956	0.1598	1.000	symbols. Only one symbol per statement is	0.3553	0.0147
+0.5029	0.5414	1.000	discarded unless they fall outside the address field of	0.3966	0.0160
+0.5096	0.1577	1.000	allowed.	0.0605	0.0141
+0.5188	0.5432	1.000	the instruction. Some operations do not use all of the	0.3947	0.0146
+0.5291	0.1353	1.000	3. The "I" or "k" fields (see Expression of Machine	0.3797	0.0161
+0.5348	0.5395	1.000	space available in their address fields (transmit, in-	0.3985	0.0161
+0.5464	0.1598	1.000	Instructions) must contain at least one strap bit	0.3553	0.0133
+0.5494	0.5395	1.000	put-output select), and in these cases bits may be	0.3985	0.0161
+0.5624	0.1579	1.000	address term.	0.1015	0.0118
+0.5639	0.5414	1.000	placed in the unused portions.	0.2237	0.0161
+0.5814	0.1335	1.000	The diagrams below illustrate the complete set of	0.3816	0.0147
+0.5827	0.5602	1.000	An error indication is given if non-zero bits are	0.3778	0.0133
+0.5951	0.5412	1.000	discarded when truncation occurs, except in the case	0.3969	0.0179
+0.5973	0.1165	1.000	rules for shifting and truncation that cover addition	0.3985	0.0133
+0.6092	0.5412	1.000	of index fields where a "1" bit in the fifth position	0.3951	0.0194
+0.6118	0.1165	1.000	and subtraction of unlike quantities in all 7030 instruc-	0.3985	0.0146
+0.6264	0.1165	1.000	tion fields where arithmetic is permitted. The two	0.3985	0.0146
+0.6264	0.5395	1.000	from the right ( in the "16" position) is discarded with-	0.3985	0.0176
+0.6424	0.1147	1.000	basic precepts involved are:	0.2124	0.0161
+0.6439	0.5395	1.000	out error indication.	0.1523	0.0131
+0.9113	0.1128	1.000	32	0.0188	0.0116
+0.9127	0.1635	1.000	IBM 7030	0.0639	0.0088

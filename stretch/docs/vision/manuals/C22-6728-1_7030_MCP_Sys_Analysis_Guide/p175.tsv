@@ -1,0 +1,109 @@
+0.0959	0.1090	1.000	Output EOJ	0.0883	0.0132
+0.0972	0.5338	1.000	Tape Switch	0.0941	0.0164
+0.1250	0.1090	1.000	At end of job, the output program is given control to	0.3947	0.0145
+0.1264	0.5338	1.000	The tape switch subroutine (ATSWCH) is used by all	0.3929	0.0146
+0.1409	0.1090	1.000	complete output for the job being terminated and to	0.3835	0.0146
+0.1424	0.5338	1.000	four output major packages: print, punch, EOJ, and	0.3985	0.0161
+0.1526	0.1071	1.000	write a separating tape mark. Output EOJ is a major	0.4060	0.0160
+0.1570	0.5338	1.000	command. It is entered. by print, punch, and EOJ	0.3778	0.0145
+0.1685	0.1090	1.000	package with an associated tentacle table (SAEOJT).	0.3929	0.0147
+0.1700	0.5338	1.000	from the respective fixup routines on occurrence of	0.3910	0.0146
+0.1845	0.1090	1.000	It is called by the sequence:	0.2105	0.0118
+0.1875	0.5338	1.000	an BE interrupt. It is entered by the output command	0.4060	0.0116
+0.1991	0.5337	1.000	program at EOJ.	0.1319	0.0153
+0.2006	0.1259	1.000	В, $МСР	0.0714	0.0131
+0.2136	0.1353	1.000	, SSPEOJ	0.0771	0.0146
+0.2151	0.5489	1.000	There are two calling sequences used to enter the	0.3759	0.0146
+0.2282	0.1109	1.000	during processing of $EOJ or $ABEOJ by Job Control.	0.4041	0.0131
+0.2297	0.5301	1.000	tape switch routine. Io write two tape marks and	0.3816	0.0161
+0.2456	0.5320	1.000	switch tapes, the following calling sequence is used	0.3910	0.0160
+0.2587	0.5320	1.000	by the EE fixup routines:	0.1917	0.0161
+0.2587	0.1278	1.000	The program starts at AEOJ (Figure 99) and oper-	0.3816	0.0131
+0.2747	0.1090	1.000	ates enabled. It saves $7 to $15, and determines	0.3703	0.0117
+0.2747	0.5470	1.000	LVI, $15, (return)	0.1447	0.0160
+0.2874	0.5506	1.000	B, ATSWCH	0.0980	0.0183
+0.2878	0.1090	1.000	whether or not there is information in the punch	0.3609	0.0146
+0.3036	0.1090	1.000	transmit buffer. If there is, it is written on the	0.3628	0.0118
+0.3036	0.5451	1.000	The following calling sequence is used by the output	0.3947	0.0161
+0.3169	0.5320	1.000	command program to write one tape mark and switch	0.4023	0.0174
+0.3169	0.1053	1.000	output tape and control given to CEOJ. If not, con-	0.3872	0.0160
+0.3327	0.1053	1.000	trol is given directly to CEOJ, where the process is	0.3947	0.0147
+0.3342	0.5320	1.000	tapes, since one tape mark has already been written	0.3966	0.0146
+0.3470	0.1070	1.000	repeated for the print transmit buffer, in this case	0.3818	0.0155
+0.3503	0.5338	1.000	when control is given to the output command program:	0.4060	0.0131
+0.3633	0.1053	1.000	filling the unused portion with blanks. Both programs	0.4079	0.0117
+0.3648	0.5526	1.000	СМОООО, ATMI	0.1147	0.0131
+0.3779	0.1053	1.000	test control bit CATUB to wait for an output in process	0.4117	0.0131
+0.3794	0.5526	1.000	LVI, $15, (return)	0.1372	0.0131
+0.3924	0.1053	1.000	to finish. At the conclusion of the print output, a tape	0.4154	0.0131
+0.3934	0.5488	1.000	B, ATSWC3	0.0923	0.0155
+0.4084	0.1071	1.000	mark is written. The flag, AOPTRI, is tested to	0.3703	0.0116
+0.4185	0.5564	1.000	Bit 5 of the one word trailer record (CTRAIL. t.5)	0.3759	0.0133
+0.4215	0.1053	1.000	determine whether or not an output command has been	0.4079	0.0131
+0.4330	0.5376	1.000	indicates whether or not the physical end of tape is	0.3816	0.0133
+0.4375	0.1053	1.000	received for execution at EOJ. If not (AOPTRI zero),	0.4060	0.0131
+0.4476	0.5376	1.000	also the logical end of tape (EOJ). On entry from the	0.4004	0.0132
+0.4520	0.1053	1.000	$7 to $15 are restored and $RET executed. If an out-	0.4023	0.0116
+0.4636	0.5357	1.000	print and punch fixups, the bit will have been set to	0.3872	0.0131
+0.4666	0.1053	1.000	put command has been received, control is given to	0.3872	0.0116
+0.4782	0.5376	1.000	zero, indicating only physical EOT. On entry from	0.3872	0.0116
+0.4811	0.1053	1.000	the output command program at CDRY1.	0.3026	0.0116
+0.4927	0.5376	1.000	output EOJ, and output commands, the bit will have	0.3872	0.0131
+0.4956	0.1222	1.000	The subsequent interrupt is taken by the I-O Table	0.3797	0.0116
+0.5073	0.5376	1.000	been set to one, indicating logical EOT (EOJ).	0.3459	0.0131
+0.5102	0.1053	1.000	of Exits CEXEF.	0.1297	0.0116
+0.5102	0.2368	1.000	On EE or EOP, the tape busy bit	0.2556	0.0132
+0.5231	0.5544	1.000	After saving the return address, the routine sets	0.3649	0.0154
+0.5247	0.1053	1.000	(CATUB) is reset, and $RET issued.	0.2763	0.0132
+0.5354	0.5374	1.000	ATSXIT in AOP as the current table of exits, writes	0.3970	0.0177
+0.5523	0.5357	1.000	a tape mark, restores index registers, and executes	0.3947	0.0131
+0.5669	0.5357	1.000	$RET. Depending on the entry conditions, this may or	0.4060	0.0131
+0.5770	0.1053	1.000	Output Command	0.1259	0.0118
+0.5814	0.5357	1.000	may not be in auto stack mode. The rest of the routine	0.4098	0.0132
+0.5959	0.5357	1.000	operates entirely in the auto stack mode.	0.3083	0.0132
+0.6061	0.1053	1.000	The COMD, OUTPUT is used to request termination	0.3872	0.0131
+0.6201	0.5544	1.000	Upon EOP, the control bit ATMI is reset and, if it	0.3800	0.0161
+0.6206	0.1034	1.000	and unloading of the current output tape at the next	0.3816	0.0117
+0.6352	0.1034	1.000	(or present) EOJ. The output command program	0.3684	0.0131
+0.6352	0.5376	1.000	had been set, another tape mark written. If it was	0.3816	0.0131
+0.6476	0.5374	1.000	not set, a new table of exits, ASTRA, is set into AOP,	0.4102	0.0198
+0.6497	0.1053	1.000	receives control at CDRY (Figure 99) via its tentacle	0.3985	0.0131
+0.6642	0.1015	1.000	table, SCDRYT. It operates enabled.	0.2857	0.0145
+0.6642	0.5357	1.000	and the trailer record is written. (Note: For EPGK	0.3985	0.0131
+0.6788	0.1203	1.000	Upon entry, index registers 7 to 15 are saved and	0.3741	0.0131
+0.6802	0.5376	1.000	and UK fixups for tables ATSXIT and ASTRA, see	0.3741	0.0131
+0.6932	0.5374	1.000	description of the error routines.) $RET is then	0.3687	0.0159
+0.6933	0.1034	1.000	the output end of job indicator, AEOJI, is tested. If	0.3929	0.0146
+0.7093	0.5376	1.000	executed.	0.0714	0.0116
+0.7093	0.1034	1.000	the system is not at EOJ (AEOJI zero), the output	0.3759	0.0131
+0.7238	0.5526	1.000	When the EOP occurs for the trailer record, the	0.3665	0.0146
+0.7238	0.1034	1.000	command request indicator, AOPTRI, is set, the	0.3703	0.0131
+0.7384	0.1015	1.000	index registers are restored, and $RET is executed.	0.3966	0.0116
+0.7397	0.5357	1.000	tape is unloaded. If another tape is ready, as evi-	0.3835	0.0133
+0.7529	0.1203	1.000	Control is given to CDRY1 if the system is at EOJ	0.3759	0.0116
+0.7529	0.5357	1.000	denced by a CS having been received (ATARI or	0.3571	0.0132
+0.7674	0.1015	1.000	when the command is given, or by the output EOJ	0.3722	0.0132
+0.7688	0.5357	1.000	ATBRI=1), the corresponding IOD name (CT11 or	0.3703	0.0146
+0.7833	0.5376	1.000	CT21) is set into AMR as the current tape, the tape	0.3853	0.0146
+0.7833	0.3158	1.000	After waiting, if neces-	0.1823	0.0118
+0.7833	0.1015	1.000	program when EOJ occurs.	0.2143	0.0103
+0.7964	0.1015	1.000	sary, for an output in process to finish, a test is made	0.4135	0.0133
+0.7979	0.5357	1.000	busy bit (CATUB) is reset, the new tape bit is reset	0.3910	0.0146
+0.8124	0.5357	1.000	(CXY+.19), and control returned to the return	0.3515	0.0132
+0.8124	0.1015	1.000	to determine whether or not the current tape has been	0.4041	0.0118
+0.8249	0.5355	1.000	address. If a new tape is not ready, the tape switeh	0.3895	0.0182
+0.8270	0.1034	1.000	used. If not, a tape switch is not required, and the	0.3891	0.0131
+0.8413	0.5357	1.000	request bit (ATSWCR) is set and $RET is executed.	0.3855	0.0134
+0.8415	0.1034	1.000	index registers are restored and $RET is executed.	0.3891	0.0118
+0.8561	0.1053	1.000	Otherwise, the output tape busy indicator (CATUB) is	0.4004	0.0118
+0.8576	0.5376	1.000	With the tape switch request bit set, the CS fixup	0.3665	0.0146
+0.8706	0.1053	1.000	set, the trailer record is set to indicate physical and	0.3966	0.0117
+0.8721	0.5376	1.000	routines (ATPACS, ATPBCS) will give control to the	0.3947	0.0131
+0.8852	0.1053	1.000	logical EOT, and control is given to the tape switch	0.3872	0.0131
+0.8881	0.5357	1.000	tape switch routine (ATSWC4 or ATSWC6) to reset	0.3816	0.0116
+0.8997	0.1053	1.000	program to write one tape mark, the trailer record,	0.3947	0.0131
+0.9012	0.5357	1.000	the bit and complete the tape switch as previously	0.3759	0.0131
+0.9142	0.1053	1.000	and switch tapes. Return is set to $RET.	0.3139	0.0116
+0.9155	0.5357	1.000	described.	0.0809	0.0120
+0.9505	0.7686	1.000	System Input-Output	0.1226	0.0120
+0.9520	0.9135	1.000	175	0.0226	0.0087

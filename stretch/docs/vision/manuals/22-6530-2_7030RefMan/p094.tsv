@@ -1,0 +1,153 @@
+0.0596	0.1090	1.000	When one or more of the operands are values in the	0.3722	0.0146
+0.0708	0.6822	1.000	Storage	0.0398	0.0095
+0.0755	0.0939	1.000	XFP or XFN ranges, comparisons are performed as fol-	0.3855	0.0159
+0.0848	0.7499	1.000	XFN, - N,- XFP,-	0.1416	0.0198
+0.0872	0.6992	1.000	XEN, +	0.0526	0.0161
+0.0900	0.5996	1.000	XFP, +	0.0414	0.0147
+0.0901	0.6466	0.300	N,+	0.0395	0.0131
+0.0915	0.0940	1.000	lows. When the fractional signs are unlike, the value	0.3853	0.0131
+0.0916	0.5094	1.000	Accumulator	0.0658	0.0087
+0.1061	0.0940	1.000	having the positive fraction sign is considered greater.	0.3853	0.0131
+0.1119	0.6617	1.000	AH	0.0169	0.0087
+0.1119	0.5150	1.000	XFP,+	0.0395	0.0102
+0.1119	0.8534	1.000	AH	0.0207	0.0102
+0.1119	0.5996	1.000	AE	0.0188	0.0102
+0.1119	0.7049	1.000	AH	0.0207	0.0102
+0.1119	0.8139	1.000	AH	0.0207	0.0102
+0.1119	0.7613	1.000	AH	0.0188	0.0087
+0.1206	0.0940	1.000	When the fraction signs are alike, the exponent range	0.3853	0.0146
+0.1308	0.6635	1.000	*	0.0113	0.0102
+0.1323	0.5996	1.000	AL	0.0188	0.0102
+0.1323	0.7049	1.000	AH	0.0207	0.0102
+0.1323	0.8534	1.000	AH	0.0207	0.0102
+0.1323	0.8139	1.000	AH	0.0207	0.0116
+0.1323	0.7594	1.000	AH	0.0207	0.0102
+0.1323	0.5169	1.000	N,+	0.0263	0.0102
+0.1366	0.0940	1.000	is considered. The following criteria apply. If both	0.3853	0.0146
+0.1512	0.0940	1.000	operands have fraction signs that are positive, a value	0.3853	0.0146
+0.1526	0.8534	1.000	AH	0.0207	0.0116
+0.1526	0.5150	1.000	XFN,+	0.0432	0.0102
+0.1541	0.6015	1.000	AL	0.0169	0.0087
+0.1541	0.7068	1.000	AE	0.0169	0.0087
+0.1541	0.8158	1.000	AH	0.0188	0.0087
+0.1541	0.6579	1.000	AL	0.0188	0.0102
+0.1541	0.7594	1.000	AH	0.0207	0.0102
+0.1672	0.0940	1.000	in the XFP range is considered greater than a value in	0.3835	0.0147
+0.1730	0.8534	1.000	AH	0.0207	0.0131
+0.1738	0.5148	1.000	XFN,-	0.0437	0.0114
+0.1744	0.7049	1.000	AL	0.0188	0.0116
+0.1744	0.6579	1.000	AL	0.0188	0.0102
+0.1744	0.7594	1.000	AE	0.0188	0.0116
+0.1744	0.6015	1.000	AL	0.0169	0.0087
+0.1744	0.8139	1.000	AH	0.0207	0.0102
+0.1830	0.0940	1.000	the N' or XEN range, and a value in the N range is	0.3853	0.0133
+0.1948	0.7049	1.000	AL	0.0188	0.0116
+0.1948	0.8534	1.000	AH	0.0207	0.0116
+0.1948	0.5169	1.000	N,-	0.0263	0.0102
+0.1948	0.7594	1.000	AL	0.0188	0.0116
+0.1962	0.6579	1.000	AL	0.0207	0.0102
+0.1962	0.6015	1.000	AL	0.0169	0.0087
+0.1976	0.0921	1.000	considered greater than a value in the XEN range. If	0.3872	0.0146
+0.2136	0.0940	1.000	both operands have fraction signs that are negative, a	0.3853	0.0131
+0.2151	0.8139	1.000	AL	0.0188	0.0116
+0.2166	0.5150	1.000	XFP,-	0.0395	0.0102
+0.2166	0.6598	1.000	AL	0.0169	0.0087
+0.2166	0.7049	1.000	AL	0.0188	0.0102
+0.2166	0.7594	1.000	AL	0.0188	0.0102
+0.2166	0.6015	1.000	AL	0.0169	0.0087
+0.2166	0.8553	1.000	AE	0.0188	0.0087
+0.2282	0.0921	1.000	value in the XEN range is considered greater than a	0.3853	0.0131
+0.2442	0.0921	1.000	value in the N or XEP range, and a value in the N	0.3853	0.0131
+0.2470	0.5075	1.000	Figure 27. Indicator Settings, Flagged Operands	0.2857	0.0118
+0.2573	0.0921	1.000	range is considered greater than a value in the XFP	0.3872	0.0146
+0.2747	0.0921	1.000	range. If both operands are in the XFP range or both	0.3853	0.0132
+0.2791	0.5075	1.000	tion, signs, and the fraction subtraction result. Results	0.3891	0.0131
+0.2892	0.0921	1.000	in the XEN range and both fraction signs are alike, the	0.3872	0.0145
+0.2936	0.5075	1.000	shown are produced for the * values shown in Fig-	0.3891	0.0146
+0.3036	0.0921	1.000	comparison is considered equal.	0.2274	0.0147
+0.3096	0.5075	1.000	ure 27.	0.0489	0.0116
+0.3197	0.1071	1.000	The arithmetic result and exponent range indicators	0.3722	0.0146
+0.3255	0.5188	1.000	Figure 27 shows the indicator settings associated	0.3759	0.0161
+0.3358	0.0921	1.000	and the original contents of the accumulator and of	0.3872	0.0131
+0.3415	0.5019	1.000	with flagged exponent operands. The settings are given	0.3929	0.0161
+0.3517	0.0921	1.000	storage are not changed.	0.1692	0.0116
+0.3576	0.5038	1.000	relative to the accumulator operand. Column and row	0.3910	0.0131
+0.3735	0.0921	1.000	INDICATORS	0.0752	0.0102
+0.3735	0.5038	1.000	values give the exponent. range and fraction sign for	0.3910	0.0131
+0.3881	0.5038	1.000	the respective operands.	0.1767	0.0131
+0.3909	0.1053	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3722	0.0146
+0.4070	0.0921	1.000	(MOP); Preparatory Shift Greater than 48 (PSH).	0.3853	0.0145
+0.4142	0.5056	1.000	Compare Magnitude (KMG)	0.1974	0.0116
+0.4205	0.0919	1.000	These indicators are set as in ADD.	0.2335	0.0142
+0.4302	0.5056	1.000	The comparison is performed as described for COMPARE	0.3872	0.0146
+0.4375	0.1071	1.000	Comparison Result (AL, AE, AH). Set according to	0.3703	0.0146
+0.4462	0.5038	1.000	except that the comparison is performed as if the sign	0.3891	0.0145
+0.4535	0.0921	1.000	result of the comparison. These indicators refer to the	0.3853	0.0145
+0.4621	0.5038	1.000	of the accumulator were positive.	0.2387	0.0132
+0.4694	0.0921	1.000	operand in the accumulator as compared with the	0.3853	0.0146
+0.4853	0.0920	1.000	storage operand.	0.1148	0.0135
+0.4866	0.5031	1.000	INDICATURS	0.0819	0.0138
+0.5042	0.5188	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3741	0.0161
+0.5115	0.0921	1.000	PROGRAMMING NOTE	0.1429	0.0118
+0.5203	0.4981	1.000	(MOP); Comparison Result (AL, AE, AH); Preparatory	0.3947	0.0161
+0.5305	0.0921	1.000	Figure 26 outlines the combinations of elements	0.3853	0.0131
+0.5348	0.5038	1.000	Shift Greater than 48 (PSH). The indicators above	0.3891	0.0146
+0.5451	0.0902	1.000	(operand signs, operand magnitudes, subtraction re-	0.3853	0.0146
+0.5523	0.5019	1.000	are set as in COMPARE.	0.1617	0.0116
+0.5609	0.0902	1.000	sults) that determine the compare indicator settings	0.3872	0.0147
+0.5770	0.5056	1.000	Compare for Range (KR)	0.1729	0.0131
+0.5770	0.0902	1.000	shown. These elements are: Fa - accumulator fraction	0.3853	0.0118
+0.5915	0.0902	1.000	sign; Ea -accumulator exponent sign; Fm - storage	0.3853	0.0146
+0.5945	0.5038	1.000	When the indicator accumulator high (Aн) is on, a	0.3891	0.0131
+0.6076	0.0902	1.000	fraction sign after negative and absolute sign modifi-	0.3853	0.0146
+0.6105	0.5038	1.000	comparison will be performed between the operand in	0.3891	0.0132
+0.6235	0.0902	1.000	cation; Em - storage exponent sign; Ae - accumulator	0.3853	0.0131
+0.6250	0.5038	1.000	the left half of the accumulator and the operand speci-	0.3891	0.0145
+0.6374	0.0901	1.000	exponent; Me -storage exponent; Af - accumulator	0.3856	0.0166
+0.6424	0.5038	1.000	hed by the effective address. If the indicator accumu-	0.3891	0.0103
+0.6526	0.0863	1.000	fraction; Mf - storage fraction; and Rs -sign of the	0.3894	0.0185
+0.6536	0.4999	1.000	lator high (Aн) is off, the comparison is performed but	0.3932	0.0181
+0.6685	0.0883	1.000	discarded result as determined by the modified frac-	0.3872	0.0161
+0.6715	0.5019	1.000	the comparison indicators are not changed.	0.3139	0.0145
+0.6960	0.5018	1.000	INDICATORS	0.0810	0.0136
+0.7136	0.5169	1.000	Data Flags (TF, UF, VF). These indicators are set	0.3759	0.0161
+0.7297	0.5000	1.000	according to the flag bits of the addressed operand	0.3929	0.0161
+0.7369	0.1823	1.000	+	0.0094	0.0102
+0.7398	0.4605	1.000	+	0.0094	0.0087
+0.7456	0.5019	1.000	whether or not the comparison is performed.	0.3308	0.0160
+0.7485	0.1259	1.000	Fm	0.0188	0.0116
+0.7602	0.4605	1.000	+	0.0094	0.0087
+0.7602	0.5188	1.000	To-Memory Operation (MOP). This indicator is set	0.3741	0.0160
+0.7602	0.1259	1.000	Em	0.0188	0.0102
+0.7761	0.5000	1.000	to zero whether or not the comparison is performed.	0.3910	0.0161
+0.7776	0.0883	1.000	¡Preshift	0.0376	0.0117
+0.7803	0.2913	1.000	AH AH ALAL	0.0716	0.0107
+0.7805	0.1955	1.000	АНІАН АH AL	0.0733	0.0089
+0.7805	0.3816	1.000	AH AL AL AL	0.0752	0.0131
+0.7889	0.1221	1.000	LAc>IMelAH	0.0716	0.0124
+0.7892	0.0977	0.300	33 LAcl IMeAH	0.0940	0.0218
+0.7921	0.5169	1.000	Accumulator Low (AL). This indicator is not	0.3778	0.0146
+0.7922	0.4549	1.000	AL	0.0188	0.0102
+0.7922	0.2726	1.000	AL	0.0150	0.0073
+0.7922	0.3628	1.000	AH	0.0188	0.0102
+0.7994	0.3609	1.000	AL	0.0188	0.0116
+0.7994	0.4549	1.000	AH	0.0207	0.0116
+0.8009	0.2726	1.000	AH	0.0169	0.0087
+0.8062	0.5017	1.000	changed.	0.0662	0.0169
+0.8197	0.0902	1.000	Preshift| Af-Mf=0| AE AE AE AE |AE AE AE|AE AE|AE AE |AE AE AE AE AE	0.3835	0.0103
+0.8227	0.5169	1.000	Accumulator Equal (AE). This indicator is set to	0.3759	0.0161
+0.8299	0.1241	1.000	Af-MFFO"	0.0489	0.0116
+0.8372	0.5000	1.000	one if the accumulator operand is low when compared	0.3929	0.0161
+0.8401	0.1034	1.000	48	0.0113	0.0073
+0.8415	0.1316	1.000	Rs (+) AHAH АH АH АН АH|АH|AH	0.1974	0.0088
+0.8415	0.3628	1.000	AL AL	0.0357	0.0088
+0.8415	0.4361	1.000	AL AL	0.0376	0.0131
+0.8488	0.1240	1.000	Af-MfFO	0.0489	0.0118
+0.8517	0.5019	1.000	with the addressed operand.	0.2068	0.0174
+0.8605	0.1335	1.000	Rs (-)LAL AL	0.0771	0.0117
+0.8618	0.3252	1.000	JALALAH AH AL AL AHAH	0.1504	0.0132
+0.8691	0.5169	1.000	Preparatory Shift Greater than 48 (PSH). This in-	0.3759	0.0146
+0.8836	0.5000	1.000	dicator is set as in ADD.	0.1617	0.0132
+0.8881	0.0865	1.000	Figure 26. Indicator Settings, Operands	0.2312	0.0116
+0.9230	0.8759	1.000	91	0.0169	0.0102
+0.9230	0.6880	1.000	Floating-Point Arithmetic	0.1617	0.0131

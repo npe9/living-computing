@@ -16463,3 +16463,15 @@ DEBT: vol 1 is cached twice by the same engine at the same dpi
 docs/vision/all/v1_pdfNNN.vis.tsv); fold the first into the second.
 OPEN: row pitch -- ink fit (857028e) 49.81-50.36 px vs Vision line
 positions 49.58 px; one of the two committed numbers is wrong.
+
+## Half word 2, statement draft, manuals (2026-11-03)
+
+listing_reading.tsv now carries BINARY h2 (agreed 100.00% on 1,178
+landed rows) and a NAME+STATEMENT Vision DRAFT (41.5% of lines exact;
+no second engine for text -- tesseract 8%). Eleven environment manuals,
+1,166 pages, read into docs/vision/manuals/ in two-column reading
+order; FORTRAN IV (C22-6751) has text for the first time. Suite:
+check_listing_reading (h2 + draft floors), check_manual_reading.
+NEXT: the transcription loop -- draft statement -> STRAP assembles ->
+compare with the agreed binary -- on printed p.197.
+STILL NOT READ: the hex bytes (C vs 0: only the assembler settles it).

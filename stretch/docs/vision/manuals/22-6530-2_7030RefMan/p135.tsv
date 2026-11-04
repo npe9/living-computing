@@ -1,0 +1,118 @@
+0.0575	0.0994	1.000	less of the presence of the file-protect ring during re-	0.3914	0.0183
+0.0624	0.5169	1.000	OCTAL CODE	0.0827	0.0118
+0.0625	0.7086	1.000	FUNCTION	0.0695	0.0131
+0.0756	0.0977	1.000	winding	0.0639	0.0160
+0.0842	0.5865	1.000	Space File. The tape is moved forward with-	0.3195	0.0161
+0.0843	0.5320	1.000	077	0.0282	0.0131
+0.0915	0.1163	1.000	Tape Indicator On. This light is turned on when-	0.3744	0.0190
+0.1017	0.5902	1.000	out reading or writing until a tape mark has	0.3158	0.0131
+0.1090	0.0996	1.000	ever the end-of-tape reflective strip is sensed during	0.3910	0.0160
+0.1147	0.5880	1.000	been passed. The tape then stops in the gap	0.3164	0.0194
+0.1248	0.0995	1.000	writing or when the tape breaks. It is turned off by	0.3911	0.0162
+0.1308	0.5865	1.000	immediately following the tape mark and	0.3177	0.0160
+0.1424	0.0996	1.000	the initiation of rewinding and by the REMOVE END	0.3910	0.0146
+0.1467	0.5865	1.000	an endexception as well as an end-of-oper-	0.3177	0.0176
+0.1546	0.0976	1.000	OF TAPE CONDITION control instruction. When this	0.3933	0.0193
+0.1612	0.5865	1.000	ation indication is given.	0.1842	0.0161
+0.1744	0.0977	1.000	light is on, every wRIte instruction is terminated by	0.3910	0.0160
+0.1773	0.5301	1.000	117	0.0301	0.0160
+0.1784	0.5862	1.000	Write Tape Mark. A standard tape mark	0.3183	0.0203
+0.1918	0.0977	1.000	end-exception after writing one block. The light can	0.3910	0.0146
+0.1962	0.5883	1.000	(0001111) denoting end of file is written	0.3158	0.0145
+0.2063	0.0976	1.000	be turned off manually by pressing the unload key. If a	0.3894	0.0176
+0.2071	0.5845	1.000	on tape.	0.0655	0.0216
+0.2224	0.0977	1.000	LOCATE selects a tape unit whose tape indicator is on	0.3891	0.0146
+0.2296	0.5882	1.000	Rewind. The tape is rewound. If the tape	0.3143	0.0177
+0.2297	0.5301	1.000	136	0.0282	0.0131
+0.2369	0.0977	1.000	and the unit is in write status, the LocATE is terminated	0.3872	0.0146
+0.2428	0.5861	1.000	is more than 450 feet from the load point,	0.3165	0.0196
+0.2529	0.0976	1.000	by end-exception (EE) and end-operation (EOP).	0.3442	0.0161
+0.2615	0.5846	1.000	a high-speed rewind is initiated first, with	0.3177	0.0161
+0.2688	0.1128	1.000	Fuse. This light is on whenever a circuit breaker	0.3741	0.0146
+0.2761	0.5863	1.000	the tape out of vacuum columns, before	0.3160	0.0150
+0.2848	0.0959	1.000	opens a circuit in the tape unit. When this light is on,	0.3910	0.0146
+0.2921	0.5827	1.000	low-speed searching for the load point. At	0.3195	0.0161
+0.2989	0.0957	1.000	the unit is not ready and customer engineer inter-	0.3913	0.0174
+0.3065	0.5843	1.000	the completion of the operation, the load	0.3162	0.0186
+0.3139	0.0959	1.000	vention is required.	0.1410	0.0145
+0.3227	0.5846	1.000	point is located at the read-write head with	0.3158	0.0146
+0.3372	0.5827	1.000	the tape loaded in the vacuum columns.	0.3177	0.0161
+0.3503	0.0977	1.000	Control Functions	0.1241	0.0116
+0.3521	0.5863	1.000	The REWIND instruction differs from other	0.3143	0.0148
+0.3637	0.5843	1.000	control instructions in that the end-of-oper-	0.3164	0.0221
+0.3706	0.0959	1.000	An end-of-operation is given upon the completion of	0.3910	0.0161
+0.3836	0.5846	1.000	ation indication is given as soon as the op-	0.3139	0.0161
+0.3849	0.0958	1.000	every instruction unless the instruction is of the SEOP	0.3893	0.0156
+0.3997	0.5846	1.000	eration is initiated at the unit. Subse-	0.3139	0.0131
+0.4012	0.0959	1.000	type. The turning on of status indicators is described	0.3891	0.0146
+0.4135	0.5825	1.000	sequently, while rewinding takes place, the	0.3180	0.0183
+0.4172	0.0940	1.000	only when the functions do not follow the general rule	0.3910	0.0160
+0.4302	0.5846	1.000	unit is not ready. When the operation is	0.3139	0.0146
+0.4330	0.0940	1.000	or are likely to cause some exceptional status indica-	0.3929	0.0161
+0.4444	0.5844	1.000	completed, the unit automatically becomes	0.3124	0.0169
+0.4462	0.0940	1.000	tions.	0.0414	0.0145
+0.4606	0.5827	1.000	ready and sends a channel-signal indication.	0.3158	0.0147
+0.4782	0.5263	1.000	137	0.0263	0.0131
+0.4797	0.5846	1.000	Rewind and Unload. This function is the	0.3139	0.0131
+0.4970	0.5827	1.000	same as REWIND except that the unit does	0.3139	0.0118
+0.5029	0.0921	1.000	OCTAL CODE	0.0827	0.0116
+0.5044	0.2857	1.000	FUNCTION	0.0677	0.0087
+0.5115	0.5827	1.000	not automatically become ready upon com-	0.3139	0.0146
+0.5233	0.1090	1.000	016	0.0282	0.0131
+0.5247	0.1635	1.000	Remove End of Tape Condition. The tape-	0.3214	0.0174
+0.5247	0.5827	1.000	pletion of the operation. When the load	0.3139	0.0147
+0.5387	0.5825	1.000	point is reached, the unit raises the upper	0.3143	0.0183
+0.5388	0.1632	1.000	indicator-on light is turned off.	0.2243	0.0181
+0.5548	0.5824	1.000	head assembly and removes the tape from	0.3145	0.0180
+0.5596	0.1071	1.000	036	0.0282	0.0116
+0.5596	0.1654	1.000	High Density Mode. The tape unit is set to	0.3177	0.0160
+0.5673	0.5824	1.000	the vacuum columns. No channel signal is	0.3146	0.0209
+0.5754	0.1634	1.000	read or write at a density of 556 bits per	0.3198	0.0163
+0.5855	0.5824	1.000	given upon completion of the operation.	0.2957	0.0184
+0.5900	0.1615	1.000	inch. When the power in the tape system	0.3218	0.0181
+0.6047	0.5244	1.000	156	0.0263	0.0116
+0.6056	0.1634	1.000	is turned on, all units are reset to the	0.3198	0.0151
+0.6061	0.5827	1.000	No-ECC Mode and Even Parity. The tape	0.3139	0.0161
+0.6191	0.1617	1.000	high density mode.	0.1410	0.0161
+0.6193	0.5825	1.000	control is set to read or write data without	0.3143	0.0161
+0.6366	0.5827	1.000	Ecc bits and with even parity.	0.2124	0.0146
+0.6395	0.1053	1.000	037	0.0301	0.0145
+0.6409	0.1617	1.000	Low Density Mode. The tape unit is set to	0.3214	0.0176
+0.6530	0.5805	1.000	No-ECC Mode and Odd Parity. The tape	0.3145	0.0189
+0.6541	0.5226	1.000	157	0.0282	0.0131
+0.6570	0.1598	1.000	read or write at a density of 200 bits per	0.3233	0.0176
+0.6700	0.5789	1.000	control is set to read or write data without	0.3158	0.0146
+0.6730	0.1598	1.000	inch.	0.0414	0.0131
+0.6830	0.5789	1.000	Ecc bits and with odd parity. When the	0.3158	0.0176
+0.6919	0.1053	1.000	056	0.0282	0.0131
+0.6925	0.1671	1.000	Erase Long Gap. The tape control is set so	0.3106	0.0156
+0.7006	0.5846	1.000	power in the tape system is turned on, th	0.3045	0.0146
+0.7078	0.1673	1.000	that the next wRs or WTM instruction (be	0.3045	0.0146
+0.7133	0.5844	1.000	tape control is reset to the no-eca mode an	0.3030	0.0181
+0.7224	0.1598	1.000	fore recording information), places on tape	0.3158	0.0161
+0.7326	0.1593	1.000	a blank gap of eight and one-half inches.	0.3018	0.0266
+0.7470	0.5733	1.000	Backspace Block. This is the same as sPAcE	0.3214	0.0191
+0.7471	0.5207	1.000	176	0.0320	0.0160
+0.7587	0.1034	1.000	057	0.0282	0.0131
+0.7602	0.1617	1.000	ECG Mode and Odd Parity. The tape con-	0.3195	0.0147
+0.7645	0.5771	1.000	BLock except that the tape is moved one	0.3177	0.0176
+0.7747	0.1617	1.000	trol is set to read or write data together with	0.3177	0.0147
+0.7776	0.5771	1.000	block backward.	0.1278	0.0176
+0.7870	0.1595	1.000	Ecc bits and with odd parity.	0.2113	0.0191
+0.7965	0.5207	1.000	177	0.0301	0.0160
+0.7979	0.5752	1.000	Backspace File. This is the same as sPACE	0.3195	0.0176
+0.8096	0.1034	1.000	076	0.0282	0.0131
+0.8109	0.1579	1.000	Space Block. The tape is moved forward	0.3214	0.0133
+0.8154	0.5771	1.000	FILE except that the tape is moved backward	0.3139	0.0146
+0.8237	0.1670	1.000	ne block to the next gap, without readin	0.3051	0.0182
+0.8285	0.5768	1.000	until a tape mark has been passed. The	0.3163	0.0189
+0.8366	0.1672	1.000	r writing. An end-of-operation indicatio	0.3029	0.0183
+0.8459	0.5808	1.000	head then is positioned on the gap imme	0.3064	0.0147
+0.8555	0.5803	1.000	diately preceding the tape mark, so that th	0.3074	0.0266
+0.8576	0.1598	1.000	is given upon completion of the operation.	0.3177	0.0146
+0.8721	0.1598	1.000	If the block consists of a tape mark, end-ex.	0.3158	0.0146
+0.8738	0.5786	1.000	next READ operation will read this tape	0.3145	0.0193
+0.8866	0.1579	1.000	ception is given as well as end-of-operation.	0.3177	0.0146
+0.8881	0.5771	1.000	mark.	0.0489	0.0174
+0.9240	0.1371	1.000	IBM 7030	0.0641	0.0111
+0.9244	0.0846	1.000	132	0.0263	0.0116

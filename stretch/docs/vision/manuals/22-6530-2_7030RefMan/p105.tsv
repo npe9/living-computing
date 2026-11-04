@@ -1,0 +1,120 @@
+0.0654	0.5150	1.000	in the accumulator. The addition is algebraic and	0.3929	0.0146
+0.0654	0.0996	1.000	dress assumes the exponent of the accumulator oper-	0.3910	0.0146
+0.0771	0.5166	1.000	takes into account the signs of both exponents.	0.3540	0.0226
+0.0799	0.0996	1.000	and.	0.0338	0.0116
+0.0827	0.8759	1.000	The	0.0321	0.0119
+0.0973	0.5169	1.000	sign of the exponent of the addressed operand is sub-	0.3891	0.0146
+0.1006	0.0994	1.000	INDICATORS	0.0793	0.0109
+0.1118	0.5150	1.000	ject to modification by the sign modifiers. The frac-	0.3929	0.0146
+0.1163	0.1147	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3741	0.0160
+0.1264	0.5169	1.000	tion and sign of the addressed operands are ignored.	0.3891	0.0161
+0.1308	0.0959	1.000	(MOP); Arithmetic Result (RLZ, RZ, RGZ, RN);	0.3947	0.0160
+0.1424	0.5188	1.000	The result of the exponent addition is placed in ac-	0.3872	0.0146
+0.1467	0.0977	1.000	Lost Carry (LC); Lost Significance (LS); Exponent	0.3929	0.0161
+0.1584	0.5169	1.000	cumulator bits 0-11. When normalized operation is	0.3910	0.0146
+0.1642	0.0977	1.000	Range (XPFP, ХPO, XPH, XPL, XPU); Zero	0.3891	0.0161
+0.1730	0.5150	1.000	specified, the accumulator exponent and fraction bits	0.3910	0.0146
+0.1788	0.0959	1.000	Multiply (ZM). The above indicators are set as in	0.3910	0.0161
+0.1890	0.5169	1.000	12-107 are normalized. Accumulator bits 108-127 and	0.3891	0.0117
+0.1976	0.0977	1.000	ADD DOUBLE.	0.0959	0.0088
+0.2035	0.5169	1.000	the sign byte register remain unchanged. If noisy	0.3891	0.0145
+0.2106	0.0959	1.000	Shift Fraction (SHF)	0.1410	0.0133
+0.2179	0.5150	1.000	mode is also specified low-order one bits instead of	0.3929	0.0147
+0.2238	0.0996	1.000	The fraction in the accumulator is shifted in the di-	0.3892	0.0132
+0.2339	0.5150	1.000	zeros are introduced during normalization.	0.3477	0.0132
+0.2355	0.8609	1.000	When	0.0451	0.0102
+0.2397	0.0977	1.000	rection and amount specified by the effective address	0.3929	0.0147
+0.2485	0.5150	1.000	unnormalized operation is specified, normalization is	0.3910	0.0161
+0.2542	0.0996	1.000	bits 0-11. A left shift is specified if bit 11 is zero, a	0.3891	0.0147
+0.2645	0.5169	1.000	omitted. The sign modifiers are ignored if either one	0.3891	0.0146
+0.2703	0.0977	1.000	right shift, if bit Il is one. The amount of the shift	0.3929	0.0146
+0.2805	0.5169	1.000	or both of the exponents are in the XFP or XEN range.	0.3872	0.0146
+0.2848	0.0959	1.000	is specified by bits 0-10. Zeros are inserted in the bit	0.3947	0.0146
+0.2951	0.5320	1.000	When the exponents of either or both operands lie	0.3741	0.0146
+0.3009	0.0977	1.000	positions which are vacated. Only accumulator bits	0.3910	0.0146
+0.3087	0.5148	1.000	in the XFP or XFN range, the rules for exponent han-	0.3913	0.0178
+0.3154	0.0959	1.000	12-107 participate in the shifting; all other accumu-	0.3947	0.0161
+0.3255	0.5169	1.000	dling follow the definitions given under MULTIPLY.	0.3891	0.0147
+0.3314	0.0959	1.000	lator bits remain unchanged. If a one bit is shifted	0.3929	0.0147
+0.3415	0.5150	1.000	When either operand has EF of 1, the result will have	0.3910	0.0161
+0.3459	0.0977	1.000	left beyond accumulator bit position 12, it is lost and	0.3910	0.0147
+0.3488	0.2779	0.500	se) is sor bit porign of the	0.2164	0.0750
+0.3576	0.5150	1.000	a propagated EF of 1 and normalization, if specified, is	0.3891	0.0146
+0.3618	0.0977	1.000	the lost carry indicator (IC) is set to one. A one-bit	0.3929	0.0132
+0.3721	0.5150	1.000	suppressed. In this case the result fraction is the orig.	0.3891	0.0161
+0.3764	0.0977	1.000	shifted right beyond accumulator bit position 107 is	0.3929	0.0146
+0.3881	0.5150	1.000	inal accumulator fraction. When both operands have	0.3891	0.0146
+0.3924	0.0977	1.000	lost, but no indicator is turned on. The sign of the	0.3929	0.0131
+0.4024	0.5150	1.000	EF of 0, the result exponent may have a generated	0.3892	0.0164
+0.4084	0.0977	1.000	shift bit Il of the effective address, or shift amount,	0.3910	0.0116
+0.4185	0.5150	1.000	EF of 1. For this case normalization, if specified, occurs	0.3891	0.0147
+0.4230	0.0977	1.000	is subject to modification by the sign modifiers. No	0.3929	0.0131
+0.4345	0.5150	1.000	if es is 0 and is suppressed if es is 1.	0.2575	0.0131
+0.4375	0.0996	1.000	change in the exponent field of the accumulator oper-	0.3910	0.0146
+0.4491	0.5301	1.000	The multiplication table is shown in Figure 32.	0.3515	0.0161
+0.4535	0.0996	1.000	and is made by this operation.	0.2199	0.0145
+0.4664	0.5150	1.000	INDICATORS	0.0790	0.0119
+0.4679	0.1165	1.000	This operation does not address storage. The ef-	0.3741	0.0147
+0.4824	0.5301	1.000	Data Flags (TF, UF, VF). These indicators are set	0.3741	0.0161
+0.4839	0.0977	1.000	fective shift may be obtained by standard indexing	0.3929	0.0132
+0.4964	0.0994	1.000	procedures. The effective shift is not monitored for	0.3913	0.0168
+0.4985	0.5150	1.000	according to the flag bits of the addressed operand.	0.3741	0.0146
+0.5130	0.5320	1.000	To-Memory Operation (MOP). This indicator is set	0.3722	0.0161
+0.5145	0.0996	1.000	address boundaries. The operation is not affected by	0.3910	0.0131
+0.5291	0.0996	1.000	the normalization modifier. No noisy mode one bits	0.3910	0.0131
+0.5300	0.5149	1.000	to zero.	0.0548	0.0112
+0.5436	0.5282	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). These in-	0.3759	0.0161
+0.5451	0.0996	1.000	are entered on left shift if noisy mode is specified.	0.3759	0.0131
+0.5581	0.5149	1.000	dicators are set according to the entire floating point	0.3893	0.0163
+0.5596	0.1165	1.000	When the accumulator operand is a value in the	0.3741	0.0146
+0.5741	0.5132	1.000	result which appears in the accumulator.	0.3026	0.0147
+0.5755	0.0996	1.000	XEP or XEN range, the operation is performed as de-	0.3910	0.0133
+0.5915	0.0977	1.000	scribed above. The result is the original accumulator	0.3929	0.0118
+0.5915	0.5301	1.000	Exponent Range (XPFP, XPO, XPH, XPL,	0.3722	0.0161
+0.6061	0.0996	1.000	exponent and the fraction shifted in the specified di-	0.3929	0.0146
+0.6061	0.5132	1.000	XPU). These indicators are set according to the ex-	0.3872	0.0176
+0.6206	0.0996	1.000	rection by the specified amount.	0.2331	0.0146
+0.6221	0.5113	1.000	ponent range of the results.	0.1974	0.0161
+0.6381	0.5301	1.000	Zero Multiply (ZM). If on, this indicator will be	0.3722	0.0174
+0.6395	0.0959	1.000	INDICATORS	0.0789	0.0102
+0.6495	0.5093	1.000	turned off.	0.0866	0.0193
+0.6497	0.1128	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). These in-	0.3759	0.0189
+0.6685	0.5132	1.000	Add Immediate to Exponent (E+1)	0.2481	0.0176
+0.6685	0.0959	1.000	dicators are set according to the arithmetic result	0.3929	0.0161
+0.6860	0.0977	1.000	which appears in the accumulator.	0.2444	0.0131
+0.6991	0.1128	1.000	Lost Carry (LC). This indicator is set to one when	0.3741	0.0161
+0.7136	0.0959	1.000	a one-bit is shifted left beyond accumulator bit posi-	0.3947	0.0161
+0.7309	0.0977	1.000	tion 12.	0.0565	0.0120
+0.7339	0.5113	1.000	address field of the instruction is not monitored for	0.3929	0.0191
+0.7427	0.1109	1.000	Exponent Range (XPFP, XPH, XPL). These in-	0.3759	0.0189
+0.7515	0.5132	1.000	address boundaries.	0.1447	0.0161
+0.7569	0.0957	1.000	dicators are set according to the exponent range of	0.3912	0.0181
+0.7761	0.0940	1.000	the result as it appears in the accumulator.	0.3195	0.0133
+0.7762	0.5207	1.000	Multiplier	0.0564	0.0131
+0.7774	0.6202	1.000	Multiplicand	0.0716	0.0121
+0.7849	0.5996	1.000	XFP	0.0282	0.0145
+0.7863	0.6861	1.000	XFN	0.0376	0.0131
+0.7863	0.6560	1.000	N	0.0150	0.0131
+0.7906	0.1109	1.000	Zero Multiply (ZM). If on, this indicator will be	0.3759	0.0176
+0.8061	0.0938	1.000	turned off.	0.0811	0.0156
+0.8081	0.5282	1.000	XFP	0.0263	0.0116
+0.8081	0.5977	1.000	XFP	0.0282	0.0116
+0.8081	0.6917	1.000	XEP	0.0282	0.0131
+0.8081	0.6466	1.000	XFP	0.0263	0.0131
+0.8183	0.5376	1.000	N	0.0169	0.0116
+0.8183	0.5977	1.000	XFP	0.0282	0.0116
+0.8183	0.6541	1.000	N*	0.0226	0.0131
+0.8198	0.6898	1.000	XEN	0.0320	0.0116
+0.8241	0.1109	1.000	To-Memory Operation (MOP). This indicator is set	0.3759	0.0147
+0.8285	0.5282	1.000	XFN	0.0301	0.0116
+0.8299	0.6391	1.000	_XFN XEN	0.0846	0.0116
+0.8299	0.5977	1.000	XEP	0.0263	0.0116
+0.8414	0.0940	1.000	to zero.	0.0546	0.0090
+0.8488	0.5357	1.000	These values may be in the XFP or XFr	0.1974	0.0131
+0.8576	0.5357	1.000	andertothe result of normal overilow o	0.1955	0.0234
+0.8576	0.0959	1.000	Add to Exponent (E+)	0.1617	0.0146
+0.8721	0.0940	1.000	The exponent of the operand specified by the effec-	0.3929	0.0161
+0.8866	0.0921	1.000	tive address is added to the exponent of the operand	0.3929	0.0174
+0.8881	0.5094	1.000	Figure 32. Exponent Multiplication Table	0.2613	0.0174
+0.9258	0.1447	1.000	IBM 7030	0.0639	0.0088
+0.9259	0.0921	1.000	102	0.0244	0.0102

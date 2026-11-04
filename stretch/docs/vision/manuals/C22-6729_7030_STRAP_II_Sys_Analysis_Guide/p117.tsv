@@ -1,0 +1,30 @@
+0.0887	0.8778	1.000	MQR	0.0395	0.0160
+0.1321	0.5244	1.000	After the primitive dimension information is in the	0.3759	0.0147
+0.1323	0.0959	1.000	LINKAGE	0.0752	0.0131
+0.1467	0.5244	1.000	unit, the index words of MAIN must be updated to	0.3647	0.0161
+0.1612	0.0977	1.000	MQR is entered from MAIN through the pseudo-op	0.3703	0.0161
+0.1612	0.5207	1.000	locate new free area.	0.1617	0.0147
+0.1758	0.0977	1.000	digit select table.	0.1316	0.0146
+0.1903	0.5226	1.000	Bоx 6	0.0489	0.0146
+0.2048	0.0959	1.000	FLOW CHART DESCRIPTION	0.2237	0.0132
+0.2194	0.5244	1.000	Before going to VDIMEN, the location of the dimension	0.4060	0.0176
+0.2337	0.0977	1.000	Boxes 10-12	0.0923	0.0166
+0.2369	0.5226	1.000	intormation is saved in a special field of the unit. Now	0.4098	0.0131
+0.2441	0.5222	1.000	VDIMEN, a special subroutine of VALUE, tries to	0.3766	0.0246
+0.2645	0.0977	1.000	When the DR does not have a name, the dimension	0.3722	0.0131
+0.2645	0.5226	1.000	evaluate the dimensions. If it can evaluate the dimen-	0.4041	0.0161
+0.2805	0.5226	1.000	sion information, VDIMEN replaces the previous coded	0.4098	0.0146
+0.2936	0.5226	1.000	expression with the twenty-four bit products. (See	0.3703	0.0131
+0.3080	0.5225	1.000	Appendix A.)	0.0997	0.0149
+0.3189	0.0977	1.000	used to set up the contents of MDIMRE's index words.	0.3986	0.0177
+0.3384	0.5206	1.000	Box 5	0.0491	0.0150
+0.3387	0.0977	1.000	MAIN's index word, Ibuffw, is now locating the avail-	0.3947	0.0132
+0.3532	0.0977	1.000	able area in the variable length portion of the unit	0.3722	0.0117
+0.3663	0.0977	1.000	where the coded expressions or encoding of any kind	0.3872	0.0160
+0.3663	0.5207	1.000	MQR must enter MDIMRF by the MDIMRI entry be-	0.3891	0.0174
+0.3808	0.5226	1.000	cause MDIMRT makes the adjustments so that the	0.3684	0.0174
+0.3821	0.0959	1.000	is to go. MDIMRF makes up the special dimension	0.3797	0.0161
+0.3967	0.5226	1.000	dimension array can be part of a vle.	0.2782	0.0147
+0.3982	0.0996	1.000	configuration to go into the unit (See Appendix A.)	0.3684	0.0132
+0.9448	0.8383	1.000	MOR	0.0301	0.0087
+0.9448	0.8947	1.000	117	0.0207	0.0087

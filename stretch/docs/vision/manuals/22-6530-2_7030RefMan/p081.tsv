@@ -1,0 +1,104 @@
+0.0609	0.0996	1.000	Floating-Point Arithmetic	0.2669	0.0176
+0.1177	0.1015	1.000	A floating number consists of a signed exponent + E,	0.3929	0.0145
+0.1190	0.5206	1.000	bits becomes too small, the arithmetic procedure may	0.3856	0.0167
+0.1336	0.1015	1.000	and a signed fraction + F. The quantity expressed	0.3910	0.0146
+0.1352	0.5207	1.000	be revised, or operations using greater precision may	0.3853	0.0161
+0.1482	0.1015	1.000	by this number is the product of the fraction and	0.3910	0.0146
+0.1494	0.5184	1.000	be used.	0.0630	0.0136
+0.1642	0.1015	1.000	the number two raised to the power of the signed	0.3910	0.0145
+0.1657	0.5357	1.000	In order to simplify significance studies, a mode of	0.3703	0.0146
+0.1802	0.1015	1.000	exponent, or +F X 2*. The exponent is expressed	0.3910	0.0146
+0.1817	0.5169	1.000	Hoating-point operation is provided in which stand-	0.3891	0.0160
+0.1948	0.0996	1.000	as a binary integer and the fraction is expressed	0.3910	0.0146
+0.1962	0.5188	1.000	ard	0.0320	0.0102
+0.1976	0.5489	1.000	results are altered in a specific manner. This	0.3571	0.0132
+0.2106	0.5188	1.000	mode of operation is called "noisy mode." By com-	0.3872	0.0161
+0.2106	0.0996	1.000	as a binary number having a binary point to the left	0.3947	0.0133
+0.2252	0.1015	1.000	of the high-order digit.	0.1654	0.0133
+0.2282	0.5188	1.000	puting a problem section in the standard mode and	0.3872	0.0131
+0.2412	0.1184	1.000	A major objective in the design of this system is	0.3741	0.0131
+0.2423	0.5187	1.000	comparing the results with those obtained by com-	0.3874	0.0152
+0.2558	0.0996	1.000	maximum processing speed for floating point opera-	0.3929	0.0146
+0.2573	0.5188	1.000	puting the same problem section in the noisy mode,	0.3853	0.0146
+0.2718	0.0996	1.000	tions. Simplification of the floating point instruction	0.3929	0.0146
+0.2733	0.5188	1.000	an estimate of the significance of the results can be	0.3872	0.0131
+0.2863	0.0996	1.000	set is achieved through full utilization of the uniform	0.3910	0.0146
+0.2871	0.5167	1.000	obtained.	0.0718	0.0145
+0.3031	0.5356	1.000	The system gives the best possible speeds for oper-	0.3706	0.0169
+0.3169	0.0996	1.000	tion information requires only a half-word which	0.3910	0.0147
+0.3197	0.5150	1.000	ands which are single-precision normalized numbers	0.3910	0.0161
+0.3312	0.5167	1.000	and results which are also normalized, since they rep-	0.3877	0.0206
+0.3327	0.0996	1.000	allows iwo floating-point instructions per storage	0.3929	0.0147
+0.3488	0.0996	1.000	word. This results in an increase of program storage	0.3910	0.0146
+0.3503	0.5150	1.000	resent the most frequent use of floating-point arith-	0.3891	0.0161
+0.3626	0.0995	1.000	efficiency and reduces the number of storage accesses.	0.3913	0.0167
+0.3648	0.5169	1.000	metic. All other cases, however, are handled in a	0.3891	0.0146
+0.3794	0.1015	1.000	Uniform information such as bit address, field length,	0.3891	0.0131
+0.3808	0.5169	1.000	straightforward manner.	0.1805	0.0131
+0.3939	0.0977	1.000	addressing mode, byte size, radix, and accumulator	0.3929	0.0146
+0.3951	0.5337	1.000	Floating-point numbers cover a range between the	0.3705	0.0169
+0.4084	0.0977	1.000	offset are implied by the operation and thus need	0.3929	0.0146
+0.4112	0.5188	1.000	positive and negative values of the fraction having	0.3853	0.0147
+0.4231	0.5166	1.000	the maximum exponent. Since the exponent range	0.3878	0.0225
+0.4244	0.0977	1.000	not be specified as required in integer arithmetic.	0.3910	0.0147
+0.4403	0.0996	1.000	Operations on the floating point fractions are per-	0.3910	0.0146
+0.4418	0.5169	1.000	is finite, a discontinuity exists between the positive	0.3872	0.0161
+0.4548	0.0977	1.000	formed at very high speed in parallel arithmetic, and	0.3910	0.0146
+0.4578	0.5169	1.000	and negative values of the fraction having minimum	0.3872	0.0146
+0.4709	0.0977	1.000	operands utilize fixed portions of the operand regis-	0.3929	0.0146
+0.4724	0.5169	1.000	exponent. Included in this range is the number zero.	0.3872	0.0146
+0.4869	0.5188	1.000	A control or flag bit has been incorporated in the	0.3853	0.0161
+0.5015	0.1147	1.000	Floating point instructions contain sign modifiers	0.3759	0.0146
+0.5025	0.5149	1.000	exponent field in order to provide straightforward	0.3893	0.0182
+0.5153	0.0977	1.000	similar to the integer arithmetic sign modifiers. They	0.3912	0.0168
+0.5188	0.5169	1.000	control of data which exceed the exponent range or	0.3872	0.0146
+0.5286	0.0976	1.000	also contain a normalization modifier which specifies	0.3932	0.0187
+0.5333	0.5169	1.000	fall within the range of the discontinuity.	0.2970	0.0146
+0.5479	0.0977	1.000	the choice between normalized and unnormalized	0.3910	0.0118
+0.5629	0.0975	1.000	operation.	0.0754	0.0131
+0.5767	0.1146	1.000	A quantity can be represented by a single floating-	0.3761	0.0168
+0.5887	0.5150	1.000	Data Format	0.1203	0.0147
+0.5929	0.0977	1.000	point number with the greatest precision when that	0.3930	0.0156
+0.6090	0.0977	1.000	number is normalized. A normalized floating point	0.3929	0.0146
+0.6221	0.5169	1.000	Floating-point numbers are represented in storage in	0.3872	0.0146
+0.6235	0.0977	1.000	number always has a one in the high-order fraction	0.3910	0.0146
+0.6366	0.5132	1.000	the following full word format.	0.2256	0.0161
+0.6394	0.0977	1.000	bit position. If one or more high order fraction bits	0.3910	0.0147
+0.6555	0.0977	1.000	are zero, the number is not in normalized form. The	0.3910	0.0118
+0.6672	0.5470	1.000	,WORD BOUNDARY	0.0677	0.0087
+0.6685	0.0977	1.000	process of normalization consists of shifting the frac-	0.3910	0.0161
+0.6788	0.5526	1.000	,EXPONENT FLAG	0.0695	0.0088
+0.6860	0.0977	1.000	tion left until the high-order bit is one, and reducing	0.3910	0.0146
+0.6918	0.5526	1.000	EXPONENT 4	0.0620	0.0131
+0.6933	0.8496	1.000	ISTUY	0.0301	0.0145
+0.6976	0.6880	1.000	FRACTION (48 BITS)	0.0846	0.0074
+0.7006	0.0977	1.000	the exponent by the amount of the shift.	0.2895	0.0131
+0.7020	0.5583	1.000	(10 BITS) L	0.0526	0.0087
+0.7078	0.7857	0.500	FRACTION SION TAS0	0.0996	0.0203
+0.7133	0.1125	1.000	When a single floating-point word cannot express	0.3764	0.0199
+0.7194	0.5695	1.000	EXPONÉNT SIGN	0.0677	0.0074
+0.7282	0.8346	1.000	3 FLAG BITS	0.0489	0.0088
+0.7324	0.0959	1.000	a quantity with sufficient precision, multiple-precision	0.3929	0.0133
+0.7470	0.0940	1.000	operation is required. The floating-point instruction	0.3929	0.0161
+0.7470	0.5301	1.000	The exponent field uses the first 12 bits of the data	0.3722	0.0161
+0.7630	0.5132	1.000	word, bit positions 0-11. Bit position 0 is called the	0.3891	0.0161
+0.7630	0.0959	1.000	set contains a number of operations providing double-	0.3910	0.0131
+0.7776	0.0959	1.000	precision results. These operations have been de-	0.3929	0.0131
+0.7776	0.5113	1.000	exponent flag, EF. Bit positions 1-10 are called the	0.3910	0.0176
+0.7912	0.5129	1.000	exponent magnitude, EM. Bit position I1 is called the	0.3895	0.0222
+0.7936	0.0940	1.000	signed to facilitate the programming of double or	0.3929	0.0131
+0.8079	0.5131	1.000	exponent sign, Es. The Es is set to 0 for positive	0.3893	0.0194
+0.8081	0.0940	1.000	higher precision operation.	0.1955	0.0131
+0.8201	0.5111	1.000	values and set to 1 for negative values of the expo-	0.3897	0.0232
+0.8241	0.1109	1.000	In floating point operation, the fractions of all	0.3759	0.0131
+0.8367	0.0939	1.000	arithmetic results contain a standard number of bits.	0.3912	0.0156
+0.8400	0.5658	1.000	The EM is a binary integer in the range	0.3365	0.0176
+0.8416	0.5132	1.000	nent.	0.0395	0.0102
+0.8545	0.0959	1.000	Not all of these bits need be significant; furthermore,	0.3910	0.0146
+0.8545	0.5113	1.000	0EEM≤1023. The EF is set to 0 for values of EM	0.3891	0.0161
+0.8706	0.5113	1.000	within the range. EF is set to 1 when EM exceeds this	0.3891	0.0146
+0.8706	0.0940	1.000	as a result of calculation, the number of significant	0.3929	0.0131
+0.8852	0.0959	1.000	bits may be reduced. When the number of significant	0.3910	0.0146
+0.8881	0.5113	1.000	range.	0.0451	0.0116
+0.9230	0.0902	1.000	78	0.0207	0.0116
+0.9230	0.1109	1.000	IBM 7030	0.0902	0.0089

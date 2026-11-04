@@ -1,0 +1,100 @@
+0.0755	0.5263	1.000	system 1-o devices) in terms of iod cards, placed at the	0.3947	0.0147
+0.0783	0.0995	1.000	INTEGERS	0.0716	0.0150
+0.0915	0.5263	1.000	front of a job input deck. This enables Mcp to deter-	0.3966	0.0146
+0.0959	0.1015	1.000	A FORTRAN integer is actually represented internally	0.3985	0.0189
+0.1076	0.5263	1.000	mine, prior to the execution of a program, the devices	0.3947	0.0146
+0.1148	0.0996	1.000	as an unnormalized floating point quantity, with a	0.3985	0.0131
+0.1221	0.5263	1.000	required by a job, so that these devices may be made	0.3947	0.0146
+0.1264	0.1015	1.000	fixed exponent of 381o. This enables the floating point	0.3966	0.0176
+0.1381	0.5244	1.000	ready, and any necessary messages in connection with	0.3966	0.0146
+0.1424	0.0996	1.000	instruction set to be used in manipulating these quan-	0.3985	0.0161
+0.1539	0.5263	1.000	tape reel mounting may be given to the operator.	0.3722	0.0133
+0.1570	0.0996	1.000	tities, resulting in an appreciably shorter running time.	0.4023	0.0189
+0.1700	0.5432	1.000	For a FORTRAN job, two important preliminary state-	0.3778	0.0131
+0.1758	0.3083	1.000	Position of Binary Point Sign	0.1579	0.0191
+0.1845	0.5263	1.000	ments may be made concerning tod cards. First, unlike	0.3947	0.0146
+0.1991	0.5263	1.000	a STRAP program, IOD's need not be present for a "com-	0.3947	0.0146
+0.2006	0.1165	1.000	3810	0.0320	0.0174
+0.2006	0.2293	1.000	Binary Integer	0.0789	0.0161
+0.2137	0.5244	1.000	pile-only"	0.0752	0.0174
+0.2138	0.5977	1.000	job. This arises from the fact that in a FOR-	0.3235	0.0145
+0.2238	0.1485	1.000	101112	0.0489	0.0116
+0.2238	0.3346	1.000	4950	0.0338	0.0116
+0.2253	0.4079	1.000	60	0.0188	0.0102
+0.2253	0.4474	1.000	63	0.0169	0.0087
+0.2311	0.5263	1.000	TRAN program there are no direct references to the	0.3929	0.0131
+0.2338	0.1597	1.000	A FORTRAN integer	0.1091	0.0179
+0.2456	0.5263	1.000	symbols punched in the 1od name field. For a compile-	0.3947	0.0147
+0.2615	0.5263	1.000	go job, or a go job, they are required. If the FORTRAN	0.3929	0.0146
+0.2761	0.5244	1.000	section of a job was processed in a compile-no-go	0.3947	0.0146
+0.2921	0.5263	1.000	operation, then the necessary Iod cards (prepared in	0.3929	0.0146
+0.3009	0.0996	1.000	LOGICAI QUANTITIES	0.1523	0.0189
+0.3067	0.5244	1.000	the manner explained later in this chapter) must be	0.3947	0.0146
+0.3212	0.0996	1.000	A logical quantity, as manipulated by a FORTRAN code,	0.4004	0.0176
+0.3227	0.5226	1.000	passed through the compiling system by themselves,	0.3985	0.0161
+0.3372	0.5226	1.000	before they may be combined with the FORTRAN object	0.3966	0.0161
+0.3387	0.0977	1.000	consists of a single bit, stored in bit 59 of a full word.	0.3985	0.0147
+0.3532	0.1015	1.000	Such quantities are operated on principally by con-	0.3966	0.0147
+0.3532	0.5263	1.000	deck and run into the machine as a go-job. (See Ex-	0.3947	0.0132
+0.3706	0.1015	1.000	NECT instructions.	0.1278	0.0117
+0.3706	0.5226	1.000	ample 3, Chapter 4.)	0.1579	0.0146
+0.3821	0.5414	1.000	Second, MCP requires all the IOd's of a job to be in	0.3778	0.0161
+0.3909	0.2989	1.000	Either 1-True, or 0-False	0.1316	0.0103
+0.3968	0.5224	1.000	one group, at the front of a job deck. Since a typical	0.3970	0.0197
+0.4142	0.5226	1.000	FORTRAN job consists arbitrarily of many subprograms,	0.3985	0.0161
+0.4287	0.5244	1.000	the I-o requirements must be considered for the job	0.3949	0.0164
+0.4375	0.4474	1.000	63	0.0150	0.0087
+0.4375	0.3853	1.000	58 59 60	0.0451	0.0089
+0.4462	0.5244	1.000	in toto, not merely for each individual subprogram.	0.3797	0.0145
+0.4476	0.1673	1.000	A FORTRAN logical quantity	0.1523	0.0132
+0.4573	0.5411	1.000	It is now possible to examine the I1 I-o statements	0.3782	0.0190
+0.4752	0.5244	1.000	of the ForTRAN language individually, and to deter-	0.3966	0.0147
+0.4898	0.5243	1.000	mine their implications in terms of required Iod cards.	0.3950	0.0169
+0.5073	0.5244	1.000	To this end, it is convenient to divide the statements	0.3947	0.0131
+0.5131	0.0977	1.000	ZERO	0.0376	0.0131
+0.5233	0.5226	1.000	into four groups.	0.1241	0.0131
+0.5333	0.1015	1.000	The FORTRAN programmer should be aware that in the	0.3947	0.0132
+0.5494	0.0996	1.000	manipulation of normalized floating point quantities	0.3966	0.0131
+0.5581	0.5243	1.000	Group 1: Statements Not Requiring IOD's	0.2972	0.0148
+0.5639	0.0996	1.000	(real numbers), a number having a zero fraction part	0.3966	0.0145
+0.5770	0.5244	1.000	The three statements of Group 1 are unique in that	0.3947	0.0131
+0.5799	0.0977	1.000	and an arbitrary exponent may be generated as a re-	0.3985	0.0131
+0.5915	0.5226	1.000	their use does not require the manufacture of rod cards.	0.3947	0.0131
+0.5945	0.0977	1.000	sult of add and/or subtract operations. It is necessary,	0.3985	0.0146
+0.6087	0.5244	1.000	They are:	0.0754	0.0123
+0.6105	0.0977	1.000	therefore, that the generated code be such that two	0.3966	0.0147
+0.6237	0.0977	1.000	numbers with zero fractions and different exponents	0.3968	0.0163
+0.6264	0.5526	1.000	READ f, list	0.0752	0.0088
+0.6364	0.5526	1.000	PRINT f. list	0.0790	0.0091
+0.6424	0.0996	1.000	be found equal under comparison operations. In the	0.3947	0.0103
+0.6482	0.5508	1.000	PUNCH f, list	0.0902	0.0132
+0.6570	0.0996	1.000	case of the Fortran integers, however, the fixed ex-	0.3929	0.0131
+0.6627	0.5207	1.000	where f is a format specification, and list is a list of	0.3985	0.0161
+0.6699	0.0976	1.000	ponent of +381n is always preserved, including the	0.3949	0.0164
+0.6788	0.5207	1.000	the quantities to be transmitted. These three state-	0.3966	0.0176
+0.6874	0.0977	1.000	case of zero.	0.0921	0.0118
+0.6948	0.5207	1.000	ments refer to the System reader, the System printer	0.3985	0.0160
+0.7106	0.5207	1.000	and the System punch, respectively.	0.2632	0.0147
+0.7106	0.0977	1.000	PRECISION	0.0715	0.0105
+0.7297	0.0977	1.000	Note that even though FORTRAN arithmetic is single-	0.3966	0.0161
+0.7470	0.5226	1.000	Group 2: Binary I-O	0.1466	0.0147
+0.7470	0.0977	1.000	precision in nature, the generated code contains some	0.3966	0.0118
+0.7602	0.0977	1.000	double precision operations. These are necessary for	0.3966	0.0132
+0.7660	0.5357	1.000	The two statements in this group are:	0.2820	0.0146
+0.7733	0.0959	1.000	such cases as the multiplication of two FORTRAN inte-	0.3985	0.0174
+0.7833	0.5470	1.000	READ (u) list	0.0977	0.0132
+0.7892	0.0959	1.000	gers; by reason of their internal format, a single preci-	0.3985	0.0189
+0.7932	0.5488	1.000	WRITE (u) list	0.1035	0.0153
+0.8052	0.0959	1.000	sion multiplication operation would yield an incorrect	0.3985	0.0176
+0.8109	0.5207	1.000	where u is a fixed point integer or variable indicating	0.3966	0.0161
+0.8235	0.0956	1.000	result.	0.0456	0.0115
+0.8285	0.5282	1.000	he particular unit referenced. These statements ar	0.3797	0.0131
+0.8415	0.5263	1.000	or the transmission of binary information to or fror	0.3816	0.0131
+0.8571	0.5206	1.000	magnetic tape, or disk, the actual device required	0.3948	0.0155
+0.8691	0.0977	1.000	Chapter 11. IOD Card Preparation	0.2914	0.0161
+0.8750	0.5226	1.000	being determined by the related IOD cards.	0.3158	0.0117
+0.8857	0.5318	1.000	The FORTRAN language is defined such that each	0.3838	0.0198
+0.8881	0.0996	1.000	All programs to be executed under MCP control are	0.3929	0.0131
+0.9039	0.5207	1.000	distinct value of u implies a distinct i-o device, or, in	0.3966	0.0147
+0.9039	0.0977	1.000	required to state their i-o requirements (other than the	0.3966	0.0133
+0.9317	0.0940	1.000	24	0.0207	0.0116

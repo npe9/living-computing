@@ -1,0 +1,105 @@
+0.0567	0.0921	1.000	The product is to be stored at co. A is stored in suc-	0.3891	0.0204
+0.0609	0.5038	1.000	fied register. The named index load operation, RENAME,	0.3947	0.0147
+0.0755	0.5075	1.000	makes use of the format shown below. The field J	0.3872	0.0147
+0.0770	0.0921	1.000	cessive core storage locations. B is a column vector	0.3872	0.0118
+0.0900	0.5075	1.000	specifies the index register which is to be stored anc	0.3853	0.0147
+0.0900	0.0921	1.000	of a matrix whose rows have p elements and are stored	0.3872	0.0147
+0.1045	0.0902	1.000	in successive storage locations. Therefore, the ele	0.3872	0.0146
+0.1045	0.5038	1.000	loaded. The field I is used in standard fashion to form	0.3929	0.0161
+0.1177	0.0921	1.000	ments of B have locations which are p words apart.	0.3853	0.0174
+0.1191	0.5056	1.000	an effective address.	0.1447	0.0161
+0.1336	0.0902	1.000	Figure 8 shows the program.	0.2049	0.0176
+0.1424	0.5488	1.000	ADDRESS	0.0527	0.0161
+0.1453	0.6654	1.000	OP.	0.0207	0.0116
+0.1584	0.6579	1.000	23	0.0132	0.0116
+0.1599	0.6880	1.000	28 31	0.0320	0.0087
+0.1715	0.5226	1.000	The RENAME instruction makes it pessible to use any	0.3722	0.0131
+0.1771	0.2180	1.000	STATEMENT	0.0810	0.0165
+0.1773	0.4173	1.000	NOTES	0.0470	0.0175
+0.1801	0.0996	1.000	NAME	0.0396	0.0119
+0.1860	0.5056	1.000	core storage word conveniently as an index quantity.	0.3929	0.0131
+0.2032	0.2161	1.000	IX, $XT, CTLWD	0.1073	0.0152
+0.2134	0.2161	1.000	IX, $X8, CTLWD	0.1073	0.0151
+0.2224	0.0996	1.000	START	0.0451	0.0160
+0.2232	0.5055	1.000	Rename (RNX)	0.1093	0.0158
+0.2267	0.4342	1.000	2	0.0075	0.0102
+0.2340	0.1015	1.000	LOOP	0.0376	0.0146
+0.2427	0.5056	1.000	The index word in the index register specified by the	0.3910	0.0161
+0.2573	0.5056	1.000	field J is stored in the location addressed by the refill	0.3929	0.0176
+0.2598	0.2142	1.000	V+ICR, $X8, p.0	0.1073	0.0123
+0.2602	0.4323	1.000	5	0.0113	0.0102
+0.2703	0.5056	1.000	field of XO. The reiill field of X0 is then replaced by	0.3910	0.0191
+0.2703	0.4323	1.000	6	0.0113	0.0116
+0.2718	0.2143	1.000	CBR+, $X7, LOOP	0.1184	0.0116
+0.2820	0.2143	1.000	ST(N), co	0.0583	0.0132
+0.2878	0.5056	1.000	bits 0-17 of the effective address. The remaining bits	0.3929	0.0174
+0.3005	0.0995	1.000	TRUZERO	0.0623	0.0167
+0.3034	0.2123	1.000	DD(U), OE-600	0.0866	0.0137
+0.3052	0.5056	1.000	of X0 remain unchanged. Next, the index word speci-	0.3910	0.0132
+0.3154	0.0996	1.000	CTLWD	0.0451	0.0116
+0.3154	0.2124	1.000	XW, O.0, n, CTLWD	0.1259	0.0131
+0.3182	0.5038	1.000	fied by J is replaced by the word in core storage ad-	0.3929	0.0161
+0.3302	0.5036	1.000	dressed by the new refill field of XO. When either the	0.3933	0.0223
+0.3488	0.1446	1.000	1. Set index registers to initíal values. These instruc-	0.3254	0.0148
+0.3503	0.5056	1.000	old or the new name of the index refers to one of the	0.3910	0.0116
+0.3503	0.1015	1.000	Notes:	0.0470	0.0087
+0.3605	0.1673	1.000	tions are necessary only when the program is first	0.2914	0.0132
+0.3648	0.5056	1.000	locations 0-31, the instruction is executed as no-	0.3910	0.0146
+0.3721	0.1673	1.000	loaded.	0.0432	0.0116
+0.3821	0.1466	1.000	2. Resets accumulator to true zero. Successive execu-	0.3252	0.0147
+0.3821	0.5056	1.000	operation and indicator Ad is set. If the interrupt sys-	0.3891	0.0147
+0.3967	0.5056	1.000	tem is enabled and if the old name is both out of	0.3910	0.0118
+0.4127	0.5056	1.000	bounds and invalid, the AD and Ds indicators are set.	0.3891	0.0131
+0.4288	0.5056	1.000	If the new name is both out of bounds and invalid, the	0.3910	0.0131
+0.4403	0.1523	1.000	3. Loads element of A in factor register	0.2274	0.0118
+0.4433	0.5056	1.000	AD and DF indicators are set. The index flag and index	0.3910	0.0131
+0.4491	0.1523	1.000	1. Multiplies by element of B, adds product to accumula-	0.3214	0.0131
+0.4593	0.5056	1.000	result indicators are set according to the new contents	0.3910	0.0131
+0.4724	0.1466	1.000	5. Increments to next element in B, and counts down the	0.3252	0.0146
+0.4738	0.5038	1.000	of the index register specified by J.	0.2594	0.0160
+0.4839	0.1711	1.000	index. If a zero count is reached, the index registe	0.2932	0.0132
+0.4942	0.1711	1.000	is refilled - ready for the next execution of the pro.	0.2876	0.0131
+0.4970	0.5056	1.000	PROGRAMMING NOTE	0.1466	0.0118
+0.5145	0.5056	1.000	In many applications the RENAME instruction can be	0.3910	0.0146
+0.5188	0.1523	1.000	. Increments to the next element in A and counts dow	0.3064	0.0118
+0.5276	0.1711	1.000	he index. Branches back to the start of the loop un.	0.2932	0.0131
+0.5291	0.5056	1.000	considered as a prefix to another operation which ex-	0.3910	0.0146
+0.5378	0.1635	1.000	Inde ths rest led and tie resche storehich case the	0.2951	0.0247
+0.5451	0.5056	1.000	pands the index address field I of that operation to	0.3910	0.0146
+0.5596	0.5056	1.000	include any address in core storage.	0.2538	0.0146
+0.5755	0.0902	1.000	Figure 8. Example of Count, Branch and Refill	0.2857	0.0147
+0.5842	0.5056	1.000	PROGRAMMING EXAMPLE	0.1748	0.0103
+0.6003	0.5075	1.000	One hundred words of floating point data are placed	0.3872	0.0146
+0.6163	0.5056	1.000	in a block starting at location DATA. Each word is to	0.3910	0.0131
+0.6308	0.5056	1.000	be stored in one of eight blocks, A through H, accord-	0.3910	0.0131
+0.6336	0.0902	1.000	Named Index Loading	0.2049	0.0161
+0.6467	0.5019	1.000	ing to the binary number, from 0 to 7, formed by the	0.3947	0.0161
+0.6599	0.5038	1.000	three flag bits in its sign byte. The control words de-	0.3929	0.0174
+0.6715	0.0902	1.000	Fifteen index registers are directly available to the	0.3891	0.0161
+0.6725	0.5036	1.000	fining the position and length of each of these eight	0.3932	0.0212
+0.6875	0.0902	1.000	programmer for use in address modification. In some	0.3891	0.0146
+0.6903	0.5038	1.000	blocks are stored in order in successive locations start-	0.3929	0.0161
+0.7006	0.0883	1.000	applications it may be desirable to use a larger num-	0.3910	0.0174
+0.7064	0.5019	1.000	ing at location CTLWDI. Assume that index registers	0.3947	0.0161
+0.7224	0.5056	1.000	XI4 and X15 and the refill field of X0 are available	0.3910	0.0161
+0.7337	0.0921	1.000	quire frequent loading and storing of index words. In	0.3854	0.0122
+0.7351	0.5018	1.000	to the program, but that all the remaining index regis-	0.3950	0.0196
+0.7485	0.0921	1.000	order to simplify the loading and storing of index	0.3853	0.0118
+0.7515	0.5000	1.000	ters are occupied. Also assume that the data flag in-	0.3966	0.0174
+0.7645	0.0921	1.000	words, the method of named index loading has been	0.3853	0.0116
+0.7674	0.5038	1.000	dicators are masked off. See Figure 9.	0.2688	0.0160
+0.7781	0.0901	1.000	provided. When this method of index loading is	0.3875	0.0179
+0.7936	0.0902	1.000	used, XO contains the core storage address, or name,	0.3872	0.0131
+0.8036	0.5038	1.000	Multiple Indexing	0.1673	0.0176
+0.8096	0.0902	1.000	of the index word last loaded into one of the regis-	0.3872	0.0116
+0.8227	0.0902	1.000	ters XI-X15 by a named index load. When a named	0.3872	0.0131
+0.8387	0.5019	1.000	In some applications index quantities are derived as	0.3947	0.0174
+0.8415	0.0902	1.000	index load is specified, the contents of the index reg.	0.3853	0.0103
+0.8545	0.0902	1.000	ister are first stored in the core storage location speci-	0.3872	0.0161
+0.8545	0.5019	1.000	the sum of a selected number of basic quantities. As	0.3947	0.0161
+0.8691	0.5019	1.000	the basic quantities are modified, the derived quanti-	0.3947	0.0176
+0.8691	0.0883	1.000	fied by XO. The name of the new index word is then	0.3892	0.0163
+0.8852	0.5038	1.000	ties should change accordingly. It may be convenient	0.3929	0.0161
+0.8852	0.0883	1.000	placed in XO and the word itself placed in the speci-	0.3891	0.0161
+0.9230	0.7199	1.000	Operand Designation	0.1316	0.0131
+0.9230	0.8778	1.000	27	0.0188	0.0116

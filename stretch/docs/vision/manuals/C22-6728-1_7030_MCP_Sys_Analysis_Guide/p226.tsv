@@ -1,0 +1,113 @@
+0.0930	0.0827	1.000	Record AB000046 will be deleted. Record AB001057	0.3966	0.0131
+0.0959	0.5338	1.000	Note: Any number and type of ALTER controls may	0.3910	0.0132
+0.1090	0.0827	1.000	will be replaced with the information on the third card.	0.4154	0.0131
+0.1104	0.5131	1.000	be used together on the same file as long as they	0.3705	0.0149
+0.1235	0.0827	1.000	Notice that because of the deletion card, SAM will not	0.4060	0.0146
+0.1264	0.5169	1.000	referenced the records in that file in numerically	0.3722	0.0118
+0.1380	0.5184	1.000	ascending sequence.	0.1531	0.0163
+0.1380	0.0826	1.000	have number 1057 on the new master.	0.2859	0.0132
+0.1394	0.3684	1.000	The ID	0.0620	0.0103
+0.1520	0.0845	1.000	numbers always refer to the records to be replaced	0.3875	0.0160
+0.1670	0.0845	1.000	or deleted on the current master tape.	0.2878	0.0134
+0.1700	0.5188	1.000	File Changes: File changes are initiated by FILE	0.3741	0.0131
+0.1841	0.5187	1.000	control cards (punched ;FILE in columns 1 through	0.3987	0.0151
+0.1888	0.0808	1.000	Case 2	0.0508	0.0104
+0.1991	0.5188	1.000	5). Columns 73 and 74 of the FILE card contain two	0.3929	0.0131
+0.2093	0.1748	1.000	10	0.0169	0.0087
+0.2132	0.5168	1.000	alphameric characters to identify the new file being .	0.4006	0.0152
+0.2208	0.0921	1.000	¡ALTER	0.0508	0.0119
+0.2224	0.1748	1.000	XXyyyyyy	0.0602	0.0160
+0.2282	0.5188	1.000	read from the card reader. This file will be auto-	0.3816	0.0131
+0.2442	0.5188	1.000	matically sequenced as it is read onto the new master.	0.4060	0.0131
+0.2587	0.5188	1.000	The new file is defined to be all cards which follow	0.3816	0.0116
+0.2718	0.0996	1.000	When columns 10 through 17 contain an ID number	0.3759	0.0131
+0.2724	0.5168	1.000	the FILE card up to the next control card. Any infor-	0.4082	0.0147
+0.2856	0.0826	1.000	and columns 20 through 27 are blank, all change cards	0.4100	0.0163
+0.2892	0.5150	1.000	mation in columns 75 through 80 of these cards will	0.3910	0.0117
+0.3006	0.0826	1.000	which follow, up to the next control card, are inserted	0.4100	0.0154
+0.3036	0.5150	1.000	be ignored. FILE cards may also have information	0.3891	0.0118
+0.3169	0.0827	1.000	after record XXyyyyyy on the current master tape.	0.3835	0.0147
+0.3182	0.5132	1.000	punched in columns 10 and 11 and columns 20 and 21.	0.4041	0.0147
+0.3299	0.0827	1.000	These cards are automatically given the proper	0.3590	0.0161
+0.3358	0.7951	1.000	73	0.0263	0.0131
+0.3459	0.0808	1.000	sequence numbers and the rest of the file is rese-	0.3778	0.0132
+0.3503	0.5263	1.000	;FILE	0.0338	0.0116
+0.3517	0.7989	1.000	XX	0.0244	0.0116
+0.3590	0.0808	1.000	quenced as the file is copied onto the new master	0.3722	0.0146
+0.3764	0.0808	1.000	tape. Information in columns 73 through 80 on the	0.3797	0.0118
+0.3892	0.0827	1.000	change cards is ignored as follows:	0.2651	0.0138
+0.3894	0.5299	1.000	When columns 10, 11, 20, and 21 are blank, the	0.3669	0.0193
+0.4053	0.5149	1.000	cards which follow, up to the next control card, are	0.3912	0.0165
+0.4084	0.1729	1.000	10	0.0188	0.0102
+0.4177	0.5130	1.000	written on the new master tape and sequenced starting	0.4102	0.0185
+0.4302	0.1729	1.000	DQ000519	0.0620	0.0116
+0.4302	0.0902	1.000	¡ALTER	0.0508	0.0116
+0.4317	0.5132	1.000	with XX000001. The current master tape is not	0.3665	0.0189
+0.4491	0.5132	1.000	altered except when the previous control card was an	0.4004	0.0176
+0.4593	0.1147	1.000	JOE	0.0263	0.0131
+0.4605	0.1710	1.000	IX, $X10, ABLE	0.0922	0.0136
+0.4606	0.5132	1.000	ALTER card, in which case, the program will finish	0.4004	0.0206
+0.4767	0.5113	1.000	copying the rest of that file on the new master tape	0.3891	0.0191
+0.4853	0.1654	1.000	SX,$10, BAKER	0.0997	0.0148
+0.4855	0.1147	1.000	SAM	0.0320	0.0116
+0.4897	0.5113	1.000	before writing the new file as follows:	0.2914	0.0191
+0.5073	0.0977	1.000	The two cards shown will be inserted after record	0.3778	0.0146
+0.5218	0.0808	1.000	000519 in file DQ.	0.1353	0.0131
+0.5305	0.5226	1.000	1	0.0150	0.0160
+0.5320	0.7970	1.000	73	0.0226	0.0160
+0.5465	0.1711	1.000	10	0.0188	0.0116
+0.5480	0.2594	1.000	20	0.0188	0.0102
+0.5567	0.5226	1.000	¡FILE	0.0357	0.0160
+0.5581	0.7951	1.000	AB	0.0244	0.0174
+0.5666	0.1710	1.000	XXyyyyyy	0.0622	0.0150
+0.5667	0.0902	1.000	¡ALTER	0.0490	0.0120
+0.5669	0.2594	1.000	XX227227	0.0489	0.0131
+0.6032	0.0959	1.000	When columns 10 through 17 contain an ID number,	0.3853	0.0160
+0.6191	0.0789	1.000	and columns 20 through 27 contain another ID number	0.4023	0.0118
+0.6262	0.5243	1.000	The symbolic cards which follow will be written	0.3669	0.0189
+0.6319	0.0789	1.000	within the same file, all records yyyyyy up to and	0.3779	0.0138
+0.6424	0.5094	1.000	and sequenced as file AB on the new master.	0.3421	0.0161
+0.6449	0.0788	1.000	including record zzzzzz on the current master tape	0.3876	0.0193
+0.6627	0.0865	1.000	vill be deleted and any change cards which follow	0.3665	0.0131
+0.6730	0.5244	1.000	1	0.0094	0.0116
+0.6744	0.6015	1.000	10	0.0188	0.0131
+0.6758	0.0846	1.000	ip to the next control card, will be inserted in thei	0.3797	0.0133
+0.6773	0.7970	1.000	73	0.0188	0.0131
+0.6903	0.0789	1.000	place. For this case a punch option is available. If	0.3966	0.0133
+0.6977	0.6015	1.000	YY	0.0263	0.0160
+0.6991	0.5207	1.000	¡FILE	0.0357	0.0131
+0.7020	0.7951	1.000	xX	0.0244	0.0145
+0.7057	0.0789	1.000	the letters PUNCH appear in columns 30 through 34	0.3892	0.0130
+0.7166	0.0789	1.000	of the ALTER card, the deleted records will be	0.3590	0.0189
+0.7324	0.0771	1.000	punched on-line.	0.1316	0.0176
+0.7544	0.0883	1.000	1	0.0188	0.0145
+0.7558	0.5244	1.000	When columns 10 and 11 contain a file ID and	0.3515	0.0191
+0.7558	0.1692	1.000	10	0.0207	0.0116
+0.7573	0.3421	1.000	30	0.0188	0.0116
+0.7573	0.2575	1.000	20	0.0188	0.0102
+0.7644	0.0864	1.000	TALTER	0.0528	0.0191
+0.7703	0.3421	1.000	PUNCH	0.0508	0.0147
+0.7703	0.5113	1.000	columns 20 and 21 are blank, the cards which follow,	0.4023	0.0204
+0.7703	0.1673	1.000	EE000100	0.0602	0.0131
+0.7717	0.2575	1.000	EE000327	0.0621	0.0118
+0.7848	0.5094	1.000	up to the next control card, are inserted and	0.3402	0.0189
+0.7935	0.0883	1.000	SALTER	0.0508	0.0162
+0.7965	0.1692	1.000	EE000438	0.0583	0.0116
+0.7980	0.2538	1.000	EE000445	0.0620	0.0116
+0.8009	0.5094	1.000	sequenced as file XX after file YY on the master tape.	0.4117	0.0189
+0.8153	0.5112	1.000	For example:	0.1053	0.0162
+0.8222	0.1672	1.000	LX,$X10, ABLE	0.0942	0.0141
+0.8227	0.1090	1.000	JOE	0.0263	0.0116
+0.8470	0.1616	1.000	SX,$X10, BAKER	0.1073	0.0153
+0.8472	0.1071	1.000	SAM	0.0340	0.0134
+0.8474	0.5244	1.000	1	0.0132	0.0116
+0.8474	0.6071	1.000	10	0.0169	0.0102
+0.8488	0.8327	1.000	73	0.0226	0.0131
+0.8590	0.5226	1.000	;FILE	0.0376	0.0131
+0.8605	0.6053	1.000	BB	0.0188	0.0116
+0.8619	0.8346	1.000	BC	0.0207	0.0116
+0.8633	0.0940	1.000	Records 00100 through 000327 in file EE will be	0.3647	0.0189
+0.8821	0.0771	1.000	deleted and punched on line. Records 000438 through	0.4023	0.0147
+0.8941	0.0770	1.000	000445 in file EE will be deleted and the two cards	0.3817	0.0144
+0.9084	0.0771	1.000	shown will be inserted in their place.	0.2838	0.0174
+0.9448	0.0714	1.000	226	0.0282	0.0145

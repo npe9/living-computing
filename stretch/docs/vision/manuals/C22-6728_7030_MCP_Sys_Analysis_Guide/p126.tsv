@@ -1,0 +1,107 @@
+0.0741	0.5113	1.000	SC is adjusted so as not to feed any negative param-	0.3872	0.0147
+0.0741	0.0771	1.000	which will remove the next parameter, 17-K from	0.3759	0.0131
+0.0900	0.0771	1.000	the queue and pass it back to RT at the same time	0.3722	0.0118
+0.0900	0.5132	1.000	eters to its successor at job boundaries, since ST,	0.3778	0.0133
+0.1045	0.5132	1.000	in effect, already knows of job boundaries.	0.3177	0.0118
+0.1045	0.0771	1.000	updating VX(Q). Thus the parametrie representation	0.3947	0.0118
+0.1177	0.0789	1.000	of one entire buffer half will have passed through Q in	0.4004	0.0117
+0.1336	0.5132	1.000	The Request Processors (E and Q)	0.2556	0.0118
+0.1336	0.0771	1.000	proper sequence though the parameter division pro-	0.3872	0.0132
+0.1482	0.0771	1.000	vides that only a specified portion will be made avail-	0.4023	0.0118
+0.1627	0.0789	1.000	able for transmission. Finally, VQEND returns to	0.3797	0.0131
+0.1627	0.5132	1.000	The card request processors provide cards under	0.3684	0.0131
+0.1788	0.0789	1.000	the program which called VSETX with a negative	0.3609	0.0116
+0.1788	0.5113	1.000	control of externally generated requests, with the	0.3703	0.0146
+0.1933	0.5113	1.000	process governed by the parameter flow mechanism.	0.3929	0.0116
+0.1933	0.0771	1.000	parameter, which is recognized by the request proc-	0.3947	0.0131
+0.2078	0.0789	1.000	essor as a job boundary.	0.1842	0.0116
+0.2078	0.5113	1.000	The input program is entered at VSCR when $SCR or	0.3929	0.0131
+0.2224	0.5113	1.000	SSCR4 is requested (Figure 66).	0.2387	0.0146
+0.2369	0.5282	1.000	The queue entry routines perform the standard	0.3477	0.0146
+0.2500	0.0771	1.000	The Tape End Procedure: The tape end procedure,	0.3816	0.0131
+0.2515	0.5132	1.000	functions except that the actuation phase consists	0.3609	0.0131
+0.2660	0.0771	1.000	culminating in tape switch, is initiated from the	0.3571	0.0116
+0.2674	0.5113	1.000	simply of placing a non-zero parameter into VX1.	0.3703	0.0132
+0.2805	0.0789	1.000	VTEE routine when the tape switch criteria are met.	0.3910	0.0102
+0.2820	0.5132	1.000	That amount of cards is then transmitted under the	0.3759	0.0102
+0.2951	0.0789	1.000	The routine, VSTTSX, simply sends to the successor	0.3947	0.0131
+0.2964	0.5113	1.000	control of and to memory areas designated by one or	0.3929	0.0147
+0.3096	0.0771	1.000	program a negative parameter which it finds in the	0.3778	0.0116
+0.3109	0.7838	1.000	The equivalent	0.1203	0.0118
+0.3109	0.5132	1.000	more externally generated requests.	0.2726	0.0118
+0.3241	0.5113	1.000	of EOP is not so clear. Recall that normal EOP	0.3628	0.0160
+0.3241	0.0789	1.000	VTS slot of the program table. This parameter,	0.3609	0.0131
+0.3387	0.0752	1.000	- VRTTS, causes an entry to VRTTS to occur only	0.3722	0.0132
+0.3399	0.5112	1.000	procedure consists of passing on the contents of VXI,	0.3987	0.0148
+0.3532	0.0771	1.000	after the last job read from the read tape has been	0.3759	0.0117
+0.3561	0.5113	1.000	updating VX, and reactuating. The request proc-	0.3684	0.0118
+0.3677	0.0771	1.000	completed with an SEJSCN command given to the	0.3628	0.0132
+0.3706	0.5132	1.000	essors perform the first two functions on a piece-	0.3703	0.0117
+0.3836	0.0771	1.000	input program.	0.1128	0.0118
+0.3852	0.5132	1.000	meal basis depending on the occurrence of requests.	0.3872	0.0117
+0.3984	0.5130	1.000	In other words, for every transmission, VXl is	0.3536	0.0149
+0.4157	0.5094	1.000	decremented and VX incremented by the amount of	0.3759	0.0116
+0.4157	0.0808	1.000	The Scan Tape (ST) Program	0.2143	0.0131
+0.4317	0.5094	1.000	cards just transmitted, and a parameter representing	0.3985	0.0116
+0.4462	0.5094	1.000	this amount is forwarded to the successor program.	0.3853	0.0117
+0.4462	0.0808	1.000	The scan tape program is virtually identical to the	0.3722	0.0117
+0.4606	0.0789	1.000	read tape program. This is because both perform	0.3759	0.0118
+0.4606	0.5113	1.000	However, when VX1 is reduced to zero, reactuation	0.3835	0.0133
+0.4752	0.0789	1.000	an almost identical function, namely; (1) to supply a	0.3853	0.0118
+0.4752	0.5113	1.000	occurs, consisting of obtaining the next parameter	0.3741	0.0133
+0.4897	0.0789	1.000	buffer with card images read from a tape of standard	0.3947	0.0118
+0.4897	0.5094	1.000	from the queue and putting it in VXI.	0.2744	0.0118
+0.5042	0.0789	1.000	format; (2) pass on parameters representing the	0.3590	0.0133
+0.5188	0.0808	1.000	buffer areas to a successor program, identifying to	0.3816	0.0133
+0.5188	0.5113	1.000	The Request Processor Subroutine: The work of	0.3628	0.0118
+0.5332	0.5093	1.000	processing requests is done by the subroutine VREQ	0.3874	0.0138
+0.5333	0.0808	1.000	the successor the occurrence of each job boundary as	0.3947	0.0118
+0.5479	0.0789	1.000	it is detected; (3) to recognize the logical end of tape;	0.3966	0.0132
+0.5479	0.5094	1.000	(Figure 66). Externally, the routine has the following	0.4023	0.0132
+0.5639	0.0789	1.000	and (4) initiate the tape switch procedure. Whatever	0.3910	0.0116
+0.5640	0.5113	1.000	characteristics:	0.1184	0.0102
+0.5785	0.0789	1.000	differences exist are absorbed in the tables, such as	0.3910	0.0116
+0.5785	0.5263	1.000	1. It is entered with the following quantities:	0.3365	0.0116
+0.5930	0.5432	1.000	a. The program table origin (E or Q) in index	0.3496	0.0116
+0.5930	0.0808	1.000	operating buffer (VCWR), tape switch routine, sym-	0.3872	0.0131
+0.6076	0.0808	1.000	bolic I-O unit (VSU) and successor program (VNX).	0.3797	0.0116
+0.6076	0.5771	1.000	register VU and location VREQXT.	0.2594	0.0116
+0.6221	0.5432	1.000	b. The first word address (FWA) and number	0.3459	0.0116
+0.6221	0.0977	1.000	The job end procedure, however, differs in two	0.3553	0.0131
+0.6366	0.5771	1.000	of cards (VNREQ) of the request in the SCR-	0.3289	0.0116
+0.6395	0.0789	1.000	points:	0.0526	0.0102
+0.6512	0.5695	1.000	SCR4 tentacle table, VVSCR.	0.2237	0.0131
+0.6526	0.0940	1.000	1. The count down of jobs and communication to	0.3628	0.0116
+0.6657	0.5414	1.000	c. The location of the M slot of the originating	0.3571	0.0131
+0.6672	0.0808	1.000	the WT for tape switch purposes is omitted.	0.3252	0.0116
+0.6817	0.5714	1.000	calling sequence in $0.	0.1748	0.0116
+0.6817	0.0959	1.000	2. Instead of VQEND, the negative parameter,	0.3534	0.0132
+0.6962	0.5263	1.000	2. When control is returned:	0.2180	0.0102
+0.6962	0.0808	1.000	- VSCEND, is used for parameter partitioning of	0.3571	0.0132
+0.7106	0.5658	1.000	The number of cards requested has been	0.3102	0.0118
+0.7106	0.0789	1.000	incompletely read buffer areas.	0.2387	0.0118
+0.7137	0.5432	1.000	a.	0.0188	0.0087
+0.7252	0.0977	1.000	The second point is necessary because of a funda-	0.3703	0.0118
+0.7252	0.5714	1.000	transmitted unless the number overlaps the	0.3271	0.0118
+0.7397	0.5771	1.000	end of job file, in which case only the	0.2782	0.0133
+0.7397	0.0808	1.000	mental difference in the successor programs, Q and	0.3872	0.0133
+0.7542	0.5771	1.000	remainder of the file was transmitted.	0.2838	0.0118
+0.7558	0.0808	1.000	SC. The VSCEND, after essentially performing the	0.3853	0.0118
+0.7703	0.0789	1.000	functions of VQEND, must return to VSETX to get	0.3741	0.0131
+0.7703	0.5432	1.000	b. $0 contains the location of the normal return	0.3628	0.0103
+0.7848	0.5752	1.000	or end return in the originating calling	0.2876	0.0117
+0.7848	0.0808	1.000	the next parameter from the queue of SC. That is,	0.3778	0.0131
+0.7971	0.5750	1.000	sequence, according to whether or not the	0.3123	0.0158
+0.7994	0.0789	1.000	after adjusting SC for the incompletely read buffer,	0.3816	0.0117
+0.8139	0.0808	1.000	VSCEND resumes parameter flow through SC as if it	0.3910	0.0116
+0.8139	0.5771	1.000	requested number of cards was delivered.	0.3102	0.0116
+0.8285	0.5658	1.000	If the request was terminated due to file	0.3083	0.0116
+0.8285	0.0789	1.000	never occurred. This is possible because SC does	0.3778	0.0116
+0.8314	0.5432	1.000	C.	0.0188	0.0087
+0.8430	0.0789	1.000	not rely on the tape format for determing job bound-	0.3891	0.0116
+0.8430	0.5771	1.000	end, the number of cards actually trans-	0.3008	0.0131
+0.8576	0.5733	1.000	mitted is placed in the calling sequence at	0.3158	0.0116
+0.8590	0.0789	1.000	aries but continues to use the non-B, B break in	0.3590	0.0116
+0.8721	0.0808	1.000	cards, as in the other modes. In the offline mode,	0.3778	0.0131
+0.8735	0.5752	1.000	the M slot.	0.0846	0.0102
+0.9302	0.0771	1.000	126	0.0207	0.0073

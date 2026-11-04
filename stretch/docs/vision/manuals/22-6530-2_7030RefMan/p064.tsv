@@ -1,0 +1,103 @@
+0.0617	0.5073	1.000	INDICATORS	0.0869	0.0175
+0.0651	0.0958	1.000	MODIFIERS	0.0735	0.0151
+0.0785	0.5207	1.000	Partial Field (PF); Data Flags (TF, UF, VF); To-	0.3853	0.0189
+0.0814	0.1053	1.000	Unsigned; Negative Sign; Radix. These modifiers	0.3797	0.0174
+0.0945	0.5094	1.000	Memory Operation (MOP); Arithmetic Result (RLZ,	0.3966	0.0204
+0.0972	0.0956	1.000	operate as in ADD.	0.1281	0.0169
+0.1090	0.5094	1.000	RZ, RGZ, RN). These indicators are set as in ADD.	0.3797	0.0204
+0.1200	0.0957	1.000	INDICATORS	0.0774	0.0158
+0.1366	0.5094	1.000	PROGRAMMING NOTE	0.1523	0.0174
+0.1381	0.1090	1.000	Lost Carry (LC); Partial Field (PF); Data Flags	0.3759	0.0160
+0.1539	0.0959	1.000	(TF, UF, VF); To-Memory Operation (MOP); Arith-	0.3872	0.0147
+0.1555	0.5094	1.000	LOAD, LOAD WITH FLAG, and LOAD CONVERTED are the	0.3947	0.0161
+0.1674	0.0976	1.000	metic Result (RLZ, RZ, RGZ, RN). These indicators	0.3875	0.0187
+0.1700	0.5094	1.000	only variable-field-length data handling operations	0.3966	0.0191
+0.1849	0.5111	1.000	that affect the data flag bit positions in the accumula-	0.3913	0.0193
+0.1860	0.0959	1.000	are set as in ADD.	0.1184	0.0131
+0.2035	0.5094	1.000	tor sign byte register as an implied operand. All	0.3929	0.0132
+0.2048	0.0959	1.000	PROGRAMMING ExAMPLE	0.1748	0.0176
+0.2151	0.5094	1.000	other operations of this type leave these. positions	0.3966	0.0203
+0.2267	0.0959	1.000	Figure 12 shows a simple use of ADD TO MAGNITUDE.	0.3891	0.0132
+0.2339	0.5094	1.000	unchanged. No operation changes the zone bit posi-	0.3929	0.0132
+0.2365	0.0975	1.000	Given two 64-bit unsigned binary numbers x and y,	0.3878	0.0231
+0.2470	0.5113	1.000	tions in the accumulator sign byte register as an im-	0.3929	0.0161
+0.2542	0.0959	1.000	put the larger of the two in the accumulator.	0.3327	0.0176
+0.2630	0.5094	1.000	plied operand.	0.1128	0.0177
+0.2980	0.4173	1.000	NOTES	0.0489	0.0131
+0.2994	0.2274	1.000	STATEMENT	0.0808	0.0116
+0.3009	0.1034	1.000	NAME	0.0357	0.0087
+0.3009	0.5113	1.000	Add to Memory (M +)	0.1729	0.0189
+0.3227	0.5094	1.000	The accumulator field specified by the offset is alge-	0.3966	0.0189
+0.3227	0.2180	1.000	I (BU, 64, 8), X, 0	0.1203	0.0146
+0.3309	0.2175	1.000	- MG (BU, 64, 8), Y, 0	0.1401	0.0181
+0.3400	0.5094	1.000	braically added to the addressed operand. The ac-	0.3947	0.0176
+0.3459	0.2180	1.000	+ (BU, 64, 8), Y, 0	0.1222	0.0132
+0.3561	0.5113	1.000	cumulator sign is used as modified by the negative	0.3929	0.0146
+0.3706	0.5112	1.000	sign modifier, and the sum replaces the addressed	0.3931	0.0175
+0.3706	0.2387	0.300	IIx>	0.0489	0.0174
+0.3706	0.3214	0.300	IxeY	0.0451	0.0145
+0.3721	0.1015	1.000	Notes:	0.0376	0.0116
+0.3822	0.1485	1.000	1. Result is	0.0790	0.0132
+0.3837	0.2481	1.000	x-y	0.0282	0.0116
+0.3881	0.5113	1.000	field in storage.	0.1165	0.0146
+0.3922	0.1503	1.000	2. Result is	0.0772	0.0135
+0.4141	0.5131	1.000	MODIFIERS	0.0753	0.0105
+0.4185	0.0959	1.000	Figure 12. Program Example, Add to Magnitude	0.2895	0.0147
+0.4277	0.5299	1.000	Unsigned. This modifier describes the addressed	0.3744	0.0175
+0.4462	0.5132	1.000	field in storage. If the operation is signed, the sign	0.3910	0.0132
+0.4535	0.0959	1.000	Load (L)	0.0602	0.0160
+0.4606	0.5132	1.000	bit of the storage operand is set to the sign of the	0.3910	0.0147
+0.4760	0.5111	1.000	algebraic sum.	0.1094	0.0174
+0.4767	0.0959	1.000	The entire left and right halves of the accumulator	0.3910	0.0161
+0.4893	0.0957	1.000	and the four low-order bits of the accumulator sign	0.3914	0.0212
+0.4912	0.5301	1.000	Negative Sign. This modifier applies to the ac-	0.3759	0.0146
+0.5058	0.0959	1.000	byte register are cleared. The numeric part of the	0.3929	0.0191
+0.5073	0.5132	1.000	cumulator sign as used in the operation. The original	0.3910	0.0146
+0.5218	0.5132	1.000	accumulator sign remains unchanged in the sign byte	0.3910	0.0146
+0.5247	0.0959	1.000	addressed operand is placed in the accumulator as	0.3910	0.0132
+0.5388	0.0958	1.000	specified by the offset. The sign bit in the sign byte	0.3910	0.0139
+0.5389	0.5130	1.000	register.	0.0604	0.0138
+0.5523	0.0940	1.000	register is set according to the sign of the data as	0.3929	0.0174
+0.5523	0.5301	1.000	Radix. In a binary ADD TO MEMORY, the byte size	0.3741	0.0146
+0.5669	0.0959	1.000	affected by the sign modifiers. The zone bits of the	0.3929	0.0189
+0.5682	0.5113	1.000	refers only to the length of the sign byte, thereby	0.3929	0.0161
+0.5799	0.0959	1.000	accumulator sign byte are not altered.	0.2782	0.0204
+0.5827	0.5132	1.000	determining the position of the sign bit. The re-	0.3910	0.0161
+0.5988	0.5113	1.000	mainder of the field is processed in eight-bit bytes	0.3947	0.0161
+0.6060	0.0958	1.000	MODIFIERS	0.0771	0.0161
+0.6163	0.5113	1.000	whenever possible.	0.1391	0.0146
+0.6250	0.1053	1.000	Unsigned; Negative Sign; Radix. These modifiers	0.3816	0.0174
+0.6294	0.5282	1.000	In a decimal operation, the field is processed in	0.3759	0.0146
+0.6394	0.0959	1.000	operate as in ADD.	0.1316	0.0176
+0.6453	0.5094	1.000	four-bit bytes. If the byte size of a decimal storage	0.3966	0.0160
+0.6599	0.5132	1.000	field participating in ADD TO MEMORY iS greater than	0.3910	0.0174
+0.6641	0.0940	1.000	INDICATORS	0.0809	0.0133
+0.6758	0.5132	1.000	four, only the four low-order bits of each byte par-	0.3929	0.0146
+0.6817	0.1109	1.000	Partial Field (PF); Data Flags (TF, UF, VF); To-	0.3759	0.0160
+0.6918	0.5132	1.000	ticipate in the addition. The high-order bits of each	0.3910	0.0161
+0.6976	0.0959	1.000	Memory Operation (MOP); Arithmetic Result (RLZ,	0.3929	0.0146
+0.7064	0.5150	1.000	byte are not changed by the operation. If a byte size	0.3910	0.0146
+0.7121	0.0977	1.000	RZ, RGZ, RN). These indicators are set as in ADD.	0.3741	0.0161
+0.7209	0.5132	1.000	less than four is specified in a decimal operation, each	0.3929	0.0146
+0.7369	0.5150	1.000	byte from the storage field is converted to a four-bit	0.3910	0.0146
+0.7515	0.5132	1.000	byte for processing by the addition of high-order	0.3929	0.0174
+0.7515	0.0959	1.000	Load with Flag (LWF)	0.1504	0.0146
+0.7674	0.5132	1.000	zeros. Normal decimal results may not be produced	0.3929	0.0132
+0.7747	0.0996	1.000	The LOAD WITH FLAG operation is the same as LOAD	0.3872	0.0132
+0.7833	0.5132	1.000	if two operands are involved whose effective signs are	0.3929	0.0146
+0.7892	0.0977	1.000	except that if the addressed storage field includes data	0.3872	0.0132
+0.7979	0.5132	1.000	unlike. Only the low-order bits of each sum byte re-	0.3929	0.0146
+0.8036	0.0959	1.000	flag bits, these bits are placed in the accumulator sign	0.3891	0.0147
+0.8139	0.5132	1.000	place the byte from storage, so that the stored result	0.3947	0.0145
+0.8182	0.0959	1.000	byte register in addition to setting the data flag	0.3910	0.0176
+0.8285	0.5132	1.000	has the same byte size as the original storage field.	0.3910	0.0145
+0.8357	0.0958	1.000	indicators.	0.0771	0.0132
+0.8445	0.5132	1.000	Since normal decimal addition takes place, the high-	0.3929	0.0161
+0.8588	0.0958	1.000	MODIFIERS	0.0753	0.0135
+0.8605	0.5113	1.000	order positions that are dropped from each sum byte	0.3947	0.0160
+0.8750	0.5132	1.000	may contain one bits. These are lost and no indica-	0.3929	0.0160
+0.8764	0.1071	1.000	Unsigned; Negative Sign; Radix. These modifiers	0.3816	0.0146
+0.8905	0.0974	1.000	operate as in ADD.	0.1285	0.0155
+0.8909	0.5132	1.000	tion of the loss is given.	0.1748	0.0146
+0.9288	0.7256	1.000	Variable Field Length	0.1353	0.0116
+0.9288	0.8891	1.000	61	0.0169	0.0087

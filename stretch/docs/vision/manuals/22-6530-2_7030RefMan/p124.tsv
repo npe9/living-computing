@@ -1,0 +1,107 @@
+0.0609	0.5038	1.000	has been completed but before a new word has been	0.3910	0.0147
+0.0625	0.0901	1.000	ditions are suppressed and only the Eop bit is turned	0.3856	0.0167
+0.0770	0.5038	1.000	started, the operator has to provide another input	0.3929	0.0146
+0.0785	0.0902	1.000	on. If no operation is being executed by the unit at	0.3891	0.0145
+0.0915	0.5038	1.000	word in order for RELEAsE to terminate the operation.	0.3929	0.0131
+0.0945	0.0902	1.000	the time the RELEASE instruction is given, all pre-	0.3872	0.0131
+0.1090	0.0902	1.000	viously set status bits, except unit ready, are reset to	0.3872	0.0146
+0.1191	0.5038	1.000	Read SEOP (RD SEOP)	0.1617	0.0132
+0.1221	0.0902	1.000	zero and the EOP bit is turned on immediately. The	0.3891	0.0146
+0.1336	0.5038	1.000	Write SEOP (W SEOP)	0.1598	0.0132
+0.1381	0.0921	1.000	COPY CONTROL WORD cannot be released since it is ex.	0.3853	0.0131
+0.1497	0.5038	1.000	Control SEOP (CTL SEOP)	0.1823	0.0116
+0.1524	0.0900	1.000	ecuted before the computer proceeds to the next in-	0.3895	0.0201
+0.1642	0.5038	1.000	Locate SEOP (LOC SEOP)	0.1805	0.0131
+0.1700	0.0902	1.000	struction. The address of the second half-word of the	0.3891	0.0131
+0.1802	0.5038	1.000	Release SEOP (REL SEOP)	0.1842	0.0131
+0.1860	0.0902	1.000	instruction is not used and is ignored.	0.2801	0.0131
+0.2006	0.1053	1.000	The RELEASE instruction is accepted regardless of	0.3741	0.0131
+0.2020	0.5075	1.000	The first four of these five seop (suppress end of oper-	0.3891	0.0131
+0.2151	0.0920	1.000	the status of the unit-ready bit in the control word of	0.3874	0.0170
+0.2166	0.5056	1.000	ation) instructions are similar to READ, WRITE, CONTROL,	0.3910	0.0131
+0.2311	0.0921	1.000	the addressed channel. If there is no operation cur-	0.3853	0.0147
+0.2324	0.5056	1.000	and LOCATE, respectively, except for the use of the	0.3929	0.0133
+0.2441	0.0901	1.000	rently in progress at the unit, the status of the unit	0.3895	0.0187
+0.2470	0.5056	1.000	end-of-operation indication. At the time an seop in-	0.3910	0.0147
+0.2586	0.0920	1.000	does not affect the execution of the instruction. The	0.3874	0.0165
+0.2615	0.5056	1.000	struction is given, the seop bit in the control word is	0.3929	0.0146
+0.2747	0.0918	1.000	pertinent status bits in the control word are reset to	0.3877	0.0176
+0.2776	0.5056	1.000	set to one. As the result of this, the Eop bit in the con-	0.3929	0.0131
+0.2921	0.0902	1.000	zero, and the eop indication is immediately turned	0.3891	0.0161
+0.2936	0.5075	1.000	trol word (and therefore in the indicator register) is	0.3910	0.0131
+0.3081	0.0921	1.000	on. If, however, a LOCATE has been issued to a channel	0.3891	0.0146
+0.3081	0.5075	1.000	not turned on unless it is accompanied by unit check	0.3910	0.0146
+0.3226	0.0920	1.000	with an inoperative control unit, or an operation has	0.3893	0.0165
+0.3241	0.5056	1.000	or end exception.	0.1316	0.0147
+0.3387	0.0902	1.000	been interrupted because of the not-ready status with-	0.3910	0.0160
+0.3387	0.5244	1.000	The five seop instructions provide a means of	0.3759	0.0147
+0.3545	0.0921	1.000	out cancelling it, the RELEAsE cannot free the channel.	0.3872	0.0133
+0.3545	0.5075	1.000	suppressing program interruption upon the comple-	0.3910	0.0146
+0.3677	0.0940	1.000	The RELEASE instruction is executed immediately. In	0.3853	0.0145
+0.3706	0.5094	1.000	tion of an operation when no exceptional conditions	0.3891	0.0131
+0.3836	0.0921	1.000	order to make the channel available, the control word	0.3872	0.0132
+0.3852	0.5075	1.000	are encountered during the execution of the instruc-	0.3910	0.0131
+0.3963	0.0919	1.000	in exchange storage must be manually reset. The	0.3896	0.0214
+0.3997	0.5094	1.000	tion. When an exceptional condition is discovered, as	0.3910	0.0145
+0.4142	0.0921	1.000	RELEASE instruction is not subject to channel busy	0.3872	0.0145
+0.4157	0.5094	1.000	indicated by the presence of EPGK, UK OF EE status bits,	0.3910	0.0146
+0.4295	0.0920	1.000	reject. Thus, when the exchange fails to complete a	0.3893	0.0169
+0.4317	0.5094	1.000	the interruption of the program is not suppressed. In	0.3891	0.0132
+0.4448	0.0921	1.000	RELEASE instruction because of an 1-0 unit malfunction,	0.3910	0.0131
+0.4460	0.5093	1.000	this case, the status bit indicating the exceptional con-	0.3911	0.0150
+0.4606	0.0940	1.000	the 1-o unit should be made not ready and a RELEASE	0.3891	0.0133
+0.4606	0.5093	1.000	dition, as well as the Eop bit if the operation has been	0.3911	0.0158
+0.4767	0.5094	1.000	completed, are turned on, and program interruption	0.3910	0.0146
+0.4767	0.0921	1.000	instruction should be given for the unit.	0.2951	0.0146
+0.4924	0.5074	1.000	is permitted.	0.0942	0.0167
+0.5013	0.0939	1.000	INDICATORS	0.0771	0.0105
+0.5073	0.5282	1.000	Receipt of a channel signal during the execution of	0.3722	0.0146
+0.5138	0.0919	1.000	Exchange check reject (EKJ) and end of operation (EOP).	0.3913	0.0198
+0.5218	0.5094	1.000	an sEoP instruction does not cause the EOP bit to be	0.3910	0.0131
+0.5392	0.5094	1.000	turned on. When the operation is completed, the cs	0.3910	0.0132
+0.5406	0.0940	1.000	PROGRAMMING NOTES	0.1523	0.0103
+0.5536	0.5094	1.000	indicator is set, but this does not have any effect on	0.3910	0.0133
+0.5552	0.0940	1.000	It is possible for an exchange channel to turn a set	0.3910	0.0161
+0.5661	0.0937	1.000	of input-output status indicators on while the cPU is	0.3915	0.0213
+0.5682	0.5113	1.000	the turning on of the indicators pertaining to the	0.3910	0.0147
+0.5856	0.0939	1.000	issuing a RELEASE instruction to that channel. As a	0.3892	0.0163
+0.5858	0.5113	1.000	SEOP operation.	0.1147	0.0116
+0.6001	0.0938	1.000	result, the status bits due to the released operation	0.3894	0.0181
+0.6003	0.5282	1.000	The RELEASE SEOP instruction never causes any in-	0.3741	0.0131
+0.6148	0.5113	1.000	terruptions. It performs all the functions of RELEASE	0.3910	0.0146
+0.6177	0.0959	1.000	may cause a program interruption between the execu-	0.3891	0.0145
+0.6294	0.5113	1.000	except that it does not cause an EOP indication. Thus,	0.3910	0.0146
+0.6308	0.0959	1.000	tion of the RELEAsE and the instruction following	0.3891	0.0146
+0.6453	0.5094	1.000	RELEASE SEOP can be used to turn off EPGK, UK, EE, CS	0.3929	0.0147
+0.6467	0.0959	1.000	RELEASE. Thereafter, as soon as this set of status indi-	0.3891	0.0147
+0.6599	0.5094	1.000	as well as any previously set Eop bits in the control	0.3929	0.0174
+0.6612	0.0940	1.000	cators has been cleared, the same channel will set the	0.3929	0.0176
+0.6744	0.5113	1.000	word. If the addressed unit is executing an instruc-	0.3910	0.0174
+0.6770	0.0958	1.000	EOP indicator signalling the completion of RELEASE	0.3912	0.0171
+0.6875	0.5113	1.000	tion at the time RELEASE SEOP is given, the SEOP bit is	0.3947	0.0189
+0.6933	0.0977	1.000	and cause another program interruption.	0.3008	0.0146
+0.7064	0.5113	1.000	temporarily set in the control word.	0.2575	0.0161
+0.7148	0.1108	1.000	If a RELEASE immediately follows a READ, no data	0.3762	0.0179
+0.7292	0.0956	1.000	transfer takes place, but a block of data is moved at	0.3934	0.0213
+0.7304	0.5092	1.000	INDICATORS	0.0850	0.0160
+0.7427	0.0959	1.000	the unit. If RELEASE immediately follows WRITE, a	0.3910	0.0189
+0.7485	0.5113	1.000	Indicators are the same as in the corresponding non-	0.3929	0.0161
+0.7602	0.0977	1.000	block consisting of one data word is always written	0.3891	0.0160
+0.7645	0.5113	1.000	SEOP type instructions, except that EOP is never turned	0.3929	0.0161
+0.7758	0.0957	1.000	before the operation is terminated. In cases where	0.3914	0.0190
+0.7791	0.5113	1.000	on after execution of RELEASE SEOP.	0.2538	0.0161
+0.7936	0.0959	1.000	RELEASE is given immediately after a CONTROL Or	0.3910	0.0146
+0.8033	0.0957	1.000	LOCATE, the execution of the subject instruction is	0.3931	0.0198
+0.8036	0.5113	1.000	PROGRAMMING NOTE	0.1523	0.0147
+0.8212	0.5132	1.000	The EoP indication following a RELEASE always ap-	0.3929	0.0161
+0.8227	0.0977	1.000	not affected except for the suppression of status indi-	0.3910	0.0161
+0.8372	0.5132	1.000	plies to the RELEAsE and not to the instruction being	0.3929	0.0161
+0.8400	0.0977	1.000	cations due to exceptional conditions.	0.2726	0.0133
+0.8517	0.5113	1.000	released. Thus, a RELEAsE is always terminated by an	0.3947	0.0161
+0.8532	0.1109	1.000	Note that in the case of manual input devices, a	0.3778	0.0160
+0.8677	0.5132	1.000	EOP indication regardless of whether the instruction	0.3910	0.0145
+0.8691	0.0977	1.000	READ cannot be released until the operator completes	0.3910	0.0146
+0.8836	0.5113	1.000	released is READ, WRITE, CONTROL, Or LOCATE or the	0.3947	0.0146
+0.8836	0.0977	1.000	the current word. If the rELEAsE is issued after a word	0.3910	0.0146
+0.9200	0.7274	1.000	IBM 7619 Exchange	0.1278	0.0131
+0.9215	0.8816	1.000	121	0.0244	0.0087

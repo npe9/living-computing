@@ -1,0 +1,72 @@
+0.1162	0.1823	1.000	SRDKAD	0.0583	0.0146
+0.1192	0.7462	1.000	=1	0.0207	0.0116
+0.1424	0.7143	1.000	63	0.0188	0.0116
+0.1941	0.4171	1.000	SRCDCT	0.0587	0.0144
+0.1961	0.1390	1.000	SRDKAD	0.0546	0.0119
+0.2195	0.3797	1.000	28	0.0169	0.0116
+0.2195	0.2556	1.000	17	0.0188	0.0116
+0.2195	0.7143	1.000	63	0.0188	0.0116
+0.2718	0.4173	1.000	SRTVL	0.0489	0.0132
+0.2729	0.5976	1.000	SRNXAD	0.0566	0.0137
+0.2733	0.1391	1.000	SRORG	0.0451	0.0131
+0.2965	0.2556	1.000	17	0.0188	0.0116
+0.2980	0.7143	1.000	63	0.0188	0.0102
+0.2980	0.3797	1.000	28	0.0169	0.0102
+0.2980	0.5508	1.000	46	0.0169	0.0102
+0.3474	0.0921	1.000	2	0.0094	0.0087
+0.3474	0.5301	1.000	SRCOMB	0.0564	0.0131
+0.3488	0.1391	1.000	SRCCT	0.0470	0.0145
+0.3677	0.4173	1.000	-32	0.0320	0.0145
+0.3706	0.7143	1.000	63	0.0188	0.0102
+0.3706	0.2688	1.000	18	0.0188	0.0131
+0.4273	0.1692	1.000	Other Named COMMON	0.1429	0.0131
+0.4273	0.5207	1.000	Other Named COMMON	0.1410	0.0131
+0.4506	0.4248	1.000	32	0.0169	0.0116
+0.5029	0.3553	1.000	S "Transfer Vector"	0.1222	0.0147
+0.5683	0.1015	1.000	LEGEND:	0.0564	0.0116
+0.5915	0.3853	1.000	If SRLIB bit = 1, meaning a Library subprogram	0.2763	0.0146
+0.5925	0.1013	1.000	SRDKAD	0.0549	0.0141
+0.5945	0.2199	1.000	SYN(BU, 36, 6), 0.0	0.1222	0.0131
+0.6061	0.4041	1.000	is to be loaded, then this is a 36-bit fielc	0.2350	0.0131
+0.6177	0.4041	1.000	containing a type-area name for a librar	0.2331	0.0132
+0.6304	0.3965	1.000	subprogram.	0.0811	0.0154
+0.6439	0.4004	1.000	SRLIB bit = O, meaning TWS is to be loade	0.2519	0.0131
+0.6539	0.4117	1.000	en this is an 18-bit relative FWA in TW	0.2312	0.0147
+0.6700	0.3929	1.000	Count of cards in subprogram when SRLIB = (	0.2538	0.0131
+0.6715	0.1015	1.000	SRCDCT	0.0564	0.0132
+0.6715	0.2199	1.000	SYN(BU, 18), 0.28	0.1109	0.0131
+0.6817	0.3929	1.000	Origin of subprogram	0.1165	0.0147
+0.6830	0.1033	1.000	SRORG	0.0452	0.0133
+0.6845	0.2199	1.000	SYN(BU, 18), 1.0	0.1053	0.0118
+0.6945	0.1033	1.000	SRTVI	0.0472	0.0150
+0.6962	0.3947	1.000	ength of transfer vecto	0.1316	0.0117
+0.6962	0.2199	1.000	SYN(BU, 18), 1.28	0.1128	0.0145
+0.7064	0.4004	1.000	ddress of next relocation table. This equa	0.2387	0.0131
+0.7078	0.1034	1.000	SRNXAD	0.0545	0.0145
+0.7078	0.2180	1.000	SYN(BU, 18), 1.46	0.1147	0.0161
+0.7204	0.3928	1.000	zero when there are no more tables.	0.2163	0.0128
+0.7324	0.1033	1.000	SRCCT	0.0472	0.0163
+0.7324	0.3872	1.000	Number of named COMMONS.	0.1823	0.0147
+0.7334	0.2179	1.000	SYN(BU, 19)2.0	0.1036	0.0157
+0.7470	0.1033	1.000	SRCOMB	0.0546	0.0133
+0.7470	0.2199	1.000	SYN(BU, 32), 2.32, etc.	0.1485	0.0147
+0.7470	0.3816	1.000	Base of named COMMON.	0.1598	0.0133
+0.7718	0.0977	1.000	Figure 44. The Relocation Table Structure	0.2556	0.0146
+0.8009	0.1015	1.000	with a branch or branch; NOP and uses MOCTL5 to	0.3872	0.0146
+0.8009	0.5376	1.000	named common specified to form the effective origin	0.3947	0.0131
+0.8169	0.5376	1.000	just prior to computing the half word corrections.	0.3741	0.0116
+0.8169	0.0996	1.000	load the dump parameters. In addition, it inserts	0.3778	0.0131
+0.8280	0.5393	1.000	Then, at the conclusion of each half word correction	0.3912	0.0169
+0.8281	0.1015	1.000	the dump calling sequence in the patch area.	0.3346	0.0167
+0.8447	0.5375	1.000	computation, it is relocated according to the reloca-	0.3968	0.0151
+0.8605	0.5376	1.000	tion columns on the card. Also, because of the pres-	0.3985	0.0117
+0.8735	0.1015	1.000	Relocatable Octal Cards (K, A, and Z): These cards	0.3891	0.0160
+0.8750	0.5376	1.000	ence of the relocation columns, the maximum number	0.4041	0.0132
+0.8888	0.1015	1.000	are handled by the same routine as the Absolute	0.3629	0.0143
+0.8894	0.5376	1.000	of half words on a relocatable Octal card is three.	0.3778	0.0118
+0.9026	0.1015	1.000	Octal cards with the following additions: the relative	0.3947	0.0174
+0.9039	0.5376	1.000	(See the IBM 7030 Data Processing System Bulletin,	0.3929	0.0133
+0.9172	0.1015	1.000	origin is relocated with respect to the subprogram or	0.4041	0.0174
+0.9200	0.5395	1.000	Loader and BSS Processor, Form C28-6379).	0.3440	0.0131
+0.9534	0.7366	1.000	System Operation Programs	0.1601	0.0121
+0.9549	0.9173	1.000	91	0.0169	0.0087

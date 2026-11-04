@@ -1,0 +1,103 @@
+0.0624	0.5320	1.000	1. A CONTrOL has been issued to a disk storage.	0.3515	0.0132
+0.0654	0.1128	1.000	2. Specification of disk storage or channel ad-	0.3778	0.0146
+0.0814	0.1391	1.000	dresses that are not available to the programmer.	0.3496	0.0132
+0.0827	0.5320	1.000	2. The Ds attempts to transfer a word to or from	0.3722	0.0147
+0.0959	0.1391	1.000	This includes uninstalled channels or channels	0.3515	0.0116
+0.0988	0.5545	1.000	a core storage location to which it does not have	0.3515	0.0131
+0.1100	0.1390	1.000	that are not operative because no disk storage	0.3517	0.0156
+0.1110	0.5562	1.000	access (locations 0 through 31 or in locations	0.3500	0.0175
+0.1264	0.1391	1.000	has been provided for them. When a disk stor-	0.3515	0.0132
+0.1279	0.5564	1.000	above the maximum address available in core	0.3496	0.0131
+0.1409	0.1372	1.000	age is temporarily physically disconnected from	0.3534	0.0146
+0.1425	0.5562	1.000	storage). In the case of a WRITE instruction to the	0.3499	0.0164
+0.1553	0.1390	1.000	the disk synchronizer, the channel will be in a	0.3499	0.0160
+0.1599	0.5564	1.000	disk unit with a data word address too high, the	0.3496	0.0147
+0.1730	0.1391	1.000	not-ready status and the disk synchronizer will	0.3515	0.0146
+0.1744	0.5564	1.000	Ds writes zeros in the arc specified in the locate	0.3496	0.0147
+0.1875	0.1372	1.000	not set the exchange-check-reject indicator.	0.3233	0.0131
+0.1903	0.5545	1.000	register. The epck indicator is delayed until the	0.3515	0.0146
+0.2048	0.1147	1.000	3. An attempt is made to locate to or process data	0.3722	0.0132
+0.2064	0.5564	1.000	write zeros operation is completed	0.2481	0.0146
+0.2183	0.1371	1.000	to or from a disk arc with an arc address greater	0.3518	0.0162
+0.2267	0.5320	1.000	3. A nonexistent disk address is encountered by	0.3741	0.0146
+0.2351	0.1352	1.000	than 4095.	0.0829	0.0152
+0.2427	0.5564	1.000	attempting to read or write beyond arc 4095.	0.3289	0.0131
+0.2587	0.1147	1.000	Unit Not Ready Reject (UNRJ). This indicator	0.3759	0.0146
+0.2630	0.5169	1.000	Programming errors indicated above are detected after	0.3910	0.0131
+0.2705	0.0976	1.000	is turned on when an instruction is given to a disk	0.3932	0.0185
+0.2768	0.5168	1.000	the instruction is sent to the disk system. The EPGK	0.3893	0.0164
+0.2892	0.0996	1.000	storage that is not ready to be operated. This is	0.3910	0.0145
+0.2936	0.5150	1.000	indicator is set soon after the instruction has been	0.3910	0.0116
+0.3036	0.0996	1.000	usually caused when a disk storage is temporarily dis-	0.3910	0.0147
+0.3096	0.5169	1.000	accepted by the disk synchronizer. However, by the	0.3891	0.0146
+0.3212	0.0977	1.000	connected from its channel.	0.2049	0.0103
+0.3241	0.5169	1.000	time an interruption can be made, the computer has	0.3910	0.0147
+0.3387	0.1128	1.000	Channel Busy Reject (CBJ). Because of the restric-	0.3797	0.0160
+0.3400	0.5150	1.000	proceeded with its instruction sequence. The specified	0.3910	0.0147
+0.3561	0.5169	1.000	disk storage will not perform the instruction.	0.3289	0.0146
+0.3561	0.0996	1.000	tions on addressing and simultaneous operation of	0.3929	0.0131
+0.3706	0.0996	1.000	disk storage, this indicator can be turned on by a	0.3910	0.0146
+0.3750	0.5338	1.000	The EPck indicator is set, by invalid address detec-	0.3722	0.0145
+0.3852	0.0977	1.000	number of conditions that do not exist in the ex-	0.3947	0.0131
+0.3909	0.5169	1.000	tion, when an attempt is made to transfer a word to	0.3891	0.0146
+0.4026	0.0996	1.000	change. The conditions which can be responsible for	0.3910	0.0131
+0.4070	0.5169	1.000	or from the location specified by the invalid address.	0.3891	0.0145
+0.4172	0.0977	1.000	channel-busy-reject in the disk synchronizer are:	0.3684	0.0147
+0.4230	0.5188	1.000	The operation proceeds normally until the invalid	0.3872	0.0131
+0.4375	0.5169	1.000	address is detected.	0.1372	0.0131
+0.4375	0.1165	1.000	1. A READ, WRITE Or LOCATE instruction is addressed	0.3741	0.0131
+0.4517	0.1390	1.000	to a disk which is executing a previous instruc-	0.3517	0.0162
+0.4578	0.5338	1.000	Unit Check (UK). This indicator is tirned on when	0.3722	0.0131
+0.4679	0.1410	1.000	tion, or is waiting to make a program interrup-	0.3477	0.0147
+0.4738	0.5169	1.000	an uncorrectable data error or machine malfunction-	0.3910	0.0116
+0.4840	0.1410	1.000	tion.	0.0338	0.0102
+0.4884	0.5150	1.000	ing occurs. Two classes of errors that will turn on uK	0.3910	0.0147
+0.5029	0.1165	1.000	2. A READ Or WRITE instruction is addressed to a	0.3759	0.0132
+0.5042	0.5169	1.000	are distinguished by the disk system:	0.2669	0.0147
+0.5188	0.1410	1.000	disk storage at a time when some other disk stor-	0.3515	0.0133
+0.5233	0.5301	1.000	1. Those errors which cause immediate termination	0.3759	0.0146
+0.5333	0.1391	1.000	age is engaged in a reading or writing operation.	0.3534	0.0146
+0.5392	0.5583	1.000	of the instruction and immediate interruption.	0.3496	0.0145
+0.5536	0.1165	1.000	3. A COPY CONTROL WORD instruction is issued at a	0.3741	0.0118
+0.5552	0.5583	1.000	These errors are developed by malfunctioning of	0.3496	0.0146
+0.5697	0.1410	1.000	time when a disk unit is engaged in reading or	0.3515	0.0146
+0.5712	0.5583	1.000	the disk storage and the disk synchronizer.	0.3120	0.0131
+0.5858	0.1410	1.000	writing.	0.0583	0.0131
+0.5915	0.5338	1.000	2. Those errors which permit the operation to be	0.3741	0.0131
+0.6046	0.5581	1.000	completed. These errors include uncorrectable	0.3499	0.0164
+0.6133	0.0996	1.000	INPUT-OUTPUT STATUS INDICATORS	0.2444	0.0103
+0.6221	0.5583	1.000	data and addressing parity errors. This class of	0.3496	0.0131
+0.6308	0.0996	1.000	When an operation associated with a disk storage has	0.3929	0.0131
+0.6381	0.5583	1.000	errors will set the Uk and EoP indicator bits.	0.3177	0.0116
+0.6453	0.0996	1.000	been terminated, the status at that time is recorded.	0.3910	0.0131
+0.6570	0.5320	1.000	End Of Operation (EOP). When this indicator is	0.3759	0.0161
+0.6599	0.0977	1.000	Each channel will retain the status bits associated	0.3947	0.0174
+0.6730	0.5169	1.000	turned on and no other check interruption occurs, it	0.3910	0.0146
+0.6773	0.0996	1.000	with termination of the last instruction executed or	0.3910	0.0103
+0.6875	0.5150	1.000	indicates that the instruction has been completed suc-	0.3910	0.0146
+0.6903	0.0977	1.000	attempted by the channel or disk synchronizer until	0.3929	0.0146
+0.7033	0.5150	1.000	cessfully. It will be set for all instructions except coPy	0.3911	0.0150
+0.7048	0.0996	1.000	the priority sequencing controls permit it to inter-	0.3929	0.0191
+0.7194	0.5169	1.000	CONTROL WORD and those instructions specifying SEOP.	0.3910	0.0146
+0.7224	0.0996	1.000	rupt in the central processing unit.	0.2519	0.0146
+0.7328	0.5130	1.000	In this latter case, however, the suppression is ignored	0.3931	0.0179
+0.7369	0.1147	1.000	Status information can occur prior to, during or	0.3778	0.0161
+0.7485	0.5075	1.000	if a unit-check is also turned on and the operation is	0.4004	0.0161
+0.7529	0.0977	1.000	subsequent to data transmission. Certain checks that	0.3947	0.0160
+0.7631	0.5132	1.000	completed.	0.0865	0.0160
+0.7660	0.0977	1.000	occur while data transmission is in progress are held	0.3947	0.0189
+0.7833	0.0996	1.000	up in the disk synchronizer or disk storage until the	0.3929	0.0161
+0.7979	0.0977	1.000	end-of-operation is signalled. Other checks can cause	0.3947	0.0161
+0.8065	0.5169	1.000	Keys and Lights	0.1166	0.0163
+0.8139	0.0977	1.000	immediate termination of the instruction being exe-	0.3947	0.0189
+0.8285	0.5169	1.000	A disk file switch turns the 60-cycle power on and off.	0.3891	0.0145
+0.8430	0.5094	1.000	The 400 cycle power for the disk units is turned on	0.3985	0.0176
+0.8459	0.1165	1.000	Exchange Program Check (EPGK). This indicator	0.3759	0.0132
+0.8545	0.5150	1.000	and off together with power for the disk synchronizer.	0.3966	0.0205
+0.8584	0.1014	1.000	is turned on by a program error. When turned on it	0.3912	0.0168
+0.8721	0.5301	1.000	The disk units do not require operator access, and	0.3797	0.0189
+0.8750	0.0996	1.000	usually implies that the operation cannot be com-	0.3947	0.0160
+0.8894	0.5150	1.000	can be installed outside of the operating area.	0.3402	0.0161
+0.8909	0.1015	1.000	pleted. Conditions which set EPGK are:	0.2801	0.0146
+0.9273	0.7086	1.000	High-Speed Disk System	0.1523	0.0161
+0.9288	0.8891	1.000	159	0.0226	0.0087

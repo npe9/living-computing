@@ -1,0 +1,113 @@
+0.0669	0.5019	1.000	where:	0.0564	0.0160
+0.0697	0.0977	1.000	FWA.(I) +12.	0.1015	0.0132
+0.0697	0.2425	1.000	Factor register	0.1165	0.0118
+0.0814	0.5244	1.000	ADDR. (D) is a full word (18 bit) address of the	0.3703	0.0174
+0.0841	0.2420	1.000	Transit register	0.1212	0.0143
+0.0842	0.0977	1.000	FWA. (I) + 13.	0.0996	0.0131
+0.0988	0.0977	1.000	FWA. (I) +14.-	0.1090	0.0131
+0.0988	0.5226	1.000	problem program storage location into which the	0.3703	0.0131
+0.1105	0.5244	1.000	full word IQS statement is placed. The IQS state-	0.3778	0.0160
+0.1133	0.2406	1.000	Index Registers 0-15	0.1560	0.0118
+0.1148	0.0977	1.000	FWA. (1)+29.	0.0921	0.0116
+0.1250	0.5226	1.000	ment is in the following form:	0.2274	0.0189
+0.1279	0.2406	1.000	Instruction Counter	0.1466	0.0103
+0.1294	0.0977	1.000	FWA. (1) + 30.	0.1015	0.0116
+0.1379	0.5469	1.000	CHXX UNY	0.0885	0.0179
+0.1424	0.0996	1.000	FWA. (I) + 30. 32	0.1184	0.0116
+0.1424	0.2387	1.000	Base Address of I/O Location	0.2256	0.0116
+0.1583	0.2406	1.000	Tables	0.0508	0.0090
+0.1715	0.5019	1.000	Free Tape Drive Pseudo-Operation ($FREE): $FREE	0.3985	0.0145
+0.1715	0.0996	1.000	An IOD reference number will appear in FWA. (I)	0.3665	0.0131
+0.1845	0.5019	1.000	expressed by the macro-instruction	0.2707	0.0146
+0.1857	0.0752	1.000	if the current I/O fix-up is for a unit other than the	0.3816	0.0122
+0.1962	0.5320	1.000	MFREE, IODNAME (I)	0.2030	0.0204
+0.1991	0.0752	1.000	one that the programmer is still expecting in his	0.3665	0.0146
+0.2121	0.4925	1.000	is expanded to the calling sequence	0.2744	0.0191
+0.2136	0.0733	1.000	mainstream non-SIO $WAIT. The reference number	0.3966	0.0161
+0.2280	0.5450	1.000	B,$МСP	0.0697	0.0163
+0.2297	0.0752	1.000	will be the $WAIT reference number, otherwise	0.3590	0.0146
+0.2439	0.5431	1.000	,$FREE	0.0679	0.0165
+0.2456	0.0771	1.000	FWA. (I) will be zero.	0.1617	0.0116
+0.2572	0.5413	1.000	,IODNAME (I)	0.1166	0.0176
+0.2718	0.5395	1.000	(return)	0.0695	0.0174
+0.2733	0.0752	1.000	Store Lower Registers Pseudo-Operation ($STLR):	0.3797	0.0131
+0.2848	0.5000	1.000	$FREE indicates to MCP that this problem program	0.3929	0.0204
+0.2886	0.0752	1.000	$STLR allows the user to replace mainstream lower	0.3910	0.0114
+0.3023	0.5000	1.000	no longer requires the tape unit specified by the	0.3647	0.0146
+0.3036	0.0771	1.000	registers with the contents of a 31 word problem	0.3647	0.0118
+0.3169	0.5000	1.000	IODNAME (I). MCP will unassign the unit from the	0.3947	0.0160
+0.3169	0.0733	1.000	program buffer. $STLR may be used only in the	0.3684	0.0147
+0.3314	0.0771	1.000	auto-stacked mode. The macro-instruction	0.3271	0.0132
+0.3327	0.5000	1.000	problem program and give control to the return word	0.4023	0.0176
+0.3459	0.1147	1.000	MSTLR, FWA. (I)	0.1372	0.0147
+0.3503	0.5019	1.000	in the calling sequence. After a $FREE is issued,	0.3797	0.0131
+0.3618	0.0733	1.000	is expanded to the calling sequence	0.2632	0.0118
+0.3648	0.5019	1.000	the problem program can no longer use the tape	0.3609	0.0131
+0.3746	0.1164	1.000	B, $MCP	0.0661	0.0153
+0.3794	0.5000	1.000	drive specified by IODNAME (I).	0.2500	0.0161
+0.3894	0.1146	1.000	,$STLR	0.0622	0.0149
+0.3939	0.5263	1.000	A list of all the support I/O pseudo-operations is	0.3647	0.0131
+0.4055	0.1147	1.000	, PWA. (I)	0.0752	0.0132
+0.4084	0.5019	1.000	contained in Appendix A.	0.1861	0.0116
+0.4198	0.1146	1.000	(return)	0.0622	0.0121
+0.4340	0.0731	1.000	where:	0.0511	0.0113
+0.4345	0.5000	1.000	System I/O Pseudo-Operations	0.2331	0.0146
+0.4476	0.0959	1.000	FWA. (I) specifies the first word (18 bit)	0.3195	0.0132
+0.4636	0.0959	1.000	address of the 31 word buffer which will be used	0.3609	0.0103
+0.4636	0.5000	1.000	System Card Read Pseudo-Operation ($SCR): MCP	0.3853	0.0146
+0.4782	0.0940	1.000	to replace the lower registers saved by MCP.	0.3459	0.0131
+0.4797	0.5019	1.000	provides a pseudo-operation that transmits to the	0.3722	0.0116
+0.4927	0.0959	1.000	The following are restrictions on the use of	0.3271	0.0116
+0.4942	0.5019	1.000	programmer a specified number of card images from	0.4004	0.0116
+0.5053	0.0750	1.000	$STLR:	0.0530	0.0113
+0.5087	0.5019	1.000	an input buffer maintained by MCP. The programmer	0.4004	0.0131
+0.5218	0.0959	1.000	1. Word 3, boundary control, is not changed.	0.3383	0.0131
+0.5233	0.5019	1.000	specifies the number of cards to be read and the	0.3609	0.0102
+0.5358	0.4999	1.000	address of the first word of the core storage block	0.3799	0.0140
+0.5363	0.0959	1.000	2. The time signal (TS) and the execute exception	0.3703	0.0116
+0.5494	0.0733	1.000	(EXE) indicators are not changed.	0.2538	0.0131
+0.5523	0.5019	1.000	into which they are to be read. If it is necessary to	0.3891	0.0116
+0.5654	0.0959	1.000	3. The instruction fetch (IF) mask bit is forced to	0.3722	0.0116
+0.5669	0.5019	1.000	fill the buffer, MCP constructs the necessary I/O	0.3722	0.0131
+0.5799	0.0733	1.000	one.	0.0320	0.0116
+0.5814	0.5019	1.000	hardware instructions, initiates the reading opera-	0.3835	0.0132
+0.5945	0.0959	1.000	The user's lower registers from the maintenance	0.3684	0.0116
+0.5959	0.5019	1.000	tion, and handles any I/ O interrupts that may occur.	0.3929	0.0132
+0.6075	0.0732	1.000	bits to index register 15, as well as the instruction	0.3837	0.0157
+0.6105	0.5019	1.000	MCP returns control to the problem program when	0.3797	0.0132
+0.6233	0.4998	1.000	the transmission is terminated.	0.2410	0.0149
+0.6235	0.0733	1.000	counter, will be taken from the buffer in the same	0.3759	0.0116
+0.6366	0.0733	1.000	order as described under $FELR. The IOD Refer-	0.3835	0.0131
+0.6394	0.5244	1.000	$SCR is a request to transmit a number of cards	0.3628	0.0118
+0.6512	0.0714	1.000	ence Number, Boundary Register and Base Address	0.3910	0.0161
+0.6539	0.5019	1.000	from the input buffer to a block of core storage with-	0.3966	0.0133
+0.6657	0.0714	1.000	of the I/O Location Tables are not stored.	0.3158	0.0146
+0.6685	0.4981	1.000	in the problem program. For the purposes of $SCR,	0.3947	0.0161
+0.6820	0.4999	1.000	each card is assumed to be a column binary card	0.3686	0.0146
+0.6933	0.0714	1.000	I/O Definition Pseudo-Operation ($IODEE): $IODEF	0.3929	0.0174
+0.6976	0.4981	1.000	image of 15 full words, 80 twelve-bit bytes. Each	0.3759	0.0161
+0.7093	0.0771	1.000	allows the problem program to obtain in an IQS	0.3477	0.0146
+0.7121	0.5019	1.000	byte is a map of a card column where bit 0 corre-	0.3741	0.0132
+0.7194	0.0752	1.000	statement, the absolute channel and unit number	0.3571	0.0176
+0.7267	0.5019	1.000	sponds to row 12, bit 1 to row 11 etc., and bit 11 to	0.3872	0.0132
+0.7347	0.0713	1.000	associated with an IOD statement.	0.2560	0.0170
+0.7397	0.3252	1.000	The macro-	0.1015	0.0133
+0.7412	0.5019	1.000	row 9. A one bit corresponds to a punch and a zero	0.3872	0.0131
+0.7515	0.0695	1.000	instruction	0.0846	0.0145
+0.7558	0.5000	1.000	bit corresponds to no punch. Only complete cards	0.3741	0.0131
+0.7674	0.1109	1.000	MIODEF, IODNAME (D, ADDR. (D)	0.2726	0.0174
+0.7703	0.5000	1.000	may be transmitted to consecutive multiples of 15	0.3741	0.0131
+0.7804	0.0692	1.000	is expanded to the calling sequence	0.2656	0.0199
+0.7848	0.5000	1.000	words in the user's core storage area. $SCR is	0.3571	0.0131
+0.7949	0.1146	1.000	B, $МСР	0.0678	0.0163
+0.7994	0.4962	1.000	specified by a macro-instruction of the form:	0.3459	0.0117
+0.8109	0.1128	1.000	, SIODEF	0.0714	0.0161
+0.8154	0.5414	1.000	MSCR, FWA.(I), N.(I), END	0.2218	0.0146
+0.8255	0.1128	1.000	, IODNAME (I)	0.1128	0.0147
+0.8283	0.4999	1.000	which is expanded to the calling sequence	0.3104	0.0149
+0.8400	0.1147	1.000	,ADDR. (I)	0.0883	0.0176
+0.8427	0.5450	1.000	B, МСР	0.0585	0.0152
+0.8544	0.1127	1.000	(return)	0.0622	0.0150
+0.8576	0.5414	1.000	,$SCR	0.0526	0.0145
+0.9200	0.6992	1.000	Programming With MCP	0.1466	0.0103
+0.9201	0.8853	1.000	19	0.0150	0.0087

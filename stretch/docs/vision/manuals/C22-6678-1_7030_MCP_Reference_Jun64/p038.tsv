@@ -1,0 +1,98 @@
+0.0624	0.5150	1.000	COMD, ABEOJ: This command terminates and	0.3590	0.0146
+0.0639	0.1071	1.000	The source of commands may make a great deal	0.3684	0.0131
+0.0770	0.5132	1.000	dumps the current job. The command source may be	0.4041	0.0146
+0.0785	0.0827	1.000	of difference in the time of execution of the command	0.4004	0.0145
+0.0900	0.5132	1.000	the operator's console or the system card reader.	0.3778	0.0161
+0.0927	0.0845	1.000	because of the asynchronism involved. Therefore,	0.3818	0.0167
+0.1061	0.0846	1.000	restrictions are placed on certain commands with	0.3741	0.0146
+0.1206	0.5150	1.000	COMD, OUTPUT: This command informs MCP that	0.3947	0.0146
+0.1235	0.0846	1.000	regard to source. Following is a list of system com-	0.4060	0.0131
+0.1343	0.5130	1.000	the current job being run is to be the last job on the	0.3912	0.0178
+0.1380	0.0864	1.000	mands and the sources to be used.	0.2558	0.0119
+0.1482	0.5132	1.000	current system output tape. The output for the next	0.3947	0.0161
+0.1642	0.5132	1.000	job will be the first file on the new system output	0.3722	0.0161
+0.1657	0.0865	1.000	Commands That Change the System Operating Mode	0.3853	0.0131
+0.1788	0.5132	1.000	tape. Either command source is acceptable.	0.3402	0.0161
+0.1962	0.0846	1.000	The mode in which the system is operating remains	0.3872	0.0117
+0.2093	0.5150	1.000	Other Commands	0.1297	0.0131
+0.2106	0.0846	1.000	in effect until another command is given to change it.	0.3985	0.0118
+0.2366	0.0844	1.000	COMD, BYPASS: This command informs MCP that	0.3896	0.0204
+0.2384	0.5150	1.000	COMD, IOCHANGE, Channel, Unit, Code, Type:	0.3684	0.0160
+0.2529	0.0827	1.000	the next job is to be run in the bypass mode from the	0.3985	0.0160
+0.2529	0.5150	1.000	This command is used to alter the availability of	0.3684	0.0147
+0.2674	0.0865	1.000	card reader as soon as the job currently running is	0.3853	0.0147
+0.2674	0.5150	1.000	I/O units and channels to the 7030 Programming Sys-	0.4023	0.0147
+0.2805	0.5113	1.000	tem. This may result in reassignment of MCP units	0.4004	0.0160
+0.2816	0.0844	1.000	completed. If the system is in the on-line overlapped	0.4064	0.0204
+0.2964	0.5132	1.000	and/or termination of the presently operating prob-	0.3910	0.0147
+0.2964	0.0863	1.000	mode, the command source must be the system card	0.4008	0.0184
+0.3121	0.0863	1.000	reader. If the system is operating in the off-line	0.3706	0.0161
+0.3124	0.5132	1.000	lem program. Either command source is acceptable.	0.4079	0.0146
+0.3258	0.0863	1.000	overlapped mode, the command source must be the	0.3857	0.0172
+0.3400	0.5150	1.000	Channel is the decimal number of the channel.	0.3477	0.0147
+0.3430	0.0865	1.000	operator's console.	0.1466	0.0131
+0.3684	0.0844	1.000	COMD, ONLINE: This command informs MCP that	0.3915	0.0204
+0.3691	0.5150	1.000	Unit is the decimal number of the unit (0-7). If an	0.3816	0.0161
+0.3836	0.5150	1.000	entire channel is being altered, ALL should be used	0.3929	0.0161
+0.3866	0.0865	1.000	the next job in the system card reader is to be	0.3496	0.0116
+0.3982	0.5150	1.000	as the unit parameter.	0.1711	0.0146
+0.3997	0.0865	1.000	written on the write tape as soon as the tape is	0.3515	0.0131
+0.4142	0.0865	1.000	available. The next job to be run comes from the	0.3741	0.0131
+0.4273	0.0865	1.000	read tape. If the system is in the bypass mode, the	0.3910	0.0146
+0.4302	0.5169	1.000	Code may be one of the following:	0.2538	0.0146
+0.4418	0.0865	1.000	command source must be the system card reader.	0.3778	0.0146
+0.4418	0.6034	1.000	Make channel or unit available.	0.2519	0.0176
+0.4448	0.5357	1.000	ADD	0.0395	0.0145
+0.4548	0.5376	1.000	DELETE Make channel or unit unavailable. The	0.3741	0.0191
+0.4564	0.0883	1.000	If the system is in the off-line mode, the command	0.3797	0.0146
+0.4709	0.5169	1.000	command is effective if and when the channel or unit	0.3966	0.0189
+0.4738	0.0883	1.000	source is the console.	0.1635	0.0102
+0.4869	0.5150	1.000	is not operating.	0.1316	0.0161
+0.4994	0.0882	1.000	COMD, OFFLINE: This command informs MCP that	0.3988	0.0179
+0.5000	0.5376	1.000	DELETM Make channel or unit unavailable only	0.3647	0.0189
+0.5145	0.0846	1.000	the next job to be run will be read from the read tape.	0.4079	0.0161
+0.5145	0.5169	1.000	if unassigned at the present time. If the channel or	0.3891	0.0189
+0.5291	0.5169	1.000	unit is assigned, the command is ignored.	0.3177	0.0189
+0.5305	0.0883	1.000	Regardless of the current operating mode, the com-	0.3947	0.0131
+0.5451	0.0883	1.000	mand source must be the last card in the system	0.3665	0.0131
+0.5500	0.5148	1.000	Type is used only if the Code is ADD. It must be	0.3746	0.0229
+0.5624	0.0883	1.000	card reader.	0.0959	0.0103
+0.5697	0.5150	1.000	one of the following:	0.1560	0.0146
+0.5824	0.8325	1.000	PUNCH	0.0567	0.0153
+0.5828	0.5376	1.000	READER	0.0734	0.0162
+0.5843	0.6786	1.000	PRINTER	0.0752	0.0145
+0.5900	0.0902	1.000	Commands That Affect The Current Input	0.3083	0.0103
+0.6163	0.0902	1.000	COMD, REWIND: This command informs MCP, if	0.3816	0.0160
+0.6264	0.5169	1.000	If the Type field is blank, it means no change in	0.3609	0.0176
+0.6294	0.0882	1.000	in the on-line overlapped mode, to terminate and	0.3705	0.0177
+0.6408	0.5169	1.000	equipment type.	0.1223	0.0179
+0.6467	0.0865	1.000	rewind the write tape. The command source must	0.3835	0.0147
+0.6627	0.0883	1.000	be the system card reader.	0.2049	0.0131
+0.6699	0.5168	1.000	COMD, CLOCK, hours, minutes, seconds, mm/dd/	0.3949	0.0178
+0.6860	0.5169	1.000	yy: This command gives MCP the real time in the	0.3816	0.0146
+0.6899	0.0901	1.000	COMD, EOF: This command marks the end of the	0.3781	0.0155
+0.6989	0.5168	1.000	three 2-digit parameters shown, which are used to	0.3837	0.0171
+0.7078	0.0902	1.000	previous job in the system card reader. The com-	0.3835	0.0116
+0.7141	0.5187	1.000	compute the calibration constant for the time clock.	0.3875	0.0159
+0.7209	0.0902	1.000	mand source must be the system card reader and	0.3703	0.0131
+0.7297	0.5188	1.000	The date field also contains three 2-digit parameters	0.3985	0.0146
+0.7369	0.0902	1.000	the card must be the last one in the reader.	0.3271	0.0102
+0.7442	0.5188	1.000	separated by / and not by commas.	0.2650	0.0161
+0.7587	0.5395	1.000	mm is the 2-digit month or day	0.2368	0.0146
+0.7660	0.0921	1.000	Commands That Affect The Current Job	0.2970	0.0102
+0.7747	0.5395	1.000	dd is the 2-digit month or day	0.2274	0.0132
+0.7892	0.5376	1.000	yy' is the last two digits of the year.	0.2726	0.0145
+0.7936	0.0921	1.000	COMD, REJECT: This command informs MCP, if	0.3816	0.0131
+0.8052	0.5188	1.000	The date and time are written on the output tape and	0.3910	0.0146
+0.8081	0.0902	1.000	in either of the overlapped modes, to reject the job	0.3853	0.0116
+0.8197	0.5169	1.000	on the console typewriter. The time can be entered	0.3929	0.0146
+0.8212	0.0902	1.000	immediately preceding the reject command. The	0.3703	0.0131
+0.8358	0.0921	1.000	command source is always the system input source.	0.3891	0.0116
+0.8358	0.5188	1.000	without a date.	0.1109	0.0131
+0.8503	0.5395	1.000	Response to the clock command is acknowledged	0.3647	0.0146
+0.8629	0.0921	1.000	COMD, EOJ: This command terminates the job being by the following message.	0.6223	0.0157
+0.8779	0.5677	1.000	$HH:MM:SS - TIME-HH:MM:SS DATE - mm/	0.3477	0.0146
+0.8794	0.0921	1.000	executed. The operator's console or system card	0.3741	0.0116
+0.8939	0.5677	1.000	dd/yy	0.0508	0.0145
+0.8939	0.0921	1.000	reader may be the source of the command.	0.3195	0.0131
+0.9142	0.0883	1.000	38	0.0150	0.0087

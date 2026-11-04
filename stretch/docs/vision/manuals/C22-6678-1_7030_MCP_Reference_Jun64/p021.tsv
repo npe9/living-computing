@@ -1,0 +1,111 @@
+0.0669	0.0865	1.000	from consecutive multiples of 15 full words in the	0.3778	0.0174
+0.0682	0.5113	1.000	is expanded to the calling sequence:	0.2782	0.0191
+0.0814	0.0846	1.000	user's core storage area. $SPU is written as a	0.3703	0.0189
+0.0843	0.5583	1.000	B,$MCP	0.0714	0.0174
+0.0959	0.0865	1.000	macro-instruction in the form	0.2293	0.0174
+0.0987	0.5582	1.000	,$FETCH	0.0810	0.0192
+0.1105	0.1259	1.000	MSPU, FWA.(D), N.(D)	0.1786	0.0189
+0.1145	0.5599	1.000	(AX)DD(BU, 48, 6), ITAAAAAAX	0.2429	0.0196
+0.1279	0.5602	1.000	,RELEWA. (D)	0.1071	0.0176
+0.1279	0.0846	1.000	which is expanded to the calling sequence	0.3120	0.0146
+0.1389	0.1276	1.000	B, $МСР	0.0719	0.0187
+0.1423	0.5582	1.000	,EWA.(D)	0.0753	0.0192
+0.1555	0.1278	1.000	, $SPU	0.0526	0.0161
+0.1581	0.5581	1.000	, N. (D)	0.0511	0.0181
+0.1700	0.1297	1.000	,FWA. (D)	0.0714	0.0146
+0.1744	0.6598	1.000	(described as "M." following)	0.2218	0.0160
+0.1831	0.1259	1.000	,N.(D)	0.0526	0.0189
+0.1859	0.5601	1.000	B, ERROR'	0.0847	0.0162
+0.1889	0.6579	1.000	Error return	0.1053	0.0147
+0.1988	0.1277	1.000	(return)	0.0642	0.0166
+0.2017	0.6578	1.000	End return	0.0885	0.0166
+0.2020	0.5583	1.000	B, END'	0.0695	0.0160
+0.2151	0.0846	1.000	where:	0.0545	0.0145
+0.2162	0.5563	1.000	(normal return)	0.1223	0.0152
+0.2267	0.1053	1.000	FWA. (D) is the first word (18 bit) address from	0.3778	0.0191
+0.2309	0.5130	1.000	where:	0.0547	0.0150
+0.2427	0.1053	1.000	which the cards are to be transmitted. N.(D	0.3609	0.0189
+0.2458	0.5355	1.000	TTAAAAAA is an eight-character name of a	0.3388	0.0176
+0.2587	0.1034	1.000	is the number of cards to be transmitted.	0.3346	0.0146
+0.2594	0.5356	1.000	specific entry in PROSA.	0.1900	0.0147
+0.2733	0.1034	1.000	Information is not altered in the user's core	0.3365	0.0146
+0.2747	0.5357	1.000	RELFWA. (I) specifies the first word within the	0.3590	0.0174
+0.2860	0.1032	1.000	storage.	0.0680	0.0182
+0.2892	0.5357	1.000	type-area to be fetched, relative to the starting	0.3609	0.0174
+0.2988	0.5335	1.000	address of the type-area. The effective	0.3072	0.0256
+0.3154	0.0846	1.000	Fetch Pseudo-Operation ($FETCH): $FETCH pro-	0.3835	0.0189
+0.3169	0.5357	1.000	RELFWA. (D) must be an integer. RELFWA.(D)	0.3496	0.0189
+0.3285	0.0827	1.000	vides access to named system material on the disk.	0.3929	0.0189
+0.3358	0.5357	1.000	should be zero if fetching is to begin with the first	0.3778	0.0131
+0.3473	0.0865	1.000	The requested material does not have to start at an	0.3835	0.0118
+0.3503	0.5357	1.000	word of the type-area, one if fetching is to begin	0.3665	0.0131
+0.3618	0.0846	1.000	arc boundary, and the amount of material to be	0.3534	0.0146
+0.3648	0.5357	1.000	with the second word of the type-area, and so on.	0.3722	0.0146
+0.3764	0.0846	1.000	transmitted is not limited to multiples of arcs. It	0.3703	0.0132
+0.3794	0.5376	1.000	FWA, (I) specifies the first word (18 bit) address	0.3628	0.0131
+0.3909	0.0846	1.000	eliminates the need for the programmer to provide	0.3816	0.0132
+0.3939	0.5357	1.000	of the block of core storage into which the	0.3383	0.0131
+0.4040	0.0845	1.000	core storage for an entire arc. The disk storage	0.3649	0.0162
+0.4084	0.5357	1.000	requested library material is to be transmitted.	0.3609	0.0131
+0.4200	0.0846	1.000	unit attached to the 7030 System is divided into	0.3496	0.0118
+0.4230	0.5376	1.000	N. (I) specifies the number of full words	0.3139	0.0116
+0.4345	0.0846	1.000	logical sections by MCP. One section, the perma-	0.3778	0.0146
+0.4375	0.5357	1.000	requested. If N. (I) is zero, fetch will read in all	0.3703	0.0131
+0.4486	0.0845	1.000	nent read only storage area (PROSA), cannot be	0.3574	0.0156
+0.4514	0.5356	1.000	of the specified type-area from RELFWA. (I) to	0.3555	0.0154
+0.4635	0.0845	1.000	read or written by the problem program, but may be	0.3949	0.0152
+0.4646	0.5353	1.000	the end of the type-area.	0.1850	0.0170
+0.4782	0.0846	1.000	obtained via $FETCH. System material, such as	0.3684	0.0146
+0.4811	0.5376	1.000	ERROR is the address of a fix-up which the pro-	0.3628	0.0131
+0.4927	0.0846	1.000	mathematical subroutines, tables, and similar	0.3496	0.0145
+0.4956	0.5357	1.000	grammer wishes to execute if the fetch attempts	0.3628	0.0131
+0.5073	0.0846	1.000	items, is maintained by MCP as a system library	0.3722	0.0146
+0.5115	0.5338	1.000	to violate protected storage or when a nonexistent	0.3759	0.0118
+0.5218	0.0846	1.000	in PROSA.	0.0789	0.0116
+0.5247	0.5357	1.000	type-area is requested.	0.1767	0.0132
+0.5340	0.1051	1.000	PROSA is divided into two levels of storage,	0.3331	0.0172
+0.5373	0.5374	1.000	END is the address of a routine that the pro-	0.3594	0.0169
+0.5523	0.0846	1.000	areas within types. An area normally contains a	0.3590	0.0116
+0.5552	0.5357	1.000	grammer wishes to execute in case the type-area	0.3703	0.0118
+0.5651	0.0845	1.000	subroutine, or a set of tables, and several such	0.3573	0.0156
+0.5682	0.5338	1.000	is exhausted before the requested number of full	0.3628	0.0133
+0.5814	0.0846	1.000	areas are grouped into types. Each type-area has a	0.3853	0.0116
+0.5824	0.5337	1.000	words can be transmitted.	0.1977	0.0139
+0.5945	0.0846	1.000	unique name consisting of eight (tape) BCD charac-	0.3816	0.0131
+0.5973	0.5337	1.000	M. is a half word reserved "by the macro-	0.3367	0.0153
+0.6090	0.0846	1.000	ters in the following format:	0.2105	0.0131
+0.6118	0.5357	1.000	generator for the case when $FETCH cannot	0.3327	0.0132
+0.6235	0.1259	1.000	TTAAAAAA	0.0902	0.0116
+0.6279	0.5338	1.000	transmit N. (I) full words or when N. (I) = 0. In	0.3553	0.0131
+0.6424	0.5357	1.000	either event, M. will then contain the number of	0.3628	0.0131
+0.6481	0.0826	1.000	where:	0.0509	0.0120
+0.6555	0.5320	1.000	full words that were actually transmitted. The	0.3553	0.0161
+0.6627	0.1053	1.000	TT, the first two characters, identify the type.	0.3553	0.0161
+0.6700	0.5338	1.000	error return slot in the calling sequence consists	0.3703	0.0131
+0.6773	0.1071	1.000	AAAAAA, the remaining six characters, identify	0.3665	0.0146
+0.6854	0.5337	1.000	of a branch instruction constructed by the macro-	0.3743	0.0144
+0.6916	0.1049	1.000	the area within the type.	0.1831	0.0155
+0.7006	0.5338	1.000	generator whose address is that specified by the	0.3628	0.0131
+0.7064	0.1053	1.000	The composite name, type-area, must be unique.	0.3703	0.0146
+0.7151	0.5338	1.000	programmer symbol ERROR in the macro-	0.3252	0.0116
+0.7194	0.0846	1.000	However, the same area name may be used with	0.3628	0.0161
+0.7297	0.5338	1.000	instruction. Similarly, the end return slot con-	0.3571	0.0131
+0.7339	0.0846	1.000	different type names. Type-areas are ordered on	0.3722	0.0161
+0.7442	0.5338	1.000	sists of a branch instruction whose address is the	0.3741	0.0116
+0.7478	0.0824	1.000	the disk in BCD code order.	0.2094	0.0169
+0.7587	0.5338	1.000	programmer symbol END.	0.2011	0.0131
+0.7645	0.1034	1.000	A type-area is the largest logical unit of PROSA	0.3628	0.0146
+0.7777	0.0825	1.000	that can be fetched with one operation. $FETCH is	0.3782	0.0178
+0.7833	0.5113	1.000	Comment Pseudo-Operation ($COMM: $COMM is	0.3797	0.0146
+0.7951	0.0827	1.000	a request to transmit a type-area, or part of a type-	0.3947	0.0146
+0.7979	0.5094	1.000	a request from the problem program to transmit a	0.3816	0.0132
+0.8095	0.0826	1.000	area, into the problem program core storage. The	0.3855	0.0149
+0.8120	0.5112	1.000	message from its core storage to MCP, to be output	0.3949	0.0156
+0.8241	0.0827	1.000	macro-instruction:	0.1410	0.0116
+0.8270	0.5113	1.000	to the operator via the console typewriter. $COMM	0.3853	0.0131
+0.8385	0.1221	1.000	MFETCH, TTAAAAAA, RELEWA. (D), FWA. (D),	0.3536	0.0176
+0.8415	0.5094	1.000	is specified in the macro-instruction	0.2782	0.0118
+0.8532	0.1222	1.000	,N. (D), ERROR, END	0.1541	0.0160
+0.8561	0.5545	1.000	MCOMM, FWA. (D), N. (L)	0.1786	0.0161
+0.9215	0.7105	1.000	Programming With MCP	0.1485	0.0103
+0.9215	0.8929	1.000	21	0.0188	0.0087

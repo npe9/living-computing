@@ -1,0 +1,79 @@
+0.0915	0.0959	1.000	MAJOR LOGIC AREA IN THE BETWEEN-PASSES PHASES OF STRAP II	0.5395	0.0146
+0.1352	0.2481	1.000	ITERate over the symbol table	0.2274	0.0146
+0.1352	0.5169	1.000	Iterates over the symbol table to establish a data	0.3665	0.0146
+0.1352	0.0959	1.000	UITER	0.0564	0.0160
+0.1467	0.5376	1.000	description and value for each symbol in the table.	0.3778	0.0191
+0.2282	0.0940	1.000	UITER	0.0583	0.0160
+0.2817	0.0958	1.000	LINKAGE	0.0735	0.0151
+0.2820	0.5188	1.000	Boxes 7, 15 (after Pass 1)	0.1936	0.0160
+0.3067	0.5169	0.300	Cet each ge atel tahlore ty by branch eng too, yeaye.	0.3966	0.0349
+0.3078	0.0938	1.000	UITER inspects the symbol table twice, once be-	0.3650	0.0215
+0.3227	0.0940	1.000	Eween the end of Pass 1 and the beginning of Pass 2a,	0.3947	0.0189
+0.3387	0.0959	1.000	and again between the end of Pass 2a and the be-	0.3590	0.0174
+0.3387	0.5188	1.000	UITER.	0.0602	0.0189
+0.3559	0.0976	1.000	ginning of Pass 2b. Each time it is entered with	0.3574	0.0151
+0.3691	0.5187	1.000	Box 8	0.0490	0.0162
+0.3735	0.0959	1.000	a--B, UITER.	0.0996	0.0131
+0.3982	0.5207	1.000	Space to location of function in order to investigate the	0.4041	0.0146
+0.4024	0.0958	1.000	DETAILS	0.0715	0.0120
+0.4127	0.5207	1.000	entry. The delete mark, the field indicating the length	0.4079	0.0176
+0.4258	0.5207	1.000	of the entry, the ID field, the field indicating the	0.3609	0.0176
+0.4297	0.0975	1.000	UITER iterates over the symbol table to establish	0.3670	0.0192
+0.4418	0.5188	1.000	length of the remainder of the argument, and the	0.3628	0.0161
+0.4433	0.0977	1.000	a data description and value for each symbol. UITER	0.3966	0.0146
+0.4525	0.5205	1.000	remainder of the argument precede the function	0.3557	0.0205
+0.4593	0.0977	1.000	also computes the memory bounds of the program	0.3665	0.0131
+0.4679	0.5207	1.000	field in the vle.	0.1184	0.0191
+0.4752	0.0977	1.000	being assembled.	0.1278	0.0133
+0.4878	0.1126	1.000	UITER maintains a pushdown type table at the sym-	0.3819	0.0184
+0.5015	0.5207	1.000	Box 9	0.0489	0.0161
+0.5058	0.0959	1.000	bolie location, Utab.	0.1523	0.0131
+0.5174	0.0977	1.000	The 64 bit entry in the Utab table contains: in positions	0.4041	0.0160
+0.5291	0.5226	1.000	Branch-on-bit-and-set-to-one Zsto (everything	0.3515	0.0161
+0.5320	0.0977	1.000	0-23 the location in the symbol table of the problem	0.3816	0.0160
+0.5451	0.5207	1.000	defined and computed) and then go to ANEXT to get	0.3797	0.0146
+0.5494	0.1015	1.000	svmbol and in positions 32-56 the level in the sym-	0.3741	0.0103
+0.5596	0.5207	1.000	the next symbol table entry. By "everything" it is	0.3759	0.0146
+0.5606	0.1014	1.000	bolic chain. An entry in the Utab table is made each	0.3857	0.0155
+0.5737	0.1013	1.000	time VALUE returns through Vbreak while UITER	0.3670	0.0182
+0.5741	0.5207	1.000	meant value, dds, and dimension properties.	0.3365	0.0160
+0.5915	0.0959	1.000	is processing a SYN chain. In coordination with the	0.3853	0.0161
+0.6032	0.5226	1.000	Boxes 16, 31	0.1015	0.0160
+0.6055	0.0994	1.000	Utab table, UITER uses three index registers which	0.3838	0.0189
+0.6235	0.0996	1.000	have the following significance:	0.2293	0.0116
+0.6321	0.5226	1.000	Branch-on-zero-bit Zst3 (existence of dds reference	0.3910	0.0161
+0.6467	0.5207	1.000	has been decided). By dds reference address, it is	0.3835	0.0161
+0.6483	0.0977	1.000	Symbolic	0.0733	0.0174
+0.6494	0.2555	1.000	Contents	0.0717	0.0152
+0.6512	0.1861	1.000	Field	0.0526	0.0131
+0.6612	0.5207	1.000	meant a location to find the address of a dds.	0.3365	0.0161
+0.6773	0.2594	1.000	The location in the symbol table	0.2406	0.0191
+0.6802	0.1917	1.000	Value	0.0489	0.0160
+0.6817	0.0996	1.000	U3 ($3)	0.0658	0.0132
+0.6933	0.5226	1.000	Box 23	0.0564	0.0161
+0.6962	0.2613	1.000	of the base symbol in the chain	0.2293	0.0117
+0.7075	0.2612	1.000	The location of the latest entry	0.2275	0.0152
+0.7106	0.0996	1.000	U4 ($4)	0.0658	0.0133
+0.7108	0.1917	1.000	Value	0.0489	0.0131
+0.7194	0.5207	1.000	Test for circular value by seeing if Zst1Z (processing	0.4004	0.0176
+0.7252	0.2613	1.000	made in the Utab table.	0.1748	0.0133
+0.7369	0.2575	1.000	The current level of evaluation.	0.2368	0.0146
+0.7384	0.5207	1.000	bit for mode) is on. If value is circular, give refer-	0.3947	0.0116
+0.7384	0.1955	1.000	Count	0.0489	0.0145
+0.7500	0.5226	1.000	ence address of zero. Branch to VALUE subroutine	0.3891	0.0145
+0.7526	0.1953	1.000	Value	0.0473	0.0166
+0.7542	0.0996	1.000	U9 ($5)	0.0659	0.0148
+0.7542	0.2575	1.000	The location in the symbol table	0.2406	0.0147
+0.7660	0.2632	1.000	of the symbol currently being	0.2162	0.0146
+0.7660	0.5226	1.000	to establish dds reference address.	0.2650	0.0161
+0.7805	0.2613	1.000	evaluated by UITER.	0.1560	0.0189
+0.7950	0.5244	1.000	Box 17	0.0546	0.0176
+0.8096	0.1015	1.000	FLOW CHART DESCRIPTION *	0.2368	0.0174
+0.8241	0.5244	1.000	Branch-on-bit Zst32 (use dds reference address) to	0.3816	0.0174
+0.8387	0.1015	1.000	After initialization we determine whether or not we	0.3778	0.0189
+0.8415	0.5244	1.000	box 10. The dds reference address is only used it	0.3741	0.0131
+0.8561	0.5244	1.000	the dds is implicit.	0.1391	0.0118
+0.8561	0.1015	1.000	are in Pass 1. (Npzind is zero if we are in Pass l.)	0.3835	0.0176
+0.9065	0.0992	1.000	*Flow chart of UITER on next page	0.2020	0.0200
+0.9403	0.6297	1.000	Major Logic Area -- Between Passes Phases	0.2481	0.0133
+0.9404	0.8947	1.000	135	0.0263	0.0116

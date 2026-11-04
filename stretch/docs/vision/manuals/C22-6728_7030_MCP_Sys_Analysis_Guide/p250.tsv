@@ -1,0 +1,60 @@
+0.0726	0.2838	1.000	Symbol	0.0621	0.0175
+0.0740	0.6146	1.000	Content	0.0621	0.0133
+0.0741	0.1335	1.000	Bits	0.0357	0.0189
+0.1032	0.2857	1.000	SREL	0.0451	0.0116
+0.1032	0.4756	1.000	0 - Non-release operation	0.2049	0.0117
+0.1032	0.1316	1.000	.61	0.0301	0.0160
+0.1177	0.4756	1.000	1 - Release operation	0.1729	0.0117
+0.1453	0.4756	1.000	This indicator exists in the channel status table for a	0.3929	0.0147
+0.1584	0.4756	1.000	single unit channel and in the unit status table for a	0.3797	0.0174
+0.1730	0.4756	1.000	multi-unit channel. The release indicator is set by the	0.4117	0.0174
+0.1875	0.4737	1.000	actuator whenever a release pseudo-operation is	0.3628	0.0189
+0.2035	0.4756	1.000	requested. The indicator is tested by the receptor.	0.3835	0.0160
+0.2340	0.1335	1.000	.62	0.0320	0.0160
+0.2352	0.2875	1.000	SUNRES	0.0641	0.0121
+0.2355	0.4774	1.000	0 - Not reserved	0.1353	0.0103
+0.2500	0.4774	1.000	1 - Reserved	0.1090	0.0103
+0.2791	0.4756	1.000	This indicator exists in the channel status table of a	0.3872	0.0131
+0.2936	0.4756	1.000	single unit channel and in the unit status table of a	0.3722	0.0161
+0.3081	0.4756	1.000	multi-unit channel. It is a second level indicator for	0.3985	0.0146
+0.3211	0.4754	1.000	special situations in I-O assignment reservation of	0.3819	0.0191
+0.3342	0.4756	1.000	units. It has priority over SOVRES. It is set and	0.3759	0.0204
+0.3488	0.4737	1.000	tested by the i-O assignment program.	0.2932	0.0191
+0.3806	0.2875	1.000	SOVRES	0.0678	0.0164
+0.3808	0.1353	1.000	.63	0.0320	0.0174
+0.3821	0.4756	1.000	0 - Not reserved	0.1391	0.0147
+0.3967	0.4756	1.000	1 - Reserved	0.1128	0.0147
+0.4244	0.4774	1.000	This indicator exists in the channel status table of a	0.3872	0.0174
+0.4403	0.4756	1.000	single unit channel and in the unit status table of a	0.3759	0.0133
+0.4535	0.4774	1.000	multi-unit channel. It is used by I-O assignment to	0.3853	0.0145
+0.4694	0.4756	1.000	ascertain those units which have been preassigned in	0.3966	0.0132
+0.4824	0.4756	1.000	the overlapped mode of operation and is set and tested	0.4060	0.0176
+0.4970	0.4756	1.000	by I-O assignment.	0.1466	0.0176
+0.5291	0.0695	1.000	Channel Status Table Entry - Multi-Unit Channel	0.3684	0.0161
+0.5578	0.2893	1.000	Symbol	0.0623	0.0195
+0.5579	0.6183	1.000	Content	0.0660	0.0164
+0.5581	0.1335	1.000	Bits	0.0395	0.0145
+0.5858	0.4774	1.000	This field contains the address of the first entry in the	0.4079	0.0176
+0.5885	0.2913	1.000	SUNNA	0.0546	0.0134
+0.5886	0.1372	1.000	.00-.27	0.0715	0.0161
+0.6003	0.4756	1.000	unit status table for the channel.	0.2462	0.0176
+0.6319	0.1371	1.000	.28 -.31	0.0717	0.0167
+0.6319	0.2912	1.000	Not Used	0.0679	0.0137
+0.6612	0.4774	1.000	This field exists only in the channel status table of a	0.3910	0.0147
+0.6624	0.2912	1.000	SARCAD	0.0661	0.0139
+0.6626	0.1353	1.000	.32 -.49	0.0734	0.0148
+0.6773	0.4793	1.000	multi-unit channel. It contains the arc address of the	0.3985	0.0118
+0.6918	0.4774	1.000	last arc to be located on the disk to which the channel	0.3985	0.0118
+0.7064	0.4793	1.000	status table entry refers. It is set by the actuator	0.3759	0.0117
+0.7224	0.4774	1.000	whenever a locate or read or write of the disk is com-	0.4041	0.0102
+0.7365	0.4773	1.000	pleted.	0.0548	0.0124
+0.7660	0.1391	1.000	.50 - .55	0.0695	0.0116
+0.7660	0.3571	1.000	single unit channel.	0.1466	0.0116
+0.7660	0.2932	1.000	Same as	0.0658	0.0102
+0.7949	0.2913	1.000	SUNIT	0.0490	0.0119
+0.7951	0.4793	1.000	0 - 7 indicates which logical or physical unit is presently	0.4229	0.0131
+0.7964	0.1391	1.000	.56 -.58	0.0696	0.0119
+0.8109	0.4793	1.000	selected for the specific channel to which the channel	0.3947	0.0103
+0.8255	0.4793	1.000	status entry refers. This field exists only in a multi-	0.4004	0.0118
+0.8400	0.4774	1.000	unit channel status table entry. It is set by the actuator	0.4154	0.0118
+0.9227	0.0713	1.000	250	0.0285	0.0121

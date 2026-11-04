@@ -1,0 +1,115 @@
+0.0959	0.0714	1.000	failure, tape breakage, etc.). The TPPRUN index	0.3816	0.0132
+0.0973	0.5150	1.000	IOD/REEL Absolute Number of	0.2650	0.0133
+0.0988	0.8327	1.000	I-O	0.0282	0.0102
+0.1101	0.0713	1.000	must therefore be stepped over the current slot.	0.3611	0.0135
+0.1133	0.8346	1.000	reference	0.0733	0.0103
+0.1134	0.6109	1.000	exit	0.0320	0.0116
+0.1134	0.6936	1.000	fields	0.0451	0.0116
+0.1279	0.8346	1.000	number	0.0583	0.0102
+0.1391	0.5149	1.000	Uncode (Figure 32) uses two subroutines, SCA6 and	0.3913	0.0182
+0.1570	0.5000	1.000	SBRK8, respectively to convert the card to BCD, and	0.4023	0.0131
+0.1637	0.0674	1.000	Job Control Subroutines	0.1866	0.0166
+0.1715	0.5000	1.000	break out the fields into consecutive full word loca-	0.3891	0.0116
+0.1875	0.5000	1.000	tions. (A field is defined as a collection of charac-	0.3872	0.0116
+0.1926	0.0675	1.000	This section describes job control subroutines,	0.3557	0.0168
+0.2020	0.4981	1.000	ters, none of which is a comma, bounded on the left	0.3947	0.0146
+0.2093	0.0677	1.000	including those that actually perform a job control	0.3759	0.0131
+0.2166	0.5000	1.000	by a comma or column 9 of a card, and on the right	0.3891	0.0131
+0.2220	0.0674	1.000	function such as Decode, Assign, Move, etc., as	0.3708	0.0177
+0.2311	0.5000	1.000	by a comma or column 63 of a card.) The first field	0.3966	0.0116
+0.2397	0.0677	1.000	well as those used for such basic tasks as code con-	0.3929	0.0118
+0.2470	0.5000	1.000	is compared against its mask in the table at YTYPMK.	0.4117	0.0118
+0.2542	0.0677	1.000	version, even though the latter are not functionally a	0.3966	0.0133
+0.2615	0.5000	1.000	If the comparison is successful, further information	0.3947	0.0133
+0.2688	0.0677	1.000	part of job control.	0.1466	0.0118
+0.2761	0.5019	1.000	must be extracted from the card. If not, error	0.3571	0.0133
+0.2906	0.5000	1.000	return is given, and no information is transmitted,	0.3835	0.0132
+0.2979	0.0677	1.000	The Uncode Routine	0.1485	0.0103
+0.3052	0.5000	1.000	unless a JOB card was expected.	0.2481	0.0118
+0.3197	0.5169	1.000	The remainder of Uncode consists of three routines	0.3872	0.0132
+0.3270	0.0676	1.000	At many points in job control 1 and 4 it is necessary	0.3930	0.0149
+0.3342	0.4981	1.000	to extract information from TYPE, LIM, and IOD or	0.3985	0.0146
+0.3430	0.0639	1.000	to verify a B card, convert it to BCD, and get infor-	0.3966	0.0146
+0.3503	0.5019	1.000	REEL cards. The TYPE card routine has an exit to	0.3929	0.0116
+0.3576	0.0677	1.000	mation from it. The uncode subroutine was written	0.3853	0.0116
+0.3648	0.5000	1.000	JC4 if an UPDATE was encountered in the bypass	0.3741	0.0116
+0.3721	0.0658	1.000	to perform this function. The uncode routine is used	0.3985	0.0116
+0.3794	0.5019	1.000	mode. A TYPE, UPDATE card causes uncode to set	0.3929	0.0131
+0.3866	0.0620	1.000	with the following linkage:	0.2011	0.0131
+0.3939	0.5000	1.000	loader limits to their maximum, the read source ($13)	0.4098	0.0131
+0.4011	0.1316	1.000	LVI, $14, A	0.0922	0.0147
+0.4084	0.5000	1.000	to $SCR, and SCORG to 1 (compile). When the	0.3515	0.0131
+0.4156	0.1334	1.000	B, YUNCOD	0.0922	0.0133
+0.4230	0.5000	1.000	$RESLD package gets control, it will be set up to load	0.4098	0.0131
+0.4302	0.0827	1.000	A	0.0113	0.0102
+0.4302	0.1316	1.000	XW, B, C, D	0.1015	0.0131
+0.4375	0.5019	1.000	C and P cards directly into MCP. Otherwise uncode	0.3947	0.0131
+0.4462	0.1335	1.000	VF, Disp	0.0695	0.0117
+0.4520	0.5000	1.000	sets up communication region (KSILO) bits 1.18-1.35	0.4023	0.0131
+0.4599	0.1314	1.000	, FWA (1)	0.0681	0.0133
+0.4666	0.5000	1.000	in the calling sequence. JC4 gets the actual compiler	0.4041	0.0116
+0.4753	0.1297	1.000	,RA(J)	0.0602	0.0131
+0.4811	0.5000	1.000	name from YUCBF2, the breakout buffer. The LIM	0.3929	0.0131
+0.4897	0.1316	1.000	(Error Return)	0.1128	0.0118
+0.4954	0.5018	1.000	card routine converts the limits from BCD to binary,	0.3986	0.0134
+0.5042	0.1316	1.000	(Normal Return)	0.1241	0.0118
+0.5115	0.5000	1.000	and verifies that they do not violate MCP memory.	0.3816	0.0118
+0.5181	0.0636	1.000	where:	0.0532	0.0132
+0.5261	0.5019	1.000	Note that the checking allows for the possibility that	0.3910	0.0118
+0.5333	0.0827	1.000	Disp denotes the type of card expected:	0.2932	0.0118
+0.5406	0.5000	1.000	MCP might occupy lower rather than upper memory.	0.3985	0.0132
+0.5479	0.1410	1.000	- TYPE	0.0696	0.0103
+0.5494	0.0977	1.000	0.0	0.0263	0.0102
+0.5552	0.5019	1.000	The IOD card routine sets up the IOD information in	0.3891	0.0118
+0.5625	0.1617	1.000	JOB	0.0357	0.0102
+0.5640	0.0977	1.000	1.0	0.0263	0.0102
+0.5697	0.5000	1.000	the format required by the decode and move sub-	0.3684	0.0132
+0.5785	0.1654	1.000	LIM	0.0320	0.0102
+0.5785	0.0977	1.000	2.0	0.0263	0.0102
+0.5857	0.5000	1.000	routines.	0.0696	0.0103
+0.5930	0.0977	1.000	4.0	0.0282	0.0102
+0.5930	0.1410	1.000	- IOD or REEL	0.1278	0.0103
+0.6003	0.5169	1.000	Data and storage used by Uncode are: YIDX12 and	0.3797	0.0116
+0.6076	0.0827	1.000	FWA(I is the location of the card.	0.2575	0.0116
+0.6126	0.5018	1.000	YUCX12 are used by the IOD and LIM card routines,	0.3931	0.0139
+0.6221	0.0827	1.000	RA(J) is the location where the converted card is	0.3703	0.0116
+0.6294	0.5000	1.000	respectively, to convert numbers from BCD to binary.	0.4117	0.0116
+0.6381	0.0977	1.000	to be put. If RA(J) = 0, no transmission is	0.3233	0.0116
+0.6439	0.5019	1.000	YUTOE is the symbolic location of the reference	0.3647	0.0116
+0.6481	0.0939	1.000	desired.	0.0697	0.0178
+0.6599	0.5000	1.000	number on a BCD IOD card. Cards are converted to	0.3966	0.0131
+0.6627	0.0808	1.000	Error return signifies that the card designated by	0.3778	0.0191
+0.6731	0.5018	1.000	BCD into YUCBF1 and broken out into YUCBF2.	0.3612	0.0144
+0.6788	0.0977	1.000	Disp was unidentifiable or contained in uncor-	0.3477	0.0176
+0.6890	0.5019	1.000	YGOMK through YFORTR is the uncode symbol table.	0.4004	0.0132
+0.6917	0.0939	1.000	rectible error.	0.1204	0.0193
+0.7035	0.5000	1.000	Uncode also uses ABSSID, a data entry in the loader,	0.4004	0.0132
+0.7078	0.0789	1.000	Normal return signifies that the card designated	0.3665	0.0174
+0.7179	0.5000	1.000	and YNLST and YNOPUN in the JC4 compile and go	0.3853	0.0133
+0.7209	0.0940	1.000	by Disp has been recognized, converted, and	0.3421	0.0189
+0.7340	0.5000	1.000	subroutines.	0.0959	0.0102
+0.7355	0.0902	1.000	processed.	0.0921	0.0189
+0.7515	0.0771	1.000	For a normal return, the XW at A will contain	0.3553	0.0189
+0.7660	0.0620	1.000	information according to Disp:	0.2331	0.0189
+0.7834	0.0752	1.000	Disp	0.0395	0.0145
+0.7849	0.4098	1.000	D	0.0150	0.0131
+0.8009	0.5000	1.000	Decode, Assign, Move	0.1711	0.0131
+0.8110	0.0789	1.000	TYPE	0.0489	0.0145
+0.8119	0.2574	1.000	Bits 1.18-1.35	0.1131	0.0172
+0.8285	0.2538	1.000	in communication	0.1372	0.0145
+0.8296	0.4999	1.000	These three subroutines perform key functions in	0.3724	0.0140
+0.8410	0.2554	1.000	region	0.0551	0.0171
+0.8459	0.4981	1.000	moving jobs through MCP. Decode sets up I-O	0.3553	0.0132
+0.8605	0.4962	1.000	assignment tables in phase 1 (or phase 4 bypass).	0.3778	0.0132
+0.8691	0.2556	1.000	Number of fields	0.1335	0.0176
+0.8692	0.0771	1.000	JOB	0.0376	0.0160
+0.8721	0.5000	1.000	Assign associates physical I-O units with symbolic	0.3797	0.0161
+0.8894	0.4981	1.000	I-O requests, assigning tape units as far ahead as	0.3759	0.0133
+0.8983	0.0771	1.000	LIM	0.0376	0.0160
+0.8996	0.1729	1.000	Lower	0.0527	0.0161
+0.8997	0.2556	1.000	Upper limit	0.0940	0.0176
+0.9039	0.4981	1.000	possible. Move sets up the I-O controls to run the	0.3835	0.0133
+0.9055	0.4023	1.000	---	0.0244	0.0073
+0.9142	0.1711	1.000	limit	0.0451	0.0160
+0.9185	0.4981	1.000	immediate job.	0.1147	0.0118
+0.9491	0.0620	1.000	66	0.0188	0.0116

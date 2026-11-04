@@ -1,0 +1,79 @@
+0.0814	0.8553	1.000	OUTPUT	0.0714	0.0174
+0.1409	0.5320	1.000	Box 17	0.0602	0.0161
+0.1439	0.1090	1.000	LINKAGE	0.0733	0.0131
+0.1700	0.5320	1.000	A separate flow chart is provided for DD's.	0.3252	0.0161
+0.1730	0.1090	1.000	The calling sequence is: SIC, Outgz; B, Outgo*.	0.3609	0.0161
+0.1991	0.5338	1.000	Boxes 9, 10, 11, 18, 22, 26	0.2143	0.0176
+0.2032	0.1089	1.000	DETAILS	0.0716	0.0123
+0.2282	0.5320	1.000	The binary output is stored in the buffer, after which	0.3966	0.0176
+0.2324	0.1090	1.000	During Pass 2b, as each unit is completed, control	0.3778	0.0147
+0.2442	0.5338	1.000	OUTPUT determines whether there is enough data	0.3741	0.0146
+0.2470	0.1071	1.000	is given to OUTPUT to create the listing print line	0.3759	0.0133
+0.2587	0.5320	1.000	to punch a card in the existing punch mode. OUTPUT	0.4004	0.0161
+0.2602	0.1090	1.000	and store the binary output into the punch buffer,	0.3628	0.0160
+0.2703	0.5301	1.000	uses the routine OPPUN to perform the punch function.	0.4135	0.0176
+0.2733	0.1090	1.000	punching a card whenever necessary. OUTPUT uses	0.3947	0.0174
+0.2863	0.1090	1.000	the subroutines, OPLIST and OPPUN, for listing and	0.3947	0.0189
+0.3052	0.1090	1.000	punching. The mechanics of page headings, numbering Box 12	0.4756	0.0146
+0.3166	0.1088	1.000	and overflow are done by OEDIT. At the end of the	0.3821	0.0211
+0.3299	0.5282	1.000	The binary output of the instruction is picked up from	0.4041	0.0189
+0.3342	0.1109	1.000	entire assembly, the following subroutines are used:	0.3910	0.0146
+0.3455	0.2199	1.000	if the PUNSYM or PUNALL pseudo-ops	0.2971	0.0168
+0.3473	0.5301	1.000	word 5 of the instruction unit, converted and stored	0.3891	0.0133
+0.3503	0.1259	1.000	NQBTP:	0.0695	0.0174
+0.3605	0.5320	1.000	in the print image.	0.1429	0.0160
+0.3618	0.2218	1.000	have been specified.	0.1579	0.0176
+0.3764	0.2218	1.000	prints lists of undefined, multiply and	0.2857	0.0176
+0.3778	0.1259	1.000	NUNDSY:	0.0734	0.0163
+0.3909	0.5320	1.000	Boxes 14,19,23	0.1353	0.0176
+0.3924	0.2293	1.000	ircularly defined symbols, plus the	0.2632	0.0161
+0.4055	0.2293	1.000	entire symbol table if PRNTALL was	0.2669	0.0161
+0.4185	0.5338	1.000	If there is a name associated with the instruction,	0.3722	0.0191
+0.4215	0.2237	1.000	specified.	0.0771	0.0160
+0.4330	0.5338	1.000	OUTPUT uses NAMEIN to get it from the name file,	0.3891	0.0191
+0.4345	0.2218	1.000	prints the list of error messages.	0.2556	0.0176
+0.4368	0.1257	1.000	ERRPRT:	0.0757	0.0174
+0.4476	0.5338	1.000	and stores it in the print image. Depending on the	0.3778	0.0191
+0.4636	0.5320	1.000	length of the name, this may require an extra line.	0.3835	0.0176
+0.4651	0.1109	1.000	FLOW CHART DESCRIPTION	0.2218	0.0161
+0.4954	0.1089	1.000	Воx 6	0.0472	0.0164
+0.4956	0.5338	1.000	Box 5.	0.0470	0.0160
+0.5233	0.5320	1.000	The symbolie statement also may require more than	0.3910	0.0174
+0.5233	0.1090	1.000	The subroutine OEDIT is used to print the page	0.3534	0.0174
+0.5378	0.5338	1.000	one line for the listing.	0.1767	0.0174
+0.5406	0.1090	1.000	heading and program boundaries for the assembly.	0.3759	0.0146
+0.5680	0.5337	1.000	Box 28	0.0567	0.0166
+0.5682	0.1109	1.000	Box 2	0.0470	0.0176
+0.5973	0.1090	1.000	The error flags for undefined, multiply and pseudo-	0.3872	0.0176
+0.5988	0.5338	1.000	OEDIT inserts the carriage control character and line	0.4041	0.0131
+0.6118	0.1090	1.000	defined symbols and contagious errors are printed	0.3778	0.0176
+0.6128	0.5338	1.000	number in the print image, as well as headings where	0.4023	0.0158
+0.6264	0.5338	1.000	a new page is required.	0.1786	0.0161
+0.6275	0.1088	1.000	here.	0.0474	0.0168
+0.6566	0.5337	1.000	Boxes 29, 37	0.1017	0.0181
+0.6597	0.1109	1.000	Boxes 15, 16	0.0978	0.0149
+0.6845	0.5301	1.000	If there have been any errors associated with the unit	0.4041	0.0176
+0.6890	0.1109	1.000	IOD cards specified by the programmer are punched,	0.3929	0.0132
+0.6990	0.5337	1.000	in process, the page and line number are stored in	0.3800	0.0186
+0.7048	0.1109	1.000	as well as the following:	0.1786	0.0103
+0.7147	0.5338	1.000	the error entry by the subroutine ERRNUM.	0.3271	0.0154
+0.7194	0.1447	1.000	Absolute decks: TYPE, GO	0.2199	0.0132
+0.7340	0.2838	1.000	LIM,-	0.0451	0.0116
+0.7452	0.5356	1.000	Boxes 31, 32	0.0999	0.0183
+0.7485	0.1447	1.000	Relocatable decks: TYPE, GO	0.2331	0.0131
+0.7631	0.2989	1.000	LIM,-	0.0414	0.0131
+0.7733	0.5338	1.000	When the END unit of the assembly is processed, a	0.3853	0.0174
+0.7761	0.1447	1.000	Fortran decks: TYPE, GO, FORTRAN	0.2951	0.0161
+0.7892	0.5338	1.000	final check is made to ascertain that the name file	0.3741	0.0145
+0.8017	0.5338	1.000	has been exhausted and therefore correctly matched	0.3892	0.0173
+0.8096	0.1109	1.000	Boxes 20, 24, 25	0.1259	0.0116
+0.8182	0.5338	1.000	with the instructions.	0.1635	0.0161
+0.8387	0.1109	1.000	The action taken for the various pseudo-ops, is	0.3496	0.0116
+0.8472	0.5338	1.000	Boxes 33, 38	0.1016	0.0177
+0.8532	0.1109	1.000	explained in separate flow charts.	0.2519	0.0117
+0.8764	0.5338	1.000	The PUNSYM subroutine constructs card images and	0.3929	0.0176
+0.8852	0.1109	1.000	* This subroutine is referred to in the text as	0.3421	0.0117
+0.8909	0.5320	1.000	punches cards for each symbol requested, or all	0.3665	0.0176
+0.9012	0.1090	1.000	OUTPUT not as QUTGO.	0.1842	0.0131
+0.9360	0.8252	1.000	OUTPUT	0.0696	0.0132
+0.9390	0.9023	1.000	157	0.0263	0.0087

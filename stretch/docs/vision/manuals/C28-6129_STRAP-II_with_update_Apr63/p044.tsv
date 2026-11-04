@@ -1,0 +1,82 @@
+0.0639	0.5414	1.000	be addressed by writing:	0.1861	0.0161
+0.0654	0.1203	1.000	the listing after an SEM has been used. The ability to	0.4004	0.0146
+0.0799	0.1203	1.000	specify individual messages or all messages at once	0.3966	0.0146
+0.0842	0.6560	1.000	A (9,9', 9'',...,9")	0.1692	0.0161
+0.0959	0.1203	1.000	is also available with ReM. Thus, following the state-	0.3966	0.0132
+0.1045	0.5451	1.000	Note that the first element of the array has the ad•	0.3910	0.0146
+0.1134	0.1203	1.000	ment	0.0395	0.0087
+0.1163	0.2556	1.000	SEM, 9, 16, 18	0.1203	0.0146
+0.1206	0.5451	1.000	dress:	0.0433	0.0103
+0.1250	0.6842	1.000	А (0,0,0,...,0)	0.1128	0.0145
+0.1366	0.1203	1.000	the pseudo operation	0.1579	0.0146
+0.1453	0.5451	1.000	and the last element is located at:	0.2444	0.0116
+0.1570	0.2575	1.000	REM, 16	0.0714	0.0145
+0.1642	0.6128	1.000	A (L-1, L'-1, L''-1,...,L'-1)	0.2575	0.0161
+0.1758	0.1184	1.000	restores normal error printing to message 16, while	0.3985	0.0146
+0.1860	0.5451	1.000	The address of an arbitrary element in the array may	0.3929	0.0131
+0.1918	0.1203	1.000	messages 9 and 18 remain suppressed.	0.2782	0.0146
+0.2006	0.5451	1.000	be computed by means of the formula:	0.2820	0.0146
+0.2151	0.1203	1.000	8. LINK-Link	0.1034	0.0116
+0.2209	0.5602	1.000	Address of A(9,9',9'',...,9") = Address of A(O,	0.3797	0.0161
+0.2294	0.2931	1.000	LINK	0.0472	0.0136
+0.2397	0.5414	1.000	0,0,0) +FLX(q+q'Ltq''LL'+9'''LL'L'+	0.3985	0.0176
+0.2500	0.1353	1.000	The LInk pseudo operation provides the program-	0.3816	0.0145
+0.2587	0.5451	1.000	...)	0.0320	0.0116
+0.2660	0.1203	1.000	mer with a shorthand notation for an entry or link-	0.3966	0.0131
+0.2776	0.5432	1.000	where FL is the field length of any element in the ar-	0.3966	0.0146
+0.2797	0.1202	1.000	age into a subroutine. At the point in the code where	0.3968	0.0156
+0.2921	0.5432	1.000	ray. An array address computed in this manner may	0.3947	0.0146
+0.2964	0.1203	1.000	the LINk is encountered, straP substitutes the 7030	0.3966	0.0147
+0.3081	0.5432	1.000	be used in any programmer symbolized field not in	0.3966	0.0146
+0.3137	0.1202	1.000	operation	0.0697	0.0122
+0.3169	0.2594	1.000	LVI, $15, $+2	0.1128	0.0160
+0.3227	0.5414	1.000	parentheses, except a general parenthetical integer	0.3985	0.0174
+0.3357	0.1164	1.000	which follows the custom of using index register 15	0.4007	0.0196
+0.3387	0.5414	1.000	entry. The dimension of a DR statement must be evalu-	0.3985	0.0160
+0.3532	0.1184	1.000	to store the instruction counter value of the return	0.3985	0.0117
+0.3532	0.5432	1.000	ated by the end of pass 1. Therefore, they may be de-	0.3966	0.0160
+0.3677	0.5432	1.000	fined by a chain of syn's ending in an integer.	0.3402	0.0160
+0.3677	0.1184	1.000	instruction and has become the standard entry mecha-	0.3985	0.0145
+0.3852	0.5602	1.000	L, L', L'', etc., must be integers in symbolic or nu-	0.3797	0.0131
+0.3852	0.1184	1.000	nism.	0.0414	0.0102
+0.3982	0.5432	1.000	meric form. Referring to "Address Field" to apply	0.3947	0.0161
+0.4051	0.1183	1.000	9. DR also provides a convenient method of defining	0.3968	0.0169
+0.4111	0.5430	1.000	index register I to the second element of a one dimen-	0.3969	0.0200
+0.4215	0.1184	1.000	multidimensional arrays of data and of addressing in-	0.3985	0.0145
+0.4317	0.5432	1.000	sional array A, write:	0.1579	0.0132
+0.4375	0.1184	1.000	dividual elements of arrays so defined. All indexing	0.3966	0.0131
+0.4462	0.7086	1.000	A(1)(I)	0.0639	0.0145
+0.4520	0.1165	1.000	required for the manipulation of the array must be	0.3985	0.0146
+0.4665	0.1181	1.000	handled by the programmer.	0.2131	0.0176
+0.4666	0.5432	1.000	where I must be a bit address.	0.2199	0.0116
+0.4839	0.1353	1.000	The statement:	0.1128	0.0103
+0.4869	0.5583	1.000	SYN must be used to define a symbol as an interior	0.3797	0.0131
+0.5015	0.5432	1.000	element of a multidimensional array and have the di-	0.3947	0.0146
+0.5029	0.2180	1.000	DR(dds), (L, L', L'',...,L')	0.2387	0.0160
+0.5044	0.1767	1.000	A	0.0113	0.0102
+0.5174	0.5432	1.000	mensional addressing properties carried along. For	0.3966	0.0147
+0.5218	0.1184	1.000	reserves space for an L XL' XI''X...L" array of	0.3985	0.0161
+0.5332	0.5413	1.000	example:	0.0697	0.0150
+0.5378	0.1184	1.000	data fields. The location counter is skipped forward	0.3966	0.0146
+0.5536	0.1184	1.000	a number of bits equal to the field length (specified in	0.3966	0.0147
+0.5552	0.6090	1.000	Name	0.0452	0.0132
+0.5552	0.7932	1.000	Statement	0.0752	0.0103
+0.5682	0.1165	1.000	the dds) multiplied by the product of the dimensions	0.3985	0.0176
+0.5785	0.7688	1.000	DR (N), (10,20)	0.1241	0.0145
+0.5785	0.6241	1.000	A	0.0132	0.0116
+0.5842	0.1184	1.000	of the array. (If the dds specifies the floating point	0.3966	0.0146
+0.5930	0.7669	1.000	SYN, A (5,5)	0.0978	0.0161
+0.5945	0.6241	1.000	B	0.0150	0.0116
+0.5988	0.1184	1.000	mode, the correct number of full-words is reserved,	0.3985	0.0146
+0.6133	0.5414	1.000	In the above example, the rectangular array goes from	0.3966	0.0146
+0.6148	0.1184	1.000	beginning at a full-word boundary.)	0.2688	0.0146
+0.6279	0.5414	1.000	A (0,0) to A (9,19); B goes from B(-5, -5) to B(4,	0.3966	0.0161
+0.6308	0.1353	1.000	Any symbol A appearing in the name field is at-	0.3797	0.0160
+0.6439	0.5414	1.000	14); 4 and B use identical storage. Thus, A (0,0) -B	0.3966	0.0161
+0.6467	0.1147	1.000	tached to the first element of the array, and the dds is	0.4004	0.0147
+0.6584	0.5395	1.000	(-5,-5); A(1,0) -B(-4,-5); A(1,1)-B(-4, -4);	0.3985	0.0161
+0.6612	0.1147	1.000	attached to the symbol in the normal fashion. Thus,	0.4004	0.0161
+0.6758	0.1147	1.000	in an instruction, a specific element of the array may	0.3985	0.0161
+0.6773	0.5414	1.000	etc.	0.0263	0.0087
+0.9126	0.1672	1.000	IBM 7030	0.0640	0.0106
+0.9128	0.1147	1.000	40	0.0207	0.0116

@@ -1,0 +1,118 @@
+0.0712	0.0695	1.000	The status evaluation routine performs an AND opera-	0.4041	0.0103
+0.0712	0.4962	1.000	mark, and space pseudo-ops, when the verify bit in	0.3816	0.0131
+0.0858	0.4962	1.000	the unit status table is on. If the reel card specified	0.3891	0.0116
+0.0858	0.0695	1.000	tion with the half word mask and the second half word	0.3966	0.0103
+0.1003	0.0695	1.000	of the selected unit status table, and enters the branch	0.4041	0.0116
+0.1003	0.4962	1.000	an unlabeled tape, the label mode and density are set	0.3929	0.0131
+0.1148	0.0695	1.000	table at a position corresponding to the first masked	0.3891	0.0116
+0.1148	0.4962	1.000	to the installation mode and density, the verify bit is	0.3891	0.0131
+0.1267	0.4961	1.000	reset, and control returned to status evaluation	0.3517	0.0162
+0.1294	0.0714	1.000	status bit which was on. Thus, the routine performs	0.3929	0.0131
+0.1439	0.4962	1.000	(ZSTEVL). The label mode and density must be set	0.3853	0.0116
+0.1453	0.0714	1.000	the specified status test, and if the masked status bits	0.4023	0.0116
+0.1599	0.4962	1.000	up even when there is no label, because they will be	0.3835	0.0131
+0.1599	0.0714	1.000	are not all off, enters the proper routine to correct	0.3853	0.0131
+0.1730	0.4962	1.000	used in the event the IOD specification for mode and	0.3835	0.0116
+0.1744	0.0714	1.000	the status. These routines perform the required	0.3647	0.0116
+0.1875	0.4962	1.000	density is null.	0.1128	0.0116
+0.1890	0.0714	1.000	function, turn off the status bit, and return to status	0.3872	0.0117
+0.2035	0.0714	1.000	evaluation. When all the masked status bits are off,	0.3891	0.0117
+0.2035	0.5132	1.000	If the tape is a labeled tape, a set-up read is per-	0.3703	0.0117
+0.2179	0.0714	1.000	the routine branches to the instruction following the	0.3835	0.0133
+0.2179	0.4981	1.000	formed and control is returned to the requestor via	0.3778	0.0103
+0.2324	0.4981	1.000	KSUPP. When the interrupt from the label read is	0.3759	0.0118
+0.2339	0.0714	1.000	branch table.	0.0996	0.0103
+0.2470	0.4981	1.000	received, the verify bit is reset, and for non-MCP	0.3759	0.0133
+0.2485	0.0902	1.000	For example, the write routine requires that the	0.3628	0.0131
+0.2615	0.4981	1.000	units the label is compared with the reel card speci-	0.3891	0.0118
+0.2630	0.0714	1.000	unit be selected, and the tape label verified. It enters	0.4041	0.0118
+0.2761	0.5677	1.000	If they do not compare (RV3SCR) and a	0.2895	0.0118
+0.2775	0.4981	1.000	fication.	0.0678	0.0119
+0.2776	0.0733	1.000	the status evaluation routine with EMKIA in SEVLMK	0.3947	0.0103
+0.2921	0.4981	1.000	seratch tape is being requested, the pseudo-op is	0.3647	0.0131
+0.2921	0.0714	1.000	and EWR18 in SEVLTB. These are defined as:	0.3515	0.0117
+0.3064	0.4981	1.000	examined.	0.0885	0.0121
+0.3067	0.5846	1.000	If it is write or write tape mark, the	0.2726	0.0131
+0.3080	0.1823	1.000	VF, (8)3000	0.0884	0.0120
+0.3081	0.0902	1.000	EMKIA	0.0545	0.0087
+0.3202	0.1801	1.000	B, KKLOC	0.0833	0.0180
+0.3212	0.4962	1.000	write label routine is entered (KWLABL). Other-	0.3722	0.0116
+0.3222	0.0882	1.000	EWR18	0.0549	0.0126
+0.3338	0.1803	1.000	B, RVFY	0.0756	0.0184
+0.3358	0.4981	1.000	wise, an EPGK is faked, since the first operation	0.3703	0.0131
+0.3473	0.0846	1.000	EMKIA has ones corresponding to the bits SSEL	0.3703	0.0176
+0.3503	0.4981	1.000	on a scratch tape must be a write. If a scratch tape	0.3872	0.0116
+0.3633	0.0695	1.000	and SVER in the unit status table. Thus, if the unit	0.3891	0.0176
+0.3648	0.4981	1.000	is not being requested, the tape is unloaded and the	0.3778	0.0131
+0.3764	0.0695	1.000	is not selected, KKLOC will be entered to perform	0.3816	0.0161
+0.3794	0.4981	1.000	operator requested to mount the correct tape. This	0.3835	0.0116
+0.3924	0.0714	1.000	a locate, and if the label is not verified, RVFY will	0.3853	0.0146
+0.3953	0.4981	1.000	will be done only once for a PP tape.	0.2744	0.0116
+0.4018	0.0693	1.000	be entered, prior to performing the requested write.	0.3969	0.0246
+0.4084	0.5150	1.000	If the label compares, or if the tape is an MCP	0.3477	0.0131
+0.4200	0.0714	1.000	The status test for the various pseudo-ops is pre-	0.3741	0.0191
+0.4230	0.4981	1.000	tape, the pseudo-op is examined.	0.2481	0.0131
+0.4244	0.7462	1.000	If it is write or	0.1222	0.0087
+0.4360	0.0714	1.000	sented in Figure 100.	0.1617	0.0176
+0.4390	0.4981	1.000	write tape mark, control is given to KWLABL to	0.3609	0.0132
+0.4535	0.4981	1.000	write the label and ultimately return to status evalua-	0.3966	0.0117
+0.4636	0.0676	1.000	Pseudo-Op	0.0678	0.0191
+0.4679	0.5451	1.000	If the mode specified by the label is null, the	0.3327	0.0133
+0.4695	0.5000	1.000	tion.	0.0357	0.0102
+0.4782	0.3308	1.000	SVER	0.0376	0.0145
+0.4792	0.0675	1.000	Requested	0.0661	0.0168
+0.4797	0.4173	1.000	SCNSSG	0.0526	0.0131
+0.4811	0.2350	1.000	SSEL	0.0301	0.0116
+0.4824	0.4981	1.000	tape is unloaded and the operator is requested to	0.3609	0.0133
+0.4970	0.5000	1.000	mount another tape (KRELOD). If the label mode is	0.3816	0.0133
+0.5044	0.3327	1.000	RVFY	0.0395	0.0145
+0.5058	0.4173	1.000	PCSRD	0.0451	0.0131
+0.5058	0.0695	1.000	Read	0.0357	0.0160
+0.5073	0.2350	1.000	KKLOC	0.0451	0.0131
+0.5130	0.4981	1.000	not null, the unit area table is updated and control	0.3703	0.0131
+0.5261	0.5000	1.000	given to the space label at KSPTM with ZSTEVL set	0.3835	0.0133
+0.5305	0.0677	1.000	Write	0.0395	0.0160
+0.5319	0.3327	1.000	RVFY	0.0377	0.0132
+0.5320	0.2368	1.000	KKLOC	0.0451	0.0131
+0.5421	0.4981	1.000	as the ultimate return in scratch pad memory	0.3383	0.0117
+0.5563	0.4961	1.000	(SSCRPM).	0.0867	0.0154
+0.5567	0.0695	1.000	WEF	0.0320	0.0145
+0.5567	0.3327	1.000	RVFY	0.0395	0.0145
+0.5580	0.2368	1.000	KKLOC	0.0452	0.0133
+0.5809	0.2366	1.000	KKLOC	0.0476	0.0170
+0.5825	0.3307	1.000	RVFY	0.0398	0.0137
+0.5828	0.0695	1.000	Space	0.0395	0.0160
+0.5858	0.5000	1.000	Write Label	0.0883	0.0103
+0.6074	0.0695	1.000	REW, Unload, Free	0.1185	0.0177
+0.6074	0.2368	1.000	KKLOC	0.0471	0.0148
+0.6148	0.5000	1.000	The write label routine is entered at KWLABL (Fig-	0.3853	0.0116
+0.6294	0.4981	1.000	ure 102). It is used to write a new label on a tape	0.3703	0.0131
+0.6352	0.0695	1.000	Figure 100. Branch Table--Address Status Bit Tests	0.2989	0.0146
+0.6453	0.4981	1.000	prior to the first write operation for that tape. It is	0.3872	0.0131
+0.6584	0.5000	1.000	assumed that the tape is positioned between the label	0.3872	0.0131
+0.6744	0.4981	1.000	and the following tape mark.	0.2124	0.0132
+0.6890	0.0883	1.000	Note that the control linkage used with the status	0.3609	0.0117
+0.6890	0.5132	1.000	If the reel card specified a file protected tape, an	0.3684	0.0117
+0.7035	0.5000	1.000	EPGK is faked. Otherwise, the routine does three	0.3741	0.0117
+0.7035	0.0733	1.000	evaluation routine permits returning control to the	0.3741	0.0132
+0.7179	0.0733	1.000	requestor after initiating a setup I-O operation. Since	0.4023	0.0133
+0.7179	0.4962	1.000	setup I-O operations: a backspace, a write label,	0.3741	0.0133
+0.7324	0.4981	1.000	and a write tape mark. It writes the label in its	0.3571	0.0133
+0.7324	0.0714	1.000	SRETAD is set in the unit status table on set up I-O	0.3835	0.0133
+0.7470	0.4981	1.000	density and mode, and the tape mark in the density	0.3759	0.0147
+0.7485	0.0733	1.000	operations, control will be returned to the proper	0.3684	0.0131
+0.7630	0.0714	1.000	unit by the receptor to continue processing the request.	0.4117	0.0118
+0.7630	0.4944	1.000	and mode specified for the file. It returns control,	0.3835	0.0131
+0.7761	0.4981	1.000	via KSUPP after each I-O operations, and when the	0.3797	0.0146
+0.7776	0.0752	1.000	Furthermore, intermediate I-O requests on other	0.3665	0.0131
+0.7921	0.0733	1.000	units may use the status evaluation routine while a	0.3741	0.0131
+0.7921	0.5000	1.000	tape mark has been written the routine returns to	0.3647	0.0117
+0.8067	0.4981	1.000	status evaluation (ZSTEVL).	0.2124	0.0131
+0.8081	0.0733	1.000	set up I-O is in progress.	0.1917	0.0116
+0.8371	0.4981	1.000	Space Label	0.0922	0.0134
+0.8372	0.0714	1.000	Verify	0.0508	0.0131
+0.8648	0.4981	1.000	The space label routine is entered at RSIFLK (Fig-	0.3797	0.0146
+0.8663	0.0733	1.000	The verify routine is entered at RVFY (Figure 101)	0.3797	0.0116
+0.8794	0.5000	1.000	ure 103). It is entered from the verify routine at	0.3647	0.0131
+0.8808	0.0733	1.000	during status evaluation for read, write, write tape	0.3835	0.0131
+0.9230	0.0695	1.000	180	0.0226	0.0087

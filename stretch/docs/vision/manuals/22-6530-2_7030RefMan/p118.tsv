@@ -1,0 +1,106 @@
+0.0585	0.1013	1.000	4. The operation of certain units has been inter-	0.3727	0.0211
+0.0609	0.4981	1.000	control unit or due to the depression of the stop key,	0.3947	0.0161
+0.0766	0.1201	1.000	rupted by a depression of the stor key. Most	0.3557	0.0196
+0.0767	0.5074	1.000	he unit-ready bit is off. On the other hand, malfun	0.3781	0.0166
+0.0913	0.5074	1.000	ioning of the exchange and errors introduced in th	0.3780	0.0150
+0.0930	0.1241	1.000	units, however, are designed so that a depres-	0.3515	0.0146
+0.1061	0.4981	1.000	transmission of data, control codes, or selection ad-	0.3966	0.0161
+0.1090	0.1241	1.000	sion of the stop key interrupts the operation	0.3496	0.0131
+0.1221	0.5000	1.000	dresses do not cause the not-ready status.	0.3008	0.0161
+0.1229	0.1258	1.000	without causing unit-check. On these units the	0.3500	0.0169
+0.1402	0.1240	1.000	operation is automatically resumed as soon as	0.3517	0.0126
+0.1555	0.1241	1.000	the ready condition is restored.	0.2331	0.0146
+0.1599	0.5000	1.000	END EXCEPTION (EE)	0.1541	0.0131
+0.1730	0.0996	1.000	Il a unit check is caused by uncorrectable data	0.3759	0.0161
+0.1758	0.5000	1.000	This bit is used to signal a number of exceptional	0.3947	0.0161
+0.1890	0.0902	1.000	errors in a READ or WRITE, data transfer proceeds nor-	0.3853	0.0117
+0.1918	0.5000	1.000	conditions usually associated with the recording me-	0.3947	0.0161
+0.2031	0.0901	1.000	mally until the end of the current block, at which	0.3857	0.0167
+0.2064	0.5000	1.000	dium or some subdivision of the data to be trans-	0.3947	0.0161
+0.2165	0.0881	1.000	time the operation is terminated and both the uk and	0.3877	0.0218
+0.2224	0.5000	1.000	mitted. It indicates that an operation has been ter-	0.3947	0.0161
+0.2324	0.0883	1.000	EoP control word status bits are turned on. Regard-	0.3891	0.0147
+0.2384	0.5019	1.000	minated because of conditions such as:	0.2782	0.0147
+0.2485	0.1635	1.000	setting of the multiple block bit, the op-	0.3139	0.0176
+0.2569	0.5167	1.000	1. A unit reached an out-of-material condition	0.3781	0.0194
+0.2645	0.0883	1.000	eration never proceeds beyond the block containing	0.3891	0.0176
+0.2761	0.5432	1.000	(e.g., empty card hopper, full card stacker, end	0.3515	0.0146
+0.2776	0.0902	1.000	the error. A data error thus can cause the Eor indi-	0.3872	0.0161
+0.2913	0.5413	1.000	of tape during writing).	0.1731	0.0147
+0.2936	0.0883	1.000	cation to be given before the last block specified in	0.3891	0.0174
+0.3109	0.5188	1.000	2. A tape mark has been sensed on tape during	0.3759	0.0147
+0.3124	0.0902	1.000	the instruction has been reached. The program must	0.3872	0.0118
+0.3239	0.0901	1.000	use the CoPy CONTROL WORD instruction to determine	0.3874	0.0149
+0.3270	0.5432	1.000	reading or spacing.	0.1429	0.0131
+0.3415	0.0865	1.000	how far the operation has progressed and whether	0.3929	0.0161
+0.3459	0.5207	1.000	3. The erase key has been pressed on the console.	0.3759	0.0147
+0.3576	0.0902	1.000	or not all blocks have been read or written.	0.3214	0.0131
+0.3683	0.5206	1.000	When an end-exception indication is caused, data	0.3762	0.0180
+0.3735	0.1053	1.000	When a data error indication is caused by a parity	0.3722	0.0146
+0.3836	0.5055	1.000	transfer is terminated at the end of the current block.	0.3912	0.0168
+0.3894	0.0921	1.000	failure in a control code or selection address, the de-	0.3872	0.0147
+0.4003	0.5074	1.000	At the same time the EE status bit in the control word	0.3893	0.0141
+0.4055	0.0921	1.000	coding of the information is suppressed, and the op-	0.3872	0.0146
+0.4172	0.5056	1.000	is turned on. The ready status of the unit may or may	0.3929	0.0147
+0.4198	0.0920	1.000	eration is not executed. As in the case of other data	0.3874	0.0148
+0.4317	0.5075	1.000	not be affected by end-exception. If the Ee indication	0.3910	0.0147
+0.4360	0.0921	1.000	errors, the uk indication in this case is accompanied	0.3872	0.0146
+0.4462	0.5056	1.000	is due to a condition which requires operator inter-	0.3929	0.0145
+0.4472	0.0918	1.000	by EoP, but the EPGK indication for invalid control	0.3896	0.0210
+0.4621	0.5056	1.000	vention (eg., empty card hopper), it causes the unit-	0.3910	0.0161
+0.4679	0.0921	1.000	codes is always suppressed.	0.1880	0.0147
+0.4750	0.5054	1.000	ready bit to be turned off. Other causes of the EF	0.3913	0.0182
+0.4839	0.1053	1.000	When a unit check is caused by any type of mal-	0.3759	0.0146
+0.4927	0.5056	1.000	indication do not affect the unit-ready status bit	0.3947	0.0145
+0.5000	0.0921	1.000	functioning in the unit or in the exchange, or when	0.3891	0.0145
+0.5102	0.5075	1.000	(e.g., tape mark).	0.1297	0.0160
+0.5126	0.0919	1.000	the operator interrupts the operation, data transfer	0.3896	0.0204
+0.5305	0.0921	1.000	is immediately terminated, and only the UK bit is	0.3910	0.0146
+0.5421	0.5094	1.000	END OF OPERATION (EOP)	0.1880	0.0131
+0.5446	0.0920	1.000	turned on. If the new control word cannot be fetched	0.3894	0.0153
+0.5596	0.5094	1.000	This bit in the absence of the uk bit indicates that an	0.3891	0.0116
+0.5609	0.0940	1.000	because of an error in the core storage address of the	0.3891	0.0147
+0.5741	0.5094	1.000	operation initiated for the unit has been completed as	0.3910	0.0160
+0.5770	0.0921	1.000	control word, the original contents of the exchange	0.3910	0.0146
+0.5886	0.5074	1.000	specified by the instruction and its control words, if	0.3932	0.0182
+0.5915	0.0940	1.000	control word location are not altered. If the fetching	0.3891	0.0131
+0.6011	0.5091	1.000	any. EoP in conjunction with uk indicates that an un-	0.3933	0.0217
+0.6076	0.0921	1.000	is successful but the control word has an uncorrect-	0.3891	0.0131
+0.6179	0.0918	1.000	able error, the new control word in its incorrect form	0.3915	0.0216
+0.6198	0.5093	1.000	correctable data error has been discovered in the last	0.3912	0.0146
+0.6352	0.5094	1.000	block. The Eop indication is given for all input-out-	0.3910	0.0146
+0.6373	0.0938	1.000	replaces the old one. Similarly, the exchange control	0.3894	0.0171
+0.6492	0.5111	1.000	put operations except COPY CONTROL WORD and except	0.3913	0.0184
+0.6510	0.0938	1.000	word location contains an incorrect control word	0.3894	0.0165
+0.6672	0.5075	1.000	when an seoP (suppress end of operation) instruc-	0.3929	0.0160
+0.6685	0.0921	1.000	when the error is discovered by means of parity	0.3929	0.0133
+0.6775	0.5110	1.000	tion is completed without causing a UK or EE indica-	0.3915	0.0219
+0.6827	0.0919	1.000	checking in the modification cycle. The Eop bit in	0.3914	0.0186
+0.6990	0.5093	1.000	tion.	0.0377	0.0147
+0.6991	0.0940	1.000	the above cases is not turned on regardless of how	0.3910	0.0131
+0.7134	0.0939	1.000	late in execution of the instruction the error is dis-	0.3930	0.0151
+0.7135	0.5262	1.000	When no uncorrectable data errors are discovered in	0.3762	0.0155
+0.7275	0.5110	1.000	a READ Or WRITE, the EoP bit in the control word is	0.3915	0.0205
+0.7322	0.0939	1.000	covered.	0.0585	0.0123
+0.7439	0.5092	1.000	turned on at the end of the block in which data trans-	0.3932	0.0183
+0.7470	0.1090	1.000	Whenever a READ Or WRITe is terminated with a	0.3759	0.0133
+0.7571	0.5091	1.000	fer is completed. Data transfer is considered as com-	0.3953	0.0218
+0.7630	0.0940	1.000	unit check for any of the reasons listed above, the	0.3910	0.0146
+0.7737	0.5091	1.000	pleted when all the words as specified by the word	0.3935	0.0222
+0.7771	0.0957	1.000	unit has been started and the first block of data has	0.3913	0.0156
+0.7921	0.5094	1.000	count in conjunction with the chain and multiple	0.3947	0.0161
+0.7936	0.0959	1.000	been moved at the unit. This takes place even if the	0.3910	0.0146
+0.8043	0.5129	1.000	flags have been read or written. When uncorrectable	0.3914	0.0187
+0.8096	0.0959	1.000	first control word cannot be fetched. In case of WRITE,	0.3910	0.0131
+0.8227	0.5132	1.000	data errors are discovered, both the EoP and uk indi-	0.3910	0.0131
+0.8236	0.0957	1.000	a word consisting of zeros is written if the first data	0.3913	0.0175
+0.8363	0.5111	1.000	cations are given at the end of the block in which the	0.3932	0.0193
+0.8415	0.0959	1.000	word cannot be obtained.	0.1861	0.0118
+0.8532	0.5132	1.000	error is discovered, regardless of whether or not the	0.3910	0.0132
+0.8576	0.1109	1.000	The state of the unit-ready bit after a uk depends	0.3759	0.0131
+0.8652	0.5129	1.000	operation is completed. As long as the above con-	0.3933	0.0202
+0.8694	0.0956	1.000	upon the cause of the uk indication. If the indica-	0.3933	0.0204
+0.8808	0.5148	1.000	ditions are satisfied, the turning on of the EoP bit is	0.3915	0.0196
+0.8881	0.0977	1.000	tion is due to some malfunctioning in the unit or	0.3910	0.0146
+0.9201	0.8835	1.000	115	0.0226	0.0102
+0.9215	0.7274	1.000	IBM 7619 Exchange	0.1278	0.0116

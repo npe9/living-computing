@@ -1,0 +1,110 @@
+0.0755	0.0620	1.000	SERVICE ROUTINES	0.1579	0.0133
+0.1017	0.4906	1.000	registers 4, and 10 through 13 contains the following	0.3966	0.0161
+0.1017	0.0658	1.000	The service routines are those disabled MCP routines	0.4004	0.0146
+0.1148	0.4944	1.000	in the value field:	0.1353	0.0146
+0.1176	0.0657	1.000	entered from the identifier which carry out service	0.3817	0.0132
+0.1308	0.5263	1.000	Index	0.0451	0.0145
+0.1319	0.0638	1.000	pseudo-op requests. They may be considered in	0.3631	0.0156
+0.1452	0.6259	1.000	VF Content	0.0922	0.0193
+0.1465	0.5262	1.000	Register	0.0698	0.0180
+0.1512	0.0658	1.000	seven groups:	0.1034	0.0102
+0.1627	0.0808	1.000	1. Those used to actuate I-O operations.	0.3083	0.0131
+0.1736	0.6295	1.000	Equipment code	0.1207	0.0177
+0.1773	0.0827	1.000	2. Those used for symbolic I-O control.	0.3026	0.0131
+0.1773	0.5508	1.000	4	0.0132	0.0131
+0.1875	0.6297	1.000	Address of channel status word	0.2350	0.0174
+0.1890	0.5414	1.000	10	0.0263	0.0160
+0.1903	0.0826	1.000	3. Those used to impose mode controls on inter-	0.3705	0.0148
+0.2020	0.6297	1.000	Address of unit status word	0.2086	0.0174
+0.2064	0.5414	1.000	11	0.0226	0.0131
+0.2092	0.1353	1.000	rupts.	0.0471	0.0104
+0.2179	0.6297	1.000	Address of unit area table	0.1955	0.0147
+0.2238	0.0827	1.000	4. The commentator.	0.1635	0.0102
+0.2321	0.6296	1.000	Address of file area table	0.1956	0.0155
+0.2384	0.0827	1.000	5. Time service operations.	0.2162	0.0102
+0.2442	0.5113	1.000	When entry is from the identifier, index registers	0.3741	0.0204
+0.2485	0.0827	1.000	6. Those used for transfer of control ($RET and	0.3628	0.0146
+0.2615	0.4944	1.000	O through 3 contain the following:	0.2500	0.0176
+0.2670	0.1258	1.000	$RAM).	0.0586	0.0125
+0.2776	0.5263	1.000	Index	0.0470	0.0160
+0.2794	0.0826	1.000	7. The communication region transmission	0.3254	0.0143
+0.2906	0.6296	1.000	VF Content	0.0922	0.0206
+0.2920	0.5262	1.000	Register	0.0716	0.0193
+0.2962	0.1277	1.000	operations.	0.0847	0.0123
+0.3081	0.0846	1.000	The routines in group six are functionally a part	0.3571	0.0146
+0.3197	0.6297	1.000	Address of control word (if appli-	0.2538	0.0176
+0.3241	0.0658	1.000	of the dispatcher, and are described with the dis-	0.3684	0.0131
+0.3381	0.0657	1.000	patcher routines. The routines concerned with I-O	0.3800	0.0152
+0.3387	0.6391	1.000	cable)	0.0545	0.0131
+0.3517	0.5432	1.000	1	0.0150	0.0174
+0.3517	0.6316	1.000	Address of entry in I-O symbolic	0.2444	0.0146
+0.3545	0.0658	1.000	activity use the set of I-O control tables previously	0.3816	0.0118
+0.3663	0.6410	1.000	location table	0.1090	0.0146
+0.3706	0.0677	1.000	described.	0.0789	0.0102
+0.3821	0.6316	1.000	Actuated address plus 2.0	0.1936	0.0133
+0.3823	0.5470	1.000	2	0.0113	0.0131
+0.3967	0.6297	1.000	Pseudo-op code	0.1203	0.0133
+0.3968	0.5470	1.000	3	0.0113	0.0116
+0.3982	0.0677	1.000	THE ACTUATOR I-O ROUTINES	0.2425	0.0118
+0.4112	0.5113	1.000	In addition, the identifier has stored the actuated	0.3665	0.0161
+0.4258	0.4962	1.000	address in the file area table (SACTAD), the actuated	0.3966	0.0161
+0.4273	0.0677	1.000	The actuator routines provide I-O pseudo operations	0.3872	0.0131
+0.4399	0.0675	1.000	corresponding to those provided by hardware instruc-	0.3988	0.0169
+0.4403	0.4962	1.000	file address in the unit area table (SFIAAC), the	0.3590	0.0161
+0.4548	0.4962	1.000	SEOP bit in the unit status table (SSEOP), and has	0.3722	0.0146
+0.4578	0.0677	1.000	tions. They operate on logical units which are	0.3477	0.0116
+0.4709	0.4962	1.000	insured that the requested channel and unit are avail-	0.3966	0.0146
+0.4724	0.0677	1.000	defined through IOD cards. The IOD cards set up	0.3684	0.0116
+0.4855	0.4962	1.000	able. (See the Identifier Routine.)	0.2594	0.0145
+0.4869	0.0677	1.000	the control tables as described in the preceding	0.3515	0.0116
+0.5042	0.0676	1.000	section.	0.0603	0.0106
+0.5145	0.4962	1.000	The Read Routine	0.1391	0.0161
+0.5160	0.0846	1.000	When an I-O pseudo-op is requested, the actuator	0.3684	0.0131
+0.5300	0.0676	1.000	performs the requested operation and any setup opera-	0.4080	0.0137
+0.5436	0.4981	1.000	The read routine is entered at ZSTART (Figure 90).	0.3853	0.0161
+0.5464	0.0677	1.000	tions required. The actuator will always perform	0.3722	0.0118
+0.5596	0.4981	1.000	The control word is checked using the control word	0.3797	0.0131
+0.5596	0.0677	1.000	the following setup operations, since their equivalent	0.3966	0.0131
+0.5725	0.4980	1.000	check subroutine (BCWCR), and SEVLMK and	0.3406	0.0192
+0.5755	0.0677	1.000	is not provided in the pseudo-op repertoire:	0.3252	0.0133
+0.5887	0.4981	1.000	SEVLTB are set for subsequent entry to the status	0.3759	0.0147
+0.5915	0.0865	1.000	1. Locate for tape channels.	0.2143	0.0103
+0.6032	0.4981	1.000	evaluation routine. The mask and table are designed	0.3929	0.0147
+0.6045	0.0846	1.000	2. Density for tape channels.	0.2237	0.0133
+0.6175	0.0864	1.000	3. Mode for tape, card reader, and punch channels.	0.3912	0.0164
+0.6177	0.4981	1.000	to check unit select, label verification, and console	0.3835	0.0160
+0.6308	0.4981	1.000	signal. The channel operating bit (SCHOP) is turned	0.3910	0.0160
+0.6336	0.0846	1.000	When the processing of a request must be delayed	0.3684	0.0132
+0.6467	0.4981	1.000	on in the channel status table, and the routine branches	0.4098	0.0161
+0.6482	0.0677	1.000	to await completion of a setup operation, control is	0.3853	0.0132
+0.6612	0.4981	1.000	depending on equipment type ($4), entering the status	0.3947	0.0161
+0.6642	0.0677	1.000	usually returned via the service op return routine.	0.3759	0.0116
+0.6758	0.5000	1.000	evaluation routine (ZSTEVL) for tape and console	0.3665	0.0133
+0.6771	0.0676	1.000	However, the setup bit (SSETUP) is set in the UST,	0.3855	0.0165
+0.6918	0.5000	1.000	equipment. For the card reader, the routine at	0.3553	0.0131
+0.6933	0.0677	1.000	and SRETAD is preset in the UAT, to allow the proc-	0.3966	0.0131
+0.7064	0.5000	1.000	KTESTM checks the mode and proceeds with the read	0.3947	0.0131
+0.7078	0.0695	1.000	essing of the request to continue when the interrupt	0.3835	0.0131
+0.7209	0.5000	1.000	instruction. For the disk, a special routine at	0.3477	0.0131
+0.7224	0.0695	1.000	occurs. Since these controls affect the unit, it is	0.3684	0.0131
+0.7368	0.0676	1.000	possible for several I-O requests for distinct units	0.3780	0.0132
+0.7369	0.5019	1.000	ZDISKI is entered. Any other equipment code is	0.3609	0.0116
+0.7499	0.4999	1.000	illegal, causing an EPGK interrupt to be faked by	0.3667	0.0149
+0.7529	0.0677	1.000	to be in various stages of processing at any given	0.3684	0.0116
+0.7660	0.5000	1.000	an appropriate entry to the receptor.	0.2744	0.0116
+0.7689	0.0695	1.000	time.	0.0414	0.0102
+0.7791	0.5169	1.000	The routine at ZDISKI is used by both the read	0.3459	0.0131
+0.7820	0.0846	1.000	The actuator I-O operations use a common group	0.3665	0.0117
+0.7951	0.5000	1.000	and write routines. It tests the disk locate setup bit	0.3891	0.0116
+0.7951	0.0695	1.000	of subroutines to perform portions of request proc-	0.3835	0.0131
+0.8096	0.5000	1.000	(SLOCSU) and the high-speed exchange bit (SHSECH).	0.3947	0.0116
+0.8096	0.0695	1.000	essing which are common to several pseudo-ops. All	0.3985	0.0131
+0.8241	0.0695	1.000	actuator programs operate disabled, and are entered	0.3929	0.0131
+0.8255	0.5000	1.000	If either is on, the routine turns off the channel	0.3534	0.0133
+0.8386	0.5018	1.000	operating bit (SCHOP) and enters an enabled loop to	0.3817	0.0137
+0.8387	0.0695	1.000	from the identifier when the pseudo-op is requested,	0.3891	0.0132
+0.8545	0.5000	1.000	the actuating address via KCBUSY. When both are	0.3778	0.0133
+0.8545	0.0695	1.000	or from the receptor when an interrupt caused by a	0.3835	0.0133
+0.8691	0.5019	1.000	off, the routine computes the arc address of the last	0.3872	0.0132
+0.8691	0.0695	1.000	setup I-O operation oceurs. For either entry, index	0.3910	0.0132
+0.9317	0.0733	1.000	166	0.0226	0.0073

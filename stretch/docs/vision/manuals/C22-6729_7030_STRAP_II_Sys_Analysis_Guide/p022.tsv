@@ -1,0 +1,111 @@
+0.0697	0.0789	1.000	eight characters are collected or up to the next sepa-	0.3947	0.0132
+0.0712	0.5226	1.000	Information from the op entry is put in the unit and	0.3759	0.0131
+0.0804	0.0768	1.000	rator character. If aOfollows the op, the if-modi-	0.3896	0.0216
+0.0872	0.5075	1.000	the location of the op index is also put in $5 for com-	0.3910	0.0116
+0.0988	0.0789	1.000	fier-exists indicator, Fmodif, is set on, so the dds	0.3816	0.0131
+0.1017	0.5075	1.000	mon referencing during Pass 1.	0.2350	0.0116
+0.1148	0.0789	1.000	or opz processing will be done after the table lookup	0.3872	0.0116
+0.1163	0.5244	1.000	During the processing of a unit in Pass 1 and Pass	0.3703	0.0116
+0.1294	0.0789	1.000	of the primary op. Modif being on indicates to MAIN	0.3929	0.0116
+0.1308	0.5075	1.000	2, $5 has the constant function of addressing the op	0.3778	0.0116
+0.1439	0.0789	1.000	that there are data description, secondary op, or	0.3665	0.0116
+0.1453	0.5075	1.000	index. For each operation there is provided a string	0.3910	0.0131
+0.1584	0.0789	1.000	EXTract parameters yet to be considered before the	0.3872	0.0116
+0.1584	0.5075	1.000	of bits which represent yes/no answers to the ques-	0.3816	0.0131
+0.1730	0.0789	1.000	address field of the instruction can be encoded.	0.3496	0.0116
+0.1744	0.5075	1.000	tions about the op such as: Is this a variable field	0.3684	0.0116
+0.1890	0.5056	1.000	length op? The format of the operation question bits	0.3966	0.0117
+0.2023	0.5055	1.000	is defined in terms of its relative locations by the	0.3687	0.0146
+0.2028	0.0750	1.000	Boxes 17-22	0.0943	0.0145
+0.2179	0.5075	1.000	symbols beginning with Zo. The absolute location of	0.3891	0.0133
+0.2311	0.0789	1.000	The binary operation search, BOPSER, does the	0.3590	0.0147
+0.2339	0.5075	1.000	each string of op question bits is in the first 18 bits	0.3797	0.0118
+0.2456	0.0771	1.000	1ook-up on the ordered table of primary operations.	0.3835	0.0131
+0.2470	0.5075	1.000	of the function part of the op entry in the table of ops.	0.3947	0.0133
+0.2615	0.0789	1.000	(This subroutine is also used to search the table of	0.3778	0.0103
+0.2630	0.5075	1.000	The first 24 bits in the actual string contains the	0.3590	0.0118
+0.2761	0.0789	1.000	secondary ops and the table of system symbols.) If	0.3835	0.0118
+0.2776	0.5056	1.000	address of the first control word in the chain of	0.3534	0.0103
+0.2906	0.0789	1.000	the op mnemonic is not found the op may be one of	0.3741	0.0118
+0.2921	0.5075	1.000	control words which are used in Pass 2 to insert the	0.3853	0.0103
+0.3036	0.0789	1.000	the 'branch on indicator' type instructions which are	0.3872	0.0133
+0.3067	0.5056	1.000	address fields into the binary output saved in the	0.3628	0.0116
+0.3197	0.0771	1.000	not in the op table because of the impracticality of	0.3759	0.0132
+0.3212	0.5056	1.000	fixed format part of this op's unit. The op index for	0.3872	0.0131
+0.3358	0.0789	1.000	including all their variations. A special purpose	0.3647	0.0116
+0.3358	0.5056	1.000	a binary producing instruction which can have a	0.3515	0.0131
+0.3488	0.0789	1.000	routine, MIBA, supplies for a 'branch on indicator'	0.3835	0.0131
+0.3517	0.5056	1.000	secondary op also contains the code number for the	0.3797	0.0131
+0.3648	0.0789	1.000	type of instruction that information which would have	0.3891	0.0116
+0.3650	0.5056	1.000	secondary op.	0.1074	0.0126
+0.3663	0.6109	1.000	(See Appendix A.)	0.1429	0.0116
+0.3794	0.0789	1.000	been in an op table entry if the operation had been in	0.3872	0.0116
+0.3808	0.5827	1.000	Is this an immediate variable field length	0.3045	0.0116
+0.3808	0.5244	1.000	Ex.:	0.0338	0.0102
+0.3939	0.0789	1.000	the op table. If the op is not a 'branch on indicator'	0.3853	0.0116
+0.3953	0.5977	1.000	op? If no, branch to Mdgl area.	0.2444	0.0147
+0.4084	0.0789	1.000	instruction, by using MBSPEC, subroutine MIBA	0.3628	0.0131
+0.4099	0.5827	1.000	BZB, Zoimm($5), Mdg1	0.1786	0.0160
+0.4230	0.0789	1.000	tries substituting alternate characters for any which	0.3872	0.0116
+0.4244	0.5226	1.000	If an operation is added to the op table, besides	0.3515	0.0132
+0.4375	0.0789	1.000	might be making the op illegal. If subsequent retries	0.3947	0.0116
+0.4403	0.5056	1.000	possible processing alterations, changes will have	0.3722	0.0118
+0.4520	0.0789	1.000	on looking up each new variation of the op fails, there	0.3985	0.0131
+0.4528	0.5055	1.000	to be made to some or to all of the following tables:	0.3818	0.0141
+0.4666	0.0789	1.000	is an error condition, and the unit is set up as a --	0.3797	0.0131
+0.4694	0.5075	1.000	table of operations, table of op question bit strings,	0.3797	0.0132
+0.4811	0.0789	1.000	SIC, $15; BE, 0 -- instruction.	0.2331	0.0131
+0.4839	0.5056	1.000	list of op index words, INSERT's index words, con-	0.3835	0.0132
+0.4985	0.5038	1.000	trol block for BOPSER, three pseudo-op branch	0.3553	0.0131
+0.5116	0.0770	1.000	Box 23	0.0527	0.0132
+0.5131	0.5056	1.000	tables.	0.0526	0.0116
+0.5406	0.0808	1.000	The entry in either op table is generally the source	0.3778	0.0118
+0.5406	0.5038	1.000	Boxes 24, 25, 26	0.1316	0.0146
+0.5552	0.0789	1.000	of both the skeleton bit pattern for the instruction	0.3665	0.0118
+0.5682	0.0789	1.000	and the location of the "op index" (op question bit	0.3628	0.0133
+0.5712	0.5056	1.000	Since the EXT parameters are handled in the EXT	0.3703	0.0131
+0.5842	0.0789	1.000	string) for the operation. However, the pseudo-op's	0.3891	0.0131
+0.5858	0.5056	1.000	pseudo-op subroutine later, this type of case is post-	0.3929	0.0131
+0.5988	0.0789	1.000	entry in the primary op table is the source of both	0.3741	0.0118
+0.6003	0.5056	1.000	poned for the later treatment. However if the char-	0.3853	0.0131
+0.6118	0.0789	1.000	the "digit select" numbers assigned to the pseudo-op	0.3891	0.0132
+0.6163	0.5038	1.000	acter after the (Ois one of the characters in the ques-	0.3966	0.0131
+0.6279	0.0789	1.000	and the location of the op index. (This number will	0.3778	0.0117
+0.6308	0.5056	1.000	tion character block which contains the lecal first	0.3684	0.0102
+0.6424	0.0789	1.000	be used in three different phases of the assembly in	0.3816	0.0131
+0.6453	0.5038	1.000	characters for a secondary op, then MAIN collects	0.3778	0.0147
+0.6570	0.0789	1.000	determining the treatment of an individual pseudo-op.)	0.4041	0.0131
+0.6599	0.5056	1.000	the remaining characters of the secondary op and	0.3647	0.0116
+0.6715	0.0789	1.000	The ambiguous op's entry in the primary op table has	0.3947	0.0131
+0.6744	0.5038	1.000	looks up the op in the secondary op table. Once again	0.3985	0.0116
+0.6875	0.0789	1.000	the skeleton bit pattern of the normalized version of	0.3853	0.0116
+0.6890	0.5056	1.000	MBSPEC may be called upon to help. Note the format	0.4004	0.0132
+0.7020	0.0789	1.000	the instruction, the last half of the bit pattern of the	0.3853	0.0131
+0.7035	0.5056	1.000	of an entry in the secondary op table differs from that	0.3985	0.0117
+0.7166	0.0789	1.000	variable field length version, and the location of the	0.3853	0.0116
+0.7194	0.5056	1.000	in the primary op table. The secondary op may not	0.3816	0.0118
+0.7311	0.0789	1.000	op index for an ambiguous op. There is one entry	0.3741	0.0116
+0.7324	0.5056	1.000	be greater than seven characters in length since the	0.3835	0.0133
+0.7456	0.0789	1.000	(not two entries) for an ambiguous op in the table of	0.3835	0.0116
+0.7485	0.5056	1.000	dietionary part of a secondary op table entry contains	0.3929	0.0131
+0.7615	0.0789	1.000	primary operations. (STRAP II processes the unit	0.3778	0.0118
+0.7630	0.5056	1.000	a special leading 8-bit byte code number to identify	0.3778	0.0118
+0.7761	0.0789	1.000	of an ambiguous op as that of a floating point instruc-	0.3947	0.0118
+0.7776	0.5056	1.000	the type of instruction which may have this secondary	0.3929	0.0118
+0.7906	0.0789	1.000	tion until diagnosis of the data description or address	0.3947	0.0118
+0.7951	0.5056	1.000	op. This code number is obtained from the current	0.3797	0.0116
+0.8052	0.0789	1.000	fields in the instruction proves otherwise. Note in	0.3759	0.0118
+0.8096	0.5056	1.000	op index and is the first character put in the second-	0.3872	0.0116
+0.8197	0.0789	1.000	Pass 2a if the data description to be associated with	0.3835	0.0118
+0.8241	0.5038	1.000	ary op collection buffer, Bop2x. When a secondary	0.3816	0.0147
+0.8340	0.0770	1.000	an ambiguous unit is still undetermined after DECODE	0.4024	0.0134
+0.8385	0.5037	1.000	op follows a primary op which permits a secondary	0.3779	0.0133
+0.8488	0.0771	1.000	has gone to VALUE for the dds, DECODE assigns a	0.3835	0.0131
+0.8532	0.5038	1.000	op, MAIN makes up an appropriate argument for the	0.3853	0.0132
+0.8633	0.0789	1.000	VFL dds to the unit. Of course, an ambiguous op's	0.3797	0.0131
+0.8654	0.5036	1.000	table look-up. Thus the cases, such as -- + (BU, 3)	0.3894	0.0172
+0.8794	0.0771	1.000	field types are not referred to until the ambiguity is	0.3835	0.0116
+0.8821	0.5038	1.000	(SEOP) and CW (V + I) -- are illegal, although in	0.3647	0.0133
+0.8936	0.0751	1.000	settled.)	0.0660	0.0136
+0.8967	0.5038	1.000	each instance the primary op does allow a secondary	0.3891	0.0133
+0.9259	0.0752	1.000	22	0.0169	0.0087

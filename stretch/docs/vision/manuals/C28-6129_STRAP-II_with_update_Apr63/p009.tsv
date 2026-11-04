@@ -1,0 +1,104 @@
+0.0741	0.4962	1.000	These fields are singled out because they are com-	0.3816	0.0147
+0.0741	0.0564	1.000	and the instruction will be compiled by STRaP-II with	0.3966	0.0147
+0.0865	0.4792	1.000	mon to most instructions or because they illustrate	0.3987	0.0175
+0.0900	0.0564	1.000	zero offset.	0.0828	0.0120
+0.1045	0.4793	1.000	important programming features or facilities of STRAP.	0.3985	0.0146
+0.1045	0.0733	1.000	The complete right-to-left drop-out of fields in a	0.3797	0.0146
+0.1191	0.4793	1.000	The operation field is, of course, common to all instruc-	0.3966	0.0146
+0.1206	0.0564	1.000	VFL statement is illustrated below to show the pro-	0.3966	0.0131
+0.1352	0.0583	1.000	grammer how the expression of a STRAP statement may	0.3947	0.0146
+0.1352	0.4793	1.000	tions. The data description appears as a sub-field of	0.3985	0.0146
+0.1473	0.4792	1.000	the operation field in those instructions where it is	0.3987	0.0174
+0.1512	0.0564	1.000	vary within the framework of the format for that class	0.3966	0.0146
+0.1657	0.0564	1.000	of instructions.	0.1109	0.0116
+0.1657	0.4793	1.000	appropriate. The address field is also common to all	0.3966	0.0131
+0.1802	0.4793	1.000	7030 instructions, although it varies considerably in	0.3966	0.0146
+0.1830	0.1692	1.000	OP(dds), A(I), OF(I')	0.1880	0.0161
+0.1962	0.4774	1.000	length. The address field typifies a field in which a	0.3985	0.0160
+0.1991	0.1692	1.000	OP (dds), A(I), OF	0.1541	0.0146
+0.2106	0.4793	1.000	wide variety of entries can be made. Rules for inter-	0.3966	0.0147
+0.2131	0.1690	1.000	OP (dds), A(I)	0.1168	0.0171
+0.2267	0.4793	1.000	preting these entries and translating them for internal	0.3985	0.0146
+0.2294	0.1691	1.000	OP (dds), A	0.0922	0.0150
+0.2412	0.4793	1.000	use are illustrated for address fields and hold true for	0.3985	0.0118
+0.2485	0.0564	1.000	Notice that when even a complex format such as the	0.3966	0.0146
+0.2573	0.4793	1.000	most other instruction fields. The offset field is found	0.3966	0.0116
+0.2645	0.0564	1.000	vEL format is written to include only the essential in-	0.3966	0.0131
+0.2718	0.4793	1.000	only in variable field length instructions, but it is in-	0.3985	0.0146
+0.2791	0.0564	1.000	formation, the result is a statement that ditters very	0.3966	0.0146
+0.2860	0.4792	1.000	terpreted as an address field of an unusual length.	0.3968	0.0165
+0.2951	0.0564	1.000	little from the basic straP instruction format previ-	0.3966	0.0146
+0.3023	0.4793	1.000	It illustrates some unique index modification as well.	0.3947	0.0146
+0.3109	0.0564	1.000	ously illustrated. It will be seen later that in actual	0.3966	0.0118
+0.3182	0.4962	1.000	Two general comments are appropriate here. First,	0.3797	0.0147
+0.3241	0.0545	1.000	practice, the (dds) field can almost always be elimi-	0.3985	0.0174
+0.3327	0.4793	1.000	all 7030 instruction fields are unsigned. Any numeric	0.3985	0.0147
+0.3415	0.0526	1.000	nated in the instruction proper (see Data Description	0.4004	0.0146
+0.3488	0.4793	1.000	entries that are negative are converted by strap and	0.3966	0.0146
+0.3559	0.0563	1.000	discussion).	0.0884	0.0135
+0.3648	0.4793	1.000	expressed as the two's complement of the entry. Sec-	0.3985	0.0146
+0.3706	0.0733	1.000	A major field may be null even if other non-null	0.3797	0.0146
+0.3794	0.4793	1.000	ond, all numeric entries in the illustrations are as-	0.3985	0.0131
+0.3866	0.0564	1.000	fields follow. Such is the case if nothing but the	0.3966	0.0146
+0.3939	0.4793	1.000	sumed to be written in the decimal radix. Entries in	0.3966	0.0131
+0.4012	0.0564	1.000	comma denoting the field termination is written.	0.3966	0.0146
+0.4099	0.4793	1.000	other radices are permitted in sTRaP Il if the radix is	0.3966	0.0131
+0.4172	0.0564	1.000	Thus, a vFL instruction written with its address and	0.3966	0.0116
+0.4244	0.4774	1.000	specified in a standard fashion (see Entry Mode in	0.3985	0.0160
+0.4312	0.0563	1.000	index modifier null but with an oflset specification fol-	0.3968	0.0156
+0.4403	0.4793	1.000	Section II of this manual).	0.1974	0.0133
+0.4476	0.0545	1.000	lowing would appear as in the illustration below	0.3553	0.0146
+0.4651	0.1748	1.000	OP(dds),, OF.(I')	0.1541	0.0161
+0.4855	0.0564	1.000	Note that it is only the presence of the comma that	0.3966	0.0131
+0.4884	0.4812	1.000	Operation Field	0.1147	0.0131
+0.5000	0.0545	1.000	indicates the missing address field. If the comma were	0.3985	0.0145
+0.5160	0.0564	1.000	omitted, STRAP would assume that the offset field were	0.3966	0.0131
+0.5188	0.4774	1.000	STRAP-II provides a complete set of mnemonics for	0.3985	0.0146
+0.5305	0.0564	1.000	null and would actually compile the offset specifica-	0.3966	0.0146
+0.5325	0.4773	1.000	the expression of all 7030 instructions. The use of	0.3988	0.0174
+0.5464	0.0564	1.000	tion as the address expression.	0.2180	0.0133
+0.5509	0.4774	1.000	mnemonics is desirable from a programming stand-	0.3985	0.0131
+0.5609	0.0714	1.000	Some of the components of a major field can be	0.3816	0.0147
+0.5654	0.4774	1.000	point because they make instructions brief to express,	0.3985	0.0146
+0.5770	0.0545	1.000	made null simply by omission. We have seen, for ex-	0.3985	0.0146
+0.5814	0.4774	1.000	easy to remember and easy to recognize.	0.2951	0.0147
+0.5915	0.0564	1.000	ample, that the offset specification in a vFL statement	0.3966	0.0146
+0.5959	0.4944	1.000	A complete list of STRAP-Il mnemonics is given in	0.3816	0.0147
+0.6061	0.0564	1.000	need not be indexed and can be written	0.2838	0.0118
+0.6105	0.4793	1.000	Appendix A. A few rules may be noted in choice of	0.3966	0.0160
+0.6250	0.1748	1.000	OP(dds), A(I), OF	0.1523	0.0160
+0.6264	0.4774	1.000	mnemonics. First, the mnemonic is as brief as it can	0.3985	0.0132
+0.6395	0.4753	1.000	be and still unambiguously identify the instruction.	0.4008	0.0217
+0.6467	0.0564	1.000	Similarly, the address expression need not be indexed,	0.3966	0.0133
+0.6570	0.4756	1.000	Second, standard symbols are used for arithmetic op-	0.4004	0.0161
+0.6612	0.0564	1.000	and can be written	0.1410	0.0118
+0.6715	0.4774	1.000	crations- + for ADD, — for SUBTRact, * for MULTIPLY	0.3966	0.0161
+0.6786	0.1898	1.000	OP(dds), A, OF	0.1241	0.0163
+0.6875	0.4774	1.000	and / for DIvIde. Third, the receiving register (that is,	0.3985	0.0146
+0.6991	0.0564	1.000	Obviously, if all the components of a major field are	0.3966	0.0146
+0.7035	0.4774	1.000	the register that receives the result of the operation)	0.3966	0.0132
+0.7151	0.0545	1.000	omitted (both offset expression and its index modi-	0.3985	0.0146
+0.7151	0.4772	1.000	in arithmetic operations is indicated by the letter to	0.3971	0.0210
+0.7297	0.0545	1.000	fier, for example) the field is made null. This will	0.3985	0.0146
+0.7339	0.4774	1.000	the left of the arithmetic symbol. In cases where the	0.3966	0.0146
+0.7456	0.0545	1.000	normally be just what the programmer desires, but	0.3985	0.0147
+0.7484	0.4755	1.000	result is in the accumulator, the accumulator is as-	0.3986	0.0155
+0.7602	0.0545	1.000	care must be taken if the null field occurs in the	0.3985	0.0132
+0.7630	0.4756	1.000	sumed and is not mentioned in the mnemonic. For	0.3985	0.0131
+0.7761	0.0545	1.000	middle of the statement. As explained above, if the	0.3985	0.0146
+0.7791	0.4774	1.000	example, + is the mnemonic for straight ADD where the	0.3966	0.0146
+0.7921	0.0545	1.000	comma denoting the termination of the null field is	0.3985	0.0131
+0.7951	0.4774	1.000	result is left in the accumulator, Mt is the mnemonic	0.3966	0.0131
+0.8067	0.0545	1.000	also missing, the null field is assumed to be missing	0.3985	0.0161
+0.8089	0.4755	1.000	for ADD TO MEMORY and vt means ADD TO VALUE.	0.3986	0.0139
+0.8212	0.0544	1.000	from the right hand end of the statement.	0.3161	0.0163
+0.8255	0.4774	1.000	Fourth, certain basic operations may be altered to in-	0.3966	0.0147
+0.8358	0.0714	1.000	On the following pages, a detailed discussion of	0.3816	0.0161
+0.8361	0.4754	1.000	voke immediate addressing by adding the suffix I as in	0.3989	0.0221
+0.8532	0.0545	1.000	some of the major fields in the stRaP instruction for-	0.3985	0.0117
+0.8576	0.4756	1.000	V†I, ADD IMMEDIATE TO VALUE.	0.2218	0.0116
+0.8652	0.0544	1.000	mats is found. The three fields covered are the opera-	0.3988	0.0191
+0.8721	0.4925	1.000	Mnemonies for STRAP-II pseudo operations may also	0.3816	0.0146
+0.8821	0.0545	1.000	tion field, the address field and the offset field.	0.3402	0.0147
+0.8866	0.4756	1.000	be written in the operation field of a sTrap statement.	0.3985	0.0146
+0.9200	0.7707	1.000	Section I 5	0.1034	0.0103

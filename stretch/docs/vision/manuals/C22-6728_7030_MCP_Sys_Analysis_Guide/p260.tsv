@@ -1,0 +1,31 @@
+0.0741	0.0789	1.000	The base addresses of the two I-O location tables are contained in the value fields of the half	0.6936	0.0160
+0.0900	0.0677	1.000	words at SBAPP and SBAMCP, for PP and MCP respectively.	0.4624	0.0161
+0.1191	0.0677	1.000	THE REEL POOL TABLE	0.1974	0.0161
+0.1482	0.0677	1.000	The reel pool table consists of one full word entry for each reel which is requested by the	0.6673	0.0176
+0.1627	0.0677	1.000	problem program. The table is set up at job control. Its format is as follows:	0.5902	0.0161
+0.1917	0.2837	1.000	Symbol	0.0622	0.0193
+0.1933	0.1335	1.000	Bits	0.0395	0.0189
+0.1947	0.6127	1.000	Content	0.0659	0.0133
+0.2221	0.2875	1.000	SNEXRL	0.0660	0.0151
+0.2224	0.4718	1.000	Address of the next reel table entry for the same unit.	0.4041	0.0146
+0.2237	0.1334	1.000	.00 -.17	0.0734	0.0149
+0.2369	0.4718	1.000	It is zero if no more reels are to be mounted.	0.3421	0.0146
+0.2645	0.2876	1.000	SRENTY	0.0677	0.0160
+0.2660	0.1335	1.000	.25	0.0320	0.0160
+0.2660	0.4737	1.000	Entry in table indicator.	0.1823	0.0146
+0.2814	0.5055	1.000	0 - No entry	0.1055	0.0157
+0.2979	0.5094	1.000	1 - Entry	0.0808	0.0118
+0.3240	0.2875	1.000	SREPR	0.0603	0.0163
+0.3241	0.1335	1.000	.26	0.0320	0.0174
+0.3255	0.4756	1.000	Reel protected indicator.	0.1861	0.0147
+0.3415	0.5056	1.000	0 - not protected	0.1391	0.0131
+0.3561	0.5094	1.000	1 - protected	0.1071	0.0118
+0.3823	0.1335	1.000	.27	0.0320	0.0174
+0.3850	0.2875	1.000	SRELB	0.0565	0.0120
+0.3852	0.4774	1.000	Reel labeled indicator.	0.1673	0.0117
+0.3997	0.5094	1.000	0 - not labeled	0.1184	0.0103
+0.4142	0.5094	1.000	1 - labeled	0.0921	0.0103
+0.4433	0.2876	1.000	SRENME	0.0695	0.0131
+0.4448	0.1372	1.000	. 34 - .63	0.0695	0.0116
+0.4448	0.4774	1.000	Reel name in A6 code.	0.1654	0.0102
+0.9244	0.0733	1.000	260	0.0226	0.0087

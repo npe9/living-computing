@@ -1,0 +1,64 @@
+0.0828	0.8778	1.000	MIOD	0.0489	0.0160
+0.1467	0.5338	1.000	after GETFLD has encoded the second field. Thus	0.3778	0.0118
+0.1480	0.1071	1.000	LINKAGE	0.0735	0.0122
+0.1627	0.5338	1.000	this field counter will locate the proper part of the	0.3741	0.0118
+0.1773	0.1090	1.000	The MCP ops, IOD and REEL, have a special bit on	0.3816	0.0131
+0.1773	0.5320	1.000	IOD if an error is detected in GETELD or in MIOD.	0.3816	0.0146
+0.1918	0.5508	1.000	MIOD also sets up the symbol table entry in the	0.3515	0.0118
+0.1918	0.1071	1.000	in their op index word, signifying the op is an MCP	0.3778	0.0131
+0.2031	0.5355	1.000	Msyte area as MAIN would have done. The reference	0.3969	0.0183
+0.2064	0.1090	1.000	op. Just before the digit select table in Pass 1 there	0.3872	0.0131
+0.2209	0.1071	1.000	is a test of this bit. If it is on, the address fields of	0.3910	0.0131
+0.2224	0.5338	1.000	number counter, initially zero, is incremented and	0.3797	0.0116
+0.2369	0.1090	1.000	the current op will then be processed by MIOD and	0.3722	0.0116
+0.2369	0.5338	1.000	saved in the unused (for IOD) Zilpms field of the	0.3571	0.0116
+0.2515	0.1090	1.000	not by the main routine. If the current op index has	0.3778	0.0116
+0.2515	0.5338	1.000	unit for later Pass 2 use. The Zifp2 indicator in the	0.3910	0.0131
+0.2660	0.5338	1.000	unit is turned off so the NMCP subroutine and not	0.3665	0.0116
+0.2660	0.1090	1.000	this bit off, or if a comment, then MAIN turns on	0.3647	0.0131
+0.2787	0.1089	1.000	the Fiod indicator to show that there should not be	0.3687	0.0153
+0.2805	0.5357	1.000	DECODE will get control of the processing of the	0.3609	0.0131
+0.2951	0.5338	1.000	unit in Pass 2. To prevent DECODE from being	0.3571	0.0131
+0.2964	0.1090	1.000	any more MCP-type instructions and continues as	0.3628	0.0118
+0.3096	0.1071	1.000	usual. Thus Fiod should not be on while MIOD is	0.3647	0.0131
+0.3096	0.5338	1.000	asked to work on the unit during the main flow of	0.3609	0.0131
+0.3241	0.5320	1.000	Pass 2, MIOD turns on the Zifall indicator on each	0.3797	0.0160
+0.3255	0.1090	1.000	processing a REEL or an IOD instruction.	0.3102	0.0118
+0.3400	0.5320	1.000	IOD or on each REEL unit. In this way, NMCP	0.3553	0.0147
+0.3545	0.5338	1.000	which has control of the processing of MCP units in	0.3797	0.0118
+0.3691	0.5357	1.000	Pass 2. will get these expressions evaluated by	0.3496	0.0132
+0.3721	0.1090	1.000	FLOW CHART DESCRIPTION	0.2199	0.0088
+0.3836	0.5320	1.000	VALUE directly from NMCP.	0.2199	0.0132
+0.4008	0.1052	1.000	Boxes 4-15	0.0867	0.0139
+0.4290	0.5336	1.000	Boxes 16-19	0.0926	0.0155
+0.4302	0.1090	1.000	The spacing over the first field is accomplished by	0.3741	0.0116
+0.4448	0.1090	1.000	saving the unit buffer control address and then after	0.3816	0.0116
+0.4593	0.5357	1.000	For a REEL instruction, MIOD does not have much	0.3778	0.0131
+0.4606	0.1090	1.000	asking GETFLD to encode the type field, resetting	0.3722	0.0118
+0.4738	0.5338	1.000	to do. The Zifall indicator is turned on to tell	0.3440	0.0131
+0.4752	0.1090	1.000	the buffer area to the original address. The encoding	0.3966	0.0103
+0.4897	0.1071	1.000	is thus effectively erased, but $3 will contain the	0.3628	0.0118
+0.4897	0.5357	1.000	Pass 2 that there are no values to get.	0.2820	0.0118
+0.5042	0.1090	1.000	comma character before the second field. This set-	0.3891	0.0103
+0.5042	0.5508	1.000	If a name had been specified with a REEL instruc-	0.3722	0.0118
+0.5188	0.1090	1.000	ting of $3 will be the proper contents with which to	0.3722	0.0118
+0.5188	0.5338	1.000	tion of course it must be set up in the symbol table	0.3759	0.0118
+0.5328	0.1089	1.000	ențer GETFLD to do the saved encoding of the second	0.3949	0.0140
+0.5333	0.5338	1.000	because _ANEXT in Pass 2 must have a name to get	0.3778	0.0132
+0.5479	0.1090	1.000	field. For IOD processing, MIOD encodes the second	0.3966	0.0146
+0.5479	0.5338	1.000	from the symbol table for each unit marked as	0.3440	0.0132
+0.5623	0.5332	1.000	having a name.	0.1119	0.0154
+0.5624	0.1090	1.000	field (exit address) of the IOD instruction.	0.3102	0.0118
+0.5639	0.6466	1.000	The symbol table entry will be set	0.2650	0.0103
+0.5770	0.5338	1.000	up as a 'phoney' or 'special' entry and UITER will	0.3703	0.0146
+0.5770	0.1259	1.000	Then MIOD increments the Zinfld counter in the	0.3515	0.0131
+0.5930	0.5338	1.000	ignore the entry during Pass 2.	0.2331	0.0116
+0.5930	0.1090	1.000	unit by only one because Zinfld tells Pass 2 how many	0.3966	0.0116
+0.6076	0.5489	1.000	Then MIOD returns to the location, Medaf, to	0.3402	0.0146
+0.6076	0.1090	1.000	encoded fields there are in the unit. However, MIOD	0.3947	0.0131
+0.6221	0.1090	1.000	increments the error message field counter once	0.3609	0.0116
+0.6221	0.5338	1.000	collect the remaining characters to finish processing	0.3929	0.0131
+0.6366	0.1090	1.000	after the first field has been skipped over and once	0.3741	0.0116
+0.6366	0.5338	1.000	the unit in Pass 1.	0.1372	0.0116
+0.9390	0.8534	1.000	MIOD	0.0357	0.0073
+0.9390	0.9135	1.000	97	0.0150	0.0073

@@ -1,0 +1,110 @@
+0.0682	0.5470	1.000	APPENDIX D. MESSAGES TO THE OPERATOR	0.3684	0.0176
+0.1105	0.0827	1.000	m Appendix D and E, many of the fields are to be	0.3703	0.0145
+0.1118	0.5113	1.000	$ STATUS REPLY: CHXX ZZZ DELETED.	0.3289	0.0176
+0.1250	0.0789	1.000	filled in, such as job name, etc. These fields are	0.3816	0.0160
+0.1264	0.5545	1.000	Where ZZZ represents either UNY, or ALL	0.3365	0.0161
+0.1389	0.0807	1.000	indicated in two ways. A symbol may be inserted,	0.3781	0.0156
+0.1398	0.5562	1.000	which means the entire channel is deleted.	0.3219	0.0173
+0.1539	0.0827	1.000	which is to be explained thereafter, or a self-	0.3459	0.0133
+0.1555	0.5564	1.000	This message is given in response to an I/O	0.3327	0.0146
+0.1685	0.0827	1.000	explanatory literal may be used, e.g., a literal	0.3628	0.0147
+0.1730	0.5526	1.000	status report.	0.1071	0.0102
+0.1808	0.5092	1.000	$ MAKE YOUR NEXT I/O STATUS REPORT.	0.3427	0.0199
+0.1830	0.0827	1.000	such as 'ppname' indicates that the job name fills	0.3703	0.0146
+0.1976	0.0808	1.000	this field; 'reel' indicates that the tape reel name	0.3722	0.0146
+0.2020	0.5545	1.000	This message directs the operator to specify	0.3365	0.0131
+0.2121	0.0808	1.000	fills this field, etc.	0.1485	0.0132
+0.2136	0.5545	1.000	any device that is currently not available to the	0.3571	0.0146
+0.2297	0.5526	1.000	system.	0.0639	0.0145
+0.2384	0.0808	1.000	Initialization Error Messages (IPL Program)	0.3440	0.0189
+0.2412	0.5094	1.000	$MCPIPI*-MOUNT REEL 'reel', ON CHANNEL	0.3816	0.0191
+0.2551	0.5073	1.000	XX, UNIT Y.	0.1057	0.0189
+0.2598	0.1032	1.000	The Initialization error messages are all in the	0.3576	0.0184
+0.2703	0.5545	1.000	A number of messages of this type will be	0.3214	0.0191
+0.2776	0.0789	1.000	following form:	0.1165	0.0118
+0.2848	0.5526	1.000	printed depending on the number of tapes	0.3120	0.0189
+0.2936	0.0808	1.000	'location' - A TYPE IPLXX ERROR	0.2801	0.0116
+0.3023	0.5508	1.000	required for system operation.	0.2425	0.0146
+0.3081	0.1015	1.000	where: 'location' is the address of the instruction	0.3778	0.0146
+0.3149	0.5094	1.000	$READER IS INPUT SOURCE ON CHANNEL XX	0.3666	0.0170
+0.3227	0.1222	1.000	+1. at which the error was detected.	0.2895	0.0131
+0.3285	0.5545	1.000	The card reader is the system input source for	0.3553	0.0176
+0.3372	0.1598	1.000	XX is one of the following error codes:	0.2970	0.0146
+0.3430	0.5526	1.000	either bypass or on-line system mode of	0.3102	0.0189
+0.3517	0.0996	1.000	00 An exchange failure (EKJ) was detected during	0.3778	0.0161
+0.3582	0.5524	1.000	operation.	0.0813	0.0176
+0.3663	0.1278	1.000	the execution of a copy control word instruction.	0.3571	0.0160
+0.3808	0.1015	1.000	01 The I/O test routine detected an error during	0.3684	0.0160
+0.3922	0.1275	1.000	the execution of an I/O operation, (EKJ,	0.3034	0.0193
+0.4040	0.5071	1.000	Normal Running Messages	0.2115	0.0202
+0.4099	0.1297	1.000	UNRJ or CBJ).	0.1184	0.0116
+0.4244	0.1015	1.000	02 The space file operation was unsuccessful.	0.3477	0.0132
+0.4345	0.5282	1.000	Once the system has been initialized, MCP receives	0.3835	0.0161
+0.4390	0.1015	1.000	03 The read of the system tape was unsuccessful.	0.3759	0.0132
+0.4491	0.5075	1.000	control and issues a series of informative and action	0.3966	0.0146
+0.4535	0.1015	1.000	04 The disk locate was unsuccessful.	0.2820	0.0132
+0.4621	0.5075	1.000	messages to keep the system running. The action	0.3816	0.0161
+0.4654	0.1013	1.000	05 The disk write of PROSA was unsuccessful.	0.3538	0.0159
+0.4752	0.5056	1.000	messages are printed at the margin while the inform-	0.4098	0.0161
+0.4811	0.1014	1.000	06 There were no IOCD cards detected.	0.3010	0.0132
+0.4884	0.5056	1.000	ative messages are shifted right for readability. The	0.4041	0.0204
+0.4956	0.0996	1.000	07 An illegal equipment code was specified on an	0.3722	0.0147
+0.5029	0.5038	1.000	following represents a typical series of MCP issued	0.3966	0.0204
+0.5115	0.1278	1.000	OCD card.	0.0846	0.0103
+0.5188	0.5056	1.000	messages while the system is running in the on-line	0.3947	0.0191
+0.5240	0.0995	1.000	08 An IOCD card was punched incorrectly.	0.3255	0.0154
+0.5334	0.5056	1.000	mode.	0.0508	0.0160
+0.5406	0.0996	1.000	09 A non IOCD or non IOD card was detected	0.3402	0.0132
+0.5552	0.1278	1.000	within the I/O Definition cards.	0.2350	0.0118
+0.5639	0.5056	1.000	$OPTR READY CHXX UNY.	0.2237	0.0161
+0.5697	0.0996	1.000	10 An illegal IOD card was detected.	0.2801	0.0118
+0.5785	0.5677	1.000	In this example, the above message is a	0.3083	0.0176
+0.5842	0.0996	1.000	11 The initialization program is unable to meet	0.3609	0.0131
+0.5945	0.5677	1.000	request for the operator to load and ready	0.3195	0.0161
+0.5988	0.1259	1.000	the I/O requirements defined, or is unable to	0.3383	0.0161
+0.6076	0.5677	1.000	the card reader.	0.1316	0.0161
+0.6118	0.1259	1.000	assign the I/O units in the manner defined by	0.3383	0.0161
+0.6206	0.5056	1.000	$OPTR SERVICE THE CARD READER.	0.3139	0.0189
+0.6279	0.1278	1.000	the MCP IOD cards.	0.1541	0.0117
+0.6381	0.5677	1.000	The system expects more cards and will not	0.3383	0.0146
+0.6424	0.0977	1.000	12 The I/O tables cannot be constructed properly	0.3759	0.0161
+0.6523	0.5676	1.000	reference the reader until the system gets	0.3234	0.0152
+0.6564	0.1258	1.000	with the information specified on the IOD	0.3273	0.0153
+0.6657	0.5677	1.000	the channel signal from the reader.	0.2707	0.0161
+0.6714	0.1278	1.000	cards.	0.0489	0.0103
+0.6788	0.5677	1.000	CHXX UNY-THE NEW IP READ TAPE.	0.3158	0.0189
+0.6817	0.5038	1.000	$	0.0132	0.0160
+0.6847	0.0975	1.000	13 The PROSA arc count is incorrect.	0.2899	0.0165
+0.6976	0.5677	1.000	The system has prescanned and rewound this	0.3402	0.0161
+0.6999	0.0995	1.000	14 The MCP parameter input card is missing	0.3575	0.0158
+0.7106	0.5677	1.000	tape. The first job on this tape will now be	0.3289	0.0161
+0.7151	0.1222	1.000	(MCPP card).	0.1128	0.0131
+0.7267	0.0976	1.000	15 An incorrect operating mode was specified.	0.3576	0.0176
+0.7282	0.5677	1.000	run.	0.0376	0.0116
+0.7412	0.5677	1.000	JOB 'ppname' 'time' 'date'	0.2143	0.0161
+0.7413	0.5038	1.000	$	0.0132	0.0145
+0.7418	0.0957	1.000	16 The system input assignments were not made	0.3726	0.0188
+0.7573	0.5677	1.000	This job will now be run.	0.1917	0.0131
+0.7587	0.1241	1.000	correctly, or the system input IOD's were not	0.3496	0.0146
+0.7718	0.5056	1.000	$OPTR MOUNT THESE TAPES:	0.2538	0.0116
+0.7718	0.1259	1.000	defined for the overlapped mode.	0.2462	0.0131
+0.7849	0.5056	1.000	$	0.0113	0.0116
+0.7863	0.5677	1.000	PP -'ppname'	0.1203	0.0146
+0.7994	0.5677	1.000	REEL 'reel' ON CHXX UNY 'protect'	0.2895	0.0146
+0.7994	0.5056	1.000	$	0.0113	0.0116
+0.8023	0.0752	1.000	Initialization Messages	0.1805	0.0160
+0.8139	0.5677	1.000	PP REQS CHXX UNY 'reel'	0.2237	0.0145
+0.8140	0.5038	1.000	$	0.0132	0.0131
+0.8245	0.0994	1.000	These operator messages can only occur during	0.3612	0.0157
+0.8285	0.5677	1.000	The message PP REQS CHXX UNY 'reel'	0.3214	0.0145
+0.8400	0.0752	1.000	initialization of MCP.	0.1654	0.0147
+0.8406	0.5674	1.000	will be given if the desired tape (scratch or	0.3295	0.0218
+0.8525	0.0750	1.000	$ DATE OF IPL TAPE XX MONTH YY DAY.	0.3368	0.0167
+0.8576	0.5677	1.000	special name) is currently mounted because	0.3327	0.0174
+0.8691	0.1184	1.000	The date specified reflects the date card used	0.3440	0.0146
+0.8721	0.5677	1.000	a previous job required the tape.	0.2519	0.0146
+0.8810	0.1181	1.000	when generating this system tape.	0.2563	0.0188
+0.8837	0.5038	1.000	$	0.0132	0.0160
+0.8866	0.5677	1.000	Begin Execution 'time'	0.1823	0.0131
+0.9201	0.7914	1.000	Appendix	0.0564	0.0087
+0.9201	0.8891	1.000	49	0.0169	0.0073

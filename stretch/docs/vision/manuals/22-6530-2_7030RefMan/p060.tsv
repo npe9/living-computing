@@ -1,0 +1,113 @@
+0.0639	0.5019	1.000	Sign Control	0.0940	0.0116
+0.0639	0.0902	1.000	an accumulator-altering operation may propagate to	0.3853	0.0131
+0.0799	0.0921	1.000	the left end of the accumulator. If a carry attempts	0.3835	0.0116
+0.0872	0.6278	1.000	arithmetic operations include two	0.2650	0.0146
+0.0887	0.5038	1.000	All the integer	0.1259	0.0132
+0.0945	0.0921	1.000	to propagate beyond the left end of the accumulator,	0.3853	0.0131
+0.1032	0.5019	1.000	modifiers, bits 51 and 52, which affect the use of the	0.3929	0.0132
+0.1090	0.0921	1.000	the carry is lost and the lost carry indicator is turned	0.3835	0.0146
+0.1191	0.5038	1.000	sign of one or both of the operands.	0.2556	0.0132
+0.1279	0.0902	1.000	on.	0.0226	0.0087
+0.1321	0.5188	1.000	Numeric data fields in storage may be signed or	0.3759	0.0147
+0.1424	0.1053	1.000	It should be pointed out that the entire contents	0.3703	0.0146
+0.1497	0.5019	1.000	unsigned. If the field is signed, the rightmost byte is	0.3929	0.0145
+0.1584	0.0902	1.000	of the accumulator are treated basically as a unit.	0.3853	0.0131
+0.1642	0.5038	1.000	the sign byte. The size of the sign byte is specified	0.3910	0.0145
+0.1730	0.0921	1.000	This means that all bits in the accumulator, even	0.3835	0.0131
+0.1802	0.5038	1.000	by the byte size. The sign of the accumulator operand	0.3910	0.0131
+0.1890	0.0921	1.000	those to the right of the offset, can be changed as a	0.3835	0.0132
+0.1948	0.5019	1.000	is contained in the fifth bit position from the left in	0.3929	0.0146
+0.2035	0.1880	1.000	accumulator-altering operation. This	0.2895	0.0145
+0.2106	0.5038	1.000	the accumulator sign byte register.	0.2481	0.0133
+0.2194	0.0902	1.000	occurs when such an operation causes the accumula-	0.3872	0.0132
+0.2252	0.5188	1.000	Instruction bit 51, the unsigned modifier, desig-	0.3759	0.0147
+0.2339	0.0902	1.000	tor to be cleared or recomplemented. For example,	0.3853	0.0132
+0.2412	0.5038	1.000	nates whether the addressed storage operand contains	0.3910	0.0131
+0.2500	0.0902	1.000	LOAD clears the entire accumulator regardless of the	0.3872	0.0131
+0.2573	0.5038	1.000	a sign byte or not. If the bit is zero, the operand is	0.3910	0.0131
+0.2660	0.0902	1.000	offset specified. Recomplementation occurs when the	0.3872	0.0131
+0.2718	0.5038	1.000	signed. If the bit is one, the operand is unsigned. A	0.3910	0.0146
+0.2805	0.0902	1.000	sign of the accumulator changes as a result of an op-	0.3853	0.0146
+0.2878	0.5038	1.000	positive sign is assumed for an unsigned field and all	0.3929	0.0131
+0.2922	0.0900	1.000	eration. In this event, the entire accumulator is re-	0.3876	0.0196
+0.3023	0.5038	1.000	bytes including the rightmost byte are processed as	0.3929	0.0146
+0.3109	0.0902	1.000	complemented regardless of the offset.	0.2707	0.0147
+0.3299	0.1034	1.000	In accumulator-altering operations, the oftset can	0.3722	0.0131
+0.3327	0.5169	1.000	Instruction bit 52, the negative sign modifier, desig-	0.3778	0.0161
+0.3445	0.0883	1.000	be conveniently thought of as equivalent to specify-	0.3891	0.0131
+0.3473	0.5036	1.000	nates whether the sign of the unreplaced operand is	0.3912	0.0177
+0.3605	0.0883	1.000	ing the number of numeric zero bits to be added to	0.3891	0.0132
+0.3648	0.5038	1.000	taken as-is or inverted before processing takes place.	0.3910	0.0131
+0.3750	0.0902	1.000	the low-order end of the other operand before it is	0.3872	0.0132
+0.3794	0.5038	1.000	If the bit is zero, the same sign is used; if the bit is	0.3929	0.0146
+0.3909	0.0902	1.000	combined with the accumulator contents. In storage-	0.3872	0.0132
+0.3939	0.5038	1.000	one, the sign is inverted. In general, if the result of	0.3929	0.0146
+0.4055	0.0902	1.000	altering operations, the contents of the accumulator	0.3872	0.0146
+0.4112	0.5019	1.000	an operation is placed in the accumulator, bit 52 de-	0.3929	0.0147
+0.4215	0.0902	1.000	to the right of the offset are ignored.	0.2538	0.0131
+0.4258	0.5038	1.000	termines the use of the sign of the operand from	0.3910	0.0133
+0.4363	0.1032	1.000	In decimal operations, the accumulator is treated	0.3744	0.0175
+0.4403	0.5038	1.000	storage; if the result is placed in storage, bit 52 deter-	0.3929	0.0146
+0.4533	0.5036	1.000	mines the use of the accumulator sign. The negative	0.3932	0.0204
+0.4535	0.0883	1.000	as 32 four-bit digit positions. Decimal fields may	0.3891	0.0145
+0.4694	0.0883	1.000	occupy any set of contiguous digit positions in the	0.3891	0.0146
+0.4724	0.5038	1.000	sign modifier, when one, has the effect of changing	0.3929	0.0131
+0.4839	0.0883	1.000	accumulator. In decimal operations, the offset is	0.3891	0.0146
+0.4869	0.5038	1.000	algebraic additions to subtractions or changing the	0.3929	0.0146
+0.5000	0.0883	1.000	limited to these digit positions and hence to a multi-	0.3891	0.0145
+0.5015	0.5038	1.000	sign of the result of multiplications, divisions, or	0.3929	0.0146
+0.5160	0.0902	1.000	ple of four by ignoring the two low-order bits of the	0.3872	0.0146
+0.5217	0.5037	1.000	stores.	0.0470	0.0089
+0.5305	0.0883	1.000	offset specified by the effective address of the second	0.3891	0.0146
+0.5323	0.5205	1.000	The following table summarizes the combinations	0.3762	0.0183
+0.5480	0.0883	1.000	half-word.	0.0695	0.0102
+0.5509	0.5038	1.000	which can be specified.	0.1711	0.0161
+0.5741	0.0902	1.000	PROGRAMMING NOTE	0.1429	0.0102
+0.5799	0.6523	1.000	OPERATION	0.0639	0.0087
+0.5814	0.5094	1.000	BITS	0.0263	0.0073
+0.5900	0.7556	1.000	SIGN STORAGE FIEL.D SIGN	0.1410	0.0074
+0.5900	0.5056	1.000	51-52 ACC. SIGN STORAGE FIELD SIGN ACC.	0.2519	0.0103
+0.5930	0.0883	1.000	Since the accumulator is addressable, it may also be	0.3891	0.0146
+0.6017	0.7293	1.000	Use as-is Use as-is	0.1184	0.0102
+0.6032	0.5451	1.000	Use as-is Use as-is	0.1222	0.0087
+0.6032	0.5094	1.000	00	0.0169	0.0087
+0.6090	0.0883	1.000	used as the storage operand of any of the data han-	0.3910	0.0146
+0.6148	0.5451	1.000	Use as-is Invert	0.1053	0.0102
+0.6163	0.5094	1.000	01	0.0150	0.0073
+0.6222	0.0882	1.000	dling operations. The left half of the accumulator	0.3912	0.0164
+0.6264	0.7293	1.000	Use as-is Unsigned, use +	0.1654	0.0118
+0.6294	0.5113	1.000	10	0.0150	0.0073
+0.6394	0.0883	1.000	has address 8, the right half has address 9, and the	0.3891	0.0147
+0.6410	0.5113	1.000	11	0.0150	0.0087
+0.6512	0.0881	1.000	accumulator sign byte register has address 10. The	0.3896	0.0203
+0.6700	0.0883	1.000	accumulator contents can be used as both operands	0.3910	0.0146
+0.6758	0.5038	1.000	Data Flag and Zone Bits	0.1767	0.0161
+0.6842	0.0882	1.000	of an operation. For example, the accumulator con-	0.3912	0.0167
+0.7006	0.5038	1.000	In some applications it may be desirable to mark	0.3929	0.0161
+0.7006	0.0883	1.000	tents can be added to or subtracted from itself in an	0.3891	0.0131
+0.7166	0.5056	1.000	certain data to indicate that special handling of that	0.3929	0.0131
+0.7179	0.0883	1.000	unsigned operation.	0.1447	0.0133
+0.7311	0.5038	1.000	data field is required. The data flag bits in the sign	0.3929	0.0160
+0.7339	0.1034	1.000	When the accumulator is used as the addressed	0.3741	0.0118
+0.7454	0.0881	1.000	operand in a signed operation, the low-order bits of	0.3915	0.0211
+0.7470	0.5038	1.000	byte of signed data fields allow such marking.	0.3252	0.0161
+0.7597	0.5205	1.000	All integer arithmetic operations that obtain data	0.3763	0.0197
+0.7645	0.0883	1.000	the addressed accumulator field are used as the sign	0.3891	0.0131
+0.7776	0.5038	1.000	flag bits from storage place these bits into the indi-	0.3947	0.0161
+0.7805	0.0883	1.000	byte as in any addressed storage operand. The con-	0.3910	0.0146
+0.7921	0.5056	1.000	cator register. LOAD WITH FLaG also places the flag	0.3910	0.0146
+0.7951	0.0883	1.000	tents of the sign byte register are not used as the sign	0.3891	0.0146
+0.8081	0.5038	1.000	bits into the three rightmost bits of the accumulator	0.3929	0.0146
+0.8109	0.0883	1.000	and flag bits of the addressed accumulator operand	0.3891	0.0147
+0.8227	0.5038	1.000	sign byte register. The only other integer arithmetic	0.3929	0.0174
+0.8255	0.0883	1.000	unless the addressed field includes bits 0-7 of word	0.3891	0.0133
+0.8387	0.5038	1.000	operation that affects the data flag positions of the	0.3929	0.0160
+0.8415	0.0883	1.000	10 as the low-order bits of the field. The sign and	0.3891	0.0131
+0.8532	0.5038	1.000	sign byte register as an inherent part of its operation	0.3929	0.0174
+0.8576	0.0883	1.000	flag bits in the sign byte register apply to the accu-	0.3910	0.0146
+0.8691	0.5019	1.000	is LOAD, which sets these three bit positions to zero.	0.3797	0.0161
+0.8721	0.0865	1.000	mulator contents only when the accumulator is the	0.3910	0.0131
+0.8852	0.5207	1.000	Zone bits in the sign byte of a signed storage oper-	0.3778	0.0146
+0.8881	0.0883	1.000	implied operand of an operation.	0.2368	0.0146
+0.9230	0.7180	1.000	Variable Field Length	0.1335	0.0116
+0.9230	0.8778	1.000	57	0.0188	0.0087

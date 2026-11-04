@@ -1,0 +1,115 @@
+0.0639	0.1090	1.000	The standard operational range for exponents is	0.3703	0.0145
+0.0769	0.0938	1.000	from +1023 through -1023. This range is called the	0.3858	0.0209
+0.0930	0.0940	1.000	normal, N, range. N range values have magnitudes	0.3853	0.0189
+0.0930	0.5094	1.000	XFP	0.0263	0.0087
+0.1104	0.0958	1.000	tor normalized floating point numbers ranging be	0.3799	0.0158
+0.1118	0.5489	1.000	- +F2t1023	0.0658	0.0191
+0.1119	0.6635	1.000	-+410+308	0.0789	0.0189
+0.1264	0.0959	1.000	tween 2+1024 and 2-1024, or approximately 10+308 and	0.3816	0.0132
+0.1424	0.0959	1.000	10-308.	0.0376	0.0116
+0.1554	0.1089	1.000	Through the use of the exponent flag, two addi-	0.3706	0.0176
+0.1657	0.5508	1.000	+F21023	0.0658	0.0203
+0.1672	0.6654	1.000	- +110-308	0.0733	0.0189
+0.1728	0.4022	1.000	These are	0.0772	0.0134
+0.1730	0.1353	1.000	ranges of numbers are provided.	0.2575	0.0146
+0.1875	0.0959	1.000	called the exponent flag positive, xep, range and the	0.3835	0.0146
+0.2035	0.0959	1.000	exponent flag negative, XEN, range. The XFP range	0.3835	0.0145
+0.2108	0.5075	1.000	XFN	0.0282	0.0131
+0.2179	0.0959	1.000	may be considered to have the properties of unde-	0.3835	0.0147
+0.2324	0.2011	1.000	sometimes symbolized by o. This	0.2782	0.0161
+0.2355	0.0977	1.000	fined numbers,	0.1071	0.0116
+0.2427	0.5508	1.000	-F21023	0.0602	0.0189
+0.2427	0.6654	1.000	--110-308	0.0714	0.0189
+0.2485	0.0959	1.000	range corresponds to all values with exponents greater	0.3835	0.0146
+0.2625	0.0939	1.000	than +1023. The XEN range may be considered to	0.3857	0.0199
+0.2791	0.0959	1.000	have the properties of the number zero. This range	0.3835	0.0161
+0.2935	0.0957	1.000	corresponds to all values with exponents less than	0.3838	0.0185
+0.2965	0.5489	1.000	-F2t1023	0.0658	0.0189
+0.2965	0.6711	1.000	--t10t308	0.0658	0.0189
+0.3240	0.1070	1.000	Algebraically, the use of these types of values in	0.3725	0.0197
+0.3285	0.5056	1.000	XFP	0.0282	0.0116
+0.3400	0.0940	1.000	arithmetic operations produces undefined results. The	0.3872	0.0176
+0.3561	0.0959	1.000	requirements of machine processing require specific	0.3853	0.0146
+0.3706	0.5056	1.000	Figure 22. Floating Point Number Range	0.2519	0.0146
+0.3721	0.0959	1.000	definitions for such cases. Therefore, the arbitrary	0.3835	0.0131
+0.3866	0.0959	1.000	definitions for these results have been selected such	0.3853	0.0131
+0.3982	0.5150	1.000	In the accumulator, floating-point numbers are	0.3835	0.0132
+0.4026	0.0959	1.000	that result exponents will be propagated in the most	0.3853	0.0147
+0.4112	0.5150	1.000	epresented either in single precision or in doubl	0.3741	0.0133
+0.4200	0.0959	1.000	noticeable direction.	0.1429	0.0103
+0.4288	0.5169	1.000	recision. For single precision the following forma	0.3722	0.0088
+0.4360	0.1090	1.000	The ranges discussed are classified as follows:	0.3308	0.0146
+0.4431	0.5037	1.000	is used:	0.0603	0.0136
+0.4651	0.3308	1.000	DEFINITION	0.0639	0.0073
+0.4666	0.1053	1.000	RANGE	0.0338	0.0073
+0.4666	0.2387	1.000	ES	0.0132	0.0073
+0.4666	0.1692	1.000	EF	0.0169	0.0073
+0.4797	0.3647	1.000	Exponent≥ +1024	0.1165	0.0131
+0.4811	0.2406	1.000	0	0.0094	0.0087
+0.4811	0.1090	1.000	XFP	0.0263	0.0087
+0.4824	0.7425	1.000	NOT USED	0.0395	0.0074
+0.4826	0.5977	1.000	FRACTION	0.0432	0.0102
+0.4913	0.8515	0.300	T27O	0.0226	0.0102
+0.4942	0.3647	1.000	Exponent>-1024	0.1165	0.0145
+0.4956	0.1128	1.000	N	0.0150	0.0116
+0.4956	0.2237	1.000	0 or 1	0.0414	0.0102
+0.4956	0.2895	1.000	+1024	0.0414	0.0116
+0.4971	0.1729	1.000	0	0.0094	0.0087
+0.5115	0.3346	1.000	≥ Exponent	0.0921	0.0103
+0.5116	0.1711	1.000	1	0.0094	0.0102
+0.5116	0.2914	1.000	-1024	0.0395	0.0087
+0.5116	0.1053	1.000	XFN	0.0301	0.0102
+0.5188	0.5207	1.000	The exponent field is in bit positions 0-11. The	0.3797	0.0161
+0.5332	0.5055	1.000	fraction magnitude is in bit positions 12-59. The	0.3931	0.0170
+0.5348	0.1090	1.000	The fraction field uses the next 49 bits of the data	0.3703	0.0131
+0.5487	0.5056	1.000	fraction sign bit does not appear in the accumulator	0.3929	0.0159
+0.5509	0.0940	1.000	word, bit positions 12-60. Bit positions 12-59 are the	0.3872	0.0174
+0.5639	0.5056	1.000	register, but in bit position 4 of the accumulator sign	0.3947	0.0176
+0.5649	0.0938	1.000	fraction magnitude, F. Bit position 60 is the fraction	0.3857	0.0197
+0.5799	0.5056	1.000	byte register. Bit positions 5-7 of the accumulator	0.3947	0.0161
+0.5814	0.0940	1.000	sign, S. The binary point associated with the frac-	0.3872	0.0147
+0.5945	0.5056	1.000	sign byte register may contain the data flag bits asso-	0.3947	0.0161
+0.5973	0.0959	1.000	tion is defined to be to the left of the high-order	0.3853	0.0133
+0.6105	0.5056	1.000	ciated with the information in the accumulator. Ac-	0.3929	0.0132
+0.6117	0.0957	1.000	position, bit position 12. This means that a 1, in bit	0.3856	0.0167
+0.6250	0.5056	1.000	cumulator bit positions 60-63 are not used and remain	0.3929	0.0160
+0.6266	0.0957	1.000	position 12, has the numerical value of one-half.	0.3518	0.0159
+0.6424	0.5075	1.000	unchanged during single-precision floating-point op	0.3891	0.0131
+0.6453	0.1090	1.000	The data flag bits T, U, and V occupy bit positions	0.3722	0.0131
+0.6549	0.5075	1.000	erations. The contents of the right half of the ac-	0.3892	0.0143
+0.6584	0.0940	1.000	61, 62, and 63, respectively. These bits can be set by	0.3853	0.0146
+0.6700	0.5056	1.000	cumulator are neither used nor changed by a single.	0.3910	0.0146
+0.6726	0.0958	1.000	the programmer and, when set to 1, turn on the asso-	0.3856	0.0169
+0.6860	0.5056	1.000	precision floating-point operation unless address 9 is	0.3929	0.0146
+0.6875	0.0940	1.000	ciated indicators. The four bits S, I, U, and V are	0.3872	0.0174
+0.7006	0.5056	1.000	used as the addressed operand. Bit positions 0-3 of	0.3947	0.0146
+0.7046	0.0958	1.000	treated as the sign byte for floating-point operations.	0.3837	0.0146
+0.7166	0.5056	1.000	the accumulator sign byte register are not used by	0.3929	0.0146
+0.7188	0.0939	1.000	In the accumulator sign byte register, they are stored	0.3854	0.0144
+0.7310	0.5055	1.000	any floating-point operation. They will not be	0.3932	0.0177
+0.7369	0.0959	1.000	in bit positions 4, 5, 6, and 7.	0.2068	0.0131
+0.7485	0.5056	1.000	changed by any floating-point operation unless ad-	0.3929	0.0131
+0.7500	0.1071	1.000	The floating point ranges specified above may be	0.3741	0.0161
+0.7630	0.5075	1.000	dress 10 is used as the addressed operand.	0.2951	0.0146
+0.7658	0.0939	1.000	visualized through Figure 22, in which F represents	0.3875	0.0164
+0.7791	0.5150	1.000	For double-precision operations, the following for-	0.3835	0.0131
+0.7800	0.0958	1.000	the binary fraction and f represents the equivalent	0.3856	0.0157
+0.7906	0.5056	1.000	mat is used:	0.0940	0.0176
+0.7951	0.0940	1.000	decimal fraction. The shaded areas represent the	0.3872	0.0131
+0.8094	0.0919	1.000	ranges of exceptional conditions that are handled by the	0.3914	0.0210
+0.8266	0.0957	1.000	system. These ranges may be considered as numerical	0.3856	0.0153
+0.8285	0.5132	1.000	tu	0.0094	0.0131
+0.8299	0.5207	0.500	ExP#	0.0320	0.0116
+0.8314	0.5977	1.000	FRACTION	0.0451	0.0131
+0.8325	0.7348	1.000	FRACTION	0.0472	0.0108
+0.8327	0.8083	1.000	NOT USED	0.0470	0.0103
+0.8411	0.0957	1.000	butters that assist in avoiding numerical difficulties	0.3857	0.0178
+0.8416	0.6880	1.000	60	0.0169	0.0145
+0.8430	0.8477	0.300	T220	0.0282	0.0116
+0.8561	0.0921	1.000	encountered in going from machine processable val-	0.3891	0.0176
+0.8691	0.5207	1.000	The exponent field, high-order fraction magnitude	0.3816	0.0176
+0.8720	0.0957	1.000	ues to non-machine processable values because of	0.3876	0.0179
+0.8852	0.5056	1.000	and fraction sign occupy the same bit positions as	0.3947	0.0176
+0.8894	0.0959	1.000	exponent overflow or underflow.	0.2312	0.0147
+0.9230	0.8816	1.000	79	0.0188	0.0116
+0.9230	0.6955	1.000	Floating-Point Arithmetic	0.1617	0.0146

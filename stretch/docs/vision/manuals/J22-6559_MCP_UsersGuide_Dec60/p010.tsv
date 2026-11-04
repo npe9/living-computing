@@ -1,0 +1,36 @@
+0.1061	0.1861	1.000	the type of operation requested. In general, the calling sequence takes the form:	0.6504	0.0161
+0.1372	0.4170	1.000	B, $МСР	0.0851	0.0177
+0.1539	0.4173	1.000	, $ОР	0.0583	0.0161
+0.1715	0.4173	1.000	, IODNAME(I)	0.1222	0.0145
+0.2151	0.3271	1.000	OP represents an I-O operation	0.2575	0.0161
+0.2179	0.2312	1.000	where:	0.0584	0.0134
+0.2297	0.3271	1.000	IODNAME is the symbol in the name field of an IOD card	0.4568	0.0161
+0.2456	0.3271	1.000	I represents any index register	0.2519	0.0160
+0.2791	0.1974	1.000	'he dashes at the end of the calling sequence format indicate the space where the rela	0.6748	0.0116
+0.2951	0.1955	1.000	ive arc numbers or the symbolic locations of control words would be placed if require	0.6805	0.0116
+0.3109	0.1861	1.000	by the operation being requested.	0.2669	0.0133
+0.3400	0.1861	1.000	The branch to $MCP causes control to be given to the Actuator subroutine. The IODNAME	0.7237	0.0161
+0.3561	0.1861	1.000	refers to a word in a table that in turn locates the block of parameters specified on the	0.6880	0.0161
+0.3721	0.1861	1.000	IOD card. If the channel is busy because an operation is in progress on that channel,	0.6880	0.0146
+0.3881	0.1880	1.000	the instruction counter is frozen until the channel is free.	0.4605	0.0116
+0.4180	0.1879	1.000	If both the channel and the unit are free, the Actuator begins the set-up of the requested	0.7013	0.0166
+0.4355	0.1878	1.000	operation. This set-up may include:	0.2935	0.0139
+0.4666	0.2105	1.000	1. Location of a unit on a multiple-unit channel.	0.3891	0.0131
+0.4811	0.2105	1.000	2. Setting the mode as requested on the IOD card, or tape label.	0.5207	0.0147
+0.4970	0.2105	1.000	3. Saving and checking the control word or are number, if one is given.	0.5808	0.0147
+0.5291	0.1880	1.000	In general, it may be said that Actuator supplies the necessary 7030 instructions that	0.6823	0.0146
+0.5451	0.1880	1.000	are required to perform the requested I-O operation.	0.4248	0.0131
+0.5741	0.1880	1.000	When the operation has been set up and accepted by the exchange, control is given to the	0.7049	0.0147
+0.5887	0.1861	1.000	return address associated with the calling sequence (the location after the last control	0.6898	0.0160
+0.6041	0.1879	1.000	word given, or, if no control word is given, the location immediately after the half	0.6656	0.0172
+0.6221	0.1861	1.000	word where the IODNAME is specified).	0.3195	0.0131
+0.6510	0.1860	1.000	Two restrictions apply to any control words that are addressed in an I-O calling	0.6430	0.0185
+0.6715	0.1861	1.000	sequence:	0.0789	0.0116
+0.6991	0.2105	1.000	1. The control word(s) must be in storage.	0.3553	0.0146
+0.7151	0.2086	1.000	2. The chain bit in the last control word must be 0.	0.4192	0.0161
+0.7456	0.1861	1.000	All I-O operations available in the 7030 system may be actuated by means of the above	0.6917	0.0160
+0.7615	0.1861	1.000	calling sequence linkage. In addition, all I-O operations, with the exception of Copy	0.6767	0.0146
+0.7761	0.1880	1.000	Control Word, may be suffixed by the letter S (which represents SEOP) to suppress the	0.6955	0.0146
+0.7921	0.1880	1.000	EOP interrupt. The complete calling sequences for all I-O operations are listed in	0.6654	0.0146
+0.8096	0.1861	1.000	the Appendix.	0.1109	0.0146
+0.9404	0.0658	1.000	10	0.0282	0.0174

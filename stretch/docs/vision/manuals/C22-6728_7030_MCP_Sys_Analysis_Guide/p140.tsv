@@ -1,0 +1,126 @@
+0.0669	0.5056	1.000	command routine. The first parameter in the SKOM	0.3929	0.0189
+0.0712	0.0752	1.000	Offline from Bypass -- VOFFLB	0.2425	0.0116
+0.0858	0.5056	1.000	calling sequence generating the command specifies	0.3778	0.0131
+0.0973	0.0752	1.000	The VOFFLB routine (Figure 72) is entered under	0.3722	0.0146
+0.0988	0.5056	1.000	the command desired. This parameter is placed in	0.3816	0.0131
+0.1133	0.5038	1.000	the VSKM tentacle where it is available to the	0.3402	0.0146
+0.1148	0.0752	1.000	circumstances similar to the VONLIB transition.	0.3665	0.0116
+0.1279	0.0752	1.000	The card originating the command must be the last	0.3797	0.0131
+0.1294	0.5056	1.000	VSSKOM routine.	0.1297	0.0131
+0.1424	0.5207	1.000	VSSKOM uses this parameter in the sense of a	0.3459	0.0161
+0.1439	0.0752	1.000	card in the file. This condition is first tested by	0.3665	0.0116
+0.1584	0.0771	1.000	VOFFLB and if it is not satisfied an "end" return is	0.3835	0.0116
+0.1584	0.5056	1.000	relative location within one of two branch tables	0.3553	0.0146
+0.1700	0.0751	1.000	given to the command package and the remainder of	0.3855	0.0161
+0.1744	0.5038	1.000	which contains branches to the appropriate routines.	0.3910	0.0132
+0.1875	0.0752	1.000	the file is processed in the bypass mode. Otherwise,	0.3966	0.0131
+0.1890	0.5056	1.000	The particular branch table used is set externally to	0.3872	0.0132
+0.2006	0.0752	1.000	the future inactivity of the card reader is ensured by	0.3929	0.0146
+0.2020	0.5075	1.000	VSSKOM by some of the transition routines. The	0.3665	0.0146
+0.2179	0.0752	1.000	altering the CS fixup to ignore channel signals.	0.3477	0.0118
+0.2194	0.5056	1.000	command routines addressed by the tables versus	0.3684	0.0118
+0.2311	0.0921	1.000	The phase 4 operation is resumed immediately by	0.3684	0.0131
+0.2333	0.5056	1.000	the relative location parameters used to address the	0.3873	0.0130
+0.2470	0.0752	1.000	altering VREQ so that is thereafter processes requests	0.4098	0.0118
+0.2485	0.5056	1.000	particular entry are as tabulated below:	0.2951	0.0118
+0.2602	0.0752	1.000	from the Qtables and VBF2. The SC is modified for	0.3947	0.0132
+0.2761	0.6241	1.000	Overlapped Bypass	0.1203	0.0118
+0.2761	0.0752	1.000	offline mode operation, connected with ST, and the	0.3778	0.0133
+0.2847	0.6183	1.000	Branch	0.0471	0.0134
+0.2862	0.5507	1.000	Parameter	0.0659	0.0133
+0.2863	0.7688	1.000	Request	0.0526	0.0145
+0.2878	0.5019	1.000	SKOM	0.0414	0.0116
+0.2878	0.7011	1.000	Branch	0.0432	0.0116
+0.2921	0.0752	1.000	SC-ST phase integrity is restored just as in the	0.3534	0.0117
+0.3009	0.7707	1.000	For	0.0263	0.0116
+0.3009	0.5000	1.000	Name	0.0395	0.0116
+0.3009	0.6241	1.000	Table	0.0376	0.0116
+0.3009	0.5583	1.000	Value	0.0376	0.0116
+0.3009	0.7030	1.000	Table	0.0376	0.0131
+0.3036	0.0733	1.000	VOFFLN routine. At this point phase 1 operation is	0.3872	0.0147
+0.3197	0.0714	1.000	ready to be started, but the method of starting depends	0.4079	0.0146
+0.3241	0.7669	1.000	ONLINE transition	0.1128	0.0160
+0.3241	0.7030	1.000	VONLIB*	0.0564	0.0145
+0.3254	0.6240	1.000	VONLIN	0.0509	0.0134
+0.3256	0.5677	1.000	0.	0.0207	0.0131
+0.3256	0.5019	1.000	SONL	0.0357	0.0131
+0.3342	0.0733	1.000	on whether this transition is simple or compound.	0.3703	0.0118
+0.3372	0.7030	1.000	VOFFLB*	0.0564	0.0145
+0.3372	0.7707	1.000	OFFLINE transition	0.1128	0.0161
+0.3387	0.5019	1.000	SOFFL	0.0395	0.0116
+0.3387	0.5752	1.000	•32	0.0263	0.0131
+0.3387	0.6241	1.000	VOFFLN	0.0526	0.0131
+0.3482	0.7705	1.000	System input EOF	0.1075	0.0186
+0.3488	0.7030	1.000	VEOFB	0.0470	0.0160
+0.3503	0.0902	1.000	If simple, then the tape switch mechanism is	0.3327	0.0116
+0.3517	0.5019	1.000	SEOF	0.0338	0.0116
+0.3517	0.6241	1.000	VEOFN	0.0451	0.0131
+0.3532	0.5677	1.000	1.0	0.0282	0.0102
+0.3617	0.7706	1.000	End of job scan	0.0941	0.0178
+0.3633	0.0733	1.000	already set up as for offline operation, and VTSA,	0.3722	0.0131
+0.3634	0.7030	1.000	VBEOJ	0.0432	0.0145
+0.3646	0.5018	1.000	SEJSCN	0.0453	0.0121
+0.3647	0.6240	1.000	VOEOJ	0.0434	0.0134
+0.3648	0.5677	1.000	1.32	0.0338	0.0131
+0.3735	0.7726	1.000	BYPASS transition	0.1071	0.0174
+0.3764	0.7030	1.000	VBSTRT	0.0508	0.0133
+0.3779	0.0733	1.000	which was blocked by the VBYPAF routine, need	0.3609	0.0131
+0.3779	0.5019	1.000	SBYP	0.0338	0.0116
+0.3779	0.6241	1.000	VBYPAS*	0.0564	0.0116
+0.3779	0.5677	1.000	2.0	0.0282	0.0131
+0.3894	0.7726	1.000	System input rewind	0.1203	0.0161
+0.3895	0.5677	1.000	2.32	0.0338	0.0131
+0.3908	0.6240	1.000	VSREW	0.0472	0.0120
+0.3910	0.5019	1.000	SREW	0.0376	0.0102
+0.3924	0.0733	1.000	only be restarted by using the VACT subroutine with	0.3891	0.0131
+0.4026	0.6241	1.000	VSCR1	0.0432	0.0131
+0.4026	0.5677	1.000	3.0	0.0282	0.0131
+0.4026	0.5019	1.000	SCR1	0.0357	0.0131
+0.4039	0.7726	1.000	Phase 1 B card request	0.1259	0.0118
+0.4070	0.7143	0.300	_--	0.0207	0.0073
+0.4084	0.0733	1.000	the VTSA queue.	0.1241	0.0116
+0.4142	0.6241	1.000	VSCAN	0.0470	0.0131
+0.4157	0.5019	1.000	SCAN	0.0376	0.0116
+0.4168	0.7744	1.000	Phase 1 scanto job	0.1054	0.0122
+0.4172	0.5677	1.000	3.32	0.0338	0.0102
+0.4215	0.0902	1.000	If the previous overlapped mode were online, there	0.3797	0.0131
+0.4269	0.7761	1.000	boundary	0.0549	0.0169
+0.4360	0.0732	1.000	may be a tape attached to WT and also some tapes in	0.3912	0.0169
+0.4520	0.5207	1.000	The transition routines with an asterisk set the	0.3534	0.0146
+0.4520	0.0733	1.000	the VTSA queue with WT destinations. Using the sub-	0.4004	0.0131
+0.4666	0.0733	1.000	routine VMTTSA will remove the tapes in the VTSA	0.3816	0.0116
+0.4666	0.5038	1.000	SSKOM routine to use the other branch table. The	0.3778	0.0160
+0.4811	0.0733	1.000	queue and put them through an unload cycle, just as	0.3835	0.0131
+0.4824	0.5056	1.000	various routines return to the command dispatcher	0.3778	0.0118
+0.4956	0.0733	1.000	for the VOFFLN routine. If a tape is attached to WT	0.3947	0.0116
+0.4967	0.5037	1.000	with the return set as end or normal. The command	0.3910	0.0138
+0.5115	0.0733	1.000	as indicated by a zero record and file count, it is	0.3665	0.0118
+0.5115	0.5056	1.000	dispatcher stores the return address in the tentacle	0.3816	0.0118
+0.5247	0.5056	1.000	table and issues $RET.	0.1748	0.0160
+0.5247	0.0733	1.000	removed by the VRJTP routine (Figure 73), which is	0.3910	0.0132
+0.5406	0.0733	1.000	that part of the VFREW routine performing this	0.3515	0.0132
+0.5552	0.0733	1.000	function for both the VOFFLB and the VOFFLN	0.3496	0.0118
+0.5624	0.5019	1.000	The Rewind Command	0.1654	0.0146
+0.5697	0.0733	1.000	routines. Just prior to cleaning out VTSA, VOP	0.3609	0.0132
+0.5858	0.0733	1.000	(VTSB) and VDS (VTSB) were set for offline opera-	0.3797	0.0116
+0.5930	0.5019	1.000	The system rewind command allows the operator to	0.3835	0.0161
+0.5988	0.0733	1.000	tion, so tapes coming ready at VTSB will be forwarded	0.4079	0.0131
+0.6090	0.5019	1.000	control termination of the write tapes in the online	0.3759	0.0131
+0.6148	0.0733	1.000	to the proper destination, ST. The first such tape	0.3759	0.0116
+0.6221	0.5038	1.000	mode of operation. The REWIND card is placed in	0.3759	0.0146
+0.6294	0.0733	1.000	will start phase 1 automatically, thus completing this	0.3966	0.0131
+0.6381	0.5038	1.000	the input file just before the job which the operator	0.3759	0.0131
+0.6453	0.0733	1.000	transition.	0.0808	0.0102
+0.6512	0.5019	1.000	wants to place on a new write tape.	0.2632	0.0161
+0.6657	0.5188	1.000	Control is given to VSREW for a rewind command	0.3703	0.0161
+0.6672	0.0695	1.000	The Input Command Dispatcher	0.2350	0.0132
+0.6830	0.5038	1.000	as soon as the card is recognized by JC1. Since con-	0.3966	0.0118
+0.6962	0.0714	1.000	All input commands except SSCR and SSCR4 enter	0.3684	0.0117
+0.6962	0.5019	1.000	trol is received in phase with SC but implies action	0.3816	0.0145
+0.7106	0.5019	1.000	in a subsequent program (WT), a negative parameter,	0.4004	0.0161
+0.7121	0.0695	1.000	through a single tentacle table, VSKM. This specifies	0.4060	0.0146
+0.7252	0.5019	1.000	- VSSREW, is forwarded to WT. When VSSREW is	0.3741	0.0147
+0.7252	0.0714	1.000	as its entry point the command dispatcher routine,	0.3759	0.0133
+0.7412	0.0733	1.000	VSSKOM, which dispatches control to the appropriate	0.3947	0.0131
+0.7412	0.5038	1.000	entered as the result of the corresponding parameter's	0.4060	0.0131
+0.9230	0.0733	1.000	140	0.0226	0.0087

@@ -1,0 +1,100 @@
+0.0945	0.5357	1.000	these must be unstacked whenever the level is to	0.3665	0.0116
+0.0945	0.0996	1.000	the second interrupt must be deferred until the re-	0.3835	0.0102
+0.1090	0.0996	1.000	sponse to the first is complete. An I-O interrupt	0.3722	0.0116
+0.1090	0.5376	1.000	change to PP. The return service routine ($RET)	0.3741	0.0131
+0.1250	0.5376	1.000	sends control to the proper place. Every fixup	0.3534	0.0117
+0.1250	0.0996	1.000	stacking mechanism is required, and is provided by	0.3910	0.0117
+0.1394	0.5376	1.000	routine, PP or MCP, and every major package,	0.3628	0.0133
+0.1395	0.0996	1.000	MСР.	0.0451	0.0131
+0.1524	0.1183	1.000	Because of the functions performed by MCP, the	0.3631	0.0151
+0.1539	0.5357	1.000	terminates with $RET. The return routine must al-	0.3947	0.0118
+0.1700	0.1015	1.000	MCP program level must have priority over the PP	0.3853	0.0118
+0.1700	0.5376	1.000	so attend to the unpriming of primed major packages.	0.4023	0.0103
+0.1708	0.5323	0.300	aulescene st oente eouil l erterd	0.3280	0.0458
+0.1845	0.0977	1.000	level. The PP must not be allowed to interrupt MCP.	0.4079	0.0118
+0.1991	0.1015	1.000	Thus, a stacking mechanism is required for PP	0.3571	0.0117
+0.2136	0.5357	1.000	cated by adding simultaneous interrupts of different	0.3891	0.0131
+0.2151	0.0996	1.000	interrupts occurring at MCP level.	0.2650	0.0116
+0.2282	0.5338	1.000	levels, and primed major packages.	0.2763	0.0131
+0.2297	0.1184	1.000	The MCP receptor places a program (MCP or PP)	0.3759	0.0116
+0.2427	0.5526	1.000	In summary, MCP has priority over PP; all MCP	0.3741	0.0131
+0.2442	0.0996	1.000	in the auto-stack mode (in which successive inter-	0.3797	0.0102
+0.2573	0.5357	1.000	tasks must be completed before control is given to	0.3797	0.0131
+0.2587	0.0996	1.000	rupts are automatically stacked) when it passes an	0.3797	0.0116
+0.2718	0.5375	1.000	PP. All major transfers of control are the result of	0.3967	0.0132
+0.2747	0.0996	1.000	I-O interrupt to that program. When the receptor	0.3759	0.0102
+0.2878	0.5357	1.000	interrupts: major package to major package, PP to	0.3910	0.0116
+0.2892	0.0996	1.000	receives an I-O interrupt and the program owning	0.3741	0.0117
+0.3023	0.5357	1.000	major package, major package to PP, mainstream	0.3835	0.0131
+0.3036	0.0977	1.000	the interrupt is auto-stacked, or is, by request,	0.3647	0.0118
+0.3182	0.5338	1.000	to fixup, and fixup to mainstream.	0.2613	0.0133
+0.3182	0.0977	1.000	suppressing I-O interrupts ($SIO), the interrupt is	0.3797	0.0147
+0.3314	0.0977	1.000	stacked in a queue. Iwo such queues are main-	0.3647	0.0147
+0.3357	0.5338	1.000	Interrupt	0.0583	0.0161
+0.3358	0.6767	1.000	Program	0.0545	0.0160
+0.3358	0.7838	1.000	Interrupt	0.0564	0.0145
+0.3358	0.6053	1.000	Program	0.0545	0.0160
+0.3459	0.0959	1.000	tained: one for PP and one for MCP. Considering	0.3853	0.0160
+0.3485	0.7837	1.000	Disposition	0.0755	0.0211
+0.3503	0.6767	1.000	Mode	0.0395	0.0131
+0.3503	0.6053	1.000	Level	0.0376	0.0131
+0.3517	0.5357	1.000	Owner	0.0414	0.0116
+0.3605	0.0959	1.000	the SIO mode and the/auto-stack mode as identical,	0.3891	0.0160
+0.3748	0.6766	1.000	Auto-stack	0.0697	0.0164
+0.3750	0.7838	1.000	Stack for MCP	0.0921	0.0132
+0.3750	0.0959	1.000	the disposition of I-O interrupts may be tabulated as	0.3966	0.0160
+0.3750	0.6053	1.000	MCP	0.0338	0.0145
+0.3765	0.5357	1.000	MCP	0.0301	0.0131
+0.3881	0.7838	1.000	Give to MCP auto-	0.1165	0.0131
+0.3891	0.6766	1.000	Non-auto-stack	0.0942	0.0140
+0.3895	0.5357	1.000	MCP	0.0320	0.0131
+0.3895	0.6053	1.000	MCP	0.0338	0.0131
+0.3924	0.0977	1.000	shown.	0.0545	0.0131
+0.3997	0.7838	1.000	stacked	0.0508	0.0160
+0.4055	0.1128	1.000	When a fixup routine (a program responding to an	0.3741	0.0161
+0.4127	0.7838	1.000	Stack for PP	0.0771	0.0146
+0.4128	0.6071	1.000	MCP	0.0338	0.0145
+0.4154	0.6766	1.000	Either	0.0397	0.0122
+0.4157	0.5357	1.000	PP	0.0188	0.0116
+0.4215	0.0977	1.000	I-O interrupt) has finished, control must ultimately	0.3872	0.0116
+0.4258	0.7857	1.000	Give to MCP, change	0.1278	0.0161
+0.4273	0.6767	1.000	Either	0.0395	0.0116
+0.4273	0.5357	1.000	MCP	0.0320	0.0131
+0.4273	0.6053	1.000	PP	0.0207	0.0131
+0.4330	0.0977	1.000	return to the point of interrupt; however, interven-	0.3872	0.0161
+0.4390	0.7820	1.000	level	0.0376	0.0131
+0.4476	0.0959	1.000	ing interrupts must first be unstacked. Since PP	0.3741	0.0161
+0.4504	0.7838	1.000	Stack for PP	0.0772	0.0164
+0.4505	0.6785	1.000	Auto-stack	0.0696	0.0162
+0.4520	0.6053	1.000	PP	0.0226	0.0131
+0.4535	0.5338	1.000	PP	0.0207	0.0131
+0.4636	0.0959	1.000	interrupts are stacked when the IC is at MCP level,	0.3929	0.0161
+0.4651	0.6767	1.000	Non-auto-stack	0.0977	0.0145
+0.4651	0.7726	1.000	Give to PP auto-stacked	0.1541	0.0131
+0.4666	0.5338	1.000	PP	0.0207	0.0116
+0.4666	0.6053	1.000	PP	0.0207	0.0116
+0.4985	0.5470	1.000	— Event	0.0639	0.0131
+0.5160	0.7256	1.000	$RET	0.0338	0.0116
+0.5218	0.4135	1.000	PP	0.0207	0.0131
+0.5333	0.7631	1.000	$RET	0.0339	0.0118
+0.5363	0.4004	1.000	Interrupt $SPR	0.0865	0.0161
+0.5430	0.5393	1.000	Second PP	0.0662	0.0171
+0.5465	0.6805	1.000	$RET	0.0357	0.0116
+0.5508	0.4530	1.000	Request	0.0489	0.0132
+0.5581	0.5526	1.000	Interrupt	0.0564	0.0131
+0.5596	0.1955	1.000	PP Mainstream	0.0902	0.0116
+0.5683	0.4850	1.000	Output	0.0432	0.0116
+0.5798	0.4737	1.000	Tape Interrupt	0.0865	0.0133
+0.5799	0.6410	1.000	$RET	0.0358	0.0117
+0.5915	0.1955	1.000	PP Fixup	0.0545	0.0131
+0.5928	0.1108	1.000	Stages	0.0435	0.0136
+0.6061	0.1184	1.000	of	0.0207	0.0131
+0.6118	0.7143	1.000	(Interrupt is	0.0715	0.0133
+0.6190	0.1071	1.000	Control	0.0471	0.0119
+0.6231	0.1954	1.000	Major Package	0.0886	0.0141
+0.6245	0.7217	1.000	Unstacked)	0.0680	0.0140
+0.6553	0.1879	1.000	MCP Fixup	0.0753	0.0135
+0.6701	0.5602	1.000	(Stacked)	0.0602	0.0116
+0.6890	0.1015	1.000	Figure 1. Function of Return Routine	0.2180	0.0102
+0.9491	0.7406	1.000	General Description of MCP	0.1598	0.0088
+0.9491	0.9248	1.000	9	0.0094	0.0087

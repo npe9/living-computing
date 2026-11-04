@@ -1,0 +1,75 @@
+0.0680	0.0713	1.000	DECODE	0.0735	0.0167
+0.1235	0.0733	1.000	LINKAGE	0.0752	0.0160
+0.1276	0.4999	1.000	Boxes 7, 8	0.0866	0.0136
+0.1526	0.0714	1.000	DECODE is entered from pass 2a and 2b if Zifpz	0.3647	0.0204
+0.1539	0.5019	1.000	If the dds has been established, insert it in the dds	0.3759	0.0161
+0.1685	0.5019	1.000	field of the expanded instruction unit.	0.2782	0.0161
+0.1708	0.0711	1.000	is one.	0.0552	0.0131
+0.1817	0.5019	1.000	If the dds has not been established, turn 'Zifall off	0.3741	0.0174
+0.1986	0.0713	1.000	On Entry	0.0699	0.0156
+0.1991	0.5000	1.000	and return.	0.0865	0.0147
+0.2252	0.0714	1.000	The calling sequence is: SIC, Decodz; B, DECODE.	0.3929	0.0191
+0.2297	0.5000	1.000	Box 9	0.0489	0.0131
+0.2412	0.0714	1.000	Zifall is set to one on entry by DECODE.	0.3083	0.0191
+0.2573	0.5019	1.000	Test Zopo to determine if it is a pseudo-op.	0.3252	0.0161
+0.2730	0.0732	1.000	On Exit	0.0585	0.0136
+0.2878	0.5019	1.000	Boxes 14, 15	0.0940	0.0146
+0.2994	0.0733	1.000	IF DECODE is unable to completely assemble the bin-	0.3985	0.0189
+0.3139	0.0714	1.000	ary output, Zifall is set to zero before returning.	0.3703	0.0189
+0.3154	0.5019	1.000	Test for general parenthetical expressions, if	0.3459	0.0146
+0.3285	0.5019	1.000	there is a GP evaluate and insert it in the binary	0.3609	0.0145
+0.3430	0.5019	1.000	output.	0.0564	0.0175
+0.3430	0.0733	1.000	FLOW CHART DESCRIPTION	0.2256	0.0176
+0.3561	0.5000	1.000	If unable to evaluate, turn Zifall off and return.	0.3553	0.0189
+0.3750	0.0733	1.000	Box 1	0.0451	0.0160
+0.3808	0.5038	1.000	Box 13	0.0583	0.0174
+0.4055	0.0733	1.000	Establish if DECODE is finished with unit by testing	0.3853	0.0161
+0.4099	0.5000	1.000	INSERI is used to fill the major fields in the binary	0.3891	0.0204
+0.4197	0.0713	1.000	if Zifall is on.	0.1092	0.0153
+0.4244	0.5038	1.000	output word of the expanded instruction unit.	0.3289	0.0189
+0.4475	0.0713	1.000	Box 2	0.0491	0.0164
+0.4546	0.5018	1.000	Boxes 10-12	0.0923	0.0167
+0.4752	0.0714	1.000	Test Zoddsa of the operation question bits to deter-	0.3872	0.0191
+0.4838	0.5036	1.000	Use VALUE to evaluate all major fields.	0.3030	0.0196
+0.4897	0.0714	1.000	mine if a dds is needed for this unit.	0.2744	0.0176
+0.5127	0.5036	1.000	Boxes 16, 17	0.0942	0.0182
+0.5217	0.0714	1.000	Boxes 3, 4	0.0865	0.0161
+0.5419	0.5017	1.000	If a DDI, process and change to SYN and return.	0.3612	0.0207
+0.5509	0.0733	1.000	Test Zifdds and Zifpm of the expanded instruction	0.3703	0.0146
+0.5551	0.5034	1.000	DECODE uses part of OUTPUT to evaluate the DDI,	0.3842	0.0235
+0.5639	0.0714	1.000	unit to determine if the dds is explieit or implicit	0.3703	0.0145
+0.5712	0.5019	1.000	and OR's it into the expanded instruction unit.	0.3421	0.0189
+0.5770	0.0714	1.000	and if it is specified by a P-mode.	0.2575	0.0191
+0.6016	0.5018	1.000	Boxes 18, 19	0.0978	0.0178
+0.6088	0.0713	1.000	Box 5	0.0472	0.0164
+0.6294	0.5000	1.000	If an DD, multiply field length by number of fields,	0.3816	0.0219
+0.6381	0.0733	1.000	Handle case when dds needed but none given explicitly,	0.4079	0.0189
+0.6439	0.5000	1.000	store result in the expanded instruction unit, and	0.3665	0.0219
+0.6526	0.0733	1.000	made up according to convention:	0.2481	0.0189
+0.6599	0.5000	1.000	return.	0.0583	0.0145
+0.6672	0.0865	1.000	I. If op is ambiguous (variable field length or	0.3496	0.0174
+0.6845	0.0752	1.000	floating point), it is compiled as (BU, 64, 8).	0.3346	0.0131
+0.6868	0.4998	1.000	Boxes 20, 21	0.1019	0.0188
+0.6991	0.0902	1.000	2. If op is clearly variable field length it is com-	0.3759	0.0131
+0.7136	0.0733	1.000	piled as (BU, 64, 8).	0.1560	0.0131
+0.7159	0.4979	1.000	If an DR, evaluate the dimension properties; multi-	0.3858	0.0224
+0.7297	0.1109	1.000	If op is clearly variable field length and an	0.3289	0.0116
+0.7297	0.0902	1.000	3.	0.0169	0.0102
+0.7311	0.4981	1.000	ply the dimension by the field length to reserve the	0.3797	0.0204
+0.7442	0.0733	1.000	immediate, it is compild as (BU, 24, 8).	0.3045	0.0131
+0.7463	0.4979	1.000	amount of space required. The result is stored in	0.3782	0.0193
+0.7573	0.0902	1.000	4. If op is only floating point except for E or E+I,	0.3778	0.0146
+0.7625	0.4961	1.000	the expanded instruction unit.	0.2222	0.0148
+0.7718	0.0733	1.000	then it is compiled as normalized; if op is E or E+I,	0.3853	0.0146
+0.7848	0.4962	1.000	Boxes 22, 23	0.1034	0.0176
+0.7878	0.0733	1.000	then it is compiled as unormalized.	0.2632	0.0116
+0.8139	0.4981	1.000	GETFLD goes to VALUE to get values, and if avail-	0.3891	0.0204
+0.8169	0.0752	1.000	Box 6	0.0414	0.0102
+0.8314	0.5038	1.000	able, stores them for use by the extract section of	0.3665	0.0147
+0.8430	0.5038	1.000	Pass 2.	0.0489	0.0146
+0.8459	0.0752	1.000	Using the Zst24 subroutine SEARCH look up the	0.3515	0.0132
+0.8576	0.5094	1.000	If the op is not DDI, DD, DR, or EXT, GETELD	0.3665	0.0203
+0.8590	0.0752	1.000	P-mode symbol. Turn the Zst24 of the symbol table	0.3891	0.0146
+0.8735	0.4981	1.000	returns for normal insertion of address field.	0.3421	0.0174
+0.8764	0.0733	1.000	entry to mark as used.	0.1692	0.0103
+0.9215	0.0714	1.000	140	0.0226	0.0073

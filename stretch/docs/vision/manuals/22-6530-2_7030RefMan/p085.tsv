@@ -1,0 +1,104 @@
+0.0609	0.0977	1.000	applies to the operand from the accumulator. In com-	0.3929	0.0147
+0.0624	0.5132	1.000	positions 5-7. The operations LOAD and LOAD DOUBLE	0.3947	0.0146
+0.0770	0.0977	1.000	pare operations, this modifier applies to the operand	0.3910	0.0146
+0.0785	0.5132	1.000	set the data flag bit positions of the sign byte register	0.3947	0.0145
+0.0915	0.0976	1.000	from storage. When this modifier bit is zero, the sign	0.3912	0.0177
+0.0930	0.5132	1.000	to zero. All other floating point operations leave the	0.3947	0.0161
+0.1076	0.5132	1.000	accumulator flag bits unchanged, unless address 10 is	0.3929	0.0161
+0.1090	0.0996	1.000	ot the operand, as modified by the operation code or	0.3891	0.0102
+0.1235	0.0977	1.000	absolute sign modifier, is used unchanged. When this	0.3910	0.0116
+0.1235	0.5132	1.000	used in the to-storage operations. Flag bits of an	0.3929	0.0160
+0.1381	0.5132	1.000	addressed operand are changed only by operations of	0.3947	0.0160
+0.1381	0.0959	1.000	modifier bit is one, the sign of the operand, as modified	0.3929	0.0160
+0.1526	0.0959	1.000	by the operation code or absolute sign modifier, is	0.3947	0.0174
+0.1539	0.5132	1.000	the store type, including STORE ROOT, which replace	0.3947	0.0161
+0.1672	0.0940	1.000	inverted. The negative sign modifier, when one, has	0.3966	0.0174
+0.1700	0.5132	1.000	the flag bits in storage by the accumulator flag bits.	0.3797	0.0146
+0.1845	0.5320	1.000	The flag bits of a floating-point data word replace	0.3759	0.0161
+0.1845	0.0959	1.000	the effect of changing algebraic additions to subtrac-	0.3947	0.0146
+0.1991	0.0977	1.000	tions or changing the sign of the result of multiplica-	0.3910	0.0146
+0.2006	0.5132	1.000	the contents of the data flag indicators, TF, UF, and	0.3929	0.0161
+0.2151	0.0977	1.000	tions, divisions or stores, including the result of sTORE	0.3910	0.0131
+0.2151	0.5132	1.000	VE, for every operation involving a data fetch. This	0.3929	0.0174
+0.2311	0.5113	1.000	includes all floating point operations except stores,	0.3947	0.0160
+0.2325	0.0958	1.000	ROOT.	0.0433	0.0104
+0.2456	0.1128	1.000	When the two sign modifiers are applied to the	0.3759	0.0147
+0.2470	0.5113	1.000	SHIFT FRACTION and ADD EXPONENT IMMEDIATE.	0.3496	0.0118
+0.2599	0.0958	1.000	same operand during an operation, the absolute sign	0.3930	0.0174
+0.2776	0.0959	1.000	moditier is applied tirst. However, in some opera-	0.3929	0.0131
+0.2891	0.0976	1.000	tons, each modifier may be applied to a different	0.3913	0.0176
+0.3036	0.5056	1.000	Zero Definition	0.1504	0.0147
+0.3052	0.0940	1.000	operand. These cases are specified in detail in "Op-	0.3947	0.0176
+0.3210	0.0958	1.000	erations."	0.0715	0.0135
+0.3342	0.5132	1.000	A floating-point number having a zero fraction may	0.3910	0.0161
+0.3372	0.1109	1.000	In some operations, the operation code specifica-	0.3797	0.0146
+0.3503	0.5150	1.000	be interpreted in two ways. It may represent an XEN	0.3891	0.0146
+0.3532	0.1335	1.000	causes the accumulator operand to be treated	0.3534	0.0132
+0.3648	0.5150	1.000	type of zero or it may represent an order of magni-	0.3891	0.0161
+0.3677	0.0959	1.000	as a positive absolute value while the absolute sign	0.3910	0.0145
+0.3808	0.5132	1.000	tude. When it is considered as an XEN zero, the ex-	0.3910	0.0131
+0.3836	0.0940	1.000	modifier is applied to the operand specified by the	0.3947	0.0146
+0.3967	0.5150	1.000	ponent and sign are immaterial. When it is consid-	0.3891	0.0133
+0.3982	0.0959	1.000	effective address. When the operation code itself in-	0.3929	0.0146
+0.4127	0.5132	1.000	ered as an order of magnitude, the exponent and	0.3910	0.0131
+0.4142	0.0959	1.000	cludes specification of the sign modification, this	0.3910	0.0145
+0.4273	0.5113	1.000	fraction sign indicate the approximate magnitude and	0.3929	0.0161
+0.4288	0.0940	1.000	modification is completed prior to the modification	0.3929	0.0146
+0.4433	0.0940	1.000	specified by the negative sign modifier.	0.2782	0.0161
+0.4433	0.5132	1.000	sign of the quantity. Such a quantity may result	0.3910	0.0131
+0.4593	0.5132	1.000	from the cancellation of two non-zero numbers, each	0.3910	0.0116
+0.4606	0.1128	1.000	The sign modifiers always affect the operand signs	0.3741	0.0133
+0.4738	0.5132	1.000	representing only a limited amount of accuracy. The	0.3910	0.0131
+0.4752	0.0959	1.000	as they are used. The original operand sign is never	0.3910	0.0147
+0.4884	0.5132	1.000	result of this cancellation is not to be a valid zero	0.3910	0.0116
+0.4912	0.0959	1.000	changed except when the entire operand is replaced	0.3910	0.0131
+0.5042	0.5132	1.000	and, therefore, the exponent and sign of the result	0.3910	0.0133
+0.5058	0.0959	1.000	by the result. The use of the data flag bits is not	0.3929	0.0146
+0.5188	0.5132	1.000	fraction are meaningful. The discussion of zeros in	0.3910	0.0133
+0.5218	0.0940	1.000	affected by the sign modifiers.	0.2143	0.0131
+0.5348	0.5132	1.000	this section considers only zeros of the order of mag-	0.3891	0.0131
+0.5494	0.5132	1.000	nitude type. XEN zeros are discussed in "Range Defi-	0.3910	0.0146
+0.5639	0.5132	1.000	nition and Handling."	0.1654	0.0145
+0.5799	0.0940	1.000	Data Flag Bits	0.1297	0.0161
+0.5814	0.5282	1.000	Floating-point values with zero fractions and ex-	0.3741	0.0132
+0.5940	0.5131	1.000	ponent fields with EF = 0 are called "order of magni-	0.3892	0.0165
+0.6105	0.5113	1.000	tude zeros." In single-precision operations, the high-	0.3910	0.0145
+0.6118	0.0940	1.000	In some problems it may be desirable to mark some	0.3929	0.0132
+0.6264	0.0940	1.000	of the data to indicate the requirement for special	0.3929	0.0146
+0.6264	0.5132	1.000	order 48 bits and the overflow bit of the 96-bit inter-	0.3891	0.0118
+0.6409	0.0940	1.000	handling. For example, a particular value might be-	0.3910	0.0161
+0.6424	0.5094	1.000	mediate result fraction are tested for zero. In double-	0.3929	0.0146
+0.6570	0.0902	1.000	long to a boundary point in a mesh-type calculation.	0.3947	0.0161
+0.6570	0.5094	1.000	precision operations, all 96 bits and the overflow bit	0.3947	0.0161
+0.6730	0.5113	1.000	of the intermediate result fraction are tested for zero.	0.3910	0.0116
+0.6730	0.0959	1.000	Or, the data might be marked because loss of sig-	0.3910	0.0131
+0.6875	0.0940	1.000	nificance has occurred. In the program it may be	0.3910	0.0146
+0.6890	0.5113	1.000	In either case, if the tested bits are zero, post-normal-	0.3910	0.0132
+0.7020	0.5094	1.000	ization, if specified, is suspended. The intermediate	0.3929	0.0174
+0.7035	0.0940	1.000	desired to attach more than one mark to each data	0.3910	0.0117
+0.7179	0.5113	1.000	result exponent field, the zero fraction, and fraction	0.3910	0.0147
+0.7194	0.0940	1.000	word and treat the marks selectively. The flag bits	0.3910	0.0132
+0.7339	0.5113	1.000	sign become the final result value. A zero fraction is	0.3910	0.0132
+0.7339	0.0921	1.000	of the sign bytes associated with integer and floating	0.3929	0.0132
+0.7485	0.0940	1.000	point data permit such indicative marking. The indi-	0.3910	0.0146
+0.7500	0.5113	1.000	not normalized and cannot be normalized.	0.3064	0.0116
+0.7645	0.0921	1.000	cators associated with data flags permit selective ac-	0.3929	0.0146
+0.7645	0.5282	1.000	The fraction sign of an order of magnitude zero	0.3741	0.0146
+0.7791	0.5094	1.000	resulting from addition is the fraction sign of the	0.3929	0.0146
+0.7805	0.0940	1.000	tion when these flag bits are encountered.	0.2932	0.0131
+0.7951	0.5094	1.000	operand originally having the alegbraically larger ex-	0.3910	0.0160
+0.7951	0.1090	1.000	Bit positions 61-63 of a floating-point word are	0.3759	0.0146
+0.8096	0.0940	1.000	used as data flag bits. These three bits are designated	0.3910	0.0146
+0.8109	0.5094	1.000	ponent, as modified by the operand and modifiers.	0.3910	0.0161
+0.8255	0.0921	1.000	as the I, U, and V bits, respectively. When a float-	0.3929	0.0147
+0.8270	0.5113	1.000	When both operand exponent magnitudes and signs	0.3910	0.0131
+0.8415	0.0921	1.000	ing-point operand is entered into the accumulator by	0.3929	0.0146
+0.8415	0.5094	1.000	are equal, the fraction sign of the order of magnitude	0.3929	0.0161
+0.8576	0.5113	1.000	zero sum is the modified fraction sign of the operand	0.3910	0.0131
+0.8576	0.0940	1.000	means of the operations LOAD WITH FLAG OI LOAD	0.3910	0.0131
+0.8704	0.0938	1.000	DOUBLE WITH FLAG, the operand flag bits replace the	0.3913	0.0195
+0.8721	0.5075	1.000	in the accumulator. The fraction sign of an order of	0.3947	0.0161
+0.8881	0.0921	1.000	accumulator flag bits in the sign byte register bit	0.3947	0.0131
+0.8881	0.5094	1.000	magnitude zero resulting from an operation other	0.3929	0.0146
+0.9258	0.1335	1.000	IBM 7030	0.0677	0.0088
+0.9259	0.0902	1.000	82	0.0188	0.0102

@@ -1,0 +1,92 @@
+0.0696	0.0733	1.000	MQDALE	0.0734	0.0163
+0.1279	0.5000	1.000	FLOW CHART DESCRIPTION	0.2218	0.0176
+0.1303	0.0751	1.000	LINKAGE	0.0717	0.0126
+0.1581	0.4980	1.000	Boxes IA, 1B	0.1110	0.0180
+0.1599	0.0733	1.000	On Entry	0.0695	0.0131
+0.1860	0.4981	1.000	MQDALE has GETCHA get the first character of the	0.3985	0.0189
+0.1890	0.0902	1.000	1.. Main flow branches to MQDALE after MAIN	0.3553	0.0174
+0.2020	0.4981	1.000	alphabetic D field since MQDD comes to MQDALE	0.3778	0.0174
+0.2048	0.0733	1.000	gets from GETCHA the comma immediately pre-	0.3665	0.0132
+0.2166	0.5019	1.000	with the comma separator in the value field of $3.	0.3647	0.0160
+0.2179	0.0733	1.000	ceeding the D field. The comma is still in the value	0.3910	0.0147
+0.2297	0.5019	1.000	MQDALE must turn on the Gcaz indicator so GETCHA	0.3966	0.0174
+0.2339	0.0733	1.000	field of $3 when MAIN goes to MQDALE.	0.3026	0.0146
+0.2431	0.1069	1.000	The value field of the index word at Bem + 1.O	0.3578	0.0221
+0.2442	0.4981	1.000	will 'kick out' blanks since a blank is significant in	0.3816	0.0189
+0.2602	0.4981	1.000	this field.	0.0789	0.0174
+0.2630	0.0752	1.000	contains the terminating character of the alphabetic	0.3835	0.0118
+0.2906	0.5000	1.000	Boxes 2, 3; 15, 16	0.1429	0.0191
+0.2921	0.0883	1.000	3. The indicators, Bemt, Bemu, and Bemv are	0.3609	0.0146
+0.3081	0.0752	1.000	set to the appropriate alphabetic entry mode.	0.3346	0.0116
+0.3210	0.0901	1.000	4. The value field of the index word, Ibuffw,	0.3329	0.0151
+0.3212	0.4981	1.000	Each time MQDALE uses GETCHA to get a new input	0.3966	0.0145
+0.3372	0.5000	1.000	character, MQDALF must make two tests before	0.3703	0.0146
+0.3372	0.0752	1.000	contains the lower bound of the area where the	0.3440	0.0102
+0.3517	0.5000	1.000	processing the character as part of the alphabetic DD.	0.4023	0.0131
+0.3532	0.0752	1.000	material is to be put in the expanded instruction unit.	0.3929	0.0102
+0.3663	0.0921	1.000	5. The value field of the index word, Ibuflw,	0.3327	0.0131
+0.3663	0.5019	1.000	Of course, on detection of the terminating character,	0.3910	0.0131
+0.3808	0.5018	1.000	MQDALF stops collecting alphabetic DD characters	0.3799	0.0145
+0.3821	0.0752	1.000	contains the address of the upper bound of the avail-	0.3872	0.0118
+0.3967	0.0752	1.000	able space in the unit.	0.1635	0.0118
+0.3967	0.5000	1.000	in the expanded instruction unit and performs the	0.3628	0.0118
+0.4112	0.5000	1.000	final housekeeping. (The terminating character is	0.3816	0.0118
+0.4258	0.5000	1.000	in the Bem area with other DD information. See	0.3590	0.0118
+0.4258	0.0752	1.000	On Exit	0.0583	0.0088
+0.4403	0.5019	1.000	Phase 1 description.)	0.1579	0.0118
+0.4548	0.5169	1.000	In case a terminating character is absent from the	0.3722	0.0118
+0.4548	0.0902	1.000	1. The necessary statement is in the DD unit.	0.3459	0.0118
+0.4694	0.0771	1.000	(Ibufiw will have been updated accordingly. Ibuflw	0.3703	0.0118
+0.4694	0.5019	1.000	D field, the end-of-card-block indication from	0.3402	0.0132
+0.4839	0.0752	1.000	may or may not have been updated.)	0.2669	0.0118
+0.4839	0.5000	1.000	GETCHA causes MQDALF to terminate the DD.	0.3534	0.0132
+0.4985	0.0902	1.000	2. The count field at relative location Zinfld in the	0.3816	0.0131
+0.5130	0.0752	1.000	expanded instruction unit of the DD contains the	0.3515	0.0118
+0.5145	0.5000	1.000	Box 4	0.0432	0.0116
+0.5276	0.0752	1.000	number of characters in the D field.	0.2688	0.0118
+0.5421	0.0921	1.000	3. If the byte size is symbolic, bits 0-23 of the	0.3534	0.0131
+0.5421	0.5019	1.000	The information, whether the data description of the	0.3853	0.0131
+0.5567	0.0752	1.000	Ziotpt field in the unit contains the number of char-	0.3816	0.0116
+0.5581	0.5019	1.000	op is symbolic or absolute, and if absolute, what the	0.3872	0.0116
+0.5710	0.0751	1.000	acters also.	0.0903	0.0120
+0.5727	0.5000	1.000	byte size is, is included in the fixed portion of the	0.3741	0.0116
+0.5850	0.1088	1.000	Bit 24 of Ziotpt = 0 in this case.	0.2372	0.0145
+0.5858	0.5019	1.000	op's expanded instruction unit. Using this informa-	0.3816	0.0131
+0.6017	0.5019	1.000	tion, MQDALF sets up the appropriate entry mode	0.3722	0.0116
+0.6017	0.1090	1.000	However, if the byte size of the DD is absolute,	0.3515	0.0131
+0.6148	0.1071	1.000	bits 0-23 of Ziotot contains the number of bits in	0.3609	0.0116
+0.6163	0.5000	1.000	subprocedure to collect the required number of bits	0.3816	0.0116
+0.6308	0.5000	1.000	for the specified type entry mode.	0.2519	0.0116
+0.6308	0.1071	1.000	the D field.	0.0865	0.0102
+0.6453	0.5150	1.000	If the byte size is symbolie which remains unevalu-	0.3816	0.0147
+0.6453	0.1090	1.000	Bit 24 of Ziotpt = 1 under this condition.	0.2951	0.0131
+0.6570	0.4981	1.000	ated during Pass 1, MQDALE saves the maximum 8	0.3891	0.0189
+0.6599	0.0883	1.000	4. Bit Ziotpt. 26 for this unit will be 0 if the entry	0.3759	0.0147
+0.6700	0.4981	1.000	bits of each of the converted A or IQS characters, or	0.3966	0.0191
+0.6744	0.0752	1.000	mode is A, P, or IQS; 1 if the entry mode is CC.	0.3647	0.0132
+0.6845	0.4981	1.000	the 12 bits of each of the converted CC characters.	0.3797	0.0191
+0.6890	0.0752	1.000	(The above fields and indicators are of interest to	0.3684	0.0117
+0.6991	0.5000	1.000	Leading zeros are added if necessary. The OUTPUT	0.3966	0.0189
+0.7035	0.0733	1.000	OUTPUT in Pass 2b.)	0.1635	0.0132
+0.7179	0.4981	1.000	routine - in Pass 2b - will truncate each of the col-	0.3835	0.0147
+0.7179	0.0902	1.000	5. Bit Ziotpt. 27 = 1 if OUTPUT has to perform a	0.3684	0.0133
+0.7311	0.4981	1.000	lected converted characters in the unit for the final	0.3816	0.0160
+0.7339	0.0733	1.000	possible truncation of the characters in the DD mes-	0.3910	0.0118
+0.7442	0.5000	1.000	binary output.	0.1090	0.0174
+0.7499	0.0751	1.000	sage.	0.0415	0.0104
+0.7587	0.5113	1.000	If the byte size collected by MAIN was absolute,	0.3647	0.0189
+0.7630	0.0902	1.000	6. After completing the conversion, MQDALF	0.3459	0.0131
+0.7747	0.4981	1.000	MODALE adjusts the appropriate subprocedure to	0.3722	0.0174
+0.7747	0.0733	1.000	returns to the main flow of Pass 1 with the value field	0.3985	0.0147
+0.7906	0.4962	1.000	store the required number of bits of each converted	0.3853	0.0132
+0.7921	0.0752	1.000	of $3 containing the next non-blank character after the	0.4004	0.0117
+0.8052	0.4981	1.000	character. (However, MQDALF forces a 12-bit byte	0.3947	0.0161
+0.8067	0.0733	1.000	terminating character of the DD.	0.2462	0.0116
+0.8197	0.4981	1.000	size if entry mode is CC.)	0.1974	0.0161
+0.8485	0.4999	1.000	Boxes 5-9	0.0792	0.0181
+0.8502	0.0733	1.000	USER	0.0433	0.0118
+0.8794	0.4944	1.000	According to the Bem setting of the Bem indicators,	0.3891	0.0161
+0.8794	0.0733	1.000	MQDD transfers to MQDALF for the processing of the	0.4023	0.0161
+0.8939	0.0752	1.000	statement field of a DD pseudo-op.	0.2575	0.0131
+0.8939	0.4962	1.000	MQDALE transfers to the correct subprocedure and	0.3872	0.0161
+0.9244	0.0714	1.000	102	0.0244	0.0087

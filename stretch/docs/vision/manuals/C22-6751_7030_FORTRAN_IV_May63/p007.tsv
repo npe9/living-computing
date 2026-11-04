@@ -1,0 +1,109 @@
+0.0785	0.5000	1.000	Chapter 3. Arithmetic Statements	0.2838	0.0161
+0.0799	0.0789	1.000	For example, the expression	0.1974	0.0131
+0.0959	0.1034	1.000	G=-A+B/C+D**E*F	0.1635	0.0116
+0.1105	0.5000	1.000	Normal Arithmetic Statements	0.2237	0.0147
+0.1118	0.0789	1.000	will be taken to mean	0.1523	0.0118
+0.1279	0.1071	1.000	G= (((-A)+(B/C))+DF*F)	0.2049	0.0117
+0.1409	0.5526	1.000	GENERAL FORM	0.0940	0.0133
+0.1413	0.7742	1.000	EXAMPLES	0.0662	0.0097
+0.1555	0.0789	1.000	ORDERING WITHIN A HIERARCHY	0.2256	0.0118
+0.1599	0.5056	1.000	'a=b" where a is a variable	0.1917	0.0102
+0.1599	0.7030	0.500	Q1=K	0.0583	0.0116
+0.1700	0.7162	1.000	A(I)= B(I)*SIN (C(I))	0.1617	0.0131
+0.1715	0.5038	1.000	(subscripted or not subscripted)	0.1917	0.0116
+0.1758	0.0771	1.000	Parentheses that have been omitted from a sequence	0.3947	0.0161
+0.1830	0.7180	1.000	(SIN and other functions are	0.1786	0.0103
+0.1830	0.5000	1.000	and b is an expression.	0.1447	0.0103
+0.1903	0.0771	1.000	of consecutive multiplications and divisions (or con-	0.3947	0.0161
+0.1933	0.7312	1.000	discussed in Chapter 6.)	0.1523	0.0131
+0.2048	0.0752	1.000	secutive additions and subtractions) will be under-	0.3985	0.0161
+0.2224	0.0771	1.000	stood to be grouped from the left. Thus, if • represents	0.3947	0.0146
+0.2252	0.4981	1.000	The arithmetic formula defines a numerical or logical	0.3985	0.0147
+0.2357	0.0770	1.000	either * or / (or either + or - ), then	0.2804	0.0162
+0.2397	0.4981	1.000	calculation. A FORTRAN arithmetic statement resembles	0.3985	0.0161
+0.2573	0.4981	1.000	very closely a conventional arithmetic formula. How-	0.3966	0.0116
+0.2587	0.1053	1.000	A • B•C•D•E	0.1128	0.0089
+0.2703	0.5000	1.000	ever, in a FORTRAN arithmetic statement the equal sign	0.3947	0.0146
+0.2747	0.0789	1.000	will be taken by FORTRAN to mean	0.2425	0.0132
+0.2848	0.4981	1.000	means "is to be replaced by," not "is equivalent to."	0.3985	0.0176
+0.2951	0.1053	1.000	((((A•B) •C) •D) •E)	0.1692	0.0102
+0.3009	0.4981	1.000	Thus, the arithmetic statement	0.2218	0.0161
+0.3212	0.0771	1.000	RULES FOR CONSTRUCTING LOGICAL ExPRESSIONS	0.3365	0.0116
+0.3227	0.5263	1.000	Y=N-LIMIT(J-2)	0.1372	0.0131
+0.3387	0.4962	1.000	means that the value of N-LIMIT(]-2) is to replace the	0.4004	0.0147
+0.3398	0.0901	1.000	1. Quantities which are not logical variables or	0.3818	0.0181
+0.3545	0.4981	1.000	value of Y. The result is stored in fixed-point or in float-	0.3985	0.0146
+0.3561	0.0752	1.000	constants may only appear in logical expressions in	0.3966	0.0161
+0.3706	0.4981	1.000	ing-point form if the variable to the left of the equal	0.3985	0.0131
+0.3735	0.0752	1.000	the following ways:	0.1504	0.0146
+0.3852	0.5000	1.000	sign is a fixed-point or a floating-point variable, respec-	0.3966	0.0146
+0.3881	0.0921	1.000	a. As arguments to logical functions.	0.2613	0.0131
+0.4011	0.4981	1.000	tively.	0.0471	0.0147
+0.4039	0.0940	1.000	b. As parts of relations.	0.1673	0.0133
+0.4157	0.5150	1.000	If the variable on the left is fixed point and the ex-	0.3816	0.0146
+0.4200	0.0940	1.000	2. A relation is a logical expression of the form:	0.3365	0.0146
+0.4317	0.5000	1.000	pression on the right is floating point, the result will	0.3966	0.0132
+0.4416	0.1033	1.000	E.GT.F	0.0491	0.0122
+0.4462	0.4981	1.000	first be computed in floating point and then truncated	0.3966	0.0145
+0.4520	0.1034	1.000	E.GE.F	0.0489	0.0131
+0.4621	0.4981	1.000	and converted to a fixed-point integer. Thus, if the	0.3985	0.0146
+0.4649	0.1033	1.000	E.LT.F	0.0490	0.0120
+0.4753	0.1034	1.000	E.LE.F	0.0489	0.0131
+0.4767	0.4981	1.000	result is + 3.872, the fixed-point number stored will be	0.3986	0.0166
+0.4869	0.1053	1.000	E.EQ.F	0.0470	0.0116
+0.4923	0.4999	1.000	+3, not + 4. If the variable on the left is floating point	0.3968	0.0165
+0.4985	0.1034	1.000	E.NE.F	0.0489	0.0116
+0.5087	0.4981	1.000	and the expression on the right fixed point, the latter	0.3985	0.0131
+0.5145	0.0752	1.000	(where E, F are arithmetic expressions of the same	0.3966	0.0161
+0.5233	0.5000	1.000	will be computed in fixed point, and then converted	0.3947	0.0146
+0.5295	0.0749	1.000	type). The operations mean:	0.2243	0.0192
+0.5392	0.4981	1.000	to floating point.	0.1241	0.0132
+0.5523	0.1053	1.000	E.GT.F is true when E > F	0.1692	0.0102
+0.5596	0.4981	1.000	The following examples illustrate types of arithmetic	0.3966	0.0131
+0.5608	0.1052	1.000	E.GE.F is true when E > F	0.1673	0.0107
+0.5741	0.1053	1.000	E.LT. F is true when E < F	0.1711	0.0102
+0.5770	0.4981	1.000	statements:	0.0827	0.0102
+0.5842	0.1053	1.000	E.LE.F is true when E ≤ F	0.1673	0.0118
+0.5959	0.1053	1.000	E.EQ.F is true when E = F	0.1692	0.0116
+0.6076	0.1053	1.000	E.NE.F is true when E # F	0.1692	0.0116
+0.6118	0.7274	1.000	MEANING	0.0583	0.0090
+0.6119	0.5169	1.000	EXAMPLES	0.0639	0.0087
+0.6250	0.0902	1.000	3. A logical constant or variable is an expression.	0.3496	0.0132
+0.6294	0.4981	1.000	A=B	0.0338	0.0116
+0.6294	0.6165	1.000	Store the value of B in A.	0.1654	0.0102
+0.6409	0.6165	1.000	Truncate B to an integer, convert to fixed	0.2763	0.0118
+0.6410	0.4962	1.000	I=B	0.0320	0.0116
+0.6424	0.0902	1.000	4. A relation is an expression.	0.2105	0.0146
+0.6512	0.6259	1.000	point, and store in I.	0.1391	0.0146
+0.6599	0.0883	1.000	5. An expression enclosed in parentheses is an ex-	0.3816	0.0147
+0.6642	0.6165	1.000	Convert I to floating point, and store in A.	0.2613	0.0116
+0.6642	0.4962	1.000	A=I	0.0338	0.0116
+0.6744	0.6147	1.000	Add I to I and store in I. This example	0.2801	0.0116
+0.6744	0.4962	1.000	I=I+1	0.0489	0.0131
+0.6754	0.0750	1.000	pression.	0.0661	0.0140
+0.6875	0.6278	1.000	illustrates the fact that an arithmetic state-	0.2650	0.0116
+0.6933	0.0921	1.000	6..NoT. any expression is an expression.	0.2838	0.0131
+0.6991	0.6278	1.000	ment is not an equation, but is a com-	0.2650	0.0117
+0.7078	0.6128	0.300	roprad wea the rodiuc or Bmitlied	0.2820	0.0392
+0.7106	0.0902	1.000	7. Any two expressions connected by .AND. create	0.3797	0.0147
+0.7195	0.4944	1.000	A=3.0*B	0.0639	0.0131
+0.7282	0.0752	1.000	an expression.	0.1034	0.0116
+0.7442	0.4906	1.000	A=I*B	0.0545	0.0116
+0.7442	0.0902	1.000	8. Any two expressions connected by .oR. create an	0.3797	0.0146
+0.7612	0.0751	1.000	expression.	0.0810	0.0125
+0.7775	0.4962	1.000	A=3*B	0.0509	0.0133
+0.7906	0.0752	1.000	HIERARCHY OF OPERATIONS	0.1898	0.0118
+0.8109	0.0752	1.000	Arithmetic expressions are calculated first, then values	0.3929	0.0147
+0.8182	0.4944	1.000	Logical Statements	0.1410	0.0147
+0.8270	0.0752	1.000	are found for relations. These, and variables, are then	0.3929	0.0118
+0.8372	0.4962	1.000	A logical variable is equated to a logical expression.	0.3966	0.0174
+0.8415	0.0733	1.000	operated upon by .NOT.. Next, results are connected	0.3947	0.0146
+0.8532	0.4944	1.000	The expression will be evaluated and the appropriate	0.3985	0.0160
+0.8545	0.0733	1.000	by.AND. and these results are connected by.oR. Paren-	0.3966	0.0191
+0.8691	0.4944	1.000	value TRUE. Or FALSE. will be stored as the current	0.3985	0.0146
+0.8706	0.0733	1.000	theses indicate any requisite recursions. Associated	0.3947	0.0161
+0.8821	0.4944	1.000	value of the variable. Example:	0.2274	0.0176
+0.8881	0.0733	1.000	with this expression, then, is a value .TRUE. Or .FALSE.	0.3966	0.0146
+0.9039	0.0752	1.000	but not both.	0.1015	0.0118
+0.9041	0.5244	1.000	T=Q.AND.(.NOT.R).AND.(V.GT.5.)	0.2444	0.0145
+0.9317	0.8835	1.000	7	0.0094	0.0102

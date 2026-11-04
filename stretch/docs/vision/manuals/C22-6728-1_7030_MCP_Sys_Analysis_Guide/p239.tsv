@@ -1,0 +1,130 @@
+0.0930	0.0959	1.000	(15 words per card) starting with the first full word	0.3853	0.0131
+0.0930	0.5639	1.000	TYPE AREA NAME	0.1541	0.0176
+0.0944	0.8421	1.000	TARC-	0.0527	0.0147
+0.0959	0.7857	1.000	XX	0.0263	0.0116
+0.1090	0.0940	1.000	beyond the highest location loaded at that point. Any	0.3910	0.0131
+0.1099	0.8438	1.000	JADDRESS	0.0792	0.0141
+0.1235	0.9060	1.000	63	0.0226	0.0131
+0.1235	0.0940	1.000	branch cards in the deck are ignored. The buffer is	0.3910	0.0131
+0.1265	0.7707	1.000	48	0.0207	0.0131
+0.1265	0.8083	1.000	50	0.0207	0.0116
+0.1265	0.8496	1.000	52	0.0244	0.0102
+0.1279	0.5282	1.000	Bit	0.0263	0.0116
+0.1381	0.0940	1.000	not cleared before loading. In all other respects the	0.3966	0.0131
+0.1409	0.6034	1.000	XX = 00 - replace control	0.2237	0.0161
+0.1521	0.0957	1.000	update loader operates like the standard MCPloader.	0.3987	0.0152
+0.1555	0.6711	1.000	01 - add control	0.1241	0.0146
+0.1667	0.0957	1.000	A detailed write up of the MCP loader may be found	0.3876	0.0168
+0.1700	0.6711	1.000	10 - delete control	0.1429	0.0161
+0.1845	0.0959	1.000	elsewhere herein.	0.1353	0.0118
+0.1857	0.7122	1.000	SIZE	0.0417	0.0138
+0.2006	0.9079	1.000	63	0.0188	0.0116
+0.2020	0.6823	1.000	28	0.0207	0.0116
+0.2020	0.7613	1.000	46	0.0226	0.0102
+0.2035	0.5677	1.000	0	0.0094	0.0102
+0.2035	0.5282	1.000	Bit	0.0263	0.0116
+0.2048	0.0977	1.000	System Subroutines: UPDATE-30 uses three stan-	0.3835	0.0146
+0.2166	0.5282	1.000	One entry (2 words) for each HED card (two entries	0.3891	0.0131
+0.2179	0.1015	1.000	dard MCP conversion routines: SAXIQS, SCAx, and	0.3891	0.0147
+0.2297	0.5282	1.000	for each HED, LIB card). SIZE is the size of the new	0.4023	0.0161
+0.2339	0.1015	1.000	SBRK8, shown in Table 9.	0.1955	0.0146
+0.2470	0.5263	1.000	type area. ARC-ADDRESS is the location of the new	0.3985	0.0176
+0.2615	0.5282	1.000	type area on the disk (filled in by ARCNST routine).	0.3910	0.0176
+0.2626	0.0976	1.000	Index and Dictionary Formats: The following para-	0.3912	0.0166
+0.2747	0.5451	1.000	3. New Dictionary - The symbol for this table is	0.3853	0.0189
+0.2773	0.1014	1.000	graphs describe the formats for the index, change	0.3762	0.0157
+0.2892	0.5282	1.000	NEWDIC (new dietionary). It consists of 2048 two-	0.3891	0.0189
+0.2936	0.1015	1.000	dictionary, and the new dictionary.	0.2632	0.0131
+0.3081	0.5282	1.000	word entries, with the following formats:	0.3139	0.0146
+0.3096	0.1109	1.000	1. Index - the symbol for the new index is	0.3308	0.0102
+0.3194	0.5676	1.000	TYPE AREA NAME	0.1505	0.0152
+0.3212	0.8383	1.000	ZARC-	0.0583	0.0131
+0.3227	0.0921	1.000	NEWIND (new index). It consists of 40 words (plus	0.3853	0.0146
+0.3342	0.8458	1.000	JADDRESS	0.0809	0.0148
+0.3383	0.0902	1.000	a zero word before the table and an extra word at the	0.4005	0.0138
+0.3503	0.9098	1.000	63	0.0188	0.0131
+0.3503	0.8496	1.000	52	0.0244	0.0131
+0.3503	0.0921	1.000	end). The format for each word is as follows:	0.3609	0.0189
+0.3517	0.8120	1.000	50	0.0226	0.0116
+0.3517	0.7707	1.000	48	0.0226	0.0116
+0.3532	0.5301	1.000	Bit	0.0244	0.0116
+0.3648	0.2556	1.000	TAWA	0.0527	0.0161
+0.3808	0.7143	1.000	SIZE	0.0395	0.0131
+0.3808	0.2538	1.000	arc 1 word	0.0865	0.0146
+0.3822	0.5676	1.000	ARC-	0.0452	0.0117
+0.3937	0.5638	1.000	WORD	0.0528	0.0135
+0.3966	0.3627	1.000	53 56	0.0528	0.0120
+0.3968	0.2556	1.000	32	0.0207	0.0116
+0.3968	0.4718	1.000	63	0.0188	0.0102
+0.3983	0.0921	1.000	Bit	0.0263	0.0116
+0.3983	0.1823	1.000	12	0.0188	0.0087
+0.3983	0.1316	1.000	0	0.0094	0.0102
+0.4113	0.6823	1.000	28	0.0226	0.0102
+0.4113	0.5301	1.000	Bit	0.0244	0.0116
+0.4113	0.6466	1.000	21	0.0207	0.0102
+0.4113	0.7632	1.000	46	0.0207	0.0102
+0.4113	0.9098	1.000	63	0.0188	0.0087
+0.4127	0.0977	1.000	One word for each type on PROSA. (The first two	0.3778	0.0161
+0.4258	0.5301	1.000	One entry (two words) for each type area on the new	0.3910	0.0133
+0.4288	0.0977	1.000	characters in a type area name identify the type.)	0.3741	0.0146
+0.4390	0.5282	1.000	PROSA. ARC-WORD field is zero if this is a new	0.3797	0.0147
+0.4418	0.0977	1.000	TAWA is the arc-word address of the first dictionary	0.4023	0.0161
+0.4525	0.5281	1.000	type area. XX bits and ARC-ADDRESS are not moved	0.4100	0.0171
+0.4554	0.0976	1.000	entry for this type. TYPNO is the number of type	0.3782	0.0188
+0.4694	0.5282	1.000	when NEWDIC is moved into the buffer. The absolute	0.4060	0.0132
+0.4705	0.0973	1.000	areas within the type.	0.1663	0.0199
+0.4839	0.5301	1.000	ARC-WORD location of each type-area on the new	0.3741	0.0118
+0.4869	0.1128	1.000	2. Change Dictionary - The symbol for this table	0.3872	0.0146
+0.4985	0.5282	1.000	PROSA is stored in the moved and final version of the	0.4060	0.0131
+0.5011	0.0958	1.000	is CHDIC (change dictionary). It consists of 512 two-	0.4060	0.0137
+0.5130	0.5282	1.000	new dictionary, but not in the NEWDIC buffer.	0.3496	0.0161
+0.5145	0.0959	1.000	word entries, with the following formats:	0.3139	0.0176
+0.5624	0.0977	1.000	Table 9. Standard Conversion Routines	0.2312	0.0118
+0.5887	0.6015	1.000	Conversion, "x" may be 6 or 8 for 6 bit or	0.3195	0.0132
+0.5889	0.4095	1.000	LVI, 15, $+1.	0.1058	0.0170
+0.5901	0.2876	1.000	SAXIQS	0.0564	0.0145
+0.5915	0.1015	1.000	1. BCD to IQS	0.1259	0.0146
+0.6032	0.5996	1.000	8 bit BCD. "A" specifies the input location,	0.3346	0.0147
+0.6036	0.4076	1.000	B, SAXIQS	0.0815	0.0180
+0.6177	0.5977	1.000	"B" the number of characters to be con-	0.3083	0.0132
+0.6191	0.4079	1.000	VF, A	0.0489	0.0146
+0.6321	0.5977	1.000	verted, and "C" the output location.	0.2763	0.0147
+0.6336	0.4098	1.000	CF, B	0.0489	0.0146
+0.6482	0.4079	1.000	VF, C	0.0508	0.0161
+0.6637	0.4077	1.000	(return)	0.0624	0.0141
+0.6903	0.6034	1.000	Conversion, "x" may be 6 or 8 for 6 bit or	0.3195	0.0133
+0.6915	0.4097	1.000	LVI, 15, $+1.	0.1054	0.0167
+0.6916	0.1334	1.000	Hollerith to	0.0979	0.0150
+0.6919	0.2876	1.000	SCAX	0.0432	0.0145
+0.6948	0.0977	1.000	2.	0.0207	0.0145
+0.7060	0.4096	1.000	B, SCAX	0.0661	0.0169
+0.7064	0.6015	1.000	8 bit BCD. "A" specifies the input location,	0.3346	0.0117
+0.7078	0.1410	1.000	BCD•	0.0470	0.0131
+0.7209	0.5996	1.000	"B" the number of characters to be con-	0.3083	0.0116
+0.7222	0.4097	1.000	VF, A	0.0491	0.0149
+0.7355	0.6015	1.000	verted, and "C" the output location.	0.2726	0.0131
+0.7369	0.4098	1.000	CF, B	0.0489	0.0146
+0.7512	0.4096	1.000	VF, C	0.0491	0.0151
+0.7674	0.4079	1.000	(return)	0.0620	0.0116
+0.7936	0.6015	1.000	Breakup a series of fields separated by	0.2970	0.0146
+0.7936	0.2876	1.000	SBRK8	0.0583	0.0145
+0.7950	0.1428	1.000	Breakdown	0.0827	0.0147
+0.7951	0.4098	1.000	LVI, 15, $+1.	0.1071	0.0160
+0.7980	0.1015	1.000	3.	0.0169	0.0131
+0.8094	0.4097	1.000	B, SBRK8	0.0772	0.0165
+0.8096	0.6015	1.000	commas and store them in consecutive full	0.3214	0.0146
+0.8212	0.5996	1.000	word locations. Input is in 8 bit BCD and	0.3158	0.0161
+0.8241	0.4098	1.000	VF, A	0.0489	0.0160
+0.8386	0.4078	1.000	CF, B	0.0527	0.0162
+0.8387	0.6015	1.000	output is 6 bit BCD. Blanks are right	0.2951	0.0147
+0.8532	0.4098	1.000	VF, C	0.0508	0.0160
+0.8532	0.6015	1.000	appended for fields of less than 8 characters.	0.3421	0.0147
+0.8672	0.4095	1.000	VF, D	0.0513	0.0170
+0.8677	0.5996	1.000	"A" specifies the input location, "B" the	0.3102	0.0145
+0.8821	0.6015	1.000	number of input characters, "C" the output	0.3271	0.0161
+0.8821	0.4098	1.000	B, ERROR	0.0846	0.0161
+0.8948	0.5994	1.000	location, and "D" (set by the routine) the	0.3125	0.0208
+0.8952	0.4097	1.000	(return)	0.0603	0.0178
+0.9112	0.6015	1.000	number of output characters.	0.2218	0.0147
+0.9548	0.7669	1.000	Supporting Programs	0.1184	0.0103
+0.9549	0.9098	1.000	239	0.0226	0.0073

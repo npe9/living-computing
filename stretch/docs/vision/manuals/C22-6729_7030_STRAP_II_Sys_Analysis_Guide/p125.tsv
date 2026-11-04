@@ -1,0 +1,79 @@
+0.0814	0.7726	1.000	MQTAIL AND MQT	0.1485	0.0174
+0.1409	0.1128	1.000	These subroutines are sometimes referred to	0.3440	0.0146
+0.1439	0.5338	1.000	number associated with the original tail will be	0.3515	0.0161
+0.1539	0.0996	1.000	jointly by IAILOR.	0.1466	0.0176
+0.1612	0.5338	1.000	used. The counter designating the number of tails	0.3741	0.0118
+0.1715	0.5338	1.000	in use must also be updated. If the current level is	0.3853	0.0161
+0.1828	0.1032	1.000	LINKAGE	0.0755	0.0182
+0.1875	0.5338	1.000	greater than the number of tails in use, the counter	0.3853	0.0161
+0.2006	0.5338	1.000	of the number of tails in use will be raised. If no	0.3703	0.0146
+0.2124	0.0968	0.500	nopatL andp Megt are onterod trom MAy through	0.3817	0.0376
+0.2151	0.5338	1.000	tails have been specified at levels in between, the	0.3703	0.0161
+0.2311	0.5338	1.000	corresponding fields in the string will be zero.	0.3496	0.0160
+0.2587	0.1015	1.000	DETAILS	0.0752	0.0161
+0.2598	0.5319	1.000	Boxes 31 - 33	0.1148	0.0196
+0.2892	0.1034	1.000	MQTAIL subroutine's information primarily consists	0.3929	0.0160
+0.2892	0.5338	1.000	After MQTAIL or MQI has processed the TAIL or	0.3778	0.0189
+0.3052	0.5357	1.000	UNTAIL pseudo op, the string in the MQTAIL table	0.3797	0.0161
+0.3052	0.1071	1.000	of: a string of ten consecutive 8-bit bytes each	0.3477	0.0132
+0.3154	0.1071	1.000	containing the number of the tail associated with one	0.3797	0.0161
+0.3182	0.5357	1.000	must be scanned. This scan determines two things,	0.3872	0.0161
+0.3314	0.1034	1.000	of the ten possible levels, a counter for the number	0.3835	0.0174
+0.3327	0.5338	1.000	first whether or not Pass 1 should continue	0.3233	0.0161
+0.3503	0.1034	1.000	of tails in use, the number of the highest level	0.3440	0.0116
+0.3517	0.5357	1.000	appending the tailing configuration to symbols	0.3383	0.0116
+0.3648	0.1053	1.000	specified, and the number associated with the tail	0.3665	0.0131
+0.3663	0.5357	1.000	collected, and second how many actual levels of	0.3553	0.0131
+0.3794	0.1053	1.000	most recently entered into the table of tails.	0.3252	0.0116
+0.3808	0.5357	1.000	tails are to be used if the internal tailing is to	0.3402	0.0116
+0.3939	0.1222	1.000	The method of internally representing the tails in	0.3628	0.0116
+0.3953	0.5357	1.000	continue. It is quite possible that the last pseudo	0.3647	0.0131
+0.4084	0.1053	1.000	use is to append the collected symbol with a special	0.3797	0.0116
+0.4112	0.5357	1.000	op might have been a (TAIL(6), ;) where there were	0.3759	0.0133
+0.4230	0.1034	1.000	tailing configuration of up to eleven A8 characters	0.3703	0.0131
+0.4258	0.5357	1.000	only four levels of tailing prior to this pseudo op	0.3609	0.0118
+0.4375	0.1053	1.000	(*, N11, M2, 1z, n4... 110). The asterisk	0.3214	0.0146
+0.4403	0.5357	1.000	occurring. So strictly speaking the count of levels	0.3759	0.0118
+0.4535	0.1053	1.000	character, which is an illegal character for a	0.3365	0.0117
+0.4548	0.5357	1.000	in use is six (from box 24), but the last two tails	0.3628	0.0132
+0.4679	0.1053	1.000	symbol, indicates there is a special tailing	0.3177	0.0118
+0.4694	0.5357	1.000	are blank and really do not need to be indicated in	0.3684	0.0118
+0.4824	0.1053	1.000	configuration. The n represents the number of the	0.3741	0.0118
+0.4839	0.5357	1.000	the configuration appended to a symbol. This scan	0.3759	0.0132
+0.4970	0.1034	1.000	tail; the position of the n in the string corresponds	0.3722	0.0118
+0.4985	0.5357	1.000	working backwards detects the highest level in use,	0.3797	0.0131
+0.5115	0.1053	1.000	to the level of the tail. The string maintained in	0.3590	0.0118
+0.5130	0.5357	1.000	i. e., the highest rank of a field in the string with	0.3665	0.0131
+0.5261	0.1053	1.000	MQTAIL's table is purposely preceded by an A8	0.3515	0.0118
+0.5291	0.5376	1.000	a non-zero content. The count of levels in use	0.3440	0.0103
+0.5421	0.1053	1.000	asterisk character, so when MAIN has to indicate	0.3665	0.0117
+0.5421	0.5357	1.000	will then be reset, accordingly.	0.2350	0.0146
+0.5552	0.1034	1.000	tailing on a symbol, MAIN can just pick up directly	0.3797	0.0132
+0.5697	0.1034	1.000	from the MQTAIL table the appropriate number of	0.3722	0.0132
+0.5727	0.5338	1.000	Boxes 10, 35, 43	0.1372	0.0146
+0.5858	0.1034	1.000	fields. However, CPLTSY masks MQTAIL's table	0.3759	0.0131
+0.6003	0.1053	1.000	onto the CPLTSY tail table which then can be	0.3327	0.0103
+0.6017	0.5376	1.000	Since GETCHA only gets one character at a time	0.3590	0.0131
+0.6148	0.1053	1.000	altered, if necessary, as described in CPLTSY.	0.3571	0.0131
+0.6163	0.5338	1.000	for the using program, GETCHA will be called	0.3477	0.0146
+0.6308	0.5357	1.000	upon twice to collect the level number whose first	0.3684	0.0116
+0.6439	0.1034	1.000	FLOW CHART DESCRIPTION	0.2218	0.0116
+0.6452	0.5338	1.000	digit is one.	0.0922	0.0149
+0.6741	0.5337	1.000	Box 38	0.0623	0.0153
+0.6744	0.1053	1.000	Boxes 21 - 24	0.1090	0.0087
+0.7020	0.1071	1.000	Each tail is numbered by MQTAIL and saved in an	0.3684	0.0174
+0.7020	0.5338	1.000	II a level greater than eight should fall through to	0.3684	0.0174
+0.7166	0.5338	1.000	this box, only 'n mod(8)' fields in the string will be	0.3910	0.0174
+0.7166	0.1053	1.000	ordered table. This ordered table has a control	0.3571	0.0131
+0.7310	0.5319	1.000	zeroed.	0.0640	0.0163
+0.7324	0.1053	1.000	block other than the one used for the ordered	0.3327	0.0118
+0.7470	0.1053	1.000	symbol table. The number assigned to the tail in	0.3647	0.0133
+0.7610	0.5337	1.000	Boxes 44,45	0.1093	0.0172
+0.7630	0.1053	1.000	its entry is saved both in the field of the string	0.3477	0.0131
+0.7761	0.1053	1.000	which corresponds to the current level and in the	0.3628	0.0133
+0.7892	0.5320	1.000	The appropriate fields in the string of level	0.3271	0.0189
+0.7921	0.1034	1.000	tail counter. Both are in MQTAIL's table. If a	0.3590	0.0146
+0.8052	0.5320	1.000	indications are zeroed.	0.1767	0.0161
+0.8052	0.1034	1.000	tail has been previously specified, of course, the	0.3665	0.0176
+0.9345	0.7613	1.000	MOTAIL AND MỌT	0.1165	0.0146
+0.9375	0.9004	1.000	125	0.0244	0.0087

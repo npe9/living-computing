@@ -1,0 +1,99 @@
+0.0827	0.0752	1.000	INTERRUPT CONTROL	0.1823	0.0147
+0.1394	0.0827	1.000	MCP design is centered around the IBM 7030 inter-	0.3816	0.0118
+0.1394	0.5207	1.000	I-O interrupts are all handled by a common routine,	0.3835	0.0133
+0.1539	0.5038	1.000	as are the maskable interrupts, and control is passed	0.3966	0.0118
+0.1539	0.0827	1.000	rupt system. All interrupts are laken by MCP. All	0.3872	0.0118
+0.1685	0.0808	1.000	major transfers of control and all I-O functions	0.3534	0.0118
+0.1685	0.5038	1.000	to these routines through the parallel interrupt table.	0.3929	0.0118
+0.1830	0.5056	1.000	This permits retaining the identity of the individual	0.3778	0.0133
+0.1845	0.0808	1.000	depend upon the interrupt system and the MCP inter-	0.3929	0.0103
+0.1991	0.5038	1.000	interrupt while branching to a common routine.	0.3496	0.0117
+0.1991	0.0827	1.000	rupt control programs for their success.	0.3026	0.0117
+0.2104	0.5206	1.000	The parallel interrupt table consists of 48 full	0.3405	0.0153
+0.2136	0.0977	1.000	MCP divides the IBM 7030 interrupt ($IND) indica-	0.3759	0.0103
+0.2282	0.0808	1.000	tors into four categories:	0.1898	0.0116
+0.2282	0.5038	1.000	words. All 48 words are not used, because all inter-	0.3966	0.0116
+0.2427	0.0977	1.000	1. The error indicators: 0-3, 5-8, 15-17, 19	0.3477	0.0116
+0.2427	0.5056	1.000	rupts do not require use of this table. In positions	0.3741	0.0116
+0.2573	0.5038	1.000	corresponding to the maskable indicators, the par-	0.3778	0.0116
+0.2573	0.0977	1.000	2. The maskable indicators: 4, 18, 20, 22-47	0.3496	0.0131
+0.2718	0.5038	1.000	allel interrupt table contains the full word instruction	0.3947	0.0116
+0.2718	0.0977	1.000	3. The I-O indicators: 9-13	0.2162	0.0116
+0.2863	0.5038	1.000	SIC, ---; B, ---. In positions corresponding to the	0.3797	0.0131
+0.2878	0.0977	1.000	4. The IF indicator: 21	0.1823	0.0102
+0.3009	0.0977	1.000	The IF indicator is placed in a category by itself	0.3628	0.0131
+0.3009	0.5056	1.000	I-O indicators, it contains BZB1, SPSIOI+ (indicator	0.3872	0.0131
+0.3154	0.5056	1.000	number), KSTORE, providing for entry to the recep-	0.3910	0.0131
+0.3169	0.0827	1.000	because, in addition to indicating a potential error,	0.3778	0.0116
+0.3299	0.0808	1.000	it is used for major transfers of control.	0.3045	0.0131
+0.3299	0.5056	1.000	tor with a bit set corresponding to the interrupt.	0.3553	0.0131
+0.3430	0.0921	1.000	Figure 3 shows the distribution of interrupts	0.3346	0.0146
+0.3445	0.5226	1.000	The action taken by the interrupt tables for the	0.3440	0.0131
+0.3590	0.0789	1.000	among the MCP programs. All interrupts are	0.3459	0.0146
+0.3605	0.5056	1.000	various interrupts may be tabulated as shown on the	0.3816	0.0117
+0.3721	0.0808	1.000	received by the MCP interrupt table and from there,	0.3892	0.0159
+0.3750	0.5038	1.000	following page.	0.1147	0.0132
+0.3881	0.0808	1.000	control flows to the specified MCP programs.	0.3402	0.0160
+0.3982	0.5056	1.000	ERROR INTERRUPTS	0.1654	0.0118
+0.4172	0.2124	1.000	MCP Interrupt Table	0.1222	0.0132
+0.4288	0.5075	1.000	MCP divides error interrupts into two groups which	0.3835	0.0116
+0.4360	0.3102	1.000	1-0	0.0282	0.0145
+0.4390	0.3947	1.000	IF	0.0169	0.0116
+0.4390	0.1861	1.000	Maskable	0.0583	0.0116
+0.4390	0.1053	1.000	Error	0.0301	0.0087
+0.4433	0.5075	1.000	are both handled by standard fixup routines:	0.3233	0.0116
+0.4578	0.5226	1.000	1. Machine errors (indicators 0-3, 5), prohibiting	0.3797	0.0146
+0.4724	0.5075	1.000	continuation of system operation.	0.2444	0.0116
+0.4839	0.2011	1.000	Parallel Interrupt Table	0.1372	0.0103
+0.4869	0.5226	1.000	2. Program errors (indicators 6-8, 15-17, 19),	0.3609	0.0131
+0.4897	0.0864	1.000	Standard	0.0527	0.0132
+0.4956	0.3947	1.000	Dispatcher	0.0620	0.0116
+0.5000	0.0865	1.000	Fixups	0.0432	0.0160
+0.5015	0.5075	1.000	prohibiting continuation of the problem program.	0.3609	0.0131
+0.5066	0.1971	1.000	Maskable	0.0569	0.0145
+0.5073	0.3102	1.000	I-O	0.0263	0.0116
+0.5174	0.5094	1.000	Program errors also prohibit continuation of system	0.3872	0.0116
+0.5320	0.5075	1.000	operation if they occur in MCP.	0.2350	0.0117
+0.5475	0.1690	1.000	Maskable	0.0605	0.0155
+0.5552	0.5038	1.000	Machine Errors	0.1259	0.0146
+0.5625	0.1692	1.000	Interrupt	0.0526	0.0116
+0.5625	0.3271	1.000	Receptor	0.0564	0.0116
+0.5727	0.1711	1.000	Routine	0.0470	0.0116
+0.5842	0.5075	1.000	Indicators MK, IK, IJ, EK, and CPU are set only by	0.3891	0.0131
+0.5988	0.5075	1.000	machine errors. The interrupt table branches to five	0.3966	0.0118
+0.6105	0.0808	1.000	Figure 3. Distribution of Interrupts Among MCP Programs	0.3308	0.0117
+0.6133	0.5075	1.000	routines all of which are two-word routines of the	0.3684	0.0103
+0.6294	0.5056	1.000	following form:	0.1165	0.0146
+0.6423	0.6202	1.000	SIC, YMFL	0.0884	0.0163
+0.6424	0.5395	1.000	YFX**	0.0526	0.0116
+0.6526	0.0808	1.000	THE INTERRUPT TABLES	0.2030	0.0131
+0.6582	0.6221	1.000	B, YMFL	0.0734	0.0135
+0.6730	0.7744	1.000	**X	0.0301	0.0102
+0.6730	0.6203	1.000	(IQSX) DD (BU),	0.1222	0.0146
+0.6830	0.0846	1.000	MCP provides the following two interrupt tables:	0.3590	0.0133
+0.6903	0.5395	1.000	(** denotes the indicator mnemonic)	0.2650	0.0103
+0.6976	0.0996	1.000	1. The interrupt table (SIT)	0.2086	0.0118
+0.7016	0.5263	1.000	Thus, control passes to a common fixup routine,	0.3572	0.0126
+0.7121	0.0996	1.000	2. The parallel interrupt table (SIPT)	0.2820	0.0118
+0.7166	0.5094	1.000	YMFL, with the location of the IQS indicator mnemonic	0.4060	0.0131
+0.7267	0.0996	1.000	All IBM 7030 interrupts are received by the inter-	0.3722	0.0132
+0.7324	0.5075	1.000	in the address of YMFL. This routine hangs up in a	0.3853	0.0118
+0.7427	0.0846	1.000	rupt table (SIT). It consists of 48 full word instruc-	0.3853	0.0116
+0.7470	0.5094	1.000	BD, $ after using the commentator to type the state-	0.3816	0.0133
+0.7573	0.0827	1.000	tions of the form SIC, ---; BD, ---; one for each indi-	0.3966	0.0131
+0.7631	0.5075	1.000	ment:	0.0432	0.0087
+0.7718	0.0846	1.000	cator 0 through 47. Indicator 14 is not used, the	0.3609	0.0116
+0.7761	0.5376	1.000	**INTERRUPT. THE NEXT INSTRUCTION IS A	0.3628	0.0146
+0.7863	0.0827	1.000	interrupt table containing two NOP instructions in	0.3703	0.0116
+0.7906	0.5414	1.000	BE TO THE INTERRUPTED ADDRESS.	0.2914	0.0132
+0.8009	0.0846	1.000	the word corresponding to that indicator. The inter-	0.3910	0.0116
+0.8169	0.5075	1.000	Program Errors	0.1259	0.0131
+0.8169	0.0846	1.000	rupt table branches to one of the following three	0.3534	0.0116
+0.8314	0.0846	1.000	basic areas of MCP (Figure 3):	0.2312	0.0116
+0.8459	0.0996	1.000	1. The standard fixups	0.1748	0.0116
+0.8459	0.5056	1.000	Incorrect program action may set indicators EKJ,	0.3722	0.0132
+0.8590	0.5075	1.000	UNRJ, CBJ, OP, AD, USA, and DS. The interrupt	0.3816	0.0160
+0.8618	0.0996	1.000	2. The parallel interrupt table	0.2331	0.0103
+0.8735	0.5075	1.000	table will branch to one of seven routines all of which	0.3947	0.0102
+0.8764	0.1015	1.000	3. The dispatcher	0.1372	0.0118
+0.9259	0.0808	1.000	12	0.0150	0.0087

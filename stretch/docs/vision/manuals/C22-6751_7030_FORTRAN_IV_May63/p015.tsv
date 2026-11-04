@@ -1,0 +1,159 @@
+0.0767	0.5056	1.000	DEFINITION	0.0848	0.0151
+0.0785	0.0827	1.000	structions compiled from FORTRAN source programs.	0.3966	0.0161
+0.0945	0.5056	1.000	There are three different types of FORTRAN Functinns:	0.3985	0.0189
+0.0945	0.0808	1.000	It is only necessary that hand-coded instructions con-	0.3985	0.0131
+0.1076	0.0827	1.000	form to rules for subprogram formation, since they will	0.3966	0.0146
+0.1090	0.5207	1.000	1. Open (or built-in) Functions.	0.2406	0.0189
+0.1250	0.5207	1.000	2. Arithmetic or Logical Statement Functions.	0.3346	0.0189
+0.1250	0.0846	1.000	comprise a distinct subprogram.	0.2406	0.0132
+0.1366	0.0996	1.000	This section presents a discussion of the various	0.3797	0.0174
+0.1409	0.5207	1.000	3. Closed Functions.	0.1560	0.0176
+0.1539	0.0846	1.000	types of subprograms possible, two of which are the	0.3929	0.0147
+0.1664	0.0827	1.000	FORTRAN-coded Function subprogram and the Sub-	0.3930	0.0175
+0.1730	0.5056	1.000	OPEN (OR BUILT-IN) FUNCTIONS	0.2293	0.0161
+0.1860	0.0827	1.000	routine subprogram.	0.1504	0.0131
+0.1962	0.5056	1.000	These are Functions which are predefined, and exist	0.3966	0.0145
+0.1991	0.0977	1.000	Although Function subprograms and Subroutine	0.3816	0.0161
+0.2106	0.5038	1.000	in the processor. They generate instructions which	0.3966	0.0161
+0.2136	0.0827	1.000	subprograms are treated together and may be viewed	0.3947	0.0176
+0.2224	0.5056	1.000	are compiled in-line every time the function is referred	0.3947	0.0174
+0.2294	0.0825	1.000	as similar, it must be remembered that they differ in	0.3970	0.0193
+0.2470	0.0827	1.000	two fundamental respects.	0.1974	0.0147
+0.2526	0.5130	1.000	The IBM 7030 FORTRAN IV System will contain the	0.3914	0.0225
+0.2660	0.0977	1.000	1. The Function subprogram is always single-	0.3797	0.0116
+0.2688	0.4981	1.000	21 built-in Functions shown in Figure 2. It has the	0.4060	0.0191
+0.2802	0.1184	1.000	valued, whereas the Subroutine subprogram may	0.3592	0.0144
+0.2848	0.5038	1.000	capacity for more Functions to be added.	0.3045	0.0189
+0.2951	0.1203	1.000	be multi-valued.	0.1184	0.0116
+0.3092	0.0975	1.000	2. The Function subprogram is called or referred to	0.3821	0.0225
+0.3299	0.1109	1.000	by the arithmetic expression containing its name;	0.3647	0.0116
+0.3398	0.7104	1.000	No. of/ Argument	0.0923	0.0152
+0.3416	0.8252	1.000	Function	0.0432	0.0102
+0.3427	0.1184	1.000	the Subroutine subprogram can only be referred	0.3573	0.0151
+0.3517	0.6222	1.000	Definition	0.0451	0.0087
+0.3517	0.7180	1.000	Args	0.0226	0.0102
+0.3517	0.8327	1.000	Mode	0.0263	0.0087
+0.3532	0.5301	1.000	Name	0.0282	0.0073
+0.3532	0.7650	1.000	Mode	0.0263	0.0073
+0.3558	0.1181	1.000	to by a CALL statement.	0.1753	0.0185
+0.3677	0.5921	1.000	lArgl	0.0263	0.0131
+0.3692	0.8271	1.000	Floating	0.0376	0.0102
+0.3703	0.7593	1.000	Floating	0.0379	0.0094
+0.3706	0.5301	1.000	ABS	0.0207	0.0073
+0.3735	0.0996	1.000	Each of these two types of subprograms, when	0.3778	0.0146
+0.3794	0.5301	1.000	IABS	0.0244	0.0073
+0.3794	0.7575	1.000	Fixed	0.0282	0.0073
+0.3794	0.8252	1.000	Fixed	0.0282	0.0073
+0.3894	0.0846	1.000	coded in FORTRAN language, must be regarded as in-	0.3947	0.0147
+0.3967	0.5977	1.000	Sign of Arg times	0.0771	0.0089
+0.3968	0.8271	1.000	Floating	0.0376	0.0087
+0.3968	0.5301	1.000	AINT	0.0263	0.0087
+0.3983	0.7594	1.000	Floating	0.0376	0.0058
+0.4055	0.5959	1.000	Largest integers|Argl	0.0977	0.0088
+0.4055	0.0846	1.000	dependent ForTrAN programs. In all respects, they con-	0.3947	0.0146
+0.4055	0.5357	1.000	INT	0.0207	0.0073
+0.4055	0.7594	1.000	Floating	0.0357	0.0073
+0.4055	0.8252	1.000	Fixed	0.0282	0.0073
+0.4166	0.0826	1.000	form to rules for FORTRAN programming. They may be	0.3950	0.0186
+0.4215	0.7237	1.000	2	0.0094	0.0102
+0.4230	0.5977	1.000	Arg, (Mod Argy)	0.0733	0.0102
+0.4230	0.5301	1.000	AMOD	0.0320	0.0087
+0.4230	0.7575	1.000	Floating	0.0395	0.0087
+0.4230	0.8252	1.000	Floating	0.0376	0.0087
+0.4317	0.8252	1.000	Fixed	0.0282	0.0087
+0.4317	0.7575	1.000	Fixed	0.0282	0.0087
+0.4331	0.5357	1.000	MOD	0.0263	0.0073
+0.4360	0.0846	1.000	compiled with the main program of which they are	0.3929	0.0146
+0.4491	0.5977	1.000	Max (Argy, Argp'...)	0.0996	0.0131
+0.4491	0.7143	1.000	≥2	0.0188	0.0087
+0.4491	0.7575	1.000	Fixed	0.0282	0.0087
+0.4491	0.8252	1.000	Floating	0.0376	0.0102
+0.4505	0.5301	1.000	AMAXO	0.0358	0.0074
+0.4506	0.0827	1.000	parts, however, by means of multiple program com-	0.3966	0.0146
+0.4593	0.5301	1.000	AMAX1	0.0357	0.0073
+0.4593	0.7594	1.000	Floating	0.0376	0.0087
+0.4593	0.8252	1.000	Floating	0.0395	0.0087
+0.4666	0.0827	1.000	pilation. In this way, the result of multiple program	0.3947	0.0146
+0.4680	0.7575	1.000	Fixed	0.0282	0.0073
+0.4680	0.5376	1.000	MAXO	0.0282	0.0073
+0.4680	0.8252	1.000	Fixed	0.0282	0.0073
+0.4767	0.5376	1.000	MAXI	0.0282	0.0073
+0.4767	0.8252	1.000	Fixed	0.0282	0.0073
+0.4767	0.7594	1.000	Floating	0.0376	0.0087
+0.4811	0.0827	1.000	compilation will be a complete main program-sub-	0.3966	0.0147
+0.4936	0.5957	1.000	Min (Argy, Arg,...)	0.0980	0.0143
+0.4942	0.7143	1.000	≥2	0.0188	0.0073
+0.4942	0.5301	1.000	AMINO	0.0357	0.0087
+0.4942	0.7575	1.000	Fixed	0.0282	0.0073
+0.4942	0.8252	1.000	Floating	0.0395	0.0087
+0.4958	0.0825	1.000	program sequence ready to be executed.	0.2973	0.0162
+0.5028	0.7594	1.000	Floating	0.0376	0.0088
+0.5029	0.8252	1.000	Floating	0.0395	0.0087
+0.5044	0.5301	1.000	AMIN1	0.0338	0.0058
+0.5116	0.8252	1.000	Fixed	0.0282	0.0087
+0.5130	0.0977	1.000	Subprograms may be referred to in two distinct ways.	0.3797	0.0146
+0.5131	0.5376	1.000	MINO	0.0282	0.0073
+0.5131	0.7575	1.000	Fixed	0.0282	0.0073
+0.5196	0.7567	1.000	Floating	0.0410	0.0116
+0.5203	0.8252	1.000	Fixed	0.0282	0.0087
+0.5218	0.5376	1.000	MINI	0.0263	0.0073
+0.5274	0.0827	1.000	One of these is by the use of the name in an arithmetic	0.3949	0.0153
+0.5363	0.7237	1.000	1	0.0094	0.0116
+0.5378	0.8252	1.000	Floating	0.0395	0.0102
+0.5392	0.5301	1.000	FLOAT	0.0338	0.0073
+0.5392	0.7575	1.000	Fixed	0.0282	0.0073
+0.5392	0.5977	1.000	Fixed to floating	0.0752	0.0087
+0.5421	0.0827	1.000	expression. This applies to Functions. The other, which	0.3947	0.0146
+0.5552	0.7575	1.000	Floating	0.0395	0.0102
+0.5552	0.8252	1.000	Fixed	0.0282	0.0087
+0.5567	0.5977	1.000	Floating to fixed	0.0752	0.0088
+0.5567	0.5301	1.000	IFIX	0.0207	0.0073
+0.5581	0.0827	1.000	applies to Subroutine subprograms, is by means of	0.3947	0.0146
+0.5727	0.7237	1.000	2	0.0094	0.0102
+0.5727	0.8252	1.000	Floating	0.0395	0.0102
+0.5736	0.5957	1.000	(Sign of Arg,) times	0.0905	0.0141
+0.5741	0.7575	1.000	Floating	0.0395	0.0087
+0.5741	0.5301	1.000	SIGN	0.0282	0.0087
+0.5755	0.0827	1.000	a CALL statement.	0.1259	0.0103
+0.5828	0.7575	1.000	Fixed	0.0282	0.0073
+0.5828	0.8252	1.000	Fixed	0.0282	0.0073
+0.5828	0.5301	1.000	ISIGN	0.0301	0.0087
+0.5843	0.6071	1.000	lArg,l	0.0338	0.0116
+0.5915	0.0996	1.000	Following are examples of arithmetic expressions	0.3778	0.0146
+0.6001	0.5977	1.000	Arg, - min (Argy, Arg,)	0.1053	0.0135
+0.6003	0.7237	1.000	2	0.0094	0.0087
+0.6003	0.7575	1.000	Floating	0.0395	0.0087
+0.6003	0.8252	1.000	Floating	0.0376	0.0087
+0.6017	0.5301	1.000	DIM	0.0207	0.0073
+0.6076	0.0808	1.000	including Function names:	0.1992	0.0131
+0.6090	0.7594	1.000	Fixed	0.0263	0.0087
+0.6090	0.8252	1.000	Fixed	0.0282	0.0073
+0.6105	0.5282	1.000	IDIM	0.0263	0.0073
+0.6250	0.1128	1.000	Y=A-SIN (B-C)	0.1034	0.0102
+0.6265	0.7594	1.000	Floating	0.0376	0.0087
+0.6265	0.8252	1.000	Floating	0.0395	0.0087
+0.6265	0.6015	1.000	VArg,	0.0301	0.0145
+0.6279	0.5282	1.000	SQRT	0.0282	0.0073
+0.6352	0.1128	1.000	C=AMINO (M, L) +ABC(B*FORTF(Z), E)	0.2838	0.0117
+0.6512	0.0808	1.000	The appearance in the arithmetic expression serves to	0.3966	0.0161
+0.6655	0.0806	1.000	call the Function; the value of the Function is then	0.3952	0.0206
+0.6817	0.0808	1.000	computed, using the arguments which are supplied	0.3947	0.0174
+0.6976	0.0807	1.000	in the parentheses following the Function name. (A	0.3949	0.0160
+0.7033	0.5018	1.000	Figure 2	0.0547	0.0134
+0.7136	0.0827	1.000	value is here defined to be a single quantity.)	0.3327	0.0131
+0.7526	0.0826	1.000	Functions	0.0678	0.0108
+0.7774	0.0808	1.000	NAMING	0.0603	0.0135
+0.7964	0.0808	1.000	The rules for naming Functions are the same as those	0.3966	0.0161
+0.8139	0.0789	1.000	for naming variables. The name may be one to six	0.3966	0.0131
+0.8266	0.0789	1.000	alphameric characters (except special characters),	0.3985	0.0153
+0.8342	0.5019	1.000	ARITHMETIC OR LOGICAL STATEMENT FUNCTIONS	0.3440	0.0146
+0.8400	0.0789	1.000	and the first must be alphabetic. The mode of the	0.3985	0.0161
+0.8576	0.5019	1.000	These are Functions which are defined by a single	0.3985	0.0146
+0.8590	0.0827	1.000	Function must be given either by a Type statement or,	0.3929	0.0146
+0.8706	0.5000	1.000	FORTRAN arithmetic or logical statement and apply	0.4004	0.0176
+0.8706	0.0789	1.000	in the case of integer and real, by the proper first	0.3985	0.0176
+0.8836	0.5019	1.000	only to the particular program or subprogram in which	0.3985	0.0191
+0.8876	0.0770	1.000	letter of the name as described in the rules for naming	0.3986	0.0155
+0.9012	0.5019	1.000	their definition appears.	0.1805	0.0189
+0.9052	0.0807	1.000	variables.	0.0697	0.0123
+0.9317	0.8797	1.000	15	0.0207	0.0116

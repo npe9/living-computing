@@ -1,0 +1,104 @@
+0.0609	0.1410	1.000	interruption cannot occur and address moni-	0.3421	0.0147
+0.0610	0.0883	1.000	abled,	0.0526	0.0145
+0.0624	0.5056	1.000	15. Subject instructions of EXECUTE INDIRECT AND	0.3966	0.0146
+0.0770	0.0902	1.000	toring	0.0489	0.0132
+0.0785	0.5075	1.000	couNT may occupy any available locations with ad-	0.3947	0.0145
+0.0785	0.1372	1.000	is suspended. In order that control may re	0.3421	0.0116
+0.0899	0.5070	1.000	dresses 32.00 and greater.	0.1890	0.0205
+0.0930	0.0902	1.000	main entirely with the main program during an exe	0.3891	0.0146
+0.1090	0.0902	1.000	cution operation, two special exceptions are made.	0.3891	0.0131
+0.1163	0.5075	1.000	PROGRAMMING NOTES	0.1560	0.0131
+0.1221	0.0902	1.000	First, address monitoring is always in force during	0.3910	0.0146
+0.1336	0.5075	1.000	The execution instructions may be used not only	0.3929	0.0161
+0.1368	0.0936	1.000	(1) EXECUTE and	0.1266	0.0149
+0.1381	0.2162	1.000	• (2) EXECUTE INDIRECT AND COUNT,	0.2669	0.0146
+0.1482	0.5056	1.000	for supervisory routines, such as tracing programs,	0.3966	0.0176
+0.1526	0.0883	1.000	except for the address of the location of the first level	0.3947	0.0160
+0.1642	0.5075	1.000	but also for parameter determination in subroutine-	0.3929	0.0161
+0.1680	0.0901	1.000	pseudo-instruction counter. Second, at the comple-	0.3912	0.0167
+0.1802	0.5056	1.000	calling sequences. For example, execution operations	0.3966	0.0161
+0.1845	0.2331	1.000	or suppression of an execution	0.2500	0.0131
+0.1845	0.0902	1.000	tion, termination,	0.1353	0.0118
+0.1948	0.5056	1.000	in a subroutine may execute parameter-specifying sub-	0.3947	0.0160
+0.1991	0.0902	1.000	operation, interruption is always permitted.	0.3158	0.0146
+0.2106	0.5038	1.000	ject instructions whose locations follow that of the	0.3966	0.0133
+0.2238	0.5056	1.000	branch to the subroutine. The instruction EXECUTE	0.3947	0.0160
+0.2238	0.0902	1.000	PROGRAMMING NOTE	0.1466	0.0102
+0.2412	0.5056	1.000	also executes instructions conveniently from the reg-	0.3929	0.0161
+0.2427	0.0902	1.000	When interruption	0.1504	0.0131
+0.2427	0.2406	1.000	occurs following an execution	0.2406	0.0131
+0.2558	0.5056	1.000	isters. This facilitates table look-up, diagnostic, and	0.3947	0.0161
+0.2573	0.0883	1.000	operation with the interruption system disabled, it	0.3929	0.0146
+0.2703	0.5056	1.000	other routines.	0.1109	0.0146
+0.2733	0.0883	1.000	is caused only by the actuated indicator of highest	0.3929	0.0131
+0.2892	0.0902	1.000	priority whose mask bit is one. Further interruptions	0.3910	0.0117
+0.3036	0.0902	1.000	cannot occur until either the system is enabled or	0.3911	0.0134
+0.3160	0.0881	1.000	another execution operation	0.2242	0.0180
+0.3197	0.3177	1.000	is completed, termi-	0.1617	0.0132
+0.3342	0.5056	1.000	System Alerts	0.1504	0.0191
+0.3342	0.0883	1.000	nated, or suppressed. Examination for other actuated	0.3910	0.0131
+0.3488	0.0865	1.000	indicators can be programmed into the correction	0.3947	0.0161
+0.3644	0.0882	1.000	routine.	0.0604	0.0125
+0.3732	0.5055	1.000	During	0.0548	0.0152
+0.3735	0.5620	1.000	the execution of a program, certain condi-	0.3365	0.0146
+0.3789	0.1052	1.000	Any actuated indicator whose mask bit is on may	0.3742	0.0150
+0.3894	0.5056	1.000	tions arising because of the program or outside influ-	0.3947	0.0161
+0.3939	0.0883	1.000	cause interruption at the completion, termination,	0.3910	0.0146
+0.4055	0.5056	1.000	ences should cause the computer to alert the pro-	0.3929	0.0146
+0.4112	0.0883	1.000	or suppression of an execution operation.	0.2970	0.0133
+0.4200	0.5056	1.000	gram. Five types of alert causes may be recognized:	0.3759	0.0146
+0.4403	0.5395	1.000	External signals, as from the interval timer,	0.3590	0.0133
+0.4404	0.5226	1.000	1.	0.0150	0.0116
+0.4504	0.0864	1.000	Execute (EX)	0.0922	0.0134
+0.4564	0.5432	1.000	input-output units, or other central processing	0.3553	0.0161
+0.4722	0.5450	1.000	units.	0.0415	0.0119
+0.4724	0.0883	1.000	Bits 0-18 of the effective address form the address of	0.3910	0.0116
+0.4884	0.0865	1.000	the location of a subject instruction that is fetched	0.3929	0.0131
+0.4912	0.5188	1.000	2. Data exceptions, such as data flags, zero divisors,	0.3778	0.0161
+0.5042	0.0865	1.000	and executed. Subject instructions of EXECUTE may	0.3910	0.0133
+0.5073	0.5451	1.000	or negative operands in square root operations.	0.3534	0.0131
+0.5188	0.0865	1.000	occupy any addressable location. An effective address	0.3929	0.0133
+0.5276	0.5188	1.000	3. Result exceptions, such as lost carries, partial	0.3797	0.0161
+0.5348	0.0865	1.000	of EXECUTE that is below 32.00 (including addresses	0.3929	0.0131
+0.5421	0.5451	1.000	fields, or floating point exponents within cer-	0.3534	0.0146
+0.5494	0.0865	1.000	between 1.00 and 3.32) is not monitored by the ad-	0.3929	0.0131
+0.5588	0.5427	1.000	tain ranges.	0.0910	0.0140
+0.5639	0.0865	1.000	dress monitoring mechanism; that is, indicator IF	0.3929	0.0145
+0.5770	0.5169	1.000	4. Instruction	0.1090	0.0146
+0.5785	0.6391	1.000	exceptions, such as instructions	0.2575	0.0131
+0.5799	0.0865	1.000	cannot be actuated by these addresses.	0.2782	0.0146
+0.5911	0.5431	1.000	which should not or cannot be completed or	0.3538	0.0187
+0.6090	0.5414	1.000	should signal when they are completed.	0.3008	0.0161
+0.6191	0.0865	1.000	Execute Indirect and Count (EXIC)	0.2406	0.0118
+0.6294	0.5169	1.000	5. Machine malfunctions.	0.1974	0.0131
+0.6424	0.0846	1.000	Bits 0-18 of the full-word addressed by bits 0-17 of	0.3947	0.0131
+0.6511	0.5018	1.000	These causes are recorded in the indicator register as	0.3949	0.0192
+0.6584	0.0865	1.000	the effective address are used as a pseudo-instruction	0.3891	0.0116
+0.6672	0.5000	1.000	they occur, thus altering the program. The inter-	0.3966	0.0160
+0.6742	0.0865	1.000	counter. The contents of the pseudo-instruction coun-	0.3891	0.0107
+0.6817	0.5019	1.000	ruption system allows programmed action on the	0.3947	0.0174
+0.6875	0.0846	1.000	ter address the location of a subject instruction that is	0.3929	0.0146
+0.6976	0.5000	1.000	alerts. The detailed action of the interruption sys-	0.3947	0.0176
+0.7020	0.0827	1.000	fetched and executed. After the subject instruction	0.3947	0.0160
+0.7121	0.5000	1.000	tem should permit (I) independent treatment of	0.3966	0.0161
+0.7194	0.0827	1.000	has been fetched but prior to its execution, the pseudo-	0.3947	0.0146
+0.7282	0.5000	1.000	alerts, and (2) preservation of the state of execution	0.3947	0.0161
+0.7339	0.0808	1.000	instruction counter is stepped. If the subject instruc-	0.3947	0.0132
+0.7407	0.5017	1.000	at the time of alert to facilitate program resumption.	0.3932	0.0198
+0.7469	0.0826	1.000	tion is halt-length, the pseudo-instruction counter is	0.3951	0.0189
+0.7660	0.0846	1.000	stepped once; if full-length, twice.	0.2387	0.0116
+0.7773	0.1014	1.000	When EXECUTE INDIRECT AND COUNT is a subiect	0.3761	0.0151
+0.7920	0.0808	1.000	instruction in a multi-leveled execution operation,	0.3949	0.0164
+0.8036	0.4981	1.000	Independent Treatment of Alerts	0.3064	0.0161
+0.8094	0.0845	1.000	each pseudo-instruction counter involved is appro-	0.3931	0.0177
+0.8241	0.0827	1.000	priately stepped between the fetching and executing	0.3947	0.0160
+0.8387	0.5019	1.000	tach alert can be treated independently by program-	0.3910	0.0132
+0.8415	0.0846	1.000	of its corresponding subject instruction.	0.2876	0.0131
+0.8532	0.4981	1.000	ming because of the following three properties:	0.3553	0.0132
+0.8545	0.0996	1.000	Pseudo-instruction counters may occupy any of the	0.3759	0.0161
+0.8721	0.0827	1.000	index registers as well as main core storage locations	0.3929	0.0146
+0.8735	0.5169	1.000	1. The interruption system may be disabled as a	0.3759	0.0116
+0.8866	0.0845	1.000	but cannot occupy locations addressed between 0 and	0.3911	0.0151
+0.8870	0.5017	1.000	part of the programmed action taken on an alert.	0.3912	0.0155
+0.9258	0.1259	1.000	IBM 7030	0.0639	0.0088
+0.9259	0.0789	1.000	50	0.0207	0.0116

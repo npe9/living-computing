@@ -1,0 +1,104 @@
+0.0858	0.5301	1.000	ed), MAIN makes an entry into the symbol table	0.3553	0.0131
+0.0872	0.1071	1.000	expression, so Ibuffw must be updated to locate avail-	0.3891	0.0131
+0.1003	0.5320	1.000	which remains in memory throughout the assembly.	0.3816	0.0116
+0.1032	0.1053	1.000	able area in the unit for the symbolic statement.	0.3571	0.0117
+0.1148	0.5301	1.000	If the symbol collected from the name field of the	0.3665	0.0116
+0.1245	0.1033	1.000	Boxes 40, 41	0.0980	0.0155
+0.1294	0.5320	1.000	card block is in the sphere of influence of a previous	0.3891	0.0116
+0.1439	0.5320	1.000	TAIL pseudo op still in effect, a NOP/Branch instruet-	0.4060	0.0131
+0.1539	0.1053	1.000	At this point if this is the first unit of a card block	0.3722	0.0118
+0.1584	0.5301	1.000	ion before the calling sequence to ADDORD will be	0.3741	0.0131
+0.1685	0.1053	1.000	and has a name, the if-a-name indicator, Zifname.	0.3759	0.0147
+0.1730	0.5301	1.000	a Branch as set previously by MQTAIL. The internal	0.3985	0.0131
+0.1830	0.1053	1.000	is turned on and the name check digit is stored in	0.3647	0.0118
+0.1875	0.5320	1.000	STRAP II characters indicating the tails in effect	0.3684	0.0131
+0.1976	0.1053	1.000	the unit. The name check digit is one of the built-in	0.3853	0.0118
+0.2035	0.5301	1.000	will be appended to the symbol before ADDORD in-	0.3759	0.0117
+0.2121	0.1053	1.000	checking features in STRAP. The check digit is	0.3553	0.0132
+0.2166	0.5320	1.000	serts the entire entry in the symbol table. GETCHA	0.3835	0.0131
+0.2252	0.1053	1.000	carried in the symbol table entry and also in the	0.3553	0.0133
+0.2324	0.5320	1.000	makes the entry in the name file which does not remain	0.4079	0.0118
+0.2412	0.1053	1.000	name field entry. The synchronous matching of	0.3553	0.0118
+0.2470	0.5301	1.000	in memory and is only recalled into memory to be	0.3703	0.0118
+0.2558	0.1053	1.000	these files in Pass 2 is cross-checked by the use of	0.3816	0.0131
+0.2615	0.5301	1.000	printed on the listing in Pass 2b.	0.2444	0.0133
+0.2703	0.1053	1.000	the check digit. Note the DDI and SYN instructions,	0.3853	0.0131
+0.2776	0.5489	1.000	At this time certain information in the unit must	0.3571	0.0103
+0.2863	0.1053	1.000	when used, must each have a name.	0.2650	0.0116
+0.2906	0.5320	1.000	also be included in the set up symbol table entry for	0.3835	0.0132
+0.3067	0.5320	1.000	a symbol referencing done by Pass 2 in establishing	0.3835	0.0116
+0.3153	0.1052	1.000	Boxes 42, 43	0.0978	0.0133
+0.3212	0.5320	1.000	the final value. Some of the data to be moved to the	0.3835	0.0116
+0.3358	0.5301	1.000	symbol table entry are: length of binary output, coded	0.3985	0.0145
+0.3445	0.1034	1.000	The length (count of 8-bit characters) of the symbolic	0.3966	0.0131
+0.3503	0.5320	1.000	expressions for a P-mode data description on a still	0.3872	0.0116
+0.3590	0.1053	1.000	statement which GETCHA has built up with each of	0.3741	0.0116
+0.3648	0.5301	1.000	"ambiguous" op, explicit data description information	0.3985	0.0131
+0.3735	0.1053	1.000	the statement field characters in this operation is now	0.3985	0.0116
+0.3794	0.5320	1.000	of a DD or the coded expression for its symbolie	0.3590	0.0116
+0.3881	0.1053	1.000	computed and saved in the format part of the unit so	0.3835	0.0131
+0.3939	0.5320	1.000	data description, and coded expression for a dimen-	0.3853	0.0146
+0.4039	0.1071	1.000	OUTPUT in Pass 2b will know the length of the state-	0.3910	0.0118
+0.4099	0.5320	1.000	sion of a DR. (See Appendix A. )	0.2368	0.0116
+0.4185	0.1071	1.000	ment field to be printed on the listing.	0.2782	0.0118
+0.4244	0.5489	1.000	Note the set up symbol table entry for a SYN or a	0.3647	0.0132
+0.4330	0.1222	1.000	The index word, Ibuffw, is rounded to a full word	0.3628	0.0133
+0.4390	0.5320	1.000	MCP op has already been made in their respective	0.3722	0.0132
+0.4476	0.1053	1.000	location so that the symbolic statement will go into	0.3759	0.0118
+0.4548	0.5320	1.000	pseudo-op subroutines.	0.1692	0.0118
+0.4636	0.1071	1.000	the unit at a full word location, except for a comment	0.3947	0.0117
+0.4679	0.5489	1.000	A special (or "phoney") symbol table entry is set	0.3628	0.0133
+0.4767	0.1071	1.000	card block and a B-type card block, the symbolic	0.3628	0.0132
+0.4824	0.5320	1.000	up for a pseudo op which should not have a name but	0.3853	0.0133
+0.4912	0.1053	1.000	statement will not necessarily be a true image of the	0.3891	0.0131
+0.4970	0.5320	1.000	yet does have one. A named pseudo op which should	0.3872	0.0133
+0.5073	0.1053	1.000	statement field of the op. The blanks following the	0.3759	0.0116
+0.5130	0.5320	1.000	not have a name is not guaranteed to have a full or	0.3741	0.0118
+0.5218	0.1053	1.000	last non-blank character in the statement field do	0.3647	0.0103
+0.5276	0.5320	1.000	half word address when referenced.	0.2632	0.0118
+0.5363	0.1053	1.000	not go into the statement buffer. Furthermore,	0.3515	0.0131
+0.5421	0.5470	1.000	If ADDORD of table management informs MAIN	0.3496	0.0117
+0.5509	0.1071	1.000	MAIN adjusts the symbolic statement to eliminate the	0.3929	0.0131
+0.5567	0.5282	1.000	that the entry just requested to be put in the symbol	0.3835	0.0131
+0.5654	0.1053	1.000	semicolon from the print image stored in the unit.	0.3684	0.0131
+0.5712	0.5282	1.000	table is multiply-defined, MAIN has the subroutine	0.3797	0.0145
+0.5799	0.1071	1.000	After the symbolic statement has been moved into	0.3665	0.0131
+0.5858	0.5301	1.000	MULTI adjust the symbol table entry of the multiply-	0.3929	0.0145
+0.5959	0.1071	1.000	the unit, Ibuffw is updated to address available	0.3496	0.0132
+0.6003	0.5301	1.000	defined symbol.	0.1184	0.0131
+0.6105	0.1071	1.000	area for the next unit since no more data will go	0.3553	0.0117
+0.6264	0.1053	1.000	into the current unit.	0.1560	0.0103
+0.6308	0.5301	1.000	Box 54	0.0526	0.0146
+0.6555	0.1053	1.000	Box 44	0.0564	0.0132
+0.6584	0.5320	1.000	A set of six error flags is OR'ed into each unit after	0.3872	0.0131
+0.6744	0.5320	1.000	a unit is processed in Pass 1 and after a unit is proc-	0.3966	0.0116
+0.6830	0.1241	1.000	The bit length of the encoded fields in the unit is	0.3534	0.0146
+0.6890	0.5320	1.000	essed in Pass 2a. (During each pass processing	0.3609	0.0117
+0.6976	0.1053	1.000	also computed and saved in the unit so OUTPUT in	0.3741	0.0146
+0.7035	0.5320	1.000	there is an intermediate error flag buffer where the	0.3835	0.0117
+0.7136	0.1071	1.000	Pass 2 will be able to locate the statement field	0.3496	0.0103
+0.7179	0.5320	1.000	occurrence of the errors is recorded as detected.)	0.3741	0.0118
+0.7282	0.1071	1.000	characters in the unit. (In Pass 2, Location of unit	0.3759	0.0131
+0.7324	0.5320	1.000	The first five flags denote whether a symbol is	0.3459	0.0133
+0.7427	0.1053	1.000	in the value field of $3 + size of fixed format + bit	0.3684	0.0116
+0.7485	0.5320	1.000	undefined, multiply-defined without contradictions,	0.3759	0.0118
+0.7573	0.1053	1.000	length of encoded fields = location of statement field	0.3853	0.0116
+0.7630	0.5320	1.000	circularly defined or defined in terms of an error	0.3684	0.0118
+0.7733	0.1071	1.000	characters.)	0.0940	0.0116
+0.7776	0.5320	1.000	symbol. The sixth flag denotes whether the suppress	0.3947	0.0118
+0.7890	0.5299	1.000	error message, , appeared before the instruction.	0.3858	0.0223
+0.8023	0.1053	1.000	Boxes 45-53	0.0959	0.0131
+0.8067	0.5320	1.000	At the end of Pass 1, only the sixth flag could be on.	0.3872	0.0131
+0.8212	0.5338	1.000	Later in Pass 2 when VALUE is evaluating a coded	0.3741	0.0131
+0.8314	0.1222	1.000	Now if the unit is the first unit of the card block	0.3534	0.0102
+0.8358	0.5338	1.000	expression which contains error symbol(s), VALUE	0.3835	0.0131
+0.8459	0.1071	1.000	and if it has a name, a symbol table entry must be	0.3722	0.0132
+0.8517	0.5320	1.000	informs the using program which in turn sets on the	0.3853	0.0116
+0.8605	0.1071	1.000	set up. Furthermore, if this is the end of a named	0.3778	0.0132
+0.8648	0.5320	1.000	appropriate error flag(s). UITER, too, does some	0.3797	0.0146
+0.8750	0.1071	1.000	card block (only at the end of a card block can an	0.3609	0.0132
+0.8808	0.5320	1.000	detecting. However, while the undefined, circularly	0.3910	0.0131
+0.8909	0.1071	1.000	MAIN be sure that the entire name has been collect-	0.3872	0.0118
+0.8939	0.5320	1.000	defined, and contagiously defined symbols are detected	0.4060	0.0131
+0.9360	0.9079	1.000	25	0.0169	0.0087
+0.9375	0.7914	1.000	Assembly Phases	0.0959	0.0102

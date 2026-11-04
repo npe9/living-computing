@@ -1,0 +1,110 @@
+0.0959	0.0714	1.000	routine will return to the address specified if the	0.3684	0.0132
+0.0973	0.5019	1.000	error control. The five main paths (Figures 115,	0.3778	0.0161
+0.1118	0.0714	1.000	instruction is accepted. If the instruction is not	0.3647	0.0118
+0.1118	0.5000	1.000	116) through the routine are:	0.2199	0.0146
+0.1264	0.0714	1.000	accepted after a number of retries, dispatcher error	0.3985	0.0132
+0.1363	0.5187	1.000	1. KKSPAC	0.0961	0.0167
+0.1381	0.6410	1.000	Space file failure	0.1372	0.0146
+0.1424	0.0714	1.000	control is entered.	0.1410	0.0103
+0.1526	0.5188	1.000	2. KLABWL	0.1015	0.0147
+0.1526	0.6447	1.000	Write label failure	0.1447	0.0147
+0.1570	0.0865	1.000	When the MIOREJ routine is used after set up I-O	0.3759	0.0116
+0.1641	0.5188	1.000	3. KRREAD	0.0997	0.0178
+0.1672	0.6429	1.000	Read label failure	0.1410	0.0147
+0.1715	0.0714	1.000	instruction, it is always followed by the SEOP test	0.3816	0.0131
+0.1829	0.5187	1.000	4. KRWEF	0.0904	0.0150
+0.1845	0.6466	1.000	Write tape mark failure	0.1823	0.0146
+0.1848	0.0713	1.000	routine (KSEOPT) for SEOP I-O instruction, and by	0.3855	0.0148
+0.1959	0.5168	1.000	5. KREPET	0.1036	0.0167
+0.1991	0.6447	1.000	Locate or change density failure	0.2481	0.0146
+0.2020	0.0714	1.000	the I-O indicator check routine (KIOIND) for non-	0.3722	0.0116
+0.2121	0.5150	1.000	Each path uses some of a set of specialized small	0.3797	0.0161
+0.2166	0.0714	1.000	SEOP set up I-O instructions. The following code	0.3778	0.0131
+0.2282	0.5019	1.000	routines to perform the retry. The routine at	0.3496	0.0146
+0.2311	0.0714	1.000	might appear following a SEOP set up I-O instruction:	0.4060	0.0131
+0.2427	0.5019	1.000	RNWTPE (Figure 117) is used if it is necessary to	0.3778	0.0161
+0.2558	0.0865	1.000	LVI, 1, KSEOPT	0.1297	0.0131
+0.2587	0.5000	1.000	unload a tape and try a new one. The routine at	0.3571	0.0146
+0.2702	0.0864	1.000	SIC, KEOPR	0.0978	0.0148
+0.2718	0.5000	1.000	JWRITL (Figure 117) is used when a write label	0.3609	0.0161
+0.2843	0.0863	1.000	B, MIOREJ	0.0887	0.0157
+0.2878	0.5000	1.000	operation fails, or when a rewrite of the label is	0.3665	0.0146
+0.3009	0.0865	1.000	(return at EOP)	0.1184	0.0116
+0.3023	0.5000	1.000	required. The short subroutines have the following	0.3835	0.0160
+0.3154	0.0714	1.000	for non-SEOP setup I-O, this code might appear:	0.3665	0.0116
+0.3285	0.1729	1.000	LVI, 1, KSUPP	0.1165	0.0131
+0.3415	0.5150	1.000	RJREWE Rewind the tape over the label to the !	0.3684	0.0161
+0.3430	0.1692	1.000	SIC, SRETAD($12)	0.1410	0.0161
+0.3589	0.5996	1.000	load point.	0.0828	0.0148
+0.3589	0.1729	1.000	B, MIOREJ	0.0847	0.0119
+0.3712	0.5168	1.000	KIOREJ Retry an I-O operation and verify its	0.3612	0.0171
+0.3733	0.1691	1.000	SIC, KKIND	0.0922	0.0149
+0.3735	0.0865	1.000	A	0.0132	0.0116
+0.3879	0.1729	1.000	B, KIOIND	0.0809	0.0134
+0.3894	0.5996	1.000	acceptance by the exchange and unit.	0.2763	0.0133
+0.4025	0.5150	1.000	RSEOPT	0.0677	0.0118
+0.4026	0.6015	1.000	Continually copy control word until the	0.2895	0.0116
+0.4026	0.0865	1.000	In this case, control is returned to KSUPP by	0.3440	0.0147
+0.4153	0.5994	1.000	SEOP bit is off (all retries are SEOP);	0.2937	0.0180
+0.4185	0.0714	1.000	MIOREJ and to A by the receptor when the interrupt	0.3910	0.0103
+0.4330	0.6015	1.000	then check the indicators and return	0.2726	0.0118
+0.4330	0.0714	1.000	from the set up I-O occurs.	0.2086	0.0118
+0.4477	0.5996	1.000	accordingly.	0.0959	0.0131
+0.4608	0.5169	1.000	KKEOP	0.0583	0.0131
+0.4621	0.0714	1.000	EOP Test for SEOP I-O	0.1786	0.0103
+0.4621	0.6015	1.000	A common routine to retry control	0.2594	0.0132
+0.4782	0.6015	1.000	operations.	0.0865	0.0102
+0.4897	0.5150	1.000	KKDENS Verify that the unit is in the desired	0.3590	0.0147
+0.4912	0.0714	1.000	The SEOP test routine (KSEOPT, Figure 113) is used	0.4004	0.0131
+0.5058	0.5996	1.000	density, and change density if nec-	0.2632	0.0131
+0.5058	0.0714	1.000	to wait for completion of a SEOP set up I-O opera-	0.3816	0.0118
+0.5203	0.0714	1.000	tion. The routine is entered with the linkage:	0.3421	0.0118
+0.5215	0.6014	1.000	essary.	0.0584	0.0107
+0.5348	0.0883	1.000	SIC, KEOPR	0.0959	0.0131
+0.5348	0.5132	1.000	In addition, the subroutines, KKLOOP, KUNR,	0.3553	0.0161
+0.5474	0.4980	1.000	and KCLEAR in the I-O reject routine (MIOREJ) are	0.3969	0.0170
+0.5487	0.0882	1.000	B, KSEOPT	0.0887	0.0146
+0.5622	0.4980	1.000	utilized.	0.0660	0.0136
+0.5639	0.0714	1.000	or its equivalent (see the I-O reject routine, MIOREJ).	0.4079	0.0131
+0.5785	0.5150	1.000	In attempting retries due to an initial EPGK or UK,	0.3872	0.0131
+0.5799	0.0714	1.000	The routine copies the control word repeatedly until	0.3891	0.0102
+0.5930	0.5000	1.000	there are many occasions for additional errors to be	0.3966	0.0116
+0.5945	0.0714	1.000	the SEOP bit is off, returning when all indicators are	0.4004	0.0116
+0.6076	0.5000	1.000	detected. In general, error indications are tested	0.3797	0.0131
+0.6090	0.0714	1.000	off. If other indicators are on when SEOP is off, the	0.3966	0.0131
+0.6221	0.5000	1.000	throughout a retry attempt, and dispatcher error con-	0.4060	0.0146
+0.6235	0.0714	1.000	channel is cleared and the operation repeated, unless	0.4004	0.0116
+0.6381	0.5000	1.000	trol is entered if the original or any subsequent	0.3590	0.0116
+0.6381	0.0714	1.000	the indicator is EE on a locate or a mode change	0.3647	0.0116
+0.6526	0.0714	1.000	operation. Since the EE indication results when	0.3628	0.0116
+0.6526	0.4981	1.000	operation cannot be successfully performed.	0.3346	0.0204
+0.6657	0.0695	1.000	these operations are performed while the tape indica-	0.4041	0.0131
+0.6817	0.0695	1.000	tor is on, the EE indication is ignored.	0.2951	0.0116
+0.6830	0.4981	1.000	SYMBOLIC I-O CONTROL ROUTINES	0.2876	0.0146
+0.6948	0.0865	1.000	If it is necessary to repeat the operation, control	0.3722	0.0146
+0.7106	0.0695	1.000	is given to KRETRY with the VF of $1 still containing	0.4004	0.0118
+0.7120	0.4980	1.000	Three service pseudo-ops are provided for flexibility	0.4025	0.0177
+0.7252	0.0714	1.000	the return address just used by the I-O reiect routine	0.3985	0.0103
+0.7267	0.4981	1.000	in the use of symbolic I-O:	0.2030	0.0161
+0.7398	0.0714	1.000	MIOREJ. Thus, the operation will be repeated and	0.3854	0.0122
+0.7407	0.5130	1.000	$IODEF -- I-O definition report	0.2448	0.0183
+0.7529	0.0695	1.000	KSEOPT entered again. A count is set up by MIOREJ	0.4041	0.0132
+0.7558	0.5132	1.000	$CHEX -- Change table of exits	0.2406	0.0161
+0.7688	0.5094	1.000	$FREE -- Free a tape unit for other assignment	0.3722	0.0191
+0.7688	0.0695	1.000	in $11 to limit retries. The counting is done at	0.3590	0.0133
+0.7832	0.0714	1.000	ZTSEOP.	0.0697	0.0122
+0.7863	0.4981	1.000	All are entered in the disabled mode from the identi-	0.3985	0.0146
+0.8009	0.4962	1.000	fier with the index registers set as specified in table	0.3985	0.0146
+0.8139	0.4979	1.000	AM (The Identifier Routine - Interrupt Control).	0.3613	0.0191
+0.8139	0.0695	1.000	I-O Indicator Check	0.1504	0.0103
+0.8415	0.0695	1.000	After a non-SEOP set up I-O operation, the I-O indi-	0.3985	0.0146
+0.8560	0.0695	1.000	cator check routine (KIOIND, Figure 115) is used to	0.3911	0.0157
+0.8590	0.4925	1.000	I-O Definition Report	0.1673	0.0160
+0.8676	0.0694	1.000	test the EPGK and UK indicators. If both are off, it	0.3951	0.0223
+0.8852	0.4962	1.000	The I-O definition report routine (JZIOR, Figure 118)	0.4060	0.0189
+0.8881	0.0695	1.000	returns; if either is on, the routine determines the	0.3853	0.0102
+0.8992	0.0695	1.000	nature of the I-O operation and initiates a series of	0.3854	0.0126
+0.9014	0.4998	1.000	obtains the storage address from the'linkage, con-	0.3744	0.0162
+0.9142	0.0695	1.000	retries, ultimately returning or entering dispatcher	0.3910	0.0145
+0.9157	0.4981	1.000	verts the channel and unit numbers to IQS, and stores	0.3985	0.0161
+0.9491	0.0695	1.000	200	0.0226	0.0087

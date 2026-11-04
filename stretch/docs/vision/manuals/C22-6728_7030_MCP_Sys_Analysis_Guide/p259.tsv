@@ -1,0 +1,71 @@
+0.0914	0.3213	1.000	Symbol	0.0622	0.0164
+0.0927	0.6522	1.000	Content	0.0603	0.0109
+0.0930	0.1692	1.000	Bits	0.0395	0.0160
+0.1191	0.3233	1.000	SREELD	0.0696	0.0162
+0.1217	0.1710	1.000	2.29- 2.31	0.0885	0.0153
+0.1221	0.5113	1.000	This field contains the code for disposition of tape reels	0.4154	0.0116
+0.1366	0.5113	1.000	at $FREE time or at $EOJ time. It is set by the I-O	0.3910	0.0116
+0.1512	0.5113	1.000	assignment routine, and tested by $FREE.	0.3158	0.0131
+0.1802	0.8083	1.000	NSAVE	0.0545	0.0116
+0.1817	0.5451	1.000	000	0.0282	0.0087
+0.1817	0.5789	1.000	- Do not save	0.1071	0.0102
+0.1945	0.8100	1.000	CSAVE	0.0529	0.0137
+0.1962	0.5451	1.000	001 - Save if job complete	0.2030	0.0117
+0.2106	0.5451	1.000	010 - Save if job incomplete	0.2180	0.0118
+0.2108	0.8064	1.000	ISAVE	0.0508	0.0116
+0.2252	0.5451	1.000	011 - Save in all cases	0.1786	0.0103
+0.2253	0.8083	1.000	SAVE	0.0433	0.0117
+0.2542	0.1710	1.000	2.48 - 2.49	0.0884	0.0149
+0.2542	0.5132	1.000	This field contains the mode specified on the IOD card.	0.4041	0.0118
+0.2544	0.3252	1.000	SFMODE	0.0677	0.0131
+0.2688	0.5113	1.000	It is set by the I-O assignment routine and tested by the	0.4117	0.0133
+0.2846	0.5112	1.000	actuator.	0.0697	0.0121
+0.3110	0.3233	1.000	SCW	0.0395	0.0145
+0.3124	0.1710	1.000	3.00 - 3.63	0.0903	0.0147
+0.3139	0.5132	1.000	This field contains the first control word to be used in	0.4004	0.0116
+0.3285	0.5113	1.000	the actuation of an I-O request. It is set by the control	0.4098	0.0131
+0.3415	0.5094	1.000	word checking routine and is used by the actuator.	0.3741	0.0161
+0.3706	0.3214	1.000	SCCW	0.0508	0.0145
+0.3717	0.1710	1.000	4.00 - 4.63	0.0885	0.0152
+0.3735	0.5113	1.000	This field contains the first control word used in the	0.3872	0.0102
+0.3881	0.5113	1.000	actuation of an I-O request if the interrupt for the termi-	0.4229	0.0116
+0.4026	0.5113	1.000	nation of that request has not been processed, or it	0.3816	0.0116
+0.4172	0.5113	1.000	contains the final control word contents if the interrupt	0.4079	0.0116
+0.4317	0.5113	1.000	has been processed. The field is set by the control word	0.4229	0.0132
+0.4462	0.5094	1.000	check routine or by the receptor. It is used by the $CCW	0.4267	0.0145
+0.4879	0.3213	1.000	SORARC	0.0718	0.0169
+0.4895	0.1710	1.000	5.06 - 5.17	0.0885	0.0151
+0.4912	0.5113	1.000	This field specifies the arc address for the beginning of	0.4135	0.0118
+0.5058	0.5113	1.000	the disk request setup by I-O assignment. It is tested	0.4004	0.0118
+0.5203	0.5094	1.000	by the actuator.	0.1203	0.0146
+0.5480	0.3214	1.000	SMXARC	0.0733	0.0145
+0.5491	0.1710	1.000	5.38- 5.49	0.0885	0.0152
+0.5494	0.5113	1.000	This field specifies the maximum allowable arc address	0.4135	0.0131
+0.5654	0.5094	1.000	for the disk request, set up by I-O assignment. It is	0.3947	0.0116
+0.5799	0.5075	1.000	tested by the actuator.	0.1711	0.0131
+0.6047	0.3214	1.000	SCUARC	0.0695	0.0174
+0.6071	0.1709	1.000	6.06 - 6.17	0.0886	0.0155
+0.6090	0.5094	1.000	This field specifies the last used arc for this file. It is	0.4135	0.0131
+0.6235	0.5113	1.000	set by the locate routine or the receptor, and is tested	0.4041	0.0131
+0.6381	0.5094	1.000	by the actuator.	0.1184	0.0146
+0.6502	0.1202	1.000	Bits not specified are not used. Symbols are defined relative to the location of the table e.g.,	0.7050	0.0184
+0.6672	0.1880	1.000	SYN(BU, 18), 0.0.	0.1485	0.0160
+0.6976	0.1071	1.000	THE SYMBOLIC I-O LOCATION TABLE	0.2970	0.0118
+0.7252	0.1071	1.000	There are two symbolic I-O location tables: one for MCP, and one for PP. The MCP symbolic	0.7086	0.0176
+0.7397	0.1053	1.000	I-O location table is constructed in MCP core at IPL time by the initialization program from the	0.7143	0.0161
+0.7542	0.1071	1.000	MCP IOD cards. The PP symbolic I-O location table is constructed at job control time from the	0.7143	0.0161
+0.7703	0.1071	1.000	PP IOD cards.	0.1090	0.0118
+0.7863	0.1222	1.000	The tables are identical in format and usage. There is one entry for each IOD reference number	0.7180	0.0131
+0.7994	0.1053	1.000	(IODRN) specified on the IOD cards, and the entry position is the same as the IODRN. The address	0.7368	0.0146
+0.8124	0.1053	1.000	of the unit area table assigned to the IODRN is entered in the VF of the first half word, and the	0.7030	0.0176
+0.8270	0.1053	1.000	address of the file area table assigned to the IODRN in the VF of the second half word.	0.6410	0.0161
+0.8445	0.6955	1.000	55	0.0207	0.0116
+0.8445	0.4831	1.000	32	0.0207	0.0131
+0.8459	0.3985	1.000	23	0.0207	0.0102
+0.8576	0.4774	1.000	Address of File Area	0.1673	0.0161
+0.8590	0.2049	1.000	Address of Unit Area	0.1579	0.0116
+0.8750	0.5320	1.000	Table	0.0526	0.0116
+0.8750	0.2538	1.000	Table	0.0432	0.0102
+0.9026	0.3308	1.000	Format of Symbolic I-O Location Table	0.2932	0.0160
+0.9403	0.6335	1.000	Appendix A - Symbolic I-O Control Tables	0.2500	0.0133
+0.9404	0.8985	1.000	259	0.0301	0.0131

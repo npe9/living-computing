@@ -1,0 +1,106 @@
+0.0563	0.5055	1.000	lectively referred to as the comparison result indica-	0.3950	0.0185
+0.0609	0.0959	1.000	turned off by an interruption or by programming. The	0.3853	0.0133
+0.0741	0.5075	1.000	tors. They are set according to the result of the float-	0.3910	0.0147
+0.0755	0.0958	1.000	temporary indicators are made either zero or one, de-	0.3836	0.0150
+0.0887	0.5075	1.000	ing point comparisons. They indicate the compara-	0.3929	0.0160
+0.0897	0.0975	1.000	pending on the causing condition. These indicators are	0.3838	0.0164
+0.1045	0.5075	1.000	tive value of the accumulator as compared with the	0.3929	0.0133
+0.1061	0.0959	1.000	changed when a new operation is performed which	0.3835	0.0161
+0.1206	0.5075	1.000	storage operand. The indicators are temporary.	0.3534	0.0146
+0.1221	0.0959	1.000	sets the indicators. The temporary indicators remain	0.3853	0.0146
+0.1381	0.0959	1.000	unchanged for operations with which they are not	0.3853	0.0131
+0.1537	0.0958	1.000	associated.	0.0697	0.0123
+0.1642	0.5075	1.000	Indicators Set Only by Floating Point Operations	0.3609	0.0131
+0.1836	0.5243	1.000	Imaginary Root (IR). This indicator is turned on	0.3763	0.0186
+0.1918	0.0959	1.000	Indicators Set by VFL or Floating-Point Operations	0.3628	0.0131
+0.2020	0.5075	1.000	if the operand of a STORE ROOT operation is negative.	0.3929	0.0146
+0.2091	0.1088	1.000	Lost Carry (LC). This indicator is turned on when	0.3726	0.0185
+0.2179	0.5094	1.000	The indicator is permanent.	0.2086	0.0133
+0.2247	0.0957	1.000	a fraction overflow bit occurs in an unnormalized	0.3856	0.0152
+0.2326	0.5242	1.000	Lost Significance (LS). This indicator is turned on	0.3764	0.0199
+0.2427	0.0959	1.000	addition or when a low order one-bit of a remainder	0.3853	0.0116
+0.2515	0.5075	1.000	if the result fraction of a floating point addition or	0.3929	0.0131
+0.2573	0.3722	1.000	The indicator	0.1109	0.0116
+0.2587	0.0977	1.000	is lost in unnormalized DIVIDE DOUBLE.	0.2726	0.0102
+0.2654	0.5093	1.000	shifting operation is zero unless the following excep-	0.3912	0.0172
+0.2733	0.0959	1.000	is also turned on during the operation SHIFT FRAC-	0.3853	0.0131
+0.2797	0.5092	1.000	tion conditions exist. This indicator is not turned	0.3913	0.0158
+0.2875	0.0958	1.000	TIoN, when a one is lost because of a left shift past	0.3874	0.0149
+0.2964	0.5094	1.000	on if both operands in a floating point addition have	0.3910	0.0161
+0.3036	0.0959	1.000	accumulator bit position 12. This indicator is per-	0.3872	0.0147
+0.3124	0.5094	1.000	zero fractions prior to the pre-addition shifting, if the	0.3910	0.0161
+0.3270	0.5094	1.000	zero fraction is a forced zero as in ADD TO MAGNITUDE,	0.3929	0.0131
+0.3342	0.1071	1.000	Partial Field (PF). This indicator is turned on in	0.3741	0.0161
+0.3415	0.5075	1.000	or if the result has a propagated exponent flag. This	0.3947	0.0176
+0.3503	0.0959	1.000	unnormalized division when the magnitude of the	0.3872	0.0131
+0.3605	0.5075	1.000	indicator is permanent.	0.1729	0.0132
+0.3648	0.0959	1.000	dividend fraction is larger than or equal to the	0.3872	0.0146
+0.3759	0.5261	1.000	Preparatory Shift Greater than 48 (PSH). This in-	0.3763	0.0188
+0.3784	0.0957	1.000	magnitude of the divisor fraction. The indicator is	0.3875	0.0173
+0.3924	0.5094	1.000	dicator is turned on if the exponent difference of op-	0.3910	0.0146
+0.3994	0.0958	1.000	permanent.	0.0753	0.0122
+0.4084	0.5094	1.000	erands in floating point addition, both having EF of 0,	0.3929	0.0146
+0.4104	0.1089	1.000	Zero Divisor (ZD). This indicator is turned on dur-	0.3724	0.0165
+0.4229	0.5093	1.000	is more than 48. It is turned on for both single- and	0.3911	0.0146
+0.4273	0.0959	1.000	ing a division when the divisor fraction is zero. The	0.3872	0.0146
+0.4344	0.5091	1.000	double-precision addition. It is turned on if the in-	0.3934	0.0218
+0.4414	0.0954	1.000	indicator is permanent.	0.1644	0.0171
+0.4548	0.5094	1.000	termediate product in MULTIPLY AND ADD has a gen-	0.3929	0.0161
+0.4563	0.1089	1.000	Data Flag T (TF); Data Flag U (UF); Data Flag V	0.3725	0.0189
+0.4694	0.5094	1.000	erated EF of 1 and its use during the addition leads	0.3929	0.0146
+0.4724	0.0940	1.000	(VF). These indicators are collectively referred to as	0.3891	0.0146
+0.4815	0.5091	1.000	to an exponent difference of more than 48. This indi-	0.3933	0.0213
+0.4884	0.0959	1.000	the data flag indicators. They are set according to	0.3872	0.0147
+0.5000	0.5094	1.000	cator is not turned on if either operand in a floating	0.3929	0.0145
+0.5028	0.0958	1.000	the flag bits (T, U, and V) in the sign byte of the	0.3874	0.0167
+0.5143	0.5110	1.000	point addition is in the XFP range, or if both oper-	0.3914	0.0178
+0.5178	0.0957	1.000	floating point words which are obtained from storage.	0.3856	0.0174
+0.5305	0.7782	1.000	The indicator is	0.1241	0.0116
+0.5333	0.5094	1.000	ands are values in the XEN range.	0.2613	0.0118
+0.5363	0.0977	1.000	The indicators are temporary.	0.2124	0.0116
+0.5478	0.1107	1.000	To-Memory Operation (MOP). This indicator is	0.3725	0.0186
+0.5506	0.5093	1.000	permanent.	0.0847	0.0121
+0.5635	0.0957	1.000	set according to the operation type of the floating	0.3875	0.0182
+0.5700	0.5261	1.000	Exponent Flag Positive (XPFP) Exponent≥1024	0.3764	0.0199
+0.5779	0.0956	1.000	point instruction. The indicator is set to one for all	0.3877	0.0182
+0.5887	0.5282	1.000	This indicator is turned on if the result exponent	0.3759	0.0116
+0.5928	0.0956	1.000	operations of the to-storage type, i.e., those for which	0.3876	0.0193
+0.6032	0.5113	1.000	has a propagated EF of 1 and Es of 0. The indicator	0.3910	0.0160
+0.6105	0.0959	1.000	the result appears in the location specified by the	0.3872	0.0160
+0.6217	0.5093	1.000	is permanent.	0.1035	0.0138
+0.6264	0.0940	1.000	effective address. Such operations consist of the stores	0.3891	0.0146
+0.6407	0.0939	1.000	and add to storage operations. For all other floating	0.3893	0.0170
+0.6439	0.5244	1.000	Exponent Overflow (XPO)	0.2030	0.0174
+0.6439	0.7744	1.000	Exponent ≥1024	0.1278	0.0146
+0.6570	0.0959	1.000	point operations, the indicator is set to zero. The	0.3891	0.0161
+0.6612	0.5263	1.000	This indicator is turned on if the result exponent	0.3759	0.0133
+0.6725	0.0937	1.000	indicator is temporary.	0.1661	0.0163
+0.6758	0.5075	1.000	has a generated EF of 1 and Es of 0. The indicator is	0.3947	0.0146
+0.6860	0.1071	1.000	Result Less than Zero (RLZ); Result Zero (RZ);	0.3778	0.0176
+0.6916	0.5074	1.000	permanent.	0.0885	0.0180
+0.7020	0.0940	1.000	Result Greater than Zero (RGZ); Result Negative	0.3891	0.0160
+0.7159	0.0918	1.000	(RN). These indicators are collectively referred to as	0.3915	0.0212
+0.7166	0.5263	1.000	Exponent Range High (XPH)	0.2237	0.0160
+0.7311	0.6861	1.000	+ 1024 > Exponent ≥ +512	0.2162	0.0160
+0.7339	0.0940	1.000	the arithmetic result indicators. They are set accord-	0.3891	0.0118
+0.7465	0.5243	1.000	This indicator is turned on if the result expo-	0.3800	0.0181
+0.7475	0.0938	1.000	ing to the sign and magnitude of the fraction result	0.3895	0.0184
+0.7609	0.0918	1.000	of any floating point operation except the compari-	0.3917	0.0245
+0.7630	0.5094	1.000	nent magnitude has a high order 1, and EF of 0, ES	0.3947	0.0191
+0.7791	0.5094	1.000	of 0. The indicator is permanent.	0.2500	0.0161
+0.7833	0.0940	1.000	son operations. The indicators are temporary.	0.3477	0.0103
+0.7947	0.1109	1.000	The indicator p7 is turned on for all zero result	0.3722	0.0123
+0.8036	0.5226	1.000	Exponent Range Low (XPL)	0.2199	0.0176
+0.8081	0.0959	1.000	fractions. The indicator Rz will not be turned on	0.3872	0.0146
+0.8182	0.7030	1.000	+512 > Exponent ≥ +64	0.1992	0.0161
+0.8241	0.0940	1.000	when unnormalized operations result in an overflow	0.3891	0.0160
+0.8358	0.5188	1.000	This indicator is turned on if the result exponent	0.3853	0.0161
+0.8387	0.0959	1.000	bit and zero fraction. In this case only the lost carry	0.3872	0.0160
+0.8517	0.5094	1.000	magnitude has a high-order zero and a 1 in bit posi-	0.3929	0.0161
+0.8590	0.0940	1.000	indicator, Lc, will be affected.	0.2143	0.0131
+0.8618	0.5072	1.000	tions 2, 3, or 4 and EF of 0, Es of O. This indicator is	0.3953	0.0220
+0.8706	0.1090	1.000	Accumulator Low (AL); Accumulator Equal (AE);	0.3759	0.0176
+0.8865	0.5056	1.000	permanent.	0.0884	0.0148
+0.8865	0.0938	1.000	Accumulator High (AH). These indicators are col-	0.3914	0.0195
+0.9185	0.6974	1.000	Floating-Point Arithmetic	0.1617	0.0147
+0.9186	0.8872	1.000	85	0.0150	0.0087

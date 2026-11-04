@@ -1,0 +1,103 @@
+0.0770	0.0752	1.000	coded expression(s), the encoding subroutine,	0.3402	0.0131
+0.0785	0.5019	1.000	not give blanks to main flow unless main flow has	0.3647	0.0116
+0.0915	0.0752	1.000	GETFLD, must also know the upper limit of the	0.3553	0.0131
+0.0930	0.5000	1.000	turned on the indicator, Geaz.	0.2274	0.0146
+0.1090	0.0752	1.000	butter containing the encoding. Since GETFLD will	0.3816	0.0089
+0.1090	0.5150	1.000	Main flow interrogates characters in the following	0.3722	0.0146
+0.1235	0.0752	1.000	probably put more than one coded expression into the	0.3929	0.0087
+0.1250	0.5019	1.000	manner. For each IBM card code character and for	0.3853	0.0102
+0.1366	0.0733	1.000	unit for this instruction, the upper boundary is set	0.3797	0.0131
+0.1394	0.5019	1.000	specific grouping of characters, there is a 256-bit	0.3741	0.0118
+0.1512	0.0752	1.000	this one time to include all the uses of GETFLD for	0.3816	0.0116
+0.1539	0.5019	1.000	question block in which the bit(s) corresponding to	0.3722	0.0133
+0.1657	0.0752	1.000	this purpose. Bofxtx has to be reset for each instruc-	0.4041	0.0131
+0.1685	0.5019	1.000	the character(s) indicated have been permanently	0.3628	0.0133
+0.1781	0.0750	1.000	tion because GETFLD can be asked to put coded	0.3537	0.0159
+0.1830	0.5038	1.000	masked on. The symbolic location of éach string of	0.3835	0.0118
+0.1962	0.0752	1.000	expression(s) in places other than in the unit (e.g.:	0.3797	0.0117
+0.1976	0.5019	1.000	bits is given by a symbol beginning with Qc. The	0.3647	0.0132
+0.2106	0.0733	1.000	in variable length entry portion of the symbol table	0.3797	0.0118
+0.2121	0.5019	1.000	relative locations within the question block is	0.3327	0.0118
+0.2251	0.0733	1.000	for a SYN).	0.0865	0.0119
+0.2267	0.5019	1.000	addressed by the A8 character in the value field of	0.3741	0.0118
+0.2397	0.0921	1.000	Finally, the contents of the identification field	0.3402	0.0133
+0.2413	0.5000	1.000	$3.	0.0263	0.0131
+0.2542	0.0752	1.000	(columns 73-80) is inserted in the space provided in	0.3835	0.0133
+0.2558	0.5188	1.000	Ex.: Is this character a "$"? If yes, branch to	0.3609	0.0131
+0.2688	0.0733	1.000	the fixed format part of the unit for the card ID which	0.3966	0.0118
+0.2718	0.5677	1.000	Mb area.	0.0677	0.0103
+0.2833	0.0733	1.000	will be later printed on the listing. Note an instruc-	0.3910	0.0132
+0.2863	0.5658	1.000	BB, Qedola ($3), Mb	0.1504	0.0131
+0.2971	0.0732	1.000	tion which is specified over several cards is assigned	0.4005	0.0142
+0.3009	0.5188	1.000	Since Pass 1 analyzes most of the characters from	0.3741	0.0116
+0.3122	0.0732	1.000	the ID of the card on which the instruction started.	0.3761	0.0135
+0.3154	0.5019	1.000	the source input through these question character	0.3647	0.0116
+0.3270	0.0902	1.000	STRAP II does not indent on the listing the second	0.3684	0.0131
+0.3299	0.5019	1.000	blocks, a pre-processor can send a special A8 char-	0.3910	0.0131
+0.3409	0.0732	1.000	and subsequent instructions contained in a single card	0.4005	0.0142
+0.3445	0.5000	1.000	acter through STRAP II by setting the high order two	0.3910	0.0131
+0.3576	0.0733	1.000	image; if there is a different ID on each card image	0.3835	0.0131
+0.3590	0.5019	1.000	bits of the A8 character to one and the corresponding	0.3910	0.0131
+0.3721	0.0733	1.000	as is the case when a sequence number is used in	0.3665	0.0116
+0.3750	0.5019	1.000	question character block accordingly. A special	0.3590	0.0117
+0.3866	0.0733	1.000	columns 73-80, each of the instructions started on	0.3741	0.0131
+0.3894	0.5019	1.000	character, thus set up, will be interpreted as an	0.3590	0.0133
+0.4012	0.0733	1.000	the same card image will have the same ID on the	0.3684	0.0131
+0.4026	0.5019	1.000	alphameric character by the question character	0.3496	0.0131
+0.4156	0.0733	1.000	listing.	0.0565	0.0119
+0.4186	0.5019	1.000	blocks.	0.0545	0.0116
+0.4330	0.5169	1.000	GETCHA also collects the characters from a name	0.3759	0.0118
+0.4460	0.0733	1.000	Boxes 3, 4	0.0809	0.0134
+0.4476	0.5019	1.000	field in the name buffer and in the symbol buffer each	0.3947	0.0118
+0.4621	0.5019	1.000	of whose contents is picked up during the end-of-card-	0.4023	0.0132
+0.4697	0.0731	1.000	One of the responsibilities of the subroutine, GETCHA,	0.4103	0.0219
+0.4767	0.5019	1.000	block procedure for the name and symbol table entries.	0.4079	0.0132
+0.4897	0.0733	1.000	is to inform Pass 1 when the end of a card block has	0.3872	0.0118
+0.4912	0.5019	1.000	Also, GETCHA builds up an image (for the listing of	0.3872	0.0131
+0.5042	0.0733	1.000	been reached by putting a 'false' semicolon (false	0.3665	0.0118
+0.5058	0.5019	1.000	the statement field of this instruction) in a buffer which	0.4079	0.0118
+0.5175	0.0732	1.000	in the sense that it did not come from the card image)	0.3969	0.0146
+0.5218	0.5019	1.000	MAIN later transfers to the unit. The statement field	0.3966	0.0116
+0.5333	0.0733	1.000	in the value field of $3 and by turning on the if-block-	0.3947	0.0132
+0.5363	0.5019	1.000	of this instruction cannot be directly built up in the unit	0.4098	0.0116
+0.5479	0.0733	1.000	end indicator, Fblend. If Fblend is on when MAIN is	0.3929	0.0132
+0.5509	0.5019	1.000	because both the coded expressions, if any, which	0.3722	0.0131
+0.5639	0.0733	1.000	starting the processing of a new instruction, then the	0.3929	0.0131
+0.5654	0.5019	1.000	precede the symbolic statement in the unit and the sym-	0.4117	0.0116
+0.5785	0.0714	1.000	previous instruction terminated a card block and the	0.3891	0.0116
+0.5799	0.5019	1.000	bolic statement are not a constant length.	0.3045	0.0116
+0.5930	0.0714	1.000	present instruction is beginning a new card block.	0.3703	0.0131
+0.6076	0.0733	1.000	(Fblend is initially on.) If Fblend is on at this point,	0.3891	0.0131
+0.6090	0.5000	1.000	Box 6	0.0489	0.0146
+0.6205	0.0713	1.000	then this instruction is marked eligible for a name by	0.3968	0.0148
+0.6366	0.0733	1.000	setting the Fblena indicator on. Fblend is turned off	0.3891	0.0131
+0.6381	0.5019	1.000	The only characters that are allowed to start an	0.3534	0.0116
+0.6496	0.0712	1.000	here as a result of the test. During the final proc-	0.3819	0.0162
+0.6539	0.5056	1.000	nstruction are: all legal op characters, O.g.(	0.3722	0.0176
+0.6645	0.0713	1.000	essing of a unit in Pass 1, if Fblena is on, then the	0.3819	0.0165
+0.6672	0.5038	1.000	¿, and a(. (This test of the first non-blank char	0.3797	0.0147
+0.6817	0.4981	1.000	acter of an instruction is a good example of STRAP II's	0.4098	0.0147
+0.6817	0.0714	1.000	symbol table entry, if any, can be prepared and set	0.3853	0.0132
+0.6962	0.0714	1.000	up; if Fblend is on, then the name and the symbol	0.3684	0.0117
+0.6962	0.5000	1.000	use of the question character blocks.)	0.2801	0.0132
+0.7106	0.0733	1.000	(name without blanks for internal processing) associ-	0.3947	0.0118
+0.7252	0.0714	1.000	ated with the card block can be entered into each of	0.3816	0.0118
+0.7267	0.4981	1.000	Boxes 7, 7B, 9C, 9D, 38	0.1898	0.0146
+0.7397	0.0714	1.000	its respective files.	0.1485	0.0118
+0.7558	0.5000	1.000	If MAIN receives a comment character as the first	0.3778	0.0131
+0.7688	0.0695	1.000	Box 5	0.0451	0.0133
+0.7718	0.5019	1.000	character of the first instruction of a named card	0.3665	0.0103
+0.7848	0.5019	1.000	block, then MAIN makes up a "DRZ(N), 1" instruction	0.3985	0.0131
+0.7994	0.0714	1.000	The get-a-character subroutine, GETCHA, gives to	0.3853	0.0131
+0.8009	0.5000	1.000	for the current unit. Whether the unit has a name or	0.3929	0.0116
+0.8139	0.0714	1.000	main flow the next character from the statement	0.3609	0.0103
+0.8154	0.5019	1.000	not, for a comment character Pass 1 continues to	0.3665	0.0131
+0.8285	0.0714	1.000	field of the card image. Each new character - now	0.3816	0.0116
+0.8299	0.5000	1.000	branch to GETCHA until GETCHA gives the terminating	0.4117	0.0131
+0.8430	0.0714	1.000	in the A8 processing code of STRAP II - is put in the	0.3910	0.0131
+0.8445	0.4981	1.000	semicolon character to main flow. The only proc-	0.3797	0.0146
+0.8576	0.0714	1.000	value field of index register three during Pass 1.	0.3647	0.0131
+0.8590	0.5000	1.000	essing necessary for the intermediate characters of	0.3853	0.0146
+0.8698	0.0713	1.000	(See section on serviceability aids.) GETCHA does	0.3819	0.0164
+0.8735	0.5000	1.000	the comment is that they be saved for the final listing	0.3947	0.0131
+0.9288	0.0695	1.000	20	0.0169	0.0087

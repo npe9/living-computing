@@ -1,0 +1,104 @@
+0.0697	0.5094	1.000	as in transmit operations, or it may be used as an ex-	0.3966	0.0161
+0.0741	0.0977	1.000	Control Format	0.1391	0.0116
+0.0858	0.5113	1.000	tension of the first address, specifying field length, byte	0.3929	0.0145
+0.1003	0.5094	1.000	size and accumulator offset for variable field length	0.3947	0.0146
+0.1118	0.0977	1.000	Computer control is provided by instructions and in-	0.3891	0.0146
+0.1163	0.5094	1.000	operations. In any event, both address parts are inde.	0.3929	0.0146
+0.1264	0.1466	1.000	These are used in the control section of the	0.3402	0.0146
+0.1294	0.5113	1.000	pendently indexable.	0.1579	0.0189
+0.1409	0.0977	1.000	computer to specify the operations to be performed.	0.3891	0.0161
+0.1568	0.0977	1.000	They are stored in core storage. When desired, they	0.3874	0.0170
+0.1701	0.6560	1.000	OP.	0.0207	0.0116
+0.1715	0.5451	1.000	ADDRESS	0.0451	0.0087
+0.1715	0.6842	1.000	I	0.0132	0.0102
+0.1744	0.0977	1.000	may be operated upon as data. Instructions occupy	0.3872	0.0132
+0.1874	0.0957	1.000	one or two hall-words. They are referred to as half-	0.3894	0.0197
+0.2020	0.0959	1.000	length and full-length instructions. A full-length as	0.3910	0.0160
+0.2092	0.5620	1.000	ADDRESS	0.0471	0.0119
+0.2093	0.7331	1.000	ADDRESS	0.0433	0.0088
+0.2093	0.6579	1.000	OP.	0.0226	0.0116
+0.2108	0.8308	1.000	OP.	0.0188	0.0102
+0.2166	0.0977	1.000	well as a half-length instruction may have a bit ad-	0.3891	0.0160
+0.2339	0.2274	1.000	An index word always occupies a	0.2575	0.0161
+0.2355	0.0959	1.000	dress of 0 or 32.	0.1353	0.0116
+0.2453	0.0938	1.000	full word. It always has bit address O. The formats	0.3915	0.0225
+0.2490	0.5072	1.000	Index Format	0.1058	0.0195
+0.2645	0.0977	1.000	used for instructions and indices are shown in Fig-	0.3872	0.0146
+0.2718	0.5094	1.000	The format of an index word consists of the value,	0.3966	0.0176
+0.2805	0.0977	1.000	ure 6. In this figure, the bit address of all instructions	0.3891	0.0131
+0.2878	0.5094	1.000	count and refill fields and the index flag bit. The	0.3947	0.0146
+0.2951	0.0959	1.000	is assumed to be 0. It equally well might have been	0.3891	0.0146
+0.3023	0.5094	1.000	value field is leftmost in the index. It contains 25 bits	0.3947	0.0146
+0.3096	0.0977	1.000	32. If the bit address is 32, the addresses of the in-	0.3872	0.0146
+0.3154	0.5113	1.000	that are interpreted as an address of 24 bits and a sign	0.3929	0.0174
+0.3241	0.0940	1.000	dividual fields in the instruction will be different from	0.3910	0.0160
+0.3327	0.5094	1.000	bit. The count and refill fields each contain 18 bits	0.3929	0.0147
+0.3415	0.2030	1.000	For convenience of presentation, all	0.2820	0.0146
+0.3415	0.0940	1.000	those shown.	0.0996	0.0131
+0.3488	0.5094	1.000	and are adjacent to each other in the rightmost part	0.3966	0.0161
+0.3561	0.0959	1.000	references to bits and fields will use the numbering	0.3891	0.0146
+0.3648	0.5094	1.000	of the index. The index flag bit is adjacent to the	0.3947	0.0146
+0.3712	0.0957	1.000	of Figure 6.	0.0888	0.0148
+0.3791	0.5093	1.000	value sign bit. The format, as shown below, has two	0.3949	0.0195
+0.3939	0.5113	1.000	bits between the index flag and the count field which	0.3929	0.0161
+0.4099	0.5113	1.000	are not used in indexing operations.	0.2613	0.0160
+0.4215	0.0959	1.000	Instruction Format	0.1335	0.0103
+0.4418	0.0940	1.000	Instructions follow a basic pattern upon which some	0.3929	0.0161
+0.4516	0.8250	1.000	REFILL	0.0379	0.0095
+0.4520	0.7162	1.000	COUNT	0.0338	0.0087
+0.4535	0.5564	1.000	VALUE	0.0338	0.0087
+0.4578	0.0959	1.000	variations are made. This pattern	0.2575	0.0146
+0.4578	0.3534	1.000	consists of three	0.1335	0.0146
+0.4724	0.0940	1.000	parts: the address part, the operation part, and the	0.3929	0.0161
+0.4871	0.0933	1.000	index part.	0.0841	0.0161
+0.4912	0.5244	1.000	In input-output operations, the index word is used	0.3797	0.0161
+0.5073	0.5094	1.000	to control data transmission to and from the exchange.	0.3929	0.0146
+0.5218	0.5094	1.000	In these operations the index flag and the two bits be-	0.3947	0.0161
+0.5363	0.5094	1.000	tween the index flag and the count field are used as	0.3947	0.0161
+0.5363	0.2293	1.000	OP.	0.0169	0.0087
+0.5363	0.1316	1.000	ADDRESS	0.0432	0.0073
+0.5523	0.5094	1.000	control bits. Part of the value field is used for status	0.3947	0.0146
+0.5665	0.5112	1.000	bits. The definition of these bits allows an index word	0.3930	0.0165
+0.5755	0.0959	1.000	The address part is leftmost in the instruction. It con-	0.3891	0.0133
+0.5827	0.5094	1.000	to be used both for input-output and indexing op-	0.3947	0.0161
+0.5885	0.0957	1.000	tains 18, 19 or 24 bits according to the type of opera-	0.3912	0.0174
+0.5988	0.5094	1.000	erations.	0.0658	0.0145
+0.6061	0.0940	1.000	tion to be performed. The address specifies the loca-	0.3929	0.0146
+0.6206	0.1278	1.000	of the operand which is involved in the opera-	0.3571	0.0161
+0.6221	0.0940	1.000	tion	0.0338	0.0087
+0.6352	0.0940	1.000	tion specified by the instruction. The operation to be	0.3910	0.0176
+0.6526	0.0940	1.000	performed is specified in the operation part of the	0.3910	0.0131
+0.6674	0.0958	1.000	instruction. I his part contains from 4 to 12 bits. The	0.3892	0.0125
+0.6715	0.5113	1.000	Operand Address	0.1842	0.0176
+0.6817	0.0959	1.000	bits are used as class bits, to specify format and op-	0.3891	0.0147
+0.6976	0.0959	1.000	eration class; as code bits, to specify basic operations;	0.3891	0.0132
+0.7121	0.5113	1.000	The format of the operand is determined by the op-	0.3929	0.0132
+0.7121	0.0940	1.000	and as modifier bits, to specify modifications to the	0.3910	0.0132
+0.7267	0.5113	1.000	eration specified in the instruction. A full word op-	0.3929	0.0146
+0.7267	0.0959	1.000	basic operations. The operand address can be modi-	0.3891	0.0161
+0.7427	0.5094	1.000	erand is implied by floating point operations. These	0.3947	0.0161
+0.7427	0.0959	1.000	fied by the index specified in the rightmost part of the	0.3891	0.0145
+0.7573	0.2575	1.000	The index part, if present,	0.2274	0.0146
+0.7573	0.5113	1.000	operations have an address part of 18 bits. A half	0.3929	0.0146
+0.7587	0.0940	1.000	instruction half-word.	0.1617	0.0116
+0.7733	0.0940	1.000	contains one or four bits.	0.1974	0.0116
+0.7733	0.2876	1.000	It may specify the address	0.1974	0.0161
+0.7733	0.5094	1.000	word operand is implied by most branch, index modi-	0.3947	0.0161
+0.7892	0.5113	1.000	fication, and transmit operations. This group of op-	0.3910	0.0132
+0.7892	0.0940	1.000	of one out of 15 words available for index operations.	0.3910	0.0132
+0.8020	0.1108	1.000	The instruction format as described so far occupies	0.3744	0.0166
+0.8036	0.5113	1.000	erations has an address part of 19 bits. The 18 high-	0.3929	0.0147
+0.8197	0.0940	1.000	a half-word and specifies a single address operation	0.3910	0.0132
+0.8197	0.5113	1.000	order bits address full words. The low-order bit ad-	0.3929	0.0118
+0.8342	0.0959	1.000	with simple indexing. There are two major variations	0.3891	0.0131
+0.8342	0.5113	1.000	dresses the first or second half of the full word. A	0.3910	0.0118
+0.8488	0.5094	1.000	variable field operand is implied by integer arithmetic	0.3947	0.0161
+0.8503	0.0940	1.000	to this basic pattern. One includes a second index ad-	0.3929	0.0131
+0.8648	0.5094	1.000	and connect operations. This group of operations, the	0.3947	0.0146
+0.8648	0.0940	1.000	dress. The other is the full-length format in which the	0.3910	0.0146
+0.8794	0.0940	1.000	half-word pattern is repeated. The operand address of	0.3910	0.0146
+0.8794	0.5094	1.000	integer arithmetic and connect operations, has an ad-	0.3947	0.0146
+0.8953	0.0940	1.000	the second half-word may be used as a second address,	0.3910	0.0147
+0.8953	0.5094	1.000	dress part of 24 bits. The 18 high-order bits address	0.3947	0.0160
+0.9330	0.7274	1.000	Operand Designation	0.1316	0.0118
+0.9331	0.8853	1.000	19	0.0188	0.0087

@@ -1,0 +1,44 @@
+0.1336	0.1241	1.000	3. PUNCDC - Punch common definition card	0.3590	0.0132
+0.1481	0.1748	1.000	PUNCDC	0.0734	0.0133
+0.1627	0.1222	1.000	This command produces one or more special common definition cards for the loader,	0.6786	0.0161
+0.1788	0.1222	1.000	containing common names and sizes derived from the COMBLOCK statements immedi-	0.6936	0.0146
+0.1948	0.1222	1.000	ately following PUNCDC.	0.1992	0.0146
+0.2267	0.1222	1.000	4. COMBLOCK - Common block definition	0.3421	0.0118
+0.2412	0.2162	1.000	COMBLOCK, N	0.1259	0.0146
+0.2427	0.1767	1.000	A	0.0113	0.0087
+0.2558	0.1222	1.000	The name A may not exceed 8 characters. The address N refers to the size of the	0.6579	0.0161
+0.2714	0.1202	1.000	common block desired, and may be either absolute or symbolic. If there are more	0.6637	0.0176
+0.2863	0.1203	1.000	than 9 COMBLOCK statements, one or more additional cards will be punched in the	0.6635	0.0146
+0.3036	0.1241	1.000	same format.	0.1053	0.0118
+0.3342	0.1203	1.000	5. PUNFPC - Punch FORTRAN program card	0.3741	0.0146
+0.3503	0.1748	1.000	PUNFPC, S, C	0.1222	0.0131
+0.3633	0.1222	1.000	This command produces a FORTRAN program card for the loader. The field S defines	0.6917	0.0161
+0.3808	0.1241	1.000	the program size, and C the blank common size. Either field may be absolute or sym-	0.6917	0.0116
+0.3905	0.1220	1.000	bolic. It either is not a full word, STRAP will round it up to the next higher full word.	0.6902	0.0257
+0.4084	0.1222	1.000	The card produced will also contain program entry points and addresses derived from	0.6842	0.0174
+0.4258	0.1222	1.000	the ENTER statements immediately following PUNFPC.	0.4436	0.0133
+0.4578	0.1222	1.000	6. ENTER - Define entry point	0.2519	0.0116
+0.4724	0.1748	1.000	A	0.0113	0.0116
+0.4737	0.2161	1.000	ENTER, B	0.0865	0.0134
+0.4884	0.1241	1.000	The ENTER statements provide information about the program entry points to be	0.6410	0.0131
+0.5042	0.1241	1.000	incorporated into the FORTRAN program card. The name A, if used, may not exceec	0.6805	0.0133
+0.5174	0.1259	1.000	3 characters. If it is left blank, the corresponding entry point in the FORTRAN pro-	0.6692	0.0132
+0.5348	0.1203	1.000	gram card will contain 8 A8 blanks. B refers to an entry point within the program. If	0.6917	0.0131
+0.5479	0.1222	1.000	there are more than 9 ENTER statements, one or more additional program cards will	0.6805	0.0161
+0.5607	0.1221	1.000	be punched in the same format except that the program size and blank common size	0.6599	0.0179
+0.5814	0.1222	1.000	fields will be left blank.	0.1898	0.0116
+0.6133	0.1222	1.000	7. SLCRCOM - Set location counter relative to common	0.4474	0.0117
+0.6276	0.1729	1.000	SLCRCOM, B	0.1110	0.0152
+0.6424	0.1203	1.000	This pseudo-operation resets the location counter to zero, and includes the number of	0.6861	0.0176
+0.6570	0.1184	1.000	the named common B on the resulting relocatable data card, so that the BSS loader may	0.7011	0.0176
+0.6700	0.1184	1.000	properly position the data relative to common B. To insure that no data will be loaded	0.6917	0.0191
+0.6827	0.1183	1.000	into blank common, STRAP does not punch an output card where the address field is left	0.7051	0.0245
+0.7035	0.1184	1.000	blank following an SLCRCOM.	0.2387	0.0160
+0.7412	0.1410	1.000	FEND- FORTRAN end card	0.2331	0.0118
+0.7427	0.1203	1.000	8.	0.0188	0.0116
+0.7570	0.1728	1.000	FEND	0.0472	0.0122
+0.7685	0.1183	1.000	Either END or FEND may terminate a FORTRAN program or subprogram. If FEND is	0.6920	0.0230
+0.7848	0.1184	1.000	used, STRAP will produce a FORTRAN branch card. If END is specified, no branch	0.6767	0.0176
+0.8023	0.1184	1.000	card will be punched.	0.1711	0.0146
+0.9215	0.5282	1.000	N28-1081 (C28-6129) Page 3	0.2387	0.0116
+0.9215	0.7763	1.000	of 20	0.0395	0.0103

@@ -1,0 +1,104 @@
+0.0581	0.5038	1.000	addressed storage operand. Neither multiplicand nor	0.3947	0.0161
+0.0593	0.0938	1.000	using the conversion operations and binary multipli-	0.3856	0.0175
+0.0741	0.0940	1.000	cation. Thus, if the proper subroutine is provided to	0.3853	0.0160
+0.0741	0.5038	1.000	multiplier may exceed 48 significant numeric bits.	0.3947	0.0160
+0.0886	0.5056	1.000	The product is algebraically added to the accumula-	0.3949	0.0178
+0.0915	0.0921	1.000	handle interruptions by the decimal-transit indicator,	0.3891	0.0146
+0.1045	0.5056	1.000	tor contents as specified by the offset. If a decimal	0.3929	0.0161
+0.1061	0.0921	1.000	the decimal MULTIPLY instruction may be used in a	0.3872	0.0146
+0.1206	0.5056	1.000	operation is specified, this operation has the same ac-	0.3929	0.0161
+0.1210	0.0938	1.000	program as though this action were actually imple-	0.3857	0.0173
+0.1360	0.0938	1.000	mented in the machine. The subroutine has the two	0.3857	0.0160
+0.1366	0.5075	1.000	tion as LOAD TRANSIT AND SET, except that the two	0.3910	0.0131
+0.1512	0.5075	1.000	high-order bits of the left zeros counter are set to 10.	0.3910	0.0146
+0.1526	0.0921	1.000	factors available in the accumulator and the transit	0.3891	0.0131
+0.1657	0.0919	1.000	register and the effective offset available in the all-	0.3876	0.0178
+0.1788	0.5075	1.000	MODIFIERS	0.0752	0.0087
+0.1875	0.0921	1.000	ones counter.	0.0959	0.0102
+0.1926	0.5224	1.000	Unsigned; Negative Sign. These modifiers operate	0.3781	0.0191
+0.2106	0.5075	1.000	as in ADD.	0.0734	0.0119
+0.2238	0.0902	1.000	Load Factor (LFT)	0.1203	0.0131
+0.2252	0.5226	1.000	Radix. This modifier operates as in ADD. It also	0.3759	0.0161
+0.2397	0.5056	1.000	determines whether a binary multiplication and addi-	0.3947	0.0161
+0.2442	0.0940	1.000	The factor register (FT) is cleared. A four-bit sign	0.3872	0.0146
+0.2516	0.5054	1.000	tion are performed or whether instead the action is	0.3952	0.0213
+0.2587	0.0920	1.000	byte, in which the leftmost bit is the sign of	0.3894	0.0176
+0.2718	0.5056	1.000	like that of a decimal LOAD TRANSIT AND SET.	0.3177	0.0131
+0.2742	0.0920	1.000	the addressed storage operand as modified by the	0.3894	0.0183
+0.2890	0.0938	1.000	negative sign modifier, is placed in the four low-order	0.3876	0.0179
+0.2994	0.5056	1.000	INDICATORS	0.0827	0.0116
+0.3052	0.0921	1.000	bits of FT. The remaining three bits of this sign byte	0.3891	0.0146
+0.3169	0.5226	1.000	Lost Carry (LG). In a binary operation, this indi-	0.3778	0.0174
+0.3212	0.0921	1.000	are zero. The numeric part of the addressed operand	0.3891	0.0145
+0.3327	0.5075	1.000	cator is set as in ADD. Lost carry cannot be turned on	0.3910	0.0147
+0.3372	0.0902	1.000	is positioned to the left of this sign byte in FT.	0.3628	0.0174
+0.3488	0.5056	1.000	if decimal is specified.	0.1654	0.0146
+0.3603	0.0940	1.000	MODIFIERS	0.0696	0.0104
+0.3633	0.5244	1.000	Partial Field (PF). This indicator is turned on in	0.3741	0.0161
+0.3705	0.1088	1.000	Unsigned; Negative Sign; Radix. These modifiers	0.3726	0.0183
+0.3794	0.5075	1.000	a binary operation if either the multiplicand or the	0.3929	0.0146
+0.3868	0.0913	1.000	operate as in ADD.	0.1273	0.0211
+0.3939	0.5056	1.000	multiplier exceeds 48 significant bits in length. In	0.3947	0.0174
+0.4099	0.5075	1.000	such a case, only the 48 low-order bits of the over-	0.3929	0.0147
+0.4113	0.0921	1.000	INDICATORS	0.0771	0.0103
+0.4221	0.1070	1.000	Partial Field (PF). Since the four low-order bits of	0.3763	0.0168
+0.4244	0.5075	1.000	sized operands are used in the operation. Partial field	0.3930	0.0162
+0.4390	0.0921	1.000	FT are used as a sign byte, only 60 numeric bits can	0.3891	0.0147
+0.4403	0.5075	1.000	is also turned on in a binary operation il the offset	0.3947	0.0146
+0.4529	0.0938	1.000	be loaded into FT. This indicator is turned on if the	0.3894	0.0163
+0.4548	0.5075	1.000	is such that significant bits of the product attempt to	0.3929	0.0146
+0.4658	0.0919	1.000	numeric part of the field loaded contains more than	0.3896	0.0209
+0.4709	0.5094	1.000	combine with accumulator positions to the left of the	0.3910	0.0146
+0.4833	0.0920	1.000	60 significant bits. If this occurs, FT is loaded up to	0.3894	0.0176
+0.4855	0.5075	1.000	left end of the accumulator. Such high-order bits of	0.3947	0.0145
+0.5015	0.0921	1.000	its left end. Higher-order bits are lost.	0.2763	0.0131
+0.5015	0.5094	1.000	the product are lost. In a decimal operation, partial	0.3910	0.0146
+0.5143	0.1089	1.000	Data Flags (TF, UF, VF); To-Memory Operation	0.3743	0.0178
+0.5188	0.5094	1.000	field is set as in LOAD TRANSIT AND SET.	0.2707	0.0103
+0.5282	0.0919	1.000	(MOP). These indicators are set as in ADD.	0.3068	0.0191
+0.5320	0.5244	1.000	Decimal Transit (DTR). This indicator is turned	0.3759	0.0160
+0.5446	0.1051	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). These	0.3782	0.0205
+0.5479	0.5094	1.000	on if decimal is specified.	0.1786	0.0146
+0.5609	0.0921	1.000	indicators are set according to the contents of the	0.3910	0.0147
+0.5620	0.5243	1.000	Data Flags (TE, UF, VF); To-Memory Operation	0.3762	0.0189
+0.5765	0.5092	1.000	(MOP). These indicators are set as in ADD.	0.3105	0.0171
+0.5770	0.0921	1.000	factor register when the operation is complete.	0.3440	0.0146
+0.5945	0.5244	1.000	Arithmetic Result (RLZ, RZ, RGZ, RN). In a	0.3778	0.0146
+0.5988	0.0940	1.000	PROGRAMMING NOTES	0.1504	0.0118
+0.6046	0.5092	1.000	binary operation the above indicators are set as in	0.3933	0.0211
+0.6114	0.0939	1.000	This operation is necessary to load the multiplicand	0.3894	0.0170
+0.6236	0.0918	1.000	of a subsequent MULTIPLY AND ADD. This instruction	0.3915	0.0219
+0.6250	0.5113	1.000	ADD. In a decimal operation, they are set as in LOAD	0.3910	0.0132
+0.6439	0.5113	1.000	TRANSIT AND SET.	0.1222	0.0088
+0.6439	0.0921	1.000	is not used to load either factor of a MULTIPLY.	0.3440	0.0131
+0.6584	0.1090	1.000	The factor register is addressable and, therefore,	0.3759	0.0146
+0.6685	0.5113	1.000	PROGRAMMING NOTES	0.1541	0.0118
+0.6744	0.0940	1.000	can be addressed as the storage operand of any opera-	0.3910	0.0132
+0.6860	0.5094	1.000	At the completion of the operation, FT still contains	0.3929	0.0146
+0.6873	0.0938	1.000	tion. FT is a 64-bit register with word address 14.	0.3669	0.0182
+0.6999	0.5093	1.000	the multiplicand and its sign. It is unchanged by the	0.3931	0.0186
+0.7048	0.1090	1.000	LOAD FACtor is the only operation that changes the	0.3741	0.0146
+0.7166	0.5094	1.000	operation. The product that was formed during the	0.3929	0.0174
+0.7194	0.0940	1.000	contents of FT as an integral part of its performance.	0.3910	0.0161
+0.7311	0.5094	1.000	operation is not available anywhere. To retain both	0.3947	0.0174
+0.7355	0.0940	1.000	FT is not changed by any other operation unless it is	0.3910	0.0145
+0.7470	0.5094	1.000	the product and the cumulative sum, the instructions	0.3947	0.0161
+0.7529	0.0902	1.000	addressed explicitly.	0.1485	0.0147
+0.7630	0.5113	1.000	MULTIPLY and ADD TO MEMORY can be used.	0.3120	0.0118
+0.7660	0.1109	1.000	The accumulator contents are not affected by LOAD	0.3741	0.0146
+0.7776	0.5282	1.000	The LOAD FACtOR operation should normally pre-	0.3759	0.0146
+0.7805	0.0940	1.000	FACTOR. The offset has no meaning in this operation	0.3891	0.0146
+0.7921	0.5113	1.000	cede MULTIPLY AND ADD. However, the loading of FT	0.3929	0.0146
+0.7964	0.0920	1.000	and is ignored. The lost-carry indicator cannot be	0.3931	0.0165
+0.8081	0.5113	1.000	need not be done in the operation immediately pre-	0.3929	0.0146
+0.8139	0.0940	1.000	turned on by this operation.	0.2068	0.0131
+0.8241	0.5094	1.000	ceding the MULTIPLY AND ADD operation.	0.2932	0.0160
+0.8387	0.5263	1.000	The offset specified has no effect upon the multi-	0.3778	0.0160
+0.8512	0.0919	1.000	Multiply and Add (*+)	0.1716	0.0175
+0.8532	0.5113	1.000	plication. The offset affects the addition of the prod-	0.3929	0.0189
+0.8706	0.5113	1.000	uct to the accumulator contents in the same manner	0.3929	0.0131
+0.8720	0.0901	1.000	If a binary operation is specified, the multiplicand	0.3950	0.0183
+0.8866	0.5113	1.000	that it affects ADD.	0.1353	0.0116
+0.8881	0.0921	1.000	feld in the factor register (FT) is multiplied by the	0.3929	0.0160
+0.9230	0.8872	1.000	69	0.0169	0.0087
+0.9230	0.7237	1.000	Variable Field Length	0.1353	0.0116

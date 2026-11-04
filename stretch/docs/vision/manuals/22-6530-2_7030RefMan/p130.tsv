@@ -1,0 +1,108 @@
+0.0596	0.0921	1.000	status bit is turned on and the computer is inter-	0.3891	0.0131
+0.0596	0.5226	1.000	1. Normal reading. In this case data are trans-	0.3759	0.0131
+0.0719	0.5469	1.000	mitted from the unit to the exchange and from	0.3518	0.0177
+0.0741	0.0921	1.000	rupted as soon as the system is enabled. The	0.3647	0.0147
+0.0770	0.4549	1.000	ex-	0.0226	0.0087
+0.0898	0.5467	1.000	there to core storage.	0.1547	0.0138
+0.0900	0.0921	1.000	change, however, cannot have the EPGK, UK, EE, Or	0.3891	0.0147
+0.1045	0.0920	1.000	EOP status bits in any exchange channel at the time	0.3893	0.0159
+0.1076	0.5226	1.000	2. Reading with the skip flag on. In this case	0.3778	0.0146
+0.1206	0.0921	1.000	initial loading is completed.	0.1992	0.0146
+0.1235	0.5470	1.000	data are transmitted to the exchange, but the	0.3534	0.0131
+0.1352	0.1053	1.000	The termination of input-output operations	0.3383	0.0146
+0.1378	0.5469	1.000	sending of the assembled words to core storage	0.3536	0.0172
+0.1512	0.0940	1.000	the resetting of control words are equivalent to issu-	0.3872	0.0146
+0.1523	0.5469	1.000	is suppressed.	0.1016	0.0165
+0.1672	0.0921	1.000	ing RELEASE instructions to all exchange channels,	0.3872	0.0132
+0.1715	0.5226	1.000	3. Skipping over the remainder of a block after	0.3778	0.0145
+0.1817	0.0921	1.000	except that the whole control word instead of only	0.3872	0.0147
+0.1875	0.5470	1.000	exhausting the control word count (no chain-	0.3534	0.0131
+0.1944	0.0900	1.000	its status bits is reset. When the INITIAL PROGRAM	0.3914	0.0210
+0.2020	0.5470	1.000	ing within block). In this case data are read by	0.3515	0.0146
+0.2136	0.0921	1.000	LOAD key is depressed, all data transfer between ex-	0.3872	0.0131
+0.2174	0.5487	1.000	the unit, but not sent to the exchange.	0.2748	0.0157
+0.2261	0.0920	1.000	ternal units and core storage is immediately stopped,	0.3894	0.0173
+0.2384	0.5244	1.000	The skip flag affects only the operation of the ex-	0.3759	0.0147
+0.2442	0.0921	1.000	but each unit still continues operating until the end	0.3872	0.0146
+0.2542	0.5075	1.000	change. The unit is not aware of the presence of the	0.3929	0.0147
+0.2602	0.0921	1.000	of the block is reached. In case of tape rewinding, a	0.3891	0.0132
+0.2688	0.5075	1.000	flag, and the discover; of any data errors by the unit	0.3929	0.0146
+0.2725	0.0920	1.000	channel signal is given at the completion of the op-	0.3875	0.0177
+0.2848	0.5075	1.000	always causes a unit-check indication to be sent to	0.3910	0.0131
+0.2863	0.1540	1.000	Note that if this is the first channel signal	0.3274	0.0178
+0.3009	0.5075	1.000	the exchange at the end of the block. Since the skip	0.3910	0.0131
+0.3052	0.0921	1.000	to be received following the depression of the INITIAL	0.3872	0.0132
+0.3154	0.5075	1.000	flag may be changed at any time within a block, the	0.3929	0.0146
+0.3212	0.0902	1.000	PROGRAM LOAD key, initial program loading will be	0.3910	0.0131
+0.3249	0.5073	1.000	state of the flag at the end of the block does not de-	0.3913	0.0208
+0.3358	0.0902	1.000	initiated from the corresponding channel.	0.2970	0.0145
+0.3458	0.5074	1.000	scribe the operation at any previous time. In order	0.3930	0.0155
+0.3618	0.5075	1.000	to insure that no error indications are lost, the ex-	0.3910	0.0132
+0.3747	0.5074	1.000	change always forwards all unit-check indications	0.3931	0.0173
+0.3764	0.0921	1.000	Handling of Data Errors	0.2180	0.0161
+0.3939	0.5056	1.000	to the computer.	0.1222	0.0116
+0.4084	0.5226	1.000	When the unit is skipping to the end of the block	0.3759	0.0131
+0.4090	0.0920	1.000	Error Checking	0.1038	0.0117
+0.4244	0.5056	1.000	after receiving a disconnect signal (because of ex-	0.3929	0.0132
+0.4288	0.0921	1.000	All input-output operations are extensively checked	0.3872	0.0131
+0.4390	0.5075	1.000	hausting the control word count), the checking for	0.3929	0.0132
+0.4433	0.0902	1.000	for errors introduced in the units, in the exchange,	0.3891	0.0131
+0.4548	0.5075	1.000	data errors depends upon the unit. In the case of the	0.3929	0.0132
+0.4593	0.0921	1.000	or in the communications between the exchange and	0.3872	0.0131
+0.4694	0.5075	1.000	card reader, for instance, data errors can be identi-	0.3910	0.0146
+0.4737	0.0918	1.000	its units and core storage.	0.1792	0.0151
+0.4839	0.5075	1.000	fied with a particular byte, and data error indications	0.3929	0.0146
+0.4897	0.1053	1.000	Whenever data are transmitted between the ex-	0.3741	0.0118
+0.5015	0.5056	1.000	are suppressed when the data are not actually for-	0.3929	0.0131
+0.5058	0.0921	1.000	change and the units, a parity bit is added to each	0.3872	0.0131
+0.5160	0.5075	1.000	warded to the exchange. In the case of the 729 tape	0.3910	0.0146
+0.5203	0.0921	1.000	byte to verify the transmission. A parity bit is also	0.3872	0.0146
+0.5305	0.5075	1.000	units this is not true. Because of the method of parity	0.3910	0.0146
+0.5363	0.0921	1.000	used to check the transmission of core storage ad	0.3853	0.0131
+0.5464	0.5075	1.000	checking that is used, it is not always possible to	0.3910	0.0147
+0.5523	0.0921	1.000	dresses when transmitting data words and control	0.3891	0.0131
+0.5624	0.5075	1.000	identify an error indication with a particular byte,	0.3929	0.0132
+0.5669	0.0921	1.000	words to and from core storage. Similarly, a parity	0.3872	0.0147
+0.5770	0.5075	1.000	and hence no data error indications are suppressed.	0.3778	0.0146
+0.5827	0.0902	1.000	bit is used to verify the execution of a number of	0.3910	0.0133
+0.5915	0.5244	1.000	As a result, in either of the above two cases,	0.3459	0.0146
+0.5973	0.0902	1.000	control functions within the exchange. In the input-	0.3891	0.0133
+0.6090	0.5075	1.000	program can get a unit-check indication without	0.3929	0.0131
+0.6118	0.0902	1.000	output units, checking is applied to the reading and	0.3891	0.0146
+0.6235	0.5056	1.000	actually having an error in the information trans-	0.3929	0.0146
+0.6279	0.0902	1.000	recording of information. The nature of this check-	0.3910	0.0146
+0.6394	0.5075	1.000	mitted to core storage. In the case of some units, such	0.3910	0.0133
+0.6439	0.0902	1.000	ing depends upon the unit. It may be based on	0.3891	0.0146
+0.6539	0.5056	1.000	as the 729's, the program does not have any means	0.3947	0.0161
+0.6584	0.0902	1.000	echoes, the use of a parity bit, reading at two stations,	0.3910	0.0146
+0.6685	0.5056	1.000	of identifying a unit check with a particular word or	0.3947	0.0161
+0.6744	0.0902	1.000	or reading immediately after recording.	0.2895	0.0132
+0.6860	0.5038	1.000	byte, and it cannot find out whether the error was	0.3947	0.0116
+0.6890	0.1034	1.000	As mentioned previously, whenever a data error is	0.3778	0.0160
+0.7015	0.0900	1.000	discovered, unit-check and end-of-operation indica-	0.3915	0.0244
+0.7020	0.5038	1.000	discovered in the portion of the block sent to core	0.3947	0.0116
+0.7151	0.5038	1.000	storage or in the portion whose reading has been	0.3966	0.0174
+0.7194	0.0902	1.000	tions are given, and the operation is terminated at	0.3910	0.0161
+0.7309	0.5056	1.000	suppressed.	0.0847	0.0163
+0.7310	0.0901	1.000	the end of the current block. When such an error is	0.3913	0.0208
+0.7515	0.0921	1.000	discovered on writing, the error always appears at the	0.3872	0.0116
+0.7615	0.5056	1.000	Error Correction	0.1203	0.0133
+0.7660	0.0902	1.000	unit to the extent that the recorded information dis-	0.3891	0.0116
+0.7803	0.0901	1.000	agrees with that sent to the unit or will cause an error	0.3913	0.0180
+0.7805	0.5038	1.000	In addition to the error checking described in the	0.3966	0.0160
+0.7951	0.5056	1.000	preceding section, an automatic error correction	0.3947	0.0189
+0.7979	0.0902	1.000	indication when later read. On reading, however, a	0.3910	0.0132
+0.8105	0.0901	1.000	data error responsible for unit check does not neces-	0.3912	0.0175
+0.8109	0.5056	1.000	process is applied to all information transferred from	0.3947	0.0176
+0.8270	0.0902	1.000	sarily have to appear in the information transmitted	0.3910	0.0161
+0.8285	0.5056	1.000	core storage to the exchange and, under the pro-	0.3929	0.0131
+0.8423	0.5056	1.000	grammer's control, to data read from external units.	0.3929	0.0145
+0.8459	0.0902	1.000	to core storage.	0.1090	0.0116
+0.8576	0.5056	1.000	This process is applied on a word basis, and permits	0.3947	0.0161
+0.8590	0.1053	1.000	As far as checking and handling of data are con-	0.3759	0.0146
+0.8735	0.0902	1.000	cerned, there can be three stages in the execution of a	0.3910	0.0146
+0.8735	0.5056	1.000	correction of single errors and detection of double	0.3947	0.0131
+0.8880	0.5075	1.000	errors per word.	0.1185	0.0133
+0.8909	0.0902	1.000	READ instruction:	0.1241	0.0103
+0.9258	0.7218	1.000	IBM 7619 Exchange	0.1278	0.0133
+0.9259	0.8759	1.000	127	0.0244	0.0116

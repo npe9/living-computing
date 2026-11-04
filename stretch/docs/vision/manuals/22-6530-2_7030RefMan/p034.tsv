@@ -1,0 +1,89 @@
+0.0596	0.0921	1.000	these constants so that their order is b, c, and a. The	0.3872	0.0131
+0.0609	0.4981	1.000	in each program section do not belong to those re-	0.3966	0.0161
+0.0755	0.5019	1.000	served for other program sections.	0.2462	0.0161
+0.0755	0.0902	1.000	instruction which accomplishes this rotation is:	0.3421	0.0147
+0.0915	0.5169	1.000	In order to verify the correct execution of a pro-	0.3797	0.0161
+0.0930	0.1203	1.000	SWAPI, 2, 112.0, 113.0	0.1485	0.0131
+0.1061	0.5019	1.000	gram, a key instruction or block of instructions can be	0.3947	0.0161
+0.1195	0.5018	1.000	monitored. When an instruction fetch occurs from	0.3950	0.0175
+0.1366	0.5019	1.000	the monitored instructions, the programmer can verily	0.3947	0.0161
+0.1525	0.0902	1.000	Data Reset	0.1091	0.0148
+0.1526	0.5019	1.000	whether the execution up to that point was satisfac-	0.3929	0.0160
+0.1672	0.5019	1.000	tory. Similarly, a key data word can be used to verily	0.3929	0.0160
+0.1830	0.5019	1.000	correct program execution.	0.1974	0.0146
+0.1903	0.0921	1.000	Several instructions are available which set the bits in	0.3853	0.0133
+0.2064	0.0921	1.000	a storage field to zero. The value, count, and refill	0.3853	0.0131
+0.2174	0.0900	1.000	fields of an index word can be set to zero with an im-	0.3877	0.0217
+0.2369	0.0883	1.000	mediate load instruction. With the CONNECT TO MEM-	0.3891	0.0146
+0.2384	0.5019	1.000	Definition of Monitored Area	0.2669	0.0147
+0.2529	0.0921	1.000	ORy operation, using connective 0000, a variable stor-	0.3853	0.0132
+0.2674	0.0902	1.000	age field may be set to zero. In order to facilitate set-	0.3853	0.0147
+0.2733	0.5019	1.000	A core storage aren is defined by placing an address in	0.3929	0.0161
+0.2833	0.0883	1.000	ting all the bits in a full storage word to zero, the in-	0.3872	0.0146
+0.2892	0.5019	1.000	each of two address boundary registers.	0.2914	0.0160
+0.2906	0.7970	1.000	This area in-	0.0977	0.0132
+0.2979	0.0883	1.000	struction STORE zEro is provided. This is a half-length	0.3872	0.0161
+0.3036	0.5019	1.000	cludes the word specified by the address in the lower	0.3929	0.0161
+0.3124	0.0865	1.000	instruction which has the format shown below. When	0.3891	0.0161
+0.3182	0.5017	1.000	boundary register and all words in subsequent loca-	0.3951	0.0188
+0.3285	0.0902	1.000	the instruction is followed by a COUNT AND BRANCH	0.3835	0.0145
+0.3342	0.5019	1.000	tions up to, but not including, the address in the	0.3929	0.0161
+0.3415	0.0883	1.000	operation in a programmed loop, a storage area of	0.3853	0.0176
+0.3503	0.5038	1.000	upper boundary register. The address in the upper	0.3910	0.0161
+0.3576	0.0883	1.000	several full words may be set to zero.	0.2538	0.0146
+0.3648	0.5038	1.000	boundary register is normally larger than that in the	0.3910	0.0146
+0.3805	0.5018	1.000	lower boundary register. If it is equal or smaller, no	0.3930	0.0170
+0.3967	0.5019	1.000	words are contained in the core storage area. The	0.3929	0.0133
+0.3968	0.2143	1.000	OP	0.0188	0.0102
+0.3973	0.1182	1.000	ADDRESS	0.0417	0.0077
+0.4127	0.5038	1.000	upper boundary and lower boundary registers are lo-	0.3891	0.0131
+0.4223	0.5017	1.000	cated in bits 0-17 and 32-49, respectively, of storage	0.3934	0.0222
+0.4403	0.0846	1.000	Store Zero (Z)	0.1035	0.0163
+0.4417	0.5018	1.000	location 3.	0.0790	0.0119
+0.4578	0.5188	1.000	The boundary control bit, bit 57 of storage location	0.3741	0.0146
+0.4606	0.0865	1.000	An all-zero word is stored in the full storage word	0.3853	0.0147
+0.4724	0.5019	1.000	3, determines which condition will cause an address	0.3929	0.0131
+0.4745	0.0845	1.000	location specified by bits 0-17 of the effective address.	0.3892	0.0161
+0.4869	0.5000	1.000	monitoring signal. When the boundary control bit is	0.3947	0.0161
+0.5029	0.5019	1.000	zero, a signal is obtained for a comparand inside the	0.3910	0.0147
+0.5188	0.5000	1.000	specified area. When the boundary control bit is one,	0.3947	0.0133
+0.5322	0.4999	1.000	a signal is obtained for a comparand outside the speci-	0.3931	0.0175
+0.5348	0.0860	1.000	Address Monitoring	0.2059	0.0236
+0.5494	0.5019	1.000	fied area. An instruction or data field which straddles	0.3910	0.0117
+0.5639	0.4999	1.000	a boundary always gives an address monitoring signal.	0.3949	0.0162
+0.5785	0.0846	1.000	In multiprogrammed operation, when several pro-	0.3891	0.0176
+0.5799	0.5188	1.000	The monitoring of references to locations 0-31 is in-	0.3741	0.0131
+0.5938	0.4999	1.000	dependent of the contents of the boundary registers.	0.3931	0.0171
+0.6076	0.0846	1.000	cuted in intermixed fashion, it is important that errors	0.3872	0.0146
+0.6105	0.5000	1.000	Locations 1, 2, and 3 are referred to as the perma-	0.3947	0.0145
+0.6231	0.0846	1.000	in one program be prevented from causing changes	0.3873	0.0154
+0.6250	0.5000	1.000	nently protected area of storage. References to these	0.3929	0.0145
+0.6394	0.0939	1.000	a data or instructions belonging to another prograr	0.3667	0.0165
+0.6424	0.5000	1.000	locations always give an address monitoring signal, re-	0.3910	0.0131
+0.6498	0.0957	1.000	'his protection may be provided by monitoring a	0.3669	0.0190
+0.6555	0.4981	1.000	gardless of the contents of the boundary registers or	0.3929	0.0161
+0.6697	0.5073	1.000	he setting of the boundary control bit. References (	0.3725	0.0183
+0.6708	0.0914	0.300	na o ore ero ge a ecae y ie anume ee	0.3763	0.0458
+0.6845	0.5075	1.000	ocations 0 and 4 through 31, inclusive, never cau	0.3722	0.0146
+0.6976	0.4962	1.000	an address monitoring signal.	0.2199	0.0191
+0.7134	0.0839	1.000	boundary registers.	0.1385	0.0187
+0.7297	0.0977	1.000	By extending the address monitoring to include ad-	0.3759	0.0174
+0.7456	0.0827	1.000	dresses from which instructions and data are fetched,	0.3910	0.0174
+0.7587	0.4981	1.000	Action of Address Monitoring Signal	0.3365	0.0174
+0.7602	0.0827	1.000	it may also be used to verify the proper execution of	0.3910	0.0174
+0.7776	0.0846	1.000	a program and to detect incorrect instructions. For	0.3891	0.0131
+0.7908	0.4960	1.000	The action of the address monitoring system depends	0.3970	0.0207
+0.7921	0.0827	1.000	instance, in program check-out, incorrect instructions	0.3910	0.0146
+0.8067	0.0827	1.000	or data addresses, especially those which are the re-	0.3891	0.0161
+0.8094	0.4943	1.000	upon the state of the interruption system and upon	0.3949	0.0164
+0.8212	0.0827	1.000	sult of address computation, may be detected by this	0.3910	0.0176
+0.8243	0.4962	1.000	the masks of the indicators that can be activated by	0.3949	0.0155
+0.8400	0.4962	1.000	the address monitoring signal. The indicators that	0.3947	0.0133
+0.8532	0.0959	1.000	The monitoring procedure can be refined by chang-	0.3759	0.0160
+0.8532	0.4906	1.000	can be turned on by the presence of the address moni-	0.3985	0.0160
+0.8677	0.0827	1.000	ing boundaries as the program proceeds. This refine-	0.3891	0.0132
+0.8677	0.4944	1.000	toring signal are Ds (data store), DF (data fetch), and	0.3966	0.0189
+0.8769	0.0826	1.000	ment can be used to ascertain that the addresses used	0.3896	0.0217
+0.8836	0.4944	1.000	IF (instruction fetch).	0.1598	0.0176
+0.9244	0.7124	1.000	Operand Designation	0.1335	0.0132
+0.9259	0.8741	1.000	31	0.0169	0.0102

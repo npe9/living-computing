@@ -1,0 +1,98 @@
+0.0654	0.5150	1.000	SEOF	0.0470	0.0161
+0.0682	0.6071	1.000	Phase 1 command to communicate	0.2538	0.0133
+0.0682	0.0714	1.000	available for use as a write tape after it has been	0.3684	0.0118
+0.0827	0.0714	1.000	processed.	0.0847	0.0120
+0.0827	0.6203	1.000	intentional EOF from the card	0.2274	0.0133
+0.0959	0.6184	1.000	reader (online mode).	0.1673	0.0160
+0.1103	0.5150	1.000	SREW	0.0490	0.0148
+0.1118	0.6071	1.000	Phase 1 command to terminate the	0.2556	0.0132
+0.1264	0.6222	1.000	write tape at this point (online mode).	0.2820	0.0146
+0.1279	0.0733	1.000	Bypass Operation	0.1297	0.0117
+0.1555	0.4981	1.000	General Organization	0.1654	0.0176
+0.1570	0.0733	1.000	Only one functional buffer is required for bypass	0.3590	0.0116
+0.1715	0.0733	1.000	operation, since phase 1 is eliminated. Physically,	0.3853	0.0131
+0.1845	0.5019	1.000	The input program may be considered in four cate-	0.3778	0.0131
+0.1860	0.0714	1.000	the phase 1 buffer is used, since it must serve as a	0.3835	0.0116
+0.2000	0.4979	1.000	gories:	0.0569	0.0143
+0.2006	0.0714	1.000	buffer for the card reader in online operation and	0.3684	0.0116
+0.2121	0.5150	1.000	1. The functional programs	0.2124	0.0176
+0.2151	0.0714	1.000	card reader controls exist for it. Functionally, it is	0.3947	0.0161
+0.2267	0.5338	1.000	The tape switch routines	0.1936	0.0176
+0.2297	0.0714	1.000	used as the phase 4 buffer to service $SCR, SSCR4,	0.3853	0.0131
+0.2427	0.5150	1.000	3. The mode transition routines	0.2444	0.0161
+0.2442	0.0714	1.000	and SEJSCN requests.	0.1654	0.0116
+0.2587	0.5150	1.000	4. The I-O fixup routines	0.1955	0.0146
+0.2747	0.5132	1.000	The functional programs do the card processing	0.3609	0.0132
+0.2863	0.0714	1.000	Input Program Pseudo-Ops	0.2030	0.0116
+0.2878	0.4981	1.000	work of the input program. The others do necessary	0.3929	0.0146
+0.3036	0.4981	1.000	housekeeping functions.	0.1786	0.0133
+0.3154	0.0733	1.000	The input program services three pseudo-ops: the	0.3797	0.0146
+0.3314	0.0695	1.000	two card requests, SSCR and SSCR4; and the input	0.3759	0.0132
+0.3459	0.0714	1.000	command pseudo-op, SKOM. The card request	0.3534	0.0116
+0.3459	0.4981	1.000	The Functional Programs	0.1917	0.0147
+0.3605	0.0695	1.000	pseudo-ops differ slightly, as described in System	0.3778	0.0145
+0.3750	0.4981	1.000	The seven functional programs are:	0.2650	0.0145
+0.3750	0.0714	1.000	Operation. However, they use a common tentacle	0.3722	0.0132
+0.3894	0.0714	1.000	table and are carried out by one program, the card	0.3816	0.0147
+0.3894	0.5132	1.000	1. Card reader	0.1222	0.0147
+0.4037	0.5131	1.000	2. Scan tape	0.1017	0.0167
+0.4055	0.0714	1.000	request routine.	0.1203	0.0118
+0.4172	0.5132	1.000	3. Job boundary scan	0.1654	0.0174
+0.4185	0.0865	1.000	The SKOM pseudo-op is handled by another program	0.3910	0.0161
+0.4298	0.5130	1.000	4. Write tape	0.1112	0.0198
+0.4330	0.0714	1.000	and tentacle table. This pseudo-op has eight sub-	0.3722	0.0133
+0.4476	0.5132	1.000	5. Read tape	0.1053	0.0161
+0.4491	0.0714	1.000	types, referred to as the input commands. (See	0.3590	0.0117
+0.4636	0.0714	1.000	System Operation). They are:	0.2256	0.0117
+0.4636	0.5132	1.000	6. Card request (overlapped)	0.2237	0.0146
+0.4752	0.5094	1.000	7. Card request (bypass)	0.1992	0.0191
+0.4782	0.1805	1.000	Phase 1 card request	0.1579	0.0131
+0.4782	0.0846	1.000	SCR1	0.0414	0.0116
+0.4927	0.1786	1.000	Phase 1 scan request	0.1579	0.0131
+0.4927	0.0846	1.000	SCAN	0.0451	0.0116
+0.4942	0.4981	1.000	The input program processes information through	0.3759	0.0131
+0.5042	0.4962	1.000	two buffers, the phase 1 buffer and the phase 4 buffer;	0.4023	0.0176
+0.5072	0.0846	1.000	SEJSCN	0.0621	0.0118
+0.5087	0.1786	1.000	Phase 4 scan request	0.1579	0.0116
+0.5203	0.4944	1.000	it is possible to associate each of the functional pro-	0.3929	0.0146
+0.5233	0.0846	1.000	SONL	0.0470	0.0116
+0.5233	0.1786	1.000	Transition command to online	0.2199	0.0102
+0.5337	0.4999	1.000	grams with one of these buffers according to syster	0.3781	0.0174
+0.5363	0.0846	1.000	SOFFL	0.0564	0.0131
+0.5378	0.1786	1.000	Transition command to offline	0.2237	0.0102
+0.5494	0.5019	1.000	input mode (Figure 55)	0.1654	0.0146
+0.5509	0.0846	1.000	SBYP	0.0451	0.0131
+0.5523	0.1786	1.000	Transition command to bypass	0.2256	0.0131
+0.6133	0.3853	1.000	Buffer Involved	0.0921	0.0117
+0.6439	0.1222	1.000	Mode	0.0357	0.0116
+0.6467	0.3515	1.000	Phase 1	0.0451	0.0089
+0.6482	0.5921	1.000	Phase 4	0.0451	0.0103
+0.6744	0.2632	1.000	Card	0.0338	0.0145
+0.6773	0.4474	1.000	Write	0.0357	0.0116
+0.6873	0.1146	1.000	Online	0.0415	0.0119
+0.6874	0.2631	1.000	Reader	0.0452	0.0133
+0.6890	0.3590	1.000	Job	0.0263	0.0131
+0.6904	0.4474	1.000	Tape	0.0338	0.0116
+0.7005	0.2631	1.000	Program	0.0490	0.0147
+0.7034	0.4455	1.000	Program	0.0527	0.0117
+0.7151	0.5432	1.000	Read	0.0338	0.0131
+0.7166	0.6259	1.000	Card	0.0282	0.0102
+0.7282	0.5414	1.000	Tape	0.0357	0.0131
+0.7294	0.6259	1.000	Request	0.0453	0.0106
+0.7398	0.2613	1.000	Scan	0.0338	0.0131
+0.7425	0.5431	1.000	Program	0.0509	0.0121
+0.7426	0.6259	1.000	Program	0.0471	0.0105
+0.7515	0.1128	1.000	Offline	0.0451	0.0131
+0.7529	0.3534	1.000	Boundary	0.0545	0.0131
+0.7529	0.2632	1.000	Tape	0.0320	0.0131
+0.7660	0.2613	1.000	Program	0.0508	0.0131
+0.8038	0.2613	1.000	Card	0.0338	0.0131
+0.8052	0.4455	1.000	Card	0.0320	0.0116
+0.8167	0.2612	1.000	Reader	0.0453	0.0120
+0.8169	0.1109	1.000	Bypass	0.0414	0.0116
+0.8183	0.3590	1.000	Scan	0.0320	0.0116
+0.8197	0.4455	1.000	Request	0.0489	0.0117
+0.8299	0.2613	1.000	Program	0.0508	0.0131
+0.8314	0.4455	1.000	Program	0.0508	0.0131
+0.8706	0.0695	1.000	Figure 55. Functional Programs	0.1880	0.0146
+0.9186	0.0658	1.000	110	0.0282	0.0145

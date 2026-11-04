@@ -1,0 +1,28 @@
+0.0915	0.0996	1.000	Boxes 1, 14; 3, 15, 16	0.1673	0.0118
+0.0915	0.5226	1.000	Boxes 2, 4, 5, 7, 8, 9, 10, 11	0.2312	0.0146
+0.1206	0.0996	1.000	If A in A ** B is zero, MQDDPP gives an error	0.3534	0.0117
+0.1206	0.5244	1.000	The powering subroutine adjusts the exponenț B so	0.3741	0.0117
+0.1352	0.5226	1.000	it can fit into an eighteen bit field. (The off/on	0.3515	0.0117
+0.1366	0.0977	1.000	message and puts a tloating point zero in the	0.3308	0.0102
+0.1497	0.5244	1.000	status of a bit in this 18-bit "new" exponent field	0.3571	0.0131
+0.1497	0.0996	1.000	accumulator.	0.0977	0.0116
+0.1599	0.7237	1.000	2n type entry is made	0.1692	0.0174
+0.1600	0.1145	1.000	If B in A ** B is not in the specified range,	0.3200	0.0187
+0.1657	0.5244	1.000	determines whether a base	0.2011	0.0102
+0.1773	0.5226	1.000	in the thirty-six word buffer.) Then MQDDPP proceeds	0.4173	0.0146
+0.1773	0.0996	1.000	MQDDPP gives an error message and uses instead	0.3759	0.0131
+0.1933	0.0977	1.000	the appropriate bound in the computation.	0.3158	0.0116
+0.1948	0.5244	1.000	to build up the needed powers of the base. Each	0.3571	0.0116
+0.2026	0.1163	1.000	When B<2-18	0.1075	0.0164
+0.2093	0.2237	1.000	, MQDDPP assigns-l + 2	0.1861	0.0116
+0.2093	0.5244	1.000	result is saved as a double precision floating point	0.3741	0.0116
+0.2174	0.0976	1.000	when B<2+18	0.1149	0.0158
+0.2224	0.2105	1.000	, MQDDPP assigns-1 + 2	0.1898	0.0161
+0.2252	0.5244	1.000	number in its appropriate slot in the thirty-six word	0.3872	0.0118
+0.2384	0.5244	1.000	buffer. After the entire "new" exponent has been	0.3665	0.0116
+0.2542	0.5244	1.000	scanned with the appropriate entries made, then all	0.3816	0.0133
+0.2688	0.5244	1.000	those entries made will be multiplied together (by	0.3684	0.0118
+0.2833	0.5244	1.000	now using the "new" exponent as a selector) to pro-	0.3816	0.0118
+0.2979	0.5244	1.000	duce the final answer.	0.1635	0.0118
+0.9444	0.8213	1.000	MODDPA	0.0547	0.0109
+0.9448	0.9023	1.000	113	0.0207	0.0087

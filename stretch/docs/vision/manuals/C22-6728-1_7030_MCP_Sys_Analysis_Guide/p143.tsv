@@ -1,0 +1,107 @@
+0.0988	0.5320	1.000	the first card of the next job. The first stage in the	0.3929	0.0131
+0.1003	0.1015	1.000	number of cards transmitted being governed by the	0.3816	0.0116
+0.1148	0.0996	1.000	lesser of VXI or VNREQ. After transmission, VXI	0.3929	0.0131
+0.1148	0.5338	1.000	execution of this command, in either overlapped	0.3609	0.0131
+0.1294	0.5338	1.000	(VOEOJ) or bypass (VBEOJ) mode, is done by the	0.3741	0.0116
+0.1294	0.1015	1.000	and VNREQ are decremented by the lesser amount.	0.3853	0.0131
+0.1439	0.1015	1.000	The VNREQ residue is tested for zero, meaning the	0.3891	0.0131
+0.1439	0.5338	1.000	VSEOJ subroutine (Figure 78). This routine looks	0.3778	0.0131
+0.1584	0.5319	1.000	for a negative parameter, beginning at VX1 and pro-	0.3967	0.0140
+0.1599	0.1015	1.000	request processing is complete, and if it is, VREQ	0.3835	0.0131
+0.1730	0.5338	1.000	ceeding into the queue, removing successive param-	0.3947	0.0131
+0.1744	0.1015	1.000	returns control with $0 properly adjusted. On the way	0.4079	0.0116
+0.1890	0.5338	1.000	eters by means of VSETX. It continues until either	0.3872	0.0117
+0.1890	0.0996	1.000	back, the parameter representing the last trans-	0.3684	0.0132
+0.2035	0.5320	1.000	a negative parameter is returned by VSETX or the	0.3797	0.0117
+0.2035	0.1015	1.000	mission is passed on to the successor. If the request	0.4041	0.0117
+0.2179	0.5338	1.000	end of the queue is reached, at which time the sum	0.3816	0.0133
+0.2194	0.0996	1.000	processing is not complete, control goes to VREQIO	0.3929	0.0118
+0.2324	0.5320	1.000	total of the positive parameters passed over in the	0.3797	0.0133
+0.2339	0.0996	1.000	to get, if possible, another positive parameter from	0.3947	0.0132
+0.2485	0.0996	1.000	the queue. VREQ10 first forwards to the successor	0.3910	0.0131
+0.2485	0.5338	1.000	search is passed on to the successor and VX is ad-	0.3835	0.0118
+0.2628	0.1014	1.000	a parameter representing the number of cards just	0.3836	0.0144
+0.2630	0.5320	1.000	justed to preserve phase. Control returns from	0.3628	0.0118
+0.2776	0.5338	1.000	VSEOJ with either the negative parameter or zero, if	0.4023	0.0131
+0.2791	0.1015	1.000	transmitted, and then goes to VSETX. The value	0.3703	0.0116
+0.2921	0.5320	1.000	none was found.	0.1222	0.0117
+0.2936	0.1015	1.000	returned from the queue by VSETX is stored in VX1.	0.3966	0.0116
+0.3067	0.5489	1.000	When VSEOJ returns control, it tells whether or	0.3665	0.0131
+0.3081	0.0996	1.000	If it is non-zero, the above process is repeated. If	0.3910	0.0116
+0.3227	0.5320	1.000	not the job end is in the buffer, and it has swept out	0.3891	0.0131
+0.3241	0.0996	1.000	it is zero, the action depends on whether the original	0.3985	0.0116
+0.3372	0.1015	1.000	request was a SCR or SCR4. If SCR4, $0 is adjusted	0.3966	0.0131
+0.3372	0.5320	1.000	all parameters not after such job end. If the job end	0.3966	0.0116
+0.3517	0.5320	1.000	was in the buffer, the command SEJSCN has been	0.3722	0.0131
+0.3532	0.0996	1.000	for an end return and VREQ returns control. I SCR,	0.4023	0.0117
+0.3663	0.5320	1.000	completed, since the removal of the negative param-	0.3985	0.0131
+0.3663	0.1034	1.000	the $RIO pseudo-op is given to allow interrupts from	0.3947	0.0146
+0.3808	0.5320	1.000	eter unblocks the VREQ routine. If the job end was	0.3872	0.0116
+0.3821	0.1034	1.000	the read tape or card reader. The first parameter	0.3835	0.0118
+0.3953	0.5320	1.000	not in the buffer, further action is required to set up	0.3947	0.0131
+0.3967	0.1034	1.000	which is passed on to Q or E as a result of an inter-	0.3910	0.0118
+0.4099	0.5320	1.000	a mechanism to skip over the remainder of the job	0.3797	0.0131
+0.4112	0.1034	1.000	rupt will be placed into VXI by the normal queue	0.3647	0.0118
+0.4200	0.5320	1.000	at the source, either the read tape or the card reader.	0.4117	0.0176
+0.4258	0.1034	1.000	entry function since VX1 is now zero. Consequently,	0.3985	0.0133
+0.4390	0.5508	1.000	To consider the bypass case first (E), the queue	0.3609	0.0132
+0.4403	0.1015	1.000	after giving $RIO, a loop is started which tests VX1	0.3910	0.0146
+0.4548	0.1034	1.000	repeatedly until a non-zero condition is identified.	0.3759	0.0132
+0.4548	0.5320	1.000	entry routine is modified so that rather than inserting	0.4041	0.0118
+0.4694	0.5320	1.000	parameters in the queue, it tests them for equality	0.3816	0.0146
+0.4709	0.1034	1.000	$SIO is then issued to protect the request processor	0.3910	0.0116
+0.4839	0.1034	1.000	from uncontrolled interference from future interrupts,	0.4098	0.0132
+0.4839	0.5320	1.000	with -VNOP. If the incoming parameter is positive	0.3872	0.0118
+0.4985	0.5320	1.000	it forwards it to CR after adjusting VX. By shunting	0.3966	0.0118
+0.5000	0.1034	1.000	and the entire procedure is repeated from the begin-	0.3947	0.0131
+0.5130	0.5320	1.000	all of the parameters related to the defunct job back	0.3910	0.0118
+0.5147	0.1023	1.000	ning.	0.0417	0.0137
+0.5276	0.5320	1.000	to CR, a continuous scan is set up, to terminate only	0.3985	0.0131
+0.5397	0.1183	1.000	If, back at the beginning, VXI was not greater than	0.3857	0.0180
+0.5407	0.5319	1.000	with the end of job signalled by the parameter,	0.3498	0.0145
+0.5540	0.1032	1.000	zero, control was sent to VREQ2 which first tests	0.3745	0.0178
+0.5567	0.5320	1.000	-VNOP. When this oceurs, the interface is restored	0.3985	0.0131
+0.5712	0.1034	1.000	whether VXI is zero, in which case VREQI0 is	0.3534	0.0145
+0.5712	0.5320	1.000	to its normal state and the execution of the SEJSCN	0.3853	0.0103
+0.5858	0.5320	1.000	command is complete.	0.1692	0.0116
+0.5858	0.1034	1.000	entered to obtain another parameter. Should VX1 be	0.3947	0.0131
+0.5997	0.1032	1.000	negative, the request is up against the job end and	0.3762	0.0158
+0.6003	0.5489	1.000	In the overlapped situation (Q), the remainder of	0.3665	0.0131
+0.6131	0.1032	1.000	the end return procedure is applied. This consists of	0.4064	0.0177
+0.6148	0.5320	1.000	the file is skipped, including the file mark, and nor-	0.3966	0.0131
+0.6292	0.1033	1.000	deriving the number of cards actually delivered by	0.3799	0.0151
+0.6308	0.5320	1.000	mal reading resumed by RT. At this time the read	0.3853	0.0116
+0.6453	0.1034	1.000	subtracting the residual from the original request,	0.3797	0.0131
+0.6453	0.5320	1.000	tape must be busy with a $RD instruction because	0.3722	0.0131
+0.6583	0.1032	1.000	storing the result in the M slot of the calling sequence,	0.4101	0.0167
+0.6599	0.5320	1.000	having just evacuated the queue of Q with VSEOJ, RT	0.3985	0.0131
+0.6744	0.5320	1.000	has a full complement of 34 card images and must	0.3778	0.0116
+0.6744	0.1034	1.000	and adjusting $0. However, VX1 itself remains	0.3590	0.0132
+0.6857	0.1050	1.000	unchanged in case it is negative, to act as a block to	0.3933	0.0187
+0.6890	0.5320	1.000	certainly be reading into 17 of them. The skipping	0.3816	0.0117
+0.7035	0.5320	1.000	procedure consists first of changing the table of exits	0.4004	0.0132
+0.7064	0.1053	1.000	all future requests.	0.1466	0.0103
+0.7173	0.1221	1.000	The request routine includes logic to simulate an	0.3668	0.0144
+0.7179	0.5320	1.000	mechanism so that control comes to one of two special	0.4098	0.0118
+0.7310	0.1051	1.000	SEJSCN operation when a one card file is encountered	0.4044	0.0154
+0.7324	0.5301	1.000	fixups, VSREO and VSRE, when the $RD is termi-	0.3816	0.0147
+0.7470	0.1053	1.000	on a read tape. This situation may be originated by	0.3910	0.0133
+0.7485	0.5846	1.000	If an EE occurs, which is ultimately desired,	0.3477	0.0131
+0.7485	0.5320	1.000	nated.	0.0545	0.0102
+0.7573	0.5338	1.000	VSRE is entered. VSRE restores the normal table	0.3816	0.0161
+0.7630	0.1053	1.000	an offline input program, and appears to be a one	0.3703	0.0131
+0.7750	0.1051	1.000	card job consisting of a command card. Unless the	0.3875	0.0162
+0.7761	0.5320	1.000	of exits configuration and restarts the same $RD	0.3665	0.0133
+0.7900	0.1051	1.000	situation is recognized and SEJSCN performed, the	0.3856	0.0166
+0.7921	0.5320	1.000	instruction but this time the record coming in will be	0.3985	0.0117
+0.8047	0.1051	1.000	system would hang up in phase 4 in an SSCR4 - end	0.3820	0.0167
+0.8067	0.5320	1.000	the first of the next job, and the normal fixups, just	0.3929	0.0131
+0.8212	0.5338	1.000	restored, will forward it to the request processor.	0.3816	0.0131
+0.8241	0.1053	1.000	return sequence.	0.1278	0.0102
+0.8358	0.5320	1.000	If an EOP occurs, a $SPFL command is issued by	0.3778	0.0131
+0.8503	0.5338	1.000	VSREO and the resulting EE interrupt will cause	0.3647	0.0131
+0.8517	0.1071	1.000	The SEJSCN Command: SEJSCN is an input command	0.4041	0.0131
+0.8648	0.5320	1.000	VSRE to be entered later.	0.1955	0.0131
+0.8663	0.1053	1.000	to recognize the next SCR4 request as a request for	0.3891	0.0131
+0.9520	0.9117	1.000	143	0.0226	0.0087
+0.9535	0.7669	1.000	System Input-Output	0.1222	0.0102

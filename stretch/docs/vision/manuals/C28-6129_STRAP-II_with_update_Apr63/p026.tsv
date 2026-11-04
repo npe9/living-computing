@@ -1,0 +1,78 @@
+0.0755	0.1316	1.000	STRAP II Punched Output	0.2387	0.0161
+0.1612	0.5564	1.000	gram following the PRNID and PUNID pseudo opera-	0.3985	0.0176
+0.1642	0.1316	1.000	In addition to printed information, STRAP also punches	0.4004	0.0161
+0.1773	0.5564	1.000	tions. The checksum permits the loader to check that	0.3985	0.0161
+0.1802	0.1316	1.000	column binary cards as part of the output of each as-	0.3985	0.0146
+0.1918	0.5564	1.000	the binary information on the card has been correctly	0.3966	0.0176
+0.1976	0.1335	1.000	sembly. Four types of column binary cards are	0.3966	0.0132
+0.2076	0.5563	1.000	loaded.	0.0585	0.0150
+0.2137	0.1335	1.000	punched.	0.0677	0.0174
+0.2238	0.5695	1.000	The complete format of the origin card is shown	0.3835	0.0146
+0.2374	0.5581	1.000	below. In the convention used to number card col-	0.3950	0.0174
+0.2384	0.1410	1.000	Drigin Card. The first card of every binary deck t	0.3835	0.0116
+0.2529	0.1410	1.000	e loaded into the 7030 via the standard loader pro	0.3835	0.0116
+0.2548	0.5581	1.000	umns and rows, the first number specifies the card	0.3951	0.0185
+0.2674	0.1335	1.000	gram must be an origin card. Basically, the origin	0.3985	0.0174
+0.2733	0.5583	1.000	column-a number ranging from 1 through 80. The	0.3966	0.0146
+0.2820	0.1335	1.000	card contains an origin address, a checksum and up	0.3985	0.0174
+0.2892	0.5583	1.000	second number, separated from the column number	0.3966	0.0145
+0.2979	0.1316	1.000	to 23 half-words of data and/or instructions.	0.3571	0.0146
+0.2998	0.5579	1.000	by a period, is the row number. Here the card is con-	0.3955	0.0261
+0.3067	0.1222	0.300	ELTEE	0.4173	0.0901
+0.3227	0.5564	1.000	sidered to be divided into 12 rows-the row nearest	0.3985	0.0146
+0.3372	0.5564	1.000	the top of the card is row O and the row nearest the	0.4004	0.0161
+0.3512	0.5545	1.000	bottom of the card is row 11. For example 10.8 means	0.4023	0.0186
+0.3675	0.5563	1.000	column 10, row 8.	0.1373	0.0208
+0.4172	0.6429	1.000	Use	0.0320	0.0145
+0.4185	0.2632	1.000	Card Column and Row	0.1654	0.0147
+0.4403	0.4605	1.000	Code column (origin card-1.9, 1.10, 1.11 punches)	0.3703	0.0161
+0.4433	0.3026	1.000	1.0-1.11	0.0583	0.0132
+0.4593	0.4586	1.000	Identification column (binary)	0.2312	0.0146
+0.4606	0.3026	1.000	2.0-2.11	0.0565	0.0134
+0.4767	0.4586	1.000	Sequence number (binary)	0.2068	0.0161
+0.4793	0.3025	1.000	3.0-3.11	0.0585	0.0123
+0.4956	0.4605	1.000	Checksum	0.0771	0.0133
+0.4969	0.3026	1.000	4.0-4.11	0.0584	0.0120
+0.5087	0.4605	1.000	A control-bit-0 if skipping, 1 if setting to zero	0.3383	0.0189
+0.5145	0.3026	1.000	5.0	0.0244	0.0131
+0.5261	0.4624	1.000	A control bit-0 if action is before card contents are	0.3703	0.0161
+0.5320	0.3026	1.000	5.1	0.0226	0.0131
+0.5421	0.4586	1.000	loaded, 1 means after card contents are loaded.	0.3571	0.0161
+0.5609	0.4586	1.000	Primary bit count	0.1447	0.0176
+0.5653	0.3026	1.000	5.2-5.11	0.0583	0.0132
+0.5785	0.4605	1.000	24-bit origin address	0.1579	0.0189
+0.5828	0.3026	1.000	6.0-7.11	0.0583	0.0131
+0.5959	0.4605	1.000	Secondary bit count	0.1541	0.0189
+0.5998	0.3025	1.000	8.0-9.11	0.0586	0.0141
+0.6162	0.4605	1.000	Not used	0.0715	0.0146
+0.6174	0.2950	1.000	10.0-10.7	0.0660	0.0138
+0.6336	0.4605	1.000	Up to 736 information bits	0.1974	0.0176
+0.6365	0.2951	1.000	10.8-71.11	0.0734	0.0118
+0.6497	0.4586	1.000	Identification (card code)-ignored by the loader	0.3609	0.0176
+0.6540	0.2951	1.000	73.0-80.11	0.0734	0.0132
+0.6962	0.5526	1.000	3. Sequence number-a binary number computed by	0.4023	0.0160
+0.6976	0.1504	1.000	The additional fields seen in the format have the	0.3835	0.0132
+0.7106	0.5583	1.000	STRAP to aid the loader in checking the sequence of	0.3985	0.0161
+0.7160	0.1350	1.000	following uses:	0.1151	0.0137
+0.7238	0.5583	1.000	cards being loaded. The first card is every deck	0.3966	0.0204
+0.7355	0.1353	1.000	1. Code column-this is a multiple punch code that	0.3985	0.0161
+0.7412	0.5564	1.000	punched by strap is given the sequence number 1,	0.4004	0.0176
+0.7500	0.1335	1.000	tells the loader the type of card that is being loaded.	0.3985	0.0176
+0.7573	0.5583	1.000	the second is given sequence number 2, etc.	0.3327	0.0161
+0.7644	0.1351	1.000	For an origin card the code is a punch in 1.9, 1.10 and	0.3989	0.0212
+0.7791	0.5602	1.000	4. Primary bit count-this 10-bit count tells the loader	0.3966	0.0174
+0.7849	0.1353	1.000	1.11.	0.0357	0.0131
+0.7951	0.5583	1.000	the number of bits of binary information (columns 10	0.3985	0.0160
+0.8036	0.1334	1.000	2. Identification column-12 bits of the 36-bit 7030	0.4006	0.0166
+0.8096	0.5583	1.000	through 72) that are to be loaded into 7030 storage,	0.3985	0.0174
+0.8197	0.1353	1.000	time clock ($TC) are punched in column 2 of every	0.3985	0.0161
+0.8255	0.5564	1.000	starting at the location specified by the origin. Any	0.3985	0.0147
+0.8354	0.1352	1.000	binary card produced by straP-Il to identify each as-	0.3968	0.0169
+0.8410	0.5564	1.000	number from 0 to 748 can be specified. Bits not in-	0.3986	0.0143
+0.8502	0.1333	1.000	sembly. The setting of the clock at the start of each	0.4007	0.0173
+0.8532	0.5583	1.000	tended to be loaded are ignored by the loader.	0.3496	0.0204
+0.8648	0.1353	1.000	assembly is used. Column 2 will be ignored by the	0.3966	0.0161
+0.8779	0.5583	1.000	5. Secondary bit count-this 24-bit count is inter-	0.3966	0.0176
+0.8823	0.1353	1.000	loader.	0.0526	0.0131
+0.9185	0.1880	1.000	IBM 7030	0.0639	0.0088
+0.9186	0.1372	1.000	22	0.0188	0.0116

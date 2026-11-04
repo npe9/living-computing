@@ -1,0 +1,109 @@
+0.0625	0.0977	1.000	indicated in single-precision operations. The low-	0.3930	0.0167
+0.0654	0.5150	1.000	Single- and Double-Precision Arithmetic	0.3665	0.0174
+0.0781	0.0995	1.000	order fraction magnitude of 48 bits is in bit positions	0.3912	0.0167
+0.0945	0.5169	1.000	Single-precision and double-precision operations dif-	0.3910	0.0146
+0.0945	0.0977	1.000	60-107. Bit positions 108-127 are not used or changed	0.3910	0.0146
+0.1077	0.5149	1.000	fer in the number of bits used in the operands and	0.3913	0.0167
+0.1090	0.0996	1.000	by any floating point operation, unless address 9 is	0.3910	0.0146
+0.1250	0.5169	1.000	developed in the final result fraction. The exponent	0.3910	0.0145
+0.1250	0.0977	1.000	used as the operand address.	0.2011	0.0145
+0.1395	0.5168	1.000	field, in either case, has one EF bit, ten EM bits, and	0.3894	0.0173
+0.1409	0.1147	1.000	The accumulator is used as an implied operand for	0.3759	0.0146
+0.1555	0.0977	1.000	most operations. It is possible, however, to use the	0.3910	0.0146
+0.1555	0.5150	1.000	one Es bit.	0.0827	0.0118
+0.1698	0.5318	1.000	In single-precision arithmetic, each operand has 48	0.3744	0.0176
+0.1715	0.0977	1.000	accumulator as the addressed operand as well as the	0.3910	0.0131
+0.1809	0.0957	1.000	implied operand. The left half of the accumulator	0.3932	0.0204
+0.1852	0.5149	1.000	fraction bits. During the execution of the operation,	0.3913	0.0174
+0.2020	0.5150	1.000	zeros are implied to the right of the specified fraction	0.3910	0.0146
+0.2020	0.0977	1.000	has address 8; the right half of the accumulator has	0.3910	0.0131
+0.2166	0.0977	1.000	address 9; the accumulator sign byte register has ad-	0.3929	0.0146
+0.2166	0.5150	1.000	bits. Only bit positions 12-59 of the accumulator are	0.3910	0.0146
+0.2324	0.5150	1.000	used. The final result of a single precision arithmetic	0.3910	0.0147
+0.2324	0.0959	1.000	dress 10.	0.0620	0.0118
+0.2485	0.5150	1.000	operation is also a 48-bit fraction. However, during	0.3910	0.0146
+0.2485	0.1128	1.000	In operations other than floating point, the con-	0.3759	0.0146
+0.2630	0.5150	1.000	the process of obtaining the final result, an inter-	0.3910	0.0146
+0.2630	0.0959	1.000	tents of the left half of the accumulator, bit positions	0.3929	0.0161
+0.2791	0.5150	1.000	mediate result is developed in the arithmetic unit,	0.3910	0.0146
+0.2791	0.0977	1.000	0-63, participate when address 8 is used as the effec-	0.3910	0.0131
+0.2934	0.5130	1.000	which may have more than 48 fraction bits. During	0.3912	0.0166
+0.2936	0.0959	1.000	tive operand address. However, in floating-point in-	0.3910	0.0146
+0.3096	0.0959	1.000	structions when address 8 is used as the effective	0.3910	0.0116
+0.3096	0.5132	1.000	addition, a 96-bit sum fraction and a possible high-	0.3929	0.0160
+0.3241	0.5113	1.000	order carry, the fraction overflow bit, is obtained as	0.3947	0.0160
+0.3241	0.0959	1.000	operand address, accumulator bit positions 0-59 and	0.3910	0.0147
+0.3384	0.5093	1.000	an intermediate result. During multiplication, a 96-	0.3950	0.0191
+0.3400	0.0921	1.000	sign byte register bit positions 4-7 are used as the	0.3947	0.0161
+0.3541	0.5130	1.000	bit product fraction is obtained. During division, a	0.3913	0.0186
+0.3545	0.0940	1.000	operand. The four sign byte bits replace the four	0.3929	0.0146
+0.3706	0.0940	1.000	low-order bits of the accumulator operand. Bits 60-	0.3929	0.0146
+0.3706	0.5132	1.000	48-bit quotient fraction is obtained; no remainder is	0.3910	0.0146
+0.3826	0.0956	1.000	63 of the accumulator do not serve as operand bits.	0.3896	0.0198
+0.3866	0.5132	1.000	preserved. In the operations load, store and square	0.3910	0.0146
+0.4012	0.0959	1.000	For all floating-point single-precision operations, they	0.3891	0.0146
+0.4026	0.5113	1.000	root, the result fraction is 48 bits. These intermediate	0.3929	0.0116
+0.4172	0.0940	1.000	remain unchanged. Bit positions 60-63 of the accumu-	0.3929	0.0132
+0.4172	0.5113	1.000	result fractions are adjusted to a final result fraction	0.3910	0.0147
+0.4317	0.0921	1.000	lator are changed in floating-point double-precision	0.3929	0.0147
+0.4317	0.5113	1.000	of 48 bits according to the rules associated with nor-	0.3910	0.0147
+0.4438	0.5110	1.000	malized or unnormalized operations.	0.2638	0.0199
+0.4476	0.0940	1.000	operations for which they are part of the implied	0.3910	0.0146
+0.4636	0.0940	1.000	operand and are changed as such. This rule applies	0.3910	0.0146
+0.4636	0.5282	1.000	In double-precision arithmetic operations, the ac-	0.3722	0.0146
+0.4762	0.5111	1.000	cumulator contains a 96-bit fraction. The memory	0.3914	0.0181
+0.4775	0.0939	1.000	to operations of both fetch and store type. Addresses	0.3912	0.0160
+0.4927	0.5113	1.000	operand has 48 bits in the fraction. The result is	0.3910	0.0145
+0.4942	0.0940	1.000	9 and 10, when used as effective operand addresses,	0.3910	0.0146
+0.5082	0.0920	1.000	are treated in floating-point as with other operations.	0.3930	0.0169
+0.5087	0.5113	1.000	placed in the accumulator and has 96 bits in the	0.3910	0.0131
+0.5213	0.5110	1.000	fraction. Intermediate results of 96 bits and a possi-	0.3896	0.0199
+0.5247	0.1090	1.000	Floating-point remainders and cumulative multipli-	0.3741	0.0147
+0.5381	0.0920	1.000	cands occurring in the remainder register (RM) ad-	0.3931	0.0167
+0.5390	0.5112	1.000	ble fraction overflow bit are developed except in the	0.3893	0.0169
+0.5536	0.5094	1.000	case of division.	0.1203	0.0133
+0.5552	0.0921	1.000	dress 13, and the factor register (FT) address 14 have	0.3910	0.0146
+0.5712	0.0921	1.000	the format of floating-point words in memory.	0.3440	0.0145
+0.5712	0.5263	1.000	In the operation DIVIDE DOUBLE, a 49-bit quotient	0.3759	0.0145
+0.5858	0.5094	1.000	fraction is developed. After the 48th quotient bit has	0.3910	0.0145
+0.6003	0.5094	1.000	been developed, the high-order 48 bits of the current	0.3910	0.0146
+0.6128	0.5074	1.000	remainder are stored in the remainder register, RM,	0.3933	0.0200
+0.6206	0.0883	1.000	Instruction Format	0.1748	0.0131
+0.6321	0.5094	1.000	with the proper exponent. When the remainder has	0.3910	0.0147
+0.6467	0.5075	1.000	been stored, it is compared with the divisor to obtain	0.3910	0.0161
+0.6497	0.0902	1.000	Floating-point instructions are contained in the half-	0.3929	0.0145
+0.6657	0.0902	1.000	word format shown below. The address portion, bit	0.3929	0.0146
+0.6788	0.5244	1.000	The result of an addition may be placed in storage	0.3759	0.0161
+0.6799	0.0901	1.000	positions 0-17, is the location of the full-word floating-	0.3931	0.0170
+0.6933	0.5075	1.000	in the single-precision add-to-memory operation.	0.3910	0.0161
+0.6958	0.3495	1.000	nand as the	0.0968	0.0376
+0.6962	0.0902	1.000	point operand. Bit position 18 is used as the nor-	0.3929	0.0145
+0.7078	0.5056	1.000	This operation is not possible in double-precisior	0.3910	0.0174
+0.7121	0.0902	1.000	malization modifier. Bit positions 19 and 20 are used	0.3910	0.0132
+0.7252	0.5075	1.000	operation, since the sum has more bits than the	0.3910	0.0118
+0.7258	0.0901	1.000	as the sign modifiers. The operation code is specified	0.3912	0.0174
+0.7397	0.5056	1.000	addressed operand	0.1372	0.0147
+0.7412	0.0882	1.000	in bit positions 21-27. Of these, bit positions 26 and	0.3931	0.0172
+0.7540	0.5243	1.000	All single-precision floating-point operations pro.	0.3725	0.0171
+0.7573	0.0902	1.000	27 contain the fixed code (10)½ to indicate that the	0.3910	0.0146
+0.7694	0.5074	1.000	vide results which are truncated to 48 bits. In sub-	0.3894	0.0146
+0.7717	0.0882	1.000	instruction belongs to the floating-point class. The	0.3932	0.0171
+0.7863	0.5056	1.000	sequent operations, zeros are implied to the right of	0.3929	0.0146
+0.7864	0.0900	1.000	five remaining bits of the operation code, bit posi-	0.3895	0.0192
+0.7999	0.5074	1.000	the low-order bit. The magnitude of the computed	0.3894	0.0173
+0.8036	0.0902	1.000	tions 21 through 25, allow 32 operations to be speci-	0.3910	0.0147
+0.8154	0.5056	1.000	result may be slightly reduced and the cumulative	0.3929	0.0146
+0.8183	0.0900	1.000	fied. Of these, 29 operations are used. The operand	0.3894	0.0179
+0.8314	0.5075	1.000	effect of truncation may result in a bias in the com-	0.3910	0.0147
+0.8342	0.0883	1.000	address can be modified by the value field of the	0.3929	0.0146
+0.8473	0.5075	1.000	putation. By using rounded results rather than trun-	0.3891	0.0133
+0.8503	0.0865	1.000	index register specified in bit positions 28-31.	0.3402	0.0146
+0.8618	0.5056	1.000	cated	0.0415	0.0119
+0.8633	0.5489	1.000	results, such bias may be reduced. To obtain	0.3477	0.0131
+0.8779	0.5056	1.000	rounded single-precision results, a series of operations	0.3910	0.0146
+0.8823	0.1165	1.000	ADDRESS	0.0395	0.0073
+0.8823	0.2462	1.000	10	0.0132	0.0102
+0.8823	0.2237	1.000	OP	0.0132	0.0073
+0.8924	0.5056	1.000	may be performed in double-precision, after which	0.3910	0.0146
+0.9269	0.1315	1.000	IBM 7030	0.0641	0.0111
+0.9273	0.0865	1.000	80	0.0169	0.0102

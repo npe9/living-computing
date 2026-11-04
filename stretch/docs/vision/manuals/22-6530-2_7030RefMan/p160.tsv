@@ -1,0 +1,100 @@
+0.0596	0.6504	1.000	High-Speed Disk System	0.2575	0.0174
+0.1482	0.5169	1.000	bered from O through 1095. An arc contains 512	0.3929	0.0161
+0.1482	0.1015	1.000	The high-speed disk storage system provided with the	0.3910	0.0146
+0.1642	0.0996	1.000	IBM 7030 is composed of the IBM 7612 Disk Syn-	0.3929	0.0131
+0.1642	0.5169	1.000	words of information and is the smallest addressable	0.3947	0.0131
+0.1788	0.5169	1.000	unit in the disk system. Each disk unit contains a to-	0.3947	0.0161
+0.1788	0.1015	1.000	chronizer, which provides the common control and	0.3910	0.0146
+0.1948	0.5169	1.000	tal of 512 tracks, and each track contains eight arcs.	0.3929	0.0160
+0.1948	0.1015	1.000	data transfer paths for the disk system and the com-	0.3910	0.0146
+0.2106	0.5338	1.000	Physically, a single disk unit contains 39 disks,	0.3778	0.0147
+0.2106	0.1015	1.000	puter, and the storage unit, which provides large capac-	0.3910	0.0133
+0.2227	0.5167	1.000	coated with a magnetic material. These are mounted	0.3933	0.0202
+0.2252	0.0996	1.000	ity auxiliary storage to supplement internal core storage.	0.3929	0.0147
+0.2412	0.5169	1.000	on a common shaft, and are used for data storage.	0.3929	0.0131
+0.2500	0.0977	1.000	IBM 7612 Disk Synchronizer	0.2613	0.0161
+0.2558	0.5188	1.000	Other disks on the same shaft are used for address and	0.3910	0.0146
+0.2688	0.1015	1.000	The IBM 7612 Disk Synchronizer serves as the major	0.3910	0.0133
+0.2718	0.5169	1.000	arc control, timing and other control purposes. Each	0.3929	0.0161
+0.2833	0.1015	1.000	control for the disk system. It controls the execution	0.3910	0.0132
+0.2863	0.5150	1.000	information disk has two surfaces that are used for	0.3966	0.0146
+0.2954	0.0995	1.000	of data transfer between a disk storage and core stor-	0.3931	0.0184
+0.3023	0.5169	1.000	data storage. The total of 78 disk faces is divided into	0.3929	0.0160
+0.3139	0.0996	1.000	age. Basically, the method of control is the same as	0.3929	0.0161
+0.3169	0.5169	1.000	two sets of 39 and each of these sets is equipped with	0.3947	0.0174
+0.3299	0.1015	1.000	that used in the exchange. However, the high rate of	0.3929	0.0131
+0.3327	0.5169	1.000	39 read-write heads. The 39 read-write heads are	0.3947	0.0147
+0.3445	0.0996	1.000	data transmission between a disk storage and internal	0.3929	0.0131
+0.3488	0.5188	1.000	mounted on 20 access arms, which are on a common	0.3910	0.0131
+0.3605	0.0996	1.000	storage causes some differences in operational and pro-	0.3929	0.0132
+0.3648	0.5188	1.000	support. The set of heads and arms is called an ac-	0.3910	0.0131
+0.3771	0.0994	1.000	gram control.	0.0999	0.0118
+0.3794	0.5188	1.000	cess mechanism. All 39 heads move back and forth	0.3910	0.0116
+0.3909	0.1165	1.000	The action of the disk synchronizer (Ds) may be	0.3759	0.0132
+0.3926	0.5187	1.000	together during access motion to a track. One set of	0.3931	0.0167
+0.4070	0.0996	1.000	summarized as follows: The central processing unit	0.3929	0.0131
+0.4099	0.5188	1.000	39 faces contains all the odd-numbered tracks, the	0.3929	0.0131
+0.4215	0.1034	1.000	(CPU) initiates operation by sending an instruction to	0.3891	0.0131
+0.4258	0.5188	1.000	other set all even-numbered tracks. Thus, two con-	0.3929	0.0133
+0.4375	0.0996	1.000	the DS. When the necessary interlock controls have	0.3929	0.0131
+0.4379	0.5168	1.000	secutively numbered tracks are never located on the	0.3932	0.0179
+0.4520	0.0996	1.000	been satisfied and the instruction accepted, control of	0.3929	0.0131
+0.4564	0.5169	1.000	same set of disk faces. This arrangement makes it pos-	0.3929	0.0131
+0.4640	0.0995	1.000	the operation is transferred to the Ds and the com-	0.3931	0.0175
+0.4679	0.5186	1.000	sible to position the heads of one access mechanism	0.3913	0.0184
+0.4816	0.0995	1.000	puter proceeds independently until the operation has	0.3931	0.0166
+0.4869	0.5188	1.000	on the next track during the time the previous track	0.3910	0.0131
+0.4970	0.0996	1.000	been completed. All necessary control required for	0.3929	0.0147
+0.5015	0.5188	1.000	is read or written.	0.1297	0.0116
+0.5130	0.0996	1.000	word assembly, word disassembly, and the disk file	0.3929	0.0131
+0.5160	0.5357	1.000	Data on the disk storage are handled in bytes of 39	0.3722	0.0146
+0.5276	0.0996	1.000	are provided by the Ds, thus enabling it to operate in-	0.3929	0.0146
+0.5320	0.5188	1.000	bits each. These bytes are read or written in parallel	0.3910	0.0145
+0.5436	0.0996	1.000	dependently of the cru and exchange portions of the	0.3929	0.0146
+0.5479	0.5188	1.000	by the set of 39 read-write heads common to an access	0.3910	0.0146
+0.5596	0.0996	1.000	7030 system. When the operation or operations speci-	0.3929	0.0131
+0.5625	0.5187	1.000	mechanism. Since a large number of bits are handled	0.3911	0.0153
+0.5741	0.0977	1.000	fied have been completed, the cru is signalled through	0.3929	0.0160
+0.5785	0.5169	1.000	in parallel, it is practical to use error checking and	0.3929	0.0145
+0.5862	0.0995	1.000	the I-o status indicator bits of the interruption system.	0.3913	0.0179
+0.5930	0.5188	1.000	correction (Ecc) bits, and each 39 bit byte is composed	0.3891	0.0146
+0.6045	0.1147	1.000	The disk synchronizer has provision for addressing	0.3778	0.0161
+0.6090	0.5188	1.000	of 32 data bits and seven Ecc bits. The Ecc bits ac-	0.3910	0.0116
+0.6206	0.0996	1.000	a maximum of 32 disk storage units. Each disk unit	0.3929	0.0131
+0.6235	0.5169	1.000	company all data transferred to or from the high-	0.3929	0.0160
+0.6352	0.0996	1.000	has its own channel address. However, only a single	0.3929	0.0146
+0.6394	0.5188	1.000	speed disks, and, on reading, are used to correct a sin-	0.3910	0.0147
+0.6497	0.0977	1.000	data transmission channel is available because of the	0.3947	0.0131
+0.6555	0.5188	1.000	gle bit error in a byte and detect double and most	0.3929	0.0132
+0.6657	0.0977	1.000	high data transfer rate. Therefore, only one disk at a	0.3929	0.0146
+0.6685	0.5169	1.000	multiple errors in a byte. A 64-bit data word is di-	0.3947	0.0176
+0.6817	0.0977	1.000	time may be used for reading or writing. Concur-	0.3947	0.0132
+0.6860	0.5169	1.000	vided into two bytes that are recorded on the disk	0.3929	0.0131
+0.6962	0.0996	1.000	rently, however, other disks can be accepting and proc-	0.3910	0.0145
+0.7006	0.5150	1.000	storage in parallel columns 39 bits long and posi-	0.3947	0.0161
+0.7121	0.0996	1.000	essing instructions for setting the read-write heads	0.3929	0.0132
+0.7166	0.5188	1.000	tioned in adjacent locations on the set of 39 disk faces.	0.3891	0.0131
+0.7282	0.0977	1.000	in position for subsequent data transmission.	0.3233	0.0131
+0.7311	0.5357	1.000	Before transmission of data is started, it is necessary	0.3722	0.0131
+0.7427	0.1147	1.000	Full words are transferred between the disk syn-	0.3778	0.0131
+0.7456	0.5169	1.000	to set the access arms to the track containing the de-	0.3910	0.0147
+0.7587	0.0996	1.000	chronizer and core storage. Each word consists of 64	0.3910	0.0116
+0.7602	0.5150	1.000	sired starting arc. After this initial positioning the	0.3947	0.0189
+0.7733	0.0977	1.000	information bits and eight error check and correction	0.3929	0.0131
+0.7776	0.5169	1.000	arms will be automatically positioned as successive	0.3929	0.0146
+0.7892	0.0977	1.000	bits.	0.0338	0.0131
+0.7921	0.5169	1.000	data transmission requires successive sequential arcs.	0.3910	0.0146
+0.8081	0.0996	1.000	Each disk storage unit has a capacity of 2,097,152	0.3910	0.0161
+0.8081	0.5150	1.000	Programmed repositioning is required only when	0.3929	0.0161
+0.8227	0.1015	1.000	(221)words. Data may be transferred between the disk	0.3891	0.0146
+0.8241	0.5169	1.000	non-sequential or random arcs are used.	0.2876	0.0131
+0.8387	0.0996	1.000	storage and core storage at an instantaneous rate of	0.3910	0.0132
+0.8400	0.5301	1.000	Positioning of the arms under program control re-	0.3759	0.0161
+0.8532	0.0996	1.000	one full word every eight microseconds.	0.2876	0.0147
+0.8561	0.5169	1.000	quires a maximum of 265 milliseconds (ms.) when the	0.3910	0.0131
+0.8691	0.1165	1.000	Each disk storage area is subdivided into 4096 (212)	0.3722	0.0161
+0.8706	0.5150	1.000	arms are moved from the outermost to the innermost	0.3929	0.0117
+0.8852	0.0996	1.000	addressable locations called arcs, consecutively num-	0.3910	0.0146
+0.8866	0.5150	1.000	track. Moving sequentially from one track to the next	0.3929	0.0161
+0.9230	0.7068	1.000	High-Speed Disk System	0.1504	0.0116
+0.9230	0.8853	1.000	157	0.0226	0.0087

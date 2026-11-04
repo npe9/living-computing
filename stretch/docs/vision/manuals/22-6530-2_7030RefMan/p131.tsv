@@ -1,0 +1,68 @@
+0.0654	0.1165	1.000	The error correction is accomplished by means of	0.3759	0.0146
+0.0669	0.5188	1.000	a word recorded by the input-output unit consists of	0.3910	0.0147
+0.0814	0.5188	1.000	72 bits: the 64 data bits preceded by eight Ecc bits.	0.3741	0.0160
+0.0814	0.0996	1.000	a set of ECC (error checking and correction) bits which	0.3910	0.0132
+0.0944	0.0976	1.000	are carried with the data word. Whenever a single	0.3931	0.0162
+0.0973	0.5357	1.000	While the unit is reading in the ecc mode, correct-	0.3722	0.0146
+0.1067	0.0975	1.000	error occurs, it is automatically corrected, and the	0.3934	0.0227
+0.1133	0.5169	1.000	able data errors detected by the checking circuits at	0.3910	0.0146
+0.1259	0.0976	1.000	data word is transferred without any indication to	0.3931	0.0172
+0.1279	0.5169	1.000	the unit are not passed on as unit-check indications	0.3910	0.0146
+0.1424	0.0977	1.000	the program. A double error cannot be corrected,	0.3929	0.0131
+0.1439	0.5169	1.000	to the exchange. This permits the error checking and	0.3891	0.0146
+0.1562	0.0976	1.000	and when one is encountered, the operation is ter-	0.3931	0.0175
+0.1599	0.5169	1.000	correction station in the exchange to correct these	0.3910	0.0131
+0.1719	0.0976	1.000	minated at the end of the current block.	0.3010	0.0142
+0.1744	0.5169	1.000	errors. When uncorrectable data errors are encoun-	0.3910	0.0116
+0.1890	0.1128	1.000	With regard to automatic error correction of in-	0.3778	0.0132
+0.1903	0.5169	1.000	tered, either the exchange or the unit provides the	0.3910	0.0146
+0.1996	0.0975	1.000	formation transferred between the exchange and the	0.3933	0.0196
+0.2035	0.5169	1.000	error indication.	0.1222	0.0132
+0.2194	0.0977	1.000	external units, two classes of units may be distin-	0.3929	0.0146
+0.2209	0.5338	1.000	When the exchange encounters a double error, the	0.3722	0.0146
+0.2353	0.5167	1.000	bits of the word, including the ecc bits, are not al-	0.3876	0.0178
+0.2355	0.0977	1.000	guished. Some units by their nature do not permit	0.3929	0.0145
+0.2500	0.0959	1.000	automatic error correction, particularly manual in-	0.3947	0.0145
+0.2515	0.5169	1.000	tered. If this occurs on writing, the word sent to the	0.3891	0.0146
+0.2660	0.5169	1.000	unit, including its ecc bits, if any, is in error. If a	0.3872	0.0161
+0.2660	0.0959	1.000	put units and printers. Information is sent to these	0.3947	0.0131
+0.2791	0.5148	1.000	double error is encountered on reading in the ECC	0.3896	0.0203
+0.2801	0.0976	1.000	units always without error correction bits, although	0.3912	0.0155
+0.2964	0.0959	1.000	parity bits are used to check the transmission. For	0.3929	0.0133
+0.2967	0.5149	1.000	mode, the unaltered word is sent to core storage. Con-	0.3895	0.0183
+0.3110	0.0958	1.000	input, the error correction bits needed in storage are	0.3930	0.0148
+0.3124	0.5150	1.000	sequently, another error indication is given when	0.3891	0.0161
+0.3270	0.0959	1.000	supplied automatically by the exchange.	0.2857	0.0146
+0.3270	0.5150	1.000	this word is subsequently read out: an instruction-	0.3891	0.0161
+0.3429	0.5131	1.000	reject or an instruction-check indication if the word	0.3892	0.0148
+0.3430	0.1128	1.000	On other units, such as tape units, card readers	0.3759	0.0146
+0.3577	0.5129	1.000	is referred to by the central processing unit, or an-	0.3914	0.0194
+0.3588	0.0957	1.000	and card punches, error correction may be applied	0.3931	0.0173
+0.3714	0.5148	1.000	other unit-check if the word is subsequently written.	0.3877	0.0208
+0.3764	0.0959	1.000	at the programmer's option. These are units which	0.3929	0.0146
+0.3909	0.5320	1.000	When the unit is reading in the ecc mode, the Ecc	0.3722	0.0146
+0.3924	0.0959	1.000	may have to provide communication with other	0.3929	0.0146
+0.4054	0.5149	1.000	bits are automatically treated as check bits and are	0.3875	0.0177
+0.4084	0.0959	1.000	equipment not designed to handle error correction	0.3910	0.0146
+0.4230	0.5150	1.000	not accessible to the program. It is possible, however,	0.3872	0.0131
+0.4258	0.0959	1.000	bits, but which may on other occasions provide ex-	0.3929	0.0146
+0.4341	0.5148	1.000	to make the error correction bits available to the pro-	0.3858	0.0198
+0.4418	0.0959	1.000	ternal storage of information that remains in the sys-	0.3910	0.0146
+0.4520	0.5150	1.000	gram by reading in the no-ecc mode information that	0.3872	0.0146
+0.4593	0.0959	1.000	tem. These units are equipped with an eca mode of	0.3929	0.0146
+0.4660	0.5148	1.000	has been recorded in the ecc mode. In this case, the	0.3876	0.0170
+0.4752	0.0959	1.000	operation, set by a CoNTROL instruction. When the	0.3929	0.0147
+0.4839	0.5150	1.000	exchange treats the ecc bits as data. By doing this,	0.3853	0.0146
+0.4902	0.0957	1.000	ecc mode is off, error correction bits are not recorded,	0.3932	0.0172
+0.4985	0.5150	1.000	the original data arrangement in words, however, is	0.3872	0.0146
+0.5082	0.0958	1.000	nor are ecc bits expected on reading. A word in this	0.3930	0.0158
+0.5118	0.5129	1.000	lost, since one eca byte is interspersed before every	0.3877	0.0191
+0.5247	0.0959	1.000	case consists of the 64 data bits. With the Ecc mode	0.3910	0.0132
+0.5291	0.5150	1.000	eight bytes of the original data, and eight words re-	0.3853	0.0146
+0.5382	0.2836	1.000	and error correction is ap-	0.2055	0.0189
+0.5421	0.0959	1.000	on, Ecc bits are written,	0.1880	0.0131
+0.5451	0.5150	1.000	corded in the ecc mode will occupy nine core storage	0.3872	0.0146
+0.5581	0.0959	1.000	plied to the information while reading. In this mode	0.3929	0.0146
+0.5592	0.5149	1.000	words when read in the no-ecc mode.	0.2671	0.0137
+0.9273	0.1447	1.000	IBM 7030	0.0621	0.0088
+0.9273	0.0921	1.000	128	0.0226	0.0087
