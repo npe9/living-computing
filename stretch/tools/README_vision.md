@@ -309,9 +309,23 @@ mnemonic's opcode bits. `tools/listing_reading.py symbols()`:
 | sym-only | 0.1% (7) / 100% |
 
 On all 451 pages: 402 binaries confirmed, 61 supplied. Smaller than the
-arithmetic because it needs a parsed reference AND a read definition;
-the reverse direction -- an agreed reference fixing the DEFINING line's
-LOCATION -- is the one that can reach the location residue, and is next.
+arithmetic because it needs a parsed reference AND a read definition.
+
+**In reverse**, an AGREED reference says where its symbol is defined, so
+the DEFINING line's LOCATION -- conflict, single-engine, or only
+supplied by the arithmetic -- is `sym-confirmed` when it equals that.
+The arithmetic is then run again, so a confirmed definition carries
+along its page.
+
+| LOCATION | landed pages | all 451 pages |
+|---|---|---|
+| sym-confirmed | 11 / 100.00% | 108 |
+| sym-only | 0 | 3 |
+| arith-confirmed (after the second pass) | 1,443 / 100.00% (was 1,440) | 3,893 (was 3,875) |
+
+Only 11 landed rows, so its floor is a tripwire rather than a measure;
+the reach is on the unfinished pages, where few lines have been read
+twice.
 
 ## REPAIRING THE STATEMENT DRAFT (2026-11-03)
 

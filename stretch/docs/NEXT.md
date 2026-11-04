@@ -16485,9 +16485,8 @@ neighbour -- 25.1% of landed rows at 100.00%, so agreed + confirmed =
 92.9% at 100%.
 Cross-page symbols (2026-11-04): a reference's BINARY h1 = the defining
 line's LOCATION + offset + opcode bits (from strap_asm). sym-confirmed
-150 landed rows at 100%; 402 on all pages. The reverse direction
-(agreed reference -> the definition's LOCATION) was prototyped and NOT
-built: it confirms 112 locations on all pages but only 12 on landed
-pages (12/12 right), too few to set a floor. Build it when more pages
-land. Also open: SYMBOLS NEVER USED (vol 2 PDF 190-194) as a list of
+150 landed rows at 100%; 402 on all pages. Reverse direction built
+(agreed reference -> the definition's LOCATION, then the arithmetic
+again): 108 locations confirmed on all pages, 11/11 on landed pages.
+Open: SYMBOLS NEVER USED (vol 2 PDF 190-194) as a list of
 names that must have no reference.

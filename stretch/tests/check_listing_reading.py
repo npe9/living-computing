@@ -19,7 +19,7 @@ CHECKS
   tables_fresh         the committed tables are what the cache produces
   agreed_vs_deck       every `agreed` field (LOCATION, BINARY h1 and h2),
                        every `arith-confirmed` LOCATION and every
-                       `sym-confirmed` BINARY h1,
+                       `sym-confirmed` LOCATION and BINARY h1,
                        on a landed page, nine of
                        nine characters, is the deck's -- or the ink was
                        inspected and tests/vision_adjudicated.tsv says the
@@ -41,6 +41,7 @@ MEASURED INJECTIONS (python3 check_listing_reading.py --inject):
     deck LOCATION on the first arith-confirmed row    FAIL agreed_vs_deck
       (proves the check reaches the rows the arithmetic confirms)
     deck BINARY h1 on the first sym-confirmed row     FAIL agreed_vs_deck
+    deck LOCATION on the first sym-confirmed row      FAIL agreed_vs_deck
     deck BINARY h2 p.88 line 6, 004633.30 -> 004633.31
                                                       FAIL agreed_vs_deck
     PDF p.120 header 113 -> 112 (PDF p.119's number)  FAIL printed_numbers
@@ -90,11 +91,15 @@ FLOORS = {("loc", "agreed"): (0.60, 0.999), ("bin", "agreed"): (0.55, 0.998),
           ("loc", "vision-only"): (0.0, 0.85), ("bin", "vision-only"): (0.0, 0.98),
           ("bin2", "agreed"): (0.65, 0.998), ("bin2", "vision-only"): (0.0, 0.97),
           # LOCATION ARITHMETIC (tools/listing_reading.py arithmetic()),
-          # 2026-11-04: arith-confirmed 25.1% / 100.00%, arith-only 1.1% / 95.16%
+          # 2026-11-04: arith-confirmed 25.2% / 100.00%, arith-only 1.0% / 94.55%
+          # (after the symbol cross-check feeds it: 1,443 and 55 rows)
           ("loc", "arith-confirmed"): (0.20, 0.998), ("loc", "arith-only"): (0.0, 0.90),
           # CROSS-PAGE SYMBOLS (tools/listing_reading.py symbols()),
           # 2026-11-04: sym-confirmed 150 rows (2.9%) / 100.00%, sym-only 7 / 7
-          ("bin", "sym-confirmed"): (0.02, 0.998), ("bin", "sym-only"): (0.0, 0.85)}
+          ("bin", "sym-confirmed"): (0.02, 0.998), ("bin", "sym-only"): (0.0, 0.85),
+          # and in reverse, a definition's LOCATION from agreed references:
+          # 11 rows / 100.00% (thin: the floor is a tripwire, not a measure)
+          ("loc", "sym-confirmed"): (0.001, 0.99)}
 TEXT_FLOOR = 0.38
 # tools/statement_repair.py, leave-one-page-out (2026-11-03): the column-
 # split, repaired STATEMENT equals the deck's on 54.2% of 6,392 lines; the
@@ -196,7 +201,7 @@ def main(root=ROOT):
                     print(f"FAIL agreed_vs_deck: p.{p['printed']} line {line} "
                           f"{ {'loc': 'LOCATION', 'bin': 'BINARY h1', 'bin2': 'BINARY h2'}[fld]}: deck {want}, " +
                           {"agreed": f"Vision AND tesseract read {v}", "arith-confirmed": f"the arithmetic confirmed {v}",
-                           "sym-confirmed": f"the defining line confirmed {v}"}[st])
+                           "sym-confirmed": f"the symbol cross-check confirmed {v}"}[st])
                     fails += 1
     ok(used == len(adj), "agreed_vs_deck",
        f"{len(landed)} landed pages; {used} of {len(adj)} adjudicated misreads still occur")
@@ -240,7 +245,7 @@ def inject():
     res.append(("control", main(td)))
     shutil.rmtree(td)
 
-    for want_st in ("agreed", "arith-confirmed"):
+    for want_st in ("agreed", "arith-confirmed", "sym-confirmed"):
         td = scratch()
         pages = listing_reading.load_all(os.path.join(td, "docs", "vision", "all"))
         # the first row of that status whose truth is a deck !CHECK line (early pages

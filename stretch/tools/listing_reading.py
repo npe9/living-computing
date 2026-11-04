@@ -155,23 +155,24 @@ def arithmetic(lines):
     NOT agree on is
 
       arith-confirmed  when one of its readings equals the prediction from
-                       a trusted neighbour (1,440 of 1,440 right on the
+                       a trusted neighbour (1,443 of 1,443 right on the
                        landed pages);
       arith-only       when nothing was read and a trusted neighbour
-                       predicts it (59 of 62 right).
+                       predicts it (52 of 55 right).
 
     Trusted = agreed or arith-confirmed.  Predicted forwards from the line
     above and backwards from the line below, repeated until nothing
     changes, so a confirmation can carry along a run of lines."""
     fmt = lambda b: "%06o.%02o" % (b // 64, b % 64)
-    trusted = lambda r: r["loc"][0] in ("agreed", "arith-confirmed") and r["bin"][1]
+    trusted = lambda r: r["loc"][0] in ("agreed", "arith-confirmed", "sym-confirmed") and r["bin"][1]
     changed = True
     while changed:
         changed = False
         for n in sorted(lines):
             r = lines[n]
             st, v = r["loc"]
-            if st in ("agreed", "agreed-out-of-order", "arith-confirmed", "arith-only"):
+            if st in ("agreed", "agreed-out-of-order", "arith-confirmed", "arith-only",
+                      "sym-confirmed", "sym-only"):
                 continue
             preds = set()
             a, b = lines.get(n - 1), lines.get(n + 1)
@@ -218,6 +219,12 @@ def op_delta(op):
     return _DELTA[op]
 
 
+def name_of(r):
+    """The NAME column read as a symbol (spaces dropped), or ''."""
+    nm = re.sub(r"\s+", "", R.printer_charset(r["name"])).replace("_", "")
+    return nm if re.fullmatch(r"[A-Z][A-Z0-9]{1,7}", nm) else ""
+
+
 def symbols(pages):
     """CROSS-PAGE SYMBOLS: a BINARY h1 that names a symbol holds that
     symbol's LOCATION, read off the line that DEFINES it -- on any of the
@@ -228,6 +235,12 @@ def symbols(pages):
                      arith-confirmed), plus the operand's offset, plus the
                      mnemonic's opcode bits (op_delta);
       sym-only       when nothing was read and the name has ONE location.
+
+    And in REVERSE, a LOCATION the engines did not agree on (or that the
+    arithmetic only supplied) is sym-confirmed when it equals where an
+    AGREED reference says its NAME is (sym-only when unread and the name
+    is defined on one line).  The arithmetic is then run again, so a
+    confirmed definition carries along its page.
 
     MCP is several assemblies (GKRUH is 002374 on printed p.42 and 230574
     on p.260), so a name may have several locations: each is a candidate,
@@ -241,33 +254,59 @@ def symbols(pages):
     defs = collections.defaultdict(set)
     for p in pages.values():
         for r in p["lines"].values():
-            nm = re.sub(r"\s+", "", R.printer_charset(r["name"])).replace("_", "")
-            if r["loc"][0] in ("agreed", "arith-confirmed") and re.fullmatch(r"[A-Z][A-Z0-9]{1,7}", nm):
+            nm = name_of(r)
+            if r["loc"][0] in ("agreed", "arith-confirmed") and nm:
                 defs[nm].add(R.bit_address(r["loc"][1]))
+    def ref(r):
+        """(symbol, bits to add to its location) for an OP,SYM[+off] statement."""
+        m = _REF.match(re.split(r"\s[-=]", R.printer_charset(r["stmt"]))[0].replace(" ", ""))
+        if not m:
+            return None
+        op, sym, off = m.groups()
+        d = op_delta(op)
+        if d is None:
+            return None
+        o = 0
+        if off:
+            w, _, b = off.lstrip("+").partition(".")
+            o = int(w or 0) * 64 + int(b or 0)
+        return sym, o + d
+    lines = [r for p in pages.values() for r in p["lines"].values()]
+    # REVERSE, measured first so both directions start from the engines
+    # alone: an AGREED reference says where its symbol is defined
+    implied = collections.defaultdict(set)
+    for r in lines:
+        x = r["bin"][0] == "agreed" and ref(r)
+        if x:
+            implied[x[0]].add(fmt(R.bit_address(r["bin"][1]) - x[1]))
+    for r in lines:
+        st, v = r["bin"]
+        x = st in ("conflict", "vision-only", "tesseract-only", "unread") and ref(r)
+        if not x or x[0] not in defs:
+            continue
+        preds = {fmt(a + x[1]) for a in defs[x[0]]}
+        vals = v.split("|") if v else []
+        hit = [y for y in preds if y in vals]
+        if len(hit) == 1:
+            r["bin"] = ("sym-confirmed", hit[0])
+        elif not vals and len(preds) == 1:
+            r["bin"] = ("sym-only", next(iter(preds)))
+    # the DEFINING line's LOCATION, from the references to its name; an
+    # arith-only value is upgraded when a reference agrees with it
+    named = collections.Counter(nm for nm in map(name_of, lines) if nm)
+    for r in lines:
+        nm, (st, v) = name_of(r), r["loc"]
+        if nm not in implied or st in ("agreed", "agreed-out-of-order", "arith-confirmed"):
+            continue
+        vals = v.split("|") if v else []
+        hit = [y for y in implied[nm] if y in vals]
+        if len(hit) == 1:
+            r["loc"] = ("sym-confirmed", hit[0])
+        elif st == "unread" and named[nm] == 1 and len(implied[nm]) == 1:
+            r["loc"] = ("sym-only", next(iter(implied[nm])))
+    # and the arithmetic carries each new location along its page
     for p in pages.values():
-        for r in p["lines"].values():
-            st, v = r["bin"]
-            if st not in ("conflict", "vision-only", "tesseract-only", "unread"):
-                continue
-            m = _REF.match(re.split(r"\s[-=]", R.printer_charset(r["stmt"]))[0].replace(" ", ""))
-            if not m or m.group(2) not in defs:
-                continue
-            op, sym, off = m.groups()
-            d = op_delta(op)
-            if d is None:
-                continue
-            o = 0
-            if off:
-                w, _, b = off.lstrip("+").partition(".")
-                o = int(w or 0) * 64 + int(b or 0)
-            preds = {fmt(a + o + d) for a in defs[sym]}
-            vals = v.split("|") if v else []
-            hit = [x for x in preds if x in vals]
-            if len(hit) == 1:
-                r["bin"] = ("sym-confirmed", hit[0])
-            elif not vals and len(preds) == 1:
-                r["bin"] = ("sym-only", next(iter(preds)))
-
+        arithmetic(p["lines"])
 
 def infer_printed(pages):
     """Fill unread headers from neighbours when both sides agree on the offset."""
