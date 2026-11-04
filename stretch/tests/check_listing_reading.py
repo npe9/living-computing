@@ -82,6 +82,10 @@ FLOORS = {("loc", "agreed"): (0.60, 0.999), ("bin", "agreed"): (0.55, 0.998),
           ("loc", "vision-only"): (0.0, 0.98), ("bin", "vision-only"): (0.0, 0.98),
           ("bin2", "agreed"): (0.65, 0.998), ("bin2", "vision-only"): (0.0, 0.97)}
 TEXT_FLOOR = 0.38
+# tools/statement_repair.py, leave-one-page-out (2026-11-03): the column-
+# split, repaired STATEMENT equals the deck's on 54.2% of 6,392 lines; the
+# NAME (text crop) equals the deck's label on 71.6% of 630 lines, pp.100+.
+SPLIT_FLOOR, LABEL_FLOOR = 0.50, 0.65
 
 
 def adjudicated():
@@ -191,6 +195,15 @@ def main(root=ROOT):
     ok(n and good / n >= TEXT_FLOOR, "floor_statement_draft",
        f"{good} of {n} lines end with the deck's statement "
        f"({100 * good / max(1, n):.1f}%, floor {100 * TEXT_FLOOR:.0f}%) -- a DRAFT, not a reading")
+
+    import statement_repair
+    sc = statement_repair.score(quiet=True)
+    ok(sc["split"] / max(1, sc["n"]) >= SPLIT_FLOOR, "floor_statement_repaired",
+       f"{sc['split']} of {sc['n']} column-split, repaired statements equal the deck's "
+       f"({100 * sc['split'] / max(1, sc['n']):.1f}%, floor {100 * SPLIT_FLOOR:.0f}%), leave-one-page-out")
+    ok(sc["label"] / max(1, sc["ln"]) >= LABEL_FLOOR, "floor_label",
+       f"{sc['label']} of {sc['ln']} NAMEs equal the deck's label, pp.100+ "
+       f"({100 * sc['label'] / max(1, sc['ln']):.1f}%, floor {100 * LABEL_FLOOR:.0f}%)")
 
     print("ALL TESTS PASSED" if not fails else f"{fails} FAILURE(S)")
     return 1 if fails else 0

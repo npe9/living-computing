@@ -252,3 +252,42 @@ is a DRAFT for rule 3, never a reading. The check on a draft is the
 assembler: transcribe, assemble, and compare against the BINARY the
 two engines read at ~99.9%. That closes the loop the image cannot,
 including C against 0 in the hex byte.
+
+## REPAIRING THE STATEMENT DRAFT (2026-11-03)
+
+`tools/statement_repair.py` turns a draft into a candidate deck card
+with constraints, not guesses: STRAP's operand grammar (`0.01$9)` ->
+`0.0($9)`, `SCCHT.22` -> `SCCW+.22` since `SYM.22` is not STRAP), the
+mnemonics the corpus uses (`CMIIII` -> `CM1111`), and the symbols known
+from OTHER landed pages (82% of a page's symbols are; scored
+leave-one-page-out so no page repairs itself).
+
+Two findings changed the reading itself:
+
+* **NAME and STATEMENT split by COLUMN.** The statement column opens
+  38 cells right of BINARY h1 (7,409 mnemonic-opening tokens at +38,
+  1,432 at +37/+39/+40; NAMEs at +29..+36). Guessing the split from
+  the words failed because a one-letter name fragment `K` is also the
+  mnemonic K.
+* **Whole page vs text crop.** Vision on the NAME+STATEMENT crop at
+  600 dpi keeps the one-letter fragments that open MCP names (`K K
+  TAPE`, read `TAPE` off the whole page) but reads statements worse.
+  Both are kept (`.vtext.tsv`), each for what it reads best.
+
+Leave-one-page-out, 6,392 lines:
+
+| | statement equals the deck's |
+|---|---|
+| raw draft (ends with it) | 42.9% |
+| repaired, split by guess | 51.7% |
+| **repaired, split by column, whole page** | **54.2%** |
+| repaired, split by column, text crop | 50.9% |
+| either of the two | 66.3% |
+| the two agree (44.8% of lines) | 86.6% right |
+
+**LABEL** (pp.100+, whose decks keep the printed name): 71.6% of 630
+from the crop's NAME column, against 32% from the whole page.
+
+The 12-point gap between "whole page" and "either" is the choice the
+assembler makes: of two candidate cards, the one that assembles to the
+agreed binary. That is the next lever and it is also rule 3's loop.

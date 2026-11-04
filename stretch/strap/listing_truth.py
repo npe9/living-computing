@@ -104,8 +104,12 @@ def statements(page, root=ROOT):
             if len(parts) < 2:
                 continue                 # a label alone on its card
             code = parts[1]
-        out.setdefault(int(m.group(2)), code.strip())
-    return out
+        out.setdefault(int(m.group(2)), []).append(code.strip())
+    # A stand-in "MPP1 SYN,(8)217260.0  ! line 44" names the line that USES
+    # the symbol (printed p.141); the card printed on line 44 is the
+    # non-SYN one, so a SYN is the statement only when nothing else is.
+    return {line: next((c for c in cs if not c.startswith("SYN")), cs[0])
+            for line, cs in out.items()}
 
 
 def _verify_files(page, root):

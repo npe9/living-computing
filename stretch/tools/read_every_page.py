@@ -18,6 +18,8 @@ For each PDF page writes, under docs/vision/all/:
 
     python3 tools/read_every_page.py --vcol VOL:PDF ...   adds only .vcol.tsv
     python3 tools/read_every_page.py --crops VOL:PDF ...  re-reads the crops
+    python3 tools/read_every_page.py --text VOL:PDF ...   NAME+STATEMENT crop,
+                                                          600 dpi -> .vtext.tsv
 
 Keyed by PDF page, NOT printed page: the offset between them is not
 constant in either volume, and the printed number is read back off each
@@ -117,6 +119,29 @@ def read_crops(vol, pdf, ocr):
     return gl != "none"
 
 
+def read_text(vol, pdf, ocr):
+    """Vision on the NAME+STATEMENT region alone, 600 dpi -> .vtext.tsv.
+    Whole-page Vision drops the one-letter fragments that open MCP names
+    ("K K TAPE" read "TAPE", printed p.197 line 11); the crop keeps them."""
+    from PIL import Image
+    stem = os.path.join(OUT, "v%d_pdf%03d" % (vol, pdf))
+    gl = open(stem + ".geom").read().strip()
+    rows = []
+    if gl != "none":
+        g = json.loads(gl)
+        cw = g["char_w"]
+        x0, x1 = (g["bin_cell"] + 27) * cw, min(1.0, (g["bin_cell"] + 77) * cw)
+        with tempfile.TemporaryDirectory() as td:
+            png, _ = render(vol, pdf, 600, td)
+            im = Image.open(png)
+            W, H = im.size
+            crop = os.path.join(td, "text.png")
+            im.crop((int(x0 * W), 0, int(x1 * W), H)).save(crop)
+            rows = multi_read.run_vision(crop, (x0, x1 - x0), ocr)
+    write_rows(stem + ".vtext.tsv", rows)
+    return gl != "none"
+
+
 def read(vol, pdf, ocr):
     os.makedirs(OUT, exist_ok=True)
     stem = os.path.join(OUT, "v%d_pdf%03d" % (vol, pdf))
@@ -151,6 +176,8 @@ if __name__ == "__main__":
     args, fn = sys.argv[1:], read
     if args and args[0] == "--vcol":
         args, fn = args[1:], read_vcol
+    if args and args[0] == "--text":
+        args, fn = args[1:], read_text
     if args and args[0] == "--crops":
         args, fn = args[1:], read_crops
     for a in args:

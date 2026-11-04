@@ -236,3 +236,27 @@ def text_at(obs, y, pitch, xwin):
     toks = sorted((x, t) for oy, x, t in obs
                   if abs(oy - y) < 0.45 * pitch and xwin[0] <= x < xwin[1])
     return printer_charset(" ".join(t for _, t in toks)).strip()
+
+
+# The STATEMENT column starts 38 cells right of BINARY half word 1: of the
+# tokens that open with a mnemonic in the text crops of all 451 pages,
+# 7,409 start at +38 and 840 / 178 / 414 at +37 / +39 / +40; NAMEs sit at
+# +29..+36.  So a line is split into NAME and STATEMENT by COLUMN, each
+# character placed at its own x, even inside one box that spans both.
+STATEMENT_CELL = 36.5
+
+
+def text_fields(obs, y, pitch, g):
+    """(NAME, STATEMENT) Vision read on one line, split at the column."""
+    cw, b = g["char_w"], g["bin_cell"]
+    x0, x1 = (b + 28.0) * cw, (b + 76.5) * cw
+    split = (b + STATEMENT_CELL) * cw
+    name, stmt = [], []
+    for oy, x, t in sorted(obs, key=lambda o: o[1]):
+        if abs(oy - y) >= 0.45 * pitch or not x0 <= x < x1:
+            continue
+        t = printer_charset(t)
+        k = max(0, min(len(t), int(round((split - x) / cw))))
+        name.append(t[:k])
+        stmt.append(t[k:])
+    return " ".join(n for n in name if n.strip()).strip(), " ".join(s for s in stmt if s.strip()).strip()

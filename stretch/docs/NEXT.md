@@ -16475,3 +16475,7 @@ check_listing_reading (h2 + draft floors), check_manual_reading.
 NEXT: the transcription loop -- draft statement -> STRAP assembles ->
 compare with the agreed binary -- on printed p.197.
 STILL NOT READ: the hex bytes (C vs 0: only the assembler settles it).
+Statement repair (tools/statement_repair.py): 54.2% of statements and
+71.6% of labels exact, leave-one-page-out; either of two Vision drafts
+66.3%. tools/page_sheet.py PRINTED prints the candidate cards. NEXT is
+the assembler choosing between candidates against the agreed binary.

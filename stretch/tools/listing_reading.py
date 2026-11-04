@@ -84,6 +84,11 @@ def read_page(stem):
     vis = R.load(stem + ".vis.tsv")
     tes = R.load(stem + ".tes.tsv")
     vcol = R.load(stem + ".vcol.tsv") if os.path.exists(stem + ".vcol.tsv") else []
+    # Vision on the text region alone: it keeps the one-letter fragments
+    # that open names ("K K TAPE", read "TAPE" off the whole page) and gets
+    # 47% of labels against 32%, but STATEMENTS worse (46.0% against 51.7%
+    # repaired) -- so both drafts are kept, each for what it reads best.
+    vtext = R.load(stem + ".vtext.tsv") if os.path.exists(stem + ".vtext.tsv") else []
     gl = open(stem + ".geom").read().strip()
     page = {"header": R.page_number(vis), "frame": gl != "none", "fit": False, "lines": {}}
     if gl == "none":
@@ -113,7 +118,11 @@ def read_page(stem):
                                R.field_at(vcol, y, pitch, xw, cw)),
                               R.field_at(tes, y, pitch, xw, cw))
         row["text"] = R.text_at(vis, y, pitch, g["text_x"])
-        if any(row[k][0] != "unread" for k in row if k != "text") or row["text"]:
+        row["text_crop"] = R.text_at(vtext, y, pitch, g["text_x"])
+        row["name"], _ = R.text_fields(vtext, y, pitch, g)
+        _, row["stmt"] = R.text_fields(vis, y, pitch, g)
+        _, row["stmt_crop"] = R.text_fields(vtext, y, pitch, g)
+        if any(row[k][0] != "unread" for k in ("loc", "bin", "bin2")) or row["text"] or row["text_crop"]:
             page["lines"][line] = row
     # ORDER CHECK on agreed locations: out of order with BOTH agreed
     # neighbours, which are in order with each other
@@ -161,7 +170,8 @@ def tables(pages):
     a = ["vol\tpdf\tprinted\tprinted_from\tframe\tline_fit\tlines\t"
          "loc_agreed\tloc_other\tbin_agreed\tbin_other\n"]
     b = ["vol\tpdf\tprinted\tline\tlocation\tloc_status\tbinary_h1\tbin_status\t"
-         "binary_h2\tbin2_status\tname_statement_draft\n"]
+         "binary_h2\tbin2_status\tname_statement_draft\tname_statement_crop\t"
+         "name_draft\tstatement_draft\tstatement_crop\n"]
     for (vol, pdf), p in sorted(pages.items()):
         ls = p["lines"].values()
         la = sum(r["loc"][0] == "agreed" for r in ls)
@@ -172,7 +182,8 @@ def tables(pages):
         for line, r in sorted(p["lines"].items()):
             b.append(f"{vol}\t{pdf}\t{p['printed'] or ''}\t{line}\t{r['loc'][1]}\t"
                      f"{r['loc'][0]}\t{r['bin'][1]}\t{r['bin'][0]}\t"
-                     f"{r['bin2'][1]}\t{r['bin2'][0]}\t{r['text']}\n")
+                     f"{r['bin2'][1]}\t{r['bin2'][0]}\t{r['text']}\t{r['text_crop']}\t"
+                     f"{r['name']}\t{r['stmt']}\t{r['stmt_crop']}\n")
     return "".join(a), "".join(b)
 
 
