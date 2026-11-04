@@ -36,9 +36,15 @@ MEASURED INJECTIONS (python3 check_listing_reading.py --inject):
     control, nothing changed                          PASS
     deck LOCATION p.83 line 14, 004632.00 -> 004631.00
                                                       FAIL agreed_vs_deck
+    deck BINARY h2 p.88 line 6, 004633.30 -> 004633.31
+                                                      FAIL agreed_vs_deck
     PDF p.120 header 113 -> 112 (PDF p.119's number)  FAIL printed_numbers
                                                       (and tables_fresh)
     one row of listing_reading.tsv edited             FAIL tables_fresh
+
+NOT INJECTED: floor_statement_draft is a floor over 6,001 lines, and
+no single edit can trip it; it catches a reader that degrades, not a
+wrong line.
 
 The deck injection first picked a row whose truth lives in a
 tests/verify_*.py file, edited nothing, and stopped on its own assert;
@@ -230,6 +236,36 @@ def inject():
     open(deck, "w").write(t)
     print(f"-- injected: p.{page} line {line} LOCATION {loc} -> {bad}")
     res.append((f"deck location p.{page} line {line}", main(td)))
+    shutil.rmtree(td)
+
+    # BINARY h2: the first agreed half word 2 whose deck !CHECK prints a
+    # full word; its last octal digit is changed
+    td = scratch()
+    pages = listing_reading.load_all(os.path.join(td, "docs", "vision", "all"))
+    target = None
+    for (vol, pdf), p in sorted(pages.items()):
+        if target or vol != 1 or not p["printed"]:
+            continue
+        deck = os.path.join(td, "decks", "mcp_bootstrap_p%d.strap" % p["printed"])
+        if not os.path.exists(deck):
+            continue
+        s = open(deck).read()
+        for line, r in sorted(p["lines"].items()):
+            h2 = r["bin2"][1]
+            if r["bin2"][0] != "agreed":
+                continue
+            bad = h2[:-1] + ("1" if h2[-1] != "1" else "2")
+            pat = (r"^(!CHECK\s+[0-7.]+\s*\|\s*[0-7.]+\s+\S+\s+)" + re.escape(h2)
+                   + r"(\s+\S+\s*\|\s*line\s+%d\b)" % line)
+            t = re.sub(pat, r"\g<1>" + bad + r"\g<2>", s, count=1, flags=re.M)
+            if t != s:
+                target = (p["printed"], line, h2, bad, t, deck)
+                break
+    assert target, "h2 injection found no row to change"
+    page, line, h2, bad, t, deck = target
+    open(deck, "w").write(t)
+    print(f"-- injected: p.{page} line {line} BINARY h2 {h2} -> {bad}")
+    res.append((f"deck h2 p.{page} line {line}", main(td)))
     shutil.rmtree(td)
 
     td = scratch()

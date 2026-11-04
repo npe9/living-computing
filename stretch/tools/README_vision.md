@@ -237,7 +237,12 @@ lowercase, accents or Cyrillic: Vision returns `В,2.0($15)` and
 `CМОCОС`). Scored against the decks' source STATEMENTS, labels
 dropped because decks rename them (`XSROOF` for printed `S ROOF`),
 spaces and remark dropped: **41.5% of 6,001 lines** end with the
-deck's statement. Typical misses: `(` read `I`/`1`, `(8)` read `[8]`,
+deck's statement. That is a FLOOR on Vision, not a measurement of it:
+a deck is not always the printed text in its operands either (printed
+p.156 line 28 prints `XW,S SCR PM($12),1,$`, the deck has
+`XW,SSCRPM,1,$`), and those count as misses. Both sides are cut at the
+first spaced `-` (the remark), so a statement such as `SYN, 1.0 +
+XBSEND - XIPLBS` is compared only up to `XBSEND`. Typical misses: `(` read `I`/`1`, `(8)` read `[8]`,
 `*` read `#`, `$0` read `$O`, a run of the statement dropped.
 
 **There is no second engine for text.** Tesseract on the same crop
