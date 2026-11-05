@@ -1,0 +1,182 @@
+! mcp_bootstrap_p226.strap -- MCP printed page 226: the Input Program's
+! end-of-job and tape-error tail (V EOJ4 .. V EE), lines 1-50.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.233, read at 400 dpi, 900 dpi for
+! doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID CA000562  DIST. OF 3/01  3/01  PAGE NUMBER 226"; the heading
+! row's LOCATION field is 224607, line 1's word.
+!
+! THE PAGE.  50 lines, contiguous from 224607.40 to 224641.40 (a half
+! word; next 224642.00), then blank paper.  Line 40 is a DDI at
+! "000000.00+" and occupies nothing: line 39 is 224633.00 (a half-word
+! B) and line 41 224633.40.  Remarks here are DECIMAL (-0569 then
+! -0570), -0563 .. -0608.
+!
+! >>> LINE 40'S DDI IS NOT HANDED TO THE ASSEMBLER. <<<  It prints
+!   40*  000000.00+  +00000017   BU,04 ,10   V D15   DDI(BU,4),15
+! and strap_asm refuses DDI outright (printed p.180 line 25 is the
+! precedent: carried as a comment, no !CHECK).  Line 47 references it
+! on THIS page -- "/I,V D15,46" printing 740000.00 80: an immediate
+! takes the DDI's 4-bit field (1111) LEFT-justified in the 24-bit
+! address, C22-6531 printed p.30.  So that line 47 can assemble, the
+! deck carries ONE stand-in, "VD15 SYN(BU,4), 15", the form printed
+! p.179 used for Z RMTCC; with the DDI not handed over it is the only
+! definition of VD15 in the merge.  It is NOT the printed card.
+!
+! GLYPHS.
+!  * "V EOJ4" (line 6) prints a closed O; line 3's SVA,V U,V EOJ4
+!    prints 224612.07 = line 6's location.  "V EOJ1" (line 8) prints
+!    the round glyph open on the right (reads ECJ1); written O by the
+!    word (End Of Job) and its sibling EOJ4.  Nothing on this page
+!    references V EOJ1 -- rests on ink and sense.
+!  * "V RBLC" (line 29): B, straight left stem at 900 dpi, not 8.
+!    Nothing on this page references it.
+!  * "V D15" (line 40) prints worn, reads C15; line 47's "V D15" is a
+!    clear D.
+!  * "V CWR" (line 46) and "D CCW" (line 42): the W is this drum's
+!    narrow w glyph.
+!  * Octal fields' open rounds ("C00000.62", "224610.CC") are 0.
+!    Hex bytes: line 6 "C1", line 32 "C7", line 13/41 "C0", line 10
+!    "C5" -- written 0 where the statement has no index to make C
+!    (verified by assembly below); line 28 "C8" is CB- (C8 = CB+'s 48
+!    with the minus bit), a true C.
+!
+! CARD SERIALS.  Right-hand serials ?A000562 .. ?A000607 (header
+! CA000562; the prefix glyph has the straight left stem of D, as
+! p.221 records).  Four pairs share a serial, the second line's remark
+! printed in the LEFT remark column: lines 4/5 (565, -0566), 12/13
+! (572, -0573), 23/24 (582, -0583), 41/42 (599, -0600).  Asterisks
+! after the LOCATION on lines 1, 23, 46.
+
+VT5     SYN, $9                      ! p.213 line 28 "V T5 SYN,$9" (landed)
+VT2     SYN, $6                      ! p.213 line 29 (landed)
+VT3     SYN, $7                      ! p.213 line 30 (landed)
+VT4     SYN, $8                      ! p.213 line 31 (landed)
+VU      SYN, $3                      ! p.213 line 25 (landed)
+VP      SYN, $1                      ! p.213 line 26 (landed)
+VH      SYN, 32                      ! p.213 line 7 "V H SYN,32", an INTEGER
+VX      SYN, (8)0.0                  ! p.213 line 11 "V X SYN,0"
+VX1     SYN, 0.32                    ! p.213 line 12 = VX.VH
+VX2R    SYN, (8)2.0                  ! p.213 line 14 = VX2S.64 = 2.0
+VCWR    SYN, 4.0                     ! p.213 line 15 = VX2R+2. = 4.0
+VNX     SYN, (8)5.0                  ! p.213 line 16 = VCWR.64 = 5.0
+VSU     SYN, 6.0                     ! p.213 line 18 = VID.VH = 6.0
+VRCNT   SYN, 7.0                     ! p.213 line 20 = VRQB.VH = 7.0
+VFCNT   SYN, 7.32                    ! p.213 line 21 = VRCNT.VH = 7.32
+VTS     SYN, 8.32                    ! p.213 line 23 = VSTR.VH = 8.32; LV line 27 000010.62
+VM1     SYN(BU,64), 262143.          ! p.213 line 9 "V M1 SYN(BU,64),262143."
+DMCP    SYN, 32.0                    ! landed
+DCCW    SYN, 2.0                     ! landed; p.102 line 11 "D CCW"
+VNXT    SYN, (8)224456.40            ! landed decks (p.215 etc.), half word only
+VACT    SYN, (8)224655.0             ! landed decks (p.215 etc.), half word only
+VEE1    SYN, (8)224646.0             ! landed (p.215 BIT-EXACT); ,V EE1 line 44
+VD15    SYN(BU,4), 15                ! STAND-IN for line 40's DDI -- see header
+
+        SLC, (8)224607.40
+        LV,VT5,VX1(VU)                                       ! line  1  -0563
+        SV,VT2,VX1(VU)                                       ! line  2  -0564
+        SVA,VU,VEOJ4                                         ! line  3  -0565
+        SIC,(VP)                                             ! line  4
+        CB+,VP,VNXT                                          ! line  5  -0566
+VEOJ4   LVI,VU,                                              ! line  6  -0567
+        LV,VT2,VX1(VU)                                       ! line  7  -0568
+VEOJ1   SR,VP,VX1(VU)                                        ! line  8  -0569
+        V-I,VP,1.                                            ! line  9  -0570
+        V+I,VT2,0                                            ! line 10  -0571
+        B,(VP)                                               ! line 11  -0572
+VTEE    SIC,(VP)                                             ! line 12
+        B,VEE                                                ! line 13  -0573
+        SV,VT2,VTEE1                                         ! line 14  -0574
+        LV,VT4,VRCNT(VU)                                     ! line 15  -0575
+        V-I,VT4,1.0                                          ! line 16  -0576
+        V+,VT4,VT5                                           ! line 17  -0577
+        BXVZ,VSTTSX                                          ! line 18  -0578
+        V+,VT2,VX(VU)                                        ! line 19  -0579
+        SV,VT2,VX(VU)                                        ! line 20  -0580
+        SR,VP,VRCNT(VU)                                      ! line 21  -0581
+        M+1(BU,18),VFCNT(VU)                                 ! line 22  -0582
+        SIC,(VP)                                             ! line 23
+        CB+,VP,VACT                                          ! line 24  -0583
+        B,VNX(VU)                                            ! line 25  -0584
+VTEE1   BE,0                                                 ! line 26  -0585
+VSTTSX  LV,VT5,VTS(VU)                                       ! line 27  -0586
+        CB-,VP,VNXT                                          ! line 28  -0587
+VRBLC   LX,VT3,VX2R(VU)                                      ! line 29  -0588
+        LV,VT2,(VT3)                                         ! line 30  -0589
+        SR,VP,(VT3)                                          ! line 31  -0590
+        V+ICR,VT3,.VH                                        ! line 32  -0591
+        SX,VT3,VX2R(VU)                                      ! line 33  -0592
+        LV,VT5,VT2                                           ! line 34  -0593
+        V+,VT2,VX(VU)                                        ! line 35  -0594
+        BZXVZ,$.64                                           ! line 36  -0595
+        V-I,VT2,34.                                          ! line 37  -0596
+        SV,VT2,VX(VU)                                        ! line 38  -0597
+        B,VNX(VU)                                            ! line 39  -0598
+! VD15  DDI(BU,4),15                                         ! line 40  -0599 NOT ASSEMBLED (DDI refused) -- see header
+VEE     B,DMCP                                               ! line 41
+        ,DCCW                                                ! line 42  -0600
+        LVE,,VSU(VU)                                         ! line 43  -0601
+        ,VEE1                                                ! line 44  -0602
+        L(BU,18),VEE1,46                                     ! line 45  -0603
+        -(BU,18),VCWR+VM1(VU),46                             ! line 46  -0604
+        /I,VD15,46                                           ! line 47  -0605
+        LV,VT5,$R                                            ! line 48  -0606
+        V-I,VT5,34.                                          ! line 49  -0607
+        LVE,VT2,VX(VU)                                       ! line 50  -0608
+
+!SYM VEOJ4  224612.00
+!SYM VEOJ1  224613.00
+!SYM VTEE   224615.00
+!SYM VTEE1  224624.40
+!SYM VSTTSX 224625.00
+!SYM VRBLC  224626.00
+!SYM VEE    224633.40
+!CHECK 224607.40 | 000000.62 33 | line 1 LV,V T5,V X1(V U) (a "*" prints after the location)
+!CHECK 224610.00 | 000000.55 33 | line 2 SV,V T2,V X1(V U)
+!CHECK 224610.40 | 224612.07 D0 | line 3 SVA,V U,V EOJ4
+!CHECK 224611.00 | 000000.00 81 | line 4 SIC,(V P)
+!CHECK 224611.40 | 224456.43 48 | line 5 CB+,V P,V NXT
+!CHECK 224612.00 | 000000.07 01 | line 6 V EOJ4 LVI,V U, (byte prints C1)
+!CHECK 224612.40 | 000000.54 33 | line 7 LV,V T2,V X1(V U)
+!CHECK 224613.00 | 000000.43 73 | line 8 V EOJ1 SR,V P,V X1(V U) (name prints ECJ1)
+!CHECK 224613.40 | 000001.03 0D | line 9 V-I,V P,1. (byte prints CD)
+!CHECK 224614.00 | 000000.15 05 | line 10 V+I,V T2,0 (statement prints C; byte prints C5)
+!CHECK 224614.40 | 000000.10 01 | line 11 B,(V P)
+!CHECK 224615.00 | 000000.00 81 | line 12 V TEE SIC,(V P)
+!CHECK 224615.40 | 224633.50 00 | line 13 B,V EE (byte prints C0)
+!CHECK 224616.00 | 224624.55 30 | line 14 SV,V T2,V TEE1
+!CHECK 224616.40 | 000007.20 33 | line 15 LV,V T4,V RCNT(V U)
+!CHECK 224617.00 | 000001.21 0D | line 16 V-I,V T4,1.0
+!CHECK 224617.40 | 000031.20 B0 | line 17 V+,V T4,V T5
+!CHECK 224620.00 | 224625.31 42 | line 18 BXVZ,V STTSX
+!CHECK 224620.40 | 000000.14 B3 | line 19 V+,V T2,V X(V U)
+!CHECK 224621.00 | 000000.15 33 | line 20 SV,V T2,V X(V U)
+!CHECK 224621.40 | 000007.03 73 | line 21 SR,V P,V RCNT(V U)
+!CHECK 224622.00 | 000007.40 83 022000.22 B0 | line 22 M+1(BU,18),V FCNT(V U)
+!CHECK 224623.00 | 000000.00 81 | line 23 SIC,(V P) (a "*" prints after the location)
+!CHECK 224623.40 | 224655.03 48 | line 24 CB+,V P,V ACT
+!CHECK 224624.00 | 000005.10 03 | line 25 B,V NX(V U)
+!CHECK 224624.40 | 000000.00 00 | line 26 V TEE1 BE,0
+!CHECK 224625.00 | 000010.62 33 | line 27 V STTSX LV,V T5,V TS(V U)
+!CHECK 224625.40 | 224456.43 C8 | line 28 CB-,V P,V NXT
+!CHECK 224626.00 | 000002.16 13 | line 29 V RBLC LX,V T3,V X2R(V U)
+!CHECK 224626.40 | 000000.14 37 | line 30 LV,V T2,(V T3)
+!CHECK 224627.00 | 000000.03 77 | line 31 SR,V P,(V T3)
+!CHECK 224627.40 | 000000.57 07 | line 32 V+ICR,V T3,.V H (byte prints C7)
+!CHECK 224630.00 | 000002.17 13 | line 33 SX,V T3,V X2R(V U)
+!CHECK 224630.40 | 000026.22 30 | line 34 LV,V T5,V T2
+!CHECK 224631.00 | 000000.14 B3 | line 35 V+,V T2,V X(V U)
+!CHECK 224631.40 | 224632.71 40 | line 36 BZXVZ,$.64
+!CHECK 224632.00 | 000042.15 0D | line 37 V-I,V T2,34.
+!CHECK 224632.40 | 000000.15 33 | line 38 SV,V T2,V X(V U)
+!CHECK 224633.00 | 000005.10 03 | line 39 B,V NX(V U)
+!CHECK 224633.40 | 000040.10 00 | line 41 V EE B,D MCP (byte prints C0)
+!CHECK 224634.00 | 000002.00 80 | line 42 ,D CCW
+!CHECK 224634.40 | 000006.01 B3 | line 43 LVE,,V SU(V U)
+!CHECK 224635.00 | 224646.00 80 | line 44 ,V EE1
+!CHECK 224635.40 | 224646.00 80 022027.20 50 | line 45 L(BU,18),V EE1,46
+!CHECK 224636.40 | 000003.00 83 022027.30 10 | line 46 -(BU,18),V CWR+V M1(V U),46 (a "*" prints after the location)
+!CHECK 224637.40 | 740000.00 80 404027.21 D0 | line 47 /I,V D15,46 (V D15 is a stand-in for line 40's DDI)
+!CHECK 224640.40 | 000011.22 30 | line 48 LV,V T5,$R
+!CHECK 224641.00 | 000042.23 0D | line 49 V-I,V T5,34. (byte prints CD)
+!CHECK 224641.40 | 000000.15 B3 | line 50 LVE,V T2,V X(V U)

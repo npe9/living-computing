@@ -6648,6 +6648,18 @@ run "a run of the V scan routines, printed p.218" python3 verify_mcp_page.py 218
 run "the V (tape) routines, printed p.219" python3 verify_mcp_page.py 219
 run "the tail of the V tape routines, printed p.220" python3 verify_mcp_page.py 220
 run "the Input Program's write routines, V+ICR .V H, printed p.221" python3 verify_mcp_page.py 221
+run "the Input Program's scratch/queue section, V SCEND .. V REQ, printed p.222" python3 verify_mcp_page.py 222
+run "the Input Program's request scan, V SKIP .. RNMFIL, printed p.223" python3 verify_mcp_page.py 223
+run "the Input Program's request section, V REQ6 .. V OEOJ, printed p.224" python3 verify_mcp_page.py 224
+run "the boundary-error exit V BNDER and the EOJ-scan fixup, printed p.225" python3 verify_mcp_page.py 225
+run "the end-of-job and tape-error tail, V EOJ4 .. V EE (DDI as comment), printed p.226" python3 verify_mcp_page.py 226
+run "V EE1, V REOP / V EOP, the V ACT loop and V BLOC, printed p.227" python3 verify_mcp_page.py 227
+run "V SET / V COM / V MD and the V IN entries (SIC then LV), printed p.228" python3 verify_mcp_page.py 228
+run "the tape-operate section, V STTS1 .. V TDSP, printed p.229" python3 verify_mcp_page.py 229
+run "V TDP3 .. V CCR, the tape status section, printed p.230" python3 verify_mcp_page.py 230
+run "the card-scan / tape-switch section, V SCNLX .. V RJTP (.26 on a bit address), printed p.231" python3 verify_mcp_page.py 231
+run "the tape-switching section, V MTTSA .. V BYPAF, printed p.232" python3 verify_mcp_page.py 232
+run "the scan/byte section, V COMX .. (instruction-label dds), printed p.233" python3 verify_mcp_page.py 233
 
 # >>> pp.185-192 FOUND A WRONG ANSWER IN THE VFL IMMEDIATE, and the
 # page caught it by writing ONE immediate at TWO LENGTHS. <<<
@@ -6667,7 +6679,8 @@ run "the Input Program's write routines, V+ICR .V H, printed p.221" python3 veri
 # Also: the SYN path never stripped blanks the instruction path does
 # ("B,K IO IND" assembled, "E IO IND SYN,K IO IND" did not), found
 # by printed p.189 printing both on one page.
-run "MCP's body merges and accounts for every word, printed pp.99-192" python3 check_mcp_body_image.py
+run "MCP's body merges and accounts for every word, printed pp.99-233" python3 check_mcp_body_image.py
+run "an instruction's name carries a dds, (BU,32,8) or (BU,64,8), C22-6531 printed p.10" python3 check_instruction_label_dds.py
 run "the equipment dispatch, printed p.160" python3 verify_mcp_page.py 160
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
 run "the program status table, printed p.109" python3 verify_mcp_page.py 109

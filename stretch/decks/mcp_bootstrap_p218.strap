@@ -46,8 +46,8 @@
 !   the spelling of an external): line 36 prints "V CCM", written VCOM
 !   (Vision reads the definition on printed p.228 line 15 as V COM, at
 !   224702.00, the word this B reaches); line 49 prints "V ECP",
-!   written VECP as printed (Vision reads p.227 line 11 "V ECP" at
-!   224647.40, this B's half word).  Line 47's label prints "V WEOP"
+!   written VEOP (p.227 line 11, the label, prints "V ECP" with the
+!   SAME glyph as VREOP's O above it; 224647.40).  Line 47's label prints "V WEOP"
 !   with the same round glyph; written VWEOP (Vision reads WECP; the
 !   sibling labels p.227 "VREOP" and p.219 "WFEOP" read with O).
 !   Undecided by shape either way -- recorded, not proven.
@@ -83,7 +83,7 @@ VSETUP  SYN, (8)224670.40            ! B line 39, half word only
 VSC7A   SYN, (8)224244.40            ! B,V SC7A+1. line 46, half word only
 VPD     SYN, (8)225427.0             ! LX line 47, word only
 VRCNT   SYN, (8)7.0                  ! M+1(BU,18) line 48, BIT-EXACT
-VECP    SYN, (8)224647.40            ! B line 49, half word only
+VEOP    SYN, (8)224647.40            ! B line 49, half word only
 VWT     SYN, (8)225266.0             ! LVI line 50, half word only
 
         SLC, (8)224274.0
@@ -135,7 +135,7 @@ VSQ     LVI,VU,VSC                                           ! line 34
 VSQ1    B,VSC7A+1.                                           ! line 46
 VWEOP   LX,VP,VPD                                            ! line 47
         M+1(BU,18),VRCNT(VU)                                 ! line 48  printed "(V L)"
-        B,VECP                                               ! line 49
+        B,VEOP                                               ! line 49
 VWQ     LVI,VU,VWT                                           ! line 50
 
 !SYM VSCR3  224274.00

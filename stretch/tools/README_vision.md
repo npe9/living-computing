@@ -412,6 +412,12 @@ AACS4/AAOS4, DICDEF/DIODEF, ACRC15/ACRD15), each a C/O or C/D glyph
 read independently. Each was settled on the 900 dpi ink of every page
 that prints it. A parallel batch needs the suite, not only the merge
 checks.
+pp.222-233 (12 pages) merged the same day. The spelling check run
+BEFORE the suite found five more cross-agent splits, and the 134-page
+body image found a bug no single page could (the instruction-label dds
+is only exercised when a label and its use assemble together). The
+merge order that works: copy, spelling check, body image, per-page
+verifiers, statement table, suite.
 
 Found on the way: strap_asm accepts `814` where an index register is
 expected (`LVS,$9,$12,$11,814` assembles as `$14`): a laxness, open.

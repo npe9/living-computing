@@ -3027,7 +3027,7 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
                 elif (stmt.op.upper() not in _NOT_INSTRUCTIONS
                         and stmt.op.upper() not in LISTING_CONTROL
                         and size in (32, 64) and hasattr(symtab, 'sym_dds')):
-                    symtab.sym_dds[up] = '(BU,%d,8)' % size
+                    symtab.sym_dds[up] = 'BU,%d,8' % size
         loc += size
 
     # Resolve SYN symbols by fixpoint: each SYN's value is its own

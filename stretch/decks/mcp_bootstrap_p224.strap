@@ -1,0 +1,181 @@
+! mcp_bootstrap_p224.strap -- MCP printed page 224: the Input Program's
+! request section (V REQ6 .. V CEOJ), lines 1-50.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.231, read at 400 dpi, 900 dpi for
+! doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID CA000472  DIST. OF 3/01  3/01  PAGE NUMBER 224"; the heading
+! row's LOCATION field is 224516, line 1's word.
+!
+! THE PAGE.  50 lines, every one located, contiguous from 224516.00 to
+! 224547.00 (a half word; next 224547.40), then blank paper.  Every
+! LINE number prints with a "*" after it; lines 1, 23 and 46 also print
+! a "*" after the LOCATION.  Remarks run -0478 .. -0520 (octal-free
+! decimal here), except line 15, which prints "-011" where -0490 would
+! fall; no row prints -0510 (lines 38, 39 print none).  Line 50 prints
+! "-OVERLAPPED" before its -0520.
+!
+! >>> "REQ", NOT "REG". <<<  At 400 dpi the labels V REQ6/9/10/11 and the
+! references V REQ5/V REQ7 look like G; at 900 dpi every one has the
+! diagonal tail of the Q in V Q2 / V Q4 (lines 8, 11, 18, 20), which
+! the binary pins as index registers $5 / $13 (.13/.12, .72 = X1 .40 +
+! 2*13).  Same for V RQ11A (line 24 label, line 15 reference) and V EQ.
+!
+! LINE 4 "VF,C" IS VF,0.  Printed 000000.00+; the open round is the
+! drum's worn 0 (line 3's SIC,0 and line 38's V+I,V T5,0 print the
+! same glyph closed).  The labels V BEOJ / V SEOJ / V CEOJ are written
+! with O, as landed p.215 wrote VBEOJ (224533.0, this page's line 26);
+! V CEOJ's first glyph has no left stem (unlike the D of V RDQ), so C.
+!
+! V POP comes from this page's binary only: BZB's bit address prints
+! 224107.62 = V VSCR (224105.00) + 2.50, so V POP = 2.32 and ".18"
+! adds 18 bits.
+!
+! Octal-field opens ("CCCCCC.00+", "224516.CC") are 0.  Card serials
+! CA000472 .. CA000515 printed with a stemless "0A"-looking prefix
+! (recorded as the header's CA).  Shared serials: lines 5/6 (476),
+! 9/10 (479), 16/17 (485), 21/22 (489), 27/28 (494), 47/48 (513).
+
+VH      SYN, 32                      ! p.213 line 7 "V H SYN,32"; .VH line 1 .41
+VP      SYN, $1                      ! p.213 line 26 "V P SYN,$1"
+VU      SYN, $3                      ! p.213 line 25 "V U SYN,$3"
+VQ4     SYN, $5                      ! p.213 line 37 "V Q4 SYN,$5"
+VQ2     SYN, $13                     ! p.213 line 35 "V Q2 SYN,$13"
+VT1     SYN, $4                      ! p.213 line 27
+VT2     SYN, $6                      ! p.213 line 29
+VT3     SYN, $7                      ! p.213 line 30
+VT5     SYN, $9                      ! p.213 line 28
+VX      SYN, 0                       ! p.213 line 11 "V X SYN,0"
+VX1     SYN, (8)0.40                 ! p.213 line 12 "SYN,V X.V H" prints 000000.40
+VF      SYN, .32                     ! p.213 line 6 "V F SYN,.32"
+VM1     SYN(BU,64), 262143.          ! p.213 line 9
+VNX     SYN, (8)5.0                  ! p.213 line 16 prints 000005.00
+VVSCR   SYN(BU,4), (8)224105.00      ! p.213 line 44 "V VSCR DD(BU,4),3,1" at 224105.00
+DMCP    SYN, 32.0                    ! landed (p.108)
+DRIO    SYN, 32.32                   ! landed (p.105)
+DSIO    SYN, 32.0                    ! landed (p.105)
+VNXT    SYN, (8)224456.40            ! landed refs (p.215..217); CB+ line 6
+VSETX   SYN, (8)224671.40            ! landed refs (p.216..220); B line 10
+VNOP    SYN, (8)224157.40            ! p.215 line 18 (landed)
+VRDQ    SYN, (8)224233.40            ! p.216 line 44 (landed)
+VSC     SYN, (8)225250.0             ! landed refs (p.216..218)
+VE      SYN, (8)225376.0             ! landed refs (p.216)
+VQ      SYN, (8)225346.0             ! landed refs (p.221)
+VRT     SYN, (8)225331.0             ! landed refs (p.221)
+VREQ5   SYN, (8)224506.0             ! B line 2, half word only
+VREQ7   SYN, (8)224472.0             ! B line 23 / BZXVZ line 14, half word only
+VRQEXT  SYN, (8)224716.40            ! LV line 7, half word only
+VPOP    SYN, 2.32                    ! BZB line 15 bit address, BIT-EXACT, this page only
+VSEOJ   SYN, (8)224600.40            ! CB+ lines 28/48, half word only
+VEQ     SYN, (8)224451.40            ! LVI line 35, half word only
+
+        SLC, (8)224516.0
+        V-I,,.VH                                             ! line  1  -0478
+        B,VREQ5                                              ! line  2  -0479
+VREQ6   SIC,0                                                ! line  3  -0480
+VREQ9   VF,0                                                 ! line  4  -0481
+VREQ10  SIC,(VP)                                             ! line  5
+        CB+,VP,VNXT                                          ! line  6  -0482
+        LV,VU,VRQEXT                                         ! line  7  -0483
+        SV,VQ4,VX(VU)                                        ! line  8  -0484
+        SIC,(VP)                                             ! line  9
+        B,VSETX                                              ! line 10  -0485
+        LV,VQ4,VX(VU)                                        ! line 11  -0486
+        LVI,VT5,0                                            ! line 12  -0487
+        SV,VT2,VX1(VU)                                       ! line 13  -0488
+        BZXVZ,VREQ7                                          ! line 14  -0489
+        BZB,VVSCR+VPOP.18,VRQ11A                             ! line 15  -011
+        B,DMCP                                               ! line 16
+        ,DRIO                                                ! line 17  -0491
+VREQ11  LV,VQ2,VX1(VU)                                       ! line 18  -0492
+        BXVZ,VREQ11                                          ! line 19  -0493
+        LV,VQ4,VX(VU)                                        ! line 20  -0494
+        B,DMCP                                               ! line 21
+        ,DSIO                                                ! line 22  -0495
+        B,VREQ7                                              ! line 23  -0496
+VRQ11A  V+I,,VF                                              ! line 24  -0497
+        CB-,VP,VM1(VP)                                       ! line 25  -0498
+VBEOJ   LVI,VU,VE                                            ! line 26  -0499
+        SIC,(VP)                                             ! line 27
+        CB+,VP,VSEOJ                                         ! line 28  -0500
+        BXVLZ,VNOP                                           ! line 29  -0501
+        LVI,VT1,VNXB                                         ! line 30  -0502
+        SVA,VT1,VNX+VSC                                      ! line 31  -0503
+        CB-,VP,VM1(VP)                                       ! line 32  -0504
+VNXB    KVNI,VT5,VNOP                                        ! line 33  -0505
+        BZXE,VNXB1                                           ! line 34  -0506
+        LVI,VT1,VEQ                                          ! line 35  -0507
+        SVA,VT1,VNX+VSC                                      ! line 36  -0508
+        CB-,VP,VM1(VP)                                       ! line 37  -0509
+VNXB1   V+I,VT5,0                                            ! line 38
+        BZXVGZ,VNOP                                          ! line 39
+        LV,VT3,VX+VE                                         ! line 40  -0511
+        V+,VT3,VT5                                           ! line 41  -0512
+        BXVLZ,$.64                                           ! line 42  -0513
+        V-I,VT3,34.                                          ! line 43  -0514
+        SV,VT3,VX+VE                                         ! line 44  -0515
+        B,VRDQ                                               ! line 45  -0516
+VOEOJ   LVI,VU,VQ                                            ! line 46  -0517 (label prints V CEOJ, the open O; p.215 l.7 prints V OEOJ)
+        SIC,(VP)                                             ! line 47
+        CB+,VP,VSEOJ                                         ! line 48  -0518
+        BXVLZ,VNOP                                           ! line 49  -0519
+        LVI,VU,VRT                                           ! line 50  -0520  -OVERLAPPED
+
+!SYM VREQ6  224517.00
+!SYM VREQ9  224517.40
+!SYM VREQ10 224520.00
+!SYM VREQ11 224527.00
+!SYM VRQ11A 224532.00
+!SYM VBEOJ  224533.00
+!SYM VNXB   224536.40
+!SYM VNXB1  224541.00
+!SYM VOEOJ  224545.00
+!CHECK 224516.00 | 000000.41 0D | line 1 V-I,,.V H (a "*" prints after the location)
+!CHECK 224516.40 | 224506.10 00 | line 2 B,V REQ5
+!CHECK 224517.00 | 000000.00 80 | line 3 V REQ6 SIC,0
+!CHECK 224517.40 | 000000.00+ | line 4 V REQ9 VF,0 (prints VF,C and CCCCCC.00+)
+!CHECK 224520.00 | 000000.00 81 | line 5 V REQ10 SIC,(V P)
+!CHECK 224520.40 | 224456.43 48 | line 6 CB+,V P,V NXT
+!CHECK 224521.00 | 224716.46 30 | line 7 LV,V U,V RQEXT
+!CHECK 224521.40 | 000000.13 33 | line 8 SV,V Q4,V X(V U)
+!CHECK 224522.00 | 000000.00 81 | line 9 SIC,(V P)
+!CHECK 224522.40 | 224671.50 00 | line 10 B,V SETX
+!CHECK 224523.00 | 000000.12 33 | line 11 LV,V Q4,V X(V U)
+!CHECK 224523.40 | 000000.23 01 | line 12 LVI,V T5,0
+!CHECK 224524.00 | 000000.55 33 | line 13 SV,V T2,V X1(V U)
+!CHECK 224524.40 | 224472.31 40 | line 14 BZXVZ,V REQ7
+!CHECK 224525.00 | 224107.62 80 224532.34 00 | line 15 BZB,VVSCR+VPOP.18,VRQ11A
+!CHECK 224526.00 | 000040.10 00 | line 16 B,D MCP
+!CHECK 224526.40 | 000040.40 80 | line 17 ,D RIO
+!CHECK 224527.00 | 000000.72 33 | line 18 V REQ11 LV,V Q2,V X1(V U)
+!CHECK 224527.40 | 224527.31 42 | line 19 BXVZ,V REQ11
+!CHECK 224530.00 | 000000.12 33 | line 20 LV,V Q4,V X(V U)
+!CHECK 224530.40 | 000040.10 00 | line 21 B,D MCP
+!CHECK 224531.00 | 000040.00 80 | line 22 ,D SIO
+!CHECK 224531.40 | 224472.10 00 | line 23 B,V REQ7 (a "*" prints after the location)
+!CHECK 224532.00 | 000000.41 05 | line 24 V RQ11A V+I,,V F
+!CHECK 224532.40 | 777777.03 C9 | line 25 CB-,V P,V M1(V P)
+!CHECK 224533.00 | 225376.07 01 | line 26 V BEOJ LVI,V U,V E
+!CHECK 224533.40 | 000000.00 81 | line 27 SIC,(V P)
+!CHECK 224534.00 | 224600.43 48 | line 28 CB+,V P,V SEOJ
+!CHECK 224534.40 | 224157.70 C2 | line 29 BXVLZ,V NOP
+!CHECK 224535.00 | 224536.51 01 | line 30 LVI,V T1,V NXB
+!CHECK 224535.40 | 225255.11 D0 | line 31 SVA,V T1,V NX+V SC
+!CHECK 224536.00 | 777777.03 C9 | line 32 CB-,V P,V M1(V P)
+!CHECK 224536.40 | 224157.63 0C | line 33 V NXB KVNI,V T5,V NOP
+!CHECK 224537.00 | 224541.32 C0 | line 34 BZXE,V NXB1
+!CHECK 224537.40 | 224451.51 01 | line 35 LVI,V T1,V EQ
+!CHECK 224540.00 | 225255.11 D0 | line 36 SVA,V T1,V NX+V SC
+!CHECK 224540.40 | 777777.03 C9 | line 37 CB-,V P,V M1(V P)
+!CHECK 224541.00 | 000000.23 05 | line 38 V NXB1 V+I,V T5,0
+!CHECK 224541.40 | 224157.71 C0 | line 39 BZXVGZ,V NOP
+!CHECK 224542.00 | 225376.16 30 | line 40 LV,V T3,V X+V E
+!CHECK 224542.40 | 000031.16 B0 | line 41 V+,V T3,V T5
+!CHECK 224543.00 | 224544.30 C2 | line 42 BXVLZ,$.64
+!CHECK 224543.40 | 000042.17 0D | line 43 V-I,V T3,34.
+!CHECK 224544.00 | 225376.17 30 | line 44 SV,V T3,V X+V E
+!CHECK 224544.40 | 224233.50 00 | line 45 B,V RDQ
+!CHECK 224545.00 | 225346.07 01 | line 46 V CEOJ LVI,V U,V Q (a "*" prints after the location)
+!CHECK 224545.40 | 000000.00 81 | line 47 SIC,(V P)
+!CHECK 224546.00 | 224600.43 48 | line 48 CB+,V P,V SEOJ
+!CHECK 224546.40 | 224157.70 C2 | line 49 BXVLZ,V NOP
+!CHECK 224547.00 | 225331.07 01 | line 50 LVI,V U,V RT -OVERLAPPED

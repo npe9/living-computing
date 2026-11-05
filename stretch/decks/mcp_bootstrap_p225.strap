@@ -1,0 +1,186 @@
+! mcp_bootstrap_p225.strap -- MCP printed page 225: the Input Program's
+! boundary-error exit (V BNDER, V BNDMG), the EOJ-scan fixup switch
+! (V REX, V REX1, V SREO, V SRE, V SPE2) and V SEOJ .. V EOJ2.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.232, read at 400 dpi, 900 dpi for
+! doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID
+! 11D11MCP  CARD ID 0A000517  DIST. OF 3/01  3/01  PAGE NUMBER 225";
+! the heading row's LOCATION field is 224547, line 1's word.
+!
+! THE PAGE.  52 lines, contiguous from 224547.40 to 224607.00 (a half
+! word; next 224607.40).  Lines 16 and 19 are CNOPs that print no
+! location and emit nothing.  Lines 17-18 are (A*)DD character data
+! (no binary printed): line 17 is 40 characters = 5 words exactly
+! (224557.00 -> 224564.00), line 18 is 16 = 2 words (-> 224566.00).
+! Remarks run -0521 .. -0562 in DECIMAL (-0537, -0538); -0526 is not
+! printed on any row.  Rows 6-10, 12, 16, 20, 22, 25, 41 print none.
+!
+! GLYPHS SETTLED BY SOMETHING OTHER THAN PLAIN INK:
+!  * Line 38 prints "B,V RTIC1": the worn O of p.221's V RTIO1, whose
+!    LOCATION 224422.00 is exactly this row's 224422.10 less B's .10.
+!  * Line 39 prints "V SECJ", lines 40/44/48 "V EOJ1"/"V EOJ2" with
+!    round open glyphs: written O, by line 3's own comment "-CHANGE
+!    NORMAL FIXUPS FOR EOJ SCAN" (S EOJ = scan for EOJ).  V SEOJ is
+!    referenced nowhere on this page -- rests on the comment.
+!  * Line 20 "B,V SREC" and line 24's label "V SREO": one symbol (line
+!    20's 224570.10 = line 24's 224570.00 + B's .10); the label's glyph
+!    reads as the drum's squared O (same as V REOP on line 22).
+!  * Line 43 "V+I,V T2,C": the immediate is 0 -- the row prints
+!    000000.15 05 (address 0, J = 6 = V T2); an open round, as in the
+!    octal fields.
+!  * Line 18's text begins "OUNDARIES": card 17 ends "EXCEEDED B" and
+!    the word is BOUNDARIES; the first glyph prints as an open round.
+!    Line 18 carries 7 blanks before its "*" (2 words, as line 20's
+!    224566.00 requires); measured on the character pitch.
+!  * Octal-field opens ("C00000", ".CC", "224557.CC") are 0.  Hex bytes
+!    printed with an open round written 0: line 6 "C0" (B,D MCP with no
+!    index, as line 25 prints 00), line 36 "BC" (= line 33's B0; p.221
+!    line 20 prints the same 031100.02 B0).
+!
+! CARD SERIALS.  Right-hand serials ?A000517 .. ?A000560, prefix glyph
+! read as 0A (same shape p.221 calls DA).  Pairs share a serial: lines
+! 6/7 (522), 8/9 (523), 10/11 (524), 12/13 (525), 20/21 (532), 22/23
+! (533), 25/26 (535), 41/42 (550).  Asterisks after the LOCATION on
+! lines 17 and 32.
+
+VX      SYN, (8)0.0                  ! p.213 line 11 "V X SYN,0"
+VX1     SYN, (8)0.40                 ! p.213 line 12 "SYN,V X.V H" prints 000000.40
+VT2     SYN, $6                      ! p.213 line 29
+VT3     SYN, $7                      ! p.213 line 30
+VT5     SYN, $9                      ! p.213 line 28
+VP      SYN, $1                      ! p.213 line 26
+VU      SYN, $3                      ! p.213 line 25
+VM1     SYN(BU,64), 262143.          ! p.213 line  9
+VSU     SYN, 6.0                     ! p.213 line 18 = VIC.VH = 6.0
+VRCNT   SYN, 7.0                     ! p.213 line 20 = VRQB.VH = 7.0
+VFCNT   SYN, 7.32                    ! p.213 line 21 = VRCNT.VH
+VFCNX   SYN, 9.0                     ! p.213 line 24 = VTS.VH = (8)11.0
+VTSQ    SYN(B,25,1), (8)224371.0     ! p.220 line 5 VF,0; (B,25,1) from M+1 line 36 031100.02
+DMCP    SYN, 32.0                    ! landed p.108
+DRIO    SYN, 32.32                   ! landed p.105 "D RIO"
+DABEOJ  SYN, 68.0                    ! landed p.105 "D ABEOJ"
+DSPFL   SYN, 6.32                    ! landed p.104 "D SPFL"
+ZSPLP9  SYN, (8)224052.0             ! landed p.212 line 12
+ZSPLPR  SYN, (8)224046.40            ! landed p.212 line 5
+SPRIMR  SYN, (8)215571.0             ! landed p.118 line 49
+SPRIME  SYN, (8)215570.0             ! landed p.118 line 48
+VNOP    SYN, (8)224157.40            ! landed p.215 line 18
+VREE    SYN, (8)224407.0             ! landed p.221 line 17
+VRTIO1  SYN, (8)224422.0             ! landed p.221 line 38
+VPD     SYN, (8)225427.0             ! LX lines 24/29, word only
+VRT     SYN, (8)225331.0             ! ST line 4/31 VRT-1. (word only); p.221 LVI 225331.07
+VREOP   SYN, (8)224647.0             ! B line 22, half word only
+VEOJ1   SYN, (8)224613.0             ! BXVLZ line 40, half word only
+VSETX   SYN, (8)224671.40            ! B lines 42/47, half word only
+
+        SLC, (8)224547.40
+        LV,VT2,VX1(VU)                                       ! line  1  -0521
+        BXVZ,0                                               ! line  2  -0522
+        LWF(U),VREX                                          ! line  3  -CHANGE NORMAL FIXUPS FOR EOJ SCAN -0523
+        ST(U),VRT-1.                                         ! line  4  -0524
+        CB-,VP,VM1(VP)                                       ! line  5  -0525
+VBNDER  B,DMCP                                               ! line  6
+        ,DRIO                                                ! line  7
+        SIC,ZSPLP9                                           ! line  8
+        B,ZSPLPR                                             ! line  9
+        ,VBNDMG                                              ! line 10
+        ,7.                                                  ! line 11  -0527
+        SIC,SPRIMR                                           ! line 12
+        B,SPRIME                                             ! line 13  -0528
+        ,DABEOJ                                              ! line 14  -0529
+        BE,VNOP                                              ! line 15  -0530
+        CNOP,                                                ! line 16
+VBNDMG  (A*)DD(BU,8),1JOB TERMINATED- $SCR REQUEST EXCEEDED B* ! line 17  -0531
+        (A*)DD(BU,8),OUNDARIES       * ! line 18  -0532
+        CNOP,                                                ! line 19  -0533
+VREX    B,VSREO                                              ! line 20
+        B,VSRE                                               ! line 21  -0534
+VREX1   B,VREOP                                              ! line 22
+        B,VREE                                               ! line 23  -0535
+VSREO   LX,VP,VPD                                            ! line 24  -0536
+        B,DMCP                                               ! line 25
+        ,DSPFL                                               ! line 26  -0537
+        LVE,,VSU(VU)                                         ! line 27  -0538
+        CB-,VP,VM1(VP)                                       ! line 28  -0539
+VSRE    LX,VP,VPD                                            ! line 29  -0540
+        LWF(U),VREX1                                         ! line 30  -RESTORE NORMAL FIXUPS -0541
+        ST(U),VRT-1.                                         ! line 31  -0542
+        SR,VP,VRCNT(VU)                                      ! line 32  -0543
+        M+1(BU,18),VFCNT(VU)                                 ! line 33  -0544
+        LC,VT3,VFCNX(VU)                                     ! line 34  -0545
+        CB,VT3,VSPE2                                         ! line 35  -0546
+        M+1,VTSQ                                             ! line 36  -0547
+VSPE2   SC,VT3,VFCNX(VU)                                     ! line 37  -0548
+        B,VRTIO1                                             ! line 38  -0549
+VSEOJ   LV,VT2,VX1(VU)                                       ! line 39  -0550
+        BXVLZ,VEOJ1                                          ! line 40  -0551
+        SIC,(VP)                                             ! line 41
+        B,VSETX                                              ! line 42  -0552
+        V+I,VT2,0                                            ! line 43  -0553
+        BZXVGZ,VEOJ2                                         ! line 44  -0554
+        V+,VT2,VX1(VU)                                       ! line 45  -0555
+        SV,VT2,VX1(VU)                                       ! line 46  -0556
+        B,VSETX                                              ! line 47  -0557
+VEOJ2   LV,VT5,VX1(VU)                                       ! line 48  -0558
+        V+,VT5,VX(VU)                                        ! line 49  -0559
+        BXVLZ,$.64                                           ! line 50  -0560
+        V-I,VT5,34.                                          ! line 51  -0561
+        SV,VT5,VX(VU)                                        ! line 52  -0562
+
+!SYM VBNDER 224552.00
+!SYM VBNDMG 224557.00
+!SYM VREX   224566.00
+!SYM VREX1  224567.00
+!SYM VSREO  224570.00
+!SYM VSRE   224572.40
+!SYM VSPE2  224577.40
+!SYM VSEOJ  224600.40
+!SYM VEOJ2  224605.00
+!CHECK 224547.40 | 000000.54 33 | line 1 LV,V T2,V X1(V U)
+!CHECK 224550.00 | 000000.31 42 | line 2 BXVZ,0
+!CHECK 224550.40 | 224566.42 60 | line 3 LWF(U),V REX
+!CHECK 224551.00 | 225330.40 E0 | line 4 ST(U),V RT-1.
+!CHECK 224551.40 | 777777.03 C9 | line 5 CB-,V P,V M1(V P)
+!CHECK 224552.00 | 000040.10 00 | line 6 V BNDER B,D MCP (byte prints C0)
+!CHECK 224552.40 | 000040.40 80 | line 7 ,D RIO
+!CHECK 224553.00 | 224052.00 80 | line 8 SIC,Z SPLP9
+!CHECK 224553.40 | 224046.50 00 | line 9 B,Z SPLPR
+!CHECK 224554.00 | 224557.00 80 | line 10 ,V BNDMG
+!CHECK 224554.40 | 000007.00 80 | line 11 ,7.
+!CHECK 224555.00 | 215571.00 80 | line 12 SIC,S PRIMR
+!CHECK 224555.40 | 215570.10 00 | line 13 B,S PRIME
+!CHECK 224556.00 | 000104.00 80 | line 14 ,D ABEOJ
+!CHECK 224556.40 | 224157.40 00 | line 15 BE,V NOP
+!CHECK 224566.00 | 224570.10 00 | line 20 V REX B,V SREO (prints SREC)
+!CHECK 224566.40 | 224572.50 00 | line 21 B,V SRE
+!CHECK 224567.00 | 224647.10 00 | line 22 V REX1 B,V REOP
+!CHECK 224567.40 | 224407.10 00 | line 23 B,V REE
+!CHECK 224570.00 | 225427.02 10 | line 24 V SREO LX,V P,V PD
+!CHECK 224570.40 | 000040.10 00 | line 25 B,D MCP
+!CHECK 224571.00 | 000006.40 80 | line 26 ,D SPFL
+!CHECK 224571.40 | 000006.01 B3 | line 27 LVE,,V SU(V U)
+!CHECK 224572.00 | 777777.03 C9 | line 28 CB-,V P,V M1(V P)
+!CHECK 224572.40 | 225427.02 10 | line 29 V SRE LX,V P,V PD
+!CHECK 224573.00 | 224567.42 60 | line 30 LWF(U),V REX1
+!CHECK 224573.40 | 225330.40 E0 | line 31 ST(U),V RT-1.
+!CHECK 224574.00 | 000007.03 73 | line 32 SR,V P,V RCNT(V U) (a "*" prints after the location)
+!CHECK 224574.40 | 000007.40 83 022000.22 B0 | line 33 M+1(BU,18),V FCNT(V U)
+!CHECK 224575.40 | 000011.16 53 | line 34 LC,V T3,V FCNX(V U)
+!CHECK 224576.00 | 224577.56 48 | line 35 CB,V T3,V SPE2
+!CHECK 224576.40 | 224371.00 80 031100.02 B0 | line 36 M+1,V TSQ (byte prints BC)
+!CHECK 224577.40 | 000011.17 53 | line 37 V SPE2 SC,V T3,V FCNX(V U)
+!CHECK 224600.00 | 224422.10 00 | line 38 B,V RTIO1 (prints RTIC1)
+!CHECK 224600.40 | 000000.54 33 | line 39 V SEOJ LV,V T2,V X1(V U)
+!CHECK 224601.00 | 224613.30 C2 | line 40 BXVLZ,V EOJ1
+!CHECK 224601.40 | 000000.00 81 | line 41 SIC,(V P) (prints 000000.CC)
+!CHECK 224602.00 | 224671.50 00 | line 42 B,V SETX
+!CHECK 224602.40 | 000000.15 05 | line 43 V+I,V T2,0 (operand prints C)
+!CHECK 224603.00 | 224605.31 C0 | line 44 BZXVGZ,V EOJ2
+!CHECK 224603.40 | 000000.54 B3 | line 45 V+,V T2,V X1(V U)
+!CHECK 224604.00 | 000000.55 33 | line 46 SV,V T2,V X1(V U)
+!CHECK 224604.40 | 224671.50 00 | line 47 B,V SETX
+!CHECK 224605.00 | 000000.62 33 | line 48 V EOJ2 LV,V T5,V X1(V U)
+!CHECK 224605.40 | 000000.22 B3 | line 49 V+,V T5,V X(V U)
+!CHECK 224606.00 | 224607.30 C2 | line 50 BXVLZ,$.64
+!CHECK 224606.40 | 000042.23 0D | line 51 V-I,V T5,34.
+!CHECK 224607.00 | 000000.23 33 | line 52 SV,V T5,V X(V U)

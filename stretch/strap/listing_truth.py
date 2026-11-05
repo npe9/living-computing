@@ -13,7 +13,7 @@ corpus:
 UNCOVERED, said out loud (measured 2026-11-03, printed pp.3-196): 19
 pages carry no line-keyed row -- 9-12 (message text; rows name the
 label, not the line), 47 59 60 81 82 100, and 99 101 102 104-109
-(prose annotations, no !CHECK).  201 pages, 7,059 lines are covered (2026-11-05, through p.221).
+(prose annotations, no !CHECK).  213 pages, 7,679 lines are covered (2026-11-05, through p.233).
 
 The first cross-check against macOS Vision read only the deck files,
 and reported 1,012 "unpaired" rows that were the early decks' rows

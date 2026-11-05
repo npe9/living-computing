@@ -16551,3 +16551,20 @@ l.22 prints it closed; pp.207/208/219 print this drum's open O). p.212
 l.16 is MCP's first TBI (transmit backward, immediate), which
 StretchExecute.bsv refuses with Operation Code Invalid: MCP needs
 backward transmit in the model.
+
+pp.222-233 LANDED (2026-11-05), the second parallel batch: 12 decks,
+body image to p.233 (134 pages), listing_truth 213 pages / 7,679 lines,
+statements hex 2,002/2,002. Merge findings:
+  * The instruction-label dds rule stored "(BU,32,8)" WITH parentheses,
+    which parse_dds reads as a mode; no single deck exercises it (each
+    SYNs its externals), so only the 134-page image raised "unknown VFL
+    mode".  Fixed to 'BU,32,8'; tests/check_instruction_label_dds.py
+    guards it (control PASS; parentheses / rule removed both FAIL).
+  * Five symbols spelled two ways across agents, settled on the ink or
+    the manual: VPOP (p.213's label prints the open O), VTDQ (D worn;
+    the VTD family), VOEOJ (p.215 prints V OEOJ), VOP (the TS table),
+    and ZASN01 with a ZERO -- C22-6728 PDF p.107 typesets "ZASN01 and
+    ZDSN01" with the narrow 0 of "ZCOM01", against its OCR's ZASNO1.
+  * VVSCR's stand-ins take p.213's DD(BU,4) (pp.121, 223).
+  * VECP -> VEOP (p.227 line 11 prints the same glyph as VREOP's O).
+

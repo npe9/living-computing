@@ -1,0 +1,189 @@
+! mcp_bootstrap_p222.strap -- MCP printed page 222: the Input Program's
+! scratch/queue section (V SCEND .. V REQ), lines 1-50.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.229, read at 400 dpi, 900 dpi for
+! doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID CA000378  DIST. OF 3/01  3/01  PAGE NUMBER 222"; the heading
+! row's LOCATION field is 224430, line 1's word.
+!
+! THE PAGE.  50 lines, every one located, contiguous from 224430.00 to
+! 224461.40 (a half word; next word 224462.00, where the p.223 scratch
+! deck opens), except lines 43-44, two
+! SYNs printed at 224110.00+ / 224110.40+ (BU,04,10 -- V VSCR's (BU,4)
+! carried through).  p.221 ends at 224427.40, so line 1 joins it.
+! Remarks -0389 .. -0433; lines 4, 16, 27, 30, 31, 37, 39, 40, 45 print
+! none (no -0403, -0416, -0423, -0424 appear).
+!
+! CARD SERIALS 0A000378 .. 0A000422 (prefix printed with the round
+! glyph; p.221 reads its prefix DA), 45 serials for 50 lines: five pairs
+! share one -- lines 4/5 (381), 27/28 (403), 30/31 (405), 37/38 (411),
+! 45/46 (418), each a SIC or B,D MCP plus its half word.  Asterisks
+! after the LOCATION on lines 16 and 36.
+!
+! GLYPHS.  Labels V QQ, V QQ2, V QQ1, V QEND print their Q's worn toward
+! G/C at 400 dpi; at 900 dpi every one shows the tail inside the bowl,
+! as the references B,V QQ2 / BXVZ,VQQ1 / LVNI,V T2,V QEND print it,
+! and the binaries (224453.10, 224456.31, 224457.15) are those labels.
+! V QEND at 224457.00 is p.221's VQEND (LVNI 224457.23).  V SCEND's last
+! glyph (label and line 1) has the squared corners of a D, unlike the
+! round C beside it.  "V CCM" (line 36) is V COM: its second glyph is
+! squared like the O of V BYON; B prints 224702.10 = VCOM.  "V PCP" is
+! V POP, "V PDQ" reads with a D stem.  V RBLC's last glyph is round: C.
+! Octal-field opens ("C00000.CC", "224626.C3") are 0.  HEX BYTES
+! printed with an open round, written 0: line 1 "C9" (LVNI: line 48
+! and p.221 line 24 print 09), lines 2/6 "C1" (LVI, as lines 21/23/47
+! print 01), line 3 "C0" (B with no index is 00, as lines 30/33 print
+! it), line 25 "FC" (CM0000 second half is F0; p.18 rule).  The C of
+! C8 (line 12) and C9 (41, 49) is CB-'s op nibble and real; D0 (line
+! 24, SVA) shows a D stem.  All settled by what the statement assembles
+! to; every row PASSES.  Statement "CMOCOO" (line 25) is CM0000.
+
+VT5     SYN, $9                      ! p.213 line 28 "V T5 SYN,$9"
+VU      SYN, $3                      ! p.213 line 25 "V U SYN,$3"
+VP      SYN, $1                      ! p.213 line 26 "V P SYN,$1"
+VT1     SYN, $4                      ! p.213 line 27
+VT2     SYN, $6                      ! p.213 line 29
+VS1     SYN, $10                     ! p.213 line 32
+VQ4     SYN, $5                      ! p.213 line 37
+VH      SYN, 32                      ! p.213 line 7 "V H SYN,32", an INTEGER
+VX      SYN, 0                       ! p.213 line 11 "V X SYN,0"
+VX1     SYN, (8)0.40                 ! p.213 line 12 = VX.VH; SV line 40 prints 000000.55
+VM1     SYN(BU,64), (8)777777.0      ! p.213 line 9 262143.
+VNX     SYN, (8)5.0                  ! p.213 line 16 = VCWR.64; B line 42 000005.10
+VRA     SYN, 1.32                    ! p.213 line 39 "V RA SYN,1.32"
+VPAR    SYN, 3.                      ! p.213 line 40 "V PAR SYN,3."
+VVSCR   SYN(BU,4), (8)224105.0       ! p.213 line 44 DD(BU,4) at 224105.00
+DMCP    SYN, 32.0                    ! landed
+DRET    SYN, 33.0                    ! landed
+SCOMRG  SYN, (8)215001.0             ! p.103 line 8
+SYSMOD  SYN(BU,2), SCOMRG+.8         ! p.103; CM/BB lines 25-26 215001.10
+VRTEE2  SYN, (8)224414.0             ! p.221 line 26
+VBYON   SYN(BU,1), (8)224372.31      ! p.220 line 8 DD(BU,1); BZBZ line 20, BIT-EXACT
+VBYP    SYN, (8)224154.40            ! p.215 line 12
+VDISP   SYN, (8)224150.0             ! p.214
+VSC     SYN, (8)225250.0             ! LVI lines 2, 6, half word only
+VE      SYN, (8)225376.0             ! LVI lines 21, 32, half word only
+VQ      SYN, (8)225346.0             ! LVI lines 34, 47, half word only
+VSETX   SYN, (8)224671.40            ! CB- line 12, half word only
+VSETUP  SYN, (8)224670.40            ! B line 38, half word only
+VCOM    SYN, (8)224702.0             ! B line 36 (printed "V CCM"), half word only
+VRBLC   SYN, (8)224626.0             ! CB+ lines 5, 46, half word only; this page only
+VPDQ    SYN, (8)225426.0             ! LX line 13, word only; this page only
+VRQEXT  SYN, (8)224716.40            ! LV/SV lines 15, 22, half word only; this page only
+VPOP    SYN, 2.32                    ! BB line 16: VVSCR+VPOP.18 = 224107.62, BIT-EXACT; this page only
+
+        SLC, (8)224430.0
+        LVNI,VT5,VSCEND                                      ! line  1  -0389
+        LVI,VU,VSC                                           ! line  2  -0390
+        B,VRTEE2                                             ! line  3  -0391
+VSCEND  SIC,(VP)                                             ! line  4
+        CB+,VP,VRBLC                                         ! line  5  -0392
+        LVI,VU,VSC                                           ! line  6  -0393
+        LC,VT2,VX(VU)                                        ! line  7  -0394
+        BXCZ,VSCEN1                                          ! line  8  -0395
+        SR,VP,VX(VU)                                         ! line  9  -0396
+VSCEN2  V+ICR,VS1,15.                                        ! line 10  -0397
+        CB,VT2,VSCEN2                                        ! line 11  -0398
+VSCEN1  CB-,VP,VSETX                                         ! line 12  -0399
+VSCR    LX,VP,VPDQ                                           ! line 13  -0400
+        LV,,VVSCR+VRA                                        ! line 14  -0401
+        LV,VU,VRQEXT                                         ! line 15  -0402
+        BB,VVSCR+VPOP.18,VSCRA                               ! line 16
+        LVI,VT1,1.                                           ! line 17  -SPECIAL SCR4 SEQUENCE  -0404
+        SV,VT1,VNREQ                                         ! line 18  -0405
+        V-I,,1.                                              ! line 19  -0406
+        BZBZ,VBYON,VSCRA                                     ! line 20  -0407
+        LVI,VU,VE                                            ! line 21  -0408
+        SV,VU,VRQEXT                                         ! line 22  -0409
+        LVI,VT1,VBYP                                         ! line 23  -0410
+        SVA,VT1,VDISP                                        ! line 24  -0411
+        CM0000,SYSMOD                                        ! line 25  -0412
+        BB1,SYSMOD,0                                         ! line 26  -0413
+VSCRA   SIC,(VP)                                             ! line 27
+        CB+,VP,VREQ                                          ! line 28  -0414
+        SV,,VVSCR+VRA                                        ! line 29  -0415
+VRTN    B,DMCP                                               ! line 30
+        ,DRET                                                ! line 31
+VEQ     LVI,VU,VE                                            ! line 32  -0417
+        B,VQQ2                                               ! line 33  -0418
+VQQ     LVI,VU,VQ                                            ! line 34  -0419
+VQQ2    SIC,(VP)                                             ! line 35  -0420
+        B,VCOM                                               ! line 36  -0421
+        SIC,(VP)                                             ! line 37
+        B,VSETUP                                             ! line 38  -0422
+        BXVZ,VQQ1                                            ! line 39
+        SV,VT2,VX1(VU)                                       ! line 40
+VQQ1    CB-,VP,VM1(VP)                                       ! line 41  -0425
+VNXT    B,VNX(VU)                                            ! line 42  -0426
+VFWA    SYN,VVSCR+VPAR                                       ! line 43  -0427
+VNREQ   SYN,VVSCR+VPAR.VH                                    ! line 44  -0428
+VQEND   SIC,(VP)                                             ! line 45
+        CB+,VP,VRBLC                                         ! line 46  -0429
+        LVI,VU,VQ                                            ! line 47  -0430
+        LVNI,VT2,VQEND                                       ! line 48  -0431
+        CB-,VP,VM1(VP)                                       ! line 49  -0432
+VREQ    LV,VQ4,VX(VU)                                        ! line 50  -0433
+
+!SYM VSCEND 224431.40
+!SYM VSCEN2 224434.40
+!SYM VSCEN1 224435.40
+!SYM VSCR   224436.00
+!SYM VSCRA  224447.00
+!SYM VRTN   224450.40
+!SYM VEQ    224451.40
+!SYM VQQ    224452.40
+!SYM VQQ2   224453.00
+!SYM VQQ1   224456.00
+!SYM VNXT   224456.40
+!SYM VFWA   224110.00
+!SYM VNREQ  224110.40
+!SYM VQEND  224457.00
+!SYM VREQ   224461.40
+!CHECK 224430.00 | 224431.63 09 | line 1 LVNI,V T5,V SCEND (byte prints C9)
+!CHECK 224430.40 | 225250.07 01 | line 2 LVI,V U,V SC (byte prints C1)
+!CHECK 224431.00 | 224414.10 00 | line 3 B,V RTEE2 (byte prints C0)
+!CHECK 224431.40 | 000000.00 81 | line 4 V SCEND SIC,(V P)
+!CHECK 224432.00 | 224626.03 48 | line 5 CB+,V P,V RBLC
+!CHECK 224432.40 | 225250.07 01 | line 6 LVI,V U,V SC (byte prints C1)
+!CHECK 224433.00 | 000000.14 53 | line 7 LC,V T2,V X(V U)
+!CHECK 224433.40 | 224435.70 42 | line 8 BXCZ,V SCEN1
+!CHECK 224434.00 | 000000.03 73 | line 9 SR,V P,V X(V U)
+!CHECK 224434.40 | 000017.25 07 | line 10 V SCEN2 V+ICR,V S1,15.
+!CHECK 224435.00 | 224434.54 48 | line 11 CB,V T2,V SCEN2
+!CHECK 224435.40 | 224671.43 C8 | line 12 V SCEN1 CB-,V P,V SETX
+!CHECK 224436.00 | 225426.02 10 | line 13 V SCR LX,V P,V PDQ
+!CHECK 224436.40 | 224106.40 30 | line 14 LV,,V VSCR+V RA
+!CHECK 224437.00 | 224716.46 30 | line 15 LV,V U,V RQEXT
+!CHECK 224437.40 | 224107.62 80 224447.34 02 | line 16 BB,V VSCR+V POP.18,V SCRA (a "*" prints after the location)
+!CHECK 224440.40 | 000001.11 01 | line 17 LVI,V T1,1. -SPECIAL SCR4 SEQUENCE
+!CHECK 224441.00 | 224110.51 30 | line 18 SV,V T1,V NREQ
+!CHECK 224441.40 | 000001.01 0D | line 19 V-I,,1.
+!CHECK 224442.00 | 224372.31 80 224447.34 04 | line 20 BZBZ,V BYON,V SCRA
+!CHECK 224443.00 | 225376.07 01 | line 21 LVI,V U,V E
+!CHECK 224443.40 | 224716.47 30 | line 22 SV,V U,V RQEXT
+!CHECK 224444.00 | 224154.51 01 | line 23 LVI,V T1,V BYP
+!CHECK 224444.40 | 224150.11 D0 | line 24 SVA,V T1,V DISP
+!CHECK 224445.00 | 215001.10 80 002000.00 F0 | line 25 CM0000,SYSMOD (statement prints CMOCOO; byte prints FC)
+!CHECK 224446.00 | 215001.10 80 000000.34 0E | line 26 BB1,SYSMOD,0
+!CHECK 224447.00 | 000000.00 81 | line 27 V SCRA SIC,(V P)
+!CHECK 224447.40 | 224461.43 48 | line 28 CB+,V P,V REQ
+!CHECK 224450.00 | 224106.41 30 | line 29 SV,,V VSCR+V RA
+!CHECK 224450.40 | 000040.10 00 | line 30 VRTN B,DMCP
+!CHECK 224451.00 | 000041.00 80 | line 31 ,DRET
+!CHECK 224451.40 | 225376.07 01 | line 32 V EQ LVI,V U,V E
+!CHECK 224452.00 | 224453.10 00 | line 33 B,V QQ2
+!CHECK 224452.40 | 225346.07 01 | line 34 V QQ LVI,V U,V Q
+!CHECK 224453.00 | 000000.00 81 | line 35 V QQ2 SIC,(V P)
+!CHECK 224453.40 | 224702.10 00 | line 36 B,V CCM as printed = V COM (a "*" prints after the location)
+!CHECK 224454.00 | 000000.00 81 | line 37 SIC,(V P)
+!CHECK 224454.40 | 224670.50 00 | line 38 B,V SETUP
+!CHECK 224455.00 | 224456.31 42 | line 39 BXVZ,VQQ1
+!CHECK 224455.40 | 000000.55 33 | line 40 SV,VT2,VX1(VU)
+!CHECK 224456.00 | 777777.03 C9 | line 41 V QQ1 CB-,V P,V M1(V P)
+!CHECK 224456.40 | 000005.10 03 | line 42 V NXT B,V NX(V U)
+!CHECK 224457.00 | 000000.00 81 | line 45 V QEND SIC,(V P)
+!CHECK 224457.40 | 224626.03 48 | line 46 CB+,V P,V RBLC
+!CHECK 224460.00 | 225346.07 01 | line 47 LVI,V U,V Q
+!CHECK 224460.40 | 224457.15 09 | line 48 LVNI,V T2,V QEND
+!CHECK 224461.00 | 777777.03 C9 | line 49 CB-,V P,V M1(V P)
+!CHECK 224461.40 | 000000.12 33 | line 50 V REQ LV,V Q4,V X(V U)

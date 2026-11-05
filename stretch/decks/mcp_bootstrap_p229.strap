@@ -1,0 +1,187 @@
+! mcp_bootstrap_p229.strap -- MCP printed page 229: the Input Program's
+! tape-operate section (V STTS1 .. V TDSP), lines 1-50.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.236, read at 400 dpi, 900 dpi for
+! doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID CA000709  DIST. OF 3/01  3/01  PAGE NUMBER 229"; the heading
+! row's LOCATION field is 224730, line 1's word.
+!
+! THE PAGE.  50 lines, every one located, contiguous from 224730.00 to
+! 224763.00 (a full-word BZB; next word 224764.00).  Remarks are octal-ish
+! sequence numbers -0706 .. -0750 (no -0713 is printed: line 9 prints
+! none and line 10 prints -0714); some rows print only a dash.
+!
+! >>> "V TDP1" IS NOT "V TOP1". <<<  Lines 14 and 50 print the same
+! BZB,V SQNC(V U),V T?P1 with the same first half word 000003.01 83, but
+! line 14's second half is 224744.34 (V TOP1 = line 22, 224744.00) and
+! line 50's is 224772.74.  At 900 dpi line 50's glyph has a straight
+! left stem (D), line 14's and line 22's are round (O, printed open as
+! C).  So line 50 branches to V TDP1 = 224772.40, defined on a later
+! page; value from this page's binary only.  Line 50 also prints the
+! first symbol "V SGNC"/"V SCNC" (worn Q) where line 14 prints a Q with
+! its tail; same binary, written VSQNC both times.  Neither VSQNC nor
+! VTDP1 is landed -- the Q rests on line 14's ink.
+!
+! LENGTH FROM THE FINAL SYMBOL.  These statements write no dds and print
+! the length of the LAST symbol in the address: "The data description of
+! the final symbol ... applies to the whole combination" (C22-6531
+! printed p.11).  V OPB, V RDY and V OP are SYN(BU,1), as their defining
+! cards print (OCR of pp.231/234/236, not landed); V OPB = .25 and
+! V RDY = .26 are bit addresses, unchanged by the point in front of them
+! (C22-6578 printed p.64).
+!
+! Octal-field opens (CCCCC0.62, 2247??.CC) are 0.  Hex bytes printed
+! with an open round, written 0 by what the statement assembles to:
+! line 4 "C1", lines 23/24 "C0", line 12 "2C 5C" (= 20 50, as line 13's
+! 20 D0), line 27 "CC FC" (= 00 F0 at 900 dpi: the C is the same open
+! round as the octal 0s beside it), line 50 "CC".  Line 27 prints "CMOCOO": the connective is
+! CM0000 (only digits stand there; cf. line 44's CM1111).
+!
+! >>> CARD SERIALS. <<<  Right-hand serials run ?A000709 .. ?A000754,
+! prefix glyph as p.221 (DA by the C/D rule, read 0A); header CA000709.
+! Four pairs share a serial: lines 7/8 (715), 22/23 (729), 29/30
+! (735), 33/34 (738) -- B,$MCP plus its parameter half word, or SIC plus
+! the branch.  Asterisks after the LOCATION on lines 1, 21, 43; after
+! the remark on lines 13 (-0717*), 23 (-0725*), 32 (-0733*), 36 (-0736*).
+
+VP      SYN, $1                      ! landed p.213 line 26 "V P SYN,$1"
+VU      SYN, $3                      ! landed p.213 line 25 "V U SYN,$3"
+VT1     SYN, $4                      ! landed p.213 line 27
+VT2     SYN, $6                      ! landed p.213 line 29
+VT4     SYN, $8                      ! landed p.213 line 31
+VT5     SYN, $9                      ! landed p.213 line 28
+VH      SYN, 32                      ! landed p.213 line 7, an INTEGER
+VX1     SYN, (8)0.40                 ! landed p.213 line 12 = VX.VH; LV line 11 .62
+VSU     SYN, 6.0                     ! landed p.213 line 18; SV line 39 000006.15
+VRCNT   SYN, 7.0                     ! landed p.213 line 20; Z line 42 000007.22
+VSTR    SYN, (8)10.0                 ! landed p.213 line 22 = VFCNT.VH = 8.0; B line 43
+VXXRG   SYN, (8)777777.40            ! landed p.213 line 8 = 262143.VH; SV line 41 .47
+VXG     SYN, (8)224135.0             ! landed p.214 line 50; LV line 40 224135.20
+VPD     SYN, (8)225427.0             ! landed; LX line 45
+VQ      SYN, (8)225346.0             ! landed p.221 (half word only); LVI line 9
+VWTTS   SYN, (8)224721.40            ! landed p.221 (half word only); CB+ line 1 .43
+VSC     SYN, (8)225250.0             ! landed; LVI line 2
+VACT    SYN, (8)224655.0             ! landed; B line 24
+DUNLD   SYN, 8.32                    ! landed p.104 line 36; line 34 000010.40
+VTSB    SYN, (8)225221.0             ! LVI line 6, half word only (p.231 "V TSB VF,0" not landed)
+VOP     SYN(BU,1), 3.                ! p.234/p.236 print V OP SYN(BU,1),3. (OCR; not landed)
+VOPB    SYN(BU,1), .25               ! p.234 line 46 prints V OPB SYN(BU,1),.25 (OCR; not landed)
+VSQNC   SYN, (8)3.01                 ! BZB lines 14/50 000003.01, this page's binary only
+VTQ     SYN, (8)6.0                  ! LV line 16 .20, SV line 20 .23, half word only
+VTDQ    SYN, (8)6.40                 ! SV line 21 000006.63, half word only; prints V TCQ, D worn to C (p.230 prints TDQ, beside VTDP3/VTDP4)
+VSURT   SYN, (8)225201.0             ! SV/LX/SX lines 18,26,37,46,49 (p.231 SYN not landed)
+VRDY    SYN(BU,1), .26               ! p.231 prints V RDY SYN(BU,1),.26 (OCR; not landed)
+VDS     SYN, (8)3.40                 ! LR line 48 000003.50 (J=4 is .10), half word only
+VTDP1   SYN, (8)224772.40            ! BZB line 50 second half 224772.74 (TOP1 gives .34 on line 14)
+
+        SLC, (8)224730.0
+        CB+,VP,VWTTS                                         ! line  1  -0706
+        LVI,VU,VSC                                           ! line  2  -0707
+VSTTS1  V-I,VP,1.                                            ! line  3  -0708
+        LVI,VT2,0                                            ! line  4  -0709
+        B,(VP)                                               ! line  5  -0710
+VRTTS   LVI,VU,VTSB                                          ! line  6  -0711
+        SIC,(VP)                                             ! line  7
+        CB+,VP,VTOP                                          ! line  8  -0712
+        LVI,VU,VQ                                            ! line  9
+        B,VSTTS1                                             ! line 10  -0714
+VTOP    LV,VT5,VX1(VU)                                       ! line 11  -TAPE OPERATE -0715
+        L,VOP(VU)                                            ! line 12  -0716
+        ST,VT1.VOPB                                          ! line 13  -0717*
+        BZB,VSQNC(VU),VTOP1                                  ! line 14  -0718
+        LVI,VT1,0                                            ! line 15  -0719
+        LV,VT4,VTQ(VU)                                       ! line 16  -0720
+        BXVZ,VTOP2                                           ! line 17  -0721
+        SV,VT5,VSURT(VT4)                                    ! line 18  -0722
+        B,VTOP1                                              ! line 19  -0723
+VTOP2   SV,VT5,VTQ(VU)                                       ! line 20  -0724
+        SV,VT5,VTDQ(VU)                                      ! line 21
+VTOP1   SIC,(VP)                                             ! line 22
+        B,VTMV                                               ! line 23  -0725*
+        B,VACT                                               ! line 24  -0726
+VTMV    LR,VT1,VU                                            ! line 25  -TAPE MOTIVATIEN -0727
+        SX,VT1,VSURT(VT5)                                    ! line 26  -0728
+        CM0000,VSURT.VRDY(VT5)                               ! line 27  -0729
+        BXF,VTMV1                                            ! line 28  -0730
+        B,$MCP                                               ! line 29
+        ,$REW                                                ! line 30  -0731
+        ,(VT5)                                               ! line 31  -0732
+        B,(VP)                                               ! line 32  -0733*
+VTMV1   B,$MCP                                               ! line 33
+        ,DUNLD                                               ! line 34  -0734
+        ,(VT5)                                               ! line 35  -0735
+        B,(VP)                                               ! line 36  -0736*
+VTA     LX,VT1,VSURT(VT2)                                    ! line 37  -0737
+        SR,VT1,VU                                            ! line 38  -PUT DS IN U -0738
+        SV,VT2,VSU(VU)                                       ! line 39  -SEND SU TO DESTINATI -0739
+        LV,VT4,VXG(VT2)                                      ! line 40  -0740
+        SV,VU,VXXRG(VT4)                                     ! line 41  -0741
+        Z,VRCNT(VU)                                          ! line 42  -0742
+        B,VSTR(VU)                                           ! line 43  -START UNIT AT DESTIN -0743
+VTDSP   CM1111,VSURT.VRDY(VT5)                               ! line 44  -0744
+        LX,VP,VPD                                            ! line 45  -0745
+        LX,VT1,VSURT(VT5)                                    ! line 46  -0746
+        SR,VT1,VU                                            ! line 47  -0747
+        LR,VT1,VDS(VU)                                       ! line 48  -0748
+        SX,VT1,VSURT(VT5)                                    ! line 49  -0749
+        BZB,VSQNC(VU),VTDP1                                  ! line 50  -0750
+
+!SYM VSTTS1 224731.00
+!SYM VRTTS  224732.40
+!SYM VTOP   224735.00
+!SYM VTOP2  224743.00
+!SYM VTOP1  224744.00
+!SYM VTMV   224745.40
+!SYM VTMV1  224752.00
+!SYM VTA    224754.00
+!SYM VTDSP  224757.40
+!CHECK 224730.00 | 224721.43 48 | line 1 CB+,V P,V WTTS (a "*" prints after the location)
+!CHECK 224730.40 | 225250.07 01 | line 2 LVI,V U,V SC
+!CHECK 224731.00 | 000001.03 0D | line 3 V STTS1 V-I,V P,1.
+!CHECK 224731.40 | 000000.15 01 | line 4 LVI,V T2,0 (byte prints C1)
+!CHECK 224732.00 | 000000.10 01 | line 5 B,(V P)
+!CHECK 224732.40 | 225221.07 01 | line 6 V RTTS LVI,V U,V TSB
+!CHECK 224733.00 | 000000.00 81 | line 7 SIC,(V P)
+!CHECK 224733.40 | 224735.03 48 | line 8 CB+,V P,V TOP
+!CHECK 224734.00 | 225346.07 01 | line 9 LVI,V U,V Q
+!CHECK 224734.40 | 224731.10 00 | line 10 B,V STTS1
+!CHECK 224735.00 | 000000.62 33 | line 11 V TOP LV,V T5,V X1(V U)
+!CHECK 224735.40 | 000003.00 83 001000.20 50 | line 12 L,V OP(V U) (prints 001000.2C 5C)
+!CHECK 224736.40 | 000024.31 80 001000.20 D0 | line 13 ST,V T1.V OPB
+!CHECK 224737.40 | 000003.01 83 224744.34 00 | line 14 BZB,V SQNC(V U),V TOP1
+!CHECK 224740.40 | 000000.11 01 | line 15 LVI,V T1,0
+!CHECK 224741.00 | 000006.20 33 | line 16 LV,V T4,V TQ(V U)
+!CHECK 224741.40 | 224743.31 42 | line 17 BXVZ,V TOP2
+!CHECK 224742.00 | 225201.23 38 | line 18 SV,V T5,V SURT(V T4)
+!CHECK 224742.40 | 224744.10 00 | line 19 B,V TOP1
+!CHECK 224743.00 | 000006.23 33 | line 20 V TOP2 SV,V T5,V TQ(V U)
+!CHECK 224743.40 | 000006.63 33 | line 21 SV,V T5,V TCQ(V U) (a "*" prints after the location)
+!CHECK 224744.00 | 000000.00 81 | line 22 V TOP1 SIC,(V P)
+!CHECK 224744.40 | 224745.50 00 | line 23 B,V TMV (byte prints C0)
+!CHECK 224745.00 | 224655.10 00 | line 24 B,V ACT (byte prints C0)
+!CHECK 224745.40 | 000023.10 70 | line 25 V TMV LR,V T1,V U
+!CHECK 224746.00 | 225201.11 19 | line 26 SX,V T1,V SURT(V T5)
+!CHECK 224746.40 | 225201.32 89 001000.00 F0 | line 27 CMOCOO,V SURT.V RDY(V T5) (prints 001000.CC FC)
+!CHECK 224747.40 | 224752.23 42 | line 28 BXF,V TMV1
+!CHECK 224750.00 | 000040.10 00 | line 29 B,$MCP
+!CHECK 224750.40 | 000010.00 80 | line 30 ,$REW
+!CHECK 224751.00 | 000000.00 89 | line 31 ,(V T5)
+!CHECK 224751.40 | 000000.10 01 | line 32 B,(V P)
+!CHECK 224752.00 | 000040.10 00 | line 33 V TMV1 B,$MCP
+!CHECK 224752.40 | 000010.40 80 | line 34 ,D UNLD
+!CHECK 224753.00 | 000000.00 89 | line 35 ,(V T5)
+!CHECK 224753.40 | 000000.10 01 | line 36 B,(V P)
+!CHECK 224754.00 | 225201.10 16 | line 37 V TA LX,V T1,V SURT(V T2)
+!CHECK 224754.40 | 000023.11 70 | line 38 SR,V T1,V U
+!CHECK 224755.00 | 000006.15 33 | line 39 SV,V T2,V SU(V U)
+!CHECK 224755.40 | 224135.20 36 | line 40 LV,V T4,V XG(V T2)
+!CHECK 224756.00 | 777777.47 38 | line 41 SV,V U,V XXRG(V T4)
+!CHECK 224756.40 | 000007.22 03 | line 42 Z,V RCNT(V U)
+!CHECK 224757.00 | 000010.10 03 | line 43 B,V STR(V U) (a "*" prints after the location)
+!CHECK 224757.40 | 225201.32 89 001000.36 F0 | line 44 V TDSP CM1111,V SURT.V RDY(V T5)
+!CHECK 224760.40 | 225427.02 10 | line 45 LX,V P,V PD
+!CHECK 224761.00 | 225201.10 19 | line 46 LX,V T1,V SURT(V T5)
+!CHECK 224761.40 | 000023.11 70 | line 47 SR,V T1,V U
+!CHECK 224762.00 | 000003.50 73 | line 48 LR,V T1,V DS(V U)
+!CHECK 224762.40 | 225201.11 19 | line 49 SX,V T1,V SURT(V T5)
+!CHECK 224763.00 | 000003.01 83 224772.74 00 | line 50 BZB,V SGNC(V U),V TDP1 (byte prints CC)

@@ -1,0 +1,230 @@
+! mcp_bootstrap_p231.strap -- MCP printed page 231: the Input Program's
+! card-scan / tape-switch section (V SCNLX .. V RJTP), lines 1-56.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.238, read at 400 dpi, 900 dpi for
+! doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID CA000799  DIST. OF 3/01  3/01  PAGE NUMBER 231"; the heading
+! row's LOCATION field is 225020, line 1's word.
+!
+! THE PAGE.  56 lines, every one located, contiguous from 225020.40 to
+! 225060.00 (a half word; next half word 225060.40).  The volume OCR
+! puts printed p.230's last row at 225020.00 (CB+,V P,V ROCSX, a half
+! word) and p.232's first at 225060.40 (V MTTSA), so the page joins on
+! both sides.  Every line number prints with a "*" after it; asterisks
+! also print after the LOCATION on lines 2, 22 and 42.
+!
+! >>> "C" FOR "O", FOUR TIMES (transcription_workflow.md "O vs C"). <<<
+!   line  1  SYSMCD  -> SYSMOD   p.103's SYN(BU,2),SCOMRG+.8 = 215001.10,
+!                                and the row prints 002000.00 (BU,2).
+!   line 17  V CFFLN -> VOFFLN   landed p.215 line 5 B,VOFFLN prints
+!                                225032.40, this row's LOCATION.
+!   line 23  V ECFX  -> VEOFX    landed p.220 DD(BU,1) at 224372.32,
+!                                exactly this row's first half word.
+!   line 34  V CCMX  -> VCOMX    p.233 line 2 (not landed) prints the
+!                                label "V COMX" at 225120.40 with a
+!                                closed O; B here prints 225120.50.
+!   and line 5 "V OVBY" is read O (closed at 900 dpi); p.232 line 16
+!   prints the same "B,V OVBY" -> 225076.50, BUT p.232 line 25's
+!   defining label prints "V CVBY".  Written VOVBY; p.232 must agree.
+!
+! >>> V OPB, V OP, V TSA, V TSB, V SURT ARE DEFINED ON PAGES NOT LANDED.
+! The volume OCR of p.234 line 46 reads "V CPB SYN(BU,1),.25" and p.236
+! line 19 "V OP SYN(BU,1),3."; this page's CM1111 rows print the (BU,1)
+! length 001000 and VSURT.VOPB = 225201.31 (.25 decimal = .31 octal).
+!
+! LINE 46 PRINTS "CM1111.VSURT" at 900 dpi -- the comma's tail is worn
+! to a dot (CM1111,V TSB on line 37 prints a clean comma); written ",".
+!
+! Octal-field opens ("C00001.CC", "225C22.CC") are 0.  Hex bytes
+! printed with an open round, written 0: line 37 "FC" (F0; the same
+! CM1111 on line 46 prints a clean F0), line 7 "EC" (E0: no second
+! index is printed), line 22 "C4" (04: p.215 prints this BZBZ's second
+! half word "000000.34 04"; this row's LOCATION prints 225035.CC).
+!
+! LENGTH FROM THE FINAL SYMBOL.  These statements write no dds and print
+! the length of the LAST symbol in the address: "The data description of
+! the final symbol ... applies to the whole combination" (C22-6531
+! printed p.11).  V OPB, V RDY and V OP are SYN(BU,1), as their defining
+! cards print (OCR of pp.231/234/236, not landed); V OPB = .25 and
+! V RDY = .26 are bit addresses, unchanged by the point in front of them
+! (C22-6578 printed p.64).
+!
+! LENGTH 32 FROM AN INSTRUCTION'S NAME.  L/ST with no dds print 040000.20
+! when the operand names a half-word instruction: "instruction-naming
+! symbols are given field lengths equal to the lengths of the particular
+! instructions named (either 32 or 64) ... byte size 8" (C22-6531
+! printed p.10), so those stand-in SYNs carry (BU,32,8).
+!
+! >>> CARD SERIALS. <<<  Right-hand serials run DA000799 .. DA000847
+! (the prefix has a straight left stem; the header's CARD ID prints C).
+! Seven pairs share a serial: lines 4/5 (802), 26/27 (823), 28/29
+! (824), 30/31 (825), 35/36 (829), 38/39 (831), 50/51 (842) -- two
+! statements per card; the second statement's remark field then prints
+! further left (lines 27, 36, 39, 51).  Remark sequence numbers skip
+! -0790/-0791 (lines 3-5 print none), -0802, -0816, -0824..-0826.
+
+SYSMOD  SYN(BU,2), (8)215001.10      ! landed p.103 line 18 SYN(BU,2),SCOMRG+.8
+VU      SYN, $3                      ! p.213 line 25
+VP      SYN, $1                      ! p.213 line 26
+VT1     SYN, $4                      ! p.213 line 27
+VT2     SYN, $6                      ! p.213 line 29
+VT3     SYN, $7                      ! p.213 line 30
+VT5     SYN, $9                      ! p.213 line 28
+VX      SYN, (8)0.0                  ! p.213 line 11 "V X SYN,0"
+VX1     SYN, (8)0.40                 ! p.213 line 12 = VX.VH
+VX2R    SYN, (8)2.0                  ! p.213 line 14 prints 000002.00
+VNX     SYN, (8)5.0                  ! p.213 line 16 prints 000005.00
+VRQB    SYN, 6.32                    ! p.213 line 19 = VSU.VH
+VRCNT   SYN, 7.0                     ! p.213 line 20 = VRQB.VH
+VFCNT   SYN, 7.32                    ! p.213 line 21 = VRCNT.VH
+VSETX   SYN, (8)224671.40            ! landed
+VSC5    SYN(BU,32,8), (8)224263.40   ! label of a half-word instruction (p.217/p.228): (BU,32,8), C22-6531 printed p.10
+VSC1A   SYN(BU,32,8), (8)224266.0    ! label of a half-word instruction (p.217/p.228): (BU,32,8), C22-6531 printed p.10
+VSCR1   SYN, (8)224272.40            ! landed p.217
+VSQ1    SYN, (8)224322.0             ! landed p.218
+VWQ     SYN, (8)224324.40            ! landed p.218
+VNOP    SYN, (8)224157.40            ! landed p.215
+VCSAW   SYN(BU,1), (8)224171.23      ! landed p.215 SYN(BU,1),V RDCSS.19
+VRDQ    SYN, (8)224233.40            ! landed p.216
+VEOFX   SYN(BU,1), (8)224372.32      ! landed p.220 DD(BU,1),0
+VSSREW  SYN, (8)224374.0             ! landed p.220
+VSC     SYN, (8)225250.0             ! landed
+VCR     SYN, (8)225232.0             ! landed
+VWT     SYN, (8)225266.0             ! landed
+VTX     SYN, (8)225246.0             ! landed
+VTX1    SYN, (8)225247.0             ! landed
+VACT    SYN, (8)224655.0             ! landed
+VTSA    SYN, (8)225210.0             ! LVI lines 2/55, LV line 45; half word only (p.234 VF, not landed)
+VTSB    SYN, (8)225221.0             ! LVI line 44, half word only (p.236 VF, not landed)
+VOP     SYN(BU,1), 3.                ! p.234/p.236 print V OP SYN(BU,1),3. (OCR; not landed)
+VSURT   SYN, (8)225201.0             ! LX line 47, half word only (p.234 SYN, not landed)
+VOPB    SYN(BU,1), .25               ! p.234 line 46 prints V OPB SYN(BU,1),.25 (OCR; not landed)
+!                                      after a period; the integer 25 is the same 25 bits and the only form that assembles
+VOVBY   SYN, (8)225076.40            ! B line 5, half word only (p.232, not landed)
+VTXT    SYN, (8)225243.0             ! SWAPI line 7 second address (p.236 XW, not landed)
+VINON   SYN(BU,32,8), (8)224717.0    ! label of a half-word instruction (p.217/p.228): (BU,32,8), C22-6531 printed p.10
+VCOMX   SYN, (8)225120.40            ! B line 34, half word only (p.233, not landed)
+VSCFL   SYN, (8)225072.0             ! B line 36, half word only (p.232, not landed)
+VMTTSA  SYN, (8)225060.40            ! CB+ line 39, half word only (p.232 line 1, not landed)
+VTMV    SYN, (8)224745.40            ! B line 51, half word only (p.229, not landed)
+
+        SLC, (8)225020.40
+        CM0000,SYSMOD                                        ! line  1  -0788
+        LVI,VU,VTSA                                          ! line  2  -0789
+        CB-,VP,VSETX                                         ! line  3
+VSCNLX  SIC,1.(VP)                                           ! line  4
+        B,VOVBY                                              ! line  5
+        B,VSCNL1                                             ! line  6  -0792
+VSCNL   SWAPI,3,VTX,VTXT                                     ! line  7  -0793
+VSCNL1  L,VINON                                              ! line  8  -0794*
+        ST,VSC5                                              ! line  9  -0795
+        LVI,VT1,VWQ                                          ! line 10  -0796
+        SVA,VT1,VNX+VSC                                      ! line 11  -0797
+        LVI,VT1,VSC1A                                        ! line 12  -0798
+        SVA,VT1,VSQ1                                         ! line 13  -0799
+        LV,VT1,VX+VCR                                        ! line 14  -0800
+        SV,VT1,VX+VWT                                        ! line 15  -0801
+        B,(VP)                                               ! line 16  -0803
+VOFFLN  LX,VT1,VTX1                                          ! line 17  -VERIFY INACTIVITY OF-0804
+        CB,VT1,VNOP                                          ! line 18  -0805
+        LX,VT3,VX2R+VSC                                      ! line 19  -0806
+        LV,VT1,(VT3)                                         ! line 20  -0807
+        BZXVZ,VNOP                                           ! line 21  -0808
+        BZBZ,VCSAW,VNOP                                      ! line 22  -0809
+        BB1,VEOFX,                                           ! line 23  -0810
+        LVI,VT1,VRDQ                                         ! line 24  -0811
+        SVA,VT1,VNX+VSC                                      ! line 25  -0812
+        SIC,(VP)                                             ! line 26
+        CB+,VP,VSCR1                                         ! line 27  -REMOVE LAST CARD FRC-0813
+        LV,VT5,VRQB+VWT                                      ! line 28
+        SR,VP,VRQB+VWT                                       ! line 29
+        SIC,(VP)                                             ! line 30
+        CB+,VP,VNX+VWT                                       ! line 31
+        LVI,VU,VWT                                           ! line 32  -0814
+        LVNI,VT5,VFREW                                       ! line 33  -0815
+        B,VCOMX                                              ! line 34
+VFREW   SIC,(VP)                                             ! line 35
+        B,VSCFL                                              ! line 36  -0817
+        CM1111,VTSB+VOP                                      ! line 37  -0818
+        SIC,(VP)                                             ! line 38
+        CB+,VP,VMTTSA                                        ! line 39  -0819
+        LVI,VU,VWT                                           ! line 40  -0820
+        LVNI,VT2,VFREW                                       ! line 41
+        L(U),VRCNT(VU)                                       ! line 42  -0821
+        BZRZ,VSSREW                                          ! line 43  -0822
+VRJTP   LVI,VU,VTSB                                          ! line 44  -0823
+        LV,VT5,VTSA+VX1                                      ! line 45  -017
+        CM1111,VSURT.VOPB(VT5)                               ! line 46  -017
+        LX,VT1,VSURT(VT5)                                    ! line 47  -017
+        SR,VT1,VT3                                           ! line 48  -030
+        SV,VP,VFCNT(VT3)                                     ! line 49  -( 30)
+        SIC,(VP)                                             ! line 50
+        B,VTMV                                               ! line 51  -0827*
+        LVI,VP,17.0                                          ! line 52
+        SV,VP,VX1(VT3)                                       ! line 53
+        LV,VP,VFCNT(VT3)                                     ! line 54
+        LVI,VU,VTSA                                          ! line 55  -0828+
+        B,VACT                                               ! line 56  -0829+
+
+!SYM VSCNLX 225022.40
+!SYM VSCNL  225024.00
+!SYM VSCNL1 225025.00
+!SYM VOFFLN 225032.40
+!SYM VFREW  225044.40
+!SYM VRJTP  225051.40
+!CHECK 225020.40 | 215001.10 80 002000.00 F0 | line 1 CM0000,SYSMCD as printed (O worn to C)
+!CHECK 225021.40 | 225210.07 01 | line 2 LVI,V U,V TSA (a "*" prints after the location)
+!CHECK 225022.00 | 224671.43 C8 | line 3 CB-,V P,V SETX
+!CHECK 225022.40 | 000001.00 81 | line 4 V SCNLX SIC,1.(V P) (row prints 000001.CC)
+!CHECK 225023.00 | 225076.50 00 | line 5 B,V OVBY
+!CHECK 225023.40 | 225025.10 00 | line 6 B,V SCNL1
+!CHECK 225024.00 | 225246.00 80 225243.06 E0 | line 7 V SCNL SWAPI,3,V TX,V TXT (byte prints EC)
+!CHECK 225025.00 | 224717.00 80 040000.20 50 | line 8 V SCNL1 L,V INON
+!CHECK 225026.00 | 224263.40 80 040000.20 D0 | line 9 ST,V SC5
+!CHECK 225027.00 | 224324.51 01 | line 10 LVI,V T1,V WQ
+!CHECK 225027.40 | 225255.11 D0 | line 11 SVA,V T1,V NX+V SC
+!CHECK 225030.00 | 224266.11 01 | line 12 LVI,V T1,V SC1A
+!CHECK 225030.40 | 224322.11 D0 | line 13 SVA,V T1,V SQ1
+!CHECK 225031.00 | 225232.10 30 | line 14 LV,V T1,V X+V CR
+!CHECK 225031.40 | 225266.11 30 | line 15 SV,V T1,V X+V WT
+!CHECK 225032.00 | 000000.10 01 | line 16 B,(V P)
+!CHECK 225032.40 | 225247.10 10 | line 17 V CFFLN LX,V T1,V TX1 as printed (O worn to C)
+!CHECK 225033.00 | 224157.50 48 | line 18 CB,V T1,V NOP
+!CHECK 225033.40 | 225252.16 10 | line 19 LX,V T3,V X2R+V SC
+!CHECK 225034.00 | 000000.10 37 | line 20 LV,V T1,(V T3)
+!CHECK 225034.40 | 224157.71 40 | line 21 BZXVZ,V NOP
+!CHECK 225035.00 | 224171.23 80 224157.74 04 | line 22 BZBZ,V CSAW,V NOP (a "*" prints after the location; byte prints C4)
+!CHECK 225036.00 | 224372.32 80 000000.34 0E | line 23 BB1,V ECFX, as printed (O worn to C)
+!CHECK 225037.00 | 224233.51 01 | line 24 LVI,V T1,V RDQ
+!CHECK 225037.40 | 225255.11 D0 | line 25 SVA,V T1,V NX+V SC
+!CHECK 225040.00 | 000000.00 81 | line 26 SIC,(V P)
+!CHECK 225040.40 | 224272.43 48 | line 27 CB+,V P,V SCR1
+!CHECK 225041.00 | 225274.62 30 | line 28 LV,VT5,VRQB+VWT
+!CHECK 225041.40 | 225274.43 70 | line 29 SR,VP,VRQB+VWT
+!CHECK 225042.00 | 000000.00 81 | line 30 SIC,(VP)
+!CHECK 225042.40 | 225273.03 48 | line 31 CB+,VP,VNX+VWT
+!CHECK 225043.00 | 225266.07 01 | line 32 LVI,V U,V WT
+!CHECK 225043.40 | 225044.63 09 | line 33 LVNI,V T5,V FREW
+!CHECK 225044.00 | 225120.50 00 | line 34 B,V CCMX as printed (O worn to C; byte prints C0)
+!CHECK 225044.40 | 000000.00 81 | line 35 V FREW SIC,(V P)
+!CHECK 225045.00 | 225072.10 00 | line 36 B,V SCFL
+!CHECK 225045.40 | 225224.00 80 001000.36 F0 | line 37 CM1111,V TSB+V OP (byte prints FC)
+!CHECK 225046.40 | 000000.00 81 | line 38 SIC,(V P)
+!CHECK 225047.00 | 225060.43 48 | line 39 CB+,V P,V MTTSA
+!CHECK 225047.40 | 225266.07 01 | line 40 LVI,V U,V WT
+!CHECK 225050.00 | 225044.55 09 | line 41 LVNI,V T2,V FREW
+!CHECK 225050.40 | 000007.40 63 | line 42 L(U),V RCNT(V U) (a "*" prints after the location)
+!CHECK 225051.00 | 224374.34 C0 | line 43 BZRZ,V SSREW
+!CHECK 225051.40 | 225221.07 01 | line 44 V RJTP LVI,V U,V TSB
+!CHECK 225052.00 | 225210.62 30 | line 45 LV,VT5,VTSA+VX1
+!CHECK 225052.40 | 225201.31 89 001000.36 F0 | line 46 CM1111,VSURT.VOPB(VT5)
+!CHECK 225053.40 | 225201.10 19 | line 47 LX,VT1,VSURT(VT5)
+!CHECK 225054.00 | 000027.11 70 | line 48 SR,VT1,VT3
+!CHECK 225054.40 | 000007.43 37 | line 49 SV,VP,VFCNT(VT3)
+!CHECK 225055.00 | 000000.00 81 | line 50 SIC,(V P)
+!CHECK 225055.40 | 224745.50 00 | line 51 B,V TMV
+!CHECK 225056.00 | 000021.03 01 | line 52 LVI,VP,17.0
+!CHECK 225056.40 | 000000.43 37 | line 53 SV,VP,VX1(VT3)
+!CHECK 225057.00 | 000007.42 37 | line 54 LV,VP,VFCNT(VT3)
+!CHECK 225057.40 | 225210.07 01 | line 55 LVI,V U,V TSA
+!CHECK 225060.00 | 224655.10 00 | line 56 B,V ACT

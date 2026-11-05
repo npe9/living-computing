@@ -292,7 +292,7 @@ YRLTT   SYN, (8)232555.00            ! line  9, printed value
 XTENTB  SYN, (8)233667.00            ! line 10, printed value
 SASPUT  SYN, (8)222111.00            ! line 11, printed value
 SCSPRT  SYN, (8)222105.00            ! line 12, printed value
-VVSCR   SYN, (8)224105.00            ! line 14, printed value
+VVSCR   SYN(BU,4), (8)224105.00      ! line 14, printed value; dds of p.213 line 44 DD(BU,4)
 YJC1TT  SYN, (8)230747.00            ! line 39, printed value
 SCDRYT  SYN, (8)222120.00            ! line 40, printed value
 SAEOJT  SYN, (8)222115.00            ! line 41, printed value
