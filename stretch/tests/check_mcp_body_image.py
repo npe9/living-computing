@@ -75,7 +75,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "strap"))
 import mcp_image                                          # noqa: E402
 
-FIRST, LAST = 99, 196
+FIRST, LAST = 99, 197
 
 
 def body_pages():
@@ -96,7 +96,7 @@ def main():
               f"{'' if ok else f' expected {want}'}")
 
     pages = body_pages()
-    check("body_page_count", len(pages), 97)
+    check("body_page_count", len(pages), 98)
 
     # merge() raises SystemExit on a symbol or dds disagreement, which
     # is the whole cross-check.  Reaching the next line IS the result.

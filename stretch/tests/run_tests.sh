@@ -6623,6 +6623,7 @@ run "the label-message and job-preamble block, printed p.193" python3 verify_mcp
 run "the new-tape routine and JNEWXR index save, printed p.194" python3 verify_mcp_page.py 194
 run "the write-label and insert-reel messages, printed p.195" python3 verify_mcp_page.py 195
 run "the UNLOAD command, printed p.196" python3 verify_mcp_page.py 196
+run "the tail of UNLOAD and its messages, printed p.197 (first page landed from the Vision reading)" python3 verify_mcp_page.py 197
 
 # >>> pp.185-192 FOUND A WRONG ANSWER IN THE VFL IMMEDIATE, and the
 # page caught it by writing ONE immediate at TWO LENGTHS. <<<

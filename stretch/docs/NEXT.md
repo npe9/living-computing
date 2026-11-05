@@ -16493,6 +16493,11 @@ the list has its own name scope). Statements confirmed by assembly
 (tools/statement_confirm.py, 2026-11-04): 3,659 on all pages, 41.6% of
 eligible landed lines, hex 1,432/1,432, text 92.6%. asm-bound (symbols
 bound by look-alike and by every location of a multiply-defined name):
-447 more, landed 216 at hex 100%, spelling 64%. NEXT: land a no-deck
-page from the confirmed cards (rule 3 still reads the spelling off the
-ink).
+447 more, landed 216 at hex 100%, spelling 64%.
+printed p.197 LANDED (2026-11-05), the first page from the Vision
+reading: tools/page_sheet.py as finding aid, every value off the ink,
+18 rows + 11 symbols bit-exact (verify_mcp_page.py 197), body image to
+p.197 with no merge disagreement. Two glyphs needed more than the ink:
+the page prints KFUNLC / K UNLC1 for p.196's KFUNLD / KUNLD1 (worn D),
+and line 11's byte prints "AC" -- an open 0, A0 (Vision read AC too). Open: no LH000042 between pp.196/197; LH000058
+printed on two cards. NEXT: p.198 the same way.
