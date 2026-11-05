@@ -58,10 +58,13 @@
 ! nibble is I2 and no second index is printed, so the byte is A0 --
 ! the same call p.197 line 11 and p.149 lines 19/23 made.
 !
-! >>> TRAILING "-" ON LINES 32 AND 37. <<<  "BB,SASPUT.4,RNOCHK-" and
-! "LX,AY,ACWA-   VF INDICATES ..." are written AS PRINTED; strap_asm
-! takes the "-" as the remark's dash and both rows check.  Line 32's BB
-! encodes exactly as line 42's BB with no minus (.34 02).
+! >>> THE "-" AFTER A STATEMENT IS THE COMMENT MARK. <<<  C28-6129 PDF
+! p.5: "The beginning of a comment is signaled by the character ' (an 8-4
+! double punch)", e.g. "TABLE' BEGIN CONVERSION" -- no blank before it;
+! this drum prints ' as "-".  So "BB,SASPUT.4,RNOCHK-" and
+! "LX,AY,ACWA-   VF INDICATES ..." (lines 32, 37) are
+! the statements WITHOUT the dash (rewritten 2026-11-05; strap_asm had
+! silently dropped a dangling operator).
 !
 ! INDEX SYMBOLS AX/AY/AZ = 10/9/8 are read off this page's binary
 ! (LVE,AX -> .25; LX,AY -> .22; LX,AZ -> .20; low nibbles 8A/89 of
@@ -118,12 +121,12 @@ ASPUO   CM0000(BU,1),AEOJI                                   ! line 25  -TURN OF
         Z,$7                                                 ! line 29
         L(BU,18),SASPUT+3.32,46                              ! line 30
         *I(BU,6),15,20                                       ! line 31
-        BB,SASPUT.4,RNOCHK-                                  ! line 32
+        BB,SASPUT.4,RNOCHK                                   ! line 32
         LF(BU,64),$L,64                                      ! line 33
         BZRZ,ACHERR                                          ! line 34
         SIC,ACHKBR                                           ! line 35
         B,ACHK                                               ! line 36
-RNOCHK  LX,AY,ACWA-                                          ! line 37        VF INDICATES AVAILABLE PUNCH BUFFER,AACX
+RNOCHK  LX,AY,ACWA                                           ! line 37        VF INDICATES AVAILABLE PUNCH BUFFER,AACX
 ! line 38  - CF CONTAINS NUMBER OF FULL WORDS AVAILABLE IN PUNCH BUFFER
         LX,AZ,AXWZ                                           ! line 39  -CF CONTAINS 15,=OF FULL WORDS PER CARD IM
 AAOS1   KCI,AX,0                                             ! line 40  -DOES PP WANT MORE CARDS PUNCHED
@@ -175,12 +178,12 @@ AAOS3   BB,ABWA,AAOS7-1.                                     ! line 55  -IS BUFF
 !CHECK 222126.00 | 000027.22 00 | line 29 Z,$7
 !CHECK 222126.40 | 222114.40 80 022027.20 50 | line 30 L(BU,18),SASPUT+3.32,46
 !CHECK 222127.40 | 170000.00 80 406012.21 90 | line 31 *I(BU,6),15,20
-!CHECK 222130.40 | 222111.04 80 222134.34 02 | line 32 BB,SASPUT.4,RNOCHK-
+!CHECK 222130.40 | 222111.04 80 222134.34 02 | line 32 BB,SASPUT.4,RNOCHK (then the comment mark)
 !CHECK 222131.40 | 000010.00 80 000040.06 70 | line 33 LF(BU,64),$L,64
 !CHECK 222132.40 | 222223.34 C0 | line 34 BZRZ,ACHERR
 !CHECK 222133.00 | 222222.40 80 | line 35 SIC,ACHKBR (serial MA000031)
 !CHECK 222133.40 | 222217.10 00 | line 36 B,ACHK (serial MA000031 again)
-!CHECK 222134.00 | 223257.22 10 | line 37 RNOCHK LX,AY,ACWA-
+!CHECK 222134.00 | 223257.22 10 | line 37 RNOCHK LX,AY,ACWA (then the comment mark)
 !CHECK 222134.40 | 223256.20 10 | line 39 LX,AZ,AXWZ
 !CHECK 222135.00 | 000000.25 0A | line 40 AAOS1 KCI,AX,0 (prints AACS1, KCI,AX,C)
 !CHECK 222135.40 | 222143.72 C2 | line 41 BXE,AAOS2 (prints AACS2)

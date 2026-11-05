@@ -66,7 +66,7 @@ VREQ7   SYN, (8)224472.0             ! B line 23 / BZXVZ line 14, half word only
 VRQEXT  SYN, (8)224716.40            ! LV line 7, half word only
 VPOP    SYN, 2.32                    ! BZB line 15 bit address, BIT-EXACT, this page only
 VSEOJ   SYN, (8)224600.40            ! CB+ lines 28/48, half word only
-VEQ     SYN, (8)224451.40            ! LVI line 35, half word only
+VEQ     SYN(BU,32,8), (8)224451.40            ! LVI line 35, half word only
 
         SLC, (8)224516.0
         V-I,,.VH                                             ! line  1  -0478

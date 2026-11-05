@@ -6660,6 +6660,22 @@ run "V TDP3 .. V CCR, the tape status section, printed p.230" python3 verify_mcp
 run "the card-scan / tape-switch section, V SCNLX .. V RJTP (.26 on a bit address), printed p.231" python3 verify_mcp_page.py 231
 run "the tape-switching section, V MTTSA .. V BYPAF, printed p.232" python3 verify_mcp_page.py 232
 run "the scan/byte section, V COMX .. (instruction-label dds), printed p.233" python3 verify_mcp_page.py 233
+run "the V sweep / rewind section and the TS-A table, V NLB2 .. V TSA2K, printed p.234" python3 verify_mcp_page.py 234
+run "one line, B,V TA, printed p.235" python3 verify_mcp_page.py 235
+run "the TS-B, card-reader and scan tables, V TSB .. V SC2Q, printed p.236" python3 verify_mcp_page.py 236
+run "the write / scan / read control words, V WT .. V RCW, printed p.237" python3 verify_mcp_page.py 237
+run "the V Q / V E / V PD buffers and RTSMSG, printed p.238" python3 verify_mcp_page.py 238
+run "the packed DD(BU,32) pair tables, 54 fields on four cards, printed p.239" python3 verify_mcp_page.py 239
+run "the 2-D DRZ(BU,64),(34,15) buffers V BF1 / V BF2 and R UNLD (C22-6531 p.34), printed p.240" python3 verify_mcp_page.py 240
+run "THE OVERLAP INPUT PROGRAM FIXUPS, R KSUK .. R WSTOR, printed p.241" python3 verify_mcp_page.py 241
+run "the read/write error recovery, R WSET .. R ENGJB, printed p.242" python3 verify_mcp_page.py 242
+run "the R GOOD / R ESRCH / R LOOPE recovery, R K CRWT, printed p.243" python3 verify_mcp_page.py 243
+run "the R ETRY / R KSCNN / R TEE recovery tables, printed p.244" python3 verify_mcp_page.py 244
+run "the R Y retry chain, R YNOGD .. R TBSP, printed p.245" python3 verify_mcp_page.py 245
+run "the R T rest / down / R DUK routines, printed p.246" python3 verify_mcp_page.py 246
+run "the R DREXT .. R DNOTP recovery (RDNOTP: C22-6728), printed p.247" python3 verify_mcp_page.py 247
+run "the R C card-jam / count routines, R CSAV .. R CSETP, printed p.248" python3 verify_mcp_page.py 248
+run "the last page of volume 1, R CUFUL .. R EOF, printed p.249" python3 verify_mcp_page.py 249
 
 # >>> pp.185-192 FOUND A WRONG ANSWER IN THE VFL IMMEDIATE, and the
 # page caught it by writing ONE immediate at TWO LENGTHS. <<<
@@ -6679,7 +6695,8 @@ run "the scan/byte section, V COMX .. (instruction-label dds), printed p.233" py
 # Also: the SYN path never stripped blanks the instruction path does
 # ("B,K IO IND" assembled, "E IO IND SYN,K IO IND" did not), found
 # by printed p.189 printing both on one page.
-run "MCP's body merges and accounts for every word, printed pp.99-233" python3 check_mcp_body_image.py
+run "MCP's body merges and accounts for every word, printed pp.99-249" python3 check_mcp_body_image.py
+run "a printed trailing '-' is the comment mark, not a minus, C28-6129 PDF p.5" python3 check_comment_mark.py
 run "an instruction's name carries a dds, (BU,32,8) or (BU,64,8), C22-6531 printed p.10" python3 check_instruction_label_dds.py
 run "the equipment dispatch, printed p.160" python3 verify_mcp_page.py 160
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108

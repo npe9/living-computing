@@ -1,0 +1,188 @@
+! mcp_bootstrap_p242.strap -- MCP printed page 242: the R W.. tape
+! positioning / R E.. error-retry section (RWSET .. RENGJB), lines 1-49.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.249, read at 400 dpi, 900/1800 dpi
+! for doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID
+! 11D11MCP  CARD ID CB000038  DIST. OF 3/01  3/01  PAGE NUMBER 242";
+! the heading row's LOCATION field is 227552, line 1's word.
+!
+! THE PAGE.  49 lines, all located, contiguous from 227552.00 to
+! 227603.00 (a full word CM; next location 227604.00), then blank
+! paper.  The volume reading puts p.241's last row at 227551.40 (a
+! half word) and p.243's line 1 at 227604.00, so the page joins both.
+! No remarks are printed.  Asterisks after the LOCATION on lines 3,
+! 24, 47.  Lines 13, 15, 21, 28, 30, 39 are VF data words (value
+! printed with a "+" suffix).
+!
+! LABEL SPELLINGS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 6 "RW TCNG" = RWTONG, line 12 "RW NCEG" = RWNOEG (and line 9
+!     ",RWNCEG"): at 1800 dpi the glyph is as wide as line 7's closed O
+!     in REJJOB, wider than the real C of LCI/DMCP in the same rows, and
+!     has no D stem.  Line 9's BZBZ h2 prints 227560.74 = line 12's
+!     227560.40, so the reference and the label are the same symbol.
+!     Neither name is in any landed deck.
+!   * line 7 "REJJOB" prints a CLOSED O; line 9 prints it open
+!     ("REJJCB") -- same symbol, same 230364.77.
+!   * line 7 "RWSTCR", line 16 "RESTCR": open O, written RWSTOR/RESTOR
+!     (RE STORe).  C22-6728 (OCR) prints RESTOR; RWSTOR rests on ink.
+!   * line 44 "REDOBL" (sheet read RECOBL) and line 31 "RERDUK": the
+!     third/fourth glyph has the straight left stem of D, the same
+!     worn-bowl D as line 39's "CERGS" = landed DERGS.
+!     C22-6728 (OCR) prints "a REDOBL entry" and RERDUK, RWSET, RWEE.
+!   * lines 13/21/28/39 print "DW", "CSPFL", "CRD"/"DRC", "CERGS": the
+!     landed p.104 D-names DW, DSPFL, DRD, DERGS (VF values 1.32, 6.32,
+!     1.0, 5.01 print exactly).
+!   * line 40 prints "VSL(VU)": the U's right stem is worn; no VSL is
+!     defined anywhere, and the binary 000006.01 B3 is lines 14/22/29's
+!     LVE,,VSU(VU) bit for bit (VSU = VID.VH = 6.0, p.213 line 18).
+!     Written VSU.
+!   * line 1 "RWEXIT-2.C", line 42 "-1.C($13)", line 47 "RKC+1.C":
+!     a round glyph in a number is 0.
+!   * hex bytes printed with an open round ("C0", "C1", "C2", "FC")
+!     are 0; octal fields "CCCCCC.CC" are 0.
+!
+! CARD SERIALS.  Right-hand serials run ?B000038 .. ?B000069 (prefix a
+! round glyph; the header prints it "CB000038", the column mostly "0B").
+! The deck's serials start afresh at 038 on this page.  Shared serials:
+! 2/3 (039), 4/5 (040), 10/11 (045), 12-15 (046), 16/17 (047), 20-22
+! (050), 27-30 (055), 38-40 (063), 42/43 (065), 44/45 (066), 47/48
+! (068).  No serial is skipped.
+
+VU      SYN, $3                      ! p.213 line 25 "V U SYN,$3"
+VSU     SYN, 6.0                     ! p.213 line 18 = VID.VH = 6.0
+VRCNT   SYN, 7.0                     ! p.213 line 20 = VRQB.VH = 7.0
+VWCW    SYN, (8)225272.0             ! landed decks; VF line 15 prints 225272.00+
+DMCP    SYN, 32.0                    ! landed p.108
+DW      SYN, 1.32                    ! landed p.104 "D W"
+DSPFL   SYN, 6.32                    ! landed p.104 "D SPFL"
+DRD     SYN, 1.0                     ! landed p.104 "D RD"
+DERGS   SYN, 5.01                    ! landed p.104 "D ERG S"
+RWEXIT  SYN(BU,32), (8)227646.0      ! p.244 (scratch) line 8 "RWEXIT DRZ(BU,32),4" at 227646.00; p.219 writes SYN, (8)227646.0
+RWREST  SYN, (8)227545.0             ! B line 5, half word only
+RKD     SYN, 3.0                     ! as p.244 (scratch) writes it, volume OCR "RKD SYN, 3.0"; LCI line 6 RKD+1.0 = 000004
+REJJOB  SYN, (8)230364.0             ! BZB1/BZBZ lines 7/9 REJJOB+.63 = 230364.77, BIT-EXACT
+RWSTOR  SYN, (8)227546.40            ! BZB1 line 7 h2, half word only
+RESTOR  SYN, (8)230316.40            ! LVI line 16 .77 = .40 + 2*15+1, this page's binary only
+RTN     SYN, (8)230103.40            ! B lines 17/34, half word only
+REBSP1  SYN, (8)230334.0             ! LVI line 19 / BZXVZ line 26, this page's binary only
+RK4P32  SYN, (8)230271.0             ! B line 23, half word only
+RESKIP  SYN, (8)230250.0             ! VF line 30 prints 230250.00+, BIT-EXACT
+RERDUK  SYN, (8)230324.0             ! LVI line 31, this page's binary only
+READ    SYN, (8)230325.0             ! LVI line 33, this page's binary only
+RETRY   SYN, (8)227643.0             ! p.244 (scratch) line 2 "RETRY VF,RKC+1.0" at 227643.00; LC/SC/SVA lines 35/37/48
+REREX   SYN(BU,32,8), (8)227612.40   ! p.243 (scratch) line 11 label of LVI (half word): (BU,32,8), C22-6531 printed p.10
+REDOBL  SYN, (8)230265.40            ! LVI line 44 .45 = .40 + 2*2+1, this page's binary only
+RESPAC  SYN(BU,32,8), (8)227613.40   ! p.243 (scratch) line 13 label of B (half word): (BU,32,8), C22-6531 printed p.10
+RKC     SYN, 3.0                     ! as p.244 (scratch) writes it, volume OCR "RKC SYN, 3.0"; LVI line 47 RKC+1.0 = 000004
+RKCRWT  SYN(BU,32,8), (8)227642.0    ! p.243 (scratch) line 56 label of NOP (half word); CM1111 line 49 .19 = 227642.23, BIT-EXACT
+
+        SLC, (8)227552.0
+        Z,RWEXIT-2.0                                         ! line  1  printed "-2.C"
+RWSET   LVI,$15,RWEE                                         ! line  2
+        SVA,$15,RWEXIT+3.32                                  ! line  3
+        LVI,$15,RWBSP                                        ! line  4
+        B,RWREST                                             ! line  5
+RWTONG  LCI,$15,RKD+1.0                                      ! line  6  printed "RW TCNG"
+        BZB1,REJJOB+.63,RWSTOR                               ! line  7
+RWSBSP  LV,VU,0.32($13)                                      ! line  8
+        BZBZ,REJJOB+.63,RWNOEG                               ! line  9
+        SIC,RERGBR                                           ! line 10
+        B,RERG                                               ! line 11
+RWNOEG  B,DMCP                                               ! line 12  printed "RW NCEG"
+        VF,DW                                                ! line 13
+        LVE,,VSU(VU)                                         ! line 14
+        VF,VWCW                                              ! line 15
+        LVI,$15,RESTOR                                       ! line 16
+        B,RTN                                                ! line 17
+RWEE    LV,VU,.32($13)                                       ! line 18
+        LVI,$15,REBSP1                                       ! line 19
+        B,DMCP                                               ! line 20
+        VF,DSPFL                                             ! line 21  printed "CSPFL"
+        LVE,,VSU(VU)                                         ! line 22
+        B,RK4P32                                             ! line 23
+RWBSP   LV,VU,0.32($13)                                      ! line 24
+        LV,$15,VRCNT(VU)                                     ! line 25
+        BZXVZ,REBSP1                                         ! line 26
+        B,DMCP                                               ! line 27
+        VF,DRD                                               ! line 28
+        LVE,,VSU(VU)                                         ! line 29
+        VF,RESKIP                                            ! line 30
+        LVI,$15,RERDUK                                       ! line 31
+        SVA,$15,3.32($13)                                    ! line 32
+        LVI,$15,READ                                         ! line 33
+        B,RTN                                                ! line 34
+RERG    LC,$14,RETRY                                         ! line 35
+        CBZ,$14,RENGJB                                       ! line 36
+        SC,$14,RETRY                                         ! line 37
+        B,DMCP                                               ! line 38
+        VF,DERGS                                             ! line 39  printed "CERGS"
+        LVE,,VSU(VU)                                         ! line 40  printed "VSL(VU)"
+RERGBR  B,$                                                  ! line 41
+RETEST  LV,$2,-1.0($13)                                      ! line 42
+        BZXVZ,REREX                                          ! line 43
+        LVI,$2,REDOBL                                        ! line 44
+        SVA,$2,4.32($13)                                     ! line 45
+        B,RESPAC                                             ! line 46
+RENGJB  LVI,$14,RKC+1.0                                      ! line 47
+        SVA,$14,RETRY                                        ! line 48
+        CM1111(BU,1),RKCRWT.19                               ! line 49
+
+!SYM RWSET  227552.40
+!SYM RWTONG 227554.40
+!SYM RWSBSP 227556.00
+!SYM RWNOEG 227560.40
+!SYM RWEE   227563.40
+!SYM RWBSP  227566.40
+!SYM RERG   227574.00
+!SYM RERGBR 227577.00
+!SYM RETEST 227577.40
+!SYM RENGJB 227602.00
+!CHECK 227552.00 | 227644.22 00 | line 1 Z,RWEXIT-2.0
+!CHECK 227552.40 | 227563.77 01 | line 2 RWSET LVI,$15,RWEE
+!CHECK 227553.00 | 227651.77 D0 | line 3 SVA,$15,RWEXIT+3.32 (a "*" after the location)
+!CHECK 227553.40 | 227566.77 01 | line 4 LVI,$15,RWBSP
+!CHECK 227554.00 | 227545.10 00 | line 5 B,RWREST
+!CHECK 227554.40 | 000004.37 02 | line 6 RWTONG LCI,$15,RKD+1.0
+!CHECK 227555.00 | 230364.77 80 227546.74 0C | line 7 BZB1,REJJOB+.63,RWSTOR
+!CHECK 227556.00 | 000000.46 3D | line 8 RWSBSP LV,VU,0.32($13)
+!CHECK 227556.40 | 230364.77 80 227560.74 04 | line 9 BZBZ,REJJOB+.63,RWNOEG
+!CHECK 227557.40 | 227577.00 80 | line 10 SIC,RERGBR
+!CHECK 227560.00 | 227574.10 00 | line 11 B,RERG
+!CHECK 227560.40 | 000040.10 00 | line 12 RWNOEG B,DMCP
+!CHECK 227561.00 | 000001.40+ | line 13 VF,DW
+!CHECK 227561.40 | 000006.01 B3 | line 14 LVE,,VSU(VU)
+!CHECK 227562.00 | 225272.00+ | line 15 VF,VWCW
+!CHECK 227562.40 | 230316.77 01 | line 16 LVI,$15,RESTOR
+!CHECK 227563.00 | 230103.50 00 | line 17 B,RTN
+!CHECK 227563.40 | 000000.46 3D | line 18 RWEE LV,VU,.32($13)
+!CHECK 227564.00 | 230334.37 01 | line 19 LVI,$15,REBSP1
+!CHECK 227564.40 | 000040.10 00 | line 20 B,DMCP
+!CHECK 227565.00 | 000006.40+ | line 21 VF,DSPFL
+!CHECK 227565.40 | 000006.01 B3 | line 22 LVE,,VSU(VU)
+!CHECK 227566.00 | 230271.10 00 | line 23 B,RK4P32
+!CHECK 227566.40 | 000000.46 3D | line 24 RWBSP LV,VU,0.32($13) (a "*" after the location)
+!CHECK 227567.00 | 000007.36 33 | line 25 LV,$15,VRCNT(VU)
+!CHECK 227567.40 | 230334.31 40 | line 26 BZXVZ,REBSP1
+!CHECK 227570.00 | 000040.10 00 | line 27 B,DMCP
+!CHECK 227570.40 | 000001.00+ | line 28 VF,DRD
+!CHECK 227571.00 | 000006.01 B3 | line 29 LVE,,VSU(VU)
+!CHECK 227571.40 | 230250.00+ | line 30 VF,RESKIP
+!CHECK 227572.00 | 230324.37 01 | line 31 LVI,$15,RERDUK
+!CHECK 227572.40 | 000003.77 DD | line 32 SVA,$15,3.32($13)
+!CHECK 227573.00 | 230325.37 01 | line 33 LVI,$15,READ
+!CHECK 227573.40 | 230103.50 00 | line 34 B,RTN
+!CHECK 227574.00 | 227643.34 50 | line 35 RERG LC,$14,RETRY
+!CHECK 227574.40 | 227602.34 4A | line 36 CBZ,$14,RENGJB
+!CHECK 227575.00 | 227643.35 50 | line 37 SC,$14,RETRY
+!CHECK 227575.40 | 000040.10 00 | line 38 B,DMCP
+!CHECK 227576.00 | 000005.01+ | line 39 VF,DERGS
+!CHECK 227576.40 | 000006.01 B3 | line 40 LVE,,VSU(VU) (prints "VSL(VU)")
+!CHECK 227577.00 | 227577.10 00 | line 41 RERGBR B,$
+!CHECK 227577.40 | 777777.04 3D | line 42 RETEST LV,$2,-1.0($13)
+!CHECK 227600.00 | 227612.71 40 | line 43 BZXVZ,REREX
+!CHECK 227600.40 | 230265.45 01 | line 44 LVI,$2,REDOBL
+!CHECK 227601.00 | 000004.45 DD | line 45 SVA,$2,4.32($13)
+!CHECK 227601.40 | 227613.50 00 | line 46 B,RESPAC
+!CHECK 227602.00 | 000004.35 01 | line 47 RENGJB LVI,$14,RKC+1.0 (a "*" after the location)
+!CHECK 227602.40 | 227643.35 D0 | line 48 SVA,$14,RETRY
+!CHECK 227603.00 | 227642.23 80 001000.36 F0 | line 49 CM1111(BU,1),RKCRWT.19 (h2 byte prints FC)

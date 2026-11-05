@@ -55,6 +55,13 @@
 !
 ! External stand-ins are checked by the merge where a landed deck
 ! defines them; the rest come from this page's binary as noted.
+!
+! >>> THE "-" AFTER A STATEMENT IS THE COMMENT MARK. <<<  C28-6129 PDF
+! p.5: "The beginning of a comment is signaled by the character ' (an 8-4
+! double punch)", e.g. "TABLE' BEGIN CONVERSION" -- no blank before it;
+! this drum prints ' as "-".  So lines 5, 28 and 33 ("SPPLB-",
+! "RNOLCK-", "CWA-") are the statements WITHOUT the dash (rewritten 2026-11-05; strap_asm had
+! silently dropped a dangling operator).
 
 SLRBU   SYN, (8)215324.0             ! landed
 SPPUB   SYN, SLRBU                   ! landed p.116 line 22
@@ -77,7 +84,7 @@ AX      SYN,$10                                              ! line  1
 AY      SYN,$9                                               ! line  2
 AZ      SYN,$8                                               ! line  3
 AN      SYN,$7                                               ! line  4
-ACHK    KV,$10,SPPLB-                                        ! line  5
+ACHK    KV,$10,SPPLB                                         ! line  5
         BXL,ACHERR                                           ! line  6  -REQUEST OUT CF BOUNDS
         +(BU,18),$10,46                                      ! line  7
         K(BU,18),SPPUB,46                                    ! line  8
@@ -100,12 +107,12 @@ CSTART  CM0000(BU,1),AEOJI                                   ! line 21  -TURN OF
         Z,$7                                                 ! line 25
         L(BU,18),SCSPRT+3.32,46                              ! line 26
         *I(BU,6),17,20                                       ! line 27
-        BB,SCSPRT.4,RNOLCK-                                  ! line 28
+        BB,SCSPRT.4,RNOLCK                                   ! line 28
         LF(BU,64),$L,64                                      ! line 29
         BZRZ,ACHERR                                          ! line 30
         SIC,ACHKBR                                           ! line 31
         B,ACHK                                               ! line 32
-RNOLCK  LX,$8,CWA-                                           ! line 33  TRANSMISSION INDEX
+RNOLCK  LX,$8,CWA                                            ! line 33  TRANSMISSION INDEX
 CAOS1   KCI,$10,0                                            ! line 34  -ARE ALL LINES TRANSMITTED
         BXE,CAOS2                                            ! line 35  -YES-BRANCH
         LCI,$9,16                                            ! line 36  -NO,CF=16 FULL WCRDS TO TRANS
@@ -147,7 +154,7 @@ CAOS3B  CM0000,CBTA                                          ! line 56  -SWAP BU
 !SYM CAOS3A 222256.00
 !SYM CXY    222257.00
 !SYM CAOS3B 222257.40
-!CHECK 222217.00 | 215324.64 90 | line 5 A CHK KV,$10,SPPLB-
+!CHECK 222217.00 | 215324.64 90 | line 5 A CHK KV,$10,SPPLB (then the comment mark)
 !CHECK 222217.40 | 222223.32 42 | line 6 BXL,ACHERR
 !CHECK 222220.00 | 000032.00 80 022027.20 10 | line 7 +(BU,18),$10,46
 !CHECK 222221.00 | 215324.00 80 022027.21 10 | line 8 K(BU,18),SPPUB,46
@@ -169,12 +176,12 @@ CAOS3B  CM0000,CBTA                                          ! line 56  -SWAP BU
 !CHECK 222232.40 | 000027.22 00 | line 25 Z,$7
 !CHECK 222233.00 | 222110.40 80 022027.20 50 | line 26 L(BU,18),SCSPRT+3.32,46
 !CHECK 222234.00 | 210000.00 80 406012.21 90 | line 27 *I(BU,6),17,20
-!CHECK 222235.00 | 222105.04 80 222240.74 02 | line 28 BB,SCSPRT.4,RNOLCK-
+!CHECK 222235.00 | 222105.04 80 222240.74 02 | line 28 BB,SCSPRT.4,RNOLCK (then the comment mark)
 !CHECK 222236.00 | 000010.00 80 000040.06 70 | line 29 LF(BU,64),$L,64 (byte prints 7C)
 !CHECK 222237.00 | 222223.34 C0 | line 30 BZRZ,ACHERR
 !CHECK 222237.40 | 222222.40 80 | line 31 SIC,ACHKBR
 !CHECK 222240.00 | 222217.10 00 | line 32 B,ACHK (byte prints C0)
-!CHECK 222240.40 | 222577.20 10 | line 33 RNOLCK LX,$8,CWA-
+!CHECK 222240.40 | 222577.20 10 | line 33 RNOLCK LX,$8,CWA (then the comment mark)
 !CHECK 222241.00 | 000000.25 0A | line 34 CACS1 KCI,$10,C as printed
 !CHECK 222241.40 | 222253.72 C2 | line 35 BXE,CACS2
 !CHECK 222242.00 | 000020.23 02 | line 36 LCI,$9,16 (byte prints C2)

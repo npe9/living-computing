@@ -1,0 +1,188 @@
+! mcp_bootstrap_p248.strap -- MCP printed page 248: the Input Program's
+! card-reader recovery section (R CSAV .. R CSETP), lines 1-51.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.255, read at 400 dpi, 900 dpi for
+! doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID CB000238  DIST. OF 3/01  3/01  PAGE NUMBER 248" (the card ID
+! prints "CBC00238": a round glyph in a numeric field, 0); the heading
+! row's LOCATION field is 230021, line 1's word.
+!
+! THE PAGE.  51 lines, all located, contiguous from 230021.40 to
+! 230054.00 (a half word; next location 230054.40), then blank paper.
+! p.247 ends with a full word at 230020.40 (BZB,2.12($13),RCENT1), so
+! line 1's .40 continues it; p.249 opens at 230054.40.  No remarks.
+! Asterisks after the LOCATION on lines 1, 23, 44.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 21 "RCCUNT" = RCOUNT (worn O): lines 8, 23, 30 print RCOUNT
+!     with the O closed; LC prints 230166.74, the same word.
+!   * line 35 "REJJCB" = REJJOB (worn O): C22-6728 names REJJOB (bits
+!     60/61, "set by the input program"); BB1 h1 230364.76 = REJJOB.62.
+!   * line 38 "RCUTCN" = RCUTDN: the defining card, p.249 line 21 at
+!     230066.40, prints the fifth glyph with a straight left stem (D) at
+!     900 dpi, and p.249 line 8 BXE,RCUTDN likewise.  BAE prints
+!     230066.76 = that location.  (Vision reads RCUTDN on p.249.)
+!   * line 28 "VPC" = VPD: landed decks (p.214/215/221) spell VPD at
+!     225427.0; LX prints 225427.02.
+!   * line 40 RCETJM: p.249 line 17 defines RCETJM at 230064.40 (the M
+!     prints with a worn right leg, Vision RCETJN); BXCZ 230064.70.
+!   * line 18 "M-1": the glyph is the digit 1 (flagged top), M-1 the
+!     subtract-one sibling of p.197's M+1.
+!   * line 18's last byte prints "BC" and is B0: its low nibble is the
+!     offset's index (I2), and M-1,RCJAM prints no second operand --
+!     the same "BC" for B0 that landed p.221 line 38 settled.  RCJAM's
+!     (B,25,1) is read off the same half word, 031100.12: length 25,
+!     byte size 1, signed (bit 51 clear; M+1/M-1 on a (BU) field print
+!     .22/.32), the form landed decks give VTSQ for M+1's 031100.02.
+!   * line 12's last byte prints "DC"; lines 46 and 48 (same statement
+!     form, SVA,$14,RCREXT+n.32) print D0, and an open round in a hex
+!     field is 0 (brief): written D0.
+!   * line 51's byte prints "C0" (C+I; line 7's C+I prints 00) and is
+!     00; octal fields printing "CCCC17.33" etc. are 0.  Lines 4 and 38
+!     print C2 (BXE, BAE), which those statements assemble to.
+!
+! CARD SERIALS.  Right-hand serials run 0B000238 .. 0B000268 (prefix
+! glyph round, as in the header).  Shared serials: 1-2 (238), 3-4
+! (239), 5-6 (240), 7-8 (241), 11-12 (244), 13-16 (245, four lines),
+! 21-22 (250), 25-26 (253), 28-30 (255), 31-32 (256), 33-34 (257),
+! 39-40 (262), 41-43 (263), 45-46 (265), 47-48 (266), 50-51 (268).  No
+! serial is skipped on the page; p.249 opens at 0B000270 (no 269
+! printed on either page).
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 13
+DCOMM   SYN, 35.32                   ! landed p.105 line 23; VF line 14 prints 000043.40+
+VT2     SYN, $6                      ! p.213 line 29 (landed)
+VT5     SYN, $9                      ! p.213 line 28 (landed)
+VP      SYN, $1                      ! p.213 line 26 (landed)
+VU      SYN, $3                      ! p.213 line 25 (landed)
+VX1     SYN, (8)0.40                 ! p.213 line 12 "SYN,V X.V H" (landed)
+VPD     SYN, (8)225427.0             ! landed (p.221); LX line 28 (printed "VPC")
+VEE     SYN, (8)224633.40            ! landed (p.215); B line 32, half word only
+RDCCW   SYN, (8)230373.0             ! p.249 line 5 VF,RDCCW 230373.00+ (not landed); LV/LX/SX lines 1,5,19,39,43,49
+RCWSAV  SYN, (8)230167.0             ! p.249 line 45 VF,RCWSAV 230167.00+ (not landed); KV line 3, SX line 10
+RCOUNT  SYN, (8)230166.40            ! this page's binary only (SVA/LC/SC lines 8,21,23,30), half word only
+RCJAM   SYN(B,25,1), (8)230166.0     ! M-1 line 18 230166.00, (B,25,1) from its printed 031100.12 (as landed VTSQ, p.221); p.247 LV line 40; BIT-EXACT
+RKF     SYN, (8)3.0                  ! this page's binary only: LVI line 6 000003.35, line 29 RKF+1.0 000004.35
+RCSCS   SYN, (8)230073.40            ! p.249 line 31 label at 230073.40 (not landed); LVI line 11 230073.75
+RCREXT  SYN, (8)230175.0             ! this page's binary only: SVA RCREXT+3/4/5.32 = 230200/1/2.40, half word only
+RCMSGE  SYN, (8)230170.0             ! this page's binary only: VF line 15 230170.00+
+RETN    SYN, (8)230104.0             ! p.249 line 47 label at 230104.00 (not landed); BE line 17
+REJJOB  SYN, (8)230364.0             ! this page's binary only: BB1 line 35 REJJOB.62 = 230364.76, word only
+RCUFUL  SYN(BU,32,8), (8)230057.40   ! p.249 line 7 label KVI at 230057.40 (not landed); instruction label (BU,32,8), C22-6531 printed p.10
+RCETJM  SYN(BU,32,8), (8)230064.40   ! p.249 line 17 label SR at 230064.40 (not landed); instruction label
+RCUTDN  SYN(BU,32,8), (8)230066.40   ! p.249 line 21 label V-I at 230066.40 (not landed); printed here "RCUTCN"
+RKTRY   SYN, (8)230304.0             ! this page's binary only: LVI line 45 230304.35
+RKTRYE  SYN, (8)230303.0             ! this page's binary only: LVI line 47 230303.35
+
+        SLC, (8)230021.40
+        LV,$15,RDCCW                                         ! line  1
+        V-I,$15,15.0                                         ! line  2
+        KV,$15,RCWSAV                                        ! line  3
+        BXE,RCWEQU                                           ! line  4
+        LX,$15,RDCCW                                         ! line  5
+        LVI,$14,RKF                                          ! line  6
+        C+I,$15,15.0                                         ! line  7
+        SVA,$14,RCOUNT                                       ! line  8
+        V-I,$15,15.0                                         ! line  9
+RCSAV   SX,$15,RCWSAV                                        ! line 10
+RCSET   LVI,$14,RCSCS                                        ! line 11
+        SVA,$14,RCREXT+4.32                                  ! line 12
+        B,DMCP                                               ! line 13
+        VF,DCOMM                                             ! line 14
+        VF,RCMSGE                                            ! line 15
+        VF,4.0                                               ! line 16
+        BE,RETN                                              ! line 17
+RCENT1  M-1,RCJAM                                            ! line 18
+        LX,$15,RDCCW                                         ! line 19
+        B,RCSAV                                              ! line 20
+RCWEQU  LC,$14,RCOUNT                                        ! line 21
+        CBZ,$14,RCUKNG                                       ! line 22
+        SC,$14,RCOUNT                                        ! line 23
+        B,RCSET                                              ! line 24
+RC34RD  LVI,VT2,0.0                                          ! line 25
+        LVI,VT5,34.0                                         ! line 26
+        B,RCBCK                                              ! line 27
+RCUKNG  LX,VP,VPD                                            ! line 28
+        LVI,$14,RKF+1.0                                      ! line 29
+        SVA,$14,RCOUNT                                       ! line 30
+        SIC,(VP)                                             ! line 31
+        B,VEE                                                ! line 32
+        V+I,VT5,0                                            ! line 33
+        BXVZ,RC34RD                                          ! line 34
+RCBCK   BB1,REJJOB.62,RCUFUL                                 ! line 35
+        LWF(U),-15.0($15)                                    ! line 36
+        KI(BU,12),(8)420000.0,-12                            ! line 37
+        BAE,RCUTDN                                           ! line 38
+        LX,$13,RDCCW                                         ! line 39
+        BXCZ,RCETJM                                          ! line 40
+        C-I,$13,15.0                                         ! line 41
+        V+I,$13,15.0                                         ! line 42
+        SX,$13,RDCCW                                         ! line 43
+RCSETP  SVA,VT2,VX1(VU)                                      ! line 44
+        LVI,$14,RKTRY                                        ! line 45
+        SVA,$14,RCREXT+5.32                                  ! line 46
+        LVI,$14,RKTRYE                                       ! line 47
+        SVA,$14,RCREXT+3.32                                  ! line 48
+        LX,$13,RDCCW                                         ! line 49
+        V-I,$13,15.0                                         ! line 50
+        C+I,$13,15.0                                         ! line 51
+
+!SYM RCSAV  230026.00
+!SYM RCSET  230026.40
+!SYM RCENT1 230032.00
+!SYM RCWEQU 230034.00
+!SYM RC34RD 230036.00
+!SYM RCUKNG 230037.40
+!SYM RCBCK  230043.00
+!SYM RCSETP 230050.40
+!CHECK 230021.40 | 230373.36 30 | line 1 LV,$15,RDCCW (a "*" after the location)
+!CHECK 230022.00 | 000017.37 0D | line 2 V-I,$15,15.0
+!CHECK 230022.40 | 230167.36 90 | line 3 KV,$15,RCWSAV
+!CHECK 230023.00 | 230034.32 C2 | line 4 BXE,RCWEQU
+!CHECK 230023.40 | 230373.36 10 | line 5 LX,$15,RDCCW
+!CHECK 230024.00 | 000003.35 01 | line 6 LVI,$14,RKF
+!CHECK 230024.40 | 000017.37 00 | line 7 C+I,$15,15.0
+!CHECK 230025.00 | 230166.75 D0 | line 8 SVA,$14,RCOUNT
+!CHECK 230025.40 | 000017.37 0D | line 9 V-I,$15,15.0
+!CHECK 230026.00 | 230167.37 10 | line 10 RCSAV SX,$15,RCWSAV
+!CHECK 230026.40 | 230073.75 01 | line 11 RCSET LVI,$14,RCSCS
+!CHECK 230027.00 | 230201.75 D0 | line 12 SVA,$14,RCREXT+4.32 (byte prints "DC")
+!CHECK 230027.40 | 000040.10 00 | line 13 B,DMCP
+!CHECK 230030.00 | 000043.40+ | line 14 VF,DCOMM
+!CHECK 230030.40 | 230170.00+ | line 15 VF,RCMSGE
+!CHECK 230031.00 | 000004.00+ | line 16 VF,4.0
+!CHECK 230031.40 | 230104.00 00 | line 17 BE,RETN
+!CHECK 230032.00 | 230166.00 80 031100.12 B0 | line 18 RCENT1 M-1,RCJAM (byte prints "BC"; no offset index printed, as p.221 line 38)
+!CHECK 230033.00 | 230373.36 10 | line 19 LX,$15,RDCCW
+!CHECK 230033.40 | 230026.10 00 | line 20 B,RCSAV
+!CHECK 230034.00 | 230166.74 50 | line 21 RCWEQU LC,$14,RCOUNT (printed "RCCUNT")
+!CHECK 230034.40 | 230037.74 4A | line 22 CBZ,$14,RCUKNG
+!CHECK 230035.00 | 230166.75 50 | line 23 SC,$14,RCOUNT (a "*" after the location)
+!CHECK 230035.40 | 230026.50 00 | line 24 B,RCSET
+!CHECK 230036.00 | 000000.15 01 | line 25 RC34RD LVI,VT2,0.0
+!CHECK 230036.40 | 000042.23 01 | line 26 LVI,VT5,34.0
+!CHECK 230037.00 | 230043.10 00 | line 27 B,RCBCK
+!CHECK 230037.40 | 225427.02 10 | line 28 RCUKNG LX,VP,VPD (printed "VPC")
+!CHECK 230040.00 | 000004.35 01 | line 29 LVI,$14,RKF+1.0
+!CHECK 230040.40 | 230166.75 D0 | line 30 SVA,$14,RCOUNT
+!CHECK 230041.00 | 000000.00 81 | line 31 SIC,(VP)
+!CHECK 230041.40 | 224633.50 00 | line 32 B,VEE
+!CHECK 230042.00 | 000000.23 05 | line 33 V+I,VT5,0
+!CHECK 230042.40 | 230036.31 42 | line 34 BXVZ,RC34RD
+!CHECK 230043.00 | 230364.76 80 230057.74 0E | line 35 RCBCK BB1,REJJOB.62,RCUFUL (printed "REJJCB")
+!CHECK 230044.00 | 777761.42 6F | line 36 LWF(U),-15.0($15)
+!CHECK 230044.40 | 420000.00 80 414072.21 10 | line 37 KI(BU,12),(8)420000.0,-12
+!CHECK 230045.40 | 230066.76 C2 | line 38 BAE,RCUTDN (printed "RCUTCN")
+!CHECK 230046.00 | 230373.32 10 | line 39 LX,$13,RDCCW
+!CHECK 230046.40 | 230064.70 42 | line 40 BXCZ,RCETJM
+!CHECK 230047.00 | 000017.33 08 | line 41 C-I,$13,15.0
+!CHECK 230047.40 | 000017.33 05 | line 42 V+I,$13,15.0
+!CHECK 230050.00 | 230373.33 10 | line 43 SX,$13,RDCCW
+!CHECK 230050.40 | 000000.55 D3 | line 44 RCSETP SVA,VT2,VX1(VU) (a "*" after the location)
+!CHECK 230051.00 | 230304.35 01 | line 45 LVI,$14,RKTRY
+!CHECK 230051.40 | 230202.75 D0 | line 46 SVA,$14,RCREXT+5.32
+!CHECK 230052.00 | 230303.35 01 | line 47 LVI,$14,RKTRYE
+!CHECK 230052.40 | 230200.75 D0 | line 48 SVA,$14,RCREXT+3.32
+!CHECK 230053.00 | 230373.32 10 | line 49 LX,$13,RDCCW
+!CHECK 230053.40 | 000017.33 0D | line 50 V-I,$13,15.0
+!CHECK 230054.00 | 000017.33 00 | line 51 C+I,$13,15.0 (byte prints "C0")

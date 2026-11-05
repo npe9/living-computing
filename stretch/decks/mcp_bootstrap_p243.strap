@@ -1,0 +1,201 @@
+! mcp_bootstrap_p243.strap -- MCP printed page 243: the R-section
+! (Input Program end-of-job / rewrite) from LX,VP,VPD to RKCRWT NOP,RSAM1,
+! lines 1-56.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.250, read at 400 dpi, 900 dpi for
+! doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID ?B000071  DIST. OF 3/01  3/01  PAGE NUMBER 243"; the heading
+! row's LOCATION field is 227604, line 1's word.
+!
+! THE PAGE.  56 lines, all located, contiguous from 227604.00 to
+! 227642.00 (a half word; next location 227642.40).  No remarks and no
+! comment cards.  The volume OCR puts p.242's last row (CM1111, a full
+! word) at 227603.00, so line 1 joins it; p.244's line 1 reads 227642.40
+! there, so line 56 joins the next page.  Asterisks after the LOCATION
+! on lines 17 and 39.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 4 "RGOOD" / line 9 label "RGCCD": open round glyphs; written
+!     RGOOD (English GOOD).  BZXVZ,RGOOD prints 227611.71 = line 9's
+!     227611.40.  Nothing else references it -- rests on the word.
+!   * line 34 label "RLCCPE", line 38 BXVGZ,RLCCPE: written RLOOPE
+!     (LOOP); 227626.71 = line 34's 227626.40.  This page only.
+!   * line 5 "CMOCOO" = CM0000 (connective 0000); line 5's h2 byte
+!     prints "FC" with an open round in an octal-dropping row
+!     ("001000.CC"); CM0000 assembles F0.
+!   * line 13 "B,CMCP" = B,DMCP (worn D stem); 000040.10 = DMCP 32.0.
+!   * line 14 "VF,CBSFL" = VF,DBSFL; prints 000007.00+ = DBSFL 7.0.
+!   * line 31 "VWT" (sheet read VHT): 900 dpi shows W; same binary as
+!     line 54 LVI,VU,VWT.  line 42 "VRQB" (sheet read VRQE): 900 dpi B.
+!   * hex bytes with open rounds: line 25 "DO" = D0, line 36 "CO" = 00,
+!     line 44 "DC" = D0, line 48 "CD" = 0D -- all by what the statement
+!     assembles to; octal "C" fields are 0.  line 8's "0C" is a real C.
+!   * "VSET3-C.32" (lines 22, 25) = VSET3-0.32.
+!   * line 19 prints "LV,VT3,VX+VWT-": the "-" is the COMMENT MARK, an
+!     empty comment, not a minus.  C28-6129 PDF p.5: "The beginning of a
+!     comment is signaled by the character ' (an 8-4 double punch)",
+!     example "TABLE' BEGIN CONVERSION" -- no blank before it; this drum
+!     prints ' as "-" (the remark column).  Written VX+VWT.
+!
+! CARD SERIALS.  Right-hand serials run ?B000071 .. ?B000105 (prefix
+! glyph round, as in the header).  Shared: 73 (lines 3/4), 75 (6/7),
+! 77 (9/10), 78 (11/12), 79 (13/14/15), 80 (16/17), 81 (18/19),
+! 82 (20/21), 83 (22/23), 86 (26/27/28), 87 (29/30), 88 (31/32/33),
+! 90 (35/36), 91 (37/38), 92 (39/40), 93 (41/42), 103 (52/53),
+! 104 (54/55).  No serial is skipped.
+
+VP      SYN, $1                      ! landed p.213 line 26 "V P SYN,$1"
+VU      SYN, $3                      ! landed p.213 line 25
+VT2     SYN, $6                      ! landed p.213 line 29
+VT3     SYN, $7                      ! landed p.213 line 30
+VT5     SYN, $9                      ! landed p.213 line 28
+VX      SYN, (8)0.0                  ! p.213 line 11 "V X SYN,0"
+VX1     SYN, (8)0.40                 ! p.213 line 12 = VX.VH
+VRCNT   SYN, 7.0                     ! landed p.213 line 20
+VFCNT   SYN, 7.32                    ! p.213 line 21 = VRCNT.VH
+VRQB    SYN, 6.32                    ! p.213 line 19 = VSU.VH
+VSU     SYN, 6.0                     ! p.213 line 18
+VPD     SYN, (8)225427.0             ! landed (p.221)
+VWT     SYN, (8)225266.0             ! landed
+VCR     SYN, (8)225232.0             ! landed
+VNXT    SYN, (8)224456.40            ! landed p.222 label
+VRTN    SYN, (8)224450.40            ! landed p.222 label
+VSETX   SYN, (8)224671.40            ! landed p.227 label
+VSET3   SYN(BU,32,8), (8)224677.40   ! landed p.228 label of SX (half word): (BU,32,8), C22-6531 printed p.10; binary same either way
+VCOM    SYN, (8)224702.0             ! landed p.228 label
+VWQ     SYN, (8)224324.40            ! landed p.218 label
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"
+DBSFL   SYN, 7.0                     ! landed p.104 line 30
+RSAM1   SYN, (8)230265.0             ! NOP line 56
+REJJOB  SYN, (8)230364.0             ! BBZ line 2 REJJOB+.17 = 230364.21
+REDUMP  SYN, (8)230400.0             ! BBZ line 2 / BZB1 line 8 h2
+RETEST  SYN, (8)227577.40            ! BZXVZ line 10
+REBSFL  SYN, (8)230272.0             ! LVI line 11
+RVSET3  SYN, (8)230362.0             ! ST(U) line 23, LWF(U) line 39
+RKSUB   SYN, (8)230363.0             ! LWF(U) line 24
+RENXSC  SYN, (8)230372.0             ! LWF(U) line 43
+
+        SLC, (8)227604.0
+        LX,VP,VPD                                            ! line  1
+        BBZ,REJJOB+.17,REDUMP                                ! line  2
+        LV,14,VFCNT(VU)                                      ! line  3
+        BZXVZ,RGOOD                                          ! line  4
+        CM0000(BU,1),RKCRWT.19                               ! line  5
+        SIC,RKCRWT                                           ! line  6
+        B,RESTRP                                             ! line  7
+        BZB1,RKCRWT.19,REDUMP                                ! line  8
+RGOOD   LV,14,VRCNT(VU)                                      ! line  9
+        BZXVZ,RETEST                                         ! line 10
+REREX   LVI,$2,REBSFL                                        ! line 11
+        SVA,$2,4.32($13)                                     ! line 12
+RESPAC  B,DMCP                                               ! line 13
+        VF,DBSFL                                             ! line 14
+        LVE,,VSU(VU)                                         ! line 15
+RESTRP  LV,$2,-1.0($13)                                      ! line 16
+        BXVZ,VRTN                                            ! line 17
+REWTEE  LV,VT5,VX1+VWT                                       ! line 18
+        LV,VT3,VX+VWT                                        ! line 19  -
+        V+,VT3,VT5                                           ! line 20
+        SV,VT3,VX+VWT                                        ! line 21
+RESRCH  LWF(U),VSET3-0.32                                    ! line 22
+        ST(U),RVSET3                                         ! line 23
+        LWF(U),RKSUB                                         ! line 24
+        ST(BU,32),VSET3-0.32,-32                             ! line 25
+        LV,VT5,VX1(VU)                                       ! line 26
+        KVI,VT5,34.0                                         ! line 27
+        BXH,$+1.32                                           ! line 28
+        SIC,(VP)                                             ! line 29
+        CB+,VP,VNXT                                          ! line 30
+        LVI,VU,VWT                                           ! line 31
+        LVI,VT2,0.0                                          ! line 32
+        LVI,VT5,0.0                                          ! line 33
+RLOOPE  V+,VT5,VT2                                           ! line 34
+        SIC,(VP)                                             ! line 35
+        B,VSETX                                              ! line 36
+        V+I,VT2,0.0                                          ! line 37
+        BXVGZ,RLOOPE                                         ! line 38
+        LWF(U),RVSET3                                        ! line 39
+        ST(U),VSET3-0.32                                     ! line 40
+        V+,VT5,VRQB+VWT                                      ! line 41
+        SR,VP,VRQB+VWT                                       ! line 42
+        LWF(U),RENXSC                                        ! line 43
+        ST(BU,32),VWQ,-32                                    ! line 44
+RK7777  SVA,VT5,RVT5SV                                       ! line 45
+        V+,VT5,VX+VWT                                        ! line 46
+        BXVLZ,$.64                                           ! line 47
+        V-I,VT5,34.0                                         ! line 48
+        SV,VT5,VX+VWT                                        ! line 49
+RVT5SV  LVI,VT5,$                                            ! line 50
+        LVI,VU,VCR                                           ! line 51
+        SIC,(VP)                                             ! line 52
+        B,VCOM                                               ! line 53
+        LVI,VU,VWT                                           ! line 54
+        LVI,VT5,0.0                                          ! line 55
+RKCRWT  NOP,RSAM1                                            ! line 56
+
+!SYM RGOOD  227611.40
+!SYM REREX  227612.40
+!SYM RESPAC 227613.40
+!SYM RESTRP 227615.00
+!SYM REWTEE 227616.00
+!SYM RESRCH 227620.00
+!SYM RLOOPE 227626.40
+!SYM RK7777 227634.40
+!SYM RVT5SV 227637.00
+!SYM RKCRWT 227642.00
+!CHECK 227604.00 | 225427.02 10 | line 1 LX,VP,VPD
+!CHECK 227604.40 | 230364.21 80 230400.34 06 | line 2 BBZ,REJJOB+.17,REDUMP
+!CHECK 227605.40 | 000007.74 33 | line 3 LV,14,VFCNT(VU)
+!CHECK 227606.00 | 227611.71 40 | line 4 BZXVZ,RGOOD
+!CHECK 227606.40 | 227642.23 80 001000.00 F0 | line 5 CM0000(BU,1),RKCRWT.19
+!CHECK 227607.40 | 227642.00 80 | line 6 SIC,RKCRWT
+!CHECK 227610.00 | 227615.10 00 | line 7 B,RESTRP
+!CHECK 227610.40 | 227642.23 80 230400.34 0C | line 8 BZB1,RKCRWT.19,REDUMP
+!CHECK 227611.40 | 000007.34 33 | line 9 RGOOD LV,14,VRCNT(VU)
+!CHECK 227612.00 | 227577.71 40 | line 10 BZXVZ,RETEST
+!CHECK 227612.40 | 230272.05 01 | line 11 REREX LVI,$2,REBSFL
+!CHECK 227613.00 | 000004.45 DD | line 12 SVA,$2,4.32($13)
+!CHECK 227613.40 | 000040.10 00 | line 13 RESPAC B,DMCP
+!CHECK 227614.00 | 000007.00+ | line 14 VF,DBSFL
+!CHECK 227614.40 | 000006.01 B3 | line 15 LVE,,VSU(VU)
+!CHECK 227615.00 | 777777.04 3D | line 16 RESTRP LV,$2,-1.0($13)
+!CHECK 227615.40 | 224450.71 42 | line 17 BXVZ,VRTN
+!CHECK 227616.00 | 225266.62 30 | line 18 REWTEE LV,VT5,VX1+VWT
+!CHECK 227616.40 | 225266.16 30 | line 19 LV,VT3,VX+VWT (empty comment)
+!CHECK 227617.00 | 000031.16 B0 | line 20 V+,VT3,VT5
+!CHECK 227617.40 | 225266.17 30 | line 21 SV,VT3,VX+VWT
+!CHECK 227620.00 | 224677.42 60 | line 22 RESRCH LWF(U),VSET3-0.32
+!CHECK 227620.40 | 230362.40 E0 | line 23 ST(U),RVSET3
+!CHECK 227621.00 | 230363.42 60 | line 24 LWF(U),RKSUB
+!CHECK 227621.40 | 224677.00 80 040060.20 D0 | line 25 ST(BU,32),VSET3-0.32,-32
+!CHECK 227622.40 | 000000.62 33 | line 26 LV,VT5,VX1(VU)
+!CHECK 227623.00 | 000042.23 04 | line 27 KVI,VT5,34.0
+!CHECK 227623.40 | 227625.33 42 | line 28 BXH,$+1.32
+!CHECK 227624.00 | 000000.00 81 | line 29 SIC,(VP)
+!CHECK 227624.40 | 224456.43 48 | line 30 CB+,VP,VNXT
+!CHECK 227625.00 | 225266.07 01 | line 31 LVI,VU,VWT
+!CHECK 227625.40 | 000000.15 01 | line 32 LVI,VT2,0.0
+!CHECK 227626.00 | 000000.23 01 | line 33 LVI,VT5,0.0
+!CHECK 227626.40 | 000026.22 B0 | line 34 RLOOPE V+,VT5,VT2
+!CHECK 227627.00 | 000000.00 81 | line 35 SIC,(VP)
+!CHECK 227627.40 | 224671.50 00 | line 36 B,VSETX
+!CHECK 227630.00 | 000000.15 05 | line 37 V+I,VT2,0.0
+!CHECK 227630.40 | 227626.71 C2 | line 38 BXVGZ,RLOOPE
+!CHECK 227631.00 | 230362.42 60 | line 39 LWF(U),RVSET3
+!CHECK 227631.40 | 224677.40 E0 | line 40 ST(U),VSET3-0.32
+!CHECK 227632.00 | 225274.62 B0 | line 41 V+,VT5,VRQB+VWT
+!CHECK 227632.40 | 225274.43 70 | line 42 SR,VP,VRQB+VWT
+!CHECK 227633.00 | 230372.42 60 | line 43 LWF(U),RENXSC
+!CHECK 227633.40 | 224324.40 80 040060.20 D0 | line 44 ST(BU,32),VWQ,-32
+!CHECK 227634.40 | 227637.23 D0 | line 45 RK7777 SVA,VT5,RVT5SV
+!CHECK 227635.00 | 225266.22 B0 | line 46 V+,VT5,VX+VWT
+!CHECK 227635.40 | 227636.70 C2 | line 47 BXVLZ,$.64
+!CHECK 227636.00 | 000042.23 0D | line 48 V-I,VT5,34.0
+!CHECK 227636.40 | 225266.23 30 | line 49 SV,VT5,VX+VWT
+!CHECK 227637.00 | 227637.23 01 | line 50 RVT5SV LVI,VT5,$
+!CHECK 227637.40 | 225232.07 01 | line 51 LVI,VU,VCR
+!CHECK 227640.00 | 000000.00 81 | line 52 SIC,(VP)
+!CHECK 227640.40 | 224702.10 00 | line 53 B,VCOM
+!CHECK 227641.00 | 225266.07 01 | line 54 LVI,VU,VWT
+!CHECK 227641.40 | 000000.23 01 | line 55 LVI,VT5,0.0
+!CHECK 227642.00 | 230265.30 00 | line 56 RKCRWT NOP,RSAM1

@@ -66,8 +66,8 @@ VACTX   SYN, (8)224653.0             ! B on line 12, half word only
 VWT     SYN, (8)225266.0             ! LVI on line 13, half word only; p.220 draft agrees
 VPD     SYN, (8)225427.0             ! LX on lines 23/43/46, half word only
 VXG     SYN, (8)224135.0             ! LVE on line 33, half word only
-RWEXIT  SYN, (8)227646.0             ! SV on line 34 (RWEXIT-1.0), half word only
-RKCRWT  SYN, (8)227642.0             ! SIC on line 36, BIT-EXACT
+RWEXIT  SYN(BU,32), (8)227646.0             ! SV on line 34 (RWEXIT-1.0), half word only
+RKCRWT  SYN(BU,32,8), (8)227642.0             ! SIC on line 36, BIT-EXACT
 REWTEE  SYN, (8)227616.0             ! B on line 37, half word only
 RSAM1   SYN, (8)230265.0             ! LVI on line 38, half word only
 REDMP   SYN, (8)230346.0             ! B on line 40, half word only

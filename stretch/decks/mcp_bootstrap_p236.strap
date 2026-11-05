@@ -1,0 +1,197 @@
+! mcp_bootstrap_p236.strap -- MCP printed page 236: the Input Program's
+! TS-B / card-reader / scan tables (VF,0 .. V SC2Q DRZ), lines 1-56.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.243, read at 400 dpi, 900 dpi for
+! doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID CA000993  DIST. OF 3/01  3/01  PAGE NUMBER 236"; the heading
+! row's LOCATION field is 225216, line 1's word.
+!
+! THE PAGE.  56 lines.  Located rows run 225216.00 .. 225260.00 (line 56
+! is a DRZ(BU,32) of V SCK = 6 half words, printing 000003.00, so the
+! next word is 225263.00).  Line 13 is the second field of line 12's
+! DD(BU,1),1,0 (same card serial).  Lines 7 and 24 are CNOPs printing
+! no location.  Lines 6, 19-23, 27, 46 are SYN cards (location column
+! prints the value; NULL or BU,01,10 in the data-description column).
+! Asterisks after the LOCATION on lines 5, 18, 39, 54, 56.  The volume
+! OCR puts p.235's last row at 225215.40 (a half-word B,V TA), so line 1
+! joins it; the scratch p.237 deck opens at SLC 225263.0, joining line 56.
+!
+! DRZ ROWS print their size in words and get no !CHECK: line 5
+! DRZ(BU,32),VTSAK-2 prints 000001.00 (2 x 32 bits), line 18
+! DRZ(BU,32),VTSBK prints 000002.00, line 39 DRZ(BU,32),VCRK-1 prints
+! 000000.40, line 56 DRZ(BU,32),VSCK prints 000003.00.  Line 5's
+! location prints 225217.71: the VF before it at 225217.40 is 25 bits
+! long (.40 + 25 bits = .71), and the CNOP on line 7 rounds up again.
+!
+! "-" IS THE COMMENT MARK.  Lines 30, 31, 49, 50 print
+! "V RDX2K-CR2S", "-CR2R", "V SX2K-SC2S", "-SC2R" with no blank.  The
+! ' comment mark (8-4 punch; C28-6129, coding-sheet section: "The
+! beginning of a comment is signaled by the character '") prints as "-"
+! on this drum, and C28-6129's coding hint 2 is to punch it "immediately
+! after the last character of the final instruction".  Binary agrees: the XW refill
+! fields print 225241 / 225257 = V RDX2K / V SX2K exactly.  CR2S etc.
+! name the X2S/X2R entries (VCR+VX2S = 225233, VCR+VX2R = 225234; the
+! queue XWs "K XW, Queue, N, K", C22-6728).  Written as remarks.
+!
+! LABEL SPELLINGS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 19 "V CP" = VOP, line 21 "V CS" = VDS, line 22 "V IO" = VID,
+!     line 20 "V SQNC"/"V SGNC" = VSQNC, lines 22/23 "V TQ"/"V TDQ"
+!     (tails worn): landed decks spell VOP, VDS (3.40), VSQNC (3.01),
+!     VTQ (6.0), VTDQ (6.40); VID is p.213's VNX.VH = 5.40, so
+!     VID.VH = 6.00 = line 22's printed value.
+!   * line 16 "V TSAQ"/"TSAG" = VTSAQ: landed p.230 label at 224777.00 =
+!     the printed address.  Line 17 V TA = landed p.229 VTA 224754.00.
+!   * line 34 "V SQ" = VSQ: landed p.218 label 224314.00 (printed).
+!   * line 35 "V RDIC" = VRDIO: landed p.216 label 224235.40, B prints
+!     224235.50.
+!   * line 53 "V EQ" = VEQ: landed p.222 label 224451.40.
+!   * lines 10/11/15 "V ISB2"/"V TSB2": T (as line 18's V TSB2 label).
+!   * lines 49/50/55/56 "V SC2Q"/"SC2G"/"SC26" = VSC2Q (C22-6728 Fig. 59
+!     prints VSC2Q, the SC queue entry).
+!   * octal fields "CCCCCC.CC" and hex "C0" are 0; "VF,C"/"XW,C"/"CW,C"
+!     are ,0 (each prints a zero value).
+!
+! CARD SERIALS.  Right-hand serials run ?A000993 .. ?A001041 (prefix
+! glyph D-shaped, as in the header's CA000993).  Pairs share a serial:
+! lines 1/2 (993), 8/9 (997), 12/13 (1000), 38/39 (1025), 42/43 (1028);
+! lines 3/4/5 share 994.  No serial is skipped.  Remark sequence numbers
+! -0964 .. -1013, several rows print none; -0997 is never printed
+! (line 38 prints none, line 39 -0996, line 40 -0998).
+
+VH      SYN, 32                      ! p.213 line 7 "V H SYN,32", an INTEGER
+VID     SYN, (8)5.40                 ! p.213 line 17 (VNX.VH); printed "V IO" here (D worn)
+VTSAK   SYN, 4                       ! p.235 "V TSAK SYN,4" (not landed); DRZ line 5 VTSAK-2 prints 000001.00, this page's binary
+VTSAQ   SYN(BU,32,8), (8)224777.0    ! landed p.230 label (LVI, half word); B line 16
+VTA     SYN(BU,32,8), (8)224754.0    ! landed p.229 label (LX, half word); B line 17
+VST     SYN, (8)225312.0             ! landed decks; VF line 14 225312.00+
+VREOP   SYN(BU,32,8), (8)224647.0    ! landed p.227 label (LX, half word); B line 25
+VRDEE   SYN(BU,32,8), (8)224162.40   ! landed p.215 label (LX, half word); B line 26 .50
+VBF1    SYN, (8)225506.0             ! landed decks; CW line 32 / XW lines 40,44,54
+VSQ     SYN(BU,32,8), (8)224314.0    ! landed p.218 label (LVI, half word); B line 34
+VRDIO   SYN(BU,32,8), (8)224235.40   ! landed p.216 label (SIC, half word); B line 35 .50
+VCRD    SYN, (8)5.0                  ! landed; p.100 card "- VCRD SYN,5."; line 36 000005.00
+VEQ     SYN(BU,32,8), (8)224451.40   ! landed p.222 label (LVI, half word); B line 53 .50
+
+        SLC, (8)225216.0
+        VF,0                                                 ! line  1  (printed "VF,C")
+        VF,0                                                 ! line  2  -0964
+VTSA2   VF,0                                                 ! line  3
+        VF,0                                                 ! line  4
+        DRZ(BU,32),VTSAK-2                                   ! line  5
+VTSBK   SYN,4                                                ! line  6  -0966
+        CNOP,                                                ! line  7  -0967+
+VTSB    VF,0                                                 ! line  8
+        VF,0                                                 ! line  9  -0968
+        XW,VTSB2,VTSBK,VTSB2K                                ! line 10  -0969
+        XW,VTSB2,VTSBK,VTSB2K                                ! line 11  -0970
+        DD(BU,1),1,0                                         ! line 12  -REWIND, SEQUENCE NOT CRITICAL
+! (line 13 prints the second field of line 12: 225224.01, 0)
+        VF,VST                                               ! line 14  -0972*
+VTSB2K  XW,VTSB2,VTSBK,VTSB2K                                ! line 15  -0973
+        B,VTSAQ                                              ! line 16  -0974
+        B,VTA                                                ! line 17  -0975
+VTSB2   DRZ(BU,32),VTSBK                                     ! line 18
+VOP     SYN(BU,1),3.                                         ! line 19  -0977  (printed "V CP")
+VSQNC   SYN(BU,1),VOP.1                                      ! line 20  -0978
+VDS     SYN,3.32                                             ! line 21  -0979  (printed "V CS")
+VTQ     SYN,VID.VH                                           ! line 22  -0980*  (printed "V IO.V H")
+VTDQ    SYN,VTQ.VH                                           ! line 23  -0981
+        CNOP,                                                ! line 24  -0982
+        B,VREOP                                              ! line 25
+        B,VRDEE                                              ! line 26  -0984
+VCRK    SYN,2                                                ! line 27  -0985
+VCR     VF,-34.                                              ! line 28  -0986
+        VF,0                                                 ! line 29  -0987
+        XW,VRD2,VCRK,VRDX2K                                  ! line 30  -CR2S  -0988
+        XW,VRD2,VCRK,VRDX2K                                  ! line 31  -CR2R  -0989
+        CW(CD),VBF1,0,$                                      ! line 32  -0990
+VRDCW   CW,0                                                 ! line 33  -CWR  -0991
+        B,VSQ                                                ! line 34  -0992
+        B,VRDIO                                              ! line 35  -0993  (printed "V RDIC")
+        ,VCRD                                                ! line 36  -0994
+VRDX2K  XW,VRD2,VCRK,VRDX2K                                  ! line 37  -0995
+VRD2    BE,34.                                               ! line 38
+        DRZ(BU,32),VCRK-1                                    ! line 39  -0996
+VTXT    XW,VBF1,34,VTXK                                      ! line 40  -0998
+        XW,0                                                 ! line 41  -0999
+        VF,0                                                 ! line 42
+        VF,0                                                 ! line 43  -1000
+VTX     XW,VBF1,34,VTXK                                      ! line 44  -1001
+VTX1    XW,0                                                 ! line 45  -1002
+VSCK    SYN,6                                                ! line 46  -1003
+VSC     VF,0                                                 ! line 47  -1004
+        VF,0                                                 ! line 48  -1005
+        XW,VSC2Q,VSCK,VSX2K                                  ! line 49  -SC2S  -1006
+        XW,VSC2Q,VSCK,VSX2K                                  ! line 50  -SC2R  -1007
+        XW,0                                                 ! line 51  -1008
+        XW,0                                                 ! line 52  -1009
+        B,VEQ                                                ! line 53  -1010
+VTXK    XW,VBF1,34,VTXK                                      ! line 54  -1011
+VSX2K   XW,VSC2Q,VSCK,VSX2K                                  ! line 55  -1012
+VSC2Q   DRZ(BU,32),VSCK                                      ! line 56  -1013
+
+!SYM VTSA2  225217.00
+!SYM VTSBK  000000.04
+!SYM VTSB   225221.00
+!SYM VTSB2K 225225.00
+!SYM VTSB2  225227.00
+!SYM VOP    000003.00
+!SYM VSQNC  000003.01
+!SYM VDS    000003.40
+!SYM VTQ    000006.00
+!SYM VTDQ   000006.40
+!SYM VCRK   000000.02
+!SYM VCR    225232.00
+!SYM VRDCW  225236.00
+!SYM VRDX2K 225241.00
+!SYM VRD2   225242.00
+!SYM VTXT   225243.00
+!SYM VTX    225246.00
+!SYM VTX1   225247.00
+!SYM VSCK   000000.06
+!SYM VSC    225250.00
+!SYM VTXK   225256.00
+!SYM VSX2K  225257.00
+!SYM VSC2Q  225260.00
+!CHECK 225216.00 | 000000.00+ | line 1 VF,C
+!CHECK 225216.40 | 000000.00+ | line 2 VF,0
+!CHECK 225217.00 | 000000.00+ | line 3 VTSA2 VF,C
+!CHECK 225217.40 | 000000.00+ | line 4 VF,C
+!CHECK 225221.00 | 000000.00+ | line 8 V TSB VF,C
+!CHECK 225221.40 | 000000.00+ | line 9 VF,0
+!CHECK 225222.00 | 225227.00+ 000 000004 225225 | line 10 XW,V TSB2,V TSBK,V TSB2K
+!CHECK 225223.00 | 225227.00+ 000 000004 225225 | line 11 XW,V TSB2,V TSBK,V TSB2K
+!CHECK 225224.00 | 1 | line 12 DD(BU,1),1,0 | 1
+!CHECK 225224.01 | 0 | line 13 second field | 1
+!CHECK 225224.40 | 225312.00+ | line 14 VF,V ST
+!CHECK 225225.00 | 225227.00+ 000 000004 225225 | line 15 V TSB2K XW,V TSB2,V TSBK,V TSB2K
+!CHECK 225226.00 | 224777.10 00 | line 16 B,V TSAQ
+!CHECK 225226.40 | 224754.10 00 | line 17 B,V TA (byte prints C0)
+!CHECK 225231.00 | 224647.10 00 | line 25 B,VREOP
+!CHECK 225231.40 | 224162.50 00 | line 26 B,V RDEE
+!CHECK 225232.00 | 000042.00- | line 28 V CR VF,-34.
+!CHECK 225232.40 | 000000.00+ | line 29 VF,C
+!CHECK 225233.00 | 225242.00+ 000 000002 225241 | line 30 XW,V RD2,V CRK,V RDX2K (-CR2S remark)
+!CHECK 225234.00 | 225242.00+ 000 000002 225241 | line 31 XW,V RD2,V CRK,V RDX2K (-CR2R remark)
+!CHECK 225235.00 | 225506.00+ 010 000000 225235 | line 32 CW(CD),V BF1,0,$
+!CHECK 225236.00 | 000000.00+ 000 000000 000000 | line 33 V RDCW CW,C
+!CHECK 225237.00 | 224314.10 00 | line 34 B,V SQ
+!CHECK 225237.40 | 224235.50 00 | line 35 B,V RDIC
+!CHECK 225240.00 | 000005.00 80 | line 36 ,V CRD
+!CHECK 225241.00 | 225242.00+ 000 000002 225241 | line 37 V RDX2K XW,V RD2,V CRK,V RDX2K
+!CHECK 225242.00 | 000042.00 00 | line 38 V RD2 BE,34.
+!CHECK 225243.00 | 225506.00+ 000 000042 225256 | line 40 V TXT XW,V BF1,34,V TXK
+!CHECK 225244.00 | 000000.00+ 000 000000 000000 | line 41 XW,C
+!CHECK 225245.00 | 000000.00+ | line 42 VF,C
+!CHECK 225245.40 | 000000.00+ | line 43 VF,0
+!CHECK 225246.00 | 225506.00+ 000 000042 225256 | line 44 V TX XW,V BF1,34,V TXK
+!CHECK 225247.00 | 000000.00+ 000 000000 000000 | line 45 V TX1 XW,C
+!CHECK 225250.00 | 000000.00+ | line 47 V SC VF,C
+!CHECK 225250.40 | 000000.00+ | line 48 VF,C
+!CHECK 225251.00 | 225260.00+ 000 000006 225257 | line 49 XW,V SC2Q,V SCK,V SX2K (-SC2S remark)
+!CHECK 225252.00 | 225260.00+ 000 000006 225257 | line 50 XW,V SC2Q,V SCK,V SX2K (-SC2R remark)
+!CHECK 225253.00 | 000000.00+ 000 000000 000000 | line 51 XW,C
+!CHECK 225254.00 | 000000.00+ 000 000000 000000 | line 52 XW,C
+!CHECK 225255.00 | 224451.50 00 | line 53 B,V EQ
+!CHECK 225256.00 | 225506.00+ 000 000042 225256 | line 54 V TXK XW,V BF1,34,V TXK (a "*" after the location)
+!CHECK 225257.00 | 225260.00+ 000 000006 225257 | line 55 V SX2K XW,V SC2Q,V SCK,V SX2K

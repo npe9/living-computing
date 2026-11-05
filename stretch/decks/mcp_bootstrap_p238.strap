@@ -1,0 +1,170 @@
+! mcp_bootstrap_p238.strap -- MCP printed page 238: the Input Program's
+! buffer/control-word tables (V RCWA, V RX2K, V Q, V QX2K, V E, V EX2K,
+! V PDQ, V PD, the RTSMSG message, V PDQB, V PDB), lines 1-47.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.245, read at 400 dpi, 900 dpi for
+! doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID CA001095  DIST. OF 3/01  3/01  PAGE NUMBER 238"; the heading
+! row's LOCATION field is 225337, line 1's word.
+!
+! THE PAGE.  47 lines, 46 located, contiguous from 225337.40 to
+! 225443.00 (a half word; next location 225443.40).  Line 11 (CNOP,)
+! prints no location.  The volume OCR puts p.237's last row at
+! 225337.00 (sequence -1067) and p.239's line 1 at 225443.40 (-1101),
+! so the page joins both neighbours.  Every line number prints an
+! asterisk after it ("1*" .. "47*"); lines 7, 20, 29 and 43 also print
+! "*" after the LOCATION.
+!   lines  1-6   three null operations ",0" (remarks -RQB -RCNT -FCNT,
+!                the p.213 SYN names) then B,V RTST / VF,-V RTTS / VF,0.
+!   lines  7-29  control words and index words for three 34-entry
+!                tables V Q2Q / V E2 (DRZ(BU,32),34 = 17 words each).
+!   lines 30-47  XW's to V PDQB / V PDB, the RTSMSG message, B,V RTN,
+!                V PDQB B,$ and a run of thirteen B, from V PDB on.
+! Remarks are sequence numbers -1068 .. -1100, some preceded by a short
+! name remark; lines 5 and 6 print "-1072-" and "-1073+" (as printed).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * Q vs G: line 12 "V Q", lines 14/15/19 "V Q2Q"/"V QX2K", line 18
+!     "B,V RQ", line 27 "B,V RDQ", lines 30/34 "V PDQ"/"V PDQB".  The
+!     tails show at 900 dpi on line 19; landed decks already spell VQ
+!     (225346.0, p.221/222/224 -- this page's line 12 location), VRQ
+!     (p.221 !SYM 224420.40 = line 18's 224420.50 less B's .10), VRDQ
+!     (p.216, 224233.40 = line 27's 224233.50), VPDQ (p.222, 225426.0
+!     = line 30's location).  VPDQB is line 30's XW address 225434.40,
+!     exactly line 34's location.
+!   * line 7 "CW(CD)": secondary CD = flags 010, which the row prints
+!     (chain 0, multiple 1, skip 0; strap_asm CW_SECONDARY).
+!   * line 31 "XW,V PDB,C,0" and line 35 "V PCB": D worn; p.233 already
+!     references VPDB = 225435.0, this page's line 35 location.
+!   * octal fields printed "CCCCCC.CC" and hex bytes "CO"/"C0" are 0;
+!     "VF,C" (lines 6, 10, 22) is VF,0, printed 000000.00+.
+!   * line 32's message: entry-mode text, blanks are data.  Measured in
+!     400-dpi character cells from the "(" of (IQS*) as cell 0: the
+!     comma is cell 16, "I" of IS is cell 26, the "*" terminator cell 49,
+!     so 9 leading blanks + 23 characters = 32 bytes = 4 words, matching
+!     225430.00 -> 225434.00.  A faint mark at cell ~25 is a smudge
+!     (2-3 px strokes), read as blank.
+!   * RTSMSG prints with no V prefix, as p.230 lines 34/37 reference it.
+!
+! CARD SERIALS.  Right-hand serials run ?A001095 .. ?A001128 (prefix
+! glyph D-shaped, as in the header's CA001095).  Lines 9/10 share
+! 1103 (the -1076 prints on line 10, shifted right) and lines 35-47
+! ALL print 1128 with only line 47 carrying a sequence number (-1100):
+! read as one card holding thirteen "B," statements.  Each statement is
+! written here as its own card.  No serial is skipped.
+
+VRTST   SYN, (8)225003.0             ! landed p.230 label; B line 4 225003.10
+VRTTS   SYN, (8)224732.40            ! landed p.229 label; VF line 5 224732.40-
+VBF2    SYN, (8)226504.0             ! CW line 16 address 226504.00, this page's binary only
+VRCW    SYN, (8)225335.0             ! CW line 7 count-refill VRCW-1. = 225334, this page's binary only
+VRQ     SYN, (8)224420.40            ! landed p.221 label; B line 18 224420.50
+VBF1    SYN, (8)225506.0             ! p.233 stand-in (not landed); CW line 25 225506.00
+VRDQ    SYN, (8)224233.40            ! landed p.216 label; B line 27 224233.50
+VRTN    SYN, (8)224450.40            ! landed p.222 label; B line 33 224450.50
+
+        SLC, (8)225337.40
+        ,0                                                   ! line  1  -RQB -1068
+        ,0                                                   ! line  2  -RCNT -1069
+        ,0                                                   ! line  3  -FCNT -1070
+        B,VRTST                                              ! line  4  -STR -1071
+        VF,-VRTTS                                            ! line  5  -TS -1072-
+        VF,0                                                 ! line  6  -FCNX -1073+
+VRCWA   CW(CD),VBF2+255.,255,VRCW-1.                         ! line  7  -1074
+VRX2K   XW,VR2,2,VRX2K                                       ! line  8  -1075
+VR2     VF,17.                                               ! line  9
+        VF,0                                                 ! line 10  -1076
+        CNOP,                                                ! line 11  -1077
+VQ      VF,-34.                                              ! line 12  -1078
+        VF,0                                                 ! line 13  -Q1 -1079
+        XW,VQ2Q,34,VQX2K                                     ! line 14  -Q2S -1080
+        XW,VQ2Q,34,VQX2K                                     ! line 15  -Q2S -1081
+        CW,VBF2,0,$                                          ! line 16  -1082
+        CW,0                                                 ! line 17  -CWR -1083
+        B,VRQ                                                ! line 18  -NX -1084
+VQX2K   XW,VQ2Q,34,VQX2K                                     ! line 19  -1085
+VQ2Q    DRZ(BU,32),34                                        ! line 20  -1086
+VE      VF,-34.                                              ! line 21  -1087
+        VF,0                                                 ! line 22  -E1 -1088
+        XW,VE2,34,VEX2K                                      ! line 23  -E2S -1089
+        XW,VE2,34,VEX2K                                      ! line 24  -E2R -1090
+        CW,VBF1,0,$                                          ! line 25  -1091
+        CW,0                                                 ! line 26  -CWR -1092
+        B,VRDQ                                               ! line 27  -NX -1093
+VEX2K   XW,VE2,34,VEX2K                                      ! line 28  -1094
+VE2     DRZ(BU,32),34                                        ! line 29  -1095
+VPDQ    XW,VPDQB,0,0                                         ! line 30  -1096
+VPD     XW,VPDB,0,0                                          ! line 31  -1097
+RTSMSG  (IQS*)DD(BU,8,8),         IS THE NEW IP READ TAPE*   ! line 32
+        B,VRTN                                               ! line 33  -1098
+VPDQB   B,$                                                  ! line 34  -1099
+VPDB    B,                                                   ! line 35
+        B,                                                   ! line 36
+        B,                                                   ! line 37
+        B,                                                   ! line 38
+        B,                                                   ! line 39
+        B,                                                   ! line 40
+        B,                                                   ! line 41
+        B,                                                   ! line 42
+        B,                                                   ! line 43
+        B,                                                   ! line 44
+        B,                                                   ! line 45
+        B,                                                   ! line 46
+        B,                                                   ! line 47  -1100
+
+!SYM VRCWA  225343.00
+!SYM VRX2K  225344.00
+!SYM VR2    225345.00
+!SYM VQ     225346.00
+!SYM VQX2K  225354.00
+!SYM VQ2Q   225355.00
+!SYM VE     225376.00
+!SYM VEX2K  225404.00
+!SYM VE2    225405.00
+!SYM VPDQ   225426.00
+!SYM VPD    225427.00
+!SYM RTSMSG 225430.00
+!SYM VPDQB  225434.40
+!SYM VPDB   225435.00
+!CHECK 225337.40 | 000000.00 80 | line 1 ,0 (null operation)
+!CHECK 225340.00 | 000000.00 80 | line 2 ,0
+!CHECK 225340.40 | 000000.00 80 | line 3 ,0
+!CHECK 225341.00 | 225003.10 00 | line 4 B,V RTST
+!CHECK 225341.40 | 224732.40- | line 5 VF,-V RTTS
+!CHECK 225342.00 | 000000.00+ | line 6 VF,0 (prints VF,C)
+!CHECK 225343.00 | 227103.00+ 010 000377 225334 | line 7 V RCWA CW(CD),V BF2+255.,255,V RCW-1. (a "*" after the location)
+!CHECK 225344.00 | 225345.00+ 000 000002 225344 | line 8 V RX2K XW,V R2,2,V RX2K
+!CHECK 225345.00 | 000021.00+ | line 9 V R2 VF,17.
+!CHECK 225345.40 | 000000.00+ | line 10 VF,0 (prints VF,C)
+!CHECK 225346.00 | 000042.00- | line 12 V Q VF,-34.
+!CHECK 225346.40 | 000000.00+ | line 13 VF,0
+!CHECK 225347.00 | 225355.00+ 000 000042 225354 | line 14 XW,V Q2Q,34,V QX2K
+!CHECK 225350.00 | 225355.00+ 000 000042 225354 | line 15 XW,V Q2Q,34,V QX2K
+!CHECK 225351.00 | 226504.00+ 000 000000 225351 | line 16 CW,V BF2,0,$
+!CHECK 225352.00 | 000000.00+ 000 000000 000000 | line 17 CW,0
+!CHECK 225353.00 | 224420.50 00 | line 18 B,V RQ
+!CHECK 225354.00 | 225355.00+ 000 000042 225354 | line 19 V QX2K XW,V Q2Q,34,V QX2K
+!CHECK 225376.00 | 000042.00- | line 21 V E VF,-34.
+!CHECK 225376.40 | 000000.00+ | line 22 VF,0 (prints VF,C)
+!CHECK 225377.00 | 225405.00+ 000 000042 225404 | line 23 XW,V E2,34,V EX2K
+!CHECK 225400.00 | 225405.00+ 000 000042 225404 | line 24 XW,V E2,34,V EX2K
+!CHECK 225401.00 | 225506.00+ 000 000000 225401 | line 25 CW,V BF1,0,$
+!CHECK 225402.00 | 000000.00+ 000 000000 000000 | line 26 CW,0
+!CHECK 225403.00 | 224233.50 00 | line 27 B,V RDQ
+!CHECK 225404.00 | 225405.00+ 000 000042 225404 | line 28 V EX2K XW,V E2,34,V EX2K
+!CHECK 225426.00 | 225434.40+ 000 000000 000000 | line 30 V PDQ XW,V PDQB,0,0
+!CHECK 225427.00 | 225435.00+ 000 000000 000000 | line 31 V PD XW,V PDB,0,0
+!CHECK 225434.00 | 224450.50 00 | line 33 B,V RTN
+!CHECK 225434.40 | 225434.50 00 | line 34 V PDQB B,$
+!CHECK 225435.00 | 000000.10 00 | line 35 V PDB B,
+!CHECK 225435.40 | 000000.10 00 | line 36 B,
+!CHECK 225436.00 | 000000.10 00 | line 37 B,
+!CHECK 225436.40 | 000000.10 00 | line 38 B,
+!CHECK 225437.00 | 000000.10 00 | line 39 B,
+!CHECK 225437.40 | 000000.10 00 | line 40 B,
+!CHECK 225440.00 | 000000.10 00 | line 41 B,
+!CHECK 225440.40 | 000000.10 00 | line 42 B,
+!CHECK 225441.00 | 000000.10 00 | line 43 B, (a "*" after the location)
+!CHECK 225441.40 | 000000.10 00 | line 44 B,
+!CHECK 225442.00 | 000000.10 00 | line 45 B,
+!CHECK 225442.40 | 000000.10 00 | line 46 B,
+!CHECK 225443.00 | 000000.10 00 | line 47 B,

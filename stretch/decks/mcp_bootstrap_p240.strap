@@ -1,0 +1,154 @@
+! mcp_bootstrap_p240.strap -- MCP printed page 240: the V tables'
+! tail (a 12-field DD(BU,32) list, V CW / V MT, V BF1 / V BF2 buffers)
+! and the R UNLD (unload) routine with its message and R UNLD2 cell.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.247, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID CA001136  DIST. OF 3/01
+! 3/01  PAGE NUMBER 240"; the heading row's LOCATION field is 225477,
+! line 1's word.
+!
+! THE PAGE.  47 lines, 46 located, from 225477.22 to 227524.00 (VF,0,
+! a half word; next location 227524.40).  Line 16 CNOP,0 prints no
+! location (the DD ends at 225505.62, so CNOP needs no NOP and DRZ's
+! full-word alignment lands at 225506.00).  Lines 13/14 are SYNs
+! printing their VALUE in LOCATION with a "+" and "+00000000 NULL" in
+! BINARY OUTPUT.  Lines 17/18 reserve 510 words each (000776.00 is the
+! COUNT, not storage -- no !CHECK; extents pinned by the next label).
+! Lines 45/46 are (IQS*)DD(BU,8,8) messages, no binary printed; their
+! lengths (25 and 15 characters, the trailing blank before "*"
+! included) are pinned by 227522.10 and line 47's 227524.00.
+! Line 1 is ONE card (serial 1136) printing its twelve 32-bit fields on
+! lines 1-12.  Asterisks after the LOCATION on lines 10, 17, 41.
+! Printed p.239 is not landed, so the join at 225477.22 is unchecked
+! here; p.233's stand-in VBF1 225506.0 (BIT-EXACT) agrees with line 17.
+!
+! REMARKS are sequence numbers -1107 .. -1138: -1114/-1115, -1118/-1119,
+! -1121 are not printed (lines 21-23, 25 carry none); lines 24, 30, 34,
+! 37, 41, 44 print theirs further left (second statement on a card).
+!
+! CARD SERIALS 0A001136 .. 0A001165, none skipped.  Shared: lines 1-12
+! (1136), 23/24 (1147), 29/30 (1152), 33/34 (1155), 36/37 (1157),
+! 40/41 (1160), 43/44 (1162).
+!
+! GLYPHS SETTLED OTHER THAN BY PLAIN INK:
+!   * line 24 "B,R UNLC1" = RUNLD1 (worn D): binary 227512.10 is line
+!     35's location, labelled "R UNLD1".
+!   * line 41 ",D UNLC" = DUNLD (worn D): prints 000010.40 = DUNLD 8.32.
+!   * line 31 "V SL(V U)" = VSU(VU): 000006.01 B3, VSU = 6.0, $3.
+!   * line 37 ",D CCMM" = DCOMM: 000043.40 = 35.32.
+!   * line 15 "CC(BU,32)" and lines 45/46 "CC(BU,8,8)" are DD.
+!   * line 47 label "R UNLD2" read D (closed bowl at 400 dpi); lines
+!     19/26 SV/LV,13,R UNLD2 print 227524.33/.32 = line 47's location.
+!   * line 27 byte prints "CD" (900 dpi): DD, a worn D -- SVA's op
+!     byte is D0 (p.233 lines 10/16/21) and ($13) puts D in the low
+!     nibble; the assembled DD agrees.
+!   * line 13 "V CW" open glyph: VCW as landed p.228 spells it (its
+!     stand-in 225505.40 agrees); line 14 VMT likewise (225506.00).
+!   * open-round glyphs in octal fields are 0.
+!
+! TWO-DIMENSIONAL RESERVATIONS.  Lines 17/18 print DRZ(BU,64),(34,15)
+! (C22-6531 printed p.34: "A DR(dds),(L,L',...)" reserves L x L' fields):
+! 34 x 15 = 510 = 0o776 words each, the printed count.  Written as
+! printed; strap_asm's dr_count multiplies the dimensions (2026-11-05;
+! until then it refused the card and this deck carried (510) stand-ins).
+!
+!   * names RUNLD, RUNLD1, VBF1, VBF2, RKSCON as C22-6728 spells them.
+
+VWT     SYN, (8)225266.0             ! landed decks; KVI line 21
+RKSCON  SYN, (8)230355.0             ! BZXE line 22, this page's binary only, half word only
+VTDSP   SYN(BU,64,8), (8)224757.40   ! landed p.229 label of a CM1111 (BU,64,8), C22-6531 printed p.10; LVI line 25
+VU      SYN, $3                      ! p.213 line 25
+VSU     SYN, 6.0                     ! p.213 line 18 = VID.VH
+VWCW    SYN, (8)225272.0             ! line 32, this page's binary only, half word only
+DMCP    SYN, 32.0                    ! landed p.108
+DW      SYN, 1.32                    ! landed p.104
+DRET    SYN, 33.0                    ! landed p.105
+DCOMM   SYN, 35.32                   ! landed p.105
+DUNLD   SYN, 8.32                    ! landed p.104
+
+        SLC, (8)225477.22
+        DD(BU,32),420,6,435,5,450,4,465,3,480,2,495,1        ! lines 1-12  -1107
+VCW     SYN,$.14                                             ! line 13  -1108
+VMT     SYN,$.46                                             ! line 14  -1109
+        DD(BU,32),510                                        ! line 15  -1110
+        CNOP,0                                               ! line 16  -1111
+VBF1    DRZ(BU,64),(34,15)                                   ! line 17  -1112
+VBF2    DRZ(BU,64),(34,15)                                   ! line 18  -1113
+RUNLD   SV,13,RUNLD2                                         ! line 19  -1116
+        LV,1,.32($13)                                        ! line 20  -1117
+        KVI,$1,VWT                                           ! line 21
+        BZXE,RKSCON                                          ! line 22
+        SIC,5.32($13)                                        ! line 23
+        B,RUNLD1                                             ! line 24  -1120  printed R UNLC1
+        LVI,$1,VTDSP                                         ! line 25
+        LV,13,RUNLD2                                         ! line 26  -1122
+        SVA,1,5.32($13)                                      ! line 27  -1123
+        LV,VU,.32($13)                                       ! line 28  -1124
+        B,DMCP                                               ! line 29
+        ,DW                                                  ! line 30  -1125
+        LVE,,VSU(VU)                                         ! line 31  -1126
+        ,VWCW                                                ! line 32  -1127
+        B,DMCP                                               ! line 33
+        ,DRET                                                ! line 34  -1128
+RUNLD1  LV,1,1.($13)                                         ! line 35  -1129
+        B,DMCP                                               ! line 36
+        ,DCOMM                                               ! line 37  -1130
+        VF,RUNM                                              ! line 38  -1131
+        CF,5                                                 ! line 39  -1132
+        B,DMCP                                               ! line 40
+        ,DUNLD                                               ! line 41  -1133  printed D UNLC
+        ,0($1)                                               ! line 42  -1134
+        B,DMCP                                               ! line 43
+        ,DRET                                                ! line 44  -1135
+RUNM    (IQS*)DD(BU,8,8),ATTEMPT TO WRITE ON FILE *          ! line 45  -1136
+        (IQS*)DD(BU,8,8),PROTECTED TAPE *                    ! line 46  -1137
+RUNLD2  VF,0                                                 ! line 47  -1138
+
+!SYM VCW    225505.40
+!SYM VMT    225506.00
+!SYM VBF1   225506.00
+!SYM VBF2   226504.00
+!SYM RUNLD  227502.00
+!SYM RUNLD1 227512.00
+!SYM RUNM   227517.00
+!SYM RUNLD2 227524.00
+!CHECK 225477.22 | 00000000644 | line 1 DD(BU,32) field 1, 420 | 32
+!CHECK 225477.62 | 00000000006 | line 2 field 2, 6 | 32
+!CHECK 225500.22 | 00000000663 | line 3 field 3, 435 | 32
+!CHECK 225500.62 | 00000000005 | line 4 field 4, 5 | 32
+!CHECK 225501.22 | 00000000702 | line 5 field 5, 450 | 32
+!CHECK 225501.62 | 00000000004 | line 6 field 6, 4 | 32
+!CHECK 225502.22 | 00000000721 | line 7 field 7, 465 | 32
+!CHECK 225502.62 | 00000000003 | line 8 field 8, 3 | 32
+!CHECK 225503.22 | 00000000740 | line 9 field 9, 480 | 32
+!CHECK 225503.62 | 00000000002 | line 10 field 10, 2 (a "*" after the location) | 32
+!CHECK 225504.22 | 00000000757 | line 11 field 11, 495 | 32
+!CHECK 225504.62 | 00000000001 | line 12 field 12, 1 | 32
+!CHECK 225505.22 | 00000000776 | line 15 DD(BU,32),510 (prints CC(BU,32)) | 32
+!CHECK 227502.00 | 227524.33 30 | line 19 R UNLD SV,13,R UNLD2
+!CHECK 227502.40 | 000000.42 3D | line 20 LV,1,.32($13)
+!CHECK 227503.00 | 225266.03 04 | line 21 KVI,$1,VWT
+!CHECK 227503.40 | 230355.32 C0 | line 22 BZXE,RKSCON
+!CHECK 227504.00 | 000005.40 8D | line 23 SIC,5.32($13)
+!CHECK 227504.40 | 227512.10 00 | line 24 B,R UNLC1
+!CHECK 227505.00 | 224757.43 01 | line 25 LVI,$1,VTDSP
+!CHECK 227505.40 | 227524.32 30 | line 26 LV,13,R UNLD2
+!CHECK 227506.00 | 000005.43 DD | line 27 SVA,1,5.32($13) (byte prints CD, worn D)
+!CHECK 227506.40 | 000000.46 3D | line 28 LV,V U,.32($13)
+!CHECK 227507.00 | 000040.10 00 | line 29 B,D MCP
+!CHECK 227507.40 | 000001.40 80 | line 30 ,D W
+!CHECK 227510.00 | 000006.01 B3 | line 31 LVE,,V SL(V U)
+!CHECK 227510.40 | 225272.00 80 | line 32 ,V WCW
+!CHECK 227511.00 | 000040.10 00 | line 33 B,D MCP
+!CHECK 227511.40 | 000041.00 80 | line 34 ,D RET
+!CHECK 227512.00 | 000001.02 3D | line 35 R UNLD1 LV,1,1.($13)
+!CHECK 227512.40 | 000040.10 00 | line 36 B,D MCP
+!CHECK 227513.00 | 000043.40 80 | line 37 ,D CCMM
+!CHECK 227513.40 | 227517.00+ | line 38 VF,RUNM
+!CHECK 227514.00 | 000005 | line 39 CF,5
+!CHECK 227514.40 | 000040.10 00 | line 40 B,D MCP
+!CHECK 227515.00 | 000010.40 80 | line 41 ,D UNLC (a "*" after the location)
+!CHECK 227515.40 | 000000.00 81 | line 42 ,0($1)
+!CHECK 227516.00 | 000040.10 00 | line 43 B,D MCP
+!CHECK 227516.40 | 000041.00 80 | line 44 ,D RET
+!CHECK 227524.00 | 000000.00+ | line 47 R UNLD2 VF,0

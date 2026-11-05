@@ -56,7 +56,7 @@ The deck injection first picked a row whose truth lives in a
 tests/verify_*.py file, edited nothing, and stopped on its own assert;
 it now picks the first agreed row that has a deck !CHECK line.
 
-THE FOUR ADJUDICATED ROWS are all binary, all a faint 7 read 1 (or a
+THE SIX ADJUDICATED ROWS are all binary, all a faint 7 read 1 (or a
 broken 0 read 6) by BOTH engines, each inspected on the ink.  Agreement
 is therefore ~99.9%, not proof; the two agreed LOCATIONS of the same
 kind are caught by the order check (`agreed-out-of-order`).

@@ -66,7 +66,7 @@ DUNLD   SYN, 8.32                    ! landed p.104 line 36; line 34 000010.40
 VTSB    SYN, (8)225221.0             ! LVI line 6, half word only (p.231 "V TSB VF,0" not landed)
 VOP     SYN(BU,1), 3.                ! p.234/p.236 print V OP SYN(BU,1),3. (OCR; not landed)
 VOPB    SYN(BU,1), .25               ! p.234 line 46 prints V OPB SYN(BU,1),.25 (OCR; not landed)
-VSQNC   SYN, (8)3.01                 ! BZB lines 14/50 000003.01, this page's binary only
+VSQNC   SYN(BU,1), (8)3.01                 ! BZB lines 14/50 000003.01, this page's binary only
 VTQ     SYN, (8)6.0                  ! LV line 16 .20, SV line 20 .23, half word only
 VTDQ    SYN, (8)6.40                 ! SV line 21 000006.63, half word only; prints V TCQ, D worn to C (p.230 prints TDQ, beside VTDP3/VTDP4)
 VSURT   SYN, (8)225201.0             ! SV/LX/SX lines 18,26,37,46,49 (p.231 SYN not landed)

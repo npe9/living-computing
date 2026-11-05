@@ -78,7 +78,7 @@ VEOFB   SYN, (8)224221.40            ! landed p.216 label; CB+ line 29
 VEOFX   SYN(BU,1), (8)224372.32      ! landed p.220 DD(BU,1),0; BZB line 30
 VNOP    SYN, (8)224157.40            ! landed p.215 label; BZB line 30 h2
 VTXT    SYN, (8)225243.0             ! SWAPI line 5 h2 225243.06, this page's binary only
-VEQ     SYN, (8)224451.40            ! LVI line 14 .51, BIT-EXACT (this page's binary)
+VEQ     SYN(BU,32,8), (8)224451.40            ! LVI line 14 .51, BIT-EXACT (this page's binary)
 VINBY   SYN(BU,32,8), (8)224720.0    ! label of a half-word instruction (p.217/p.228): (BU,32,8), C22-6531 printed p.10
 VIN1    SYN(BU,32,8), (8)224720.40   ! label of a half-word instruction (p.217/p.228): (BU,32,8), C22-6531 printed p.10
 VPDB    SYN, (8)225435.0             ! LVE line 23 VPDB+1. = 225436, this page's binary only

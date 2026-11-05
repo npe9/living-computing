@@ -1,0 +1,33 @@
+! mcp_bootstrap_p235.strap -- MCP printed page 235: one line, the
+! Input Program's branch B,V TA that ends the tape status table code
+! after p.234's B,V TSBQ.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.242, read at 400 dpi.  Header, READ:
+! "TIME CLCCK 00054041  PUNIC 11D11MCP  CARD ID CA000991  DIST. OF 3/C1
+! 3/01  PAGE NUMBER 235"; the heading row's LOCATION field is 225215,
+! line 1's word.
+!
+! THE PAGE.  One line, located at 225215.40 (a half word; next location
+! 225216.00).  The rest of the sheet is blank.  Line 1 joins p.234's
+! last row (225215.00, a half word, B,V TSBQ); p.236's heading row reads
+! LOCATION 225216 and its line 1 is at 225216.00, so the page is
+! contiguous both ways.  A "*" prints after the line number ("1*").
+! The remark field prints a lone "-" and then the sequence number -0963
+! (p.234 ended at -0962), as p.234 lines 54-56.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * binary "224754.1C 00": the round glyph after .1 is 0 (octal field);
+!     B's offset is .10, and V TA is landed p.229's label at 224754.00.
+!   * "V TA" = VTA: landed p.229 line 37 defines it; C22-6728 names the
+!     "VTA Routine" (tape attachment).
+!
+! CARD SERIALS.  Right-hand serial 0A000991 (header CA000991).  p.236's
+! header and line 1 read CA000993 / 0A000993: serial 992 does not print
+! on either page.
+
+VTA     SYN(BU,32,8), (8)224754.0             ! landed p.229 label (line 37); B line 1 224754.10
+
+        SLC, (8)225215.40
+        B,VTA                                                ! line  1  -  -0963
+
+!CHECK 225215.40 | 224754.10 00 | line 1 B,V TA (a "*" after the line number; octal prints .1C)

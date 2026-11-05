@@ -167,6 +167,7 @@ def collect(deck_dir=None):
     """
     addr_names = collections.defaultdict(lambda: collections.defaultdict(set))
     aliases = set()
+    page_syms = collections.defaultdict(set)    # page -> names with a !SYM
     names = re.compile(r'mcp_bootstrap_p(\d+(?:_p\d+)?)\.strap$')
     for fn in sorted(os.listdir(deck_dir)):
         m = names.search(fn)
@@ -202,6 +203,17 @@ def collect(deck_dir=None):
                     bit = _as_bit("(8)%s" % loc)
                     if bit is not None:
                         addr_names[bit][name].add(page)
+                        page_syms[page].add(name)
+    # >>> TWO NAMES ONE PAGE DEFINES ARE TWO SYMBOLS. <<<  Printed
+    # p.241 defines RKA, RKB, RKC, RKD, RKF and RKH on six SYN cards,
+    # all 3.0 (C22-6728 names both RKC and RKD), so RKC/RKD share a key
+    # and differ by C/D -- and are not one name read two ways: one
+    # transcriber read both cards, and each has its own !SYM.  A pair is
+    # exempt only when a single page carries a !SYM for BOTH names;
+    # two pages that each spell one name are still compared.
+    for on_page in page_syms.values():
+        for a, b in itertools.combinations(sorted(on_page), 2):
+            aliases.add(frozenset((a, b)))
     return addr_names, aliases
 
 

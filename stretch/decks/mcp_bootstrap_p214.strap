@@ -66,7 +66,7 @@ RKSUK   SYN, (8)227524.40            ! B on line 18, half word only
 VCR     SYN, (8)225232.0             ! BE on line 15, half word only
 VRDCSS  SYN, (8)224171.0             ! B on line 22, half word only
 VST     SYN, (8)225312.0             ! BE on line 26, half word only
-VTDSP   SYN, (8)224757.40            ! B on lines 33/44, half word only
+VTDSP   SYN(BU,64,8), (8)224757.40            ! B on lines 33/44, half word only
 VPD     SYN, (8)225427.0             ! LX on line 53, word only
 VDISP   SYN, (8)224150.0             ! CB+ on line 55, half word only
 

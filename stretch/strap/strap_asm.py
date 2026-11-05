@@ -646,6 +646,17 @@ def tokenize_expr(s, lineno=None):
         raise AssemblerError(f"cannot parse expression {s!r} at {s[i:]!r}", lineno)
     if not tokens:
         raise AssemblerError("empty expression", lineno)
+    # >>> AN OPERATOR WITH NO TERM AFTER IT IS REFUSED. <<<  It was
+    # silently dropped ("A+B-" was A+B), which hid five misreadings
+    # (MCP printed pp.201, 203, 243): the "-" printed after a statement
+    # is the COMMENT MARK, C28-6129 PDF p.5 -- "The beginning of a
+    # comment is signaled by the character ' (an 8-4 double punch)",
+    # punched with no blank before it ("TABLE' BEGIN CONVERSION") --
+    # which this listing prints as "-".  The statement ends before it.
+    if s[-1] in '+-':
+        raise AssemblerError(
+            f"expression {s!r} ends in an operator: a printed trailing "
+            f"'-' is the comment mark (C28-6129 PDF p.5), not a minus", lineno)
     return tokens
 
 
@@ -1344,16 +1355,27 @@ def dr_count(stmt, symtab=None):
     a lookup.
 
     `symtab` is optional only so the two call sites can be read in
-    either order; both pass it."""
+    either order; both pass it.
+
+    >>> AN ARRAY: SEVERAL DIMENSIONS, AND THE COUNT IS THEIR PRODUCT.
+    <<<  C22-6531 printed p.34: "A DR(dds),(L,L',L",...)" "reserves
+    space for an L x L' x L" x ... array of data fields", the counter
+    skipped by the field length "multiplied by the product of the
+    dimensions of the array".  MCP printed p.240 lines 17-18 are
+    "DRZ(BU,64),(34,15)": 510 words, which is what the page's next
+    LOCATION and its V BF2 / R UNLD labels require."""
     if len(stmt.fields) != 1:
         raise AssemblerError("DR takes one dimension field", stmt.lineno)
     f = stmt.fields[0].strip()
     if f.startswith('(') and f.endswith(')'):
         f = f[1:-1]
-    n = eval_expr(f, symtab if symtab is not None else {}, 0,
-                  lineno=stmt.lineno)
-    if n < 1:
-        raise AssemblerError(f"DR dimension {n} is not positive", stmt.lineno)
+    n = 1
+    for dim in f.split(','):
+        d = eval_expr(dim, symtab if symtab is not None else {}, 0,
+                      lineno=stmt.lineno)
+        if d < 1:
+            raise AssemblerError(f"DR dimension {d} is not positive", stmt.lineno)
+        n *= d
     return n
 
 

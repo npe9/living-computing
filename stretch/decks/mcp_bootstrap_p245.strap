@@ -1,0 +1,182 @@
+! mcp_bootstrap_p245.strap -- MCP printed page 245: the receptor-tape
+! retry/backspace section (V+ICR,VT3 .. RYNOGD, RYHERE, RYBSP, RYWAIT,
+! RYSET, RYTHAR, RYSEET, RTBSP), lines 1-49.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.252, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID CB000150  DIST. OF 3/01
+!  3/01  PAGE NUMBER 245"; the heading row's LOCATION field is 227702,
+! line 1's word.  No Vision reading exists for this page (line fit
+! failed); everything below is read off the image.
+!
+! THE PAGE.  49 lines, all located, contiguous from 227702.40 to
+! 227732.40 (a half word; next location 227733.00 = p.246's line 1).
+! p.244 (scratch) ends at 227702.00, so line 1 joins it.  Every line
+! number prints with an asterisk after it ("1*" .. "49*"); asterisks
+! after the LOCATION on lines 16 and 39.  No remark column.  Line 6
+! (VF,DCHEX) prints its value 000014.00+.
+!
+! LABEL SPELLINGS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 10 "B,VRTIC1" = VRTIO1 (worn O): landed p.221 line 38 label at
+!     224422.00, which is this row's binary; landed p.225/p.230 print the
+!     same "V RTIC1" and spell VRTIO1.
+!   * line 11 "RYNCGD" = RYNOGD (worn O): p.246 scratch spells RYNOGD;
+!     Y-NO-GooD.  Nothing on this page references it.
+!   * "RCREXT"/"RDREXT" everywhere = RDREXT (D stem visible on most rows;
+!     p.246/p.247 scratch spell RDREXT, p.247 defines it).
+!   * line 24 ",CBSP" = DBSP, line 38 ",DSP", line 47 ",CRC" = DRD,
+!     line 6 "VF,DCHEX": landed p.104 D BSP 6.0, D SP 5.32, D RD 1.0,
+!     D CHEX 12.0 -- the printed 000006.00, 000005.40, 000001.00,
+!     000014.00+ are those values.
+!   * line 14 "RTNCTR" (prints RTNOTR-like): p.246 line 16, 227743.00 =
+!     this row's binary.
+!   * hex bytes with an open round written 0 ("C1", "C0", "DC" ...),
+!     octal fields "CCCCCC.CC" are 0.  Line 44/45 "BC" is genuine: the
+!     ($12) index makes the low nibble C.
+!   * line 22's address prints "227774.7?" with a blot on the last digit;
+!     settled as .71 by line 34 (same statement, clean 227774.71 D0).
+!
+! LINES 11 AND 12 print "LVI,12," and "SVA,12," with NO "$" (lines
+! 16-17, 21-22, 28-29 print $12).  Kept as printed; binaries match the
+! $12 rows (000004.31 01, 227777.31 D0).
+!
+! CARD SERIALS.  Right-hand serials run ?B000150 .. ?B000175 (prefix
+! glyph round, header CB000150), continuing p.244's ?B000149.  Shared:
+! 150 (1,2), 153 (5-8), 154 (9,10), 155 (11,12), 156 (13,14), 158
+! (16,17), 159 (18,19), 160 (20-22), 161 (23-25), 164 (28,29), 165
+! (30,31), 167 (33,34), 170 (37-39), 172 (41,42), 173 (43,44), 175
+! (46-49).  None skipped on this page; but p.246 opens at CB000177, so
+! 176 is printed on neither page.
+
+VP      SYN, $1                      ! landed p.213 line 26
+VU      SYN, $3                      ! landed p.213 line 25
+VT3     SYN, $7                      ! landed p.213 line 30
+VF      SYN, .32                     ! landed p.213 line 6 "V F SYN,.32"
+VX2S    SYN, 1.0                     ! landed p.213 line 13 = VX1.VH = 1.0
+VSU     SYN, 6.0                     ! landed p.213 line 18 = VID.VH
+VRCNT   SYN, 7.0                     ! landed p.213 line 20 = VRQB.VH
+VRT     SYN, (8)225331.0             ! landed decks; LVI line 3
+VRTIO1  SYN, (8)224422.0             ! landed p.221 line 38; printed "V RTIC1"
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"
+DCHEX   SYN, 12.0                    ! landed p.104 "D CHEX"
+DBSP    SYN, 6.0                     ! landed p.104 "D BSP"
+DSP     SYN, 5.32                    ! landed p.104 "D SP"
+DRD     SYN, 1.0                     ! landed p.104 "D RD"
+RKB     SYN, 3.0                     ! p.241 scratch "RKB SYN,3.0"; LVI line 11 RKB+1.0 = 4.0
+RDREXT  SYN, (8)227771.0             ! p.247 scratch DRZ(BU,32),4 (not landed); LVE line 4 RDREXT-1.0, BIT-EXACT
+RTTRY   SYN, (8)227777.0             ! p.247 scratch CF (not landed); SVA line 12, half word only
+RTSP3X  SYN, (8)227777.40            ! p.247 scratch CF (not landed); LC line 13 .76, BIT-EXACT
+RBSP3X  SYN, (8)230000.0             ! p.247 scratch CF (not landed); LC line 18, half word only
+RTNCTR  SYN(BU,32,8), (8)227743.0    ! p.246 scratch line 16 (LVI); CBZ line 14, half word only
+RTEPBS  SYN(BU,32,8), (8)227671.40   ! p.244 scratch line 39 (LV); LVI line 16 .71, BIT-EXACT
+RSREPK  SYN(BU,32,8), (8)230001.40   ! p.247 scratch line 22 (B); SVA line 17 .71, BIT-EXACT
+RWAIT   SYN, (8)230215.40            ! not landed; B line 27 230215.50, half word only
+RKSCON  SYN, (8)230355.0             ! not landed; LVI line 30 .27 (J 11), half word only
+
+        SLC, (8)227702.40
+        V+ICR,VT3,.VF                                        ! line  1
+        SX,VT3,VX2S(VU)                                      ! line  2
+        LVI,VU,VRT                                           ! line  3
+        LVE,$15,RDREXT-1.0                                   ! line  4
+        B,DMCP                                               ! line  5
+        VF,DCHEX                                             ! line  6
+        LVE,,VSU(VU)                                         ! line  7
+        BE,($15)                                             ! line  8
+        SR,VP,VRCNT+VRT                                      ! line  9
+        B,VRTIO1                                             ! line 10
+RYNOGD  LVI,12,RKB+1.0                                       ! line 11
+        SVA,12,RTTRY                                         ! line 12
+        LC,$15,RTSP3X                                        ! line 13
+        CBZ,$15,RTNCTR                                       ! line 14
+        SC,$15,RTSP3X                                        ! line 15
+        LVI,$12,RTEPBS                                       ! line 16
+        SVA,$12,RSREPK                                       ! line 17
+RYHERE  LC,$15,RBSP3X                                        ! line 18
+        CBZ,$15,RYSET                                        ! line 19
+        SC,$15,RBSP3X                                        ! line 20
+        LVI,$12,RYHERE                                       ! line 21
+        SVA,$12,RDREXT+3.32                                  ! line 22
+RYBSP   B,DMCP                                               ! line 23
+        ,DBSP                                                ! line 24
+        LVE,,VSU(VU)                                         ! line 25
+RYWAIT  SVA,$12,RDREXT+5.32                                  ! line 26
+        B,RWAIT                                              ! line 27
+RYSET   LVI,$12,4.0                                          ! line 28
+        SVA,$12,RBSP3X                                       ! line 29
+        LVI,$11,RKSCON                                       ! line 30
+        SVA,$11,RSREPK                                       ! line 31
+RYTHAR  LC,$15,RBSP3X                                        ! line 32
+        LVI,$12,RYTHAR                                       ! line 33
+        SVA,$12,RDREXT+3.32                                  ! line 34
+        CBZ,$15,RYSEET                                       ! line 35
+        SC,$15,RBSP3X                                        ! line 36
+        B,DMCP                                               ! line 37
+        ,DSP                                                 ! line 38
+        LVE,,VSU(VU)                                         ! line 39
+        B,RYWAIT                                             ! line 40
+RYSEET  LVI,$12,5.0                                          ! line 41
+        SVA,$12,RBSP3X                                       ! line 42
+RTBSP   LV,$12,RDREXT-1.0                                    ! line 43
+        LVE,$12,.32($12)                                     ! line 44
+        LVE,$12,1.32($12)                                    ! line 45
+        B,DMCP                                               ! line 46
+        ,DRD                                                 ! line 47
+        LVE,,VSU(VU)                                         ! line 48
+        ,($12)                                               ! line 49
+
+!SYM RYNOGD 227707.40
+!SYM RYHERE 227713.00
+!SYM RYBSP  227715.40
+!SYM RYWAIT 227717.00
+!SYM RYSET  227720.00
+!SYM RYTHAR 227722.00
+!SYM RYSEET 227726.40
+!SYM RTBSP  227727.40
+!CHECK 227702.40 | 000000.57 07 | line 1 V+ICR,VT3,.VF
+!CHECK 227703.00 | 000001.17 13 | line 2 SX,VT3,VX2S(VU)
+!CHECK 227703.40 | 225331.07 01 | line 3 LVI,VU,VRT
+!CHECK 227704.00 | 227770.37 B0 | line 4 LVE,$15,RDREXT-1.0 (prints "RCREXT-1.C")
+!CHECK 227704.40 | 000040.10 00 | line 5 B,DMCP
+!CHECK 227705.00 | 000014.00+ | line 6 VF,DCHEX
+!CHECK 227705.40 | 000006.01 B3 | line 7 LVE,,VSU(VU)
+!CHECK 227706.00 | 000000.00 0F | line 8 BE,($15)
+!CHECK 227706.40 | 225340.03 70 | line 9 SR,VP,VRCNT+VRT
+!CHECK 227707.00 | 224422.10 00 | line 10 B,VRTIO1 (prints "B,VRTIC1")
+!CHECK 227707.40 | 000004.31 01 | line 11 RYNOGD LVI,12,RKB+1.0 (prints "RYNCGD")
+!CHECK 227710.00 | 227777.31 D0 | line 12 SVA,12,RTTRY
+!CHECK 227710.40 | 227777.76 50 | line 13 LC,$15,RTSP3X
+!CHECK 227711.00 | 227743.36 4A | line 14 CBZ,$15,RTNCTR
+!CHECK 227711.40 | 227777.77 50 | line 15 SC,$15,RTSP3X
+!CHECK 227712.00 | 227671.71 01 | line 16 LVI,$12,RTEPBS (a "*" after the location)
+!CHECK 227712.40 | 230001.71 D0 | line 17 SVA,$12,RSREPK
+!CHECK 227713.00 | 230000.36 50 | line 18 RYHERE LC,$15,RBSP3X
+!CHECK 227713.40 | 227720.36 4A | line 19 CBZ,$15,RYSET
+!CHECK 227714.00 | 230000.37 50 | line 20 SC,$15,RBSP3X
+!CHECK 227714.40 | 227713.31 01 | line 21 LVI,$12,RYHERE
+!CHECK 227715.00 | 227774.71 D0 | line 22 SVA,$12,RDREXT+3.32 (last address digit blotted)
+!CHECK 227715.40 | 000040.10 00 | line 23 RYBSP B,DMCP
+!CHECK 227716.00 | 000006.00 80 | line 24 ,DBSP (prints ",CBSP")
+!CHECK 227716.40 | 000006.01 B3 | line 25 LVE,,VSU(VU)
+!CHECK 227717.00 | 227776.71 D0 | line 26 RYWAIT SVA,$12,RDREXT+5.32
+!CHECK 227717.40 | 230215.50 00 | line 27 B,RWAIT
+!CHECK 227720.00 | 000004.31 01 | line 28 RYSET LVI,$12,4.0
+!CHECK 227720.40 | 230000.31 D0 | line 29 SVA,$12,RBSP3X
+!CHECK 227721.00 | 230355.27 01 | line 30 LVI,$11,RKSCON
+!CHECK 227721.40 | 230001.67 D0 | line 31 SVA,$11,RSREPK
+!CHECK 227722.00 | 230000.36 50 | line 32 RYTHAR LC,$15,RBSP3X
+!CHECK 227722.40 | 227722.31 01 | line 33 LVI,$12,RYTHAR
+!CHECK 227723.00 | 227774.71 D0 | line 34 SVA,$12,RDREXT+3.32
+!CHECK 227723.40 | 227726.76 4A | line 35 CBZ,$15,RYSEET
+!CHECK 227724.00 | 230000.37 50 | line 36 SC,$15,RBSP3X
+!CHECK 227724.40 | 000040.10 00 | line 37 B,DMCP
+!CHECK 227725.00 | 000005.40 80 | line 38 ,DSP
+!CHECK 227725.40 | 000006.01 B3 | line 39 LVE,,VSU(VU) (a "*" after the location)
+!CHECK 227726.00 | 227717.10 00 | line 40 B,RYWAIT
+!CHECK 227726.40 | 000005.31 01 | line 41 RYSEET LVI,$12,5.0
+!CHECK 227727.00 | 230000.31 D0 | line 42 SVA,$12,RBSP3X
+!CHECK 227727.40 | 227770.30 30 | line 43 RTBSP LV,$12,RDREXT-1.0
+!CHECK 227730.00 | 000000.71 BC | line 44 LVE,$12,.32($12)
+!CHECK 227730.40 | 000001.71 BC | line 45 LVE,$12,1.32($12)
+!CHECK 227731.00 | 000040.10 00 | line 46 B,DMCP
+!CHECK 227731.40 | 000001.00 80 | line 47 ,DRD (prints ",CRC")
+!CHECK 227732.00 | 000006.01 B3 | line 48 LVE,,VSU(VU)
+!CHECK 227732.40 | 000000.00 8C | line 49 ,($12)

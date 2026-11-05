@@ -16568,3 +16568,36 @@ statements hex 2,002/2,002. Merge findings:
   * VVSCR's stand-ins take p.213's DD(BU,4) (pp.121, 223).
   * VECP -> VEOP (p.227 line 11 prints the same glyph as VREOP's O).
 
+pp.234-249 LANDED (2026-11-05): THE END OF VOLUME 1. 16 decks; body
+image pp.99-249 (150 pages) reaches 230106.00, which printed p.250
+(docs/MCP_Mar63_250-445.pdf PDF p.1) continues at 230106.40.
+listing_truth 229 pages / 8,408 lines; statements hex 2,101/2,101.
+  * THREE PAGES THE READING LOST: listing_pages.tsv recorded printed
+    pp.235, 239 and 245 with 0 lines (the line fit failed) and PDF
+    p.256 as "unknown" (it is printed p.249).  p.240 opening at
+    225477.22 with nothing ending there is what showed it; each was
+    landed off the image alone.  The reading's line fit is still wrong
+    on those four frames.
+  * ASSEMBLER: DR/DRZ take several dimensions and reserve their
+    PRODUCT (C22-6531 printed p.34, "A DR(dds),(L,L',L",...)"); p.240
+    prints DRZ(BU,64),(34,15) twice, 510 words each, pinned by its
+    VBF2/RUNLD !SYMs.  An expression ending in an operator is now
+    REFUSED: the printed trailing "-" is the comment mark (C28-6129 PDF
+    p.5, the 8-4 punch, written with no blank before it), and strap_asm
+    had silently dropped it -- five cards on pp.201/203 and one on p.243
+    carried it; tests/check_comment_mark.py.
+  * check_symbol_spellings exempts a pair that ONE page defines with two
+    !SYMs (p.241's RKA..RKH family, all SYN,3.0: RKC/RKD differ by C/D
+    and are two symbols); a split across two pages is still caught
+    (measured: RDNCTP against RDNOTP).
+  * Spellings settled: RDNOTP (C22-6728's typeset prose; p.247's label
+    prints the open O).  Stand-ins for instruction labels now write the
+    label's (BU,32,8)/(BU,64,8) and RWEXIT DRZ(BU,32)'s (BU,32), as the
+    merge requires (pp.214, 219, 224, 225, 233-237, 241); VSQNC takes
+    p.236's (BU,1).  Two more both-engine 7-read-1 rows adjudicated on
+    the ink (pp.247, 248).
+  * MCP USES BACKWARD TRANSMIT (TBI, p.212), which StretchExecute.bsv
+    refuses: the next model work MCP needs.
+  NEXT: volume 2 (docs/MCP_Mar63_250-445.pdf, printed pp.250-445),
+  same batches.
+

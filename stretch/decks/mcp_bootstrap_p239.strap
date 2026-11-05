@@ -1,0 +1,107 @@
+! mcp_bootstrap_p239.strap -- MCP printed page 239: the Input Program's
+! tables continue -- a BE,0, a DD(BU,18),34 count, and four DD(BU,32)
+! cards of 54 fields, the pairs 15*k, 34-k (k = 1..27) that p.240's
+! line 1 card (420,6 .. 495,1) completes.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.246, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID CA001130  DIST. OF 3/01
+! 3/01  PAGE NUMBER 239" (printed "CARC IC ... 3/C1", D and 0 worn).
+! The heading row's LOCATION field is 225443, line 1's word.
+!
+! THE PAGE.  56 lines, all located, contiguous from 225443.40 to
+! 225476.62 (a 32-bit field; next location 225477.22).
+!   line  1     BE,0 (printed "BE,C") at 225443.40, a half word,
+!               printed 000000.00 00.
+!   line  2     DD(BU,18),34 at 225444.00, printed 000042.
+!   lines 3-16  card 1132, DD(BU,32), 14 fields.
+!   lines 17-29 card 1133, 13 fields.
+!   lines 30-42 card 1134, 13 fields.
+!   lines 43-56 card 1135, 14 fields.
+! Each DD card is ONE card printing one field per line; one !CHECK per
+! field (precedent p.213 line 52, p.240 line 1).  Asterisks after the
+! LOCATION on lines 20 and 43; every line number prints "N*".
+! JOIN.  p.238 (scratch) ends with B, at 225443.00 (a half word), so the
+! counter arrives at 225443.40 = line 1; p.240 (scratch) opens at
+! 225477.22 = the next 32-bit field after line 56.  Contiguous both ways.
+! Remarks (sequence numbers) -1101 .. -1106 follow p.238's -1100 and
+! precede p.240's -1107.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 1 "BE,C": open round glyph read 0 (printed binary all zero).
+!   * "DD" printed "DC"/"CD"/"DD" (worn D); octal "C"s in LOCATION and
+!     BINARY are 0.  "90"/"330"/"360"/"10"/"270"/"240"/"120"/"150"/"180"
+!     print the 0 open; each settled by its own field's printed octal
+!     (132, 512, 550, 12, 416, 360, 170, 226, 264).
+!
+! CARD SERIALS 0A001130 .. 0A001135, none skipped on the page; lines
+! 3-16 all print 1132, 17-29 1133, 30-42 1134, 43-56 1135.  p.238's
+! scratch deck ends at serial 1128, so 1129 prints on neither page
+! (the header CARD ID CA001130 agrees this page begins at 1130).
+! The serial prefix prints as an oval "0", the header's as "C" (worn D,
+! cf. p.213).
+
+
+        SLC, (8)225443.40
+        BE,0                                                 ! line  1  -1101  printed BE,C
+        DD(BU,18),34                                         ! line  2  -1102
+        DD(BU,32),15,33,30,32,45,31,60,30,75,29,90,28,105,27 ! lines 3-16  -1103
+        DD(BU,32),120,26,135,25,150,24,165,23,180,22,195,21,210  ! lines 17-29  -1104
+        DD(BU,32),20,225,19,240,18,255,17,270,16,285,15,300,14  ! lines 30-42  -1105
+        DD(BU,32),315,13,330,12,345,11,360,10,375,9,390,8,405,7  ! lines 43-56  -1106
+
+!CHECK 225443.40 | 000000.00 00 | line 1 BE,0 (prints BE,C)
+!CHECK 225444.00 | 000042 | line 2 DD(BU,18),34 | 18
+!CHECK 225444.22 | 00000000017 | line 3 card 1132 (-1103) field 1, 15 | 32
+!CHECK 225444.62 | 00000000041 | line 4 card 1132 (-1103) field 2, 33 | 32
+!CHECK 225445.22 | 00000000036 | line 5 card 1132 (-1103) field 3, 30 | 32
+!CHECK 225445.62 | 00000000040 | line 6 card 1132 (-1103) field 4, 32 | 32
+!CHECK 225446.22 | 00000000055 | line 7 card 1132 (-1103) field 5, 45 | 32
+!CHECK 225446.62 | 00000000037 | line 8 card 1132 (-1103) field 6, 31 | 32
+!CHECK 225447.22 | 00000000074 | line 9 card 1132 (-1103) field 7, 60 | 32
+!CHECK 225447.62 | 00000000036 | line 10 card 1132 (-1103) field 8, 30 | 32
+!CHECK 225450.22 | 00000000113 | line 11 card 1132 (-1103) field 9, 75 | 32
+!CHECK 225450.62 | 00000000035 | line 12 card 1132 (-1103) field 10, 29 | 32
+!CHECK 225451.22 | 00000000132 | line 13 card 1132 (-1103) field 11, 90 | 32
+!CHECK 225451.62 | 00000000034 | line 14 card 1132 (-1103) field 12, 28 | 32
+!CHECK 225452.22 | 00000000151 | line 15 card 1132 (-1103) field 13, 105 | 32
+!CHECK 225452.62 | 00000000033 | line 16 card 1132 (-1103) field 14, 27 | 32
+!CHECK 225453.22 | 00000000170 | line 17 card 1133 (-1104) field 1, 120 | 32
+!CHECK 225453.62 | 00000000032 | line 18 card 1133 (-1104) field 2, 26 | 32
+!CHECK 225454.22 | 00000000207 | line 19 card 1133 (-1104) field 3, 135 | 32
+!CHECK 225454.62 | 00000000031 | line 20 card 1133 (-1104) field 4, 25 (a "*" after the location) | 32
+!CHECK 225455.22 | 00000000226 | line 21 card 1133 (-1104) field 5, 150 | 32
+!CHECK 225455.62 | 00000000030 | line 22 card 1133 (-1104) field 6, 24 | 32
+!CHECK 225456.22 | 00000000245 | line 23 card 1133 (-1104) field 7, 165 | 32
+!CHECK 225456.62 | 00000000027 | line 24 card 1133 (-1104) field 8, 23 | 32
+!CHECK 225457.22 | 00000000264 | line 25 card 1133 (-1104) field 9, 180 | 32
+!CHECK 225457.62 | 00000000026 | line 26 card 1133 (-1104) field 10, 22 | 32
+!CHECK 225460.22 | 00000000303 | line 27 card 1133 (-1104) field 11, 195 | 32
+!CHECK 225460.62 | 00000000025 | line 28 card 1133 (-1104) field 12, 21 | 32
+!CHECK 225461.22 | 00000000322 | line 29 card 1133 (-1104) field 13, 210 | 32
+!CHECK 225461.62 | 00000000024 | line 30 card 1134 (-1105) field 1, 20 | 32
+!CHECK 225462.22 | 00000000341 | line 31 card 1134 (-1105) field 2, 225 | 32
+!CHECK 225462.62 | 00000000023 | line 32 card 1134 (-1105) field 3, 19 | 32
+!CHECK 225463.22 | 00000000360 | line 33 card 1134 (-1105) field 4, 240 | 32
+!CHECK 225463.62 | 00000000022 | line 34 card 1134 (-1105) field 5, 18 | 32
+!CHECK 225464.22 | 00000000377 | line 35 card 1134 (-1105) field 6, 255 | 32
+!CHECK 225464.62 | 00000000021 | line 36 card 1134 (-1105) field 7, 17 | 32
+!CHECK 225465.22 | 00000000416 | line 37 card 1134 (-1105) field 8, 270 | 32
+!CHECK 225465.62 | 00000000020 | line 38 card 1134 (-1105) field 9, 16 | 32
+!CHECK 225466.22 | 00000000435 | line 39 card 1134 (-1105) field 10, 285 | 32
+!CHECK 225466.62 | 00000000017 | line 40 card 1134 (-1105) field 11, 15 | 32
+!CHECK 225467.22 | 00000000454 | line 41 card 1134 (-1105) field 12, 300 | 32
+!CHECK 225467.62 | 00000000016 | line 42 card 1134 (-1105) field 13, 14 | 32
+!CHECK 225470.22 | 00000000473 | line 43 card 1135 (-1106) field 1, 315 (a "*" after the location) | 32
+!CHECK 225470.62 | 00000000015 | line 44 card 1135 (-1106) field 2, 13 | 32
+!CHECK 225471.22 | 00000000512 | line 45 card 1135 (-1106) field 3, 330 | 32
+!CHECK 225471.62 | 00000000014 | line 46 card 1135 (-1106) field 4, 12 | 32
+!CHECK 225472.22 | 00000000531 | line 47 card 1135 (-1106) field 5, 345 | 32
+!CHECK 225472.62 | 00000000013 | line 48 card 1135 (-1106) field 6, 11 | 32
+!CHECK 225473.22 | 00000000550 | line 49 card 1135 (-1106) field 7, 360 | 32
+!CHECK 225473.62 | 00000000012 | line 50 card 1135 (-1106) field 8, 10 | 32
+!CHECK 225474.22 | 00000000567 | line 51 card 1135 (-1106) field 9, 375 | 32
+!CHECK 225474.62 | 00000000011 | line 52 card 1135 (-1106) field 10, 9 | 32
+!CHECK 225475.22 | 00000000606 | line 53 card 1135 (-1106) field 11, 390 | 32
+!CHECK 225475.62 | 00000000010 | line 54 card 1135 (-1106) field 12, 8 | 32
+!CHECK 225476.22 | 00000000625 | line 55 card 1135 (-1106) field 13, 405 | 32
+!CHECK 225476.62 | 00000000007 | line 56 card 1135 (-1106) field 14, 7 | 32

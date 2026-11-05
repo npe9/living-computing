@@ -69,7 +69,7 @@ VREE    SYN, (8)224407.0             ! landed p.221 line 17
 VRTIO1  SYN, (8)224422.0             ! landed p.221 line 38
 VPD     SYN, (8)225427.0             ! LX lines 24/29, word only
 VRT     SYN, (8)225331.0             ! ST line 4/31 VRT-1. (word only); p.221 LVI 225331.07
-VREOP   SYN, (8)224647.0             ! B line 22, half word only
+VREOP   SYN(BU,32,8), (8)224647.0             ! B line 22, half word only
 VEOJ1   SYN, (8)224613.0             ! BXVLZ line 40, half word only
 VSETX   SYN, (8)224671.40            ! B lines 42/47, half word only
 

@@ -1,0 +1,189 @@
+! mcp_bootstrap_p237.strap -- MCP printed page 237: the Input Program's
+! write / sweep / read tables (exit vectors, VF/XW/CW words, DRZ
+! reservations), lines 1-56.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.244, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID CA001042  DIST. OF 3/01
+! 3/01  PAGE NUMBER 237"; the heading row's LOCATION field is BLANK --
+! line 1 is a CNOP that compiles nothing and prints no location.
+!
+! THE PAGE.  56 lines; lines 2-56 located, contiguous from 225263.00 to
+! 225337.00 (a half word; next location 225337.40).  The volume reading
+! of p.236 ends with DRZ(BU,32),V SCK at 225260.00, size 000003.00, so
+! line 1's CNOP falls on a word (225263.00) and emits nothing; p.238's
+! line 1 reads 225337.40.  Both joins hold.  Asterisks after the LOCATION
+! on lines 20, 22, 41, 43.
+!
+! REMARKS.  Two remark fields: a mnemonic one ("-W2S", "-NX", "-SU" ...)
+! and a sequence number -1014 .. -1067.  The sequence number is absent on
+! lines 2, 3, 5, 7, 8, 9, 16, 35, 42 (16 and 35 skip -1028 and -1047);
+! line 43 prints its -1054 to the left of the usual column.  On lines
+! 29, 30, 32, 50, 53 the mnemonic remark abuts the statement
+! ("V SX2KT-S2S"): the binary shows it is NOT part of the operand
+! (229/30 address 225323 = V SX2KT exactly).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * worn O printing as C: line 2/6 "V WECP" = VWEOP (p.218, 224322.40;
+!     B prints 224322.50); line 4 "V WFECP" = VWFEOP (p.219); lines 24/46
+!     "V REOP"/"V RECP" = VREOP (p.227); lines 34/55 "V RTIC" = VRTIO and
+!     line 39 "V RTIC1" = VRTIO1 (p.221, 224421.40 / 224422.00); line 15
+!     "V WIC" = VWIO (p.221, 224403.40).  Each B's printed address equals
+!     the landed label's location.
+!   * line 14 "V RDQ" (p.216 VRDQ 224233.40), line 54 "V QQ" (p.222 VQQ
+!     224452.40), line 33 "V SQ" (p.218 VSQ 224314.00) -- landed spellings,
+!     binary agrees.
+!   * line 30 operand printed "V SZT"/"V S2T" read as VS2T: binary 225324.00
+!     = line 42's V S2T.
+!   * "C" in VF,C (lines 18, 19), CW,C (13) is 0: every octal field of
+!     those rows is zero.  Line 8 "VF,-34.C" is -34.0.
+!   * hex bytes printed with an open round ("C0") are 00; octal fields
+!     "CCCCCC.CC" are 0.
+!
+! DATA ROWS.  VF prints its value with sign; XW/CW print value, the
+! count/flags, and the refill address.  DRZ rows (22, 43, 44) print their
+! size and get no !CHECK; the SYN (26) prints NULL, +00000002.
+
+VWEOP   SYN, (8)224322.40            ! landed p.218 label
+VWFEOP  SYN, (8)224361.40            ! landed p.219 label
+VWEFT   SYN, (8)224333.0             ! landed p.219 label
+RWTEE   SYN, (8)224340.0             ! landed p.219 label
+RWTM    SYN, (8)224360.0             ! landed p.219 label
+VRDQ    SYN, (8)224233.40            ! landed p.216 line 44
+VWIO    SYN, (8)224403.40            ! landed p.221 label
+VACT    SYN, (8)224655.0             ! landed label (!SYM VACT 224655.00)
+VREOP   SYN(BU,32,8), (8)224647.0             ! landed p.227 label
+VRTEE   SYN, (8)224426.40            ! landed p.221 label
+VSQ     SYN(BU,32,8), (8)224314.0             ! landed p.218 label
+VRTIO   SYN, (8)224421.40            ! landed p.221 label
+VRTIO1  SYN, (8)224422.0             ! landed p.221 label
+VSTTS   SYN, (8)224727.0             ! landed p.228 label
+VREE    SYN, (8)224407.0             ! landed p.221 label
+VQQ     SYN, (8)224452.40            ! landed p.222 label
+VH      SYN, 32                      ! p.213 line 7 "V H SYN,32", an INTEGER
+VBF1    SYN, (8)225506.0             ! as p.233 (BIT-EXACT there); CW line 12 225506.00
+VBF2    SYN, (8)226504.0             ! CW(CD) line 52, this page's binary only
+VRCWA   SYN, (8)225343.0             ! CW(CD) line 52 refill 225343, this page's binary only
+VRX2K   SYN, (8)225344.0             ! XW line 51 refill 225344, this page's binary only
+VR2     SYN, (8)225345.0             ! XW line 51 225345.00 (line 50 VR2.VH = .40), this page's binary only
+
+        SLC, (8)225263.0
+        CNOP,                                                ! line  1  -1014
+        B,VWEOP                                              ! line  2
+        B,RWTEE                                              ! line  3
+        B,VWFEOP                                             ! line  4  -1016
+        B,RWTM                                               ! line  5
+        B,VWEOP                                              ! line  6  -1018
+        B,RWTEE                                              ! line  7
+VWT     VF,-34.0                                             ! line  8
+        VF,-VWEFT                                            ! line  9
+        XW,VW2,17,VWX2K                                      ! line 10  -W2S  -1022
+        XW,VW2,17,VWX2K                                      ! line 11  -W2R  -1023
+        CW,VBF1,0,$                                          ! line 12  -1024
+VWCW    CW,0                                                 ! line 13  -CWR  -1025
+        B,VRDQ                                               ! line 14  -NX  -1026
+        B,VWIO                                               ! line 15  -IO  -1027
+        ,0                                                   ! line 16  -SU
+        ,0                                                   ! line 17  -RQB  -1029
+        VF,0                                                 ! line 18  -RCNT  -1030
+        VF,0                                                 ! line 19  -FCNT  -1031
+        B,VACT                                               ! line 20  -STR  -1032
+VWX2K   XW,VW2,17,VWX2K                                      ! line 21  -1033
+VW2     DRZ(BU,32),17                                        ! line 22  -1034
+        CNOP,                                                ! line 23  -1035
+        B,VREOP                                              ! line 24  -1036
+        B,VRTEE                                              ! line 25  -1037
+VSTK    SYN,2                                                ! line 26  -1038
+VST     VF,-34.                                              ! line 27  -1039
+        VF,17.                                               ! line 28  -S1  -1040
+        XW,VS2T.VH,VSTK-1,VSX2KT                             ! line 29  -S2S  -1041
+        XW,VS2T,VSTK,VSX2KT                                  ! line 30  -S2R  -1042
+        CW(CD),VBF1,255,VSCWA                                ! line 31  -1043
+VSCW    CW(CD),VBF1,255,VSCWA                                ! line 32  -CWR  -1044
+        B,VSQ                                                ! line 33  -NX  -1045
+        B,VRTIO                                              ! line 34  -IO  -1046
+        ,0                                                   ! line 35  -SU
+        ,0                                                   ! line 36  -RQB  -1048
+        ,0                                                   ! line 37  -RCNT  -1049
+        ,0                                                   ! line 38  -FCNT  -1050
+        B,VRTIO1                                             ! line 39  -STR  -1051
+        VF,-VSTTS                                            ! line 40  -TS  -1052
+VSX2KT  XW,VS2T,VSTK,VSX2KT                                  ! line 41  -1053
+VS2T    BE,17.                                               ! line 42
+        DRZ(BU,32),VSTK-1                                    ! line 43  -1054
+        DRZ(BU,32),4                                         ! line 44  -1055
+VSCWA   CW(CD),VBF1+255.,255,VSCW-1.                         ! line 45  -1056
+        B,VREOP                                              ! line 46  -1057
+        B,VREE                                               ! line 47  -1058
+VRT     VF,-34.                                              ! line 48  -1059
+        VF,17.                                               ! line 49  -R1  -1060
+        XW,VR2.VH,1,VRX2K                                    ! line 50  -R2S  -1061
+        XW,VR2,2,VRX2K                                       ! line 51  -R2R  -1062
+        CW(CD),VBF2,255,VRCWA                                ! line 52  -1063
+VRCW    CW(CD),VBF2,255,VRCWA                                ! line 53  -CWR  -1064
+        B,VQQ                                                ! line 54  -NX  -1065
+        B,VRTIO                                              ! line 55  -IO  -1066
+        ,0                                                   ! line 56  -SU  -1067
+
+!SYM VWT    225266.00
+!SYM VWCW   225272.00
+!SYM VWX2K  225277.00
+!SYM VW2    225300.00
+!SYM VSTK   000000.02
+!SYM VST    225312.00
+!SYM VSCW   225316.00
+!SYM VSX2KT 225323.00
+!SYM VS2T   225324.00
+!SYM VSCWA  225327.00
+!SYM VRT    225331.00
+!SYM VRCW   225335.00
+!CHECK 225263.00 | 224322.50 00 | line 2 B,V WECP (byte prints C0)
+!CHECK 225263.40 | 224340.10 00 | line 3 B,RWTEE
+!CHECK 225264.00 | 224361.50 00 | line 4 B,V WFECP
+!CHECK 225264.40 | 224360.10 00 | line 5 B,RWTM (byte prints C0)
+!CHECK 225265.00 | 224322.50 00 | line 6 B,V WECP (byte prints C0)
+!CHECK 225265.40 | 224340.10 00 | line 7 B,RWTEE (byte prints C0)
+!CHECK 225266.00 | 000042.00- | line 8 V WT VF,-34.C
+!CHECK 225266.40 | 224333.00- | line 9 VF,-VWEFT
+!CHECK 225267.00 | 225300.00+ 000 000021 225277 | line 10 XW,V W2,17,V WX2K
+!CHECK 225270.00 | 225300.00+ 000 000021 225277 | line 11 XW,V W2,17,V WX2K
+!CHECK 225271.00 | 225506.00+ 000 000000 225271 | line 12 CW,V BF1,0,$
+!CHECK 225272.00 | 000000.00+ 000 000000 000000 | line 13 V WCW CW,C
+!CHECK 225273.00 | 224233.50 00 | line 14 B,V RDQ
+!CHECK 225273.40 | 224403.50 00 | line 15 B,V WIC
+!CHECK 225274.00 | 000000.00 80 | line 16 ,0
+!CHECK 225274.40 | 000000.00 80 | line 17 ,0
+!CHECK 225275.00 | 000000.00+ | line 18 VF,C
+!CHECK 225275.40 | 000000.00+ | line 19 VF,C
+!CHECK 225276.00 | 224655.10 00 | line 20 B,V ACT (a "*" after the location; byte prints C0)
+!CHECK 225277.00 | 225300.00+ 000 000021 225277 | line 21 V WX2K XW,V W2,17,V WX2K
+!CHECK 225310.40 | 000000.30 00 | line 23 CNOP, (byte prints C0)
+!CHECK 225311.00 | 224647.10 00 | line 24 B,V REOP (byte prints C0)
+!CHECK 225311.40 | 224426.50 00 | line 25 B,V RTEE
+!CHECK 225312.00 | 000042.00- | line 27 V ST VF,-34.
+!CHECK 225312.40 | 000021.00+ | line 28 VF,17.
+!CHECK 225313.00 | 225324.40+ 000 000001 225323 | line 29 XW,V S2T.V H,V STK-1,V SX2KT
+!CHECK 225314.00 | 225324.00+ 000 000002 225323 | line 30 XW,V S2T,V STK,V SX2KT
+!CHECK 225315.00 | 225506.00+ 010 000377 225327 | line 31 CW(CD),V BF1,255,V SCWA
+!CHECK 225316.00 | 225506.00+ 010 000377 225327 | line 32 V SCW CW(CD),V BF1,255,V SCWA
+!CHECK 225317.00 | 224314.10 00 | line 33 B,V SQ
+!CHECK 225317.40 | 224421.50 00 | line 34 B,V RTIC
+!CHECK 225320.00 | 000000.00 80 | line 35 ,0
+!CHECK 225320.40 | 000000.00 80 | line 36 ,0
+!CHECK 225321.00 | 000000.00 80 | line 37 ,0
+!CHECK 225321.40 | 000000.00 80 | line 38 ,0
+!CHECK 225322.00 | 224422.10 00 | line 39 B,V RTIC1
+!CHECK 225322.40 | 224727.00- | line 40 VF,-V STTS
+!CHECK 225323.00 | 225324.00+ 000 000002 225323 | line 41 V SX2KT XW,V S2T,V STK,V SX2KT (a "*" after the location)
+!CHECK 225324.00 | 000021.00 00 | line 42 V S2T BE,17.
+!CHECK 225327.00 | 226105.00+ 010 000377 225315 | line 45 V SCWA CW(CD),V BF1+255.,255,V SCW-1.
+!CHECK 225330.00 | 224647.10 00 | line 46 B,V RECP
+!CHECK 225330.40 | 224407.10 00 | line 47 B,V REE
+!CHECK 225331.00 | 000042.00- | line 48 V RT VF,-34.
+!CHECK 225331.40 | 000021.00+ | line 49 VF,17.
+!CHECK 225332.00 | 225345.40+ 000 000001 225344 | line 50 XW,V R2.V H,1,V RX2K
+!CHECK 225333.00 | 225345.00+ 000 000002 225344 | line 51 XW,V R2,2,V RX2K
+!CHECK 225334.00 | 226504.00+ 010 000377 225343 | line 52 CW(CD),V BF2,255,V RCWA
+!CHECK 225335.00 | 226504.00+ 010 000377 225343 | line 53 V RCW CW(CD),V BF2,255,V RCWA
+!CHECK 225336.00 | 224452.50 00 | line 54 B,V QQ
+!CHECK 225336.40 | 224421.50 00 | line 55 B,V RTIC (byte prints C0)
+!CHECK 225337.00 | 000000.00 80 | line 56 ,0
