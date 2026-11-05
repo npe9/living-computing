@@ -1,0 +1,199 @@
+! mcp_bootstrap_p203.strap -- MCP printed page 203: A CHK (the
+! request bounds check and its SPRIME error exit) and C START, the
+! transmit-N-print-lines-from-PP-to-print-buffer loop.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.210, read at 400 dpi (900 dpi for
+! doubtful glyphs).  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+!  CARD ID MA000106  DIST. OF 3/01  3/01  PAGE NUMBER 203"; the heading
+! row's LOCATION field prints 000032 -- line 1's SYN value (AX = $10).
+!
+! THE SPAN.  Lines 1-4 SYN register names (no storage).  Code runs
+! contiguous from 222217.00 (line 5) to 222257.40 (line 56).  Lines 20
+! and 44 are comment cards with no location.
+!
+! CARD SERIALS.  MA000106 (line 1) .. MA000156 (line 56), but lines
+! 11-12 both print MA000116, lines 13-15 all print MA000117, lines
+! 16-17 both MA000118, and lines 31-32 both MA000132; from line 33 on
+! the serial is line+100 again.  Recorded, not explained.  Lines 21,
+! 37 and 54 print a "*" after the LOCATION.
+!
+! GLYPHS NOT SETTLED BY PLAIN INK:
+!  * CAOS1..CAOS4, CAOS3A, CAOS3B: the NAME column prints all six as
+!    "CACS..", the references on lines 37, 46, 49 print a closed
+!    "CAOS3"/"CAOS1" (lines 35, 45 print "CACS2"/"CACS4").  One symbol
+!    per address (B,CAOS1 -> 222241.10 = CACS1's location), so the
+!    open round is a worn O; spelled CAOS throughout.  The typeset
+!    manual C22-6728(-1) prints CAOS3 and CAOS3A (grep docs/ocr/).
+!  * line 34 KCI,$10,0 prints "KCI,$10,C": the operand is an open
+!    round in a numeric field and the row compiles 000000 (count 0).
+!  * lines 21, 56 print "CMOCOO" / "CMOCOC": CM0000 (neither printed
+!    string is a mnemonic).  Line 21's second half prints
+!    "001000.CC FC" and line 56's "001000.CC FO": both are 001000.00 F0,
+!    the statement's own CM0000(BU,1) word.
+!  * hex "C0" for 00 on the branch rows 10, 17, 32 (and C2 on 36): the
+!    open-round 0; line 17 is line 12's own statement and line 12
+!    prints 00.  Settled by what the statements assemble to.
+!  * line 17 prints "BC,SPRIME": BD with the stem worn (line 12 prints
+!    BD,SPRIME and both compile 215570.04).
+!  * line 23's byte is B0, not 80: at 900 dpi its first glyph has a
+!    straight left stem where line 22's 80 is round; LVE assembles B0.
+!  * octal-field C's (".CC", "000C27", "222110" etc.) are 0 throughout.
+!
+! Trailing "-" after an operand (lines 5, 28, 33) is printed; the
+! remark that follows on line 33 ("TRANSMISSION INDEX") has no dash
+! of its own.  Line 39 prints a BLANK between "(BU,48,6)" and "(V+I)".
+!
+! Lines 13 and 18 print ,$SPR and ,$ABEOJ (a clear $ at 900 dpi) and are
+! written as printed: MCP pseudo-ops are STRAP system symbols preceded by
+! $ (N28-1081 p.8, docs C28-6129 PDF p.66; values MCP pp.104/105).
+!
+! No landed deck references a label this page defines, so the hard
+! SLC origin 222217.00 is ASSERTED, not checked by the merge.
+!
+! CBTA's (BU,1) is read from the binary (length field 001000.xx on
+! lines 47 and 56, which print no dds of their own), not from a card.
+!
+! External stand-ins are checked by the merge where a landed deck
+! defines them; the rest come from this page's binary as noted.
+
+SLRBU   SYN, (8)215324.0             ! landed
+SPPUB   SYN, SLRBU                   ! landed p.116 line 22
+SPPLB   SYN, SLRBU+.32               ! landed p.116 line 23
+SPRIMR  SYN, (8)215571.0             ! landed
+SPRIME  SYN, (8)215570.0             ! landed
+ASERR   SYN, (8)223764.0             ! line 14 null op ,ASERR 223764.00 -- BIT-EXACT, this page only
+ARET    SYN, (8)222144.0             ! lines 19/51 branch; half word only, this page only
+AEOJI   SYN, (8)223744.14            ! line 21 CM0000(BU,1) VFL -- BIT-EXACT, this page only
+CXR7    SYN, (8)223753.0             ! line 22 TI second address; word only (.22 is the count), this page only
+SCSPRT  SYN, (8)222105.00            ! landed p.121
+CWA     SYN, (8)222577.0             ! lines 33/50 LX/SX; half word only, this page only
+CBTA    SYN(BU,1), (8)223743.00      ! lines 47/56 CM VFL -- BIT-EXACT; (BU,1) from 001000.xx, this page only
+CBWA    SYN(BU,1), (8)223744.06            ! line 52 BB bit address -- BIT-EXACT, this page only
+CATUB   SYN(BU,1,1), (8)223744.11            ! line 54 BB bit address -- BIT-EXACT, this page only
+CXZ     SYN, (8)222270.0             ! line 55 B; half word only, this page only
+
+        SLC, (8)222217.0
+AX      SYN,$10                                              ! line  1
+AY      SYN,$9                                               ! line  2
+AZ      SYN,$8                                               ! line  3
+AN      SYN,$7                                               ! line  4
+ACHK    KV,$10,SPPLB-                                        ! line  5
+        BXL,ACHERR                                           ! line  6  -REQUEST OUT CF BOUNDS
+        +(BU,18),$10,46                                      ! line  7
+        K(BU,18),SPPUB,46                                    ! line  8
+        BAH,ACHERR                                           ! line  9
+ACHKBR  B,$                                                  ! line 10
+ACHERR  SIC,SPRIMR                                           ! line 11
+        BD,SPRIME                                            ! line 12
+        ,$SPR                                                ! line 13
+        ,ASERR                                               ! line 14
+        ,1.                                                  ! line 15
+        SIC,SPRIMR                                           ! line 16
+        BD,SPRIME                                            ! line 17  printed BC (D worn)
+        ,$ABEOJ                                              ! line 18
+        BE,ARET                                              ! line 19
+! line 20  - TRANSMIT N PRINT LINES FROM PP TC PRINT BUFFER
+CSTART  CM0000(BU,1),AEOJI                                   ! line 21  -TURN OFF ECJ INDICATOR
+        TI,9,$7,CXR7                                         ! line 22
+        LVE,$10,SCSPRT+3.                                    ! line 23  -EFFECTIVE ADDRESS FROM TENTACLE TBLE
+        LC,$10,SCSPRT+3.32                                   ! line 24  -NUMBER OF LINES TO TRANSMIT
+        Z,$7                                                 ! line 25
+        L(BU,18),SCSPRT+3.32,46                              ! line 26
+        *I(BU,6),17,20                                       ! line 27
+        BB,SCSPRT.4,RNOLCK-                                  ! line 28
+        LF(BU,64),$L,64                                      ! line 29
+        BZRZ,ACHERR                                          ! line 30
+        SIC,ACHKBR                                           ! line 31
+        B,ACHK                                               ! line 32
+RNOLCK  LX,$8,CWA-                                           ! line 33  TRANSMISSION INDEX
+CAOS1   KCI,$10,0                                            ! line 34  -ARE ALL LINES TRANSMITTED
+        BXE,CAOS2                                            ! line 35  -YES-BRANCH
+        LCI,$9,16                                            ! line 36  -NO,CF=16 FULL WCRDS TO TRANS
+        BB,CBTA,CAOS3                                        ! line 37  -IS BUFFER T AVAILABLE
+CTRANS  LF(BU,64,8)(V+I),1.($10)                             ! line 38  -YES,TRANSMIT 16 FULL WORDS FROM
+        SF(BU,48,6) (V+I),.48($8)                            ! line 39
+        CB,$9,CTRANS                                         ! line 40  -ARE 16 WORD TRANSMITTED
+        LF(BU,40,8)(V+IC),1.($10)                            ! line 41  -TRANSMIT LAST 5 BYTES
+        SF(BU,30,6)(V+I),.30($8)                             ! line 42
+        C-I,$8,1                                             ! line 43  -REDUCE NUMBER OF LINES AVAILABLE
+! line 44  -IN BUFFER BY ONE
+        BXCZ,CAOS4                                           ! line 45  -NO LINES LEFT,MAKE T UNAVAIL
+        B,CAOS1                                              ! line 46  -TRANSMIT MORE LINES
+CAOS4   CM1111,CBTA                                          ! line 47  -BUFFER IS FILLED-MADE UNAVAILABLE
+        R,$8                                                 ! line 48  -REFILL TRANSMISSION INDEX
+        B,CAOS1                                              ! line 49  -GO TO PICKUP MORE LINES
+CAOS2   SX,$8,CWA                                            ! line 50  -ALL LINES TRANSMITTED
+        B,ARET                                               ! line 51  -RETURN TO DISPATCHER
+CAOS3   BB,CBWA,CTRANS-1.                                    ! line 52  -IS W AVAIL. NO--WAIT-LOOP
+        LVI,$15,CTRANS                                       ! line 53  -WHERE TO GO AFTER OUTPUT
+CAOS3A  BB,CATUB,$                                           ! line 54  -IF TAPE IS BUSY LOOP
+CXY     B,CXZ                                                ! line 55  -BRANCH IF NEW TAPE,OTHERWISE NOP
+CAOS3B  CM0000,CBTA                                          ! line 56  -SWAP BUFFERS, T AVAIL
+
+!SYM AX     000032.00
+!SYM AY     000031.00
+!SYM AZ     000030.00
+!SYM AN     000027.00
+!SYM ACHK   222217.00
+!SYM ACHKBR 222222.40
+!SYM ACHERR 222223.00
+!SYM CSTART 222227.40
+!SYM RNOLCK 222240.40
+!SYM CAOS1  222241.00
+!SYM CTRANS 222243.40
+!SYM CAOS4  222251.40
+!SYM CAOS2  222253.40
+!SYM CAOS3  222254.40
+!SYM CAOS3A 222256.00
+!SYM CXY    222257.00
+!SYM CAOS3B 222257.40
+!CHECK 222217.00 | 215324.64 90 | line 5 A CHK KV,$10,SPPLB-
+!CHECK 222217.40 | 222223.32 42 | line 6 BXL,ACHERR
+!CHECK 222220.00 | 000032.00 80 022027.20 10 | line 7 +(BU,18),$10,46
+!CHECK 222221.00 | 215324.00 80 022027.21 10 | line 8 K(BU,18),SPPUB,46
+!CHECK 222222.00 | 222223.37 42 | line 9 BAH,ACHERR
+!CHECK 222222.40 | 222222.50 00 | line 10 A CHKBR B,$ (byte prints C0)
+!CHECK 222223.00 | 215571.00 80 | line 11 A CHERR SIC,SPRIMR
+!CHECK 222223.40 | 215570.04 00 | line 12 BD,SPRIME
+!CHECK 222224.00 | 000103.40 80 | line 13 ,$SPR
+!CHECK 222224.40 | 223764.00 80 | line 14 ,ASERR
+!CHECK 222225.00 | 000001.00 80 | line 15 ,1.
+!CHECK 222225.40 | 215571.00 80 | line 16 SIC,SPRIMR
+!CHECK 222226.00 | 215570.04 00 | line 17 BC,SPRIME as printed (D worn; byte prints C0)
+!CHECK 222226.40 | 000104.00 80 | line 18 ,$ABEOJ
+!CHECK 222227.00 | 222144.00 00 | line 19 BE,ARET
+!CHECK 222227.40 | 223744.14 80 001000.00 F0 | line 21 C START CMOCOO(BU,1),AEOJI (a "*" after the location; h2 prints 001000.CC FC)
+!CHECK 222230.40 | 000027.00 80 223753.22 A0 | line 22 TI,9,$7,CXR7
+!CHECK 222231.40 | 222110.25 B0 | line 23 LVE,$10,SCSPRT+3. (byte read B0 at 900 dpi: flat left stem, unlike line 22's round 80)
+!CHECK 222232.00 | 222110.64 50 | line 24 LC,$10,SCSPRT+3.32
+!CHECK 222232.40 | 000027.22 00 | line 25 Z,$7
+!CHECK 222233.00 | 222110.40 80 022027.20 50 | line 26 L(BU,18),SCSPRT+3.32,46
+!CHECK 222234.00 | 210000.00 80 406012.21 90 | line 27 *I(BU,6),17,20
+!CHECK 222235.00 | 222105.04 80 222240.74 02 | line 28 BB,SCSPRT.4,RNOLCK-
+!CHECK 222236.00 | 000010.00 80 000040.06 70 | line 29 LF(BU,64),$L,64 (byte prints 7C)
+!CHECK 222237.00 | 222223.34 C0 | line 30 BZRZ,ACHERR
+!CHECK 222237.40 | 222222.40 80 | line 31 SIC,ACHKBR
+!CHECK 222240.00 | 222217.10 00 | line 32 B,ACHK (byte prints C0)
+!CHECK 222240.40 | 222577.20 10 | line 33 RNOLCK LX,$8,CWA-
+!CHECK 222241.00 | 000000.25 0A | line 34 CACS1 KCI,$10,C as printed
+!CHECK 222241.40 | 222253.72 C2 | line 35 BXE,CACS2
+!CHECK 222242.00 | 000020.23 02 | line 36 LCI,$9,16 (byte prints C2)
+!CHECK 222242.40 | 223743.00 80 222254.74 02 | line 37 BB,CBTA,CAOS3 (a "*" after the location)
+!CHECK 222243.40 | 000001.00 8A 100000.06 70 | line 38 C TRANS LF(BU,64,8)(V+I),1.($10)
+!CHECK 222244.40 | 000000.60 88 160600.12 F0 | line 39 SF(BU,48,6) (V+I),.48($8)
+!CHECK 222245.40 | 222243.62 48 | line 40 CB,$9,CTRANS
+!CHECK 222246.00 | 000001.00 8A 250000.06 70 | line 41 LF(BU,40,8)(V+IC),1.($10) (byte prints 7C)
+!CHECK 222247.00 | 000000.36 88 136600.12 F0 | line 42 SF(BU,30,6)(V+I),.30($8)
+!CHECK 222250.00 | 000001.21 08 | line 43 C-I,$8,1
+!CHECK 222250.40 | 222251.70 42 | line 45 BXCZ,CACS4
+!CHECK 222251.00 | 222241.10 00 | line 46 B,CAOS1
+!CHECK 222251.40 | 223743.00 80 001000.36 F0 | line 47 CACS4 CM1111,CBTA
+!CHECK 222252.40 | 000030.02 00 | line 48 R,$8 (byte prints C0)
+!CHECK 222253.00 | 222241.10 00 | line 49 B,CAOS1
+!CHECK 222253.40 | 222577.21 10 | line 50 CACS2 SX,$8,CWA
+!CHECK 222254.00 | 222144.10 00 | line 51 B,ARET
+!CHECK 222254.40 | 223744.06 80 222242.74 02 | line 52 CACS3 BB,CBWA,CTRANS-1.
+!CHECK 222255.40 | 222243.77 01 | line 53 LVI,$15,CTRANS
+!CHECK 222256.00 | 223744.11 80 222256.34 02 | line 54 CACS3A BB,CATUB,$ (a "*" after the location)
+!CHECK 222257.00 | 222270.10 00 | line 55 CXY B,CXZ
+!CHECK 222257.40 | 223743.00 80 001000.00 F0 | line 56 CACS3B CMOCOC,CBTA as printed

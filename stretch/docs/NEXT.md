@@ -16501,3 +16501,53 @@ p.197 with no merge disagreement. Two glyphs needed more than the ink:
 the page prints KFUNLC / K UNLC1 for p.196's KFUNLD / KUNLD1 (worn D),
 and line 11's byte prints "AC" -- an open 0, A0 (Vision read AC too). Open: no LH000042 between pp.196/197; LH000058
 printed on two cards. NEXT: p.198 the same way.
+
+pp.198-221 LANDED (2026-11-05), one agent per page in parallel, merged
+and checked together: 24 verify_mcp_page lines, body image to p.221
+(122 pages, no merge disagreement), listing_truth 201 pages / 7,059
+lines. THE ASSEMBLER GREW FOUR RULES THE PAGES PRINT, each cited:
+  * MCP pseudo-ops as $ system symbols ($MCP, $RET, $W, $WEF, $COMM ...,
+    opcodes.MCP_PSEUDO_OPS from pp.104/105/108): N28-1081 p.8 (C28-6129
+    PDF p.66).
+  * A null field is zero everywhere -- register (LVE,,AMR), branch
+    (BZBZ,V CSAW,), DD (DD(BU,32),,,,,,) and CW (C KERIC CW,):
+    C22-6531 printed p.7, C28-6129 PDF pp.8-9.  "CW needs an ADDRESS
+    field" was a refusal the manual does not make.
+  * A bit address's bit part may be an integer SYMBOL (".V H",
+    "V X.V H"): C22-6531 printed p.10, "a pair of integers separated by
+    a period", an integer being "a symbol that takes on an integral
+    value".  p.213 prints V H SYN,32 and V X1 SYN,V X.V H = 0.32.
+    WIDENED to C22-6578 printed p.64, A4.8.2(c): "A 'point' placed in
+    front of or behind a symbolized integer converts it into a bit
+    address; a 'point' placed in front or behind a symbolized bit
+    address, however, has no effect on the latter" -- p.231 prints
+    V RDY SYN(BU,1),.26 and V OPB ...,.25 on bit-address symbols.
+    verify_c22_6578_a4_addresses.py's two known gaps are gone.
+  * The dds of an expression is its FINAL symbol's (C22-6531 printed
+    p.11); an instruction label is (BU,32,8) or (BU,64,8) by the
+    instruction's length (C22-6531 printed p.10).
+  * SIC followed by any instruction assembles (p.224 SIC then VF,
+    p.228 SIC then LV: IBM's STRAP took both); only a SIC with nothing
+    after it is refused.
+  * _names_an_address tested for kind 'addr', which the tokenizer never
+    makes, so its dotted-literal case was dead; it now tests
+    addr/bitaddr/bitsym and every deck still passes.
+  Measured: on the previous assembler p.221's two V+ICR rows fail
+  (000020.17 for 000000.57) and pp.210/213/214/215 do not assemble as
+  printed.
+Merge decisions: p.213 deposits all six DD(BU,32),,,,,, fields (the
+sixth prints as p.214 line 1); ACP -> AOP (p.211 defines A OP at
+224046.0); AOFMC -> A0FMC (p.210, beside A1FMC/A2FMC); p.216's V IC
+reference written VID, p.213's reading of its label -- THE GLYPH IS NOT
+SETTLED (IC / IO / worn D). VWT is 225266.0 (p.219's LVI pins the half
+word; FP rows cannot see it). Open: card serials CA vs DA/0A in the V
+section headers; LH/0A serial gaps recorded per deck; VRDQ vs p.224's
+"V RDO". NEXT: pp.222+ the same way, in batches.
+Settled on the 900 dpi ink when the suite's spelling check caught three
+symbols spelled two ways across agents: AACS4 is C (p.201 l.48 and
+p.202 l.16 both print C, closed nowhere); ACRD15 is D (p.202 l.23 and
+p.210's own remark print D; the label's is worn); DIODEF is O (p.179
+l.22 prints it closed; pp.207/208/219 print this drum's open O). p.212
+l.16 is MCP's first TBI (transmit backward, immediate), which
+StretchExecute.bsv refuses with Operation Code Invalid: MCP needs
+backward transmit in the model.

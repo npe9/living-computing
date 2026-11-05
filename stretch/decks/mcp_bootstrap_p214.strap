@@ -1,0 +1,189 @@
+! mcp_bootstrap_p214.strap -- MCP printed page 214: THE INPUT PROGRAM
+! (card deck CA), its tentacle table V VSKM and the V XCRG / V XWRG /
+! V XRRG read/write entries, to V SSKOM.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.221, read at 400 dpi, zooms for
+! doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+!  CARD ID CA000049  DIST. OF 3/01  3/01  PAGE NUMBER 214"; the heading
+! row's LOCATION field is 224110, line 1's word.
+!
+! THE PAGE.  56 lines, contiguous from 224110.40 to 224146.40.
+!   line   1     NO STATEMENT: the sixth and last field of printed
+!                p.213 line 52's "DD(BU,32),,,,,," (card CA000049,
+!                fields at 224106.00 .. 224110.00 on p.213), printed
+!                here as 11 octal zeros at 224110.40.  SEE THE NOTE AT
+!                LINE 1 BELOW -- the one card not on this page's ink.
+!   lines  2-14  V VSKM, a DD / DD / DD / DD / EXT(0,18) BE / DD
+!                tentacle table, the same shape as p.213's V VSCR.
+!                Lines 3, 6 and 11-14 are the further fields of the
+!                DD above them and carry no statement.
+!   lines 15-46  V XCRG, V XWRG, V XRRG: BE, DRZ, SIC,RKSBRC; B,RKSUK,
+!                then the LV / B,-.32 / LVI,VT5 / B,VTDSP returns.
+!   lines 47-50  XW cards V XGX.. and V XG SYN,V XGX-V RTP (224135.00+).
+!   lines 51-56  V SSKOM, to SV,,V VSKM+V RA at 224146.40.
+! p.213 ends at 224110.00 (line 56, the fifth DD field), so line 1's
+! 224110.40 continues it.
+!
+! >>> CARD SERIALS. <<<  CA000049 (line 1) .. CA000084 (line 56), no
+! gap.  The serial column prints the C open, as "0A0000nn"; the header
+! prints CA.  Shared serials are DD field continuations (50, 52, 55),
+! EXT/BE (54) and two-statement cards (58-61, 65-68, 72-75, 83).
+! Asterisks after the LOCATION on lines 16, 27, 38 (the three DRZs).
+!
+! >>> GLYPHS SETTLED BY SOMETHING OTHER THAN PLAIN INK. <<<
+!   * line 26 prints "8E,V ST": BE (8E is no operation; lines 15/37
+!     print BE for the same card shape, and 225312.00 00 assembles).
+!   * line 33 prints "B,V TCSP": D worn to C.  Line 44 prints V TDSP
+!     with the same binary 224757.50 00; VTDSP is the manual's name
+!     (C22-6728 "The VTDSP Routine").
+!   * line 36 prints "NCP,": NOP (NCP is no operation; line 25 NOP,
+!     prints the same 000000.30 00).
+!   * lines 2 and 7 print "DC(BU,4)" / "CD(BU,30)": DD (the D stems
+!     worn; DC/CD are no operation).
+!   * RKS BRC / RKS UK / V TDSP / V T5 spelled as C22-6728 prints them
+!     ("SIC, RKSBRC; B, RKSUK"; "LVI, VT5, (OD name); B, VTDSP").
+!   * octal-field C glyphs (e.g. "CCCC06.23", "00000CCCC0") are 0 by
+!     the octal rule; hex bytes printed "C0"/"C1"/"CO" are 00/01, which
+!     is what the statements assemble to (BE/B with no index; LVI's
+!     01 as p.197 prints it).
+!   * line 2 remark prints "SIC ENTRY"; written as printed.
+!
+! Lines 5 and 10 print "DD(BU,2),2," and "DD(BU,32),,,,,", written as
+! printed: a null field compiles as zero (C22-6531 printed p.7; C28-6129 PDF pp.8-9).
+!
+! EXTERNALS from printed p.213 (transcribed in parallel, NOT LANDED):
+! read off that page's image, lines 25-40.
+
+VU      SYN, $3                      ! p.213 line 25 "V U SYN,$3" (not landed); LV J=3 on line 19 agrees
+VP      SYN, $1                      ! p.213 line 26 "V P SYN,$1" (not landed); SIC,(V P) prints 81
+VT5     SYN, $9                      ! p.213 line 28 "V T5 SYN,$9" (not landed); LVI .23 = 2J+1
+VRA     SYN, 1.32                    ! p.213 line 39 "V RA SYN,1.32" (not landed)
+VPAR    SYN, 3.                      ! p.213 line 40 "V PAR SYN,3." (not landed)
+VRTP    SYN, (8)4.0                  ! landed p.103 (p.100 card)
+VWTP    SYN, (8)6.0                  ! landed p.103 (p.100 card)
+RKSBRC  SYN, (8)230363.40            ! SIC on line 17, BIT-EXACT
+RKSUK   SYN, (8)227524.40            ! B on line 18, half word only
+VCR     SYN, (8)225232.0             ! BE on line 15, half word only
+VRDCSS  SYN, (8)224171.0             ! B on line 22, half word only
+VST     SYN, (8)225312.0             ! BE on line 26, half word only
+VTDSP   SYN, (8)224757.40            ! B on lines 33/44, half word only
+VPD     SYN, (8)225427.0             ! LX on line 53, word only
+VDISP   SYN, (8)224150.0             ! CB+ on line 55, half word only
+
+! line 1: NOT A CARD OF THIS PAGE.  The 32 zero bits printed at
+! 224110.40 are the sixth null field of p.213 line 52's DD(BU,32),,,,,,
+! -- that deck deposits and checks them, so this one starts after them.
+        SLC, (8)224111.00
+VVSKM   DD(BU,4),2,1                                         ! line  2  -2 PARAMETERS, ENABLED SIC ENTRY
+!                                                              line  3  second field, 01
+        DD(BU,3),0                                           ! line  4
+        DD(BU,2),2,                                          ! line  5
+!                                                              line  6  second (null) field, 0
+        DD(BU,30),0                                          ! line  7
+        EXT(0,18)                                            ! line  8
+        BE,VSSKOM                                            ! line  9
+        DD(BU,32),,,,,                                       ! line 10
+!                                                              lines 11-14  fields 2-5
+VXCRG   BE,VCR                                               ! line 15
+VCREXT  DRZ(B,64),2                                          ! line 16
+        SIC,RKSBRC                                           ! line 17
+        B,RKSUK                                              ! line 18
+        LV,VU,VXCRG                                          ! line 19
+        B,-.32(VU)                                           ! line 20
+        LV,VU,VXCRG                                          ! line 21
+        B,VRDCSS                                             ! line 22
+        LV,VU,VXCRG                                          ! line 23
+        B,-1.(VU)                                            ! line 24
+        NOP,                                                 ! line 25
+VXWRG   BE,VST                                               ! line 26  (printed 8E)
+VWTEXT  DRZ(B,64),2                                          ! line 27
+        SIC,RKSBRC                                           ! line 28
+        B,RKSUK                                              ! line 29
+        LV,VU,VXWRG                                          ! line 30
+        B,-.32(VU)                                           ! line 31
+        LVI,VT5,VWTP                                         ! line 32
+        B,VTDSP                                              ! line 33  (printed V TCSP)
+        LV,VU,VXWRG                                          ! line 34
+        B,-1.(VU)                                            ! line 35
+        NOP,                                                 ! line 36  (printed NCP,)
+VXRRG   BE,VRTP                                              ! line 37
+VRTEXT  DRZ(BU,64),2                                         ! line 38
+        SIC,RKSBRC                                           ! line 39
+        B,RKSUK                                              ! line 40
+        LV,VU,VXRRG                                          ! line 41
+        B,-.32(VU)                                           ! line 42
+        LVI,VT5,VRTP                                         ! line 43
+        B,VTDSP                                              ! line 44
+        LV,VU,VXRRG                                          ! line 45
+        B,-1.(VU)                                            ! line 46
+VXGX    XW,VRTEXT                                            ! line 47
+        XW,VCREXT                                            ! line 48
+        XW,VWTEXT                                            ! line 49
+VXG     SYN,VXGX-VRTP                                        ! line 50
+VSSKOM  LVE,VU,VVSKM+VPAR                                    ! line 51
+        LV,,VVSKM+VRA                                        ! line 52
+        LX,VP,VPD                                            ! line 53
+        SIC,(VP)                                             ! line 54
+        CB+,VP,VDISP                                         ! line 55
+        SV,,VVSKM+VRA                                        ! line 56
+
+!SYM VVSKM  224111.00
+!SYM VXCRG  224114.40
+!SYM VCREXT 224115.00
+!SYM VXWRG  224123.40
+!SYM VWTEXT 224124.00
+!SYM VXRRG  224132.40
+!SYM VRTEXT 224133.00
+!SYM VXGX   224141.00
+!SYM VXG    224135.00
+!SYM VSSKOM 224144.00
+!CHECK 224111.00 | 02 | line 2 V VSKM DD(BU,4),2,1 field 1 | 4
+!CHECK 224111.04 | 01 | line 3 field 2 of line 2 | 4
+!CHECK 224111.10 | 0 | line 4 DD(BU,3),0 | 3
+!CHECK 224111.13 | 2 | line 5 DD(BU,2),2, field 1 | 2
+!CHECK 224111.15 | 0 | line 6 null field 2 of line 5 | 2
+!CHECK 224111.17 | 0000000000 | line 7 DD(BU,30),0 | 30
+!CHECK 224111.55 | 0450310 | line 9 BE,V SSKOM under line 8's EXT(0,18) -- 19 bits, the half-word address of V SSKOM (line 51) | 19
+!CHECK 224112.00 | 00000000000 | line 10 DD(BU,32),,,,, field 1 | 32
+!CHECK 224112.40 | 00000000000 | line 11 field 2 | 32
+!CHECK 224113.00 | 00000000000 | line 12 field 3 | 32
+!CHECK 224113.40 | 00000000000 | line 13 field 4 | 32
+!CHECK 224114.00 | 00000000000 | line 14 field 5 | 32
+!CHECK 224114.40 | 225232.00 00 | line 15 V XCRG BE,V CR
+!CHECK 224117.00 | 230363.40 80 | line 17 SIC,RKS BRC
+!CHECK 224117.40 | 227524.50 00 | line 18 B,RKS UK
+!CHECK 224120.00 | 224114.46 30 | line 19 LV,V U,V XCRG
+!CHECK 224120.40 | 777777.50 03 | line 20 B,-.32(V U)
+!CHECK 224121.00 | 224114.46 30 | line 21 LV,V U,V XCRG
+!CHECK 224121.40 | 224171.10 00 | line 22 B,V RDCSS
+!CHECK 224122.00 | 224114.46 30 | line 23 LV,V U,V XCRG
+!CHECK 224122.40 | 777777.10 03 | line 24 B,-1.(V U)
+!CHECK 224123.00 | 000000.30 00 | line 25 NOP,
+!CHECK 224123.40 | 225312.00 00 | line 26 V XWRG BE,V ST (printed 8E)
+!CHECK 224126.00 | 230363.40 80 | line 28 SIC,RKS BRC
+!CHECK 224126.40 | 227524.50 00 | line 29 B,RKS UK
+!CHECK 224127.00 | 224123.46 30 | line 30 LV,V U,V XWRG
+!CHECK 224127.40 | 777777.50 03 | line 31 B,-.32(V U)
+!CHECK 224130.00 | 000006.23 01 | line 32 LVI,V T5,V WTP
+!CHECK 224130.40 | 224757.50 00 | line 33 B,V TCSP as printed (D worn to C)
+!CHECK 224131.00 | 224123.46 30 | line 34 LV,V U,V XWRG
+!CHECK 224131.40 | 777777.10 03 | line 35 B,-1.(V U)
+!CHECK 224132.00 | 000000.30 00 | line 36 NCP, as printed (NOP)
+!CHECK 224132.40 | 000004.00 00 | line 37 V XRRG BE,V RTP
+!CHECK 224135.00 | 230363.40 80 | line 39 SIC,RKS BRC
+!CHECK 224135.40 | 227524.50 00 | line 40 B,RKS UK
+!CHECK 224136.00 | 224132.46 30 | line 41 LV,V U,V XRRG
+!CHECK 224136.40 | 777777.50 03 | line 42 B,-.32(V U)
+!CHECK 224137.00 | 000004.23 01 | line 43 LVI,V T5,V RTP
+!CHECK 224137.40 | 224757.50 00 | line 44 B,V TDSP
+!CHECK 224140.00 | 224132.46 30 | line 45 LV,V U,V XRRG
+!CHECK 224140.40 | 777777.10 03 | line 46 B,-1.(V U)
+!CHECK 224141.00 | 224133.00+ 000 000000 000000 | line 47 V XGX XW,V RTEXT
+!CHECK 224142.00 | 224115.00+ 000 000000 000000 | line 48 XW,V CREXT
+!CHECK 224143.00 | 224124.00+ 000 000000 000000 | line 49 XW,V WTEXT
+!CHECK 224144.00 | 224114.07 B0 | line 51 V SSKOM LVE,V U,V VSKM+V PAR
+!CHECK 224144.40 | 224112.40 30 | line 52 LV,,V VSKM+V RA
+!CHECK 224145.00 | 225427.02 10 | line 53 LX,V P,V PD
+!CHECK 224145.40 | 000000.00 81 | line 54 SIC,(V P)
+!CHECK 224146.00 | 224150.03 48 | line 55 CB+,V P,V DISP
+!CHECK 224146.40 | 224112.41 30 | line 56 SV,,V VSKM+V RA

@@ -1,0 +1,92 @@
+! mcp_bootstrap_p200.strap -- MCP printed page 200: SOUND GONG (W GONG),
+! from its banner to the card that branches away to K SUPP.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.207, read at 400 dpi (900 for doubts).
+! Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID LK000001
+!  DIST. OF 3/01  3/01  PAGE NUMBER 200"; the heading row's LOCATION
+! field is BLANK -- line 1 is an asterisk banner (workflow step 1).
+!
+! WHY THE VISION READING FOUND NO LINE FIT (listing_pages.tsv PDF 207
+! line_fit 0): not an empty page and not a new layout.  Vision read all
+! 17 LOCATIONs correctly, but on most rows FUSED the line number to the
+! location in one token and misread the line digits ("7* 222073.40",
+! "E* 222074.00", "1(#_222075.00", "1E# 222100.00", "15* 222102.00"
+! for line 19, "2C*", "2E#") -- a guess, not traced in the fitter, is
+! that this plus the short page (22 lines, 16 located code rows, the
+! lower 2/3 of the sheet blank) left too few clean pairs to fit.
+! Every value below is read off the IMAGE.
+!
+! THE PAGE.  Contiguous from 222073.00 to 222104.00.
+!   lines  1-4   the banner "*****  SOUND GONG  *****" (comment cards).
+!   line   5     SLC,$ printed at 222073.00 * -- the counter arriving.
+!   lines  6-22  W GONG: V-I, SV, KVI (-IS EQUIPMENT CONSOLE), BZXE to
+!                K ILEGL, BZBZ on S SEL to W G CTL-1.0, SIC/B to K G LOC,
+!                CNOP (emits nothing; counter already on a word),
+!                LX/SX, W G CTL GONG, LVI/B to M IO REJ, CM1111 S CTL,
+!                LVI,0,177. / SV S CTL OP, B,K SUPP.
+!
+! THE JOIN.  The printed SLC,$ location 222073.00 is the arriving
+! counter.  The hard SLC below ASSERTS it; but printed p.178's landed
+! deck SYNs W GONG at (8)222073.0, and this page DEFINES W GONG, so
+! the merge CHECKS this origin.
+!
+! >>> "C" FOR "G" ON LINE 11. <<<  The page prints SIC,K C LCC R (at
+! 900 dpi the glyph after K has no G spur, while line 12 prints a clear
+! G in B,K G LCC).  K G LOC R is landed at 220105.40, and the SIC
+! binary 220105.40 80 is BIT-EXACT on it; no K C LOC R exists.  LCC is
+! the drum's O-as-C throughout.
+!
+! CARD SERIALS: LK000001-LK000017, with pairs sharing a serial (lines
+! 6-7 LK000006, 11-12 LK000010, 14-15 LK000012, 17-18 LK000014, 20-21
+! LK000016) -- two statements punched on one card.
+
+SSEL    SYN(BU,1), 0.39              ! landed; p.99 line 32 -SELECT
+STIC    SYN, (8)215265.0             ! landed, 26 decks; p.116 line 16 defines it
+KILEGL  SYN, (8)220064.0             ! landed; label row printed p.160
+KGLOCR  SYN, (8)220105.40            ! landed; SIC, BIT-EXACT on line 11
+KGLOC   SYN, (8)220100.40            ! landed; B, half word only
+SIOINS  SYN(BU,64), 4.0              ! landed; p.101 line 17 -IO INSTR. LAST
+MIOREJ  SYN, (8)221261.0             ! landed; B, half word only
+SCTL    SYN(BU,1), 0.60              ! landed; p.99 line 48
+SCTLOP  SYN(BU,8), 5.42              ! landed; -OCTAL CONTROL OP CODE
+KSUPP   SYN, (8)216242.0             ! landed, p.128 defines it
+
+        SLC, (8)222073.0             ! asserted; CHECKED by the merge via p.178's WGONG
+! lines 1-4 are the banner: "*****  SOUND GONG  *****"
+        SLC,$                                                ! line  5 * printed 222073.00 *; emits nothing
+WGONG   V-I,2,.32                                            ! line  6   printed name "W GONG"
+        SV,2,STIC                                            ! line  7
+        KVI,4,1.0                                            ! line  8  -IS EQUIPMENT CONSOLE
+        BZXE,KILEGL                                          ! line  9
+        BZBZ,SSEL($11),WGCTL-1.0                              ! line 10  -CHECK IF LOCATE NEEDED
+        SIC,KGLOCR                                           ! line 11   printed "K C LCC R" (G worn to C)
+        B,KGLOC                                              ! line 12
+        CNOP                                                 ! line 13
+        LX,0,$+1.0                                           ! line 14
+        SX,0,SIOINS($12)                                     ! line 15
+WGCTL   GONG,0.0($14)                                        ! line 16   printed name "W G CTL"
+        LVI,1,$+1.0                                          ! line 17
+        B,MIOREJ                                             ! line 18
+        CM1111(BU,1),SCTL($11)                               ! line 19
+        LVI,0,177.                                           ! line 20
+        SV,0,SCTLOP($12)                                     ! line 21
+        B,KSUPP                                              ! line 22
+
+!SYM WGONG  222073.00
+!SYM WGCTL  222100.00
+!CHECK 222073.00 | 000000.45 0D | line 6 W GONG V-I,2,.32 (hex prints "CD")
+!CHECK 222073.40 | 215265.05 30 | line 7 SV,2,S TIC
+!CHECK 222074.00 | 000001.11 04 | line 8 KVI,4,1.0 -IS EQUIPMENT CONSOLE
+!CHECK 222074.40 | 220064.32 C0 | line 9 BZXE,K ILEGL
+!CHECK 222075.00 | 000000.47 8B 222077.34 04 | line 10 BZBZ,S SEL($11),W G CTL-1.0
+!CHECK 222076.00 | 220105.40 80 | line 11 SIC,K C LCC R as printed (G worn to C)
+!CHECK 222076.40 | 220100.50 00 | line 12 B,K G LCC
+!CHECK 222077.00 | 222100.00 10 | line 14 LX,0,$+1.0
+!CHECK 222077.40 | 000004.01 1C | line 15 SX,0,S IO INS($12)
+!CHECK 222100.00 | 000000.00 8E 000177.05 00 | line 16 W G CTL GONG,0.0($14)
+!CHECK 222101.00 | 222102.03 01 | line 17 LVI,1,$+1.0
+!CHECK 222101.40 | 221261.10 00 | line 18 B,M IO REJ
+!CHECK 222102.00 | 000000.74 8B 001000.36 F0 | line 19 CM1111(BU,1),S CTL($11)
+!CHECK 222103.00 | 000261.01 01 | line 20 LVI,0,177.
+!CHECK 222103.40 | 000005.41 3C | line 21 SV,0,S CTL OP($12) (hex prints "3C")
+!CHECK 222104.00 | 216242.10 00 | line 22 B,K SUPP

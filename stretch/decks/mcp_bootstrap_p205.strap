@@ -1,0 +1,176 @@
+! mcp_bootstrap_p205.strap -- MCP printed page 205: tape error
+! recovery (CUKN .. CKERG), the BSP / ERGS / W retry loop through $MCP
+! requests, and its two tables of exits.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.212, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID MA000210  DIST. OF 3/01
+!  3/01  PAGE NUMBER 205"; the heading row's LOCATION field is 222327,
+! line 1's word.
+!
+! THE PAGE.  56 lines, contiguous from 222327.00 to 222366.40.  Every
+! line compiles; nothing is omitted.  Serials MA000210..MA000250, no
+! hole; multi-card groups share a serial (12-15, 27-29, 34-35, 36-37,
+! 38-39, 43-45, 46-49, 53-54, 55-56).  A "*" prints after the LOCATION
+! of lines 5, 26, 33 and 52.  Line 51 (CNOP,) prints no LOCATION and no
+! binary: the counter is already on a word.  Line 32 (CNOP,) emits a
+! half-word NOP.
+!
+! EXTERNALS.  None of this page's references is defined in any landed
+! deck, so every SYN below is read off this page's own binary.  A
+! branch / index / LVI / SVA / LC / SC row pins only the half word
+! (low bits are convention); BB/BZB's bit address and a null-operation
+! word read every bit.  The $-names ($MCP, $CCW, $BSP, $RET, $ERGS,
+! $W) are MCP pseudo-ops, written as printed.
+!
+! PRINTED FORMS.  MCP pseudo-ops are STRAP system symbols assembled by
+! a preceding "$" (N28-1081 p.8, in C28-6129 PDF p.66; values from MCP
+! printed pp.104/105/108).  LVE,,AMR (lines 14, 29, 45, 48) prints a
+! blank J field: "A NULL FIELD IS ALWAYS COMPILED AS A ZERO" (C22-6531
+! printed p.7; C28-6129 PDF p.9).  $ERGS prints 000005.01, not the
+! C22-6728 table's $ERG 5.0 (mcp_bootstrap_p178.strap): recorded, not
+! explained.
+!
+! >>> LVE's HEX BYTE IS B0, NOT 80, ON ALL FOUR ROWS. <<<  At 400 dpi
+! lines 14, 45 and 48 read "80"; at 900 dpi all four show the flat-
+! backed B (the null-operation rows 13, 39, 47 beside them print a
+! round 8).  The assembler agrees: B0.
+!
+! DRZ(N),2 on lines 33 and 52 prints its COUNT (000002.00); a
+! reservation row cannot be !CHECKed (transcription_workflow.md).  Its
+! extent is pinned by the next card: line 34 at 222352.00 and line 53
+! at 222365.00 both check.
+
+CEOPN   SYN, (8)222321.0             ! LVI,$15,CEOPN+1. on line 1, half word only
+ATSWCH  SYN, (8)222404.0             ! B on line 2, half word only
+CEXN    SYN, (8)222314.0             ! BB,CEXN+1.09 on line 6, BIT-EXACT
+ANFM    SYN, (8)222505.40            ! LVI on line 5, half word only
+AEPGK   SYN, (8)222521.40            ! BB on line 6, half word only
+ALNUKC  SYN, (8)222527.40            ! BZB on line 7, half word only
+ANFMEX  SYN, (8)222516.40            ! SVA on line 8, half word only
+AUKCT   SYN, (8)223745.40            ! LC on line 10, half word only
+AWRCT   SYN, (8)223746.0             ! SC on line 11, half word only
+AMR     SYN, (8)224032.0             ! LVE on line 14, half word only
+CKERIC  SYN, (8)223740.0             ! null op on line 15, BIT-EXACT
+ABSPCT  SYN, (8)223746.40            ! SC on line 21, half word only
+AOP     SYN, (8)224046.0             ! SVA on line 23, half word only
+CRET    SYN, (8)222320.0             ! B on line 30, half word only
+
+        SLC, (8)222327.00
+        LVI,$15,CEOPN+1.                                     ! line  1  -LOAD INDEX WITH EXIT
+        B,ATSWCH                                             ! line  2  -BRANCH TO TAPE SWITCH
+CUKN    LV,$2,CEXN.32                                        ! line  3  -ACTUATED ADDRESS
+        LVI,$1,CEXN                                          ! line  4  -TABLE OF EXITS
+        LVI,$3,ANFM                                          ! line  5
+        BB,CEXN+1.09,AEPGK                                   ! line  6  -REQUEST RING
+        BZB,CEXN+1.12,ALNUKC                                 ! line  7  -UK ALONE - UNIT TROUBLE
+CKUK    SVA,$1,ANFMEX                                        ! line  8  -SAVE TABLE OF EXITS
+        SVA,$3,CKRUKE                                        ! line  9
+        LC,$3,AUKCT                                          ! line 10  -SET UP BSP, ERGS, W LOOP COUNT
+        SC,$3,AWRCT                                          ! line 11
+        B,$MCP                                               ! line 12
+        ,$CCW                                                ! line 13
+        LVE,,AMR                                             ! line 14
+        ,CKERIC                                              ! line 15
+        R,CKERIC                                             ! line 16  -PICK UP CURRENT CONTROL WORD
+CKRGUK  LC,$3,AWRCT                                          ! line 17
+        CBZ,$3,CKRUKE                                        ! line 18  -IF RETRIED N TIMES TELL OPERATOR
+        SC,$3,AWRCT                                          ! line 19
+        LC,$3,AUKCT                                          ! line 20  -SET UP BSP COUNTER
+        SC,$3,ABSPCT                                         ! line 21
+        LVI,$13,CUKUK                                        ! line 22  -SET UP NEW TABLE OF EXITS FOR BSP
+        SVA,$13,AOP                                          ! line 23
+CBSPUK  LC,$3,ABSPCT                                         ! line 24  -HAS BSP BEEN RETRIED N TIMES
+        CBZ,$3,CKRUKE                                        ! line 25  -YES - TELL OPERATOR
+        SC,$3,ABSPCT                                         ! line 26
+        B,$MCP                                               ! line 27
+        ,$BSP                                                ! line 28
+        LVE,,AMR                                             ! line 29
+        B,CRET                                               ! line 30
+CKRUKE  B,$                                                  ! line 31
+        CNOP,                                                ! line 32
+CUKUK   DRZ(N),2                                             ! line 33  -TABLE OF EXITS FOR BSP IN CBSPUK
+        B,CBSPUK                                             ! line 34
+        NOP                                                  ! line 35
+        B,CKERG                                              ! line 36
+        NOP                                                  ! line 37
+        B,$MCP                                               ! line 38
+        ,$RET                                                ! line 39
+CKERG   BZB,CUKUK+1.12,CBSPUK                                ! line 40  -NO EOP - BSP TROUBLE
+        LVI,$14,CKWRIT                                       ! line 41  -SET UP TABLE OF EXITS FOR ERGS,W
+        SVA,$14,AOP                                          ! line 42
+        B,$MCP                                               ! line 43
+        ,$ERGS                                               ! line 44
+        LVE,,AMR                                             ! line 45
+        B,$MCP                                               ! line 46
+        ,$W                                                  ! line 47
+        LVE,,AMR                                             ! line 48
+        ,CKERIC                                              ! line 49
+        B,CRET                                               ! line 50
+        CNOP,                                                ! line 51
+CKWRIT  DRZ(N),2                                             ! line 52  -TABLE OF EXITS FOR ERGS, W IN CKERG
+        B,CKRGUK                                             ! line 53
+        NOP                                                  ! line 54
+        LV,$1,ANFMEX                                         ! line 55
+        B,3.($1)                                             ! line 56  -GO TO ORIG. $W EE FIXUP
+
+!SYM CUKN   222330.00
+!SYM CKUK   222333.40
+!SYM CKRGUK 222340.00
+!SYM CBSPUK 222343.40
+!SYM CKRUKE 222347.00
+!SYM CUKUK  222350.00
+!SYM CKERG  222355.00
+!SYM CKWRIT 222363.00
+!CHECK 222327.00 | 222322.37 01 | line 1 LVI,$15,CEOPN+1.
+!CHECK 222327.40 | 222404.10 00 | line 2 B,ATSWCH
+!CHECK 222330.00 | 222314.44 30 | line 3 CUKN LV,$2,CEXN.32
+!CHECK 222330.40 | 222314.03 01 | line 4 LVI,$1,CEXN
+!CHECK 222331.00 | 222505.47 01 | line 5 LVI,$3,ANFM ("*" after the location)
+!CHECK 222331.40 | 222315.11 80 222521.74 02 | line 6 BB,CEXN+1.09,AEPGK
+!CHECK 222332.40 | 222315.14 80 222527.74 00 | line 7 BZB,CEXN+1.12,ALNUKC
+!CHECK 222333.40 | 222516.43 D0 | line 8 CKUK SVA,$1,ANFMEX
+!CHECK 222334.00 | 222347.07 D0 | line 9 SVA,$3,CKRUKE
+!CHECK 222334.40 | 223745.46 50 | line 10 LC,$3,AUKCT
+!CHECK 222335.00 | 223746.07 50 | line 11 SC,$3,AWRCT
+!CHECK 222335.40 | 000040.10 00 | line 12 B,$MCP
+!CHECK 222336.00 | 000002.00 80 | line 13 ,$CCW
+!CHECK 222336.40 | 224032.01 B0 | line 14 LVE,,AMR (B0 at 900 dpi)
+!CHECK 222337.00 | 223740.00 80 | line 15 ,CKERIC
+!CHECK 222337.40 | 223740.02 00 | line 16 R,CKERIC
+!CHECK 222340.00 | 223746.06 50 | line 17 CKRGUK LC,$3,AWRCT
+!CHECK 222340.40 | 222347.06 4A | line 18 CBZ,$3,CKRUKE
+!CHECK 222341.00 | 223746.07 50 | line 19 SC,$3,AWRCT
+!CHECK 222341.40 | 223745.46 50 | line 20 LC,$3,AUKCT
+!CHECK 222342.00 | 223746.47 50 | line 21 SC,$3,ABSPCT
+!CHECK 222342.40 | 222350.33 01 | line 22 LVI,$13,CUKUK
+!CHECK 222343.00 | 224046.33 D0 | line 23 SVA,$13,AOP
+!CHECK 222343.40 | 223746.46 50 | line 24 CBSPUK LC,$3,ABSPCT
+!CHECK 222344.00 | 222347.06 4A | line 25 CBZ,$3,CKRUKE
+!CHECK 222344.40 | 223746.47 50 | line 26 SC,$3,ABSPCT ("*" after the location)
+!CHECK 222345.00 | 000040.10 00 | line 27 B,$MCP
+!CHECK 222345.40 | 000006.00 80 | line 28 ,$BSP
+!CHECK 222346.00 | 224032.01 B0 | line 29 LVE,,AMR
+!CHECK 222346.40 | 222320.10 00 | line 30 B,CRET
+!CHECK 222347.00 | 222347.10 00 | line 31 CKRUKE B,$
+!CHECK 222347.40 | 000000.30 00 | line 32 CNOP,
+!CHECK 222352.00 | 222343.50 00 | line 34 B,CBSPUK
+!CHECK 222352.40 | 000000.30 00 | line 35 NOP
+!CHECK 222353.00 | 222355.10 00 | line 36 B,CKERG
+!CHECK 222353.40 | 000000.30 00 | line 37 NOP
+!CHECK 222354.00 | 000040.10 00 | line 38 B,$MCP
+!CHECK 222354.40 | 000041.00 80 | line 39 ,$RET
+!CHECK 222355.00 | 222351.14 80 222343.74 00 | line 40 CKERG BZB,CUKUK+1.12,CBSPUK
+!CHECK 222356.00 | 222363.35 01 | line 41 LVI,$14,CKWRIT
+!CHECK 222356.40 | 224046.35 D0 | line 42 SVA,$14,AOP
+!CHECK 222357.00 | 000040.10 00 | line 43 B,$MCP
+!CHECK 222357.40 | 000005.01 80 | line 44 ,$ERGS
+!CHECK 222360.00 | 224032.01 B0 | line 45 LVE,,AMR (B0 at 900 dpi)
+!CHECK 222360.40 | 000040.10 00 | line 46 B,$MCP
+!CHECK 222361.00 | 000001.40 80 | line 47 ,$W
+!CHECK 222361.40 | 224032.01 B0 | line 48 LVE,,AMR (B0 at 900 dpi)
+!CHECK 222362.00 | 223740.00 80 | line 49 ,CKERIC
+!CHECK 222362.40 | 222320.10 00 | line 50 B,CRET
+!CHECK 222365.00 | 222340.10 00 | line 53 B,CKRGUK
+!CHECK 222365.40 | 000000.30 00 | line 54 NOP
+!CHECK 222366.00 | 222516.42 30 | line 55 LV,$1,ANFMEX
+!CHECK 222366.40 | 000003.10 01 | line 56 B,3.($1)

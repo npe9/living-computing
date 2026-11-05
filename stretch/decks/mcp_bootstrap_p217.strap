@@ -1,0 +1,192 @@
+! mcp_bootstrap_p217.strap -- MCP printed page 217: the tail of the V
+! card-scan (V SCAN .. V SC7B, V SC3, V SC0), the job/command card test
+! (RJOB, RCOMD, RSWITC, RBREAK) and V SC5 .. V SCR1.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.224, read at 400 dpi, 900/1800 dpi
+! for doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID
+! 11D11MCP  CARD ID CA000179  DIST. OF 3/01  3/01  PAGE NUMBER 217"; the
+! heading row's LOCATION field is 224237, line 1's word.
+!
+! THE PAGE.  50 lines, contiguous from 224237.40 to 224273.40 (a half
+! word), then blank paper; p.218 line 1 (V SCR3) is at 224274.00.
+!   lines  4-5   RJOB / RCOMD DD(BU,48) constants, 48 bits each.
+!   lines  6, 47 continuation cards, NAME "-", no location, remark only:
+!                compile nothing; kept as comments.
+!
+! THE "-0212".."-0250" COLUMN is the remark field (one per card,
+! numbered); it prints at one of two columns.  Written as the remark.
+!
+! >>> CARD SERIALS. <<<  Printed "0A000179".."0A000223" (the header
+! says CA000179: the round first glyph is the drum's C).  One per line
+! except pairs sharing a serial: lines 10/11 (188; line 11 prints
+! "0A000186" with worn 8s -- read 188 by the pair pattern, not by ink),
+! 18/19 (195), 31/32 (207), 35/36 (210), 42/43 (216).  Asterisks after
+! the LOCATION on lines 5, 24 and 44; recorded, not explained.
+!
+! >>> RJOB AND RCOMD, NOT "RJCB" AND "RCCMD". <<<  The NAME column of
+! lines 4/5 prints an open round in both.  Lines 25 and 27 reference
+! the same labels and print a closed O ("RJOB", "RCOMD") at 900 dpi;
+! the names are JOB / COMD.  The binaries 224241.00 / 224241.60 are
+! the lines 4/5 locations either way.
+!
+! >>> V SQ1 (line 10) and V SC10 (line 19). <<<  Line 10 prints a Q
+! with its tail ("SG1" to OCR), the twin of line 46's V SQ2.  Line 19
+! prints "V SC1C" with the last glyph identical to the C at 1800 dpi;
+! its defining card, p.218 line 23 at 224307.00, prints "V SC10" with
+! a closed 0.  Written VSC10.  External; the name does not reach the
+! binary.
+!
+! >>> LINE 34 "V NCP" IS V NOP (224157.40, the p.216 label). <<<
+! Octal-field C glyphs (e.g. "COCCC5.CC", "11CCCO.00", "(8)24CC2..")
+! are 0 by the octal rule.
+!
+! >>> TWO HEX BYTES PRINT AN OPEN ROUND THAT IS 0. <<<  Line 11
+! (B,$.32) prints "224245.5C C0" and line 34 (LVNI) prints "224157.63
+! C9".  At 1800 dpi both are the same open round this page prints in
+! octal fields where only 0 can stand (line 3 ".C3", line 11 ".5C"),
+! and identical to the true C of line 3's CB- "C9" and line 15's BZAE
+! "C0": shape cannot decide.  Settled by assembly: B assembles 00
+! (lines 20/39/40 print 00), LVNI assembles 09 (as p.216 / p.218
+! print it, e.g. 224207.00 "224210.23 09").  Checked as 00 and 09.
+!
+! VH is p.213's integer 32; "$.VH" (line 40) is $ plus 32 bits (C22-6531
+! printed p.10): 224266.40+.32+.10 = 224267.10.  VNXT is the half word 224456.40 (volume OCR "224456.4C ... V NXT").
+
+VCRD    SYN, (8)5.0                  ! landed; p.100 card "- VCRD SYN,5."
+VRDCW   SYN, (8)225236.0             ! "," on line 2, this page's binary
+VP      SYN, (8)21.0                 ! $1 -- this page's binary (CB+ J field, SIC,(VP))
+VM1     SYN(BU,64), (8)777777.0             ! CB- on line 3, this page's binary
+VU      SYN, (8)23.0                 ! $3 -- this page's binary (LVI J field)
+VSC     SYN, (8)225250.0             ! LVI on line 7, this page's binary
+VS1     SYN, (8)32.0                 ! $10 -- this page's binary (LX J field)
+VS2     SYN, (8)33.0                 ! $11 -- LV on line 29 prints 000033.22, BIT-EXACT
+VT5     SYN, (8)31.0                 ! $9 -- this page's binary (LV/LVNI J field)
+VTX     SYN, (8)225246.0             ! LX on line 12, this page's binary
+VTX1    SYN, (8)225247.0             ! LX on line 8, this page's binary
+VSQ1    SYN, (8)224322.0             ! SIC on line 10, BIT-EXACT
+VSC10   SYN, (8)224307.0             ! CB+ on line 19; p.218 line 23 "V SC10" 224307.00
+VNXT    SYN, (8)224456.40            ! CB+ on line 32 (224456.43 = .40 + VP's J), half word
+VNOP    SYN, (8)224157.40            ! LVNI on line 34; p.216 "V NOP" at 224157.40
+VNX     SYN, (8)5.0                  ! CB+ on line 36: VNX+VSC = 225255.0
+VH      SYN, 32                      ! p.213 line 7 "V H SYN,32", an INTEGER; ".V H" is 32 bits
+SPRIMR  SYN, (8)215571.0             ! landed
+SPRIME  SYN, (8)215570.0             ! landed
+SJC1    SYN, 76.32                   ! landed; printed p.106 line 8
+VSCR3   SYN, (8)224274.0             ! BBZ on line 46; p.218 line 1 "V SCR3" 224274.00
+VSQ2    SYN, (8)224311.40            ! BBZ on line 46; p.218 "V SQ2" 224311.40
+
+        SLC, (8)224237.40
+        ,VCRD                                                ! line  1  -0212
+        ,VRDCW                                               ! line  2  -0213
+        CB-,VP,VM1(VP)                                       ! line  3  -0214
+RJOB    DD(BU,48),(8)2400201042001102                        ! line  4
+RCOMD   DD(BU,48),(8)4100201020404040                        ! line  5
+!                                                              line  6  NAME "-", no location  -0215
+VSCAN   LVI,VU,VSC                                           ! line  7  -0216
+        LX,VS2,VTX1                                          ! line  8  -0217
+VSC6    BZBZ,VSC7B.30,$+1.                                   ! line  9  -0218
+VSC7A   SIC,VSQ1                                             ! line 10
+        B,$.32                                               ! line 11  -0219
+        LX,VS1,VTX                                           ! line 12  -0220
+VSC7    LWF(U),(VS1)                                         ! line 13  -0221
+        KFI(BU,12),(16)880,-12                               ! line 14  -0222
+VSC7B   BZAE,VSC0                                            ! line 15  -0223
+VSC3    V+ICR,VS1,15.                                        ! line 16  -0224
+        CB+,VS2,VSC7                                         ! line 17  -0225
+        SIC,(VP)                                             ! line 18
+        CB+,VP,VSC10                                         ! line 19  -0226
+        B,VSC7                                               ! line 20  -0227
+VSC0    KFI(BU,12),(16)240,-12                               ! line 21  -0228
+        BAE,VSC3                                             ! line 22  -0229
+RSWITC  BZBN,VSC7B.30,VSC3                                   ! line 23
+        L(BU,48),1.44(VS1)                                   ! line 24
+        KF(BU,48),RJOB                                       ! line 25
+        BAE,RBREAK                                           ! line 26
+        KF(BU,48),RCOMD                                      ! line 27
+        BZAE,RSWITC                                          ! line 28
+RBREAK  LV,VT5,VS2                                           ! line 29
+        BXVZ,VSC5                                            ! line 30  -0233
+        SIC,(VP)                                             ! line 31
+        CB+,VP,VNXT                                          ! line 32  -0234
+        LVI,VS2,0                                            ! line 33  -0235
+VSC5    LVNI,VT5,VNOP                                        ! line 34  -0236
+        SIC,(VP)                                             ! line 35
+        CB+,VP,VNX+VSC                                       ! line 36  -0237
+        LVI,VU,VSC                                           ! line 37  -0238
+VSC5A   SX,VS1,VTX                                           ! line 38  -0239
+VSC1A   B,VSC7                                               ! line 39  -0240
+        B,$.VH                                               ! line 40  -0241
+        SX,VS2,VTX1                                          ! line 41  -0242
+        SIC,SPRIMR                                           ! line 42
+        BD,SPRIME                                            ! line 43  -0243
+        ,SJC1                                                ! line 44  -0244
+        BE,$.32                                              ! line 45  -0245
+        BBZ,VSCR3.19,VSQ2                                    ! line 46  -0246
+!                                                              line 47  NAME "-", no location  -0247
+VSCR1   LVI,VU,VSC                                           ! line 48  -0248
+        LX,VS1,VTX                                           ! line 49  -0249
+        LX,VS2,VTX1                                          ! line 50  -0250
+
+!SYM RJOB   224241.00
+!SYM RCOMD  224241.60
+!SYM VSCAN  224242.40
+!SYM VSC6   224243.40
+!SYM VSC7A  224244.40
+!SYM VSC7   224246.00
+!SYM VSC7B  224247.40
+!SYM VSC3   224250.00
+!SYM VSC0   224252.40
+!SYM RSWITC 224254.00
+!SYM RBREAK 224261.00
+!SYM VSC5   224263.40
+!SYM VSC5A  224265.40
+!SYM VSC1A  224266.00
+!SYM VSCR1  224272.40
+!CHECK 224237.40 | 000005.00 80 | line 1 ,V CRD
+!CHECK 224240.00 | 225236.00 80 | line 2 ,V RDCW
+!CHECK 224240.40 | 777777.03 C9 | line 3 CB-,V P,V M1(V P)
+!CHECK 224241.00 | 2400201042001102 | line 4 RJOB DD(BU,48),(8)2400201042001102 (name prints RJCB) | 48
+!CHECK 224241.60 | 4100201020404040 | line 5 RCOMD DD(BU,48),(8)4100201020404040 (name prints RCCMD) | 48
+!CHECK 224242.40 | 225250.07 01 | line 7 V SCAN LVI,V U,V SC
+!CHECK 224243.00 | 225247.26 10 | line 8 LX,V S2,V TX1
+!CHECK 224243.40 | 224247.76 80 224244.74 04 | line 9 V SC6 BZBZ,V SC7B.30,$+1.
+!CHECK 224244.40 | 224322.00 80 | line 10 V SC7A SIC,V SQ1
+!CHECK 224245.00 | 224245.50 00 | line 11 B,$.32 (byte prints "C0" -- see header)
+!CHECK 224245.40 | 225246.24 10 | line 12 LX,V S1,V TX
+!CHECK 224246.00 | 000000.42 6A | line 13 V SC7 LWF(U),(V S1)
+!CHECK 224246.40 | 420000.00 80 414072.23 10 | line 14 KFI(BU,12),(16)880,-12
+!CHECK 224247.40 | 224252.76 C0 | line 15 V SC7B BZAE,V SC0
+!CHECK 224250.00 | 000017.25 07 | line 16 V SC3 V+ICR,V S1,15.
+!CHECK 224250.40 | 224246.27 48 | line 17 CB+,V S2,V SC7
+!CHECK 224251.00 | 000000.00 81 | line 18 SIC,(V P)
+!CHECK 224251.40 | 224307.03 48 | line 19 CB+,V P,V SC1C as printed (V SC10)
+!CHECK 224252.00 | 224246.10 00 | line 20 B,V SC7
+!CHECK 224252.40 | 110000.00 80 414072.23 10 | line 21 V SC0 KFI(BU,12),(16)240,-12
+!CHECK 224253.40 | 224250.36 C2 | line 22 BAE,V SC3
+!CHECK 224254.00 | 224247.76 80 224250.34 08 | line 23 RSWITC BZBN,VSC7B.30,VSC3
+!CHECK 224255.00 | 000001.54 8A 060000.20 50 | line 24 L(BU,48),1.44(VS1)
+!CHECK 224256.00 | 224241.00 80 060000.23 10 | line 25 KF(BU,48),RJOB
+!CHECK 224257.00 | 224261.36 C2 | line 26 BAE,RBREAK
+!CHECK 224257.40 | 224241.60 80 060000.23 10 | line 27 KF(BU,48),RCOMD
+!CHECK 224260.40 | 224254.36 C0 | line 28 BZAE,RSWITC
+!CHECK 224261.00 | 000033.22 30 | line 29 RBREAK LV,VT5,VS2
+!CHECK 224261.40 | 224263.71 42 | line 30 BXVZ,V SC5
+!CHECK 224262.00 | 000000.00 81 | line 31 SIC,(V P)
+!CHECK 224262.40 | 224456.43 48 | line 32 CB+,V P,V NXT
+!CHECK 224263.00 | 000000.27 01 | line 33 LVI,V S2,0
+!CHECK 224263.40 | 224157.63 09 | line 34 V SC5 LVNI,V T5,V NCP as printed (V NOP; byte prints "C9" -- see header)
+!CHECK 224264.00 | 000000.00 81 | line 35 SIC,(V P)
+!CHECK 224264.40 | 225255.03 48 | line 36 CB+,V P,V NX+V SC
+!CHECK 224265.00 | 225250.07 01 | line 37 LVI,V U,V SC
+!CHECK 224265.40 | 225246.25 10 | line 38 V SC5A SX,V S1,V TX
+!CHECK 224266.00 | 224246.10 00 | line 39 V SC1A B,V SC7
+!CHECK 224266.40 | 224267.10 00 | line 40 B,$.V H
+!CHECK 224267.00 | 225247.27 10 | line 41 SX,V S2,V TX1
+!CHECK 224267.40 | 215571.00 80 | line 42 SIC,S PRIMR
+!CHECK 224270.00 | 215570.04 00 | line 43 BD,S PRIME
+!CHECK 224270.40 | 000114.40 80 | line 44 ,S JC1
+!CHECK 224271.00 | 224271.40 00 | line 45 BE,$.32
+!CHECK 224271.40 | 224274.23 80 224311.74 06 | line 46 BBZ,V SCR3.19,V SQ2
+!CHECK 224272.40 | 225250.07 01 | line 48 V SCR1 LVI,V U,V SC
+!CHECK 224273.00 | 225246.24 10 | line 49 LX,V S1,V TX
+!CHECK 224273.40 | 225247.26 10 | line 50 LX,V S2,V TX1

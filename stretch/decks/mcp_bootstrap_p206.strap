@@ -1,0 +1,190 @@
+! mcp_bootstrap_p206.strap -- MCP printed page 206: the tape-switch
+! exits around ATSWEF (write end-of-file / unload) and its exit tables.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.213, read at 400 dpi (900 dpi for
+! doubtful glyphs).  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+!  CARD ID MA000251  DIST. OF 3/01  3/01  PAGE NUMBER 206"; the heading
+! row's LOCATION field is 222367, line 1's word.
+!
+! THE PAGE.  Contiguous from 222367.00 to 222425.40 (line 56 is a
+! half word at 222425.00).  56 lines.
+!   lines  1-4   B,$MCP / ,$RET, then LV,$1,ANFMEX and B,5.($1).
+!   lines  5-7   comment cards "TABLES OF EXITS", "EXITS FOR WTM(AT EOJ
+!                TIME)" (NAME prints "-"), and a CNOP at 222371.00, a
+!                word boundary, which emits nothing.
+!   lines  8-15  C EXEF table: two DR(N),1 words, B,C UKEFA / NOP -UK,
+!                B,C EEEF / CNOP -EE, B,$MCP / ,$RET.
+!   lines 16-34  C EOPEF / C EEEF / C UKEFA / AT SWCH / AT SWC3 code.
+!   lines 35-41  comment "EXITS FOR ATSWEF", CNOP, AT SXIT DRZ(N),2 and
+!                its UK / EE entries.
+!   lines 42-56  B,$MCP / ,$RET, AT SWC2, the $W call, AT SWU1, A UKEF.
+! COMMENT CARDS NOT TRANSCRIBED (compile nothing): lines 5, 6, 16, 19,
+! 35.  Line 7's CNOP is transcribed but emits nothing (no check).
+!
+! PRINTED FORMS WRITTEN AS PRINTED.  B,$MCP (lines 1, 14, 31, 42, 47),
+! ,$RET (2, 15, 43), ,$WEF (32), ,$W (48) and LVE,,AMR (33, 49) are
+! written exactly as printed: MCP pseudo-ops are STRAP system symbols
+! preceded by $ (N28-1081 p.8, C28-6129 PDF p.66; values MCP printed
+! pp.104/105/108), and "A NULL FIELD IS ALWAYS COMPILED AS A ZERO"
+! (C22-6531 printed p.7; C28-6129 PDF p.9).
+!
+! >>> GLYPHS SETTLED OTHER THAN BY PLAIN INK. <<<
+!  * line 17's label prints "CECPEF"; line 22's LVI,$15,CEOPEF+1.
+!    prints a closed O and 222377.37 = 222376.00 + 1.0 with $15.  The
+!    label is CEOPEF (the comment card above it is "EOP ON WRITE TAPE
+!    MARK").  Symbol-confirmed.
+!  * line 30 prints "SVA,$14,ACP", line 46 "SVA,$14,AOP" (closed O at
+!    900 dpi); both print 224046.35 D0.  Ink opens an O, never closes a
+!    C, so both are AOP, one symbol.
+!  * "CMOCOO"/"CMOCOC" (lines 17, 20, 21) is CM0000, and line 20's
+!    "+.C5" is +.05: the octal-field gauge (this page prints 0 open in
+!    its octal columns throughout); .05 is what makes 223742.05.
+!  * line 30 prints its byte "DC", line 46 "DO"; SVA,$14 assembles D0.
+!  * hex bytes printing "CC"/"CO" on B and NOP rows are 00 by assembly.
+!  * line 53 prints "A1FM" (digit 1, flagged, like the 1 of "$13");
+!    line 25 prints "AOFM".  Two different symbols (222443.00 and
+!    222445.40) despite identical comments; spelling rests on ink.
+!
+! >>> CARD SERIALS. <<<  MA000251-MA000300, contiguous, but six serials
+! print on TWO lines each: 251 (lines 1-2), 252 (3-4), 258 (10-11),
+! 259 (12-13), 284 (38-39), 285 (40-41).  Lines 14-15 (B,$MCP / ,$RET)
+! do NOT pair (260, 261).  Recorded, not explained.  A "*" flag prints
+! after the LOCATION on lines 8, 30, 37.  The card-ID prefix is MA
+! (p.197 was LH).
+!
+! DR(N)/DRZ(N) rows (lines 8, 9, 37) print the reservation count
+! (000001.00, 000002.00) and get no !CHECK (p.113 / p.109 precedent).
+!
+! EXTERNALS, all from THIS page's binary (none landed in decks/):
+!  half word only (branch / index class reads bit 32 only):
+!   ANFMEX CRET AOFM A1FM ATSWC1 AOP AMR ARET ASTRA AERRN AUKCT AEFCT
+!   CTR (null-op half word)
+!  BIT-EXACT (VFL address): CATUB, CTRAIL, ATMI.
+
+ANFMEX  SYN, (8)222516.40            ! LV on line 3, half word only
+CATUB   SYN(BU,1,1), (8)223744.11    ! CM0000 on line 17, BIT-EXACT; dds from its 001100 F0
+CTRAIL  SYN, (8)223742.00            ! CM0000(BU,1,1) +.05 on line 20, BIT-EXACT
+ATMI    SYN(BU,1), (8)223743.02      ! CM on lines 21, 27; BBZ line 44; BIT-EXACT; dds from 001000 F0
+CRET    SYN, (8)222320.0             ! B on lines 18, 51, half word only
+AOFM    SYN, (8)222443.0             ! LVI on line 25, half word only
+A1FM    SYN, (8)222445.40            ! LVI on line 53, half word only
+ATSWC1  SYN, (8)222500.0             ! SVA on line 28, half word only
+AOP     SYN, (8)224046.0             ! SVA on lines 30, 46, half word only
+AMR     SYN, (8)224032.0             ! LVE on lines 33, 49, half word only
+ARET    SYN, (8)222144.0             ! B on line 34, half word only
+ASTRA   SYN, (8)222460.0             ! LVI on line 45, half word only
+CTR     SYN, (8)223752.0             ! null op on line 50, half word only
+AERRN   SYN, (8)222531.40            ! BZB on line 54, half word only
+AUKCT   SYN, (8)223745.40            ! LC on line 55, half word only
+AEFCT   SYN, (8)223747.0             ! SC on line 56, half word only
+
+        SLC, (8)222367.00
+        B,$MCP                                               ! line  1
+        ,$RET                                                ! line  2
+        LV,$1,ANFMEX                                         ! line  3
+        B,5.($1)                                             ! line  4  -GO TO ORIG. $W EOP FIXUP
+        CNOP,                                                ! line  7
+CEXEF   DR(N),1                                              ! line  8  -REF. NO,ACTUATED ADDRESS
+        DR(N),1                                              ! line  9  -INDICATORS,INTERRUPT ADDRESS
+        B,CUKEFA                                             ! line 10
+        NOP                                                  ! line 11  -UK
+        B,CEEEF                                              ! line 12
+        CNOP                                                 ! line 13  -EE
+        B,$MCP                                               ! line 14
+        ,$RET                                                ! line 15
+CEOPEF  CM0000,CATUB                                         ! line 17  -RELLASE TAPE
+        B,CRET                                               ! line 18
+CEEEF   CM0000(BU,1,1),CTRAIL+.05                            ! line 20  -PHYSICAL AND LOGICAL END OF TAPE
+        CM0000,ATMI                                          ! line 21  -ONE END OF FILE TO BE WRITTEN
+        LVI,$15,CEOPEF+1.                                    ! line 22  -LOAD INDEX WITH EXIT
+        B,ATSWC3                                             ! line 23  -GO TO TAPE SWITCH
+CUKEFA  LVI,$14,CEXEF                                        ! line 24  -CURRENT TABLE OF EXITS-SUCCESS. WEF
+        LVI,$13,AOFM                                         ! line 25  -EXIT UPON FAILURE TO WEF
+        B,AUKEF                                              ! line 26  -IF $WEF FAILS N TIMES
+ATSWCH  CM1111,ATMI                                          ! line 27  -TAPE MARK INDICATOR
+ATSWC3  SVA,$15,ATSWC1                                       ! line 28  -STORE RETURN
+        LVI,$14,ATSXIT                                       ! line 29
+        SVA,$14,AOP                                          ! line 30  printed ACP (see header)
+        B,$MCP                                               ! line 31
+        ,$WEF                                                ! line 32
+        LVE,,AMR                                             ! line 33
+        B,ARET                                               ! line 34
+        CNOP,                                                ! line 36
+ATSXIT  DRZ(N),2                                             ! line 37
+        B,ATSWU1                                             ! line 38
+        NOP                                                  ! line 39  -UK
+        B,ATSWC2                                             ! line 40
+        CNOP                                                 ! line 41  -EE
+        B,$MCP                                               ! line 42
+        ,$RET                                                ! line 43
+ATSWC2  BBZ,ATMI,ATSWC3+.32                                  ! line 44  -BRANCH IF FIRST TAPE MARK WRITTEN
+        LVI,$14,ASTRA                                        ! line 45
+        SVA,$14,AOP                                          ! line 46
+        B,$MCP                                               ! line 47
+        ,$W                                                  ! line 48
+        LVE,,AMR                                             ! line 49
+        ,CTR                                                 ! line 50
+        B,CRET                                               ! line 51  -RETURN TO MCP
+ATSWU1  LVI,$14,ATSXIT                                       ! line 52  -CURRENT TABLE OF EXITS-SUCCESS. WEF
+        LVI,$13,A1FM                                         ! line 53  -EXIT UPON FAILURE TO WEF
+AUKEF   BZB,1.12($14),AERRN                                  ! line 54  -EPGK OR UK ALONE
+        LC,$3,AUKCT                                          ! line 55  -SET UP WEF RETRY COUNTER
+        SC,$3,AEFCT                                          ! line 56
+
+!SYM CEXEF  222371.00
+!SYM CEOPEF 222376.00
+!SYM CEEEF  222377.40
+!SYM CUKEFA 222402.40
+!SYM ATSWCH 222404.00
+!SYM ATSWC3 222405.00
+!SYM ATSXIT 222411.00
+!SYM ATSWC2 222416.00
+!SYM ATSWU1 222422.40
+!SYM AUKEF  222423.40
+!CHECK 222367.00 | 000040.10 00 | line 1 B,$MCP
+!CHECK 222367.40 | 000041.00 80 | line 2 ,$RET
+!CHECK 222370.00 | 222516.42 30 | line 3 LV,$1,ANFMEX
+!CHECK 222370.40 | 000005.10 01 | line 4 B,5.($1)
+!CHECK 222373.00 | 222402.50 00 | line 10 B,C UKEFA
+!CHECK 222373.40 | 000000.30 00 | line 11 NOP (hex prints CO)
+!CHECK 222374.00 | 222377.50 00 | line 12 B,C EEEF
+!CHECK 222374.40 | 000000.30 00 | line 13 CNOP (this one emits)
+!CHECK 222375.00 | 000040.10 00 | line 14 B,$MCP; hex prints CO
+!CHECK 222375.40 | 000041.00 80 | line 15 ,$RET
+!CHECK 222376.00 | 223744.11 80 001100.00 F0 | line 17 C EOPEF CM0000,C ATUB (label prints CECPEF)
+!CHECK 222377.00 | 222320.10 00 | line 18 B,C RET (hex prints CO)
+!CHECK 222377.40 | 223742.05 80 001100.00 F0 | line 20 C EEEF CM0000(BU,1,1),C TRAIL+.05
+!CHECK 222400.40 | 223743.02 80 001000.00 F0 | line 21 CM0000,AT MI
+!CHECK 222401.40 | 222377.37 01 | line 22 LVI,$15,C EOPEF+1.
+!CHECK 222402.00 | 222405.10 00 | line 23 B,AT SWC3
+!CHECK 222402.40 | 222371.35 01 | line 24 C UKEFA LVI,$14,C EXEF
+!CHECK 222403.00 | 222443.33 01 | line 25 LVI,$13,A OFM
+!CHECK 222403.40 | 222423.50 00 | line 26 B,A UKEF (hex prints CO)
+!CHECK 222404.00 | 223743.02 80 001000.36 F0 | line 27 AT SWCH CM1111,AT MI
+!CHECK 222405.00 | 222500.37 D0 | line 28 AT SWC3 SVA,$15,AT SWC1
+!CHECK 222405.40 | 222411.35 01 | line 29 LVI,$14,AT SXIT
+!CHECK 222406.00 | 224046.35 D0 | line 30 SVA,$14,ACP as printed (AOP); hex prints DC; "*" after location
+!CHECK 222406.40 | 000040.10 00 | line 31 B,$MCP
+!CHECK 222407.00 | 000007.40 80 | line 32 ,$WEF
+!CHECK 222407.40 | 224032.01 B0 | line 33 LVE,,AMR
+!CHECK 222410.00 | 222144.10 00 | line 34 B,ARET (hex prints CO)
+!CHECK 222410.40 | 000000.30 00 | line 36 CNOP, (emits; hex prints CO)
+!CHECK 222413.00 | 222422.50 00 | line 38 B,AT SWU1
+!CHECK 222413.40 | 000000.30 00 | line 39 NOP
+!CHECK 222414.00 | 222416.10 00 | line 40 B,AT SWC2
+!CHECK 222414.40 | 000000.30 00 | line 41 CNOP
+!CHECK 222415.00 | 000040.10 00 | line 42 B,$MCP
+!CHECK 222415.40 | 000041.00 80 | line 43 ,$RET
+!CHECK 222416.00 | 223743.02 80 222405.74 06 | line 44 AT SWC2 BBZ,AT MI,AT SWC3+.32
+!CHECK 222417.00 | 222460.35 01 | line 45 LVI,$14,ASTRA
+!CHECK 222417.40 | 224046.35 D0 | line 46 SVA,$14,AOP (hex prints DO)
+!CHECK 222420.00 | 000040.10 00 | line 47 B,$MCP
+!CHECK 222420.40 | 000001.40 80 | line 48 ,$W
+!CHECK 222421.00 | 224032.01 B0 | line 49 LVE,,AMR
+!CHECK 222421.40 | 223752.00 80 | line 50 ,CTR
+!CHECK 222422.00 | 222320.10 00 | line 51 B,C RET
+!CHECK 222422.40 | 222411.35 01 | line 52 AT SWU1 LVI,$14,AT SXIT
+!CHECK 222423.00 | 222445.73 01 | line 53 LVI,$13,A1FM
+!CHECK 222423.40 | 000001.14 8E 222531.74 00 | line 54 A UKEF BZB,1.12($14),A ERRN
+!CHECK 222424.40 | 223745.46 50 | line 55 LC,$3,A UKCT
+!CHECK 222425.00 | 223747.07 50 | line 56 SC,$3,A EFCT

@@ -237,7 +237,7 @@ from opcodes import (
     IMM_INDEX_CODES, UNCOND_BRANCH_CODES, MISC_CODES, INDICATOR_BITS,
     MODE_BITS, MODE_DEFAULT_BS, PROGRESSIVE_SECONDARY_OP, CONNECTIVE_SUFFIX,
     VFL_INT_WRITTEN_MINUS,
-    IO_OP, CB_CODES, IMM_INDEX_COUNT_OPS, SYSTEM_SYMBOLS, BB_CODES,
+    IO_OP, CB_CODES, IMM_INDEX_COUNT_OPS, SYSTEM_SYMBOLS, MCP_PSEUDO_OPS, BB_CODES,
     TRANSMIT_CODES,
 )
 
@@ -514,6 +514,22 @@ def tokenize_expr(s, lineno=None):
             m = _TERM_SYS.match(s, i + 1)
             tokens.append((sign, 'sys', m.group(0)))
             i = m.end(); sign = 1; continue
+        if c == '.' and i + 1 < n and s[i + 1].isalpha():
+            # >>> THE BIT PART OF A BIT ADDRESS MAY BE A SYMBOL. <<<
+            # C22-6531 printed p.10: a bit address "consists of a pair
+            # of integers separated by a period", and on the same page
+            # "the term 'integer' is used to denote either an integral
+            # number OR A SYMBOL THAT TAKES ON AN INTEGRAL VALUE".  MCP
+            # printed p.213 is the witness: "V H SYN,32" prints the
+            # integer +00000040, and "V X1 SYN,V X.V H" /
+            # "V X2S SYN,V X1.V H" make 0.32 and 1.0 -- thirty-two
+            # BITS.  Read as a plain symbol, ".V H" added 32 in the
+            # FIELD's units, which in the 19-bit field of p.221's
+            # "V+ICR,V T3,.V H" is 32 half words (000020.17 for the
+            # printed 000000.57).
+            m = _TERM_SYM.match(s, i + 1)
+            tokens.append((sign, 'bitsym', m.group(0)))
+            i = m.end(); sign = 1; continue
         if c == '.':
             m = _TERM_NUM.match(s, i + 1)
             b = int(m.group(0)) if m else 0
@@ -600,7 +616,12 @@ def tokenize_expr(s, lineno=None):
         if c.isdigit() or (radix > 10 and c in 'ABCDEF'):
             m = numre.match(s, i)
             j = m.end()
-            if j < n and s[j] == '.':
+            if j + 1 < n and s[j] == '.' and s[j + 1].isalpha() and radix == 10:
+                # "262143.V H" (p.213): the word part, then a symbolic
+                # bit part, which the '.' branch above reads.
+                tokens.append((sign, 'bitaddr', (int(m.group(0)), 0)))
+                i = j
+            elif j < n and s[j] == '.':
                 m2 = numre.match(s, j + 1)
                 b = int(m2.group(0), radix) if m2 else 0
                 tokens.append((sign, 'bitaddr', (int(m.group(0), radix), b)))
@@ -611,7 +632,16 @@ def tokenize_expr(s, lineno=None):
             sign = 1; continue
         if c.isalpha():
             m = _TERM_SYM.match(s, i)
-            tokens.append((sign, 'sym', m.group(0)))
+            # A POINT BEHIND A SYMBOL: "M." / "M.M" / "K FUNLD.32".
+            # C22-6578 printed p.64, A4.8.2(c): "A 'point' placed in
+            # front of or behind a symbolized INTEGER converts it into a
+            # bit address; a 'point' placed in front or behind a
+            # symbolized BIT ADDRESS, however, has no effect on the
+            # latter."  So the word part of an integer counts words
+            # ('wordsym'); a bit address is left as it is.  The point
+            # itself is left for the '.' branch, which reads what follows.
+            kind = 'wordsym' if m.end() < n and s[m.end()] == '.' else 'sym'
+            tokens.append((sign, kind, m.group(0)))
             i = m.end(); sign = 1; continue
         raise AssemblerError(f"cannot parse expression {s!r} at {s[i:]!r}", lineno)
     if not tokens:
@@ -713,6 +743,12 @@ def eval_system_symbol(name, loc_bits, reg_context, lineno=None):
     if up in SYSTEM_SYMBOLS:
         w, b = SYSTEM_SYMBOLS[up]        # C22-6531 Appendix A register fields
         return w * 64 + b
+    if up in MCP_PSEUDO_OPS:
+        # "$MCP", "$RET", "$W" ...: MCP's pseudo-operations are in the
+        # STRAP system symbol table (N28-1081, bound into C28-6129, page
+        # 8); the values are MCP's own printed table (opcodes.py).
+        w, b = MCP_PSEUDO_OPS[up]
+        return w * 64 + b
     raise AssemblerError(f"unsupported system symbol ${name!r}", lineno)
 
 
@@ -742,7 +778,38 @@ def eval_system_symbol(name, loc_bits, reg_context, lineno=None):
 _BLANKED_SYMBOL = re.compile(r'^[A-Za-z][A-Za-z0-9 ]*$')
 
 
+def _bit_part(name, symtab, lineno):
+    """The value of a symbolic bit part ('.V H'), counted in BITS (see
+    tokenize_expr).  An integer (p.213's "V H SYN,32") counts bits --
+    C22-6578 printed p.64's ".M" = 0.5 -- and a bit address (p.231's
+    "V RDY SYN(BU,1),.26", used as "V SURT.V RDY" on pp.229-232) is
+    unchanged by the point, which is the same number."""
+    up = name.upper()
+    if up not in symtab:
+        raise AssemblerError(f"undefined symbol {name!r}", lineno)
+    return symtab[up]
+
+
+def _word_part(name, symtab, loc_bits, lineno):
+    """A symbol written in front of a point: an INTEGER counts words
+    (C22-6578 printed p.64, "M." = 5.0), a bit address is unchanged."""
+    up = name.upper()
+    if up not in symtab:
+        raise AssemblerError(f"undefined symbol {name!r}", lineno)
+    alias = getattr(symtab, 'sys_alias', {}).get(up)
+    if alias is not None:
+        return eval_system_symbol(alias, loc_bits, False, lineno)
+    v = symtab[up]
+    return v * 64 if up in getattr(symtab, 'sym_int', ()) else v
+
+
 def eval_expr(expr, symtab, loc_bits, reg_context=False, lineno=None):
+    # A NULL FIELD IS ALWAYS COMPILED AS A ZERO (C22-6531 printed p.7);
+    # "missing fields are compiled by STRAP-II as if they contained
+    # zeros" (C28-6129 PDF pp.8-9).  "BZBZ,V CSAW," (MCP printed p.215
+    # line 44) prints 000000.34 04: the null branch address is zero.
+    if expr is None or not expr.strip():
+        return 0
     if expr and ' ' in expr.strip():
         _t = expr.strip()
         if _BLANKED_SYMBOL.match(_t):
@@ -756,6 +823,10 @@ def eval_expr(expr, symtab, loc_bits, reg_context=False, lineno=None):
         elif kind == 'bitaddr':
             w, b = val
             term = w * 64 + b
+        elif kind == 'bitsym':
+            term = _bit_part(val, symtab, lineno)
+        elif kind == 'wordsym':
+            term = _word_part(val, symtab, loc_bits, lineno)
         elif kind == 'sym':
             up = val.upper()
             if up not in symtab:
@@ -796,10 +867,16 @@ def eval_addr_field(expr, symtab, loc_bits, unit_shift, lineno=None, int_shift=0
     one bit up (I-Box 4 p.58: "SX,$X0,8" prints as word 8, "SV,$X0,2"
     as half-word 2 = 1.0). eval_expr(), by contrast, returns a pure
     bit count."""
+    if expr is None or not expr.strip():
+        return 0              # a null field: see eval_expr
     total = 0
     for sign, kind, val in tokenize_expr(expr, lineno):
         if kind == 'int':
             term = val << int_shift
+        elif kind == 'bitsym':
+            term = _bit_part(val, symtab, lineno) >> unit_shift
+        elif kind == 'wordsym':
+            term = _word_part(val, symtab, loc_bits, lineno) >> unit_shift
         elif kind == 'bitaddr':
             w, b = val
             term = (w * 64 + b) >> unit_shift
@@ -840,7 +917,7 @@ def _written_as_bit_address(expr, lineno=None):
         toks = tokenize_expr(expr, lineno)
     except Exception:
         return False
-    return bool(toks) and all(kind == 'bitaddr' for _s, kind, _v in toks)
+    return bool(toks) and all(kind in ('bitaddr', 'bitsym') for _s, kind, _v in toks)
 
 
 def _names_an_address(expr, symtab, lineno=None):
@@ -865,9 +942,9 @@ def _names_an_address(expr, symtab, lineno=None):
         return False
     if any(kind == 'sys' for _s, kind, _v in toks):
         return False          # $N: already a register number
-    if any(kind == 'addr' for _s, kind, _v in toks):
+    if any(kind in ('addr', 'bitaddr', 'bitsym') for _s, kind, _v in toks):
         return True           # a dotted literal, e.g. "11.0"
-    names = [v.upper() for _s, kind, v in toks if kind == 'sym']
+    names = [v.upper() for _s, kind, v in toks if kind in ('sym', 'wordsym')]
     if not names:
         return False
     # A name the `sys_alias` chain already resolved to a REGISTER
@@ -905,7 +982,11 @@ def eval_reg(expr, symtab, lineno=None):
     that only covers a SYN leading back to a `$N` spelling.  1664 bits
     is word 26, and 26 & 0xF is 10 -- the conversion below.
     """
-    if expr is None:
+    # A NULL FIELD IS ALWAYS COMPILED AS A ZERO (C22-6531 printed p.7),
+    # and a field is null when "nothing but the comma denoting the field
+    # termination is written" (C28-6129 PDF p.9).  The OUTPUT program
+    # prints "LVE,,AMR" on pp.204-208 and compiles 224032.01 B0: J = 0.
+    if expr is None or not expr.strip():
         return 0
     v = eval_expr(expr, symtab, 0, reg_context=True, lineno=lineno)
     if _names_an_address(expr, symtab, lineno):
@@ -920,7 +1001,8 @@ def referenced_symbols(expr, lineno=None):
     fixpoint resolution (see assemble()) to test "would this expression
     evaluate cleanly right now" without triggering eval_expr's
     undefined-symbol error itself."""
-    return {val.upper() for sign, kind, val in tokenize_expr(expr, lineno) if kind == 'sym'}
+    return {val.upper() for sign, kind, val in tokenize_expr(expr, lineno)
+            if kind in ('sym', 'bitsym', 'wordsym')}
 
 
 # ---------------------------------------------------------------------
@@ -1871,6 +1953,11 @@ def dds_length_bits(mods, lineno=None, symtab=None):
     return 64 if n == 0 else n
 
 
+# Pseudo-operations: a name on one of these is not an instruction's.
+_NOT_INSTRUCTIONS = ('DD', 'DR', 'DRZ', 'VF', 'XW', 'CW', 'CF', 'RF', 'END',
+                     'SYN', 'SLC', 'CNOP', 'EXT', 'DDI', 'INDMK')
+
+
 def inherited_dds(stmt, symtab):
     """The dds a bare VFL statement takes from its operand symbol.
 
@@ -1909,10 +1996,20 @@ def inherited_dds(stmt, symtab):
         dds = getattr(symtab, 'sym_dds', {}).get(closed)
         if dds is not None:
             return dds
-    names = sorted(referenced_symbols(base, stmt.lineno))
-    if len(names) != 1:
+    # >>> AN EXPRESSION TAKES ITS FINAL SYMBOL'S dds. <<<  C22-6531
+    # printed p.11, on "SAM- JOE+ FRED- 72.386+5": "The data description
+    # of the final symbol, FRED, applies to the whole combination."
+    # MCP printed p.229 prints "CM0000,V SURT.V RDY(V T5)" -- no dds,
+    # V RDY SYN(BU,1) -- with length 1 (001000.00 F0), and p.230's
+    # "CM0000,V TSB+V OP" the same.
+    try:
+        toks = tokenize_expr(base, stmt.lineno)
+    except AssemblerError:
         return None
-    return getattr(symtab, 'sym_dds', {}).get(names[0])
+    names = [v.upper() for _s, k, v in toks if k in ('sym', 'bitsym', 'wordsym')]
+    if not names:
+        return None
+    return getattr(symtab, 'sym_dds', {}).get(names[-1])
 
 
 def is_half_word_branch(op):
@@ -2828,7 +2925,16 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
     for n, stmt in enumerate(statements):
         if stmt.op.upper() == 'SIC':
             nxt = statements[n + 1] if n + 1 < len(statements) else None
-            if nxt is None or not is_half_word_branch(nxt.op):
+            # >>> STRAP DID NOT REQUIRE THE BRANCH; this guard did. <<<
+            # The hardware executes SIC and the next half word as one
+            # instruction (Reference Manual p.41), but MCP prints SIC
+            # followed by other things and IBM's STRAP assembled them:
+            # printed p.224 lines 3-4 "V REQ6 SIC,0" / "V REQ9 VF,0" (a
+            # named slot filled at run time) and printed p.228 lines
+            # 44-45 "V IN2 SIC,V SQ1" / "V WTTS LV,V T2,V FCNT(V U)".  So
+            # only a SIC with NOTHING after it is refused; a non-branch
+            # follower is the program's business, not the assembler's.
+            if nxt is None:
                 raise AssemblerError(
                     f"SIC must be immediately followed by a half-word branch "
                     f"(B/BR/BE/BD/BEW/NOP, CB..., B<ind>...) -- it is one 64-bit "
@@ -2910,6 +3016,18 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
                         and stmt.mods and stmt.mods[0].strip()
                         and hasattr(symtab, 'sym_dds')):
                     symtab.sym_dds[up] = stmt.mods[0]
+                # >>> AN INSTRUCTION'S NAME CARRIES A dds TOO. <<<
+                # C22-6531 printed p.10: "instruction-naming symbols
+                # are given field lengths equal to the lengths of the
+                # particular instructions named (either 32 or 64), and
+                # are defined as unsigned binary with byte size 8."
+                # MCP printed p.233 lines 13-19, "L,V INBY" and
+                # "ST,V SC5" with no dds, name LVNI and B half words
+                # and print 040000.20: length 32.
+                elif (stmt.op.upper() not in _NOT_INSTRUCTIONS
+                        and stmt.op.upper() not in LISTING_CONTROL
+                        and size in (32, 64) and hasattr(symtab, 'sym_dds')):
+                    symtab.sym_dds[up] = '(BU,%d,8)' % size
         loc += size
 
     # Resolve SYN symbols by fixpoint: each SYN's value is its own
@@ -3243,8 +3361,11 @@ def emit_statement(stmt, symtab, image):
                 f"CW needs one of {sorted(CW_SECONDARY)} as its "
                 f"secondary operation, got {secondary!r}", stmt.lineno)
         chain, multiple, skip = CW_SECONDARY[secondary]
-        if not stmt.fields or not stmt.fields[0].strip():
-            raise AssemblerError("CW needs an ADDRESS field", stmt.lineno)
+        # A NULL ADDRESS IS ZERO, like any null field (C22-6531
+        # printed p.7; C28-6129 PDF pp.8-9).  MCP printed p.210 line 15
+        # is "C KERIC  CW," and prints address 000000.
+        if not stmt.fields:
+            stmt.fields = ['']
         # AN INTEGER AND A BIT ADDRESS ARE NOT THE SAME THING HERE,
         # and conflating them is a silent wrong answer.  C22-6531
         # printed p.12 (PDF 13), "A18 Full-Word Address":
@@ -3281,7 +3402,7 @@ def emit_statement(stmt, symtab, image):
             v = eval_expr(text, symtab, loc, lineno=stmt.lineno)
             return (v >> 6) if _is_bit_address(text) else v
 
-        addr = _word_field(stmt.fields[0])
+        addr = _word_field(stmt.fields[0]) if stmt.fields[0].strip() else 0
         # COUNT TAKES THE SAME RULE, which the first version missed.
         # C22-6531 p.12's note covers any 18-bit field, and the count
         # field is bits 28-45.  MCP writes it both ways within twelve
@@ -4043,6 +4164,11 @@ _DD_RADIX_LITERAL = re.compile(r'^\((\d+)\)\s*([0-9A-Za-z][0-9A-Za-z\s]*)$')
 
 def parse_dd_literal(field, lineno=None):
     field = field.strip()
+    if not field:
+        # "DD(BU,32),,,,,," (MCP printed p.213 line 52): six null
+        # fields, six words of zeros -- C22-6531 printed p.7, "a null
+        # field is always compiled as a zero".
+        return 0
     m = _DD_RADIX_LITERAL.match(field)
     if m:
         radix, digits = int(m.group(1)), "".join(m.group(2).split())

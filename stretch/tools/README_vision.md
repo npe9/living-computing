@@ -397,6 +397,22 @@ the NAME column's reading of the definition, right 64.4% (`XICCD` for
 `XIOCD`), so it is a separate status: it settles WHERE the operand
 points, not how it is spelled. All pages: 447.
 
+**Landing pages in parallel (2026-11-05).** pp.198-221 were landed by
+one agent per page, each in its own scratch directory, from
+`tools/page_sheet.py` plus the ink, then merged. With 24 pages landed,
+1,726 of 4,116 eligible lines are asm-confirmed (41.9%), hex 1,925 of
+1,925, text 91.8%. The merge is where the pages meet:
+`check_mcp_body_image.py` caught external stand-ins that disagree with
+the page that defines them (`AY SYN,9` against p.203's `SYN,$9`; a
+SYN with no dds beside one with `(BU,1)`), and a cross-check of every
+external SYN against the defining `!SYM` found no value mismatch.
+The full suite then caught what neither did: three symbols that
+agents on different pages SPELLED differently (`check_symbol_spellings.py`:
+AACS4/AAOS4, DICDEF/DIODEF, ACRC15/ACRD15), each a C/O or C/D glyph
+read independently. Each was settled on the 900 dpi ink of every page
+that prints it. A parallel batch needs the suite, not only the merge
+checks.
+
 Found on the way: strap_asm accepts `814` where an index register is
 expected (`LVS,$9,$12,$11,814` assembles as `$14`): a laxness, open.
 

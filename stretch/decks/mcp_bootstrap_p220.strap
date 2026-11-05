@@ -1,0 +1,96 @@
+! mcp_bootstrap_p220.strap -- MCP printed page 220: the tail of the V
+! write-end-of-file path (V WF3), its VF constants V TSQ/V MNJB/V MXJB,
+! the flag bits V BYON/V EOFX, and V SSRW1/V BREW/V SSREW.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.227, read at 400 dpi (names and
+! statements at 900 dpi).  Header, READ: "TIME CLOCK 00054041  PUNID
+! 11D11MCP  CARD ID 0A000317  DIST. OF 3/01  3/01  PAGE NUMBER 220";
+! the heading row's LOCATION field is 224367, line 1's word.
+!
+! THE PAGE.  17 lines, contiguous from 224367.00 to 224376.40, then
+! blank paper.  p.219 ends at 224366.40 (line 56, KV,V T3,V MXJB) and
+! p.221 opens at 224377.00, so the page joins both neighbours.
+!   This section prints a sequence column (-0328 .. -0344, one per
+!   line, continuing p.219's -0327 into p.221's -0345) beside the card
+!   serials 0A000317 .. 0A000333.  p.221's header and line 1 are
+!   0A000335: no 0A000334 is printed on either page.  Recorded, not
+!   explained.  Line 15 prints a "*" after its location.
+!
+! EXTERNAL SYMBOLS.  No V-section symbol is landed; every SYN below is
+! taken from this page's own binary (or a neighbour's printed NAME),
+! and each stated as half word only / BIT-EXACT.  The index symbols are
+! the J/I fields the rows print; p.219's rows (SR,V P .03 73;
+! SV,V T2,V X1(V U) 000000.55 33; CB-,V P,V M1(V P) C9) print the same.
+!
+! GLYPHS.  The page prints 0 as an open round throughout ("CCCCCC.CC+"
+! on line 5, "224655.1C CO" on line 4).  Settled:
+!   line 5   "VF,C" is VF,0 -- the row prints 000000.00+.
+!   lines 8-9 "DD(BU,1),C" is 0 -- the "0" printed left of each NAME is
+!            the one-bit value (closed glyph).
+!   line 4   hex "CO" is 00: B's byte (p.197 B rows print 00), assembled.
+!   line 5   name: "V TSG"/"V TSQ" -- the Q's tail shows at 900 dpi, and
+!            p.221 line 20 prints M+1,V TSQ at 224371.00.
+!   line 8   "V BYCN" written VBYON (round, no stem: O, not D); line 11
+!            prints the same "BYCN" for its reference and compiles
+!            224372.31, so the two spellings are one symbol.
+!   line 9   "V ECFX" written VEOFX (round, no stem; END OF FILE).  Not
+!            referenced on pp.219-221: the spelling rests on ink alone.
+! Nothing refused by the assembler.
+
+VWF1    SYN, (8)224377.40            ! p.221 line 2 "V WF1" (not landed); BZXL line 1 agrees
+VWT     SYN, (8)225266.0             ! LWF on lines 2/17, ST line 3, half word only; p.219 LVI,V U,V WT agrees
+VACT    SYN, (8)224655.0             ! B on line 4, half word only
+VP      SYN, $1                      ! CB- J on line 10; this page only, BIT-EXACT field
+VSETX   SYN, (8)224671.40            ! CB- on line 10, half word (19-bit) only; this page only
+VT1     SYN, $4                      ! LV J on line 12; this page only, BIT-EXACT field
+VT2     SYN, $6                      ! SV J on line 15; this page only, BIT-EXACT field
+VU      SYN, $3                      ! (V U) on line 12; this page only, BIT-EXACT field
+VRCNT   SYN, 7.0                     ! LV on line 12; this page only, BIT-EXACT field
+VFCNT   SYN, 7.32                    ! V+ on line 13; this page only, BIT-EXACT field
+VX1     SYN, 0.32                    ! SV on line 15; this page only, BIT-EXACT field
+
+        SLC, (8)224367.00
+        BZXL,VWF1                                            ! line  1
+VWF3    LWF(U),VWT-3.                                        ! line  2
+        ST(U),VWT-1.                                         ! line  3
+        B,VACT                                               ! line  4
+VTSQ    VF,0                                                 ! line  5
+VMNJB   VF,5.                                                ! line  6
+VMXJB   VF,10.                                               ! line  7
+VBYON   DD(BU,1),0                                           ! line  8
+VEOFX   DD(BU,1),0                                           ! line  9
+VSSRW1  CB-,VP,VSETX                                         ! line 10
+VBREW   BB1,VBYON,$+1.                                       ! line 11
+VSSREW  LV,VT1,VRCNT(VU)                                     ! line 12
+        V+,VT1,VFCNT(VU)                                     ! line 13
+        BXVZ,VSSRW1                                          ! line 14
+        SV,VT2,VX1(VU)                                       ! line 15  (a "*" prints after the location)
+        V-I,VP,1.                                            ! line 16
+        LWF(U),VWT-2.                                        ! line 17
+
+!SYM VWF3   224367.40
+!SYM VTSQ   224371.00
+!SYM VMNJB  224371.40
+!SYM VMXJB  224372.00
+!SYM VBYON  224372.31
+!SYM VEOFX  224372.32
+!SYM VSSRW1 224372.40
+!SYM VBREW  224373.00
+!SYM VSSREW 224374.00
+!CHECK 224367.00 | 224377.72 40 | line 1 BZXL,V WF1
+!CHECK 224367.40 | 225263.42 60 | line 2 V WF3 LWF(U),V WT-3.
+!CHECK 224370.00 | 225265.40 E0 | line 3 ST(U),V WT-1.
+!CHECK 224370.40 | 224655.10 00 | line 4 B,V ACT
+!CHECK 224371.00 | 000000.00+ | line 5 V TSQ VF,0
+!CHECK 224371.40 | 000005.00+ | line 6 V MNJB VF,5.
+!CHECK 224372.00 | 000012.00+ | line 7 V MXJB VF,10.
+!CHECK 224372.31 | 0 | line 8 V BYON DD(BU,1),0 | 1
+!CHECK 224372.32 | 0 | line 9 V EOFX DD(BU,1),0 | 1
+!CHECK 224372.40 | 224671.43 C8 | line 10 V SSRW1 CB-,V P,V SETX
+!CHECK 224373.00 | 224372.31 80 224374.34 0E | line 11 V BREW BB1,V BYON,$+1.
+!CHECK 224374.00 | 000007.10 33 | line 12 V SSREW LV,V T1,V RCNT(V U)
+!CHECK 224374.40 | 000007.50 B3 | line 13 V+,V T1,V FCNT(V U)
+!CHECK 224375.00 | 224372.71 42 | line 14 BXVZ,V SSRW1
+!CHECK 224375.40 | 000000.55 33 | line 15 SV,V T2,V X1(V U)
+!CHECK 224376.00 | 000001.03 0D | line 16 V-I,V P,1.
+!CHECK 224376.40 | 225264.42 60 | line 17 LWF(U),V WT-2.

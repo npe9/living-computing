@@ -4258,12 +4258,12 @@ vol	pdf	printed	line	status	statement	assembled
 1	128	121	35	asm-confirmed	VF,YJC4TT	231136.00 00
 1	128	121	37	draft	SPECIALMCPPSEUDOOPS	
 1	128	121	39	draft	VF,YJC1TT	
-1	128	121	40	asm-confirmed	VF,SCORYT	222120.00 00
+1	128	121	40	asm-bound	VF,SCORYT	222120.00 00
 1	128	121	41	draft	VF,SAEOJT	
 1	128	121	42	draft	VF,PDBTT	
 1	128	121	43	asm-confirmed	VF,YJC4TT	231136.00 00
 1	128	121	44	asm-confirmed	VF,VVSCR	224105.00 00
-1	128	121	45	draft	VF,VVSKN	
+1	128	121	45	draft	VF,VVSKM	
 1	128	121	46	draft	VF,JTENT	
 1	128	121	47	draft	VF,UNDEF8C.32LOGGER4	
 1	128	121	48	draft	VF,UNCEF	
@@ -7576,7 +7576,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	208	201	22	draft	EXT(0,18)	
 1	208	201	23	draft	B,CLRY	
 1	208	201	24	draft	DRZTNJ,2	
-1	208	201	25	asm-confirmed	CM0000(BU,1),AECJI	223744.14 80 001000.00 F0
+1	208	201	25	asm-bound	CM0000(BU,1),AECJI	223744.14 80 001000.00 F0
 1	208	201	26	draft	TI,9,$7,CXR7	
 1	208	201	27	draft	LVE,AX,SASPUT+3.	
 1	208	201	28	draft	LC,AX,SASPUT+3.32	
@@ -7620,7 +7620,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	209	202	10	draft	SVALB14,ACP	
 1	209	202	11	draft	BEБMCP	
 1	209	202	12	draft	,$W	
-1	209	202	13	draft	LVE,,AMR	
+1	209	202	13	asm-confirmed	LVE,,AMR	224032.01 B0
 1	209	202	14	draft	,ACWI(AN)	
 1	209	202	15	draft	B,0	
 1	209	202	16	draft	-NAKEBUFFERTUNAVAILABLE	
@@ -7637,7 +7637,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	209	202	27	asm-confirmed	CB+,AY,AECJ3	222170.63 48
 1	209	202	28	draft	-REFILLTRANSMISSION	
 1	209	202	29	draft	UNAVAILABLE	
-1	209	202	30	draft	BB,ABWA,AECJI	
+1	209	202	30	draft	BB,ABWA,AEOJI	
 1	209	202	31	asm-confirmed	BZB,ABTA,CECJ	223743.01 80 222271.34 00
 1	209	202	32	draft	-LOADINDEXWITHEXIT	
 1	209	202	33	asm-confirmed	B,ASWCH	222150.50 00
@@ -7647,8 +7647,8 @@ vol	pdf	printed	line	status	statement	assembled
 1	209	202	37	asm-confirmed	NOP	000000.30 00
 1	209	202	38	draft	B,AWEE	
 1	209	202	39	asm-confirmed	NOP	000000.30 00
-1	209	202	40	draft	B,$MCP	
-1	209	202	41	draft	,$RET	
+1	209	202	40	asm-confirmed	B,$MCP	000040.10 00
+1	209	202	41	asm-confirmed	,$RET	000041.00 80
 1	209	202	42	draft	CM0000,CATUB	
 1	209	202	43	draft	CM0000,ABWA	
 1	209	202	44	draft	BZB,ABTA,CRETBUFFERTAVAILABLE,RET	
@@ -7676,7 +7676,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	210	203	10	draft	E,$	
 1	210	203	11	draft	SIC,SPRIMR	
 1	210	203	12	asm-confirmed	BD,SPRIME	215570.04 00
-1	210	203	13	draft	,$SPR	
+1	210	203	13	asm-confirmed	,$SPR	000103.40 80
 1	210	203	14	asm-confirmed	,ASERR	223764.00 80
 1	210	203	15	draft	,1.	
 1	210	203	16	draft	SIC,SPRIMR	
@@ -7684,7 +7684,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	210	203	18	draft	,$ABEOJ	
 1	210	203	19	asm-confirmed	BE,ARET	222144.00 00
 1	210	203	20	draft	TRANSMITNPRINTLINESFROMPPTCPRINTBUFFER	
-1	210	203	21	draft	CM0000(BU,1),AECJI	
+1	210	203	21	draft	CM0000(BU,1),AEOJI	
 1	210	203	22	draft	TI,9,$7,CXR7	
 1	210	203	23	asm-confirmed	LVE,$10,SCSPRT+3.	222110.25 B0
 1	210	203	24	draft	LC,$IO.SCSPRI+3.32——NUMBERCFLINESTO	
@@ -7727,12 +7727,12 @@ vol	pdf	printed	line	status	statement	assembled
 1	211	204	5	draft	CM1111,CATUB	
 1	211	204	6	asm-confirmed	LVI,$14,CEXN	222314.35 01
 1	211	204	7	asm-confirmed	SVA,$14,ACP	224046.35 D0
-1	211	204	8	draft	B,$MCP	
+1	211	204	8	asm-confirmed	B,$MCP	000040.10 00
 1	211	204	9	draft	,$W	
 1	211	204	10	draft	LVELAMR	
 1	211	204	11	draft	CWX($7)	
 1	211	204	12	draft	B,0	
-1	211	204	13	draft	BZB1,CXY+.19,CA0S3B	
+1	211	204	13	draft	BZB1,CXY+.19,CAOS3B	
 1	211	204	14	draft	BB,CBTA,CEOJ2	
 1	211	204	15	draft	LX,$8,CWA	
 1	211	204	16	draft	KCI,$8,CNUM	
@@ -7748,14 +7748,14 @@ vol	pdf	printed	line	status	statement	assembled
 1	211	204	27	asm-bound	BB,CBWA,CECJ	223744.06 80 222271.34 02
 1	211	204	28	draft	BZB,CBTA,CECJ4	
 1	211	204	29	asm-confirmed	LVI,$15,CECJ4	222305.77 01
-1	211	204	30	draft	B,CACS3A	
+1	211	204	30	draft	B,CAOS3A	
 1	211	204	31	asm-confirmed	BB,CATUB,$	223744.11 80 222305.74 02
 1	211	204	32	draft	CM1111,CATUB	
 1	211	204	33	draft	LVI,$14,CEXEF	
-1	211	204	34	asm-confirmed	SVA,$14,ACP	224046.35 D0
+1	211	204	34	asm-bound	SVA,$14,ACP	224046.35 D0
 1	211	204	35	draft	B,$NCP	
 1	211	204	36	draft	,$WEF	
-1	211	204	37	draft	LVE,,AMR	
+1	211	204	37	asm-confirmed	LVE,,AMR	224032.01 B0
 1	211	204	38	draft	BBZ,AOPTRI,CDRY1	
 1	211	204	39	asm-confirmed	B,ARET	222144.10 00
 1	211	204	40	draft	CNOP,	
@@ -7771,11 +7771,11 @@ vol	pdf	printed	line	status	statement	assembled
 1	211	204	50	draft	CM0000,CBWA	
 1	211	204	51	draft	BZB,CBTA,CRET	
 1	211	204	52	draft	LVI,$15,CRET	
-1	211	204	53	draft	B,CACS3A	
+1	211	204	53	draft	B,CAOS3A	
 1	211	204	54	draft	EECNNERNALRITE	
 1	211	204	55	draft	BE,AFOJI,CECPN	
 1	211	204	56	draft	C1111(B0,1.1),CTRAIL+.05	
-1	212	205	1	draft	LVI,$15,CECPN+1.	
+1	212	205	1	draft	LVI,$15,CEOPN+1.	
 1	212	205	2	asm-confirmed	B,ATSWCH	222404.10 00
 1	212	205	3	draft	LV,$2,CEXN.32	
 1	212	205	4	asm-confirmed	LVI,$1,CEXN	222314.03 01
@@ -7788,7 +7788,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	212	205	11	draft	SC,$3,AWRUT	
 1	212	205	12	draft	B,БMCP	
 1	212	205	13	draft	,$CCH	
-1	212	205	14	draft	LVE,,AMR	
+1	212	205	14	asm-confirmed	LVE,,AMR	224032.01 B0
 1	212	205	15	asm-confirmed	,CKERIC	223740.00 80
 1	212	205	16	asm-confirmed	R,CKERIC	223740.02 00
 1	212	205	17	draft	LC,$3,AWRCT	
@@ -7797,7 +7797,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	212	205	20	draft	LC,$3,AUKCT	
 1	212	205	21	draft	SC,$3,ABSPCT	
 1	212	205	22	asm-confirmed	LVI,$13,CUKUK	222350.33 01
-1	212	205	23	draft	SVA,$13,ACP	
+1	212	205	23	draft	SVA,$13,AOP	
 1	212	205	24	draft	(C,$3,ABSPCT	
 1	212	205	25	asm-confirmed	CBZ,$3,CKRUKE	222347.06 4A
 1	212	205	26	draft	SC,$3,ABSPCT	
@@ -7812,17 +7812,17 @@ vol	pdf	printed	line	status	statement	assembled
 1	212	205	35	asm-confirmed	NOP	000000.30 00
 1	212	205	36	asm-confirmed	B,CKERG	222355.10 00
 1	212	205	37	draft	NOP	
-1	212	205	38	draft	B,$MCP	
+1	212	205	38	asm-confirmed	B,$MCP	000040.10 00
 1	212	205	39	draft	,$RET	
 1	212	205	40	draft	BZB,CUKUK+1.12,CBSPUK	
 1	212	205	41	draft	LVI,$I4,CKWRIT	
-1	212	205	42	draft	SVA,$I4,ACP	
+1	212	205	42	draft	SVA,$I4,A0P	
 1	212	205	43	draft	B,$MCP	
 1	212	205	44	draft	,$ERGS	
-1	212	205	45	draft	LVE,,AMR	
+1	212	205	45	asm-confirmed	LVE,,AMR	224032.01 B0
 1	212	205	46	draft	B,$NCP	
 1	212	205	47	draft	2$W	
-1	212	205	48	draft	LVE,,AMR	
+1	212	205	48	asm-confirmed	LVE,,AMR	224032.01 B0
 1	212	205	49	asm-confirmed	,CKERIC	223740.00 80
 1	212	205	50	draft	B,CRET	
 1	212	205	51	draft	CNOP,	
@@ -7831,7 +7831,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	212	205	54	draft	NOP	
 1	212	205	55	draft	LV,$1,ANFMEX	
 1	212	205	56	draft	B,3.($1)	
-1	213	206	1	draft	B,$MCP	
+1	213	206	1	asm-confirmed	B,$MCP	000040.10 00
 1	213	206	2	draft	,$RET	
 1	213	206	3	asm-confirmed	LV,$1,ANFMEX	222516.42 30
 1	213	206	4	draft	B,5.($1)	
@@ -7844,8 +7844,8 @@ vol	pdf	printed	line	status	statement	assembled
 1	213	206	11	draft	NOP	
 1	213	206	12	asm-confirmed	B,CEEEF	222377.50 00
 1	213	206	13	asm-confirmed	CNOP	000000.30 00
-1	213	206	14	draft	B,SMCP	
-1	213	206	15	draft	,$RET	
+1	213	206	14	asm-confirmed	B,$MCP	000040.10 00
+1	213	206	15	asm-confirmed	,$RET	000041.00 80
 1	213	206	16	draft	EOPONHRITETAPEMARK	
 1	213	206	17	draft	CM0000,CAIUB	
 1	213	206	18	draft	E,CRET	
@@ -7862,7 +7862,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	213	206	29	asm-confirmed	LVI,$14,ATSXIT	222411.35 01
 1	213	206	30	asm-confirmed	SVA,$14,ACP	224046.35 D0
 1	213	206	31	draft	B,$MCP	
-1	213	206	32	draft	•$WEF	
+1	213	206	32	asm-confirmed	,$WEF	000007.40 80
 1	213	206	33	draft	LVE,,AMR	
 1	213	206	34	asm-confirmed	B,ARET	222144.10 00
 1	213	206	35	draft	EXITSFERATSWEF	
@@ -7876,10 +7876,10 @@ vol	pdf	printed	line	status	statement	assembled
 1	213	206	43	draft	,$RET	
 1	213	206	44	asm-confirmed	BBZ,ATMI,ATSWC3+.32	223743.02 80 222405.74 06
 1	213	206	45	asm-confirmed	LVI,$14,ASTRA	222460.35 01
-1	213	206	46	draft	SVA,$14,ACP	
-1	213	206	47	draft	B,$MCP	
+1	213	206	46	draft	SVA,$14,AOP	
+1	213	206	47	asm-confirmed	B,$MCP	000040.10 00
 1	213	206	48	draft	,$W	
-1	213	206	49	draft	LVE,,AMR	
+1	213	206	49	asm-confirmed	LVE,,AMR	224032.01 B0
 1	213	206	50	draft	,CTR	
 1	213	206	51	draft	B,CRET	
 1	213	206	52	asm-confirmed	LVI,$14,ATSXIT	222411.35 01
@@ -7896,10 +7896,10 @@ vol	pdf	printed	line	status	statement	assembled
 1	214	207	7	draft	SC,$3,AEFCT	
 1	214	207	8	draft	B,$MCP	
 1	214	207	9	draft	,$ERGS	
-1	214	207	10	draft	LVE,AMR	
-1	214	207	11	draft	B,SMCP	
+1	214	207	10	asm-confirmed	LVE,,AMR	224032.01 B0
+1	214	207	11	asm-confirmed	B,$MCP	000040.10 00
 1	214	207	12	draft	,SWEF	
-1	214	207	13	draft	LVE,,AMR	
+1	214	207	13	asm-confirmed	LVE,,AMR	224032.01 B0
 1	214	207	14	draft	B,CRET	
 1	214	207	15	draft	CNOP,	
 1	214	207	16	draft	DRZIN),2	
@@ -7907,23 +7907,23 @@ vol	pdf	printed	line	status	statement	assembled
 1	214	207	18	draft	NOP	
 1	214	207	19	draft	LV,$14,ATSWKE	
 1	214	207	20	asm-confirmed	B,3.($14)	000003.10 0E
-1	214	207	21	draft	B,$MCP	
+1	214	207	21	asm-confirmed	B,$MCP	000040.10 00
 1	214	207	22	draft	,BRET	
 1	214	207	23	draft	LV,$I4,ATSWKE	
 1	214	207	24	draft	B,5.T$I4)	
-1	214	207	25	draft	LF(BU,8),AOFMC	
-1	214	207	26	asm-confirmed	SF(BU,8),CMESSI+4.24	224020.30 80 010000.12 F0
+1	214	207	25	draft	LF(BU,8),A0FMC	
+1	214	207	26	draft	SFIBU,8),CMESS1+4.24	
 1	214	207	27	asm-confirmed	B,AGFM	222447.50 00
 1	214	207	28	draft	LF(BU,8),A1FMC	
 1	214	207	29	draft	SF(BU,81,CME$$1+4.24	
 1	214	207	30	asm-confirmed	TI,2,ANFMS,CMESSI	224010.00 80 224014.04 A0
 1	214	207	31	draft	LF(BU),ALOGM	
-1	214	207	32	draft	SF(BU),CMESSI+6.24	
+1	214	207	32	draft	SF(BU),CMESS1+6.24	
 1	214	207	33	draft	B,DMCP	
 1	214	207	34	asm-confirmed	,DICDEF	000015.00 80
-1	214	207	35	draft	LVE,,AMR	
+1	214	207	35	asm-confirmed	LVE,,AMR	224032.01 B0
 1	214	207	36	draft	,CMESSI+2.0	
-1	214	207	37	draft	B,$MCP	
+1	214	207	37	asm-confirmed	B,$MCP	000040.10 00
 1	214	207	38	draft	„$CCMM	
 1	214	207	39	draft	,CMESS1	
 1	214	207	40	draft	,9.	
@@ -7938,14 +7938,14 @@ vol	pdf	printed	line	status	statement	assembled
 1	214	207	49	asm-confirmed	B,ATSWC5	222465.10 00
 1	214	207	50	draft	CNOP	
 1	214	207	51	draft	B,$NCP	
-1	214	207	52	draft	,$RET	
+1	214	207	52	asm-confirmed	,$RET	000041.00 80
 1	214	207	53	draft	CM1111,ATSWCR	
-1	214	207	54	draft	BSNCP	
+1	214	207	54	asm-confirmed	B,$MCP	000040.10 00
 1	214	207	55	draft	SUALO	
-1	214	207	56	draft	LVE,,AMR	
+1	214	207	56	asm-confirmed	LVE,,AMR	224032.01 B0
 1	215	208	1	draft	BRZ,ATARI,ATSWC4	
 1	215	208	2	draft	BBZ,ATBRI,ATSWC6	
-1	215	208	3	draft	B,$MCP	
+1	215	208	3	asm-confirmed	B,$MCP	000040.10 00
 1	215	208	4	draft	"ERET	
 1	215	208	5	asm-confirmed	LV,1,AMR1	224032.42 30
 1	215	208	6	asm-confirmed	SV,1,AMR	224032.03 30
@@ -7960,14 +7960,14 @@ vol	pdf	printed	line	status	statement	assembled
 1	215	208	15	asm-confirmed	LVI,$1,ASTRA	222460.03 01
 1	215	208	16	draft	LVI,$3,C2FM	
 1	215	208	17	asm-confirmed	B,CKUK	222333.50 00
-1	215	208	18	asm-confirmed	LF(BU,8),AZFMC	224005.00 80 010000.06 70
-1	215	208	19	draft	SF(BU,8),CMESSI+4.24	
+1	215	208	18	asm-bound	LF(BU,8),AZFMC	224005.00 80 010000.06 70
+1	215	208	19	draft	SF(BU,8),CMESS1+4.24	
 1	215	208	20	asm-confirmed	B,AGFM	222447.50 00
-1	215	208	21	asm-confirmed	TI,2,ANFMS,CMESSI	224010.00 80 224014.04 A0
+1	215	208	21	asm-bound	TI,2,ANFMS,CMESSI	224010.00 80 224014.04 A0
 1	215	208	22	draft	LELBU,81,A0FMC	
-1	215	208	23	draft	SFIBU,8),CMESSI+4.24	
+1	215	208	23	draft	SFIBU,8),CMESS1+4.24	
 1	215	208	24	asm-confirmed	LF(BU),APHYM	224005.30 80 000000.06 70
-1	215	208	25	asm-confirmed	SF(BU),CMESSI+6.24	224022.30 80 000000.12 F0
+1	215	208	25	draft	SFIBU),CMESS1+6.24	
 1	215	208	26	draft	B,DMCP	
 1	215	208	27	asm-confirmed	,DICDEF	000015.00 80
 1	215	208	28	draft	LVE,,AMR	
@@ -7986,7 +7986,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	215	208	41	asm-confirmed	,DICDEF	000015.00 80
 1	215	208	42	draft	LVE,,AMR	
 1	215	208	43	asm-bound	,AEPGKN	224031.00 80
-1	215	208	44	draft	B,$MCP	
+1	215	208	44	asm-confirmed	B,$MCP	000040.10 00
 1	215	208	45	draft	,SCCMM	
 1	215	208	46	asm-confirmed	,APGKM1	224025.00 80
 1	215	208	47	draft	,5.	
@@ -7998,12 +7998,12 @@ vol	pdf	printed	line	status	statement	assembled
 1	215	208	53	draft	SVA,$1,ANFMEX	
 1	215	208	54	asm-confirmed	B,ANFMRT	222506.50 00
 1	215	208	55	asm-confirmed	LF(BU,8),A1FMC	224005.20 80 010000.06 70
-1	215	208	56	asm-confirmed	SF(BU,8),CMESSI+4.24	224020.30 80 010000.12 F0
-1	216	209	1	asm-confirmed	TI,2,ALNKMS,CMESSI	224012.00 80 224014.04 A0
+1	215	208	56	asm-bound	SF(BU,8),CMESSI+4.24	224020.30 80 010000.12 F0
+1	216	209	1	asm-bound	TI,2,ALNKMS,CMESSI	224012.00 80 224014.04 A0
 1	216	209	2	asm-confirmed	B,AGFM+1.	222450.50 00
 1	216	209	3	draft	LF(BU,8),AZFMC	
-1	216	209	4	draft	SF(EU,8),CMESSI+4.24	
-1	216	209	5	draft	TI2,ALNKMS,CMESSI	
+1	216	209	4	draft	SF(EU,8),CMESS1+4.24	
+1	216	209	5	draft	TI2,ALNKMS,CMESS1	
 1	216	209	6	asm-confirmed	B,AGFM+1.	222450.50 00
 1	216	209	7	draft	CNOP,	
 1	216	209	8	draft	DRZ(N),2	
@@ -8041,8 +8041,8 @@ vol	pdf	printed	line	status	statement	assembled
 1	216	209	40	draft	,$RFT	
 1	216	209	41	draft	BB,ATSWER,ATSWCE	
 1	216	209	42	draft	CMTTTIATBRI	
-1	216	209	43	draft	B,$MCP	
-1	216	209	44	draft	,$RET	
+1	216	209	43	asm-confirmed	B,$MCP	000040.10 00
+1	216	209	44	asm-confirmed	,$RET	000041.00 80
 1	216	209	45	draft	LVI,14,ATPACS	
 1	216	209	46	draft	SVA,14,AXITA+4.0	
 1	216	209	47	draft	B,DMCP	
@@ -8129,11 +8129,11 @@ vol	pdf	printed	line	status	statement	assembled
 1	218	211	16	draft	VF=	
 1	218	211	17	draft	БUTPUTPSEUDO-OP	
 1	218	211	18	draft	TI,S,$7,CXR7	
-1	218	211	19	draft	BBZ,AECJI,CDRYI	
+1	218	211	19	draft	BBZ,AEOJI,CDRY1	
 1	218	211	20	draft	CM1111(BU,1),AOPTRI	
 1	218	211	21	asm-confirmed	B,ARET	222144.10 00
 1	218	211	22	draft	E8,CATUE,$	
-1	218	211	23	draft	B7B,CXY+.19,ARETL	
+1	218	211	23	draft	B7B,CXY+.19,ARETI	
 1	218	211	24	draft	SX,#15,CXR15	
 1	218	211	25	draft	CM1111,CATUB	
 1	218	211	26	draft	CM0000(EU,1,1),CTRAIL+.05	
@@ -8288,7 +8288,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	222	215	3	draft	B,VBYP(VU)	
 1	222	215	4	draft	B,VCNLIN	
 1	222	215	5	asm-confirmed	B,VCFFLN	225032.50 00
-1	222	215	6	asm-confirmed	B,VECFN	224226.50 00
+1	222	215	6	asm-bound	B,VECFN	224226.50 00
 1	222	215	7	draft	B,VOEOJ	
 1	222	215	8	asm-confirmed	B,VBYPAS	225103.10 00
 1	222	215	9	asm-confirmed	B,VSREW	225203.50 00
@@ -8296,12 +8296,12 @@ vol	pdf	printed	line	status	statement	assembled
 1	222	215	11	asm-confirmed	B,VSCAN	224242.50 00
 1	222	215	12	draft	B,VCNLIB	
 1	222	215	13	asm-confirmed	B,VCFFLB	225136.10 00
-1	222	215	14	asm-confirmed	B,VECFB	224221.50 00
+1	222	215	14	asm-bound	B,VECFB	224221.50 00
 1	222	215	15	asm-confirmed	B,VBECJ	224533.10 00
 1	222	215	16	asm-confirmed	B,VBSTRT	224160.10 00
-1	222	215	17	draft	B,VNCP	
-1	222	215	18	draft	CB-,VP,VMI(VP)	
-1	222	215	19	draft	LVI,VT1,VNCP	
+1	222	215	17	draft	B,VNOP	
+1	222	215	18	draft	CB-,VP,VM1(VP)	
+1	222	215	19	draft	LVI,VT1,VNOP	
 1	222	215	20	draft	SVA,VT1,VBYP(VU)	
 1	222	215	21	draft	LVI,VU,VVCR	
 1	222	215	22	draft	V+I,1.	
@@ -8326,18 +8326,18 @@ vol	pdf	printed	line	status	statement	assembled
 1	222	215	41	draft	(VE,,VSUTV	
 1	222	215	42	draft	,V	
 1	222	215	43	draft	BZB,VEE1.18,VNCP	
-1	222	215	44	draft	BZBZ,VCSAW,	
+1	222	215	44	asm-confirmed	BZBZ,VCSAW,	224171.23 80 000000.34 04
 1	222	215	45	draft	CM0000,VFOFX	
 1	222	215	46	draft	LVI,VU,VCR	
 1	222	215	47	draft	(VI,VT2,0	
 1	222	215	48	draft	-OI9	
 1	222	215	49	asm-confirmed	BXVZ,VREE4	224203.31 42
-1	222	215	50	draft	SV,VT2,VXI(VU)	
+1	222	215	50	draft	SV,VT2,VX1(VU)	
 1	223	216	1	draft	LV,VT3,VX(VU)	
 1	223	216	2	asm-confirmed	BXVLZ,$.64	224202.70 C2
 1	223	216	3	asm-confirmed	V-I,VT3,34.	000042.17 0D
-1	223	216	4	draft	B,VIC(VL)	
-1	223	216	5	draft	SV,VT2,VXI(VU)	
+1	223	216	4	draft	B,VID(VL)	
+1	223	216	5	draft	SV,VT2,VX1(VU)	
 1	223	216	6	asm-confirmed	B,VACT	224655.10 00
 1	223	216	7	draft	CNOP,	
 1	223	216	8	draft	(IQS#)DD(BU,8,8),SERVICETHECARDREADER#	
@@ -8360,17 +8360,17 @@ vol	pdf	printed	line	status	statement	assembled
 1	223	216	25	draft	VF,VREE6	
 1	223	216	26	draft	CF,3	
 1	223	216	27	draft	CB-,VP,VSETX	
-1	223	216	28	draft	BZB,VCSAH,VNCP	
+1	223	216	28	draft	BZB,VCSAH,VNOP	
 1	223	216	29	draft	LV,V(1,VX1+VE	
-1	223	216	30	asm-confirmed	BZXVZ,VNCP	224157.71 40
+1	223	216	30	draft	BZXVZVNOP	
 1	223	216	31	draft	LX,VT3,VX2R+VE	
 1	223	216	32	draft	LV,VT1,(VT3)	
-1	223	216	33	draft	BZXVZ,VNCP	
+1	223	216	33	draft	BZXVZ,VNOP	
 1	223	216	34	draft	V+I,,V	
-1	223	216	35	draft	BZB1,VECFX,VNCF	
-1	223	216	36	asm-confirmed	BZB,VCSAW,VNCP	224171.23 80 224157.74 00
+1	223	216	35	draft	BZB1,VEOFX,VNCF	
+1	223	216	36	draft	BZB,VCSAH,VNGP	
 1	223	216	37	draft	LX,VTI.VTX1	
-1	223	216	38	draft	CB,VT1,VNCP	
+1	223	216	38	draft	CB,VT1,VNOP	
 1	223	216	39	draft	LX,VT3.VX2R+VSC	
 1	223	216	40	draft	LV,VT1,1VT3)	
 1	223	216	41	asm-confirmed	BZXVZ,VNCP	224157.71 40
@@ -8416,7 +8416,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	224	217	31	draft	SIC,(V	
 1	224	217	32	draft	CB+,VP,VNXT	
 1	224	217	33	draft	LVI,V52.0	
-1	224	217	34	draft	LVNI,VT5,VNCP	
+1	224	217	34	draft	LVNI,VT5,VNOP	
 1	224	217	35	draft	SIC,(V	
 1	224	217	36	draft	CB+,VP,V	
 1	224	217	37	draft	LVI,VU.VSC	
@@ -8431,9 +8431,9 @@ vol	pdf	printed	line	status	statement	assembled
 1	224	217	46	draft	BBZ,VSCR3.19,VSQ2	
 1	224	217	48	draft	SC	
 1	224	217	49	draft	LX,VS1,VTX	
-1	224	217	50	draft	LX,VS2,VTXI	
+1	224	217	50	draft	LX,VS2,VTX1	
 1	225	218	1	asm-confirmed	NOP,VSCR2	224306.30 00
-1	225	218	2	draft	V+ICR,V51,15.	
+1	225	218	2	draft	V+ICR,VS1,15.	
 1	225	218	3	draft	CB+,VS2,VSCR6	
 1	225	218	4	draft	LV,VT5,VS2	
 1	225	218	5	draft	SIC,(V.P)	
@@ -8450,7 +8450,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	225	218	16	draft	SV,VS1,0	
 1	225	218	17	draft	V+122,V	
 1	225	218	18	draft	SX,VS1,VTX	
-1	225	218	19	draft	SX,VS2,VTXI	
+1	225	218	19	draft	SX,VS2,VTX1	
 1	225	218	20	draft	CB-,VP,VM1(VP)	
 1	225	218	21	draft	BZB1,VSCR3.19,VSCRE	
 1	225	218	23	draft	SIC,(V)P)	
@@ -8459,7 +8459,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	225	218	26	asm-confirmed	BXVZ,VSC4	224312.31 42
 1	225	218	27	draft	LC,VS2,VT2	
 1	225	218	28	draft	CB-,VP,VMIIVP)	
-1	225	218	29	draft	LV,VT5,V52	
+1	225	218	29	draft	LV,VT5,VS2	
 1	225	218	30	draft	SX,VS1,VTX	
 1	225	218	31	draft	V-I,VP,1.0	
 1	225	218	32	draft	B,VNX(VU)	
@@ -8471,10 +8471,10 @@ vol	pdf	printed	line	status	statement	assembled
 1	225	218	39	asm-confirmed	B,VSETUP	224670.50 00
 1	225	218	40	draft	SX,VS1,VTX	
 1	225	218	41	draft	V+I,VT2,Q	
-1	225	218	42	draft	BXVZ,VS02	
+1	225	218	42	draft	BXVZ,VSQ2	
 1	225	218	43	draft	SV,VT2.VXI(VU)	
 1	225	218	44	draft	LC,VS2,V12	
-1	225	218	45	draft	LVI,V52,0	
+1	225	218	45	draft	LVI,VS2,0	
 1	225	218	46	asm-confirmed	B,VSC7A+1.	224245.50 00
 1	225	218	47	draft	LX,VP,VPD	
 1	225	218	48	draft	M+1(BU,18),VRENT(VL)	
@@ -8493,7 +8493,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	226	219	11	draft	SXEYT3,VX2S(V	
 1	226	219	12	asm-confirmed	B,VACTX	224653.10 00
 1	226	219	13	draft	LVI,VU,VWT	
-1	226	219	14	draft	SV,VT2,VXI(VU)	
+1	226	219	14	draft	SV,VT2,VX1(VU)	
 1	226	219	15	draft	LWF(U),VWT-2.	
 1	226	219	16	draft	SIILL,VWI-1.	
 1	226	219	17	draft	SR,VP,VRONTIVUI	
@@ -8501,7 +8501,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	226	219	19	draft	B,DMCP	
 1	226	219	20	draft	,DWEF	
 1	226	219	21	draft	LVE,,VSU(VU)	
-1	226	219	22	draft	CB-,VP,VMI(VP)	
+1	226	219	22	draft	CB-,VP,VM1(VP)	
 1	226	219	23	draft	LX,VP,VPD	
 1	226	219	24	draft	B,DMCP	
 1	226	219	25	asm-confirmed	,DICDEF	000015.00 80
@@ -8535,7 +8535,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	226	219	53	draft	BXL,VHF3	
 1	226	219	54	draft	(V,VTZ,VTSO	
 1	226	219	55	draft	BZXVI7,VWF1	
-1	226	219	56	asm-confirmed	KV,VT3,VNXJB	224372.16 90
+1	226	219	56	asm-bound	KV,VT3,VNXJB	224372.16 90
 1	227	220	1	asm-confirmed	BZXL,VWF1	224377.72 40
 1	227	220	2	draft	LWFIU),VWT-3.	
 1	227	220	3	draft	ST(U),VHT-1.	
@@ -8550,7 +8550,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	227	220	12	draft	LV,VT1,VRCNT(VU)	
 1	227	220	13	draft	V+,VT1,VFCNTIVU)	
 1	227	220	14	asm-confirmed	BXVZ,VSSRW1	224372.71 42
-1	227	220	15	draft	SV,VT2,VXI(VU)	
+1	227	220	15	draft	SV,VT2,VX1(VU)	
 1	227	220	16	draft	V-I,VP,1.	
 1	227	220	17	draft	LWEIUL,VWT-2.	
 1	228	221	1	draft	ST(L),VHT-1SV,VP,VRONTIVU1	
@@ -8568,7 +8568,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	228	221	13	draft	•DH	
 1	228	221	14	draft	LVE,,VSUIVU)	
 1	228	221	15	draft	HCH	
-1	228	221	16	draft	CB-,VP,VMI(VP)	
+1	228	221	16	draft	CB-,VP,VM1(VP)	
 1	228	221	17	draft	LX,VP,VPD	
 1	228	221	18	draft	LC,VT4,VFONXIVU)	
 1	228	221	19	draft	CB,VT4,VRTEEL	
@@ -8651,7 +8651,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	229	222	48	draft	LVNI,VT2.VQEND	
 1	229	222	49	draft	CB-,VP,VMIIVP)	
 1	229	222	50	draft	LV,VQ4,VX(VU)	
-1	230	223	1	draft	LVE,V03,VFWA	
+1	230	223	1	draft	LVE,VQ3,VFWA	
 1	230	223	2	draft	LVI,VT5,0	
 1	230	223	3	draft	LVE,VG1,VNREQ	
 1	230	223	4	draft	BB,VVSCR.VUB,VSKIP	
@@ -8660,10 +8660,10 @@ vol	pdf	printed	line	status	statement	assembled
 1	230	223	7	draft	LIBU,18),SPPUB,46	
 1	230	223	8	draft	-(BU,18),VFWA,46	
 1	230	223	9	draft	/I,VD15,46	
-1	230	223	10	draft	KV,VQL,$R	
+1	230	223	10	draft	KV,VQ1,$R	
 1	230	223	11	asm-confirmed	BXH,VBNDER	224552.33 42
 1	230	223	12	draft	BXVZ,VREQ1	
-1	230	223	13	draft	LV,VQ2,VXI(VU)	
+1	230	223	13	draft	LV,VQ2,VX1(VU)	
 1	230	223	14	draft	BZXVGZ,VREQ2	
 1	230	223	15	draft	LV,VT2,VQ1	
 1	230	223	16	draft	KV,VI2,VQ2	
@@ -8686,7 +8686,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	230	223	33	draft	V+,V62,VREQ6	
 1	230	223	34	draft	V+,V61,VREGE	
 1	230	223	35	draft	REGIO	
-1	230	223	36	draft	SV,VQ2,VXI(VU)	
+1	230	223	36	draft	SV,VQ2,VX1(VU)	
 1	230	223	37	draft	SV,VQ4,VXVU)	
 1	230	223	38	draft	V+I,,1.	
 1	230	223	39	draft	B,VNX/V	
@@ -8696,7 +8696,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	230	223	43	draft	V+I,.0.32	
 1	230	223	44	draft	SR,$1,VX1(VU)	
 1	230	223	45	draft	CB-,VP,-1.0(VP)	
-1	230	223	46	draft	SVA,,VREG8	
+1	230	223	46	asm-confirmed	SVA,,VREG8	224515.41 D0
 1	230	223	47	draft	SVA,V61,VRECЬ	
 1	230	223	48	draft	(VE:VCI,VNREO	
 1	230	223	49	draft	V+,VG1,VREGG	
@@ -8713,7 +8713,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	231	224	10	draft	B,V.SETX	
 1	231	224	11	draft	LVLV64,VXIVUJ	
 1	231	224	12	draft	LVI,VT5,0	
-1	231	224	13	draft	SV,VT2,VXI(VU)	
+1	231	224	13	draft	SV,VT2,VX1(VU)	
 1	231	224	14	draft	BZXVZ,VREQ7	
 1	231	224	15	draft	BZB,VVSCR+VPOP.18,VRG11A	
 1	231	224	16	draft	B,DMCP	
@@ -8729,17 +8729,17 @@ vol	pdf	printed	line	status	statement	assembled
 1	231	224	26	draft	LVI,VU,V	
 1	231	224	27	draft	SIC,(VP)	
 1	231	224	28	draft	CB+,VP,VSECJ	
-1	231	224	29	draft	BXVLZ,VNCP	
+1	231	224	29	draft	BXVLZ,VNOP	
 1	231	224	30	draft	LVI,VTI.VNXB	
 1	231	224	31	draft	SVA,VT1,VNX+VSC	
 1	231	224	32	draft	CB-,VP,VM1(VP)	
-1	231	224	33	draft	KVNI,VT5,VNCP	
+1	231	224	33	draft	KVNI,VT5,VNOP	
 1	231	224	34	asm-confirmed	BZXE,VNXB1	224541.32 C0
 1	231	224	35	draft	LVI,V(1,VEG	
 1	231	224	36	draft	SVA,VT1,VNX+VSC	
 1	231	224	37	draft	CB-,VP,VM1(VP)	
 1	231	224	38	draft	V+I,VT5,0	
-1	231	224	39	asm-confirmed	BZXVGZ,VNCP	224157.71 C0
+1	231	224	39	asm-bound	BZXVGZ,VNCP	224157.71 C0
 1	231	224	40	draft	LV,VT3,VX+VE	
 1	231	224	41	draft	V+,VT3,VT5	
 1	231	224	42	draft	BXV(Z:$.64	
@@ -8749,7 +8749,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	231	224	46	draft	LVI,VU,V	
 1	231	224	47	draft	SIC,IV	
 1	231	224	48	draft	CB+,VP,VSECJ	
-1	231	224	49	draft	BXVLZ,VNCP	
+1	231	224	49	draft	BXVLZ,VNOP	
 1	231	224	50	draft	LVI,VU,VRT	
 1	232	225	1	draft	LV,VT2,VX1(VU)	
 1	232	225	2	draft	BXVZ,0	
@@ -8765,7 +8765,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	232	225	12	draft	SIC,SPRIMR	
 1	232	225	13	asm-confirmed	B,SPRIME	215570.10 00
 1	232	225	14	asm-confirmed	,DABEOJ	000104.00 80
-1	232	225	15	asm-confirmed	BE,VNCP	224157.40 00
+1	232	225	15	asm-bound	BE,VNCP	224157.40 00
 1	232	225	16	draft	CNOP,	
 1	232	225	17	draft	(A#)0D(BU,8),IJOETERMINATED-$SCRREGUEST	
 1	232	225	18	draft	(A*)CC(EU,8),CUNCARIES	
@@ -8778,7 +8778,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	232	225	25	draft	E,DMCP	
 1	232	225	26	draft	SPFL	
 1	232	225	27	draft	LVE,,VSU(VU)	
-1	232	225	28	draft	CE-,VP,VMI(VP)	
+1	232	225	28	draft	CE-,VP,VM1(VP)	
 1	232	225	29	draft	LX,VP,VPD	
 1	232	225	30	draft	(WF(UI,VREXI	
 1	232	225	31	draft	ST(L),VRT-1.	
@@ -8789,14 +8789,14 @@ vol	pdf	printed	line	status	statement	assembled
 1	232	225	36	draft	M+1,VTSG	
 1	232	225	37	draft	SC,VT3,VFCNX(VU)	
 1	232	225	38	asm-bound	B,VRTIOI	224422.10 00
-1	232	225	39	draft	LV,VT2,VXI(VU)	
+1	232	225	39	draft	LV,VT2,VX1(VU)	
 1	232	225	40	asm-bound	BXVLZ,VECJI	224613.30 C2
 1	232	225	41	draft	SICTIVPI	
 1	232	225	42	asm-confirmed	B,VSETX	224671.50 00
 1	232	225	43	draft	V+I,VT2,Q	
 1	232	225	44	asm-bound	BZXVGZ,VECJZ	224605.31 C0
-1	232	225	45	draft	V+,VT2,VXI(VU)	
-1	232	225	46	draft	SV,VT2,VXI(VU)	
+1	232	225	45	draft	V+,VT2,VX1(VU)	
+1	232	225	46	draft	SV,VT2,VX1(VU)	
 1	232	225	47	draft	SETX	
 1	232	225	48	draft	(V,VT5,0	
 1	232	225	49	draft	V+,VT5,VX(VU)	
@@ -8809,8 +8809,8 @@ vol	pdf	printed	line	status	statement	assembled
 1	233	226	4	draft	SIC,IVP!	
 1	233	226	5	draft	CB+,VP,VNXI	
 1	233	226	6	draft	LVI,VU9	
-1	233	226	7	draft	LV,VT2,VXI(VU)	
-1	233	226	8	draft	SR,VP,VXI(VU)	
+1	233	226	7	draft	LV,VT2,VX1(VU)	
+1	233	226	8	draft	SR,VP,VX1(VU)	
 1	233	226	9	draft	V-I,VPOL.	
 1	233	226	10	draft	V+I,V12,Q	
 1	233	226	11	draft	BLLVPL	
@@ -8847,7 +8847,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	233	226	42	draft	,D	
 1	233	226	43	draft	IVF,.VSU(VU)	
 1	233	226	44	draft	EEI	
-1	233	226	45	draft	LBU,18),VEEL,46	
+1	233	226	45	draft	LBU,18),VEE1,46	
 1	233	226	46	draft	CWR+VMIIVUJ,46	
 1	233	226	47	draft	/1,V015.46	
 1	233	226	48	draft	LV,VT5,$R	
@@ -8873,7 +8873,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	234	227	18	draft	SIC,(VP)	
 1	234	227	19	asm-confirmed	B,VSETUP	224670.50 00
 1	234	227	20	asm-confirmed	BZXVZ,VACT2	224656.31 40
-1	234	227	21	draft	CB-,VP,VMI(VP)	
+1	234	227	21	draft	CB-,VP,VM1(VP)	
 1	234	227	22	draft	SIC,IVP)	
 1	234	227	23	draft	B,VSETX	
 1	234	227	24	draft	SV,VT2„VX1(VU	
@@ -8927,7 +8927,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	235	228	23	draft	V+ICR,VI3,.VH	
 1	235	228	24	draft	SX,VT3,VX2S(VL)	
 1	235	228	25	draft	B,(VP)	
-1	235	228	26	draft	LX,VT1,VCWR+VMI(VU)	
+1	235	228	26	draft	LX,VT1,VCWR+VM1(VU)	
 1	235	228	27	draft	V+,VT1,VCW(VT3)	
 1	235	228	28	draft	KV,VI2,VMILVT3)	
 1	235	228	29	asm-confirmed	BZXH,VMD1	224712.73 40
@@ -8945,7 +8945,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	235	228	41	asm-confirmed	B,VSC5A	224265.50 00
 1	235	228	42	draft	(VNI,VT5,VNCP	
 1	235	228	43	asm-confirmed	B,VSC7	224246.10 00
-1	235	228	44	draft	SIC,VSC1	
+1	235	228	44	draft	SIC,VSQ1	
 1	235	228	45	draft	LV,VT2,VFCNTIVU)	
 1	235	228	46	draft	SIC,YTSTR	
 1	235	228	47	asm-confirmed	B,YTST	231117.10 00
@@ -8953,7 +8953,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	235	228	49	draft	V-I,VT2,VFCD	
 1	235	228	50	asm-confirmed	BXVGZ,VWTTSI	224725.71 C2
 1	235	228	51	draft	LVI,VT2.1.	
-1	235	228	52	draft	LC,VTI,VT2	
+1	235	228	52	draft	LC,VT1,VT2	
 1	235	228	53	draft	LVI,VU,VTSA	
 1	235	228	54	asm-confirmed	B,VTOP	224735.10 00
 1	235	228	55	draft	LVI,VU,VST	
@@ -8982,7 +8982,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	236	229	22	draft	SIC,(VP)	
 1	236	229	23	draft	B,VTMV	
 1	236	229	24	draft	B,VACT	
-1	236	229	25	draft	LR,VTI,VU	
+1	236	229	25	draft	LR,VT1,VU	
 1	236	229	26	draft	SX,VT1,VSURT(VT5)	
 1	236	229	27	draft	CM0000,VSURT.VROYCVT5)	
 1	236	229	28	draft	BXF,VTMV1	
@@ -8990,11 +8990,11 @@ vol	pdf	printed	line	status	statement	assembled
 1	236	229	30	draft	,$REH	
 1	236	229	31	draft	,(VT5)	
 1	236	229	32	draft	B,(VP)	
-1	236	229	33	draft	B,$MCP	
+1	236	229	33	asm-confirmed	B,$MCP	000040.10 00
 1	236	229	34	draft	,DUNLD	
 1	236	229	35	draft	T5)	
 1	236	229	36	draft	B,(V	
-1	236	229	37	draft	LX,VTI,VSURT(VT2)	
+1	236	229	37	draft	LX,VT1,VSURT(VT2)	
 1	236	229	38	draft	SR,VT1,VU	
 1	236	229	39	draft	SV,VT2,VSU(VU)	
 1	236	229	40	draft	LV,VT4,VXGIVT2)	
@@ -9004,13 +9004,13 @@ vol	pdf	printed	line	status	statement	assembled
 1	236	229	44	draft	CM1111,VSURT.VRDY(VT5)	
 1	236	229	45	draft	LX,VP,VPD	
 1	236	229	46	draft	LX,VT1,VSURT(VT5)	
-1	236	229	47	draft	SR,VTI,V	
-1	236	229	48	draft	LR,VTI,V	
+1	236	229	47	draft	SR,VT1,V	
+1	236	229	48	draft	LR,VT1,V	
 1	236	229	49	draft	SX,VT1,VSURT(VT5)	
 1	236	229	50	draft	BZB,VSCNCYVUI,VTDP1	
 1	237	230	1	draft	LV,VT5,VTCQIVU)	
 1	237	230	2	asm-confirmed	BXVZ,VTDP2	224771.71 42
-1	237	230	3	draft	BZB,VSURT.VRDY(VT5),VNCP	
+1	237	230	3	draft	BZB,VSURT.VRDY(VT5),VNOP	
 1	237	230	4	draft	LV,VT2,VSURTIVT5)	
 1	237	230	5	draft	SV,V12,VTDQ(VL)	
 1	237	230	6	draft	SVA,VU,VTDP4	
@@ -9037,7 +9037,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	237	230	27	draft	LVI,VU,VTSB	
 1	237	230	28	draft	B,V.TSAGI	
 1	237	230	29	draft	LVI,VU,VRT	
-1	237	230	30	draft	SC,VTI,VFCNXIVU)	
+1	237	230	30	draft	SC,VT1,VFCNXIVU)	
 1	237	230	31	draft	B,DMCP	
 1	237	230	32	draft	,DICCEF	
 1	237	230	33	draft	LVE,,VX1+VTSB	
@@ -9048,7 +9048,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	237	230	38	asm-confirmed	,4.0	000004.00 80
 1	237	230	39	asm-bound	B,VRTIOI	224422.10 00
 1	237	230	40	draft	LVI,VT1,VHTEALTERRTDISPESITION-O739	
-1	237	230	41	draft	SV,VTI,VTSB+VCS	
+1	237	230	41	draft	SV,VT1,VTSB+VCS	
 1	237	230	42	draft	CM0000,VTSB+VCP	
 1	237	230	43	draft	SIC,ZCCM90	
 1	237	230	44	draft	B,ZASNO1	
@@ -9072,20 +9072,20 @@ vol	pdf	printed	line	status	statement	assembled
 1	238	231	8	draft	L,VINON	
 1	238	231	9	draft	ST,VSC5	
 1	238	231	10	draft	LVI,VT1,VWG	
-1	238	231	11	draft	SVA,VTI,VNX+VSC	
+1	238	231	11	draft	SVA,VT1,VNX+VSC	
 1	238	231	12	draft	LVI,VT1,VSCIA	
 1	238	231	13	draft	SVA,VT1,VSQ1	
 1	238	231	14	draft	LV,VR1,VX+VCR	
 1	238	231	15	draft	SV,VT1,VX+VWT	
 1	238	231	16	draft	B,(VP)	
-1	238	231	17	draft	LX,VTI,VTX1	
-1	238	231	18	draft	CP,VTI,VNCP	
+1	238	231	17	draft	LX,VT1,VTX1	
+1	238	231	18	draft	CP,VT1,VNOP	
 1	238	231	19	draft	LX,VT3,VX2R+VSC	
 1	238	231	20	draft	LV,VT1,(VT3)	
-1	238	231	21	asm-confirmed	BZXVZ,VNCP	224157.71 40
-1	238	231	22	draft	BZBZ,V.CSAW,VNCP	
-1	238	231	23	draft	BB1,VECFX,	
-1	238	231	24	draft	LVI,VTI,VRDQ	
+1	238	231	21	asm-bound	BZXVZ,VNCP	224157.71 40
+1	238	231	22	draft	BZBZ,V.CSAW,VNOP	
+1	238	231	23	draft	BB1,VEOFX,	
+1	238	231	24	draft	LVI,VT1,VRDQ	
 1	238	231	25	draft	SVA,VT1,VNX+VSC	
 1	238	231	26	draft	SIC,(VP)	
 1	238	231	27	draft	CB+,VP,VSCR1	
@@ -9134,7 +9134,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	239	232	14	asm-confirmed	B,VMTTSA	225060.50 00
 1	239	232	15	draft	SIC,1.(VP)	
 1	239	232	16	draft	B,VCVBY	
-1	239	232	17	draft	LVI,VT1,VSCIA	
+1	239	232	17	draft	LVI,VT1,VSC1A	
 1	239	232	18	draft	SVA,VT1,VS61	
 1	239	232	19	draft	SWAPI,3,VTX,VTXT	
 1	239	232	20	draft	LVI,VT1,VSTG	
@@ -9143,11 +9143,11 @@ vol	pdf	printed	line	status	statement	assembled
 1	239	232	23	draft	ST,VSC5	
 1	239	232	24	draft	B,(VP)	
 1	239	232	25	draft	L,VIN2	
-1	239	232	26	draft	LVI,VT1,VCFFON	
+1	239	232	26	draft	LVI,VT1,VOFFON	
 1	239	232	27	draft	SVA,VT1,VDISP	
 1	239	232	28	draft	ST,VSCIA	
 1	239	232	29	draft	LVI,VT12VQ	
-1	239	232	30	draft	SV,VTI,VROEXT	
+1	239	232	30	draft	SV,VT1,VROEXT	
 1	239	232	31	draft	B,1.1VP)	
 1	239	232	32	draft	V+I,,1.	
 1	239	232	33	asm-bound	BB,VCP+VTSB,VBYPAF	225224.00 80 225116.34 02
@@ -9179,7 +9179,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	240	233	3	draft	B,VCOM	
 1	240	233	4	asm-confirmed	B,VACTX	224653.10 00
 1	240	233	5	draft	SWAPI,3,VTX,VIXT	
-1	240	233	6	draft	SV,VT2,VXI(VU)	
+1	240	233	6	draft	SV,VT2,VX1(VU)	
 1	240	233	7	draft	SIC,(VP)	
 1	240	233	8	asm-confirmed	B,VSCBY	225127.10 00
 1	240	233	9	draft	LVI,VT1,VSC6	
@@ -9187,24 +9187,24 @@ vol	pdf	printed	line	status	statement	assembled
 1	240	233	11	draft	CM1111,VBYON	
 1	240	233	12	draft	CB-,VP,VRDCSX	
 1	240	233	13	draft	L,VINBY	
-1	240	233	14	draft	LVI,VTI,VEQ	
+1	240	233	14	draft	LVI,VT1,VEQ	
 1	240	233	15	draft	ST,VSC5	
 1	240	233	16	draft	SVA,VI1,VNX+VSC	
 1	240	233	17	draft	L,VINI	
 1	240	233	18	draft	LX,VT2,VTX	
-1	240	233	19	draft	ST,VSCIA	
+1	240	233	19	draft	ST,VSC1A	
 1	240	233	20	draft	SC,VT2,VT1	
 1	240	233	21	draft	SVA,VT1,VX+VE	
 1	240	233	22	draft	B,IVP)	
-1	240	233	23	draft	LVE,VTI,VPDE+1.	
+1	240	233	23	draft	LVE,VT1,VPDE+1.	
 1	240	233	24	asm-confirmed	BZXVZ,VOFFX	225140.31 40
 1	240	233	25	draft	BB1,VCSAW,	
 1	240	233	26	draft	SIC,VBYP.VH	
 1	240	233	27	draft	BR,Q	
 1	240	233	28	draft	SIC,(VP)	
 1	240	233	29	draft	CB+,VP,VECFB	
-1	240	233	30	draft	BZB,VEOFX,VNCP	
-1	240	233	31	draft	BZBZ,VCSAW,	
+1	240	233	30	draft	BZB,VEOFX,VNOP	
+1	240	233	31	asm-confirmed	BZBZ,VCSAW,	224171.23 80 000000.34 04
 1	240	233	32	draft	-GCG	
 1	240	233	33	draft	SIC,(V	
 1	240	233	34	asm-confirmed	B,VSCFLX	225070.10 00
@@ -9243,7 +9243,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	241	234	11	draft	BZXVGZ,V.NLB1	
 1	241	234	12	draft	LX,VT1,VSURTIVT2)	
 1	241	234	13	draft	LRI,VT1,VWT	
-1	241	234	14	draft	SX,VTI,VSURT(VT2)	
+1	241	234	14	draft	SX,VT1,VSURT(VT2)	
 1	241	234	15	draft	V+ICR,VT3,V	
 1	241	234	16	draft	B,VNLB2	
 1	241	234	17	draft	LVI,VU,VISA	
@@ -9318,7 +9318,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	243	236	32	asm-confirmed	CW(CD),VBF1,0,$	225506.00 20
 1	243	236	33	draft	CW,Q	
 1	243	236	34	draft	B,VSG	
-1	243	236	35	draft	B,VRDIC	
+1	243	236	35	draft	B,VRDIO	
 1	243	236	36	draft	,VCRD	
 1	243	236	37	draft	KXW,VRD2,VCRK,VRCX2K	
 1	243	236	38	draft	BE,34.1	
@@ -9343,7 +9343,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	244	237	1	draft	CNCF,	
 1	244	237	2	asm-confirmed	B,VWECP	224322.50 00
 1	244	237	3	draft	B,RWTEE	
-1	244	237	4	draft	B,VWFECP	
+1	244	237	4	draft	B,VWFEOP	
 1	244	237	5	draft	B,RHIM	
 1	244	237	6	asm-confirmed	B,VWECP	224322.50 00
 1	244	237	7	draft	B,RWTEE	
@@ -9354,7 +9354,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	244	237	12	draft	CHOVBF1,0,$	
 1	244	237	13	draft	CW,Q	
 1	244	237	14	draft	B,VRDG	
-1	244	237	15	draft	B,VWIC	
+1	244	237	15	draft	B,VWIO	
 1	244	237	16	draft	,0	
 1	244	237	17	draft	,0	
 1	244	237	18	draft	VF,Q	
@@ -9615,7 +9615,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	250	243	38	asm-confirmed	BXVGZ,RLCOPE	227626.71 C2
 1	250	243	39	asm-confirmed	LWF(U),RVSET3	230362.42 60
 1	250	243	40	draft	ST(U),VSET3-0.32	
-1	250	243	41	draft	V+,VT5,VROB+VWT	
+1	250	243	41	draft	V+,VT5,VRQB+VWT	
 1	250	243	42	draft	SR,VP,VRQE+VWT	
 1	250	243	43	draft	LWFIU),RENXSC	
 1	250	243	44	draft	ST(EU,32),VWQ,-32	
@@ -9651,7 +9651,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	251	244	18	draft	BB,VSC7E.30,RKSCK	
 1	251	244	19	draft	LI(BU,12),18)420000.0,52	
 1	251	244	20	draft	ST(EU,64),($15)	
-1	251	244	21	draft	L(BU,48),RJCB	
+1	251	244	21	draft	L(BU,48),RJOB	
 1	251	244	22	draft	ST(EU,48),1.44($15)	
 1	251	244	23	draft	LCLL$15,252•0	
 1	251	244	24	asm-confirmed	V+I,15,2.0	000002.37 05
@@ -9916,10 +9916,10 @@ vol	pdf	printed	line	status	statement	assembled
 2	1	250	25	asm-confirmed	BXE,RSAM	230120.32 C2
 2	1	250	26	asm-confirmed	BB,VVSCR.4,RCCMMK	224105.04 80 230146.34 02
 2	1	250	27	draft	TBI,16,ZLSTBF,ZLSTBF-1•0	
-2	1	250	28	draft	LLL4,RBEFUK,ZNSGBF	
+2	1	250	28	draft	LLL4,RBEFUK,ZMSGBF	
 2	1	250	29	draft	SIC,SPRIMR	
 2	1	250	30	asm-confirmed	BD,SPRIME	215570.04 00
-2	1	250	31	draft	,$SPR	
+2	1	250	31	asm-confirmed	,$SPR	000103.40 80
 2	1	250	32	draft	•ZMSGBF	
 2	1	250	33	draft	,1.0	
 2	1	250	34	draft	SIC,SPRIMR	
@@ -9929,7 +9929,7 @@ vol	pdf	printed	line	status	statement	assembled
 2	1	250	38	draft	CNOP,	
 2	1	250	39	draft	(A*)DD(BU),TINPUTUKTROUBLETERMINATEDJOB*	
 2	1	250	40	draft	LIQS*)DD(BU)2INPUTSKIPPEDAJCBBECAUSECFUKDIFFICULIY	
-2	1	250	41	draft	B,$MCP	
+2	1	250	41	asm-confirmed	B,$MCP	000040.10 00
 2	1	250	42	draft	,$CCMM	
 2	1	250	43	draft	,RCMMUK	
 2	1	250	44	draft	,6.0	
@@ -15546,7 +15546,7 @@ vol	pdf	printed	line	status	statement	assembled
 2	131	381	45	draft	SIC,SPRIMR	
 2	131	381	46	asm-confirmed	BD,SPRIME	215570.04 00
 2	131	381	47	draft	,SJC4	
-2	131	381	48	draft	BE,$MCP	
+2	131	381	48	asm-confirmed	BE,$MCP	000040.00 00
 2	131	381	49	draft	,SRET	
 2	131	381	50	asm-confirmed	BB,SJBUSY,ZYC4B2	215001.22 80 020024.34 02
 2	131	381	51	asm-confirmed	BZBZ,REJJOB.60,RNOREJ	230364.74 80 020031.34 04
@@ -15554,7 +15554,7 @@ vol	pdf	printed	line	status	statement	assembled
 2	131	381	53	draft	BXCZ,WSYSC2.	
 2	131	381	54	draft	C-I,$8,1.0	
 2	131	381	55	draft	SC,$8,SREJJB	
-2	131	381	56	draft	B,SMCP	
+2	131	381	56	asm-confirmed	B,$MCP	000040.10 00
 2	132	382	1	draft	,SSCR4	
 2	132	382	2	asm-confirmed	,YBCBU	231462.00 80
 2	132	382	3	draft	B,WSYSCA+.32	

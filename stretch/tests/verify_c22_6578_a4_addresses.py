@@ -118,7 +118,12 @@ POINTS = [
 # changed is that one pair stopped agreeing for a reason that was
 # never the right one, and another started agreeing for a reason
 # that is only right in this field.  Neither is point notation.
-KNOWN_GAP = {"M.", ".M"}
+# >>> BOTH LEFT ON 2026-11-05: POINT NOTATION IS IMPLEMENTED. <<<
+# MCP printed p.213 needed it ("V X1 SYN,V X.V H", "V H SYN,32") and
+# p.221's "V+ICR,V T3,.V H" printed 000000.57 where the old reading
+# compiled 000020.17.  tokenize_expr now reads a symbol before a point
+# as a WORD part and one after it as a BIT part, by p.64's rule.
+KNOWN_GAP = set()
 
 
 def words_of(src):

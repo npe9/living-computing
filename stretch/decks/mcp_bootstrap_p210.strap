@@ -1,0 +1,168 @@
+! mcp_bootstrap_p210.strap -- MCP printed page 210.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.217, read at 400 dpi, 900 dpi for
+! doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+!  CARD ID MA000432  DIST. OF 3/01  3/01  PAGE NUMBER 210"; the heading
+! row's LOCATION field is 222603, line 1's word.
+!
+! THE PAGE.  56 lines, contiguous from 222603.00 to 224005.30 (the last
+! DD ends there; p.211 opens at 224005.30).  p.209 ends with CX, a
+! 6-bit DD at 222602.00, and DR(N) word-aligns to 222603.00.  All data:
+! reservations, SYN/XW/CW/VF/DD/DRZ indicators, and four messages.
+!   line  5  remark continuation card, NAME "-": compiles nothing.
+!   DR/DRZ rows (1,3,12,14,17,19-21,24,25,27,29,30) print their COUNT,
+!   so they carry no !CHECK; each extent is pinned by the next !SYM.
+!   line  4  ACRD SYN,10 is an INTEGER SYN: prints 000000.00+ +00000012
+!            NULL.  !SYM ACRD 000000.12 states the printed value 10.
+!
+! >>> CARD SERIALS. <<<  MA000432 .. MA000487, one per line (p.209 ends
+! at MA000431).  Asterisks after the LOCATION on lines 1, 3, 12, 14,
+! 17, 19, 44, 51; recorded, not explained.  Line 27's NAME ATBRI is
+! printed one column right of the others.
+!
+! LINE 15 PRINTS "CW," and is written so: a null field compiles as zero (C22-6531 printed p.7; C28-6129 PDF pp.8-9);
+! the printed word is all zeros.
+!
+! >>> OPEN ROUNDS. <<<  "15C"/"150" = 150 (0o226 printed); XW,C,15 and
+! VF,C and DD(BU,1,8),C / DD(BU,1),C are 0: each prints a zero value
+! and no symbol C exists.  ACX/ACY's entry datum "C*" (lines 11, 13) is
+! ink only (no binary prints): written the LETTER C, for line 12's
+! remark "-C-RECORD CONTROL CHARACTER FOR PUNCH" beside CY's "P*" and
+! "-P-RECORD ... FOR PRINT".  Names: AOPTRI (printed "ACPTRI", remark
+! OUTPUT REQUEST), AEOJI ("AECJI", remark EOJ), A0FMC (the narrow zero,
+! as p.208's deck reads it, and the 0 of the A0/A1/A2FMC family).
+!
+! >>> ENTRY-MODE BLANKS ARE DATA. <<<  CFILL "-" + 10 blanks (66 bits,
+! CBWA at .06); ASERR 40 chars; line 51 "G SEQUENCE" + 30 blanks;
+! line 52 40 blanks; line 53 16 blanks -- each the count the next
+! LOCATION requires, and the "*" columns on the ink agree.  Line 50
+! prints "TERMINATLD" (E with worn bar), written TERMINATED; the
+! datum's text reaches no check.
+
+        SLC, (8)222603.00
+        DR(N),149                                            ! line  1  -P-RECORD CONTROL CHARACTER FOR PRINT
+CY      (A*)DD(BU,6,6),P*                                    ! line  2  -X=CF IN DR(N),X WHERE
+        DR(N),149                                            ! line  3  -X=(133*6*CNUM+5)/64
+ACRD    SYN,10                                               ! line  4  -THIS PARAMETER CAN BE VARIED
+ACRD15  SYN,150.                                             ! line  6  -ACRD*15 (label prints ACRC15: D worn to C; p.202 l.23 and this remark print D)
+AXWZ    XW,0,15,AXWZ                                         ! line  7
+ACWA    XW,ACX+.6,150,ACWW                                   ! line  8  -CF=Y
+ACWT    XW,ACX+.6,150,ACWW                                   ! line  9  -CF=Y
+ACWW    XW,ACY+.6,150,ACWT                                   ! line 10  -CF=Y
+ACX     (A*)DD(BU,6,6),C*                                    ! line 11  -BUFFER X AND Y RESERVATION
+        DRZ(N),150                                           ! line 12  -C-RECORD CONTROL CHARACTER FOR PUNCH
+ACY     (A*)DD(BU,6,6),C*                                    ! line 13  -Y=CF IN DR(N),X WHERE
+        DRZ(N),150                                           ! line 14  -Y=(80*12*ACRD+5)/64
+CKERIC  CW,                                                  ! line 15  -COPIED CONTROL WORD FOR UK ON WRITING A BUFFER
+CXFILL  XW,CFILL,13,CXFILL                                   ! line 16  -XW TO FILL PRINT BUFFER WITH BLANKS
+CTRAIL  DRZ(N),1                                             ! line 17  -TRAILER RECORD
+CBTA    DD(BU,1,8),0                                         ! line 18  -BUFFER T INDICATOR
+ABTA    DRZ(BU,1),1                                          ! line 19  -BUFFER T INDICATOR
+ATMI    DRZ(BU,1),1                                          ! line 20  -TAPE MARK INDICATOR
+AOPTRI  DRZ(BU,1),1                                          ! line 21  -OUTPUT REQUEST INDICATOR
+CFILL   (A*)DD(BU,6,6),-          *                          ! line 22  -BLANKS FOR FILL
+CBWA    DD(BU,1,8),0                                         ! line 23  -BUFFER W INDICATOR
+ABWA    DRZ(BU,1),1                                          ! line 24  -BUFFER W INDICATOR
+APPERR  DRZ(BU,1),1                                          ! line 25
+CATUB   DD(BU,1,1),0                                         ! line 26  -TAPE USAGE INDICATOR
+ATBRI   DRZ(BU,1),1                                          ! line 27
+ATARI   DD(BU,1),0                                           ! line 28
+AEOJI   DRZ(BU,1),1                                          ! line 29  -EOJ INDICATOR
+ATSWCR  DRZ(BU,1),1                                          ! line 30  -TAPE SWITCH REQUEST INDICATOR
+CCX     VF,1.                                                ! line 31  -OUTPUT BUFFER POINTER
+AACX    VF,1.                                                ! line 32  -OUTPUT BUFFER POINTER
+AUKCT   VF,10.                                               ! line 33
+AWRCT   VF,0                                                 ! line 34  -BSP,ERG,W RETRY COUNTER
+ABSPCT  VF,0                                                 ! line 35  -BSP RETRY COUNTER
+AEFCT   VF,0                                                 ! line 36  -WEF RETRY COUNTER
+ATSWKE  VF,0                                                 ! line 37  -STOR. FOR WEF TBL. OF EXITS
+ACW1    CW(CR),ACX,151,ACW1                                  ! line 38  -CF=Y+1.
+ACW2    CW(CR),ACY,151,ACW2                                  ! line 39  -CF=Y+1.
+CTR     CW(CR),CTRAIL,1,CTR                                  ! line 40  -CW FOR TRAILER RECORD
+CXR7    XW                                                   ! line 41  -DUMP HOLD FOR I
+        XW                                                   ! line 42  -N
+        XW                                                   ! line 43  -D
+        XW                                                   ! line 44  -E
+        XW                                                   ! line 45  -X
+        XW                                                   ! line 46
+        XW                                                   ! line 47
+        XW                                                   ! line 48
+CXR15   XW                                                   ! line 49  -      X REGISTERS
+ASERR   (A*)DD(BU),-JOB TERMINATED - ERROR IN OUTPUT CALLIN* ! line 50
+        (A*)DD(BU),G SEQUENCE                              * ! line 51
+        (A*)DD(BU),                                        * ! line 52
+        (A*)DD(BU),                *                         ! line 53
+A2FMC   (IQS*)DD(BU),2*                                      ! line 54
+A0FMC   (IQS*)DD(BU),0*                                      ! line 55
+A1FMC   (IQS*)DD(BU),1*                                      ! line 56
+
+!SYM CY     223030.00
+!SYM ACRD   000000.12
+!SYM ACRD15 000226.00
+!SYM AXWZ   223256.00
+!SYM ACWA   223257.00
+!SYM ACWT   223260.00
+!SYM ACWW   223261.00
+!SYM ACX    223262.00
+!SYM ACY    223511.00
+!SYM CKERIC 223740.00
+!SYM CXFILL 223741.00
+!SYM CTRAIL 223742.00
+!SYM CBTA   223743.00
+!SYM ABTA   223743.01
+!SYM ATMI   223743.02
+!SYM AOPTRI 223743.03
+!SYM CFILL  223743.04
+!SYM CBWA   223744.06
+!SYM ABWA   223744.07
+!SYM APPERR 223744.10
+!SYM CATUB  223744.11
+!SYM ATBRI  223744.12
+!SYM ATARI  223744.13
+!SYM AEOJI  223744.14
+!SYM ATSWCR 223744.15
+!SYM CCX    223744.40
+!SYM AACX   223745.00
+!SYM AUKCT  223745.40
+!SYM AWRCT  223746.00
+!SYM ABSPCT 223746.40
+!SYM AEFCT  223747.00
+!SYM ATSWKE 223747.40
+!SYM ACW1   223750.00
+!SYM ACW2   223751.00
+!SYM CTR    223752.00
+!SYM CXR7   223753.00
+!SYM CXR15  223763.00
+!SYM ASERR  223764.00
+!SYM A2FMC  224005.00
+!SYM A0FMC  224005.10
+!SYM A1FMC  224005.20
+!CHECK 223256.00 | 000000.00+ 000 000017 223256 | line 7 AXWZ XW,0,15,AXWZ (value printed "C")
+!CHECK 223257.00 | 223262.06+ 000 000226 223261 | line 8 ACWA XW,ACX+.6,150,ACWW
+!CHECK 223260.00 | 223262.06+ 000 000226 223261 | line 9 ACWT XW,ACX+.6,150,ACWW
+!CHECK 223261.00 | 223511.06+ 000 000226 223260 | line 10 ACWW XW,ACY+.6,150,ACWT
+!CHECK 223740.00 | 000000.00+ 000 000000 000000 | line 15 CKERIC CW,
+!CHECK 223741.00 | 223743.04+ 000 000015 223741 | line 16 CXFILL XW,CFILL,13,CXFILL
+!CHECK 223743.00 | 0 | line 18 CBTA DD(BU,1,8),0 | 1
+!CHECK 223744.06 | 0 | line 23 CBWA DD(BU,1,8),0 (datum printed "C") | 1
+!CHECK 223744.11 | 0 | line 26 CATUB DD(BU,1,1),0 | 1
+!CHECK 223744.13 | 0 | line 28 ATARI DD(BU,1),0 (datum printed "C") | 1
+!CHECK 223744.40 | 000001.00+ | line 31 CCX VF,1.
+!CHECK 223745.00 | 000001.00+ | line 32 AACX VF,1.
+!CHECK 223745.40 | 000012.00+ | line 33 AUKCT VF,10.
+!CHECK 223746.00 | 000000.00+ | line 34 AWRCT VF,0 (printed "VF,C")
+!CHECK 223746.40 | 000000.00+ | line 35 ABSPCT VF,0
+!CHECK 223747.00 | 000000.00+ | line 36 AEFCT VF,0
+!CHECK 223747.40 | 000000.00+ | line 37 ATSWKE VF,0
+!CHECK 223750.00 | 223262.00+ 000 000227 223750 | line 38 ACW1 CW(CR),ACX,151,ACW1
+!CHECK 223751.00 | 223511.00+ 000 000227 223751 | line 39 ACW2 CW(CR),ACY,151,ACW2
+!CHECK 223752.00 | 223742.00+ 000 000001 223752 | line 40 CTR CW(CR),CTRAIL,1,CTR
+!CHECK 223753.00 | 000000.00+ 000 000000 000000 | line 41 CXR7 XW
+!CHECK 223754.00 | 000000.00+ 000 000000 000000 | line 42 XW
+!CHECK 223755.00 | 000000.00+ 000 000000 000000 | line 43 XW
+!CHECK 223756.00 | 000000.00+ 000 000000 000000 | line 44 XW (location carries an asterisk)
+!CHECK 223757.00 | 000000.00+ 000 000000 000000 | line 45 XW
+!CHECK 223760.00 | 000000.00+ 000 000000 000000 | line 46 XW
+!CHECK 223761.00 | 000000.00+ 000 000000 000000 | line 47 XW
+!CHECK 223762.00 | 000000.00+ 000 000000 000000 | line 48 XW
+!CHECK 223763.00 | 000000.00+ 000 000000 000000 | line 49 CXR15 XW

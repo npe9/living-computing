@@ -1,0 +1,127 @@
+! mcp_bootstrap_p199.strap -- MCP printed page 199: UNIT LIGHTS, the
+! light pseudo-ops $TIF/$RLF/$RLN/$KLN (entries B TIF R, B RLF R,
+! B RLN R, B KLN R) and their common routine B TFOK.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.206, read at 400 dpi, doubtful
+! glyphs at 900.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID LJ000001  DIST. OF 3/01  3/01  PAGE NUMBER 199".  The heading
+! row's LOCATION field is BLANK: line 1 is a banner (workflow step 1).
+!
+! THE PAGE.  Contiguous from 222051.40 to 222072.40, then line 38's SYN.
+!   lines  1-3   asterisk banner "UNIT LIGHTS".
+!   line   4     SLC,$ at 222051.40 (a "*" prints after the location).
+!   lines  5-13  the four entries, each loading its control code.
+!   lines 14-37  B TFOK, the common routine (C22-6728-1 "Unit Lights").
+!   line  38     B XA SYN,$XC -- prints 000020.00+, BU,100,10.
+!
+! >>> A NEW CARD-ID SERIES. <<<  The page opens at LJ000001, not a
+! continuation of p.198's serials.  Serials are DUPLICATED: lines 23
+! and 24 both print LJ000023, lines 26 and 27 both LJ000025, lines 29
+! and 30 both LJ000027; line 25 prints LJ000024 and line 38 LJ000035.
+! Recorded, not explained.
+!
+! >>> "B TFCK" IS B TFOK. <<<  The label (line 14) and its four
+! references print a round glyph that reads C on 8/10 and O on 6/12.
+! C22-6728-1 and C22-6728 both say "enters the common routine at
+! BTFOK" (docs/ocr, Unit Lights section).  Spelled BTFOK.
+! >>> "K LCCTD" IS K LOCTD. <<<  Line 23; the manual prints this very
+! linkage, "SIC, KLOCTD; B, KLOCAT", and p.159 defines KLOCTD at
+! 220047.00, the address line 23 compiles.
+! >>> "$XC" IS $X0. <<<  Line 38 prints its value 000020.00 = word 16,
+! which is index register 0's address; X12 would be 000034.00.
+! >>> C IN A NUMERIC OPERAND IS 0. <<<  Lines 16 and 27 print "SV,C,"
+! and "SX,C,"; 18 prints "C.C(.9)1"; 28 "C.C" -- a register number or
+! a number, where C cannot stand.  The compiled j nibble is 0.
+! >>> M IC REJ, S IO INS printed "S IC INS": O read as C (landed
+! symbols MIOREJ, SIOINS).
+!
+! "(.9)1" is a parenthetical integer entry (C28-6129): 1 at bit 9 of
+! the address field, the 000400 in lines 5, 7 and 18's binaries.
+
+SCTLOP  SYN(BU,8), 5.42             ! landed; p.101 -OCTAL CONTROL OP CODE
+SSEL    SYN(BU,1), 0.39             ! landed; p.99 -SELECT FILE STATUS
+SIOINS  SYN(BU,64), 4.0             ! landed; p.101 -IO INSTR. LAST
+SCHOP   SYN(BU,1), 0.26             ! landed; p.99 -CHAN OPERATING
+STIC    SYN, (8)215265.0             ! landed; p.116
+KILEGL  SYN, (8)220064.0             ! landed; p.160
+KLOCAT  SYN, (8)220033.40            ! landed; p.159
+KLOCTD  SYN, (8)220047.0             ! landed; p.159
+MIOREJ  SYN, (8)221261.0             ! landed; p.185
+KSUPP   SYN, (8)216242.0             ! landed; p.128
+
+        SLC, (8)222051.40            ! line  4  printed "SLC,$" at 222051.40 *
+BTIFR   LVI,BXA,14.0(.9)1                                    ! line  5  -SAVE TAPE INDICATOR OFF CODE
+        B,BTFOK                                              ! line  6  -BRANCH TO IO REF NO EVALUATION
+        LVI,0,15.(.9)1                                       ! line  7
+        B,BTFOK                                              ! line  8
+BRLFR   LVI,BXA,14.0                                         ! line  9  -SAVE RESERVED LIGHT OFF CODE
+        B,BTFOK                                              ! line 10  -BRANCH TO IO REF NO EVALUATION
+BRLNR   LVI,BXA,15.0                                         ! line 11  -SAVE RESERVED LIGHT ON CODE
+        B,BTFOK                                              ! line 12  -BRANCH TO IO REF NO EVALUATION
+BKLNR   LVI,BXA,78.0                                         ! line 13  -SAVE CHECK LIGHT ON CODE
+BTFOK   V-I,2,.32                                            ! line 14
+        SV,2,STIC                                            ! line 15
+        SV,0,SCTLOP($12)                                     ! line 16  -CTL OP CODE TO UNIT AREA
+        SVA,0,B4CTL+.32                                      ! line 17  -INITIALIZE RT EFFECTIVE ADDR
+        KVI,BXA,0.0(.9)1                                     ! line 18  -TEST FOR TAPE INDICATOR
+        BXL,BRONK                                            ! line 19  -IF NOT TAPE INDICATOR TO B RONK
+        KVI,4,4.0                                            ! line 20  -TEST IF TAPE
+        BZXE,KILEGL                                          ! line 21  -IF NOT TAPE TO ERROR ROUTINE
+        BZBZ,SSEL($11),B4CTL-1.0                             ! line 22
+        SIC,KLOCTD                                           ! line 23
+        B,KLOCAT                                             ! line 24  -SELECT THE UNIT
+        CNOP                                                 ! line 25
+        LX,0,$+1.0                                           ! line 26
+        SX,0,SIOINS($12)                                     ! line 27
+B4CTL   CTL,0.0($14),0.0                                     ! line 28
+        LVI,1,$+1.0                                          ! line 29
+        B,MIOREJ                                             ! line 30
+        CM1111,SCHOP($10)                                    ! line 31
+        B,KSUPP                                              ! line 32
+BRONK   KVI,4,.32                                            ! line 33
+        BXE,KILEGL                                           ! line 34  -IF DISK,ERROR
+        KVI,4,4.0                                            ! line 35
+        BXE,KILEGL                                           ! line 36  -IF TAPE, ERROR
+        B,B4CTL-1.0                                          ! line 37
+BXA     SYN,$X0                                              ! line 38
+
+!SYM BTIFR  222051.40
+!SYM BRLFR  222053.40
+!SYM BRLNR  222054.40
+!SYM BKLNR  222055.40
+!SYM BTFOK  222056.00
+!SYM B4CTL  222065.00
+!SYM BRONK  222070.40
+!SYM BXA    000020.00
+!CHECK 222051.40 | 000416.01 01 | line 5 B TIF R LVI,B XA,14.0(.9)1 (byte prints "C1"; its own octal field prints .C1)
+!CHECK 222052.00 | 222056.10 00 | line 6 B,B TFOK
+!CHECK 222052.40 | 000417.01 01 | line 7 LVI,0,15.(.9)1
+!CHECK 222053.00 | 222056.10 00 | line 8 B,B TFCK as printed (byte prints "C0")
+!CHECK 222053.40 | 000016.01 01 | line 9 B RLF R LVI,B XA,14.0
+!CHECK 222054.00 | 222056.10 00 | line 10 B,B TFCK as printed
+!CHECK 222054.40 | 000017.01 01 | line 11 B RLN R LVI,B XA,15.0
+!CHECK 222055.00 | 222056.10 00 | line 12 B,B TFOK (byte prints "C0")
+!CHECK 222055.40 | 000116.01 01 | line 13 B KLN R LVI,B XA,78.C
+!CHECK 222056.00 | 000000.45 0D | line 14 B TFCK V-I,2,.32
+!CHECK 222056.40 | 215265.05 30 | line 15 SV,2,S TIC
+!CHECK 222057.00 | 000005.41 3C | line 16 SV,C,S CTL OP($12)
+!CHECK 222057.40 | 222065.41 D0 | line 17 SVA,0,B 4CTL+.32
+!CHECK 222060.00 | 000400.01 04 | line 18 KVI,B XA,C.C(.9)1
+!CHECK 222060.40 | 222070.72 42 | line 19 BXL,B RONK
+!CHECK 222061.00 | 000004.11 04 | line 20 KVI,4,4.0
+!CHECK 222061.40 | 220064.32 C0 | line 21 BZXE,K ILEGL
+!CHECK 222062.00 | 000000.47 8B 222064.34 04 | line 22 BZBZ,S SEL($11),B 4CTL-1.C
+!CHECK 222063.00 | 220047.00 80 | line 23 SIC,K LCCTD as printed
+!CHECK 222063.40 | 220033.50 00 | line 24 B,K LOCAT (byte prints "C0")
+!CHECK 222064.00 | 222065.00 10 | line 26 LX,0,$+1.0
+!CHECK 222064.40 | 000004.01 1C | line 27 SX,C,S IO INS($12) (a "*" prints after the location)
+!CHECK 222065.00 | 000000.00 8E 000000.05 00 | line 28 B 4CTL CTL,0.0($14),0.0 (prints .CC and .C5 0C)
+!CHECK 222066.00 | 222067.03 01 | line 29 LVI,1,$+1.0
+!CHECK 222066.40 | 221261.10 00 | line 30 B,M IC REJ
+!CHECK 222067.00 | 000000.32 8A 001000.36 F0 | line 31 CM1111,S CH OP($10) (prints "FC")
+!CHECK 222070.00 | 216242.10 00 | line 32 B,K SUPP
+!CHECK 222070.40 | 000000.51 04 | line 33 B RONK KVI,4,.32
+!CHECK 222071.00 | 220064.32 C2 | line 34 BXE,K ILEGL
+!CHECK 222071.40 | 000004.11 04 | line 35 KVI,4,4.C (byte prints "C4")
+!CHECK 222072.00 | 220064.32 C2 | line 36 BXE,K ILEGL
+!CHECK 222072.40 | 222064.10 00 | line 37 B,B 4CTL-1.C (byte prints "C0")

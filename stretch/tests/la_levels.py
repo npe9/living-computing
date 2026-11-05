@@ -383,11 +383,18 @@ def main():
     # "*I(BU,18),8,46".  The trailing-I loop above had always built
     # it; this is simply the first landed deck to USE it, and like
     # every other immediate Table A-2 gives it no count.
+    #
+    # "TBI" joined on 2026-11-05 with printed p.212, line 16
+    # "TBI,16,Z LST BF,Z LST BF-1.0": transmit BACKWARD, immediate
+    # count (strap/opcodes.py TRANSMIT_CODES).  An immediate like the
+    # rest, and the first MCP use of a backward transmit -- which
+    # StretchExecute.bsv refuses with Operation Code Invalid (the
+    # TRANSMIT_CODES hazard note), so MCP now needs it.
     check("page_silent_mnemonics_in_mcp",
           sorted(notgiven),
           ["*I", "*I+", "+I", "-I", "/I", "CI0001", "CI0111", "CTI0001",
            "CTI0110", "KFI", "KI", "LFI", "LI", "SWAPI", "T", "TB",
-           "TI"])
+           "TBI", "TI"])
 
     if fails:
         print(f"\n{fails} TEST(S) FAILED")

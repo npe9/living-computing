@@ -6624,6 +6624,30 @@ run "the new-tape routine and JNEWXR index save, printed p.194" python3 verify_m
 run "the write-label and insert-reel messages, printed p.195" python3 verify_mcp_page.py 195
 run "the UNLOAD command, printed p.196" python3 verify_mcp_page.py 196
 run "the tail of UNLOAD and its messages, printed p.197 (first page landed from the Vision reading)" python3 verify_mcp_page.py 197
+run "SEARCH (K SERCH), printed p.198" python3 verify_mcp_page.py 198
+run "UNIT LIGHTS, printed p.199" python3 verify_mcp_page.py 199
+run "SOUND GONG (W GONG), printed p.200" python3 verify_mcp_page.py 200
+run "the head of the OUTPUT program, printed p.201" python3 verify_mcp_page.py 201
+run "the output-buffer routines, printed p.202" python3 verify_mcp_page.py 202
+run "A CHK, printed p.203" python3 verify_mcp_page.py 203
+run "the OUTPUT program, LVE,,AMR null J fields, printed p.204" python3 verify_mcp_page.py 204
+run "tape error exits, printed p.205" python3 verify_mcp_page.py 205
+run "the tape-switch routines, printed p.206" python3 verify_mcp_page.py 206
+run "the $WEF exit, printed p.207" python3 verify_mcp_page.py 207
+run "AT SWC, printed p.208" python3 verify_mcp_page.py 208
+run "the OUTPUT program's message calls, printed p.209" python3 verify_mcp_page.py 209
+run "the OUTPUT program's data and messages, printed p.210" python3 verify_mcp_page.py 210
+run "the tail of the OUTPUT data, A OP, printed p.211" python3 verify_mcp_page.py 211
+run "THE DISABLED SPOOL SHORT MESSAGE ROUTINE, printed p.212" python3 verify_mcp_page.py 212
+run "the head of THE INPUT PROGRAM, its SYN table and .V H, printed p.213" python3 verify_mcp_page.py 213
+run "THE INPUT PROGRAM's register words, printed p.214" python3 verify_mcp_page.py 214
+run "the V-section branch table, printed p.215" python3 verify_mcp_page.py 215
+run "the V (input program) end-of-file routines, printed p.216" python3 verify_mcp_page.py 216
+run "the V scan routines, printed p.217" python3 verify_mcp_page.py 217
+run "a run of the V scan routines, printed p.218" python3 verify_mcp_page.py 218
+run "the V (tape) routines, printed p.219" python3 verify_mcp_page.py 219
+run "the tail of the V tape routines, printed p.220" python3 verify_mcp_page.py 220
+run "the Input Program's write routines, V+ICR .V H, printed p.221" python3 verify_mcp_page.py 221
 
 # >>> pp.185-192 FOUND A WRONG ANSWER IN THE VFL IMMEDIATE, and the
 # page caught it by writing ONE immediate at TWO LENGTHS. <<<

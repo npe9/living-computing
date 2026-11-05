@@ -1,0 +1,192 @@
+! mcp_bootstrap_p221.strap -- MCP printed page 221: the Input Program's
+! tape write/read section (V WF1 .. V RTEE), lines 1-48.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.228, read at 400 dpi, 900/1800 dpi
+! for doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID
+! 11D11MCP  CARD ID CA000335  DIST. OF 3/01  3/01  PAGE NUMBER 221";
+! the heading row's LOCATION field is 224377, line 1's word.
+!
+! THE PAGE.  48 lines, every one located, contiguous from 224377.00 to
+! 224427.40 (a half word; next word 224430.00).  The volume OCR puts
+! printed p.220's last row at 224376.40 (remark -0344) and p.222's first
+! at 224430.00 (remark -0389), so the page joins on both sides; this
+! page's remarks run -0345 .. -0388 (octal sequence numbers, e.g.
+! -0357 then -0360), and some rows print none.
+!
+! >>> THE V SYMBOLS ARE PRINTED p.213'S, WHICH IS NOT LANDED. <<<  p.213
+! ("THE INPUT PROGRAM") prints the SYN table: V F SYN,.32; V H SYN,32;
+! V M1 SYN(BU,64),262143.; V X2S = 1.0; V CWR = 4.0; V SU = 6.0;
+! V RCNT = 7.0; V FCNX = (8)11.0; V U $3, V P $1, V T3 $7, V T4 $8,
+! V T5 $9.  Read off p.213's image (PDF p.220) and every one agrees with
+! this page's binary.  The rest (V WT, V WTTS, V MD, V WCW, V PD, V TSQ,
+! V TEE, V QEND, V Q, V TEE1, V RT, V RQ1, V ST) come from this page's
+! binary only, as noted per card.
+!
+! LINES 29 AND 32, "V+ICR,V T3,.V H" -> 000000.57 07: ".V H" is a bit
+! part of V H = 32 bits, i.e. 0.40, and .40 + .17 (2*7+1) = .57.  A
+! bit address is "a pair of integers separated by a period" and an
+! integer may be "a symbol that takes on an integral value" (C22-6531
+! printed p.10); p.213 prints V H as the integer 32 (+00000040).  These
+! two rows failed until the assembler read a symbol after the period.
+!
+! >>> "V WIC" IS WRITTEN VWIO. <<<  Line 10's last glyph at 1800 dpi has
+! the straight sides and squared corners of the O in V RTIO (line 37)
+! and V WTEOP (line 7), broken on the right with stroke remnants, not
+! the round C beside it in SIC.  It pairs with V RTIO.  Nothing on this
+! page references it (a later page's "B,V WIC" OCR prints 224403.50,
+! the address, not the spelling) -- rests on ink.
+!
+! Octal-field opens ("C00007.CC", "224707.5C") are 0.  Hex bytes printed
+! with an open round, written 0: line 3 "C0" and lines 11/36 "C0" (B,
+! with no index is 00, as lines 12/39/45 print it), line 29 "C7" (= line
+! 27/32's 07), line 38 "BC" (M+1(BU,18),V RCNT(V U) has no offset index;
+! p.197 line 8 prints the same second half word "022000.22 B0").
+!
+! >>> CARD SERIALS. <<<  Right-hand serials run ?A000335 .. ?A000376 --
+! the prefix glyph has a straight left stem (the D of "ID" beside the
+! header's CA000335 is the same shape), so DA by the C/D rule; recorded
+! as read either way.  Six pairs share a serial: lines 3/4 (337), 10/11
+! (343), 12/13 (344), 22/23 (353), 39/40 (369), 47/48 (376) -- a call
+! B,D MCP plus its parameter half word, or SIC plus the branch, two
+! statements per card.  Asterisks after the LOCATION on lines 20, 42.
+
+VF      SYN, .32                     ! p.213 line  6 "V F SYN,.32" (not landed); V+ICR line 27 .57
+VH      SYN, 32                      ! p.213 line  7 "V H SYN,32" (not landed); .VH line 29 .57
+VM1     SYN(BU,64), 262143.          ! p.213 line  9 (not landed); CB- line 6 777777.03
+VX2S    SYN, 1.0                     ! p.213 line 13 = VX1.VH = 1.0 (not landed); LX line 26
+VCWR    SYN, 4.0                     ! p.213 line 15 = VX2R+2. = 4.0 (not landed); line 42 000004.00
+VSU     SYN, 6.0                     ! p.213 line 18 = VIC.VH = 6.0 (not landed); LVE line 5
+VRCNT   SYN, 7.0                     ! p.213 line 20 = VRQB.VH = 7.0 (not landed); SV line 2
+VFCNX   SYN, 9.0                     ! p.213 line 24 = VTS.VH = (8)11.0 (not landed); LC line 18
+VU      SYN, $3                      ! p.213 line 25 "V U SYN,$3" (not landed)
+VP      SYN, $1                      ! p.213 line 26 "V P SYN,$1" (not landed)
+VT3     SYN, $7                      ! p.213 line 30 "V T3 SYN,$7" (not landed)
+VT4     SYN, $8                      ! p.213 line 31 "V T4 SYN,$8" (not landed)
+VT5     SYN, $9                      ! p.213 line 28 "V T5 SYN,$9" (not landed)
+DMCP    SYN, 32.0                    ! landed
+DWEF    SYN, 7.32                    ! landed
+DW      SYN, 1.32                    ! landed
+DRD     SYN, 1.0                     ! landed
+VWT     SYN, (8)225266.0             ! ST line 1 VWT-1. (FP: word only); p.219 LVI,V U,V WT 225266.07 pins the half word
+VWTTS   SYN, (8)224721.40            ! B line 9, half word only
+VMD     SYN, (8)224707.40            ! B line 11, half word only
+VWCW    SYN, (8)225272.0             ! line 15 half word, half word only
+VPD     SYN, (8)225427.0             ! LX lines 17/46, word only
+VTSQ    SYN(B,25,1), (8)224371.0     ! M+1 line 20, word only; (B,25,1) from its printed 031100.02
+VTEE    SYN, (8)224615.0             ! CB+ lines 23/48, half word only
+VQEND   SYN, (8)224457.0             ! LVNI line 24, half word only
+VQ      SYN, (8)225346.0             ! LVI line 25, half word only
+VTEE1   SYN, (8)224624.40            ! LV line 30, half word only
+VRT     SYN, (8)225331.0             ! LVI line 35, half word only
+VRQ1    SYN, (8)224325.0             ! B lines 36/45, half word only
+VST     SYN, (8)225312.0             ! LVI line 44, half word only
+
+        SLC, (8)224377.0
+        ST(U),VWT-1.                                         ! line  1  -0345
+VWF1    SV,VP,VRCNT(VU)                                      ! line  2  -0346
+        B,DMCP                                               ! line  3
+        ,DWEF                                                ! line  4  -0347
+        LVE,,VSU(VU)                                         ! line  5  -0348
+        CB-,VP,VM1(VP)                                       ! line  6  -0349
+VWTEOP  LWF(U),VWT-3.                                        ! line  7  -0350
+        ST(U),VWT-1.                                         ! line  8  -0351
+        B,VWTTS                                              ! line  9  -0352
+VWIO    SIC,(VP)                                             ! line 10
+        B,VMD                                                ! line 11  -0353
+        B,DMCP                                               ! line 12
+        ,DW                                                  ! line 13  -0354
+        LVE,,VSU(VU)                                         ! line 14  -0355
+        ,VWCW                                                ! line 15  -0356
+        CB-,VP,VM1(VP)                                       ! line 16  -0357
+VREE    LX,VP,VPD                                            ! line 17  -0360
+        LC,VT4,VFCNX(VU)                                     ! line 18  -0361
+        CB,VT4,VRTEE1                                        ! line 19  -0362
+        M+1,VTSQ                                             ! line 20  -0363
+VRTEE1  SC,VT4,VFCNX(VU)                                     ! line 21  -0364
+        SIC,(VP)                                             ! line 22
+        CB+,VP,VTEE                                          ! line 23  -0365
+        LVNI,VT5,VQEND                                       ! line 24  -0366
+        LVI,VU,VQ                                            ! line 25  -0367
+VRTEE2  LX,VT3,VX2S(VU)                                      ! line 26  -0368
+        V+ICR,VT3,VF                                         ! line 27  -0369
+        SV,VT5,(VT3)                                         ! line 28  -0370
+        V+ICR,VT3,.VH                                        ! line 29  -0371
+        LV,VT5,VTEE1                                         ! line 30  -0372
+        SV,VT5,(VT3)                                         ! line 31  -0373
+        V+ICR,VT3,.VH                                        ! line 32  -0374
+        SX,VT3,VX2S(VU)                                      ! line 33  -0375
+        CB-,VP,VM1(VP)                                       ! line 34  -0376
+VRQ     LVI,VU,VRT                                           ! line 35  -0377
+        B,VRQ1                                               ! line 36  -0378
+VRTIO   R,VCWR(VU)                                           ! line 37  -0379
+VRTIO1  M+1(BU,18),VRCNT(VU)                                 ! line 38  -0380
+        B,DMCP                                               ! line 39
+        ,DRD                                                 ! line 40  -0381
+        LVE,,VSU(VU)                                         ! line 41  -0382
+        ,VCWR(VU)                                            ! line 42  -0383
+        CB-,VP,VM1(VP)                                       ! line 43  -0384
+VSTQ    LVI,VU,VST                                           ! line 44  -0385
+        B,VRQ1                                               ! line 45  -0386
+VRTEE   LX,VP,VPD                                            ! line 46  -0387
+        SIC,(VP)                                             ! line 47
+        CB+,VP,VTEE                                          ! line 48  -0388
+
+!SYM VWF1   224377.40
+!SYM VWTEOP 224402.00
+!SYM VWIO   224403.40
+!SYM VREE   224407.00
+!SYM VRTEE1 224411.40
+!SYM VRTEE2 224414.00
+!SYM VRQ    224420.40
+!SYM VRTIO  224421.40
+!SYM VRTIO1 224422.00
+!SYM VSTQ   224425.40
+!SYM VRTEE  224426.40
+!CHECK 224377.00 | 225265.40 E0 | line 1 ST(U),V WT-1.
+!CHECK 224377.40 | 000007.03 33 | line 2 V WF1 SV,V P,V RCNT(V U)
+!CHECK 224400.00 | 000040.10 00 | line 3 B,D MCP (byte prints C0)
+!CHECK 224400.40 | 000007.40 80 | line 4 ,D WEF
+!CHECK 224401.00 | 000006.01 B3 | line 5 LVE,,V SU(V U)
+!CHECK 224401.40 | 777777.03 C9 | line 6 CB-,V P,V M1(V P)
+!CHECK 224402.00 | 225263.42 60 | line 7 V WTEOP LWF(U),V WT-3.
+!CHECK 224402.40 | 225265.40 E0 | line 8 ST(U),V WT-1.
+!CHECK 224403.00 | 224721.50 00 | line 9 B,V WTTS
+!CHECK 224403.40 | 000000.00 81 | line 10 V WIO SIC,(V P)
+!CHECK 224404.00 | 224707.50 00 | line 11 B,V MD (prints 224707.5C C0)
+!CHECK 224404.40 | 000040.10 00 | line 12 B,D MCP
+!CHECK 224405.00 | 000001.40 80 | line 13 ,D W
+!CHECK 224405.40 | 000006.01 B3 | line 14 LVE,,V SU(V U)
+!CHECK 224406.00 | 225272.00 80 | line 15 ,V WCW
+!CHECK 224406.40 | 777777.03 C9 | line 16 CB-,V P,V M1(V P)
+!CHECK 224407.00 | 225427.02 10 | line 17 V REE LX,V P,V PD
+!CHECK 224407.40 | 000011.20 53 | line 18 LC,V T4,V FCNX(V U)
+!CHECK 224410.00 | 224411.60 48 | line 19 CB,V T4,V RTEE1
+!CHECK 224410.40 | 224371.00 80 031100.02 B0 | line 20 M+1,V TSQ (a "*" prints after the location)
+!CHECK 224411.40 | 000011.21 53 | line 21 V RTEE1 SC,V T4,V FCNX(V U)
+!CHECK 224412.00 | 000000.00 81 | line 22 SIC,(V P)
+!CHECK 224412.40 | 224615.03 48 | line 23 CB+,V P,V TEE
+!CHECK 224413.00 | 224457.23 09 | line 24 LVNI,V T5,V QEND
+!CHECK 224413.40 | 225346.07 01 | line 25 LVI,V U,V Q
+!CHECK 224414.00 | 000001.16 13 | line 26 V RTEE2 LX,V T3,V X2S(V U)
+!CHECK 224414.40 | 000000.57 07 | line 27 V+ICR,V T3,V F
+!CHECK 224415.00 | 000000.23 37 | line 28 SV,V T5,(V T3)
+!CHECK 224415.40 | 000000.57 07 | line 29 V+ICR,V T3,.V H (byte prints C7)
+!CHECK 224416.00 | 224624.62 30 | line 30 LV,V T5,V TEE1
+!CHECK 224416.40 | 000000.23 37 | line 31 SV,V T5,(V T3)
+!CHECK 224417.00 | 000000.57 07 | line 32 V+ICR,V T3,.V H
+!CHECK 224417.40 | 000001.17 13 | line 33 SX,V T3,V X2S(V U)
+!CHECK 224420.00 | 777777.03 C9 | line 34 CB-,V P,V M1(V P)
+!CHECK 224420.40 | 225331.07 01 | line 35 V RQ LVI,V U,V RT
+!CHECK 224421.00 | 224325.10 00 | line 36 B,V RQ1 (byte prints C0)
+!CHECK 224421.40 | 000004.02 03 | line 37 V RTIO R,V CWR(V U)
+!CHECK 224422.00 | 000007.00 83 022000.22 B0 | line 38 V RTIO1 M+1(BU,18),V RCNT(V U) (row prints 000007.CC; byte prints BC)
+!CHECK 224423.00 | 000040.10 00 | line 39 B,D MCP
+!CHECK 224423.40 | 000001.00 80 | line 40 ,D RD
+!CHECK 224424.00 | 000006.01 B3 | line 41 LVE,,V SU(V U)
+!CHECK 224424.40 | 000004.00 83 | line 42 ,V CWR(V U) (a "*" prints after the location)
+!CHECK 224425.00 | 777777.03 C9 | line 43 CB-,V P,V M1(V P)
+!CHECK 224425.40 | 225312.07 01 | line 44 V STQ LVI,V U,V ST
+!CHECK 224426.00 | 224325.10 00 | line 45 B,V RQ1
+!CHECK 224426.40 | 225427.02 10 | line 46 V RTEE LX,V P,V PD
+!CHECK 224427.00 | 000000.00 81 | line 47 SIC,(V P)
+!CHECK 224427.40 | 224615.03 48 | line 48 CB+,V P,V TEE

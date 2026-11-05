@@ -1,0 +1,217 @@
+! mcp_bootstrap_p215.strap -- MCP printed page 215: the V-section branch
+! table (V DISP, V OFFON, V BYP) and V BSTRT .. V REE1.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.222, read at 400 dpi, 900 dpi for
+! doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+!  CARD ID CA000085  DIST. OF 3/01  3/01  PAGE NUMBER 215"; the heading
+! row's LOCATION field is 224147, line 1's word.
+!
+! Finding aid: tools/page_sheet.py 215.  Every value below is read off
+! the IMAGE.
+!
+! THE PAGE.  50 lines, contiguous from 224147.00 to 224200.40.
+!   p.214's sheet ends at 224146.40 (a half word); p.216's begins at
+!   224201.00.  Both joins are contiguous (neither page landed yet).
+!   line 37  V CSAW SYN(BU,1),V RDCSS.19 prints 224171.23+ +00000000
+!            BU,01 ,10: a !SYM, no !CHECK.
+!   line 48  no statement and no location: only the remark "-019" and
+!            serial 0A000128.  Compiles nothing; not transcribed.
+!
+! >>> REMARKS ARE NUMBERS. <<<  The comment column prints "-0122" ..
+! "-0167" (line 11 prints none) at one indent, and "-020", "-021",
+! "-019" (lines 31, 46, 48) and "-0122", "-0147", "-0153", "-0159"
+! (lines 2, 26, 33, 40) further left.  Recorded on each card as printed.
+!
+! >>> CARD SERIALS. <<<  The header prints CARD ID "CA000085" (open
+! first glyph); the right-hand column prints "0A000085" .. "0A000130"
+! with a closed round first glyph.  Recorded, not resolved.  Shared
+! serials: lines 1/2 (085), 25/26 (108), 32/33 (114), 39/40 (120);
+! otherwise one per line, no gaps, line 48's blank card included (128).
+! Asterisks after the LOCATION on lines 3, 26 and 46.
+!
+! >>> O PRINTED AS AN OPEN C, AND THE NAMES SPELLED WITH O. <<<
+! Line 4's label prints "V CFFON" and its statement "V CNLIN"; line 5
+! "V CFFLN".  At 900 dpi the first glyph of each is an open round, while
+! the O of OFFLB/ONLIB (lines 12-13) and the 4th glyph of CFFON itself
+! print closed.  The symbols are the ON-LINE/OFF-LINE pair of the
+! ONLIB/OFFLB on lines 12-13, and this drum opens round glyphs
+! (transcription_workflow.md "O vs C"; octal fields on this page print
+! 0 open throughout, e.g. "C0C000.23").  Spelled VOFFON, VONLIN,
+! VOFFLN.  NOT assembly-checked: VONLIN/VOFFLN are external and their
+! values come from this page's binary, and nothing here references
+! VOFFON -- the integrating merge must confirm the spelling.
+!
+! >>> "V NCP" IS VNOP (assembly-bound). <<<  Line 18's label and line
+! 43's second operand print "V NCP"; lines 17 and 19 print "V NOP".
+! Line 17's B,V NOP prints 224157.50 = line 18's 224157.40 + B's .10,
+! and line 43's h2 224157.74 is that same address; so one symbol.
+!
+! >>> "V L" ON LINE 34 IS V U. <<<  Its U is worn to an L (right
+! stroke short), as is the U of "V SU" on line 41; its binary
+! 225232.07 01 is identical to lines 21/46 LVI,V U,V CR.
+!
+! >>> "V RDEE" ON LINE 24. <<<  The fourth letter is a worn E (faint
+! arms) -- read as RDEL at 400 dpi.  Sibling labels REE1/3/4/7, EE,
+! EE1.  Nothing on this page references it: ink only.
+!
+! >>> LINE 28'S BYTE PRINTS "C5" AND IS 05. <<<  Same open round as
+! line 47's "C1" two lines down (which assembles to 01, as lines 21/34
+! print it) and as this row's octal "C0C000"; line 22 V+I,,1. prints 05.
+!
+! Line 45 prints CM0C00 (4th glyph open); a connective is four binary
+! digits, so CM0000, and the printed h2 001000.00 F0 agrees.
+!
+! LINE 44 prints "BZBZ,V CSAW," -- a null branch field, written as
+! printed: a null field compiles as zero (C22-6531 printed p.7; C28-6129 PDF pp.8-9).
+! The printed h2 000000.34 04 is address zero.
+!
+! EXTERNAL SYMBOLS.  No V symbol is landed.  Every V value below is
+! from THIS PAGE's binary.  Index numbers from the I field: B's low
+! byte (VU 03), LVI/SVA/V+I's 2J+1 in the low octal pair (VT1 .11=4,
+! VT2 .15=6, VT5 .23=9, VU .07=3).
+
+DMCP    SYN, 32.0                    ! landed (B,D MCP lines 1, 39)
+DRET    SYN, 33.0                    ! landed
+DCCW    SYN, 2.0                     ! landed; p.102 line 11 "D CCW"
+VU      SYN, $3                      ! B,V BYP(V U) line 3 byte 03; LVI .07, BIT-EXACT
+VP      SYN, $1                      ! LX/SIC/CB lines 24, 25, 33, BIT-EXACT
+VT1     SYN, $4                      ! LVI line 19 .51, BIT-EXACT
+VT2     SYN, $6                      ! SVA line 27 .55, LVI line 47 .15, BIT-EXACT
+VT5     SYN, $9                      ! SVA line 30 .63, V+I line 28 .23, BIT-EXACT
+VONLIN  SYN, (8)225010.40            ! B line 4, half word only
+VOFFLN  SYN, (8)225032.40            ! B line 5, half word only
+VEOFN   SYN, (8)224226.40            ! B line 6, half word only
+VOEOJ   SYN, (8)224545.0             ! B line 7, half word only
+VBYPAS  SYN, (8)225103.0             ! B line 8, half word only
+VSREW   SYN, (8)225203.40            ! B line 9, half word only
+VSCR1   SYN, (8)224272.40            ! B line 10, half word only
+VSCAN   SYN, (8)224242.40            ! B line 11, half word only
+VONLIB  SYN, (8)225151.0             ! B line 12, half word only
+VOFFLB  SYN, (8)225136.0             ! B line 13, half word only
+VEOFB   SYN, (8)224221.40            ! B line 14, half word only
+VBEOJ   SYN, (8)224533.0             ! B line 15, half word only
+VM1     SYN(BU,64), (8)777777.0             ! CB- line 18, half word only
+VCR     SYN, (8)225232.0             ! LVI line 21 / LV line 31, half word only
+VACT    SYN, (8)224655.0             ! B line 23, half word only
+VPD     SYN, (8)225427.0             ! LX line 24, half word only
+VEE     SYN, (8)224633.40            ! B line 26, half word only
+VX1     SYN, (8)0.40                 ! LV line 31 (VX1+VCR .62), SV line 50 .55, BIT-EXACT
+VNXT    SYN, (8)224456.40            ! CB+ line 33, half word only
+VREE3   SYN, (8)224207.0             ! BZB1 line 35 h2, half word only
+VRTN    SYN, (8)224450.40            ! B line 36, half word only
+VSU     SYN, (8)6.0                  ! LVE line 41, word only
+VEE1    SYN, (8)224646.0             ! ,V EE1 line 42; BZB line 43 .18, BIT-EXACT
+VEOFX   SYN(BU,1), (8)224372.32      ! CM0000 line 45, BIT-EXACT; (BU,1) from its printed 001000.00 F0
+VREE4   SYN, (8)224203.0             ! BXVZ line 49, half word only
+
+        SLC, (8)224147.00
+        B,DMCP                                               ! line  1
+        ,DRET                                                ! line  2  -0122
+VDISP   B,VBYP(VU)                                           ! line  3  -0123
+VOFFON  B,VONLIN                                             ! line  4  -0124
+        B,VOFFLN                                             ! line  5  -0125
+        B,VEOFN                                              ! line  6  -0126
+        B,VOEOJ                                              ! line  7  -0127
+        B,VBYPAS                                             ! line  8  -0128
+        B,VSREW                                              ! line  9  -0129
+        B,VSCR1                                              ! line 10  -0130
+        B,VSCAN                                              ! line 11
+VBYP    B,VONLIB                                             ! line 12  -0132
+        B,VOFFLB                                             ! line 13  -0133
+        B,VEOFB                                              ! line 14  -0134
+        B,VBEOJ                                              ! line 15  -0135
+        B,VBSTRT                                             ! line 16  -0136
+        B,VNOP                                               ! line 17  -0137
+VNOP    CB-,VP,VM1(VP)                                       ! line 18  -0138
+VBSTRT  LVI,VT1,VNOP                                         ! line 19  -0141
+        SVA,VT1,VBYP(VU)                                     ! line 20  -0142
+        LVI,VU,VCR                                           ! line 21  -0143
+        V+I,,1.                                              ! line 22  -0144
+        B,VACT                                               ! line 23  -0145
+VRDEE   LX,VP,VPD                                            ! line 24  -0146
+        SIC,(VP)                                             ! line 25
+        B,VEE                                                ! line 26  -0147
+        SVA,VT2,VREE1                                        ! line 27  -0148
+        V+I,VT5,0                                            ! line 28  -0149
+        BZXVZ,VREE7                                          ! line 29  -0150
+        SVA,VT5,VREE1                                        ! line 30  -0151
+        LV,VT5,VX1+VCR                                       ! line 31  -020
+VREE7   SIC,(VP)                                             ! line 32
+        CB+,VP,VNXT                                          ! line 33  -0153
+        LVI,VU,VCR                                           ! line 34  -0154
+        BZB1,VCSAW,VREE3                                     ! line 35  -0155
+VRDCSS  B,VRTN                                               ! line 36  -0156
+VCSAW   SYN(BU,1),VRDCSS.19                                  ! line 37  -0157
+        LX,VP,VPD                                            ! line 38  -0158
+        B,DMCP                                               ! line 39
+        ,DCCW                                                ! line 40  -0159
+        LVE,,VSU(VU)                                         ! line 41  -0160
+        ,VEE1                                                ! line 42  -0161
+        BZB,VEE1.18,VNOP                                     ! line 43  -0162
+        BZBZ,VCSAW,                                          ! line 44  -0163  null branch field: address 0
+VRDCSX  CM0000,VEOFX                                         ! line 45  -0164
+        LVI,VU,VCR                                           ! line 46  -021
+VREE1   LVI,VT2,0                                            ! line 47  -0165
+!       (line 48: no statement, no location; remark -019, serial 0A000128)
+        BXVZ,VREE4                                           ! line 49  -0166
+        SV,VT2,VX1(VU)                                       ! line 50  -0167
+
+!SYM VDISP  224150.00
+!SYM VOFFON 224150.40
+!SYM VBYP   224154.40
+!SYM VNOP   224157.40
+!SYM VBSTRT 224160.00
+!SYM VRDEE  224162.40
+!SYM VREE7  224166.40
+!SYM VRDCSS 224171.00
+!SYM VCSAW  224171.23
+!SYM VRDCSX 224176.00
+!SYM VREE1  224177.40
+!CHECK 224147.00 | 000040.10 00 | line 1 B,D MCP
+!CHECK 224147.40 | 000041.00 80 | line 2 ,D RET
+!CHECK 224150.00 | 224154.50 03 | line 3 V DISP B,V BYP(V U) (an asterisk prints after the location)
+!CHECK 224150.40 | 225010.50 00 | line 4 V CFFON B,V CNLIN as printed (O worn to C)
+!CHECK 224151.00 | 225032.50 00 | line 5 B,V CFFLN as printed (O worn to C)
+!CHECK 224151.40 | 224226.50 00 | line 6 B,V EOFN
+!CHECK 224152.00 | 224545.10 00 | line 7 B,V OEOJ
+!CHECK 224152.40 | 225103.10 00 | line 8 B,V BYPAS
+!CHECK 224153.00 | 225203.50 00 | line 9 B,V SREW
+!CHECK 224153.40 | 224272.50 00 | line 10 B,V SCR1
+!CHECK 224154.00 | 224242.50 00 | line 11 B,VSCAN
+!CHECK 224154.40 | 225151.10 00 | line 12 V BYP B,V ONLIB
+!CHECK 224155.00 | 225136.10 00 | line 13 B,V OFFLB
+!CHECK 224155.40 | 224221.50 00 | line 14 B,V EOFB
+!CHECK 224156.00 | 224533.10 00 | line 15 B,V BEOJ
+!CHECK 224156.40 | 224160.10 00 | line 16 B,V BSTRT
+!CHECK 224157.00 | 224157.50 00 | line 17 B,V NOP
+!CHECK 224157.40 | 777777.03 C9 | line 18 V NCP CB-,V P,V M1(V P) (label printed NCP; O worn to C)
+!CHECK 224160.00 | 224157.51 01 | line 19 V BSTRT LVI,V T1,V NOP
+!CHECK 224160.40 | 224154.51 D3 | line 20 SVA,V T1,V BYP(V U)
+!CHECK 224161.00 | 225232.07 01 | line 21 LVI,V U,V CR
+!CHECK 224161.40 | 000001.01 05 | line 22 V+I,,1.
+!CHECK 224162.00 | 224655.10 00 | line 23 B,V ACT
+!CHECK 224162.40 | 225427.02 10 | line 24 V RDEE LX,V P,V PD
+!CHECK 224163.00 | 000000.00 81 | line 25 SIC,(V P)
+!CHECK 224163.40 | 224633.50 00 | line 26 B,V EE (an asterisk prints after the location)
+!CHECK 224164.00 | 224177.55 D0 | line 27 SVA,V T2,V REE1
+!CHECK 224164.40 | 000000.23 05 | line 28 V+I,V T5,0 (byte prints "C5"; the open round of line 47 "C1"=01 -- see header)
+!CHECK 224165.00 | 224166.71 40 | line 29 BZXVZ,V REE7
+!CHECK 224165.40 | 224177.63 D0 | line 30 SVA,V T5,V REE1
+!CHECK 224166.00 | 225232.62 30 | line 31 LV,VT5,VX1+VCR
+!CHECK 224166.40 | 000000.00 81 | line 32 V REE7 SIC,(V P)
+!CHECK 224167.00 | 224456.43 48 | line 33 CB+,V P,V NXT
+!CHECK 224167.40 | 225232.07 01 | line 34 LVI,V U,V CR (U worn, reads L)
+!CHECK 224170.00 | 224171.23 80 224207.34 0C | line 35 BZB1,V CSAW,V REE3
+!CHECK 224171.00 | 224450.50 00 | line 36 V RDCSS B,V RTN
+!CHECK 224171.40 | 225427.02 10 | line 38 LX,V P,V PD
+!CHECK 224172.00 | 000040.10 00 | line 39 B,D MCP
+!CHECK 224172.40 | 000002.00 80 | line 40 ,D CCW
+!CHECK 224173.00 | 000006.01 B3 | line 41 LVE,,V SU(V U)
+!CHECK 224173.40 | 224646.00 80 | line 42 ,V EE1
+!CHECK 224174.00 | 224646.22 80 224157.74 00 | line 43 BZB,V EE1.18,V NCP as printed (O worn to C)
+!CHECK 224175.00 | 224171.23 80 000000.34 04 | line 44 BZBZ,V CSAW,
+!CHECK 224176.00 | 224372.32 80 001000.00 F0 | line 45 V RDCSX CM0C00,V EOFX as printed (octal 0 open)
+!CHECK 224177.00 | 225232.07 01 | line 46 LVI,VU,VCR (an asterisk prints after the location)
+!CHECK 224177.40 | 000000.15 01 | line 47 V REE1 LVI,V T2,0
+!CHECK 224200.00 | 224203.31 42 | line 49 BXVZ,V REE4
+!CHECK 224200.40 | 000000.55 33 | line 50 SV,V T2,V X1(V U)

@@ -408,6 +408,63 @@ SYSTEM_SYMBOLS = {
     "Z":   (0, 0),    # Word Number Zero
 }
 
+
+# ---------------------------------------------------------------------
+# MCP's PSEUDO-OPERATIONS AS SYSTEM SYMBOLS: "$MCP", "$RET", "$W" ...
+#
+# N28-1081 (the Apr 1963 update bound into C28-6129, STRAP II), page 8,
+# docs PDF p.66: "The MCP pseudo-operations are included in the STRAP
+# system symbol table, and may be assembled as with any other system
+# symbol, by preceding the reference with a $; e.g., $WAIT, $ABEOJ."
+# Its own coding example on page 7 is "B, $MCP" / ", $EOJ".
+#
+# The VALUES are MCP's: the pseudo-op table MCP itself prints, which the
+# landed decks carry as D-prefixed SYNs (printed "D RET  SYN,33.0").
+# Each entry is (word, bit) and cites the printed page and line.  The
+# OUTPUT program (printed pp.201-209) prints the $ form, and its binaries
+# agree: "B,$MCP" 000040.10 00, ",$RET" 000041.00 80, ",$SPR" 000103.40.
+MCP_PSEUDO_OPS = {
+    "RD":    (1, 0),   # printed p.104 line 7
+    "RDS":   (1, 1),   # printed p.104 line 8
+    "W":     (1, 32),  # printed p.104 line 9
+    "WS":    (1, 33),  # printed p.104 line 10
+    "CCW":   (2, 0),   # printed p.104 line 11
+    "REL":   (2, 32),  # printed p.104 line 12
+    "LOC":   (3, 0),   # printed p.104 line 14
+    "LOCS":  (3, 1),   # printed p.104 line 15
+    "ERGS":  (5, 1),   # printed p.104 line 23
+    "SP":    (5, 32),  # printed p.104 line 24
+    "BSP":   (6, 0),   # printed p.104 line 26
+    "SPFL":  (6, 32),  # printed p.104 line 28
+    "BSFL":  (7, 0),   # printed p.104 line 30
+    "WEF":   (7, 32),  # printed p.104 line 32
+    "REW":   (8, 0),   # printed p.104 line 34
+    "UNLD":  (8, 32),  # printed p.104 line 36
+    "RLFS":  (9, 1),   # printed p.104 line 39
+    "RLNS":  (9, 33),  # printed p.104 line 41
+    "KLN":   (10, 0),  # printed p.104 line 42
+    "KLNS":  (10, 1),  # printed p.104 line 43
+    "FREE":  (10, 32), # printed p.104 line 44
+    "WAIT":  (11, 32), # printed p.104 line 47
+    "CHEX":  (12, 0),  # printed p.104 line 48
+    "IODEF": (13, 0),  # printed p.105 line 2
+    "SIO":   (32, 0),  # printed p.105 line 15
+    "RIO":   (32, 32), # printed p.105 line 16
+    "RET":   (33, 0),  # printed p.105 line 17
+    "TIME":  (35, 0),  # printed p.105 line 22
+    "COMM":  (35, 32), # printed p.105 line 23
+    "SIT":   (36, 0),  # printed p.105 line 24
+    "DUMP":  (64, 0),  # printed p.105 line 31
+    "EOJ":   (65, 0),  # printed p.105 line 33
+    "HOLD":  (65, 32), # printed p.105 line 34
+    "RESLD": (66, 0),  # printed p.105 line 35
+    "FETCH": (66, 32), # printed p.105 line 36
+    "SPR":   (67, 32), # printed p.105 line 38
+    "ABEOJ": (68, 0),  # printed p.105 line 39
+    "SCR":   (68, 32), # printed p.105 line 40
+    "MCP":   (32, 0),  # printed p.108 line 5
+}
+
 INDICATOR_BITS = {
     "MK": 0, "IK": 1, "IJ": 2, "EK": 3, "TS": 4, "CPUS": 5, "EKJ": 6,
     "UNRJ": 7, "CBJ": 8, "EPGK": 9, "UK": 10, "EE": 11, "EOP": 12,

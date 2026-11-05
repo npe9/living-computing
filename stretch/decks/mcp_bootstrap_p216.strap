@@ -1,0 +1,200 @@
+! mcp_bootstrap_p216.strap -- MCP printed page 216: the V (input program)
+! card-reader service, V REE4 .. V RDIO, ending in a B,DMCP / ,DRD call.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.223, read at 400 dpi (900 dpi for the
+! doubtful glyphs).  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID CA000132  DIST. OF 3/01  3/01  PAGE NUMBER 216"; the heading
+! row's LOCATION field is 224201, line 1's word.
+!
+! THE PAGE.  Contiguous from 224201.00 to 224237.00 (a half word), 51
+! lines, every line number printed with a "*".  The vision reading of
+! p.215 ends 224200.40 (a half word: SV,V T2,V X1(V U)), so line 1's .00
+! continues it; p.217's line 1 reads 224237.40 (",V CRD"), continuing
+! line 51.
+!   line  7      CNOP, at 224204.00 -- no location printed, emits nothing.
+!   line  8      V REE6 (IQS*)DD(BU,8,8), 24 characters, 3 words.
+!   lines 25-26  VF,V REE6 (224204.00+) and CF,3 (000003).
+!   lines 23-24, 50-51  B,DMCP followed by a null-operation parameter card.
+!
+! THE REMARK COLUMN prints "-0168" .. "-0211", one per source card, and
+! the card serials run 0A000132 .. 0A000177 (the first glyph is the
+! drum's worn D or 0; the header prints "CA000132").  Five serials are
+! printed on TWO lines each -- 149 (lines 18,19), 153 (23,24), 174
+! (45,46), 176 (48,49), 177 (50,51) -- and in every pair the first line
+! prints no remark and the second prints its remark shifted left, the
+! way a second statement on one card would.  Line 34 (serial 163) prints
+! no remark.  Recorded, not explained.  Lines 15 and 35 print a "*" after
+! the LOCATION (as p.197 line 11).
+!
+! GLYPHS SETTLED BY SOMETHING OTHER THAN PLAIN INK:
+!  * Line 4 prints "B,V IO(V U)" with a nearly closed round glyph.  The
+!    only such symbol is p.213 line 17 "V IC SYN,V NX.V H" = 000005.40
+!    (read off PDF p.220 for this deck), and the binary 000005.50 is
+!    exactly V IC + B's .10.  Written VID, p.213's spelling of its label
+!    (that page reads a worn D; the glyph is not settled on either page).
+!  * "V ECFX" (line 22) / "V EOFX" (lines 35, 43): all three compile
+!    224372.32, the same symbol.  Labels "V ECFB" (28) and "V ECFN" (36)
+!    print open; p.215's references (lines 6, 14, vision) read V EOFN and
+!    V EOFB.  EOF (end of file) is the English; written VEOFX/VEOFB/VEOFN.
+!  * "V NCP" (lines 30, 35, 36, 41) / "V NOP" (28, 33, 38): one symbol,
+!    224157.40 (p.215 line 18).  Written VNOP.
+!  * Line 46 "B,V CCM" is V COM (p.228 line 15, 224702.00 = .10 less);
+!    line 49 "B,V MC" is V MD (D's stem worn; p.228 line 26, 224707.40).
+!  * Line 44's label prints "V RDQ" with a clear Q tail at 900 dpi; kept
+!    as RDQ.  NOTE p.224 line 45 (vision) reads "B,V RDO" at 224233.50 =
+!    this label + .10 -- the coordinator should settle Q vs O there.
+!  * Hex bytes printed "CC"/"0C" on lines 6, 10, 11 (h2), 28 (h2), 35 (h2)
+!    are 00 -- the open round 0 this page prints in its octal fields too
+!    (000000 prints "CCCCCC" on lines 1, 5, 18, 45, 48).  See the CHECKs.
+!  * The h2 bytes of the six bit-branch rows (11, 28, 35, 36, 43 and 22's
+!    "02") are indistinguishable "0C"/"CC" glyph pairs at 900 dpi.  The
+!    statement settles them: BZB (lines 11, 28, 36) assembles 00, and
+!    BZB1 (lines 35, 43, the "1" printed plainly) assembles 0C -- the
+!    one-variant's bit in the low nibble.
+
+! --- external symbols -----------------------------------------------------
+! The V index/field SYNs are p.213's (read off its image, PDF p.220).
+VU      SYN, $3                      ! p.213 line 25 "V U SYN,$3"  (000023.00)
+VP      SYN, $1                      ! p.213 line 26 "V P SYN,$1"
+VT1     SYN, $4                      ! p.213 line 27
+VT5     SYN, $9                      ! p.213 line 28
+VT2     SYN, $6                      ! p.213 line 29
+VT3     SYN, $7                      ! p.213 line 30
+VX      SYN, (8)0.0                  ! p.213 line 11 "V X SYN,0"
+VX1     SYN, (8)0.40                 ! p.213 line 12 "SYN,V X.V H" prints 000000.40
+VX2R    SYN, (8)2.0                  ! p.213 line 14 prints 000002.00
+VNX     SYN, (8)5.0                  ! p.213 line 16 prints 000005.00
+VID     SYN, (8)5.40                 ! p.213 line 17 "V ID" (read VID there; ink IC/IO/ID unsettled) prints 000005.40
+VF      SYN, (8)0.40                 ! p.213 line 6 "V F SYN,.32"
+DMCP    SYN, 32.0                    ! landed p.108
+DCOMM   SYN, 35.32                   ! landed p.105
+DRD     SYN, 1.0                     ! landed p.104
+! Not yet landed; values from THIS page's binary unless noted.
+VACT    SYN, (8)224655.0             ! line 6 B, half word only (p.227 l.22 reads 224655.00)
+VACTX   SYN, (8)224653.0             ! line 47 B, half word only (p.227 l.18)
+VNXT    SYN, (8)224456.40            ! line 10 B, half word only (p.222 l.42)
+VCSAW   SYN(BU,1), (8)224171.23      ! lines 11,28,36 BZB -- BIT-EXACT (p.215 l.37 SYN(BU,1),V RDCSS.19)
+VSC     SYN, (8)225250.0             ! lines 12,20 VI -- (p.236 l.47 "V SC VF,0" at 225250.00)
+VWQ     SYN, (8)224324.40            ! line 15 KVI -- 19-bit immediate, bit 18 = 1
+VSETX   SYN, (8)224671.40            ! lines 21,27 CB -- (p.227 l.47 reads 224671.40)
+VEOFX   SYN(BU,1), (8)224372.32      ! lines 22,35,43 -- BIT-EXACT (p.220 l.9 DD(BU,1),0)
+VNOP    SYN, (8)224157.40            ! lines 28,30.. -- half word (p.215 l.18 at 224157.40)
+VE      SYN, (8)225376.0             ! lines 29,31 -- (p.238 l.21 "V E VF,-34." at 225376.00)
+VTX1    SYN, (8)225247.0             ! line 37 -- (p.236 l.45 "V TX1 XW,0" at 225247.00)
+VSREW   SYN, (8)225203.40            ! line 43 h2 -- half word (p.234 l.38 at 225203.40)
+VCR     SYN, (8)225232.0             ! line 44 LVI -- (p.236 l.28 at 225232.00)
+VCOM    SYN, (8)224702.0             ! line 46 B -- (p.228 l.15)
+VMD     SYN, (8)224707.40            ! line 49 B -- (p.228 l.26)
+
+        SLC, (8)224201.00
+        LV,VT3,VX(VU)                                        ! line  1  -0168
+        BXVLZ,$.64                                           ! line  2  -0169
+        V-I,VT3,34.                                          ! line  3  -0170
+        B,VID(VU)                                            ! line  4  -0171  (prints V IO; p.213 defines VID)
+VREE4   SV,VT2,VX1(VU)                                       ! line  5  -0172
+        B,VACT                                               ! line  6  -0173
+        CNOP,                                                ! line  7  -0174
+VREE6   (IQS*)DD(BU,8,8),SERVICE THE CARD READER *           ! line  8  -0175
+VREE3   LVNI,VT5,VEES                                        ! line  9  -0176
+        B,VNXT                                               ! line 10  -0177
+VEES    BZB,VCSAW,VEES1                                      ! line 11  -0178
+        KVI,VU,VSC                                           ! line 12  -0179
+        BZXE,VEES2                                           ! line 13  -0180
+        LVE,VT1,VNX+VSC                                      ! line 14  -0181
+        KVI,VT1,VWQ                                          ! line 15  -0182
+        BXE,VEES2                                            ! line 16  -0183
+        LVNI,VT5,VEES                                        ! line 17  -0184
+        SIC,(VP)                                             ! line 18  (no remark; serial 149)
+        CB+,VP,VNXT                                          ! line 19  -0185 (serial 149)
+        LVI,VU,VSC                                           ! line 20  -0186
+VEES1   CB-,VP,VSETX                                         ! line 21  -0187
+VEES2   BB,VEOFX,VEES1                                       ! line 22  -0188  (prints V ECFX)
+        B,DMCP                                               ! line 23  (no remark; serial 153)
+        ,DCOMM                                               ! line 24  -0189 (serial 153)
+        VF,VREE6                                             ! line 25  -0190
+        CF,3                                                 ! line 26  -0191
+        CB-,VP,VSETX                                         ! line 27  -0192
+VEOFB   BZB,VCSAW,VNOP                                       ! line 28  -0193  (label prints V ECFB)
+        LV,VT1,VX1+VE                                        ! line 29  -0194
+        BZXVZ,VNOP                                           ! line 30  -0195  (prints V NCP)
+        LX,VT3,VX2R+VE                                       ! line 31  -0196
+        LV,VT1,(VT3)                                         ! line 32  -0197
+        BZXVZ,VNOP                                           ! line 33  -0198
+        V+I,,VF                                              ! line 34  (no remark; serial 163)
+        BZB1,VEOFX,VNOP                                      ! line 35  -0199  (prints V NCP)
+VEOFN   BZB,VCSAW,VNOP                                       ! line 36  -0200  (label prints V ECFN)
+        LX,VT1,VTX1                                          ! line 37  -0201
+        CB,VT1,VNOP                                          ! line 38  -0202
+        LX,VT3,VX2R+VSC                                      ! line 39  -0203
+        LV,VT1,(VT3)                                         ! line 40  -0204
+        BZXVZ,VNOP                                           ! line 41  -0205  (prints V NCP)
+        V+I,,VF                                              ! line 42  (no remark; serial 171)
+        BZB1,VEOFX,VSREW                                     ! line 43  -0206
+VRDQ    LVI,VU,VCR                                           ! line 44  -0207
+        SIC,(VP)                                             ! line 45  (no remark; serial 174)
+        B,VCOM                                               ! line 46  -0208 (serial 174; prints V CCM)
+        B,VACTX                                              ! line 47  -0209
+VRDIO   SIC,(VP)                                             ! line 48  (no remark; serial 176)
+        B,VMD                                                ! line 49  -0210 (serial 176; prints V MC)
+        B,DMCP                                               ! line 50  (no remark; serial 177)
+        ,DRD                                                 ! line 51  -0211 (serial 177)
+
+!SYM VREE4  224203.00
+!SYM VREE6  224204.00
+!SYM VREE3  224207.00
+!SYM VEES   224210.00
+!SYM VEES1  224215.40
+!SYM VEES2  224216.00
+!SYM VEOFB  224221.40
+!SYM VEOFN  224226.40
+!SYM VRDQ   224233.40
+!SYM VRDIO  224235.40
+!CHECK 224201.00 | 000000.16 33 | line 1 LV,V T3,V X(V U) (octal prints CCCCC0)
+!CHECK 224201.40 | 224202.70 C2 | line 2 BXVLZ,$.64
+!CHECK 224202.00 | 000042.17 0D | line 3 V-I,V T3,34.
+!CHECK 224202.40 | 000005.50 03 | line 4 B,V IO(V U) as printed -- V IC
+!CHECK 224203.00 | 000000.55 33 | line 5 V REE4 SV,V T2,V X1(V U)
+!CHECK 224203.40 | 224655.10 00 | line 6 B,V ACT (byte prints CC)
+!CHECK 224207.00 | 224210.23 09 | line 9 V REE3 LVNI,V T5,V EES
+!CHECK 224207.40 | 224456.50 00 | line 10 B,V NXT (byte prints CC)
+!CHECK 224210.00 | 224171.23 80 224215.74 00 | line 11 V EES BZB,V CSAW,V EES1 (h2 byte prints CC)
+!CHECK 224211.00 | 225250.07 04 | line 12 KVI,V U,V SC
+!CHECK 224211.40 | 224216.32 C0 | line 13 BZXE,V EES2
+!CHECK 224212.00 | 225255.11 B0 | line 14 LVE,V T1,V NX+V SC
+!CHECK 224212.40 | 224324.51 04 | line 15 KVI,V T1,V WQ (a "*" prints after the location)
+!CHECK 224213.00 | 224216.32 C2 | line 16 BXE,V EES2
+!CHECK 224213.40 | 224210.23 09 | line 17 LVNI,V T5,V EES
+!CHECK 224214.00 | 000000.00 81 | line 18 SIC,(V P)
+!CHECK 224214.40 | 224456.43 48 | line 19 CB+,V P,V NXT
+!CHECK 224215.00 | 225250.07 01 | line 20 LVI,V U,V SC
+!CHECK 224215.40 | 224671.43 C8 | line 21 V EES1 CB-,V P,V SETX
+!CHECK 224216.00 | 224372.32 80 224215.74 02 | line 22 V EES2 BB,V ECFX,V EES1
+!CHECK 224217.00 | 000040.10 00 | line 23 B,D MCP
+!CHECK 224217.40 | 000043.40 80 | line 24 ,D COMM
+!CHECK 224220.00 | 224204.00+ | line 25 VF,V REE6
+!CHECK 224220.40 | 000003 | line 26 CF,3
+!CHECK 224221.00 | 224671.43 C8 | line 27 CB-,V P,V SETX
+!CHECK 224221.40 | 224171.23 80 224157.74 00 | line 28 V ECFB BZB,V CSAW,V NOP (h2 byte prints 0C/CC; BZB makes 00, see header)
+!CHECK 224222.40 | 225376.50 30 | line 29 LV,V T1,V X1+V E
+!CHECK 224223.00 | 224157.71 40 | line 30 BZXVZ,V NCP
+!CHECK 224223.40 | 225400.16 10 | line 31 LX,V T3,V X2R+V E
+!CHECK 224224.00 | 000000.10 37 | line 32 LV,V T1,(V T3)
+!CHECK 224224.40 | 224157.71 40 | line 33 BZXVZ,V NOP
+!CHECK 224225.00 | 000000.41 05 | line 34 V+I,,V F
+!CHECK 224225.40 | 224372.32 80 224157.74 0C | line 35 BZB1,V EOFX,V NCP (a "*" after the location; h2 byte 0C -- BZB1 sets the low nibble, see header)
+!CHECK 224226.40 | 224171.23 80 224157.74 00 | line 36 V ECFN BZB,V CSAW,V NOP
+!CHECK 224227.40 | 225247.10 10 | line 37 LX,V T1,V TX1
+!CHECK 224230.00 | 224157.50 48 | line 38 CB,V T1,V NOP
+!CHECK 224230.40 | 225252.16 10 | line 39 LX,V T3,V X2R+V SC
+!CHECK 224231.00 | 000000.10 37 | line 40 LV,V T1,(V T3)
+!CHECK 224231.40 | 224157.71 40 | line 41 BZXVZ,V NCP
+!CHECK 224232.00 | 000000.41 05 | line 42 V+I,,V F
+!CHECK 224232.40 | 224372.32 80 225203.74 0C | line 43 BZB1,V EOFX,V SREW (h2 byte prints 0C)
+!CHECK 224233.40 | 225232.07 01 | line 44 V RDQ LVI,V U,V CR
+!CHECK 224234.00 | 000000.00 81 | line 45 SIC,(V P)
+!CHECK 224234.40 | 224702.10 00 | line 46 B,V CCM as printed -- V COM
+!CHECK 224235.00 | 224653.10 00 | line 47 B,V ACTX
+!CHECK 224235.40 | 000000.00 81 | line 48 V RDIO SIC,(V P)
+!CHECK 224236.00 | 224707.50 00 | line 49 B,V MC as printed -- V MD
+!CHECK 224236.40 | 000040.10 00 | line 50 B,D MCP
+!CHECK 224237.00 | 000001.00 80 | line 51 ,D RD

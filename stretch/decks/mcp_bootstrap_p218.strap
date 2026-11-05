@@ -1,0 +1,200 @@
+! mcp_bootstrap_p218.strap -- MCP printed page 218: a run of the V
+! (scan) routines, V SCR3 .. V WQ, all instructions.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.225, read at 400 dpi (900 dpi for
+! the doubtful glyphs).  Header, READ: "TIME CLOCK 00054C41  PUNID
+! 11D11MCP  CARD ID DA000225  DIST. OF 3/01  3/01  PAGE NUMBER 218";
+! the heading row's LOCATION field is 224274, line 1's word.
+!
+! THE PAGE.  Contiguous from 224274.00 to 224324.40 (a half word), 50
+! lines, 48 of them located; then blank paper.  Lines 22 and 33 carry
+! no location and no binary: each prints only a lone "-" in the NAME
+! column (and a right-hand remark number), and the counter does not
+! move across them (224306.00 BZB1 full word -> 224307.00; 224313.40
+! half word -> 224314.00).  They are carried as comments.
+! p.217 (Vision reading, not landed) ends at 224273.40, a half word, so
+! line 1's .00 continues it; p.219 (Vision) opens at 224325.00, the
+! word after line 50's half word.
+!
+! THE TWO RIGHT-HAND COLUMNS.  Every card prints a "-NNNN" number
+! (-0251 .. -0295) and a card serial DA000225 .. DA000269.  The SIC
+! rows 5, 8, 23, 35, 38 print a serial but no number; the row after
+! each (6, 9, 24, 36, 39) repeats that serial and prints its number
+! further LEFT (-0255, -0257, -0271, -0282, -0284): SIC and the
+! instruction after it are ONE card, printed as two lines.  The serial
+! column is sequential with those five repeats and no gaps.  The
+! serial's first glyph (and the header's CARD ID) has a straight left
+! stem: D, per the C/D rule; Vision reads it C.
+!
+! >>> GLYPHS SETTLED BY SOMETHING OTHER THAN PLAIN INK. <<<
+! * OCTAL-FIELD "C"s: the BINARY fields of rows 4, 5, 8, 10, 12, 16,
+!   23, 29, 31, 35, 41 and most LOCATION fields (224274.CC ...) print C
+!   (000000.CC, CCCCC0.CC, CCC033.22 ...); only 0 can stand there.
+!   Checked as 0.
+! * HEX "C0" FOR 00 on line 1 (NOP) and on the B rows 24, 39, 46, 49:
+!   line 9 prints the SAME statement as line 24 (B,V SETX) with a clean
+!   "00", B's byte is the index nibble (none printed), and NOP compiles
+!   000000.30 00 on every landed page.  Checked as 00.
+! * "C" FOR 0 IN THE STATEMENT on lines 13, 16, 41, 45 (LVI,V S2,C ;
+!   SV,V S1,C ; V+I,V T2,C): the address field prints 000000, and no
+!   symbol C exists in this program.  Written 0.
+! * LINE 48'S "V L" IS V U: the index nibble prints 3 (byte 83), the
+!   value V U has on rows 10, 25, 32, 43 which print a clear U; the L
+!   is a U with its right stroke worn away.  No V L is referenced
+!   anywhere else on the page.  Written VU.
+! * O vs C IN EXTERNAL NAMES, NOT SETTLED BY INK (the bits cannot see
+!   the spelling of an external): line 36 prints "V CCM", written VCOM
+!   (Vision reads the definition on printed p.228 line 15 as V COM, at
+!   224702.00, the word this B reaches); line 49 prints "V ECP",
+!   written VECP as printed (Vision reads p.227 line 11 "V ECP" at
+!   224647.40, this B's half word).  Line 47's label prints "V WEOP"
+!   with the same round glyph; written VWEOP (Vision reads WECP; the
+!   sibling labels p.227 "VREOP" and p.219 "WFEOP" read with O).
+!   Undecided by shape either way -- recorded, not proven.
+! * Q, not G, in V SQ, V SQ1, V SQ2, V WQ: at 900 dpi each has a tail
+!   at lower right and no crossbar.
+!
+! "*" prints after the LOCATION on lines 17 and 41.
+!
+! EXTERNALS.  Nothing in the V routines is landed.  Every value below
+! is read off THIS page's printed binary.  Corroboration, Vision
+! readings only: printed p.213 lines 28-33 read V T5 SYN,$9, V T2
+! SYN,$6, V S1 SYN,$10, V S2 SYN,$11; p.217 line 10 V SC7A at
+! 224244.40; p.222 line 42 V NXT at 224456.40; p.227 line 45 V SETUP
+! 224670.40, line 47 V SETX 224671.40; p.228 line 15 V COM 224702.00.
+
+VS1     SYN, $10                     ! SX/LX J field 10 (lines 18, 37)
+VS2     SYN, $11                     ! LV address 000033 = X11 (line 4); J 11
+VT5     SYN, $9                      ! LV J field 9 (lines 4, 29)
+VT2     SYN, $6                      ! LC/SV/V+I J field 6, LC address 000026
+VP      SYN, $1                      ! SIC,(V P) index nibble 1 (byte 81)
+VU      SYN, $3                      ! SV ..(V U) index nibble 3 (byte 33)
+VH      SYN, 32                      ! p.213 line 7 "V H SYN,32", an INTEGER; ".V H" is 32 bits
+VX1     SYN, (8)0.40                 ! SV,..,V X1(V U) prints 000000.55
+VNXT    SYN, (8)224456.40            ! CB+ on line 6, half word only
+VSC     SYN, (8)225250.0             ! LVI on lines 7, 34, half word only
+VSETX   SYN, (8)224671.40            ! B on lines 9, 24, half word only
+VTX     SYN, (8)225246.0             ! SX/LX lines 18, 30, 37, 40, word only
+VTX1    SYN, (8)225247.0             ! SX line 19, word only
+VM1     SYN(BU,64), (8)777777.0             ! CB- lines 20, 28, half word only
+VNX     SYN, (8)5.0                  ! B,V NX(V U) line 32, half word only
+VCOM    SYN, (8)224702.0             ! B line 36 (printed "V CCM"), half word only
+VSETUP  SYN, (8)224670.40            ! B line 39, half word only
+VSC7A   SYN, (8)224244.40            ! B,V SC7A+1. line 46, half word only
+VPD     SYN, (8)225427.0             ! LX line 47, word only
+VRCNT   SYN, (8)7.0                  ! M+1(BU,18) line 48, BIT-EXACT
+VECP    SYN, (8)224647.40            ! B line 49, half word only
+VWT     SYN, (8)225266.0             ! LVI line 50, half word only
+
+        SLC, (8)224274.0
+VSCR3   NOP,VSCR2                                            ! line  1
+        V+ICR,VS1,15.                                        ! line  2
+        CB+,VS2,VSCR6                                        ! line  3
+        LV,VT5,VS2                                           ! line  4
+        SIC,(VP)                                             ! line  5
+        CB+,VP,VNXT                                          ! line  6
+        LVI,VU,VSC                                           ! line  7
+        SIC,(VP)                                             ! line  8
+        B,VSETX                                              ! line  9
+        SV,VT2,VX1(VU)                                       ! line 10
+        BXVZ,VSCR4                                           ! line 11
+        LC,VS2,VT2                                           ! line 12
+        LVI,VS2,0                                            ! line 13  printed ",C"
+VSCR6   SVA,,VSCR6A                                          ! line 14
+        V+I,,.VH                                             ! line 15  -NORMAL RETURN SPECIFIED
+VSCR6A  SV,VS1,0                                             ! line 16  printed ",C"
+VSCR4   V+I,,.VH                                             ! line 17  ("*" after location) -END RETURN SPECIFIED
+        SX,VS1,VTX                                           ! line 18
+        SX,VS2,VTX1                                          ! line 19
+        CB-,VP,VM1(VP)                                       ! line 20
+VSCR2   BZB1,VSCR3.19,VSCR6                                  ! line 21
+!                                                            ! line 22  prints only "-" in NAME, no location; -0270
+VSC10   SIC,(VP)                                             ! line 23
+        B,VSETX                                              ! line 24
+        SV,VT2,VX1(VU)                                       ! line 25
+        BXVZ,VSC4                                            ! line 26
+        LC,VS2,VT2                                           ! line 27
+VSQ2    CB-,VP,VM1(VP)                                       ! line 28
+VSC4    LV,VT5,VS2                                           ! line 29
+        SX,VS1,VTX                                           ! line 30
+        V-I,VP,1.0                                           ! line 31
+        B,VNX(VU)                                            ! line 32
+!                                                            ! line 33  prints only "-" in NAME, no location; -0280
+VSQ     LVI,VU,VSC                                           ! line 34
+        SIC,(VP)                                             ! line 35
+        B,VCOM                                               ! line 36  printed "V CCM"
+        LX,VS1,VTX                                           ! line 37
+        SIC,(VP)                                             ! line 38
+        B,VSETUP                                             ! line 39
+        SX,VS1,VTX                                           ! line 40
+        V+I,VT2,0                                            ! line 41  ("*" after location) printed ",C"
+        BXVZ,VSQ2                                            ! line 42
+        SV,VT2,VX1(VU)                                       ! line 43
+        LC,VS2,VT2                                           ! line 44
+        LVI,VS2,0                                            ! line 45  printed ",C"
+VSQ1    B,VSC7A+1.                                           ! line 46
+VWEOP   LX,VP,VPD                                            ! line 47
+        M+1(BU,18),VRCNT(VU)                                 ! line 48  printed "(V L)"
+        B,VECP                                               ! line 49
+VWQ     LVI,VU,VWT                                           ! line 50
+
+!SYM VSCR3  224274.00
+!SYM VSCR6  224302.40
+!SYM VSCR6A 224303.40
+!SYM VSCR4  224304.00
+!SYM VSCR2  224306.00
+!SYM VSC10  224307.00
+!SYM VSQ2   224311.40
+!SYM VSC4   224312.00
+!SYM VSQ    224314.00
+!SYM VSQ1   224322.00
+!SYM VWEOP  224322.40
+!SYM VWQ    224324.40
+!CHECK 224274.00 | 224306.30 00 | line 1 V SCR3 NOP,V SCR2 (byte prints "C0")
+!CHECK 224274.40 | 000017.25 07 | line 2 V+ICR,V S1,15.
+!CHECK 224275.00 | 224302.67 48 | line 3 CB+,V S2,V SCR6
+!CHECK 224275.40 | 000033.22 30 | line 4 LV,V T5,V S2
+!CHECK 224276.00 | 000000.00 81 | line 5 SIC,(V P)
+!CHECK 224276.40 | 224456.43 48 | line 6 CB+,V P,V NXT
+!CHECK 224277.00 | 225250.07 01 | line 7 LVI,V U,V SC
+!CHECK 224277.40 | 000000.00 81 | line 8 SIC,(V P)
+!CHECK 224300.00 | 224671.50 00 | line 9 B,V SETX
+!CHECK 224300.40 | 000000.55 33 | line 10 SV,V T2,V X1(V U)
+!CHECK 224301.00 | 224304.31 42 | line 11 BXVZ,V SCR4
+!CHECK 224301.40 | 000026.26 50 | line 12 LC,V S2,V T2
+!CHECK 224302.00 | 000000.27 01 | line 13 LVI,V S2,C
+!CHECK 224302.40 | 224303.41 D0 | line 14 V SCR6 SVA,,V SCR6A
+!CHECK 224303.00 | 000000.41 05 | line 15 V+I,,.V H
+!CHECK 224303.40 | 000000.25 30 | line 16 V SCR6A SV,V S1,C
+!CHECK 224304.00 | 000000.41 05 | line 17 V SCR4 V+I,,.V H
+!CHECK 224304.40 | 225246.25 10 | line 18 SX,V S1,V TX
+!CHECK 224305.00 | 225247.27 10 | line 19 SX,V S2,V TX1
+!CHECK 224305.40 | 777777.03 C9 | line 20 CB-,V P,V M1(V P)
+!CHECK 224306.00 | 224274.23 80 224302.74 0C | line 21 V SCR2 BZB1,V SCR3.19,V SCR6
+!CHECK 224307.00 | 000000.00 81 | line 23 V SC10 SIC,(V P)
+!CHECK 224307.40 | 224671.50 00 | line 24 B,V SETX
+!CHECK 224310.00 | 000000.55 33 | line 25 SV,V T2,V X1(V U)
+!CHECK 224310.40 | 224312.31 42 | line 26 BXVZ,V SC4
+!CHECK 224311.00 | 000026.26 50 | line 27 LC,V S2,V T2
+!CHECK 224311.40 | 777777.03 C9 | line 28 V SQ2 CB-,V P,V M1(V P)
+!CHECK 224312.00 | 000033.22 30 | line 29 V SC4 LV,V T5,V S2
+!CHECK 224312.40 | 225246.25 10 | line 30 SX,V S1,V TX
+!CHECK 224313.00 | 000001.03 0D | line 31 V-I,V P,1.0
+!CHECK 224313.40 | 000005.10 03 | line 32 B,V NX(V U)
+!CHECK 224314.00 | 225250.07 01 | line 34 V SQ LVI,V U,V SC
+!CHECK 224314.40 | 000000.00 81 | line 35 SIC,(V P)
+!CHECK 224315.00 | 224702.10 00 | line 36 B,V CCM as printed
+!CHECK 224315.40 | 225246.24 10 | line 37 LX,V S1,V TX
+!CHECK 224316.00 | 000000.00 81 | line 38 SIC,(V P)
+!CHECK 224316.40 | 224670.50 00 | line 39 B,V SETUP
+!CHECK 224317.00 | 225246.25 10 | line 40 SX,V S1,V TX
+!CHECK 224317.40 | 000000.15 05 | line 41 V+I,V T2,C
+!CHECK 224320.00 | 224311.71 42 | line 42 BXVZ,V SQ2
+!CHECK 224320.40 | 000000.55 33 | line 43 SV,V T2,V X1(V U)
+!CHECK 224321.00 | 000026.26 50 | line 44 LC,V S2,V T2
+!CHECK 224321.40 | 000000.27 01 | line 45 LVI,V S2,C
+!CHECK 224322.00 | 224245.50 00 | line 46 V SQ1 B,V SC7A+1.
+!CHECK 224322.40 | 225427.02 10 | line 47 V WEOP LX,V P,V PD
+!CHECK 224323.00 | 000007.00 83 022000.22 B0 | line 48 M+1(BU,18),V RCNT(V L) as printed, L = worn U
+!CHECK 224324.00 | 224647.50 00 | line 49 B,V ECP
+!CHECK 224324.40 | 225266.07 01 | line 50 V WQ LVI,V U,V WT

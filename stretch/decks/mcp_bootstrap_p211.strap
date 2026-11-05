@@ -1,0 +1,128 @@
+! mcp_bootstrap_p211.strap -- MCP printed page 211: the tail of the
+! spool messages, AMR/AMR1/AMR2, and the OUTPUT pseudo-op (C DRY ..
+! B,ATSWC3), ending at A OP VF,0.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.218, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID MA000488  DIST. OF 3/01
+!  3/01  PAGE NUMBER 211"; the heading row's LOCATION field is 224005,
+! line 1's word (docs/transcription_workflow.md step 1).
+!
+! THE PAGE.  30 lines, contiguous from 224005.30 to 224046.00, then
+! blank paper.  p.210's last card (A1FMC (IQS*)DD(BU),1*, per its
+! finding-aid sheet) sits at 224005.20, six bits, so line 1's .30
+! continues it.
+!   lines  1-11  messages (IQS*)DD(BU), CNOPs, two DRZ(N) reservations.
+!   line   9     CNOP printing no location (counter already on a word).
+!   lines 12,17  remark cards, NAME "-": "SYMBOLIC UNITS" and
+!                "OUTPUT PSEUDO-OP".  Compile nothing; recorded as
+!                comments only.
+!   lines 13-16  VF,CT11 / VF,CT11 / VF,CT21 / VF, (null field, 0).
+!   lines 18-29  the OUTPUT pseudo-op code.
+!   line  30     A OP VF,0.
+!
+! >>> CARD SERIALS. <<<  MA000488 .. MA000517, one per printed line,
+! no gaps.  Asterisks after the LOCATION on lines 1, 6, 11 and 28;
+! recorded, not explained.
+!
+! >>> GLYPHS NOT SETTLED BY PLAIN INK. <<<
+!   * line 2 "ALCGM" is ALOGM: its remark word is LOGICAL, and the
+!     landed-for-SYN decks reference ALOGM at 224006.30 (LF, BIT-EXACT).
+!   * line 30 "ACP" is AOP: p.209 and others reference AOP at 224046.0,
+!     this row's location.
+!   * lines 26/27 "CMOCOO" are CM0000 (the only CM mnemonic of that
+!     shape; the C's are open rounds in a 0/1 mask).
+!   * line 18 "CDRY" / line 22 "CDRY1": the D is D -- the landed-for-SYN
+!     decks reference CDRY 224034.0 and CDRY1 224037.40, these rows.
+!   * line 18 TI,9: printed "9"; the h2 .22 = 2*9 count (as other decks
+!     note for this same TI,9,$7,CXR7).
+!   * Hex bytes printed with an open round are written 0 where the
+!     statement cannot make a C: line 21 "CC" (B,ARET, no index),
+!     line 29 "C0" (B,ATSWC3), line 26 "FC" (CM VFL, no offset index),
+!     line 18 "AC" (TI low nibble is I2; none printed).  Settled by
+!     assembly; the same rows print open rounds in their octal fields.
+!   * Octal-field C's ("224031.CC", "CCCCC1.CC", "CCC013.00+",
+!     "CCCCCC.00+") are 0 by the octal rule.
+!
+! The data cards' blanks are DATA (entry mode).  Line 7's count was
+! measured on the ink (character pitch 40.1 px at 400 dpi): 36 data
+! characters, " THERE ARE   FILE MARKS ON" plus ten blanks, matching
+! line 8's LOCATION 224023.40 (288 bits after 224017.00).
+
+CT11    SYN, 11.0                    ! landed p.126 -OUTPUT SPOOL TAPE 1
+CT21    SYN, 12.0                    ! landed p.126 -OUTPUT SPOOL TAPE 2
+CXR7    SYN, (8)223753.0             ! landed-for-SYN decks; TI word only
+CXR15   SYN, (8)223763.0             ! SX on line 24, half word only (this page only)
+AEOJI   SYN, (8)223744.14            ! landed-for-SYN; BIT-EXACT
+AOPTRI  SYN, (8)223743.03            ! landed-for-SYN; BIT-EXACT
+ARET    SYN, (8)222144.0             ! landed-for-SYN; half word only
+ARET1   SYN, (8)222146.0             ! p.201 !SYM ARET1 222146.00
+CATUB   SYN(BU,1,1), (8)223744.11    ! landed-for-SYN; BIT-EXACT, dds from 001100
+CXY     SYN, (8)222257.0             ! landed-for-SYN; CXY+.19 = 222257.23
+CTRAIL  SYN, (8)223742.0             ! landed-for-SYN; CTRAIL+.05 = 223742.05
+ATMI    SYN(BU,1), (8)223743.02      ! landed-for-SYN; dds from 001000 F0
+CRET    SYN, (8)222320.0             ! landed-for-SYN; half word only
+ATSWC3  SYN, (8)222405.0             ! p.206 !SYM ATSWC3 222405.00
+
+        SLC, (8)224005.30
+APHYM   (IQS*)DD(BU),PHYSICAL*                               ! line  1
+ALOGM   (IQS*)DD(BU),LOGICAL *                               ! line  2  printed ALCGM
+        CNOP                                                 ! line  3
+ANFMS   (IQS*)DD(BU),DATA FAILURE ON *                       ! line  4
+ALNKMS  (IQS*)DD(BU),UNIT FAILURE ON *                       ! line  5
+CMESS1  DRZ(N),3                                             ! line  6
+        (IQS*)DD(BU), THERE ARE   FILE MARKS ON          *   ! line  7
+        (IQS*)DD(BU),END OF TAPE *                           ! line  8
+        CNOP                                                 ! line  9
+APGKM1  (IQS*)DD(BU),INSERT A RING IN OUTPUT TAPE ON *       ! line 10
+AEPGKM  DRZ(N),1                                             ! line 11
+! line 12  -  SYMBOLIC UNITS   (remark card, compiles nothing)
+AMR     VF,CT11                                              ! line 13
+AMR1    VF,CT11                                              ! line 14
+AMR2    VF,CT21                                              ! line 15
+        VF,                                                  ! line 16
+! line 17  -  OUTPUT PSEUDO-OP (remark card, compiles nothing)
+CDRY    TI,9,$7,CXR7                                         ! line 18
+        BBZ,AEOJI,CDRY1                                      ! line 19  -IS EOJ INDICATOR ON
+        CM1111(BU,1),AOPTRI                                  ! line 20  -NO   TURN ON OUTPUT REQUEST INDICATOR
+        B,ARET                                               ! line 21
+CDRY1   BB,CATUB,$                                           ! line 22  -IF SPOOL TAPE BUSY WAIT
+        BZB,CXY+.19,ARET1                                    ! line 23  -IF HAVE NEW TAPE, RETURN
+        SX,$15,CXR15                                         ! line 24  -SAVE INDEX
+        CM1111,CATUB                                         ! line 25  -MAKE TAPE UNAVAILABLE
+        CM0000(BU,1,1),CTRAIL+.05                            ! line 26  -PHYSICAL AND LOGICAL END OF TAPE
+        CM0000,ATMI                                          ! line 27  -ONE TAPE MARK TO BE WRITTEN
+        LVI,$15,CRET                                         ! line 28  -LOAD INDEX WITH EXIT
+        B,ATSWC3                                             ! line 29  -GO TO TAPE SWITCH
+AOP     VF,0                                                 ! line 30  printed ACP
+
+!SYM APHYM  224005.30
+!SYM ALOGM  224006.30
+!SYM ANFMS  224010.00
+!SYM ALNKMS 224012.00
+!SYM CMESS1 224014.00
+!SYM APGKM1 224025.00
+!SYM AEPGKM 224031.00
+!SYM AMR    224032.00
+!SYM AMR1   224032.40
+!SYM AMR2   224033.00
+!SYM CDRY   224034.00
+!SYM CDRY1  224037.40
+!SYM AOP    224046.00
+!CHECK 224007.40 | 000000.30 00 | line 3 CNOP
+!CHECK 224032.00 | 000013.00+ | line 13 AMR VF,CT11
+!CHECK 224032.40 | 000013.00+ | line 14 AMR1 VF,CT11
+!CHECK 224033.00 | 000014.00+ | line 15 AMR2 VF,CT21
+!CHECK 224033.40 | 000000.00+ | line 16 VF, (null field)
+!CHECK 224034.00 | 000027.00 80 223753.22 A0 | line 18 C DRY TI,9,$7,CXR7 (byte prints "AC")
+!CHECK 224035.00 | 223744.14 80 224037.74 06 | line 19 BBZ,AEOJI,CDRY1
+!CHECK 224036.00 | 223743.03 80 001000.36 F0 | line 20 CM1111(BU,1),AOPTRI
+!CHECK 224037.00 | 222144.10 00 | line 21 B,ARET (byte prints "CC")
+!CHECK 224037.40 | 223744.11 80 224037.74 02 | line 22 C DRY1 BB,CATUB,$
+!CHECK 224040.40 | 222257.23 80 222146.34 00 | line 23 BZB,CXY+.19,ARET1
+!CHECK 224041.40 | 223763.37 10 | line 24 SX,$15,CXR15
+!CHECK 224042.00 | 223744.11 80 001100.36 F0 | line 25 CM1111,CATUB
+!CHECK 224043.00 | 223742.05 80 001100.00 F0 | line 26 CM0000(BU,1,1),CTRAIL+.05 (byte prints "FC")
+!CHECK 224044.00 | 223743.02 80 001000.00 F0 | line 27 CM0000,ATMI
+!CHECK 224045.00 | 222320.37 01 | line 28 LVI,$15,CRET (a "*" prints after the location)
+!CHECK 224045.40 | 222405.10 00 | line 29 B,ATSWC3 (byte prints "C0")
+!CHECK 224046.00 | 000000.00+ | line 30 A OP VF,0 (printed ACP)

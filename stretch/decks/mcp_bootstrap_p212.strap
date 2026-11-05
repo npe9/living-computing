@@ -1,0 +1,116 @@
+! mcp_bootstrap_p212.strap -- MCP printed page 212: THE DISABLED SPOOL
+! SHORT MESSAGE ROUTINE (Z SPL PR), its save area and message buffers.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.219, read at 400 dpi, doubtful glyphs
+! at 900.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID
+! MB000001  DIST. OF 3/01  3/01  PAGE NUMBER 212"; the heading row's
+! LOCATION field is BLANK -- line 1 is an asterisk banner
+! (docs/transcription_workflow.md step 1).  Card serials MB000001 ..
+! MB000044, one per line, no gaps: a NEW card-ID series (MB) opens here.
+!
+! THE PAGE.  Contiguous from 224046.31 (the SLC,$) to 224104.77.
+!   lines  1-3   the asterisk box around the routine's title
+!   line   4     "SLC,$", printed at 224046.31 with an asterisk mark
+!   lines  5-25  code: Z SPL PR .. Z SPL PX (BD,0.0)
+!   line  26     CNOP, no location printed (emits nothing: 224062.00
+!                is already a word boundary)
+!   line  27     Z SAV IX DRZ(BU,64,8),(2) -- two words, prints 000002.00
+!   lines 28-44  seventeen one-word (AX)DD(BU) blank buffers: Z MSG BF
+!                (lines 28-43, sixteen words) and Z LST BF (line 44).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * Operand 0's printed as open C (SX,C / LV,C / LVE,0,C.C / BD,C.C /
+!     T,1,0.C / +1.C / LX,C): the same open round prints in this page's
+!     OCTAL fields (CCCCCC.41), where only 0 can stand; a C is no
+!     register and no number.  Written 0.
+!   * line 19 "BD,S IFAC" is SIFAD (landed, !SYM SIFAD 215510.00; the
+!     binary 215510.04 is that address): D with its stem worn.
+!   * line 21 ",Z MSC BF" is Z MSG BF: binary 224064.00 is line 28's
+!     ZMSGBF, which line 17 prints as "Z MSG BF"; no ZMSCBF exists.
+!   * lines 8 and 10 print the byte "CD" and it is 0D.  At 900 dpi its
+!     first glyph is the same open round that line 10 prints six times
+!     in its OCTAL field ("CCCCCC.41"), where only 0 can stand; and
+!     V-I,0,.32 assembles to 0D -- no index or other operand is printed
+!     that could set those bits.  Vision read CD: the C/0 confusion.
+!   * Data blanks (entry mode): eight 8-bit blanks before each X, as
+!     the ink spaces them and as the next card's LOCATION requires.
+
+STIC    SYN, (8)215265.0             ! landed; p.116 line 16 defines it
+SIFAD   SYN, (8)215510.0             ! landed !SYM SIFAD 215510.00
+DSPR    SYN, 67.32                   ! landed (p.105 line 38 D SPR); 0o103.40
+
+        SLC, (8)224046.31
+! line  1  - ****************************************************
+! line  2  - ********** THE DISABLED SPOOL SHORT MESSAGE ROUTINE **********
+! line  3  - ****************************************************
+! line  4  224046.31 *   SLC,$   (restated hard above)
+ZSPLPR  SX,0,ZSAVIX                                          ! line  5
+        SX,1,ZSAVIX+1.0                                      ! line  6
+        LV,0,ZSPLP9                                          ! line  7
+        V-I,0,.32                                            ! line  8
+        SVA,0,ZGETNM                                         ! line  9
+        V-I,0,.32                                            ! line 10
+        SVA,0,ZSPLPX                                         ! line 11
+ZSPLP9  LVE,0,0.0                                            ! line 12
+        SVA,0,ZTRANS                                         ! line 13
+ZGETNM  LVE,1,0.0                                            ! line 14
+        LC,1,$1                                              ! line 15
+        TBI,16,ZLSTBF,ZLSTBF-1.0                             ! line 16
+ZTRANS  T,1,0.0,ZMSGBF                                       ! line 17
+        SIC,STIC                                             ! line 18
+        BD,SIFAD                                             ! line 19
+        ,DSPR                                                ! line 20
+        ,ZMSGBF                                              ! line 21  printed Z MSC BF
+        ,1.0                                                 ! line 22
+        LX,0,ZSAVIX                                          ! line 23
+        LX,1,ZSAVIX+1.0                                      ! line 24
+ZSPLPX  BD,0.0                                               ! line 25
+        CNOP                                                 ! line 26
+ZSAVIX  DRZ(BU,64,8),(2)                                     ! line 27
+ZMSGBF  (AX)DD(BU),        X                                 ! line 28
+        (AX)DD(BU),        X                                 ! line 29
+        (AX)DD(BU),        X                                 ! line 30
+        (AX)DD(BU),        X                                 ! line 31
+        (AX)DD(BU),        X                                 ! line 32
+        (AX)DD(BU),        X                                 ! line 33
+        (AX)DD(BU),        X                                 ! line 34
+        (AX)DD(BU),        X                                 ! line 35
+        (AX)DD(BU),        X                                 ! line 36
+        (AX)DD(BU),        X                                 ! line 37
+        (AX)DD(BU),        X                                 ! line 38
+        (AX)DD(BU),        X                                 ! line 39
+        (AX)DD(BU),        X                                 ! line 40
+        (AX)DD(BU),        X                                 ! line 41
+        (AX)DD(BU),        X                                 ! line 42
+        (AX)DD(BU),        X                                 ! line 43
+ZLSTBF  (AX)DD(BU,64,8),        X                            ! line 44
+
+!SYM ZSPLPR 224046.40
+!SYM ZSPLP9 224052.00
+!SYM ZGETNM 224053.00
+!SYM ZTRANS 224055.00
+!SYM ZSPLPX 224061.40
+!SYM ZSAVIX 224062.00
+!SYM ZMSGBF 224064.00
+!SYM ZLSTBF 224104.00
+!CHECK 224046.40 | 224062.01 10 | line 5 Z SPL PR SX,C,Z SAV IX
+!CHECK 224047.00 | 224063.03 10 | line 6 SX,1,Z SAV IX+1.C
+!CHECK 224047.40 | 224052.00 30 | line 7 LV,C,Z SPL P9
+!CHECK 224050.00 | 000000.41 0D | line 8 V-I,0,.32 (byte prints "CD"; the same open round prints in this row's octal field, 000000 -- see header)
+!CHECK 224050.40 | 224053.01 D0 | line 9 SVA,0,Z GET NM
+!CHECK 224051.00 | 000000.41 0D | line 10 V-I,0,.32 (byte prints "CD"; the row prints its octal 000000 as CCCCCC -- see header)
+!CHECK 224051.40 | 224061.41 D0 | line 11 SVA,0,Z SPL PX
+!CHECK 224052.00 | 000000.01 B0 | line 12 Z SPL P9 LVE,0,C.C
+!CHECK 224052.40 | 224055.01 D0 | line 13 SVA,0,Z TRANS
+!CHECK 224053.00 | 000000.03 B0 | line 14 Z GET NM LVE,1,0.C
+!CHECK 224053.40 | 000021.02 50 | line 15 LC,1,$1
+!CHECK 224054.00 | 224104.00 80 224103.01 A0 | line 16 TBI,16,Z LST BF,Z LST BF-1.0
+!CHECK 224055.00 | 000000.00 80 224064.02 20 | line 17 Z TRANS T,1,0.C,Z MSG BF
+!CHECK 224056.00 | 215265.00 80 | line 18 SIC,STIC
+!CHECK 224056.40 | 215510.04 00 | line 19 BD,S IFAC as printed (D worn)
+!CHECK 224057.00 | 000103.40 80 | line 20 ,D SPR
+!CHECK 224057.40 | 224064.00 80 | line 21 ,Z MSC BF as printed (G worn)
+!CHECK 224060.00 | 000001.00 80 | line 22 ,1.C
+!CHECK 224060.40 | 224062.00 10 | line 23 LX,C,Z SAV IX
+!CHECK 224061.00 | 224063.02 10 | line 24 LX,1,Z SAV IX+1.C
+!CHECK 224061.40 | 000000.04 00 | line 25 Z SPL PX BD,C.C (location carries an asterisk)

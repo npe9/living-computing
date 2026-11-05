@@ -1,0 +1,183 @@
+! mcp_bootstrap_p209.strap -- MCP printed page 209.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.216, read at 400 dpi, 900 dpi for
+! doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+!  CARD ID MA000384  DIST. OF 3/01  3/01  PAGE NUMBER 209"; the heading
+! row's LOCATION field is 222533, line 1's word.
+!
+! THE PAGE.  56 lines, contiguous from 222533.40 to 222602.00.
+!   line  22  CNOP printing no location (counter already on a word).
+!   line  49  CNUM SYN,12. (prints 000014.00+ +00000000 NULL).
+!   line  50  remark continuation card, NAME "-": compiles nothing,
+!             not transcribed.
+!   line  56  CX (A*)DD(BU,6,6),P* prints a LOCATION and NO binary.
+!
+! >>> CARD SERIALS. <<<  MA000384 .. MA000431, one per line except
+! eight pairs that share a serial: lines 9/10 (392), 11/12 (393),
+! 13/14 (394), 24/25 (404), 26/27 (405), 28/29 (406), 45/46 (422),
+! 47/48 (423) -- each pair a full/half-word instruction followed by a
+! half word, the shape of two statements on one card.  Written here
+! one statement per printed line.  Asterisks after the LOCATION on
+! lines 5, 8, 23 and 41; recorded, not explained.
+!
+! >>> "ACP" IS AOP. <<<  LV,14,A?P on lines 9/11/15/24/26/30: the
+! middle glyph at 900 dpi is the same squared, upper-right-broken
+! round that this page prints as the O of CNOP (line 7) and NOP
+! (line 14), not the C of CNOP's first letter.  External; the name
+! does not reach the binary.
+!
+! Octal-field C glyphs (e.g. line 8 "C0C002.CC", line 36 "000C03.10",
+! line 49 "+00C00000", "150" printed "15C" on lines 51/52 = 0o226) are
+! 0 by the octal rule / the printed count.
+!
+! >>> HEX BYTES PRINTED WITH AN OPEN ROUND, WRITTEN 0. <<<  Lines 1 and
+! 5 print "AC", line 4 "FC", line 27 "C0".  At 900 dpi each is the same
+! open round that the same row prints in its OCTAL fields ("224C12.CC",
+! "224C20.30 8C", "010000.C6"), where only 0 can stand; and the
+! statements cannot make a C: TI/SF carry no second-operand index
+! (low nibble 0), B,AXBEE no index (byte 00, as lines 10/25 print it).
+!
+! >>> $MCP AND $RET WRITTEN AS PRINTED. <<<  Lines 39/43 "B,$MCP" and
+! 40/44 ",$RET": MCP pseudo-ops are STRAP system symbols assembled by
+! preceding with $ (N28-1081 p.8, in C28-6129 PDF p.66).  Their printed
+! binaries 000040.10 00 / 000041.00 80 are exactly what line 47/48's
+! B,DMCP / ,DRET print (DMCP 32.0, DRET 33.0 landed).
+
+ALNKMS  SYN, (8)224012.0             ! TI on line 1, BIT-EXACT
+CMESS1  SYN, (8)224014.0             ! SF on line 4 (CMESS1+4.24 = 224020.30), BIT-EXACT
+AGFM    SYN, (8)222447.40            ! B,AGFM+1. on line 2, half word only
+A2FMC   SYN, (8)224005.0             ! LF on line 3, BIT-EXACT
+AOP     SYN, (8)224046.0             ! LV on line 9, half word only
+ATSWCR  SYN(BU,1), (8)223744.15            ! BB on line 37, BIT-EXACT
+ATSWC4  SYN, (8)222472.40            ! BB on line 37, half word only
+ATSWC6  SYN, (8)222474.0             ! BB on line 41, half word only
+ATARI   SYN(BU,1), (8)223744.13      ! CM1111 on line 38, BIT-EXACT; (BU,1) from its printed 001000.36
+ATBRI   SYN(BU,1), (8)223744.12      ! CM1111 on line 42, BIT-EXACT; (BU,1) from its printed 001000.36
+CY      SYN, (8)223030.0             ! CW on line 52, BIT-EXACT
+DMCP    SYN, 32.0                    ! landed
+DRET    SYN, 33.0                    ! landed
+
+        SLC, (8)222533.40
+        TI,2,ALNKMS,CMESS1                                   ! line  1
+        B,AGFM+1.                                            ! line  2
+AERRUN  LF(BU,8),A2FMC                                       ! line  3
+        SF(BU,8),CMESS1+4.24                                 ! line  4
+        TI,2,ALNKMS,CMESS1                                   ! line  5
+        B,AGFM+1.                                            ! line  6
+        CNOP,                                                ! line  7
+AXITA   DRZ(N),2                                             ! line  8
+        LV,14,AOP                                            ! line  9
+        B,AXAUK                                              ! line 10
+        LV,14,AOP                                            ! line 11
+        B,AXAEE                                              ! line 12
+        B,RATPCS                                             ! line 13
+        NOP,                                                 ! line 14
+        LV,14,AOP                                            ! line 15
+        TI,2,AXITA,0($14)                                    ! line 16
+        B,5.($14)                                            ! line 17
+AXAUK   TI,2,AXITA,0($14)                                    ! line 18
+        B,2.($14)                                            ! line 19
+AXAEE   TI,2,AXITA,($14)                                     ! line 20
+        B,3.($14)                                            ! line 21
+        CNOP,                                                ! line 22
+AXITB   DRZ(N),2                                             ! line 23
+        LV,14,AOP                                            ! line 24
+        B,AXBUK                                              ! line 25
+        LV,14,AOP                                            ! line 26
+        B,AXBEE                                              ! line 27
+        B,ATPBCS                                             ! line 28
+        NOP,                                                 ! line 29
+        LV,14,AOP                                            ! line 30
+        TI,2,AXITB,0($14)                                    ! line 31
+        B,5.($14)                                            ! line 32
+AXBUK   TI,2,AXITB,0($14)                                    ! line 33
+        B,2.($14)                                            ! line 34
+AXBEE   TI,2,AXITB,0($14)                                    ! line 35
+        B,3.($14)                                            ! line 36
+ATPACS  BB,ATSWCR,ATSWC4                                     ! line 37
+        CM1111,ATARI                                         ! line 38
+        B,$MCP                                               ! line 39
+        ,$RET                                                ! line 40
+ATPBCS  BB,ATSWCR,ATSWC6                                     ! line 41
+        CM1111,ATBRI                                         ! line 42
+        B,$MCP                                               ! line 43
+        ,$RET                                                ! line 44
+RATPCS  LVI,14,ATPACS                                        ! line 45
+        SVA,14,AXITA+4.0                                     ! line 46
+        B,DMCP                                               ! line 47
+        ,DRET                                                ! line 48
+CNUM    SYN,12.                                              ! line 49  -THIS PARAMETER CAN BE VARIED
+CWX     CW(CR),CX,150,CWX                                    ! line 51  -CWS FOR BUFFERS X AND Y
+CWY     CW(CR),CY,150,CWY                                    ! line 52  -CF=X+1.
+CWA     XW,CX+.6,CNUM,CWW                                    ! line 53  -TRANSMISSION INDEX
+CWT     XW,CX+.6,CNUM,CWW                                    ! line 54  -BUFFER X
+CWW     XW,CY+.6,CNUM,CWT                                    ! line 55  -BUFFER Y
+CX      (A*)DD(BU,6,6),P*                                    ! line 56  -BUFFER X AND Y RESERVATION
+
+!SYM AERRUN 222535.00
+!SYM AXITA  222541.00
+!SYM AXAUK  222550.00
+!SYM AXAEE  222551.40
+!SYM AXITB  222553.00
+!SYM AXBUK  222562.00
+!SYM AXBEE  222563.40
+!SYM ATPACS 222565.00
+!SYM ATPBCS 222570.00
+!SYM RATPCS 222573.00
+!SYM CNUM   000014.00
+!SYM CWX    222575.00
+!SYM CWY    222576.00
+!SYM CWA    222577.00
+!SYM CWT    222600.00
+!SYM CWW    222601.00
+!SYM CX     222602.00
+!CHECK 222533.40 | 224012.00 80 224014.04 A0 | line 1 TI,2,ALNKMS,CMESS1 (byte prints "AC")
+!CHECK 222534.40 | 222450.50 00 | line 2 B,AGFM+1.
+!CHECK 222535.00 | 224005.00 80 010000.06 70 | line 3 AERRUN LF(BU,8),A2FMC
+!CHECK 222536.00 | 224020.30 80 010000.12 F0 | line 4 SF(BU,8),CMESS1+4.24
+!CHECK 222537.00 | 224012.00 80 224014.04 A0 | line 5 TI,2,ALNKMS,CMESS1 (location carries an asterisk)
+!CHECK 222540.00 | 222450.50 00 | line 6 B,AGFM+1.
+!CHECK 222540.40 | 000000.30 00 | line 7 CNOP (this one emits)
+!CHECK 222543.00 | 224046.34 30 | line 9 LV,14,AOP
+!CHECK 222543.40 | 222550.10 00 | line 10 B,AXAUK
+!CHECK 222544.00 | 224046.34 30 | line 11 LV,14,AOP
+!CHECK 222544.40 | 222551.50 00 | line 12 B,AXAEE
+!CHECK 222545.00 | 222573.10 00 | line 13 B,RATPCS
+!CHECK 222545.40 | 000000.30 00 | line 14 NOP
+!CHECK 222546.00 | 224046.34 30 | line 15 LV,14,AOP
+!CHECK 222546.40 | 222541.00 80 000000.04 AE | line 16 TI,2,AXITA,0($14)
+!CHECK 222547.40 | 000005.10 0E | line 17 B,5.($14)
+!CHECK 222550.00 | 222541.00 80 000000.04 AE | line 18 AXAUK TI,2,AXITA,0($14)
+!CHECK 222551.00 | 000002.10 0E | line 19 B,2.($14)
+!CHECK 222551.40 | 222541.00 80 000000.04 AE | line 20 AXAEE TI,2,AXITA,($14)
+!CHECK 222552.40 | 000003.10 0E | line 21 B,3.($14)
+!CHECK 222555.00 | 224046.34 30 | line 24 LV,14,AOP
+!CHECK 222555.40 | 222562.10 00 | line 25 B,AXBUK
+!CHECK 222556.00 | 224046.34 30 | line 26 LV,14,AOP
+!CHECK 222556.40 | 222563.50 00 | line 27 B,AXBEE
+!CHECK 222557.00 | 222570.10 00 | line 28 B,ATPBCS
+!CHECK 222557.40 | 000000.30 00 | line 29 NOP
+!CHECK 222560.00 | 224046.34 30 | line 30 LV,14,AOP
+!CHECK 222560.40 | 222553.00 80 000000.04 AE | line 31 TI,2,AXITB,0($14)
+!CHECK 222561.40 | 000005.10 0E | line 32 B,5.($14)
+!CHECK 222562.00 | 222553.00 80 000000.04 AE | line 33 AXBUK TI,2,AXITB,0($14)
+!CHECK 222563.00 | 000002.10 0E | line 34 B,2.($14)
+!CHECK 222563.40 | 222553.00 80 000000.04 AE | line 35 AXBEE TI,2,AXITB,0($14)
+!CHECK 222564.40 | 000003.10 0E | line 36 B,3.($14)
+!CHECK 222565.00 | 223744.15 80 222472.74 02 | line 37 ATPACS BB,ATSWCR,ATSWC4
+!CHECK 222566.00 | 223744.13 80 001000.36 F0 | line 38 CM1111,ATARI
+!CHECK 222567.00 | 000040.10 00 | line 39 B,$MCP
+!CHECK 222567.40 | 000041.00 80 | line 40 ,$RET
+!CHECK 222570.00 | 223744.15 80 222474.34 02 | line 41 ATPBCS BB,ATSWCR,ATSWC6 (location carries an asterisk)
+!CHECK 222571.00 | 223744.12 80 001000.36 F0 | line 42 CM1111,ATBRI
+!CHECK 222572.00 | 000040.10 00 | line 43 B,$MCP
+!CHECK 222572.40 | 000041.00 80 | line 44 ,$RET
+!CHECK 222573.00 | 222565.35 01 | line 45 RATPCS LVI,14,ATPACS
+!CHECK 222573.40 | 222545.35 D0 | line 46 SVA,14,AXITA+4.0
+!CHECK 222574.00 | 000040.10 00 | line 47 B,DMCP
+!CHECK 222574.40 | 000041.00 80 | line 48 ,DRET
+!CHECK 222575.00 | 222602.00+ 000 000226 222575 | line 51 CWX CW(CR),CX,150,CWX
+!CHECK 222576.00 | 223030.00+ 000 000226 222576 | line 52 CWY CW(CR),CY,150,CWY
+!CHECK 222577.00 | 222602.06+ 000 000014 222601 | line 53 CWA XW,CX+.6,CNUM,CWW
+!CHECK 222600.00 | 222602.06+ 000 000014 222601 | line 54 CWT XW,CX+.6,CNUM,CWW
+!CHECK 222601.00 | 223030.06+ 000 000014 222600 | line 55 CWW XW,CY+.6,CNUM,CWT

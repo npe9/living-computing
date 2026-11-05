@@ -1,0 +1,201 @@
+! mcp_bootstrap_p201.strap -- MCP printed page 201: the head of the
+! OUTPUT PROGRAM -- four tentacle tables (SPR, SPU, EOJ, -OUTPUT-) and
+! the punch-transmit loop A SPUO .. A AOS3.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.208, read at 400 dpi, doubtful glyphs
+! at 900.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID
+! MA000001  DIST. OF 3/01  3/01  PAGE NUMBER 201"; the heading row's
+! LOCATION field is BLANK -- line 1 is a banner card
+! (docs/transcription_workflow.md step 1).
+!
+! THE PAGE.  56 lines, contiguous from 222104.40 to 222150.00 (a half
+! word; the next page continues at 222150.40).
+!   lines  1-3   banner "*** OUTPUT PROGRAM ***", no location.
+!   lines  4-24  CNOP and four tentacle tables, each DD / DRZ /
+!                EXT(0,18) over a B / DRZ(N).
+!   lines 25-56  code.  Line 38 is a remark card with no location.
+! This page opens a new card deck: serials restart at MA000001.
+!
+! >>> CARD SERIALS. <<<  Lines 7/8, 12/13, 17/18, 22/23 share a serial
+! (each EXT and the B it extracts from, as on p.149).  Lines 35
+! (SIC,ACHKBR) and 36 (B,ACHK) BOTH print MA000031 -- not an EXT pair.
+! Recorded, not explained.  Serial = line - 4 through line 35, then
+! line - 5 from line 36 (MA000031) to line 56 (MA000051); the remark
+! card on line 38 takes MA000033.  Line 55 prints a stray "." to the
+! right of its remark.
+!
+! >>> THE A AOS FAMILY: O, NOT C. <<<  The labels print open rounds
+! (AACS1 l.40, AACS7 l.43, AACS3 l.55, and reference AACS2 l.41,
+! AACS4 l.48); the SAME symbols print closed O elsewhere (label AAOS2
+! l.50; references AAOS3 l.42, AAOS7 ll.45/55/56, AAOS1 l.49).  Ink can
+! open an O but never close a C, so every one is O -- but one.  AACS4
+! prints C in BOTH columns (here l.48, above a near-closed "B,AAOS1",
+! and p.202 l.16's label) and closed nowhere, so it keeps its C
+! (900 dpi, 2026-11-05; tests/check_symbol_spellings.py).
+! Likewise A SPUO (label closed O l.25, reference reads ASPUC l.13),
+! S AEOJT / A EOJ / A EOJI (comments "EOJ", "TURN OFF EOJ INDICATOR"),
+! RNOCHK ("NO CHK"; label and line 32's reference both print open).
+!
+! >>> D, NOT C. <<<  Line 15 prints "DC(BU,4,8),1"; line 20 prints the
+! same card as "DD(BU,4,8),1" -- the worn D (stem kept, bowl gone).
+! strap_asm refuses the printed "DC" outright ('DC').
+! SCDRYT and CDRY: the third / second glyph has a straight left stem and
+! squared corners at 900 dpi -- D.  The C's in SCSPRT, SCDRYT, CSTART,
+! CDRY are round with no stem: C (the program's C prefix, as A is the
+! A SPU / A EOJ prefix).  Neither SCSPRT nor SCDRYT is referenced here:
+! their spellings rest on ink alone.
+!
+! >>> LINE 40 "KCI,AX,C" IS 0. <<<  The operand prints as an open round;
+! the binary is 000000 (immediate 0); the printed "C" is refused,
+! "undefined symbol 'C'".
+!
+! >>> OPEN ROUNDS IN HEX BYTES, SETTLED BY ASSEMBLY. <<<  At 900 dpi
+! the first glyph of the bytes on lines 4 (CNOP), 34 (BZRZ), 49 (B) and
+! 53 (B) is the same open round, identical to the 0's printed in those
+! rows' OCTAL fields (line 4 prints "CCCCCC.3C").  Ink cannot separate
+! them: BZRZ assembles C0, B and CNOP assemble 00 (every landed CNOP
+! check is 000000.30 00).  Lines 26 and 52 (TI) print "AC"; TI's low
+! nibble is I2 and no second index is printed, so the byte is A0 --
+! the same call p.197 line 11 and p.149 lines 19/23 made.
+!
+! >>> TRAILING "-" ON LINES 32 AND 37. <<<  "BB,SASPUT.4,RNOCHK-" and
+! "LX,AY,ACWA-   VF INDICATES ..." are written AS PRINTED; strap_asm
+! takes the "-" as the remark's dash and both rows check.  Line 32's BB
+! encodes exactly as line 42's BB with no minus (.34 02).
+!
+! INDEX SYMBOLS AX/AY/AZ = 10/9/8 are read off this page's binary
+! (LVE,AX -> .25; LX,AY -> .22; LX,AZ -> .20; low nibbles 8A/89 of
+! (AX)/(AY) on lines 43/44).  All externals below are stand-ins checked
+! by the merge.
+
+AX      SYN, $10                     ! p.203 line 1 defines AX SYN,$10; l.43 L(..),1.(AX) low nibble A
+AY      SYN, $9                      ! p.203 line 2 defines AY SYN,$9; l.44 ST(..),1.(AY) low nibble 9
+AZ      SYN, $8                      ! p.203 line 3 defines AZ SYN,$8; l.39 LX,AZ -> .20 (J=8)
+CSTART  SYN, (8)222227.40            ! l.8 EXT 0444457, half word only
+AEOJ    SYN, (8)222164.0             ! l.18 EXT 0444350, half word only
+CDRY    SYN, (8)224034.0             ! l.23 EXT 0450070, half word only
+AEOJI   SYN, (8)223744.14            ! l.25 CM0000 VFL address, BIT-EXACT
+CXR7    SYN, (8)223753.0             ! l.26/52 TI, word only
+ACWA    SYN, (8)223257.0             ! l.37/50 LX/SX, word only
+AXWZ    SYN, (8)223256.0             ! l.39 LX, word only
+ABTA    SYN(BU,1), (8)223743.01            ! l.42 BB bit address, BIT-EXACT
+ABWA    SYN(BU,1), (8)223744.07            ! l.55 BB bit address, BIT-EXACT
+APPERR  SYN, (8)223744.10            ! l.51 BBZ bit address, BIT-EXACT
+ACHERR  SYN, (8)222223.0             ! l.34/51, half word only
+ACHKBR  SYN, (8)222222.40            ! l.35 SIC, BIT-EXACT
+ACHK    SYN, (8)222217.0             ! l.36 B, half word only
+AACS4   SYN, (8)222162.0             ! l.48 BXCZ, half word only
+
+        SLC, (8)222104.40
+! line  1  ------------------------------------------------------------
+! line  2  *********** OUTPUT PROGRAM **********
+! line  3  ------------------------------------------------------------
+        CNOP                                                 ! line  4
+SCSPRT  DD(BU,15,8),(8)14012                                 ! line  5  -TENTACLE TABLE FOR SPR
+        DRZ(BU,30,8),1                                       ! line  6
+        EXT(0,18)                                            ! line  7
+        B,CSTART                                             ! line  8
+        DRZ(N),3                                             ! line  9
+SASPUT  DD(BU,15,8),(8)14012                                 ! line 10  -TENTACLE TABLE FOR SPU
+        DRZ(BU,30,8),1                                       ! line 11
+        EXT(0,18)                                            ! line 12
+        B,ASPUO                                              ! line 13
+        DRZ(N),3                                             ! line 14
+SAEOJT  DD(BU,4,8),1                                         ! line 15  -TENTACLE TABLE FOR EOJ  (prints DC: worn D)
+        DRZ(BU,41,8),1                                       ! line 16
+        EXT(0,18)                                            ! line 17
+        B,AEOJ                                               ! line 18
+        DRZ(N),2                                             ! line 19
+SCDRYT  DD(BU,4,8),1                                         ! line 20  -TENTACLE TABLE FOR -OUTPUT-
+        DRZ(BU,41,8),1                                       ! line 21
+        EXT(0,18)                                            ! line 22
+        B,CDRY                                               ! line 23
+        DRZ(N),2                                             ! line 24
+ASPUO   CM0000(BU,1),AEOJI                                   ! line 25  -TURN OFF EOJ INDICATOR
+        TI,9,$7,CXR7                                         ! line 26
+        LVE,AX,SASPUT+3.                                     ! line 27  -EFFECTIVE ADDRESS FROM TENTACLE TBLE
+        LC,AX,SASPUT+3.32                                    ! line 28  -NUMBER OF CARDS TO TRANSMIT
+        Z,$7                                                 ! line 29
+        L(BU,18),SASPUT+3.32,46                              ! line 30
+        *I(BU,6),15,20                                       ! line 31
+        BB,SASPUT.4,RNOCHK-                                  ! line 32
+        LF(BU,64),$L,64                                      ! line 33
+        BZRZ,ACHERR                                          ! line 34
+        SIC,ACHKBR                                           ! line 35
+        B,ACHK                                               ! line 36
+RNOCHK  LX,AY,ACWA-                                          ! line 37        VF INDICATES AVAILABLE PUNCH BUFFER,AACX
+! line 38  - CF CONTAINS NUMBER OF FULL WORDS AVAILABLE IN PUNCH BUFFER
+        LX,AZ,AXWZ                                           ! line 39  -CF CONTAINS 15,=OF FULL WORDS PER CARD IM
+AAOS1   KCI,AX,0                                             ! line 40  -DOES PP WANT MORE CARDS PUNCHED
+        BXE,AAOS2                                            ! line 41  -NO,SAVE INDEX AY AND RETURN TO PP
+        BB,ABTA,AAOS3                                        ! line 42  -IS BUFFER T AVAILABLE
+AAOS7   L(BU,64,8)(V+I),1.(AX)                               ! line 43  -TRANSMIT ONE WORD FROM PP
+        ST(BU,64,8)(V+I),1.(AY)                              ! line 44  -TO BUFFER T DISREGARDING WORD BOUNDA
+        CBR,AZ,AAOS7                                         ! line 45  -REPEAT LOOP TILL 1 CARD IMAGE HAS BEEN TR
+        C-I,AX,1                                             ! line 46  -REDUCE NNO. OF CARDS TO RANSMIT BY ONE.
+        C-I,AY,15                                            ! line 47  -REDUCE NUMBER OF WRDS AVAIL IN BUFFER BY 1
+        BXCZ,AACS4                                           ! line 48  -IS BUFFER T FULL
+        B,AAOS1                                              ! line 49  -NO-TRY TO TRANSMIT ANOTHER CARD
+AAOS2   SX,AY,ACWA                                           ! line 50  -SAVE TRANSMISSION INDEX
+ARET    BBZ,APPERR,ACHERR                                    ! line 51
+        TI,9,CXR7,$7                                         ! line 52
+!  Lines 53-54 are written as printed: "B,$MCP" / ",$RET" are MCP
+!  system symbols, assembled by preceding with $ (N28-1081 p.8, in C28-6129
+!  PDF p.66; values MCP pp.104/105/108).
+ARET1   B,$MCP                                               ! line 53
+        ,$RET                                                ! line 54
+AAOS3   BB,ABWA,AAOS7-1.                                     ! line 55  -IS BUFFER W UNAVAILABLE ALSO
+        LVI,$15,AAOS7                                        ! line 56  -SWITCH LOGICAL BUFFERS + RET TO TRANSMIT
+
+!SYM SCSPRT 222105.00
+!SYM SASPUT 222111.00
+!SYM SAEOJT 222115.00
+!SYM SCDRYT 222120.00
+!SYM ASPUO  222123.00
+!SYM RNOCHK 222134.00
+!SYM AAOS1  222135.00
+!SYM AAOS7  222137.00
+!SYM AAOS2  222143.40
+!SYM ARET   222144.00
+!SYM ARET1  222146.00
+!SYM AAOS3  222147.00
+!CHECK 222104.40 | 000000.30 00 | line 4 CNOP (byte prints "C0" -- the open round this row prints in its octal field, CCCCCC.3C; see header)
+!CHECK 222105.00 | 14012 | line 5 SCSPRT DD(BU,15,8),(8)14012 | 15
+!CHECK 222105.55 | 0444457 | line 8 B,CSTART under line 7's EXT(0,18) | 19
+!CHECK 222111.00 | 14012 | line 10 SASPUT DD(BU,15,8),(8)14012 | 15
+!CHECK 222111.55 | 0444246 | line 13 B,ASPUO under line 12's EXT(0,18) (prints ASPUC) | 19
+!CHECK 222115.00 | 01 | line 15 SAEOJT DD(BU,4,8),1 (prints DC and SAECJT) | 4
+!CHECK 222115.55 | 0444350 | line 18 B,AEOJ under line 17's EXT(0,18) | 19
+!CHECK 222120.00 | 01 | line 20 SCDRYT DD(BU,4,8),1 | 4
+!CHECK 222120.55 | 0450070 | line 23 B,CDRY under line 22's EXT(0,18) | 19
+!CHECK 222123.00 | 223744.14 80 001000.00 F0 | line 25 ASPUO CM0000(BU,1),AEOJI
+!CHECK 222124.00 | 000027.00 80 223753.22 A0 | line 26 TI,9,$7,CXR7 (byte prints "AC"; see header)
+!CHECK 222125.00 | 222114.25 B0 | line 27 LVE,AX,SASPUT+3.
+!CHECK 222125.40 | 222114.64 50 | line 28 LC,AX,SASPUT+3.32
+!CHECK 222126.00 | 000027.22 00 | line 29 Z,$7
+!CHECK 222126.40 | 222114.40 80 022027.20 50 | line 30 L(BU,18),SASPUT+3.32,46
+!CHECK 222127.40 | 170000.00 80 406012.21 90 | line 31 *I(BU,6),15,20
+!CHECK 222130.40 | 222111.04 80 222134.34 02 | line 32 BB,SASPUT.4,RNOCHK-
+!CHECK 222131.40 | 000010.00 80 000040.06 70 | line 33 LF(BU,64),$L,64
+!CHECK 222132.40 | 222223.34 C0 | line 34 BZRZ,ACHERR
+!CHECK 222133.00 | 222222.40 80 | line 35 SIC,ACHKBR (serial MA000031)
+!CHECK 222133.40 | 222217.10 00 | line 36 B,ACHK (serial MA000031 again)
+!CHECK 222134.00 | 223257.22 10 | line 37 RNOCHK LX,AY,ACWA-
+!CHECK 222134.40 | 223256.20 10 | line 39 LX,AZ,AXWZ
+!CHECK 222135.00 | 000000.25 0A | line 40 AAOS1 KCI,AX,0 (prints AACS1, KCI,AX,C)
+!CHECK 222135.40 | 222143.72 C2 | line 41 BXE,AAOS2 (prints AACS2)
+!CHECK 222136.00 | 223743.01 80 222147.34 02 | line 42 BB,ABTA,AAOS3 (a "*" prints after the location)
+!CHECK 222137.00 | 000001.00 8A 100000.20 50 | line 43 AAOS7 L(BU,64,8)(V+I),1.(AX) (prints AACS7)
+!CHECK 222140.00 | 000001.00 89 100000.20 D0 | line 44 ST(BU,64,8)(V+I),1.(AY)
+!CHECK 222141.00 | 222137.20 4C | line 45 CBR,AZ,AAOS7
+!CHECK 222141.40 | 000001.25 08 | line 46 C-I,AX,1
+!CHECK 222142.00 | 000017.23 08 | line 47 C-I,AY,15
+!CHECK 222142.40 | 222162.30 42 | line 48 BXCZ,AACS4 (prints AACS4)
+!CHECK 222143.00 | 222135.10 00 | line 49 B,AAOS1 (byte prints "C0"; see header)
+!CHECK 222143.40 | 223257.23 10 | line 50 AAOS2 SX,AY,ACWA
+!CHECK 222144.00 | 223744.10 80 222223.34 06 | line 51 ARET BBZ,APPERR,ACHERR
+!CHECK 222145.00 | 223753.00 80 000027.22 A0 | line 52 TI,9,CXR7,$7 (byte prints "AC"; see header)
+!CHECK 222146.00 | 000040.10 00 | line 53 ARET1 B,$MCP (byte prints "C0"; see header)
+!CHECK 222146.40 | 000041.00 80 | line 54 ,$RET
+!CHECK 222147.00 | 223744.07 80 222136.34 02 | line 55 AAOS3 BB,ABWA,AAOS7-1. (prints AACS3)
+!CHECK 222150.00 | 222137.37 01 | line 56 LVI,$15,AAOS7

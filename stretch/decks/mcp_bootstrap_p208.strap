@@ -1,0 +1,190 @@
+! mcp_bootstrap_p208.strap -- MCP printed page 208: the AT SWC
+! switch tail, AT STR1 (unit failure), the file-mark / end-of-tape
+! messages (C2FM, ANFM, ANFMRT), the EPGK and unit-trouble exits.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.215, read at 400 dpi (900 dpi for
+! doubtful glyphs).  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID MA000340  DIST. OF 3/01  3/01  PAGE NUMBER 208"; the heading
+! row's LOCATION field is 222467, line 1's word.
+!
+! THE PAGE.  Contiguous from 222467.40 to 222532.40: 56 lines, every
+! one compiles, then blank paper.  Every line number prints a "*"
+! after it; lines 10, 24 and 45 also print a "*" after the LOCATION.
+!
+! >>> CARD SERIALS. <<<  MA000340 .. MA000383 one per line, EXCEPT
+! lines 26-29 all print MA000365, lines 30-33 MA000366, lines 40-43
+! MA000373 and lines 44-47 MA000374: each four-word "B,DMCP/B,$MCP
+! request" prints one serial.
+!
+! >>> PRINTED FORMS WRITTEN AS PRINTED. <<<  B,$MCP (lines 3/30/44),
+! ,$RET (4), ,$CCMM (31/45, read $COMM) and LVE,,AMR (28/42) are on
+! their cards as printed: MCP pseudo-ops are STRAP system symbols
+! preceded by "$" (N28-1081 p.8; C28-6129 PDF p.66; values MCP printed
+! pp.104/105/108), and "A NULL FIELD IS ALWAYS COMPILED AS A ZERO"
+! (C22-6531 printed p.7; C28-6129 PDF p.9).  Lines 26/40 print B,DMCP.
+!
+! CATUB and ATSWCR carry dds: lines 10/11 write no dds and print
+! 001100 / 001000 in h2, so the SYNs are (BU,1,1) / (BU,1).
+!
+! >>> GLYPHS. <<<  The hex columns print open rounds where the octal
+! fields demand 0 (C0, CO, DO, CD, AC, FO, BO); every hex byte is
+! settled by what the statement assembles to, not by the glyph.
+!   line 14  AERRUN prints "AERRLN": the glyph is an L with an
+!            upturned foot -- this drum's U with its right stem worn
+!            (line 49's remark prints "LNLOADED" the same way).
+!            External, half word only: the spelling is not assembled.
+!   line 22  A0FMC: the glyph is the narrow zero, not the remark's O,
+!            and its siblings are A1FMC (line 55), A2FMC (line 18).
+
+ATARI   SYN(BU,1), (8)223744.13            ! BBZ on line 1, BIT-EXACT
+ATBRI   SYN(BU,1), (8)223744.12            ! BBZ on line 2, BIT-EXACT
+DMCP    SYN, 32.0                    ! landed; p.108 line 5; B,DMCP lines 26/40
+AMR1    SYN, (8)224032.40            ! LV on line 5, half word only
+AMR     SYN, (8)224032.0             ! SV on line 6, half word only
+AMR2    SYN, (8)224033.0             ! LV on line 8, half word only
+CATUB   SYN(BU,1,1), (8)223744.11    ! CM on line 10, BIT-EXACT; dds from h2 001100
+ATSWCR  SYN(BU,1), (8)223744.15      ! CM on line 11, BIT-EXACT; dds from h2 001000
+CXY     SYN, (8)222257.0             ! CM on line 12 (CXY.19 = .23), BIT-EXACT
+ASTRA   SYN, (8)222460.0             ! BZB line 14 / LVI line 15
+AERRUN  SYN, (8)222535.0             ! BZB on line 14, half word only
+CKUK    SYN, (8)222333.40            ! B on line 17, half word only
+A2FMC   SYN, (8)224005.0             ! LF on line 18, BIT-EXACT
+CMESS1  SYN, (8)224014.0             ! TI line 21, ,CMESS1 line 32, BIT-EXACT
+AGFM    SYN, (8)222447.40            ! B on line 20, half word only
+ANFMS   SYN, (8)224010.0             ! TI on line 21, BIT-EXACT
+A0FMC   SYN, (8)224005.10            ! LF on line 22, BIT-EXACT
+APHYM   SYN, (8)224005.30            ! LF on line 24, BIT-EXACT
+DIODEF  SYN, (8)15.0                 ! ,DIODEF lines 27/41, BIT-EXACT; prints DICDEF (open O, as this drum prints O; p.179 l.22 prints it closed)
+CRET    SYN, (8)222320.0             ! LVI on lines 38/50, half word only
+ATSWC5  SYN, (8)222465.0             ! B on lines 39/51, half word only
+AEPGKM  SYN, (8)224031.0             ! ,AEPGKM line 43, BIT-EXACT
+APGKM1  SYN, (8)224025.0             ! ,APGKM1 line 46, BIT-EXACT
+ALNKMS  SYN, (8)224012.0             ! TI on line 52, BIT-EXACT
+A1FMC   SYN, (8)224005.20            ! LF on line 55, BIT-EXACT
+
+        SLC, (8)222467.40
+        BBZ,ATARI,ATSWC4                                     ! line  1
+        BBZ,ATBRI,ATSWC6                                     ! line  2
+        B,$MCP                                               ! line  3
+        ,$RET                                                ! line  4
+ATSWC4  LV,1,AMR1                                            ! line  5
+        SV,1,AMR                                             ! line  6
+        B,ATSWC7                                             ! line  7
+ATSWC6  LV,1,AMR2                                            ! line  8
+        SV,1,AMR                                             ! line  9
+ATSWC7  CM0000,CATUB                                         ! line 10
+        CM0000,ATSWCR                                        ! line 11
+        CM0000(BU,1),CXY.19                                  ! line 12
+ATSWC1  B,$                                                  ! line 13
+ATSTR1  BZB,ASTRA+1.12,AERRUN                                ! line 14  -UNIT FAILURE
+        LVI,$1,ASTRA                                         ! line 15  -CURRENT TBL. OF EXITS FOR SUCCESS
+        LVI,$3,C2FM                                          ! line 16  -RETURN IF UNSUCCESSFUL
+        B,CKUK                                               ! line 17
+C2FM    LF(BU,8),A2FMC                                       ! line 18
+        SF(BU,8),CMESS1+4.24                                 ! line 19
+        B,AGFM                                               ! line 20
+ANFM    TI,2,ANFMS,CMESS1                                    ! line 21  -DATA FAILURE
+ANFMRT  LF(BU,8),A0FMC                                       ! line 22  -TELL OPERATOR O FILE MARKS
+        SF(BU,8),CMESS1+4.24                                 ! line 23
+        LF(BU),APHYM                                         ! line 24  -ON PHYSICAL END OF TAPE
+        SF(BU),CMESS1+6.24                                   ! line 25
+        B,DMCP                                               ! line 26
+        ,DIODEF                                              ! line 27
+        LVE,,AMR                                             ! line 28
+        ,CMESS1+2.0                                          ! line 29
+        B,$MCP                                               ! line 30
+        ,$COMM                                               ! line 31  prints $CCMM: worn O
+        ,CMESS1                                              ! line 32
+        ,9.                                                  ! line 33
+ANFMEX  LVI,$14,$                                            ! line 34  -ORIG. TABLE OF EXITS FOR $W
+        LV,$14,.32($14)                                      ! line 35  -AFTER $UNLD RETURN TO MAINSTREAM
+        V-I,$14,2.32                                         ! line 36  -WRITE
+        SVA,$14,ATSWC1                                       ! line 37
+        LVI,$15,CRET                                         ! line 38
+        B,ATSWC5                                             ! line 39
+AEPGK   B,DMCP                                               ! line 40
+        ,DIODEF                                              ! line 41
+        LVE,,AMR                                             ! line 42
+        ,AEPGKM                                              ! line 43
+        B,$MCP                                               ! line 44
+        ,$COMM                                               ! line 45  prints $CCMM: worn O
+        ,APGKM1                                              ! line 46
+        ,5.                                                  ! line 47
+        V-I,$2,2.32                                          ! line 48  -RETRY MAINSTREAM WRITE AFTER
+        SVA,$2,ATSWC1                                        ! line 49  -TAPE IS UNLOADED
+        LVI,$15,CRET                                         ! line 50
+        B,ATSWC5                                             ! line 51
+ALNUKC  TI,2,ALNKMS,CMESS1                                   ! line 52  -TELL OPERATOR UNIT TROUBLE
+        SVA,$1,ANFMEX                                        ! line 53
+        B,ANFMRT                                             ! line 54
+AERRN   LF(BU,8),A1FMC                                       ! line 55
+        SF(BU,8),CMESS1+4.24                                 ! line 56
+
+!SYM ATSWC4 222472.40
+!SYM ATSWC6 222474.00
+!SYM ATSWC7 222475.00
+!SYM ATSWC1 222500.00
+!SYM ATSTR1 222500.40
+!SYM C2FM   222503.00
+!SYM ANFM   222505.40
+!SYM ANFMRT 222506.40
+!SYM ANFMEX 222516.40
+!SYM AEPGK  222521.40
+!SYM ALNUKC 222527.40
+!SYM AERRN  222531.40
+!CHECK 222467.40 | 223744.13 80 222472.74 06 | line 1 BBZ,ATARI,ATSWC4 (hex prints C6)
+!CHECK 222470.40 | 223744.12 80 222474.34 06 | line 2 BBZ,ATBRI,ATSWC6
+!CHECK 222471.40 | 000040.10 00 | line 3 B,$MCP as printed
+!CHECK 222472.00 | 000041.00 80 | line 4 ,$RET as printed
+!CHECK 222472.40 | 224032.42 30 | line 5 ATSWC4 LV,1,AMR1
+!CHECK 222473.00 | 224032.03 30 | line 6 SV,1,AMR
+!CHECK 222473.40 | 222475.10 00 | line 7 B,ATSWC7
+!CHECK 222474.00 | 224033.02 30 | line 8 ATSWC6 LV,1,AMR2
+!CHECK 222474.40 | 224032.03 30 | line 9 SV,1,AMR
+!CHECK 222475.00 | 223744.11 80 001100.00 F0 | line 10 ATSWC7 CM0000,CATUB ("*" after the location)
+!CHECK 222476.00 | 223744.15 80 001000.00 F0 | line 11 CM0000,ATSWCR
+!CHECK 222477.00 | 222257.23 80 001000.00 F0 | line 12 CM0000(BU,1),CXY.19
+!CHECK 222500.00 | 222500.10 00 | line 13 ATSWC1 B,$
+!CHECK 222500.40 | 222461.14 80 222535.34 00 | line 14 ATSTR1 BZB,ASTRA+1.12,AERRLN as printed
+!CHECK 222501.40 | 222460.03 01 | line 15 LVI,$1,ASTRA
+!CHECK 222502.00 | 222503.07 01 | line 16 LVI,$3,C2FM
+!CHECK 222502.40 | 222333.50 00 | line 17 B,CKUK
+!CHECK 222503.00 | 224005.00 80 010000.06 70 | line 18 C2FM LF(BU,8),A2FMC
+!CHECK 222504.00 | 224020.30 80 010000.12 F0 | line 19 SF(BU,8),CMESS1+4.24
+!CHECK 222505.00 | 222447.50 00 | line 20 B,AGFM
+!CHECK 222505.40 | 224010.00 80 224014.04 A0 | line 21 ANFM TI,2,ANFMS,CMESS1 (hex prints AC)
+!CHECK 222506.40 | 224005.10 80 010000.06 70 | line 22 ANFMRT LF(BU,8),A0FMC
+!CHECK 222507.40 | 224020.30 80 010000.12 F0 | line 23 SF(BU,8),CMESS1+4.24
+!CHECK 222510.40 | 224005.30 80 000000.06 70 | line 24 LF(BU),APHYM ("*" after the location)
+!CHECK 222511.40 | 224022.30 80 000000.12 F0 | line 25 SF(BU),CMESS1+6.24
+!CHECK 222512.40 | 000040.10 00 | line 26 B,DMCP
+!CHECK 222513.00 | 000015.00 80 | line 27 ,DIODEF
+!CHECK 222513.40 | 224032.01 B0 | line 28 LVE,,AMR (hex prints BC/BO)
+!CHECK 222514.00 | 224016.00 80 | line 29 ,CMESS1+2.0
+!CHECK 222514.40 | 000040.10 00 | line 30 B,$MCP as printed
+!CHECK 222515.00 | 000043.40 80 | line 31 ,$CCMM as printed
+!CHECK 222515.40 | 224014.00 80 | line 32 ,CMESS1
+!CHECK 222516.00 | 000011.00 80 | line 33 ,9.
+!CHECK 222516.40 | 222516.75 01 | line 34 ANFMEX LVI,$14,$
+!CHECK 222517.00 | 000000.74 3E | line 35 LV,$14,.32($14)
+!CHECK 222517.40 | 000002.75 0D | line 36 V-I,$14,2.32
+!CHECK 222520.00 | 222500.35 D0 | line 37 SVA,$14,ATSWC1
+!CHECK 222520.40 | 222320.37 01 | line 38 LVI,$15,CRET
+!CHECK 222521.00 | 222465.10 00 | line 39 B,ATSWC5
+!CHECK 222521.40 | 000040.10 00 | line 40 AEPGK B,DMCP
+!CHECK 222522.00 | 000015.00 80 | line 41 ,DIODEF
+!CHECK 222522.40 | 224032.01 B0 | line 42 LVE,,AMR (hex prints BC/BO)
+!CHECK 222523.00 | 224031.00 80 | line 43 ,AEPGKM
+!CHECK 222523.40 | 000040.10 00 | line 44 B,$MCP as printed
+!CHECK 222524.00 | 000043.40 80 | line 45 ,$CCMM as printed ("*" after the location)
+!CHECK 222524.40 | 224025.00 80 | line 46 ,APGKM1
+!CHECK 222525.00 | 000005.00 80 | line 47 ,5.
+!CHECK 222525.40 | 000002.45 0D | line 48 V-I,$2,2.32
+!CHECK 222526.00 | 222500.05 D0 | line 49 SVA,$2,ATSWC1
+!CHECK 222526.40 | 222320.37 01 | line 50 LVI,$15,CRET
+!CHECK 222527.00 | 222465.10 00 | line 51 B,ATSWC5
+!CHECK 222527.40 | 224012.00 80 224014.04 A0 | line 52 ALNUKC TI,2,ALNKMS,CMESS1 (hex prints AC)
+!CHECK 222530.40 | 222516.43 D0 | line 53 SVA,$1,ANFMEX
+!CHECK 222531.00 | 222506.50 00 | line 54 B,ANFMRT
+!CHECK 222531.40 | 224005.20 80 010000.06 70 | line 55 AERRN LF(BU,8),A1FMC
+!CHECK 222532.40 | 224020.30 80 010000.12 F0 | line 56 SF(BU,8),CMESS1+4.24

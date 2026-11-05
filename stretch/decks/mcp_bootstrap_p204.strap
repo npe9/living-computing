@@ -1,0 +1,186 @@
+! mcp_bootstrap_p204.strap -- MCP printed page 204.
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.211, read at 400 dpi (900 dpi for
+! the glyphs named below).  Header, READ: "TIME CLOCK 00054041  PUNID
+! 11D11MCP  CARD ID MA000157  DIST. OF 3/01  3/01  PAGE NUMBER 204";
+! the heading row's LOCATION field is 222260, line 1's word.
+!
+! THE PAGE.  Contiguous from 222260.40 to 222326.00 (line 56, a full
+! word, runs to 222327.00).  56 printed lines; lines 48 ("- EOP ON
+! NORMAL WRITE") and 54 ("- EE ON NORMAL WRITE") are comment cards
+! with no location and compile nothing, so they are not transcribed.
+! Line 41 C EXN DRZ(N),2 reserves two words (prints 000002.00).
+!
+! CARD SERIALS.  MA000157 (line 1) to MA000209 (line 56), with three
+! pairs of lines sharing one serial: lines 42/43 both MA000198, 44/45
+! both MA000199, 46/47 both MA000200.  Recorded, not explained.
+!
+! GLYPHS NOT SETTLED BY PLAIN INK:
+!  * the NAME column prints C EOJ, C EOJ2, C EOJ3, C EOJ4 and C EOPN
+!    with an OPEN third glyph ("CECJ"); every reference in the
+!    STATEMENT column prints a closed O (CEOJ2, CEOJ, CEOJ3, CEOJ4,
+!    CEOPN at 900 dpi), and each reference's binary is that label's
+!    LOCATION.  O worn to C in the name column.
+!  * line 7 prints "SVA,$14,ACP" (open glyph); line 34 prints the same
+!    instruction "SVA,$14,AOP" with a closed O, and both print
+!    224046.35.  Written AOP on both.
+!  * line 30 prints "B,CACS3A" (open); line 53 prints "B,CAOS3A"
+!    (closed), both 222256.10.  Written CAOS3A on both.
+!  * line 56's offset prints ".C5"; written .05 (a bit offset is
+!    digits; binary 223742.05).
+!  * CMOCOO on lines 49/50 is CM0000.
+!
+!  * HEX BYTES IN THE OPEN ROUND GLYPH, settled by what the printed
+!    statement assembles to (the row's octal fields print the same
+!    glyph where only 0 can stand): line 12 "CO" -> 00, line 16 "CA"
+!    -> 0A (KCI), line 28 "CC" -> 00 (BZB; line 51's BZB prints 00,
+!    line 13's BZB1 prints a clear 0C), line 52 "C1" -> 01 (LVI; line
+!    29 prints 01).  Lines 35/39/40/42-44/53 print "CO" for 00.
+!    Line 1's byte is D0 with a visible stem (SVA; line 7 prints D0).
+!
+! External symbols.  Lines 8/35/46 print B,$MCP and lines 9/36/47
+! print ,$W / ,$WEF / ,$RET; lines 10/37 print LVE,,AMR.  All are now
+! written as printed: MCP pseudo-ops are STRAP system symbols preceded
+! by $ (N28-1081 p.8, C28-6129 PDF p.66; values MCP pp.104/105/108), and
+! "A NULL FIELD IS ALWAYS COMPILED AS A ZERO" (C22-6531 p.7; C28-6129
+! PDF p.9).  Every other symbol is taken from THIS page's printed binary.
+CBWA    SYN(BU,1), (8)223744.06      ! CM1111/BB lines 2,27,50; BIT-EXACT
+CBTA    SYN(BU,1), (8)223743.00      ! CM1111/BB/BZB lines 14,26,28,51; BIT-EXACT
+CATUB   SYN(BU,1,1), (8)223744.11    ! lines 5,31,32,49 (001100 = BS 1); BIT-EXACT
+AEOJI   SYN, (8)223744.14            ! BB line 55; BIT-EXACT
+AOPTRI  SYN, (8)223743.03            ! BBZ line 38; BIT-EXACT
+CTRAIL  SYN, (8)223742.00            ! line 56 CTRAIL+.05 prints 223742.05
+CCX     SYN, (8)223744.40            ! line 3 CCX+.17 prints 223744.61; LV line 4
+CXY     SYN, (8)222257.00            ! line 13 CXY+.19 prints 222257.23
+CAOS3B  SYN, (8)222257.40            ! BZB1 line 13 branch half prints 222257.74
+CAOS3A  SYN, (8)222256.00            ! B lines 30,53, half word only
+CDRY1   SYN, (8)224037.40            ! BBZ line 38 branch half prints 224037.74
+AOP     SYN, (8)224046.00            ! SVA lines 7,34, half word only
+AMR     SYN, (8)224032.00            ! LVE lines 10,37, half word only
+CWX     SYN, (8)222575.00            ! line 11, half word only
+CWA     SYN, (8)222577.00            ! LX/SX lines 15,25, half word only
+CXFILL  SYN, (8)223741.00            ! LX line 18, half word only
+CNUM    SYN, (8)14.0                 ! KCI line 16 prints 000014.21
+CEXEF   SYN, (8)222371.00            ! LVI line 33, half word only
+ARET    SYN, (8)222144.00            ! B line 39, half word only
+CUKN    SYN, (8)222330.00            ! B line 42, half word only
+
+        SLC, (8)222260.40
+        SVA,15,RSVRT1                        ! line  1
+        CM1111,CBWA                          ! line  2  -W UNAVAIL
+        BBN,CCX+.17,$+1.                     ! line  3  -INVERT BIT,OUTPUT BUFFER POINTER
+        LV,$7,CCX                            ! line  4  -OUTPUT BUFFER POINTER
+        CM1111,CATUB                         ! line  5  -MAKE TAPE UNAVAILABLE
+        LVI,$14,CEXN                         ! line  6
+        SVA,$14,AOP                          ! line  7  [printed ACP; see header]
+        B,$MCP                               ! line  8
+        ,$W                                  ! line  9
+        LVE,,AMR                             ! line 10
+        ,CWX($7)                             ! line 11
+RSVRT1  B,0                                  ! line 12
+CXZ     BZB1,CXY+.19,CAOS3B                  ! line 13
+CEOJ    BB,CBTA,CEOJ2                        ! line 14  -IS BUFFER T AVAIL FOR TRANSMISSION
+        LX,$8,CWA                            ! line 15  -YES-DOES IT HAVE ALL
+        KCI,$8,CNUM                          ! line 16  -LINES AVAILABLE
+        BXE,CEOJ4                            ! line 17  -YES-GO TO WRITE EOF
+        LX,$9,CXFILL                         ! line 18  -LOAD INDEX
+CEOJ3   LF(BU,18,6)(V+I),.6($9)              ! line 19  -FILL REST OF BUFFER WITH
+        SF(BU,18,6)(V+I),.18($8)             ! line 20  -BLANKS
+        LF(BU,60,6),0($9)                    ! line 21
+        SF(BU,60,6)(V+I),.60($8)             ! line 22
+        CBR,$9,$-1.                          ! line 23
+        CBR,$8,CEOJ3                         ! line 24
+        SX,$8,CWA                            ! line 25  -SAVE TRANSMISSION INDEX
+        CM1111,CBTA                          ! line 26  -MAKE BUFFER T UNAVAILABLE
+CEOJ2   BB,CBWA,CEOJ                         ! line 27  -LOOP, NO EOP FOR BUFF W YET
+        BZB,CBTA,CEOJ4                       ! line 28  -TEST IF BUFFER T IS AVAILABLE
+        LVI,$15,CEOJ4                        ! line 29  -WHERE TO GO AFTER OUTPUT
+        B,CAOS3A                             ! line 30  -ENTER OUTPUT SR
+CEOJ4   BB,CATUB,$                           ! line 31  -WAIT IF TAPE IS BUSY
+        CM1111,CATUB                         ! line 32  -MAKE TAPE UNAVAILABLE
+        LVI,$14,CEXEF                        ! line 33
+        SVA,$14,AOP                          ! line 34
+        B,$MCP                               ! line 35
+        ,$WEF                                ! line 36
+        LVE,,AMR                             ! line 37
+        BBZ,AOPTRI,CDRY1                     ! line 38  -HAS OUTPUT BEEN REQUESTED
+        B,ARET                               ! line 39  -GO TO RESTORE AND EXIT
+        CNOP,                                ! line 40
+CEXN    DRZ(N),2                             ! line 41  -TABLE OF EXITS FOR PRINT BUFFER
+        B,CUKN                               ! line 42
+        NOP                                  ! line 43  -UK
+        B,CEEN                               ! line 44
+        CNOP                                 ! line 45  -EE
+CRET    B,$MCP                               ! line 46
+        ,$RET                                ! line 47
+CEOPN   CM0000,CATUB                         ! line 49  -MAKE TAPE AVAILABLE
+        CM0000,CBWA                          ! line 50  -MAKE BUFFER W UNAVAILABLE
+        BZB,CBTA,CRET                        ! line 51  -IS T AVAIL FOR TRANS
+        LVI,$15,CRET                         ! line 52  -WHERE TO GO AFTER OUTPUT
+        B,CAOS3A                             ! line 53  -GO TO OUTPUT SR
+CEEN    BB,AEOJI,CEOPN                       ! line 55  -IF EOJ INDIC. IS ON, TAKE EOP ACTION
+        CM1111(BU,1,1),CTRAIL+.05            ! line 56  -PHYSICAL END OF TAPE
+
+!SYM RSVRT1 222267.40
+!SYM CXZ    222270.00
+!SYM CEOJ   222271.00
+!SYM CEOJ3  222274.00
+!SYM CEOJ2  222302.40
+!SYM CEOJ4  222305.40
+!SYM CEXN   222314.00
+!SYM CRET   222320.00
+!SYM CEOPN  222321.00
+!SYM CEEN   222325.00
+!CHECK 222260.40 | 222267.77 D0 | line 1 SVA,15,RSVRT1
+!CHECK 222261.00 | 223744.06 80 001000.36 F0 | line 2 CM1111,CBWA (octal prints .C6)
+!CHECK 222262.00 | 223744.61 80 222263.34 0A | line 3 BBN,CCX+.17,$+1.
+!CHECK 222263.00 | 223744.56 30 | line 4 LV,$7,CCX
+!CHECK 222263.40 | 223744.11 80 001100.36 F0 | line 5 CM1111,CATUB
+!CHECK 222264.40 | 222314.35 01 | line 6 LVI,$14,CEXN
+!CHECK 222265.00 | 224046.35 D0 | line 7 SVA,$14,ACP as printed (written AOP)
+!CHECK 222265.40 | 000040.10 00 | line 8 B,$MCP
+!CHECK 222266.00 | 000001.40 80 | line 9 ,$W
+!CHECK 222266.40 | 224032.01 B0 | line 10 LVE,,AMR
+!CHECK 222267.00 | 222575.00 87 | line 11 ,CWX($7)
+!CHECK 222267.40 | 000000.10 00 | line 12 R SVRT1 B,0 (byte prints CO, same open round as the row's octal zeros)
+!CHECK 222270.00 | 222257.23 80 222257.74 0C | line 13 C XZ BZB1,CXY+.19,CAOS3B
+!CHECK 222271.00 | 223743.00 80 222302.74 02 | line 14 C EOJ BB,CBTA,CEOJ2
+!CHECK 222272.00 | 222577.20 10 | line 15 LX,$8,CWA (a "*" prints after the location)
+!CHECK 222272.40 | 000014.21 0A | line 16 KCI,$8,CNUM (byte prints CA; settled 0A by assembly)
+!CHECK 222273.00 | 222305.72 C2 | line 17 BXE,CEOJ4
+!CHECK 222273.40 | 223741.22 10 | line 18 LX,$9,CXFILL
+!CHECK 222274.00 | 000000.06 89 122600.06 70 | line 19 C EOJ3 LF(BU,18,6)(V+I),.6($9)
+!CHECK 222275.00 | 000000.22 88 122600.12 F0 | line 20 SF(BU,18,6)(V+I),.18($8)
+!CHECK 222276.00 | 000000.00 89 074600.06 70 | line 21 LF(BU,60,6),0($9)
+!CHECK 222277.00 | 000000.74 88 174600.12 F0 | line 22 SF(BU,60,6)(V+I),.60($8)
+!CHECK 222300.00 | 222277.22 4C | line 23 CBR,$9,$-1.
+!CHECK 222300.40 | 222274.20 4C | line 24 CBR,$8,CEOJ3
+!CHECK 222301.00 | 222577.21 10 | line 25 SX,$8,CWA
+!CHECK 222301.40 | 223743.00 80 001000.36 F0 | line 26 CM1111,CBTA
+!CHECK 222302.40 | 223744.06 80 222271.34 02 | line 27 C EOJ2 BB,CBWA,CEOJ
+!CHECK 222303.40 | 223743.00 80 222305.74 00 | line 28 BZB,CBTA,CEOJ4 (last byte prints "CC"/"0C"; settled 00 by assembly)
+!CHECK 222304.40 | 222305.77 01 | line 29 LVI,$15,CEOJ4
+!CHECK 222305.00 | 222256.10 00 | line 30 B,CACS3A as printed (written CAOS3A)
+!CHECK 222305.40 | 223744.11 80 222305.74 02 | line 31 C EOJ4 BB,CATUB,$ (a "*" prints after the location)
+!CHECK 222306.40 | 223744.11 80 001100.36 F0 | line 32 CM1111,CATUB
+!CHECK 222307.40 | 222371.35 01 | line 33 LVI,$14,CEXEF
+!CHECK 222310.00 | 224046.35 D0 | line 34 SVA,$14,AOP
+!CHECK 222310.40 | 000040.10 00 | line 35 B,$MCP
+!CHECK 222311.00 | 000007.40 80 | line 36 ,$WEF
+!CHECK 222311.40 | 224032.01 B0 | line 37 LVE,,AMR
+!CHECK 222312.00 | 223743.03 80 224037.74 06 | line 38 BBZ,AOPTRI,CDRY1
+!CHECK 222313.00 | 222144.10 00 | line 39 B,ARET
+!CHECK 222313.40 | 000000.30 00 | line 40 CNOP,
+!CHECK 222316.00 | 222330.10 00 | line 42 B,CUKN
+!CHECK 222316.40 | 000000.30 00 | line 43 NOP
+!CHECK 222317.00 | 222325.10 00 | line 44 B,CEEN
+!CHECK 222317.40 | 000000.30 00 | line 45 CNOP
+!CHECK 222320.00 | 000040.10 00 | line 46 C RET B,$MCP
+!CHECK 222320.40 | 000041.00 80 | line 47 ,$RET
+!CHECK 222321.00 | 223744.11 80 001100.00 F0 | line 49 C EOPN CM0000,CATUB (prints CMOCOO)
+!CHECK 222322.00 | 223744.06 80 001000.00 F0 | line 50 CM0000,CBWA (prints CMOCOO)
+!CHECK 222323.00 | 223743.00 80 222320.34 00 | line 51 BZB,CBTA,CRET
+!CHECK 222324.00 | 222320.37 01 | line 52 LVI,$15,CRET (byte prints C1; settled 01 by assembly, line 29 prints 01)
+!CHECK 222324.40 | 222256.10 00 | line 53 B,CAOS3A
+!CHECK 222325.00 | 223744.14 80 222321.34 02 | line 55 C EEN BB,AEOJI,CEOPN
+!CHECK 222326.00 | 223742.05 80 001100.36 F0 | line 56 CM1111(BU,1,1),CTRAIL+.C5 as printed (written .05)

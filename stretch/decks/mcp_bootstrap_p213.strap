@@ -1,0 +1,180 @@
+! mcp_bootstrap_p213.strap -- MCP printed page 213: the head of THE
+! INPUT PROGRAM -- its V-prefixed SYN block (field offsets, index-
+! register names, small constants) and the first data words (V VSCR).
+!
+! docs/MCP_Mar63_001-249.pdf PDF p.220, read at 400 dpi, doubtful glyphs
+! at 900.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID
+! CA000001  DIST. OF 3/01  3/01  PAGE NUMBER 213" (printed "CARC IC
+! CA0CCC01 ... DIST. OF 3/C1" -- see THE CARD ID).  The heading row's
+! LOCATION field is BLANK -- line 1 is an asterisk banner
+! (docs/transcription_workflow.md step 1).
+!
+! THE PAGE.  56 lines.
+!   lines  1-3   banner "********** THE INPUT PROGRAM **********".
+!   line   4     SLC,$ printed at 224105.00 * -- the counter arriving.
+!   line   5     a blank comment card ("-" only).
+!   lines  6-41  36 SYN cards, V F .. V PCP.  They print the SYN value
+!                in LOCATION with the "+" sign suffix and +00000000 in
+!                BINARY (address-valued), except V H and V UB, which
+!                print 000000.00+ and their value in BINARY (+00000040,
+!                +00000004): pure NUMBERS (cf. printed p.171 K QUANT,
+!                p.185 K REP).  The data-description column prints NULL,
+!                or BU,100,10 = (BU,64,8) on V M1 (explicit) and on the
+!                twelve SYN,$n cards (inherited from the index register).
+!   line  42     SLC,$ again at 224105.00; line 43 CNOP, (no location,
+!                emits nothing -- counter already on a word).
+!   lines 44-56  V VSCR: DD(BU,4),3,1 / DD(BU,3),0 / DD(BU,2),2,2 /
+!                DD(BU,30),0 / EXT(0,18) over BE,V SCR / DD(BU,32),,,,,,
+!                -- the last card's sixth field prints on p.214 line 1.
+! JOIN.  p.212 ends with a 64-bit word at 224104.00 (finding aid), so
+! the counter arrives at 224105.00 = the printed SLC,$; p.214 opens at
+! 224110.40, which is where the sixth DD(BU,32) field falls.  Contiguous
+! both ways.  An independent witness: printed p.121's landed deck SYNs
+! VVSCR at (8)224105.00 (its "VF,VVSCR" rows), and this page defines it
+! there.
+!
+! >>> THE CARD ID. <<<  The header prints "CA000001"; the right-hand
+! serial column prints the first letter as a closed glyph with a
+! straight left stem on every card, DA000001 .. DA000049, against the
+! oval 0s beside it.  The same header line prints CARD and ID as "CARC"
+! and "IC" -- D worn to C.  Recorded as DA, settled by the serial
+! column's ink; not checkable by the assembler.
+!
+! >>> V ID, NOT V IC (lines 17, 18). <<<  At 900 dpi the glyph after I
+! is squared with a faint, dotted right side, in BOTH the label (line 17)
+! and the reference (line 18); the true C of V CWR on line 15 is round
+! and open.  Read as D with its bow worn.  Label-only: no binary can
+! settle it (VID is used only inside this page's own SYN chain).
+!
+! >>> Q, NOT G/C (lines 19-20, 34-37). <<<  V RQB (line 19, referenced
+! "RQB" on line 20) and V Q1..V Q4 print the Q tail inside the bowl at
+! 900 dpi; the right side of Q3/Q4 is worn.
+!
+! V VSCR vs V SCR.  The NAME column on line 44 prints "V VSCR" (=VVSCR);
+! line 51's operand is "V SCR" (=VSCR), a DIFFERENT symbol: its
+! EXT(0,18) prints 0451074, the 19-bit half-word address 0o224436 / 0,
+! i.e. 224436.00, not VVSCR's 224105.00.  The volume OCR (docs/ocr line
+! 11578) puts "V SCR LXV P,V PDG" at 224436.00, a page not yet landed.
+!
+! LINE 52, "DD(BU,32),,,,,,": six null fields, each 32 zero bits (a
+! null field compiles as zero (C22-6531 printed p.7; C28-6129 PDF pp.8-9)).  Five print
+! here (lines 52-56); the sixth prints at 224110.40 as p.214 line 1.
+! This card deposits all six, so this deck checks the sixth too and
+! p.214's deck starts after it.
+!
+! CARD SERIALS: DA000001-DA000049.  Line 45 shares DA000044 with line 44
+! (one DD card, two fields), line 48 shares DA000046 with line 47, lines
+! 50-51 share DA000048 (the EXT pair), lines 52-56 all print DA000049.
+! The sequence-number column (-0037 ..) prints -0068 on line 28 (V T5)
+! between -0064 and -0065, and skips -0042: the T5 card was moved.
+! Lines 23 and 41 print "*" after the sequence number, line 24 a "+".
+! Lines 1 and 3 print "*" after theirs; line 4 prints "*" after its
+! LOCATION.  Recorded, not explained.
+
+VSCR    SYN, (8)224436.0             ! line 51 EXT(0,18) of BE, half word only (printed 0451074)
+
+        SLC, (8)224105.00
+! line  1  -*************************************************************
+! line  2  -********** THE INPUT PROGRAM **********
+! line  3  -*************************************************************
+        SLC,$                                                ! line  4 * printed 224105.00 *
+! line  5  -
+VF      SYN,.32                                              ! line  6
+VH      SYN,32                                               ! line  7  a NUMBER: prints 000000.00+, BINARY +00000040
+VXXRG   SYN,262143.VH                                        ! line  8
+VM1     SYN(BU,64),262143.                                   ! line  9
+VFCD    SYN,2.                                               ! line 10  -NO. OF REMAINING JOBS ON RT WHEN TS REQUESTED
+VX      SYN,0                                                ! line 11
+VX1     SYN,VX.VH                                            ! line 12
+VX2S    SYN,VX1.VH                                           ! line 13
+VX2R    SYN,VX2S.64                                          ! line 14
+VCWR    SYN,VX2R+2.                                          ! line 15
+VNX     SYN,VCWR.64                                          ! line 16
+VID     SYN,VNX.VH                                           ! line 17  printed "V IC" (D's bow worn)
+VSU     SYN,VID.VH                                           ! line 18  printed "V IC.V H"
+VRQB    SYN,VSU.VH                                           ! line 19
+VRCNT   SYN,VRQB.VH                                          ! line 20
+VFCNT   SYN,VRCNT.VH                                         ! line 21
+VSTR    SYN,VFCNT.VH                                         ! line 22
+VTS     SYN,VSTR.VH                                          ! line 23
+VFCNX   SYN,VTS.VH                                           ! line 24
+VU      SYN,$3                                               ! line 25
+VP      SYN,$1                                               ! line 26
+VT1     SYN,$4                                               ! line 27
+VT5     SYN,$9                                               ! line 28
+VT2     SYN,$6                                               ! line 29
+VT3     SYN,$7                                               ! line 30
+VT4     SYN,$8                                               ! line 31
+VS1     SYN,$10                                              ! line 32
+VS2     SYN,$11                                              ! line 33
+VQ1     SYN,$2                                               ! line 34
+VQ2     SYN,$13                                              ! line 35
+VQ3     SYN,$14                                              ! line 36
+VQ4     SYN,$5                                               ! line 37
+VUB     SYN,4                                                ! line 38  a NUMBER: prints 000000.00+, BINARY +00000004
+VRA     SYN,1.32                                             ! line 39
+VPAR    SYN,3.                                               ! line 40
+VPCP    SYN,2.32                                             ! line 41
+        SLC,$                                                ! line 42  printed 224105.00
+        CNOP,                                                ! line 43
+VVSCR   DD(BU,4),3,1                                         ! line 44 (and 45)
+        DD(BU,3),0                                           ! line 46
+        DD(BU,2),2,2                                         ! line 47 (and 48)
+        DD(BU,30),0                                          ! line 49
+        EXT(0,18)                                            ! line 50
+        BE,VSCR                                              ! line 51
+        DD(BU,32),,,,,,                                      ! line 52  six null fields (53-56; field 6 prints on p.214 line 1)
+
+!SYM VF     000000.40
+!SYM VH     000000.40
+!SYM VXXRG  777777.40
+!SYM VM1    777777.00
+!SYM VFCD   000002.00
+!SYM VX     000000.00
+!SYM VX1    000000.40
+!SYM VX2S   000001.00
+!SYM VX2R   000002.00
+!SYM VCWR   000004.00
+!SYM VNX    000005.00
+!SYM VID    000005.40
+!SYM VSU    000006.00
+!SYM VRQB   000006.40
+!SYM VRCNT  000007.00
+!SYM VFCNT  000007.40
+!SYM VSTR   000010.00
+!SYM VTS    000010.40
+!SYM VFCNX  000011.00
+!SYM VU     000023.00
+!SYM VP     000021.00
+!SYM VT1    000024.00
+!SYM VT5    000031.00
+!SYM VT2    000026.00
+!SYM VT3    000027.00
+!SYM VT4    000030.00
+!SYM VS1    000032.00
+!SYM VS2    000033.00
+!SYM VQ1    000022.00
+!SYM VQ2    000035.00
+!SYM VQ3    000036.00
+!SYM VQ4    000025.00
+!SYM VUB    000000.04
+!SYM VRA    000001.40
+!SYM VPAR   000003.00
+!SYM VPCP   000002.40
+!SYM VVSCR  224105.00
+! VH and VUB: the !SYM checks the VALUE, read from the BINARY column
+! (+00000040 = 32, +00000004 = 4); their LOCATION prints 000000.00+
+! (the p.185 K REP convention).
+!CHECK 224105.00 | 03 | line 44 V VSCR DD(BU,4),3,1 | 4
+!CHECK 224105.04 | 01 | line 45 second field (printed "C1": C/0) | 4
+!CHECK 224105.10 | 0 | line 46 DD(BU,3),0 (printed "C") | 3
+!CHECK 224105.13 | 2 | line 47 DD(BU,2),2,2 | 2
+!CHECK 224105.15 | 2 | line 48 second field | 2
+!CHECK 224105.17 | 0000000000 | line 49 DD(BU,30),0 | 30
+!CHECK 224105.55 | 0451074 | line 51 BE,V SCR under line 50's EXT(0,18) -- 19 bits, V SCR's half-word address | 19
+!CHECK 224106.00 | 00000000000 | line 52 DD(BU,32),,,,,, field 1 | 32
+!CHECK 224106.40 | 00000000000 | line 53 field 2 | 32
+!CHECK 224107.00 | 00000000000 | line 54 field 3 | 32
+!CHECK 224107.40 | 00000000000 | line 55 field 4 | 32
+!CHECK 224110.00 | 00000000000 | line 56 field 5 | 32
+!CHECK 224110.40 | 00000000000 | field 6, printed on p.214 line 1 (that deck emits nothing for it) | 32
