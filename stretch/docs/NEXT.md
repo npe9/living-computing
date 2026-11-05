@@ -16488,5 +16488,9 @@ line's LOCATION + offset + opcode bits (from strap_asm). sym-confirmed
 150 landed rows at 100%; 402 on all pages. Reverse direction built
 (agreed reference -> the definition's LOCATION, then the arithmetic
 again): 108 locations confirmed on all pages, 11/11 on landed pages.
-Open: SYMBOLS NEVER USED (vol 2 PDF 190-194) as a list of
-names that must have no reference.
+SYMBOLS NEVER USED measured and NOT built (README_vision: 7 rows gained;
+the list has its own name scope). Statements confirmed by assembly
+(tools/statement_confirm.py, 2026-11-04): 3,659 on all pages, 41.6% of
+eligible landed lines, hex 1,432/1,432, text 92.6%. NEXT: try every
+location of a multiply-defined symbol; land a no-deck page from the
+confirmed cards (rule 3 still reads the spelling off the ink).

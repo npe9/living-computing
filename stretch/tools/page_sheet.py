@@ -21,10 +21,14 @@ fragments) and statement (from the whole page, which reads statements
 better) in the decks' space-free spelling, repaired with
 STRAP's grammar and the symbols known from every OTHER landed page.
 
-The hex bytes are Vision's alone, folded to 0-9 A-F (O, Q, D -> 0;
+The hex bytes are Vision's alone, folded to 0-9 A-F (O, Q -> 0;
 I, l -> 1) and marked `h`: C against 0 is NOT settled by any image
 method tried (tools/README_vision.md), so every C and 0 in a hex byte
 is the assembler's to settle.
+
+"=>" in place of "->" marks a card that ASSEMBLES to the trusted binary
+(tools/statement_confirm.py): its binary is right; its spelling is
+still to be checked on the ink.
 
 THIS IS A WORK SHEET, NOT A TRANSCRIPTION.  Rule 3 is unchanged: the
 deck is read off the page image, and its !CHECKs off the page.  The
@@ -46,7 +50,8 @@ import statement_repair     # noqa: E402
 MARK = {"agreed": "=", "vision-only": "~", "conflict": "?", "tesseract-only": "t",
         "agreed-out-of-order": "!", "unread": ".", "arith-confirmed": "+", "arith-only": "a",
         "sym-confirmed": "s", "sym-only": "S"}
-HEX_FIX = str.maketrans({"O": "0", "Q": "0", "D": "0", "I": "1", "L": "1", "|": "1"})
+# D is a hex digit: never folded (Vision reads D0 as 00, but a D is a D)
+HEX_FIX = str.maketrans({"O": "0", "Q": "0", "I": "1", "L": "1", "|": "1"})
 
 
 def page_of(printed):
@@ -91,7 +96,11 @@ def main(printed):
     C = statement_repair.corpus()
     syms = set().union(*(s for p, (s, _) in C.items() if p != printed))
     ops = set().union(*(o for p, (_, o) in C.items() if p != printed))
-    print(f"printed p.{printed} = vol {vol} PDF p.{pdf}; {len(rows)} lines read")
+    confirmed = {r["line"]: r for r in csv.DictReader(
+        open(os.path.join(ROOT, "docs", "vision", "listing_statements.tsv")), delimiter="\t",
+        quoting=csv.QUOTE_NONE) if r["vol"] == str(vol) and r["pdf"] == str(pdf) and r["status"] == "asm-confirmed"}
+    print(f"printed p.{printed} = vol {vol} PDF p.{pdf}; {len(rows)} lines read, "
+          f"{len(confirmed)} statements confirmed by assembly")
     print(f"{'ln':>3} {'LOCATION':11s} {'BINARY h1':11s} hx  {'h2':11s} hx  NAME+STATEMENT (draft)")
     for r in rows:
         line = int(r["line"])
@@ -106,7 +115,10 @@ def main(printed):
         _, st2 = statement_repair.repair(r["statement_crop"], syms, ops, whole=True)
         if st2 and st2 != st:
             st += f"   | crop: {st2}"
-        if st:
+        if r["line"] in confirmed:
+            c = confirmed[r["line"]]
+            print(f"{'':52s}=> {lab:8s} {c['statement']}   ASSEMBLES TO {c['assembled']}")
+        elif st:
             print(f"{'':52s}-> {lab:8s} {st}")
 
 

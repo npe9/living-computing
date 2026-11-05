@@ -365,3 +365,40 @@ from the crop's NAME column, against 32% from the whole page.
 The 12-point gap between "whole page" and "either" is the choice the
 assembler makes: of two candidate cards, the one that assembles to the
 agreed binary. That is the next lever and it is also rule 3's loop.
+
+## STATEMENTS CONFIRMED BY ASSEMBLY (2026-11-04)
+
+`tools/statement_confirm.py` runs rule 3's loop on the reading: each
+candidate card for a line with a trusted LOCATION and BINARY h1 is
+assembled by strap_asm AT THAT LOCATION, symbols SYN'd to where the
+reading's NAME column defines them, and kept as `asm-confirmed` when it
+produces h1 (and h2) exactly and Vision's hex byte does not contradict
+it. Table: `docs/vision/listing_statements.tsv`.
+
+* **The hex byte is needed.** On octal alone, `BDS` confirmed for
+  `BDSZ` (C2 vs C6) and an index `34` for `$4` (82 vs 84). Vision's hex,
+  measured on 5,242 landed bytes, confuses 0/C/D (00 read C0 212 times,
+  D0 read 00 49) and 8/B; a byte that differs outside those classes
+  vetoes.
+* **Landed pages, leave-one-page-out:** 1,466 of 3,520 eligible lines
+  confirmed (41.6%); hex equals the deck's on 1,432 of 1,432; text
+  equals the deck's on 92.6%. The rest are binary-equivalent spellings
+  (`$15` read for the printed `$X15`) -- so confirmed means the BINARY
+  is right, not the spelling.
+* **All 451 pages: 3,659 confirmed statements**, about 2,190 of them on
+  pages with no deck.
+
+Found on the way: strap_asm accepts `814` where an index register is
+expected (`LVS,$9,$12,$11,814` assembles as `$14`): a laxness, open.
+
+## SYMBOLS NEVER USED (vol 2 PDF pp.190-193): measured, not built
+
+Each entry prints NAME, `*`, `1`, LOCATION (C22-6729 PDF p.36: STRAP's
+NUNDSY prints the undefined, multiply-defined, circular and never-used
+symbols; what `*` and `1` mean is not in the manuals read). Vision
+parses 160 entries, 120 with a location; of the 63 whose name the
+reading defines, 58 match a definition's location -- but only 7 of
+those rows were not already agreed or confirmed. As a "must have no
+reference" check it is wrong: SCHANS is listed at 002152.00 (checked on
+the ink) yet referenced at 215002, the body's own SCHANS. The list
+belongs to one name scope, and the listing has several.

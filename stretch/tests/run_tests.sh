@@ -6676,6 +6676,7 @@ run "two OCR engines read the landed pages as the decks do" python3 check_vision
 # fresh, and as accurate as measured on the landed pages.
 run "every listing page read by two engines, scored on the landed ones" python3 check_listing_reading.py
 run "Vision's text layer of the eleven environment manuals is whole and fresh" python3 check_manual_reading.py
+run "statement drafts confirmed by assembling them against the agreed binary" python3 check_statement_confirm.py
 
 # >>> READING THE PAGE NUMBER OFF ALL 256 PAGES, AND THE TWO PARSERS
 # THAT WERE WORSE THAN THE OCR. <<<
