@@ -14,6 +14,17 @@ names SYN'd to where the reading found them defined.  A candidate is
   asm-confirmed  when it assembles to BINARY h1 (and h2, when printed)
                  exactly, and Vision's hex byte, where read, does not
                  contradict the assembled one;
+  asm-bound      when it does so only once its symbols are BOUND to
+                 definitions it did not spell: each operand symbol the
+                 reading does not define is replaced by a look-alike
+                 (up to two) that it does, and a name defined at several
+                 locations tries each (MCP is several assemblies); bound
+                 only when exactly one binding assembles.  The BINARY is
+                 as sure as asm-confirmed's (hex 216 of 216 on landed
+                 pages) but the SPELLING is the NAME column's reading of
+                 the definition, right only 64% of the time
+                 (XICCD for XIOCD) -- the symbol's location is what it
+                 settles;
   draft          otherwise (the first candidate is kept).
 
 THE HEX BYTE IS NEEDED.  The octal fields alone confirmed `BDS` for
@@ -33,6 +44,7 @@ column, so a landed page never repairs itself from its deck.
 """
 import collections
 import csv
+import itertools
 import json
 import os
 import re
@@ -60,11 +72,20 @@ def reading(root=ROOT):
                                delimiter="\t", quoting=csv.QUOTE_NONE))
 
 
-def assemble(stmt, loc, defs):
-    """(h1, hex1, h2, hex2) of `stmt` assembled at bit address `loc`, or None."""
-    names = set(re.findall(r"(?<![A-Z0-9$.])([A-Z][A-Z0-9]*)", stmt.split(",", 1)[1] if "," in stmt else ""))
-    pre = "".join("%-8sSYN, (8)%s\n" % (n, next(iter(defs[n]))) for n in sorted(names)
-                  if len(defs.get(n, ())) == 1)
+SYM = re.compile(r"(?<![A-Z0-9$.])([A-Z][A-Z0-9]*)")
+
+
+def operands(stmt):
+    return sorted(set(SYM.findall(stmt.split(",", 1)[1]))) if "," in stmt else []
+
+
+def assemble(stmt, loc, defs, binding=None):
+    """(h1, hex1, h2, hex2) of `stmt` assembled at bit address `loc`, or None.
+    Symbols are SYN'd from `binding` {name: location}, else from `defs`
+    when the name has one location."""
+    if binding is None:
+        binding = {n: next(iter(defs[n])) for n in operands(stmt) if len(defs.get(n, ())) == 1}
+    pre = "".join("%-8sSYN, (8)%s\n" % (n, v) for n, v in sorted(binding.items()))
     try:
         p = strap_asm.assemble(pre + "        " + stmt + "\n", origin_bits=loc)
     except Exception:
@@ -95,6 +116,33 @@ class Hex:
         y0, pitch, _, _ = f
         return page_sheet.hex_after(vis, y0 + (int(r["line"]) - 1) * pitch, pitch,
                                     g["bin_cell"] + 14 * half, g["char_w"])
+
+
+def bind(stmt, loc, defs, fits):
+    """(statement, assembled) for the ONE binding of `stmt`'s symbols to
+    read definitions that assembles and fits, or None (see asm-bound)."""
+    toks = operands(stmt)
+    if not toks or len(toks) > 3:
+        return None
+    opts = []
+    for x in toks:
+        vs = [x] if x in defs else [k for k in sorted(defs) if SR.one_lookalike(x, k, 2)][:6]
+        opts.append([(v, l) for v in vs for l in sorted(defs[v])][:8])
+    if not all(opts):
+        return None
+    hits = {}
+    for combo in itertools.product(*opts):
+        s2 = stmt.split(",", 1)
+        rest = s2[1]
+        for x, (v, _) in zip(toks, combo):
+            rest = re.sub(r"(?<![A-Z0-9$.])" + x + r"(?![A-Z0-9])", v, rest)
+        s2 = s2[0] + "," + rest
+        a = assemble(s2, loc, defs, {v: l for v, l in combo})
+        if fits(a):
+            hits[s2] = a
+            if len(hits) > 1:
+                return None
+    return next(iter(hits.items())) if hits else None
 
 
 def confirm(rows, root=ROOT):
@@ -130,23 +178,30 @@ def confirm(rows, root=ROOT):
                 cands.append(st)
         if not cands:
             continue
-        got = None
+        got, status = None, "draft"
         if r["loc_status"] in TRUST_LOC and r["bin_status"] in TRUST_BIN:
-            for st in cands:
-                a = assemble(st, R.bit_address(r["location"]), defs)
+            loc = R.bit_address(r["location"])
+
+            def fits(a):
                 if not a or a[0] != r["binary_h1"] or (r["binary_h2"] and a[2] != r["binary_h2"]):
-                    continue
-                vetoed = False
+                    return False
                 for half, i in ((0, 1), (1, 3)):
                     if half and not r["binary_h2"]:
                         continue
                     vh = hexes(r, half)
-                    vetoed |= bool(vh) and vh.translate(LOOK) != a[i].translate(LOOK)
-                if not vetoed:
-                    got = (st, a)
+                    if vh and vh.translate(LOOK) != a[i].translate(LOOK):
+                        return False
+                return True
+            for st in cands:
+                a = assemble(st, loc, defs)
+                if fits(a):
+                    got, status = (st, a), "asm-confirmed"
                     break
+            if not got:
+                got = bind(cands[0], loc, defs, fits)
+                status = "asm-bound" if got else "draft"
         if got:
-            out.append((r, "asm-confirmed", got[0], " ".join(got[1][:2] + (got[1][2:] if r["binary_h2"] else ()))))
+            out.append((r, status, got[0], " ".join(got[1][:2] + (got[1][2:] if r["binary_h2"] else ()))))
         else:
             out.append((r, "draft", cands[0], ""))
     return out
@@ -180,10 +235,11 @@ def score(root=ROOT, quiet=False):
             continue
         r = rd[(t["vol"], t["pdf"], t["line"])]
         c["eligible"] += r["loc_status"] in TRUST_LOC and r["bin_status"] in TRUST_BIN
-        if t["status"] != "asm-confirmed":
+        if t["status"] not in ("asm-confirmed", "asm-bound"):
             continue
-        c["confirmed"] += 1
-        c["text"] += t["statement"] == SR._norm(re.split(r"\s-", want)[0])
+        k = "confirmed" if t["status"] == "asm-confirmed" else "bound"
+        c[k] += 1
+        c[k + "_text"] += t["statement"] == SR._norm(re.split(r"\s-", want)[0])
         pr = printed.get(int(t["line"]), (None, ""))[1].split()
         a = t["assembled"].split()
         if len(pr) > 1 and re.fullmatch(r"[0-9A-F]{2}", pr[1]):
@@ -195,7 +251,11 @@ def score(root=ROOT, quiet=False):
         e = max(1, c["eligible"])
         print(f"{c['eligible']} landed lines with a deck statement and a trusted LOCATION + BINARY h1")
         print(f"  asm-confirmed            {c['confirmed']:5d}  {100 * c['confirmed'] / e:.1f}%")
-        print(f"  ... text equals the deck {c['text']:5d}  {100 * c['text'] / max(1, c['confirmed']):.1f}%")
+        print(f"  ... text equals the deck {c['confirmed_text']:5d}  "
+              f"{100 * c['confirmed_text'] / max(1, c['confirmed']):.1f}%")
+        print(f"  asm-bound                {c['bound']:5d}  {100 * c['bound'] / e:.1f}%")
+        print(f"  ... text equals the deck {c['bound_text']:5d}  "
+              f"{100 * c['bound_text'] / max(1, c['bound']):.1f}%")
         print(f"  ... hex byte equals the deck's printed one: {c['hex_ok']} of {c['hex']}")
     return c
 

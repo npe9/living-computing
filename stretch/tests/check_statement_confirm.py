@@ -15,11 +15,16 @@ CHECKS
                        1,466 of 3,520 = 41.6%; 92.6% text-equal; hex 1,432
                        of 1,432) -- so a broken assembler or repair cannot
                        pass by confirming less
+  floor_bound          asm-bound (symbols bound to read definitions): 216
+                       of 3,520 (6.1%); its spelling (64.4%) is not floored,
+                       its hex is (hex_vs_deck covers both statuses:
+                       1,648 of 1,648)
 
 MEASURED INJECTIONS (python3 check_statement_confirm.py --inject):
 
     control, nothing changed                          PASS
     deck hex byte of the first confirmed row changed  FAIL hex_vs_deck
+    deck hex byte of the first asm-bound row changed  FAIL hex_vs_deck
     one row of listing_statements.tsv edited          FAIL table_fresh
 """
 import os
@@ -34,6 +39,7 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 import statement_confirm as SC      # noqa: E402
 
 CONFIRMED_FLOOR, TEXT_FLOOR = 0.38, 0.90
+BOUND_FLOOR = 0.05
 
 
 def main(root=ROOT):
@@ -57,10 +63,14 @@ def main(root=ROOT):
     ok(c["confirmed"] / e >= CONFIRMED_FLOOR, "floor_confirmed",
        f"{c['confirmed']} of {c['eligible']} eligible landed lines ({100 * c['confirmed'] / e:.1f}%, "
        f"floor {100 * CONFIRMED_FLOOR:.0f}%)")
-    t = c["text"] / max(1, c["confirmed"])
+    t = c["confirmed_text"] / max(1, c["confirmed"])
     ok(t >= TEXT_FLOOR, "floor_text",
-       f"{c['text']} of {c['confirmed']} confirmed equal the deck's text ({100 * t:.1f}%, "
+       f"{c['confirmed_text']} of {c['confirmed']} confirmed equal the deck's text ({100 * t:.1f}%, "
        f"floor {100 * TEXT_FLOOR:.0f}%)")
+    ok(c["bound"] / e >= BOUND_FLOOR, "floor_bound",
+       f"{c['bound']} of {c['eligible']} eligible landed lines asm-bound "
+       f"({100 * c['bound'] / e:.1f}%, floor {100 * BOUND_FLOOR:.0f}%); spelling "
+       f"{c['bound_text']} right, not floored")
     print("ALL TESTS PASSED" if not fails else f"{fails} CHECK(S) FAILED")
     return fails
 
@@ -77,30 +87,31 @@ def inject():
     res.append(("control", main(td)))
     shutil.rmtree(td)
 
-    # the first confirmed row whose deck !CHECK prints a hex byte: change it
-    td = scratch()
-    target = None
-    for ln in open(os.path.join(td, "docs", "vision", "listing_statements.tsv")).read().splitlines()[1:]:
-        vol, pdf, printed, line, st, stmt, a = ln.split("\t")
-        if st != "asm-confirmed" or vol != "1" or not printed:
-            continue
-        deck = os.path.join(td, "decks", "mcp_bootstrap_p%s.strap" % printed)
-        if not os.path.exists(deck):
-            continue
-        h1, hx = a.split()[:2]
-        bad = "%02X" % (int(hx, 16) ^ 0x01)
-        s = open(deck).read()
-        t = re.sub(r"^(!CHECK\s+[0-7.]+\s*\|\s*" + re.escape(h1) + r"\s+)" + hx + r"(\b[^\n]*\|\s*line\s+%s\b)" % line,
-                   r"\g<1>" + bad + r"\g<2>", s, count=1, flags=re.M)
-        if t != s:
-            target = (printed, line, hx, bad, deck, t)
-            break
-    assert target, "hex injection found no row to change"
-    printed, line, hx, bad, deck, t = target
-    open(deck, "w").write(t)
-    print(f"-- injected: p.{printed} line {line} deck hex {hx} -> {bad}")
-    res.append((f"deck hex p.{printed} line {line}", main(td)))
-    shutil.rmtree(td)
+    # the first row of each status whose deck !CHECK prints a hex byte: change it
+    for want in ("asm-confirmed", "asm-bound"):
+        td = scratch()
+        target = None
+        for ln in open(os.path.join(td, "docs", "vision", "listing_statements.tsv")).read().splitlines()[1:]:
+            vol, pdf, printed, line, st, stmt, a = ln.split("\t")
+            if st != want or vol != "1" or not printed:
+                continue
+            deck = os.path.join(td, "decks", "mcp_bootstrap_p%s.strap" % printed)
+            if not os.path.exists(deck):
+                continue
+            h1, hx = a.split()[:2]
+            bad = "%02X" % (int(hx, 16) ^ 0x01)
+            s = open(deck).read()
+            t = re.sub(r"^(!CHECK\s+[0-7.]+\s*\|\s*" + re.escape(h1) + r"\s+)" + hx + r"(\b[^\n]*\|\s*line\s+%s\b)" % line,
+                       r"\g<1>" + bad + r"\g<2>", s, count=1, flags=re.M)
+            if t != s:
+                target = (printed, line, hx, bad, deck, t)
+                break
+        assert target, "hex injection found no row to change"
+        printed, line, hx, bad, deck, t = target
+        open(deck, "w").write(t)
+        print(f"-- injected: p.{printed} line {line} ({want}) deck hex {hx} -> {bad}")
+        res.append((f"deck hex, {want}, p.{printed} line {line}", main(td)))
+        shutil.rmtree(td)
 
     td = scratch()
     f = os.path.join(td, "docs", "vision", "listing_statements.tsv")

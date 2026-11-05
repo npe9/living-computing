@@ -16491,6 +16491,8 @@ again): 108 locations confirmed on all pages, 11/11 on landed pages.
 SYMBOLS NEVER USED measured and NOT built (README_vision: 7 rows gained;
 the list has its own name scope). Statements confirmed by assembly
 (tools/statement_confirm.py, 2026-11-04): 3,659 on all pages, 41.6% of
-eligible landed lines, hex 1,432/1,432, text 92.6%. NEXT: try every
-location of a multiply-defined symbol; land a no-deck page from the
-confirmed cards (rule 3 still reads the spelling off the ink).
+eligible landed lines, hex 1,432/1,432, text 92.6%. asm-bound (symbols
+bound by look-alike and by every location of a multiply-defined name):
+447 more, landed 216 at hex 100%, spelling 64%. NEXT: land a no-deck
+page from the confirmed cards (rule 3 still reads the spelling off the
+ink).

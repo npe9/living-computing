@@ -388,6 +388,15 @@ it. Table: `docs/vision/listing_statements.tsv`.
 * **All 451 pages: 3,659 confirmed statements**, about 2,190 of them on
   pages with no deck.
 
+**Binding symbols by assembly (`asm-bound`).** When no candidate
+assembles, each operand symbol the reading does not define is replaced
+by a look-alike that it does, and a name with several locations tries
+each; the line is bound when exactly ONE binding assembles and fits.
+Landed: 216 more lines (6.1%), hex 216 of 216 -- but the spelling is
+the NAME column's reading of the definition, right 64.4% (`XICCD` for
+`XIOCD`), so it is a separate status: it settles WHERE the operand
+points, not how it is spelled. All pages: 447.
+
 Found on the way: strap_asm accepts `814` where an index register is
 expected (`LVS,$9,$12,$11,814` assembles as `$14`): a laxness, open.
 

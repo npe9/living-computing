@@ -28,7 +28,9 @@ is the assembler's to settle.
 
 "=>" in place of "->" marks a card that ASSEMBLES to the trusted binary
 (tools/statement_confirm.py): its binary is right; its spelling is
-still to be checked on the ink.
+still to be checked on the ink.  "~>" is asm-bound: the binary is right
+once a symbol is bound to a read definition, whose SPELLING is only the
+NAME column's reading.
 
 THIS IS A WORK SHEET, NOT A TRANSCRIPTION.  Rule 3 is unchanged: the
 deck is read off the page image, and its !CHECKs off the page.  The
@@ -98,7 +100,7 @@ def main(printed):
     ops = set().union(*(o for p, (_, o) in C.items() if p != printed))
     confirmed = {r["line"]: r for r in csv.DictReader(
         open(os.path.join(ROOT, "docs", "vision", "listing_statements.tsv")), delimiter="\t",
-        quoting=csv.QUOTE_NONE) if r["vol"] == str(vol) and r["pdf"] == str(pdf) and r["status"] == "asm-confirmed"}
+        quoting=csv.QUOTE_NONE) if r["vol"] == str(vol) and r["pdf"] == str(pdf) and r["status"] in ("asm-confirmed", "asm-bound")}
     print(f"printed p.{printed} = vol {vol} PDF p.{pdf}; {len(rows)} lines read, "
           f"{len(confirmed)} statements confirmed by assembly")
     print(f"{'ln':>3} {'LOCATION':11s} {'BINARY h1':11s} hx  {'h2':11s} hx  NAME+STATEMENT (draft)")
@@ -117,7 +119,8 @@ def main(printed):
             st += f"   | crop: {st2}"
         if r["line"] in confirmed:
             c = confirmed[r["line"]]
-            print(f"{'':52s}=> {lab:8s} {c['statement']}   ASSEMBLES TO {c['assembled']}")
+            mk = "=>" if c["status"] == "asm-confirmed" else "~>"
+            print(f"{'':52s}{mk} {lab:8s} {c['statement']}   ASSEMBLES TO {c['assembled']}")
         elif st:
             print(f"{'':52s}-> {lab:8s} {st}")
 
