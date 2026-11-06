@@ -15,10 +15,9 @@
 # carries on to T MOVE.
 #
 # WHY IT STOPS AT T MOVE (half-word 5144, printed p.27's own
-# "TMOVE SYN, (8)5014.0" = word 2572).  Two reasons, and neither is
-# convenience: the request table is cleared by paths downstream of
-# ASSIGN, and past T MOVE the run falls into storage that no
-# transcribed page fills, so the end of the run says nothing at all.
+# "TMOVE SYN, (8)5014.0" = word 2572), and not for convenience: the
+# request table is cleared by paths downstream of ASSIGN.  (The run past T MOVE is StretchMcpPastMoveTb, the same
+# script with another module name.)
 # The stop is an ADDRESS rather than a step count because a newly
 # transcribed page moves step numbers and does not move p.27.
 #

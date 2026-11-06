@@ -87,8 +87,9 @@ WHAT IS CHOSEN -- the two offsets and the filler
 ---------------------------------------------------------------------
   * the two "preceding" sizes are 3 and 5, so MCP starts at buffer
     word 8 and the sum is not a round number either side;
-  * the MCP size is 12, which nothing in the transcribed pages reads
-    back -- it goes into X10 and stays there;
+  * (no longer chosen, 2026-11-06: the MCP block is the resident body,
+    printed pp.99-319, and its size, X10, is that image's length;
+    see MCP_DEST_WORD);
   * the FILLER around the image -- every word that is not the
     dictionary and not MCP -- carries ITS OWN BUFFER OFFSET in its
     low bits.
@@ -238,27 +239,28 @@ COMM_REGION_WORDS = 14
 # -- and the only question is how they get from the buffer to
 # X IN END.
 #
-# >>> printed p.15 LINE 24 IS THE ANSWER, AND IT IS ALREADY THERE:
-# "T,$10,X BUFER($9),0.0($8)  -PLACE MCP IN STORAGE".  It moves X10
-# words from the same buffer offset the comm region came from to the
-# address the descriptor names.  Put the cards at the END of that
-# block and they land at the end of where MCP is placed -- which is
-# what X IN END IS: the end of the assembled image. <<<
+# >>> THE CARDS TRAVEL WITH THE IPL PROGRAM, AND C22-6728-1 SAYS SO.
+# printed p.96 (PDF p.96): the master IPL tape's second file is the
+# type areas 11A11DIC, 11B11IND, 11C11IPL and 11D11MCP, in that
+# order, and "The control cards are included with the initializing
+# program". <<<  Printed p.4's first TRANSMIT moves X11, "GET IPL",
+# words to X BS END, and the IPL image is X IN END - X BS END words
+# long exactly.  So when the cards follow the image inside the IPL
+# type area, and X11 counts both, the first card lands at X IN END.
+# Printed p.17's hunt then finds it on its first test: line 13's
+# "BB, 1.44($4)" is bit 108 of the group, where the IOCD identifier
+# starts.
 #
-# So MCP's destination is no longer a free choice.  It is
+# UNTIL 2026-11-06 THE CARDS FOLLOWED MCP INSTEAD, with
+# MCP_DEST_WORD = X IN END - 14, and the run past T MOVE falsified
+# that.  Printed p.19 line 32 is "SV,$8,$13  -TEMPORARILY SAVE BASE OF
+# MCP".  The status tables are moved to just below $13, so they grew
+# down from 005450 onto MOVE's code at 005376-005377, and MOVE's
+# B,TMREJB ran into table data and fell to location 0
+# (docs/boot_plan.md, "PAST T MOVE"). MCP's base is where its body is
+# assembled: see MCP_DEST_WORD below.
 #
-#     MCP_DEST_WORD = X IN END - MCP_BODY_WORDS
-#
-# and the cards follow the body, so the first one lands exactly at
-# X IN END and printed p.17's hunt finds it on its first test --
-# line 13's "BB, 1.44($4)" is bit 108 of the group, which is where
-# the IOCD identifier starts.
-#
-# CHOSEN: how long MCP's body is, and what is on the cards.  The
-# body is the comm region's own length, because the comm region IS
-# the start of the block (printed p.15 lines 21 and 24 move from the
-# SAME source) and nothing in the transcribed pages reads anything
-# between it and X IN END.
+# CHOSEN: what is on the cards.
 #
 # >>> AND THE CARDS DESCRIBE THE MACHINE THE MODEL ACTUALLY IS, which
 # is the whole point of an IOCD deck: "the IOCD cards define the
@@ -466,32 +468,95 @@ MCP_IPL_AT, MCP_IPL_WORDS = mcp_ipl_image()
 IPL_WORDS = len(MCP_IPL_WORDS)   # X11, "GET IPL" -- the TRANSMIT's
                                   # count.  DERIVED: the image's length.
 
-# printed p.15 line 17: "LVS,$9,$12,$11,$14" sums THREE counts -- the
-# dictionary, the IPL and the index -- so the comm region starts
-# exactly here.
-COMM_AT = WORDS_BEFORE_MCP_A + IPL_WORDS + WORDS_BEFORE_MCP_B
-
-# MCP's body: the comm region's own length -- see the IOCD note.
-MCP_BODY_WORDS = COMM_REGION_WORDS
 # +2: the IOD terminator and the MCPP card after it.  C22-6728 printed
 # p.88 gives the order IOCD, IOD, MCPP, and MCP read the IOD and then
 # reported X ERR 22, "INCORRECT CARD TYPE WITHIN IODS" (printed p.8
 # line 14) -- it wanted the next legal card type and found none.
 MCPP_MODE = "BYPASS"   # printed p.98 case 1: normal IPL, unoverlapped
 CARD_WORDS = iocd.WORDS_PER_CARD * (len(IOCD_CARDS) + len(MCP_IODS) + 1)
-# X10, "GET MCP SIZE": the body plus the cards, because printed p.15
-# line 24 moves the whole block.
-MCP_SIZE_WORDS = MCP_BODY_WORDS + CARD_WORDS
-# DERIVED: the block has to END at X IN END plus its cards, so that
-# the first card lands where printed p.17 line 8 points $4.
+# X11, "GET IPL": the 11C11IPL type area, the image and its cards.
+IPL_AREA_WORDS = IPL_WORDS + CARD_WORDS
 XINEND_WORD = mcp_image.build_mcp_ipl()[0].symtab["XINEND"] // 64
-MCP_DEST_WORD = XINEND_WORD - MCP_BODY_WORDS
-CARDS_AT = COMM_AT + MCP_BODY_WORDS   # inside the record
+assert MCP_IPL_AT + IPL_WORDS == XINEND_WORD
+CARDS_AT = MCP_AT + IPL_WORDS         # inside the record
+
+# printed p.15 line 17: "LVS,$9,$12,$11,$14" sums THREE counts -- the
+# dictionary, the IPL and the index -- so the 11D11MCP type area
+# starts exactly here.
+COMM_AT = WORDS_BEFORE_MCP_A + IPL_AREA_WORDS + WORDS_BEFORE_MCP_B
+
+# The SLC-covered words of the resident body, which no card writes:
+# printed p.112's PARALLEL IO INTERRUPT SLOTS and the four DATA words
+# of printed p.256's CC stand-in.  tests/check_mcp_body_image.py's
+# RESIDENT_SKIP_HOLES gives each one's reason; the two lists must
+# agree.
+BODY_SLC_HOLES = {
+    0o215104, 0o215105, 0o215106,
+    0o215110, 0o215111, 0o215112, 0o215113,
+    0o215121, 0o215122, 0o215123, 0o215124,
+    0o215126,
+    0o215130,
+    0o230411, 0o230412, 0o230413, 0o230414,
+}
+
+
+def mcp_body_image():
+    """Printed pp.99-319, the resident body, assembled:
+    (first_word_address, [words]).
+
+    This is the 11D11MCP type area, "Main portion of MCP" (C22-6728-1
+    PDF p.10).  The overlays assembled into Y MPBUF (LOADER, $DUMP,
+    SCOMD) are other type areas, and Y MPBUF arrives as its DRZ's
+    zeros.  A hole must be a reservation or one of BODY_SLC_HOLES,
+    and both go into the record as zeros.  >>> THE CC STAND-IN'S FOUR
+    WORDS ARE REAL DATA THAT ARE ZERO HERE until strap_asm implements
+    CC entry mode. <<<
+    """
+    skip = mcp_image.NO_DECK_PAGES | mcp_image.MISSING_PAGES
+    pages = [(mcp_image.DECK("mcp_bootstrap_p%d.strap" % n),
+              "printed p.%d" % n) for n in range(99, 320) if n not in skip]
+    prog, _, _, _ = mcp_image.build(False, pages, end_at="SDISP")
+    lo, hi = min(prog.words), max(prog.words)
+    missing = {a for a in range(lo, hi + 1) if a not in prog.words}
+    lost = missing - prog.reserved_words() - BODY_SLC_HOLES
+    if lost:
+        raise SystemExit("prosa.py: printed pp.99-319 lose words "
+                         f"{[f'{a:06o}' for a in sorted(lost)]}")
+    return lo, [prog.words.get(a, 0) for a in range(lo, hi + 1)]
+
+
+# >>> MCP'S DESTINATION IS WHERE ITS BODY IS ASSEMBLED, AND THE BODY
+# SAYS SO IN ITS FIRST WORD. <<<  Printed p.99 line 11 is
+# "SLC,(8)215000.".  Printed p.103 opens the body with "SMCP VF,SMCP"
+# and "SCOMSZ VF,SENDCM-SMCP", which assemble to exactly
+# comm_descriptor(215000, 14): the word printed p.15 reads out of
+# X BUFER($9).  So the fixture no longer builds the descriptor.  It
+# carries IBM's, and the assert below states the agreement.
+MCP_DEST_WORD, MCP_BODY = mcp_body_image()
+MCP_SIZE_WORDS = len(MCP_BODY)        # X10, "GET MCP SIZE"
 
 # A few words of filler past everything, so that a transmit which ran
 # one word long would copy something recognisable rather than falling
-# off the end of the record.
-RECORD_WORDS = COMM_AT + max(COMM_REGION_WORDS, MCP_SIZE_WORDS) + 4
+# off the end of the record.  Then round up to whole arcs: each record
+# on the master tape is "an image of an arc of PROSA on the disk"
+# (C22-6728-1 printed p.229, PDF p.228), and printed p.16 line 29 counts the arcs it
+# writes as words / 512, so a short last record is not counted.
+RECORD_WORDS = -(-(COMM_AT + MCP_SIZE_WORDS + 4) // CHUNK_STRIDE) * CHUNK_STRIDE
+PROSA_ARCS = RECORD_WORDS // CHUNK_STRIDE
+
+# >>> XUPDAT IS PUNCHED BY THE TAPE'S MAKER, NOT BY THE ASSEMBLER. <<<
+# Printed p.15 lines 15-16 assemble "XIN BE,XINEND-XIN  -SIZE OF IPL
+# FOR UPDATE" and "XUPDAT BE,0  -NUMBER OF PROSA ARCS", a slot that
+# UPDATE-30 fills in when it writes the master tape (C22-6728-1 printed
+# p.96).  Printed p.28 lines 18-22 compare it with S DK MCP, the arcs
+# p.16 counted while writing PROSA, and take XERR26, "PROSA ARC COUNT
+# INCORRECT" (printed p.8 line 22) if they differ.  Measured
+# 2026-11-06: with the assembled 0 there, the run past T MOVE stopped
+# in XERR26 with S DK MCP = 22.0.  The count goes in the BE's address
+# field as N.0, which is what "BE, N.0" assembles to.
+_XUPDAT = mcp_image.build_mcp_ipl()[0].symtab["XUPDAT"]
+assert _XUPDAT % 64 == 32 and MCP_IPL_WORDS[_XUPDAT // 64 - MCP_IPL_AT] & 0xFFFFFFFF == 0
+MCP_IPL_WORDS[_XUPDAT // 64 - MCP_IPL_AT] |= (PROSA_ARCS * 64) << 8
 
 # A body word carries its own offset.  0x5A5A is a pattern no part of
 # the bootstrap or the control words uses, so a stray one is obvious
@@ -516,6 +581,10 @@ def comm_descriptor(mcp_dest_word, size_words):
             | ((size_words & 0x3FFFF) << 14))
 
 
+assert MCP_BODY[0] == comm_descriptor(MCP_DEST_WORD, COMM_REGION_WORDS), \
+    "printed p.103's SMCP/SCOMSZ word is not the descriptor p.15 reads"
+
+
 def index_word(value=0, sign=0, flag=0, spare=0, count=0, refill=0):
     """Mirrors StretchTypes.bsv's packIndexWord field for field:
     addr 0-23, sign 24, flag 25, spare 26-27, count 28-45, refill 46-63."""
@@ -532,37 +601,25 @@ def record():
     """
     words = [body_word(i) for i in range(RECORD_WORDS)]
     sizes = (WORDS_BEFORE_MCP_A, WORDS_BEFORE_MCP_B,
-             IPL_WORDS, MCP_SIZE_WORDS)
+             IPL_AREA_WORDS, MCP_SIZE_WORDS)
     for offset, n in zip(DICT_AT, sizes):
         words[offset] = index_word(count=n)
     # MCP's own image, at the offset the dictionary names.
     words[MCP_AT:MCP_AT + IPL_WORDS] = MCP_IPL_WORDS
-    # The communication region, at the offset printed p.15 line 17's
-    # three-register LVS computes.  Its FIRST word is the descriptor;
-    # the rest keep their buffer-offset filler, because nothing in the
-    # transcribed pages reads a value out of them -- they are read as
-    # a block by the TRANSMIT and written field by field afterwards.
-    # >>> THE COMM REGION IS THE DESCRIPTOR AND THEN ZEROS, and the
-    # zeros are the point.  A tagged filler word here is not inert:
-    # printed p.5 line 19 is "LV,$X1,S YCOCH  -GET CONSOLE CHANNEL
-    # SLOT CONTENT" and line 20 "BZXVZ,X2AERR  -IF CHANNEL NUMBER
-    # PRESENT", so a non-zero S YCOCH sends the error routine
-    # straight to GONG on whatever channel it read instead of walking
-    # the exchange to find one.  With filler there MCP believed in a
-    # console on a channel made of 0x5A5A and printed NOTHING; with
-    # zeros it walks, exactly as it does when no console has been
-    # declared.
-    #
-    # S YCOCH is S MCP + 6 words, so this is not a hypothetical: the
-    # region is fifteen words and the fixture was filling all of them.
-    # NOTHING IN THE TRANSCRIBED PAGES SAYS WHAT THE REGION ARRIVES
-    # CARRYING, so it arrives empty, which is also what a region the
-    # program fills in looks like before it is filled. <<<
-    for k in range(1, COMM_REGION_WORDS):
-        words[COMM_AT + k] = 0
-    words[COMM_AT] = comm_descriptor(MCP_DEST_WORD, COMM_REGION_WORDS)
-    # The IOCD cards, at the end of the block printed p.15 line 24
-    # places -- so they land at X IN END.
+    # The 11D11MCP type area, at the offset printed p.15 line 17's
+    # three-register LVS computes: the resident body, whose first
+    # word is the descriptor and whose first fourteen are the
+    # communication region printed p.15 line 21 moves to S MCP.
+    # >>> THE REGION ARRIVES CARRYING IBM'S VALUES, NOT ZEROS. <<<
+    # Until 2026-11-06 the fixture zeroed words 1-13, because tagged
+    # filler in S YCOCH (word 6) sent printed p.5's error routine to
+    # GONG on a channel made of 0x5A5A.  The body's own word 6 is
+    # printed p.103 line 37's "SYCOCH VF,(8)23.40", IBM's console
+    # channel.  Printed p.20 line 23 and p.25 line 24 store the
+    # channels the IOCD cards declare over it and over S YPRCH.
+    words[COMM_AT:COMM_AT + MCP_SIZE_WORDS] = MCP_BODY
+    # The IOCD cards, after the image inside the IPL type area -- so
+    # printed p.4's TRANSMIT lands them at X IN END.
     deck = [(c, e, u, iocd.CARD_TYPE) for c, e, u in IOCD_CARDS]
     for _ in MCP_IODS:
         deck.append(TERMINATOR_CARD)

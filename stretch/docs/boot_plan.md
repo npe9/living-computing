@@ -1857,7 +1857,7 @@ reads is IBM's first word of the body**, so the MCP block in the
 record is the resident image itself, and `$8` is 215000.
 
 **And the cards go with the IPL program, not after MCP.** C22-6728-1
-PDF p.97 (printed p.96): the master IPL tape's second file holds the
+printed p.96 (PDF p.96): the master IPL tape's second file holds the
 type areas 11A11DIC, 11B11IND, **11C11IPL** and **11D11MCP** in that
 order, and "The control cards are included with the initializing
 program". Printed p.4's first TRANSMIT moves the IPL type area to
@@ -1879,3 +1879,80 @@ Two side findings from the same run:
 - **Four `vflIntOp/unimplemented-code` sites after T MOVE.** They
   have no addresses, because OP was already set and the `OP site`
   display prints no PC. Add one at the next core rebuild.
+
+**THE FIX, AND WHERE THE RUN STOPS NOW (same day).** `strap/prosa.py`
+now carries the resident body (printed pp.99-319, 215000-236523,
+9,044 words) as the 11D11MCP block, and the cards inside the IPL
+block. MOVE's code survives: 005376-005377 read back as assembled.
+The run then stopped in two of IPL's own checks in turn.
+
+1. **XERR26, "PROSA ARC COUNT INCORRECT"** (X ERR AD 001520.40).
+   Printed p.28 lines 18-22 compare S DK MCP, the arcs printed p.16
+   line 29 counted while writing PROSA (22.0), against XUPDAT. That
+   is printed p.15 line 16's `XUPDAT BE,0 -NUMBER OF PROSA ARCS`, a
+   slot the tape's maker fills. The record was 11,660 words, 22 arcs
+   and a fraction. Each record is "an image of an arc" (C22-6728-1
+   printed p.229, PDF p.228), so the record is now padded to 23 whole arcs and
+   XUPDAT carries 23. S DK MCP then reads 24.0, after p.28 lines
+   24-26 round it up to whole tracks.
+2. **XERR29, "SPOOL INPUT ASSIGNMENTS NOT MADE"** (printed p.13 line
+   20, read at 300 dpi). X ERR AD is 001647.40, at printed p.32 line
+   28. p.32 searches the mount messages for the spool tapes the real
+   comm region names: S R TAPE `VF,VRTP` and S W TAPE `VF,VWTP`
+   (printed p.103 lines 32-33), which are IOD reference numbers 4
+   and 6. The fixture's IOD deck has only 1-3.
+
+**This is still inside IPL**, before PREPARE FOR RETURN: no body
+instruction has executed. `StretchMcpPastMoveTb` pins the stop by
+address.
+
+Moving MCP's base also moves everything placed relative to it, and
+three boot checks were re-derived rather than refitted:
+- TABSCH in ASSIGN's request table is the CST entry's ADDRESS
+  (base + channel), not a channel number.
+- S MCP's high half follows the base. In both placements the base
+  sits 42 words below the placed address: 005450 → 005376, and
+  215000 → 214726.
+- p.37's S DATE and S TODAY equal p.103's, so the comm move's extent
+  is now witnessed at 002163 (S IA), the last word whose two copies
+  differ.
+
+**NEXT: MCP'S OWN IOD DECK IS IN THE LISTING.** Printed p.1 (volume 1
+PDF p.8) prints the cards, binary column included, and printed p.100
+(PDF p.107) SYNs their reference numbers. In OCR, a finding aid only:
+
+| Ref | Name | Card |
+|---|---|---|
+| 1 | PROSA | DISK |
+| 2, 7 | UNUSE1, UNUSE2 | not used |
+| 3, 9 | UNAGN3, UNAGN9 | reserved for unassign |
+| 4 | VRTP | TAPE, VRTEXT, CH32 |
+| 5 | VCRD | READER, VCREXT |
+| 6 | VWTP | TAPE, VWTEXT, CH33 |
+| 8 | JCIOD | CONSOLE |
+| 10 | PCDEF2 | CONSOLE |
+| 11 | CT11 | TAPE, AXITA, CH34, UN0 |
+| 12 | CT21 | TAPE, AXITB, CH34, UN1 |
+
+The tape IODs carry REEL cards. Transcribing p.1 retires the
+fixture's invented IODNAMEs and `MCP_IOD_EXIT`. It also gives
+`iocd.iod_card` its first oracle: columns 63-72 print the octal
+reference number and exit. All eight punched exits equal the body's
+assembled symbols: CDICEX 234354, VRTEXT 224133, VCREXT 224115,
+VWTEXT 224124, JCFIX 232723, PDBEX 232653, AXITA 222541 and AXITB
+222553.
+
+**"CH32" IS NOT CHANNEL 32.** C22-6678-1 printed p.9 (PDF p.9):
+"Channel is a programmer symbol (it is not used for compilation)
+that corresponds to an absolute channel number which will be
+assigned by MCP. The same channel symbol on several IOD cards ... is
+a request to assign them to the same channel. A different channel
+symbol ... is a request to assign them to different channels. MCP
+will honor such requests as the I/O configuration and its current
+usage allow."
+
+So the model's channel numbers need not match IBM's. The deck asks
+for FOUR TAPE UNITS (VRTP, VWTP, and CT11/CT21 on distinct unit
+symbols), ideally on three channels. That is A5's documented minimum
+of four 729 IVs. Whether a one-channel machine with four units
+satisfies ASSIGN is to be MEASURED, not assumed.

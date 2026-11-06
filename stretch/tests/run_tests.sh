@@ -1465,6 +1465,14 @@ run "WHAT MCP-DECODE BUILT (read at ASSIGN's entry, before the reject clears it)
 # is a real MCP behaviour verified against printed console text, and
 # the forward progress is the milestone.
 run "ASSIGN SUCCEEDS and MCP reaches T MOVE (both tape units available)" ./run_mcp_assign_test.sh StretchMcpAssignTb
+# >>> PAST T MOVE, 2026-11-06: MOVE's code survives and IPL stops in
+# its own XERR29, "SPOOL INPUT ASSIGNMENTS NOT MADE". <<<  The same
+# machine, not stopped at T MOVE.  MCP's body is placed at its assembled
+# 215000, so printed p.19's status tables no longer land on MOVE; the
+# record is padded to whole arcs and XUPDAT carries their count, so
+# printed p.28's XERR26 passes.  Injections and reasons are in
+# gen_mcp_boot_tb.py's PastMoveTb branch and docs/boot_plan.md.
+run "PAST T MOVE: MOVE intact, IPL stops in XERR29 (spool IODs 4-6)" ./run_mcp_assign_test.sh StretchMcpPastMoveTb
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<
 #
@@ -1648,15 +1656,15 @@ run "ASSIGN SUCCEEDS and MCP reaches T MOVE (both tape units available)" ./run_m
 # procedure mounts the master system TAPE and no deck -- so they
 # arrive in the PROSA record like everything else.
 #
-# HOW THEY GET FROM THE BUFFER TO X IN END was already in the
-# listing: printed p.15 line 24, "T,$10,X BUFER($9),0.0($8)  -PLACE
-# MCP IN STORAGE".  Put the cards at the END of that block and they
-# land at the end of where MCP is placed -- which is what X IN END
-# IS.  So MCP's destination stopped being a free choice:
-#
-#     MCP_DEST_WORD = X IN END - MCP_BODY_WORDS
-#
-# and the first card lands exactly where the hunt starts.
+# HOW THEY GET FROM THE BUFFER TO X IN END: until 2026-11-06 the
+# fixture put them at the end of the block printed p.15 line 24 places,
+# with MCP_DEST_WORD = X IN END - 14.  The run past T MOVE falsified
+# that: printed p.19's status tables, moved to just below MCP's base,
+# landed on MOVE's code.  They now follow the image in the IPL block
+# ("The control cards are included with the initializing program",
+# C22-6728-1 printed p.96), so printed p.4's TRANSMIT lands the first
+# card exactly where the hunt starts, and MCP goes to its assembled
+# 215000.
 #
 # THE DECK DESCRIBES THE MACHINE THE MODEL ACTUALLY IS, five cards
 # for the five channels bsv/StretchIO.bsv presents: 0 disk, 32

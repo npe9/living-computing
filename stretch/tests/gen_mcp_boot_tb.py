@@ -56,6 +56,14 @@ from mcp_image import build, build_mcp_ipl
 from opcodes import INDICATOR_BITS
 import iocd
 import prosa
+
+# MCP's base after printed p.19 moves the status tables below the
+# placed base and printed p.28 lines 5-11 lower it past the I-O tables
+# ("X263 LV,$12,$R -BASE OF MCP", "SV,$12,S MCP").  MEASURED, 42 words
+# for this fixture's cards, at both placements the fixture has used:
+# 005450 -> 005376 and 215000 -> 214726.  A different card deck sizes
+# the tables differently and moves it.
+MCP_BASE = prosa.MCP_DEST_WORD - 42
 import struct
 
 
@@ -230,11 +238,51 @@ def main():
     # IPL case describes -- a card reader and output tape unitS -- and
     # MCP then assigns all three requests and goes on to T MOVE.
     #
-    # It stops at T MOVE rather than running to the end for two reasons:
-    # the request table is cleared by paths downstream, and past T MOVE
-    # the run falls into storage no transcribed page fills, so the end
-    # of the run says nothing.  T MOVE is printed p.27's own
+    # It stops at T MOVE because the request table is cleared by paths
+    # downstream; past T MOVE MCP goes on through IPL's own checks,
+    # which PastMoveTb pins.  T MOVE is printed p.27's own
     # "TMOVE SYN, (8)5014.0" = word 2572 = half-word 5144.
+    # >>> PAST T MOVE, 2026-11-06: MOVE RUNS AND IPL STOPS IN ITS OWN
+    # XERR29. <<<
+    # The same machine as AssignTb, not stopped at T MOVE.  Until this
+    # date the fixture placed MCP at X IN END - 14 and printed p.19's
+    # status-table move wrote below it onto MOVE's code at 005376-005377,
+    # so MOVE's B,TMREJB ran into table data and fell to location 0
+    # (docs/boot_plan.md, "PAST T MOVE").  With the body placed at its
+    # assembled 215000 the run goes on through printed p.28's PROSA arc
+    # check (XERR26) and stops in printed p.32's spool search:
+    # XERR29, "SPOOL INPUT ASSIGNMENTS NOT MADE" (printed p.13 line 20),
+    # because the real comm region names IOD reference numbers 4, 5 and
+    # 6 (printed p.103 lines 32-34) and the fixture's deck has 1-3.
+    # Still inside IPL: no body instruction has executed.
+    #
+    # MEASURED INJECTIONS (same checks, scratch runs of 2026-11-06):
+    #   MCP placed at X IN END - 14     FAIL mcp_move_code_intact_*
+    #                                   (005377 read 0x4400000000)
+    #   XUPDAT left at the assembled 0  FAIL mcp_past_move_x_err_ad
+    #                                   (001520.40, XERR26)
+    if module_name.endswith("PastMoveTb"):
+        prosa.set_tape_units(prosa.TAPE_UNITS_BOTH_AVAILABLE)
+        write_tape(src)
+        # printed p.28 lines 24-26 round the arc count up to whole
+        # tracks of eight ("V+I,$0,(8)7.0", "CM0000(BU,3),$0+.15") and
+        # store it in S DK MCP and S SYRFT, the two halves of 002157.
+        tracks = -(-prosa.PROSA_ARCS // 8) * 8
+        print(generate(module_name, prog,
+                       [("mcp_move_code_intact_005377", str(0o5377),
+                         prosa.MCP_IPL_WORDS[_image_index("005377")]),
+                        ("mcp_move_code_intact_005376", str(0o5376),
+                         prosa.MCP_IPL_WORDS[_image_index("005376")]),
+                        # printed p.8 line 27: "VF,XERR29+1.0"
+                        ("mcp_past_move_x_err_ad", str(prog.symtab["XERRAD"] // 64),
+                         (prog.symtab["XERR29"] + 64) << 40),
+                        ("mcp_past_move_prosa_tracks", str(0o2157),
+                         ((tracks * 64) << 40) | ((tracks * 64) << 8))],
+                       step_cap=40000000,
+                       pc_trail=True,
+                       ipl=True))
+        return
+
     if module_name.endswith("AssignTb"):
         # set_tape_units BEFORE write_tape: the tape carries the cards.
         prosa.set_tape_units(prosa.TAPE_UNITS_BOTH_AVAILABLE)
@@ -254,13 +302,17 @@ def main():
         # The two tapes share TABSCH because TABSCH is "THE ABSOLUTE
         # CHANNEL" (p.62 line 39) and both units sit on channel 34; the
         # reader's 2846 is channel 32.
+        # >>> TABSCH IS AN ADDRESS, NOT A CHANNEL NUMBER: the CST
+        # entry, MCP_BASE + channel. <<<  2846 was 005376 + 32; with MCP
+        # placed at its assembled 215000 (2026-11-06) every TABSCH moved
+        # by exactly 215000 - 005450 words, and it is now 214726 + 32.
         print(generate(module_name, prog,
                        [("mcp_assign_slot0_reader_assigned",
-                         str(tuiorq), 0x8600001000000b1e),
+                         str(tuiorq), 0x8600001000000000 | (MCP_BASE + 32)),
                         ("mcp_assign_slot1_tape_assigned",
-                         str(tuiorq + 1), 0xb000002000000b20),
+                         str(tuiorq + 1), 0xb000002000000000 | (MCP_BASE + 34)),
                         ("mcp_assign_slot2_tape_assigned",
-                         str(tuiorq + 2), 0xb040003000000b20)],
+                         str(tuiorq + 2), 0xb040003000000000 | (MCP_BASE + 34))],
                        step_cap=40000000,
                        stop_at_pc=tmove_hw,
                        pc_trail=True,
@@ -1349,8 +1401,12 @@ def main():
         # 11's "SV,$10,S MCP  -SET BASE OF MCP IN COMM REGION" -- so
         # one word carries the fixture's number, IBM's number and
         # MCP's answer at once.
+        # >>> THE HIGH HALF FOLLOWS MCP'S PLACEMENT, 42 WORDS DOWN. <<<
+        # Measured twice: placed at 005450 it read 005376, placed at
+        # 215000 (2026-11-06) it read 214726.  Printed p.28 lines 5-11
+        # lower the base by the I-O tables' size; see MCP_BASE below.
         ("mcp_comm_size_fixture_and_listing_agree", str(0o2150),
-         0x02BF800000038000),
+         ((MCP_BASE * 64) << 40) | 0x38000),
         # A word from the middle, so the check is not two endpoints
         # and a hope.
         #
@@ -1450,7 +1506,16 @@ def main():
         # Both were zero in the old formulation; now one is a
         # specific instruction word.  The pair is strictly stronger
         # and neither drifts.
-        ("mcp_comm_move_covers_s_today", str(0o2165), 0),
+        #
+        # >>> AND ON 2026-11-06 THE RECORD STOPPED CARRYING ZEROS. <<<
+        # The block is now printed p.103's resident body, whose S DATE
+        # and S TODAY (words 12-13) are bit-identical to p.37's, so
+        # 002165 can no longer tell a moved word from an unmoved one.
+        # It reads the body's word and says so.  The extent is now
+        # witnessed by word 11, 002163, the last word whose two copies
+        # differ: p.103 line 47's "SIA VF,SIT" against p.37's.
+        ("mcp_comm_move_covers_s_today", str(0o2165), prosa.MCP_BODY[13]),
+        ("mcp_comm_move_covers_sia", str(0o2163), prosa.MCP_BODY[11]),
         ("mcp_comm_move_stops_before_yuncod", str(0o2166),
          prosa.MCP_IPL_WORDS[0o2166 - prosa.MCP_IPL_AT]),
         # >>> AND MCP IS PLACED.  printed p.15 line 24,
@@ -1470,14 +1535,14 @@ def main():
         ("mcp_placed_one_past_is_zero",
          str(prosa.MCP_DEST_WORD + prosa.MCP_SIZE_WORDS), 0),
 
-        # >>> AND THE IOCD CARD IS AT X IN END, which is the whole
-        # reason MCP's destination is no longer a free choice. <<<
+        # >>> AND THE IOCD CARD IS AT X IN END. <<<
         # printed p.17 line 8 points $4 at X IN END and line 12 tests
         # fourteen words from there for the first card; printed p.13
         # line 38 reserves what follows as "SLOTS LEFT FOR IOCD +
-        # IODS".  strap/prosa.py puts the cards at the END of the
-        # block printed p.15 line 24 places, and MCP_DEST_WORD is
-        # X IN END minus the body, so the first card lands exactly
+        # IODS".  strap/prosa.py puts the cards after the image in
+        # the IPL type area ("The control cards are included with the
+        # initializing program", C22-6728-1 printed p.96), so printed
+        # p.4's TRANSMIT to X BS END lands the first card exactly
         # where the hunt starts.
         #
         # The card's FIRST word is the class column: "B" in column 1
