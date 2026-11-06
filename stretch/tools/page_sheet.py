@@ -86,6 +86,16 @@ def hex_after(obs, y, pitch, gx_cell, cw):
     return None
 
 
+def line_numbers_read(stem, g):
+    """How many LINE-column reads fit_lines would take as line numbers."""
+    n = 0
+    for y, x, t in R.load(stem + ".vis.tsv"):
+        if g["line_x"][0] <= x <= g["line_x"][1]:
+            d = re.sub(r"[*#\s]", "", t).translate(R.OCT_FIX)
+            n += bool(re.fullmatch(r"\d{1,2}", d) and 1 <= int(d) <= 60)
+    return n
+
+
 def main(printed):
     vol, pdf = page_of(printed)
     rows = [r for r in csv.DictReader(open(os.path.join(ROOT, "docs", "vision", "listing_reading.tsv")),
@@ -93,7 +103,15 @@ def main(printed):
     stem = os.path.join(ROOT, "docs", "vision", "all", "v%d_pdf%03d" % (vol, pdf))
     g = json.loads(open(stem + ".geom").read())
     vis = R.load(stem + ".vis.tsv") + R.load(stem + ".vcol.tsv")
-    y0, pitch, _, _ = R.fit_lines(R.load(stem + ".vis.tsv"), g)
+    # A page with fewer than R.FIT_MIN_POINTS line numbers read (a short
+    # page: printed p.296 has eleven lines and three readable numbers) has
+    # no line fit.  The sheet says so and still prints what it has: the
+    # rows and drafts need no fit; only the hex bytes, placed by y, do.
+    fit = R.fit_lines(R.load(stem + ".vis.tsv"), g)
+    if fit is None:
+        y0 = pitch = None
+    else:
+        y0, pitch, _, _ = fit
     cw = g["char_w"]
     C = statement_repair.corpus()
     syms = set().union(*(s for p, (s, _) in C.items() if p != printed))
@@ -103,13 +121,22 @@ def main(printed):
         quoting=csv.QUOTE_NONE) if r["vol"] == str(vol) and r["pdf"] == str(pdf) and r["status"] in ("asm-confirmed", "asm-bound")}
     print(f"printed p.{printed} = vol {vol} PDF p.{pdf}; {len(rows)} lines read, "
           f"{len(confirmed)} statements confirmed by assembly")
+    if fit is None:
+        print(f"LINE FIT FAILED ON THIS PAGE: {line_numbers_read(stem, g)} line numbers read in "
+              f"the LINE column, {R.FIT_MIN_POINTS} needed (or under {R.FIT_MIN_AGREE:.0%} "
+              f"on one grid); rows are shown without hex bytes, which are placed by the fit")
+        if not rows:
+            print("(tools/listing_reading.py places no rows on an unfit page either: "
+                  "read this page off the image)")
     print(f"{'ln':>3} {'LOCATION':11s} {'BINARY h1':11s} hx  {'h2':11s} hx  NAME+STATEMENT (draft)")
     for r in rows:
         line = int(r["line"])
-        y = y0 + (line - 1) * pitch
         f = lambda v, s: (MARK[s] + (v.split("|")[0] if v else "")).ljust(11)
-        h1 = hex_after(vis, y, pitch, g["bin_cell"], cw) if r["binary_h1"] else None
-        h2 = hex_after(vis, y, pitch, g["bin_cell"] + 14, cw) if r["binary_h2"] else None
+        h1 = h2 = None
+        if fit is not None:
+            y = y0 + (line - 1) * pitch
+            h1 = hex_after(vis, y, pitch, g["bin_cell"], cw) if r["binary_h1"] else None
+            h2 = hex_after(vis, y, pitch, g["bin_cell"] + 14, cw) if r["binary_h2"] else None
         print(f"{line:3d} {f(r['location'], r['loc_status'])} {f(r['binary_h1'], r['bin_status'])} "
               f"{('h' + h1) if h1 else '   '} {f(r['binary_h2'], r['bin2_status'])} "
               f"{('h' + h2) if h2 else '   '} {r['name_statement_draft']}")

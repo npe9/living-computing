@@ -6779,6 +6779,10 @@ run "two OCR engines read the landed pages as the decks do" python3 check_vision
 run "every listing page read by two engines, scored on the landed ones" python3 check_listing_reading.py
 run "Vision's text layer of the eleven environment manuals is whole and fresh" python3 check_manual_reading.py
 run "statement drafts confirmed by assembling them against the agreed binary" python3 check_statement_confirm.py
+# The page sheet on a page with no line fit (printed p.296: three line
+# numbers read, six needed) says so and prints what it has; a traceback
+# was what it printed.  Control: p.266, which has a fit.
+run "the page sheet degrades loudly on a page with no line fit" python3 check_page_sheet_short.py
 
 # >>> READING THE PAGE NUMBER OFF ALL 256 PAGES, AND THE TWO PARSERS
 # THAT WERE WORSE THAN THE OCR. <<<
