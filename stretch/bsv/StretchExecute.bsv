@@ -458,7 +458,13 @@ endfunction
 // one word each", which was true only while a crossing store was
 // refused outright.  The remaining one-word-each sites are the ones
 // that still cannot cross: M+ and the CM connective.
-function Bool protViolates(StretchStorage st, WordAddr a);
+function Bool protViolates(StretchStorage st, WordAddr a) =
+  protViolatesEn(st, a, st.irqEnabled());
+
+// The same test against a GIVEN enable state rather than the current
+// one -- for BE/BEW/BD's own branch target, whose enable state is the
+// one the instruction leaves (see ifViolatesAfter).
+function Bool protViolatesEn(StretchStorage st, WordAddr a, Bool enabled);
   Word64  b     = st.readBoundaries();
   WordAddr upper = b[63:46];   // IBM bits 0-17
   WordAddr lower = b[31:14];   // IBM bits 32-49
@@ -466,7 +472,7 @@ function Bool protViolates(StretchStorage st, WordAddr a);
   Bool inArea = (a >= lower) && (a < upper);
   Bool signalled = (a < 32) ? (a >= 1 && a <= 3)
                             : ((ctl == 1) ? !inArea : inArea);
-  return st.irqEnabled() && installed(a) && signalled;
+  return enabled && installed(a) && signalled;
 endfunction
 
 function BitAddr effAddr24(StretchStorage st, BitAddr raw, Bit#(4) idx);
@@ -964,6 +970,26 @@ function Bool ifViolates(StretchStorage st, WordAddr a) =
 
 function Word64 ifSignal(StretchStorage st, WordAddr a, Word64 ind) =
   ifViolates(st, a) ? setBit(ind, ind_IF, 1) : ind;
+
+// >>> A BRANCH TARGET IS MONITORED IN THE ENABLE STATE THE BRANCH
+// LEAVES, 2026-11-06. <<<  Reference Manual printed p.40: BRANCH
+// ENABLED "enables the interruption mechanism, and then performs the
+// same operation as BRANCH"; BRANCH DISABLED "disables the
+// interruption mechanism, and then performs the same operation as
+// BRANCH".  Monitoring is "ineffective" while disabled (printed p.32,
+// PDF p.35), so for these two the target is judged AFTER the change.
+// The model read the enable register BEFORE BE's own write landed, and
+// MCP's IPL ends in exactly the case that tells them apart: printed
+// p.34 line 44, "BE,32.0", run disabled, into word 32 -- which line
+// 25 has just filled with the trap BD,SDISIC+.32 and p.36 lines 39-40
+// fence with bounds 32-33.  Judged disabled, the branch went through,
+// the trap ran, and MCP typed TYPE 16 ("a successful branch to
+// location 32.0", C22-6678-1 printed p.54).  Judged enabled, the
+// branch is suppressed (p.32) and IF interrupts, which is how MCP is
+// entered: C22-6678-1's error 01 is "an IF interrupt, and the contents
+// of the instruction counter -.32 is not a B,$MCP".
+function Bool ifViolatesAfter(StretchStorage st, WordAddr a, Bool enabled) =
+  (a >= 32) && protViolatesEn(st, a, enabled);
 
 function Word64 setResultIndicatorsF(Word64 ind, SM128 v);
   Bool z = (v.mag == 0);
@@ -5304,9 +5330,14 @@ endfunction
 
 function ActionValue#(ExecDispatch)
     execute(StretchStorage st, StretchIO io, HWordAddr pc, InstrLen len, DecodedInstr di,
-            Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Bool atIntAddr,
-            ExSubject ex) =
+            Vector#(2, Word64) prefetch, Bit#(2) prefetchCount,
+            Maybe#(HWordAddr) intIC, ExSubject ex) =
   actionvalue
+    // An instruction at an effective interruption address carries the
+    // interrupted program's instruction counter, which "is not stepped
+    // during execution of either interruption instruction" (Reference
+    // Manual printed p.48) -- see the Sic arm, which stores it.
+    Bool atIntAddr = isValid(intIC);
     Maybe#(WordAddr) needsRead = tagged Invalid;
     // WHEN `ex.under` IS TRUE, `pc` AND `len` ARE THE EXECUTE'S, NOT
     // THE SUBJECT'S, and that is the whole of p.49's instruction-counter
@@ -5357,6 +5388,9 @@ function ActionValue#(ExecDispatch)
     // edge here.  To take a full census, instrument a scratch build;
     // do not change what the arms see.
     Word64 indEntry = ind;
+    // The enable state this instruction leaves -- changed only by
+    // BE/BEW/BD below; see ifViolatesAfter.
+    Bool enAfter = st.irqEnabled();
 
     // IF, p.32 CLASS 1: "The location of each instruction to be
     // executed with the exception of the single instructions at the
@@ -5578,8 +5612,8 @@ function ActionValue#(ExecDispatch)
             ind = setBit(ind, ind_EXE, 1);
           else begin
             case (bm.code)
-              3'b000, 3'b100: st.setIrqEnabled(True);   // BE, BEW
-              3'b001:         st.setIrqEnabled(False);  // BD
+              3'b000, 3'b100: begin st.setIrqEnabled(True);  enAfter = True;  end // BE, BEW
+              3'b001:         begin st.setIrqEnabled(False); enAfter = False; end // BD
               default:        noAction;
             endcase
             if (o.taken) next = o.relative ? (fallthrough + o.target) : o.target;
@@ -6036,12 +6070,40 @@ function ActionValue#(ExecDispatch)
             if (o.doIdxWrite) vflPending = tagged Valid tuple2(o.idxWriteReg, o.idxWriteVal);
             if (o.taken) begin
               next = o.relative ? (fallthrough + o.target) : o.target;
+              // >>> AN INNER BE/BD/BEW CHANGES THE ENABLE STATE HERE
+              // TOO, 2026-11-06. <<<  The Reference Manual's
+              // interruption-table scheme is "an unconditional STORE
+              // INSTRUCTION COUNTER IF BRANCH DISABLED instruction to
+              // the subroutine" (printed p.49), and MCP's table is
+              // exactly that: printed p.111 lines 2-3, "SIC,STIC" /
+              // "BD,SIFAE" at 215050.  This arm took the branch and
+              // dropped the disable, so MCP's IF analyzer ran ENABLED,
+              // and printed p.117 line 7's STM -- run "FOR LASL LRL"
+              // (line 8), whose OP C22-6728-1 printed p.277 says MCP
+              // resets -- interrupted instead.  The unconditional
+              // branch arm's own case, and its EXE suppression (handled
+              // above), are the model for this one.
+              if (inner matches tagged BranchOrMisc .ib &&& !ib.misc)
+                case (ib.code)
+                  3'b000, 3'b100: begin st.setIrqEnabled(True);  enAfter = True;  end // BE, BEW
+                  3'b001:         begin st.setIrqEnabled(False); enAfter = False; end // BD
+                  default:        noAction;
+                endcase
               if (ha < 32)
                 ind = setBit(ind, ind_AD, 1);
               else begin
                 Word64 w = prefetch[o.readsUsed[0]];
                 HalfWord32 old = (ha[0] == 0) ? w[63:32] : w[31:0];
-                HalfWord32 hwv = {fallthrough, old[12:0]};
+                // The stored address is the INSTRUCTION COUNTER's: at an
+                // effective interruption address that is the interrupted
+                // program's, not this table word's fall-through (printed
+                // p.48, "The instruction counter is not stepped during
+                // execution of either interruption instruction").  MCP's
+                // table is SIC,STIC / BD,SIFAE (printed p.111 lines 2-3),
+                // and its IF analyzer reads the word at that counter
+                // -.32 for a B,$MCP (printed p.117 line 11); storing
+                // 215051.00 made it type TYPE 1.
+                HalfWord32 hwv = {fromMaybe(fallthrough, intIC), old[12:0]};
                 Word64 w2 = (ha[0] == 0) ? {hwv, w[31:0]} : {w[63:32], hwv};
                 if (protViolates(st, ha[18:1])) ind = setBit(ind, ind_DS, 1);
                 else st.writeWord(ha[18:1], w2);
@@ -6648,7 +6710,7 @@ function ActionValue#(ExecDispatch)
       // alarm it would raise -- and its target is the next instruction,
       // which p.32 class 1 will monitor once class 1 exists.
       if (next != fallthrough) begin
-        ind = ifSignal(st, next[18:1], ind);
+        if (ifViolatesAfter(st, next[18:1], enAfter)) ind = setBit(ind, ind_IF, 1);
         // p.32, THE BRANCH-SUPPRESSION CLAUSE: "If the branch address
         // of a successful branch operation is such that control would
         // pass into a protected area, the entire branch operation,
@@ -6669,7 +6731,7 @@ function ActionValue#(ExecDispatch)
         // in the BitBranch case), and doing the same for IF needs the
         // branch-target test moved into that arm.  Stated rather than
         // left as a silent third of the sentence.
-        if (maskedOn(st, ind_IF) && ifViolates(st, next[18:1])) begin
+        if (maskedOn(st, ind_IF) && ifViolatesAfter(st, next[18:1], enAfter)) begin
           next = fallthrough;
           doIdxWrite = False;
           vflPending = tagged Invalid;
@@ -6730,7 +6792,8 @@ typedef struct {
   HWordAddr    pc;         // THE EXECUTE'S pc while a subject is held
   InstrLen     len;        // ... and the EXECUTE'S length
   DecodedInstr di;         // the instruction actually being run
-  Bool         atIntAddr;  // p.32's interruption-address exemption
+  Maybe#(HWordAddr) intIC;  // p.32's interruption-address exemption,
+                             // and the interrupted IC (execute())
   ExSubject    ex;         // notSubject unless `di` is a subject instruction
   // THE INVARIANT, and resume() orders its dispatch on it: `exic` is
   // Valid IF AND ONLY IF `di` is an EXIC whose pseudo-instruction
@@ -6745,7 +6808,7 @@ interface EBox;
   method ActionValue#(Maybe#(ExecDone))
     start(HWordAddr pc, InstrLen len, DecodedInstr di,
           Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, ExecOwner owner,
-          Bool atIntAddr);
+          Maybe#(HWordAddr) intIC);
   method Bool busy();                 // holding an instruction that waits on a read
   method Bool busyFor(ExecOwner o);   // ... dispatched by o
   method Bool canResume();            // busy and the read has answered
@@ -6795,18 +6858,18 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
 
   method ActionValue#(Maybe#(ExecDone))
       start(HWordAddr pc, InstrLen len, DecodedInstr di,
-            Vector#(2, Word64) pf, Bit#(2) cnt, ExecOwner o, Bool atIntAddr);
+            Vector#(2, Word64) pf, Bit#(2) cnt, ExecOwner o, Maybe#(HWordAddr) intIC);
     // A freshly dispatched instruction is never itself a subject: the
     // instruction unit only ever hands over instructions of the main
     // program.  An EX dispatched here bails immediately for its subject
     // word and becomes the held instruction; resume() takes it from
     // there.
-    let r <- execute(st, io, pc, len, di, pf, cnt, atIntAddr, notSubject);
+    let r <- execute(st, io, pc, len, di, pf, cnt, intIC, notSubject);
     case (r) matches
       tagged NeedOperand .a: begin
         st.readWordReq(a);
         held <= tagged Valid HeldOp{pc: pc, len: len, di: di,
-                                    atIntAddr: atIntAddr, ex: notSubject,
+                                    intIC: intIC, ex: notSubject,
                                     exic: tagged Invalid};
         prefetch <= pf;
         prefetchCount <= cnt;
@@ -7038,12 +7101,12 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
       if (stepWrite matches tagged Valid .t) st.writeWord(tpl_1(t), tpl_2(t));
       if (more) st.readWordReq(moreAddr);
       held <= tagged Valid HeldOp{pc: rpc, len: rlen, di: rdi,
-                                  atIntAddr: h.atIntAddr, ex: rex, exic: rexic};
+                                  intIC: h.intIC, ex: rex, exic: rexic};
       prefetch <= rpf;
       prefetchCount <= rcnt;
       return tagged Invalid;
     end else begin
-      let r <- execute(st, io, rpc, rlen, rdi, rpf, rcnt, h.atIntAddr, rex);
+      let r <- execute(st, io, rpc, rlen, rdi, rpf, rcnt, h.intIC, rex);
       case (r) matches
       tagged NeedOperand .a: begin
         st.readWordReq(a);
@@ -7051,7 +7114,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
         // `rex` are new, and on an ordinary operand arrival they are
         // exactly what was already there.
         held <= tagged Valid HeldOp{pc: rpc, len: rlen, di: rdi,
-                                    atIntAddr: h.atIntAddr, ex: rex,
+                                    intIC: h.intIC, ex: rex,
                                     exic: rexic};
         prefetch <= rpf;
         prefetchCount <= rcnt;

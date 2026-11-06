@@ -1,0 +1,83 @@
+! be_sic_interrupt_entry.strap -- how MCP is entered: a BE into an
+! IF-protected word, and an interruption table entry of SIC / BD.
+!
+! WHY IT EXISTS, AND WHO ASKED FOR IT.  MCP's IPL ends (printed p.34
+! lines 23-31 and 44) by filling word 32 with a trap, fencing it with
+! the boundaries (printed p.36 lines 39-40), turning IF's mask on and
+! executing "BE,32.0" DISABLED.  MCP's interruption table entry for IF
+! is "SIC,STIC" / "BD,SIFAE" (printed p.111 lines 2-3), and its IF
+! analyzer reads the word at the stored counter -.32 for a B,$MCP
+! (printed p.117 line 11).  The model got three things wrong in a row,
+! each found by the run reaching the next:
+!
+!   1. It judged BE's TARGET with the enable state from BEFORE the BE.
+!      Reference Manual printed p.40: BRANCH ENABLED "enables the
+!      interruption mechanism, and then performs the same operation as
+!      BRANCH"; monitoring is "ineffective" only while disabled
+!      (printed p.32).  So the branch went through, the trap ran, and
+!      MCP typed TYPE 16, "a successful branch to location 32.0"
+!      (C22-6678-1 printed p.54).
+!   2. A SIC whose branch half is BD took the branch and dropped the
+!      DISABLE -- "STORE INSTRUCTION COUNTER IF BRANCH DISABLED" is
+!      printed p.49's interruption-table instruction.  MCP's IF
+!      analyzer then ran enabled.
+!   3. That SIC stored the TABLE WORD's fall-through, not the
+!      instruction counter, which "is not stepped during execution of
+!      either interruption instruction" (printed p.48).  MCP typed
+!      TYPE 1, "an IF interrupt, and the contents of the instruction
+!      counter -.32 is not a B,$MCP".
+!
+! WHAT EACH CHECK ESTABLISHES
+!   PC=PASS    the BE was suppressed (TRAP's B,BAD did not run) and the
+!              interruption reached HANDLER.
+!   saved_ic   SAVE's address field holds RET -- CALL+.32, the half-word
+!              after the BE -- the counter MCP reads -.32 from.
+!   entries    HANDLER ran ONCE.  It turns IF back on with IF's mask at
+!              one; that interrupts again only if the BD failed to
+!              disable, and each entry adds .32 to $X5.
+!
+! INJECTIONS: measured, and tests/run_tests.sh records them beside its
+! entry.
+
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! run disabled, as IPL does
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X13, TRAP
+        SV,  $X13, $LB               ! lower boundary := TRAP
+        LVI, $X13, TRAP+1.0
+        SV,  $X13, $UB               ! upper boundary := TRAP+1.0
+        BBZ, 3.57, $+1.0             ! control bit := 0: signal INSIDE
+        BBZ, $IF,  $+1.0
+        BB1, 12.21, $+1.0            ! IF's mask bit := ONE
+        LVI, $X5, 0
+CALL    BE,  TRAP                    ! disabled HERE; enabled by the BE
+RET     B,   BAD                     ! the counter SIC must store
+
+HANDLER V+I, $X5, .32                ! count the entries
+        BB1, $IF,  $+1.0             ! IF on, mask on: interrupts only
+        NOP                          !   if the BD did not disable
+        NOP
+        BBZ, $IF,  $+1.0
+        SV,  $X5,  CNT
+        B,   PASS
+BAD     B,   $                       ! hang: the trap or RET ran
+PASS    BEW, $
+        CNOP
+
+        SLC, (8)4400.0
+TRAP    B,   BAD                     ! the protected word: never runs
+        CNOP
+
+        SLC, (8)4500.0
+SAVE    B,   0                       ! SIC stores the counter here
+        CNOP
+CNT     DD(BU,64), 0
+
+! The interruption table.  IF is indicator 21.
+        SLC, (8)5000.0
+TBL     DD(BU,64), 0
+        SLC, (8)5025.0
+        SIC, SAVE
+        BD,  HANDLER
+        END, START

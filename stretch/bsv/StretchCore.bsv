@@ -303,9 +303,9 @@ module mkStretchCore(StretchCore);
   endfunction
 
   function ActionValue#(Bool) startExecute(HWordAddr pc, InstrLen len, DecodedInstr di,
-                                           Bool atIntAddr) =
+                                           Maybe#(HWordAddr) intIC) =
     actionvalue
-      let r <- ebox.start(pc, len, di, replicate(0), 0, OwnerIbox, atIntAddr);
+      let r <- ebox.start(pc, len, di, replicate(0), 0, OwnerIbox, intIC);
       startClk <= clk;
       if (r matches tagged Valid .o) begin
         commitNext(pc, len, o.next);
@@ -1169,7 +1169,7 @@ module mkStretchCore(StretchCore);
     Vector#(2, Word64) pf = replicate(0);
     Bit#(2) cnt = 0;
     if (h.data matches tagged Valid .d) begin pf[0] = d; cnt = 1; end
-    let r <- ebox.start(h.pc, h.len, h.di, pf, cnt, OwnerLA, False);
+    let r <- ebox.start(h.pc, h.len, h.di, pf, cnt, OwnerLA, tagged Invalid);
     if (h.branch) begin
       // The guessed branch, now with final indicators (a branch never
       // waits on an operand, so the result is here).
@@ -1395,7 +1395,8 @@ module mkStretchCore(StretchCore);
       // (plan §6c) says wait; never while the arithmetic unit's own
       // instruction is mid-flight (it owns the resume path).
       if (!ebox.busyFor(OwnerLA) && !iboxHazard(st, guessPending, di, nl)) begin
-        let d1 <- startExecute(pc, len, di, isValid(intPC));
+        let d1 <- startExecute(pc, len, di,
+                              isValid(intPC) ? tagged Valid pcReg : tagged Invalid);
         done = d1;
       end
     end

@@ -1479,18 +1479,19 @@ run "PAST T MOVE: MOVE intact, IPL stops in XERR29 (spool IODs 4-6)" ./run_mcp_a
 # and MCP types the date, both mount messages with reel OUTPT (p.1's
 # REEL,NLBOUTPT: "The first three characters are not part of the reel
 # identification", C22-6678-1 printed p.11) and "READER IS INPUT SOURCE
-# ON CHANNEL 32".  It then types TYPE 16, C22-6678-1 printed p.54's
-# "The problem program executed a successful branch to location 32.0
-# or 32.32" -- the CURRENT STOP, pinned so a change that moves it is
-# seen; docs/boot_plan.md has why it is not yet understood.
+# ON CHANNEL 32".
 # MEASURED INJECTIONS (same deck, scratch runs):
 #   console of 32 words        XERR05; no READER line, no TYPE 16
 #   CM crossing field refused  reel name typed blank (no "OUTPT")
 #   the four PULL cards kept   XERR22, "INCORRECT CARD TYPE WITHIN
 #                              IODS"; X ERR AD 001441.40
-run "MCP's OWN IOD DECK (p.1): IPL completes, the body types TYPE 16" ./run_mcp_p1deck_test.sh \
+# UPDATED the same day: with BE and SIC fixed (be_sic_interrupt_entry
+# below) MCP is entered through its IF trap and types no error; the run
+# now ends at location 4.0 (docs/boot_plan.md).  NOTHING HERE PINS THAT
+# STOP YET -- the console text is what is checked.
+run "MCP's OWN IOD DECK (p.1): IPL completes and MCP is entered" ./run_mcp_p1deck_test.sh \
     "DATE OF IPL TAPE" "REEL NUMBER OUTPT" \
-    "READER IS INPUT SOURCE ON CHANNEL 32" "TYPE 16 ERROR"
+    "READER IS INPUT SOURCE ON CHANNEL 32"
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<
 #
@@ -2170,6 +2171,20 @@ run "CM ACROSS A WORD BOUNDARY -- MCP's p.78 SF(BU,40,8),TREELX" ./run_program.s
 #   *+ ignoring the offset                 FAIL mul_add_offset_46
 #   *+ replacing instead of adding         FAIL mul_add_offset_0,
 #                                          _immediate, _offset_46
+# >>> HOW MCP IS ENTERED: a disabled BE into an IF-protected word, and
+# an interruption-table SIC / BD, 2026-11-06. <<<  Three model faults,
+# each found by MCP's run reaching the next (the deck's header): BE's
+# target judged before BE's own enable (TYPE 16), SIC's inner BD not
+# disabling, and SIC storing the table word's fall-through instead of
+# the instruction counter (TYPE 1).  Expectations derived from the
+# assembly before the run.  MEASURED INJECTIONS:
+#   target judged with the pre-BE state  FAIL saved_ic (IF arrives a
+#                                        fetch later, from TRAP)
+#   SIC's BD leaves the system enabled   FAIL step cap, entries, PC
+#   SIC stores its own fall-through      FAIL saved_ic (005026.00)
+run "MCP's ENTRY: BE into a protected word, SIC/BD interrupt entry" ./run_program.sh ../decks/be_sic_interrupt_entry.strap StretchBeSicTb "PC=4250" \
+    "saved_ic:2368=149155349377587200" "entries:2369=35184372088832"
+
 run "LFT and *+ (VFL) -- MCP's MOVE lays out its tables with them" ./run_program.sh ../decks/vfl_load_factor.strap StretchVflLoadFactorTb "PC=2094" \
     "lft_ft_value:1060=320" "lft_acc_untouched:1061=5" "mul_add_offset_0:1062=1100" \
     "mul_add_immediate:1063=1140" "mul_add_offset_46:1064=7036874417767400" \

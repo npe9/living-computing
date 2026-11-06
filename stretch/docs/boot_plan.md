@@ -2012,7 +2012,7 @@ The console now reads:
     READER IS INPUT SOURCE ON CHANNEL 32
     MCPIPL* TYPE 16 ERROR
 
-**WHERE IT STOPS: TYPE 16.** C22-6678-1 printed p.54 says: "16 The
+**WHERE IT STOPPED: TYPE 16** *(explained and fixed in the next section)*. C22-6678-1 printed p.54 says: "16 The
 problem program executed a successful branch to location 32.0 or
 32.32." So the body is running, and S DISP (printed p.147) believes
 an error came from problem-program level. **NEXT:** find the
@@ -2033,4 +2033,54 @@ X22-6533 lists (the same 29 `strap/opcodes.py` carries). So on the
 The very next statement, line 27 `BOPZ,$.32` (indicator 15, "set
 indicator to zero"), tests OP and turns it off. MCP appears to execute
 it on purpose; why is not yet read.
+
+### HOW MCP IS ENTERED, AND THREE MODEL FAULTS ON THE WAY IN, 2026-11-06
+
+IPL hands over to MCP through an IF trap. Printed p.34 lines 23-26
+fill word 32 with S IF DMP, `BD,SDISIC+.32` (a branch to S DSPDS,
+whose error code is SBR40, "-16 SUCCESSFUL B,$MCP", printed p.107
+line 21). Line 31 turns IF's mask on, and printed p.36 lines 39-40 set
+the boundaries to 32-33. Then line 44 executes `BE,32.0` DISABLED,
+with `,DRET` after it. BE enables and *then* branches (Reference
+Manual printed p.40). The target is protected, so the branch is
+suppressed (printed p.32) and IF interrupts. MCP's table entry is
+`SIC,STIC` / `BD,SIFAE` (printed p.111 lines 2-3), and the IF analyzer
+checks that the counter -.32 holds a B,$MCP (printed p.117 lines
+9-12). This is MCP's calling convention, and C22-6678-1 printed p.54's
+errors 01 and 16 are its two failure modes.
+
+The model got three things wrong, each found when the run reached the
+next. `decks/be_sic_interrupt_entry.strap` checks all three:
+
+1. **BE's target was judged with the enable state from before the
+   BE.** Monitoring is "ineffective" while disabled (printed p.32), so
+   the trap BD ran. MCP typed **TYPE 16**.
+2. **A SIC whose branch half is BD dropped the disable.** The IF
+   analyzer ran enabled. Printed p.117 line 7 is `STM(U)`, hand-
+   assembled as `BE,STLR+1.32(.26,2)111101` because STRAP II has no
+   STM. On a machine without $MR it sets OP, which line 8's
+   `BOPZ,$.32 -FOR LASL LRL` resets. C22-6728-1 Appendix C (printed
+   p.277, read in the ink): "It takes the precaution of resetting $OP
+   in the event the machine has no multiplier register." Enabled, the
+   OP interrupted first, and MCP typed "OP INTERRUPT".
+3. **That SIC stored the table word's fall-through**, not the
+   instruction counter, which "is not stepped during execution of
+   either interruption instruction" (printed p.48). MCP typed
+   **TYPE 1**.
+
+**THE MODEL IS A K-1 FOR $MR, AND THAT IS NOW A STATED CHOICE.**
+Appendix C: K-2 and later machines have the floating-point multiplier
+register, with LMR (=LFT's code), STM (11110) and *+ using it. MCP's
+listing runs on both kinds. Without $MR, MCP takes the "FOR LASL LRL"
+path, so nothing here forces the K-2 register yet. The FP LFT/*+ in
+the model use $FT, which is the K-1 behaviour.
+
+**WHERE IT STOPS NOW.** No error is typed. The run ends at location
+4.0 after 6.6M steps, reached from 232722.00. That word is printed
+p.295 line 30, `YXCOMD LX,1,Y XW CMD`, and it is **overwritten**:
+storage holds `0014008000010000` there, and `00FBC00000030000` at
+232723. Word 232723 is JCFIX, which printed p.1's console IOD names
+as its table of exits. **NEXT:** find what writes 232722-232723. That
+starts with what MCP does with an IOD's exit address, and whether it
+writes at exit-1.
 
