@@ -1,0 +1,180 @@
+! mcp_bootstrap_p328.strap -- MCP printed page 328: the octal-card
+! loader's body (AOCTAL): pick up octal/hex characters into AADD,
+! bounds-check the card origin against ALOWWD/AHGHWD, store half words,
+! update AHIWD and ALDTC, return to ANORMR, and the ignore-corrections
+! path (AOIGNR .. AOIGN2), lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.79, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22LOADER  CARD
+! ID TA000402  DIST. OF 3/01  3/01  PAGE NUMBER 328"; the heading row's
+! LOCATION field is 235052, line 1's word.
+!
+! THE PAGE.  50 lines; every line number prints a "*" after it.  No
+! remark cards, no TAIL card.  Located rows run contiguous from
+! 235052.40 (line 1) to 235111.40 (line 50, V+I, a half word; next
+! location 235112.00), then blank paper.  "*" after the LOCATION on
+! lines 15 and 33.
+!
+! JOIN.  p.327 (no scratch deck; tools/page_sheet.py 327) ends with
+! BRZ,AOCTZ at 235052.00 (a half word): contiguous with line 1.  That
+! page also defines AOCTL1 (line 49, 235051.00) and AOCTLD (line 42,
+! 235042.40), and its BB,AOIGNI,AOIGN2 (235107.34) and BBZ,$R+.55,
+! AOIGNR (235106.34) land on this page's lines 47 and 45 -- independent
+! witnesses of the placement.  p.329 should open at 235112.00 with
+! serial TA000449.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * the AOCTL/AOCT/AOIGN family prints its second glyph open
+!     ("ACCTL2", "ACCTH", "ACIGNR"); written O: C22-6728 names AOCTAL,
+!     AOCTLA, AOCTLH, AOCTLS, AOIGNI, and landed p.291 spells AOIGNI,
+!     AOPT12/AOPT24 (printed "ACPT24" on line 34 here) the same way.
+!   * line 19 "B.AOCTLC": the separator prints as a dot (a worn comma;
+!     "B." is no statement) and the last glyph is a D with its stem
+!     worn: the binary 235042.50 is B to 235042.40, p.327 line 42's
+!     label (read "ACCTLD" there, comment "DECIMAL PT COLUMN"), and the
+!     remark is "-GO TO CHECK DECIMAL POINT".  Written AOCTLD.
+!   * line 11 "ALCWWC" = ALOWWD (landed p.291 line 36).
+!   * "CMOCOO" / "CM0C00" (lines 10, 41, 43) = CM0000; "CTIC11C" (line
+!     48) = CTI0110 (connective digits).
+!   * octal / hex fields with an open round read 0 ("FO" = F0, "CO" =
+!     00 on line 40's B, ".CC" = .00 on line 41's h2).
+!
+! EXTERNALS.  AADD, AOPT12, AOPT24, ALOWWD, AHGHWD, AHIWD, ALDTC are
+! landed p.291 (forms copied).  The rest come from p.327 (not landed)
+! or pages not yet read; values from this page's binary (each comment
+! says how much it fixes).
+!
+! CARD SERIALS.  TA000402 .. TA000448.  Shared serials: lines 7-8
+! (TA000408), 18-19 (TA000418), 22-23 (TA000421).  None skipped.
+
+AADD    SYN(N), (8)232551.0          ! landed p.291 line 32 DRZ(N),1
+AOPT12  SYN(B,25,1), (8)232545.0     ! landed p.291 line 23 VF,.12
+AOPT24  SYN(B,25,1), (8)232545.40    ! landed p.291 line 24 VF,.24
+ALDCTR  SYN(N), (8)232552.0          ! p.291 line 34 DRZ(N),1
+ALDTC   SYN,ALDCTR.32                ! landed p.291 line 35 SYN,ALDCTR.32 (ALDCTR DRZ(N))
+ALOWWD  SYN(BU,32), (8)232553.0      ! landed p.291 line 36 DRZ(BU,32),1
+AHGHWD  SYN(BU,32), (8)232553.40     ! landed p.291 line 37 DRZ(BU,32),1
+AHIWD   SYN(BU,32), (8)232554.0      ! landed p.291 line 38 DRZ(BU,32),1
+AOCTLD  SYN(BU,64,8), (8)235042.40   ! p.327 line 42 LF (full word) label (not landed); B line 19 235042.50, half word only
+AOCTL1  SYN(BU,64,8), (8)235051.0    ! p.327 line 49 CT (full word) label (not landed); B line 4 235051.10, half word only
+APCRD2  SYN, (8)235135.0             ! not landed; NOP line 13 235135.30, half word only
+AERR5B  SYN, (8)235226.40            ! not landed; BXL line 12 235226.72, half word only
+AOCTH1  SYN, (8)235116.0             ! not landed; BB line 29 second half 235116.34, half word only
+ANORMR  SYN, (8)235233.0             ! not landed; B line 40 235233.10, half word only
+AOIGN1  SYN, (8)235114.40            ! not landed; BXE line 46 235114.72, half word only
+AOIGN3  SYN, (8)235113.0             ! not landed; BZRZ line 49 235113.34, half word only
+
+        SLC, (8)235052.40
+        LF(BU,3),$LZC+.4                                     ! line  1  -STORE OCTAL CHARACTER INTO AADD
+        SF(BU,3)(V+ICR),.3($2)                               ! line  2
+AOCTL2  CBZ,$1,$+1.                                          ! line  3
+        B,AOCTL1                                             ! line  4
+        LCI,$1,1                                             ! line  5  -PICK UP HALF WORD
+        V+,$1,AOPT12                                         ! line  6  -ADVANCE OVER DECIMAL POINT
+        SIC,AOCTL2                                           ! line  7
+        B,AOCTL1                                             ! line  8
+        LV,$3,AADD                                           ! line  9  -PICK UP OCTAL CARD ORIGIN IN $3
+        CM0000(BU,6),$3.19                                   ! line 10  -ZERO REST OF VF OF $3
+        KV,$3,ALOWWD                                         ! line 11
+        BXL,AERR5B                                           ! line 12
+AOCTLP  NOP,APCRD2                                           ! line 13  -IF P CARD THIS IS A BRANCH
+AOCTL3  KV,$3,AHGHWD                                         ! line 14
+        BXH,AERR5B                                           ! line 15
+        V+,$1,AOPT24                                         ! line 16  -ADVANCE OVER BLANKS
+        LCI,$1,6                                             ! line 17  -SET COUNT TO PICK UP 6 OCTAL CHAR.
+AOCTL5  SIC,AOCTL2                                           ! line 18
+        B,AOCTLD                                             ! line 19  -GO TO CHECK DECIMAL POINT
+        V+,$1,AOPT12                                         ! line 20  -SPACE OVER DECIMAL POINT
+        LCI,$1,2                                             ! line 21  -PICK UP LAST 2 OCTAL CHAR.
+        SIC,AOCTL2                                           ! line 22
+        B,AOCTL1                                             ! line 23
+        LCI,$1,2                                             ! line 24
+        V+,$1,AOPT12                                         ! line 25
+AOCTH   CT0011(BU,10)(V+I),.12($1)                           ! line 26  -PICK UP 2 HEX CHARACTERS
+        BRZ,AOCTHZ                                           ! line 27  -BLANK COL STORE A ZERO
+        LF(BU,4),$LZC+.3                                     ! line 28
+        BB,-.14($1),AOCTH1                                   ! line 29
+AOCTH2  SF(BU,4)(V+ICR),.4($2)                               ! line 30
+AOCT2A  CB,$1,AOCTH                                          ! line 31
+        LF(BU,32),AADD                                       ! line 32  -STORE HALF WORD INSTRUCTION
+        SF(BU,32)(V+I),.32($3)                               ! line 33
+        V+,$1,AOPT24                                         ! line 34  -ADVANCE OVER BLANKS
+        CB,$3,AOCTL3                                         ! line 35  -HAVE ALL CORRECTIONS BEEN LOADED
+AOCT4A  KV,$3,AHIWD                                          ! line 36  -UPDATE HIWD
+        BZXH,$+1.                                            ! line 37
+        SVA,$3,AHIWD                                         ! line 38
+        SVA,$3,ALDTC                                         ! line 39  -UPDATE OCTAL CARD LOCATION CTR
+        B,ANORMR                                             ! line 40  -NORMAL RETURN IN JOB CONTROL
+AOCTZ   CM0000(BU,4)(V+ICR),.3($2)                           ! line 41
+        B,AOCTL2                                             ! line 42
+AOCTHZ  CM0000(BU,4)(V+ICR),.4($2)                           ! line 43
+        B,AOCT2A                                             ! line 44
+AOIGNR  KVI,$3,0                                             ! line 45
+        BXE,AOIGN1                                           ! line 46  -IGNORE WHOLE CARD
+AOIGN2  BBZ,$R.55,$+1.                                       ! line 47  -SET 1 BIT TO ZERO IF ON
+        CTI0110(BU,12),(8)4102                               ! line 48
+        BZRZ,AOIGN3                                          ! line 49  -LAST HLF WD ON CRD TESTED
+        V+I,$3,.32                                           ! line 50  -ADVANCE OCTAL CRD LOC CTR A HLF WD
+
+!SYM AOCTL2 235054.40
+!SYM AOCTLP 235062.00
+!SYM AOCTL3 235062.40
+!SYM AOCTL5 235064.40
+!SYM AOCTH  235070.40
+!SYM AOCTH2 235074.00
+!SYM AOCT2A 235075.00
+!SYM AOCT4A 235100.40
+!SYM AOCTZ  235103.00
+!SYM AOCTHZ 235104.40
+!SYM AOIGNR 235106.00
+!SYM AOIGN2 235107.00
+!CHECK 235052.40 | 000007.25 80 003000.06 70 | line 1 LF(BU,3),$LZC+.4
+!CHECK 235053.40 | 000000.03 82 303000.12 F0 | line 2 SF(BU,3)(V+ICR),.3($2) (h2 prints "FO")
+!CHECK 235054.40 | 235055.42 4A | line 3 AOCTL2 CBZ,$1,$+1. (label printed "ACCTL2")
+!CHECK 235055.00 | 235051.10 00 | line 4 B,AOCTL1 (printed "ACCTL1")
+!CHECK 235055.40 | 000001.03 02 | line 5 LCI,$1,1
+!CHECK 235056.00 | 232545.02 B0 | line 6 V+,$1,AOPT12
+!CHECK 235056.40 | 235054.40 80 | line 7 SIC,AOCTL2
+!CHECK 235057.00 | 235051.10 00 | line 8 B,AOCTL1 (printed "ACCTL1")
+!CHECK 235057.40 | 232551.06 30 | line 9 LV,$3,AADD
+!CHECK 235060.00 | 000023.23 80 006000.00 F0 | line 10 CM0000(BU,6),$3.19 (printed "CM0C00")
+!CHECK 235061.00 | 232553.06 90 | line 11 KV,$3,ALOWWD (printed "ALCWWC")
+!CHECK 235061.40 | 235226.72 42 | line 12 BXL,AERR5B
+!CHECK 235062.00 | 235135.30 00 | line 13 AOCTLP NOP,APCRD2
+!CHECK 235062.40 | 232553.46 90 | line 14 AOCTL3 KV,$3,AHGHWD
+!CHECK 235063.00 | 235226.73 42 | line 15 BXH,AERR5B (a "*" prints after the location)
+!CHECK 235063.40 | 232545.42 B0 | line 16 V+,$1,AOPT24
+!CHECK 235064.00 | 000006.03 02 | line 17 LCI,$1,6
+!CHECK 235064.40 | 235054.40 80 | line 18 AOCTL5 SIC,AOCTL2
+!CHECK 235065.00 | 235042.50 00 | line 19 B,AOCTLD (printed "B.AOCTLC")
+!CHECK 235065.40 | 232545.02 B0 | line 20 V+,$1,AOPT12
+!CHECK 235066.00 | 000002.03 02 | line 21 LCI,$1,2
+!CHECK 235066.40 | 235054.40 80 | line 22 SIC,AOCTL2
+!CHECK 235067.00 | 235051.10 00 | line 23 B,AOCTL1 (printed "ACCTL1")
+!CHECK 235067.40 | 000002.03 02 | line 24 LCI,$1,2
+!CHECK 235070.00 | 232545.02 B0 | line 25 V+,$1,AOPT12
+!CHECK 235070.40 | 000000.14 81 112000.07 70 | line 26 AOCTH CT0011(BU,10)(V+I),.12($1)
+!CHECK 235071.40 | 235104.74 C2 | line 27 BRZ,AOCTHZ
+!CHECK 235072.00 | 000007.24 80 004000.06 70 | line 28 LF(BU,4),$LZC+.3
+!CHECK 235073.00 | 777777.62 81 235116.34 02 | line 29 BB,-.14($1),AOCTH1 (printed "ACCTH1")
+!CHECK 235074.00 | 000000.04 82 304000.12 F0 | line 30 AOCTH2 SF(BU,4)(V+ICR),.4($2) (label printed "ACCTH2")
+!CHECK 235075.00 | 235070.42 48 | line 31 AOCT2A CB,$1,AOCTH
+!CHECK 235075.40 | 232551.00 80 040000.06 70 | line 32 LF(BU,32),AADD
+!CHECK 235076.40 | 000000.40 83 140000.12 F0 | line 33 SF(BU,32)(V+I),.32($3) (a "*" prints after the location)
+!CHECK 235077.40 | 232545.42 B0 | line 34 V+,$1,AOPT24 (printed "ACPT24")
+!CHECK 235100.00 | 235062.46 48 | line 35 CB,$3,AOCTL3
+!CHECK 235100.40 | 232554.06 90 | line 36 AOCT4A KV,$3,AHIWD (label printed "ACCT4A")
+!CHECK 235101.00 | 235102.33 40 | line 37 BZXH,$+1.
+!CHECK 235101.40 | 232554.07 D0 | line 38 SVA,$3,AHIWD
+!CHECK 235102.00 | 232552.47 D0 | line 39 SVA,$3,ALDTC
+!CHECK 235102.40 | 235233.10 00 | line 40 B,ANORMR (byte prints "C0" = 00)
+!CHECK 235103.00 | 000000.03 82 304000.00 F0 | line 41 AOCTZ CM0000(BU,4)(V+ICR),.3($2) (h2 prints "304000.CC FO" = 00 F0; printed "CMOCOO")
+!CHECK 235104.00 | 235054.50 00 | line 42 B,AOCTL2
+!CHECK 235104.40 | 000000.04 82 304000.00 F0 | line 43 AOCTHZ CM0000(BU,4)(V+ICR),.4($2) (printed "CMOCOO")
+!CHECK 235105.40 | 235075.10 00 | line 44 B,AOCT2A
+!CHECK 235106.00 | 000000.07 04 | line 45 AOIGNR KVI,$3,0 (label printed "ACIGNR")
+!CHECK 235106.40 | 235114.72 C2 | line 46 BXE,AOIGN1
+!CHECK 235107.00 | 000011.67 80 235110.34 06 | line 47 AOIGN2 BBZ,$R.55,$+1. (label printed "ACIGN2")
+!CHECK 235110.00 | 410200.00 80 414000.15 70 | line 48 CTI0110(BU,12),(8)4102 (printed "CTIC11C")
+!CHECK 235111.00 | 235113.34 C0 | line 49 BZRZ,AOIGN3 (byte prints "C0")
+!CHECK 235111.40 | 000000.47 05 | line 50 V+I,$3,.32

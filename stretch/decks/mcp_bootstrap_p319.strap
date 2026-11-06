@@ -1,0 +1,91 @@
+! mcp_bootstrap_p319.strap -- MCP printed page 319: "THE DUMP ROUTINE",
+! its table-of-exits word PDUMPT, the entry YXDUMP, and the overlay
+! buffer YMPBUF.
+!
+! docs/MCP_Mar63_250-445.pdf (volume 2) PDF p.70, read at 400 dpi.
+! Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID SC000001
+!  DIST. OF 3/01  3/01  PAGE NUMBER 319".  The heading row's LOCATION
+! field is BLANK -- line 1 is an asterisk banner (the p.83 / p.149
+! case, docs/transcription_workflow.md step 1).
+!
+! THE PAGE.  14 lines, then blank paper.
+!   lines  1-3   asterisk box around "THE DUMP ROUTINE" (remarks).
+!   line   4     SLC,$ prints 234417.00 -- the arriving counter.
+!   line   5     CNOP, emits nothing at a word boundary.
+!   lines  6-8   PDUMPT: DD(BU,45),0(.3)2(.11)1 then EXT(0,18) over
+!                B,YXDUMP -- the SAME construct as printed p.149's
+!                AEDMPT (decks/mcp_bootstrap_p149.strap, THE EXT
+!                PAIR): 45 bits of control + the 19-bit half-word
+!                address of YXDUMP.  Line 8 prints 0471045 =
+!                0o234422*2+1, YXDUMP at 234422.40.  The branch
+!                deposits nothing of its own.
+!   lines  9-10  DRZ(BU,64),2 and DRZ(BU,32),1 (reservation counts
+!                000002.00 / 000000.40 in the binary column; no !CHECK).
+!   lines 11-13  YXDUMP  LX,$1,YXWDMP ; B,YMPFCH ; CNOP (which here
+!                compiles a half-word NOP, 000000.30 00, at 234423.40).
+!   line  14     YMPBUF  DRZ(BU),1088 -RESERVE ROOM FOR OVERLAID AREA,
+!                printed count 002100.00 = 0o2100 = 1088 words.
+! Span: 234417.00 .. 234424.00 (+1088 words reserved), so the counter
+! leaves the page at 236524.00.
+!
+! PDUMPT IS ADDRESSED FROM ANOTHER PAGE: printed p.121 line 5 prints
+! "215666.00  234417.00+  MIFTTT VF,PDUMPT", and decks/mcp_bootstrap_
+! p121.strap carries PDUMPT SYN,(8)234417.00 -- this page's line 6.
+! YMPBUF is the count field of p.269's XWs (234424), this page's line 14.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!  * Line 6's 15-digit DD field prints with open rounds
+!    ("1C0100000CCCCC0" to the eye).  The field is octal (bare-octal
+!    datum), so a C cannot stand there; the statement is p.149 line 6's
+!    character for character, which prints 100100000000000.  Recorded
+!    as that.
+!  * Octal fields on lines 9-13 print 0 open ("000C02.00", ".4C", ".C2")
+!    -- octal, so 0.
+! CARD SERIALS: SC000001..SC000013 for 14 lines; lines 7 (EXT) and 8
+! (B) share SC000007, the EXT pair's single card, as on p.149.
+! A new card-ID series (SC) begins on this page.
+!
+! TAIL/UNTAIL: not determinable from this page (p.318 not seen).
+
+YXWDMP  SYN(BU), (8)231157.0         ! landed p.269 line 37 XW; LX line 11 231157.02, BIT-EXACT word
+YMPFCH  SYN(BU,32,8), (8)231141.0    ! landed p.269 line 14 SC; B line 12 231141.10, half word only
+
+!  THE PAGE PRINTS "SLC,$" ON LINE 4 AT 234417.00; restated hard.
+        SLC, (8)234417.0
+        CNOP                                                 ! line  5
+PDUMPT  DD(BU,45),0(.3)2(.11)1                               ! line  6
+        EXT(0,18)                                            ! line  7
+        B,YXDUMP                                             ! line  8  extracted by line 7
+        DRZ(BU,64),2                                         ! line  9
+        DRZ(BU,32),1                                         ! line 10
+YXDUMP  LX,$1,YXWDMP                                         ! line 11
+        B,YMPFCH                                             ! line 12
+        CNOP                                                 ! line 13
+YMPBUF  DRZ(BU),1088                                         ! line 14  -RESERVE ROOM FOR OVERLAID AREA
+
+! THE PRINTED LISTING
+!   1*                                    - ****************************************  SC000001
+!   2*                                    - ******** THE DUMP ROUTINE ***************  SC000002
+!   3*                                    - ****************************************  SC000003
+!   4*  234417.00 *                              SLC,$                                 SC000004
+!   5*                                           CNOP                                  SC000005
+!   6*  234417.00    100100000000000   PDUMPT    DD(BU,45),0(.3)2(.11)1                SC000006
+!   7*                                           EXT(0,18)                             SC000007
+!   8*  234417.55            0471045             B,YXDUMP                              SC000007
+!   9*  234420.00 *  000002.00                   DRZ(BU,64),2                          SC000008
+!  10*  234422.00    000000.40                   DRZ(BU,32),1                          SC000009
+!  11*  234422.40    231157.02 10      YXDUMP    LX,$1,YXWDMP                          SC000010
+!  12*  234423.00    231141.10 00                B,YMPFCH                              SC000011
+!  13*  234423.40    000000.30 00                CNOP                                  SC000012
+!  14*  234424.00 *  002100.00         YMPBUF    DRZ(BU),1088  -RESERVE ROOM FOR OVERLAID AREA  SC000013
+
+!SYM   PDUMPT   234417.00
+!SYM   YXDUMP   234422.40
+!SYM   YMPBUF   234424.00
+!SYM   YXWDMP   231157.00
+!SYM   YMPFCH   231141.00
+!CHECK 234417.00 | 100100000000000 | line 6 PDUMPT DD(BU,45),0(.3)2(.11)1 (printed with open rounds "1C0100000CCCCC0"; octal field, so 0) | 45
+!CHECK 234417.55 | 0471045 | line 8 B,YXDUMP under line 7's EXT(0,18) -- 19 bits, the half-word address of YXDUMP | 19
+!CHECK 234422.40 | 231157.02 10 | line 11 YXDUMP LX,$1,YXWDMP
+!CHECK 234423.00 | 231141.10 00 | line 12 B,YMPFCH
+!CHECK 234423.40 | 000000.30 00 | line 13 CNOP

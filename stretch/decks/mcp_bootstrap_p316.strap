@@ -1,0 +1,180 @@
+! mcp_bootstrap_p316.strap -- MCP printed page 316: the tail of an arc
+! request set-up (C NNOTO, C ENT, CHEKT, X LIMIT), then the index
+! binary search X BN SCH (X3 LO / X3 HI / X CERT) and the sequential
+! search X SQ SCH that returns via X GOBK; lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.67, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID SB000216  DIST. OF 3/01  3/01  PAGE NUMBER 316"; the heading row's
+! LOCATION field is 234115, line 1's word.
+!
+! THE PAGE.  50 lines; every line number prints a "*" after it.  No
+! remark cards, no TAIL card.  Located rows run contiguous from
+! 234115.40 (line 1) to 234147.40 (line 50, B, a half word; next
+! location 234150.00), then blank paper.  "*" after the LOCATION on
+! lines 11 (C ENT) and 32.
+! JOIN.  p.313 ended at 234021.40 (SB000126); pp.314-315 lie between
+! and had no scratch deck when this was read.  p.317 should open at
+! 234150.00 with serial SB000255 (or SB000254 continued).  Independent
+! witnesses of the assembly: b8decks p.312 SYNs XGOBK (8)234140.40 and
+! X SG SCH (8)234144.40, p.313 SYNs CHEKT 234130.0 and XLIMIT
+! 234130.40 -- this page defines all four at exactly those addresses.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 4 label "C NNCTO" = CNNOTO.  The first glyph is a round C,
+!     open on the right; the fourth and sixth are the drum's squared O,
+!     the same shape as the O of "C NORM" (line 7) and "X GOBK" (line
+!     36), not the round C.  Vision reads p.315 line 49 "BZXVZ,CNNOTO-
+!     1.0" (docs/vision/listing_statements.tsv) -- the same spelling.
+!     Unreferenced on this page.
+!   * line 44 label "X SQ SCH": the Q is CLOSED with its tail at 900
+!     dpi.  b8decks p.312 line 12 spells the same symbol (same address
+!     234144.40) XSGSCH from a worn glyph; its ink there is the same Q
+!     worn open.  Written XSQSCH (sequential search, beside X BN SCH,
+!     binary search; remark line 28 "SEQUENTIAL SCH").
+!   * line 30 hex byte prints "80"; V+,5,$2 is the same operation as
+!     line 15's V+,5,$7, whose byte prints "B0" -- B/8 glyph trap; B0.
+!     The octal field of the same row prints its zeros open ("COCC22").
+!   * line 8 "C0" (BZXE) assembles C0: plain ink.
+!   * "BXL,CURC" / "BZXL,CURC" (lines 14, 17) = CURD (D with a worn
+!     stem; b8decks p.312 prints "C URD" with the stem whole).
+!   * "C CELTA" (line 11) = CDELTA, stem worn.
+!   * lines 33, 46 "C.0($5)" / "0.C($5)" = 0.0($5); lines 48, 49 "1.C",
+!     "C.0": open round after/before a point is the digit 0.
+!   * line 47 "BXE, X GOBK-BEGINNING AT (VF $5)TH WORD": the "-" right
+!     after XGOBK with no blank is the COMMENT MARK; statement BXE,XGOBK.
+!   * names spaced by the drum (C NORM, C ENT, C DELTA, CNT BUF, X TRAN,
+!     X LIMIT, X BN SCH, X CERT, X3 HI, X3 LO, X GOBK, X SQ SCH) written
+!     closed up.
+!
+! EXTERNALS.  Values for symbols defined on pages not landed come from
+! this page's binary (each comment says how much it fixes).
+!
+! CARD SERIALS.  SB000216 .. SB000254, none skipped.  Shared serials:
+! lines 22-23 (SB000237), 25-26 (239), 27-28 (240), 29-30 (241), 34-35
+! (245), 37-38 (247), 39-40 (248), 41-42 (249), 44-45 (251), 46-47
+! (252), 48-49 (253).
+
+XTENTB  SYN(BU,45), (8)233667.00     ! b8decks p.311 line 6 DD(BU,45) at 233667.00; BB lines 3, 12 233667.04
+CNORM   SYN(BU,24), (8)233670.40      ! not landed; KV line 7 233670.54 / SV line 19 233670.55, half word only
+CDELTA  SYN, (8)234213.40            ! b8decks p.311/p.313 stand-in; SV line 11 234213.57, half word only
+SLRBU   SYN, (8)215324.0             ! landed p.116 line 21
+SPPLB   SYN, SLRBU+.32               ! landed p.116 line 23
+SPPUB   SYN, SLRBU                   ! landed p.116 line 22
+CURD    SYN, (8)234076.0             ! b8decks p.312 stand-in; BXL line 14 234076.32, half word only
+YMPSAV  SYN(BU), (8)231164.00        ! b8decks p.269 line 42 XW; Z line 18 231164.22
+CNTBUF  SYN, (8)234216.0             ! b8decks p.313 stand-in (BIT-EXACT there); SV line 23 234216.21
+XTRAN   SYN(BU,64,8), (8)234005.00   ! b8decks p.313 line 32 T (full word); B line 24 234005.10
+
+        SLC, (8)234115.40
+        LV,7,$3                                              ! line  1  -OTHERWISE SET N REQUEST TO
+        V-I,6,1                                              ! line  2  -SIZE-BETA
+        BB,XTENTB.4,CENT                                     ! line  3
+CNNOTO  KV,7,$4                                              ! line  4
+        BZXH,CENT                                            ! line  5
+        LV,7,$4                                              ! line  6
+        KV,6,CNORM                                           ! line  7
+        BZXE,$+1.                                            ! line  8  -SET C NORM TO ERROR RETURN
+        V-I,6,1                                              ! line  9
+        V-I,6,1                                              ! line 10
+CENT    SV,7,CDELTA                                          ! line 11
+        BB,XTENTB.4,CHEKT-.32                                ! line 12
+        KV,5,SPPLB                                           ! line 13
+        BXL,CURD                                             ! line 14
+        V+,5,$7                                              ! line 15
+        KV,5,SPPUB                                           ! line 16
+        BZXL,CURD                                            ! line 17
+        Z,YMPSAV                                             ! line 18
+        SV,6,CNORM                                           ! line 19
+CHEKT   B,$                                                  ! line 20
+XLIMIT  LCI,6, 40.0                                          ! line 21
+        LVI,8, 20.0                                          ! line 22
+        SV,8, CNTBUF                                         ! line 23
+        B, XTRAN                                             ! line 24
+XBNSCH  LV,5,$4                                              ! line 25
+        V-I,5,3.0                                            ! line 26  -BINARY SCH FROM (VF$2) TO (VF$4)
+        KV,5,$2                                              ! line 27
+        BZXH, XCERT                                          ! line 28  -SEQUENTIAL SCH LAST 3 ITEMS
+        V+I,5,3.0                                            ! line 29
+        V+,5, $2                                             ! line 30
+        L(BU,17), $5, -18                                    ! line 31  -FIND AVERAGE ADDRESS
+        LV,5, $L                                             ! line 32
+        KV,3, 0.0($5)                                        ! line 33
+        BXH, X3HI                                            ! line 34
+        BXL, X3LO                                            ! line 35
+XGOBK   B, $                                                 ! line 36  -RETURN ON EQUALITY
+X3LO    LV,4, $5                                             ! line 37
+        B, XBNSCH                                            ! line 38  -LOWER UPPER BOUND
+X3HI    LV,2, $5                                             ! line 39
+        B, XBNSCH                                            ! line 40  -RAISE UPPER BOUND
+XCERT   V+I,5, 3.0                                           ! line 41
+        SVA,2, $ + 0.32                                      ! line 42
+        V-I,5, $2                                            ! line 43
+XSQSCH  LC,5,$5                                              ! line 44
+        LV,5,$2                                              ! line 45  -SEARCH (CF $5) ENTRIES
+        KV,3,0.0($5)                                         ! line 46
+        BXE, XGOBK                                           ! line 47  -BEGINNING AT (VF $5)TH WORD
+        CB+,5, $-1.0                                         ! line 48
+        LVI,5, 0.0                                           ! line 49
+        B, XGOBK                                             ! line 50  -RETURN VIA X GOBK
+
+!SYM CNNOTO 234117.40
+!SYM CENT   234123.00
+!SYM CHEKT  234130.00
+!SYM XLIMIT 234130.40
+!SYM XBNSCH 234132.40
+!SYM XGOBK  234140.40
+!SYM X3LO   234141.00
+!SYM X3HI   234142.00
+!SYM XCERT  234143.00
+!SYM XSQSCH 234144.40
+!CHECK 234115.40 | 000023.16 30 | line 1 LV,7,$3
+!CHECK 234116.00 | 000000.55 0D | line 2 V-I,6,1
+!CHECK 234116.40 | 233667.04 80 234123.34 02 | line 3 BB,XTENTB.4,CENT
+!CHECK 234117.40 | 000024.16 90 | line 4 C NNOTO KV,7,$4 (printed "C NNCTO")
+!CHECK 234120.00 | 234123.33 40 | line 5 BZXH,C ENT
+!CHECK 234120.40 | 000024.16 30 | line 6 LV,7,$4
+!CHECK 234121.00 | 233670.54 90 | line 7 KV,6,C NORM
+!CHECK 234121.40 | 234122.72 C0 | line 8 BZXE,$+1.
+!CHECK 234122.00 | 000000.55 0D | line 9 V-I,6,1
+!CHECK 234122.40 | 000000.55 0D | line 10 V-I,6,1
+!CHECK 234123.00 | 234213.57 30 | line 11 C ENT SV,7,C DELTA
+!CHECK 234123.40 | 233667.04 80 234127.74 02 | line 12 BB,XTENTB.4,CHEKT-.32
+!CHECK 234124.40 | 215324.52 90 | line 13 KV,5,SPPLB
+!CHECK 234125.00 | 234076.32 42 | line 14 BXL,CURD (printed "CURC")
+!CHECK 234125.40 | 000027.12 B0 | line 15 V+,5,$7
+!CHECK 234126.00 | 215324.12 90 | line 16 KV,5,SPPUB
+!CHECK 234126.40 | 234076.32 40 | line 17 BZXL,CURD (printed "CURC")
+!CHECK 234127.00 | 231164.22 00 | line 18 Z,YMPSAV
+!CHECK 234127.40 | 233670.55 30 | line 19 SV,6,C NORM
+!CHECK 234130.00 | 234130.10 00 | line 20 CHEKT B,$
+!CHECK 234130.40 | 000050.15 02 | line 21 X LIMIT LCI,6,40.0
+!CHECK 234131.00 | 000024.21 01 | line 22 LVI,8,20.0
+!CHECK 234131.40 | 234216.21 30 | line 23 SV,8,CNT BUF
+!CHECK 234132.00 | 234005.10 00 | line 24 B,X TRAN
+!CHECK 234132.40 | 000024.12 30 | line 25 X BN SCH LV,5,$4
+!CHECK 234133.00 | 000003.13 0D | line 26 V-I,5,3.0
+!CHECK 234133.40 | 000022.12 90 | line 27 KV,5,$2
+!CHECK 234134.00 | 234143.33 40 | line 28 BZXH,X CERT
+!CHECK 234134.40 | 000003.13 05 | line 29 V+I,5,3.0
+!CHECK 234135.00 | 000022.12 B0 | line 30 V+,5,$2 (byte prints "80": B/8 trap, same op as line 15 "B0")
+!CHECK 234135.40 | 000025.00 80 021067.20 50 | line 31 L(BU,17),$5,-18
+!CHECK 234136.40 | 000010.12 30 | line 32 LV,5,$L
+!CHECK 234137.00 | 000000.06 95 | line 33 KV,3,0.0($5)
+!CHECK 234137.40 | 234142.33 42 | line 34 BXH,X3 HI
+!CHECK 234140.00 | 234141.32 42 | line 35 BXL,X3 LO
+!CHECK 234140.40 | 234140.50 00 | line 36 X GOBK B,$
+!CHECK 234141.00 | 000025.10 30 | line 37 X3 LO LV,4,$5
+!CHECK 234141.40 | 234132.50 00 | line 38 B,X BN SCH
+!CHECK 234142.00 | 000025.04 30 | line 39 X3 HI LV,2,$5
+!CHECK 234142.40 | 234132.50 00 | line 40 B,X BN SCH
+!CHECK 234143.00 | 000003.13 05 | line 41 X CERT V+I,5,3.0
+!CHECK 234143.40 | 234144.05 D0 | line 42 SVA,2,$+0.32
+!CHECK 234144.00 | 000022.13 0D | line 43 V-I,5,$2
+!CHECK 234144.40 | 000025.12 50 | line 44 X SQ SCH LC,5,$5
+!CHECK 234145.00 | 000022.12 30 | line 45 LV,5,$2
+!CHECK 234145.40 | 000000.06 95 | line 46 KV,3,0.0($5)
+!CHECK 234146.00 | 234140.72 C2 | line 47 BXE,X GOBK
+!CHECK 234146.40 | 234145.53 48 | line 48 CB+,5,$-1.0
+!CHECK 234147.00 | 000000.13 01 | line 49 LVI,5,0.0
+!CHECK 234147.40 | 234140.50 00 | line 50 B,X GOBK

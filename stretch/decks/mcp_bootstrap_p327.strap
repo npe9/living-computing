@@ -1,0 +1,201 @@
+! mcp_bootstrap_p327.strap -- MCP printed page 327: the LOADER's
+! relocation-segment tail (ARNRM5, ARNRM3 library branch, ARNRM4) and
+! the opening of the OCTAL CARD LOADER (AOCTAL .. AOCTL1), lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.78, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22LOADER  CARD
+! ID TA000351  DIST. OF 3/01  3/01  PAGE NUMBER 327"; the heading row's
+! LOCATION field is 235010, line 1's word.  NOTE the PUNID: 22LOADER,
+! not 11D11MCP.
+!
+! THE PAGE.  50 lines; every line number prints a "*" after it.  No
+! TAIL card.  Located rows run contiguous from 235010.00 (line 1) to
+! 235052.00 (line 50, BRZ, a half word; next location 235052.40), then
+! blank paper.  "*" after the LOCATION on lines 14, 30 and 47.
+!   line 31  remark card, "-" in the NAME field, "OCTAL CARD LOADER".
+! JOIN.  p.326 has no scratch neighbour; contiguity with it is NOT
+! established here.  p.328 should open at 235052.40 with serial
+! TA000401.
+!
+! EXTERNALS.  KSILO and the ALL bits / ALB / ATWSTA are landed (p.171,
+! p.291); stand-ins are checked by the merge.  Every other value comes
+! from this page's binary; each comment says how much it fixes.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * LINE 19'S BYTE PRINTS "C8" AND IS 08.  At 900 dpi the first glyph
+!     is the same open round this drum prints for 0 in the octal field
+!     one row up (".C3").  C-I's byte is 08 in every landed C-I row, and
+!     the landed row 217123.00 (G EMAN C-I,$4,0.0) prints the
+!     same "C8" and was written 08.
+!   * line 21 "YRLCTA" = YRLDTA: line 25 prints the same symbol (same
+!     address 235307.00) with the D stem; volume OCR reads YRLDTA twice.
+!   * line 46 "CTIC110" = CTI0110 (connective digits; the immediate
+!     form, as landed decks write CTI0110/CTI0001).
+!   * "CMOCOO" (lines 6, 35) = CM0000; "C($1)" (line 24) = 0($1);
+!     "KVI,$1,C" (line 8) = 0; "KSILC" read KSILO (landed p.171).
+!   * A-names spelled with an open round after A (ACCTAL, ACCTLA,
+!     ACCTLD, ACCTL1/2/5/6, ACCTZ, ACXW1/2, ACIGN2, ACIGNR) written O:
+!     C22-6728 prints AOCTAL, AOCTLA, AOCTL and AOIGNI; the family is
+!     the octal loader's.  O vs digit 0 is NOT settled by ink for the
+!     AOXW pair (the sheet read A0XW1 once).
+!   * "ANORMR" (line 34) as printed: C22-6728 "routines return to
+!     ANORMR to make a normal return ... ANORMR returns control to
+!     APCRDND" (this line's remark).  C22-6728's ANORMP is a different
+!     program's label (panel dump).
+!   * octal / hex fields with an open round read 0 ("FC"/"FO" = F0,
+!     "CO"/"C0" in octal fields = 00).  The "C0" byte of line 48 and the
+!     "C2" bytes of lines 9 and 50 are what BZRZ/BXE/BRZ assemble.
+!
+! >>> LINE 6 FAILS, AND IT IS THE ASSEMBLER, NOT THE INK. <<<
+! "CM0000,AFPCI" prints 232543.11 80 000400.00 F0: length 64 (field 0)
+! and BYTE SIZE 4 -- ALL's (N) dds (p.291 line 9 "ALL DRZ(N),1")
+! reaching the connective through "AFPCI SYN,ALL.9" (p.291 line 17).  A
+! second witness of the (N)-connective rule (printed p.267 line 1), and
+! the first that the dds carries through a SYN to "SYMBOL.bit" (C22-6531
+! printed p.11: an expression takes its FINAL symbol's dds).  strap_asm
+! inherits dds through SYN only for a BARE symbol (the sym_dds branch
+! after "A SYN TO A BARE SYMBOL INHERITS", ~line 2837), so AFPCI gets no
+! dds and the row assembles 000000.00 F0.  Measured: AFPCI written
+! SYN(N), (8)232543.11 passes, but that would give AFPCI a second dds
+! against p.291's defining SYN and the merge refuses it; so the printed
+! defining form is kept and the row is left failing.  ALL's stand-in
+! carries (N) as p.267's YC1DB SYN(N) does (ALL is placed by p.291).
+!
+! SPELLINGS read at 900 dpi: AREADS (S, not 5) and AREAD1 (lines 13,
+! 26); AOIGN2 (2, not Z: compare AOCTL2) and AOCTZ (Z as in BZRZ);
+! AOCTL6 (6, not O).  The glyph after A in the AO- names prints with a
+! straight-ish left side on lines 43-50; C22-6728's typeset AOCTAL /
+! AOCTLA / AOIGNI and p.291's AOIGNI decide O.
+!
+! CARD SERIALS.  TA000351 .. TA000400, one per line, none shared, none
+! skipped.
+
+KSILO   SYN, (8)220451.0             ! landed p.171 DR(BU,64); SV line 10 KSILO+9.32
+ALL     SYN(N), (8)232543.0          ! landed p.291 line 9 DRZ(N),1; dds carried so AFPCI inherits it (line 6)
+AFPCI   SYN,ALL.9                    ! landed p.291 line 17
+AOIGNI  SYN,ALL.5                    ! landed p.291 line 13
+APCRDI  SYN,ALL.6                    ! landed p.291 line 14
+ADCRDI  SYN,ALL.8                    ! landed p.291 line 16
+ALB     SYN, (8)232547.71            ! landed p.291 line 29 (A*)DD(BU,12,6)
+ATWSTA  SYN, (8)232550.05            ! landed p.291 line 30 (A*)DD(BU,48,6)
+AREADS  SYN(BU), (8)235246.0         ! not landed; LX line 13 235246.32, half word only
+AREAD1  SYN(BU), (8)235245.0         ! not landed; LX line 26 235245.32, half word only
+YRLDTA  SYN, (8)235307.0             ! not landed; SF lines 21, 25 235307.00, BIT-EXACT
+AOCTL5  SYN, (8)235064.40            ! not landed; SVA line 33 AOCTL5+.32 = 235065.00, BIT-EXACT
+ANORMR  SYN, (8)235233.0             ! not landed; CM1111 line 34 ANORMR.19 = 235233.23, BIT-EXACT
+AOCTL2  SYN, (8)235054.40            ! not landed; SVA line 37 235054.47 / LVI line 36 AOCTL2+1. 235055.47, BIT-EXACT
+AOXW1   SYN(BU), (8)235247.0         ! not landed; LX line 38 235247.02, half word only
+AOXW2   SYN(BU), (8)235250.0         ! not landed; LX line 40 235250.04, half word only
+AOIGN2  SYN, (8)235107.0             ! not landed; BB line 43 235107.34, half word only
+AOIGNR  SYN, (8)235106.0             ! not landed; BBZ line 47 235106.34, half word only
+AOCTL6  SYN, (8)235122.40            ! not landed; BZRZ line 48 235122.74, half word only
+AOCTZ   SYN, (8)235103.0             ! not landed; BRZ line 50 235103.34, half word only
+
+        SLC, (8)235010.00
+        BXCZ,ARNRM5                                          ! line  1  -NO TRANSFER VECTOR TO TRANSMIT
+        V+,$1,2.($1)                                         ! line  2  -COMPUTE LOC. OF T.V. IN RELOC. TABLE
+        V+I,$1,3.                                            ! line  3
+        T,$2,0($1),1.($2)                                    ! line  4
+ARNRM5  Z,$1                                                 ! line  5
+        CM0000,AFPCI                                         ! line  6
+        SR,$2,$1                                             ! line  7
+        KVI,$1,0                                             ! line  8  -ANY MORE SEGMENTS TO BE LOADED
+        BXE,ARNRM4                                           ! line  9  -NO-BRANCH
+        SV,$1,KSILO+9.32                                     ! line 10  -STORE ADDR. OF NEXT RELOCATION TABLE
+        BB,.63($1),ARNRM3                                    ! line 11  -LIBRARY ROUTINE  BRANCH
+        L(BU,18),($1),-18                                    ! line 12
+        LX,$13,AREADS                                        ! line 13  -SET UP $13 FOR RESLD
+        V+,$13,$L                                            ! line 14
+        LFI(BU,9),0,-9                                       ! line 15
+        /I(BU,18),15.,-18                                    ! line 16
+        LV,1,$L                                              ! line 17
+        SVA,1,$.32                                           ! line 18
+        C-I,13,$                                             ! line 19
+        LF(BU,48,6),ATWSTA                                   ! line 20
+        SF(BU,48,6),YRLDTA                                   ! line 21
+        B,3.32($15)                                          ! line 22
+ARNRM3  LF(BU,12,6),ALB,48                                   ! line 23  -SET UP RESLD FOR LIB SUBROUTINE
+        LF(BU,36,6),0($1)                                    ! line 24
+        SF(BU,48,6),YRLDTA                                   ! line 25
+        LX,$13,AREAD1                                        ! line 26
+        B,3.32($15)                                          ! line 27
+ARNRM4  LV,$1,KSILO+10.                                      ! line 28
+        SVA,$1,3.($15)                                       ! line 29
+        B,2.32($15)                                          ! line 30
+! line 31  - OCTAL CARD LOADER
+AOCTAL  LVI,$1,AOCTLD                                        ! line 32  -INITIALIZE FOR C CARDS
+        SVA,$1,AOCTL5+.32                                    ! line 33
+        CM1111(BU,1),ANORMR.19                               ! line 34  -SET BRANCH TO APCRDND TO NOP
+        CM0000(BU,1),.57($15)                                ! line 35
+AOCTLA  LVI,$3,AOCTL2+1.                                     ! line 36  -INITIALIZE FOR C AND P CARDS
+        SVA,$3,AOCTL2                                        ! line 37
+        LX,$1,AOXW1                                          ! line 38  -XR1 LOCATED COLUMN BEING TESTED
+        LVI,$3,0                                             ! line 39  -USED FOR CONTINUATION C AND P CARDS
+        LX,$2,AOXW2                                          ! line 40  -STORAGE AREA FOR CONVERTED COLUMNS
+        LCI,$3,4                                             ! line 41  -MAX. NO. OF HALFWDS PER CARD
+AOCTLD  LF(BU,12),.70($1)                                    ! line 42  -PUT DECIMAL PT COLUMN IN AC
+        BB,AOIGNI,AOIGN2                                     ! line 43  -IF ON IGNORE CORRECTIONS ON CRD
+        BB,ADCRDI,$+3.                                       ! line 44
+        BB,APCRDI,$+2.                                       ! line 45  -IF P CARD DONT TEST FOR 1
+        CTI0110(BU,12),(8)4102                               ! line 46  -TEST FOR DECIMAL POINT
+        BBZ,$R+.55,AOIGNR                                    ! line 47  -A 1 BIT IGNORE CORRECTION
+        BZRZ,AOCTL6                                          ! line 48  -NOT A DECIMAL POINT
+AOCTL1  CT0011(BU,8)(V+I),.12($1)                            ! line 49  -PICK UP AN OCTAL COLUMN
+        BRZ,AOCTZ                                            ! line 50  -BLANK COL STORE A ZERO
+
+!SYM ARNRM5 235012.40
+!SYM ARNRM3 235027.00
+!SYM ARNRM4 235033.00
+!SYM AOCTAL 235034.40
+!SYM AOCTLA 235037.40
+!SYM AOCTLD 235042.40
+!SYM AOCTL1 235051.00
+!CHECK 235010.00 | 235012.70 42 | line 1 BXCZ,ARNRM5
+!CHECK 235010.40 | 000002.02 B1 | line 2 V+,$1,2.($1)
+!CHECK 235011.00 | 000003.03 05 | line 3 V+I,$1,3.
+!CHECK 235011.40 | 000000.00 81 000001.04 22 | line 4 T,$2,0($1),1.($2)
+!CHECK 235012.40 | 000021.22 00 | line 5 ARNRM5 Z,$1
+!CHECK 235013.00 | 232543.11 80 000400.00 F0 | line 6 CM0000,AFPCI (printed "CMOCOO") -- FAILS: assembler gap, see header
+!CHECK 235014.00 | 000021.05 70 | line 7 SR,$2,$1
+!CHECK 235014.40 | 000000.03 04 | line 8 KVI,$1,0
+!CHECK 235015.00 | 235033.32 C2 | line 9 BXE,ARNRM4
+!CHECK 235015.40 | 220462.43 30 | line 10 SV,$1,KSILO+9.32
+!CHECK 235016.00 | 000000.77 81 235027.34 02 | line 11 BB,.63($1),ARNRM3
+!CHECK 235017.00 | 000000.00 81 022067.20 50 | line 12 L(BU,18),($1),-18
+!CHECK 235020.00 | 235246.32 10 | line 13 LX,$13,AREADS
+!CHECK 235020.40 | 000010.32 B0 | line 14 V+,$13,$L
+!CHECK 235021.00 | 000000.00 80 411073.46 70 | line 15 LFI(BU,9),0,-9
+!CHECK 235022.00 | 000017.00 80 422067.21 D0 | line 16 /I(BU,18),15.,-18
+!CHECK 235023.00 | 000010.02 30 | line 17 LV,1,$L
+!CHECK 235023.40 | 235024.03 D0 | line 18 SVA,1,$.32
+!CHECK 235024.00 | 235024.33 08 | line 19 C-I,13,$ (byte PRINTS "C8"; written 08 -- see header)
+!CHECK 235024.40 | 232550.05 80 060600.06 70 | line 20 LF(BU,48,6),ATWSTA
+!CHECK 235025.40 | 235307.00 80 060600.12 F0 | line 21 SF(BU,48,6),YRLDTA (printed "YRLCTA", D worn)
+!CHECK 235026.40 | 000003.50 0F | line 22 B,3.32($15)
+!CHECK 235027.00 | 232547.71 80 014630.06 70 | line 23 ARNRM3 LF(BU,12,6),ALB,48
+!CHECK 235030.00 | 000000.00 81 044600.06 70 | line 24 LF(BU,36,6),0($1)
+!CHECK 235031.00 | 235307.00 80 060600.12 F0 | line 25 SF(BU,48,6),YRLDTA
+!CHECK 235032.00 | 235245.32 10 | line 26 LX,$13,AREAD1
+!CHECK 235032.40 | 000003.50 0F | line 27 B,3.32($15)
+!CHECK 235033.00 | 220463.02 30 | line 28 ARNRM4 LV,$1,KSILO+10.
+!CHECK 235033.40 | 000003.03 DF | line 29 SVA,$1,3.($15)
+!CHECK 235034.00 | 000002.50 0F | line 30 B,2.32($15)
+!CHECK 235034.40 | 235042.43 01 | line 32 AOCTAL LVI,$1,AOCTLD
+!CHECK 235035.00 | 235065.03 D0 | line 33 SVA,$1,AOCTL5+.32
+!CHECK 235035.40 | 235233.23 80 001000.36 F0 | line 34 CM1111(BU,1),ANORMR.19
+!CHECK 235036.40 | 000000.71 8F 001000.00 F0 | line 35 CM0000(BU,1),.57($15) (printed "CMOCOO")
+!CHECK 235037.40 | 235055.47 01 | line 36 AOCTLA LVI,$3,AOCTL2+1.
+!CHECK 235040.00 | 235054.47 D0 | line 37 SVA,$3,AOCTL2
+!CHECK 235040.40 | 235247.02 10 | line 38 LX,$1,AOXW1
+!CHECK 235041.00 | 000000.07 01 | line 39 LVI,$3,0
+!CHECK 235041.40 | 235250.04 10 | line 40 LX,$2,AOXW2
+!CHECK 235042.00 | 000004.07 02 | line 41 LCI,$3,4
+!CHECK 235042.40 | 000001.06 81 014000.06 70 | line 42 AOCTLD LF(BU,12),.70($1)
+!CHECK 235043.40 | 232543.05 80 235107.34 02 | line 43 BB,AOIGNI,AOIGN2
+!CHECK 235044.40 | 232543.10 80 235047.74 02 | line 44 BB,ADCRDI,$+3.
+!CHECK 235045.40 | 232543.06 80 235047.74 02 | line 45 BB,APCRDI,$+2.
+!CHECK 235046.40 | 410200.00 80 414000.15 70 | line 46 CTI0110(BU,12),(8)4102 (printed "CTIC110")
+!CHECK 235047.40 | 000011.67 80 235106.34 06 | line 47 BBZ,$R+.55,AOIGNR
+!CHECK 235050.40 | 235122.74 C0 | line 48 BZRZ,AOCTL6
+!CHECK 235051.00 | 000000.14 81 110000.07 70 | line 49 AOCTL1 CT0011(BU,8)(V+I),.12($1)
+!CHECK 235052.00 | 235103.34 C2 | line 50 BRZ,AOCTZ

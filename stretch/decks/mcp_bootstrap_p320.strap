@@ -1,0 +1,215 @@
+! mcp_bootstrap_p320.strap -- MCP printed page 320: the opening of the
+! JOB CONTROL BINARY LOADER (22LOADER): its punch controls and two
+! (CC*) header cards, then A LOADR's entry (ALOADR .. the card-type
+! branch table at ATYPE), lines 1-54.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.71, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID TA000001  DIST. OF 3/01  3/01  PAGE NUMBER 320" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is BLANK
+! (line 1 is PUNFUL, which prints no location).
+!
+! THE PAGE.  54 lines; every line number prints a "*" after it.  A "*"
+! after the LOCATION on lines 1 (no location), 3, 23 and 46.  No TAIL.
+!   line  1      PUNFUL.
+!   lines 2-3    two (CC*)DD(BU,,12) cards at 236524.00 and 236534.34
+!                (the deck's "B HED, REP, 22LOADER, LOAD,," header card
+!                images) -- see below.
+!   lines 4-6    PUNORG, PUNID,22LOADER, RESEQ.
+!   lines 7-9    remark banner "******** JOB CONTROL BINARY LOADER ****".
+!   line  10     SLC,YMPBUF prints 234424.00.
+!   lines 11-54  code, contiguous from 234424.00 (ALOADR) to 234456.40
+!                (line 54, B, a half word; next location 234457.00),
+!                then blank paper.  Lines 26-54 are ATYPE's branch
+!                table, indexed by card type (B,ATYPE-.32($3)).
+!
+! JOIN.  This page opens a new program: its card serials restart at
+! TA000001.  Lines 2-3 CONTINUE p.319 (scratch neighbour): p.319's
+! YMPBUF DRZ(BU),1088 at 234424.00 leaves its counter at 236524.00,
+! line 2's printed location.  Line 10's SLC,YMPBUF then goes BACK to
+! 234424.00: the loader's code overlays the buffer p.319 reserved
+! ("RESERVE ROOM FOR OVERLAID AREA").  The deck still states 236524.00
+! hard (an SLC stand-in).  p.321 (scratch) opens at 234457.00 =
+! line 54's next location, contiguous; but its first serial is
+! TA000047, and this page's last is TA000045: NO TA000046 is printed
+! on either page.  p.321's header prints PUNID 22LOADER, the PUNID set
+! by this page's line 5 (this page's header still prints 11D11MCP).
+!
+! >>> LINES 2-3'S (CC*)DD ARE NOT HANDED TO THE ASSEMBLER. <<<
+! strap_asm refuses entry mode CC (as printed pp.15, 99, 256 found).
+! Each card is kept as a comment; the deck carries TWO stand-ins that
+! are not printed cards: "SLC, (8)236524.0" (line 2's printed location)
+! and "SLC, (8)236534.34" (line 3's).  Line 2's span is 236524.00 ->
+! 236534.34 = 540 bits = 45 twelve-bit characters, which matches the
+! ink: "B", blanks, "HED, REP, 22LOADER, LOAD,,", blanks to the "*"
+! terminator is 45 columns at the drum's pitch.  Line 3's length is
+! not fixed by the page (the next card is an SLC).  The bits from
+! 236524.00 are therefore NOT written into the image by this deck.
+! The cards are unlabeled, so no SYN stand-in is needed.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 11 label printed "ALCADR" = ALOADR (open O): C22-6728 "The
+!     MCP Loader - ALOADR", "B, ALOADR".
+!   * line 11 "ALCR1" and line 22 label "ALCR1" = ALDR1: at 900 dpi the
+!     third glyph has a straight left stem (D, worn bowl), unlike the
+!     round C of "CM0000" on the same rows.  Same address either way
+!     (line 11's BZBZ prints 234436.74, line 22 is 234436.40).  No deck
+!     or C22-6728 spells it.
+!   * line 29 "B,ACCTAL" = AOCTAL: p.291 line 32's remark "USED IN
+!     AOCTAL ROUTINE"; C22-6728 "uses AOCTAL".
+!   * line 27 "B,ANCRMR" = ANORMR (C22-6728 "return to ANORMR").
+!   * line 54 "B,AFLCW" = AFLOW (C22-6728 "AFLOW, Figure").
+!   * line 45 ALDADJ (C22-6728 "handled by ALDADJ").
+!   * lines 19-21 "CMOCOO" = CM0000 (connective digits).
+!   * line 22 "LVE,$3,C($15)" = 0($15); line 23 "Z,$C" = Z,$0 (prints
+!     000020.22, $0's word 16 as Z,ALL on line 12 prints ALL's word .22).
+!   * line 25 "B,ATST1": digit 1 (the flagged 1 of "$15" beside it).
+!   * hex fields "CO"/"FC"/"8C" = 00 / F0, as the octal fields of the
+!     same rows print 0 open.
+!   * line 16 prints a raised dot after "ALOWWD" and line 22 a raised
+!     dot between the label ALDR1 and LVE: stray ink (not "-", so not
+!     the comment mark); not written.
+!
+! EXTERNALS.  p.291's loader data block (landed) defines ALL, ATCRDI,
+! ALDCTR, ALOWWD, AHGHWD, AHIWD, ASEQID: written here in p.291's own
+! form at p.291's addresses.  Every other external is defined on a page
+! not landed; its value comes from this page's binary, and each comment
+! says how much it fixes.
+!
+! CARD SERIALS.  TA000001 .. TA000045.  Shared serials: lines 24-25
+! (TA000024), 27-28 (TA000026), 41-42 (TA000039), 43-44 (TA000040),
+! 45-46 (TA000041), 47-48 (TA000042), 49-50 (TA000043), 51-52
+! (TA000044), 53-54 (TA000045).  None skipped.  Line 14's serial prints
+! a stray "." after it.
+
+YMPBUF  SYN(BU), (8)234424.0         ! p.319 (scratch) line 14 "YMPBUF DRZ(BU),1088" at 234424.00; SLC line 10 prints 234424.00
+ALL     SYN(N), (8)232543.0          ! p.291 line 9 "ALL DRZ(N),1" at 232543.00 (landed)
+ATCRDI  SYN,ALL.1                    ! p.291 line 10 (landed), 232543.01
+ALDCTR  SYN(N), (8)232552.0          ! p.291 line 34 "ALDCTR DRZ(N),1" at 232552.00 (landed)
+ALOWWD  SYN(BU,32), (8)232553.0      ! p.291 line 36 DRZ(BU,32),1 at 232553.00 (landed)
+AHGHWD  SYN(BU,32), (8)232553.40     ! p.291 line 37 DRZ(BU,32),1 at 232553.40 (landed)
+AHIWD   SYN(BU,32), (8)232554.0      ! p.291 line 38 DRZ(BU,32),1 at 232554.00 (landed)
+ASEQID  SYN(BU,12), (8)232554.40     ! p.291 line 39 DRZ(BU,12),1 at 232554.40 (landed)
+ATST1   SYN, (8)234546.40            ! not landed; B line 25 234546.50, half word only
+ANORMR  SYN, (8)235233.0             ! not landed; B line 27 235233.10, half word only
+AERR3   SYN(BU,32,8), (8)235221.40   ! not landed; form as p.322 (scratch) writes it; B lines 28-52 235221.50, half word only
+AOCTAL  SYN, (8)235034.40            ! not landed; B line 29 235034.50, half word only
+ASUPRT  SYN, (8)234600.0             ! not landed; B line 31 234600.10, half word only
+APCARD  SYN, (8)235130.0             ! not landed; B line 33 235130.10, half word only
+ATCARD  SYN, (8)234576.40            ! not landed; B line 35 234576.50, half word only
+ABCARD  SYN, (8)234601.40            ! not landed; B line 37 234601.50, half word only
+ADCARD  SYN, (8)235172.0             ! not landed; B line 39 235172.10, half word only
+AFPCRD  SYN, (8)234634.0             ! not landed; B lines 41, 43, 51 234634.10, half word only
+ALDADJ  SYN, (8)234621.0             ! not landed; B line 45 234621.10, half word only
+AXWBIN  SYN, (8)235260.0             ! not landed; LX line 47 235260.10, half word only
+ARBNCD  SYN, (8)234653.0             ! not landed; B line 48 234653.10, half word only
+AXRDAT  SYN, (8)235261.0             ! not landed; LX line 49 235261.10, half word only
+ARBDCD  SYN, (8)234764.0             ! not landed; B line 50 234764.10, half word only
+AXWFLW  SYN, (8)235256.0             ! not landed; LX line 53 235256.10, half word only
+AFLOW   SYN, (8)234615.0             ! not landed; B line 54 234615.10, half word only
+
+        PUNFUL                                               ! line  1
+        SLC, (8)236524.0             ! STAND-IN: line 2's printed location -- see header
+!       (CC*)DD(BU,,12),B            HED, REP, 22LOADER, LOAD,,          *   ! line  2  NOT ASSEMBLED (entry mode CC refused)
+        SLC, (8)236534.34            ! STAND-IN: line 3's printed location -- see header
+!       (CC*)DD(BU,,12),                              22LOADER*              ! line  3  NOT ASSEMBLED (entry mode CC refused)
+        PUNORG                                               ! line  4
+        PUNID,22LOADER                                       ! line  5
+        RESEQ                                                ! line  6
+! -**************************************************************  ! line  7
+! -        ******** JOB CONTROL BINARY LOADER ***************        ! line  8
+! -**************************************************************  ! line  9
+        SLC,YMPBUF                                           ! line 10
+ALOADR  BZBZ,.57($15),ALDR1                                  ! line 11  -CHECK IF NEW JOB
+        Z,ALL                                                ! line 12  -INITIALIZE LOADER
+        BZBZ,.89($15),$+2.                                   ! line 13
+        CM1111(BU,1),ATCRDI                                  ! line 14  -SET TO STORE INITIAL ID AND SEQ
+        LF(BU,18),.32($15)                                   ! line 15  -SET PPS BOUNDARIES
+        SF(BU,18),ALOWWD                                     ! line 16
+        LF(BU,18),1.($15)                                    ! line 17
+        SF(BU,18),AHGHWD                                     ! line 18
+        CM0000,ALDCTR                                        ! line 19  -ZERO BINARY CARD ORIGIN COUNTER
+        CM0000,ASEQID                                        ! line 20  -ZERO SEQ AND ID COUNTER
+        CM0000,AHIWD                                         ! line 21  -ZERO PROGRAM HIGH WORD
+ALDR1   LVE,$3,0($15)                                        ! line 22
+        Z,$0                                                 ! line 23
+        SIC,$14                                              ! line 24
+        B,ATST1                                              ! line 25
+ATYPE   B,ATYPE-.32($3)                                      ! line 26  -SEPARATE CARD TYPES
+        B,ANORMR                                             ! line 27
+        B,AERR3                                              ! line 28  -B CARD
+        B,AOCTAL                                             ! line 29  -C CARD
+        B,AERR3                                              ! line 30  -ILLEGAL CARD
+        B,ASUPRT                                             ! line 31  -SUPER T CARD
+        B,AERR3                                              ! line 32  -ILLEGAL CARD
+        B,APCARD                                             ! line 33  - P CARD
+        B,AERR3                                              ! line 34  -ILLEGAL CARD
+        B,ATCARD                                             ! line 35  - T CARD
+        B,AERR3                                              ! line 36  -ILLEGAL CARD
+        B,ABCARD                                             ! line 37  - BRANCH CARD
+        B,AERR3                                              ! line 38  -ILLEGAL CARD
+        B,ADCARD                                             ! line 39  -DUMP CARD
+        B,AERR3                                              ! line 40  -ILLEGAL CARD
+        B,AFPCRD                                             ! line 41
+        B,AERR3                                              ! line 42  -FORTRAN PROGRAM CARD
+        B,AFPCRD                                             ! line 43
+        B,AERR3                                              ! line 44  -COMMON DEFINITION CARD
+        B,ALDADJ                                             ! line 45
+        B,AERR3                                              ! line 46  -LOADER ADJUSTMENT CARD
+        LX,$4,AXWBIN                                         ! line 47
+        B,ARBNCD                                             ! line 48  -RELOC. BIN. INSTR. CARD
+        LX,$4,AXRDAT                                         ! line 49
+        B,ARBDCD                                             ! line 50  -RELOC. BIN DATA CARD
+        B,AFPCRD                                             ! line 51
+        B,AERR3                                              ! line 52  -FORTRAN BRANCH CARD
+        LX,$4,AXWFLW                                         ! line 53
+        B,AFLOW                                              ! line 54  -FLOW CARD
+
+!SYM ALOADR 234424.00
+!SYM ALDR1  234436.40
+!SYM ATYPE  234440.40
+
+!CHECK 234424.00 | 000000.71 8F 234436.74 04 | line 11 ALOADR BZBZ,.57($15),ALDR1 (printed "ALCADR", "ALCR1")
+!CHECK 234425.00 | 232543.22 00 | line 12 Z,ALL (hex prints "C0" = 00)
+!CHECK 234425.40 | 000001.31 8F 234427.74 04 | line 13 BZBZ,.89($15),$+2.
+!CHECK 234426.40 | 232543.01 80 001000.36 F0 | line 14 CM1111(BU,1),ATCRDI
+!CHECK 234427.40 | 000000.40 8F 022000.06 70 | line 15 LF(BU,18),.32($15)
+!CHECK 234430.40 | 232553.00 80 022000.12 F0 | line 16 SF(BU,18),ALOWWD
+!CHECK 234431.40 | 000001.00 8F 022000.06 70 | line 17 LF(BU,18),1.($15)
+!CHECK 234432.40 | 232553.40 80 022000.12 F0 | line 18 SF(BU,18),AHGHWD
+!CHECK 234433.40 | 232552.00 80 000400.00 F0 | line 19 CM0000,ALDCTR (printed "CMOCOO")
+!CHECK 234434.40 | 232554.40 80 014000.00 F0 | line 20 CM0000,ASEQID (printed "CMOCOO")
+!CHECK 234435.40 | 232554.00 80 040000.00 F0 | line 21 CM0000,AHIWD (printed "CMOCOO")
+!CHECK 234436.40 | 000000.07 BF | line 22 ALDR1 LVE,$3,0($15) (printed "ALCR1", "C($15)")
+!CHECK 234437.00 | 000020.22 00 | line 23 Z,$0 (printed "$C")
+!CHECK 234437.40 | 000036.00 80 | line 24 SIC,$14
+!CHECK 234440.00 | 234546.50 00 | line 25 B,ATST1
+!CHECK 234440.40 | 234440.10 03 | line 26 ATYPE B,ATYPE-.32($3)
+!CHECK 234441.00 | 235233.10 00 | line 27 B,ANORMR (printed "ANCRMR")
+!CHECK 234441.40 | 235221.50 00 | line 28 B,AERR3
+!CHECK 234442.00 | 235034.50 00 | line 29 B,AOCTAL (printed "ACCTAL")
+!CHECK 234442.40 | 235221.50 00 | line 30 B,AERR3
+!CHECK 234443.00 | 234600.10 00 | line 31 B,ASUPRT
+!CHECK 234443.40 | 235221.50 00 | line 32 B,AERR3
+!CHECK 234444.00 | 235130.10 00 | line 33 B,APCARD
+!CHECK 234444.40 | 235221.50 00 | line 34 B,AERR3
+!CHECK 234445.00 | 234576.50 00 | line 35 B,ATCARD
+!CHECK 234445.40 | 235221.50 00 | line 36 B,AERR3
+!CHECK 234446.00 | 234601.50 00 | line 37 B,ABCARD
+!CHECK 234446.40 | 235221.50 00 | line 38 B,AERR3
+!CHECK 234447.00 | 235172.10 00 | line 39 B,ADCARD
+!CHECK 234447.40 | 235221.50 00 | line 40 B,AERR3
+!CHECK 234450.00 | 234634.10 00 | line 41 B,AFPCRD
+!CHECK 234450.40 | 235221.50 00 | line 42 B,AERR3
+!CHECK 234451.00 | 234634.10 00 | line 43 B,AFPCRD
+!CHECK 234451.40 | 235221.50 00 | line 44 B,AERR3
+!CHECK 234452.00 | 234621.10 00 | line 45 B,ALDADJ
+!CHECK 234452.40 | 235221.50 00 | line 46 B,AERR3
+!CHECK 234453.00 | 235260.10 10 | line 47 LX,$4,AXWBIN
+!CHECK 234453.40 | 234653.10 00 | line 48 B,ARBNCD
+!CHECK 234454.00 | 235261.10 10 | line 49 LX,$4,AXRDAT
+!CHECK 234454.40 | 234764.10 00 | line 50 B,ARBDCD
+!CHECK 234455.00 | 234634.10 00 | line 51 B,AFPCRD
+!CHECK 234455.40 | 235221.50 00 | line 52 B,AERR3
+!CHECK 234456.00 | 235256.10 10 | line 53 LX,$4,AXWFLW
+!CHECK 234456.40 | 234615.10 00 | line 54 B,AFLOW (printed "AFLCW")

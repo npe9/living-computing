@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""check_mcp_body_image.py -- MCP's BODY, printed pp.99-297, merged
+"""check_mcp_body_image.py -- MCP's BODY, printed pp.99-328, merged
 into one image and made to account for every word it spans.
 
 >>> THE BODY IS NOT A LONGER BOOTSTRAP.  IT IS A SECOND ASSEMBLY. <<<
@@ -92,7 +92,7 @@ import mcp_image                                          # noqa: E402
 import verify_mcp_page                                    # noqa: E402
 from listing_oracle import check_rows                     # noqa: E402
 
-FIRST, LAST = 99, 297
+FIRST, LAST = 99, 328
 
 
 def body_pages():
@@ -113,7 +113,7 @@ def main():
               f"{'' if ok else f' expected {want}'}")
 
     pages = body_pages()
-    check("body_page_count", len(pages), 196)
+    check("body_page_count", len(pages), 227)
 
     # merge() raises SystemExit on a symbol or dds disagreement, which
     # is the whole cross-check.  Reaching the next line IS the result.

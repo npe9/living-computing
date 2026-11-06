@@ -16669,3 +16669,39 @@ each commit.
   (p.292) unsettled; the IPL decks' YJCBC, YTCPGO, YJCCER (pp.38-40)
   spell C where the body spells O -- re-read on the ink.
   NEXT: batch 8 (pp.298-313) is transcribed; merge it.
+
+
+pp.298-328 LANDED (2026-11-06): batches 8 and 9, merged together.  31
+decks; body image pp.99-328 (227 pages, 2,284 defined, 64 external);
+listing_truth 302 pages / 11,134 lines.  The COMMENTATOR (pp.302-310),
+DISK FETCH (pp.311-318), THE DUMP ROUTINE (p.319) and the JOB CONTROL
+BINARY LOADER, PUNID 22LOADER (pp.320-328).
+  * PRINTED p.329 IS NOT IN THE SCAN.  docs/MCP_Mar63_250-445.pdf goes
+    from PDF p.79 (PAGE NUMBER 328) to PDF p.80 (330): from p.330 on,
+    PDF = printed - 250 (docs/vision/listing_pages.tsv already agrees).
+    The gap is 235112.00-235153.40, cards TA000449-TA000499; its labels
+    (APCRD4 235150.40, AOIGN1, AOIGN3) need matching stand-ins on
+    pp.328 and 330.  The body check will need a MISSING-page set (not
+    NO_DECK) and the hole pinned when p.330 lands.
+  * A SYN TO AN EXPRESSION TAKES ITS FINAL SYMBOL'S dds (C22-6531
+    printed pp.11, 31).  p.291's "A FPCI SYN,ALL.9", ALL a DRZ(N): p.327
+    line 6 prints CM0000,AFPCI with length 64, byte size 4 -- the second
+    witness of the (N)-connective rule, and the first through a SYN.
+  * THE CNOP FILL IS LAID DOWN AFTER THE STATEMENTS.  p.319's Y MPBUF
+    DRZ(BU),1088 reserves room the loader is assembled over (p.320
+    SLC,YMPBUF); p.321's CNOP inside it was pre-filled, so the DRZ
+    refused the merged image (check_syn_expr_and_cnop).
+  * p.309 line 16 "B,$" prints "C0" with an open first glyph; written
+    00 by the hex-field rule (the row's location prints its zeros open
+    too).  The alternative, BZUSA,$ with a misprinted statement, is
+    recorded in the deck header.  RE-CHECK on a better scan.
+  * Spellings settled: XSQSCH (p.316 defines it with a plain Q; p.312's
+    is the same glyph worn), CNNOTO.  Stand-ins brought to their
+    defining forms: JKSUPB (p.310 SYN,KSUPP.19), every ALL.n (p.291),
+    ALDBF (SYN,YBCBU), ALDTC (SYN,ALDCTR.32), CSARTY/CNORM/CNPRIM (p.317's
+    SYN(BU,48)/(BU,24)); ANORMR plain (no page defines it); AOXW1 (BU).
+  * p.320 lines 2-3 are (CC*)DD(BU,,12) cards, stood in by SLCs as
+    p.256's is; RESEQ prints there (still no citation).
+  OPEN: AOXW1/AOXW2 O vs 0; XLCALF (p.314, open round after L);
+  card-serial gaps SB000127 (pp.313/314), TA000046 (pp.320/321).
+  NEXT: batch 10 from p.330 (PDF = printed - 250).

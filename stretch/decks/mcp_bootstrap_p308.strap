@@ -1,0 +1,186 @@
+! mcp_bootstrap_p308.strap -- MCP printed page 308: the end of the
+! commentator's stack entry (SVA,MXUAT,KCOMMR .. B,MSKIP), M SEOP, the
+! table-address routine M TABLE, and the head of the commentator return
+! (M RET AD, M CC COPY, M FIXUP, M CHK B, M CHK R); lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.59, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID SA000312  DIST. OF 3/01
+! 3/01  PAGE NUMBER 308" (round glyphs in numeric fields read 0).  The
+! heading row's LOCATION field is 233376, line 1's word.
+!
+! THE PAGE.  50 lines, every line number prints a "*" after it, then
+! blank paper.  Located rows run contiguous from 233376.00 (line 1) to
+! 233431.00 (line 50, LV, a half word; next location 233431.40).
+! Remark cards: lines 18-24 (a banner "*****COMPUTE TABLE ENTRIES*****"
+! and the calling linkage "LINKAGE...LVI,MXIN2,$+1.0 / B,M TABLE /
+! RETURN") and 35-37 (banner "***** SETUP RETURN FOR COMMENTATOR
+! *****").  A "*" prints after the LOCATION on lines 14 and 42.
+!
+! JOIN.  p.307 has no scratch deck; contiguity with it is NOT
+! established here (it should end with a half word at 233375.40 or a
+! full word at 233375.00).  The p.309 scratch deck opens at 233431.40
+! (SLC), contiguous with line 50 here, and its labels MASTOR 233433.40,
+! MTRY 233443.40, MCHECK 233444.40, MCCWD 233451.00, JRECEP 233666.02,
+! JSTKBT 233666.03 and JXTEM ($4) equal this deck's stand-ins.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * octal fields "CCCCCC.CC" read 0; hex "DO", "FO", "BO", "CO" = D0,
+!     F0, B0, C0.  Line 2's second-half byte prints "BC" and is B0: the
+!     same row prints 0 open in its octal fields, M+1's low nibble is
+!     I2 and no second-operand index is printed; it assembles B0.  Its
+!     first-half "8C" is a real C (MXSTK = $12).
+!   * CMOCOO / CMOOOO (lines 4, 7, 8, 16) = CM0000; CTOC11 (lines 29,
+!     45) = CT0011; CTIC001 (line 14) = CTI0001 (connective bits).
+!   * line 4 "S RC(MXUST)": D with a worn stem; SRD (landed p.99, 0.57;
+!     prints .71 = 57).
+!   * line 10 "SSECP", lines 13/15 "MSEOPB", line 14 label "M SEOP":
+!     SSEOP as landed (p.99, 0.46; prints .56); MSEOPB as typeset in
+!     C22-6728-1 ("Otherwise (MSEOPB)"); M SEOP takes the same O.
+!   * "M CC COPY" (line 41) = MCCOPY; "M CHK B", "M CHK R", "M RET AD",
+!     "M REL 1", "M FIXUP": spaces are the drum's.  MRETAD, MFIXUP,
+!     MTABLE are typeset in C22-6728-1.  "MCFECK"/"MCHFCK" = MCHECK (H
+!     with a faint bar; C22-6728-1 "MCHECK").
+!   * "M CCWD" (lines 41, 45, 49, 50): CCWD, D worn; a control word for
+!     the console CCW (p.309 line 32 "M CCWD XW,0").
+!
+! EXTERNALS.  S-fields copy the defining decks' forms (p.99 / p.101 /
+! p.102 / p.103 / p.109).  The index registers are SYN,$n: JXTEM on
+! p.309 line 50 (scratch), JXTEM2 and MXIN1..MXSTK on p.310 (volume
+! OCR card serials SA000414-421; not transcribed):
+! JXTEM $4, JXTEM2 $5, MXIN1 $6, MXIN2 $7, MXCST $8, MXUST $9, MXUAT
+! $10, MXFAT $11, MXSTK $12 -- each value CONFIRMED here by the
+! assembled binaries (89 = $9 on line 4, 8B = $11 on line 6, ...).
+! Other addresses from this page's binary (see each comment).
+!
+! CARD SERIALS.  SA000312 .. SA000361, line N prints SA000(311+N); none
+! skipped.
+
+MXIN1   SYN,$6                       ! p.310 (vol OCR SA000415) "MXIN 1 SYN,$6"; B line 5 prints 06
+MXIN2   SYN,$7                       ! p.310 (vol OCR SA000416) "MXIN 2 SYN,$7"; B line 34 prints 07
+MXCST   SYN,$8                       ! p.310 (vol OCR SA000417) "MXCST SYN,$8"
+MXUST   SYN,$9                       ! p.310 (vol OCR SA000418) "MXUST SYN,$9"; line 4 prints 89
+MXUAT   SYN,$10                      ! p.310 (vol OCR SA000419) "MXUAT SYN,$10"
+MXFAT   SYN,$11                      ! p.310 (vol OCR SA000420) "MXFAT SYN,$11"; line 6 prints 0B
+MXSTK   SYN,$12                      ! p.310 (vol OCR SA000421) "MXSTK SYN,$12"; line 2 prints 8C
+JXTEM   SYN,$4                       ! p.309 line 50 (scratch deck) "JXTEM SYN,$4"
+JXTEM2  SYN,$5                       ! p.310 (vol OCR SA000414) "JXTEM 2 SYN,$5"
+KCOMMR  SYN(BU,32,8), (8)216246.40   ! landed p.128 line 11 (LVI, half-word label)
+SQK     SYN(BU,18), .32              ! landed p.109 line 9
+SRD     SYN(BU,1), 0.57              ! landed p.99 line 45 -READ
+SSETUP  SYN(BU,1), 0.31              ! landed p.99 line 25
+SSEOP   SYN(BU,1), 0.46              ! landed p.99 line 34 -SUPP END OF OP
+SUNIT   SYN(BU,3), 0.56              ! landed p.99 line 39 -UNIT NUMBER
+SFIAAC  SYN(BU,18), 3.0              ! landed p.101 line 13
+SIOIND  SYN(BU,5), 1.09              ! landed p.102 line 7 -IO INDICATORS
+SCCW    SYN(BU,64), 4.0              ! landed p.102 line 15 -COPIED CONTROL WORD
+SCHANS  SYN, (8)215002.0             ! landed p.103
+JCNAD   SYN, (8)215006.0             ! landed p.128
+JSTKBT  SYN(BU,1), (8)233666.03      ! not landed; p.309 (scratch !SYM 233666.03) "JSTKBT DD(BU,1),0"; CM line 3 233666.03, BIT-EXACT
+JRECEP  SYN(BU,1), (8)233666.02      ! not landed; p.309 (scratch !SYM 233666.02) "JRECEP DD(BU,1),0"; CM line 38 233666.02, BIT-EXACT
+MSEOPB  SYN(BU,64,8), (8)233364.0    ! not landed; p.307 (OCR "M SECP B ST(PU,5),SIOINC(MXFAT)", a full-word ST); B line 13 233364.10, half word only
+MCCWD   SYN(BU), (8)233451.0         ! not landed; p.309 line 32 "M CCWD XW,0" (scratch); CT line 45 MCCWD+.19 = 233451.23, BIT-EXACT
+MTRY    SYN(BU,32,8), (8)233443.40   ! not landed; p.309 line 15 "M TRY CB,JXTEM,MCCOPY" (scratch); BEKJZ line 42 233443.43, half word only
+MCHECK  SYN(BU,32,8), (8)233444.40   ! not landed; p.309 line 20 "M CHECK LCI,JXTEM,10" (scratch); BZRZ line 46 233444.74, half word only
+MASTOR  SYN(BU,64,8), (8)233433.40   ! not landed; p.309 line 4 "MASTOR CM0000(BU,1),JIOBSY" (scratch); BB line 49 233433.74, half word only
+
+        SLC, (8)233376.00
+        SVA,MXUAT,KCOMMR                                     ! line  1
+        M+1(BU,18),SQK(MXSTK)                                ! line  2  -INCREMENT PROPER Q COUNT
+        CM1111(BU,1),JSTKBT                                  ! line  3  -TURN ON STACK BIT
+MSKIP   CM0000(BU,5),SRD(MXUST)                              ! line  4  -CLEAR STATUS BITS  (printed "S RC")
+        B,0.0(MXIN1)                                         ! line  5  -EXIT
+MREL1   Z,SCCW(MXFAT)                                        ! line  6
+        CM0000(BU,1),SSETUP(MXUST)                           ! line  7
+        CM0000(BU,5),SIOIND(MXFAT)                           ! line  8
+        Z,$R                                                 ! line  9
+        BBZ,SSEOP(MXUST),MSKIP                               ! line 10  (printed "SSECP")
+        CM1111(BU,1),$R+.22                                  ! line 11
+        CM1111(BU,1),SCCW+.22(MXFAT)                         ! line 12
+        B,MSEOPB                                             ! line 13
+MSEOP   CTI0001(BU,3),(8)700000.0,42                         ! line 14  -EPGK,UK,OR EE ON  (location prints *)
+        BZRZ,MSEOPB                                          ! line 15
+        CM0000(BU,3),SCCW+.22(MXFAT)                         ! line 16
+        B,MSKIP                                              ! line 17
+! line 18  -
+! line 19  - *****COMPUTE TABLE ENTRIES*****
+! line 20  -
+! line 21  - LINKAGE...LVI,MXIN2,$+1.0
+! line 22  - B,M TABLE
+! line 23  - RETURN
+! line 24  -
+MTABLE  LV,MXCST,JCNAD                                       ! line 25  -GET CHANNEL ADDRESS
+        V+,MXCST,MXCST                                       ! line 26  -COMPUTE CST
+        V+,MXCST,SCHANS                                      ! line 27  -ENTRY ADDRESS
+        LV,MXUST,0.0(MXCST)                                  ! line 28  -COMPUTE MCP UST ADDRESS
+        CT0011(BU,3),SUNIT(MXCST)                            ! line 29  -WHO OWNS THE UNIT NOW
+        BRZ,$+1.0                                            ! line 30  -MCP IF BRANCH
+        V+I,MXUST,1.0                                        ! line 31  -PP UST ADDRESS
+        LV,MXUAT,0.0(MXUST)                                  ! line 32  -COMPUTE UNIT AREA TABLE ADDRESS
+        LV,MXFAT,SFIAAC(MXUAT)                               ! line 33  -COMPUTE FILE AREA TABLE ADDRESS
+        B,0.0(MXIN2)                                         ! line 34  -EXIT
+! line 35  -
+! line 36  - ***** SETUP RETURN FOR COMMENTATOR *****
+! line 37  -
+MRETAD  CM1111(BU,1),JRECEP                                  ! line 38  -SET RECEPTOR ENTRY BIT
+        LCI,JXTEM,10                                         ! line 39  -CCW AT MOST 10 TIMES
+        LV,JXTEM2,$CA                                        ! line 40  -GET CONSOLE CHANNEL
+MCCOPY  CCW,0.0(JXTEM2),MCCWD                                ! line 41
+        BEKJZ,MTRY                                           ! line 42  (location prints *)
+MFIXUP  LVI,MXIN2,$+1.0                                      ! line 43  -COMPUTE I/O TABLES
+        B,MTABLE                                             ! line 44  -ENTRY ADDRESSES
+        CT0011(BU,2),MCCWD+.19                               ! line 45  -CHECK EPGK + UK
+MCHKB   BZRZ,MCHECK                                          ! line 46  -EPGK OR UK ON IF BRANCH
+        LVI,JXTEM,MCHECK                                     ! line 47  -RESET EPGK + UK EXIT
+        SVA,JXTEM,MCHKB                                      ! line 48  -IF BOTH ARE OFF
+MCHKR   BB,MCCWD+.25,MASTOR                                  ! line 49  -SHOULD WRITE POINTER BE RESET
+        LV,JXTEM,MCCWD                                       ! line 50  -YES
+
+!SYM MSKIP  233400.40
+!SYM MREL1  233402.00
+!SYM MSEOP  233410.40
+!SYM MTABLE 233413.40
+!SYM MRETAD 233421.00
+!SYM MCCOPY 233423.00
+!SYM MFIXUP 233424.40
+!SYM MCHKB  233426.40
+!SYM MCHKR  233430.00
+!CHECK 233376.00 | 216246.65 D0 | line 1 SVA,MXUAT,KCOMMR
+!CHECK 233376.40 | 000000.40 8C 022000.22 B0 | line 2 M+1(BU,18),SQK(MXSTK)
+!CHECK 233377.40 | 233666.03 80 001000.36 F0 | line 3 CM1111(BU,1),JSTKBT
+!CHECK 233400.40 | 000000.71 89 005000.00 F0 | line 4 MSKIP CM0000(BU,5),SRD(MXUST)
+!CHECK 233401.40 | 000000.10 06 | line 5 B,0.0(MXIN1)
+!CHECK 233402.00 | 000004.22 0B | line 6 MREL1 Z,SCCW(MXFAT)
+!CHECK 233402.40 | 000000.37 89 001000.00 F0 | line 7 CM0000(BU,1),SSETUP(MXUST)
+!CHECK 233403.40 | 000001.11 8B 005000.00 F0 | line 8 CM0000(BU,5),SIOIND(MXFAT)
+!CHECK 233404.40 | 000011.22 00 | line 9 Z,$R
+!CHECK 233405.00 | 000000.56 89 233400.74 06 | line 10 BBZ,SSEOP(MXUST),MSKIP
+!CHECK 233406.00 | 000011.26 80 001000.36 F0 | line 11 CM1111(BU,1),$R+.22
+!CHECK 233407.00 | 000004.26 8B 001000.36 F0 | line 12 CM1111(BU,1),SCCW+.22(MXFAT)
+!CHECK 233410.00 | 233364.10 00 | line 13 B,MSEOPB
+!CHECK 233410.40 | 700000.00 80 403025.03 70 | line 14 MSEOP CTI0001(BU,3),(8)700000.0,42
+!CHECK 233411.40 | 233364.34 C0 | line 15 BZRZ,MSEOPB
+!CHECK 233412.00 | 000004.26 8B 003000.00 F0 | line 16 CM0000(BU,3),SCCW+.22(MXFAT)
+!CHECK 233413.00 | 233400.50 00 | line 17 B,MSKIP
+!CHECK 233413.40 | 215006.20 30 | line 25 MTABLE LV,MXCST,JCNAD
+!CHECK 233414.00 | 000030.20 B0 | line 26 V+,MXCST,MXCST
+!CHECK 233414.40 | 215002.20 B0 | line 27 V+,MXCST,SCHANS
+!CHECK 233415.00 | 000000.22 38 | line 28 LV,MXUST,0.0(MXCST)
+!CHECK 233415.40 | 000000.70 88 003000.07 70 | line 29 CT0011(BU,3),SUNIT(MXCST)
+!CHECK 233416.40 | 233417.74 C2 | line 30 BRZ,$+1.0
+!CHECK 233417.00 | 000001.23 05 | line 31 V+I,MXUST,1.0
+!CHECK 233417.40 | 000000.24 39 | line 32 LV,MXUAT,0.0(MXUST)
+!CHECK 233420.00 | 000003.26 3A | line 33 LV,MXFAT,SFIAAC(MXUAT)
+!CHECK 233420.40 | 000000.10 07 | line 34 B,0.0(MXIN2)
+!CHECK 233421.00 | 233666.02 80 001000.36 F0 | line 38 MRETAD CM1111(BU,1),JRECEP
+!CHECK 233422.00 | 000012.11 02 | line 39 LCI,JXTEM,10
+!CHECK 233422.40 | 000005.12 30 | line 40 LV,JXTEM2,$CA
+!CHECK 233423.00 | 000000.00 85 233451.21 00 | line 41 MCCOPY CCW,0.0(JXTEM2),MCCWD
+!CHECK 233424.00 | 233443.43 46 | line 42 BEKJZ,MTRY
+!CHECK 233424.40 | 233425.57 01 | line 43 MFIXUP LVI,MXIN2,$+1.0
+!CHECK 233425.00 | 233413.50 00 | line 44 B,MTABLE
+!CHECK 233425.40 | 233451.23 80 002000.07 70 | line 45 CT0011(BU,2),MCCWD+.19
+!CHECK 233426.40 | 233444.74 C0 | line 46 MCHKB BZRZ,MCHECK
+!CHECK 233427.00 | 233444.51 01 | line 47 LVI,JXTEM,MCHECK
+!CHECK 233427.40 | 233426.51 D0 | line 48 SVA,JXTEM,MCHKB
+!CHECK 233430.00 | 233451.31 80 233433.74 02 | line 49 MCHKR BB,MCCWD+.25,MASTOR
+!CHECK 233431.00 | 233451.10 30 | line 50 LV,JXTEM,MCCWD

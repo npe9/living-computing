@@ -1,0 +1,171 @@
+! mcp_bootstrap_p304.strap -- MCP printed page 304: the tail of the
+! message-stacking routine (JSTKER/JSTKRP/JSTKR1), the "IS WRITE
+! NECESSARY" test JDWTST, and the start of JSTCW, "CONSTRUCT TWO LINK
+! CHAIN FOR WRITE", lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.55, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID SA000103  DIST. OF 3/01
+! 3/01  PAGE NUMBER 304" (round glyphs in numeric fields read 0).  The
+! heading row's LOCATION field is 233226, line 1's word.
+!
+! THE PAGE.  50 lines, every line number prints a "*" after it.  Located
+! rows run contiguous from 233226.40 (line 1) to 233256.00 (line 50,
+! B,JSTCW1, a half word; next location 233256.40), then blank paper.
+!   lines  1-21  code (JSTKER, JSTKRP, JSTKR1), exit B,1.0(JXIN1).
+!   lines 22-29  remark cards: "*****IS WRITE NECESSARY*****" and its
+!                calling linkage.
+!   lines 30-37  JDWTST.
+!   lines 38-44  remark cards: "*****CONSTRUCT TWO LINK CHAIN FOR
+!                WRITE*****" and its linkage.
+!   lines 45-50  JSTCW, JSTCW1.
+! "*" after the LOCATION on lines 16 and 48.
+!
+! JOIN.  No p.303 or p.305 deck exists in scratch.  The Vision reading
+! of p.303 ends with line 50 LV at 233226.00 (a half word), so this
+! page's 233226.40 continues it; the Vision reading of p.305 opens at
+! 233256.40 (JPNTOK), the location after line 50 here.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 30 label and line 26 remark print "JCWTST": D with a worn
+!     stem.  The p.302 reading prints B,JDWTST (233245.10), this label's
+!     address.  Written JDWTST.
+!   * line 35 "BZXH,C.C(JXIN1)": the drum's open 0; written 0.0.
+!   * line 45 "Z,JXTEM2-": the trailing "-" is the COMMENT MARK (C28-6129
+!     PDF p.5), not a minus; written Z,JXTEM2.
+!   * octal "CCCCC0.33" (line 35), "C00001.C0" (line 17) etc. read 0;
+!     hex "F0"/"FC" read F0 (line 36 prints "FC" -- open round = 0).
+!   * line 13's byte prints "CA" and is 0A.  Read at 900 dpi: the first
+!     glyph is the same open round this row prints in "CCC012.11", where
+!     only a 0 can stand; KCI's op byte assembles 0A (line 15's LCI, the
+!     same operands, prints 02), and no index is printed.
+!
+! EXTERNALS.  S-fields copy the landed forms.  The J-package storage is
+! DEFINED on printed p.309 (lines 35-50: JSTKP VF, JSTWP VF, JMESM VF,
+! JSTACK DR(N),(JSIZS), JWAIT/JIF/JIOBSY DD(BU,1),0, JXIN1 SYN,$1, JXTEM
+! SYN,$4), not yet landed; stand-ins take the forms those cards fix and
+! the values this page's binary prints.  JIF follows landed p.184's
+! no-dds stand-ins for its siblings JWAIT and JIOBSY.
+!
+! >>> THE SPLIT JSTACK+JSIZSW (line 34, KVI prints 233666.11). <<<
+! Printed p.302 line 36, read on its ink: KVI,JXTEM,JSTACK+80.0 prints
+! 233616.11, so JSTACK = 233616-0o120 = 233476.0 (p.309 line 41 prints
+! JSTACK at 233476.00, and DR(N),(JSIZS) reserving 000170 = 120 words).
+! JSIZSW = 233666-233476 = 0o170 = 120 words, written 120.0 (a bare
+! integer 120 assembles 233572 here).  No page seen defines JSIZSW.
+!
+! CARD SERIALS.  SA000103 .. SA000151; lines 10 AND 11 both print
+! SA000112, so line N prints SA0001(02+N) for N <= 10 and SA0001(01+N)
+! after.  Recorded, not explained.
+
+SL      SYN(BU,1), (8)215001.04      ! printed p.103 line 14 -LEVEL OF INSTR
+STLR    SYN, (8)215230.0             ! printed p.116 line 13 "STLR DRZ(BU,64), 29"
+SLOWER  SYN, STLR+0.32               ! printed p.116 line 15
+SUPPER  SYN, STLR                    ! printed p.116 line 14 -PP UPPER BOUNDRY
+SCOMER  SYN,(16)0108.0              ! landed; LVI line 9 prints 000410.35
+SDISIC  SYN, (8)217451.40            ! landed; SIC, BIT-EXACT
+SDISP   SYN, (8)217372.0             ! landed; B, half word only
+JXIN1   SYN,$1                       ! p.309 line 47 (not landed) "JX IN 1 SYN,$1"; B line 21 index 01
+JXTEM   SYN,$4                       ! p.309 line 50 (not landed) "JXTEM SYN,$4"; LF line 16 index 4
+JXTEM2  SYN,$5                       ! not landed; SF line 2 index nibble 5, Z line 45 000025.22
+JIF     SYN, (8)233666.01            ! p.309 line 43 DD(BU,1),0 (not landed); BB line 4 -- BIT-EXACT
+JIOBSY  SYN, (8)233666.04            ! landed p.184; BZB line 30 -- BIT-EXACT
+JWAIT   SYN, (8)233666.00            ! landed p.184; BB line 31 -- BIT-EXACT
+JSTKP   SYN(B,25,1), (8)233454.0     ! p.309 line 35 VF (not landed); LV/SV lines 20,32,46, half word only
+JMESM   SYN(B,25,1), (8)233455.0     ! p.309 line 37 VF (not landed); V+ line 33, half word only
+JSTACK  SYN(N), (8)233476.0          ! p.309 line 41 DR(N) (not landed); p.302 line 36 KVI, half word only
+JSIZSW  SYN, 120.0                   ! not landed; KVI line 34 233666 - JSTACK = 0o170
+JPNTOK  SYN, (8)233256.40            ! p.305 line 1's label (not landed); BRZ line 48 233256.74, half word only
+
+        SLC, (8)233226.40
+        LFI(BU,16),(16)02FD,64                               ! line  1  -RED $ AND CR
+        SF(BU,8)(V+I),.8(JXTEM2),64                          ! line  2
+        BB,SL,JSTKRP-1.0                                     ! line  3
+        BB,JIF,JSTKRP-1.0                                    ! line  4  -IF ACTUATOR
+        KV,JXTEM,SLOWER                                      ! line  5
+        BXL,JSTKER                                           ! line  6  -TO ERROR EXIT
+        KV,JXTEM,SUPPER                                      ! line  7
+        BXL,JSTKRP                                           ! line  8  -IF NO ERROR
+JSTKER  LVI,$14,SCOMER                                       ! line  9
+        SIC,SDISIC                                           ! line 10
+        B,SDISP                                              ! line 11
+        SF(BU,8)(V+I),.8(JXTEM2),72                          ! line 12
+JSTKRP  KCI,JXTEM,10.0                                       ! line 13
+        BZXH,$+1.0                                           ! line 14  -
+        LCI,JXTEM,10.0                                       ! line 15  -RESET TO 10 WORDS
+JSTKR1  LF(BU,64),0.0(JXTEM)                                 ! line 16  -MESSAGE WORD  (prints 233240.40 *)
+        SF(BU,64)(V+I),1.0(JXTEM2)                           ! line 17  -TO STACK
+        CB+,JXTEM,JSTKR1                                     ! line 18
+        SF(BU,8)(V+I),.8(JXTEM2),64                          ! line 19  -CR LAST
+        SV,JXTEM2,JSTKP                                      ! line 20  -NEW STACK POINTER
+        B,1.0(JXIN1)                                         ! line 21  -EXIT
+! line 22  -
+! line 23  - *****IS WRITE NECESSARY*****
+! line 24  -
+! line 25  - LINKAGE...LVI,JXIN1,$+1.0
+! line 26  - B,JDWTST  (printed "JCWTST")
+! line 27  - RETURN,NO WRITE NEEDED
+! line 28  - RETURN,WRITE NEEDED
+! line 29  -
+JDWTST  BZB,JIOBSY,.32(JXIN1)                                ! line 30  -IF NOT BUSY,DO A WRITE  (printed "JCWTST")
+        BB,JWAIT,.32(JXIN1)                                  ! line 31  -WRITE IF WAITING
+        LV,JXTEM,JSTKP                                       ! line 32  -STACK POINTER
+        V+,JXTEM,JMESM                                       ! line 33  -PLUS LENGTH OF LARGEST MESSAGE
+        KVI,JXTEM,JSTACK+JSIZSW                              ! line 34
+        BZXH,0.0(JXIN1)                                      ! line 35  -IF NOT FULL  (printed "C.C")
+        CM1111(BU,1),JWAIT                                   ! line 36  -IF FULL,TURN ON WAIT
+        B,.32(JXIN1)                                         ! line 37
+! line 38  -
+! line 39  - *****CONSTRUCT TWO LINK CHAIN FOR WRITE*****
+! line 40  -
+! line 41  - LINKAGE...LVI,JXIN1,$+1.0
+! line 42  - B,JSTCW
+! line 43  - RETURN,TWO CW SET UP IN POOL
+! line 44  -
+JSTCW   Z,JXTEM2                                             ! line 45  (printed "Z,JXTEM2-", comment mark)
+        LV,JXTEM,JSTKP                                       ! line 46  -CURRENT STACK POINTER
+JSTCW1  LF(BU,6),JXTEM+.18                                   ! line 47  -BIT PORTION .18-.23
+        BRZ,JPNTOK                                           ! line 48  (prints 233254.40 *)
+        CM0000(BU,8)(V+I),0.8(JXTEM)                         ! line 49  -INSERT IQS BLANK
+        B,JSTCW1                                             ! line 50
+
+!SYM JSTKER 233234.40
+!SYM JSTKRP 233237.00
+!SYM JSTKR1 233240.40
+!SYM JDWTST 233245.00
+!SYM JSTCW 233252.40
+!SYM JSTCW1 233253.40
+!CHECK 233226.40 | 005764.00 80 420040.06 70 | line  1 LFI(BU,16),(16)02FD,64
+!CHECK 233227.40 | 000000.10 85 110040.12 F0 | line  2 SF(BU,8)(V+I),.8(JXTEM2),64
+!CHECK 233230.40 | 215001.04 80 233236.34 02 | line  3 BB,SL,JSTKRP-1.0
+!CHECK 233231.40 | 233666.01 80 233236.34 02 | line  4 BB,JIF,JSTKRP-1.0
+!CHECK 233232.40 | 215230.50 90 | line  5 KV,JXTEM,SLOWER
+!CHECK 233233.00 | 233234.72 42 | line  6 BXL,JSTKER
+!CHECK 233233.40 | 215230.10 90 | line  7 KV,JXTEM,SUPPER
+!CHECK 233234.00 | 233237.32 42 | line  8 BXL,JSTKRP
+!CHECK 233234.40 | 000410.35 01 | line  9 JSTKER LVI,$14,SCOMER
+!CHECK 233235.00 | 217451.40 80 | line 10 SIC,SDISIC
+!CHECK 233235.40 | 217372.10 00 | line 11 B,SDISP
+!CHECK 233236.00 | 000000.10 85 110044.12 F0 | line 12 SF(BU,8)(V+I),.8(JXTEM2),72
+!CHECK 233237.00 | 000012.11 0A | line 13 JSTKRP KCI,JXTEM,10.0 (byte prints "CA")
+!CHECK 233237.40 | 233240.73 40 | line 14 BZXH,$+1.0
+!CHECK 233240.00 | 000012.11 02 | line 15 LCI,JXTEM,10.0
+!CHECK 233240.40 | 000000.00 84 000000.06 70 | line 16 JSTKR1 LF(BU,64),0.0(JXTEM)
+!CHECK 233241.40 | 000001.00 85 100000.12 F0 | line 17 SF(BU,64)(V+I),1.0(JXTEM2)
+!CHECK 233242.40 | 233240.51 48 | line 18 CB+,JXTEM,JSTKR1
+!CHECK 233243.00 | 000000.10 85 110040.12 F0 | line 19 SF(BU,8)(V+I),.8(JXTEM2),64
+!CHECK 233244.00 | 233454.13 30 | line 20 SV,JXTEM2,JSTKP
+!CHECK 233244.40 | 000001.10 01 | line 21 B,1.0(JXIN1)
+!CHECK 233245.00 | 233666.04 80 000000.74 01 | line 30 JDWTST BZB,JIOBSY,.32(JXIN1)
+!CHECK 233246.00 | 233666.00 80 000000.74 03 | line 31 BB,JWAIT,.32(JXIN1)
+!CHECK 233247.00 | 233454.10 30 | line 32 LV,JXTEM,JSTKP
+!CHECK 233247.40 | 233455.10 B0 | line 33 V+,JXTEM,JMESM
+!CHECK 233250.00 | 233666.11 04 | line 34 KVI,JXTEM,JSTACK+JSIZSW
+!CHECK 233250.40 | 000000.33 41 | line 35 BZXH,0.0(JXIN1)
+!CHECK 233251.00 | 233666.00 80 001000.36 F0 | line 36 CM1111(BU,1),JWAIT
+!CHECK 233252.00 | 000000.50 01 | line 37 B,.32(JXIN1)
+!CHECK 233252.40 | 000025.22 00 | line 45 JSTCW Z,JXTEM2
+!CHECK 233253.00 | 233454.10 30 | line 46 LV,JXTEM,JSTKP
+!CHECK 233253.40 | 000024.22 80 006000.06 70 | line 47 JSTCW1 LF(BU,6),JXTEM+.18
+!CHECK 233254.40 | 233256.74 C2 | line 48 BRZ,JPNTOK
+!CHECK 233255.00 | 000000.10 84 110000.00 F0 | line 49 CM0000(BU,8)(V+I),0.8(JXTEM)
+!CHECK 233256.00 | 233253.50 00 | line 50 B,JSTCW1

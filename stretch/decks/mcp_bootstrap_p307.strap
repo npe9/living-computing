@@ -1,0 +1,186 @@
+! mcp_bootstrap_p307.strap -- MCP printed page 307: the tail of the
+! commentator console-read loop (SF,J IONST .. B,1.0(J XIN1)) and the
+! head of STACK INTERRUPTS (COMMENTATOR), M STACK .. SV,M XCUMQ,S CUMQ.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.58, read at 400 dpi (900 dpi for the
+! J IONST / M STKGO round glyphs).  Header, READ: "TIME CLOCK 00054041
+! PUNID 11D11MCP  CARD ID SA000261  DIST. OF 3/01  3/01  PAGE NUMBER
+! 307" (round glyphs in numeric fields read 0).  The heading row's
+! LOCATION field is 233340, line 1's word.
+!
+! THE PAGE.  50 lines, every line number prints a "*" after it.
+!   lines  1-12  code, contiguous 233340.40 .. 233346.40 (a half word).
+!   lines 13-19  remark cards: a banner "***** STACK INTERRUPTS
+!                (COMMENTATOR) *****" and "LINKAGE...LVI,MXIN1,$+1.0 /
+!                B,MSTACK / RETURN".  No location printed.
+!   lines 20-50  code, contiguous 233347.00 .. 233375.40 (a half word;
+!                next location 233376.00), then blank paper.
+! Lines 12 -> 20 are contiguous too (233346.40 half word, 233347.00).
+! A "*" prints after the LOCATION on lines 11, 33 and 49.
+!
+! JOIN.  p.306 has no scratch deck yet; line 1 at 233340.40 is a half
+! word continuing p.306.  p.308 should open at 233376.00.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 4's label prints "J ICNST", open.  Lines 1 and 7 print
+!     "JIONST" with a CLOSED O at 900 dpi, both address this row
+!     (233342.40 / 233342.42), and the comment is "-PRESET TO I/O
+!     INST.".  Written JIONST.  Line 5 prints "NCP" and compiles the
+!     same 000000.30 00 as line 4's NOP: written NOP.
+!   * M STKGO: line 22 prints "MSTKGC" open; line 31's label closes it
+!     and C22-6728 spells MSTKGO.
+!   * line 36's NAME field prints "M SEOP B" -- the label MSEOPB (the
+!     vol.2 OCR shows B,MSEOPB -> 233364.10 elsewhere; C22-6728 has
+!     MSEOPB).  It is NOT the MSEOP that line 35 branches to (233410.40).
+!   * CMOCOO / CMOC00 (lines 27, 31, 32, 40) = CM0000.
+!   * octal fields "CCCCCC.CC" read 0.  Bytes settled by what the
+!     statement assembles to: B rows (lines 8, 21) print "00"/"CO" and
+!     are 00; B,1.0(JXIN1) (line 12) prints "C1" and is 01; V+I (line
+!     48) prints "C5" and is 05.  BZXE "CO" (line 25), BRZ "C2" (line
+!     47) and BUNRJZ "C6" (line 9) are real C's.  "FC"/"DO"/"DC" second
+!     bytes are F0/D0.
+!   * line 7 "JXINl" / line 10 "JXIN1]": JXIN1.
+!
+! EXTERNALS.  The index names are defined on printed pp.309-310 (vol.2
+! PDF pp.60-61, not landed): OCR "JXIN1 SYN,$1 / JXTEM SYN,$4 / MXIN1
+! SYN,$6 / MXIN2 SYN,$7 / MXCST SYN,$8 / MXUST SYN,$9 / MXUAT SYN,$10 /
+! MXFAT SYN,$11 / MXSTK SYN,$12 / MXCUMQ SYN,$13", each confirmed below
+! by this page's binary.  S-fields copy the defining decks' forms.
+!
+! CARD SERIALS.  SA000261 .. SA000310, line N prints SA000(260+N); none
+! skipped.
+
+JXIN1   SYN, $1                      ! p.309 (OCR); LCI line 3 .03 = 2*1+1; B line 12 byte 01
+JXTEM   SYN, $4                      ! p.309 (OCR); LCI line 2 .11 = 2*4+1
+MXIN1   SYN, $6                      ! p.310 (OCR); B line 30 byte 06
+MXIN2   SYN, $7                      ! p.310 (OCR); LVI line 20 .17 = 2*7+1
+MXCST   SYN, $8                      ! p.310 (OCR); CM line 31 byte 88
+MXUST   SYN, $9                      ! p.310 (OCR); BZB line 22 byte 89
+MXUAT   SYN, $10                     ! p.310 (OCR); KV line 24 byte 9A
+MXFAT   SYN, $11                     ! p.310 (OCR); ST line 34 byte 8B
+MXSTK   SYN, $12                     ! p.310 (OCR); LV line 38 byte 3C
+MXCUMQ  SYN, $13                     ! p.310 (OCR); ST line 49 byte 8D
+SSETUP  SYN(BU,1), 0.31              ! p.99 line 25 -PSEUDO-OP SET-UP
+SRETAD  SYN(BU,19), 5.0              ! p.101 line 18 -RETURN ADDRESS
+SCHOP   SYN(BU,1), 0.26              ! p.99 line 22 -CHAN OPERATING
+SREL    SYN(BU,1), 0.61              ! p.99 line 49 -RELEASE
+SCCW    SYN(BU,64), 4.0              ! p.102 line 15 -COPIED CONTROL WORD
+SSEOP   SYN(BU,1), 0.46              ! p.99 line 34 -SUPP END OF OP STATUS
+SIOIND  SYN(BU,5), 1.09              ! p.102 line 7 -IO INDICATORS
+SQK     SYN(BU,18), .32              ! p.109 line 9
+SUNIT   SYN(BU,3), 0.56              ! p.99 line 39 -UNIT NUMBER
+SUNSUP  SYN(BU,1), 0.30              ! p.99 line 28 -UNIT SUPPRESSION
+SOWNER  SYN(BU,1), 0.32              ! p.99 line 30 -PRIORITY LEVEL
+SPROGS  SYN, (8)215021.0             ! landed; p.109 line 7 (LVI line 37)
+SCUMQ   SYN(B,25,1), (8)215466.0     ! landed p.116 line 34 "SCUMQ VF,SQUE"; LV/SV lines 44, 50
+PCONE2  SYN(BU,64,8), (8)216644.0    ! landed p.135 line 39 (CM0000 label); LVI line 23
+KCONCP  SYN(BU,32,8), (8)216250.0    ! landed p.128 line 13 (B label); CM1111 line 28 216250.23
+KCOMCW  SYN(BU), (8)216257.0         ! landed p.128 line 23 (XW label); ST line 26
+CQ2BIG  SYN(BU,32,8), (8)216313.0    ! landed p.123 line 8 (LVI label); BXH line 43
+JWAIT   SYN, (8)233666.00            ! as landed pp.184/186/193 (no dds); CM1111 line 29, BIT-EXACT
+JKSUPB  SYN, (8)216242.23            ! p.310 (OCR) "J KSUPB SYN,KSUPP.19"; KSUPP landed p.128 216242.0 (NOP label); CM0000 line 27 216242.23, BIT-EXACT
+MTABLE  SYN, (8)233413.40            ! not landed; B line 21 233413.50, half word only
+MREL1   SYN, (8)233402.0             ! not landed; BBZ line 33 233402.34, half word only
+MSEOP   SYN, (8)233410.40            ! not landed; BBZ line 35 233410.74, half word only
+
+        SLC, (8)233340.40
+        SF(BU,64),JIONST                                     ! line  1
+JNRED   LCI,JXTEM,10.0                                       ! line  2
+        LCI,JXIN1,10.0                                       ! line  3
+JIONST  NOP                                                  ! line  4  -PRESET TO I/O INST. (label printed "J ICNST")
+        NOP                                                  ! line  5  (printed "NCP")
+        BZEKJZ,JTUNR                                         ! line  6
+        CB,JXIN1,JIONST                                      ! line  7  -IF EKJ,TRY AGAIN
+        B,$                                                  ! line  8  -CONSOLE DOWN,EKJ 10 IN A ROW
+JTUNR   BUNRJZ,JNRED                                         ! line  9  -INFINITE LOOP IF UNRJ
+        BZCBJZ,1.32(JXIN1)                                   ! line 10
+        CB,JXTEM,JNRED+.32                                   ! line 11
+        B,1.0(JXIN1)                                         ! line 12  -GIVE CBJ RETURN
+! line 13  -
+! line 14  - ***** STACK INTERRUPTS (COMMENTATOR) *****
+! line 15  -
+! line 16  - LINKAGE...LVI,MXIN1,$+1.0
+! line 17  - B,MSTACK
+! line 18  - RETURN
+! line 19  -
+MSTACK  LVI,MXIN2,$+1.0                                      ! line 20  -COMPUTE I/O TABLE
+        B,MTABLE                                             ! line 21  -ENTRY ADDRESSES
+        BZB,SSETUP(MXUST),MSTKGO                             ! line 22  - IF NO SETUP
+        LVI,$0,PCONE2                                        ! line 23
+        KV,$0,SRETAD(MXUAT)                                  ! line 24
+        BZXE,MSTKGO                                          ! line 25
+        ST(BU),KCOMCW                                        ! line 26  -MUST BE CONCEPTORS
+        CM0000(BU,1),JKSUPB                                  ! line 27  -FORCE KSUPP TO TAKE EOP
+        CM1111(BU,1),KCONCP.19                               ! line 28
+        CM1111(BU,1),JWAIT                                   ! line 29
+        B,0.0(MXIN1)                                         ! line 30  - EXIT
+MSTKGO  CM0000(BU,1),SCHOP(MXCST)                            ! line 31
+        CM0000(BU,1),$R+.23                                  ! line 32
+        BBZ,SREL(MXUST),MREL1                                ! line 33
+        ST(BU,0),SCCW(MXFAT)                                 ! line 34  -SAVE COPIED CTLWD
+        BBZ,SSEOP(MXUST),MSEOP                               ! line 35
+MSEOPB  ST(BU,5),SIOIND(MXFAT),40                            ! line 36  -SAVE I/O IND (name printed "M SEOP B")
+        LVI,MXSTK,SPROGS                                     ! line 37
+        LV,JXTEM,SQK(MXSTK)                                  ! line 38  -GET TOTAL
+        V+,JXTEM,SQK+1.0(MXSTK)                              ! line 39  -QUEUE COUNT
+        CM0000(BU,3),SUNIT(MXCST)                            ! line 40
+        CM1111(BU,1),SUNSUP(MXUST)                           ! line 41
+        KVI,JXTEM,127.0                                      ! line 42  -IS QUEUE FULL
+        BXH,CQ2BIG                                           ! line 43
+        LV,MXCUMQ,SCUMQ                                      ! line 44  -GET NEXT STACK LOCATION
+        SV,MXFAT,$L                                          ! line 45  -COMPUTE ENTRY
+        LF(BU,1),SOWNER(MXUST),-19                           ! line 46  -TO BE STACKED
+        BRZ,$+1.0                                            ! line 47  -MCP OR PP ENTRY
+        V+I,MXSTK,1.0                                        ! line 48  -MCP ENTRY
+        ST(V+I)(BU,19),.19(MXCUMQ),-19                       ! line 49  -STACK
+        SV,MXCUMQ,SCUMQ                                      ! line 50  -RESET NEXT STACK LOC.
+
+!SYM JNRED  233341.40
+!SYM JIONST 233342.40
+!SYM JTUNR  233345.00
+!SYM MSTACK 233347.00
+!SYM MSTKGO 233357.00
+!SYM MSEOPB 233364.00
+!CHECK 233340.40 | 233342.40 80 000000.12 F0 | line 1 SF(BU,64),JIONST
+!CHECK 233341.40 | 000012.11 02 | line 2 J NRED LCI,JXTEM,10.0
+!CHECK 233342.00 | 000012.03 02 | line 3 LCI,JXIN1,10.0
+!CHECK 233342.40 | 000000.30 00 | line 4 J ICNST NOP (as printed; JIONST)
+!CHECK 233343.00 | 000000.30 00 | line 5 NCP (as printed; NOP)
+!CHECK 233343.40 | 233345.03 44 | line 6 BZEKJZ,JTUNR
+!CHECK 233344.00 | 233342.42 48 | line 7 CB,JXIN1,JIONST
+!CHECK 233344.40 | 233344.50 00 | line 8 B,$
+!CHECK 233345.00 | 233341.43 C6 | line 9 J TUNR BUNRJZ,JNRED
+!CHECK 233345.40 | 000001.44 45 | line 10 BZCBJZ,1.32(JXIN1)
+!CHECK 233346.00 | 233342.10 48 | line 11 CB,JXTEM,JNRED+.32 (a "*" prints after the location)
+!CHECK 233346.40 | 000001.10 01 | line 12 B,1.0(JXIN1) (byte prints "C1")
+!CHECK 233347.00 | 233350.17 01 | line 20 M STACK LVI,MXIN2,$+1.0
+!CHECK 233347.40 | 233413.50 00 | line 21 B,MTABLE (byte prints "CO")
+!CHECK 233350.00 | 000000.37 89 233357.34 00 | line 22 BZB,SSETUP(MXUST),MSTKGO
+!CHECK 233351.00 | 216644.01 01 | line 23 LVI,$0,PCONE2
+!CHECK 233351.40 | 000005.00 9A | line 24 KV,$0,SRETAD(MXUAT)
+!CHECK 233352.00 | 233357.32 C0 | line 25 BZXE,MSTKGO
+!CHECK 233352.40 | 216257.00 80 000000.20 D0 | line 26 ST(BU),KCOMCW
+!CHECK 233353.40 | 216242.23 80 001000.00 F0 | line 27 CM0000(BU,1),JKSUPB
+!CHECK 233354.40 | 216250.23 80 001000.36 F0 | line 28 CM1111(BU,1),KCONCP.19
+!CHECK 233355.40 | 233666.00 80 001000.36 F0 | line 29 CM1111(BU,1),JWAIT
+!CHECK 233356.40 | 000000.10 06 | line 30 B,0.0(MXIN1)
+!CHECK 233357.00 | 000000.32 88 001000.00 F0 | line 31 M STKGO CM0000(BU,1),SCHOP(MXCST)
+!CHECK 233360.00 | 000011.27 80 001000.00 F0 | line 32 CM0000(BU,1),$R+.23
+!CHECK 233361.00 | 000000.75 89 233402.34 06 | line 33 BBZ,SREL(MXUST),MREL1 (a "*" prints after the location)
+!CHECK 233362.00 | 000004.00 8B 000000.20 D0 | line 34 ST(BU,0),SCCW(MXFAT)
+!CHECK 233363.00 | 000000.56 89 233410.74 06 | line 35 BBZ,SSEOP(MXUST),MSEOP
+!CHECK 233364.00 | 000001.11 8B 005024.20 D0 | line 36 M SEOP B ST(BU,5),SIOIND(MXFAT),40
+!CHECK 233365.00 | 215021.31 01 | line 37 LVI,MXSTK,SPROGS
+!CHECK 233365.40 | 000000.50 3C | line 38 LV,JXTEM,SQK(MXSTK)
+!CHECK 233366.00 | 000001.50 BC | line 39 V+,JXTEM,SQK+1.0(MXSTK)
+!CHECK 233366.40 | 000000.70 88 003000.00 F0 | line 40 CM0000(BU,3),SUNIT(MXCST)
+!CHECK 233367.40 | 000000.36 89 001000.36 F0 | line 41 CM1111(BU,1),SUNSUP(MXUST)
+!CHECK 233370.40 | 000177.11 04 | line 42 KVI,JXTEM,127.0
+!CHECK 233371.00 | 216313.33 42 | line 43 BXH,CQ2BIG
+!CHECK 233371.40 | 215466.32 30 | line 44 LV,MXCUMQ,SCUMQ
+!CHECK 233372.00 | 000010.27 30 | line 45 SV,MXFAT,$L
+!CHECK 233372.40 | 000000.40 89 001066.46 70 | line 46 LF(BU,1),SOWNER(MXUST),-19
+!CHECK 233373.40 | 233374.74 C2 | line 47 BRZ,$+1.0
+!CHECK 233374.00 | 000001.31 05 | line 48 V+I,MXSTK,1.0 (byte prints "C5")
+!CHECK 233374.40 | 000000.23 8D 123066.60 D0 | line 49 ST(V+I)(BU,19),.19(MXCUMQ),-19 (a "*" prints after the location)
+!CHECK 233375.40 | 215466.33 30 | line 50 SV,MXCUMQ,SCUMQ

@@ -1,0 +1,185 @@
+! mcp_bootstrap_p324.strap -- MCP printed page 324: the LOADER (PUNID
+! 22LOADER), a run of card processing from ALDA5 (bounds test against
+! ALOWWD/AHGHWD), AFPCRD (the FORTRAN program card routine: ARCDCT
+! card count, AFPCD1/AFPCD2), ARBNCD (relocatable binary card: origin,
+! instruction count, relocation bits) to ARBCD4, lines 1-56.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.75, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22LOADER  CARD
+! ID TA000196  DIST. OF 3/01  3/01  PAGE NUMBER 324"; the heading row's
+! LOCATION field is 234625, line 1's word.
+!
+! THE PAGE.  56 lines, all code, every line number printed with "*".
+!   Contiguous from 234625.40 (line 1) to 234676.00 (line 56, a half
+!   word; next location 234676.40).  "*" also stands after the LOCATION
+!   on lines 13, 27 and 45.  Line 26 prints a stray "." between the
+!   label AFPCD1 and SF.  Line 49 prints "ANUBIT-": the COMMENT MARK
+!   (C28-6129 PDF p.5), written without it.  No TAIL is printed.
+!
+! JOIN.  pp.314-323 are not landed; p.313 (staged) ends at 234021.x, so
+!   this page's join to p.323 is unchecked here.  p.325 should open at
+!   234676.40 with serial TA000249.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 36 Z,$1 prints its last byte "C0" -- the same open round
+!     this row prints in its octal field ("000C21.22"), and Z,$6 / Z,$7
+!     on lines 35/37 print 00; the statement can only assemble 00
+!     (brief rule 6).  Checked as 00.  (Line 15's BZAE "C0" and line
+!     48's BAE "C2" are real C: they assemble so.)
+!   * ALDCTR, ALOWWD, AFPCD1/AFPCD2, ARBCD4/6/7, ARCDCT print D (and O)
+!     worn/open; spelled as p.291 (staged) and C22-6728 (AFPCRD, ARBNCD,
+!     ARNRM1, ARBCD6, ARBCD7, ANORMR) spell them; AFPCD1/2 and ARBCD4
+!     follow their families.  ALDA1's last glyph is a flagged 1 at
+!     900 dpi, as in "$1" beside it.
+!
+! EXTERNALS.  Loader data (ALL .. AHGHWD) from p.291 (staged), KSILO
+!   from landed p.171.  Branch targets ALDA1, AERR5A, ANORMR, ARNRM1,
+!   AERR4, ACHSM, AERR8 and the SF targets ARBCD6/ARBCD7 are defined on
+!   pages not landed: values from this page's binary only.
+!
+! CARD SERIALS.  TA000196 (line 1) .. TA000248 (line 56).  TA000225
+!   prints on lines 30 AND 31; TA000229 on lines 35, 36 AND 37.  None
+!   skipped.  Recorded, not explained.
+
+ALDA1   SYN, (8)234623.0             ! not landed (p.323?); CB line 1 234623.02, half word only
+AERR5A  SYN, (8)235225.0             ! not landed; BXL line 5 / BXH lines 7, 44 235225.3x, half word only
+ANORMR  SYN, (8)235233.0             ! not landed; B line 11 235233.10, half word only
+ARNRM1  SYN, (8)235004.40            ! not landed; BB line 12 235004.74, B line 27 235004.50, half word only
+AERR4   SYN, (8)235216.40            ! not landed; BZAE line 15 235216.76, half word only
+ACHSM   SYN, (8)234563.0             ! not landed; B line 31 234563.10, half word only
+AERR8   SYN, (8)235220.0             ! not landed; BXVZ line 33 235220.31, half word only
+ARBCD7  SYN, (8)234735.0    ! not landed; SF line 50 ARBCD7.36 prints 234735.44, BIT-EXACT
+ARBCD6  SYN, (8)234746.40   ! not landed; SF lines 51/52 .36/.19 print 234747.04/234746.63, BIT-EXACT
+KSILO   SYN(BU,64), (8)220451.0      ! landed p.171 "KSILO DR(BU,64),(K QUANT)" at 220451.00
+ABSSID  SYN, (8)232542.0             ! p.291 line 8 (staged) (A*)DD(BU,48,6); as p.271 writes it
+ALL     SYN(N), (8)232543.0          ! p.291 line 9 (staged) DRZ(N),1 at 232543.00
+AFPCI   SYN,ALL.9                    ! p.291 line 17 (staged) SYN,ALL.9 -- ALL's (N)
+ANUBIT  SYN,ALL.15                   ! p.291 line 20 (staged) SYN,ALL.15 -- ALL's (N)
+ARCDCT  SYN(B,25,1), (8)232547.0     ! p.291 line 27 (staged) VF,0 at 232547.00
+ARELOB  SYN(BU,7), (8)232550.65      ! p.291 line 31 (staged) DRZ(BU,7),1 at 232550.65
+YBCBU   SYN(BU), (8)231462.0         ! p.274 line 19 DR(BU),(15), as p.291's stand-in writes it
+ALDBF   SYN,YBCBU                    ! p.291 line 33 (staged) SYN,YBCBU; YBCBU p.274 DR(BU) at 231462.00
+ALDCTR  SYN(N), (8)232552.0          ! p.291 line 34 (staged) DRZ(N),1 at 232552.00
+ALOWWD  SYN(BU,32), (8)232553.0      ! p.291 line 36 (staged) DRZ(BU,32),1 at 232553.00
+AHGHWD  SYN(BU,32), (8)232553.40     ! p.291 line 37 (staged) DRZ(BU,32),1 at 232553.40
+
+        SLC, (8)234625.40
+        CB,$1,ALDA1                                          ! line  1
+ALDA5   Z,$3                                                 ! line  2
+        SF(BU,18),$3,46                                      ! line  3  -TEST IF WITHIN BOUNDS
+        KV,$3,ALOWWD                                         ! line  4
+        BXL,AERR5A                                           ! line  5
+        KV,$3,AHGHWD                                         ! line  6
+        BXH,AERR5A                                           ! line  7
+        SV,$3,ALDCTR                                         ! line  8
+        BB1,ALL.3,$+1.32                                     ! line  9
+        SVA,$3,3.($15)                                       ! line 10
+        B,ANORMR                                             ! line 11
+AFPCRD  BB,AFPCI,ARNRM1                                      ! line 12
+        L(BU,18),KSILO+2.0                                   ! line 13
+        KF(BU,18),ABSSID                                     ! line 14
+        BZAE,AERR4                                           ! line 15
+        CM1111(BU,1),AFPCI                                   ! line 16
+        LV,$1,KSILO+9.32                                     ! line 17  -ADDRESS OF RELOCATION TABLES
+        LV,$2,1.($1)                                         ! line 18  -ORG. OF PROG. IN $2
+        SV,$2,ALDCTR                                         ! line 19
+        LF(BU,19),2.($1)                                     ! line 20  -= OF NAMED COMMONS DEVELOP A LZC
+        LI(BU,7),19                                          ! line 21
+        -(BU,7),$LZC                                         ! line 22  -COMPUTE = OF RELOC. BITS PER 1/2 WD.
+        SF(BU,7),ARELOB                                      ! line 23
+        BB,.63($1),AFPCD2                                    ! line 24
+        LF(BU,18),.28($1)                                    ! line 25
+AFPCD1  SF(BU,18),ARCDCT                                     ! line 26  -SET UP COUNT OF CARDS  (a stray "." prints between label and statement)
+        B,ARNRM1                                             ! line 27
+AFPCD2  LFI(BU,18),0                                         ! line 28  -LIBRARY ROUTINE CARD CT.=0
+        B,AFPCD1                                             ! line 29
+ARBNCD  SIC,$14                                              ! line 30
+        B,ACHSM                                              ! line 31
+        LV,$2,ALDCTR                                         ! line 32  -PROGRAM ORIGIN IN $2
+        BXVZ,AERR8                                           ! line 33  -NO LOADER ADJUSTMENT CARD
+        L(BU,36),ALDBF.48                                    ! line 34  -COLUMNS 5,6,7
+        Z,$6                                                 ! line 35
+        Z,$1                                                 ! line 36
+        Z,$7                                                 ! line 37
+        SF(BU,24),$1                                         ! line 38  -RELATIVE ORIGIN IN $1
+        V+,$1,$2                                             ! line 39  -ABSOLUTE ORIGIN FOR CRD IN $1
+        SF(BU,10),$7.14,24                                   ! line 40  -NO. OF INSR. TO LOAD
+        V+,$6,$7                                             ! line 41  -COMPUTE LOC. OF RELOC. BITS
+        V+,$7,$1                                             ! line 42  -COMPUTE UPPER ADDR. OCCUPIED
+        KV,$7,AHGHWD                                         ! line 43
+        BXH,AERR5A                                           ! line 44
+        SF(BU,5),$4.41,29                                    ! line 45  -= HLF. WD. INSTR. IN CF OF $4
+        LF(BU,5),$6.19                                       ! line 46
+        KFI(BU,5),0                                          ! line 47
+        BAE,ARBCD4                                           ! line 48
+        CM1111(BU,1),ANUBIT                                  ! line 49  (printed "ANUBIT-": comment mark)
+        SF(BU,5),ARBCD7.36                                   ! line 50  -IN LOAD INSTR.
+        SF(BU,5),ARBCD6.36                                   ! line 51  -IN STORE INSTR.
+        SF(BU,5),ARBCD6.19                                   ! line 52
+ARBCD4  V+,$6,$4                                             ! line 53  -LOC. OF RELOCATION BITS
+        C1100(BU,5),$1.19,-24                                ! line 54
+        M+1(BU,5),$L.19                                      ! line 55
+        V+,1,$L                                              ! line 56
+
+!SYM ALDA5  234626.00
+!SYM AFPCRD 234634.00
+!SYM AFPCD1 234650.00
+!SYM AFPCD2 234651.40
+!SYM ARBNCD 234653.00
+!SYM ARBCD4 234673.40
+!CHECK 234625.40 | 234623.02 48 | line 1 CB,$1,ALDA1
+!CHECK 234626.00 | 000023.22 00 | line 2 ALDA5 Z,$3
+!CHECK 234626.40 | 000023.00 80 022027.12 F0 | line 3 SF(BU,18),$3,46
+!CHECK 234627.40 | 232553.06 90 | line 4 KV,$3,ALOWWD
+!CHECK 234630.00 | 235225.32 42 | line 5 BXL,AERR5A
+!CHECK 234630.40 | 232553.46 90 | line 6 KV,$3,AHGHWD
+!CHECK 234631.00 | 235225.33 42 | line 7 BXH,AERR5A
+!CHECK 234631.40 | 232552.07 30 | line 8 SV,$3,ALDCTR
+!CHECK 234632.00 | 232543.03 80 234633.74 0E | line 9 BB1,ALL.3,$+1.32
+!CHECK 234633.00 | 000003.07 DF | line 10 SVA,$3,3.($15)
+!CHECK 234633.40 | 235233.10 00 | line 11 B,ANORMR
+!CHECK 234634.00 | 232543.11 80 235004.74 02 | line 12 AFPCRD BB,AFPCI,ARNRM1
+!CHECK 234635.00 | 220453.00 80 022000.20 50 | line 13 L(BU,18),KSILO+2.0
+!CHECK 234636.00 | 232542.00 80 022000.23 10 | line 14 KF(BU,18),ABSSID
+!CHECK 234637.00 | 235216.76 C0 | line 15 BZAE,AERR4
+!CHECK 234637.40 | 232543.11 80 001000.36 F0 | line 16 CM1111(BU,1),AFPCI
+!CHECK 234640.40 | 220462.42 30 | line 17 LV,$1,KSILO+9.32
+!CHECK 234641.00 | 000001.04 31 | line 18 LV,$2,1.($1)
+!CHECK 234641.40 | 232552.05 30 | line 19 SV,$2,ALDCTR
+!CHECK 234642.00 | 000002.00 81 023000.06 70 | line 20 LF(BU,19),2.($1)
+!CHECK 234643.00 | 114000.00 80 407000.20 50 | line 21 LI(BU,7),19
+!CHECK 234644.00 | 000007.21 80 007000.30 10 | line 22 -(BU,7),$LZC
+!CHECK 234645.00 | 232550.65 80 007000.12 F0 | line 23 SF(BU,7),ARELOB
+!CHECK 234646.00 | 000000.77 81 234651.74 02 | line 24 BB,.63($1),AFPCD2
+!CHECK 234647.00 | 000000.34 81 022000.06 70 | line 25 LF(BU,18),.28($1)
+!CHECK 234650.00 | 232547.00 80 022000.12 F0 | line 26 AFPCD1 SF(BU,18),ARCDCT
+!CHECK 234651.00 | 235004.50 00 | line 27 B,ARNRM1
+!CHECK 234651.40 | 000000.00 80 422000.06 70 | line 28 AFPCD2 LFI(BU,18),0
+!CHECK 234652.40 | 234650.10 00 | line 29 B,AFPCD1
+!CHECK 234653.00 | 000036.00 80 | line 30 ARBNCD SIC,$14
+!CHECK 234653.40 | 234563.10 00 | line 31 B,ACHSM
+!CHECK 234654.00 | 232552.04 30 | line 32 LV,$2,ALDCTR
+!CHECK 234654.40 | 235220.31 42 | line 33 BXVZ,AERR8
+!CHECK 234655.00 | 231462.60 80 044000.20 50 | line 34 L(BU,36),ALDBF.48
+!CHECK 234656.00 | 000026.22 00 | line 35 Z,$6
+!CHECK 234656.40 | 000021.22 00 | line 36 Z,$1 (last byte prints "C0": open 0, as its own octal field "000C21")
+!CHECK 234657.00 | 000027.22 00 | line 37 Z,$7
+!CHECK 234657.40 | 000021.00 80 030000.12 F0 | line 38 SF(BU,24),$1
+!CHECK 234660.40 | 000022.02 B0 | line 39 V+,$1,$2
+!CHECK 234661.00 | 000027.16 80 012014.12 F0 | line 40 SF(BU,10),$7.14,24
+!CHECK 234662.00 | 000027.14 B0 | line 41 V+,$6,$7
+!CHECK 234662.40 | 000021.16 B0 | line 42 V+,$7,$1
+!CHECK 234663.00 | 232553.56 90 | line 43 KV,$7,AHGHWD
+!CHECK 234663.40 | 235225.33 42 | line 44 BXH,AERR5A
+!CHECK 234664.00 | 000024.51 80 005016.52 F0 | line 45 SF(BU,5),$4.41,29
+!CHECK 234665.00 | 000026.23 80 005000.06 70 | line 46 LF(BU,5),$6.19
+!CHECK 234666.00 | 000000.00 80 405000.23 10 | line 47 KFI(BU,5),0
+!CHECK 234667.00 | 234673.76 C2 | line 48 BAE,ARBCD4
+!CHECK 234667.40 | 232543.17 80 001000.36 F0 | line 49 CM1111(BU,1),ANUBIT
+!CHECK 234670.40 | 234735.44 80 005000.12 F0 | line 50 SF(BU,5),ARBCD7.36
+!CHECK 234671.40 | 234747.04 80 005000.12 F0 | line 51 SF(BU,5),ARBCD6.36
+!CHECK 234672.40 | 234746.63 80 005000.12 F0 | line 52 SF(BU,5),ARBCD6.19
+!CHECK 234673.40 | 000024.14 B0 | line 53 ARBCD4 V+,$6,$4
+!CHECK 234674.00 | 000021.23 80 005064.30 70 | line 54 C1100(BU,5),$1.19,-24
+!CHECK 234675.00 | 000010.23 80 005000.22 B0 | line 55 M+1(BU,5),$L.19
+!CHECK 234676.00 | 000010.02 B0 | line 56 V+,1,$L

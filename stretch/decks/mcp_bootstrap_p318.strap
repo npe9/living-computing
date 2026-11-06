@@ -1,0 +1,175 @@
+! mcp_bootstrap_p318.strap -- MCP printed page 318: the DISK FETCH
+! data area (X N FOST .. C DIC EX), the unknown-key exit (C XUK, C XIT,
+! C EPGK, C XUKND), the C DSK FL message, C LOC CT and CW RD.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.69, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID SB000307  DIST. OF 3/01  3/01  PAGE NUMBER 318"; the heading row's
+! LOCATION field is 234212, line 1's word.
+!
+! THE PAGE.  45 lines; every line number prints a "*" after it, and a
+! "*" follows the LOCATION on lines 9, 22 and 43.  No remark cards, no
+! TAIL card.  Contiguous from 234212.40 (line 1) to 234416.00 (line 45,
+! CW, a full word; next location 234417.00), then blank paper.
+!   lines  1-8   VF / XW data words (printed "+" values).
+!   lines  9-12  DRZ: (2) words, 40 (N) = 50 octal words, (50) = 62
+!                octal, (2); each next LOCATION confirms the count.
+!   line  22     C LR DRZ(BU,64),(11) = 13 octal words.
+!   line  43     (IQS*)DD(BU),OPERATOR--REPEATED UKS ON DISK  *  : the
+!                "*" is the delimiter; 4 words to 234415.00.  Two blanks
+!                before it on the ink; any 25-32 characters fill the same
+!                4 words, so the next LOCATION does not fix the count.
+! JOIN.  p.313 (b8decks) ends at 234021.40; pp.314-317 have no scratch
+! deck, so the back join is NOT established here.  p.319 should open at
+! 234417.00 with serial SB000344.  This page DEFINES symbols other
+! pages carried as stand-ins (XNFOST, CALPHA, CDELTA, CBUFF, CDICT,
+! CNDXAD, CNTBUF, CFOT, CINDEX, CBFMAP, CLR, CLUK, CWRD): every one of
+! those stand-in addresses agrees with this page's LOCATION column.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "C CIC EX" (line 12) = CDICEX: line 23 prints "CDICEX+1.09" with
+!     a plain D, and 234355.11 = 234354.00 + 1.09.  D with a worn stem.
+!   * "B, C MCP" (line 20) = B,DMCP (000040.10; DMCP is 32.0).
+!   * "SIC,SCISIC" / "B,SCISP" (lines 35, 36) = SDISIC / SDISP (landed
+!     values 217451.40 / 217372.0).  "SIC,CRCBR" (line 30) = CRDBR
+!     (234164.00, as b8decks pp.312-313).
+!   * ",DLCCS" (27) = DLOCS (3.01); ",PRCSA" (28) = PROSA (1.0, the
+!     b8decks pp.312-313 spelling); ",DCCMM" (38) = DCOMM (35.32 =
+!     000043.40).  The drum's open O.
+!   * CLOCCT (line 44): the third glyph is CLOSED at 900 dpi -> O.
+!   * CRD1 (line 31): last glyph has the 1's flag at 900 dpi; D plain.
+!   * hex "C0" on B/BE rows 16, 18, 31, 36 = 00; "BC" on line 24 = B0;
+!     octal/VF fields with an open round read 0; "VF,C" / "XW,C" /
+!     "CW,0,0,C" = 0.
+!   * names spaced by the drum (X N FOST, C ALPHA, C NDX AD, CNT BUF,
+!     CW DISK, C BF MAP, C DIC EX, C XIT, C LR, CW RD) written closed up.
+!     CBFMAP, CFOT are C22-6728 spellings; C22-6728 OCR prints "OW DISK"
+!     (CW DISK).
+!
+! EXTERNALS.  CUKCNT and CRD1 are defined on no landed or staged page:
+! their values come only from this page's binary.
+!
+! CARD SERIALS.  SB000307 .. SB000343, none skipped.  Shared: 13-14
+! (319), 15-16 (320), 17-18 (321), 20-21 (323), 30-31 (332), 32-33
+! (333), 35-36 (335), 41-42 (340).
+
+DMCP    SYN, 32.0                    ! landed (p.105); B lines 20,26,32,37,41 000040.10
+DRET    SYN, 33.0                    ! landed (p.105); null op lines 21,33,42 000041.00
+DCOMM   SYN, 35.32                   ! landed (p.105); null op line 38 000043.40 (printed "DCCMM")
+DLOCS   SYN, 3.01                    ! landed p.104 line 15 "D LOC S"; line 27 000003.01 (printed "DLCCS")
+PROSA   SYN, 1.0                     ! not landed; as b8decks p.312/313; line 28 000001.00 (printed "PRCSA")
+SEPGK   SYN,(16)0801.0               ! landed p.107 line 35; LVI line 34 004001.35
+SDISIC  SYN, (8)217451.40            ! landed p.103; SIC line 35, BIT-EXACT (printed "SCISIC")
+SDISP   SYN, (8)217372.0             ! landed; B line 36 217372.10, half word only (printed "SCISP")
+ADSKRD  SYN, (8)234210.0             ! not landed; as b8decks p.312/313; CM0000 line 19 234210.00, BIT-EXACT
+CUKCNT  SYN, (8)234210.40            ! not landed; M-1 line 24 234210.40, BIT-EXACT (from this page only)
+CRDBR   SYN, (8)234164.0             ! not landed; as b8decks p.312/313; SIC line 30 234164.00, BIT-EXACT (printed "CRCBR")
+CRD1    SYN, (8)234161.0             ! not landed; B line 31 234161.10, half word only (from this page only)
+
+        SLC, (8)234212.40
+XNFOST  VF,0                                                 ! line  1  -STATUS OF INFORMATION AVAILABLE
+CALPHA  VF, 0                                                ! line  2  -ALPHA EQUALS BETA PLUS ARC-WORD
+CDELTA  VF, 0                                                ! line  3  -DELTA EQUALS NO. OF WDS READ
+CBUFF   XW,0                                                 ! line  4  -ARC LAST READ INTO BUFFER
+CDICT   VF, 0                                                ! line  5  -ADDRESSES DICT ENTRY FOR CS ARTY
+CNDXAD  VF, 0                                                ! line  6  -ADDRESS OF TYPE INDEX ENTRY
+CNTBUF  VF, 0                                                ! line  7  -NUMBER OF ENTRIES IN BUFFER MAP
+CWDISK  XW,0,0,0                                             ! line  8  -CONTROL WORD FOR DISK FETCH
+CFOT    DRZ(BU,64), (2)                                      ! line  9
+CINDEX  DRZ(N), 40                                           ! line 10  -INDEX
+CBFMAP  DRZ(BU,64), (50)                                     ! line 11  -MAP OF BUFFER CONTENTS
+CDICEX  DRZ(BU,64), (2)                                      ! line 12
+        LVI,$15,$                                            ! line 13
+        BE,CXUK                                              ! line 14
+        LVI, 15, $                                           ! line 15
+        BE, CXIT                                             ! line 16
+        LVI, 15, $                                           ! line 17
+        BE, CXIT                                             ! line 18
+        CM0000(BU,1),ADSKRD                                  ! line 19
+CXIT    B, DMCP                                              ! line 20
+        , DRET                                               ! line 21
+CLR     DRZ(BU,64), (11)                                     ! line 22
+CXUK    BB,CDICEX+1.09,CEPGK                                 ! line 23
+        M-1(BU,18),CUKCNT                                    ! line 24
+        BRZ,CXUKND                                           ! line 25
+        B,DMCP                                               ! line 26
+        ,DLOCS                                               ! line 27
+        ,PROSA                                               ! line 28
+CLUK    ,0                                                   ! line 29
+        SIC,CRDBR                                            ! line 30
+        B,CRD1                                               ! line 31
+        B,DMCP                                               ! line 32
+        ,DRET                                                ! line 33
+CEPGK   LVI,$14,SEPGK                                        ! line 34
+        SIC,SDISIC                                           ! line 35
+        B,SDISP                                              ! line 36
+CXUKND  B,DMCP                                               ! line 37
+        ,DCOMM                                               ! line 38
+        ,CDSKFL                                              ! line 39
+        ,4.                                                  ! line 40
+        B,DMCP                                               ! line 41
+        ,DRET                                                ! line 42
+CDSKFL  (IQS*)DD(BU),OPERATOR--REPEATED UKS ON DISK  *       ! line 43
+CLOCCT  VF,0                                                 ! line 44
+CWRD    CW,0,0,0                                             ! line 45
+
+!SYM XNFOST 234212.40
+!SYM CALPHA 234213.00
+!SYM CDELTA 234213.40
+!SYM CBUFF  234214.00
+!SYM CDICT  234215.00
+!SYM CNDXAD 234215.40
+!SYM CNTBUF 234216.00
+!SYM CWDISK 234217.00
+!SYM CFOT   234220.00
+!SYM CINDEX 234222.00
+!SYM CBFMAP 234272.00
+!SYM CDICEX 234354.00
+!SYM CXIT   234362.00
+!SYM CLR    234363.00
+!SYM CXUK   234376.00
+!SYM CLUK   234402.00
+!SYM CEPGK  234404.40
+!SYM CXUKND 234406.00
+!SYM CDSKFL 234411.00
+!SYM CLOCCT 234415.00
+!SYM CWRD   234416.00
+!CHECK 234212.40 | 000000.00+ | line 1 X NFOST VF,C (printed "CC0000.00+")
+!CHECK 234213.00 | 000000.00+ | line 2 C ALPHA VF, 0
+!CHECK 234213.40 | 000000.00+ | line 3 C DELTA VF, 0
+!CHECK 234214.00 | 000000.00+ 000 000000 000000 | line 4 C BUFF XW,C
+!CHECK 234215.00 | 000000.00+ | line 5 C DICT VF, 0
+!CHECK 234215.40 | 000000.00+ | line 6 C NDX AD VF, 0
+!CHECK 234216.00 | 000000.00+ | line 7 CNT BUF VF, 0
+!CHECK 234217.00 | 000000.00+ 000 000000 000000 | line 8 CW DISK XW,0,0,C
+!CHECK 234356.00 | 234356.37 01 | line 13 LVI,$15,$
+!CHECK 234356.40 | 234376.00 00 | line 14 BE,CXUK
+!CHECK 234357.00 | 234357.37 01 | line 15 LVI, 15, $
+!CHECK 234357.40 | 234362.00 00 | line 16 BE, CXIT (hex prints "C0"; an open round, 0)
+!CHECK 234360.00 | 234360.37 01 | line 17 LVI, 15, $
+!CHECK 234360.40 | 234362.00 00 | line 18 BE, CXIT (hex prints "C0")
+!CHECK 234361.00 | 234210.00 80 001000.00 F0 | line 19 CM0000(BU,1),A DSK RD
+!CHECK 234362.00 | 000040.10 00 | line 20 C XIT B, C MCP (D worn to C)
+!CHECK 234362.40 | 000041.00 80 | line 21 , D RET
+!CHECK 234376.00 | 234355.11 80 234404.74 02 | line 23 CXUK BB,CDICEX+1.09,CEPGK
+!CHECK 234377.00 | 234210.40 80 022000.32 B0 | line 24 M-1(BU,18),CUKCNT (hex prints "BC")
+!CHECK 234400.00 | 234406.34 C2 | line 25 BRZ,CXUKND
+!CHECK 234400.40 | 000040.10 00 | line 26 B,DMCP
+!CHECK 234401.00 | 000003.01 80 | line 27 ,DLCCS
+!CHECK 234401.40 | 000001.00 80 | line 28 ,PRCSA
+!CHECK 234402.00 | 000000.00 80 | line 29 CLUK ,0
+!CHECK 234402.40 | 234164.00 80 | line 30 SIC,CRCBR
+!CHECK 234403.00 | 234161.10 00 | line 31 B,CRD1 (hex prints "C0")
+!CHECK 234403.40 | 000040.10 00 | line 32 B,DMCP
+!CHECK 234404.00 | 000041.00 80 | line 33 ,DRET
+!CHECK 234404.40 | 004001.35 01 | line 34 CEPGK LVI,$14,SEPGK
+!CHECK 234405.00 | 217451.40 80 | line 35 SIC,SCISIC (D worn to C)
+!CHECK 234405.40 | 217372.10 00 | line 36 B,SCISP (D worn to C; hex prints "C0")
+!CHECK 234406.00 | 000040.10 00 | line 37 CXUKND B,DMCP
+!CHECK 234406.40 | 000043.40 80 | line 38 ,DCCMM (= D COMM)
+!CHECK 234407.00 | 234411.00 80 | line 39 ,CDSKFL
+!CHECK 234407.40 | 000004.00 80 | line 40 ,4.
+!CHECK 234410.00 | 000040.10 00 | line 41 B,DMCP
+!CHECK 234410.40 | 000041.00 80 | line 42 ,DRET
+!CHECK 234415.00 | 000000.00+ | line 44 CLOCCT VF,0
+!CHECK 234416.00 | 000000.00+ 000 000000 000000 | line 45 CW RD CW,0,0,C

@@ -42,6 +42,10 @@ VFL = {}
 for m in ("+", "L", "LWF", "+MG", "K", "KR", "KE", "KF", "KFE", "KFR", "LCV"):
     VFL[m] = 2                     # op / opnd
 VFL["*"] = 2                       # binary
+# LN is L with the negative sign modifier ("LN -m -> a", C28-6129
+# printed p.48, PDF p.52); MCP printed p.313 line 39 "C INTER
+# LN(BU,9),...".  A sign modifier changes no level (see M-1 below).
+VFL["LN"] = 2
 for m in ("CV", "DCV"):
     VFL[m] = 2                     # op / INT
 # M-1 is M+1 with the invert-sign modifier (opcodes.py
@@ -220,6 +224,9 @@ PSEUDO = {"DD", "DR", "DRZ", "VF", "CF", "RF", "XW", "CW", "END", "SYN",
           # direct the card punch and the listing and execute nothing,
           # so Table A-2 has no cost for them and should not.
           "PRNS", "PUNORG", "PUNID", "RESEQ",
+          # PUNFUL, "Punch Full Cards" (C28-6129 printed p.36, PDF
+          # p.40): MCP printed p.320 line 1, the same company.
+          "PUNFUL",
           # INDMK creates one word of binary output (C28-6129 printed
           # p.19) and executes nothing, so it costs no look-ahead
           # level -- the same reason XW, CW, VF, CF and RF are here.

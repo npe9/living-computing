@@ -6722,6 +6722,37 @@ run "the CNSL I/O table of exits (P DB EX), the CNSL error fixup within the, pri
 run "THE SYSTEM COMMAND PACKAGE -- its tentacle (J TENT .. J SIZE, YXCOMD), printed p.295" python3 verify_mcp_page.py 295
 run "a console-source system-command call (BD,S PRIME / ,S COMD), its count, printed p.296" python3 verify_mcp_page.py 296
 run "THE SPECIAL ASSIGNMENT PACKAGE (ZASN01 .. B,DMCP), printed p.297" python3 verify_mcp_page.py 297
+run "the tail of THE SPECIAL ASSIGNMENT PACKAGE (lines 1-33, from ,DCOMM to ZASN99) and the head of, printed p.298" python3 verify_mcp_page.py 298
+run "the tail of the ZDSN (disregard system tape mounting) routine, then THE SPECIAL ASSIGNMENT, printed p.299" python3 verify_mcp_page.py 299
+run "THE \$TIME PSEUDO OP (Z TIME .. S TIME K), lines 1-47, printed p.300" python3 verify_mcp_page.py 300
+run "THE DUMMY MAJOR PACKAGE (UNDEF .. J UNDEF), lines 1-14, printed p.301" python3 verify_mcp_page.py 301
+run "THE COMMENTATOR, disabled and IF entry points (MCOMD, JCOMM), lines 1-54, printed p.302" python3 verify_mcp_page.py 302
+run "the tail of the commentator I/O setup, the COMMON EXIT ROUTINE (J EXITD .. M COMIC), printed p.303" python3 verify_mcp_page.py 303
+run "the tail of the message-stacking routine (JSTKER/JSTKRP/JSTKR1), the 'IS WRITE NECESSARY' test, printed p.304" python3 verify_mcp_page.py 304
+run "the tail of the console-message stacking code (J PNTOK, R SIC1, R TRANS, R SIC2) and the I/O, printed p.305" python3 verify_mcp_page.py 305
+run "the tail of the wait-for-I/O routine J TERM (J EKJZ, J TERMS, J FKCS), the RELEASE CONSOLE, printed p.306" python3 verify_mcp_page.py 306
+run "the tail of the commentator console-read loop (SF,J IONST .. B,1.0(J XIN1)) and the head of, printed p.307" python3 verify_mcp_page.py 307
+run "the end of the commentator's stack entry (SVA,MXUAT,KCOMMR .. B,MSKIP), M SEOP, the, printed p.308" python3 verify_mcp_page.py 308
+run "the tail of the commentator's console write (M ASTOR .. B,J EXITD), M TRY, the EPGK and UK, printed p.309" python3 verify_mcp_page.py 309
+run "a block of SYN cards -- nine index-register names J XTEM 2 .. MX CUMQ (\$5..\$13), the, printed p.310" python3 verify_mcp_page.py 310
+run "the head of DISK FETCH -- the tentacle table X TENTB (DD / EXT(0,18) over a B / DRZ), C FETCH, printed p.311" python3 verify_mcp_page.py 311
+run "a dictionary look-up -- CS ARTY sought first in the arc already in the buffer, else by an, printed p.312" python3 verify_mcp_page.py 312
+run "the disk-arc buffer search (X TO LK / X FRO LK / XIT) and the read set-up (X TRAN, C PRERD, C, printed p.313" python3 verify_mcp_page.py 313
+run "the tail of the disk-arc read set-up begun on p.313 (V-I/LC/LR, CW DISK, M+1 CLUK, the TI of, printed p.314" python3 verify_mcp_page.py 314
+run "DISK FETCH continued, the alpha-zero path (X LC ALF, C ALFZE), the read of one arc (C SET J, C, printed p.315" python3 verify_mcp_page.py 315
+run "the tail of an arc request set-up (C NNOTO, C ENT, CHEKT, X LIMIT), then the index binary, printed p.316" python3 verify_mcp_page.py 316
+run "DISK FETCH, the two-word search X 2WD LK / X VFL LK / X GOBAK, the restart-area and, printed p.317" python3 verify_mcp_page.py 317
+run "the DISK FETCH data area (X N FOST .. C DIC EX), the unknown-key exit (C XUK, C XIT, C EPGK, C, printed p.318" python3 verify_mcp_page.py 318
+run "'THE DUMP ROUTINE', its table-of-exits word PDUMPT, the entry YXDUMP, and the overlay buffer, printed p.319" python3 verify_mcp_page.py 319
+run "the opening of the JOB CONTROL BINARY LOADER (22LOADER): its punch controls and two (CC*), printed p.320" python3 verify_mcp_page.py 320
+run "the LOADER's origin card (LX,\$4,AXWORG .. B,AORG2) and the ORIGIN AND FLOW CARD LOADER (A LOAD, printed p.321" python3 verify_mcp_page.py 321
+run "the LOADER's partial-word / zeroing tail (ALD1 .. ASETZ1), the card-type test (ATST1, ATST, printed p.322" python3 verify_mcp_page.py 322
+run "the LOADER's checksum loop (ACHSM1, ACHSM2), the T and super-T card routines (ATCARD, ASUPRT), printed p.323" python3 verify_mcp_page.py 323
+run "the LOADER (PUNID 22LOADER), a run of card processing from ALDA5 (bounds test against, printed p.324" python3 verify_mcp_page.py 324
+run "the LOADER's relocating binary-card loop (A RBCD1 .. A RBCD7), relocation by the bit string A, printed p.325" python3 verify_mcp_page.py 325
+run "the LOADER's relocatable binary card routines -- the tail of the field loop (ARBCD8, ARBCDA, printed p.326" python3 verify_mcp_page.py 326
+run "the LOADER's relocation-segment tail (ARNRM5, ARNRM3 library branch, ARNRM4) and the opening, printed p.327" python3 verify_mcp_page.py 327
+run "the octal-card loader's body (AOCTAL): pick up octal/hex characters into AADD, bounds-check, printed p.328" python3 verify_mcp_page.py 328
 
 # >>> pp.185-192 FOUND A WRONG ANSWER IN THE VFL IMMEDIATE, and the
 # page caught it by writing ONE immediate at TWO LENGTHS. <<<
@@ -6741,10 +6772,11 @@ run "THE SPECIAL ASSIGNMENT PACKAGE (ZASN01 .. B,DMCP), printed p.297" python3 v
 # Also: the SYN path never stripped blanks the instruction path does
 # ("B,K IO IND" assembled, "E IO IND SYN,K IO IND" did not), found
 # by printed p.189 printing both on one page.
-run "MCP's body merges, holds every page's rows and accounts for every word, printed pp.99-297" python3 check_mcp_body_image.py
+run "MCP's body merges, holds every page's rows and accounts for every word, printed pp.99-328" python3 check_mcp_body_image.py
 run "a printed trailing '-' is the comment mark, not a minus, C28-6129 PDF p.5" python3 check_comment_mark.py
 run "instruction and index-word names carry a dds, C22-6531 printed pp.10, 19" python3 check_instruction_label_dds.py
 run "\$OP assembles as OP and PRND is a listing control, C28-6129 printed pp.10, 36" python3 check_dollar_op.py
+run "a SYN to an expression takes its final symbol's dds; a CNOP fills inside a DRZ, C22-6531 printed pp.11, 31" python3 check_syn_expr_and_cnop.py
 run "the equipment dispatch, printed p.160" python3 verify_mcp_page.py 160
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
 run "the program status table, printed p.109" python3 verify_mcp_page.py 109

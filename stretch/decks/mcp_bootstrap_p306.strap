@@ -1,0 +1,156 @@
+! mcp_bootstrap_p306.strap -- MCP printed page 306: the tail of the
+! wait-for-I/O routine J TERM (J EKJZ, J TERMS, J FKCS), the RELEASE
+! CONSOLE ROUTINE (J RELCN, J NOEKJ), and the first card of the
+! CONSOLE I/O ACCEPTANCE ROUTINE (J IOGO); lines 1-52.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.57, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID SA000209  DIST. OF 3/01
+! 3/01  PAGE NUMBER 306" (round glyphs in numeric fields read 0).  The
+! heading row's LOCATION field is 233310, line 1's word.
+!
+! THE PAGE.  52 lines, every line number printing a "*" after it.
+! Located rows run contiguous from 233310.40 (line 1) to 233332.00
+! (line 26, a half word), then remark cards 27-33 (no location; a "-"
+! in the NAME column), then 233332.40 (line 34) to 233337.00 (line 42),
+! remark cards 43-51, and line 52 at 233337.40, a full-word LF (next
+! location 233340.40).  Lines 11 (233317.00) and 34 (233332.40) print
+! an asterisk after the LOCATION; recorded, not explained.
+!
+! JOIN.  p.305 and p.307 have no scratch decks yet; contiguity with
+! either is NOT established here (line 1 opens at a .40, so p.305
+! should end with a half word at 233310.00).
+!
+! INDEX-REGISTER STAND-INS.  J XIN1, J XIN2, J XCNSL, J XTEM, M XCST are
+! defined later in this deck (the volume OCR,
+! docs/ocr/MCP_Mar63_250-445.txt, prints "JXIN 2 SYN,$2", "JXCNSL
+! SYN,$3", "JXTEM SYN $4", "MXCST SYN$8" at serials SA000410-417, on a
+! page not yet landed).  This page's own binary fixes each: LV's J
+! field prints 2J (.06 = $3 J XCNSL, .10 = $4 J XTEM, .20 = $8 M XCST);
+! LCI's prints 2J+1 (.03 = $1 J XIN1, .05 = $2 J XIN2).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * octal-field open rounds ("CCC012.C3", "C00000.1C", "233310.4C"...)
+!     are 0; every hex byte "CO"/"FC" here is C0/F0 only where the
+!     statement assembles it so (line 9 BZRZ C0, line 25 CM1111 F0).
+!   * line 52's label prints "J I C G O" open; the routine is J IOGO --
+!     line 47's remark prints "B,JIOGO" with a closed O, and C22-6728
+!     (MCP Sys Analysis Guide) typesets "The I-O Routine, JIOGO".
+!   * "J NOEKJ", "J RELCN", "SEOP", "JCNAD": open rounds read O / D
+!     (comment "NO EKJ"; JCNAD landed on printed p.122/p.128).
+!   * line 8's "CTI0001" prints its digits open; CTI's mask is binary.
+!
+! CARD SERIALS.  SA000209 .. SA000259, line N prints SA0002(08+N) except
+! that lines 22 and 23 (SIC,K STCS / B,K CSIN, one card -- line 23's B
+! is indented one column) BOTH print SA000230, so from line 24 on line N
+! prints SA0002(07+N).  None skipped.
+
+JXIN1   SYN,$1                       ! OCR SA000409 "JXIN 1 SYN,$1"; LCI line 1 .03 = 2J+1
+JXIN2   SYN,$2                       ! OCR SA000410 "JXIN 2 SYN,$2"; LCI line 34 .05
+JXCNSL  SYN,$3                       ! OCR SA000411 "JXCNSL SYN,$3"; LV line 2 .06
+JXTEM   SYN,$4                       ! OCR SA000412 "JXTEM SYN $4"; LV line 10 .10
+MXCST   SYN,$8                       ! OCR SA000417 "MXCST SYN$8"; LV line 16 .20, V+ line 17 000030
+JCNAD   SYN, (8)215006.0             ! landed p.122; LV line 2 215006
+SCHANS  SYN, (8)215002.0             ! landed p.103 (SYN,SXCHAN); V+ line 18 215002
+SCHOP   SYN(BU,1), 0.26              ! landed p.99 -CHAN OPERATING; BB line 19 .32
+KSTCS   SYN, (8)216272.40            ! landed p.122; SIC line 22 BIT-EXACT
+KCSIN   SYN, (8)216267.0             ! landed p.128 line 36; B line 23 216267.10
+JWAIT   SYN, (8)233666.00            ! landed p.184 stand-in; CM1111 line 25 BIT-EXACT, no dds
+
+        SLC, (8)233310.40
+JTERM   LCI,JXIN1,10.0                                       ! line  1  -WILL TRY CCW 10 TIMES
+        LV,JXCNSL,JCNAD                                      ! line  2  -GET CONSOLE CHANNEL NUMBER
+        CCW,0.0(JXCNSL),JCWTMP                               ! line  3
+        BZEKJZ,JEKJZ                                         ! line  4
+        CB,JXIN1,JTERM+.32                                   ! line  5  -EKJ,TRY AGAIN
+        B,$                                                  ! line  6  -CONSOLE DOWN,10 EKJS IN A ROW
+JEKJZ   LF(BU,64),JCWTMP                                     ! line  7  -CW TO $R
+        CTI0001(BU,4),(8)740000.0,41                         ! line  8  -EPGK,UK,OR EOP ON
+        BZRZ,JFKCS                                           ! line  9
+        LV,JXTEM,0.0(JXIN1)                                  ! line 10  -LOCATION OF I/O OP.
+        BXVZ,JTERMS                                          ! line 11  (location carries an asterisk)
+        BZB,.52(JXTEM),JTERM                                 ! line 12  -IF NOT SEOP,TRY AGAIN
+        BB,$R+.24,JTERM                                      ! line 13  -IF SEOP NOT DOWN,TRY AGAIN
+        B,JFKCS                                              ! line 14
+JCWTMP  XW,0                                                 ! line 15  -STORAGE FOR CCW
+JTERMS  LV,MXCST,JCNAD                                       ! line 16
+        V+,MXCST,MXCST                                       ! line 17
+        V+,MXCST,SCHANS                                      ! line 18
+        BB,SCHOP(MXCST),JTERM                                ! line 19  - IF CHANNEL OPERATING
+JFKCS   BZB,$R.23,.32(JXIN1)                                 ! line 20
+        LV,$14,JCNAD                                         ! line 21
+        SIC,KSTCS                                            ! line 22  \ one card, SA000230
+        B,KCSIN                                              ! line 23  / printed on both lines
+        LF(BU),JCWTMP                                        ! line 24
+        CM1111(BU,1),JWAIT                                   ! line 25
+        B,.32(JXIN1)                                         ! line 26
+!                                                            ! line 27  - (blank remark card)
+!       *****RELEASE CONSOLE ROUTINE*****                    ! line 28  - remark card
+!                                                            ! line 29  - (blank remark card)
+!       LINKAGE...LVI,JXIN2,$+1.0                            ! line 30  - remark card
+!       B,JRELCN                                             ! line 31  - remark card
+!       RETURN,CONSOLE RELEASED                              ! line 32  - remark card
+!                                                            ! line 33  - (blank remark card)
+JRELCN  LCI,JXIN2,10.0                                       ! line 34  -WILL TRY REL 10 TIMES  (location carries an asterisk)
+        REL(SEOP),0.0(JXCNSL)                                ! line 35  -INDEX HAS CONSOLE CHANNEL NO.
+        BZEKJZ,JNOEKJ                                        ! line 36
+        CB,JXIN2,JRELCN+.32                                  ! line 37
+        B,$                                                  ! line 38  -CONSOLE DOWN,10 EKJS IN A ROW
+JNOEKJ  LVI,JXIN1,$+1.0                                      ! line 39  -TEST FOR COMPLETION
+        B,JTERM                                              ! line 40
+        VF,JRELCN+.32                                        ! line 41
+        B,0.0(JXIN2)                                         ! line 42  -EXIT
+!                                                            ! line 43  - (blank remark card)
+!       *****CONSOLE I/O ACCEPTANCE ROUTINE*****             ! line 44  - remark card
+!                                                            ! line 45  - (blank remark card)
+!       LINKAGE...LVI,JXIN1,$+1.0                            ! line 46  - remark card
+!       B,JIOGO                                              ! line 47  - remark card
+!       PRESET I/O COMMAND                                   ! line 48  - remark card
+!       RETURN CBJ                                           ! line 49  - remark card
+!       RETURN IF ACCEPTED                                   ! line 50  - remark card
+!                                                            ! line 51  - (blank remark card)
+JIOGO   LF(BU,64),0.0(JXIN1)                                 ! line 52  -PICK UP I/O COM.  (printed "J I C G O")
+
+!SYM JTERM  233310.40
+!SYM JEKJZ  233314.00
+!SYM JCWTMP 233322.00
+!SYM JTERMS 233323.00
+!SYM JFKCS  233325.40
+!SYM JRELCN 233332.40
+!SYM JNOEKJ 233335.40
+!SYM JIOGO  233337.40
+!CHECK 233310.40 | 000012.03 02 | line 1 J TERM LCI,J XIN1,10.0
+!CHECK 233311.00 | 215006.06 30 | line 2 LV,J XCNSL,JCNAD
+!CHECK 233311.40 | 000000.00 83 233322.21 00 | line 3 CCW,0.0(J XCNSL),J CWTMP
+!CHECK 233312.40 | 233314.03 44 | line 4 BZEKJZ,J EKJZ
+!CHECK 233313.00 | 233311.02 48 | line 5 CB,J XIN1,J TERM+.32
+!CHECK 233313.40 | 233313.50 00 | line 6 B,$
+!CHECK 233314.00 | 233322.00 80 000000.06 70 | line 7 J EKJZ LF(BU,64),J CWTMP
+!CHECK 233315.00 | 740000.00 80 404024.43 70 | line 8 CTI0001(BU,4),(8)740000.0,41
+!CHECK 233316.00 | 233325.74 C0 | line 9 BZRZ,J FKCS
+!CHECK 233316.40 | 000000.10 31 | line 10 LV,J XTEM,0.0(J XIN1)
+!CHECK 233317.00 | 233323.31 42 | line 11 BXVZ,J TERMS
+!CHECK 233317.40 | 000000.64 84 233310.74 00 | line 12 BZB,.52(J XTEM),J TERM
+!CHECK 233320.40 | 000011.30 80 233310.74 02 | line 13 BB,$R+.24,J TERM
+!CHECK 233321.40 | 233325.50 00 | line 14 B,J FKCS
+!CHECK 233322.00 | 000000.00+ 000 000000 000000 | line 15 J CWTMP XW,0
+!CHECK 233323.00 | 215006.20 30 | line 16 J TERMS LV,M XCST,JCNAD
+!CHECK 233323.40 | 000030.20 B0 | line 17 V+,M XCST,M XCST
+!CHECK 233324.00 | 215002.20 B0 | line 18 V+,M XCST,S CHANS
+!CHECK 233324.40 | 000000.32 88 233310.74 02 | line 19 BB,S CHOP(M XCST),J TERM
+!CHECK 233325.40 | 000011.27 80 000000.74 01 | line 20 J FKCS BZB,$R.23,.32(J XIN1)
+!CHECK 233326.40 | 215006.34 30 | line 21 LV,$14,JCNAD
+!CHECK 233327.00 | 216272.40 80 | line 22 SIC,K STCS
+!CHECK 233327.40 | 216267.10 00 | line 23 B,K CSIN
+!CHECK 233330.00 | 233322.00 80 000000.06 70 | line 24 LF(BU),J CWTMP
+!CHECK 233331.00 | 233666.00 80 001000.36 F0 | line 25 CM1111(BU,1),J WAIT
+!CHECK 233332.00 | 000000.50 01 | line 26 B,.32(J XIN1)
+!CHECK 233332.40 | 000012.05 02 | line 34 J RELCN LCI,J XIN2,10.0
+!CHECK 233333.00 | 000000.00 83 000000.33 00 | line 35 REL(SEOP),0.0(J XCNSL)
+!CHECK 233334.00 | 233335.43 44 | line 36 BZEKJZ,J NOEKJ
+!CHECK 233334.40 | 233333.04 48 | line 37 CB,J XIN2,J RELCN+.32
+!CHECK 233335.00 | 233335.10 00 | line 38 B,$
+!CHECK 233335.40 | 233336.43 01 | line 39 J NOEKJ LVI,J XIN1,$+1.0
+!CHECK 233336.00 | 233310.50 00 | line 40 B,J TERM
+!CHECK 233336.40 | 233333.00+ | line 41 VF,J RELCN+.32
+!CHECK 233337.00 | 000000.10 02 | line 42 B,0.0(J XIN2)
+!CHECK 233337.40 | 000000.00 81 000000.06 70 | line 52 J IOGO LF(BU,64),0.0(J XIN1)

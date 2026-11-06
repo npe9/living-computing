@@ -1,0 +1,184 @@
+! mcp_bootstrap_p323.strap -- MCP printed page 323: the LOADER's
+! checksum loop (ACHSM1, ACHSM2), the T and super-T card routines
+! (ATCARD, ASUPRT), the branch card routine (ABCARD, ABCRD1), the flow
+! card routine (AFLOW) and the loader-adjustment (O) card routine
+! (ALDADJ, ALDA1), lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.74, read at 400 dpi, doubtful glyphs
+! enlarged.  Header, READ: "TIME CLOCK 00054041  PUNID 22LOADER  CARD
+! ID TA000147  DIST. OF 3/01  3/01  PAGE NUMBER 323" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is 234565,
+! line 1's word.  NOTE THE PUNID: 22LOADER, not 11D11MCP -- but the
+! addresses are the body assembly's (ALL, ALDBF, ALDCTR, ALOWWD, AHGHWD
+! print exactly where landed p.291 defines them).
+!
+! THE PAGE.  50 lines; every line number prints a "*" after it.
+!   line 10        a card with no statement: "-CHK SUM" in the remark
+!                  column, no location.
+!   lines 16,19,38 remark cards ("-" in the name column).
+!   located rows run contiguous from 234565.00 (line 1) to 234625.00
+!   (line 50, V-I, a half word; next location 234625.40), then blank
+!   paper.  "*" after the LOCATION on lines 8, 27 and 46.
+!   No TAIL card.  No DD/DR/SYN rows: every located row gets a !CHECK.
+!
+! JOIN.  p.322 (no scratch neighbour at writing) is not checked here:
+! the page opens at 234565.00 with serial TA000147.  B,ACHSM (line 25,
+! 234563.10) places ACHSM two words before this page's line 1, on
+! p.322.  p.324 should open at 234625.40 with serial TA000195.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 45 label prints "ALCADJ": third glyph has the D stem when
+!     enlarged; C22-6728 p.81 "(O in column 1) are handled by ALDADJ"
+!     and its connector index lists ALDADJ.  Written ALDADJ.
+!   * line 48 label "ALDA1": D with stem, read directly.
+!   * line 23 "B,ASEQ1": the glyph has the Q tail, the same glyph as
+!     "SEQ" in line 16's remark; C22-6728 names the sequence test
+!     routine ASEQ.
+!   * line 46 "AOXW1": the second glyph is round with no stem (not D);
+!     letter O vs digit 0 NOT settled by ink.  Written letter O, by the
+!     loader's octal family (AOCTL, AOCTAL; ALDADJ "converts them to
+!     octal").  No landed deck or C22-6728 spells it.
+!   * "ABCRD1" (lines 29, 36): fifth glyph read D (worn stem), the
+!     ABCARD family (ABCARD, line 20).
+!   * "ANORMR" (lines 15, 18), "AFLOW", "ALOWWD", "AORG1": the drum's
+!     open round glyph; C22-6728 spellings (ANORMR, AFLOW, AORG1 in its
+!     text and connector index; ALOWWD as landed p.291).
+!   * "CM0000" line 7 and "CT0011" line 48: connective digits.
+!   * line 23's byte prints "C0" and line 50's prints "CD": B and V-I
+!     can only assemble 00 / 0D here; open round = 0 (lesson 6).
+!     Lines 12 ("C0", BZAE) and 29 ("C2", BXE) are real C's.
+!
+! EXTERNALS.  Symbols landed on p.291 are written in p.291's own form.
+! The rest are defined on pages not landed; values from this page's
+! binary (each comment says how much it fixes).
+!
+! CARD SERIALS.  TA000147 .. TA000194.  Shared serials: lines 22-23
+! (TA000168, SIC,$14 + B,ASEQ1) and 24-25 (TA000169, SIC,$14 +
+! B,ACHSM).  None skipped.
+
+ALL     SYN(N), (8)232543.0          ! landed p.291 line 9 DRZ(N),1 at 232543.00; BZB lines 36, 39 232543.03
+ATCRDI  SYN,ALL.1                    ! landed p.291 line 10; CM1111 line 14 232543.01
+ASTCRD  SYN,ALL.2                    ! landed p.291 line 11; CM1111 line 17 232543.02
+AFPCI   SYN,ALL.9                    ! landed p.291 line 17; BB lines 21, 45 232543.11
+YBCBU   SYN(BU), (8)231462.0         ! staged p.274 line 19 DR(BU),(15); as landed p.291's stand-in
+ALDBF   SYN,YBCBU                    ! landed p.291 line 33; KF line 11 231462.44, LF lines 20, 26
+ALDCTR  SYN(N), (8)232552.0          ! landed p.291 line 34 DRZ(N),1; LV line 40 232552.02
+ALOWWD  SYN(BU,32), (8)232553.0      ! landed p.291 line 36 DRZ(BU,32),1; KV line 30 232553.02
+AHGHWD  SYN(BU,32), (8)232553.40     ! landed p.291 line 37 DRZ(BU,32),1; KV line 32 232553.42
+ACHSM   SYN, (8)234563.0             ! not landed (p.322); B line 25 234563.10, half word only
+AERR1   SYN, (8)235210.40            ! not landed; BZAE line 12 235210.76, half word only
+ANORMR  SYN, (8)235233.0             ! not landed; B lines 15, 18 235233.10, half word only
+ARNRM1  SYN, (8)235004.40            ! not landed; BB lines 21, 45 second half 235004.74, half word only
+ASEQ1   SYN, (8)234553.40            ! not landed; B line 23 234553.50, half word only
+AERR5A  SYN, (8)235225.0             ! not landed; BXL line 31 235225.32, BXH line 33, half word only
+AERR8   SYN, (8)235220.0             ! not landed; BZB lines 36, 39 second half 235220.34, half word only
+AORG1   SYN, (8)234471.0             ! not landed; B line 44 234471.10, half word only
+AOXW1   SYN(BU), (8)235247.0             ! not landed; LX line 46 235247.02, half word only
+
+        SLC, (8)234565.00
+        Z,$R                                                 ! line  1
+        LF(BU,12)(V+I),.12($3)                               ! line  2  -COMPUTE CHECKSUM
+ACHSM1  +(BU,12)(V+I),.12($3)                                ! line  3
+        CBR,$3,ACHSM1                                        ! line  4
+        BXF,ACHSM1                                           ! line  5
+        LF(BU,12),$R.40,64                                   ! line  6
+        CM0000(BU,12),$R.40                                  ! line  7
+        +(BU,12),$L.52                                       ! line  8
+        +(BU,1),$R.51                                        ! line  9
+! line 10  (no statement)                    -CHK SUM
+        KF(BU,12),ALDBF.36                                   ! line 11
+        BZAE,AERR1                                           ! line 12  -INCORRECT CHECKSUM
+ACHSM2  B,0($14)                                             ! line 13
+ATCARD  CM1111(BU,1),ATCRDI                                  ! line 14  -SET T CARD INDICATOR
+        B,ANORMR                                             ! line 15
+! line 16  - SUPER T CARD ROUTINE-ALL SEQ AND ID IGNCRED
+ASUPRT  CM1111(BU,1),ASTCRD                                  ! line 17
+        B,ANORMR                                             ! line 18
+! line 19  - BRANCH CARD ROUTINE
+ABCARD  LF(BU,24),ALDBF.24                                   ! line 20  -CHECK SEQUENCE AND CHECKSUM
+        BB,AFPCI,ARNRM1                                      ! line 21
+        SIC,$14                                              ! line 22
+        B,ASEQ1                                              ! line 23
+        SIC,$14                                              ! line 24
+        B,ACHSM                                              ! line 25
+        LF(BU,24),ALDBF.60                                   ! line 26  -PUT BRANCH ADDRESS INTO $1
+        SF(BU,24),$1                                         ! line 27
+        KVI,$1,0                                             ! line 28  -IF NO BRANCH ADDR. GIVEN USE 1ST ORG
+        BXE,ABCRD1                                           ! line 29
+        KV,$1,ALOWWD                                         ! line 30  -IS BRANCH ADDRESS WITIN BOUNDS
+        BXL,AERR5A                                           ! line 31
+        KV,$1,AHGHWD                                         ! line 32
+        BXH,AERR5A                                           ! line 33
+        SVA,$1,3.($15)                                       ! line 34
+        B,2.32($15)                                          ! line 35
+ABCRD1  BZB,ALL.3,AERR8                                      ! line 36  -CHECK IF ORIGIN STORED
+        B,2.32($15)                                          ! line 37  -BRANCH RETURN IN JOB CONTROL
+! line 38  - FLOW CARD ROUTINE
+AFLOW   BZB,ALL.3,AERR8                                      ! line 39  -NO ORIGIN STORED ERROR
+        LV,$1,ALDCTR                                         ! line 40  -PUT BINARY LOC.CTR.INTO XR1
+        LV,6,$1                                              ! line 41  -SET UP FOR BOUNDARY TEST
+        V+I,$6,12.32                                         ! line 42
+        LFI(BU,6),(8)400000.,48                              ! line 43  -SET UP FOR PARTIAL WD LOADING
+        B,AORG1                                              ! line 44
+ALDADJ  BB,AFPCI,ARNRM1                                      ! line 45
+        LX,$1,AOXW1                                          ! line 46
+        LVI,$2,30.32                                         ! line 47
+ALDA1   CT0011(BU,8)(V+I),.12($1)                            ! line 48  -PICK UP LOCATION FIELD
+        LF(BU,3),$LZC.4,($2)                                 ! line 49
+        V-I,$2,1.32                                          ! line 50
+
+!SYM ACHSM1 234566.40
+!SYM ACHSM2 234576.00
+!SYM ATCARD 234576.40
+!SYM ASUPRT 234600.00
+!SYM ABCARD 234601.40
+!SYM ABCRD1 234613.40
+!SYM AFLOW  234615.00
+!SYM ALDADJ 234621.00
+!SYM ALDA1  234623.00
+!CHECK 234565.00 | 000011.22 00 | line 1 Z,$R
+!CHECK 234565.40 | 000000.14 83 114000.06 70 | line 2 LF(BU,12)(V+I),.12($3)
+!CHECK 234566.40 | 000000.14 83 114000.20 10 | line 3 ACHSM1 +(BU,12)(V+I),.12($3)
+!CHECK 234567.40 | 234566.46 4C | line 4 CBR,$3,ACHSM1
+!CHECK 234570.00 | 234566.63 42 | line 5 BXF,ACHSM1
+!CHECK 234570.40 | 000011.50 80 014040.06 70 | line 6 LF(BU,12),$R.40,64
+!CHECK 234571.40 | 000011.50 80 014000.00 F0 | line 7 CM0000(BU,12),$R.40
+!CHECK 234572.40 | 000010.64 80 014000.20 10 | line 8 +(BU,12),$L.52
+!CHECK 234573.40 | 000011.63 80 001000.20 10 | line 9 +(BU,1),$R.51
+!CHECK 234574.40 | 231462.44 80 014000.23 10 | line 11 KF(BU,12),ALDBF.36
+!CHECK 234575.40 | 235210.76 C0 | line 12 BZAE,AERR1
+!CHECK 234576.00 | 000000.10 0E | line 13 ACHSM2 B,0($14)
+!CHECK 234576.40 | 232543.01 80 001000.36 F0 | line 14 ATCARD CM1111(BU,1),ATCRDI
+!CHECK 234577.40 | 235233.10 00 | line 15 B,ANORMR
+!CHECK 234600.00 | 232543.02 80 001000.36 F0 | line 17 ASUPRT CM1111(BU,1),ASTCRD
+!CHECK 234601.00 | 235233.10 00 | line 18 B,ANORMR
+!CHECK 234601.40 | 231462.30 80 030000.06 70 | line 20 ABCARD LF(BU,24),ALDBF.24
+!CHECK 234602.40 | 232543.11 80 235004.74 02 | line 21 BB,AFPCI,ARNRM1
+!CHECK 234603.40 | 000036.00 80 | line 22 SIC,$14
+!CHECK 234604.00 | 234553.50 00 | line 23 B,ASEQ1 (byte prints "C0")
+!CHECK 234604.40 | 000036.00 80 | line 24 SIC,$14
+!CHECK 234605.00 | 234563.10 00 | line 25 B,ACHSM
+!CHECK 234605.40 | 231462.74 80 030000.06 70 | line 26 LF(BU,24),ALDBF.60
+!CHECK 234606.40 | 000021.00 80 030000.12 F0 | line 27 SF(BU,24),$1
+!CHECK 234607.40 | 000000.03 04 | line 28 KVI,$1,0
+!CHECK 234610.00 | 234613.72 C2 | line 29 BXE,ABCRD1
+!CHECK 234610.40 | 232553.02 90 | line 30 KV,$1,ALOWWD
+!CHECK 234611.00 | 235225.32 42 | line 31 BXL,AERR5A
+!CHECK 234611.40 | 232553.42 90 | line 32 KV,$1,AHGHWD
+!CHECK 234612.00 | 235225.33 42 | line 33 BXH,AERR5A
+!CHECK 234612.40 | 000003.03 DF | line 34 SVA,$1,3.($15) (octal prints "C3")
+!CHECK 234613.00 | 000002.50 0F | line 35 B,2.32($15)
+!CHECK 234613.40 | 232543.03 80 235220.34 00 | line 36 ABCRD1 BZB,ALL.3,AERR8
+!CHECK 234614.40 | 000002.50 0F | line 37 B,2.32($15)
+!CHECK 234615.00 | 232543.03 80 235220.34 00 | line 39 AFLOW BZB,ALL.3,AERR8
+!CHECK 234616.00 | 232552.02 30 | line 40 LV,$1,ALDCTR
+!CHECK 234616.40 | 000021.14 30 | line 41 LV,6,$1
+!CHECK 234617.00 | 000014.55 05 | line 42 V+I,$6,12.32
+!CHECK 234617.40 | 400000.00 80 406030.06 70 | line 43 LFI(BU,6),(8)400000.,48
+!CHECK 234620.40 | 234471.10 00 | line 44 B,AORG1
+!CHECK 234621.00 | 232543.11 80 235004.74 02 | line 45 ALDADJ BB,AFPCI,ARNRM1 (label printed "ALCADJ")
+!CHECK 234622.00 | 235247.02 10 | line 46 LX,$1,AOXW1
+!CHECK 234622.40 | 000036.45 01 | line 47 LVI,$2,30.32
+!CHECK 234623.00 | 000000.14 81 110000.07 70 | line 48 ALDA1 CT0011(BU,8)(V+I),.12($1)
+!CHECK 234624.00 | 000007.25 80 003000.06 72 | line 49 LF(BU,3),$LZC.4,($2)
+!CHECK 234625.00 | 000001.45 0D | line 50 V-I,$2,1.32 (byte prints "CD")

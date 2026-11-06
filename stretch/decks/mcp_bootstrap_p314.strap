@@ -1,0 +1,194 @@
+! mcp_bootstrap_p314.strap -- MCP printed page 314: the tail of the
+! disk-arc read set-up begun on p.313 (V-I/LC/LR, CW DISK, M+1 CLUK, the
+! TI of one arc), the copy loop C T, the bookkeeping to X RETN and the
+! MCP D RET return, C BUFT / C FAST (form C FOT, ALPHA = BETA + arc),
+! the C NARK re-entry to C RODE and C NOLOC; lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.65, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID SB000128  DIST. OF 3/01  3/01  PAGE NUMBER 314"; the heading row's
+! LOCATION field is 234021, line 1's word.
+!
+! THE PAGE.  50 lines, then blank paper.  Every line number prints a "*"
+! after it.  No remark cards, no TAIL card.  Located rows run contiguous
+! from 234021.40 (line 1) to 234061.40 (line 50, a half-word B; next
+! location 234062.00).  "*" after the LOCATION on lines 13, 32 and 48.
+!   lines 39-42  B,D MCP and its calling sequence ,D LOCS / ,PROSA / ,0,
+!                the same sequence p.312 lines 17-20 print.
+! JOIN.  p.313 (b8decks) ends at 234021.00, a half-word SVA, next
+! location 234021.40: this page's line 1 continues it.  p.315 should open
+! at 234062.00.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "CW CISK" (line 4) and "CWCISK" (line 6) = CWDISK: D with its stem
+!     worn; same TI shape as p.313 line 36 TI,1,CWDCRD,CWRD.  Name used
+!     only here; value from the binary (234217.00).
+!   * "B, C MCP" (line 25) = B,DMCP: D worn, as on p.312 line 17; line 39
+!     prints the same card with the stem whole; 000040.10 = DMCP 32.0.
+!   * ", S D RET" (line 26) = SDRET, landed stand-in value 33.0 (p.105).
+!   * "C NOLOC" (lines 35, 49): both O's print CLOSED at 900 dpi; the last
+!     glyph is a real open C.  "C FOT" (lines 28, 30, 31): O closed, and
+!     C22-6728 prints CFOT.  XRETN is a C22-6728 spelling.
+!   * "X LC ALF" (line 37): the glyph after L is open round; nothing
+!     closes it to O, no deck or C22-6728 names the symbol: written as
+!     the ink, XLCALF.
+!   * "M+1(BU,18)" (line 5): the glyph after "+" has the 1's flag and base
+!     (as the 1 of "18" beside it), not the serif I of "SIC": the op is
+!     M+1 (add one to memory).
+!   * LINE 5'S LAST BYTE PRINTS "BC" AND IS B0: the glyph after B is the
+!     same open round this row prints in its octal fields (234402.CC);
+!     the statement prints no second-operand index, so the low nibble
+!     can only be 0 (brief lesson 6; p.197 / p.313 "AC" = A0 cases).
+!   * "1.C" (line 18), "C.0" (line 1), "C.0($7)" / "C.0($8)" (line 11),
+!     ", C" (line 42): open round glyphs read as digit 0 (000000.00 80 on
+!     line 42, as p.312 line 20).
+!   * octal / hex fields with an open round read 0 ("0D", "80", "C0" =
+!     00, "A0", "F0", "D0", "50", "10").
+!   * names spaced by the drum (CW DISK, C GAMMA, C DELTA, C N, C N PRIM,
+!     C LR, S D RET, C BUFT, C FOT, C FAST, C BETA, C ALPHA, C NOLOC,
+!     X LC ALF, D LOCS, C PRERD, C NARK, C RODE, C NOLOC, CHK PAR, C T)
+!     written closed up.
+!
+! CARD SERIALS.  SB000128 .. SB000168.  p.313 ends at SB000126: NO
+! SB000127 is printed on either page.  Shared serials: lines 2-3
+! (SB000129), 14-16 (SB000140, three lines), 19-20 (SB000143), 22-23
+! (SB000145), 27-28 (SB000149), 29-30 (SB000150), 47-48 (SB000167),
+! 49-50 (SB000168).  Line 17's serial prints a mark over its S.
+!
+! EXTERNALS.  Values for symbols defined on pages not landed come from
+! this page's binary or the b8decks stand-ins (each comment says which).
+
+CWDISK  SYN, (8)234217.0             ! not landed; TI line 6 234217.00 (SX line 4 234217.21)
+CLUK    SYN, (8)234402.0             ! not landed; p.312/313 stand-ins; M+1 line 5 234402.00
+CWRD    SYN, (8)234416.0             ! not landed; p.312/313 stand-ins; TI line 6 234416.02
+YNRBIT  SYN(BU,1), (8)234205.40      ! not landed; CM1111 line 7 / BZBZ line 13 234205.40, BIT-EXACT
+CGAMMA  SYN, (8)234211.40            ! not landed; p.313 stand-in; LV line 10 234211.60, half word only
+CN      SYN, (8)234212.0             ! not landed; p.311 stand-in; LV line 12 234212.02, half word only
+CRDBR   SYN, (8)234164.0             ! not landed; p.312/313 stand-ins; SIC line 14 234164.00
+CREAD   SYN, (8)234157.0             ! not landed; p.312/313 stand-ins; B line 15 234157.10, half word only
+ADSKRD  SYN, (8)234210.0             ! not landed; p.312/313 stand-ins; BB line 16 234210.00
+CDELTA  SYN, (8)234213.40            ! not landed; p.313 stand-in; LV lines 19, 22 234213.42/.44, half word only
+CNPRIM  SYN(BU,24), (8)233674.40      ! not landed; SV line 23 233674.45, half word only
+CLR     SYN, (8)234363.0             ! not landed; p.311 stand-in; TI line 24 234363.00
+DMCP    SYN, 32.0                    ! landed p.108; B lines 25, 39 000040.10
+SDRET   SYN, 33.0                    ! landed p.105 "S D RET SYN,DRET", DRET SYN,33.0; line 26 000041.00
+CFOT    SYN, (8)234220.0             ! not landed; p.311/312 stand-ins; SX line 28 234220.07
+CBETA   SYN, (8)234211.0             ! not landed; p.312 stand-in; +(BU,18) line 32 234211.00
+CALPHA  SYN, (8)234213.0             ! not landed; p.313 stand-in; ST line 33 234213.00
+CBUFF   SYN, (8)234214.0             ! not landed; p.312/313 stand-ins; KF line 34 234214.00
+XLCALF  SYN, (8)234063.0             ! not landed; BAE line 37 234063.36, half word only
+DLOCS   SYN, 3.01                    ! landed p.104 line 15 "D LOC S"; line 40 000003.01
+PROSA   SYN, 1.0                     ! not landed; p.313 form; null op line 41 000001.00, BIT-EXACT
+CPRERD  SYN(BU,32,8), (8)234006.40   ! b8decks p.313 line 34 (SIC label); B line 46 234006.50
+CRODE   SYN(BU,64,8), (8)233743.40   ! b8decks p.312 line 30 (L label); B line 48 CRODE+3.32 = 233747.10
+CHEKT   SYN, (8)234130.0             ! not landed; p.313 stand-in; SIC line 49 234130.00
+CHKPAR  SYN, (8)234102.0             ! not landed; p.313 stand-in; B line 50 234102.10, half word only
+
+        SLC, (8)234021.40
+        V-I,9,0.0                                            ! line  1  (printed "C.0")
+        LC,8,$9                                              ! line  2
+        LR,8,$Z                                              ! line  3  -CLEAR RF $8
+        SX,8,CWDISK                                          ! line  4  (printed "CW CISK", D worn)
+        M+1(BU,18),CLUK                                      ! line  5
+        TI,1,CWDISK,CWRD                                     ! line  6  (printed "CWCISK", D worn)
+        CM1111,YNRBIT                                        ! line  7
+        LC,6,$6                                              ! line  8
+        BXCZ,$+2.0                                           ! line  9
+CT      LV,8,CGAMMA                                          ! line 10
+        T,$6,0.0($7),0.0($8)                                 ! line 11
+        LV,1,CN                                              ! line 12
+        BZBZ,YNRBIT,$+3.0                                    ! line 13
+        SIC,CRDBR                                            ! line 14
+        B,CREAD                                              ! line 15
+        BB,ADSKRD,$                                          ! line 16
+        KVI,1,0                                              ! line 17
+        BXE,XRETN-1.0                                        ! line 18  (printed "1.C")
+        LV,1,CDELTA                                          ! line 19
+        KV,1,CN                                              ! line 20
+        BXE,XRETN                                            ! line 21
+        LV,2,CDELTA                                          ! line 22
+        SV,2,CNPRIM                                          ! line 23
+XRETN   TI,11,CLR,$0                                         ! line 24
+        B,DMCP                                               ! line 25  (printed "C MCP", D worn)
+        ,SDRET                                               ! line 26
+CBUFT   LX,3,0.0($5)                                         ! line 27
+        SX,3,CFOT                                            ! line 28
+        LX,3,1.0($5)                                         ! line 29
+        SX,3,CFOT+1.0                                        ! line 30
+CFAST   L(BU,21),CFOT+1.0,-21                                ! line 31
+        +(BU,18),CBETA,-21                                   ! line 32
+        ST(BU,21),CALPHA,-21                                 ! line 33
+        KF(BU,12),CBUFF,-12                                  ! line 34
+        BAE,CNOLOC                                           ! line 35
+        KFI(BU,9),0,-21                                      ! line 36
+        BAE,XLCALF                                           ! line 37
+        ST(BU,12),$+2.38,-12                                 ! line 38
+        B,DMCP                                               ! line 39
+        ,DLOCS                                               ! line 40
+        ,PROSA                                               ! line 41
+        ,0                                                   ! line 42  (printed open round "C")
+        SF(BU,12),CBUFF,-12                                  ! line 43
+        ST(BU,12),CLUK+.06,-12                               ! line 44
+        LVI,1,3                                              ! line 45
+        B,CPRERD                                             ! line 46  (printed "C PRERC", D worn)
+CNARK   LVI,6,510.0                                          ! line 47
+        B,CRODE+3.32                                         ! line 48
+CNOLOC  SIC,CHEKT                                            ! line 49
+        B,CHKPAR                                             ! line 50
+
+!SYM CT     234027.40
+!SYM XRETN  234040.00
+!SYM CBUFT  234042.00
+!SYM CFAST  234044.00
+!SYM CNARK  234060.00
+!SYM CNOLOC 234061.00
+!CHECK 234021.40 | 000000.23 0D | line 1 V-I,9,0.0
+!CHECK 234022.00 | 000031.20 50 | line 2 LC,8,$9
+!CHECK 234022.40 | 000000.20 70 | line 3 LR,8,$Z
+!CHECK 234023.00 | 234217.21 10 | line 4 SX,8,CW DISK
+!CHECK 234023.40 | 234402.00 80 022000.22 B0 | line 5 M+1(BU,18),CLUK (last byte prints "BC")
+!CHECK 234024.40 | 234217.00 80 234416.02 A0 | line 6 TI,1,CWDISK,CWRD
+!CHECK 234025.40 | 234205.40 80 001000.36 F0 | line 7 CM1111,YNRBIT
+!CHECK 234026.40 | 000026.14 50 | line 8 LC,6,$6
+!CHECK 234027.00 | 234031.30 42 | line 9 BXCZ,$+2.0
+!CHECK 234027.40 | 234211.60 30 | line 10 C T LV,8,C GAMMA
+!CHECK 234030.00 | 000000.00 87 000000.14 28 | line 11 T,$6,0.0($7),0.0($8)
+!CHECK 234031.00 | 234212.02 30 | line 12 LV,1,CN
+!CHECK 234031.40 | 234205.40 80 234034.74 04 | line 13 BZBZ,YNRBIT,$+3.0
+!CHECK 234032.40 | 234164.00 80 | line 14 SIC,CRDBR
+!CHECK 234033.00 | 234157.10 00 | line 15 B,CREAD
+!CHECK 234033.40 | 234210.00 80 234033.74 02 | line 16 BB,ADSKRD,$
+!CHECK 234034.40 | 000000.03 04 | line 17 KVI,1,0
+!CHECK 234035.00 | 234037.32 C2 | line 18 BXE,X RETN-1.0
+!CHECK 234035.40 | 234213.42 30 | line 19 LV,1,C DELTA
+!CHECK 234036.00 | 234212.02 90 | line 20 KV,1,C N
+!CHECK 234036.40 | 234040.32 C2 | line 21 BXE,X RETN
+!CHECK 234037.00 | 234213.44 30 | line 22 LV,2,C DELTA
+!CHECK 234037.40 | 233674.45 30 | line 23 SV,2,C N PRIM
+!CHECK 234040.00 | 234363.00 80 000020.26 A0 | line 24 XRETN TI,11,C LR,$0
+!CHECK 234041.00 | 000040.10 00 | line 25 B,D MCP (printed "C MCP")
+!CHECK 234041.40 | 000041.00 80 | line 26 ,S D RET
+!CHECK 234042.00 | 000000.06 15 | line 27 C BUFT LX,3,0.0($5)
+!CHECK 234042.40 | 234220.07 10 | line 28 SX,3,C FOT
+!CHECK 234043.00 | 000001.06 15 | line 29 LX,3,1.0($5)
+!CHECK 234043.40 | 234221.07 10 | line 30 SX,3,C FOT+1.0
+!CHECK 234044.00 | 234221.00 80 025065.60 50 | line 31 C FAST L(BU,21),C FOT+1.0,-21
+!CHECK 234045.00 | 234211.00 80 022065.60 10 | line 32 +(BU,18),C BETA,-21
+!CHECK 234046.00 | 234213.00 80 025065.60 D0 | line 33 ST(BU,21),C ALPHA,-21
+!CHECK 234047.00 | 234214.00 80 014072.23 10 | line 34 KF(BU,12),CBUFF,-12
+!CHECK 234050.00 | 234061.36 C2 | line 35 BAE,C NOLOC
+!CHECK 234050.40 | 000000.00 80 411065.63 10 | line 36 KFI(BU,9),0,-21
+!CHECK 234051.40 | 234063.36 C2 | line 37 BAE,X LC ALF
+!CHECK 234052.00 | 234054.46 80 014072.20 D0 | line 38 ST(BU,12),$+2.38,-12
+!CHECK 234053.00 | 000040.10 00 | line 39 B,D MCP
+!CHECK 234053.40 | 000003.01 80 | line 40 ,D LOCS
+!CHECK 234054.00 | 000001.00 80 | line 41 ,PROSA
+!CHECK 234054.40 | 000000.00 80 | line 42 ,0
+!CHECK 234055.00 | 234214.00 80 014072.12 F0 | line 43 SF(BU,12),CBUFF,-12
+!CHECK 234056.00 | 234402.06 80 014072.20 D0 | line 44 ST(BU,12),CLUK+.06,-12
+!CHECK 234057.00 | 000001.43 01 | line 45 LVI,1,3
+!CHECK 234057.40 | 234006.50 00 | line 46 B,C PRERD
+!CHECK 234060.00 | 000776.15 01 | line 47 C NARK LVI,6,510.0
+!CHECK 234060.40 | 233747.10 00 | line 48 B,C RODE+3.32
+!CHECK 234061.00 | 234130.00 80 | line 49 C NOLOC SIC,CHEKT
+!CHECK 234061.40 | 234102.10 00 | line 50 B,CHK PAR

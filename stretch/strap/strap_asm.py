@@ -2838,6 +2838,24 @@ def resolve_syns(syn_stmts, symtab, final):
                     and re.fullmatch(r"[A-Za-z][A-Za-z0-9 ]*", body)
                     and body.upper() in symtab.sym_dds):
                 symtab.sym_dds[up] = symtab.sym_dds[body.upper()]
+            # >>> AND A SYN TO AN EXPRESSION INHERITS ITS FINAL SYMBOL'S.
+            # <<<  The same exact substitution, applied to C22-6531
+            # printed p.11's rule that an expression takes the data
+            # description of its final symbol.  MCP printed p.291 is
+            # "A FPCI SYN,ALL.9" with ALL a DRZ(N), and printed p.327
+            # line 6 prints "CM0000,AFPCI" as 232543.11 80 000400.00 F0:
+            # length 64, byte size 4, the (N)-connective form of p.267
+            # line 1 -- ALL's dds, carried through the SYN.  Without
+            # this, AFPCI had none and the row assembled 000000.00 F0.
+            elif (body and hasattr(symtab, 'sym_dds')
+                    and not re.fullmatch(r"[A-Za-z][A-Za-z0-9 ]*", body)):
+                try:
+                    _names = [v.upper() for _s, k, v in tokenize_expr(body, stmt.lineno)
+                              if k in ('sym', 'bitsym', 'wordsym')]
+                except AssemblerError:
+                    _names = []
+                if _names and _names[-1] in symtab.sym_dds:
+                    symtab.sym_dds[up] = symtab.sym_dds[_names[-1]]
             # INTEGER OR BIT ADDRESS -- see SymTab.  A SYN is an
             # INTEGER when every term of its operand is one: a plain
             # number, or another symbol already classified as one.  A
@@ -3102,6 +3120,25 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
     # Pass 2: evaluate + emit.
     image = Image()
     image.skips = slc_skips
+    end_pc = None
+    for stmt in statements:
+        emit_statement(stmt, symtab, image)
+        apply_parenthetical_entries(stmt, symtab, image)
+        if stmt.op.upper() == 'END' and stmt.fields and stmt.fields[0].strip():
+            target_bits = eval_expr(stmt.fields[0], symtab, stmt.addr, lineno=stmt.lineno)
+            if target_bits % 32 != 0:
+                raise AssemblerError("END target is not half-word aligned", stmt.lineno)
+            end_pc = target_bits // 32
+    # >>> THE CNOP FILL GOES IN AFTER THE STATEMENTS, NOT BEFORE. <<<
+    # It used to be laid down first, which made it "already written"
+    # to any DRZ earlier in the source.  MCP printed p.319 line 14 is
+    # "Y MPBUF DRZ(BU),1088 -RESERVE ROOM FOR OVERLAID AREA" and p.320
+    # line 10 is "SLC,YMPBUF": the loader is assembled INTO that
+    # reservation, as p.116 overlays its own DRZ (reserve_zero()).
+    # p.321 line 42's CNOP gap at 234512.40 lies inside it, and the
+    # pre-filled NOP made the DRZ refuse the whole merged image.  In
+    # source order the reservation comes first and the code over it;
+    # filling the gaps last keeps that order.
     for gap_start, gap_size in gaps:
         # A CNOP's gap need not start on a half-word boundary, because
         # the statement before it need not have ended on one.  MCP's
@@ -3133,15 +3170,6 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
         for off in range(0, gap_size, HALF):
             image.deposit_half((gap_start + off) // HALF, enc_branch_or_misc(0, UNCOND_BRANCH_CODES['NOP'], False, 0))
 
-    end_pc = None
-    for stmt in statements:
-        emit_statement(stmt, symtab, image)
-        apply_parenthetical_entries(stmt, symtab, image)
-        if stmt.op.upper() == 'END' and stmt.fields and stmt.fields[0].strip():
-            target_bits = eval_expr(stmt.fields[0], symtab, stmt.addr, lineno=stmt.lineno)
-            if target_bits % 32 != 0:
-                raise AssemblerError("END target is not half-word aligned", stmt.lineno)
-            end_pc = target_bits // 32
 
     return AssembledProgram(image.words, symtab, end_pc, image.reservations,
                             image.skips)

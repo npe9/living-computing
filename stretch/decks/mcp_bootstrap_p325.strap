@@ -1,0 +1,183 @@
+! mcp_bootstrap_p325.strap -- MCP printed page 325: the LOADER's
+! relocating binary-card loop (A RBCD1 .. A RBCD7), relocation by the
+! bit string A RELOB / APT1 / APT3, to the normal exit B,A RNORM.
+!
+! docs/MCP_Mar63_250-445.pdf (volume 2) PDF p.76, read at 400 dpi,
+! doubtful glyphs re-read in 400 dpi crops.  Header, READ: "TIME CLOCK
+! 00054041  PUNID 22LOADER  CARD ID TA000249  DIST. OF 3/01  3/01
+! PAGE NUMBER 325"; the heading row's LOCATION field is 234676, line
+! 1's word.  PUNID is 22LOADER (not 11D11MCP).
+!
+! THE PAGE.  56 lines; every line number prints a "*" after it.  No
+! remark cards, no TAIL card.  Located rows run contiguous from
+! 234676.40 (line 1) to 234750.40 (line 56, B, a half word; next
+! location 234751.00 = A RBCD8, which line 49 branches to, so p.326
+! should open there).  Line 42 (CNOP,) prints no location and compiles
+! nothing: line 41's BZB is a full word ending on a word boundary.
+! "*" after the LOCATION on lines 4, 19, 35 and 50.
+! JOIN.  p.324 is not landed or staged; contiguity with it is NOT
+! established here.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * the ARBCDn family prints D worn to C throughout (ARBCC3, ARBCC5,
+!     ARBCC6, ARBCCB, ARBCCC to the eye); every one is D by the
+!     binaries: line 3 BXE,ARBCD5 = 234734.32 (line 41), line 6
+!     ARBCD3.32 = 234707.34 (line 12), line 7 ARBCDB.32 = 234727.21
+!     (line 34), line 9 ARBCDC = 234712.74 (line 18), line 45 ARBCD6 =
+!     234746.74 (line 54), line 50 ARBCD7.35 = 234735.43 (line 43).
+!   * line 2's label and line 15's operand are ARBCD1 with the DIGIT 1,
+!     not p.291's ARBCDI (SYN,ALL.10 = 232543.12): B,ARBCD1 prints
+!     234677.10, line 2's own location.  Two distinct symbols.
+!   * line 10/16 "ARBCDR": BB line 10 prints 234711.34 = line 16.
+!   * line 41 "ARNORM-" and line 55 "ANUBIT-": the trailing "-" is the
+!     COMMENT MARK (C28-6129 PDF p.5), written without it.
+!   * line 32 "V+,$6;$L": the second separator is a comma with a
+!     smudge; binary 000010.14 B0 is V+,$6,$L.
+!   * line 55 "CMOOOO" = CM0000 (connective digits).
+!   * octal / hex fields with an open round read 0 throughout.
+!
+! EXTERNALS.  p.291 (landed, same body assembly) defines ALL, AFPCI,
+! ARBCRI, ANUBIT, APT1, APT3, ARELOB; values from its !SYM.  KSILO is
+! landed p.171's DR(BU,64) at 220451.00 (same MCP address: LV line 23
+! KSILO+9. = 220462.16).  AERR4, ARNORM, ARBCD8, ARBCDA are not landed
+! and come from this page's binary.
+!
+! CARD SERIALS.  TA000249 .. TA000304, one per line, none shared or
+! skipped.
+
+ALL     SYN(N), (8)232543.0          ! p.291 line 9 DRZ(N),1 at 232543.00 (the ALL.n SYNs below are p.291's own form)
+AFPCI   SYN,ALL.9                    ! landed p.291 line 17 SYN,ALL.9; BZB line 18 232543.11
+ARBCRI  SYN,ALL.11                   ! landed p.291 line 19 SYN,ALL.11; CM line 21 232543.13
+ANUBIT  SYN,ALL.15                   ! landed p.291 line 20 SYN,ALL.15; BZB line 41 232543.17
+APT1    SYN(B,25,1), (8)232544.0     ! landed p.291 line 21 VF,.1; V+ line 5 232544.14
+APT3    SYN(B,25,1), (8)232544.40    ! landed p.291 line 22 VF,.3; V+ line 12 232544.54
+ARELOB  SYN(BU,7), (8)232550.65      ! landed p.291 line 31 DRZ(BU,7),1; L line 19 232550.65
+KSILO   SYN(BU,64), (8)220451.0      ! landed p.171 DR(BU,64),(K QUANT); LV line 23 KSILO+9. 220462.16
+AERR4   SYN, (8)235216.40            ! not landed; BZB line 18 2nd half 235216.74, half word only
+ARNORM  SYN, (8)235001.40            ! not landed; BZB line 41 235001.74, B line 56 235001.50, half word only
+ARBCD8  SYN, (8)234751.0             ! not landed (p.326?); BB line 49 234751.34, half word only
+ARBCDA  SYN, (8)234753.0             ! not landed (p.326?); LVI line 46 234753.21, half word only
+
+        SLC, (8)234676.40
+        V+,4,$L                                              ! line  1
+ARBCD1  KCI,$4,0                                             ! line  2
+        BXE,ARBCD5                                           ! line  3  -NO. OF FULL WDS. TO BE LOADED
+        L(BU,32)(V+I),.32($4)                                ! line  4  -PICK UP HLF. WD. INSTR.
+        V+,$6,APT1                                           ! line  5  -ADV. RELOC. BIT CTR. BY 1 BIT
+        BZB,-.1($6),ARBCD3.32                                ! line  6  -BRANCH IF NO RELOCATION
+        LVI,$8,ARBCDB.32                                     ! line  7
+        SVA,$8,ARBCDB                                        ! line  8
+        BB,.2($6),ARBCDC                                     ! line  9  -RELOCATE ACCORDING TO COMMON
+        BB,.1($6),ARBCDR                                     ! line 10  -RELOCATE RIGHTMOST 18 BITS
+        +(BU,18),$2,14                                       ! line 11  -RELOCATE LEFTMOST 18 BITS
+ARBCD3  V+,$6,APT3                                           ! line 12
+        ST(BU,32)(V+I),.32($1)                               ! line 13
+        C-I,$4,1                                             ! line 14
+        B,ARBCD1                                             ! line 15
+ARBCDR  +(BU,18),$2                                          ! line 16  -RELOCATE RIGHTMOST 18 BITS
+        B,ARBCD3                                             ! line 17
+ARBCDC  BZB,AFPCI,AERR4                                      ! line 18  -NOT BSS- TRIED COMMON RELOC.
+        L(BU,7),ARELOB,-24                                   ! line 19  -PICK UP = OF RELOCATION BITS
+        BZB,.1($6),$+2.                                      ! line 20
+        CM1111(BU,1),ARBCRI                                  ! line 21  -RELOCATE RIGHTMOST
+        BB,.3($6),$+2.                                       ! line 22
+        LV,$7,KSILO+9.                                       ! line 23  -RELOC. ACCORD. TO BLANK COMMON
+        B,ARBCD2.32                                          ! line 24
+        SF(BU,6),$+2.03,-24                                  ! line 25
+        Z,$7                                                 ! line 26
+        LF(BU),.4($6),5                                      ! line 27
+        SF(BU,24),$7                                         ! line 28
+        V+,$7,KSILO+9.32                                     ! line 29
+        V+I,$7,2.                                            ! line 30
+        LV,$7,0($7)                                          ! line 31
+ARBCD2  V+,$6,$L                                             ! line 32  -ADVANCE RELOC. BITS CTR.
+        V+,$6,APT1                                           ! line 33
+ARBCDB  B,$                                                  ! line 34
+        L(BU,32),-.32($4)                                    ! line 35
+        BBZ,ARBCRI,ARBCRR                                    ! line 36
+        +(BU,18),$7,14                                       ! line 37
+        B,ARBCD3                                             ! line 38
+ARBCRR  +(BU,18),$7                                          ! line 39
+        B,ARBCD3                                             ! line 40
+ARBCD5  BZB,ANUBIT,ARNORM                                    ! line 41  (printed "ARNORM-": comment mark)
+        CNOP,                                                ! line 42
+ARBCD7  LF(BU),0($4)                                         ! line 43
+        V+,6,APT1                                            ! line 44
+        BZB,-.1($6),ARBCD6                                   ! line 45  -NO RELOCATION
+        LVI,$8,ARBCDA                                        ! line 46
+        SVA,$8,ARBCDB                                        ! line 47
+        BB,.2($6),ARBCDC                                     ! line 48  -RELOCATE ACCORD. TO COMMON
+        BB,.1($6),ARBCD8                                     ! line 49  -RELOCATE RIGHTMOST
+        LF(BU,6),ARBCD7.35,-6                                ! line 50  -RELOCATE LEFTMOST
+        -I(BU,6),(8)22,-6                                    ! line 51
+        SF(BU,6),$+1.45,-6                                   ! line 52
+        +(BU,18),$2,0                                        ! line 53
+ARBCD6  SF(BU)(V+I),($1)                                     ! line 54
+        CM0000(BU,1),ANUBIT                                  ! line 55  (printed "ANUBIT-": comment mark; "CMOOOO")
+        B,ARNORM                                             ! line 56
+
+!SYM ARBCD1 234677.00
+!SYM ARBCD3 234706.40
+!SYM ARBCDR 234711.00
+!SYM ARBCDC 234712.40
+!SYM ARBCD2 234725.40
+!SYM ARBCDB 234726.40
+!SYM ARBCRR 234732.40
+!SYM ARBCD5 234734.00
+!SYM ARBCD7 234735.00
+!SYM ARBCD6 234746.40
+!CHECK 234676.40 | 000010.10 B0 | line 1 V+,4,$L
+!CHECK 234677.00 | 000000.11 0A | line 2 A RBCD1 KCI,$4,0
+!CHECK 234677.40 | 234734.32 C2 | line 3 BXE,A RBCD5
+!CHECK 234700.00 | 000000.40 84 140000.20 50 | line 4 L(BU,32)(V+I),.32($4)
+!CHECK 234701.00 | 232544.14 B0 | line 5 V+,$6,APT1
+!CHECK 234701.40 | 777777.77 86 234707.34 00 | line 6 BZB,-.1($6),A RBCD3.32
+!CHECK 234702.40 | 234727.21 01 | line 7 LVI,$8,A RBCDB.32
+!CHECK 234703.00 | 234726.61 D0 | line 8 SVA,$8,A RBCDB
+!CHECK 234703.40 | 000000.02 86 234712.74 02 | line 9 BB,.2($6),A RBCDC
+!CHECK 234704.40 | 000000.01 86 234711.34 02 | line 10 BB,.1($6),A RBCDR
+!CHECK 234705.40 | 000022.00 80 022007.20 10 | line 11 +(BU,18),$2,14
+!CHECK 234706.40 | 232544.54 B0 | line 12 A RBCD3 V+,$6,APT3
+!CHECK 234707.00 | 000000.40 81 140000.20 D0 | line 13 ST(BU,32)(V+I),.32($1)
+!CHECK 234710.00 | 000001.11 08 | line 14 C-I,$4,1
+!CHECK 234710.40 | 234677.10 00 | line 15 B,A RBCD1
+!CHECK 234711.00 | 000022.00 80 022000.20 10 | line 16 A RBCDR +(BU,18),$2
+!CHECK 234712.00 | 234706.50 00 | line 17 B,A RBCD3
+!CHECK 234712.40 | 232543.11 80 235216.74 00 | line 18 A RBCDC BZB,A FPCI,A ERR4
+!CHECK 234713.40 | 232550.65 80 007064.20 50 | line 19 L(BU,7),A RELOB,-24
+!CHECK 234714.40 | 000000.01 86 234716.74 00 | line 20 BZB,.1($6),$+2.
+!CHECK 234715.40 | 232543.13 80 001000.36 F0 | line 21 CM1111(BU,1),A RBCRI
+!CHECK 234716.40 | 000000.03 86 234720.74 02 | line 22 BB,.3($6),$+2.
+!CHECK 234717.40 | 220462.16 30 | line 23 LV,$7,KSILO+9.
+!CHECK 234720.00 | 234726.10 00 | line 24 B,A RBCD2.32
+!CHECK 234720.40 | 234722.43 80 006064.12 F0 | line 25 SF(BU,6),$+2.03,-24
+!CHECK 234721.40 | 000027.22 00 | line 26 Z,$7
+!CHECK 234722.00 | 000000.04 86 000002.46 70 | line 27 LF(BU),.4($6),5
+!CHECK 234723.00 | 000027.00 80 030000.12 F0 | line 28 SF(BU,24),$7
+!CHECK 234724.00 | 220462.56 B0 | line 29 V+,$7,KSILO+9.32
+!CHECK 234724.40 | 000002.17 05 | line 30 V+I,$7,2.
+!CHECK 234725.00 | 000000.16 37 | line 31 LV,$7,0($7)
+!CHECK 234725.40 | 000010.14 B0 | line 32 A RBCD2 V+,$6,$L
+!CHECK 234726.00 | 232544.14 B0 | line 33 V+,$6,APT1
+!CHECK 234726.40 | 234726.50 00 | line 34 A RBCDB B,$
+!CHECK 234727.00 | 777777.40 84 040000.20 50 | line 35 L(BU,32),-.32($4)
+!CHECK 234730.00 | 232543.13 80 234732.74 06 | line 36 BBZ,A RBCRI,A RBCRR
+!CHECK 234731.00 | 000027.00 80 022007.20 10 | line 37 +(BU,18),$7,14
+!CHECK 234732.00 | 234706.50 00 | line 38 B,A RBCD3
+!CHECK 234732.40 | 000027.00 80 022000.20 10 | line 39 A RBCRR +(BU,18),$7
+!CHECK 234733.40 | 234706.50 00 | line 40 B,A RBCD3
+!CHECK 234734.00 | 232543.17 80 235001.74 00 | line 41 A RBCD5 BZB,A NUBIT,A RNORM
+!CHECK 234735.00 | 000000.00 84 000000.06 70 | line 43 A RBCD7 LF(BU),0($4)
+!CHECK 234736.00 | 232544.14 B0 | line 44 V+,6,APT1
+!CHECK 234736.40 | 777777.77 86 234746.74 00 | line 45 BZB,-.1($6),A RBCD6
+!CHECK 234737.40 | 234753.21 01 | line 46 LVI,$8,A RBCDA
+!CHECK 234740.00 | 234726.61 D0 | line 47 SVA,$8,A RBCDB
+!CHECK 234740.40 | 000000.02 86 234712.74 02 | line 48 BB,.2($6),A RBCDC
+!CHECK 234741.40 | 000000.01 86 234751.34 02 | line 49 BB,.1($6),A RBCD8
+!CHECK 234742.40 | 234735.43 80 006075.06 70 | line 50 LF(BU,6),A RBCD7.35,-6
+!CHECK 234743.40 | 220000.00 80 406075.30 10 | line 51 -I(BU,6),(8)22,-6
+!CHECK 234744.40 | 234746.15 80 006075.12 F0 | line 52 SF(BU,6),$+1.45,-6
+!CHECK 234745.40 | 000022.00 80 022000.20 10 | line 53 +(BU,18),$2,0
+!CHECK 234746.40 | 000000.00 81 100000.12 F0 | line 54 A RBCD6 SF(BU)(V+I),($1)
+!CHECK 234747.40 | 232543.17 80 001000.00 F0 | line 55 CM0000(BU,1),A NUBIT
+!CHECK 234750.40 | 235001.50 00 | line 56 B,A RNORM

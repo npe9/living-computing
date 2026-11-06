@@ -1,0 +1,181 @@
+! mcp_bootstrap_p309.strap -- MCP printed page 309: the tail of the
+! commentator's console write (M ASTOR .. B,J EXITD), M TRY, the EPGK
+! and UK fixups (M CHECK, M CHK 1), and the miscellaneous commentator
+! symbols: control words, stack pointers, J DEXRG, J STACK, the
+! JWAIT..JIOBSY flag bits and the class-1/2, channel and temporary
+! index SYNs.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.60, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID SA000363  DIST. OF 3/01
+! 3/01  PAGE NUMBER 309" (round glyphs in numeric fields read 0).  The
+! heading row's LOCATION field is 233431, line 1's word.
+!
+! THE PAGE.  50 lines, then blank paper.  Every line number prints a
+! "*" after it.
+!   lines  1-16  code, contiguous 233431.40 .. 233444.00 (B,$ console
+!                down; next 233444.40).
+!   lines 17-19  blank comment, "*****EPGK AND UK FIXUPS FOR
+!                COMMENTATOR *****" remark, blank comment.
+!   lines 20-28  M CHECK .. B,$, contiguous 233444.40 .. 233450.40.
+!   lines 29-31  blank, "***** MISCELLANEOUS COMMENTATOR SYMBOLS *****",
+!                blank.
+!   lines 32-46  XW, VF, DR, SYN, DD data, contiguous 233451.00 ..
+!                233666.04 (J DEXRG DR(N),(16) prints 000020; J STACK
+!                DR(N),(JSIZS) prints 000170 = 120 words: 233476 +
+!                0o170 = 233666, J WAIT's word).  Line 40 SLITES
+!                SYN,PONOUT prints its VALUE 232630.00+ in LOCATION.
+!   lines 47-50  SYN,$1..$4, LOCATION prints 000021.00+..000024.00+,
+!                "+00000000  BU,100,10".
+! Asterisks after the LOCATION on lines 8, 34, 39.
+!
+! JOIN.  p.308 and p.310 have no scratch decks; contiguity with either
+! is NOT established here.  233431.40 opens the page (a half word).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "CMOCOO" (lines 1, 4-7, 11) is the op CM0000 (connect to memory,
+!     all-zeros connective) as landed decks spell it.
+!   * second-half last bytes printed "FC" on lines 4 and 11 (round
+!     glyph) are F0, as lines 5-7 print; the statement assembles F0.
+!   * "JICBSY" (lines 4, 46) = JIOBSY, landed spelling (p.184).
+!   * "B,JEXITC" (line 14): D stem worn; JEXITD (C22-6728 names it).
+!   * "XW,C" (lines 32, 34) = XW,0 (binary prints all zeros).
+!   * line 4 remark "$CCMM" = $COMM (worn).
+!   * "JSCWD1"/"JSCWD2", "M CCWD", "M CCOPY", "MASTOR", "JDEXRG": open
+!     rounds read as printed; no landed or C22-6728 spelling to compare
+!     (MCCOPY is used only, not defined, here).
+!
+! LINE 16's BYTE IS 00, BY THE HEX-FIELD RULE -- A ONE-GLYPH CALL.
+! The statement prints "B,$" (900 dpi: B, comma, $; nothing else in the
+! field) and the binary prints "233444.10 C0" with the first hex glyph
+! OPEN, like line 9's real C0 (BZXE) and unlike lines 14 and 28's
+! closed "00".  But the same row's LOCATION prints its zeros open too
+! ("233444.CC"), so on this drum an open round does not decide C; and
+! no B form assembles C0.  Written 00 as pp.297, 302 and 311 write their
+! open-glyph B and Z bytes.  The alternative (the binary is BZUSA,$, a
+! wait loop on USA, and the statement misprints) would need the listing
+! to disagree with itself; it is recorded, not adopted.  RE-CHECK on a
+! better scan if one is found (docs/NEXT.md).
+
+! CARD SERIALS.  SA000363 .. SA000412, line N prints SA0000(362+N);
+! none skipped.
+
+PONOUT  SYN(BU,64), (8)232630.0      ! printed p.293 line 42 DRZ(BU,64),(13); line 40 SLITES prints 232630.00+
+SCHOP   SYN(BU,1), 0.26              ! p.99          -CHAN OPERATING
+SSETUP  SYN(BU,1), 0.31              ! p.99  line 25 -PSEUDO-OP SET-UP
+SWR     SYN(BU,1), 0.58              ! p.99  line 46 -WRITE, OPERATION STATUS
+MXCST   SYN,$8                       ! line 5 index nibble 8 (88), this page's binary only
+MXUST   SYN,$9                       ! lines 6-7 index nibble 9 (89), this page's binary only
+MCTL    SYN(BU,32,8), (8)233176.0    ! p.302 line 48 "M CTL LVI" (finding aid); BZXE line 9, half word only
+JEXITD  SYN(BU,32,8), (8)233205.40   ! B line 14 prints 233205.50 -- BIT-EXACT, this page's binary only
+MCCOPY  SYN(BU,32,8), (8)233423.0    ! CB line 15, half word only, this page's binary only
+MCHKB   SYN, (8)233426.40            ! SVA line 23 prints 233426.51 -- BIT-EXACT, this page's binary only
+MCHKR   SYN(BU,32,8), (8)233430.0    ! BZXCZ line 27, half word only, this page's binary only
+JSIZS   SYN, 120                     ! line 41 DR(N),(JSIZS) prints count 000170 = 120, this page's binary only
+
+        SLC, (8)233431.40
+        CM0000(BU,7),JXTEM+.18                               ! line  1
+        V-I,JXTEM,2.0                                        ! line  2  -REDUCE CW BY 2.0
+        SV,JXTEM,JSTWP                                       ! line  3  -RESET WRITE POINTER
+MASTOR  CM0000(BU,1),JIOBSY                                  ! line  4  -MAKE $COMM NOT BUSY (printed "$CCMM")
+        CM0000(BU,1),SCHOP(MXCST)                            ! line  5
+        CM0000(BU,1),SSETUP(MXUST)                           ! line  6
+        CM0000(BU,1),SWR(MXUST)                              ! line  7
+        KV,JXTEM,JSTKP                                       ! line  8  -IS STACK EMPTY
+        BZXE,MCTL                                            ! line  9  -NO, IF BRANCH
+        LVI,JXTEM,JSTACK                                     ! line 10
+        CM0000(BU,1),JWAIT                                   ! line 11
+        SV,JXTEM,JSTKP                                       ! line 12  -RESET STACK
+        SV,JXTEM,JSTWP                                       ! line 13  -AND WRITE POINTERS
+        B,JEXITD                                             ! line 14  -EXIT
+MTRY    CB,JXTEM,MCCOPY                                      ! line 15
+        B,$                                                  ! line 16  -CONSOLE DOWN
+! -                                                            line 17
+! -*****EPGK AND UK FIXUPS FOR COMMENTATOR *****               line 18
+! -                                                            line 19
+MCHECK  LCI,JXTEM,10                                         ! line 20  -RETRY 10 TIMES
+        SC,JXTEM,MCTR                                        ! line 21
+        LVI,JXTEM,MCHK1                                      ! line 22  -SET NEW FIXUP ENTRY
+        SVA,JXTEM,MCHKB                                      ! line 23  -FOR COUNTING
+MCHK1   LC,JXTEM,MCTR                                        ! line 24
+        C-I,JXTEM,1.0                                        ! line 25
+        SC,JXTEM,MCTR                                        ! line 26
+        BZXCZ,MCHKR                                          ! line 27
+        B,$                                                  ! line 28
+! -                                                            line 29
+! -***** MISCELLANEOUS COMMENTATOR SYMBOLS *****               line 30
+! -                                                            line 31
+MCCWD   XW,0                                                 ! line 32
+JSCWD1  XW,SLITES,3.0,JSCWD2                                 ! line 33  -LIGHTS CONTROL WORD
+JSCWD2  XW,0                                                 ! line 34  -2ND CONTROL WORD
+JSTKP   VF,JSTACK                                            ! line 35  -STACK POINTER
+JSTWP   VF,JSTACK                                            ! line 36  -WRITE POINTER
+JMESM   VF,10.24                                             ! line 37  -MAX MESSAGE SIZE
+MCTR    VF,0                                                 ! line 38  -COUNTER FOR UK AND EPGK ON COMMENTATOR
+JDEXRG  DR(N),(16)                                           ! line 39  -SAVE INDEX REGS.
+SLITES  SYN,PONOUT                                           ! line 40  -CONSOLE DISPLAY LITES
+JSTACK  DR(N),(JSIZS)                                        ! line 41  -STACK
+JWAIT   DD(BU,1),0                                           ! line 42
+JIF     DD(BU,1),0                                           ! line 43
+JRECEP  DD(BU,1),0                                           ! line 44
+JSTKBT  DD(BU,1),0                                           ! line 45
+JIOBSY  DD(BU,1),0                                           ! line 46  -I/O BUSY IF EQUAL TO 0
+JXIN1   SYN,$1                                               ! line 47  -CLASS 1 SUBROUTINE INDEX
+JXIN2   SYN,$2                                               ! line 48  -CLASS 2 SUBROUTINE INDEX
+JXCNSL  SYN,$3                                               ! line 49  -INDEX CONTAINING CHAN. NO.
+JXTEM   SYN,$4                                               ! line 50  -TEMPORARY INDEX
+
+!SYM MASTOR 233433.40
+!SYM MTRY   233443.40
+!SYM MCHECK 233444.40
+!SYM MCHK1  233446.40
+!SYM MCCWD  233451.00
+!SYM JSCWD1 233452.00
+!SYM JSCWD2 233453.00
+!SYM JSTKP  233454.00
+!SYM JSTWP  233454.40
+!SYM JMESM  233455.00
+!SYM MCTR   233455.40
+!SYM JDEXRG 233456.00
+!SYM SLITES 232630.00
+!SYM JSTACK 233476.00
+!SYM JWAIT  233666.00
+!SYM JIF    233666.01
+!SYM JRECEP 233666.02
+!SYM JSTKBT 233666.03
+!SYM JIOBSY 233666.04
+!SYM JXIN1  000021.00
+!SYM JXIN2  000022.00
+!SYM JXCNSL 000023.00
+!SYM JXTEM  000024.00
+!CHECK 233431.40 | 000024.22 80 007000.00 F0 | line 1 CM0000(BU,7),JXTEM+.18
+!CHECK 233432.40 | 000002.11 0D | line 2 V-I,JXTEM,2.0
+!CHECK 233433.00 | 233454.51 30 | line 3 SV,JXTEM,JSTWP
+!CHECK 233433.40 | 233666.04 80 001000.00 F0 | line 4 M ASTOR CM0000(BU,1),JIOBSY (printed "FC")
+!CHECK 233434.40 | 000000.32 88 001000.00 F0 | line 5 CM0000(BU,1),SCHOP(MXCST)
+!CHECK 233435.40 | 000000.37 89 001000.00 F0 | line 6 CM0000(BU,1),SSETUP(MXUST)
+!CHECK 233436.40 | 000000.72 89 001000.00 F0 | line 7 CM0000(BU,1),SWR(MXUST)
+!CHECK 233437.40 | 233454.10 90 | line 8 KV,JXTEM,JSTKP (flag column prints *)
+!CHECK 233440.00 | 233176.32 C0 | line 9 BZXE,MCTL
+!CHECK 233440.40 | 233476.11 01 | line 10 LVI,JXTEM,JSTACK
+!CHECK 233441.00 | 233666.00 80 001000.00 F0 | line 11 CM0000(BU,1),JWAIT (printed "FC")
+!CHECK 233442.00 | 233454.11 30 | line 12 SV,JXTEM,JSTKP
+!CHECK 233442.40 | 233454.51 30 | line 13 SV,JXTEM,JSTWP
+!CHECK 233443.00 | 233205.50 00 | line 14 B,JEXITD (printed "JEXITC")
+!CHECK 233443.40 | 233423.10 48 | line 15 M TRY CB,JXTEM,MCCOPY
+!CHECK 233444.00 | 233444.10 00 | line 16 B,$ (prints "C0", open glyph; see header)
+!CHECK 233444.40 | 000012.11 02 | line 20 M CHECK LCI,JXTEM,10
+!CHECK 233445.00 | 233455.51 50 | line 21 SC,JXTEM,MCTR
+!CHECK 233445.40 | 233446.51 01 | line 22 LVI,JXTEM,MCHK1
+!CHECK 233446.00 | 233426.51 D0 | line 23 SVA,JXTEM,MCHKB
+!CHECK 233446.40 | 233455.50 50 | line 24 M CHK 1 LC,JXTEM,MCTR
+!CHECK 233447.00 | 000001.11 08 | line 25 C-I,JXTEM,1.0
+!CHECK 233447.40 | 233455.51 50 | line 26 SC,JXTEM,MCTR
+!CHECK 233450.00 | 233430.30 40 | line 27 BZXCZ,MCHKR
+!CHECK 233450.40 | 233450.50 00 | line 28 B,$
+!CHECK 233451.00 | 000000.00+ 000 000000 000000 | line 32 M CCWD XW,0
+!CHECK 233452.00 | 232630.00+ 000 000003 233453 | line 33 JSCWD1 XW,SLITES,3.0,JSCWD2
+!CHECK 233453.00 | 000000.00+ 000 000000 000000 | line 34 JSCWD2 XW,0 (flag column prints *)
+!CHECK 233454.00 | 233476.00+ | line 35 JSTKP VF,JSTACK
+!CHECK 233454.40 | 233476.00+ | line 36 JSTWP VF,JSTACK
+!CHECK 233455.00 | 000012.30+ | line 37 JMESM VF,10.24
+!CHECK 233455.40 | 000000.00+ | line 38 M CTR VF,0

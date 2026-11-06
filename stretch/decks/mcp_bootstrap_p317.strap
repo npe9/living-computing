@@ -1,0 +1,192 @@
+! mcp_bootstrap_p317.strap -- MCP printed page 317: DISK FETCH, the
+! two-word search X 2WD LK / X VFL LK / X GOBAK, the restart-area and
+! compiled-program fetches (XTRCT R, XTRCT C), the read C READ / C RD BR,
+! the index read C NDX F, and the routine's data (YNRBIT, the control
+! words C NDX CW / CW DC RD, the X TENTB SYNs, A DSK RD, the VFs).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.68, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID SB000256  DIST. OF 3/C1  3/01  PAGE NUMBER 317"; the heading row's
+! LOCATION field is 234150, line 1's word.
+!
+! THE PAGE.  56 lines; every line number prints a "*".  No TAIL card.
+! "*" after the LOCATION on lines 5, 24, 40, 51.  Code is contiguous
+! from 234150.00 (line 1) to 234212.00 (line 55, VF; next 234212.40,
+! which is X N FOST's landed stand-in address -- p.318 should open
+! there).  Lines 49, 50, 56 are SYNs on X TENTB (233670.40, 233672.00,
+! 233674.40) and do not move the counter.
+!   line 46  YNRBIT DD(BU,1),0 at 234205.40 prints "0" left of NAME.
+!   line 51  A DSK RD DRZ(BU,1),1 prints 000000.01: the reservation's
+!            SIZE (one bit), no !CHECK (printed pp.84, 109, 119
+!            convention); line 52's 234210.40 confirms it.
+! JOIN.  p.316 has no scratch deck: contiguity with it is NOT
+! established here (p.316 should end at 234150.00).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 5 "X GCBAK - C.32" = XGOBAK-0.32: lines 8 and 12 print
+!     GOBAK with the O plain; 234155.50 = 234156.00 - .32 + B's 8 bits.
+!   * lines 23, 35 "B, C MCP" = B,DMCP (D stem worn; 000040.10, and line
+!     17 prints "B,D MCP" whole).  Line 24 ",DLCCS" = DLOCS (000003.01).
+!   * lines 27, 28 "CMOCOO" = CM0000 (connective digits; as p.313).
+!   * lines 26 ", C", 38 ",0", 52 "VF,C", 48 "512, C": the open round
+!     glyph alone is the digit 0 (no MCP symbol "C"; rows print zeros).
+!     Lines 53-55 print "VF, 0" with the round closed.
+!   * line 29 "CW DC RD" = CWDCRD (p.312/313 spelling; line 48's label).
+!   * line 22 "XTRCT C": the last glyph is a real C at 900 dpi (terminals
+!     as the first C), not a worn D.
+!   * hex bytes "FC" (16, 27, 28), "DO" (15, 34), "AC" (29) are F0, D0,
+!     A0: the same open round as the 0s of the octal fields beside them;
+!     TI's low nibble is I2 and no second index is printed (as p.313
+!     line 36).  Octal-field rounds are 0.
+!   * line 48's printed control-word flag field "C00" is 000.
+!   * names spaced by the drum written closed up.
+!
+! CARD SERIALS.  SB000256 .. SB000306.  Shared serials: lines 1-2
+! (256), 3-4 (257), 8-9 (261), 30-31 (282), 42-43 (293).  None skipped.
+! p.313 ended at SB000126; pp.314-316 lie between.
+!
+! EXTERNALS.  CBUFF, CLUK, CDSKBF, CINDEX, CWRD, PROSA copy the p.312 /
+! p.313 stand-ins; XTENTB and CSCNOP are p.311's definitions.
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B lines 17, 23, 35 000040.10
+DRD     SYN, 1.0                     ! landed p.104 "D RD"; line 18 000001.00
+DLOCS   SYN, 3.01                    ! landed p.104 line 15 "D LOC S"; lines 24, 36 000003.01
+PROSA   SYN, 1.0                     ! not landed; p.313 form; lines 19, 25, 37 000001.00, BIT-EXACT
+CBUFF   SYN, (8)234214.0             ! not landed; p.313 form; CM0000 l.27 / SF l.39 234214.00, BIT-EXACT
+CLUK    SYN, (8)234402.0             ! not landed; p.313 form; CM0000 l.28 / ST l.40 234402.00, BIT-EXACT
+CDSKBF  SYN, (8)235464.0             ! not landed; L l.33 CDSKBF+3.0 = 235467.00, XW l.48 235464.00
+CINDEX  SYN, (8)234222.0             ! not landed; p.312 form; CW l.47 234222.00
+CWRD    SYN, (8)234416.0             ! not landed; p.313 form; ,CWRD l.20 234416.00, TI l.29/41 .02
+XTENTB  SYN(BU,45), (8)233667.00     ! staged p.311 line 6 DD(BU,45); SYNs l.49/50/56
+CSCNOP  SYN(BU,64,8), (8)233700.40   ! staged p.311 line 13 BBZ; B l.45 CSCNOP+1.0 = 233701.50
+
+        SLC, (8)234150.00
+X2WDLK  KV,3, 0.0($5)                                        ! line  1
+        BXE, XVFLLK                                          ! line  2  -SEQUENTIAL SEARCH
+        V+IC,5,2.0                                           ! line  3
+        BZXCZ, X2WDLK                                        ! line  4  -COMPARE VFS FIRST
+        B, XGOBAK - 0.32                                     ! line  5
+XVFLLK  SX,3, $L                                             ! line  6
+        K(BU,48),0.0($5), -48                                ! line  7  -THEN COMPARE FULL 48 BITS
+        BAE, XGOBAK                                          ! line  8
+        V+IC,5, 2.0                                          ! line  9
+        BZXCZ, $-2.0                                         ! line 10
+        LVI,5, 0.0                                           ! line 11
+XGOBAK  B, $                                                 ! line 12
+XTRCTR  BEW, $                                               ! line 13  -ROUTINE FOR FETCHING RESTART AREA
+CREAD   LI(BU,24),20.,1                                      ! line 14
+        ST(BU,25),CUKCNT                                     ! line 15
+CRD1    CM1111(BU,1),ADSKRD                                  ! line 16
+        B,DMCP                                               ! line 17
+        ,DRD                                                 ! line 18
+        ,PROSA                                               ! line 19
+        ,CWRD                                                ! line 20
+CRDBR   B,$                                                  ! line 21
+XTRCTC  BEW, $                                               ! line 22  -DITTO COMPILED PROGRAM
+CNDXF   B, DMCP                                              ! line 23  -LOCATE FIRST ARC OF DICT
+        ,DLOCS                                               ! line 24
+        , PROSA                                              ! line 25
+        , 0                                                  ! line 26
+        CM0000(BU,12),CBUFF                                  ! line 27
+        CM0000(BU,18),CLUK                                   ! line 28
+        TI,1,CWDCRD,CWRD                                     ! line 29  -READ 1ST ARC OF DICT INTO BUFFER
+        SIC,CRDBR                                            ! line 30
+        B,CREAD                                              ! line 31
+        BB,ADSKRD,$                                          ! line 32
+        L(BU,12), CDSKBF + 3.0, -18                          ! line 33  -LOAD ARC ADDRESS OF INDEX
+        ST(BU,18), $ + 2.32, -18                             ! line 34  -AND STORE IT IN CALLING SEQUENCE
+        B, DMCP                                              ! line 35  -LOCATE ARC HOLDING INDEX
+        ,DLOCS                                               ! line 36
+        , PROSA                                              ! line 37
+        ,0                                                   ! line 38
+        SF(BU,12),CBUFF,-18                                  ! line 39
+        ST(BU,18),CLUK,-18                                   ! line 40
+        TI,1,CNDXCW,CWRD                                     ! line 41
+        SIC,CRDBR                                            ! line 42
+        B,CREAD                                              ! line 43  -READ INDEX INTO CORE
+        BB,ADSKRD,$                                          ! line 44
+        B, CSCNOP + 1.0                                      ! line 45  -RETURN TO BEGINNING OF ROUTINE
+YNRBIT  DD(BU,1),0                                           ! line 46  -TO PREVENT A READ.
+CNDXCW  CW, CINDEX,40,0                                      ! line 47
+CWDCRD  XW, CDSKBF, 512, 0                                   ! line 48  -CONTROL WORD FOR DICTIONARY READ
+CNORM   SYN(BU,24), XTENTB + 1.32                            ! line 49
+CSARTY  SYN(BU,48), XTENTB + 3.0                             ! line 50  -TYPE-AREA IN CALLING SEQUENCE
+ADSKRD  DRZ(BU,1),1                                          ! line 51
+CUKCNT  VF,0                                                 ! line 52
+CBETA   VF, 0                                                ! line 53  -RELATIVE AREA FWA
+CGAMMA  VF, 0                                                ! line 54  -CORE FWA
+CN      VF, 0                                                ! line 55  -NUMBER OF WORDS REQUESTED
+CNPRIM  SYN(BU,24), XTENTB + 5.32                            ! line 56  -NUMBER OF WORDS READ FROM DISK
+
+!SYM X2WDLK 234150.00
+!SYM XVFLLK 234152.40
+!SYM XGOBAK 234156.00
+!SYM XTRCTR 234156.40
+!SYM CREAD  234157.00
+!SYM CRD1   234161.00
+!SYM CRDBR  234164.00
+!SYM XTRCTC 234164.40
+!SYM CNDXF  234165.00
+!SYM YNRBIT 234205.40
+!SYM CNDXCW 234206.00
+!SYM CWDCRD 234207.00
+!SYM CNORM  233670.40
+!SYM CSARTY 233672.00
+!SYM ADSKRD 234210.00
+!SYM CUKCNT 234210.40
+!SYM CBETA  234211.00
+!SYM CGAMMA 234211.40
+!SYM CN     234212.00
+!SYM CNPRIM 233674.40
+!CHECK 234150.00 | 000000.06 95 | line 1 X 2WD LK KV,3,0.0($5)
+!CHECK 234150.40 | 234152.72 C2 | line 2 BXE,X VFL LK
+!CHECK 234151.00 | 000002.13 06 | line 3 V+IC,5,2.0
+!CHECK 234151.40 | 234150.30 40 | line 4 BZXCZ,X 2WD LK
+!CHECK 234152.00 | 234155.50 00 | line 5 B,X GOBAK-0.32 (printed "GCBAK - C.32")
+!CHECK 234152.40 | 000010.07 10 | line 6 X VFL LK SX,3,$L
+!CHECK 234153.00 | 000000.00 85 060050.21 10 | line 7 K(BU,48),0.0($5),-48
+!CHECK 234154.00 | 234156.36 C2 | line 8 BAE,X GOBAK
+!CHECK 234154.40 | 000002.13 06 | line 9 V+IC,5,2.0
+!CHECK 234155.00 | 234153.30 40 | line 10 BZXCZ,$-2.0
+!CHECK 234155.40 | 000000.13 01 | line 11 LVI,5,0.0
+!CHECK 234156.00 | 234156.10 00 | line 12 X GOBAK B,$
+!CHECK 234156.40 | 234156.60 00 | line 13 XTRCT R BEW,$
+!CHECK 234157.00 | 000024.00 80 430000.60 50 | line 14 CREAD LI(BU,24),20.,1
+!CHECK 234160.00 | 234210.40 80 031000.20 D0 | line 15 ST(BU,25),CUKCNT (h2 prints "DO")
+!CHECK 234161.00 | 234210.00 80 001000.36 F0 | line 16 CRD1 CM1111(BU,1),A DSK RD (h2 prints "FC")
+!CHECK 234162.00 | 000040.10 00 | line 17 B,D MCP
+!CHECK 234162.40 | 000001.00 80 | line 18 ,D RD
+!CHECK 234163.00 | 000001.00 80 | line 19 ,PROSA
+!CHECK 234163.40 | 234416.00 80 | line 20 ,CW RD
+!CHECK 234164.00 | 234164.10 00 | line 21 C RD BR B,$
+!CHECK 234164.40 | 234164.60 00 | line 22 XTRCT C BEW,$
+!CHECK 234165.00 | 000040.10 00 | line 23 C NDX F B,D MCP (printed "C MCP")
+!CHECK 234165.40 | 000003.01 80 | line 24 ,D LOCS (printed "DLCCS")
+!CHECK 234166.00 | 000001.00 80 | line 25 ,PROSA
+!CHECK 234166.40 | 000000.00 80 | line 26 ,0
+!CHECK 234167.00 | 234214.00 80 014000.00 F0 | line 27 CM0000(BU,12),CBUFF (printed "CMOCOO", h2 "FC")
+!CHECK 234170.00 | 234402.00 80 022000.00 F0 | line 28 CM0000(BU,18),CLUK (printed "CMOCOO", h2 "FC")
+!CHECK 234171.00 | 234207.00 80 234416.02 A0 | line 29 TI,1,CW DC RD,CW RD (last byte prints "AC")
+!CHECK 234172.00 | 234164.00 80 | line 30 SIC,C RD BR
+!CHECK 234172.40 | 234157.10 00 | line 31 B,C READ
+!CHECK 234173.00 | 234210.00 80 234173.34 02 | line 32 BB,A DSK RD,$
+!CHECK 234174.00 | 235467.00 80 014067.20 50 | line 33 L(BU,12),C DSK BF+3.0,-18
+!CHECK 234175.00 | 234177.40 80 022067.20 D0 | line 34 ST(BU,18),$+2.32,-18 (h2 prints "DO")
+!CHECK 234176.00 | 000040.10 00 | line 35 B,D MCP
+!CHECK 234176.40 | 000003.01 80 | line 36 ,D LOCS
+!CHECK 234177.00 | 000001.00 80 | line 37 ,PROSA
+!CHECK 234177.40 | 000000.00 80 | line 38 ,0
+!CHECK 234200.00 | 234214.00 80 014067.12 F0 | line 39 SF(BU,12),CBUFF,-18
+!CHECK 234201.00 | 234402.00 80 022067.20 D0 | line 40 ST(BU,18),CLUK,-18
+!CHECK 234202.00 | 234206.00 80 234416.02 A0 | line 41 TI,1,C NDX CW,CW RD
+!CHECK 234203.00 | 234164.00 80 | line 42 SIC,C RD BR
+!CHECK 234203.40 | 234157.10 00 | line 43 B,C READ
+!CHECK 234204.00 | 234210.00 80 234204.34 02 | line 44 BB,A DSK RD,$
+!CHECK 234205.00 | 233701.50 00 | line 45 B,C SCNOP+1.0
+!CHECK 234205.40 | 0 | line 46 YNRBIT DD(BU,1),0 | 1
+!CHECK 234206.00 | 234222.00+ 000 000050 000000 | line 47 C NDX CW CW,C INDEX,40,0
+!CHECK 234207.00 | 235464.00+ 000 001000 000000 | line 48 CW DC RD XW,C DSK BF,512,0 (flags print "C00")
+!CHECK 234210.40 | 000000.00+ | line 52 CUKCNT VF,0
+!CHECK 234211.00 | 000000.00+ | line 53 C BETA VF,0
+!CHECK 234211.40 | 000000.00+ | line 54 C GAMMA VF,0
+!CHECK 234212.00 | 000000.00+ | line 55 C N VF,0

@@ -1,0 +1,184 @@
+! mcp_bootstrap_p312.strap -- MCP printed page 312: a dictionary
+! look-up -- CS ARTY sought first in the arc already in the buffer, else
+! by an index search (X NDX LK), an MCP D LOCS call to locate the arc,
+! a read of it (TI,1,C WDC RD,C W RD), the search loop C RODE, and the
+! exit XCPT RD that saves the entry address and forms C FOT; lines 1-51.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.63, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID SB000042  DIST. OF 3/01  3/01  PAGE NUMBER 312".  The heading row's
+! LOCATION field is 233721, line 1's word.
+!
+! THE PAGE.  51 lines, then blank paper.  Every line number prints a
+! "*" after it.  Contiguous from 233721.40 (line 1) to 233760.40 (line
+! 51, a half-word B; next location 233761.00).  "*" after the LOCATION
+! on lines 7 (X NDX LK), 24 and 43 (XCPT RD).  Lines 18-20 are null-op
+! calling-sequence half words after B,D MCP (,D LOCS / ,PROSA / ,0).
+! No TAIL card on the page.
+!
+! JOIN.  p.311 and p.313 have no scratch decks; contiguity is NOT
+! established here.  p.311 should end at 233721.40; p.313 should open
+! at 233761.00 with serial SB000083.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 17 "B, C MCP" = B,DMCP: the first glyph prints with its stem
+!     worn (it reads C to Vision); 000040.10 = DMCP 32.0 (landed p.108),
+!     and line 51 prints the same card "B, D MCP" with the stem whole.
+!   * line 18 ", D LOCS" = DLOCS (landed p.104 line 15 "D LOC S", 3.01);
+!     000003.01 is that value.  First glyph worn as on line 17.
+!   * line 20 ", C" written ",0": an open round glyph alone; the row
+!     prints 000000.00 80.  No symbol "C" (one letter) is defined in any
+!     landed deck; read as the digit 0, the null third parameter.
+!   * lines 10 "40.C" and 47 "C FOT + 1.C": the open round after a point
+!     is the digit 0 (000050.13 = 40 decimal; 234221.11 = CFOT+1).
+!   * line 12 "X SG SCH" is XSQSCH: printed p.316 line 44 DEFINES it at
+!     this address (234144.40) with a plain Q, tail crossing the bowl;
+!     this page's glyph has the same tail at lower right, worn, which
+!     read here first as G's bar.  Last glyph H with a worn left stem.
+!   * line 23 "C WDC RD": third glyph carries the D stem at 900 dpi.
+!   * line 30 label "C RODE": second glyph open round, taken as O by this
+!     drum's rule (open O); third has the D stem.  Unreferenced here.
+!   * X GOBK (line 11, 234140.40) and X GOBAK (lines 3, 40, 234156.00)
+!     are DIFFERENT symbols: different binaries, both read plainly.
+!
+! CARD SERIALS.  SB000042 .. SB000082.  Ten serials print twice, on
+! consecutive lines: 44 (lines 3-4), 51 (11-12), 63 (24-25), 65 (27-28),
+! 70 (33-34), 72 (36-37), 73 (38-39), 74 (40-41), 77 (44-45), 78 (46-47).
+! Recorded, not explained (two statements per card?).
+!
+! EXTERNAL SYMBOLS.  None of this page's C/X names is defined in a
+! landed deck; CBUFF, XNFOST, CFOT copy the b7decks p.269 stand-ins.
+! The rest take their values from this page's binaries (noted per card).
+
+CDSKBF  SYN, (8)235464.0             ! LVI line 1 / V+I line 38 235464.13, half word only
+CINDEX  SYN, (8)234222.0             ! LVI line 9 234222.05, half word only
+XGOBAK  SYN, (8)234156.0             ! SIC lines 3, 40 234156.00
+X2WDLK  SYN, (8)234150.0             ! B lines 4, 41 234150.10, half word only
+CSARTY  SYN(BU,48), (8)233672.0       ! L(BU,12) line 7 233672.00, BIT-EXACT
+XGOBK   SYN, (8)234140.40            ! SIC line 11 234140.40
+XSQSCH  SYN, (8)234144.40            ! B line 12 234144.50, half word only
+CURD    SYN, (8)234076.0             ! BXVZ lines 13, 42 234076.31, half word only
+CNDXAD  SYN, (8)234215.40            ! SV line 14 234215.53 / LV line 29 234215.42, half word only
+DMCP    SYN, 32.0                    ! landed p.108; B lines 17, 51 000040.10
+DLOCS   SYN, 3.01                    ! landed p.104 line 15 "D LOC S"; line 18 000003.01
+PROSA   SYN, (8)1.0                  ! not landed; line 19 000001.00 80, BIT-EXACT
+CBUFF   SYN, (8)234214.0             ! not landed; Z line 34 234214.22, half word only (b7decks p.269); SF line 21 234214.00
+CLUK    SYN, (8)234402.0             ! ST(BU,18) line 22 234402.00, BIT-EXACT
+CWDCRD  SYN, (8)234207.0             ! TI line 23 first half 234207.00
+CWRD    SYN, (8)234416.0             ! TI line 23 second half 234416.02, half word only
+CRDBR   SYN, (8)234164.0             ! SIC line 24 234164.00
+CREAD   SYN, (8)234157.0             ! B line 25 234157.10, half word only
+ADSKRD  SYN, (8)234210.0             ! BB line 26 234210.00, BIT-EXACT
+XNFOST  SYN, (8)234212.40            ! not landed; SV line 33 234212.43, half word only (b7decks p.269); SV line 28 here
+CNARK   SYN, (8)234060.0             ! BRZ line 33 234060.34, half word only
+CDICT   SYN, (8)234215.0             ! SV line 43 234215.13, half word only
+CFOT    SYN, (8)234220.0             ! not landed; Z line 35 234220.22, half word only (b7decks p.269); SX lines 45, 47
+CBETA   SYN, (8)234211.0             ! +(BU,18) line 49 234211.00, BIT-EXACT
+
+        SLC, (8)233721.40
+        LVI,5,CDSKBF                                         ! line  1  -DICTIONARY ARC IN THE BUFFER
+        LCI,5,256                                            ! line  2
+        SIC,XGOBAK                                           ! line  3
+        B,X2WDLK                                             ! line  4
+        BXVZ,XNDXLK                                          ! line  5  -IF NOT, GO TO INDEX SEARCH
+        B,XCPTRD                                             ! line  6  -IF IT IS, GO TO XCPT RD
+XNDXLK  L(BU,12),CSARTY,-12                                  ! line  7  -INDEX SEARCH
+        LV,3,$L                                              ! line  8  -SET UP PARAMETERS FOR
+        LVI,2,CINDEX                                         ! line  9  -BINARY SEARCH OF INDEX
+        LVI,5,40.0                                           ! line 10  (printed "40.C")
+        SIC,XGOBK                                            ! line 11
+        B,XSQSCH                                             ! line 12
+        BXVZ,CURD                                            ! line 13  -TYPE NOT IN INDEX
+        SV,5,CNDXAD                                          ! line 14  -VF $5 ADDRESSES INDEX ENTRY FOR TYPE
+        L(BU,12),0.32($5),-18                                ! line 15  -SET ARC ADDRESS IN CALLING SEQ
+        ST(BU,18),$+2.32,-18                                 ! line 16
+        B,DMCP                                               ! line 17  -LOCATE ARC A(TAWA)  (printed "C MCP", D worn)
+        ,DLOCS                                               ! line 18  (printed "D LOCS", D worn)
+        ,PROSA                                               ! line 19
+        ,0                                                   ! line 20  (printed open round "C")
+        SF(BU,12),CBUFF,-18                                  ! line 21
+        ST(BU,18),CLUK,-18                                   ! line 22
+        TI,1,CWDCRD,CWRD                                     ! line 23  -READ AN ARC OF THE DICT INTO
+        SIC,CRDBR                                            ! line 24
+        B,CREAD                                              ! line 25  -BUFFER WHEN CS ARTY NOT FOUND IN
+        BB,ADSKRD,$                                          ! line 26  -BF MAP
+        LVI,1,1                                              ! line 27
+        SV,1,XNFOST                                          ! line 28
+        LV,1,CNDXAD                                          ! line 29
+CRODE   L(BU,9),0.44($1),-18                                 ! line 30  -SEARCH FOR CS ARTY AMONG THE DICT
+        LV,5,$L                                              ! line 31  -ENTRIES FOR THE GIVEN TYPE
+        L(BU,9),1.44($1),-18                                 ! line 32
+        BRZ,CNARK                                            ! line 33
+        LV,6,$L                                              ! line 34
+        CM1111(BU,1),$6.24                                   ! line 35
+        V+,6,$5                                              ! line 36
+        LC,5,$6                                              ! line 37
+        V+I,5,CDSKBF                                         ! line 38
+        LX,3,CSARTY                                          ! line 39
+        SIC,XGOBAK                                           ! line 40
+        B,X2WDLK                                             ! line 41
+        BXVZ,CURD                                            ! line 42  -BRANCH IF CS ARTY NOT IN DICT
+XCPTRD  SV,5,CDICT                                           ! line 43  -SAVE ADDRESS OF DICTIONARY ENTRY
+        LX,4,0.0($5)                                         ! line 44
+        SX,4,CFOT                                            ! line 45  -FORM C FOT
+        LX,4,1.0($5)                                         ! line 46
+        SX,4,CFOT+1.0                                        ! line 47  (printed "1.C")
+        SV,4,$L                                              ! line 48
+        +(BU,18),CBETA,-21                                   ! line 49  -BETA PLUS ARC-WORD IS ALPHA
+        ST(BU,12),$+2.38,-12                                 ! line 50  -SET ARC ADDRESS IN CALL SEQ
+        B,DMCP                                               ! line 51
+
+!SYM XNDXLK 233724.40
+!SYM CRODE  233743.40
+!SYM XCPTRD 233753.40
+!CHECK 233721.40 | 235464.13 01 | line 1 LVI,5,C DSK BF
+!CHECK 233722.00 | 000400.13 02 | line 2 LCI,5,256
+!CHECK 233722.40 | 234156.00 80 | line 3 SIC,X GOBAK
+!CHECK 233723.00 | 234150.10 00 | line 4 B,X 2WD LK
+!CHECK 233723.40 | 233724.71 42 | line 5 BXVZ,X NDX LK
+!CHECK 233724.00 | 233753.50 00 | line 6 B,XCPT RD
+!CHECK 233724.40 | 233672.00 80 014072.20 50 | line 7 X NDX LK L(BU,12),CS ARTY,-12
+!CHECK 233725.40 | 000010.06 30 | line 8 LV,3,$L
+!CHECK 233726.00 | 234222.05 01 | line 9 LVI,2,C INDEX
+!CHECK 233726.40 | 000050.13 01 | line 10 LVI,5,40.0
+!CHECK 233727.00 | 234140.40 80 | line 11 SIC,X GOBK
+!CHECK 233727.40 | 234144.50 00 | line 12 B,XSQSCH (prints X SG SCH)
+!CHECK 233730.00 | 234076.31 42 | line 13 BXVZ,C URD
+!CHECK 233730.40 | 234215.53 30 | line 14 SV,5,C NDX AD
+!CHECK 233731.00 | 000000.40 85 014067.20 50 | line 15 L(BU,12),0.32($5),-18
+!CHECK 233732.00 | 233734.40 80 022067.20 D0 | line 16 ST(BU,18),$+2.32,-18
+!CHECK 233733.00 | 000040.10 00 | line 17 B,D MCP (printed "C MCP")
+!CHECK 233733.40 | 000003.01 80 | line 18 ,D LOCS
+!CHECK 233734.00 | 000001.00 80 | line 19 ,PROSA
+!CHECK 233734.40 | 000000.00 80 | line 20 ,0 (printed "C")
+!CHECK 233735.00 | 234214.00 80 014067.12 F0 | line 21 SF(BU,12),CBUFF,-18
+!CHECK 233736.00 | 234402.00 80 022067.20 D0 | line 22 ST(BU,18),CLUK,-18
+!CHECK 233737.00 | 234207.00 80 234416.02 A0 | line 23 TI,1,C WDC RD,C W RD
+!CHECK 233740.00 | 234164.00 80 | line 24 SIC,CRDBR
+!CHECK 233740.40 | 234157.10 00 | line 25 B,C READ
+!CHECK 233741.00 | 234210.00 80 233741.34 02 | line 26 BB,ADSKRD,$
+!CHECK 233742.00 | 000000.43 01 | line 27 LVI,1,1
+!CHECK 233742.40 | 234212.43 30 | line 28 SV,1,X NFOST
+!CHECK 233743.00 | 234215.42 30 | line 29 LV,1,C NDX AD
+!CHECK 233743.40 | 000000.54 81 011067.20 50 | line 30 C RODE L(BU,9),0.44($1),-18
+!CHECK 233744.40 | 000010.12 30 | line 31 LV,5,$L
+!CHECK 233745.00 | 000001.54 81 011067.20 50 | line 32 L(BU,9),1.44($1),-18
+!CHECK 233746.00 | 234060.34 C2 | line 33 BRZ,C NARK
+!CHECK 233746.40 | 000010.14 30 | line 34 LV,6,$L
+!CHECK 233747.00 | 000026.30 80 001000.36 F0 | line 35 CM1111(BU,1),$6.24
+!CHECK 233750.00 | 000025.14 B0 | line 36 V+,6,$5
+!CHECK 233750.40 | 000026.12 50 | line 37 LC,5,$6
+!CHECK 233751.00 | 235464.13 05 | line 38 V+I,5,C DSK BF
+!CHECK 233751.40 | 233672.06 10 | line 39 LX,3,CS ARTY
+!CHECK 233752.00 | 234156.00 80 | line 40 SIC,X GOBAK
+!CHECK 233752.40 | 234150.10 00 | line 41 B,X 2WD LK
+!CHECK 233753.00 | 234076.31 42 | line 42 BXVZ,C URD
+!CHECK 233753.40 | 234215.13 30 | line 43 XCPT RD SV,5,C DICT
+!CHECK 233754.00 | 000000.10 15 | line 44 LX,4,0.0($5)
+!CHECK 233754.40 | 234220.11 10 | line 45 SX,4,C FOT
+!CHECK 233755.00 | 000001.10 15 | line 46 LX,4,1.0($5)
+!CHECK 233755.40 | 234221.11 10 | line 47 SX,4,C FOT+1.0
+!CHECK 233756.00 | 000010.11 30 | line 48 SV,4,$L
+!CHECK 233756.40 | 234211.00 80 022065.60 10 | line 49 +(BU,18),C BETA,-21
+!CHECK 233757.40 | 233762.06 80 014072.20 D0 | line 50 ST(BU,12),$+2.38,-12
+!CHECK 233760.40 | 000040.10 00 | line 51 B,D MCP

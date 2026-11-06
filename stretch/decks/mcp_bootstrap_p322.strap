@@ -1,0 +1,190 @@
+! mcp_bootstrap_p322.strap -- MCP printed page 322: the LOADER's
+! partial-word / zeroing tail (ALD1 .. ASETZ1), the card-type test
+! (ATST1, ATST, AALRT), the sequence and ID test (ASEQ1 .. ASEQ) and
+! the opening of the checksum (ACHSM), lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.73, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22LOADER  CARD
+! ID TA000096  DIST. OF 3/01  3/01  PAGE NUMBER 322" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is 234522,
+! line 1's word.
+!
+! THE PAGE.  50 lines; every line number prints a "*" after it.
+!   lines  1-27  code, contiguous 234522.00 .. 234546.00 (a half word).
+!   line  28     remark card, NAME "-": "TEST TO DETERMINE TYPE OF CARD".
+!   lines 29-36  ATST1 .. B,0($14), contiguous from 234546.40.
+!   line  37     remark card, NAME "-": "SEQUENCE AND ID TEST".
+!   lines 38-46  ASEQ1 .. B,0($14), contiguous from 234553.40.
+!   line  47     remark card, NAME "-": "COMPUTE CHECKSUM".
+!   lines 48-50  ACHSM .. LX,$3,ACXW3; last located row 234564.40 (a
+!                half word), so p.323 should open at 234565.00, then
+!                blank paper.
+! A "*" also prints after the LOCATION on lines 11, 24 and 42.
+!
+! JOIN.  p.321 (parallel, not available) -- nothing on this page shows
+! where it ends; line 1 opens at 234522.00 with serial TA000096.  The
+! uses of ALOAD (234511.40), ALOAD1 (234513.00), ALD5 (234517.40) and
+! ALD2 (234520.40) all lie just before this page.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 9 label prints "ALC3" = ALD3, and line 6's "ALC1" = ALD1: at
+!     900 dpi the third glyph of both is the SAME worn-stem D as the
+!     "ALCBF" operand on lines 9 and 48, which is ALDBF (landed p.291,
+!     and the binaries 231462.60 / .44 are ALDBF.48 / .36).  The loader
+!     family ALD1, ALD2, ALD4, ALD5 is printed here; the volume OCR
+!     reads ALD3 once.  Line 26's operand prints "ALC1" too.
+!   * lines 18, 23 operand "ALOAC1" = ALOAD1 (worn D; remarks print
+!     "ALCADI" / "ALCAD1" the same way).
+!   * lines 18, 23 last byte prints "AC" = A0: the TI rows, as p.197
+!     line 11; TI's low nibble is I2 and no second index is printed.
+!   * line 34 byte prints "CO" = 00 (B,; octal fields print 0 open).
+!   * line 4 octal prints "232554.C3" = .03 (SVA,$1,AHIWD).
+!   * line 19 ASETZI (letter I, the zeroing indicator of landed p.291
+!     line 15, 232543.07) against line 21's label ASETZ1 (digit 1, its
+!     base serif printed; 234541.00): both readings are bit-exact.
+!   * line 48 "CT0011" connective with digit zeros.
+!
+! EXTERNALS.  The p.291 symbols are landed (copied by form).  Every
+! other external is from this page's binary only (not landed, most on
+! p.321 or later loader pages); their dds is NOT established: branch
+! targets are written (BU,32,8), the TI operands ALOAD1/ASETZ3/ALD4
+! (BU,64,8) as full words (TI,1 moves one word), the LX operands
+! ATXW1/ACXW3 (BU) as index words.
+!
+! CARD SERIALS.  TA000096 on line 1 .. TA000145 on line 50, one per
+! line, none skipped.
+
+AHIWD   SYN(BU,32), (8)232554.0      ! landed p.291 line 38 "AHIWD DRZ(BU,32),1"
+ABT31   SYN(B,25,1), (8)232546.40    ! landed p.291 line 26 VF
+ACNT    SYN(B,25,1), (8)232547.40    ! landed p.291 line 28 VF
+YBCBU   SYN(BU), (8)231462.0         ! p.274 line 19 DR(BU),(15), as p.291's stand-in writes it
+ALDBF   SYN,YBCBU                    ! landed p.291 line 33 SYN,YBCBU (YBCBU DR(BU))
+ALL     SYN(N), (8)232543.0          ! p.291 line 9 DRZ(N),1 at 232543.00 (the ALL.n SYNs below are p.291's own form)
+ASETZI  SYN,ALL.7                    ! landed p.291 line 15 SYN,ALL.7 (ALL DRZ(N))
+AHFWDI  SYN,ALL.4                    ! landed p.291 line 12 SYN,ALL.4
+ATCRDI  SYN,ALL.1                    ! landed p.291 line 10 SYN,ALL.1
+ASTCRD  SYN,ALL.2                    ! landed p.291 line 11 SYN,ALL.2
+ASEQID  SYN(BU,12), (8)232554.40     ! landed p.291 line 39 "ASEQID DRZ(BU,12),1"
+ANORMR  SYN, (8)235233.0    ! not landed; B line 5 235233.10, half word only
+ALD5    SYN(BU,32,8), (8)234517.40   ! not landed (p.321?); B line 8 234517.50, half word only
+ALD2    SYN(BU,32,8), (8)234520.40   ! not landed (p.321?); B lines 11, 27 234520.50, half word only
+ALOAD   SYN(BU,32,8), (8)234511.40   ! not landed (p.321?); B line 20 234511.50, BZXCZ line 25, half word only
+ALOAD1  SYN(BU,64,8), (8)234513.0    ! not landed (p.321?); TI lines 18, 23 2nd half 234513.02; full word assumed (TI,1 replaces it)
+ASETZ3  SYN(BU,64,8), (8)235235.0    ! not landed; TI line 18 1st half 235235.00; full word assumed (TI,1 source)
+ALD4    SYN(BU,64,8), (8)235236.0    ! not landed; TI line 23 1st half 235236.00; full word assumed (TI,1 source)
+ATXW1   SYN(BU), (8)235257.0         ! not landed; LX line 29 235257.06, XW (BU), half word only
+AERR3   SYN(BU,32,8), (8)235221.40   ! not landed; B line 34 235221.50, half word only
+AERR2   SYN(BU,32,8), (8)235215.0    ! not landed; BZAE line 42 235215.36, half word only
+ACHSM2  SYN(BU,32,8), (8)234576.0    ! not landed; BRZ line 49 234576.34, half word only
+ACXW3   SYN(BU), (8)235253.0         ! not landed; LX line 50 235253.06, XW (BU), half word only
+
+        SLC, (8)234522.00
+        KV,$1,AHIWD                                          ! line  1
+        BXL,ANORMR                                           ! line  2
+        V+,$1,ABT31                                          ! line  3
+        SVA,$1,AHIWD                                         ! line  4  -IN ALDCTR AND AHIWD
+        B,ANORMR                                             ! line  5  -NORMAL RETURN TO JOB CONTROL
+ALD1    LF(BU,32)(V+I),.32($4)                               ! line  6  -LOAD PARTIAL WORD
+        SF(BU,32)(V+I),.32($1)                               ! line  7
+        B,ALD5                                               ! line  8
+ALD3    BB,ALDBF.48,ASETZ                                    ! line  9  -SKIP OR ZERO AFTER CARD LOADED
+        V+,$1,$5                                             ! line 10  -ADD NO. OF BITS SKIPPED TO LOCATION-
+        B,ALD2                                               ! line 11  -CTR.-$1
+ASETZ   SC,$4,ACNT                                           ! line 12  -SAVE COUNT OF NO. OF WDS TO BE LOADED
+        LF(BU,24),$5                                         ! line 13  -STORE NO. OF WHOLE WDS ZEROED IN CF OF $4
+        SF(BU,18),$4+.28,6                                   ! line 14
+        SF(BU,6),ASETZ1+1.18                                 ! line 15  -STORE NO OF BITS TO ZERO IN ASETZ1-
+        SF(BU,6),ASETZ1+.35                                  ! line 16  -AND ASETZ1+1.
+        SF(BU,6),ASETZ1+1.35                                 ! line 17
+        TI,1,ASETZ3,ALOAD1                                   ! line 18  -CHANGE ALOAD1 TO LOAD ZEROS
+        CM1111(BU,1),ASETZI                                  ! line 19  -TURN ON ZEROING INDICATOR
+        B,ALOAD                                              ! line 20
+ASETZ1  LF(BU,32),($0)                                       ! line 21  -LOAD PARTIAL WORD OF ZEROS-
+        SF(BU,32)(V+I),.32($1)                               ! line 22  -OR NOTHING IF FL=0
+        TI,1,ALD4,ALOAD1                                     ! line 23  -REINITIALIZE ALOAD1
+        LC,$4,ACNT                                           ! line 24  -RESTORE COUNT OF NO. OF WDS. TO BE LOADED
+        BZXCZ,ALOAD                                          ! line 25
+        BBZ,AHFWDI,ALD1                                      ! line 26
+        B,ALD2                                               ! line 27
+! line 28  -   TEST TO DETERMINE TYPE OF CARD
+ATST1   LX,$3,ATXW1                                          ! line 29
+        LF(BU,12),ALDBF                                      ! line 30  -LOAD COLUMN 1
+ATST    KF(BU,12)(V+I),.12($3)                               ! line 31  -COMPARE WITH ENTRIES IN ATBL
+        BAE,AALRT                                            ! line 32  -IF TYPE OF CARD DETERMINED GO TO AALRT
+        CB,$3,ATST                                           ! line 33
+        B,AERR3                                              ! line 34  -ILLEGAL TYPE OF CARD
+AALRT   SC,$3,$3                                             ! line 35  -CF INDICATES TYPE OF CARD
+        B,0($14)                                             ! line 36  -RETURN TO ATYPE AT BEG. OF LOADER
+! line 37  -               SEQUENCE AND ID TEST
+ASEQ1   BBZ,ATCRDI,ASEQ                                      ! line 38  -TEST FOR T CARD
+        BB,ASTCRD,ASEQ2A                                     ! line 39  -TEST FOR SUPER T, YES-RETURN
+        M-1(BU,12,8),$R.40                                   ! line 40
+        KF(BU,12),ASEQID,12                                  ! line 41
+        BZAE,AERR2                                           ! line 42  -SEQUENCE OR ID ERROR
+        M+1(BU,12),ASEQID                                    ! line 43  -UPDATE SEQUENCE COUNTER
+ASEQ2A  B,0($14)                                             ! line 44
+ASEQ    SF(BU,12),ASEQID,12                                  ! line 45
+        B,0($14)                                             ! line 46
+! line 47  -   COMPUTE CHECKSUM
+ACHSM   CT0011(BU,12),ALDBF.36                               ! line 48  -CHECKSUM COLUMN BLANK
+        BRZ,ACHSM2                                           ! line 49  -IGNORE CHECKSUM
+        LX,$3,ACXW3                                          ! line 50
+
+!SYM ALD1   234524.40
+!SYM ALD3   234527.00
+!SYM ASETZ  234531.00
+!SYM ASETZ1 234541.00
+!SYM ATST1  234546.40
+!SYM ATST   234550.00
+!SYM AALRT  234552.40
+!SYM ASEQ1  234553.40
+!SYM ASEQ2A 234561.00
+!SYM ASEQ   234561.40
+!SYM ACHSM  234563.00
+!CHECK 234522.00 | 232554.02 90 | line 1 KV,$1,AHIWD
+!CHECK 234522.40 | 235233.32 42 | line 2 BXL,ANORMR
+!CHECK 234523.00 | 232546.42 B0 | line 3 V+,$1,ABT31
+!CHECK 234523.40 | 232554.03 D0 | line 4 SVA,$1,AHIWD (octal prints "C3")
+!CHECK 234524.00 | 235233.10 00 | line 5 B,ANORMR (prints "1C CO")
+!CHECK 234524.40 | 000000.40 84 140000.06 70 | line 6 ALD1 LF(BU,32)(V+I),.32($4) (label prints "ALC1")
+!CHECK 234525.40 | 000000.40 81 140000.12 F0 | line 7 SF(BU,32)(V+I),.32($1)
+!CHECK 234526.40 | 234517.50 00 | line 8 B,ALD5
+!CHECK 234527.00 | 231462.60 80 234531.34 02 | line 9 ALD3 BB,ALDBF.48,ASETZ (label prints "ALC3", operand "ALCBF")
+!CHECK 234530.00 | 000025.02 B0 | line 10 V+,$1,$5
+!CHECK 234530.40 | 234520.50 00 | line 11 B,ALD2 (a "*" prints after the location)
+!CHECK 234531.00 | 232547.51 50 | line 12 ASETZ SC,$4,ACNT
+!CHECK 234531.40 | 000025.00 80 030000.06 70 | line 13 LF(BU,24),$5
+!CHECK 234532.40 | 000024.34 80 022003.12 F0 | line 14 SF(BU,18),$4+.28,6
+!CHECK 234533.40 | 234542.22 80 006000.12 F0 | line 15 SF(BU,6),ASETZ1+1.18
+!CHECK 234534.40 | 234541.43 80 006000.12 F0 | line 16 SF(BU,6),ASETZ1+.35
+!CHECK 234535.40 | 234542.43 80 006000.12 F0 | line 17 SF(BU,6),ASETZ1+1.35
+!CHECK 234536.40 | 235235.00 80 234513.02 A0 | line 18 TI,1,ASETZ3,ALOAD1 (operand prints "ALOAC1"; last byte prints "AC")
+!CHECK 234537.40 | 232543.07 80 001000.36 F0 | line 19 CM1111(BU,1),ASETZI
+!CHECK 234540.40 | 234511.50 00 | line 20 B,ALOAD
+!CHECK 234541.00 | 000000.00 80 040000.06 70 | line 21 ASETZ1 LF(BU,32),($0)
+!CHECK 234542.00 | 000000.40 81 140000.12 F0 | line 22 SF(BU,32)(V+I),.32($1)
+!CHECK 234543.00 | 235236.00 80 234513.02 A0 | line 23 TI,1,ALD4,ALOAD1 (last byte prints "AC")
+!CHECK 234544.00 | 232547.50 50 | line 24 LC,$4,ACNT (a "*" prints after the location)
+!CHECK 234544.40 | 234511.70 40 | line 25 BZXCZ,ALOAD
+!CHECK 234545.00 | 232543.04 80 234524.74 06 | line 26 BBZ,AHFWDI,ALD1
+!CHECK 234546.00 | 234520.50 00 | line 27 B,ALD2
+!CHECK 234546.40 | 235257.06 10 | line 29 ATST1 LX,$3,ATXW1
+!CHECK 234547.00 | 231462.00 80 014000.06 70 | line 30 LF(BU,12),ALDBF
+!CHECK 234550.00 | 000000.14 83 114000.23 10 | line 31 ATST KF(BU,12)(V+I),.12($3)
+!CHECK 234551.00 | 234552.76 C2 | line 32 BAE,AALRT
+!CHECK 234551.40 | 234550.06 48 | line 33 CB,$3,ATST
+!CHECK 234552.00 | 235221.50 00 | line 34 B,AERR3 (byte prints "CO")
+!CHECK 234552.40 | 000023.07 50 | line 35 AALRT SC,$3,$3
+!CHECK 234553.00 | 000000.10 0E | line 36 B,0($14)
+!CHECK 234553.40 | 232543.01 80 234561.74 06 | line 38 ASEQ1 BBZ,ATCRDI,ASEQ
+!CHECK 234554.40 | 232543.02 80 234561.34 02 | line 39 BB,ASTCRD,ASEQ2A
+!CHECK 234555.40 | 000011.50 80 014000.32 B0 | line 40 M-1(BU,12,8),$R.40
+!CHECK 234556.40 | 232554.40 80 014006.23 10 | line 41 KF(BU,12),ASEQID,12
+!CHECK 234557.40 | 235215.36 C0 | line 42 BZAE,AERR2 (a "*" prints after the location)
+!CHECK 234560.00 | 232554.40 80 014000.22 B0 | line 43 M+1(BU,12),ASEQID
+!CHECK 234561.00 | 000000.10 0E | line 44 ASEQ2A B,0($14)
+!CHECK 234561.40 | 232554.40 80 014006.12 F0 | line 45 ASEQ SF(BU,12),ASEQID,12
+!CHECK 234562.40 | 000000.10 0E | line 46 B,0($14)
+!CHECK 234563.00 | 231462.44 80 014000.07 70 | line 48 ACHSM CT0011(BU,12),ALDBF.36 (operand prints "ALCBF")
+!CHECK 234564.00 | 234576.34 C2 | line 49 BRZ,ACHSM2
+!CHECK 234564.40 | 235253.06 10 | line 50 LX,$3,ACXW3

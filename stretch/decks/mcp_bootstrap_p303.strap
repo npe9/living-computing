@@ -1,0 +1,172 @@
+! mcp_bootstrap_p303.strap -- MCP printed page 303: the tail of the
+! commentator I/O setup, the COMMON EXIT ROUTINE (J EXITD .. M COMIC),
+! COMMENTATOR BUSY WITH OWN I/O (M BSY), CONSOLE BUSY WITH OTHER I/O
+! (M PP BSY, M RID), and the head of ENTER MESSAGE IN STACK (J STKR).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.54, read at 400 dpi (900 dpi for the
+! doubtful glyphs).  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID SA000055  DIST. OF 3/01  3/01  PAGE NUMBER 303".  The heading
+! row's LOCATION field is 233202, line 1's word.
+!
+! THE PAGE.  50 lines, every line number prints a "*" after it.
+! Located rows run contiguous from 233202.00 (line 1) to 233226.00
+! (line 50, LV, a half word; next location 233226.40), then blank paper.
+!   lines  1-5   tail of the I/O setup (B,M SETIO / BB,J WAIT,M BSY).
+!   lines  6-8   remarks: "*****COMMON EXIT ROUTINE*****".
+!   lines  9-15  J EXITD .. M COMIC B,$.
+!   lines 16-18  remarks: "***** COMMENTATOR BUSY WITH OWN I/O *****".
+!   lines 19-24  M BSY ..; line 21 VF,J RITE prints 233200.40+.
+!   line  25     remark "-AND PROCESS INTERRUPT" (continues line 24's).
+!   lines 26-28  remarks: "***** CONSOLE BUSY WITH OTHER I/O *****".
+!   lines 29-37  M PP BSY .. M RID .. B,J RELCN.
+!   lines 38-46  remarks: "*****ENTER MESSAGE IN STACK*****" and its
+!                calling linkage (LVI / B,J STKR / VF / CF / RETURN).
+!   lines 47-50  J STKR LC,J XTEM,.32(J XIN1) .. LV,J XTEM,0.0(J XIN1).
+! A "*" prints after the LOCATION on lines 13 and 49.
+!
+! JOIN.  p.302's scratch sheet (tmp/land/p302/sheet.txt) reads its line
+! 54 "B,M PP BSY" at 233201.40, a half word, so p.302 ends at 233202.00
+! and this page's line 1 continues it.  p.304 should open at 233226.40.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 4 "B,MSETIC" = MSETIO: the drum's open O; C22-6728 names
+!     M SETIO seven times, and the line-2 remark is "SET UP I/O".
+!   * line 15 label "MCCMIC" = MCOMIC: open O (the third glyph is
+!     nearly closed at 900 dpi); same family as landed S COMIC, and
+!     p.302's sheet reads SVA,$XC,MCOMIC.
+!   * line 12 "CMOCOO" = CM0000 (connective digits); "JKSLPB" = JKSUPB
+!     (U with its stem worn; the remark names K SUPP).
+!   * line 32 "CTIC001" = CTI0001 (connective digits).
+!   * line 31 "VF,C'" = VF,0: an open round glyph and a speck; it prints
+!     000000.00+ (as b7decks p.291 lines 27-28 "VF,C").
+!   * octal fields "CCCCCC" read 0; hex "FC" (lines 1, 12), "CO", "DO"
+!     are F0, 00, D0 -- the open 0 of this drum (the CM rows assemble
+!     F0 in the same position on landed p.197 line 10).
+!   * line 33's op byte prints "C2" and BRZ assembles C2 (left as is).
+!
+! CARD SERIALS.  SA000055 (line 1) .. SA000101 (line 50).  Three serials
+! print twice: SA000073 (lines 19/20), SA000076 (lines 23/24) and
+! SA000081 (lines 29/30) -- in each case an LVI and the branch after it
+! are ONE card printed as two lines (as decks/mcp_bootstrap_p154.strap
+! lines 1/2).  50 lines - 3 doubled = 47 cards = 101 - 55 + 1.
+!
+! EXTERNALS.  None of this page's references is defined on a landed
+! page except S L and K SUPP; the others are stand-ins from this page's
+! own binary (see each comment).  Index registers: an LVI's low six bits
+! print 2J+1 over a bit-0 address and an LV's print 2J (as landed p.197
+! LVI,7,9. -> .17), so each J is read off a row whose address is known
+! on this page: J XIN1 $1, J XIN2 $2, J XTEM $4, J XTEM2 $5, M XIN1 $6.
+
+SL      SYN(BU,1), (8)215001.04      ! landed p.103 line 14 -LEVEL OF INSTR
+KSUPP   SYN, (8)216242.0             ! landed p.128 line 3, label row
+JIOBSY  SYN, (8)233666.04            ! line 1 VFL address -- BIT-EXACT; landed p.184 form, no dds
+JWAIT   SYN, (8)233666.00            ! line 5 VFL address -- BIT-EXACT; landed p.184 form, no dds
+JIF     SYN, (8)233666.01            ! line 13 BZB bit address -- BIT-EXACT
+JRECEP  SYN, (8)233666.02            ! line 9 BBZ bit address -- BIT-EXACT
+JSTKBT  SYN, (8)233666.03            ! line 10 BZBZ bit address -- BIT-EXACT
+JKSUPB  SYN, (8)216242.23            ! line 12 VFL address -- BIT-EXACT
+JDEXRG  SYN, (8)233456.0             ! line 14 TI, BIT-EXACT
+MCCWD   SYN, (8)233451.0             ! line 22 ST(BU,0), BIT-EXACT
+JRITE   SYN(BU,64,8), (8)233200.40   ! p.302 line 53 "J RITE W..." (not landed; next row 233201.40); VF line 21 233200.40+, BIT-EXACT
+MSETIO  SYN, (8)233274.40            ! B line 4 233274.50, half word only
+JTERM   SYN, (8)233310.40            ! B lines 20/30 233310.50, half word only
+JRELCN  SYN, (8)233332.40            ! B lines 24/37 233332.50, half word only
+MSTACK  SYN, (8)233347.0             ! B line 35 233347.10, half word only
+MFIXUP  SYN, (8)233424.40            ! LVI line 23 233424.45 less J XIN2
+JSTKP   SYN, (8)233454.0             ! LV line 49 233454.12 less J XTEM2
+JXIN1   SYN, $1                      ! LVI lines 2/19/29: $+n prints .x3 = 2J+1; LV line 50 byte 31
+JXIN2   SYN, $2                      ! LVI line 36: J RITE-1.32 prints 233177.05 = 2J+1
+JXTEM   SYN, $4                      ! LVI line 3: J RITE prints 233200.51, .11 = 2J+1
+JXTEM2  SYN, $5                      ! LV line 49: prints .12 = 2J (LV line 50 .10 = J XTEM 4)
+MXIN1   SYN, $6                      ! LVI line 34: $+1.0 prints 233223.55, .15 = 2J+1
+
+        SLC, (8)233202.00
+        CM1111(BU,1),JIOBSY                                  ! line  1  -W ACCEPTED,MAKE $COMM BUSY
+        LVI,JXIN1,$+1.32                                     ! line  2  -DO SET UP I/O BOOK KEEPING
+        LVI,JXTEM,JRITE                                      ! line  3
+        B,MSETIO                                             ! line  4  (prints MSETIC; open O)
+        BB,JWAIT,MBSY                                        ! line  5  -GO TO WAIT FOR $COMM ECP
+! line  6  -
+! line  7  - *****COMMON EXIT ROUTINE*****
+! line  8  -
+JEXITD  BBZ,JRECEP,KSUPP                                     ! line  9  -IF RECEPTOR ENTRY
+        BZBZ,JSTKBT,JTSTEX                                   ! line 10  -1 IF WE STACKED AN INTERRUPT
+        BB,SL,JTSTEX                                         ! line 11
+        CM0000(BU,1),JKSUPB                                  ! line 12  -FORCE KSUPP TO CHECK INTERRUPT QUE
+JTSTEX  BZB,JIF,KSUPP                                        ! line 13  -IF ENTRY MEANS RETURN THRU ACTUATOR
+        TI,16,JDEXRG,$X0                                     ! line 14  -RESTORE INDEX REGISTERS
+MCOMIC  B,$                                                  ! line 15  -RETURN FOR DISABLED ENTRY
+! line 16  -
+! line 17  - ***** COMMENTATOR BUSY WITH OWN I/O *****
+! line 18  -
+MBSY    LVI,JXIN1,$+1.0                                      ! line 19
+        B,JTERM                                              ! line 20  (same card as 19) -WAIT FOR END OF
+        VF,JRITE                                             ! line 21  -COMMENTATOR I/O
+        ST(BU,0),MCCWD                                       ! line 22  -SAVE COPIED CTLWD
+        LVI,JXIN2,MFIXUP                                     ! line 23
+        B,JRELCN                                             ! line 24  (same card as 23) -RELEASE CONSOLE
+! line 25  -                         -AND PROCESS INTERRUPT
+! line 26  -
+! line 27  - ***** CONSOLE BUSY WITH OTHER I/O *****
+! line 28  -
+MPPBSY  LVI,JXIN1,$+1.0                                      ! line 29
+        B,JTERM                                              ! line 30  (same card as 29) -WAIT FOR END OF
+        VF,0                                                 ! line 31  -OTHER I/O (prints "C'")
+        CTI0001(BU,4),(8)740000.0,41                         ! line 32  -EPGK,UK,EE, OR EOP ON
+        BRZ,MRID                                             ! line 33  -CS ONLY ON
+        LVI,MXIN1,$+1.0                                      ! line 34  -STACK SOMEONE ELSES
+        B,MSTACK                                             ! line 35  -INTERRUPT
+MRID    LVI,JXIN2,JRITE-1.32                                 ! line 36  -RELEASE CONSOLE
+        B,JRELCN                                             ! line 37  -AND GO TO WRITE
+! line 38  -
+! line 39  - *****ENTER MESSAGE IN STACK*****
+! line 40  -
+! line 41  - LINKAGE...LVI,JXIN1,$+1.0
+! line 42  - B,JSTKR
+! line 43  - VF,LOCATION OF MESSAGE
+! line 44  - CF,LENGTH OF MESSAGE,LESS THAN 11 WORDS
+! line 45  - RETURN
+! line 46  -
+JSTKR   LC,JXTEM,.32(JXIN1)                                  ! line 47  -NO OF WORDS
+        BXCZ,JTSTEX                                          ! line 48
+        LV,JXTEM2,JSTKP                                      ! line 49  -NEXT BYTE IN STACK
+        LV,JXTEM,0.0(JXIN1)                                  ! line 50  -FWA
+
+!SYM JEXITD 233205.40
+!SYM JTSTEX 233211.40
+!SYM MCOMIC 233213.40
+!SYM MBSY   233214.00
+!SYM MPPBSY 233217.40
+!SYM MRID   233223.40
+!SYM JSTKR  233224.40
+!CHECK 233202.00 | 233666.04 80 001000.36 F0 | line 1 CM1111(BU,1),JIOBSY (byte prints "FC")
+!CHECK 233203.00 | 233204.43 01 | line 2 LVI,JXIN1,$+1.32
+!CHECK 233203.40 | 233200.51 01 | line 3 LVI,JXTEM,JRITE
+!CHECK 233204.00 | 233274.50 00 | line 4 B,MSETIO (printed MSETIC)
+!CHECK 233204.40 | 233666.00 80 233214.34 02 | line 5 BB,JWAIT,MBSY
+!CHECK 233205.40 | 233666.02 80 216242.34 06 | line 9 J EXITD BBZ,JRECEP,KSUPP
+!CHECK 233206.40 | 233666.03 80 233211.74 04 | line 10 BZBZ,JSTKBT,JTSTEX
+!CHECK 233207.40 | 215001.04 80 233211.74 02 | line 11 BB,SL,JTSTEX
+!CHECK 233210.40 | 216242.23 80 001000.00 F0 | line 12 CM0000(BU,1),JKSUPB (prints CMOCOO, JKSLPB, "FC")
+!CHECK 233211.40 | 233666.01 80 216242.34 00 | line 13 J TSTEX BZB,JIF,KSUPP (a "*" prints after the location)
+!CHECK 233212.40 | 233456.00 80 000020.00 A0 | line 14 TI,16,JDEXRG,$X0
+!CHECK 233213.40 | 233213.50 00 | line 15 M COMIC B,$ (label prints MCCMIC)
+!CHECK 233214.00 | 233215.03 01 | line 19 M BSY LVI,JXIN1,$+1.0
+!CHECK 233214.40 | 233310.50 00 | line 20 B,JTERM
+!CHECK 233215.00 | 233200.40+ | line 21 VF,JRITE
+!CHECK 233215.40 | 233451.00 80 000000.20 D0 | line 22 ST(BU,0),MCCWD
+!CHECK 233216.40 | 233424.45 01 | line 23 LVI,JXIN2,MFIXUP
+!CHECK 233217.00 | 233332.50 00 | line 24 B,JRELCN
+!CHECK 233217.40 | 233220.43 01 | line 29 M PP BSY LVI,JXIN1,$+1.0
+!CHECK 233220.00 | 233310.50 00 | line 30 B,JTERM
+!CHECK 233220.40 | 000000.00+ | line 31 VF,0 (prints "VF,C'")
+!CHECK 233221.00 | 740000.00 80 404024.43 70 | line 32 CTI0001(BU,4),(8)740000.0,41 (prints CTIC001)
+!CHECK 233222.00 | 233223.74 C2 | line 33 BRZ,MRID
+!CHECK 233222.40 | 233223.55 01 | line 34 LVI,MXIN1,$+1.0
+!CHECK 233223.00 | 233347.10 00 | line 35 B,MSTACK
+!CHECK 233223.40 | 233177.05 01 | line 36 M RID LVI,JXIN2,JRITE-1.32
+!CHECK 233224.00 | 233332.50 00 | line 37 B,JRELCN
+!CHECK 233224.40 | 000000.50 51 | line 47 J STKR LC,JXTEM,.32(JXIN1)
+!CHECK 233225.00 | 233211.70 42 | line 48 BXCZ,JTSTEX
+!CHECK 233225.40 | 233454.12 30 | line 49 LV,JXTEM2,JSTKP (a "*" prints after the location)
+!CHECK 233226.00 | 000000.10 31 | line 50 LV,JXTEM,0.0(JXIN1)

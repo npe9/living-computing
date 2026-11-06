@@ -1,0 +1,185 @@
+! mcp_bootstrap_p298.strap -- MCP printed page 298: the tail of THE
+! SPECIAL ASSIGNMENT PACKAGE (lines 1-33, from ,DCOMM to ZASN99) and
+! the head of THE SPECIAL DISASSIGN PACKAGE (lines 35-50, ZDSN01 ..).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.49, read at 400 dpi (900 dpi for
+! doubtful glyphs).  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID QJ000050  DIST. OF 3/01  3/01  PAGE NUMBER 298".  The heading
+! row's LOCATION field prints 233003 (line 1's word, 233003.40).
+!
+! THE PAGE.  50 lines, every line number prints a "*" after it.  Located
+! rows run contiguous from 233003.40 (line 1) to 233051.40 (line 50, a
+! full-word CM; next location 233052.40), then blank paper.  Lines 34-41
+! and 47 are remark cards (a banner "THE SPECIAL DISASSIGN PACKAGE"
+! between two rows of asterisks, "CALLING LINKAGE / SIC,Z COM 90
+! B,Z DSN 01  VF,IOD NUMBER"; line 47 "-SET UNASSIGNED", no location).
+! "*" after the LOCATION on lines 7, 20 and 33.
+!
+! JOIN.  p.297 (b7decks) ends at 233003.00 (B,DMCP, half word; next
+! 233003.40) = this page's line 1.  Scratch neighbour p.299 opens with
+! SLC (8)233052.40 = this page's next location.  Contiguous both ways.
+!
+! ENTRY MODE.  Lines 6-9, 11, 13 are (IQS*)DD(BU) cards; the datum is
+! everything between the comma and the "*", blanks included.  Blank
+! counts measured on the 400 dpi image by glyph-cell centre (40 px
+! pitch, comma in cell 22 on every row):
+!   line 6  "  MOUNT "                          8 chars  233006.00-233007.00
+!   line 7  "   LINE MODE MCP TAPE ON CHANNEL "  33 chars 233007.00-233013.10
+!   line 8  "  , UNIT "                         9 chars  233013.10-233014.20
+!   line 9  " .     "                           7 chars  233014.20-233015.10
+!   line 11 "OFF", line 13 " ON"
+! Each count agrees with the next printed location.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "Z LCD LP" (lines 19, 24) = ZLODLP: the drum's open O, D with stem.
+!     C22-6728 PDF p.107 (typeset) names "a branch switch at ZLODLP for
+!     use by special assignment" within ZSETAS.
+!   * "Z CCM 95" (line 4), "Z CCM 99" (line 42), "Z CCM 19" (line 46):
+!     ZCOM95 / ZCOM99 / ZCOM19 -- line 22 prints "Z COM 19" and line 43
+!     "Z COM 01" with closed O's; p.297 defines ZCOM95, p.299 (scratch)
+!     ZCOM99 / ZCOM19; C22-6728 p.107 names ZCOM01, ZCOM90.
+!   * "Z DSN 01" (line 42 label; also line 40 remark): D's stem is clear
+!     at 900 dpi; C22-6728 p.107 (typeset) names ZDSN01.  0 by family.
+!   * "Z ASN 09" etc.: digit 0 by the numbered family (landed ZASN01).
+!   * CMOCOO / CMOCO0 / CMOOOO (lines 19, 48, 49, 50) = CM0000.
+!   * line 29 "SV,2,0.C($1)": 0.0 (open round glyph, a bit offset).
+!   * octal fields "CCCCCC.CC" read 0.  Bytes printing an open round
+!     second glyph are written 0: B rows (lines 4, 15, 21, 32, 43) "CO"
+!     = 00, TI rows (lines 16, 31) "AC" = A0, SIC line 42 "8C" = 80,
+!     CM rows "FO" = F0 -- each is what the printed statement assembles
+!     to, and the same row's octal fields print 0 open.
+!   * line 46 "BB1": the third glyph has the digit-1 foot (as in "$1");
+!     it assembles to the printed 0E byte.
+!
+! AS PRINTED: line 16 "TI,8,$3 ,ZASN99" keeps the printed blank before
+! the second comma; the assembler takes it and the row checks.
+!
+! EXTERNALS.  S-fields copy the defining decks' forms (p.99 / p.101 /
+! p.103).  ZCHNNM / ZUNTNM are index-register operands (SX / SV J field)
+! whose values come only from this page's binary: SX .07 = 2*3+1,
+! SV .51 = .40(half) + 2*4 + 1 -> $3 and $4.  No page defines them.
+!
+! CARD SERIALS.  QJ000050 .. QJ000097.  Line N prints QJ0000(N+49) for
+! lines 1-20; QJ000069 prints TWICE (lines 20 and 21); lines 22-42
+! print N+48; QJ000090 prints TWICE (lines 42 and 43); lines 44-50 print
+! N+47.  No serial skipped.
+
+DCOMM   SYN, 35.32                   ! landed p.105
+SCHANN  SYN(BU,7), 0.12              ! p.101 line 5 -CHANNEL NUMBER
+SUNITN  SYN(BU,3), 0.47              ! p.101 line 6 -UNIT NUMBER
+SUNSUP  SYN(BU,1), 0.30              ! p.99 line 28
+SUNASG  SYN(BU,1), 0.29              ! p.99 line 27 -UNIT ASSIGNMENT
+SOWNER  SYN(BU,1), 0.32              ! p.99 line 30
+SVER    SYN(BU,1), 0.40              ! p.99 line 32 -VERIFY FILE STATUS
+SRD     SYN(BU,1), 0.57              ! p.99 line 45 -READ
+SIMNT   SYN(BU,1), 0.53              ! p.99 line 44
+SCNFCG  SYN(BU,1), (8)215001.02      ! landed p.103 line 12 SYN(BU,1),SCOMRG+.2; CM1111 line 23 215001.02
+ZCOM95  SYN(BU,32,8), (8)232761.0    ! p.297 line 25 (LX, half word); B line 4 232761.10
+ZASN07  SYN(BU,32,8), (8)233002.40   ! p.297 line 47 (SV, half word); B line 15 233002.50
+ZASN52  SYN(BU,64,8), (8)232772.40   ! p.297 line 38 (LCV, full word); B line 32 232772.50
+ZCOM99  SYN(BU,32,8), (8)233077.40   ! p.299 (scratch) line 36 B,$; SIC lines 42 233077.40, BIT-EXACT
+ZCOM01  SYN(BU,32,8), (8)233067.40   ! p.299 (scratch) line 21 SX; B line 43 233067.50, half word only
+ZCOM19  SYN(BU,32,8), (8)233103.0    ! p.299 (scratch) line 43 LVI; BB lines 45-46 233103.34, half word only
+ZLODLP  SYN, (8)235127.40            ! not landed; CM lines 19/24 ZLODLP+.19 = 235127.63, BIT-EXACT
+ZSCAN9  SYN, (8)235143.40            ! not landed; SIC line 20 235143.40, BIT-EXACT
+ZCHSCN  SYN, (8)235071.0             ! not landed; B line 21 235071.10, half word only
+ZCHNNM  SYN, $3                      ! no page defines; SX line 26 J field 3, this page's binary only
+ZUNTNM  SYN, $4                      ! no page defines; SV line 27 J field 4, this page's binary only
+
+        SLC, (8)233003.40
+        ,DCOMM                                               ! line  1  (printed ",D COMM")
+        VF,ZASN10                                            ! line  2
+        CF,7.0                                               ! line  3
+        B,ZCOM95                                             ! line  4  (printed "Z CCM 95")
+        CNOP                                                 ! line  5
+ZASN10  (IQS*)DD(BU),  MOUNT *                               ! line  6
+ZASN11  (IQS*)DD(BU),   LINE MODE MCP TAPE ON CHANNEL *      ! line  7  (location prints "*")
+ZASN12  (IQS*)DD(BU),  , UNIT *                              ! line  8
+ZASN13  (IQS*)DD(BU), .     *                                ! line  9
+        CNOP                                                 ! line 10
+ZASN15  (IQS*)DD(BU),OFF*                                    ! line 11
+        CNOP                                                 ! line 12
+ZASN16  (IQS*)DD(BU), ON*                                    ! line 13
+ZASN09  LV,2,ZASN16                                          ! line 14
+        B,ZASN07                                             ! line 15
+ZASN50  TI,8,$3 ,ZASN99                                      ! line 16  (blank as printed)
+        LV,8,$2                                              ! line 17  -PUT CHAN STATUS ADDRESS
+        LV,6,$1                                              ! line 18
+        CM0000(BU,1),ZLODLP+.19                              ! line 19  -SET SWITCH  (printed "Z LCD LP")
+        SIC,ZSCAN9                                           ! line 20  (location prints "*")
+        B,ZCHSCN                                             ! line 21
+ZASN51  BXVZ,ZCOM19                                          ! line 22  -BR. IF NO REPLACEMENT FOUND
+        CM1111,SCNFCG                                        ! line 23
+        CM1111(BU,1),ZLODLP+.19                              ! line 24  -RESET SWITCH FOR REASSIGN
+        SR,2,$2                                              ! line 25  -GET ORIG UNIT AREA ADDRESS
+        SX,ZCHNNM,SCHANN($2)                                 ! line 26  -NEW CHANNEL NUMBER
+        SV,ZUNTNM,SUNITN($2)                                 ! line 27  -NEW UNIT NUMBER
+        LV,1,$9                                              ! line 28  -GET NEW UNIT STATUS ADDRESS
+        SV,2,0.0($1)                                         ! line 29  -SET UAA INTO NEW UST  (printed "0.C")
+        CM1111,SIMNT($1)                                     ! line 30
+        TI,8,ZASN99,$3                                       ! line 31
+        B,ZASN52                                             ! line 32
+ZASN99  DRZ(N),(8)                                           ! line 33  -INDEX STORAGE  (location prints "*")
+! line 34  -
+! line 35  - ******************************************************
+! line 36  - THE SPECIAL DISASSIGN PACKAGE
+! line 37  - ******************************************************
+! line 38  -
+! line 39  - CALLING LINKAGE
+! line 40  - SIC,Z COM 90    B,Z DSN 01     VF,IOD NUMBER
+! line 41  -
+ZDSN01  SIC,ZCOM99                                           ! line 42  (printed "Z CCM 99")
+        B,ZCOM01                                             ! line 43
+        KV,1,$2                                              ! line 44
+        BB,SUNSUP($1),ZCOM19                                 ! line 45  -BRANCH IF SUPPRESSED TO ERROR
+        BB1,SUNASG($1),ZCOM19                                ! line 46  -BRANCH IF NOT ASSIGNED TO ERROR  (printed "Z CCM 19")
+! line 47  -SET UNASSIGNED
+        CM0000,SOWNER($1)                                    ! line 48
+        CM0000(BU,9),SVER($1)                                ! line 49  -CLEAR TABLES
+        CM0000(BU,7),SRD($1)                                 ! line 50
+
+!SYM ZASN10 233006.00
+!SYM ZASN11 233007.00
+!SYM ZASN12 233013.10
+!SYM ZASN13 233014.20
+!SYM ZASN15 233016.00
+!SYM ZASN16 233017.00
+!SYM ZASN09 233017.40
+!SYM ZASN50 233020.40
+!SYM ZASN51 233024.40
+!SYM ZASN99 233034.00
+!SYM ZDSN01 233044.00
+!CHECK 233003.40 | 000043.40 80 | line 1 ,DCOMM (printed ",D COMM")
+!CHECK 233004.00 | 233006.00+ | line 2 VF,ZASN10
+!CHECK 233004.40 | 000007 | line 3 CF,7.0 -- an 18-bit count field
+!CHECK 233005.00 | 232761.10 00 | line 4 B,ZCOM95 (byte prints CO)
+!CHECK 233005.40 | 000000.30 00 | line 5 CNOP
+!CHECK 233015.40 | 000000.30 00 | line 10 CNOP
+!CHECK 233016.40 | 000000.30 00 | line 12 CNOP
+!CHECK 233017.40 | 233017.04 30 | line 14 ZASN09 LV,2,ZASN16
+!CHECK 233020.00 | 233002.50 00 | line 15 B,ZASN07
+!CHECK 233020.40 | 000023.00 80 233034.20 A0 | line 16 ZASN50 TI,8,$3 ,ZASN99 (byte prints AC)
+!CHECK 233021.40 | 000022.20 30 | line 17 LV,8,$2
+!CHECK 233022.00 | 000021.14 30 | line 18 LV,6,$1
+!CHECK 233022.40 | 235127.63 80 001000.00 F0 | line 19 CM0000(BU,1),ZLODLP+.19
+!CHECK 233023.40 | 235143.40 80 | line 20 SIC,ZSCAN9
+!CHECK 233024.00 | 235071.10 00 | line 21 B,ZCHSCN
+!CHECK 233024.40 | 233103.31 42 | line 22 ZASN51 BXVZ,ZCOM19
+!CHECK 233025.00 | 215001.02 80 001000.36 F0 | line 23 CM1111,SCNFCG
+!CHECK 233026.00 | 235127.63 80 001000.36 F0 | line 24 CM1111(BU,1),ZLODLP+.19
+!CHECK 233027.00 | 000022.05 70 | line 25 SR,2,$2
+!CHECK 233027.40 | 000000.07 12 | line 26 SX,ZCHNNM,SCHANN($2)
+!CHECK 233030.00 | 000000.51 32 | line 27 SV,ZUNTNM,SUNITN($2)
+!CHECK 233030.40 | 000031.02 30 | line 28 LV,1,$9
+!CHECK 233031.00 | 000000.05 31 | line 29 SV,2,0.0($1)
+!CHECK 233031.40 | 000000.65 81 001000.36 F0 | line 30 CM1111,SIMNT($1)
+!CHECK 233032.40 | 233034.00 80 000023.20 A0 | line 31 TI,8,ZASN99,$3 (byte prints AC)
+!CHECK 233033.40 | 232772.50 00 | line 32 B,ZASN52
+!CHECK 233044.00 | 233077.40 80 | line 42 ZDSN01 SIC,ZCOM99
+!CHECK 233044.40 | 233067.50 00 | line 43 B,ZCOM01
+!CHECK 233045.00 | 000022.02 90 | line 44 KV,1,$2
+!CHECK 233045.40 | 000000.36 81 233103.34 02 | line 45 BB,SUNSUP($1),ZCOM19
+!CHECK 233046.40 | 000000.35 81 233103.34 0E | line 46 BB1,SUNASG($1),ZCOM19
+!CHECK 233047.40 | 000000.40 81 001000.00 F0 | line 48 CM0000,SOWNER($1)
+!CHECK 233050.40 | 000000.50 81 011000.00 F0 | line 49 CM0000(BU,9),SVER($1)
+!CHECK 233051.40 | 000000.71 81 007000.00 F0 | line 50 CM0000(BU,7),SRD($1)

@@ -1,0 +1,188 @@
+! mcp_bootstrap_p321.strap -- MCP printed page 321: the LOADER's origin
+! card (LX,$4,AXWORG .. B,AORG2) and the ORIGIN AND FLOW CARD LOADER
+! (A LOAD .. A LD2), lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.72, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22LOADER  CARD ID TA000047  DIST. OF 3/01
+!  3/01  PAGE NUMBER 321" (round glyphs in numeric fields read 0).  The
+! heading row's LOCATION field is 234457, line 1's word.
+!
+! THE PAGE.  50 lines; every line number prints a "*" after it.
+! Located rows run contiguous from 234457.00 (line 1) to 234521.40
+! (line 50, SV, a half word; next location 234522.00), then blank paper.
+! "*" after the LOCATION on lines 12, 29 and 45.
+!   lines  1-38  origin card: bounds check against ALOWWD/AHGHWD, the
+!                skip count, the job-control origin, the sequence and
+!                checksum checks, the flow-card test, B,AORG2.
+!   line  39     remark card "ORIGIN AND FLOW CARD LOADER" (the NAME
+!                column prints "-"); no location.
+!   lines 40-50  A LOAD: full words (L/ST (V+I) loop on $4), then the
+!                zeroing / partial-word / skip tests.
+!   line  42     CNOP at 234512.40 prints 000000.30 00: the half-word
+!                NOP that pads ALOAD1 to a full word.
+!
+! JOIN.  p.320 and p.322 have no scratch deck; contiguity is NOT
+! established here.  p.322 should open at 234522.00 with serial
+! TA000095.  The loader data block (p.291, staged) supplies ALL and its
+! indicator bits, ALDBF, ALDCTR, ALOWWD, AHGHWD -- this page's binaries
+! (232543.03 / .04 / .07 / .12, 232552.03, 232553.02 / .42) meet them.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "A LOAC" / "A LCAD" / "ALCAD" (lines 28, 29, 32, 40) = ALOAD: the
+!     drum's open O and worn-stem D; line 40 defines it at 234511.40 and
+!     BXE line 28 (234511.72), BB line 29 (234511.74), B line 32
+!     (234511.50) all print that address.  ALOAD1 (line 43) prints
+!     closed.  C22-6728 has ALOADR.
+!   * "ACRG1" / "ACRG2" (lines 16, 20, 38) = AORG1 / AORG2: C22-6728
+!     prints AORG1.
+!   * "ALC8" (line 7) = ALD8: C22-6728 prints ALD8 three times.
+!   * "ALD1", "ALD2", "ALD3", "ALD5", "ALD6", "ALDBF" with the D worn
+!     (lines 22, 29, 34-37, 41, 46-49).  ALDBF is p.291's spelling.
+!   * "AHFWD"/"AHFWCI" (lines 19, 33, 47): AHFWDI is p.291's spelling.
+!   * "ALCWWD" (line 9) = ALOWWD (p.291).  "AXWFLW" (line 27): the
+!     remark "TEST IF FLOW CARD" -- W, F, L, W are plain ink.
+!   * line 46 "BBZ,ASETZI,ASETZ1": the first operand's last glyph is I
+!     (the indicator, p.291 ASETZI = ALL.7, binary 232543.07); the
+!     second's is a 1 with a flag (a branch target 234541.00), written
+!     ASETZ1.
+!   * "AERR5A" (lines 8, 10, 17): 5 is plain ink at 400 dpi.
+!   * octal / hex fields with an open round read 0 ("CO" = 00, "FC" /
+!     "FO" = F0, "C2" stays C2 -- BXE's byte -- "0E", "0A").
+!
+! EXTERNALS.  None is landed; p.291 (staged) gives ALL's data block;
+! every other value comes from this page's binary (each comment says how
+! much it fixes).
+!
+! CARD SERIALS.  TA000047 .. TA000094.  Shared serials: lines 23-24
+! (TA000069) and 25-26 (TA000070).  None skipped.
+
+ALL     SYN(N), (8)232543.0          ! p.291 line 9 DRZ(N),1 (staged); BB1 line 20 232543.03
+AHFWDI  SYN,ALL.4                    ! p.291 line 12 (staged); CM line 33 232543.04
+ASETZI  SYN,ALL.7                    ! p.291 line 15 (staged); BBZ line 46 232543.07
+ARBCDI  SYN,ALL.10                   ! p.291 line 18 (staged); BBZ line 49 232543.12
+YBCBU   SYN(BU), (8)231462.0         ! p.274 line 19 DR(BU),(15) (staged), as p.291 writes it
+ALDBF   SYN,YBCBU                    ! p.291 line 33 (staged); LF line 5 ALDBF.48 = 231462.60
+ALDCTR  SYN(N), (8)232552.0          ! p.291 line 34 DRZ(N),1 (staged); SV line 50 232552.03
+ALOWWD  SYN(BU,32), (8)232553.0      ! p.291 line 36 DRZ(BU,32),1 (staged); KV line 9 232553.02
+AHGHWD  SYN(BU,32), (8)232553.40     ! p.291 line 37 DRZ(BU,32),1 (staged); KV line 7 232553.42
+AXWORG  SYN, (8)235255.0             ! not landed; LX line 1 235255.10, half word only
+AXWFLW  SYN, (8)235256.0             ! not landed; KV line 27 235256.10, half word only
+AERR5A  SYN, (8)235225.0             ! not landed; BXH lines 8, 17 235225.33, half word only
+ASEQ1   SYN, (8)234553.40            ! not landed; B line 24 234553.50, half word only
+ACHSM   SYN, (8)234563.0             ! not landed; B line 26 234563.10, half word only
+ASETZ   SYN, (8)234531.0             ! not landed; BB line 30 234531.34, half word only
+ALD1    SYN, (8)234524.40            ! not landed; BBZ line 47 234524.74; SF line 34 ALD1.18 = 234524.62, BIT-EXACT
+ASETZ1  SYN, (8)234541.0             ! not landed; BBZ line 46 234541.34, half word only
+ALD3    SYN, (8)234527.0             ! not landed; BB line 48 234527.34, half word only
+ARNORM  SYN, (8)235001.40            ! not landed; BBZ line 49 235001.74, half word only
+
+        SLC, (8)234457.00
+        LX,$4,AXWORG                                         ! line  1  -ORIGIN CARD
+        Z,$1                                                 ! line  2
+        Z,$5                                                 ! line  3
+        Z,$6                                                 ! line  4
+        LF(BU,60),ALDBF.48                                   ! line  5  -LOAD COLUMNS 5-9
+        SF(BU,24),$1,24                                      ! line  6  -PLACE ORIGIN IN $1
+ALD8    KV,1,AHGHWD                                          ! line  7
+        BXH,AERR5A                                           ! line  8
+        KV,$1,ALOWWD                                         ! line  9
+        BXL,AERR5A                                           ! line 10
+        SF(BU,24),$5                                         ! line 11  -STORE NO. OF BITS TO BE SKIPPED
+        SF(BU,10),$6.14,48                                   ! line 12
+        V+,6,$5                                              ! line 13
+        V+,6,$1                                              ! line 14
+        SF(BU,4),$4.42,54                                    ! line 15  -STORE NO OF WHOLE WORS IN CF
+AORG1   KV,$6,AHGHWD                                         ! line 16
+        BXH,AERR5A                                           ! line 17
+        KFI(BU,6),0,48                                       ! line 18  -TEST IF PARITAL WORD TO BE STORED
+        BZAE,AHFWD                                           ! line 19
+AORG2   BB1,ALL.3,$+1.32                                     ! line 20  -SAVE INITIAL ORIGIN IN JOB CONTROL-
+        SV,$1,3.($15)                                        ! line 21  -CALLING SEQUENCE AS BRANCH ADDR.
+        LF(BU,24),ALDBF.24                                   ! line 22  -LOAD COLUMNS 3-4
+        SIC,$14                                              ! line 23
+        B,ASEQ1                                              ! line 24  -CHECK COLUMN 3 FOR SEQUENCE
+        SIC,$14                                              ! line 25
+        B,ACHSM                                              ! line 26  -CHECK CHECKSUM COLUMN 4
+        KV,$4,AXWFLW                                         ! line 27  -TEST IF FLOW CARD
+        BXE,ALOAD                                            ! line 28  -YES-GO TO LOAD
+        BB,ALDBF.49,ALOAD                                    ! line 29  -IF SKIP OR ZERO DONE LAST - LOAD
+        BB,ALDBF.48,ASETZ                                    ! line 30  -ZERO DONE FIRST
+        V+,$1,$5                                             ! line 31  -ADD NO OF BITS SKIPPED TO ORG.
+        B,ALOAD                                              ! line 32
+AHFWD   CM1111(BU,1),AHFWDI                                  ! line 33  -SET PARTIAL WORD INDICATOR
+        SF(BU,6),ALD1.18,48                                  ! line 34  -STORE NO OF BITS IN VFL-
+        SF(BU,6),ALD1+1.18,48                                ! line 35  -INSTRUCTIONS IN ALD1
+        SF(BU,6),ALD1.35,48                                  ! line 36
+        SF(BU,6),ALD1+1.35,48                                ! line 37
+        B,AORG2                                              ! line 38  -CONTINUE WITH LOAD ROUTINE
+! line 39  - ORIGIN AND FLOW CARD LOADER
+ALOAD   KCI,$4,0                                             ! line 40  -ARE THERE FULL WDS TO BE LOADED
+        BXE,ALD6                                             ! line 41  -NO-TEST FOR ZEROING AND PARTIAL WORD
+        CNOP                                                 ! line 42
+ALOAD1  L(BU,64)(V+I),1.($4)                                 ! line 43  -CHANGED TO LOAD ZEROS IN SETZ ROUTINE
+        ST(BU,64)(V+I),1.($1)                                ! line 44  -LOAD FULL WORDS
+        CB,$4,ALOAD1                                         ! line 45
+ALD6    BBZ,ASETZI,ASETZ1                                    ! line 46  -TEST IF ZEROING WAS BEING DONE
+        BBZ,AHFWDI,ALD1                                      ! line 47  -TEST IF PARTIAL WD TO BE STORED
+ALD5    BB,ALDBF.49,ALD3                                     ! line 48  -TEST IF SKIP OR ZERO STILL TO BE DONE
+ALD2    BBZ,ARBCDI,ARNORM                                    ! line 49
+        SV,$1,ALDCTR                                         ! line 50
+
+!SYM ALD8   234463.00
+!SYM AORG1  234471.00
+!SYM AORG2  234473.40
+!SYM AHFWD  234504.00
+!SYM ALOAD  234511.40
+!SYM ALOAD1 234513.00
+!SYM ALD6   234515.40
+!SYM ALD5   234517.40
+!SYM ALD2   234520.40
+!CHECK 234457.00 | 235255.10 10 | line 1 LX,$4,AXWORG
+!CHECK 234457.40 | 000021.22 00 | line 2 Z,$1
+!CHECK 234460.00 | 000025.22 00 | line 3 Z,$5
+!CHECK 234460.40 | 000026.22 00 | line 4 Z,$6
+!CHECK 234461.00 | 231462.60 80 074000.06 70 | line 5 LF(BU,60),ALDBF.48
+!CHECK 234462.00 | 000021.00 80 030014.12 F0 | line 6 SF(BU,24),$1,24
+!CHECK 234463.00 | 232553.42 90 | line 7 ALD8 KV,1,AHGHWD (label prints ALC8)
+!CHECK 234463.40 | 235225.33 42 | line 8 BXH,AERR5A
+!CHECK 234464.00 | 232553.02 90 | line 9 KV,$1,ALOWWD (prints ALCWWD)
+!CHECK 234464.40 | 235225.32 42 | line 10 BXL,AERR5A
+!CHECK 234465.00 | 000025.00 80 030000.12 F0 | line 11 SF(BU,24),$5
+!CHECK 234466.00 | 000026.16 80 012030.12 F0 | line 12 SF(BU,10),$6.14,48 ("*" after location)
+!CHECK 234467.00 | 000025.14 B0 | line 13 V+,6,$5
+!CHECK 234467.40 | 000021.14 B0 | line 14 V+,6,$1
+!CHECK 234470.00 | 000024.52 80 004033.12 F0 | line 15 SF(BU,4),$4.42,54
+!CHECK 234471.00 | 232553.54 90 | line 16 AORG1 KV,$6,AHGHWD (label prints ACRG1)
+!CHECK 234471.40 | 235225.33 42 | line 17 BXH,AERR5A
+!CHECK 234472.00 | 000000.00 80 406030.23 10 | line 18 KFI(BU,6),0,48
+!CHECK 234473.00 | 234504.36 C0 | line 19 BZAE,AHFWD
+!CHECK 234473.40 | 232543.03 80 234475.34 0E | line 20 AORG2 BB1,ALL.3,$+1.32
+!CHECK 234474.40 | 000003.03 3F | line 21 SV,$1,3.($15)
+!CHECK 234475.00 | 231462.30 80 030000.06 70 | line 22 LF(BU,24),ALDBF.24
+!CHECK 234476.00 | 000036.00 80 | line 23 SIC,$14
+!CHECK 234476.40 | 234553.50 00 | line 24 B,ASEQ1
+!CHECK 234477.00 | 000036.00 80 | line 25 SIC,$14
+!CHECK 234477.40 | 234563.10 00 | line 26 B,ACHSM
+!CHECK 234500.00 | 235256.10 90 | line 27 KV,$4,AXWFLW
+!CHECK 234500.40 | 234511.72 C2 | line 28 BXE,ALOAD (prints ALOAC)
+!CHECK 234501.00 | 231462.61 80 234511.74 02 | line 29 BB,ALDBF.49,ALOAD ("*" after location)
+!CHECK 234502.00 | 231462.60 80 234531.34 02 | line 30 BB,ALDBF.48,ASETZ
+!CHECK 234503.00 | 000025.02 B0 | line 31 V+,$1,$5
+!CHECK 234503.40 | 234511.50 00 | line 32 B,ALOAD
+!CHECK 234504.00 | 232543.04 80 001000.36 F0 | line 33 AHFWD CM1111(BU,1),AHFWDI
+!CHECK 234505.00 | 234524.62 80 006030.12 F0 | line 34 SF(BU,6),ALD1.18,48
+!CHECK 234506.00 | 234525.62 80 006030.12 F0 | line 35 SF(BU,6),ALD1+1.18,48
+!CHECK 234507.00 | 234525.03 80 006030.12 F0 | line 36 SF(BU,6),ALD1.35,48
+!CHECK 234510.00 | 234526.03 80 006030.12 F0 | line 37 SF(BU,6),ALD1+1.35,48
+!CHECK 234511.00 | 234473.50 00 | line 38 B,AORG2
+!CHECK 234511.40 | 000000.11 0A | line 40 ALOAD KCI,$4,0 (label prints ALCAD)
+!CHECK 234512.00 | 234515.72 C2 | line 41 BXE,ALD6
+!CHECK 234512.40 | 000000.30 00 | line 42 CNOP (pads a half word)
+!CHECK 234513.00 | 000001.00 84 100000.20 50 | line 43 ALOAD1 L(BU,64)(V+I),1.($4)
+!CHECK 234514.00 | 000001.00 81 100000.20 D0 | line 44 ST(BU,64)(V+I),1.($1)
+!CHECK 234515.00 | 234513.10 48 | line 45 CB,$4,ALOAD1 ("*" after location)
+!CHECK 234515.40 | 232543.07 80 234541.34 06 | line 46 ALD6 BBZ,ASETZI,ASETZ1
+!CHECK 234516.40 | 232543.04 80 234524.74 06 | line 47 BBZ,AHFWDI,ALD1
+!CHECK 234517.40 | 231462.61 80 234527.34 02 | line 48 ALD5 BB,ALDBF.49,ALD3
+!CHECK 234520.40 | 232543.12 80 235001.74 06 | line 49 ALD2 BBZ,ARBCDI,ARNORM
+!CHECK 234521.40 | 232552.03 30 | line 50 SV,$1,ALDCTR

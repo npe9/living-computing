@@ -1,0 +1,166 @@
+! mcp_bootstrap_p326.strap -- MCP printed page 326: the LOADER's
+! relocatable binary card routines -- the tail of the field loop
+! (ARBCD8, ARBCDA, ARBCDD), the relocatable binary data routine ARBDCD
+! (C22-6728 "The relocatable binary data routine, ARBDCD") through
+! ARBDC3/ARBDC2, and ARNORM / ARNRM1 / ARNRM2, lines 1-47.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.77, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22LOADER  CARD
+! ID TA000305  DIST. OF 3/01  3/01  PAGE NUMBER 326"; the heading row's
+! LOCATION field is 234751, line 1's word.
+!
+! THE PAGE.  47 lines, contiguous from 234751.00 to 235007.40 (a half
+! word; next location 235010.00), then blank paper.  Line 15 is a
+! remark card ("-" in the NAME field, "BINARY DATA CARD"), no location.
+! "*" after the LOCATION on lines 8, 25 and 42.
+!
+! JOIN.  p.325 (scratch neighbour, not landed; Vision sheet) ends with
+! B,ARNORM at 234750.40 and defines ARBCD6 at 234746.40 -- line 1's
+! 234751.00 continues it.  p.327's sheet opens at 235010.00.
+!
+! CARD SERIALS.  TA000305 .. TA000349, 45 serials on 47 lines: lines 5
+! and 6 (NOP, NOP) both print TA000309, lines 16 and 17 (Z,$5 / Z,$6)
+! both print TA000319.  Recorded, not explained.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 7 "ARBCDC" (last glyph open) = ARBCDD: line 13 DEFINES
+!     ARBCDD with both D stems plain at 900 dpi, and line 7's printed
+!     second half 234762.74 is line 13's 234762.40.  D worn to C.
+!   * line 16 label ARBDCD: C22-6728 names it ("The relocatable
+!     binary data routine, ARBDCD").
+!   * line 36 ARNORM and line 40 ANORMR: letter O (C22-6728 "ARNORM";
+!     ANORMR's O prints closed at 900 dpi).  line 41 ARNRM1: C22-6728
+!     "counted in the routine ARNRM1".
+!   * hex bytes printed with open rounds ("CO" line 12, "CC" line 22,
+!     "OF" line 45, "FC" lines 10 and 29-31) read 0, as the octal
+!     fields of the same rows print 0 open.  Line 42's "C8" likewise
+!     is 08 (C-I compiles 08, as the landed C-I rows at 216547.00 and
+!     222141.40 print it).
+!
+! The loader's data block (ALL and the indicators SYN'd onto it,
+! ALDCTR, AHIWD, ABT31, ARCDCT, ALDBF) is printed p.291 (staged); the
+! stand-ins below copy its addresses and dds.
+
+ALL     SYN(N), (8)232543.0          ! p.291 line 9 DRZ(N),1; CM1111 line 29 ALL.3 = 232543.03, BIT-EXACT
+ATCRDI  SYN,ALL.1                    ! p.291 line 10 SYN,ALL.1; CM1111 line 30 232543.01
+ARBCDI  SYN,ALL.10                   ! p.291 line 18 SYN,ALL.10; CM1111 line 31 232543.12
+ARBCRI  SYN,ALL.11                   ! p.291 line 19 SYN,ALL.11; BBZ line 7 232543.13
+AFPCI   SYN,ALL.9                    ! p.291 line 17 SYN,ALL.9; BZB lines 22, 40 232543.11
+YBCBU   SYN(BU), (8)231462.0         ! p.274 line 19 DR(BU),(15), as p.291's stand-in writes it
+ALDBF   SYN,YBCBU                    ! p.291 line 33 SYN,YBCBU (p.274 DR(BU),(15)); L line 26 ALDBF.60 = 231462.74
+ALDCTR  SYN(N), (8)232552.0          ! p.291 line 34 DRZ(N),1; LV line 33 232552.02
+AHIWD   SYN(BU,32), (8)232554.0      ! p.291 line 38 DRZ(BU,32),1; KV line 36 / SVA line 39
+ABT31   SYN(B,25,1), (8)232546.40    ! p.291 line 26 VF,0.31; V+ line 38 232546.42
+ARCDCT  SYN(B,25,1), (8)232547.0     ! p.291 line 27 VF,0; LC line 41 / SC line 43
+KSILO   SYN(BU,64), (8)220451.0      ! landed p.171 DR(BU,64),(K QUANT) at 220451.00; V+ line 24 KSILO+9.32
+ARBCD6  SYN, (8)234746.40            ! not landed; p.325 sheet line 54; B lines 2, 12, 14 234746.50, half word only
+ARBCD7  SYN, (8)234735.0             ! not landed; TI line 4 234735.00, LF line 8 ARBCD7.35 = 234735.43, BIT-EXACT
+ALD8    SYN, (8)234463.0             ! not landed; B line 32 234463.10, half word only
+AERR4   SYN, (8)235216.40            ! not landed; BZB line 22 second half 235216.74, half word only
+AERR8   SYN, (8)235220.0             ! not landed; BXVZ line 34 235220.31, half word only
+ANORMR  SYN, (8)235233.0             ! not landed; BZB line 40 second half 235233.34, half word only
+
+        SLC, (8)234751.0
+ARBCD8  +(BU,18),$2                                          ! line  1
+        B,ARBCD6                                             ! line  2
+        CNOP,                                                ! line  3
+ARBCDA  TI,1,ARBCD7,$+1.                                     ! line  4
+        NOP                                                  ! line  5
+        NOP                                                  ! line  6
+        BBZ,ARBCRI,ARBCDD                                    ! line  7
+        LF(BU,6),ARBCD7.35,-6                                ! line  8
+        -I(BU,6),(8)22,-6                                    ! line  9
+        SF(BU,6),$+1.45,-6                                   ! line 10
+        +(BU,18),$7,0                                        ! line 11
+        B,ARBCD6                                             ! line 12
+ARBCDD  +(BU,18),$7                                          ! line 13
+        B,ARBCD6                                             ! line 14
+! line 15  -            BINARY DATA CARD
+ARBDCD  Z,$5                                                 ! line 16
+        Z,$6                                                 ! line 17
+        L(BU,12),ALDBF.108,-19                               ! line 18  -PICK UP LOADING BASE
+        Z,$1                                                 ! line 19
+        LV,$1,$L                                             ! line 20  -STORE AS 19 BIT ADDR.
+        BXVZ,ARBDC2                                          ! line 21  -PROGRAM DATA
+        BZB,AFPCI,AERR4                                      ! line 22  -ILLEGAL IN NON BSS JOB
+        V+I,$1,2.                                            ! line 23
+        V+,$1,KSILO+9.32                                     ! line 24
+        LV,$1,0($1)                                          ! line 25
+ARBDC3  L(BU,24),ALDBF.60,-24                                ! line 26  -PICK UP RELATIVE ORIGIN
+        V+,$1,$L                                             ! line 27  -COMPUTE ABSOLUTE ORIGIN
+        LF(BU,60),ALDBF.48                                   ! line 28  -INITIALIZE FOR ABSOLUTE LOADER
+        CM1111(BU,1),ALL.3                                   ! line 29
+        CM1111(BU,1),ATCRDI                                  ! line 30
+        CM1111(BU,1),ARBCDI                                  ! line 31
+        B,ALD8                                               ! line 32
+ARBDC2  LV,$1,ALDCTR                                         ! line 33
+        BXVZ,AERR8                                           ! line 34
+        B,ARBDC3                                             ! line 35
+ARNORM  KV,$1,AHIWD                                          ! line 36
+        BXL,$+1.32                                           ! line 37
+        V+,$1,ABT31                                          ! line 38
+        SVA,$1,AHIWD                                         ! line 39
+        BZB,AFPCI,ANORMR                                     ! line 40  -NON BSS JOB-BRANCH
+ARNRM1  LC,$1,ARCDCT                                         ! line 41
+        C-I,$1,1                                             ! line 42
+        SC,$1,ARCDCT                                         ! line 43
+        BXCZ,ARNRM2                                          ! line 44
+        B,3.32($15)                                          ! line 45
+ARNRM2  LV,$1,KSILO+9.32                                     ! line 46  -ZERO CARD COUNT
+        LX,$2,1.($1)                                         ! line 47
+
+!SYM ARBCD8 234751.00
+!SYM ARBCDA 234753.00
+!SYM ARBCDD 234762.40
+!SYM ARBDCD 234764.00
+!SYM ARBDC3 234772.00
+!SYM ARBDC2 235000.00
+!SYM ARNORM 235001.40
+!SYM ARNRM1 235004.40
+!SYM ARNRM2 235007.00
+!CHECK 234751.00 | 000022.00 80 022000.20 10 | line 1 ARBCD8 +(BU,18),$2
+!CHECK 234752.00 | 234746.50 00 | line 2 B,ARBCD6
+!CHECK 234752.40 | 000000.30 00 | line 3 CNOP,
+!CHECK 234753.00 | 234735.00 80 234754.02 A0 | line 4 ARBCDA TI,1,ARBCD7,$+1.
+!CHECK 234754.00 | 000000.30 00 | line 5 NOP
+!CHECK 234754.40 | 000000.30 00 | line 6 NOP
+!CHECK 234755.00 | 232543.13 80 234762.74 06 | line 7 BBZ,ARBCRI,ARBCDD (last glyph prints C: worn D)
+!CHECK 234756.00 | 234735.43 80 006075.06 70 | line 8 LF(BU,6),ARBCD7.35,-6 (a "*" prints after the location)
+!CHECK 234757.00 | 220000.00 80 406075.30 10 | line 9 -I(BU,6),(8)22,-6
+!CHECK 234760.00 | 234761.55 80 006075.12 F0 | line 10 SF(BU,6),$+1.45,-6
+!CHECK 234761.00 | 000027.00 80 022000.20 10 | line 11 +(BU,18),$7,0
+!CHECK 234762.00 | 234746.50 00 | line 12 B,ARBCD6 (hex prints "CO": open rounds, 00)
+!CHECK 234762.40 | 000027.00 80 022000.20 10 | line 13 ARBCDD +(BU,18),$7
+!CHECK 234763.40 | 234746.50 00 | line 14 B,ARBCD6
+!CHECK 234764.00 | 000025.22 00 | line 16 ARBDCD Z,$5
+!CHECK 234764.40 | 000026.22 00 | line 17 Z,$6
+!CHECK 234765.00 | 231463.54 80 014066.60 50 | line 18 L(BU,12),ALDBF.108,-19
+!CHECK 234766.00 | 000021.22 00 | line 19 Z,$1
+!CHECK 234766.40 | 000010.02 30 | line 20 LV,$1,$L
+!CHECK 234767.00 | 235000.31 42 | line 21 BXVZ,ARBDC2
+!CHECK 234767.40 | 232543.11 80 235216.74 00 | line 22 BZB,AFPCI,AERR4 (last byte prints "CC": open rounds, 00)
+!CHECK 234770.40 | 000002.03 05 | line 23 V+I,$1,2.
+!CHECK 234771.00 | 220462.42 B0 | line 24 V+,$1,KSILO+9.32
+!CHECK 234771.40 | 000000.02 31 | line 25 LV,$1,0($1) (a "*" prints after the location)
+!CHECK 234772.00 | 231462.74 80 030064.20 50 | line 26 ARBDC3 L(BU,24),ALDBF.60,-24
+!CHECK 234773.00 | 000010.02 B0 | line 27 V+,$1,$L
+!CHECK 234773.40 | 231462.60 80 074000.06 70 | line 28 LF(BU,60),ALDBF.48
+!CHECK 234774.40 | 232543.03 80 001000.36 F0 | line 29 CM1111(BU,1),ALL.3
+!CHECK 234775.40 | 232543.01 80 001000.36 F0 | line 30 CM1111(BU,1),ATCRDI
+!CHECK 234776.40 | 232543.12 80 001000.36 F0 | line 31 CM1111(BU,1),ARBCDI
+!CHECK 234777.40 | 234463.10 00 | line 32 B,ALD8
+!CHECK 235000.00 | 232552.02 30 | line 33 ARBDC2 LV,$1,ALDCTR
+!CHECK 235000.40 | 235220.31 42 | line 34 BXVZ,AERR8
+!CHECK 235001.00 | 234772.10 00 | line 35 B,ARBDC3
+!CHECK 235001.40 | 232554.02 90 | line 36 ARNORM KV,$1,AHIWD
+!CHECK 235002.00 | 235003.72 42 | line 37 BXL,$+1.32
+!CHECK 235002.40 | 232546.42 B0 | line 38 V+,$1,ABT31
+!CHECK 235003.00 | 232554.03 D0 | line 39 SVA,$1,AHIWD
+!CHECK 235003.40 | 232543.11 80 235233.34 00 | line 40 BZB,AFPCI,ANORMR
+!CHECK 235004.40 | 232547.02 50 | line 41 ARNRM1 LC,$1,ARCDCT
+!CHECK 235005.00 | 000001.03 08 | line 42 C-I,$1,1 (a "*" prints after the location; hex prints "C8": the same open round as this row's octal "C00001.C3", where only 0 stands -- 08)
+!CHECK 235005.40 | 232547.03 50 | line 43 SC,$1,ARCDCT
+!CHECK 235006.00 | 235007.30 42 | line 44 BXCZ,ARNRM2
+!CHECK 235006.40 | 000003.50 0F | line 45 B,3.32($15)
+!CHECK 235007.00 | 220462.42 30 | line 46 ARNRM2 LV,$1,KSILO+9.32
+!CHECK 235007.40 | 000001.04 11 | line 47 LX,$2,1.($1)

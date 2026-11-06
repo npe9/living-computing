@@ -1,0 +1,74 @@
+! mcp_bootstrap_p301.strap -- MCP printed page 301: THE DUMMY MAJOR
+! PACKAGE (UNDEF .. J UNDEF), lines 1-14.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.52, read at 400 dpi (900 dpi for the
+! binaries of lines 5, 6, 13, 14).  Header, READ: "TIME CLOCK 00054041
+! PUNID 11D11MCP  CARD ID RA000001  DIST. OF 3/01  3/01  PAGE NUMBER
+! 301" (round glyphs in numeric fields read 0).  The heading row's
+! LOCATION field is BLANK (line 1 is a banner).  CARD ID RA000001 -- a
+! new card-ID series begins on this page (p.297 ran QJ...).
+!
+! THE PAGE.  14 lines, every line number prints a "*" after it.  Lines
+! 1-3 are remark cards (a banner "DUMMY MAJOR PACKAGE" between two rows
+! of asterisks).  Line 4 "SLC,$" prints 233143.31 and a "*"; this deck
+! restates it as a hard SLC.  Line 5 CNOP at 233143.40 EMITS a half-word
+! NOP (000000.30) to reach the word.  Line 6 UNDEF DD(BU,45),0(.3)1
+! at 233144.00 prints 15 octal digits 040000000000000 (a 1 at bit 3).
+! Lines 7-8 EXT(0,18) over B,JUNDEF: prints 0466316 at 233144.55 = the
+! 19-bit half-word address of JUNDEF (233147.00; 0o233147 * 2).
+! Lines 9-12 four VF,0 (-LAST TT, -RETURN ADDR, -PSEUDO OP LOC, -PSEUDO
+! OP), lines 13-14 J UNDEF B,DMCP / ,SDRET.  Located rows contiguous
+! from 233143.31 to 233147.40 (a half word; next location 233150.00),
+! then blank paper.
+!
+! JOIN.  The finding-aid sheet for p.300 reads its last line at
+! 233143.00 (STIMEK VF..., 25 bits -> 233143.31), so this page's
+! 233143.31 continues it (not established from a landed deck).  p.302's
+! sheet opens SLC,$ at 233150.00.  landed p.121 lines 47-49 print
+! VF,UNDEF = 233144.00+, an independent witness of line 6's location.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 5 "CNCP" = CNOP (open O); its byte prints "C0", written 00:
+!     every landed CNOP row prints 000000.30 00 (p.103, p.121 ...).
+!   * lines 9-12 "VF,C" = VF,0: open round glyph; binaries 000000.00+.
+!   * line 8 "B,J UNCEF" = B,JUNDEF: D with a worn stem; line 13's label
+!     prints "J UNDEF" and the EXT value is JUNDEF's address.
+!   * line 11 remark "-PSEUDO OP LCC" = LOC (open O).
+!   * line 13 "B,D MCP" = B,DMCP; byte prints "C0", written 00 (as p.297).
+!   * line 14 ",S C RET" = ,SDRET (worn D); landed p.105 "S D RET".
+!   * octal fields "CCCCCC.CC" read 0.
+!
+! CARD SERIALS.  RA000001 .. RA000013; lines 7-8 (the EXT pair) share
+! RA000007 (as p.265's EXT pair), so line N prints RA00000N through line
+! 7 and RA0000(N-1) from line 8.  None skipped.
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 13 000040.10
+SDRET   SYN, 33.0                    ! landed p.105 "S D RET SYN,DRET", DRET SYN,33.0; line 14 000041.00
+
+        SLC, (8)233143.31
+! line  1  - **************************************************************
+! line  2  - ****************** DUMMY MAJOR PACKAGE ******************
+! line  3  - **************************************************************
+        SLC,$                                                ! line  4  (prints 233143.31 *)
+        CNOP                                                 ! line  5  (printed "CNCP")
+UNDEF   DD(BU,45),0(.3)1                                     ! line  6
+        EXT(0,18)                                            ! line  7  (no location printed)
+        B,JUNDEF                                             ! line  8  (printed "J UNCEF")
+        VF,0                                                 ! line  9  -LAST TT
+        VF,0                                                 ! line 10  -RETURN ADDR
+        VF,0                                                 ! line 11  -PSEUDO OP LOC
+        VF,0                                                 ! line 12  -PSEUDO OP
+JUNDEF  B,DMCP                                               ! line 13
+        ,SDRET                                               ! line 14
+
+!SYM UNDEF 233144.00
+!SYM JUNDEF 233147.00
+!CHECK 233143.40 | 000000.30 00 | line 5 CNOP (byte prints C0)
+!CHECK 233144.00 | 040000000000000 | line 6 UNDEF DD(BU,45),0(.3)1 | 45
+!CHECK 233144.55 | 0466316 | line 8 B,JUNDEF under line 7's EXT(0,18) -- 19 bits, JUNDEF's half-word address | 19
+!CHECK 233145.00 | 000000.00+ | line 9 VF,0 -LAST TT
+!CHECK 233145.40 | 000000.00+ | line 10 VF,0 -RETURN ADDR
+!CHECK 233146.00 | 000000.00+ | line 11 VF,0 -PSEUDO OP LOC
+!CHECK 233146.40 | 000000.00+ | line 12 VF,0 -PSEUDO OP
+!CHECK 233147.00 | 000040.10 00 | line 13 JUNDEF B,DMCP (byte prints C0)
+!CHECK 233147.40 | 000041.00 80 | line 14 ,SDRET

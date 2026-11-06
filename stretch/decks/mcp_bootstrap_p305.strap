@@ -1,0 +1,181 @@
+! mcp_bootstrap_p305.strap -- MCP printed page 305: the tail of the
+! console-message stacking code (J PNTOK, R SIC1, R TRANS, R SIC2) and
+! the I/O BOOK KEEPING routine M SET IO; lines 1-56.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.56, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID SA000153  DIST. OF 3/01
+! 3/01  PAGE NUMBER 305" (round glyphs in numeric fields read 0).  The
+! heading row's LOCATION field is 233256, line 1's word.
+!
+! THE PAGE.  56 lines, every line number printing a "*" after it.
+! Located rows run contiguous from 233256.40 (line 1) to 233274.00
+! (line 24, B,0.0(JXIN1), a half word); remark cards 25-32 (no
+! location, a "-" in the NAME column: "***** SET UP I/O BOOK KEEPING
+! *****" and its calling linkage); then 233274.40 (line 33, M SET IO)
+! to 233310.00 (line 48, B,0.0(JXIN1), a half word); remark cards
+! 49-56 ("*****CONSOLE I/O TERMINATION ROUTINE*****" and its linkage).
+! Lines 18 (233270.00) and 42 (233303.00) print an asterisk after the
+! LOCATION; recorded, not explained.
+!
+! JOIN.  p.306 (scratch) opens at 233310.40 with J TERM, so this page's
+! last half word 233310.00 meets it.  p.304 has no scratch deck;
+! contiguity at 233256.40 is NOT established here.
+!
+! COMMENT MARKS.  Lines 12 "T,JXTEM2,$,JSTACK-", 13 "LV,JXTEM,JSTKP-"
+! and 14 "V-I,JXTEM,$-" print a "-" right after the statement (the
+! comment mark, C28-6129 PDF p.5); written without it.  Lines 4, 7, 9
+! and 16 print a blank then a lone "-" (an empty remark).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * octal-field open rounds ("CCC024.12", "C00000.22") are 0; hex
+!     "CO"/"DO"/"FO"/"BO" are C0/D0/F0/B0 where the statement assembles
+!     them so.
+!   * line 9 "CMOCOO(BU,3)", lines 38, 45 "CMOCOO" = CM0000 (connective
+!     digits).
+!   * line 33's label prints "M SET IO" (spaces the drum's); C22-6728
+!     typesets "The I-O Bookkeeping Routine, MSETIO".  Line 30's remark
+!     prints "B,MSETIC" (open O); a remark, left as printed.
+!   * line 1's label "J PNTCK" (open O) = JPNTOK ("POINTER OK"; no
+!     other spelling anywhere).
+!   * "JSCWD1"/"JSCWD2", "JCNAD", "MRETAD", "SRETAD", "ADDRESS": a D
+!     with a worn stem; JSCWD1/2 are p.309's (scratch) line 33-34
+!     labels, JCNAD landed (p.122/p.128), SRETAD landed (p.101).
+!
+! EXTERNALS.  Index registers from p.306/p.309/p.310 (scratch) SYN,$n
+! cards, each confirmed by this page's binary (LV J field 2J: .10 $4,
+! .12 $5, .20 $8, .22 $9, .24 $10; B/BZXH low nibble 1 = $1).  p.309
+! (scratch) defines JSCWD1/2 (XW), JSTKP/JSTWP/JMESM (VF), JSTACK
+! (DR(N)); stand-ins carry the dds the compiler fixes.  MRETAD is from
+! this page's binary only.
+!
+! CARD SERIALS.  SA000153 .. SA000208, line N prints SA0001(52+N); none
+! skipped, none repeated.
+
+JXIN1   SYN,$1                       ! p.306/p.309 scratch "JXIN1 SYN,$1"; B line 24 byte 01
+JXTEM   SYN,$4                       ! p.306/p.309 scratch "JXTEM SYN,$4"; LV line 13 .10
+JXTEM2  SYN,$5                       ! p.310 scratch line 1; LV line 2 .52 = 233454.40 + .12
+MXCST   SYN,$8                       ! p.310 scratch line 4; LV line 33 .20
+MXUST   SYN,$9                       ! p.310 scratch line 5; LV line 36 .22
+MXUAT   SYN,$10                      ! p.310 scratch line 6; LV line 37 .24
+JSIZSW  SYN,120.0                    ! p.310 scratch line 11; KVI line 21 JSTACK+JSIZSW = 233666.0
+JSCWD1  SYN(BU), (8)233452.0         ! p.309 scratch line 33 XW; CM line 9/18 JSCWD1.25 = 233452.31, BIT-EXACT
+JSCWD2  SYN(BU), (8)233453.0         ! p.309 scratch line 34 XW; SX line 16 233453.13
+JSTKP   SYN(B,25,1), (8)233454.0     ! p.309 scratch line 35 VF; SV line 1 233454.11
+JSTWP   SYN(B,25,1), (8)233454.40    ! p.309 scratch line 36 VF; LV line 2 233454.52
+JMESM   SYN(B,25,1), (8)233455.0     ! p.309 scratch line 37 VF; V+ line 20 233455.10
+JSTACK  SYN, (8)233476.0             ! p.309 scratch line 41 DR(N); V-I line 5 233476.13
+JWAIT   SYN, (8)233666.00            ! landed p.184 stand-in; CM1111 line 23 BIT-EXACT, no dds
+SCHANS  SYN, (8)215002.0             ! landed p.103 (SYN,SXCHAN); LV line 33 215002.20
+JCNAD   SYN, (8)215006.0             ! landed p.122/p.128; V+ lines 34-35 215006.20
+SSEL    SYN(BU,1), 0.39              ! landed p.99 -SELECT; CM line 38 000000.47
+SCHOP   SYN(BU,1), 0.26              ! landed p.99 -CHAN OPERATING; CM line 40 .32
+SSETUP  SYN(BU,1), 0.31              ! landed p.99 -PSEUDO-OP SET-UP; CM line 41 .37
+SWR     SYN(BU,1), 0.58              ! landed p.99 -WRITE; CM line 42 .72
+SRETAD  SYN(BU,19), 5.0              ! landed p.101 -RETURN ADDRESS; SV line 44 000005.13
+SUNIT   SYN(BU,3), 0.56              ! landed p.99 -UNIT NUMBER; CM line 45 .70
+SIOINS  SYN(BU,64), 4.0              ! landed p.101 -IO INSTR. LAST; ST line 47 000004.00
+MRETAD  SYN, (8)233421.0             ! not landed; LVI line 43 233421.13, half word only
+
+        SLC, (8)233256.40
+JPNTOK  SV,JXTEM,JSTKP                                       ! line  1  -POINTER NOW AT FULL WA.
+        LV,JXTEM2,JSTWP                                      ! line  2
+        SVA,JXTEM2,RTRANS                                    ! line  3  -TRANS START ADDRESS
+        SVA,JXTEM2,RSIC1                                     ! line  4  -
+        V-I,JXTEM2,JSTACK                                    ! line  5
+        SVA,JXTEM2,RSIC2                                     ! line  6
+        LVI,JXTEM2,JSTACK                                    ! line  7  -
+        SV,JXTEM2,JSTWP                                      ! line  8  -RESET WRITE TO ORIGIN
+        CM0000(BU,3),JSCWD1.25                               ! line  9  -  (printed "CMOCOO")
+RSIC1   V-I,JXTEM,$                                          ! line 10  - CALC COUNT
+        LC,JXTEM2,JXTEM                                      ! line 11  - COUNT FOR TRANS + WRITE
+RTRANS  T,JXTEM2,$,JSTACK                                    ! line 12  (comment mark "-" after)
+        LV,JXTEM,JSTKP                                       ! line 13  (comment mark "-" after)
+RSIC2   V-I,JXTEM,$                                          ! line 14  (comment mark "-" after)
+        SV,JXTEM,JSTKP                                       ! line 15  -RESET STACK POINTER
+        SX,JXTEM2,JSCWD2                                     ! line 16  -
+        BXCZ,$+1.32                                          ! line 17  -LEAVE CHAIN OFF,IF COUNT ZERO
+        CM1111(BU,1),JSCWD1+.25                              ! line 18  -TURN CHAIN BIT ON  (prints 233270.00 *)
+        LV,JXTEM,JSTKP                                       ! line 19  -STACK POINTER
+        V+,JXTEM,JMESM                                       ! line 20  -PLUS LENGTH OF LARGEST MESSAGE
+        KVI,JXTEM,JSTACK+JSIZSW                              ! line 21
+        BZXH,0.0(JXIN1)                                      ! line 22  -IF ROOM FOR NEXT MESSAGE
+        CM1111(BU,1),JWAIT                                   ! line 23  -IF FULL,TURN ON WAIT BIT
+        B,0.0(JXIN1)                                         ! line 24
+! line 25  -
+! line 26  - ***** SET UP I/O BOOK KEEPING *****
+! line 27  -
+! line 28  - LINKAGE...LVI,JXIN1,$+1.32
+! line 29  - LVI,JXTEM,I/O ADDRESS
+! line 30  - B,MSETIC   (printed so; the routine is M SET IO, line 33)
+! line 31  - RETURN
+! line 32  -
+MSETIO  LV,MXCST,SCHANS                                      ! line 33  -BASE OF CST  (printed "M SET IO")
+        V+,MXCST,JCNAD                                       ! line 34  -FORM CST ENTRY
+        V+,MXCST,JCNAD                                       ! line 35  -ADDRESS
+        LV,MXUST,0.0(MXCST)                                  ! line 36  -UST ENTRY ADDRESS
+        LV,MXUAT,0.0(MXUST)                                  ! line 37  -UAT ADDRESS
+        CM0000(BU,1),SSEL(MXUST)                             ! line 38  -SELECT MCP UNIT
+        CM1111(BU,1),SSEL+1.0(MXUST)                         ! line 39  -UNSELECT PP UNIT
+        CM1111(BU,1),SCHOP(MXCST)                            ! line 40
+        CM1111(BU,1),SSETUP(MXUST)                           ! line 41
+        CM1111(BU,1),SWR(MXUST)                              ! line 42  (prints 233303.00 *)
+        LVI,JXTEM2,MRETAD                                    ! line 43  -SET RETURN
+        SV,JXTEM2,SRETAD(MXUAT)                              ! line 44  -UPON INTERRUPT
+        CM0000(BU,3),SUNIT(MXCST)                            ! line 45
+        L(BU,64),(JXTEM)                                     ! line 46
+        ST(BU,64),SIOINS(MXUAT)                              ! line 47
+        B,0.0(JXIN1)                                         ! line 48
+! line 49  -
+! line 50  - *****CONSOLE I/O TERMINATION ROUTINE*****
+! line 51  -
+! line 52  - LINKAGE...LVI,JXIN1,$+1.0
+! line 53  - B,JTERM
+! line 54  - VF,LOC. OF I/O OP OR ZERO IF NOT CURS
+! line 55  - RETURN,CCW IN $R
+! line 56  -
+
+!SYM JPNTOK 233256.40
+!SYM RSIC1  233263.40
+!SYM RTRANS 233264.40
+!SYM RSIC2  233266.00
+!SYM MSETIO 233274.40
+!CHECK 233256.40 | 233454.11 30 | line  1 JPNTOK SV,JXTEM,JSTKP
+!CHECK 233257.00 | 233454.52 30 | line  2 LV,JXTEM2,JSTWP
+!CHECK 233257.40 | 233264.53 D0 | line  3 SVA,JXTEM2,RTRANS
+!CHECK 233260.00 | 233263.53 D0 | line  4 SVA,JXTEM2,RSIC1
+!CHECK 233260.40 | 233476.13 0D | line  5 V-I,JXTEM2,JSTACK
+!CHECK 233261.00 | 233266.13 D0 | line  6 SVA,JXTEM2,RSIC2
+!CHECK 233261.40 | 233476.13 01 | line  7 LVI,JXTEM2,JSTACK
+!CHECK 233262.00 | 233454.53 30 | line  8 SV,JXTEM2,JSTWP
+!CHECK 233262.40 | 233452.31 80 003000.00 F0 | line  9 CM0000(BU,3),JSCWD1.25
+!CHECK 233263.40 | 233263.51 0D | line 10 RSIC1 V-I,JXTEM,$
+!CHECK 233264.00 | 000024.12 50 | line 11 LC,JXTEM2,JXTEM
+!CHECK 233264.40 | 233264.40 80 233476.12 20 | line 12 RTRANS T,JXTEM2,$,JSTACK
+!CHECK 233265.40 | 233454.10 30 | line 13 LV,JXTEM,JSTKP
+!CHECK 233266.00 | 233266.11 0D | line 14 RSIC2 V-I,JXTEM,$
+!CHECK 233266.40 | 233454.11 30 | line 15 SV,JXTEM,JSTKP
+!CHECK 233267.00 | 233453.13 10 | line 16 SX,JXTEM2,JSCWD2
+!CHECK 233267.40 | 233271.30 42 | line 17 BXCZ,$+1.32
+!CHECK 233270.00 | 233452.31 80 001000.36 F0 | line 18 CM1111(BU,1),JSCWD1+.25
+!CHECK 233271.00 | 233454.10 30 | line 19 LV,JXTEM,JSTKP
+!CHECK 233271.40 | 233455.10 B0 | line 20 V+,JXTEM,JMESM
+!CHECK 233272.00 | 233666.11 04 | line 21 KVI,JXTEM,JSTACK+JSIZSW
+!CHECK 233272.40 | 000000.33 41 | line 22 BZXH,0.0(JXIN1)
+!CHECK 233273.00 | 233666.00 80 001000.36 F0 | line 23 CM1111(BU,1),JWAIT
+!CHECK 233274.00 | 000000.10 01 | line 24 B,0.0(JXIN1)
+!CHECK 233274.40 | 215002.20 30 | line 33 MSETIO LV,MXCST,SCHANS
+!CHECK 233275.00 | 215006.20 B0 | line 34 V+,MXCST,JCNAD
+!CHECK 233275.40 | 215006.20 B0 | line 35 V+,MXCST,JCNAD
+!CHECK 233276.00 | 000000.22 38 | line 36 LV,MXUST,0.0(MXCST)
+!CHECK 233276.40 | 000000.24 39 | line 37 LV,MXUAT,0.0(MXUST)
+!CHECK 233277.00 | 000000.47 89 001000.00 F0 | line 38 CM0000(BU,1),SSEL(MXUST)
+!CHECK 233300.00 | 000001.47 89 001000.36 F0 | line 39 CM1111(BU,1),SSEL+1.0(MXUST)
+!CHECK 233301.00 | 000000.32 88 001000.36 F0 | line 40 CM1111(BU,1),SCHOP(MXCST)
+!CHECK 233302.00 | 000000.37 89 001000.36 F0 | line 41 CM1111(BU,1),SSETUP(MXUST)
+!CHECK 233303.00 | 000000.72 89 001000.36 F0 | line 42 CM1111(BU,1),SWR(MXUST)
+!CHECK 233304.00 | 233421.13 01 | line 43 LVI,JXTEM2,MRETAD
+!CHECK 233304.40 | 000005.13 3A | line 44 SV,JXTEM2,SRETAD(MXUAT)
+!CHECK 233305.00 | 000000.70 88 003000.00 F0 | line 45 CM0000(BU,3),SUNIT(MXCST)
+!CHECK 233306.00 | 000000.00 84 000000.20 50 | line 46 L(BU,64),(JXTEM)
+!CHECK 233307.00 | 000004.00 8A 000000.20 D0 | line 47 ST(BU,64),SIOINS(MXUAT)
+!CHECK 233310.00 | 000000.10 01 | line 48 B,0.0(JXIN1)

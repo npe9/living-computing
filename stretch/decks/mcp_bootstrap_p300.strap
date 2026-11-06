@@ -1,0 +1,149 @@
+! mcp_bootstrap_p300.strap -- MCP printed page 300: THE $TIME PSEUDO OP
+! (Z TIME .. S TIME K), lines 1-47.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.51, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID QK000001  DIST. OF 3/01
+! 3/01  PAGE NUMBER 300" (round glyphs in numeric fields read 0; the Q of
+! QK prints open like C, the serials print a clear QK).  The heading
+! row's LOCATION field is BLANK.  CARD ID QK000001 -- a new card-ID
+! series begins on this page.
+!
+! THE PAGE.  47 lines, every line number prints a "*" after it.  Lines
+! 1-7 are remark cards (a banner "****** THE $TIME PSEUDO OP ******"
+! between two rows of asterisks; "CALLING SEQUENCE / B,$MCP ,$TIME
+! ,FWA(I)").  Line 8 "SLC,$" prints 233107.00 and a "*"; this deck
+! restates it as a hard SLC (as p.297 does).  Located rows run
+! contiguous from 233107.00 (line 9) to 233143.00 (line 47, S TIME K
+! VF,0.0, printed 000000.00+), then blank paper.  "*" after the
+! LOCATION on lines 8, 25 and 37.
+!
+! JOIN.  p.299 has no scratch neighbour; contiguity with it is NOT
+! established here (p.297 ended at 233003.00).  This page's labels match
+! the landed forward references: p.178 B,ZTIME -> 233107.10 (ZTIME at
+! 233107.00, line 9); p.146/p.178 stand-ins ZT8 233136.0 and ZT81
+! 233141.0 (here lines 38 and 43).  p.301 should open at 233143.40.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "Z TIME", "Z T 1", "Z T 2", "Z T8", "Z T8 1", "Z T 9", "S TIME K",
+!     "S T LR", "K SUPP", "S FORBD": spaces are the drum's; spellings as
+!     landed (ZTIME p.178, ZT8/ZT81 p.146/p.178, STLR, KSUPP, SFORBD).
+!   * line 33 "ST(CU,63,8)": D with a worn stem -- the second half prints
+!     077000.24, the decimal-mode bit, so DU (as p.297 lines 39/41).
+!   * line 46 "B,SCISP" = SDISP (worn D; landed SDISP 217372.0, binary
+!     217372.10).
+!   * line 15 "LVE,1,C.O", line 47 "VF,C.O", lines 26/31 "0.2C($1)",
+!     line 34 "(2)C1110101", line 35/36 "C.16"/"C.40": open round glyphs
+!     in numeric fields read 0.
+!   * octal fields "CCCCCC.CC" read 0; hex "CO", "FO", "DO" = C0, F0, D0.
+!     Line 24's second byte prints "DC"; line 27 (the same statement)
+!     prints "D0" -- read D0.  Line 28's "BC" read B0.
+!   * line 19 remark "-TC CHECK BOUNDS" -- TO with the open O.
+!
+! CARD SERIALS.  QK000001 .. QK000045.  Lines 1-18 print QK0000NN; line
+! 19 ALSO prints QK000018; lines 20-45 print QK0000(N-1); line 46 ALSO
+! prints QK000044; line 47 prints QK000045.  Two duplicated serials,
+! none skipped.  Recorded, not explained.
+
+STIC    SYN(B,25,1), (8)215265.0     ! landed; p.116 line 16 STIC VF,0
+STLR    SYN, (8)215230.0             ! landed; p.116 line 13 DRZ(BU,64),29
+SL      SYN(BU,1), (8)215001.04      ! p.103 line 14 -LEVEL OF INSTR
+KSUPP   SYN, (8)216242.0             ! p.128 line 3 "K SUPP NOP,K COMM R"
+SFORBD  SYN,(16)1009.0               ! p.107 line 14 - 9 COMMUNICATION WITH
+SDISIC  SYN, (8)217451.40            ! landed; SIC, BIT-EXACT
+SDISP   SYN, (8)217372.0             ! landed; B, half word only
+
+        SLC, (8)233107.00
+! line  1  - ******************************************************
+! line  2  - ****** THE $TIME PSEUDO OP ******
+! line  3  - ******************************************************
+! line  4  -
+! line  5  - CALLING SEQUENCE
+! line  6  - B,$MCP    ,$TIME    ,FWA(I)
+! line  7  -
+        SLC,$                                                ! line  8  (prints 233107.00 *)
+ZTIME   LV,7,STIC                                            ! line  9
+        V+I,7,.32                                            ! line 10
+        SVA,7,ZT1                                            ! line 11
+        V+I,7,.32                                            ! line 12
+        SV,7,STIC                                            ! line 13  -UPDATE STIC
+        TI,15,STLR+14.0,17.0                                 ! line 14  -RESTORE INDEXES
+ZT1     LVE,1,0.0                                            ! line 15  -GET STORAGE ADDRESS
+        BUSAZ,$+.32                                          ! line 16
+        BADZ,$+.32                                           ! line 17
+        SIC,ZT81                                             ! line 18
+        B,ZT8                                                ! line 19  -TO CHECK BOUNDS IF PP REQUEST
+ZT2     Z,$SB                                                ! line 20
+        CM1111(BU,2),$SB+.2                                  ! line 21  -SET ZONE BITS FOR IQS STORE
+        L(BU,26),$TC,-60                                     ! line 22  -READ TIME CLOCK
+        +(B,27,1),STIMEK,-60                                 ! line 23  -ADD TIME CONSTANT
+        /I(BU,6),60,-60                                      ! line 24
+        C0011(BU,6),$RM+.54                                  ! line 25  -GET SECONDS FROM RM IN BINARY
+        CM0101(BU,6),0.20($1)                                ! line 26  -SAVE BINARY SECONDS
+        /I(BU,6),60,-60                                      ! line 27  -COMPUTE HOURS AND MINUTES
+        CV(BU),$L,24                                         ! line 28  -CONVERT HOURS TO DECIMAL
+        LTRCV(BU,6),$RM+.54                                  ! line 29  -CONVERT MINUTES TO DEC
+        C0011(BU,8),$TR+.52,12                               ! line 30
+        LTRCV(BU,6),0.20($1)                                 ! line 31
+        C0011(BU,8),$TR+.52                                  ! line 32
+        ST(DU,63,8),0.0($1)                                  ! line 33  (printed "CU")
+        LFI(BU,8),(2)01110101                                ! line 34  -IQS COLON
+        SF(BU,8),0.16($1)                                    ! line 35
+        SF(BU,8),0.40($1)                                    ! line 36
+        B,KSUPP                                              ! line 37
+ZT8     BB,SL,ZT81                                           ! line 38  -BRANCH IF MCP - NO TEST
+        KV,1,STLR                                            ! line 39
+        BZXL,ZT9                                             ! line 40
+        KV,1,STLR+.32                                        ! line 41
+        BXL,ZT9                                              ! line 42
+ZT81    B,$                                                  ! line 43
+ZT9     LVI,14,SFORBD                                        ! line 44
+        SIC,SDISIC                                           ! line 45
+        B,SDISP                                              ! line 46  (printed "SCISP")
+STIMEK  VF,0.0                                               ! line 47
+
+!SYM ZTIME  233107.00
+!SYM ZT1    233112.40
+!SYM ZT2    233115.00
+!SYM ZT8    233136.00
+!SYM ZT81   233141.00
+!SYM ZT9    233141.40
+!SYM STIMEK 233143.00
+!CHECK 233107.00 | 215265.16 30 | line  9 ZTIME LV,7,STIC
+!CHECK 233107.40 | 000000.57 05 | line 10 V+I,7,.32
+!CHECK 233110.00 | 233112.57 D0 | line 11 SVA,7,ZT1
+!CHECK 233110.40 | 000000.57 05 | line 12 V+I,7,.32
+!CHECK 233111.00 | 215265.17 30 | line 13 SV,7,STIC
+!CHECK 233111.40 | 215246.00 80 000021.36 A0 | line 14 TI,15,STLR+14.0,17.0
+!CHECK 233112.40 | 000000.03 B0 | line 15 ZT1 LVE,1,0.0
+!CHECK 233113.00 | 233113.50 C6 | line 16 BUSAZ,$+.32
+!CHECK 233113.40 | 233114.10 46 | line 17 BADZ,$+.32
+!CHECK 233114.00 | 233141.00 80 | line 18 SIC,ZT81
+!CHECK 233114.40 | 233136.10 00 | line 19 B,ZT8
+!CHECK 233115.00 | 000012.22 00 | line 20 ZT2 Z,$SB
+!CHECK 233115.40 | 000012.02 80 002000.36 F0 | line 21 CM1111(BU,2),$SB+.2
+!CHECK 233116.40 | 000001.34 80 032042.20 50 | line 22 L(BU,26),$TC,-60
+!CHECK 233117.40 | 233143.00 80 033142.00 10 | line 23 +(B,27,1),STIMEK,-60
+!CHECK 233120.40 | 740000.00 80 406042.21 D0 | line 24 /I(BU,6),60,-60 (byte prints DC)
+!CHECK 233121.40 | 000015.66 80 006000.06 70 | line 25 C0011(BU,6),$RM+.54
+!CHECK 233122.40 | 000000.24 81 006000.12 F0 | line 26 CM0101(BU,6),0.20($1)
+!CHECK 233123.40 | 740000.00 80 406042.21 D0 | line 27 /I(BU,6),60,-60
+!CHECK 233124.40 | 000010.00 80 000014.21 B0 | line 28 CV(BU),$L,24
+!CHECK 233125.40 | 000015.66 80 006000.22 30 | line 29 LTRCV(BU,6),$RM+.54
+!CHECK 233126.40 | 000017.64 80 010006.06 70 | line 30 C0011(BU,8),$TR+.52,12
+!CHECK 233127.40 | 000000.24 81 006000.22 30 | line 31 LTRCV(BU,6),0.20($1)
+!CHECK 233130.40 | 000017.64 80 010000.06 70 | line 32 C0011(BU,8),$TR+.52
+!CHECK 233131.40 | 000000.00 81 077000.24 D0 | line 33 ST(DU,63,8),0.0($1) (printed "CU")
+!CHECK 233132.40 | 352000.00 80 410000.06 70 | line 34 LFI(BU,8),(2)01110101
+!CHECK 233133.40 | 000000.20 81 010000.12 F0 | line 35 SF(BU,8),0.16($1)
+!CHECK 233134.40 | 000000.50 81 010000.12 F0 | line 36 SF(BU,8),0.40($1)
+!CHECK 233135.40 | 216242.10 00 | line 37 B,KSUPP
+!CHECK 233136.00 | 215001.04 80 233141.34 02 | line 38 ZT8 BB,SL,ZT81
+!CHECK 233137.00 | 215230.02 90 | line 39 KV,1,STLR
+!CHECK 233137.40 | 233141.72 40 | line 40 BZXL,ZT9
+!CHECK 233140.00 | 215230.42 90 | line 41 KV,1,STLR+.32
+!CHECK 233140.40 | 233141.72 42 | line 42 BXL,ZT9
+!CHECK 233141.00 | 233141.10 00 | line 43 ZT81 B,$
+!CHECK 233141.40 | 010011.35 01 | line 44 ZT9 LVI,14,SFORBD
+!CHECK 233142.00 | 217451.40 80 | line 45 SIC,SDISIC
+!CHECK 233142.40 | 217372.10 00 | line 46 B,SDISP (printed "SCISP")
+!CHECK 233143.00 | 000000.00+ | line 47 STIMEK VF,0.0

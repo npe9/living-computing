@@ -1,0 +1,69 @@
+! mcp_bootstrap_p310.strap -- MCP printed page 310: a block of SYN
+! cards -- nine index-register names J XTEM 2 .. MX CUMQ ($5..$13), the
+! stack-length numbers J SIZS / J SIZSW (120 bits / 120 words), J CNAD
+! (a second name for S YCOCH) and J KSUPB (bit 19 of K SUPP); lines 1-13.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.61, read at 400 and 900 dpi.  Header,
+! READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID SA000414  DIST. OF
+! 3/01  3/01  PAGE NUMBER 310" (round glyphs in numeric fields read 0).
+! The heading row's LOCATION field is 000025 -- line 1's LOCATION, which
+! on a SYN card is its VALUE ($5 = 000025.00).
+!
+! THE PAGE COMPILES NO STORAGE.  13 lines, then blank paper to the foot.
+! Every line number prints a "*" after it.  Every line is a SYN whose
+! LOCATION field prints its VALUE with a "+", BINARY OUTPUT prints
+! "+00000000" (line 10: "+00000170", the integer 120 in octal), and the
+! data-description column prints the dds IN OCTAL: "BU,100,10" (64,8)
+! for the index registers, "NULL" for the two numbers, "B ,31 ,01"
+! (B,25,1 -- a VF's dds) for J CNAD, "BU,40 ,10" (BU,32,8 -- a half-word
+! instruction label's) for J KSUPB.  No SLC, no !CHECK rows: SYN prints
+! no binary of its own.  Remarks on lines 1-3, 10, 11, 13.
+!
+! JOIN.  No storage, so nothing to join; neighbours p.309 and p.311 have
+! no scratch decks.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * octal "000025.00+", "+0000000C", "BU,10C,1C", "000000.C0+",
+!     "00017C.00+" etc.: round glyphs in octal fields are 0.
+!   * line 11 "SYN,120.C" = 120.0 (LOCATION prints 000170.00 = 120 words).
+!   * line 12 "SYN,SYCCCH" = SYCOCH, as landed (p.103 line 37 VF at
+!     215006.00; JCNAD already stood in at 215006.0 by p.128).
+!   * "MXCST", "MXCUMQ": the C prints open, the same form as the C in
+!     "J CNAD" and "STACK" on this page; nothing closes it to O, no other
+!     deck or C22-6728 spells either.  Kept as C (unsettled by ink).
+!   * line 13 "J KSUPB": final glyph has the same form as the B of
+!     "BU" on the same row; read B (comment "-BRANCH IN KSUPP").
+!
+! CARD SERIALS.  SA000414 .. SA000426, line N prints SA0004(13+N); none
+! skipped.  Header CARD ID SA000414 = line 1's serial.
+
+SYCOCH  SYN(B,25,1), (8)215006.0     ! landed p.103 line 37 "S YCOCH VF,(8)23.40" at 215006.00; line 12 prints 215006.00+ B,31,01 (octal = B,25,1)
+KSUPP   SYN(BU,32,8), (8)216242.0    ! landed p.128 line 3 "K SUPP NOP,K COMM R" (half-word label); line 13 prints KSUPP.19 = 216242.23, BU,40,10 (octal = BU,32,8)
+
+JXTEM2  SYN,$5                                               ! line  1  -TEMP INDEX  (printed "JXTEM 2")
+MXIN1   SYN,$6                                               ! line  2  -SUBROUTINE INDEX  (printed "MXIN 1")
+MXIN2   SYN,$7                                               ! line  3  -SUBROUTINE INDEX  (printed "MXIN 2")
+MXCST   SYN,$8                                               ! line  4
+MXUST   SYN,$9                                               ! line  5
+MXUAT   SYN,$10                                              ! line  6
+MXFAT   SYN,$11                                              ! line  7
+MXSTK   SYN,$12                                              ! line  8
+MXCUMQ  SYN,$13                                              ! line  9
+JSIZS   SYN,120                                              ! line 10  -LENGTH OF STACK  (a NUMBER: prints 000000.00+, BINARY +00000170 NULL)
+JSIZSW  SYN,120.0                                            ! line 11  -LENGTH OF STACK IN WORDS  (prints 000170.00+ NULL)
+JCNAD   SYN,SYCOCH                                           ! line 12  (printed "J CNAD SYN,SYCCCH")
+JKSUPB  SYN,KSUPP.19                                         ! line 13  -BRANCH IN KSUPP
+
+!SYM JXTEM2 000025.00
+!SYM MXIN1  000026.00
+!SYM MXIN2  000027.00
+!SYM MXCST  000030.00
+!SYM MXUST  000031.00
+!SYM MXUAT  000032.00
+!SYM MXFAT  000033.00
+!SYM MXSTK  000034.00
+!SYM MXCUMQ 000035.00
+!SYM JSIZS  000001.70
+!SYM JSIZSW 000170.00
+!SYM JCNAD  215006.00
+!SYM JKSUPB 216242.23

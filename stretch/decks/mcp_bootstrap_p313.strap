@@ -1,0 +1,185 @@
+! mcp_bootstrap_p313.strap -- MCP printed page 313: the disk-arc buffer
+! search (X TO LK / X FRO LK / XIT) and the read set-up (X TRAN,
+! C PRERD, C INTER), lines 1-51.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.64, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID SB000084  DIST. OF 3/01  3/01  PAGE NUMBER 313"; the heading row's
+! LOCATION field is 233761, line 1's word.
+!
+! THE PAGE.  51 lines; every line number prints a "*" after it.  No
+! remark cards, no TAIL card.  Located rows run contiguous from
+! 233761.00 (line 1) to 234021.00 (line 51, SVA, a half word; next
+! location 234021.40), then blank paper.  "*" after the LOCATION on
+! lines 9, 29 and 45.
+!   lines 1-3  null operations ", D LOCS", ", PROSA", ", 0" -- the tail
+!              of a list begun on p.312 (not landed).
+!   line 51    "SVA,6, $+0.32 -N - 512 + W(ALPHA) IN CF$8": the remark
+!              begins at "-N"; the binary 234021.55 is $+0.32 alone.
+! JOIN.  p.312 has no scratch neighbour; contiguity with it is NOT
+! established here.  p.314 should open at 234021.40 with serial
+! SB000127 (or SB000126 continued).  Independent witness of the
+! assembly: b7decks p.269 (same body assembly) SYNs XNFOST at
+! (8)234212.40 and CBUFF at (8)234214.0, which this page's SV line 45
+! and SF line 4 print.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "X TO LK" (line 12, 16) and "X FRO LK" (lines 13, 18, 22): the
+!     drum's open round glyph; written O (XTOLK / XFROLK, "to link" /
+!     "from link").  No landed deck or C22-6728 spells either.
+!   * "B, CREAC" (line 38): D with a worn stem; CREAD (C22-6728-1
+!     prints CREAD).  "CW DC RD" (line 36): first glyph has the D stem
+!     at 900 dpi, second is a real C -> CWDCRD.
+!   * "CMOCOO" (line 31) = CM0000 (connective digits).
+!   * "CNT BUF + 0.C1" (line 29) = CNTBUF+0.01.
+!   * LINE 36'S LAST BYTE PRINTS "AC" AND IS A0.  At 900 dpi the glyph
+!     after A is the same open round as the 0 of ".02" beside it; TI's
+!     low nibble is I2 and no second-operand index is printed.  Same
+!     case as landed p.197 line 11 (TI, "AC" = A0).
+!   * octal / hex fields with an open round read 0 ("DC" = D0, "CO" =
+!     00, "FC" / "FO" = F0, "2C" = 20, "C1" = 01).
+!   * names spaced by the drum (C ALPHA, C DSK BF, X LIMIT, C BF MAP,
+!     CHK PAR, A DSK RD, X N FOST, C DELTA, C SET J, C GAMMA, D LOCS)
+!     written closed up.  CBFMAP, CHKPAR, CPRERD, XNFOST are C22-6728
+!     spellings.
+!
+! EXTERNALS.  Values for symbols defined on pages not landed come from
+! this page's binary (each comment says how much it fixes).
+!
+! CARD SERIALS.  SB000084 .. SB000126.  Shared serials: lines 9-10
+! (SB000092), 23-24 (SB000105), 26-27 (SB000107), 34-35 (SB000114),
+! 37-38 (SB000116), 40-41 (SB000118), 48-49 (SB000125), 50-51
+! (SB000126).  None skipped.
+
+DLOCS   SYN, 3.01                    ! landed p.104 line 15 "D LOC S"; line 1 000003.01
+PROSA   SYN, 1.0                     ! not landed; null op line 2 000001.00, BIT-EXACT
+CBUFF   SYN, (8)234214.0             ! not landed; b7decks p.269 form; SF line 4 234214.00, BIT-EXACT
+CLUK    SYN, (8)234402.0             ! not landed; ST line 5 CLUK+.06 = 234402.06, BIT-EXACT
+CALPHA  SYN, (8)234213.0             ! not landed; ST line 6 234213.00, BIT-EXACT
+CALFZE  SYN, (8)234067.0             ! not landed; BAE line 8 234067.36, half word only
+CDSKBF  SYN, (8)235464.0             ! not landed; KVI line 12 235464.15, half word only
+XLIMIT  SYN, (8)234130.40            ! not landed; BXH line 27 234130.73, half word only
+CNTBUF  SYN, (8)234216.0             ! not landed; ST line 29 CNTBUF+0.01 = 234216.01, BIT-EXACT
+CBFMAP  SYN, (8)234272.0             ! not landed; T line 32 second half 234272.14
+CHEKT   SYN, (8)234130.0             ! not landed; SIC line 34 234130.00, BIT-EXACT
+CHKPAR  SYN, (8)234102.0             ! not landed; B line 35 234102.10, half word only
+CWDCRD  SYN, (8)234207.0             ! not landed; TI line 36 234207.00, word only
+CWRD    SYN, (8)234416.0             ! not landed; TI line 36 second half 234416.02, word only
+CRDBR   SYN, (8)234164.0             ! not landed; SIC line 37 234164.00, BIT-EXACT
+CREAD   SYN, (8)234157.0             ! not landed; B line 38 234157.10, half word only
+ADSKRD  SYN, (8)234210.0             ! not landed; BB line 44 234210.00, BIT-EXACT
+XNFOST  SYN, (8)234212.40            ! not landed; b7decks p.269 form; SV line 45 234212.43, half word only
+CDELTA  SYN, (8)234213.40            ! not landed; KV line 46 234213.54 / LV line 50 234213.62, half word only
+CSETJ   SYN, (8)234075.0             ! not landed; BZXL line 47 234075.32, half word only
+CGAMMA  SYN, (8)234211.40            ! not landed; V+ line 49 234211.60, half word only
+
+        SLC, (8)233761.00
+        , DLOCS                                              ! line  1
+        , PROSA                                              ! line  2
+        , 0                                                  ! line  3
+        SF(BU,12),CBUFF,-12                                  ! line  4
+        ST(BU,12),CLUK+.06,-12                               ! line  5
+        ST(BU,21), CALPHA, -21                               ! line  6
+        KFI(BU,9), 0, -21                                    ! line  7
+        BAE, CALFZE                                          ! line  8  -BRANCH IF W(ALPHA IS ZERO
+        LV,6,$5                                              ! line  9
+        LV,7,$5                                              ! line 10
+        L(BU,12), 1.0($5), -12                               ! line 11
+XTOLK   KVI,6, CDSKBF                                        ! line 12  -LOOK FOR FIRST ENTRY IN BUFFER
+        BXE, XFROLK                                          ! line 13  -WITH ARC ADDRESS DIFFERING
+        V-I,6,2.0                                            ! line 14  -FROM THAT IN ARC FIELD
+        K(BU,12), 1.0($6), -12                               ! line 15  -ADDRESSED BY 1.0($5)
+        BAE, XTOLK                                           ! line 16
+        V+I,6, 2.0                                           ! line 17
+XFROLK  KVI,7, CDSKBF + 510.0                                ! line 18
+        BXE, XIT                                             ! line 19
+        V+I,7,2.0                                            ! line 20
+        K(BU,12), 1.0($7), -12                               ! line 21
+        BAE, XFROLK                                          ! line 22
+XIT     SVA,6,$+0.32                                         ! line 23
+        LVNI,6,$                                             ! line 24
+        V+,7, $6                                             ! line 25
+        KVI,7, 40.0                                          ! line 26
+        BXH, XLIMIT                                          ! line 27
+        SV,7,$L                                              ! line 28
+        ST(BU,17), CNTBUF + 0.01, -17                        ! line 29
+        LC,6, $7                                             ! line 30
+        CM0000(BU,1), $6 + 0.24                              ! line 31
+XTRAN   T, $6, 0.0($6), CBFMAP                               ! line 32
+        LVI,1,2                                              ! line 33
+CPRERD  SIC, CHEKT                                           ! line 34
+        B, CHKPAR                                            ! line 35
+        TI,1,CWDCRD,CWRD                                     ! line 36  -FETCH ONE ARC OF INFORMATION
+        SIC,CRDBR                                            ! line 37
+        B, CREAD                                             ! line 38  -INTO BUFFER
+CINTER  LN(BU,9), CALPHA + 0.12, -18                         ! line 39
+        LV,7,$L                                              ! line 40
+        V+I,7, CDSKBF                                        ! line 41  -VF$7 HOLDS C DSK BF + W(ALPHA)
+        +I(BU,18), 512, -18                                  ! line 42  -VF$6 HOLDS 512 - W(ALPHA)
+        LV,6,$L                                              ! line 43
+        BB,ADSKRD,$                                          ! line 44
+        SV,1,XNFOST                                          ! line 45
+        KV,6, CDELTA                                         ! line 46  -IS N LESS THAN 512 - W(ALPHA)
+        BZXL, CSETJ                                          ! line 47  -BRANCH IF IT IS
+        LV,8,$6                                              ! line 48
+        V+,8, CGAMMA                                         ! line 49  -GAMMA + 512 - W(ALPH) IN VF $8
+        LV,9, CDELTA                                         ! line 50
+        SVA,6, $+0.32                                        ! line 51  -N - 512 + W(ALPHA) IN CF$8
+
+!SYM XTOLK  233771.00
+!SYM XFROLK 233774.40
+!SYM XIT    233777.40
+!SYM XTRAN  234005.00
+!SYM CPRERD 234006.40
+!SYM CINTER 234011.40
+!CHECK 233761.00 | 000003.01 80 | line 1 ,D LOCS
+!CHECK 233761.40 | 000001.00 80 | line 2 ,PROSA
+!CHECK 233762.00 | 000000.00 80 | line 3 ,0
+!CHECK 233762.40 | 234214.00 80 014072.12 F0 | line 4 SF(BU,12),CBUFF,-12 (h2 prints "FC")
+!CHECK 233763.40 | 234402.06 80 014072.20 D0 | line 5 ST(BU,12),CLUK+.06,-12 (h2 prints "DC")
+!CHECK 233764.40 | 234213.00 80 025065.60 D0 | line 6 ST(BU,21),C ALPHA,-21 (h2 prints "DC")
+!CHECK 233765.40 | 000000.00 80 411065.63 10 | line 7 KFI(BU,9),0,-21
+!CHECK 233766.40 | 234067.36 C2 | line 8 BAE,C ALFZE
+!CHECK 233767.00 | 000025.14 30 | line 9 LV,6,$5
+!CHECK 233767.40 | 000025.16 30 | line 10 LV,7,$5
+!CHECK 233770.00 | 000001.00 85 014072.20 50 | line 11 L(BU,12),1.0($5),-12
+!CHECK 233771.00 | 235464.15 04 | line 12 X TO LK KVI,6,C DSK BF
+!CHECK 233771.40 | 233774.72 C2 | line 13 BXE,X FRO LK
+!CHECK 233772.00 | 000002.15 0D | line 14 V-I,6,2.0
+!CHECK 233772.40 | 000001.00 86 014072.21 10 | line 15 K(BU,12),1.0($6),-12
+!CHECK 233773.40 | 233771.36 C2 | line 16 BAE,X TO LK
+!CHECK 233774.00 | 000002.15 05 | line 17 V+I,6,2.0
+!CHECK 233774.40 | 236462.17 04 | line 18 X FRO LK KVI,7,C DSK BF+510.0
+!CHECK 233775.00 | 233777.72 C2 | line 19 BXE,XIT
+!CHECK 233775.40 | 000002.17 05 | line 20 V+I,7,2.0
+!CHECK 233776.00 | 000001.00 87 014072.21 10 | line 21 K(BU,12),1.0($7),-12
+!CHECK 233777.00 | 233774.76 C2 | line 22 BAE,X FRO LK
+!CHECK 233777.40 | 234000.15 D0 | line 23 XIT SVA,6,$+0.32
+!CHECK 234000.00 | 234000.15 09 | line 24 LVNI,6,$
+!CHECK 234000.40 | 000026.16 B0 | line 25 V+,7,$6
+!CHECK 234001.00 | 000050.17 04 | line 26 KVI,7,40.0
+!CHECK 234001.40 | 234130.73 42 | line 27 BXH,X LIMIT
+!CHECK 234002.00 | 000010.17 30 | line 28 SV,7,$L
+!CHECK 234002.40 | 234216.01 80 021067.60 D0 | line 29 ST(BU,17),CNT BUF+0.01,-17
+!CHECK 234003.40 | 000027.14 50 | line 30 LC,6,$7
+!CHECK 234004.00 | 000026.30 80 001000.00 F0 | line 31 CM0000(BU,1),$6+0.24 (printed "CMOCOO")
+!CHECK 234005.00 | 000000.00 86 234272.14 20 | line 32 X TRAN T,$6,0.0($6),C BF MAP
+!CHECK 234006.00 | 000001.03 01 | line 33 LVI,1,2
+!CHECK 234006.40 | 234130.00 80 | line 34 C PRERD SIC,CHEKT
+!CHECK 234007.00 | 234102.10 00 | line 35 B,CHK PAR
+!CHECK 234007.40 | 234207.00 80 234416.02 A0 | line 36 TI,1,CW DC RD,CW RD (last byte prints "AC")
+!CHECK 234010.40 | 234164.00 80 | line 37 SIC,C RD BR
+!CHECK 234011.00 | 234157.10 00 | line 38 B,CREAD (printed "CREAC")
+!CHECK 234011.40 | 234213.14 80 011067.30 50 | line 39 C INTER LN(BU,9),C ALPHA+0.12,-18
+!CHECK 234012.40 | 000010.16 30 | line 40 LV,7,$L
+!CHECK 234013.00 | 235464.17 05 | line 41 V+I,7,C DSK BF
+!CHECK 234013.40 | 001000.00 80 422067.20 10 | line 42 +I(BU,18),512,-18
+!CHECK 234014.40 | 000010.14 30 | line 43 LV,6,$L
+!CHECK 234015.00 | 234210.00 80 234015.34 02 | line 44 BB,A DSK RD,$
+!CHECK 234016.00 | 234212.43 30 | line 45 SV,1,X N FOST
+!CHECK 234016.40 | 234213.54 90 | line 46 KV,6,C DELTA
+!CHECK 234017.00 | 234075.32 40 | line 47 BZXL,C SET J
+!CHECK 234017.40 | 000026.20 30 | line 48 LV,8,$6
+!CHECK 234020.00 | 234211.60 B0 | line 49 V+,8,C GAMMA
+!CHECK 234020.40 | 234213.62 30 | line 50 LV,9,C DELTA
+!CHECK 234021.00 | 234021.55 D0 | line 51 SVA,6,$+0.32

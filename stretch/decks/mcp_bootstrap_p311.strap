@@ -1,0 +1,155 @@
+! mcp_bootstrap_p311.strap -- MCP printed page 311: the head of DISK
+! FETCH -- the tentacle table X TENTB (DD / EXT(0,18) over a B / DRZ),
+! C FETCH, and the index / dictionary / buffer-map search dispatch to
+! X NDX LK.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.62, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID SB000001  DIST. OF 3/01
+! 3/01  PAGE NUMBER 311"; the heading row's LOCATION field is BLANK --
+! line 1 is a banner card.  Every line number prints a "*".
+!
+! THE PAGE.  43 lines, then blank paper.
+!   lines  1-3   banner "*** DISK FETCH ***", no location.
+!   line   4     "SLC,$" printing 233666.05 * -- written as a hard SLC,
+!                as p.104 line 6 does.
+!   lines  5-43  contiguous from 233666.40 to 233721.00 (a half word;
+!                the next page continues at 233721.40).
+! This page opens a new card deck: serials restart at SB000001.
+! JOIN: p.310 has no scratch deck; contiguity with p.310 / p.312 is NOT
+! established here (line 4's 233666.05 is where p.310 must end).
+!
+! CARD SERIALS.  Lines 7/8 (EXT and its B) share SB000007, lines 30/31
+! (LX,3,CS ARTY / LVI,5,C BF MAP) share SB000029, lines 33/34
+! (SIC,X GOBAK / B,X 2WD LK) share SB000031.  Serial = line for lines
+! 1-7, line-1 for 8-30, line-2 for 31-33, line-3 for 34-43 (SB000040).
+! None skipped.  The 30/31 pairing is not an EXT or SIC pair: recorded,
+! not explained.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "C FETCH" (label l.10): C, not a worn D -- C22-6728 "The program
+!     is entered at CFETCH"; and DFETCH is already MCP's SYN 66.32
+!     (landed p.105).  Line 8's EXT prints 0467574 = 2*233676, l.10.
+!   * C DSK BF, C BF MAP, X NDX LK: spelled as C22-6728 names them.
+!   * "TI,11,$C,C LR" (l.12): $0 -- the first half prints 000020.00
+!     (index register 0's word).  Its byte prints "AC"; TI's low nibble
+!     is I2 and no second index is printed, so A0 (as p.197 l.11).
+!   * line 11's byte (Z,YMPSAV) prints "C0" at 900 dpi -- an open
+!     round the same as this row's neighbour's octal-field rounds
+!     (233677.4C, 000020.C0 on line 12); Z with no index assembles 00
+!     (every landed Z check is .22 00; p.122 Z,SPSIOI prints the same
+!     open C0).  Written 00.  Line 23 / 41's "C2" is a real C (BAE/BXE).
+!   * octal-field rounds (000CCC.30, 233667.CC, ...) are 0.
+!   * "SV,1, C N" (l.20): the sheet's "L" is 1 on the ink.
+!   * "KVI,3, C.C" (l.40): 0.0, binary 000000.07.
+! Line 34 prints its statement one column right (" B, X 2WD LK").
+! Lines 21/22's "-48" is the offset operand, not the comment mark
+! (blank before it; the remark follows).
+!
+! Externals: stand-ins checked by the merge.  CSARTY, XGOBAK are
+! BIT-EXACT (VFL / SIC addresses); the rest are half word or word only.
+
+YMPSAV  SYN(BU), (8)231164.00        ! p.269 line 42 XW (staged); Z l.11 231164.22, half word only
+CLR     SYN, (8)234363.0             ! not landed; TI l.12 234363.26, word only
+CNDXF   SYN, (8)234165.0             ! not landed; BBZ l.13 234165.34, half word only
+CBETA   SYN, (8)234211.0             ! not landed; SV l.15, half word only
+CGAMMA  SYN, (8)234211.40            ! not landed; SV l.17, half word only
+CDELTA  SYN, (8)234213.40            ! not landed; SV l.19, half word only
+CN      SYN, (8)234212.0             ! not landed; SV l.20, half word only
+XNFOST  SYN, (8)234212.40            ! not landed; SV/LV, half word only (as p.269)
+CSARTY  SYN(BU,48), (8)233672.0       ! not landed; L(BU,48) l.21, BIT-EXACT
+CFOT    SYN, (8)234220.0             ! not landed; K(BU,48) l.22 234220.00 (as p.269)
+CFAST   SYN, (8)234044.0             ! not landed; BAE l.23, half word only
+XNDXLK  SYN, (8)233724.40            ! not landed; B l.26 233724.50, half word only
+CBFMAP  SYN, (8)234272.0             ! not landed; LVI l.31 value 234272
+CNTBUF  SYN, (8)234216.0             ! not landed; LC l.32, word only
+XGOBAK  SYN, (8)234156.00            ! not landed; SIC l.33, BIT-EXACT
+X2WDLK  SYN, (8)234150.0             ! not landed; B l.34 234150.10, half word only
+CBUFT   SYN, (8)234042.0             ! not landed; B l.36 234042.10, half word only
+CDSKBF  SYN, (8)235464.0             ! not landed; KV l.38, word only
+
+        SLC, (8)233666.05            ! line  4 -- printed card is "SLC,$"
+! line  1  -----------------------------------------------------------
+! line  2  ************** DISK FETCH **************
+! line  3  -----------------------------------------------------------
+        CNOP                                                 ! line  5
+XTENTB  DD(BU,45),(8)460005220000000                         ! line  6
+        EXT(0,18)                                            ! line  7
+        B,CFETCH                                             ! line  8
+        DRZ(BU,64),(6)                                       ! line  9
+CFETCH  BB,XTENTB+.4,$+1.32                                  ! line 10  -SET MAJOR PACKAGE BUFFER
+        Z,YMPSAV                                             ! line 11
+        TI,11,$0,CLR                                         ! line 12  -SAVE LOWER REGISTERS  (prints "$C", "LCWER")
+CSCNOP  BBZ,$+0.53,CNDXF                                     ! line 13  -BRANCH AND RESET TO SIC,NOP
+        LVE,1,XTENTB+4.0                                     ! line 14
+        SV,1,CBETA                                           ! line 15
+        LVE,1,XTENTB+4.32                                    ! line 16
+        SV,1,CGAMMA                                          ! line 17
+        LVE,1,XTENTB+5.0                                     ! line 18
+        SV,1,CDELTA                                          ! line 19  -SAVE ORIGINAL VALUE OF N IN C DELTA
+        SV,1,CN                                              ! line 20
+        L(BU,48),CSARTY,-48                                  ! line 21  -IS THIS A REQUEST FOR THE SAME
+        K(BU,48),CFOT,-48                                    ! line 22  -TYPE-AREA AS LAST TIME
+        BAE,CFAST                                            ! line 23  -IF SO, GO TO C FAST
+        LV,1,XNFOST                                          ! line 24
+        B,$+0.32($1)                                         ! line 25
+        B,XNDXLK                                             ! line 26  -INDEX SEARCH
+        B,XDICLK                                             ! line 27  -DICTIONARY SEARCH
+        B,XMAPLK                                             ! line 28  -BUFFER MAP SEARCH
+        B,XNDXLK                                             ! line 29  -INDEX SEARCH
+XMAPLK  LX,3,CSARTY                                          ! line 30
+        LVI,5,CBFMAP                                         ! line 31  -IS CS ARTY IN BUFFER MAP
+        LC,5,CNTBUF                                          ! line 32
+        SIC,XGOBAK                                           ! line 33
+        B,X2WDLK                                             ! line 34
+        BXVZ,XNDXLK                                          ! line 35  -IF IT ISN,T, GO TO INDEX SEARCH
+        B,CBUFT                                              ! line 36  -IF IT IS, GO TO C BUFT
+XDICLK  LX,3,CSARTY                                          ! line 37  -SEE IF CS ARTY IS IN THE
+        KV,3,CDSKBF                                          ! line 38
+        BXL,XNDXLK                                           ! line 39
+        KVI,3,0.0                                            ! line 40
+        BXE,$+1.32                                           ! line 41
+        KV,3,CDSKBF+510.0                                    ! line 42
+        BXH,XNDXLK                                           ! line 43
+
+!SYM XTENTB 233667.00
+!SYM CFETCH 233676.00
+!SYM CSCNOP 233700.40
+!SYM XMAPLK 233712.40
+!SYM XDICLK 233716.00
+!CHECK 233666.40 | 000000.30 00 | line 5 CNOP
+!CHECK 233667.00 | 460005220000000 | line 6 XTENTB DD(BU,45),(8)460005220000000 | 45
+!CHECK 233667.55 | 0467574 | line 8 B,CFETCH under line 7's EXT(0,18) | 19
+!CHECK 233676.00 | 233667.04 80 233677.74 02 | line 10 C FETCH BB,XTENTB+.4,$+1.32
+!CHECK 233677.00 | 231164.22 00 | line 11 Z,YMPSAV (byte prints "C0", open round; see header)
+!CHECK 233677.40 | 000020.00 80 234363.26 A0 | line 12 TI,11,$0,C LR (byte prints "AC"; see header)
+!CHECK 233700.40 | 233701.25 80 234165.34 06 | line 13 C SCNOP BBZ,$+0.53,C NDX F
+!CHECK 233701.40 | 233673.03 B0 | line 14 LVE,1,X TENTB+4.0
+!CHECK 233702.00 | 234211.03 30 | line 15 SV,1,C BETA
+!CHECK 233702.40 | 233673.43 B0 | line 16 LVE,1,X TENTB+4.32
+!CHECK 233703.00 | 234211.43 30 | line 17 SV,1,C GAMMA
+!CHECK 233703.40 | 233674.03 B0 | line 18 LVE,1,X TENTB+5.0
+!CHECK 233704.00 | 234213.43 30 | line 19 SV,1,C DELTA
+!CHECK 233704.40 | 234212.03 30 | line 20 SV,1,C N
+!CHECK 233705.00 | 233672.00 80 060050.20 50 | line 21 L(BU,48),CS ARTY,-48
+!CHECK 233706.00 | 234220.00 80 060050.21 10 | line 22 K(BU,48),C FOT,-48
+!CHECK 233707.00 | 234044.36 C2 | line 23 BAE,C FAST
+!CHECK 233707.40 | 234212.42 30 | line 24 LV,1,X NFOST
+!CHECK 233710.00 | 233710.50 01 | line 25 B,$+0.32($1)
+!CHECK 233710.40 | 233724.50 00 | line 26 B,X NDX LK
+!CHECK 233711.00 | 233716.10 00 | line 27 B,X DIC LK (location carries an asterisk)
+!CHECK 233711.40 | 233712.50 00 | line 28 B,X MAP LK
+!CHECK 233712.00 | 233724.50 00 | line 29 B,X NDX LK
+!CHECK 233712.40 | 233672.06 10 | line 30 X MAP LK LX,3,CS ARTY
+!CHECK 233713.00 | 234272.13 01 | line 31 LVI,5,C BF MAP
+!CHECK 233713.40 | 234216.12 50 | line 32 LC,5,CNT BUF
+!CHECK 233714.00 | 234156.00 80 | line 33 SIC,X GOBAK
+!CHECK 233714.40 | 234150.10 00 | line 34 B,X 2WD LK
+!CHECK 233715.00 | 233724.71 42 | line 35 BXVZ,X NDX LK
+!CHECK 233715.40 | 234042.10 00 | line 36 B,C BUFT
+!CHECK 233716.00 | 233672.06 10 | line 37 X DIC LK LX,3,CS ARTY
+!CHECK 233716.40 | 235464.06 90 | line 38 KV,3,C DSK BF
+!CHECK 233717.00 | 233724.72 42 | line 39 BXL,X NDX LK
+!CHECK 233717.40 | 000000.07 04 | line 40 KVI,3,0.0
+!CHECK 233720.00 | 233721.72 C2 | line 41 BXE,$+1.32
+!CHECK 233720.40 | 236462.06 90 | line 42 KV,3,C DSK BF+510.0
+!CHECK 233721.00 | 233724.73 42 | line 43 BXH,X NDX LK
