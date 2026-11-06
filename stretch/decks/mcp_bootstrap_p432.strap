@@ -1,0 +1,166 @@
+! mcp_bootstrap_p432.strap -- MCP printed page 432: $EOJ's MOVE routine,
+! the special reject (T MREJB .. T MREJ1 and the unit release up to
+! CM1111,TMFREJ).  The same source as volume 1's printed p.96 (T MREJB
+! .. T MREJ1), reassembled by $EOJ at different addresses.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.182, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZF000736  DIST. OF 3/01
+!  3/01  PAGE NUMBER 432"; the heading row's LOCATION field is blank.
+! Card serials ZF000736..ZF000785, one per line, no gap or repeat.
+!
+! THE PAGE.  Lines 1-8 and 13-14 are remark cards.  Code is contiguous
+! from 022721.00 (line 9) to 022756.00 (line 50, a full word), so the
+! next location is 022757.00.  Still PUNID 22$EOJ, card series ZF.
+! Lines 9, 28 and 43 carry the bare "*" listing mark after LOCATION.
+!
+! GLYPHS settled by other than plain ink:
+!   line 12  "022735.10 C0": B,TMREJS can only assemble 00 there; the
+!            open round is 0 (as the octal fields of the same row).
+!   line 16  "BB,C.25($15)": line 23's ".25($15)" prints the identical
+!            first half word 000000.31 8F, so the character is 0
+!            (volume 1 p.96 line 33 settled the same way).
+!   line 23  the byte prints "dF"/"3F"; line 16 prints 8F for the same
+!            half word.  8F.
+!   line 48  statement "CMOCOO": CM0000 (lines 46, 49; binary F0 as theirs).
+!   T MREJS (line 28) vs T MREJ5 (lines 32, 41): two symbols, as on
+!   volume 1 p.96; B,TMREJS prints 022735.10 = line 28's location.
+!
+! External stand-ins whose value comes only from THIS page's binary
+! ($EOJ symbols defined on pages not yet landed): TN2, TMREJ3, TMREJ5.
+
+! ---- index names ($EOJ p.418 lines 23-32)
+TMXA    SYN,$2                       ! p.418 line 23
+TMXB    SYN,$3                       ! p.418 line 24
+TMXG    SYN,$8                       ! p.418 line 29
+TMXEE   SYN,$9                       ! p.418 line 30
+TMXGA   SYN,$11                      ! p.418 line 32
+
+! ---- field symbols, resident (landed pp.99, 288, 289)
+TCRREF  SYN(BU,18),0.0               ! landed p.288 line 12
+TUNCT   SYN(BU,08),0.28              ! landed p.288 line 13
+TJBPRO  SYN(BU,1),0.36               ! landed p.288 line 14
+TRJECT  SYN(BU,1),0.37               ! landed p.288 line 15
+TABSUN  SYN(BU,3),0.07               ! landed p.288 line 32
+TFREEL  SYN(BU,18),0.28              ! landed p.288 line 36
+TABSCH  SYN(BU,18),0.46              ! landed p.288 line 37
+TUNTBA  SYN(BU,18),0.0               ! landed p.289 line 6
+TMULTI  SYN(BU,1),0.27               ! landed p.289 line 7
+TUNASG  SYN(BU,1),0.29               ! landed p.289 line 11
+TCHOWN  SYN(BU,1),0.32               ! landed p.289 line 12
+SMOUNT  SYN(BU,1), 0.51              ! landed p.99 line 42
+SIMNT   SYN(BU,1), 0.53              ! landed p.99 line 44
+
+! ---- resident addresses
+TPPURF  SYN(BU), (8)232230.0         ! landed p.288 line 5 XW
+TPPRUN  SYN(BU), (8)232232.0         ! landed p.288 line 7 XW
+TSAV    SYN(BU), (8)232226.0         ! landed p.287 line 15 XW
+SXCHAN  SYN(BU), (8)215002.0         ! landed p.103 line 28 "SXCHAN XW,0"; line 33 215002.00
+TCHSXW  SYN,SXCHAN                   ! landed p.289 line 5 (defining form)
+
+! ---- $EOJ symbols
+TCAT    SYN, (8)022272.0             ! $EOJ p.422 line 11 DRZ(N),8 (as p.405); ST lines 34/39, LCI line 44
+TMFREJ  SYN(BU,1), (8)022133.31      ! $EOJ p.418 line 15 DD(BU,1),0; line 50 022133.31
+TN2     SYN, (8)022766.0             ! $EOJ, not landed; BXCZ line 28 022766.30, half word only
+TMREJ3  SYN, (8)022764.0             ! $EOJ, not landed; BRZ line 30 022764.34, half word only
+TMREJ5  SYN, (8)022761.40            ! $EOJ, not landed; BZB line 32 / BRZ line 41 022761.74
+
+        SLC, (8)022721.00
+! line  1  -
+! line  2  - ------------------------------------------------------------
+! line  3  -          THE DISPATCHER TOLD MOVE TO REJECT NEXT JOB
+! line  4  - ------------------------------------------------------------
+! line  5  -
+! line  6  -
+! line  7  -   A SPECIAL REJECT WHENTHE PPRUN INDEX HAS BEEN STEPPED
+! line  8  -
+TMREJB  CM1111,TRJECT(TMXA)                                  ! line  9
+        CM1111,TJBPRO(TMXA)                                  ! line 10  -SET THE JOB PROCESSED BIT CN
+        V+I,TMXB,0.0                                         ! line 11  -TO ACTIVATE IX FOR COUNT CHECK
+        B,TMREJS                                             ! line 12
+! line 13  -
+! line 14  -
+TMREJ   LVI,TMXEE,0.0                                        ! line 15
+        BB,0.25($15),TMREJ8                                  ! line 16  -IF NOT OVERLAP  (printed "C.25")
+        LX,TMXA,TPPRUN                                       ! line 17  -GET THE NEXT JOB TO BE RUN
+        B,TMREJ7                                             ! line 18
+TMREJ8  LX,TMXA,TPPURF                                       ! line 19  -SET UP FOR NOT OVERLAP
+TMREJ7  L,TCRREF(TMXA),46                                    ! line 20  -I/O REQ TABLE ADDRESS
+        LF,TUNCT(TMXA),18                                    ! line 21  -THE NUMBER OF UNITS TO CF
+        CM1111,TJBPRO(TMXA)                                  ! line 22  -SET THE JOB PROCESSED BIT
+        BB,.25($15),TMREJS-.32                               ! line 23  -IF BYPASS
+TMREJ6  V+ICR,TMXA,2.0                                       ! line 24
+        SX,TMXA,TPPRUN                                       ! line 25  -ADVANCE AND SAVE FOR NEXT JOB
+        SX,TMXA,TSAV                                         ! line 26
+        LX,TMXB,$R                                           ! line 27
+TMREJS  BXCZ,TN2                                             ! line 28  -IF NO REQ TO ZERO
+TMREJ1  L,TABSCH(TMXB),46                                    ! line 29  -GET ADDRESS OF CHANNEL
+        BRZ,TMREJ3                                           ! line 30
+        LV,TMXG,$R                                           ! line 31
+        BZB,TMULTI(TMXG),TMREJ5                              ! line 32  -IF A NON-MULTI CHANNEL
+        -(BU,18),TCHSXW,46                                   ! line 33  -COMPUTE THE CHANNEL NUMBER
+        ST(BU,7),TCAT+.12,46                                 ! line 34
+        L,TUNTBA(TMXG),46                                    ! line 35  -GET UNIT TABLE ADDRESS
+        LV,TMXG,$R                                           ! line 36
+        L,TABSUN(TMXB),46                                    ! line 37  -GET THE UNIT NUMBER
+        V+,TMXG,$R                                           ! line 38  -ADD TO INITIAL UNIT ADDRESS
+        ST(BU,3),TCAT+.47,46                                 ! line 39  -STORE THE UNIT NUMBER ALSO
+        L,TFREEL(TMXB),46                                    ! line 40  -GET THE FIRST REEL ADDRESS
+        BRZ,TMREJ5                                           ! line 41  -IF NONE
+        LV,TMXGA,$R                                          ! line 42
+        Z,0.0(TMXGA)                                         ! line 43  -ZERO THE REEL SLOT
+        LCI,TMXG,TCAT                                        ! line 44  -SET UP THE UNIT STATUS TABLE
+        SC,TMXG,0.0(TMXG)                                    ! line 45  -WITH THE DUMMY UNIT AREA TBL ADDR.
+        CM0000,TUNASG(TMXG)                                  ! line 46  -AND SET THE UNIT ASSIGNED
+        CM1111,TCHOWN(TMXG)                                  ! line 47  -SET UNIT OWNER TO MCP
+        CM0000,SIMNT(TMXG)                                   ! line 48  -TO RESET THE  (printed "CMOCOO")
+        CM0000,SMOUNT(TMXG)                                  ! line 49  -MOUNT BITS
+        CM1111,TMFREJ                                        ! line 50  -TO TELL FREE WERE COMING FROM MOVE
+
+!SYM TMREJB 022721.00
+!SYM TMREJ  022724.00
+!SYM TMREJ8 022726.40
+!SYM TMREJ7 022727.00
+!SYM TMREJ6 022733.00
+!SYM TMREJS 022735.00
+!SYM TMREJ1 022735.40
+
+!CHECK 022721.00 | 000000.45 82 001000.36 F0 | line 9 T MREJB CM1111,TRJECT(TMXA)
+!CHECK 022722.00 | 000000.44 82 001000.36 F0 | line 10 CM1111,TJBPRO(TMXA)
+!CHECK 022723.00 | 000000.07 05 | line 11 V+I,TMXB,0.0
+!CHECK 022723.40 | 022735.10 00 | line 12 B,TMREJS (printed "C0": open round = 0, lesson 6)
+!CHECK 022724.00 | 000000.23 01 | line 15 T MREJ LVI,TMXEE,0.0
+!CHECK 022724.40 | 000000.31 8F 022726.74 02 | line 16 BB,0.25($15),TMREJ8
+!CHECK 022725.40 | 232232.04 10 | line 17 LX,TMXA,TPPRUN
+!CHECK 022726.00 | 022727.10 00 | line 18 B,TMREJ7
+!CHECK 022726.40 | 232230.04 10 | line 19 T MREJ8 LX,TMXA,TPPURF
+!CHECK 022727.00 | 000000.00 82 022027.20 50 | line 20 T MREJ7 L,TCRREF(TMXA),46
+!CHECK 022730.00 | 000000.34 82 010011.06 70 | line 21 LF,TUNCT(TMXA),18
+!CHECK 022731.00 | 000000.44 82 001000.36 F0 | line 22 CM1111,TJBPRO(TMXA)
+!CHECK 022732.00 | 000000.31 8F 022734.74 02 | line 23 BB,.25($15),TMREJS-.32
+!CHECK 022733.00 | 000002.05 07 | line 24 T MREJ6 V+ICR,TMXA,2.0
+!CHECK 022733.40 | 232232.05 10 | line 25 SX,TMXA,TPPRUN
+!CHECK 022734.00 | 232226.05 10 | line 26 SX,TMXA,TSAV
+!CHECK 022734.40 | 000011.06 10 | line 27 LX,TMXB,$R
+!CHECK 022735.00 | 022766.30 42 | line 28 T MREJS BXCZ,TN2
+!CHECK 022735.40 | 000000.56 83 022027.20 50 | line 29 T MREJ1 L,TABSCH(TMXB),46
+!CHECK 022736.40 | 022764.34 C2 | line 30 BRZ,TMREJ3
+!CHECK 022737.00 | 000011.20 30 | line 31 LV,TMXG,$R
+!CHECK 022737.40 | 000000.33 88 022761.74 00 | line 32 BZB,TMULTI(TMXG),TMREJ5
+!CHECK 022740.40 | 215002.00 80 022027.30 10 | line 33 -(BU,18),TCHSXW,46
+!CHECK 022741.40 | 022272.14 80 007027.20 D0 | line 34 ST(BU,7),TCAT+.12,46
+!CHECK 022742.40 | 000000.00 88 022027.20 50 | line 35 L,TUNTBA(TMXG),46
+!CHECK 022743.40 | 000011.20 30 | line 36 LV,TMXG,$R
+!CHECK 022744.00 | 000000.07 83 003027.20 50 | line 37 L,TABSUN(TMXB),46
+!CHECK 022745.00 | 000011.20 B0 | line 38 V+,TMXG,$R
+!CHECK 022745.40 | 022272.57 80 003027.20 D0 | line 39 ST(BU,3),TCAT+.47,46
+!CHECK 022746.40 | 000000.34 83 022027.20 50 | line 40 L,TFREEL(TMXB),46
+!CHECK 022747.40 | 022761.74 C2 | line 41 BRZ,TMREJ5
+!CHECK 022750.00 | 000011.26 30 | line 42 LV,TMXGA,$R
+!CHECK 022750.40 | 000000.22 0B | line 43 Z,0.0(TMXGA)
+!CHECK 022751.00 | 022272.21 02 | line 44 LCI,TMXG,TCAT
+!CHECK 022751.40 | 000000.21 58 | line 45 SC,TMXG,0.0(TMXG)
+!CHECK 022752.00 | 000000.35 88 001000.00 F0 | line 46 CM0000,TUNASG(TMXG)
+!CHECK 022753.00 | 000000.40 88 001000.36 F0 | line 47 CM1111,TCHOWN(TMXG)
+!CHECK 022754.00 | 000000.65 88 001000.00 F0 | line 48 CM0000,SIMNT(TMXG) (printed "CMOCOO")
+!CHECK 022755.00 | 000000.63 88 001000.00 F0 | line 49 CM0000,SMOUNT(TMXG)
+!CHECK 022756.00 | 022133.31 80 001000.36 F0 | line 50 CM1111,TMFREJ

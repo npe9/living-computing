@@ -6801,6 +6801,66 @@ run "SYSTEM COMMAND package (PUNID 22SCOMD), the IOCHANGE routine: the tail of t
 run "SYSTEM COMMAND package (PUNID 22SCOMD), the IOCHANGE command's DISK SECTION (ZDSKCH, printed p.375" python3 verify_mcp_page.py 375
 run "SYSTEM COMMAND package (PUNID 22SCOMD): the DELETE/ADD/ALL command words, the, printed p.376" python3 verify_mcp_page.py 376
 run "the SYSTEM COMMAND package's ONLINE command (Z ONLIN, lines 1-34) and the opening of, printed p.377" python3 verify_mcp_page.py 377
+run "the SYSTEM COMMAND package's OFFLINE command, its tail (lines 1-24: Z OFF 20, Z OFF 10, printed p.378" python3 verify_mcp_page.py 378
+run "the SYSTEM COMMAND package's time-calibration tail (Z TCC 03 .. Z TCC ST, lines 1-33), printed p.379" python3 verify_mcp_page.py 379
+run "the SYSTEM COMMAND package's comment-onto-tape routine (V VOPTP, V VTPCN), its blanking, printed p.380" python3 verify_mcp_page.py 380
+run "the END of the SYSTEM COMMAND package (its two (CC*) trailer cards) and the OPENING of, printed p.381" python3 verify_mcp_page.py 381
+run "the \$EOJ package (PUNID 22\$EOJ, card series ZA): the job-card path into UNCODE, the, printed p.382" python3 verify_mcp_page.py 382
+run "five lines in the \$EOJ program (PUNID 22\$EOJ, card series ZA), the end of the job-card, printed p.383" python3 verify_mcp_page.py 383
+run "the \$EOJ program's B-card sequence check (YTCSR .. B,YC4B after YIODSO). , printed p.384" python3 verify_mcp_page.py 384
+run "a NEW PROGRAM, PUNID 22\$EOJ (card series ZA), JOB CONTROL 4 (C22-6728-1 App. D: YC4C9, printed p.385" python3 verify_mcp_page.py 385
+run "the \$EOJ program (PUNID 22\$EOJ, card series ZA), YMOVXW .. the general error routine. , printed p.386" python3 verify_mcp_page.py 386
+run "the \$EOJ package's 'SWITCHING SUBROUTINE TO READ ONE CARD FROM SOURCE' (Y RDFSO). , printed p.387" python3 verify_mcp_page.py 387
+run "the \$EOJ program's read-type-card path (W J4PA .. W J4PC) and the head of the, printed p.388" python3 verify_mcp_page.py 388
+run "END OF JOB, the LIMIT card (W J4PE .. W J4PI) and the IOD/REEL card loop (W JCV .. W, printed p.389" python3 verify_mcp_page.py 389
+run "the \$EOJ program's 'ANALYZE ERROR RETURN, GIVE ERROR MESSAGE' section (after TMOVE, printed p.390" python3 verify_mcp_page.py 390
+run "the END-OF-JOB overlay (PUNID 22\$EOJ, card series ZA), 'SERVICE ROUTINES FOR ERROR, printed p.391" python3 verify_mcp_page.py 391
+run "the END-OF-JOB program (JC4): the job-reject exit (WJC4QI .. WJC4QM), the T.C.P./, printed p.392" python3 verify_mcp_page.py 392
+run "the \$EOJ program's reject fix-ups -- DECODE REJECT (Y ICER2), ASSIGN REJECT (Y ASREJ), printed p.393" python3 verify_mcp_page.py 393
+run "the JC4 ERROR MESSAGES of the END OF JOB program (\$EOJ), YJCEM .. YJ1FUL (C22-6728, printed p.394" python3 verify_mcp_page.py 394
+run "the \$EOJ program's (JC4) temporary storage and symbols (WSPLL .. YTBIT), then THE, printed p.395" python3 verify_mcp_page.py 395
+run "the \$EOJ program (JOB CONTROL 4, card series ZA): convert compiler names to BCD, break, printed p.396" python3 verify_mcp_page.py 396
+run "the \$EOJ program's special-BSS branch (KFI,YBSSID .. B,TJUNAS) and its data: the XWs, printed p.397" python3 verify_mcp_page.py 397
+run "the \$EOJ copy of the ASSIGN routine's entry -- index save area, the not-overlap PP ref, printed p.398" python3 verify_mcp_page.py 398
+run "the \$EOJ program's copy of the I/O assignment validity check (the TASIGN family): the, printed p.399" python3 verify_mcp_page.py 399
+run "the \$EOJ program's copy of the ASSIGN routine's request scan -- T A2 (clear the temp, printed p.400" python3 verify_mcp_page.py 400
+run "the \$EOJ copy of the I/O ASSIGNMENT routine (T-names): the multi-unit conclusion (T A6, printed p.401" python3 verify_mcp_page.py 401
+run "\$EOJ's copy of the I/O unit-assignment scan (TASIGN's TA7/TB7/TA7CA/TC7 multi-single, printed p.402" python3 verify_mcp_page.py 402
+run "the \$EOJ program's re-assembled tape ASSIGN, sections TA3C (like-channel search) .., printed p.403" python3 verify_mcp_page.py 403
+run "the \$EOJ program's copy of the I/O ASSIGN routine -- the reserved-unit release loop (T, printed p.404" python3 verify_mcp_page.py 404
+run "\$EOJ's copy of the ASSIGN program's unit-assignment tail -- T A5MA (set the assigned, printed p.405" python3 verify_mcp_page.py 405
+run "the \$EOJ program's copy of the tape-assignment routine (TASIGN, vol-1 pp.66-67's code), printed p.406" python3 verify_mcp_page.py 406
+run "END OF JOB (\$EOJ), the machine-configuration-change unit scan (T 9M .. T B9B), the save, printed p.407" python3 verify_mcp_page.py 407
+run "the \$EOJ copy of the ASSIGN program's unit-count sort tail (T D9C .. T D9) and the, printed p.408" python3 verify_mcp_page.py 408
+run "the \$EOJ program's MACHINE CONFIGURATION CHANGE fix-up (T A10 .. T B11C): reset the, printed p.409" python3 verify_mcp_page.py 409
+run "the \$EOJ program's tape-assignment REJECT path (TAREJX .. TAREJ6) and the exit table T, printed p.410" python3 verify_mcp_page.py 410
+run "the \$EOJ program's reassembly of 'A PRINT SUB - ROUTINE THAT WILL PRINT ASSIGNMENTS' --, printed p.411" python3 verify_mcp_page.py 411
+run "the \$EOJ program's SCAN THE PP REF TABLE FOR NEW ASSIGNMENTS (T SCRIB .. the BBZ to T, printed p.412" python3 verify_mcp_page.py 412
+run "the \$EOJ program's reassembly of the tape ASSIGN routine's CONVERT THE CHANNEL FIELDS, printed p.413" python3 verify_mcp_page.py 413
+run "the \$EOJ program's reassembly of the tape ASSIGN mount-message writer (T P4A .. T P1), printed p.414" python3 verify_mcp_page.py 414
+run "the \$EOJ program's tape-assign exit (T P1BA, T P1A): set the job processed and, printed p.415" python3 verify_mcp_page.py 415
+run "the \$EOJ program's copy of the MOVE routine's constants, its index-register names, the, printed p.418" python3 verify_mcp_page.py 418
+run "the \$EOJ copy of THE UNIT NAME TABLE's SYNs (tail), THE DISK ALLOCATION TABLE, THE, printed p.419" python3 verify_mcp_page.py 419
+run "\$EOJ's reassembly of the ASSIGN routine's SYN CARDS FOR FILE AREA TABLE, THE FORMAT OF, printed p.420" python3 verify_mcp_page.py 420
+run "the \$EOJ copy of the ASSIGN program's MODE, DENSITY and DISPOSITION SCAN TABLES. , printed p.421" python3 verify_mcp_page.py 421
+run "\$EOJ's dummy tables for the un-assignment of the rejected job (T DSIO .. T WORM). , printed p.422" python3 verify_mcp_page.py 422
+run "the \$EOJ program's THE - MOVE - SUB-ROUTINE (T MOVE .. T MNGA): save indexes, test the, printed p.423" python3 verify_mcp_page.py 423
+run "\$EOJ's reassembly of the IOD-card field scan (tape MODE, DENSITY, DISPOSITION), the, printed p.424" python3 verify_mcp_page.py 424
+run "the \$EOJ program's reassembly of the tape ASSIGN routine, the IOD-card scan against the, printed p.425" python3 verify_mcp_page.py 425
+run "the \$EOJ program's reassembly of the tape ASSIGN routine, 'MODIFY THE CHAN/UNIT STATUS, printed p.426" python3 verify_mcp_page.py 426
+run "the \$EOJ program's reassembly of the tape ASSIGN routine, 'GENERATE THE FILE AREA, printed p.427" python3 verify_mcp_page.py 427
+run "the \$EOJ program's reassembly of the tape ASSIGN routine's disk/track arc allocation, printed p.428" python3 verify_mcp_page.py 428
+run "the \$EOJ program's reassembly of the tape ASSIGN routine, 'LOCATE THE PROPER REEL SLOT, printed p.429" python3 verify_mcp_page.py 429
+run "the \$EOJ program's 'INITIAL ENTRY PER PROBLEM PROGRAM' (TM2 .. TM3B): reset the disk, printed p.430" python3 verify_mcp_page.py 430
+run "the \$EOJ program's reassembly of the tape ASSIGN routine, 'SORT THE I/O REQUEST WITHIN, printed p.431" python3 verify_mcp_page.py 431
+run "\$EOJ's MOVE routine, the special reject (T MREJB .. T MREJ1 and the unit release up to, printed p.432" python3 verify_mcp_page.py 432
+run "the \$EOJ program's reassembly of the tape ASSIGN routine, the end of the reject loop (T, printed p.433" python3 verify_mcp_page.py 433
+run "the \$EOJ program's 'UN-ASSIGN ROUTINE FOR DISASSIGNMENT' (TJUNAS .. RSWTCH), card, printed p.434" python3 verify_mcp_page.py 434
+run "a fragment of the \$EOJ tape release loop (RTCSAV, REMIND, T JNTP), card series ZZ. , printed p.435" python3 verify_mcp_page.py 435
+run "the \$EOJ program's UNASSIGN loop, disk/channel release and reset (TJCC1 .. TJEND, printed p.436" python3 verify_mcp_page.py 436
+run "the \$EOJ program, card series ZZ: the tail of a routine (SV,\$2,SCUMQ .. YC4BZ .. T, printed p.437" python3 verify_mcp_page.py 437
+run "the \$EOJ program's 'PRINT PROBLEM PROGRAM REEL HISTORY' routine, JHISTE .. JHIST2 (to, printed p.438" python3 verify_mcp_page.py 438
+run "the tail of the \$EOJ reel history routine (JHISTE: the tape-label/mode move, the, printed p.439" python3 verify_mcp_page.py 439
 
 # >>> pp.185-192 FOUND A WRONG ANSWER IN THE VFL IMMEDIATE, and the
 # page caught it by writing ONE immediate at TWO LENGTHS. <<<
@@ -6820,7 +6880,7 @@ run "the SYSTEM COMMAND package's ONLINE command (Z ONLIN, lines 1-34) and the o
 # Also: the SYN path never stripped blanks the instruction path does
 # ("B,K IO IND" assembled, "E IO IND SYN,K IO IND" did not), found
 # by printed p.189 printing both on one page.
-run "MCP's body merges, holds every page's rows and accounts for every word, resident pages plus each overlay (LOADER, \$DUMP, SCOMD), printed pp.99-377" python3 check_mcp_body_image.py
+run "MCP's body merges, holds every page's rows and accounts for every word, resident pages plus each overlay (LOADER, \$DUMP, SCOMD) and the low-core \$EOJ, printed pp.99-439" python3 check_mcp_body_image.py
 run "a printed trailing '-' is the comment mark, not a minus, C28-6129 PDF p.5" python3 check_comment_mark.py
 run "instruction and index-word names carry a dds, C22-6531 printed pp.10, 19" python3 check_instruction_label_dds.py
 run "\$OP assembles as OP and PRND is a listing control, C28-6129 printed pp.10, 36" python3 check_dollar_op.py

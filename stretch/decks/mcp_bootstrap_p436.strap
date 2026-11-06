@@ -1,0 +1,177 @@
+! mcp_bootstrap_p436.strap -- MCP printed page 436: the $EOJ program's
+! UNASSIGN loop, disk/channel release and reset (TJCC1 .. TJEND, C22-6728
+! "unassign ... TJTAP and TJNTPS ... stacked PP interrupts are discarded
+! from SQUE"), and the SQUE purge loop (YUNSTL, YUNSCB).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.186, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZZ000071  DIST. OF 3/01
+!  3/01  PAGE NUMBER 436"; the heading row's LOCATION field is 023064,
+! line 1's word.
+!
+! >>> CARD SERIES ZZ (not ZF as p.425/426), PUNID 22$EOJ.  No SLC, no
+! PUNID on the page; the origin below is line 1's printed LOCATION.  No
+! TAIL. <<<
+!
+! THE PAGE.  52 lines, every line number prints a "*"; a further "*"
+! after the LOCATION on lines 20, 34 and 51 (recorded, not interpreted).
+! Contiguous 023064.00 .. 023126.40 (line 52, a half word; next location
+! 023127.00), then blank paper.  Lines 6, 13, 33, 40 are blank remark
+! cards (a lone "-").  pp.427-435 are not landed: continuity with p.435
+! and p.437 is unchecked here.
+!
+! CARD SERIALS.  ZZ000071 .. ZZ000122, one per line, consecutive.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!  * labels "T JOK1/T JOK2/T JOK/T JOK3" print a half-open O; the
+!    statements that USE them (lines 9, 16, 21, 22, 24) print a CLOSED
+!    O ("TJOK2", "TJOK"), and the targets assemble to those rows.
+!  * "TJCC1", "TJCC", "TJCM", "TJCW": open everywhere; C22-6728 typesets
+!    TJCW, so C.  TJC (index $3, byte 83) goes with the family TJA..TJE
+!    ($1 .. $5: TJD byte 84, TJE byte 85).
+!  * line 12 "TJCW+C.22": open round before ".22" is digit 0 (binary
+!    023143.26 = TJCW + bit 22).  Line 41 "BD" prints with a worn stem.
+!  * lines 25, 28, 29, 31, 34-36 "CM0C00"/"CM0C0C": CM0000 (connective
+!    digits; F0 byte).  Line 2 BZAE prints "C0" and assembles C0.
+!  * line 36 prints a stray tick after "(BU,3)"; not a character.
+!  * line 44 "YC4BZ": the last glyph has the flat top of the Z in BXVZ on
+!    the same line, not the round top of the 2 in TJOK2 (900 dpi crop).
+!    C22-6728 names a YC4B2 in JC4 (231xxx), a different symbol; this
+!    one is low core, from this page's binary.
+!
+! EXTERNALS.  The TJ index names are defined on a page not yet landed;
+! values from this page's bytes, written SYN,$n as index aliases.
+
+TJA     SYN,$1                       ! not landed; CB+ line 39 .03, SC line 42 .43
+TJC     SYN,$3                       ! not landed; byte 83 lines 27-38
+TJD     SYN,$4                       ! not landed; byte 84 lines 4, 25, 26
+TJE     SYN,$5                       ! not landed; LCI line 7 .13, byte 85
+TJNEXT  SYN, (8)023012.0             ! not landed; CB+ line 39 023012.03, half word only
+TJDISP  SYN, (8)023131.40            ! not landed; B line 11 023131.50, half word only
+TJCW    SYN, (8)023143.0             ! not landed; BB line 24 023143.30, BZB line 12 .26
+YC4BZ   SYN, (8)023130.0             ! not landed; BXVZ line 44 023127.71, half word only
+SCHOP   SYN(BU,1), 0.26              ! landed p.99 line 22 -CHAN OPERATING
+TMULTI  SYN(BU,1),0.27               ! landed p.289 line 7
+TUNASG  SYN(BU,1),0.29               ! landed p.289 line 11
+SMAXRN  SYN(B,25,1), (8)215005.40    ! landed p.103 line 36 VF; as p.418
+TMAXRF  SYN,SMAXRN                   ! p.418 line 19 (defining form)
+SPROGS  SYN, (8)215021.0             ! landed p.109 line 7 -PROGRAM STATUS TABLE
+SQUE    SYN, (8)215420.0             ! landed; p.116 line 33 DRZ(BU,19),(128)
+
+        SLC, (8)023064.0
+        KFI(BU,4),1                                          ! line  1  -LOOK FOR DISK
+        BZAE,TJCC1                                           ! line  2  -IF NOT DISK
+        BE,$+.32                                             ! line  3
+        BB,SCHOP(TJD),$                                      ! line  4
+        BD,TJTEST                                            ! line  5
+! line  6  -
+TJCC1   LCI,TJE,3.0                                          ! line  7  -SET COUNT FOR THE NUMB OF RETRYS
+TJCC    CCW,.0(TJE),TJCW                                     ! line  8  -GET CHAN CW FOR TEST
+        BZEKJZ,TJOK1                                         ! line  9  -IF EXCHANGE OK
+        CB,TJE,TJCC                                          ! line 10  -KEEP TRYING
+        B,TJDISP                                             ! line 11  -EXCHANGE CHECK
+TJOK1   BZB,TJCW+0.22,TJCC1                                  ! line 12  -WAIT FOR EOP
+! line 13  -
+        LCI,TJE,3.0                                          ! line 14  -FOR RELEASE RETRYS
+TJREL   REL(SEOP),0.0(TJE)                                   ! line 15  -TRY TO CLEAR CHAN
+        BZEKJZ,TJOK2                                         ! line 16  -IF OK
+        CB,TJE,TJREL                                         ! line 17  -RETRY AGAIN
+        B,TJDISP                                             ! line 18  -IF NO MORE RETRYS
+TJOK2   LCI,TJE,3.0                                          ! line 19
+TJOK    CCW,.0(TJE),TJCW                                     ! line 20
+        BZEKJZ,TJOK3                                         ! line 21
+        CB,TJE,TJOK                                          ! line 22  -KEEP ON TRYING
+        B,TJDISP                                             ! line 23  -IF NO MORE TRYS
+TJOK3   BB,TJCW+.24,TJOK2                                    ! line 24  -IF SEOP IS STILL ON
+TJCM    CM0000,SCHOP(TJD)                                    ! line 25  -DROP THE CHAN OPERATING BIT
+TJTEST  BZB,TMULTI(TJD),TJNTPS                               ! line 26  -IF A SINGLE UNIT CHAN
+TJTAP   CM0000(BU,3),.51(TJC)                                ! line 27
+        CM0000(BU,1),.50(TJC)                                ! line 28
+        CM0000(BU,6),.54(TJC)                                ! line 29
+        CM0000(BU,10),.39(TJC)                               ! line 30
+        CM0000(BU,2),.30(TJC)                                ! line 31  -RESET THE UNIT STATUS BITS
+        B,TJSTP                                              ! line 32
+! line 33  -
+TJNTPS  CM0000(BU,2),0.30(TJC)                               ! line 34  -RESET THE CHAN STATUS BITS
+        CM0000(BU,10),.39(TJC)                               ! line 35
+        CM0000(BU,3),.50(TJC)                                ! line 36
+        CM0000(BU,5),0.57(TJC)                               ! line 37
+TJSTP   CM1111,TUNASG(TJC)                                   ! line 38  -SET UNIT UN- ASSIGNED
+TJSTPA  CB+,TJA,TJNEXT                                       ! line 39  -GO FOR NEXT
+! line 40  -
+TJEND   BD,$+.32                                             ! line 41
+        SC,TJA,TMAXRF                                        ! line 42  -RESET MAX REF NO. TO ZERO
+        LV,$1,SPROGS+.32                                     ! line 43  -GET TOTAL INTERRUPT COUNT
+        BXVZ,YC4BZ-.32                                       ! line 44
+        V+,$1,SPROGS+1.32                                    ! line 45
+        LC,$1,$1                                             ! line 46
+        LVI,$1,SQUE                                          ! line 47  -SQUE IS THE LOCATION
+        LVI,$2,SQUE                                          ! line 48  -OF THE INTERRUPT QUEUE
+YUNSTL  L(BU,19)(V+I),.19($1)                                ! line 49  -GET AN INTERRUPT.
+        BZB,$R+.63,YUNSCB                                    ! line 50  -PP INTERRUPT - FORGET IT.
+        ST(V+I)(BU,19),.19($2)                               ! line 51  -REPACK MCP INTERRUPT.
+YUNSCB  CB,$1,YUNSTL                                         ! line 52  -LOOP
+
+!SYM TJCC1  023067.40
+!SYM TJCC   023070.00
+!SYM TJOK1  023072.40
+!SYM TJREL  023074.00
+!SYM TJOK2  023076.40
+!SYM TJOK   023077.00
+!SYM TJOK3  023101.40
+!SYM TJCM   023102.40
+!SYM TJTEST 023103.40
+!SYM TJTAP  023104.40
+!SYM TJNTPS 023112.00
+!SYM TJSTP  023116.00
+!SYM TJSTPA 023117.00
+!SYM TJEND  023117.40
+!SYM YUNSTL 023123.40
+!SYM YUNSCB 023126.40
+!CHECK 023064.00 | 040000.00 80 404000.23 10 | line 1 KFI(BU,4),1
+!CHECK 023065.00 | 023067.76 C0 | line 2 BZAE,TJCC1
+!CHECK 023065.40 | 023066.00 00 | line 3 BE,$+.32
+!CHECK 023066.00 | 000000.32 84 023066.34 02 | line 4 BB,SCHOP(TJD),$
+!CHECK 023067.00 | 023103.44 00 | line 5 BD,TJTEST
+!CHECK 023067.40 | 000003.13 02 | line 7 T JCC1 LCI,TJE,3.0
+!CHECK 023070.00 | 000000.00 85 023143.21 00 | line 8 T JCC CCW,.0(TJE),TJCW
+!CHECK 023071.00 | 023072.43 44 | line 9 BZEKJZ,TJOK1
+!CHECK 023071.40 | 023070.12 48 | line 10 CB,TJE,TJCC
+!CHECK 023072.00 | 023131.50 00 | line 11 B,TJDISP
+!CHECK 023072.40 | 023143.26 80 023067.74 00 | line 12 T JOK1 BZB,TJCW+C.22,TJCC1 (C = open 0)
+!CHECK 023073.40 | 000003.13 02 | line 14 LCI,TJE,3.0
+!CHECK 023074.00 | 000000.00 85 000000.33 00 | line 15 T JREL REL(SEOP),0.0(TJE)
+!CHECK 023075.00 | 023076.43 44 | line 16 BZEKJZ,TJOK2
+!CHECK 023075.40 | 023074.12 48 | line 17 CB,TJE,TJREL
+!CHECK 023076.00 | 023131.50 00 | line 18 B,TJDISP
+!CHECK 023076.40 | 000003.13 02 | line 19 T JOK2 LCI,TJE,3.0
+!CHECK 023077.00 | 000000.00 85 023143.21 00 | line 20 T JOK CCW,.0(TJE),TJCW (a "*" prints after the location)
+!CHECK 023100.00 | 023101.43 44 | line 21 BZEKJZ,TJOK3
+!CHECK 023100.40 | 023077.12 48 | line 22 CB,TJE,TJOK
+!CHECK 023101.00 | 023131.50 00 | line 23 B,TJDISP
+!CHECK 023101.40 | 023143.30 80 023076.74 02 | line 24 T JOK3 BB,TJCW+.24,TJOK2
+!CHECK 023102.40 | 000000.32 84 001000.00 F0 | line 25 T JCM CM0000,SCHOP(TJD)
+!CHECK 023103.40 | 000000.33 84 023112.34 00 | line 26 T JTEST BZB,TMULTI(TJD),TJNTPS
+!CHECK 023104.40 | 000000.63 83 003000.00 F0 | line 27 T JTAP CM0000(BU,3),.51(TJC)
+!CHECK 023105.40 | 000000.62 83 001000.00 F0 | line 28 CM0000(BU,1),.50(TJC)
+!CHECK 023106.40 | 000000.66 83 006000.00 F0 | line 29 CM0000(BU,6),.54(TJC)
+!CHECK 023107.40 | 000000.47 83 012000.00 F0 | line 30 CM0000(BU,10),.39(TJC)
+!CHECK 023110.40 | 000000.36 83 002000.00 F0 | line 31 CM0000(BU,2),.30(TJC)
+!CHECK 023111.40 | 023116.10 00 | line 32 B,TJSTP
+!CHECK 023112.00 | 000000.36 83 002000.00 F0 | line 34 T JNTPS CM0000(BU,2),0.30(TJC) (a "*" prints after the location)
+!CHECK 023113.00 | 000000.47 83 012000.00 F0 | line 35 CM0000(BU,10),.39(TJC)
+!CHECK 023114.00 | 000000.62 83 003000.00 F0 | line 36 CM0000(BU,3),.50(TJC)
+!CHECK 023115.00 | 000000.71 83 005000.00 F0 | line 37 CM0000(BU,5),0.57(TJC)
+!CHECK 023116.00 | 000000.35 83 001000.36 F0 | line 38 T JSTP CM1111,TUNASG(TJC)
+!CHECK 023117.00 | 023012.03 48 | line 39 T JSTPA CB+,TJA,TJNEXT
+!CHECK 023117.40 | 023120.04 00 | line 41 T JEND BD,$+.32
+!CHECK 023120.00 | 215005.43 50 | line 42 SC,TJA,TMAXRF
+!CHECK 023120.40 | 215021.42 30 | line 43 LV,$1,SPROGS+.32
+!CHECK 023121.00 | 023127.71 42 | line 44 BXVZ,YC4BZ-.32
+!CHECK 023121.40 | 215022.42 B0 | line 45 V+,$1,SPROGS+1.32
+!CHECK 023122.00 | 000021.02 50 | line 46 LC,$1,$1
+!CHECK 023122.40 | 215420.03 01 | line 47 LVI,$1,SQUE
+!CHECK 023123.00 | 215420.05 01 | line 48 LVI,$2,SQUE
+!CHECK 023123.40 | 000000.23 81 123000.20 50 | line 49 YUNSTL L(BU,19)(V+I),.19($1)
+!CHECK 023124.40 | 000011.77 80 023126.74 00 | line 50 BZB,$R+.63,YUNSCB
+!CHECK 023125.40 | 000000.23 82 123000.20 D0 | line 51 ST(V+I)(BU,19),.19($2) (a "*" prints after the location)
+!CHECK 023126.40 | 023123.42 48 | line 52 YUNSCB CB,$1,YUNSTL

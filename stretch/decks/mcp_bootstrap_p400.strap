@@ -1,0 +1,189 @@
+! mcp_bootstrap_p400.strap -- MCP printed page 400: the $EOJ program's
+! copy of the ASSIGN routine's request scan -- T A2 (clear the temp
+! channel word, compare the requested channel count against the
+! machine configuration), "GET AN I/O REQUEST AND FOLLOW IT THRU"
+! (T A2B .. T A2DC) and "SINGLE UNIT REQUEST, ASSIGN ONLY NEXT PP TO
+! RUN" (T C2B .. T A2E).  Same code as volume 1's printed pp.66-67
+! (T A2 .. T A2E at 0037xx), with T A2G/T A2F (the split-channel
+! test, lines 3-9) added and "B,TC" become "B,TG".
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.150, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZE000102  DIST. OF 3/01
+!  3/01  PAGE NUMBER 400"; the heading row's LOCATION field reads
+! 021225, line 1's location.
+!
+! >>> STILL $EOJ, BUT CARD SERIES ZE. <<<  PUNID 22$EOJ, low core
+! (0212xx); pp.381-393 printed series ZA.  No SLC on the page -- the
+! origin below is line 1's printed LOCATION.  No TAIL.
+!
+! THE PAGE.  50 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 17 and 32.  Contiguous 021225.40 .. 021264.00
+! (line 50, BB, a full word: next free 021265.00).
+!   lines 14-16, 35-37, 48-49  remarks.
+!
+! CARD SERIALS.  ZE000102 .. ZE000151, one per line, in order.
+!
+! >>> GLYPHS. <<<  Octal fields printing the open round as "C"
+! ("000000.C3" lines 18, 34; "000000.C7" line 22; "000000.C0" line 17)
+! are 0: a C cannot stand there.  Label/statement D's printed with a
+! worn stem (TINDA line 2/8 "TINCA", TINDZ line 12 "TINCZ", TA2D line
+! 17 "TA2C", TA2DB line 31 "TA2CB", TA2DC line 32 "TA2CC", TA2D/TA2DB/
+! TA2DC labels): settled by the binaries (TA2D = 021250.00 on line
+! 28, TA2DB 021253.40, TA2DC 021254.40) and by p.287's defining
+! TINDA/TINDZ DDs (232227.33 / 232227.40).  "TIOREQ" (line 25) and
+! "TJBPRO" (line 42) print the O open; spelled as their defining
+! cards (p.288).  "CM0C00" lines 2, 11, 28 is CM0000 (an operation:
+! only 0/1 can stand there).
+!
+! STAND-INS.
+!   Resident ASSIGN data (pp.287-290, landed): forms copied from the
+!   defining cards; DD(BU,1)/DD(BU,7) symbols as SYN(BU,n) at the
+!   address p.287's !SYM gives; TPPRUN/TYSCAN (XW) as SYN(BU);
+!   TIOREQ as p.283's SYN(BU,64).
+!   $EOJ low-core symbols not yet landed, plain SYN:
+!     TCTEMP  021102.0  p.287's stand-in; Z line 1 / ST line 23, BIT-EXACT
+!     TG      021722.0  B line 13, half word only
+!     TA8     021476.0  B line 27, half word only
+!     TA7     021311.40 B line 47 (021311.50), BIT-EXACT
+!     TP      021725.40 BB line 40 (021725.74), BIT-EXACT
+!     TA6     021267.0  BB line 50 (021267.34), BIT-EXACT
+
+TCTEMP  SYN, (8)021102.0             ! $EOJ, as p.287's stand-in; Z line 1 021102.22
+TINDA   SYN(BU,1), (8)232227.33      ! p.287 line 20 DD(BU,1)
+TLCHCT  SYN(BU,7), (8)232227.22      ! p.287 line 17 DD(BU,7)
+TRLSYM  SYN(BU,7),0.11               ! p.288 line 33
+TIXA    SYN,$4                       ! p.287 line 34
+TIXB    SYN,$5                       ! p.287 line 35
+TINDD   SYN(BU,1), (8)232227.36      ! p.287 line 23 DD(BU,1)
+TINDZ   SYN(BU,1), (8)232227.40      ! p.287 line 25 DD(BU,1)
+TG      SYN, (8)021722.0             ! $EOJ, not landed; B line 13, half word only
+TASGNI  SYN(BU,1),0.00               ! p.288 line 28
+TTYPE   SYN(BU,4),0.03               ! p.288 line 31
+TABSCH  SYN(BU,18),0.46              ! p.288 line 37
+TABSUN  SYN(BU,3),0.07               ! p.288 line 32
+TLAST   SYN(BU,1),0.18               ! p.288 line 34
+TIOREQ  SYN(BU,64), (8)232307.0      ! p.288 line 26 DRZ(BU,64), as p.283
+TA8     SYN, (8)021476.0             ! $EOJ, not landed; B line 27, half word only
+TMODE   SYN(BU,1), (8)232227.32      ! p.287 line 19 DD(BU,1)
+TX2     SYN,$9                       ! p.287 line 31
+TYSCAN  SYN(BU), (8)232517.0         ! p.290 line 36 XW
+TX1     SYN,$10                      ! p.287 line 30
+TCTWDX  SYN,TX1                      ! p.287 line 29
+TUNOBT  SYN(BU,1),0.01               ! p.288 line 29
+TA7     SYN, (8)021311.40            ! $EOJ, not landed; B line 47 021311.50, BIT-EXACT
+TPPRUN  SYN(BU), (8)232232.0         ! p.288 line 7 XW, as p.391
+TLPPEN  SYN(BU,1),0.39               ! p.288 line 17
+TP      SYN, (8)021725.40            ! $EOJ, not landed; BB line 40 021725.74, BIT-EXACT
+TRJECT  SYN(BU,1),0.37               ! p.288 line 15
+TJBPRO  SYN(BU,1),0.36               ! p.288 line 14
+TIXE    SYN,$3                       ! p.287 line 36
+TA6     SYN, (8)021267.0             ! $EOJ, not landed; BB line 50 021267.34, BIT-EXACT
+
+        SLC, (8)021225.40
+TA2     Z,TCTEMP                                             ! line  1  -CLEAR THE TEMP SYMB CHAN WORD
+        CM0000(BU,4),TINDA                                   ! line  2  -RESET ALL IND
+        LF,TLCHCT                                            ! line  3  -COMPARE THE REQUESTED CHANNEL COUNT
+TA2G    KF,TRLSYM(TIXA)                                      ! line  4  -AGAINST THE ACTUAL MACHINE CONFIGURATION
+        BAL,TA2F                                             ! line  5  -. IF GREATER THAN THEN ALLOW
+        CBR+,TIXA,TA2G                                       ! line  6  -A SPLIT CHANNEL OPERATION.
+        B,TA2A                                               ! line  7
+TA2F    CM1111(BU,2),TINDA                                   ! line  8
+        R,TIXA                                               ! line  9
+TA2A    LX,TIXB,$Z                                           ! line 10  -INITIALIZE TO PREVENT ERROR
+        CM0000,TINDD                                         ! line 11  -RESET THE OPTIMIZE IND
+        BZB,TINDZ,TA2B                                       ! line 12  -IF MORE MULTI UNIT CHAN AVAILALBE
+        B,TG                                                 ! line 13
+! line 14  -
+! line 15  -          GET AN I/O REQUEST AND FOLLOW IT THRU
+! line 16  -
+TA2B    BZB,TASGNI(TIXA),TA2D                                ! line 17  -IF REQ IS NOT ASSIGNED
+        BZB,TTYPE(TIXA),TB2                                  ! line 18  -IF A SINGLE UNIT TYPE OF REQUEST
+        L,TRLSYM(TIXA),32                                    ! line 19  -REL SYMBOLIC CHANNEL TO ACC
+        BRZ,TB2                                              ! line 20  -IF A ZERO CHANNEL REQEST
+        C0011,TABSCH(TIXA),46                                ! line 21  -ABSOLUTE CHANNEL TO ACC
+        C0011,TABSUN(TIXA)                                   ! line 22  -ABSOLUTE UNIT TO ACC
+        ST(BU,64),TCTEMP                                     ! line 23  -BUILD TEMP CHAN WORD
+TB2     BZB,TLAST+1.0(TIXA),TB2Z                             ! line 24  -CHECK FOR TABLE LOOP AROUND
+        LVI,TIXA,TIOREQ-1.0                                  ! line 25
+TB2Z    CB+,TIXA,TA2A                                        ! line 26
+        B,TA8                                                ! line 27  -IF COUNT GOES TO ZERO
+TA2D    CM0000,TMODE                                         ! line 28  -RESET IND
+        LX,TX2,TYSCAN                                        ! line 29  -SET UP FOR FORWARD SCAN
+        LX,TCTWDX,0.0($15)                                   ! line 30  -SET UP FOR OVERLAP MODE TEST
+        BXF,TA2DB                                            ! line 31  -IF FULL NOT OVERLAP MODE
+        BZB,TUNOBT(TIXA),TA2DC                               ! line 32  -IF SINGLE OVERLAP MODE
+TA2DB   CM1111,TMODE                                         ! line 33  -SET IND TO NOT OVERLAP MODE
+TA2DC   BB,TTYPE(TIXA),TA2E                                  ! line 34  -IF A TAPE CHAN REQUEST
+! line 35  -
+! line 36  -          SINGLE UNIT REQUEST, ASSIGN ONLY NEXT PP TO RUN
+! line 37  -
+        BXF,TA7                                              ! line 38  -IF NOT OVERLAP CASE,BYPASS
+        LX,TX1,TPPRUN                                        ! line 39  -SET IX TO NEXT JOB TO RUN
+        BB,TLPPEN(TX1),TP                                    ! line 40  -ERROR - SOMETHING IS OUT OF PHASE
+TC2B    BB,TRJECT(TX1),TC2BA                                 ! line 41  -IF THIS JOB WAS REJECTED
+        BZB,TJBPRO(TX1),TC2BC                                ! line 42  -IF THE JOB WAS NOT PROCESSED
+TC2BA   V+ICR,TX1,2.0                                        ! line 43
+        B,TC2B                                               ! line 44
+TC2BC   KV,TIXE,TX1                                          ! line 45  -IS ASSIGNMENT FOR NEXT JOB TO BE RUN
+        BZXE,TB2                                             ! line 46  -NO, DO NOT ASSIGN
+        B,TA7                                                ! line 47
+! line 48  -
+! line 49  -
+TA2E    BB,TMODE,TA6                                         ! line 50  -IF NOT OVERLAP MODE
+
+!SYM TA2    021225.40
+!SYM TA2G   021230.00
+!SYM TA2F   021232.40
+!SYM TA2A   021234.00
+!SYM TA2B   021237.00
+!SYM TB2    021245.40
+!SYM TB2Z   021247.00
+!SYM TA2D   021250.00
+!SYM TA2DB  021253.40
+!SYM TA2DC  021254.40
+!SYM TC2B   021257.40
+!SYM TC2BA  021261.40
+!SYM TC2BC  021262.40
+!SYM TA2E   021264.00
+!CHECK 021225.40 | 021102.22 00 | line 1 TA2 Z,TCTEMP
+!CHECK 021226.00 | 232227.33 80 004000.00 F0 | line 2 CM0000(BU,4),TINDA (printed "CM0C00")
+!CHECK 021227.00 | 232227.22 80 007000.06 70 | line 3 LF,TLCHCT
+!CHECK 021230.00 | 000000.13 84 007000.23 10 | line 4 TA2G KF,TRLSYM(TIXA)
+!CHECK 021231.00 | 021232.76 42 | line 5 BAL,TA2F
+!CHECK 021231.40 | 021230.11 4C | line 6 CBR+,TIXA,TA2G
+!CHECK 021232.00 | 021234.10 00 | line 7 B,TA2A
+!CHECK 021232.40 | 232227.33 80 002000.36 F0 | line 8 TA2F CM1111(BU,2),TINDA
+!CHECK 021233.40 | 000024.02 00 | line 9 R,TIXA
+!CHECK 021234.00 | 000000.12 10 | line 10 TA2A LX,TIXB,$Z
+!CHECK 021234.40 | 232227.36 80 001000.00 F0 | line 11 CM0000,TINDD
+!CHECK 021235.40 | 232227.40 80 021237.34 00 | line 12 BZB,TINDZ,TA2B
+!CHECK 021236.40 | 021722.10 00 | line 13 B,TG
+!CHECK 021237.00 | 000000.00 84 021250.34 00 | line 17 TA2B BZB,TASGNI(TIXA),TA2D (a "*" prints after the location)
+!CHECK 021240.00 | 000000.03 84 021245.74 00 | line 18 BZB,TTYPE(TIXA),TB2 (printed "000000.C3")
+!CHECK 021241.00 | 000000.13 84 007020.20 50 | line 19 L,TRLSYM(TIXA),32
+!CHECK 021242.00 | 021245.74 C2 | line 20 BRZ,TB2
+!CHECK 021242.40 | 000000.56 84 022027.06 70 | line 21 C0011,TABSCH(TIXA),46
+!CHECK 021243.40 | 000000.07 84 003000.06 70 | line 22 C0011,TABSUN(TIXA) (printed "000000.C7")
+!CHECK 021244.40 | 021102.00 80 000000.20 D0 | line 23 ST(BU,64),TCTEMP
+!CHECK 021245.40 | 000001.22 84 021247.34 00 | line 24 TB2 BZB,TLAST+1.0(TIXA),TB2Z
+!CHECK 021246.40 | 232306.11 01 | line 25 LVI,TIXA,TIOREQ-1.0
+!CHECK 021247.00 | 021234.11 48 | line 26 TB2Z CB+,TIXA,TA2A
+!CHECK 021247.40 | 021476.10 00 | line 27 B,TA8
+!CHECK 021250.00 | 232227.32 80 001000.00 F0 | line 28 TA2D CM0000,TMODE
+!CHECK 021251.00 | 232517.22 10 | line 29 LX,TX2,TYSCAN
+!CHECK 021251.40 | 000000.24 1F | line 30 LX,TCTWDX,0.0($15)
+!CHECK 021252.00 | 021253.63 42 | line 31 BXF,TA2DB (printed "TA2CB")
+!CHECK 021252.40 | 000000.01 84 021254.74 00 | line 32 BZB,TUNOBT(TIXA),TA2DC (a "*" prints after the location)
+!CHECK 021253.40 | 232227.32 80 001000.36 F0 | line 33 TA2DB CM1111,TMODE
+!CHECK 021254.40 | 000000.03 84 021264.34 02 | line 34 TA2DC BB,TTYPE(TIXA),TA2E (printed "000000.C3")
+!CHECK 021255.40 | 021311.63 42 | line 38 BXF,TA7
+!CHECK 021256.00 | 232232.24 10 | line 39 LX,TX1,TPPRUN
+!CHECK 021256.40 | 000000.47 8A 021725.74 02 | line 40 BB,TLPPEN(TX1),TP
+!CHECK 021257.40 | 000000.45 8A 021261.74 02 | line 41 TC2B BB,TRJECT(TX1),TC2BA
+!CHECK 021260.40 | 000000.44 8A 021262.74 00 | line 42 BZB,TJBPRO(TX1),TC2BC
+!CHECK 021261.40 | 000002.25 07 | line 43 TC2BA V+ICR,TX1,2.0
+!CHECK 021262.00 | 021257.50 00 | line 44 B,TC2B
+!CHECK 021262.40 | 000032.06 90 | line 45 TC2BC KV,TIXE,TX1
+!CHECK 021263.00 | 021245.72 C0 | line 46 BZXE,TB2
+!CHECK 021263.40 | 021311.50 00 | line 47 B,TA7
+!CHECK 021264.00 | 232227.32 80 021267.34 02 | line 50 TA2E BB,TMODE,TA6

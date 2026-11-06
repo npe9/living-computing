@@ -1,0 +1,172 @@
+! mcp_bootstrap_p407.strap -- MCP printed page 407: END OF JOB ($EOJ),
+! the machine-configuration-change unit scan (T 9M .. T B9B), the
+! save of the unit count index, and the opening of the unit-count
+! table sort (T D9A .. BZAH,T D9C), lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.157, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZE000461  DIST. OF 3/01
+!  3/01  PAGE NUMBER 407".  The heading row's LOCATION field is 021530,
+! line 1's word.  Still $EOJ (PUNID 22$EOJ), low core, card series ZE.
+!
+! THE PAGE.  Contiguous from 021530.40 to 021571.00 (line 50, a half
+! word), then blank paper.  Card serials ZE000461..ZE000510, one per
+! line, no gap.  Lines 34-36 and 42-45 are remark cards.
+!   This is the $EOJ reassembly of the same source as printed p.72
+! (decks/mcp_bootstrap_p72.strap lines 19-51), lines 1-33 here = p.72
+! lines 19-51 card for card.
+!
+! LISTING MARKS: lines 12 and 27 print a "*" after the LOCATION.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   line 39 prints "TRCHSC+C.24": the open round is 0 (the octal fields
+!     of the same row print 0 open); TRCHSC+0.24 assembles the printed
+!     232521.30.  Line 37's "C.32" likewise 0.32.
+!   line 15 prints "CTOC11(BU,2)": the connective CT0011, as p.72 line 33.
+!   lines 46-50 "T D9A", "TD9B", "TD9", "TD9C": D read at 400 dpi (a
+!     straight-backed round, not the open C); p.72/p.74 spell the same
+!     family TD9, TD9C, and the BXCZ/BZAH binaries tie TD9/TD9C.
+!
+! STAND-INS.
+!   Resident (body) symbols, copied in the DEFINING form of the landed
+!   page: TX1/TX3/TX1BR/TIXF/TIXG/TIXH (p.287), the T.. field SYNs
+!   (p.289, p.291), TDISK/TFCHSC/TRCHSC/TCHCUC (p.290), SXCHAN/SYCOCH/
+!   SYPRCH (p.103).
+!   $EOJ symbols defined on pages not yet landed, from THIS page's
+!   binary: TCOMBO, T2COMB (VFs per p.63's source; BIT-EXACT from the
+!   * and - rows), TA9D, TM (BB/BZB, half word only), TA10 (BZRZ, half
+!   word only), TA9A (CB+, half word only), TD9 (BXCZ), TD9C (BZAH).
+
+TX1     SYN,$10                      ! landed p.287 line 30
+TX3     SYN,$2                       ! landed p.287 line 33
+TX1BR   SYN,$1                       ! landed p.287 line 32
+TIXF    SYN,TX1                      ! landed p.287 line 37
+TIXG    SYN,$8                       ! landed p.287 line 38
+TIXH    SYN,TX3                      ! landed p.287 line 39
+TMULTI  SYN(BU,1),0.27               ! landed p.289 line 7
+TCHAVL  SYN(BU,1),0.25               ! landed p.289 line 8
+TUNAVL  SYN(BU,1),0.28               ! landed p.289 line 10
+TUNASG  SYN(BU,1),0.29               ! landed p.289 line 11
+TCHOWN  SYN(BU,1),0.32               ! landed p.289 line 12
+TEQUIP  SYN(BU,4),0.52               ! landed p.289 line 15
+TUNITK  SYN(BU,4),0.59               ! landed p.289 line 16
+TUNRES  SYN(BU,1),0.62               ! landed p.289 line 17
+TCHCNT  SYN(BU,4),0.20               ! landed p.291 line 7
+TDISK   SYN(BU,8), (8)232513.0       ! landed p.290 line 6 (8)DD(BU,8)
+TFCHSC  SYN(BU), (8)232520.0         ! landed p.290 line 37 XW
+TRCHSC  SYN(BU), (8)232521.0         ! landed p.290 line 38 XW
+TCHCUC  SYN(BU,32), (8)232522.0      ! landed p.290 line 39 DRZ(BU,32)
+SXCHAN  SYN(BU), (8)215002.0         ! landed p.103 line 28 "SXCHAN XW,0"
+SYCOCH  SYN(B,25,1), (8)215006.0     ! landed p.103 line 37 VF
+SYPRCH  SYN(B,25,1), (8)215006.40    ! landed p.103 line 38 VF
+TCOMBO  SYN(B,25,1), (8)021163.0     ! $EOJ VF (p.63 source); * line 1, BIT-EXACT
+T2COMB  SYN(B,25,1), (8)021163.40    ! $EOJ VF (p.63 source); - line 2, BIT-EXACT
+TA9D    SYN, (8)021576.40            ! $EOJ; BB line 9, half word only
+TM      SYN, (8)021724.40            ! $EOJ; BZB line 13, half word only
+TA10    SYN, (8)021622.0             ! $EOJ; BZRZ line 16, half word only
+TA9A    SYN, (8)021526.0             ! $EOJ; CB+ line 33, half word only
+TD9     SYN, (8)021575.40            ! $EOJ; BXCZ line 47, half word only
+TD9C    SYN, (8)021573.40            ! $EOJ; BZAH line 50, half word only
+
+        SLC, (8)021530.40
+        *(BU,24),TCOMBO,40                                   ! line  1  -COMPUTE LOC WITHIN TABLE
+        -(BU,24),T2COMB,20                                   ! line  2
+        L(BU,64),$R,20                                       ! line  3  -LEFT SHIFT TO VF
+        LV,TIXG,$R                                           ! line  4
+        LI(BU,1),1                                           ! line  5  -AT LEAST GIVE A COUNT OF ONE
+        BZB,TEQUIP(TIXF),T9M                                 ! line  6  -IF A NON TAPE CHAN
+        L,TUNITK(TIXF)                                       ! line  7  -GET COUNT FOR MULTI CHAN
+T9M     M+,TDISK(TIXG)                                       ! line  8  -ADD CONFIGURATION TO TABLE
+        BB,TMULTI(TIXF),TA9D                                 ! line  9  -IF A MULTI CHANNEL
+        BB,TCHAVL(TIXF),TA9B                                 ! line 10  -IF CHANNEL NOT AVAILABLE
+        BB,TCHOWN(TIXF),TA9BA                                ! line 11  -IF MCP LEVEL IT IS NOT AVAIL TO PP
+        BZB,TUNAVL(TIXF),TB9                                 ! line 12  -IF UNIT IS AVAILABLE
+TA9B    BZB,TUNASG(TIXF),TM                                  ! line 13  -IF THE UNIT IS ASSIGNED
+TA9BA   LVI,TX1BR,TB9                                        ! line 14  -LOAD FOR SUB ROUTINE BRANCH
+        CT0011(BU,2),TUNRES(TIXF)                            ! line 15  -IS UNIT RESERVED BY PP
+        BZRZ,TA10                                            ! line 16  -YES
+TB9     LF,TEQUIP(TIXF)                                      ! line 17
+        KFI(BU,4),2                                          ! line 18  -LOOK FOR CONSOLE
+        BZAE,TB9A                                            ! line 19  -NO
+        LV,TIXG,TIXF                                         ! line 20
+        CM1111(BU,1),TIXG+.24                                ! line 21  -SET IX NEG SO TO SUB
+        V+,TIXG,SXCHAN                                       ! line 22  -COMPUTE CONSOLE CHANNEL
+        SV,TIXG,$R                                           ! line 23
+        SF(BU,17),SYCOCH+.2,46                               ! line 24
+        B,TB9B                                               ! line 25
+TB9A    KFI(BU,4),5                                          ! line 26  -LOOK FOR A PRINTER
+        BZAE,TB9B                                            ! line 27  -NO
+        LV,TIXG,TIXF                                         ! line 28
+        CM1111(BU,1),TIXG+.24                                ! line 29  -SET IX NEG SO TO SUB
+        V+,TIXG,SXCHAN                                       ! line 30  -COMPUTE THE PRINTER CHANNEL
+        SV,TIXG,$R                                           ! line 31
+        SF(BU,17),SYPRCH+.2,46                               ! line 32
+TB9B    CB+,TIXF,TA9A                                        ! line 33
+! line 34  -
+! line 35  -      SAVE THE VALUES OF THE UNIT COUNT INDEX
+! line 36  -
+        V-I,TIXH,0.32                                        ! line 37  -REDUCE BY A HALF
+        SX,TIXH,TRCHSC                                       ! line 38
+        CM1111(BU,1),TRCHSC+0.24                             ! line 39  -SET THE IX NEG
+        LVI,TIXH,TCHCUC                                      ! line 40  -MODIFY THE VALUE FIELD
+        SX,TIXH,TFCHSC                                       ! line 41  -SAVE THE FORWARD SCAN INDEX
+! line 42  -
+! line 43  -      SORT THE UNIT COUNT TABLE
+! line 44  -
+! line 45  -
+TD9A    LX,TIXF,TIXH                                         ! line 46  -LOAD TRANSIT INDEX
+        BXCZ,TD9                                             ! line 47  -IF NO MULTI UNIT TABLE
+        LF(BU,32),0.0(TIXH),32                               ! line 48  -LOAD ACC WITH THE TOP WORD
+TD9B    KF,TCHCNT(TIXF),40                                   ! line 49
+        BZAH,TD9C                                            ! line 50  -IF ACC IS THE SMALLER
+
+!SYM T9M    021537.00
+!SYM TA9B   021544.00
+!SYM TA9BA  021545.00
+!SYM TB9    021547.00
+!SYM TB9A   021555.40
+!SYM TB9B   021562.40
+!SYM TD9A   021566.00
+!SYM TD9B   021570.00
+!CHECK 021530.40 | 021163.00 80 030024.21 90 | line 1 *(BU,24),TCOMBO,40
+!CHECK 021531.40 | 021163.40 80 030012.30 10 | line 2 -(BU,24),T 2COMB,20
+!CHECK 021532.40 | 000011.00 80 000012.20 50 | line 3 L(BU,64),$R,20
+!CHECK 021533.40 | 000011.20 30 | line 4 LV,T IXG,$R
+!CHECK 021534.00 | 400000.00 80 401000.20 50 | line 5 LI(BU,1),1
+!CHECK 021535.00 | 000000.64 8A 021537.34 00 | line 6 BZB,T EQUIP(T IXF),T 9M
+!CHECK 021536.00 | 000000.73 8A 004000.20 50 | line 7 L,T UNITK(T IXF)
+!CHECK 021537.00 | 232513.00 88 010000.20 90 | line 8 T 9M M+,T DISK(T IXG)
+!CHECK 021540.00 | 000000.33 8A 021576.74 02 | line 9 BB,T MULTI(T IXF),T A9D
+!CHECK 021541.00 | 000000.31 8A 021544.34 02 | line 10 BB,T CHAVL(T IXF),T A9B
+!CHECK 021542.00 | 000000.40 8A 021545.34 02 | line 11 BB,T CHOWN(T IXF),T A9BA
+!CHECK 021543.00 | 000000.34 8A 021547.34 00 | line 12 BZB,T UNAVL(T IXF),T B9 ("*" after the location)
+!CHECK 021544.00 | 000000.35 8A 021724.74 00 | line 13 T A9B BZB,T UNASG(T IXF),T M
+!CHECK 021545.00 | 021547.03 01 | line 14 T A9BA LVI,T X1BR,T B9
+!CHECK 021545.40 | 000000.76 8A 002000.07 70 | line 15 CT0011(BU,2),T UNRES(T IXF)
+!CHECK 021546.40 | 021622.34 C0 | line 16 BZRZ,T A10
+!CHECK 021547.00 | 000000.64 8A 004000.06 70 | line 17 T B9 LF,T EQUIP(T IXF)
+!CHECK 021550.00 | 100000.00 80 404000.23 10 | line 18 KFI(BU,4),2
+!CHECK 021551.00 | 021555.76 C0 | line 19 BZAE,T B9A
+!CHECK 021551.40 | 000032.20 30 | line 20 LV,T IXG,T IXF
+!CHECK 021552.00 | 000030.30 80 001000.36 F0 | line 21 CM1111(BU,1),T IXG+.24
+!CHECK 021553.00 | 215002.20 B0 | line 22 V+,T IXG,S XCHAN
+!CHECK 021553.40 | 000011.21 30 | line 23 SV,T IXG,$R
+!CHECK 021554.00 | 215006.02 80 021027.12 F0 | line 24 SF(BU,17),S YCOCH+.2,46
+!CHECK 021555.00 | 021562.50 00 | line 25 B,T B9B
+!CHECK 021555.40 | 240000.00 80 404000.23 10 | line 26 T B9A KFI(BU,4),5
+!CHECK 021556.40 | 021562.76 C0 | line 27 BZAE,T B9B ("*" after the location)
+!CHECK 021557.00 | 000032.20 30 | line 28 LV,T IXG,T IXF
+!CHECK 021557.40 | 000030.30 80 001000.36 F0 | line 29 CM1111(BU,1),T IXG+.24
+!CHECK 021560.40 | 215002.20 B0 | line 30 V+,T IXG,S XCHAN
+!CHECK 021561.00 | 000011.21 30 | line 31 SV,T IXG,$R
+!CHECK 021561.40 | 215006.42 80 021027.12 F0 | line 32 SF(BU,17),S YPRCH+.2,46
+!CHECK 021562.40 | 021526.25 48 | line 33 T B9B CB+,T IXF,T A9A
+!CHECK 021563.00 | 000000.45 0D | line 37 V-I,T IXH,0.32 (prints "C.32"; 0)
+!CHECK 021563.40 | 232521.05 10 | line 38 SX,T IXH,T RCHSC
+!CHECK 021564.00 | 232521.30 80 001000.36 F0 | line 39 CM1111(BU,1),T RCHSC+0.24 (prints "+C.24"; 0)
+!CHECK 021565.00 | 232522.05 01 | line 40 LVI,T IXH,T CHCUC
+!CHECK 021565.40 | 232520.05 10 | line 41 SX,T IXH,T FCHSC
+!CHECK 021566.00 | 000022.24 10 | line 46 T D9A LX,T IXF,T IXH
+!CHECK 021566.40 | 021575.70 42 | line 47 BXCZ,T D9
+!CHECK 021567.00 | 000000.00 82 040020.06 70 | line 48 LF(BU,32),0.0(T IXH),32
+!CHECK 021570.00 | 000000.24 8A 004024.23 10 | line 49 T D9B KF,T CHCNT(T IXF),40
+!CHECK 021571.00 | 021573.77 40 | line 50 BZAH,T D9C

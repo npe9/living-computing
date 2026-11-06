@@ -1,0 +1,115 @@
+! mcp_bootstrap_p388.strap -- MCP printed page 388: the $EOJ program's
+! read-type-card path (W J4PA .. W J4PC) and the head of the I/O-assign
+! path for a GO job (W J4PF .. W JCW).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.138, read at 400 dpi (900 dpi for
+! lines 11, 16, 17, 22).  Header, READ: "TIME CLOCK 00054041  PUNID
+! 22$EOJ  CARD ID ZA000317  DIST. OF 3/01  3/01  PAGE NUMBER 388"; the
+! heading row's LOCATION field is blank.
+!
+! >>> NOT SCOMD. <<<  PUNID 22$EOJ, card series ZA, and the page lives
+! at 020256.40-020300.00 -- far below SCOMD (234424..235453).  No $EOJ
+! page has landed or been staged, so every W-symbol this page uses but
+! does not define is stood in from THIS page's binary.  Resident
+! symbols (D MCP, D SCR, Y BCBU, Y UNCOD, K SILO, S CORG, S CNFCG) are
+! copied from their landed defining forms.
+!
+! THE PAGE.  32 lines, ZA000317..ZA000348 in order, no gap.  Lines 1-3
+! and 24-26 are remark cards.  Contiguous from 020256.40 to 020300.00
+! (line 32, a full-word XW); the next page should open at 020301.00.
+! The previous page's end is not known to this deck.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 11 "(8)11CC": the open rounds are 0 -- the printed binary
+!     110000.00 is (8)1100 left-justified in the 24-bit immediate field.
+!   * line 16 "VF,C." and line 15 "XW,C,O,C": 0 (binary all zero).
+!   * line 22 "CM1C1C": CM1010 (a connective; the octal fields of the
+!     same row print 0 open: 215001.C3).
+!   * Y COJB (line 23): C22-6728 typesets YCOJB (letter O), 20 times.
+!   * line 4/28 "D MCP" / "SCNFCG": D prints with its stem worn.
+! LINE 17 prints a "*" after its LOCATION (020266.40 *), as p.197 line
+! 11 does.  Recorded, not explained.
+! Lines 4-8, 13, 15, 17, 18, 20, 28, 30-32 print a bare "-" remark (the
+! comment mark with nothing after it).
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 4 000040.10
+DSCR    SYN, 68.32                   ! landed p.105 line 40 "D SCR"; line 5 000104.40
+YBCBU   SYN(BU), (8)231462.0         ! p.274 line 19 DR(BU),(15), as p.291's stand-in writes it
+YUNCOD  SYN(BU,64,8), (8)231215.0    ! p.270 line 27 "Y UNCOD TI,3,$11,YUXSAV" at 231215.00
+KSILO   SYN(BU,64), (8)220451.0      ! landed p.171 DR(BU,64),(K QUANT) at 220451.00
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label (as p.128/p.142/p.153)
+SCORG   SYN(BU,1), SCOMRG+0.03       ! landed p.103 line 13; CM1010 line 22 215001.03
+SCNFCG  SYN(BU,1), SCOMRG+.2         ! landed p.103 line 12; BZBZ line 28 215001.02
+WJC4QT  SYN, (8)020426.0             ! $EOJ, not landed; B line 19 020426.10, half word only
+YCOJB   SYN, (8)020750.40           ! not landed; BZB line 23 020750.74 (as $+2.0 = 020276.40 prints 020276.74), half word only
+WRDXW1  SYN(BU), (8)020450.0         ! $EOJ, not landed; LX line 27 020450.32, word only
+TASIGN  SYN, (8)021164.0             ! $EOJ, not landed; B line 31 021164.10, half word only
+
+        SLC, (8)020256.40
+! line  1  - ***********************************************************
+! line  2  - READ TYPE CARD, STORE T.O.P. IN COMMUNICATION REGION
+! line  3  - ***********************************************************
+WJ4PA   B,DMCP                                               ! line  4  -
+        ,DSCR                                                ! line  5  -
+        ,YBCBU                                               ! line  6  -
+        ,1.0                                                 ! line  7  -
+        ,0                                                   ! line  8  -
+        NOP                                                  ! line  9
+        L(BU,12),YBCBU                                       ! line 10
+        KFI(BU,12),(8)1100                                   ! line 11  (prints "11CC")
+        BAE,WJ4PA                                            ! line 12
+WJ4PB   LVI,$14,WUNC2                                        ! line 13  -
+        B,YUNCOD                                             ! line 14  -TO UNCODE SUBROUTINE
+WUNC2   XW,0,0,0                                             ! line 15  -  (prints "C,O,C")
+        VF,0.                                                ! line 16  -TOP CARD  (prints "C.")
+        ,YBCBU                                               ! line 17  -  (a "*" prints after the location)
+        ,0                                                   ! line 18  -
+        B,WJC4QT                                             ! line 19  -SPOOL MESSAGE, THEN REJECT
+        L(BU,5),WUNC2+.41                                    ! line 20  -
+        ST(BU,5),KSILO+1.18                                  ! line 21  -TO COMM. REGION
+        CM1010(BU,1),SCORG,2                                 ! line 22  (prints "CM1C1C")
+WJ4PC   BZB,WUNC2+.43,YCOJB                                  ! line 23  -TO COMPILE SUBROUTINE
+! line 24  - ***********************************************************
+! line 25  --TO I O ASSIGN SUBROUTINE WITH I O REQUESTS, FOR GO JOB
+! line 26  - ***********************************************************
+WJ4PF   LX,$13,WRDXW1                                        ! line 27  -SET READ SOURCE TO SPOOL
+WJ4PFF  BZBZ,SCNFCG,$+2.0                                    ! line 28  -
+        CM1111(BU,1),WJCW                                    ! line 29  -CONFIGURATION CHANGE
+WJ4PD   LVI,$15,WJCW                                         ! line 30  -
+        B,TASIGN                                             ! line 31  -
+WJCW    XW,0,0,0                                             ! line 32  -
+
+!SYM WJ4PA  020256.40
+!SYM WJ4PB  020264.00
+!SYM WUNC2  020265.00
+!SYM WJ4PC  020273.00
+!SYM WJ4PF  020274.00
+!SYM WJ4PFF 020274.40
+!SYM WJ4PD  020276.40
+!SYM WJCW   020300.00
+!CHECK 020256.40 | 000040.10 00 | line 4 W J4PA B,D MCP
+!CHECK 020257.00 | 000104.40 80 | line 5 ,D SCR
+!CHECK 020257.40 | 231462.00 80 | line 6 ,Y BCBU
+!CHECK 020260.00 | 000001.00 80 | line 7 ,1.0
+!CHECK 020260.40 | 000000.00 80 | line 8 ,0
+!CHECK 020261.00 | 000000.30 00 | line 9 NOP
+!CHECK 020261.40 | 231462.00 80 014000.20 50 | line 10 L(BU,12),Y BCBU
+!CHECK 020262.40 | 110000.00 80 414000.23 10 | line 11 KFI(BU,12),(8)1100 (prints "11CC")
+!CHECK 020263.40 | 020256.76 C2 | line 12 BAE,W J4PA
+!CHECK 020264.00 | 020265.35 01 | line 13 W J4PB LVI,$14,W UNC2
+!CHECK 020264.40 | 231215.10 00 | line 14 B,Y UNCOD
+!CHECK 020265.00 | 000000.00+ 000 000000 000000 | line 15 W UNC2 XW,0,0,0
+!CHECK 020266.00 | 000000.00+ | line 16 VF,0.
+!CHECK 020266.40 | 231462.00 80 | line 17 ,Y BCBU
+!CHECK 020267.00 | 000000.00 80 | line 18 ,0
+!CHECK 020267.40 | 020426.10 00 | line 19 B,W JC4QT
+!CHECK 020270.00 | 020265.51 80 005000.20 50 | line 20 L(BU,5),W UNC2+.41
+!CHECK 020271.00 | 220452.22 80 005000.20 D0 | line 21 ST(BU,5),K SILO+1.18
+!CHECK 020272.00 | 215001.03 80 001001.24 F0 | line 22 CM1010(BU,1),S CORG,2
+!CHECK 020273.00 | 020265.53 80 020750.74 00 | line 23 W J4PC BZB,W UNC2+.43,Y COJB
+!CHECK 020274.00 | 020450.32 10 | line 27 W J4PF LX,$13,W RDXW1
+!CHECK 020274.40 | 215001.02 80 020276.74 04 | line 28 W J4PFF BZBZ,S CNFCG,$+2.0
+!CHECK 020275.40 | 020300.00 80 001000.36 F0 | line 29 CM1111(BU,1),W JCW
+!CHECK 020276.40 | 020300.37 01 | line 30 W J4PD LVI,$15,W JCW
+!CHECK 020277.00 | 021164.10 00 | line 31 B,T ASIGN
+!CHECK 020300.00 | 000000.00+ 000 000000 000000 | line 32 W JCW XW,0,0,0

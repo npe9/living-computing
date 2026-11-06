@@ -1,0 +1,157 @@
+! mcp_bootstrap_p393.strap -- MCP printed page 393: the $EOJ program's
+! reject fix-ups -- DECODE REJECT (Y ICER2), ASSIGN REJECT (Y ASREJ) and
+! MOVE REJECT (Y MOVEJ .. Y MOVJ1).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.143, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZA000550  DIST. OF 3/01
+!  3/01  PAGE NUMBER 393"; the heading row's LOCATION field is BLANK
+! (line 1 is a remark).  The Vision reading of this page is upside down
+! (v2_pdf143.geom is "None"), so tools/page_sheet.py 393 gives nothing;
+! every value here is read off the image alone.
+!
+! >>> NOT SCOMD. <<<  PUNID 22$EOJ, card series ZA, low core (0204xx-
+! 0205xx); the page has no SLC of its own -- the origin below is line
+! 4's printed LOCATION.  No TAIL.
+!
+! THE PAGE.  50 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 9 and 34.  Contiguous 020471.40 .. 020522.40 (line
+! 50, a half word).  p.392 ends with B,YC4C9 at 020471.00 (a half word),
+! so line 4 continues it; p.394 opens with a CNOP and Y JCEM at
+! 020523.00.
+!   lines  1-3, 14-17, 20-24  remarks.
+!
+! >>> CARD SERIALS. <<<  ZA000550 .. ZA000598, one per line, except
+! that lines 40 (SIC,YPRRET) and 41 (B,YPR) BOTH print ZA000589 (as
+! p.197's SIC/B pair does).  p.392 ends at ZA000548 and p.394 opens at
+! ZA000600: ZA000549 and ZA000599 are printed on no page.
+!
+! >>> GLYPHS. <<<  "+1.C" (line 4), "4.C" (30, 35), "O" (31), "3.C8"
+! (37) and "(2)00C01010" (34) print the open round in places only a
+! digit can stand: written 0.  Every C/O in the Y MOV/Y MOJ names is
+! written O: the ink is open in all of them ("YMCVJ1", "YMCVXW",
+! "YMCVJ3" on lines 42-43, 49 beside closed-reading YMOVJ2/YMOVXW on
+! 26/43/44), and the binaries tie each use to its definition.  Line 44
+! and the line-23 remark print YMOJRP (C22-6728's index reads YMORJP;
+! the ink here reads OJRP twice, so it stays as printed).
+!
+! STAND-INS (checked by the merge where a page defines them):
+!   YDECVF  C22-6728 (linkage table "YDECVF VF,") names it a VF, so it
+!           carries (B,25,1); address from line 4's LV, HALF WORD ONLY.
+!   YC4SMB, YDECJM, YDEJM1, YMOVXW, YMOVJM  BIT-EXACT from this page's
+!           TI/LF/SF binaries.  YDECJM 020530.00 is p.394 line 7's
+!           LOCATION (Vision reading); YDEJM1 copies p.266's stand-in.
+!   YBRLOG, YASRJM, YMOJM1-3, YMOJRP  HALF WORD ONLY (B, LVI, BZB).
+!   YPR, YPRRET  resident, landed p.270.
+
+YDECVF  SYN(B,25,1), (8)020160.0     ! VF per C22-6728; LV line 4, half word only
+YC4SMB  SYN, (8)020726.0             ! TI line 9, BIT-EXACT
+YDECJM  SYN, (8)020530.0             ! TI line 10, BIT-EXACT
+YDEJM1  SYN, (8)020532.0             ! TI line 11, BIT-EXACT
+YBRLOG  SYN, (8)020220.0             ! B line 13, half word only
+YASRJM  SYN, (8)020556.0             ! LVI line 18, half word only
+YMOVXW  SYN, (8)020174.0             ! LF line 25, BIT-EXACT
+YMOVJM  SYN(BU), (8)020576.0             ! p.394 (AX)DD(BU) per p.390; SF line 27 / TI line 38, BIT-EXACT
+YPRRET  SYN(BU,32,8), (8)231204.40   ! landed p.270 line 22
+YPR     SYN(BU,32,8), (8)231172.0    ! landed p.270 line 2
+YMOJRP  SYN, (8)020176.0             ! BZB line 44, half word only
+YMOJM2  SYN(BU), (8)020612.0             ! p.394 (AX)DD(BU) per p.390; LVI line 45, half word only
+YMOJM3  SYN(BU), (8)020566.0             ! p.394 (AX)DD(BU) per p.390; LVI line 47, half word only
+YMOJM1  SYN(BU), (8)020622.0             ! p.394 (AX)DD(BU) per p.390; LVI line 49, half word only
+
+        SLC, (8)020471.40
+! line  1  - ****************************************************
+! line  2  -      DECODE REJECT - PICK UP DIAGNOSING MESSAGE, PUT IN YC4SMB , SET
+! line  3  - ****************************************************
+YICER2  LV,$14,YDECVF+1.0                                    ! line  4  printed "+1.C"
+        V-I,$14,4.0                                          ! line  5
+        BXVLZZ,YMOVEJ                                        ! line  6
+        V+,$14,$14                                           ! line  7
+        V+,$14,$14                                           ! line  8
+        TI,8,YC4SMB+8.0,YC4SMB                               ! line  9
+        TI,2,YDECJM,YC4SMB                                   ! line 10
+        TI,4,YDEJM1($14),YC4SMB+2.0                          ! line 11
+        LVI,$10,YC4SMB                                       ! line 12
+        B,YBRLOG                                             ! line 13
+! line 14  -
+! line 15  - ****************************************************
+! line 16  -      ASSIGN REJECT FIXUPUP
+! line 17  - ****************************************************
+YASREJ  LVI,$10,YASRJM                                       ! line 18
+        B,YBRLOG                                             ! line 19
+! line 20  -
+! line 21  - ****************************************************
+! line 22  -      MOVE REJECT - ERROR MAY BE FATAL(YMOVJ2,3)- IF NOT,DIAGNOSE ON
+! line 23  -      SPOOL AND RETURN TO YMOJRP IN MAINSTREAM.
+! line 24  - ****************************************************
+YMOVEJ  LF(BU,3,3),YMOVXW+.28                                ! line 25
+        BRZ,YMOVJ2                                           ! line 26
+        SF(BU,8),YMOVJM+5.16                                 ! line 27
+        LVI,$10,YMOVJM                                       ! line 28
+        LF(BU,12,3),.52($11)                                 ! line 29
+        LCI,$9,4.0                                           ! line 30
+        LVI,$9,0                                             ! line 31
+YMOJL   CT0101(BU,8),$,0($9)                                 ! line 32
+        BZRZ,$+1.32                                          ! line 33
+        LFI(BU,8),(2)00001010,0($9)                          ! line 34  printed "00C01010"
+        V+I,$9,4.0                                           ! line 35
+        CB,$9,YMOJL                                          ! line 36
+        ST(BU,32),YMOVJM+3.08                                ! line 37  printed "3.C8"
+        TI,8,YMOVJM,YC4SMB                                   ! line 38
+        LVI,1,YC4SMB                                         ! line 39
+        SIC,YPRRET                                           ! line 40
+        B,YPR                                                ! line 41
+YMOVJ2  BB,YMOVXW+.43,YMOVJ3                                 ! line 42
+        BB,YMOVXW+.42,YMOVJ1                                 ! line 43
+        BZB,YMOVXW+.45,YMOJRP                                ! line 44
+        LVI,$10,YMOJM2                                       ! line 45
+        B,YBRLOG                                             ! line 46
+YMOVJ3  LVI,$10,YMOJM3                                       ! line 47
+        B,YBRLOG                                             ! line 48
+YMOVJ1  LVI,$10,YMOJM1                                       ! line 49
+        B,YBRLOG                                             ! line 50
+
+!SYM YICER2 020471.40
+!SYM YASREJ 020500.00
+!SYM YMOVEJ 020501.00
+!SYM YMOJL  020506.00
+!SYM YMOVJ2 020515.00
+!SYM YMOVJ3 020521.00
+!SYM YMOVJ1 020522.00
+!CHECK 020471.40 | 020161.34 30 | line 4 YICER2 LV,$14,YDECVF+1.0 (printed "+1.C")
+!CHECK 020472.00 | 000004.35 0D | line 5 V-I,$14,4.0
+!CHECK 020472.40 | 020501.30 C6 | line 6 BXVLZZ,YMOVEJ
+!CHECK 020473.00 | 000036.34 B0 | line 7 V+,$14,$14
+!CHECK 020473.40 | 000036.34 B0 | line 8 V+,$14,$14
+!CHECK 020474.00 | 020736.00 80 020726.20 A0 | line 9 TI,8,YC4SMB+8.0,YC4SMB (a "*" prints after the location)
+!CHECK 020475.00 | 020530.00 80 020726.04 A0 | line 10 TI,2,YDECJM,YC4SMB
+!CHECK 020476.00 | 020532.00 8E 020730.10 A0 | line 11 TI,4,YDEJM1($14),YC4SMB+2.0
+!CHECK 020477.00 | 020726.25 01 | line 12 LVI,$10,YC4SMB
+!CHECK 020477.40 | 020220.10 00 | line 13 B,YBRLOG
+!CHECK 020500.00 | 020556.25 01 | line 18 YASREJ LVI,$10,YASRJM
+!CHECK 020500.40 | 020220.10 00 | line 19 B,YBRLOG
+!CHECK 020501.00 | 020174.34 80 003300.06 70 | line 25 YMOVEJ LF(BU,3,3),YMOVXW+.28
+!CHECK 020502.00 | 020515.34 C2 | line 26 BRZ,YMOVJ2
+!CHECK 020502.40 | 020603.20 80 010000.12 F0 | line 27 SF(BU,8),YMOVJM+5.16
+!CHECK 020503.40 | 020576.25 01 | line 28 LVI,$10,YMOVJM
+!CHECK 020504.00 | 000000.64 8B 014300.06 70 | line 29 LF(BU,12,3),.52($11)
+!CHECK 020505.00 | 000004.23 02 | line 30 LCI,$9,4.0
+!CHECK 020505.40 | 000000.23 01 | line 31 LVI,$9,0
+!CHECK 020506.00 | 020506.00 80 010000.13 79 | line 32 YMOJL CT0101(BU,8),$,0($9)
+!CHECK 020507.00 | 020510.74 C0 | line 33 BZRZ,$+1.32
+!CHECK 020507.40 | 024000.00 80 410000.06 79 | line 34 LFI(BU,8),(2)00001010,0($9) (a "*" prints after the location)
+!CHECK 020510.40 | 000004.23 05 | line 35 V+I,$9,4.0
+!CHECK 020511.00 | 020506.22 48 | line 36 CB,$9,YMOJL
+!CHECK 020511.40 | 020601.10 80 040000.20 D0 | line 37 ST(BU,32),YMOVJM+3.08 (printed "3.C8")
+!CHECK 020512.40 | 020576.00 80 020726.20 A0 | line 38 TI,8,YMOVJM,YC4SMB
+!CHECK 020513.40 | 020726.03 01 | line 39 LVI,1,YC4SMB
+!CHECK 020514.00 | 231204.40 80 | line 40 SIC,YPRRET
+!CHECK 020514.40 | 231172.10 00 | line 41 B,YPR
+!CHECK 020515.00 | 020174.53 80 020521.34 02 | line 42 YMOVJ2 BB,YMOVXW+.43,YMOVJ3
+!CHECK 020516.00 | 020174.52 80 020522.34 02 | line 43 BB,YMOVXW+.42,YMOVJ1
+!CHECK 020517.00 | 020174.55 80 020176.34 00 | line 44 BZB,YMOVXW+.45,YMOJRP
+!CHECK 020520.00 | 020612.25 01 | line 45 LVI,$10,YMOJM2
+!CHECK 020520.40 | 020220.10 00 | line 46 B,YBRLOG
+!CHECK 020521.00 | 020566.25 01 | line 47 YMOVJ3 LVI,$10,YMOJM3
+!CHECK 020521.40 | 020220.10 00 | line 48 B,YBRLOG
+!CHECK 020522.00 | 020622.25 01 | line 49 YMOVJ1 LVI,$10,YMOJM1
+!CHECK 020522.40 | 020220.10 00 | line 50 B,YBRLOG

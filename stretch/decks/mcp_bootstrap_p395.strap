@@ -1,0 +1,190 @@
+! mcp_bootstrap_p395.strap -- MCP printed page 395: the $EOJ program's
+! (JC4) temporary storage and symbols (WSPLL .. YTBIT), then THE COMPILE
+! AND GO SUB ROUTINES (Y COJB .. YCIODC).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.145, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZA000651  DIST. OF 3/01
+!  3/01  PAGE NUMBER 395"; the heading row's LOCATION field is BLANK
+! (line 1 is a remark).
+!
+! >>> STILL $EOJ. <<<  PUNID 22$EOJ, card series ZA, low core.  No SLC,
+! no new PUNID, no TAIL on the page; the SLC below is scaffolding for
+! line 5's printed LOCATION (line 4 is a CNOP with no location).
+!
+! THE PAGE.  56 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 5, 12, 14, 37 and 52.  Contiguous 020706.00 ..
+! 020776.00 (line 56, a half word; next 020776.40, where p.396's SLC
+! starts), except lines 16-23: eight SYNs printing their own values
+! (231443.00, 231426.xx, 020202.40, 020707.00, 020226.00) that do not
+! move the counter.
+!   lines  1-3, 24-26  remarks.
+!   lines  4, 11       CNOP.
+!   lines  5-14        (AX)DD messages/buffers and WSPLL1 DRZ(U),8.
+!   line  15           YYJCL ,YUCBF1+.54 (a half word).
+!   lines 16-23        SYNs.  Their printed dds: YJCDB1 U,64,4; YLOL1,
+!                      YLOL2, YTBIT N,64,4; YBCRD, YRESTR, YC4B BU,64,8;
+!                      YJCDBU U,64,4 (printed octal "100", "04"/"10").
+!   lines 27-56        code and data.
+!
+! ENTRY-MODE DATA counted on the ink at a 40 px/char pitch from the
+! comma (each X is the terminator; the counts are what the next
+! LOCATION requires): line 5 "1"+7 blanks; line 7 "- TIME  "; line 8
+! 8 blanks, ",", 2 blanks, "DATE", 1 blank; line 9 8 blanks, ",", 4
+! blanks, "VERSION", 4 blanks; line 10 8 blanks; lines 12-14 48 blanks.
+!
+! CARD SERIALS.  ZA000651 .. ZA000706, one per line, no gaps or
+! repeats.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * YLOL1/YLOL2 (labels lines 17-18 print "YLCL1"/"YLCL2", open;
+!     line 23 reads "YLOL2"): spelled as every $EOJ stand-in spells them
+!     (pp.271, 386).
+!   * YCOJB/YCOJB1/YCOJB2: C22-6728 names YCOJB, YCOJB1, YCOJB2.
+!     Line 27 prints "Y COJB", line 31 "Y DUM" (blank in the name).
+!   * YJCDB1/YJCDBU print "YJCDB1"/"YJCCBU" with D worn: C22-6728
+!     YJCDBU; neighbours' stand-ins.
+!   * YDFCTA (lines 49, 52): reads D; the sheet's "YOFCTA" rejected.
+!   * KSILO (prints "KSILC"/"KSIL0"): landed p.171.
+!   * Octal fields' open rounds are 0 (e.g. line 48 "414030.C6").
+!   * Line 48's last hex byte prints "7C" (900 dpi: the same open round
+!     as its octal ".C6"); LFI's low nibble is the index, none printed:
+!     written 70.
+!
+! >>> MERGE NOTE. <<<  This page DEFINES YLOL1, YLOL2 and YTBIT by SYN
+! to YLLSAV (a DR(N)), so they carry (N) -- printed N,64,4.  Earlier
+! $EOJ pages stand them in plain (YLOL1/2, pp.271, 386) or SYN(BU,1)
+! (YTBIT, pp.273, 391, 392, which also write (BU,1) on the use).
+!
+! EXTERNALS: stand-ins are checked by the merge.  YCCIN copies p.396's
+! DDI stand-in (its line 29 "(AX)DDI(BU,12,6),PCX" = 4763).
+
+SCNFCG  SYN(BU,1), (8)215001.02      ! landed p.103
+TASIGN  SYN, (8)021164.0             ! $EOJ's TASIGN; B line 30, half word only
+TPPRUN  SYN(BU), (8)232232.0         ! landed p.288 XW
+TRJECT  SYN(BU,1), 0.37              ! landed p.62
+KSILO   SYN(BU,64), (8)220451.0      ! landed p.171 DR(BU,64)
+WJ4PFF  SYN(BU,64,8), (8)020274.40   ! $EOJ p.388 line 28 BZBZ label; BB line 34, half word only
+YMOJM3  SYN(BU), (8)020566.0         ! p.394 (AX)DD(BU); LVI line 35, half word only
+TMOVE   SYN, (8)022326.0             ! $EOJ's TMOVE; B line 42, half word only
+YUCBF1  SYN(BU,64,8), (8)231366.0    ! p.273 DRZ(BU,64),(8); line 15 231366.66
+YUCBF2  SYN(BU,64,8), (8)231376.0    ! p.273 DRZ(BU,64),(13); L line 47 231400.00 = +2.0
+YCCIN   SYN(BU,12,6), (8)4763        ! p.396 line 29 DDI stand-in; LFI line 48 476300.00
+DMCP    SYN, 32.0                    ! landed
+DFETCH  SYN, 66.32                   ! landed p.105
+SJCTWS  SYN(B,25,1), (8)215020.0     ! landed p.103 VF
+WJOR2   SYN(U), (8)231443.0          ! p.274 DRZ(U),15
+YLLSAV  SYN(N), (8)231426.0          ! p.274 DR(N),(1)
+WJC4G2  SYN(BU,64,8), (8)020202.40   ! $EOJ p.386 line 12 CM1111 label
+WRESTR  SYN(BU,64,8), (8)020226.0    ! $EOJ p.386 CM1111 label
+
+        SLC, (8)020706.00
+! line  1  - ****************************************************
+! line  2  -           TEMPORARY STORAGE + SYMBOLS FOR JC4
+! line  3  - ****************************************************
+        CNOP                                                 ! line  4
+WSPLL   (AX)DD(BU),1       X                                 ! line  5  -
+WSPLL1  DRZ(U),8                                             ! line  6  -FOR JOB NAME
+YC4DTS  (AX)DD(BU),- TIME  X                                 ! line  7
+YC4TIM  (AX)DD(BU),        ,  DATE X                         ! line  8
+YC4DTE  (AX)DD(BU),        ,    VERSION    X                 ! line  9
+YC4DTI  (AX)DD(BU),        X                                 ! line 10
+        CNOP                                                 ! line 11
+YC4SMB  (AX)DD(BU),                                                X ! line 12
+        (AX)DD(BU),                                                X ! line 13
+        (AX)DD(BU),                                                X ! line 14
+YYJCL   ,YUCBF1+.54                                          ! line 15
+YJCDB1  SYN,WJOR2                                            ! line 16  -A6 JOB CARD.
+YLOL1   SYN,YLLSAV                                           ! line 17
+YLOL2   SYN,YLLSAV +.32                                      ! line 18
+YBCRD   SYN,WJC4G2                                           ! line 19
+YJCDBU  SYN,WSPLL1                                           ! line 20
+YRESTR  SYN,WRESTR                                           ! line 21
+YC4B    SYN,YRESTR                                           ! line 22
+YTBIT   SYN,YLOL2+.25                                        ! line 23
+! line 24  - ****************************************************
+! line 25  -  ********** THE COMPILE AND GO SUB ROUTINES *************
+! line 26  - ****************************************************
+YCOJB   BZBZ,SCNFCG,$+2.                                     ! line 27  printed "Y COJB"
+        CM1111(BU,1),YDUM                                    ! line 28  -IF THERE IS A MACHINE CONF. CHANGE
+        LVI,$15,YDUM                                         ! line 29
+        B,TASIGN                                             ! line 30  -(TO PRINT MESSAGES BEFORE COMPILING
+YDUM    XW,0,0,7                                             ! line 31  -SPEC. ENTRY TO ASSIGN TO RETURN WITHOUT STATUS  printed "Y DUM"
+        LV,$15,TPPRUN                                        ! line 32
+        BZB,TRJECT($15),YCOJB2                               ! line 33
+        BB,KSILO+1.18,WJ4PFF                                 ! line 34
+        LVI,$14,YMOJM3                                       ! line 35
+        CT1100(BU,2),KSILO+1.21                              ! line 36
+        BZRZ,WJ4PFF                                          ! line 37
+        KV,$14,0($15)                                        ! line 38
+        BXL,WJ4PFF                                           ! line 39
+YCOJB2  BB,KSILO+1.19,YCOJB1                                 ! line 40
+        LVI,$15,YCPREJ                                       ! line 41
+        B,TMOVE                                              ! line 42
+YCPREJ  XW,0,0,1,0                                           ! line 43
+YCOJB1  LVI,$15,0                                            ! line 44
+        SVA,$15,YCIODC                                       ! line 45
+        Z,KSILO+7.0                                          ! line 46
+        L(BU,48),YUCBF2+2.0                                  ! line 47
+        LFI(BU,12),YCCIN,48                                  ! line 48
+        ST(BU,48),YDFCTA,12                                  ! line 49
+        B,DMCP                                               ! line 50
+        ,DFETCH                                              ! line 51
+YDFCTA  DR(BU),(1)                                           ! line 52
+        ,0                                                   ! line 53
+        LVE, ,SJCTWS                                         ! line 54
+        ,0                                                   ! line 55
+YCIODC  ,0                                                   ! line 56
+
+!SYM WSPLL  020706.00
+!SYM WSPLL1 020707.00
+!SYM YC4DTS 020717.00
+!SYM YC4TIM 020720.00
+!SYM YC4DTE 020722.00
+!SYM YC4DTI 020725.00
+!SYM YC4SMB 020726.00
+!SYM YYJCL  020750.00
+!SYM YJCDB1 231443.00
+!SYM YLOL1  231426.00
+!SYM YLOL2  231426.40
+!SYM YBCRD  020202.40
+!SYM YJCDBU 020707.00
+!SYM YRESTR 020226.00
+!SYM YC4B   020226.00
+!SYM YTBIT  231426.71
+!SYM YCOJB  020750.40
+!SYM YDUM   020754.00
+!SYM YCOJB2 020762.40
+!SYM YCPREJ 020765.00
+!SYM YCOJB1 020766.00
+!SYM YDFCTA 020773.40
+!SYM YCIODC 020776.00
+!CHECK 020750.00 | 231366.66 80 | line 15 YYJCL ,YUCBF1+.54
+!CHECK 020750.40 | 215001.02 80 020752.74 04 | line 27 YCOJB BZBZ,SCNFCG,$+2.
+!CHECK 020751.40 | 020754.00 80 001000.36 F0 | line 28 CM1111(BU,1),YDUM
+!CHECK 020752.40 | 020754.37 01 | line 29 LVI,$15,YDUM
+!CHECK 020753.00 | 021164.10 00 | line 30 B,TASIGN
+!CHECK 020754.00 | 000000.00+ 000 000000 000007 | line 31 YDUM XW,0,0,7
+!CHECK 020755.00 | 232232.36 30 | line 32 LV,$15,TPPRUN
+!CHECK 020755.40 | 000000.45 8F 020762.74 00 | line 33 BZB,TRJECT($15),YCOJB2
+!CHECK 020756.40 | 220452.22 80 020274.74 02 | line 34 BB,KSILO+1.18,WJ4PFF
+!CHECK 020757.40 | 020566.35 01 | line 35 LVI,$14,YMOJM3
+!CHECK 020760.00 | 220452.25 80 002000.31 70 | line 36 CT1100(BU,2),KSILO+1.21
+!CHECK 020761.00 | 020274.74 C0 | line 37 BZRZ,WJ4PFF (a "*" prints after the location)
+!CHECK 020761.40 | 000000.34 9F | line 38 KV,$14,0($15)
+!CHECK 020762.00 | 020274.72 42 | line 39 BXL,WJ4PFF
+!CHECK 020762.40 | 220452.23 80 020766.34 02 | line 40 YCOJB2 BB,KSILO+1.19,YCOJB1
+!CHECK 020763.40 | 020765.37 01 | line 41 LVI,$15,YCPREJ
+!CHECK 020764.00 | 022326.10 00 | line 42 B,TMOVE
+!CHECK 020765.00 | 000000.00+ 000 000000 000001 | line 43 YCPREJ XW,0,0,1,0
+!CHECK 020766.00 | 000000.37 01 | line 44 YCOJB1 LVI,$15,0
+!CHECK 020766.40 | 020776.37 D0 | line 45 SVA,$15,YCIODC
+!CHECK 020767.00 | 220460.22 00 | line 46 Z,KSILO+7.0
+!CHECK 020767.40 | 231400.00 80 060000.20 50 | line 47 L(BU,48),YUCBF2+2.0
+!CHECK 020770.40 | 476300.00 80 414030.06 70 | line 48 LFI(BU,12),YCCIN,48 (printed "414030.C6 7C": open rounds; no index is printed, so the low nibble can only be 0)
+!CHECK 020771.40 | 020773.40 80 060006.20 D0 | line 49 ST(BU,48),YDFCTA,12
+!CHECK 020772.40 | 000040.10 00 | line 50 B,DMCP
+!CHECK 020773.00 | 000102.40 80 | line 51 ,DFETCH
+!CHECK 020774.40 | 000000.00 80 | line 53 ,0
+!CHECK 020775.00 | 215020.01 B0 | line 54 LVE, ,SJCTWS
+!CHECK 020775.40 | 000000.00 80 | line 55 ,0
+!CHECK 020776.00 | 000000.00 80 | line 56 YCIODC ,0

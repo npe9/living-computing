@@ -68,7 +68,7 @@
 
 YUSB8C  SYN(B,25,1), (8)231227.0     ! p.270 not landed (VF per OCR); LC lines 8/15/34, half word only
 YBLWD4  SYN(BU,48,6), (8)231423.0    ! p.274 not landed ((AX)DD(BU,48,6) per OCR); TI line 11 231423.00, half word only
-YTBIT   SYN(BU,1), (8)231426.71      ! not landed (DD(BU,1) in IPL p.36); CM0000 line 31 231426.71, BIT-EXACT
+YTBIT   SYN, (8)231426.71           ! plain: p.395 line 23 defines it "SYN,YLOL2+.25" (dds from YLLSAV, printed N,64,4); every use writes (BU,1); not landed (DD(BU,1) in IPL p.36); CM0000 line 31 231426.71, BIT-EXACT
 YUTOE   SYN, (8)231373.64            ! p.274 not landed (SYN,YUCBF1+.372 per OCR); LF line 5 / XW line 38, BIT-EXACT
 
         SLC, (8)231330.00

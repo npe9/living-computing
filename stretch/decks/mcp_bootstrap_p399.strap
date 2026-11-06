@@ -1,0 +1,165 @@
+! mcp_bootstrap_p399.strap -- MCP printed page 399: the $EOJ program's
+! copy of the I/O assignment validity check (the TASIGN family): the
+! tail of the PP loop, then T D1 .. T CONT -- clear the count area,
+! count the requests by type, check them against the machine
+! configuration count.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.149, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZE000051  DIST. OF 3/01
+!  3/01  PAGE NUMBER 399"; the heading row's LOCATION field is 021174,
+! line 1's word.
+!
+! >>> STILL $EOJ, BUT CARD SERIES ZE. <<<  PUNID 22$EOJ, low core
+! (0211xx-0212xx); p.393 ran card series ZA, this page prints ZE000051
+! .. ZE000100.  No SLC prints on the page: the origin below is line 1's
+! printed LOCATION.  No TAIL.
+!
+! THE PAGE.  50 lines, every line number prints a "*"; a "*" also
+! prints after the LOCATION on lines 2, 25 and 47.  Contiguous
+! 021174.00 .. 021224.40 (line 48, a full word, so the next word is
+! 021225.40 -- T A2's address from line 13's BZXH).
+!   lines 15-19, 32, 34, 38-40, 49-50  remarks (16, 18, 39 carry text).
+!
+! >>> CARD SERIALS. <<<  ZE000051 .. ZE000100, one per line, no gap or
+! repeat on the page.
+!
+! >>> GLYPHS. <<<  "TCTWCX" (line 9), "TRCAC" (22, 35), "TLCCP1" (11),
+! "TCCMBO" (23, 30), "TCCNT" (42), "TCHEK" etc.: this drum prints O
+! open and D with its stem worn.  TCTWDX and TRCAD are the resident
+! names (pp.287, 289); TLOOP1 is p.287's DD and line 11's binary
+! 232227.43 is its address; TCOMBO / TCONT by the family and by every
+! binary.  Line 12 prints an ink blot before its remark.
+!
+! STAND-INS:
+!   resident (pp.287-289): TIXE, TIXA, TX1, TCTWDX, TLOOP1, TVALVF,
+!     TIOREQ, TCRREF, TUNCT, TASGNP, TRJECT, TLAST, TTYPE, TTYAD, TMCAD,
+!     TRCAD -- copied in their defining forms.
+!   $EOJ, not landed, from THIS PAGE'S binary:
+!     TB8Z, TAREJ, TAREJX, TB8C, TA2   branch targets, half word only
+!     TREFIL  SX/LRI target (XW), half word only
+!     TTYARA  LX target (XW), half word only
+!     TCOMBO  V+C/V+CR operand (a VF in vol.1, p.65), half word only
+
+TIXE    SYN,$3                       ! p.287 line 36
+TIXA    SYN,$4                       ! p.287 line 34
+TX1     SYN,$10                      ! p.287 line 30
+TCTWDX  SYN,TX1                      ! p.287 line 29
+TLOOP1  SYN(BU,1), (8)232227.43      ! p.287 line 28 DD(BU,1); BBZ line 11 BIT-EXACT
+TVALVF  SYN(B,25,1), (8)232512.0     ! p.289 line 25 VF; KV line 12, SV line 14
+TIOREQ  SYN(BU,64), (8)232307.0      ! p.288 line 26 DRZ(BU,64); LVI line 26
+TCRREF  SYN(BU,18),0.0               ! p.288 line 12
+TUNCT   SYN(BU,8),0.28               ! p.288 line 13 (printed "(BU,08)")
+TRJECT  SYN(BU,1),0.37               ! p.288 line 15
+TASGNP  SYN(BU,1),0.38               ! p.288 line 16
+TTYPE   SYN(BU,4),0.03               ! p.288 line 31
+TLAST   SYN(BU,1),0.18               ! p.288 line 34
+TTYAD   SYN(BU,8),0.0                ! p.289 line 29
+TMCAD   SYN(BU,8),TTYAD+0.8          ! p.289 line 30
+TRCAD   SYN(BU,8),TMCAD+0.8          ! p.289 line 31
+TB8Z    SYN, (8)021503.40            ! $EOJ, not landed; BB line 1, half word only
+TAREJ   SYN, (8)021663.0             ! $EOJ, not landed; BB line 7, half word only
+TAREJX  SYN, (8)021662.0             ! $EOJ, not landed; BB line 48, half word only
+TB8C    SYN, (8)021501.40            ! $EOJ, not landed; BXCZ line 8, half word only
+TA2     SYN, (8)021225.40            ! $EOJ, not landed; BZXH line 13, half word only
+TREFIL  SYN(BU), (8)021105.0         ! $EOJ, not landed; XW; LRI/SX lines 5-6, half word only
+TTYARA  SYN(BU), (8)021162.0         ! $EOJ, not landed; XW; LX line 20, half word only
+TCOMBO  SYN(B,25,1), (8)021163.0     ! $EOJ, not landed; VF (p.65); V+CR line 23, half word only
+
+        SLC, (8)021174.0
+        BB,TASGNP(TIXE),TB8Z                                 ! line  1  -IF PP IS ASSIGNED BYPASS REMAINDER
+        LV,TIXA,TCRREF(TIXE)                                 ! line  2  -GET I/O REQ TBL ADDRESS
+        L,TUNCT(TIXE),46                                     ! line  3  -GET THE UNIT COUNT
+        LC,TIXA,$R                                           ! line  4
+        LRI,TIXA,TREFIL                                      ! line  5  -REFILL ADDR TO INDEX
+        SX,TIXA,TREFIL                                       ! line  6
+        BB,TRJECT(TIXE),TAREJ                                ! line  7  -IF PP WAS REJD AND TBLS TO BE CLEARED
+        BXCZ,TB8C                                            ! line  8  -IF NO I/O REQUESTS FOR THE PP
+        LX,TCTWDX,0.0($15)                                   ! line  9  -TO ACTIVATE THE FLAG IND  printed "TCTWCX"
+        BXF,TD1+.32                                          ! line 10  -TO PREVENT A DOUBLE VALIDITY
+        BBZ,TLOOP1,TD1                                       ! line 11  -IF IX-E- WAS REFILLED  printed "TLCCP1"
+        KV,TIXE,TVALVF                                       ! line 12  -CHECK TO PREVENT A DOUBLE VALIDITY CK
+        BZXH,TA2                                             ! line 13  -IF A VALIDITY CHECK HAS BEEN MADE
+TD1     SV,TIXE,TVALVF                                       ! line 14  -SAVE TO PREVENT DOUBLE VALIDY CHECK
+! line 15  -
+! line 16  -      DO A VALIDITY CHECK ON THE REQUEST
+! line 17  -
+! line 18  -      FIRST CLEAR COUNT AREA
+! line 19  -
+        LX,TX1,TTYARA                                        ! line 20  -LOAD TO BEGINNING OF TABLE
+        Z,$R                                                 ! line 21  -ZERO THE ACC
+TCLEAR  ST,TRCAD(TX1)                                        ! line 22  -THEN CLEAR THE COUNT AREA  printed "TRCAC"
+        V+CR,TX1,TCOMBO                                      ! line 23
+        BZXCZ,TCLEAR                                         ! line 24
+TSETAC  BZB,TLAST(TIXA),TSETBC                               ! line 25
+        LVI,TIXA,TIOREQ                                      ! line 26  -RELOAD TO BEGINING OF TABLE
+TSETBC  L,TTYPE(TIXA)                                        ! line 27  -REQUESTED TYPE TO ACC
+TCOMPA  K,TTYAD(TX1)                                         ! line 28  -COMPARE FOR EQUALITY
+        BAE,TC1                                              ! line 29  -IF EQUAL
+        V+C,TX1,TCOMBO                                       ! line 30  -GET NEXT FEILD
+        BZXCZ,TCOMPA                                         ! line 31
+! line 32  -
+        BD,$                                                 ! line 33  -ILLEGAL REQUEST - MCP ERROR
+! line 34  -
+TC1     M+1,TRCAD(TX1)                                       ! line 35  -INCREMENT REQUEST COUNT
+        R,TX1                                                ! line 36  -REFILL TO BEGINNING OF TABLE
+        CBR+,TIXA,TSETAC                                     ! line 37
+! line 38  -
+! line 39  -      CHECK REQUEST COUNT AGAINST THE MACH CONF COUNT
+! line 40  -
+TCHEK   LF,TRCAD(TX1)                                        ! line 41  -REQUEST COUNT TO ACC
+        BRZ,TCONT                                            ! line 42  -NO REQUEST
+        KF,TMCAD(TX1)                                        ! line 43  -COMPARE MACHINE CONF. COUNT
+        BZAH,TCONT                                           ! line 44  -IF REQUEST IS OK
+        CM1111,TRJECT(TIXE)                                  ! line 45  -REJECT PP FOR REQ IS TO HIGH
+TCONT   V+C,TX1,TCOMBO                                       ! line 46
+        BZXCZ,TCHEK                                          ! line 47
+        BB,TRJECT(TIXE),TAREJX                               ! line 48  -IF PP WAS REJECTED
+! line 49  -
+! line 50  -
+
+!SYM TD1    021204.40
+!SYM TCLEAR 021206.00
+!SYM TSETAC 021210.00
+!SYM TSETBC 021211.40
+!SYM TCOMPA 021212.40
+!SYM TC1    021215.40
+!SYM TCHEK  021217.40
+!SYM TCONT  021223.40
+!CHECK 021174.00 | 000000.46 83 021503.74 02 | line 1 BB,TASGNP(TIXE),TB8Z
+!CHECK 021175.00 | 000000.10 33 | line 2 LV,TIXA,TCRREF(TIXE) (a "*" prints after the location)
+!CHECK 021175.40 | 000000.34 83 010027.20 50 | line 3 L,TUNCT(TIXE),46
+!CHECK 021176.40 | 000011.10 50 | line 4 LC,TIXA,$R
+!CHECK 021177.00 | 021105.11 03 | line 5 LRI,TIXA,TREFIL
+!CHECK 021177.40 | 021105.11 10 | line 6 SX,TIXA,TREFIL
+!CHECK 021200.00 | 000000.45 83 021663.34 02 | line 7 BB,TRJECT(TIXE),TAREJ
+!CHECK 021201.00 | 021501.70 42 | line 8 BXCZ,TB8C
+!CHECK 021201.40 | 000000.24 1F | line 9 LX,TCTWDX,0.0($15)
+!CHECK 021202.00 | 021205.23 42 | line 10 BXF,TD1+.32
+!CHECK 021202.40 | 232227.43 80 021204.74 06 | line 11 BBZ,TLOOP1,TD1
+!CHECK 021203.40 | 232512.06 90 | line 12 KV,TIXE,TVALVF
+!CHECK 021204.00 | 021225.73 40 | line 13 BZXH,TA2
+!CHECK 021204.40 | 232512.07 30 | line 14 TD1 SV,TIXE,TVALVF
+!CHECK 021205.00 | 021162.24 10 | line 20 LX,TX1,TTYARA
+!CHECK 021205.40 | 000011.22 00 | line 21 Z,$R
+!CHECK 021206.00 | 000000.20 8A 010000.20 D0 | line 22 TCLEAR ST,TRCAD(TX1)
+!CHECK 021207.00 | 021163.24 F0 | line 23 V+CR,TX1,TCOMBO
+!CHECK 021207.40 | 021206.30 40 | line 24 BZXCZ,TCLEAR
+!CHECK 021210.00 | 000000.22 84 021211.74 00 | line 25 TSETAC BZB,TLAST(TIXA),TSETBC (a "*" prints after the location)
+!CHECK 021211.00 | 232307.11 01 | line 26 LVI,TIXA,TIOREQ
+!CHECK 021211.40 | 000000.03 84 004000.20 50 | line 27 TSETBC L,TTYPE(TIXA)
+!CHECK 021212.40 | 000000.00 8A 010000.21 10 | line 28 TCOMPA K,TTYAD(TX1)
+!CHECK 021213.40 | 021215.76 C2 | line 29 BAE,TC1
+!CHECK 021214.00 | 021163.24 D0 | line 30 V+C,TX1,TCOMBO
+!CHECK 021214.40 | 021212.70 40 | line 31 BZXCZ,TCOMPA
+!CHECK 021215.00 | 021215.04 00 | line 33 BD,$
+!CHECK 021215.40 | 000000.20 8A 010000.22 B0 | line 35 TC1 M+1,TRCAD(TX1)
+!CHECK 021216.40 | 000032.02 00 | line 36 R,TX1
+!CHECK 021217.00 | 021210.11 4C | line 37 CBR+,TIXA,TSETAC
+!CHECK 021217.40 | 000000.20 8A 010000.06 70 | line 41 TCHEK LF,TRCAD(TX1)
+!CHECK 021220.40 | 021223.74 C2 | line 42 BRZ,TCONT
+!CHECK 021221.00 | 000000.10 8A 010000.23 10 | line 43 KF,TMCAD(TX1)
+!CHECK 021222.00 | 021223.77 40 | line 44 BZAH,TCONT
+!CHECK 021222.40 | 000000.45 83 001000.36 F0 | line 45 CM1111,TRJECT(TIXE)
+!CHECK 021223.40 | 021163.24 D0 | line 46 TCONT V+C,TX1,TCOMBO
+!CHECK 021224.00 | 021217.70 40 | line 47 BZXCZ,TCHEK (a "*" prints after the location)
+!CHECK 021224.40 | 000000.45 83 021662.34 02 | line 48 BB,TRJECT(TIXE),TAREJX

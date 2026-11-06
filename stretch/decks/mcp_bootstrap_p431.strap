@@ -1,0 +1,156 @@
+! mcp_bootstrap_p431.strap -- MCP printed page 431: the $EOJ program's
+! reassembly of the tape ASSIGN routine, "SORT THE I/O REQUEST WITHIN
+! THE I/O REQUEST TABLE BY THE IOD SEQUENCE NUMBER AS PER PP" (TSORT ..
+! TSORT3) and "COMPUTE THE TABLE LOCATIONS AND ZERO THEM" (to TM1F and
+! B,TM1).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.181, read at 400 dpi (900 dpi for
+! line 12).  Header, READ: "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID
+! ZF000687  DIST. OF 3/01  3/01  PAGE NUMBER 431"; the heading row's
+! LOCATION field prints nothing.
+!
+! >>> CARD SERIES ZF, PUNID 22$EOJ.  No SLC, no PUNID on the page; the
+! origin below is line 5's printed LOCATION.  No TAIL. <<<
+!
+! THE PAGE.  48 lines, every line number prints a "*"; a further "*"
+! after the LOCATION on lines 11 and 31 (recorded, not interpreted).
+! Lines 1-4 and 20-24 are boxed banners (remarks), line 38 an empty
+! remark.  Contiguous 022666.00 .. 022720.40 (line 48, a half word;
+! next location 022721.00, TMREJB).  The same source as volume 1
+! pp.95-96, except line 6 prints TLAST(TMXF) where volume 1 prints
+! TLAST(TMXG); the byte 87 confirms TMXF here.
+!
+! CARD SERIALS.  ZF000687 .. ZF000734, one per line, consecutive.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!  * line 6 label prints "TSCRT1" (no space, open O) = TSORT1: line 19
+!    prints CB+,TMXF,TSORT1 and the address 022666.57 is this row's.
+!  * hex "CC"/"C0" bytes that only a 0 can fill: line 6 h2 "CC" (BZB,
+!    00), line 48 "C0" (B, 00), line 44 "FC" (CM0000, F0).  The open 0,
+!    as this row's octal fields print 0 open.
+!  * line 12 "TIODSQ" read at 900 dpi: Q's tail is present.
+!
+! EXTERNALS.  Copied in their DEFINING forms from the scratch neighbours
+! (p.418: TMXn index names, TLIMB/TBAMCP/TMAXRF SYNs; p.419 TUNLGN;
+! p.420 TFLLGN; p.423 TM1) and the resident page p.288 (field SYNs).
+
+TMX1    SYN,$1                       ! p.418 line 22; LVI line 43 .03
+TMXA    SYN,$2                       ! p.418 line 23; byte 82
+TMXC    SYN,$4                       ! p.418 line 25; LV line 37 .10
+TMXD    SYN,$5                       ! p.418 line 26; LV line 30 .12
+TMXE    SYN,$6                       ! p.418 line 27; LV line 32 .14
+TMXF    SYN,$7                       ! p.418 line 28; byte 87
+TMXG    SYN,$8                       ! p.418 line 29; byte 88
+TMXGA   SYN,$11                      ! p.418 line 32; LX line 14 .26
+TLAST   SYN(BU,1),0.18               ! landed p.288 line 34
+TIODSQ  SYN(BU,9),0.19               ! landed p.288 line 35
+TLREFN  SYN(BU,12),0.40              ! landed p.288 line 18
+TIODCT  SYN(BU,12),0.52              ! landed p.288 line 19
+TUNCT   SYN(BU,08),0.28              ! landed p.288 line 13
+TIOREQ  SYN(BU,64), (8)232307.0      ! landed p.288 line 26 DRZ(BU,64); LVI line 7
+TFLLGN  SYN(BU,6),7                  ! p.420 line 5
+TUNLGN  SYN(BU,6),9                  ! p.419 line 39
+SBAPP   SYN(B,25,1), (8)215005.0     ! landed p.103 line 35 "S BAPP VF,0"
+SMAXRN  SYN(B,25,1), (8)215005.40    ! landed p.103 line 36 VF
+SMAXUB  SYN(B,25,1), (8)215225.0     ! landed p.116 "S MAXUB VF,0.0"
+TLIMB   SYN,SBAPP                    ! p.418 line 16 (defining form)
+TBAMCP  SYN,SMAXUB                   ! p.418 line 18 (defining form)
+TMAXRF  SYN,SMAXRN                   ! p.418 line 19 (defining form)
+TM1     SYN(BU,64,8), (8)022333.40   ! p.423 line 15 C0011 label; B line 48
+TMREJB  SYN, (8)022721.0             ! not seen; B line 45 022721.10, half word only
+
+        SLC, (8)022666.0
+! line  1  -****************
+! line  2  -SORT THE I/O REQUEST WITHIN THE I/O REQUEST TABLE
+! line  3  -BY THE IOD SEQUENCE NUMBER AS PER PP
+! line  4  -****************
+TSORT   LX,TMXF,$R                                           ! line  5  -LOAD TO GET I/O REQUEST TABLE
+TSORT1  BZB,TLAST(TMXF),TSORT4                               ! line  6
+        LVI,TMXF,TIOREQ                                      ! line  7
+TSORT4  LX,TMXG,TMXF                                         ! line  8
+        L(BU,64),0.0(TMXF)                                   ! line  9  -GET A WORD FROM REQ TABLE FOR COMPARE
+TSORT2  BZB,TLAST(TMXG),TSORT5                               ! line 10
+        LVI,TMXG,TIOREQ                                      ! line 11
+TSORT5  KF,TIODSQ(TMXG),36                                   ! line 12  -COMPARE THE NEXT SEQ NO AND SO FORTH
+        BZAH,TSORT3                                          ! line 13  -SWAP ONLY ON HIGH
+        LX,TMXGA,0.0(TMXG)                                   ! line 14  -LOAD SWAP INDEX
+        ST(BU,64),0.0(TMXG)                                  ! line 15  -STORE THE GREATER
+        SX,TMXGA,$R                                          ! line 16  -REPLACE THE ACC WITH THE LESSER
+TSORT3  CB+,TMXG,TSORT2                                      ! line 17
+        ST(BU,64),0.0(TMXF)                                  ! line 18  -REPLACE THE INITIAL WORD
+        CB+,TMXF,TSORT1                                      ! line 19
+! line 20  -
+! line 21  ----------------
+! line 22  -COMPUTE THE TABLE LOCATIONS AND ZERO THEM
+! line 23  ----------------
+! line 24  -
+        LFT,TIODCT(TMXA)                                     ! line 25  -NUMBER OF IODS TO FACTOR REG
+        L,TLREFN(TMXA),46                                    ! line 26  -GET LARGEST REF NO FOR TBL LENGTH
+        CM0101(BU,18),TMAXRF,46                              ! line 27  -SAVE THE LARGEST REFERENCE NUMBER
+        +(BU,18),TLIMB,46                                    ! line 28  -ADD TO IT THE UPPER LIMIT OF PP
+        M+1(BU,18),$R                                        ! line 29  -ADD ONE FOR PROPER TABLE SIZE
+        LV,TMXD,$R                                           ! line 30  -FIRST CELL AVAIL FOR FILE AREA
+        *I+,TFLLGN,46                                        ! line 31  -ADD FILE AREA TABLE LENGHT
+        LV,TMXE,$R                                           ! line 32  -FIRST CELL AVAILABLE FOR UNIT AREA TB
+        LFT,TUNCT(TMXA)                                      ! line 33  -THE NO. OF UNITS REQ TO FACTOR REG
+        *I+,TUNLGN,46                                        ! line 34  -ADD UNIT AREA TBL LENGHT
+        LV,TMXF,$R                                           ! line 35  -FIRST CELL AVAIL FOR REEL NUMBER
+        -(BU,18),TLIMB,46                                    ! line 36  -REMOVE THE BASE ADDRESS
+        LV,TMXC,TLIMB                                        ! line 37  -FIRST LOC AVAL FOR SYM I/O LOC TBL
+! line 38  -
+        LV,TMXG,TLIMB                                        ! line 39  -PREPARE FOR TABLE ZEROING
+        LC,TMXG,$R                                           ! line 40
+        KV,TMXF,TBAMCP                                       ! line 41  -IS THE REEL POOL EXCEEDING BOUNDS
+        BXL,TM1F                                             ! line 42  -IF WITHIN PP ALLOWED LIMMITS
+        LVI,TMX1,4.0                                         ! line 43  -NOTE THE ERROR- OUTSIDE LIMITS
+        CM0000(BU,18),TMAXRF                                 ! line 44
+        B,TMREJB                                             ! line 45  -AND REJECT JOB
+TM1F    Z,0.0(TMXG)                                          ! line 46  -ZERO THE SLOTS
+        CB+,TMXG,TM1F                                        ! line 47
+        B,TM1                                                ! line 48  -GET THE FIRST CARD
+
+!SYM TSORT  022666.00
+!SYM TSORT1 022666.40
+!SYM TSORT4 022670.00
+!SYM TSORT2 022671.40
+!SYM TSORT5 022673.00
+!SYM TSORT3 022676.40
+!SYM TM1F   022717.40
+!CHECK 022666.00 | 000011.16 10 | line 5 T SORT LX,TMXF,$R
+!CHECK 022666.40 | 000000.22 87 022670.34 00 | line 6 TSORT1 BZB,TLAST(TMXF),TSORT4 (h2 prints "CC": the open 0)
+!CHECK 022667.40 | 232307.17 01 | line 7 LVI,TMXF,TIOREQ
+!CHECK 022670.00 | 000027.20 10 | line 8 T SORT4 LX,TMXG,TMXF
+!CHECK 022670.40 | 000000.00 87 000000.20 50 | line 9 L(BU,64),0.0(TMXF)
+!CHECK 022671.40 | 000000.22 88 022673.34 00 | line 10 T SORT2 BZB,TLAST(TMXG),TSORT5
+!CHECK 022672.40 | 232307.21 01 | line 11 LVI,TMXG,TIOREQ
+!CHECK 022673.00 | 000000.23 88 011022.23 10 | line 12 T SORT5 KF,TIODSQ(TMXG),36
+!CHECK 022674.00 | 022676.77 40 | line 13 BZAH,TSORT3
+!CHECK 022674.40 | 000000.26 18 | line 14 LX,TMXGA,0.0(TMXG)
+!CHECK 022675.00 | 000000.00 88 000000.20 D0 | line 15 ST(BU,64),0.0(TMXG)
+!CHECK 022676.00 | 000011.27 10 | line 16 SX,TMXGA,$R
+!CHECK 022676.40 | 022671.61 48 | line 17 T SORT3 CB+,TMXG,TSORT2
+!CHECK 022677.00 | 000000.00 87 000000.20 D0 | line 18 ST(BU,64),0.0(TMXF)
+!CHECK 022700.00 | 022666.57 48 | line 19 CB+,TMXF,TSORT1
+!CHECK 022700.40 | 000000.64 82 014000.20 B0 | line 25 LFT,TIODCT(TMXA)
+!CHECK 022701.40 | 000000.50 82 014027.20 50 | line 26 L,TLREFN(TMXA),46
+!CHECK 022702.40 | 215005.40 80 022027.12 F0 | line 27 CM0101(BU,18),TMAXRF,46
+!CHECK 022703.40 | 215005.00 80 022027.20 10 | line 28 +(BU,18),TLIMB,46
+!CHECK 022704.40 | 000011.00 80 022000.22 B0 | line 29 M+1(BU,18),$R
+!CHECK 022705.40 | 000011.12 30 | line 30 LV,TMXD,$R
+!CHECK 022706.00 | 070000.00 80 406027.23 90 | line 31 *I+,TFLLGN,46
+!CHECK 022707.00 | 000011.14 30 | line 32 LV,TMXE,$R
+!CHECK 022707.40 | 000000.34 82 010000.20 B0 | line 33 LFT,TUNCT(TMXA)
+!CHECK 022710.40 | 110000.00 80 406027.23 90 | line 34 *I+,TUNLGN,46
+!CHECK 022711.40 | 000011.16 30 | line 35 LV,TMXF,$R
+!CHECK 022712.00 | 215005.00 80 022027.30 10 | line 36 -(BU,18),TLIMB,46
+!CHECK 022713.00 | 215005.10 30 | line 37 LV,TMXC,TLIMB
+!CHECK 022713.40 | 215005.20 30 | line 39 LV,TMXG,TLIMB
+!CHECK 022714.00 | 000011.20 50 | line 40 LC,TMXG,$R
+!CHECK 022714.40 | 215225.16 90 | line 41 KV,TMXF,TBAMCP
+!CHECK 022715.00 | 022717.72 42 | line 42 BXL,TM1F
+!CHECK 022715.40 | 000004.03 01 | line 43 LVI,TMX1,4.0
+!CHECK 022716.00 | 215005.40 80 022000.00 F0 | line 44 CM0000(BU,18),TMAXRF (hex prints "FC": the open 0)
+!CHECK 022717.00 | 022721.10 00 | line 45 B,TMREJB
+!CHECK 022717.40 | 000000.22 08 | line 46 T M1F Z,0.0(TMXG)
+!CHECK 022720.00 | 022717.61 48 | line 47 CB+,TMXG,TM1F
+!CHECK 022720.40 | 022333.50 00 | line 48 B,TM1 (hex prints "C0": the open 0)

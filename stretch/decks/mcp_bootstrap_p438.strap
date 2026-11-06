@@ -1,0 +1,166 @@
+! mcp_bootstrap_p438.strap -- MCP printed page 438: the $EOJ program's
+! "PRINT PROBLEM PROGRAM REEL HISTORY" routine, JHISTE .. JHIST2 (to the
+! L,TREPR test of the first reel slot).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.188, read at 400 dpi (900 dpi for the
+! doubtful glyphs).  Header, READ: "TIME CLOCK 00054041  PUNID 22$EOJ
+! CARD ID ZZ000144  DIST. OF 3/01  3/01  PAGE NUMBER 438"; the heading
+! row's LOCATION field is BLANK (line 1 is a banner remark).
+!
+! >>> CARD SERIES ZZ (as p.437), PUNID 22$EOJ.  No SLC, no PUNID on the
+! page; the origin below is line 13's printed LOCATION.  No TAIL. <<<
+!
+! THE PAGE.  50 lines, every line number prints a "*"; a further "*"
+! after the LOCATION on lines 29 and 48 (recorded, not interpreted).
+! Lines 1-12 are remarks (1-3 the boxed banner, 5-11 the linkage note:
+! "SIC,JHISTX / B,JHISTE / (RETURN)", index registers JTX1 (VF,CF),
+! JTX2 (VF) used and not restored); line 12 prints a lone "¬"-like mark
+! in the NAME column and nothing else.  Lines 21, 30, 40, 45 are bare
+! remarks.  Line 13 is the SYN JHBIT (printed 023144.75+, "BU,01 ,10").
+! Contiguous 023144.00 .. 023173.00 (line 50, a full word; next location
+! 023174.00, which is p.439's line 1).  p.437 ends with T JCW XW at
+! 023143.00, so line 14's 023144.00 continues it.
+!
+! CARD SERIALS.  ZZ000144 .. ZZ000190.  p.437's last line prints
+! ZZ000142: ZZ000143 is printed on neither page (recorded, not
+! explained).  Lines 23/24 both print ZZ000166, lines 27/28 ZZ000169,
+! lines 33/34 ZZ000174: in each pair the second statement (" B,JEDIN",
+! " B,JEDIN+1.0") prints one column further right, the second statement
+! of the same card.  Written one card per printed line here.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!  * line 18 prints "BC,ZSPLPR" = BD (D worn): binary 224046.44 is
+!    ZSPLPR 224046.40 plus BD's .04, identical to line 37's plainly
+!    printed BD,ZSPLPR (and p.437 line 8 BD,SDISP 217372.04).
+!  * JEDIN / JEDEX (lines 23, 24, 27, 28, 33, 34) print "JECIN" in
+!    places with D worn; the remark "-EDIT INTO A8" on the same lines
+!    prints "ECIT" too.  Spelled D; both are defined on a later page.
+!  * line 32 "SIOCRN" = SIODRN (worn D): the landed p.102 spelling; the
+!    remark reads "-LAST IOD NO."; binary 000000.00 = SIODRN's 0.0.
+!  * J1STPG (lines 16, 19): the second glyph is the flagged digit 1 at
+!    900 dpi (as in JHIST1), not the serifed I of JHISTE.  "1ST PAGE".
+!  * line 29 "JCHNUN+2.C8" -> 2.08: binary 023220.10 = 023216.00 +
+!    2 words + 8 bits.
+!  * hex "C0" on line 47 (BZRZ) is a real C0; the open 0s in the octal
+!    fields are 0.
+!
+! EXTERNALS.  Resident field SYNs copied in their DEFINING forms
+! (p.101, p.102, p.212); TREPR as p.420 line 20 prints it; YJCDB1 as
+! p.395 line 16 defines it (SYN,WJOR2) with WJOR2 as the landed
+! stand-in.  The index names JTX1, JUAX (SYN,TJB) and TJB are p.437's
+! lines 16, 18 and 12, read off p.437's image (not yet landed).  The
+! J-labels JEDEX, JEDIN, J1STPG, JCHNUN, JTAPLB, JASTK are defined on a
+! later page (p.439 ff., not landed): plain SYN stand-ins whose values
+! come ONLY from this page's binary.
+
+WJOR2   SYN(U), (8)231443.0          ! landed p.274 line 18 DRZ(U),15
+YJCDB1  SYN,WJOR2                    ! p.395 line 16's defining form; line 15 231444.00
+SCHANN  SYN(BU,7), 0.12              ! p.101 line 5 -CHANNEL NUMBER
+SUNITN  SYN(BU,3), 0.47              ! p.101 line 6 -UNIT NUMBER
+SFIAAC  SYN(BU,18), 3.0              ! p.101 line 13 -FILE AREA ACTIVATED
+SREELK  SYN(BU,7), 8.57              ! p.101 line 27 -CURRENT REEL COUNT
+SFREEL  SYN(BU,18), 8.0              ! p.101 line 26 -FIRST REEL ADDRESS
+SIODRN  SYN(BU,18), 0.0              ! p.102 line  6 -IOD REFERENCE NUMBER
+TREPR   SYN(BU,1),0.26               ! p.420 line 20 -REEL PROTECT BIT IF ONE
+ZSPLP9  SYN, (8)224052.0             ! landed p.212 line 12; SIC lines 17, 36
+ZSPLPR  SYN, (8)224046.40            ! landed p.212 line 5; BD lines 18, 37 224046.44
+TJB     SYN,$2                       ! p.437 line 12 "T JB SYN,$2" (not landed)
+JUAX    SYN,TJB                      ! p.437 line 18 (not landed); byte 82
+JTX1    SYN,$6                       ! p.437 line 16 "J TX1 SYN,$6" (not landed); byte 86
+JEDEX   SYN, (8)023207.0             ! not landed; SIC lines 23, 27, 33, this page's binary
+JEDIN   SYN, (8)023203.0             ! not landed; B lines 24, 34 023203.10, half word only
+J1STPG  SYN, (8)023210.0             ! not landed; line 19 ",J1STPG" 023210.00, BIT-EXACT
+JCHNUN  SYN, (8)023216.0             ! not landed; line 38 ",JCHNUN" 023216.00, BIT-EXACT
+JTAPLB  SYN, (8)023226.0             ! not landed; line 43 JTAPLB+.7 = 023226.07, BIT-EXACT
+JASTK   SYN, (8)023233.40            ! not landed; line 48 LF 023233.40, BIT-EXACT
+
+        SLC, (8)023144.00
+! line  1  - ********************************************************
+! line  2  -           ********** PRINT PROBLEM PROGRAM REEL HISTORY **********
+! line  3  - ********************************************************
+! line  4  -
+! line  5  -           LINKAGE.... FOR JOBS INITIAL ENTRY, SET JHBIT = 1
+! line  6  -                       FOR EACH ENTRY, INDEX JUAX = UNIT AREA ADDRESS
+! line  7  -                       SIC,JHISTX
+! line  8  -                       B,JHISTE
+! line  9  -                       (RETURN)
+! line 10  -                       INDEX REGISTERS USED AND NOT RESTORED
+! line 11  -                       ARE JTX1 (VF,CF), JTX2 (VF).
+! line 12  (a lone hook mark in the NAME column; nothing else printed)
+JHBIT   SYN(BU,1),JHISTE+.61                                 ! line 13  -SET TO 1 FOR 1ST UNIT OF EA. JOB
+JHISTE  BZBZ,$.61,JHIST1                                     ! line 14  -FALL THRU FOR 1ST TIME
+        LF(BU,48,6),YJCDB1+1.                                ! line 15  -PICK UP JOB NAME AND
+        SF(BU),J1STPG+.40                                    ! line 16  -STORE IN A8
+        SIC,ZSPLP9                                           ! line 17  -PRINT HEADING
+        BD,ZSPLPR                                            ! line 18  -ON NEXT PAGE (printed "BC")
+        ,J1STPG                                              ! line 19
+        ,6.0                                                 ! line 20
+! line 21  -
+JHIST1  LCV,SCHANN(JUAX)                                     ! line 22  -CONVERT CHANNEL NO.
+        SIC,JEDEX                                            ! line 23
+        B,JEDIN                                              ! line 24  -EDIT INTO A8
+        SF(BU,16),JCHNUN+.72                                 ! line 25
+        L,SUNITN(JUAX)                                       ! line 26  -CONVERT UNIT NO.
+        SIC,JEDEX                                            ! line 27
+        B,JEDIN+1.0                                          ! line 28  -EDIT INTO A8
+        SF(BU,8),JCHNUN+2.08                                 ! line 29
+! line 30  -
+        LV,JTX1,SFIAAC(JUAX)                                 ! line 31  -LAST FILE ACTIVATED
+        LCV,SIODRN(JTX1)                                     ! line 32  -LAST IOD NO.
+        SIC,JEDEX                                            ! line 33
+        B,JEDIN                                              ! line 34
+        SF(BU,32),JCHNUN+6.24                                ! line 35
+        SIC,ZSPLP9                                           ! line 36  -PRINT CH, UNIT, IOD
+        BD,ZSPLPR                                            ! line 37
+        ,JCHNUN                                              ! line 38
+        ,7.0                                                 ! line 39
+! line 40  -
+        L,SREELK(JUAX),46                                    ! line 41  -REEL COUNT
+        LC,JTX1,$R                                           ! line 42
+        CM1111(BU,1),JTAPLB+.7                               ! line 43  -SET DOUBLE SPACE
+        LV,JTX1,SFREEL(JUAX)                                 ! line 44  -FIRST REEL SLOT LOC.
+! line 45  -
+JHIST2  LF(BU,30,6),.34(JTX1)                                ! line 46  -REEL NAME
+        BZRZ,$+1.32                                          ! line 47
+        LF(BU,30,6),JASTK                                    ! line 48
+        SF(BU,40),JTAPLB+.88                                 ! line 49
+        L(BU,2),TREPR(JTX1),45                               ! line 50  -REL. LOC. OF 3 CHAR.
+
+!SYM JHBIT  023144.75
+!SYM JHISTE 023144.00
+!SYM JHIST1 023151.00
+!SYM JHIST2 023167.40
+
+!CHECK 023144.00 | 023144.75 80 023151.34 04 | line 14 JHISTE BZBZ,$.61,JHIST1
+!CHECK 023145.00 | 231444.00 80 060600.06 70 | line 15 LF(BU,48,6),YJCDB1+1.
+!CHECK 023146.00 | 023210.50 80 000000.12 F0 | line 16 SF(BU),J1STPG+.40
+!CHECK 023147.00 | 224052.00 80 | line 17 SIC,ZSPLP9
+!CHECK 023147.40 | 224046.44 00 | line 18 BD,ZSPLPR (printed "BC")
+!CHECK 023150.00 | 023210.00 80 | line 19 ,J1STPG
+!CHECK 023150.40 | 000006.00 80 | line 20 ,6.0
+!CHECK 023151.00 | 000000.14 82 007000.20 30 | line 22 JHIST1 LCV,SCHANN(JUAX)
+!CHECK 023152.00 | 023207.00 80 | line 23 SIC,JEDEX
+!CHECK 023152.40 | 023203.10 00 | line 24 B,JEDIN
+!CHECK 023153.00 | 023217.10 80 020000.12 F0 | line 25 SF(BU,16),JCHNUN+.72
+!CHECK 023154.00 | 000000.57 82 003000.20 50 | line 26 L,SUNITN(JUAX)
+!CHECK 023155.00 | 023207.00 80 | line 27 SIC,JEDEX
+!CHECK 023155.40 | 023204.10 00 | line 28 B,JEDIN+1.0
+!CHECK 023156.00 | 023220.10 80 010000.12 F0 | line 29 SF(BU,8),JCHNUN+2.08
+!CHECK 023157.00 | 000003.14 32 | line 31 LV,JTX1,SFIAAC(JUAX)
+!CHECK 023157.40 | 000000.00 86 022000.20 30 | line 32 LCV,SIODRN(JTX1)
+!CHECK 023160.40 | 023207.00 80 | line 33 SIC,JEDEX
+!CHECK 023161.00 | 023203.10 00 | line 34 B,JEDIN
+!CHECK 023161.40 | 023224.30 80 040000.12 F0 | line 35 SF(BU,32),JCHNUN+6.24
+!CHECK 023162.40 | 224052.00 80 | line 36 SIC,ZSPLP9
+!CHECK 023163.00 | 224046.44 00 | line 37 BD,ZSPLPR
+!CHECK 023163.40 | 023216.00 80 | line 38 ,JCHNUN
+!CHECK 023164.00 | 000007.00 80 | line 39 ,7.0
+!CHECK 023164.40 | 000010.71 82 007027.20 50 | line 41 L,SREELK(JUAX),46
+!CHECK 023165.40 | 000011.14 50 | line 42 LC,JTX1,$R
+!CHECK 023166.00 | 023226.07 80 001000.36 F0 | line 43 CM1111(BU,1),JTAPLB+.7
+!CHECK 023167.00 | 000010.14 32 | line 44 LV,JTX1,SFREEL(JUAX)
+!CHECK 023167.40 | 000000.42 86 036600.06 70 | line 46 JHIST2 LF(BU,30,6),.34(JTX1)
+!CHECK 023170.40 | 023172.34 C0 | line 47 BZRZ,$+1.32
+!CHECK 023171.00 | 023233.40 80 036600.06 70 | line 48 LF(BU,30,6),JASTK
+!CHECK 023172.00 | 023227.30 80 050000.12 F0 | line 49 SF(BU,40),JTAPLB+.88
+!CHECK 023173.00 | 000000.32 86 002026.60 50 | line 50 L(BU,2),TREPR(JTX1),45

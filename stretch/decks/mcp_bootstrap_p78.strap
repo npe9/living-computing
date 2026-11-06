@@ -135,7 +135,7 @@ TP5A    LX, TCTWDX, 0.0($15)         ! line 5  -CHECK THE MODE
         BZXE, TP3                    ! line 8  -
 TP5A1   L, TABSCH(TXB), -60          ! line 9  -LOAD FOR ABS CHANNEL
                                       !           CONVERSION   (card: $L)
-        -(BU,18), TCHSXW, -60        ! line 10                 (card: $-)
+        $-(BU,18), TCHSXW, -60       ! line 10                 as printed ($OP, C28-6129 printed p.10)
         SF(BU,18), TIPL+1, -60       ! line 11 -TO SAVE THE CHAN
                                       !           FOR IPL PRINT (card: $SF)
         CV(BU,18), 0.0, -32          ! line 12                 (card: $CV)

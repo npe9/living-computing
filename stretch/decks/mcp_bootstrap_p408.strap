@@ -1,0 +1,151 @@
+! mcp_bootstrap_p408.strap -- MCP printed page 408: the $EOJ copy of the
+! ASSIGN program's unit-count sort tail (T D9C .. T D9) and the MULTI
+! UNIT SCAN (T A9D .. T C9).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.158, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZE000512  DIST. OF 3/01
+!  3/01  PAGE NUMBER 408"; the heading row's LOCATION field is 021571,
+! line 1's word.
+!
+! >>> STILL $EOJ, BUT CARD SERIES ZE. <<<  PUNID 22$EOJ as on pp.381-393;
+! the card series here is ZE (ZE000512 .. ZE000556, one per line, none
+! skipped or doubled), not p.393's ZA.  No SLC on the page; the origin
+! below is line 1's printed LOCATION.  No TAIL.
+!
+! THE PAGE.  45 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 2, 22 and 44.  Contiguous 021571.40 .. 021621.40
+! (line 45, a half word).  Banner/blank remark lines 7, 10-12, 25-28,
+! 40-42.  The code is the same source as the volume-1 bootstrap's
+! printed p.73 lines 13-56 (decks/mcp_bootstrap_p73.strap), reassembled
+! in $EOJ; p.73 was used as a finding aid only, never for an address.
+!
+! GLYPHS.  Line 6 prints "CBH,TIXh,TD9A" with an F/H-ambiguous glyph:
+! its code 021566.04 (bits 19-22 = 0010 = $2 = TIXH) settles TIXH (as
+! p.73 line 18).  Line 8 prints "TCTWCX": D worn to C (TCTWDX, p.287
+! line 29; the code 000000.24 1F is LX of $10 from 0.0($15)).  Line 23
+! prints "TC1C": the numbered label TC10 (open round = 0).  Line 22
+! prints "CT0C11": a connective code is binary digits, 0.  Bytes printed
+! "DC"/"DO" (lines 2, 5, 33, 38) are D0: the octal fields of the same
+! rows print 0 open.  Line 23's "C0" and line 30's "C2" are real C's.
+!
+! STAND-INS.  Resident (landed pp.287, 289, 291) symbols copy their
+! defining forms.  $EOJ labels on unlanded pages carry plain SYN (their
+! defining lengths are not known from this page):
+!   TD9A, TD9B  (back, on p.407 presumably), TB1F, TB9 -- half word only.
+!   TN, TC10    (forward) -- half word only.
+
+TX1     SYN,$10                      ! landed p.287 line 30
+TX3     SYN,$2                       ! landed p.287 line 33
+TX1BR   SYN,$1                       ! landed p.287 line 32
+TCTWDX  SYN,TX1                      ! landed p.287 line 29
+TIXF    SYN,TX1                      ! landed p.287 line 37
+TIXG    SYN,$8                       ! landed p.287 line 38
+TIXH    SYN,TX3                      ! landed p.287 line 39
+TLUCT   SYN(BU,18), (8)232227.0      ! landed p.287 line 16 DD(BU,18)
+TLCHCT  SYN(BU,7), (8)232227.22      ! landed p.287 line 17 DD(BU,7)
+TUNTBA  SYN(BU,18),0.0               ! landed p.289
+TCHAVL  SYN(BU,1),0.25               ! landed p.289 line 8
+TUNAVL  SYN(BU,1),0.28               ! landed p.289 line 10
+TUNASG  SYN(BU,1),0.29               ! landed p.289 line 11
+TCHOWN  SYN(BU,1),0.32               ! landed p.289 line 12
+TEQUIP  SYN(BU,4),0.52               ! landed p.289 line 15
+TUNITK  SYN(BU,4),0.59               ! landed p.289 line 16
+TUNRES  SYN(BU,1),0.62               ! landed p.289 line 17
+TCHADD  SYN(BU,18),0.0               ! landed p.291 line 6
+TCHCNT  SYN(BU,4),0.20               ! landed p.291 line 7
+TD9A    SYN, (8)021566.0             ! $EOJ, not landed; CBH line 6 021566.04, half word only
+TD9B    SYN, (8)021570.0             ! $EOJ, not landed; CBH line 4 021570.24, half word only
+TB1F    SYN, (8)021167.0             ! $EOJ, not landed; B line 9 021167.10, half word only
+TB9     SYN, (8)021547.0             ! $EOJ, not landed; B line 39 021547.10, half word only
+TN      SYN, (8)021725.0             ! $EOJ, not landed; BZB line 20 021725.34, half word only
+TC10    SYN, (8)021624.40            ! $EOJ, not landed; BZRZ line 23 021624.74, half word only
+
+        SLC, (8)021571.40
+        LV,TIXG,0.0(TIXF)                                    ! line  1  -USE INDEX FOR SWAPPING
+        ST(BU,32),0.0(TIXF),32                               ! line  2  -STORE THE GREATER
+        SV,TIXG,$R                                           ! line  3  -RELOAD ACC WITH THE LESSER
+TD9C    CBH,TIXF,TD9B                                        ! line  4
+        ST(BU,32),0.0(TIXH),32                               ! line  5  -REPLACE THE INITIAL WORD WITH FINAL
+        CBH,TIXH,TD9A                                        ! line  6  printed "TIXh" (F/H), code says H
+! line  7  -
+TD9     LX,TCTWDX,0.0($15)                                   ! line  8  -RELOAD FOR TEST  (printed "TCTWCX")
+        B,TB1F                                               ! line  9
+! line 10  -
+! line 11  -                  MULTI UNIT SCAN
+! line 12  -
+TA9D    L,TUNITK(TIXF),46                                    ! line 13  -LOAD FOR UNIT TABLE SCAN
+        LC,TIXG,$R                                           ! line 14  -UNIT COUNT TO CF
+        BXCZ,TB9                                             ! line 15  -IF NO UNITS CONNECTED TO CHAN
+        LV,TIXG,TUNTBA(TIXF)                                 ! line 16  -UNIT TABLE ADDRESS TO VF
+TA9E    BB,TCHAVL(TIXF),TA9F                                 ! line 17  -IF CHAN IS NOT AVAILABLE
+        BB,TCHOWN(TIXG),TA9FA                                ! line 18  -IF MCP LEVEL IT IS NOT AVAIL TO PP
+        BZB,TUNAVL(TIXG),TC9                                 ! line 19  -IF THE UNIT IS AVAILABLE
+TA9F    BZB,TUNASG(TIXG),TN                                  ! line 20  -IF THE UNIT IS ASSIGNED
+TA9FA   LVI,TX1BR,TA9G                                       ! line 21  -LOAD FOR SUB ROUTINE BRANCH
+        CT0011(BU,2),TUNRES(TIXG)                            ! line 22
+        BZRZ,TC10                                            ! line 23  -IF THE UNIT IS RESERVED BY PP
+TA9G    CB+,TIXG,TA9E                                        ! line 24
+! line 25  -
+! line 26  -                  ADVANCE THE UNIT COUNT TABLE FOR ANOTHER CHANNEL
+! line 27  -
+! line 28  -
+        LF,TCHCNT(TIXH)                                      ! line 29  -TEST FOR NO ENTRY
+        BRZ,TB9                                              ! line 30  -IF NO ENTRY
+        M+1,TLCHCT                                           ! line 31  -BUMP THE CHAN. COUNTER
+        SV,TIXF,$R                                           ! line 32  -SAVE THE CHANNEL ADDRESS
+        ST,TCHADD(TIXH),46                                   ! line 33
+        V+I,TIXH,0.32                                        ! line 34  -ADD A HALF WORD TO VF
+        C+I,TIXH,1.0                                         ! line 35
+        KF,TLUCT                                             ! line 36  -KEEP ONLY THE LARGEST COUNT
+        BZAH,TB9                                             ! line 37  -IF TLUCT IS LARGER
+        ST,TLUCT                                             ! line 38  -SAVE THE LARGER
+        B,TB9                                                ! line 39
+! line 40  -
+! line 41  -                  ADD TO THE UNIT COUNT IN THE MULTI UNIT TABLE
+! line 42  -
+TC9     BZB,TEQUIP(TIXF),TA9G                                ! line 43  -NOT A TAPE UNIT
+        M+1,TCHCNT(TIXH)                                     ! line 44  -ADD TO THE UNIT COUNT
+        B,TA9G                                               ! line 45
+
+!SYM TD9C   021573.40
+!SYM TD9    021575.40
+!SYM TA9D   021576.40
+!SYM TA9E   021601.00
+!SYM TA9F   021604.00
+!SYM TA9FA  021605.00
+!SYM TA9G   021607.00
+!SYM TC9    021617.40
+!CHECK 021571.40 | 000000.20 3A | line 1 LV,TIXG,0.0(TIXF)
+!CHECK 021572.00 | 000000.00 8A 040020.20 D0 | line 2 ST(BU,32),0.0(TIXF),32 (a "*" after the location; byte prints "DO", the octal fields print 0 open)
+!CHECK 021573.00 | 000011.21 30 | line 3 SV,TIXG,$R
+!CHECK 021573.40 | 021570.24 C8 | line 4 TD9C CBH,TIXF,TD9B
+!CHECK 021574.00 | 000000.00 82 040020.20 D0 | line 5 ST(BU,32),0.0(TIXH),32 (byte prints "DC")
+!CHECK 021575.00 | 021566.04 C8 | line 6 CBH,TIXH,TD9A
+!CHECK 021575.40 | 000000.24 1F | line 8 TD9 LX,TCTWDX,0.0($15) (printed TCTWCX)
+!CHECK 021576.00 | 021167.10 00 | line 9 B,TB1F
+!CHECK 021576.40 | 000000.73 8A 004027.20 50 | line 13 TA9D L,TUNITK(TIXF),46
+!CHECK 021577.40 | 000011.20 50 | line 14 LC,TIXG,$R
+!CHECK 021600.00 | 021547.30 42 | line 15 BXCZ,TB9
+!CHECK 021600.40 | 000000.20 3A | line 16 LV,TIXG,TUNTBA(TIXF)
+!CHECK 021601.00 | 000000.31 8A 021604.34 02 | line 17 TA9E BB,TCHAVL(TIXF),TA9F
+!CHECK 021602.00 | 000000.40 88 021605.34 02 | line 18 BB,TCHOWN(TIXG),TA9FA
+!CHECK 021603.00 | 000000.34 88 021617.74 00 | line 19 BZB,TUNAVL(TIXG),TC9
+!CHECK 021604.00 | 000000.35 88 021725.34 00 | line 20 TA9F BZB,TUNASG(TIXG),TN
+!CHECK 021605.00 | 021607.03 01 | line 21 TA9FA LVI,TX1BR,TA9G
+!CHECK 021605.40 | 000000.76 88 002000.07 70 | line 22 CT0011(BU,2),TUNRES(TIXG) (a "*" after the location)
+!CHECK 021606.40 | 021624.74 C0 | line 23 BZRZ,TC10 (printed TC1C)
+!CHECK 021607.00 | 021601.21 48 | line 24 TA9G CB+,TIXG,TA9E
+!CHECK 021607.40 | 000000.24 82 004000.06 70 | line 29 LF,TCHCNT(TIXH)
+!CHECK 021610.40 | 021547.34 C2 | line 30 BRZ,TB9
+!CHECK 021611.00 | 232227.22 80 007000.22 B0 | line 31 M+1,TLCHCT
+!CHECK 021612.00 | 000011.25 30 | line 32 SV,TIXF,$R
+!CHECK 021612.40 | 000000.00 82 022027.20 D0 | line 33 ST,TCHADD(TIXH),46 (byte prints "DO")
+!CHECK 021613.40 | 000000.45 05 | line 34 V+I,TIXH,0.32
+!CHECK 021614.00 | 000001.05 00 | line 35 C+I,TIXH,1.0
+!CHECK 021614.40 | 232227.00 80 022000.23 10 | line 36 KF,TLUCT
+!CHECK 021615.40 | 021547.37 40 | line 37 BZAH,TB9
+!CHECK 021616.00 | 232227.00 80 022000.20 D0 | line 38 ST,TLUCT (byte prints "DO")
+!CHECK 021617.00 | 021547.10 00 | line 39 B,TB9
+!CHECK 021617.40 | 000000.64 8A 021607.34 00 | line 43 TC9 BZB,TEQUIP(TIXF),TA9G
+!CHECK 021620.40 | 000000.24 82 004000.22 B0 | line 44 M+1,TCHCNT(TIXH) (a "*" after the location)
+!CHECK 021621.40 | 021607.10 00 | line 45 B,TA9G

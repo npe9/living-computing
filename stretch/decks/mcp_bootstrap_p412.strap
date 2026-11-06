@@ -1,0 +1,152 @@
+! mcp_bootstrap_p412.strap -- MCP printed page 412: the $EOJ program's
+! SCAN THE PP REF TABLE FOR NEW ASSIGNMENTS (T SCRIB .. the BBZ to T P3).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.162, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZE000703  DIST. OF 3/01
+!  3/01  PAGE NUMBER 412"; the heading row's LOCATION field is BLANK
+! (lines 1-5 are remarks).
+!
+! STILL $EOJ.  PUNID 22$EOJ, card series ZE, low core 0217xx-0220xx, no
+! SLC on the page -- the origin below is line 6's printed LOCATION.  No
+! TAIL.  This is $EOJ's own reassembly of the volume-1 bootstrap's
+! printed p.77 (decks/mcp_bootstrap_p77.strap, at 004461): the same
+! statements line for line (lines 6-41), different addresses, and no END
+! card here (line 42 is a blank remark).  Volume 1 used only for
+! spellings.
+!
+! THE PAGE.  42 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 14 and 31.  Contiguous 021763.00 .. 022012.00 (line
+! 41, a full word; next location 022013.00 = T P5A, the BZB1 target).
+!   lines 1-5    remark banner; lines 10, 27, 32, 39, 42 blank remarks.
+! p.409 ends at 021661.40 and pp.410-411 are not seen: contiguity with
+! neither neighbour is established.
+!
+! CARD SERIALS.  ZE000703 .. ZE000744, one per line, consecutive.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 19 h1 byte prints "C0" (open rounds) = 00: BD's J field is
+!     0000 and nothing else can stand there (p.409 line 36 BD,$ prints
+!     ".04 00"; volume-1 p.77 line 19 prints "002366.04 00").  The same
+!     row prints its octal 0s open.
+!   * line 19 "SA8IÇS" (Q with a short tail) = SA8IQS, the resident
+!     label (p.147 / p.260 TI at 230566.0); BD address 230566.04.
+!   * line 35 "C.O(TXC)" = 0.0(TXC): the address prints 000000.10 34.
+!   * line 29 "TIOREQ": O open; the resident spelling (p.288 line 26).
+!
+! EXTERNALS.  Resident field symbols copied from their DEFINING cards
+! (p.288/p.289); TPPRUN XW 232232 (p.288 line 7), TIOREQ DRZ(BU,64)
+! 232307 (p.288 line 26).  $EOJ's own T XA/T XB/T XC, T P1..T P5A, the
+! work words T P5IN/T P5OUT/T PSAV/T PID are on pages not yet landed
+! (volume 1 defines them on p.76-p.79); their values come from THIS
+! page's binary.
+
+TXA     SYN,$2                       ! not landed (vol-1 p.76 form); byte 82 lines 7-9, 12, 15
+TXB     SYN,$3                       ! not landed (vol-1 p.76 form); byte 83 lines 28-38, 41
+TXC     SYN,$4                       ! not landed (vol-1 p.76 form); byte 84 line 40
+TCRREF  SYN(BU,18),0.0               ! landed p.288 line 12
+TUNCT   SYN(BU,08),0.28              ! landed p.288 line 13
+TJBPRO  SYN(BU,1),0.36               ! landed p.288 line 14
+TRJECT  SYN(BU,1),0.37               ! landed p.288 line 15
+TLPPEN  SYN(BU,1),0.39               ! landed p.288 line 17
+TPNAME  SYN(BU,48,6),1.0             ! landed p.288 line 20
+TASGNI  SYN(BU,1),0.00               ! landed p.288 line 28
+TPRINT  SYN(BU,1),0.02               ! landed p.288 line 30
+TTYPE   SYN(BU,4),0.03               ! landed p.288 line 31
+TABSUN  SYN(BU,3),0.07               ! landed p.288 line 32
+TLAST   SYN(BU,1), 0.18              ! landed p.288 line 34
+TABSCH  SYN(BU,18),0.46              ! landed p.288 line 37
+TUNRES  SYN(BU,1),0.62               ! landed p.289 line 17
+TPPRUN  SYN(BU), (8)232232.0         ! landed p.288 line 7 XW; LX line 6 232232.04
+TIOREQ  SYN(BU,64), (8)232307.0      ! landed p.288 line 26 DRZ(BU,64); LVI line 29 232307.07
+SA8IQS  SYN(BU,64,8), (8)230566.0    ! landed p.147 TI label; BD line 19 230566.04
+TPID    SYN, (8)021752.0             ! $EOJ, not landed; SF line 26 021752.00, BIT-EXACT
+TP5IN   SYN, (8)021760.0             ! $EOJ, not landed; SF line 16 / VF line 20 021760.00, BIT-EXACT
+TP5OUT  SYN, (8)021761.0             ! $EOJ, not landed; VF line 22 / LF line 24 021761.00, BIT-EXACT
+TPSAV   SYN(BU), (8)021762.0         ! $EOJ, not landed; SX line 17 / LX line 25 021762.3x, BIT-EXACT
+TP5A    SYN, (8)022013.0             ! $EOJ, not landed; BZB1 line 38 022013.34, half word only
+TP3     SYN, (8)022076.0             ! $EOJ, not landed; BZB lines 30-31, 40 022076.34, half word only
+TP2     SYN, (8)022076.40            ! $EOJ, not landed; BB lines 8-9 022076.74, BXCZ line 14 .70
+TP1     SYN, (8)022100.40            ! $EOJ, not landed; BB line 7 022100.74
+
+        SLC, (8)021763.00
+! line  1  -
+! line  2  -  -----------------------------------------------
+! line  3  -      SCAN THE PP REF TABLE FOR NEW ASSIGNMENTS
+! line  4  -  -----------------------------------------------
+! line  5  -
+TSCRIB  LX,TXA,TPPRUN                                        ! line  6
+TP6     BB,TLPPEN(TXA),TP1                                   ! line  7
+        BB,TJBPRO(TXA),TP2                                   ! line  8
+        BB,TRJECT(TXA),TP2                                   ! line  9
+! line 10  -
+        LV,TXB,TCRREF(TXA)                                   ! line 11  -GET CROSS REF ADDRESS
+        L,TUNCT(TXA),46                                      ! line 12
+        LC,TXB,$R                                            ! line 13
+        BXCZ,TP2                                             ! line 14
+        LF,TPNAME(TXA)                                       ! line 15  -GET PP NAME
+        SF(BU,64,8),TP5IN                                    ! line 16  -SAVE FOR CONVERSION
+        SX,$15,TPSAV                                         ! line 17
+        LVI,$15,TP6A                                         ! line 18  -SET UP FOR CONV ROUTINE
+        BD,SA8IQS                                            ! line 19
+TP6A    VF,TP5IN                                             ! line 20  -FWA IN
+        CF,8                                                 ! line 21  - N
+        VF,TP5OUT                                            ! line 22  -FWA OUT
+TIPLB1  BE,$+.32                                             ! line 23  -MODIFIED BY IPL
+        LF(BU,64,8),TP5OUT                                   ! line 24  -GET THE CONVERTED WORD
+        LX,$15,TPSAV                                         ! line 25  -RESTORE INDEX
+        SF,TPID                                              ! line 26
+! line 27  -
+TP5     BZB,TLAST(TXB),TP5Z                                  ! line 28
+        LVI,TXB,TIOREQ                                       ! line 29
+TP5Z    BZB,TASGNI(TXB),TP3                                  ! line 30
+        BZB,TTYPE(TXB),TP3                                   ! line 31
+! line 32  -
+        L,TABSCH(TXB),46                                     ! line 33  -GET THE CHANNEL STATUS WORD
+        LV,TXC,$R                                            ! line 34
+        LV,TXC,0.0(TXC)                                      ! line 35  -GET ADDRESS OF UNIT TABLE
+        L,TABSUN(TXB),46                                     ! line 36  -GET THE UNIT NUMBER
+        V+,TXC,$R                                            ! line 37  -ADD TO VF TO GET UNIT STATUS WORD
+        BZB1,TPRINT(TXB),TP5A                                ! line 38
+! line 39  -
+        BZB,TUNRES(TXC),TP3                                  ! line 40  -IF OVERLAP RESERVED  -- ONLY --
+        BBZ,TPRINT(TXB),TP3                                  ! line 41  -RESET THE PRINT BIT AND GO
+! line 42  -
+
+!SYM TSCRIB 021763.00
+!SYM TP6    021763.40
+!SYM TP6A   021774.40
+!SYM TIPLB1 021776.00
+!SYM TP5    022001.00
+!SYM TP5Z   022002.40
+!CHECK 021763.00 | 232232.04 10 | line 6 T SCRIB LX,TXA,TPPRUN
+!CHECK 021763.40 | 000000.47 82 022100.74 02 | line 7 T P6 BB,TLPPEN(TXA),TP1
+!CHECK 021764.40 | 000000.44 82 022076.74 02 | line 8 BB,TJBPRO(TXA),TP2
+!CHECK 021765.40 | 000000.45 82 022076.74 02 | line 9 BB,TRJECT(TXA),TP2
+!CHECK 021766.40 | 000000.06 32 | line 11 LV,TXB,TCRREF(TXA)
+!CHECK 021767.00 | 000000.34 82 010027.20 50 | line 12 L,TUNCT(TXA),46
+!CHECK 021770.00 | 000011.06 50 | line 13 LC,TXB,$R
+!CHECK 021770.40 | 022076.70 42 | line 14 BXCZ,TP2 (a "*" prints after the location)
+!CHECK 021771.00 | 000001.00 82 060600.06 70 | line 15 LF,TPNAME(TXA)
+!CHECK 021772.00 | 021760.00 80 000000.12 F0 | line 16 SF(BU,64,8),TP5IN
+!CHECK 021773.00 | 021762.37 10 | line 17 SX,$15,TPSAV
+!CHECK 021773.40 | 021774.77 01 | line 18 LVI,$15,TP6A
+!CHECK 021774.00 | 230566.04 00 | line 19 BD,SA8IQS (byte prints "C0": open 0, BD's J field is 0000)
+!CHECK 021774.40 | 021760.00+ | line 20 T P6A VF,TP5IN
+!CHECK 021775.00 | 000010 | line 21 CF,8
+!CHECK 021775.40 | 021761.00+ | line 22 VF,TP5OUT
+!CHECK 021776.00 | 021776.40 00 | line 23 T IPLB1 BE,$+.32
+!CHECK 021776.40 | 021761.00 80 000000.06 70 | line 24 LF(BU,64,8),TP5OUT
+!CHECK 021777.40 | 021762.36 10 | line 25 LX,$15,TPSAV
+!CHECK 022000.00 | 021752.00 80 000000.12 F0 | line 26 SF,TPID
+!CHECK 022001.00 | 000000.22 83 022002.74 00 | line 28 T P5 BZB,TLAST(TXB),TP5Z
+!CHECK 022002.00 | 232307.07 01 | line 29 LVI,TXB,TIOREQ
+!CHECK 022002.40 | 000000.00 83 022076.34 00 | line 30 T P5Z BZB,TASGNI(TXB),TP3
+!CHECK 022003.40 | 000000.03 83 022076.34 00 | line 31 BZB,TTYPE(TXB),TP3 (a "*" prints after the location)
+!CHECK 022004.40 | 000000.56 83 022027.20 50 | line 33 L,TABSCH(TXB),46
+!CHECK 022005.40 | 000011.10 30 | line 34 LV,TXC,$R
+!CHECK 022006.00 | 000000.10 34 | line 35 LV,TXC,0.0(TXC) (printed "C.O")
+!CHECK 022006.40 | 000000.07 83 003027.20 50 | line 36 L,TABSUN(TXB),46
+!CHECK 022007.40 | 000011.10 B0 | line 37 V+,TXC,$R
+!CHECK 022010.00 | 000000.02 83 022013.34 0C | line 38 BZB1,TPRINT(TXB),TP5A (0C is BZB1's signature)
+!CHECK 022011.00 | 000000.76 84 022076.34 00 | line 40 BZB,TUNRES(TXC),TP3
+!CHECK 022012.00 | 000000.02 83 022076.34 06 | line 41 BBZ,TPRINT(TXB),TP3

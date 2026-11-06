@@ -1,0 +1,158 @@
+! mcp_bootstrap_p389.strap -- MCP printed page 389: END OF JOB, the
+! LIMIT card (W J4PE .. W J4PI) and the IOD/REEL card loop (W JCV ..
+! W MOVIO) that goes to T MOVE.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.139, read at 400 dpi, names at 900
+! dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID
+! ZA000350  DIST. OF 3/01  3/01  PAGE NUMBER 389"; the heading row's
+! LOCATION field is BLANK -- line 1 is an asterisk banner
+! (docs/transcription_workflow.md step 1).
+!
+! >>> NOT SCOMD.  PUNID 22$EOJ, card series ZA, LOCATIONS 020301.00 ..
+! 020331.00 -- far below the resident body (2xxxxx) and the overlays. <<<
+! Cards ZA000350..ZA000395, one per printed line, 46 lines, no gaps or
+! repeats.  Lines 5, 27 and 45 print a "*" after the location.
+!
+! THE PAGE.  Contiguous from 020301.00 to 020331.00 (an XW, so the next
+! free word is 020332.00).  Line 4 LX,14,WJCW names 020300.00, the word
+! just before this page: p.388 should end there.
+!   lines  1-3   banner "--READ LIM. CARD, SET P.P. LIMITS".
+!   lines  4-23  W J4PE .. W J4PI: read and uncode the LIMIT card.
+!   lines 24-26  banner "--READ IOD AND REEL CARDS. GO TO MOVE WITH EACH".
+!   lines 27-46  W JCV .. W MOVIO, ending B,TMOVE.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!  * Lines 17 and 37 print "XW,C,C,C" / "XW,0,0,C": open rounds, and
+!    the printed word is 000000.00+ 000 000000 000000.  No symbol C
+!    exists; written XW,0,0,0 (the drum prints 0 open).
+!  * Lines 16 and 36 print "B,YUNCCD"/"YUNCCC": YUNCOD, the resident
+!    UNCODE subroutine (p.270 line 27, 231215.00), which is exactly
+!    the printed 231215.10.  Comments "-TO UNCODE (SUBROUTINE)".
+!  * YRDFSO (lines 9, 29) and WMOVIO (lines 27, 44, 46) end in LETTER O:
+!    C22-6728 (both revisions) spells YRDFSO and WMOVIO; line 9's
+!    final glyph prints closed.
+!  * Line 34's hex prints "CO"/"C0": the assembler's BZAE,WTEST gives
+!    C0 -- consistent.  Line 29's last byte prints "C0" open; it is 00
+!    (B's low byte, line 9 the same card prints 00).
+!  * Line 4 prints "LX,14,WJCW" with no $; written as printed.
+!
+! External symbols from THIS PAGE'S BINARY (no page landed defines them;
+! the $EOJ pages 378-393 are being transcribed in parallel):
+!   WJCW 020300.00, WJC4QI 020432.00, YL1 020120.40, YRDFSO 020233.00,
+!   WJC4QL 020430.00, WTEST 020364.00, WBREAK 231444.00, TMOVE 022326.00
+!   -- all half word only.  WBREAK lies inside the resident WJOR2
+!   (DRZ(U),15 at 231443.00); TMOVE is NOT p.88's TMOVE (005014.00).
+
+KSILO   SYN(BU,64), (8)220451.0      ! landed p.171 DR(BU,64),(K QUANT); LX line 6 KSILO+8. 220461.34
+YBCBU   SYN(BU), (8)231462.0         ! p.274 line 19 DR(BU),(15), as p.291 writes it
+WJOR2   SYN(U), (8)231443.0          ! p.274 line 18 DRZ(U),15 at 231443.00; lines 20, 40 231446.00
+YUNCOD  SYN(BU,64,8), (8)231215.0    ! p.270 line 27 TI,3,$11,YUXSAV (full word); B lines 16, 36
+WJCW    SYN(BU), (8)020300.0         ! LX line 4 020300.34, half word only (p.388?)
+WJC4QI  SYN, (8)020432.0             ! BZXCZZ line 5 020432.30, half word only
+YL1     SYN, (8)020120.40            ! BBZ line 7 020120.74 / B line 23 020120.50, half word only
+YRDFSO  SYN, (8)020233.0             ! B lines 9, 29 020233.10, half word only
+WJC4QL  SYN, (8)020430.0             ! B line 21 020430.10, half word only
+WTEST   SYN, (8)020364.0             ! BZAE line 34 020364.36, half word only
+WBREAK  SYN,WJOR2+1.0                ! p.392 line 16 defining form; SX line 43 WBREAK+1.0 231445.25; XW line 46 231445.00+, half word only
+TMOVE   SYN, (8)022326.0             ! B line 45 022326.10, half word only
+
+        SLC, (8)020301.0
+! line  1  - ********************************
+! line  2  --READ LIM. CARD, SET P.P. LIMITS
+! line  3  - ********************************
+WJ4PE   LX,14,WJCW                                           ! line  4  -
+        BZXCZZ,WJC4QI                                        ! line  5  - WAS JOB REJECTED
+        LX,$14,KSILO+8.                                      ! line  6
+        BBZ,YTSP,YL1                                         ! line  7  -IF A SPECIAL BSS CASE
+WJ4PG   SIC,$15                                              ! line  8  -
+        B,YRDFSO                                             ! line  9  -READ ONE CARD
+        ,YBCBU                                               ! line 10  -
+        NOP                                                  ! line 11  -
+        L(BU,12),YBCBU                                       ! line 12
+        KFI(BU,12),(8)1100                                   ! line 13
+        BAE,WJ4PG                                            ! line 14
+WJ4PH   LVI,$14,WUNC3                                        ! line 15  -
+        B,YUNCOD                                             ! line 16  - TO UNCODE SUBROUTINE
+WUNC3   XW,0,0,0                                             ! line 17  - (printed XW,C,C,C)
+        VF,2.0                                               ! line 18  -LIMIT CARD
+        ,YBCBU                                               ! line 19  -
+        ,WJOR2+3.0                                           ! line 20
+        B,WJC4QL                                             ! line 21  -SPOOL MESSAGE, THEN REJECT
+WJ4PI   LX,$14,WUNC3                                         ! line 22
+        B,YL1                                                ! line 23
+! line 24  - ********************************
+! line 25  --READ IOD AND REEL CARDS. GO TO MOVE WITH EACH
+! line 26  - ********************************
+        CM1111(BU,1),WMOVIO+.24                              ! line 27  -SET INITIAL ENTRY BIT FOR TMOVE
+WJCV    SIC,$15                                              ! line 28  -
+        B,YRDFSO                                             ! line 29  -READ ONE CARD
+        VF,YBCBU                                             ! line 30  -
+YTSP    NOP                                                  ! line 31  -SPECIAL BSS IND. IS THE FIRST BIT
+WJCVA   L(BU,12),YBCBU                                       ! line 32  -FIRST COLUMN OF HOLERITH CARD
+        KI(BU,12),(8)4200                                    ! line 33  -IS IT A B CARD
+        BZAE,WTEST                                           ! line 34  - NO
+WJCVB   LVI,$14,WUNC4                                        ! line 35  -
+        B,YUNCOD                                             ! line 36  -TO UNCODE
+WUNC4   XW,0,0,0                                             ! line 37  - (printed XW,0,0,C)
+        VF,4.0                                               ! line 38  -IOD OR REEL CARD
+        ,YBCBU                                               ! line 39  -
+        ,WJOR2+3.0                                           ! line 40
+        B,WJCV                                               ! line 41  -IF AN INVALID CARD GET NEXT
+        LX,$10,WUNC4                                         ! line 42  -
+        SX,$10,WBREAK+1.0                                    ! line 43  -
+WJCVC   LVI,$15,WMOVIO                                       ! line 44  -
+        B,TMOVE                                              ! line 45  -WITH IOD OR REEL CARDS
+WMOVIO  XW,WBREAK+1.0,0,0                                    ! line 46  -
+
+!SYM WJ4PE  020301.00
+!SYM WJ4PG  020303.40
+!SYM WJ4PH  020310.00
+!SYM WUNC3  020311.00
+!SYM WJ4PI  020314.00
+!SYM WJCV   020316.00
+!SYM YTSP   020317.40
+!SYM WJCVA  020320.00
+!SYM WJCVB  020322.40
+!SYM WUNC4  020324.00
+!SYM WJCVC  020330.00
+!SYM WMOVIO 020331.00
+!CHECK 020301.00 | 020300.34 10 | line 4 W J4PE LX,14,WJCW
+!CHECK 020301.40 | 020432.30 44 | line 5 BZXCZZ,WJC4QI (a "*" prints after the location)
+!CHECK 020302.00 | 220461.34 10 | line 6 LX,$14,KSILO+8.
+!CHECK 020302.40 | 020317.40 80 020120.74 06 | line 7 BBZ,YTSP,YL1
+!CHECK 020303.40 | 000037.00 80 | line 8 W J4PG SIC,$15
+!CHECK 020304.00 | 020233.10 00 | line 9 B,YRDFSO
+!CHECK 020304.40 | 231462.00 80 | line 10 ,YBCBU (prints 231462.CC 80)
+!CHECK 020305.00 | 000000.30 00 | line 11 NOP
+!CHECK 020305.40 | 231462.00 80 014000.20 50 | line 12 L(BU,12),YBCBU
+!CHECK 020306.40 | 110000.00 80 414000.23 10 | line 13 KFI(BU,12),(8)1100
+!CHECK 020307.40 | 020303.76 C2 | line 14 BAE,WJ4PG
+!CHECK 020310.00 | 020311.35 01 | line 15 W J4PH LVI,$14,WUNC3
+!CHECK 020310.40 | 231215.10 00 | line 16 B,YUNCOD (printed YUNCCD)
+!CHECK 020311.00 | 000000.00+ 000 000000 000000 | line 17 W UNC3 XW,0,0,0 (printed XW,C,C,C)
+!CHECK 020312.00 | 000002.00+ | line 18 VF,2.0 (prints CCC002.00+)
+!CHECK 020312.40 | 231462.00 80 | line 19 ,YBCBU
+!CHECK 020313.00 | 231446.00 80 | line 20 ,WJOR2+3.0
+!CHECK 020313.40 | 020430.10 00 | line 21 B,WJC4QL
+!CHECK 020314.00 | 020311.34 10 | line 22 W J4PI LX,$14,WUNC3
+!CHECK 020314.40 | 020120.50 00 | line 23 B,YL1
+!CHECK 020315.00 | 020331.30 80 001000.36 F0 | line 27 CM1111(BU,1),WMOVIO+.24 (a "*" prints after the location)
+!CHECK 020316.00 | 000037.00 80 | line 28 W JCV SIC,$15
+!CHECK 020316.40 | 020233.10 00 | line 29 B,YRDFSO (byte prints "C0", an open 0 -- the same card as line 9, which prints 00)
+!CHECK 020317.00 | 231462.00+ | line 30 VF,YBCBU
+!CHECK 020317.40 | 000000.30 00 | line 31 Y TSP NOP
+!CHECK 020320.00 | 231462.00 80 014000.20 50 | line 32 W JCVA L(BU,12),YBCBU
+!CHECK 020321.00 | 420000.00 80 414000.21 10 | line 33 KI(BU,12),(8)4200
+!CHECK 020322.00 | 020364.36 C0 | line 34 BZAE,WTEST
+!CHECK 020322.40 | 020324.35 01 | line 35 W JCVB LVI,$14,WUNC4
+!CHECK 020323.00 | 231215.10 00 | line 36 B,YUNCOD (printed YUNCCC)
+!CHECK 020324.00 | 000000.00+ 000 000000 000000 | line 37 W UNC4 XW,0,0,0 (printed XW,0,0,C)
+!CHECK 020325.00 | 000004.00+ | line 38 VF,4.0
+!CHECK 020325.40 | 231462.00 80 | line 39 ,YBCBU
+!CHECK 020326.00 | 231446.00 80 | line 40 ,WJOR2+3.0
+!CHECK 020326.40 | 020316.10 00 | line 41 B,WJCV
+!CHECK 020327.00 | 020324.24 10 | line 42 LX,$10,WUNC4
+!CHECK 020327.40 | 231445.25 10 | line 43 SX,$10,WBREAK+1.0
+!CHECK 020330.00 | 020331.37 01 | line 44 W JCVC LVI,$15,WMOVIO
+!CHECK 020330.40 | 022326.10 00 | line 45 B,TMOVE (a "*" prints after the location)
+!CHECK 020331.00 | 231445.00+ 000 000000 000000 | line 46 W MOVIO XW,WBREAK+1.0,0,0

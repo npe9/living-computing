@@ -1,0 +1,135 @@
+! mcp_bootstrap_p394.strap -- MCP printed page 394: the JC4 ERROR
+! MESSAGES of the END OF JOB program ($EOJ), YJCEM .. YJ1FUL
+! (C22-6728: "YJCEM through YJ1FUL are the JC4 error messages"), and
+! the YC4CM/YC4CM1 constants between them.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.144, read at 400 dpi, doubtful
+! glyphs at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$EOJ
+! CARD ID ZA000600  DIST. OF 3/01  3/01  PAGE NUMBER 394"; the heading
+! row's LOCATION field is BLANK (line 1 is a remark).  The Vision
+! reading of this page is missing (v2_pdf144.geom is "none"), so
+! tools/page_sheet.py 394 gives nothing; every value is read off the
+! image alone.
+!
+! >>> STILL $EOJ. <<<  PUNID 22$EOJ, card series ZA, low core
+! (0205xx-0207xx).  No SLC is printed; the SLC below is scaffolding for
+! line 5's printed location.  p.393 ends with the half word B,YBRLOG at
+! 020522.40, so the counter already stands at 020523.00 and line 4's
+! CNOP emits nothing.  No TAIL.
+!
+! THE PAGE.  50 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 5, 9, 12, 19, 23, 29, 33, 37, 40 and 45.
+! Contiguous 020523.00 .. 020704.00 (line 50, a 16-character message;
+! next 020706.00), then blank paper.
+!   lines  1-3   remarks.
+!   lines  4-42  CNOPs and (IQSX)/(AX)DD(BU) messages (no binary printed).
+!   lines 43-47  DD(BU,32)/DD(BU) hex constants YC4CM, YC4CM1 (binary
+!                printed, checked below).
+!   lines 48-50  (IQS*)DD(BU) messages YC4CM2, YJ1FUL.
+!
+! >>> THE ENTRY-MODE BLANKS. <<<  Every message's length is fixed by the
+! next printed LOCATION where one follows directly (7-11, 15-16, 19,
+! 22-24, 27-32, 35-42, 48-49), and every interior/trailing blank was
+! placed by measuring the ink column by column at 400 dpi (pitch 40.1
+! px; the terminator's column gives the count).  Lines 5 (40 chars),
+! 12 (32), 17 (20), 25 (16), 33 (31) and 50 (16) are measured only;
+! 5, 17 and 33 then land exactly on the next printed location
+! (020530.00, 020566.00, 020632.00).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * Line 44 prints "(16)89CF0000" and line 47 "(16)8515CCC0"-like: the
+!     open rounds are 0.  The printed binaries 21103600000 and
+!     20505200000 are 0x890F0000 and 0x85150000; 0x89CF0000 would print
+!     21163600000.  Line 43's "(16)0000001F" prints the same open round
+!     for its zeros.
+!   * YMOJM4 / YMOJM3 / YMOVJM / YMOJM2 (lines 10, 19, 22, 28) print
+!     "YMCJMn"/"YMCVJM" (open); line 32 prints YMOJM1 with a CLOSED O.
+!     Spelled O as p.390/p.393 use them, and the binaries there tie them.
+!   * YCOMJM (line 42) prints "YCCMJM": p.267's stand-in spells YCOMJM.
+!   * Line 35's label prints "Y EMJC" (a blank in the name, ignored):
+!     YEMJC, as p.266/268's stand-ins.  Line 45's "Y C4CM1" likewise.
+!   * YJ1FUL (line 49): digit 1, C22-6728 "YJCEM through YJ1FUL".
+!   * Line 40's label prints one column right (" YICEM").
+!   * Line 20 prints "HONORDX" (HONORED misspelt on the card): as printed.
+!
+! CARD SERIALS.  ZA000600 .. ZA000649, one per line.  p.393 ends at
+! ZA000598: ZA000599 is printed on neither page.
+!
+! No externals: the page defines every symbol it uses.
+
+        SLC, (8)020523.0
+! line  1  - **********************************************************************
+! line  2  -       JC4 ERROR MESSAGES
+! line  3  - **********************************************************************
+        CNOP                                                 ! line  4
+YJCEM   (IQSX)DD(BU,64,8), PRESENT JOB REJECTED - NO JOB CARD.    X! line  5
+        CNOP                                                 ! line  6
+YDECJM  (AX)DD(BU),-JOB REJECTED ..X                         ! line  7
+YDEJM1  (AX)DD(BU), TAPE UNIT-CHANNEL CONFLICT.    X         ! line  8
+        (AX)DD(BU), REELCARD FOLLOWS A NON-TAPE IODX         ! line  9
+YMOJM4  (AX)DD(BU), TYPE IS ILLEGAL ON AN IOD CARD X         ! line 10  printed YMCJM4
+        (AX)DD(BU), TWO INFINITY DISK REQUESTS.    X         ! line 11
+        (AX)DD(BU), FIRST IOD CARD IS ILLEGAL      X         ! line 12
+        CNOP                                                 ! line 13
+        CNOP                                                 ! line 14
+YASRJM  (AX)DD(BU),-JOB REJECTED-...  X                      ! line 15
+        (AX)DD(BU),I-O REQUESTS INCOMPATIBLEX                ! line 16
+        (AX)DD(BU), WITH CONFIGURATION.X                     ! line 17
+        CNOP                                                 ! line 18
+YMOJM3  (AX)DD(BU),-JOB REJECTED- B LIMIT IS TOO HIX         ! line 19  printed YMCJM3
+        (AX)DD(BU),GH FOR I-O REQUESTS TO BE HONORDX         ! line 20
+        CNOP                                                 ! line 21
+YMOVJM  (AX)DD(BU),-               X                         ! line 22  printed YMCVJM
+        (AX)DD(BU),IOD CARD      HAX                         ! line 23
+        (AX)DD(BU),S A TYPE     ERRX                         ! line 24
+        (AX)DD(BU),OR.             X                         ! line 25
+        CNOP                                                 ! line 26
+YISUKM  (AX)DD(BU),DUE TO REPEATED UKS IN SCANNING.X         ! line 27
+YMOJM2  (AX)DD(BU),-JOB REJECTED-..X                         ! line 28  printed YMCJM2
+        (AX)DD(BU),TOO MUCH DISK REX                         ! line 29
+        (AX)DD(BU),QUESTED.        X                         ! line 30
+        (AX)DD(BU),                X                         ! line 31
+YMOJM1  (AX)DD(BU),-JOB REJECTED-... IOD CARD HAS ANX        ! line 32
+        (AX)DD(BU), INVALID REFERENCE NUMBER.     X          ! line 33
+        CNOP                                                 ! line 34
+YEMJC   (AX)DD(BU),-   JOB CARD ERROR              X         ! line 35  printed Y EMJC
+YTCEM   (AX)DD(BU),-    TYPE CARD ERROR            X         ! line 36
+        (AX)DD(BU),-   JOB REJECTED.               X         ! line 37
+YLCEM   (AX)DD(BU),-   LIM CARD ERROR              X         ! line 38
+        (AX)DD(BU),-   JOB REJECTED.               X         ! line 39
+YICEM   (AX)DD(BU),-         IOD CARD        ERROR X         ! line 40  label printed one column right
+        (AX)DD(BU),-   JOB REJECTED.               X         ! line 41
+YCOMJM  (AX)DD(BU),BY OPERATOR IN PHASE ONE.       X         ! line 42  printed YCCMJM
+YC4CM   DD(BU,32),(16)0000001F                               ! line 43  -JOB IN RED
+        DD(BU,32),(16)890F0000                               ! line 44  printed 89CF0000
+YC4CM1  DD(BU),(16)0000000                                   ! line 45  printed Y C4CM1  - , TIME IN RED
+        DD(BU,32),(16)0800931D                               ! line 46
+        DD(BU,32),(16)85150000                               ! line 47  printed "8515CCC0"-like
+YC4CM2  (IQS*)DD(BU),        *                               ! line 48
+YJ1FUL  (IQS*)DD(BU),THE SCAN TABLES ARE FULL. THE PHASE I TAPE MAY B*! line 49
+        (IQS*)DD(BU),E STOPPED.      *                       ! line 50
+
+!SYM YJCEM  020523.00
+!SYM YDECJM 020530.00
+!SYM YDEJM1 020532.00
+!SYM YMOJM4 020542.00
+!SYM YASRJM 020556.00
+!SYM YMOJM3 020566.00
+!SYM YMOVJM 020576.00
+!SYM YISUKM 020606.00
+!SYM YMOJM2 020612.00
+!SYM YMOJM1 020622.00
+!SYM YEMJC  020632.00
+!SYM YTCEM  020636.00
+!SYM YLCEM  020646.00
+!SYM YICEM  020656.00
+!SYM YCOMJM 020666.00
+!SYM YC4CM  020672.00
+!SYM YC4CM1 020673.00
+!SYM YC4CM2 020675.00
+!SYM YJ1FUL 020676.00
+!CHECK 020672.00 | 00000000037 | line 43 YC4CM DD(BU,32),(16)0000001F | 32
+!CHECK 020672.40 | 21103600000 | line 44 DD(BU,32),(16)890F0000 (printed "89CF0000"; the open round is 0, as the binary says) | 32
+!CHECK 020673.00 | 0000000000000000000000 | line 45 YC4CM1 DD(BU),(16)0000000 (a "*" after the location) | 64
+!CHECK 020674.00 | 01000111435 | line 46 DD(BU,32),(16)0800931D | 32
+!CHECK 020674.40 | 20505200000 | line 47 DD(BU,32),(16)85150000 (printed "8515CCC0"-like; the open rounds are 0, as the binary says) | 32

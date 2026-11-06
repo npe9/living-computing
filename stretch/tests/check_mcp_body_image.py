@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""check_mcp_body_image.py -- MCP's BODY, printed pp.99-345, merged
+"""check_mcp_body_image.py -- MCP's BODY, printed pp.99-439, merged
 into one image per overlay and made to account for every word.
 
 >>> THE BODY IS NOT A LONGER BOOTSTRAP.  IT IS A SECOND ASSEMBLY. <<<
@@ -93,6 +93,14 @@ overlay_fill_is_exactly_the_known_words, MEASURED 2026-11-06:
                                                   (0, 582), $DUMP (0, 133),
                                                   SCOMD (0, 589)
 
+  $EOJ, the low-core program (printed pp.381-439), MEASURED 2026-11-06:
+    control                                       PASS, all four images
+    printed p.389 dropped                         FAIL slc_holes (25 words)
+    printed p.381 dropped                         FAIL low_region_origin
+                                                  (0o20031)
+    reserved words no longer excluded from the    FAIL (1, 0): 020252, p.387's
+    SLC holes                                     YI4TA DR(BU),(1)
+
 THE END TARGET IS A PLACEHOLDER.  build() always appends "END, <sym>",
 and MCP's body entry point has not been established, so SDISP is
 passed to make it assemble and nothing here depends on it.  Finding
@@ -110,7 +118,7 @@ import mcp_image                                          # noqa: E402
 import verify_mcp_page                                    # noqa: E402
 from listing_oracle import check_rows                     # noqa: E402
 
-FIRST, LAST = 99, 377
+FIRST, LAST = 99, 439
 
 # >>> THE BODY IS ONE RESIDENT PART AND THREE OVERLAYS. <<<  printed
 # p.319 line 14 reserves "Y MPBUF DRZ(BU),1088 -RESERVE ROOM FOR
@@ -124,7 +132,16 @@ FIRST, LAST = 99, 377
 # words p.320 and p.335 both write.  Each overlay is merged with the
 # resident pages it runs beside, and each image is checked whole.
 RESIDENT = (99, 319)
-OVERLAYS = (("LOADER", 320, 334), ("$DUMP", 335, 360), ("SCOMD", 361, LAST))
+OVERLAYS = (("LOADER", 320, 334), ("$DUMP", 335, 360), ("SCOMD", 361, 380),
+            ("$EOJ", 381, LAST))
+
+# >>> AND A FOURTH PROGRAM IS NOT IN Y MPBUF AT ALL. <<<  printed p.381
+# lines 2-3 are SCOMD's last two cards; line 5 is "PUNID,22$EOJ" and
+# line 7 "SLC,YPPMEM" -- 020000.00 (printed p.269 line 11, "YPPMEM
+# SYN,(8)20000."), the problem-program origin, far below the body.  It
+# is merged with the resident pages like an overlay, since it calls
+# them, and its own words are accounted for as a second region.
+LOW_ORIGIN = {"$EOJ": 0o020000}
 
 
 def _pages(a, b):
@@ -159,6 +176,7 @@ OVERLAY_SKIP_HOLES = {
     "LOADER": set(),
     "$DUMP": set(),
     "SCOMD": set(),
+    "$EOJ": set(),
 }
 
 # >>> INSIDE THE OVERLAID AREA A LOST PAGE IS NOT A HOLE. <<<  Y MPBUF
@@ -211,15 +229,20 @@ FILL_ONLY = {
         | {0o234636}
         # printed p.371 line 45, "Z ST IND DRZ(N),(1)".
         | {0o235155}
-        # SCOMD is landed through printed p.377 (235453.40); everything
-        # after is pages not yet transcribed.  This shrinks as they land.
-        | _span(0o235454, 0o236523)),
+        # past printed p.380's VDUB at 235570.00: printed p.381 lines
+        # 2-3, two (CC*)DD trailer cards from 235570.10, stood in by SLCs
+        # because the CC entry mode is not implemented (as p.361's are),
+        # and then the end of Y MPBUF.  Shrinks when CC lands.
+        | _span(0o235571, 0o236523)),
+    # The $EOJ is not assembled into Y MPBUF: the whole buffer is the
+    # resident DRZ's fill.
+    "$EOJ": _span(YMPBUF[0], YMPBUF[1] - 1),
 }
 
 # A floor on the rows each image checks, so an image that silently
 # lost its pages cannot pass on an empty check.  The first image
 # checks every resident row; an overlay checks its own pages.
-ROWS_FLOOR = {"LOADER": 7000, "$DUMP": 1000, "SCOMD": 600}
+ROWS_FLOOR = {"LOADER": 7000, "$DUMP": 1000, "SCOMD": 600, "$EOJ": 500}
 
 
 def main():
@@ -233,7 +256,7 @@ def main():
         print(f"{'PASS' if ok else 'FAIL'} {name} = {got}"
               f"{'' if ok else f' expected {want}'}")
 
-    check("body_page_count", len(body_pages()), 275)
+    check("body_page_count", len(body_pages()), 335)
     resident = _pages(*RESIDENT)
     for name, a, b in OVERLAYS:
         print(f"--- {name}: resident pp.{RESIDENT[0]}-{RESIDENT[1]} + pp.{a}-{b} ---")
@@ -241,7 +264,8 @@ def main():
         # they are the same cards in both.
         check_image(check, name, resident + _pages(a, b),
                     None if name == OVERLAYS[0][0] else _pages(a, b),
-                    RESIDENT_SKIP_HOLES | OVERLAY_SKIP_HOLES[name], FILL_ONLY[name])
+                    RESIDENT_SKIP_HOLES | OVERLAY_SKIP_HOLES[name], FILL_ONLY[name],
+                    LOW_ORIGIN.get(name))
     if fails:
         print(f"\n{fails} TEST(S) FAILED")
     else:
@@ -249,7 +273,8 @@ def main():
     return 1 if fails else 0
 
 
-def check_image(check_, name, pages, row_pages, expected_skip_holes, fill_only):
+def check_image(check_, name, pages, row_pages, expected_skip_holes, fill_only,
+                low_origin=None):
     def check(label, got, want):
         check_(f"{name}: {label}", got, want)
 
@@ -293,12 +318,20 @@ def check_image(check_, name, pages, row_pages, expected_skip_holes, fill_only):
     # overlay's own pages carry a few hundred.
     check("image_rows_checked", rows_total >= ROWS_FLOOR[name], True)
 
-    words = sorted(prog.words)
+    # The words below the body are a separate program's region (the
+    # $EOJ); each region is accounted for over its own span, so the
+    # gap between them is not "holes".
+    low = sorted(w for w in prog.words if w < 0o215000)
+    words = sorted(w for w in prog.words if w >= 0o215000)
     check("origin_is_the_MCP_body", oct(words[0]), oct(0o215000))
+    check("low_region_origin", oct(low[0]) if low else None,
+          None if low_origin is None else oct(low_origin))
     check("image_is_nonempty", len(prog.words) > 1500, True)
 
     holes = {w for w in range(words[0], words[-1] + 1)
              if w not in prog.words}
+    if low:
+        holes |= {w for w in range(low[0], low[-1] + 1) if w not in prog.words}
     reserved = prog.reserved_words()
     skipped = prog.skipped_words()
     unaccounted = sorted(holes - reserved - skipped)
@@ -324,7 +357,11 @@ def check_image(check_, name, pages, row_pages, expected_skip_holes, fill_only):
     # new one means a page or a row went missing.
     # expected_skip_holes: passed in (RESIDENT_SKIP_HOLES and the
     # overlay's own, above).
-    got_skip_holes = holes & skipped
+    # A reserved word is accounted for by its own DR card, even when an
+    # SLC's span also covers it: the body's first SLC (040 -> 215000)
+    # spans the whole $EOJ region, so printed p.387 line 31's "Y I4TA
+    # DR(BU),(1)" at 020252.00 read as an SLC hole until this.
+    got_skip_holes = (holes - reserved) & skipped
     extra = sorted(got_skip_holes - expected_skip_holes)
     missing = sorted(expected_skip_holes - got_skip_holes)
     if extra:
@@ -351,7 +388,7 @@ def check_image(check_, name, pages, row_pages, expected_skip_holes, fill_only):
     check("holes_include_reservations", len(holes & reserved) > 0, True)
     check("holes_include_slc_skips", len(holes & skipped) > 0, True)
     print(f"     {len(holes)} hole words = {len(holes & reserved)} reserved "
-          f"+ {len(holes & skipped)} SLC-skipped")
+          f"+ {len((holes - reserved) & skipped)} SLC-skipped")
 
 
 

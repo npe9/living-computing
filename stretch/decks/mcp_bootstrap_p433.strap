@@ -1,0 +1,147 @@
+! mcp_bootstrap_p433.strap -- MCP printed page 433: the $EOJ program's
+! reassembly of the tape ASSIGN routine, the end of the reject loop
+! (T IPL5 .. T MREJ4), "PREPARE FOR RETURN" (T N2) and the CONVERSION
+! SUBROUTINE (T MCONV .. L XA SYN,TMLXA), ending with CNOP.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.183, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZF000787  DIST. OF 3/01
+!  3/01  PAGE NUMBER 433"; the heading row's LOCATION field is 022757,
+! line 1's word.
+!
+! >>> CARD SERIES ZF, PUNID 22$EOJ.  No SLC, no PUNID on the page; the
+! origin below is line 1's printed LOCATION.  No TAIL. <<<
+!
+! THE PAGE.  43 lines, every line number prints a "*"; a further "*"
+! after the LOCATION on lines 8 and 33 (recorded, not interpreted).
+! Contiguous 022757.00 .. 023005.40 (line 41, a half word; next location
+! 023006.00).  Lines 11-15 and 22-26 are remarks (boxed banners
+! "PREPARE FOR RETURN", "CONVERSION SUBROUTINE").  Line 42 LXA SYN,TMLXA
+! prints "000034.00+  +0000000  BU,100,10" (recorded).  Line 43 CNOP
+! prints no location (the location counter is already on a word).
+! The same source as volume 1 pp.97-98 (TMREJ5 .. TN2, TMCONV .. LXA).
+!
+! CARD SERIALS.  ZF000787 .. ZF000829, one per line, consecutive.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!  * line 31 "LBLZCR" = LBLZOR (open O): the resident spelling (vol 2
+!    "(AX)DD(BU,8,8),0X" printed "L BLZCR"); binary 231545.63 agrees.
+!  * line 27 label "T MCONV" (an accent-like mark over the O; open O),
+!    vol-1 p.98 TMCONV; lines 32/35 "L CONVA"/"L CONVB" (open O),
+!    vol-1 p.98 LCONVA/LCONVB.
+!  * line 4 "CM0C00" / line 7: CM0000 (open 0s); h2 001000.00 F0.
+!  * lines 1-3: B,DMCP with the parameter half words ",DFREE" and ",3."
+!    (blank operation), as p.208 lines 26-27; DFREE = 10.32 gives
+!    000012.40.
+!  * line 33 "BAH,LCONVB" followed by "-    NO----BRANCH": remark.
+!
+! EXTERNALS.  Copied in their DEFINING forms from p.418 (TMXn index
+! names, TERFLG VF, TMARK SYN,SMARK, TMLXA, TSIOXW DRZ) and the resident
+! pages (p.288/289 field SYNs).  TMREJ1 (defined on an unlanded page,
+! pp.426-432) comes from this page's binary.
+
+TMX1    SYN,$1                       ! p.418 line 22; B line 41 byte 01
+TMXB    SYN,$3                       ! p.418 line 24; byte 83
+TMXF    SYN,$7                       ! p.418 line 28; SV line 16 .57
+TMXG    SYN,$8                       ! p.418 line 29; byte 88
+TMLXA   SYN,$12                      ! p.418 line 34
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 1 000040.10
+DFREE   SYN, 10.32                   ! landed (p.104 line 44 form); line 2 000012.40
+TCHOWN  SYN(BU,1),0.32               ! landed p.289 line 12
+TUNRES  SYN(BU,1),0.62               ! landed p.289 line 17
+TOVRES  SYN(BU,1),0.63               ! landed p.289 line 18
+TLAST   SYN(BU,1),0.18               ! landed p.288 line 34
+TIOREQ  SYN(BU,64), (8)232307.0      ! landed p.288 line 26 DRZ(BU,64); LVI line 9 232306.07
+LBLZOR  SYN(BU,8,8), (8)231545.63    ! resident (AX)DD(BU,8,8); LF line 31 231545.63
+SMARK   SYN(B,25,1), (8)215012.40    ! landed p.103 line 46 VF (p.418's form)
+TMARK   SYN,SMARK                    ! p.418 line 20
+TERFLG  SYN(B,25,1), (8)022133.0     ! p.418 line 14 VF,0 (!SYM 022133.00); LF line 18 022133.17
+TSIOXW  SYN(BU,64), (8)022134.0      ! p.418 line 41 DRZ(BU,64),(15) (!SYM 022134.00); SWAPI line 20
+TMREJ1  SYN, (8)022735.40            ! $EOJ, not landed; CB+ line 10 022735.47, half word only
+
+        SLC, (8)022757.0
+
+TIPL5   B,DMCP                                               ! line  1  -GO TO THE D FREE ROUTINE
+        ,DFREE                                               ! line  2  -AS TO REMOVE THE MOUNTED TAPES
+        ,3.                                                  ! line  3
+        CM0000,TCHOWN(TMXG)                                  ! line  4  -RESET UNIT OWNER TO PP
+TMREJ5  Z,0.0(TMXB)                                          ! line  5  -ZERO THE I/O REQ SLOT
+        BBZ,TUNRES(TMXG),TMREJ3                              ! line  6
+        CM0000,TOVRES(TMXG)                                  ! line  7
+TMREJ3  BZB,TLAST+1.0(TMXB),TMREJ4                           ! line  8  - TO PREVENT A LOOP
+        LVI,TMXB,TIOREQ-1.0                                  ! line  9
+TMREJ4  CB+,TMXB,TMREJ1                                      ! line 10
+! -                                                            line 11
+! - ------------------------------------------------           line 12
+! -          PREPARE FOR RETURN                                line 13
+! - ------------------------------------------------           line 14
+! -                                                            line 15
+TN2     SV,TMXF,TMARK                                        ! line 16  -SAVE THE REEL POOL INDEX
+        SV,TMX1,$R                                           ! line 17  -SAVE DISPOSITION
+        LF(BU,3),TERFLG+.15,61                               ! line 18  -GET THE IOD CARD ERROR IF ANY
+        ST(BU,18),0.28($15),46                               ! line 19
+        SWAPI,12,$1,TSIOXW                                   ! line 20  -RESTORE INDEXES
+        B,1.00($15)                                          ! line 21
+! -                                                            line 22
+! - ------------------------------------------------           line 23
+! -          CONVERSION SUBROUTINE                             line 24
+! - ------------------------------------------------           line 25
+! -                                                            line 26
+TMCONV  NOP                                                  ! line 27
+        LF(BU,48,6),$R+.16                                   ! line 28  -EXPAND TO 8 BIT BYTES.
+        SF(BU,32,4),$R+.32                                   ! line 29  -CONTRACT TO 4-BIT BYTES.
+        LVI,LXA,$R+.32                                       ! line 30
+        LF(BU,8,8),LBLZOR,32                                 ! line 31  (printed "LBLZCR")
+LCONVA  KF(BU,4,4)(V+I),.4(LXA),32                           ! line 32  -IS 4-BIT BYTE 1010.
+        BAH,LCONVB                                           ! line 33  -   NO----BRANCH
+        $CM0000(BU,4,4),-.4(LXA)                             ! line 34  - YES --- REPLACE BY 0000.
+LCONVB  KF(BU,4,4),0.0(LXA),36                               ! line 35  -IS NEXT BYTE 0000.
+        BZAEZ,LCONVA                                         ! line 36  -   NO----GO BACK.
+        V-I,LXA,$R+.32                                       ! line 37  -COMPUTE FIELD LENGTH.
+        LF(BU,6,6),LXA+.18,119                               ! line 38
+        LV,LXA,$L                                            ! line 39
+        LCV(DU,0,4),$R+.32,0.0(LXA)                          ! line 40  -CONVERT.
+        B,0.0(TMX1)                                          ! line 41  -OUT OF ROUTINE.
+LXA     SYN,TMLXA                                            ! line 42
+        CNOP                                                 ! line 43
+
+!SYM   TIPL5    022757.00
+!SYM   TMREJ5   022761.40
+!SYM   TMREJ3   022764.00
+!SYM   TMREJ4   022765.40
+!SYM   TN2      022766.00
+!SYM   TMCONV   022772.40
+!SYM   LCONVA   022776.40
+!SYM   LCONVB   023001.00
+!SYM   LXA      000034.00
+
+!CHECK 022757.00 | 000040.10 00 | line 1 TIPL5 B,DMCP
+!CHECK 022757.40 | 000012.40 80 | line 2 ,DFREE
+!CHECK 022760.00 | 000003.00 80 | line 3 ,3.
+!CHECK 022760.40 | 000000.40 88 001000.00 F0 | line 4 CM0000,TCHOWN(TMXG)
+!CHECK 022761.40 | 000000.22 03 | line 5 TMREJ5 Z,0.0(TMXB)
+!CHECK 022762.00 | 000000.76 88 022764.34 06 | line 6 BBZ,TUNRES(TMXG),TMREJ3
+!CHECK 022763.00 | 000000.77 88 001000.00 F0 | line 7 CM0000,TOVRES(TMXG)
+!CHECK 022764.00 | 000001.22 83 022765.74 00 | line 8 TMREJ3 BZB,TLAST+1.0(TMXB),TMREJ4
+!CHECK 022765.00 | 232306.07 01 | line 9 LVI,TMXB,TIOREQ-1.0
+!CHECK 022765.40 | 022735.47 48 | line 10 TMREJ4 CB+,TMXB,TMREJ1
+!CHECK 022766.00 | 215012.57 30 | line 16 TN2 SV,TMXF,TMARK
+!CHECK 022766.40 | 000011.03 30 | line 17 SV,TMX1,$R
+!CHECK 022767.00 | 022133.17 80 003036.46 70 | line 18 LF(BU,3),TERFLG+.15,61
+!CHECK 022770.00 | 000000.34 8F 022027.20 D0 | line 19 ST(BU,18),0.28($15),46
+!CHECK 022771.00 | 000021.00 80 022134.30 E0 | line 20 SWAPI,12,$1,TSIOXW
+!CHECK 022772.00 | 000001.10 0F | line 21 B,1.00($15)
+!CHECK 022772.40 | 000000.30 00 | line 27 TMCONV NOP
+!CHECK 022773.00 | 000011.20 80 060600.06 70 | line 28 LF(BU,48,6),$R+.16
+!CHECK 022774.00 | 000011.40 80 040400.12 F0 | line 29 SF(BU,32,4),$R+.32
+!CHECK 022775.00 | 000011.71 01 | line 30 LVI,LXA,$R+.32
+!CHECK 022775.40 | 231545.63 80 010020.06 70 | line 31 LF(BU,8,8),LBLZOR,32
+!CHECK 022776.40 | 000000.04 8C 104420.23 10 | line 32 LCONVA KF(BU,4,4)(V+I),.4(LXA),32
+!CHECK 022777.40 | 023001.37 42 | line 33 BAH,LCONVB
+!CHECK 023000.00 | 777777.74 8C 004400.00 F0 | line 34 $CM0000(BU,4,4),-.4(LXA)
+!CHECK 023001.00 | 000000.00 8C 004422.23 10 | line 35 LCONVB KF(BU,4,4),0.0(LXA),36
+!CHECK 023002.00 | 022776.76 C4 | line 36 BZAEZ,LCONVA
+!CHECK 023002.40 | 000011.71 0D | line 37 V-I,LXA,$R+.32
+!CHECK 023003.00 | 000034.22 80 006673.46 70 | line 38 LF(BU,6,6),LXA+.18,119
+!CHECK 023004.00 | 000010.30 30 | line 39 LV,LXA,$L
+!CHECK 023004.40 | 000011.40 80 000400.24 3C | line 40 LCV(DU,0,4),$R+.32,0.0(LXA)
+!CHECK 023005.40 | 000000.10 01 | line 41 B,0.0(TMX1)

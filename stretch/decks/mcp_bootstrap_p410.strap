@@ -1,0 +1,199 @@
+! mcp_bootstrap_p410.strap -- MCP printed page 410: the $EOJ program's
+! tape-assignment REJECT path (TAREJX .. TAREJ6) and the exit table
+! T D .. T P of $EOJ's reassembly of the tape ASSIGN routine.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.160, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZE000611  DIST. OF 3/01
+!  3/01  PAGE NUMBER 410"; the heading row's LOCATION field is 021662,
+! line 1's word.
+!
+! >>> STILL $EOJ, CARD SERIES ZE. <<<  No SLC, no PUNID, no TAIL on the
+! page; the origin below is line 1's printed LOCATION.
+!
+! THE PAGE.  53 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 4, 18 and 35.  Contiguous 021662.00 .. 021725.40
+! (line 53, a half word; next location 021726.00).  p.409 ends at
+! 021661.40, so line 1 continues it.  No remark-only lines.
+!   The same text is the IPL bootstrap's p.75 (decks/mcp_bootstrap_p75.strap,
+!   at 0043xx); there it opens at T AREJ, here a TAREJX LVI/SV pair
+!   precedes it.  Spellings only were taken from there.
+!
+! CARD SERIALS.  ZE000611 .. ZE000663, one per line, consecutive.
+! p.409 ends at ZE000609: ZE000610 is printed on neither page.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 41 "TCTWCX" = TCTWDX, D worn to C (p.287 line 29 TCTWDX
+!     SYN,TX1; byte 1F/.24 = index 10).
+!   * open rounds in binary fields where only 0 can stand: line 10
+!     "215C02.00" (SXCHAN's XW at 215002) and h2 "1C" (= 10, a "-" VFL
+!     op's last byte as p.405 line 4); line 11 h2 "DC" (= D0, ST);
+!     line 22 "C2" (LCI) and line 40 ".C3"; lines 29, 36 "CCC..." /
+!     "C000..." octal fields.  Each settled by what the printed statement
+!     assembles to.
+!   * line 36 "TCVRES", line 4 "NCN", etc: open O (TOVRES p.289 line 18).
+!
+! EXTERNALS.  Resident symbols in their DEFINING forms (pp.287-289,
+! p.99, p.103, p.104, p.108).  $EOJ stand-ins from the staging decks
+! (TCAT p.405, TB8Z defined p.406, UNAGN3) or this page's binary.
+
+TIXE    SYN,$3                       ! landed p.287 line 36
+TIXA    SYN,$4                       ! landed p.287 line 34
+TX1     SYN,$10                      ! landed p.287 line 30
+TX3     SYN,$2                       ! landed p.287 line 33
+TCTWDX  SYN,TX1                      ! landed p.287 line 29
+TASGNI  SYN(BU,1),0.00               ! landed p.288 line 28
+TABSUN  SYN(BU,3),0.07               ! landed p.288 line 32
+TLAST   SYN(BU,1),0.18               ! landed p.288 line 34
+TFREEL  SYN(BU,18),0.28              ! landed p.288 line 36
+TRJECT  SYN(BU,1),0.37               ! landed p.288 line 15
+TABSCH  SYN(BU,18),0.46              ! landed p.288 line 37
+TIOREQ  SYN(BU,64), (8)232307.0      ! landed p.288 line 26 DRZ(BU,64); LVI line 38 232306.11
+TUNTBA  SYN(BU,18),0.0               ! landed p.289 line 6
+TMULTI  SYN(BU,1),0.27               ! landed p.289 line 7
+TUNASG  SYN(BU,1),0.29               ! landed p.289 line 11
+TCHOWN  SYN(BU,1),0.32               ! landed p.289 line 12
+TUNRES  SYN(BU,1),0.62               ! landed p.289 line 17
+TOVRES  SYN(BU,1),0.63               ! landed p.289 line 18
+SXCHAN  SYN(BU), (8)215002.0         ! landed p.103 line 28 "SXCHAN XW,0"; line 10 215002.00
+TCHSXW  SYN,SXCHAN                   ! landed p.289 line 5
+SMOUNT  SYN(BU,1), 0.51              ! landed p.99 line 42
+SIMNT   SYN(BU,1), 0.53              ! landed p.99 line 44
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 28 000040.10
+DFREE   SYN, 10.32                   ! landed (p.104 line 44 form); line 29 000012.40
+UNAGN3  SYN, 3.0                     ! "UNAGN3 SYN,3.0" (p.405/406); line 30 000003.00
+TCAT    SYN, (8)022272.0             ! $EOJ, not landed (as p.405); ST lines 11/15 022272.14/.57, LCI line 22
+TB8Z    SYN, (8)021503.40            ! $EOJ p.406 line 12 (staging); BZXF line 42 021503.63
+TMESSY  SYN, (8)021753.0             ! $EOJ, not landed; LVI line 1, from this page's binary
+YSCRBT  SYN, (8)021757.03            ! $EOJ, not landed; BBZ line 40 021757.03, BIT-EXACT
+TP1BA   SYN, (8)022123.0             ! $EOJ, not landed; BBZ line 40 022123.34, half word only
+TSCRIB  SYN, (8)021763.0             ! $EOJ, not landed; B lines 44-46, 49 021763.10, half word only
+TPICA   SYN, (8)022104.40            ! $EOJ, not landed; B line 50 022104.50, half word only
+
+        SLC, (8)021662.00
+TAREJX  LVI,TX1,TMESSY                                       ! line  1  -SET REASON FOR REJECTION
+        SV,TX1,1.(TIXE)                                      ! line  2
+TAREJ   R,TIXA                                               ! line  3  -RELOAD IX
+        BXCZ,TAREJ6                                          ! line  4  -IF A NON IOD TYPE PP
+        CM1111,TRJECT(TIXE)                                  ! line  5  -SET THE REJECT BIT
+TAREJ1  L,TABSCH(TIXA),46                                    ! line  6  -GET THE CHANNEL ASSIGNED
+        LV,TX1,$R                                            ! line  7
+        BRZ,TAREJN                                           ! line  8
+        BZB,TMULTI(TX1),TAREJ3                               ! line  9  -IF NOT A MULTI CASE
+        -(BU,18),TCHSXW,46                                   ! line 10  -COMPUTE THE CHANNEL NUMBER
+        ST(BU,7),TCAT+.12,46                                 ! line 11
+        L,TUNTBA(TX1),46                                     ! line 12  -GET UNIT TABLE ADDRESS
+        LV,TX1,$R                                            ! line 13
+        L,TABSUN(TIXA),46                                    ! line 14  -GET UNIT NUMBER
+        ST(BU,3),TCAT+.47,46                                 ! line 15  -ALSO STORE THE UNIT NUMBER
+        V+,TX1,$R                                            ! line 16  -ADD TO VALUE
+TAREJN  L,TFREEL(TIXA),46                                    ! line 17  -GET ADDRESS OF REEL
+        BRZ,TAREJ3                                           ! line 18  -IF NO REEL
+        LV,TX3,$R                                            ! line 19
+        Z,0.0(TX3)                                           ! line 20  -ZERO THE REEL SLOT
+        BZB,TASGNI(TIXA),TAREJ3                              ! line 21  -IF REQ WAS NOT ASSIGNED AS UNIT
+        LCI,TX1,TCAT                                         ! line 22  -SET UP THE UNIT AREA TABLE ADDRESS
+        SC,TX1,0.0(TX1)                                      ! line 23  -IN THE UNIT STATUS TABLE
+        CM0000,TUNASG(TX1)                                   ! line 24  -RESET THE ASSIGNED BIT
+        CM1111,TCHOWN(TX1)                                   ! line 25  -SET UNIT OWNER TO MCP
+        CM0000,SIMNT(TX1)                                    ! line 26  -TO RESET THE
+        CM0000,SMOUNT(TX1)                                   ! line 27  -MOUNT BITS
+TIPL4   B,DMCP                                               ! line 28  -GO TO FREE THE TAPE
+        ,DFREE                                               ! line 29
+        ,UNAGN3                                              ! line 30
+        CM0000,TCHOWN(TX1)                                   ! line 31  -RESET UNIT TO PP OWNER
+TAREJ3  Z,0.0(TIXA)                                          ! line 32  -ZERO THE I/O REQ SLOT
+        V+I,TX1,0.0                                          ! line 33  -FOR INDEX CHECK
+        BXVZ,TAREJ4                                          ! line 34  -IF REQ WAS NOT ASSIGNED
+        BBZ,TUNRES(TX1),TAREJ4                               ! line 35  -RESET THE NOT OV RES FIRST
+        CM0000,TOVRES(TX1)                                   ! line 36
+TAREJ4  BZB,TLAST+1.0(TIXA),TAREJ5                           ! line 37
+        LVI,TIXA,TIOREQ-1.0                                  ! line 38
+TAREJ5  CB+,TIXA,TAREJ1                                      ! line 39
+TAREJ6  BBZ,YSCRBT,TP1BA                                     ! line 40
+        LX,TCTWDX,0.0($15)                                   ! line 41  -CHECK THE MODE
+        BZXF,TB8Z                                            ! line 42
+        B,TL                                                 ! line 43  -IF NOT OVERLAP
+TD      B,TSCRIB                                             ! line 44  -NOT OVERLAP FULLY ASSIGNED
+TF      B,TSCRIB                                             ! line 45  -OK -- ALL I/O REQ HAVE BEEN PROCESSED
+TG      B,TSCRIB                                             ! line 46  -OK -- NO MORE UNITS AVAIL FOR ASSIGN
+TH      BD,$                                                 ! line 47  -ASSIGN BIT ON - SING UNIT CHAN
+TI      BD,$                                                 ! line 48  -ASSIGN BIT ON - MULTI UNIT CHAN
+TK      B,TSCRIB                                             ! line 49  -OK -- NOT OVERLAP JOB FULLY ASSIGNED
+TL      B,TPICA                                              ! line 50  -NOT OVERLAP JOB NOT ASSIGNED
+TM      BD,$                                                 ! line 51  -MACH CONF CH. ASSIGN BIT ON - SING
+TN      BD,$                                                 ! line 52  -MACH CONF CH. ASSIGN BIT ON - MULTI
+TP      BD,$                                                 ! line 53  -ERROR MCP IS OUT OF PHASE
+
+!SYM TAREJX 021662.00
+!SYM TAREJ  021663.00
+!SYM TAREJ1 021665.00
+!SYM TAREJN 021676.00
+!SYM TIPL4  021706.40
+!SYM TAREJ3 021711.00
+!SYM TAREJ4 021714.40
+!SYM TAREJ5 021716.00
+!SYM TAREJ6 021716.40
+!SYM TD     021721.00
+!SYM TF     021721.40
+!SYM TG     021722.00
+!SYM TH     021722.40
+!SYM TI     021723.00
+!SYM TK     021723.40
+!SYM TL     021724.00
+!SYM TM     021724.40
+!SYM TN     021725.00
+!SYM TP     021725.40
+
+!CHECK 021662.00 | 021753.25 01 | line 1 TAREJX LVI,TX1,TMESSY
+!CHECK 021662.40 | 000001.25 33 | line 2 SV,TX1,1.(TIXE)
+!CHECK 021663.00 | 000024.02 00 | line 3 T AREJ R,TIXA
+!CHECK 021663.40 | 021716.70 42 | line 4 BXCZ,TAREJ6 (a "*" prints after the location)
+!CHECK 021664.00 | 000000.45 83 001000.36 F0 | line 5 CM1111,TRJECT(TIXE)
+!CHECK 021665.00 | 000000.56 84 022027.20 50 | line 6 T AREJ1 L,TABSCH(TIXA),46
+!CHECK 021666.00 | 000011.24 30 | line 7 LV,TX1,$R
+!CHECK 021666.40 | 021676.34 C2 | line 8 BRZ,TAREJN
+!CHECK 021667.00 | 000000.33 8A 021711.34 00 | line 9 BZB,TMULTI(TX1),TAREJ3
+!CHECK 021670.00 | 215002.00 80 022027.30 10 | line 10 -(BU,18),TCHSXW,46 (printed "215C02.00 ... 1C", open 0s)
+!CHECK 021671.00 | 022272.14 80 007027.20 D0 | line 11 ST(BU,7),TCAT+.12,46 (h2 printed "DC", open 0)
+!CHECK 021672.00 | 000000.00 8A 022027.20 50 | line 12 L,TUNTBA(TX1),46
+!CHECK 021673.00 | 000011.24 30 | line 13 LV,TX1,$R
+!CHECK 021673.40 | 000000.07 84 003027.20 50 | line 14 L,TABSUN(TIXA),46
+!CHECK 021674.40 | 022272.57 80 003027.20 D0 | line 15 ST(BU,3),TCAT+.47,46
+!CHECK 021675.40 | 000011.24 B0 | line 16 V+,TX1,$R
+!CHECK 021676.00 | 000000.34 84 022027.20 50 | line 17 T AREJN L,TFREEL(TIXA),46
+!CHECK 021677.00 | 021711.34 C2 | line 18 BRZ,TAREJ3 (a "*" prints after the location)
+!CHECK 021677.40 | 000011.04 30 | line 19 LV,TX3,$R
+!CHECK 021700.00 | 000000.22 02 | line 20 Z,0.0(TX3)
+!CHECK 021700.40 | 000000.00 84 021711.34 00 | line 21 BZB,TASGNI(TIXA),TAREJ3
+!CHECK 021701.40 | 022272.25 02 | line 22 LCI,TX1,TCAT (hex printed "C2", open 0)
+!CHECK 021702.00 | 000000.25 5A | line 23 SC,TX1,0.0(TX1)
+!CHECK 021702.40 | 000000.35 8A 001000.00 F0 | line 24 CM0000,TUNASG(TX1)
+!CHECK 021703.40 | 000000.40 8A 001000.36 F0 | line 25 CM1111,TCHOWN(TX1)
+!CHECK 021704.40 | 000000.65 8A 001000.00 F0 | line 26 CM0000,SIMNT(TX1)
+!CHECK 021705.40 | 000000.63 8A 001000.00 F0 | line 27 CM0000,SMOUNT(TX1)
+!CHECK 021706.40 | 000040.10 00 | line 28 T IPL4 B,DMCP
+!CHECK 021707.00 | 000012.40 80 | line 29 ,DFREE
+!CHECK 021707.40 | 000003.00 80 | line 30 ,UNAGN3
+!CHECK 021710.00 | 000000.40 8A 001000.00 F0 | line 31 CM0000,TCHOWN(TX1)
+!CHECK 021711.00 | 000000.22 04 | line 32 T AREJ3 Z,0.0(TIXA)
+!CHECK 021711.40 | 000000.25 05 | line 33 V+I,TX1,0.0
+!CHECK 021712.00 | 021714.71 42 | line 34 BXVZ,TAREJ4
+!CHECK 021712.40 | 000000.76 8A 021714.74 06 | line 35 BBZ,TUNRES(TX1),TAREJ4 (a "*" prints after the location)
+!CHECK 021713.40 | 000000.77 8A 001000.00 F0 | line 36 CM0000,TOVRES(TX1) (printed "TCVRES")
+!CHECK 021714.40 | 000001.22 84 021716.34 00 | line 37 T AREJ4 BZB,TLAST+1.0(TIXA),TAREJ5
+!CHECK 021715.40 | 232306.11 01 | line 38 LVI,TIXA,TIOREQ-1.0
+!CHECK 021716.00 | 021665.11 48 | line 39 T AREJ5 CB+,TIXA,TAREJ1
+!CHECK 021716.40 | 021757.03 80 022123.34 06 | line 40 TAREJ6 BBZ,YSCRBT,TP1BA (printed ".C3")
+!CHECK 021717.40 | 000000.24 1F | line 41 LX,TCTWDX,0.0($15) (printed "TCTWCX", worn D)
+!CHECK 021720.00 | 021503.63 40 | line 42 BZXF,TB8Z
+!CHECK 021720.40 | 021724.10 00 | line 43 B,TL
+!CHECK 021721.00 | 021763.10 00 | line 44 T D B,TSCRIB
+!CHECK 021721.40 | 021763.10 00 | line 45 T F B,TSCRIB
+!CHECK 021722.00 | 021763.10 00 | line 46 T G B,TSCRIB
+!CHECK 021722.40 | 021722.44 00 | line 47 T H BD,$
+!CHECK 021723.00 | 021723.04 00 | line 48 T I BD,$
+!CHECK 021723.40 | 021763.10 00 | line 49 T K B,TSCRIB
+!CHECK 021724.00 | 022104.50 00 | line 50 T L B,TPICA
+!CHECK 021724.40 | 021724.44 00 | line 51 T M BD,$
+!CHECK 021725.00 | 021725.04 00 | line 52 T N BD,$
+!CHECK 021725.40 | 021725.44 00 | line 53 T P BD,$

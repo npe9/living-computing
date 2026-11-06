@@ -63,6 +63,11 @@ for m in ("CV", "DCV"):
 # and by the same reasoning it costs what M+ costs.
 for m in ("ST", "SRD", "M+MG", "M+1", "M-1", "M-", "M+"):
     VFL[m] = 3                     # op / opnd / store
+# STN is ST with the N (negative) suffix, C22-6531 Appendix A footnote
+# 4, written in use by the Reference Manual printed p.64 Figure 14;
+# MCP printed p.378 line 44 "STN(B,27,1),Z TCC ST".  A sign modifier
+# changes no level, so it costs what ST costs.
+VFL["STN"] = 3
 VFL["*+"] = 3                      # op / opnd / C($FT)
 for m in ("LFT", "LTRS", "LTRCV"):
     VFL[m] = 3
@@ -274,7 +279,9 @@ def opcode_of(line):
     # printed p.10), as strap_asm reads it: MCP printed pp.53, 56, 57,
     # 279, 283 print "$TI" and "$L(BU,8)", and the census counted them
     # as two unmatched mnemonics until the decks wrote them as printed.
-    if op.startswith("$") and op[1:2].isalpha():
+    # The sign mnemonics take it too: MCP printed p.413 line 9 and
+    # printed p.78 line 10 print "$-(BU,18),TCHSXW,-60".
+    if op.startswith("$") and (op[1:2].isalpha() or op[1:2] in ("+", "-", "*", "/")):
         op = op[1:]
     return op or None
 

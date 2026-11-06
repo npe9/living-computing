@@ -1,0 +1,196 @@
+! mcp_bootstrap_p434.strap -- MCP printed page 434: the $EOJ program's
+! "UN-ASSIGN ROUTINE FOR DISASSIGNMENT" (TJUNAS .. RSWTCH), card series ZZ.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.184, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZZ000001  DIST. OF 3/01
+!  3/01  PAGE NUMBER 434"; the heading row's LOCATION field is BLANK
+! (line 1 is a remark).
+!
+! >>> NEW CARD SERIES ZZ, STARTING AT ZZ000001 ON THIS PAGE.  PUNID still
+! 22$EOJ.  Line 6 prints SLC,$ (location 023006.00): a no-op relocation
+! to the current counter, so the deck states the origin hard and keeps
+! the printed SLC,$ card.  No TAIL. <<<
+!
+! THE PAGE.  56 lines.  Lines 1-5 the boxed banner, line 13 a blank
+! remark.  Contiguous 023006.00 .. 023046.00 (line 56, a full word; next
+! location 023047.00, which is p.435 line 1 -- contiguous with p.435,
+! whose serials start ZZ000055).  Every line number prints a "*"; a
+! further "*" after the LOCATION on lines 6, 25, 41 (recorded, not
+! interpreted).
+!
+! CARD SERIALS.  ZZ000001 .. ZZ000054.  Lines 44 and 45 (B,RTCSAV+1.0 /
+! NOP) BOTH print ZZ000044; lines 46 and 47 (B,RTCSAV / NOP) BOTH print
+! ZZ000045.  So lines 1-44 print ZZ0000N, 45-46 N-1, and line 47 on
+! N-2 (line 56 = ZZ000054).  Recorded, not explained (each NOP shares
+! its B's serial).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!  * lines 49, 50, 55 print "CMOCOO(BU,1)" = CM0000 (open 0s; a
+!    connective's mode digits are 0/1 only); binary 001000.00 F0.
+!  * line 49 label prints "RUNLCA" (open O) = RUNLOA: line 41 prints
+!    RUNLOA with a closed O, and BZRZ line 41 prints 023041.34.
+!  * line 25 "TECUIP"-ish = TEQUIP (Q's tail faint; line 29 clear).
+!  * line 18 "$LV": the "$" error-suppress prefix, as printed; likewise
+!    line 19 "$V+" and line 24 "$V+".
+!  * hex "OC"/"CC" open-round bytes on BZB rows (22, 25, 29, 56 h2 "00"):
+!    BZB can make only 00 there; the open 0.
+!  * octal ".C3"/".C6" (lines 10, 18, 23): open 0s.
+!  * line 14 label printed "T JNEXT", line 28 "T JNTPA" (a space after T).
+!
+! EXTERNALS.  Resident field SYNs copied from p.99/p.101/p.103/p.289
+! and $EOJ's p.419/p.420.  TJA..TJD index names, TJSAV, JHBIT, JHISTX,
+! JHISTE, TJEND, TJSTPA, TJTAP, TJNTP, RTCSAV are defined on no landed
+! page: values from this page's binary (TJNTP/RTCSAV/TJTAP agree with
+! the p.435 scratch deck).
+
+TJA     SYN,$1                       ! not seen; LV line 9 .02, byte 31 line 15
+TJB     SYN,$2                       ! not seen (as p.435); LV line 15 .04
+TJC     SYN,$3                       ! not seen (as p.435); LV line 18 .06
+TJD     SYN,$4                       ! not seen (as p.435); LV line 21 .10
+SBAPP   SYN, (8)215005.0             ! landed p.103 line 35 "S BAPP VF,0"
+SMAXRN  SYN(B,25,1), (8)215005.40    ! landed p.103 line 36 VF
+TMAXRF  SYN,SMAXRN                   ! p.418 line 19; LC line 11 215005.42
+SXCHAN  SYN(BU), (8)215002.0         ! landed p.103 line 28 "SXCHAN XW,0"
+TCHSXW  SYN,SXCHAN                   ! landed p.289 line 5 (defining form)
+SUUNAS  SYN(BU,1), 1.62              ! p.101 line 9; BB1 line 17 000001.76
+TCHANN  SYN(BU,7),0.12               ! p.419 line 40
+TMULTI  SYN(BU,1),0.27               ! landed p.289 line 7
+TUNTBA  SYN(BU,18),0.0               ! landed p.289 line 6
+TUNITN  SYN(BU,3),0.47               ! p.419 line 41
+TEQUIP  SYN(BU,4),0.52               ! landed p.289 line 15
+TUNASG  SYN(BU,1),0.29               ! landed p.289 line 11
+TFIAAC  SYN(BU,18),3.0               ! p.419 line 44
+TIODRN  SYN(BU,18),0.0               ! p.420 line 8
+SUNAVL  SYN(BU,1), 0.28              ! landed p.99 line 26
+SCHAVL  SYN(BU,1), 0.25              ! landed p.99 line 21
+SCREEL  SYN(BU,18), 8.32             ! p.101 line 28 -CURRENT REEL ADDRESS
+SCOMRG  SYN, (8)215001.0             ! landed p.103 line 8
+SPINCL  SYN(BU,1), SCOMRG+.6         ! p.103 line 16; BB line 48 215001.06
+SYSMOD  SYN(BU,2), SCOMRG+.8         ! landed p.103 line 18; BZB line 56 215001.10
+SMOUNT  SYN(BU,1), 0.51              ! p.99 line 42
+SIMNT   SYN(BU,1), 0.53              ! p.99 line 44
+SFREE   SYN, 12.32                   ! p.105 line 4
+TJSAV   SYN, (8)023133.0             ! not seen; TI line 7 h2 023133.20, half word only
+JHBIT   SYN(BU,1), (8)023144.75      ! not seen; CM1111 line 8 023144.75, length 1, BIT-EXACT
+JHISTX  SYN, (8)023202.40            ! not seen; SIC line 26 023202.40, BIT-EXACT
+JHISTE  SYN, (8)023144.0             ! not seen; B line 27 023144.10, half word only
+TJEND   SYN, (8)023117.40            ! not seen; BXCZ line 12 023117.70
+TJSTPA  SYN, (8)023117.0             ! not seen; BB1 line 17 023117.34, half word only
+TJTAP   SYN, (8)023104.40            ! not seen (as p.435); B line 54 023104.50
+TJNTP   SYN, (8)023057.0             ! p.435 scratch line 10; BZB line 29 023057.34
+RTCSAV  SYN, (8)023050.40            ! p.435 scratch line 3; B line 46 023050.50
+
+        SLC, (8)023006.00
+! line  1  -
+! line  2  - ****************************************************************
+! line  3  -              THE UN-ASSIGN ROUTINE FOR DISASSIGNMENT
+! line  4  - ****************************************************************
+! line  5  -
+        SLC,$                                                ! line  6
+TJUNAS  TI,8,$1,TJSAV                                        ! line  7
+        CM1111,JHBIT                                         ! line  8  -SET HEADING BIT FOR REEL HIST. PRINT
+        LV,TJA,SBAPP                                         ! line  9  -GET THE FIRST WORD OF SIOL TABLE
+        V+I,TJA,1.0                                          ! line 10  -TO GET THE REAL FIRST WORD
+        LC,TJA,TMAXRF                                        ! line 11  -THE MAX REF NO TO COUNT
+        BXCZ,TJEND                                           ! line 12  -IF NO IODS FOR LAST JOB
+! line 13  -
+TJNEXT  BE,$+.32                                             ! line 14  -ENABLE PLEASE  (label printed "T JNEXT")
+        LV,TJB,0.0(TJA)                                      ! line 15  -GET ADD OF UNIT AREA TABLE
+        BXVZ,TJSTPA                                          ! line 16  -IF SIOL TABLE SLOT IS ZERO
+        BB1,SUUNAS(TJB),TJSTPA                               ! line 17  -BR. IF UNIT ALREADY UNASSIGNED
+        $LV,TJC,TCHANN(TJB)                                  ! line 18  -GET THE CHAN NUMBER
+        $V+,TJC,TCHANN(TJB)                                  ! line 19  -TIMES TWO
+        V+,TJC,TCHSXW                                        ! line 20
+        LV,TJD,TJC                                           ! line 21  -FOR THE EQUIPMENT CHECK
+        BZB,TMULTI(TJD),TJNTPA                               ! line 22  -IF A SINGLE UNIT CHAN
+        LV,TJC,TUNTBA(TJC)                                   ! line 23  -GET UNIT STATUS TABLE ADDRESS
+        $V+,TJC,TUNITN(TJB)                                  ! line 24  -ADD UNIT NO TO GET UNIT SLCT
+        BZB,TEQUIP(TJD),TJNTPA                               ! line 25  -IF NOT TAPE
+        SIC,JHISTX                                           ! line 26  -TO PRINT REEL HISTORY
+        B,JHISTE                                             ! line 27
+TJNTPA  BB,TUNASG(TJC),TJSTPA                                ! line 28  -IF ALREADY FREED  (label printed "T JNTPA")
+        BZB,TEQUIP(TJD),TJNTP                                ! line 29  -IF NOT TAPE
+        LV,TJB,TFIAAC(TJB)                                   ! line 30  -GET THE LAST FILE ACTIVATED
+        LC,TJD,TIODRN(TJB)                                   ! line 31  -THEN GET THE REF NUMBER
+        SC,TJD,TJFRE                                         ! line 32  -AND SAVE FOR THE FREE ROUTINE
+        BB,SUNAVL(TJC),TJTAP                                 ! line 33  -SKIP FREE IF UNIT DOWN.
+        BB,SCHAVL(TJD),TJTAP                                 ! line 34
+        BD,$.32                                              ! line 35
+        LV,8,(TJC)                                           ! line 36
+        L(BU,2),2.30(TJB),46                                 ! line 37
+        LV,8,SCREEL($8)                                      ! line 38
+        C0011(BU,2),.26($8),-2                               ! line 39
+        M-1(BU,2),$L                                         ! line 40
+        BZRZ,RUNLOA                                          ! line 41
+        LV,8,$R                                              ! line 42
+        BR,($8)                                              ! line 43
+        B,RTCSAV+1.0                                         ! line 44
+        NOP                                                  ! line 45  (serial ZZ000044 again)
+        B,RTCSAV                                             ! line 46
+        NOP                                                  ! line 47  (serial ZZ000045 again)
+        BB,SPINCL,RTCSAV+1.0                                 ! line 48
+RUNLOA  CM0000(BU,1),SMOUNT(TJC)                             ! line 49  (printed "RUNLCA", "CMOCOO")
+        CM0000(BU,1),SIMNT(TJC)                              ! line 50  (printed "CMOCOO")
+        BE,$MCP                                              ! line 51
+        ,SFREE                                               ! line 52  blank operation field, as printed
+TJFRE   ,0                                                   ! line 53  blank operation field, as printed
+RSWTCH  B,TJTAP                                              ! line 54
+        CM0000(BU,1),RSWTCH.19                               ! line 55  (printed "CMOCOO")
+        BZB,SYSMOD,TJTAP                                     ! line 56
+
+!SYM TJUNAS 023006.00
+!SYM TJNEXT 023012.00
+!SYM TJNTPA 023022.40
+!SYM RUNLOA 023041.00
+!SYM TJFRE  023044.00
+!SYM RSWTCH 023044.40
+
+!CHECK 023006.00 | 000021.00 80 023133.20 A0 | line 7 TJUNAS TI,8,$1,TJSAV
+!CHECK 023007.00 | 023144.75 80 001000.36 F0 | line 8 CM1111,JHBIT
+!CHECK 023010.00 | 215005.02 30 | line 9 LV,TJA,SBAPP
+!CHECK 023010.40 | 000001.03 05 | line 10 V+I,TJA,1.0 (printed ".C3": open 0)
+!CHECK 023011.00 | 215005.42 50 | line 11 LC,TJA,TMAXRF
+!CHECK 023011.40 | 023117.70 42 | line 12 BXCZ,TJEND
+!CHECK 023012.00 | 023012.40 00 | line 14 TJNEXT BE,$+.32
+!CHECK 023012.40 | 000000.04 31 | line 15 LV,TJB,0.0(TJA)
+!CHECK 023013.00 | 023117.31 42 | line 16 BXVZ,TJSTPA
+!CHECK 023013.40 | 000001.76 82 023117.34 0E | line 17 BB1,SUUNAS(TJB),TJSTPA
+!CHECK 023014.40 | 000000.06 32 | line 18 $LV,TJC,TCHANN(TJB) (printed ".C6": open 0)
+!CHECK 023015.00 | 000000.06 B2 | line 19 $V+,TJC,TCHANN(TJB)
+!CHECK 023015.40 | 215002.06 B0 | line 20 V+,TJC,TCHSXW
+!CHECK 023016.00 | 000023.10 30 | line 21 LV,TJD,TJC
+!CHECK 023016.40 | 000000.33 84 023022.74 00 | line 22 BZB,TMULTI(TJD),TJNTPA (h2 prints "0C": open 0)
+!CHECK 023017.40 | 000000.06 33 | line 23 LV,TJC,TUNTBA(TJC) (printed ".C6": open 0)
+!CHECK 023020.00 | 000000.46 B2 | line 24 $V+,TJC,TUNITN(TJB)
+!CHECK 023020.40 | 000000.64 84 023022.74 00 | line 25 BZB,TEQUIP(TJD),TJNTPA (h2 prints "CC": open 0)
+!CHECK 023021.40 | 023202.40 80 | line 26 SIC,JHISTX
+!CHECK 023022.00 | 023144.10 00 | line 27 B,JHISTE
+!CHECK 023022.40 | 000000.35 83 023117.34 02 | line 28 TJNTPA BB,TUNASG(TJC),TJSTPA
+!CHECK 023023.40 | 000000.64 84 023057.34 00 | line 29 BZB,TEQUIP(TJD),TJNTP (h2 prints "0C": open 0)
+!CHECK 023024.40 | 000003.04 32 | line 30 LV,TJB,TFIAAC(TJB)
+!CHECK 023025.00 | 000000.10 52 | line 31 LC,TJD,TIODRN(TJB)
+!CHECK 023025.40 | 023044.11 50 | line 32 SC,TJD,TJFRE
+!CHECK 023026.00 | 000000.34 83 023104.74 02 | line 33 BB,SUNAVL(TJC),TJTAP
+!CHECK 023027.00 | 000000.31 84 023104.74 02 | line 34 BB,SCHAVL(TJD),TJTAP
+!CHECK 023030.00 | 023030.44 00 | line 35 BD,$.32
+!CHECK 023030.40 | 000000.20 33 | line 36 LV,8,(TJC)
+!CHECK 023031.00 | 000002.36 82 002027.20 50 | line 37 L(BU,2),2.30(TJB),46
+!CHECK 023032.00 | 000010.60 38 | line 38 LV,8,SCREEL($8)
+!CHECK 023032.40 | 000000.32 88 002077.06 70 | line 39 C0011(BU,2),.26($8),-2
+!CHECK 023033.40 | 000010.00 80 002000.32 B0 | line 40 M-1(BU,2),$L
+!CHECK 023034.40 | 023041.34 C0 | line 41 BZRZ,RUNLOA
+!CHECK 023035.00 | 000011.20 30 | line 42 LV,8,$R
+!CHECK 023035.40 | 000000.14 08 | line 43 BR,($8)
+!CHECK 023036.00 | 023051.50 00 | line 44 B,RTCSAV+1.0
+!CHECK 023036.40 | 000000.30 00 | line 45 NOP
+!CHECK 023037.00 | 023050.50 00 | line 46 B,RTCSAV
+!CHECK 023037.40 | 000000.30 00 | line 47 NOP
+!CHECK 023040.00 | 215001.06 80 023051.74 02 | line 48 BB,SPINCL,RTCSAV+1.0
+!CHECK 023041.00 | 000000.63 83 001000.00 F0 | line 49 RUNLOA CM0000(BU,1),SMOUNT(TJC)
+!CHECK 023042.00 | 000000.65 83 001000.00 F0 | line 50 CM0000(BU,1),SIMNT(TJC)
+!CHECK 023043.00 | 000040.00 00 | line 51 BE,$MCP
+!CHECK 023043.40 | 000014.40 80 | line 52 ,SFREE
+!CHECK 023044.00 | 000000.00 80 | line 53 TJFRE ,0
+!CHECK 023044.40 | 023104.50 00 | line 54 RSWTCH B,TJTAP
+!CHECK 023045.00 | 023044.63 80 001000.00 F0 | line 55 CM0000(BU,1),RSWTCH.19
+!CHECK 023046.00 | 215001.10 80 023104.74 00 | line 56 BZB,SYSMOD,TJTAP

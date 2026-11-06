@@ -1,0 +1,123 @@
+! mcp_bootstrap_p420.strap -- MCP printed page 420: $EOJ's reassembly
+! of the ASSIGN routine's SYN CARDS FOR FILE AREA TABLE, THE FORMAT OF
+! THE REEL POOL, and THE TYPE SCAN TABLES (the same source as the
+! volume-1 bootstrap's printed p.85, a different assembly).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.170, read at 400 dpi, names at 900.
+! Header, READ: "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZF000154
+! DIST. OF 3/01  3/01  PAGE NUMBER 420"; the heading row's LOCATION
+! field is BLANK (line 1 is a remark).
+!
+! >>> CARD SERIES ZF, not ZE (p.409 prints ZE). <<<  PUNID still
+! 22$EOJ.  Serials ZF000154 .. ZF000200, one per line, consecutive.
+! No SLC printed on the page; no TAIL.  The origin below is line 28's
+! printed LOCATION.
+!
+! THE PAGE.  47 lines, every line number prints a "*".
+!   lines  1-4   remark banner "SYN CARDS FOR FILE AREA TABLE".
+!   lines  5-13  nine SYNs (field offsets in the file area table).
+!   lines 14-18  blank remark / banner "THE FORMAT OF THE REEL POOL".
+!   lines 19-22  four SYNs (reel pool fields).
+!   lines 23-27  banner "THE TYPE SCAN TABLES".
+!   lines 28-47  TSCIX1 XW, TSCBK1 VF, TSCAN1 and the type table:
+!                022244.00 .. 022253.21 + 5 bits = 022253.26.
+!
+! DIFFERS FROM VOLUME 1 (p.85), so nothing is copied from there but the
+! spellings: here TORARC/TMXARC/TCUARC are SYN(BU,17) at 5.01/5.33/6.01
+! (vol 1: (BU,12) at 5.06/5.38/6.06), and line 47 adds a ninth entry,
+! DD(BU,05),0 -ERROR OR NULL TYPE FIELD.
+!
+! SYN rows print their value in LOCATION with a "+" suffix, the dds in
+! the data-description column (in OCTAL: BU,22 = 18, BU,21 = 17,
+! BU,36 = 30), and +00000000 in BINARY -- except line 5, TFLLGN
+! SYN(BU,6),7, a pure NUMBER: 000000.00+ and +00000007.  Its !SYM states
+! the integer as p.210's !SYM ACRD and p.286 do (7 -> 000000.07).
+! SYN rows get no !CHECK.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 11 "T CR ARC" = TORARC: the first glyph is open (as is the
+!     real C of ARC beside it); an open glyph says nothing on this drum.
+!     The remark prints "ORIGINAL ARC" with a closed O, the vol-1 copy
+!     (p.85) spells TORARC, and no TCRARC exists anywhere.  UNSETTLED BY
+!     INK -- spelling follows the landed deck.
+!   * line 6 "T TOELC" = TTOELO (open final O; first O prints closed;
+!     vol-1 TTOELO, remark "TABLE OF EXITS LOC").
+!   * line 7 "T CENMD" = TDENMD, line 8 "T IOCRN" = TIODRN, line 9
+!     "REELC", line 10 "FMCDE": D worn to C / open O, vol-1 spellings.
+!   * line 6 BINARY "+000000CC" = +00000000: open zeros (same row prints
+!     000002.C0+ in its octal LOCATION).
+!   * line 29 BINARY "CCCCCC.05-" = 000000.05-: octal field.
+!
+! EXTERNALS: none.  TSCAN1, the XW's only reference, is defined here.
+
+        SLC, (8)022244.0
+
+! ---- SYN CARDS FOR FILE AREA TABLE -------------------------------    ! lines 1-4
+TFLLGN  SYN(BU,6),7                  ! line  5  -THE FILE AREA TABLE LENGHT
+TTOELO  SYN(BU,18),2.0               ! line  6  -TABLE OF EXITS LOC
+TDENMD  SYN(BU,2),2.27               ! line  7  -THE FILE AREA DENSITY MODIFIER
+TIODRN  SYN(BU,18),0.0               ! line  8  -IOD REF NUMBER
+TREELD  SYN(BU,3),2.29               ! line  9  -REEL DISPOSITON
+TFMODE  SYN(BU,2),2.48               ! line 10  -FILE MODE
+TORARC  SYN(BU,17),5.01              ! line 11  - ORIGINAL ARC  (printed "T CR ARC")
+TMXARC  SYN(BU,17),5.33              ! line 12  - MAXIMUM ARC
+TCUARC  SYN(BU,17),6.01              ! line 13  - CURRENT ARC
+! (lines 14-18) THE FORMAT OF THE REEL POOL
+TRENTY  SYN(BU,1),0.25               ! line 19  -A ONE IF A REEL WAS ENTERED HERE
+TREPR   SYN(BU,1),0.26               ! line 20  -REEL PROTECT BIT IF ONE
+TRELB   SYN(BU,1),0.27               ! line 21  -REEL LABELED IF ONE
+TRENME  SYN(BU,30),0.34              ! line 22  -REEL NAME FORMAT
+! (lines 23-27) THE TYPE SCAN TABLES
+TSCIX1  XW,TSCAN1,8,0                ! line 28  -INDEX FOR TYPE SCAN
+TSCBK1  VF,-5                        ! line 29  -THE BACKUP CONSTANT TO GET THE CODE
+! (line 30) blank remark
+TSCAN1  (AX)DD(BU,42,6),CONSOLEX     ! line 31
+        DD(BU,5),2                   ! line 32
+        (AX)DD(BU,42,6),DISK   X     ! line 33
+        DD(BU,5),1                   ! line 34
+        (AX)DD(BU,42,6),READER X     ! line 35
+        DD(BU,5),3                   ! line 36
+        (AX)DD(BU,42,6),PUNCH  X     ! line 37
+        DD(BU,5),4                   ! line 38
+        (AX)DD(BU,42,6),PRINTERX     ! line 39
+        DD(BU,5),5                   ! line 40
+        (AX)DD(BU,42,6),IQS    X     ! line 41
+        DD(BU,5),6                   ! line 42
+        (AX)DD(BU,42,6),TRACK  X     ! line 43
+        DD(BU,5),(2)10001            ! line 44  -SPECIAL TRACK IND
+        (AX)DD(BU,42,6),TAPE   X     ! line 45
+        DD(BU,5),8                   ! line 46
+        DD(BU,05),0                  ! line 47  -ERROR OR NULL TYPE FIELD
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 420 --------
+!SYM   TFLLGN   000000.07
+!SYM   TTOELO   000002.00
+!SYM   TDENMD   000002.33
+!SYM   TIODRN   000000.00
+!SYM   TREELD   000002.35
+!SYM   TFMODE   000002.60
+!SYM   TORARC   000005.01
+!SYM   TMXARC   000005.41
+!SYM   TCUARC   000006.01
+!SYM   TRENTY   000000.31
+!SYM   TREPR    000000.32
+!SYM   TRELB    000000.33
+!SYM   TRENME   000000.42
+!SYM   TSCIX1   022244.00
+!SYM   TSCBK1   022245.00
+!SYM   TSCAN1   022245.31
+!CHECK 022244.00 | 022245.31+ 000 000010 000000 | line 28  T SCIX1  XW,TSCAN1,8,0
+!CHECK 022245.00 | 000000.05- | line 29  T SCBK1  VF,-5 (printed "CCCCCC.05-", octal field: zeros)
+!CHECK 022246.03 | 02 | line 32 DD(BU,5),2       | 5
+!CHECK 022246.62 | 01 | line 34 DD(BU,5),1       | 5
+!CHECK 022247.41 | 03 | line 36 DD(BU,5),3       | 5
+!CHECK 022250.20 | 04 | line 38 DD(BU,5),4       | 5
+!CHECK 022250.77 | 05 | line 40 DD(BU,5),5       | 5
+!CHECK 022251.56 | 06 | line 42 DD(BU,5),6       | 5
+!CHECK 022252.35 | 21 | line 44 DD(BU,5),(2)10001 | 5
+!CHECK 022253.14 | 10 | line 46 DD(BU,5),8       | 5
+!CHECK 022253.21 | 00 | line 47 DD(BU,05),0      | 5
+!
+! The (AX)DD(BU,42,6) rows (lines 31, 33, 35, 37, 39, 41, 43, 45) print a
+! LOCATION and no BINARY; their placement is witnessed by the next
+! DD(BU,5) row's printed location (each 42 bits on).

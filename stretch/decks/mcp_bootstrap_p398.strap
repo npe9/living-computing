@@ -1,0 +1,162 @@
+! mcp_bootstrap_p398.strap -- MCP printed page 398: the $EOJ copy of the
+! ASSIGN routine's entry -- index save area, the not-overlap PP ref and
+! I/O request tables, the type-code constants, and T ASIGN itself
+! through T A1.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.148, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZE000002  DIST. OF 3/01
+!  3/01  PAGE NUMBER 398"; the heading row's LOCATION field is BLANK
+! (line 1 is a remark).
+!
+! >>> A NEW CARD SERIES, ZE. <<<  Still PUNID 22$EOJ, still low core,
+! but the card serials are ZE000002 .. ZE000049 (line N prints
+! ZE0000(N+1)), not $EOJ's ZA series (p.393 ends at ZA000598).  Line 4
+! is "SLC,$" printed at 021062.60 -- the origin below is that printed
+! LOCATION; SLC,$ itself changes nothing.  No TAIL.
+!
+! THE SAME SOURCE AS VOLUME 1's ASSIGN (decks/mcp_bootstrap_p62/p63/p65:
+! T PURFT .. T UFRE, T TYARA .. T 2COMB, T B1F/T B1C/T A1), assembled
+! here in $EOJ low core.  Spellings copied from those decks; addresses
+! never.
+!
+! THE PAGE.  48 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 4, 21, 25.  Contiguous 021062.60 .. 021173.00
+! (line 48, a full word ending at 021174.00).
+!   lines 1-3, 5-7, 10, 15, 19, 23, 26, 30, 36-38, 41-44  remarks.
+!   line  8      CNOP at 021062.60, prints nothing (no half word fits).
+!   line  9      T ASAVE DRZ(BU,64),(15) prints its SIZE 000017.00.
+!   line 21      DRZ(BU,64),TUIOC-1 prints its SIZE 000023.00 (19).
+!   line 25      T UFRE DRZ(BU,64),TUFRC prints its SIZE 000024.00 (20).
+!   DRZ rows get no !CHECK.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "XW,C" (lines 16, 17, 20), "XW,C(.39)1" (18), "VF,C.32" (22),
+!     "B,TA1-1.C" (40): the open round where only a digit stands -- 0;
+!     p.62 prints the same cards as XW,0 / XW,0(.39)1 / VF,0.32.
+!   * TUIORQ (20), TUIOC (21), TMODE (33): spelled as their defining
+!     cards (p.62/p.276, p.286, p.287).
+!   * line 35 "T B1F", line 45 "T B1C", "TB1C" (35): the digit 1, as
+!     p.65's TB1F/TB1C; the sheet's "BIF" is a misread.
+!   * Line 16 NAME "T PURFT" (the sheet read PUREL): the ink is PURFT,
+!     as p.62 and the p.276/p.288 stand-ins (021106.0, matches here).
+!   * Octal fields "CCCCCC.CC", "CCO" are 0.
+!
+! STAND-INS.  Resident (body) symbols copy their defining form from
+! pp.286-290; the three $EOJ branch targets come from this page's
+! binary (no page landed defines them):
+!   TA9   BZXVZ line 34 021515.31 -- the indicator bits stack on, so
+!         HALF WORD ONLY.
+!   TF    BB line 47 021721.74 -- HALF WORD ONLY.
+!   TB8Z  BB line 48 021503.74 -- HALF WORD ONLY.
+! This page DEFINES TCTEMP 021102.0, TUIORQ 021111.0, TPURFT 021106.0,
+! TUFRE 021136.0 and TASIGN 021164.0 -- the addresses every earlier
+! stand-in (pp.276-288, 385, 388) carries.
+
+TX1     SYN,$10                      ! landed p.287 line 30 (000032.00)
+TCTWDX  SYN,TX1                      ! landed p.287 line 29
+TIXE    SYN,$3                       ! landed p.287 line 36
+TMODE   SYN(BU,1), (8)232227.32      ! landed p.287 line 19 DD(BU,1)
+TINDE   SYN(BU,1), (8)232227.37      ! landed p.287 line 24 DD(BU,1)
+TSAV    SYN(BU), (8)232226.0         ! landed p.287 line 15 XW
+TPPURF  SYN(BU), (8)232230.0         ! landed p.288 line 5 XW
+TDISK   SYN(BU,8), (8)232513.0       ! landed p.290 line 6 (8)DD(BU,8)
+TTYBC   SYN,0.8                      ! landed p.289 line 26
+TMACBC  SYN,0.8                      ! landed p.289 line 27
+TREQBC  SYN,0.8                      ! landed p.289 line 28
+TUIOC   SYN,20                       ! landed p.286 line 11
+TUFRC   SYN,20                       ! landed p.286 line 12
+TJBPRO  SYN(BU,1),0.36               ! landed p.288 line 14
+TLPPEN  SYN(BU,1),0.39               ! landed p.288 line 17
+TA9     SYN, (8)021515.0             ! $EOJ, not landed; BZXVZ line 34 021515.31, half word only
+TF      SYN, (8)021721.40            ! $EOJ, not landed; BB line 47 021721.74, half word only
+TB8Z    SYN, (8)021503.40            ! $EOJ, not landed; BB line 48 021503.74, half word only
+
+        SLC, (8)021062.60
+! line  1  - ------------------------------------------------------------
+! line  2  -           THE ENTRY POINT TO THE ASSIGN ROUTINE
+! line  3  - ------------------------------------------------------------
+        SLC,$                                                ! line  4
+! line  5  -
+! line  6  -           SAVE AREAS FOR INDEXES
+! line  7  -
+        CNOP                                                 ! line  8
+TASAVE  DRZ(BU,64),(15)                                      ! line  9  -AREA SET ASIDE FOR INDEX SAVING
+! line 10  -
+TCTEMP  XW                                                   ! line 11  -TEMP SYMBOLIC CHAN WORD
+TWORK1  XW                                                   ! line 12  -TEMPORARY WORKING WORD
+TWORK2  XW                                                   ! line 13  -TEMPORARY WORKING WORD
+TREFIL  XW                                                   ! line 14  -TEMP STORAGE FOR IX -A-
+! line 15  -
+TPURFT  XW,0                                                 ! line 16  -NOT OVERLAP PP REF WORD NO. 1  (printed "XW,C")
+        XW,0                                                 ! line 17  -NOT OVERLAP PP REF WD NO. 2  (printed "XW,C")
+        XW,0(.39)1                                           ! line 18  -NECESSARY FOR LAST ENTRY BIT  (printed "XW,C(.39)1")
+! line 19  -
+TUIORQ  XW,0                                                 ! line 20  -THE NOT OVERLAP I/O REQ TBL  (printed "XW,C")
+        DRZ(BU,64),TUIOC-1                                   ! line 21
+        VF,0.32                                              ! line 22  -DO NOT REMOVE - MARKS LAST WORD  (printed "VF,C.32")
+! line 23  -
+        CNOP                                                 ! line 24
+TUFRE   DRZ(BU,64),TUFRC                                     ! line 25  -THE NOT OVERLAP FIRST REEL TABLE
+! line 26  -
+TTYARA  XW,TDISK,8,TTYARA                                    ! line 27  -THE TYPE CODE
+TCOMBO  VF,TTYBC+TMACBC+TREQBC                               ! line 28  -A CONSTANT THAT WILL BY PASS ONE WORD
+T2COMB  VF,TTYBC+TMACBC                                      ! line 29  -FOR COMPUTING THE NUMBER OF UNITS
+! line 30  -
+TASIGN  SWAPI,12,$1,TASAVE                                   ! line 31  -SAVE INDEXES
+        LX,TCTWDX,0.0($15)                                   ! line 32  -OVERLAP AND MACHINE CONF TEST
+        CM0000(BU,6),TMODE                                   ! line 33  -RESET INDICATORS
+        BZXVZ,TA9                                            ! line 34  -IF A MACH ONF CHANGE
+TB1F    BZXF,TB1C                                            ! line 35  -IF OVERLAP MODE
+! line 36  -
+! line 37  -           NOT OVERLAPPED TYPE OF PROBLEM PROGRAM
+! line 38  -
+        LX,TIXE,TPPURF                                       ! line 39  -NOT OVERLAP PP SET UP
+        B,TA1-1.0                                            ! line 40  (printed "TA1-1.C")
+! line 41  -
+! line 42  -
+! line 43  -           OVERLAP TYPE OF PP
+! line 44  -
+TB1C    LX,TIXE,TSAV                                         ! line 45  -FIND LOC. WITH IN P P REF TBL
+        CM0000(BU,2),TINDE                                   ! line 46
+TA1     BB,TLPPEN(TIXE),TF                                   ! line 47  -IF LAST ENTRY WITHIN PP REF TB
+        BB,TJBPRO(TIXE),TB8Z                                 ! line 48  -IF THE PP WAS PROCESSED
+
+!SYM TASAVE 021063.00
+!SYM TCTEMP 021102.00
+!SYM TWORK1 021103.00
+!SYM TWORK2 021104.00
+!SYM TREFIL 021105.00
+!SYM TPURFT 021106.00
+!SYM TUIORQ 021111.00
+!SYM TUFRE  021136.00
+!SYM TTYARA 021162.00
+!SYM TCOMBO 021163.00
+!SYM T2COMB 021163.40
+!SYM TASIGN 021164.00
+!SYM TB1F   021167.00
+!SYM TB1C   021170.40
+!SYM TA1    021172.00
+!CHECK 021102.00 | 000000.00+ 000 000000 000000 | line 11 T CTEMP XW
+!CHECK 021103.00 | 000000.00+ 000 000000 000000 | line 12 T WORK1 XW
+!CHECK 021104.00 | 000000.00+ 000 000000 000000 | line 13 T WORK2 XW
+!CHECK 021105.00 | 000000.00+ 000 000000 000000 | line 14 T REFIL XW
+!CHECK 021106.00 | 000000.00+ 000 000000 000000 | line 16 T PURFT XW,C
+!CHECK 021107.00 | 000000.00+ 000 000000 000000 | line 17 XW,C
+!CHECK 021110.00 | 000000.00+ 000 000100 000000 | line 18 XW,C(.39)1
+!CHECK 021111.00 | 000000.00+ 000 000000 000000 | line 20 T UIORQ XW,C
+!CHECK 021135.00 | 000000.40+ | line 22 VF,C.32
+!CHECK 021135.40 | 000000.30 00 | line 24 CNOP
+!CHECK 021162.00 | 232513.00+ 000 000010 021162 | line 27 T TYARA XW,TDISK,8,TTYARA
+!CHECK 021163.00 | 000000.30+ | line 28 T COMBO VF,TTYBC+TMACBC+TREQBC
+!CHECK 021163.40 | 000000.20+ | line 29 T 2COMB VF,TTYBC+TMACBC
+!CHECK 021164.00 | 000021.00 80 021063.30 E0 | line 31 T ASIGN SWAPI,12,$1,TASAVE
+!CHECK 021165.00 | 000000.24 1F | line 32 LX,TCTWDX,0.0($15)
+!CHECK 021165.40 | 232227.32 80 006000.00 F0 | line 33 CM0000(BU,6),TMODE
+!CHECK 021166.40 | 021515.31 40 | line 34 BZXVZ,TA9
+!CHECK 021167.00 | 021170.63 40 | line 35 T B1F BZXF,TB1C
+!CHECK 021167.40 | 232230.06 10 | line 39 LX,TIXE,TPPURF
+!CHECK 021170.00 | 021171.10 00 | line 40 B,TA1-1.C
+!CHECK 021170.40 | 232226.06 10 | line 45 T B1C LX,TIXE,TSAV
+!CHECK 021171.00 | 232227.37 80 002000.00 F0 | line 46 CM0000(BU,2),TINDE
+!CHECK 021172.00 | 000000.47 83 021721.74 02 | line 47 T A1 BB,TLPPEN(TIXE),TF
+!CHECK 021173.00 | 000000.44 83 021503.74 02 | line 48 BB,TJBPRO(TIXE),TB8Z

@@ -1,0 +1,180 @@
+! mcp_bootstrap_p409.strap -- MCP printed page 409: the $EOJ program's
+! MACHINE CONFIGURATION CHANGE fix-up (T A10 .. T B11C): reset the
+! reserved bits of a downed channel/unit, then scan the PP reference and
+! I/O request tables for jobs assigned to it.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.159, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054C41  PUNID 22$EOJ  CARD ID ZE000558  DIST. OF 3/01
+!  3/01  PAGE NUMBER 409"; the heading row's LOCATION field is BLANK
+! (lines 1-2 are remarks).
+!
+! >>> NOT SCOMD.  PUNID 22$EOJ, but CARD SERIES ZE (pp.381-393 print
+! ZA). <<<  Low core 0216xx, no SLC on the page -- the origin below is
+! line 3's printed LOCATION.  No TAIL.
+!
+! THE PAGE.  52 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 18 and 38.  Contiguous 021622.00 .. 021661.40 (line
+! 51, a half word; next location 021662.00).  p.408 is not landed and
+! p.410 not seen: contiguity with neither neighbour is established.
+!   lines  1-2   remark banner; lines 6, 9, 19-21, 37, 52 blank remarks.
+!   The labels T A10 .. T B11C also appear in the IPL bootstrap
+!   (decks/mcp_bootstrap_p74.strap, at 0043xx); the two copies differ
+!   (there TB11C is an LV), and this page's are $EOJ's own.
+!
+! CARD SERIALS.  ZE000558 .. ZE000609, one per line, consecutive.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "TIXC" (lines 10 and 33 read C at 400 dpi; the other TIXD uses read
+!     D or near it) = TIXD, D worn to C: no TIXC exists; p.287 line 42
+!     defines TIXD SYN,$7, and every row's index byte prints 7 (87, .17,
+!     .16 ... the J field of LX/KV/SV/SX).
+!   * line 35 "TLCCP" = TLOOP (open O; p.287 line 27; BZB1 address
+!     232227.42 is TLOOP).
+!   * hex "FC" (line 4 h2) and "C0"/"0C" opens in octal fields: CM0000
+!     can make only F0 there -- the drum's open 0.  Line 35's h2 "0C" is
+!     REAL: BZB1's signature (BZB 00, BB 02).
+!   * line 24 TABSCH (H partly worn; the CM0000 on line 40 prints it
+!     plainly; p.288 line 37).
+!
+! EXTERNALS.  Resident (pp.287-289); index registers copied in their
+! DEFINING forms from p.287 (TIXF SYN,TX1; TIXI SYN,TIXB), field symbols
+! from pp.288-289.  Data words' addresses from landed p.287/p.289 (TSAV
+! XW at 232226, TLOOP DD(BU,1) at 232227.42, TVALVF VF at 232512) and
+! p.288 (TPPRUN XW 232232, TIOREQ DRZ(BU,64) 232307); each agrees with
+! this page's binary.
+
+TX1     SYN,$10                      ! landed p.287 line 30
+TX1BR   SYN,$1                       ! landed p.287 line 32
+TIXB    SYN,$5                       ! landed p.287 line 35
+TIXF    SYN,TX1                      ! landed p.287 line 37; byte 8A lines 3-4
+TIXG    SYN,$8                       ! landed p.287 line 38; byte 88 lines 7-8
+TIXI    SYN,TIXB                     ! landed p.287 line 40; byte 85 line 22
+TIXD    SYN,$7                       ! landed p.287 line 42; byte 87 line 12
+TUNRES  SYN(BU,1),0.62               ! landed p.289 line 17
+TOVRES  SYN(BU,1),0.63               ! landed p.289 line 18
+TUNITK  SYN(BU,4),0.59               ! landed p.289 line 16
+TCRREF  SYN(BU,18),0.0               ! landed p.288 line 12
+TUNCT   SYN(BU,08),0.28              ! landed p.288 line 13
+TJBPRO  SYN(BU,1),0.36               ! landed p.288 line 14
+TASGNP  SYN(BU,1),0.38               ! landed p.288 line 16
+TLPPEN  SYN(BU,1),0.39               ! landed p.288 line 17
+TASGNI  SYN(BU,1),0.00               ! landed p.288 line 28
+TUNOBT  SYN(BU,1),0.01               ! landed p.288 line 29
+TPRINT  SYN(BU,1),0.02               ! landed p.288 line 30
+TTYPE   SYN(BU,4),0.03               ! landed p.288 line 31
+TABSUN  SYN(BU,3),0.07               ! landed p.288 line 32
+TLAST   SYN(BU,1), 0.18              ! landed p.288 line 34
+TABSCH  SYN(BU,18),0.46              ! landed p.288 line 37
+TSAV    SYN(BU), (8)232226.0         ! landed p.287 line 15 XW; KV line 48 232226.16
+TLOOP   SYN(BU,1), (8)232227.42      ! landed p.287 line 27 DD(BU,1); CM0000 line 11 232227.42
+TPPRUN  SYN(BU), (8)232232.0         ! landed p.288 line 7 XW (as p.391); LX line 10 232232.16
+TIOREQ  SYN(BU,64), (8)232307.0      ! landed p.288 line 26 DRZ(BU,64); LVI line 23 232307.13
+TVALVF  SYN(B,25,1), (8)232512.0     ! landed p.289 line 25 VF; KV line 45 232512.16
+
+        SLC, (8)021622.00
+! line  1  -      MACHINE CONFIGURATION CHANGE, THE RESERVED BIT
+! line  2  -      IS ON AND THE CHAN AND/OR UNIT IS DOWN
+TA10    CM0000,TUNRES(TIXF)                                  ! line  3  -RESET THE UNIT RESERVED BIT
+        CM0000,TOVRES(TIXF)                                  ! line  4  -RESET THE NOT OVER LAP RES BIT
+        B,TA10A                                              ! line  5
+! line  6  -
+TC10    CM0000,TUNRES(TIXG)                                  ! line  7  -RESET THE UNIT RESERVED BIT
+        CM0000,TOVRES(TIXG)                                  ! line  8  -RESET THE NOT OVERLAP RES BIT
+! line  9  -
+TA10A   LX,TIXD,TPPRUN                                       ! line 10  -SET FOR LOCATING NEXT JOB TO BE RUN (printed "TIXC")
+        CM0000,TLOOP                                         ! line 11  -RESET THE LOOP INDICATOR
+TB10A   BB,TLPPEN(TIXD),0.0(TX1BR)                           ! line 12  -IF LAST ENTRY IN PP REF TBL
+        BB,TJBPRO(TIXD),TB10                                 ! line 13  -IF THE JOB WAS PROCESSED
+        L,TUNCT(TIXD),46                                     ! line 14  -GET THE UNIT COUNT
+        BRZ,TB10                                             ! line 15  -IF A NON I/O TYPE JOB
+        LC,TIXI,TCRREF(TIXD)                                 ! line 16  -GET 18 BIT I/O REQ TBL ADD
+        SC,TIXI,TIXI                                         ! line 17  -SAVE ONLY 18 BITS
+        LC,TIXI,$R                                           ! line 18  -UNIT COUNT TO CF
+! line 19  -
+! line 20  -
+! line 21  -
+TA11    BZB,TLAST(TIXI),TA11B                                ! line 22
+        LVI,TIXI,TIOREQ                                      ! line 23
+TA11B   L,TABSCH(TIXI),46                                    ! line 24  -GET ABSOLUTE CHANNEL ADDRESS
+        KV,TIXF,$R                                           ! line 25  -COMPARE CHANNEL ADDRESSES
+        BZXE,TB10B                                           ! line 26  -IF UNLIKE
+        BZB,TTYPE(TIXI),TA11A                                ! line 27  -IF THE TYPE IS NOT TAPE
+        L,TUNITK(TIXF),46                                    ! line 28
+        -,TABSUN(TIXI),46                                    ! line 29  -COMPUTE THE RELATIVE UNIT NUMBER
+        KC,TIXG,$R                                           ! line 30  -COMPARE UNIT LOCATIONS
+        BXE,TA11A                                            ! line 31  -IF LIKE
+TB10B   CB+,TIXI,TA11                                        ! line 32
+TB10    V+ICR,TIXD,2.0                                       ! line 33
+        BZXCZ,TB10A                                          ! line 34  -IF THE COUNT IS OK
+        BZB1,TLOOP,TB10A                                     ! line 35  -SET THE LOOP PREVENTER (printed "TLCCP")
+        BD,$                                                 ! line 36  -MCP OR MACHINE ERROR
+! line 37  -
+TA11A   CM0000,TASGNP(TIXD)                                  ! line 38  -RESET THE ASSIGNED BIT --- PP REF TBL
+        CM0000,TASGNI(TIXI)                                  ! line 39  -RESET THE ASSIGNED BIT --I/O REQ TBLE
+        CM0000,TABSCH(TIXI)                                  ! line 40  -ZERO THE CHANNEL ADDRESS
+        CM0000,TABSUN(TIXI)                                  ! line 41  -ZERO THE REL UNIT ADDRESS
+        CM0000,TPRINT(TIXI)                                  ! line 42  -RESET THE PRINT TO OPERATOR BIT
+        CM1111,TUNOBT(TIXI)                                  ! line 43  -RESET TO ONE THE NOT OVERLAP BIT
+        BB,TLOOP,TB10B                                       ! line 44  -IF IX WAS REFILLED -- BRANCH
+        KV,TIXD,TVALVF                                       ! line 45  -SHALL WE RESET THE VALID CHK PTR
+        BZXL,TB11C                                           ! line 46  -NO
+        SV,TIXD,TVALVF                                       ! line 47  -YES  --
+TB11C   KV,TIXD,TSAV                                         ! line 48  -DOES THE TSAV PTR. NEED RESETTING
+        BZXL,TB10B                                           ! line 49  -DO NOT PLACE IXH IN TSAV IF IX GREATR
+        SX,TIXD,TSAV                                         ! line 50  -DO PLACE IX IN TSAV IF LESS
+        B,TB10B                                              ! line 51  -LOOK FOR MORE
+! line 52  -
+
+!SYM TA10   021622.00
+!SYM TC10   021624.40
+!SYM TA10A  021626.40
+!SYM TB10A  021630.00
+!SYM TA11   021635.00
+!SYM TA11B  021636.40
+!SYM TB10B  021644.40
+!SYM TB10   021645.00
+!SYM TA11A  021647.40
+!SYM TB11C  021660.00
+!CHECK 021622.00 | 000000.76 8A 001000.00 F0 | line 3 T A10 CM0000,TUNRES(TIXF)
+!CHECK 021623.00 | 000000.77 8A 001000.00 F0 | line 4 CM0000,TOVRES(TIXF) (h2 prints "FC": open 0)
+!CHECK 021624.00 | 021626.50 00 | line 5 B,TA10A
+!CHECK 021624.40 | 000000.76 88 001000.00 F0 | line 7 T C10 CM0000,TUNRES(TIXG)
+!CHECK 021625.40 | 000000.77 88 001000.00 F0 | line 8 CM0000,TOVRES(TIXG)
+!CHECK 021626.40 | 232232.16 10 | line 10 T A10A LX,TIXC,TPPRUN (TIXC = TIXD, worn D)
+!CHECK 021627.00 | 232227.42 80 001000.00 F0 | line 11 CM0000,TLOOP
+!CHECK 021630.00 | 000000.47 87 000000.34 03 | line 12 T B10A BB,TLPPEN(TIXD),0.0(TX1BR)
+!CHECK 021631.00 | 000000.44 87 021645.34 02 | line 13 BB,TJBPRO(TIXD),TB10
+!CHECK 021632.00 | 000000.34 87 010027.20 50 | line 14 L,TUNCT(TIXD),46
+!CHECK 021633.00 | 021645.34 C2 | line 15 BRZ,TB10
+!CHECK 021633.40 | 000000.12 57 | line 16 LC,TIXI,TCRREF(TIXD)
+!CHECK 021634.00 | 000025.13 50 | line 17 SC,TIXI,TIXI
+!CHECK 021634.40 | 000011.12 50 | line 18 LC,TIXI,$R (a "*" prints after the location)
+!CHECK 021635.00 | 000000.22 85 021636.74 00 | line 22 T A11 BZB,TLAST(TIXI),TA11B
+!CHECK 021636.00 | 232307.13 01 | line 23 LVI,TIXI,TIOREQ
+!CHECK 021636.40 | 000000.56 85 022027.20 50 | line 24 T A11B L,TABSCH(TIXI),46
+!CHECK 021637.40 | 000011.24 90 | line 25 KV,TIXF,$R
+!CHECK 021640.00 | 021644.72 C0 | line 26 BZXE,TB10B
+!CHECK 021640.40 | 000000.03 85 021647.74 00 | line 27 BZB,TTYPE(TIXI),TA11A
+!CHECK 021641.40 | 000000.73 8A 004027.20 50 | line 28 L,TUNITK(TIXF),46
+!CHECK 021642.40 | 000000.07 85 003027.30 10 | line 29 -,TABSUN(TIXI),46
+!CHECK 021643.40 | 000011.21 90 | line 30 KC,TIXG,$R
+!CHECK 021644.00 | 021647.72 C2 | line 31 BXE,TA11A
+!CHECK 021644.40 | 021635.13 48 | line 32 T B10B CB+,TIXI,TA11
+!CHECK 021645.00 | 000002.17 07 | line 33 T B10 V+ICR,TIXD,2.0 (printed "TIXC,2.C")
+!CHECK 021645.40 | 021630.30 40 | line 34 BZXCZ,TB10A
+!CHECK 021646.00 | 232227.42 80 021630.34 0C | line 35 BZB1,TLOOP,TB10A (printed "TLCCP"; 0C is BZB1's signature)
+!CHECK 021647.00 | 021647.04 00 | line 36 BD,$
+!CHECK 021647.40 | 000000.46 87 001000.00 F0 | line 38 T A11A CM0000,TASGNP(TIXD) (a "*" prints after the location)
+!CHECK 021650.40 | 000000.00 85 001000.00 F0 | line 39 CM0000,TASGNI(TIXI)
+!CHECK 021651.40 | 000000.56 85 022000.00 F0 | line 40 CM0000,TABSCH(TIXI)
+!CHECK 021652.40 | 000000.07 85 003000.00 F0 | line 41 CM0000,TABSUN(TIXI)
+!CHECK 021653.40 | 000000.02 85 001000.00 F0 | line 42 CM0000,TPRINT(TIXI)
+!CHECK 021654.40 | 000000.01 85 001000.36 F0 | line 43 CM1111,TUNOBT(TIXI)
+!CHECK 021655.40 | 232227.42 80 021644.74 02 | line 44 BB,TLOOP,TB10B
+!CHECK 021656.40 | 232512.16 90 | line 45 KV,TIXD,TVALVF
+!CHECK 021657.00 | 021660.32 40 | line 46 BZXL,TB11C
+!CHECK 021657.40 | 232512.17 30 | line 47 SV,TIXD,TVALVF
+!CHECK 021660.00 | 232226.16 90 | line 48 T B11C KV,TIXD,TSAV
+!CHECK 021660.40 | 021644.72 40 | line 49 BZXL,TB10B
+!CHECK 021661.00 | 232226.17 10 | line 50 SX,TIXD,TSAV
+!CHECK 021661.40 | 021644.50 00 | line 51 B,TB10B

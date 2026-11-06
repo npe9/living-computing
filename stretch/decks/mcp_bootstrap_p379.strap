@@ -1,0 +1,185 @@
+! mcp_bootstrap_p379.strap -- MCP printed page 379: the SYSTEM COMMAND
+! package's time-calibration tail (Z TCC 03 .. Z TCC ST, lines 1-33)
+! and the opening of the COMMENT command (V VCOMJ, lines 37-56).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.129, read at 400 dpi, doubtful
+! glyphs at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22SCOMD
+! CARD ID WA000889  DIST. OF 3/01  3/01  PAGE NUMBER 379"; the heading
+! row's LOCATION field is 235511, line 1's word.
+!
+! THE PAGE.  56 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 15, 32 and 54.  Contiguous 235511.00 .. 235553.40
+! (line 56, a CF half word; next 235554.00).  Still SCOMD: no PUNID
+! change, no SLC, card series WA throughout.  No TAIL.
+!   lines  1-30  the TCC routine: *I/M+ time constant, D MCP / ,DTIME
+!                and D MCP / ,D COMM calls, A6->A8 date conversion
+!                loop V TCC LP, B,J NOPX, CNOP.
+!   lines 31-33  Z TCC 10 / Z TCC 11 (IQS*)DD messages, Z TCC ST VF.
+!   lines 34-36  remarks (banner "COMMENT VIA COMD ROUTINE" on 35).
+!   lines 37-56  V VCOMJ: mode-mask tests, buffer clear, SA6IQS call.
+!
+! JOIN.  p.377 ends at 235453.40 (next 235454.00); p.378 (parallel)
+! must fill 235454.00 .. 235510.40.  Card serials: p.377 ends
+! WA000841, this page opens WA000889, so p.378 holds WA000842-888.
+! p.361's B,VVCOMJ stand-in (235540.40) agrees with line 37.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 54 ",DCCMM" = DCOMM (landed p.105 "D COMM" SYN,35.32; the
+!     binary 000043.40 is DCOMM's, and line 16 prints ",D COMM").
+!   * line 48 "SA6ICS" = SA6IQS (landed p.260; BD binary 230567.44 is
+!     SA6IQS 230567.40 + BD's .04; the Q's tail is worn).
+!   * line 40 "JCN" = JON and "JCV"/"JCF" = JOV/JOF (p.363's mode bits;
+!     JSR+JJ1+JOV+JON = 4+8+32+128 = 0o254, printed 000254).
+!   * "CTICO10"/"CTIC010" = CTI0010 (as p.377).
+!   * names written without blanks: Z TCC 03 = ZTCC03, Z TCC 02 =
+!     ZTCC02, Z TCC ST = ZTCCST, Z TCC 10/11 = ZTCC10/ZTCC11, S TIME K
+!     = STIMEK (landed p.300), D MCP = DMCP, D COMM = DCOMM, V TCC LP =
+!     VTCCLP, J NOPX = JNOPX.
+!   * hex bytes printed "C0"/"C1" on rows whose octal
+!     fields print 0 open: read as 0 (lesson 6).
+!   * line 32's datum is SEVEN blanks, counted by column against line
+!     31 above it (monospace: the "*" prints under the F of AFTER, col
+!     20; the comma is col 12).  56 bits from 235537.00, the VF rounds to
+!     the half word 235540.00 the LOCATION prints.  Line 31's datum is
+!     24 characters (" TIME AFTER CALIBRATION "), exactly 3 words.
+!
+! CARD SERIALS.  WA000889 .. WA000942, one per line, except lines 12,
+! 13 and 14, which all print WA000900 (a B,DMCP calling sequence).
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B lines 12, 15, 53 000040.10
+DTIME   SYN, 35.0                    ! landed p.105 line 22 "D TIME"; line 13 000043.00
+DCOMM   SYN, 35.32                   ! landed p.105 line 23; lines 16, 54 000043.40 (54 printed "DCCMM")
+STODAY  SYN, (8)215015.0             ! landed p.103 line 50 (AX)DD(BU) at 215015.00; LVI line 23 215015.05
+STIMEK  SYN(B,25,1), (8)233143.0     ! landed p.300 line 47 "S TIME K VF,0.0"; ST line 11 233143.00
+YUCBF1  SYN(BU,64,8), (8)231366.0    ! landed p.273 line 42 DRZ(BU,64),(8); VF line 49 231366.66+
+SA6IQS  SYN, (8)230567.40            ! landed p.260 line 7 "SA6IQS TI,..."; BD line 48 230567.44 (printed "SA6ICS")
+JBRKC   SYN(BU,18), (8)234503.40     ! not landed; p.363 line 10 "J BRK C CF,0" at 234503.40; KV line 20
+JCBUF   SYN(BU,6), (8)234550.0       ! not landed; p.363 line 32 DR(BU,6),(80) at 234550.00; Z line 45, VF lines 51, 55
+JFLDB   SYN, (8)234560.0             ! not landed; p.363 line 33 "J FLD B DRZ,(12)" at 234560.00; LVI line 24 234565.03
+JJX1    SYN(BU), (8)234574.0         ! not landed; p.363 line 34 XW,0.0,12 at 234574.00; LX line 44
+JXMSK   SYN,$X13                     ! not landed; p.363 line 40 "J XMSK SYN,$X13"; SX line 37 000011.33 10
+JOP     SYN,2.0                      ! not landed; p.363 line 44
+JSR     SYN,4.0                      ! not landed; p.363 line 45
+JJ1     SYN,8.0                      ! not landed; p.363 line 46
+JOV     SYN,32.0                     ! not landed; p.363 line 48 "J CV"
+JON     SYN,128.0                    ! not landed; p.363 line 50
+JOF     SYN,256.0                    ! not landed; p.363 line 51 "J CF"
+JNOPX   SYN, (8)234637.0             ! not landed; p.365 line 18 "JNOPX SYN,$"; BXL line 21, B line 29, BRZ lines 41, 43
+ZTCC02  SYN, (8)235507.0             ! not landed (p.378, parallel); B lines 5, 8 235507.10, half word only
+VVOPTP  SYN, (8)235555.40            ! not landed (p.380); BRZ line 39 235555.74 = .40 + BRZ's .34, BIT-EXACT to the half word
+
+        SLC, (8)235511.00
+        V+I,4,2.32                                           ! line  1
+        B,0.0($4)                                            ! line  2
+ZTCC03  *I(BU,12),3600,46                                    ! line  3
+        M+(B,27,1),ZTCCST,20                                 ! line  4
+        B,ZTCC02                                             ! line  5
+        *I(BU,6),60,46                                       ! line  6
+        M+(B,27,1),ZTCCST,20                                 ! line  7
+        B,ZTCC02                                             ! line  8
+        L(BU,18),$R,20                                       ! line  9
+        +(B,27,1),ZTCCST,20                                  ! line 10
+        ST(B,27,1),STIMEK,20                                 ! line 11  -SET  TIME CONSTANT
+        B,DMCP                                               ! line 12
+        ,DTIME                                               ! line 13
+        ,ZTCC11                                              ! line 14
+        B,DMCP                                               ! line 15  printed "B,D MCP"; location carries *
+        ,DCOMM                                               ! line 16  printed ",D COMM"
+        VF,ZTCC10                                            ! line 17
+        CF,4.0                                               ! line 18
+        LVI,$5,6.0                                           ! line 19
+        KV,$5,JBRKC+1.0                                      ! line 20
+        BXL,JNOPX                                            ! line 21  -DO NOT HAVE DATE GIVEN
+! line 22  - *** PUT IN THE DATE FROM THE 6TH FIELD****
+        LVI,$2,STODAY                                        ! line 23
+        LVI,$1,JFLDB+5.0                                     ! line 24  - PICK UP DATE FIELD
+        LCI,$2,8.0                                           ! line 25
+VTCCLP  L(BU,6)(V+I),.6($1)                                  ! line 26  -CONVERT A6 TO A8
+        ST(BU,8)(V+I),.8($2)                                 ! line 27
+        CB,$2,VTCCLP                                         ! line 28
+        B,JNOPX                                              ! line 29  printed "B,J NOPX"
+        CNOP                                                 ! line 30
+ZTCC10  (IQS*)DD(BU), TIME AFTER CALIBRATION *               ! line 31
+ZTCC11  (IQS*)DD(BU),       *                                ! line 32  location carries *; SEVEN blanks: the * prints under line 31's F of AFTER
+ZTCCST  VF,0.0                                               ! line 33
+! line 34  ---------------------------------------------------------------------
+! line 35  -------------------COMMENT VIA COMD ROUTINE----------------------------
+! line 36  ---------------------------------------------------------------------
+VVCOMJ  SX,JXMSK,$R                                          ! line 37
+        CTI0010(BU,18),JOP,46                                ! line 38
+        BRZ,VVOPTP                                           ! line 39  -OPERATOR COMMENT
+        CTI0010(BU,18),JSR+JJ1+JOV+JON,46                    ! line 40  printed "CTIC010", "JCV+JCN"
+        BRZ,JNOPX                                            ! line 41  -IGNORE B CARD IN PHASE 1 SCAN
+        CTI0010(BU,18),JSR+JJ1+JOV+JOF,46                    ! line 42  printed "CTICO10", "JCV+JCF"
+        BRZ,JNOPX                                            ! line 43  -IGNORE B CARD IN PHASE 1 SCAN
+        LX,$12,JJX1                                          ! line 44
+VZERO   Z,JCBUF($12)                                         ! line 45  -CLEAR JCBUF
+        CB+,$12,VZERO                                        ! line 46
+        LVI,$15,$+1.0                                        ! line 47  -CONSOLE OUTPUT-CARD SOURCE
+        BD,SA6IQS                                            ! line 48  -CONVERT FROM A6 TO ICS  printed "SA6ICS"
+        VF,YUCBF1+.54                                        ! line 49  -BUFFER WITH CHARACTERS TO CONVERT
+        CF,53                                                ! line 50  -COUNT OF CHARACTERS TO CONVERT
+        VF,JCBUF                                             ! line 51
+        BE,$+.32                                             ! line 52
+        B,DMCP                                               ! line 53
+        ,DCOMM                                               ! line 54  printed ",DCCMM"; location carries *
+        VF,JCBUF                                             ! line 55
+        CF,7.0                                               ! line 56
+
+!SYM ZTCC03 235512.00
+!SYM VTCCLP 235530.40
+!SYM ZTCC10 235534.00
+!SYM ZTCC11 235537.00
+!SYM ZTCCST 235540.00
+!SYM VVCOMJ 235540.40
+!SYM VZERO  235546.00
+!CHECK 235511.00 | 000002.51 05 | line 1 V+I,4,2.32
+!CHECK 235511.40 | 000000.10 04 | line 2 B,0.0($4)
+!CHECK 235512.00 | 702000.00 80 414027.21 90 | line 3 Z TCC 03 *I(BU,12),3600,46
+!CHECK 235513.00 | 235540.00 80 033112.00 90 | line 4 M+(B,27,1),Z TCC ST,20
+!CHECK 235514.00 | 235507.10 00 | line 5 B,Z TCC 02
+!CHECK 235514.40 | 740000.00 80 406027.21 90 | line 6 *I(BU,6),60,46
+!CHECK 235515.40 | 235540.00 80 033112.00 90 | line 7 M+(B,27,1),Z TCC ST,20
+!CHECK 235516.40 | 235507.10 00 | line 8 B,Z TCC 02 (byte prints "C0")
+!CHECK 235517.00 | 000011.00 80 022012.20 50 | line 9 L(BU,18),$R,20
+!CHECK 235520.00 | 235540.00 80 033112.00 10 | line 10 +(B,27,1),Z TCC ST,20
+!CHECK 235521.00 | 233143.00 80 033112.00 D0 | line 11 ST(B,27,1),S TIME K,20
+!CHECK 235522.00 | 000040.10 00 | line 12 B,DMCP (byte prints "C0")
+!CHECK 235522.40 | 000043.00 80 | line 13 ,DTIME
+!CHECK 235523.00 | 235537.00 80 | line 14 ,Z TCC 11
+!CHECK 235523.40 | 000040.10 00 | line 15 B,D MCP
+!CHECK 235524.00 | 000043.40 80 | line 16 ,D COMM
+!CHECK 235524.40 | 235534.00+ | line 17 VF,Z TCC10
+!CHECK 235525.00 | 000004 | line 18 CF,4.0
+!CHECK 235525.40 | 000006.13 01 | line 19 LVI,$5,6.0
+!CHECK 235526.00 | 234504.52 90 | line 20 KV,$5,JBRKC+1.0
+!CHECK 235526.40 | 234637.32 42 | line 21 BXL,JNOPX
+!CHECK 235527.00 | 215015.05 01 | line 23 LVI,$2,STODAY (byte prints "C1")
+!CHECK 235527.40 | 234565.03 01 | line 24 LVI,$1,JFLDB+5.0
+!CHECK 235530.00 | 000010.05 02 | line 25 LCI,$2,8.0
+!CHECK 235530.40 | 000000.06 81 106000.20 50 | line 26 V TCC LP L(BU,6)(V+I),.6($1)
+!CHECK 235531.40 | 000000.10 82 110000.20 D0 | line 27 ST(BU,8)(V+I),.8($2)
+!CHECK 235532.40 | 235530.44 48 | line 28 CB,$2,V TCC LP
+!CHECK 235533.00 | 234637.10 00 | line 29 B,J NOPX
+!CHECK 235533.40 | 000000.30 00 | line 30 CNOP
+!CHECK 235540.00 | 000000.00+ | line 33 Z TCC ST VF,0.0
+!CHECK 235540.40 | 000011.33 10 | line 37 VVCOMJ SX,JXMSK,$R
+!CHECK 235541.00 | 000002.00 80 422027.05 70 | line 38 CTI0010(BU,18),JOP,46
+!CHECK 235542.00 | 235555.74 C2 | line 39 BRZ,VVOPTP
+!CHECK 235542.40 | 000254.00 80 422027.05 70 | line 40 CTI0010(BU,18),JSR+JJ1+JOV+JON,46
+!CHECK 235543.40 | 234637.34 C2 | line 41 BRZ,JNOPX
+!CHECK 235544.00 | 000454.00 80 422027.05 70 | line 42 CTI0010(BU,18),JSR+JJ1+JOV+JOF,46
+!CHECK 235545.00 | 234637.34 C2 | line 43 BRZ,JNOPX
+!CHECK 235545.40 | 234574.30 10 | line 44 LX,$12,JJX1
+!CHECK 235546.00 | 234550.22 0C | line 45 VZERO Z,JCBUF($12)
+!CHECK 235546.40 | 235546.31 48 | line 46 CB+,$12,VZERO
+!CHECK 235547.00 | 235550.37 01 | line 47 LVI,$15,$+1.0 (byte prints "C1")
+!CHECK 235547.40 | 230567.44 00 | line 48 BD,SA6IQS
+!CHECK 235550.00 | 231366.66+ | line 49 VF,YUCBF1+.54
+!CHECK 235550.40 | 000065 | line 50 CF,53
+!CHECK 235551.00 | 234550.00+ | line 51 VF,JCBUF
+!CHECK 235551.40 | 235552.00 00 | line 52 BE,$+.32
+!CHECK 235552.00 | 000040.10 00 | line 53 B,DMCP
+!CHECK 235552.40 | 000043.40 80 | line 54 ,DCCMM
+!CHECK 235553.00 | 234550.00+ | line 55 VF,JCBUF
+!CHECK 235553.40 | 000007 | line 56 CF,7.0

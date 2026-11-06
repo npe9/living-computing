@@ -16775,3 +16775,59 @@ Y MPBUF overlay.  listing_truth 350 pages / 13,125 lines.
   NEXT: printed p.378 on.  SCOMD ends on p.381 line 3; p.381 line 5 is
     PUNID,22$EOJ and line 7 SLC,YPPMEM (020000.00): a fourth program,
     not in Y MPBUF, which needs its own image region.
+
+pp.378-439 LANDED (2026-11-06): batches 13-16, parallel fan-outs of 16.
+60 decks (pp.416-417 are remarks only): the end of SCOMD (pp.378-381
+line 3) and the whole of the $EOJ program (PUNID 22$EOJ, p.381 line 5
+to p.439 line 33, END,0 at 023233.76).  Volume 2's code is now fully
+landed; pp.440-445 are the assembler's trailers.  listing_truth 410
+pages / 15,163 lines.
+  * A FOURTH PROGRAM, IN LOW CORE.  p.381 line 7 SLC,YPPMEM sets $EOJ at
+    020000.00, not in Y MPBUF.  check_mcp_body_image merges $EOJ
+    (pp.381-439) with the resident pp.99-319 and accounts for words
+    below 215000 as a region of their own (low_region_origin, holes per
+    region).  An SLC-skipped word that is also reserved is not an SLC
+    hole: the body's first SLC (040 -> 215000) spans the whole $EOJ
+    region, and p.387's YI4TA DR(BU),(1) at 020252.00 read as a hole.
+    SCOMD's fill-only tail is p.381's CC trailer cards to the end of
+    Y MPBUF; $EOJ's fill-only is all of Y MPBUF.  Measured: drop p.389
+    -> FAIL slc_holes (25 words); drop p.381 -> FAIL low_region_origin;
+    reserved exclusion removed -> FAIL on 020252.
+  * $OP WITH A SIGN.  "Any operation code" (C28-6129 printed p.10)
+    includes the arithmetic mnemonics that start with a sign: p.413
+    line 9 prints "$-(BU,18),TCHSXW,-60".  strap_asm's $ guard took
+    only a letter; check_dollar_op gains dollar_minus_equals_minus.
+    The landed volume-1 p.78 line 10 deck had written the same card as
+    "-(BU,18)"; it now carries the printed "$-".
+  * SPELLINGS.  check_symbol_spellings skips !SYM rows for names a page
+    SYNs to an index register ($n): p.411 TXA and p.418 TMXA are both
+    $1 and name the register, not a location.  Injection with the
+    exclusion removed -> FAIL 3 (TMXA/TXA, TMXB/TXB, TMXC/TXC).
+  * STAND-INS TAKE THE DEFINING FORM (merge refusals fixed): PHOLDB
+    plain; WBREAK SYN,WJOR2+1.0; YMOJM1-3 and YMOVJM SYN(BU); WJCV
+    SYN(BU,32,8); TAREJX plain; YTBIT plain -- p.395 line 23 defines it
+    "SYN,YLOL2+.25", which changed the landed p.273 deck's stand-in.
+  * p.384 YICDSO is YIODSO (C22-6728, five times).
+  * Census: STN costs what ST costs (the N suffix, C22-6531 App. A fn.4;
+    p.378 line 44), and la_levels strips "$" before a sign mnemonic as
+    strap_asm does (p.413 line 9, p.78 line 10).
+  * THE ERROR LIST, p.444, corroborates two assembler rules
+    independently: "PAGE 356 LINE 42 NO MODE" (E-I,48 takes the U
+    default) and "PAGE 363 LINE 33 DR OR DD WITHOUT DDS" (J FLD B
+    DRZ,(12) is a DR(N)).  p.445: "THIS ASSEMBLY REQUIRED 000952
+    SECOND(S). FOR 20228 UNITS".
+  OPEN: p.444's other rows are unchecked against their decks: PAGE 364
+    LINE 48 FIELD LENGTH GREATER THAN 64; volume 1 PAGE 15/15, 37/9,
+    103/7 MORE THAN 1 LOC.CTR.DEP. SYMBOL; PAGE 156/28, 195/44 INDEX
+    NOT ALLOWED.  pp.442-443's symbol table (name, value) is an oracle
+    not yet used.  YICDTM (p.387) unsettled.  $EOJ's ZE series (pp.398-
+    415) reassembles volume 1 pp.61-98's tape ASSIGN at other addresses:
+    p.421 against p.86 line 18 is unchecked (line 52 is a confirmed
+    source revision); p.418 line 13 prints 8 blanks where the p.83 deck
+    has 7.  TORARC settled by a remark only; TMOJRP vs YMORJP.  p.394
+    lines 12, 25, 50 message lengths rest on measurement.  p.436 YC4BZ
+    (p.437 defines it, Z not 2).  Card-serial gaps ZA000549, ZA000599,
+    ZE000610, ZF000050, ZZ000143; ZZ serials printed twice on pp.434
+    and 438.
+  NEXT: volume 2's code is done.  pp.442-443 as an oracle for every
+    symbol's value; the p.444 rows; then the $EOJ image on the model.

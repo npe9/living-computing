@@ -1,0 +1,153 @@
+! mcp_bootstrap_p429.strap -- MCP printed page 429: the $EOJ program's
+! reassembly of the tape ASSIGN routine, "LOCATE THE PROPER REEL SLOT
+! FOR ENTRY" (TM6 .. TN6) and "DETERMINE THE REEL STATUS" (TM8 .. TM6C),
+! to B,TMREJB.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.179, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZF000585  DIST. OF 3/01
+!  3/01  PAGE NUMBER 429"; the heading row's LOCATION field is blank
+! (line 1 is a remark card and compiles nothing).
+!
+! >>> CARD SERIES ZF, PUNID 22$EOJ.  No SLC, no PUNID on the page; the
+! origin below is line 6's printed LOCATION.  No TAIL. <<<
+!
+! THE PAGE.  48 lines, every line number prints a "*"; a further "*"
+! after the LOCATION on lines 20 and 40 (recorded, not interpreted).
+! Contiguous 022606.00 .. 022634.00 (line 48, a half word; next location
+! 022634.40).  Lines 1-5 the boxed banner "LOCATE THE PROPER REEL SLOT
+! FOR ENTRY"; 9, 17, 19, 22, 35, 39 remark dashes; 23-24 the banner
+! "DETERMINE THE REEL STATUS - EG. FILE PROTECT, SYSTEM".  Same source
+! as volume 1 pp.93-94 (TM6 .. TM6C), a different assembly.
+!
+! CARD SERIALS.  ZF000585 .. ZF000632, one per line, consecutive.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!  * line 7 prints "TM6C" for TM6D (worn D): binary 022610.36 is BAE to
+!    022610.00 = line 10's T M6D; T M6C is line 41 at 022630.40.
+!  * line 10 label "T M6D" reads D (stem visible); volume 1 spells TM6D.
+!  * line 25 "(BU,3C,6)" = (BU,30,6): open 0 (decimal length 30).
+!  * line 38 "CM0C00" = CM0000 (open 0).
+!  * hex "C0" bytes on BZAE/BZXE rows (32, 37) are real C0 (as p.425).
+!
+! EXTERNALS.  Copied in their DEFINING forms from b15decks p.418 (TMXn
+! index names, TMREEL/TLBL/TNOP (AX)DDs, TBAMCP, TM6BL), p.419 (TFRLAD,
+! TIREEL, TSYSTM), p.420 (TRENTY, TREPR, TRELB, TRENME).  TOK and
+! TMREJB come from this page's binary only.
+
+TMX1    SYN,$1                       ! p.418 line 22; LVI line 47 .03
+TMXF    SYN,$7                       ! p.418 line 28; byte 87
+TMXG    SYN,$8                       ! p.418 line 29; byte 88
+TMXEE   SYN,$9                       ! p.418 line 30; byte 89
+TMXI    SYN,$10                      ! p.418 line 31; byte 8A
+TMXGA   SYN,$11                      ! p.418 line 32; byte 8B
+TMXH    SYN,TMX1                     ! p.418 line 33 (defining form); byte 81
+TMREEL  SYN(BU,24,6), (8)022131.51   ! p.418 line 10 (AX)DD(BU,24,6); KF line 6 022131.51
+TLBL    SYN(BU,6,6), (8)022132.01    ! p.418 line 11 (AX)DD(BU,6,6); KF line 31 022132.01
+TNOP    SYN(BU,6,6), (8)022132.07    ! p.418 line 12 (AX)DD(BU,6,6); KF line 28 022132.07
+TM6BL   SYN(BU,48,6), (8)022132.15   ! p.418 line 13 (AX)DD(BU,48,6); KF line 25
+SMAXUB  SYN(B,25,1), (8)215225.0     ! landed p.116 "S MAXUB VF,0.0"; KV line 45 215225.16
+TBAMCP  SYN,SMAXUB                   ! p.418 line 18 (defining form)
+TFRLAD  SYN(BU,18),8.0               ! p.419 line 46
+TIREEL  SYN(BU,48),2.0               ! p.419 line 22
+TSYSTM  SYN(BU,1),7.25               ! p.419 line 45
+TRENTY  SYN(BU,1),0.25               ! p.420 line 19
+TREPR   SYN(BU,1),0.26               ! p.420 line 20
+TRELB   SYN(BU,1),0.27               ! p.420 line 21
+TRENME  SYN(BU,30),0.34              ! p.420 line 22
+TOK     SYN, (8)022604.0             ! not seen; CBZ line 12 022604.26, CBZ+ line 41 .27, half word only
+TMREJB  SYN, (8)022721.0             ! not seen; B line 48 022721.10, half word only
+
+        SLC, (8)022606.00
+! line  1  -
+! line  2  - ----------------------------------------------------------
+! line  3  -              LOCATE THE PROPER REEL SLOT FOR ENTRY
+! line  4  - ----------------------------------------------------------
+! line  5  -
+TM6     KF,TMREEL                                            ! line  6  -CHECK FOR A REEL CARD
+        BAE,TM6D                                             ! line  7  -OK (printed "TM6C")
+        BD,$                                                 ! line  8  -MCP ERROR, INVALID OP CODE ON CD.
+! line  9  -
+TM6D    LV,TMXG,TFRLAD(TMXEE)                                ! line 10  -GET INITIAL REEL ENTRY
+        LX,TMXGA,0.0(TMXI)                                   ! line 11  -TO GET THE REEL COUNT
+        CBZ,TMXGA,TOK                                        ! line 12  -GET 1ST REEL LOC IF ANY
+        LV,TMXGA,TMXI                                        ! line 13  -GET FIRST REEL ADDRESS
+TM6A    LV,TMXH,TMXG                                         ! line 14  -SAVE FOR LAST ENTRY
+        LX,TMXG,0.0(TMXG)                                    ! line 15  -LOOK AHEAD ONE SLOT
+        BZXVZ,TM6A                                           ! line 16  -IF THERE IS AN ENTRY
+! line 17  -
+        BXF,TM6C+.32                                         ! line 18  -IF A SCRATCH REEL HAS BEEN ENTERED
+! line 19  -
+TN6     C0011,TIREEL(TMXGA)                                  ! line 20  -GET A REEL NAME FROM BREAKDOWN
+        Z,0.0(TMXH)                                          ! line 21  -CLEAR THE REEL SLOT FIRST
+! line 22  -
+! line 23  -              DETERMINE THE REEL STATUS - EG. FILE PROTECT, SYSTEM
+! line 24  -
+        KF(BU,30,6),TM6BL                                    ! line 25  -BYPASS PROTECTION IF SCRATCH
+        BAE,TM8AB                                            ! line 26
+        CM0101,TRENME(TMXH)                                  ! line 27  -INSERT THE NAME
+        KF,TNOP,42                                           ! line 28  -LOOK FOR A NON-PROTECT
+        BAE,TM8                                              ! line 29
+        CM1111,TREPR(TMXH)                                   ! line 30  -SET THE REEL PROTECT BIT ON
+TM8     KF,TLBL,36                                           ! line 31  -LOOK FOR A LABELED TAPE
+        BZAE,TM8AZ                                           ! line 32  -IF NOT A LABELED TAPE
+TM8AB   CM1111,TRELB(TMXH)                                   ! line 33  -SET THE LABEL BIT TO ONE
+        B,TM8A                                               ! line 34
+! line 35  -
+TM8AZ   KV,TMXH,TFRLAD(TMXEE)                                ! line 36  -CHECK TO SEE IF FIRST REEL ENTRY
+        BZXE,TM8A                                            ! line 37  -NO
+        CM0000,TSYSTM(TMXEE)                                 ! line 38  -RESET SYSTEM BIT
+! line 39  -
+TM8A    CM1111,TRENTY(TMXH)                                  ! line 40  -SET THE ENTRY BIT TO ONE
+TM6C    CBZ+,TMXGA,TOK                                       ! line 41  -STEP BREAKDOWN INDEX
+        SV,TMXF,0.0(TMXH)                                    ! line 42  -STORE THE SLOT ADDRESS
+        LV,TMXH,TMXF                                         ! line 43  -GET NEW SLOT
+        V+I,TMXF,1.0                                         ! line 44
+        KV,TMXF,TBAMCP                                       ! line 45  -IS THE REEL POOL EXCEEDING BOUNDS
+        BXL,TN6                                              ! line 46  -NO
+        LVI,TMX1,4.0                                         ! line 47  -NOTE ERROR - PP EXCEEDING LIMITS
+        B,TMREJB                                             ! line 48
+
+!SYM TM6    022606.00
+!SYM TM6D   022610.00
+!SYM TM6A   022612.00
+!SYM TN6    022614.00
+!SYM TM8    022622.40
+!SYM TM8AB  022624.00
+!SYM TM8AZ  022625.40
+!SYM TM8A   022627.40
+!SYM TM6C   022630.40
+!CHECK 022606.00 | 022131.51 80 030600.23 10 | line 6 T M6 KF,TMREEL
+!CHECK 022607.00 | 022610.36 C2 | line 7 BAE,TM6D (printed "TM6C")
+!CHECK 022607.40 | 022607.44 00 | line 8 BD,$
+!CHECK 022610.00 | 000010.20 39 | line 10 T M6D LV,TMXG,TFRLAD(TMXEE)
+!CHECK 022610.40 | 000000.26 1A | line 11 LX,TMXGA,0.0(TMXI)
+!CHECK 022611.00 | 022604.26 4A | line 12 CBZ,TMXGA,TOK
+!CHECK 022611.40 | 000032.26 30 | line 13 LV,TMXGA,TMXI
+!CHECK 022612.00 | 000030.02 30 | line 14 T M6A LV,TMXH,TMXG
+!CHECK 022612.40 | 000000.20 18 | line 15 LX,TMXG,0.0(TMXG)
+!CHECK 022613.00 | 022612.31 40 | line 16 BZXVZ,TM6A
+!CHECK 022613.40 | 022631.23 42 | line 18 BXF,TM6C+.32
+!CHECK 022614.00 | 000002.00 8B 060000.06 70 | line 20 T N6 C0011,TIREEL(TMXGA)
+!CHECK 022615.00 | 000000.22 01 | line 21 Z,0.0(TMXH)
+!CHECK 022615.40 | 022132.15 80 036600.23 10 | line 25 KF(BU,30,6),TM6BL
+!CHECK 022616.40 | 022624.36 C2 | line 26 BAE,TM8AB
+!CHECK 022617.00 | 000000.42 81 036000.12 F0 | line 27 CM0101,TRENME(TMXH)
+!CHECK 022620.00 | 022132.07 80 006625.23 10 | line 28 KF,TNOP,42
+!CHECK 022621.00 | 022622.76 C2 | line 29 BAE,TM8
+!CHECK 022621.40 | 000000.32 81 001000.36 F0 | line 30 CM1111,TREPR(TMXH)
+!CHECK 022622.40 | 022132.01 80 006622.23 10 | line 31 T M8 KF,TLBL,36
+!CHECK 022623.40 | 022625.76 C0 | line 32 BZAE,TM8AZ
+!CHECK 022624.00 | 000000.33 81 001000.36 F0 | line 33 T M8AB CM1111,TRELB(TMXH)
+!CHECK 022625.00 | 022627.50 00 | line 34 B,TM8A
+!CHECK 022625.40 | 000010.02 99 | line 36 T M8AZ KV,TMXH,TFRLAD(TMXEE)
+!CHECK 022626.00 | 022627.72 C0 | line 37 BZXE,TM8A
+!CHECK 022626.40 | 000007.31 89 001000.00 F0 | line 38 CM0000,TSYSTM(TMXEE)
+!CHECK 022627.40 | 000000.31 81 001000.36 F0 | line 40 T M8A CM1111,TRENTY(TMXH)
+!CHECK 022630.40 | 022604.27 4A | line 41 T M6C CBZ+,TMXGA,TOK
+!CHECK 022631.00 | 000000.17 31 | line 42 SV,TMXF,0.0(TMXH)
+!CHECK 022631.40 | 000027.02 30 | line 43 LV,TMXH,TMXF
+!CHECK 022632.00 | 000001.17 05 | line 44 V+I,TMXF,1.0
+!CHECK 022632.40 | 215225.16 90 | line 45 KV,TMXF,TBAMCP
+!CHECK 022633.00 | 022614.32 42 | line 46 BXL,TN6
+!CHECK 022633.40 | 000004.03 01 | line 47 LVI,TMX1,4.0
+!CHECK 022634.00 | 022721.10 00 | line 48 B,TMREJB

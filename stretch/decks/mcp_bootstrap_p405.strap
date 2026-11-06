@@ -1,0 +1,182 @@
+! mcp_bootstrap_p405.strap -- MCP printed page 405: $EOJ's copy of the
+! ASSIGN program's unit-assignment tail -- T A5MA (set the assigned bit,
+! the channel and unit numbers to the I/O request), the scratch/label
+! unload path (T A5LC, T IPL3, T VARI), and SINGLE UNIT ASSIGNMENT
+! (T A5S .. T A5SA), to B,TB2.  The same source as vol-1 printed pp.70-71
+! (decks/mcp_bootstrap_p70/p71.strap), REVISED: line 22 here loads
+! T CAT (p.70: T COT), and lines 18, 23, 24, 32 (LRI/SR with UNAGN9,
+! UNAGN3, T VARI) are new.  Spellings checked against p.70/71 and the
+! resident definitions (pp.287-289); addresses never copied from vol 1.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.155, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZE000357  DIST. OF 3/01
+!  3/01  PAGE NUMBER 405"; the heading row's LOCATION field is 021436,
+! line 1's word.
+!
+! >>> STILL $EOJ, BUT CARD SERIES ZE. <<<  PUNID 22$EOJ as pp.381-393,
+! but this page's serials are ZE000357 .. ZE000408 (pp.381-393 are ZA),
+! and it sits at 0214xx, not 0200xx-0205xx.  No SLC, no TAIL on the
+! page; the origin below is line 1's printed LOCATION.
+!
+! THE PAGE.  52 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 1, 13 and 31.  Located rows contiguous from
+! 021436.00 to 021475.40 (line 48, B,TB2, a half word); lines 49-52
+! remarks, then blank paper.
+!   lines 20-21, 35-39, 49-52   remark cards ("-" in the name column).
+!
+! >>> CARD SERIALS. <<<  ZE000357 .. ZE000408, one per line, no gap, no
+! duplicate.
+!
+! >>> GLYPHS. <<<  Round glyphs in octal fields read 0 throughout
+! ("000000.CC", "215002.CC", "C22272.57").  The connective "CTOC11"
+! (line 15) and "CMOCOO" (27, 29, 33) print open rounds in a connective
+! field, where only 0/1 stand: written CT0011, CM0000.  Line 47 prints
+! "TABSCF": the H has lost its right stem; it is TABSCH (line 3 prints
+! the same statement, and both rows assemble 000000.56 = bit 46).  Line
+! 4 prints "TCHSXw" (a worn W).  "T COT" (lines 5, 10, 17) is O by
+! p.70's TCOT; the ink is open.  Line 30 "B,DMCP" prints a worn M.
+! Line 13 prints "BB ,TFDISP" and line 46 "SV,TX3 ,$R" with a blank
+! before the comma; written as printed.
+!
+! STAND-INS.  Resident (pp.99-319) forms copied from their defining
+! pages.  $EOJ's T COT, T CAT, T A2A, T B2, T H, T I, UNAGN9, UNAGN3 are
+! defined on no landed page: values from this page's binary.  UNAGN9 and
+! UNAGN3 are WORD addresses 9.0 / 3.0: line 32's null-op half word prints
+! 000011.00, and a bare integer 9 compiles 000000.11 there (the LRI rows
+! cannot tell the two apart).
+
+TASGNI  SYN(BU,1),0.00               ! landed p.288 line 28
+TABSCH  SYN(BU,18),0.46              ! landed p.288 line 37
+TABSUN  SYN(BU,3),0.07               ! landed p.288 line 32
+TTYPE   SYN(BU,4),0.03               ! landed p.288 line 31
+TFREEL  SYN(BU,18),0.28              ! landed p.288 line 36
+TFDISP  SYN(BU,1),0.27               ! landed p.289 line 9
+TUNASG  SYN(BU,1),0.29               ! landed p.289 line 11
+TCHOWN  SYN(BU,1),0.32               ! landed p.289 line 12
+TUNITK  SYN(BU,4),0.59               ! landed p.289 line 16
+TUNRES  SYN(BU,1),0.62               ! landed p.289 line 17
+TOVRES  SYN(BU,1),0.63               ! landed p.289 line 18
+SXCHAN  SYN(BU), (8)215002.0         ! landed p.103 line 28 XW (as p.289's stand-in); line 4 215002.00, BIT-EXACT
+TCHSXW  SYN,SXCHAN                   ! landed p.289 line 5
+TX1     SYN,$10                      ! landed p.287 line 30
+TCTWDX  SYN,TX1                      ! landed p.287 line 29
+TX3     SYN,$2                       ! landed p.287 line 33
+TIXA    SYN,$4                       ! landed p.287 line 34
+TIXB    SYN,$5                       ! landed p.287 line 35
+TIXJ    SYN,$6                       ! landed p.287 line 41
+STATI   SYN(BU,1), 0.26              ! landed p.99 line 23
+SIMNT   SYN(BU,1), 0.53              ! landed p.99 line 44
+SMOUNT  SYN(BU,1), 0.51              ! landed p.99 line 42
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 30 000040.10
+DFREE   SYN, 10.32                   ! landed (p.104 line 44 form); line 31 000012.40
+TH      SYN, (8)021722.40            ! $EOJ, not landed; BB1 line 45 021722.74, half word only
+TI      SYN, (8)021723.0             ! $EOJ, not landed; BB1 line 1 021723.34, half word only
+TCOT    SYN, (8)022307.0             ! $EOJ, not landed; ST lines 5/10 022307.14/.57, BIT-EXACT
+TCAT    SYN, (8)022272.0             ! $EOJ, not landed; ST lines 6/11 022272.14/.57, BIT-EXACT
+TA2A    SYN, (8)021234.0             ! $EOJ, not landed; B line 34 021234.10, half word only
+TB2     SYN, (8)021245.40            ! $EOJ, not landed; B line 48 021245.50, half word only
+UNAGN9  SYN, 9.0                     ! not landed; LRI line 18 000011.13, line 32 000011.00 (word 9: a bare 9 compiles .11 there)
+UNAGN3  SYN, 3.0                     ! not landed; LRI line 23 000003.13
+
+        SLC, (8)021436.0
+TA5MA   BB1,TASGNI(TIXA),TI                                  ! line  1  -SET THE ASSIGNED BIT -- I/O REQ TBL
+        SV,TX3,$R                                            ! line  2  -THE CHANNEL ADDRESS
+        ST,TABSCH(TIXA),46                                   ! line  3  -ABSOLUTE CHAN TO I/O REQ TABLE
+        -(BU,18),TCHSXW,46                                   ! line  4  -COMPUTE THE CHANNEL NUMBER
+        ST(BU,7),TCOT+.12,46                                 ! line  5
+        ST(BU,7),TCAT+.12,46                                 ! line  6
+        L,TUNITK(TX3),46                                     ! line  7  -COMPUTE REAL UNIT NUMBER
+        - (BU,4),TIXJ+0.42,46                                ! line  8
+        ST,TABSUN(TIXA),46                                   ! line  9  -TO THE I/O REQUEST TABLE
+        ST(BU,3),TCOT+.47,46                                 ! line 10
+        ST(BU,3),TCAT+.47,46                                 ! line 11
+        BZB,TTYPE(TIXA),TA2A                                 ! line 12
+        BB ,TFDISP(TIXJ),TA2A                                ! line 13  -IF THERE IS NOTAPE MOUNTED
+        BB,STATI(TIXJ),TA5LC                                 ! line 14  -IF THE TAPE MTED IS A SPECIFIC TP
+        CT0011,TFREEL(TIXA)                                  ! line 15  printed "CTOC11"
+        BRZ,TA2A                                             ! line 16  -AND A THE REQUEST IS FOR A SCRATCH
+        LCI,TIXB,TCOT                                        ! line 17  -FOR DO NCT SAVE MESSAGE  (printed "T COT")
+        LRI,TIXB,UNAGN9                                      ! line 18
+        B,TA5LC+1.0                                          ! line 19
+! line 20  -      CONCLUSION IS A SCRATCH IS MOUNTED AND A LABEL TAPE IS TO RE-
+! line 21  -      PLACE IT , HENCE WE MUST UNLOAD
+TA5LC   LCI,TIXB,TCAT                                        ! line 22  -FOR SAVE MESSAGES  (printed "T CAT")
+        LRI,TIXB,UNAGN3                                      ! line 23
+        SR,TIXB,TVARI                                        ! line 24
+        SC,TIXB,0.0(TIXJ)                                    ! line 25  -SET UP THE DUMMY UNIT AREA ADDR.
+        CM1111,TCHOWN(TIXJ)                                  ! line 26  -AND SET TO MCP OWNER
+        CM0000,TUNASG(TIXJ)                                  ! line 27  -ALSO SET ASSIGNED  (printed "CMOCOO")
+        CM0000,SIMNT(TIXJ)                                   ! line 28  -RESET THE
+        CM0000,SMOUNT(TIXJ)                                  ! line 29  -MOUNT BITS  (printed "CMOCOO", "SMCUNT")
+TIPL3   B,DMCP                                               ! line 30  -THEN UNLOAD WITH  - SFREE -
+        ,DFREE                                               ! line 31
+TVARI   ,UNAGN9                                              ! line 32  -MAY ALSO BE UNAGN3
+        CM0000,TCHOWN(TIXJ)                                  ! line 33  -THEN RESET BACK TO PP OWNER  (printed "CMOCOO")
+        B,TA2A                                               ! line 34
+! line 35  -
+! line 36  -              SINGLE UNIT ASSIGNMENT
+! line 37  -              MARK THE I/O CHAN/UNIT RESERVED
+! line 38  -              MARK THE I/O REQUEST ASSIGNED
+! line 39  -
+TA5S    LX,TCTWDX,0.0($15)                                   ! line 40  -CHECK THE MODE
+        BXF,TA5Z                                             ! line 41  -IF NOT OVERLAP
+        CM1111,TOVRES(TX3)                                   ! line 42  -SET THE OVERLAP RESERVED BIT
+        B,TA5SA                                              ! line 43
+TA5Z    CM1111,TUNRES(TX3)                                   ! line 44  -SET THE NOT OVERLAP RESERVED BIT
+TA5SA   BB1,TASGNI(TIXA),TH                                  ! line 45  -SET THE ASSIGNED BIT -- I/O REQ TBL
+        SV,TX3 ,$R                                           ! line 46  -THE CHAN/UNIT ADDRESS
+        ST,TABSCH(TIXA),46                                   ! line 47  -PLACE IN THE I/O REQ TBLE  (printed "TABSCF")
+        B,TB2                                                ! line 48
+! line 49  -
+! line 50  -              CHECK TO SEE THAT ALL UNITS WERE ASSIGNED TO A GIVEN
+! line 51  -              PP.  IF SO MARK THE ASSIGNED BIT ON IN THE PP
+! line 52  -              REFERENCE TABLE
+
+!SYM TA5MA  021436.00
+!SYM TA5LC  021456.40
+!SYM TIPL3  021464.40
+!SYM TVARI  021465.40
+!SYM TA5S   021467.40
+!SYM TA5Z   021472.00
+!SYM TA5SA  021473.00
+!CHECK 021436.00 | 000000.00 84 021723.34 0E | line 1 T A5MA BB1,TASGNI(TIXA),TI (a "*" prints after the location)
+!CHECK 021437.00 | 000011.05 30 | line 2 SV,TX3,$R
+!CHECK 021437.40 | 000000.56 84 022027.20 D0 | line 3 ST,TABSCH(TIXA),46
+!CHECK 021440.40 | 215002.00 80 022027.30 10 | line 4 -(BU,18),TCHSXW,46
+!CHECK 021441.40 | 022307.14 80 007027.20 D0 | line 5 ST(BU,7),TCOT+.12,46
+!CHECK 021442.40 | 022272.14 80 007027.20 D0 | line 6 ST(BU,7),TCAT+.12,46
+!CHECK 021443.40 | 000000.73 82 004027.20 50 | line 7 L,TUNITK(TX3),46
+!CHECK 021444.40 | 000026.52 80 004027.30 10 | line 8 - (BU,4),TIXJ+0.42,46
+!CHECK 021445.40 | 000000.07 84 003027.20 D0 | line 9 ST,TABSUN(TIXA),46
+!CHECK 021446.40 | 022307.57 80 003027.20 D0 | line 10 ST(BU,3),TCOT+.47,46
+!CHECK 021447.40 | 022272.57 80 003027.20 D0 | line 11 ST(BU,3),TCAT+.47,46
+!CHECK 021450.40 | 000000.03 84 021234.34 00 | line 12 BZB,TTYPE(TIXA),TA2A
+!CHECK 021451.40 | 000000.33 86 021234.34 02 | line 13 BB ,TFDISP(TIXJ),TA2A (a "*" prints after the location)
+!CHECK 021452.40 | 000000.32 86 021456.74 02 | line 14 BB,STATI(TIXJ),TA5LC
+!CHECK 021453.40 | 000000.34 84 022000.07 70 | line 15 CT0011,TFREEL(TIXA) (printed "CTOC11")
+!CHECK 021454.40 | 021234.34 C2 | line 16 BRZ,TA2A
+!CHECK 021455.00 | 022307.13 02 | line 17 LCI,TIXB,T COT
+!CHECK 021455.40 | 000011.13 03 | line 18 LRI,TIXB,UNAGN9
+!CHECK 021456.00 | 021457.50 00 | line 19 B,TA5LC+1.0
+!CHECK 021456.40 | 022272.13 02 | line 22 T A5LC LCI,TIXB,T CAT
+!CHECK 021457.00 | 000003.13 03 | line 23 LRI,TIXB,UNAGN3
+!CHECK 021457.40 | 021465.53 70 | line 24 SR,TIXB,TVARI
+!CHECK 021460.00 | 000000.13 56 | line 25 SC,TIXB,0.0(TIXJ)
+!CHECK 021460.40 | 000000.40 86 001000.36 F0 | line 26 CM1111,TCHOWN(TIXJ)
+!CHECK 021461.40 | 000000.35 86 001000.00 F0 | line 27 CM0000,TUNASG(TIXJ)
+!CHECK 021462.40 | 000000.65 86 001000.00 F0 | line 28 CM0000,SIMNT(TIXJ)
+!CHECK 021463.40 | 000000.63 86 001000.00 F0 | line 29 CM0000,SMOUNT(TIXJ)
+!CHECK 021464.40 | 000040.10 00 | line 30 T IPL3 B,DMCP
+!CHECK 021465.00 | 000012.40 80 | line 31 ,DFREE (a "*" prints after the location)
+!CHECK 021465.40 | 000011.00 80 | line 32 T VARI ,UNAGN9
+!CHECK 021466.00 | 000000.40 86 001000.00 F0 | line 33 CM0000,TCHOWN(TIXJ)
+!CHECK 021467.00 | 021234.10 00 | line 34 B,TA2A
+!CHECK 021467.40 | 000000.24 1F | line 40 T A5S LX,TCTWDX,0.0($15)
+!CHECK 021470.00 | 021472.23 42 | line 41 BXF,TA5Z
+!CHECK 021470.40 | 000000.77 82 001000.36 F0 | line 42 CM1111,TOVRES(TX3)
+!CHECK 021471.40 | 021473.10 00 | line 43 B,TA5SA
+!CHECK 021472.00 | 000000.76 82 001000.36 F0 | line 44 T A5Z CM1111,TUNRES(TX3)
+!CHECK 021473.00 | 000000.00 84 021722.74 0E | line 45 T A5SA BB1,TASGNI(TIXA),TH
+!CHECK 021474.00 | 000011.05 30 | line 46 SV,TX3 ,$R
+!CHECK 021474.40 | 000000.56 84 022027.20 D0 | line 47 ST,TABSCH(TIXA),46 (printed "TABSCF")
+!CHECK 021475.40 | 021245.50 00 | line 48 B,TB2

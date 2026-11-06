@@ -1,0 +1,108 @@
+! mcp_bootstrap_p380.strap -- MCP printed page 380: the SYSTEM COMMAND
+! package's comment-onto-tape routine (V VOPTP, V VTPCN), its blanking
+! loop (V ZERO1) and the double-space printer code (V DUB).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.130, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22SCOMD  CARD ID WA000943  DIST. OF 3/01
+!  3/01  PAGE NUMBER 380"; the heading row's LOCATION field is 235554,
+! line 1's word.
+!
+! THE PAGE.  25 lines, every line number prints a "*"; a "*" after the
+! LOCATION on line 21.  Contiguous 235554.00 .. 235570.00 (line 25, the
+! one-byte DD; next 235570.10), then blank paper.  Still SCOMD: no
+! PUNID change, no SLC, card series WA throughout.  No TAIL.
+!   lines  1-3   LVI/LCI/B tail of the routine before (on p.379).
+!   line   4     remark "---- COMMENT ONTO TAPE -----".
+!   lines  5-14  V VOPTP .. V VTPCN .. V ZERO1 loop, TI, BD,SIQSA8.
+!   lines 15-17  V VBFAD VF,0 / V VBFCT CF,0.0 / VF,JFLDB+.8.
+!   lines 18-23  SIC,ZSPLP9 / BD,ZSPLPR calling sequence, BE,ZEXITX.
+!   lines 24-25  CNOP; V DUB DD(BU,8),(2)00100001, printed "041".
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "VVCPTP" = VVOPTP: the round after V V is open, as this drum
+!     prints O; "COMMENT ONTO TAPE" names the routine (V V O P TP =
+!     OPerator-to-TaPe); p.379 line 39 (Vision reading) prints
+!     "BRZ,VVOPTP -OPERATOR COMMENT" at 235555.74 = 235555.40 + .34.
+!   * "VZERO1" (lines 10, 11): the last glyph is a digit 1, read plain;
+!     the round before it prints CLOSED at 900 dpi (letter O), and
+!     p.379 lines 45-46 define V ZERO (Vision reading).  The
+!     sheet's "VZEROL" is the Vision misreading.  CB+ line 11 assembles
+!     235560.31 = V ZERO1's own address: the loop.
+!   * "VDLB/VDUB" (line 12) = VDUB, line 25's label (TI prints 235570.00).
+!   * "JFLCB" = JFLDB (D worn to C), landed p.363 line 33.
+!   * hex bytes "0C"/"C0"/"AC" on lines 3, 19, 23, 24 = 00 where the
+!     statement can only assemble 0 (lesson 6); line 12's "AC" is A0 as
+!     p.197 line 11's TI.  Line 10's "0C" is a real C: index $12.
+!   * "CC0000.00+", "CC0000", "VF,C", "CF,C.0", "C00065": open rounds,
+!     digit 0 (numeric fields).
+!
+! CARD SERIALS.  WA000943 .. WA000967, one per line, none shared or
+! skipped.  p.377 ended at WA000841; pp.378-379 lie between.
+
+JCBUF   SYN(BU,6), (8)234550.0       ! p.363 line 32 DR(BU,6),(80) at 234550.00; LVI line 1 234550.35
+PMCPBF  SYN, (8)216775.0             ! landed p.137 line 22 DR(BU,64),(13); LVI line 5 PMCPBF+3.0 = 217000.35
+JSIZE   SYN(BU,32,8), (8)232721.0    ! landed p.295 line 28 "J SIZE ,0"; LC line 6 232721.34
+JJX1    SYN(BU), (8)234574.0         ! p.363 line 34 XW,0.0,12 at 234574.00; LX line 9 234574.30
+JFLDB   SYN, (8)234560.0             ! p.363 line 33 "J FLD B DRZ,(12)" at 234560.00; Z line 10 234560.22
+SIQSA8  SYN(BU,64,8), (8)230504.40   ! landed p.259 line 4 "SIQSA8 TI,1,..."; BD line 14 230504.44
+ZSPLP9  SYN, (8)224052.0             ! landed p.212 line 12; SIC line 18 224052.00
+ZSPLPR  SYN, (8)224046.40            ! landed p.212 line 5; BD line 19 224046.44
+ZEXITX  SYN(BU,32,8), (8)234633.0    ! p.365 line 9 "Z EXITX LWF(U),..." (staged); BE line 23 234633.00, half word only
+
+        SLC, (8)235554.00
+        LVI,14,JCBUF                                         ! line  1  -PREPARE TO WRITE ON TAPE
+        LCI,14,53                                            ! line  2
+        B,VVTPCN                                             ! line  3  (byte prints "C0")
+! line  4  -     ---- COMMENT ONTO TAPE -----
+VVOPTP  LVI,14,PMCPBF+3.0                                    ! line  5  -IQS FORM  printed "VVCPTP"
+        LC,14,JSIZE                                          ! line  6
+VVTPCN  SVA,14,VVBFAD                                        ! line  7
+        SC,14,VVBFCT                                         ! line  8
+        LX,$12,JJX1                                          ! line  9
+VZERO1  Z,JFLDB($12)                                         ! line 10
+        CB+,$12,VZERO1                                       ! line 11
+        TI,1,VDUB,JFLDB                                      ! line 12
+        LVI,15,$+1.0                                         ! line 13
+        BD,SIQSA8                                            ! line 14  -CONVERT FROM IQS TO A8
+VVBFAD  VF,0                                                 ! line 15
+VVBFCT  CF,0.0                                               ! line 16
+        VF,JFLDB+.8                                          ! line 17
+        SIC,ZSPLP9                                           ! line 18
+        BD,ZSPLPR                                            ! line 19  -WRITE ON TAPE
+        ,JFLDB                                               ! line 20  -CONSOLE OR PP SOURCE
+        ,7.0                                                 ! line 21  (location carries *)
+        LVI,12,10.0                                          ! line 22
+        BE,ZEXITX                                            ! line 23  -ACKNOWLEDGE ACCEPTANCE AND RETURN
+        CNOP                                                 ! line 24
+VDUB    DD(BU,8),(2)00100001                                 ! line 25  -DOUBLE SPACE PRINTER CODE
+
+!SYM VVOPTP 235555.40
+!SYM VVTPCN 235556.40
+!SYM VZERO1 235560.00
+!SYM VVBFAD 235563.00
+!SYM VVBFCT 235563.40
+!SYM VDUB   235570.00
+!CHECK 235554.00 | 234550.35 01 | line 1 LVI,14,JCBUF
+!CHECK 235554.40 | 000065.35 02 | line 2 LCI,14,53
+!CHECK 235555.00 | 235556.50 00 | line 3 B,VVTPCN (byte prints "C0")
+!CHECK 235555.40 | 217000.35 01 | line 5 V VOPTP LVI,14,PMCPBF+3.0
+!CHECK 235556.00 | 232721.34 50 | line 6 LC,14,JSIZE
+!CHECK 235556.40 | 235563.35 D0 | line 7 V VTPCN SVA,14,VVBFAD
+!CHECK 235557.00 | 235563.75 50 | line 8 SC,14,VVBFCT
+!CHECK 235557.40 | 234574.30 10 | line 9 LX,$12,JJX1
+!CHECK 235560.00 | 234560.22 0C | line 10 V ZERO1 Z,JFLDB($12)
+!CHECK 235560.40 | 235560.31 48 | line 11 CB+,$12,VZERO1
+!CHECK 235561.00 | 235570.00 80 234560.02 A0 | line 12 TI,1,VDUB,JFLDB (byte prints "AC")
+!CHECK 235562.00 | 235563.37 01 | line 13 LVI,15,$+1.0
+!CHECK 235562.40 | 230504.44 00 | line 14 BD,SIQSA8
+!CHECK 235563.00 | 000000.00+ | line 15 V VBFAD VF,0
+!CHECK 235563.40 | 000000 | line 16 V VBFCT CF,0.0 -- an 18-bit count field, six bare octal digits
+!CHECK 235564.00 | 234560.10+ | line 17 VF,JFLDB+.8
+!CHECK 235564.40 | 224052.00 80 | line 18 SIC,ZSPLP9
+!CHECK 235565.00 | 224046.44 00 | line 19 BD,ZSPLPR (byte prints "C0")
+!CHECK 235565.40 | 234560.00 80 | line 20 ,JFLDB
+!CHECK 235566.00 | 000007.00 80 | line 21 ,7.0
+!CHECK 235566.40 | 000012.31 01 | line 22 LVI,12,10.0
+!CHECK 235567.00 | 234633.00 00 | line 23 BE,ZEXITX (byte prints "C0")
+!CHECK 235567.40 | 000000.30 00 | line 24 CNOP
+!CHECK 235570.00 | 041 | line 25 VDUB DD(BU,8),(2)00100001 | 8

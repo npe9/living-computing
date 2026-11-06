@@ -1,0 +1,145 @@
+! mcp_bootstrap_p418.strap -- MCP printed page 418: the $EOJ program's
+! copy of the MOVE routine's constants, its index-register names, the
+! SAVE AND RESTORE AREA FOR INDEXES and the head of THE UNIT NAME
+! TABLE.  Same source as volume 1's printed pp.83-84 (TMMAX .. TDKSAV
+! at 0046xx, T UNXW / T UNATB on p.84), a DIFFERENT ASSEMBLY: T MMAX is
+! DD(BU,17) here (DD(BU,12) in volume 1), and line 15 T MFREJ
+! DD(BU,1),0 is new.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.168, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZF000051  DIST. OF 3/01
+!  3/01  PAGE NUMBER 418"; the heading row's LOCATION field is blank.
+!
+! >>> STILL PUNID 22$EOJ, BUT CARD SERIES ZF. <<<  pp.398-409 printed
+! series ZE; this page's serials run ZF000051 .. ZF000101, one per
+! line, in order, no gaps.  No SLC on the page -- the origin below is
+! line 7's printed LOCATION.  No TAIL.
+!
+! THE PAGE.  51 lines.  Lines 1-6 PRNS and the boxed heading "EXTRA
+! CONSTANTS FOR THE PROGRAM - MOVE -"; lines 35-39 and 44-48 boxed
+! headings; line 21, 42 remark dashes.  Locations 022130.40 ..
+! 022155.00 (T UNATB DRZ(BU,64),(50): next free 022237.00).  A "*"
+! after the LOCATION on lines 41 and 50 (the two DRZs).
+!
+! >>> GLYPHS. <<<  The drum prints O open and D with a worn stem:
+!   line  9  "T MIOD"  is TMIOD (volume 1 p.83; "IOD" in its datum
+!            and remark)
+!   line 12  "T NCP"   is TNOP  (volume 1 p.83 and every user,
+!            "C0011(BU,6,6),TNOP,56"; remark NOT PROTECT)
+!   line 41  "T SICXW" is TSIOXW (volume 1 p.83 line 40)
+!   line 43  "T CKSAV" is TDKSAV (volume 1 p.83; LV,TMXG,TDKSAV users)
+!   line 43  "VF,C"    is VF,0 (the binary prints 000000.00+)
+! Octal fields' open rounds ("CCCCCC.00+", "CCC17.CC") are 0.
+!
+! LINE 13 T M6BL (AX)DD(BU,48,6), then blanks, then X: measured on the
+! ink against line 12's character pitch, the X stands at statement
+! column 25 -- EIGHT blanks after the comma, 8 x 6 = 48 bits, the
+! declared length.  (Volume 1's p.83 deck wrote seven.)
+!
+! SYN ROWS print their value in LOCATION and "B ,31 ,01" (= (B,25,1),
+! a VF's dds) or "BU,100,10" (index words) or "BU,60 ,10" (line 51,
+! (BU,48)) -- no !CHECK, as every deck before.  The DRZ rows print
+! their word count (000017.00, 000062.00) -- no !CHECK.
+!
+! EXTERNALS: the five resident words, landed (p.103 VFs, p.116 VF);
+! the page's own SYN rows print each value, and agree.  Stand-ins carry
+! (B,25,1), the dds the page prints for the SYNs to them.
+
+SBAPP   SYN(B,25,1), (8)215005.0     ! landed p.103 line 35 "S BAPP VF,0"; line 16 prints 215005.00
+SSYRFT  SYN(B,25,1), (8)215007.40    ! landed p.103 line 40 VF; line 17 prints 215007.40
+SMAXUB  SYN(B,25,1), (8)215225.0     ! landed p.116 "S MAXUB VF,0.0"; line 18 prints 215225.00
+SMAXRN  SYN(B,25,1), (8)215005.40    ! landed p.103 line 36 VF; line 19 prints 215005.40
+SMARK   SYN(B,25,1), (8)215012.40    ! landed p.103 line 46 VF; line 20 prints 215012.40
+
+        SLC, (8)022130.40
+        PRNS                                                 ! line  1
+! line  2  -
+! line  3  - ------------------------------------------------------
+! line  4  -          EXTRA CONSTANTS FOR THE PROGRAM - MOVE -
+! line  5  - ------------------------------------------------------
+! line  6  -
+        CNOP                                                 ! line  7
+TMMAX   DD(BU,17),4095                                       ! line  8  -THE MAXIMUM ARC AVAILABLE ON DISK
+TMIOD   (AX)DD(BU,24,6),IOD X                                ! line  9  - BCD CODE FOR IOD  (label prints "MICD")
+TMREEL  (AX)DD(BU,24,6),REELX                                ! line 10  -BCD CODE FOR A REEL CARD
+TLBL    (AX)DD(BU,6,6),LX                                    ! line 11  -LABELED CHARACTER
+TNOP    (AX)DD(BU,6,6),NX                                    ! line 12  -NOT PROTECT CHARACTER  (label prints "NCP")
+TM6BL   (AX)DD(BU,48,6),        X                            ! line 13
+TERFLG  VF,0                                                 ! line 14  -IOD CARD ERROR INDICATOR
+TMFREJ  DD(BU,1),0                                           ! line 15  -A ONE IF FREE IS ENTERED FROM MOVE
+TLIMB   SYN,SBAPP                                            ! line 16  -UPPER BOUNDARY OF A PP
+TSYRFT  SYN,SSYRFT                                           ! line 17  -THE ADDRESS OF THE TRACK AVAIL TO PP
+TBAMCP  SYN,SMAXUB                                           ! line 18  -FOR CHECKING THE UPPER LIMIT OF A PP
+TMAXRF  SYN,SMAXRN                                           ! line 19  -THE MAX REF NO. PER PP
+TMARK   SYN,SMARK                                            ! line 20  -THE NEXT VACANT REEL SLOT  FOR PP
+! line 21  -
+TMX1    SYN,$1                                               ! line 22
+TMXA    SYN,$2                                               ! line 23  -PP REF WORD LOCATOR
+TMXB    SYN,$3                                               ! line 24  -I/O REQ TABLE PICK UP IX
+TMXC    SYN,$4                                               ! line 25  -SYMB I/O TABLE INDEX
+TMXD    SYN,$5                                               ! line 26  -FILE AREA TABLE INDEX
+TMXE    SYN,$6                                               ! line 27  -UNIT AREA TABLE INDEX
+TMXF    SYN,$7                                               ! line 28  -REEL POOL INDEX
+TMXG    SYN,$8                                               ! line 29  -TEMPORARY INDEX
+TMXEE   SYN,$9                                               ! line 30  -TEMPORARY INDEX
+TMXI    SYN,$10                                              ! line 31  -CONTROL WORD INDEX
+TMXGA   SYN,$11                                              ! line 32  -TEMPORARY INDEX
+TMXH    SYN,TMX1                                             ! line 33
+TMLXA   SYN,$12                                              ! line 34  -CONVERSION ROUTINE INDEX
+! line 35  -
+! line 36  - ------------------------------------------------------
+! line 37  -          SAVE AND RESTORE AREA FOR INDEXES
+! line 38  - ------------------------------------------------------
+! line 39  -
+        CNOP                                                 ! line 40
+TSIOXW  DRZ(BU,64),(15)                                      ! line 41  (label prints "SICXW")
+! line 42  -
+TDKSAV  VF,0                                                 ! line 43  -ADDRESS OF THE UNIT TABLE  (prints "T CKSAV VF,C")
+! line 44  -
+! line 45  - ------------------------------------------------------
+! line 46  -          THE UNIT NAME TABLE
+! line 47  - ------------------------------------------------------
+! line 48  -
+TUNXW   XW,TUNATB,0,$0                                       ! line 49  -RESET INDEX
+TUNATB  DRZ(BU,64),(50)                                      ! line 50  -THE CHAN/UNIT NAME TABLE
+TCHNM   SYN(BU,48),0.0                                       ! line 51  -SYMBOLIC CHAN NAME
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 418 --------
+!SYM   TMMAX    022131.00
+!SYM   TMIOD    022131.21
+!SYM   TMREEL   022131.51
+!SYM   TLBL     022132.01
+!SYM   TNOP     022132.07
+!SYM   TM6BL    022132.15
+!SYM   TERFLG   022133.00
+!SYM   TMFREJ   022133.31
+!SYM   TLIMB    215005.00
+!SYM   TSYRFT   215007.40
+!SYM   TBAMCP   215225.00
+!SYM   TMAXRF   215005.40
+!SYM   TMARK    215012.40
+!SYM   TMX1     000021.00
+!SYM   TMXA     000022.00
+!SYM   TMXB     000023.00
+!SYM   TMXC     000024.00
+!SYM   TMXD     000025.00
+!SYM   TMXE     000026.00
+!SYM   TMXF     000027.00
+!SYM   TMXG     000030.00
+!SYM   TMXEE    000031.00
+!SYM   TMXI     000032.00
+!SYM   TMXGA    000033.00
+!SYM   TMXH     000021.00
+!SYM   TMLXA    000034.00
+!SYM   TSIOXW   022134.00
+!SYM   TDKSAV   022153.00
+!SYM   TUNXW    022154.00
+!SYM   TUNATB   022155.00
+!SYM   TCHNM    000000.00
+!CHECK 022130.40 | 000000.30 00 | line 7  CNOP
+!CHECK 022131.00 | 007777 | line 8  T MMAX DD(BU,17),4095 | 17
+!CHECK 022133.00 | 000000.00+ | line 14 T ERFLG VF,0
+!CHECK 022133.31 | 0 | line 15 T MFREJ DD(BU,1),0 | 1
+!CHECK 022133.40 | 000000.30 00 | line 40 CNOP
+!CHECK 022153.00 | 000000.00+ | line 43 T DKSAV VF,0 (prints "VF,C"; binary 000000.00+)
+!CHECK 022154.00 | 022155.00+ 000 000000 000020 | line 49 T UNXW XW,TUNATB,0,$0

@@ -1,0 +1,137 @@
+! mcp_bootstrap_p419.strap -- MCP printed page 419: the $EOJ copy of
+! THE UNIT NAME TABLE's SYNs (tail), THE DISK ALLOCATION TABLE, THE
+! FORMAT OF THE IOD CARD BREAKDOWN TABLE, and SYN CARDS FOR THE UNIT
+! AREA TABLE.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.169, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZF000103  DIST. OF 3/01
+!  3/01  PAGE NUMBER 419"; the heading row's LOCATION field is 000000
+! (line 1's SYN value, 000000.74 truncated to the word).
+!
+! >>> A NEW CARD SERIES, ZF. <<<  Still PUNID 22$EOJ, still low core.
+! Card serials ZF000103 .. ZF000152, line N prints ZF0001(02+N),
+! contiguous.  (p.409 was series ZE; pp.410-418 not landed.)  No TAIL.
+!
+! THE SAME SOURCE AS VOLUME 1's printed p.84 (decks/mcp_bootstrap_p84),
+! a different assembly: spellings copied from p.84, addresses never.
+! Two differences from p.84's source, read plainly on the ink here:
+!   * line 12 is "T SBDFT SYN(BU,17),TSBDTB" (dds column BU,21 = 17,
+!     location 022240.00) -- p.84 printed SYN(BU,12),TSBDTB+.05.
+!   * line 43 "T RMTC SYN(BU,26),1.32" is new (C22-6728 lists S RMTC
+!     at 1.32-1.57 in the unit area table).
+!
+! THE PAGE.  50 lines, every line number prints a "*".  The only
+! location-counter cards are lines 10-11: T DCLRX XW at 022237.00 and
+! T SBDTB DRZ(BU,32),(8) at 022240.00 (a "*" prints after its
+! location) printing its SIZE 000004.00 (eight 32-bit fields = four
+! words).  The counter ends at 022244.00 -- p.420 should open there.
+! Everything else is SYN to an absolute field address (no !CHECK; a
+! SYN prints its value in the LOCATION column, checked by !SYM).
+!   lines 7-9, 13-16, 34-38, 49-50  remarks (blank or titles).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "C" for "D" (the worn stem): T CSKRF (line 4) = TDSKRF, T CTRK
+!     (5) = TDTRK, T DKCT, T DCLRX, T SBDTB/T SBDFT, TSBDTB, TSBDFT,
+!     T IOCK (42) = TIODK -- p.84's spellings; C22-6728 prints SIODK.
+!   * Octal fields "C"/"CC" (e.g. 000001.CC-, C.0, CCCC04.00) are 0.
+!   * T JCNME (17), T IMO/T IMOCD (28/29), T INO (27), T IOP (20): the
+!     open round read as O, as p.84 spells them.
+! Remark line 46 prints "FIRST FEEL ADDRESS" (p.84: REEL); kept as
+! printed.  Line 39's remark prints "LENGHT", kept.
+!
+! No external symbols: the page references only TSBDFT and TSBDTB,
+! both defined here.
+
+TUNTYP  SYN(BU,4),0.60                                       ! line  1  -THE EQUIP TYPE REQUESTED
+TUNREF  SYN(BU,12),0.48                                      ! line  2  -REF NO IN THE UNIT NAME TABLE
+TUNME   SYN(BU,48),25.0                                      ! line  3  -2ND TABLE -- UNIT NAME
+TDSKRF  SYN(BU,12),25.48                                     ! line  4  -REF NUMBER OF NULL DISK OR TRACK
+TDTRK   SYN(BU,1),25.60                                      ! line  5  -ONE IF TRACK - ZERO IF DISK
+TDKCT   SYN(BU,3),25.61                                      ! line  6  -RELATIVE ADDRESS OF ALLOCATION COUNT
+!                                                              line  7  -
+!                                                              line  8  -THE DISK ALLOCATION TABLE
+!                                                              line  9  -
+
+        SLC, (8)022237.0
+TDCLRX  XW,TSBDFT,4,$                                        ! line 10  -INDEX WORD FOR CLEARING
+TSBDTB  DRZ(BU,32),(8)                                       ! line 11
+TSBDFT  SYN(BU,17),TSBDTB                                    ! line 12  -DISK ALLOCATION TABLE
+!                                                              line 13  - -----------
+!                                                              line 14  -THE FORMAT OF THE IOD CARD BREAKDOWN TABLE
+!                                                              line 15  - -----------
+!                                                              line 16  -
+TJCNME  SYN(BU,48,6),-1.0                                    ! line 17  -JOB NAME FORMAT FOR BREAKDOWN TBL
+TIABEX  SYN(BU,18),0.0                                       ! line 18  -THE ABSOLUTE EXIT ADDRESS
+TIREF   SYN(BU,12),0.52                                      ! line 19  -THE REF NUMBER
+TIOP    SYN(BU,24),1.0                                       ! line 20  -OP CODE FIELD
+TITY    SYN(BU,42),2.0                                       ! line 21  - THE TYPE FIELD
+TIREEL  SYN(BU,48),2.0                                       ! line 22  -FORMAT AND POSITION OF REEL NAME
+TITRK   SYN(BU,1),2.59                                       ! line 23  -TRACK CODE BIT
+TITYCD  SYN(BU,4),2.60                                       ! line 24  -THE TYPE FIELD CONVERTED
+TICH    SYN(BU,48),4.0                                       ! line 25  -CHANNEL FIELD
+TIUN    SYN(BU,48),5.0                                       ! line 26  -THE UNIT FIELD
+TINO    SYN(BU,48),5.0                                       ! line 27  -THE NUMBER FOR DISK
+TIMO    SYN(BU,30),6.0                                       ! line 28  -THE MODE FIELD
+TIMOCD  SYN(BU,2),6.62                                       ! line 29  -THE MODE FIELD CONVERTED
+TIDN    SYN(BU,12),7.0                                       ! line 30  -THE DENSITY FIELD
+TIDNCD  SYN(BU,2),7.62                                       ! line 31  -THE DENSITY FIELD CONVERTED
+TIDS    SYN(BU,30),8.0                                       ! line 32  -THE DISP FIELD
+TIDSCD  SYN(BU,2),8.62                                       ! line 33  -THE DISP FIELD CONVERTED
+!                                                              line 34  -
+!                                                              line 35  - -----------
+!                                                              line 36  -SYN CARDS FOR THE UNIT AREA TABLE
+!                                                              line 37  - -----------
+!                                                              line 38  -
+TUNLGN  SYN(BU,6),9                                          ! line 39  -THE UNIT AREA TABLE LENGHT
+TCHANN  SYN(BU,7),0.12                                       ! line 40  -THE CHANNEL NUMBER
+TUNITN  SYN(BU,3),0.47                                       ! line 41  -THE UNIT NUMBER
+TIODK   SYN(BU,12),1.6                                       ! line 42  -THE IOD COUNT
+TRMTC   SYN(BU,26),1.32                                      ! line 43  -REMINDER MESSAGE TIME CONSTANT
+TFIAAC  SYN(BU,18),3.0                                       ! line 44  -THE FILE AREA TABLE ACTIVATED
+TSYSTM  SYN(BU,1),7.25                                       ! line 45  -SYSTEM TAPE IF A ONE
+TFRLAD  SYN(BU,18),8.0                                       ! line 46  -FIRST FEEL ADDRESS
+TCREEL  SYN(BU,18),8.32                                      ! line 47  -CURRENT REEL ADDRESS
+TREELK  SYN(BU,7),8.57                                       ! line 48  -CURRENT REEL COUNT
+!                                                              line 49  -
+!                                                              line 50  -
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 419 --------
+!SYM   TUNTYP   000000.74
+!SYM   TUNREF   000000.60
+!SYM   TUNME    000031.00
+!SYM   TDSKRF   000031.60
+!SYM   TDTRK    000031.74
+!SYM   TDKCT    000031.75
+!SYM   TDCLRX   022237.00
+!SYM   TSBDTB   022240.00
+!SYM   TSBDFT   022240.00
+!SYM   TJCNME   -000001.00
+!SYM   TIABEX   000000.00
+!SYM   TIREF    000000.64
+!SYM   TIOP     000001.00
+!SYM   TITY     000002.00
+!SYM   TIREEL   000002.00
+!SYM   TITRK    000002.73
+!SYM   TITYCD   000002.74
+!SYM   TICH     000004.00
+!SYM   TIUN     000005.00
+!SYM   TINO     000005.00
+!SYM   TIMO     000006.00
+!SYM   TIMOCD   000006.76
+!SYM   TIDN     000007.00
+!SYM   TIDNCD   000007.76
+!SYM   TIDS     000010.00
+!SYM   TIDSCD   000010.76
+! TUNLGN is the integer 9: its LOCATION column prints 000000.00 and its
+! binary +00000011, so its !SYM gives the value as bit 9 (000000.11).
+!SYM   TUNLGN   000000.11
+!SYM   TCHANN   000000.14
+!SYM   TUNITN   000000.57
+!SYM   TIODK    000001.06
+!SYM   TRMTC    000001.40
+!SYM   TFIAAC   000003.00
+!SYM   TSYSTM   000007.31
+!SYM   TFRLAD   000010.00
+!SYM   TCREEL   000010.40
+!SYM   TREELK   000010.71
+!CHECK 022237.00 | 022240.00+ 000 000004 022237 | line 10  T DCLRX  XW,TSBDFT,4,$

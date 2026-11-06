@@ -1204,8 +1204,11 @@ def parse_statement_text(text, lineno=None):
     # 5, 22 and 38 carry one (N28-1081 Revised Appendix D, C28-6129 PDF
     # p.71).  This assembler prints no error marks, so the prefix has
     # nothing else to do.  A lone "$" is not an operation and is left
-    # alone.
-    if op and op.startswith('$') and len(op) > 1 and op[1].isalpha():
+    # alone.  "Any operation code" includes the arithmetic mnemonics
+    # that start with a sign: MCP printed p.413 line 9 prints
+    # "$-(BU,18),TCHSXW,-60", the VFL subtract.
+    if op and op.startswith('$') and len(op) > 1 and (op[1].isalpha()
+                                                      or op[1] in '+-*/'):
         op = op[1:]
     # `entry` rather than None: it is None for an ordinary statement
     # anyway, and a NUMERIC entry mode reaches here (see the note

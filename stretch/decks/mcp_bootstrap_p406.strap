@@ -1,0 +1,186 @@
+! mcp_bootstrap_p406.strap -- MCP printed page 406: the $EOJ program's
+! copy of the tape-assignment routine (TASIGN, vol-1 pp.66-67's code):
+! RELOAD -A- (T A8 .. T B8) and the MACHINE CONFIGURATION CHANGE entry
+! (T A9 .. T A9A).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.156, read at 400 dpi (900 dpi for
+! lines 37-41).  Header, READ: "TIME CLOCK 00054041  PUNID 22$EOJ  CARD
+! ID ZE000410  DIST. OF 3/01  3/01  PAGE NUMBER 406"; the heading row's
+! LOCATION field is 021476, line 1's word.
+!
+! >>> STILL $EOJ, CARD SERIES ZE. <<<  PUNID 22$EOJ, low core (0214xx-
+! 0215xx); no SLC printed on the page -- the origin below is line 1's
+! printed LOCATION.  No TAIL.
+!
+! THE PAGE.  50 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 4, 26 and 49.  Contiguous 021476.00 .. 021530.00
+! (line 50, a half word, so the page ends at 021530.40).
+!   lines 6-7, 11, 20, 28-31, 34, 44   "-" (blank remark cards)
+!   lines 32-33                        remark text
+!
+! >>> CARD SERIALS. <<<  ZE000410 .. ZE000459, one per line, no gaps,
+! no repeats.
+!
+! >>> GLYPHS. <<<  The open round where only a digit can stand is 0:
+! "2.C" (lines 12, 23), "CM0C00"/"CMOCOO" (36, 41, 45, 46, 48), "4C"
+! (49), "O.O" (9, 16, 21, 36).  BXF (lines 10, 17, 22): the ink reads F
+! and vol-1 p.66 prints BXF in the same code; BXF assembles the printed
+! .23/.63 bytes.  "TLCCP1" (line 14) is TLOOP1: line 26 prints TLOOP1
+! and both assemble 232227.43 (p.287's TLOOP1).  "TCSIO" (38, 39) is
+! TDSIO, the worn-stem D (vol-1 p.67 "TDSIO VF,TCAT").  "TCCMBO" (42) is
+! TCOMBO (vol-1).  Names "T 88A"/"T B8A": written TB8A (vol-1 p.66, and
+! line 13's BZXCZ,TB8A assembles to it).  Line 41 prints "TMCAD (TIXG)"
+! with a gap before the "(": the binary (000000.10 88) carries the
+! TIXG index, so the gap is spacing, not a blank; written TMCAD(TIXG).
+!
+! STAND-INS:
+!   resident (landed pp.287-291), copied in their defining forms.
+!   $EOJ (not landed; from this page's binary):
+!     TA1     021172.0   B lines 19, 27 021172.10, BB label (BU,64,8)
+!     TK      021723.40  BXF line 10 021723.63 (BXF adds .23)
+!     TAREJX  021662.0   BXF line 22 021662.23
+!     TB9B    021562.40  BRZ line 50 021562.74 (BRZ adds .34)
+!     TDSIO   022270.0   TI line 38, BIT-EXACT; a VF (vol-1 p.67)
+!     TTYARA  021162.0   LX line 40, XW (vol-1): (BU)
+!     TCOMBO  021163.0   V+C line 42; a VF (vol-1)
+!   UNAGN3/UNAGN9: "UNAGN3 SYN,3.0" / "UNAGN9 SYN,9.0" (OCR finding aid,
+!     docs/ocr/MCP_Mar63_001-249.txt l.5373/5381, a vol-1 page no deck
+!     defines; RESERVED FOR UNASSIGN); TI lines 38-39 000003.02 /
+!     000011.02, BIT-EXACT.
+
+TX1     SYN,$10                      ! landed p.287 line 30
+TX3     SYN,$2                       ! landed p.287 line 33
+TIXA    SYN,$4                       ! landed p.287 line 34
+TIXE    SYN,$3                       ! landed p.287 line 36
+TIXF    SYN,TX1                      ! landed p.287 line 37
+TIXG    SYN,$8                       ! landed p.287 line 38
+TIXH    SYN,TX3                      ! landed p.287 line 39
+TCTWDX  SYN,TX1                      ! landed p.287 line 29
+TLAST   SYN(BU,1), 0.18              ! landed p.288 line 34
+TASGNI  SYN(BU,1), 0.00              ! landed p.288 line 28
+TASGNP  SYN(BU,1), 0.38              ! landed p.288 line 16
+TIOREQ  SYN(BU,64), (8)232307.0      ! landed p.288 line 26 DRZ(BU,64); LVI line 3 232307.11
+TSAV    SYN(BU), (8)232226.0         ! landed p.287 line 15 XW; SX line 18
+TLUCT   SYN(BU,18), (8)232227.0      ! landed p.287 line 16 DD(BU,18)
+TLCHCT  SYN(BU,7), (8)232227.22      ! landed p.287 line 17 DD(BU,7)
+TINDE   SYN(BU,1), (8)232227.37      ! landed p.287 line 24 DD(BU,1)
+TLOOP1  SYN(BU,1), (8)232227.43      ! landed p.287 line 28 DD(BU,1)
+SXCHAN  SYN(BU), (8)215002.0         ! landed p.103 line 28 XW (as p.289)
+TCHSXW  SYN,SXCHAN                   ! landed p.289 line 5
+SBAMCP  SYN(B,25,1), (8)215003.0     ! landed p.103 line 31 VF; LV line 37 215003.20
+TTYAD   SYN(BU,8),0.0                ! landed p.289 line 29
+TMCAD   SYN(BU,8),TTYAD+0.8          ! landed p.289 line 30
+TEQUIP  SYN(BU,4),0.52               ! landed p.289 line 15
+TCHCNT  SYN(BU,4),0.20               ! landed p.291 line 7
+TMUCTX  SYN(BU), (8)232516.0         ! landed p.290 line 35 XW; LX line 47 232516.04
+UNAGN3  SYN, 3.0                     ! "UNAGN3 SYN,3.0"; TI line 38 000003.02, BIT-EXACT
+UNAGN9  SYN, 9.0                     ! "UNAGN9 SYN,9.0"; TI line 39 000011.02, BIT-EXACT
+TA1     SYN(BU,64,8), (8)021172.0    ! $EOJ, not landed; BB label; B line 19 021172.10, half word only
+TK      SYN(BU,32,8), (8)021723.40   ! $EOJ, not landed; B label (vol-1); BXF line 10 021723.63
+TAREJX  SYN, (8)021662.0    ! $EOJ, not landed; LVI label (vol-1); BXF line 22 021662.23
+TB9B    SYN(BU,32,8), (8)021562.40   ! $EOJ, not landed; CB+ label (vol-1); BRZ line 50 021562.74
+TDSIO   SYN(B,25,1), (8)022270.0     ! $EOJ, not landed; VF (vol-1 p.67); TI line 38, BIT-EXACT
+TTYARA  SYN(BU), (8)021162.0         ! $EOJ, not landed; XW (vol-1); LX line 40 021162.20
+TCOMBO  SYN(B,25,1), (8)021163.0     ! $EOJ, not landed; VF (vol-1); V+C line 42 021163.20
+
+        SLC, (8)021476.0
+TA8     R,TIXA                                               ! line  1  -RELOAD -A-
+TA8A    BZB,TLAST(TIXA),TA8BB                                ! line  2
+        LVI,TIXA,TIOREQ                                      ! line  3  -RELOAD IX TO BEGINNING OF TABLE
+TA8BB   BZB,TASGNI(TIXA),TA8B                                ! line  4  -IF NOT ASSIGNED
+        CB+,TIXA,TA8A                                        ! line  5
+! line  6  -
+! line  7  -
+TB8C    CM1111,TASGNP(TIXE)                                  ! line  8  -SET PP ASSIGNED BIT
+        LX,TCTWDX,0.0($15)                                   ! line  9  -LOAD FOR OVERLAP TEST
+        BXF,TK                                               ! line 10  -IF NOT OVERLAP MODE
+! line 11  -
+TB8Z    V+ICR,TIXE,2.0                                       ! line 12  -STEP IX -E-  printed "2.C"
+        BZXCZ,TB8A                                           ! line 13  -COUNT IS OK
+        M+1,TLOOP1                                           ! line 14  -IX REFILLED INDICATOR  printed "TLCCP1"
+TB8A    BB,TINDE,TA1                                         ! line 15  -IF SAVING IS TO BE IGNORED
+        LX,TCTWDX,0.0($15)                                   ! line 16  -CHECK MODE BEFORE SAVING
+        BXF,TA1                                              ! line 17  -IF NOT OVERLAP
+        SX,TIXE,TSAV                                         ! line 18  -IF NOT SAVE
+        B,TA1                                                ! line 19
+! line 20  -
+TA8B    LX,TCTWDX,0.0($15)                                   ! line 21  -LOAD FOR OVERLAP TEST
+        BXF,TAREJX                                           ! line 22  -NOT OVERLAP ASSIGNED
+TB8     V+ICR,TIXE,2.0                                       ! line 23  printed "2.C"
+        CM1111,TINDE                                         ! line 24  -DO NOT SAVE INDEX TIXE FROM HERE ON
+        BZXCZ,TA1                                            ! line 25  -COUNT STILL OK
+        M+1,TLOOP1                                           ! line 26  -IX REFILLED INDICATOR
+        B,TA1                                                ! line 27  -SO DO NOT SAVE -E-
+! line 28  -
+! line 29  -
+! line 30  -
+! line 31  -
+! line 32  -          MACHINE CONFIGURATION CHANGE
+! line 33  -          ADJUST THE NECESSARY TABLES
+! line 34  -
+TA9     LX,TIXF,TCHSXW                                       ! line 35  -BEGINNING OF CHAN STAT TABLE
+        CM0000(BU,24),0.0($15)                               ! line 36  -CLEAR CON FIG CHANGE
+        LV,TIXG,SBAMCP                                       ! line 37  -SET UP THE DUMMY SIOL FOR
+        TI,1,TDSIO,UNAGN3(TIXG)                              ! line 38  -UNLOADING TAPES ON UNITS
+        TI,1,TDSIO+1.,UNAGN9(TIXG)                           ! line 39  -FOR UNLOADING SCRATCH TAPES
+        LX,TIXG,TTYARA                                       ! line 40  -CLEAR THE MACHINE CONFIGUATION
+TCM9    CM0000,TMCAD(TIXG)                                   ! line 41  -COUNT TABLE  printed "TMCAD (TIXG)"
+        V+C,TIXG,TCOMBO                                      ! line 42
+        BZXCZ,TCM9                                           ! line 43
+! line 44  -
+        CM0000,TLCHCT                                        ! line 45  -CLEAR THE CHAN. COUNTER
+        CM0000,TLUCT                                         ! line 46  -CLEAR LARGEST COUNT AREA
+        LX,TIXH,TMUCTX                                       ! line 47  -BEGINNING OF THE MULTI UNIT CNT TBLE
+TA9A    CM0000,TCHCNT(TIXH)                                  ! line 48  -CLEAR THE UNIT COUNT AREA
+        L,TEQUIP(TIXF),40                                    ! line 49  -GET EQUIP FOR MACH CONF  printed "4C"
+        BRZ,TB9B                                             ! line 50  -IF NO EQUIP ON  THIS CHAN
+
+!SYM TA8    021476.00
+!SYM TA8A   021476.40
+!SYM TA8BB  021500.00
+!SYM TB8C   021501.40
+!SYM TB8Z   021503.40
+!SYM TB8A   021505.40
+!SYM TA8B   021510.40
+!SYM TB8    021511.40
+!SYM TA9    021515.00
+!SYM TCM9   021521.40
+!SYM TA9A   021526.00
+!CHECK 021476.00 | 000024.02 00 | line 1 TA8 R,TIXA
+!CHECK 021476.40 | 000000.22 84 021500.34 00 | line 2 TA8A BZB,TLAST(TIXA),TA8BB
+!CHECK 021477.40 | 232307.11 01 | line 3 LVI,TIXA,TIOREQ
+!CHECK 021500.00 | 000000.00 84 021510.74 00 | line 4 TA8BB BZB,TASGNI(TIXA),TA8B (a "*" prints after the location)
+!CHECK 021501.00 | 021476.51 48 | line 5 CB+,TIXA,TA8A
+!CHECK 021501.40 | 000000.46 83 001000.36 F0 | line 8 TB8C CM1111,TASGNP(TIXE)
+!CHECK 021502.40 | 000000.24 1F | line 9 LX,TCTWDX,0.0($15)
+!CHECK 021503.00 | 021723.63 42 | line 10 BXF,TK
+!CHECK 021503.40 | 000002.07 07 | line 12 TB8Z V+ICR,TIXE,2.0
+!CHECK 021504.00 | 021505.70 40 | line 13 BZXCZ,TB8A
+!CHECK 021504.40 | 232227.43 80 001000.22 B0 | line 14 M+1,TLOOP1 (printed "TLCCP1")
+!CHECK 021505.40 | 232227.37 80 021172.34 02 | line 15 TB8A BB,TINDE,TA1
+!CHECK 021506.40 | 000000.24 1F | line 16 LX,TCTWDX,0.0($15)
+!CHECK 021507.00 | 021172.23 42 | line 17 BXF,TA1
+!CHECK 021507.40 | 232226.07 10 | line 18 SX,TIXE,TSAV
+!CHECK 021510.00 | 021172.10 00 | line 19 B,TA1
+!CHECK 021510.40 | 000000.24 1F | line 21 TA8B LX,TCTWDX,0.0($15)
+!CHECK 021511.00 | 021662.23 42 | line 22 BXF,TAREJX
+!CHECK 021511.40 | 000002.07 07 | line 23 TB8 V+ICR,TIXE,2.0
+!CHECK 021512.00 | 232227.37 80 001000.36 F0 | line 24 CM1111,TINDE
+!CHECK 021513.00 | 021172.30 40 | line 25 BZXCZ,TA1
+!CHECK 021513.40 | 232227.43 80 001000.22 B0 | line 26 M+1,TLOOP1 (a "*" prints after the location)
+!CHECK 021514.40 | 021172.10 00 | line 27 B,TA1
+!CHECK 021515.00 | 215002.24 10 | line 35 TA9 LX,TIXF,TCHSXW
+!CHECK 021515.40 | 000000.00 8F 030000.00 F0 | line 36 CM0000(BU,24),0.0($15)
+!CHECK 021516.40 | 215003.20 30 | line 37 LV,TIXG,SBAMCP
+!CHECK 021517.00 | 022270.00 80 000003.02 A8 | line 38 TI,1,TDSIO,UNAGN3(TIXG)
+!CHECK 021520.00 | 022271.00 80 000011.02 A8 | line 39 TI,1,TDSIO+1.,UNAGN9(TIXG)
+!CHECK 021521.00 | 021162.20 10 | line 40 LX,TIXG,TTYARA
+!CHECK 021521.40 | 000000.10 88 010000.00 F0 | line 41 TCM9 CM0000,TMCAD(TIXG)
+!CHECK 021522.40 | 021163.20 D0 | line 42 V+C,TIXG,TCOMBO
+!CHECK 021523.00 | 021521.70 40 | line 43 BZXCZ,TCM9
+!CHECK 021523.40 | 232227.22 80 007000.00 F0 | line 45 CM0000,TLCHCT
+!CHECK 021524.40 | 232227.00 80 022000.00 F0 | line 46 CM0000,TLUCT
+!CHECK 021525.40 | 232516.04 10 | line 47 LX,TIXH,TMUCTX
+!CHECK 021526.00 | 000000.24 82 004000.00 F0 | line 48 TA9A CM0000,TCHCNT(TIXH)
+!CHECK 021527.00 | 000000.64 8A 004024.20 50 | line 49 L,TEQUIP(TIXF),40 (a "*" prints after the location)
+!CHECK 021530.00 | 021562.74 C2 | line 50 BRZ,TB9B

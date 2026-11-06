@@ -1,0 +1,169 @@
+! mcp_bootstrap_p403.strap -- MCP printed page 403: the $EOJ program's
+! re-assembled tape ASSIGN, sections TA3C (like-channel search) .. TA4C
+! (PP reference table scan for a not-overlap reserve).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.153, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZE000255  DIST. OF 3/01
+!  3/01  PAGE NUMBER 403"; the heading row's LOCATION field is 021351,
+! line 1's word.
+!
+! >>> STILL $EOJ, CARD SERIES ZE. <<<  PUNID 22$EOJ, low core (0213xx-
+! 0214xx); the page has no SLC of its own -- the origin below is line
+! 1's printed LOCATION.  No TAIL.  The T-names are the ASSIGN source's
+! (printed p.287 and its vol-1 twin p.61..), re-assembled inside $EOJ.
+!
+! THE PAGE.  50 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 16 and 31.  Contiguous 021351.40 .. 021405.40
+! (line 49, a half word), so p.404 should open at 021406.00.  p.402 is
+! not landed, so the join at 021351.40 is unchecked from this side.
+!   lines 3-5, 9, 11-12, 17-19, 38-41, 50  remarks (blank or text).
+!
+! >>> CARD SERIALS. <<<  ZE000255 .. ZE000304, one per line, no gaps.
+!
+! >>> GLYPHS. <<<  "CMOCOO" (lines 16, 26) is CM0000 and "CTOC11"
+! (line 21) is CT0011: the mask field is binary digits, and the
+! binaries (001000.00 F0, 002000.07 70) say so.  "TMCDE" (line 23) is
+! TMODE (O open, D worn; 232227.32 is p.287 line 19's TMODE);
+! "TINDC" on line 27 is TINDD (232227.36 = p.287 line 23) while line
+! 34's TINDC is TINDC (232227.35 = p.287 line 22) -- D worn to C on 27.
+! TJBPRO is spelled as landed (p.288).
+! The open rounds in the LOCATION/octal fields are 0.
+!
+! STAND-INS.  Resident ASSIGN constants and index names are p.287's
+! (landed, body 232224.40-232227.43): TX1/TIXG and the index SYNs copied
+! in their defining form; the DD(BU,1) bits as SYN(BU,1) at their p.287
+! addresses.  Field SYNs as p.288/p.289 define them.  $EOJ-local labels
+! not landed anywhere (TWORK2, TB3, TA3F1, TA5A) come from this page's
+! binary.
+
+TX1     SYN,$10                      ! landed p.287 line 30
+TIXG    SYN,$8                       ! landed p.287 line 38
+TIXA    SYN,$4                       ! landed p.287 line 34
+TIXE    SYN,$3                       ! landed p.287 line 36
+TIXJ    SYN,$6                       ! landed p.287 line 41
+TIXK    SYN,TX1                      ! landed p.287 line 43
+TIXL    SYN,$11                      ! landed p.287 line 44
+TIXM    SYN,TIXG                     ! landed p.287 line 45
+TONE    SYN(BU,1), (8)232227.31      ! landed p.287 line 18 DD(BU,1)
+TMODE   SYN(BU,1), (8)232227.32      ! landed p.287 line 19 DD(BU,1)
+TINDC   SYN(BU,1), (8)232227.35      ! landed p.287 line 22 DD(BU,1)
+TINDD   SYN(BU,1), (8)232227.36      ! landed p.287 line 23 DD(BU,1)
+TINDZ   SYN(BU,1), (8)232227.40      ! landed p.287 line 25 DD(BU,1)
+TINDX   SYN(BU,1), (8)232227.41      ! landed p.287 line 26 DD(BU,1)
+TABSCH  SYN(BU,18),0.46              ! landed p.288 line 37
+TRLSYM  SYN(BU,7),0.11               ! landed p.288 line 33
+TUNOBT  SYN(BU,1),0.01               ! landed p.288 line 29
+TFREEL  SYN(BU,18),0.28              ! landed p.288 line 36
+TLPPEN  SYN(BU,1),0.39               ! landed p.288 line 17
+TJBPRO  SYN(BU,1),0.36               ! landed p.288 line 14
+TUNCT   SYN(BU,08),0.28              ! landed p.288 line 13
+TCRREF  SYN(BU,18),0.0               ! landed p.288 line 12
+TUNAVL  SYN(BU,1),0.28               ! landed p.289 line 10
+TUNASG  SYN(BU,1),0.29               ! landed p.289 line 11
+TUNRES  SYN(BU,1),0.62               ! landed p.289 line 17
+TFDISP  SYN(BU,1),0.27               ! landed p.289 line 9
+STATI   SYN(BU,1), 0.26              ! p.99 line 23
+TWORK2  SYN(BU), (8)021104.0         ! $EOJ, not landed; SX/LX lines 13-14 (index word), BIT-EXACT
+TB3     SYN, (8)021420.0             ! $EOJ, not landed; BB line 15 etc., half word only
+TA3F1   SYN, (8)021423.0             ! $EOJ, not landed; BZAE line 8, half word only
+TA5A    SYN, (8)021432.40            ! $EOJ, not landed; BB line 27, half word only
+
+        SLC, (8)021351.40
+TA3CA   KF,TABSCH(TIXK),46                                   ! line  1  -LOOK FOR LIKE CHANNEL ADDRESS
+        BZAE,TA3CB                                           ! line  2  -IF CHAN IS NOT ASSIGNED TO ANOTHER
+! line  3  -
+! line  4  -        YES -- DOES THE I/O REQUEST THE SAME CHANNEL
+! line  5  -
+        LF,TRLSYM(TIXK)                                      ! line  6  -REL SYMB CHAN NUMBER VS
+        KF,TRLSYM(TIXA)                                      ! line  7  -THE ASSIGNED REL SYMB CHAN NUMBER
+        BZAE,TA3F1                                           ! line  8  -IF THEY ARE UN-LIKE
+! line  9  -
+TA3CB   CB+,TIXK,TA3CA                                       ! line 10
+! line 11  -        IF IT GETS HERE,  DO A UNIT TABLE SCAN
+! line 12  -
+TC3Z    SX,TIXJ,TWORK2                                       ! line 13  -SAVE IX FOR RELOAD
+TC3     LX,TIXJ,TWORK2                                       ! line 14  -RELOAD
+TC3A    BB,TUNAVL(TIXJ),TB3                                  ! line 15  -IF THE UNIT IS NOT AVAILABLE
+        CM0000,TINDX                                         ! line 16  -MORE UNITS ARE AVAILABLE (printed "CMOCOO")
+! line 17  -
+! line 18  -
+! line 19  -
+        BZB,TUNASG(TIXJ),TB3                                 ! line 20  -IF THE UNIT IS ASSIGNED
+        CT0011(BU,2),TUNRES(TIXJ)                            ! line 21  -=TEST THE RESERVE BITS (printed "CTOC11")
+        BRZ,TA4A                                             ! line 22  -IF NOT RESERVED
+        BZB,TMODE,TB3                                        ! line 23  -IF OVERLAP MODE (printed "TMCDE")
+        BB,TUNRES(TIXJ),TB3                                  ! line 24  -IF NOT OVERLAP RESERVED
+        BB,TUNOBT(TIXA),TA4C                                 ! line 25  -IF SINGLE UNIT NOT OVERLAP MODE
+TA4A    CM0000,TINDZ                                         ! line 26  -SET THE MULTI-UNIT AVAIL.BIT (printed "CMOCOO")
+        BB,TINDD,TA5A                                        ! line 27  -IF THE OPT. REEL MOUNT IS BY PASSED (printed "TINDC")
+        LF,TFREEL(TIXA)                                      ! line 28  -GET THE REEL NUMBER ADDRESS
+        BRZ,TA4B                                             ! line 29  -IF SCRATCH REQ.
+        BB,TFDISP(TIXJ),TA5A                                 ! line 30  -IF NO TAPE MTED, MNT THE LAB TAP
+        LF,TONE                                              ! line 31  -IF REEL ADDRESS IS NOT ZERO
+TA4BA   KF,STATI(TIXJ)                                       ! line 32  -ORIGINAL VS THE NEW
+        BAE,TA5A                                             ! line 33  -IF LIKE MOUNTING
+TA4CM   CM1111,TINDC                                         ! line 34  -SET THE UNIT FOUND IND.
+        B,TB3                                                ! line 35
+TA4B    BB,TFDISP(TIXJ),TA4CM                                ! line 36  -SCRATCH. IS A TAPE MTED
+        B,TA4BA                                              ! line 37  -YES
+! line 38  -
+! line 39  -        SINGLE NOT OVERLAP MODE -- BE SURE THE UNIT IS
+! line 40  -        RESERVED FOR A PP THAT IS IN QUEUE AFTER THIS PP
+! line 41  -
+TA4C    LX,TIXL,TIXE                                         ! line 42  -LOAD FOR PP REF TABLE SCAN
+TA4CA   V+ICR,TIXL,2.0                                       ! line 43  -GET THE NEXT PP REF NUMBER
+        BB,TLPPEN(TIXL),TB3                                  ! line 44  -IF LAST ENTRY
+        BB,TJBPRO(TIXL),TA4CA                                ! line 45  -IF NOT OVERLAP JOB WAS PROCESSED
+        L,TUNCT(TIXL),46                                     ! line 46  -GET THE I/O REQ COUNT
+        BRZ,TA4CA                                            ! line 47  -IF THERE IS NO I/O REQ FOR PP
+        LC,TIXM,$R                                           ! line 48  -UNIT COUNT TO CF
+        LV,TIXM,TCRREF(TIXL)                                 ! line 49  -GET I/O REQ TBL ADDRESS
+! line 50  -
+
+!SYM TA3CA  021351.40
+!SYM TA3CB  021355.40
+!SYM TC3Z   021356.00
+!SYM TC3    021356.40
+!SYM TC3A   021357.00
+!SYM TA4A   021366.40
+!SYM TA4BA  021374.00
+!SYM TA4CM  021375.40
+!SYM TA4B   021377.00
+!SYM TA4C   021400.40
+!SYM TA4CA  021401.00
+!CHECK 021351.40 | 000000.56 8A 022027.23 10 | line 1 TA3CA KF,TABSCH(TIXK),46
+!CHECK 021352.40 | 021355.76 C0 | line 2 BZAE,TA3CB
+!CHECK 021353.00 | 000000.13 8A 007000.06 70 | line 6 LF,TRLSYM(TIXK)
+!CHECK 021354.00 | 000000.13 84 007000.23 10 | line 7 KF,TRLSYM(TIXA)
+!CHECK 021355.00 | 021423.36 C0 | line 8 BZAE,TA3F1
+!CHECK 021355.40 | 021351.65 48 | line 10 TA3CB CB+,TIXK,TA3CA
+!CHECK 021356.00 | 021104.15 10 | line 13 TC3Z SX,TIXJ,TWORK2
+!CHECK 021356.40 | 021104.14 10 | line 14 TC3 LX,TIXJ,TWORK2
+!CHECK 021357.00 | 000000.34 86 021420.34 02 | line 15 TC3A BB,TUNAVL(TIXJ),TB3
+!CHECK 021360.00 | 232227.41 80 001000.00 F0 | line 16 CM0000,TINDX (a "*" prints after the location)
+!CHECK 021361.00 | 000000.35 86 021420.34 00 | line 20 BZB,TUNASG(TIXJ),TB3
+!CHECK 021362.00 | 000000.76 86 002000.07 70 | line 21 CT0011(BU,2),TUNRES(TIXJ)
+!CHECK 021363.00 | 021366.74 C2 | line 22 BRZ,TA4A
+!CHECK 021363.40 | 232227.32 80 021420.34 00 | line 23 BZB,TMODE,TB3 (printed "TMCDE")
+!CHECK 021364.40 | 000000.76 86 021420.34 02 | line 24 BB,TUNRES(TIXJ),TB3
+!CHECK 021365.40 | 000000.01 84 021400.74 02 | line 25 BB,TUNOBT(TIXA),TA4C
+!CHECK 021366.40 | 232227.40 80 001000.00 F0 | line 26 TA4A CM0000,TINDZ
+!CHECK 021367.40 | 232227.36 80 021432.74 02 | line 27 BB,TINDD,TA5A (printed "TINDC")
+!CHECK 021370.40 | 000000.34 84 022000.06 70 | line 28 LF,TFREEL(TIXA)
+!CHECK 021371.40 | 021377.34 C2 | line 29 BRZ,TA4B
+!CHECK 021372.00 | 000000.33 86 021432.74 02 | line 30 BB,TFDISP(TIXJ),TA5A
+!CHECK 021373.00 | 232227.31 80 001000.06 70 | line 31 LF,TONE (a "*" prints after the location)
+!CHECK 021374.00 | 000000.32 86 001000.23 10 | line 32 TA4BA KF,STATI(TIXJ)
+!CHECK 021375.00 | 021432.76 C2 | line 33 BAE,TA5A
+!CHECK 021375.40 | 232227.35 80 001000.36 F0 | line 34 TA4CM CM1111,TINDC
+!CHECK 021376.40 | 021420.10 00 | line 35 B,TB3
+!CHECK 021377.00 | 000000.33 86 021375.74 02 | line 36 TA4B BB,TFDISP(TIXJ),TA4CM
+!CHECK 021400.00 | 021374.10 00 | line 37 B,TA4BA
+!CHECK 021400.40 | 000023.26 10 | line 42 TA4C LX,TIXL,TIXE
+!CHECK 021401.00 | 000002.27 07 | line 43 TA4CA V+ICR,TIXL,2.0
+!CHECK 021401.40 | 000000.47 8B 021420.34 02 | line 44 BB,TLPPEN(TIXL),TB3
+!CHECK 021402.40 | 000000.44 8B 021401.34 02 | line 45 BB,TJBPRO(TIXL),TA4CA
+!CHECK 021403.40 | 000000.34 8B 010027.20 50 | line 46 L,TUNCT(TIXL),46
+!CHECK 021404.40 | 021401.34 C2 | line 47 BRZ,TA4CA
+!CHECK 021405.00 | 000011.20 50 | line 48 LC,TIXM,$R
+!CHECK 021405.40 | 000000.20 3B | line 49 LV,TIXM,TCRREF(TIXL)

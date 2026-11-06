@@ -1,0 +1,174 @@
+! mcp_bootstrap_p401.strap -- MCP printed page 401: the $EOJ copy of the
+! I/O ASSIGNMENT routine (T-names): the multi-unit conclusion (T A6 ..
+! T AQ) and the head of the single-unit conclusion (T A7, T A7A).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.151, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZE000153  DIST. OF 3/01
+!  3/01  PAGE NUMBER 401"; the heading row's LOCATION field is 021265,
+! line 1's word.
+!
+! >>> CARD SERIES ZE, NOT ZA. <<<  PUNID is still 22$EOJ, but the
+! serials are ZE000153 .. ZE000202, one per line, none skipped, none
+! repeated.  pp.381-393 print ZA.  No SLC prints on this page; the origin
+! below is line 1's printed LOCATION.  No TAIL.
+!
+! THE PAGE.  50 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 2, 30 and 50; a tick after line 13's LOCATION.
+! Contiguous 021265.00 .. 021315.00 (line 50, KF, a full word, so the
+! next page should open at 021316.00).
+!   lines  3-6, 16, 19, 24-26, 40-45  remarks.
+!   lines  1-2   tail of the preceding test (BB1 .. TB2, CM1111 TINDX).
+!   lines  7-39  CONCLUSION -- TRY TO ASSIGN THIS MULTI-UNIT REQ.
+!   lines 46-50  CONCLUSION -- TRY TO ASSIGN THIS SINGLE UNIT REQUEST.
+!
+! >>> "C" FOR "D". <<<  Lines 1 and 2 print TINCZ and TINCX; the
+! binaries 232227.40 and 232227.41 are TINDZ and TINDX (landed p.287
+! lines 25-26); D with its stem worn.  Line 34 prints TMCDE (open
+! round): TMODE, 232227.32 (p.287 line 19).
+!
+! >>> OPEN ROUNDS IN DIGIT FIELDS. <<<  Line 12's LOCATION prints
+! "021272.CC" (written 021272.00), and many octal 0s print open; only a
+! digit can stand there.  The "C0" bytes of lines 23 and 36 are real C0s
+! (BZAE/BZXE assemble them).
+!
+! EMBEDDED BLANKS.  Line 46 prints "LX,TX3 ,TCHSXW", lines 47-48
+! "(TX3 )"; the blanks are written out (STRAP ignores them in a field).
+!
+! STAND-INS:
+!   resident (landed pp.287-289, volume 2): TINDZ TINDX TINDA TINDB
+!     TMODE TLUCT TPPRUN TCTACH TCTSCH, the index SYNs and the T-field
+!     SYNs, copied in their defining forms.
+!   $EOJ, not landed (the defining pages are not in the staging dir):
+!     TCTEMP  as p.287's stand-in (021102.0).
+!     TREFIL  LX line 7, BIT-EXACT; an LX target, SYN(BU).
+!     TWORK1  SC line 10, BIT-EXACT; an SC target (XW in vol. 1), SYN(BU).
+!     TB2     BB1 line 1, BIT-EXACT.
+!     TA3     BRZ line 11 / B line 39, BIT-EXACT.
+!     TC3Z    BZB line 32 / BZXE line 36, BIT-EXACT.
+!     TB7     BB lines 47-48, BIT-EXACT.
+
+TX1     SYN,$10                      ! landed p.287 line 30
+TX2     SYN,$9                       ! landed p.287 line 31
+TX3     SYN,$2                       ! landed p.287 line 33
+TIXA    SYN,$4                       ! landed p.287 line 34
+TIXE    SYN,$3                       ! landed p.287 line 36
+TIXJ    SYN,$6                       ! landed p.287 line 41
+TLUCT   SYN(BU,18), (8)232227.0      ! landed p.287 line 16 DD(BU,18)
+TMODE   SYN(BU,1), (8)232227.32      ! landed p.287 line 19 DD(BU,1)
+TINDA   SYN(BU,1), (8)232227.33      ! landed p.287 line 20
+TINDB   SYN(BU,1), (8)232227.34      ! landed p.287 line 21
+TINDZ   SYN(BU,1), (8)232227.40      ! landed p.287 line 25
+TINDX   SYN(BU,1), (8)232227.41      ! landed p.287 line 26
+TCTEMP  SYN, (8)021102.0             ! $EOJ, not landed; as p.287's stand-in
+TCTACH  SYN(BU,18),TCTEMP+0.0        ! landed p.287 line 12 (defining form)
+TCTSCH  SYN(BU,7),TCTEMP+0.25        ! landed p.287 line 13 (defining form)
+TPPRUN  SYN(BU), (8)232232.0         ! landed p.288 line 7 XW
+TTYPE   SYN(BU,4),0.03               ! landed p.288 line 31
+TRLSYM  SYN(BU,7),0.11               ! landed p.288 line 33
+TUNTBA  SYN(BU,18),0.0               ! landed p.289 line 6
+TCHAVL  SYN(BU,1),0.25               ! landed p.289 line 8
+TEQUIP  SYN(BU,4),0.52               ! landed p.289 line 15
+TUNITK  SYN(BU,4),0.59               ! landed p.289 line 16
+SXCHAN  SYN(BU), (8)215002.0         ! landed p.103 line 28 "SXCHAN XW,0"
+TCHSXW  SYN,SXCHAN                   ! landed p.289 line 5 (defining form)
+TREFIL  SYN(BU), (8)021105.0         ! $EOJ, not landed; LX line 7, BIT-EXACT
+TWORK1  SYN(BU), (8)021103.0         ! $EOJ, not landed; SC line 10, BIT-EXACT
+TB2     SYN, (8)021245.40            ! $EOJ, not landed; BB1 line 1, BIT-EXACT
+TA3     SYN, (8)021337.0             ! $EOJ, not landed; BRZ line 11, B line 39, BIT-EXACT
+TC3Z    SYN, (8)021356.0             ! $EOJ, not landed; BZB line 32, BZXE line 36, BIT-EXACT
+TB7     SYN, (8)021325.0             ! $EOJ, not landed; BB lines 47-48, BIT-EXACT
+
+        SLC, (8)021265.00
+        BB1,TINDZ,TB2                                        ! line  1  printed "TINCZ"
+        CM1111(BU,1),TINDX                                   ! line  2  printed "TINCX"
+! line  3  -
+! line  4  - ****************************************************
+! line  5  -           CONCLUSION -- TRY TO ASSIGN THIS MULTI-UNIT REQ
+! line  6  - ****************************************************
+TA6     LX,TX1,TREFIL                                        ! line  7  -SET FOR CHANNEL SCAN
+        LF,TRLSYM(TIXA)                                      ! line  8  -SYMBOLIC CHANNEL NUMBER TO ACC
+        Z,TX3                                                ! line  9  -ZERO THE COUNTER INDEX
+        SC,TIXA,TWORK1                                       ! line 10  -SAVE FOR COMPARING
+        BRZ,TA3                                              ! line 11  -DO NOT COMPARE IF RLSYM IS ZERO
+TA6A    KF,TRLSYM(TX1)                                       ! line 12  -LOOK FOR LIKE SYMBOLIC CHAN
+        BAE,TA6C                                             ! line 13  -IF LIKE SYMBOLIC CHANNEL
+TA6B    CB+,TX1,TA6A                                         ! line 14
+        B,TA6D                                               ! line 15
+! line 16  -
+TA6C    C+I,TX3,1.0                                          ! line 17  -ADVANCE THE LIKE REQUEST COUNTER
+        B,TA6B                                               ! line 18
+! line 19  -
+TA6D    KF,TCTSCH                                            ! line 20  -COMPARE ACC AGAINST TEMP
+        KC,TX3,TLUCT                                         ! line 21  -IS THERE A CHANNEL WITH ENOUGH UNITS
+        BXH,TAQ                                              ! line 22  -IF THE CHANNEL REQ IS TOO LARGE
+        BZAE,TA3                                             ! line 23  -IF UNLIKE ABS CHAN LOC
+! line 24  -
+! line 25  -      GET ABSOLUTE CHANNEL NO. AS REQUEST IS PARTIALY ASSIGNED
+! line 26  -
+        L,TCTACH,46                                          ! line 27  -GET ABSOLUTE CHAN ADDRESS
+        LX,TX3,$R                                            ! line 28  -PLACE IN INDEX
+        LV,TIXJ,TUNTBA(TX3)                                  ! line 29  -GET UNIT TABLE ADDRESS
+        L,TUNITK(TX3),46                                     ! line 30
+        LC,TIXJ,$R                                           ! line 31  -UNIT COUNT TO CF
+        BZB,TINDA,TC3Z                                       ! line 32  -IF THE SAME CHAN IS NOT ALLOWED
+        BB,TINDB,TAQ                                         ! line 33  -IF SPLIT CH MODE,SET TO REV SCAN
+        BB,TMODE,TAQ                                         ! line 34  -IF NOT OVERLAP  printed "TMCDE"
+        KV,TIXE,TPPRUN                                       ! line 35  -IS THIS THE NEXT JOB TO BE RUN
+        BZXE,TC3Z                                            ! line 36  -NO -- BYPASS
+TAQ     CM1111,TINDB                                         ! line 37  -SET THE SPLIT CHANNEL IND
+        V+I,TX2,1.0                                          ! line 38  -STEP TO THE REVERSE SCAN
+        B,TA3                                                ! line 39
+! line 40  -
+! line 41  -
+! line 42  -
+! line 43  -
+! line 44  -           CONCLUSION --TRY TO ASSIGN THIS SINGLE UNIT REQUEST
+! line 45  -
+TA7     LX,TX3,TCHSXW                                        ! line 46  printed "TX3 ,"
+TA7A    BB,TEQUIP(TX3),TB7                                   ! line 47  -IF A TAPE CHANNEL  printed "(TX3 )"
+        BB,TCHAVL(TX3),TB7                                   ! line 48  -IF THE CHANNEL IS NOT AVAILABLE  printed "(TX3 )"
+        LF,TTYPE(TIXA)                                       ! line 49  -IS IT THE CORRECT EQUIP TYPE
+        KF,TEQUIP(TX3)                                       ! line 50
+!SYM TA6    021267.00
+!SYM TA6A   021272.00
+!SYM TA6B   021273.40
+!SYM TA6C   021274.40
+!SYM TA6D   021275.40
+!SYM TAQ    021307.40
+!SYM TA7    021311.40
+!SYM TA7A   021312.00
+!CHECK 021265.00 | 232227.40 80 021245.74 0E | line 1 BB1,TINCZ,TB2 as printed (D worn to C)
+!CHECK 021266.00 | 232227.41 80 001000.36 F0 | line 2 CM1111(BU,1),TINCX as printed (D worn to C)
+!CHECK 021267.00 | 021105.24 10 | line 7 T A6 LX,TX1,TREFIL
+!CHECK 021267.40 | 000000.13 84 007000.06 70 | line 8 LF,TRLSYM(TIXA)
+!CHECK 021270.40 | 000022.22 00 | line 9 Z,TX3
+!CHECK 021271.00 | 021103.11 50 | line 10 SC,TIXA,TWORK1
+!CHECK 021271.40 | 021337.34 C2 | line 11 BRZ,TA3
+!CHECK 021272.00 | 000000.13 8A 007000.23 10 | line 12 T A6A KF,TRLSYM(TX1) (LOCATION prints 021272.CC)
+!CHECK 021273.00 | 021274.76 C2 | line 13 BAE,TA6C
+!CHECK 021273.40 | 021272.25 48 | line 14 T A6B CB+,TX1,TA6A
+!CHECK 021274.00 | 021275.50 00 | line 15 B,TA6D
+!CHECK 021274.40 | 000001.05 00 | line 17 T A6C C+I,TX3,1.0
+!CHECK 021275.00 | 021273.50 00 | line 18 B,TA6B
+!CHECK 021275.40 | 021102.31 80 007000.23 10 | line 20 T A6D KF,TCTSCH
+!CHECK 021276.40 | 232227.05 90 | line 21 KC,TX3,TLUCT
+!CHECK 021277.00 | 021307.73 42 | line 22 BXH,TAQ
+!CHECK 021277.40 | 021337.36 C0 | line 23 BZAE,TA3
+!CHECK 021300.00 | 021102.00 80 022027.20 50 | line 27 L,TCTACH,46
+!CHECK 021301.00 | 000011.04 10 | line 28 LX,TX3,$R
+!CHECK 021301.40 | 000000.14 32 | line 29 LV,TIXJ,TUNTBA(TX3)
+!CHECK 021302.00 | 000000.73 82 004027.20 50 | line 30 L,TUNITK(TX3),46
+!CHECK 021303.00 | 000011.14 50 | line 31 LC,TIXJ,$R
+!CHECK 021303.40 | 232227.33 80 021356.34 00 | line 32 BZB,TINDA,TC3Z
+!CHECK 021304.40 | 232227.34 80 021307.74 02 | line 33 BB,TINDB,TAQ
+!CHECK 021305.40 | 232227.32 80 021307.74 02 | line 34 BB,TMCDE,TAQ as printed (TMODE)
+!CHECK 021306.40 | 232232.06 90 | line 35 KV,TIXE,TPPRUN
+!CHECK 021307.00 | 021356.32 C0 | line 36 BZXE,TC3Z
+!CHECK 021307.40 | 232227.34 80 001000.36 F0 | line 37 T AQ CM1111,TINDB
+!CHECK 021310.40 | 000001.23 05 | line 38 V+I,TX2,1.0
+!CHECK 021311.00 | 021337.10 00 | line 39 B,TA3
+!CHECK 021311.40 | 215002.04 10 | line 46 T A7 LX,TX3 ,TCHSXW
+!CHECK 021312.00 | 000000.64 82 021325.34 02 | line 47 T A7A BB,TEQUIP(TX3 ),TB7
+!CHECK 021313.00 | 000000.31 82 021325.34 02 | line 48 BB,TCHAVL(TX3 ),TB7
+!CHECK 021314.00 | 000000.03 84 004000.06 70 | line 49 LF,TTYPE(TIXA)
+!CHECK 021315.00 | 000000.64 82 004000.23 10 | line 50 KF,TEQUIP(TX3)

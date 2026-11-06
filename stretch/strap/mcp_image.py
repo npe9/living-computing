@@ -435,7 +435,7 @@ def build(verbose=False, pages=None, end_at='XIPLBS'):
 # documenting the DECODE and ASSIGN linkage formats.  Nothing compiles
 # and nothing is labelled; p.275 leaves the counter at 231522.40 and
 # p.276 opens at 231523.00, p.285 at 232224.40 and p.287 opens there.
-NO_DECK_PAGES = {47, 59, 60, 81, 82, 100, 275, 285}
+NO_DECK_PAGES = {47, 59, 60, 81, 82, 100, 275, 285, 416, 417}
 
 # >>> AND A PAGE THE SCAN DOES NOT HAVE IS NOT A PAGE THAT COMPILES
 # NOTHING. <<<  docs/MCP_Mar63_250-445.pdf goes from PDF p.79 (PAGE

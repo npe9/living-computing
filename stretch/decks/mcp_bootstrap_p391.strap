@@ -1,0 +1,213 @@
+! mcp_bootstrap_p391.strap -- MCP printed page 391: the END-OF-JOB
+! overlay (PUNID 22$EOJ, card series ZA), "SERVICE ROUTINES FOR ERROR
+! MESSAGES, ETC.": W REJJB, Y TRT/Y TRMOV, W J4VV, W SYSC2/W SYSC1/
+! W SYSCA, Z JOBC1, W JC4QJ, W JC4QT, W JC4QL.  Lines 1-56.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.141, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$EOJ  CARD
+! ID ZA000447  DIST. OF 3/01  3/01  PAGE NUMBER 391"; the heading row's
+! LOCATION field prints no value.
+!
+! >>> THIS PAGE IS NOT SCOMD. <<<  PUNID 22$EOJ (not 22SCOMD), card
+! series ZA (not WA), and line 4 opens at 020372.40 -- low core, a new
+! overlay origin, far from SCOMD's 2344xx-2354xx.  Every non-resident
+! symbol below is an $EOJ symbol; none is copied from a SCOMD, LOADER
+! or $DUMP deck.  Resident symbols (pp.99-319) are shared.
+!
+! tools/page_sheet.py 391 failed its line fit (no LINE column read), so
+! the sheet gave no reading: everything below is off the image.
+!
+! THE PAGE.  56 lines, every line number prints a "*".  Lines 1-3 are
+! the banner remark.  Located rows run contiguous from 020372.40 to
+! 020431.00 (a half-word B; next location 020431.40), then blank paper.
+! "*" after the LOCATION on lines 5, 22 and 44.
+!   lines 25-28, 34-36, 39, 42, 45-46: null-op data words (",SCOMD" ...),
+!             the parameter words after BD,SPRIME / B,DMCP.
+!   line 13   YTRMOV XW,0,0,1,0 prints 000000.00+ 000 000000 000001.
+! JOIN.  p.390 is not landed; contiguity backwards is NOT established.
+! p.268 (resident) independently stands YTRT in at 020375.40 (its WREJRT
+! SYN,YTRT+.32 prints 020376.00): this page's line 10 label, a witness.
+! p.392 should open at 020431.40 with serial about ZA000498.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 25 ",SCCMD" = SCOMD (landed p.106 SCOMD SYN,80.0; prints
+!     000120.00).  Lines 34, 44 ",DCCMM" = DCOMM (landed p.105 SYN,35.32;
+!     prints 000043.40).
+!   * line 48 "BB,SYSMCD,WRESTR" = SYSMOD (landed p.103 SYN(BU,2),
+!     SCOMRG+.8; prints 215001.10).
+!   * line 13 label prints "YTRMCV" (open); line 11 LVI,$15,YTRMOV prints
+!     the O closed at 400 dpi, and LVI's value 020400 is this row.
+!   * lines 31, 37 ZJOBC1: the round after J is closed at 900 dpi (O);
+!     no other deck spells it.
+!   * line 35 ",YJ1FUL": the third glyph is ambiguous I/1 on the ink;
+!     C22-6728 spells YJ1FUL (and the resident sibling is SJ1FUL, line 31).
+!   * line 45 YJCEM: C, as C22-6728 spells it and as the CEM family
+!     (YTCEM, YLCEM, YICEM on p.268) is spelled.
+!   * WJCV, WSYSC2, WJC4Q, TMOVE, WREJJB as C22-6728 spells them.
+!   * lines 29 (NOP) and 40 (BE,$+.32) print the last hex byte "C0";
+!     neither statement can make a C there (no index), and line 53's BE
+!     prints 00: the open round is 0 -- 00 (line 21 BZAE's C0 is real).
+!   * octal fields printing "C" for 0 (lines 6, 12, 13, 16, ...) are 0.
+!
+! EXTERNALS.  $EOJ symbols defined on pages not landed (WRESTR, WJCV,
+! WJC4Q, YJ1FUL, YJCEM, YTCEM, YLCEM) come from this page's binary,
+! half word only; TMOVE (resident, not landed in the body; the IPL copy
+! is at 005014) likewise.  YTCEM/YLCEM agree with p.268's stand-ins.
+!
+! CARD SERIALS.  ZA000447 .. ZA000497.  Lines 33-36 all print ZA000479;
+! lines 51-52 both ZA000494; lines 55-56 both ZA000497.  Otherwise line
+! N prints ZA000(446+N) through line 33, ZA000(443+N) for lines 37-51,
+! ZA000(442+N) for 53-55.  Recorded, not explained.
+
+SREJJB  SYN(B,25,1), (8)215011.40    ! landed p.103 "S REJJB VF,0" (VF: (B,25))
+TPPRUN  SYN(BU), (8)232232.0         ! landed p.288 line 7 XW (index word: (BU))
+YTRB    SYN(BU,1),1.49               ! landed p.268 line 48
+YTBIT   SYN, (8)231426.71           ! plain: p.395 line 23 defines it "SYN,YLOL2+.25" (dds from YLLSAV, printed N,64,4); every use writes (BU,1); as p.273 (not landed; DD(BU,1)); CM1111 line 15 231426.71
+WJOR2   SYN(U), (8)231443.0          ! landed p.274 line 18 DRZ(U),15
+YCOMDM  SYN(BU,48,6), (8)231070.0    ! landed p.268 line 5 (AX)DD(BU,48,6)
+SPRIMR  SYN, (8)215571.0             ! landed p.118 line 49
+SPRIME  SYN, (8)215570.0             ! landed p.118 line 48
+SCOMD   SYN, 80.0                    ! landed p.106 line 15; line 25 000120.00 (printed "SCCMD")
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label
+SJ1FUL  SYN(BU,1), SCOMRG.16         ! landed p.103 line 25; BZB line 31 215001.20
+SYSMOD  SYN(BU,2), SCOMRG+.8         ! landed p.103 line 18; BB line 48 215001.10 (printed "SYSMCD")
+DMCP    SYN, 32.0                    ! landed p.108 line 5
+DCOMM   SYN, 35.32                   ! landed p.105 line 23 (printed "DCCMM")
+SJC4    SYN, 78.32                   ! landed p.106 line 12
+DRET    SYN, 33.0                    ! landed p.105 line 17
+SDRET   SYN, DRET                    ! landed p.105 line 18
+YSSPBT  SYN(BU,1), (8)231501.0       ! landed p.274 line 20 DD(BU,1)
+YPRRET  SYN(BU,32,8), (8)231204.40   ! landed p.270 line 22 BE,0 (half word)
+YPR     SYN(BU,32,8), (8)231172.0    ! landed p.270 line 2 B,YPRSPL (half word)
+TMOVE   SYN, (8)022326.0             ! not landed in the body; B line 12 022326.10, half word only
+WRESTR  SYN, (8)020226.0             ! $EOJ, not landed; B line 8 020226.10, half word only
+WJCV    SYN(BU,32,8), (8)020316.0      ! p.389 SIC label (half-word instruction); $EOJ, not landed; B line 16 020316.10, half word only
+WJC4Q   SYN, (8)020223.0             ! $EOJ, not landed; B line 49 020223.10, half word only
+YJ1FUL  SYN, (8)020676.0             ! $EOJ, not landed; null op line 35 020676.00
+YJCEM   SYN, (8)020523.0             ! $EOJ, not landed; null op line 45 020523.00
+YTCEM   SYN, (8)020636.0             ! as p.268 (not landed); LVI line 50 020636.03
+YLCEM   SYN, (8)020646.0             ! as p.268 (not landed); LVI line 54 020646.03
+WREJRT  SYN,YTRT+.32                 ! landed p.268 line 49 (its defining form; YTRT is this page's line 10)
+
+        SLC, (8)020372.40
+! -  ***************************************************              line  1
+! --SERVICE ROUTINES FOR ERROR MESSAGES, ETC.                          line  2
+! -  ***************************************************              line  3
+WREJJB  LC,$8,SREJJB                                         ! line  4  -NUMBER OF JOBS TO REJECT
+        BXCZ,YTRT-.32                                        ! line  5
+        C-I,$8,1.0                                           ! line  6  -
+        SC,$8,SREJJB                                         ! line  7  -
+        B,WRESTR                                             ! line  8
+        LV,$14,TPPRUN                                        ! line  9
+YTRT    BZBZ,YTRB($14),$                                     ! line 10
+        LVI,$15,YTRMOV                                       ! line 11
+        B,TMOVE                                              ! line 12
+YTRMOV  XW,0,0,1,0                                           ! line 13  printed "YTRMCV"
+        B,YTRT-.32                                           ! line 14
+WJ4VV   CM1111(BU,1),YTBIT                                   ! line 15  -
+        B,WJCV                                               ! line 16  -READ NEXT CARD
+WSYSC2  SIC,WREJRT                                           ! line 17
+        B,WREJJB                                             ! line 18
+        L(BU,48),WJOR2                                       ! line 19
+        K(BU,48),YCOMDM                                      ! line 20
+        BZAE,WJC4QJ                                          ! line 21
+WSYSC1  SC,$15,WSYSCA                                        ! line 22  -
+        SIC,SPRIMR                                           ! line 23  -
+        BD,SPRIME                                            ! line 24  -
+        ,SCOMD                                               ! line 25  printed ",SCCMD"
+        ,2.0                                                 ! line 26
+        ,WJOR2                                               ! line 27
+WSYSCA  ,0.                                                  ! line 28  -FOR NUMBER OF FIELDS
+        NOP                                                  ! line 29
+        LCI,9,0.0                                            ! line 30
+        BZB,SJ1FUL,ZJOBC1                                    ! line 31
+        CB,9,$                                               ! line 32
+        B,DMCP                                               ! line 33
+        ,DCOMM                                               ! line 34  printed ",DCCMM"
+        ,YJ1FUL                                              ! line 35
+        ,8.                                                  ! line 36
+ZJOBC1  SIC,SPRIMR                                           ! line 37
+        BD,SPRIME                                            ! line 38  -
+        ,SJC4                                                ! line 39  - PRIME JC-4
+        BE,$+.32                                             ! line 40  -
+        B,DMCP                                               ! line 41  -
+        ,SDRET                                               ! line 42  -
+WJC4QJ  B,DMCP                                               ! line 43  -
+        ,DCOMM                                               ! line 44  printed ",DCCMM"
+        ,YJCEM                                               ! line 45  -
+        ,5.0                                                 ! line 46  -
+        CM1111,YSSPBT                                        ! line 47
+        BB,SYSMOD,WRESTR                                     ! line 48  printed "SYSMCD"
+        B,WJC4Q                                              ! line 49  -TO REJECT JOB
+WJC4QT  LVI,1,YTCEM                                          ! line 50
+        SIC,YPRRET                                           ! line 51
+        B,YPR                                                ! line 52
+        BE,WJC4Q                                             ! line 53  -TO REJECT JOB
+WJC4QL  LVI,1,YLCEM                                          ! line 54
+        SIC,YPRRET                                           ! line 55
+        B,YPR                                                ! line 56
+
+!SYM WREJJB 020372.40
+!SYM YTRT   020375.40
+!SYM YTRMOV 020400.00
+!SYM WJ4VV  020401.40
+!SYM WSYSC2 020403.00
+!SYM WSYSC1 020406.40
+!SYM WSYSCA 020411.40
+!SYM ZJOBC1 020416.40
+!SYM WJC4QJ 020421.40
+!SYM WJC4QT 020426.00
+!SYM WJC4QL 020430.00
+!CHECK 020372.40 | 215011.60 50 | line 4 W REJJB LC,$8,S REJJB
+!CHECK 020373.00 | 020375.30 42 | line 5 BXCZ,Y TRT-.32 (a "*" prints after the location)
+!CHECK 020373.40 | 000001.21 08 | line 6 C-I,$8,1.0
+!CHECK 020374.00 | 215011.61 50 | line 7 SC,$8,S REJJB
+!CHECK 020374.40 | 020226.10 00 | line 8 B,W RESTR
+!CHECK 020375.00 | 232232.34 30 | line 9 LV,$14,TPPRUN
+!CHECK 020375.40 | 000001.61 8E 020375.74 04 | line 10 Y TRT BZBZ,Y TRB($14),$
+!CHECK 020376.40 | 020400.37 01 | line 11 LVI,$15,Y TRMOV
+!CHECK 020377.00 | 022326.10 00 | line 12 B,TMOVE
+!CHECK 020400.00 | 000000.00+ 000 000000 000001 | line 13 Y TRMOV XW,0,0,1,0
+!CHECK 020401.00 | 020375.10 00 | line 14 B,Y TRT-.32
+!CHECK 020401.40 | 231426.71 80 001000.36 F0 | line 15 W J4VV CM1111(BU,1),Y TBIT
+!CHECK 020402.40 | 020316.10 00 | line 16 B,W JCV
+!CHECK 020403.00 | 020376.00 80 | line 17 W SYSC2 SIC,W REJRT
+!CHECK 020403.40 | 020372.50 00 | line 18 B,W REJJB
+!CHECK 020404.00 | 231443.00 80 060000.20 50 | line 19 L(BU,48),W JOR2
+!CHECK 020405.00 | 231070.00 80 060000.21 10 | line 20 K(BU,48),Y COMDM
+!CHECK 020406.00 | 020421.76 C0 | line 21 BZAE,W JC4QJ
+!CHECK 020406.40 | 020411.77 50 | line 22 W SYSC1 SC,$15,W SYSCA (a "*" prints after the location)
+!CHECK 020407.00 | 215571.00 80 | line 23 SIC,S PRIMR
+!CHECK 020407.40 | 215570.04 00 | line 24 BD,S PRIME
+!CHECK 020410.00 | 000120.00 80 | line 25 ,SCOMD (printed ",SCCMD")
+!CHECK 020410.40 | 000002.00 80 | line 26 ,2.0
+!CHECK 020411.00 | 231443.00 80 | line 27 ,W JOR2
+!CHECK 020411.40 | 000000.00 80 | line 28 W SYSCA ,0.
+!CHECK 020412.00 | 000000.30 00 | line 29 NOP (hex prints "C0": the open round is 0, as in this row's octal fields; NOP has no index)
+!CHECK 020412.40 | 000000.23 02 | line 30 LCI,9,0.0
+!CHECK 020413.00 | 215001.20 80 020416.74 00 | line 31 BZB,S J1FUL,Z JOBC1
+!CHECK 020414.00 | 020414.22 48 | line 32 CB,9,$
+!CHECK 020414.40 | 000040.10 00 | line 33 B,DMCP
+!CHECK 020415.00 | 000043.40 80 | line 34 ,DCOMM (printed ",DCCMM")
+!CHECK 020415.40 | 020676.00 80 | line 35 ,Y J1FUL
+!CHECK 020416.00 | 000010.00 80 | line 36 ,8.
+!CHECK 020416.40 | 215571.00 80 | line 37 Z JOBC1 SIC,S PRIMR
+!CHECK 020417.00 | 215570.04 00 | line 38 BD,S PRIME
+!CHECK 020417.40 | 000116.40 80 | line 39 ,S JC4
+!CHECK 020420.00 | 020420.40 00 | line 40 BE,$+.32 (hex prints "C0": open round = 0; no index printed, line 53 BE prints 00)
+!CHECK 020420.40 | 000040.10 00 | line 41 B,DMCP
+!CHECK 020421.00 | 000041.00 80 | line 42 ,S D RET
+!CHECK 020421.40 | 000040.10 00 | line 43 W JC4QJ B,DMCP
+!CHECK 020422.00 | 000043.40 80 | line 44 ,DCOMM (printed ",DCCMM"; a "*" prints after the location)
+!CHECK 020422.40 | 020523.00 80 | line 45 ,Y JCEM
+!CHECK 020423.00 | 000005.00 80 | line 46 ,5.0
+!CHECK 020423.40 | 231501.00 80 001000.36 F0 | line 47 CM1111,Y SSPBT
+!CHECK 020424.40 | 215001.10 80 020226.34 02 | line 48 BB,SYSMOD,W RESTR (printed "SYSMCD")
+!CHECK 020425.40 | 020223.10 00 | line 49 B,W JC4Q
+!CHECK 020426.00 | 020636.03 01 | line 50 W JC4QT LVI,1,Y TCEM
+!CHECK 020426.40 | 231204.40 80 | line 51 SIC,Y PRRET
+!CHECK 020427.00 | 231172.10 00 | line 52 B,Y PR
+!CHECK 020427.40 | 020223.00 00 | line 53 BE,W JC4Q
+!CHECK 020430.00 | 020646.03 01 | line 54 W JC4QL LVI,1,Y LCEM
+!CHECK 020430.40 | 231204.40 80 | line 55 SIC,Y PRRET
+!CHECK 020431.00 | 231172.10 00 | line 56 B,Y PR

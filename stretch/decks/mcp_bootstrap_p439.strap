@@ -1,0 +1,115 @@
+! mcp_bootstrap_p439.strap -- MCP printed page 439: the tail of the
+! $EOJ reel history routine (JHISTE: the tape-label/mode move, the
+! spool-print SIC to ZSPLP9, the reel loop, JHISTX), the EDIT ROUTINE
+! (JEDIN .. JEDEX), its messages and constants, and the END card.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.189, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZZ000192  DIST. OF 3/01
+!  3/01  PAGE NUMBER 439"; the heading row's LOCATION field is 023174,
+! line 1's word.
+!
+! >>> CARD SERIES ZZ, PUNID 22$EOJ.  No SLC, no PUNID on the page; the
+! origin below is line 1's printed LOCATION.  No TAIL.  THE PAGE ENDS
+! THE $EOJ ASSEMBLY: line 33 is "END,0" (printed binary 000000.00, the
+! entry; END emits no word, so it gets no !CHECK). <<<
+!
+! THE PAGE.  33 lines, every line number prints a "*"; a further "*"
+! after the LOCATION on lines 17, 24, 33 (recorded, not interpreted).
+! Contiguous 023174.00 .. 023233.76 (JASTK's 30 bits end at 023233.76,
+! where END prints).  Lines 12-14 and 20 are remarks (13 the banner
+! "*****EDIT ROUTINE*****"); line 23's CNOP emits nothing (line 22's 48
+! bytes end on a word); lines 21 and 26 emit a half-word NOP.  Line 25's
+! message is 22 bytes (ends 023225.20); line 26's CNOP prints .40.
+!
+! CARD SERIALS.  ZZ000192 .. ZZ000224, one per line, consecutive.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!  * line 8 prints "CMOCOO" = CM0000 (connective digits; open rounds);
+!    binary 001000.00 F0.  Line 18 "COOC1" = C0001, binary 040000.02 70.
+!  * line 16 "+(DU,32,4)": the D is CLOSED at 400 dpi; the row assembles
+!    to the printed 040400.24 10 only with DU (BU assembles 040400.20).
+!  * line 25 "NC." = NO. (open O); line 22 "FCLLOWING" = FOLLOWING.
+!    Data only, no binary printed.
+!  * message blanks are DATA: counted on a 40 px character pitch (the
+!    statement column); each count is the one the next LOCATION needs:
+!    line 27 has 7 blanks after J and "AAANNNNN" (3 A, 5 N), line 25 3
+!    blanks after XXXX.
+!  * line 21's "CNOP'" -- a stray tick after the P, not a character.
+!
+! EXTERNALS.  JTX1, JTX2, JHIST2 are defined on pp.426-438 (not landed);
+! values from this page's binary.  ZSPLP9/ZSPLPR are the resident
+! spool routine (landed p.132/p.147 stand-ins, same values).
+
+JTX1    SYN,$6                       ! not landed; LV line 9 byte 36, index 6
+JTX2    SYN,$7                       ! not landed; LF line 2 byte 87, index 7
+JHIST2  SYN, (8)023167.40            ! not landed; CB line 10 023167.54, half word only
+ZSPLP9  SYN, (8)224052.0             ! landed p.132/p.147 stand-in; SIC line 4 BIT-EXACT
+ZSPLPR  SYN, (8)224046.40            ! landed p.132/p.147 stand-in; BD line 5 224046.44
+
+        SLC, (8)023174.00
+        LV,JTX2,$R                                           ! line  1
+        LF(BU,32),JTAPMD(JTX2)                               ! line  2
+        SF(BU,24),JTAPLB+1.0                                 ! line  3
+        SIC,ZSPLP9                                           ! line  4
+        BD,ZSPLPR                                            ! line  5
+        ,JTAPLB                                              ! line  6   blank operation field, as printed
+        ,2.0                                                 ! line  7   blank operation field, as printed
+        CM0000(BU,1),JTAPLB+.7                               ! line  8  -RESET TO 1 SPACE (printed "CMOCOO")
+        LV,JTX1,0.0(JTX1)                                    ! line  9  -NEXT REEL ADDR.
+        CB,JTX1,JHIST2                                       ! line 10  -LOOP THRU ALL REELS
+JHISTX  BE,$                                                 ! line 11  -SIC TYPE EXIT
+!                                                              line 12
+!       *****EDIT ROUTINE*****                                 line 13
+!                                                              line 14
+JEDIN   LF(BU,16,4),$R+.48                                   ! line 15  -4 BIT TO 8 BIT BYTES
+        +(DU,32,4),JKON9                                     ! line 16  -ENTER HERE IF 8 BIT BYTES
+        +(BU,32,8),JKON1                                     ! line 17
+        C0001(BU,32),JKONZ                                   ! line 18  (printed "COOC1")
+JEDEX   B,$                                                  ! line 19
+!                                                              line 20
+        CNOP                                                 ! line 21  -EJECT PAGE (emits a NOP at 023207.40)
+J1STPG  (A*)DD(BU),1JOB XXXXXXXX USED THE FOLLOWING TAPE REELS.....* ! line 22
+        CNOP                                                 ! line 23  -TRIPLE SPACE (emits nothing)
+JCHNUN  (A*)DD(BU),KCHANNEL XX UNIT X LAST ACTIVATED BY*     ! line 24
+        (A*)DD(BU), REFERENCE NO. XXXX   *                   ! line 25
+        CNOP                                                 ! line 26  -1ST DOUBLE THEN SINGLE. (emits a NOP at 023225.40)
+JTAPLB  (A*)DD(BU),J       AAANNNNN*                         ! line 27
+JTAPMD  (A*)DD(BU), NUL NLB PUL PLB*                         ! line 28
+JKON9   DD(BU,32,4),(16)09090909                             ! line 29
+JKON1   DD(BU,32,4),(16)01010101                             ! line 30
+JKONZ   DD(BU,32),(16)0F0F0F0F                               ! line 31
+JASTK   (AX)DD(BU,30,6),*****X                               ! line 32
+        END,0                                                ! line 33  (printed 000000.00 at 023233.76)
+
+!SYM JHISTX 023202.40
+!SYM JEDIN  023203.00
+!SYM JEDEX  023207.00
+!SYM J1STPG 023210.00
+!SYM JCHNUN 023216.00
+!SYM JTAPLB 023226.00
+!SYM JTAPMD 023230.00
+!SYM JKON9  023232.00
+!SYM JKON1  023232.40
+!SYM JKONZ  023233.00
+!SYM JASTK  023233.40
+!CHECK 023174.00 | 000011.16 30 | line 1 LV,JTX2,$R
+!CHECK 023174.40 | 023230.00 87 040000.06 70 | line 2 LF(BU,32),JTAPMD(JTX2)
+!CHECK 023175.40 | 023227.00 80 030000.12 F0 | line 3 SF(BU,24),JTAPLB+1.0
+!CHECK 023176.40 | 224052.00 80 | line 4 SIC,ZSPLP9
+!CHECK 023177.00 | 224046.44 00 | line 5 BD,ZSPLPR
+!CHECK 023177.40 | 023226.00 80 | line 6 ,JTAPLB
+!CHECK 023200.00 | 000002.00 80 | line 7 ,2.0
+!CHECK 023200.40 | 023226.07 80 001000.00 F0 | line 8 CM0000(BU,1),JTAPLB+.7
+!CHECK 023201.40 | 000000.14 36 | line 9 LV,JTX1,0.0(JTX1)
+!CHECK 023202.00 | 023167.54 48 | line 10 CB,JTX1,JHIST2
+!CHECK 023202.40 | 023202.40 00 | line 11 JHISTX BE,$
+!CHECK 023203.00 | 000011.60 80 020400.06 70 | line 15 JEDIN LF(BU,16,4),$R+.48
+!CHECK 023204.00 | 023232.00 80 040400.24 10 | line 16 +(DU,32,4),JKON9
+!CHECK 023205.00 | 023232.40 80 040000.20 10 | line 17 +(BU,32,8),JKON1
+!CHECK 023206.00 | 023233.00 80 040000.02 70 | line 18 C0001(BU,32),JKONZ
+!CHECK 023207.00 | 023207.10 00 | line 19 JEDEX B,$
+!CHECK 023207.40 | 000000.30 00 | line 21 CNOP
+!CHECK 023225.40 | 000000.30 00 | line 26 CNOP
+!CHECK 023232.00 | 01102204411 | line 29 JKON9 DD(BU,32,4),(16)09090909 | 32
+!CHECK 023232.40 | 00100200401 | line 30 JKON1 DD(BU,32,4),(16)01010101 | 32
+!CHECK 023233.00 | 01703607417 | line 31 JKONZ DD(BU,32),(16)0F0F0F0F | 32

@@ -1,0 +1,166 @@
+! mcp_bootstrap_p430.strap -- MCP printed page 430: the $EOJ program's
+! "INITIAL ENTRY PER PROBLEM PROGRAM" (TM2 .. TM3B): reset the disk
+! parameters, pick the next PP off the run tables, test the job's
+! synchronization with the JC-4 job card, and its status bits.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.180, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZF000634  DIST. OF 3/01
+!  3/01  PAGE NUMBER 430"; the heading row's LOCATION field is blank.
+!
+! >>> CARD SERIES ZF, PUNID 22$EOJ.  No SLC, no PUNID on the page; the
+! origin below is line 5's printed LOCATION.  No TAIL. <<<
+!
+! THE PAGE.  52 lines, every line number prints a "*"; a further "*"
+! after the LOCATION on lines 19 and 40 (recorded, not interpreted).
+! Contiguous 022634.40 .. 022665.40 (line 52, a half word; next location
+! 022666.00 = TSORT, BB line 51).  Lines 1-4, 7-9 are the boxed banners,
+! 13, 17, 24-26, 37, 42, 46, 50 remarks.  p.423's stand-in TM2 =
+! 022634.40 (BXVLZ) agrees with line 5.
+!
+! CARD SERIALS.  ZF000634 .. ZF000685, one per line, consecutive.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!  * line 20 "B,TM3C" = TM3D (D worn): line 22 defines T M3D at
+!    022645.00 and the binary is 022645.10; TM3C is line 43 (022660.00).
+!  * line 49 "B,TCK" = TOK (open O): no TCK anywhere; volume-1 decks
+!    spell TOK; binary 022604.10.
+!  * line 14 "LF(BU,17),TSYRFT.1-": the "-" right after the statement is
+!    the comment mark (C28-6129 PDF p.5); remark "RESTORE THE MCP USER AREA".
+!  * open-round "C"/"0" in octal fields read 0 (e.g. line 30 "000002.C3").
+!  * line 28 "$KF": a leading "$" (error marks suppressed), as printed.
+!
+! EXTERNALS.  Copied in their DEFINING forms from b15decks (p.418:
+! TMXn, TSYRFT/SSYRFT, TMAXRF/SMAXRN, TMARK/SMARK; p.419: TDCLRX XW,
+! TSBDFT SYN(BU,17),TSBDTB, TJCNME; p.425: TUNXW) and the resident p.288
+! fields.  TOK, TN2, TSORT are not landed: half word only.
+
+TMX1    SYN,$1                       ! p.418 line 22; LVI line 30 .03
+TMXA    SYN,$2                       ! p.418 line 23; byte 82
+TMXB    SYN,$3                       ! p.418 line 24; LX line 47
+TMXF    SYN,$7                       ! p.418 line 28; LV line 36
+TMXG    SYN,$8                       ! p.418 line 29; LX line 10 .20
+TMXI    SYN,$10                      ! p.418 line 31; byte 8A
+TUNXW   SYN(BU), (8)022154.0         ! p.418 line 49 XW (as p.425); line 5 022154.34
+TDCLRX  SYN(BU), (8)022237.0         ! p.419 line 10 XW; LX line 10 022237.20
+TSBDTB  SYN(BU,32), (8)022240.0      ! p.419 line 11 DRZ(BU,32) at 022240.00
+TSBDFT  SYN(BU,17),TSBDTB            ! p.419 line 12 (defining form)
+SSYRFT  SYN(B,25,1), (8)215007.40    ! landed p.103 line 40 VF (as p.418)
+TSYRFT  SYN,SSYRFT                   ! p.418 line 17 (defining form)
+SMAXRN  SYN(B,25,1), (8)215005.40    ! landed p.103 line 36 VF (as p.418)
+TMAXRF  SYN,SMAXRN                   ! p.418 line 19 (defining form)
+SMARK   SYN(B,25,1), (8)215012.40    ! landed p.103 line 46 VF (as p.418)
+TMARK   SYN,SMARK                    ! p.418 line 20 (defining form)
+TPPRUN  SYN(BU), (8)232232.0         ! landed p.288 line 7 XW
+TPPURF  SYN(BU), (8)232230.0         ! landed p.288 line 5 XW
+TLPPEN  SYN(BU,1),0.39               ! landed p.288 line 17
+TPNAME  SYN(BU,48,6),1.0             ! landed p.288 line 20
+TJCNME  SYN(BU,48,6),-1.0            ! p.419 line 17
+TRJECT  SYN(BU,1),0.37               ! landed p.288 line 15
+TJBPRO  SYN(BU,1),0.36               ! landed p.288 line 14
+TCRREF  SYN(BU,18),0.0               ! landed p.288 line 12
+TUNCT   SYN(BU,08),0.28              ! landed p.288 line 13
+TASGNP  SYN(BU,1),0.38               ! landed p.288 line 16
+TN2     SYN, (8)022766.0             ! $EOJ, not landed; B line 31 022766.10, half word only
+TOK     SYN, (8)022604.0             ! $EOJ, not landed; B line 49 022604.10, half word only
+TSORT   SYN, (8)022666.0             ! $EOJ, not landed; BB line 51 022666.34, half word only
+
+        SLC, (8)022634.40
+! line  1  - ----------------------------------------------------------
+! line  2  -       INITIAL ENTRY PER PROBLEM PROGRAM
+! line  3  - ----------------------------------------------------------
+! line  4  -
+TM2     CM0000(BU,18),TUNXW+0.28                             ! line  5  -CLEAR UNIT NAME TABLE COUNTER
+        SX,TMXI,0.0($15)                                     ! line  6  -SET CONTROL WORD PLUS
+! line  7  -
+! line  8  -       RESET THE DISK PARAMETERS
+! line  9  -
+        LX,TMXG,TDCLRX                                       ! line 10  -LOAD FOR TABLE CLEARING
+TMCLR   Z,0.0(TMXG)                                          ! line 11  -CLEAR THE ACCUMULATING AREA
+        CB+,TMXG,TMCLR                                       ! line 12
+! line 13  -
+        LF(BU,17),TSYRFT.1                                   ! line 14  -   RESTORE THE MCP USER AREA (printed "TSYRFT.1-": comment mark)
+        ST,TSBDFT                                            ! line 15
+        CM0000(BU,18),TMAXRF                                 ! line 16  -RESET THE MAX REF TO ZERO
+! line 17  -
+        BB,.25($15),TM2A                                     ! line 18  -IF NOT OVERLAP
+        LX,TMXA,TPPRUN                                       ! line 19  -LOAD FOR NEXT JOB TO BE RUN
+        B,TM3D                                               ! line 20  (printed "TM3C", worn D)
+TM2A    LX,TMXA,TPPURF                                       ! line 21  -SET UP FOR NOT OVERLAP JOB
+TM3D    BZB,TLPPEN(TMXA),TM3E                                ! line 22  -IF MORE JOBS TO BE RUN
+        BD,$                                                 ! line 23  -MCP ERROR , NO MORE JOBS TO BE RUN
+! line 24  -
+! line 25  -       TEST FOR JOB SYNCHRONIZATION
+! line 26  -
+TM3E    LF(BU,48,8),TPNAME(TMXA)                             ! line 27  -GET JOB NAME FROM PP REF TBL
+        $KF,TJCNME(TMXI)                                     ! line 28  -COMPARE AGAINST JC-4 JOB CARD
+        BAE,TM3EZ                                            ! line 29  -OK IF ALIKE
+        LVI,TMX1,2.0                                         ! line 30  -ERROR --JOBS ARE OUT OF SYNC
+        B,TN2                                                ! line 31  -RETURN WITHOUT REJECT
+TM3EZ   LX,TMXG,TMXA                                         ! line 32  -SET UP FOR NEXT JOB - MOVE POINTER
+        BB,.25($15),TM2AM                                    ! line 33  -IF NOT OVERLAP DONT SAVE PTR.
+        V+ICR,TMXG,2.0                                       ! line 34
+        SX,TMXG,TPPRUN                                       ! line 35
+        LV,TMXF,TMARK                                        ! line 36
+! line 37  -
+TM2AM   BZB,TRJECT(TMXA),TM3A                                ! line 38  -IF PP WAS NOT REJECTED
+        BD,$                                                 ! line 39  -MCP ERROR, PP WAS PREVIOUSLY REJ
+TM3A    BZB,TJBPRO(TMXA),TM3C                                ! line 40  -IF THE JOB WAS NOT PROCESSED
+        BD,$                                                 ! line 41  -MCP ERROR, PP WAS PREVIOUSLY RUN
+! line 42  -
+TM3C    L,TCRREF(TMXA),46                                    ! line 43  -GET LOC OF I/O REQ TBL
+        CM1111,TJBPRO(TMXA)                                  ! line 44  -SET THE JOB PROCESSED BIT ON
+        C0011,TUNCT(TMXA),18                                 ! line 45  -GET NUMBER OF I/O REQ
+! line 46  -
+        LX,TMXB,$R                                           ! line 47
+        BZXCZ,TM3B                                           ! line 48
+        B,TOK                                                ! line 49  -IF NO I/O REQ (printed "TCK", open O)
+! line 50  -
+TM3B    BB,TASGNP(TMXA),TSORT                                ! line 51  -IF JOB WAS ASSIGNED
+        BD,$                                                 ! line 52  -MCP ERROR, JOB NOT ASSIGNED
+
+!SYM TM2    022634.40
+!SYM TMCLR  022636.40
+!SYM TM2A   022644.40
+!SYM TM3D   022645.00
+!SYM TM3E   022646.40
+!SYM TM3EZ  022652.00
+!SYM TM2AM  022655.00
+!SYM TM3A   022656.40
+!SYM TM3C   022660.00
+!SYM TM3B   022664.40
+!CHECK 022634.40 | 022154.34 80 022000.00 F0 | line 5 T M2 CM0000(BU,18),TUNXW+0.28
+!CHECK 022635.40 | 000000.25 1F | line 6 SX,TMXI,0.0($15)
+!CHECK 022636.00 | 022237.20 10 | line 10 LX,TMXG,TDCLRX
+!CHECK 022636.40 | 000000.22 08 | line 11 T MCLR Z,0.0(TMXG)
+!CHECK 022637.00 | 022636.61 48 | line 12 CB+,TMXG,TMCLR
+!CHECK 022637.40 | 215007.41 80 021000.06 70 | line 14 LF(BU,17),TSYRFT.1
+!CHECK 022640.40 | 022240.00 80 021000.20 D0 | line 15 ST,TSBDFT
+!CHECK 022641.40 | 215005.40 80 022000.00 F0 | line 16 CM0000(BU,18),TMAXRF
+!CHECK 022642.40 | 000000.31 8F 022644.74 02 | line 18 BB,.25($15),TM2A
+!CHECK 022643.40 | 232232.04 10 | line 19 LX,TMXA,TPPRUN
+!CHECK 022644.00 | 022645.10 00 | line 20 B,TM3D (printed "TM3C")
+!CHECK 022644.40 | 232230.04 10 | line 21 T M2A LX,TMXA,TPPURF
+!CHECK 022645.00 | 000000.47 82 022646.74 00 | line 22 T M3D BZB,TLPPEN(TMXA),TM3E
+!CHECK 022646.00 | 022646.04 00 | line 23 BD,$
+!CHECK 022646.40 | 000001.00 82 060000.06 70 | line 27 T M3E LF(BU,48,8),TPNAME(TMXA)
+!CHECK 022647.40 | 777777.00 8A 060600.23 10 | line 28 $KF,TJCNME(TMXI)
+!CHECK 022650.40 | 022652.36 C2 | line 29 BAE,TM3EZ
+!CHECK 022651.00 | 000002.03 01 | line 30 LVI,TMX1,2.0 (octal prints "000002.C3", open 0)
+!CHECK 022651.40 | 022766.10 00 | line 31 B,TN2
+!CHECK 022652.00 | 000022.20 10 | line 32 T M3EZ LX,TMXG,TMXA
+!CHECK 022652.40 | 000000.31 8F 022655.34 02 | line 33 BB,.25($15),TM2AM
+!CHECK 022653.40 | 000002.21 07 | line 34 V+ICR,TMXG,2.0
+!CHECK 022654.00 | 232232.21 10 | line 35 SX,TMXG,TPPRUN
+!CHECK 022654.40 | 215012.56 30 | line 36 LV,TMXF,TMARK
+!CHECK 022655.00 | 000000.45 82 022656.74 00 | line 38 T M2AM BZB,TRJECT(TMXA),TM3A
+!CHECK 022656.00 | 022656.04 00 | line 39 BD,$
+!CHECK 022656.40 | 000000.44 82 022660.34 00 | line 40 T M3A BZB,TJBPRO(TMXA),TM3C
+!CHECK 022657.40 | 022657.44 00 | line 41 BD,$
+!CHECK 022660.00 | 000000.00 82 022027.20 50 | line 43 T M3C L,TCRREF(TMXA),46
+!CHECK 022661.00 | 000000.44 82 001000.36 F0 | line 44 CM1111,TJBPRO(TMXA)
+!CHECK 022662.00 | 000000.34 82 010011.06 70 | line 45 C0011,TUNCT(TMXA),18
+!CHECK 022663.00 | 000011.06 10 | line 47 LX,TMXB,$R
+!CHECK 022663.40 | 022664.70 40 | line 48 BZXCZ,TM3B
+!CHECK 022664.00 | 022604.10 00 | line 49 B,TOK (printed "TCK")
+!CHECK 022664.40 | 000000.46 82 022666.34 02 | line 51 T M3B BB,TASGNP(TMXA),TSORT
+!CHECK 022665.40 | 022665.44 00 | line 52 BD,$

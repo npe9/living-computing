@@ -1,0 +1,166 @@
+! mcp_bootstrap_p404.strap -- MCP printed page 404: the $EOJ program's
+! copy of the I/O ASSIGN routine -- the reserved-unit release loop
+! (T A4CB .. T A4CC), the multi-unit index runout (T B3 .. T AQX), and the
+! head of MULTI-UNIT ASSIGNMENT (T A5A .. T A5M1).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.154, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZE000306  DIST. OF 3/01
+!  3/01  PAGE NUMBER 404"; the heading row's LOCATION field is 021406,
+! line 1's word.
+!
+! >>> STILL $EOJ, BUT A NEW CARD SERIES: ZE (not ZA). <<<  PUNID 22$EOJ,
+! low core (0214xx); no SLC is printed -- the origin below is line 1's
+! LOCATION.  No TAIL.  The same routine is volume 1's bootstrap p.69
+! (TA4CB .. TA5M1 at 4100-4140 there); this is $EOJ's copy.
+!
+! THE PAGE.  50 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 2 and 22.  Contiguous 021406.00 .. 021435.00 (line
+! 50, CM1111 a full word, so the next free address is 021436.00 -- the
+! TA5MA that lines 12 and 49 branch to).  pp.394-403 are not landed, so
+! contiguity with p.403 is unchecked.
+!   remarks (NAME column prints "-"): lines 15-18, 23, 27-29, 36, 39-44,
+!   47; lines 28, 42-44 carry text.
+!
+! >>> CARD SERIALS. <<<  ZE000306 .. ZE000355, one per line, no gaps.
+!
+! >>> GLYPHS. <<<  "CMOCOO" (lines 9-11) is CM0000: the open rounds stand
+! where only connective digits can, and the binary's second half
+! 001000.00 is the 0000 connective.  Hex bytes "CO"/"FO"/"FC"/"OA" print
+! the open round: C0 (BZXE, line 3/8/33, as the statement assembles),
+! F0, and 0A.  "TMOCE" (line 30) and "TINCA" (line 34) are TMODE and
+! TINDA (D worn to C): the binaries 232227.32 / 232227.33 are p.287's
+! TMODE / TINDA.  "TCTWDX" reads with D as landed.
+!
+! STAND-INS:
+!   resident (p.287-289 define them): index SYNs copied in their DEFINING
+!   form; field SYNs SYN(BU,n); p.287's DD(BU,1) indicators as SYN(BU,1)
+!   at their !SYM addresses; TPPRUN as p.391's SYN(BU).
+!   $EOJ labels not landed (pp.394-403, 405): plain SYN, HALF WORD ONLY,
+!   from this page's B / BB / CB binaries.
+
+TABSCH  SYN(BU,18), 0.46             ! landed p.288 line 37
+TUNITK  SYN(BU,4), 0.59              ! landed p.289 line 16
+TABSUN  SYN(BU,3), 0.07              ! landed p.288 line 32
+TASGNI  SYN(BU,1), 0.00              ! landed p.288 line 28
+TPRINT  SYN(BU,1), 0.02              ! landed p.288 line 30
+TASGNP  SYN(BU,1), 0.38              ! landed p.288 line 16
+TUNRES  SYN(BU,1), 0.62              ! landed p.289 line 17
+TOVRES  SYN(BU,1), 0.63              ! landed p.289 line 18
+TX1     SYN,$10                      ! landed p.287 line 30
+TX3     SYN,$2                       ! landed p.287 line 33
+TIXB    SYN,$5                       ! landed p.287 line 35
+TIXE    SYN,$3                       ! landed p.287 line 36
+TIXG    SYN,$8                       ! landed p.287 line 38
+TIXJ    SYN,$6                       ! landed p.287 line 41
+TIXL    SYN,$11                      ! landed p.287 line 44
+TIXM    SYN,TIXG                     ! landed p.287 line 45
+TCTWDX  SYN,TX1                      ! landed p.287 line 29
+TMODE   SYN(BU,1), (8)232227.32      ! landed p.287 line 19 DD(BU,1)
+TINDA   SYN(BU,1), (8)232227.33      ! landed p.287 line 20 DD(BU,1)
+TINDC   SYN(BU,1), (8)232227.35      ! landed p.287 line 22 DD(BU,1)
+TINDD   SYN(BU,1), (8)232227.36      ! landed p.287 line 23 DD(BU,1)
+TINDX   SYN(BU,1), (8)232227.41      ! landed p.287 line 26 DD(BU,1)
+TPPRUN  SYN(BU), (8)232232.0         ! landed p.288 line 7 XW (index word: (BU))
+TA5MA   SYN, (8)021436.0             ! $EOJ, not landed; B line 12/49 021436.10, half word only
+TA4CA   SYN, (8)021401.0             ! $EOJ, not landed; B line 14 021401.10, half word only
+TC3A    SYN, (8)021357.0             ! $EOJ, not landed; CB+ line 19 021357.15, half word only
+TC3     SYN, (8)021356.40            ! $EOJ, not landed; B line 22 021356.50, half word only
+TB2     SYN, (8)021245.40            ! $EOJ, not landed; BXCZ line 25 021245.70, half word only
+TA3D    SYN, (8)021340.0             ! $EOJ, not landed; CBH line 26 021340.12, half word only
+TA3     SYN, (8)021337.0             ! $EOJ, not landed; B line 35 021337.10, half word only
+TAQ     SYN, (8)021307.40            ! $EOJ, not landed; B line 38 021307.50, half word only
+
+        SLC, (8)021406.0
+TA4CB   L,TABSCH(TIXM),46                                    ! line  1  -GET THE CHANNEL ADDRESS
+        KV,TX3,$R                                            ! line  2  -COMPARE CHANNEL ADDRESSES
+        BZXE,TA4CC                                           ! line  3  -IF THEY ARE UNLIKE
+        LV,TX1,$R                                            ! line  4
+        L,TUNITK(TX1),46                                     ! line  5  -GET THE UNIT COUNT
+        -,TABSUN(TIXM),46                                    ! line  6  -COMPUTE THE RELATIVE UNIT NUMBER
+        KC,TIXJ,$R                                           ! line  7  -COMPARE UNIT NUMBERS
+        BZXE,TA4CC                                           ! line  8  -IF UNLIKE UNITS
+        CM0000,TASGNI(TIXM)                                  ! line  9  -ZERO THE ASIGNED BIT -- UNIT BASIS
+        CM0000,TPRINT(TIXM)                                  ! line 10  -RESET THE PRINT BIT
+        CM0000,TASGNP(TIXL)                                  ! line 11  -ZERO THE ASIGNED BIT -- JOB BASIS
+        B,TA5MA                                              ! line 12  -THE UNIT IS NOW RELEASED
+TA4CC   CB+,TIXM,TA4CB                                       ! line 13  -IF UNLIKE UNIT/CHAN NUMBER
+        B,TA4CA                                              ! line 14  -COULD NOT FIND RESERVED UNIT
+! line 15  -
+! line 16  -
+! line 17  -
+! line 18  -
+TB3     CB+,TIXJ,TC3A                                        ! line 19
+        BZBZ,TINDC,TA3F1                                     ! line 20  -IF IND -C- IS OFF
+        CM1111,TINDD                                         ! line 21  -SET THE OPTIMUM REEL MTNG BYPASS IND
+        B,TC3                                                ! line 22
+! line 23  -
+TA3F1   LX,TIXB,TIXB                                         ! line 24
+        BXCZ,TB2                                             ! line 25  -IF THERE ARE NO MULTI UNITS AVAILABLE
+        CBH,TIXB,TA3D                                        ! line 26  -GET THE NEXT CHANNEL
+! line 27  -
+! line 28  -              IN THE CASE OF AN INDEX RUNOUT
+! line 29  -
+        BB,TMODE,TABBN                                       ! line 30  -CONTINUE IF NOT OVERLAP  printed "TMOCE"
+        BB,TINDX,TAQX                                        ! line 31
+        KV,TIXE,TPPRUN                                       ! line 32  -OVERLAP, IS IT THE NEXT JOB TO BE RUN
+        BZXE,TB2                                             ! line 33  -NO, SO DO NOT ALLOW THE SAME CHANNEL
+TABBN   BBN,TINDA,TB2                                        ! line 34  --SET THE SAME CHANNEL ALLOWED IND.  printed "TINCA"
+        B,TA3                                                ! line 35
+! line 36  -
+TAQX    CM1111,TINDA                                         ! line 37  -AS TO ALLOW BOTH SPLIT CHAN AND SAME CHAN
+        B,TAQ                                                ! line 38
+! line 39  -
+! line 40  -
+! line 41  -
+! line 42  -              MULTI - UNIT ASSIGNMENT
+! line 43  -              MARK THE I/O UNIT RESERVED
+! line 44  -              MARK THE I/O REQUEST ASSIGNED
+TA5A    LX,TCTWDX,0.0($15)                                   ! line 45  -CHECK THE MODE
+        BZXF,TA5M1                                           ! line 46  -IF OVERLAP
+! line 47  -
+        CM1111,TUNRES(TIXJ)                                  ! line 48  -SET NOT OVERLAP RESERVED BIT
+        B,TA5MA                                              ! line 49
+TA5M1   CM1111,TOVRES(TIXJ)                                  ! line 50  -SET THE OVERLAP RESERVED BIT
+
+!SYM TA4CB  021406.00
+!SYM TA4CC  021417.00
+!SYM TB3    021420.00
+!SYM TA3F1  021423.00
+!SYM TABBN  021427.40
+!SYM TAQX   021431.00
+!SYM TA5A   021432.40
+!SYM TA5M1  021435.00
+!CHECK 021406.00 | 000000.56 88 022027.20 50 | line 1 TA4CB L,TABSCH(TIXM),46
+!CHECK 021407.00 | 000011.04 90 | line 2 KV,TX3,$R (a "*" prints after the location)
+!CHECK 021407.40 | 021417.32 C0 | line 3 BZXE,TA4CC (hex prints open "CO")
+!CHECK 021410.00 | 000011.24 30 | line 4 LV,TX1,$R
+!CHECK 021410.40 | 000000.73 8A 004027.20 50 | line 5 L,TUNITK(TX1),46
+!CHECK 021411.40 | 000000.07 88 003027.30 10 | line 6 -,TABSUN(TIXM),46
+!CHECK 021412.40 | 000011.15 90 | line 7 KC,TIXJ,$R
+!CHECK 021413.00 | 021417.32 C0 | line 8 BZXE,TA4CC
+!CHECK 021413.40 | 000000.00 88 001000.00 F0 | line 9 CM0000,TASGNI(TIXM) (printed "CMOCOO")
+!CHECK 021414.40 | 000000.02 88 001000.00 F0 | line 10 CM0000,TPRINT(TIXM) (printed "CMOCOO", hex "FC")
+!CHECK 021415.40 | 000000.46 8B 001000.00 F0 | line 11 CM0000,TASGNP(TIXL) (printed "CMOCOC")
+!CHECK 021416.40 | 021436.10 00 | line 12 B,TA5MA
+!CHECK 021417.00 | 021406.21 48 | line 13 TA4CC CB+,TIXM,TA4CB
+!CHECK 021417.40 | 021401.10 00 | line 14 B,TA4CA
+!CHECK 021420.00 | 021357.15 48 | line 19 TB3 CB+,TIXJ,TC3A
+!CHECK 021420.40 | 232227.35 80 021423.34 04 | line 20 BZBZ,TINDC,TA3F1
+!CHECK 021421.40 | 232227.36 80 001000.36 F0 | line 21 CM1111,TINDD
+!CHECK 021422.40 | 021356.50 00 | line 22 B,TC3 (a "*" prints after the location)
+!CHECK 021423.00 | 000025.12 10 | line 24 TA3F1 LX,TIXB,TIXB
+!CHECK 021423.40 | 021245.70 42 | line 25 BXCZ,TB2
+!CHECK 021424.00 | 021340.12 C8 | line 26 CBH,TIXB,TA3D
+!CHECK 021424.40 | 232227.32 80 021427.74 02 | line 30 BB,TMODE,TABBN (printed "TMOCE")
+!CHECK 021425.40 | 232227.41 80 021431.34 02 | line 31 BB,TINDX,TAQX
+!CHECK 021426.40 | 232232.06 90 | line 32 KV,TIXE,TPPRUN
+!CHECK 021427.00 | 021245.72 C0 | line 33 BZXE,TB2
+!CHECK 021427.40 | 232227.33 80 021245.74 0A | line 34 TABBN BBN,TINDA,TB2 (printed "TINCA"; hex "OA")
+!CHECK 021430.40 | 021337.10 00 | line 35 B,TA3
+!CHECK 021431.00 | 232227.33 80 001000.36 F0 | line 37 TAQX CM1111,TINDA
+!CHECK 021432.00 | 021307.50 00 | line 38 B,TAQ
+!CHECK 021432.40 | 000000.24 1F | line 45 TA5A LX,TCTWDX,0.0($15)
+!CHECK 021433.00 | 021435.23 40 | line 46 BZXF,TA5M1
+!CHECK 021433.40 | 000000.76 86 001000.36 F0 | line 48 CM1111,TUNRES(TIXJ)
+!CHECK 021434.40 | 021436.10 00 | line 49 B,TA5MA
+!CHECK 021435.00 | 000000.77 86 001000.36 F0 | line 50 TA5M1 CM1111,TOVRES(TIXJ)

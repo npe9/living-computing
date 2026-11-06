@@ -1,0 +1,197 @@
+! mcp_bootstrap_p425.strap -- MCP printed page 425: the $EOJ program's
+! reassembly of the tape ASSIGN routine, the IOD-card scan against the
+! unit name table (TM1X .. TM1E) and the start of "GENERATE THE UNIT
+! AREA TABLES" (TMU .. B,TMREJB).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.175, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZF000380  DIST. OF 3/01
+!  3/01  PAGE NUMBER 425"; the heading row's LOCATION field is 022416,
+! line 1's word.
+!
+! >>> CARD SERIES ZF (as p.424), PUNID 22$EOJ.  No SLC, no PUNID on the
+! page; the origin below is line 1's printed LOCATION.  No TAIL. <<<
+!
+! THE PAGE.  55 lines, every line number prints a "*"; a further "*"
+! after the LOCATION on lines 1, 16, 36, 48 (recorded, not interpreted).
+! Contiguous 022416.00 .. 022465.40 (line 55, a half word; next location
+! 022466.00).  p.424 ends at 022415.40 (its header), so line 1 continues
+! it.  Lines 23, 29-32 are remarks (29-31 the boxed banner "GENERATE THE
+! UNIT AREA TABLES").  The same source as volume 1 pp.89-90, with
+! lines 6-12 (the TM6BL blank test, TM1X) and 49-50 ($TC -> TRMTC) new.
+!
+! CARD SERIALS.  ZF000380 .. ZF000434, one per line, consecutive.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!  * line 2 "TMCOG" = TMDOG (D worn to C, open O): p.424 line 47 defines
+!    TMDOG; binary 022413.74 = 022413.40 + BZRZ's .34.
+!  * line 19 prints "TM1C" = TM1D (worn D): line 21 prints TM1D, and
+!    both rows' addresses agree (022504.74 BZB, 022504.76 BAE); volume 1
+!    p.90's spelling.  TM1DA/TM1DAA (38, 41, 53) read D, worn.
+!  * line 36 "-(BL,18)" = -(BU,18) (U worn open at the bottom); length
+!    field prints 022 = 18.
+!  * line 26 prints "(BU,64]" -- a worn ")".
+!  * hex "C0"/"0C" bytes: BZB rows (19, 38, 41) print h2 "0C"/"CC": BZB
+!    can make only 00 there (p.409 BZB rows print 00); the open 0.  The
+!    BZRZ/BZAE "C0" bytes are real C0.
+!  * lines 7 and 9 "BZAE,TM1X-   NO": the "-" right after the statement
+!    is the comment mark (C28-6129 PDF p.5); remark "NO".
+!  * line 12 label prints "TM1X" with no space (others "T M1A" etc.).
+!
+! EXTERNALS.  Copied in their DEFINING forms from the scratch neighbours
+! (p.418: TMXn index names, TM6BL DD, TBAMCP SYN,SMAXUB, TDKSAV VF,
+! TUNXW XW; p.419: the IOD/unit-table field SYNs; p.420: TRELB) and the
+! resident pages (p.288/289).  Each agrees with this page's binary.
+
+TMX1    SYN,$1                       ! p.418 line 22; LVI line 54 .03
+TMXB    SYN,$3                       ! p.418 line 24; byte 83
+TMXC    SYN,$4                       ! p.418 line 25; byte 84
+TMXD    SYN,$5                       ! p.418 line 26; SV line 33 .13
+TMXE    SYN,$6                       ! p.418 line 27; byte 86
+TMXF    SYN,$7                       ! p.418 line 28; byte 87
+TMXG    SYN,$8                       ! p.418 line 29; byte 88
+TMXI    SYN,$10                      ! p.418 line 31; byte 8A
+TICH    SYN(BU,48),4.0               ! p.419 line 25
+TIUN    SYN(BU,48),5.0               ! p.419 line 26
+TITYCD  SYN(BU,4),2.60               ! p.419 line 24
+TIREF   SYN(BU,12),0.52              ! p.419 line 19
+TUNTYP  SYN(BU,4),0.60               ! p.419 line 1
+TUNME   SYN(BU,48),25.0              ! p.419 line 3
+TCHNM   SYN(BU,48),0.0               ! p.419 line 51
+TFIAAC  SYN(BU,18),3.0               ! p.419 line 44
+TCHANN  SYN(BU,7),0.12               ! p.419 line 40
+TUNITN  SYN(BU,3),0.47               ! p.419 line 41
+TSYSTM  SYN(BU,1),7.25               ! p.419 line 45
+TFRLAD  SYN(BU,18),8.0               ! p.419 line 46
+TCREEL  SYN(BU,18),8.32              ! p.419 line 47
+TREELK  SYN(BU,7),8.57               ! p.419 line 48
+TRMTC   SYN(BU,26),1.32              ! p.419 line 43; SF line 50 000001.40
+TRELB   SYN(BU,1),0.27               ! p.420 line 21
+TMULTI  SYN(BU,1),0.27               ! landed p.289 line 7
+TABSCH  SYN(BU,18),0.46              ! landed p.288 line 37
+TABSUN  SYN(BU,3),0.07               ! landed p.288 line 32
+TTYPE   SYN(BU,4),0.03               ! landed p.288 line 31
+SXCHAN  SYN(BU), (8)215002.0         ! landed p.103 line 28 "SXCHAN XW,0"; line 36 215002.00
+TCHSXW  SYN,SXCHAN                   ! landed p.289 line 5 (defining form)
+SMAXUB  SYN(B,25,1), (8)215225.0     ! landed p.116 "S MAXUB VF,0.0"; KV line 52 215225.16
+TBAMCP  SYN,SMAXUB                   ! p.418 line 18 (defining form)
+TM6BL   SYN(BU,48,6), (8)022132.15   ! p.418 line 13 (AX)DD(BU,48,6) at 022132.15; KF lines 8, 10
+TDKSAV  SYN(B,25,1), (8)022153.0     ! p.418 line 43 "TDKSAV VF,0"; SV lines 18, 28 022153.21
+TUNXW   SYN(BU), (8)022154.0         ! p.418 line 49 XW; M+1 line 27 TUNXW+28 = 022154.34
+TMDOG   SYN, (8)022413.40            ! p.424 line 47 label; BZRZ line 2 022413.74, half word only
+TM1D    SYN, (8)022504.40            ! not seen; BZB line 19 022504.74, BAE line 21 .76, half word only
+TM1DA   SYN, (8)022470.40            ! not seen; BZB line 38 022470.74, half word only
+TM1DAA  SYN, (8)022466.0             ! not seen; BZB line 41 .34, BXL line 53 .32, half word only
+TMREJB  SYN, (8)022721.0             ! not seen; B line 55 022721.10, half word only
+
+        SLC, (8)022416.00
+        LF(BU),0.0(TMXC)                                     ! line  1  -IS SIOL SLOT ALREADY USED
+        BZRZ,TMDOG                                           ! line  2  -YES - REPORT ILLEGAL IOD CARD TO JC (printed "TMCOG")
+        L,TICH(TMXI),16                                      ! line  3  -GET CHAN FIELD OF IOD CARD
+        LF,TIUN(TMXI),80                                     ! line  4  -GET THE UNIT NAME - TAPE ONLY
+        LF,TITYCD(TMXI)                                      ! line  5  -GET THE TYPE FIELD CODED
+        KFI(BU,4,6),8                                        ! line  6  -LOOK FOR A TAPE IOD
+        BZAE,TM1X                                            ! line  7  -   NO
+        KF,TM6BL,16                                          ! line  8  -YES
+        BZAE,TM1X                                            ! line  9  -   NO
+        KF,TM6BL,80                                          ! line 10  -
+        BAE,TMU                                              ! line 11  -IF BOTH CHAN/UNIT FIELDS ARE BLANK
+TM1X    V+I,TMXG,0.0                                         ! line 12  -TO RE-ACTIVATE IX INDICATORS
+        BXCZ,TM1E                                            ! line 13  -IF ZERO ENTRY
+TM1A    KF,TCHNM(TMXG),16                                    ! line 14  -COMPARE AGAINST TABLE
+        BZAE,TM1B                                            ! line 15  -IF UNLIKE ENTRY
+        KF,TUNTYP(TMXG)                                      ! line 16  -COMPARE EQUIP FEILD
+        BZAE,TM1B                                            ! line 17  -IF NOT ALIKE
+        SV,TMXG,TDKSAV                                       ! line 18
+        BZB,TITYCD(TMXI),TM1D                                ! line 19  -IF NOT TAPE (printed "TM1C")
+        KF,TUNME(TMXG),80                                    ! line 20  -TAPE COMPARE UNIT NAME
+        BAE,TM1D                                             ! line 21  -UNIT AREA TABLE GENERATED
+TM1B    CB+,TMXG,TM1A                                        ! line 22
+! line 23  -
+TM1E    LF,TIREF(TMXI),04                                    ! line 24  -GET THE REF. NUMBER
+        SF(BU,64),TUNME(TMXG),64                             ! line 25
+        CM0101(BU,64),0.0(TMXG)                              ! line 26  -STORE NEW ENTRY IN TABLE
+        M+1(BU,18),TUNXW+28                                  ! line 27  -STEP TABLE COUNTER
+        SV,TMXG,TDKSAV                                       ! line 28
+! line 29  - ----------------------------------------------------------
+! line 30  -              GENERATE THE UNIT AREA TABLES
+! line 31  - ----------------------------------------------------------
+! line 32  -
+TMU     SV,TMXD,TFIAAC(TMXE)                                 ! line 33  - SET UP THE FILE AREA  ACT. ADDR.
+        L,TABSCH(TMXB),46                                    ! line 34  -GET THE ADDR OF THE ASSIGNED CHAN
+        LX,TMXG,$R                                           ! line 35  -CHAN TABLE ADDR TO IX
+        -(BU,18),TCHSXW,46                                   ! line 36  -COMPUTE THE CHANNEL NUMBER (printed "(BL,18)")
+        ST,TCHANN(TMXE),46                                   ! line 37
+        BZB,TMULTI(TMXG),TM1DA                               ! line 38  -IF NOT A MULTI UNIT CHAN
+        L,TABSUN(TMXB),46                                    ! line 39  -GET THE UNIT NUMBER
+        ST,TUNITN(TMXE),46                                   ! line 40  -AND PLACE IN UNIT AREA TBL
+        BZB,TTYPE(TMXB),TM1DAA                               ! line 41  -IF THE TYPE IS NOT TAPE
+        CM1111,TSYSTM(TMXE)                                  ! line 42  -SET THE SYSTEM TAPE BIT FOR INITIAL
+        C0011(BU,18),TMXF                                    ! line 43  -GET REEL POOL ADDRESS
+        CM0101,TFRLAD(TMXE)                                  ! line 44  -AND STORE IN UNIT AREA
+        CM0101,TCREEL(TMXE)                                  ! line 45
+        M+1,TREELK(TMXE)                                     ! line 46  -SET THE REEL COUNT TO ONE
+        Z,0.0(TMXF)                                          ! line 47  -ZERO THE FIRST REEL SLOT
+        CM1111(BU,1),TRELB(TMXF)                             ! line 48
+        LF(BU,26),$TC                                        ! line 49
+        SF(BU,26),TRMTC(TMXE)                                ! line 50
+        V+I,TMXF,1.0                                         ! line 51  -STEP REEL POOL INDEX
+        KV,TMXF,TBAMCP                                       ! line 52  -IS THE REEL POOL EXCEEDING BOUNDS
+        BXL,TM1DAA                                           ! line 53  -NO
+        LVI,TMX1,4.0                                         ! line 54  -YES SO NOTE IT JC
+        B,TMREJB                                             ! line 55  -AND REJECT JOB
+
+!SYM TM1X   022427.00
+!SYM TM1A   022430.00
+!SYM TM1B   022436.00
+!SYM TM1E   022436.40
+!SYM TMU    022443.00
+!CHECK 022416.00 | 000000.00 84 000000.06 70 | line 1 LF(BU),0.0(TMXC)
+!CHECK 022417.00 | 022413.74 C0 | line 2 BZRZ,TMDOG (printed "TMCOG")
+!CHECK 022417.40 | 000004.00 8A 060010.20 50 | line 3 L,TICH(TMXI),16
+!CHECK 022420.40 | 000005.00 8A 060050.06 70 | line 4 LF,TIUN(TMXI),80
+!CHECK 022421.40 | 000002.74 8A 004000.06 70 | line 5 LF,TITYCD(TMXI)
+!CHECK 022422.40 | 400000.00 80 404600.23 10 | line 6 KFI(BU,4,6),8
+!CHECK 022423.40 | 022427.36 C0 | line 7 BZAE,TM1X
+!CHECK 022424.00 | 022132.15 80 060610.23 10 | line 8 KF,TM6BL,16
+!CHECK 022425.00 | 022427.36 C0 | line 9 BZAE,TM1X
+!CHECK 022425.40 | 022132.15 80 060650.23 10 | line 10 KF,TM6BL,80
+!CHECK 022426.40 | 022443.36 C2 | line 11 BAE,TMU
+!CHECK 022427.00 | 000000.21 05 | line 12 TM1X V+I,TMXG,0.0
+!CHECK 022427.40 | 022436.70 42 | line 13 BXCZ,TM1E
+!CHECK 022430.00 | 000000.00 88 060010.23 10 | line 14 T M1A KF,TCHNM(TMXG),16
+!CHECK 022431.00 | 022436.36 C0 | line 15 BZAE,TM1B
+!CHECK 022431.40 | 000000.74 88 004000.23 10 | line 16 KF,TUNTYP(TMXG)
+!CHECK 022432.40 | 022436.36 C0 | line 17 BZAE,TM1B
+!CHECK 022433.00 | 022153.21 30 | line 18 SV,TMXG,TDKSAV
+!CHECK 022433.40 | 000002.74 8A 022504.74 00 | line 19 BZB,TITYCD(TMXI),TM1D (h2 prints "0C": open 0)
+!CHECK 022434.40 | 000031.00 88 060050.23 10 | line 20 KF,TUNME(TMXG),80
+!CHECK 022435.40 | 022504.76 C2 | line 21 BAE,TM1D
+!CHECK 022436.00 | 022430.21 48 | line 22 T M1B CB+,TMXG,TM1A
+!CHECK 022436.40 | 000000.64 8A 014002.06 70 | line 24 T M1E LF,TIREF(TMXI),04
+!CHECK 022437.40 | 000031.00 88 000040.12 F0 | line 25 SF(BU,64),TUNME(TMXG),64
+!CHECK 022440.40 | 000000.00 88 000000.12 F0 | line 26 CM0101(BU,64),0.0(TMXG)
+!CHECK 022441.40 | 022154.34 80 022000.22 B0 | line 27 M+1(BU,18),TUNXW+28
+!CHECK 022442.40 | 022153.21 30 | line 28 SV,TMXG,TDKSAV
+!CHECK 022443.00 | 000003.13 36 | line 33 T MU SV,TMXD,TFIAAC(TMXE)
+!CHECK 022443.40 | 000000.56 83 022027.20 50 | line 34 L,TABSCH(TMXB),46
+!CHECK 022444.40 | 000011.20 10 | line 35 LX,TMXG,$R
+!CHECK 022445.00 | 215002.00 80 022027.30 10 | line 36 -(BU,18),TCHSXW,46 (printed "BL")
+!CHECK 022446.00 | 000000.14 86 007027.20 D0 | line 37 ST,TCHANN(TMXE),46
+!CHECK 022447.00 | 000000.33 88 022470.74 00 | line 38 BZB,TMULTI(TMXG),TM1DA
+!CHECK 022450.00 | 000000.07 83 003027.20 50 | line 39 L,TABSUN(TMXB),46
+!CHECK 022451.00 | 000000.57 86 003027.20 D0 | line 40 ST,TUNITN(TMXE),46
+!CHECK 022452.00 | 000000.03 83 022466.34 00 | line 41 BZB,TTYPE(TMXB),TM1DAA (h2 prints "CC": open 0)
+!CHECK 022453.00 | 000007.31 86 001000.36 F0 | line 42 CM1111,TSYSTM(TMXE)
+!CHECK 022454.00 | 000027.00 80 022000.06 70 | line 43 C0011(BU,18),TMXF
+!CHECK 022455.00 | 000010.00 86 022000.12 F0 | line 44 CM0101,TFRLAD(TMXE)
+!CHECK 022456.00 | 000010.40 86 022000.12 F0 | line 45 CM0101,TCREEL(TMXE)
+!CHECK 022457.00 | 000010.71 86 007000.22 B0 | line 46 M+1,TREELK(TMXE)
+!CHECK 022460.00 | 000000.22 07 | line 47 Z,0.0(TMXF)
+!CHECK 022460.40 | 000000.33 87 001000.36 F0 | line 48 CM1111(BU,1),TRELB(TMXF)
+!CHECK 022461.40 | 000001.34 80 032000.06 70 | line 49 LF(BU,26),$TC
+!CHECK 022462.40 | 000001.40 86 032000.12 F0 | line 50 SF(BU,26),TRMTC(TMXE)
+!CHECK 022463.40 | 000001.17 05 | line 51 V+I,TMXF,1.0
+!CHECK 022464.00 | 215225.16 90 | line 52 KV,TMXF,TBAMCP
+!CHECK 022464.40 | 022466.32 42 | line 53 BXL,TM1DAA
+!CHECK 022465.00 | 000004.03 01 | line 54 LVI,TMX1,4.0
+!CHECK 022465.40 | 022721.10 00 | line 55 B,TMREJB

@@ -1,0 +1,78 @@
+! mcp_bootstrap_p422.strap -- MCP printed page 422: $EOJ's dummy tables
+! for the un-assignment of the rejected job (T DSIO .. T WORM).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.172, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZF000255  DIST. OF 3/01
+!  3/01  PAGE NUMBER 422"; the heading row's LOCATION field is blank.
+! Card series ZF (ZF000255 .. ZF000276), still PUNID 22$EOJ.
+!
+! THE PAGE.  Contiguous from 022267.40 (CNOP) to 022325.00 (T WORM, a
+! full word), then blank paper.  The next location, 022326.00, is the
+! $EOJ TMOVE the staged decks reference (022326.0).
+!   lines 1-4    remark banner; line 2 THE DUMMY TABLES FOR THE
+!                UN-ASSIGNMENT OF THE REJECTED JOB.
+!   line  5      CNOP (000000.30, half-word fill).
+!   lines 6-9    T DSIO: four VFs to the tables below.
+!   lines 11-25  the tables (DRZ(N)s, VFs, two DD(BU,7),(16)01, an XW).
+!   line  27     T WORM XW,(.26)3.
+! Every symbol the page references is defined on the page: no external
+! SYNs.  Spellings TDSIO/TCAT/TBIRD/TCOT/TBOID/TWORM agree with the
+! volume-1 copy (pp.67-75) and the staged $EOJ decks (pp.405/406).
+!
+! >>> OPEN ROUNDS. <<<  Every "C" in the octal/hex fields (022267.4C,
+! 000000.30 CC, 022270.CC ...) is the drum's open 0; the only bytes it
+! affects, CNOP's "CC", can only be 00 (NOP half word; staged CNOP rows
+! print 000000.30 00).
+!
+! >>> CARD SERIALS. <<<  Shared: 260 (lines 6,7), 261 (8,9), 264
+! (12,13,14), 271 (21,22,23).  Otherwise one per line, no gaps.
+
+        SLC, (8)022267.40
+!       -----------------------------------------------------------   ! line  1
+!       THE DUMMY TABLES FOR THE UN-ASSIGNMENT OF THE REJECTED JOB    ! line  2
+!       -----------------------------------------------------------   ! line  3
+!                                                                     ! line  4
+        CNOP                                                 ! line  5
+TDSIO   VF,TCAT                                              ! line  6
+        VF,TBIRD                                             ! line  7  -SAVE TAPES
+        VF,TCOT                                              ! line  8
+        VF,TBOID                                             ! line  9
+!                                                                     ! line 10
+TCAT    DRZ(N),8                                             ! line 11  -DUMMY UNIT AREA TABLE
+        VF,TWORM                                             ! line 12
+        VF,TWORM                                             ! line 13
+        DD(BU,7),(16)01                                      ! line 14
+!                                                                     ! line 15
+TBIRD   DRZ(N),2                                             ! line 16  -DUMMY FILE AREA
+        XW,(.31)3                                            ! line 17  -SET TO SAVE
+        DRZ(N),1                                             ! line 18
+!                                                                     ! line 19
+TCOT    DRZ(N),8                                             ! line 20  -DUMMY UNIT AREA TABLE
+        VF,TWORM                                             ! line 21
+        VF,TWORM                                             ! line 22
+        DD(BU,7),(16)01                                      ! line 23
+!                                                                     ! line 24
+TBOID   DRZ(N),5                                             ! line 25
+!                                                                     ! line 26
+TWORM   XW,(.26)3                                            ! line 27  -THE DUMMY REEL POOL --PROTECT
+!                                                                     ! line 28
+
+!SYM TDSIO  022270.00
+!SYM TCAT   022272.00
+!SYM TBIRD  022303.00
+!SYM TCOT   022307.00
+!SYM TBOID  022320.00
+!SYM TWORM  022325.00
+!CHECK 022267.40 | 000000.30 00 | line 5 CNOP (hex prints "CC", the open 0)
+!CHECK 022270.00 | 022272.00+ | line 6 T DSIO VF,TCAT
+!CHECK 022270.40 | 022303.00+ | line 7 VF,TBIRD
+!CHECK 022271.00 | 022307.00+ | line 8 VF,TCOT
+!CHECK 022271.40 | 022320.00+ | line 9 VF,TBOID
+!CHECK 022302.00 | 022325.00+ | line 12 VF,TWORM
+!CHECK 022302.40 | 022325.00+ | line 13 VF,TWORM
+!CHECK 022302.71 | 001 | line 14 DD(BU,7),(16)01 | 7
+!CHECK 022305.00 | 000000.00+ 000 140000 000000 | line 17 XW,(.31)3
+!CHECK 022317.00 | 022325.00+ | line 21 VF,TWORM
+!CHECK 022317.40 | 022325.00+ | line 22 VF,TWORM
+!CHECK 022317.71 | 001 | line 23 DD(BU,7),(16)01 | 7
+!CHECK 022325.00 | 000000.00+ 110 000000 000000 | line 27 T WORM XW,(.26)3

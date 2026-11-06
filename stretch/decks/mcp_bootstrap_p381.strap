@@ -1,0 +1,220 @@
+! mcp_bootstrap_p381.strap -- MCP printed page 381: the END of the
+! SYSTEM COMMAND package (its two (CC*) trailer cards) and the OPENING of
+! a new program, PUNID 22$EOJ: punch controls, SLC,YPPMEM, and the start
+! of "JOB CONTROL 4" (YC4..., lines 11-56).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.131, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22SCOMD  CARD
+! ID ZA000001  DIST. OF 3/01  3/01  PAGE NUMBER 381" (the header prints
+! the PREVIOUS PUNID, as p.361 printed 22$DUMP).  The heading row's
+! LOCATION field is BLANK.
+!
+! >>> A NEW PROGRAM: THE PAGE LEAVES SCOMD. <<<  Line 5 sets
+! PUNID,22$EOJ; card serials restart at ZA000001 (SCOMD ran WA...);
+! line 7 SLC,YPPMEM goes to 020000.00 (YPPMEM, landed p.269, the
+! problem-program memory origin) -- not the YMPBUF overlay origin of the
+! LOADER/$DUMP/SCOMD.  Every external below is a RESIDENT symbol
+! (pp.99-319) or this page's binary; none comes from an overlay.
+!
+! THE PAGE.  56 lines; every line number prints a "*".  "*" in the
+! LOCATION column on lines 1 and 4 (no location); "*" after the
+! LOCATION on lines 27 and 51.  No TAIL.
+!   line  1      PUNFUL.
+!   lines 2-3    two (CC*)DD(BU,,12) cards at 235570.10 and 235600.44
+!                (the "B HED, REP, 22$EOJ, LOAD,," header card images)
+!                -- see below.
+!   lines 4-6    PUNORG (printed "PUNCRG", open O), PUNID,22$EOJ, RESEQ.
+!   line  7      SLC,YPPMEM prints 020000.00.
+!   lines 8-10   remark cards (rules of dashes, banner "JOB CONTROL 4").
+!   lines 11-37  code, contiguous 020000.00 .. 020021.00 (,SSPEOJ).
+!   lines 38-43  remark cards (asterisk rules and a 3-line comment).
+!   lines 44-56  code, YC4B2 at 020021.40 .. RNOREJ B,$MCP at 020031.00
+!                (a half word; next 020031.40), then blank paper.
+!
+! JOIN.  p.380 (scratch) ends SCOMD with the one-byte DD VDUB at
+! 235570.00, next 235570.10 = line 2's printed location: the CC card
+! continues SCOMD's location counter.  The deck states it hard (an SLC
+! stand-in).  Line 7 then moves to 020000.00; p.382 should continue at
+! 020031.40.
+!
+! >>> LINES 2-3'S (CC*)DD ARE NOT HANDED TO THE ASSEMBLER. <<<
+! strap_asm refuses entry mode CC (as pp.15, 99, 256, 320, 335, 361).
+! Each card is kept as a comment; the deck carries TWO stand-ins that
+! are not printed cards: "SLC, (8)235570.10" and "SLC, (8)235600.44"
+! (the printed locations).  Line 2's span 235570.10 -> 235600.44 = 8
+! words + 28 bits = 540 bits = 45 twelve-bit characters, exactly
+! p.361 line 2's span for the same card shape.  Line 3's length is not
+! fixed by the page (the next located card is an SLC).  The cards are
+! unlabeled; their bits are NOT written into the image by this deck.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "22$EOJ" (lines 2, 3, 5): the O prints open; written O (C22-6728's
+!     $EOJ, the end-of-job program; "J" follows).
+!   * line 16 ",SSYRFT": the 400-dpi crop and the sheet read "SSYRFI";
+!     at 900 dpi the T's bar prints.  Landed p.103 "SSYRFT VF,0" at
+!     215007.40; SV prints 215007.75 (= .40 + SV's .35, as line 15's LV
+!     SDKMCP 215007.00 prints .34).
+!   * line 21 ",SKCM" = ,SKOM (open O): landed p.106 "S KOM SYN,79.32";
+!     prints 000117.40 (as pp.265, 366-376).
+!   * line 27 ",S LOG 2" = ,SLOG2 (open O; landed p.106), 000121.00.
+!   * lines 30-32 "PCNOUT" = PONOUT (open O): landed p.293.
+!   * line 33 "PHOLCB"/"PHOLDB" (D's stem worn) = PHOLDB, p.340's VF.
+!   * line 34 "KSILC" = KSILO (open O): landed p.171.
+!   * lines 18, 25, 33 "CMOCOO" = CM0000 (open rounds; line 19 prints
+!     CM0000 closed, 900 dpi); line 18 "YECJS" = YEOJS (landed p.274).
+!   * lines 51/56 RNOREJ: the round prints nearly closed on line 56's
+!     label at 900 dpi; read O ("NO REJect"); the name occurs on no
+!     other page.  Line 19's "CM0000" prints its rounds CLOSED (900 dpi).
+!   * YC4B2, YC4INT, WSYSC2, TJUNAS: spelled as C22-6728's OCR names
+!     them (the compiler routine YC4INT; WSYSC2; TJUNAS).
+!   * line 45: a speck to the left of "SIC" in the NAME/STATEMENT gutter,
+!     off the character grid -- paper, not a "." (SIC prints 215571.00
+!     80, SPRIMR's address exactly).
+!   * hex bytes printed "CO"/"0C"/"C0" on the B/BE/Z/LCI/BD rows = 00,
+!     and line 12's "C2CC21.72 C2" octal = 020021.72 (open rounds where
+!     only 0 can stand; lesson 6).  Line 12's hex C2 and line 22's 80
+!     are as printed.
+!
+! EXTERNALS.  YPPMEM (p.269).  SJC4, SSPEOJ, SKOM, SLOG2 (p.106);
+! DMCP (p.108); SCOMRG, SCORG, SJBUSY, SDKMCP, SSYRFT, SREJJB (p.103);
+! SIT (p.110); YMISCO (p.116); SPRIME, SPRIMR (p.118); FWIT, KSILO
+! (pp.171/175); REJJOB (p.248 XW); YSSPBT, YEOJS (p.274); LFINB
+! (p.276); PONOUT (p.293); PHOLDB (p.340, VF).  YC4INT, TJUNAS, WSYSC2:
+! not landed (later $EOJ / compiler pages; C22-6728 names all three);
+! values from this page's binary.
+!
+! CARD SERIALS.  ZA000001 .. ZA000054: one per line through line 51
+! (ZA000051); lines 52 AND 53 both print ZA000052, lines 54 AND 55 both
+! print ZA000053, line 56 prints ZA000054 (read at 900 dpi).  Recorded,
+! not explained.
+
+YPPMEM  SYN,(8)20000.                ! landed p.269 line 11; SLC line 7 prints 020000.00
+SJC4    SYN, 78.32                   ! landed p.106 "S JC4"; KVI line 11 000116.75, LINK line 47 000116.40
+SSPEOJ  SYN, 77.32                   ! landed p.106 "S SPEOJ"; line 37 000115.40
+SKOM    SYN, 79.32                   ! landed p.106 "S KOM"; line 21 000117.40 (printed "SKCM")
+SLOG2   SYN, 81.0                    ! landed p.106 "S LOG2"; line 27 000121.00
+DMCP    SYN, 32.0                    ! landed (p.108 "D MCP SYN,32.0"); B lines 20, 26, 36 000040.10
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label
+SCORG   SYN(BU,1), SCOMRG+0.03       ! landed p.103 line 13; BB line 17 215001.03
+SJBUSY  SYN(BU,1), SCOMRG.18         ! landed p.103 line 27; CM0000 line 25, BB line 50 215001.22
+SDKMCP  SYN(B,25,1), (8)215007.0     ! landed p.103 line 39 "SDKMCP VF,0" at 215007.00; LV line 15 215007.34
+SSYRFT  SYN(B,25,1), (8)215007.40    ! landed p.103 line 40 "SSYRFT VF,0" at 215007.40; SV line 16 215007.75
+SREJJB  SYN(B,25,1), (8)215011.40    ! landed p.103 line 44 "SREJJB VF,0" at 215011.40; LC line 52 215011.60
+SIT     SYN(BU,32,8), (8)215023.0    ! landed p.110 line 7 "SIT SIC,YMFIC" at 215023.00; TI lines 13-14
+YMISCO  SYN(BU,18), (8)215466.40     ! landed p.116 line 35 "YMISCO CF,50" at 215466.40; SC line 29 215466.77
+SPRIME  SYN(BU,64,8), (8)215570.0    ! landed p.118 line 48 "SPRIME TI,5,..."; BD line 46 215570.04
+SPRIMR  SYN(BU,32,8), (8)215571.0    ! landed p.118 line 49 "SPRIMR LVI,$1,0"; SIC line 45 215571.00
+KSILO   SYN(BU,64), (8)220451.0      ! landed p.171 DR(BU,64),(K QUANT) at 220451.00; Z line 34 KSILO+2.0 = 220453.22
+FWIT    SYN(BU,32,8), (8)220644.0    ! landed p.175 line 49 "FWIT SIC,STIC" at 220644.00; TI lines 13-14
+REJJOB  SYN(BU), (8)230364.0         ! p.248 "REJJOB XW,0.0"; CM0000 line 19 REJJOB+.60 = 230364.74, BIT-EXACT
+YSSPBT  SYN(BU,1), (8)231501.0       ! landed p.274 line 20 DD(BU,1),(2)0; BBZ line 35 231501.00
+YEOJS   SYN(BU,1), (8)231501.01      ! landed p.274 line 21 DD(BU,1),(2)0; CM0000 line 18 231501.01
+LFINB   SYN(BU,1), (8)231545.51      ! p.276 line 47 DD(BU,1) 231545.51; BB line 44, BIT-EXACT
+PONOUT  SYN(BU,64), (8)232630.0      ! landed p.293 line 42 DRZ(BU,64),(13); Z lines 30-32 (printed "PCNOUT")
+PHOLDB  SYN, (8)234663.40           ! p.340 line 45 "PHOLDB VF,0.0" (staged); plain as p.294 writes it (the use carries its own (BU,1)); CM0000 line 33 234663.40, BIT-EXACT
+YC4INT  SYN, (8)021017.40            ! not landed; BB line 17 second address 021017.74 (= .40 + BB's .34, as line 50's ZYC4B2), BIT-EXACT
+TJUNAS  SYN, (8)023006.0             ! not landed; B line 24 023006.10, half word only
+WSYSC2  SYN, (8)020403.0             ! not landed; BXCZ line 53 020403.30, half word only
+
+        PUNFUL                                               ! line  1
+        SLC, (8)235570.10            ! STAND-IN: line 2's printed location -- see header
+!       (CC*)DD(BU,,12),B            HED, REP, 22$EOJ, LOAD,,           *   ! line  2  NOT ASSEMBLED (entry mode CC refused)
+        SLC, (8)235600.44            ! STAND-IN: line 3's printed location -- see header
+!       (CC*)DD(BU,,12),                              22$EOJ*               ! line  3  NOT ASSEMBLED (entry mode CC refused)
+        PUNORG                                               ! line  4  printed "PUNCRG"
+        PUNID,22$EOJ                                         ! line  5
+        RESEQ                                                ! line  6
+        SLC,YPPMEM                                           ! line  7
+! line  8  -  --------------------------------------------------------
+! line  9  -  ----------- JOB CONTROL 4 ----------------------------
+! line 10  -  --------------------------------------------------------
+        KVI,$14,SJC4                                         ! line 11
+        BXE,YC4B2                                            ! line 12
+        TI,16,FWIT,SIT+20.                                   ! line 13  -RESTORE THE MASKABLE INTRPT SLOTS IN THE
+        TI,12,FWIT+16.,SIT+36.                               ! line 14  -INT TBLE BEFORE NEXT JOB STARTS
+        LV,$14,SDKMCP                                        ! line 15
+        SV,$14,SSYRFT                                        ! line 16
+        BB,SCORG,YC4INT                                      ! line 17
+        CM0000,YEOJS                                         ! line 18  printed "CMOCOO,YECJS"
+        CM0000(BU,1),REJJOB+.60                              ! line 19
+        B,DMCP                                               ! line 20
+        ,SKOM                                                ! line 21  printed "SKCM"
+        ,1.32                                                ! line 22  -EJSCAN
+        LVI,$15,$+1.0                                        ! line 23
+        B,TJUNAS                                             ! line 24
+        CM0000,SJBUSY                                        ! line 25  printed "CMOCOO"
+        B,DMCP                                               ! line 26  -LOGGER 2 ENTRY  printed "D MCP"
+        ,SLOG2                                               ! line 27  printed "S LOG 2"
+        LCI,$15,50.                                          ! line 28
+        SC,$15,YMISCO                                        ! line 29
+        Z,PONOUT                                             ! line 30  printed "PCNOUT"
+        Z,PONOUT+1.0                                         ! line 31
+        Z,PONOUT+2.0                                         ! line 32
+        CM0000(BU,1),PHOLDB                                  ! line 33  printed "CMOCOO"
+        Z,KSILO+2.0                                          ! line 34  printed "KSILC"
+        BBZ,YSSPBT,YC4B2                                     ! line 35
+        B,DMCP                                               ! line 36
+        ,SSPEOJ                                              ! line 37
+! line 38  -
+! line 39  - ***********************************************************
+! line 40  -       ON THIS PAGE WE READ THE JOB CARD, PUT IT ON THE SPOOL LISTING,
+! line 41  -       LOG BEGINNING OF JOB, AND TELL THE OPERATOR THAT THE NEW JOB IS
+! line 42  -       ABOUT TO START
+! line 43  - ***********************************************************
+YC4B2   BB,LFINB,$+3.32                                      ! line 44
+        SIC,SPRIMR                                           ! line 45
+        BD,SPRIME                                            ! line 46
+        ,SJC4                                                ! line 47
+ZYC4B2  BE,$MCP                                              ! line 48
+        ,$RET                                                ! line 49
+        BB,SJBUSY,ZYC4B2                                     ! line 50
+        BZBZ,REJJOB.60,RNOREJ                                ! line 51
+        LC,$8,SREJJB                                         ! line 52
+        BXCZ,WSYSC2                                          ! line 53
+        C-I,$8,1.0                                           ! line 54
+        SC,$8,SREJJB                                         ! line 55
+RNOREJ  B,$MCP                                               ! line 56
+
+!SYM YC4B2  020021.40
+!SYM ZYC4B2 020024.00
+!SYM RNOREJ 020031.00
+!CHECK 020000.00 | 000116.75 04 | line 11 KVI,$14,SJC4
+!CHECK 020000.40 | 020021.72 C2 | line 12 BXE,YC4B2 (octal prints "C2CC21.72")
+!CHECK 020001.00 | 220644.00 80 215047.00 A0 | line 13 TI,16,FWIT,SIT+20.
+!CHECK 020002.00 | 220664.00 80 215067.30 A0 | line 14 TI,12,FWIT+16.,SIT+36.
+!CHECK 020003.00 | 215007.34 30 | line 15 LV,$14,SDKMCP
+!CHECK 020003.40 | 215007.75 30 | line 16 SV,$14,SSYRFT
+!CHECK 020004.00 | 215001.03 80 021017.74 02 | line 17 BB,SCORG,YC4INT
+!CHECK 020005.00 | 231501.01 80 001000.00 F0 | line 18 CM0000,YEOJS
+!CHECK 020006.00 | 230364.74 80 001000.00 F0 | line 19 CM0000(BU,1),REJJOB+.60
+!CHECK 020007.00 | 000040.10 00 | line 20 B,DMCP (byte prints "CO")
+!CHECK 020007.40 | 000117.40 80 | line 21 ,SKOM
+!CHECK 020010.00 | 000001.40 80 | line 22 ,1.32
+!CHECK 020010.40 | 020011.77 01 | line 23 LVI,$15,$+1.0
+!CHECK 020011.00 | 023006.10 00 | line 24 B,TJUNAS
+!CHECK 020011.40 | 215001.22 80 001000.00 F0 | line 25 CM0000,SJBUSY
+!CHECK 020012.40 | 000040.10 00 | line 26 B,DMCP
+!CHECK 020013.00 | 000121.00 80 | line 27 ,SLOG2
+!CHECK 020013.40 | 000062.37 02 | line 28 LCI,$15,50.
+!CHECK 020014.00 | 215466.77 50 | line 29 SC,$15,YMISCO
+!CHECK 020014.40 | 232630.22 00 | line 30 Z,PONOUT
+!CHECK 020015.00 | 232631.22 00 | line 31 Z,PONOUT+1.0
+!CHECK 020015.40 | 232632.22 00 | line 32 Z,PONOUT+2.0
+!CHECK 020016.00 | 234663.40 80 001000.00 F0 | line 33 CM0000(BU,1),PHOLDB
+!CHECK 020017.00 | 220453.22 00 | line 34 Z,KSILO+2.0
+!CHECK 020017.40 | 231501.00 80 020021.74 06 | line 35 BBZ,YSSPBT,YC4B2
+!CHECK 020020.40 | 000040.10 00 | line 36 B,DMCP
+!CHECK 020021.00 | 000115.40 80 | line 37 ,SSPEOJ
+!CHECK 020021.40 | 231545.51 80 020025.34 02 | line 44 YC4B2 BB,LFINB,$+3.32
+!CHECK 020022.40 | 215571.00 80 | line 45 SIC,SPRIMR
+!CHECK 020023.00 | 215570.04 00 | line 46 BD,SPRIME
+!CHECK 020023.40 | 000116.40 80 | line 47 ,SJC4
+!CHECK 020024.00 | 000040.00 00 | line 48 ZYC4B2 BE,$MCP
+!CHECK 020024.40 | 000041.00 80 | line 49 ,$RET
+!CHECK 020025.00 | 215001.22 80 020024.34 02 | line 50 BB,SJBUSY,ZYC4B2
+!CHECK 020026.00 | 230364.74 80 020031.34 04 | line 51 BZBZ,REJJOB.60,RNOREJ
+!CHECK 020027.00 | 215011.60 50 | line 52 LC,$8,SREJJB
+!CHECK 020027.40 | 020403.30 42 | line 53 BXCZ,WSYSC2
+!CHECK 020030.00 | 000001.21 08 | line 54 C-I,$8,1.0
+!CHECK 020030.40 | 215011.61 50 | line 55 SC,$8,SREJJB
+!CHECK 020031.00 | 000040.10 00 | line 56 RNOREJ B,$MCP

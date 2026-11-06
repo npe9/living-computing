@@ -1,0 +1,183 @@
+! mcp_bootstrap_p384.strap -- MCP printed page 384: the $EOJ program's
+! B-card sequence check (YTCSR .. B,YC4B after YIODSO).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.134, read at 400 dpi (900 dpi for
+! doubtful glyphs).  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZA000112  DIST. OF 3/01
+!  3/01  PAGE NUMBER 384"; the heading row's LOCATION field prints only
+! its label (no value).
+!
+! >>> NOT SCOMD.  A NEW PUNID, 22$EOJ, CARD SERIES ZA, ORIGIN 020075.40. <<<
+! pp.361-377 are SCOMD (PUNID 22SCOMD, series WA, 234424-235453); this
+! page is $EOJ, card series ZA, at 020075.40-020133.40 -- the JC4
+! region ("YMAX SYN,(8)30000. -UPPER END OF JC4 WHILE IN CORE", p.269).
+! Its references to 231xxx (YBCBU, YUNCOD, YEDLL, YJCDB1) are the
+! resident job-control words of pp.269-274/p.180, and 215xxx/220xxx
+! are resident (pp.103, 116, 171).  Its 020xxx externals (YC4B,
+! YRDFSO, YTCERR, YLCERR, YCOJB1, WJCV) are $EOJ-local and defined on
+! no landed page: stand-ins from this page's binary, plain SYN.
+!
+! THE PAGE.  Contiguous from 020075.40 to 020133.40 (line 56, a half
+! word).  Lines 1-5 a remark banner; line 38 a remark card with no
+! location ("-LIMIT FOR LOADER)."); the rest code and linkage.
+! Card serials ZA000112 .. ZA000167, one per line, no gaps, no repeats.
+! Lines 18, 35 and 56 print a second "*" after the LOCATION; recorded.
+! Line 40 prints a lone "." in the remark field; not compiled.
+!
+! GLYPHS SETTLED BY SOMETHING OTHER THAN PLAIN INK:
+!   * B,YUNCCD (lines 13, 29) = YUNCOD (D worn to C; p.270 defines
+!     YUNCOD at 231215.00, the printed 231215.10).
+!   * SV,$14,YECLL (line 36) / YEDLL+1.0 (line 47) = YEDLL (p.274 line
+!     17 DRZ(N) at 231430.00, the printed 231430.35 / 231431.35).
+!   * SCCRG (lines 22, 48) = SCORG (p.103; binary 215001.03).
+!   * BB,SCCRG,YCOJB1 (line 22): letter O after C, final digit 1 --
+!     C22-6728 typesets YCOJB1 (8 times) and a sibling YCOJB2; the ink's
+!     last glyph has the 1's flag and no foot serif.
+!   * YL1 (line 36): digit 1, ink as above; C22-6728 prose "at YL1".
+!   * YC4B5 (line 24): B not 8; C22-6728 "LIM card is read at YC4B5".
+!   * YRDFSO (lines 25, 54, printed "YRDFSC"): C22-6728 typesets YRDFSO.
+!   * YTCSR, YTCINF, YLCINF, YTCERR, YLCERR: letter C (T-card/L-card
+!     family; C22-6728 typesets YTCSR, YTCERR, YLCERR with C).
+!   * YIODSO (line 53): the label prints "YICDSO" (third glyph open);
+!     C22-6728 spells it YIODSO five times, YICDSO never, and p.385
+!     line 23's B,YIODSO is this address (020132.00).  Merge decision.
+!   * XW,C / XW,O (lines 14, 30) = XW,0: the binary is all zero.
+!   * hex "C0"/"CO" on B/Z rows = 00 (lesson 6; octal fields print 0
+!     open in the same rows).
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 6 000040.10
+DSCR    SYN, 68.32                   ! landed p.105 line 40 "D SCR"; line 7 000104.40
+YBCBU   SYN(BU), (8)231462.0         ! p.274 line 19 DR(BU),(15), as p.291's stand-in writes it
+YUNCOD  SYN, (8)231215.0             ! p.270 line 27 TI (as p.265's stand-in); B lines 13, 29 231215.10
+YEDLL   SYN, (8)231430.0             ! p.274 line 17 DRZ(N),(11) (as p.150's stand-in); SV line 36
+YJCDB1  SYN, (8)231443.0             ! not landed; as p.180's stand-in; LX line 51 YJCDB1+1.0 = 231444
+YMAX    SYN,(8)30000.                ! p.269 line 12, verbatim; KCI/LCI lines 41, 43 030000
+KSILO   SYN(BU,64), (8)220451.0      ! landed p.171 DR(BU,64),(K QUANT) at 220451.00; ST line 20 KSILO+1.18
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label (form as p.377)
+SCORG   SYN(BU,1), SCOMRG+0.03       ! landed p.103 line 13; CM/BB lines 21, 22, 48 215001.03
+SYSMOD  SYN(BU,2), SCOMRG+.8         ! landed p.103 line 18; BZB line 49 215001.10
+SLRBU   SYN, (8)215324.0             ! landed p.116 line 21; SV/SC/CM lines 37, 39, 45
+SMARK   SYN, (8)215012.40            ! landed p.103 line 46 VF; SC line 40 215012.75
+SBAPP   SYN, (8)215005.0             ! landed p.103 line 35 "S BAPP VF,0"; SC line 44
+SJCTWS  SYN(B,25,1), (8)215020.0     ! landed p.103 line 55 VF,(8)42.0; LVE line 52 215020.31
+YC4B    SYN, (8)020226.0             ! $EOJ, not landed; B lines 11, 27, 56 020226.10, half word only
+YRDFSO  SYN, (8)020233.0             ! $EOJ, not landed; B lines 25, 54 020233.10, half word only
+YTCERR  SYN, (8)020451.0             ! $EOJ, not landed; B line 18 020451.10, half word only
+YLCERR  SYN, (8)020452.40            ! $EOJ, not landed; B line 34 020452.50, half word only
+YCOJB1  SYN, (8)020766.0             ! $EOJ, not landed; BB line 22 020766.34
+WJCV    SYN(BU,32,8), (8)020316.0      ! p.389 SIC label (half-word instruction); $EOJ, not landed; BZB line 49 WJCV-1.0 = 020315.34
+
+        SLC, (8)020075.40
+! line  1  - ***********************************************************
+! line  2  -          HAVING PROCESSED THE JOB CARD, WE NOW SEQUENCE CHECK THE
+! line  3  -          REMZINING B CARDS, EXTRACTING FROM THEM THE NECESSARY INFORMATI
+! line  4  -          ON, AND SAVE THE IODS STARTING AT LOCATION 41.
+! line  5  - ***********************************************************
+YTCSR   B,DMCP                                               ! line  6  -GET 1 CARD
+        ,DSCR                                                ! line  7
+        ,YBCBU                                               ! line  8  -- B CARD BUFFER
+        ,1.0                                                 ! line  9
+        ,0                                                   ! line 10
+        B,YC4B                                               ! line 11
+        LVI,$14,YTCINF                                       ! line 12  -TO UNCODE
+        B,YUNCOD                                             ! line 13  (printed YUNCCD)
+YTCINF  XW,0                                                 ! line 14
+        VF,0.0                                               ! line 15
+        ,YBCBU                                               ! line 16
+        ,0                                                   ! line 17
+        B,YTCERR                                             ! line 18  -ERROR RETURN
+        L(BU,5),YTCINF+.41                                   ! line 19  -PUT INFORMATION INTO
+        ST(BU,5),KSILO+1.18                                  ! line 20  -COMMUNICATION REGION
+        CM1010(BU,1),SCORG,2                                 ! line 21
+        BB,SCORG,YCOJB1                                      ! line 22
+        Z,$13                                                ! line 23
+YC4B5   SIC,$15                                              ! line 24  -READ 1 CARD FROM SOURCE
+        B,YRDFSO                                             ! line 25
+        VF,YBCBU                                             ! line 26
+        B,YC4B                                               ! line 27
+        LVI,$14,YLCINF                                       ! line 28  -TO UNCODE
+        B,YUNCOD                                             ! line 29  (printed YUNCCD)
+YLCINF  XW,0                                                 ! line 30
+        VF,2.0                                               ! line 31
+        ,YBCBU                                               ! line 32
+        ,0                                                   ! line 33
+        B,YLCERR                                             ! line 34  -ERROR RETURN
+        LX,$14,YLCINF                                        ! line 35  -NORMAL RETURN
+YL1     SV,$14,YEDLL                                         ! line 36  (printed YECLL)
+        SV,$14,SLRBU+.32                                     ! line 37
+! line 38                                    -LIMIT FOR LOADER).
+        SC,$14,SLRBU                                         ! line 39
+        SC,$14,SMARK                                         ! line 40
+        KCI,14,YMAX                                          ! line 41
+        BXH,$+1.0                                            ! line 42
+        LCI,14,YMAX                                          ! line 43
+        SC,$14, SBAPP                                        ! line 44
+        CM1111(BU,1),SLRBU+.57                               ! line 45  -INITIALIZE B.C. BIT
+        LVI,$14,15.0                                         ! line 46
+        SV,$14,YEDLL+1.0                                     ! line 47
+        BB,SCORG,$+2.0                                       ! line 48
+        BZB,SYSMOD,WJCV-1.0                                  ! line 49
+        LCI,$12,1.0                                          ! line 50  -INITIALIZE SYSTEM CARD
+        LX,$11,YJCDB1+1.0                                    ! line 51
+        LVE,$12,SJCTWS                                       ! line 52
+YIODSO  SIC,$15                                              ! line 53  -READ 1 CARD FROM SOURCE.
+        B,YRDFSO                                             ! line 54
+        VF,YBCBU                                             ! line 55
+        B,YC4B                                               ! line 56
+
+!SYM YTCSR  020075.40
+!SYM YTCINF 020102.00
+!SYM YC4B5  020111.40
+!SYM YLCINF 020115.00
+!SYM YL1    020120.40
+!SYM YIODSO 020132.00
+!CHECK 020075.40 | 000040.10 00 | line  6 YTCSR B,DMCP
+!CHECK 020076.00 | 000104.40 80 | line  7 ,DSCR
+!CHECK 020076.40 | 231462.00 80 | line  8 ,YBCBU
+!CHECK 020077.00 | 000001.00 80 | line  9 ,1.0
+!CHECK 020077.40 | 000000.00 80 | line 10 ,0
+!CHECK 020100.00 | 020226.10 00 | line 11 B,YC4B
+!CHECK 020100.40 | 020102.35 01 | line 12 LVI,$14,YTCINF
+!CHECK 020101.00 | 231215.10 00 | line 13 B,YUNCOD (printed YUNCCD)
+!CHECK 020102.00 | 000000.00+ 000 000000 000000 | line 14 YTCINF XW,0
+!CHECK 020103.00 | 000000.00+ | line 15 VF,0.0
+!CHECK 020103.40 | 231462.00 80 | line 16 ,YBCBU
+!CHECK 020104.00 | 000000.00 80 | line 17 ,0
+!CHECK 020104.40 | 020451.10 00 | line 18 B,YTCERR (a "*" prints after the location; hex prints "C0")
+!CHECK 020105.00 | 020102.51 80 005000.20 50 | line 19 L(BU,5),YTCINF+.41
+!CHECK 020106.00 | 220452.22 80 005000.20 D0 | line 20 ST(BU,5),KSILO+1.18
+!CHECK 020107.00 | 215001.03 80 001001.24 F0 | line 21 CM1010(BU,1),SCORG,2
+!CHECK 020110.00 | 215001.03 80 020766.34 02 | line 22 BB,SCORG,YCOJB1
+!CHECK 020111.00 | 000035.22 00 | line 23 Z,$13 (hex prints "C0")
+!CHECK 020111.40 | 000037.00 80 | line 24 YC4B5 SIC,$15
+!CHECK 020112.00 | 020233.10 00 | line 25 B,YRDFSO
+!CHECK 020112.40 | 231462.00+ | line 26 VF,YBCBU
+!CHECK 020113.00 | 020226.10 00 | line 27 B,YC4B
+!CHECK 020113.40 | 020115.35 01 | line 28 LVI,$14,YLCINF
+!CHECK 020114.00 | 231215.10 00 | line 29 B,YUNCOD (printed YUNCCD)
+!CHECK 020115.00 | 000000.00+ 000 000000 000000 | line 30 YLCINF XW,0
+!CHECK 020116.00 | 000002.00+ | line 31 VF,2.0
+!CHECK 020116.40 | 231462.00 80 | line 32 ,YBCBU
+!CHECK 020117.00 | 000000.00 80 | line 33 ,0
+!CHECK 020117.40 | 020452.50 00 | line 34 B,YLCERR (hex prints "C0")
+!CHECK 020120.00 | 020115.34 10 | line 35 LX,$14,YLCINF (a "*" prints after the location)
+!CHECK 020120.40 | 231430.35 30 | line 36 YL1 SV,$14,YEDLL (printed YECLL)
+!CHECK 020121.00 | 215324.75 30 | line 37 SV,$14,SLRBU+.32
+!CHECK 020121.40 | 215324.35 50 | line 39 SC,$14,SLRBU
+!CHECK 020122.00 | 215012.75 50 | line 40 SC,$14,SMARK
+!CHECK 020122.40 | 030000.35 0A | line 41 KCI,14,YMAX
+!CHECK 020123.00 | 020124.33 42 | line 42 BXH,$+1.0
+!CHECK 020123.40 | 030000.35 02 | line 43 LCI,14,YMAX
+!CHECK 020124.00 | 215005.35 50 | line 44 SC,$14, SBAPP
+!CHECK 020124.40 | 215324.71 80 001000.36 F0 | line 45 CM1111(BU,1),SLRBU+.57
+!CHECK 020125.40 | 000017.35 01 | line 46 LVI,$14,15.0
+!CHECK 020126.00 | 231431.35 30 | line 47 SV,$14,YEDLL+1.0
+!CHECK 020126.40 | 215001.03 80 020130.74 02 | line 48 BB,SCORG,$+2.0
+!CHECK 020127.40 | 215001.10 80 020315.34 00 | line 49 BZB,SYSMOD,WJCV-1.0
+!CHECK 020130.40 | 000001.31 02 | line 50 LCI,$12,1.0
+!CHECK 020131.00 | 231444.26 10 | line 51 LX,$11,YJCDB1+1.0
+!CHECK 020131.40 | 215020.31 B0 | line 52 LVE,$12,SJCTWS
+!CHECK 020132.00 | 000037.00 80 | line 53 YIODSO SIC,$15
+!CHECK 020132.40 | 020233.10 00 | line 54 B,YRDFSO
+!CHECK 020133.00 | 231462.00+ | line 55 VF,YBCBU
+!CHECK 020133.40 | 020226.10 00 | line 56 B,YC4B (a "*" prints after the location)

@@ -1,0 +1,79 @@
+! mcp_bootstrap_p415.strap -- MCP printed page 415: the $EOJ program's
+! tape-assign exit (T P1BA, T P1A): set the job processed and disposition
+! bits, step the PP reference pointer, restore the indexes and return.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.165, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZE000858  DIST. OF 3/01
+!  3/01  PAGE NUMBER 415"; the heading row's LOCATION field is 022117,
+! line 1's word.
+!
+! STILL $EOJ, card series ZE.  Low core 0221xx, no SLC on the page -- the
+! origin below is line 1's printed LOCATION.  No TAIL.
+!
+! THE PAGE.  14 lines, every line number prints a "*"; a "*" after the
+! LOCATION on line 8.  Contiguous 022117.00 .. 022130.00 (line 14, a
+! half word; next location 022130.40), then blank paper.  p.414 is not
+! landed; its finding-aid sheet ends at 022116.40 (BXCZ,TP1BA, a half
+! word), which this page's 022117.00 would continue.  p.416 not seen.
+!
+! CARD SERIALS.  ZE000858 .. ZE000871, one per line, consecutive.
+!
+! GLYPHS.  Line 13's NAME prints "T P1A" and line 10 "BXF,TP1A": the
+! 1 is a plain digit in both (TP1A, as the volume-1 spelling).  Line 7's
+! NAME "T P1BA".  Line 7 "TJBPRO": open O, the resident p.288 spelling.
+! Hex/octal opens ("C0", "0C" in octal fields) are the drum's open 0.
+!
+! EXTERNALS.  Resident (pp.287-288): index registers in their defining
+! forms, TRJECT/TJBPRO field bits, TPPRUN XW.  $EOJ (staged p.398):
+! TREFIL XW at 021105, TASAVE DRZ(BU,64) at 021063.  TAREJ/TAREJX as
+! p.399 stands them in.  YSCRBT: no $EOJ page landed defines it; its
+! address is line 1's binary, and its dds (BU,1) is the binary too: the
+! CM1111's length field prints 1 (001000.36), which a plain SYN cannot
+! make (it assembles 000000.36).  Volume 1 defines YSCRBT DD(BU,1).
+
+TIXE    SYN,$3                       ! landed p.287 line 36
+TIXA    SYN,$4                       ! landed p.287 line 34
+TIXG    SYN,$8                       ! landed p.287 line 38; byte 88 lines 5,7
+TX1     SYN,$10                      ! landed p.287 line 30
+TCTWDX  SYN,TX1                      ! landed p.287 line 29
+TRJECT  SYN(BU,1),0.37               ! landed p.288 line 15
+TJBPRO  SYN(BU,1),0.36               ! landed p.288 line 14
+TPPRUN  SYN(BU), (8)232232.0         ! landed p.288 line 7 XW; SX line 12 232232.21
+TREFIL  SYN(BU), (8)021105.0         ! $EOJ p.398 line 14 XW; LRI/SX lines 3-4
+TASAVE  SYN(BU,64), (8)021063.0      ! $EOJ p.398 line 9 DRZ(BU,64); SWAPI line 13
+TAREJ   SYN, (8)021663.0             ! $EOJ, not landed (as p.399); BB1 line 5, half word only
+TAREJX  SYN, (8)021662.0             ! $EOJ, not landed (as p.399); B line 6, half word only
+YSCRBT  SYN(BU,1), (8)021757.03      ! $EOJ, not landed; CM1111 line 1 021757.03 80, BIT-EXACT
+
+        SLC, (8)022117.00
+        CM1111,YSCRBT                                        ! line  1
+        LX,TIXE,TIXG                                         ! line  2
+        LRI,TIXA,TREFIL                                      ! line  3
+        SX ,TIXA,TREFIL                                      ! line  4
+        BB1,TRJECT(TIXG),TAREJ                               ! line  5  -CLEAR OUT THE PRE-REJECTED JOB
+        B,TAREJX                                             ! line  6
+TP1BA   CM1111,TJBPRO(TIXG)                                  ! line  7  -IF SO SET JOB PROCESSED BIT TO ONE
+        CM1111(BU,1),0.28($15)                               ! line  8  -SET THE DISPOSITION BIT
+        LX,TCTWDX,0.0($15)                                   ! line  9  -ACTIVATE THE MODE
+        BXF,TP1A                                             ! line 10  -AS TO CHECK MODE-- IF NOT OVERLAP
+        V+ICR,TIXG,2.0                                       ! line 11  -UP DATE THE POINTER
+        SX,TIXG,TPPRUN                                       ! line 12  -AND SAVE
+TP1A    SWAPI,12,$1,TASAVE                                   ! line 13  -RESTORE INDEXES
+        B,1.00($15)                                          ! line 14  -RETURN
+
+!SYM TP1BA  022123.00
+!SYM TP1A   022127.00
+!CHECK 022117.00 | 021757.03 80 001000.36 F0 | line 1 CM1111,YSCRBT
+!CHECK 022120.00 | 000030.06 10 | line 2 LX,TIXE,TIXG
+!CHECK 022120.40 | 021105.11 03 | line 3 LRI,TIXA,TREFIL (hex prints "C3": open 0)
+!CHECK 022121.00 | 021105.11 10 | line 4 SX ,TIXA,TREFIL
+!CHECK 022121.40 | 000000.45 88 021663.34 0E | line 5 BB1,TRJECT(TIXG),TAREJ
+!CHECK 022122.40 | 021662.10 00 | line 6 B,TAREJX
+!CHECK 022123.00 | 000000.44 88 001000.36 F0 | line 7 T P1BA CM1111,TJBPRO(TIXG)
+!CHECK 022124.00 | 000000.34 8F 001000.36 F0 | line 8 CM1111(BU,1),0.28($15) (a "*" prints after the location)
+!CHECK 022125.00 | 000000.24 1F | line 9 LX,TCTWDX,0.0($15)
+!CHECK 022125.40 | 022127.23 42 | line 10 BXF,TP1A
+!CHECK 022126.00 | 000002.21 07 | line 11 V+ICR,TIXG,2.0
+!CHECK 022126.40 | 232232.21 10 | line 12 SX,TIXG,TPPRUN
+!CHECK 022127.00 | 000021.00 80 021063.30 E0 | line 13 T P1A SWAPI,12,$1,TASAVE
+!CHECK 022130.00 | 000001.10 0F | line 14 B,1.00($15)

@@ -1,0 +1,145 @@
+! mcp_bootstrap_p402.strap -- MCP printed page 402: $EOJ's copy of the
+! I/O unit-assignment scan (TASIGN's TA7/TB7/TA7CA/TC7 multi-single unit
+! request, and TA3 .. the multi-unit channel scan).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.152, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZE000204  DIST. OF 3/01
+!  3/01  PAGE NUMBER 402"; the heading row's LOCATION field is 021316,
+! line 1's word.
+!
+! >>> STILL $EOJ, BUT A NEW CARD SERIES: ZE. <<<  PUNID 22$EOJ, low core
+! (0213xx); the cards are ZE000204 .. ZE000253, one per line, 50 lines.
+! No SLC on the page; the origin below is line 1's printed LOCATION.
+! No TAIL.
+!
+! THE PAGE.  Contiguous 021316.00 .. 021351.00 (line 50, a half word).
+!   lines 11-13, 26-31, 45-47  blank/remark lines.
+!   a "*" prints after the LOCATION on lines 18 and 41.
+!
+! RESIDENT SYMBOLS, copied in their defining (resident, pp.287-291) form:
+! the T-table bit fields, the index SYNs, and TMODE/TINDA/TINDB, whose
+! binaries here (232227.32/.33/.34) are the resident words.
+! $EOJ-LOCAL LABELS defined on pages not yet landed take their address
+! from this page's binary (half word only unless said).  NEVER the
+! volume-1 bootstrap's addresses (TB2 3756.40, TA5S 4167.40, ...).
+
+TMULTI  SYN(BU,1),0.27                   ! resident p.289 line 7
+TUNAVL  SYN(BU,1),0.28                   ! resident (TASIGN tables)
+TUNASG  SYN(BU,1),0.29                   ! resident
+TUNRES  SYN(BU,1),0.62                   ! resident p.289 line 17
+TUNTBA  SYN(BU,18),0.0                   ! resident p.289 line 6
+TUNITK  SYN(BU,4),0.59                   ! resident p.289 line 16
+TCHCNT  SYN(BU,4),0.20                   ! resident p.291 line 7
+TRLSYM  SYN(BU,7),0.11                   ! resident p.288 line 33
+TX1     SYN,$10                          ! resident p.287 line 30
+TX2     SYN,$9                           ! resident p.287 line 31
+TX3     SYN,$2                           ! resident p.287 line 33
+TIXA    SYN,$4                           ! resident p.287 line 34
+TIXB    SYN,$5                           ! resident p.287 line 35
+TIXJ    SYN,$6                           ! resident p.287 line 41
+TIXK    SYN,TX1                          ! resident p.287 line 43
+TMODE   SYN(BU,1), (8)232227.32          ! resident p.287 line 19 DD(BU,1)
+TINDA   SYN(BU,1), (8)232227.33          ! resident p.287 line 20 DD(BU,1)
+TINDB   SYN(BU,1), (8)232227.34          ! resident p.287 line 21 DD(BU,1)
+TA7A    SYN, (8)021312.0                 ! $EOJ, not landed; CB+ line 9, BIT-EXACT
+TB2     SYN, (8)021245.40                ! $EOJ, not landed; B line 10 / BXCZ line 33, half word only
+TA5S    SYN, (8)021467.40                ! $EOJ, not landed; BRZ line 6, half word only
+TA5A    SYN, (8)021432.40                ! $EOJ, not landed; BRZ line 21, half word only
+TC3Z    SYN, (8)021356.0                 ! $EOJ, not landed; BRZ line 42, half word only
+TA3F1   SYN, (8)021423.0                 ! $EOJ, not landed; BZB line 44, half word only
+TREFIL  SYN, (8)021105.0                 ! $EOJ, not landed; LX line 49, BIT-EXACT
+
+        SLC, (8)021316.0
+        BZAE,TB7                                             ! line  1  -NO
+        BB,TMULTI(TX3),TA7D                                  ! line  2  -IF A MULTI SING UNIT CHANNEL
+        BB,TUNAVL(TX3),TB7                                   ! line  3  -IF UNIT IS NOT AVAILABLE
+        BZB,TUNASG(TX3),TB7                                  ! line  4  -IF THE UNIT IS ASSIGNED
+        CT0011(BU,2),TUNRES(TX3)                             ! line  5  -IS THE UNIT RESERVED
+        BRZ,TA5S                                             ! line  6  -NO
+        BZB,TMODE,TB7                                        ! line  7  -YES, WHAT IS THE MODE
+        BZB,TUNRES(TX3),TA5S                                 ! line  8  - NOT OVERLAP, GO ONLY IF OVERLAP RES
+TB7     CB+,TX3,TA7A                                         ! line  9
+        B,TB2                                                ! line 10  -IF IX -D- RUNS OUT
+!                                                              line 11
+! -     MULTI-SINGLE UNIT REQUEST.  EG DISK, CONSOLE           ! line 12
+!                                                              line 13
+TA7D    LV,TIXJ,TUNTBA(TX3)                                  ! line 14  -ADDRESS OF UNIT TABLE
+        L,TUNITK(TX3),46                                     ! line 15  -GET UNIT COUNT
+        LC,TIXJ,$R                                           ! line 16  -PLACE IN CF
+        BXCZ,TB7                                             ! line 17  -IF NO UNITS ARE AVAILABLE
+TA7CA   BB,TUNAVL(TIXJ),TC7                                  ! line 18  -IF THE UNIT IS NOT AVAILABLE
+        BZB,TUNASG(TIXJ),TC7                                 ! line 19  -IF THE UNIT IS ASSIGNED
+        CT0011(BU,2),TUNRES(TIXJ)                            ! line 20  -IS UNIT RESERVED
+        BRZ,TA5A                                             ! line 21  -NO
+        BZB,TMODE,TC7                                        ! line 22  -YES, WHAT IS THE MODE
+        BZB,TUNRES(TIXJ),TA5A                                ! line 23  -NOT OVERLAP, GO IF OVERLAP RES
+TC7     CB+,TIXJ,TA7CA                                       ! line 24
+        B,TB7                                                ! line 25
+!                                                              lines 26-28
+! -     MULTI-UNIT CHANNEL SCAN                                ! line 29
+!                                                              lines 30-31
+TA3     LX,TIXB,0.0(TX2)                                     ! line 32  -GET THE PROPER SCAN
+        BXCZ,TB2                                             ! line 33  -IF THERE ARE NO MULTI UNITS AVAILABLE
+TA3D    LC,TIXJ,0.0(TIXB)                                    ! line 34  -LOCATE THE CHANNEL WORD INDEX
+        SC,TIXJ,TX3                                          ! line 35  -TO REMOVE THE INTERGER FROM THE VF
+        LV,TIXJ,TUNTBA(TX3)                                  ! line 36  -ADDRESS OF THE UNIT TABLE TO IX
+        L,TUNITK(TX3),46                                     ! line 37  -GET THE NUMBER OF UNITS ON CHANNEL
+        LF,TCHCNT(TIXB),14                                   ! line 38  -GET NO. OF UNITS ON CHAN FOR COMPARE
+        LC,TIXJ,$R                                           ! line 39  -PLACE IN CF
+        KC,TX3,$R+.32                                        ! line 40  -ARE THERE ENOUGH UNITS TO SATIFY REQ
+        LF,TRLSYM(TIXA)                                      ! line 41  -TEST FOR BLANK CHANNEL REQUEST
+        BRZ,TC3Z                                             ! line 42  -YES, ASSIGN TO ANY CHANNEL
+        BZXH,TA3C                                            ! line 43  -IF THERE ARE ENOUGH UNITS ON A CHAN
+        BZB,TINDB,TA3F1                                      ! line 44  -IF THE SPLIT CHAN IND IS OFF
+!                                                              line 45
+! -     IS THIS CHAN ASSIGNED TO ANOTHER I/O WITHIN PP         ! line 46
+!                                                              line 47
+TA3C    BB,TINDA,TC3Z                                        ! line 48  -IF SAME CHAN IS ALLOWED
+        LX,TIXK,TREFIL                                       ! line 49  -SET IX FOR SCANNING I/O REQ TABLE
+        SV,TX3,$R                                            ! line 50  -CHANNEL ADDRESS TO ACC
+
+!SYM TB7    021325.00
+!SYM TA7D   021326.00
+!SYM TA7CA  021330.40
+!SYM TC7    021336.00
+!SYM TA3    021337.00
+!SYM TA3D   021340.00
+!SYM TA3C   021347.40
+!CHECK 021316.00 | 021325.36 C0 | line 1 BZAE,TB7
+!CHECK 021316.40 | 000000.33 82 021326.34 02 | line 2 BB,TMULTI(TX3 ),TA7D
+!CHECK 021317.40 | 000000.34 82 021325.34 02 | line 3 BB,TUNAVL(TX3 ),TB7
+!CHECK 021320.40 | 000000.35 82 021325.34 00 | line 4 BZB,TUNASG(TX3 ),TB7
+!CHECK 021321.40 | 000000.76 82 002000.07 70 | line 5 CT0011(BU,2),TUNRES(TX3)
+!CHECK 021322.40 | 021467.74 C2 | line 6 BRZ,TA5S
+!CHECK 021323.00 | 232227.32 80 021325.34 00 | line 7 BZB,TMCDE,TB7 (O open)
+!CHECK 021324.00 | 000000.76 82 021467.74 00 | line 8 BZB,TUNRES(TX3),TA5S
+!CHECK 021325.00 | 021312.05 48 | line 9 T B7 CB+,TX3 ,TA7A
+!CHECK 021325.40 | 021245.50 00 | line 10 B,TB2
+!CHECK 021326.00 | 000000.14 32 | line 14 T A7D LV,TIXJ,TUNTBA(TX3)
+!CHECK 021326.40 | 000000.73 82 004027.20 50 | line 15 L,TUNITK(TX3 ),46
+!CHECK 021327.40 | 000011.14 50 | line 16 LC,TIXJ,$R
+!CHECK 021330.00 | 021325.30 42 | line 17 BXCZ,TB7
+!CHECK 021330.40 | 000000.34 86 021336.34 02 | line 18 T A7CA BB,TUNAVL(TIXJ),TC7
+!CHECK 021331.40 | 000000.35 86 021336.34 00 | line 19 BZB,TUNASG(TIXJ),TC7
+!CHECK 021332.40 | 000000.76 86 002000.07 70 | line 20 CT0011(BU,2),TUNRES(TIXJ)
+!CHECK 021333.40 | 021432.74 C2 | line 21 BRZ,TA5A
+!CHECK 021334.00 | 232227.32 80 021336.34 00 | line 22 BZB,TMCDE,TC7 (O open)
+!CHECK 021335.00 | 000000.76 86 021432.74 00 | line 23 BZB,TUNRES(TIXJ),TA5A
+!CHECK 021336.00 | 021330.55 48 | line 24 T C7 CB+,TIXJ,TA7CA
+!CHECK 021336.40 | 021325.10 00 | line 25 B,TB7
+!CHECK 021337.00 | 000000.12 19 | line 32 T A3 LX,TIXB,0.0(TX2)
+!CHECK 021337.40 | 021245.70 42 | line 33 BXCZ,TB2
+!CHECK 021340.00 | 000000.14 55 | line 34 T A3D LC,TIXJ,0.0(TIXB)
+!CHECK 021340.40 | 000022.15 50 | line 35 SC,TIXJ,TX3
+!CHECK 021341.00 | 000000.14 32 | line 36 LV,TIXJ,TUNTBA(TX3)
+!CHECK 021341.40 | 000000.73 82 004027.20 50 | line 37 L,TUNITK(TX3),46
+!CHECK 021342.40 | 000000.24 85 004007.06 70 | line 38 LF,TCHCNT(TIXB),14
+!CHECK 021343.40 | 000011.14 50 | line 39 LC,TIXJ,$R
+!CHECK 021344.00 | 000011.45 90 | line 40 KC,TX3,$R+.32
+!CHECK 021344.40 | 000000.13 84 007000.06 70 | line 41 LF,TRLSYM(TIXA)
+!CHECK 021345.40 | 021356.34 C2 | line 42 BRZ,TC3Z
+!CHECK 021346.00 | 021347.73 40 | line 43 BZXH,TA3C
+!CHECK 021346.40 | 232227.34 80 021423.34 00 | line 44 BZB,TINDB,TA3F1
+!CHECK 021347.40 | 232227.33 80 021356.34 02 | line 48 T A3C BB,TINDA,TC3Z
+!CHECK 021350.40 | 021105.24 10 | line 49 LX,TIXK,TREFIL
+!CHECK 021351.00 | 000011.05 30 | line 50 SV,TX3,$R

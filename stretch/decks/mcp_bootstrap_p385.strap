@@ -1,0 +1,168 @@
+! mcp_bootstrap_p385.strap -- MCP printed page 385: a NEW PROGRAM,
+! PUNID 22$EOJ (card series ZA), JOB CONTROL 4 (C22-6728-1 App. D:
+! YC4C9, YICER2, YIDCER, YIODSO, YVI are "JOB CONTROL 4-CHART 5/6").
+! The tail of the IOD/REEL card loop (YIO .. YVI), then the section
+! "IN THIS SECTION WE ASSIGN I-O FOR THE P.P. USING THE SAVED IODS":
+! decode (YC4C9/YC4D1), I-O assign (TASIGN) and move (TMOVE).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.135, read at 400 and 900 dpi.
+! Header, READ: "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZA000168
+! DIST. OF 3/01  3/01  PAGE NUMBER 385"; the heading row's LOCATION
+! field is 020134, line 1's word.
+!
+! THE PAGE.  Contiguous from 020134.00 to 020173.00 (line 56, a half
+! word; next 020173.40).  Lines 24-27, 44, 48 are remarks.
+! NOT SCOMD: a different overlay at low addresses (020xxx); only
+! resident symbols (pp.99-319) are taken from landed decks.  Symbols
+! of this program defined on other pages come from this page's binary.
+!
+! EVERY LINE NUMBER prints a "*" after it (1* .. 56*), and lines 17
+! and 41 print a SECOND "*" after the LOCATION.  Recorded as on other
+! pages, not explained.
+!
+! GLYPHS.  The labels print YIC (l.6) and YICCIN (l.9) open; the
+! references print YIO (l.3) and YIOCIN (l.7, l.15) closed: YIO,
+! YIOCIN.  YCCNCG (l.47) is YCONCG (closed O on ll.43/45/49).
+! YIDCER (l.13) is printed with a D stem, and C22-6728-1 App. D p.279
+! prints YIDCER between YICER2 and YIODSO; YICER2 (l.39) is a real C
+! (same index).  YC4C9 / YC4D1: YC4C9 as App. D and its text ("The
+! code from YC4C9 ..."); l.30/l.41 YC4D1 print the squared D.  YMOVJ1
+! (l.21) prints "YMCVJ1": MOV family (YMOVE, YMOVXW, comments MOVE).
+! YDECVF prints "YDECVF" with worn D (App. D text: "YDECVF VF,").
+! LDECOD prints "LCECCC"/"LDECOD": the landed symbol, 231703.
+! Line 15 prints a stray "." left of the statement column (".LX");
+! LX,$14,YIOCIN as the binary 020142.34 10 requires; written without it.
+! Line 22's label prints "Y VI" (a blank inside the name): YVI.
+! Line 53 prints "SV,$10,   YMOVXW" (blanks before the address).
+
+YBCBU   SYN(BU), (8)231462.0         ! p.274 line 19 DR(BU),(15), as p.291's stand-in writes it
+YUNCOD  SYN, (8)231215.0             ! p.270 line 27 (TI label), as p.265's stand-in; B line 8
+YRELMK  SYN(BU,48,6), (8)231417.0    ! p.274 line 2 (AX)DD(BU,48,6); KF line 18 prints 060600 (48,6)
+LDECOD  SYN, (8)231703.0             ! p.278 line 39 (SWAPI label), as p.267's stand-in; B line 35
+SJCTWS  SYN(B,25,1), (8)215020.0     ! landed p.103 line 55 VF,(8)42.0; LVE lines 28/51
+SCNFCG  SYN(BU,1), (8)215001.02      ! landed p.103 line 12 SYN(BU,1),SCOMRG+.2; BZBZ line 42
+YIODSO  SYN, (8)020132.0             ! $EOJ, not landed; B line 23 020132.10, half word only
+YIDCER  SYN, (8)020454.0             ! $EOJ, not landed; B line 13 020454.10, half word only
+YMOVJ1  SYN, (8)020522.0             ! $EOJ, not landed; BRZ line 21 020522.34, half word only
+YICER2  SYN, (8)020471.40            ! $EOJ, not landed; B line 39 020471.50, half word only
+YASREJ  SYN, (8)020500.0             ! $EOJ, not landed; BZXCZZ line 50 020500.30, half word only
+YMOVXW  SYN, (8)020174.0             ! $EOJ, not landed (next page); SV l.53 / LVI l.55, half word only
+TASIGN  SYN, (8)021164.0             ! $EOJ, not landed; B line 46 021164.10, half word only
+TMOVE   SYN, (8)022326.0             ! $EOJ, not landed; B line 56 022326.10, half word only
+
+        SLC, (8)020134.00
+        L(BU,48),YBCBU+1.44                                  ! line  1  -TYPE CARD CHECK
+        KFI(BU,24),(8)11001002,24                            ! line  2
+        BZAE,YIO                                             ! line  3
+        KFI(BU,24),(8)20044020                               ! line  4
+        BAE,YIODSO                                           ! line  5
+YIO     SX,$11,-1.0($12)                                     ! line  6
+        LVI,$14,YIOCIN                                       ! line  7  -TO UNCODE
+        B,YUNCOD                                             ! line  8
+YIOCIN  XW,0                                                 ! line  9
+        VF,4.0                                               ! line 10
+        ,YBCBU                                               ! line 11  null operation
+        ,1.0($12)                                            ! line 12  null operation
+        B,YIDCER                                             ! line 13  -ERROR RETURN
+        C+I,$12,1.0                                          ! line 14  -NORMAL RETURN - STEP COUNT
+        LX,$14,YIOCIN                                        ! line 15  -GET INFORMATION FROM UNCODE
+        SX,$14,0.0($12)                                      ! line 16  -PUT IN ALPHA SLOT FOR DECODE.
+        LF(BU,48),1.0($12)                                   ! line 17  -IS THIS A REEL CARD
+        KF,YRELMK                                            ! line 18
+        BAE,YVI                                              ! line 19  -YES  A REEL CARD IS  PRESENT
+        LF(BU,12),.52($12)                                   ! line 20  -IS THE REF NUMBER ZERO
+        BRZ,YMOVJ1                                           ! line 21  -YES - REJECT THE JOB
+YVI     V+I,$12,15.0                                         ! line 22  -STEP THE CARD LOCATOR
+        B,YIODSO                                             ! line 23  -GO BACK AND READ ANOTHER CARD
+! line 24  -
+! line 25  - ****************************************************
+! line 26  -      IN THIS SECTION WE ASSIGN I-O FOR THE P.P. USING THE SAVED IODS.
+! line 27  - ****************************************************
+YC4C9   LVE,$12,SJCTWS                                       ! line 28  -RESET CARD LOCATOR
+        SX,$12,$11                                           ! line 29  -SAVE FOR MOVE PURPOSES
+YC4D1   SV,$12,YDECVF                                        ! line 30  -SET FWA FOR DECODE ENTRY.
+        KCI,$12,1.0                                          ! line 31  -IF THIS IS LAST CARD +1,
+        BZXE,$+1.32                                          ! line 32  -ZERO OUT ALPHA +1 SLOT FOR
+        CM0000(BU,64),1.0($12)                               ! line 33  -DECODE
+        LVI,$15,$+1.0                                        ! line 34  -TO DECODE
+        B,LDECOD                                             ! line 35
+YDECVF  VF,0                                                 ! line 36  -ADDRESS OF ALPHA SLOT
+        CF,7                                                 ! line 37
+        VF,0                                                 ! line 38  -DISPOSITION SLOT - RETURN
+        B,YICER2                                             ! line 39  -ERROR RETURN
+        V+I,$12,15.0                                         ! line 40  -NORMAL RETURN
+        CB,$12,YC4D1                                         ! line 41  -STEP UP AND COUNT DOWN
+        BZBZ,SCNFCG,$+1.32                                   ! line 42
+        SV,$12,YCONCG                                        ! line 43
+! line 44  -DELIVER TO I-O ASSIGN
+        LVI,$15,YCONCG                                       ! line 45  -TO I-O ASSIGN
+        B,TASIGN                                             ! line 46
+YCONCG  XW,0,0,0,7                                           ! line 47
+! line 48  -UNOVER LAPPED MODE
+        LX,$14,YCONCG                                        ! line 49  -IF THE COUNT FUELD OF YCONCG
+        BZXCZZ,YASREJ                                        ! line 50  -IS NON-ZERO ON RETURN, JOB
+        LVE,$10,SJCTWS                                       ! line 51  -IS TO BE REJECTED
+        CM1111(BU,1),$10+.24                                 ! line 52  -SET UP FOR INITIAL ENTRY
+        SV,$10,   YMOVXW                                     ! line 53  --ENTRY BIT IN MOVE INDEX WORD
+        C-I,$11,1.0                                          ! line 54  -REDUCE SYSTEM CARD COUNTER BY 2.
+YMOVE   LVI,$15,YMOVXW                                       ! line 55  -TO MOVE
+        B,TMOVE                                              ! line 56
+
+!SYM YIO    020140.00
+!SYM YIOCIN 020142.00
+!SYM YVI    020152.40
+!SYM YC4C9  020153.40
+!SYM YC4D1  020154.40
+!SYM YDECVF 020160.00
+!SYM YCONCG 020166.00
+!SYM YMOVE  020172.40
+!CHECK 020134.00 | 231463.54 80 060000.20 50 | line 1 L(BU,48),YBCBU+1.44
+!CHECK 020135.00 | 110010.02 80 430014.23 10 | line 2 KFI(BU,24),(8)11001002,24
+!CHECK 020136.00 | 020140.36 C0 | line 3 BZAE,YIO
+!CHECK 020136.40 | 200440.20 80 430000.23 10 | line 4 KFI(BU,24),(8)20044020
+!CHECK 020137.40 | 020132.36 C2 | line 5 BAE,YIODSO
+!CHECK 020140.00 | 777777.27 1C | line 6 YIO SX,$11,-1.0($12)
+!CHECK 020140.40 | 020142.35 01 | line 7 LVI,$14,YIOCIN
+!CHECK 020141.00 | 231215.10 00 | line 8 B,YUNCOD
+!CHECK 020142.00 | 000000.00+ 000 000000 000000 | line 9 YIOCIN XW,0
+!CHECK 020143.00 | 000004.00+ | line 10 VF,4.0
+!CHECK 020143.40 | 231462.00 80 | line 11 ,YBCBU
+!CHECK 020144.00 | 000001.00 8C | line 12 ,1.0($12)
+!CHECK 020144.40 | 020454.10 00 | line 13 B,YIDCER
+!CHECK 020145.00 | 000001.31 00 | line 14 C+I,$12,1.0
+!CHECK 020145.40 | 020142.34 10 | line 15 LX,$14,YIOCIN (stray "." printed before LX)
+!CHECK 020146.00 | 000000.35 1C | line 16 SX,$14,0.0($12)
+!CHECK 020146.40 | 000001.00 8C 060000.06 70 | line 17 LF(BU,48),1.0($12) (second "*" after location)
+!CHECK 020147.40 | 231417.00 80 060600.23 10 | line 18 KF,YRELMK
+!CHECK 020150.40 | 020152.76 C2 | line 19 BAE,YVI
+!CHECK 020151.00 | 000000.64 8C 014000.06 70 | line 20 LF(BU,12),.52($12)
+!CHECK 020152.00 | 020522.34 C2 | line 21 BRZ,YMOVJ1
+!CHECK 020152.40 | 000017.31 05 | line 22 YVI V+I,$12,15.0
+!CHECK 020153.00 | 020132.10 00 | line 23 B,YIODSO
+!CHECK 020153.40 | 215020.31 B0 | line 28 YC4C9 LVE,$12,SJCTWS
+!CHECK 020154.00 | 000033.31 10 | line 29 SX,$12,$11
+!CHECK 020154.40 | 020160.31 30 | line 30 YC4D1 SV,$12,YDECVF
+!CHECK 020155.00 | 000001.31 0A | line 31 KCI,$12,1.0
+!CHECK 020155.40 | 020157.32 C0 | line 32 BZXE,$+1.32
+!CHECK 020156.00 | 000001.00 8C 000000.00 F0 | line 33 CM0000(BU,64),1.0($12)
+!CHECK 020157.00 | 020160.37 01 | line 34 LVI,$15,$+1.0
+!CHECK 020157.40 | 231703.10 00 | line 35 B,LDECOD
+!CHECK 020160.00 | 000000.00+ | line 36 YDECVF VF,0
+!CHECK 020160.40 | 000007 | line 37 CF,7 -- an 18-bit count field, six bare octal digits
+!CHECK 020161.00 | 000000.00+ | line 38 VF,0
+!CHECK 020161.40 | 020471.50 00 | line 39 B,YICER2
+!CHECK 020162.00 | 000017.31 05 | line 40 V+I,$12,15.0
+!CHECK 020162.40 | 020154.70 48 | line 41 CB,$12,YC4D1 (second "*" after location)
+!CHECK 020163.00 | 215001.02 80 020164.74 04 | line 42 BZBZ,SCNFCG,$+1.32
+!CHECK 020164.00 | 020166.31 30 | line 43 SV,$12,YCONCG
+!CHECK 020164.40 | 020166.37 01 | line 45 LVI,$15,YCONCG
+!CHECK 020165.00 | 021164.10 00 | line 46 B,TASIGN
+!CHECK 020166.00 | 000000.00+ 111 000000 000000 | line 47 YCONCG XW,0,0,0,7
+!CHECK 020167.00 | 020166.34 10 | line 49 LX,$14,YCONCG
+!CHECK 020167.40 | 020500.30 44 | line 50 BZXCZZ,YASREJ
+!CHECK 020170.00 | 215020.25 B0 | line 51 LVE,$10,SJCTWS
+!CHECK 020170.40 | 000032.30 80 001000.36 F0 | line 52 CM1111(BU,1),$10+.24
+!CHECK 020171.40 | 020174.25 30 | line 53 SV,$10,YMOVXW
+!CHECK 020172.00 | 000001.27 08 | line 54 C-I,$11,1.0
+!CHECK 020172.40 | 020174.37 01 | line 55 YMOVE LVI,$15,YMOVXW
+!CHECK 020173.00 | 022326.10 00 | line 56 B,TMOVE

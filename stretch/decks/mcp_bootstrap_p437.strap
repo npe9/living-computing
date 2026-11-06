@@ -1,0 +1,88 @@
+! mcp_bootstrap_p437.strap -- MCP printed page 437: the $EOJ program,
+! card series ZZ: the tail of a routine (SV,$2,SCUMQ .. YC4BZ ..
+! T JDISP, the error exit to the DISP), its save area TJSAV, the index
+! names TJA..TJE, JTX1, JTX2, JUAX, and the copy control word TJCW.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.187, read at 400 dpi, doubtful
+! glyphs at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$EOJ
+! CARD ID ZZ000124  DIST. OF 3/01  3/01  PAGE NUMBER 437"; the heading
+! row's LOCATION field is 023127, line 1's word.
+!
+! >>> CARD SERIES ZZ (new relative to p.425's ZF), PUNID still 22$EOJ.
+! No SLC, no PUNID on the page; the origin below is line 1's printed
+! LOCATION.  No TAIL. <<<
+!
+! THE PAGE.  19 lines, every line number prints a "*"; a further "*"
+! after line 10's LOCATION (023133.00 *), recorded, not interpreted.
+! Contiguous 023127.00 .. 023143.00 (line 19, the XW; next location
+! 023144.00), then blank paper.  Lines 5 and 9 are bare comment rows
+! ("-" in the NAME column).  Line 10 TJSAV DR(N),(8) prints its count
+! 000010.00 (8 words, 023133 .. 023142) -- no !CHECK, as every deck
+! before.  Lines 11-18 are SYN rows printing "BU,100,10" in the dds
+! column and +00000000 -- no !CHECK; !SYM for each.
+!
+! CARD SERIALS.  ZZ000124 .. ZZ000142, one per line, consecutive.
+!
+! >>> NAMES.  Lines 16, 17 print "J TX1" and "J TX2" (a clear J, a
+! space): JTX1 = $6, JTX2 = $7.  NOT the resident TX1 ($10) / TX2 ($9)
+! of p.287.  Line 18 prints "JUAX" (no T), SYN,TJB. <<<
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!  * line 3 label "YC4BZ": the last glyph is a flat-bottomed Z (900 dpi;
+!    compare the 2 in the same row's "21.20").  The C is open -- an open
+!    glyph says nothing about C vs O; C22-6728's YC4B2/YC4B3/YC4B5
+!    family spells C, so C.  Not referenced by this page.
+!  * line 6 label prints "T JCISP" = TJDISP (worn D); the remark is
+!    "-GO TO THE DISP WITH ERROR CODE".
+!  * line 4 "BE,C.0($15)" = BE,0.0($15) (open 0); binary 000000.00 0F.
+!  * octal/hex "C"s in the LOCATION and BINARY fields are open 0s.
+!
+! EXTERNALS.  Resident symbols, copied from landed decks' stand-ins.
+
+SCUMQ   SYN(B,25,1), (8)215466.0     ! landed p.116 line 34 "SCUMQ VF,SQUE"; SV line 1 215466.05
+SPROGS  SYN, (8)215021.0             ! landed p.109 line 7 -PROGRAM STATUS TABLE; Z line 2 215021.22
+SREJ    SYN, (8)3406.0               ! landed p.107 line 30; LVI line 6 003406.35
+SDISIC  SYN, (8)217451.40            ! landed; SIC line 7, BIT-EXACT
+SDISP   SYN, (8)217372.0             ! landed; BD line 8 217372.04, half word only
+
+        SLC, (8)023127.00
+        SV,$2,SCUMQ                                          ! line  1  -RESET COUNT,NEXT AVAILABLE SLOT.
+        Z,SPROGS                                             ! line  2
+YC4BZ   TI,8,TJSAV,$1                                        ! line  3
+        BE,0.0($15)                                          ! line  4  -AND RETURN
+! -                                                          ! line  5
+TJDISP  LVI,$14,SREJ                                         ! line  6  -GO TO THE DISP WITH ERROR CODE  printed "T JCISP"
+        SIC,SDISIC                                           ! line  7  -SAVE THE LOC CTR FOR ERROR CONTROL
+        BD,SDISP                                             ! line  8
+! -                                                          ! line  9
+TJSAV   DR(N),(8)                                            ! line 10
+TJA     SYN,$1                                               ! line 11
+TJB     SYN,$2                                               ! line 12
+TJC     SYN,$3                                               ! line 13
+TJD     SYN,$4                                               ! line 14
+TJE     SYN,$5                                               ! line 15
+JTX1    SYN,$6                                               ! line 16  -FOR REEL HISTORY PRINT ROUTINE
+JTX2    SYN,$7                                               ! line 17  -FOR REEL HISTORY PRINT ROUTINE
+JUAX    SYN,TJB                                              ! line 18
+TJCW    XW                                                   ! line 19  -THE COPY CONTROL WORD AREA
+
+!SYM   YC4BZ    023130.00
+!SYM   TJDISP   023131.40
+!SYM   TJSAV    023133.00
+!SYM   TJA      000021.00
+!SYM   TJB      000022.00
+!SYM   TJC      000023.00
+!SYM   TJD      000024.00
+!SYM   TJE      000025.00
+!SYM   JTX1     000026.00
+!SYM   JTX2     000027.00
+!SYM   JUAX     000022.00
+!SYM   TJCW     023143.00
+!CHECK 023127.00 | 215466.05 30 | line 1  SV,$2,SCUMQ
+!CHECK 023127.40 | 215021.22 00 | line 2  Z,SPROGS
+!CHECK 023130.00 | 023133.00 80 000021.20 A0 | line 3  YC4BZ TI,8,TJSAV,$1
+!CHECK 023131.00 | 000000.00 0F | line 4  BE,0.0($15) (prints "CCCCCC.CC 0F": open 0s)
+!CHECK 023131.40 | 003406.35 01 | line 6  T JDISP LVI,$14,SREJ
+!CHECK 023132.00 | 217451.40 80 | line 7  SIC,SDISIC
+!CHECK 023132.40 | 217372.04 00 | line 8  BD,SDISP
+!CHECK 023143.00 | 000000.00+ 000 000000 000000 | line 19 T JCW XW

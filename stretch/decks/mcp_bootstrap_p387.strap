@@ -1,0 +1,145 @@
+! mcp_bootstrap_p387.strap -- MCP printed page 387: the $EOJ package's
+! "SWITCHING SUBROUTINE TO READ ONE CARD FROM SOURCE" (Y RDFSO).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.137, read at 400 dpi, names at 900
+! dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID
+! ZA000279  DIST. OF 3/01  3/01  PAGE NUMBER 387"; the heading row's
+! LOCATION field is BLANK (line 1 is a remark).
+!
+! >>> NOT SCOMD. <<<  PUNID 22$EOJ, card series ZA, at 0202xx: this is
+! the $EOJ program, not the SYSTEM COMMAND package (PUNID 22SCOMD, WA,
+! 2354xx).  No SLC is printed on this page; the deck's SLC is line 4's
+! printed location.  No TAIL.
+!
+! THE PAGE.  38 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 15 and 31.  Contiguous 020233.00 .. 020256.00 (line
+! 38, a half word; next 020256.40).  Card serials ZA000279 .. ZA000315,
+! one per line, except that line 28 (CNOP, printed indented two places
+! to the right, no location) repeats line 27's ZA000305.
+!   lines  1-3   remarks (banner).
+!   lines  4-14  Y RDFSO: save $14, calling sequence B,DMCP / ,DSCR, the
+!                Y SPRDS data words, returns B,.32($15) / B,1.0($15).
+!   lines 15-21  Y ICDTM: compile-or-go test, TI of 15 words to Y BCBU.
+!   lines 22-38  Y PPID4: TI,1,YDFCS,YI4TA, B,DMCP / ,DFETCH, the Y I4TA
+!                word and its data words, B,WRESTR, NOP, B,1.0($15).
+!
+! JOIN.  p.386 is being transcribed in parallel; the volume OCR prints
+! WRESTR (ZA000270, CM1111,YEOJS) and this page's B,WRESTR prints
+! 020226.10, so p.386 ends somewhere below 020233.00.  Not verified
+! against a deck.
+!
+! >>> SPELLINGS SETTLED BY OTHER THAN PLAIN INK. <<<
+!  * line 4 "YRCFSO" is written YRDFSO: the third glyph has the squared
+!    left side of this drum's worn D, and C22-6728 (typeset, OCR
+!    p.10315) names "the read source routine (YRDFSO)"; the volume OCR
+!    of the pages that call it reads B,YRDFSO / YROFSO.  The last glyph
+!    is the letter O (SOurce; the guide's spelling).
+!  * line 16 prints "YBCBL" and is YBCBU: the last glyph is a U whose
+!    right stem is worn away (a stub of it shows), no YBCBL is defined
+!    anywhere, and the second half word 231462.36 is YBCBU's address
+!    (p.274 line 19, 231462.00) with the count 15 in its low bits, as
+!    line 22's TI,1,...,YI4TA prints 020252.02.  Lines 20 and 33 print
+!    YBCBU plainly.
+!  * line 15's label and line 5's reference both print the third glyph
+!    of "Y ICDTM" OPEN, twice, the same open round as the C of SCORG on
+!    line 15; no closed glyph anywhere, and no other page or manual
+!    names it.  Kept as printed, YICDTM (an "IOD" reading, YIODTM, is
+!    plausible from the guide's "LIM and IOD cards" but nothing closes
+!    it).
+!  * line 5 prints "YICCTM": the fourth glyph is the worn D (the label
+!    on line 15 prints a clear D); BXF prints 020240.63 = Y ICDTM's
+!    020240.40, so it is the same symbol.
+!  * octal-field zeros print open throughout ("CCCCCO.CO" on line 35);
+!    statements ",1.C" (line 11), "CMOCOO" (line 20) and "0.C($15)"
+!    (line 6) are written 1.0, CM0000, 0.0.
+!
+! Line 31 Y I4TA DR(BU),(1) prints its count 000001.00 and no hex byte:
+! a reservation, no !CHECK (as p.274's DR rows).
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B lines 8, 29 000040.10
+DSCR    SYN, 68.32                   ! landed p.105 line 40 "D SCR"; line 9 000104.40
+DFETCH  SYN, 66.32                   ! landed p.105 line 36 "D FETCH"; line 30 000102.40
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label
+SCORG   SYN(BU,1), SCOMRG+0.03       ! landed p.103 line 13; BZB line 15 215001.03
+YDFCS   SYN(BU), (8)231427.0         ! landed p.274 line 16 DR(BU),(1); TI line 22 231427.00
+YBCBU   SYN(BU), (8)231462.0         ! p.274 line 19 DR(BU),(15), as p.291's stand-in writes it
+WRESTR  SYN(BU,64,8), (8)020226.0    ! not landed (p.386, ZA000270 "WRESTR CM1111,YEOJS" per volume OCR, a full-word VFL); B line 36 020226.10, half word only
+
+        SLC, (8)020233.00
+! line  1  -  ****************************************************************
+! line  2  -        SWITCHING SUBROUTINE TO READ ONE CARD FROM SOURCE.
+! line  3  -  ****************************************************************
+YRDFSO  LX,$13,$13                                           ! line  4  printed "YRCFSO" (D worn; see header)
+        BXF,YICDTM                                           ! line  5  printed "YICCTM" (D worn)
+        LV,$14,0.0($15)                                      ! line  6
+        SV,$14,YSPRDS                                        ! line  7
+        B,DMCP                                               ! line  8
+        ,DSCR                                                ! line  9
+YSPRDS  ,0                                                   ! line 10
+        ,1.0                                                 ! line 11  printed ",1.C" (open 0)
+        ,0                                                   ! line 12
+        B,.32($15)                                           ! line 13
+        B,1.0($15)                                           ! line 14
+YICDTM  BZB,SCORG,YPPID4                                     ! line 15  "*" after the location
+        TI,15,($13),YBCBU                                    ! line 16  printed "YBCBL" (U worn; see header)
+        C-I,$13,15.0                                         ! line 17
+        V+I,$13,15.0                                         ! line 18
+        BZXCZ,$+1.32                                         ! line 19
+        CM0000,YBCBU                                         ! line 20  printed "CMOCOO"
+        B,1.0($15)                                           ! line 21
+YPPID4  TI,1,YDFCS,YI4TA                                     ! line 22
+        V+IC,$13,15.                                         ! line 23
+        BZXCZ,$+1.32                                         ! line 24
+        V+I,13,2.0                                           ! line 25
+        LCI,13,34.                                           ! line 26
+        SV,13,YI4TA+1.                                       ! line 27
+        CNOP                                                 ! line 28  indented; serial ZA000305 repeated from line 27; compiles nothing
+        B,DMCP                                               ! line 29
+        ,DFETCH                                              ! line 30
+YI4TA   DR(BU),(1)                                           ! line 31  "*" after the location; prints 000001.00
+        ,0                                                   ! line 32
+        ,YBCBU                                               ! line 33
+        ,15.                                                 ! line 34
+        ,0                                                   ! line 35
+        B,WRESTR                                             ! line 36
+        NOP                                                  ! line 37
+        B,1.0($15)                                           ! line 38
+
+!SYM YRDFSO 020233.00
+!SYM YSPRDS 020236.00
+!SYM YICDTM 020240.40
+!SYM YPPID4 020245.40
+!SYM YI4TA  020252.00
+!CHECK 020233.00 | 000035.32 10 | line 4 Y RDFSO LX,$13,$13
+!CHECK 020233.40 | 020240.63 42 | line 5 BXF,Y ICDTM
+!CHECK 020234.00 | 000000.34 3F | line 6 LV,$14,0.0($15)
+!CHECK 020234.40 | 020236.35 30 | line 7 SV,$14,Y SPRDS
+!CHECK 020235.00 | 000040.10 00 | line 8 B,DMCP
+!CHECK 020235.40 | 000104.40 80 | line 9 ,DSCR
+!CHECK 020236.00 | 000000.00 80 | line 10 Y SPRDS ,0
+!CHECK 020236.40 | 000001.00 80 | line 11 ,1.0
+!CHECK 020237.00 | 000000.00 80 | line 12 ,0
+!CHECK 020237.40 | 000000.50 0F | line 13 B,.32($15)
+!CHECK 020240.00 | 000001.10 0F | line 14 B,1.0($15)
+!CHECK 020240.40 | 215001.03 80 020245.74 00 | line 15 Y ICDTM BZB,SCORG,Y PPID4
+!CHECK 020241.40 | 000000.00 8D 231462.36 A0 | line 16 TI,15,($13),Y BCBU
+!CHECK 020242.40 | 000017.33 08 | line 17 C-I,$13,15.0 (byte prints "C8": open 0, as the row's octal "CCC017")
+!CHECK 020243.00 | 000017.33 05 | line 18 V+I,$13,15.0
+!CHECK 020243.40 | 020245.30 40 | line 19 BZXCZ,$+1.32
+!CHECK 020244.00 | 231462.00 80 000000.00 F0 | line 20 CM0000,Y BCBU
+!CHECK 020245.00 | 000001.10 0F | line 21 B,1.0($15)
+!CHECK 020245.40 | 231427.00 80 020252.02 A0 | line 22 Y PPID4 TI,1,Y DFCS,Y I4TA
+!CHECK 020246.40 | 000017.33 06 | line 23 V+IC,$13,15.
+!CHECK 020247.00 | 020250.70 40 | line 24 BZXCZ,$+1.32
+!CHECK 020247.40 | 000002.33 05 | line 25 V+I,13,2.0
+!CHECK 020250.00 | 000042.33 02 | line 26 LCI,13,34.
+!CHECK 020250.40 | 020253.33 30 | line 27 SV,13,Y I4TA+1.
+!CHECK 020251.00 | 000040.10 00 | line 29 B,DMCP
+!CHECK 020251.40 | 000102.40 80 | line 30 ,DFETCH
+!CHECK 020253.00 | 000000.00 80 | line 32 ,0
+!CHECK 020253.40 | 231462.00 80 | line 33 ,YBCBU
+!CHECK 020254.00 | 000017.00 80 | line 34 ,15.
+!CHECK 020254.40 | 000000.00 80 | line 35 ,0
+!CHECK 020255.00 | 020226.10 00 | line 36 B,WRESTR
+!CHECK 020255.40 | 000000.30 00 | line 37 NOP
+!CHECK 020256.00 | 000001.10 0F | line 38 B,1.0($15)

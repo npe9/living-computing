@@ -1,0 +1,128 @@
+! mcp_bootstrap_p411.strap -- MCP printed page 411: the $EOJ program's
+! reassembly of "A PRINT SUB - ROUTINE THAT WILL PRINT ASSIGNMENTS" --
+! its data: message buffers, three hex constants, five index SYNs, four
+! one-bit flags and three index words (T BUF01 .. T PSAV).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.161, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZE000665  DIST. OF 3/01
+!  3/01  PAGE NUMBER 411"; the heading row's LOCATION field is BLANK
+! (lines 1-7 are remarks).  The Vision geometry of this page is missing
+! (v2_pdf161.geom is "none"), so tools/page_sheet.py 411 gives nothing;
+! every value is read off the image alone.
+!
+! >>> STILL $EOJ, card series ZE, low core 0217xx.  No SLC is printed;
+! the SLC below is scaffolding for line 9's printed location.  Line 8's
+! CNOP prints no location and no binary: the counter already stood on
+! a word boundary.  No TAIL.
+!
+! THE PAGE.  37 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 9, 14 and 24.  Contiguous 021726.00 .. 021762.00
+! (line 37, an XW; next 021763.00), then blank paper.
+!   lines  1-7   remark banner (line 3 is the title).
+!   lines  8-24  CNOPs, (IQSX)/(A*) character data, three DD(BU),(16)
+!                constants (binary printed, checked).
+!   lines 26-30  T XA .. T IXY SYN,$2..$6, print 0000nn.00+ +00000000
+!                BU,100,10 -- SYN rows, no !CHECK (they compile nothing).
+!   lines 31-34  four DD(BU,1) flags 021757.00-.03.
+!   lines 35-37  three XWs.
+! The same source as the volume-1 bootstrap's printed p.76 (decks/
+! mcp_bootstrap_p76.strap, at 004423.40-004460), every label at the same
+! relative offset (+15302 octal) -- but this card set terminates the
+! (IQS) messages with "X" ((IQSX)), not "*".  Spellings only were taken
+! from p.76; addresses and lengths are this page's.
+!
+! THE ENTRY-MODE BLANKS.  Every message's length is fixed by the next
+! printed LOCATION (lines 9-10, 12-17, 20-22; line 24 by line 31's
+! 021757.00).  The split of blanks was MEASURED at 400 dpi against the
+! character pitch (40.2 px): line 9 two leading / four trailing; line 12
+! one leading, one trailing; line 14 one/one; line 16 one/one; line 20
+! none leading ("SCRATCH" against the comma), one trailing; line 21 one
+! leading, one trailing; line 24 one leading.  The same as p.76.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 18 "(16)00171D8315008B8F": the D prints worn (C-like), the
+!     zeros open.  Printed binary 0000270730142500105617 = 0x00171D83
+!     15008B8F exactly; a C would print ...0270716... .
+!   * lines 11 and 19: zeros print open ("C") in the hex literals; the
+!     printed binaries 0000174733321303310621 and 1046230521062300000000
+!     are 0x000F9DB68B0D9191 and 0x8993151193000000.
+!   * line 36 "T P5CUT" = TP5OUT (open O; p.76's spelling).  Line 33's
+!     remark "CVERLAP" written OVERLAP.
+!   * T BUF01 (line 9): digit 0 as p.76 spells it.
+!
+! CARD SERIALS.  ZE000665 .. ZE000701, one per line, consecutive.
+! (p.409 ended at ZE000609; p.410 not seen.)
+!
+! No externals: the page defines every symbol it uses.
+
+        SLC, (8)021726.0
+! line  1  -
+! line  2  - ------------------------------------------------------------------------
+! line  3  -                    A PRINT SUB - ROUTINE THAT WILL PRINT ASSIGNMENTS
+! line  4  - ------------------------------------------------------------------------
+! line  5  -
+! line  6  -
+! line  7  -
+        CNOP                                                 ! line  8
+TBUF01  (IQSX)DD(BU,64,8),  --- SET UP THE FOLLOWING UNITS ---    X ! line  9
+TMBLK   (IQSX)DD(BU,64,8),        X                          ! line 10  -BLANK MASK
+TBUFB1  DD(BU),(16)000F9DB68B0D9191                          ! line 11  -BYPASS IN RED
+        (IQSX)DD(BU), MOUNT - REEL NUMBER X                  ! line 12
+TREELX  (IQSX)DD(BU,64,8),        X                          ! line 13
+        (IQSX)DD(BU,64,8), ON CHANNEL X                      ! line 14
+TCHANX  (IQSX)DD(BU,24,8),   X                               ! line 15
+        (IQSX)DD(BU,36,8), UNIT X                            ! line 16
+TUNITX  (IQSX)DD(BU),      X                                 ! line 17
+        DD(BU),(16)00171D8315008B8F                          ! line 18
+        DD(BU),(16)8993151193000000                          ! line 19
+TSCRAT  (IQSX)DD(BU,64,8),SCRATCH X                          ! line 20
+TSUBHD  (IQSX)DD(BU,8,8), -- PROBLEM PROGRAM --- X           ! line 21
+TPID    (IQSX)DD(BU,64,8),        X                          ! line 22
+        CNOP                                                 ! line 23
+TMESSY  (A*)DD(BU), I/O REQ. INCOMP WITH MACH CONF.*         ! line 24
+! line 25  -
+TXA     SYN,$2                                               ! line 26
+TXB     SYN,$3                                               ! line 27
+TXC     SYN,$4                                               ! line 28
+TIXZ    SYN,$5                                               ! line 29
+TIXY    SYN,$6                                               ! line 30  -
+THEAD   DD(BU,1),0                                           ! line 31
+TSBHDI  DD(BU,1),0                                           ! line 32  -SUB HEADING IND
+TNGATE  DD(BU,1),0                                           ! line 33  -GATE FOR NOT OVERLAP RE-ITERATION
+YSCRBT  DD(BU,1),(2)0                                        ! line 34
+TP5IN   XW                                                   ! line 35  -CONVERSION BUFFER IN
+TP5OUT  XW                                                   ! line 36  -CONVERSION BUFFER OUT
+TPSAV   XW                                                   ! line 37  -CONVERSION BUFFER INDEX SAVE
+
+!SYM TBUF01 021726.00
+!SYM TMBLK  021733.00
+!SYM TBUFB1 021734.00
+!SYM TREELX 021737.50
+!SYM TCHANX 021742.10
+!SYM TUNITX 021743.20
+!SYM TSCRAT 021746.00
+!SYM TSUBHD 021747.00
+!SYM TPID   021752.00
+!SYM TMESSY 021753.00
+!SYM TXA    000022.00
+!SYM TXB    000023.00
+!SYM TXC    000024.00
+!SYM TIXZ   000025.00
+!SYM TIXY   000026.00
+!SYM THEAD  021757.00
+!SYM TSBHDI 021757.01
+!SYM TNGATE 021757.02
+!SYM YSCRBT 021757.03
+!SYM TP5IN  021760.00
+!SYM TP5OUT 021761.00
+!SYM TPSAV  021762.00
+!CHECK 021734.00 | 0000174733321303310621 | line 11 T BUFB1 DD(BU),(16)000F9DB68B0D9191 (zeros print open) | 64
+!CHECK 021744.00 | 0000270730142500105617 | line 18 DD(BU),(16)00171D8315008B8F (D prints worn) | 64
+!CHECK 021745.00 | 1046230521062300000000 | line 19 DD(BU),(16)8993151193000000 (zeros print open) | 64
+!CHECK 021757.00 | 0 | line 31 T HEAD DD(BU,1),0 | 1
+!CHECK 021757.01 | 0 | line 32 T SBHDI DD(BU,1),0 | 1
+!CHECK 021757.02 | 0 | line 33 T NGATE DD(BU,1),0 | 1
+!CHECK 021757.03 | 0 | line 34 YSCRBT DD(BU,1),(2)0 | 1
+!CHECK 021760.00 | 000000.00+ 000 000000 000000 | line 35 T P5IN XW
+!CHECK 021761.00 | 000000.00+ 000 000000 000000 | line 36 T P5OUT XW (prints "CC0000.00+ CC0 ... CCCCCC": open 0)
+!CHECK 021762.00 | 000000.00+ 000 000000 000000 | line 37 T PSAV XW

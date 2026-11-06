@@ -1,0 +1,183 @@
+! mcp_bootstrap_p396.strap -- MCP printed page 396: the $EOJ program
+! (JOB CONTROL 4, card series ZA): convert compiler names to BCD, break
+! out a card, tell the compilers how big TWS is, and the compiler-chain
+! entry Y C4INT .. Y LASTC (the last-compiler test and SFETCH type area).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.146, read at 400 dpi (900 dpi for
+! lines 17, 29, 53).  Header, READ:
+! "TIME CLOCK 00054041 .  PUNID 22$EOJ  CARD ID ZA000707  DIST. OF 3/C1
+!  3/01  PAGE NUMBER 396"; the heading row's LOCATION field is 020776,
+! line 1's word.
+!
+! THE PAGE.  Contiguous from 020776.40 to 021043.00 (line 56, a full
+! word: next 021044.00); still $EOJ, card serials ZA000707..ZA000762
+! with no gap.  56 lines, all compile except line 29 (a DDI).
+!
+! >>> LINE 29'S DDI IS NOT HANDED TO THE ASSEMBLER. <<<  It prints
+!   29*  000000.00+  +00004763   BU,14 ,06   YCCIN  (AX)DDI(BU,12,6),PCX
+! (the field print is octal: 14 = 12, 06 = 6).  strap_asm refuses DDI;
+! as decks/mcp_bootstrap_p226.strap does for VD15, the deck carries ONE
+! stand-in, "YCCIN SYN(BU,12,6), (8)4763", the printed value and dds.
+! It is NOT the printed card; the card is kept as a comment.
+!
+! >>> LINE 17'S LAST BYTE PRINTS "C0" AND IS 00. <<<  Read at 900 dpi:
+! the same open round this row prints in its octal fields; Z,KSILO can
+! only assemble 00 there (p.261 line 6 Z,$R prints "000011.22 00").
+!
+! >>> LINE 5'S HEX BYTE READS "80" AND IS B0. <<<  At 900 dpi the first
+! glyph has a straight left stem and square top/bottom corners, beside
+! line 53's plain B0 and line 19's round, pinched 8; and LVE prints B0
+! on every landed page (p.204's LVE,,AMR, dozens of rows).  Vision and
+! the 400 dpi read both say 80 -- the B/8 trap.
+!
+! Lines 19, 35 and 49 print a "*" flag after the LOCATION.  Line 34
+! prints a lone "-" remark (comment mark, nothing after it).  Line 50
+! prints "L(BU,48),YTWSTA-" with the comment mark right after the
+! statement; the "-" is NOT a minus (C28-6129 PDF p.5).
+! Line 31 prints "YCIDBT" with a worn B; line 23 prints it plainly.
+! Lines 41/55 (LX targets YDKCRS, YPPDKS) are index words: SYN(BU).
+! YRESTR (lines 44, 45, 49) prints Y plainly, as on p.392 line 41;
+! its address is p.392's WRESTR; copied the existing plain stand-in.
+
+YTCERR  SYN, (8)020451.0             ! $EOJ p.392 LVI label; B line 1 020451.10, half word only
+SCA6    SYN, (8)230622.0             ! landed p.261 label; BD line 4 230622.04
+SJCTWS  SYN(B,25,1), (8)215020.0     ! landed p.103 line 55 VF,(8)42.0; LVE line 5 215020.01
+YUCBF1  SYN(BU,64,8), (8)231366.0    ! landed p.273 line 42 DRZ(BU,64),(8); VF line 7 231366.00+
+SBRK8   SYN, (8)230672.0             ! landed p.263 label; B line 9 230672.10
+YUCBF2  SYN(BU,64,8), (8)231376.0    ! landed p.273 line 43 DRZ(BU,64),(13); VF line 12 231376.00+
+KSILO   SYN(BU,64), (8)220451.0      ! landed p.171 DR(BU,64),(K QUANT) at 220451.00
+SSYRFT  SYN(B,25,1), (8)215007.40    ! landed p.103 line 40 "SSYRFT VF,0"; SV line 54 215007.75
+YCIDBT  SYN, (8)021060.60            ! $EOJ, not landed; CM1111 line 23 021060.60, BIT-EXACT
+YCIODC  SYN, (8)020776.0             ! $EOJ, not landed; LC line 26 020776.32, half word only
+YC4B5   SYN, (8)020111.40            ! $EOJ p.384 SIC label; B line 28 020111.50, half word only
+YEOJS   SYN(BU,1), (8)231501.01      ! landed p.274 line 21 DD(BU,1),(2)0; BBZ line 30 231501.01
+SCOMRG  SYN, (8)215001.0             ! landed p.103 line 8
+SCORG   SYN(BU,1), SCOMRG+0.03       ! landed p.103 line 13; CM0000 line 43 215001.03
+SYSMOD  SYN(BU,2), (8)215001.10      ! landed p.103 line 18 SYN(BU,2),SCOMRG+.8; BB line 44
+YRESTR  SYN, (8)020226.0             ! $EOJ, not landed (p.392's WRESTR address); BB line 44 020226.34, half word only
+YDFCS   SYN(BU), (8)231427.0         ! landed p.274 line 16 DR(BU),(1); ST line 40 231427.00
+YDKCRS  SYN(BU), (8)021056.0         ! $EOJ, not landed; LX line 41 021056.32, half word only
+WJC4G   SYN, (8)020200.40            ! $EOJ p.386 LV label; B line 42 020200.50, half word only
+WJC4Q   SYN, (8)020223.0             ! $EOJ p.386 CM1111 label; B line 46 020223.10, half word only
+YTWSTA  SYN, (8)021060.0             ! $EOJ, not landed; L line 50 021060.00, BIT-EXACT
+SDKMCP  SYN(B,25,1), (8)215007.0     ! landed p.103 line 39 "SDKMCP VF,0"; V+ line 53 215007.34
+YPPDKS  SYN(BU), (8)021055.0         ! $EOJ, not landed; LX line 55 021055.32, half word only
+YCCIN   SYN(BU,12,6), (8)4763        ! STAND-IN for line 29's DDI -- see header
+
+        SLC, (8)020776.40
+        B,YTCERR                                             ! line  1
+        NOP                                                  ! line  2
+        LVI,$15,$+1.0                                        ! line  3
+        BD,SCA6                                              ! line  4  -CONVERT COMPILER NAMES TO BCD.
+        LVE, ,SJCTWS                                         ! line  5
+        CF,80                                                ! line  6
+        VF,YUCBF1                                            ! line  7
+        LVI,$15,$+1.0                                        ! line  8  -BREAK OUT CARD
+        B,SBRK8                                              ! line  9
+        VF,YUCBF1+.6                                         ! line 10
+        CF,71.                                               ! line 11
+        VF,YUCBF2                                            ! line 12
+YPCCT   ,0                                                   ! line 13
+        BEW,$                                                ! line 14
+        BE,$+.32                                             ! line 15
+        LC,$15,YPCCT                                         ! line 16
+        Z,KSILO                                              ! line 17
+        SC,$15,KSILO                                         ! line 18
+        LI(BU,18),4096.                                      ! line 19
+        -(BU,18),SSYRFT                                      ! line 20  -TELL COMPILERS HOW BIG TWS IS.
+        ST(BU,18),KSILO+1.0                                  ! line 21
+        T,$15,YUCBF2,KSILO+2.0                               ! line 22
+        CM1111(BU,1),YCIDBT                                  ! line 23  -SET READ SOURCE BIT
+        LV,$13,SJCTWS                                        ! line 24
+        V+I,$13,15.0                                         ! line 25
+        LC,$13,YCIODC                                        ! line 26
+        CM1111(BU,1),$13+.25                                 ! line 27
+        B,YC4B5                                              ! line 28
+! YCCIN (AX)DDI(BU,12,6),PCX                                 ! line 29  NOT ASSEMBLED (DDI refused) -- see header
+YC4INT  BBZ,YEOJS,YCREJ                                      ! line 30
+        CM0000(BU,1),YCIDBT                                  ! line 31
+        LV,$14,KSILO+.32                                     ! line 32
+        V+I,$14,1.0                                          ! line 33
+        KV,$14,KSILO                                         ! line 34  -
+        BXH,YLASTC                                           ! line 35  -HAS LAST COMPILER RUN
+        BXL,$+1.32                                           ! line 36  -IS THIS THE LAST COMPILER
+        CM1111(BU,1),KSILO+.25                               ! line 37  -SET FLAG
+        SV,$14,KSILO+.32                                     ! line 38  -UPDATE COMPILER POINTER
+        L(BU,48),KSILO+1.0($14)                              ! line 39
+        ST(BU,48),YDFCS                                      ! line 40  -COMPILER TYPE AREA INTO SFETCH
+        LX,$13,YDKCRS                                        ! line 41
+        B,WJC4G                                              ! line 42
+YCREJ   CM0000,SCORG                                         ! line 43
+        BB,SYSMOD,YRESTR                                     ! line 44
+        BZB,KSILO+1.19,YRESTR                                ! line 45
+        B,WJC4Q                                              ! line 46
+YLASTC  CM0000(BU,1),SCORG                                   ! line 47  -SET TOGO  (ZERO)
+        BBZ,KSILO+7.25,YCREJ                                 ! line 48
+        BZB,KSILO+1.19,YRESTR                                ! line 49
+        L(BU,48),YTWSTA                                      ! line 50  -LOAD TYPE AREA FOR COMPILED P.P.
+        ST(BU,48),YDFCS                                      ! line 51
+        LV,$14,KSILO+7.0                                     ! line 52  - COMPUTE NUMBER OF TWS ARCS LEFT.
+        V+,$14,SDKMCP                                        ! line 53
+        SV,$14,SSYRFT                                        ! line 54
+        LX,$13,YPPDKS                                        ! line 55  -SET READ SOURCE TO P.P.
+        LF(BU,18),KSILO+2.                                   ! line 56  -CHECK FOR BSS LOADER
+
+!SYM YPCCT  021004.40
+!SYM YC4INT 021017.40
+!SYM YCREJ  021030.40
+!SYM YLASTC 021034.00
+!CHECK 020776.40 | 020451.10 00 | line 1 B,YTCERR
+!CHECK 020777.00 | 000000.30 00 | line 2 NOP
+!CHECK 020777.40 | 021000.77 01 | line 3 LVI,$15,$+1.0
+!CHECK 021000.00 | 230622.04 00 | line 4 BD,SCA6
+!CHECK 021000.40 | 215020.01 B0 | line 5 LVE, ,SJCTWS -- hex reads "80" at 400 dpi; B0 at 900 dpi (see header)
+!CHECK 021001.00 | 000120 | line 6 CF,80 -- 0o120 = 80
+!CHECK 021001.40 | 231366.00+ | line 7 VF,YUCBF1
+!CHECK 021002.00 | 021003.37 01 | line 8 LVI,$15,$+1.0
+!CHECK 021002.40 | 230672.10 00 | line 9 B,SBRK8
+!CHECK 021003.00 | 231366.06+ | line 10 VF,YUCBF1+.6
+!CHECK 021003.40 | 000107 | line 11 CF,71. -- 0o107 = 71
+!CHECK 021004.00 | 231376.00+ | line 12 VF,YUCBF2
+!CHECK 021004.40 | 000000.00 80 | line 13 YPCCT ,0
+!CHECK 021005.00 | 021005.20 00 | line 14 BEW,$
+!CHECK 021005.40 | 021006.00 00 | line 15 BE,$+.32
+!CHECK 021006.00 | 021004.76 50 | line 16 LC,$15,YPCCT
+!CHECK 021006.40 | 220451.22 00 | line 17 Z,KSILO -- printed "C0": an open round where only 0 can stand (see header)
+!CHECK 021007.00 | 220451.37 50 | line 18 SC,$15,KSILO
+!CHECK 021007.40 | 010000.00 80 422000.20 50 | line 19 LI(BU,18),4096.
+!CHECK 021010.40 | 215007.40 80 022000.30 10 | line 20 -(BU,18),SSYRFT
+!CHECK 021011.40 | 220452.00 80 022000.20 D0 | line 21 ST(BU,18),KSILO+1.0
+!CHECK 021012.40 | 231376.00 80 220453.36 20 | line 22 T,$15,YUCBF2,KSILO+2.0
+!CHECK 021013.40 | 021060.60 80 001000.36 F0 | line 23 CM1111(BU,1),YCIDBT
+!CHECK 021014.40 | 215020.32 30 | line 24 LV,$13,SJCTWS
+!CHECK 021015.00 | 000017.33 05 | line 25 V+I,$13,15.0
+!CHECK 021015.40 | 020776.32 50 | line 26 LC,$13,YCIODC
+!CHECK 021016.00 | 000035.31 80 001000.36 F0 | line 27 CM1111(BU,1),$13+.25
+!CHECK 021017.00 | 020111.50 00 | line 28 B,YC4B5
+!CHECK 021017.40 | 231501.01 80 021030.74 06 | line 30 YC4INT BBZ,YEOJS,YCREJ
+!CHECK 021020.40 | 021060.60 80 001000.00 F0 | line 31 CM0000(BU,1),YCIDBT
+!CHECK 021021.40 | 220451.74 30 | line 32 LV,$14,KSILO+.32
+!CHECK 021022.00 | 000001.35 05 | line 33 V+I,$14,1.0
+!CHECK 021022.40 | 220451.34 90 | line 34 KV,$14,KSILO
+!CHECK 021023.00 | 021034.33 42 | line 35 BXH,YLASTC
+!CHECK 021023.40 | 021025.32 42 | line 36 BXL,$+1.32
+!CHECK 021024.00 | 220451.31 80 001000.36 F0 | line 37 CM1111(BU,1),KSILO+.25
+!CHECK 021025.00 | 220451.75 30 | line 38 SV,$14,KSILO+.32
+!CHECK 021025.40 | 220452.00 8E 060000.20 50 | line 39 L(BU,48),KSILO+1.0($14)
+!CHECK 021026.40 | 231427.00 80 060000.20 D0 | line 40 ST(BU,48),YDFCS
+!CHECK 021027.40 | 021056.32 10 | line 41 LX,$13,YDKCRS
+!CHECK 021030.00 | 020200.50 00 | line 42 B,WJC4G
+!CHECK 021030.40 | 215001.03 80 001000.00 F0 | line 43 YCREJ CM0000,SCORG
+!CHECK 021031.40 | 215001.10 80 020226.34 02 | line 44 BB,SYSMOD,YRESTR
+!CHECK 021032.40 | 220452.23 80 020226.34 00 | line 45 BZB,KSILO+1.19,YRESTR
+!CHECK 021033.40 | 020223.10 00 | line 46 B,WJC4Q
+!CHECK 021034.00 | 215001.03 80 001000.00 F0 | line 47 YLASTC CM0000(BU,1),SCORG
+!CHECK 021035.00 | 220460.31 80 021030.74 06 | line 48 BBZ,KSILO+7.25,YCREJ
+!CHECK 021036.00 | 220452.23 80 020226.34 00 | line 49 BZB,KSILO+1.19,YRESTR
+!CHECK 021037.00 | 021060.00 80 060000.20 50 | line 50 L(BU,48),YTWSTA
+!CHECK 021040.00 | 231427.00 80 060000.20 D0 | line 51 ST(BU,48),YDFCS
+!CHECK 021041.00 | 220460.34 30 | line 52 LV,$14,KSILO+7.0
+!CHECK 021041.40 | 215007.34 B0 | line 53 V+,$14,SDKMCP
+!CHECK 021042.00 | 215007.75 30 | line 54 SV,$14,SSYRFT
+!CHECK 021042.40 | 021055.32 10 | line 55 LX,$13,YPPDKS
+!CHECK 021043.00 | 220453.00 80 022000.06 70 | line 56 LF(BU,18),KSILO+2.

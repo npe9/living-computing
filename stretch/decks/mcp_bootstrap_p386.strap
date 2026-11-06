@@ -1,0 +1,189 @@
+! mcp_bootstrap_p386.strap -- MCP printed page 386: the $EOJ program
+! (PUNID 22$EOJ, card series ZA), YMOVXW .. the general error routine.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.136, read at 400 dpi (900 dpi for
+! doubtful glyphs).  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZA000224  DIST. OF 3/01
+!  3/01  PAGE NUMBER 386"; the heading row's LOCATION field is 020174,
+! line 1's word.
+!
+! >>> NOT SCOMD. <<<  This page is PUNID 22$EOJ, card series ZA, at
+! 020174.00 -- a different overlay from SCOMD (234424+, series WA).
+! No $EOJ page has landed; every $EOJ-local external below is a stand-in
+! taken from THIS page's binary.  Resident symbols (S..., D..., Y... of
+! pp.99-319) are copied from the landed decks.
+!
+! THE PAGE.  Contiguous from 020174.00 to 020232.40 (55 lines).
+!   lines  1-31  YMOVXW .. ,SDRET (the JC4 return, WJC4G1/WJC4G/WJC4G2)
+!   lines 32-36  remark banner: GENERAL ERROR ROUTINE - PRINTS DIAGNOSIS
+!                OF ERROR AND RETURNS TO BEGINNING , SKIPPING DEJSCN IF
+!                EOJ CARD WAS ENCOUNTERED.
+!   lines 37-55  YBRLOG .. ,SDRET
+!
+! GLYPHS SETTLED OTHER THAN BY PLAIN INK:
+!   * line 1 "XW,C,0,C,4": open rounds; 0 (binary 000000.00+ 100 000000
+!     000000 -- value, count and refill all zero).
+!   * line 1 YMCVXW, line 4 YMCJRP, line 42 YECJP, line 47 WMCVIQ: this
+!     drum prints O open.  YMOVXW (used by lines 2, 5), WMOVIQ (used by
+!     44, 45, closed O in line 45's "WMOVIQ"), YEOJP (the EOJ family:
+!     YEOJS is landed p.274 and prints "YEOJS" closed on line 48).
+!   * line 44 label "WJC4Q": at 900 dpi the last glyph has the diagonal
+!     tail of WMOVIQ's Q on the same row and no inward bar of line 8's
+!     G; and the line carries no flag, as a second WJC4G would.  Q.
+!   * line 30 "BE,CMCP" / line 31 ",SCRET": D worn to C; DMCP (000040),
+!     SDRET (000041), as lines 54-55 print them plainly.
+!   * line 41 B,YRESTR prints Y plainly although line 48 defines WRESTR
+!     at the same 020226.00; kept as printed with a stand-in.
+!
+! FLAGS: a "*" prints after the LOCATION of lines 4 (V+I,$11,15.),
+! 20 (CM0000(BU,2),SSPFIX -- a 2-bit field on a (BU,1) symbol) and 47
+! (XW,WBREAK+1.0,0,1,0).  Recorded, not explained.
+!
+! CARD SERIALS: ZA000224 .. ZA000277; ZA000262 prints on BOTH lines 39
+! and 40 (900 dpi).
+
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label
+SCORG   SYN(BU,1), SCOMRG+0.03       ! landed p.103 line 13; BB line 7 215001.03
+SPINCL  SYN(BU,1), SCOMRG+.6         ! landed p.103 line 16; CM1111 line 19 215001.06
+SSPFIX  SYN(BU,1), SCOMRG+.11        ! landed p.103 line 20; CM0000 line 20 215001.13
+SJ1FUL  SYN(BU,1), SCOMRG.16         ! landed p.103 line 25; BZB line 26 215001.20
+SMARK   SYN, (8)215012.40            ! landed p.103 line 46 VF; LV line 21 215012.74
+SLRBU   SYN, (8)215324.0             ! landed p.116 line 21
+SREADS  SYN(BU), (8)215467.0         ! landed p.116 line 36 "SREADS XW,0" (XW label)
+SPRIME  SYN, (8)215570.0             ! landed p.118 line 48
+SPRIMR  SYN, (8)215571.0             ! landed p.118 line 49
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"
+SDRET   SYN, 33.0                    ! landed p.105 "S D RET SYN,DRET", DRET SYN,33.0
+DEOJ    SYN, 65.0                    ! landed p.105 "D EOJ"; line 52 000101.00
+DRESLD  SYN, 66.0                    ! landed p.105 "D RESLD"; line 25 000102.00
+SJC1    SYN, 76.32                   ! landed; printed p.106 line 8; line 29 000114.40
+YPR     SYN(BU,32,8), (8)231172.0    ! landed p.270 line 2 B,YPRSPL (half word)
+YPRRET  SYN(BU,32,8), (8)231204.40   ! landed p.270 line 22 BE,0 (half word)
+YLOL1   SYN, (8)231426.0             ! not landed; as p.271; SV line 10 231426.35, CM1111 line 12 .31
+YLOL2   SYN, (8)231426.40            ! not landed; as p.271; SC line 11 231426.75
+YEDLL   SYN(N), (8)231430.0          ! landed p.274 line 17 DRZ(N),(11); SV line 22 231430.75
+YEOJS   SYN(BU,1), (8)231501.01      ! landed p.274 line 21 DD(BU,1),(2)0
+YMOVE   SYN, (8)020172.40            ! $EOJ, not landed; CB line 6 020172.66 (.40 = half-word bit), half word only
+YMOVEJ  SYN, (8)020501.0             ! $EOJ, not landed; BZXCZ line 3 020501.30, half word only
+YC4INT  SYN, (8)021017.40            ! $EOJ, not landed; BB line 7 021017.74, half word only
+YC4SMB  SYN, (8)020726.0             ! $EOJ, not landed; LVI line 38 020726.03, TI line 37 020726.20
+YRESTR  SYN, (8)020226.0             ! $EOJ, not landed; B line 41 020226.10 (= line 48 WRESTR's address)
+TMOVE   SYN, (8)022326.0             ! $EOJ, not landed; B line 46 022326.10, half word only
+WJOR2   SYN(U), (8)231443.0          ! landed p.274 line 18 DRZ(U),15
+WBREAK  SYN,WJOR2+1.0                ! p.392 line 16 defining form; not landed; XW line 47 value WBREAK+1.0 = 231445.00
+
+        SLC, (8)020174.00
+YMOVXW  XW,0,0,0,4                                           ! line  1
+        LX,$10,YMOVXW                                        ! line  2
+        BZXCZ,YMOVEJ                                         ! line  3
+YMOJRP  V+I,$11,15.                                          ! line  4
+        SV,$11,YMOVXW                                        ! line  5
+        CB,$11,YMOVE                                         ! line  6
+WJC4G1  BB,SCORG,YC4INT                                      ! line  7
+WJC4G   LV,$14,SLRBU+.32                                     ! line  8
+        LC,$14,SLRBU                                         ! line  9
+        SV,$14,YLOL1                                         ! line 10  -LOWER LIMIT), AND YLOL1(LOWER
+        SC,$14,YLOL2                                         ! line 11
+WJC4G2  CM1111(BU,1),YLOL1+.25                               ! line 12
+        SX,$13,SREADS                                        ! line 13
+        Z,SLRBU+1.0                                          ! line 14  -SET LOWER REGISTERS
+        LCI,$1,27.                                           ! line 15  -TO ZERO
+        T,$1,SLRBU+1.0,SLRBU+2.0                             ! line 16
+        CM1111(BU,1),SLRBU+9.21                              ! line 17  -SET IF MASK TO ONE
+        CM1111(BU,1),SLRBU+9.0                               ! line 18
+        CM1111(BU,1),SPINCL                                  ! line 19
+        CM0000(BU,2),SSPFIX                                  ! line 20
+        LV,$14,SMARK                                         ! line 21  -SET UP $EDUMP
+        SV,$14,YEDLL+.32                                     ! line 22
+        SIC,SPRIMR                                           ! line 23
+        BD,SPRIME                                            ! line 24
+        ,DRESLD                                              ! line 25
+        BZB,SJ1FUL,$+2.32                                    ! line 26
+        SIC,SPRIMR                                           ! line 27
+        BD,SPRIME                                            ! line 28
+        ,SJC1                                                ! line 29
+        BE,DMCP                                              ! line 30  printed "BE,CMCP"
+        ,SDRET                                               ! line 31  printed ",SCRET"
+! -                                                            line 32
+! - ***************************************************        line 33
+! - GENERAL ERROR ROUTINE - PRINTS DIAGNOSIS OF ERROR AND RETURNS     line 34
+! - TO BEGINNING , SKIPPING DEJSCN IF EOJ CARD WAS ENCOUNTERED.       line 35
+! - ***************************************************        line 36
+YBRLOG  TI,8,0($10),YC4SMB                                   ! line 37
+        LVI,1,YC4SMB                                         ! line 38
+        SIC,YPRRET                                           ! line 39
+        B,YPR                                                ! line 40
+        B,YRESTR                                             ! line 41
+YEOJP   SYN,$                                                ! line 42  printed "YECJP"
+! -                                                            line 43
+WJC4Q   CM1111(BU,1),WMOVIQ+.24                              ! line 44  -INITIAL ENTRY BIT
+        LVI,$15,WMOVIQ                                       ! line 45  -
+        B,TMOVE                                              ! line 46  -TO MOVE
+WMOVIQ  XW,WBREAK+1.0,0,1,0                                  ! line 47  -      TO REJECT NEXT JOB
+WRESTR  CM1111,YEOJS                                         ! line 48
+        CM0000(BU,1),SPINCL                                  ! line 49
+        SIC,SPRIMR                                           ! line 50  -
+        BD,SPRIME                                            ! line 51  -
+        ,DEOJ                                                ! line 52  -
+        BE,$+.32                                             ! line 53  -
+        B,DMCP                                               ! line 54  -
+        ,SDRET                                               ! line 55  -
+
+!SYM YMOVXW 020174.00
+!SYM YMOJRP 020176.00
+!SYM WJC4G1 020177.40
+!SYM WJC4G  020200.40
+!SYM WJC4G2 020202.40
+!SYM YBRLOG 020220.00
+!SYM YEOJP  020223.00
+!SYM WJC4Q  020223.00
+!SYM WMOVIQ 020225.00
+!SYM WRESTR 020226.00
+!CHECK 020174.00 | 000000.00+ 100 000000 000000 | line 1 YMOVXW XW,0,0,0,4 (printed "XW,C,0,C,4"; binary's leading zeros print open)
+!CHECK 020175.00 | 020174.24 10 | line 2 LX,$10,YMOVXW
+!CHECK 020175.40 | 020501.30 40 | line 3 BZXCZ,YMOVEJ
+!CHECK 020176.00 | 000017.27 05 | line 4 YMOJRP V+I,$11,15. (flagged "*")
+!CHECK 020176.40 | 020174.27 30 | line 5 SV,$11,YMOVXW
+!CHECK 020177.00 | 020172.66 48 | line 6 CB,$11,YMOVE
+!CHECK 020177.40 | 215001.03 80 021017.74 02 | line 7 WJC4G1 BB,SCORG,YC4INT
+!CHECK 020200.40 | 215324.74 30 | line 8 WJC4G LV,$14,SLRBU+.32
+!CHECK 020201.00 | 215324.34 50 | line 9 LC,$14,SLRBU
+!CHECK 020201.40 | 231426.35 30 | line 10 SV,$14,YLOL1
+!CHECK 020202.00 | 231426.75 50 | line 11 SC,$14,YLOL2
+!CHECK 020202.40 | 231426.31 80 001000.36 F0 | line 12 WJC4G2 CM1111(BU,1),YLOL1+.25
+!CHECK 020203.40 | 215467.33 10 | line 13 SX,$13,SREADS
+!CHECK 020204.00 | 215325.22 00 | line 14 Z,SLRBU+1.0
+!CHECK 020204.40 | 000033.03 02 | line 15 LCI,$1,27.
+!CHECK 020205.00 | 215325.00 80 215326.02 20 | line 16 T,$1,SLRBU+1.0,SLRBU+2.0 (last byte prints "2C"; open round = 0)
+!CHECK 020206.00 | 215335.25 80 001000.36 F0 | line 17 CM1111(BU,1),SLRBU+9.21
+!CHECK 020207.00 | 215335.00 80 001000.36 F0 | line 18 CM1111(BU,1),SLRBU+9.0
+!CHECK 020210.00 | 215001.06 80 001000.36 F0 | line 19 CM1111(BU,1),SPINCL
+!CHECK 020211.00 | 215001.13 80 002000.00 F0 | line 20 CM0000(BU,2),SSPFIX (flagged "*")
+!CHECK 020212.00 | 215012.74 30 | line 21 LV,$14,SMARK
+!CHECK 020212.40 | 231430.75 30 | line 22 SV,$14,YEDLL+.32
+!CHECK 020213.00 | 215571.00 80 | line 23 SIC,SPRIMR
+!CHECK 020213.40 | 215570.04 00 | line 24 BD,SPRIME
+!CHECK 020214.00 | 000102.00 80 | line 25 ,DRESLD
+!CHECK 020214.40 | 215001.20 80 020217.34 00 | line 26 BZB,SJ1FUL,$+2.32
+!CHECK 020215.40 | 215571.00 80 | line 27 SIC,SPRIMR
+!CHECK 020216.00 | 215570.04 00 | line 28 BD,SPRIME
+!CHECK 020216.40 | 000114.40 80 | line 29 ,SJC1
+!CHECK 020217.00 | 000040.00 00 | line 30 BE,DMCP (printed "BE,CMCP")
+!CHECK 020217.40 | 000041.00 80 | line 31 ,SDRET (printed ",SCRET")
+!CHECK 020220.00 | 000000.00 8A 020726.20 A0 | line 37 YBRLOG TI,8,0($10),YC4SMB
+!CHECK 020221.00 | 020726.03 01 | line 38 LVI,1,YC4SMB
+!CHECK 020221.40 | 231204.40 80 | line 39 SIC,YPRRET
+!CHECK 020222.00 | 231172.10 00 | line 40 B,YPR
+!CHECK 020222.40 | 020226.10 00 | line 41 B,YRESTR
+!CHECK 020223.00 | 020225.30 80 001000.36 F0 | line 44 WJC4Q CM1111(BU,1),WMOVIQ+.24
+!CHECK 020224.00 | 020225.37 01 | line 45 LVI,$15,WMOVIQ
+!CHECK 020224.40 | 022326.10 00 | line 46 B,TMOVE
+!CHECK 020225.00 | 231445.00+ 000 000000 000001 | line 47 WMOVIQ XW,WBREAK+1.0,0,1,0 (flagged "*")
+!CHECK 020226.00 | 231501.01 80 001000.36 F0 | line 48 WRESTR CM1111,YEOJS
+!CHECK 020227.00 | 215001.06 80 001000.00 F0 | line 49 CM0000(BU,1),SPINCL
+!CHECK 020230.00 | 215571.00 80 | line 50 SIC,SPRIMR
+!CHECK 020230.40 | 215570.04 00 | line 51 BD,SPRIME
+!CHECK 020231.00 | 000101.00 80 | line 52 ,DEOJ
+!CHECK 020231.40 | 020232.00 00 | line 53 BE,$+.32
+!CHECK 020232.00 | 000040.10 00 | line 54 B,DMCP
+!CHECK 020232.40 | 000041.00 80 | line 55 ,SDRET

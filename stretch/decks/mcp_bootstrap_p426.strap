@@ -1,0 +1,138 @@
+! mcp_bootstrap_p426.strap -- MCP printed page 426: the $EOJ program's
+! reassembly of the tape ASSIGN routine, "MODIFY THE CHAN/UNIT STATUS
+! TABLES" (TM1DAA .. TM1DX), "ZERO THE I/O REQUEST TBL AND REEL SLOT"
+! (TM2AC, TM1DB) and "THE UNIT AREA TABLE IS ALREADY GENERATED FOR THIS
+! IOD CARD" (TM1D, TN5).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.176, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZF000436  DIST. OF 3/01
+!  3/01  PAGE NUMBER 426"; the heading row's LOCATION field is blank.
+!
+! >>> CARD SERIES ZF (as p.425), PUNID 22$EOJ.  No SLC, no PUNID on the
+! page; the origin below is line 5's printed LOCATION.  No TAIL. <<<
+!
+! THE PAGE.  42 lines, every line number prints a "*"; a further "*"
+! after the LOCATION on lines 15 and 42 (recorded, not interpreted).
+! Contiguous 022466.00 .. 022507.40 (line 42, a full word; next location
+! 022510.40).  p.425 ends at 022465.40 (half word), so line 5 continues
+! it at 022466.00 -- p.425's TM1DAA stand-in.  Remarks: 1-4 (boxed
+! banner "MODIFY THE CHAN/UNIT STATUS TABLES"), 8, 10, 13, 17, 20-22
+! (banner), 28, 33-35 (banner), 39, 41.  The same source as volume 1
+! pp.90-91.
+!
+! CARD SERIALS.  ZF000436 .. ZF000477, one per line, consecutive.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!  * labels print "T M1DAA", "T M1DA", "T M1DX", "T M2AC", "T M1DB",
+!    "T M1D", "T N5" (blank after T, as p.425); D's read worn
+!    (TM1D: p.425 lines 19/21 address 022504.40, printed here as the
+!    location of line 36; volume 1 p.90-91 spellings).
+!  * line 29 "...,TM1DB-IF NOT ...": the "-" right after the statement
+!    is the comment mark (C28-6129 PDF p.5); TM1DB's D reads worn (line
+!    31 defines TM1DB; binary 022503.74 = 022503.40 + BZB's .34).
+!  * line 42 prints "TIOCK" = TIODK (worn D; p.419 line 42 defines
+!    TIODK SYN(BU,12),1.6; binary 000001.06 with length 014 = 12).
+!  * lines 14, 16 "CMOCOO"/"CMOOOO" = CM0000 (connective digits; F0
+!    byte, opcode field 000 as p.425's CM0101/CM1111 rows).
+!  * line 23 hx "83"/line 29 h2 "00": B rows; open zeros.
+!  * line 36 remark "REF NC." (= NO.; open O).
+!
+! EXTERNALS.  Copied in their DEFINING forms from the scratch / b15
+! neighbours (p.418 index names, TLIMB SYN,SBAPP; p.419 field SYNs) and
+! the resident pages (pp.288/289).  Each agrees with this page's binary.
+
+TMXB    SYN,$3                       ! p.418 line 24; byte 83
+TMXE    SYN,$6                       ! p.418 line 27; byte 86
+TMXG    SYN,$8                       ! p.418 line 29; byte 88
+TMXEE   SYN,$9                       ! p.418 line 30; byte 89
+TMXGA   SYN,$11                      ! p.418 line 32; LV line 25 000011.26
+TUNREF  SYN(BU,12),0.48              ! p.419 line 2; L line 36 000000.60
+TIODK   SYN(BU,12),1.6               ! p.419 line 42; M+1 line 42 000001.06
+TUNTBA  SYN(BU,18),0.0               ! landed p.289 line 6
+TSEL    SYN(BU,1),0.39               ! landed p.289 line 13; line 7 .47
+TCHOWN  SYN(BU,1),0.32               ! landed p.289 line 12; line 12 .40
+TUNASG  SYN(BU,1),0.29               ! landed p.289 line 11; line 14 .35
+TUNRES  SYN(BU,1),0.62               ! landed p.289 line 17; line 15 .76
+TOVRES  SYN(BU,1),0.63               ! landed p.289 line 18; line 16 .77
+TFREEL  SYN(BU,18),0.28              ! landed p.288 line 36; line 23 .34
+TLAST   SYN(BU,1),0.18               ! landed p.288 line 34; line 29 1.22
+TIOREQ  SYN(BU,64), (8)232307.0      ! landed p.288 line 26 DRZ(BU,64); LVI line 30 232306.07
+SBAPP   SYN(B,25,1), (8)215005.0     ! landed p.103 line 35 "S BAPP VF,0"; as p.418
+TLIMB   SYN,SBAPP                    ! p.418 line 16 (defining form); + line 37 215005.00
+
+        SLC, (8)022466.00
+! line  1  - ----------------------------------------------------------
+! line  2  -              MODIFY THE CHAN/UNIT STATUS TABLES
+! line  3  - ----------------------------------------------------------
+! line  4  -
+TM1DAA  +,TUNTBA(TMXG),46                                    ! line  5  -COMPUTE UNIT TABLE ADDR. IN MULTI CAS
+        LV,TMXG,$R                                           ! line  6  -GET POINTER FOR UNIT TABLE
+        CM1111,TSEL(TMXG)                                    ! line  7  -SET THE SEL BIT TO 1 FOR ALL MULTI CH
+! line  8  -
+TM1DA   SV,TMXE,0.0(TMXG)                                    ! line  9  -STORE UNIT AREA TBL ADDRESS
+! line 10  -
+        LF(BU,1),.26($15)                                    ! line 11  -GET THE OWNERSHIP BIT
+        SF,TCHOWN(TMXG)                                      ! line 12
+! line 13  -
+        CM0000,TUNASG(TMXG)                                  ! line 14  -SET THE UNIT ASSIGNED BIT
+        BBZ,TUNRES(TMXG),TM1DX                               ! line 15  -RESET THE NOT OV RES FIRST
+        CM0000,TOVRES(TMXG)                                  ! line 16  -
+! line 17  -
+TM1DX   LV,TMXEE,TMXE                                        ! line 18  -KEEP ONE IX TO BEGINNING OF TBL
+        V+I,TMXE,9.0                                         ! line 19  -ADVANCE THE OTHER TO END + 1
+! line 20  -
+! line 21  -          ZERO THE I/O REQUEST TBL AND REEL SLOT
+! line 22  -
+        L,TFREEL(TMXB),46                                    ! line 23  -GET THE FIRST REEL ADDRESS
+        BRZ,TM2AC                                            ! line 24  -NO REEL
+        LV,TMXGA,$R                                          ! line 25
+        Z,0.0(TMXGA)                                         ! line 26  -ZERO THE REEL SLOT
+TM2AC   Z,0.0(TMXB)                                          ! line 27  -ZERO THE I/O REQ TBL SLOT
+! line 28  -
+        BZB,TLAST+1.0(TMXB),TM1DB                            ! line 29  -IF NOT LAST ENTRY IN THE I/O REQ TBL (comment mark "-" dropped)
+        LVI,TMXB,TIOREQ-1.                                   ! line 30
+TM1DB   V+IC,TMXB,1.0                                        ! line 31
+        B,TN5                                                ! line 32
+! line 33  -
+! line 34  -          THE UNIT AREA TABLE IS ALREADY GENERATED FOR THIS IOD CARD
+! line 35  -
+TM1D    L,TUNREF(TMXG),46                                    ! line 36  -GET THE REF NC.
+        +(BU,18),TLIMB,46                                    ! line 37  -COMPUTE SYMB. I/O LOC ADDRESS
+        LV,TMXG,$R                                           ! line 38
+! line 39  -
+        LV,TMXEE,0.0(TMXG)                                   ! line 40  -GET UNIT AREA ADDRESS
+! line 41  -
+TN5     M+1,TIODK(TMXEE)                                     ! line 42  -ADD TO IOD COUNT (printed "TIOCK")
+
+!SYM TM1DAA 022466.00
+!SYM TM1DA  022470.40
+!SYM TM1DX  022476.00
+!SYM TM2AC  022501.40
+!SYM TM1DB  022503.40
+!SYM TM1D   022504.40
+!SYM TN5    022507.40
+!CHECK 022466.00 | 000000.00 88 022027.20 10 | line 5 T M1DAA +,TUNTBA(TMXG),46
+!CHECK 022467.00 | 000011.20 30 | line 6 LV,TMXG,$R
+!CHECK 022467.40 | 000000.47 88 001000.36 F0 | line 7 CM1111,TSEL(TMXG)
+!CHECK 022470.40 | 000000.15 38 | line 9 T M1DA SV,TMXE,0.0(TMXG)
+!CHECK 022471.00 | 000000.32 8F 001000.06 70 | line 11 LF(BU,1),.26($15)
+!CHECK 022472.00 | 000000.40 88 001000.12 F0 | line 12 SF,TCHOWN(TMXG)
+!CHECK 022473.00 | 000000.35 88 001000.00 F0 | line 14 CM0000,TUNASG(TMXG)
+!CHECK 022474.00 | 000000.76 88 022476.34 06 | line 15 BBZ,TUNRES(TMXG),TM1DX
+!CHECK 022475.00 | 000000.77 88 001000.00 F0 | line 16 CM0000,TOVRES(TMXG)
+!CHECK 022476.00 | 000026.22 30 | line 18 T M1DX LV,TMXEE,TMXE
+!CHECK 022476.40 | 000011.15 05 | line 19 V+I,TMXE,9.0
+!CHECK 022477.00 | 000000.34 83 022027.20 50 | line 23 L,TFREEL(TMXB),46
+!CHECK 022500.00 | 022501.74 C2 | line 24 BRZ,TM2AC
+!CHECK 022500.40 | 000011.26 30 | line 25 LV,TMXGA,$R
+!CHECK 022501.00 | 000000.22 0B | line 26 Z,0.0(TMXGA)
+!CHECK 022501.40 | 000000.22 03 | line 27 T M2AC Z,0.0(TMXB)
+!CHECK 022502.00 | 000001.22 83 022503.74 00 | line 29 BZB,TLAST+1.0(TMXB),TM1DB
+!CHECK 022503.00 | 232306.07 01 | line 30 LVI,TMXB,TIOREQ-1.
+!CHECK 022503.40 | 000001.07 06 | line 31 T M1DB V+IC,TMXB,1.0
+!CHECK 022504.00 | 022507.50 00 | line 32 B,TN5
+!CHECK 022504.40 | 000000.60 88 014027.20 50 | line 36 T M1D L,TUNREF(TMXG),46
+!CHECK 022505.40 | 215005.00 80 022027.20 10 | line 37 +(BU,18),TLIMB,46
+!CHECK 022506.40 | 000011.20 30 | line 38 LV,TMXG,$R
+!CHECK 022507.00 | 000000.22 38 | line 40 LV,TMXEE,0.0(TMXG)
+!CHECK 022507.40 | 000001.06 89 014000.22 B0 | line 42 T N5 M+1,TIODK(TMXEE) (printed "TIOCK")

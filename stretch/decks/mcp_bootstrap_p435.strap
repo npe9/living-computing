@@ -1,0 +1,95 @@
+! mcp_bootstrap_p435.strap -- MCP printed page 435: a fragment of the
+! $EOJ tape release loop (RTCSAV, REMIND, T JNTP), card series ZZ.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.185, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZZ000055  DIST. OF 3/01
+!  3/01  PAGE NUMBER 435"; the heading row's LOCATION field is 023047,
+! line 1's word.
+!
+! >>> CARD SERIES ZZ (new; pp.416-425 were ZF), PUNID still 22$EOJ.
+! No SLC, no PUNID, no TAIL on the page; the origin below is line 1's
+! printed LOCATION. <<<
+!
+! THE PAGE.  15 lines, then blank paper.  Contiguous 023047.00 ..
+! 023063.00 (line 15, a VFL full word; next location 023064.00).
+! Every line number prints a "*"; a further "*" after the LOCATION on
+! lines 2 and 15 (recorded, not interpreted).
+!
+! CARD SERIALS.  ZZ000055 .. ZZ000069, one per line, consecutive.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!  * line 5 prints "CMOCOO(BU,2)" = CM0000 (open 0s; a connective's
+!    mode digits are 0/1 only); binary 002000.00 = length 2, CM0000.
+!  * line 6 prints "RSWTCF+1.32" = RSWTCH (H worn to F): line 9 prints
+!    RSWTCH.19, and both binaries give RSWTCH = 023044.32
+!    (023044.63 - .19; 023046.00 - 1.32).
+!  * line 10 prints "SCHCP(TJD)" = SCHOP (open O; p.99's spelling);
+!    binary 000000.32 = 0.26.  Line 10's label "T JNTP" as printed
+!    (C22-6728 mentions "TJNTPS" in prose).
+!  * line 7 "REMIND"; line 4 prints "REMINC" (worn D): same address.
+!  * line 5 h2 prints "002000.CC FC" and is 002000.00 F0: the octal
+!    ".CC" can only be 00, and the hex byte's last glyph is the same
+!    open round (900 dpi).  A connective's low nibble is i2, the offset
+!    index, and no second operand is printed, so only 0 can stand.
+!    Line 9's h2 "0C" is a real 0C (BZB1 assembles it).
+!  * line 14 "$LV": the "$" error-suppress prefix, as printed.
+!
+! EXTERNALS.  Resident field SYNs copied from p.99/p.103/p.289/p.419.
+! The TJx index names, RUNLOA, RSWTCH, TJTAP, TJTEST are not defined
+! on any landed page: values from this page's binary, plain SYN.
+
+SCHOP   SYN(BU,1), 0.26              ! p.99 line 22; BZB line 10 .32
+STATI   SYN(BU,1), 0.26              ! p.99 line 23
+SSETUP  SYN(BU,1), 0.31              ! p.99 line 29; BB line 11 .37
+SSEL    SYN(BU,1), 0.39              ! p.99 line 32; BB line 12 .47
+SMOUNT  SYN(BU,1), 0.51              ! p.99 line 42; BZB line 7 .63
+SREW    SYN(BU,1), 0.52              ! p.99 line 43; BZBZ line 4 .64
+SIMNT   SYN(BU,1), 0.53              ! p.99 line 44; CM1111 line 8 .65
+SCOMRG  SYN, (8)215001.0             ! landed p.103 line 8
+SPINCL  SYN(BU,1), SCOMRG+.6         ! p.103 line 16; BB line 3 215001.06
+TCHANN  SYN(BU,7),0.12               ! p.419 line 40
+TEQUIP  SYN(BU,4),0.52               ! landed p.289 line 15
+TJB     SYN,$2                       ! not seen; $LV line 14, BIT-EXACT
+TJC     SYN,$3                       ! not seen; byte 83
+TJD     SYN,$4                       ! not seen; byte 84
+TJE     SYN,$5                       ! not seen; $LV line 14, BIT-EXACT
+RUNLOA  SYN, (8)023041.0             ! not seen; BB line 3 023041.34, half word only
+RSWTCH  SYN, (8)023044.40            ! not seen; BZB1 line 9 023044.63 - .19 (decimal 51-19)
+TJTAP   SYN, (8)023104.40            ! not seen; B line 2 023105.50 = TJTAP+1.0 +.10
+TJTEST  SYN, (8)023103.40            ! not seen; BZB line 10 / BB line 12 023103.74, half word only
+
+        SLC, (8)023047.00
+        CM1111(BU,2),.52(TJC)                                ! line  1
+        B,TJTAP+1.0                                          ! line  2
+RTCSAV  BB,SPINCL,RUNLOA                                     ! line  3
+        BZBZ,SREW(TJC),REMIND                                ! line  4  (printed "REMINC")
+        CM0000(BU,2),STATI(TJC)                              ! line  5  (printed "CMOCOO")
+        BE,RSWTCH+1.32                                       ! line  6  (printed "RSWTCF")
+REMIND  BZB,SMOUNT(TJC),$+2.0                                ! line  7
+        CM1111(BU,1),SIMNT(TJC)                              ! line  8
+        BZB1,RSWTCH.19,RUNLOA+2.0                            ! line  9
+TJNTP   BZB,SCHOP(TJD),TJTEST                                ! line 10  -IF CHAN IS NOT OPERATING (printed "SCHCP")
+        BB,SSETUP(TJC),$                                     ! line 11
+        BB,SSEL(TJC),TJTEST                                  ! line 12  -IFUNIT IS NOT SELECTED DONT RELEASE
+        BD,$+.32                                             ! line 13  -PLEASE DISABLE FOR THE FOLLOWING
+        $LV,TJE,TCHANN(TJB)                                  ! line 14  -GET THE CHANN NUMBER
+        LF,TEQUIP(TJD)                                       ! line 15  -GET THE TYPE OF UNIT
+
+!SYM RTCSAV 023050.40
+!SYM REMIND 023054.00
+!SYM TJNTP  023057.00
+!CHECK 023047.00 | 000000.64 83 002000.36 F0 | line 1 CM1111(BU,2),.52(TJC)
+!CHECK 023050.00 | 023105.50 00 | line 2 B,TJTAP+1.0
+!CHECK 023050.40 | 215001.06 80 023041.34 02 | line 3 RTCSAV BB,SPINCL,RUNLOA
+!CHECK 023051.40 | 000000.64 83 023054.34 04 | line 4 BZBZ,SREW(TJC),REMIND
+!CHECK 023052.40 | 000000.32 83 002000.00 F0 | line 5 CM0000(BU,2),STATI(TJC) (printed "CMOCOO"; h2 prints "FC": open 0, i2 only 0)
+!CHECK 023053.40 | 023046.00 00 | line 6 BE,RSWTCH+1.32 (printed "RSWTCF")
+!CHECK 023054.00 | 000000.63 83 023056.34 00 | line 7 REMIND BZB,SMOUNT(TJC),$+2.0
+!CHECK 023055.00 | 000000.65 83 001000.36 F0 | line 8 CM1111(BU,1),SIMNT(TJC)
+!CHECK 023056.00 | 023044.63 80 023043.34 0C | line 9 BZB1,RSWTCH.19,RUNLOA+2.0
+!CHECK 023057.00 | 000000.32 84 023103.74 00 | line 10 T JNTP BZB,SCHOP(TJD),TJTEST (printed "SCHCP")
+!CHECK 023060.00 | 000000.37 83 023060.34 02 | line 11 BB,SSETUP(TJC),$
+!CHECK 023061.00 | 000000.47 83 023103.74 02 | line 12 BB,SSEL(TJC),TJTEST
+!CHECK 023062.00 | 023062.44 00 | line 13 BD,$+.32
+!CHECK 023062.40 | 000000.12 32 | line 14 $LV,TJE,TCHANN(TJB)
+!CHECK 023063.00 | 000000.64 84 004000.06 70 | line 15 LF,TEQUIP(TJD)

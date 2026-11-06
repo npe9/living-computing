@@ -1,0 +1,180 @@
+! mcp_bootstrap_p378.strap -- MCP printed page 378: the SYSTEM COMMAND
+! package's OFFLINE command, its tail (lines 1-24: Z OFF 20, Z OFF 10,
+! Z OFF 72), and the opening of the TIME CONSTANT SETUP (Z TCC, lines
+! 30-49).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.128, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22SCOMD  CARD ID WA000843  DIST. OF 3/01
+!  3/01  PAGE NUMBER 378"; the heading row's LOCATION field is 235454,
+! line 1's word.
+!
+! THE PAGE.  49 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 9, 31 and 48.  Contiguous 235454.00 .. 235510.40
+! (line 49, a half word; next 235511.00).  Still SCOMD: no PUNID, no
+! SLC, card series WA throughout.  No TAIL.
+!   lines  1-24  ,.32 (the third word of p.377's B,DMCP / ,SKOM call),
+!                B,ZOFF72, Z OFF 20 (C1100 IPL-mode test), Z OFF 10
+!                (LI/CM mode bits), Z OFF 72 (BZBZ tapes-assigned test,
+!                two ZCOM90/ZDSN01 linkages, CM1111 SPPBT1).
+!   lines 25-29  remarks (banner "TIME CONSTANT SETUP" on 27).
+!   lines 30-49  Z TCC .. Z TCC 01 (L(BU,26),$TC -GET TIME) .. Z TCC 02.
+!
+! JOIN.  p.377 ends with ,SKOM at 235453.40, a half word, so line 1's
+! 235454.00 continues it; p.361's B,ZTCC prints 235473.50 = line 30.
+! p.379 (Vision reading) opens at 235511.00 = line 49 + one half word.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "ZCFF72" (lines 2, 16) = ZOFF72; "Z CFF 10" (line 11) = ZOFF10,
+!     as the ZOFF family of p.377 (open O; line 3 and 7 print Z OFF
+!     closed).  Line 2's B prints 235466.10 = line 16's location.
+!   * "C11CO" (line 6) = C1100: open rounds in a connective code are 0.
+!   * "CMOCOO" (line 13) = CM0000; "CTICO10"/"CTIC010" = CTI0010.
+!   * "LVI,O,YC1C" (line 4): the index field is a number, 0; the j
+!     nibble compiles 0.
+!   * "SV,C,J RET A" (line 5): C in a numeric operand is 0, as landed
+!     p.199 ("SV,C," / "SX,C,"); the j nibble compiles 0 (.41).
+!   * "Z CCM 90" (line 17) = ZCOM90 (lines 8, 20 print Z COM 90).
+!   * >>> LINE 35 PRINTS "JCN" AND IT IS JON. <<<  The binary 000324 =
+!     0o324 = 212 = JSR+JJ4+JNV+JON (4+16+64+128); p.363's JCN (1024)
+!     would compile 002124.  The open glyph is this drum's open O, so the
+!     deck spells it JON.  Settled by the printed binary, not the ink.
+!   * "ZTCCO1"/"Z TCC 01": digit 0 (numbered family ZTCC01/02/03).
+!   * hex bytes "C0"/"CO" on B rows = 00 (lesson 6; lines 9, 18, 41).
+!   * line 42 prints "L(BU,26),$TC -GET TIME": the remark follows the
+!     statement after one blank.
+!
+! CARD SERIALS.  WA000843 .. WA000887, one per line, except four
+! shared: WA000850 (lines 8, 9), WA000858 (17, 18), WA000860 (20, 21),
+! WA000886 (47, 48) -- each a SIC/B linkage pair.  Recorded.
+
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label
+SYSMOD  SYN(BU,2), SCOMRG+.8         ! landed p.103 line 18; BB line 3, C line 6, CM line 12 215001.10
+SPPBT1  SYN(BU,1), SCOMRG+.13        ! landed p.103 line 22; CM line 23 215001.15
+SPPBT3  SYN(BU,1), SCOMRG+.15        ! landed p.103 line 24; CM line 13, BZBZ line 16 215001.17
+VCRD    SYN, (8)5.0                  ! landed; p.100 card "- VCRD SYN,5."; VF line 10 000005.00+
+VWTP    SYN, (8)6.0                  ! landed p.103 (p.100 card); VF line 22 000006.00+
+VRTP    SYN, (8)4.0                  ! landed p.103 (p.100 card); VF line 19 000004.00+
+YC1C    SYN(BU,32,8), (8)231062.0    ! landed p.267 line 41 "YC1C B,DMCP"; LVI line 4 231062.01
+JRETA   SYN(B,25,1), (8)232716.40    ! landed p.295 line 23 "JRETA VF,0"; SV line 5 232716.41
+ZCOM90  SYN(BU,32,8), (8)232762.0    ! landed p.297 line 27 "ZCOM90 B,$"; SIC lines 8, 17, 20 232762.00
+ZDSN01  SYN(BU,32,8), (8)233044.0    ! landed p.298 line 42 "ZDSN01 SIC,ZCOM99"; B lines 9, 18, 21 233044.10
+JXMSK   SYN,$X13                     ! p.363 line 40 "J XMSK SYN,$X13" -MODE MASK INDEX; SX line 30 .33
+JOP     SYN,2.0                      ! p.363 line 44 "J OP"; CTI line 31 000002.00
+JSR     SYN,4.0                      ! p.363 line 45 "J SR"
+JJ1     SYN,8.0                      ! p.363 line 46 "J J1"
+JJ4     SYN,16.0                     ! p.363 line 47 "J J4"
+JOV     SYN,32.0                     ! p.363 line 48 "J CV"
+JNV     SYN,64.0                     ! p.363 line 49 "J NV"
+JON     SYN,128.0                    ! p.363 line 50 "J ON"
+JOF     SYN,256.0                    ! p.363 line 51 "J CF"
+ZIPL    SYN,512.0                    ! p.363 line 52 "Z IPL"
+JFLDB   SYN, (8)234560.0             ! p.363 line 33 "J FLD B DRZ,(12)" at 234560.00 -- not landed; LVI line 45 234562.07
+ZEREX2  SYN(BU,32,8), (8)234632.0    ! p.365 line 7 "Z ER EX2 LX,12,..." -- not landed; B lines 24, 41 234632.10, BZBZ line 16 .34
+ZEXITX  SYN(BU,32,8), (8)234633.0    ! p.365 line 9 "Z EXITX LWF(U),..." -- not landed; B line 15 234633.10
+JNOPX   SYN, (8)234637.0             ! p.365 line 18 "JNOPX SYN,$" -- not landed; BRZ line 38 234637.34
+ZCONVC  SYN(BU,64,8), (8)235004.0    ! p.369 line 32 "ZCONVC L(BU,64),..." -- not landed; B line 48 235004.10
+ZEND    SYN(BU,32,8), (8)235020.40   ! p.369 line 5 "Z END B,$" -- not landed; SIC line 47 235020.40
+ZTCC03  SYN(BU,64,8), (8)235512.0    ! p.379 line 3 (Vision reading) "Z TCC 03 *I(BU,12),..." at 235512.00, a full word; LVI line 43 half word only
+ZTCCST  SYN, (8)235540.0             ! not landed; STN line 44 235540.00, BIT-EXACT
+
+        SLC, (8)235454.00
+        ,.32                                                 ! line  1
+        B,ZOFF72                                             ! line  2  -END RETURN  printed "ZCFF72"
+        BB,SYSMOD,ZOFF20                                     ! line  3  -BRANCH IF BYPASS
+        LVI,0,YC1C                                           ! line  4  -SET RETURN TO JC1 $RET  printed "LVI,O,"
+        SV,0,JRETA                                           ! line  5  -FOR ONLINE CASE  printed "SV,C,J RET A"
+ZOFF20  C1100,SYSMOD                                         ! line  6  -TEST IF IPL MODE  printed "C11CO"
+        BRZ,ZOFF10                                           ! line  7  -BR. IF IPL - NO DISASSGN OF RDR
+        SIC,ZCOM90                                           ! line  8
+        B,ZDSN01                                             ! line  9  (location carries *)
+        VF,VCRD                                              ! line 10
+ZOFF10  LI(BU,2),(2)01                                       ! line 11  -SET MODE BITS  printed "Z CFF 10"
+        CM0101,SYSMOD                                        ! line 12
+        CM0000,SPPBT3                                        ! line 13  printed "CMOCOO"
+        LVI,12,8.0                                           ! line 14
+        B,ZEXITX                                             ! line 15
+ZOFF72  BZBZ,SPPBT3,ZEREX2                                   ! line 16  -BRANCH IF TAPES NOT PREVIOUSLY ASSD  printed "ZCFF72"
+        SIC,ZCOM90                                           ! line 17  printed "Z CCM 90"
+        B,ZDSN01                                             ! line 18
+        VF,VRTP                                              ! line 19
+        SIC,ZCOM90                                           ! line 20
+        B,ZDSN01                                             ! line 21
+        VF,VWTP                                              ! line 22
+        CM1111(BU,2),SPPBT1                                  ! line 23  -SET ON-OFF BITS AGAIN
+        B,ZEREX2                                             ! line 24
+! line 25  -
+! line 26  -   ***************************************************
+! line 27  -                     TIME CONSTANT SETUP
+! line 28  -   ***************************************************
+! line 29  -
+ZTCC    SX,JXMSK,$L                                          ! line 30
+        CTI0010(BU,18),JOP,-18                               ! line 31  (location carries *)
+        BRZ,ZTCC01                                           ! line 32
+        CTI0010(BU,18),JSR+JJ1+JON+JOV,-18                   ! line 33
+        BRZ,ZTCC01                                           ! line 34
+        CTI0010(BU,18),JSR+JJ4+JNV+JON,-18                   ! line 35  printed "JCN"
+        BRZ,ZTCC01                                           ! line 36
+        CTI0010(BU,18),JSR+JJ4+JOV+JON,-18                   ! line 37
+        BRZ,JNOPX                                            ! line 38
+        CTI0010(BU,18),ZIPL+JNV+JOF,-18                      ! line 39
+        BRZ,ZTCC01                                           ! line 40
+        B,ZEREX2                                             ! line 41
+ZTCC01  L(BU,26),$TC                                         ! line 42  -GET TIME
+        LVI,4,ZTCC03-2.32                                    ! line 43
+        STN(B,27,1),ZTCCST                                   ! line 44
+        LVI,3,JFLDB+2.0                                      ! line 45
+ZTCC02  LV,5,$3                                              ! line 46
+        SIC,ZEND                                             ! line 47
+        B,ZCONVC                                             ! line 48  -CONVERT BCD ZERO TO DEC ZERO  (location carries *)
+        V+I,3,1.0                                            ! line 49
+
+!SYM ZOFF20 235457.00
+!SYM ZOFF10 235462.00
+!SYM ZOFF72 235466.00
+!SYM ZTCC   235473.40
+!SYM ZTCC01 235504.00
+!SYM ZTCC02 235507.00
+!CHECK 235454.00 | 000000.40 80 | line 1 ,.32
+!CHECK 235454.40 | 235466.10 00 | line 2 B,ZCFF72
+!CHECK 235455.00 | 215001.10 80 235457.34 02 | line 3 BB,SYSMOD,Z OFF 20
+!CHECK 235456.00 | 231062.01 01 | line 4 LVI,O,YC1C
+!CHECK 235456.40 | 232716.41 30 | line 5 SV,C,J RET A
+!CHECK 235457.00 | 215001.10 80 002000.30 70 | line 6 Z OFF 20 C11CO,SYSMOD
+!CHECK 235460.00 | 235462.34 C2 | line 7 BRZ,Z OFF 10
+!CHECK 235460.40 | 232762.00 80 | line 8 SIC,Z COM 90
+!CHECK 235461.00 | 233044.10 00 | line 9 B,Z DSN 01 (byte prints "C0")
+!CHECK 235461.40 | 000005.00+ | line 10 VF,VCRD
+!CHECK 235462.00 | 200000.00 80 402000.20 50 | line 11 Z CFF 10 LI(BU,2),(2)01
+!CHECK 235463.00 | 215001.10 80 002000.12 F0 | line 12 CM0101,SYSMOD
+!CHECK 235464.00 | 215001.17 80 001000.00 F0 | line 13 CMOCOO,SPPBT3
+!CHECK 235465.00 | 000010.31 01 | line 14 LVI,12,8.0
+!CHECK 235465.40 | 234633.10 00 | line 15 B,ZEXITX
+!CHECK 235466.00 | 215001.17 80 234632.34 04 | line 16 ZCFF72 BZBZ,SPPBT3,ZEREX2
+!CHECK 235467.00 | 232762.00 80 | line 17 SIC,Z CCM 90
+!CHECK 235467.40 | 233044.10 00 | line 18 B,Z DSN 01 (byte prints "C0")
+!CHECK 235470.00 | 000004.00+ | line 19 VF,VRTP
+!CHECK 235470.40 | 232762.00 80 | line 20 SIC,Z COM 90
+!CHECK 235471.00 | 233044.10 00 | line 21 B,Z DSN 01
+!CHECK 235471.40 | 000006.00+ | line 22 VF,VWTP
+!CHECK 235472.00 | 215001.15 80 002000.36 F0 | line 23 CM1111(BU,2),SPPBT1
+!CHECK 235473.00 | 234632.10 00 | line 24 B,Z ER EX2
+!CHECK 235473.40 | 000010.33 10 | line 30 Z TCC SX,JXMSK,$L
+!CHECK 235474.00 | 000002.00 80 422067.05 70 | line 31 CTI0010(BU,18),JOP,-18
+!CHECK 235475.00 | 235504.34 C2 | line 32 BRZ,Z TCC 01
+!CHECK 235475.40 | 000254.00 80 422067.05 70 | line 33 CTI0010(BU,18),JSR+JJ1+JON+JOV,-18
+!CHECK 235476.40 | 235504.34 C2 | line 34 BRZ,ZTCC01
+!CHECK 235477.00 | 000324.00 80 422067.05 70 | line 35 CTI0010(BU,18),JSR+JJ4+JNV+JCN,-18
+!CHECK 235500.00 | 235504.34 C2 | line 36 BRZ,ZTCC01
+!CHECK 235500.40 | 000264.00 80 422067.05 70 | line 37 CTI0010(BU,18),JSR+JJ4+JOV+JON,-18
+!CHECK 235501.40 | 234637.34 C2 | line 38 BRZ,JNOPX
+!CHECK 235502.00 | 001500.00 80 422067.05 70 | line 39 CTI0010(BU,18),ZIPL+JNV+JOF,-18
+!CHECK 235503.00 | 235504.34 C2 | line 40 BRZ,Z TCC 01
+!CHECK 235503.40 | 234632.10 00 | line 41 B,Z ER EX2
+!CHECK 235504.00 | 000001.34 80 032000.20 50 | line 42 Z TCC 01 L(BU,26),$TC
+!CHECK 235505.00 | 235507.51 01 | line 43 LVI,4,Z TCC 03-2.32
+!CHECK 235505.40 | 235540.00 80 033100.10 D0 | line 44 STN(B,27,1),Z TCC ST
+!CHECK 235506.40 | 234562.07 01 | line 45 LVI,3,JFLDB+2.0
+!CHECK 235507.00 | 000023.12 30 | line 46 Z TCC 02 LV,5,$3
+!CHECK 235507.40 | 235020.40 80 | line 47 SIC,Z END
+!CHECK 235510.00 | 235004.10 00 | line 48 B,Z CONV C
+!CHECK 235510.40 | 000001.07 05 | line 49 V+I,3,1.0

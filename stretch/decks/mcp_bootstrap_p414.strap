@@ -1,0 +1,196 @@
+! mcp_bootstrap_p414.strap -- MCP printed page 414: the $EOJ program's
+! reassembly of the tape ASSIGN mount-message writer (T P4A .. T P1) and
+! the start of the look-ahead scan (T PICA .. TP1B).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.164, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZE000802  DIST. OF 3/01
+!  3/01  PAGE NUMBER 414"; the heading row's LOCATION field is 022060,
+! line 1's word.
+!
+! STILL $EOJ: PUNID 22$EOJ, card series ZE, low core 0220xx, no SLC on
+! the page -- the origin below is line 1's printed LOCATION.  No TAIL.
+!
+! THE PAGE.  56 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 5, 27 and 49.  Contiguous 022060.00 .. 022116.40
+! (line 56, a half word; next location 022117.00).  pp.410-413 are not
+! landed (p.409 ends at 021661.40): contiguity with neither neighbour is
+! established here.
+!   lines  8-10  remark "CHECK FOR REEL PROTECTION" between blank remarks
+!   lines 38-41  remark "LOOK AHEAD -N- JOBS AND DETERMINE THE STATUS"
+!   Same source as the IPL bootstrap's decks/mcp_bootstrap_p79.strap
+!   (TP4 .. TP1 at 0045xx), but a different assembly and a different
+!   text (here BXF,TP4A / BZB,TUNOBT(TXB),TP7 / T P4A replace p.79's
+!   BZB,TMODE,TP7): spellings only were taken from it.
+!
+! CARD SERIALS.  ZE000802 .. ZE000857, one per line, consecutive.
+!
+! NAME FIELD.  Every label prints with a blank after the T ("T P4A",
+! "T WRITE", "T PICA") except line 52, which prints "TP1B" closed up.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "DCCMM" (lines 16, 21, 25) = DCOMM (open O; resident p.105 line 23;
+!     every row prints 000043.40, DCOMM's 35.32).
+!   * "TNCP" (line 11) = TNOP (open O; vol-1 p.83 line 12 "TNOP", the
+!     NOT PROTECT character; remark -LOOK FOR NON - PROTECT).
+!   * line 14 "THEAC" = THEAD, D worn to C: line 32 prints THEAD with a
+!     plain D, and both rows print 021757.00 (vol-1 spelling THEAD).
+!   * line 30 "TSBHDI" prints its D worn (near "TSBHCI"); line 19 prints
+!     it plainly, and both rows print 021757.01.
+!   * "5.C", "4.C", "1.C", "2.C", "0.C" -- the open 0 in the statements;
+!     each binary is the integer word (000005.00 ...).
+!   * octal fields' open rounds ("022062.CC", "022C66.36") are 0.
+!
+! EXTERNALS.  Resident (pp.105-108, 287-289) copied in their defining
+! forms.  $EOJ symbols from pp.410-413 (not landed) and from later pages
+! are plain SYNs whose value is read off this page's binary.
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 15 000040.10
+DCOMM   SYN, 35.32                   ! landed p.105 line 23 (printed "DCCMM")
+TX1     SYN,$10                      ! landed p.287 line 30
+TCTWDX  SYN,TX1                      ! landed p.287 line 29; byte 1F lines 3, 33, 44
+TIXA    SYN,$4                       ! landed p.287 line 34
+TIXG    SYN,$8                       ! landed p.287 line 38
+TNEXT   SYN(B,25,1), (8)232224.40    ! landed p.287 line 7 TNEXT VF; SV line 48 232224.61
+TPPURF  SYN(BU), (8)232230.0         ! landed p.288 line 5 XW
+TPPRUN  SYN(BU), (8)232232.0         ! landed p.288 line 7 XW
+TCRREF  SYN(BU,18),0.0               ! landed p.288 line 12
+TUNCT   SYN(BU,08),0.28              ! landed p.288 line 13
+TASGNP  SYN(BU,1),0.38               ! landed p.288 line 16
+TLPPEN  SYN(BU,1),0.39               ! landed p.288 line 17
+TUNOBT  SYN(BU,1),0.01               ! landed p.288 line 29
+TXA     SYN,$2                       ! $EOJ, defined on no landed page; vol-1 p.77 form; LX line 36 232230.04 (J=2)
+TXB     SYN,$3                       ! $EOJ, defined on no landed page; vol-1 p.77 form; BZB line 5 byte 83
+TIXZ    SYN,$5                       ! $EOJ, defined on no landed page; ,TBUFB1(TIXZ) line 26 byte 85
+TIXY    SYN,$6                       ! $EOJ, defined on no landed page; ,7.(TIXY) line 27 byte 86
+TBUF01  SYN, (8)021726.0             ! $EOJ, not landed; line 17, BIT-EXACT
+TBUFB1  SYN, (8)021734.0             ! $EOJ, not landed; line 26, BIT-EXACT
+TSUBHD  SYN, (8)021747.0             ! $EOJ, not landed; line 22, BIT-EXACT
+THEAD   SYN, (8)021757.0             ! $EOJ, not landed; BB1 line 14, BIT-EXACT
+TSBHDI  SYN, (8)021757.01            ! $EOJ, not landed; BB1 line 19, BIT-EXACT
+TNGATE  SYN, (8)021757.02            ! $EOJ, not landed; BBN line 35, BIT-EXACT
+TP6     SYN, (8)021763.40            ! $EOJ, not landed; B lines 31, 37 021763.50, BIT-EXACT
+TP5     SYN, (8)022001.0             ! $EOJ, not landed; CB+ line 28 022001.07, half word only
+TNOP    SYN(BU,6,6), (8)022132.07    ! $EOJ, not landed (printed "TNCP"); KF line 11, BIT-EXACT incl. dds:
+                                     !   006634 = length 6, byte size 6 (vol-1 p.83 (AX)DD(BU,6,6))
+TP1BA   SYN, (8)022123.0             ! $EOJ, not landed; BXCZ line 56 022123.30, half word only
+TP1A    SYN, (8)022127.0             ! $EOJ, not landed; BB line 42 022127.34, B line 51, half word only
+
+        SLC, (8)022060.00
+        LVI,TIXY,0                                           ! line  1  -INITIALIZE TO NON PROTECT
+        LVI,TIXZ,1.0                                         ! line  2  -SET UP FOR OVERLAP
+        LX,TCTWDX,0.0($15)                                   ! line  3  -CHECK FOR MODE
+        BXF,TP4A                                             ! line  4  -IF BY-PASS MODE
+        BZB,TUNOBT(TXB),TP7                                  ! line  5  -IF NOT A SINGLE NOT OVERLAP CASE
+TP4A    LVI,TIXZ,0.0                                         ! line  6  -SET UP FOR BY-PASS MOUNT
+        V+I,TIXY,1.0                                         ! line  7  -GET ALL OF MESSAGE PLUS
+! line  8  -
+! line  9  -      CHECK FOR REEL PROTECTION
+! line 10  -
+TP7     KF,TNOP,56                                           ! line 11  -LOOK FOR NON - PROTECT (printed "TNCP")
+        BAE,TWRITE                                           ! line 12  -IF NOT PROTECTED
+        V+I,TIXY,2.0                                         ! line 13
+TWRITE  BB1,THEAD,TPENY                                      ! line 14  -CHECK FOR MAJOR HEADING (printed "THEAC", D worn)
+        B,DMCP                                               ! line 15  -WRITE THE MAJOR HEADING
+        ,DCOMM                                               ! line 16  (printed "DCCMM")
+        ,TBUF01                                              ! line 17
+        ,5.0                                                 ! line 18
+TPENY   BB1,TSBHDI,TPEN                                      ! line 19
+        B,DMCP                                               ! line 20  -WRITE THE SUB HEADING
+        ,DCOMM                                               ! line 21  (printed "DCCMM")
+        ,TSUBHD                                              ! line 22
+        ,4.0                                                 ! line 23
+TPEN    B,DMCP                                               ! line 24  -WRITE THE MOUNTING PROCEDURES
+        ,DCOMM                                               ! line 25  (printed "DCCMM")
+        ,TBUFB1(TIXZ)                                        ! line 26
+        ,7.(TIXY)                                            ! line 27
+TP3     CB+,TXB,TP5                                          ! line 28
+TP2     V+ICR,TXA,2.0                                        ! line 29
+        CM0000(BU,1),TSBHDI                                  ! line 30
+        B,TP6                                                ! line 31
+TP1     CM0000(BU,2),THEAD                                   ! line 32  -ZERO THE IND
+        LX,TCTWDX,0.0($15)                                   ! line 33  -CHECK THE MODE
+        BZXF,TPICA                                           ! line 34  -IF OVERLAP PROCEED ONWARD
+        BBN,TNGATE,TPICA                                     ! line 35  -IF SECOND PASS
+        LX,TXA,TPPURF                                        ! line 36  -SET UP FOR THE NOT OVERLAP
+        B,TP6                                                ! line 37  -FOR NOT OVERLAP RE-ITERATION
+! line 38  -
+! line 39  -
+! line 40  -      LOOK AHEAD -N- JOBS AND DETERMINE THE STATUS
+! line 41  -
+TPICA   BB,.63($15),TP1A                                     ! line 42  -IF SPECIAL ASSIGN ENTRY
+        LX,TIXG,TPPRUN                                       ! line 43  -GET NEXT JOB TO BE RUN
+        LX,TCTWDX,0.0($15)                                   ! line 44  -CHECK MODE
+        BZXF,TPIC                                            ! line 45  -IF OVERLAP
+        LX,TIXG,TPPURF                                       ! line 46  -IF NOT OVERLAP
+TPIC    CM0000(BU,18),.28($15)                               ! line 47  -CLEAR THE ENTIRE RETURN DISPO FIELD
+        SV,TIXG,TNEXT                                        ! line 48  -SAVE THE ADDR OF THE NEXT PP TO FUN
+        BZB,TLPPEN(TIXG),TP1B                                ! line 49  -IF MORE JOBS
+        CM1111(BU,1),0.45($15)                               ! line 50
+        B,TP1A                                               ! line 51
+TP1B    BB,TASGNP(TIXG),TP1A                                 ! line 52  -IF THE PP IS ASSIGNED
+        LV,TIXA,TCRREF(TIXG)                                 ! line 53  -COMPUTE THE IO REQ TBL ADDR
+        L,TUNCT(TIXG),46                                     ! line 54  -AND THE NUMBER OF I/O UNITS REQUESTED
+        LC,TIXA,$R                                           ! line 55  -AS TO ENABLE ASSIGN TO
+        BXCZ,TP1BA                                           ! line 56  -DONT TRY TO CLEAR A NON IOD PP
+
+!SYM TP4A   022063.00
+!SYM TP7    022064.00
+!SYM TWRITE 022066.00
+!SYM TPENY  022071.00
+!SYM TPEN   022074.00
+!SYM TP3    022076.00
+!SYM TP2    022076.40
+!SYM TP1    022100.40
+!SYM TPICA  022104.40
+!SYM TPIC   022107.40
+!SYM TP1B   022113.40
+
+!CHECK 022060.00 | 000000.15 01 | line 1 LVI,TIXY,0
+!CHECK 022060.40 | 000001.13 01 | line 2 LVI,TIXZ,1.0
+!CHECK 022061.00 | 000000.24 1F | line 3 LX,TCTWDX,0.0($15)
+!CHECK 022061.40 | 022063.23 42 | line 4 BXF,TP4A
+!CHECK 022062.00 | 000000.01 83 022064.34 00 | line 5 BZB,TUNOBT(TXB),TP7 (a "*" prints after the location)
+!CHECK 022063.00 | 000000.13 01 | line 6 T P4A LVI,TIXZ,0.0
+!CHECK 022063.40 | 000001.15 05 | line 7 V+I,TIXY,1.0
+!CHECK 022064.00 | 022132.07 80 006634.23 10 | line 11 T P7 KF,TNOP,56
+!CHECK 022065.00 | 022066.36 C2 | line 12 BAE,TWRITE
+!CHECK 022065.40 | 000002.15 05 | line 13 V+I,TIXY,2.0
+!CHECK 022066.00 | 021757.00 80 022071.34 0E | line 14 T WRITE BB1,THEAD,TPENY
+!CHECK 022067.00 | 000040.10 00 | line 15 B,DMCP
+!CHECK 022067.40 | 000043.40 80 | line 16 ,DCOMM
+!CHECK 022070.00 | 021726.00 80 | line 17 ,TBUF01
+!CHECK 022070.40 | 000005.00 80 | line 18 ,5.0
+!CHECK 022071.00 | 021757.01 80 022074.34 0E | line 19 T PENY BB1,TSBHDI,TPEN
+!CHECK 022072.00 | 000040.10 00 | line 20 B,DMCP
+!CHECK 022072.40 | 000043.40 80 | line 21 ,DCOMM
+!CHECK 022073.00 | 021747.00 80 | line 22 ,TSUBHD
+!CHECK 022073.40 | 000004.00 80 | line 23 ,4.0
+!CHECK 022074.00 | 000040.10 00 | line 24 T PEN B,DMCP
+!CHECK 022074.40 | 000043.40 80 | line 25 ,DCOMM
+!CHECK 022075.00 | 021734.00 85 | line 26 ,TBUFB1(TIXZ)
+!CHECK 022075.40 | 000007.00 86 | line 27 ,7.(TIXY) (a "*" prints after the location)
+!CHECK 022076.00 | 022001.07 48 | line 28 T P3 CB+,TXB,TP5
+!CHECK 022076.40 | 000002.05 07 | line 29 T P2 V+ICR,TXA,2.0
+!CHECK 022077.00 | 021757.01 80 001000.00 F0 | line 30 CM0000(BU,1),TSBHDI
+!CHECK 022100.00 | 021763.50 00 | line 31 B,TP6
+!CHECK 022100.40 | 021757.00 80 002000.00 F0 | line 32 T P1 CM0000(BU,2),THEAD
+!CHECK 022101.40 | 000000.24 1F | line 33 LX,TCTWDX,0.0($15)
+!CHECK 022102.00 | 022104.63 40 | line 34 BZXF,TPICA
+!CHECK 022102.40 | 021757.02 80 022104.74 0A | line 35 BBN,TNGATE,TPICA
+!CHECK 022103.40 | 232230.04 10 | line 36 LX,TXA,TPPURF
+!CHECK 022104.00 | 021763.50 00 | line 37 B,TP6
+!CHECK 022104.40 | 000000.77 8F 022127.34 02 | line 42 T PICA BB,.63($15),TP1A
+!CHECK 022105.40 | 232232.20 10 | line 43 LX,TIXG,TPPRUN
+!CHECK 022106.00 | 000000.24 1F | line 44 LX,TCTWDX,0.0($15)
+!CHECK 022106.40 | 022107.63 40 | line 45 BZXF,TPIC
+!CHECK 022107.00 | 232230.20 10 | line 46 LX,TIXG,TPPURF
+!CHECK 022107.40 | 000000.34 8F 022000.00 F0 | line 47 T PIC CM0000(BU,18),.28($15)
+!CHECK 022110.40 | 232224.61 30 | line 48 SV,TIXG,TNEXT
+!CHECK 022111.00 | 000000.47 88 022113.74 00 | line 49 BZB,TLPPEN(TIXG),TP1B (a "*" prints after the location)
+!CHECK 022112.00 | 000000.55 8F 001000.36 F0 | line 50 CM1111(BU,1),0.45($15)
+!CHECK 022113.00 | 022127.10 00 | line 51 B,TP1A
+!CHECK 022113.40 | 000000.46 88 022127.34 02 | line 52 TP1B BB,TASGNP(TIXG),TP1A
+!CHECK 022114.40 | 000000.10 38 | line 53 LV,TIXA,TCRREF(TIXG)
+!CHECK 022115.00 | 000000.34 88 010027.20 50 | line 54 L,TUNCT(TIXG),46
+!CHECK 022116.00 | 000011.10 50 | line 55 LC,TIXA,$R
+!CHECK 022116.40 | 022123.30 42 | line 56 BXCZ,TP1BA

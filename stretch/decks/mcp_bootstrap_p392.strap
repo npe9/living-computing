@@ -1,0 +1,184 @@
+! mcp_bootstrap_p392.strap -- MCP printed page 392: the END-OF-JOB
+! program (JC4): the job-reject exit (WJC4QI .. WJC4QM), the T.C.P./
+! LIM/IOD card error entries (YTCERR, YLCERR, YIDCER) and the B-card
+! test at YBCERR through the B-limit check (YBLMOK).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.142, read at 400 dpi, names at 900
+! dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID
+! ZA000498  DIST. OF 3/01  3/01  PAGE NUMBER 392"; the heading row's
+! LOCATION field is 020431, line 1's word.
+!
+! >>> NOT SCOMD. <<<  PUNID 22$EOJ, card series ZA, origin 020431.40
+! (low core), not SCOMD's 234xxx-235xxx/WA.  No SLC is printed on the
+! page; the SLC below is scaffolding for line 1's printed location.
+! No TAIL.
+!
+! THE PAGE.  52 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 6, 13 and 38.  Contiguous 020431.40 .. 020471.00
+! (line 52, a half word; next 020471.40), except line 16, a SYN at
+! 231444.00 (WJOR2+1.0, resident p.274) that does not move the counter.
+!   lines  1-10  code; 11 CNOP; 12-14 the "JOB REJECTED" message and a
+!                DRZ(U),(4); 15 XW WRDXW1; 16 SYN WBREAK.
+!   lines 17-20, 32-36  remarks.
+!   lines 21-31, 37-52  code.
+! Lines 6, 10, 12, 13, 15 and 16 print a lone "-" in the remark column
+! (an empty remark); line 12's comes after the message's X.
+!
+! JOIN.  p.391 (image, PDF p.141) ends with B,YPR at 020431.00, a half
+! word, serial ZA000497, so line 1's 020431.40 continues it; p.391
+! also prints BE,WJC4Q and a label WJC4QL (the Q family).  p.393 (PDF
+! p.143) opens with remarks; its header reads CARD ID ZA000550.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * WJC4Q / WJC4QI / WJC4QM: Q (the tail prints at 900 dpi on lines
+!     1, 6, 7, 12); C22-6728 PDF p.265 index lists WJC4Q, WJC4QI.
+!   * YIDCER (line 27, prints "YICCER", D worn): C22-6728 index YIDCER.
+!   * WRDXW1 (line 15, prints "WRCXW1"-like, D worn); no other witness.
+!   * WJOR2 (line 16, prints "WJCR2"): p.274 line 18 defines WJOR2.
+!   * YIODSO (line 28): letter O, typeset wide in C22-6728 PDF p.55.
+!   * YBLMOK (lines 47, 50, prints "YBLMCK"): open glyph read as O (B
+!     LIMIT OK); no typeset witness found -- a judgment.
+!   * SCORG (line 4 prints "SCCRG"): landed p.103.
+!   * CM0000 (lines 3, 4 print "CM0C00"/"CMOOOO"): connective code digits.
+!   * hex bytes "C0"/"CO" on B/BZ rows = 00 / C0 as the statement assembles.
+!   * Line 24's card is punched one column right (YLCERR and its statement
+!     both print shifted one character); written normally here.
+!   * Line 38 prints a stray "." left of KFI; line 42 a stray "." in the
+!     remark column; line 52 a stray "." in the NAME column.  Not part
+!     of the statements.
+!
+! CARD SERIALS.  ZA000498 .. ZA000548, one per line, except ZA000505
+! shared by lines 8 and 9 (the SIC,YPRRET / B,YPR linkage pair).
+! p.393's header reads ZA000550: no ZA000549 is printed on either page.
+! Recorded, not explained.
+!
+! EXTERNALS: stand-ins are checked by the merge.  EOJ (020xxx) symbols
+! defined on other EOJ pages (not landed) are half-word stand-ins from
+! this page's binary.
+
+TNEXT   SYN(B,25,1), (8)232224.40    ! landed p.287 line 7 TNEXT VF; LV line 2
+YTSP    SYN, (8)020317.40            ! EOJ, not landed; CM0000(BU,1) line 3, BIT-EXACT
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label
+SCORG   SYN(BU,1), SCOMRG+0.03       ! landed p.103 line 13; CM0000 line 4 215001.03
+YPRRET  SYN(BU,32,8), (8)231204.40   ! landed p.270 line 22 BE,0 (half word)
+YPR     SYN(BU,32,8), (8)231172.0    ! landed p.270 line 2 B,YPRSPL (half word)
+WJC4Q   SYN, (8)020223.0             ! EOJ, not landed; BE line 1, half word only
+WRESTR  SYN, (8)020226.0             ! EOJ, not landed; BE line 10, half word only
+YBCBU   SYN(BU), (8)231462.0         ! landed p.274 line 19 DR(BU),(15)
+WJOR2   SYN(U), (8)231443.0          ! landed p.274 line 18 DRZ(U),15; no prior SYN(U) stand-in in the corpus
+YTCEM   SYN, (8)020636.0             ! EOJ, not landed; as p.268's stand-in
+YTCSR   SYN, (8)020075.40            ! EOJ, not landed; LVI line 22, half word only
+YLCEM   SYN, (8)020646.0             ! EOJ, not landed; as p.268's stand-in
+YC4B5   SYN, (8)020111.40            ! EOJ, not landed; LVI line 25, half word only
+YICEM   SYN, (8)020656.0             ! EOJ, not landed; as p.266/268's stand-in
+YIODSO  SYN, (8)020132.0             ! EOJ, not landed; LVI line 28, half word only
+YUCBF1  SYN(BU,64,8), (8)231366.0    ! as landed p.274's stand-in (DRZ(BU,64),(8))
+YUTOE   SYN,YUCBF1+.372              ! landed p.274 line 14 (defining form); LF line 29
+YTBIT   SYN, (8)231426.71           ! plain: p.395 line 23 defines it "SYN,YLOL2+.25" (dds from YLLSAV, printed N,64,4); every use writes (BU,1); as landed p.273's stand-in; CM1111 line 40, BIT-EXACT
+YBRLOG  SYN, (8)020220.0             ! EOJ, not landed; BAEZ/BZXE lines 43/45, half word only
+SLRBU   SYN, (8)215324.0             ! landed p.117
+SBAPP   SYN, (8)215005.0             ! landed p.103 line 35
+WJC4G1  SYN, (8)020177.40            ! EOJ, not landed; BXE line 51, half word only
+YC4C9   SYN, (8)020153.40            ! EOJ, not landed; B line 52, half word only
+
+        SLC, (8)020431.40
+        BE,WJC4Q                                             ! line  1  -TO REJECT JOB
+WJC4QI  LV,$14,TNEXT                                         ! line  2
+        CM0000(BU,1),YTSP                                    ! line  3  -RESET THE SPECIAL BSS CASE IND.
+        CM0000,SCORG                                         ! line  4
+        LV,$14,1.($14)                                       ! line  5
+        TI,4,0.($14),WJC4QM+2.                               ! line  6
+        LVI,1,WJC4QM                                         ! line  7
+        SIC,YPRRET                                           ! line  8
+        B,YPR                                                ! line  9
+        BE,WRESTR                                            ! line 10
+        CNOP                                                 ! line 11
+WJC4QM  (AX)DD(BU), JOB REJECTED   X                         ! line 12
+        DRZ(U),(4)                                           ! line 13
+        (AX)DD(BU),                X                         ! line 14
+WRDXW1  XW,0,0,YBCBU,0                                       ! line 15
+WBREAK  SYN,WJOR2+1.0                                        ! line 16
+! -  ******************************************************  ! line 17
+! -  ERROR ON T.C.P.,LIM, ORIOD CARD- PICK UP ERROR MESSAGE($10),   ! line 18
+! -  AND SET RETURN POINT IN CSE ERROR WAS FRAUDULENT (T-CARD)       ! line 19
+! -  ******************************************************  ! line 20
+YTCERR  LVI,$10,YTCEM                                        ! line 21
+        LVI,$9,YTCSR                                         ! line 22  -T.C.P. CARD ERROR
+        B,YBCERR                                             ! line 23
+YLCERR  LVI,$10,YLCEM                                        ! line 24  (card punched one column right)
+        LVI,$9,YC4B5                                         ! line 25
+        B,YBCERR                                             ! line 26
+YIDCER  LVI,$10,YICEM                                        ! line 27
+        LVI,$9,YIODSO                                        ! line 28
+        LF(BU,24,6),YUTOE                                    ! line 29
+        SF(BU,32),YICEM+.168                                 ! line 30
+        B,YBCERR                                             ! line 31
+! -                                                          ! line 32
+! -  ******************************************************  ! line 33
+! -  B-CARD ERROR - TEST FOR T-CARD AND FOR IODS,SEE WHETHER  ! line 34
+! -  1ST PROGRAM CARD HAS BEEN ENCOUNTERED.                   ! line 35
+! -  ******************************************************  ! line 36
+YBCERR  L(BU,12),YBCBU                                       ! line 37
+        KFI(BU,12),(2)001001000000                           ! line 38
+        BZAE,$+2.0                                           ! line 39
+        CM1111(BU,1),YTBIT                                   ! line 40
+        B,0.0($9)                                            ! line 41
+        KFI(BU,12),(2)100010000000                           ! line 42
+        BAEZ,YBRLOG                                          ! line 43
+        KVI,$10,YICEM                                        ! line 44
+        BZXE,YBRLOG                                          ! line 45
+        KV,$12,SLRBU                                         ! line 46  -ARE IODS APPROACHING B LIMIT
+        BXL,YBLMOK                                           ! line 47  -I F SO, RESET B LIMIT
+        SV,$12,SLRBU                                         ! line 48
+        SV,$12,SBAPP                                         ! line 49
+YBLMOK  KCI,$12,1.0                                          ! line 50  -IS NUMBER OF IODS ZERO
+        BXE,WJC4G1                                           ! line 51
+        B,YC4C9                                              ! line 52
+
+!SYM WJC4QI 020432.00
+!SYM WJC4QM 020440.00
+!SYM WRDXW1 020450.00
+!SYM WBREAK 231444.00
+!SYM YTCERR 020451.00
+!SYM YLCERR 020452.40
+!SYM YIDCER 020454.00
+!SYM YBCERR 020457.40
+!SYM YBLMOK 020470.00
+!CHECK 020431.40 | 020223.00 00 | line 1 BE,WJC4Q
+!CHECK 020432.00 | 232224.74 30 | line 2 WJC4QI LV,$14,TNEXT
+!CHECK 020432.40 | 020317.40 80 001000.00 F0 | line 3 CM0000(BU,1),YTSP
+!CHECK 020433.40 | 215001.03 80 001000.00 F0 | line 4 CM0000,SCORG
+!CHECK 020434.40 | 000001.34 3E | line 5 LV,$14,1.($14)
+!CHECK 020435.00 | 000000.00 8E 020442.10 A0 | line 6 TI,4,0.($14),WJC4QM+2. (a "*" after the location)
+!CHECK 020436.00 | 020440.03 01 | line 7 LVI,1,WJC4QM
+!CHECK 020436.40 | 231204.40 80 | line 8 SIC,YPRRET
+!CHECK 020437.00 | 231172.10 00 | line 9 B,YPR
+!CHECK 020437.40 | 020226.00 00 | line 10 BE,WRESTR
+!CHECK 020450.00 | 000000.00+ 000 000000 231462 | line 15 WRDXW1 XW,0,0,YBCBU,0
+!CHECK 020451.00 | 020636.25 01 | line 21 YTCERR LVI,$10,YTCEM
+!CHECK 020451.40 | 020075.63 01 | line 22 LVI,$9,YTCSR
+!CHECK 020452.00 | 020457.50 00 | line 23 B,YBCERR
+!CHECK 020452.40 | 020646.25 01 | line 24 YLCERR LVI,$10,YLCEM
+!CHECK 020453.00 | 020111.63 01 | line 25 LVI,$9,YC4B5
+!CHECK 020453.40 | 020457.50 00 | line 26 B,YBCERR
+!CHECK 020454.00 | 020656.25 01 | line 27 YIDCER LVI,$10,YICEM
+!CHECK 020454.40 | 020132.23 01 | line 28 LVI,$9,YIODSO
+!CHECK 020455.00 | 231373.64 80 030600.06 70 | line 29 LF(BU,24,6),YUTOE
+!CHECK 020456.00 | 020660.50 80 040000.12 F0 | line 30 SF(BU,32),YICEM+.168
+!CHECK 020457.00 | 020457.50 00 | line 31 B,YBCERR
+!CHECK 020457.40 | 231462.00 80 014000.20 50 | line 37 YBCERR L(BU,12),YBCBU
+!CHECK 020460.40 | 110000.00 80 414000.23 10 | line 38 KFI(BU,12),(2)001001000000 (a "*" after the location)
+!CHECK 020461.40 | 020463.76 C0 | line 39 BZAE,$+2.0
+!CHECK 020462.00 | 231426.71 80 001000.36 F0 | line 40 CM1111(BU,1),YTBIT
+!CHECK 020463.00 | 000000.10 09 | line 41 B,0.0($9)
+!CHECK 020463.40 | 420000.00 80 414000.23 10 | line 42 KFI(BU,12),(2)100010000000
+!CHECK 020464.40 | 020220.36 C6 | line 43 BAEZ,YBRLOG
+!CHECK 020465.00 | 020656.25 04 | line 44 KVI,$10,YICEM
+!CHECK 020465.40 | 020220.32 C0 | line 45 BZXE,YBRLOG
+!CHECK 020466.00 | 215324.30 90 | line 46 KV,$12,SLRBU
+!CHECK 020466.40 | 020470.32 42 | line 47 BXL,YBLMOK
+!CHECK 020467.00 | 215324.31 30 | line 48 SV,$12,SLRBU
+!CHECK 020467.40 | 215005.31 30 | line 49 SV,$12,SBAPP
+!CHECK 020470.00 | 000001.31 0A | line 50 YBLMOK KCI,$12,1.0
+!CHECK 020470.40 | 020177.72 C2 | line 51 BXE,WJC4G1
+!CHECK 020471.00 | 020153.50 00 | line 52 B,YC4C9

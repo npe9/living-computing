@@ -1,0 +1,119 @@
+! mcp_bootstrap_p421.strap -- MCP printed page 421: the $EOJ copy of the
+! ASSIGN program's MODE, DENSITY and DISPOSITION SCAN TABLES.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.171, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054C41  PUNID 22$EOJ  CARD ID ZF000202  DIST. OF 3/C1
+!  3/01  PAGE NUMBER 421"; the heading row's LOCATION field is BLANK --
+! line 1 is a banner (docs/transcription_workflow.md step 1).
+!
+! >>> STILL $EOJ, CARD SERIES ZF. <<<  PUNID 22$EOJ; serials ZF000202
+! .. ZF000253, one per line, none skipped or doubled.  No SLC, no TAIL;
+! the origin below is line 5's printed LOCATION.
+!
+! THE PAGE.  52 lines, every line number prints a "*"; a "*" after the
+! LOCATION on line 16 (as volume 1's p.86 line 16).  Contiguous
+! 022254.00 .. 022266.76 (line 52, a 3-bit DD ending at 022267.01).
+! Banner/blank remark lines 1-4, 7, 19-23, 33-38, 41.  Same source as
+! the volume-1 bootstrap's printed p.86 (decks/mcp_bootstrap_p86.strap),
+! reassembled in $EOJ; p.86 used for spellings only, never an address.
+!
+! >>> TWO ROWS DIFFER FROM VOLUME 1's DECK. <<<  Here line 18 prints
+! DD(BU,2),0 with binary 0, and line 52 prints DD(BU,03),3 with binary
+! 3 and the remark "-AN ERROR WILL WILL SAVE THE TAPE" (disposition 3 =
+! SAVE).  decks/mcp_bootstrap_p86.strap has line 18 ",3" and line 52
+! ",0" -- either a different source revision or a misreading there;
+! this page's statement and binary agree with each other on both rows.
+!
+! GLYPHS.  The octal fields print 0 open throughout ("C22255.31+",
+! "CCCCCC.02-"); all such are 0.  The labels print "T SCIX2" etc.
+! with a blank after T; the statements reference "TSCAN2" unspaced.
+! Line 52's remark prints "LRROR" and "IHE LAPE": worn E and T.
+!
+! Entry-mode data: the blanks in the (AX)DD rows are DATA, padding each
+! name to its 5 (or 2) characters before the X terminator.
+
+        SLC, (8)022254.0
+! line  1  - ---------------------------------------------------------
+! line  2  -                    THE MODE SCAN TABLES
+! line  3  - ---------------------------------------------------------
+! line  4  -
+TSCIX2  XW,TSCAN2,5,0                                        ! line  5  -INDEX FOR MODE SCAN TABLES
+TSCBK2  VF,-2                                                ! line  6  -BACKUP CONSTANT TO GET CODE
+! line  7  -
+TSCAN2  (AX)DD(BU,30,6),     X                               ! line  8
+        DD(BU,2),0                                           ! line  9
+        (AX)DD(BU,30,6),ECC  X                               ! line 10
+        DD(BU,2),1                                           ! line 11
+        (AX)DD(BU,30,6),ODD  X                               ! line 12
+        DD(BU,2),3                                           ! line 13
+        (AX)DD(BU,30,6),EVEN X                               ! line 14
+        DD(BU,2),2                                           ! line 15
+        (AX)DD(BU,30,6),NOECCX                               ! line 16  (a "*" prints after the location)
+        DD(BU,2),3                                           ! line 17
+        DD(BU,2),0                                           ! line 18
+! line 19  -
+! line 20  - ---------------------------------------------------------
+! line 21  -                    THE DENSITY SCAN TABLE
+! line 22  - ---------------------------------------------------------
+! line 23  -
+TSCIX3  XW,TSCAN3,3,0                                        ! line 24  -IX FOR DENSITY SCAN TABLE
+TSCBK3  VF,-2                                                ! line 25  -BACKUP CONSTANT TO GET CODE
+TSCAN3  (AX)DD(BU,12,6),HDX                                  ! line 26
+        DD(BU,2),1                                           ! line 27
+        (AX)DD(BU,12,6),LDX                                  ! line 28
+        DD(BU,2),3                                           ! line 29
+        (AX)DD(BU,12,6),  X                                  ! line 30
+        DD(BU,2),0                                           ! line 31
+        DD(BU,2),0                                           ! line 32  -ERROR WILL BE NULL
+! line 33  -
+! line 34  -
+! line 35  - ---------------------------------------------------------
+! line 36  -                    THE DISPOSITION SCAN TABLE
+! line 37  - ---------------------------------------------------------
+! line 38  -
+TSCIX4  XW,TSCAN4,5,0                                        ! line 39  -IX FOR THE DISPOSITION SCAN TABLE
+TSCBK4  VF,-3                                                ! line 40  -BACKUP CONSTANT TO GET CODE
+! line 41  -
+TSCAN4  (AX)DD(BU,30,6),NSAVEX                               ! line 42
+        DD(BU,3),0                                           ! line 43
+        (AX)DD(BU,30,6),     X                               ! line 44
+        DD(BU,3),0                                           ! line 45
+        (AX)DD(BU,30,6),CSAVEX                               ! line 46
+        DD(BU,3),1                                           ! line 47
+        (AX)DD(BU,30,6),ISAVEX                               ! line 48
+        DD(BU,3),2                                           ! line 49
+        (AX)DD(BU,30,6),SAVE X                               ! line 50
+        DD(BU,3),3                                           ! line 51
+        DD(BU,03),3                                          ! line 52  -AN ERROR WILL WILL SAVE THE TAPE
+
+!SYM TSCIX2 022254.00
+!SYM TSCBK2 022255.00
+!SYM TSCAN2 022255.31
+!SYM TSCIX3 022260.00
+!SYM TSCBK3 022261.00
+!SYM TSCAN3 022261.31
+!SYM TSCIX4 022263.00
+!SYM TSCBK4 022264.00
+!SYM TSCAN4 022264.31
+!CHECK 022254.00 | 022255.31+ 000 000005 000000 | line 5 T SCIX2 XW,TSCAN2,5,0 (0 printed open)
+!CHECK 022255.00 | 000000.02- | line 6 T SCBK2 VF,-2
+!CHECK 022255.67 | 0 | line 9 DD(BU,2),0 | 2
+!CHECK 022256.27 | 1 | line 11 DD(BU,2),1 | 2
+!CHECK 022256.67 | 3 | line 13 DD(BU,2),3 | 2
+!CHECK 022257.27 | 2 | line 15 DD(BU,2),2 | 2
+!CHECK 022257.67 | 3 | line 17 DD(BU,2),3 | 2
+!CHECK 022257.71 | 0 | line 18 DD(BU,2),0 (volume 1's p.86 deck has 3) | 2
+!CHECK 022260.00 | 022261.31+ 000 000003 000000 | line 24 T SCIX3 XW,TSCAN3,3,0
+!CHECK 022261.00 | 000000.02- | line 25 T SCBK3 VF,-2
+!CHECK 022261.45 | 1 | line 27 DD(BU,2),1 | 2
+!CHECK 022261.63 | 3 | line 29 DD(BU,2),3 | 2
+!CHECK 022262.01 | 0 | line 31 DD(BU,2),0 | 2
+!CHECK 022262.03 | 0 | line 32 DD(BU,2),0 | 2
+!CHECK 022263.00 | 022264.31+ 000 000005 000000 | line 39 T SCIX4 XW,TSCAN4,5,0
+!CHECK 022264.00 | 000000.03- | line 40 T SCBK4 VF,-3
+!CHECK 022264.67 | 0 | line 43 DD(BU,3),0 | 3
+!CHECK 022265.30 | 0 | line 45 DD(BU,3),0 | 3
+!CHECK 022265.71 | 1 | line 47 DD(BU,3),1 | 3
+!CHECK 022266.32 | 2 | line 49 DD(BU,3),2 | 3
+!CHECK 022266.73 | 3 | line 51 DD(BU,3),3 | 3
+!CHECK 022266.76 | 3 | line 52 DD(BU,03),3 (volume 1's p.86 deck has 0) | 3

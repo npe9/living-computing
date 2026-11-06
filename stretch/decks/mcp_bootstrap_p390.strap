@@ -1,0 +1,198 @@
+! mcp_bootstrap_p390.strap -- MCP printed page 390: the $EOJ program's
+! "ANALYZE ERROR RETURN, GIVE ERROR MESSAGE" section (after TMOVE
+! returns from moving IOD/reel cards): reject-bit tests on WMOVIO, the
+! IOD-reference-number conversion loop (WMOJL), the four error-message
+! exits (WINV, WREFNO, WDISKA, WMEMO) through YPR, and WTEST (T card?)
+! with its WMOVIX move-index word.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.140, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZA000397  DIST. OF 3/01
+!  3/01  PAGE NUMBER 390"; the heading row's LOCATION field is BLANK
+! (line 1 is a remark).
+!
+! >>> NOT SCOMD. <<<  PUNID 22$EOJ, card series ZA: the END OF JOB
+! program, which opens on printed p.381 (card ZA000001).  Its code is
+! at 020xxx; it references the resident YPR/YPRRET/WJOR2 only.
+!
+! THE PAGE.  53 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 18 and 36.  Contiguous 020332.00 .. 020372.00
+! (line 53, a half word; next 020372.40).  No SLC printed, no TAIL.
+!   lines  1-3   remarks (banner).
+!   lines  4-28  reject analysis, WMOJL conversion loop, WMOREJ.
+!   line  29     remark "- OUT OF PHASE ERROR EXIT TO BE WRITTEN".
+!   lines 30-44  WINV, WREFNO, WSIC ("W SIC"), WDISKA, WMEMO.
+!   line  45     CNOP (compiles nothing; 020364.00 already a word).
+!   lines 46-53  WTEST, WMOVIX XW, B,WJC4G.
+!
+! JOIN.  p.389 (read off its image for this page's stand-ins) ends at
+! line 46 "WMOVIO XW,WBREAK+1.0,0,0" at 020331.00, a full word, so line
+! 4's 020332.00 continues it.
+!
+! STAND-INS.  No $EOJ page is landed.  WMOVIO, WUNC4, WJCV (p.389),
+! WJC4QM, WBREAK (p.392) and the YMOJMn/YMOVJM messages (p.394) were
+! read off their defining page's IMAGE at 400 dpi; WJC4G, WRESTR (p.386)
+! and WJ4VV (p.391) come from the Vision reading of those pages only:
+! XW labels and (AX)DD(BU) labels are SYN(BU); instruction labels carry
+! their length.  WBREAK is p.392 line 16 "WBREAK SYN,WJOR2+1.0" (prints
+! 231444.00+, dds U,100,04), copied in its defining form over the
+! resident WJOR2 (landed p.274 "WJOR2 DRZ(U),15", 231443.00).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * WMOJL (printed "WMCJL" twice, lines 12 and 16): the WMO- family
+!     (WMOVIO, WMOREJ, WMOVIX all print O closed on this page).  Nothing
+!     outside this page references it -- rests on the family.
+!   * WMOREJ: line 21 prints "WMOREJ" closed; the label (line 22)
+!     prints "WMCREJ".
+!   * WMOVIX: line 52's label prints "WMCVIX"; lines 49, 50 print
+!     "WMOVIX" closed.
+!   * YMOJM4, YMOJM1, YMOJM2, YMOJM3, YMOVJM: lines 30/41 print "YMCJM4",
+!     "YMCJM3"; p.394 line 32 defines "YMOJM1" with a closed O and the
+!     family takes it; YMOVJM prints closed on lines 8, 17, 18.
+!   * WREFNO (printed "WREFNC" twice): "-INVALID REFERENCE NO." on line
+!     27 and the open round is this drum's O.
+!   * WJC4QM: the Q has its tail on line 31 and on p.392 line 12's
+!     defining card; WJC4G (line 48, 53) is a different symbol (p.386).
+!   * LVI,$9,C (line 11) = LVI,$9,0 (it prints 000000.23 01).
+!   * LFI(BU,8),(2)0000101C,0($9) (line 14) = (2)00001010: a binary
+!     literal can hold only 0/1 ("LOAD BCD ZERO").
+!   * KI(BU,12),(8)110C (line 46) = (8)1100: octal literal; p.389 line
+!     13 prints the same comparison "(8)1100".
+!   * line 8 SF byte prints "FC" = F0: i2 (low nibble) is the offset
+!     index and none is printed; at 900 dpi the glyph matches the
+!     row's octal-field 0s (lesson 6).  BZRZ line 13 "C0" is a real C0.
+!
+! CARD SERIALS.  ZA000397 .. ZA000445, one per line, except four
+! shared: ZA000415 (lines 19, 20), ZA000429 (34, 35), ZA000432 (38, 39),
+! ZA000435 (42, 43) -- each a SIC/B linkage pair.  p.389 ends at
+! ZA000395: no ZA000396 is printed on either page.  Recorded.
+
+YPRRET  SYN(BU,32,8), (8)231204.40   ! landed p.270 line 22 BE,0 (half word); SIC lines 19, 34, 38, 42
+YPR     SYN(BU,32,8), (8)231172.0    ! landed p.270 line 2 B,YPRSPL (half word); B lines 20, 35, 39, 43
+WJOR2   SYN(U), (8)231443.0          ! landed p.274 line 18 "WJOR2 DRZ(U),15"; base of WBREAK
+WBREAK  SYN,WJOR2+1.0                ! not landed; p.392 line 16 "WBREAK SYN,WJOR2+1.0" (231444.00+, U,100,04); XW line 52 231445.00+
+WMOVIO  SYN(BU), (8)020331.0         ! not landed; p.389 line 46 "WMOVIO XW,WBREAK+1.0,0,0"; LX line 4 020331.24
+WUNC4   SYN(BU), (8)020324.0         ! not landed; p.389 line 37 "WUNC4 XW,0,0,0"; LF line 9 020324.64
+WJCV    SYN(BU,32,8), (8)020316.0    ! not landed; p.389 line 28 "WJCV SIC,$15"; BXCZ line 5, BRZ line 23
+WJC4G   SYN(BU,32,8), (8)020200.40   ! not landed; p.386 "WJC4G LV,$14,SLRBU+.32" (Vision reading); B line 53 020200.50, half word only
+WRESTR  SYN(BU,64,8), (8)020226.0    ! not landed; p.386 "WRESTR CM1111,YEOJS" (Vision reading); BE lines 36, 40, 44 020226.00
+WJ4VV   SYN(BU,64,8), (8)020401.40   ! not landed; p.391 line 15 "WJ4VV CM1111(BU,1),YTBIT" (Vision reading); BAE line 47 020401.76
+WJC4QM  SYN(BU), (8)020440.0         ! not landed; p.392 line 12 "WJC4QM (AX)DD(BU), JOB REJECTED"; LVI line 31 020440.03
+YMOJM4  SYN(BU), (8)020542.0         ! not landed; p.394 line 10 "YMCJM4 (AX)DD(BU),..."; TI line 30 020542.00
+YMOJM3  SYN(BU), (8)020566.0         ! not landed; p.394 line 19 "YMCJM3 (AX)DD(BU),..."; LVI line 41
+YMOVJM  SYN(BU), (8)020576.0         ! not landed; p.394 line 22 "YMCVJM (AX)DD(BU),-"; LVI line 18 020576.03
+YMOJM2  SYN(BU), (8)020612.0         ! not landed; p.394 line 28 "YMCJM2 (AX)DD(BU),..."; LVI line 37
+YMOJM1  SYN(BU), (8)020622.0         ! not landed; p.394 line 32 "YMOJM1 (AX)DD(BU),..."; LVI line 33
+TMOVE   SYN, (8)022326.0             ! $EOJ's TMOVE (NOT the bootstrap's 005014); defining card not found; B line 51 022326.10, half word only
+
+        SLC, (8)020332.0
+! line  1  - ****************************************************
+! line  2  --ANALYZE ERROR RETURN, GIVE ERROR MESSAGE
+! line  3  - ****************************************************
+        LX,$10,WMOVIO                                        ! line  4  -
+        BXCZ,WJCV                                            ! line  5  -NO ERROR, NO REJECT
+        C0011(BU,3),WMOVIO+.28                               ! line  6  -COPY FIRST THREE BITS OF COUNT F
+        BRZ,WMOREJ                                           ! line  7  -TO REJECT  printed "WMCREJ"
+        SF(BU,8,8),YMOVJM+5.16                               ! line  8  -STORE IN REJECT MESSAGE
+        LF(BU,12,3),WUNC4+.52                                ! line  9  -
+        LCI,$9,4.0                                           ! line 10  -
+        LVI,$9,0                                             ! line 11  -  printed "LVI,$9,C"
+WMOJL   CT0101(BU,8),$,0($9)                                 ! line 12  -  printed "WMCJL"
+        BZRZ,$+1.32                                          ! line 13  -
+        LFI(BU,8),(2)00001010,0($9)                          ! line 14  -LOAD BCD ZERO  printed "(2)0000101C"
+        V+I,$9,4.0                                           ! line 15  -
+        CB,$9,WMOJL                                          ! line 16  -CONVERT IOD REFERENCE NUMBER  printed "WMCJL"
+        ST(BU,32),YMOVJM+3.08                                ! line 17  -STORE IN OUTPUT MESSAGE
+        LVI,$1,YMOVJM                                        ! line 18  (location carries *)
+        SIC,YPRRET                                           ! line 19
+        B,YPR                                                ! line 20
+        BE,WMOREJ                                            ! line 21  -CHECK MOVE REJECT
+WMOREJ  L(BU,4),WMOVIO+.42,                                  ! line 22  - LOAD REJECT BITS  printed "WMCREJ"
+        BRZ,WJCV                                             ! line 23  -NO REJECT, READ NEXT CARD
+        BB,WMOVIO+.41,WINV                                   ! line 24  -IF AN INVALID IOD CARD
+        BB,WMOVIO+.45,WDISKA                                 ! line 25  -REQUEST EXCEEDS DISK ALLOWED
+        BB,WMOVIO+.43,WMEMO                                  ! line 26  -EXCEEDING REEL POOL TABLE
+        BB,WMOVIO+.42,WREFNO                                 ! line 27  -INVALID REFERENCE NO.
+        BEW,$                                                ! line 28  -JOB OUT OF PHASE
+! line 29  -     OUT OF PHASE ERROR EXIT TO BE WRITTEN
+WINV    TI,4,YMOJM4,WJC4QM+2.                                ! line 30  -SET FOR THE ILLEGAL CARD MESSAGE  printed "YMCJM4"
+        LVI,$1,WJC4QM                                        ! line 31
+        B,WSIC                                               ! line 32
+WREFNO  LVI,1,YMOJM1                                         ! line 33  printed "WREFNC"
+WSIC    SIC,YPRRET                                           ! line 34  printed "W SIC"
+        B,YPR                                                ! line 35  printed " B,YPR"
+        BE,WRESTR                                            ! line 36  (location carries *)
+WDISKA  LVI,1,YMOJM2                                         ! line 37
+        SIC,YPRRET                                           ! line 38
+        B,YPR                                                ! line 39
+        BE,WRESTR                                            ! line 40
+WMEMO   LVI,1,YMOJM3                                         ! line 41  printed "WMEMC", "YMCJM3"
+        SIC,YPRRET                                           ! line 42
+        B,YPR                                                ! line 43
+        BE,WRESTR                                            ! line 44
+        CNOP                                                 ! line 45  -
+WTEST   KI(BU,12),(8)1100                                    ! line 46  -IS IT A T CARD  printed "(8)110C"
+        BAE,WJ4VV                                            ! line 47  -YES
+        BZB,WMOVIO+.24,WJC4G                                 ! line 48  -INITIAL ENTRY BIT ON
+        CM1111(BU,1),WMOVIX+.24                              ! line 49  -
+        LVI,$15,WMOVIX                                       ! line 50  -
+        B,TMOVE                                              ! line 51  -
+WMOVIX  XW,WBREAK+1.0,0                                      ! line 52  -  printed "WMCVIX"
+        B,WJC4G                                              ! line 53  -
+
+!SYM WMOJL  020337.40
+!SYM WMOREJ 020346.00
+!SYM WINV   020354.00
+!SYM WREFNO 020356.00
+!SYM WSIC   020356.40
+!SYM WDISKA 020360.00
+!SYM WMEMO  020362.00
+!SYM WTEST  020364.00
+!SYM WMOVIX 020371.00
+!CHECK 020332.00 | 020331.24 10 | line 4 LX,$10,WMOVIO
+!CHECK 020332.40 | 020316.30 42 | line 5 BXCZ,WJCV
+!CHECK 020333.00 | 020331.34 80 003000.06 70 | line 6 C0011(BU,3),WMOVIO+.28
+!CHECK 020334.00 | 020346.34 C2 | line 7 BRZ,WMOREJ
+!CHECK 020334.40 | 020603.20 80 010000.12 F0 | line 8 SF(BU,8,8),YMOVJM+5.16 -- byte prints "FC": open 0 (no offset index printed, i2=0; same glyph as the row's octal 0s at 900 dpi)
+!CHECK 020335.40 | 020324.64 80 014300.06 70 | line 9 LF(BU,12,3),WUNC4+.52
+!CHECK 020336.40 | 000004.23 02 | line 10 LCI,$9,4.0
+!CHECK 020337.00 | 000000.23 01 | line 11 LVI,$9,C
+!CHECK 020337.40 | 020337.40 80 010000.13 79 | line 12 WMOJL CT0101(BU,8),$,0($9)
+!CHECK 020340.40 | 020342.34 C0 | line 13 BZRZ,$+1.32
+!CHECK 020341.00 | 024000.00 80 410000.06 79 | line 14 LFI(BU,8),(2)00001010,0($9)
+!CHECK 020342.00 | 000004.23 05 | line 15 V+I,$9,4.0
+!CHECK 020342.40 | 020337.62 48 | line 16 CB,$9,WMOJL
+!CHECK 020343.00 | 020601.10 80 040000.20 D0 | line 17 ST(BU,32),YMOVJM+3.08
+!CHECK 020344.00 | 020576.03 01 | line 18 LVI,$1,YMOVJM
+!CHECK 020344.40 | 231204.40 80 | line 19 SIC,YPRRET
+!CHECK 020345.00 | 231172.10 00 | line 20 B,YPR
+!CHECK 020345.40 | 020346.00 00 | line 21 BE,WMOREJ
+!CHECK 020346.00 | 020331.52 80 004000.20 50 | line 22 WMOREJ L(BU,4),WMOVIO+.42,
+!CHECK 020347.00 | 020316.34 C2 | line 23 BRZ,WJCV
+!CHECK 020347.40 | 020331.51 80 020354.34 02 | line 24 BB,WMOVIO+.41,WINV
+!CHECK 020350.40 | 020331.55 80 020360.34 02 | line 25 BB,WMOVIO+.45,WDISKA
+!CHECK 020351.40 | 020331.53 80 020362.34 02 | line 26 BB,WMOVIO+.43,WMEMO
+!CHECK 020352.40 | 020331.52 80 020356.34 02 | line 27 BB,WMOVIO+.42,WREFNO
+!CHECK 020353.40 | 020353.60 00 | line 28 BEW,$
+!CHECK 020354.00 | 020542.00 80 020442.10 A0 | line 30 WINV TI,4,YMOJM4,WJC4QM+2.
+!CHECK 020355.00 | 020440.03 01 | line 31 LVI,$1,WJC4QM
+!CHECK 020355.40 | 020356.50 00 | line 32 B,WSIC
+!CHECK 020356.00 | 020622.03 01 | line 33 WREFNO LVI,1,YMOJM1
+!CHECK 020356.40 | 231204.40 80 | line 34 W SIC SIC,YPRRET
+!CHECK 020357.00 | 231172.10 00 | line 35 B,YPR
+!CHECK 020357.40 | 020226.00 00 | line 36 BE,WRESTR
+!CHECK 020360.00 | 020612.03 01 | line 37 WDISKA LVI,1,YMOJM2
+!CHECK 020360.40 | 231204.40 80 | line 38 SIC,YPRRET
+!CHECK 020361.00 | 231172.10 00 | line 39 B,YPR
+!CHECK 020361.40 | 020226.00 00 | line 40 BE,WRESTR
+!CHECK 020362.00 | 020566.03 01 | line 41 WMEMO LVI,1,YMOJM3
+!CHECK 020362.40 | 231204.40 80 | line 42 SIC,YPRRET
+!CHECK 020363.00 | 231172.10 00 | line 43 B,YPR
+!CHECK 020363.40 | 020226.00 00 | line 44 BE,WRESTR
+!CHECK 020364.00 | 110000.00 80 414000.21 10 | line 46 WTEST KI(BU,12),(8)1100
+!CHECK 020365.00 | 020401.76 C2 | line 47 BAE,WJ4VV
+!CHECK 020365.40 | 020331.30 80 020200.74 00 | line 48 BZB,WMOVIO+.24,WJC4G
+!CHECK 020366.40 | 020371.30 80 001000.36 F0 | line 49 CM1111(BU,1),WMOVIX+.24
+!CHECK 020367.40 | 020371.37 01 | line 50 LVI,$15,WMOVIX
+!CHECK 020370.00 | 022326.10 00 | line 51 B,TMOVE
+!CHECK 020371.00 | 231445.00+ 000 000000 000000 | line 52 WMOVIX XW,WBREAK+1.0,0
+!CHECK 020372.00 | 020200.50 00 | line 53 B,WJC4G

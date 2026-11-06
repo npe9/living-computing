@@ -168,6 +168,7 @@ def collect(deck_dir=None):
     addr_names = collections.defaultdict(lambda: collections.defaultdict(set))
     aliases = set()
     page_syms = collections.defaultdict(set)    # page -> names with a !SYM
+    index_alias = collections.defaultdict(set)  # page -> names SYN'd to $n
     names = re.compile(r'mcp_bootstrap_p(\d+(?:_p\d+)?)\.strap$')
     for fn in sorted(os.listdir(deck_dir)):
         m = names.search(fn)
@@ -181,6 +182,7 @@ def collect(deck_dir=None):
                 if hit:
                     name, addr = hit.group(1).upper(), hit.group(2).strip().rstrip(',')
                     if addr.startswith('$'):      # index-register aliases
+                        index_alias[page].add(name)
                         continue
                     bit = _as_bit(addr)
                     if bit is None and addr.upper().isalnum():
@@ -200,6 +202,16 @@ def collect(deck_dir=None):
                     # however the deck defined it -- SYN, VF, DD or a
                     # label on an instruction.
                     name, loc = hit.group(1).upper(), hit.group(2)
+                    # >>> AN INDEX ALIAS'S !SYM IS ITS REGISTER, NOT A
+                    # LOCATION. <<<  The SYN card above is skipped for
+                    # the same reason.  printed p.411 ($EOJ) defines
+                    # "TXA SYN,$2" and p.418 "TMXA SYN,$2" -- the print
+                    # routine's and the MOVE routine's own names for one
+                    # register, as volume 1's pp.76 and 83 have them --
+                    # and both carry a !SYM, which made them read as one
+                    # name spelled two ways ("extra 'M'").
+                    if name in index_alias[page]:
+                        continue
                     bit = _as_bit("(8)%s" % loc)
                     if bit is not None:
                         addr_names[bit][name].add(page)

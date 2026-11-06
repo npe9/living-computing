@@ -1,0 +1,170 @@
+! mcp_bootstrap_p423.strap -- MCP printed page 423: the $EOJ program's
+! THE - MOVE - SUB-ROUTINE (T MOVE .. T MNGA): save indexes, test the
+! card for IOD, and convert the IOD card's TYPE and MODE fields to codes.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.173, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID ZF000278  DIST. OF 3/01
+!  3/01  PAGE NUMBER 423"; the heading row's LOCATION field is BLANK
+! (lines 1-5 are a remark banner).
+!
+! >>> PUNID 22$EOJ, CARD SERIES ZF (p.409 printed ZE). <<<  Low core
+! 0223xx, no SLC on the page -- the origin below is line 6's printed
+! LOCATION.  No TAIL.  T MOVE prints at 022326.00, the address every
+! $EOJ deck's TMOVE stand-in carries (022326.0).
+!
+! THE PAGE.  50 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 24 and 41.  Contiguous 022326.00 .. 022361.00
+! (line 50, a half word LX; next location 022361.40).  p.422 and p.424
+! are not landed: contiguity with neither neighbour is established.
+!   lines  1-5   remark banner "THE - MOVE - SUB-ROUTINE"
+!   lines 18-20  remark banner "CONVERT THE NECESSARY FIELDS OF THE
+!                IOD CARD"; lines 7, 14, 32, 49 blank remarks.
+! The same source as the volume-1 bootstrap's printed p.88
+! (decks/mcp_bootstrap_p88.strap) but a DIFFERENT ASSEMBLY, and the
+! text differs from line 45: here line 45 is BZRZ,Z TGET2, line 46
+! LFI(BU,2),(8)3 (-IF SINGLE UNIT NULL IOD,GET ODD PARITY) and line 47
+! is labelled Z TGET2.  Volume 1 is used for SPELLINGS only.
+!
+! CARD SERIALS.  ZF000278 .. ZF000327, one per line, consecutive
+! (serial = line + 277).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 24 label prints "T MLCK1" (open round) and line 26 "TMLCK1":
+!     spelled TMLOK1 as volume 1 (p.88 line 24) does; the drum prints O
+!     open, and line 29's "T MOK1" / line 43's "T MOK2" are the
+!     LOOK/OK family.  BZXCZ's address 022340.30 is the label's own.
+!   * line 12 h2 prints "001000.CC FC": an octal field can only hold 0,
+!     and CM0000 can only make F0 there (volume-1 p.88 line 12 prints
+!     001000.00 F0).
+!   * every bare B prints ".x0 00"/"C0" bytes as the drum's open 0; the
+!     assembler and the octal fields agree.
+!
+! EXTERNALS.  None of these is defined on a landed $EOJ page (pp.381-
+! 409); every address below is read off THIS page's binary.  Index
+! registers in the volume-1 defining form SYN,$n (bytes 8A/88, 1F, .27
+! 01/05 confirm $10/$8/$11).  Field offsets carry the dds the page's own
+! VFL rows print (C0011,TIOP -> length 030 = 24; C0011,TITY -> 052 = 42;
+! LF,TIMO-1.0 -> 036 = 30; CM0101,TIMOCD-1.0 -> 002 = 2; KF,TMIOD ->
+! 030600 = (BU,24,6)).  Words of unknown length are plain SYN; the two
+! LX targets are index words, SYN(BU).
+
+TMXI    SYN,$10                      ! vol-1 p.83 line 30 form; byte 8A lines 15, 23, 31
+TMXG    SYN,$8                       ! vol-1 p.83 line 28 form; byte 88 line 30, .20 10 line 22
+TMXGA   SYN,$11                      ! vol-1 p.83 line 31 form; LVI line 21 000000.27 01
+TIOP    SYN(BU,24),1.0               ! C0011 line 15 000001.00 8A 030000.06, BIT-EXACT
+TITY    SYN(BU,42),2.0               ! C0011 line 23 000002.00 8A 052000.06, BIT-EXACT
+TITYCD  SYN(BU,4),2.60               ! BB line 33 000002.74 / SF line 31 -1 = 2.59
+TIMO    SYN(BU,30),6.0               ! LF line 37 TIMO-1.0 = 000005.00, length 036
+TIMOCD  SYN(BU,2),6.62               ! CM0101 line 47 TIMOCD-1.0 = 000005.76 (5.62), length 002
+TMIOD   SYN(BU,24,6), (8)022131.21   ! $EOJ, not landed; KF line 16 022131.21 80 030600.23, BIT-EXACT
+TSIOXW  SYN, (8)022134.0             ! $EOJ, not landed; SWAPI line 6 022134.30, word address only
+TERFLG  SYN, (8)022133.0             ! $EOJ, not landed; CM0000 line 8 022133.00, BIT-EXACT
+TSCIX1  SYN(BU), (8)022244.0         ! $EOJ, not landed; XW (vol-1); LX line 22 022244.20, word only
+TSCIX2  SYN(BU), (8)022254.0         ! $EOJ, not landed; XW (vol-1); LX lines 36/50 022254.20, word only
+TSCBK1  SYN, (8)022245.0             ! $EOJ, not landed; V+ line 29 022245.20, half word only
+TSCBK2  SYN, (8)022255.0             ! $EOJ, not landed; V+ line 43 022255.20, half word only
+TMREJ   SYN, (8)022724.0             ! $EOJ, not landed; BZRZ line 11 022724.34, half word only
+TM2     SYN, (8)022634.40            ! $EOJ, not landed; BXVLZ line 13 022634.70, half word only
+TM6     SYN, (8)022606.0             ! $EOJ, not landed; BZAE line 17 022606.36, half word only
+TMNG    SYN, (8)022406.0             ! $EOJ, not landed; BAE line 35 022406.36, B line 48 022406.10
+
+        SLC, (8)022326.00
+! line  1  -
+! line  2  -      ---------------------------------------------------
+! line  3  -                    THE - MOVE - SUB-ROUTINE
+! line  4  -      ---------------------------------------------------
+! line  5  -
+TMOVE   SWAPI,12,$1,TSIOXW                                   ! line  6  -SAVE INDEXES
+! line  7  -
+        CM0000(BU,18),TERFLG                                 ! line  8  -RESET THE IOD CARD ERROR IND
+        LX,TMXI,0.0($15)                                     ! line  9  -GET CONTROL WORD FOR ENTRY CK
+        CT0011(BU,18),0.46($15)                              ! line 10
+        BZRZ,TMREJ                                           ! line 11  -IF A DISPATCHER REJECT
+        CM0000(BU,1),TMXI+24                                 ! line 12  -SET THE SIGN PLUS
+        BXVLZ,TM2                                            ! line 13  -IF INITIAL ENTRY
+! line 14  -
+TM1     C0011,TIOP(TMXI)                                     ! line 15  -LOAD OP CODE FOR TEST
+        KF,TMIOD                                             ! line 16  -TEST FOR IOD
+        BZAE,TM6                                             ! line 17  -NOT AN IOD CARD
+! line 18  -
+! line 19  -           CONVERT THE NECESSARY FIELDS OF THE IOD CARD
+! line 20  -
+        LVI,TMXGA,0.0                                        ! line 21  -RESET THE ERROR FLAG INDEX
+        LX,TMXG,TSCIX1                                       ! line 22  -GET THE NUMBER OF SCAN
+        C0011,TITY(TMXI)                                     ! line 23  -GET TYPE FIELD
+TMLOK1  KF(V+IC)(BU,42,6),.47(TMXG)                          ! line 24  (printed "T MLCK1")
+        BAE,TMOK1                                            ! line 25
+        BZXCZ,TMLOK1                                         ! line 26
+        V+I,TMXGA,16.0                                       ! line 27  -A TYPE FIELD ERROR
+        B,TGET1                                              ! line 28
+TMOK1   V+,TMXG,TSCBK1                                       ! line 29
+TGET1   LF(BU,5),0.0(TMXG)                                   ! line 30
+        SF(BU,5),TITYCD-1(TMXI)                              ! line 31  -STORE THE TYPE CODE
+! line 32  -
+        BB,TITYCD(TMXI),TMNGA                                ! line 33  -GO IF TAPE
+        KFI(BU,4),001                                        ! line 34  -LOOK FOR A DISK
+        BAE,TMNG                                             ! line 35  -YES
+        LX,TMXG,TSCIX2                                       ! line 36  -LOAD FOR MODE SCAN FOR CARD MACHINES
+        LF,TIMO-1.0(TMXI)                                    ! line 37  -GET CARD MACHINE MODE
+TMLOK2  KF(V+IC)(BU,30,6),0.32(TMXG)                         ! line 38
+        BAE,TMOK2                                            ! line 39
+        BZXCZ,TMLOK2                                         ! line 40
+        V+I,TMXGA,04.0                                       ! line 41  -A MODE FIELD ERROR
+        B,TGET2                                              ! line 42
+TMOK2   V+,TMXG,TSCBK2                                       ! line 43
+TGET2   C0011(BU,2),0.0(TMXG)                                ! line 44
+        BZRZ,ZTGET2                                          ! line 45
+        LFI(BU,2),(8)3                                       ! line 46  -IF SINGLE UNIT NULL IOD,GET ODD PARITY
+ZTGET2  CM0101,TIMOCD-1.0(TMXI)                              ! line 47
+        B,TMNG                                               ! line 48  -NON TAPE FINISHED
+! line 49  -
+TMNGA   LX,TMXG,TSCIX2                                       ! line 50  -LOAD TO TAPE MODE SCAN
+
+!SYM TMOVE  022326.00
+!SYM TM1    022333.40
+!SYM TMLOK1 022340.00
+!SYM TMOK1  022343.00
+!SYM TGET1  022343.40
+!SYM TMLOK2 022351.40
+!SYM TMOK2  022354.40
+!SYM TGET2  022355.00
+!SYM ZTGET2 022357.40
+!SYM TMNGA  022361.00
+!CHECK 022326.00 | 000021.00 80 022134.30 E0 | line 6 T MOVE SWAPI,12,$1,TSIOXW
+!CHECK 022327.00 | 022133.00 80 022000.00 F0 | line 8 CM0000(BU,18),TERFLG
+!CHECK 022330.00 | 000000.24 1F | line 9 LX,TMXI,0.0($15)
+!CHECK 022330.40 | 000000.56 8F 022000.07 70 | line 10 CT0011(BU,18),0.46($15)
+!CHECK 022331.40 | 022724.34 C0 | line 11 BZRZ,TMREJ
+!CHECK 022332.00 | 000032.30 80 001000.00 F0 | line 12 CM0000(BU,1),TMXI+24 (h2 prints "001000.CC FC": open 0s, CM0000 makes F0)
+!CHECK 022333.00 | 022634.70 C2 | line 13 BXVLZ,TM2
+!CHECK 022333.40 | 000001.00 8A 030000.06 70 | line 15 T M1 C0011,TIOP(TMXI)
+!CHECK 022334.40 | 022131.21 80 030600.23 10 | line 16 KF,TMIOD
+!CHECK 022335.40 | 022606.36 C0 | line 17 BZAE,TM6
+!CHECK 022336.00 | 000000.27 01 | line 21 LVI,TMXGA,0.0
+!CHECK 022336.40 | 022244.20 10 | line 22 LX,TMXG,TSCIX1
+!CHECK 022337.00 | 000002.00 8A 052000.06 70 | line 23 C0011,TITY(TMXI)
+!CHECK 022340.00 | 000000.57 88 252600.23 10 | line 24 T MLOK1 KF(V+IC)(BU,42,6),.47(TMXG) (a "*" after the location; label prints "T MLCK1")
+!CHECK 022341.00 | 022343.36 C2 | line 25 BAE,TMOK1
+!CHECK 022341.40 | 022340.30 40 | line 26 BZXCZ,TMLOK1
+!CHECK 022342.00 | 000020.27 05 | line 27 V+I,TMXGA,16.0
+!CHECK 022342.40 | 022343.50 00 | line 28 B,TGET1
+!CHECK 022343.00 | 022245.20 B0 | line 29 T MOK1 V+,TMXG,TSCBK1
+!CHECK 022343.40 | 000000.00 88 005000.06 70 | line 30 T GET1 LF(BU,5),0.0(TMXG)
+!CHECK 022344.40 | 000002.73 8A 005000.12 F0 | line 31 SF(BU,5),TITYCD-1(TMXI)
+!CHECK 022345.40 | 000002.74 8A 022361.34 02 | line 33 BB,TITYCD(TMXI),TMNGA
+!CHECK 022346.40 | 040000.00 80 404000.23 10 | line 34 KFI(BU,4),001
+!CHECK 022347.40 | 022406.36 C2 | line 35 BAE,TMNG
+!CHECK 022350.00 | 022254.20 10 | line 36 LX,TMXG,TSCIX2
+!CHECK 022350.40 | 000005.00 8A 036000.06 70 | line 37 LF,TIMO-1.0(TMXI)
+!CHECK 022351.40 | 000000.40 88 236600.23 10 | line 38 T MLOK2 KF(V+IC)(BU,30,6),0.32(TMXG)
+!CHECK 022352.40 | 022354.76 C2 | line 39 BAE,TMOK2
+!CHECK 022353.00 | 022351.70 40 | line 40 BZXCZ,TMLOK2
+!CHECK 022353.40 | 000004.27 05 | line 41 V+I,TMXGA,04.0 (a "*" after the location)
+!CHECK 022354.00 | 022355.10 00 | line 42 B,TGET2
+!CHECK 022354.40 | 022255.20 B0 | line 43 T MOK2 V+,TMXG,TSCBK2
+!CHECK 022355.00 | 000000.00 88 002000.06 70 | line 44 T GET2 C0011(BU,2),0.0(TMXG)
+!CHECK 022356.00 | 022357.74 C0 | line 45 BZRZ,Z TGET2
+!CHECK 022356.40 | 600000.00 80 402000.06 70 | line 46 LFI(BU,2),(8)3
+!CHECK 022357.40 | 000005.76 8A 002000.12 F0 | line 47 Z TGET2 CM0101,TIMOCD-1.0(TMXI)
+!CHECK 022360.40 | 022406.10 00 | line 48 B,TMNG
+!CHECK 022361.00 | 022254.20 10 | line 50 T MNGA LX,TMXG,TSCIX2

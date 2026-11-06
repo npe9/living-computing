@@ -1,0 +1,47 @@
+! mcp_bootstrap_p383.strap -- MCP printed page 383: five lines in the
+! $EOJ program (PUNID 22$EOJ, card series ZA), the end of the job-card
+! ($SPU / logger) sequence before p.384's B-card sequence check.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.133 (volume 2, offset 250), read at
+! 400 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$EOJ  CARD ID
+! ZA000107  DIST. OF 3/01  3/01  PAGE NUMBER 383"; the heading row's
+! LOCATION field is 020072, line 1's word.
+!
+! NOT SCOMD.  This page is in the $EOJ overlay (PUNID 22$EOJ, ZA cards,
+! origin region 0200xx); p.382 is $EOJ too, so the change of program
+! happened before this page.  Only RESIDENT symbols (DMCP, SLOG4,
+! SYSMOD) are used, plus one $EOJ label, WJ4PA, defined on no landed page.
+!
+! THE PAGE.  Lines 1-5, contiguous 020072.40 .. 020074.40 (a full word,
+! so the next location is 020075.40), then blank paper.
+!   p.382 ends at line 56, 020072.00 ,YC4DTS (a half word, ZA000106):
+!   line 1's .40 continues it.  p.384's first located row is line 6,
+!   020075.40 Y TCSR B,DMCP (ZA000117): contiguous.
+! Every line number prints with a "*" after it (as on pp.382 and 384).
+!
+! >>> "SLCG4" IS SLOG4. <<<  Line 4 prints ",SLCG4-   LOGGER 4 ENTRY".
+! The resident symbol is p.106's "S LOG4 SYN,80.32" (-LOGGER 4), and
+! the binary 000120.40 is 80.32; this drum prints O open (the comment's
+! own word is LOGGER).  The trailing "-" is the COMMENT MARK, not a
+! minus (C28-6129 PDF p.5), and is dropped from the statement.
+!
+! >>> CARD SERIALS. <<<  Lines 3 (B,DMCP) and 4 (,SLCG4) BOTH print
+! ZA000109; line 5 prints ZA000110.  Recorded, not explained.
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 3 000040.10
+SLOG4   SYN, 80.32                   ! landed p.106 "S LOG4"; line 4 000120.40 (printed "SLCG4")
+SYSMOD  SYN(BU,2), (8)215001.10      ! landed p.103 line 18 SYN(BU,2),SCOMRG+.8; BZB line 5 215001.10
+WJ4PA   SYN, (8)020256.40            ! $EOJ, no landed page defines it; BZB line 5 prints 020256.74 = 020256.40 + op bits .34 (half word only)
+
+        SLC, (8)020072.40
+        ,7.0                                                 ! line  1
+        BE,$+.32                                             ! line  2
+        B,DMCP                                               ! line  3
+        ,SLOG4                                               ! line  4  -LOGGER 4 ENTRY  (printed ",SLCG4-")
+        BZB,SYSMOD,WJ4PA                                     ! line  5
+
+!CHECK 020072.40 | 000007.00 80 | line 1 ,7.0
+!CHECK 020073.00 | 020073.40 00 | line 2 BE,$+.32
+!CHECK 020073.40 | 000040.10 00 | line 3 B,DMCP
+!CHECK 020074.00 | 000120.40 80 | line 4 ,SLOG4 (printed ",SLCG4-": O open, comment mark)
+!CHECK 020074.40 | 215001.10 80 020256.74 00 | line 5 BZB,SYSMOD,WJ4PA
