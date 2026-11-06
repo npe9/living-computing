@@ -1182,6 +1182,20 @@ def parse_statement_text(text, lineno=None):
     # parse_statement_text has already reduced it to "".
     if op:
         op = op.replace(' ', '').replace('\t', '')
+    # >>> "$OP" IS OP WITH ITS ERROR MARKS SUPPRESSED. <<<  C28-6129
+    # printed p.10 (PDF p.14): "Another special use of the $ character
+    # is to prefix any operation code in this manner: $OP.  This
+    # directs the compiler to suppress any error indications that arise
+    # in connection with the compilation of this statement."  C22-6531
+    # says the same.  So the binary is OP's, and printed p.279 line 25
+    # "$TI,1,-1.0(LIODX),1.0(LXPP)" prints exactly TI's -- with no
+    # error asterisk after its location, where its neighbours on lines
+    # 5, 22 and 38 carry one (N28-1081 Revised Appendix D, C28-6129 PDF
+    # p.71).  This assembler prints no error marks, so the prefix has
+    # nothing else to do.  A lone "$" is not an operation and is left
+    # alone.
+    if op and op.startswith('$') and len(op) > 1 and op[1].isalpha():
+        op = op[1:]
     # `entry` rather than None: it is None for an ordinary statement
     # anyway, and a NUMERIC entry mode reaches here (see the note
     # above) and must keep its radix for entry_radix to find.
@@ -1981,6 +1995,9 @@ _NOT_INSTRUCTIONS = ('DD', 'DR', 'DRZ', 'VF', 'XW', 'CW', 'CF', 'RF', 'END',
                      'SYN', 'SLC', 'CNOP', 'EXT', 'DDI', 'INDMK')
 
 
+_FLOAT_DDS = re.compile(r"^\s*\(?\s*[NU]\s*(,|\)|$)")
+
+
 def inherited_dds(stmt, symtab):
     """The dds a bare VFL statement takes from its operand symbol.
 
@@ -2137,10 +2154,19 @@ LISTING_CONTROL = frozenset([
     'PUNFUL',   # punch the full deck
     'PUNORG',   # punch origin
     'PUNID',    # punch identification in the card ID columns
-    'PRNS',     # print suppression
+    # C28-6129 printed p.36 (PDF p.40), "Output Listing Pseudo
+    # Operations": PRNS "Print Single Spaced", PRND "Print Double
+    # Spaced" (printed pp.275 and 285 line 2), NOPRNT, SPNUS "Suppress
+    # Printing of Unused Symbols"; printed p.39 (PDF p.43) SEM and REM,
+    # "Suppress" and "Resume Error Messages".  None produces storage.
+    'PRNS',     # print single spaced
+    'PRND',     # print double spaced
+    'NOPRNT',   # stop printing the listing
+    'SPNUS',    # suppress printing of unused symbols
     'PRNID',    # print identification
-    'RESEQ',    # resequence the card numbers
-    'SEM',      # listing semantic/eject control
+    'RESEQ',    # resequence the card numbers (no citation found yet)
+    'SEM',      # suppress error messages
+    'REM',      # resume error messages
     # NOT listing controls -- see the long note above for why they
     # are nevertheless discarded, and for the one condition that
     # would make that wrong.
@@ -3904,6 +3930,20 @@ def emit_statement(stmt, symtab, image):
         # C22-6531 printed p.31, see inherited_dds().
         dds_text = (dds_mods[0] if dds_mods and dds_mods[0].strip()
                     else inherited_dds(stmt, symtab))
+        # >>> A FLOATING SYMBOL UNDER A CONNECTIVE: ONE WITNESS. <<<
+        # C22-6531 PDF p.10 (C28-6129 the same): for N or U, "field
+        # length and byte size not appropriate", and where description
+        # and operation are "not mutually consistent ... the operation
+        # overrules".  Neither manual says what is then COMPILED.  MCP
+        # printed p.267 line 1, "CM0000,YC1DB-2.0" with printed p.268
+        # line 8's "YC1DB DR(N),(13)", prints 000400.00: length 0 (64)
+        # and BYTE SIZE 4, with no error flag.  That one row is the
+        # whole evidence for the 4 (2026-11-05, the only connective in
+        # pp.99-281 that inherits N or U); a second print that differs
+        # overturns it.  check_instruction_label_dds pins it.
+        if (not (dds_mods and dds_mods[0].strip()) and dds_text
+                and _FLOAT_DDS.match(dds_text)):
+            dds_text = 'BU,,4'
         mode, length_expr, bs_expr = (('BU', None, None) if not dds_text
                                       else parse_dds(dds_text, stmt.lineno))
         if mode not in MODE_BITS:
@@ -4024,6 +4064,15 @@ def emit_statement(stmt, symtab, image):
         # C22-6531 printed p.31, see inherited_dds().
         dds_text = (dds_mods[0] if dds_mods and dds_mods[0].strip()
                     else inherited_dds(stmt, symtab))
+        # A floating symbol under an arithmetic VFL op has NO witness
+        # yet (the connective case above has one), so it is refused
+        # by name rather than guessed.
+        if (not (dds_mods and dds_mods[0].strip()) and dds_text
+                and _FLOAT_DDS.match(dds_text)):
+            raise AssemblerError(
+                f"VFL operation on a symbol defined ({dds_text}): what "
+                f"STRAP compiles is not in C22-6531/C28-6129 and no MCP "
+                f"row witnesses it yet; write the dds out", stmt.lineno)
         mode, length_expr, bs_expr = (('BU', None, None) if not dds_text
                                       else parse_dds(dds_text, stmt.lineno))
         if mode not in MODE_BITS:

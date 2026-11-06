@@ -1,0 +1,169 @@
+! mcp_bootstrap_p271.strap -- MCP printed page 271: JOB CONTROL PHASE 1
+! OVERLAPPED, the end of the disposition tests (KVI .. B,YUER) and the
+! opening of the SERVICE ROUTINES (YJOBC, YTOPGO, YBSSGO), lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.22, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QA000100  DIST. OF 3/01  3/01  PAGE NUMBER 271" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is 231232,
+! line 1's word.  A NEW CARD DECK: serials QA000100 .. QA000149.
+!
+! THE PAGE.  50 lines; every line number prints a "*" after it.  Lines
+! 3 and 16-19 are remark cards (line 3 prints its "-" in the NAME field
+! and its text in the remark column; 16 is a lone "-"; 17-19 a banner).
+! Located rows run contiguous from 231232.40 to 231266.00 (SF, a full
+! word; next location 231267.00), then blank paper.  "*" after the
+! LOCATION on lines 23 and 39 (recorded, not explained).
+! JOIN.  p.270 (not landed, no neighbour deck at the time of writing) --
+! contiguity with it is NOT established here.  p.272 should open at
+! 231267.00 with serial QA000150.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * YJOBC (line 4 operand, line 20 label): the third glyph is the
+!     drum's squared O with its right side worn to stipple, NOT the
+!     curled C that ends the same name (900 dpi).  Remark line 4 "-DISP.
+!     WAS JOB".  YTOPGO (line 5 operand prints open, line 23 label
+!     prints the first O CLOSED at 900 dpi; remark "T.O.P. - GO TYPE").
+!     YJOCER (line 9): the glyph after J prints CLOSED at 900 dpi.
+!     NOTE: the IPL assembly decks pp.38-40 spell these YJCBC, YTCPGO,
+!     YJCCER (different addresses, a different assembly); the ink here
+!     closes the question toward O.
+!   * hex bytes with an open round written 0 ("C0" line 22 = 00, as line
+!     15's identical B,YUER prints 00; "5C" line 42 octal = 50; "7C" line
+!     49 = 70); octal fields "CCCC" are 0.
+!   * line 13's K(BU,48),YRELMK: the "10" printed left of the NAME field
+!     is the end of BINARY h2 ("060000.21 10"), not a name.
+!
+! EXTERNALS.  None of this page's Y-symbols is landed in the body (the
+! IPL assembly pp.15-98 carries the same names at other addresses).
+! Values come from this page's binary; the IPL decks' own addresses
+! agree on every word/half-word offset (YJCCER .40, YIODC .40, YNORR .40,
+! YUER/YLIMC/YREELC/YUCBF2 .0).
+
+YJOCER  SYN, (8)231343.40            ! not landed; BXE line 9 231343.72, half word only
+YLIMC   SYN, (8)231303.0             ! not landed; BXEZ line 7 231303.32, half word only
+YIODC   SYN, (8)231326.40            ! not landed; B line 8 231326.50, half word only
+YUER    SYN, (8)231350.0             ! not landed; B line 15 231350.10, half word only
+YRELMK  SYN, (8)231417.0             ! not landed ((AX)DD(BU,48,6) in IPL p.40); K line 13, BIT-EXACT
+YREELC  SYN, (8)231336.0             ! not landed; BAEZ line 14 231336.36, half word only
+YNORR   SYN, (8)231352.40            ! not landed; BXEZ line 21 231352.72, half word only
+YUCBF2  SYN, (8)231376.0             ! not landed; L line 25 YUCBF2+1.0 = 231377.00, BIT-EXACT
+YGOMK   SYN, (8)231413.0             ! not landed; K line 26, BIT-EXACT
+YCOMMK  SYN, (8)231421.0             ! not landed; K line 28, BIT-EXACT
+YTOPCM  SYN, (8)231267.40            ! not landed; BAE line 29 231267.76, half word only
+YCNGMK  SYN, (8)231422.0             ! not landed; K line 30, BIT-EXACT
+YTOPCG  SYN, (8)231270.40            ! not landed; BAE line 31 231270.76, half word only
+YUPDAT  SYN, (8)231424.0             ! not landed; K line 32, BIT-EXACT
+SYSMOD  SYN(BU,2), (8)215001.10      ! landed p.103 line 18 SYN(BU,2),SCOMRG+.8; BZB line 34
+SCOMRG  SYN, (8)215001.0             ! landed p.103 line 8
+SCORG   SYN(BU,1), SCOMRG+0.03       ! landed p.103 line 13; CM1111 line 35 215001.03
+SBAPP   SYN, (8)215005.0             ! landed p.103 line 35 "S BAPP VF,0"
+SROOF   SYN, (8)215012.0             ! landed p.103 line 45 (!SYM 215012.00); LV line 38
+YLOL2   SYN, (8)231426.40            ! not landed; SV line 39 231426.73, half word only
+YLOL1   SYN, (8)231426.0             ! not landed; SV line 41 231426.33, half word only
+WJC4G2  SYN, (8)020202.40            ! not landed; B line 42 020202.50, half word only
+YUSB8C  SYN, (8)231227.0             ! not landed; LC line 43 231227.36, half word only
+YFORTR  SYN, (8)231424.60            ! not landed; KF line 47 231424.60, BIT-EXACT
+ABSSID  SYN, (8)232542.0             ! not landed (loader); LF line 49, BIT-EXACT
+
+        SLC, (8)231232.40
+        KVI,$13,1.0                                          ! line  1  -TEST DISPOSITION
+        BZAEZ,YMKEAR                                         ! line  2  -IF FIRST FIELD IS NOT CORRECT,
+! line  3  -FURTHER TESTING IS REQUIRED   ("-" printed in the NAME field)
+        BXEZ,YJOBC                                           ! line  4  -DISP. WAS JOB
+        BXLZ,YTOPGO                                          ! line  5  -CARD WAS T.O.P. - GO TYPE
+        KVI,$13,2.0                                          ! line  6  -TEST DISPOSITION FURTHER
+        BXEZ,YLIMC                                           ! line  7  -CARD WAS  A LIM.
+        B,YIODC                                              ! line  8  -CARD WAS AN IOD.
+YMKEAR  BXE,YJOCER                                           ! line  9
+        BXL,YUER                                             ! line 10
+        KVI,$13,2.0                                          ! line 11  -DISP. 2.0 OR 4.0
+        BXEZ,YUER                                            ! line 12  -DISPOSITION WAS LIM- TO ERROR RETURN
+        K(BU,48),YRELMK                                      ! line 13  -TESTR FOR REEL CARD
+        BAEZ,YREELC                                          ! line 14
+        B,YUER                                               ! line 15
+! line 16  -
+! line 17  -*************************************************************
+! line 18  -          SERVICE ROUTINES TO EXTRACT INFORMATION FROM SYSTEN CARDS.
+! line 19  -*************************************************************
+YJOBC   KV,$13,1.0($14)                                      ! line 20
+        BXEZ,YNORR                                           ! line 21
+        B,YUER                                               ! line 22
+YTOPGO  Z,$12                                                ! line 23  -GO - SET COUNT FIELD TO PROPER
+        LCI,$12,(2)00100                                     ! line 24  -VALUE + GO TO NORMAL RETURN
+        L(BU,48),YUCBF2+1.0                                  ! line 25
+        K(BU,48),YGOMK                                       ! line 26
+        BAE,YBSSGO                                           ! line 27
+        K(BU,48),YCOMMK                                      ! line 28
+        BAE,YTOPCM                                           ! line 29
+        K(BU,48),YCNGMK                                      ! line 30
+        BAE,YTOPCG                                           ! line 31
+        K(BU,48),YUPDAT                                      ! line 32
+        BZAE,YUER                                            ! line 33
+        BZB,SYSMOD,YUER                                      ! line 34
+        CM1111,SCORG                                         ! line 35
+        LVI,$13,(8)42.                                       ! line 36
+        SV,13,SBAPP                                          ! line 37
+        LV,$13,SROOF                                         ! line 38
+        SV,$13,YLOL2                                         ! line 39
+        Z,$13                                                ! line 40
+        SV,$13,YLOL1                                         ! line 41
+        B,WJC4G2                                             ! line 42
+YBSSGO  LC,15,YUSB8C                                         ! line 43
+        KCI,15,2                                             ! line 44
+        BZXH,YNORR                                           ! line 45
+        L(BU,48),YUCBF2+2.                                   ! line 46  -INTERPRET GO, AS CMPILGO,...
+        KF(BU,48),YFORTR                                     ! line 47  -AND FORTRAN AS BSS
+        BZAE,YTOPCG                                          ! line 48
+        LF(BU,48),ABSSID                                     ! line 49
+        SF(BU,48),YUCBF2+2.                                  ! line 50
+
+!SYM YMKEAR 231236.00
+!SYM YJOBC  231242.00
+!SYM YTOPGO 231243.40
+!SYM YBSSGO 231261.00
+!CHECK 231232.40 | 000001.33 04 | line 1 KVI,$13,1.0
+!CHECK 231233.00 | 231236.36 C4 | line 2 BZAEZ,YMKEAR
+!CHECK 231233.40 | 231242.32 C6 | line 4 BXEZ,YJOBC (printed "YJCBC")
+!CHECK 231234.00 | 231243.72 46 | line 5 BXLZ,YTOPGO (printed "YTCPGO")
+!CHECK 231234.40 | 000002.33 04 | line 6 KVI,$13,2.0
+!CHECK 231235.00 | 231303.32 C6 | line 7 BXEZ,YLIMC
+!CHECK 231235.40 | 231326.50 00 | line 8 B,YIODC
+!CHECK 231236.00 | 231343.72 C2 | line 9 YMKEAR BXE,YJOCER
+!CHECK 231236.40 | 231350.32 42 | line 10 BXL,YUER
+!CHECK 231237.00 | 000002.33 04 | line 11 KVI,$13,2.0
+!CHECK 231237.40 | 231350.32 C6 | line 12 BXEZ,YUER
+!CHECK 231240.00 | 231417.00 80 060000.21 10 | line 13 K(BU,48),YRELMK
+!CHECK 231241.00 | 231336.36 C6 | line 14 BAEZ,YREELC
+!CHECK 231241.40 | 231350.10 00 | line 15 B,YUER
+!CHECK 231242.00 | 000001.32 9E | line 20 YJOBC KV,$13,1.0($14)
+!CHECK 231242.40 | 231352.72 C6 | line 21 BXEZ,YNORR
+!CHECK 231243.00 | 231350.10 00 | line 22 B,YUER (byte prints "C0")
+!CHECK 231243.40 | 000034.22 00 | line 23 YTOPGO Z,$12 (a "*" after the location)
+!CHECK 231244.00 | 000004.31 02 | line 24 LCI,$12,(2)00100
+!CHECK 231244.40 | 231377.00 80 060000.20 50 | line 25 L(BU,48),YUCBF2+1.0
+!CHECK 231245.40 | 231413.00 80 060000.21 10 | line 26 K(BU,48),YGOMK
+!CHECK 231246.40 | 231261.36 C2 | line 27 BAE,YBSSGO
+!CHECK 231247.00 | 231421.00 80 060000.21 10 | line 28 K(BU,48),YCOMMK
+!CHECK 231250.00 | 231267.76 C2 | line 29 BAE,YTOPCM
+!CHECK 231250.40 | 231422.00 80 060000.21 10 | line 30 K(BU,48),YCNGMK
+!CHECK 231251.40 | 231270.76 C2 | line 31 BAE,YTOPCG
+!CHECK 231252.00 | 231424.00 80 060000.21 10 | line 32 K(BU,48),YUPDAT
+!CHECK 231253.00 | 231350.36 C0 | line 33 BZAE,YUER
+!CHECK 231253.40 | 215001.10 80 231350.34 00 | line 34 BZB,SYSMOD,YUER
+!CHECK 231254.40 | 215001.03 80 001000.36 F0 | line 35 CM1111,SCORG
+!CHECK 231255.40 | 000042.33 01 | line 36 LVI,$13,(8)42.
+!CHECK 231256.00 | 215005.33 30 | line 37 SV,13,SBAPP
+!CHECK 231256.40 | 215012.32 30 | line 38 LV,$13,SROOF
+!CHECK 231257.00 | 231426.73 30 | line 39 SV,$13,YLOL2 (a "*" after the location)
+!CHECK 231257.40 | 000035.22 00 | line 40 Z,$13
+!CHECK 231260.00 | 231426.33 30 | line 41 SV,$13,YLOL1
+!CHECK 231260.40 | 020202.50 00 | line 42 B,WJC4G2 (printed "020202.5C")
+!CHECK 231261.00 | 231227.36 50 | line 43 YBSSGO LC,15,YUSB8C
+!CHECK 231261.40 | 000002.37 0A | line 44 KCI,15,2
+!CHECK 231262.00 | 231352.73 40 | line 45 BZXH,YNORR
+!CHECK 231262.40 | 231400.00 80 060000.20 50 | line 46 L(BU,48),YUCBF2+2.
+!CHECK 231263.40 | 231424.60 80 060000.23 10 | line 47 KF(BU,48),YFORTR
+!CHECK 231264.40 | 231270.76 C0 | line 48 BZAE,YTOPCG
+!CHECK 231265.00 | 232542.00 80 060000.06 70 | line 49 LF(BU,48),ABSSID (byte prints "7C")
+!CHECK 231266.00 | 231400.00 80 060000.12 F0 | line 50 SF(BU,48),YUCBF2+2.

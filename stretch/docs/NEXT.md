@@ -16638,3 +16638,34 @@ listing_truth 245 pages / 9,027 lines.
   stand-in dds for YC1MTT, YSPDCR, YC1B, YC1TC come from OCR;
   statement_confirm scores volume 1 only.
   NEXT: printed p.266 on, same batches.
+
+
+pp.266-297 LANDED (2026-11-06): batches 6 and 7, two parallel batches
+merged together.  30 decks (pp.275 and 285 compile nothing: SLC,$,
+PRND and remarks -- NO_DECK_PAGES); body image pp.99-297 (196 pages,
+2,011 defined, 56 external); listing_truth 272 pages / 9,888 lines.
+tests/merge_gate.sh runs run_tests.sh's own MCP-listing run lines
+(292 checks, 26 s) to land a batch; the full suite still runs before
+each commit.
+  * "$OP" IS ASSEMBLED AS OP.  C28-6129 printed p.10 (PDF p.14): the
+    "$" prefix suppresses the statement's error indications.  pp.53, 56,
+    57, 279, 283 and the AX5B listing print "$TI", "$L(BU,8)", "$BD";
+    those decks wrote the card without its "$" and now write it as
+    printed (check_dollar_op).
+  * Listing controls cited: PRNS/PRND/NOPRNT/SPNUS (C28-6129 printed
+    p.36), SEM/REM (printed p.39).  RESEQ still has no citation.
+  * A FLOAT SYMBOL UNDER A CONNECTIVE compiles as BU,,4 (FL 64, BS 4):
+    ONE WITNESS, p.267 line 1 against p.268's YC1DB DR(N),(13).  A VFL
+    op on an N/U symbol with no dds of its own is refused.  JCFIX DR(N)
+    (p.295) is a possible second witness; check it when its users land.
+  * The merge's dds key ignores leading zeros: T UNCT's "(BU,08)" and
+    "(BU,8)" are one dds.
+  OPEN, from these batches: TAIL/UNTAIL (semantics now cited: C28-6129
+  printed pp.37-38 -- "SYM$TAIL" names a tailed symbol across blocks,
+  so p.261's "$B,QGO$A" is an error-suppressed B to QGO tailed A); CC
+  entry mode (p.256); DDI (p.266's YDOLLR stand-in); TBI in the BSV
+  model; card-serial gaps QD000311, PE000049, QD000025, QD000098/151,
+  QD000260; AOPT12/AOPT24 O vs 0 (p.291), MXCST/MXCUMQ (p.310), GDELK
+  (p.292) unsettled; the IPL decks' YJCBC, YTCPGO, YJCCER (pp.38-40)
+  spell C where the body spells O -- re-read on the ink.
+  NEXT: batch 8 (pp.298-313) is transcribed; merge it.

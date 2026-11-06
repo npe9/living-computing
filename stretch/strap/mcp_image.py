@@ -236,8 +236,13 @@ def merge(verbose=False, pages=None, end_at='XIPLBS'):
                         and re.fullmatch(r'\s*[A-Za-z][A-Za-z0-9 ]*\s*',
                                          m.group(3))):
                     continue
+                # "(BU,08)" IS "(BU,8)": printed p.288 line 13 writes
+                # TUNCT's dds with a leading zero, and the comparison
+                # is of TEXT, so it is normalised before comparing.
                 ddsers.setdefault(m.group(1), {}).setdefault(
-                    (m.group(2) or '').replace(' ', ''), []).append(label)
+                    re.sub(r'(?<![0-9.])0+(?=[0-9])', '',
+                           (m.group(2) or '').replace(' ', '')),
+                    []).append(label)
     #
     # >>> EXCEPT FOR A SYMBOL SOME PAGE PLACES. <<<  A label on an
     # instruction, DD, DR, VF or XW card gets its dds FROM THAT CARD
@@ -424,7 +429,13 @@ def build(verbose=False, pages=None, end_at='XIPLBS'):
 # live cards are is open: p.100's serials are BD000001-BD000016 and
 # p.101's are BF000001, so an entire BE group exists between them and
 # appears on no page in this PDF.
-NO_DECK_PAGES = {47, 59, 60, 81, 82, 100}
+# printed pp.275 and 285 joined on 2026-11-06, the body's copies of the
+# IPL's p.47 and p.59 and the same kind of page: "SLC,$", a PRND card
+# (C28-6129 printed p.36, "Print Double Spaced"), then remark cards
+# documenting the DECODE and ASSIGN linkage formats.  Nothing compiles
+# and nothing is labelled; p.275 leaves the counter at 231522.40 and
+# p.276 opens at 231523.00, p.285 at 232224.40 and p.287 opens there.
+NO_DECK_PAGES = {47, 59, 60, 81, 82, 100, 275, 285}
 
 # >>> THE RANGE REACHES printed p.58, 2026-10-24, AND IT IS
 # CONTIGUOUS. <<<

@@ -1,0 +1,107 @@
+! mcp_bootstrap_p290.strap -- MCP printed page 290: the REQUEST
+! VALIDITY CHECK TABLE (T DISK, eight three-byte rows) and THE
+! MULTI-UNIT COUNT TABLE -- SORTED (T MUCTX .. T CHCUC), lines 1-39.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.41, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID QE000170  DIST. OF 3/01
+!  3/01  PAGE NUMBER 290".  The heading row's LOCATION field is blank
+! (line 1 is a remark card).
+!
+! THE PAGE.  39 lines, every line number prints a "*" after it.
+!   lines  1-4   remark cards, "REQUEST VALIDITY CHECK TABLE".
+!   line   5     CNOP at 232512.40.
+!   lines  6-29  eight (8)DD(BU,8),n,m,0 cards, each compiling THREE
+!                eight-bit bytes (one printed row per byte, octal).
+!   lines 30-34  remark cards, "THE MULTI-UNIT COUNT TABLE -- SORTED".
+!   lines 35-38  four XWs; line 39 T CHCUC DRZ(BU,32),(32), printing
+!                its size 000020.00 (16 words) and a "*" after its
+!                LOCATION.  The DRZ row gets no !CHECK.
+! Located rows are contiguous from 232512.40 to 232522.00 + 16 words =
+! 232542.00, then blank paper.
+!
+! THIS IS THE BODY'S RE-ASSEMBLY OF printed p.64 (IPL, decks/
+! mcp_bootstrap_p64.strap): the same statements and remarks.  Spellings
+! (TDISK, TMUCTX, TYSCAN, TFCHSC, TRCHSC, TCHCUC) follow p.64; the
+! addresses are this page's.
+!
+! JOIN.  p.289 (not landed, no scratch neighbour): its Vision reading
+! has T VALVF VF,0.0 at 232512.00 then SYN cards -- consistent with
+! this page's 232512.40, not established here.  p.291's Vision reading
+! opens at 232542.00, the word after T CHCUC's 16 -- consistent.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "(8)CD(BU,8)" on lines 6-24 = (8)DD: D with its stem worn (line
+!     27 prints DD; p.64 prints DD on every row).
+!   * trailing ",C" / ",0,C" in those statements and "CCO"/"000000"
+!     round glyphs in octal fields are 0 (numeric/octal context).
+!   * line 5 CNOP binary prints "000C00.30 CO": 000000.30 00 (CNOP
+!     assembles 00, as every landed CNOP; the open round is a 0).
+!   * line 35 "T MUCTX" (M worn) and line 36 "TFCFSC" = TFCHSC (H worn;
+!     line 37 labels T FCHSC; binary 232520.00 is line 37's location).
+!
+! CARD SERIALS.  QE000170..QE000174 for lines 1-5, then one serial per
+! card: each three-byte DD prints its serial on all three rows
+! (QE000175 x3 .. QE000182 x3), then QE000183..QE000192 for lines
+! 30-39.  None skipped.
+
+        SLC, (8)232512.40
+! line  1  -
+! line  2  - REQUEST VALIDITY CHECK TABLE
+! line  3  -
+! line  4  -
+        CNOP                                                 ! line  5
+TDISK   (8)DD(BU,8),1,1,0                                    ! line  6  -TYPE CODE, MACH CONF, REQ CNT- DISK
+        (8)DD(BU,8),2,0,0                                    ! line  9  -SAME AS ABOVE - CONSOLE
+        (8)DD(BU,8),3,0,0                                    ! line 12  -SAME AS ABOVE - CARD READER
+        (8)DD(BU,8),4,0,0                                    ! line 15  -SAME AS ABOVE - PUNCH
+        (8)DD(BU,8),5,0,0                                    ! line 18  -SAME AS ABOVE - PRINTER
+        (8)DD(BU,8),6,0,0                                    ! line 21  -SAME AS ABOVE - IQS
+        (8)DD(BU,8),7,0,0                                    ! line 24  -SAME AS ABOVE - EXTRA
+        (8)DD(BU,8),10,0,0                                   ! line 27  -SAME AS ABOVE - TAPE
+! line 30  -
+! line 31  -
+! line 32  - THE MULTI-UNIT COUNT TABLE -- SORTED
+! line 33  -
+! line 34  -
+TMUCTX  XW,TCHCUC,0,0                                        ! line 35  -CONSTANT TO THE BEGINNING OF CNT TBL
+TYSCAN  XW,TFCHSC,2,0                                        ! line 36  -LOCATOR FOR THE TWO SCANS
+TFCHSC  XW,TCHCUC,0,0                                        ! line 37  -FORWARD SCAN
+TRCHSC  XW,-TCHCUC-32.0,0,0                                  ! line 38  -THE REVERSE SCAN
+TCHCUC  DRZ(BU,32),(32)                                      ! line 39  -MULTI CHANNEL UNIT COUNT
+
+!SYM TDISK  232513.00
+!SYM TMUCTX 232516.00
+!SYM TYSCAN 232517.00
+!SYM TFCHSC 232520.00
+!SYM TRCHSC 232521.00
+!SYM TCHCUC 232522.00
+
+!CHECK 232512.40 | 000000.30 00 | line 5 CNOP (byte prints "CO"; see header)
+!CHECK 232513.00 | 001 | line 6 TDISK (8)DD(BU,8),1,1,0 first byte | 8
+!CHECK 232513.10 | 001 | line 7 second byte | 8
+!CHECK 232513.20 | 000 | line 8 third byte | 8
+!CHECK 232513.30 | 002 | line 9 (8)DD(BU,8),2,0,0 first byte | 8
+!CHECK 232513.40 | 000 | line 10 second byte | 8
+!CHECK 232513.50 | 000 | line 11 third byte | 8
+!CHECK 232513.60 | 003 | line 12 (8)DD(BU,8),3,0,0 first byte | 8
+!CHECK 232513.70 | 000 | line 13 second byte | 8
+!CHECK 232514.00 | 000 | line 14 third byte | 8
+!CHECK 232514.10 | 004 | line 15 (8)DD(BU,8),4,0,0 first byte | 8
+!CHECK 232514.20 | 000 | line 16 second byte | 8
+!CHECK 232514.30 | 000 | line 17 third byte | 8
+!CHECK 232514.40 | 005 | line 18 (8)DD(BU,8),5,0,0 first byte | 8
+!CHECK 232514.50 | 000 | line 19 second byte | 8
+!CHECK 232514.60 | 000 | line 20 third byte | 8
+!CHECK 232514.70 | 006 | line 21 (8)DD(BU,8),6,0,0 first byte | 8
+!CHECK 232515.00 | 000 | line 22 second byte | 8
+!CHECK 232515.10 | 000 | line 23 third byte | 8
+!CHECK 232515.20 | 007 | line 24 (8)DD(BU,8),7,0,0 first byte | 8
+!CHECK 232515.30 | 000 | line 25 second byte | 8
+!CHECK 232515.40 | 000 | line 26 third byte | 8
+!CHECK 232515.50 | 010 | line 27 (8)DD(BU,8),10,0,0 first byte | 8
+!CHECK 232515.60 | 000 | line 28 second byte | 8
+!CHECK 232515.70 | 000 | line 29 third byte | 8
+!CHECK 232516.00 | 232522.00+ 000 000000 000000 | line 35 TMUCTX XW,TCHCUC,0,0
+!CHECK 232517.00 | 232520.00+ 000 000002 000000 | line 36 TYSCAN XW,TFCHSC,2,0 (printed "TFCFSC")
+!CHECK 232520.00 | 232522.00+ 000 000000 000000 | line 37 TFCHSC XW,TCHCUC,0,0
+!CHECK 232521.00 | 232562.00- 000 000000 000000 | line 38 TRCHSC XW,-TCHCUC-32.0,0,0

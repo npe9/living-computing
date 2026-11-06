@@ -1,0 +1,195 @@
+! mcp_bootstrap_p283.strap -- MCP printed page 283: the FINAL ROUTINE
+! (L FINAL .. L FIN2) and the start of the IOREQ sort (L FINI .. L SEARE).
+!
+! 2026-11-06: "$OP" IS NOW WRITTEN AS PRINTED.  C28-6129 printed p.10 (PDF
+! p.14): a $ prefixed to an operation code "directs the compiler to
+! suppress any error indications" for that statement; the binary is
+! the plain operation's, and strap_asm accepts the prefix.  Notes below
+! that describe writing the card WITHOUT the "$" predate this.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.34, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QD000360  DIST. OF 3/01  3/01  PAGE NUMBER 283" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is blank
+! (lines 1-4 are a remark box); line 5's word is 232126.00.
+!
+! THE PAGE.  56 lines, every line number prints a "*" after it.  Lines
+! 1-4, 7, 16-19 are remark cards (a "-" in the NAME column): the "FINAL
+! ROUTINE" box (lines 1-4) and "SORT IOREQ TABLE ENTRIES FOR THIS
+! PROBLEM PROGRAM BY UNIT-PER-CHANNEL SIZE." (lines 17-18).  Located
+! rows run contiguous from 232126.00 (line 5) to 232165.40 (line 56, a
+! half word; next location 232166.00), then blank paper.  "*" after the
+! LOCATION on lines 6, 28 and 45.
+!
+! THIS IS THE BODY'S RE-ASSEMBLY OF THE IPL'S FINAL ROUTINE AND SORT
+! (landed pp.56-57 print the same code at IPL addresses).  A DIFFERENT
+! ASSEMBLY: values here are this page's.  The sequence differs from
+! p.57 at lines 44 and 55: here "LC,LXNT,.32($15) -CHECK MODE" where
+! p.57 prints "V+I,$15,0.0".  Spellings follow pp.56-57.
+!
+! JOIN.  p.281 (staged) ends at 232070.00 with serial QD000310; p.282
+! (not landed, no scratch deck) must fill 232071.00 .. 232125.40 with
+! serials QD000311 .. QD000359 -- contiguity NOT established here.
+! p.284 should open at 232166.00 (p.57's LVI,LWORKX,TUIORQ), serial
+! QD000416, with L SEARG at 232166.40, L SKIP 232167.40, L FIN3
+! 232170.00 (the stand-ins below).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 5 prints "$TI,1,..." and line 34 "$L(BU,8),..." -- the
+!     leading "$" seen on IPL pp.43, 56, 57 (no bit changes); strap_asm
+!     refuses "$TI", so the cards are written without it (as p.56/p.57).
+!   * LIODX printed "LIOCX"/"LICDX" on lines 22, 28, 29, 34, 36, 37, 40,
+!     46, 47 (D's stem worn, O open); line 22's binary 000023.22 = $3.
+!     LWORKX printed "LWCRKX" (line 52); TIOREQ printed "TIOREC" (line
+!     54, tail of Q worn); all as pp.56-57 and line 43's clean TIOREQ.
+!   * hex bytes: line 6 last byte prints "OC" and line 53's "OC" too,
+!     line 22 "CO", line 10 "CO" -- the same open round glyph this drum
+!     uses for 0 in the octal fields ("C00023.22").  Settled by the
+!     statement: BZB1 makes 0C (line 6), BZB makes 00 (line 53; line 42
+!     prints 00), Z,LIODX and B make 00.
+!   * statement "C.26", "1.C", "C.8", "C.0" are 0 (numeric context).
+!   * line 32: a lone "." printed between "46" and the remark, with
+!     blanks around it -- remark field, written as remark.
+!
+! EXTERNALS.  Index registers SYN, $n as pp.53-55/p.276.  Body
+! definitions on staged pp.276-277 and scratch p.288 give the dds;
+! addresses from this page's binary.
+!
+! CARD SERIALS.  QD000360 .. QD000415, line N prints QD000(359+N); none
+! skipped.
+
+LIODX   SYN, $3                      ! as pp.53-55 / p.276 line 33; byte 83 line 31
+LXPP    SYN, $4                      ! as pp.53-55 / p.276 line 34; byte 34 line 8
+LXIO    SYN, $5                      ! as pp.53-55 / p.276 line 35; SV line 8 000000.13 = $5
+LXNT    SYN, $9                      ! as p.53/p.54 / p.276 line 39; byte 89 line 38
+LWORKX  SYN, $10                     ! as pp.54-55 / p.276 line 40; byte 8A line 51
+LFINB   SYN(BU,1), (8)231545.51      ! p.276 line 47 DD(BU,1); BZB1 line 6 231545.51, BIT-EXACT
+LCOUNT  SYN(BU,7), (8)231545.53      ! p.276 line 49 DRZ(BU,7); L line 24 231545.53, BIT-EXACT
+LSAVE   SYN(BU), (8)231546.0         ! p.277 line 1 XW; SC line 27 231546.25
+LPUT    SYN(BU), (8)231551.0         ! p.277 line 4 XW; SX line 20 231551.23
+LCT     SYN(BU,8), (8)231554.0       ! p.277 line 8 DD(BU,8); L line 41 231554.00, BIT-EXACT
+LRLCT   SYN(BU,64), (8)231560.0      ! p.277 line 43 DRZ(BU,64); LVI lines 29-30 231560.0x
+TIOREQ  SYN(BU,64), (8)232307.0      ! p.288 line 26 DRZ(BU,64); LVI lines 43, 54 232307.x
+TUIORQ  SYN, (8)021111.0             ! not defined in the body yet; as p.276; LVI line 46 021111.07
+TIODCT  SYN(BU,12), 0.52             ! p.288 line 19; L line 12 000000.64 014000
+TLREFN  SYN(BU,12), 0.40             ! p.288 line 18; K line 13 000000.50 014000
+TLAST   SYN(BU,1), 0.18              ! p.288 line 34; BZB lines 42, 53 000000.22
+LERROR  SYN(BU,64,8), (8)232200.0    ! not landed in the body; BB lines 9, 11 232200.34, half word only
+LFIN3   SYN(BU,64,8), (8)232170.0    ! not landed (p.284; CM0000 per p.57); B line 10 232170.10, half word only
+LSKIP   SYN(BU,32,8), (8)232167.40   ! not landed (p.284; LX per p.57); BRZZ line 25 232167.74
+LSEARG  SYN(BU,32,8), (8)232166.40   ! not landed (p.284; CB+ per p.57); BZB line 53 232166.74, BXCZ line 56 232166.70
+
+        SLC, (8)232126.00
+! -                                                          ! line  1  (rule)
+! -          FINAL ROUTINE                                   ! line  2
+! -                                                          ! line  3  (rule)
+! -                                                          ! line  4
+LFINAL  $TI,1,-1.0(LIODX),1.0(LXPP)                          ! line  5  -STORE PP ID  (printed "$TI")
+        BZB1,LFINB,LFIN2-1.                                  ! line  6  -IS FINAL BIT 1.
+! -   IF 1, GO ON....IF 0, MAKE IT 1 AND BRANCH.             ! line  7
+        SV,LXIO,0.0(LXPP)                                    ! line  8  -STORE CRREF.
+        BB,0.26($15),LERROR                                  ! line  9  -BRANCH ON REJECT END COMBO.
+        B,LFIN3                                              ! line 10  -BRANCH TO STEP PPREF TABLE.
+        BB,0.26($15),LERROR                                  ! line 11  -BRANCH ON REJECT END COMBO.
+LFIN2   L,TIODCT(LXPP)                                       ! line 12  -IS LARGEST PP REFERENCE NO.
+        K,TLREFN(LXPP)                                       ! line 13  - LARGER THAN THE IODCT
+        BALZ,LFINI                                           ! line 14  - YES....STEP DOWN.
+        ST,TLREFN(LXPP)                                      ! line 15  - NO.... REPLACE BY IODCT
+! -                                                          ! line 16
+! -          SORT IOREQ TABLE ENTRIES FOR THIS PROBLEM       ! line 17
+! -          PROGRAM BY UNIT-PER-CHANNEL SIZE.               ! line 18
+! -                                                          ! line 19
+LFINI   SX,LXNT,LPUT                                         ! line 20  -ENTER SORT----SAVE LXNT INDEX.
+        Z,LWORKX                                             ! line 21  -ZERO 2 INDICES.
+        Z,LIODX                                              ! line 22
+        LV,LWORKX,0.0(LXPP)                                  ! line 23  -PUT CRREF IN XA VF.
+        L(BU,7),LCOUNT,46                                    ! line 24  -LOAD RLSYM NO. COUNT.
+        BRZZ,LSKIP                                           ! line 25  -NO RLSYMS----SKIP SORT.
+        LC,LWORKX,$R                                         ! line 26  -PUT COUNT INTO XA CF.
+        SC,LWORKX,LSAVE                                      ! line 27
+LSEARA  LC,LIODX,LSAVE                                       ! line 28  -OUTER LOOP----LOAD XB CF.
+        LVI,LIODX,LRLCT                                      ! line 29  -INITIALIZE XB AND XC VF.
+        LVI,LXNT,LRLCT                                       ! line 30
+        L(V+I)(BU,8),0.8(LIODX),46                           ! line 31  -ENTER FIRST RLCT.
+LSEARB  KF(V+I)(BU,8),0.8(LIODX),46                          ! line 32  . -INNER LOOP----COMPARE.
+        BZALZ,LSEARC                                         ! line 33  -ACC. NOT LOW----STEP DOWN.
+        $L(BU,8),-0.8(LIODX),46                              ! line 34  -ACC LOW-- SWITCH RLCT  (printed "$L")
+        LVE,LXNT,$-1.                                        ! line 35  -PUT PROPER ADDRESS IN XC VF.
+LSEARC  CB,LIODX,LSEARB                                      ! line 36  -LOOP BACK ON NON ZERO CF.
+        LC,LIODX,$R                                          ! line 37  -LOAD XB CF.
+        CM0000(BU,8),0.0(LXNT),0.0                           ! line 38  -ZERO PROPER RLCT SLOT.
+        V-I,LXNT,LRLCT                                       ! line 39  -READY XC FOR RLSYM SEARCH.
+        LV,LIODX,LWORKX                                      ! line 40  -LOAD XB VF.
+        L(BU,8),LCT(LXNT),0.0                                ! line 41  -LOAD HIGH RLSYM.
+LSEARD  BZB,TLAST(LIODX),LSEARF                              ! line 42  -IS THIS END OF TABLE
+        LVI,LIODX,TIOREQ                                     ! line 43  - YES ... INITIALIZE
+        LC,LXNT,.32($15)                                     ! line 44  -CHECK MODE
+        BXCZ,LSEARF                                          ! line 45  -OVERLAP MODE
+        LVI,LIODX,TUIORQ                                     ! line 46  -IF NOT OVERLAP MODE
+LSEARF  KF(BU,7),.11(LIODX)                                  ! line 47  - NO....INNER SEARCH LOOP.
+        BAEZ,LSEARE                                          ! line 48  -FOUND----STEP DOWN.
+        V+I,LIODX,1.0                                        ! line 49  -NOT FOUND----STEP XB VF.
+        B,LSEARD                                             ! line 50  -GO BACK AND TRY AGAIN.
+LSEARE  SWAPI,1,0.0(LWORKX),0.0(LIODX)                       ! line 51  -SWAP IOREQ SLOTS.
+        V+I,LWORKX,1.0                                       ! line 52  -STEP XA VF.
+        BZB,TLAST(LWORKX),LSEARG                             ! line 53  -IS THIS END OF IOREQ TABLE
+        LVI,LWORKX,TIOREQ                                    ! line 54  -YES...INITIALIZE
+        LC,LXNT,.32($15)                                     ! line 55  -CHECK MODE
+        BXCZ,LSEARG                                          ! line 56  -IF OVERLAP
+
+!SYM LFINAL 232126.0
+!SYM LFIN2  232133.0
+!SYM LFINI  232136.40
+!SYM LSEARA 232143.0
+!SYM LSEARB 232145.40
+!SYM LSEARC 232150.40
+!SYM LSEARD 232154.40
+!SYM LSEARF 232157.40
+!SYM LSEARE 232162.0
+!CHECK 232126.00 | 777777.00 83 000001.02 A4 | line 5 LFINAL $TI,1,-1.0(LIODX),1.0(LXPP)
+!CHECK 232127.00 | 231545.51 80 232132.34 0C | line 6 BZB1,LFINB,LFIN2-1.
+!CHECK 232130.00 | 000000.13 34 | line 8 SV,LXIO,0.0(LXPP)
+!CHECK 232130.40 | 000000.32 8F 232200.34 02 | line 9 BB,0.26($15),LERROR
+!CHECK 232131.40 | 232170.10 00 | line 10 B,LFIN3
+!CHECK 232132.00 | 000000.32 8F 232200.34 02 | line 11 BB,0.26($15),LERROR
+!CHECK 232133.00 | 000000.64 84 014000.20 50 | line 12 LFIN2 L,TIODCT(LXPP)
+!CHECK 232134.00 | 000000.50 84 014000.21 10 | line 13 K,TLREFN(LXPP)
+!CHECK 232135.00 | 232136.76 46 | line 14 BALZ,LFINI
+!CHECK 232135.40 | 000000.50 84 014000.20 D0 | line 15 ST,TLREFN(LXPP)
+!CHECK 232136.40 | 231551.23 10 | line 20 LFINI SX,LXNT,LPUT
+!CHECK 232137.00 | 000032.22 00 | line 21 Z,LWORKX
+!CHECK 232137.40 | 000023.22 00 | line 22 Z,LIODX
+!CHECK 232140.00 | 000000.24 34 | line 23 LV,LWORKX,0.0(LXPP)
+!CHECK 232140.40 | 231545.53 80 007027.20 50 | line 24 L(BU,7),LCOUNT,46
+!CHECK 232141.40 | 232167.74 C6 | line 25 BRZZ,LSKIP
+!CHECK 232142.00 | 000011.24 50 | line 26 LC,LWORKX,$R
+!CHECK 232142.40 | 231546.25 50 | line 27 SC,LWORKX,LSAVE
+!CHECK 232143.00 | 231546.06 50 | line 28 LSEARA LC,LIODX,LSAVE
+!CHECK 232143.40 | 231560.07 01 | line 29 LVI,LIODX,LRLCT
+!CHECK 232144.00 | 231560.23 01 | line 30 LVI,LXNT,LRLCT
+!CHECK 232144.40 | 000000.10 83 110027.20 50 | line 31 L(V+I)(BU,8),0.8(LIODX),46
+!CHECK 232145.40 | 000000.10 83 110027.23 10 | line 32 LSEARB KF(V+I)(BU,8),0.8(LIODX),46
+!CHECK 232146.40 | 232150.76 44 | line 33 BZALZ,LSEARC
+!CHECK 232147.00 | 777777.70 83 010027.20 50 | line 34 $L(BU,8),-0.8(LIODX),46
+!CHECK 232150.00 | 232147.23 B0 | line 35 LVE,LXNT,$-1.
+!CHECK 232150.40 | 232145.46 48 | line 36 LSEARC CB,LIODX,LSEARB
+!CHECK 232151.00 | 000011.06 50 | line 37 LC,LIODX,$R
+!CHECK 232151.40 | 000000.00 89 010000.00 F0 | line 38 CM0000(BU,8),0.0(LXNT),0.0
+!CHECK 232152.40 | 231560.23 0D | line 39 V-I,LXNT,LRLCT
+!CHECK 232153.00 | 000032.06 30 | line 40 LV,LIODX,LWORKX
+!CHECK 232153.40 | 231554.00 89 010000.20 50 | line 41 L(BU,8),LCT(LXNT),0.0
+!CHECK 232154.40 | 000000.22 83 232157.74 00 | line 42 LSEARD BZB,TLAST(LIODX),LSEARF
+!CHECK 232155.40 | 232307.07 01 | line 43 LVI,LIODX,TIOREQ
+!CHECK 232156.00 | 000000.62 5F | line 44 LC,LXNT,.32($15)
+!CHECK 232156.40 | 232157.70 42 | line 45 BXCZ,LSEARF
+!CHECK 232157.00 | 021111.07 01 | line 46 LVI,LIODX,TUIORQ
+!CHECK 232157.40 | 000000.13 83 007000.23 10 | line 47 LSEARF KF(BU,7),.11(LIODX)
+!CHECK 232160.40 | 232162.36 C6 | line 48 BAEZ,LSEARE
+!CHECK 232161.00 | 000001.07 05 | line 49 V+I,LIODX,1.0
+!CHECK 232161.40 | 232154.50 00 | line 50 B,LSEARD
+!CHECK 232162.00 | 000000.00 8A 000000.02 E3 | line 51 LSEARE SWAPI,1,0.0(LWORKX),0.0(LIODX)
+!CHECK 232163.00 | 000001.25 05 | line 52 V+I,LWORKX,1.0
+!CHECK 232163.40 | 000000.22 8A 232166.74 00 | line 53 BZB,TLAST(LWORKX),LSEARG
+!CHECK 232164.40 | 232307.25 01 | line 54 LVI,LWORKX,TIOREQ
+!CHECK 232165.00 | 000000.62 5F | line 55 LC,LXNT,.32($15)
+!CHECK 232165.40 | 232166.70 42 | line 56 BXCZ,LSEARG

@@ -1,0 +1,130 @@
+! mcp_bootstrap_p292.strap -- MCP printed page 292: the head of THE
+! DEBUGGER PACKAGE -- its SYN list of console keys, switches and lights
+! (G DELK .. P IASS) and the debugger's CS fixup for the console (P DBO).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.43, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QG000001  DIST. OF 3/01  3/01  PAGE NUMBER 292" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field prints NO
+! value (lines 1-4 are remark cards; the first located row is line 5).
+!
+! THE PAGE.  33 lines, every line number prints a "*".  A NEW PROGRAM:
+! a new card-ID series (QG) opening at QG000001.
+!   lines  1-4   remark cards: a row of asterisks, "********** THE
+!                DEBUGGER PACKAGE ************", asterisks, blank.
+!   line   5     "SLC,$", printed 232561.00 with a "*" after it.
+!   line   6     remark "-SYN LIST".
+!   lines  7-22  SYN cards: the location column prints the value
+!                (octal bit address), "+00000000  NULL" in the binary and
+!                data-description columns; no !CHECK.
+!   line  23     remark "-DEBUGGER CS FIXUP FOR CNSL".
+!   lines 24-33  code, contiguous 232561.00 .. 232565.40 (line 33 a half
+!                word; next location 232566.00), then blank paper.
+!
+! JOIN.  p.291 is not landed and has no scratch neighbour, so whether
+! 232561.00 continues it is NOT established here; SLC,$ is restated hard
+! at the printed value.  p.293 should open at 232566.00 (or its own SLC)
+! with serial QG000034.
+!
+! CARD SERIALS.  QG000001 .. QG000033, line N prints QG0000NN; none
+! skipped, none repeated.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK (this drum prints O open, like
+! C, and D with a worn stem, like C):
+!   * line 7 "G DELK": the first glyph is a plain G at 900 dpi (every
+!     other label on the list prints P).  Transcribed GDELK as printed.
+!   * line 10 "PHCK" = PHDK (-HOLD KEY): D worn.
+!   * line 13 "P CKLS" = PDKLS (-DISPLAY ON KEY LIGHTS); the volume OCR
+!     of the debugger's later pages reads PNSLIN+PDKLS three times.
+!   * line 15 "P CAS" = POAS (-OCTAL ADDRESS SWITCH); the volume OCR of a
+!     later page reads BZB,PNSLIN+POAS.
+!   * line 18 "P CH SS" = POHSS (-OCTAL HEX WITH SUPPRESSION ...); the
+!     volume OCR of a later page reads "OHSS".
+!   * line 20 "PHCLDS" = PHOLDS (-HOLD LITE); later pages' OCR reads
+!     PONOUT+PHOLDS twice.
+!   * line 8 "P CLK" kept PCLK (-* CLEAR *): an open glyph, read as C.
+!   * line 24 "P CBO" = PDBO: C22-6728 PDF p.207 names "the CS entry in
+!     the TOE (PDBO ...)" for this very fixup; the last glyph is CLOSED
+!     here, read as the letter O.  (A PDB1 label exists on a later
+!     page, so PDB0 with a digit is possible; ink and C22-6728 say O.)
+!   * line 30 ", S CCT" = SDDT: landed p.106 "SDDT SYN, 78.0
+!     -DEBUGGER" (C22-6728 "SDDT Debugger 78.00"), and the binary
+!     prints 000116.00 = 78.0.  D worn twice.
+!   * lines 24, 29, 32 print hex "CO" after B,DMCP / BD,S PRIME / B,DMCP:
+!     the open round is 0 twice (byte 00), as every landed B,DMCP and
+!     BD,SPRIME row reads it (pp.217, 236 ...); a branch's last byte has
+!     no index field set here to make a C.
+!   * line 2 remark "PACKAGE", line 18 "MNEMCNICS" (open O), as printed.
+!
+! EXTERNALS.  From landed decks; PCW1 from this page's binary.
+
+DMCP    SYN, 32.0                    ! landed (p.108 "D MCP SYN,32.0")
+DRET    SYN, 33.0                    ! landed (p.105)
+DRDS    SYN, 1.01                    ! landed (p.104 "D RD S"); ,DRDS line 25 000001.01
+PCDEF2  SYN, 10.0                    ! landed (p.137); ,PCDEF2 line 26 000012.00
+PCW1    SYN, (8)232645.0             ! not landed; ,PCW1 line 27 232645.00, half word only
+SPRIMR  SYN, (8)215571.0             ! landed
+SPRIME  SYN, (8)215570.0             ! landed
+SDDT    SYN, 78.0                    ! landed (p.106); , S DDT line 30 000116.00
+
+! line  1  - ************************************************************
+! line  2  - ********** THE DEBUGGER PACKAGE ************
+! line  3  - ************************************************************
+! line  4  -
+        SLC, (8)232561.00                                    ! line  5  printed card is "SLC,$"
+! line  6  - -SYN LIST
+GDELK   SYN,0.44                                             ! line  7  -* DELETE *
+PCLK    SYN,0.45                                             ! line  8  -* CLEAR *
+PDUMK   SYN,0.46                                             ! line  9  -DUMP KEY
+PHDK    SYN,0.47                                             ! line 10  -HOLD KEY
+PSTK    SYN,0.48                                             ! line 11  -START KEY
+PSICK   SYN,0.16                                             ! line 12  -SET IC KEY
+PDKLS   SYN,2.16                                             ! line 13  -DISPLAY ON KEY LIGHTS SWITCH
+PEBKS   SYN,2.17                                             ! line 14  -ENTER FROM BINARY KEYS SWITCH
+POAS    SYN,2.11                                             ! line 15  -OCTAL ADDRESS SWITCH
+PSSRS   SYN,2.12                                             ! line 16  -SUPPRESS SPEC. REGISTERS SWITCH
+PFPS    SYN,2.13                                             ! line 17  -FP FORMAT SWITCH
+POHSS   SYN, 2.14                                            ! line 18  - - OCTAL HEX WITH SUPPRESSION OF MNEMONICS SWITC
+PXWS    SYN,2.15                                             ! line 19  -XW FORMT SWITCH
+PHOLDS  SYN,2.16                                             ! line 20  -HOLD LITE
+PINCS   SYN,2.17                                             ! line 21  -INCOMPATIBLE COMBINATION LITE
+PIASS   SYN,2.18                                             ! line 22  -INCORRECT ADDRESS SETTING LITE
+! line 23  - -DEBUGGER CS FIXUP FOR CNSL
+PDBO    B,DMCP                                               ! line 24  -READ CNSL
+        ,DRDS                                                ! line 25  -RESULTS IN A FAKE READ IN ACTUAT
+        ,PCDEF2                                              ! line 26
+        ,PCW1                                                ! line 27
+        SIC,SPRIMR                                           ! line 28
+        BD,SPRIME                                            ! line 29
+        ,SDDT                                                ! line 30  printed ", S CCT"
+        BE,$+.32                                             ! line 31  - ENABLE AFTER PRIMIMG
+        B,DMCP                                               ! line 32
+        ,DRET                                                ! line 33
+
+!SYM GDELK  000000.54
+!SYM PCLK   000000.55
+!SYM PDUMK  000000.56
+!SYM PHDK   000000.57
+!SYM PSTK   000000.60
+!SYM PSICK  000000.20
+!SYM PDKLS  000002.20
+!SYM PEBKS  000002.21
+!SYM POAS   000002.13
+!SYM PSSRS  000002.14
+!SYM PFPS   000002.15
+!SYM POHSS  000002.16
+!SYM PXWS   000002.17
+!SYM PHOLDS 000002.20
+!SYM PINCS  000002.21
+!SYM PIASS  000002.22
+!SYM PDBO   232561.00
+!CHECK 232561.00 | 000040.10 00 | line 24 P DBO B,DMCP (hex prints "CO")
+!CHECK 232561.40 | 000001.01 80 | line 25 ,DRDS
+!CHECK 232562.00 | 000012.00 80 | line 26 ,PCDEF2
+!CHECK 232562.40 | 232645.00 80 | line 27 ,PCW1
+!CHECK 232563.00 | 215571.00 80 | line 28 SIC,S PRIMR
+!CHECK 232563.40 | 215570.04 00 | line 29 BD,S PRIME (hex prints "CO")
+!CHECK 232564.00 | 000116.00 80 | line 30 ,S DDT (printed S CCT)
+!CHECK 232564.40 | 232565.00 00 | line 31 BE,$+.32
+!CHECK 232565.00 | 000040.10 00 | line 32 B,DMCP (hex prints "CO")
+!CHECK 232565.40 | 000041.00 80 | line 33 ,DRET

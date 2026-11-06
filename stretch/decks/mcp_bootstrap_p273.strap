@@ -1,0 +1,174 @@
+! mcp_bootstrap_p273.strap -- MCP printed page 273: the UNCODE service
+! routines continued (the IOD card's field conversion YIODTL, the REEL
+! card YREELC, the error exit YJOCER/YUER), then "RETURNS, MASKS,
+! TEMPORARY STORAGE FOR UNCODE": the normal return YNORR, the index
+! words YIDX12/YUCX12, the storage YUXSAV/YUCBF1/YUCBF2 and the first
+! masks YGOMK, YTYPMK.  Lines 1-50.  (The body's copy of printed
+! pp.40-41 of the IPL assembly, at 2313xx-2314xx in place of 0023xx.)
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.24, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID QA000202  DIST. OF 3/01
+! 3/01  PAGE NUMBER 273" (round glyphs in numeric fields read 0).  The
+! heading row's LOCATION field is 231330, line 1's word.
+!
+! THE PAGE.  50 lines; every line number prints a "*" after it.
+! Lines 26-29 are remark cards (line 26 a bare "-", 27 and 29 asterisk
+! rules, 28 the banner).  Lines 45, 47, 49 are CNOPs that print no
+! location.  Located rows run contiguous from 231330.00 to line 50's
+! (AX)DD at 231416.00 (48 bits; ends 231416.60).  "*" after the
+! LOCATION on lines 7, 22 and 41.  No TAIL is seen on this page or in
+! the Vision reading of pp.265-274.
+!   lines 38-40  XW rows print value+, flags, count, refill.
+!   lines 41-43  DRZ rows print their size in words (no !CHECK).
+!   lines 44, 46, 48, 50  (AX)DD(BU,48,6) masks print no binary (no
+!            !CHECK); their extent is checked by the next location.
+!            Text is padded to the "X" terminator's column as printed
+!            (GO+6, TYPE+4, JOB+5, LIM+5 blanks = 8 characters), as
+!            printed p.41's IPL copy of the same cards.
+! JOIN.  p.272 (not landed, no neighbour deck yet) -- contiguity with
+! it is NOT established here.  p.274 should open at 231416.60 or later
+! (the next CNOP, 231417.00) with serial QA000252; the volume OCR of
+! p.274 shows the mask run continuing (YCOMMK, YCNGMK, YBLWD4 ..) and
+! "YUTOE SYN,YUCBF1+.372".
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 1 label printed "YICDTL" (open O) = YIODTL: line 4's operand
+!     prints a closed O ("YIODTL"); CBR line 4 prints 231330.30 = line
+!     1's location.  Spelling as IPL p.40.
+!   * line 4 label printed "YICCB" (open O) = YIOCB: line 2's operand
+!     prints "YIOCB"; BZRZZ line 2 prints 231332.74 = line 4.
+!   * line 30 label "YNCRR" (open O) = YNORR: line 14's operand prints
+!     "YNORR" closed; B line 14 prints 231352.50.
+!   * line 5/38 "YUTCE"/"YUTOE" = YUTOE (IPL p.41 spelling; p.274 OCR).
+!   * lines 3, 31 "CM0C00"-like = CM0000; line 23/36 "0.O" = 0.0;
+!     line 40 "6,C,7" = 6,0,7: open round glyphs, digits by context;
+!     binaries agree.
+!   * line 24 "Z,0.0($15)": Z (Vision read 2); prints 000000.22 0F.
+!   * line 33 prints " LVE,$15,2.0($14)" one column to the right; the
+!     leading blank is dropped.
+!   * hex bytes printed with an open round written 0 ("CF" line 24 =
+!     0F; "70", "F0", "E0", "A0", "0E"); octal fields "CCCCCC.CC" are 0.
+!     Line 2's "C4" and line 17's "C0" are real C (the statements
+!     assemble to C4 / C0).
+!
+! EXTERNALS.  None of these is defined on a landed page; values come
+! from this page's binary:
+!   YUSB8C  p.270 (OCR "YUSB8C VF.1."): VF -> SYN(B,25,1); LC lines 8,
+!           15, 34 print 231227.30/.36, half word only.
+!   YBLWD4  p.274 (OCR "(AX)DD(BU,48,6)"); TI line 11 231423.00, half
+!           word only.
+!   YTBIT   (DD(BU,1) in the IPL copy, p.36); CM0000 line 31 prints the
+!           full bit address 231426.71, BIT-EXACT.
+!   YUTOE   p.274 (OCR "SYN,YUCBF1+.372" = 231366.00 + 372 bits =
+!           231373.64, agreeing); LF line 5 and XW line 38 print
+!           231373.64, BIT-EXACT.
+!
+! CARD SERIALS.  QA000202 .. QA000251, line N prints QA000(201+N).
+! None skipped or shared; the header CARD ID QA000202 is line 1's.
+
+YUSB8C  SYN(B,25,1), (8)231227.0     ! p.270 not landed (VF per OCR); LC lines 8/15/34, half word only
+YBLWD4  SYN(BU,48,6), (8)231423.0    ! p.274 not landed ((AX)DD(BU,48,6) per OCR); TI line 11 231423.00, half word only
+YTBIT   SYN(BU,1), (8)231426.71      ! not landed (DD(BU,1) in IPL p.36); CM0000 line 31 231426.71, BIT-EXACT
+YUTOE   SYN, (8)231373.64            ! p.274 not landed (SYN,YUCBF1+.372 per OCR); LF line 5 / XW line 38, BIT-EXACT
+
+        SLC, (8)231330.00
+YIODTL  CT0110(V+I)(BU,6),.6($12)                            ! line  1  -FUELDS ON IOD CARD TO BINARY
+        BZRZZ,YIOCB                                          ! line  2
+        CM0000(BU,6),-.6($12)                                ! line  3
+YIOCB   CBR,$12,YIODTL                                       ! line  4
+        LF(BU,60,6),YUTOE                                    ! line  5
+        SF(BU,12,3),$12+.52,48                               ! line  6  -PUT IN $12
+        SF(BU,18,3),$12                                      ! line  7
+YREELC  LC,$12,YUSB8C                                        ! line  8  -LOAD COUNT WITH = OF FIELDS
+        SWAPI,3,$11,YUXSAV                                   ! line  9
+        LVE,$15,2.0($14)                                     ! line 10
+        TI,1,YBLWD4,0.0($15)                                 ! line 11
+        TI,7,0.0($15),1.0($15)                               ! line 12
+        SWAPI,3,$11,YUXSAV                                   ! line 13
+        B,YNORR                                              ! line 14  -IN BREAKDOWN, AND RETURN
+YJOCER  LC,$15,YUSB8C                                        ! line 15 -- YJOCER, not YJCCER: printed p.271 prints the glyph after J CLOSED (900 dpi)
+        KV,$13,1.0($14)                                      ! line 16
+        BZXE,YUER                                            ! line 17
+        TI,3,YUXSAV,$11                                      ! line 18
+        LVE,$15,2.0($14)                                     ! line 19
+        T,$15,YUCBF2,0.0($15)                                ! line 20
+        B,2.32($14)                                          ! line 21
+YUER    TI,3,YUXSAV,$11                                      ! line 22
+        LVE,$15,2.0($14)                                     ! line 23
+        Z,0.0($15)                                           ! line 24
+        B,2.32($14)                                          ! line 25
+! line 26  -
+! line 27  - **************************************************************
+! line 28  - -               RETURNS, MASKS, TEMPORARY STORAGE FOR UNCODE.
+! line 29  - **************************************************************
+YNORR   SX,$12,0.0($14)                                      ! line 30  -PUT INFORMATION IN CALLING
+        CM0000(BU,1),YTBIT                                   ! line 31
+        TI,3,YUXSAV,$11                                      ! line 32  -SEQUENCE
+        LVE,$15,2.0($14)                                     ! line 33  -IF BETA SUB I ISNON ZERO,
+        LC,$15,YUSB8C                                        ! line 34  -TRANSMIT BROKEN OUT
+        BXVZ,$+1.32                                          ! line 35  -CARD TC REQUESTED AREA
+        T,$15,YUCBF2,0.0($15)                                ! line 36
+        B,3.0($14)                                           ! line 37  -RETURN
+YIDX12  XW,YUTOE,10,0                                        ! line 38
+YUCX12  XW,YUCBF2+1.0,6,$+1.0                                ! line 39  -INDEX WORDS FOR ABOVE ROUTINE
+        XW,YUCBF2+2.0,6,0,7                                  ! line 40
+YUXSAV  DRZ(BU,64),(3)                                       ! line 41
+YUCBF1  DRZ(BU,64),(8)                                       ! line 42
+YUCBF2  DRZ(BU,64),(13)                                      ! line 43
+YGOMK   (AX)DD(BU,48,6),GO      X                            ! line 44
+        CNOP                                                 ! line 45  (no location printed)
+YTYPMK  (AX)DD(BU,48,6),TYPE    X                            ! line 46
+        CNOP                                                 ! line 47  (no location printed)
+        (AX)DD(BU,48,6),JOB     X                            ! line 48
+        CNOP                                                 ! line 49  (no location printed)
+        (AX)DD(BU,48,6),LIM     X                            ! line 50
+
+!SYM YIODTL 231330.00
+!SYM YIOCB  231332.40
+!SYM YREELC 231336.00
+!SYM YJOCER 231343.40
+!SYM YUER   231350.00
+!SYM YNORR  231352.40
+!SYM YIDX12 231360.00
+!SYM YUCX12 231361.00
+!SYM YUXSAV 231363.00
+!SYM YUCBF1 231366.00
+!SYM YUCBF2 231376.00
+!SYM YGOMK  231413.00
+!SYM YTYPMK 231414.00
+!CHECK 231330.00 | 000000.06 8C 106000.15 70 | line 1 YIODTL CT0110(V+I)(BU,6),.6($12)
+!CHECK 231331.00 | 231332.74 C4 | line 2 BZRZZ,YIOCB
+!CHECK 231331.40 | 777777.72 8C 006000.00 F0 | line 3 CM0000(BU,6),-.6($12)
+!CHECK 231332.40 | 231330.30 4C | line 4 YIOCB CBR,$12,YIODTL
+!CHECK 231333.00 | 231373.64 80 074600.06 70 | line 5 LF(BU,60,6),YUTOE
+!CHECK 231334.00 | 000034.64 80 014330.12 F0 | line 6 SF(BU,12,3),$12+.52,48
+!CHECK 231335.00 | 000034.00 80 022300.12 F0 | line 7 SF(BU,18,3),$12 (a "*" after the location)
+!CHECK 231336.00 | 231227.30 50 | line 8 YREELC LC,$12,YUSB8C
+!CHECK 231336.40 | 000033.00 80 231363.06 E0 | line 9 SWAPI,3,$11,YUXSAV
+!CHECK 231337.40 | 000002.37 BE | line 10 LVE,$15,2.0($14)
+!CHECK 231340.00 | 231423.00 80 000000.02 AF | line 11 TI,1,YBLWD4,0.0($15)
+!CHECK 231341.00 | 000000.00 8F 000001.16 AF | line 12 TI,7,0.0($15),1.0($15)
+!CHECK 231342.00 | 000033.00 80 231363.06 E0 | line 13 SWAPI,3,$11,YUXSAV
+!CHECK 231343.00 | 231352.50 00 | line 14 B,YNORR
+!CHECK 231343.40 | 231227.36 50 | line 15 YJOCER LC,$15,YUSB8C
+!CHECK 231344.00 | 000001.32 9E | line 16 KV,$13,1.0($14)
+!CHECK 231344.40 | 231350.32 C0 | line 17 BZXE,YUER
+!CHECK 231345.00 | 231363.00 80 000033.06 A0 | line 18 TI,3,YUXSAV,$11
+!CHECK 231346.00 | 000002.37 BE | line 19 LVE,$15,2.0($14)
+!CHECK 231346.40 | 231376.00 80 000000.36 2F | line 20 T,$15,YUCBF2,0.0($15)
+!CHECK 231347.40 | 000002.50 0E | line 21 B,2.32($14)
+!CHECK 231350.00 | 231363.00 80 000033.06 A0 | line 22 YUER TI,3,YUXSAV,$11 (a "*" after the location)
+!CHECK 231351.00 | 000002.37 BE | line 23 LVE,$15,2.0($14)
+!CHECK 231351.40 | 000000.22 0F | line 24 Z,0.0($15) (byte prints "CF")
+!CHECK 231352.00 | 000002.50 0E | line 25 B,2.32($14)
+!CHECK 231352.40 | 000000.31 1E | line 30 YNORR SX,$12,0.0($14)
+!CHECK 231353.00 | 231426.71 80 001000.00 F0 | line 31 CM0000(BU,1),YTBIT
+!CHECK 231354.00 | 231363.00 80 000033.06 A0 | line 32 TI,3,YUXSAV,$11
+!CHECK 231355.00 | 000002.37 BE | line 33 LVE,$15,2.0($14)
+!CHECK 231355.40 | 231227.36 50 | line 34 LC,$15,YUSB8C
+!CHECK 231356.00 | 231357.71 42 | line 35 BXVZ,$+1.32
+!CHECK 231356.40 | 231376.00 80 000000.36 2F | line 36 T,$15,YUCBF2,0.0($15)
+!CHECK 231357.40 | 000003.10 0E | line 37 B,3.0($14)
+!CHECK 231360.00 | 231373.64+ 000 000012 000000 | line 38 YIDX12 XW,YUTOE,10,0
+!CHECK 231361.00 | 231377.00+ 000 000006 231362 | line 39 YUCX12 XW,YUCBF2+1.0,6,$+1.0
+!CHECK 231362.00 | 231400.00+ 111 000006 000000 | line 40 XW,YUCBF2+2.0,6,0,7 (printed "6,C,7")

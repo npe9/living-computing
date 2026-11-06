@@ -1,0 +1,176 @@
+! mcp_bootstrap_p282.strap -- MCP printed page 282: the tail of the TAPE
+! IOC ROUTINE (BZAH,LJOE .. LSET .. LSETA .. B,LETA) and THE REEL CARD
+! ROUTINE (LREELR .. LRE3 .. B,LNORM), lines 1-47.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.33, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QD000312  DIST. OF 3/01  3/01  PAGE NUMBER 282" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is 232071,
+! line 1's word.
+!
+! THE PAGE.  47 lines, every line number prints a "*" after it.  Lines
+! 16-20 and 25 are remark cards ("-" in the NAME column; lines 17, 19 a
+! dashed rule, line 18 "THE REEL CARD ROUTINE", line 25 "IF ZERO MAKE
+! IT A ONE", the continuation of line 24's remark).  Located rows run
+! contiguous from 232071.00 (line 1) to 232125.40 (line 47, a half word;
+! next location 232126.00), then blank paper.  "*" after the LOCATION on
+! lines 12 and 33.
+!
+! THIS IS THE BODY'S RE-ASSEMBLY OF THE IPL'S TAPE IOC / REEL CARD CODE
+! (landed pp.55-56 print LSET, LSETA, LREELR, LREEL1, LREEL2 at IPL
+! addresses).  That is a DIFFERENT ASSEMBLY; the values here are this
+! page's.  The statement sequence differs from the IPL: here lines 1-4
+! (BZAH,LJOE / ST / LJOE V+I / B,LFOUND), lines 10-11, and lines 36-44
+! (LV / L / BRZ,LRE3 / LC / LRE1 .. LRE3 L(BU,18),LXFR) are new; written
+! as printed.  Spellings follow pp.55-56.
+!
+! JOIN.  p.281 (staged, b6decks) ends at 232070.00 (a full word) with
+! serial QD000310; this page opens at 232071.00 -- contiguous.  Its
+! serial QD000312 skips QD000311 (no line prints it; a card that compiled
+! no listing line, or a gap in the deck numbering).  p.283 should open at
+! 232126.00 with serial QD000359.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 29 "BB,LCVBIT" = LOVBIT (open O): IPL p.56 line 13 spells
+!     "BB, LOVBIT, LREEL2-0.32"; the staged b6 decks SYN LOVBIT at
+!     231545.62, which this binary prints.
+!   * line 1 "LJCE" / line 3 label "L JOE" = LJOE (line 3 closes the O).
+!   * lines 14, 28 ",LNCRM" = LNORM (lines 8, 24, 47 print LNORM).
+!   * line 4 ",LFOUNC" = LFOUND (worn D; p.281 line 43 LFOUND, binary
+!     232004.50 is p.281's LFOUND).
+!   * lines 39-43 "LWCRKX" = LWORKX; line 42 "TICREQ" = TIOREQ.
+!   * octal fields "CCCCCC.CC" and statement "C.0", "C.C" are 0 (octal
+!     fields / numeric context); hex "CO", "DO", "BO" = C0, D0, B0 by the
+!     round glyph in hex position matching the closed 0 in the same
+!     column on other rows; binaries agree.
+!   * line 35 "2.C( LIODX)" prints a blank after the paren; written
+!     2.0(LIODX).
+!   * line 11 "V+,LXSC,$R" read at 900 dpi: V+ then a comma (no I).
+!
+! EXTERNALS.  Index registers as pp.53-56 SYN them; forms copied from
+! p.281 and the staged b6 decks.  Stand-ins are checked by the merge.
+!
+! CARD SERIALS.  QD000312 .. QD000358, line N prints QD0003(11+N); none
+! skipped within the page.
+
+LIODX   SYN, $3                      ! as pp.53-55; byte 83 line 5
+LXPP    SYN, $4                      ! as pp.53-56; LV line 36 .24 34
+LXFR    SYN, $6                      ! as pp.52-56; byte 86 line 30
+LXSU    SYN, $7                      ! as pp.53-55; byte 87 line 10
+LXSC    SYN, $8                      ! as pp.53-55; byte 88 line 12
+LWORKX  SYN, $10                     ! as pp.54-55; byte 8A line 41
+LCOUNT  SYN(BU,7), (8)231545.53      ! IPL p.48 DRZ(BU,7); ST line 2 231545.53, BIT-EXACT
+LSYMC   SYN, (8)231624.0             ! as p.281; V+I line 3 LSYMC-1. = 231623.21
+LFOUND  SYN, (8)232004.40            ! as p.281; B line 4 232004.50, half word only
+LBLANK  SYN(BU,48,6), (8)231702.0    ! IPL p.51 (AY)DD(BU,48,6); KF line 6 231702.00, BIT-EXACT
+LNORM   SYN(BU,64,8), (8)232176.40   ! as b6 p.280 (SWAPI per p.58); BZRZ line 8 232176.74, half word only
+LSYMCX  SYN, (8)231532.0             ! as p.281; LX line 9 231532.20, half word only
+LETA    SYN(BU,32,8), (8)232032.40   ! defined p.281 line 13 (CB+); B line 15 232032.50
+LNTB    SYN(BU,1), (8)231545.52      ! IPL p.48 DD(BU,1); BZB line 21 231545.52, BIT-EXACT
+LERROR  SYN(BU,64,8), (8)232200.0    ! as p.281; B line 23 232200.10, half word only
+LRLBIT  SYN(BU,1), 0.49              ! IPL p.55 form; BB1 line 24 000000.61
+LOVBIT  SYN(BU,1), (8)231545.62      ! IPL p.53 DD(BU,1); BB line 29 231545.62, BIT-EXACT
+LERR4   SYN(BU,64,8), (8)232222.40   ! as b6 decks (SWAPI per p.58); B line 33 232222.50, half word only
+TLAST   SYN(BU,1), 0.18              ! pp.57, 58; BZB line 41 000000.22
+TIOREQ  SYN, (8)232307.0             ! as b6 decks (XW value); LVI line 42 232307.25
+TFREEL  SYN(BU,18), 0.28             ! pp.56, 62, 69; ST line 45 000000.34
+
+        SLC, (8)232071.00
+        BZAH,LJOE                                            ! line  1  -THEN RLSYM  (printed "LJCE")
+        ST(BU,7),LCOUNT                                      ! line  2
+LJOE    V+I,LXSC,LSYMC-1.                                    ! line  3  -RESTORE THE CHANNEL INDEX
+        B,LFOUND                                             ! line  4  -BRANCH  (printed "LFOUNC")
+LSET    LF(BU,48),4.0(LIODX)                                 ! line  5  -IS THE CARD CHANNEL NULL
+        KF(BU,48),LBLANK                                     ! line  6
+        BZAE,LSETA                                           ! line  7  -IF NOT NULL CONTINUE LOOKING
+        BZRZ,LNORM                                           ! line  8  -YES A NULL CHANNEL
+LSETA   LX,LXSC,LSYMCX                                       ! line  9  -IS CHANNEL IN THE SYMBOLIC
+        L(BU,7),0.57(LXSU),46                                ! line 10  -MOVE INDEX DIRECTLY TO THE
+        V+,LXSC,$R                                           ! line 11  -ASSOCIATED CHAN SLOT
+        L(BU,48),0.0(LXSC),0.0                               ! line 12  -     CHANNEL TABLE.
+        K(BU,48),4.0(LIODX),0.0                              ! line 13
+        BAEZ,LNORM                                           ! line 14  -   YES----NORMAL RETURN.  (printed "LNCRM")
+        B,LETA                                               ! line 15
+! line 16  -
+! line 17  - ----------------------------------------
+! line 18  -           THE REEL CARD ROUTINE
+! line 19  - ----------------------------------------
+! line 20  -
+LREELR  BZB,LNTB,LREEL1                                      ! line 21  -BRANCH IF NON-TAPE BIT 0.
+        LCI,$15,5.0                                          ! line 22  -BIT ONE -- ERROR FLAG 5.
+        B,LERROR                                             ! line 23  -BRANCH TO ERROR ROUTINE.
+LREEL1  BB1,LRLBIT(LXSU),LNORM                               ! line 24  -BRANCH ON REEL BIT ONE
+! line 25  -          IF ZERO MAKE IT A ONE
+        LF(BU,48),2.0(LIODX)                                 ! line 26  -TEST FOR BLANK FREEL SYMBOLIC
+        K,LBLANK                                             ! line 27
+        BAEZ,LNORM                                           ! line 28  -NORMAL RETURN IF BLANK.  (printed "LNCRM")
+        BB,LOVBIT,LREEL2-0.32                                ! line 29  (printed "LCVBIT")
+        L(BU,64),0.0(LXFR),0.0                               ! line 30  -IS FREEL SLOT AVAILABLE.
+        BRZZ,LREEL2                                          ! line 31  -   YES----STEP DOWN.
+        LCI,$15,3.0                                          ! line 32  -NO ERROR FLAG SI 3.
+        B,LERR4                                              ! line 33
+        Z,0.0(LXFR)                                          ! line 34
+LREEL2  TI,1,2.0(LIODX),0.0(LXFR)                            ! line 35  -STORE FREEL SYMBOL IN SLOT.
+        LV,LWORKX,0.0(LXPP)                                  ! line 36  -FOR COMPUTING THE CORRECT
+        L(BU,7),.50(LXSU),46                                 ! line 37  -I/O REQUEST TABLE ADDRESS
+        BRZ,LRE3                                             ! line 38  -FOR FREEL ADDRESS INSERTION
+        LC,LWORKX,$R                                         ! line 39
+LRE1    V+I,LWORKX,1.0                                       ! line 40
+        BZB,TLAST(LWORKX),LRE2                               ! line 41  -CHECK FOR LAST +1 ENTRY PT WITHIN TBL
+        LVI,LWORKX,TIOREQ                                    ! line 42
+LRE2    CB,LWORKX,LRE1                                       ! line 43
+LRE3    L(BU,18),LXFR                                        ! line 44  - STORE THE FREEL ADDRESS
+        ST(BU,18),TFREEL(LWORKX)                             ! line 45  -   IN IOREQ SLOT
+        V+ICR,LXFR,1.0                                       ! line 46  -STEP FREEL INDEX.
+        B,LNORM                                              ! line 47  -NORMAL RETURN.
+
+!SYM LJOE   232072.40
+!SYM LSET   232073.40
+!SYM LSETA  232076.40
+!SYM LREELR 232103.40
+!SYM LREEL1 232105.40
+!SYM LREEL2 232115.00
+!SYM LRE1   232120.40
+!SYM LRE2   232122.40
+!SYM LRE3   232123.00
+!CHECK 232071.00 | 232072.77 40 | line 1 BZAH,LJOE
+!CHECK 232071.40 | 231545.53 80 007000.20 D0 | line 2 ST(BU,7),LCOUNT
+!CHECK 232072.40 | 231623.21 05 | line 3 LJOE V+I,LXSC,LSYMC-1.
+!CHECK 232073.00 | 232004.50 00 | line 4 B,LFOUND
+!CHECK 232073.40 | 000004.00 83 060000.06 70 | line 5 LSET LF(BU,48),4.0(LIODX)
+!CHECK 232074.40 | 231702.00 80 060000.23 10 | line 6 KF(BU,48),LBLANK
+!CHECK 232075.40 | 232076.76 C0 | line 7 BZAE,LSETA
+!CHECK 232076.00 | 232176.74 C0 | line 8 BZRZ,LNORM
+!CHECK 232076.40 | 231532.20 10 | line 9 LSETA LX,LXSC,LSYMCX
+!CHECK 232077.00 | 000000.71 87 007027.20 50 | line 10 L(BU,7),0.57(LXSU),46
+!CHECK 232100.00 | 000011.20 B0 | line 11 V+,LXSC,$R
+!CHECK 232100.40 | 000000.00 88 060000.20 50 | line 12 L(BU,48),0.0(LXSC),0.0
+!CHECK 232101.40 | 000004.00 83 060000.21 10 | line 13 K(BU,48),4.0(LIODX),0.0
+!CHECK 232102.40 | 232176.76 C6 | line 14 BAEZ,LNORM
+!CHECK 232103.00 | 232032.50 00 | line 15 B,LETA
+!CHECK 232103.40 | 231545.52 80 232105.74 00 | line 21 LREELR BZB,LNTB,LREEL1
+!CHECK 232104.40 | 000005.37 02 | line 22 LCI,$15,5.0
+!CHECK 232105.00 | 232200.10 00 | line 23 B,LERROR
+!CHECK 232105.40 | 000000.61 87 232176.74 0E | line 24 LREEL1 BB1,LRLBIT(LXSU),LNORM
+!CHECK 232106.40 | 000002.00 83 060000.06 70 | line 26 LF(BU,48),2.0(LIODX)
+!CHECK 232107.40 | 231702.00 80 060600.21 10 | line 27 K,LBLANK
+!CHECK 232110.40 | 232176.76 C6 | line 28 BAEZ,LNORM
+!CHECK 232111.00 | 231545.62 80 232114.74 02 | line 29 BB,LOVBIT,LREEL2-0.32
+!CHECK 232112.00 | 000000.00 86 000000.20 50 | line 30 L(BU,64),0.0(LXFR),0.0
+!CHECK 232113.00 | 232115.34 C6 | line 31 BRZZ,LREEL2
+!CHECK 232113.40 | 000003.37 02 | line 32 LCI,$15,3.0
+!CHECK 232114.00 | 232222.50 00 | line 33 B,LERR4
+!CHECK 232114.40 | 000000.22 06 | line 34 Z,0.0(LXFR)
+!CHECK 232115.00 | 000002.00 83 000000.02 A6 | line 35 LREEL2 TI,1,2.0(LIODX),0.0(LXFR)
+!CHECK 232116.00 | 000000.24 34 | line 36 LV,LWORKX,0.0(LXPP)
+!CHECK 232116.40 | 000000.62 87 007027.20 50 | line 37 L(BU,7),.50(LXSU),46
+!CHECK 232117.40 | 232123.34 C2 | line 38 BRZ,LRE3
+!CHECK 232120.00 | 000011.24 50 | line 39 LC,LWORKX,$R
+!CHECK 232120.40 | 000001.25 05 | line 40 LRE1 V+I,LWORKX,1.0
+!CHECK 232121.00 | 000000.22 8A 232122.74 00 | line 41 BZB,TLAST(LWORKX),LRE2
+!CHECK 232122.00 | 232307.25 01 | line 42 LVI,LWORKX,TIOREQ
+!CHECK 232122.40 | 232120.64 48 | line 43 LRE2 CB,LWORKX,LRE1
+!CHECK 232123.00 | 000026.00 80 022000.20 50 | line 44 LRE3 L(BU,18),LXFR
+!CHECK 232124.00 | 000000.34 8A 022000.20 D0 | line 45 ST(BU,18),TFREEL(LWORKX)
+!CHECK 232125.00 | 000001.15 07 | line 46 V+ICR,LXFR,1.0
+!CHECK 232125.40 | 232176.50 00 | line 47 B,LNORM

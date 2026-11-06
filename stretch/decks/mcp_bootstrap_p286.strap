@@ -1,0 +1,64 @@
+! mcp_bootstrap_p286.strap -- MCP printed page 286: "SYN CARDS FOR THE
+! LENGTHS OF THE THREE TABLES", lines 1-16.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.37, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QE000029  DIST. OF 3/01  3/01  PAGE NUMBER 286" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is BLANK:
+! line 1 is a remark card and compiles nothing.
+!
+! THE PAGE.  16 lines, every line number prints a "*" after it, then
+! blank paper.  Lines 1-5, 9 and 13-16 are remark cards (only a "-" in
+! the NAME column; lines 2 and 4 are dashed rules, line 3 "SYN CARDS FOR
+! THE LENGTHS OF THE THREE TABLES", lines 14-15 "--NOTE-- THE TPPC COUNT
+! MUST BE HALF OF THE ACTUAL TABLE LENGTH / WHICH IS THE ACTUAL NUMBER OF
+! JOBS THE TABLE CAN ACCOMMODATE.").  Lines 6-8 and 10-12 are six INTEGER
+! SYN cards; each prints LOCATION 000000.00+, its value in octal in the
+! BINARY OUTPUT column (+00000025, +00000120, +00000062, +00000002,
+! +00000024, +00000024) and NULL as the data description.  Each octal
+! value agrees with the decimal statement (21, 80, 50, 2, 20, 20).
+!
+! >>> THE PAGE COMPILES NO STORAGE.  No SLC, no !CHECK (as printed
+! p.105 and the p.210 integer SYN): the check surface is six !SYM, each
+! stating the integer as p.210's !SYM ACRD does (21 -> 000000.25). <<<
+!
+! These are the BODY's definitions of the table lengths; IPL p.60/p.62
+! (a different assembly) print TPPC SYN,20.  The body's stand-ins on
+! scratch pp.268 and 276 (TPPC 21, TIOC 80, TFRC 50, TUPPC 2, TUIOC 20,
+! TUFRC 20, from XW counts) agree with every card here.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 7 label printed "TICC" = TIOC: open O as this drum prints it;
+!     line 11's "T UIOC" prints a closed O, the remark on line 11 reads
+!     "I/O REQ", and pp.61-62, 268, 276 spell TIOC.
+!   * line 12 "SYN,2C" = 20: decimal field; binary prints +00000024.
+!   * LOCATION "000000.CC+" (lines 6, 10, 12) = 000000.00+ (octal field).
+!   * Remark misspellings "LENGHT" (lines 8, 12), "OVERLAPFIRST" (line
+!     12) and "ACCCMODATE" (line 15, printed so) are kept as printed.
+!
+! CARD SERIALS.  QE000029 .. QE000044, line N prints QE0000(28+N); none
+! skipped.  A new card-ID prefix (QE) starting at 29 on line 1.
+
+! line  1  -
+! line  2  - ------------------------------------------------------------
+! line  3  - SYN CARDS FOR THE LENGTHS OF THE THREE TABLES
+! line  4  - ------------------------------------------------------------
+! line  5  -
+TPPC    SYN,21                                               ! line  6  -THE NUMBER OF JOBS ON THE SCAN AND READ TAPE PLUS 1
+TIOC    SYN,80                                               ! line  7  (label printed "TICC")
+TFRC    SYN,50                                               ! line  8  -THE FIRST REEL TABLE LENGHT
+! line  9  -
+TUPPC   SYN,2                                                ! line 10  -NOT OVERLAP PP REF TABLE LENGTH
+TUIOC   SYN,20                                               ! line 11  -NOT OVERLAP I/O REQ TABLE LENGTH
+TUFRC   SYN,20                                               ! line 12  -NOT OVERLAPFIRST REEL TABLE LENGHT  (statement printed "SYN,2C")
+! line 13  -
+! line 14  - --NOTE--   THE TPPC COUNT MUST BE HALF OF THE ACTUAL TABLE LENGTH
+! line 15  - WHICH IS THE ACTUAL NUMBER OF JOBS THE TABLE CAN ACCCMODATE.
+! line 16  -
+
+!SYM TPPC   000000.25
+!SYM TIOC   000001.20
+!SYM TFRC   000000.62
+!SYM TUPPC  000000.02
+!SYM TUIOC  000000.24
+!SYM TUFRC  000000.24

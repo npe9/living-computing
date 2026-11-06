@@ -256,6 +256,12 @@ def opcode_of(line):
     if op.startswith(","):
         return None            # an operand continuation line, not an opcode
     op = op.split("(", 1)[0].split(",", 1)[0]
+    # "$OP" is OP with its error indications suppressed (C28-6129
+    # printed p.10), as strap_asm reads it: MCP printed pp.53, 56, 57,
+    # 279, 283 print "$TI" and "$L(BU,8)", and the census counted them
+    # as two unmatched mnemonics until the decks wrote them as printed.
+    if op.startswith("$") and op[1:2].isalpha():
+        op = op[1:]
     return op or None
 
 

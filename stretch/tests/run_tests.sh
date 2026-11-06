@@ -6692,6 +6692,36 @@ run "its tail and the character locator tables (QOK), printed p.262" python3 ver
 run "THE BREAKDOWN ROUTINE, S BRK8, printed p.263" python3 verify_mcp_page.py 263
 run "the breakdown routine concluded, printed p.264" python3 verify_mcp_page.py 264
 run "JOB CONTROL PHASE 1 OVERLAPPED opens (volume 2), printed p.265" python3 verify_mcp_page.py 265
+run "JOB CONTROL PHASE 1 OVERLAPPED, continued: the card-type tests (LF, printed p.266" python3 verify_mcp_page.py 266
+run "JOB CONTROL PHASE 1 OVERLAPPED, its system-command scan (YC1SC .. YCOM, printed p.267" python3 verify_mcp_page.py 267
+run "JOB CONTROL PHASE 1 OVERLAPPED, its constants (YC1MTT .. YC1HLP) and t, printed p.268" python3 verify_mcp_page.py 268
+run "JOB CONTROL, PHASE 4, OVERLAPPED, its opening (YJC4TT DD .. the dump/c, printed p.269" python3 verify_mcp_page.py 269
+run "the tail of the console-message print routine (Y PR .. YPRCMM) and the, printed p.270" python3 verify_mcp_page.py 270
+run "JOB CONTROL PHASE 1 OVERLAPPED, the end of the disposition tests (KVI, printed p.271" python3 verify_mcp_page.py 271
+run "the UNCODE routine's card-type tests, the LIM card conversion (YLIMC, printed p.272" python3 verify_mcp_page.py 272
+run "the UNCODE service routines continued (the IOD card's field conversion, printed p.273" python3 verify_mcp_page.py 273
+run "the tail of the JOB CONTROL mask table (YRELMK .. YFORTR), YUTOE, the, printed p.274" python3 verify_mcp_page.py 274
+run "RESERVATIONS, TABLES AND COUNTERS of the body's DECODE (L LPPURF .. L, printed p.276" python3 verify_mcp_page.py 276
+run "the DECODE program's storage block (L SAVE .. L CLEAR, LASTPP), the co, printed p.277" python3 verify_mcp_page.py 277
+run "the swap area L NOSAV, TYPE SYMBOLS AND CODES, IOD AND REEL COMPARISON, printed p.278" python3 verify_mcp_page.py 278
+run "the loader's INITIALIZATION ROUTINE (L INIT .. B,LFWA) and the IOD CARD ROUTINE opening, printed p.279" python3 verify_mcp_page.py 279
+run "the IOD CARD ROUTINE's type decode and non-tape channel table (L IOD1, printed p.280" python3 verify_mcp_page.py 280
+run "the end of a disk check (LCI,\$15,7.0 / B,LERROR) and the TAPE IOC ROU, printed p.281" python3 verify_mcp_page.py 281
+run "the tail of the TAPE IOC ROUTINE (BZAH,LJOE .. LSET .. LSETA .. B,LETA, printed p.282" python3 verify_mcp_page.py 282
+run "the FINAL ROUTINE and the IOREQ sort, printed p.283" python3 verify_mcp_page.py 283
+run "the end of the IOREQ search (LVI,LWORKX,TUIORQ .. LFIN3 .. ZLDCD1), th, printed p.284" python3 verify_mcp_page.py 284
+run "'SYN CARDS FOR THE LENGTHS OF THE THREE TABLES', printed p.286" python3 verify_mcp_page.py 286
+run "the ASSIGN program's CONSTANTS AND INDEX NAMES (T NEXT .. T IXM), printed p.287" python3 verify_mcp_page.py 287
+run "the ASSIGN tables' SYN cards -- the PP REFERENCE TABLE (T PPURF .. T P, printed p.288" python3 verify_mcp_page.py 288
+run "the SYN CARDS FOR THE CHANNEL/UNIT STATUS TABLE and the SYN CARDS FOR, printed p.289" python3 verify_mcp_page.py 289
+run "the REQUEST VALIDITY CHECK TABLE (T DISK, eight three-byte rows) and T, printed p.290" python3 verify_mcp_page.py 290
+run "the multi-unit count table SYNs (T CHADD, T CHCNT), the LOADER's data, printed p.291" python3 verify_mcp_page.py 291
+run "the head of THE DEBUGGER PACKAGE -- its SYN list of console keys, swit, printed p.292" python3 verify_mcp_page.py 292
+run "the DEBUGGER AND \$HOLD section -- the DB tentacle table (P DB TT), th, printed p.293" python3 verify_mcp_page.py 293
+run "the CNSL I/O table of exits (P DB EX), the CNSL error fixup within the, printed p.294" python3 verify_mcp_page.py 294
+run "THE SYSTEM COMMAND PACKAGE -- its tentacle (J TENT .. J SIZE, YXCOMD), printed p.295" python3 verify_mcp_page.py 295
+run "a console-source system-command call (BD,S PRIME / ,S COMD), its count, printed p.296" python3 verify_mcp_page.py 296
+run "THE SPECIAL ASSIGNMENT PACKAGE (ZASN01 .. B,DMCP), printed p.297" python3 verify_mcp_page.py 297
 
 # >>> pp.185-192 FOUND A WRONG ANSWER IN THE VFL IMMEDIATE, and the
 # page caught it by writing ONE immediate at TWO LENGTHS. <<<
@@ -6711,9 +6741,10 @@ run "JOB CONTROL PHASE 1 OVERLAPPED opens (volume 2), printed p.265" python3 ver
 # Also: the SYN path never stripped blanks the instruction path does
 # ("B,K IO IND" assembled, "E IO IND SYN,K IO IND" did not), found
 # by printed p.189 printing both on one page.
-run "MCP's body merges, holds every page's rows and accounts for every word, printed pp.99-265" python3 check_mcp_body_image.py
+run "MCP's body merges, holds every page's rows and accounts for every word, printed pp.99-297" python3 check_mcp_body_image.py
 run "a printed trailing '-' is the comment mark, not a minus, C28-6129 PDF p.5" python3 check_comment_mark.py
 run "instruction and index-word names carry a dds, C22-6531 printed pp.10, 19" python3 check_instruction_label_dds.py
+run "\$OP assembles as OP and PRND is a listing control, C28-6129 printed pp.10, 36" python3 check_dollar_op.py
 run "the equipment dispatch, printed p.160" python3 verify_mcp_page.py 160
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
 run "the program status table, printed p.109" python3 verify_mcp_page.py 109

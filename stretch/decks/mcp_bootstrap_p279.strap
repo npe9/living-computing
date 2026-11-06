@@ -1,0 +1,205 @@
+! mcp_bootstrap_p279.strap -- MCP printed page 279: the loader's
+! INITIALIZATION ROUTINE (L INIT .. B,LFWA) and the opening of the IOD
+! CARD ROUTINE (L IODRN .. L IOFUL), lines 1-56.
+!
+! 2026-11-06: "$OP" IS NOW WRITTEN AS PRINTED.  C28-6129 printed p.10 (PDF
+! p.14): a $ prefixed to an operation code "directs the compiler to
+! suppress any error indications" for that statement; the binary is
+! the plain operation's, and strap_asm accepts the prefix.  Notes below
+! that describe writing the card WITHOUT the "$" predate this.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.30, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QD000152  DIST. OF 3/01  3/01  PAGE NUMBER 279" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is BLANK
+! (line 1 is a remark card).
+!
+! THE PAGE.  56 lines; every line number prints a "*" after it.  Lines
+! 1-4 are remark cards (banner "INITIALIZATION ROUTINE"), lines 43-47
+! remark cards (banner "IOD CARD ROUTINE").  Located rows run
+! contiguous from 231715.40 (line 5) to 231750.00 (line 42, a half
+! word) and from 231750.40 (line 48) to 231757.40 (line 56, a half
+! word; next location 231760.00), then blank paper.  "*" after the
+! LOCATION on lines 5, 22 and 38.  This routine is the body-assembly
+! twin of the IPL assembly's printed pp.52-53 (decks/mcp_bootstrap_
+! p52/p53.strap), whose statements match these card for card except
+! line 17 (here "L,TJBPRO(LWORKX)", there "L(BU,1),TJBPRO(LXPP)") and
+! line 19 (here "L,TCRREF(LWORKX)") and the new lines 6-16.
+!
+! JOIN.  p.278 is not landed and no neighbour deck exists in scratch,
+! so contiguity with it is NOT established here; the body volume OCR
+! (finding aid) shows "LFWA BB,1.1(LIODX),LIOORN" printing 231750.74,
+! i.e. LIODRN at 231750.40, which this page's line 48 defines there.
+! p.280 should open at 231760.00 with serial QD000208 (the volume OCR
+! puts "B,LERR4" at QD000208, as p.53's LIOFUL is followed by B,LERR4).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 48 label prints "L ICDRN": an open O and a D with worn stem.
+!     Written LIODRN: p.53 "LIODRN M+1,TIODCT(LXPP)" is this card, p.146
+!     notes the spelling IODRN, the comment is "-STEP IOD COUNTER"; the
+!     volume OCR reads the reference "LIOORN".
+!   * line 17 ",TJBPRC" = TJBPRO (open O): landed p.53/p.62 "TJBPRO
+!     SYN(BU,1),0.36"; the row prints 000000.44 (bit 36) length 1.
+!   * line 25 prints "$TI,1,-1.0(LIODX),1.0(LXPP)" (a "$" before the
+!     operation, as printed p.53 line 14 does on the same card).  Written
+!     "TI" as p.53 does; the row 777777.00 83 000001.02 A4 is a plain TI.
+!     strap_asm refuses "$TI" (unknown mnemonic); the body OCR also
+!     carries this card as the label of LFINAL on a later page.
+!   * "LIOCX" (lines 5, 27) = LIODX, worn D; "LXIC"/"LXIO" = LXIO;
+!     "LIOC1"/"LIOD1" = LIOD1; "CMOCOO" = CM0000 (open 0s) -- all names
+!     that the landed IPL decks spell and the binaries agree with.
+!   * line 41 last byte prints "FC" = F0 (as lines 9-11, 39 print F0).
+!   * lines 13 and 14 end in a COMMENT MARK ("Z,0.0(LWORKX)-",
+!     "CBR+,LWORKX,$-.32-", remark following); written without it.
+!   * line 38's label prints "LINITC" with no blank after the L (every
+!     other label on the page prints "L xxxx"); the same symbol.
+!
+! EXTERNALS.  Values come from THIS page's binary (the body assembly;
+! the IPL decks pp.48-58 carry other addresses for the same names).
+! Data descriptions follow the landed IPL decks and the body volume OCR
+! (L SAVEY/L SAVEZ/L CLEAR are XW cards, L INFAD DD(BU,1), L COUNT
+! DRZ(BU,7)).  Index registers as the IPL decks write them.
+!
+! CARD SERIALS.  QD000152 .. QD000207, one per line, none skipped.
+
+LIODX   SYN, $3                      ! landed p.53; line 5 1.0(LIODX) 83
+LXPP    SYN, $4                      ! landed p.53; line 15 000024.24, line 24 04
+LXIO    SYN, $5                      ! landed p.53; line 37 05
+LXFR    SYN, $6                      ! landed p.52; line 7 SX .15
+LWORKX  SYN, $10                     ! landed p.53; line 13 0A
+LSAVEY  SYN(BU), (8)231547.0         ! not landed in the body (XW per OCR); SX line 6 231547.13, half word only
+LSAVEZ  SYN(BU), (8)231550.0         ! not landed in the body (XW per OCR); SX line 7 231550.15, half word only
+LCLEAR  SYN(BU), (8)231552.0         ! not landed in the body (XW per OCR); LX line 12 231552.24, half word only
+LFINB   SYN(BU,1), (8)231545.51      ! not landed in the body; CM0000 line 9 231545.51, BIT-EXACT
+LINFAD  SYN(BU,1), (8)231545.73      ! not landed in the body (DD(BU,1) per OCR); line 10 231545.73, BIT-EXACT
+LCOUNT  SYN(BU,7), (8)231545.53      ! not landed in the body (DRZ(BU,7) per OCR); line 11 231545.53 007000, BIT-EXACT
+LOVBIT  SYN(BU,1), (8)231545.62      ! not landed in the body; BB line 33 231545.62, BIT-EXACT
+LIOSCR  SYN(BU,9), (8)231545.40      ! not landed in the body; line 39 231545.40 011000, BIT-EXACT
+LTAPEC  SYN(BU,7), (8)231545.31      ! not landed in the body; line 41 231545.31 007000, BIT-EXACT
+LIOD    SYN, (8)231700.0             ! not landed in the body; K line 29 231700.00 (explicit dds), half word only
+LFWA    SYN(BU,64,8), (8)231714.0    ! not landed in the body (BB card per OCR); B line 42 231714.10, half word only
+LFINAL  SYN(BU,64,8), (8)232126.0    ! not landed in the body (TI card per OCR); BRZ line 28 232126.34, half word only
+LERROR  SYN(BU,64,8), (8)232200.0    ! not landed in the body (CM1111 card per OCR); B line 32 232200.10, half word only
+LERR4   SYN(BU,64,8), (8)232222.40   ! not landed in the body (SWAPI card per OCR); B line 23 232222.50, half word only
+LIOD1   SYN(BU,64,8), (8)231761.0    ! not landed (L(BU,48) card, p.53); BRZZ line 55 231761.34, half word only
+TJBPRO  SYN(BU,1), 0.36              ! landed p.53/p.62; L line 17 000000.44 (printed "TJBPRC")
+TCRREF  SYN(BU,18), 0.0              ! landed p.53/p.62; L line 19 022000
+TLPPEN  SYN(BU,1), 0.39              ! landed p.53/p.62; CM1111 line 26 000000.47
+TIODCT  SYN(BU,12), 0.52             ! landed p.53/p.62; M+1 line 48 000000.64 014000
+LIREF   SYN(BU,12), 0.52             ! landed p.48/p.53; L line 49 000000.64 014000
+TLREFN  SYN(BU,12), 0.40             ! landed p.53/p.62; K line 50 000000.50 014000
+
+        SLC, (8)231715.40
+! line  1  - -----------------------------------------------------------
+! line  2  -          INITIALIZATION ROUTINE
+! line  3  - -----------------------------------------------------------
+! line  4  -
+LINIT   L(BU,24),1.0(LIODX)                                  ! line  5  ("LIOCX")
+        SX,LXIO,LSAVEY                                       ! line  6  -SAVE THE IOREQ INDEX
+        SX,LXFR,LSAVEZ                                       ! line  7  -SAVE THE FREEL TABLE INDEX
+        BRZ,LINITA+1.                                        ! line  8  -IF REJ END COMBO
+LINITA  CM0000(BU,1),LFINB,0.0                               ! line  9  -FINAL BIT TO 0.
+        CM0000,LINFAD                                        ! line 10  -ZERO THE INF DISK
+        CM0000,LCOUNT                                        ! line 11  -ZERO RLSYM NO. COUNT.
+        LX,LWORKX,LCLEAR                                     ! line 12  -CLEAR RLSYM COUNT TABLE
+        Z,0.0(LWORKX)                                        ! line 13  comment mark; SYMBOLIC CHANNEL AND UNIT TABLES
+        CBR+,LWORKX,$-.32                                    ! line 14  comment mark; AND THE NON TAPE TABLES
+        LX,LWORKX,LXPP                                       ! line 15  -LOOK AT THE NEXT PP REF SLOT WITHOUT
+        V+ICR,LWORKX,2.0                                     ! line 16  -DESTROYING THE LXPP INDEX.
+        L,TJBPRO(LWORKX)                                     ! line 17  -IS THE NEXT PP REF TBL SLOT AVAILABLE ("TJBPRC")
+        BZRZZ,LINITB                                         ! line 18  -   YES----STEP DOWN.
+        L,TCRREF(LWORKX)                                     ! line 19  -IS THE NEXT PP REF TBL SLOT AVAILABLE
+        BRZZ,LINITB                                          ! line 20  -   YES----STEP DOWN.
+        LCI,$15,1.0                                          ! line 21  -NO -- ERROR FLAG 1.
+        CM1111(BU,1),LFINB,0.0                               ! line 22  -SET FINAL BIT TO 1.
+        B,LERR4                                              ! line 23
+LINITB  Z,0.0(LXPP)                                          ! line 24  -CLEAR SLOT.
+        $TI,1,-1.0(LIODX),1.0(LXPP)                          ! line 25  -STORE PP ID (printed "$TI")
+        CM1111(BU,1),TLPPEN(LXPP)                            ! line 26
+        L(BU,24),1.0(LIODX)                                  ! line 27  -LOOK FOR REJ END COMBO
+        BRZ,LFINAL                                           ! line 28  -( IF SO
+        K(BU,24),LIOD                                        ! line 29  -IS THE FIRST CARD AN IOD
+        BAE,LINBB                                            ! line 30  -YES
+        LCI,$15,8.0                                          ! line 31  -NO    SEND ERROR FLAG
+        B,LERROR                                             ! line 32
+LINBB   BB,LOVBIT,LINITC-.32                                 ! line 33  -IF NOT OVERLAP MODE
+        L(BU,64),0.0(LXIO),0.0                               ! line 34  -IS IOREQ SLOT AVAILABLE.
+        BRZZ,LINITC                                          ! line 35  -   YES----STEP DOWN.
+        B,LIOFUL                                             ! line 36  -   NO----TO SPECIAL ROUTINE.
+        Z,0.0(LXIO)                                          ! line 37
+LINITC  SV,LXIO,0.0(LXPP)                                    ! line 38  -PUT CRREF IN PPREF SLOT.
+        CM0000(BU,9),LIOSCR,0.0                              ! line 39  -SET IODSQ COUNTER TO 1.
+        M+1(BU,9),LIOSCR                                     ! line 40
+        CM0000,LTAPEC                                        ! line 41  -SET REEL COUNT TO ZERO
+        B,LFWA                                               ! line 42  -BRANCH TO TEST FWA.
+! line 43  -
+! line 44  - -----------------------------------------------------------
+! line 45  -          IOD CARD ROUTINE
+! line 46  - -----------------------------------------------------------
+! line 47  -
+        SLC, (8)231750.40
+LIODRN  M+1,TIODCT(LXPP)                                     ! line 48  -STEP IOD COUNTER (printed "L ICDRN")
+        L,LIREF(LIODX),0.0                                   ! line 49  -COMPARE FOR LARGEST
+        K,TLREFN(LXPP)                                       ! line 50  -   PP REFERENCE NUMBER
+        BALZ,LIODA                                           ! line 51  -THIS NO. IS LOW....STEP DOWN.
+        ST,TLREFN(LXPP)                                      ! line 52  -HIGH.... REPLACE BY THIS NUMBER
+        BB,LOVBIT,LIOD1-0.32                                 ! line 53
+LIODA   L(BU,64),0.0(LXIO),0.0                               ! line 54  -IS IOREQ SLOT AVAILABLE.
+        BRZZ,LIOD1                                           ! line 55  -   YES----STEP DOWN.
+LIOFUL  LCI,$15,2.0                                          ! line 56  -NO -- ERROR FLAG 2.
+
+!SYM LINIT  231715.40
+!SYM LINITA 231720.00
+!SYM LINITB 231732.40
+!SYM LINBB  231741.00
+!SYM LINITC 231744.40
+!SYM LIODRN 231750.40
+!SYM LIODA  231756.00
+!SYM LIOFUL 231757.40
+!CHECK 231715.40 | 000001.00 83 030000.20 50 | line 5 LINIT L(BU,24),1.0(LIODX)
+!CHECK 231716.40 | 231547.13 10 | line 6 SX,LXIO,LSAVEY
+!CHECK 231717.00 | 231550.15 10 | line 7 SX,LXFR,LSAVEZ
+!CHECK 231717.40 | 231721.34 C2 | line 8 BRZ,LINITA+1.
+!CHECK 231720.00 | 231545.51 80 001000.00 F0 | line 9 LINITA CM0000(BU,1),LFINB,0.0
+!CHECK 231721.00 | 231545.73 80 001000.00 F0 | line 10 CM0000,LINFAD
+!CHECK 231722.00 | 231545.53 80 007000.00 F0 | line 11 CM0000,LCOUNT
+!CHECK 231723.00 | 231552.24 10 | line 12 LX,LWORKX,LCLEAR
+!CHECK 231723.40 | 000000.22 0A | line 13 Z,0.0(LWORKX)
+!CHECK 231724.00 | 231723.65 4C | line 14 CBR+,LWORKX,$-.32
+!CHECK 231724.40 | 000024.24 10 | line 15 LX,LWORKX,LXPP
+!CHECK 231725.00 | 000002.25 07 | line 16 V+ICR,LWORKX,2.0
+!CHECK 231725.40 | 000000.44 8A 001000.20 50 | line 17 L,TJBPRO(LWORKX) (printed "TJBPRC")
+!CHECK 231726.40 | 231732.74 C4 | line 18 BZRZZ,LINITB
+!CHECK 231727.00 | 000000.00 8A 022000.20 50 | line 19 L,TCRREF(LWORKX)
+!CHECK 231730.00 | 231732.74 C6 | line 20 BRZZ,LINITB
+!CHECK 231730.40 | 000001.37 02 | line 21 LCI,$15,1.0
+!CHECK 231731.00 | 231545.51 80 001000.36 F0 | line 22 CM1111(BU,1),LFINB,0.0
+!CHECK 231732.00 | 232222.50 00 | line 23 B,LERR4
+!CHECK 231732.40 | 000000.22 04 | line 24 LINITB Z,0.0(LXPP)
+!CHECK 231733.00 | 777777.00 83 000001.02 A4 | line 25 TI,1,-1.0(LIODX),1.0(LXPP) (printed "$TI")
+!CHECK 231734.00 | 000000.47 84 001000.36 F0 | line 26 CM1111(BU,1),TLPPEN(LXPP)
+!CHECK 231735.00 | 000001.00 83 030000.20 50 | line 27 L(BU,24),1.0(LIODX)
+!CHECK 231736.00 | 232126.34 C2 | line 28 BRZ,LFINAL
+!CHECK 231736.40 | 231700.00 80 030000.21 10 | line 29 K(BU,24),LIOD
+!CHECK 231737.40 | 231741.36 C2 | line 30 BAE,LINBB
+!CHECK 231740.00 | 000010.37 02 | line 31 LCI,$15,8.0
+!CHECK 231740.40 | 232200.10 00 | line 32 B,LERROR
+!CHECK 231741.00 | 231545.62 80 231744.34 02 | line 33 LINBB BB,LOVBIT,LINITC-.32
+!CHECK 231742.00 | 000000.00 85 000000.20 50 | line 34 L(BU,64),0.0(LXIO),0.0
+!CHECK 231743.00 | 231744.74 C6 | line 35 BRZZ,LINITC
+!CHECK 231743.40 | 231757.50 00 | line 36 B,LIOFUL
+!CHECK 231744.00 | 000000.22 05 | line 37 Z,0.0(LXIO)
+!CHECK 231744.40 | 000000.13 34 | line 38 LINITC SV,LXIO,0.0(LXPP)
+!CHECK 231745.00 | 231545.40 80 011000.00 F0 | line 39 CM0000(BU,9),LIOSCR,0.0
+!CHECK 231746.00 | 231545.40 80 011000.22 B0 | line 40 M+1(BU,9),LIOSCR
+!CHECK 231747.00 | 231545.31 80 007000.00 F0 | line 41 CM0000,LTAPEC (last byte prints "FC")
+!CHECK 231750.00 | 231714.10 00 | line 42 B,LFWA
+!CHECK 231750.40 | 000000.64 84 014000.22 B0 | line 48 LIODRN M+1,TIODCT(LXPP)
+!CHECK 231751.40 | 000000.64 83 014000.20 50 | line 49 L,LIREF(LIODX),0.0
+!CHECK 231752.40 | 000000.50 84 014000.21 10 | line 50 K,TLREFN(LXPP)
+!CHECK 231753.40 | 231756.36 46 | line 51 BALZ,LIODA
+!CHECK 231754.00 | 000000.50 84 014000.20 D0 | line 52 ST,TLREFN(LXPP)
+!CHECK 231755.00 | 231545.62 80 231760.74 02 | line 53 BB,LOVBIT,LIOD1-0.32
+!CHECK 231756.00 | 000000.00 85 000000.20 50 | line 54 LIODA L(BU,64),0.0(LXIO),0.0
+!CHECK 231757.00 | 231761.34 C6 | line 55 BRZZ,LIOD1
+!CHECK 231757.40 | 000002.37 02 | line 56 LIOFUL LCI,$15,2.0

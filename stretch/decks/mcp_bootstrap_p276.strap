@@ -1,0 +1,179 @@
+! mcp_bootstrap_p276.strap -- MCP printed page 276: RESERVATIONS,
+! TABLES AND COUNTERS of the body's DECODE (L LPPURF .. L INFAD), lines 1-52.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.27, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QD000026  DIST. OF 3/01  3/01  PAGE NUMBER 276" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is BLANK:
+! line 1 is PRNS and compiles nothing.
+!
+! THE SAME SOURCE AS printed p.48 (IPL assembly, decks/mcp_bootstrap_p48
+! .strap), card for card, assembled here in the body at 231523.00.
+! Its stand-in values differ from p.48's (a different assembly).
+!
+! THE PAGE.  52 lines; every line number prints a "*" after it.
+!   line 1      PRNS (listing control, emits nothing).
+!   lines 2-4, 6-8, 19-21, 30-32, 41-43  remark/banner cards.
+!   line 5      L IREF SYN(BU,12),0.52 prints 000000.64+, dds "BU,14 ,10".
+!   lines 9-18  ten XWs, 231523.00 .. 231534.00.
+!   lines 22-29 eight XWs, 231535.00 .. 231544.00 ("*" after line 22's
+!               location).
+!   lines 33-40 L IODX .. L WORKX SYN,$3..$10, print 000023.00+ .. 000032.00+,
+!               dds "BU,100,10".
+!   lines 44-52 the bit chain 231545.00 .. 231545.73 (VF = 25 bits, so
+!               line 45 is at .31; "*" after line 45's location).  DRZ rows
+!               print their size (000000.07, 000000.11) and get no !CHECK;
+!               line 51's (AX)DD prints no binary and gets no !CHECK; the
+!               DD(BU,1) rows print their one bit at the right of the field.
+! Located rows run contiguous from 231523.00 to 231545.73 (+1 bit).
+!
+! JOIN.  printed p.275 (QD000001..QD000024, not landed) is comment cards
+! after "SLC,$" at 231522.40, so this page's first XW at 231523.00 is
+! that counter rounded to a word: contiguous.  printed p.277's sheet
+! opens at 231546.00 (L SAVE XW), the next word after 231545.74:
+! contiguous.  p.277 line 7 "LASTPP XW,TPREFT" at 231553.00 is the
+! value p.265's LASTPP stand-in carries -- a cross-witness.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 50 "L CVBIT" = LOVBIT (open O): p.48 line 50 / p.52 (landed,
+!     IPL assembly) spell L OVBIT; comment "-OVERLAPPED JOB BIT".
+!   * line 51 "L BLZCR" = LBLZOR (open O): landed p.48/p.54/p.98 spell
+!     LBLZOR; nothing on this page closes the glyph.  Unreferenced here.
+!   * line 13 "LICTBX" (and line 24's operand) = LIOTBX; line 24
+!     "TICREC" = TIOREQ; line 33 "IODX" = LIODX: as landed p.48, and
+!     the binaries (232307.00, 231527) agree.
+!   * line 48 prints its bit as "C" = 0 (DD(BU,1),0); lines 50, 52 print 0.
+!   * octal fields "CCCCCC.CC", "CCC" are 0.
+!   * the XW counts are read off the count field (octal): line 12/23
+!     000025 = 21 (p.48's IPL assembly prints 20 -- a different TPPC),
+!     line 13/24 000120 = 80, lines 14/25 000062 = 50, lines 10-11
+!     000024 = 20, line 9 000002 = 2.
+!
+! EXTERNALS.  None of the T*/L* table symbols is landed in the body;
+! every value below is this page's binary (XW value field: full word,
+! BIT-EXACT to the word; count field: the integer).
+!
+! CARD SERIALS.  QD000026 .. QD000077, line N prints QD0000(25+N).
+! p.275 ends at QD000024: QD000025 is printed on neither page.
+
+TPURFT  SYN, (8)021106.0             ! not landed; XW value line 9 021106.00
+TUPPC   SYN, 2                       ! not landed; XW count line 9 000002
+TUIORQ  SYN, (8)021111.0             ! not landed; XW value line 10 021111.00
+TUIOC   SYN, 20                      ! not landed; XW count line 10 000024 (octal)
+TUFRE   SYN, (8)021136.0             ! not landed; XW value line 11 021136.00
+TUFRC   SYN, 20                      ! not landed; XW count line 11 000024 (octal)
+TPREFT  SYN, (8)232234.0             ! not landed; XW value lines 12, 23 232234.00
+TPPC    SYN, 21                      ! not landed; XW count lines 12, 23 000025 (octal)
+TIOREQ  SYN, (8)232307.0             ! not landed; XW value lines 13, 24 232307.00
+TIOC    SYN, 80                      ! not landed; XW count lines 13, 24 000120 (octal)
+TFSTRE  SYN, (8)232430.0             ! not landed; XW value lines 14, 25 232430.00
+TFRC    SYN, 50                      ! not landed; XW count lines 14, 25 000062 (octal)
+LSYMU   SYN, (8)231564.0             ! not landed; XW value lines 15, 26 231564.00
+LSYMC   SYN, (8)231624.0             ! not landed; XW value lines 16, 27 231624.00
+LNTPU   SYN, (8)231644.0             ! not landed; XW value lines 17, 28 231644.00
+LDISK   SYN, (8)231667.0             ! not landed; XW value line 18 231667.00
+
+        SLC, (8)231523.00
+        PRNS                                                 ! line  1
+! line  2  -------------------------------------------------------------
+! line  3  -          RESERVATIONS, TABLES AND COUNTERS
+! line  4  -------------------------------------------------------------
+LIREF   SYN(BU,12),0.52                                      ! line  5  -P.P. REFERENCE NUMBER
+! line  6  -------------------------------------------------------------
+! line  7  -          TABLE INDICES FOR REFILL USE
+! line  8  -
+LPPURF  XW,TPURFT,TUPPC,$                                    ! line  9  -NOT OVERLAP PP REF. TBL.
+        XW,TUIORQ,TUIOC,$                                    ! line 10  -NOT OVERLAP I/O REQ. TBL.
+        XW,TUFRE,TUFRC,$                                     ! line 11  -NOT OVERLAP FIRST REEL TBL.
+LPPREF  XW,TPREFT,TPPC,$                                     ! line 12
+LIOTBX  XW,TIOREQ,TIOC,$                                     ! line 13  printed "LICTBX"
+LFSTRX  XW,TFSTRE,TFRC,$                                     ! line 14
+LSYMUX  XW,LSYMU,32-2,$                                      ! line 15  -SYMBOLIC TAPE INDEX REFILL
+LSYMCX  XW,LSYMC,16-2,$                                      ! line 16  -SYMBOLIC CHANNEL INDEX REFILL
+LNTPUX  XW,LNTPU,16-2,$                                      ! line 17  -NON-TAPE INDEX REFILL
+LXTYPE  XW,LDISK,9,$                                         ! line 18  -THE TYPE CODE INDEX
+! line 19  -------------------------------------------------------------
+! line 20  -          SWAP AREA FOR EIGHT MCP-DECODE INDICES.
+! line 21  -
+LTY     XW                                                   ! line 22  ("*" after the location)
+        XW,TPREFT,TPPC,LPPREF                                ! line 23
+        XW,TIOREQ,TIOC,LIOTBX                                ! line 24  printed "TICREC,TIOC,LICTBX"
+        XW,TFSTRE,TFRC,LFSTRX                                ! line 25
+        XW,LSYMU,32-2,LSYMUX                                 ! line 26
+        XW,LSYMC,16-2,LSYMCX                                 ! line 27
+        XW,LNTPU,16-2,LNTPUX                                 ! line 28
+        XW                                                   ! line 29
+! line 30  -------------------------------------------------------------
+! line 31  -          TABLE INDICES
+! line 32  -
+LIODX   SYN,$3                                               ! line 33  -INDEX FOR GETTING IOD IMAGE
+LXPP    SYN,$4                                               ! line 34  -P.P. REFERENCE TABLE INDEX
+LXIO    SYN,$5                                               ! line 35  -I.O. REQUEST TABLE INDEX
+LXFR    SYN,$6                                               ! line 36  -FIRST REEL NUMBER TABLE INDEX
+LXSU    SYN,$7                                               ! line 37  -SYMBOLIC TAPE UNIT TABLE INDEX
+LXSC    SYN,$8                                               ! line 38  -SYMBOLIC CHANNEL TABLE INDEX
+LXNT    SYN,$9                                               ! line 39  -NON-TAPE TABLE INDEX
+LWORKX  SYN,$10                                              ! line 40  -WORKING INDEX
+! line 41  -------------------------------------------------------------
+! line 42  -          COUNTERS AND BITS
+! line 43  -
+LNO6    VF,.06                                               ! line 44  -FOR IX BUMMPING (sic)
+LTAPEC  DRZ(BU,7),(1)                                        ! line 45  -TAPE REEL COUNTER ("*" after the location)
+LIOSCR  DRZ(BU,9),(1)                                        ! line 46  -IODSQ COUNTER
+LFINB   DD(BU,1),1                                           ! line 47  -FINAL BIT
+LNTB    DD(BU,1),0                                           ! line 48  -NON-TAPE BIT
+LCOUNT  DRZ(BU,7),(1)                                        ! line 49  -COUNT OF RLSYMS
+LOVBIT  DD(BU,1),0                                           ! line 50  -OVERLAPPED JOB BIT (printed "L CVBIT")
+LBLZOR  (AX)DD(BU,8,8),0X                                    ! line 51  -BCD-8ZERO (printed "L BLZCR")
+LINFAD  DD(BU,1),0                                           ! line 52  -INFINITE-DISK ADDRESS
+
+!SYM LIREF  000000.64
+!SYM LPPURF 231523.00
+!SYM LPPREF 231526.00
+!SYM LIOTBX 231527.00
+!SYM LFSTRX 231530.00
+!SYM LSYMUX 231531.00
+!SYM LSYMCX 231532.00
+!SYM LNTPUX 231533.00
+!SYM LXTYPE 231534.00
+!SYM LTY    231535.00
+!SYM LIODX  000023.00
+!SYM LXPP   000024.00
+!SYM LXIO   000025.00
+!SYM LXFR   000026.00
+!SYM LXSU   000027.00
+!SYM LXSC   000030.00
+!SYM LXNT   000031.00
+!SYM LWORKX 000032.00
+!SYM LNO6   231545.00
+!SYM LTAPEC 231545.31
+!SYM LIOSCR 231545.40
+!SYM LFINB  231545.51
+!SYM LNTB   231545.52
+!SYM LCOUNT 231545.53
+!SYM LOVBIT 231545.62
+!SYM LBLZOR 231545.63
+!SYM LINFAD 231545.73
+!CHECK 231523.00 | 021106.00+ 000 000002 231523 | line 9 LPPURF XW,TPURFT,TUPPC,$
+!CHECK 231524.00 | 021111.00+ 000 000024 231524 | line 10 XW,TUIORQ,TUIOC,$
+!CHECK 231525.00 | 021136.00+ 000 000024 231525 | line 11 XW,TUFRE,TUFRC,$
+!CHECK 231526.00 | 232234.00+ 000 000025 231526 | line 12 LPPREF XW,TPREFT,TPPC,$
+!CHECK 231527.00 | 232307.00+ 000 000120 231527 | line 13 LIOTBX XW,TIOREQ,TIOC,$
+!CHECK 231530.00 | 232430.00+ 000 000062 231530 | line 14 LFSTRX XW,TFSTRE,TFRC,$
+!CHECK 231531.00 | 231564.00+ 000 000036 231531 | line 15 LSYMUX XW,LSYMU,32-2,$
+!CHECK 231532.00 | 231624.00+ 000 000016 231532 | line 16 LSYMCX XW,LSYMC,16-2,$
+!CHECK 231533.00 | 231644.00+ 000 000016 231533 | line 17 LNTPUX XW,LNTPU,16-2,$
+!CHECK 231534.00 | 231667.00+ 000 000011 231534 | line 18 LXTYPE XW,LDISK,9,$
+!CHECK 231535.00 | 000000.00+ 000 000000 000000 | line 22 LTY XW
+!CHECK 231536.00 | 232234.00+ 000 000025 231526 | line 23 XW,TPREFT,TPPC,LPPREF
+!CHECK 231537.00 | 232307.00+ 000 000120 231527 | line 24 XW,TIOREQ,TIOC,LIOTBX
+!CHECK 231540.00 | 232430.00+ 000 000062 231530 | line 25 XW,TFSTRE,TFRC,LFSTRX
+!CHECK 231541.00 | 231564.00+ 000 000036 231531 | line 26 XW,LSYMU,32-2,LSYMUX
+!CHECK 231542.00 | 231624.00+ 000 000016 231532 | line 27 XW,LSYMC,16-2,LSYMCX
+!CHECK 231543.00 | 231644.00+ 000 000016 231533 | line 28 XW,LNTPU,16-2,LNTPUX
+!CHECK 231544.00 | 000000.00+ 000 000000 000000 | line 29 XW
+!CHECK 231545.00 | 000000.06+ | line 44 LNO6 VF,.06
+!CHECK 231545.51 | 1 | line 47 LFINB DD(BU,1),1 | 1
+!CHECK 231545.52 | 0 | line 48 LNTB DD(BU,1),0 (bit prints "C") | 1
+!CHECK 231545.62 | 0 | line 50 LOVBIT DD(BU,1),0 | 1
+!CHECK 231545.73 | 0 | line 52 LINFAD DD(BU,1),0 | 1

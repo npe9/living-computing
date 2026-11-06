@@ -1,0 +1,201 @@
+! mcp_bootstrap_p269.strap -- MCP printed page 269: JOB CONTROL, PHASE
+! 4, OVERLAPPED, its opening (YJC4TT DD .. the dump/command/debug/EOJ/
+! reload table EXTs), lines 1-56.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.20, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QA000001  DIST. OF 3/01  3/01  PAGE NUMBER 269".  The heading
+! row's LOCATION field is BLANK (line 1 is a banner).
+! A NEW CARD DECK: this page's serials start at QA000001.  No TAIL card
+! on the page.
+!
+! THE PAGE.  56 lines; every line number prints a "*" after it.  Lines
+! 1-3 and 13 are remark cards (banner, heading).  Line 4 "SLC,$" prints
+! 231136.00 with a "*"; line 5 CNOP prints no location (231136.00
+! already a word: emits nothing).  The EXT cards (lines 8, 43, 46, 49,
+! 52, 55) print no location; each owns the statement after it.
+! Located rows run contiguous from 231136.00 to 231171.00 (line 56, the
+! 28-bit EXT(0,27) of BE,YRESL1, ending at 231171.34), then blank
+! paper.  "*" after the LOCATION on lines 4, 7, 10, 25 and 42.
+!   line 6   YJC4TT DD(BU,12,3),(8)0401 prints "C401" = 0401 (12 bits).
+!   line 7   DR(BU,33),(1) at 231136.14 prints 000000.41 (the size).
+!   lines 8-9 EXT(0,18) over B,YC4NO prints 0463203 at 231136.55.
+!   line 10  DR(BU),(2) at 231137.00 prints 000002.00.
+!   lines 11-12 YPPMEM / YMAX SYN print "020000.00+ +00000000 NULL" and
+!            "030000.00+ +00000000 NULL".
+!   line 24  (AX)DD(BU,12,6),22X at 231150.00 prints no binary.
+!   line 25  YFHTA DR(BU,52),(1) at 231150.14 prints 000000.64.
+!   lines 43-56 five EXT(0,27)/BE/(AX)DD triples: each EXT(0,27) takes
+!            bits 0..27 (28 bits) of a BE half word, so the row prints
+!            10 octal digits (a 1-bit digit then nine): 0471611000 etc.;
+!            the (AX)DD rows at .34 print no binary.  Labels YDMPTA,
+!            YCMDTA, YDBTA, YEOJTA, YRLTA sit on the EXT cards; the XW
+!            rows 37-41 print their values 231165.00 .. 231171.00.
+!            Line 51 is (AX)DD(BU,48,6) but its datum "$DUMP " is six
+!            characters (36 bits); the page prints the next location
+!            231170.00, confirming strap_asm's rule that a converted
+!            DD's size is character count x byte size, not the 48.
+! JOIN.  p.268 is not landed and no neighbour deck exists -- contiguity
+! with it is NOT established here (the page opens on SLC,$).  Landed
+! p.121 SYNs YJC4TT at (8)231136.00, which this page's line 6 defines
+! there -- an independent witness of the origin.  p.270 should open at
+! 231171.34 (line 56's EXT ends there; presumably the (AX)DD of the
+! YRLTA triple) with serial QA000051.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * YEOJTA (operand line 40, label line 52): reads "YECJTA" at 400
+!     dpi; at 1800 dpi the line-52 glyph after E has a RIGHT-hand stroke
+!     (open at the bottom, as this drum's O prints; a C opens on the
+!     right) and matches the O of line 54's "$EOJ".  Also: the (AX) data two
+!     rows below the label reads "$EOJ", the XW that uses it is labelled
+!     YXWEJM (E-J, end of job), and its four siblings are named for
+!     their (AX) text (YDMPTA/$DUMP, YCMDTA/SCOMD, YDBTA, YRLTA).  The
+!     name is used only on this page; no landed deck spells it.
+!   * YFDO (line 22): third glyph has the D stem, fourth is round with
+!     no stem -> O.  Unreferenced on this page.
+!   * JCOMD (line 47): "JCCMD" to tesseract; the third glyph is the
+!     drum's open round glyph, taken as O to match the (AX) text "SCOMD"
+!     below it.  No landed deck spells it.  Value from this page's EXT
+!     binary (half word only).
+!   * YC4NO (line 9): final glyph round, no stem; O (the family is
+!     letters).  Value from the EXT binary.
+!   * line 48 (AX) text "SCOMD X": its first glyph prints as an S with
+!     no vertical stroke at 900 dpi, unlike the "$" of lines 45, 51 and
+!     54.  Written as printed (S).  Character data; prints no binary.
+!   * hex bytes and octal fields printed with an open round written 0
+!     ("DC"/"DO" line 17 = D0; "1C" line 16 = 10; "C0"/"CO" lines 30, 36
+!     = 00; "C1" line 32 = 01; "CCO" XW flag fields = 000).
+!   * DFETCH (line 23): landed p.105 "DFETCH SYN, 66.32"; prints
+!     000102.40 = 66.32 decimal.
+!
+! EXTERNALS.  Values for symbols defined on pages not landed come from
+! this page's binary (half word only unless said).  EXT(0,27) rows give
+! the 19-bit half-word address in the top 19 of 28 bits.
+!
+! CARD SERIALS.  QA000001 .. QA000050; each EXT and its statement share
+! one serial (lines 8-9 QA000008, 43-44 QA000042, 46-47 QA000044, 49-50
+! QA000046, 52-53 QA000048, 55-56 QA000050).  None skipped.
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 22 000040.10
+DFETCH  SYN, 66.32                   ! landed p.105 line 36 "D FETCH"; line 23 000102.40
+XNFOST  SYN, (8)234212.40            ! not landed; SV line 33 234212.43, half word only
+CBUFF   SYN, (8)234214.0             ! not landed; Z line 34 234214.22, half word only
+CFOT    SYN, (8)234220.0             ! not landed; Z line 35 234220.22, half word only
+YMPBUF  SYN, (8)234424.0             ! not landed; XW count field lines 37-39, 41 prints 234424 (word only)
+YC4NO   SYN, (8)231501.40            ! not landed; EXT(0,18) line 9 prints 0463203, half word only
+AWDUMP  SYN, (8)234704.40            ! not landed; EXT(0,27) line 44 prints 0471611000, half word only
+JCOMD   SYN, (8)234443.0             ! not landed; EXT(0,27) line 47 prints 0471106000, half word only
+YDBBEG  SYN, (8)234424.0             ! not landed; EXT(0,27) line 50 prints 0471050000, half word only
+YRESL1  SYN, (8)235262.0             ! not landed; EXT(0,27) line 56 prints 0472544000, half word only
+
+        SLC, (8)231136.00
+! line  1  -*************************************************************
+! line  2  - JOB CONTROL, PHASE 4, -OVERLAPPED
+! line  3  -*************************************************************
+        SLC,$                                                ! line  4  prints 231136.00 *
+        CNOP                                                 ! line  5  (no location printed)
+YJC4TT  DD(BU,12,3),(8)0401                                  ! line  6
+        DR(BU,33),(1)                                        ! line  7
+        EXT(0,18)                                            ! line  8
+        B,YC4NO                                              ! line  9
+        DR(BU),(2)                                           ! line 10
+YPPMEM  SYN,(8)20000.                                        ! line 11
+YMAX    SYN,(8)30000.                                        ! line 12  -UPPER END OF JC4 WHILE IN CORE
+! line 13  - SPECIAL PACKAGE TO PULL MCP PROGRAMS FROM THE DISK.
+YMPFCH  SC,1,YFHFWA                                          ! line 14
+        LF(BU,36),.28($1)                                    ! line 15
+        KF(BU,36),YMPSAV                                     ! line 16
+        ST(BU,36),YMPSAV                                     ! line 17
+        LV,$1,0($1)                                          ! line 18
+        SVA,$1,YFHBR                                         ! line 19
+        BAE,YFHBR                                            ! line 20
+        SF(BU,36),YFHTA                                      ! line 21
+YFDO    B,DMCP                                               ! line 22
+        ,DFETCH                                              ! line 23
+        (AX)DD(BU,12,6),22X                                  ! line 24
+YFHTA   DR(BU,52),(1)                                        ! line 25
+        ,0                                                   ! line 26
+YFHFWA  ,0                                                   ! line 27
+        ,0                                                   ! line 28
+        ,0                                                   ! line 29
+        BEW,$                                                ! line 30
+        NOP                                                  ! line 31
+        LVI,1,0                                              ! line 32
+        SV,1,XNFOST                                          ! line 33
+        Z,CBUFF                                              ! line 34
+        Z,CFOT                                               ! line 35
+YFHBR   B,$                                                  ! line 36
+YXWDMP  XW,YDMPTA,YMPBUF,0,0                                 ! line 37
+YXWCMD  XW,YCMDTA,YMPBUF,0,0                                 ! line 38
+YXWDB   XW,YDBTA,YMPBUF,0,0                                  ! line 39
+YXWEJM  XW,YEOJTA,YPPMEM                                     ! line 40  printed "YECJTA"
+YXWRLD  XW,YRLTA,YMPBUF                                      ! line 41
+YMPSAV  XW,0                                                 ! line 42
+YDMPTA  EXT(0,27)                                            ! line 43
+        BE,AWDUMP                                            ! line 44
+        (AX)DD(BU,36,6),$DUMP X                              ! line 45
+YCMDTA  EXT(0,27)                                            ! line 46
+        BE,JCOMD                                             ! line 47
+        (AX)DD(BU,36,6),SCOMD X                              ! line 48
+YDBTA   EXT(0,27)                                            ! line 49
+        BE,YDBBEG                                            ! line 50
+        (AX)DD(BU,48,6),$DUMP X                              ! line 51
+YEOJTA  EXT(0,27)                                            ! line 52  printed "YECJTA"
+        BE,YPPMEM                                            ! line 53
+        (AX)DD(BU,36,6),$EOJ  X                              ! line 54
+YRLTA   EXT(0,27)                                            ! line 55
+        BE,YRESL1                                            ! line 56
+
+!SYM YJC4TT 231136.00
+!SYM YPPMEM 020000.00
+!SYM YMAX   030000.00
+!SYM YMPFCH 231141.00
+!SYM YFDO   231147.00
+!SYM YFHTA  231150.14
+!SYM YFHFWA 231151.40
+!SYM YFHBR  231156.00
+!SYM YXWDMP 231157.00
+!SYM YXWCMD 231160.00
+!SYM YXWDB  231161.00
+!SYM YXWEJM 231162.00
+!SYM YXWRLD 231163.00
+!SYM YMPSAV 231164.00
+!SYM YDMPTA 231165.00
+!SYM YCMDTA 231166.00
+!SYM YDBTA  231167.00
+!SYM YEOJTA 231170.00
+!SYM YRLTA  231171.00
+!CHECK 231136.00 | 0401 | line 6 YJC4TT DD(BU,12,3),(8)0401 (printed "C401") | 12
+!CHECK 231136.55 | 0463203 | line 9 B,YC4NO under line 8's EXT(0,18) -- 19 bits, YC4NO's half-word address | 19
+!CHECK 231141.00 | 231151.43 50 | line 14 YMPFCH SC,1,YFHFWA
+!CHECK 231141.40 | 000000.34 81 044000.06 70 | line 15 LF(BU,36),.28($1)
+!CHECK 231142.40 | 231164.00 80 044000.23 10 | line 16 KF(BU,36),YMPSAV
+!CHECK 231143.40 | 231164.00 80 044000.20 D0 | line 17 ST(BU,36),YMPSAV
+!CHECK 231144.40 | 000000.02 31 | line 18 LV,$1,0($1)
+!CHECK 231145.00 | 231156.03 D0 | line 19 SVA,$1,YFHBR
+!CHECK 231145.40 | 231156.36 C2 | line 20 BAE,YFHBR
+!CHECK 231146.00 | 231150.14 80 044000.12 F0 | line 21 SF(BU,36),YFHTA
+!CHECK 231147.00 | 000040.10 00 | line 22 YFDO B,DMCP
+!CHECK 231147.40 | 000102.40 80 | line 23 ,DFETCH
+!CHECK 231151.00 | 000000.00 80 | line 26 ,0
+!CHECK 231151.40 | 000000.00 80 | line 27 YFHFWA ,0
+!CHECK 231152.00 | 000000.00 80 | line 28 ,0
+!CHECK 231152.40 | 000000.00 80 | line 29 ,0
+!CHECK 231153.00 | 231153.20 00 | line 30 BEW,$
+!CHECK 231153.40 | 000000.30 00 | line 31 NOP
+!CHECK 231154.00 | 000000.03 01 | line 32 LVI,1,0
+!CHECK 231154.40 | 234212.43 30 | line 33 SV,1,XNFOST
+!CHECK 231155.00 | 234214.22 00 | line 34 Z,CBUFF
+!CHECK 231155.40 | 234220.22 00 | line 35 Z,CFOT
+!CHECK 231156.00 | 231156.10 00 | line 36 YFHBR B,$
+!CHECK 231157.00 | 231165.00+ 000 234424 000000 | line 37 YXWDMP XW,YDMPTA,YMPBUF,0,0
+!CHECK 231160.00 | 231166.00+ 000 234424 000000 | line 38 YXWCMD XW,YCMDTA,YMPBUF,0,0
+!CHECK 231161.00 | 231167.00+ 000 234424 000000 | line 39 YXWDB XW,YDBTA,YMPBUF,0,0
+!CHECK 231162.00 | 231170.00+ 000 020000 000000 | line 40 YXWEJM XW,YEOJTA,YPPMEM (flags print "CCO")
+!CHECK 231163.00 | 231171.00+ 000 234424 000000 | line 41 YXWRLD XW,YRLTA,YMPBUF
+!CHECK 231164.00 | 000000.00+ 000 000000 000000 | line 42 YMPSAV XW,0 (a "*" after the location)
+!CHECK 231165.00 | 0471611000 | line 44 BE,AWDUMP under line 43's EXT(0,27) -- 28 bits | 28
+!CHECK 231166.00 | 0471106000 | line 47 BE,JCOMD under line 46's EXT(0,27) -- 28 bits | 28
+!CHECK 231167.00 | 0471050000 | line 50 BE,YDBBEG under line 49's EXT(0,27) -- 28 bits | 28
+!CHECK 231170.00 | 0040000000 | line 53 BE,YPPMEM under line 52's EXT(0,27) -- 28 bits | 28
+!CHECK 231171.00 | 0472544000 | line 56 BE,YRESL1 under line 55's EXT(0,27) -- 28 bits | 28

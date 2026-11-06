@@ -1,0 +1,178 @@
+! mcp_bootstrap_p281.strap -- MCP printed page 281: the end of a disk
+! check (LCI,$15,7.0 / B,LERROR) and the TAPE IOC ROUTINE (LIODTP ..
+! KF(BU,7),LCOUNT), lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.32, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QD000261  DIST. OF 3/01  3/01  PAGE NUMBER 281" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is 232025,
+! line 1's word.
+!
+! THE PAGE.  50 lines, every line number prints a "*" after it.  Lines
+! 3-6 are remark cards (only a "-" in the NAME column; line 5 "TAPE IOC
+! ROUTINE").  Located rows run contiguous from 232025.00 (line 1) to
+! 232070.00 (line 50, a full word; next location 232071.00), then blank
+! paper.  "*" after the LOCATION on lines 17, 32 and 46.
+!
+! THIS IS THE BODY'S RE-ASSEMBLY OF THE IPL'S TAPE IOC CODE (landed
+! pp.54-55 print the same symbols at IPL addresses -- LIODTP, LOOPSU,
+! LETA, LIOD3, LOOPSC, LIOD4, LCHAN, LENTER, LERROR, LSET, LFOUND ...).
+! That is a DIFFERENT ASSEMBLY; the values here are this page's.  The
+! statement sequence also differs from p.55 after line 34 (here: CM0000
+! (BU,7) / CM1111 / V+I / CM0000(BU,64) / LF / KF / BZAE,LFOUND / CM0000
+! (BU,48) / B,LFOUND), written as printed.  Spellings follow pp.53-55.
+!
+! JOIN.  p.280 (not landed, no scratch neighbour) -- contiguity with it
+! is NOT established here.  p.282 should open at 232071.00 with serial
+! QD000311.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 9 label printed "L COPSU" = LOOPSU (open O): line 13's
+!     reference prints LOOPSU with closed O's; p.54 spells it LOOPSU.
+!   * line 22 label printed "L OCPSC" = LOOPSC: line 26's reference
+!     prints LOOPSC closed; p.55 spells it LOOPSC.
+!   * line 7 label "L IODTP", line 15 "L IOD3", line 28 "L IOD4", operand
+!     LIODX: the second glyph is open (O), the third prints the D stem at
+!     900 dpi; pp.53-55 spell LIODTP / LIOD3 / LIOD4 / LIODX.
+!   * line 41 ",LFCUND" = LFOUND (line 43 prints LFOUND); line 50
+!     ",LCCUNT" = LCOUNT (p.48/p.55 LCOUNT).
+!   * octal fields "CCCCCC.CC" and statement "C.C", "0.C" are 0 (octal
+!     fields / numeric context); hex "CO", "DO", "BO", "FO" = C0, D0, B0,
+!     F0 by the round glyph in hex position matching the closed 0 in the
+!     same column on other rows; binaries agree.
+!   * line 17 "ST(BU,7),.50(LXSU)": a single comma and a point, read at
+!     900 dpi (the 100 dpi overview suggests ",,"); as p.55 line 2.
+!
+! EXTERNALS.  Index registers as pp.53-55 SYN them; addresses from this
+! page's binary (half word only unless noted).  Stand-ins are checked by
+! the merge.
+!
+! CARD SERIALS.  QD000261 .. QD000310, line N prints QD0002(60+N); none
+! skipped.
+
+LIODX   SYN, $3                      ! as pp.53-55; byte 83 line 11
+LXIO    SYN, $5                      ! as pp.53-55; byte 85 line 20
+LXSU    SYN, $7                      ! as pp.53-55; byte 87 line 9
+LXSC    SYN, $8                      ! as pp.53-55; byte 88 line 22
+LWORKX  SYN, $10                     ! as pp.54-55; byte 8A line 49
+LERROR  SYN(BU,64,8), (8)232200.0             ! not landed in the body; B line 2 232200.10, half word only
+LNTB    SYN(BU,1), (8)231545.52      ! IPL p.48 DD(BU,1); CM0000 line 7 231545.52, BIT-EXACT
+LSYMUX  SYN, (8)231531.0             ! not landed in the body; LX line 8 231531.16, half word only
+LSET    SYN, (8)232073.40            ! not landed in the body; BAEZ line 12 232073.76, half word only
+LTAPEC  SYN(BU,7), (8)231545.31      ! IPL p.48 DRZ(BU,7); L line 16 231545.31, BIT-EXACT
+LTAPE   SYN, (8)231677.0             ! not landed in the body; L line 19 LTAPE+.60 = 231677.74, BIT-EXACT
+TTYPE   SYN(BU,4), 0.3               ! as p.54; ST line 20 000000.03
+LSYMCX  SYN, (8)231532.0             ! not landed in the body; LX line 21 231532.20, half word only
+LSYMC   SYN, (8)231624.0             ! not landed in the body; V-I line 29 231624.21
+LBLANK  SYN(BU,48,6), (8)231702.0    ! IPL p.51 (AY)DD(BU,48,6); K line 33 231702.00, BIT-EXACT
+TRLSYM  SYN(BU,7), 0.11              ! as p.62; CM0000 line 35 000000.13
+LFOUND  SYN, (8)232004.40            ! not landed in the body; B line 43 232004.50, half word only
+LRLCT   SYN, (8)231560.0             ! not landed in the body; M+1 line 49 LRLCT-.8 = 231557.70, BIT-EXACT
+LCOUNT  SYN(BU,7), (8)231545.53      ! IPL p.48 DRZ(BU,7); KF line 50 231545.53, BIT-EXACT
+
+        SLC, (8)232025.00
+        LCI,$15,7.0                                          ! line  1  -NO -- ERROR FLAG 7.
+        B,LERROR                                             ! line  2
+! line  3  -
+! line  4  -
+! line  5  - TAPE IOC ROUTINE
+! line  6  -
+LIODTP  CM0000(BU,1),LNTB,0.0                                ! line  7  -SET NON-TAPE BIT TO 0.
+        LX,LXSU,LSYMUX                                       ! line  8  -IS THIS UNIT IN THE
+LOOPSU  L(BU,48),0.0(LXSU),0.0                               ! line  9  -   TAPE TABLE.  (label printed "COPSU")
+        BRZZ,LIOD3                                           ! line 10  -   NO----STEP DOWN.
+        K(BU,48),5.0(LIODX),0.0                              ! line 11
+        BAEZ,LSET                                            ! line 12  -   YES----STEP DOWN.
+LETA    CB+,LXSU,LOOPSU                                      ! line 13  -TRY AGAIN ON A NON-ZERO CT
+        BD,$                                                 ! line 14  -INTERNAL UNIT TABLE EXCEEDED
+LIOD3   TI,1,5.0(LIODX),0.0(LXSU)                            ! line 15  -ENTER UNIT IN TAPE TABLE.
+        L,LTAPEC                                             ! line 16  -ENTER THE TAPE REEL COUNT
+        ST(BU,7),.50(LXSU)                                   ! line 17  -IN THE TAPE UNIT TABLE
+        M+1,LTAPEC                                           ! line 18  -AND BUMP BY ONE
+        L(BU,4),LTAPE+.60,0.0                                ! line 19  -STORE TAPE TYPE IN
+        ST(BU,4),TTYPE(LXIO)                                 ! line 20  -   IOREQ SLOT
+        LX,LXSC,LSYMCX                                       ! line 21  -IS CHANNEL IN SYMBOLIC
+LOOPSC  L(BU,48),0.0(LXSC),0.0                               ! line 22  -   CHANNEL TABLE.  (label printed "OCPSC")
+        BRZZ,LIOD4                                           ! line 23  -   NO----STEP DOWN.
+        K(BU,48),4.0(LIODX),0.0                              ! line 24
+        BAEZ,LCHAN                                           ! line 25  -   YES----STEP DOWN.
+        CB+,LXSC,LOOPSC                                      ! line 26  -TRY AGAIN ON NON-ZERO COUNT.
+        BD,$                                                 ! line 27  -INTERNAL CHANNEL TABLE EXCEEDED
+LIOD4   TI,1,4.0(LIODX),0.0(LXSC)                            ! line 28  -ENTER CHANNEL IN TABLE.
+LCHAN   V-I,LXSC,LSYMC                                       ! line 29  -COMPUTE WHERE IN TABLE
+        SV,LXSC,$R                                           ! line 30
+        ST(BU,7),0.57(LXSU),46                               ! line 31  -CHAN NAME WITH THE UNIT NAME
+        L(BU,48),4.0(LIODX)                                  ! line 32  -IS CHANNEL SYMBOL BLANK
+        K(BU,48),LBLANK                                      ! line 33
+        BZAEZ,LENTER                                         ! line 34  -   NO----STEP DOWN.
+        CM0000(BU,7),TRLSYM(LXIO)                            ! line 35
+        CM1111(BU,1),0.48(LXSU)                              ! line 36  -SET THE UNIT SLOT TO NULL CHAN
+        V+I,LXSC,LSYMC                                       ! line 37  -RESTORE THE CHAN IX
+        CM0000(BU,64),0.0(LXSC)                              ! line 38  -CLEAR A BLANK FROM THE CHAN TBL
+        LF(BU,48),0.0(LXSU)                                  ! line 39  -SEE IF UNIT FIELD WAS BLANK
+        KF(BU,48),LBLANK                                     ! line 40
+        BZAE,LFOUND                                          ! line 41  -IF NOT CONTINUE  (printed "LFCUND")
+        CM0000(BU,48),0.0(LXSU)                              ! line 42  -CLEAR THE UNIT NAME
+        B,LFOUND                                             ! line 43  -BRANCH
+LENTER  V+I,LXSC,1.0                                         ! line 44  -INCREASE BY ONE FOR RLSYM
+        L(BU,7),LXSC+.11,0.0                                 ! line 45
+        ST(BU,7),TRLSYM(LXIO)                                ! line 46
+        Z,LWORKX                                             ! line 47  -STORE RLSYM SHIFTED 3 BITS
+        ST(BU,7),LWORKX+.14,0.0                              ! line 48  -   FOR SUBSEQUENT SORT.
+        M+1(BU,8),LRLCT-.8(LWORKX)                           ! line 49  -ADD ONE TO PROPER COUNT.
+        KF(BU,7),LCOUNT                                      ! line 50  -DONT SAVE IF COUNT IS LARGER  (printed "LCCUNT")
+
+!SYM LIODTP 232026.00
+!SYM LOOPSU 232027.40
+!SYM LETA   232032.40
+!SYM LIOD3  232033.40
+!SYM LOOPSC 232042.00
+!SYM LIOD4  232046.00
+!SYM LCHAN  232047.00
+!SYM LENTER 232063.00
+!CHECK 232025.00 | 000007.37 02 | line 1 LCI,$15,7.0
+!CHECK 232025.40 | 232200.10 00 | line 2 B,LERROR
+!CHECK 232026.00 | 231545.52 80 001000.00 F0 | line 7 LIODTP CM0000(BU,1),LNTB,0.0
+!CHECK 232027.00 | 231531.16 10 | line 8 LX,LXSU,LSYMUX
+!CHECK 232027.40 | 000000.00 87 060000.20 50 | line 9 LOOPSU L(BU,48),0.0(LXSU),0.0
+!CHECK 232030.40 | 232033.74 C6 | line 10 BRZZ,LIOD3
+!CHECK 232031.00 | 000005.00 83 060000.21 10 | line 11 K(BU,48),5.0(LIODX),0.0
+!CHECK 232032.00 | 232073.76 C6 | line 12 BAEZ,LSET
+!CHECK 232032.40 | 232027.57 48 | line 13 LETA CB+,LXSU,LOOPSU
+!CHECK 232033.00 | 232033.04 00 | line 14 BD,$
+!CHECK 232033.40 | 000005.00 83 000000.02 A7 | line 15 LIOD3 TI,1,5.0(LIODX),0.0(LXSU)
+!CHECK 232034.40 | 231545.31 80 007000.20 50 | line 16 L,LTAPEC
+!CHECK 232035.40 | 000000.62 87 007000.20 D0 | line 17 ST(BU,7),.50(LXSU)
+!CHECK 232036.40 | 231545.31 80 007000.22 B0 | line 18 M+1,LTAPEC
+!CHECK 232037.40 | 231677.74 80 004000.20 50 | line 19 L(BU,4),LTAPE+.60,0.0
+!CHECK 232040.40 | 000000.03 85 004000.20 D0 | line 20 ST(BU,4),TTYPE(LXIO)
+!CHECK 232041.40 | 231532.20 10 | line 21 LX,LXSC,LSYMCX
+!CHECK 232042.00 | 000000.00 88 060000.20 50 | line 22 LOOPSC L(BU,48),0.0(LXSC),0.0
+!CHECK 232043.00 | 232046.34 C6 | line 23 BRZZ,LIOD4
+!CHECK 232043.40 | 000004.00 83 060000.21 10 | line 24 K(BU,48),4.0(LIODX),0.0
+!CHECK 232044.40 | 232047.36 C6 | line 25 BAEZ,LCHAN
+!CHECK 232045.00 | 232042.21 48 | line 26 CB+,LXSC,LOOPSC
+!CHECK 232045.40 | 232045.44 00 | line 27 BD,$
+!CHECK 232046.00 | 000004.00 83 000000.02 A8 | line 28 LIOD4 TI,1,4.0(LIODX),0.0(LXSC)
+!CHECK 232047.00 | 231624.21 0D | line 29 LCHAN V-I,LXSC,LSYMC
+!CHECK 232047.40 | 000011.21 30 | line 30 SV,LXSC,$R
+!CHECK 232050.00 | 000000.71 87 007027.20 D0 | line 31 ST(BU,7),0.57(LXSU),46
+!CHECK 232051.00 | 000004.00 83 060000.20 50 | line 32 L(BU,48),4.0(LIODX)
+!CHECK 232052.00 | 231702.00 80 060000.21 10 | line 33 K(BU,48),LBLANK
+!CHECK 232053.00 | 232063.36 C4 | line 34 BZAEZ,LENTER
+!CHECK 232053.40 | 000000.13 85 007000.00 F0 | line 35 CM0000(BU,7),TRLSYM(LXIO)
+!CHECK 232054.40 | 000000.60 87 001000.36 F0 | line 36 CM1111(BU,1),0.48(LXSU)
+!CHECK 232055.40 | 231624.21 05 | line 37 V+I,LXSC,LSYMC
+!CHECK 232056.00 | 000000.00 88 000000.00 F0 | line 38 CM0000(BU,64),0.0(LXSC)
+!CHECK 232057.00 | 000000.00 87 060000.06 70 | line 39 LF(BU,48),0.0(LXSU)
+!CHECK 232060.00 | 231702.00 80 060000.23 10 | line 40 KF(BU,48),LBLANK
+!CHECK 232061.00 | 232004.76 C0 | line 41 BZAE,LFOUND (printed "LFCUND")
+!CHECK 232061.40 | 000000.00 87 060000.00 F0 | line 42 CM0000(BU,48),0.0(LXSU)
+!CHECK 232062.40 | 232004.50 00 | line 43 B,LFOUND
+!CHECK 232063.00 | 000001.21 05 | line 44 LENTER V+I,LXSC,1.0
+!CHECK 232063.40 | 000030.13 80 007000.20 50 | line 45 L(BU,7),LXSC+.11,0.0
+!CHECK 232064.40 | 000000.13 85 007000.20 D0 | line 46 ST(BU,7),TRLSYM(LXIO)
+!CHECK 232065.40 | 000032.22 00 | line 47 Z,LWORKX
+!CHECK 232066.00 | 000032.16 80 007000.20 D0 | line 48 ST(BU,7),LWORKX+.14,0.0
+!CHECK 232067.00 | 231557.70 8A 010000.22 B0 | line 49 M+1(BU,8),LRLCT-.8(LWORKX)
+!CHECK 232070.00 | 231545.53 80 007000.23 10 | line 50 KF(BU,7),LCOUNT (printed "LCCUNT")

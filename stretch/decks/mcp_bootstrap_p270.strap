@@ -1,0 +1,174 @@
+! mcp_bootstrap_p270.strap -- MCP printed page 270: the tail of the
+! console-message print routine (Y PR .. YPRCMM) and the opening of the
+! UNCODE subroutine (YUNCOD .. YIPL1), lines 1-49.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.21, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QA000051  DIST. OF 3/01  3/01  PAGE NUMBER 270"; the heading row's
+! LOCATION field is 231171, line 1's word.
+!
+! THE PAGE.  49 lines; every line number prints a "*" after it.
+! Located rows run contiguous from 231171.34 to 231231.40 (line 49, a
+! full word; next location 231232.40), then blank paper.  Lines 3 and
+! 47 are remark continuation cards ("-" in the NAME column); lines 24-26
+! are a remark banner.  "*" after the LOCATION on lines 13, 23 and 46.
+!   line 1   (AX)DD(BU,36,6),LOADERX at 231171.34 prints no binary (the
+!            text LOADER, six 6-bit characters, X the terminator; it
+!            ends at 231172.00, line 2's location).
+!   line 2   label printed "Y PR" (blank inside the name) = YPR; line 4
+!            LVE,2,YPR prints 231172.05.
+!   lines 11, 36, 44 VF rows print sign-suffixed values; lines 12, 37,
+!            42 CF rows print the count field only (000100 = 64,
+!            000120 = 80, 000065 = 53).
+!   line 23  YPRCMM DRZ(N),(8) at 231205.00 prints 000010.00 (8 words,
+!            a reservation: no !CHECK); line 27 opens at 231215.00.
+! JOIN.  p.269 is not landed and no neighbour deck exists in scratch;
+! line 1 opens at a bit address (231171.34), so it continues the
+! previous page's last card.  p.265 ends at 230777.40; pp.266-269 lie
+! between.  p.271 should open at 231232.40 with serial QA000099.
+!
+! UNDER A TAIL?  Not established from this page.  p.133/p.134's decks
+! carry "THIS tail's YUXSAV" at 231363.00, the same cell TI line 27
+! addresses here; the IPL assembly's pp.38-41 carry the same UNCODE
+! routine at 002xxx with the same spellings.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 5 "BR,C($2)", line 11 "VF,C", line 22 "BE,C", line 29
+!     "0.C($13)": open round glyphs = 0 (binaries agree).
+!   * line 15 ",$CCMM" = ,$COMM (worn O); prints 000043.40 80.
+!   * line 10 SA8IQS: Q at 400 dpi; landed p.260 defines SA8IQS at
+!     230566.00, which BD prints.
+!   * line 27 last byte prints "AC": the same row's octal field prints
+!     ".C6" for .06, so the open glyph is 0; byte A0 (the assembler).
+!   * line 44 YUSB8C: B then 8 at 900 dpi; p.38 (IPL assembly) spells it
+!     the same.  Line 46 YIPL1: second glyph an I (barred both ends),
+!     last a 1 (flagged), 900 dpi; p.38 spells YIPL1.
+!   * hex bytes printed with an open round written 0 ("C1", "C4" etc.
+!     where the octal fields beside them print 0 the same way).
+!
+! EXTERNALS.  Values for symbols defined on pages not landed come from
+! this page's binary:
+!   YUXSAV  231363.00  as p.133/p.134's stand-in; TI line 27.
+!   YUER    231350.00  BZAEZ line 31 231350.36, half word only.
+!   YUCBF1  231366.00  VF line 38 231366.00+, BIT-EXACT.
+!   YUCBF2  231376.00  VF line 43 231376.00+, BIT-EXACT.
+!   YTYPMK  231414.00  K line 49 231414.00, BIT-EXACT.
+!
+! CARD SERIALS.  QA000051 .. QA000098, a new deck (QA).  ANOMALY: lines
+! 19 and 20 both print QA000069; lines 21-49 print QA0000(N+49).
+
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label
+SYSMOD  SYN(BU,2), SCOMRG+.8         ! landed p.103 line 18; BZB/BB lines 6-7 215001.10
+SA8IQS  SYN, (8)230566.0             ! landed p.260 label; BD line 10 230566.04
+ZSPLP9  SYN, (8)224052.0             ! landed p.212 line 12; SIC line 18
+ZSPLPR  SYN, (8)224046.40            ! landed p.212 line 5; BD line 19 224046.44
+SCA6    SYN, (8)230622.0             ! landed p.261 label; BD line 35 230622.04
+SBRK8   SYN, (8)230672.0             ! landed p.263 label; BD line 40 230672.04
+YUXSAV  SYN, (8)231363.0             ! not landed (as p.133/p.134); TI line 27 231363.06
+YUER    SYN, (8)231350.0             ! not landed; BZAEZ line 31 231350.36, half word only
+YUCBF1  SYN, (8)231366.0             ! not landed; VF line 38 231366.00+, BIT-EXACT
+YUCBF2  SYN, (8)231376.0             ! not landed; VF line 43, L line 48 231376.00, BIT-EXACT
+YTYPMK  SYN, (8)231414.0             ! not landed; K line 49 231414.00, BIT-EXACT
+
+        SLC, (8)231171.34
+        (AX)DD(BU,36,6),LOADERX                              ! line  1  (no binary printed)
+YPR     B,YPRSPL                                             ! line  2  printed "Y PR"  -CONSOLE MESS. PRINT. NOP = BYPASS, NOP,1. = BYPASS
+! line  3  -     AND ONLINE, NOP,2. - ON/OFFLINE AND BYPASS.
+        LVE,2,YPR                                            ! line  4
+        BR,0($2)                                             ! line  5  printed "BR,C($2)"
+        BZB,SYSMOD,YPRSPL                                    ! line  6
+        BB,SYSMOD.1,YPRSPL                                   ! line  7
+        SV,1,YPRCNV                                          ! line  8
+        LVI,$15,$+1.                                         ! line  9
+        BD,SA8IQS                                            ! line 10
+YPRCNV  VF,0                                                 ! line 11  printed "VF,C"
+        CF,64                                                ! line 12
+        VF,YPRCMM                                            ! line 13  (a "*" after the location)
+        BE,$MCP                                              ! line 14
+        ,$COMM                                               ! line 15  printed "$CCMM"
+        ,YPRCMM                                              ! line 16
+        ,8.                                                  ! line 17
+YPRSPL  SIC,ZSPLP9                                           ! line 18
+        BD,ZSPLPR                                            ! line 19
+        ,0($1)                                               ! line 20
+        ,8.                                                  ! line 21
+YPRRET  BE,0                                                 ! line 22  printed "BE,C"
+YPRCMM  DRZ(N),(8)                                           ! line 23  (a "*" after the location)
+! line 24  - ****************************************************************
+! line 25  -        UNCODE SUBROUTINE TO DECIPHER SYSTEM CARDS
+! line 26  - ****************************************************************
+YUNCOD  TI,3,$11,YUXSAV                                      ! line 27  -SAVE UNDICIES
+        LVE,$13,1.32($14)                                    ! line 28  -GET LOCATION OF HOLLERITH
+        L(BU,12),0.0($13)                                    ! line 29  -CARD AND TEST FOR B
+        KFI(BU,12),(2)100010000000                           ! line 30
+        BZAEZ,YUER                                           ! line 31  -IF NOT A B GIVE ERROR RETURN
+        SV,$13,YUECS                                         ! line 32  -LOCATION OF CARD TO EDIT CALLING
+        LV,$13,1.0($14)                                      ! line 33  -DISP. TO $13
+        LVI,$15,$+1.0                                        ! line 34  -CONVERT CARS TO 6-BIYT BCD
+        BD,SCA6                                              ! line 35
+YUECS   VF,0.0                                               ! line 36
+        CF,80                                                ! line 37
+        VF,YUCBF1                                            ! line 38
+        LVI,$15,$+1.0                                        ! line 39  -BREAK CARD INTO FIELDS
+        BD,SBRK8                                             ! line 40
+        VF,YUCBF1+.54                                        ! line 41
+        CF,53.                                               ! line 42
+        VF,YUCBF2                                            ! line 43
+YUSB8C  VF,1.                                                ! line 44
+        LVI,$13,1.0                                          ! line 45  -ERROR RETURN- VALID ONLY FOR
+YIPL1   BE,$+.32                                             ! line 46  (a "*" after the location)
+! line 47  -                      JOB CARD SO FAKE DISPOSITION
+        L(BU,48),YUCBF2                                      ! line 48  -NORMAL RETURN TEST FIRST
+        K(BU,48),YTYPMK($13)                                 ! line 49  -FIELD IN CARD
+
+!SYM YPR    231172.00
+!SYM YPRCNV 231177.00
+!SYM YPRSPL 231202.40
+!SYM YPRRET 231204.40
+!SYM YPRCMM 231205.00
+!SYM YUNCOD 231215.00
+!SYM YUECS  231223.00
+!SYM YUSB8C 231227.00
+!SYM YIPL1  231230.00
+!CHECK 231172.00 | 231202.50 00 | line 2 YPR B,YPRSPL
+!CHECK 231172.40 | 231172.05 B0 | line 4 LVE,2,YPR
+!CHECK 231173.00 | 000000.14 02 | line 5 BR,0($2) (printed "BR,C($2)")
+!CHECK 231173.40 | 215001.10 80 231202.74 00 | line 6 BZB,SYSMOD,YPRSPL
+!CHECK 231174.40 | 215001.11 80 231202.74 02 | line 7 BB,SYSMOD.1,YPRSPL
+!CHECK 231175.40 | 231177.03 30 | line 8 SV,1,YPRCNV
+!CHECK 231176.00 | 231177.37 01 | line 9 LVI,$15,$+1.
+!CHECK 231176.40 | 230566.04 00 | line 10 BD,SA8IQS
+!CHECK 231177.00 | 000000.00+ | line 11 YPRCNV VF,0 (printed "CCCCCC.00+")
+!CHECK 231177.40 | 000100 | line 12 CF,64
+!CHECK 231200.00 | 231205.00+ | line 13 VF,YPRCMM
+!CHECK 231200.40 | 000040.00 00 | line 14 BE,$MCP
+!CHECK 231201.00 | 000043.40 80 | line 15 ,$COMM (printed "$CCMM")
+!CHECK 231201.40 | 231205.00 80 | line 16 ,YPRCMM
+!CHECK 231202.00 | 000010.00 80 | line 17 ,8.
+!CHECK 231202.40 | 224052.00 80 | line 18 YPRSPL SIC,ZSPLP9
+!CHECK 231203.00 | 224046.44 00 | line 19 BD,ZSPLPR
+!CHECK 231203.40 | 000000.00 81 | line 20 ,0($1)
+!CHECK 231204.00 | 000010.00 80 | line 21 ,8.
+!CHECK 231204.40 | 000000.00 00 | line 22 YPRRET BE,0 (printed "BE,C")
+!CHECK 231215.00 | 000033.00 80 231363.06 A0 | line 27 YUNCOD TI,3,$11,YUXSAV (last byte prints "AC")
+!CHECK 231216.00 | 000001.73 BE | line 28 LVE,$13,1.32($14)
+!CHECK 231216.40 | 000000.00 8D 014000.20 50 | line 29 L(BU,12),0.0($13)
+!CHECK 231217.40 | 420000.00 80 414000.23 10 | line 30 KFI(BU,12),(2)100010000000
+!CHECK 231220.40 | 231350.36 C4 | line 31 BZAEZ,YUER
+!CHECK 231221.00 | 231223.33 30 | line 32 SV,$13,YUECS
+!CHECK 231221.40 | 000001.32 3E | line 33 LV,$13,1.0($14)
+!CHECK 231222.00 | 231223.37 01 | line 34 LVI,$15,$+1.0
+!CHECK 231222.40 | 230622.04 00 | line 35 BD,SCA6
+!CHECK 231223.00 | 000000.00+ | line 36 YUECS VF,0.0
+!CHECK 231223.40 | 000120 | line 37 CF,80
+!CHECK 231224.00 | 231366.00+ | line 38 VF,YUCBF1
+!CHECK 231224.40 | 231225.77 01 | line 39 LVI,$15,$+1.0
+!CHECK 231225.00 | 230672.04 00 | line 40 BD,SBRK8
+!CHECK 231225.40 | 231366.66+ | line 41 VF,YUCBF1+.54
+!CHECK 231226.00 | 000065 | line 42 CF,53.
+!CHECK 231226.40 | 231376.00+ | line 43 VF,YUCBF2
+!CHECK 231227.00 | 000001.00+ | line 44 YUSB8C VF,1.
+!CHECK 231227.40 | 000001.33 01 | line 45 LVI,$13,1.0
+!CHECK 231230.00 | 231230.40 00 | line 46 YIPL1 BE,$+.32
+!CHECK 231230.40 | 231376.00 80 060000.20 50 | line 48 L(BU,48),YUCBF2
+!CHECK 231231.40 | 231414.00 8D 060000.21 10 | line 49 K(BU,48),YTYPMK($13)

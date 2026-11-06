@@ -1,6 +1,12 @@
 ! MCP INITIALIZATION, printed p.57 (MCP_Mar63_001-249 PDF p.64) --
 ! THE IOREQ SEARCH AND SORT.
 !
+! 2026-11-06: "$OP" IS NOW WRITTEN AS PRINTED.  C28-6129 printed p.10 (PDF
+! p.14): a $ prefixed to an operation code "directs the compiler to
+! suppress any error indications" for that statement; the binary is
+! the plain operation's, and strap_asm accepts the prefix.  Notes below
+! that describe writing the card WITHOUT the "$" predate this.
+!
 ! Thirty-eight lines and ALL THIRTY-EIGHT COMPILE.  No comment rows,
 ! no heading box: the page is solid code from 003206.00 to 003237.00.
 !
@@ -137,7 +143,7 @@ TUIORQ  SYN, (8)3514.0
 LSEARB  KF(V+I)(BU,8), 0.8(LIODX), 46 ! line 3 -INNER LOOP----COMPARE.
         BZALZ, LSEARC                ! line 4  -ACC. NOT LOW----STEP
                                       !           DOWN.
-        L(BU,8), -0.8(LIODX), 46     ! line 5  -ACC LOW-- SWITCH RLCT
+        $L(BU,8), -0.8(LIODX), 46    ! line 5  -ACC LOW-- SWITCH RLCT
                                       !   listing prints "$L(BU,8)..."
         LVE, LXNT, $-1.              ! line 6  -PUT PROPER ADDRESS IN
                                       !           XC VF.

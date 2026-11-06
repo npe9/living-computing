@@ -1,0 +1,121 @@
+! mcp_bootstrap_p289.strap -- MCP printed page 289: the SYN CARDS FOR
+! THE CHANNEL/UNIT STATUS TABLE and the SYN CARDS FOR THE VALID CHECK
+! TABLE (T VALVF VF,0.0 and the T TYBC .. T RCAD field SYNs), lines 1-31.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.40, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID QE000138  DIST. OF 3/01
+!  3/01  PAGE NUMBER 289" (round glyphs in numeric fields read 0).  The
+! heading row's LOCATION field prints NOTHING: line 1 is a remark card
+! and prints no word.
+!
+! THE PAGE.  31 lines, every line number prints a "*" after it, then
+! blank paper.
+!   lines  1-4   remark cards: rule, "SYN CARDS FOR THE CHANNEL/UNIT
+!                STATUS TABLE", rule, "-".
+!   lines  5-18  fourteen SYN cards (T CHSXW .. T OVRES).  A SYN row
+!                prints its VALUE with a "+" in the LOCATION column,
+!                "+00000000" and its dds (octal: BU,100,10 = (BU,64,8);
+!                BU,22 = (BU,18); BU,01 / BU,04).  No !CHECK; their
+!                values are the !SYMs below.
+!   lines 19-24  remark cards: "-", "-", rule, "SYN CARDS FOR THE VALID
+!                CHECK TABLE", rule, "-".
+!   line  25     T VALVF VF,0.0 at 232512.00, prints 000000.00+ -- the
+!                ONLY row on the page that compiles.
+!   lines 26-31  six SYN cards (T TYBC, T MACBC, T REQBC print "NULL";
+!                T TYAD, T MCAD, T RCAD print BU,10,10 = (BU,8,8)).
+!
+! THIS IS THE BODY'S RE-ASSEMBLY OF THE IPL ASSIGN PROGRAM's compool SYNs
+! (landed p.62 lines 52-56 head the same block, "T CHSXW SYN,SXCHAN";
+! pp.66/68/71/73/75 spell TUNTBA, TMULTI, TCHAVL, TUNAVL, TUNASG, TCHOWN,
+! TEQUIP, TUNITK, TUNRES, TOVRES, TTYAD, TMCAD, TRCAD; p.65 TVALVF).
+! Spellings follow those decks; the VALUES are this page's.  TFDISP,
+! TSEL, TVER, TTYBC, TMACBC, TREQBC have no earlier spelling in decks/
+! and are written as the ink prints them.
+!
+! JOIN.  The only located word is 232512.00 (a VF, one half word), so
+! the location counter leaves the page at 232512.40.  p.288 (no scratch
+! neighbour deck when this was written) should end just below 232512.00;
+! p.290 should open at 232512.40.  Contiguity NOT established here.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 18 label prints "T CVRES" (open O) = TOVRES: the remark on
+!     the same row prints "OVERLAP" with the same glyph, and pp.71/75
+!     spell TOVRES.
+!   * line 12 "T CHOWN": O as pp.71/73/75 TCHOWN.
+!   * line 29 prints "SYN (BU,8),C.0" -- a BLANK between SYN and "(".
+!     The row prints dds BU,10,10, so the assembler took (BU,8) as the
+!     SYN's data description; written SYN(BU,8),0.0 as p.66 line
+!     "TTYAD SYN(BU,8),0.0".  "C.0" is 0.0 (numeric field; prints
+!     000000.00+).
+!   * octal fields "CCCCCC.CC", "+CCCCCCCC" and statements "C.0",
+!     "TTYAD+C.8", "TMCAD+C.8" are 0 (numeric context; the values
+!     000000.10+ / 000000.20+ agree).
+!   * line 5 "SXCFAN" (H with a worn bar) = SXCHAN, printed p.103's XW;
+!     the row prints 215002.00 = SXCHAN's value there.
+!
+! EXTERNALS.  SXCHAN is printed p.103 line 28 "SXCHAN XW,0" at 215002.00
+! (landed); stand-in carries the XW label's dds (BU), as decks/ write
+! other XW stand-ins.  This page's line 5 prints 215002.00+ BU,100,10:
+! BIT-EXACT.
+!
+! CARD SERIALS.  QE000138 .. QE000168, line N prints QE0001(37+N); none
+! shared or skipped.
+
+SXCHAN  SYN(BU), (8)215002.0         ! landed p.103 line 28 "SXCHAN XW,0"; line 5 prints 215002.00+ BU,100,10, BIT-EXACT
+
+! line  1  - ---------------------------------------------------------
+! line  2  -        SYN CARDS FOR THE CHANNEL/UNIT STATUS TABLE
+! line  3  - ---------------------------------------------------------
+! line  4  -
+TCHSXW  SYN,SXCHAN                                           ! line  5  -INDEX WORD FOR CHAN STAT TBL  (printed "SXCFAN")
+TUNTBA  SYN(BU,18),0.0                                       ! line  6  -THE UNIT TABLE ADDRESS
+TMULTI  SYN(BU,1),0.27                                       ! line  7  -THE MULTI -CHANNEL BIT
+TCHAVL  SYN(BU,1),0.25                                       ! line  8  -THE CHANNEL AVAILABLE BIT
+TFDISP  SYN(BU,1),0.27                                       ! line  9  -THE KIND OF REEL MOUNTED ON UNIT
+TUNAVL  SYN(BU,1),0.28                                       ! line 10  -THE UNIT AVAILABLE BIT
+TUNASG  SYN(BU,1),0.29                                       ! line 11  -THE UNIT ASSIGNED BIT
+TCHOWN  SYN(BU,1),0.32                                       ! line 12  -THE OWNERSHIP LEVEL INDICATOR
+TSEL    SYN(BU,1),0.39                                       ! line 13  -THE MULTI UNIT SELECT BIT
+TVER    SYN(BU,1),0.40                                       ! line 14  -THE VERIFY BIT
+TEQUIP  SYN(BU,4),0.52                                       ! line 15  -TYPE OF UNIT REQUESTED
+TUNITK  SYN(BU,4),0.59                                       ! line 16  -NUMBER OF UNITS TO A GIVEN CHANNEL
+TUNRES  SYN(BU,1),0.62                                       ! line 17  -NOT OVERLAP RESERVED BIT
+TOVRES  SYN(BU,1),0.63                                       ! line 18  -THE OVERLAP RESERVED BIT  (label printed "T CVRES")
+! line 19  -
+! line 20  -
+! line 21  - ---------------------------------------------------------
+! line 22  -        SYN CARDS FOR THE VALID CHECK TABLE
+! line 23  - ---------------------------------------------------------
+! line 24  -
+
+        SLC, (8)232512.00
+TVALVF  VF,0.0                                               ! line 25  -TO PREVENT A DOUBLE VALIDITY CHECK
+TTYBC   SYN,0.8                                              ! line 26  -THE TYPE CODE BIT COUNT
+TMACBC  SYN,0.8                                              ! line 27  -THE MACHINE CONF COUNT BIT COUNT
+TREQBC  SYN,0.8                                              ! line 28  -THE REQUEST COUNT BIT COUNT
+TTYAD   SYN(BU,8),0.0                                        ! line 29  -ADDRESS OF THE TYPE CODE  (printed "SYN (BU,8),C.0", a blank before "(")
+TMCAD   SYN(BU,8),TTYAD+0.8                                  ! line 30  -MACHINE CONF COUNT ADDRESS
+TRCAD   SYN(BU,8),TMCAD+0.8                                  ! line 31  -THE REQUEST COUNT ADDRESS
+
+!SYM TCHSXW 215002.00
+!SYM TUNTBA 000000.00
+!SYM TMULTI 000000.33
+!SYM TCHAVL 000000.31
+!SYM TFDISP 000000.33
+!SYM TUNAVL 000000.34
+!SYM TUNASG 000000.35
+!SYM TCHOWN 000000.40
+!SYM TSEL   000000.47
+!SYM TVER   000000.50
+!SYM TEQUIP 000000.64
+!SYM TUNITK 000000.73
+!SYM TUNRES 000000.76
+!SYM TOVRES 000000.77
+!SYM TVALVF 232512.00
+!SYM TTYBC  000000.10
+!SYM TMACBC 000000.10
+!SYM TREQBC 000000.10
+!SYM TTYAD  000000.00
+!SYM TMCAD  000000.10
+!SYM TRCAD  000000.20
+!CHECK 232512.00 | 000000.00+ | line 25 TVALVF VF,0.0

@@ -1,0 +1,67 @@
+! mcp_bootstrap_p296.strap -- MCP printed page 296: a console-source
+! system-command call (BD,S PRIME / ,S COMD), its count and buffer
+! words, J LINK, an MCP return (BE,D MCP / ,D RET), the XW J LMSG and
+! two index-register SYNs J INXK, J MKNT; lines 1-11.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.47, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID QH000052  DIST. OF 3/01
+! 3/01  PAGE NUMBER 296" (round glyphs in numeric fields read 0).  The
+! heading row's LOCATION field is 232741, line 1's word.
+!
+! THE PAGE.  11 lines, then blank paper.  Every line number prints a
+! "*" after it.  Located rows run contiguous from 232741.00 (line 1) to
+! 232745.00 (line 9, a full-word XW; next location 232746.00).  Lines
+! 10-11 are SYNs whose LOCATION field prints their VALUE (000021.00+,
+! 000022.00+ = $1, $2) with "+00000000  BU,100,10".  Remarks on lines
+! 3 ("-SCURCE IS CONSOLE", i.e. SOURCE, open O) and 5 ("-FILLED IN
+! ABOVE").  tools/page_sheet.py 296 crashes (fit_lines finds no lattice
+! on so short a page); read from the image only.
+!
+! JOIN.  p.295 and p.297 have no scratch decks; contiguity with either
+! is NOT established here.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * octal "CCC120.00", "CCCCC3", "CCCCCC", "217CCC.00+" and "+0000000C"
+!     are 0 (octal fields); binaries agree with the statements.
+!   * "D MCP", "D RET" (BE / continuation): D stems worn; spelled DMCP,
+!     DRET as landed (p.108, p.105); binaries 000040 / 000041 = 32 / 33.
+!   * ",S COMC" = SCOMD (landed p.106; 000120 = 80).
+!   * "XW,C,80.C" = XW,0,80.0 (count field prints 000120 = 80).
+!   * line 11 label "J MKNT": first glyph is M (same form as M in
+!     "MCP", "LMSG" on this page).
+!
+! CARD SERIALS.  QH000052 .. QH000062, line N prints QH0000(51+N); none
+! skipped.
+
+SPRIME  SYN, (8)215570.0             ! landed p.118 line 48; BD line 1 215570.04
+SCOMD   SYN, 80.0                    ! landed p.106 line 15; line 2 000120.00
+PMCPBF  SYN, (8)216775.0             ! landed p.137 line 22 DR(BU,64),(13); VF line 4 PMCPBF+3.0 = 217000.00
+DMCP    SYN, 32.0                    ! landed p.108; BE line 7 000040.00
+DRET    SYN, 33.0                    ! landed p.105; line 8 000041.00
+
+        SLC, (8)232741.00
+        BD,SPRIME                                            ! line  1
+        ,SCOMD                                               ! line  2
+        CF,3.0                                               ! line  3  -SOURCE IS CONSOLE  (printed "SCURCE")
+        VF,PMCPBF+3.0                                        ! line  4
+JLINK   CF,0                                                 ! line  5  -FILLED IN ABOVE
+        NOP                                                  ! line  6
+        BE,DMCP                                              ! line  7
+        ,DRET                                                ! line  8
+JLMSG   XW,0,80.0                                            ! line  9
+JINXK   SYN,$1                                               ! line 10
+JMKNT   SYN,$2                                               ! line 11
+
+!SYM JLINK  232743.00
+!SYM JLMSG  232745.00
+!SYM JINXK  000021.00
+!SYM JMKNT  000022.00
+!CHECK 232741.00 | 215570.04 00 | line 1 BD,S PRIME
+!CHECK 232741.40 | 000120.00 80 | line 2 ,S COMD (printed "S COMC")
+!CHECK 232742.00 | 000003 | line 3 CF,3.0
+!CHECK 232742.40 | 217000.00+ | line 4 VF,P MCP BF+3.0
+!CHECK 232743.00 | 000000 | line 5 J LINK CF,0
+!CHECK 232743.40 | 000000.30 00 | line 6 NOP
+!CHECK 232744.00 | 000040.00 00 | line 7 BE,D MCP
+!CHECK 232744.40 | 000041.00 80 | line 8 ,D RET
+!CHECK 232745.00 | 000000.00+ 000 000120 000000 | line 9 J LMSG XW,0,80.0

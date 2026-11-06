@@ -1,0 +1,193 @@
+! mcp_bootstrap_p295.strap -- MCP printed page 295: THE SYSTEM COMMAND
+! PACKAGE -- its tentacle (J TENT .. J SIZE, YXCOMD) and the OPERATOR
+! CONSOLE FIXUP (JCFIX .. SIC,S PRIM R); lines 1-56.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.46, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QH000001  DIST. OF 3/01  3/01  PAGE NUMBER 295" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is BLANK:
+! line 1 is an asterisk banner (transcription_workflow.md step 1).
+!
+! THE PAGE.  56 lines, every line number prints a "*" after it; "*"
+! after the LOCATION on lines 4, 19, 35 and 55.  A NEW CARD-ID SERIES
+! (QH000001): this is the first page of a separately assembled deck.
+!   lines  1-3   banner "THE SYSTEM COMMAND PACKAGE"; line 5 banner
+!                "COMMAND PACKAGE TENTACLE".
+!   line   4     SLC,$ printed at 232714.40 * -- the counter arriving.
+!   line   6     CNOP at 232714.40, prints 000000.30 00 (a half-word NOP).
+!   lines  7-19  the tentacle's packed parameter word at 232715.00:
+!                J TENT DD(BU,4),5 (prints 05), seven DD(BU,1),0, three
+!                DD(BU,2) (prints 2, 2, 3), DRZ(BU,2),(14) prints its size
+!                000000.34 (28 bits) and gets no !CHECK.  Line 16 is the
+!                remark continuation "-CODE .11" (no location).
+!   lines 20-21  EXT(0,18) over B,YXCOMD: prints 0465644 at 232715.55 =
+!                the 19-bit half-word address of YXCOMD (232722.00).
+!   lines 22-29  VF,0 x3 (J RETA on 23), ,0 x5 (J CODE, J FRST, J SIZE).
+!   lines 30-31  YXCOMD LX,1,Y XW CMD / B,Y MP FCH.
+!   lines 32-34  remark banner "OPERATOR CONSOLE FIXUP".
+!   lines 35-56  JCFIX DRZ(N),(2) (prints its size 000002.00, no !CHECK),
+!                then code through SIC,S PRIM R at 232740.40.
+! Located rows are contiguous from 232714.40 to 232740.40 (a half word;
+! next location 232741.00).
+!
+! JOIN.  p.294 has no scratch deck: contiguity with it is NOT
+! established here (line 4's SLC,$ prints 232714.40, the arriving
+! counter).  The p.296 scratch deck opens at 232741.00 with serial
+! QH000052 -- contiguous with this page's end (232740.40 half word,
+! serial QH000051).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * octal fields "CCCCCC.00+", "000000.CC 80", "000002.CC", and
+!     statement "VF,C", "DD(BU,1),C", "LV,1,C.C($1)" are 0 (octal /
+!     numeric context); hex "CO", "BO", "FO", "7C" = 00, B0, F0, 70.
+!   * YXCOMD: the label (line 30) prints "YXCCMD" with an open 4th glyph;
+!     line 21's reference prints the O closed at 900 dpi.
+!   * JCFIX: printed with an open C ("JCFIX"); C22-6728 (MCP Sys.
+!     Analysis Guide) spells "JCFIX" ("location of which is JCFIX").
+!   * JCNCS: C open in label and references; C22-6728 prints "JCNCS".
+!   * "YXW CMD" = YXWCMD (D stem worn; landed p.269 line 38).
+!   * line 53 "BAE,J ENDC" / line 55 label "J ENDC" = JENDC (D worn).
+!   * $MCP, $RET (lines 36-37): printed with $ glyphs; binaries 000040 /
+!     000041 = 32 / 33, the MCP pseudo-op system symbols.
+!
+! EXTERNALS.  Index registers JINXK=$1, JMKNT=$2, and JLINK, JLMSG are
+! p.296's (scratch, not landed); their forms copy that deck.  The LVI
+! byte .03 01 and KF byte 81 confirm JINXK=$1; LX .04 and CB+/SV .05
+! confirm JMKNT=$2.
+!
+! THE PAGE ENDS IN A BARE SIC.  Line 56 SIC,S PRIM R's branch half is
+! p.296 line 1 (BD,S PRIME at 232741.00).  The assembler refuses a SIC
+! with nothing after it ("found 'end of program'"), so a scaffold
+! "SLC, (8)232741.0" (p.296's origin, emits nothing) follows it, as
+! decks/mcp_bootstrap_p255.strap does.
+!
+! CARD SERIALS.  QH000001 .. QH000051.  Lines 20-21 (the EXT pair) share
+! QH000020; then lines 36-37 share QH000035, 38-39 QH000036, 40-41
+! QH000037, 42-43 QH000038 (each a B and the half word after it on one
+! card); line N prints QH0000(N-5) from line 44 on.  None skipped.
+
+YXWCMD  SYN, (8)231160.0             ! b6 p.269 line 38 YXWCMD XW; LX line 30 231160.02, half word only
+YMPFCH  SYN, (8)231141.0             ! b6 p.269 line 14 YMPFCH SC; B line 31 231141.10, half word only
+SXCHAN  SYN, (8)215002.0             ! landed p.99 XW (body 215002.00); LX line 44 215002.02
+SYCOCH  SYN, (8)215006.0             ! landed p.99 VF (body 215006.00); V+ lines 45-46 215006.02
+SCNSSG  SYN(BU,1), 0.47              ! landed p.99 line 35; CM0000 line 48 000000.57
+PMCPBF  SYN, (8)216775.0             ! landed p.137 line 22 DR(BU,64),(13); LVI line 49 PMCPBF+3.0 = 217000.03
+JINXK   SYN,$1                       ! p.296 line 10 (scratch); LVI byte .03 01
+JMKNT   SYN,$2                       ! p.296 line 11 (scratch); LX .04 line 50
+JLMSG   SYN, (8)232745.0             ! p.296 line 9 XW (scratch); LX line 50 232745.04
+JLINK   SYN, (8)232743.0             ! p.296 line 5 CF (scratch); SV line 55 232743.05
+SPRIMR  SYN, (8)215571.0             ! landed p.118 line 49; SIC line 56 215571.00, BIT-EXACT
+
+        SLC, (8)232714.40
+! line  1  -*************************************************************
+! line  2  -          ********** THE SYSTEM COMMAND PACKAGE ***********
+! line  3  -*************************************************************
+        SLC,$                                                ! line  4 * printed 232714.40 *
+! line  5  -          *****COMMAND PACKAGE TENTACLE*****
+        CNOP                                                 ! line  6
+JTENT   DD(BU,4),5                                           ! line  7  -NUMBER OF PARAMETERS
+        DD(BU,1),0                                           ! line  8  -USER BIT - .4
+        DD(BU,1),0                                           ! line  9  -ENTRY MODE NOT SAME .5
+        DD(BU,1),0                                           ! line 10  -ENTRY MODE NOT DISABLED .6
+        DD(BU,1),0                                           ! line 11  -ENTRY MODE IS ENABLED
+        DD(BU,1),0                                           ! line 12  -NOT USED .8
+        DD(BU,1),0                                           ! line 13  -BUSY BIT - .9
+        DD(BU,1),0                                           ! line 14  -NOT USED .10
+        DD(BU,2),(2)10                                       ! line 15  -FORM EFFECTIVE,NO RESTORE-SOURCE
+! line 16  -CODE .11
+        DD(BU,2),(2)10                                       ! line 17  -FORM EFFECTIVE,NO RESTORE-LOCATION .13
+        DD(BU,2),(2)11                                       ! line 18  -FORM EFFEC.,RESTORE-NUMBER .15
+        DRZ(BU,2),(14)                                       ! line 19 * -14 VOID FIELDS .17 THRU .44
+        EXT(0,18)                                            ! line 20
+        B,YXCOMD                                             ! line 21
+        VF,0                                                 ! line 22  -LAST TENTACLE TABLE USED
+JRETA   VF,0                                                 ! line 23  -RETURN ADDRESS
+        VF,0                                                 ! line 24  -FWA OF PSEUDO OP LINKAGE
+        ,0                                                   ! line 25  -PSEUDO OP
+JCODE   ,0                                                   ! line 26  -SOURCE CODE
+JFRST   ,0                                                   ! line 27  -LOCATION OF 1ST CHAR OF FIELD
+JSIZE   ,0                                                   ! line 28  -MESSAGE LENGTH
+        ,0                                                   ! line 29  -CONTENTS OF ERROR SLOT
+YXCOMD  LX,1,YXWCMD                                          ! line 30
+        B,YMPFCH                                             ! line 31
+! line 32  -
+! line 33  -          *****OPERATOR CONSOLE FIXUP*****
+! line 34  -
+JCFIX   DRZ(N),(2)                                           ! line 35 *
+        B,$MCP                                               ! line 36
+        ,$RET                                                ! line 37
+        B,JCNCS                                              ! line 38
+        NOP,                                                 ! line 39
+        B,JCNCS                                              ! line 40
+        NOP                                                  ! line 41  -CHANNEL SIGNAL
+        B,JCNCS+2.0                                          ! line 42
+        NOP                                                  ! line 43
+JCNCS   LX,1,SXCHAN                                          ! line 44
+        V+,1,SYCOCH                                          ! line 45
+        V+,1,SYCOCH                                          ! line 46
+        LV,1,0.0($1)                                         ! line 47  -GET UNIT STATUS ADDRESS
+        CM0000,SCNSSG($1)                                    ! line 48
+        LVI,JINXK,PMCPBF+3.0                                 ! line 49
+        LX,JMKNT,JLMSG                                       ! line 50
+        LFI(BU,8),(2)11111110                                ! line 51  -END CHARACTER
+JCLOK   KF(V+I)(BU,8),.8(JINXK)                              ! line 52
+        BAE,JENDC                                            ! line 53
+        CB+,JMKNT,JCLOK                                      ! line 54
+JENDC   SV,JMKNT,JLINK                                       ! line 55 *
+        SIC,SPRIMR                                           ! line 56
+        SLC, (8)232741.0                     ! scaffold: p.296's origin; SIC's branch half is p.296's first card (see header)
+
+!SYM JTENT  232715.00
+!SYM JRETA  232716.40
+!SYM JCODE  232720.00
+!SYM JFRST  232720.40
+!SYM JSIZE  232721.00
+!SYM YXCOMD 232722.00
+!SYM JCFIX  232723.00
+!SYM JCNCS  232731.00
+!SYM JCLOK  232736.00
+!SYM JENDC  232740.00
+!CHECK 232714.40 | 000000.30 00 | line 6 CNOP
+!CHECK 232715.00 | 05 | line 7 J TENT DD(BU,4),5 | 4
+!CHECK 232715.04 | 0 | line 8 DD(BU,1),0 | 1
+!CHECK 232715.05 | 0 | line 9 DD(BU,1),0 | 1
+!CHECK 232715.06 | 0 | line 10 DD(BU,1),0 | 1
+!CHECK 232715.07 | 0 | line 11 DD(BU,1),0 | 1
+!CHECK 232715.10 | 0 | line 12 DD(BU,1),0 | 1
+!CHECK 232715.11 | 0 | line 13 DD(BU,1),0 | 1
+!CHECK 232715.12 | 0 | line 14 DD(BU,1),0 | 1
+!CHECK 232715.13 | 2 | line 15 DD(BU,2),(2)10 | 2
+!CHECK 232715.15 | 2 | line 17 DD(BU,2),(2)10 | 2
+!CHECK 232715.17 | 3 | line 18 DD(BU,2),(2)11 | 2
+!CHECK 232715.55 | 0465644 | line 21 B,YXCOMD under line 20's EXT(0,18) -- 19 bits, YXCOMD's half-word address | 19
+!CHECK 232716.00 | 000000.00+ | line 22 VF,0 (printed "VF,C")
+!CHECK 232716.40 | 000000.00+ | line 23 J RETA VF,0
+!CHECK 232717.00 | 000000.00+ | line 24 VF,0
+!CHECK 232717.40 | 000000.00 80 | line 25 ,0 -- blank operation
+!CHECK 232720.00 | 000000.00 80 | line 26 J CODE ,0
+!CHECK 232720.40 | 000000.00 80 | line 27 J FRST ,0
+!CHECK 232721.00 | 000000.00 80 | line 28 J SIZE ,0 (printed "000000.CC 80")
+!CHECK 232721.40 | 000000.00 80 | line 29 ,0
+!CHECK 232722.00 | 231160.02 10 | line 30 YXCOMD LX,1,Y XW CMD
+!CHECK 232722.40 | 231141.10 00 | line 31 B,Y MP FCH
+!CHECK 232725.00 | 000040.10 00 | line 36 B,$MCP
+!CHECK 232725.40 | 000041.00 80 | line 37 ,$RET
+!CHECK 232726.00 | 232731.10 00 | line 38 B,JCNCS
+!CHECK 232726.40 | 000000.30 00 | line 39 NOP,
+!CHECK 232727.00 | 232731.10 00 | line 40 B,JCNCS
+!CHECK 232727.40 | 000000.30 00 | line 41 NOP
+!CHECK 232730.00 | 232733.10 00 | line 42 B,J CNCS+2.0
+!CHECK 232730.40 | 000000.30 00 | line 43 NOP
+!CHECK 232731.00 | 215002.02 10 | line 44 J CNCS LX,1,SX CHAN
+!CHECK 232731.40 | 215006.02 B0 | line 45 V+,1,SYCOCH
+!CHECK 232732.00 | 215006.02 B0 | line 46 V+,1,SYCOCH
+!CHECK 232732.40 | 000000.02 31 | line 47 LV,1,0.0($1)
+!CHECK 232733.00 | 000000.57 81 001000.00 F0 | line 48 CM0000,S CNS SG($1)
+!CHECK 232734.00 | 217000.03 01 | line 49 LVI,JINXK,P MCP BF+3.0
+!CHECK 232734.40 | 232745.04 10 | line 50 LX,JMKNT,J LMSG
+!CHECK 232735.00 | 774000.00 80 410000.06 70 | line 51 LFI(BU,8),(2)11111110
+!CHECK 232736.00 | 000000.10 81 110000.23 10 | line 52 J CLOK KF(V+I)(BU,8),.8(JINXK)
+!CHECK 232737.00 | 232740.36 C2 | line 53 BAE,J ENDC
+!CHECK 232737.40 | 232736.05 48 | line 54 CB+,JMKNT,J CLOK
+!CHECK 232740.00 | 232743.05 30 | line 55 J ENDC SV,J MKNT,J LINK
+!CHECK 232740.40 | 215571.00 80 | line 56 SIC,S PRIM R

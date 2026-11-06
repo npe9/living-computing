@@ -1,0 +1,170 @@
+! mcp_bootstrap_p293.strap -- MCP printed page 293: the DEBUGGER AND
+! $HOLD section -- the DB tentacle table (P DB TT), the PPS instruction
+! counter display (P DB BEG, P D4), the console buffers and control
+! words (P NSLIN, P ONOUT, P CW1 .. P CW7), lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.44, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QG000035  DIST. OF 3/01  3/01  PAGE NUMBER 293".  The heading
+! row's LOCATION field is BLANK: line 1 is a banner and compiles
+! nothing (docs/transcription_workflow.md step 1).
+!
+! THE PAGE.  50 lines, every line number prints a "*" after it.
+! Lines 1-3, 12, 15-16, 27, 39, 43-44 are remark cards; lines 4, 9,
+! 34 and 40 are CNOPs that print no location (the counter is already
+! a full word: they emit nothing).  Located rows run contiguous from
+! 232566.00 (line 5) to 232652.00 (line 50, a full word; next location
+! 232653.00), then blank paper, except line 31 (PINVAD SYN,SMARK,
+! printed 215012.40+, "+00000000  B ,31 ,01").  "*" after the
+! LOCATION on lines 8, 33 and 41.
+!
+!   line 5    P DB TT DD(BU,45) prints 040000000000000 (45 bits).
+!             landed p.121 line 42 prints PDBTT = 232566.00: agrees.
+!   lines 6-7 EXT(0,18) over B,P DB BEG prints 0465366 at 232566.55 =
+!             the 19-bit half-word address of PDBBEG (232573.00), as
+!             pp.149 and 265 do it.
+!   lines 8, 10, 11, 41, 42  DRZ rows print their sizes (2, 1, 1, 13,
+!             13 words) and get no !CHECK.
+!
+! JOIN.  p.292 (scratch neighbour, not landed) ends with ,DRET at
+! 232565.40, a half word: next location 232566.00, which is line 5
+! here.  Contiguous.  p.292's stand-in PCW1 SYN,(8)232645.0 agrees
+! with line 45.  p.294 (not seen) should open at 232653.00 with serial
+! QG000083.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * round glyphs in octal fields and in "(8)040 00C COC COC 0C0",
+!     "(2)101C", "(8)...513000C0000" are 0 (octal/binary context; the
+!     binaries agree).  Hex "CO" on lines 28-30 = 00 (NOP); line 26's
+!     "0C" is a real C: B,0.($12), index 12 in the low nibble.
+!   * labels "P CNCUT" (line 42) and references "PCNCUT" (lines 20, 46,
+!     47, 48) are PONOUT: line 21 prints PONOUT with closed O's, and
+!     p.292 spells PONOUT.  Line 23 ", D W S" = DWS (landed p.104
+!     DWS SYN,1.33; binary 000001.41).
+!   * line 17's label "P D4": the D prints with its stem worn (900 dpi
+!     shows a partial stem); written PD4.  The statement prints
+!     L(DU,18,3) -- D, as printed.
+!   * line 29's label prints "G NOP" with no P: GNOP, as printed.
+!   * line 37 prints a speck at the baseline after the octal digits
+!     ("...0400.-ENT BK"), much smaller than this row's commas and
+!     points; read as paper, not a point.  The binary is the digits.
+!   * line 5's datum prints with blanks between octal groups; written
+!     as printed.
+!
+! CARD SERIALS.  QG000035 .. QG000082; line N prints QG0000(34+N)
+! through line 6 (QG000040); line 7 also prints QG000040 (the EXT and
+! its B share a serial), so line N prints QG0000(33+N) from line 7;
+! line 30 again repeats line 29's QG000062 (GNOP NOP / NOP), so line N
+! prints QG0000(32+N) from line 30 to line 50 (QG000082).
+!
+! EXTERNALS.  From landed decks (forms copied); YXWDB and YMPFCH from
+! the staged p.269 (an XW label (BU); SC is a half-word instruction).
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 22 000040.10
+DWS     SYN, 1.33                    ! landed p.104; ,DWS line 23 000001.41
+PCDEF2  SYN, 10.0                    ! landed p.137; ,PCDEF2 line 24 000012.00
+SMARK   SYN, (8)215012.40            ! landed; p.103 line 46 VF; PINVAD line 31 215012.40
+YXWDB   SYN(BU), (8)231161.0         ! staged p.269 line 39 XW; LX line 13 231161.02, BIT-EXACT
+YMPFCH  SYN(BU,32,8), (8)231141.0    ! staged p.269 line 14 SC; B line 14 231141.10, half word only
+
+        SLC, (8)232566.00
+! line  1  - ---------------------------------------------------------
+! line  2  -           -DEBUGGER AND $HOLD
+! line  3  - ---------------------------------------------------------
+        CNOP                                                 ! line  4
+PDBTT   DD(BU,45),(8)040 000 000 000 000                     ! line  5  -DB TENTACLE TABLE
+        EXT(0,18)                                            ! line  6
+        B,PDBBEG                                             ! line  7
+        DRZ(BU),(2)                                          ! line  8
+        CNOP                                                 ! line  9
+PLTRA   DRZ(N),(1)                                           ! line 10
+PLTWA   DRZ(N),(1)                                           ! line 11
+! line 12  -DISPLAY PPS INTRUCTION COUNTER
+PDBBEG  LX,$1,YXWDB                                          ! line 13
+        B,YMPFCH                                             ! line 14
+! line 15  -
+! line 16  -DISPLAY IC ROUTINE
+PD4     L(DU,18,3),$2,104                                    ! line 17  - PUT WORD ADDRESS IN $L, OFFSET 40
+        LF(BU,1),$2.18,-30                                   ! line 18  -HALF WORD POSITION
+        LFI(BU,4),(2)1010,-28                                ! line 19  -DECIMAL POINT
+        SF(BU,32),PONOUT+1.32,-32                            ! line 20
+        TI,1,PNSLIN,PONOUT                                   ! line 21
+        B,DMCP                                               ! line 22  - DISPLAY PPS IC
+        ,DWS                                                 ! line 23
+        ,PCDEF2                                              ! line 24
+        ,PCW5                                                ! line 25  -
+        B,0.($12)                                            ! line 26  - LINK OUT
+! line 27  -
+        CNOP                                                 ! line 28
+GNOP    NOP                                                  ! line 29
+        NOP                                                  ! line 30
+PINVAD  SYN,SMARK                                            ! line 31
+PK1     XW,14.32,8,PK1                                       ! line 32  -VF OFFSET = 28
+PK2     XW,2.0,2,PK2                                         ! line 33
+        CNOP                                                 ! line 34
+PSETIC  DD(BU,64,8),(8)1765211525140017230400                ! line 35  -SET IC
+PDISKL  DD(BU,64,8),(8)1764631725040020241400                ! line 36  -DIS KL
+PENTBK  DD(BU,64,8),(8)1764652165140013640400                ! line 37  -ENT BK
+PDUMP   DD(BU,64,8),(8)1764632524251300000000                ! line 38  -DUMP
+! line 39  -CNSL TEMPORARY BUFFERS
+        CNOP,0                                               ! line 40
+PNSLIN  DRZ(BU,64),(13)                                      ! line 41  -CNSL INPUT BUFFER
+PONOUT  DRZ(BU,64),(13)                                      ! line 42  -CNSL OUTPUT BUFFER
+! line 43  -
+! line 44  -CNSL CONTROL WORDS
+PCW1    CW,PNSLIN,13,$                                       ! line 45  -CNSL INPUT CW
+        CW,PONOUT,13,$                                       ! line 46  -CNSL OUTPUT CW
+PCW4    CW,PONOUT,7,$                                        ! line 47
+PCW5    CW,PONOUT,3,$                                        ! line 48
+PCW6    CW,PLTWA,1                                           ! line 49  -
+PCW7    CW,PLTRA,1                                           ! line 50  -
+
+!SYM PDBTT  232566.00
+!SYM PLTRA  232571.00
+!SYM PLTWA  232572.00
+!SYM PDBBEG 232573.00
+!SYM PD4    232574.00
+!SYM GNOP   232604.00
+!SYM PINVAD 215012.40
+!SYM PK1    232605.00
+!SYM PK2    232606.00
+!SYM PSETIC 232607.00
+!SYM PDISKL 232610.00
+!SYM PENTBK 232611.00
+!SYM PDUMP  232612.00
+!SYM PNSLIN 232613.00
+!SYM PONOUT 232630.00
+!SYM PCW1   232645.00
+!SYM PCW4   232647.00
+!SYM PCW5   232650.00
+!SYM PCW6   232651.00
+!SYM PCW7   232652.00
+!CHECK 232566.00 | 040000000000000 | line 5 P DB TT DD(BU,45),(8)040 000 000 000 000 (round glyphs read 0) | 45
+!CHECK 232566.55 | 0465366 | line 7 B,P DB BEG under line 6's EXT(0,18) -- 19 bits, PDBBEG's half-word address | 19
+!CHECK 232573.00 | 231161.02 10 | line 13 PDBBEG LX,$1,YXWDB
+!CHECK 232573.40 | 231141.10 00 | line 14 B,YMPFCH
+!CHECK 232574.00 | 000022.00 80 022364.24 50 | line 17 P D4 L(DU,18,3),$2,104
+!CHECK 232575.00 | 000022.22 80 001061.06 70 | line 18 LF(BU,1),$2.18,-30
+!CHECK 232576.00 | 500000.00 80 404062.06 70 | line 19 LFI(BU,4),(2)1010,-28 (printed "101C")
+!CHECK 232577.00 | 232631.40 80 040060.12 F0 | line 20 SF(BU,32),PONOUT+1.32,-32 (printed PCNCUT)
+!CHECK 232600.00 | 232613.00 80 232630.02 A0 | line 21 TI,1,PNSLIN,PONOUT
+!CHECK 232601.00 | 000040.10 00 | line 22 B,DMCP
+!CHECK 232601.40 | 000001.41 80 | line 23 ,D W S
+!CHECK 232602.00 | 000012.00 80 | line 24 ,P C DEF2
+!CHECK 232602.40 | 232650.00 80 | line 25 ,PCW5
+!CHECK 232603.00 | 000000.10 0C | line 26 B,0.($12)
+!CHECK 232603.40 | 000000.30 00 | line 28 CNOP (hex printed "CO")
+!CHECK 232604.00 | 000000.30 00 | line 29 G NOP NOP
+!CHECK 232604.40 | 000000.30 00 | line 30 NOP (printed "NCP", hex "CO")
+!CHECK 232605.00 | 000016.40+ 000 000010 232605 | line 32 P K1 XW,14.32,8,PK1
+!CHECK 232606.00 | 000002.00+ 000 000002 232606 | line 33 P K2 XW,2.0,2,PK2
+!CHECK 232607.00 | 1765211525140017230400 | line 35 P SETIC DD(BU,64,8) | 64
+!CHECK 232610.00 | 1764631725040020241400 | line 36 P DISKL DD(BU,64,8) | 64
+!CHECK 232611.00 | 1764652165140013640400 | line 37 P ENTBK DD(BU,64,8) | 64
+!CHECK 232612.00 | 1764632524251300000000 | line 38 P DUMP DD(BU,64,8) | 64
+!CHECK 232645.00 | 232613.00+ 000 000015 232645 | line 45 P CW1 CW,PNSLIN,13,$
+!CHECK 232646.00 | 232630.00+ 000 000015 232646 | line 46 CW,PONOUT,13,$
+!CHECK 232647.00 | 232630.00+ 000 000007 232647 | line 47 P CW4 CW,PONOUT,7,$
+!CHECK 232650.00 | 232630.00+ 000 000003 232650 | line 48 P CW5 CW,PONOUT,3,$
+!CHECK 232651.00 | 232572.00+ 000 000001 000000 | line 49 PCW6 CW,PLTWA,1
+!CHECK 232652.00 | 232571.00+ 000 000001 000000 | line 50 PCW7 CW,PLTRA,1

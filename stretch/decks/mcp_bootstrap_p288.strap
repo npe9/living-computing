@@ -1,0 +1,132 @@
+! mcp_bootstrap_p288.strap -- MCP printed page 288: the ASSIGN tables'
+! SYN cards -- the PP REFERENCE TABLE (T PPURF .. T PNAME), the I/O
+! REQUEST TABLE (T IOREQ .. T ABSCH) and the FIRST REEL NUMBER TABLE
+! (T FSTRE, T REELN), lines 1-45.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.39, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID QE000092  DIST. OF 3/01
+! 3/01  PAGE NUMBER 288" (round glyphs in numeric fields read 0; the
+! header prints CARD as "CARC").  The heading row prints no LOCATION.
+!
+! THE PAGE.  45 lines, every line number prints a "*".  Remark cards
+! (only "-" in NAME): lines 1-4 (banner "SYN CARDS FOR THE PP REFERENCE
+! TABLE"), 21-24 ("SYN CARDS FOR THE I/O REQUEST TABLE"), 38-42 ("SYN
+! CARDS FOR THE FIRST REEL NUMBER TABLE").  Located rows:
+!   lines  5-9   five XWs, 232230.00 .. 232234.00
+!   lines 10-11  DRZ(BU,64),(TPPC) twice, printing their SIZE 000025.00
+!                (= 21) at 232235.00 and 232262.00 -- no word, no !CHECK
+!   lines 12-20  SYN cards (value in LOCATION with "+", +00000000 in
+!                BINARY, dds column BU,nn,10 / BU,60,06): !SYM only
+!   line  25     CNOP, no location printed (counter already on a word)
+!   line  26     T IOREQ DRZ(BU,64),(TIOC) at 232307.00, size 000120.00
+!   line  27     VF,0.32 at 232427.00, prints 000000.40+
+!   lines 28-37  SYN cards, !SYM only
+!   line  43     CNOP at 232427.40, 000000.30 00
+!   line  44     T FSTRE DRZ(BU,64),(TFRC) at 232430.00, size 000062.00
+!   line  45     T REELN SYN(BU,48),0.00, !SYM only
+! "*" after the LOCATION on lines 10 and 44.  The next free location is
+! 232430.00 + 62 = 232512.00.
+!
+! THIS IS THE BODY'S RE-ASSEMBLY OF IPL printed p.62's tables (landed
+! decks/mcp_bootstrap_p62.strap); spellings follow p.62, addresses are
+! this page's.  The body differs: T PPC is 21 here (p.62: 20), and
+! T PURFT's three XWs are not on this page (T PURFT = 021106.00 per this
+! page's line 5 binary, as scratch p.276 SYNs it).
+!
+! JOIN.  p.287 (not landed, no deck in scratch) ends, per the finding
+! aid, in DD(BU,1) bits near 232227.4x, so line 5's XW at 232230.00 is
+! the next word -- consistent, not established.  p.289's finding aid
+! shows 232512.00, the next free location after T FSTRE.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 9 "XW,TIOREC,0,(.39)9" at 400 dpi: at 900 dpi the last glyph
+!     shows a small Q tail -- TIOREQ, which line 26 defines at 232307.00,
+!     the XW's printed value field.
+!   * line 14 "T JBPRC": open O; spelled TJBPRO as p.62 and the landed
+!     decks (b6decks p.279 also reads its printed "TJBPRC" as TJBPRO).
+!   * line 29 "T UNCBT" / line 35 "T ICCSQ" / line 19 "T IODCT": open
+!     O's and worn D's; spelled TUNOBT, TIODSQ, TIODCT as p.62.
+!   * octal fields "CCCCCC.CC", "C21106", "CCC" are 0s (octal fields);
+!     statement "C.0", "0.C0" are 0.  CNOP byte "00".
+!   * line 13 "SYN(BU,08)" is printed with a leading 0 (written as
+!     printed; dds column BU,10 = 8).
+!
+! EXTERNALS.  Values from this page's binary (and matching scratch
+! p.276 / b6decks p.268 stand-ins).
+!
+! CARD SERIALS.  QE000092 .. QE000136, line N prints QE0000(91+N); none
+! skipped, none shared.
+
+TPURFT  SYN, (8)021106.0             ! not landed; XW value line 5 021106.00 (as scratch p.276)
+TUPPC   SYN, 2                       ! not landed; XW count line 5 000002
+TPPC    SYN, 21                      ! not landed; XW count lines 6-7 000025 (octal); DRZ sizes lines 10-11
+TIOC    SYN, 80                      ! not landed; DRZ size line 26 000120 (octal)
+TFRC    SYN, 50                      ! not landed; DRZ size line 44 000062 (octal)
+
+        SLC, (8)232230.0
+TPPURF  XW,TPURFT,TUPPC,$                                    ! line  5  -CONSTANT IX FOR THE NOT OVERLAP TBL
+TPPREF  XW,TPREFT,TPPC,$                                     ! line  6  -CONSTANT IX FOR THE PP REF TBL
+TPPRUN  XW,TPREFT,TPPC,TPPREF                                ! line  7  -THE NEXT JOB TO BE RUN POINTER
+        XW                                                   ! line  8  -A BLANK WORD MUST PRECEED THE PP REF
+TPREFT  XW,TIOREQ,0,(.39)9                                   ! line  9  -INITIAL ENTRY WITHIN THE PP REF TBL (Q tail at 900 dpi)
+        DRZ(BU,64),(TPPC)                                    ! line 10  -THE PP REFERENCE TABLE
+        DRZ(BU,64),(TPPC)                                    ! line 11  -THE PP REFERENCE TABLE SECOND HALF
+TCRREF  SYN(BU,18),0.0                                       ! line 12  -THE CROSS REFERENCE ADDRESS
+TUNCT   SYN(BU,08),0.28                                      ! line 13  -I/O REQUEST COUNT
+TJBPRO  SYN(BU,1),0.36                                       ! line 14  -JOB PROCESSED BIT
+TRJECT  SYN(BU,1),0.37                                       ! line 15  -JOB REJECTED BIT
+TASGNP  SYN(BU,1),0.38                                       ! line 16  -JOB ASSIGNED BIT
+TLPPEN  SYN(BU,1),0.39                                       ! line 17  -LAST ENTRY BIT
+TLREFN  SYN(BU,12),0.40                                      ! line 18  -IF GO TYPE PP - THE LARGEST REF NO.
+TIODCT  SYN(BU,12),0.52                                      ! line 19  -THE NUMBER OF IODS PER PP
+TPNAME  SYN(BU,48,6),1.0                                     ! line 20  -NAME OF PP 8 BCD-6 CHAR
+        CNOP                                                 ! line 25
+TIOREQ  DRZ(BU,64),(TIOC)                                    ! line 26  -I/O REQUEST TABLE
+        VF,0.32                                              ! line 27  -DO NOT REMOVE - MARKS LAST WORD
+TASGNI  SYN(BU,1),0.00                                       ! line 28  -I/O ASSIGNED INDICATOR
+TUNOBT  SYN(BU,1),0.01                                       ! line 29  -NOT OVERLAP BIT
+TPRINT  SYN(BU,1),0.02                                       ! line 30  -I/O REQ PRINTED TO OPERATOR BIT
+TTYPE   SYN(BU,4),0.03                                       ! line 31  -TYPE OF REQUEST
+TABSUN  SYN(BU,3),0.07                                       ! line 32  -UNIT NUMBER
+TRLSYM  SYN(BU,7),0.11                                       ! line 33  -THE SYMBOLIC CHANNEL NUMBER
+TLAST   SYN(BU,1),0.18                                       ! line 34  -LAST WORD OF THE I/O REQ TABLE
+TIODSQ  SYN(BU,9),0.19                                       ! line 35  -IOD SEQUENCE NUMBER AS RECEIVED
+TFREEL  SYN(BU,18),0.28                                      ! line 36  -THE FIRST REEL ADDRESS
+TABSCH  SYN(BU,18),0.46                                      ! line 37  -THE ABSOLUTE CHANNEL ADDRESS
+        CNOP                                                 ! line 43
+TFSTRE  DRZ(BU,64),(TFRC)                                    ! line 44  -THE FIRST REEL TABLE
+TREELN  SYN(BU,48),0.00                                      ! line 45  -A REEL NUMBER FOR A GIVEN UNIT
+
+!SYM TPPURF 232230.00
+!SYM TPPREF 232231.00
+!SYM TPPRUN 232232.00
+!SYM TPREFT 232234.00
+!SYM TCRREF 000000.00
+!SYM TUNCT  000000.34
+!SYM TJBPRO 000000.44
+!SYM TRJECT 000000.45
+!SYM TASGNP 000000.46
+!SYM TLPPEN 000000.47
+!SYM TLREFN 000000.50
+!SYM TIODCT 000000.64
+!SYM TPNAME 000001.00
+!SYM TIOREQ 232307.00
+!SYM TASGNI 000000.00
+!SYM TUNOBT 000000.01
+!SYM TPRINT 000000.02
+!SYM TTYPE  000000.03
+!SYM TABSUN 000000.07
+!SYM TRLSYM 000000.13
+!SYM TLAST  000000.22
+!SYM TIODSQ 000000.23
+!SYM TFREEL 000000.34
+!SYM TABSCH 000000.56
+!SYM TFSTRE 232430.00
+!SYM TREELN 000000.00
+!CHECK 232230.00 | 021106.00+ 000 000002 232230 | line 5 T PPURF XW,TPURFT,TUPPC,$
+!CHECK 232231.00 | 232234.00+ 000 000025 232231 | line 6 T PPREF XW,TPREFT,TPPC,$
+!CHECK 232232.00 | 232234.00+ 000 000025 232231 | line 7 T PPRUN XW,TPREFT,TPPC,TPPREF
+!CHECK 232233.00 | 000000.00+ 000 000000 000000 | line 8 XW
+!CHECK 232234.00 | 232307.00+ 000 001100 000000 | line 9 T PREFT XW,TIOREQ,0,(.39)9
+!CHECK 232427.00 | 000000.40+ | line 27 VF,0.32
+!CHECK 232427.40 | 000000.30 00 | line 43 CNOP

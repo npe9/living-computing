@@ -1,0 +1,139 @@
+! mcp_bootstrap_p277.strap -- MCP printed page 277: the DECODE program's
+! storage block (L SAVE .. L CLEAR, LASTPP), the count table L CT, and
+! the INTERNAL DECODE TABLES (L RLCT .. L ZBIT), lines 1-48.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.28, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QD000079  DIST. OF 3/01  3/01  PAGE NUMBER 277" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field prints
+! 231546 -- line 1's location word.
+!
+! THE PAGE.  48 lines; every line number prints a "*" after it.  It is
+! the body-assembly twin of the IPL assembly's printed pp.49-50
+! (decks/mcp_bootstrap_p49.strap, p50.strap): the same names, the same
+! tables, here at 2315xx-2316xx instead of 0026xx.  Line 6 and lines
+! 39-41 are remark cards ("-" in the NAME column; line 6 is a bare "-",
+! lines 39/41 rule lines, line 40 "INTERNAL DECODE TABLES").  Line 42
+! CNOP prints no location (the count table ends at 231557.70; CNOP
+! emits nothing the listing shows and line 43's DRZ is at 231560.00).
+! Located rows run contiguous 231546.00 .. 231664.00 (the end of line
+! 47's 16-word L NTPU).  "*" after the LOCATION on line 43.
+!   line 5   L CLEAR XW,LRLCT,4+32+16+16,$- prints "231560.00+ 000
+!            000104 231552": value L RLCT, count 0o104 = 68 = the
+!            4+32+16+16 words lines 43/44/46/47 reserve, refill ITSELF
+!            ($).  The "-" right after "$" is the COMMENT MARK, so the
+!            card is written "...,$" and the remark is "TO CLEAR THE
+!            INTERNAL TABLES".  (The IPL twin p.49 line 5 counts 4.)
+!   lines 8, 24  L CT DD(BU,8),1..16 and DD(BU,8),17..31: one output
+!            row per byte, 001 .. 037 octal, at 231554.00 .. 231557.60.
+!   line 43  L RLCT DRZ(BU,64),(4)- : the "-" is the comment mark;
+!            remark "THE RLSYM COUNT TABLE".  Prints 000004.00 (size).
+!   lines 44, 46, 47  DRZ sizes 000040.00, 000020.00, 000020.00.  DR/DRZ
+!            rows get no !CHECK.
+!   lines 45, 48  SYN(BU,1) rows print "BU,01 ,10"; L RLBIT 0.49 in the
+!            LOCATION column (000000.61+), L ZBIT 63 in the INTEGER
+!            column (+00000077) -- as p.50.  SYN rows get no !CHECK.
+! JOIN.  p.276 (not landed, no neighbour deck when read): its serials
+! should end QD000078.  p.265 SYNs LASTPP at (8)231553.0 off its LV
+! binary; this page's line 7 DEFINES LASTPP at 231553.00 -- an
+! independent witness of the origin.  p.278 should open at 231664.00
+! with serial QD000098.  No TAIL card appears on this page (p.262's
+! UNTAIL closed the last one seen); whether a TAIL from p.275-276 is in
+! force is not established here.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * open round glyphs in octal/statement fields read 0 ("XW,C" lines
+!     2-3 = XW,0; "000020.CC" etc.).  The binaries agree.
+!   * line 44 "(32]": the closing glyph prints squarer than line 46's
+!     ")" but is the right parenthesis; the size 000040.00 = 32.
+!   * line 24 "CD(BU,8)" = DD (worn-stem D); line 8 prints DD.
+!   * Names: blanks inside names dropped (L SAVE = LSAVE etc.), the
+!     spellings the IPL decks pp.49-50 land (LSAVE, LSAVEY, LSAVEZ,
+!     LPUT, LCLEAR, LASTPP, LCT, LRLCT, LSYMU, LRLBIT, LSYMC, LNTPU,
+!     LZBIT).  "L SYMC" / "L SYMU" print an M with a worn middle.
+!
+! EXTERNALS.
+!   TPREFT  defining card not seen (volume OCR shows only uses, all
+!           printing 232234.00); plain SYN off line 7's XW value field
+!           (24 bits, BIT-EXACT).  The IPL assembly's TPREFT is an XW
+!           at (8)3317.0 -- a different assembly.
+!
+! CARD SERIALS.  QD000079 .. QD000097: lines 1-8 QD000079-QD000086;
+! lines 8-23 (the 16-value DD) all QD000086; lines 24-38 (the 15-value
+! DD) all QD000087; lines 39-48 QD000088-QD000097.  None skipped.
+
+TPREFT  SYN, (8)232234.0             ! not landed; XW line 7 value field 232234.00, BIT-EXACT
+
+        SLC, (8)231546.00
+LSAVE   XW                                                   ! line  1  -TO SAVE LXNT INDEX
+LSAVEY  XW,0                                                 ! line  2
+LSAVEZ  XW,0                                                 ! line  3
+LPUT    XW                                                   ! line  4
+LCLEAR  XW,LRLCT,4+32+16+16,$                                ! line  5  TO CLEAR THE INTERNAL TABLES (printed "$-": comment mark)
+! line  6  -
+LASTPP  XW,TPREFT                                            ! line  7
+LCT     DD(BU,8),1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16      ! line  8  (rows lines 8-23)
+        DD(BU,8),17,18,19,20,21,22,23,24,25,26,27,28,29,30,31 ! line 24  (rows lines 24-38)
+! line 39  - --------------------------------------------------------------
+! line 40  -          INTERNAL DECODE TABLES
+! line 41  - --------------------------------------------------------------
+        CNOP                                                 ! line 42  (no location printed)
+LRLCT   DRZ(BU,64),(4)                                       ! line 43  THE RLSYM COUNT TABLE (printed "(4)-": comment mark)
+LSYMU   DRZ(BU),(32)                                         ! line 44  -SYMBOLIC UNIT TABLE
+LRLBIT  SYN(BU,1),0.49                                       ! line 45  -THE REEL ENTERED BIT
+LSYMC   DRZ(BU),(16)                                         ! line 46  -SYMBOLIC CHANNEL TABLE
+LNTPU   DRZ(BU),(16)                                         ! line 47  -NON TAPE TABLE
+LZBIT   SYN(BU,1),63                                         ! line 48  -INFINITY BIT
+
+!SYM LSAVE  231546.00
+!SYM LSAVEY 231547.00
+!SYM LSAVEZ 231550.00
+!SYM LPUT   231551.00
+!SYM LCLEAR 231552.00
+!SYM LASTPP 231553.00
+!SYM LCT    231554.00
+!SYM LRLCT  231560.00
+!SYM LSYMU  231564.00
+!SYM LRLBIT 000000.61
+!SYM LSYMC  231624.00
+!SYM LNTPU  231644.00
+! (no !SYM LZBIT: its 63 prints in the INTEGER column, +00000077, with
+!  LOCATION 000000.00; !SYM compares a bit address -- 000000.00 fails
+!  against the assembler's 63, and 000000.77 is not what the column prints.)
+!CHECK 231546.00 | 000000.00+ 000 000000 000000 | line 1 LSAVE XW
+!CHECK 231547.00 | 000000.00+ 000 000000 000000 | line 2 LSAVEY XW,0 (printed "XW,C")
+!CHECK 231550.00 | 000000.00+ 000 000000 000000 | line 3 LSAVEZ XW,0 (printed "XW,C")
+!CHECK 231551.00 | 000000.00+ 000 000000 000000 | line 4 LPUT XW
+!CHECK 231552.00 | 231560.00+ 000 000104 231552 | line 5 LCLEAR XW,LRLCT,4+32+16+16,$
+!CHECK 231553.00 | 232234.00+ 000 000000 000000 | line 7 LASTPP XW,TPREFT
+!CHECK 231554.00 | 001 | line 8 LCT DD(BU,8) value 1 | 8
+!CHECK 231554.10 | 002 | line 9 LCT DD(BU,8) value 2 | 8
+!CHECK 231554.20 | 003 | line 10 LCT DD(BU,8) value 3 | 8
+!CHECK 231554.30 | 004 | line 11 LCT DD(BU,8) value 4 | 8
+!CHECK 231554.40 | 005 | line 12 LCT DD(BU,8) value 5 | 8
+!CHECK 231554.50 | 006 | line 13 LCT DD(BU,8) value 6 | 8
+!CHECK 231554.60 | 007 | line 14 LCT DD(BU,8) value 7 | 8
+!CHECK 231554.70 | 010 | line 15 LCT DD(BU,8) value 8 | 8
+!CHECK 231555.00 | 011 | line 16 LCT DD(BU,8) value 9 | 8
+!CHECK 231555.10 | 012 | line 17 LCT DD(BU,8) value 10 | 8
+!CHECK 231555.20 | 013 | line 18 LCT DD(BU,8) value 11 | 8
+!CHECK 231555.30 | 014 | line 19 LCT DD(BU,8) value 12 | 8
+!CHECK 231555.40 | 015 | line 20 LCT DD(BU,8) value 13 | 8
+!CHECK 231555.50 | 016 | line 21 LCT DD(BU,8) value 14 | 8
+!CHECK 231555.60 | 017 | line 22 LCT DD(BU,8) value 15 | 8
+!CHECK 231555.70 | 020 | line 23 LCT DD(BU,8) value 16 | 8
+!CHECK 231556.00 | 021 | line 24 DD(BU,8) value 17 | 8
+!CHECK 231556.10 | 022 | line 25 DD(BU,8) value 18 | 8
+!CHECK 231556.20 | 023 | line 26 DD(BU,8) value 19 | 8
+!CHECK 231556.30 | 024 | line 27 DD(BU,8) value 20 | 8
+!CHECK 231556.40 | 025 | line 28 DD(BU,8) value 21 | 8
+!CHECK 231556.50 | 026 | line 29 DD(BU,8) value 22 | 8
+!CHECK 231556.60 | 027 | line 30 DD(BU,8) value 23 | 8
+!CHECK 231556.70 | 030 | line 31 DD(BU,8) value 24 | 8
+!CHECK 231557.00 | 031 | line 32 DD(BU,8) value 25 | 8
+!CHECK 231557.10 | 032 | line 33 DD(BU,8) value 26 | 8
+!CHECK 231557.20 | 033 | line 34 DD(BU,8) value 27 | 8
+!CHECK 231557.30 | 034 | line 35 DD(BU,8) value 28 | 8
+!CHECK 231557.40 | 035 | line 36 DD(BU,8) value 29 | 8
+!CHECK 231557.50 | 036 | line 37 DD(BU,8) value 30 | 8
+!CHECK 231557.60 | 037 | line 38 DD(BU,8) value 31 | 8

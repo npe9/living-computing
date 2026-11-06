@@ -1,0 +1,174 @@
+! mcp_bootstrap_p272.strap -- MCP printed page 272: the UNCODE routine's
+! card-type tests, the LIM card conversion (YLIMC .. YUCLLH) and the
+! opening of the I-O reference conversion (YIODC), lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.23, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QA000151  DIST. OF 3/01  3/01  PAGE NUMBER 272" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is 231267,
+! line 1's word.
+!
+! THE PAGE.  50 lines, every one located, every line number printing a
+! "*" after it; "*" after the LOCATION on lines 8, 23 and 39.  No remark
+! cards.  Located rows run contiguous from 231267.00 to 231327.00 (a
+! full word; next location 231330.00), then blank paper.
+! JOIN.  p.271 (not landed, no neighbour deck yet) -- contiguity with it
+! is NOT established here.  p.273 should open at 231330.00 with serial
+! QA000201.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * labels YTOPCM (line 2), YTOPCG (line 4) print "YTCPCM"/"YTCPCG"
+!     (open O); the operand YTOPCG on lines 1 and 3 prints a closed O,
+!     and line 3's B,YTOPCG+.32 = 231271.10 = line 4 + .32.  (T.O.P.
+!     card, cf. p.265 line 43 remark.)
+!   * YNORR (lines 7, 13, 16, 18, 48): printed "YNCRR" mostly; line 48
+!     prints a closed O.  The volume OCR spells the SX card "YNORR".
+!   * label line 49 printed "YICDC"/"YIODC": YIODC, its remark "-CONVERT
+!     I-O REFERENCE"; IPL assembly p.36's deck spells it YIODC.
+!   * line 21 "CTO110" = CT0110 (connective truth table digits);
+!     lines 11, 17, 23 "CMOCOO"/"CM0C00" = CM0000.
+!   * line 22 "BZRZZ,$+1.32" as printed (prints C4; line 30 BZRZ prints
+!     C0); the assembler takes it.
+!   * hex bytes printed with an open round written 0 ("C0" lines 10, 16,
+!     30 are C0 = BZAE/BZRZ opcodes, as assembled; "CA" lines 6, 12 =
+!     0A; "FC" lines 11, 23 = F0; "C4" line 42 = 04, line 22 = C4).
+!     Octal fields "CCCC" are 0.
+!
+! EXTERNALS.  Values for symbols defined on pages not landed come from
+! this page's binary; where the volume OCR (a finding aid only) shows
+! the defining card, the SYN carries the dds that card fixes:
+!   YUSB8C  VF,1.        (p.271 QA000093 by OCR)   (B,25,1)
+!   YNORR   SX           half-word instruction     (BU,32,8)
+!   YUER    TI           full-word instruction     (BU,64,8)
+!   YUCBF2  DRZ(BU,64),(13)                        (BU,64)
+!   YIDX12, YUCX12  XW                             (BU)
+!   YNLST   (AX)DD(BU,48,6),NOLIST   (ZA000783)    (BU,48,6)
+!   YNOPUN  (AX)DD(BU,48,6),NOPUNCH  (ZA000785)    (BU,48,6)
+! The IPL assembly (pp.36-39) carries all of these at other values; a
+! different assembly.
+!
+! CARD SERIALS.  QA000151 .. QA000200, line N prints QA000(150+N).  None
+! skipped.
+
+SMCP    SYN(B,25,1), (8)215000.0     ! landed p.103 "S MCP VF,SMCP"; KC line 40 215000.31
+SROOF   SYN(B,25,1), (8)215012.0     ! landed p.103 "S ROOF VF,0"; KC line 36 215012.31
+STERMI  SYN(B,25,1), (8)215020.40    ! landed p.103 "S TERMI VF,ZFINIS"; KV line 34 215020.70
+SMAXUB  SYN(B,25,1), (8)215225.0     ! landed p.116 "S MAXUB VF,0.0"; SV line 45 215225.27
+YUSB8C  SYN(B,25,1), (8)231227.0     ! not landed (VF,1. per OCR); LC line 5 231227.36, half word only
+YNORR   SYN(BU,32,8), (8)231352.40   ! not landed (SX per OCR); B line 18 231352.50, half word only
+YUER    SYN(BU,64,8), (8)231350.0    ! not landed (TI per OCR); BXH line 37 231350.33, half word only
+YUCBF2  SYN(BU,64), (8)231376.0      ! not landed (DRZ(BU,64) per OCR); L line 8 231401.00 = +3.0, BIT-EXACT
+YNLST   SYN(BU,48,6), (8)021060.61   ! not landed ((AX)DD(BU,48,6) per OCR); K line 9 021060.61, BIT-EXACT
+YNOPUN  SYN(BU,48,6), (8)021062.00   ! not landed ((AX)DD(BU,48,6) per OCR); K line 15 021062.00, BIT-EXACT
+YUCX12  SYN(BU), (8)231361.0         ! not landed (XW per OCR); LX line 19 231361.30, half word only
+YIDX12  SYN(BU), (8)231360.0         ! not landed (XW per OCR); LX line 49 231360.30, half word only
+
+        SLC, (8)231267.00
+        B,YTOPCG                                             ! line  1
+YTOPCM  LCI,$12,(2)10011                                     ! line  2
+        B,YTOPCG+.32                                         ! line  3
+YTOPCG  LCI,$12,(2)01011                                     ! line  4
+        LC,$15,YUSB8C                                        ! line  5
+        KCI,15,3                                             ! line  6
+        BZXH,YNORR                                           ! line  7
+        L(BU,48),YUCBF2+3.0                                  ! line  8
+        K(BU,48),YNLST                                       ! line  9
+        BZAE,$+1.32                                          ! line 10
+        CM0000(BU,1),$12+.44                                 ! line 11
+        KCI,15,4                                             ! line 12
+        BZXH,YNORR                                           ! line 13
+        L(BU,48),YUCBF2+4.0                                  ! line 14
+        K(BU,48),YNOPUN                                      ! line 15
+        BZAE,YNORR                                           ! line 16
+        CM0000(BU,1),$12+.45                                 ! line 17
+        B,YNORR                                              ! line 18
+YLIMC   LX,$12,YUCX12                                        ! line 19  -LIM CARD- CONVERT BCD ZEROS
+        LI(BU,6),(2)001010                                   ! line 20  -TO TRUE ZEROS
+YLL2    CT0110(V+I)(BU,6),.6($12)                            ! line 21  -IS THIS BYTE A BCD ZERO
+        BZRZZ,$+1.32                                         ! line 22  -IF NOT TEST NEXT BYTE
+        CM0000(BU,6),-.6($12)                                ! line 23  -IF SO, REPLACE BY TRUE ZERO
+        CBR,$12,YLL2                                         ! line 24
+        BZXF,YLL2                                            ! line 25
+        LF(BU,36,6),YUCBF2+2.0                               ! line 26
+        SF(BU,18,3),$12.28                                   ! line 27
+        LF(BU,36,6),YUCBF2+1.0                               ! line 28
+        SF(BU,18,3),$12                                      ! line 29
+        BZRZ,$+3.0                                           ! line 30
+        LI(BU,18),(8)41.,46                                  ! line 31
+        V+,$12,$R                                            ! line 32
+        M+(BU,18),$12.28,46                                  ! line 33
+        KV,$12,STERMI                                        ! line 34
+        BXL,YUCLLC                                           ! line 35
+        KC,$12,SROOF                                         ! line 36
+        BXH,YUER                                             ! line 37
+        LV,$11,SROOF                                         ! line 38
+        B,YUCLLH                                             ! line 39
+YUCLLC  KC,$12,SMCP                                          ! line 40
+        BXH,YUER                                             ! line 41
+        KVI,$12,33.0                                         ! line 42
+        BXL,YUER                                             ! line 43
+        LV,$11,SMCP                                          ! line 44
+YUCLLH  SV,$11,SMAXUB                                        ! line 45
+        KC,$12,$12                                           ! line 46  -IS LOWER GREATER
+        BZXH,YUER                                            ! line 47  -THAN UPPER LIMIT
+        B,YNORR                                              ! line 48  -LIMITS OK - TO NORMAL RETURN
+YIODC   LX,$12,YIDX12                                        ! line 49  -CONVERT I-O REFERENCE
+        LI(BU,6),(2)001010                                   ! line 50  -NUMBER AND ABSOLUTE EXIT
+
+!SYM YTOPCM 231267.40
+!SYM YTOPCG 231270.40
+!SYM YLIMC  231303.00
+!SYM YLL2   231304.40
+!SYM YUCLLC 231322.00
+!SYM YUCLLH 231324.40
+!SYM YIODC  231326.40
+!CHECK 231267.00 | 231270.50 00 | line 1 B,YTOPCG
+!CHECK 231267.40 | 000023.31 02 | line 2 YTOPCM LCI,$12,(2)10011
+!CHECK 231270.00 | 231271.10 00 | line 3 B,YTOPCG+.32
+!CHECK 231270.40 | 000013.31 02 | line 4 YTOPCG LCI,$12,(2)01011
+!CHECK 231271.00 | 231227.36 50 | line 5 LC,$15,YUSB8C
+!CHECK 231271.40 | 000003.37 0A | line 6 KCI,15,3 (byte prints "0A")
+!CHECK 231272.00 | 231352.73 40 | line 7 BZXH,YNORR
+!CHECK 231272.40 | 231401.00 80 060000.20 50 | line 8 L(BU,48),YUCBF2+3.0
+!CHECK 231273.40 | 021060.61 80 060000.21 10 | line 9 K(BU,48),YNLST
+!CHECK 231274.40 | 231276.36 C0 | line 10 BZAE,$+1.32
+!CHECK 231275.00 | 000034.54 80 001000.00 F0 | line 11 CM0000(BU,1),$12+.44 (printed "001000.CC FC")
+!CHECK 231276.00 | 000004.37 0A | line 12 KCI,15,4 (byte prints "CA")
+!CHECK 231276.40 | 231352.73 40 | line 13 BZXH,YNORR
+!CHECK 231277.00 | 231402.00 80 060000.20 50 | line 14 L(BU,48),YUCBF2+4.0
+!CHECK 231300.00 | 021062.00 80 060000.21 10 | line 15 K(BU,48),YNOPUN
+!CHECK 231301.00 | 231352.76 C0 | line 16 BZAE,YNORR
+!CHECK 231301.40 | 000034.55 80 001000.00 F0 | line 17 CM0000(BU,1),$12+.45
+!CHECK 231302.40 | 231352.50 00 | line 18 B,YNORR
+!CHECK 231303.00 | 231361.30 10 | line 19 YLIMC LX,$12,YUCX12
+!CHECK 231303.40 | 120000.00 80 406000.20 50 | line 20 LI(BU,6),(2)001010
+!CHECK 231304.40 | 000000.06 8C 106000.15 70 | line 21 YLL2 CT0110(V+I)(BU,6),.6($12)
+!CHECK 231305.40 | 231307.34 C4 | line 22 BZRZZ,$+1.32
+!CHECK 231306.00 | 777777.72 8C 006000.00 F0 | line 23 CM0000(BU,6),-.6($12) (printed "006000.CC FC")
+!CHECK 231307.00 | 231304.70 4C | line 24 CBR,$12,YLL2
+!CHECK 231307.40 | 231304.63 40 | line 25 BZXF,YLL2
+!CHECK 231310.00 | 231400.00 80 044600.06 70 | line 26 LF(BU,36,6),YUCBF2+2.0
+!CHECK 231311.00 | 000034.34 80 022300.12 F0 | line 27 SF(BU,18,3),$12.28
+!CHECK 231312.00 | 231377.00 80 044600.06 70 | line 28 LF(BU,36,6),YUCBF2+1.0
+!CHECK 231313.00 | 000034.00 80 022300.12 F0 | line 29 SF(BU,18,3),$12
+!CHECK 231314.00 | 231317.34 C0 | line 30 BZRZ,$+3.0
+!CHECK 231314.40 | 000041.00 80 422027.20 50 | line 31 LI(BU,18),(8)41.,46
+!CHECK 231315.40 | 000011.30 B0 | line 32 V+,$12,$R
+!CHECK 231316.00 | 000034.34 80 022027.20 90 | line 33 M+(BU,18),$12.28,46
+!CHECK 231317.00 | 215020.70 90 | line 34 KV,$12,STERMI
+!CHECK 231317.40 | 231322.32 42 | line 35 BXL,YUCLLC
+!CHECK 231320.00 | 215012.31 90 | line 36 KC,$12,SROOF
+!CHECK 231320.40 | 231350.33 42 | line 37 BXH,YUER
+!CHECK 231321.00 | 215012.26 30 | line 38 LV,$11,SROOF
+!CHECK 231321.40 | 231324.50 00 | line 39 B,YUCLLH
+!CHECK 231322.00 | 215000.31 90 | line 40 YUCLLC KC,$12,SMCP
+!CHECK 231322.40 | 231350.33 42 | line 41 BXH,YUER
+!CHECK 231323.00 | 000041.31 04 | line 42 KVI,$12,33.0 (byte prints "C4")
+!CHECK 231323.40 | 231350.32 42 | line 43 BXL,YUER
+!CHECK 231324.00 | 215000.26 30 | line 44 LV,$11,SMCP
+!CHECK 231324.40 | 215225.27 30 | line 45 YUCLLH SV,$11,SMAXUB
+!CHECK 231325.00 | 000034.31 90 | line 46 KC,$12,$12
+!CHECK 231325.40 | 231350.33 40 | line 47 BZXH,YUER
+!CHECK 231326.00 | 231352.50 00 | line 48 B,YNORR
+!CHECK 231326.40 | 231360.30 10 | line 49 YIODC LX,$12,YIDX12
+!CHECK 231327.00 | 120000.00 80 406000.20 50 | line 50 LI(BU,6),(2)001010

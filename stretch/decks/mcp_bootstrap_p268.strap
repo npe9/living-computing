@@ -1,0 +1,179 @@
+! mcp_bootstrap_p268.strap -- MCP printed page 268: JOB CONTROL PHASE 1
+! OVERLAPPED, its constants (YC1MTT .. YC1HLP) and the spool-tape status
+! routine YTST with its parameters and SYNs.  Lines 1-49.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.19, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID PE000155  DIST. OF 3/01  3/01  PAGE NUMBER 268"; the heading row's
+! LOCATION field is 231067, line 1's word.
+!
+! THE PAGE.  49 lines, every line number prints a "*" after it.  Located
+! rows run contiguous from 231067.00 to 231135.00 (a whole-word XW; next
+! location 231136.00), then five SYN rows (lines 45-49), then blank paper.
+! "*" after the LOCATION on lines 2, 7 and 31.
+!   line  1   YC1MTT DD(BU,12),(8)0401 prints 0401 (12 bits).
+!   line  2   DR(BU,33),(1) at 231067.14 prints 000000.41 (DR: no !CHECK).
+!   lines 3-4 EXT(0,18) over B,YC1A: prints 0461732 at 231067.55 = the
+!             19-bit half-word address of YC1A (230755.00, p.265 line 19).
+!   line  5   YCOMDM (AX)DD(BU,48,6),COMD    X -- no binary printed.  The
+!             datum is COMD and four blanks: measured at 900 dpi, the X
+!             starts five character pitches after the D (91 px pitch,
+!             D at 1047, X at 1498); 8 x 6 = 48 bits, and line 6 opens
+!             at 231071.00.
+!   lines 7-8 DR(N),(2) at 231072.00 prints 000002.00; YC1DB DR(N),(13)
+!             at 231074.00 prints 000015.00 (no !CHECK).
+!   lines 9-17 VF/NOP pairs; the VFs print their values with "+".
+!   lines 20-23, 42 remark cards ("-" alone on 22-23).
+!   lines 45-49 SYN rows print LOCATION with "+", "+00000000" and the
+!             dds ("BU,22 ,10" = (BU,18) in octal; "BU,01 ,10"; others
+!             "BU,100,10"): !SYM only.
+! JOIN.  p.265 ends at 230777.40; pp.266-267 are not landed, so
+! contiguity backwards is NOT established here.  p.265's stand-ins for
+! YC1MTT (231067.0), YC1JJC (231071.0), YC1DB (231074.0) and YSPDCR
+! (231121.40) are this page's labels at those addresses -- independent
+! witnesses.  p.228's YTST (231117.0) and YTSTR (231133.0) likewise.
+! p.269 should open at 231136.00 with serial PE000203.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 5 label prints "YCCMDM" (both round glyphs after Y open).  On
+!     p.267 (PDF p.18) line 4, KF(BU,48),YCOMDM, the same symbol prints
+!     with the O CLOSED at 900 dpi; Vision reads it YCOMDM there and the
+!     binary's address field is 231070.00, this row.  Spelled YCOMDM.
+!   * line 45 label "YC1JOC": the glyph after J prints closed and round
+!     (not D's straight stem) at 900 dpi -- O.
+!   * line 17 label YC1IDM: straight left stem, D.
+!   * line 11 label prints "Y C1JCM" with a blank; written YC1JCM.
+!   * octal fields "CCCCCC.CC" are 0; hex "FC"/"EC"/"DC"/"C7"/"CD" with an
+!     open round are F0/E0/D0/07/0D (line 18 "FC", lines 24/40 "EC").
+!   * line 6 VF,0 and line 43 XW,0 print "VF,C"/"XW,C": digit 0.
+!
+! EXTERNALS.  Values for symbols defined on pages not landed come from
+! this page's binary.  TPREFT/TPPC/TPPREF: the IPL assembly (pp.15-98)
+! carries other values (TPREFT (8)3317.0, TPPC 20); the body's are line
+! 44's XW: 232234.00, count 000025 (octal) = 21, refill 232231.
+! YTRT: line 49 WREJRT SYN,YTRT+.32 prints 020376.00, so YTRT = 020375.40.
+!
+! CARD SERIALS.  PE000155 .. PE000202; lines 3-4 (the EXT pair) share
+! PE000157, so line N prints PE000(154+N) through line 3 and
+! PE000(153+N) from line 4.  None skipped.
+
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label (as p.128/p.265)
+SJ1FUL  SYN(BU,1), SCOMRG.16         ! landed p.103 line 25; CM1111 line 18 215001.20
+YC1A    SYN(BU,64,8), (8)230755.0    ! landed p.265 line 19 (BBZ, full word); EXT/B line 4 0461732
+YTCEM   SYN, (8)020636.0             ! not landed; VF line 9 020636.00+, BIT-EXACT
+YEMJC   SYN, (8)020632.0             ! not landed; VF line 11 020632.00+, BIT-EXACT
+YLCEM   SYN, (8)020646.0             ! not landed; VF line 13 020646.00+, BIT-EXACT
+YICEM   SYN, (8)020656.0             ! not landed; VF line 17 020656.00+, BIT-EXACT
+YC1C    SYN, (8)231062.0             ! as p.265 (not landed); B line 19 231062.10, half word only
+REJJOB  SYN, (8)230364.0             ! as p.241-p.265 (not landed); L line 25 REJJOB+.16 = 230364.20, BIT-EXACT
+VT2     SYN, $6                      ! landed p.213 line 29
+TPREFT  SYN, (8)232234.0             ! not landed in the body; XW line 44 value 232234.00
+TPPC    SYN, 21                      ! not landed in the body; XW line 44 count 000025 (octal)
+TPPREF  SYN, (8)232231.0             ! not landed in the body; XW line 44 refill 232231
+YTRT    SYN, (8)020375.40            ! not landed; line 49 WREJRT SYN,YTRT+.32 = 020376.00
+
+        SLC, (8)231067.00
+YC1MTT  DD(BU,12),(8)0401                                    ! line  1
+        DR(BU,33),(1)                                        ! line  2
+        EXT(0,18)                                            ! line  3
+        B,YC1A                                               ! line  4
+YCOMDM  (AX)DD(BU,48,6),COMD    X                            ! line  5  printed "YCCMDM"
+YC1JJC  VF,0                                                 ! line  6
+        DR(N),(2)                                            ! line  7
+YC1DB   DR(N),(13)                                           ! line  8  -DECODE BUFFER
+YC1EM   VF,YTCEM                                             ! line  9
+        NOP                                                  ! line 10
+YC1JCM  VF,YEMJC                                             ! line 11  printed "Y C1JCM"
+        NOP                                                  ! line 12
+        VF,YLCEM                                             ! line 13
+        NOP                                                  ! line 14
+        NOP                                                  ! line 15
+        NOP                                                  ! line 16
+YC1IDM  VF,YICEM                                             ! line 17
+YC1HLP  CM1111,SJ1FUL                                        ! line 18
+        B,YC1C                                               ! line 19
+! line 20  - THE FOLLOWING IS A ROUTINE TO EVALUATE THE STATUS OF A SPOOL TAPE
+! line 21  - AT TAPE-SWITCH TIME.
+! line 22  -
+! line 23  -
+YTST    SWAPI,2,YJCX,YC1JCX                                  ! line 24
+        L(BU,1),REJJOB+.16                                   ! line 25
+        LC,YJCX,VT2                                          ! line 26
+YSPDCR  C-I,YJCX,0                                           ! line 27  -SUBTRACT REJECT COUNT
+        BXCZ,YTCU                                            ! line 28
+YRTL    CM0101,YTRB(YPPRX)                                   ! line 29
+        V+ICR,YPPRX,2.0                                      ! line 30
+        CB,YJCX,YRTL                                         ! line 31
+        BZB,REJJOB+.17,YHSKP                                 ! line 32
+        V-I,YJCX,1.0                                         ! line 33
+        CM1111,YTRB(YPPRX)                                   ! line 34
+        V+ICR,YPPRX,2.0                                      ! line 35
+YHSKP   SVA,VT2,$+.32                                        ! line 36
+        V-I,YJCX,$                                           ! line 37
+YTCU    SC,YJCX,REJJOB                                       ! line 38
+        CM0000(BU,18),YSPDCR                                 ! line 39
+        SWAPI,2,YJCX,YC1JCX                                  ! line 40
+YTSTR   B,(8)400000.0                                        ! line 41
+! line 42  - PARAMETERS FOR ABOVE ROUTINE
+YC1JCX  XW,0                                                 ! line 43  -FOR JOB COUNTER
+        XW,TPREFT,TPPC,TPPREF                                ! line 44  -FOR PPREF TABLE INDEX
+YC1JOC  SYN(BU,18),YC1JCX                                    ! line 45
+YJCX    SYN,$13                                              ! line 46
+YPPRX   SYN,YJCX+1.0                                         ! line 47
+YTRB    SYN(BU,1),1.49                                       ! line 48
+WREJRT  SYN,YTRT+.32                                         ! line 49
+
+!SYM YC1MTT 231067.00
+!SYM YCOMDM 231070.00
+!SYM YC1JJC 231071.00
+!SYM YC1DB  231074.00
+!SYM YC1EM  231111.00
+!SYM YC1JCM 231112.00
+!SYM YC1IDM 231115.00
+!SYM YC1HLP 231115.40
+!SYM YTST   231117.00
+!SYM YSPDCR 231121.40
+!SYM YRTL   231122.40
+!SYM YHSKP  231127.40
+!SYM YTCU   231130.40
+!SYM YTSTR  231133.00
+!SYM YC1JCX 231134.00
+!SYM YC1JOC 231134.00
+!SYM YJCX   000035.00
+!SYM YPPRX  000036.00
+!SYM YTRB   000001.61
+!SYM WREJRT 020376.00
+!CHECK 231067.00 | 0401 | line 1 YC1MTT DD(BU,12),(8)0401 | 12
+!CHECK 231067.55 | 0461732 | line 4 B,YC1A under line 3's EXT(0,18) -- 19 bits, YC1A's half-word address | 19
+!CHECK 231071.00 | 000000.00+ | line 6 YC1JJC VF,0 (printed "VF,C")
+!CHECK 231111.00 | 020636.00+ | line 9 YC1EM VF,YTCEM
+!CHECK 231111.40 | 000000.30 00 | line 10 NOP
+!CHECK 231112.00 | 020632.00+ | line 11 YC1JCM VF,YEMJC
+!CHECK 231112.40 | 000000.30 00 | line 12 NOP
+!CHECK 231113.00 | 020646.00+ | line 13 VF,YLCEM
+!CHECK 231113.40 | 000000.30 00 | line 14 NOP
+!CHECK 231114.00 | 000000.30 00 | line 15 NOP
+!CHECK 231114.40 | 000000.30 00 | line 16 NOP
+!CHECK 231115.00 | 020656.00+ | line 17 YC1IDM VF,YICEM
+!CHECK 231115.40 | 215001.20 80 001000.36 F0 | line 18 YC1HLP CM1111,SJ1FUL (last byte prints "FC")
+!CHECK 231116.40 | 231062.10 00 | line 19 B,YC1C
+!CHECK 231117.00 | 000035.00 80 231134.04 E0 | line 24 YTST SWAPI,2,YJCX,YC1JCX (byte prints "EC")
+!CHECK 231120.00 | 230364.20 80 001000.20 50 | line 25 L(BU,1),REJJOB+.16
+!CHECK 231121.00 | 000026.32 50 | line 26 LC,YJCX,VT2
+!CHECK 231121.40 | 000000.33 08 | line 27 YSPDCR C-I,YJCX,0
+!CHECK 231122.00 | 231130.70 42 | line 28 BXCZ,YTCU
+!CHECK 231122.40 | 000001.61 8E 001000.12 F0 | line 29 YRTL CM0101,YTRB(YPPRX)
+!CHECK 231123.40 | 000002.35 07 | line 30 V+ICR,YPPRX,2.0
+!CHECK 231124.00 | 231122.72 48 | line 31 CB,YJCX,YRTL (a "*" after the location)
+!CHECK 231124.40 | 230364.21 80 231127.74 00 | line 32 BZB,REJJOB+.17,YHSKP
+!CHECK 231125.40 | 000001.33 0D | line 33 V-I,YJCX,1.0
+!CHECK 231126.00 | 000001.61 8E 001000.36 F0 | line 34 CM1111,YTRB(YPPRX)
+!CHECK 231127.00 | 000002.35 07 | line 35 V+ICR,YPPRX,2.0
+!CHECK 231127.40 | 231130.15 D0 | line 36 YHSKP SVA,VT2,$+.32
+!CHECK 231130.00 | 231130.33 0D | line 37 V-I,YJCX,$
+!CHECK 231130.40 | 230364.33 50 | line 38 YTCU SC,YJCX,REJJOB
+!CHECK 231131.00 | 231121.40 80 022000.00 F0 | line 39 CM0000(BU,18),YSPDCR
+!CHECK 231132.00 | 000035.00 80 231134.04 E0 | line 40 SWAPI,2,YJCX,YC1JCX
+!CHECK 231133.00 | 400000.10 00 | line 41 YTSTR B,(8)400000.0
+!CHECK 231134.00 | 000000.00+ 000 000000 000000 | line 43 YC1JCX XW,0 (printed "XW,C")
+!CHECK 231135.00 | 232234.00+ 000 000025 232231 | line 44 XW,TPREFT,TPPC,TPPREF

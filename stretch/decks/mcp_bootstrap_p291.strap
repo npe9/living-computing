@@ -1,0 +1,187 @@
+! mcp_bootstrap_p291.strap -- MCP printed page 291: the multi-unit
+! count table SYNs (T CHADD, T CHCNT), the LOADER's data block (ABSSID
+! .. ASEQID: card-type indicators SYN'd onto ALL, VF field pointers,
+! counters and bounds), and the RESUME LOAD pseudo-op's opening (YRLTT
+! .. B,YMPFCH), lines 1-51.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.42, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QE000194  DIST. OF 3/01  3/01  PAGE NUMBER 291" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is BLANK
+! (line 1 is a remark card).
+!
+! THE PAGE.  51 lines; every line number prints a "*" after it.
+!   lines  1-5   remark cards (line 3 "SYN CARDS FOR THE MULTI-UNIT
+!                COUNT TABLE"; line 5 prints a stray "." on the paper).
+!   lines  6-7   T CHADD SYN(BU,18),0.0 / T CHCNT SYN(BU,4),0.20, as
+!                IPL p.64 lines 45-46; print 000000.00+ / 000000.24+,
+!                BINARY +00000000, dds BU,22,10 / BU,04,10.
+!   lines  8-39  the loader's data: located rows contiguous from
+!                232542.00 (line 8) to 232554.54 (line 39's 12-bit DRZ
+!                ends there).  SYN rows print their value with "+" and a
+!                dds; ALL's bits print N,100,04 (the (N) DRZ's dds, length
+!                64, byte 4).  ALDBF SYN,YBCBU prints 231462.00+ BU,100,10.
+!   lines 40-42  remark banner "******* RESUME LOAD PSEUDO OP. ****".
+!   line  43     SLC,$ prints 232554.54 *.
+!   line  44     CNOP prints no location (next row is 232555.00).
+!   lines 45-49  YRLTT DD(BU,6),(8)04 prints "04" (6 bits); DRZ(BU,39),
+!                (1) at 232555.06 prints 000000.47 (39 bits, the size);
+!                EXT(0,18) prints no location; B,YRESLD at 232555.55
+!                prints 0465340 = the 19-bit half-word address of YRESLD
+!                (232560.00); DR(BU),(2) at 232556.00 prints 000002.00.
+!                The same shape as p.265 lines 5-9 (YJC1TT).
+!   lines 50-51  YRESLD LX,$1,YXWRLD; B,YMPFCH.  Last located row
+!                232560.40 (a half word; next location 232561.00), then
+!                blank paper.
+! "*" after the LOCATION on lines 9, 32, 43, 46 and 49.
+! DR/DRZ/SYN rows get no !CHECK (they print a size or a value, not
+! code); their labels are !SYM-checked.
+!
+! JOIN.  p.290 (scratch neighbour, not landed) ends with T CHCUC
+! DRZ(BU,32),(32) at 232522.00, next location 232542.00 -- this page's
+! line 8: contiguous (the SYN rows 6-7 take no storage).  p.121's landed deck SYNs YRLTT at
+! (8)232555.00 and p.271 (staged) SYNs ABSSID at (8)232542.0, which
+! lines 45 and 8 define there -- independent witnesses of the
+! placement.  p.292 should open at 232561.00 with serial QF000044.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 13 label prints "ADIGNI" (open round) = AOIGNI: C22-6728
+!     "(i.e., AOIGNI=1)" -IGNORE CORRECTIONS; the use on PDF p.78 reads
+!     BB,AOIGNI.
+!   * line 16 label prints "ACCRDI" = ADCRDI: the uses on PDF p.78
+!     (BB,ADCRDI,$+3.) and PDF p.80 (CM1111(BU,1),ADCRDI) print the
+!     second glyph with a straight D stem at 900 dpi; C22-6728 names the
+!     D-card routine ADCARD beside APCARD/ATCARD (APCRDI, ATCRDI here).
+!   * lines 23-24 labels print "ACPT12" / "ACPT24" = AOPT12 / AOPT24:
+!     the uses on PDF p.79 (V+,$1,AOPT12 three times) and PDF p.80
+!     (V+,1,AOPT24) print the second glyph CLOSED, rounded both sides
+!     (no D stem).  LETTER O vs DIGIT 0 IS NOT SETTLED by ink; the
+!     volume OCR reads A0PT12 twice, AOPT24 once.  Written letter O.
+!   * line 27 "ARCDCT" (third glyph open): C22-6728 "ARCDCT - loader
+!     card counter for BSS jobs".
+!   * line 32 "AACD" = AADD: volume OCR of the uses reads AADD five
+!     times; comment "-USED IN ADCTAL ROUTINE" = AOCTAL (C22-6728).
+!   * lines 34-35 "ALCCTR"/"ALCTC" = ALDCTR / ALDTC: C22-6728 (ALDCTR x5,
+!     ALDTC x3); line 35's operand prints ALDCTR the same way.
+!   * line 36 "ALCWWD" = ALOWWD: comment "-PROGRAM LOW BOUND"; the
+!     volume OCR of a later use reads KV,$1,ALOWWD.
+!   * line 6 label "T CHADC" = TCHADD (landed p.64/p.73); "C.C" = 0.0.
+!   * lines 27-28 "VF,C" = VF,0 (prints 000000.00+).
+!   * line 51 byte prints "CO" = 00 (B,; the octal fields of this page
+!     print 0 open throughout); assembles 231141.10 00.
+!   * line 8 "(A*)DD(BU,48,6),BSS     *": measured at 900 dpi, the "*"
+!     stands six cells after the last S -- BSS plus five blanks fills
+!     the eight 6-bit characters.  Line 30's data is eight ")"s.
+!
+! EXTERNALS.  YXWRLD, YMPFCH (p.269) and YBCBU (p.274) are staged, not
+! landed; values from those decks and this page's binary.
+!
+! CARD SERIALS.  QE000194 .. QE000200 on lines 1-7, then a NEW DECK:
+! QF000001 on line 8 .. QF000040 on line 47; lines 47-48 (the EXT pair)
+! share QF000040; lines 49-51 QF000041-QF000043.  None skipped.
+
+YXWRLD  SYN(BU), (8)231163.0         ! p.269 line 41 XW (staged); LX line 50 231163.02, half word only
+YMPFCH  SYN(BU,32,8), (8)231141.0    ! p.269 line 14 SC label (staged); B line 51 231141.10, half word only
+YBCBU   SYN(BU), (8)231462.0         ! p.274 line 19 DR(BU),(15) (staged); ALDBF line 33 prints 231462.00+ BU,100,10, BIT-EXACT
+
+! line  1  -
+! line  2  - -------------------------------------------------------
+! line  3  -                SYN CARDS FOR THE MULTI-UNIT COUNT TABLE
+! line  4  - -------------------------------------------------------
+! line  5  -
+TCHADD  SYN(BU,18),0.0                                       ! line  6  -MULTI-UNIT CHAN ADDRESS
+TCHCNT  SYN(BU,4),0.20                                       ! line  7  -NUMBER OF UNITS ON CHANNEL
+        SLC, (8)232542.00
+ABSSID  (A*)DD(BU,48,6),BSS     *                            ! line  8
+ALL     DRZ(N),1                                             ! line  9
+ATCRDI  SYN,ALL.1                                            ! line 10  -T CARD INDICATOR
+ASTCRD  SYN,ALL.2                                            ! line 11  -SUPER T CARD INDICATOR
+AHFWDI  SYN,ALL.4                                            ! line 12  -PARTIAL WORD INDICATOR
+AOIGNI  SYN,ALL.5                                            ! line 13  -IGNORE CORRECTIONS ON CARD
+APCRDI  SYN,ALL.6                                            ! line 14  -P CARD INDICATOR
+ASETZI  SYN,ALL.7                                            ! line 15  -ZEROING INDICATOR
+ADCRDI  SYN,ALL.8                                            ! line 16
+AFPCI   SYN,ALL.9                                            ! line 17  -FORTRAN PROGRAM CARD INDICATOR
+ARBCDI  SYN,ALL.10                                           ! line 18  -BINARY DATA CARD INDICATOR
+ARBCRI  SYN,ALL.11                                           ! line 19  -RELOCATE RIGHTMOST 18 BITS AS COMMON
+ANUBIT  SYN,ALL.15                                           ! line 20
+APT1    VF,.1                                                ! line 21
+APT3    VF,.3                                                ! line 22
+AOPT12  VF,.12                                               ! line 23
+AOPT24  VF,.24                                               ! line 24
+APT168  VF,2.40                                              ! line 25
+ABT31   VF,0.31                                              ! line 26
+ARCDCT  VF,0                                                 ! line 27
+ACNT    VF,0                                                 ! line 28  -USED IN ASETZ TO SAVE NO. WDS. TO BE LOADED
+ALB     (A*)DD(BU,12,6),LB*                                  ! line 29
+ATWSTA  (A*)DD(BU,48,6),))))))))*                            ! line 30
+ARELOB  DRZ(BU,7),1                                          ! line 31
+AADD    DRZ(N),1                                             ! line 32  -USED IN AOCTAL ROUTINE
+ALDBF   SYN,YBCBU                                            ! line 33
+ALDCTR  DRZ(N),1                                             ! line 34  -BINARY LOCATION COUNTER
+ALDTC   SYN,ALDCTR.32                                        ! line 35  -OCTAL LOCATION COUNTER
+ALOWWD  DRZ(BU,32),1                                         ! line 36  -PROGRAM LOW BOUND
+AHGHWD  DRZ(BU,32),1                                         ! line 37  -PROGRAM HIGH BOUND
+AHIWD   DRZ(BU,32),1                                         ! line 38  -HIGHEST LOC.OCCUPIED BY PROGRAM
+ASEQID  DRZ(BU,12),1                                         ! line 39  -SEQUENCE COUNTER
+! line 40  - ***********************************************************
+! line 41  - *******  RESUME LOAD PSEUDO OP.  ***************************
+! line 42  - ***********************************************************
+        SLC,$                                                ! line 43
+        CNOP                                                 ! line 44  (no location printed)
+YRLTT   DD(BU,6),(8)04                                       ! line 45
+        DRZ(BU,39),(1)                                       ! line 46
+        EXT(0,18)                                            ! line 47
+        B,YRESLD                                             ! line 48
+        DR(BU),(2)                                           ! line 49
+YRESLD  LX,$1,YXWRLD                                         ! line 50
+        B,YMPFCH                                             ! line 51
+
+!SYM TCHADD 000000.00
+!SYM TCHCNT 000000.24
+!SYM ABSSID 232542.00
+!SYM ALL    232543.00
+!SYM ATCRDI 232543.01
+!SYM ASTCRD 232543.02
+!SYM AHFWDI 232543.04
+!SYM AOIGNI 232543.05
+!SYM APCRDI 232543.06
+!SYM ASETZI 232543.07
+!SYM ADCRDI 232543.10
+!SYM AFPCI  232543.11
+!SYM ARBCDI 232543.12
+!SYM ARBCRI 232543.13
+!SYM ANUBIT 232543.17
+!SYM APT1   232544.00
+!SYM APT3   232544.40
+!SYM AOPT12 232545.00
+!SYM AOPT24 232545.40
+!SYM APT168 232546.00
+!SYM ABT31  232546.40
+!SYM ARCDCT 232547.00
+!SYM ACNT   232547.40
+!SYM ALB    232547.71
+!SYM ATWSTA 232550.05
+!SYM ARELOB 232550.65
+!SYM AADD   232551.00
+!SYM ALDBF  231462.00
+!SYM ALDCTR 232552.00
+!SYM ALDTC  232552.40
+!SYM ALOWWD 232553.00
+!SYM AHGHWD 232553.40
+!SYM AHIWD  232554.00
+!SYM ASEQID 232554.40
+!SYM YRLTT  232555.00
+!SYM YRESLD 232560.00
+!CHECK 232544.00 | 000000.01+ | line 21 APT1 VF,.1
+!CHECK 232544.40 | 000000.03+ | line 22 APT3 VF,.3
+!CHECK 232545.00 | 000000.14+ | line 23 AOPT12 VF,.12 (label printed "ACPT12")
+!CHECK 232545.40 | 000000.30+ | line 24 AOPT24 VF,.24 (label printed "ACPT24")
+!CHECK 232546.00 | 000002.50+ | line 25 APT168 VF,2.40
+!CHECK 232546.40 | 000000.37+ | line 26 ABT31 VF,0.31
+!CHECK 232547.00 | 000000.00+ | line 27 ARCDCT VF,0 (printed "VF,C")
+!CHECK 232547.40 | 000000.00+ | line 28 ACNT VF,0 (printed "VF,C")
+!CHECK 232555.00 | 04 | line 45 YRLTT DD(BU,6),(8)04 | 6
+!CHECK 232555.55 | 0465340 | line 48 B,YRESLD under line 47's EXT(0,18) -- 19 bits, YRESLD's half-word address | 19
+!CHECK 232560.00 | 231163.02 10 | line 50 YRESLD LX,$1,YXWRLD
+!CHECK 232560.40 | 231141.10 00 | line 51 B,YMPFCH (byte prints "CO")

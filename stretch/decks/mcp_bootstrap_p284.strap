@@ -1,0 +1,195 @@
+! mcp_bootstrap_p284.strap -- MCP printed page 284: the end of the
+! IOREQ search (LVI,LWORKX,TUIORQ .. LFIN3 .. ZLDCD1), the NORMAL RETURN
+! ROUTINE (LNORM) and the ERROR RETURN ROUTINE (LERROR .. LERR4 ..
+! B,1.32($15)), lines 1-51.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.35, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QD000416  DIST. OF 3/01  3/01  PAGE NUMBER 284" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is 232166,
+! line 1's word.
+!
+! THE PAGE.  51 lines, every line number prints a "*" after it.  Lines
+! 13-15 and 18-20 are remark cards (only a "-" in the NAME column; line
+! 14 "NORMAL RETURN ROUTINE", line 19 "ERROR RETURN ROUTINE", the others
+! rule lines).  Located rows run contiguous from 232166.00 (line 1) to
+! 232224.00 (line 51, a half word; next location 232224.40), then blank
+! paper.  "*" after the LOCATION on lines 7, 29 and 47.
+!
+! THIS IS THE BODY'S RE-ASSEMBLY OF THE IPL'S DISPATCHER RETURNS (landed
+! p.57 lines 28-32 and p.58 print LSEARG, LSKIP, LFIN3, LNORM, LERROR,
+! LERRA, LERR1-4 at IPL addresses).  That is a DIFFERENT ASSEMBLY; the
+! values here are this page's.  The statement sequence differs from the
+! IPL's: lines 6-12 (BB,LOVBIT,ZLDCD1 / SX / ZLDCD1 V+ICR / CM1111 /
+! BZBZ,LOVBIT,LNORM / SWAPI,3,LNOSAV,LXPP / B,LNORM) and lines 42-48
+! (the same pattern with ZLDCD2 / LERR4) are the overlap-mode code, and
+! are written as printed.  Spellings follow pp.57-58 and b6 pp.276-279.
+!
+! JOIN.  p.283 (no scratch deck when this was read) should end with the
+! word before 232166.00.  p.285 (scratch deck) opens at 232224.40 with
+! serial QE000001: CONTIGUOUS with this page's end.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 1 "TUIORG" = TUIORQ (Q's tail worn): p.57 and b6 p.276 spell
+!     TUIORQ; line 30 "TICREG" = TIOREQ (open O, worn Q; b6 p.276,
+!     scratch p.288's DRZ).
+!   * line 6 ",Z LDCC1" = ZLDCD1: the label on line 8 prints "Z LDCD1"
+!     with the D stem at 900 dpi; the binary target 232172.74 is line 8's
+!     232172.40, the same encoding as line 42's ZLDCD2 (232216.74 for
+!     232216.40).  Lines 42/44 print LDCD2 with the stem.
+!   * lines 6 and 42 opcode "BB" (the 900 dpi crop thresholds the second
+!     B to an R; 400 dpi shows B; byte 80/02 as p.279's BB).
+!   * line 5 "CMOCOO" and line 40 "CMOCOO" = CM0000 (round glyphs in a
+!     mnemonic of 0/1 digits); "LWCRKX", "LIODX", "LCVBIT" open O's.
+!   * line 12 binary "232176.50 00": a pencil stroke crosses the "1";
+!     B,LNORM to 232176.40 assembles to it.
+!   * line 48 hex "EC" read as E0: line 11 prints the same statement
+!     SWAPI,3,LNOSAV,LXPP with "E0"; an open round glyph on this drum is
+!     an ordinary 0 (workflow).  The row's !CHECK is E0.
+!   * octal fields "CCCCCC.CC", statement "C.C", "2.C" are 0; hex "CO",
+!     "FO", "EO", "OA", "OF" = C0, F0, E0, 0A, 0F by numeric context;
+!     binaries agree.
+!
+! EXTERNALS.  Index registers as pp.53-58 SYN them; storage symbols with
+! the dds of their defining card (b6 pp.276-278 or scratch p.288) and
+! that card's body address; others from this page's binary (half word
+! only unless noted).  Stand-ins are checked by the merge.
+!
+! CARD SERIALS.  QD000416 .. QD000466, line N prints QD000(415+N); none
+! skipped.
+
+LIODX   SYN, $3                      ! as pp.53-58; CB+ line 2 .47 = $3
+LXPP    SYN, $4                      ! as pp.53-58; byte 84 line 5
+LXIO    SYN, $5                      ! as pp.53-58; LX line 36 .12
+LXFR    SYN, $6                      ! as pp.52-58; LX line 37 .14
+LXNT    SYN, $9                      ! as pp.53-58; SC line 32 000031.23
+LWORKX  SYN, $10                     ! as pp.53-58; byte 8A line 29
+TUIORQ  SYN, (8)021111.0             ! as b6 p.276 (not landed); LVI line 1 021111.25
+LSEARD  SYN(BU,64,8), (8)232154.40   ! IPL p.57 BZB label, not landed in the body; CB+ line 2 232154.47, BIT-EXACT
+LSEARA  SYN(BU,32,8), (8)232143.0    ! IPL p.56 LC label, not landed in the body; CB line 3 232143.24, half word only
+LPUT    SYN(BU), (8)231551.0         ! b6 p.277 XW 231551.00; LX line 4 231551.22
+TASGNP  SYN(BU,1), 0.38              ! landed p.62 / p.265; CM0000 line 5 000000.46
+LOVBIT  SYN(BU,1), (8)231545.62      ! b6 p.276 DD(BU,1) 231545.62; BB line 6, BIT-EXACT
+LASTPP  SYN(BU), (8)231553.0         ! b6 p.277 XW 231553.00; SX line 7 231553.11
+TLPPEN  SYN(BU,1), 0.39              ! landed p.53/p.62; CM1111 line 9 000000.47
+LNOSAV  SYN(BU,64), (8)231664.0      ! b6 p.278 DRZ(BU,64),(3) 231664.00; SWAPI line 11, BIT-EXACT
+LTY     SYN(BU), (8)231535.0         ! b6 p.276 XW 231535.00; SWAPI line 16 231535.00, BIT-EXACT
+LFINB   SYN(BU,1), (8)231545.51      ! b6 p.276 DD(BU,1) 231545.51; CM1111 line 21, BIT-EXACT
+LSAVE   SYN(BU), (8)231546.0         ! b6 p.277 XW 231546.00; SX line 22 231546.23
+TUNCT   SYN(BU,8), 0.28              ! landed p.54 form; L line 25 000000.34
+TLAST   SYN(BU,1), 0.18              ! landed p.57 form; BZB line 29 000000.22
+TIOREQ  SYN(BU,64), (8)232307.0      ! scratch p.288 DRZ(BU,64) 232307.00; LVI line 30 232307.25
+LSAVEY  SYN(BU), (8)231547.0         ! b6 p.277 XW 231547.00; LX line 36 231547.12
+LSAVEZ  SYN(BU), (8)231550.0         ! b6 p.277 XW 231550.00; LX line 37 231550.14
+TRJECT  SYN(BU,1), 0.37              ! landed p.62 / p.265; CM1111 line 39 000000.45
+
+        SLC, (8)232166.00
+        LVI,LWORKX,TUIORQ                                    ! line  1  -IF NOT OVERLAP MOAD  (printed "TUIORG")
+LSEARG  CB+,LIODX,LSEARD                                     ! line  2  -   LOOP BACK ON NON-ZERO CF.
+        CB,LWORKX,LSEARA                                     ! line  3  -END OF SWAP AND SORT.
+LSKIP   LX,LXNT,LPUT                                         ! line  4  -RESTORE LXNT INDEX.
+LFIN3   CM0000(BU,2),TASGNP(LXPP)                            ! line  5  -RESET BOTH ASSIGN AND LAST PP BITS
+        BB,LOVBIT,ZLDCD1                                     ! line  6  (printed "Z LDCC1")
+        SX,LXPP,LASTPP                                       ! line  7  -SAVE ADR. OF LAST PP ENTERED
+ZLDCD1  V+ICR,LXPP,2.0                                       ! line  8  -STEP PP REF INDEX
+        CM1111(BU,1),TLPPEN(LXPP)                            ! line  9  -TURN ON LPPEN BIT
+        BZBZ,LOVBIT,LNORM                                    ! line 10  -IF OVERLAP MODE
+        SWAPI,3,LNOSAV,LXPP                                  ! line 11  -RESET INDEXES TO OVERLAP MODE
+        B,LNORM                                              ! line 12  -NORMAL RETURN.
+! line 13  - ----------------------------------------
+! line 14  -           NORMAL RETURN ROUTINE
+! line 15  - ----------------------------------------
+LNORM   SWAPI,8,LTY,LIODX                                    ! line 16  -SWAP 8 INDICES.
+        B,2.0($15)                                           ! line 17  -DISPATCHER NORMAL RETURN.
+! line 18  - ----------------------------------------
+! line 19  -           ERROR RETURN ROUTINE
+! line 20  - ----------------------------------------
+LERROR  CM1111(BU,1),LFINB,0.0                               ! line 21  -SET FINAL BIT TO 1.
+        SX,LXNT,LSAVE                                        ! line 22  -SAVE INDEX.
+        LX,LWORKX,0.0(LXPP)                                  ! line 23  -SET IOREQ AND FREEL SLOTS FOR  H
+        BXVZZ,LERR2                                          ! line 24  -     THIS PROGRAM TO ZERO.
+        L,TUNCT(LXPP),46                                     ! line 25
+        BRZZ,LERR2                                           ! line 26
+        LC,LWORKX,$R                                         ! line 27
+LERRA   LX,LXNT,0.0(LWORKX)                                  ! line 28
+        BZB,TLAST(LWORKX),LERR3                              ! line 29  -END OF IOREQ TABLE
+        LVI,LWORKX,TIOREQ                                    ! line 30  (printed "TICREG")
+LERR3   BXCZZ,LERR1                                          ! line 31
+        SC,LXNT,LXNT                                         ! line 32
+        Z,0.0(LXNT)                                          ! line 33  -ZERO FREEL SLOT.
+LERR1   Z,0.0(LWORKX)                                        ! line 34  -ZERO IOREQ SLOT.
+        CB+,LWORKX,LERRA                                     ! line 35  -BACK ON NON-ZERO COUNT.
+        LX,LXIO,LSAVEY                                       ! line 36  -RESET THE IOREQ INDEX
+        LX,LXFR,LSAVEZ                                       ! line 37  -RELOAD THE FREEL TABLE INDEX
+LERR2   Z,0.0(LXPP)                                          ! line 38  -ZERO PPREF SLOT.
+        CM1111(BU,1),TRJECT(LXPP)                            ! line 39  -SET THE REJECT BIT
+        CM0000,TLPPEN(LXPP)                                  ! line 40  -RESET THIS LPPEN BIT
+        SC,15,$R                                             ! line 41  -ERROR FLAG TO ACC
+        BB,LOVBIT,ZLDCD2                                     ! line 42
+        SX,LXPP,LASTPP                                       ! line 43  -SAVE ADR. OF LAST PP ENTERED
+ZLDCD2  V+ICR,LXPP,2.0                                       ! line 44  -STEP PP REF INDEX
+        CM1111,TLPPEN(LXPP)                                  ! line 45  -SET THE NEXT LPPEN BIT
+        LX,LXNT,LSAVE                                        ! line 46  -RESTORE INDEX.
+        BZBZ,LOVBIT,LERR4                                    ! line 47  -IF OVERLAP MODE
+        SWAPI,3,LNOSAV,LXPP                                  ! line 48  -RESET INDEXES TO OVERLAP MODE
+LERR4   SWAPI,8,LTY,LIODX                                    ! line 49  -SWAP 8 INDEXES
+        SC,$15,1.0($15)                                      ! line 50  -SAVE THE ERROR FLAG
+        B,1.32($15)                                          ! line 51  -DISPATCHER ERROR RETURN.
+
+!SYM LSEARG 232166.40
+!SYM LSKIP  232167.40
+!SYM LFIN3  232170.00
+!SYM ZLDCD1 232172.40
+!SYM LNORM  232176.40
+!SYM LERROR 232200.00
+!SYM LERRA  232204.40
+!SYM LERR3  232206.40
+!SYM LERR1  232210.00
+!SYM LERR2  232212.00
+!SYM ZLDCD2 232216.40
+!SYM LERR4  232222.40
+!CHECK 232166.00 | 021111.25 01 | line 1 LVI,LWORKX,TUIORQ (printed "TUIORG")
+!CHECK 232166.40 | 232154.47 48 | line 2 LSEARG CB+,LIODX,LSEARD
+!CHECK 232167.00 | 232143.24 48 | line 3 CB,LWORKX,LSEARA
+!CHECK 232167.40 | 231551.22 10 | line 4 LSKIP LX,LXNT,LPUT
+!CHECK 232170.00 | 000000.46 84 002000.00 F0 | line 5 LFIN3 CM0000(BU,2),TASGNP(LXPP)
+!CHECK 232171.00 | 231545.62 80 232172.74 02 | line 6 BB,LOVBIT,ZLDCD1 (printed "Z LDCC1")
+!CHECK 232172.00 | 231553.11 10 | line 7 SX,LXPP,LASTPP
+!CHECK 232172.40 | 000002.11 07 | line 8 ZLDCD1 V+ICR,LXPP,2.0
+!CHECK 232173.00 | 000000.47 84 001000.36 F0 | line 9 CM1111(BU,1),TLPPEN(LXPP)
+!CHECK 232174.00 | 231545.62 80 232176.74 04 | line 10 BZBZ,LOVBIT,LNORM
+!CHECK 232175.00 | 231664.00 80 000024.06 E0 | line 11 SWAPI,3,LNOSAV,LXPP
+!CHECK 232176.00 | 232176.50 00 | line 12 B,LNORM
+!CHECK 232176.40 | 231535.00 80 000023.20 E0 | line 16 LNORM SWAPI,8,LTY,LIODX
+!CHECK 232177.40 | 000002.10 0F | line 17 B,2.0($15)
+!CHECK 232200.00 | 231545.51 80 001000.36 F0 | line 21 LERROR CM1111(BU,1),LFINB,0.0
+!CHECK 232201.00 | 231546.23 10 | line 22 SX,LXNT,LSAVE
+!CHECK 232201.40 | 000000.24 14 | line 23 LX,LWORKX,0.0(LXPP)
+!CHECK 232202.00 | 232212.31 46 | line 24 BXVZZ,LERR2
+!CHECK 232202.40 | 000000.34 84 010027.20 50 | line 25 L,TUNCT(LXPP),46
+!CHECK 232203.40 | 232212.34 C6 | line 26 BRZZ,LERR2
+!CHECK 232204.00 | 000011.24 50 | line 27 LC,LWORKX,$R
+!CHECK 232204.40 | 000000.22 1A | line 28 LERRA LX,LXNT,0.0(LWORKX)
+!CHECK 232205.00 | 000000.22 8A 232206.74 00 | line 29 BZB,TLAST(LWORKX),LERR3
+!CHECK 232206.00 | 232307.25 01 | line 30 LVI,LWORKX,TIOREQ (printed "TICREG")
+!CHECK 232206.40 | 232210.30 46 | line 31 LERR3 BXCZZ,LERR1
+!CHECK 232207.00 | 000031.23 50 | line 32 SC,LXNT,LXNT
+!CHECK 232207.40 | 000000.22 09 | line 33 Z,0.0(LXNT)
+!CHECK 232210.00 | 000000.22 0A | line 34 LERR1 Z,0.0(LWORKX)
+!CHECK 232210.40 | 232204.65 48 | line 35 CB+,LWORKX,LERRA
+!CHECK 232211.00 | 231547.12 10 | line 36 LX,LXIO,LSAVEY
+!CHECK 232211.40 | 231550.14 10 | line 37 LX,LXFR,LSAVEZ
+!CHECK 232212.00 | 000000.22 04 | line 38 LERR2 Z,0.0(LXPP)
+!CHECK 232212.40 | 000000.45 84 001000.36 F0 | line 39 CM1111(BU,1),TRJECT(LXPP)
+!CHECK 232213.40 | 000000.47 84 001000.00 F0 | line 40 CM0000,TLPPEN(LXPP)
+!CHECK 232214.40 | 000011.37 50 | line 41 SC,15,$R
+!CHECK 232215.00 | 231545.62 80 232216.74 02 | line 42 BB,LOVBIT,ZLDCD2
+!CHECK 232216.00 | 231553.11 10 | line 43 SX,LXPP,LASTPP
+!CHECK 232216.40 | 000002.11 07 | line 44 ZLDCD2 V+ICR,LXPP,2.0
+!CHECK 232217.00 | 000000.47 84 001000.36 F0 | line 45 CM1111,TLPPEN(LXPP)
+!CHECK 232220.00 | 231546.22 10 | line 46 LX,LXNT,LSAVE
+!CHECK 232220.40 | 231545.62 80 232222.74 04 | line 47 BZBZ,LOVBIT,LERR4
+!CHECK 232221.40 | 231664.00 80 000024.06 E0 | line 48 SWAPI,3,LNOSAV,LXPP (hex printed "EC", read E0; see header)
+!CHECK 232222.40 | 231535.00 80 000023.20 E0 | line 49 LERR4 SWAPI,8,LTY,LIODX
+!CHECK 232223.40 | 000001.37 5F | line 50 SC,$15,1.0($15)
+!CHECK 232224.00 | 000001.50 0F | line 51 B,1.32($15)

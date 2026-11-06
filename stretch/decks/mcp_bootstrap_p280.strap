@@ -1,0 +1,193 @@
+! mcp_bootstrap_p280.strap -- MCP printed page 280: the IOD CARD
+! ROUTINE's type decode and non-tape channel table (L IOD1 .. L FOUND)
+! and the DISK - TRACK CHECK ROUTINE (L NON .. L DSKD), lines 1-52.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.31, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QD000208  DIST. OF 3/01  3/01  PAGE NUMBER 280" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is 231760,
+! line 1's word.
+!
+! THE PAGE.  52 lines; every line number prints a "*" after it.  Located
+! rows run contiguous from 231760.00 to 232024.00 (line 52's BZB1, a
+! full word, ends 232025.00), then blank paper.  Lines 33-36 are remark
+! cards (a "-" in the NAME column; line 35 "DISK - TRACK CHECK
+! ROUTINE").  "*" after the LOCATION on lines 1, 17, 30 and 49.
+! JOIN.  p.279 not available (no landed deck, no scratch deck); line 1
+! at 231760.00 agrees with the heading LOCATION 231760.  p.281 should
+! open at 232025.00 with serial QD000260.  No TAIL/UNTAIL card on this
+! page; names print "L XXXX" with a blank, dropped as on every page.
+!
+! THE SAME ROUTINE AS VOLUME 1's printed pp.53-54 (mcp_bootstrap_p53/
+! p54.strap, at 003016..003077), reassembled here: lines 1-32 are p.53's
+! last eleven cards (B,L ERR4 .. CB+,L WORKX,L TYPR) and p.54's cards
+! from LCI,$15,6.0 through V+ICR, and lines 37-52 are p.54's L NON ..
+! L DSKD, card for card.  Names are spelled as pp.53-54 spell them.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 5 "LIOCTP" = L IODTP (D worn to C, as the drum prints D);
+!     p.53/p.54 spell LIODTP, CM0000 card at p.54's 003077.0; this
+!     page's BAEZ prints 232026.36 = the word after L DSKD's BZB1 and
+!     the LCI/B pair that follow it on p.54.
+!   * line 10 "LCOCE" = L CODE (line 14's label prints "L CODE"; the
+!     BAE prints 231771.36 = that label).
+!   * line 15 label "L COPNT" and line 22 ",LOCPNT" = L OOPNT (open O;
+!     line 22's CB+ prints 231771.63 = line 15's 231771.40).
+!   * line 16 ",LICD2" / line 23 label "L ICD2" = L IOD2 (p.54); BRZZ
+!     prints 231777.74 = line 23's 231777.40.
+!   * line 21 ",LNCN", line 22 "L NCNCH", "LNCRM", "LWCRKX": open O's.
+!   * line 47 "LBLZCR" = L BLZOR: the landed spelling (p.48 line 51,
+!     p.54, p.98 -- p.98 also prints it "LBLZCR"); the ink does not
+!     close the question the other way.
+!   * line 48 label prints "LDSKC" with no blank; LDSKC either way.
+!   * octal fields "CCCCCC.CC" are 0; hex "C0" on line 1 = 00 (B; the
+!     assembler agrees); line 52's last byte prints "0C", the second
+!     glyph clearly more open than the 0 before it, and 0C is BZB1's
+!     landed signature (p.112, p.154): written 0C.
+!
+! EXTERNALS.  Index registers and field symbols copy the landed p.53/
+! p.54 forms.  Storage symbols are defined on body pages not landed
+! (p.279 and before, and after this page); values are this page's
+! binary, dds the vol.1 defining cards' (SWAPI/CM full words (BU,64,8)).
+!
+! CARD SERIALS.  QD000208 .. QD000259, one per line, none shared or
+! skipped.
+
+LIODX   SYN, $3                      ! landed p.53/p.54 form; LV line 45 000023.24
+LXPP    SYN, $4                      ! landed p.53/p.54 form
+LXIO    SYN, $5                      ! landed p.53/p.54 form
+LXNT    SYN, $9                      ! landed p.53/p.54 form
+LWORKX  SYN, $10                     ! landed p.53/p.54 form
+TTYPE   SYN(BU,4), 0.3               ! landed p.54 form; ST line 27 000000.03
+TIODSQ  SYN(BU,9), 0.19              ! landed p.54 form; ST line 30 000000.23
+TUNCT   SYN(BU,8), 0.28              ! landed p.54 form; M+1 line 28 000000.34
+LZBIT   SYN(BU,1), 63                ! landed p.54 form; BZB1 line 52 000000.77
+LNO6    SYN, (8)231545.0             ! not landed in the body (p.48's "L NO6 VF,.06" analog); V+ line 50 231545.24, half word only
+LTAPEC  SYN(BU,7), (8)231545.31      ! not landed in the body (p.48 DRZ(BU,7) analog); M+1 line 24 231545.31, BIT-EXACT
+LIOSCR  SYN(BU,9), (8)231545.40      ! not landed in the body (p.48 DRZ(BU,9) analog); L/M+1 lines 29,31 231545.40, BIT-EXACT
+LNTB    SYN(BU,1), (8)231545.52      ! not landed in the body (p.53 form); CM1111 line 6 231545.52, BIT-EXACT
+LBLZOR  SYN(BU,8,8), (8)231545.63    ! not landed in the body (p.48/p.54 form); LF line 47 LBLZOR+.2 = 231545.65, BIT-EXACT
+LXTYPE  SYN, (8)231534.0             ! not landed in the body (p.48 XW analog); LX line 7 231534.24, half word only
+LNTPUX  SYN, (8)231533.0             ! not landed in the body (p.48 XW analog); LX line 14 231533.22, half word only
+LDISK   SYN, (8)231667.0             ! not landed in the body (p.48 (AY)DD analog); KF line 38 231667.00, BIT-EXACT
+LTRACK  SYN, (8)231670.0             ! not landed in the body (p.48 (AY)DD analog); KF line 40 231670.00, BIT-EXACT
+LTAPE   SYN, (8)231677.0             ! not landed in the body (p.48 (AY)DD analog); K line 4 231677.00, BIT-EXACT
+LBLANK  SYN(BU,48,6), (8)231702.0    ! not landed in the body (p.54 form); KF line 43 231702.00, BIT-EXACT
+LNORM   SYN(BU,64,8), (8)232176.40   ! not landed (SWAPI per p.58); BZAEZ lines 41,49 232176.76, BZB1 line 52 232176.74
+LERROR  SYN(BU,64,8), (8)232200.0    ! not landed (CM1111 per p.58); B line 13 232200.10, half word only
+LERR4   SYN(BU,64,8), (8)232222.40   ! not landed (SWAPI per p.58); B line 1 232222.50, half word only
+LIODTP  SYN(BU,64,8), (8)232026.0    ! not landed (CM0000 per p.54); BAEZ line 5 232026.36, half word only
+
+        SLC, (8)231760.00
+        B,LERR4                                              ! line  1  (a "*" after the location)
+        Z,0.0(LXIO)                                          ! line  2
+LIOD1   L(BU,48),2.0(LIODX),0.0                              ! line  3  -IS TYPE TAPE.
+        K(BU,48),LTAPE,0.0                                   ! line  4
+        BAEZ,LIODTP                                          ! line  5  -   YES----TO TAPE SECTION.
+        CM1111(BU,1),LNTB,0.0                                ! line  6  -   NO----SET NON-TAPE BIT TO 1.
+        LX,LWORKX,LXTYPE                                     ! line  7  -DECODE TYPE AND ENTER IN
+LTYPR   L(BU,48),2.0(LIODX)                                  ! line  8  -IO REQUEST SLOT
+        K(BU,48),.0(LWORKX)                                  ! line  9
+        BAE,LCODE                                            ! line 10  -TYPE FOUND
+        CB+,LWORKX,LTYPR                                     ! line 11  -NO TRY AGAIN
+        LCI,$15,6.0                                          ! line 12  -NO TYPE MATCHED
+        B,LERROR                                             ! line 13  -WITH ERROR FLAG OF 6
+LCODE   LX,LXNT,LNTPUX                                       ! line 14  -IS THIS CHANNEL IN THE
+LOOPNT  L(BU,48),0.0(LXNT),0.0                               ! line 15  -     NON-TAPE TABLE.
+        BRZZ,LIOD2                                           ! line 16  -   NO----STEP DOWN.
+        K(BU,48),4.0(LIODX),0.0                              ! line 17  (a "*" after the location)
+        BZAE,LNONCH                                          ! line 18  -NO EQUAL
+        LF(BU,4),.48(LXNT)                                   ! line 19  -EQUAL CHAN FOUND CHECK EQUIP TYPE
+        KF(BU,4),.60(LWORKX)                                 ! line 20
+        BAE,LNON                                             ! line 21  -IF EQUIP IS SAME AND CHAN SAME CONT.
+LNONCH  CB+,LXNT,LOOPNT                                      ! line 22  -TRY AGAIN
+LIOD2   TI,1,4.0(LIODX),0.0(LXNT)                            ! line 23  -PUT CHANNEL IN NON-TAPE TABLE.
+        M+1,LTAPEC                                           ! line 24  -STEP REEL COUNTER
+        L(BU,4),.60(LWORKX)                                  ! line 25  -GET TYPE
+        SF(BU,4),.48(LXNT)                                   ! line 26  -AND PLACE IN CHANNEL TABLE
+        ST(BU,4),TTYPE(LXIO)                                 ! line 27
+LFOUND  M+1,TUNCT(LXPP)                                      ! line 28  -STEP UNIT COUNT
+        L(BU,9),LIOSCR,0.0                                   ! line 29  -ENTER IODSQ IN IOREQ. SLOT.
+        ST(BU,9),TIODSQ(LXIO)                                ! line 30  (a "*" after the location)
+        M+1(BU,9),LIOSCR                                     ! line 31  -STEP IODSQ.
+        V+ICR,LXIO,1.0                                       ! line 32  -STEP IOREQ. INDEX.
+! line 33  -
+! line 34  -
+! line 35  -          DISK - TRACK CHECK ROUTINE
+! line 36  -
+LNON    LF(BU,48),2.0(LIODX)                                 ! line 37  -IS TYPE DISK OR TRACK.
+        KF(BU,48),LDISK                                      ! line 38
+        BAEZ,LNEW                                            ! line 39  -   DISK----BRANCH.
+        KF(BU,48),LTRACK                                     ! line 40
+        BZAEZ,LNORM                                          ! line 41  - NON DISK OR TRACK
+LNEW    L(BU,48),5.0(LIODX)                                  ! line 42  -IS NUMBER FIELD BLANK
+        KF,LBLANK                                            ! line 43
+        BAEZ,LDSKD                                           ! line 44  -YES
+        LV,LWORKX,LIODX                                      ! line 45  -IS THE NUMBER FIELD ZERO
+        LCI,LWORKX,8                                         ! line 46
+        LF(BU,6),LBLZOR+.2                                   ! line 47  printed "LBLZCR"
+LDSKC   KF(BU,6,6),5.(LWORKX)                                ! line 48
+        BZAEZ,LNORM                                          ! line 49  -A NON ZERO ENTRY (a "*" after the location)
+        V+,LWORKX,LNO6                                       ! line 50  -STEP TO NEXT CHAR
+        CB,LWORKX,LDSKC                                      ! line 51
+LDSKD   BZB1,LZBIT(LXNT),LNORM                               ! line 52  -IF NO OTHER INF REQUESETD
+
+!SYM LIOD1  231761.00
+!SYM LTYPR  231765.00
+!SYM LCODE  231771.00
+!SYM LOOPNT 231771.40
+!SYM LNONCH 231777.00
+!SYM LIOD2  231777.40
+!SYM LFOUND 232004.40
+!SYM LNON   232011.00
+!SYM LNEW   232015.00
+!SYM LDSKC  232021.40
+!SYM LDSKD  232024.00
+!CHECK 231760.00 | 232222.50 00 | line 1 B,LERR4 (byte prints "C0")
+!CHECK 231760.40 | 000000.22 05 | line 2 Z,0.0(LXIO)
+!CHECK 231761.00 | 000002.00 83 060000.20 50 | line 3 LIOD1 L(BU,48),2.0(LIODX),0.0
+!CHECK 231762.00 | 231677.00 80 060000.21 10 | line 4 K(BU,48),LTAPE,0.0
+!CHECK 231763.00 | 232026.36 C6 | line 5 BAEZ,LIODTP (printed "LIOCTP")
+!CHECK 231763.40 | 231545.52 80 001000.36 F0 | line 6 CM1111(BU,1),LNTB,0.0
+!CHECK 231764.40 | 231534.24 10 | line 7 LX,LWORKX,LXTYPE
+!CHECK 231765.00 | 000002.00 83 060000.20 50 | line 8 LTYPR L(BU,48),2.0(LIODX)
+!CHECK 231766.00 | 000000.00 8A 060000.21 10 | line 9 K(BU,48),.0(LWORKX)
+!CHECK 231767.00 | 231771.36 C2 | line 10 BAE,LCODE (printed "LCOCE")
+!CHECK 231767.40 | 231765.25 48 | line 11 CB+,LWORKX,LTYPR
+!CHECK 231770.00 | 000006.37 02 | line 12 LCI,$15,6.0
+!CHECK 231770.40 | 232200.10 00 | line 13 B,LERROR
+!CHECK 231771.00 | 231533.22 10 | line 14 LCODE LX,LXNT,LNTPUX
+!CHECK 231771.40 | 000000.00 89 060000.20 50 | line 15 LOOPNT L(BU,48),0.0(LXNT),0.0 (label prints "L COPNT")
+!CHECK 231772.40 | 231777.74 C6 | line 16 BRZZ,LIOD2 (printed "LICD2")
+!CHECK 231773.00 | 000004.00 83 060000.21 10 | line 17 K(BU,48),4.0(LIODX),0.0
+!CHECK 231774.00 | 231777.36 C0 | line 18 BZAE,LNONCH
+!CHECK 231774.40 | 000000.60 89 004000.06 70 | line 19 LF(BU,4),.48(LXNT)
+!CHECK 231775.40 | 000000.74 8A 004000.23 10 | line 20 KF(BU,4),.60(LWORKX)
+!CHECK 231776.40 | 232011.36 C2 | line 21 BAE,LNON
+!CHECK 231777.00 | 231771.63 48 | line 22 LNONCH CB+,LXNT,LOOPNT
+!CHECK 231777.40 | 000004.00 83 000000.02 A9 | line 23 LIOD2 TI,1,4.0(LIODX),0.0(LXNT)
+!CHECK 232000.40 | 231545.31 80 007000.22 B0 | line 24 M+1,LTAPEC
+!CHECK 232001.40 | 000000.74 8A 004000.20 50 | line 25 L(BU,4),.60(LWORKX)
+!CHECK 232002.40 | 000000.60 89 004000.12 F0 | line 26 SF(BU,4),.48(LXNT)
+!CHECK 232003.40 | 000000.03 85 004000.20 D0 | line 27 ST(BU,4),TTYPE(LXIO)
+!CHECK 232004.40 | 000000.34 84 010000.22 B0 | line 28 LFOUND M+1,TUNCT(LXPP)
+!CHECK 232005.40 | 231545.40 80 011000.20 50 | line 29 L(BU,9),LIOSCR,0.0
+!CHECK 232006.40 | 000000.23 85 011000.20 D0 | line 30 ST(BU,9),TIODSQ(LXIO)
+!CHECK 232007.40 | 231545.40 80 011000.22 B0 | line 31 M+1(BU,9),LIOSCR
+!CHECK 232010.40 | 000001.13 07 | line 32 V+ICR,LXIO,1.0
+!CHECK 232011.00 | 000002.00 83 060000.06 70 | line 37 LNON LF(BU,48),2.0(LIODX)
+!CHECK 232012.00 | 231667.00 80 060000.23 10 | line 38 KF(BU,48),LDISK
+!CHECK 232013.00 | 232015.36 C6 | line 39 BAEZ,LNEW
+!CHECK 232013.40 | 231670.00 80 060000.23 10 | line 40 KF(BU,48),LTRACK
+!CHECK 232014.40 | 232176.76 C4 | line 41 BZAEZ,LNORM
+!CHECK 232015.00 | 000005.00 83 060000.20 50 | line 42 LNEW L(BU,48),5.0(LIODX)
+!CHECK 232016.00 | 231702.00 80 060600.23 10 | line 43 KF,LBLANK
+!CHECK 232017.00 | 232024.36 C6 | line 44 BAEZ,LDSKD
+!CHECK 232017.40 | 000023.24 30 | line 45 LV,LWORKX,LIODX
+!CHECK 232020.00 | 000010.25 02 | line 46 LCI,LWORKX,8
+!CHECK 232020.40 | 231545.65 80 006000.06 70 | line 47 LF(BU,6),LBLZOR+.2 (printed "LBLZCR")
+!CHECK 232021.40 | 000005.00 8A 006600.23 10 | line 48 LDSKC KF(BU,6,6),5.(LWORKX)
+!CHECK 232022.40 | 232176.76 C4 | line 49 BZAEZ,LNORM
+!CHECK 232023.00 | 231545.24 B0 | line 50 V+,LWORKX,LNO6
+!CHECK 232023.40 | 232021.64 48 | line 51 CB,LWORKX,LDSKC
+!CHECK 232024.00 | 000000.77 89 232176.74 0C | line 52 LDSKD BZB1,LZBIT(LXNT),LNORM (0C = BZB1's signature)

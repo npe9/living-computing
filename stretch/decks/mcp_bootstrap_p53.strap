@@ -3,6 +3,12 @@
 ! docs/MCP_Mar63_001-249.pdf PDF p.60, header "PAGE NUMBER 53".
 ! docs/boot_plan.md M3.
 !
+! 2026-11-06: "$OP" IS NOW WRITTEN AS PRINTED.  C28-6129 printed p.10 (PDF
+! p.14): a $ prefixed to an operation code "directs the compiler to
+! suppress any error indications" for that statement; the binary is
+! the plain operation's, and strap_asm accepts the prefix.  Notes below
+! that describe writing the card WITHOUT the "$" predate this.
+!
 ! >>> IT CONFIRMS BOTH OF printed p.52's DERIVED STAND-INS AND
 ! SETTLES A NAME p.48 FLAGGED. <<<
 !
@@ -114,7 +120,7 @@ LOOPN   Z, LNTPU(LXNT)
         CM1111(BU,1), LFINB, 0.0
         B, LERR4
 LINITB  Z, 0.0(LXPP)
-        TI, 1, -1.0(LIODX), 1.0(LXPP)
+        $TI, 1, -1.0(LIODX), 1.0(LXPP)
         CM1111(BU,1), TLPPEN(LXPP)
         L(BU,24), 1.0(LIODX)
         BRZ, LFINAL

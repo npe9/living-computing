@@ -1,0 +1,196 @@
+! mcp_bootstrap_p267.strap -- MCP printed page 267: JOB CONTROL PHASE 1
+! OVERLAPPED, its system-command scan (YC1SC .. YCOMDJ), lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.18, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID PE000104  DIST. OF 3/01  3/01  PAGE NUMBER 267" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is 231034,
+! line 1's word.
+!
+! THE PAGE.  50 lines, every line number prints a "*" after it; no
+! remark cards.  Located rows run contiguous from 231034.00 to
+! 231066.40 (line 50 CNOP compiles a half-word NOP there), then blank
+! paper; p.268 should open at 231067.00 with serial PE000154.
+! "*" after the LOCATION on lines 12 and 35.
+!   line 21  DD(BU,2),(2)01 at 231047.71 (after line 20's 25-bit VF)
+!            prints "1" (2 bits).
+!   lines 22/32 CF,0 print the bare 18-bit "000000".
+! JOIN.  p.266 is not landed (no neighbour deck); the image so far ends
+! at p.265's 230777.40, so 231000.00-231033.40 is p.266's.  Contiguity
+! with p.266 is NOT established here; the heading LOCATION 231034 is
+! the independent witness of this page's origin.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 1 prints "CM0C00" (900 dpi): a connective is four BINARY
+!     digits, so the open round is a 0 -> CM0000 (as p.265 line 26);
+!     last byte prints "FC" = F0 (p.265 lines 24/26 print the same).
+!   * line 10 ",SCCMD" = ,SCOMD (open O): landed p.105/p.106 "S COMD"
+!     SYN 80.0; prints 000120.00 = 80.0.
+!   * line 36 ",SKCM" = ,SKOM (open O), as p.265 line 28; 000117.40.
+!   * line 48's label prints "YCCMDJ" with an open second glyph; line
+!     14's operand prints "B,YCOMDJ" with a CLOSED O at 900 dpi, and
+!     line 14's B assembles to 231065.50 = this label's 231065.40.
+!     The closed glyph decides: YCOMDJ (C22-6728 OCR also has YCOMDJ).
+!   * Y1SCCS (label line 13, operand line 2): the second glyph prints
+!     the flagged 1 at 900 dpi in both places (as in YC1SC); C22-6728
+!     OCR shows both Y1SCCS and YISCCS.  SC line 2 prints 231043.77 =
+!     line 13's 231043.40.
+!   * YC1JOC (line 38): fifth glyph a closed O at 900 dpi; C22-6728 OCR
+!     "YC1JOC".
+!   * lines 13 ",0", 22/32 "CF,0", 23/33 "VF,0", 29 "$+1.0", 11 ",1.0",
+!     39 "1.0", 40 "+1.0" print open round glyphs; digits by context.
+!   * line 31 prints "VF,YC1DB -1.0" WITH a blank; the binary 231073.00+
+!     includes the -1.0 (as line 20, printed without one).  Written as
+!     printed.
+!   * hex bytes printed with an open round written 0 ("C1" lines 17,
+!     29, 48 = 01; "C0" line 41 = 00).
+!
+! >>> LINE 1: A FLOATING SYMBOL UNDER A CONNECTIVE, ONE WITNESS. <<<
+! It prints 000400.00 in its second half word: field length 0 (64),
+! BYTE SIZE 4.  CM0000 writes no dds, so the dds is YC1DB's, and
+! printed p.268 line 8 defines "YC1DB DR(N),(13) -DECODE BUFFER"
+! (read on its ink, 231074.00).  C22-6531 PDF p.10 / C28-6129: for N,
+! "field length and byte size not appropriate", and the operation
+! overrules -- but neither says what is compiled.  strap_asm now
+! compiles length 64, byte size 4 for a connective on an N or U symbol
+! ON THIS ROW'S EVIDENCE ALONE (see the rule's comment in strap_asm and
+! check_instruction_label_dds), and the stand-in carries the defining
+! card's (N), so the page and the merged image agree.
+!
+! EXTERNALS.  Values for symbols defined on pages not landed come from
+! this page's binary (YC1DB, YC1JJC, LASTPP as p.265 has them).
+!
+! CARD SERIALS.  PE000104 .. PE000153, one per line, none skipped or
+! shared.  p.265 ends at PE000048, so p.266 holds PE000049..PE000103.
+
+YC1DB   SYN(N), (8)231074.0             ! (N) as printed p.268 line 8 DR(N),(13); LF line 3 231074.00, Z line 18 231074.22, half word only
+YCOMDM  SYN, (8)231070.0             ! not landed; KF line 4 231070.00, half word only
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 9
+SCOMD   SYN, 80.0                    ! landed p.105/p.106 "S COMD"; line 10 000120.00 (printed "SCCMD")
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label (as p.128/p.142/p.153)
+STRANB  SYN(BU,1), SCOMRG+.10        ! landed p.103 line 19; BB line 15 215001.12
+YC1A1   SYN(BU,32,8), (8)230763.40   ! landed p.265 line 27 (B, half word); B line 16 230763.50
+LDECOD  SYN, (8)231703.0             ! not landed in the body; B lines 19/30 231703.10, half word only
+LASTPP  SYN, (8)231553.0             ! as p.265 (not landed in the body); LV line 25 231553.34, half word only
+SKOM    SYN, 79.32                   ! landed p.106 "S KOM"; line 36 000117.40 (printed "SKCM")
+YC1JOC  SYN(BU,18), (8)231134.0             ! not landed; M+1 line 38 231134.00, half word only
+Y1UCXW  SYN(BU), (8)230770.0         ! landed p.265 line 35 XW,0; SV line 40 230771.35
+SDRET   SYN, 33.0                    ! landed p.105 "S D RET SYN,DRET", DRET SYN,33.0; line 42 000041.00
+YC1JJC  SYN, (8)231071.0             ! as p.265 (not landed); LC line 43 231071.34, half word only
+YCOMJM  SYN, (8)020666.0             ! not landed; LVI line 48 020666.33, half word only
+YC1PRJ  SYN(BU,32,8), (8)230760.40   ! landed p.265 line 23 (LV, half word); B line 49 230760.50
+
+        SLC, (8)231034.00
+        CM0000,YC1DB-2.0                                     ! line  1  printed "CM0C00"; -
+YC1SC   SC,$15,Y1SCCS                                        ! line  2  -SET UP COUNT FOR SYSTEM COMMANDS.
+        LF(BU,48),YC1DB                                      ! line  3
+        KF(BU,48),YCOMDM                                     ! line  4
+        BAE,YC1SCC                                           ! line  5
+        SIC,YC1RP                                            ! line  6
+        B,YC1JT                                              ! line  7
+        B,YC1SEJ                                             ! line  8
+YC1SCC  B,DMCP                                               ! line  9
+        ,SCOMD                                               ! line 10  printed "SCCMD"
+        ,1.0                                                 ! line 11  -DISPOSITION FOR JC1.
+        ,YC1DB                                               ! line 12  (a "*" after the location)
+Y1SCCS  ,0                                                   ! line 13
+        B,YCOMDJ                                             ! line 14
+        BB,STRANB,YC1C                                       ! line 15
+        B,YC1A1                                              ! line 16
+YC1SEJ  LVI,$15,$+1.32                                       ! line 17  -
+        Z,YC1DB                                              ! line 18  -ZERO ALPHA+1.0 SLOT
+        B,LDECOD                                             ! line 19
+        VF,YC1DB-1.0                                         ! line 20
+        DD(BU,2),(2)01                                       ! line 21  -REJECT BIT SET TO ONE.
+        CF,0                                                 ! line 22
+        VF,0                                                 ! line 23
+        NOP                                                  ! line 24
+YC1EJ1  LV,$14,LASTPP                                        ! line 25
+        SV,$13,1.($14)                                       ! line 26
+        B,YC1SEX                                             ! line 27
+YC1SCN  Z,YC1DB                                              ! line 28  -ZERO ALPHA + 1. SLOT
+        LVI,$15,$+1.0                                        ! line 29
+        B,LDECOD                                             ! line 30  -TO DECODE
+YSJDCS  VF,YC1DB -1.0                                        ! line 31  (blank as printed)
+        CF,0                                                 ! line 32
+        VF,0                                                 ! line 33
+        NOP                                                  ! line 34
+YC1SEX  B,DMCP                                               ! line 35  -SCAN TO NEXT JOB. (a "*" after the location)
+        ,SKOM                                                ! line 36  printed "SKCM"
+        ,3.32                                                ! line 37  --SCAN
+        M+1(BU,18),YC1JOC                                    ! line 38
+        LVI,$14,1.0                                          ! line 39  - RESTORE DISP. TO JOB
+        SV,$14,Y1UCXW+1.0                                    ! line 40
+YC1C    B,DMCP                                               ! line 41
+        ,SDRET                                               ! line 42
+YC1JT   LC,$14,YC1JJC                                        ! line 43
+YC1RP   BXCZ,$                                               ! line 44
+        C-I,$14,1                                            ! line 45
+        SC,$14,YC1JJC                                        ! line 46
+        B,YC1SEX                                             ! line 47
+YCOMDJ  LVI,$13,YCOMJM                                       ! line 48  printed "YCCMDJ"
+        B,YC1PRJ                                             ! line 49
+        CNOP                                                 ! line 50
+
+!SYM YC1SC  231035.00
+!SYM YC1SCC 231041.40
+!SYM Y1SCCS 231043.40
+!SYM YC1SEJ 231046.00
+!SYM YC1EJ1 231051.40
+!SYM YC1SCN 231053.00
+!SYM YSJDCS 231054.40
+!SYM YC1SEX 231056.40
+!SYM YC1C   231062.00
+!SYM YC1JT  231063.00
+!SYM YC1RP  231063.40
+!SYM YCOMDJ 231065.40
+!CHECK 231034.00 | 231072.00 80 000400.00 F0 | line 1 CM0000,YC1DB-2.0 (printed "CM0C00"; last byte prints "FC")
+!CHECK 231035.00 | 231043.77 50 | line 2 YC1SC SC,$15,Y1SCCS
+!CHECK 231035.40 | 231074.00 80 060000.06 70 | line 3 LF(BU,48),YC1DB
+!CHECK 231036.40 | 231070.00 80 060000.23 10 | line 4 KF(BU,48),YCOMDM
+!CHECK 231037.40 | 231041.76 C2 | line 5 BAE,YC1SCC
+!CHECK 231040.00 | 231063.40 80 | line 6 SIC,YC1RP
+!CHECK 231040.40 | 231063.10 00 | line 7 B,YC1JT
+!CHECK 231041.00 | 231046.10 00 | line 8 B,YC1SEJ
+!CHECK 231041.40 | 000040.10 00 | line 9 YC1SCC B,DMCP
+!CHECK 231042.00 | 000120.00 80 | line 10 ,SCOMD (printed "SCCMD")
+!CHECK 231042.40 | 000001.00 80 | line 11 ,1.0
+!CHECK 231043.00 | 231074.00 80 | line 12 ,YC1DB
+!CHECK 231043.40 | 000000.00 80 | line 13 Y1SCCS ,0
+!CHECK 231044.00 | 231065.50 00 | line 14 B,YCOMDJ
+!CHECK 231044.40 | 215001.12 80 231062.34 02 | line 15 BB,STRANB,YC1C
+!CHECK 231045.40 | 230763.50 00 | line 16 B,YC1A1
+!CHECK 231046.00 | 231047.77 01 | line 17 YC1SEJ LVI,$15,$+1.32 (byte prints "C1")
+!CHECK 231046.40 | 231074.22 00 | line 18 Z,YC1DB
+!CHECK 231047.00 | 231703.10 00 | line 19 B,LDECOD
+!CHECK 231047.40 | 231073.00+ | line 20 VF,YC1DB-1.0
+!CHECK 231047.71 | 1 | line 21 DD(BU,2),(2)01 | 2
+!CHECK 231050.00 | 000000 | line 22 CF,0
+!CHECK 231050.40 | 000000.00+ | line 23 VF,0
+!CHECK 231051.00 | 000000.30 00 | line 24 NOP
+!CHECK 231051.40 | 231553.34 30 | line 25 YC1EJ1 LV,$14,LASTPP
+!CHECK 231052.00 | 000001.33 3E | line 26 SV,$13,1.($14)
+!CHECK 231052.40 | 231056.50 00 | line 27 B,YC1SEX
+!CHECK 231053.00 | 231074.22 00 | line 28 YC1SCN Z,YC1DB
+!CHECK 231053.40 | 231054.77 01 | line 29 LVI,$15,$+1.0 (byte prints "C1")
+!CHECK 231054.00 | 231703.10 00 | line 30 B,LDECOD
+!CHECK 231054.40 | 231073.00+ | line 31 YSJDCS VF,YC1DB -1.0
+!CHECK 231055.00 | 000000 | line 32 CF,0
+!CHECK 231055.40 | 000000.00+ | line 33 VF,0
+!CHECK 231056.00 | 000000.30 00 | line 34 NOP
+!CHECK 231056.40 | 000040.10 00 | line 35 YC1SEX B,DMCP
+!CHECK 231057.00 | 000117.40 80 | line 36 ,SKOM (printed "SKCM")
+!CHECK 231057.40 | 000003.40 80 | line 37 ,3.32
+!CHECK 231060.00 | 231134.00 80 022000.22 B0 | line 38 M+1(BU,18),YC1JOC
+!CHECK 231061.00 | 000001.35 01 | line 39 LVI,$14,1.0
+!CHECK 231061.40 | 230771.35 30 | line 40 SV,$14,Y1UCXW+1.0
+!CHECK 231062.00 | 000040.10 00 | line 41 YC1C B,DMCP (byte prints "C0")
+!CHECK 231062.40 | 000041.00 80 | line 42 ,SDRET
+!CHECK 231063.00 | 231071.34 50 | line 43 YC1JT LC,$14,YC1JJC
+!CHECK 231063.40 | 231063.70 42 | line 44 YC1RP BXCZ,$
+!CHECK 231064.00 | 000001.35 08 | line 45 C-I,$14,1
+!CHECK 231064.40 | 231071.35 50 | line 46 SC,$14,YC1JJC
+!CHECK 231065.00 | 231056.50 00 | line 47 B,YC1SEX
+!CHECK 231065.40 | 020666.33 01 | line 48 YCOMDJ LVI,$13,YCOMJM (printed "YCCMDJ"; byte prints "C1")
+!CHECK 231066.00 | 230760.50 00 | line 49 B,YC1PRJ
+!CHECK 231066.40 | 000000.30 00 | line 50 CNOP

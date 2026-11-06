@@ -1,0 +1,175 @@
+! mcp_bootstrap_p297.strap -- MCP printed page 297: THE SPECIAL
+! ASSIGNMENT PACKAGE (ZASN01 .. B,DMCP), lines 1-48.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.48, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID QJ000001  DIST. OF 3/01
+! 3/01  PAGE NUMBER 297" (round glyphs in numeric fields read 0).  The
+! heading row's LOCATION field is BLANK.  CARD ID QJ000001 -- a new
+! card-ID series begins on this page (p.281 ran QD...).
+!
+! THE PAGE.  48 lines, every line number prints a "*" after it.  Lines
+! 1-4 are remark cards (a banner "THE SPECIAL ASSIGNMENT PACKAGE"
+! between two rows of asterisks).  Line 5 "SLC,$" prints 232746.00 and
+! a "*"; this deck restates it as a hard SLC (as p.261 does).  Lines 6-9
+! remarks ("CALLING LINKAGE / SIC,ZCOM90  B,ZASN01  VF,IOD NUMBER").
+! Line 18 is a remark.  Located rows run contiguous from 232746.00
+! (line 10) to 233003.00 (line 48, B,DMCP, a half word; next location
+! 233003.40), then blank paper.  "*" after the LOCATION on lines 5, 25
+! and 40.
+!
+! JOIN.  p.296 has no scratch neighbour; contiguity with it is NOT
+! established here.  This page's labels match the landed forward
+! references: p.230/p.232 SIC,ZCOM90 -> 232762.00 and B,ZASN01 ->
+! 232746.10 (here ZCOM90 at 232762.00 line 27, ZASN01 at 232746.00 line
+! 10).  p.298 should open at 233003.40.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "Z CCM 99" (line 10), "Z CCM C1" (line 11): the drum's open O;
+!     written ZCOM99 / ZCOM01 -- lines 25-27 print "Z COM 95 / 98 / 90"
+!     with closed O's, landed pp.230/232 spell ZCOM90, and C22-6728 names
+!     the save subroutine ZCOM01.  The numbered family takes digit 0.
+!   * "Z ASN 01", "ASN 04/06/07/09": digit 0 by the numbered family
+!     (landed ZASN01, pp.230/232).
+!   * CMOCOO / CMOCO0 (lines 22, 23, 31) = CM0000 (connective digits);
+!     CT0C11 (lines 14, 44) = CT0011.
+!   * lines 39, 41 "ST(DU,16,8)" / "ST(CU,8,8)": D with a worn stem; both
+!     print 0x.24 in the second half (decimal-mode bit), so both DU.
+!   * "S I MNT" (line 29) = SIMNT, "S UN A A" (line 20) = SUNAA, "S CH
+!     AVL" = SCHAVL, "S UN AVL" = SUNAVL, "S CNF CG" = SCNFCG, "S FILE K"
+!     = SFILEK, "S UNIT N" = SUNITN, "S RMTC" = SRMTC, "S DISPO" =
+!     SDISPO, "D MCP" = DMCP: spaces are the drum's, spellings as landed.
+!   * octal fields "CCCCCC.CC" read 0; hex "CO", "FO", "DO" = C0, F0, D0.
+!   * the B rows' op byte (lines 11, 27, 48) prints "CC" / "C0" / "C0"
+!     at 900 dpi, the first glyph as open as line 24's real C.  Written
+!     00: B assembles byte 00 on all 319 landed B rows and never C0, and
+!     line 11's "CC" shows this drum printing 0 open in both positions
+!     (as p.230 line 44 "B,ZASN01 (byte prints C0)").
+!
+! EXTERNALS.  S-fields copy the defining decks' forms (p.99 / p.101 /
+! p.103).  Z-addresses from this page's binary (see each comment).
+!
+! CARD SERIALS.  QJ000001 .. QJ000048, line N prints QJ0000NN; none
+! skipped.
+
+SCHAVL  SYN(BU,1), 0.25              ! p.99 line 21 -CHANNEL AVAILABILITY
+SUNAVL  SYN(BU,1), 0.28              ! p.99 line 26 -UNIT AVAILABILITY
+SUNASG  SYN(BU,1), 0.29              ! p.99 line 27 -UNIT ASSIGNMENT
+SOWNER  SYN(BU,1), 0.32              ! p.99 line 30
+SVER    SYN(BU,1), 0.40              ! p.99 line 32 -VERIFY FILE STATUS
+SRD     SYN(BU,1), 0.57              ! p.99 line 45 -READ
+SMOUNT  SYN(BU,1), 0.51              ! p.99 line 42 -MOUNT TAPE
+SIMNT   SYN(BU,1), 0.53              ! p.99 line 44
+SDISPO  SYN(BU,1), 0.27              ! p.99 line 25
+STATI   SYN(BU,1), 0.26              ! p.99 line 23
+SUNAA   SYN(BU,25), 0.0              ! p.99 line 19 -UNIT AREA TABLE FIELD
+SFILEK  SYN(BU,12), 7.38             ! p.101 line 25 -FILE COUNT
+SUNITN  SYN(BU,3), 0.47              ! p.101 line 6 -UNIT NUMBER
+SRMTC   SYN(BU,26), 1.32             ! p.101 line 8 -REMINDER MESSAGE TIME
+SCNFCG  SYN(BU,1), (8)215001.02      ! landed p.103 line 12 SYN(BU,1),SCOMRG+.2; CM1111 line 16 215001.02
+SYSMOD  SYN(BU,2), (8)215001.10      ! landed p.103 line 18 SYN(BU,2),SCOMRG+.8; CT line 44 215001.10
+DMCP    SYN, 32.0                    ! landed p.108; B line 48 000040.10
+ZCOM99  SYN, (8)233077.40            ! not landed; SIC line 10 233077.40, BIT-EXACT
+ZCOM01  SYN, (8)233067.40            ! not landed; B line 11 233067.50, half word only
+ZASN50  SYN, (8)233020.40            ! not landed; BB lines 12-13 / BZBZ line 17 233020.74, half word only
+ZCOM98  SYN, (8)233105.0             ! not landed; LX lines 25-26 233105.02 / 233106.04, full word only
+ZASN12  SYN, (8)233013.10            ! not landed; ST line 39 ZASN12-.1 = 233013.07, BIT-EXACT
+ZASN13  SYN, (8)233014.20            ! not landed; ST line 41 ZASN13-.1 = 233014.17, BIT-EXACT
+ZASN09  SYN, (8)233017.40            ! not landed; BRZ line 45 233017.74, half word only
+ZASN15  SYN, (8)233016.0             ! not landed; LV line 46 233016.04, full word only
+ZASN11  SYN, (8)233007.0             ! not landed; SV line 47 233007.05, full word only
+
+        SLC, (8)232746.00
+! line  1  -
+! line  2  - ******************************************************
+! line  3  - THE SPECIAL ASSIGNMENT PACKAGE
+! line  4  - ******************************************************
+        SLC,$                                                ! line  5  (prints 232746.00 *)
+! line  6  -
+! line  7  - CALLING LINKAGE
+! line  8  - SIC,Z CCM 90    B,Z ASN 01     VF,IOD NUMBER
+! line  9  -
+ZASN01  SIC,ZCOM99                                           ! line 10  (printed "Z CCM 99")
+        B,ZCOM01                                             ! line 11  (printed "Z CCM C1")
+        BB,SCHAVL($2),ZASN50                                 ! line 12  -BRANCH IF CHAN NOT AVAILABLE
+        BB,SUNAVL($1),ZASN50                                 ! line 13  -BRANCH IF UNIT NOT AVAILABLE
+        CT0011(BU,2),0.62($1)                                ! line 14
+        BRZ,ZASN04                                           ! line 15  -BRANCH IF NOT RESERVED
+        CM1111,SCNFCG                                        ! line 16  -SET CONFIGURATION CHANGE BIT
+ZASN04  BZBZ,SUNASG($1),ZASN50                               ! line 17  -BR. IF ASSIGNED TO REASSIGN
+! line 18  -MAKE ASSIGNED IF UNASSIGNED
+        CM1111,SOWNER($1)                                    ! line 19  -SET OWNER TO MCP
+        SR,2,SUNAA($1)                                       ! line 20  -PUT UNIT AREA ADDR. IN UST ENTRY
+        KV,1,$2                                              ! line 21
+        CM0000(BU,8),SVER+.1($1)                             ! line 22  -CLEAR TABLES
+        CM0000(BU,7),SRD($1)                                 ! line 23
+        BZXE,ZASN06                                          ! line 24  -IF UNEQUAL,BR. FOR MULTI CHAN
+ZCOM95  LX,1,ZCOM98                                          ! line 25  -RESTORE INDICES
+        LX,2,ZCOM98+1.0                                      ! line 26
+ZCOM90  B,$                                                  ! line 27  -RETURN SLOT
+ZASN06  CM1111,SMOUNT($1)                                    ! line 28
+        CM1111(BU,1),SIMNT($1)                               ! line 29
+        CM1111,SVER($1)                                      ! line 30
+        CM0000,SDISPO($1)                                    ! line 31
+        CM1111,STATI($1)                                     ! line 32
+        LVNI,1,0.0                                           ! line 33
+        SR,2,$2                                              ! line 34  -SET UNIT AREA ADDR INTO $2 VF
+        SV,1,SFILEK($2)                                      ! line 35  -SET FILE COUNT TO -0
+        Z,$SB                                                ! line 36
+        CM1111(BU,2),$SB+.2                                  ! line 37  -SET ZONE BITS FOR IQS STORE
+ZASN52  LCV(BU,18),.1($2)                                    ! line 38  -GET CHANNEL NO.
+        ST(DU,16,8),ZASN12-.1                                ! line 39  -STORE CHAN NUM IN MESSAGE
+        LCV(BU,3),SUNITN($2)                                 ! line 40  -GET UNIT NUMBER
+        ST(DU,8,8),ZASN13-.1                                 ! line 41  -STORE UNIT NUMBER IN MESSAGE  (printed "CU")
+        L(BU,26),$TC                                         ! line 42
+        ST,SRMTC($2)                                         ! line 43
+        CT0011,SYSMOD                                        ! line 44  -TEST MODE
+        BRZ,ZASN09                                           ! line 45
+        LV,2,ZASN15                                          ! line 46  -LOAD OFFLINE
+ZASN07  SV,2,ZASN11                                          ! line 47
+        B,DMCP                                               ! line 48
+
+!SYM ZASN01 232746.00
+!SYM ZASN04 232753.40
+!SYM ZCOM95 232761.00
+!SYM ZCOM90 232762.00
+!SYM ZASN06 232762.40
+!SYM ZASN52 232772.40
+!SYM ZASN07 233002.40
+!CHECK 232746.00 | 233077.40 80 | line 10 ZASN01 SIC,ZCOM99
+!CHECK 232746.40 | 233067.50 00 | line 11 B,ZCOM01 (byte prints CC)
+!CHECK 232747.00 | 000000.31 82 233020.74 02 | line 12 BB,SCHAVL($2),ZASN50
+!CHECK 232750.00 | 000000.34 81 233020.74 02 | line 13 BB,SUNAVL($1),ZASN50
+!CHECK 232751.00 | 000000.76 81 002000.07 70 | line 14 CT0011(BU,2),0.62($1)
+!CHECK 232752.00 | 232753.74 C2 | line 15 BRZ,ZASN04
+!CHECK 232752.40 | 215001.02 80 001000.36 F0 | line 16 CM1111,SCNFCG
+!CHECK 232753.40 | 000000.35 81 233020.74 04 | line 17 ZASN04 BZBZ,SUNASG($1),ZASN50
+!CHECK 232754.40 | 000000.40 81 001000.36 F0 | line 19 CM1111,SOWNER($1)
+!CHECK 232755.40 | 000000.05 71 | line 20 SR,2,SUNAA($1)
+!CHECK 232756.00 | 000022.02 90 | line 21 KV,1,$2
+!CHECK 232756.40 | 000000.51 81 010000.00 F0 | line 22 CM0000(BU,8),SVER+.1($1)
+!CHECK 232757.40 | 000000.71 81 007000.00 F0 | line 23 CM0000(BU,7),SRD($1)
+!CHECK 232760.40 | 232762.72 C0 | line 24 BZXE,ZASN06
+!CHECK 232761.00 | 233105.02 10 | line 25 ZCOM95 LX,1,ZCOM98
+!CHECK 232761.40 | 233106.04 10 | line 26 LX,2,ZCOM98+1.0
+!CHECK 232762.00 | 232762.10 00 | line 27 ZCOM90 B,$ (byte prints C0)
+!CHECK 232762.40 | 000000.63 81 001000.36 F0 | line 28 ZASN06 CM1111,SMOUNT($1)
+!CHECK 232763.40 | 000000.65 81 001000.36 F0 | line 29 CM1111(BU,1),SIMNT($1)
+!CHECK 232764.40 | 000000.50 81 001000.36 F0 | line 30 CM1111,SVER($1)
+!CHECK 232765.40 | 000000.33 81 001000.00 F0 | line 31 CM0000,SDISPO($1)
+!CHECK 232766.40 | 000000.32 81 001000.36 F0 | line 32 CM1111,STATI($1)
+!CHECK 232767.40 | 000000.03 09 | line 33 LVNI,1,0.0
+!CHECK 232770.00 | 000022.05 70 | line 34 SR,2,$2
+!CHECK 232770.40 | 000007.43 32 | line 35 SV,1,SFILEK($2)
+!CHECK 232771.00 | 000012.22 00 | line 36 Z,$SB
+!CHECK 232771.40 | 000012.02 80 002000.36 F0 | line 37 CM1111(BU,2),$SB+.2
+!CHECK 232772.40 | 000000.01 82 022000.20 30 | line 38 ZASN52 LCV(BU,18),.1($2)
+!CHECK 232773.40 | 233013.07 80 020000.24 D0 | line 39 ST(DU,16,8),ZASN12-.1
+!CHECK 232774.40 | 000000.57 82 003000.20 30 | line 40 LCV(BU,3),SUNITN($2)
+!CHECK 232775.40 | 233014.17 80 010000.24 D0 | line 41 ST(DU,8,8),ZASN13-.1 (printed "CU")
+!CHECK 232776.40 | 000001.34 80 032000.20 50 | line 42 L(BU,26),$TC
+!CHECK 232777.40 | 000001.40 82 032000.20 D0 | line 43 ST,SRMTC($2)
+!CHECK 233000.40 | 215001.10 80 002000.07 70 | line 44 CT0011,SYSMOD
+!CHECK 233001.40 | 233017.74 C2 | line 45 BRZ,ZASN09
+!CHECK 233002.00 | 233016.04 30 | line 46 LV,2,ZASN15
+!CHECK 233002.40 | 233007.05 30 | line 47 ZASN07 SV,2,ZASN11
+!CHECK 233003.00 | 000040.10 00 | line 48 B,DMCP (byte prints C0)

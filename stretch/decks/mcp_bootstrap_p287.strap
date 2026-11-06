@@ -1,0 +1,161 @@
+! mcp_bootstrap_p287.strap -- MCP printed page 287: the ASSIGN
+! program's CONSTANTS AND INDEX NAMES (T NEXT .. T IXM), lines 1-45.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.38, read at 400 dpi, names at 900
+! dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID
+! QE000046  DIST. OF 3/01  3/01  PAGE NUMBER 287" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is BLANK:
+! line 1 is PRNS and compiles nothing.
+!
+! THE SAME SOURCE AS printed p.61 (IPL assembly, decks/mcp_bootstrap_p61
+! .strap), REVISED and assembled here in the body at 232224.40.  The
+! differences from p.61, all read off this page's ink:
+!   * no T CTEMP XW between T NEXT and T IPL (T CTEMP is external here,
+!     and resolves to 021102.0 -- see EXTERNALS);
+!   * no T WORK1 / T WORK2 / T REFIL XWs before T SAV;
+!   * NEW: line 17 "T LCHCT DD(BU,7),0" -TAPE CHAN COUNT FOR ENTIRE SYST
+!     CONF., and line 26 "T INDX DD(BU,1),0" -FOR THE ODD-BALL SITUATION;
+!   * line 44 "TIXL SYN,$11" (p.61: SYN,T X1) -- printed 000033.00+.
+! Spellings copied from p.61; addresses never.
+!
+! THE PAGE.  45 lines; every line number prints a "*" after it.
+!   line 1         PRNS (listing control, emits nothing).
+!   lines 2-6, 9-11, 14  remark/banner cards.
+!   lines 7-8      T NEXT VF, (232224.40) and T IPL VF,0.0 (232225.00):
+!                  VF is 25 bits, so T IPL starts on the next half word.
+!   lines 12-13    SYN(BU,18)/SYN(BU,7) on T CTEMP, print 021102.00+ and
+!                  021102.31+ with dds "BU,22 ,10" / "BU,07 ,10".
+!   line 15        T SAV XW at 232226.00.
+!   lines 16-28    the bit chain 232227.00 .. 232227.43: 18 + 7 + 11x1
+!                  bits; the DDs print their value right-justified
+!                  ("000000", "000", then one bit each).
+!   lines 29-45    seventeen index SYNs, print 0000nn.00+, dds "BU,100,10".
+!                  SYN rows get no !CHECK (they compile nothing); their
+!                  printed values are the !SYM rows.
+! Located rows run contiguous from 232224.40 to 232227.43 (+1 bit).
+!
+! JOIN.  printed p.286 is not landed here, so the join at 232224.40 is
+! unchecked from this side.  Line 15's XW refill field 232231 is
+! T PPREF and its value 232234 is T PREFT, both on a later page
+! (b6decks p.268/p.276 stand-ins carry the same values).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 18 "T CNE" = TONE (open O): p.61 line 21 spells T ONE, and
+!     the remark is "-CONSTANT OF ONE".  Nothing on the row closes it.
+!   * line 17 "T LCHCT": both C glyphs are open, the same as T LUCT's
+!     and T INDC's C, while T LOOP on line 27 prints CLOSED O's at 900
+!     dpi; read as C.  New symbol, no other witness.
+!   * line 19 "T MCDE" = TMODE, line 28 "T LCCP1" = TLOOP1: as landed
+!     p.61; line 27 T LOOP closes the O.
+!   * DD values printed "C" (lines 19-28) are 0; octal fields
+!     "CCCCCC.CC", "CCC" are 0; line 15's "CCO" flags are 000.
+!
+! EXTERNALS.  None of these is landed in the body; values from this
+! page's own binary.
+!
+! CARD SERIALS.  QE000046 .. QE000090, line N prints QE0000(45+N);
+! the header's CARD ID is QE000046.
+
+TCTEMP  SYN, (8)021102.0             ! not landed in the body; line 12 SYN TCTEMP+0.0 prints 021102.00+ (BIT-EXACT)
+TPREFT  SYN, (8)232234.0             ! not landed in the body; XW line 15 value 232234.00, BIT-EXACT
+TPPC    SYN, 21                      ! not landed in the body; XW line 15 count 000025 (octal)
+TPPREF  SYN, (8)232231.0             ! not landed in the body; XW line 15 refill 232231
+
+        SLC, (8)232224.40
+        PRNS                                                 ! line  1
+! line  2  -
+! line  3  -  -----------------------------------------------------------
+! line  4  -          CONSTANTS TO BE USED THRU OUT ASSIGN PROGRAM
+! line  5  -  -----------------------------------------------------------
+! line  6  -
+TNEXT   VF,                                                  ! line  7  -THE ADDR OF THE NEXT PP TO BE RUN
+TIPL    VF,0.0                                               ! line  8  -CHAN ADDRESSES FOR IPL
+! line  9  -
+! line 10  -          THE FORMAT OF THE TEMP CHAN WORD
+! line 11  -
+TCTACH  SYN(BU,18),TCTEMP+0.0                                ! line 12  -ABSOLUTE CHANNEL NUMBER
+TCTSCH  SYN(BU,7),TCTEMP+0.25                                ! line 13  -SYMBOLIC CHANNEL NUMBER
+! line 14  -
+TSAV    XW,TPREFT,TPPC,TPPREF                                ! line 15
+TLUCT   DD(BU,18),0                                          ! line 16  -LARGEST UNIT COUNT ON ONE CHANNEL
+TLCHCT  DD(BU,7),0                                           ! line 17  -TAPE CHAN COUNT FOR ENTIRE SYST CONF.
+TONE    DD(BU,1),1                                           ! line 18  -CONSTANT OF ONE (printed "T CNE")
+TMODE   DD(BU,1),0                                           ! line 19  -SINGLE OR FULL NOT-OVERLAP MODE
+TINDA   DD(BU,1),0                                           ! line 20  -SAME CHANNEL ALLOWED INDICATOR
+TINDB   DD(BU,1),0                                           ! line 21  -THE SPLIT CHANNEL INDICATOR
+TINDC   DD(BU,1),0                                           ! line 22  -UNIT FOUND -- MULTI-UNIT CHECK
+TINDD   DD(BU,1),0                                           ! line 23  -BYPASS OPTIMISED REEL MTINGS
+TINDE   DD(BU,1),0                                           ! line 24  -THE ADVANCE AND SAVE INDEX IND
+TINDZ   DD(BU,1),0                                           ! line 25  -MORE MULTI-UNITS AVAILABLE
+TINDX   DD(BU,1),0                                           ! line 26  -FOR THE ODD-BALL SITUATION
+TLOOP   DD(BU,1),0                                           ! line 27  -TO PREVENT A LOOP IN SECTION ELEVEN
+TLOOP1  DD(BU,1),0                                           ! line 28  -LOOP PREVENTER NUMBER 2
+TCTWDX  SYN,TX1                                              ! line 29  -ENTRY CONTROL WORD INDEX
+TX1     SYN,$10                                              ! line 30  -TEMPORARY INDEX
+TX2     SYN,$9                                               ! line 31  -THE SCAN CONTROL INDEX
+TX1BR   SYN,$1                                               ! line 32  -FOR SUB-ROUTINE BRANCHING
+TX3     SYN,$2                                               ! line 33  -COUNTER
+TIXA    SYN,$4                                               ! line 34  -I/O REQ. LOCATOR INDEX
+TIXB    SYN,$5                                               ! line 35  -MULTI-UNIT STAT TBLE SCAN INDEX
+TIXE    SYN,$3                                               ! line 36  -PP REF. WORD LOCATOR INDEX
+TIXF    SYN,TX1                                              ! line 37  -MACH CONF CHANGE-- CHAN. SCAN IX
+TIXG    SYN,$8                                               ! line 38  -MACH CONF CHANGE -- UNIT SCAN
+TIXH    SYN,TX3                                              ! line 39  -MACH CONF CHANGE -- PP REF TBL SCAN
+TIXI    SYN,TIXB                                             ! line 40  -MACH CONF CHANGE -- I/O TBLE SCAN IX
+TIXJ    SYN,$6                                               ! line 41  -UNIT TBLE ADDR. AND UNIT COUNT
+TIXD    SYN,$7                                               ! line 42  -CHANNEL ADDRESS
+TIXK    SYN,TX1                                              ! line 43  -LIKE CHANNEL SEARCH INDEX
+TIXL    SYN,$11                                              ! line 44  -I/O TABLE SCAN INDEX
+TIXM    SYN,TIXG                                             ! line 45  -NOT OVERLAP SCANNER INDEX
+
+!SYM TNEXT  232224.40
+!SYM TIPL   232225.00
+!SYM TCTACH 021102.00
+!SYM TCTSCH 021102.31
+!SYM TSAV   232226.00
+!SYM TLUCT  232227.00
+!SYM TLCHCT 232227.22
+!SYM TONE   232227.31
+!SYM TMODE  232227.32
+!SYM TINDA  232227.33
+!SYM TINDB  232227.34
+!SYM TINDC  232227.35
+!SYM TINDD  232227.36
+!SYM TINDE  232227.37
+!SYM TINDZ  232227.40
+!SYM TINDX  232227.41
+!SYM TLOOP  232227.42
+!SYM TLOOP1 232227.43
+!SYM TCTWDX 000032.00
+!SYM TX1    000032.00
+!SYM TX2    000031.00
+!SYM TX1BR  000021.00
+!SYM TX3    000022.00
+!SYM TIXA   000024.00
+!SYM TIXB   000025.00
+!SYM TIXE   000023.00
+!SYM TIXF   000032.00
+!SYM TIXG   000030.00
+!SYM TIXH   000022.00
+!SYM TIXI   000025.00
+!SYM TIXJ   000026.00
+!SYM TIXD   000027.00
+!SYM TIXK   000032.00
+!SYM TIXL   000033.00
+!SYM TIXM   000030.00
+!CHECK 232224.40 | 000000.00+ | line 7 TNEXT VF,
+!CHECK 232225.00 | 000000.00+ | line 8 TIPL VF,0.0
+!CHECK 232226.00 | 232234.00+ 000 000025 232231 | line 15 TSAV XW,TPREFT,TPPC,TPPREF
+!CHECK 232227.00 | 000000 | line 16 TLUCT DD(BU,18),0 | 18
+!CHECK 232227.22 | 000 | line 17 TLCHCT DD(BU,7),0 | 7
+!CHECK 232227.31 | 1 | line 18 TONE DD(BU,1),1 (printed "T CNE") | 1
+!CHECK 232227.32 | 0 | line 19 TMODE DD(BU,1),0 | 1
+!CHECK 232227.33 | 0 | line 20 TINDA DD(BU,1),0 | 1
+!CHECK 232227.34 | 0 | line 21 TINDB DD(BU,1),0 | 1
+!CHECK 232227.35 | 0 | line 22 TINDC DD(BU,1),0 | 1
+!CHECK 232227.36 | 0 | line 23 TINDD DD(BU,1),0 | 1
+!CHECK 232227.37 | 0 | line 24 TINDE DD(BU,1),0 | 1
+!CHECK 232227.40 | 0 | line 25 TINDZ DD(BU,1),0 | 1
+!CHECK 232227.41 | 0 | line 26 TINDX DD(BU,1),0 | 1
+!CHECK 232227.42 | 0 | line 27 TLOOP DD(BU,1),0 | 1
+!CHECK 232227.43 | 0 | line 28 TLOOP1 DD(BU,1),0 | 1

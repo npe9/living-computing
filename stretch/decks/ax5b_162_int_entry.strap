@@ -3,6 +3,12 @@
 ! Transcribed VERBATIM at the listing's own addresses and checked
 ! bit-exactly by verify_ax5b_162_int_entry_listing.py.
 !
+! 2026-11-06: "$OP" IS NOW WRITTEN AS PRINTED.  C28-6129 printed p.10 (PDF
+! p.14): a $ prefixed to an operation code "directs the compiler to
+! suppress any error indications" for that statement; the binary is
+! the plain operation's, and strap_asm accepts the prefix.  Notes below
+! that describe writing the card WITHOUT the "$" predate this.
+!
 ! THE ROW THE PAGE EXISTS FOR:
 !
 !     024320.00  I62ITE  BD,$   "-ALL INTERRUPTS ENTER HERE."  24320.04 00
@@ -212,9 +218,9 @@ I62EXT XW,  0, 0, 0
 I62EX  LX,  $X1, I00O            ! -IN
         NOP                        ! -ORDER
 I62PSI LX,  $X0, 0                ! -PSEUDO IC.
-I62BR1 BD,  0                     ! listing: "$BD,0"
+I62BR1 $BD, 0                     ! listing: "$BD,0"
 I62SUB XW,  0, 0, 0               ! -SUBJ INST.
-I62BR2 BD,  0                     ! listing: "$BD,0"; 024325.40 is skipped
+I62BR2 $BD, 0                     ! listing: "$BD,0"; 024325.40 is skipped
 I62XW1 XW,  0, 64, I62INT        ! the $IA setting: 64 words at I62INT
 I62EXV L(BU), I00O               ! -VFL FULL WD.
 I62EXF L(U), I00O                ! -FLT PT.

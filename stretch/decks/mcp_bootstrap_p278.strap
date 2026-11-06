@@ -1,0 +1,160 @@
+! mcp_bootstrap_p278.strap -- MCP printed page 278: the swap area L NOSAV,
+! TYPE SYMBOLS AND CODES, IOD AND REEL COMPARISONS, and the DISPATCHER
+! ENTRY TO DECODE (L DECOD .. B,L REELR), lines 1-52.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.29, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID QD000099  DIST. OF 3/01
+!  3/01  PAGE NUMBER 278" (round glyphs in numeric fields read 0).  The
+! heading row's LOCATION field is BLANK (line 1 is a banner).
+!
+! THE PAGE.  52 lines; every line number prints a "*" after it.  Located
+! rows run contiguous from 231664.00 to 231715.00 (a half word; next
+! location 231715.40), then blank paper.  "*" after the LOCATION on
+! line 34.  No TAIL card is printed on this page.
+!   line  4      L NOSAV DRZ(BU,64),(3) prints 000003.00 (the size; DRZ
+!                rows get no !CHECK).
+!   lines 8-25   nine (AY)DD(BU,60,6) type symbols, each followed by its
+!                4-bit (8)DD(BU,4) code at .74.  The (AY) rows print no
+!                binary (no !CHECK); the codes print 01..10 and are
+!                checked at width 4.
+!   lines 30-34  L IOD, L REEL (AY)DD(BU,64,6) with CNOPs (no location,
+!                emit nothing), L BLANK (AY)DD(BU,48,6).
+!   lines 39-52  L DECOD .. B,L REELR, code.
+! THE (AY) BLANK COUNTS WERE MEASURED on the 400 dpi image: the "Y"
+! terminator's ink starts at x = 3741-3744 px on every type row (lines
+! 8-24) and on L IOD / L REEL (lines 30, 32), so each datum is ten
+! characters; on L BLANK (line 34) at x = 3661, 82 px = two character
+! pitches earlier, so eight blanks -- as its own (BU,48,6) says.  This
+! is the same table, laid out the same way, as the IPL assembly's
+! printed p.51 (decks/mcp_bootstrap_p51.strap).
+!
+! JOIN.  p.277 (not landed; its image, PDF p.28, read at 200 dpi) ends
+! with "L NTPU DRZ(BU),(16)" at 231644.00, i.e. through 231663.77, so
+! this page's 231664.00 continues it.  p.279 (PDF p.30, read at 200 dpi)
+! opens on a banner and then line 5 "L INIT L(BU,24),1.0(LIODX)" at
+! 231715.40 -- contiguous with this page's end, and the address this
+! page's line 49 branches to.
+!
+! CARD SERIALS.  QD000099 (line 1) .. QD000150 (line 52), one per line,
+! none skipped on the page.  But p.277's last row prints QD000097 and
+! p.279's first QD000152: QD000098 and QD000151 print on neither
+! neighbour's located lines nor here.  Recorded, not explained
+! (p.277/p.279 read only at 200 dpi).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 48 label prints "L CVER" (open O): the operands of lines 42
+!     and 43 print "LOVER" with a closed O, and both branch to 231711.40,
+!     this row's location.  Written LOVER.
+!   * line 30 prints "L ICD (AY)DD(BU,64,6),ICD": the remark line 28
+!     prints "IOD AND REEL COMPARISONS" closed; written LIOD / IOD.
+!   * open round glyphs in octal fields are 0 ("CCCCC1.CC 83" etc.);
+!     the (8)DD rows print "CD(BU,4)" = DD (worn-stem D; line 8 prints DD).
+!   * hex bytes "C4" (lines 46, 47) = 04: Z's high nibble is 0 and the
+!     low nibble the index ($4).  Line 50's "C6" is a real C (branch on
+!     indicator, as p.52 of the IPL assembly records for BAEZ).
+!
+! EXTERNALS.  None of these is defined on a landed body page; values
+! come from this page's binary.  Forms follow the IPL assembly's
+! defining cards for the same source (p.48: LIODX SYN,$3; LXPP SYN,$4;
+! LTY and LPPURF are XW; LFINB DD(BU,1); p.53 LOVBIT SYN(BU,1)).
+!   LINIT: p.279 line 5, an L(BU,24) full word -> (BU,64,8).
+!   LIODRN, LREELR, LFINAL: defining card not seen; plain SYN.
+
+LTY     SYN(BU), (8)231535.0          ! not landed (XW, as IPL p.48 "L TY XW"); SWAPI line 39 231535.00, BIT-EXACT
+LIODX   SYN, $3                       ! not landed (IPL p.48 "L IODX SYN,$3"); SWAPI line 39 000023.20 = $3
+LXPP    SYN, $4                       ! not landed (IPL p.48 "L XPP SYN,$4"); SWAPI line 44 000024.00 = $4
+LOVBIT  SYN(BU,1), (8)231545.62       ! not landed (IPL p.53 form); BB1 line 43 231545.62, BIT-EXACT
+LPPURF  SYN(BU), (8)231523.0          ! not landed (XW, as IPL p.48 "L PPURF XW"); TI line 45 231523.00, BIT-EXACT
+LFINB   SYN(BU,1), (8)231545.51       ! not landed (IPL p.48 DD(BU,1)); BB line 49 231545.51, BIT-EXACT
+LINIT   SYN(BU,64,8), (8)231715.40    ! p.279 line 5 (not landed) "L INIT L(BU,24),..." at 231715.40; BB line 49 231715.74
+LFINAL  SYN(BU,64,8), (8)232126.0              ! not landed; BRZZ line 50 232126.34, half word only
+LIODRN  SYN, (8)231750.40             ! not landed; BB line 51 231750.74, half word only
+LREELR  SYN, (8)232103.40             ! not landed; B line 52 232103.50, half word only
+
+        SLC, (8)231664.00
+! line  1  -------------------------------------------------------------
+! line  2  -          SWAP AREAS FOR THE 3 INTERNAL INDEXES FOR NOT OVERLAP USE
+! line  3  -
+LNOSAV  DRZ(BU,64),(3)                                       ! line  4
+! line  5  -------------------------------------------------------------
+! line  6  -          TYPE SYMBOLS AND CODES
+! line  7  -
+LDISK   (AY)DD(BU,60,6),DISK      Y                          ! line  8
+        (8)DD(BU,4),1                                        ! line  9
+LTRACK  (AY)DD(BU,60,6),TRACK     Y                          ! line 10
+        (8)DD(BU,4),1                                        ! line 11
+        (AY)DD(BU,60,6),CONSOLE   Y                          ! line 12
+        (8)DD(BU,4),2                                        ! line 13
+        (AY)DD(BU,60,6),READER    Y                          ! line 14
+        (8)DD(BU,4),3                                        ! line 15
+        (AY)DD(BU,60,6),PUNCH     Y                          ! line 16
+        (8)DD(BU,4),4                                        ! line 17
+        (AY)DD(BU,60,6),PRINTER   Y                          ! line 18
+        (8)DD(BU,4),5                                        ! line 19
+        (AY)DD(BU,60,6),IQS       Y                          ! line 20
+        (8)DD(BU,4),6                                        ! line 21
+        (AY)DD(BU,60,6),          Y                          ! line 22  ten blanks
+        (8)DD(BU,4),7                                        ! line 23
+LTAPE   (AY)DD(BU,60,6),TAPE      Y                          ! line 24
+        (8)DD(BU,4),10                                       ! line 25
+! line 26  -------------------------------------------------------------
+! line 27  -
+! line 28  -          IOD AND REEL COMPARISONS
+! line 29  -
+LIOD    (AY)DD(BU,64,6),IOD       Y                          ! line 30  printed "L ICD ... ICD"
+        CNOP                                                 ! line 31  (no location printed)
+LREEL   (AY)DD(BU,64,6),REEL      Y                          ! line 32
+        CNOP                                                 ! line 33  (no location printed)
+LBLANK  (AY)DD(BU,48,6),        Y                            ! line 34  -BCD BLANKS
+! line 35  -------------------------------------------------------------
+! line 36  -          DISPATCHER ENTRY TO DECODE
+! line 37  -------------------------------------------------------------
+! line 38  -
+LDECOD  SWAPI,8,LTY,LIODX                                    ! line 39  -SAVE INDEXES
+        LV,LIODX,0.0($15)                                    ! line 40  -GET FWA CONTENTS.
+        LC,LIODX,0.32($15)                                   ! line 41  -CHECK FOR NOT OVERLAP MODE
+        BXCZ,LOVER                                           ! line 42  -IF OVERLAP MODE
+        BB1,LOVBIT,LOVER                                     ! line 43  -CHECK AND SET FOR NOT OVERLAP CASE
+        SWAPI,3,LXPP,LNOSAV                                  ! line 44  -SAVE THE OVERLAP INDEXES
+        TI,3,LPPURF,LXPP                                     ! line 45  -AND INITIALIZE FOR NOT OVERLAP
+        Z,0.0(LXPP)                                          ! line 46  -ZERO FIRST PPREF ENTRY.
+        Z,1.0(LXPP)                                          ! line 47
+LOVER   L(BU,64),1.0(LIODX),0.0                              ! line 48  printed "L CVER"
+        BB,LFINB,LINIT                                       ! line 49  -BRANCH ON FINAL BIT 1
+        BRZZ,LFINAL                                          ! line 50  -BRANCH ON ZERO FWA
+LFWA    BB,1.1(LIODX),LIODRN                                 ! line 51  -TEST FOR I OR R
+        B,LREELR                                             ! line 52
+
+!SYM LNOSAV 231664.00
+!SYM LDISK  231667.00
+!SYM LTRACK 231670.00
+!SYM LTAPE  231677.00
+!SYM LIOD   231700.00
+!SYM LREEL  231701.00
+!SYM LBLANK 231702.00
+!SYM LDECOD 231703.00
+!SYM LOVER  231711.40
+!SYM LFWA   231714.00
+!CHECK 231667.74 | 01 | line 9 (8)DD(BU,4),1 | 4
+!CHECK 231670.74 | 01 | line 11 (8)DD(BU,4),1 (printed "C1") | 4
+!CHECK 231671.74 | 02 | line 13 (8)DD(BU,4),2 | 4
+!CHECK 231672.74 | 03 | line 15 (8)DD(BU,4),3 (printed "C3") | 4
+!CHECK 231673.74 | 04 | line 17 (8)DD(BU,4),4 | 4
+!CHECK 231674.74 | 05 | line 19 (8)DD(BU,4),5 | 4
+!CHECK 231675.74 | 06 | line 21 (8)DD(BU,4),6 | 4
+!CHECK 231676.74 | 07 | line 23 (8)DD(BU,4),7 | 4
+!CHECK 231677.74 | 10 | line 25 (8)DD(BU,4),10 | 4
+!CHECK 231703.00 | 231535.00 80 000023.20 E0 | line 39 L DECOD SWAPI,8,LTY,LIODX
+!CHECK 231704.00 | 000000.06 3F | line 40 LV,LIODX,0.0($15)
+!CHECK 231704.40 | 000000.46 5F | line 41 LC,LIODX,0.32($15)
+!CHECK 231705.00 | 231711.70 42 | line 42 BXCZ,LOVER
+!CHECK 231705.40 | 231545.62 80 231711.74 0E | line 43 BB1,LOVBIT,LOVER
+!CHECK 231706.40 | 000024.00 80 231664.06 E0 | line 44 SWAPI,3,LXPP,LNOSAV
+!CHECK 231707.40 | 231523.00 80 000024.06 A0 | line 45 TI,3,LPPURF,LXPP
+!CHECK 231710.40 | 000000.22 04 | line 46 Z,0.0(LXPP) (byte prints "C4")
+!CHECK 231711.00 | 000001.22 04 | line 47 Z,1.0(LXPP) (byte prints "C4")
+!CHECK 231711.40 | 000001.00 83 000000.20 50 | line 48 L OVER L(BU,64),1.0(LIODX),0.0 (printed "L CVER")
+!CHECK 231712.40 | 231545.51 80 231715.74 02 | line 49 BB,LFINB,LINIT
+!CHECK 231713.40 | 232126.34 C6 | line 50 BRZZ,LFINAL
+!CHECK 231714.00 | 000001.01 83 231750.74 02 | line 51 LFWA BB,1.1(LIODX),LIODRN
+!CHECK 231715.00 | 232103.50 00 | line 52 B,LREELR

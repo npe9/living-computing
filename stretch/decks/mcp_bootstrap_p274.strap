@@ -1,0 +1,178 @@
+! mcp_bootstrap_p274.strap -- MCP printed page 274: the tail of the JOB
+! CONTROL mask table (YRELMK .. YFORTR), YUTOE, the loader save areas
+! (YLLSAV .. YEOJS), and the opening of the EOJ routine (YC4NO .. B,YMPFCH).
+! Lines 1-52.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.25, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID QA000253  DIST. OF 3/01  3/01  PAGE NUMBER 274" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is BLANK
+! (line 1 is a CNOP that prints no location).
+!
+! THE PAGE.  52 lines; every line number prints a "*" after it.  Located
+! rows contiguous from 231417.00 (line 2) to 231522.00 (line 52, a half
+! word; next location 231522.40), then blank paper.  "*" after the
+! LOCATION on lines 15, 17, 19 and 42.
+!   lines 1-13  the same eight-character (AX)DD(BU,48,6) masks as the
+!               bootstrap's printed p.41 lines 26-36 (REEL, IOD, COMPILE,
+!               COMPILGO, eight blanks, UPDATE), each followed by a CNOP
+!               that prints no location (pads 16 bits), plus YFORTR
+!               "FORTRAN " at 231424.60, NOT followed by a CNOP.  The masks
+!               print no binary; their extent is checked by the locations.
+!   line 14     YUTOE SYN,YUCBF1+.372 prints 231373.64+, "+00000000",
+!               "BU,100,10" (the dds of YUCBF1); no !CHECK on SYN rows.
+!   lines 15-19 DR/DRZ reservations print their sizes (no !CHECK).
+!   lines 20-21 YSSPBT/YEOJS DD(BU,1),(2)0, each prints "0".
+!   lines 22-24 remark cards (banner); line 22's trailing "--" is text.
+! JOIN.  p.273 not landed and no neighbour deck in scratch: contiguity
+! with it is NOT established; line 1's CNOP prints no location, so the
+! origin is line 2's 231417.00.  p.275 should open at 231522.40 with
+! serial QA000305.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 12 "LPDATE" = UPDATE (worn U): p.41 line 36's YUPDAT mask
+!     reads UPDATE, and the label is YUPDAT.
+!   * line 14 label printed "Y UTOE" (blank inside the name dropped, as
+!     on every page); YUTOE as p.41 line 37.
+!   * line 16 YDFCS, line 17 YEDLL, line 18 WJOR2, line 52 YMPFCH, line 25
+!     YC4NO: D/O/F glyphs worn; spellings as C22-6728 (and the volume OCR)
+!     print them (YDFCS, YEDLL, WJOR2, YC4NO, YMPFCH).
+!   * line 21 label "YECJS" = YEOJS: line 46's operand ",YEOJS" prints a
+!     closed O; C22-6728 YEOJS.
+!   * lines 44/48 "CABEOJ", "CDUMP" = DABEOJ, DDUMP (landed spellings).
+!   * line 51 YC4B3 / line 45 ,YC4B3: B with stem at 900 dpi.
+!   * line 48 byte "CO" = 00: its first glyph is as open as line 45's
+!     real C0, but BE's op byte is 00 in every landed BE row (p.130 "W CONY
+!     BE,$" 216371.00 00, "BE,5.0($1)" 000005.00 01) -- open round = 0.
+!   * hex bytes printed with an open round read 0 ("BO" = B0, "CO" = C0,
+!     "5C" = 50); octal fields "CCCCCC" = 000000.
+!
+! EXTERNALS.  YUCBF1 is defined on a page not landed (the body's copy);
+! its value comes from this page's line 14 (231373.64 - .372 =
+! 231366.00, BIT-EXACT through the SYN), its dds from the SYN's printed
+! "BU,100,10".  YXWEJM, YMPFCH: this page's binary, half word only.
+!
+! CARD SERIALS.  QA000253 .. QA000304, one per line (line N prints
+! QA000(252+N)), none skipped or shared; the header CARD ID QA000253 is
+! line 1's.  A new deck letter (QA) begins on or before this page.
+
+YJC4TT  SYN, (8)231136.00            ! landed p.121 line 7; LVE line 25 231140.75
+YUCBF1  SYN(BU,64,8), (8)231366.00   ! not landed; from line 14 YUTOE SYN,YUCBF1+.372 = 231373.64, BIT-EXACT
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B lines 27, 47
+DRET    SYN, 33.0                    ! landed p.105; line 28 000041.00
+SMAXRN  SYN, (8)215005.40            ! printed p.103 line 36 "SMAXRN VF,0"; LC line 29
+SBAPP   SYN, (8)215005.0             ! printed p.103 line 35 "S BAPP VF,0"; LV line 31
+SCHANS  SYN, (8)215002.0             ! printed p.103 (SYN,SXCHAN); V+ line 36
+SMULTI  SYN(BU,1), 0.27              ! printed p.99 line 24 -MULTI-UNIT CHAN; BZB line 38
+SSEL    SYN(BU,1), 0.39              ! p.99 line 32  -SELECT; BB line 41
+SCHOP   SYN(BU,1), 0.26              ! p.99 line 22 -CHAN OPERATING; BB line 42
+DABEOJ  SYN, 68.0                    ! landed p.105 "D ABEOJ"; KVI line 44 000104.35
+DDUMP   SYN, 64.0                    ! landed "D DUMP"; BE line 48 000100.00
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label
+SPINCL  SYN(BU,1), SCOMRG+.6         ! p.103 line 16; CM0000 line 50 215001.06
+YXWEJM  SYN, (8)231162.0             ! not landed; LX line 51 231162.02, half word only
+YMPFCH  SYN, (8)231141.0             ! not landed; B line 52 231141.10, half word only
+
+        SLC, (8)231417.00
+        CNOP                                                 ! line  1  (no location printed)
+YRELMK  (AX)DD(BU,48,6),REEL    X                            ! line  2
+        CNOP                                                 ! line  3
+        (AX)DD(BU,48,6),IOD     X                            ! line  4
+        CNOP                                                 ! line  5
+YCOMMK  (AX)DD(BU,48,6),COMPILE X                            ! line  6
+        CNOP                                                 ! line  7
+YCNGMK  (AX)DD(BU,48,6),COMPILGOX                            ! line  8
+        CNOP                                                 ! line  9
+YBLWD4  (AX)DD(BU,48,6),        X                            ! line 10
+        CNOP                                                 ! line 11
+YUPDAT  (AX)DD(BU,48,6),UPDATE  X                            ! line 12  printed "LPDATE"
+YFORTR  (AX)DD(BU,48,6),FORTRAN X                            ! line 13
+YUTOE   SYN,YUCBF1+.372                                      ! line 14  -LOCATION OF REF = AND TOE
+YLLSAV  DR(N),(1)                                            ! line 15  -TO SAVE LOADER LIMITS
+YDFCS   DR(BU),(1)                                           ! line 16
+YEDLL   DRZ(N),(11)                                          ! line 17
+WJOR2   DRZ(U),15                                            ! line 18  -FOR JOB CARD, DECODED
+YBCBU   DR(BU),(15)                                          ! line 19
+YSSPBT  DD(BU,1),(2)0                                        ! line 20
+YEOJS   DD(BU,1),(2)0                                        ! line 21  printed "YECJS"
+! line 22  - SET EOJ SWITCH TO NORMAL OR ABNORMAL, AND FINISH UP LAST JOB.--
+! line 23  - LOG, DUMP (IF GO ),AND RESTORE TABLES
+! line 24  - ******************************************************
+YC4NO   LVE,$14,YJC4TT+2.32                                  ! line 25
+        BZB,YLLSAV.25,$+2.0                                  ! line 26  -IF INITIAL ENTRY TO LOADER IS ON
+        B,DMCP                                               ! line 27  -THIS EOJ IS SPURIOUS.
+        ,DRET                                                ! line 28
+        LC,1,SMAXRN                                          ! line 29
+        BXCZ,YWAITS+.32                                      ! line 30  -T/O INSURE THAT P.P. I-O ACTIVITY IS DEAD
+        LV,1,SBAPP                                           ! line 31
+        V+I,1,1.0                                            ! line 32
+YWAITL  LV,2,0($1)                                           ! line 33
+        BXVZ,YWAITS                                          ! line 34
+        LV,3,0($2)                                           ! line 35
+        V+,3,SCHANS                                          ! line 36
+        V+,3,0($2)                                           ! line 37
+        BZB,SMULTI($3),YWAITI                                ! line 38
+        LV,2,.32($2)                                         ! line 39
+        V+,2,0($3)                                           ! line 40
+        BB,SSEL($2),YWAITS                                   ! line 41
+YWAITI  BB,SCHOP($3),YWAITL                                  ! line 42
+YWAITS  CB+,1,YWAITL                                         ! line 43
+        KVI,$14,DABEOJ                                       ! line 44  printed "CABEOJ"
+        BZXE,YC4B3                                           ! line 45
+        CM1111,YEOJS                                         ! line 46
+        B,DMCP                                               ! line 47  -DUMP IF ABNORMAL EOJ
+        BE,DDUMP                                             ! line 48  - OF A GO JOB  L EOJ (printed "CDUMP")
+        ,YEDLL                                               ! line 49
+        CM0000(BU,1),SPINCL                                  ! line 50
+YC4B3   LX,$1,YXWEJM                                         ! line 51
+        B,YMPFCH                                             ! line 52
+
+!SYM YRELMK 231417.00
+!SYM YCOMMK 231421.00
+!SYM YCNGMK 231422.00
+!SYM YBLWD4 231423.00
+!SYM YUPDAT 231424.00
+!SYM YFORTR 231424.60
+!SYM YUTOE  231373.64
+!SYM YLLSAV 231426.00
+!SYM YDFCS  231427.00
+!SYM YEDLL  231430.00
+!SYM WJOR2  231443.00
+!SYM YBCBU  231462.00
+!SYM YSSPBT 231501.00
+!SYM YEOJS  231501.01
+!SYM YC4NO  231501.40
+!SYM YWAITL 231506.00
+!SYM YWAITI 231513.40
+!SYM YWAITS 231514.40
+!SYM YC4B3  231521.40
+!CHECK 231501.00 | 0 | line 20 YSSPBT DD(BU,1),(2)0 | 1
+!CHECK 231501.01 | 0 | line 21 YEOJS DD(BU,1),(2)0 (label printed "YECJS") | 1
+!CHECK 231501.40 | 231140.75 B0 | line 25 YC4NO LVE,$14,YJC4TT+2.32
+!CHECK 231502.00 | 231426.31 80 231504.34 00 | line 26 BZB,YLLSAV.25,$+2.0
+!CHECK 231503.00 | 000040.10 00 | line 27 B,DMCP
+!CHECK 231503.40 | 000041.00 80 | line 28 ,DRET
+!CHECK 231504.00 | 215005.42 50 | line 29 LC,1,SMAXRN
+!CHECK 231504.40 | 231515.30 42 | line 30 BXCZ,YWAITS+.32
+!CHECK 231505.00 | 215005.02 30 | line 31 LV,1,SBAPP
+!CHECK 231505.40 | 000001.03 05 | line 32 V+I,1,1.0
+!CHECK 231506.00 | 000000.04 31 | line 33 YWAITL LV,2,0($1)
+!CHECK 231506.40 | 231514.71 42 | line 34 BXVZ,YWAITS
+!CHECK 231507.00 | 000000.06 32 | line 35 LV,3,0($2)
+!CHECK 231507.40 | 215002.06 B0 | line 36 V+,3,SCHANS
+!CHECK 231510.00 | 000000.06 B2 | line 37 V+,3,0($2)
+!CHECK 231510.40 | 000000.33 83 231513.74 00 | line 38 BZB,SMULTI($3),YWAITI
+!CHECK 231511.40 | 000000.44 32 | line 39 LV,2,.32($2)
+!CHECK 231512.00 | 000000.04 B3 | line 40 V+,2,0($3)
+!CHECK 231512.40 | 000000.47 82 231514.74 02 | line 41 BB,SSEL($2),YWAITS
+!CHECK 231513.40 | 000000.32 83 231506.34 02 | line 42 YWAITI BB,SCHOP($3),YWAITL (a "*" after the location)
+!CHECK 231514.40 | 231506.03 48 | line 43 YWAITS CB+,1,YWAITL
+!CHECK 231515.00 | 000104.35 04 | line 44 KVI,$14,DABEOJ
+!CHECK 231515.40 | 231521.72 C0 | line 45 BZXE,YC4B3
+!CHECK 231516.00 | 231501.01 80 001000.36 F0 | line 46 CM1111,YEOJS
+!CHECK 231517.00 | 000040.10 00 | line 47 B,DMCP
+!CHECK 231517.40 | 000100.00 00 | line 48 BE,DDUMP (printed "CDUMP", byte "CO" = 00)
+!CHECK 231520.00 | 231430.00 80 | line 49 ,YEDLL
+!CHECK 231520.40 | 215001.06 80 001000.00 F0 | line 50 CM0000(BU,1),SPINCL
+!CHECK 231521.40 | 231162.02 10 | line 51 YC4B3 LX,$1,YXWEJM
+!CHECK 231522.00 | 231141.10 00 | line 52 B,YMPFCH

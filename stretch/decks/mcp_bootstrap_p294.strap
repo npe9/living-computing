@@ -1,0 +1,182 @@
+! mcp_bootstrap_p294.strap -- MCP printed page 294: the CNSL I/O table
+! of exits (P DB EX), the CNSL error fixup within the debugger (PER ..
+! PERMSG), and the $HOLD subroutine (P OLD TT, PHOLD .. PHOLD3).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.45, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID QG000084  DIST. OF 3/01
+!  3/01  PAGE NUMBER 294".  The heading row's LOCATION field is BLANK:
+! line 1 is a remark banner and compiles nothing (workflow step 1).
+!
+! THE PAGE.  51 lines, every line number prints a "*" after it.
+!   lines  1-3   remark banner "-CNSL I/O TABLES OF EXITS".
+!   line   4     CNOP, no location printed.
+!   line   5     P DB EX DRZ(BU,64),2 at 232653.00 ("*" after location).
+!   lines  6-13  the exits: B,PER / NOP / B,PEND1 / NOP / B,PDBO / NOP,
+!                PEND1 B,DMCP ,DRET.
+!   line  14     remark "-CNSL ERROR FIXUP  WITHIN DEBUGGER".
+!   lines 15-24  PER .. ,DRET; lines 25-29 the (IQS*)DD messages PUK1,
+!                PEPGK1, PERMSG (two cards), line 27 a CNOP that pads
+!                nothing.
+!   line  30     remark banner "HOLD SUBROUTINE".
+!   line  31     CNOP, no location (232677.00 is already a word).
+!   lines 32-35  P OLD TT, the $HOLD tentacle table: DD(BU,45), EXT(0,18)
+!                over B,PHOLD (19 bits, 0465604), DRZ(BU),(2).
+!   lines 36-51  PHOLD .. PHOLD3 ,DRET.
+! Located rows run contiguous from 232653.00 (line 5) to 232714.00 (line
+! 51, a half word; next location 232714.40), then blank paper.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 5 label "P CB EX" / line 16 "PCBEX+1.9" = PDBEX: C22-6728
+!     (Console Debugging, "the I-O unit ... with TOE PDBEX") names it, and
+!     this drum prints D with its stem worn to a C.
+!   * line 10 "B, P DBC" = PDBO, LETTER O: printed p.292 line 24 defines
+!     it at 232561.00, and C22-6728 PDF p.207 typesets "(PDBO," with a
+!     round glyph as wide as its D, against that page's narrow oval digit
+!     0 ("0 -- used in floa...", 300 dpi).  The family rule does not
+!     apply where the typeset manual settles it by width.
+!   * line 32 "P CLD TT" = POLDTT: landed p.121 SYNs POLDTT at 232677.00
+!     and prints it "P OLD TT"; line 37 here prints POLDTT closed.
+!   * line 36 / 41 / 46 / 50 labels "P HOLD", "P HOLD1", "PHCLD2",
+!     "PHCLD3" = PHOLD, PHOLD1, PHOLD2, PHOLD3: C22-6728 names PHOLD
+!     (Figure 118), and lines 36/38/39/40 print the references with
+!     closed O's.
+!   * line 39 "P HOLD B" / line 41 "P HOLD B" = PHOLDB: C22-6728 ("the
+!     hold bit, PHOLDB").
+!   * line 42 "PONOUT" (O open) = PONOUT: C22-6728 ("PONOUT - Words 0-2
+!     are used by the commentator").
+!   * line 48 ",DHCLD" = DHOLD: landed p.105 "D HOLD SYN,65.32" = 000101.40.
+!   * line 20 ",DCOMM" as landed p.105.
+!   * octal fields "CCCCCC.CC" are 0 (octal fields).  The hex bytes on
+!     lines 8, 10, 12, 16, 23, 38, 40, 47 all print the SAME open-round
+!     pair at 900 dpi ("CO"); the statements assemble 00 on seven of them
+!     and C0 on line 38 (BZRZ), so the glyph says nothing here and each
+!     byte is settled by assembly.  Line 44 "C1" = 01 likewise.
+!   * line 29 "INCORRECT  *": two blanks before the terminator, measured
+!     by column pitch (39.2 px at 400 dpi: T at column 21, * at 24); the
+!     11 characters end at 232677.00, which line 32 confirms.
+!   * line 32 "(8)040 CCC 000 000 CCC" written as printed with the
+!     blanks, 0 in every round position (octal radix).
+!
+! EXTERNALS.  PONOUT+PHOLDS (line 42) prints 232632.20, and the split
+! comes from the defining pages: printed p.293 line 42 places PONOUT at
+! 232630.00 and printed p.292 line 20 defines PHOLDS SYN,2.16 (000002.20).
+! The first draft guessed 232632.00 + 0.20; the merge refused it.
+!
+! CARD SERIALS.  QG000084 .. QG000129.  Five serials print twice, on
+! line pairs 6/7 (089), 8/9 (090), 10/11 (091), 16/17 (096) and 33/34
+! (112); recorded, not explained.  Lines 1-51 otherwise step by one.
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B lines 12, 19, 23, 50
+DRET    SYN, 33.0                    ! landed p.105; lines 13, 24, 51 000041.00
+DCOMM   SYN, 35.32                   ! landed p.105 line 23; line 20 000043.40
+DHOLD   SYN, 65.32                   ! landed p.105 line 34; line 48 000101.40 (printed "DHCLD")
+SICBU   SYN, (8)215361.0             ! landed (p.116 VF); LV line 43 215361.04
+SPRIMR  SYN, (8)215571.0             ! landed p.118 line 49; SIC line 46 215571.00
+SPRIME  SYN, (8)215570.0             ! landed p.118 line 48; BD line 47 215570.04
+PDBO    SYN, (8)232561.0             ! p.292 line 24 defines it; B line 10 232561.10, half word only
+PD4     SYN, (8)232574.0             ! not landed (p.293); B line 45 232574.10, half word only
+PONOUT  SYN(BU,64), (8)232630.0      ! printed p.293 line 42 PONOUT DRZ(BU,64),(13) at 232630.00; CM1111 line 42 PONOUT+PHOLDS = 232632.20
+PHOLDS  SYN,2.16                     ! printed p.292 line 20, as defined there (000002.20); the sum is BIT-EXACT
+PHOLDB  SYN, (8)234663.40            ! not landed; BB line 39 / CM1111 line 41 234663.40, BIT-EXACT
+
+        SLC, (8)232653.00
+! line  1  - ------------------------------------------------------------
+! line  2  -        -CNSL I/O TABLES OF EXITS
+! line  3  -        -------------------------------------------------------
+        CNOP                                                 ! line  4
+PDBEX   DRZ(BU,64),2                                         ! line  5  (printed "P CB EX")
+        B,PER                                                ! line  6
+        NOP                                                  ! line  7  -
+        B,PEND1                                              ! line  8
+        NOP                                                  ! line  9  -END EXCEPTION-ERASE FOR RD.
+        B,PDBO                                               ! line 10  (printed "B, P DBC")
+        NOP                                                  ! line 11
+PEND1   B,DMCP                                               ! line 12
+        ,DRET                                                ! line 13
+! line 14           -CNSL ERROR FIXUP  WITHIN DEBUGGER
+PER     L(BU,32),PUK1                                        ! line 15  -
+        BZB,PDBEX+1.9,PER1                                   ! line 16  (printed "PCBEX")
+        L(BU,32),PEPGK1                                      ! line 17
+PER1    ST(BU,32),PERMSG+.8                                  ! line 18  -
+        B,DMCP                                               ! line 19  -
+        ,DCOMM                                               ! line 20  -
+        ,PERMSG                                              ! line 21  -
+        ,6.0                                                 ! line 22  -
+        B,DMCP                                               ! line 23  -
+        ,DRET                                                ! line 24  -
+PUK1    (IQS*)DD(BU), UK *                                   ! line 25  -
+PEPGK1  (IQS*)DD(BU),EPGK*                                   ! line 26  -
+        CNOP                                                 ! line 27  -
+PERMSG  (IQS*)DD(BU), XXXX ON CNSL-LAST FUNCTION PROBABLY *  ! line 28
+        (IQS*)DD(BU),INCORRECT  *                            ! line 29
+! line 30  -        -*****************HOLD SUBROUTINE********************************
+        CNOP                                                 ! line 31
+POLDTT  DD(BU,45),(8)040 000 000 000 000                     ! line 32  - $HOLD TENTACLE TABLE (printed "P CLD TT")
+        EXT(0,18)                                            ! line 33
+        B,PHOLD                                              ! line 34  (printed "B, P HOLC")
+        DRZ(BU),(2)                                          ! line 35
+PHOLD   BZB,POLDTT+.04,PHOLD1                                ! line 36  -IS USER MCP (=0)
+        CT0011(BU,32),POLDTT+1.0                             ! line 37  -
+        BZRZ,PHOLD1                                          ! line 38  -NO-THEN PRIME
+        BB,PHOLDB,PHOLD2                                     ! line 39  -IS HOLD BIT ON
+        B,PHOLD3                                             ! line 40  -NO-OUT
+PHOLD1  CM1111(BU,1),PHOLDB                                  ! line 41  -TURN HOLD BIT ON
+        CM1111(BU,1),PONOUT+PHOLDS                           ! line 42
+        LV,$2,SICBU                                          ! line 43
+        LVI,$12,$+1.0                                        ! line 44
+        B,PD4                                                ! line 45
+PHOLD2  SIC,SPRIMR                                           ! line 46  (printed "PHCLD2")
+        BD,SPRIME                                            ! line 47
+        ,DHOLD                                               ! line 48  (printed ",DHCLD")
+        BE,$+.32                                             ! line 49
+PHOLD3  B,DMCP                                               ! line 50  (printed "PHCLD3")
+        ,DRET                                                ! line 51
+
+!SYM PDBEX  232653.00
+!SYM PEND1  232660.00
+!SYM PER    232661.00
+!SYM PER1   232664.00
+!SYM PUK1   232670.00
+!SYM PEPGK1 232670.40
+!SYM PERMSG 232671.00
+!SYM POLDTT 232677.00
+!SYM PHOLD  232702.00
+!SYM PHOLD1 232706.00
+!SYM PHOLD2 232711.40
+!SYM PHOLD3 232713.40
+!CHECK 232655.00 | 232661.10 00 | line 6 B,PER
+!CHECK 232655.40 | 000000.30 00 | line 7 NOP
+!CHECK 232656.00 | 232660.10 00 | line 8 B,P END1 (byte prints "CO")
+!CHECK 232656.40 | 000000.30 00 | line 9 NOP
+!CHECK 232657.00 | 232561.10 00 | line 10 B,P DB0 (printed "P DBC"; byte "CO")
+!CHECK 232657.40 | 000000.30 00 | line 11 NOP
+!CHECK 232660.00 | 000040.10 00 | line 12 PEND1 B,DMCP (byte "CO")
+!CHECK 232660.40 | 000041.00 80 | line 13 ,DRET
+!CHECK 232661.00 | 232670.00 80 040000.20 50 | line 15 PER L(BU,32),PUK1
+!CHECK 232662.00 | 232654.11 80 232664.34 00 | line 16 BZB,PDBEX+1.9,PER1 (printed "PCBEX"; byte "CO")
+!CHECK 232663.00 | 232670.40 80 040000.20 50 | line 17 L(BU,32),PEPGK1
+!CHECK 232664.00 | 232671.10 80 040000.20 D0 | line 18 PER1 ST(BU,32),PERMSG+.8
+!CHECK 232665.00 | 000040.10 00 | line 19 B,DMCP
+!CHECK 232665.40 | 000043.40 80 | line 20 ,DCOMM
+!CHECK 232666.00 | 232671.00 80 | line 21 ,PERMSG
+!CHECK 232666.40 | 000006.00 80 | line 22 ,6.0
+!CHECK 232667.00 | 000040.10 00 | line 23 B,DMCP (byte "CO")
+!CHECK 232667.40 | 000041.00 80 | line 24 ,DRET
+!CHECK 232677.00 | 040000000000000 | line 32 POLDTT DD(BU,45),(8)040 000 000 000 000 | 45
+!CHECK 232677.55 | 0465604 | line 34 B,PHOLD under line 33's EXT(0,18) -- 19 bits, PHOLD's half-word address | 19
+!CHECK 232702.00 | 232677.04 80 232706.34 00 | line 36 PHOLD BZB,POLDTT+.04,PHOLD1
+!CHECK 232703.00 | 232700.00 80 040000.07 70 | line 37 CT0011(BU,32),POLDTT+1.0
+!CHECK 232704.00 | 232706.34 C0 | line 38 BZRZ,PHOLD1 (byte prints "CO" = C0; the same glyph as the 00 rows -- settled by assembly)
+!CHECK 232704.40 | 234663.40 80 232711.74 02 | line 39 BB,PHOLDB,PHOLD2
+!CHECK 232705.40 | 232713.50 00 | line 40 B,PHOLD3 (byte "CO")
+!CHECK 232706.00 | 234663.40 80 001000.36 F0 | line 41 PHOLD1 CM1111(BU,1),PHOLDB
+!CHECK 232707.00 | 232632.20 80 001000.36 F0 | line 42 CM1111(BU,1),PONOUT+PHOLDS
+!CHECK 232710.00 | 215361.04 30 | line 43 LV,$2,SICBU
+!CHECK 232710.40 | 232711.71 01 | line 44 LVI,$12,$+1.0 (byte prints "C1")
+!CHECK 232711.00 | 232574.10 00 | line 45 B,PD4
+!CHECK 232711.40 | 215571.00 80 | line 46 PHOLD2 SIC,SPRIMR
+!CHECK 232712.00 | 215570.04 00 | line 47 BD,SPRIME (byte "CO")
+!CHECK 232712.40 | 000101.40 80 | line 48 ,DHOLD
+!CHECK 232713.00 | 232713.40 00 | line 49 BE,$+.32
+!CHECK 232713.40 | 000040.10 00 | line 50 PHOLD3 B,DMCP
+!CHECK 232714.00 | 000041.00 80 | line 51 ,DRET

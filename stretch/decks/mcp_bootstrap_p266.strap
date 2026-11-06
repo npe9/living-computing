@@ -1,0 +1,196 @@
+! mcp_bootstrap_p266.strap -- MCP printed page 266: JOB CONTROL PHASE 1
+! OVERLAPPED, continued: the card-type tests (LF .. B,YC1A1), the
+! SERVICE ROUTINE FOR JOB AND T.O.P. CARDS (YC1JC, YC1TC) and the
+! ERROR ANALYSIS ROUTINES (YC1DJP, YC1B ..), lines 1-53.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.17, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID PE000050  DIST. OF 3/01  3/01  PAGE NUMBER 266" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is 231000,
+! line 1's word.
+!
+! THE PAGE.  53 lines; every line number prints a "*" after it.  Lines
+! 14-16 and 31-32 are remark cards (banners, printed "- ***" / "-
+! SERVICE ..." with a blank after the dash).  Line 4 is a DDI: its row
+! prints "000000.00+" in LOCATION and occupies nothing.  Located rows run
+! contiguous from 231000.00 to 231033.40 (a half word; next location
+! 231034.00), then blank paper.  "*" after the LOCATION on lines 1, 26
+! and 47.
+! JOIN.  p.265 ends at 230777.40 (a half word), next 231000.00 = line 1
+! here: contiguous.  p.265's stand-ins agree with this page's labels:
+! YC1JC 231007.0 (line 17), YC1TC 231013.40 (line 26), YC1B 231022.40
+! (line 40).
+!
+! >>> LINE 4'S DDI IS NOT HANDED TO THE ASSEMBLER. <<<  It prints
+!   4*  000000.00+  +00000053   BU,06 ,06   YDOLLR   (A*)DDI(BU,6,6),$*
+! (the character "$", 6-bit code octal 53, terminated by "*").
+! strap_asm refuses DDI (as decks/mcp_bootstrap_p226.strap, VD15).
+! Line 2 references it on THIS page -- "KFI(BU,6),YDOLLR" printing
+! 530000.00 80: the immediate takes the DDI's 6-bit field 101011
+! LEFT-justified in the 24-bit address.  So that line 2 can assemble,
+! the deck carries ONE stand-in, "YDOLLR SYN(BU,6,6), 43" (43 = octal
+! 53), the form p.226 used for VD15.  It is NOT the printed card; no
+! !SYM.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 4 label "YDCLLR"/line 2 "YDOLLR" (open O): YDOLLR, the
+!     DOLLAR sign its DDI holds.  No deck spells it otherwise.
+!   * line 45 "YICEM": the second glyph is the serifed, unflagged I (as
+!     in KVI on the same line), NOT the flagged 1 of line 44's YC1EM at
+!     900 dpi.  Written YICEM, a different symbol from YC1EM; its value
+!     020656.0 (low core, like YDEJM1 020532, YEMJC 020632) agrees.
+!   * line 11 label YC1DJD, line 33 label YC1DJP (and their uses lines
+!     12, 33): D with straight stems at 900 dpi; line 12's B,YC1DJP
+!     prints 231017.10 = line 33, line 33's LV prints 231005.72 = line
+!     11 + LV bits.
+!   * line 20 "B,D MCP" and line 21 ",S LOG 1" print blanks inside the
+!     operand (STRAP drops them): DMCP (landed p.108), SLOG1 (landed
+!     p.106 "S LOG1", 81.32 = 000121.40 printed).  Written DMCP, SLOG1.
+!   * lines 9 "1.C", 10 "CF,C", 11 "VF,C", 40 "C($1C)": open round
+!     glyphs, digits by context; binaries agree.
+!   * hex bytes with an open round written 0: line 22 "CA" = 0A, lines
+!     46/48/53 "C0", lines 3/37/42/51 "C2" are C (BAE/BXVLZ/BZXE/BZAE
+!     byte: assembled to decide), line 18 "1C" = 10, line 34/35 "BC"=B0.
+!   * line 36 " V-I,$13,16.0" prints one column right of the other
+!     statements; written without the blank.
+!   * line 6 remark prints "DECOCDE" (as printed).
+!
+! EXTERNALS.  Values for symbols defined on pages not landed come from
+! this page's binary ("half word only"): LDECOD, YC1RP, YC1JT, YC1SCN,
+! YC1HLP, YDEJM1, YC1EJ1, YC1EM, YICEM, YUCBF2, YTYPMK, YEMJC, YC1SEJ.
+! LDECOD, YUCBF2 and YTYPMK carry other values in the IPL assembly
+! pp.26-52 (LDECOD 2737.0, YUCBF2 2337.0, YTYPMK 2355.0) -- a different
+! assembly; the body's values are these.  Defining cards not seen:
+! plain SYN.
+!
+! CARD SERIALS.  PE000050 .. PE000102, line N = PE0000(N+49), none
+! skipped on the page.  p.265 ends at PE000048, so PE000049 prints on
+! neither page (between them).
+
+YC1A1   SYN(BU,32,8), (8)230763.40   ! landed p.265 line 27 label of B; BAE line 3 230763.76, B lines 13/25/30 .50
+Y1UCXW  SYN(BU), (8)230770.0         ! landed p.265 line 35 "Y1UCXW XW,0"; LX line 5 230770.34
+YC1DB   SYN, (8)231074.0             ! as p.265 (not landed); LF line 1 YC1DB+1.0 = 231075.00, VF line 9 YC1DB-1.0 = 231073.00, BIT-EXACT
+LDECOD  SYN, (8)231703.0             ! not landed in the body; B line 8 231703.10, half word only
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 20 000040.10 (printed "D MCP")
+SLOG1   SYN, 81.32                   ! landed p.106 "S LOG1"; line 21 000121.40 (printed "S LOG 1")
+YC1RP   SYN, (8)231063.40            ! not landed; SIC line 23 231063.40, half word only
+YC1JT   SYN, (8)231063.0             ! not landed; B line 24 231063.10, half word only
+YC1SCN  SYN, (8)231053.0             ! not landed; BB line 26 231053.34, BZAE line 48 231053.36, half word only
+YC1HLP  SYN, (8)231115.40            ! not landed; BXVLZ line 37 231115.70, half word only
+YDEJM1  SYN, (8)020532.0             ! not landed; V+I line 38 020532.33, half word only
+YC1EJ1  SYN, (8)231051.40            ! not landed; B line 39 231051.50, half word only
+YC1EM   SYN, (8)231111.0             ! not landed; LV line 44 231111.32, half word only
+YICEM   SYN, (8)020656.0             ! not landed; KVI line 45 020656.33, half word only (I, not 1: see header)
+YUCBF2  SYN, (8)231376.0             ! not landed in the body; LF line 49 231376.00, half word only
+YTYPMK  SYN, (8)231414.0             ! not landed in the body; KF line 50 231414.00, half word only
+YEMJC   SYN, (8)020632.0             ! not landed; KVI line 52 020632.33, half word only
+YC1SEJ  SYN, (8)231046.0             ! not landed; BZXE line 53 231046.32, half word only
+YDOLLR  SYN(BU,6,6), 43              ! STAND-IN for line 4's DDI (octal 53, "$") -- see header
+
+        SLC, (8)231000.00
+        LF(BU,6),YC1DB+1.0                                   ! line  1
+        KFI(BU,6),YDOLLR                                     ! line  2
+        BAE,YC1A1                                            ! line  3
+! YDOLLR (A*)DDI(BU,6,6),$*                                  ! line  4  NOT ASSEMBLED (DDI refused) -- see header
+        LX,$14,Y1UCXW                                        ! line  5  -IOD CARD
+        SX,$14,YC1DB-1.0                                     ! line  6  -SET UP INFO. FOR DECOCDE
+        LVI,$15,$+1.0                                        ! line  7
+        B,LDECOD                                             ! line  8
+        VF,YC1DB-1.0                                         ! line  9
+        CF,0                                                 ! line 10
+YC1DJD  VF,0                                                 ! line 11
+        B,YC1DJP                                             ! line 12  -ERROR RETURN
+        B,YC1A1                                              ! line 13  -NORMAL - GO BACK + READ 1 MORE CARD
+! line 14  - *****************************************************************
+! line 15  -  SERVICE ROUTINE FOR JOB AND T.O.P. CARDS
+! line 16  - *****************************************************************
+YC1JC   LX,$13,YC1DB+1.0                                     ! line 17  -PUT JOB NAME
+        SX,$13,YC1DB-2.0                                     ! line 18  -INTO ALPHA - 1. SLOT FOR DECODE
+        SV,$14,Y1UCXW+1.0                                    ! line 19  -SET DISP. TO T.O.P.
+        B,DMCP                                               ! line 20  -LOGGER 1 , ASSUME ADDR. IN $10 (printed "D MCP")
+        ,SLOG1                                               ! line 21  (printed "S LOG 1")
+        NOP,0.0($10)                                         ! line 22  -HOLLERITH FWA
+        SIC,YC1RP                                            ! line 23
+        B,YC1JT                                              ! line 24
+        B,YC1A1                                              ! line 25  -READ ONE MORE CARD
+YC1TC   BB,.41+Y1UCXW,YC1SCN                                 ! line 26  - BRANCH IF A COMPILE JOB
+        BB,.43+Y1UCXW,$+1.32                                 ! line 27
+        LVI,$14,4.0                                          ! line 28
+        SV,$14,Y1UCXW+1.0                                    ! line 29
+        B,YC1A1                                              ! line 30  -RETURN TO READ 1 CARD
+! line 31  - *****************************************************************
+! line 32  -  ERROR ANALYSIS ROUTINES
+YC1DJP  LV,$13,YC1DJD                                        ! line 33  -GET ERROR CODE
+        V+,$13,$13                                           ! line 34
+        V+,$13,$13                                           ! line 35
+        V-I,$13,16.0                                         ! line 36  -DEVELOP ERROR MESSAGE
+        BXVLZ,YC1HLP                                         ! line 37  - SHOULD NEVER TAKE THIS BRANCH
+        V+I,$13,YDEJM1                                       ! line 38
+        B,YC1EJ1                                             ! line 39
+YC1B    L(BU,12),0($10)                                      ! line 40
+        KFI(BU,12),(8)1100                                   ! line 41  -CHECK FOR T CARD.
+        BAE,YC1A1                                            ! line 42
+        LV,$13,Y1UCXW+1.0                                    ! line 43
+        LV,$13,YC1EM($13)                                    ! line 44
+        KVI,$13,YICEM                                        ! line 45
+        BZXE,$+2.0                                           ! line 46
+        KFI(BU,12),(8)4200                                   ! line 47  -CHECK FOR FIRST BINARY CARD.
+        BZAE,YC1SCN                                          ! line 48
+        LF(BU,48),YUCBF2                                     ! line 49
+        KF(BU,48),YTYPMK                                     ! line 50
+        BAE,YC1A1                                            ! line 51
+        KVI,$13,YEMJC                                        ! line 52  -NO IT MAY BE A COMD CARD
+        BZXE,YC1SEJ                                          ! line 53  -
+
+!SYM YC1DJD 231005.40
+!SYM YC1JC  231007.00
+!SYM YC1TC  231013.40
+!SYM YC1DJP 231017.00
+!SYM YC1B   231022.40
+!CHECK 231000.00 | 231075.00 80 006000.06 70 | line 1 LF(BU,6),YC1DB+1.0
+!CHECK 231001.00 | 530000.00 80 406000.23 10 | line 2 KFI(BU,6),YDOLLR (YDOLLR is a stand-in for line 4's DDI)
+!CHECK 231002.00 | 230763.76 C2 | line 3 BAE,YC1A1
+!CHECK 231002.40 | 230770.34 10 | line 5 LX,$14,Y1UCXW
+!CHECK 231003.00 | 231073.35 10 | line 6 SX,$14,YC1DB-1.0
+!CHECK 231003.40 | 231004.77 01 | line 7 LVI,$15,$+1.0
+!CHECK 231004.00 | 231703.10 00 | line 8 B,LDECOD
+!CHECK 231004.40 | 231073.00+ | line 9 VF,YC1DB-1.0 (printed "1.C")
+!CHECK 231005.00 | 000000 | line 10 CF,0 -- an 18-bit count field, six bare octal digits (printed "CCCCCC")
+!CHECK 231005.40 | 000000.00+ | line 11 YC1DJD VF,0 (printed "VF,C")
+!CHECK 231006.00 | 231017.10 00 | line 12 B,YC1DJP
+!CHECK 231006.40 | 230763.50 00 | line 13 B,YC1A1
+!CHECK 231007.00 | 231075.32 10 | line 17 YC1JC LX,$13,YC1DB+1.0
+!CHECK 231007.40 | 231072.33 10 | line 18 SX,$13,YC1DB-2.0 (byte prints "1C")
+!CHECK 231010.00 | 230771.35 30 | line 19 SV,$14,Y1UCXW+1.0
+!CHECK 231010.40 | 000040.10 00 | line 20 B,DMCP (printed "D MCP")
+!CHECK 231011.00 | 000121.40 80 | line 21 ,SLOG1 (printed "S LOG 1")
+!CHECK 231011.40 | 000000.30 0A | line 22 NOP,0.0($10) (byte prints "CA")
+!CHECK 231012.00 | 231063.40 80 | line 23 SIC,YC1RP
+!CHECK 231012.40 | 231063.10 00 | line 24 B,YC1JT
+!CHECK 231013.00 | 230763.50 00 | line 25 B,YC1A1
+!CHECK 231013.40 | 230770.51 80 231053.34 02 | line 26 YC1TC BB,.41+Y1UCXW,YC1SCN
+!CHECK 231014.40 | 230770.53 80 231016.34 02 | line 27 BB,.43+Y1UCXW,$+1.32
+!CHECK 231015.40 | 000004.35 01 | line 28 LVI,$14,4.0
+!CHECK 231016.00 | 230771.35 30 | line 29 SV,$14,Y1UCXW+1.0
+!CHECK 231016.40 | 230763.50 00 | line 30 B,YC1A1
+!CHECK 231017.00 | 231005.72 30 | line 33 YC1DJP LV,$13,YC1DJD
+!CHECK 231017.40 | 000035.32 B0 | line 34 V+,$13,$13 (byte prints "BC")
+!CHECK 231020.00 | 000035.32 B0 | line 35 V+,$13,$13
+!CHECK 231020.40 | 000020.33 0D | line 36 V-I,$13,16.0
+!CHECK 231021.00 | 231115.70 C2 | line 37 BXVLZ,YC1HLP
+!CHECK 231021.40 | 020532.33 05 | line 38 V+I,$13,YDEJM1
+!CHECK 231022.00 | 231051.50 00 | line 39 B,YC1EJ1
+!CHECK 231022.40 | 000000.00 8A 014000.20 50 | line 40 YC1B L(BU,12),0($10)
+!CHECK 231023.40 | 110000.00 80 414000.23 10 | line 41 KFI(BU,12),(8)1100
+!CHECK 231024.40 | 230763.76 C2 | line 42 BAE,YC1A1
+!CHECK 231025.00 | 230771.32 30 | line 43 LV,$13,Y1UCXW+1.0
+!CHECK 231025.40 | 231111.32 3D | line 44 LV,$13,YC1EM($13)
+!CHECK 231026.00 | 020656.33 04 | line 45 KVI,$13,YICEM
+!CHECK 231026.40 | 231030.72 C0 | line 46 BZXE,$+2.0
+!CHECK 231027.00 | 420000.00 80 414000.23 10 | line 47 KFI(BU,12),(8)4200
+!CHECK 231030.00 | 231053.36 C0 | line 48 BZAE,YC1SCN
+!CHECK 231030.40 | 231376.00 80 060000.06 70 | line 49 LF(BU,48),YUCBF2
+!CHECK 231031.40 | 231414.00 80 060000.23 10 | line 50 KF(BU,48),YTYPMK
+!CHECK 231032.40 | 230763.76 C2 | line 51 BAE,YC1A1
+!CHECK 231033.00 | 020632.33 04 | line 52 KVI,$13,YEMJC
+!CHECK 231033.40 | 231046.32 C0 | line 53 BZXE,YC1SEJ

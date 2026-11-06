@@ -1,6 +1,12 @@
 ! MCP INITIALIZATION, printed p.56 (MCP_Mar63_001-249 PDF p.63) --
 ! THE REEL CARD ROUTINE, THE FINAL ROUTINE, AND THE SORT'S ENTRY.
 !
+! 2026-11-06: "$OP" IS NOW WRITTEN AS PRINTED.  C28-6129 printed p.10 (PDF
+! p.14): a $ prefixed to an operation code "directs the compiler to
+! suppress any error indications" for that statement; the binary is
+! the plain operation's, and strap_asm accepts the prefix.  Notes below
+! that describe writing the card WITHOUT the "$" predate this.
+!
 ! Fifty-six lines, forty-one of which compile.  Three heading boxes
 ! divide the page and the listing names each one:
 !
@@ -164,7 +170,7 @@ LREEL2  TI, 1, 2.0(LIODX), 0.0(LXFR) ! line 19 -STORE FREEL SYMBOL
         B, LNORM                     ! line 26 -NORMAL RETURN.
 
 ! ---- FINAL ROUTINE -------------------------------------------------
-LFINAL  TI, 1, -1.0(LIODX), 1.0(LXPP) ! line 32 -STORE PP ID
+LFINAL  $TI, 1, -1.0(LIODX), 1.0(LXPP) ! line 32 -STORE PP ID
                                       !   listing prints "$TI,1,..."
         BZB1, LFINB, LFIN2-1.        ! line 33 -IS FINAL BIT 1.
                                       !   IF 1, GO ON....IF 0, MAKE
