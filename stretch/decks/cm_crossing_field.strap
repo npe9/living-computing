@@ -1,0 +1,93 @@
+! cm_crossing_field.strap -- CONNECT TO MEMORY whose field straddles
+! two storage words.
+!
+! WHY IT EXISTS, AND WHO ASKED FOR IT.  MCP did, as it did for the
+! crossing ST (decks/vfl_crossing_store.strap).  Printed p.78 line 42
+! of IBM's own operating system is
+!
+!       SF(BU,40,8),TREELX
+!
+! at 004542.00, assembled 004435.50 80 050000.12 F0 and checked bit for
+! bit by tests/verify_mcp_bootstrap_p78.py.  SF is the store
+! connective, CONNECT TO MEMORY 0101 -- its second half-word ends .12
+! F0 exactly as line 46's written-out "CM0101(BU,24,8),TREELX+.40,64"
+! does -- and its field is forty bits at bit 40: bits 40-79 of the
+! word pair.  Until 2026-11-06 the model refused any crossing CM with
+! OP.  Nothing interrupted on it during IPL, so it stayed invisible
+! until MCP's body enabled interrupts and typed "MCP ERROR- ... OP
+! INTERRUPT AT ABOVE LOCATION".
+!
+! WEAKER STANDARD, STATED PLAINLY.  This program is hand-written from
+! Reference Manual printed p.21 (the VFL field at a bit address) and
+! printed pp.75-76 (the connectives).  Its expectations were computed
+! in Python from that arithmetic before the arm was built, with the
+! same pair formula vfl_crossing_store.strap states: a field at bit A,
+! length L, is at 128-A-L from the bottom of the pair (W, W+1).
+!
+! EVERY TARGET STARTS AS A PATTERN, so a write of the whole word, or of
+! the wrong half, leaves bits the derivation does not.
+!
+!   A  MCP's own shape: 40 bits at .40, store (0101), (16)123456789A.
+!   B  XOR (0110) of 32 bits at .48 into ones: the complement lands.
+!   C  AND (0001) of 16 bits at .56 across (16)AAAA.../(16)5555...:
+!      the memory field reads (16)AA55, AND (16)0FF0 gives (16)0A50.
+!      This is the block that needs the SECOND word's bits read, not
+!      only written -- a model that wrote the tail from zero, or from
+!      the head word, gets the wrong low byte.
+!   D  BACK TO BACK, two crossing CMs with nothing between them, the
+!      case StretchCore's storeTailPending stall exists for.
+!
+! INJECTIONS: measured, and tests/run_tests.sh records them beside its
+! entry.
+!
+! WHAT IS STILL REFUSED, each for ST's reason (StretchExecute.bsv,
+! connectiveOp's "CM MAY CROSS" note): a tail below word 32, and a
+! crossing field that also needs a progressive refill.
+
+        SLC, (8)300.0
+START   LVI, $X1, 0
+
+! ---- A. MCP's width and offset ---------------------------------
+        L(BU,40,8), DATA40
+        CM0101(BU,40,8), TA+.40
+
+! ---- B. XOR into ones ------------------------------------------
+        L(BU,32,8), DATA32
+        CM0110(BU,32,8), TB+.48
+
+! ---- C. AND, reading both words --------------------------------
+        L(BU,16,8), DATA16
+        CM0001(BU,16,8), TC+.56
+
+! ---- D. back to back -------------------------------------------
+        L(BU,40,8), DATA40
+        CM0101(BU,40,8), TD+.40
+        CM0101(BU,40,8), TE+.40
+
+        BOP, $                       ! hang if any of them was refused
+PASS    BEW, $
+        CNOP
+
+! ---- data --------------------------------------------------------
+        SLC, (8)400.0
+DATA40  DD(BU,40), (16)123456789A
+        SLC, (8)401.0
+DATA32  DD(BU,32), (16)12345678
+        SLC, (8)402.0
+DATA16  DD(BU,16), (16)0FF0
+        SLC, (8)410.0
+TA      DD(BU,64), (8)1777777777777777777777
+        DD(BU,64), (8)1777777777777777777777
+        SLC, (8)420.0
+TB      DD(BU,64), (8)1777777777777777777777
+        DD(BU,64), (8)1777777777777777777777
+        SLC, (8)430.0
+TC      DD(BU,64), (16)AAAAAAAAAAAAAAAA
+        DD(BU,64), (16)5555555555555555
+        SLC, (8)440.0
+TD      DD(BU,64), (8)1777777777777777777777
+        DD(BU,64), (8)1777777777777777777777
+        SLC, (8)450.0
+TE      DD(BU,64), (8)1777777777777777777777
+        DD(BU,64), (8)1777777777777777777777
+        END, START

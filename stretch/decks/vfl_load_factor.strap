@@ -1,0 +1,92 @@
+! LOAD FACTOR (LFT, abc001011) and MULTIPLY AND ADD (*+, abc111001),
+! the VFL integer forms.  Reference Manual printed p.69 (PDF p.72):
+!
+!   LFT: "The factor register (FT) is cleared.  A four-bit sign byte,
+!   in which the leftmost bit is the sign of the addressed storage
+!   operand as modified by the negative sign modifier, is placed in the
+!   four low-order bits of FT.  The remaining three bits of this sign
+!   byte are zero.  The numeric part of the addressed operand is
+!   positioned to the left of this sign byte in FT."  PF "if the
+!   numeric part of the field loaded contains more than 60 significant
+!   bits".  "The accumulator contents are not affected by LOAD FACTOR."
+!
+!   *+: "the multiplicand field in the factor register (FT) is
+!   multiplied by the addressed storage operand ... The product is
+!   algebraically added to the accumulator contents as specified by
+!   the offset."  "At the completion of the operation, FT still
+!   contains the multiplicand and its sign."
+!
+! WHY: MCP's MOVE lays out its tables with them -- printed p.95 lines
+! 49 and 55, "LFT,TIODCT(TMXA) -NUMBER OF IODS TO FACTOR REG" and
+! "*I+,TFLLGN,46 -ADD FILE AREA TABLE LENGHT" -- and the model set OP
+! on both until 2026-11-06.  No IBM example exercises the VFL forms
+! (C22-6578's LFT/*+ examples are floating point), so the constants
+! here are this deck's own and each expectation is worked below.
+!
+! WHAT EACH CHECK ESTABLISHES
+!   T1  FT after LFT of 20: 20 shifted left of a zero sign byte, 320.
+!   T2  the accumulator is untouched by LFT: it still holds 5.
+!   T3  MCP's shape: 1000 in the accumulator, FT = 20, *+ by 5 at
+!       offset 0 adds the product: 1100.
+!   T4  the IMMEDIATE form MCP writes, "*I+": 1000 + 20 * 7 = 1140.
+!   T5  the offset places the PRODUCT, not the multiplication:
+!       1000 + 100 * 2**46 = 7036874417767400.
+!   T6  FT is unchanged by *+: still 320.
+!   T7  PF is off after the clean operations (control for T8).
+!   T8  a 61-bit operand: FT keeps the low 60 bits, 3 << 4 = 48 ...
+!   T9  ... and PF is on.
+!
+! INJECTIONS: measured, and tests/run_tests.sh records them beside its entry.
+
+        SLC, (8)2000.0
+
+START   L(BU,64), N, 0
+        LFT(BU,64), M
+        ST(BU,64), T2, 0           ! accumulator still 5
+        L(BU,64), 14.0, 0
+        ST(BU,64), T1, 0           ! FT = 20 << 4
+
+        L(BU,64), BASE, 0
+        *+(BU,64), N, 0
+        ST(BU,64), T3, 0           ! 1000 + 20 * 5
+
+        L(BU,64), BASE, 0
+        *I+(BU,18), 7, 0
+        ST(BU,64), T4, 0           ! 1000 + 20 * 7
+
+        L(BU,64), BASE, 0
+        *+(BU,64), N, 46
+        ST(BU,64), T5, 0           ! 1000 + 100 * 2**46
+
+        L(BU,64), 14.0, 0
+        ST(BU,64), T6, 0           ! FT still 320
+
+        L(BU,1), $IND+.23, 0
+        ST(BU,64), T7, 0           ! PF still 0
+
+        LFT(BU,64), BIG61
+        L(BU,64), 14.0, 0
+        ST(BU,64), T8, 0           ! low 60 bits: 3 << 4
+        L(BU,1), $IND+.23, 0
+        ST(BU,64), T9, 0           ! PF now 1
+
+PASS    BEW, $
+
+        SLC, (8)2040.0
+
+M       DD(BU,64,8), 20
+N       DD(BU,64,8), 5
+BASE    DD(BU,64,8), 1000
+BIG61   DD(BU,64,8), (16)1000000000000003   ! 2**60 + 3: 61 bits
+
+T1      DD(BU,64,8), 0
+T2      DD(BU,64,8), 0
+T3      DD(BU,64,8), 0
+T4      DD(BU,64,8), 0
+T5      DD(BU,64,8), 0
+T6      DD(BU,64,8), 0
+T7      DD(BU,64,8), 0
+T8      DD(BU,64,8), 0
+T9      DD(BU,64,8), 0
+
+        END, START

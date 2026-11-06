@@ -154,7 +154,9 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
       WordAddr w = ea[23:6];
       Bit#(7) len_ = effLength(c.a.length);
       Bool done = (prog && c.a.i1 == 0)
-               || (c.suffix == conn_CM && fieldCrosses(ea, len_))
+               // CM crossing into a register word, which execute()
+               // still refuses (its "CM MAY CROSS" note).
+               || (c.suffix == conn_CM && fieldCrosses(ea, len_) && (w + 1) < 32)
                || dfSuppresses(st, w)
                || !installed(w);
       return PreparedExec {

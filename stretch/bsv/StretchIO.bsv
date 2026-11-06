@@ -267,6 +267,22 @@ typedef Bit#(TLog#(DeviceWords)) DeviceIndex;
 // uses against TapeIndex -- see "CARD FEED".
 typedef Bit#(TAdd#(TLog#(DeviceWords), 1)) DevicePos;
 
+// THE CONSOLE'S PAPER, 2026-11-06.  A console WRITE walks consolePos
+// across this image and keeps its place between instructions, so every
+// message MCP types accumulates here.  It was DeviceWords, thirty-two,
+// and MCP's IPL ran off the end of it: the date message and two of the
+// mount messages MCP's printed p.34 types fill it, the next write
+// ends in End Exception (status bit 21, seen in X IPL BS = 000041), and
+// printed p.3's IO test takes XERR05, UNSUCCESSFUL COMPLETION.
+// A 7152 typewriter's paper does not run out at thirty-two words.
+// >>> 256 IS CHOSEN, NOT DOCUMENTED: a model buffer standing in for
+// continuous paper, read back by the testbench.  Its End Exception is
+// a model artifact.  On the ULX3S it belongs in BRAM or a UART
+// stream, not 16 Kbit of registers. <<<
+typedef 256 ConsoleWords;
+typedef Bit#(TLog#(ConsoleWords)) ConsoleIndex;
+typedef Bit#(TAdd#(TLog#(ConsoleWords), 1)) ConsolePos;
+
 // TapeWords / TapeIndex / TapePos are no longer defined here: they
 // moved to StretchTapeSource.bsv along with the TapeSource interface,
 // so that an implementation of that interface -- an SD-backed one, say
@@ -484,10 +500,10 @@ interface StretchIO;
   // and X MSG CW), so two WRITEs in a row have to land consecutively
   // or the message comes out on top of itself.
   // ---------------------------------------------------------------
-  method Action writeConsoleWord(DeviceIndex i, Word64 v);
-  method Word64 readConsoleWord(DeviceIndex i);   // testbench only
-  method DevicePos consolePos();
-  method Action setConsolePos(DevicePos p);
+  method Action writeConsoleWord(ConsoleIndex i, Word64 v);
+  method Word64 readConsoleWord(ConsoleIndex i);   // testbench only
+  method ConsolePos consolePos();
+  method Action setConsolePos(ConsolePos p);
 
   // ---------------------------------------------------------------
   // AND A READ SCANS THE SWITCHES.  Reference Manual printed p.150,
@@ -576,8 +592,8 @@ module mkStretchIO(StretchIO);
   // the choice -- but something had to be chosen and this says so.
   Reg#(ArcAddr) arcReg     <- mkReg(0);
   // The console printer's paper, and where the next character goes.
-  Vector#(DeviceWords, Reg#(Word64)) consoleImg <- replicateM(mkReg(0));
-  Reg#(DevicePos) consolePosReg <- mkReg(0);
+  Vector#(ConsoleWords, Reg#(Word64)) consoleImg <- replicateM(mkReg(0));
+  Reg#(ConsolePos) consolePosReg <- mkReg(0);
   // The console's three switch words, zero at power-on -- which is
   // MCP's "NO TIME ENTERED" case, not an absence of behaviour.  See
   // the interface above.
@@ -657,12 +673,12 @@ module mkStretchIO(StretchIO);
     arcReg <= a;
   endmethod
 
-  method Action writeConsoleWord(DeviceIndex i, Word64 v);
+  method Action writeConsoleWord(ConsoleIndex i, Word64 v);
     consoleImg[i] <= v;
   endmethod
-  method Word64 readConsoleWord(DeviceIndex i) = consoleImg[i];
-  method DevicePos consolePos() = consolePosReg;
-  method Action setConsolePos(DevicePos p);
+  method Word64 readConsoleWord(ConsoleIndex i) = consoleImg[i];
+  method ConsolePos consolePos() = consolePosReg;
+  method Action setConsolePos(ConsolePos p);
     consolePosReg <= p;
   endmethod
 

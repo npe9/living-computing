@@ -605,6 +605,10 @@ module mkStretchCore(StretchCore);
       // something had to be chosen and this says so.
       : (kind == DevConsole && !x.isWrite)
           ? fromInteger(valueOf(ConsoleSwitchWords))
+      // and the WRITE walks the console's own paper, ConsoleWords of
+      // it (StretchIO.bsv, "THE CONSOLE'S PAPER").
+      : (kind == DevConsole)
+          ? fromInteger(valueOf(ConsoleWords))
       : fromInteger(valueOf(DeviceWords));
     if (ioRefillIssued) begin
       // A CHAINED CONTROL WORD IS IN FLIGHT.  This arm is first in the
@@ -780,7 +784,7 @@ module mkStretchCore(StretchCore);
           // message and MCP writes one message as a chain of control
           // words.
           if (kind == DevConsole) begin
-            ioDev.writeConsoleWord(di, v);
+            ioDev.writeConsoleWord(truncate(x.devIdx), v);
             ioDev.setConsolePos(truncate(x.devIdx + 1));
           end else
             ioDev.writePrinterWord(di, v);

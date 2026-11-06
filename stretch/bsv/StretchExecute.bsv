@@ -2536,7 +2536,9 @@ function ActionValue#(VflOutcome)
         // resuming call reaches this line again with the same `ea`.
         Bool vflFetchType = (vi.code == 6'b000101)    // L
                          || (vi.code == 6'b000001)    // + , -
-                         || (vi.code == 6'b010001);   // K
+                         || (vi.code == 6'b010001)    // K
+                         || (vi.code == 6'b001011)    // LFT
+                         || (vi.code == 6'b111001);   // *+
         Bool dfSupp = False;
         if (vflFetchType && !immediate) begin
           ind = dfSignal(st, baWord(ea), ind);
@@ -2662,9 +2664,10 @@ function ActionValue#(VflOutcome)
             //     converter hits it: the three checks above go green,
             //     and line 49's own index has no refill.
             //
-            // M+ (code 010001 below) and the CM connective keep the
-            // old refusal.  Nothing measured needs them yet, and
-            // bsv/README.md's scope list carries them with the date.
+            // M+ (code 010001 below) keeps the old refusal.  Nothing
+            // measured needs it yet, and bsv/README.md's scope list
+            // carries it with the date.  The CM connective crosses
+            // since 2026-11-06 (connectiveOp's "CM MAY CROSS" note).
             Bool stCrosses = fieldCrosses(ea, len_);
             WordAddr stW0 = baWord(ea);
             if (immediate
@@ -2954,6 +2957,91 @@ function ActionValue#(VflOutcome)
               // "Arithmetic Result (RLZ, RZ, RGZ, RN).  In a binary
               // operation, these indicators are set as in ADD."
               ind = setResultIndicatorsF(ind, res);
+            end
+          end
+          6'b001011, 6'b111001: begin // LFT (Load Factor), *+ (Multiply and Add)
+            // Reference Manual printed p.69 (PDF p.72), read at the
+            // ink.  LOAD FACTOR: "The factor register (FT) is cleared.
+            // A four-bit sign byte, in which the leftmost bit is the
+            // sign of the addressed storage operand as modified by the
+            // negative sign modifier, is placed in the four low-order
+            // bits of FT.  The remaining three bits of this sign byte
+            // are zero.  The numeric part of the addressed operand is
+            // positioned to the left of this sign byte in FT."  PF if
+            // the numeric part has more than 60 significant bits;
+            // result indicators "according to the contents of the
+            // factor register"; "The accumulator contents are not
+            // affected ... The offset has no meaning".
+            //
+            // MULTIPLY AND ADD, binary: "the multiplicand field in the
+            // factor register (FT) is multiplied by the addressed
+            // storage operand.  Neither multiplicand nor multiplier
+            // may exceed 48 significant numeric bits.  The product is
+            // algebraically added to the accumulator contents as
+            // specified by the offset."  PF if either factor exceeds
+            // 48 bits (the 48 low-order bits are used), or if product
+            // bits pass the accumulator's left end; FT is unchanged.
+            // Decimal *+ (LOAD TRANSIT AND SET's action) is refused
+            // above with the rest of the decimal VFL set.
+            //
+            // ARRIVED VIA MCP: printed p.95 lines 49 and 55 and p.96
+            // lines 1-2, MOVE's table layout -- "LFT,TIODCT(TMXA)
+            // -NUMBER OF IODS TO FACTOR REG" then "*I+,TFLLGN,46 -ADD
+            // FILE AREA TABLE LENGHT".  Both set OP until 2026-11-06.
+            //
+            // Lost Carry "as in ADD" is not modelled, as in this
+            // model's ADD.  Same prefetch/bail-out shape as + above.
+            Bit#(64) raw = 0;
+            if (immediate) begin
+              raw = immediateOperand(vi.a.addr, len_);
+            end else begin
+              WordAddr w0 = baWord(ea);
+              Bit#(6) off = baBit(ea);
+              if (!fieldCrosses(ea, len_)) begin
+                if (prefetchCount >= 1) begin
+                  raw = extractFieldBits(prefetch[0], 0, off, len_);
+                  vflReadsUsed = 1;
+                end else
+                  needsRead = tagged Valid w0;
+              end else begin
+                if (prefetchCount >= 2) begin
+                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
+                  vflReadsUsed = 2;
+                end else if (prefetchCount == 1)
+                  needsRead = tagged Valid (w0 + 1);
+                else
+                  needsRead = tagged Valid w0;
+              end
+            end
+            if (!isValid(needsRead)) begin
+              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              if (vi.code == 6'b001011) begin
+                if ((opnd.mag >> 60) != 0) ind = setBit(ind, ind_PF, 1);
+                Bit#(60) num = truncate(opnd.mag);
+                st.writeWord(addrFactor, (zeroExtend(num) << 4)
+                                         | (zeroExtend(opnd.sign) << 3));
+                ind = setResultIndicatorsF(ind,
+                        SM128 { sign: opnd.sign, mag: zeroExtend(num) });
+              end else begin
+                Word64 ft = st.readFactor();
+                Bit#(60) mcand = truncate(ft >> 4);
+                Bit#(1)  ftSign = ft[3];
+                if ((mcand >> 48) != 0 || (opnd.mag >> 48) != 0)
+                  ind = setBit(ind, ind_PF, 1);
+                Bit#(96) a = zeroExtend(mcand[47:0]);
+                Bit#(96) b = zeroExtend(opnd.mag[47:0]);
+                Bit#(96) prod = a * b;
+                Bit#(256) wide = zeroExtend(prod) << offSh;
+                if ((wide >> 128) != 0) ind = setBit(ind, ind_PF, 1);
+                SM128 prodSh = SM128 { sign: ftSign ^ opnd.sign,
+                                       mag: truncate(wide) };
+                SM128 sum = smAdd(readAcc(st), prodSh);
+                writeAcc(st, sum);
+                ind = setResultIndicatorsF(ind, sum);
+              end
+              // "To-Memory Operation (MOP) ... set as in ADD", and ADD
+              // turns it off (p.60).
+              ind = setBit(ind, ind_MOP, 0);
             end
           end
           6'b011101: begin // / (Divide)
@@ -3419,11 +3507,10 @@ function ActionValue#(VflOutcome)
             // A2).  Eight bits at byte size four is two decimal
             // digits.
             //
-            // ONLY DECIMAL-TO-BINARY IS BUILT.  p.72: "If this bit
-            // is zero, the original field is binary" -- which asks
-            // for the other direction, repeated division by ten, and
-            // nothing in the corpus calls for it.  The binary source
-            // sets OP below rather than being silently wrong.
+            // BOTH DIRECTIONS ARE BUILT: decimal-to-binary here, and
+            // binary-to-decimal (binaryToBcd) in the arm below, which
+            // printed p.32 line 6's "LCV(BU,18),$13 -CONVERT CHANNEL
+            // TO DECIMAL" uses.
             Bit#(64) raw = 0;
             if (immediate) begin
               raw = immediateOperand(vi.a.addr, len_);
@@ -3699,7 +3786,8 @@ function ActionValue#(VflOutcome)
             end
           end
           default: begin
-            $display("StretchCore:   OP site = vflIntOp/unimplemented-code");
+            $display("StretchCore:   OP site = vflIntOp/unimplemented-code  code=%b decimal=%0d",
+                     vi.code, vi.m.decimal);
             ind = setOpInvalid(ind);
             vflOk = False;
           end
@@ -3801,7 +3889,8 @@ endfunction
 // ---------------------------------------------------------------------
 function ActionValue#(VflOutcome)
     connectiveOp(StretchStorage st, ConnInstr cn,
-                 Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0);
+                 Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0,
+                 HWordAddr pc);
   actionvalue
     Maybe#(WordAddr) needsRead = tagged Invalid;
     Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = tagged Invalid;
@@ -3926,16 +4015,31 @@ function ActionValue#(VflOutcome)
         if (dfSupp) begin
           // suppressed: deliberately nothing at all
         end else begin
-        if (cn.suffix == conn_CM && fieldCrosses(ea, len_)) begin
-          // CM writing a crossing field: same single-word-write
-          // limitation as VflInt's ST/M+ (writeField's precondition).
+        // >>> CM MAY CROSS A WORD BOUNDARY, 2026-11-06, AND MCP IS
+        // AGAIN THE SOURCE THAT SAYS IT MUST. <<<  Printed p.78 line
+        // 42, "SF(BU,40,8),TREELX" at 004542.00, is CONNECT TO MEMORY
+        // 0101 (the store connective, assembled 004435.50 80 050000.12
+        // F0 and checked by tests/verify_mcp_bootstrap_p78.py) of
+        // forty bits at bit 40: bits 40-79 of the pair.  Refused, it
+        // left OP set through the rest of IPL, and MCP's body, once it
+        // enabled interrupts, typed "MCP ERROR- ... OP INTERRUPT AT
+        // ABOVE LOCATION".  It is now written the way ST's crossing
+        // store is (vflIntOp's ST arm): both words read, the field
+        // inserted across the pair, the head through writeWord and the
+        // tail through writeWordTail.  The two refusals ST keeps are
+        // kept here for ST's two reasons -- a tail below word 32 (the
+        // registers) and a crossing field that also needs a refill
+        // (three reads of a two-slot prefetch).
+        if (cn.suffix == conn_CM && fieldCrosses(ea, len_)
+            && ((baWord(ea) + 1) < 32 || vflNeedsRefill)) begin
+          // CM writing a crossing field ST also refuses.
           // The length and offset are printed because THAT IS WHAT
           // CAUGHT THE 2026-10-25 IMAGE BUG: three CM1111 rows came
           // through with rawlen=0 (which effLength reads as 64) where
           // the assembled word has 1, and the numbers are what showed
           // the fault was in the MERGED IMAGE and not in this guard.
-          $display("StretchCore:   OP site = conn/CM-crossing-field  len=%0d off=%0d",
-                   len_, baBit(ea));
+          $display("StretchCore:   OP site = conn/CM-crossing-field  len=%0d off=%0d  at half-word %0d",
+                   len_, baBit(ea), pc);
           ind = setOpInvalid(ind);
           vflOk = False;
         end else if (cn.suffix == conn_CM && vflNeedsRefill) begin
@@ -3943,9 +4047,10 @@ function ActionValue#(VflOutcome)
           // as VflInt's ST -- own field word first, refill second,
           // write only once both are in hand (see vflWriteArmHandled's
           // comment above for why this can't share the generic
-          // C/CT/CM read-then-dispatch path below). CM is always
-          // non-crossing and non-immediate here (both forced invalid
-          // above), so its own read is always exactly 1 slot.
+          // C/CT/CM read-then-dispatch path below). CM is
+          // non-crossing and non-immediate here (crossing-with-refill
+          // and immediate are forced invalid above), so its own read is
+          // always exactly 1 slot.
           vflWriteArmHandled = True;
           // DF, p.32 class 3.  This branch is entered only on
           // "CM && vflNeedsRefill", so the refill genuinely happens --
@@ -3982,18 +4087,16 @@ function ActionValue#(VflOutcome)
           Bit#(64) m = 0;
           Word64 mHiWord = 0; // valid only for CM (the only suffix
                                // that writes back); see below.
+          Word64 mLoWord = 0;  // and the second word, when CM's field
+                               // crosses into it.
           if (immediate) begin
             m = immediateOperand(cn.a.addr, len_);
           end else begin
-            // C/CT/CM all share this prefetch/bail-out shape. CM is
-            // guaranteed non-crossing by the outer guard above (and
-            // guaranteed !immediate by the check further above), so
-            // it always takes the !crosses branch below and needs
-            // exactly 1 read -- the same shape VflInt M+/ST have.
-            // C/CT, unlike CM, are NOT restricted to non-crossing
-            // (neither writes to general storage: C writes the
-            // accumulator, CT writes nothing), so they can genuinely
-            // need the 2-read crossing path.
+            // C/CT/CM all share this prefetch/bail-out shape, and
+            // since 2026-11-06 all three may take the 2-read crossing
+            // path (CM's "MAY CROSS" note above).  CM is still
+            // guaranteed !immediate by the check further above, and
+            // keeps both words it read for the write back.
             WordAddr w0 = baWord(ea);
             Bit#(6) off = baBit(ea);
             if (!fieldCrosses(ea, len_)) begin
@@ -4006,6 +4109,10 @@ function ActionValue#(VflOutcome)
             end else begin
               if (prefetchCount >= 2) begin
                 m = extractFieldBits(prefetch[0], prefetch[1], off, len_);
+                if (cn.suffix == conn_CM) begin
+                  mHiWord = prefetch[0];
+                  mLoWord = prefetch[1];
+                end
                 vflReadsUsed = 2;
               end else if (prefetchCount == 1)
                 needsRead = tagged Valid (w0 + 1);
@@ -4045,7 +4152,24 @@ function ActionValue#(VflOutcome)
                                         mag: (acc.mag & ~fieldMask128) | resultSh };
                 writeAcc(st, merged);
               end
-              conn_CM: writeFieldWithHi(st, ea, len_, result, mHiWord); // CM
+              conn_CM: begin
+                if (!fieldCrosses(ea, len_))
+                  writeFieldWithHi(st, ea, len_, result, mHiWord);
+                else begin
+                  // Both words compared, p.31's straddling rule, as
+                  // ST's crossing store does.
+                  WordAddr cw0 = baWord(ea);
+                  if (protViolates(st, cw0) || protViolates(st, cw0 + 1))
+                    ind = setBit(ind, ind_DS, 1);
+                  else begin
+                    Tuple2#(Word64, Word64) np =
+                      insertFieldBitsPair(mHiWord, mLoWord, baBit(ea),
+                                          len_, result);
+                    st.writeWord(cw0, tpl_1(np));
+                    st.writeWordTail(cw0 + 1, tpl_2(np));
+                  end
+                end
+              end
               conn_CT: begin end // CT: result discarded, indicators only
               default: ind = setOpInvalid(ind); // unreachable: StretchDecode's
                                                  // isConnSuffix only admits these
@@ -4086,7 +4210,7 @@ function ActionValue#(VflOutcome)
           // VflInt's identical trailing block.
           if (vflNeedsRefill && vflReadsUsed >= 2) begin
             // See VflInt's identical comment above: a crossing-field
-            // read (C/CT only -- CM is always non-crossing, forced
+            // read (CM's own crossing-with-refill is forced
             // invalid above) plus a refill would need a 3rd prefetch
             // slot. Not reachable by any current test.
             ind = setOpInvalid(ind);
@@ -6128,7 +6252,7 @@ function ActionValue#(ExecDispatch)
       // this file (PF isn't implemented for VflInt either). Not
       // exercised by any program yet with BS!=8.
       tagged Connective .cn: begin
-        VflOutcome co <- connectiveOp(st, cn, prefetch, prefetchCount, ind);
+        VflOutcome co <- connectiveOp(st, cn, prefetch, prefetchCount, ind, pc);
         needsRead  = co.needsRead;
         vflPending = co.vflPending;
         ind        = co.ind;

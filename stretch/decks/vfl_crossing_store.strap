@@ -79,9 +79,9 @@
 ! left to be assumed; block 2 is the attempt to make it load-bearing.
 !
 ! WHAT IS STILL REFUSED, and block 5 is the scope check for it:
-!   * M+ with a crossing field, and the CM connective likewise.
-!     Nothing measured needs them; bsv/README.md carries them with the
-!     date.
+!   * M+ with a crossing field.  Nothing measured needs it;
+!     bsv/README.md carries it with the date.  (The CM connective
+!     crosses since 2026-11-06: decks/cm_crossing_field.strap.)
 !   * A crossing field whose SECOND word is below 32 (the machine's
 !     registers): the tail is drained to the core-storage queue and
 !     does not run writeWord's special-address dispatch.

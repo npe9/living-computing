@@ -253,6 +253,11 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   the operator puts in them, and MCP's own printed p.23 line 30
   (`BZB,X LR IN+.29`) confirms its bit numbering. Built 2026-10-22
   because MCP's printed p.22 line 5 asks for them.
+  The printed output is a **256-word image** (`ConsoleWords`,
+  StretchIO.bsv) — a chosen model buffer standing in for continuous
+  paper, not a documented number. It was the shared 32-word device
+  image until 2026-11-06, when MCP's IPL typed past it and took
+  XERR05.
   *Known limits, all of them p.150's and none of them reached by
   anything that runs here*: the **keyboard** is not modelled (only
   p.150's "keyboard not enabled" case exists), the ENTER key's
@@ -641,8 +646,12 @@ it recognizes independent of what the datapath implements.
   arm existed) and `tests/gen_mcp_boot_tb.py`'s `mcp_ucbf1_*` pin the
   effect on MCP itself.
   **WHAT IS STILL REFUSED**, each for a stated reason:
-  `M+` and the `CM` connective keep the old guard (nothing measured
-  needs them); a crossing field whose SECOND word is below 32 — the
+  `M+` keeps the old guard (nothing measured needs it). The `CM`
+  connective crosses since 2026-11-06, the same way and for the same
+  kind of reason: MCP printed p.78 line 42, `SF(BU,40,8),TREELX`, is a
+  forty-bit CONNECT TO MEMORY at bit 40, refused it left OP set, and
+  MCP's body reported an OP interrupt
+  (`decks/cm_crossing_field.strap`). Still refused: a crossing field whose SECOND word is below 32 — the
   machine's registers — because the tail drains to the core-storage
   queue and does not run `writeWord`'s special-address dispatch; and a
   crossing field that ALSO needs a progressive refill, which wants
