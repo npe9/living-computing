@@ -119,7 +119,15 @@
 !    operation's code field, p.16's deck is faithful, and no landed
 !    page is implicated.
 !
-! 2. LINE 28 IS A LABELLED SUBSTITUTION.  The page prints
+! 2. LINE 28 IS WRITTEN AS PRINTED, "($12)" AND ALL (2026-11-06).
+!    MCP's error list, printed p.444, prints "PAGE 156, LINE 28,
+!    FIELD 1 -- INDEX NOT ALLOWED 115" (N28-1081 diagnostic 115), and
+!    the line number here prints "28**", IBM's per-line error flag:
+!    IBM's assembler ignored the index and said so, and strap_asm now
+!    does the same (tests/check_error_list.py).  What follows is the
+!    substitution this deck made before:
+!
+!    The page prints
 !
 !        E LAB CW  XW,S SCR PM($12),1,$
 !
@@ -248,7 +256,7 @@ KWLTMK  LV,4,SCREEL($12)             ! line 21  -UPDATE REEL POOL
         LVI,0,1.                     ! line 25
         SV,0,SFILEK($12)             ! line 26  (same card as 25) -UPDATE FILE COUNT
         B,ZSTEVL                     ! line 27  -BRANCH TO EVAL. ROUTINE
-ELABCW  XW,SSCRPM,1,$                ! line 28  -WRITE LABEL CTL WD
+ELABCW  XW,SSCRPM($12),1,$           ! line 28  -WRITE LABEL CTL WD (diagnostic 115: the index is ignored)
                                      !          printed "XW,S SCR PM($12),1,$"
 
 ! ---------------------------------------------------------------
@@ -314,4 +322,4 @@ ELABCW  XW,SSCRPM,1,$                ! line 28  -WRITE LABEL CTL WD
 !CHECK 217763.00 | 000001.01 01 | line 25 LVI,0,1. -- J=0, so the .01 is LVI's operation bit alone
 !CHECK 217763.40 | 000007.41 3C | line 26 SV,0,S FILEK($12) (same card as line 25) -- .41 is SV's .01 plus S FILEK's bit 32; the bits BELOW 32 are dropped by an index-arithmetic operand, so 7.38 and 7.32 are indistinguishable here (this LOCATION carries the trailing asterisk)
 !CHECK 217764.00 | 221144.50 00 | line 27 B,Z STEVL -- .50 is Z STEVL's .40 plus B's .10, exactly as printed p.152 line 27 prints it
-!CHECK 217765.00 | 000006.00+ 000 000001 217765 | line 28 E LAB CW XW,S SCR PM($12),1,$ -- a full word, so the counter leaves this page at 217766.00; the refill is the XW's own address and the count is 1; the deck drops the printed "($12)" because strap_asm's XW VALUE field takes no index and an index word has no index field to put it in
+!CHECK 217765.00 | 000006.00+ 000 000001 217765 | line 28 E LAB CW XW,S SCR PM($12),1,$ -- a full word, so the counter leaves this page at 217766.00; the refill is the XW's own address and the count is 1; written as printed; IBM's assembler ignored the "($12)" with diagnostic 115 (printed p.444), and so does strap_asm

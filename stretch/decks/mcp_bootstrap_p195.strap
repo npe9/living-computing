@@ -372,7 +372,7 @@
 ! and rest on the ink alone.
 !
 ! ---------------------------------------------------------------
-! DEPARTURES FROM THE PRINTED FORM -- TWO, BOTH FLAGGED
+! DEPARTURES FROM THE PRINTED FORM -- TWO, BOTH FLAGGED; (B) IS GONE
 ! ---------------------------------------------------------------
 ! The brief's rule is to hand strap_asm the printed form and let a
 ! bad row FAIL.  Two rows on this page cannot fail, because
@@ -389,6 +389,12 @@
 !     one line 4 and line 43 spell without the blank, and the row's
 !     !CHECK tests the printed 221727.01 30.
 !
+! (B) GONE 2026-11-06: line 44 is now written as printed.  MCP's error
+!     list, printed p.444, prints "PAGE 195, LINE 44, FIELD 1 -- INDEX
+!     NOT ALLOWED 115" (N28-1081 diagnostic 115), and the "leading
+!     asterisk" below is the line number's "44**", IBM's per-line
+!     error flag: the index was ignored, as strap_asm now does.
+!     The departure as it stood:
 ! (B) LINE 44 IS PRINTED "CW,SSCRPM($12),1.0" AND IS WRITTEN HERE
 !     "CW,SSCRPM,1.0".  strap_asm's CW evaluates its ADDRESS field
 !     with eval_expr, which refuses an index -- "cannot parse
@@ -537,11 +543,10 @@ JRDLK   RD(SEOP),0.0($14),$+1.0      ! line 39   -READ LABEL COMMAND
 JLABIN  XW,0                         ! line 41   -LABEL SLOT
 JERGK   CTL(SEOP),0.0($14),(8)56.0   ! line 42
 JWKOM   W(SEOP),0.0($14),$+1.0       ! line 43 * trailing asterisk; -WRITE LABEL COMMAND
-        CW,SSCRPM,1.0                ! line 44 * LEADING asterisk.  PRINTED
-!                                    !           "CW,SSCRPM($12),1.0"; the index is dropped
-!                                    !           here because strap_asm's CW address field
-!                                    !           refuses one -- departure (B).  A control
-!                                    !           word has no index field, and the compiled
+        CW,SSCRPM($12),1.0           ! line 44 * LEADING asterisk (the "44**" error flag).
+!                                    !           As printed; diagnostic 115, the index is
+!                                    !           ignored (printed p.444).  A control word
+!                                    !           has no index field, and the compiled
 !                                    !           word is the printed one.
 JPREVX  DRZ(N), (3)                  ! line 45 * trailing asterisk; -FOR INDEX REGISTERS
 ! line 46 is a comment card: "--" in the NAME column, nothing else.

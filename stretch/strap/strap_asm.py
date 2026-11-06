@@ -2607,6 +2607,11 @@ def statement_size(stmt, symtab=None):
 class Image:
     def __init__(self):
         self.reservations = []      # (bit location, bit width) from DR
+        # STRAP's non-fatal diagnostics, (source line, number, message)
+        # with the numbers and wording of N28-1081 (bound in C28-6129,
+        # PDF pp.71-73).  Only those MCP's own error list, printed
+        # p.444, witnesses are produced; see _strip_index.
+        self.diagnostics = []
         # >>> AND WHAT A FORWARD SLC JUMPED OVER. <<<  Recorded in the
         # same shape and for the same reason as a DR's range: it is the
         # SECOND legitimate hole in an image.  A DR says "reserve this
@@ -2765,6 +2770,26 @@ class Image:
 # (this is exactly how a real 7030 installation would leave word 0
 # alone too). Ordinary storage starts at word 32.
 DEFAULT_ORIGIN_BITS = 32 * 64
+
+
+# AN INDEX ON AN INDEX WORD'S VALUE OR A CONTROL WORD'S ADDRESS IS
+# IGNORED, AND SAID SO.  N28-1081 (C28-6129 PDF p.73) diagnostic 115,
+# "INDEX NOT ALLOWED".  MCP's error list, printed p.444, prints it for
+# exactly two cards, printed p.156 line 28 "E LAB CW XW,S SCR PM($12),
+# 1,$" and printed p.195 line 44 "CW,SSCRPM($12),1.0", and both print
+# their word as the card without the index ("000006.00+ 000 000001
+# 217765" and "... 000000"): neither word has an index field (C22-6531;
+# C28-6129 printed p.14).  This used to be refused, and the two decks
+# dropped the "($12)" from the printed card to assemble.
+_INDEX_SUFFIX = re.compile(r'\(\s*\$X?\d+\s*\)\s*$')
+
+
+def _strip_index(text, image, lineno):
+    m = _INDEX_SUFFIX.search(text)
+    if not m:
+        return text
+    image.diagnostics.append((lineno, 115, "INDEX NOT ALLOWED"))
+    return text[:m.start()]
 
 
 class AssembledProgram:
@@ -3244,6 +3269,7 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
 
     prog = AssembledProgram(image.words, symtab, end_pc, image.reservations,
                             image.skips)
+    prog.diagnostics = list(image.diagnostics)
     # The words some statement actually WROTE, as against those a DRZ's
     # zero fill alone holds: `words` cannot tell them apart, and inside
     # a reservation an overlay assembles over (printed p.319's Y MPBUF,
@@ -3571,7 +3597,8 @@ def emit_statement(stmt, symtab, image):
             v = eval_expr(text, symtab, loc, lineno=stmt.lineno)
             return (v >> 6) if _is_bit_address(text) else v
 
-        addr = _word_field(stmt.fields[0]) if stmt.fields[0].strip() else 0
+        addr_text = _strip_index(stmt.fields[0], image, stmt.lineno)
+        addr = _word_field(addr_text) if addr_text.strip() else 0
         # COUNT TAKES THE SAME RULE, which the first version missed.
         # C22-6531 p.12's note covers any 18-bit field, and the count
         # field is bits 28-45.  MCP writes it both ways within twelve
@@ -3686,7 +3713,8 @@ def emit_statement(stmt, symtab, image):
             stmt = Statement(stmt.lineno, stmt.name, stmt.op, stmt.mods,
                              ['0'], stmt.entry, stmt.pents)
             stmt.addr = loc
-        val = eval_expr(stmt.fields[0], symtab, loc, lineno=stmt.lineno)
+        val = eval_expr(_strip_index(stmt.fields[0], image, stmt.lineno),
+                        symtab, loc, lineno=stmt.lineno)
         sign = 1 if val < 0 else 0
         mag = abs(val) & 0xFFFFFF
         # COUNT is an 18-bit field of WORDS, and it takes exactly the

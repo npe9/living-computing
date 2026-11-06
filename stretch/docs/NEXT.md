@@ -16857,3 +16857,21 @@ tests/check_never_used_symbols.py.
   * "* 1" marks exactly the names inside the TAIL,(2)G block (p.2 line
     10 to p.98 line 37); its meaning is not established.
   NEXT: p.444's error rows against their decks.
+
+THE ERROR LIST, printed p.444, IS CHECKED BOTH WAYS (2026-11-06).
+tests/check_error_list.py predicts its eight rows from every landed
+deck and requires the sets to be equal.  The numbers and wording are
+N28-1081's diagnostics (C28-6129 PDF pp.71-73): 123, 115, 92, 46, 36.
+Each listed line prints "NN**" where every other line prints "NN*" --
+IBM's per-line error flag, seen on all eight at 300 dpi.
+  * 115 INDEX NOT ALLOWED: strap_asm now ignores an index on an XW VALUE
+    or a CW ADDRESS and records it (prog.diagnostics), and printed
+    p.156 line 28 and p.195 line 44 are written as printed, "($12)"
+    and all -- both decks had dropped it to assemble (Rule 3).
+  * 123 MORE THAN 1 LOC.CTR.DEP. SYMBOL: FIELD 1 of a card that is not
+    a SYN.  p.2's CW has the difference in field 2 and p.13's SYN has
+    it too; neither is listed.
+  * 46, 36, 92 each have one card in the corpus that fits, and it is
+    the listed one.
+  OPEN: the rules for 123 and 92 are what the listing shows, not text
+    from the manual; 92 has a single witness.
