@@ -1,0 +1,184 @@
+! mcp_bootstrap_p251.strap -- MCP printed page 251: the Input Program's
+! card-reader recovery section, continued (ST(BU,32),VNLB2-3.32,-64 ..
+! LV,VU,RPRTEX-.32), lines 1-56.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.2, read at 400 dpi (900 dpi for
+! doubtful glyphs).  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID 0B000326  DIST. OF 3/01  3/01  PAGE NUMBER 251" (round glyphs
+! in numeric fields read 0); the heading row's LOCATION field is
+! 230157, line 1's word.
+!
+! THE PAGE.  56 lines, contiguous from 230157.40 to 230223.00 (a half
+! word; next location 230223.40, where printed p.252 opens).  Lines 7,
+! 16 and 50 (CNOP,) print no location: each follows a row that ends on
+! a full word, so the CNOP emits nothing.  Every line number prints a
+! "*" after it (lines 1-56).  Asterisks after the LOCATION on lines 15,
+! 19, 41 and 53.  No remarks.  Line 15's DD prints no binary (32
+! characters = 4 words, 230170.00 .. 230173.40).  The DRZs (lines 19,
+! 53) print their size, 000002.00 words each, and get no !CHECK (as
+! p.214's DRZs).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 4 label "RENCTR" = RENDTR (D with a worn stem): line 9
+!     B,RENDTR prints 230161.50 = this row's 230161.40.
+!   * line 6 "REJJCB" = REJJOB (open O), as every landed deck spells it
+!     (230364.0); BBZ .59 prints 230364.73.
+!   * line 13 label "RCCUNT" = RCOUNT (open O), as other pages
+!     SYN it at 230166.40 = this row.
+!   * line 15 "(IQS*)DC(BU)" = DD (worn D), as the landed (IQS*)DD(BU)
+!     message cards; label RCMSGE (M worn) as other pages' SYNs spell it, 230170.00.
+!   * line 43 binary prints "290234.77": the second digit is a blotted
+!     3 (no 9 in octal); same statement as line 29 (230234.77).
+!   * lines 12, 14, 51, 52 "VF,C", "XW,C", "BE,C" = 0 (binary all 0).
+!   * hex bytes "C0"/"CO" = 00, "C1" = 01, "DO"/"D0" = D0 (SVA), "FC"
+!     = F0 (line 31 h2), "DC" = D0 (lines 1, 5 h2); octal "C" = 0.
+!
+! CARD SERIALS.  Right-hand serials run 0B000326 .. 0B000360, none
+! skipped.  Shared: 2-3 (327), 4-5 (328), 8-9 (331), 10-11 (332),
+! 17-18 (338), 20-21 (340), 22-23 (341), 24-25 (342), 26-27 (343),
+! 28-29 (344), 32-33 (347), 34-35 (348), 36-39 (349, four lines),
+! 44-46 (354), 47-49 (355), 51-52 (357), 54-55 (359).  Line 56's 360
+! is shared with p.252's line 1.
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B lines 36, 44, 47
+DCHEX   SYN, 12.0                    ! landed p.104 "D CHEX"; line 37 000014.00
+DWAIT   SYN, 11.32                   ! landed p.104 "D WAIT"; line 48 000013.40
+VP      SYN, $1                      ! p.213 line 26 (landed)
+VU      SYN, $3                      ! p.213 line 25 (landed)
+VSU     SYN, 6.0                     ! p.213 line 18 = VIC.VH = 6.0 (landed); LVE lines 38, 46, 49
+VE      SYN, (8)225376.0             ! landed decks (p.238 "V E VF,-34."); LVI line 2 225376.07
+VCR     SYN, (8)225232.0             ! landed; BE line 18
+VNLB2   SYN(BU,32,8), (8)225165.40   ! landed p.234 label (LV) at 225165.40; ST lines 1, 5, BBZ line 6
+VSWEEP  SYN(BU,32,8), (8)225173.40   ! landed p.234 label (LVI) at 225173.40; B line 3 225173.50
+RKA     SYN,3.0                      ! landed p.241 line 6; LCI line 28 RKA+1.0 000004.37
+RKF     SYN,3.0                      ! landed p.241 line 10; VF line 13 RKF+1.0 000004.00+
+RKSBRC  SYN, (8)230363.40            ! landed p.214; SIC line 20 230363.40, BIT-EXACT
+RKSUK   SYN(BU,32,8), (8)227524.40   ! landed p.214 label (LV); B line 21 227524.50
+REJJOB  SYN, (8)230364.0             ! landed decks (printed "REJJCB"); BBZ line 6 .59 = 230364.73, BIT-EXACT
+RPQUES  SYN, (8)230415.40            ! as landed decks (not defined yet); B line 30 230415.50, half word only
+RPTCOM  SYN(BU,32,8), (8)230154.0    ! p.250 label (LVI, not landed); this page's binary only: B line 8 230154.10, half word only
+RPTRY   SYN, (8)230234.40            ! later page (not landed); this page's binary only: SC lines 29, 43 230234.77, LC line 40 230234.76, BIT-EXACT
+
+        SLC, (8)230157.40
+        ST(BU,32),VNLB2-3.32,-64                             ! line  1
+        LVI,VU,VE                                            ! line  2
+        B,VSWEEP                                             ! line  3
+RENDTR  LWF(U),RRESTR                                        ! line  4   printed "RENCTR"
+        ST(BU,32),VNLB2-3.32,-32                             ! line  5
+        BBZ,REJJOB.59,VNLB2-3.32                             ! line  6   printed "REJJCB"
+        CNOP,                                                ! line  7
+RNLJAM  B,RPTCOM                                             ! line  8
+        B,RENDTR                                             ! line  9
+RRESTR  SIC,(VP)                                             ! line 10
+        NOP,                                                 ! line 11
+RCJAM   VF,0                                                 ! line 12
+RCOUNT  VF,RKF+1.0                                           ! line 13   printed "RCCUNT"
+RCWSAV  XW,0                                                 ! line 14
+RCMSGE  (IQS*)DD(BU),SERVICE RD/FD CHK ON CARD READER*       ! line 15   printed "DC(BU)"
+        CNOP,                                                ! line 16
+        BE,$                                                 ! line 17
+        BE,VCR                                               ! line 18
+RCREXT  DRZ(BU,64),2                                         ! line 19
+        SIC,RKSBRC                                           ! line 20
+        B,RKSUK                                              ! line 21
+        LVI,$13,$-4.0                                        ! line 22
+        B,$                                                  ! line 23
+        LVI,$13,$-5.0                                        ! line 24
+        B,$                                                  ! line 25
+        LVI,$13,$-6.0                                        ! line 26
+        B,$                                                  ! line 27
+RCPQES  LCI,15,RKA+1.0                                       ! line 28
+        SC,15,RPTRY                                          ! line 29
+        B,RPQUES                                             ! line 30
+RPUKLI  CM1111(BU,1),RPRTEX-.33                              ! line 31
+RPUK    SVA,$15,RPEXEC.32                                    ! line 32
+        SVA,VU,RPRTEX-.32                                    ! line 33
+        V+I,$13,1.0                                          ! line 34
+        SVA,$13,RPRTEX-1.0                                   ! line 35
+        B,DMCP                                               ! line 36
+        ,DCHEX                                               ! line 37
+        LVE,,VSU(VU)                                         ! line 38
+        ,RPRTEX                                              ! line 39
+RPCABR  LC,15,RPTRY                                          ! line 40
+        BZB,RPRTEX+1.12,RCPQES                               ! line 41
+        CBZ,15,RCPQES                                        ! line 42
+        SC,$15,RPTRY                                         ! line 43
+RPEXEC  B,DMCP                                               ! line 44
+        ,$                                                   ! line 45
+        LVE,,VSU(VU)                                         ! line 46
+RWAIT   B,DMCP                                               ! line 47
+        ,DWAIT                                               ! line 48
+        LVE,,VSU(VU)                                         ! line 49
+        CNOP,                                                ! line 50
+        BE,0                                                 ! line 51
+        BE,0                                                 ! line 52
+RPRTEX  DRZ(BU,32),4                                         ! line 53
+        LV,VU,RPRTEX-.32                                     ! line 54
+        B,RPCABR                                             ! line 55
+        LV,VU,RPRTEX-.32                                     ! line 56
+
+!SYM RENDTR 230161.40
+!SYM RNLJAM 230164.00
+!SYM RRESTR 230165.00
+!SYM RCJAM  230166.00
+!SYM RCOUNT 230166.40
+!SYM RCWSAV 230167.00
+!SYM RCMSGE 230170.00
+!SYM RCREXT 230175.00
+!SYM RCPQES 230203.00
+!SYM RPUKLI 230204.40
+!SYM RPUK   230205.40
+!SYM RPCABR 230211.40
+!SYM RPEXEC 230214.00
+!SYM RWAIT  230215.40
+!SYM RPRTEX 230220.00
+!CHECK 230157.40 | 225162.00 80 040040.20 D0 | line 1 ST(BU,32),VNLB2-3.32,-64 (h2 byte prints "DC")
+!CHECK 230160.40 | 225376.07 01 | line 2 LVI,VU,VE
+!CHECK 230161.00 | 225173.50 00 | line 3 B,VSWEEP
+!CHECK 230161.40 | 230165.42 60 | line 4 RENDTR LWF(U),RRESTR (printed "RENCTR")
+!CHECK 230162.00 | 225162.00 80 040060.20 D0 | line 5 ST(BU,32),VNLB2-3.32,-32
+!CHECK 230163.00 | 230364.73 80 225162.34 06 | line 6 BBZ,REJJOB.59,VNLB2-3.32 (printed "REJJCB")
+!CHECK 230164.00 | 230154.10 00 | line 8 RNLJAM B,RPTCOM
+!CHECK 230164.40 | 230161.50 00 | line 9 B,RENDTR
+!CHECK 230165.00 | 000000.00 81 | line 10 RRESTR SIC,(VP)
+!CHECK 230165.40 | 000000.30 00 | line 11 NOP,
+!CHECK 230166.00 | 000000.00+ | line 12 RCJAM VF,0
+!CHECK 230166.40 | 000004.00+ | line 13 RCOUNT VF,RKF+1.0 (printed "RCCUNT")
+!CHECK 230167.00 | 000000.00+ 000 000000 000000 | line 14 RCWSAV XW,0
+!CHECK 230174.00 | 230174.00 00 | line 17 BE,$
+!CHECK 230174.40 | 225232.00 00 | line 18 BE,VCR
+!CHECK 230177.00 | 230363.40 80 | line 20 SIC,RKSBRC
+!CHECK 230177.40 | 227524.50 00 | line 21 B,RKSUK
+!CHECK 230200.00 | 230174.33 01 | line 22 LVI,$13,$-4.0
+!CHECK 230200.40 | 230200.50 00 | line 23 B,$
+!CHECK 230201.00 | 230174.33 01 | line 24 LVI,$13,$-5.0
+!CHECK 230201.40 | 230201.50 00 | line 25 B,$
+!CHECK 230202.00 | 230174.33 01 | line 26 LVI,$13,$-6.0
+!CHECK 230202.40 | 230202.50 00 | line 27 B,$
+!CHECK 230203.00 | 000004.37 02 | line 28 RCPQES LCI,15,RKA+1.0
+!CHECK 230203.40 | 230234.77 50 | line 29 SC,15,RPTRY
+!CHECK 230204.00 | 230415.50 00 | line 30 B,RPQUES
+!CHECK 230204.40 | 230217.37 80 001000.36 F0 | line 31 RPUKLI CM1111(BU,1),RPRTEX-.33 (h2 byte prints "FC")
+!CHECK 230205.40 | 230214.77 D0 | line 32 RPUK SVA,$15,RPEXEC.32
+!CHECK 230206.00 | 230217.47 D0 | line 33 SVA,VU,RPRTEX-.32
+!CHECK 230206.40 | 000001.33 05 | line 34 V+I,$13,1.0
+!CHECK 230207.00 | 230217.33 D0 | line 35 SVA,$13,RPRTEX-1.0
+!CHECK 230207.40 | 000040.10 00 | line 36 B,DMCP
+!CHECK 230210.00 | 000014.00 80 | line 37 ,DCHEX
+!CHECK 230210.40 | 000006.01 B3 | line 38 LVE,,VSU(VU)
+!CHECK 230211.00 | 230220.00 80 | line 39 ,RPRTEX
+!CHECK 230211.40 | 230234.76 50 | line 40 RPCABR LC,15,RPTRY
+!CHECK 230212.00 | 230221.14 80 230203.34 00 | line 41 BZB,RPRTEX+1.12,RCPQES (a "*" after the location)
+!CHECK 230213.00 | 230203.36 4A | line 42 CBZ,15,RCPQES
+!CHECK 230213.40 | 230234.77 50 | line 43 SC,$15,RPTRY (prints "290234.77", a blotted 3)
+!CHECK 230214.00 | 000040.10 00 | line 44 RPEXEC B,DMCP
+!CHECK 230214.40 | 230214.40 80 | line 45 ,$
+!CHECK 230215.00 | 000006.01 B3 | line 46 LVE,,VSU(VU)
+!CHECK 230215.40 | 000040.10 00 | line 47 RWAIT B,DMCP
+!CHECK 230216.00 | 000013.40 80 | line 48 ,DWAIT
+!CHECK 230216.40 | 000006.01 B3 | line 49 LVE,,VSU(VU)
+!CHECK 230217.00 | 000000.00 00 | line 51 BE,0
+!CHECK 230217.40 | 000000.00 00 | line 52 BE,0
+!CHECK 230222.00 | 230217.46 30 | line 54 LV,VU,RPRTEX-.32
+!CHECK 230222.40 | 230211.50 00 | line 55 B,RPCABR
+!CHECK 230223.00 | 230217.46 30 | line 56 LV,VU,RPRTEX-.32

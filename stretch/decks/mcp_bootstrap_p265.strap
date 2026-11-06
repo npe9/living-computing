@@ -1,0 +1,179 @@
+! mcp_bootstrap_p265.strap -- MCP printed page 265: JOB CONTROL PHASE 1
+! OVERLAPPED, its opening (YJC1TT DD .. NOP), lines 1-49.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.16, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD
+! ID PE000001  DIST. OF 3/01  3/01  PAGE NUMBER 265" (round glyphs in
+! numeric fields read 0).  The heading row's LOCATION field is BLANK.
+! A NEW CARD DECK: p.264 is the PD deck; this page's serials start at
+! PE000001.
+!
+! THE PAGE.  49 lines; every line number prints a "*" after it.  Lines
+! 1-3 and 10-12 are remark cards (banner), line 4 CNOP prints no
+! location (230747.00 already a word: emits nothing), line 7 EXT(0,18)
+! prints no location.  Located rows run contiguous from 230747.00 to
+! 230777.40 (a half word; next location 231000.00), then blank paper.
+! "*" after the LOCATION on lines 6, 9 and 30.
+!   line 5   YJC1TT DD(BU,12),(8)0401 prints "04C1" = 0401 (12 bits).
+!   line 6   DR(BU,33),(1) at 230747.14 prints 000000.41 (the size,
+!            33 bits; DR rows get no !CHECK).
+!   lines 7-8 EXT(0,18) over B,YC11ST: prints 0461724 at 230747.55 =
+!            the 19-bit half-word address of YC11ST (230752.00).
+!   line 9   DR(BU),(2) at 230750.00 prints 000002.00 (two words).
+! JOIN.  p.264 (PD deck, not landed, no neighbour deck) -- contiguity
+! with it is NOT established here: this page opens on a CNOP whose
+! row prints no location.  p.121's landed deck SYNs YJC1TT at
+! (8)230747.00, which this page's line 5 defines there -- an
+! independent witness of the origin.  p.266 should open at 231000.00
+! with serial PE000049.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * YC11ST (label line 13, operand line 8): both glyphs after C print
+!     the flagged 1 at 900 dpi (the unflagged I of YISUKM, LVI differs);
+!     the volume OCR also reads YC11ST.  EXT/B prints 0461724 = 230752.0.
+!   * line 28 ",SKCM" = ,SKOM (open O): landed p.106 "S KOM SYN,79.32";
+!     prints 000117.40.
+!   * line 29 ",3.C" = ,3.0; line 35 "XW,C" = XW,0; line 41 "BR,C($14)"
+!     = BR,0($14): open round glyphs, digits by context; binaries agree.
+!   * line 40 prints "LV,$14,Y1UCXW +1.0" WITH a blank before "+"; the
+!     binary 230771.34 includes the +1.0, so the blank is inside the
+!     operand (STRAP drops blanks in an operand).  Written as printed.
+!   * hex bytes printed with an open round written 0 ("C1" lines 33,
+!     46 = 01; "FC" line 24 = F0 as line 26's CM0000 prints F0); octal fields "CCCCCC.CC" are 0.
+!
+! EXTERNALS.  Values for symbols defined on pages not landed come from
+! this page's binary.  Where the volume OCR (a finding aid only) shows
+! the defining card's operation, the SYN carries that dds:
+!   YC1MTT  DD(BU,12)  (OCR "YCIMTT DD(BU,12),(8)0401")
+!   YSPDCR  C-I        half-word instruction (BU,32,8)
+!   YC1TC   BB         full-word instruction (BU,64,8)
+!   YC1B    L(BU,12)   full-word instruction (BU,64,8)
+!   YC1JJC  VF,0       plain
+!   YC1C, YC1JC, YC1DB, YUNCOD, YISUKM, LASTPP: defining card not seen;
+!   plain SYN.  (LASTPP and YUNCOD carry other values in the IPL
+!   assembly pp.15-98 -- p.57 "LASTPP SYN,(8)2613.0", p.25 "YUNCOD
+!   SYN,(8)2166.0" -- a different assembly; the body's values are
+!   these.)
+!
+! CARD SERIALS.  PE000001 .. PE000048; lines 7-8 (the EXT pair) share
+! PE000007, so line N prints PE00000N through line 7 and PE0000(N-1)
+! from line 8.  None skipped.
+
+SREJJB  SYN, (8)215011.40            ! landed p.103 "S REJJB VF,0" at 215011.40; LV line 13 215011.74
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label (as p.128/p.142/p.153)
+SJ1FUL  SYN(BU,1), SCOMRG.16         ! landed p.103 line 25; BBZ line 19 215001.20
+YSPDCR  SYN(BU,32,8), (8)231121.40   ! not landed (C-I card per OCR); SVA line 14 231121.75, half word only
+YC1JJC  SYN, (8)231071.0             ! not landed (VF,0 per OCR); SV line 15 231071.35, half word only
+YC1MTT  SYN(BU,12), (8)231067.0      ! not landed (DD(BU,12) per OCR); LX line 16 231067.34, half word only
+REJJOB  SYN, (8)230364.0             ! as p.241-p.248 (not landed); BZBZ line 21 REJJOB+.61 = 230364.75, BIT-EXACT
+YISUKM  SYN, (8)020606.0             ! not landed; LVI line 22 020606.33, half word only
+LASTPP  SYN, (8)231553.0             ! not landed in the body; LV line 23 231553.34, half word only
+TRJECT  SYN(BU,1), 0.37              ! landed p.62 line 12; CM1111 line 24
+TASGNP  SYN(BU,1), 0.38              ! landed p.62 line 13; CM0000 line 26
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 27
+SKOM    SYN, 79.32                   ! landed p.106 "S KOM"; line 28 000117.40 (printed "SKCM")
+YC1C    SYN, (8)231062.0             ! not landed; B line 31 231062.10, half word only
+YUNCOD  SYN, (8)231215.0             ! not landed in the body; B line 34 231215.10, half word only
+YC1DB   SYN, (8)231074.0             ! not landed; line 38 ,YC1DB 231074.00, half word only
+YC1B    SYN(BU,64,8), (8)231022.40   ! not landed (L(BU,12) card per OCR); B line 39 231022.50, half word only
+YC1TC   SYN(BU,64,8), (8)231013.40   ! not landed (BB card per OCR); B line 43 231013.50, half word only
+YC1JC   SYN, (8)231007.0             ! not landed; B line 45 231007.10, half word only
+
+        SLC, (8)230747.00
+! line  1  -*************************************************************
+! line  2  -          JOB CONTROL PHASE 1  OVERLAPPED
+! line  3  -*************************************************************
+        CNOP                                                 ! line  4  (no location printed)
+YJC1TT  DD(BU,12),(8)0401                                    ! line  5
+        DR(BU,33),(1)                                        ! line  6
+        EXT(0,18)                                            ! line  7
+        B,YC11ST                                             ! line  8
+        DR(BU),(2)                                           ! line  9
+! line 10  -*************************************************************
+! line 11  - READ ONE CARD , DETERMINE TYPE AND SEQUENCE , AND EXTRACT INFORMATION
+! line 12  -*************************************************************
+YC11ST  LV,$14,SREJJB                                        ! line 13  -JC1 INITIALIZING PACKGE
+        SVA,14,YSPDCR                                        ! line 14
+        SV,$14,YC1JJC                                        ! line 15
+        LX,$14,YC1MTT                                        ! line 16
+        SX,$14,YJC1TT                                        ! line 17
+        B,YC1A1                                              ! line 18
+YC1A    BBZ,SJ1FUL,YC1UNC-.32                                ! line 19
+        BZB,Y1UCXW+1.17,YC1A1                                ! line 20
+        BZBZ,REJJOB+.61,YC1A1                                ! line 21  -TEST FOR UK
+        LVI,$13,YISUKM                                       ! line 22
+YC1PRJ  LV,$14,LASTPP                                        ! line 23
+        CM1111(BU,1),TRJECT($14)                             ! line 24
+        SV,$13,1.($14)                                       ! line 25
+        CM0000(BU,1),TASGNP($14)                             ! line 26
+YC1A1   B,DMCP                                               ! line 27
+        ,SKOM                                                ! line 28  printed "SKCM"
+        ,3.0                                                 ! line 29  -SCR1
+YC1CA   ,0                                                   ! line 30
+        B,YC1C                                               ! line 31  -END RETURN - TO SDRET
+        LVE,$10,YC1CA                                        ! line 32
+YC1UNC  LVI,$14,Y1UCXW                                       ! line 33  -TO UNCODE
+        B,YUNCOD                                             ! line 34
+Y1UCXW  XW,0                                                 ! line 35  -INFORMATION SLOT
+        VF,1.0                                               ! line 36  -TYPE OF CARD DISPOSITION
+        ,0($10)                                              ! line 37
+        ,YC1DB                                               ! line 38
+        B,YC1B                                               ! line 39  -ERROR RETURN
+        LV,$14,Y1UCXW +1.0                                   ! line 40  -PICK UP TYPE OF CARD
+        BR,0($14)                                            ! line 41  -GO TO SERVICE ROUTINE
+        LVI,$14,2.0                                          ! line 42
+        B,YC1TC                                              ! line 43  -T.O.P. CARD
+        LVI,$14,0.0                                          ! line 44
+        B,YC1JC                                              ! line 45  -JOB CARD
+        LVI,$14,4.0                                          ! line 46
+        SV,$14,Y1UCXW+1.0                                    ! line 47  --LIM CARD CHANGE
+        B,YC1A1                                              ! line 48  -DISPOSITION + RETURN
+        NOP                                                  ! line 49
+
+!SYM YJC1TT 230747.00
+!SYM YC11ST 230752.00
+!SYM YC1A   230755.00
+!SYM YC1PRJ 230760.40
+!SYM YC1A1  230763.40
+!SYM YC1CA  230765.00
+!SYM YC1UNC 230766.40
+!SYM Y1UCXW 230770.00
+!CHECK 230747.00 | 0401 | line 5 YJC1TT DD(BU,12),(8)0401 (printed "04C1") | 12
+!CHECK 230747.55 | 0461724 | line 8 B,YC11ST under line 7's EXT(0,18) -- 19 bits, YC11ST's half-word address | 19
+!CHECK 230752.00 | 215011.74 30 | line 13 YC11ST LV,$14,SREJJB
+!CHECK 230752.40 | 231121.75 D0 | line 14 SVA,14,YSPDCR
+!CHECK 230753.00 | 231071.35 30 | line 15 SV,$14,YC1JJC
+!CHECK 230753.40 | 231067.34 10 | line 16 LX,$14,YC1MTT
+!CHECK 230754.00 | 230747.35 10 | line 17 SX,$14,YJC1TT
+!CHECK 230754.40 | 230763.50 00 | line 18 B,YC1A1
+!CHECK 230755.00 | 215001.20 80 230766.34 06 | line 19 YC1A BBZ,SJ1FUL,YC1UNC-.32
+!CHECK 230756.00 | 230771.21 80 230763.74 00 | line 20 BZB,Y1UCXW+1.17,YC1A1
+!CHECK 230757.00 | 230364.75 80 230763.74 04 | line 21 BZBZ,REJJOB+.61,YC1A1
+!CHECK 230760.00 | 020606.33 01 | line 22 LVI,$13,YISUKM
+!CHECK 230760.40 | 231553.34 30 | line 23 YC1PRJ LV,$14,LASTPP
+!CHECK 230761.00 | 000000.45 8E 001000.36 F0 | line 24 CM1111(BU,1),TRJECT($14) (last byte prints "FC")
+!CHECK 230762.00 | 000001.33 3E | line 25 SV,$13,1.($14)
+!CHECK 230762.40 | 000000.46 8E 001000.00 F0 | line 26 CM0000(BU,1),TASGNP($14)
+!CHECK 230763.40 | 000040.10 00 | line 27 YC1A1 B,DMCP
+!CHECK 230764.00 | 000117.40 80 | line 28 ,SKOM (printed "SKCM")
+!CHECK 230764.40 | 000003.00 80 | line 29 ,3.0 (printed "3.C")
+!CHECK 230765.00 | 000000.00 80 | line 30 YC1CA ,0 (a "*" after the location)
+!CHECK 230765.40 | 231062.10 00 | line 31 B,YC1C
+!CHECK 230766.00 | 230765.25 B0 | line 32 LVE,$10,YC1CA
+!CHECK 230766.40 | 230770.35 01 | line 33 YC1UNC LVI,$14,Y1UCXW (byte prints "C1")
+!CHECK 230767.00 | 231215.10 00 | line 34 B,YUNCOD
+!CHECK 230770.00 | 000000.00+ 000 000000 000000 | line 35 Y1UCXW XW,0 (printed "XW,C")
+!CHECK 230771.00 | 000001.00+ | line 36 VF,1.0
+!CHECK 230771.40 | 000000.00 8A | line 37 ,0($10)
+!CHECK 230772.00 | 231074.00 80 | line 38 ,YC1DB
+!CHECK 230772.40 | 231022.50 00 | line 39 B,YC1B
+!CHECK 230773.00 | 230771.34 30 | line 40 LV,$14,Y1UCXW +1.0 (blank as printed)
+!CHECK 230773.40 | 000000.14 0E | line 41 BR,0($14) (printed "BR,C($14)")
+!CHECK 230774.00 | 000002.35 01 | line 42 LVI,$14,2.0
+!CHECK 230774.40 | 231013.50 00 | line 43 B,YC1TC
+!CHECK 230775.00 | 000000.35 01 | line 44 LVI,$14,0.0
+!CHECK 230775.40 | 231007.10 00 | line 45 B,YC1JC
+!CHECK 230776.00 | 000004.35 01 | line 46 LVI,$14,4.0 (byte prints "C1")
+!CHECK 230776.40 | 230771.35 30 | line 47 SV,$14,Y1UCXW+1.0
+!CHECK 230777.00 | 230763.50 00 | line 48 B,YC1A1
+!CHECK 230777.40 | 000000.30 00 | line 49 NOP

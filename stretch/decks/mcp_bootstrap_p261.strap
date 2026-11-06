@@ -1,0 +1,134 @@
+! mcp_bootstrap_p261.strap -- MCP printed page 261: "HOLLERITH TO BCD
+! CONVERSION" (S CA6 / S CA8 entries, Q GO prologue, FIND THE CHARACTER
+! IN TABLE through Q ER), lines 1-48.  A relocated reprint of the
+! routine landed at printed p.43 (decks/mcp_bootstrap_p43.strap), here
+! without p.43's TI/SWAPI index save.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.12, read at 400 dpi, 900 dpi for
+! doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID PC000001  DIST. OF 3/01  3/01  PAGE NUMBER 261"; the heading
+! row's LOCATION field is BLANK -- line 1 is a banner, as the workflow
+! rule predicts.
+!
+! THE PAGE.  48 lines.  Lines 1-4 are comment cards (a dashed banner
+! "HOLLERITH TO BCD CONVERSION"); lines 8, 16, 18, 30, 31, 33, 38, 43
+! are bare "-" cards; line 17 is the remark "FIND THE CHARACTER IN
+! TABLE"; line 10 is "TAIL,A" (discarded by the assembler, see p.43).
+! Line 5 "SLC,$" prints 230622.00 with a "*" mark; this deck restates
+! it hard.  Located rows run contiguous from 230622.00 to 230646.00 (a
+! half word; next location 230646.40, which is Q OK -- every "B,Q CK"
+! on the page prints 230646.50).  Asterisks after the LOCATION on lines
+! 5 and 28.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 7 "$B,QGC$A" is written "B,QGO" as p.43 line 6 is (the "$A"
+!     is the hand-spelled tail form; the "$" on the operation is
+!     unexplained there too).  B prints 230624.10 = line 11's QGO.
+!   * line 11 "LVE,4,0($15)": printed with a bare 4, no "$"; written
+!     as printed.  The row's .11 has J=4 (LV,$1/$2/$3 print .02/.04/.06).
+!   * line 19 "CTOC11" = CT0011: the connective field is binary digits;
+!     p.43 line 19 likewise.
+!   * >>> line 32 "BXCZ,QOK" PRINTS A CLOSED O at 900 dpi (the C of
+!     BXCZ in the same row is open). <<<  Lines 37, 42, 46 print the
+!     same symbol open ("QCK"), and all four compile 230646.40 (B .50,
+!     BXCZ .70, BAE .76).  Ink dropout opens a closed glyph but never
+!     closes an open one, so the symbol is Q OK -- consistent with
+!     line 46's remark "-OK MUST BE A COLON".  printed p.43 (landed)
+!     spells it QCK; its ink there is open on every instance.  Written
+!     QOK here; the label itself is on printed p.262.
+!   * line 40 "QNCZ" = QNOZ: line 44's label prints "Q NOZ" closed.
+!   * line 35 "QNO" closed, as line 39's label "Q NO".
+!   * hex bytes "C0" (lines 7, 24, 35, 37, 40, 42) are 00/C0 by what
+!     the statement assembles to; "C2" line 46 is a real C (p.52 note:
+!     BAE carries C); octal "CCCC" fields are 0.  Line 11's byte prints
+!     "BF" (B, not 8; LVE's high nibble).
+!
+! EXTERNALS FROM p.262 (not landed), values from this page's binary:
+!   QFIN 230653.40 (BXCZ line 14 prints 230653.70), QOK 230646.40
+!   (B lines 37/42 230646.50), QTB 230670.0 (LV line 26 230670.04,
+!   half word only).
+!
+! CARD SERIALS.  Right-hand serials PC000001 .. PC000048, one per line,
+! none shared or skipped.  A new deck ("PC") starts here.
+
+QFIN    SYN(BU,64,8), (8)230653.40   ! p.262 (not landed); p.43 QFIN is SWAPI; BXCZ line 14 230653.70, BIT-EXACT
+QOK     SYN(BU,32,8), (8)230646.40   ! p.262 (not landed); p.43 "Q CK LVE"; B lines 37/42 230646.50, BIT-EXACT
+QTB     SYN, (8)230670.0             ! p.262/later (not landed); LV line 26 230670.04, half word only
+
+        SLC, (8)230622.0             ! line  5  printed "SLC,$" at 230622.00 *
+SCA6    Z,$R                                                 ! line  6  -SET UP FOR A-6 CONVERSION
+        B,QGO                                                ! line  7  printed "$B,QGC$A"
+SCA8    LI(BU,24),1.32,40                                    ! line  9  -SETUP FOR A-8 TYPE CONVERSION
+        TAIL,A                                               ! line 10
+QGO     LVE,4,0($15)                                         ! line 11
+        LV,$1,$R                                             ! line 12
+        LC,$4,.32($15)                                       ! line 13
+        BXCZ,QFIN                                            ! line 14
+        LV,$5,1.0($15)                                       ! line 15
+! -FIND THE CHARACTER IN TABLE                                 line 17
+QP      CT0011(V+I)(BU,3),.3($4)                             ! line 19  printed "CTOC11"
+        L(BU,7),$LZC,45                                      ! line 20
+        LV,$2,$R                                             ! line 21
+        LC,$2,7.32                                           ! line 22
+        LF(V+I)(BU,9),.9($4)                                 ! line 23
+        C+I,$2,0                                             ! line 24
+        BZXCZ,QER                                            ! line 25  -YES
+        LV,$2,QTB($2)                                        ! line 26
+        LC,$3,7.32                                           ! line 27
+        LF(BU,7),$LZC,45                                     ! line 28
+        LV,$3,$R                                             ! line 29
+        BXCZ,QOK                                             ! line 32  -IF NO TRIPLE OR MORE PUNCHES
+        KFI(BU,9),(2)001000010                               ! line 34  -CHECK FOR AN 8-3 COMBO
+        BZAE,QNO                                             ! line 35  -NO
+        LVI,$3,5.0                                           ! line 36
+        B,QOK                                                ! line 37  printed "QCK"
+QNO     KFI(BU,9),(2)000100010                               ! line 39  -CHECK FOR AN 8-4 COMBO
+        BZAE,QNOZ                                            ! line 40  -NO  printed "QNCZ"
+        LVI,$3,5.32                                          ! line 41
+        B,QOK                                                ! line 42  printed "QCK"
+QNOZ    KFI(BU,9),(2)010000010                               ! line 44  -CHECK FOR AN 8-I COMBO
+        LVI,$3,6.0                                           ! line 45
+        BAE,QOK                                              ! line 46  -OK MUST BE A COLON  printed "QCK"
+QER     LVI,$3,6.0                                           ! line 47
+        LVI,$2,0                                             ! line 48
+
+!SYM SCA6   230622.00
+!SYM SCA8   230623.00
+!SYM QGO    230624.00
+!SYM QP     230626.40
+!SYM QNO    230641.00
+!SYM QNOZ   230643.40
+!SYM QER    230645.40
+!CHECK 230622.00 | 000011.22 00 | line 6 SCA6 Z,$R
+!CHECK 230622.40 | 230624.10 00 | line 7 $B,QGO$A (byte prints "C0")
+!CHECK 230623.00 | 000001.40 80 430024.20 50 | line 9 SCA8 LI(BU,24),1.32,40
+!CHECK 230624.00 | 000000.11 BF | line 11 QGO LVE,4,0($15)
+!CHECK 230624.40 | 000011.02 30 | line 12 LV,$1,$R
+!CHECK 230625.00 | 000000.50 5F | line 13 LC,$4,.32($15)
+!CHECK 230625.40 | 230653.70 42 | line 14 BXCZ,QFIN
+!CHECK 230626.00 | 000001.12 3F | line 15 LV,$5,1.0($15)
+!CHECK 230626.40 | 000000.03 84 103000.07 70 | line 19 QP CT0011(V+I)(BU,3),.3($4)
+!CHECK 230627.40 | 000007.21 80 007026.60 50 | line 20 L(BU,7),$LZC,45
+!CHECK 230630.40 | 000011.04 30 | line 21 LV,$2,$R
+!CHECK 230631.00 | 000007.44 50 | line 22 LC,$2,7.32
+!CHECK 230631.40 | 000000.11 84 111000.06 70 | line 23 LF(V+I)(BU,9),.9($4)
+!CHECK 230632.40 | 000000.05 00 | line 24 C+I,$2,0
+!CHECK 230633.00 | 230645.70 40 | line 25 BZXCZ,QER
+!CHECK 230633.40 | 230670.04 32 | line 26 LV,$2,QTB($2)
+!CHECK 230634.00 | 000007.46 50 | line 27 LC,$3,7.32
+!CHECK 230634.40 | 000007.21 80 007026.46 70 | line 28 LF(BU,7),$LZC,45 (a "*" after the location)
+!CHECK 230635.40 | 000011.06 30 | line 29 LV,$3,$R
+!CHECK 230636.00 | 230646.70 42 | line 32 BXCZ,QOK
+!CHECK 230636.40 | 102000.00 80 411000.23 10 | line 34 KFI(BU,9),(2)001000010
+!CHECK 230637.40 | 230641.36 C0 | line 35 BZAE,QNO
+!CHECK 230640.00 | 000005.07 01 | line 36 LVI,$3,5.0
+!CHECK 230640.40 | 230646.50 00 | line 37 B,QOK (printed "QCK")
+!CHECK 230641.00 | 042000.00 80 411000.23 10 | line 39 QNO KFI(BU,9),(2)000100010
+!CHECK 230642.00 | 230643.76 C0 | line 40 BZAE,QNOZ (printed "QNCZ")
+!CHECK 230642.40 | 000005.47 01 | line 41 LVI,$3,5.32
+!CHECK 230643.00 | 230646.50 00 | line 42 B,QOK (printed "QCK")
+!CHECK 230643.40 | 202000.00 80 411000.23 10 | line 44 QNOZ KFI(BU,9),(2)010000010
+!CHECK 230644.40 | 000006.07 01 | line 45 LVI,$3,6.0
+!CHECK 230645.00 | 230646.76 C2 | line 46 BAE,QOK (printed "QCK")
+!CHECK 230645.40 | 000006.07 01 | line 47 QER LVI,$3,6.0
+!CHECK 230646.00 | 000000.05 01 | line 48 LVI,$2,0

@@ -133,9 +133,11 @@ def merge(verbose=False, pages=None, end_at='XIPLBS'):
     if pages is None:
         pages = PAGES
     defined, standins = {}, {}
+    placed = set()     # symbols some page labels STORAGE with
     agreed = 0
     for path, label in pages:
         places, s, d = _classify(path)
+        placed.update(places)
         for sym, val in list(places.items()) + list(d.items()):
             if sym in defined:
                 # >>> A SYN THAT REPRODUCES ANOTHER PAGE'S SYN EXACTLY
@@ -236,8 +238,24 @@ def merge(verbose=False, pages=None, end_at='XIPLBS'):
                     continue
                 ddsers.setdefault(m.group(1), {}).setdefault(
                     (m.group(2) or '').replace(' ', ''), []).append(label)
+    #
+    # >>> EXCEPT FOR A SYMBOL SOME PAGE PLACES. <<<  A label on an
+    # instruction, DD, DR, VF or XW card gets its dds FROM THAT CARD
+    # (C22-6531 printed pp.10, 19, 31), every SYN for it is a
+    # stand-in the merge drops, and check_mcp_body_image's
+    # every_page_row_holds_in_image proves the defining card's dds
+    # gives the printed bits at every use.  Holding such symbols to one
+    # stand-in string meant hand-aligning stand-ins that are each right
+    # for their own page: printed pp.234-265 disagreed on nine (VSQ as
+    # (BU,32,8) and (BU,32), both bit-exact where used).
+    #
+    # A symbol DEFINED BY A SYN stays strict.  T JBPRO is one --
+    # "SYN(BU,1),0.36" -- and the SYN text is the only dds it has, so
+    # two spellings of it are two candidate definitions.
+    # verify_merge_dds_guard pins this on the IPL merge, which has no
+    # row check behind it.
     for sym, byd in sorted(ddsers.items()):
-        if len(byd) > 1:
+        if len(byd) > 1 and sym not in placed:
             shown = '; '.join(
                 '%s on %s' % (d or '(no dds)', ', '.join(pp))
                 for d, pp in sorted(byd.items()))

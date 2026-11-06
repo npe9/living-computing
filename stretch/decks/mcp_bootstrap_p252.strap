@@ -1,0 +1,54 @@
+! mcp_bootstrap_p252.strap -- MCP printed page 252: the Input Program's
+! card-reader recovery section, continued (B,RPREST .. RPREST LVI,$6,3.0,
+! B,RPINT), lines 1-7.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.3, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID 0B000360  DIST. OF 3/01
+! 3/01  PAGE NUMBER 252" (round glyphs in numeric fields read 0); the
+! heading row's LOCATION field is 230223, line 1's word.
+!
+! THE PAGE.  7 lines, all located, every one with an asterisk after the
+! line number; contiguous from 230223.40 to 230226.40 (a half word; next
+! location 230227.00), then blank paper.  Printed p.251 (PDF p.2, not
+! landed) ends with line 56 at 230223.00 (LV,VU,RPRTEX-.32, serial
+! 0B000360), so line 1's .40 continues it; printed p.253 (PDF p.4,
+! heading LOCATION 230227) opens at 230227.00.  No remarks.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * hex bytes printed with an open round written 0 ("00" lines 1, 3, 5,
+!     7 print open; "01" line 6); octal "C00003.15" line 6 is 000003.15
+!     (an octal field holds no C).  "3.C" (line 6), "+2.C" (line 5) are
+!     3.0, 2.0 as line 3's closed "+1.0" prints.
+!
+! EXTERNALS (neither landed):
+!   * RPRTEX: p.251 line 53 "RPRTEX DRZ(BU,32),4" at 230220.00; this
+!     page's LV lines 2, 4 print 230217.46 = RPRTEX-.32 with J=3.
+!   * RPINT: p.253 line 4 label of "LV,$15,RPRTEX-1.0" at 230230.40 (a
+!     half-word instruction, hence (BU,32,8)); this page's B line 7
+!     prints 230230.50.
+!
+! CARD SERIALS.  0B000360 .. 0B000363: line 1 shares 360 with p.251's
+! line 56; shared 2-3 (361), 4-5 (362), 6-7 (363).  p.253 opens at
+! 0B000365 (364 printed on neither page, as 294 between p.249/p.250).
+
+VU      SYN, $3                      ! p.213 line 25 (landed)
+RPRTEX  SYN(BU,32), (8)230220.0      ! p.251 line 53 DRZ(BU,32),4 at 230220.00 (not landed); LV lines 2, 4 230217.46, BIT-EXACT
+RPINT   SYN(BU,32,8), (8)230230.40   ! p.253 line 4 label (LV) at 230230.40 (not landed); B line 7 230230.50, BIT-EXACT
+
+        SLC, (8)230223.40
+        B,RPREST                                             ! line  1
+        LV,VU,RPRTEX-.32                                     ! line  2
+        B,RPREST+1.0                                         ! line  3
+        LV,VU,RPRTEX-.32                                     ! line  4
+        B,RPREST+2.0                                         ! line  5   printed "+2.C"
+RPREST  LVI,$6,3.0                                           ! line  6   printed "3.C"
+        B,RPINT                                              ! line  7
+
+!SYM RPREST 230226.00
+!CHECK 230223.40 | 230226.10 00 | line 1 B,RPREST
+!CHECK 230224.00 | 230217.46 30 | line 2 LV,VU,RPRTEX-.32
+!CHECK 230224.40 | 230227.10 00 | line 3 B,RPREST+1.0
+!CHECK 230225.00 | 230217.46 30 | line 4 LV,VU,RPRTEX-.32
+!CHECK 230225.40 | 230230.10 00 | line 5 B,RPREST+2.0
+!CHECK 230226.00 | 000003.15 01 | line 6 RPREST LVI,$6,3.0 (octal prints "C00003")
+!CHECK 230226.40 | 230230.50 00 | line 7 B,RPINT

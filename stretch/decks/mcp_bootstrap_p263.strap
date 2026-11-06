@@ -1,0 +1,163 @@
+! mcp_bootstrap_p263.strap -- MCP printed page 263: THE BREAKDOWN
+! ROUTINE (S BRK8), its banner, set-up and character loop, through the
+! oversized-field path's first two SWAPs, lines 1-48.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.14, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID PD000001  DIST. OF 3/01
+!  3/01  PAGE NUMBER 263" (round glyphs in numeric fields read 0); the
+! heading row's LOCATION field is BLANK, as it is whenever line 1
+! compiles nothing (line 1 is the banner rule).
+!
+! THE SAME ROUTINE AS printed p.45 (decks/mcp_bootstrap_p45.strap),
+! reassembled here at 230672.00: same statements line for line, same
+! comments, signed "LARRY LEVY" on line 7.  p.45 was used as a finding
+! aid for the statement text; every value below is read off THIS page.
+!
+! THE PAGE.  48 lines.  Lines 1-4 a banner ("- THE BREAKDOWN ROUTINE"
+! between rule lines), line 5 "SLC,$" at 230671.71, lines 6-9 remarks,
+! lines 10-48 code, contiguous from 230672.00 to 230722.00 (a full
+! word, SWAPI; next location 230723.00), then blank paper.  Lines 31,
+! 40, 45 are bare "-" remark cards.  Every LINE number carries an
+! asterisk; asterisks after the LOCATION on lines 5, 26 and 46.
+! printed p.262's last datum is "VF,234" at 230671.40, 25 bits, ending
+! at 230671.71 -- line 5's SLC,$ location -- so the page is contiguous
+! with p.262.  printed p.264 opens at 230723.00 (SWAPI,1,QX CF9,Q SAV3),
+! contiguous with line 48.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "GX"/"CX"/"QX" prefixes (open Q, tail worn) are QX: QXINN, QXOUT,
+!     QXCF9 as p.264 (scratch) and landed p.45/p.46 spell them; the
+!     J-field nibbles (SX lines 10-12 print .03/.05/.07 = $1/$2/$3)
+!     agree.
+!   * line 17 "CMOC00" = CM0000 (connective with a four-digit truth
+!     table), as landed p.45 line 17; assembles to the printed word.
+!   * line 21 "Q IF C", line 32 label "Q IF C" = QIFC (p.45); BAE line 21
+!     prints 230710.76, line 32's location 230710.40.
+!   * line 36 label "Q REDY" (D worn) = QREDY: CBRZ line 33 prints
+!     230713.46, line 36's location 230713.40.
+!   * line 46 label "Q 2B.IG" (stray dot) = Q2BIG: CBRZ line 24 prints
+!     230720.06 = line 46's 230720.00.
+!   * line 34 label "Q ZERC" = QZERO: CBR line 35 prints 230712.06.
+!   * lines 17, 25, 29 final byte reads "FC" at 400 dpi; at 900 dpi its
+!     round glyph is the same open shape as the zeros of the octal
+!     fields beside it (line 17's ".CC" can only be .00), and line 34's
+!     identical SF prints a closed "F0".  Written F0.  Line 30
+!     "230706.5C C0" is 230706.50 00 likewise.  Octal fields "CCCCCC.CC"
+!     are 0.
+!
+! EXTERNALS.  Every Q symbol not labelled here is defined on printed
+! p.264 (lines 22-39, not landed; its scratch deck agrees with every
+! value below), and every value also comes from this page's own binary.
+!
+! CARD SERIALS.  Right-hand serials run PD000001 .. PD000048, one per
+! line, none shared or skipped (the CARD ID PD000001 is line 1's).  A
+! new deck begins here.
+
+QXINN   SYN, $1                      ! p.264 line 28 (not landed); SX line 10 J=1 (.03)
+QXOUT   SYN, $2                      ! p.264 line 29 (not landed); SX line 11 J=2 (.05)
+QXCF9   SYN, $3                      ! p.264 line 30 (not landed); SX line 12 J=3 (.07)
+QKSIZ   SYN, 6                       ! p.264 line 39 (not landed); LF line 19 address 000000.06
+QSAV1   SYN, (8)230737.0             ! p.264 line 22 XW (not landed); SX line 10 230737.03, BIT-EXACT
+QSAV2   SYN, (8)230740.0             ! p.264 line 23 XW (not landed); SX line 11 230740.05, BIT-EXACT
+QSAV3   SYN, (8)230741.0             ! p.264 line 24 XW (not landed); SX line 12 230741.07, BIT-EXACT
+QWCF9   SYN, (8)230745.0             ! p.264 line 34 XW (not landed); LX line 16 230745.06, BIT-EXACT
+QSKIP   SYN, (8)230746.0             ! p.264 line 35 VF,.16 (not landed); V+ line 36 230746.04, word only
+QCMA    SYN(BU,6,6), (8)230746.31    ! p.264 line 36 (A*)DD(BU,QKSIZ,QKSIZ) (not landed); KF line 20 230746.31 006600, BIT-EXACT
+QCOUNT  SYN(BU,18), (8)230746.37     ! p.264 line 37 DD(BU,18) (not landed); L line 18 230746.37, BIT-EXACT
+QBLNK   SYN(BU,6,6), (8)230746.61    ! p.264 line 38 (A*)DD(BU,QKSIZ,QKSIZ) (not landed); KF line 22 230746.61 006600, BIT-EXACT
+
+        SLC, (8)230671.71
+!       -  ------------------------------------------                ! line  1
+!       -              THE BREAKDOWN ROUTINE                         ! line  2
+!       -  ------------------------------------------                ! line  3
+!       -                                                            ! line  4
+        SLC,$                                                ! line  5
+! -SBRK8,  6 BIT BCD VERSION,  16 BITS BETWEEN OUTPUT  -               line  6
+! -FIELDS.        LARRY LEVY                           -               line  7
+! -  -----------------------------------------------                   line  8
+! -                                                                    line  9
+SBRK8   SX,QXINN,QSAV1                                       ! line 10  -SAVE INDEX REGISTERS
+        SX,QXOUT,QSAV2                                       ! line 11
+        SX,QXCF9,QSAV3                                       ! line 12
+        LV,QXINN,0.($15)                                     ! line 13  -INITIALIZE IN
+        LC,QXINN,.32($15)                                    ! line 14  -INITIALIZE N
+        LV,QXOUT,1.($15)                                     ! line 15  -INITIALIZE OUT
+        LX,QXCF9,QWCF9                                       ! line 16  -COUNT CHARS IN STORED FIELD
+        CM0000(BU,18,8),1.32($15)                            ! line 17  -INITIALIZE FIELD COUNT  (printed "CMOC00")
+        L(BU,18+QKSIZ),QCOUNT,64                             ! line 18
+QNEXT   LF(V+I)(BU,QKSIZ),QKSIZ(QXINN)                       ! line 19  -LOAD INPUT CHAR. STEP X
+        KF,QCMA                                              ! line 20  -IS THIS A COMMA
+        BAE,QIFC                                             ! line 21
+        KF,QBLNK                                             ! line 22  -IS THIS A BLANK
+        BAE,QSTEP                                            ! line 23
+        CBRZ,QXCF9,Q2BIG                                     ! line 24  -TEST FOR OVERSIZED FIELD
+        SF(V+I)(BU,QKSIZ),QKSIZ(QXOUT)                       ! line 25  -STORE CHAR. STEP X
+QSTEP   CB,QXINN,QNEXT                                       ! line 26  -TEST FOR LAST INPUT CHAR
+        M+1(BU,18),1.32($15)                                 ! line 27  -COUNT LAST FIELD
+QBL     CBZ,QXCF9,QRSTR                                      ! line 28  -STORE R.H. BLANKS AT END OF LAST FIELD
+        SF(V+I)(BU,QKSIZ),QKSIZ(QXOUT),64                    ! line 29  -IF NECESSARY
+        B,QBL                                                ! line 30
+! -                                                                    line 31
+QIFC    M+1(BU,18),1.32($15)                                 ! line 32  -COUNT THIS FIELD
+        CBRZ,QXCF9,QREDY                                     ! line 33  -TEST FOR SHORT INPUT FIELD
+QZERO   SF(V+I)(BU,QKSIZ),QKSIZ(QXOUT),64                    ! line 34  -STORE RIGHT-HAND
+        CBR,QXCF9,QZERO                                      ! line 35  -  BLANKS AFTER SHORT FIELDS
+QREDY   V+,QXOUT,QSKIP                                       ! line 36  -SKIP TO BEG OF NEXT OUTPUT FIELD
+        KF(BU,18),1.32($15),64+QKSIZ                         ! line 37
+        BZAH,QRSTR                                           ! line 38
+        CB,QXINN,QNEXT                                       ! line 39  -TEST FOR LAST INPUT CHAR
+! -                                                                    line 40
+QRSTR   LX,QXINN,QSAV1                                       ! line 41  -RESTORE INDEX REGISTERS
+        LX,QXOUT,QSAV2                                       ! line 42
+        LX,QXCF9,QSAV3                                       ! line 43
+        B,2.32($15)                                          ! line 44  -NORMAL RETURN
+! -                                                                    line 45
+Q2BIG   M+1(BU,18),1.32($15)                                 ! line 46  -COUNT THIS FIELD
+        SWAPI,1,QXINN,QSAV1                                  ! line 47  -RESTORE INDEXES BUT SAVE THE
+        SWAPI,1,QXOUT,QSAV2                                  ! line 48  -  PRESENT VALUES FOR RE-ENTRY
+
+!SYM SBRK8  230672.00
+!SYM QNEXT  230677.40
+!SYM QSTEP  230705.00
+!SYM QBL    230706.40
+!SYM QIFC   230710.40
+!SYM QZERO  230712.00
+!SYM QREDY  230713.40
+!SYM QRSTR  230716.00
+!SYM Q2BIG  230720.00
+!CHECK 230672.00 | 230737.03 10 | line 10 SBRK8 SX,QXINN,QSAV1
+!CHECK 230672.40 | 230740.05 10 | line 11 SX,QXOUT,QSAV2
+!CHECK 230673.00 | 230741.07 10 | line 12 SX,QXCF9,QSAV3
+!CHECK 230673.40 | 000000.02 3F | line 13 LV,QXINN,0.($15)
+!CHECK 230674.00 | 000000.42 5F | line 14 LC,QXINN,.32($15)
+!CHECK 230674.40 | 000001.04 3F | line 15 LV,QXOUT,1.($15)
+!CHECK 230675.00 | 230745.06 10 | line 16 LX,QXCF9,QWCF9
+!CHECK 230675.40 | 000001.40 8F 022000.00 F0 | line 17 CM0000(BU,18,8),1.32($15) (printed "CMOC00"; bytes print "FC")
+!CHECK 230676.40 | 230746.37 80 030040.20 50 | line 18 L(BU,18+QKSIZ),QCOUNT,64
+!CHECK 230677.40 | 000000.06 81 106000.06 70 | line 19 QNEXT LF(V+I)(BU,QKSIZ),QKSIZ(QXINN)
+!CHECK 230700.40 | 230746.31 80 006600.23 10 | line 20 KF,QCMA
+!CHECK 230701.40 | 230710.76 C2 | line 21 BAE,QIFC
+!CHECK 230702.00 | 230746.61 80 006600.23 10 | line 22 KF,QBLNK
+!CHECK 230703.00 | 230705.36 C2 | line 23 BAE,QSTEP
+!CHECK 230703.40 | 230720.06 4E | line 24 CBRZ,QXCF9,Q2BIG
+!CHECK 230704.00 | 000000.06 82 106000.12 F0 | line 25 SF(V+I)(BU,QKSIZ),QKSIZ(QXOUT) (byte prints "FC")
+!CHECK 230705.00 | 230677.42 48 | line 26 QSTEP CB,QXINN,QNEXT (a "*" after the location)
+!CHECK 230705.40 | 000001.40 8F 022000.22 B0 | line 27 M+1(BU,18),1.32($15)
+!CHECK 230706.40 | 230716.06 4A | line 28 QBL CBZ,QXCF9,QRSTR
+!CHECK 230707.00 | 000000.06 82 106040.12 F0 | line 29 SF(V+I)(BU,QKSIZ),QKSIZ(QXOUT),64 (byte prints "FC")
+!CHECK 230710.00 | 230706.50 00 | line 30 B,QBL (prints "230706.5C C0")
+!CHECK 230710.40 | 000001.40 8F 022000.22 B0 | line 32 QIFC M+1(BU,18),1.32($15)
+!CHECK 230711.40 | 230713.46 4E | line 33 CBRZ,QXCF9,QREDY
+!CHECK 230712.00 | 000000.06 82 106040.12 F0 | line 34 QZERO SF(V+I)(BU,QKSIZ),QKSIZ(QXOUT),64
+!CHECK 230713.00 | 230712.06 4C | line 35 CBR,QXCF9,QZERO
+!CHECK 230713.40 | 230746.04 B0 | line 36 QREDY V+,QXOUT,QSKIP
+!CHECK 230714.00 | 000001.40 8F 022043.23 10 | line 37 KF(BU,18),1.32($15),64+QKSIZ
+!CHECK 230715.00 | 230716.37 40 | line 38 BZAH,QRSTR
+!CHECK 230715.40 | 230677.42 48 | line 39 CB,QXINN,QNEXT
+!CHECK 230716.00 | 230737.02 10 | line 41 QRSTR LX,QXINN,QSAV1
+!CHECK 230716.40 | 230740.04 10 | line 42 LX,QXOUT,QSAV2
+!CHECK 230717.00 | 230741.06 10 | line 43 LX,QXCF9,QSAV3
+!CHECK 230717.40 | 000002.50 0F | line 44 B,2.32($15)
+!CHECK 230720.00 | 000001.40 8F 022000.22 B0 | line 46 Q2BIG M+1(BU,18),1.32($15) (a "*" after the location)
+!CHECK 230721.00 | 000021.00 80 230737.02 E0 | line 47 SWAPI,1,QXINN,QSAV1
+!CHECK 230722.00 | 000022.00 80 230740.02 E0 | line 48 SWAPI,1,QXOUT,QSAV2

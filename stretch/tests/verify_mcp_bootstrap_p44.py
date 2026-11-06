@@ -181,14 +181,22 @@ for zone, (off, want, what) in enumerate(
 # LISTING_CONTROL note says to watch for, and it would have to be
 # looked at rather than discovered later.
 # ---------------------------------------------------------------------
-TAILED = ["QGO", "QP", "QNO", "QNOZ", "QER", "QCK", "QST", "QCHK",
+TAILED = ["QGO", "QP", "QNO", "QNOZ", "QER", "QOK", "QST", "QCHK",
           "QFIN", "QFLD", "Q", "QSAV", "QTB"]
 INSIDE = {"mcp_bootstrap_p43.strap", "mcp_bootstrap_p44.strap"}
 
+# ONLY THE IPL ASSEMBLY, printed pp.15-98.  printed p.99 line 11 opens
+# MCP's body, a SECOND assembly (see check_mcp_body_image), and
+# printed pp.261-264 print this same routine again under its own tail
+# -- QGO, QOK, QFIN at 2306xx -- which is that assembly's names, not a
+# leak from this block (2026-11-05).
 leaks = []
 for path in sorted(glob.glob("../decks/mcp_bootstrap_p*.strap")):
     name = os.path.basename(path)
     if name in INSIDE:
+        continue
+    page = re.match(r"mcp_bootstrap_p(\d+)", name)
+    if page and int(page.group(1)) >= 99:
         continue
     for lineno, line in enumerate(open(path), 1):
         code = line.split("!", 1)[0]

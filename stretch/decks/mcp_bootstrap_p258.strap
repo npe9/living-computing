@@ -1,0 +1,109 @@
+! mcp_bootstrap_p258.strap -- MCP printed page 258: the rejected-tape
+! path (RRTPRO, RKRTUK, REJTRT), lines 1-24.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.9, read at 400 dpi (900 dpi for
+! doubtful glyphs).  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID 0B000528  DIST. OF 3/01  3/01  PAGE NUMBER 258" (round glyphs
+! in numeric fields read 0); the heading row's LOCATION field is
+! 230467, line 1's word.
+!
+! THE PAGE.  24 lines, all located, contiguous from 230467.40 to
+! 230504.00 (a half word; next location 230504.40), then blank paper.
+! Lines 4 and 14 are full-word CM instructions (second half word
+! 001000.36 F0).  No remarks.  An asterisk after the LOCATION on
+! line 19.  Printed p.257 was not available to check line 1's .40
+! against.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 2 label RRTPRO: the last glyph is open at mid-right but
+!     carries right-hand strokes top and bottom (900 dpi), so O, not C;
+!     no deck, neighbour or C22-6728 spells RRTPRO/RRTPRC.  Nothing on
+!     this page references it.
+!   * line 10 "VQ": the tail of Q is faint; landed p.238 "V Q VF,-34."
+!     at 225346.0; LVI prints 225346.07.
+!   * line 4 ",RKSRTB": as landed p.244 (RKSBIT.01); CM prints
+!     227670.41.
+!   * hex bytes printed with an open round written 0 ("C8" lines 1, 11
+!     = C8 as assembled; "C1" lines 10, 23 = 01; "8C" line 4 = 80);
+!     octal fields "CCCCCC.CC" are 0.
+!
+! CARD SERIALS.  Right-hand serials run 0B000528 .. 0B000549 (prefix
+! glyph round, as the header's 0B000528).  Shared: 8-9 (535), 21-22
+! (547).  None skipped on the page.
+
+VP      SYN, $1                      ! p.213 line 26 (landed)
+VU      SYN, $3                      ! p.213 line 25 (landed)
+VT1     SYN, $4                      ! p.213 line 27 (landed); LX line 15, SR line 16
+VT2     SYN, $6                      ! p.213 line 29 (landed)
+VT3     SYN, $7                      ! p.213 line 30 (landed); SR line 16 prints 000027
+VT5     SYN, $9                      ! p.213 line 28 (landed)
+VNX     SYN, (8)5.0                  ! p.213 line 16 prints 000005.00 (landed); B line 3
+VX1     SYN, (8)0.40                 ! p.213 line 12 = VX.VH (landed); LV line 13 .62
+VFCNX   SYN, 9.0                     ! p.213 line 24 = VTS.VH (landed); LV line 5
+VFCNT   SYN, 7.32                    ! p.213 line 21 = VRCNT.VH (landed); lines 17, 20
+VSETX   SYN, (8)224671.40            ! landed p.227 label; CB- lines 1, 11 224671.43
+VACT    SYN, (8)224655.0             ! landed p.227 label; B line 24 224655.10
+VTMV    SYN, (8)224745.40            ! landed p.229 label; B line 22 224745.50
+VSURT   SYN, (8)225201.0             ! landed p.234 (VSURTX-VRTP); LX line 15 225201.10
+VOPB    SYN(BU,1), .25               ! landed p.234 line 46; CM line 14 225201.31
+VTSA    SYN, (8)225210.0             ! landed p.234 VF label; LVI line 12 225210.07
+VTSB    SYN, (8)225221.0             ! landed p.236 VF label; LVI line 23, LV line 13
+VRT     SYN, (8)225331.0             ! landed p.237 VF label; LV line 5 VFCNX+VRT = 225342
+VQ      SYN, (8)225346.0             ! landed p.238 VF label; LVI line 10 225346.07
+RKSBIT  SYN, (8)227670.40            ! landed p.244 line 36 VF label
+RKSRTB  SYN,RKSBIT.01                ! landed p.244 line 37; CM line 4 227670.41
+RKRTBL  SYN, (8)227671.0             ! landed p.244 line 38 VF label; SV line 7 227671.15
+
+        SLC, (8)230467.40
+        CB-,VP,VSETX                                         ! line  1
+RRTPRO  LVNI,VT5,RKRTUK                                      ! line  2
+        B,VNX(VU)                                            ! line  3
+RKRTUK  CM1111(BU,1),RKSRTB                                  ! line  4
+        LV,VT2,VFCNX+VRT                                     ! line  5
+        V+I,VT2,2.0                                          ! line  6
+        SV,VT2,RKRTBL                                        ! line  7
+        SIC,(VP)                                             ! line  8
+        CB+,VP,REJTRT                                        ! line  9
+        LVI,VU,VQ                                            ! line 10
+        CB-,VP,VSETX                                         ! line 11
+REJTRT  LVI,VU,VTSA                                          ! line 12
+        LV,VT5,VTSB+VX1                                      ! line 13
+        CM1111,VSURT.VOPB(VT5)                               ! line 14
+        LX,VT1,VSURT(VT5)                                    ! line 15
+        SR,VT1,VT3                                           ! line 16
+        SV,VP,VFCNT(VT3)                                     ! line 17
+        LVI,VP,17.0                                          ! line 18
+        SV,VP,VX1(VT3)                                       ! line 19
+        LV,VP,VFCNT(VT3)                                     ! line 20
+        SIC,(VP)                                             ! line 21
+        B,VTMV                                               ! line 22
+        LVI,VU,VTSB                                          ! line 23
+        B,VACT                                               ! line 24
+
+!SYM RRTPRO 230470.00
+!SYM RKRTUK 230471.00
+!SYM REJTRT 230475.40
+!CHECK 230467.40 | 224671.43 C8 | line 1 CB-,VP,VSETX
+!CHECK 230470.00 | 230471.23 09 | line 2 RRTPRO LVNI,VT5,RKRTUK
+!CHECK 230470.40 | 000005.10 03 | line 3 B,VNX(VU)
+!CHECK 230471.00 | 227670.41 80 001000.36 F0 | line 4 RKRTUK CM1111(BU,1),RKSRTB
+!CHECK 230472.00 | 225342.14 30 | line 5 LV,VT2,VFCNX+VRT
+!CHECK 230472.40 | 000002.15 05 | line 6 V+I,VT2,2.0
+!CHECK 230473.00 | 227671.15 30 | line 7 SV,VT2,RKRTBL
+!CHECK 230473.40 | 000000.00 81 | line 8 SIC,(VP)
+!CHECK 230474.00 | 230475.43 48 | line 9 CB+,VP,REJTRT
+!CHECK 230474.40 | 225346.07 01 | line 10 LVI,VU,VQ
+!CHECK 230475.00 | 224671.43 C8 | line 11 CB-,VP,VSETX
+!CHECK 230475.40 | 225210.07 01 | line 12 REJTRT LVI,VU,VTSA
+!CHECK 230476.00 | 225221.62 30 | line 13 LV,VT5,VTSB+VX1
+!CHECK 230476.40 | 225201.31 89 001000.36 F0 | line 14 CM1111,VSURT.VOPB(VT5)
+!CHECK 230477.40 | 225201.10 19 | line 15 LX,VT1,VSURT(VT5)
+!CHECK 230500.00 | 000027.11 70 | line 16 SR,VT1,VT3
+!CHECK 230500.40 | 000007.43 37 | line 17 SV,VP,VFCNT(VT3)
+!CHECK 230501.00 | 000021.03 01 | line 18 LVI,VP,17.0
+!CHECK 230501.40 | 000000.43 37 | line 19 SV,VP,VX1(VT3) (a "*" after the location)
+!CHECK 230502.00 | 000007.42 37 | line 20 LV,VP,VFCNT(VT3)
+!CHECK 230502.40 | 000000.00 81 | line 21 SIC,(VP)
+!CHECK 230503.00 | 224745.50 00 | line 22 B,VTMV
+!CHECK 230503.40 | 225221.07 01 | line 23 LVI,VU,VTSB
+!CHECK 230504.00 | 224655.10 00 | line 24 B,VACT

@@ -169,7 +169,11 @@ def confirm(rows, root=ROOT):
     hexes = Hex(root)
     out = []
     for r in rows:
-        page = int(r["printed"]) if r["vol"] == "1" and r["printed"] else None
+        # BOTH VOLUMES (2026-11-05).  This read vol "1" only, so a
+        # volume-2 row got page None and the vocabulary of EVERY page,
+        # its own deck included -- leave-one-page-out did not hold
+        # there.  Printed numbers do not overlap: vol 1 ends at p.249.
+        page = int(r["printed"]) if r["printed"] else None
         syms, ops = vocab(page)
         cands = []
         for src in ("statement_draft", "statement_crop"):

@@ -16601,3 +16601,40 @@ listing_truth 229 pages / 8,408 lines; statements hex 2,101/2,101.
   NEXT: volume 2 (docs/MCP_Mar63_250-445.pdf, printed pp.250-445),
   same batches.
 
+
+pp.250-265 LANDED (2026-11-05): the first volume-2 batch, and EVERY
+PAGE'S ROWS NOW CHECKED IN THE MERGED IMAGE.  16 decks; body image
+pp.99-265 (166 pages, 1,599 defined, 40 external) runs to 230777.
+listing_truth 245 pages / 9,027 lines.
+  * check_mcp_body_image's every_page_row_holds_in_image runs every
+    deck's !CHECK and !SYM rows (7,876 by p.265) against the MERGED
+    image, where each use meets the card that DEFINES its symbol
+    instead of its page's own stand-in.  Its first run, through p.249,
+    failed three of 7,113: M+-1,V TSQ on pp.221, 225, 228 assembled
+    .22 for a printed .02.  p.220 defines V TSQ with VF, and C22-6531
+    printed p.19 gives index-word labels dds the compiler fixes: XW
+    (BU), VF (B, 25), CF or RF (BU, 18).  strap_asm now does
+    (check_instruction_label_dds).
+  * With that proved, merge() no longer holds a symbol some page PLACES
+    (an instruction, DD/DR, VF/XW label) to one stand-in dds string;
+    a SYN-defined symbol (T JBPRO, the 2026-10-25 bug) stays strict,
+    and verify_merge_dds_guard caught the first, wider version.  Batch 5 had nine defined symbols whose
+    stand-ins differ (VSQ (BU,32,8) vs (BU,32), each bit-exact where
+    used); aligning them by hand would have been 1,162 edits.
+    Measured injection: p.220's V EOFX DD(BU,1) made (BU,2) is caught
+    at p.215 line 45, where merge() no longer refuses.
+  * QCK is QOK (p.43 and p.262): p.261 line 32 prints a closed O.
+  * p.256 line 34's (CC*)DD is stood in by an SLC (entry mode CC is not
+    implemented); its four data words 230411-230414 are pinned as known
+    holes until it is.
+  * Two scorers read volume 1 only: statement_repair (floor_label fell
+    to 62.2% as pp.250-265's labels scored against an empty reading;
+    70.4% with both volumes) and statement_confirm (a volume-2 row got
+    every page's vocabulary, its own included).  verify_mcp_bootstrap_p44's
+    tail-block scan now covers the IPL assembly only (pp.15-98).
+  OPEN, from this batch: TAIL/UNTAIL name scoping is not implemented
+  (pp.261-264 repeat bootstrap names under a tail); p.261's "$B,QGO$A"
+  may be the ";" statement separator (C28-6129 PDF p.5); p.265's
+  stand-in dds for YC1MTT, YSPDCR, YC1B, YC1TC come from OCR;
+  statement_confirm scores volume 1 only.
+  NEXT: printed p.266 on, same batches.

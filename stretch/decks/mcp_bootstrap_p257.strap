@@ -1,0 +1,204 @@
+! mcp_bootstrap_p257.strap -- MCP printed page 257: the tape-error
+! retry section, continued (RBSWRT B,$ .. RKSTOT, RKSTUK, RKPONE,
+! RKREJ, LVI,VU,VSC), lines 1-56.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.8, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID 0B000492  DIST. OF 3/01
+!  3/01  PAGE NUMBER 257" (round glyphs in numeric fields read 0); the
+! heading row's LOCATION field is 230432, line 1's word.
+!
+! THE PAGE.  56 lines, all located, contiguous from 230432.00 to
+! 230467.00 (a half word; next location 230467.40), then blank paper.
+! printed p.256 (PDF p.7, not landed) ends with a half word at
+! 230431.40 (",($14)"), so line 1's .00 continues it; printed p.258
+! (PDF p.9) opens at 230467.40 (CB-,VP,VSETX).  No remarks.
+! Asterisks after the LOCATION on lines 11, 34 and 55.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK (900 dpi):
+!   * lines 5, 16 print "RPCUES" (no Q tail); lines 10, 12 print RPQUES
+!     with the tail.  RPQUES as landed p.246/p.247 spell it (230415.40)
+!     and p.256 line 35 labels it; BXE/BZXE print 230415.72, B 230415.50.
+!   * line 52 prints "RKBITI" (L's foot worn): landed p.244 label RKBITL
+!     at 227670.00; SV prints 227670.15.
+!   * labels RKDCYD (line 13; BXE line 3 prints 230440.32) and RKSTOT
+!     (line 18, closed O; unreferenced on this page) are new; no deck or
+!     neighbour spells a look-alike.
+!   * hex bytes printed with an open round written 0: "C0" on the B
+!     rows 12, 17, 20, 32, 35 (= 00, as B,$ line 1 and B,RPQUES line
+!     10 print a closed "00"); octal fields "000C01.33", "C00004.35",
+!     "CCCCCC.CC" are 0.  Line 16 BZXE prints "C0" and IS C0 (as
+!     p.249's BZXE).  "D0" on the SVA rows and "B0"/"F0" on lines
+!     14, 50, 55 are as printed.
+!
+! EXTERNALS FROM THIS PAGE'S BINARY ONLY:
+!   RPQUES  -- p.256 line 35 LX label (not landed), 230415.40 from BXE
+!              line 5 .72 and B line 10 .50 (as p.246/p.247 already had).
+!   RSWBCK  -- p.256 line 51 BZBZ label (not landed), 230426.40 from
+!              B line 20 230426.50, half word only.
+!   RRTPRO  -- p.258 line 2 LVNI label (not landed), 230470.00 from BXE
+!              line 28 230470.32, half word only.
+!
+! CARD SERIALS.  Right-hand serials run 0B000492 .. 0B000527 (prefix
+! glyph round, as in the header's 0B000492).  Shared: 2-3 (493), 4-5
+! (494), 6-7 (495), 8-9 (496), 13-14 (500), 15-16 (501), 19-20 (504),
+! 21-22 (505), 23-24 (506), 25-26 (507), 27-28 (508), 29-30 (509),
+! 31-32 (510), 34-35 (512), 36-37 (513), 38-39 (514), 42-43 (517),
+! 44-45 (518), 47-48 (520), 53-54 (525).  No serial skipped.
+
+DWEF    SYN, 7.32                    ! landed p.104 "D WEF"; KVI line 2 000007.77
+VU      SYN, $3                      ! p.213 line 25 (landed)
+VP      SYN, $1                      ! p.213 line 26 (landed)
+VT5     SYN, $9                      ! p.213 line 28 (landed)
+VT2     SYN, $6                      ! p.213 line 29 (landed)
+VX      SYN, (8)0.0                  ! p.213 line 11 "V X SYN,0" (landed)
+VRCNT   SYN, 7.0                     ! landed p.213 line 20; LV line 47 225321.14
+VFCNT   SYN, 7.32                    ! p.213 line 21 = VRCNT.VH = 7.32 (landed)
+VST     SYN, (8)225312.0             ! landed; LV/SV lines 36, 40
+VWT     SYN, (8)225266.0             ! landed; KVI line 7
+VRT     SYN, (8)225331.0             ! landed; KVI line 27
+VSC     SYN, (8)225250.0             ! landed; LVI lines 29, 56
+VCOM    SYN, (8)224702.0             ! landed p.228 label; B lines 32, 35, half word only
+VSQ     SYN(BU,32,8), (8)224314.0    ! landed p.218 label; B line 41 VSQ+1.32 = 224315.50
+VSETX   SYN, (8)224671.40            ! landed p.227 label; LVI line 44 224671.55
+VRJTP   SYN, (8)225051.40            ! landed decks; CB+ line 54 225051.43
+RKB     SYN, 3.0                     ! landed p.241 "RKB SYN,3.0"; lines 15, 21
+RKC     SYN, 3.0                     ! landed p.241 "RKC SYN,3.0"; line 15
+RKH     SYN, 3.0                     ! landed p.241 "RKH SYN,3.0"; line 23
+RETRY   SYN, (8)227643.0             ! landed p.244 line 2 "RETRY VF,RKC+1.0"; LV line 13 227643.34
+RWTRY   SYN, (8)227643.40            ! landed p.244 line 3 "RWTRY VF,RKD+1.0"; V+ line 14 227643.74
+RWEXIT  SYN(BU,32), (8)227646.0      ! landed p.244 line 8 "RWEXIT DRZ(BU,32),4"; lines 4, 11 RWEXIT-1.0
+RDREXT  SYN(BU,32), (8)227771.0      ! landed p.247 line 9 "RDREXT DRZ(BU,32),4"; lines 9, 18 RDREXT-1.0
+RTTRY   SYN, (8)227777.0             ! landed p.247 line 18 "RTTRY CF,RKB+1.0"; SVA line 22
+RTSP3X  SYN, (8)227777.40            ! landed p.247 line 19 "RTSP3X CF,RKH+1.0"; SVA line 24 .75
+RBSP3X  SYN, (8)230000.0             ! landed p.247 line 20 "RBSP3X CF,5.0"; SVA line 26
+RKSCNN  SYN, (8)227654.0             ! landed p.244 line 17 label; CB+ line 43 227654.03
+RKSCRT  SYN, (8)227663.40            ! landed p.244 line 27 label; SIC line 42, SVA line 45
+RKBITL  SYN, (8)227670.0             ! landed p.244 line 35 "RKBITL VF,0"; SV line 52
+RKSBIT  SYN, (8)227670.40            ! landed p.244 line 36 "RKSBIT VF,0"; CM line 55
+REJJOB  SYN, (8)230364.0             ! as landed p.241/p.244/p.248; BBZ line 46 REJJOB.61 = 230364.75
+RPQUES  SYN(BU,32,8), (8)230415.40   ! p.256 line 35 LX label (not landed); BXE lines 5/16 .72, B lines 10/12 .50
+RSWBCK  SYN(BU,64,8), (8)230426.40   ! p.256 line 51 BZBZ label (not landed); B line 20 230426.50, half word only
+RRTPRO  SYN(BU,32,8), (8)230470.0    ! p.258 line 2 LVNI label (not landed); BXE line 28 230470.32, half word only
+
+        SLC, (8)230432.00
+RBSWRT  B,$                                                  ! line  1
+RGNOGD  KVI,$15,DWEF                                         ! line  2
+        BXE,RKDCYD                                           ! line  3
+        KVI,$13,RWEXIT-1.0                                   ! line  4
+        BXE,RPQUES                                           ! line  5   printed "RPCUES"
+RKLOUP  V+I,$13,1.0                                          ! line  6
+        KVI,VU,VWT                                           ! line  7
+        BXE,$+1.32                                           ! line  8
+        SVA,$13,RDREXT-1.0                                   ! line  9
+        B,RPQUES                                             ! line 10
+        SVA,$13,RWEXIT-1.0                                   ! line 11
+        B,RPQUES                                             ! line 12
+RKDCYD  LV,$14,RETRY                                         ! line 13
+        V+,$14,RWTRY                                         ! line 14
+        KVI,$14,RKB+RKC+2.0                                  ! line 15
+        BZXE,RPQUES                                          ! line 16   printed "RPCUES"
+        B,RKLOUP                                             ! line 17
+RKSTOT  LV,$14,RDREXT-1.0                                    ! line 18
+        SIC,RBSWRT                                           ! line 19
+        B,RSWBCK                                             ! line 20
+        LVI,$14,RKB+1.0                                      ! line 21
+        SVA,$14,RTTRY                                        ! line 22
+        LVI,$14,RKH+1.0                                      ! line 23
+        SVA,$14,RTSP3X                                       ! line 24
+        LVI,$14,5.0                                          ! line 25
+        SVA,$14,RBSP3X                                       ! line 26
+        KVI,VU,VRT                                           ! line 27
+        BXE,RRTPRO                                           ! line 28
+        LVI,VU,VSC                                           ! line 29
+        LVNI,VT5,RKSTUK                                      ! line 30
+        SIC,(VP)                                             ! line 31
+        B,VCOM                                               ! line 32
+        LVI,VT5,17.0                                         ! line 33
+        SIC,(VP)                                             ! line 34
+        B,VCOM                                               ! line 35
+        LV,VT5,VX+VST                                        ! line 36
+        V+I,VT5,17.0                                         ! line 37
+        BXVLZ,$+1.0                                          ! line 38
+        V-I,VT5,34.0                                         ! line 39
+        SV,VT5,VX+VST                                        ! line 40
+        B,VSQ+1.32                                           ! line 41
+RKSTUK  SIC,RKSCRT                                           ! line 42
+        CB+,VP,RKSCNN                                        ! line 43
+        LVI,VT2,VSETX                                        ! line 44
+        SVA,VT2,RKSCRT                                       ! line 45
+        BBZ,REJJOB.61,RKPONE                                 ! line 46
+        LV,VT2,VRCNT+VST                                     ! line 47
+        KVI,VT2,1.0                                          ! line 48
+        BXE,RKREJ                                            ! line 49
+RKPONE  M+1(BU,18),VFCNT+VST                                 ! line 50
+RKREJ   LV,VT2,VFCNT+VST                                     ! line 51
+        SV,VT2,RKBITL                                        ! line 52   printed "RKBITI"
+        SIC,(VP)                                             ! line 53
+        CB+,VP,VRJTP                                         ! line 54
+        CM1111(BU,1),RKSBIT                                  ! line 55
+        LVI,VU,VSC                                           ! line 56
+
+!SYM RBSWRT 230432.00
+!SYM RGNOGD 230432.40
+!SYM RKLOUP 230434.40
+!SYM RKDCYD 230440.00
+!SYM RKSTOT 230442.40
+!SYM RKSTUK 230456.40
+!SYM RKPONE 230463.00
+!SYM RKREJ  230464.00
+!CHECK 230432.00 | 230432.10 00 | line 1 RBSWRT B,$
+!CHECK 230432.40 | 000007.77 04 | line 2 RGNOGD KVI,$15,DWEF
+!CHECK 230433.00 | 230440.32 C2 | line 3 BXE,RKDCYD
+!CHECK 230433.40 | 227645.33 04 | line 4 KVI,$13,RWEXIT-1.0
+!CHECK 230434.00 | 230415.72 C2 | line 5 BXE,RPQUES (printed "RPCUES")
+!CHECK 230434.40 | 000001.33 05 | line 6 RKLOUP V+I,$13,1.0 (octal prints "000C01")
+!CHECK 230435.00 | 225266.07 04 | line 7 KVI,VU,VWT
+!CHECK 230435.40 | 230437.32 C2 | line 8 BXE,$+1.32
+!CHECK 230436.00 | 227770.33 D0 | line 9 SVA,$13,RDREXT-1.0
+!CHECK 230436.40 | 230415.50 00 | line 10 B,RPQUES
+!CHECK 230437.00 | 227645.33 D0 | line 11 SVA,$13,RWEXIT-1.0 (a "*" after the location)
+!CHECK 230437.40 | 230415.50 00 | line 12 B,RPQUES (byte prints "C0")
+!CHECK 230440.00 | 227643.34 30 | line 13 RKDCYD LV,$14,RETRY
+!CHECK 230440.40 | 227643.74 B0 | line 14 V+,$14,RWTRY
+!CHECK 230441.00 | 000010.35 04 | line 15 KVI,$14,RKB+RKC+2.0
+!CHECK 230441.40 | 230415.72 C0 | line 16 BZXE,RPQUES (printed "RPCUES")
+!CHECK 230442.00 | 230434.50 00 | line 17 B,RKLOUP (byte prints "C0")
+!CHECK 230442.40 | 227770.34 30 | line 18 RKSTOT LV,$14,RDREXT-1.0
+!CHECK 230443.00 | 230432.00 80 | line 19 SIC,RBSWRT
+!CHECK 230443.40 | 230426.50 00 | line 20 B,RSWBCK (byte prints "C0")
+!CHECK 230444.00 | 000004.35 01 | line 21 LVI,$14,RKB+1.0
+!CHECK 230444.40 | 227777.35 D0 | line 22 SVA,$14,RTTRY
+!CHECK 230445.00 | 000004.35 01 | line 23 LVI,$14,RKH+1.0 (octal prints "C00004")
+!CHECK 230445.40 | 227777.75 D0 | line 24 SVA,$14,RTSP3X
+!CHECK 230446.00 | 000005.35 01 | line 25 LVI,$14,5.0
+!CHECK 230446.40 | 230000.35 D0 | line 26 SVA,$14,RBSP3X
+!CHECK 230447.00 | 225331.07 04 | line 27 KVI,VU,VRT
+!CHECK 230447.40 | 230470.32 C2 | line 28 BXE,RRTPRO
+!CHECK 230450.00 | 225250.07 01 | line 29 LVI,VU,VSC
+!CHECK 230450.40 | 230456.63 09 | line 30 LVNI,VT5,RKSTUK
+!CHECK 230451.00 | 000000.00 81 | line 31 SIC,(VP)
+!CHECK 230451.40 | 224702.10 00 | line 32 B,VCOM (byte prints "C0")
+!CHECK 230452.00 | 000021.23 01 | line 33 LVI,VT5,17.0
+!CHECK 230452.40 | 000000.00 81 | line 34 SIC,(VP) (a "*" after the location)
+!CHECK 230453.00 | 224702.10 00 | line 35 B,VCOM (byte prints "C0")
+!CHECK 230453.40 | 225312.22 30 | line 36 LV,VT5,VX+VST
+!CHECK 230454.00 | 000021.23 05 | line 37 V+I,VT5,17.0
+!CHECK 230454.40 | 230455.70 C2 | line 38 BXVLZ,$+1.0
+!CHECK 230455.00 | 000042.23 0D | line 39 V-I,VT5,34.0
+!CHECK 230455.40 | 225312.23 30 | line 40 SV,VT5,VX+VST
+!CHECK 230456.00 | 224315.50 00 | line 41 B,VSQ+1.32
+!CHECK 230456.40 | 227663.40 80 | line 42 RKSTUK SIC,RKSCRT
+!CHECK 230457.00 | 227654.03 48 | line 43 CB+,VP,RKSCNN
+!CHECK 230457.40 | 224671.55 01 | line 44 LVI,VT2,VSETX
+!CHECK 230460.00 | 227663.55 D0 | line 45 SVA,VT2,RKSCRT
+!CHECK 230460.40 | 230364.75 80 230463.34 06 | line 46 BBZ,REJJOB.61,RKPONE
+!CHECK 230461.40 | 225321.14 30 | line 47 LV,VT2,VRCNT+VST
+!CHECK 230462.00 | 000001.15 04 | line 48 KVI,VT2,1.0
+!CHECK 230462.40 | 230464.32 C2 | line 49 BXE,RKREJ
+!CHECK 230463.00 | 225321.40 80 022000.22 B0 | line 50 RKPONE M+1(BU,18),VFCNT+VST
+!CHECK 230464.00 | 225321.54 30 | line 51 RKREJ LV,VT2,VFCNT+VST
+!CHECK 230464.40 | 227670.15 30 | line 52 SV,VT2,RKBITL (printed "RKBITI")
+!CHECK 230465.00 | 000000.00 81 | line 53 SIC,(VP)
+!CHECK 230465.40 | 225051.43 48 | line 54 CB+,VP,VRJTP
+!CHECK 230466.00 | 227670.40 80 001000.36 F0 | line 55 CM1111(BU,1),RKSBIT (a "*" after the location)
+!CHECK 230467.00 | 225250.07 01 | line 56 LVI,VU,VSC

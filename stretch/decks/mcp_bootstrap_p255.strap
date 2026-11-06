@@ -1,0 +1,210 @@
+! mcp_bootstrap_p255.strap -- MCP printed page 255: the Input Program's
+! error-recovery section, continued (LVI,$15,RKC+1.0 .. SIC,(VP)),
+! lines 1-56.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.6, read at 400 dpi (900 dpi for the
+! name/statement glyphs).  Header, READ: "TIME CLOCK 00054041  PUNID
+! 11D11MCP  CARD ID 0B000432  DIST. OF 3/01  3/01  PAGE NUMBER 255"
+! (round glyphs in numeric fields read 0); the heading row's LOCATION
+! field is 230317, line 1's word.
+!
+! THE PAGE.  56 lines, all located, contiguous from 230317.00 to
+! 230353.40 (a half word; next location 230354.00), then blank paper.
+! printed p.254 (PDF p.5) ends with line 52 "RESTOR LV,VU,0.32($13)" at
+! 230316.40, so line 1 continues it; printed p.256 (PDF p.7, heading
+! LOCATION 230354) opens at 230354.00.  No remarks.  Asterisks after the
+! LOCATION on lines 15 and 37.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 11 statement "REDUMP": the D prints with a worn stem; spelled
+!     as landed p.243 (REDUMP SYN, (8)230400.0) and C22-6728 (12 times).
+!   * line 35 label RECDMP: third glyph round/open (C), fourth has a
+!     straight left stem (D) at 900 dpi.  No other deck spells it;
+!     C22-6728 OCR prints "RECCMP" once, a flowchart box (does not
+!     close it).  Nothing references it here: rests on ink alone.
+!   * line 45 label REDMP: third glyph has a stem (D); landed p.219
+!     B,REDMP prints 230346.10 = this row.
+!   * lines 18/19 "RECCW": both round glyphs open, no stem; written
+!     RECCW (RE + CCW, as RDCCW on p.249).  VF prints 230371.00+.
+!   * line 27 REJJOB: as landed decks; BZBZ prints 230364.77.
+!   * line 42 ",DCCMM" = ,DCOMM (worn O): landed p.105 DCOMM 35.32;
+!     prints 000043.40.
+!   * line 47 "VFCNT" (sheet read VECNT): F is plain ink; landed VFCNT.
+!   * line 52 a stray dot between LOCATION and BINARY: speck, ignored.
+!   * line 44 ",4.C" = ,4.0 (open round in a numeric field); prints
+!     000004.00.
+!   * hex/octal round glyphs read 0 throughout ("C0" etc.).
+!
+! EXTERNALS FROM THIS PAGE'S BINARY ONLY: RECCW (230371.0, VF line 18
+! BIT-EXACT), RWMSGE (230374.0, lines 40/43 BIT-EXACT as half-word
+! address constants).
+!
+! CARD SERIALS.  Right-hand serials run 0B000432 .. 0B000458.  Shared:
+! 1-2 (432), 3-4 (433), 6-9 (435), 13-14 (439), 15-18 (440), 19-20
+! (441), 22-24 (443), 28-29 (447), 30-32 (448), 33-34 (449), 35-36
+! (450), 37-40 (451), 41-44 (452), 45-46 (453), 47-48 (454), 49-50
+! (455), 52-55 (457).  Line 56's 458 is also p.256 line 1's
+! (CB+,VP,VRJTP -- SIC and its branch on one card).  No serial skipped.
+!
+! THE PAGE ENDS IN A BARE SIC.  Line 56 SIC,(VP)'s branch half is
+! printed p.256 line 1 (CB+,VP,VRJTP at 230354.00).  strap_asm refuses
+! a SIC with nothing after it ("SIC must be immediately followed ...
+! found 'end of program'"), so a scaffold "SLC, (8)230354.0" (p.256's
+! own origin, compiles nothing, skips nothing) follows line 56 for the
+! standalone verify.  In a merged build p.256's identical origin SLC
+! follows it; scaffolding the CB+ itself instead would deposit 230354.00
+! twice and the merge refuses that (tested).
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B lines 6/15/22/30/37/41/52
+DCHEX   SYN, 12.0                    ! landed p.104 "D CHEX"; lines 7/53 000014.00
+DCCW    SYN, 2.0                     ! landed; p.102 line 11 "D CCW"; VF line 16
+DBSP    SYN, 6.0                     ! landed p.104 "D BSP"; line 23
+DWEF    SYN, 7.32                    ! landed p.104 "D WEF"; VF line 31 000007.40+
+DIODEF  SYN, 13.0                    ! landed p.105 line 2; line 38 000015.00
+DCOMM   SYN, 35.32                   ! landed p.105; line 42 (printed "DCCMM")
+VU      SYN, $3                      ! p.213 line 25 (landed)
+VP      SYN, $1                      ! p.213 line 26 (landed)
+VT2     SYN, $6                      ! p.213 line 29 (landed)
+VSU     SYN, 6.0                     ! p.213 line 18 = VID.VH = 6.0 (landed)
+VWT     SYN, (8)225266.0             ! landed; LVE line 39 VSU+VWT
+VFCNT   SYN, 7.32                    ! p.213 line 21 = VRCNT.VH (landed); LV line 47
+RKC     SYN, 3.0                     ! as landed p.242/p.244; LVI line 1 RKC+1.0
+RKD     SYN, 3.0                     ! as landed p.242/p.244; LVI line 3 RKD+1.0
+RETRY   SYN, (8)227643.0             ! landed p.244 label (VF); SVA line 2 227643.37
+RWTRY   SYN, (8)227643.40            ! landed p.244 label (VF); SVA line 4 227643.77
+RKSUK   SYN, (8)227524.40            ! landed p.241 label; LVI line 13 227524.77
+RERGBR  SYN, (8)227577.0             ! landed p.242 label "RERGBR B,$"; SIC line 28 227577.00
+RERG    SYN, (8)227574.0             ! landed p.242 label; B line 29 227574.10
+RKCRWT  SYN(BU,32,8), (8)227642.0    ! landed p.243 label of NOP (as p.242 writes it); SIC line 35 227642.00
+RESRCH  SYN, (8)227620.0             ! landed p.243 label; B line 36 227620.10
+RWEXIT  SYN(BU,32), (8)227646.0      ! as landed p.244 "RWEXIT DRZ(BU,32),4"; LV line 51 227645.30
+REJJOB  SYN, (8)230364.0             ! landed decks; BZBZ line 27, SVA line 46
+RTN     SYN, (8)230103.40            ! landed p.249 label; B lines 25/34 230103.50
+REDUMP  SYN, (8)230400.0             ! landed p.243; BZB line 11 h2 230400.34
+RESTOR  SYN, (8)230316.40            ! p.254 line 52 label (not landed); landed p.242 SYN; LVI line 33 230316.77
+RECCW   SYN, (8)230371.0             ! not landed; this page's binary: VF line 18 230371.00+, BIT-EXACT
+RWMSGE  SYN, (8)230374.0             ! not landed; this page's binary: lines 40/43 230374.00, BIT-EXACT
+YTSTR   SYN, (8)231133.0             ! landed p.228; SIC line 49
+YTST    SYN, (8)231117.0             ! landed p.228; B line 50, half word only
+
+        SLC, (8)230317.0
+        LVI,$15,RKC+1.0                                      ! line  1
+        SVA,$15,RETRY                                        ! line  2
+        LVI,$15,RKD+1.0                                      ! line  3
+        SVA,$15,RWTRY                                        ! line  4
+        LV,$15,($13)                                         ! line  5
+        B,DMCP                                               ! line  6
+        VF,DCHEX                                             ! line  7
+        LVE,,VSU(VU)                                         ! line  8
+        ,($15)                                               ! line  9
+        B,5.0($15)                                           ! line 10
+RERDUK  BZB,2.12($13),REDUMP                                 ! line 11
+READ    LV,VU,0.32($13)                                      ! line 12
+        LVI,$15,RKSUK                                        ! line 13
+        SVA,$15,3.32($13)                                    ! line 14
+        B,DMCP                                               ! line 15
+        VF,DCCW                                              ! line 16
+        LVE,,VSU(VU)                                         ! line 17
+        VF,RECCW                                             ! line 18
+        LX,$12,RECCW                                         ! line 19
+        BXCZ,REBSP1                                          ! line 20
+        LVI,$15,REBSP1                                       ! line 21
+        B,DMCP                                               ! line 22
+        ,DBSP                                                ! line 23
+        LVE,,VSU(VU)                                         ! line 24
+        B,RTN                                                ! line 25
+REBSP1  LV,VU,0.32($13)                                      ! line 26
+        BZBZ,REJJOB.63,REWEF                                 ! line 27
+        SIC,RERGBR                                           ! line 28
+        B,RERG                                               ! line 29
+REWEF   B,DMCP                                               ! line 30
+        VF,DWEF                                              ! line 31
+        LVE,,VSU(VU)                                         ! line 32
+        LVI,$15,RESTOR                                       ! line 33
+        B,RTN                                                ! line 34
+RECDMP  SIC,RKCRWT                                           ! line 35
+        B,RESRCH                                             ! line 36
+        B,DMCP                                               ! line 37
+        ,DIODEF                                              ! line 38
+        LVE,,VSU+VWT                                         ! line 39
+        ,RWMSGE                                              ! line 40
+        B,DMCP                                               ! line 41
+        ,DCOMM                                               ! line 42   printed "DCCMM"
+        ,RWMSGE                                              ! line 43
+        ,4.0                                                 ! line 44
+REDMP   LVI,12,2.0                                           ! line 45
+        SVA,12,REJJOB                                        ! line 46
+        LV,VT2,VFCNT+VWT                                     ! line 47
+        V+I,VT2,1.0                                          ! line 48
+        SIC,YTSTR                                            ! line 49
+        B,YTST                                               ! line 50
+        LV,$12,RWEXIT-1.0                                    ! line 51
+        B,DMCP                                               ! line 52
+        ,DCHEX                                               ! line 53
+        LVE,,VSU(VU)                                         ! line 54
+        ,($12)                                               ! line 55
+        SIC,(VP)                                             ! line 56
+        SLC, (8)230354.0                     ! scaffold: p.256's origin; SIC's branch half is p.256's first card (see header)
+
+!SYM RERDUK 230324.00
+!SYM READ   230325.00
+!SYM REBSP1 230334.00
+!SYM REWEF  230336.40
+!SYM RECDMP 230341.00
+!SYM REDMP  230346.00
+!CHECK 230317.00 | 000004.37 01 | line 1 LVI,$15,RKC+1.0
+!CHECK 230317.40 | 227643.37 D0 | line 2 SVA,$15,RETRY
+!CHECK 230320.00 | 000004.37 01 | line 3 LVI,$15,RKD+1.0
+!CHECK 230320.40 | 227643.77 D0 | line 4 SVA,$15,RWTRY
+!CHECK 230321.00 | 000000.36 3D | line 5 LV,$15,($13)
+!CHECK 230321.40 | 000040.10 00 | line 6 B,DMCP
+!CHECK 230322.00 | 000014.00+ | line 7 VF,DCHEX
+!CHECK 230322.40 | 000006.01 B3 | line 8 LVE,,VSU(VU)
+!CHECK 230323.00 | 000000.00 8F | line 9 ,($15)
+!CHECK 230323.40 | 000005.10 0F | line 10 B,5.0($15)
+!CHECK 230324.00 | 000002.14 8D 230400.34 00 | line 11 RERDUK BZB,2.12($13),REDUMP
+!CHECK 230325.00 | 000000.46 3D | line 12 READ LV,VU,0.32($13)
+!CHECK 230325.40 | 227524.77 01 | line 13 LVI,$15,RKSUK
+!CHECK 230326.00 | 000003.77 DD | line 14 SVA,$15,3.32($13)
+!CHECK 230326.40 | 000040.10 00 | line 15 B,DMCP (a "*" after the location)
+!CHECK 230327.00 | 000002.00+ | line 16 VF,DCCW
+!CHECK 230327.40 | 000006.01 B3 | line 17 LVE,,VSU(VU)
+!CHECK 230330.00 | 230371.00+ | line 18 VF,RECCW
+!CHECK 230330.40 | 230371.30 10 | line 19 LX,$12,RECCW
+!CHECK 230331.00 | 230334.30 42 | line 20 BXCZ,REBSP1
+!CHECK 230331.40 | 230334.37 01 | line 21 LVI,$15,REBSP1
+!CHECK 230332.00 | 000040.10 00 | line 22 B,DMCP
+!CHECK 230332.40 | 000006.00 80 | line 23 ,DBSP
+!CHECK 230333.00 | 000006.01 B3 | line 24 LVE,,VSU(VU)
+!CHECK 230333.40 | 230103.50 00 | line 25 B,RTN
+!CHECK 230334.00 | 000000.46 3D | line 26 REBSP1 LV,VU,0.32($13)
+!CHECK 230334.40 | 230364.77 80 230336.74 04 | line 27 BZBZ,REJJOB.63,REWEF
+!CHECK 230335.40 | 227577.00 80 | line 28 SIC,RERGBR
+!CHECK 230336.00 | 227574.10 00 | line 29 B,RERG
+!CHECK 230336.40 | 000040.10 00 | line 30 REWEF B,DMCP
+!CHECK 230337.00 | 000007.40+ | line 31 VF,DWEF
+!CHECK 230337.40 | 000006.01 B3 | line 32 LVE,,VSU(VU)
+!CHECK 230340.00 | 230316.77 01 | line 33 LVI,$15,RESTOR
+!CHECK 230340.40 | 230103.50 00 | line 34 B,RTN
+!CHECK 230341.00 | 227642.00 80 | line 35 RECDMP SIC,RKCRWT
+!CHECK 230341.40 | 227620.10 00 | line 36 B,RESRCH
+!CHECK 230342.00 | 000040.10 00 | line 37 B,DMCP (a "*" after the location)
+!CHECK 230342.40 | 000015.00 80 | line 38 ,DIODEF
+!CHECK 230343.00 | 225274.01 B0 | line 39 LVE,,VSU+VWT
+!CHECK 230343.40 | 230374.00 80 | line 40 ,RWMSGE
+!CHECK 230344.00 | 000040.10 00 | line 41 B,DMCP
+!CHECK 230344.40 | 000043.40 80 | line 42 ,DCOMM (printed "DCCMM")
+!CHECK 230345.00 | 230374.00 80 | line 43 ,RWMSGE
+!CHECK 230345.40 | 000004.00 80 | line 44 ,4.0
+!CHECK 230346.00 | 000002.31 01 | line 45 REDMP LVI,12,2.0
+!CHECK 230346.40 | 230364.31 D0 | line 46 SVA,12,REJJOB
+!CHECK 230347.00 | 225275.54 30 | line 47 LV,VT2,VFCNT+VWT
+!CHECK 230347.40 | 000001.15 05 | line 48 V+I,VT2,1.0
+!CHECK 230350.00 | 231133.00 80 | line 49 SIC,YTSTR
+!CHECK 230350.40 | 231117.10 00 | line 50 B,YTST
+!CHECK 230351.00 | 227645.30 30 | line 51 LV,$12,RWEXIT-1.0
+!CHECK 230351.40 | 000040.10 00 | line 52 B,DMCP
+!CHECK 230352.00 | 000014.00 80 | line 53 ,DCHEX
+!CHECK 230352.40 | 000006.01 B3 | line 54 LVE,,VSU(VU)
+!CHECK 230353.00 | 000000.00 8C | line 55 ,($12)
+!CHECK 230353.40 | 000000.00 81 | line 56 SIC,(VP)

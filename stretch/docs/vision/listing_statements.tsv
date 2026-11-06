@@ -1716,9 +1716,9 @@ vol	pdf	printed	line	status	statement	assembled
 1	50	43	31	draft	KFI(BU,91,12/001000010	
 1	50	43	32	draft	BZAE,CNC	
 1	50	43	33	asm-confirmed	LVI,$3,5.0	000005.07 01
-1	50	43	34	draft	B,QCK	
+1	50	43	34	draft	B,QOK	
 1	50	43	36	draft	KFI(BU;9I;(ZIOOOIOCC10	
-1	50	43	37	draft	BZAE,QNCZ	
+1	50	43	37	draft	BZAE,QNOZ	
 1	50	43	38	draft	LVI,$3,5.32	
 1	50	43	39	draft	B,OCK	
 1	50	43	41	draft	KFI(BU,Ф,T2T010C00010	
@@ -9501,7 +9501,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	248	241	21	draft	BXE,RDUK	
 1	248	241	22	asm-confirmed	BZB,2.12($13),RGNOGD	000002.14 8D 230432.74 00
 1	248	241	23	draft	KVI,$15,DWEF	
-1	248	241	24	draft	BIXE,RPUKL1	
+1	248	241	24	draft	BIXE,RPUKLI	
 1	248	241	25	draft	CM0000(BU,1),RWEXBR+.19	
 1	248	241	26	draft	BB,REJJOB+.17,RWSET	
 1	248	241	27	draft	LV,$15,RWTRY	
@@ -9891,7 +9891,7 @@ vol	pdf	printed	line	status	statement	assembled
 1	256		51	draft	,VCREXT	
 2	1	250	1	asm-confirmed	LV,$9,RRCCW	230111.22 30
 2	1	250	2	asm-confirmed	V-I,$9,15.0	000017.23 0D
-2	1	250	3	asm-confirmed	TI,5,RDLECF,0.0($9)	230411.00 80 000000.12 A9
+2	1	250	3	asm-bound	TI,5,RDLECF,0.0($9)	230411.00 80 000000.12 A9
 2	1	250	4	draft	BEVRDEE	
 2	1	250	5	draft	XW,0.32,0	
 2	1	250	6	draft	(VE,$15,-1.CTVP)	
@@ -10405,15 +10405,15 @@ vol	pdf	printed	line	status	statement	assembled
 2	12	261	27	asm-confirmed	LC,$3,7.32	000007.46 50
 2	12	261	28	draft	LELBU,7)2$LZC,45	
 2	12	261	29	draft	LV,$3,$R	
-2	12	261	32	draft	BXCZ,QCK	
+2	12	261	32	draft	BXCZ,QOK	
 2	12	261	34	draft	KFI(BU,9)212)001000010	
 2	12	261	35	draft	BZAE,GNO	
 2	12	261	36	asm-confirmed	LVI,$3,5.0	000005.07 01
-2	12	261	37	draft	B,QCK	
+2	12	261	37	draft	B,QOK	
 2	12	261	39	draft	KFI(BU,9),12)000100010	
 2	12	261	40	draft	BZAE,QNOZ	
 2	12	261	41	asm-confirmed	LVI,$3,5.32	000005.47 01
-2	12	261	42	draft	B,QCK	
+2	12	261	42	draft	B,QOK	
 2	12	261	44	asm-confirmed	KFI(BU,9),(2)010000010	202000.00 80 411000.23 10
 2	12	261	45	asm-confirmed	LVI,$3,6.0	000006.07 01
 2	12	261	46	draft	BAE2GCK*	
@@ -10593,7 +10593,7 @@ vol	pdf	printed	line	status	statement	assembled
 2	17	266	16	draft	***########*###*#**#*##*####******##*	
 2	17	266	17	draft	LX$13,YC1DB+1.0	
 2	17	266	18	asm-confirmed	SX,$13,YC1DB-2.0	231072.33 10
-2	17	266	19	draft	SV,S14,YLUCXW+1•0	
+2	17	266	19	draft	SV,S14,Y1UCXW+1•0	
 2	17	266	20	draft	B,DMCP	
 2	17	266	21	asm-bound	,SLCG1	000121.40 80
 2	17	266	22	asm-confirmed	NOP,0.0($10)	000000.30 0A
@@ -10601,7 +10601,7 @@ vol	pdf	printed	line	status	statement	assembled
 2	17	266	24	asm-confirmed	B,YC1JT	231063.10 00
 2	17	266	25	asm-confirmed	B,YC1A1	230763.50 00
 2	17	266	26	draft	BB,.41+Y1UCXW,YCISCN	
-2	17	266	27	draft	BB,.43+YIUCXW,$+1.32	
+2	17	266	27	draft	BB,.43+Y1UCXW,$+1.32	
 2	17	266	28	draft	LVI2$1424•0	
 2	17	266	29	draft	SV2$14,Y1UCXW+1•0	
 2	17	266	30	asm-confirmed	B,YC1A1	230763.50 00
@@ -10673,10 +10673,10 @@ vol	pdf	printed	line	status	statement	assembled
 2	18	267	43	asm-confirmed	LC,$14,YCIJJC	231071.34 50
 2	18	267	44	asm-confirmed	BXCZ,$	231063.70 42
 2	18	267	45	asm-confirmed	C-I,$14,1	000001.35 08
-2	18	267	46	draft	SC,$14,YCIJJC	
+2	18	267	46	draft	SC,$14,YC1JJC	
 2	18	267	47	asm-confirmed	B,YCISEX	231056.50 00
 2	18	267	48	draft	(VI‚$I3,YCOMJM	
-2	18	267	49	draft	B,YCIPRJ	
+2	18	267	49	draft	B,YC1PRJ	
 2	18	267	50	draft	CNOP	
 2	19	268	1	draft	DD(BU,12),(8)0401	
 2	19	268	2	draft	DR(BU,33),(1)	
@@ -15490,7 +15490,7 @@ vol	pdf	printed	line	status	statement	assembled
 2	130	380	11	asm-confirmed	CB+,$12,VZEROL	235560.31 48
 2	130	380	12	asm-confirmed	TI,1,VDUB,JFLDB	235570.00 80 234560.02 A0
 2	130	380	13	asm-confirmed	LVI,15,$+1.0	235563.37 01
-2	130	380	14	asm-confirmed	BD,SICSA8	230504.44 00
+2	130	380	14	asm-bound	BD,SICSA8	230504.44 00
 2	130	380	15	draft	VF,0	
 2	130	380	16	draft	CELC,0	
 2	130	380	17	draft	VEJELDB+,8	
@@ -15599,7 +15599,7 @@ vol	pdf	printed	line	status	statement	assembled
 2	132	382	42	draft	,YC4CM	
 2	132	382	43	draft	CF,4.0	
 2	132	382	44	draft	LVI,$15,$+1.	
-2	132	382	45	asm-confirmed	B,SICSA8	230504.50 00
+2	132	382	45	asm-bound	B,SICSA8	230504.50 00
 2	132	382	46	draft	VFLYC4CM2	
 2	132	382	47	draft	CEL8	
 2	132	382	48	draft	VF,YC4TIM	

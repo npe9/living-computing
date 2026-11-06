@@ -1,0 +1,148 @@
+! mcp_bootstrap_p259.strap -- MCP printed page 259: the IQS TO BCD
+! CONVERSION ROUTINE (SIQSA8 / SIQSA6) and the first part of its
+! table of BCD equivalents (F TABLE), lines 1-56.
+!
+! docs/MCP_Mar63_250-445.pdf (VOLUME 2) PDF p.10, read at 400 dpi.
+! Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID PA000001
+! DIST. OF 3/01  3/01  PAGE NUMBER 259".  The heading row's LOCATION
+! field is BLANK, as it is whenever line 1 is a banner.
+!
+! THE PAGE.  56 lines.  Lines 1-3 are an asterisk banner, line 28 a
+! comment card; lines 4-56 run contiguously from 230504.40 to the end
+! of line 56's 16-byte datum at 230566.00.  A NEW CARD DECK: CARD ID
+! PA000001 and serials restart at PA000001, so this page opens a new
+! routine.  Printed p.260 (PDF p.11, CARD ID PB000001, the BCD TO IQS
+! routine) opens with line 4 "230566.00 * SLC,$" -- exactly where this
+! page's last datum ends, so the trail is contiguous forward.  Backward
+! join to p.258 (being transcribed in parallel) not checked here; this
+! deck carries its own SLC.  Asterisks after the LOCATION on lines 18,
+! 27, 40 and 51.
+!
+! THE TABLE (lines 29-56) is entry-mode alphanumeric DD data, which
+! prints NO binary, so those rows have no !CHECK; their extents are
+! pinned by the LOCATION column (each row's length in 8-bit bytes is
+! the next row's location minus its own, and every row agrees with
+! its datum's printed character count) and by p.260's 230566.00.  The
+! four (8)DD rows print one octal byte per line (020 014 020,
+! 032 040 020) and are checked at width 8.
+!   * line 29 datum is " +$=*(/)," -- a leading blank and a trailing
+!     comma, 9 bytes (230526.00 -> 230527.10).  Line 34's "++$=*(/),"
+!     is 9 bytes (230532.00 -> 230533.10); lines 45 and 52's
+!     "++$=*(/)" have no comma and are 8 bytes.
+!   * line 41/48 datum "00112233445566778899." is 21 bytes (-> .50).
+!   * line 56 datum "SSTTUUV WWX    Z" is 16 bytes: blank columns
+!     measured against line 54's "SSTTUUVVWWXXYYZZ" at 400 dpi (ink
+!     runs at a 39.9-px character pitch; blanks at datum positions 7
+!     and 11-14, Z at 15, the terminator * at 16), and 16 bytes is what
+!     p.260's 230566.00 requires.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "SIQSA8"/"SIQSA6": Q (Vision read G) -- C22-6728 and C22-6728-1
+!     both spell SIQSA8/SIQSA6; line 5 prints B,SIQSA6 with a clear Q.
+!   * "DD" printed "DC"/"CD"/"CC" (worn D) on lines 30, 34, 35, 41, 42,
+!     46, 48, 49, 54: DD, as every other table row prints it.
+!   * "KKLLMMNNCOPPQQRR" (lines 39, 46, 53, 55) = ...NNOOPP...: the
+!     ordered alphabet; "0C11..." (lines 41, 48) = 00112233...99.
+!   * line 49 "(BU;8,8)": a speck over the comma, read ",".
+!   * line 18 ST(BU,64),0.0 byte printed "C0"/"D0": assembles D0.
+!   * hex/octal round glyphs printed open ("C0", "CF", ".CC") are 0.
+!
+! CARD SERIALS.  PA000001 .. PA000048, one per card; the (8)DD cards
+! occupy three listing lines each under one serial (lines 30-32 =
+! PA000030, 35-37 = 033, 42-44 = 038, 49-51 = 043).  No gaps.
+!
+! EXTERNALS: none.  $R (line 15) is the assembler's system symbol.
+
+        SLC, (8)230504.40
+! -*****************************************************************  ! line  1
+! -************ IQS TO BCD CONVERSION ROUTINE **********               ! line  2
+! -*****************************************************************  ! line  3
+SIQSA8  TI,1,FA8INS,FINSTR                                   ! line  4  - 8 BIT OUTPUT
+        B,SIQSA6+1.0                                         ! line  5
+SIQSA6  TI,1,FA6INS,FINSTR                                   ! line  6  - 6 BIT OUTPUT
+        SX,$15,FSVE                                          ! line  7  -SAVE INDEX REGISTERS
+        SX,$14,FSVE+1.0                                      ! line  8
+        SX,$13,FSVE+2.0                                      ! line  9
+        LV,$14,0.0($15)                                      ! line 10  -PUT *IN* INTO VF OF $14
+        LC,$14,.32($15)                                      ! line 11  -PUT *N* IN CF OF $14
+        BXCZ,FDONE                                           ! line 12  -CHECK IF COUNT = 0
+        LV,$13,1.0($15)                                      ! line 13  -PUT. *OUT* IN VF OF $13
+FLOOP   L(V+I)(BU,8,8),.8($14),43                            ! line 14  -LOAD IQS CHARACTER
+        LV,$15,$R                                            ! line 15  -CRRECT TABLE POSITION X
+        L(BU,8,8),FTABLE($15)                                ! line 16  -1ST ENTRY 8BITS NOW IN $15
+        CNOP                                                 ! line 17  (no location, no binary)
+FINSTR  ST(BU,64),0.0                                        ! line 18  -STORE CONVERTED CHARACTER
+        CB,$14,FLOOP                                         ! line 19  -CONVERSION DONE
+FDONE   LX,$15,FSVE                                          ! line 20  -RESTORE INDEX REGISTERS
+        LX,$14,FSVE+1.0                                      ! line 21
+        LX,$13,FSVE+2.0                                      ! line 22
+        B,1.32($15)                                          ! line 23  -RETURN
+        CNOP                                                 ! line 24
+FA8INS  ST(V+I)(BU,8,1),.8($13)                              ! line 25  -INSTRUCTION FOR 8BIT OPTION
+FA6INS  ST(V+I)(BU,6,1),.6($13)                              ! line 26  -INSTRUCTION FOR 6BIT OPTION
+FSVE    DRZ(BU,64),(3)                                       ! line 27  prints 000003.00 (the count)
+! -*****TABLE OF BCD EQUIVALENTS TO ORDERED IQS CODE SET*****         ! line 28
+FTABLE  (AZ)DD(BU,8,8), +$=*(/),Z                            ! line 29
+        (8)DD(BU,8,8),20,14,20                               ! lines 30-32  -SEMICOLON, SINGLE QUOTE, DOUBLE
+        (AZ)DD(BU,8,8),AABBCCDDEEFFGGHHIIJJZ                 ! line 33
+        (AZ)DD(BU,8,8),++$=*(/),Z                            ! line 34  printed "DC"
+        (8)DD(BU,8,8),20,14,20                               ! lines 35-37  -SEMICOLON, SINGLE QUOTE, DOUBLE  printed "CD"
+        (AZ)DD(BU,8,8),AABBCCDDEEFFGGHHIIJJZ                 ! line 38
+        (AZ)DD(BU,8,8),KKLLMMNNOOPPQQRRZ                     ! line 39
+        (A*)DD(BU,8,8),SSTTUUVVWWXXYYZZ*                     ! line 40
+        (AZ)DD(BU,8,8),00112233445566778899.Z                ! line 41  printed "DC"
+        (8)DD(BU,8,8),32,40,20                               ! lines 42-44  -COLON, MINUS, QUESTION  printed "CD"
+        (AZ)DD(BU,8,8),++$=*(/)Z                             ! line 45
+        (AZ)DD(BU,8,8),KKLLMMNNOOPPQQRRZ                     ! line 46  printed "DC"
+        (A*)DD(BU,8,8),SSTTUUVVWWXXYYZZ*                     ! line 47
+        (AZ)DD(BU,8,8),00112233445566778899.Z                ! line 48  printed "DC"
+        (8)DD(BU,8,8),32,40,20                               ! lines 49-51  -COLON, MINUS, QUESTION  printed "CD(BU;"
+        (AZ)DD(BU,8,8),++$=*(/)Z                             ! line 52
+        (AZ)DD(BU,8,8),KKLLMMNNOOPPQQRRZ                     ! line 53
+        (A*)DD(BU,8,8),SSTTUUVVWWXXYYZZ*                     ! line 54  printed "DC"
+        (AZ)DD(BU,8,8),KKLLMMNNOOPPQQRRZ                     ! line 55
+        (A*)DD(BU,8,8),SSTTUUV WWX    Z*                     ! line 56
+
+!SYM SIQSA8 230504.40
+!SYM SIQSA6 230506.00
+!SYM FLOOP  230512.40
+!SYM FINSTR 230515.00
+!SYM FDONE  230516.40
+!SYM FA8INS 230521.00
+!SYM FA6INS 230522.00
+!SYM FSVE   230523.00
+!SYM FTABLE 230526.00
+!CHECK 230504.40 | 230521.00 80 230515.02 A0 | line 4 SIQSA8 TI,1,FA8INS,FINSTR (the 0 of A0 prints open)
+!CHECK 230505.40 | 230507.10 00 | line 5 B,SIQSA6+1.0
+!CHECK 230506.00 | 230522.00 80 230515.02 A0 | line 6 SIQSA6 TI,1,FA6INS,FINSTR
+!CHECK 230507.00 | 230523.37 10 | line 7 SX,$15,FSVE
+!CHECK 230507.40 | 230524.35 10 | line 8 SX,$14,FSVE+1.0
+!CHECK 230510.00 | 230525.33 10 | line 9 SX,$13,FSVE+2.0
+!CHECK 230510.40 | 000000.34 3F | line 10 LV,$14,0.0($15)
+!CHECK 230511.00 | 000000.74 5F | line 11 LC,$14,.32($15)
+!CHECK 230511.40 | 230516.70 42 | line 12 BXCZ,FDONE
+!CHECK 230512.00 | 000001.32 3F | line 13 LV,$13,1.0($15)
+!CHECK 230512.40 | 000000.10 8E 110025.60 50 | line 14 FLOOP L(V+I)(BU,8,8),.8($14),43
+!CHECK 230513.40 | 000011.36 30 | line 15 LV,$15,$R
+!CHECK 230514.00 | 230526.00 8F 010000.20 50 | line 16 L(BU,8,8),FTABLE($15)
+!CHECK 230515.00 | 000000.00 80 000000.20 D0 | line 18 FINSTR ST(BU,64),0.0 (a "*" after the location)
+!CHECK 230516.00 | 230512.74 48 | line 19 CB,$14,FLOOP
+!CHECK 230516.40 | 230523.36 10 | line 20 FDONE LX,$15,FSVE
+!CHECK 230517.00 | 230524.34 10 | line 21 LX,$14,FSVE+1.0
+!CHECK 230517.40 | 230525.32 10 | line 22 LX,$13,FSVE+2.0
+!CHECK 230520.00 | 000001.50 0F | line 23 B,1.32($15) (byte prints "CF")
+!CHECK 230520.40 | 000000.30 00 | line 24 CNOP
+!CHECK 230521.00 | 000000.10 8D 110100.20 D0 | line 25 FA8INS ST(V+I)(BU,8,1),.8($13)
+!CHECK 230522.00 | 000000.06 8D 106100.20 D0 | line 26 FA6INS ST(V+I)(BU,6,1),.6($13)
+!CHECK 230527.10 | 020 | line 30 (8)DD(BU,8,8),20,14,20 first byte | 8
+!CHECK 230527.20 | 014 | line 31 second byte | 8
+!CHECK 230527.30 | 020 | line 32 third byte | 8
+!CHECK 230533.10 | 020 | line 35 (8)DD(BU,8,8),20,14,20 first byte | 8
+!CHECK 230533.20 | 014 | line 36 second byte | 8
+!CHECK 230533.30 | 020 | line 37 third byte | 8
+!CHECK 230544.50 | 032 | line 42 (8)DD(BU,8,8),32,40,20 first byte | 8
+!CHECK 230544.60 | 040 | line 43 second byte | 8
+!CHECK 230544.70 | 020 | line 44 third byte | 8
+!CHECK 230554.50 | 032 | line 49 (8)DD(BU,8,8),32,40,20 first byte | 8
+!CHECK 230554.60 | 040 | line 50 second byte | 8
+!CHECK 230554.70 | 020 | line 51 third byte | 8

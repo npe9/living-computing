@@ -1,0 +1,137 @@
+! mcp_bootstrap_p262.strap -- MCP printed page 262: the tail of HOLLERITH
+! TO BCD CONVERSION (Q CK .. Q FIN), THE CHARACTER LOCATOR TABLES, THE
+! TABLES and Q TB, closed by UNTAIL.  Lines 1-45.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.13, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID PC000050  DIST. OF 3/01
+!  3/01  PAGE NUMBER 262" (round glyphs in numeric fields read 0); the
+! heading row's LOCATION field is BLANK, as it is whenever line 1
+! compiles nothing (line 1 is a blank "-" card).
+!
+! THE PAGE.  45 lines; located rows contiguous from 230646.40 to
+! 230671.40 (a half-word VF; next location 230672.00), then blank paper.
+!   lines  2-11  code: Q CK, Q ST, Q CHK, Q FIN -- the same routine as
+!                the bootstrap's printed p.43 lines 46-54, a second copy
+!                inside MCP, under p.261 line 10's "TAIL,A".
+!   lines 13-27  THE CHARACTER LOCATOR TABLES: Q FLD, thirteen null-op
+!                half words ",.n($2)", printed 82.
+!   lines 29-38  THE TABLES: CNOP (emits a NOP), Q and four entry-mode
+!                (AX)/(AA)DD zone rows plus the octal colon, CNOP (emits
+!                nothing: the no-zone row ends at 230667.70).
+!   lines 40-43  Q TB VF 0, 78, 156, 234.
+!   line  45     "UNTAIL" with an empty address field (p.44's was
+!                "UNTAIL,(1)"); discarded by the assembler, as TAIL is.
+! p.261 (scratch, not landed) ends with a half word at 230646.00
+! (LVI,$2,0), so line 2's .40 continues it.  Lines 6 and 33 print "*"
+! after the LOCATION.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 11 label "CFIN" = Q FIN (open/worn Q): p.261 line 14
+!     BXCZ,QFIN prints 230653.70 = this row's 230653.40 + .30, and p.43
+!     names the same routine's exit Q FIN.
+!   * line 2 "Q CK": written QOK.  p.261 line 32's BXCZ,QOK prints a
+!     CLOSED O beside the open C of BXCZ (900 dpi), and p.261 line 46's
+!     remark reads "-OK MUST BE A COLON"; this drum prints O open, so the
+!     open glyph here does not argue for C.  p.43 is the same routine.
+!   * line 11 byte "CF" = 0F (open round; B,1.32($15) index 15, h1 octal
+!     field prints "CCCC01" = 000001); line 3 "C6 70" = 06 70; line 4
+!     ".5C 01" = .50 01; lines 6/8 "DO" = D0 (assemble so); octal
+!     "CCCCCC" = 000000 throughout.
+!   * line 34 "/STUVWXYZ0,(A": the tenth character is the DIGIT zero
+!     (each row's tenth is its lone-zone punch), as p.44 line 23 reads.
+!     No binary is printed for the table rows; their lengths are checked
+!     by the following rows' locations.
+!   * line 36 "123456789 =-/X": the blank after 9 is DATA (entry mode);
+!     the row ends at 230667.70 and the CNOP rounds to Q TB's 230670.00.
+!
+! EXTERNAL FROM p.261 (not landed): QP is p.261 line 19's label
+! (CT0011(V+I)..., full word) at 230626.40; this page's CB,$4,QP prints
+! 230626.50, so half word only.
+!
+! CARD SERIALS.  Right-hand serials run PC000050 .. PC000094, one per
+! line, none skipped or shared; the header CARD ID PC000050 is line 1's.
+! p.261 ends at PC000048: PC000049 is printed on neither page.
+
+QP      SYN(BU,64,8), (8)230626.40   ! p.261 line 19 label "Q P" (not landed); CB line 9 230626.50, half word only
+
+        SLC, (8)230646.40
+! -                                                                       ! line  1
+QOK     LVE,$6,QFLD($3)                                      ! line  2
+        LF(BU,6,6),Q($6)                                     ! line  3
+        B,QST($1)                                            ! line  4
+! -                                                                       ! line  5
+QST     ST(V+I)(BU,6,6),.6($5)                               ! line  6
+        B,QCHK                                               ! line  7
+        ST(V+I)(BU,8,8),.8($5)                               ! line  8
+QCHK    CB,$4,QP                                             ! line  9
+! -                                                                       ! line 10
+QFIN    B,1.32($15)                                          ! line 11  printed "CFIN"
+! -                                                                       ! line 12
+! -                    THE CHARACTER LOCATOR TABLES                       ! line 13
+! -                                                                       ! line 14
+QFLD    ,0($2)                                               ! line 15
+        ,.6($2)                                              ! line 16
+        ,.12($2)                                             ! line 17
+        ,.18($2)                                             ! line 18
+        ,.24($2)                                             ! line 19
+        ,.30($2)                                             ! line 20
+        ,.36($2)                                             ! line 21
+        ,.42($2)                                             ! line 22
+        ,.48($2)                                             ! line 23
+        ,.54($2)                                             ! line 24
+        ,.60($2)                                             ! line 25
+        ,.66($2)                                             ! line 26
+        ,0.72($2)                                            ! line 27
+! -                                                                       ! line 28
+! -                    THE TABLES                                         ! line 29
+! -                                                                       ! line 30
+        CNOP                                                 ! line 31
+Q       (AX)DD(BU,6,6),ABCDEFGHI+.)/X                        ! line 32
+        (AX)DD(BU,6,6),JKLMNOPQR-$*/X                        ! line 33
+        (AA)DD(BU,6,6),/STUVWXYZ0,(A                         ! line 34
+        DD(BU,6,6),(8)32                                     ! line 35  -SPECIAL FOR COLON
+        (AX)DD(BU,6,6),123456789 =-/X                        ! line 36
+! -                                                                       ! line 37
+        CNOP                                                 ! line 38
+! -                                                                       ! line 39
+QTB     VF,0                                                 ! line 40  -FOR 12 ZONE
+        VF,78                                                ! line 41  -FOR THE 11 ZONE
+        VF,156                                               ! line 42  -FOR THE ZERO ZONE
+        VF,234                                               ! line 43  -FOR THE NO ZONE
+! -                                                                       ! line 44
+        UNTAIL                                               ! line 45
+
+!SYM QOK    230646.40
+!SYM QST    230650.40
+!SYM QCHK   230653.00
+!SYM QFIN   230653.40
+!SYM QFLD   230654.00
+!SYM Q      230663.00
+!SYM QTB    230670.00
+!CHECK 230646.40 | 230654.15 B3 | line 2 QOK LVE,$6,QFLD($3)
+!CHECK 230647.00 | 230663.00 86 006600.06 70 | line 3 LF(BU,6,6),Q($6) (prints "C6 70")
+!CHECK 230650.00 | 230650.50 01 | line 4 B,QST($1) (prints ".5C")
+!CHECK 230650.40 | 000000.06 85 106600.20 D0 | line 6 QST ST(V+I)(BU,6,6),.6($5) (a "*" after the location)
+!CHECK 230651.40 | 230653.10 00 | line 7 B,QCHK
+!CHECK 230652.00 | 000000.10 85 110000.20 D0 | line 8 ST(V+I)(BU,8,8),.8($5)
+!CHECK 230653.00 | 230626.50 48 | line 9 QCHK CB,$4,QP
+!CHECK 230653.40 | 000001.50 0F | line 11 QFIN B,1.32($15) (printed "CFIN", byte "CF")
+!CHECK 230654.00 | 000000.00 82 | line 15 QFLD ,0($2)
+!CHECK 230654.40 | 000000.06 82 | line 16 ,.6($2)
+!CHECK 230655.00 | 000000.14 82 | line 17 ,.12($2)
+!CHECK 230655.40 | 000000.22 82 | line 18 ,.18($2)
+!CHECK 230656.00 | 000000.30 82 | line 19 ,.24($2)
+!CHECK 230656.40 | 000000.36 82 | line 20 ,.30($2)
+!CHECK 230657.00 | 000000.44 82 | line 21 ,.36($2)
+!CHECK 230657.40 | 000000.52 82 | line 22 ,.42($2)
+!CHECK 230660.00 | 000000.60 82 | line 23 ,.48($2)
+!CHECK 230660.40 | 000000.66 82 | line 24 ,.54($2)
+!CHECK 230661.00 | 000000.74 82 | line 25 ,.60($2)
+!CHECK 230661.40 | 000001.02 82 | line 26 ,.66($2)
+!CHECK 230662.00 | 000001.10 82 | line 27 ,0.72($2)
+!CHECK 230662.40 | 000000.30 00 | line 31 CNOP (emits a NOP)
+!CHECK 230666.44 | 32 | line 35 DD(BU,6,6),(8)32 -SPECIAL FOR COLON | 6
+!CHECK 230670.00 | 000000.00+ | line 40 QTB VF,0
+!CHECK 230670.40 | 000001.16+ | line 41 VF,78
+!CHECK 230671.00 | 000002.34+ | line 42 VF,156
+!CHECK 230671.40 | 000003.52+ | line 43 VF,234

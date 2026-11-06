@@ -1,0 +1,242 @@
+! mcp_bootstrap_p256.strap -- MCP printed page 256: the Input Program's
+! card/tape recovery section, continued (CB+,VP,VRJTP .. ,($14)), with
+! the operator message texts RKMSGE, RSMGSP, RDLEOF and the CCWs
+! RECCW / RDCCW, lines 1-56.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.7, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID 0B000458  DIST. OF 3/01
+! 3/01  PAGE NUMBER 256" (round glyphs in numeric fields read 0); the
+! heading row's LOCATION field is 230354, line 1's word.
+!
+! THE PAGE.  56 lines; every line except 33 (a CNOP that pads nothing)
+! is located, contiguous from 230354.00 to 230431.40 (a half word; next
+! location 230432.00, which is RBSWRT, p.257 line 1 by the volume OCR).
+! The landed/scratch neighbours agree on the join: p.245 SYNs RKSCON at
+! 230355.0 = line 3 here.  Every line number prints with a trailing
+! "*"; asterisks after the LOCATION on lines 4, 17, 20, 32 and 46.  No
+! remarks.
+!
+! DATA TEXTS, character positions measured on a 40.08 px (400 dpi) grid
+! anchored on each statement's "(":
+!   * line 16 RKMSGE: 9 blanks, "EPGK", 3 blanks, "RESTART VIA IPL", 1
+!     blank, then the "*" terminator = 32 characters = 4 words, matching
+!     230365.00 -> 230371.00.
+!   * line 21: 1 blank, "UNLOADING,REUSE TAPE", 3 blanks = 24 characters
+!     = 3 words, 230375.00 -> 230400.00.  Printed "UNLCADING" (open O;
+!     the English word is UNLOADING).
+!   * line 32 RSMGSP: 1 blank, "STRIP", 11 blanks, "BEFORE REUSING", 1
+!     blank = 32 characters = 4 words, 230405.00 -> 230411.00; line 33's
+!     CNOP pads nothing and prints no location.
+!   * line 34 RDLEOF (CC*)DD(BU,,12): "B", 8 blanks, "COMD,OFFLINE," =
+!     22 twelve-bit characters = 264 bits; 230411.00 + 264 = 230415.10,
+!     and line 35's half-word LX lands at 230415.40 as printed.  ("COMD"
+!     as printed: the fourth glyph has the D's straight stem.)
+!
+! >>> LINE 34'S (CC*)DD IS NOT HANDED TO THE ASSEMBLER. <<<  strap_asm
+! refuses entry mode CC ("CC's 12-bit card code is tabulated in no
+! document read so far"), as printed pp.15 and 99 found.  The card is
+! kept as a comment; the deck carries TWO stand-ins that are not
+! printed cards: "RDLEOF SYN, (8)230411.0" (line 34's printed
+! location) and "SLC, (8)230415.40" (line 35's printed location).  The
+! 264 bits 230411.00..230415.10 are therefore NOT written into the
+! image by this deck.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * lines 4, 23 ",DICDEF" = DIODEF (open O): landed p.105/p.179
+!     "DIODEF SYN,13.0"; prints 000015.00.
+!   * lines 8, 27 ",DCCMM" = DCOMM: landed p.105 "D COMM SYN,35.32";
+!     prints 000043.40.
+!   * line 13 label RKSUB, line 3 RKSCON, line 14 RKSBRC, line 15 REJJOB
+!     (printed "REJJCB"), line 18 RENXSC, line 12 RVSET3, line 22 REDUMP,
+!     line 35 RPQUES (printed "RPCUES"): spellings as the landed/scratch
+!     decks p.242-p.246 already SYN them, at these addresses.
+!   * line 19 RDCCW (printed "RCCCW"-like, worn D stem): p.249 SYNs RDCCW
+!     at 230373.0 = this row.
+!   * line 34 label printed "RDLECF" = RDLEOF (open O; Read-EOF, cf.
+!     p.249's REOF).  No deck spells it otherwise; nothing on this page
+!     references it -- READ ON INK AND SENSE ONLY.
+!   * line 17 label RECCW: as printed (C C W, cf. RDCCW, RRCCW).  Nothing
+!     here references it.
+!   * line 41 "SVA,$14,RWTRY": landed p.244 label RWTRY at 227643.40;
+!     prints 227643.75 (the volume OCR reads it "RWIRY").
+!   * line 47 "SIC,RBSWRT": T is clear in the 400 dpi ink; p.257 line 1
+!     label "RBSWRT B," by the volume OCR at 230432.10's word.
+!   * line 18 "B,RKS111": digits, as the family RKS112/RKS113/RKS114 in
+!     the volume OCR of p.253.
+!   * line 30 "B,REDMP" (not REDUMP, line 22's label at 230400.00):
+!     prints 230346.10 = landed p.219's REDMP SYN at 230346.0.
+!   * line 45 "CM0000(BU,1)": zeros, as the connective's four truth-
+!     table digits (cf. p.164's CM1111).
+!   * line 54 ",DCHEX" (worn H crossbar): landed p.104, 000014.00.
+!   * lines 42, 46, 52 "-1.C" = -1.0; line 14 "BE,C.O" = BE,0.0; line 17
+!     "XW,C.0" = XW,0.0: round glyphs in numeric literals.
+!   * hex bytes printed with an open round written 0 ("C0" lines 2, 7,
+!     13, 22, 26, 30, 48, 53; "C1" line 40 = 01).  Line 37 BZXE and line
+!     44 BZXE print "C0" and ARE C0 (the BZXE opcode byte, as p.249 line
+!     27).  "D0" lines 39, 41 (SVA) as printed; line 56 "8E" read at 900 dpi
+!     (the E's bottom bar is faint at 400 dpi and reads F; the
+!     statement's ($14) = E agrees).
+!
+! EXTERNALS FROM THIS PAGE'S BINARY ONLY (no landed definer):
+!   RKNEG 230235.0 (B line 13 .10; volume OCR p.253 "RKNEG LVNI"),
+!   RKS111 230240.40 (B line 18 .50), RKSTOT 230442.40 (BZXE line 37
+!   .72, as $+1.32 on line 44 prints .72 for 230423.40), RECDMP 230341.0
+!   (B line 50 .10; volume OCR p.255 "RECDMP S?C,RKCRWT", a half word),
+!   RBSWRT 230432.0 (SIC line 47).  All half word only.
+!
+! CARD SERIALS.  Right-hand serials run 0B000458 .. 0B000491 (prefix
+! glyph round, as in the header).  Shared: 1-2 (458), 3-6 (459), 7-10
+! (460), 22-25 (472), 26-29 (473), 35-37 (479), 38-39 (480), 40-41
+! (481), 42-43 (482), 47-48 (486), 53-56 (491); every other line its
+! own card.  No serial skipped; p.257 opens at 0B000492 (volume OCR).
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B lines 3, 7, 22, 26, 53
+DIODEF  SYN, 13.0                    ! landed p.105/p.179; lines 4, 23 (printed "DICDEF")
+DCOMM   SYN, 35.32                   ! landed p.105 line 23; lines 8, 27 (printed "DCCMM")
+DCHEX   SYN, 12.0                    ! landed p.104 "D CHEX"; line 54 000014.00
+VP      SYN, $1                      ! p.213 line 26 (landed)
+VU      SYN, $3                      ! p.213 line 25 (landed)
+VSU     SYN, 6.0                     ! p.213 line 18 = VID.VH = 6.0 (landed); LVE lines 5, 24, 55
+VRJTP   SYN, (8)225051.40            ! landed p.231 label; CB+ line 1 225051.43
+VRTN    SYN, (8)224450.40            ! landed p.222 label; B line 2 224450.50
+VPD     SYN, (8)225427.0             ! landed decks; LX line 35
+VWT     SYN, (8)225266.0             ! landed decks; KVI line 36
+REDMP   SYN, (8)230346.0             ! landed p.219 SYN; B line 30 230346.10, half word only
+RENGJB  SYN(BU,32,8), (8)227602.0    ! landed p.242 label (LVI) at 227602.00; BB line 49 h2 227602.34
+RKC     SYN, 3.0                     ! landed p.241 "RKC SYN,3.0"; LVI line 38 RKC+1.0 = 000004
+RKD     SYN, 3.0                     ! landed p.241 line 9; LVI line 40 RKD+1.0 = 000004
+RETRY   SYN, (8)227643.0             ! landed p.244 label; SVA line 39 227643.35
+RWTRY   SYN, (8)227643.40            ! landed p.244 label; SVA line 41 227643.75
+RWEXIT  SYN(BU,32), (8)227646.0      ! landed p.244 "RWEXIT DRZ(BU,32),4"; KVI line 43, LV line 46
+RPRTEX  SYN(BU,32), (8)230220.0      ! p.251 line 53 DRZ(BU,32),4 at 230220.00 (scratch, not landed); lines 42, 45, 51, 52
+RKNEG   SYN(BU,32,8), (8)230235.0    ! p.253 label (LVNI, volume OCR; not landed); B line 13 230235.10, half word only
+RKS111  SYN, (8)230240.40            ! p.253 label (not landed); B line 18 230240.50, this page's binary only
+RECDMP  SYN(BU,32,8), (8)230341.0    ! p.255 label (half word, volume OCR; not landed); B line 50 230341.10
+RKSTOT  SYN, (8)230442.40            ! later page (not landed); BZXE line 37 230442.72, this page's binary only
+RBSWRT  SYN(BU,32,8), (8)230432.0    ! p.257 line 1 "RBSWRT B," (volume OCR; not landed); SIC line 47 230432.00
+
+        SLC, (8)230354.0
+        CB+,VP,VRJTP                                         ! line  1
+        B,VRTN                                               ! line  2
+RKSCON  B,DMCP                                               ! line  3
+        ,DIODEF                                              ! line  4   printed "DICDEF"
+        LVE,,VSU(VU)                                         ! line  5
+        ,RKMSGE                                              ! line  6
+        B,DMCP                                               ! line  7
+        ,DCOMM                                               ! line  8   printed "DCCMM"
+        ,RKMSGE                                              ! line  9
+        ,4.0                                                 ! line 10
+        BEW,$                                                ! line 11
+RVSET3  XW,0.0                                               ! line 12
+RKSUB   B,RKNEG                                              ! line 13
+RKSBRC  BE,0.0                                               ! line 14   printed "BE,C.O"
+REJJOB  XW,0.0                                               ! line 15   printed "REJJCB"
+RKMSGE  (IQS*)DD(BU,8),         EPGK   RESTART VIA IPL *     ! line 16
+RECCW   XW,0.0                                               ! line 17   printed "XW,C.0"
+RENXSC  B,RKS111                                             ! line 18
+RDCCW   XW,0.0                                               ! line 19
+RWMSGE  DRZ(BU,64),1                                         ! line 20
+        (IQS*)DD(BU,8), UNLOADING,REUSE TAPE   *             ! line 21   printed "UNLCADING"
+REDUMP  B,DMCP                                               ! line 22
+        ,DIODEF                                              ! line 23   printed "DICDEF"
+        LVE,,VSU(VU)                                         ! line 24
+        ,RSMGSP+1.0                                          ! line 25
+        B,DMCP                                               ! line 26
+        ,DCOMM                                               ! line 27   printed "DCCMM"
+        ,RSMGSP                                              ! line 28
+        ,4.0                                                 ! line 29
+        B,REDMP                                              ! line 30
+        CNOP,                                                ! line 31
+RSMGSP  (IQS*)DD(BU,8), STRIP           BEFORE REUSING *     ! line 32
+        CNOP                                                 ! line 33
+! RDLEOF  (CC*)DD(BU,,12),B        COMD,OFFLINE,*            ! line 34   printed "RDLECF" -- NOT ASSEMBLED (entry mode CC refused) -- see header
+RDLEOF  SYN, (8)230411.0             ! STAND-IN for line 34's (CC*)DD -- see header
+        SLC, (8)230415.40            ! STAND-IN: line 34's 22 x 12 = 264 bits end at 230415.10; line 35 LX printed at 230415.40
+RPQUES  LX,VP,VPD                                            ! line 35   printed "RPCUES"
+        KVI,VU,VWT                                           ! line 36
+        BZXE,RKSTOT                                          ! line 37
+        LVI,$14,RKC+1.0                                      ! line 38
+        SVA,$14,RETRY                                        ! line 39
+        LVI,$14,RKD+1.0                                      ! line 40
+        SVA,$14,RWTRY                                        ! line 41
+        LV,$14,RPRTEX-1.0                                    ! line 42
+        KVI,$14,RWEXIT                                       ! line 43
+        BZXE,$+1.32                                          ! line 44
+        CM0000(BU,1),RPRTEX-.33                              ! line 45
+        LV,$14,RWEXIT-1.0                                    ! line 46
+        SIC,RBSWRT                                           ! line 47
+        B,RSWBCK                                             ! line 48
+        BB,REJJOB.17,RENGJB                                  ! line 49
+        B,RECDMP                                             ! line 50
+RSWBCK  BZBZ,RPRTEX-.33,$+1.32                               ! line 51
+        LV,$14,RPRTEX-1.0                                    ! line 52
+        B,DMCP                                               ! line 53
+        ,DCHEX                                               ! line 54
+        LVE,,VSU(VU)                                         ! line 55
+        ,($14)                                               ! line 56
+
+!SYM RKSCON 230355.00
+!SYM RVSET3 230362.00
+!SYM RKSUB  230363.00
+!SYM RKSBRC 230363.40
+!SYM REJJOB 230364.00
+!SYM RKMSGE 230365.00
+!SYM RECCW  230371.00
+!SYM RENXSC 230372.00
+!SYM RDCCW  230373.00
+!SYM RWMSGE 230374.00
+!SYM REDUMP 230400.00
+!SYM RSMGSP 230405.00
+!SYM RDLEOF 230411.00
+!SYM RPQUES 230415.40
+!SYM RSWBCK 230426.40
+!CHECK 230354.00 | 225051.43 48 | line 1 CB+,VP,VRJTP
+!CHECK 230354.40 | 224450.50 00 | line 2 B,VRTN
+!CHECK 230355.00 | 000040.10 00 | line 3 RKSCON B,DMCP
+!CHECK 230355.40 | 000015.00 80 | line 4 ,DIODEF (printed "DICDEF"; a "*" after the location)
+!CHECK 230356.00 | 000006.01 B3 | line 5 LVE,,VSU(VU)
+!CHECK 230356.40 | 230365.00 80 | line 6 ,RKMSGE
+!CHECK 230357.00 | 000040.10 00 | line 7 B,DMCP
+!CHECK 230357.40 | 000043.40 80 | line 8 ,DCOMM (printed "DCCMM")
+!CHECK 230360.00 | 230365.00 80 | line 9 ,RKMSGE
+!CHECK 230360.40 | 000004.00 80 | line 10 ,4.0
+!CHECK 230361.00 | 230361.20 00 | line 11 BEW,$
+!CHECK 230362.00 | 000000.00+ 000 000000 000000 | line 12 RVSET3 XW,0.0
+!CHECK 230363.00 | 230235.10 00 | line 13 RKSUB B,RKNEG
+!CHECK 230363.40 | 000000.00 00 | line 14 RKSBRC BE,0.0
+!CHECK 230364.00 | 000000.00+ 000 000000 000000 | line 15 REJJOB XW,0.0
+!CHECK 230371.00 | 000000.00+ 000 000000 000000 | line 17 RECCW XW,0.0 (a "*" after the location)
+!CHECK 230372.00 | 230240.50 00 | line 18 RENXSC B,RKS111
+!CHECK 230373.00 | 000000.00+ 000 000000 000000 | line 19 RDCCW XW,0.0
+!CHECK 230400.00 | 000040.10 00 | line 22 REDUMP B,DMCP
+!CHECK 230400.40 | 000015.00 80 | line 23 ,DIODEF (printed "DICDEF")
+!CHECK 230401.00 | 000006.01 B3 | line 24 LVE,,VSU(VU)
+!CHECK 230401.40 | 230406.00 80 | line 25 ,RSMGSP+1.0
+!CHECK 230402.00 | 000040.10 00 | line 26 B,DMCP
+!CHECK 230402.40 | 000043.40 80 | line 27 ,DCOMM (printed "DCCMM")
+!CHECK 230403.00 | 230405.00 80 | line 28 ,RSMGSP
+!CHECK 230403.40 | 000004.00 80 | line 29 ,4.0
+!CHECK 230404.00 | 230346.10 00 | line 30 B,REDMP
+!CHECK 230404.40 | 000000.30 00 | line 31 CNOP,
+!CHECK 230415.40 | 225427.02 10 | line 35 RPQUES LX,VP,VPD
+!CHECK 230416.00 | 225266.07 04 | line 36 KVI,VU,VWT
+!CHECK 230416.40 | 230442.72 C0 | line 37 BZXE,RKSTOT
+!CHECK 230417.00 | 000004.35 01 | line 38 LVI,$14,RKC+1.0
+!CHECK 230417.40 | 227643.35 D0 | line 39 SVA,$14,RETRY
+!CHECK 230420.00 | 000004.35 01 | line 40 LVI,$14,RKD+1.0
+!CHECK 230420.40 | 227643.75 D0 | line 41 SVA,$14,RWTRY
+!CHECK 230421.00 | 230217.34 30 | line 42 LV,$14,RPRTEX-1.0
+!CHECK 230421.40 | 227646.35 04 | line 43 KVI,$14,RWEXIT
+!CHECK 230422.00 | 230423.72 C0 | line 44 BZXE,$+1.32
+!CHECK 230422.40 | 230217.37 80 001000.00 F0 | line 45 CM0000(BU,1),RPRTEX-.33
+!CHECK 230423.40 | 227645.34 30 | line 46 LV,$14,RWEXIT-1.0 (a "*" after the location)
+!CHECK 230424.00 | 230432.00 80 | line 47 SIC,RBSWRT
+!CHECK 230424.40 | 230426.50 00 | line 48 B,RSWBCK
+!CHECK 230425.00 | 230364.21 80 227602.34 02 | line 49 BB,REJJOB.17,RENGJB
+!CHECK 230426.00 | 230341.10 00 | line 50 B,RECDMP
+!CHECK 230426.40 | 230217.37 80 230430.34 04 | line 51 RSWBCK BZBZ,RPRTEX-.33,$+1.32
+!CHECK 230427.40 | 230217.34 30 | line 52 LV,$14,RPRTEX-1.0
+!CHECK 230430.00 | 000040.10 00 | line 53 B,DMCP
+!CHECK 230430.40 | 000014.00 80 | line 54 ,DCHEX
+!CHECK 230431.00 | 000006.01 B3 | line 55 LVE,,VSU(VU)
+!CHECK 230431.40 | 000000.00 8E | line 56 ,($14)

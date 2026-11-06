@@ -6676,6 +6676,22 @@ run "the R T rest / down / R DUK routines, printed p.246" python3 verify_mcp_pag
 run "the R DREXT .. R DNOTP recovery (RDNOTP: C22-6728), printed p.247" python3 verify_mcp_page.py 247
 run "the R C card-jam / count routines, R CSAV .. R CSETP, printed p.248" python3 verify_mcp_page.py 248
 run "the last page of volume 1, R CUFUL .. R EOF, printed p.249" python3 verify_mcp_page.py 249
+run "card-reader recovery, LV,\$9,RRCCW .. RNLJAM, printed p.250" python3 verify_mcp_page.py 250
+run "card-reader recovery continued, printed p.251" python3 verify_mcp_page.py 251
+run "card-reader recovery, B,RPREST .. RPREST, printed p.252" python3 verify_mcp_page.py 252
+run "error recovery, .. BXE,RECDMP, printed p.253" python3 verify_mcp_page.py 253
+run "card-reader recovery, B,DMCP .. RESTOR, printed p.254" python3 verify_mcp_page.py 254
+run "error recovery, .. SIC,(VP), printed p.255" python3 verify_mcp_page.py 255
+run "card/tape recovery, RDLEOF's CC field stood in, printed p.256" python3 verify_mcp_page.py 256
+run "tape-error retry, RBSWRT .. RKREJ, printed p.257" python3 verify_mcp_page.py 257
+run "the rejected-tape path, RRTPRO .. REJTRT, printed p.258" python3 verify_mcp_page.py 258
+run "IQS TO BCD CONVERSION, SIQSA8 / SIQSA6, printed p.259" python3 verify_mcp_page.py 259
+run "BCD TO IQS CONVERSION, SA8IQS / SA6IQS, printed p.260" python3 verify_mcp_page.py 260
+run "HOLLERITH TO BCD CONVERSION, S CA6 / S CA8, printed p.261" python3 verify_mcp_page.py 261
+run "its tail and the character locator tables (QOK), printed p.262" python3 verify_mcp_page.py 262
+run "THE BREAKDOWN ROUTINE, S BRK8, printed p.263" python3 verify_mcp_page.py 263
+run "the breakdown routine concluded, printed p.264" python3 verify_mcp_page.py 264
+run "JOB CONTROL PHASE 1 OVERLAPPED opens (volume 2), printed p.265" python3 verify_mcp_page.py 265
 
 # >>> pp.185-192 FOUND A WRONG ANSWER IN THE VFL IMMEDIATE, and the
 # page caught it by writing ONE immediate at TWO LENGTHS. <<<
@@ -6695,9 +6711,9 @@ run "the last page of volume 1, R CUFUL .. R EOF, printed p.249" python3 verify_
 # Also: the SYN path never stripped blanks the instruction path does
 # ("B,K IO IND" assembled, "E IO IND SYN,K IO IND" did not), found
 # by printed p.189 printing both on one page.
-run "MCP's body merges and accounts for every word, printed pp.99-249" python3 check_mcp_body_image.py
+run "MCP's body merges, holds every page's rows and accounts for every word, printed pp.99-265" python3 check_mcp_body_image.py
 run "a printed trailing '-' is the comment mark, not a minus, C28-6129 PDF p.5" python3 check_comment_mark.py
-run "an instruction's name carries a dds, (BU,32,8) or (BU,64,8), C22-6531 printed p.10" python3 check_instruction_label_dds.py
+run "instruction and index-word names carry a dds, C22-6531 printed pp.10, 19" python3 check_instruction_label_dds.py
 run "the equipment dispatch, printed p.160" python3 verify_mcp_page.py 160
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
 run "the program status table, printed p.109" python3 verify_mcp_page.py 109

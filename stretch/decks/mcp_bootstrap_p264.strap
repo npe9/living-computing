@@ -1,0 +1,139 @@
+! mcp_bootstrap_p264.strap -- MCP printed page 264: THE BREAKDOWN
+! ROUTINE (SBRK8, the 6-bit BCD version) concluded -- the error-return
+! tail, the re-entry Q BRK8, the blank-skipping loop Q SPAC, the save
+! area and the program modification cards.  Lines 1-39.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.15, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 11D11MCP  CARD ID PD000050  DIST. OF 3/01
+!  3/01  PAGE NUMBER 264"; the heading row's LOCATION field is 230723,
+! line 1's word.
+!
+! THE PAGE.  39 lines, located rows contiguous from 230723.00 to the
+! 6-bit (A*)DD at 230746.61 (ends 230746.67), then blank paper.
+!   lines  1-4   the error return (continuing p.263's SWAPIs, which end
+!                at 230722.00 with SWAPI,1,QX OUT,Q SAV2), B,2.($15).
+!   lines  5-7   comment cards ("-", "-", "-RE-ENTRY POINT ...").
+!   lines  8-19  Q BRK8 .. B,Q SPAC.
+!   lines 20-21  "-" comment cards.
+!   lines 22-27  the save area, six XWs (Q SAV1..Q SAV4, unnamed, Q SAV6).
+!   lines 28-30  QX INN/QX OUT/QX CF9 SYN,$1/$2/$3 (print 000021.00+ ..
+!                000023.00+, "+00000000  BU,100,10").
+!   lines 31-33  the PROGRAM MODIFICATION CARDS banner.
+!   lines 34-38  Q W CF9, Q SKIP, Q CMA, QCOUNT, Q BLNK.
+!   line  39     Q KSIZ SYN, 6 (prints 000000.00+  +00000006  NULL).
+! p.263 ends at 230722.00 (a whole-word SWAPI), so line 1's 230723.00
+! continues it.  p.265 opens at 230747.00 (heading LOCATION per its
+! own sheet), the next word after 230746.67: contiguous.
+!
+! THE SAME ROUTINE AS VOLUME 1's printed pp.45-46 (mcp_bootstrap_p46
+! .strap, at 002536.0), reassembled here at 230723: every statement on
+! lines 8-39 is p.46's lines 2-33 card for card.  Lines 1-4 are p.45's
+! tail (SWAPI QX CF9, TI,2,$L,Q SAV4, SX,$15,Q SAV6, B,2.($15)).  Every
+! name is spelled as pp.45-46 spell it (blanks dropped).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * Q-prefixed names print the Q open (reads "C"/"G" in places, e.g.
+!     line 12 "C SAV6", line 13 "CX OUT", line 36 "C CMA", line 37
+!     "CCOUNT"); written Q as pp.45-46 and the same rows' other Qs.
+!   * line 34 label prints "CW CF9" (Q's tail faint); the statement on
+!     the same row prints QWCF9, and its XW refers to itself: QWCF9
+!     prints 230745 in the last field = this row.
+!   * line 37 "(8)000C14": octal, a 0; the binary prints 000014.
+!   * line 4 prints "B,2.  ($15)" with two blanks; written B,2.($15)
+!     as p.45 line 52; prints 000002.10 0F.
+!   * octal fields "CCCCCC.CC" are 0; hex "E0"/"A0"/"80" printed with
+!     an open round are 0 (lines 1, 2, 8-11 as on p.263).
+!
+! EXTERNALS FROM p.263 (not landed; its scratch deck was empty when
+! this was written).  Q NEXT is p.263 line 19's label at 230677.40
+! (BAE line 17 prints 230677.76 = .40 + .32), Q RSTR is p.263 line 41's
+! label at 230716.00 (CBZ line 14 prints 230716.02).  Both values are
+! also this page's binary, BIT-EXACT.
+!
+! CARD SERIALS.  PD000050 .. PD000088, one per line, none shared or
+! skipped.  Asterisk after the LOCATION on line 15 only.
+
+QNEXT   SYN(BU,64,8), (8)230677.40   ! p.263 line 19 "Q NEXT LF(V+I)..." (not landed); BAE line 17 230677.76, BIT-EXACT
+QRSTR   SYN(BU,32,8), (8)230716.0    ! p.263 line 41 "Q RSTR LX,..." (not landed); CBZ line 14 230716.02, BIT-EXACT
+
+        SLC, (8)230723.0
+        SWAPI,1,QXCF9,QSAV3                                  ! line  1  -   AT QBRK8
+        TI,2,$L,QSAV4                                        ! line  2  -SAVE $L AND $R
+        SX,$15,QSAV6                                         ! line  3
+        B,2.($15)                                            ! line  4  -ERROR RETURN  (printed "B,2.  ($15)")
+!                                                              line  5  -
+!                                                              line  6  -
+!                                                              line  7  -RE-ENTRY POINT FOLLOWING ERROR RETURN
+QBRK8   SWAPI,1,QXINN,QSAV1                                  ! line  8  -RESET INDEXES
+        SWAPI,1,QXOUT,QSAV2                                  ! line  9
+        SWAPI,1,QXCF9,QSAV3                                  ! line 10
+        TI,2,QSAV4,$L                                        ! line 11  -RESET $L AND $R
+        LX,$15,QSAV6                                         ! line 12
+        V+,QXOUT,QSKIP                                       ! line 13  -SKIP TO BEG OF NEXT OUTPUT FIELD
+QSPAC   CBZ,QXINN,QRSTR                                      ! line 14  -TEST FOR LAST INPUT CHARACTER.
+        KF,QCMA                                              ! line 15  -TEST FOR COMMA. FIRST CHAR READ
+!                                                              line 16  -     CANNOT BE A COMMA
+        BAE,QNEXT                                            ! line 17
+        LF(V+I)(BU,QKSIZ),QKSIZ(QXINN)                       ! line 18  -LOAD NEXT CHAR. STEP X
+        B,QSPAC                                              ! line 19
+!                                                              line 20  -
+!                                                              line 21  -
+QSAV1   XW,                                                  ! line 22  -STORE INDEXES
+QSAV2   XW,                                                  ! line 23
+QSAV3   XW,                                                  ! line 24
+QSAV4   XW,                                                  ! line 25  -STORE $L
+        XW                                                   ! line 26  -STORE $R
+QSAV6   XW,                                                  ! line 27  -STORE $15
+QXINN   SYN,$1                                               ! line 28
+QXOUT   SYN,$2                                               ! line 29
+QXCF9   SYN,$3                                               ! line 30
+!                                                              line 31  -----------------------------------
+!                                                              line 32  -   PROGRAM MODIFICATION CARDS   -
+!                                                              line 33  -----------------------------------
+QWCF9   XW,0.,9,QWCF9                                        ! line 34  -NO. OF CHARS PER OUTPUT FIELD +1 (label printed "CW CF9")
+QSKIP   VF,.16                                               ! line 35  -NO. OF BIT BETWEEN STORAGE FIELDS
+QCMA    (A*)DD(BU,QKSIZ,QKSIZ),,*                            ! line 36  -COMMA
+QCOUNT  DD(BU,18),(8)000014                                  ! line 37  -MAX. NO. FIELDS IN BREAKOUT
+QBLNK   (A*)DD(BU,QKSIZ,QKSIZ), *                            ! line 38  -BLANK
+QKSIZ   SYN, 6                                               ! line 39  a NUMBER: prints 000000.00+, BINARY +00000006 NULL; !SYM gives the value as p.213 does for V H
+
+!SYM QBRK8  230726.00
+!SYM QSPAC  230733.00
+!SYM QSAV1  230737.00
+!SYM QSAV2  230740.00
+!SYM QSAV3  230741.00
+!SYM QSAV4  230742.00
+!SYM QSAV6  230744.00
+!SYM QXINN  000021.00
+!SYM QXOUT  000022.00
+!SYM QXCF9  000023.00
+!SYM QWCF9  230745.00
+!SYM QSKIP  230746.00
+!SYM QCMA   230746.31
+!SYM QCOUNT 230746.37
+!SYM QBLNK  230746.61
+!SYM QKSIZ  000000.06
+!CHECK 230723.00 | 000023.00 80 230741.02 E0 | line 1 SWAPI,1,QXCF9,QSAV3 (bytes print "E0" open)
+!CHECK 230724.00 | 000010.00 80 230742.04 A0 | line 2 TI,2,$L,QSAV4
+!CHECK 230725.00 | 230744.37 10 | line 3 SX,$15,QSAV6
+!CHECK 230725.40 | 000002.10 0F | line 4 B,2.($15)
+!CHECK 230726.00 | 000021.00 80 230737.02 E0 | line 8 QBRK8 SWAPI,1,QXINN,QSAV1
+!CHECK 230727.00 | 000022.00 80 230740.02 E0 | line 9 SWAPI,1,QXOUT,QSAV2
+!CHECK 230730.00 | 000023.00 80 230741.02 E0 | line 10 SWAPI,1,QXCF9,QSAV3
+!CHECK 230731.00 | 230742.00 80 000010.04 A0 | line 11 TI,2,QSAV4,$L
+!CHECK 230732.00 | 230744.36 10 | line 12 LX,$15,QSAV6
+!CHECK 230732.40 | 230746.04 B0 | line 13 V+,QXOUT,QSKIP
+!CHECK 230733.00 | 230716.02 4A | line 14 QSPAC CBZ,QXINN,QRSTR
+!CHECK 230733.40 | 230746.31 80 006600.23 10 | line 15 KF,QCMA (a "*" after the location)
+!CHECK 230734.40 | 230677.76 C2 | line 17 BAE,QNEXT
+!CHECK 230735.00 | 000000.06 81 106000.06 70 | line 18 LF(V+I)(BU,QKSIZ),QKSIZ(QXINN)
+!CHECK 230736.00 | 230733.10 00 | line 19 B,QSPAC
+!CHECK 230737.00 | 000000.00+ 000 000000 000000 | line 22 QSAV1 XW,
+!CHECK 230740.00 | 000000.00+ 000 000000 000000 | line 23 QSAV2 XW,
+!CHECK 230741.00 | 000000.00+ 000 000000 000000 | line 24 QSAV3 XW,
+!CHECK 230742.00 | 000000.00+ 000 000000 000000 | line 25 QSAV4 XW,
+!CHECK 230743.00 | 000000.00+ 000 000000 000000 | line 26 XW
+!CHECK 230744.00 | 000000.00+ 000 000000 000000 | line 27 QSAV6 XW,
+!CHECK 230745.00 | 000000.00+ 000 000011 230745 | line 34 QWCF9 XW,0.,9,QWCF9
+!CHECK 230746.00 | 000000.20+ | line 35 QSKIP VF,.16
+!CHECK 230746.37 | 000014 | line 37 QCOUNT DD(BU,18),(8)000014 | 18

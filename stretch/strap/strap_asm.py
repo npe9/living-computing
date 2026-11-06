@@ -1976,6 +1976,7 @@ def dds_length_bits(mods, lineno=None, symtab=None):
 
 
 # Pseudo-operations: a name on one of these is not an instruction's.
+_INDEX_WORD_DDS = {'XW': 'BU', 'VF': 'B,25', 'CF': 'BU,18', 'RF': 'BU,18'}
 _NOT_INSTRUCTIONS = ('DD', 'DR', 'DRZ', 'VF', 'XW', 'CW', 'CF', 'RF', 'END',
                      'SYN', 'SLC', 'CNOP', 'EXT', 'DDI', 'INDMK')
 
@@ -3038,6 +3039,16 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
                         and stmt.mods and stmt.mods[0].strip()
                         and hasattr(symtab, 'sym_dds')):
                     symtab.sym_dds[up] = stmt.mods[0]
+                # >>> SO DOES AN INDEX WORD'S NAME. <<<  C22-6531
+                # printed p.19: the index word pseudo-operations "are
+                # given data descriptions by the compiler, as though
+                # they had been defined by DD statements ... and
+                # cannot be overruled": XW (BU), VF (B, 25), CF or RF
+                # (BU, 18).  MCP printed p.220 line 5 "V TSQ VF,0" and
+                # printed p.221 line 20 "M+1,V TSQ" print 031100.02.
+                elif (stmt.op.upper() in _INDEX_WORD_DDS
+                        and hasattr(symtab, 'sym_dds')):
+                    symtab.sym_dds[up] = _INDEX_WORD_DDS[stmt.op.upper()]
                 # >>> AN INSTRUCTION'S NAME CARRIES A dds TOO. <<<
                 # C22-6531 printed p.10: "instruction-naming symbols
                 # are given field lengths equal to the lengths of the

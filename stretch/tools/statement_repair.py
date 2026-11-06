@@ -194,7 +194,12 @@ def score(quiet=False):
     reading = collections.defaultdict(dict)
     for r in csv.DictReader(open(os.path.join(ROOT, "docs", "vision", "listing_reading.tsv")),
                             delimiter="\t", quoting=csv.QUOTE_NONE):
-        if r["vol"] == "1" and r["printed"]:
+        # BOTH VOLUMES.  This read vol "1" only, so when printed
+        # pp.250-265 (volume 2) landed every one of their labels scored
+        # as a MISS against an empty reading and floor_label fell from
+        # above 65% to 62.2% (2026-11-05) -- reach, not the engines.
+        # Printed numbers do not overlap: vol 1 ends at p.249.
+        if r["printed"]:
             reading[int(r["printed"])][int(r["line"])] = r
     c = collections.Counter()
     for page in sorted(C):

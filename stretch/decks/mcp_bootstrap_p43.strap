@@ -184,26 +184,26 @@ QP      CT0011(V+I)(BU,3), .3($4)   ! line 19
         LC, $3, 7.32                ! line 27
         LF(BU,7), $LZC, 45          ! line 28
         LV, $3, $R                  ! line 29
-        BXCZ, QCK                   ! line 30 -IF NO TRIPLE OR MORE
+        BXCZ, QOK                   ! line 30 -IF NO TRIPLE OR MORE
                                      !           PUNCHES
         KFI(BU,9), (2)001000010     ! line 31 -CHECK FOR AN 8-3 COMBO
         BZAE, QNO                   ! line 32 -NO
         LVI, $3, 5.0                ! line 33
-        B, QCK                      ! line 34
+        B, QOK                      ! line 34
 
 QNO     KFI(BU,9), (2)000100010     ! line 36 -CHECK FOR AN 8-4 COMBO
         BZAE, QNOZ                  ! line 37 -NO
         LVI, $3, 5.32               ! line 38
-        B, QCK                      ! line 39
+        B, QOK                      ! line 39
 
 QNOZ    KFI(BU,9), (2)010000010     ! line 41 -CHECK FOR AN 8-I COMBO
         LVI, $3, 6.0                ! line 42
-        BAE, QCK                    ! line 43 -OK MUST BE A COLON
+        BAE, QOK                    ! line 43 -OK MUST BE A COLON
 QER     LVI, $3, 6.0                ! line 44
         LVI, $2, 0                  ! line 45
 
 ! ---- store the converted character --------------------------------
-QCK     LVE, $6, QFLD($3)           ! line 46
+QOK     LVE, $6, QFLD($3)           ! line 46 -- QOK, not QCK: printed p.261 line 32 prints BXCZ,QOK with a CLOSED O (900 dpi), same routine; see p.262 notes
         LF(BU,6,6), Q($6)           ! line 47
         B, QST($1)                  ! line 48
 QST     ST(V+I)(BU,6,6), .6($5)     ! line 49

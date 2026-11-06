@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""check_mcp_body_image.py -- MCP's BODY, printed pp.99-192, merged
+"""check_mcp_body_image.py -- MCP's BODY, printed pp.99-265, merged
 into one image and made to account for every word it spans.
 
 >>> THE BODY IS NOT A LONGER BOOTSTRAP.  IT IS A SECOND ASSEMBLY. <<<
@@ -63,19 +63,36 @@ order.  The second failing as well is the point of having it: it is
 there so that a change which silently stopped recording ONE of the two
 kinds of legitimate hole cannot hide behind the other.
 
+every_page_row_holds_in_image, MEASURED 2026-11-05 (7,113 rows+syms):
+
+    control                                       PASS, 0
+    VF labels' (B,25) removed from strap_asm      FAIL, 3 (pp.221, 225,
+                                                  228: M+-1,V TSQ)
+    p.220's defining "V EOFX DD(BU,1)" made       FAIL, 1 (p.215 line 45,
+    (BU,2), in a scratch copy of decks/           CM0C00,V EOFX), and
+                                                  merge() no longer
+                                                  refuses it: the use
+                                                  on another page is
+                                                  what catches it
+
 THE END TARGET IS A PLACEHOLDER.  build() always appends "END, <sym>",
 and MCP's body entry point has not been established, so SDISP is
 passed to make it assemble and nothing here depends on it.  Finding
 the real entry is open work.
 """
+import contextlib
+import io
 import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "strap"))
+sys.path.insert(0, HERE)
 import mcp_image                                          # noqa: E402
+import verify_mcp_page                                    # noqa: E402
+from listing_oracle import check_rows                     # noqa: E402
 
-FIRST, LAST = 99, 249
+FIRST, LAST = 99, 265
 
 
 def body_pages():
@@ -96,7 +113,7 @@ def main():
               f"{'' if ok else f' expected {want}'}")
 
     pages = body_pages()
-    check("body_page_count", len(pages), 150)
+    check("body_page_count", len(pages), 166)
 
     # merge() raises SystemExit on a symbol or dds disagreement, which
     # is the whole cross-check.  Reaching the next line IS the result.
@@ -104,6 +121,36 @@ def main():
         False, pages, end_at="SDISP")
     print(f"PASS merges_without_disagreement = {len(defined)} defined, "
           f"{len(external)} external")
+
+    # >>> EVERY PAGE'S ROWS MUST HOLD IN THE MERGED IMAGE. <<<
+    # verify_mcp_page checks a deck against its listing with that
+    # deck's OWN stand-ins, and merge() drops the stand-in of every
+    # symbol some page defines -- so a use is only ever proved against
+    # the defining card HERE.  printed p.221 line 20, "M+1,V TSQ",
+    # verified on its own page with "V TSQ SYN(B,25,1)" and assembled
+    # 031100.22 in the image against a printed 031100.02, because
+    # printed p.220 defines V TSQ with a VF card and VF labels had no
+    # dds; C22-6531 printed p.19 gives them (B, 25).  Three rows of
+    # 7,113 failed when this was first run (2026-11-05), all of them
+    # that one rule.
+    #
+    # It is also what lets merge() hold only EXTERNAL symbols to one
+    # stand-in dds: for a symbol the image defines, this proves the
+    # defining dds gives the printed bits at every use, which is what
+    # agreeing stand-in strings were standing in for.
+    rows_total, row_fails = 0, 0
+    for path, label in pages:
+        syms, rows, _ = verify_mcp_page.parse(open(path).read())
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            f = check_rows(prog, rows, syms, label=label + " ")
+        rows_total += len(rows) + len(syms)
+        row_fails += f
+        for line in buf.getvalue().splitlines():
+            if f and line.startswith("FAIL"):
+                print("     " + line[:170])
+    check("every_page_row_holds_in_image", row_fails, 0)
+    check("image_rows_checked", rows_total >= 7000, True)
 
     words = sorted(prog.words)
     check("origin_is_the_MCP_body", oct(words[0]), oct(0o215000))
@@ -129,16 +176,24 @@ def main():
     # still reports 0 unaccounted.  printed p.175's transcriber
     # spotted it before it could mislead anyone.
     #
-    # So the skips that coincide with holes are pinned by VALUE.  All
-    # thirteen are printed p.112's five SLC cards (SIPT+4.0, +9.0,
+    # So the skips that coincide with holes are pinned by VALUE.
+    # Thirteen are printed p.112's five SLC cards (SIPT+4.0, +9.0,
     # +18.0, +20.0, +22.0), the "PARALLEL IO INTERRUPT SLOTS" its own
-    # line 11 names.  A new one means a page or a row went missing.
+    # line 11 names; four are printed p.256's CC stand-in, below.  A
+    # new one means a page or a row went missing.
     expected_skip_holes = {
         0o215104, 0o215105, 0o215106,
         0o215110, 0o215111, 0o215112, 0o215113,
         0o215121, 0o215122, 0o215123, 0o215124,
         0o215126,
         0o215130,
+        # printed p.256 line 34, "RDLEOF (CC*)DD(BU,,12),B  COMD,
+        # OFFLINE,": 22 twelve-bit characters, 264 bits from 230411.00
+        # to 230415.10.  strap_asm refuses entry mode CC, so the deck
+        # stands it in with an SLC to line 35's printed 230415.40 and
+        # these four words are its DATA, not a lost row.  They leave
+        # this list when CC entry mode is implemented.
+        0o230411, 0o230412, 0o230413, 0o230414,
     }
     got_skip_holes = holes & skipped
     extra = sorted(got_skip_holes - expected_skip_holes)

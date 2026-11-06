@@ -1,0 +1,122 @@
+! mcp_bootstrap_p260.strap -- MCP printed page 260: the BCD TO IQS
+! CONVERSION ROUTINE (SA8IQS / SA6IQS) and its 64-entry IQS table
+! G RADA, lines 1-38.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.11, read at 400 dpi (900 dpi for
+! doubtful glyphs).  Header, READ: "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID PB000001  DIST. OF 3/01  3/01  PAGE NUMBER 260" (round glyphs
+! in numeric fields read 0).  The heading row's LOCATION field is
+! BLANK: line 1 is an asterisk banner (transcription_workflow.md step 1).
+! A NEW CARD-ID PREFIX: PB, serials starting at PB000001 -- this page
+! opens a new program text.
+!
+! THE PAGE.  38 lines.  Lines 1-3 are a banner ("*****BCD TO IQS
+! CONVERSION ROUTINE ****") carrying no location.  Line 4 "SLC,$" at
+! 230566.00 (with a "*" mark after the location) emits nothing.  Code
+! from 230566.00 (S A8IQS) to the table's last byte; the last DD,
+! line 38 at 230617.30, is 21 eight-bit characters, so the next
+! location is 230622.30.  Then blank paper.
+!   lines  5-31  code: S A8IQS / S A6IQS entries (TI, of the two-word
+!                loop setup G OSMI or G SEST into G KRUH), index save
+!                area G ULOZX (DRZ 3), G KRUH (DRZ 2).
+!   lines 32-38  G RADA, the BCD-indexed IQS character table: five
+!                (IQS*)/(IQSY) DDs and two (2)DD binary bytes (052
+!                QUOTATION, 165 COLON); 12+1+13+1+15+1+21 = 64 bytes.
+! Continuity with p.259 is not checkable here (p.259 not landed);
+! SA8IQS = 230566.0 and SA6IQS = 230567.40 agree with landed p.147 /
+! p.179 / p.180 SYNs.  CNOPs on lines 15 and 25 fall on word
+! boundaries and print no location and no binary.  Asterisks after
+! the LOCATION on lines 4, 16 and 31.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 5 "G CSMI" = G OSMI: line 26's label prints a CLOSED O at
+!     900 dpi, and TI line 5 prints 230603.00 = line 26's location.
+!   * line 5 "G KRLH" = G KRUH (worn U): line 16's label, TI prints
+!     230574.04 = line 16's 230574.00.
+!   * line 17 label "G SKCK" = G SKOK: line 29's B,G SKOK prints the
+!     closed O and 230576.10 = this row's 230576.00.
+!   * hex bytes / octal fields printed with an open round written 0
+!     ("CCCCCC.74 5F" line 12, "C00011.36" line 17, "230612.CC" line 18,
+!     "DC" line 19 = D0, "1C" in serials etc.); octal fields can hold
+!     only 0-7.
+!   * line 27 "C0000": the connective's four truth-table digits are
+!     binary, so the rounds are 0.
+!   * the data blanks: line 34 "/// /STUVWXYZ" has ONE blank, the
+!     count line 35's location 230615.20 requires (13 characters).
+!     Line 38's tail is ")///" (three slashes, 900 dpi).
+!
+! CARD SERIALS.  PB000001 .. PB000036.  Shared: lines 24-25 both print
+! PB000024 (B,1.32($15) and CNOP -BACK TO RETURN); lines 29-30 both
+! print PB000028 (B,G SKOK and NOP).  So 38 lines carry 36 serials.
+! No serial skipped.
+
+        SLC, (8)230566.0                                     ! line  4  printed "SLC,$" at 230566.00 *
+SA8IQS  TI,2,GOSMI,GKRUH                                     ! line  5  printed "G CSMI,G KRLH"  -SET LOOP FOR 8BIT BCD
+        B,$+1.32                                             ! line  6
+SA6IQS  TI,2,GSEST,GKRUH                                     ! line  7  -SET LOOP FOR 6BIT BCD
+        SX,$13,GULOZX                                        ! line  8  -SAVE ORIGINAL INDEX REGISTERS
+        SX,$14,GULOZX+1.0                                    ! line  9
+        SX,$15,GULOZX+2.0                                    ! line 10
+        LV,$14,0.0($15)                                      ! line 11  -PUT *IN* IN VF OF $14
+        LC,$14,.32($15)                                      ! line 12  -PUT *N* IN CF OF $14
+        BXCZ,GPRYC                                           ! line 13
+        LV,$13,1.0($15)                                      ! line 14  -PUT *OUT* IN VF OF $13
+        CNOP                                                 ! line 15
+GKRUH   DRZ(BU,64),(2)                                       ! line 16  -RESERVE 2 FULL WORDS
+GSKOK   LV,$15,$R                                            ! line 17  printed "G SKCK"  -PUT BIT ADDRESS*8 IN $15
+        L(BU,8),GRADA($15)                                   ! line 18  -LOAD 8BIT CODE IQS CHARACTER
+        ST(V+I)(BU,8),.8($13)                                ! line 19  -STORE SAME
+        CB,$14,GKRUH                                         ! line 20
+GPRYC   LX,$13,GULOZX                                        ! line 21  -RESTORE INDEX REGISTERS
+        LX,$14,GULOZX+1.0                                    ! line 22
+        LX,$15,GULOZX+2.0                                    ! line 23
+        B,1.32($15)                                          ! line 24
+        CNOP                                                 ! line 25  -BACK TO RETURN
+GOSMI   L(V+I)(BU,8),.8($14),43                              ! line 26  -FOR 8BIT BCD
+        C0000(BU,2),0.0,49                                   ! line 27
+GSEST   L(V+I)(BU,6),.6($14),43                              ! line 28  -FOR 6BIT BCD
+        B,GSKOK                                              ! line 29
+        NOP                                                  ! line 30
+GULOZX  DRZ(BU,64),(3)                                       ! line 31  -RESERVE 3 FULL WORDS FOR INDEXES
+GRADA   (IQS*)DD(BU,8,8),/1234567890=*                       ! line 32
+        (2)DD(BU,8,8),00101010                               ! line 33  -QUOTATION
+        (IQS*)DD(BU,8,8),/// /STUVWXYZ*                      ! line 34
+        (2)DD(BU,8,8),01110101                               ! line 35  -COLON
+        (IQS*)DD(BU,8,8),,(///-JKLMNOPQR*                    ! line 36
+        (IQS*)DD(BU,8,8),/*                                  ! line 37  - SEMICOLON
+        (IQSY)DD(BU,8,8),$*///+ABCDEFGHI/.)///Y              ! line 38
+
+!SYM SA8IQS 230566.00
+!SYM SA6IQS 230567.40
+!SYM GKRUH  230574.00
+!SYM GSKOK  230576.00
+!SYM GPRYC  230601.00
+!SYM GOSMI  230603.00
+!SYM GSEST  230605.00
+!SYM GULOZX 230607.00
+!SYM GRADA  230612.00
+!CHECK 230566.00 | 230603.00 80 230574.04 A0 | line 5 SA8IQS TI,2,GOSMI,GKRUH (printed "G CSMI,G KRLH")
+!CHECK 230567.00 | 230570.50 00 | line 6 B,$+1.32
+!CHECK 230567.40 | 230605.00 80 230574.04 A0 | line 7 SA6IQS TI,2,GSEST,GKRUH
+!CHECK 230570.40 | 230607.33 10 | line 8 SX,$13,GULOZX
+!CHECK 230571.00 | 230610.35 10 | line 9 SX,$14,GULOZX+1.0
+!CHECK 230571.40 | 230611.37 10 | line 10 SX,$15,GULOZX+2.0
+!CHECK 230572.00 | 000000.34 3F | line 11 LV,$14,0.0($15)
+!CHECK 230572.40 | 000000.74 5F | line 12 LC,$14,.32($15)
+!CHECK 230573.00 | 230601.30 42 | line 13 BXCZ,GPRYC
+!CHECK 230573.40 | 000001.32 3F | line 14 LV,$13,1.0($15)
+!CHECK 230576.00 | 000011.36 30 | line 17 GSKOK LV,$15,$R (printed "G SKCK")
+!CHECK 230576.40 | 230612.00 8F 010000.20 50 | line 18 L(BU,8),GRADA($15)
+!CHECK 230577.40 | 000000.10 8D 110000.20 D0 | line 19 ST(V+I)(BU,8),.8($13)
+!CHECK 230600.40 | 230574.34 48 | line 20 CB,$14,GKRUH
+!CHECK 230601.00 | 230607.32 10 | line 21 GPRYC LX,$13,GULOZX
+!CHECK 230601.40 | 230610.34 10 | line 22 LX,$14,GULOZX+1.0
+!CHECK 230602.00 | 230611.36 10 | line 23 LX,$15,GULOZX+2.0
+!CHECK 230602.40 | 000001.50 0F | line 24 B,1.32($15)
+!CHECK 230603.00 | 000000.10 8E 110025.60 50 | line 26 GOSMI L(V+I)(BU,8),.8($14),43
+!CHECK 230604.00 | 000000.00 80 002030.40 70 | line 27 C0000(BU,2),0.0,49
+!CHECK 230605.00 | 000000.06 8E 106025.60 50 | line 28 GSEST L(V+I)(BU,6),.6($14),43
+!CHECK 230606.00 | 230576.10 00 | line 29 B,GSKOK
+!CHECK 230606.40 | 000000.30 00 | line 30 NOP
+!CHECK 230613.40 | 052 | line 33 (2)DD(BU,8,8),00101010 -QUOTATION | 8
+!CHECK 230615.20 | 165 | line 35 (2)DD(BU,8,8),01110101 -COLON | 8
