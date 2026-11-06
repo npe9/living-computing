@@ -16831,3 +16831,29 @@ pages / 15,163 lines.
     and 438.
   NEXT: volume 2's code is done.  pp.442-443 as an oracle for every
     symbol's value; the p.444 rows; then the $EOJ image on the model.
+
+THE ASSEMBLER'S "SYMBOLS NEVER USED" IS AN ORACLE (2026-11-06).  printed
+pp.440-443 are not a symbol table: they are one list, "SYMBOLS NEVER
+USED IN PROGRAM", 187 names with values, transcribed in
+tests/mcp_never_used_symbols.tsv and checked by
+tests/check_never_used_symbols.py.
+  * Every value agrees with the deck that defines the name -- 185 rows;
+    UNUSE1/UNUSE2 are IOD cards (volume 1 PDF p.8 lines 2, 9).  The
+    list prints an integer SYN as 000000.00 (ACRD SYN,10; XEEEOP
+    SYN(BU,5),(2)00110) and a point-notation one as its address.
+  * None of the 185 is named by any landed card: the decks agree with
+    IBM's own reference count.
+  * The other direction holds too: every name the decks define and
+    never name is on the list, but for sixteen, each explained.  Seven
+    LOADER labels on pp.328-331 are used per the list and named by no
+    landed card -- the evidence that the missing printed p.329 names
+    them.  JCFIX is named by the IOD card JCIOD.  Seven volume-1 names
+    can only be named on the unlanded printed pp.1, 5-12.
+  * A label naming itself is a use (YMCPHP BD,YMCPHP p.133; PK2, XIN,
+    ATYPE, CWY, ACW2): all six are off the list.
+  * YSFLCR (p.134) is YSFLOR: the list prints a closed O.  Fourteen
+    printed names differ from the decks' by the drum's wear only
+    (600 dpi); TF5A2 prints a crisp F and the TP5A family decides P.
+  * "* 1" marks exactly the names inside the TAIL,(2)G block (p.2 line
+    10 to p.98 line 37); its meaning is not established.
+  NEXT: p.444's error rows against their decks.

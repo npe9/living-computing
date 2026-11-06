@@ -6902,6 +6902,7 @@ run "the interrupt table continued, printed p.112" python3 verify_mcp_page.py 11
 # referencing one word are two independent readings of it, so
 # disagreement is a defect -- see tests/check_symbol_spellings.py.
 run "No MCP symbol is spelled two ways across the decks" python3 check_symbol_spellings.py
+run "The assembler's SYMBOLS NEVER USED list, printed pp.440-443: every value as printed, none referenced, every unlisted unused name explained" python3 check_never_used_symbols.py
 
 # >>> AND THE CHECKER ABOVE MUST NOT QUIETLY CHECK LESS THAN IT SAYS.
 # It had two independent silent-degradation paths, both found by page

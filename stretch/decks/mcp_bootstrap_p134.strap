@@ -21,7 +21,7 @@
 ! of the entry-mode field is the end-of-statement character and is
 ! not compiled, so "(AA)" is mode A terminated by A).
 !
-! Lines 30-32 are three definitions (YSFIC, YSFBCR, YSFLCR), lines
+! Lines 30-32 are three definitions (YSFIC, YSFBCR, YSFLOR), lines
 ! 33-34 a comment box, and lines 35-50 the sixteen instructions of
 ! the special-interrupt routine JWLODE.
 !
@@ -144,6 +144,11 @@
 !   YSFBCR twice in English: printed p.132 "LX,$3,YSFBCR  -RESET
 !   BOUNDARY CONTROL" and printed p.133 "LX,$L,YSFBCR  SET NEW
 !   BOUNDARY CONTROL".  BCR is the Boundary Control Register.
+!   >>> YSFLOR, NOT YSFLCR (settled 2026-11-06). <<<  The assembler's
+!   own "SYMBOLS NEVER USED IN PROGRAM", printed p.442 row 4, prints
+!   "YSFLOR 231363.00" with a CLOSED O; this label's open glyph says
+!   nothing on this drum (tests/check_never_used_symbols.py).  What
+!   follows was written when the C rested on this page alone:
 !   >>> YSFLCR IS THE ONE NAME ON THIS PAGE WITH NO OUTSIDE
 !   CORROBORATION AT ALL. <<<  It occurs exactly once in the whole
 !   volume OCR -- here -- and nowhere in docs/ocr/'s manuals, and
@@ -215,7 +220,7 @@ YINXPU  (AA)DD(BU,32), XPUA           ! line 28
         CNOP                          ! line 29
 YSFIC   VF,0                          ! line 30
 YSFBCR  SYN,SBNDRS                    ! line 31  prints "B ,31 ,01"
-YSFLCR  SYN,YUXSAV                    ! line 32  prints "BU,100,10"
+YSFLOR  SYN,YUXSAV                    ! line 32  prints "BU,100,10"; the O per printed p.442
 !                                       line 33  ***** SPECIAL INTERRUPT
 !                                                ROUTINE FOR TS *****
 !                                       line 34  (blank comment card)
@@ -274,7 +279,7 @@ JWLOD3  CM1111(BU,1),SLRBU+8.4        ! line 49 -PUT TS IN BACKUP BUFFER
 !SYM   YINXPU   216603.00
 !SYM   YSFIC    216604.00
 !SYM   YSFBCR   215224.00
-!SYM   YSFLCR   231363.00
+!SYM   YSFLOR   231363.00
 !SYM   JWLODE   216604.40
 !SYM   JWLOD2   216614.00
 !SYM   JWLOD4   216615.40
