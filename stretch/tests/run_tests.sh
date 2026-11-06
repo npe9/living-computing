@@ -6912,6 +6912,14 @@ run "the interrupt table continued, printed p.112" python3 verify_mcp_page.py 11
 run "No MCP symbol is spelled two ways across the decks" python3 check_symbol_spellings.py
 run "The assembler's SYMBOLS NEVER USED list, printed pp.440-443: every value as printed, none referenced, every unlisted unused name explained" python3 check_never_used_symbols.py
 run "MCP's own error list, printed p.444: the eight rows the decks draw are exactly the eight printed (N28-1081 diagnostics 123, 115, 92, 46, 36)" python3 check_error_list.py
+# >>> MCP'S OWN IOD DECK, printed p.1, 2026-11-06. <<<  Sixteen IOD and
+# REEL cards; columns 63-72 print the octal reference number and the
+# exit as STRAP II punched them.  All eight exits equal the resident
+# body's assembled symbols, and strap/iocd.iod_card_text reproduces
+# every IOD card of a listed type.  Injections: ref or exit punched in
+# decimal -> FAIL iocd_punches_as_printed; a row dropped -> FAIL
+# rows_transcribed, ref_numbers_count_iods.
+run "MCP's own IOD deck, printed p.1: refs, exits and iocd's punching" python3 check_iod_deck_p1.py
 
 # >>> AND THE CHECKER ABOVE MUST NOT QUIETLY CHECK LESS THAN IT SAYS.
 # It had two independent silent-degradation paths, both found by page

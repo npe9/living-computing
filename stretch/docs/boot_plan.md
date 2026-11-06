@@ -1956,3 +1956,11 @@ for FOUR TAPE UNITS (VRTP, VWTP, and CT11/CT21 on distinct unit
 symbols), ideally on three channels. That is A5's documented minimum
 of four 729 IVs. Whether a one-channel machine with four units
 satisfies ASSIGN is to be MEASURED, not assumed.
+
+Printed p.1 is now transcribed (`tests/mcp_iod_deck_p1.tsv`) and
+checked (`tests/check_iod_deck_p1.py`). Its line 11 is UNAGN9, not
+the OCR's UNAGN1. Its NOT USED and RESERVED FOR UNASSIGN cards
+(refs 2, 3, 7 and 9) are not IOD types C22-6678-1 lists, and they
+read "PULL THIS CARD BEFORE UPDATING". **READING, NOT YET
+EVIDENCE:** the tape would then carry refs 1, 4-6, 8 and 10-12 with
+their REEL cards.
