@@ -261,6 +261,39 @@ def main():
     #                                   (005377 read 0x4400000000)
     #   XUPDAT left at the assembled 0  FAIL mcp_past_move_x_err_ad
     #                                   (001520.40, XERR26)
+    # >>> MCP'S OWN IOD DECK: IPL COMPLETES, 2026-11-06. <<<
+    # The same run as PastMoveTb with printed p.1's deck in place of
+    # the fixture's (strap/prosa.py, MCP_IODS_P1 / PROSA_IOD_DECK=P1,
+    # set by tests/run_mcp_p1deck_test.sh) and the four tape units it
+    # asks for.  XERR29 is passed -- refs 4 and 6 now exist -- and so
+    # is every other IPL check: X ERR AD (000551, which no page
+    # assembles a value into; each IPL error routine stores there, as
+    # printed p.8 line 27 does) stays zero.  What MCP types is checked
+    # by tests/check_console_text.py from the console_dump below.
+    #
+    # MEASURED, scratch runs of 2026-11-06, each change on its own:
+    #   console of 32 words (DeviceWords)  XERR05 at 000070.00, End
+    #                                      Exception on the console
+    #   CM crossing field refused (OP)     reel name typed blank, and
+    #                                      MCP's body types an OP error
+    #   p.1's four "PULL" cards kept       XERR22 "INCORRECT CARD TYPE
+    #   (PROSA_IOD_DECK=P1_UNPULLED, iocd  WITHIN IODS" (printed p.8
+    #   widened to punch them)             line 14), X ERR AD 001441.40
+    if module_name.endswith("P1DeckTb"):
+        assert prosa.IOD_DECK == "P1", prosa.IOD_DECK
+        prosa.set_tape_units(prosa.TAPE_UNITS_P1_DECK)
+        write_tape(src)
+        print(generate(module_name, prog,
+                       [("mcp_p1deck_move_code_intact_005377", str(0o5377),
+                         prosa.MCP_IPL_WORDS[_image_index("005377")]),
+                        ("mcp_p1deck_no_ipl_error",
+                         str(prog.symtab["XERRAD"] // 64), 0)],
+                       step_cap=40000000,
+                       pc_trail=True,
+                       console_dump=128,
+                       ipl=True))
+        return
+
     if module_name.endswith("PastMoveTb"):
         prosa.set_tape_units(prosa.TAPE_UNITS_BOTH_AVAILABLE)
         write_tape(src)

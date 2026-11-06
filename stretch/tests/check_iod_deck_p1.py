@@ -26,15 +26,26 @@ CHECKS
                               0-3-8 separator iocd writes as "'" is the
                               listing's ",")
 
-OPEN: iocd builds no REEL card, and the NOT USED / RESERVED FOR
+  reel_cards_punch_as_printed strap/iocd.reel_card_text reproduces the
+                              four REEL cards: blank name, statement,
+                              the IOD's ref in 63-66 and 67-72 blank
+
+OPEN: the NOT USED / RESERVED FOR
 UNASSIGN cards are not IOD types C22-6678-1 lists ("PULL THIS CARD
-BEFORE UPDATING").  The p.1 order of SEM is unexplained.
+BEFORE UPDATING").
+
+Line 17 is STRAP II's "SEM -- Suppress Error Messages" (C28-6129
+printed p.39): diagnostics 114, 116, 118, 119 and 120 are not printed
+for the rest of the assembly, so printed p.444's error list could never
+show them.  It is an assembler card, not one for the tape.
 
 MEASURED INJECTIONS (python3 check_iod_deck_p1.py --inject):
     control                          PASS
-    iocd punches the ref in decimal  FAIL iocd_punches_as_printed
+    iocd punches the ref in decimal  FAIL iocd_punches_as_printed,
+                                     reel_cards_punch_as_printed
                                      (refs 8-12 read 0008.., not 0010..)
     iocd punches the exit in decimal FAIL iocd_punches_as_printed
+    REEL card punches an exit field  FAIL reel_cards_punch_as_printed
     a row dropped                    FAIL rows_transcribed,
                                      ref_numbers_count_iods
 """
@@ -127,13 +138,33 @@ def main(mod=iocd, rs=None, symtab=None):
                        f"printed {r['statement']!r} {r['cols63_72']}")
     check("iocd_punches_as_printed", bad, n)
 
+    bad, n = [], 0
+    for r in rs:
+        f = r["statement"].split(",")
+        if f[0] != "REEL":
+            continue
+        n += 1
+        text = mod.reel_card_text(f[1:], int(r["cols63_72"][:4], 8))
+        got = (text[9:62].rstrip().replace(mod.IOD_SUBFIELD_SEPARATOR, ","),
+               text[62:72].rstrip(), text[1:9])
+        want = (r["statement"], r["cols63_72"], " " * 8)
+        if got != want:
+            bad.append(f"line {r['line']}: iocd {got}, printed {want}")
+    check("reel_cards_punch_as_printed", bad, n)
+
     print("ALL TESTS PASSED" if not fails else f"{fails} TEST(S) FAILED")
     return fails
 
 
+# the last lines of iocd.reel_card_text, unique to it in iocd.py
+REEL_TAIL = ("    for i, ch in enumerate(ref):\n"
+             "        cols[IOD_REF_COLUMNS[0] - 1 + i] = ch\n"
+             "    return \"\".join(cols)\n\n\ndef reel_card")
+
+
 def patched(old, new):
     src = open(iocd.__file__).read()
-    assert src.count(old) == 1, old
+    assert src.count(old) >= 1, old         # every occurrence is injected
     m = types.ModuleType("iocd_injected")
     m.__file__ = iocd.__file__
     exec(compile(src.replace(old, new), iocd.__file__, "exec"), m.__dict__)
@@ -150,6 +181,11 @@ if __name__ == "__main__":
         print("-- injected: iocd punches the exit in decimal")
         res.append(("exitdec", main(patched('ex = "%06o" % absolute_exit',
                                             'ex = "%06d" % absolute_exit'), symtab=st)))
+        print("-- injected: REEL card punches an exit field")
+        res.append(("reelexit", main(patched(
+            REEL_TAIL, REEL_TAIL.replace("enumerate(ref)",
+                                         'enumerate(ref + "000000")')),
+            symtab=st)))
         print("-- injected: a row dropped")
         res.append(("drop", main(rs=[r for r in rows() if r["line"] != "6"], symtab=st)))
         print("INJECTIONS: " + ", ".join(f"{n} -> {'FAIL' if r else 'PASS'}" for n, r in res))

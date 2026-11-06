@@ -1875,7 +1875,10 @@ Two side findings from the same run:
   64-bit connective field that crosses a word
   (`conn/CM-crossing-field`, len 64 off 40). It also happens in the
   ASSIGN run. Nothing interrupts on it yet, which is why it is
-  invisible.
+  invisible. *(Superseded later the same day: once the display
+  carried a PC, the site in the p.1-deck run was 004542.00, p.78
+  line 42, len 40 off 40. Crossing CM is now built, and the ASSIGN
+  run sets no OP at all. See "IPL COMPLETES" below.)*
 - **Four `vflIntOp/unimplemented-code` sites after T MOVE.** They
   have no addresses, because OP was already set and the `OP site`
   display prints no PC. Add one at the next core rebuild.
@@ -1964,3 +1967,70 @@ the OCR's UNAGN1. Its NOT USED and RESERVED FOR UNASSIGN cards
 read "PULL THIS CARD BEFORE UPDATING". **READING, NOT YET
 EVIDENCE:** the tape would then carry refs 1, 4-6, 8 and 10-12 with
 their REEL cards.
+
+### WITH MCP'S OWN IOD DECK, IPL COMPLETES, 2026-11-06
+
+`strap/prosa.py` can now build the tape with printed p.1's deck
+(`MCP_IODS_P1`, selected by `PROSA_IOD_DECK=P1`), declaring the four
+tape units it asks for. `tests/run_mcp_p1deck_test.sh` runs it. The
+fixture deck stays the default, because the boot and ASSIGN checks pin
+it. Five obstacles stood between XERR29 and the end of IPL, one after
+another:
+
+1. **XERR29, passed.** p.1 has refs 4 (VRTP) and 6 (VWTP), which are
+   the spool tapes printed p.103 lines 32-33 name.
+2. **The "PULL" cards are load-bearing, measured.** Keeping p.1's
+   NOT USED / RESERVED FOR UNASSIGN cards (refs 2, 3, 7, 9) stops IPL
+   in XERR22, "INCORRECT CARD TYPE WITHIN IODS" (printed p.8 line
+   14), with X ERR AD 001441.40. With them pulled, as the cards say,
+   it does not. The remaining cards keep their printed reference
+   numbers, gaps included.
+3. **LFT and \*+ were unimplemented.** MOVE uses them (printed p.95
+   lines 49 and 55: `LFT,TIODCT(TMXA)`, `*I+,TFLLGN,46`). They are
+   built from Reference Manual printed p.69 and checked by
+   `decks/vfl_load_factor.strap`.
+4. **XERR05 was the model's console running out of paper.** The
+   console shared the reader's and printer's 32-word image, and MCP's
+   messages filled it. The next write ended in End Exception (bit 21
+   of X IPL BS), and printed p.3's IO test took XERR05. The console
+   now has its own `ConsoleWords` = 256. **That number is chosen, not
+   documented**: it is a model buffer standing in for paper.
+5. **CONNECT TO MEMORY across a word boundary.** Printed p.78 line 42,
+   `SF(BU,40,8),TREELX` at 004542.00, is CM0101 of 40 bits at bit 40.
+   The model refused it with OP, so the mount messages carried a blank
+   reel name, and MCP's body later reported the OP interrupt. Crossing
+   CM is now built the way crossing ST is
+   (`decks/cm_crossing_field.strap`). The reel is typed as OUTPT, from
+   p.1's `REEL,NLBOUTPT`: "The first three characters are not part of
+   the reel identification" (C22-6678-1 printed p.11, read in the ink).
+
+The console now reads:
+
+    DATE OF IPL TAPE 00 MONTH 00 DAY
+    MCPIPL* MOUNT - REEL NUMBER OUTPT ON CHANNEL 34 UNIT 0
+    MCPIPL* MOUNT - REEL NUMBER OUTPT ON CHANNEL 34 UNIT 1
+    READER IS INPUT SOURCE ON CHANNEL 32
+    MCPIPL* TYPE 16 ERROR
+
+**WHERE IT STOPS: TYPE 16.** C22-6678-1 printed p.54 says: "16 The
+problem program executed a successful branch to location 32.0 or
+32.32." So the body is running, and S DISP (printed p.147) believes
+an error came from problem-program level. **NEXT:** find the
+instruction that branched to 32.0, and what level MCP thought it was
+at.
+
+**NOT A MODEL BUG: the OP at 217455.40.** On the way to typing, the
+run passes through S DSPDS (printed p.148 lines 21-30). There, line 26
+`BE,STLR+1.32(.26,2)111101` (assembled `215231.47 A0`) sets OP in the
+model. The `(.26,2)111101` lays a pattern over bits 21-26. Read
+against Figure 6 (Reference Manual printed p.18), the half-word is
+then no unconditional branch: bits 22-27 must be 000000 for that
+(printed p.39). It has the FLOATING-POINT shape instead: an 18-bit
+address, N/U = 1 at bit 18, S = 00, and the literal `10` at bits 26-27.
+Its code, `1111010`, is not one of the 29 FP codes the pocket card
+X22-6533 lists (the same 29 `strap/opcodes.py` carries). So on the
+7030 it is an undefined operation, and OP is the documented result.
+The very next statement, line 27 `BOPZ,$.32` (indicator 15, "set
+indicator to zero"), tests OP and turns it off. MCP appears to execute
+it on purpose; why is not yet read.
+

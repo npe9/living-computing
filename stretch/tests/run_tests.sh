@@ -1473,6 +1473,24 @@ run "ASSIGN SUCCEEDS and MCP reaches T MOVE (both tape units available)" ./run_m
 # printed p.28's XERR26 passes.  Injections and reasons are in
 # gen_mcp_boot_tb.py's PastMoveTb branch and docs/boot_plan.md.
 run "PAST T MOVE: MOVE intact, IPL stops in XERR29 (spool IODs 4-6)" ./run_mcp_assign_test.sh StretchMcpPastMoveTb
+# >>> WITH MCP'S OWN IOD DECK, IPL COMPLETES, 2026-11-06. <<<  Printed
+# p.1's cards (strap/prosa.py MCP_IODS_P1, the four "PULL" cards
+# pulled) and the four tape units they ask for.  X ERR AD stays zero,
+# and MCP types the date, both mount messages with reel OUTPT (p.1's
+# REEL,NLBOUTPT: "The first three characters are not part of the reel
+# identification", C22-6678-1 printed p.11) and "READER IS INPUT SOURCE
+# ON CHANNEL 32".  It then types TYPE 16, C22-6678-1 printed p.54's
+# "The problem program executed a successful branch to location 32.0
+# or 32.32" -- the CURRENT STOP, pinned so a change that moves it is
+# seen; docs/boot_plan.md has why it is not yet understood.
+# MEASURED INJECTIONS (same deck, scratch runs):
+#   console of 32 words        XERR05; no READER line, no TYPE 16
+#   CM crossing field refused  reel name typed blank (no "OUTPT")
+#   the four PULL cards kept   XERR22, "INCORRECT CARD TYPE WITHIN
+#                              IODS"; X ERR AD 001441.40
+run "MCP's OWN IOD DECK (p.1): IPL completes, the body types TYPE 16" ./run_mcp_p1deck_test.sh \
+    "DATE OF IPL TAPE" "REEL NUMBER OUTPT" \
+    "READER IS INPUT SOURCE ON CHANNEL 32" "TYPE 16 ERROR"
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<
 #
@@ -2125,6 +2143,38 @@ run "A VFL STORE ACROSS A WORD BOUNDARY -- the store MCP's card converter needs"
     "progressive_tail:297=12033618204333965311" \
     "mplus_refused_head:304=18446744073709551615" \
     "mplus_refused_tail:305=18446744073709551615"
+
+# >>> CONNECT TO MEMORY ACROSS A WORD BOUNDARY, 2026-11-06 -- MCP's
+# printed p.78 line 42, "SF(BU,40,8),TREELX", needs it. <<<  Refused,
+# it left OP set and MCP typed the mount messages with a blank reel
+# name.  Expectations derived in Python before the arm existed (the
+# deck's header).  MEASURED INJECTIONS:
+#   tail built from the head word  FAIL and_16_at_56_tail only (block
+#                                  C is the one non-symmetric target)
+#   tail write dropped             FAIL all five *_tail
+#   crossing CM refused again      FAIL all ten + PC (BOP hang, 403)
+run "CM ACROSS A WORD BOUNDARY -- MCP's p.78 SF(BU,40,8),TREELX" ./run_program.sh ../decks/cm_crossing_field.strap StretchCmCrossTb "PC=404" \
+    "store_40_at_40_head:264=18446744073693967446" "store_40_at_40_tail:265=8690539905941503999" \
+    "xor_32_at_48_head:272=18446744073709546955" "xor_32_at_48_tail:273=12216013989242470399" \
+    "and_16_at_56_head:280=12297829382473034250" "and_16_at_56_tail:281=5788626721046877525" \
+    "b2b_first_head:288=18446744073693967446" "b2b_first_tail:289=8690539905941503999" \
+    "b2b_second_head:296=18446744073693967446" "b2b_second_tail:297=8690539905941503999"
+
+# >>> LOAD FACTOR and MULTIPLY AND ADD, VFL integer forms, 2026-11-06
+# -- MCP's MOVE (printed p.95 lines 49 and 55) uses both, and the model
+# set OP on them. <<<  Reference Manual printed p.69.  Expectations are
+# worked in the deck's header.  MEASURED INJECTIONS:
+#   LFT without the 4-bit sign-byte shift  FAIL lft_ft_value,
+#                                          lft_keeps_low_60, the three
+#                                          mul_add_* and ft_unchanged
+#   *+ ignoring the offset                 FAIL mul_add_offset_46
+#   *+ replacing instead of adding         FAIL mul_add_offset_0,
+#                                          _immediate, _offset_46
+run "LFT and *+ (VFL) -- MCP's MOVE lays out its tables with them" ./run_program.sh ../decks/vfl_load_factor.strap StretchVflLoadFactorTb "PC=2094" \
+    "lft_ft_value:1060=320" "lft_acc_untouched:1061=5" "mul_add_offset_0:1062=1100" \
+    "mul_add_immediate:1063=1140" "mul_add_offset_46:1064=7036874417767400" \
+    "ft_unchanged_by_mul_add:1065=320" "pf_clear_before:1066=0" \
+    "lft_keeps_low_60:1067=48" "lft_pf_set:1068=1"
 
 # >>> THE TWO CAUSES THE CORPUS NEVER REACHED. <<<  prepareExec's
 # `completesWithoutFetch` has six causes (docs/ebox_roadmap.md).  A

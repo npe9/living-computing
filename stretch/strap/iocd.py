@@ -278,6 +278,46 @@ def iod_card(*a, **k):
 
 
 # ---------------------------------------------------------------------
+# THE REEL CARD -- C22-6678-1 printed pp.10-11
+# ---------------------------------------------------------------------
+# "B | blank REEL, reel1, reel2, etc blank": column 1 B, columns 2-9
+# blank, the statement from column 10.  It "must immediately follow
+# the tape IOD card to which it refers".  Each reel is eight characters:
+# PLB/PUL/NLB/NUL (protected or not, labeled or not) and the five
+# characters on the container.  ON THE OUTPUT CARD STRAP II punches the
+# IOD's reference number in 63-66 and leaves 67-72 blank: MCP printed
+# p.1 lines 5, 8, 14 and 16 print "0004", "0006", "0013", "0014" and
+# nothing after (tests/check_iod_deck_p1.py).
+REEL_CARD_TYPE = "REEL"
+
+
+def reel_card_text(reels, ref_number, tag=CLASS_COLUMN):
+    """The eighty columns of one output REEL card, as text."""
+    for r in reels:
+        if len(r) > 8:
+            raise ValueError(f"reel {r!r} exceeds eight characters")
+    statement = IOD_SUBFIELD_SEPARATOR.join([REEL_CARD_TYPE] + list(reels))
+    lo, hi = IOD_STATEMENT_COLUMNS
+    if len(statement) > hi - lo + 1:
+        raise ValueError(f"statement {statement!r} does not fit columns {lo}-{hi}")
+    cols = [" "] * 80
+    cols[0] = tag
+    for i, ch in enumerate(statement):
+        cols[lo - 1 + i] = ch
+    ref = "%04o" % ref_number
+    if len(ref) != 4:
+        raise ValueError(f"reference number {ref_number} needs four octal digits")
+    for i, ch in enumerate(ref):
+        cols[IOD_REF_COLUMNS[0] - 1 + i] = ch
+    return "".join(cols)
+
+
+def reel_card(*a, **k):
+    """One output REEL card as WORDS_PER_CARD 64-bit words."""
+    return card_words(reel_card_text(*a, **k))
+
+
+# ---------------------------------------------------------------------
 # THE MCPP CARD -- MCP Parameters
 # ---------------------------------------------------------------------
 # Two documents agree, and both are in docs/ocr/:

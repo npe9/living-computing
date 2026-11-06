@@ -110,6 +110,10 @@ PROSA record.  At that point the dictionary stops being chosen and
 the sizes become facts, and any test that still imports this module
 is testing the fixture.
 """
+import csv
+import functools
+import os
+
 import iocd
 import mcp_image
 
@@ -310,6 +314,13 @@ COMM_REGION_WORDS = 14
 # forward-progress run selects BOTH_AVAILABLE for itself.
 TAPE_UNITS_BOTH_AVAILABLE = (2, 2)
 TAPE_UNITS_ONE_SHORT = (2, 0)
+# Printed p.1's deck (MCP_IODS_P1 below) asks for FOUR tape units.
+# BYPASS deletes the two spool mounts (printed pp.31-32) and the
+# others name UN0 and UN1 on CH34; C22-6678-1 printed p.9 says the
+# channel field is a symbol MCP assigns, so four distinct requests need
+# four units.  The model's tape is still one drive (bsv/StretchIO.bsv),
+# which is A5's business, not this declaration's.
+TAPE_UNITS_P1_DECK = (2, 2, 2, 2)
 
 _TAPE_UNITS = TAPE_UNITS_ONE_SHORT
 
@@ -419,6 +430,70 @@ MCP_IODS = [
          ref_number=3, absolute_exit=MCP_IOD_EXIT),
 ]
 
+# >>> MCP'S OWN IOD DECK, PRINTED p.1 (vol 1 PDF p.8), AS AN OPTION. <<<
+# tests/mcp_iod_deck_p1.tsv is its transcription and
+# tests/check_iod_deck_p1.py checks iocd punches it as printed.  Its
+# exits are real body symbols (CDICEX 234354 ... AXITB 222553), so
+# this deck invents nothing that MCP_IODS above invents.
+#
+# IT IS SELECTED, NOT THE DEFAULT, by PROSA_IOD_DECK=P1 in the
+# environment before import -- the layout below (CARD_WORDS, COMM_AT,
+# the arc count) is computed from it at import.  The boot and ASSIGN
+# checks in tests/gen_mcp_boot_tb.py pin MCP_IODS and stay on it.
+#
+# >>> THE FOUR "NOT USED" / "RESERVED FOR UNASSIGN" CARDS ARE PULLED,
+# AS THE CARDS THEMSELVES SAY. <<<  Lines 2, 3, 9 and 11 read "PULL
+# THIS CARD BEFORE UPDATING" / "PULL CARD BEFORE UPDATING".  The
+# remaining cards keep their printed reference numbers, gaps and all,
+# because MCP finds its IODs by them (printed p.103 lines 32-33's
+# SRTAPE/SWTAPE are refs 4 and 6).  PROSA_IOD_DECK=P1_UNPULLED keeps
+# the four, which is how docs/boot_plan.md measured what pulling does.
+P1_DECK_TSV = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           "..", "tests", "mcp_iod_deck_p1.tsv")
+P1_PULLED_TYPES = ("NOT USED", "RESERVED FOR UNASSIGN")
+
+
+@functools.lru_cache(maxsize=None)
+def body_program():
+    """Printed pp.99-319 assembled once: the body image and the exits."""
+    skip = mcp_image.NO_DECK_PAGES | mcp_image.MISSING_PAGES
+    pages = [(mcp_image.DECK("mcp_bootstrap_p%d.strap" % n),
+              "printed p.%d" % n) for n in range(99, 320) if n not in skip]
+    return mcp_image.build(False, pages, end_at="SDISP")[0]
+
+
+def mcp_iods_p1(pull=True):
+    """Printed p.1's IOD and REEL cards as MCP_IODS entries."""
+    symtab = body_program().symtab
+    deck = []
+    with open(P1_DECK_TSV) as f:
+        for r in csv.DictReader(f, delimiter="\t"):
+            fields = r["statement"].split(",")
+            if fields[0] == iocd.IOD_CARD_TYPE:
+                if fields[1] in P1_PULLED_TYPES and pull:
+                    continue
+                exit_word = (0 if fields[1] in P1_PULLED_TYPES
+                             else symtab[fields[2]] // 64)
+                assert int(r["cols63_72"][4:], 8) == exit_word, r
+                deck.append(dict(name=r["name"], iod_type=fields[1],
+                                 exit_sym=fields[2],
+                                 subfields=tuple(fields[3:]),
+                                 ref_number=int(r["cols63_72"][:4], 8),
+                                 absolute_exit=exit_word))
+            elif fields[0] == iocd.REEL_CARD_TYPE:
+                deck.append(dict(reels=tuple(fields[1:]),
+                                 ref_number=int(r["cols63_72"][:4], 8)))
+    return deck
+
+
+IOD_DECK = os.environ.get("PROSA_IOD_DECK", "FIXTURE")
+if IOD_DECK == "P1":
+    MCP_IODS = mcp_iods_p1()
+elif IOD_DECK == "P1_UNPULLED":
+    MCP_IODS = mcp_iods_p1(pull=False)
+else:
+    assert IOD_DECK == "FIXTURE", IOD_DECK
+
 TERMINATOR_CARD = (None, None, (), iocd.IOD_CARD_TYPE)
 
 
@@ -512,10 +587,7 @@ def mcp_body_image():
     WORDS ARE REAL DATA THAT ARE ZERO HERE until strap_asm implements
     CC entry mode. <<<
     """
-    skip = mcp_image.NO_DECK_PAGES | mcp_image.MISSING_PAGES
-    pages = [(mcp_image.DECK("mcp_bootstrap_p%d.strap" % n),
-              "printed p.%d" % n) for n in range(99, 320) if n not in skip]
-    prog, _, _, _ = mcp_image.build(False, pages, end_at="SDISP")
+    prog = body_program()
     lo, hi = min(prog.words), max(prog.words)
     missing = {a for a in range(lo, hi + 1) if a not in prog.words}
     lost = missing - prog.reserved_words() - BODY_SLC_HOLES
@@ -630,8 +702,11 @@ def record():
         if kind == iocd.MCPP_CARD_TYPE:
             cw = iocd.mcpp_card(MCPP_MODE)
         elif kind == iocd.IOD_CARD_TYPE:
-            # the IOD cards, punched as STRAP II would emit them
-            cw = iocd.iod_card(**MCP_IODS[iod_n])
+            # the IOD cards, punched as STRAP II would emit them; an
+            # entry carrying "reels" is the REEL card after a tape IOD
+            entry = MCP_IODS[iod_n]
+            cw = (iocd.reel_card(**entry) if "reels" in entry
+                  else iocd.iod_card(**entry))
             iod_n += 1
         else:
             cw = iocd.card(channel, equipment, units, card_type=kind)

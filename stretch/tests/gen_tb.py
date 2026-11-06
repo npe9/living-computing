@@ -20,7 +20,7 @@ from strap_asm import assemble, AssemblerError
 def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              console_switches=None,
              printer_checks=None, tape_image=None, tape_checks=None,
-             console_checks=None,
+             console_checks=None, console_dump=0,
              pc_check=None, cycle_bound=None, cycle_window=None,
              ipl=False, pc_trail=False,
              pc_trail_check=None, op_trail=False,
@@ -365,7 +365,20 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append("  endrule")
         lines.append("")
 
-    tcheck_phase0 = ccheck_phase0 + len(console_checks)
+    # CONSOLE DUMP -- the first `console_dump` words of the console's
+    # paper, DISPLAYED and not checked, as "CONSOLE <i> <hex>" lines.
+    # For a run whose console text is checked by a separate reader of
+    # the log (tests/check_console_text.py), which can look for a
+    # message wherever MCP happened to type it.
+    cdump_phase0 = ccheck_phase0 + len(console_checks)
+    for i in range(console_dump):
+        lines.append(f"  rule cdump{i} (phase == {cdump_phase0 + i});")
+        lines.append(f'    $display("CONSOLE {i} %016h", core.io.readConsoleWord({i}));')
+        lines.append(f"    phase <= {cdump_phase0 + i + 1};")
+        lines.append("  endrule")
+        lines.append("")
+
+    tcheck_phase0 = cdump_phase0 + console_dump
     for i, (label, tape_idx, expected) in enumerate(tape_checks):
         lines.append(f"  rule tcheck{i} (phase == {tcheck_phase0 + i});")
         lines.append(f'    check("{label}", core.io.readTapeWord({tape_idx}), 64\'h{expected & ((1<<64)-1):016x});')
