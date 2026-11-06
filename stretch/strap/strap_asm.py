@@ -3171,8 +3171,15 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
             image.deposit_half((gap_start + off) // HALF, enc_branch_or_misc(0, UNCOND_BRANCH_CODES['NOP'], False, 0))
 
 
-    return AssembledProgram(image.words, symtab, end_pc, image.reservations,
+    prog = AssembledProgram(image.words, symtab, end_pc, image.reservations,
                             image.skips)
+    # The words some statement actually WROTE, as against those a DRZ's
+    # zero fill alone holds: `words` cannot tell them apart, and inside
+    # a reservation an overlay assembles over (printed p.319's Y MPBUF,
+    # under the LOADER and the $DUMP) a lost page would read as zeros
+    # that are "there" (tests/check_mcp_body_image.py).
+    prog.written_words = frozenset(w for w, m in image._written.items() if m)
+    return prog
 
 
 def apply_parenthetical_entries(stmt, symtab, image):

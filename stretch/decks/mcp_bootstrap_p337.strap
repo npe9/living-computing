@@ -1,0 +1,155 @@
+! mcp_bootstrap_p337.strap -- MCP printed page 337: the $DUMP console
+! debugging package's PDKL (display a requested location on the binary
+! key-lights) and PLT (test the binary keys for latched keys by writing
+! and reading SEOP all ones / all zeros), lines 1-42.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.87, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$DUMP  CARD
+! ID VA000099  DIST. OF 3/01  3/01  PAGE NUMBER 337"; the heading row's
+! LOCATION field is BLANK (line 1 is a remark card).
+!
+! THE PAGE.  42 lines; every line number prints a "*" after it.
+!   lines 1-2   remark cards ("-" in the NAME column):  a dashed rule and
+!               "-DISPLAY ON BINARY KEY-LIGHTS".
+!   lines 3-42  code, contiguous from 234507.00 (PDKL) to 234535.00
+!               (PLOCKT B,0, a half word; next location 234535.40), then
+!               blank paper.  "*" after the LOCATION on lines 14 and 34.
+! No TAIL card.  This is the $DUMP assembly, which re-uses addresses the
+! LOADER pages (pp.320-328) also occupy: a different program.
+!
+! JOIN.  p.336 (no landed deck; tools/page_sheet.py 336) ends with
+! BE,1.0($14) at 234506.40 (a half word): contiguous with line 3.
+! p.338 (sheet) opens with PEBK SIC,PA02 at 234535.40: contiguous with
+! line 42.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * PA02 (line 5, printed "PAO2" with an open round): C22-6728 PDF
+!     p.210 (typeset) prints "Requestor from PA02." with a narrow-oval
+!     DIGIT 0, the same width as the 2; the binary 234677.40 is p.341
+!     line 18's "PA02 B,0 -LINK OUT" (vision sheet).
+!   * line 12 "PCISKL" = PDISKL, D with its stem worn: landed p.293 line
+!     36 PDISKL DD at 232610.00, the address the binary prints.
+!   * PDKL, PLT, PE3, PSC3, PINC, PA1 are spelled as C22-6728 PDF p.210
+!     prints them (PDKL "using PLT to test for a legal request",
+!     "PE3 via PSC", "PINC", "PA1").
+!   * PLOCKT (lines 3, 42, printed "P LOCK T"): line 42 prints a closed O.
+!   * "CMOCOO" (line 28) = CM0000; "CTOC11" (line 40) = CT0011
+!     (connective digits).
+!   * octal / hex fields with an open round read 0 ("FC" = F0, "CO" = 00
+!     on B rows, "C0" bytes of BZRZ are C0 by the indicator code).
+!
+! EXTERNALS.  DMCP (p.108), DWS, DRDS, DWAIT (p.104), PCDEF2 (p.137),
+! PHOLDS (p.292), PLTRA, PLTWA, PDISKL, PONOUT, PCW6, PCW7 (p.293) are
+! landed; forms copied from the defining cards or landed stand-ins.
+! PA1, PA02, PE3, PSC3, PINC are defined on pp.335, 336 and 341 (not
+! landed): values from this page's binary, half word only.
+!
+! CARD SERIALS.  VA000099 .. VA000138.  Lines 3 and 4 BOTH print
+! VA000101 (SIC,PLOCKT and B,PLT: one card, two statements); otherwise
+! one serial per line, none skipped.
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B lines 15, 19, 23, 29, 33, 37 000040.10
+DWS     SYN, 1.33                    ! landed p.104; ,DWS lines 16, 30 000001.41
+DRDS    SYN, 1.01                    ! landed p.104 "D RD S"; ,DRDS lines 20, 34 000001.01
+DWAIT   SYN, 11.32                   ! landed p.104 "D WAIT"; lines 24, 38 000013.40
+PCDEF2  SYN, 10.0                    ! landed p.137; ,PCDEF2 lines 17, 21, ... 000012.00
+PHOLDS  SYN,2.16                     ! printed p.292 line 20, as defined there (000002.20); the sum is BIT-EXACT
+PONOUT  SYN(BU,64), (8)232630.0      ! printed p.293 line 42 PONOUT DRZ(BU,64),(13) at 232630.00
+PDISKL  SYN(BU,64,8), (8)232610.0    ! printed p.293 line 36 PDISKL DD(BU,64,8) at 232610.00
+PLTRA   SYN(N), (8)232571.0          ! printed p.293 line 10 PLTRA DRZ(N),(1) at 232571.00
+PLTWA   SYN(N), (8)232572.0          ! printed p.293 line 11 PLTWA DRZ(N),(1) at 232572.00
+PCW6    SYN, (8)232651.0             ! printed p.293 line 49 PCW6 CW,PLTWA,1 at 232651.00
+PCW7    SYN, (8)232652.0             ! printed p.293 line 50 PCW7 CW,PLTRA,1 at 232652.00
+PA1     SYN(BU,64,8), (8)234666.0    ! p.341 line 6 L(BU,32) (full word) label (not landed); B line 6 234666.10, half word only
+PA02    SYN(BU,32,8), (8)234677.40   ! p.341 line 18 B,0 label (not landed); SIC line 5 234677.40, half word only
+PE3     SYN(BU,64,8), (8)234451.0    ! p.335 line 43 CM1111 (full word) label (not landed); LVI line 11 PE3-1.0 = 234450.35 ($14), half word only
+PSC3    SYN(BU,32,8), (8)234462.40   ! p.336 line 10 SX label (not landed); B line 13 234462.50, half word only
+PINC    SYN(BU,32,8), (8)234454.40   ! p.335 line 49 Z label (not landed); BZRZ lines 27, 41 234454.74, half word only
+
+        SLC, (8)234507.00
+! -  ----------------------------------------------------------------- ! line  1
+! -          -DISPLAY ON BINARY KEY-LIGHTS                             ! line  2
+PDKL    SIC,PLOCKT                                           ! line  3
+        B,PLT                                                ! line  4  - TO TEST FOR LATCHED KEYS
+        SIC,PA02                                             ! line  5
+        B,PA1                                                ! line  6  -OBTAIN ADDR OF LOC TO BE DISPLAYED
+        LV,$2,$R                                             ! line  7
+        LX,$3,0($2)                                          ! line  8
+        SX,$3,PONOUT                                         ! line  9  -SET UP CONTENTS OF LOC TO BE DISPLAYED
+        CM1111(BU,1),PONOUT+PHOLDS                           ! line 10
+        LVI,$14,PE3-1.0                                      ! line 11
+        LX,$2,PDISKL                                         ! line 12
+        B,PSC3                                               ! line 13
+PLT     CM1111(BU),PLTWA                                     ! line 14  -INSERT ALL 1S
+        B,DMCP                                               ! line 15
+        ,DWS                                                 ! line 16  -WRITE SEOP ALL ONES
+        ,PCDEF2                                              ! line 17
+        ,PCW6                                                ! line 18
+        B,DMCP                                               ! line 19
+        ,DRDS                                                ! line 20  -ATTEMPT TO RD SEOP ALL ONES
+        ,PCDEF2                                              ! line 21
+        ,PCW7                                                ! line 22
+        B,DMCP                                               ! line 23
+        ,DWAIT                                               ! line 24
+        ,PCDEF2                                              ! line 25
+        CT1100(BU),PLTRA                                     ! line 26
+        BZRZ,PINC                                            ! line 27  -OUT-KEY LATCHED TO ZERO
+        CM0000(BU),PLTWA                                     ! line 28
+        B,DMCP                                               ! line 29
+        ,DWS                                                 ! line 30  -WRITE SEOP ALL ZEROS
+        ,PCDEF2                                              ! line 31
+        ,PCW6                                                ! line 32
+        B,DMCP                                               ! line 33
+        ,DRDS                                                ! line 34  -ATTEMPT TO RD SEOP ALL ZEROS
+        ,PCDEF2                                              ! line 35
+        ,PCW7                                                ! line 36
+        B,DMCP                                               ! line 37
+        ,DWAIT                                               ! line 38
+        ,PCDEF2                                              ! line 39
+        CT0011(BU),PLTRA                                     ! line 40
+        BZRZ,PINC                                            ! line 41  -OUT-KEY LATCHED TO ONE
+PLOCKT  B,0                                                  ! line 42  -RETURN TO PDKL
+
+!SYM PDKL   234507.00
+!SYM PLT    234515.00
+!SYM PLOCKT 234535.00
+!CHECK 234507.00 | 234535.00 80 | line 3 PDKL SIC,PLOCKT (printed "P DKL", "P LOCK T")
+!CHECK 234507.40 | 234515.10 00 | line 4 B,PLT (printed "P LT"; byte prints "C0" = 00)
+!CHECK 234510.00 | 234677.40 80 | line 5 SIC,PA02 (printed "PAO2")
+!CHECK 234510.40 | 234666.10 00 | line 6 B,PA1 (h1 prints "234666.1C CO" = .10 00)
+!CHECK 234511.00 | 000011.04 30 | line 7 LV,$2,$R
+!CHECK 234511.40 | 000000.06 12 | line 8 LX,$3,0($2)
+!CHECK 234512.00 | 232630.07 10 | line 9 SX,$3,PONOUT
+!CHECK 234512.40 | 232632.20 80 001000.36 F0 | line 10 CM1111(BU,1),PONOUT+PHOLDS (h2 prints "FC" = F0)
+!CHECK 234513.40 | 234450.35 01 | line 11 LVI,$14,PE3-1.0
+!CHECK 234514.00 | 232610.04 10 | line 12 LX,$2,PDISKL (printed "PCISKL")
+!CHECK 234514.40 | 234462.50 00 | line 13 B,PSC3 (byte prints "C0" = 00)
+!CHECK 234515.00 | 232572.00 80 000000.36 F0 | line 14 PLT CM1111(BU),PLTWA (a "*" prints after the location)
+!CHECK 234516.00 | 000040.10 00 | line 15 B,DMCP (printed "D MCP")
+!CHECK 234516.40 | 000001.41 80 | line 16 ,DWS (printed "D W S")
+!CHECK 234517.00 | 000012.00 80 | line 17 ,PCDEF2 (printed "P C DEF2")
+!CHECK 234517.40 | 232651.00 80 | line 18 ,PCW6
+!CHECK 234520.00 | 000040.10 00 | line 19 B,DMCP (printed "D MCP")
+!CHECK 234520.40 | 000001.01 80 | line 20 ,DRDS (printed "D RD S")
+!CHECK 234521.00 | 000012.00 80 | line 21 ,PCDEF2 (printed "P C DEF2")
+!CHECK 234521.40 | 232652.00 80 | line 22 ,PCW7
+!CHECK 234522.00 | 000040.10 00 | line 23 B,DMCP
+!CHECK 234522.40 | 000013.40 80 | line 24 ,DWAIT
+!CHECK 234523.00 | 000012.00 80 | line 25 ,PCDEF2
+!CHECK 234523.40 | 232571.00 80 000000.31 70 | line 26 CT1100(BU),PLTRA
+!CHECK 234524.40 | 234454.74 C0 | line 27 BZRZ,PINC (printed "P INC")
+!CHECK 234525.00 | 232572.00 80 000000.00 F0 | line 28 CM0000(BU),PLTWA (printed "CMOCOO")
+!CHECK 234526.00 | 000040.10 00 | line 29 B,DMCP (byte prints "CO" = 00)
+!CHECK 234526.40 | 000001.41 80 | line 30 ,DWS (printed "D W S")
+!CHECK 234527.00 | 000012.00 80 | line 31 ,PCDEF2 (printed "P C DEF2")
+!CHECK 234527.40 | 232651.00 80 | line 32 ,PCW6
+!CHECK 234530.00 | 000040.10 00 | line 33 B,DMCP
+!CHECK 234530.40 | 000001.01 80 | line 34 ,DRDS (printed "D RD S"; a "*" prints after the location)
+!CHECK 234531.00 | 000012.00 80 | line 35 ,PCDEF2 (printed "P CDEF2")
+!CHECK 234531.40 | 232652.00 80 | line 36 ,PCW7
+!CHECK 234532.00 | 000040.10 00 | line 37 B,DMCP
+!CHECK 234532.40 | 000013.40 80 | line 38 ,DWAIT
+!CHECK 234533.00 | 000012.00 80 | line 39 ,PCDEF2
+!CHECK 234533.40 | 232571.00 80 000000.07 70 | line 40 CT0011(BU),PLTRA (printed "CTOC11")
+!CHECK 234534.40 | 234454.74 C0 | line 41 BZRZ,PINC
+!CHECK 234535.00 | 000000.10 00 | line 42 PLOCKT B,0 (printed "P LOCK T")

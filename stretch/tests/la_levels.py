@@ -403,9 +403,14 @@ def main():
     # rest, and the first MCP use of a backward transmit -- which
     # StretchExecute.bsv refuses with Operation Code Invalid (the
     # TRANSMIT_CODES hazard note), so MCP now needs it.
+    #
+    # "CI0011" joined on 2026-11-06 with printed p.340 lines 3, 9 and
+    # 18 ("CI0011(BU,8),(2)00111010,72"): the $DUMP's message build,
+    # another immediate connective written with the "I" infix, so it
+    # joins for the same reason CI0001 and CI0111 did.
     check("page_silent_mnemonics_in_mcp",
           sorted(notgiven),
-          ["*I", "*I+", "+I", "-I", "/I", "CI0001", "CI0111", "CTI0001",
+          ["*I", "*I+", "+I", "-I", "/I", "CI0001", "CI0011", "CI0111", "CTI0001",
            "CTI0110", "KFI", "KI", "LFI", "LI", "SWAPI", "T", "TB",
            "TBI", "TI"])
 

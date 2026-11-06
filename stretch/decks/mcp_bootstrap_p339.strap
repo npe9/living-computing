@@ -1,0 +1,172 @@
+! mcp_bootstrap_p339.strap -- MCP printed page 339: the console
+! debugger's dump request (PDUM): obtain the initial and end addresses
+! through PA1, order them, check them with PERR1, test the FP / OCT-HEX /
+! XW / special-register switches, set the dump character code, log the
+! request (PMES), go to $DUMP, and the start of PMES; lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.89, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$DUMP  CARD ID VA000187  DIST. OF 3/01
+! 3/01  PAGE NUMBER 339"; the heading row's LOCATION field is 234572,
+! line 1's word.
+!
+! THE PAGE.  50 lines; every line number prints a "*" after it.  "*"
+! after the LOCATION on lines 2, 18 and 37.  Located rows run contiguous
+! from 234572.40 (line 1) to 234630.00 (line 50, a full word; next
+! location 234631.00).  Lines 28, 44, 45 and 46 are remark cards (no
+! location).  No TAIL card.
+!
+! JOIN.  p.338 (tools/page_sheet.py 338, not landed) ends with a full
+! word at 234571.40, so line 1's 234572.40 continues it; p.340's sheet
+! opens at 234631.00, contiguous with line 50.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "PA02" (lines 2, 8): the third glyph is an open round, written the
+!     digit 0 -- C22-6728 PDF p.210 (the debugger routine table) types
+!     "Requestor from PA02." with the narrow digit oval; the same table
+!     types PA1 and PERR1 (lines 3, 9, 15 here).
+!   * "P DUM1" (line 21): the last glyph is the digit 1 (serifed foot,
+!     same as line 26's PMES1).
+!   * "PDUM5/6/7/8/9", "P DU DAT", "D MCP", "D CUMP", "P C DEF2": the D
+!     prints with its stem worn and reads C ("PCUM7", "P CU DAT", "D
+!     CUMP"); written D.  DDUMP is landed (SYN,64.0; BE binary 000100.00);
+!     PDUDAT is this page's line 41 and the SVA/CM binaries (234624.71,
+!     234625.33, 234625.40, 234625.62) are its address.
+!   * "CMOCOO" (line 23) = CM0000, connective digits.
+!   * octal fields with an open round read 0 throughout.
+!   * blanks inside names ("P OHSS", "PNSLIN + P OHSS", "$13 ,$R") are the
+!     drum's spacing; the names are written closed up.
+!
+! EXTERNALS.  PDUMP, PNSLIN, PONOUT, PCW4 from landed p.293; PSSRS,
+! PFPS, POHSS, PXWS from landed p.292 (SYN forms copied); PCDEF2, DMCP,
+! DWS, DDUMP landed.  PA02, PA1, PERR1, PMES1, PFP, POHS, PXW are defined
+! on pages not yet landed; values from this page's binary.
+!
+! CARD SERIALS.  VA000187 .. VA000234.  Lines 2-3 share VA000188 and
+! lines 26-27 share VA000211.  None skipped.
+
+PDUMP   SYN(BU,64,8), (8)232612.0    ! landed p.293 line 38 DD(BU,64,8); LX line 24 232612.04
+PNSLIN  SYN(BU,64), (8)232613.0      ! landed p.293 line 41 DRZ(BU,64),(13)
+PONOUT  SYN(BU,64), (8)232630.0      ! landed p.293 line 42 DRZ(BU,64),(13); SX line 25 232633.05
+PCW4    SYN, (8)232647.0             ! landed p.293 line 47 CW,PONOUT,7,$; ,PCW4 line 32 232647.00
+PSSRS   SYN,2.12                     ! landed p.292 line 16 (defining SYN)
+PFPS    SYN,2.13                     ! landed p.292 line 17 (defining SYN)
+POHSS   SYN, 2.14                    ! landed p.292 line 18 (defining SYN)
+PXWS    SYN,2.15                     ! landed p.292 line 19 (defining SYN)
+PCDEF2  SYN, 10.0                    ! landed p.137; ,PCDEF2 line 31 000012.00
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B lines 29, 35
+DWS     SYN, 1.33                    ! landed p.104; ,DWS line 30 000001.41
+DDUMP   SYN, 64.0                    ! landed "D DUMP"; BE line 36 000100.00
+PA02    SYN, (8)234677.40            ! not landed; SIC lines 2, 8 234677.40, BIT-EXACT
+PA1     SYN, (8)234666.0             ! not landed; B lines 3, 9 234666.10, half word only
+PERR1   SYN, (8)234664.0             ! not landed; BXH line 15 234664.33, half word only
+PMES1   SYN, (8)234650.0             ! not landed; SIC line 26 234650.00, BIT-EXACT
+PFP     SYN, (8)234652.0             ! not landed; BB line 18 234652.34, half word only
+POHS    SYN, (8)234653.40            ! not landed; BB line 19 234653.74, half word only
+PXW     SYN, (8)234655.0             ! not landed; BB line 20 234655.34, half word only
+
+        SLC, (8)234572.40
+        B,PDUM5-1.0                                          ! line  1
+PDUM9   SIC,PA02                                             ! line  2
+        B,PA1                                                ! line  3  -OBTAIN INITIAL ADDR
+        LV,$12,$R                                            ! line  4  -INITIAL ADDR OF DUMP IN $12
+        L(BU),PNSLIN+1.0,0                                   ! line  5  -LOAD INITIAL AND END ADDR
+        +(BU,32),PNSLIN+1.32,64                              ! line  6  -ADD END ADDR LEFT OF INT ADDR
+        ST(BU),PNSLIN+1.0,32                                 ! line  7  -REVERSE ORDER OF INT AND END ADDR)
+        SIC,PA02                                             ! line  8
+        B,PA1                                                ! line  9  -OBTAIN END ADDR
+        LV,$13,$R                                            ! line 10  -PUT END ADDR IN VF OF $13
+        L(BU),PNSLIN+1.0,0                                   ! line 11  -LOAD END AND INITIAL ADDRS
+        +(BU,32),PNSLIN+1.32,64                              ! line 12  -ADD INITIAL ADDR LEFT OF END ADDR
+        ST(BU),PNSLIN+1.0,32                                 ! line 13  -RESTORE ORDER OF INT AND END ADDRS
+        KV,$12,$13                                           ! line 14
+        BXH,PERR1                                            ! line 15
+        SVA,$12,PDUDAT                                       ! line 16
+        SVA,$13,PDUDAT+.32                                   ! line 17
+PDUM5   BB,PNSLIN+PFPS,PFP                                   ! line 18  -FP
+        BB,PNSLIN+POHSS,POHS                                 ! line 19  - OCT HEX SUPPRESS MNEMONICS
+        BB,PNSLIN+PXWS,PXW                                   ! line 20  -XW
+PDUM1   CM0000(BU,18),PDUDAT+1.0                             ! line 21  -SET TO OCTAL-HEX
+        BB,PNSLIN+PSSRS,PDUM8                                ! line 22
+        CM0000(BU,1),PDUDAT+1.18                             ! line 23  -PRINT LOWER REGS
+PDUM7   LX,$2,PDUMP                                          ! line 24  -
+        SX,$2,PONOUT+3.0                                     ! line 25  -INSERT DUMP CHAR CODE
+        SIC,PMES1                                            ! line 26
+        B,PMES                                               ! line 27  -INSERT ADDR RANGE
+! -WRITE OUT DAMP LINKAGE  TYPED MESSAGE                     ! line 28
+        B,DMCP                                               ! line 29  -LOG DUMP REQUEST
+        ,DWS                                                 ! line 30
+        ,PCDEF2                                              ! line 31
+        ,PCW4                                                ! line 32
+        V+I,$14,1.0                                          ! line 33  -
+        SVA,$14,PDUM6                                        ! line 34  -
+        B,DMCP                                               ! line 35  -TO $DUMP
+        BE,DDUMP                                             ! line 36
+        ,PDUDAT                                              ! line 37
+PDUM6   B,$                                                  ! line 38  -
+PDUM8   CM1111(BU,1),PDUDAT+1.18                             ! line 39  -SUPPRESS LOWER REGS
+        B,PDUM7                                              ! line 40
+PDUDAT  ,0                                                   ! line 41
+        ,0                                                   ! line 42
+        NOP,0                                                ! line 43
+! -                                                          ! line 44
+! - -----------------------------------------------------    ! line 45
+! -   -SET UP ADDR RANGE FOR TYPING                          ! line 46
+PMES    L(BU,32),PNSLIN+1.32,0                               ! line 47  -PUT END ADDR IN $R
+        LVI,$2,49152.                                        ! line 48  -2 TO 14TH PLUS 2TO 15TH
+        SV,$2,10.0                                           ! line 49  -SET ZEONE BITS=0011
+        ST(DU,48,8),$L,8                                     ! line 50  -EXPAND 1ST 6 4 BIT NEC CHAYS OF END
+
+!SYM PDUM9  234573.00
+!SYM PDUM5  234606.00
+!SYM PDUM1  234611.00
+!SYM PDUM7  234614.00
+!SYM PDUM6  234622.40
+!SYM PDUM8  234623.00
+!SYM PDUDAT 234624.40
+!SYM PMES   234626.00
+!CHECK 234572.40 | 234605.10 00 | line 1 B,P DUM5 -1.0
+!CHECK 234573.00 | 234677.40 80 | line 2 PDUM9 SIC,PA02
+!CHECK 234573.40 | 234666.10 00 | line 3 B,PA1
+!CHECK 234574.00 | 000011.30 30 | line 4 LV,$12,$R
+!CHECK 234574.40 | 232614.00 80 000000.20 50 | line 5 L(BU),PNSLIN+1.0,0
+!CHECK 234575.40 | 232614.40 80 040040.20 10 | line 6 +(BU,32),PNSLIN+1.32,64
+!CHECK 234576.40 | 232614.00 80 000020.20 D0 | line 7 ST(BU),PNSLIN+1.0,32
+!CHECK 234577.40 | 234677.40 80 | line 8 SIC,PA02
+!CHECK 234600.00 | 234666.10 00 | line 9 B,PA1
+!CHECK 234600.40 | 000011.32 30 | line 10 LV,$13 ,$R
+!CHECK 234601.00 | 232614.00 80 000000.20 50 | line 11 L(BU),PNSLIN+1.0,0
+!CHECK 234602.00 | 232614.40 80 040040.20 10 | line 12 +(BU,32),PNSLIN+1.32,64
+!CHECK 234603.00 | 232614.00 80 000020.20 D0 | line 13 ST(BU),PNSLIN+1.0,32
+!CHECK 234604.00 | 000035.30 90 | line 14 KV,$12,$13
+!CHECK 234604.40 | 234664.33 42 | line 15 BXH,PERR1
+!CHECK 234605.00 | 234624.71 D0 | line 16 SVA,$12,P DU DAT
+!CHECK 234605.40 | 234625.33 D0 | line 17 SVA,$13,P DU DAT+.32
+!CHECK 234606.00 | 232615.15 80 234652.34 02 | line 18 PDUM5 BB,PNSLIN+PFPS,PFP
+!CHECK 234607.00 | 232615.16 80 234653.74 02 | line 19 BB,PNSLIN + P OHSS,POHS
+!CHECK 234610.00 | 232615.17 80 234655.34 02 | line 20 BB,PNSLIN+PXWS,PXW
+!CHECK 234611.00 | 234625.40 80 022000.00 F0 | line 21 P DUM1 CM0000(BU,18),P DU DAT+1.0
+!CHECK 234612.00 | 232615.14 80 234623.34 02 | line 22 BB,PNSLIN+PSSRS,PDUM8
+!CHECK 234613.00 | 234625.62 80 001000.00 F0 | line 23 CMOCOO(BU,1),P DU DAT+1.18
+!CHECK 234614.00 | 232612.04 10 | line 24 PDUM7 LX,$2,PDUMP
+!CHECK 234614.40 | 232633.05 10 | line 25 SX,$2,PONOUT+3.0
+!CHECK 234615.00 | 234650.00 80 | line 26 SIC,PMES1
+!CHECK 234615.40 | 234626.10 00 | line 27 B,PMES
+!CHECK 234616.00 | 000040.10 00 | line 29 B,DMCP
+!CHECK 234616.40 | 000001.41 80 | line 30 , D W S
+!CHECK 234617.00 | 000012.00 80 | line 31 , P C DEF2
+!CHECK 234617.40 | 232647.00 80 | line 32 ,P CW4
+!CHECK 234620.00 | 000001.35 05 | line 33 V+I,$14,1.0
+!CHECK 234620.40 | 234622.75 D0 | line 34 SVA,$14,PDUM6
+!CHECK 234621.00 | 000040.10 00 | line 35 B,D MCP
+!CHECK 234621.40 | 000100.00 00 | line 36 BE, D CUMP (D worn to C)
+!CHECK 234622.00 | 234624.40 80 | line 37 ,P DU DAT
+!CHECK 234622.40 | 234622.50 00 | line 38 PDUM6 B,$
+!CHECK 234623.00 | 234625.62 80 001000.36 F0 | line 39 P DUM8 CM1111(BU,1),P DU DAT+1.18
+!CHECK 234624.00 | 234614.10 00 | line 40 B,PDUM7
+!CHECK 234624.40 | 000000.00 80 | line 41 P DU DAT ,0
+!CHECK 234625.00 | 000000.00 80 | line 42 ,0
+!CHECK 234625.40 | 000000.30 00 | line 43 NOP,0
+!CHECK 234626.00 | 232614.40 80 040000.20 50 | line 47 PMES L(BU,32),PNSLIN+1.32,0
+!CHECK 234627.00 | 140000.05 01 | line 48 LVI,$2,49152.
+!CHECK 234627.40 | 000012.05 30 | line 49 SV,$2,10.0
+!CHECK 234630.00 | 000010.00 80 060004.24 D0 | line 50 ST(DU,48,8),$L,8

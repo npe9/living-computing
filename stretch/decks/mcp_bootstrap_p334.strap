@@ -1,0 +1,162 @@
+! mcp_bootstrap_p334.strap -- MCP printed page 334: the LOADER's reject
+! exits (YSUKFX, YLERR, YAERR2, YAERR1, YLERR2 .. YLJL), the reject
+! message texts (YLEM1, YMLJM, YLJM1, the error-text table, YSUKM), the
+! disk fetch buffer CDSKBF DRZ(N),(512) and ZFINIS VF,0, lines 1-54.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.84, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22LOADER  CARD
+! ID TB000085  DIST. OF 3/01  3/01  PAGE NUMBER 334"; the heading row's
+! LOCATION field is BLANK (line 1 is a remark card).
+!
+! THE PAGE.  54 lines; every line number prints a "*" after it.  Lines
+! 1-4 are remark cards (a "*" banner, "LOADER REJECT - (YLERR2 - YLERR
+! IS CASE WHERE BRANCH CARD IS MISSING ) - USE RETURN TO DIAGNOSE ERROR
+! AND GOTO YBRLOG", a "*" banner), no location.  Located rows run
+! contiguous from 235345.40 (line 5) to 236464.00 (line 54, ZFINIS VF,0;
+! a half word, next 236464.40).  "*" after the LOCATION on lines 12, 29,
+! 40, 42, 45, 48, 51, 53.  No TAIL card.
+!
+! JOIN.  p.333 (scratch neighbour, not landed) ends with B,ARNRM5 at
+! 235345.00 (a half word): contiguous with line 5.  p.332 (scratch)
+! stands in YSUKFX 235345.40, YLERR 235346.40, YLERR2 235356.00 -- all
+! three are this page's printed locations.  CDSKBF at 235464.00 is the
+! address every landed stand-in (pp.311-317) uses; ZFINIS at 236464.00
+! is landed p.103's stand-in.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * B,YRLLOG (lines 6, 11, 37): lines 6 and 37 print a CLOSED O at
+!     900 dpi (line 11 prints it open).  Written YRLLOG.  NOTE: scratch
+!     p.333 DEFINES this label as "YRLLCG" (line 6, 235326.40); the ink
+!     here says YRLLOG -- the two must be reconciled.
+!   * "$1C" (lines 5, 10, 36) = $10: the binary 235454.25/235374.25/
+!     235404.25 is what LVI,$10 assembles.
+!   * line 22 "(2)0000101C": the last glyph is in a binary literal, so
+!     0 -- (2)00001010; the binary 024000.00 is 00001010 left-justified.
+!   * hex bytes printed with open rounds ("C1" line 26, "C0" line 16,
+!     ".CC"/".C0" octal fields) read 0 where the statement can only
+!     assemble 0; line 21's BZRZ byte C0 is a real C0 (as p.328's BZRZ).
+!   * line 28 "ALD BF" (a gap in the ink) = ALDBF (landed p.291 line 33).
+!   * line 53 "CDSKBF" prints its D worn ("CUSKBF" to Vision): C22-6728
+!     names CDSKBF, the disk fetch buffer.
+!   * the (AX)DD texts: blank counts measured on a 40.07 px/column grid
+!     against the X terminator (column 43 = 32 characters, each text's
+!     4-word stride confirms it); line 52's X stands in column 25, 14
+!     blanks; line 51's 49 characters give 235462.10 exactly.
+!     "CRIGIN" = ORIGIN (English, lines 49, 50).
+!
+! EXTERNALS.  KSILO (p.171), ABSSID / ARCDCT / ALDBF (p.291), SCA8
+! (p.261), ARNORM (p.326) are landed; forms copied.  YRLLOG is scratch
+! p.333's label; YLJSLT is scratch p.332's VF.
+!
+! CARD SERIALS.  TB000085 .. TB000136 (lines 1-52), then TC000001,
+! TC000002 (lines 53, 54): a new card-deck series begins at CDSKBF.
+
+KSILO   SYN(BU,64), (8)220451.0      ! landed p.171 DR(BU,64),(K QUANT) at 220451.00; L line 7 KSILO+2.
+ABSSID  SYN, (8)232542.0             ! landed p.291 line 8 (A*)DD(BU,48,6); as p.271 writes it; KF line 8
+ARCDCT  SYN(B,25,1), (8)232547.0     ! landed p.291 line 27 VF,0; ST line 15 232547.00
+YBCBU   SYN(BU), (8)231462.0         ! p.274 line 19 DR(BU),(15), as p.291's stand-in writes it
+ALDBF   SYN,YBCBU                    ! landed p.291 line 33 SYN,YBCBU; VF line 28 ALDBF+13.32 = 231477.40
+SCA8    SYN(BU,64,8), (8)230623.0    ! landed p.261 line 9 LI(BU,24) (full word) label; BD line 27 230623.04
+ARNORM  SYN(BU,32,8), (8)235001.40   ! landed p.326 line 36 KV (half word) label; B line 16 235001.50
+YRLLOG  SYN(BU,32,8), (8)235326.40   ! scratch p.333 line 6 LV (half word) label, spelled "YRLLCG" there; B lines 6, 11, 37 235326.50
+YLJSLT  SYN(B,25,1), (8)235316.40    ! scratch p.332 line 49 VF,0; LF line 17 235316.40, LV line 31
+
+        SLC, (8)235345.40
+YSUKFX  LVI,$10,YSUKM                                        ! line  5
+        B,YRLLOG                                             ! line  6
+YLERR   L(BU,18),KSILO+2.                                    ! line  7
+        KF(BU,18),ABSSID                                     ! line  8
+        BAE,YAERR1                                           ! line  9
+YAERR2  LVI,$10,YLEM1                                        ! line 10
+        B,YRLLOG                                             ! line 11
+YAERR1  LV,$1,KSILO+9.32                                     ! line 12  -FETCH END RETURN ON A BSS JOB
+        BZB,.63($1),YAERR2                                   ! line 13
+        LI(BU,18),1.                                         ! line 14  -LIBRARY ROUTINE WAS READ
+        ST(BU,18),ARCDCT                                     ! line 15
+        B,ARNORM                                             ! line 16
+YLERR2  LF(BU,12,3),YLJSLT                                   ! line 17
+        LCI,$9,4.0                                           ! line 18
+        LVI,$9,0.0                                           ! line 19
+YLJL    CT0101(BU,8),$,0($9)                                 ! line 20
+        BZRZ,$+1.32                                          ! line 21
+        LFI(BU,8),(2)00001010,0($9)                          ! line 22
+        V+I,$9,4.0                                           ! line 23
+        CB,$9,YLJL                                           ! line 24
+        ST(BU,32),YMLJM+1.56                                 ! line 25
+        LVI,$15,$+1.0                                        ! line 26
+        BD,SCA8                                              ! line 27
+        VF,ALDBF+13.32                                       ! line 28
+        CF,8                                                 ! line 29
+        VF,YMLJM+3.0                                         ! line 30
+        LV,$9,YLJSLT                                         ! line 31
+        CM0000(BU,12),$9                                     ! line 32
+        V+,$9,$9                                             ! line 33
+        V+,$9,$9                                             ! line 34
+        TI,4,YLJM1($9),YLJM1                                 ! line 35
+        LVI,$10,YMLJM                                        ! line 36
+        B,YRLLOG                                             ! line 37
+        CNOP                                                 ! line 38
+YLEM1   (AX)DD(BU),-NO BRANCH CARD IN CURRENT DECK-X         ! line 39
+        (AX)DD(BU), JOB REJECTED.                  X         ! line 40
+YMLJM   (AX)DD(BU),-LOAD. REJ. CD.     ID          X         ! line 41
+YLJM1   DRZ(BU),(4)                                          ! line 42
+        (AX)DD(BU), CHECKSUM ERROR.                X         ! line 43
+        (AX)DD(BU), SEQUENCE ERROR.                X         ! line 44
+        (AX)DD(BU), ILLEGAL TYPE OF CARD.          X         ! line 45
+        (A*)DD(BU),ILLEGAL NON-BSS FUNCTION        *         ! line 46
+        (AX)DD(BU), TRIED TO LOAD OUTSIDE LIMITS.  X         ! line 47
+        (AX)DD(BU), C OR P CARD INCORRECTLY PUNCHEDX         ! line 48
+        (AX)DD(BU), FIRST C CARD HAS NO ORIGIN.    X         ! line 49
+        (AX)DD(BU),NO ORIGIN IN FIRST CARD.        X         ! line 50
+YSUKM   (AX)DD(BU),-JOB CANNOT BE RUN BECAUSE OF INPUT DIFFICULTIES.X ! line 51
+        (AX)DD(BU),              X                           ! line 52
+CDSKBF  DRZ(N),(512)                                         ! line 53  - ***** DISK FETCH BUFFER *****
+ZFINIS  VF,0                                                 ! line 54
+
+!SYM YSUKFX 235345.40
+!SYM YLERR  235346.40
+!SYM YAERR2 235351.00
+!SYM YAERR1 235352.00
+!SYM YLERR2 235356.00
+!SYM YLJL   235360.00
+!SYM YLEM1  235374.00
+!SYM YMLJM  235404.00
+!SYM YLJM1  235410.00
+!SYM YSUKM  235454.00
+!SYM CDSKBF 235464.00
+!SYM ZFINIS 236464.00
+!CHECK 235345.40 | 235454.25 01 | line 5 YSUKFX LVI,$10,YSUKM (printed "$1C")
+!CHECK 235346.00 | 235326.50 00 | line 6 B,YRLLOG
+!CHECK 235346.40 | 220453.00 80 022000.20 50 | line 7 YLERR L(BU,18),KSILO+2.
+!CHECK 235347.40 | 232542.00 80 022000.23 10 | line 8 KF(BU,18),ABSSID
+!CHECK 235350.40 | 235352.36 C2 | line 9 BAE,YAERR1
+!CHECK 235351.00 | 235374.25 01 | line 10 YAERR2 LVI,$10,YLEM1 (printed "$1C")
+!CHECK 235351.40 | 235326.50 00 | line 11 B,YRLLOG (printed "YRLLCG"; byte "C0" = 00)
+!CHECK 235352.00 | 220462.42 30 | line 12 YAERR1 LV,$1,KSILO+9.32 (a "*" prints after the location)
+!CHECK 235352.40 | 000000.77 81 235351.34 00 | line 13 BZB,.63($1),YAERR2
+!CHECK 235353.40 | 000001.00 80 422000.20 50 | line 14 LI(BU,18),1.
+!CHECK 235354.40 | 232547.00 80 022000.20 D0 | line 15 ST(BU,18),ARCDCT
+!CHECK 235355.40 | 235001.50 00 | line 16 B,ARNORM (prints "235C01.50 C0" = 00)
+!CHECK 235356.00 | 235316.40 80 014300.06 70 | line 17 YLERR2 LF(BU,12,3),YLJSLT
+!CHECK 235357.00 | 000004.23 02 | line 18 LCI,$9,4.0
+!CHECK 235357.40 | 000000.23 01 | line 19 LVI,$9,0.0
+!CHECK 235360.00 | 235360.00 80 010000.13 79 | line 20 YLJL CT0101(BU,8),$,0($9)
+!CHECK 235361.00 | 235362.74 C0 | line 21 BZRZ,$+1.32
+!CHECK 235361.40 | 024000.00 80 410000.06 79 | line 22 LFI(BU,8),(2)00001010,0($9) (printed "0000101C")
+!CHECK 235362.40 | 000004.23 05 | line 23 V+I,$9,4.0
+!CHECK 235363.00 | 235360.22 48 | line 24 CB,$9,YLJL
+!CHECK 235363.40 | 235405.70 80 040000.20 D0 | line 25 ST(BU,32),YMLJM+1.56
+!CHECK 235364.40 | 235365.77 01 | line 26 LVI,$15,$+1.0 (byte prints "C1" = 01)
+!CHECK 235365.00 | 230623.04 00 | line 27 BD,SCA8
+!CHECK 235365.40 | 231477.40+ | line 28 VF,ALDBF+13.32 (printed "ALD BF")
+!CHECK 235366.00 | 000010 | line 29 CF,8 (a "*" prints after the location)
+!CHECK 235366.40 | 235407.00+ | line 30 VF,YMLJM+3.0
+!CHECK 235367.00 | 235316.62 30 | line 31 LV,$9,YLJSLT
+!CHECK 235367.40 | 000031.00 80 014000.00 F0 | line 32 CM0000(BU,12),$9
+!CHECK 235370.40 | 000031.22 B0 | line 33 V+,$9,$9
+!CHECK 235371.00 | 000031.22 B0 | line 34 V+,$9,$9
+!CHECK 235371.40 | 235410.00 89 235410.10 A0 | line 35 TI,4,YLJM1($9),YLJM1
+!CHECK 235372.40 | 235404.25 01 | line 36 LVI,$10,YMLJM (printed "$1C")
+!CHECK 235373.00 | 235326.50 00 | line 37 B,YRLLOG (closed O)
+!CHECK 235373.40 | 000000.30 00 | line 38 CNOP
+!CHECK 236464.00 | 000000.00+ | line 54 ZFINIS VF,0 (prints "CCCCCC.CC+" open rounds = 0)

@@ -16705,3 +16705,29 @@ BINARY LOADER, PUNID 22LOADER (pp.320-328).
   OPEN: AOXW1/AOXW2 O vs 0; XLCALF (p.314, open round after L);
   card-serial gaps SB000127 (pp.313/314), TA000046 (pp.320/321).
   NEXT: batch 10 from p.330 (PDF = printed - 250).
+
+
+pp.330-345 LANDED (2026-11-06): batch 10.  16 decks: the end of the
+LOADER (pp.330-334) and the debugger/$DUMP (PUNID 22$DUMP, pp.335-345).
+listing_truth 318 pages / 11,790 lines.
+  * THE BODY IS A RESIDENT PART AND TWO OVERLAYS.  p.319's Y MPBUF
+    DRZ(BU),1088 ("RESERVE ROOM FOR OVERLAID AREA") is the origin of
+    BOTH the LOADER (p.320 SLC,YMPBUF) and the $DUMP (p.335 SLC,YMPBUF,
+    the same 234424.00), so check_mcp_body_image merges each with the
+    resident pp.99-319: LOADER 2,350 defined / 40 external, $DUMP 2,262
+    / 61, every row of both holding.
+  * A LOST PAGE INSIDE AN OVERLAY WAS INVISIBLE.  The DRZ's zero fill
+    put every Y MPBUF word in the image, so the missing p.329 passed
+    every_word_accounted_for with 0 unaccounted.  strap_asm now records
+    written_words; the fill-only words of Y MPBUF are pinned by value
+    with their printed reasons.  Measured: dropping p.331 fails that
+    check (32 words) and NOTHING ELSE.
+  * Spelling settled: YRLLOG (p.334 prints its O closed twice; p.333's
+    label prints it open).  PA02 is the digit (C22-6728 PDF p.210
+    typesets the narrow oval).  APCRND is written as printed (C22-6728
+    and p.327's remark spell APCRDND).
+  OPEN: p.335 lines 3-4 are (CC*)DD cards (stood in by SLCs, as p.320's
+    and p.256's are); the $DUMP's own data (ABUFF, AOCTLB, ...) is
+    past p.345.
+  NEXT: printed p.346 on (PDF = printed - 250); extend FILL_ONLY["$DUMP"]
+  as pages land.

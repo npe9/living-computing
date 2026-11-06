@@ -437,6 +437,16 @@ def build(verbose=False, pages=None, end_at='XIPLBS'):
 # p.276 opens at 231523.00, p.285 at 232224.40 and p.287 opens there.
 NO_DECK_PAGES = {47, 59, 60, 81, 82, 100, 275, 285}
 
+# >>> AND A PAGE THE SCAN DOES NOT HAVE IS NOT A PAGE THAT COMPILES
+# NOTHING. <<<  docs/MCP_Mar63_250-445.pdf goes from PDF p.79 (PAGE
+# NUMBER 328) to PDF p.80 (330).  printed p.329 held 235112.00-235153.40,
+# cards TA000449-TA000499 of the LOADER (p.328 ends at 235111.40 with
+# TA000448, p.330 opens at 235154.00 with TA000500); its labels --
+# APCRD4, AOIGN1, AOIGN3 -- are stood in from the binaries that use
+# them.  Kept apart from NO_DECK_PAGES so the words it held stay a
+# KNOWN hole, not an accounted one.
+MISSING_PAGES = {329}
+
 # >>> THE RANGE REACHES printed p.58, 2026-10-24, AND IT IS
 # CONTIGUOUS. <<<
 #

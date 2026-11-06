@@ -1,0 +1,163 @@
+! mcp_bootstrap_p344.strap -- MCP printed page 344: $DUMP's panel dump,
+! first panel line: index-register fields (IT, UB, LB, LZC, AOC, FT)
+! are converted to octal through AOCTLC into the print image at $14,
+! the line is formatted (AFTRMT) and written (AWRITE); then the second
+! panel line ("AC") is begun from APNLW1.  Lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.94, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$DUMP  CARD
+! ID VB000085  DIST. OF 3/01  3/01  PAGE NUMBER 344"; the heading row's
+! LOCATION field is 234772, line 1's word.
+!
+! THE PAGE.  50 lines; every line number prints a "*" after it.  One
+! remark card (line 41, "- PANEL 2ND LINE", no location).  No TAIL
+! card.  Located rows run contiguous from 234772.00 (line 1) to
+! 235040.00 (line 50, LF, a full word; next location 235041.00), then
+! blank paper.  "*" after the LOCATION on lines 14, 27 and 45.  The
+! NAME column is blank on every line: the page defines no symbol.
+!
+! JOIN.  p.343 (no scratch deck; tools/page_sheet.py 343) ends with
+! V+I at 234771.40 (a half word): contiguous with line 1.  p.345's
+! sheet opens at 235041.00 (SIC,AOCTLB): contiguous with line 50.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "ACCTLC" (B on lines 6, 12, 18, 25) prints its second glyph open;
+!     line 32 prints it CLOSED (900 dpi), and the SIC links print
+!     "AOCTLB" closed on lines 5, 11, 17, 24, 31.  Written AOCTLC, the
+!     AOCTL family C22-6728 names (AOCTLA, AOCTLH, AOCTLS) and landed
+!     p.328 spells (AOCTL1, AOCTL2, AOCTLD).  The LAST glyph is a real
+!     C, not a worn D: AOCTLD is p.327's 235042.40, and this B lands at
+!     235373.40, another address.
+!   * the header prints a stray "-" after "PAGE NUMBER 344".
+!   * line 27 "AAOC": the third glyph prints closed at 900 dpi; it pairs
+!     with line 20's ALZC (left zeros count / all ones count, the
+!     $LZC/$AOC fields).  Written AAOC.
+!   * octal / hex fields with an open round read 0 ("FC"/"FO" = F0,
+!     "5C" = 50, "CO" = 00 on the B rows, ".CC" = .00).
+!
+! EXTERNALS.  None is defined on a landed page (grep decks/ and the
+! scratch neighbours: no hits).  All values come from this page's
+! binary; each comment says how much it fixes.  The defining lengths
+! are unknown, so the stand-ins carry no dds (every statement here
+! that needs one writes it out).
+!
+! CARD SERIALS.  VB000085 .. VB000126.  Shared serials (each a SIC,B
+! pair): lines 5-6 (VB000089), 11-12 (VB000094), 17-18 (VB000099),
+! 24-25 (VB000105), 31-32 (VB000111), 37-38 (VB000116), 39-40
+! (VB000117), 43-44 (VB000120).  None skipped.
+
+ABUFF   SYN, (8)236044.0             ! not landed; L line 3 ABUFF+1. 236045.00, LF lines 10/16/22 ABUFF+3/+7, LVI line 36 ABUFF+14. -- word-exact
+AOCTLB  SYN, (8)235376.40            ! not landed; SIC lines 5,11,17,24,31 235376.40, BIT-EXACT
+AOCTLC  SYN, (8)235373.40            ! not landed; B lines 6,12,18,25,32 235373.50, half word only
+ALZC    SYN, (8)236223.30            ! not landed; LF line 20 236223.30, BIT-EXACT
+AAOC    SYN, (8)236223.60            ! not landed; LF line 27 236223.60, BIT-EXACT
+AFTRMB  SYN, (8)235221.0             ! not landed; SIC line 37 235221.00, BIT-EXACT
+AFTRMT  SYN, (8)235211.0             ! not landed; B line 38 235211.10, half word only
+AWRITB  SYN, (8)235327.40            ! not landed; SIC line 39 235327.40, BIT-EXACT
+AWRITE  SYN, (8)235325.40            ! not landed; B line 40 235325.50, half word only
+AMNMBF  SYN, (8)236126.0             ! not landed; LVI line 42 236126.35, word address
+AINTLB  SYN, (8)235210.40            ! not landed; SIC line 43 235210.40, BIT-EXACT
+AINITL  SYN, (8)235205.40            ! not landed; B line 44 235205.50, half word only
+APNLW1  SYN(BU), (8)236150.0         ! not landed; LX line 48 236150.02, word address (an LX target is an index word)
+
+        SLC, (8)234772.00
+        LFI(BU,16),(8)034423                                 ! line  1  -IT
+        SF(BU,16)(V+I),.24($14)                              ! line  2
+        L(BU,1),ABUFF+1.,48                                  ! line  3
+        LF(BU,18,3),ABUFF+1.1                                ! line  4
+        SIC,AOCTLB                                           ! line  5
+        B,AOCTLC                                             ! line  6
+        SF(BU,56)(V+I),1.24($14)                             ! line  7
+        LFI(BU,16),(8)012062                                 ! line  8  -UB
+        SF(BU,16)(V+I),.24($14)                              ! line  9
+        LF(BU,18,3),ABUFF+3.                                 ! line 10
+        SIC,AOCTLB                                           ! line 11
+        B,AOCTLC                                             ! line 12
+        SF(BU,48,8)(V+I),1.16($14)                           ! line 13
+        LFI(BU,16),(8)021462                                 ! line 14  -LB
+        SF(BU,16)(V+I),.24($14)                              ! line 15
+        LF(BU,18,3),ABUFF+3.32                               ! line 16
+        SIC,AOCTLB                                           ! line 17
+        B,AOCTLC                                             ! line 18
+        SF(BU,48,8)(V+I),1.16($14)                           ! line 19
+        LF(BU,24),ALZC                                       ! line 20  -LZC
+        SF(BU,24)(V+I),.32($14)                              ! line 21
+        L(BU,1),ABUFF+7.17,16                                ! line 22
+        LF(BU,6,3),ABUFF+7.18                                ! line 23
+        SIC,AOCTLB                                           ! line 24
+        B,AOCTLC                                             ! line 25
+        SF(BU,24)(V+I),.56($14)                              ! line 26
+        LF(BU,24),AAOC                                       ! line 27
+        SF(BU,24)(V+I),.32($14)                              ! line 28
+        L(BU,1),ABUFF+7.44,16                                ! line 29
+        LF(BU,6,3),ABUFF+7.45                                ! line 30
+        SIC,AOCTLB                                           ! line 31
+        B,AOCTLC                                             ! line 32
+        SF(BU,24)(V+I),.56($14)                              ! line 33
+        LFI(BU,16),(8)033023                                 ! line 34  -FT
+        SF(BU,16)(V+I),.24($14)                              ! line 35
+        LVI,$1,ABUFF+14.                                     ! line 36
+        SIC,AFTRMB                                           ! line 37
+        B,AFTRMT                                             ! line 38
+        SIC,AWRITB                                           ! line 39
+        B,AWRITE                                             ! line 40
+! -     PANEL 2ND LINE                                         ! line 41
+        LVI,$14,AMNMBF                                       ! line 42
+        SIC,AINTLB                                           ! line 43
+        B,AINITL                                             ! line 44
+        LFI(BU,16),(8)030463                                 ! line 45  -AC
+        SF(BU,16),.8($14)                                    ! line 46
+        V+I,$14,.32                                          ! line 47
+        LX,$1,APNLW1                                         ! line 48
+        L(BU,2)(V+I),.2($1),16                               ! line 49
+        LF(BU,6,3)(V+I),.6($1)                               ! line 50
+
+!CHECK 234772.00 | 162114.00 80 420000.06 70 | line 1 LFI(BU,16),(8)034423 (h2 prints "7C": 70)
+!CHECK 234773.00 | 000000.30 8E 120000.12 F0 | line 2 SF(BU,16)(V+I),.24($14) (h2 prints "FC": F0)
+!CHECK 234774.00 | 236045.00 80 001030.20 50 | line 3 L(BU,1),ABUFF+1.,48
+!CHECK 234775.00 | 236045.01 80 022300.06 70 | line 4 LF(BU,18,3),ABUFF+1.1
+!CHECK 234776.00 | 235376.40 80 | line 5 SIC,AOCTLB
+!CHECK 234776.40 | 235373.50 00 | line 6 B,AOCTLC (printed "ACCTLC"; octal ".5C", hex "CO": the open round, 50 00)
+!CHECK 234777.00 | 000001.30 8E 170000.12 F0 | line 7 SF(BU,56)(V+I),1.24($14)
+!CHECK 235000.00 | 050310.00 80 420000.06 70 | line 8 LFI(BU,16),(8)012062
+!CHECK 235001.00 | 000000.30 8E 120000.12 F0 | line 9 SF(BU,16)(V+I),.24($14)
+!CHECK 235002.00 | 236047.00 80 022300.06 70 | line 10 LF(BU,18,3),ABUFF+3. (octal prints "236047.C0": .00)
+!CHECK 235003.00 | 235376.40 80 | line 11 SIC,AOCTLB
+!CHECK 235003.40 | 235373.50 00 | line 12 B,AOCTLC (printed "ACCTLC")
+!CHECK 235004.00 | 000001.20 8E 160000.12 F0 | line 13 SF(BU,48,8)(V+I),1.16($14)
+!CHECK 235005.00 | 106310.00 80 420000.06 70 | line 14 LFI(BU,16),(8)021462 (a "*" prints after the location)
+!CHECK 235006.00 | 000000.30 8E 120000.12 F0 | line 15 SF(BU,16)(V+I),.24($14)
+!CHECK 235007.00 | 236047.40 80 022300.06 70 | line 16 LF(BU,18,3),ABUFF+3.32
+!CHECK 235010.00 | 235376.40 80 | line 17 SIC,AOCTLB
+!CHECK 235010.40 | 235373.50 00 | line 18 B,AOCTLC (printed "ACCTLC"; hex "CO": 00)
+!CHECK 235011.00 | 000001.20 8E 160000.12 F0 | line 19 SF(BU,48,8)(V+I),1.16($14)
+!CHECK 235012.00 | 236223.30 80 030000.06 70 | line 20 LF(BU,24),ALZC
+!CHECK 235013.00 | 000000.40 8E 130000.12 F0 | line 21 SF(BU,24)(V+I),.32($14)
+!CHECK 235014.00 | 236053.21 80 001010.20 50 | line 22 L(BU,1),ABUFF+7.17,16
+!CHECK 235015.00 | 236053.22 80 006300.06 70 | line 23 LF(BU,6,3),ABUFF+7.18
+!CHECK 235016.00 | 235376.40 80 | line 24 SIC,AOCTLB
+!CHECK 235016.40 | 235373.50 00 | line 25 B,AOCTLC (printed "ACCTLC"; octal ".5C", hex "CO": the open round, 50 00)
+!CHECK 235017.00 | 000000.70 8E 130000.12 F0 | line 26 SF(BU,24)(V+I),.56($14)
+!CHECK 235020.00 | 236223.60 80 030000.06 70 | line 27 LF(BU,24),AAOC (a "*" prints after the location)
+!CHECK 235021.00 | 000000.40 8E 130000.12 F0 | line 28 SF(BU,24)(V+I),.32($14)
+!CHECK 235022.00 | 236053.54 80 001010.20 50 | line 29 L(BU,1),ABUFF+7.44,16 (h2 octal prints ".2C": .20)
+!CHECK 235023.00 | 236053.55 80 006300.06 70 | line 30 LF(BU,6,3),ABUFF+7.45
+!CHECK 235024.00 | 235376.40 80 | line 31 SIC,AOCTLB
+!CHECK 235024.40 | 235373.50 00 | line 32 B,AOCTLC (the O prints closed here)
+!CHECK 235025.00 | 000000.70 8E 130000.12 F0 | line 33 SF(BU,24)(V+I),.56($14)
+!CHECK 235026.00 | 154114.00 80 420000.06 70 | line 34 LFI(BU,16),(8)033023
+!CHECK 235027.00 | 000000.30 8E 120000.12 F0 | line 35 SF(BU,16)(V+I),.24($14)
+!CHECK 235030.00 | 236062.03 01 | line 36 LVI,$1,ABUFF+14.
+!CHECK 235030.40 | 235221.00 80 | line 37 SIC,AFTRMB
+!CHECK 235031.00 | 235211.10 00 | line 38 B,AFTRMT
+!CHECK 235031.40 | 235327.40 80 | line 39 SIC,AWRITB
+!CHECK 235032.00 | 235325.50 00 | line 40 B,AWRITE
+!CHECK 235032.40 | 236126.35 01 | line 42 LVI,$14,AMNMBF
+!CHECK 235033.00 | 235210.40 80 | line 43 SIC,AINTLB
+!CHECK 235033.40 | 235205.50 00 | line 44 B,AINITL
+!CHECK 235034.00 | 142314.00 80 420000.06 70 | line 45 LFI(BU,16),(8)030463 (a "*" prints after the location)
+!CHECK 235035.00 | 000000.10 8E 020000.12 F0 | line 46 SF(BU,16),.8($14)
+!CHECK 235036.00 | 000000.75 05 | line 47 V+I,$14,.32
+!CHECK 235036.40 | 236150.02 10 | line 48 LX,$1,APNLW1
+!CHECK 235037.00 | 000000.02 81 102010.20 50 | line 49 L(BU,2)(V+I),.2($1),16
+!CHECK 235040.00 | 000000.06 81 106300.06 70 | line 50 LF(BU,6,3)(V+I),.6($1)

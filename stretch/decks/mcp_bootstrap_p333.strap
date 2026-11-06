@@ -1,0 +1,124 @@
+! mcp_bootstrap_p333.strap -- MCP printed page 333: the loader's RESUME
+! LOAD / end-of-job tail (YRLLOG .. YLREST) and the set-up of the load
+! limits from the communication region (YARSL), lines 1-28.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.83, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22LOADER  CARD ID TB000057  DIST. OF 3/01
+!  3/01  PAGE NUMBER 333"; the heading row's LOCATION field is 235323,
+! line 1's word.
+!
+! THE PAGE.  28 lines; every line number prints a "*" after it.  No
+! remark-only cards, no TAIL card.  Located rows run contiguous from
+! 235323.40 (line 1) to 235345.00 (line 28, B, a half word; next
+! location 235345.40), then blank paper.  A "*" prints after the
+! LOCATION on line 19.
+!
+! JOIN.  p.332 (no deck; tools/page_sheet.py 332) ends around
+! 235320.50 (line 50, B,YBCENC); its lines 46-49 put YRLLL at 235315.00
+! and YLOADA (VF,YBCBU) at 235314.40 -- the stand-ins below.  The span
+! 235321.00-235323.00 is on p.332's last lines, not read here.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "CMOCOO" (lines 3, 10) = CM0000 (connective digits).
+!   * line 6 "LV,1,$1C": the open round is 0 -- $10 (index register 10,
+!     word 32 octal; the binary 000032.02 is that address).
+!   * line 9 "YEOJS" prints its O open ("YECJS"); spelled as landed
+!     p.274 line 21.  Line 14 ",DECJ" = ,DEOJ (landed p.105, 000101.00);
+!     line 18 ",DABECJ" = ,DABEOJ (landed p.105, 000104.00).
+!   * line 11 "$+3.C": the last glyph is the open round 0 -- $+3.0.
+!   * line 17 "BD,SPRIME" prints its D with a worn stem; binary 215570.04
+!     is BD (landed pp.294/296 the same).
+!   * B rows' hex byte "C0" (lines 4, 8) = 00 (the open round, as in
+!     the octal fields of the same rows).
+!   * octal fields with an open round read 0.
+!
+! EXTERNALS.  DMCP, DRET, DEOJ, DABEOJ, SICBU, SPRIMR, SPRIME, SPINCL,
+! KSILO landed (forms copied).  YRLTT p.291, YLLSAV/YEOJS p.274, YPR/
+! YPRRET p.270, ARNRM5 p.327 (forms from their defining cards).  YRLLL
+! and YLOADA are defined on p.332 (not landed): values from this page's
+! binary, form as noted.
+!
+! CARD SERIALS.  TB000057 .. TB000083.  Lines 7-8 share TB000063.
+! None skipped.
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B lines 4, 20 000040.10
+DRET    SYN, 33.0                    ! landed p.105; lines 5, 21 000041.00
+DEOJ    SYN, 65.0                    ! landed p.105 "D EOJ"; line 14 000101.00
+DABEOJ  SYN, 68.0                    ! landed p.105 "D ABEOJ"; line 18 000104.00
+SICBU   SYN, (8)215361.0             ! landed (p.116 VF); SV line 2 215361.35
+SPRIMR  SYN, (8)215571.0             ! landed p.118 line 49; SIC lines 12, 16 215571.00
+SPRIME  SYN, (8)215570.0             ! landed p.118 line 48; B line 13, BD line 17
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label
+SPINCL  SYN(BU,1), SCOMRG+.6         ! p.103 line 16; CM0000 line 10 215001.06
+KSILO   SYN(BU,64), (8)220451.0      ! landed p.171 DR(BU,64),(K QUANT) at 220451.00; lines 22, 23, 26
+YRLTT   SYN(BU,6), (8)232555.0       ! landed p.291 line 45 DD(BU,6),(8)04
+YLLSAV  SYN(N), (8)231426.0          ! landed p.274 line 15 DR(N),(1)
+YEOJS   SYN(BU,1), (8)231501.01      ! landed p.274 line 21 DD(BU,1),(2)0
+YPR     SYN(BU,32,8), (8)231172.0    ! landed p.270 line 2 B,YPRSPL (half word)
+YPRRET  SYN(BU,32,8), (8)231204.40   ! landed p.270 line 22 BE,0 (half word)
+ARNRM5  SYN(BU,32,8), (8)235012.40   ! landed p.327 line 5 Z,$1
+YRLLL   SYN, (8)235315.0             ! p.332 line 46 (not landed, dds unknown); ST line 24 235315.00, BIT-EXACT
+YLOADA  SYN(B,25,1), (8)235314.40    ! p.332 line 45 VF,YBCBU (not landed); LVI line 27 235314.77
+
+        SLC, (8)235323.40
+        SV,$14,YRLTT+1.32                                    ! line  1
+        SV,14,SICBU                                          ! line  2
+        CM0000(BU,1),YLLSAV+.25                              ! line  3
+        B,DMCP                                               ! line  4
+        ,DRET                                                ! line  5
+YRLLOG  LV,1,$10                                             ! line  6  (label prints "YRLLCG" open; p.334 lines 6, 37 print it closed)
+        SIC,YPRRET                                           ! line  7
+        B,YPR                                                ! line  8
+        CM1111,YEOJS                                         ! line  9
+        CM0000,SPINCL                                        ! line 10
+YRLEJJ  BZBZ,YLLSAV.25,$+3.0                                 ! line 11
+        SIC,SPRIMR                                           ! line 12
+        B,SPRIME                                             ! line 13
+        ,DEOJ                                                ! line 14
+        BE,$+2.32                                            ! line 15
+YLREST  SIC,SPRIMR                                           ! line 16
+        BD,SPRIME                                            ! line 17  -HAVING DIAGNOSED ERROR FOR P.P.,
+        ,DABEOJ                                              ! line 18  - GO TO ENDOFJOB.
+        BE,$+.32                                             ! line 19
+        B,DMCP                                               ! line 20
+        ,DRET                                                ! line 21
+YARSL   L(BU,18),KSILO+8.,46                                 ! line 22  -SET UP LIMITS FROM COMMUNICATION REG.
+        LF(BU,18),KSILO+9.,14                                ! line 23
+        ST(BU),YRLLL                                         ! line 24
+        CM1111(BU,1),YRLLL.25                                ! line 25
+        LR,$2,KSILO+9.32                                     ! line 26
+        LVI,$15,YLOADA                                       ! line 27
+        B,ARNRM5                                             ! line 28
+
+!SYM YRLLOG 235326.40
+!SYM YRLEJJ 235332.00
+!SYM YLREST 235335.00
+!SYM YARSL  235340.00
+!CHECK 235323.40 | 232556.75 30 | line 1 SV,$14,YRLTT+1.32
+!CHECK 235324.00 | 215361.35 30 | line 2 SV,14,SICBU
+!CHECK 235324.40 | 231426.31 80 001000.00 F0 | line 3 CM0000(BU,1),YLLSAV+.25 (printed "CMOCOO"; h2 "001000.CC FO")
+!CHECK 235325.40 | 000040.10 00 | line 4 B,DMCP (byte prints "C0" = 00)
+!CHECK 235326.00 | 000041.00 80 | line 5 ,DRET
+!CHECK 235326.40 | 000032.02 30 | line 6 YRLLOG LV,1,$10 (printed "$1C")
+!CHECK 235327.00 | 231204.40 80 | line 7 SIC,YPRRET
+!CHECK 235327.40 | 231172.10 00 | line 8 B,YPR (byte prints "C0" = 00)
+!CHECK 235330.00 | 231501.01 80 001000.36 F0 | line 9 CM1111,YEOJS (printed "YECJS")
+!CHECK 235331.00 | 215001.06 80 001000.00 F0 | line 10 CM0000,SPINCL (printed "CMOCOO")
+!CHECK 235332.00 | 231426.31 80 235335.34 04 | line 11 YRLEJJ BZBZ,YLLSAV.25,$+3.0 (printed "$+3.C")
+!CHECK 235333.00 | 215571.00 80 | line 12 SIC,SPRIMR
+!CHECK 235333.40 | 215570.10 00 | line 13 B,SPRIME
+!CHECK 235334.00 | 000101.00 80 | line 14 ,DEOJ (printed ",DECJ")
+!CHECK 235334.40 | 235337.00 00 | line 15 BE,$+2.32
+!CHECK 235335.00 | 215571.00 80 | line 16 YLREST SIC,SPRIMR
+!CHECK 235335.40 | 215570.04 00 | line 17 BD,SPRIME
+!CHECK 235336.00 | 000104.00 80 | line 18 ,DABEOJ (printed ",DABECJ")
+!CHECK 235336.40 | 235337.00 00 | line 19 BE,$+.32 (a "*" prints after the location)
+!CHECK 235337.00 | 000040.10 00 | line 20 B,DMCP
+!CHECK 235337.40 | 000041.00 80 | line 21 ,DRET
+!CHECK 235340.00 | 220461.00 80 022027.20 50 | line 22 YARSL L(BU,18),KSILO+8.,46
+!CHECK 235341.00 | 220462.00 80 022007.06 70 | line 23 LF(BU,18),KSILO+9.,14 (h2 prints "022007.C6")
+!CHECK 235342.00 | 235315.00 80 000000.20 D0 | line 24 ST(BU),YRLLL
+!CHECK 235343.00 | 235315.31 80 001000.36 F0 | line 25 CM1111(BU,1),YRLLL.25
+!CHECK 235344.00 | 220462.44 70 | line 26 LR,$2,KSILO+9.32
+!CHECK 235344.40 | 235314.77 01 | line 27 LVI,$15,YLOADA
+!CHECK 235345.00 | 235012.50 00 | line 28 B,ARNRM5

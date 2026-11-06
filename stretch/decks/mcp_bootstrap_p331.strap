@@ -1,0 +1,207 @@
+! mcp_bootstrap_p331.strap -- MCP printed page 331: the loader's error
+! entries (AERR3 .. AERR7, the common exit AERRB), the normal return
+! ANORMR, the P-card and D-card skeleton words (ASETZ3, ALD4, APBRCH,
+! APNOP, ABDMP, ADFWA), the card-type table ATBL, and the loader's
+! index words (AREAD1 .. AXRDAT), lines 1-51.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.81, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22LOADER  CARD
+! ID TA000551  DIST. OF 3/01  3/01  PAGE NUMBER 331"; the heading row's
+! LOCATION field is 235221, line 1's word.
+!
+! THE PAGE.  51 lines; every line number prints a "*" after it.  No
+! remark cards, no TAIL card.  Located rows run contiguous from
+! 235221.40 (line 1) to 235261.00 (line 51, an XW; next location
+! 235262.00), then blank paper.  Line 16 CNOP prints no location and
+! no binary (235235.00 is already a word boundary).  Lines 24-38 are a
+! DD(BU,12) table packed from 235241.40 to 235244.10; line 39's XW
+! rounds up to 235245.00.  "*" after the LOCATION on lines 12, 40, 51.
+!
+! JOIN.  p.330 (scratch, not read) should end at 235221.00/.40; this
+! page's own binaries place AERRA at 235211.40 (B line 6) on it.
+! Landed stand-ins agree with this page: p.320/322 AERR3 235221.40,
+! p.321/323/324 AERR5A 235225.0, p.328 AERR5B 235226.40, p.320-328
+! ANORMR 235233.0, p.322 ASETZ3 235235.0 / ALD4 235236.0, p.327 AREAD1
+! 235245.0 / AREADS 235246.0, p.323/327 AOXW1 235247.0, p.327 AOXW2
+! 235250.0, p.322 ACXW3 235253.0, p.321 AXWORG 235255.0, p.320/321
+! AXWFLW 235256.0, p.322 ATXW1 235257.0, p.320 AXWBIN 235260.0 and
+! AXRDAT 235261.0.  p.332 should open at 235262.00, serial TA000601.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 2 label "AERRB" (and B,AERRB lines 8, 10, 12): letter B, not
+!     digit 8 -- AERR8 is a DIFFERENT symbol at 235220.00 (landed
+!     stand-ins p.323/324/326 from their binaries), while B,AERRB here
+!     compiles 235222.50, this page's line 2 (235222.40).  The pair
+!     AERRA (line 6, 235211.40) / AERRB fits the letter.
+!   * line 13 "NOP.APCRND": the separator prints as a dot (a worn comma;
+!     "NOP." is no statement).  APCRND is six letters at 900 dpi and is
+!     written as printed; C22-6728 prose names "APCRDND" (p.327 remark
+!     too) -- not this card's spelling.
+!   * line 17 "($C)": written ($0); the byte 80 is index 0 (line 18's
+!     ($4) prints 84), and an open round is an ordinary 0 on this drum.
+!   * line 18 label "ALC4" = ALD4 (D with worn stem): landed p.322 spells
+!     the family ALD1/ALD2/ALD4/ALD5 and its TI stands ALD4 at 235236.0.
+!   * line 23 "ADFWA": D (remark "-USED IN ADCARD").
+!   * lines 41-46 the round after A: line 42 refills to "AOXW3" =
+!     235251 = line 43's label, so line 43 is AOXW3 (printed "ACXW3")
+!     and line 45 (235253, "-USED IN CHECKSUM", refill 235254 = line 46
+!     ACXW3A) is ACXW3 with a C, as landed p.322's stand-in spells it;
+!     line 46 refills 235253 = ACXW3.  Lines 41, 42 "ACXW1"/"ACXW2" =
+!     AOXW1/AOXW2 (landed p.323/327 spelling); line 44 AOXW4 prints O.
+!   * line 40 "AREADS": S, as landed p.327 spells it.
+!   * line 47 "XW,ALDBF.116," -- a faint slanted mark after 116, taken
+!     as a trailing comma (null field, compiles nothing).
+!   * octal / hex fields with an open round read 0 ("CO"/"C0" = 00,
+!     ".C6" = .06, "CC0017" = 000017, "CCO" = 000 in the XW flags).
+!   * DD statements print "(8)C007", "(8)C025", "(8)201C", "(8)404C",
+!     "(8)130C", "(8)410C", "(8)420C": octal constants, so 0.
+!
+! EXTERNALS.  DMCP, DDUMP landed p.108/p.105; AADD, ALDBF (YBCBU),
+! AFPCI (ALL) landed p.291 forms; ARNRM1 landed p.326 line 41 (LC, a
+! half-word instruction label).  AERRA and APCRND only from this page's
+! binary.
+!
+! CARD SERIALS.  TA000551 .. TA000600.  Lines 21-22 share TA000571.
+! None skipped.
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 21 000040.10
+DDUMP   SYN, 64.0                    ! landed p.105 line 31 "D DUMP"; line 22 000100.00
+AADD    SYN(N), (8)232551.0          ! landed p.291 line 32 DRZ(N),1
+YBCBU   SYN(BU), (8)231462.0         ! p.274 line 19 DR(BU),(15), as landed p.291's stand-in writes it
+ALDBF   SYN,YBCBU                    ! landed p.291 line 33 SYN,YBCBU
+ALL     SYN(N), (8)232543.0          ! landed p.291 line 9 DRZ(N),1
+AFPCI   SYN,ALL.9                    ! landed p.291 line 17; BB line 14 232543.11
+ARNRM1  SYN(BU,32,8), (8)235004.40   ! landed p.326 line 41 LC (half word) at 235004.40; BB line 14 235004.74
+AERRA   SYN, (8)235211.40            ! not landed (p.330); B line 6 235211.50, half word only
+APCRND  SYN, (8)235163.40            ! not landed; NOP line 13 235163.70, half word only
+
+        SLC, (8)235221.40
+AERR3   LFI(BU,5),3                                          ! line  1  -ILLEGAL TYPE OF CARD
+AERRB   SF(BU,5),2.13($15)                                   ! line  2
+        CM0000(BU,12),2.($15)                                ! line  3
+        B,1.32($15)                                          ! line  4
+AERR5A  LFI(BU,5),5                                          ! line  5  -CARD LOADED OUTSIDE OF-
+        B,AERRA                                              ! line  6  -A AND B
+AERR5B  LFI(BU,5),5                                          ! line  7
+        B,AERRB                                              ! line  8
+AERR6   LFI(BU,5),6                                          ! line  9  -C OR P CARD INCORRECTLY PUNCHED
+        B,AERRB                                              ! line 10
+AERR7   LFI(BU,5),7                                          ! line 11  -NO ORIGIN PUNCHED IN FIRST C-
+        B,AERRB                                              ! line 12  -CARD ENCOUNTERED
+ANORMR  NOP,APCRND                                           ! line 13
+        BB,AFPCI,ARNRM1                                      ! line 14
+        B,3.32($15)                                          ! line 15
+        CNOP                                                 ! line 16
+ASETZ3  L(BU,64),($0)                                        ! line 17  -USED TO CHANGE ALOAD1-
+ALD4    L(BU,64)(V+I),1.($4)                                 ! line 18  -TO LOAD ZEROS
+APBRCH  B,$                                                  ! line 19  -USED IN P CARD ROUTING
+APNOP   NOP                                                  ! line 20  -USED IN P CARD ROUTINE
+ABDMP   B,DMCP                                               ! line 21
+        ,DDUMP                                               ! line 22  -USED IN ADCARD
+ADFWA   SIC,0                                                ! line 23  -USED IN ADCARD
+ATBL    DD(BU,12),(8)0007                                    ! line 24  -ORIGIN
+        DD(BU,12),(8)0005                                    ! line 25  -FLOW
+        DD(BU,12),(8)0037                                    ! line 26  -FORTRAN BRANCH CARD 5,6,7,8,9
+        DD(BU,12),(8)0017                                    ! line 27  -BINARY DATA CARD 6,7,8,9
+        DD(BU,12),(8)0025                                    ! line 28  -BINARY INSTR. CARD 5,7,9
+        DD(BU,12),(8)2010                                    ! line 29  -LOADER ADJ. CARD C
+        DD(BU,12),(8)0027                                    ! line 30  -COMMON DEFINITION CARD 5,7,8,9
+        DD(BU,12),(8)0035                                    ! line 31  -FORTRAN PROGRAM CARD 5,6,7,9
+        DD(BU,12),(8)4040                                    ! line 32  -D CARD
+        DD(BU,12),(8)0015                                    ! line 33  -BRANCH
+        DD(BU,12),(8)1100                                    ! line 34  -T CARD
+        DD(BU,12),(8)2004                                    ! line 35  -P CARD
+        DD(BU,12),(8)1300                                    ! line 36  -SUPERT
+        DD(BU,12),(8)4100                                    ! line 37  -C CARD
+        DD(BU,12),(8)4200                                    ! line 38  -B CARD
+AREAD1  XW,-15.,0,,7                                         ! line 39
+AREADS  XW,-13.,35,,7                                        ! line 40
+AOXW1   XW,ALDBF.14,6                                        ! line 41  -PICKS UP COLUMNS ON OCTAL CARD
+AOXW2   XW,AADD,7,AOXW3                                      ! line 42  -STORES LOC.FIELD OF OCTAL CARDS
+AOXW3   XW,AADD,8,AOXW4                                      ! line 43  -STORES OCTAL CHAR.
+AOXW4   XW,AADD+.24,2,AOXW3                                  ! line 44  -STORES HEX CHAR.
+ACXW3   XW,ALDBF,2,ACXW3A,0-4                                ! line 45  -USED IN CHECKSUM SETS XF
+ACXW3A  XW,ALDBF.48,67,ACXW3                                 ! line 46  -USED IN CHECKSUM
+AXWORG  XW,ALDBF.116,                                        ! line 47  -INDICATES ORIGIN CARD
+AXWFLW  XW,ALDBF.52,12                                       ! line 48  -INDICATES FLOW CARD
+ATXW1   XW,ATBL,15,0                                         ! line 49
+AXWBIN  XW,ALDBF.96                                          ! line 50
+AXRDAT  XW,ALDBF.120                                         ! line 51
+
+!SYM AERR3  235221.40
+!SYM AERRB  235222.40
+!SYM AERR5A 235225.00
+!SYM AERR5B 235226.40
+!SYM AERR6  235230.00
+!SYM AERR7  235231.40
+!SYM ANORMR 235233.00
+!SYM ASETZ3 235235.00
+!SYM ALD4   235236.00
+!SYM APBRCH 235237.00
+!SYM APNOP  235237.40
+!SYM ABDMP  235240.00
+!SYM ADFWA  235241.00
+!SYM ATBL   235241.40
+!SYM AREAD1 235245.00
+!SYM AREADS 235246.00
+!SYM AOXW1  235247.00
+!SYM AOXW2  235250.00
+!SYM AOXW3  235251.00
+!SYM AOXW4  235252.00
+!SYM ACXW3  235253.00
+!SYM ACXW3A 235254.00
+!SYM AXWORG 235255.00
+!SYM AXWFLW 235256.00
+!SYM ATXW1  235257.00
+!SYM AXWBIN 235260.00
+!SYM AXRDAT 235261.00
+!CHECK 235221.40 | 060000.00 80 405000.06 70 | line 1 AERR3 LFI(BU,5),3 (h2 prints ".C6 70")
+!CHECK 235222.40 | 000002.15 8F 005000.12 F0 | line 2 AERRB SF(BU,5),2.13($15) (prints "000C02", "FO")
+!CHECK 235223.40 | 000002.00 8F 014000.00 F0 | line 3 CM0000(BU,12),2.($15) (printed "CMOCOO")
+!CHECK 235224.40 | 000001.50 0F | line 4 B,1.32($15) (byte prints "CF")
+!CHECK 235225.00 | 120000.00 80 405000.06 70 | line 5 AERR5A LFI(BU,5),5
+!CHECK 235226.00 | 235211.50 00 | line 6 B,AERRA
+!CHECK 235226.40 | 120000.00 80 405000.06 70 | line 7 AERR5B LFI(BU,5),5
+!CHECK 235227.40 | 235222.50 00 | line 8 B,AERRB (byte prints "CO")
+!CHECK 235230.00 | 140000.00 80 405000.06 70 | line 9 AERR6 LFI(BU,5),6
+!CHECK 235231.00 | 235222.50 00 | line 10 B,AERRB
+!CHECK 235231.40 | 160000.00 80 405000.06 70 | line 11 AERR7 LFI(BU,5),7
+!CHECK 235232.40 | 235222.50 00 | line 12 B,AERRB (a "*" prints after the location)
+!CHECK 235233.00 | 235163.70 00 | line 13 ANORMR NOP,APCRND (printed "NOP.APCRND")
+!CHECK 235233.40 | 232543.11 80 235004.74 02 | line 14 BB,AFPCI,ARNRM1
+!CHECK 235234.40 | 000003.50 0F | line 15 B,3.32($15)
+!CHECK 235235.00 | 000000.00 80 000000.20 50 | line 17 ASETZ3 L(BU,64),($0) (printed "($C)")
+!CHECK 235236.00 | 000001.00 84 100000.20 50 | line 18 ALD4 L(BU,64)(V+I),1.($4) (label printed "ALC4")
+!CHECK 235237.00 | 235237.10 00 | line 19 APBRCH B,$
+!CHECK 235237.40 | 000000.30 00 | line 20 APNOP NOP
+!CHECK 235240.00 | 000040.10 00 | line 21 ABDMP B,DMCP
+!CHECK 235240.40 | 000100.00 80 | line 22 ,DDUMP
+!CHECK 235241.00 | 000000.00 80 | line 23 ADFWA SIC,0
+!CHECK 235241.40 | 0007 | line 24 ATBL DD(BU,12),(8)0007 | 12
+!CHECK 235241.54 | 0005 | line 25 DD(BU,12),(8)0005 | 12
+!CHECK 235241.70 | 0037 | line 26 DD(BU,12),(8)0037 | 12
+!CHECK 235242.04 | 0017 | line 27 DD(BU,12),(8)0017 | 12
+!CHECK 235242.20 | 0025 | line 28 DD(BU,12),(8)0025 | 12
+!CHECK 235242.34 | 2010 | line 29 DD(BU,12),(8)2010 | 12
+!CHECK 235242.50 | 0027 | line 30 DD(BU,12),(8)0027 | 12
+!CHECK 235242.64 | 0035 | line 31 DD(BU,12),(8)0035 | 12
+!CHECK 235243.00 | 4040 | line 32 DD(BU,12),(8)4040 | 12
+!CHECK 235243.14 | 0015 | line 33 DD(BU,12),(8)0015 | 12
+!CHECK 235243.30 | 1100 | line 34 DD(BU,12),(8)1100 | 12
+!CHECK 235243.44 | 2004 | line 35 DD(BU,12),(8)2004 | 12
+!CHECK 235243.60 | 1300 | line 36 DD(BU,12),(8)1300 | 12
+!CHECK 235243.74 | 4100 | line 37 DD(BU,12),(8)4100 | 12
+!CHECK 235244.10 | 4200 | line 38 DD(BU,12),(8)4200 | 12
+!CHECK 235245.00 | 000017.00- 111 000000 000000 | line 39 AREAD1 XW,-15.,0,,7 (prints "CC0017.00-")
+!CHECK 235246.00 | 000015.00- 111 000043 000000 | line 40 AREADS XW,-13.,35,,7
+!CHECK 235247.00 | 231462.16+ 000 000006 000000 | line 41 AOXW1 XW,ALDBF.14,6 (label printed "ACXW1")
+!CHECK 235250.00 | 232551.00+ 000 000007 235251 | line 42 AOXW2 XW,AADD,7,AOXW3 (label printed "ACXW2")
+!CHECK 235251.00 | 232551.00+ 000 000010 235252 | line 43 AOXW3 XW,AADD,8,AOXW4 (label printed "ACXW3")
+!CHECK 235252.00 | 232551.30+ 000 000002 235251 | line 44 AOXW4 XW,AADD+.24,2,AOXW3
+!CHECK 235253.00 | 231462.00+ 100 000002 235254 | line 45 ACXW3 XW,ALDBF,2,ACXW3A,0-4
+!CHECK 235254.00 | 231462.60+ 000 000103 235253 | line 46 ACXW3A XW,ALDBF.48,67,ACXW3
+!CHECK 235255.00 | 231463.64+ 000 000000 000000 | line 47 AXWORG XW,ALDBF.116,
+!CHECK 235256.00 | 231462.64+ 000 000014 000000 | line 48 AXWFLW XW,ALDBF.52,12
+!CHECK 235257.00 | 235241.40+ 000 000017 000000 | line 49 ATXW1 XW,ATBL,15,0
+!CHECK 235260.00 | 231463.40+ 000 000000 000000 | line 50 AXWBIN XW,ALDBF.96
+!CHECK 235261.00 | 231463.70+ 000 000000 000000 | line 51 AXRDAT XW,ALDBF.120

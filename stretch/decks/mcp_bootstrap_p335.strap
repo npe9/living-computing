@@ -1,0 +1,210 @@
+! mcp_bootstrap_p335.strap -- MCP printed page 335: the opening of the
+! DEBUGGER deck (PUNID 22$DUMP): its punch controls and two (CC*)
+! header cards, then the debugger's entry YDBBEG and the console-key
+! dispatch (PDB1 .. PE4, PINC), lines 1-51.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.85, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22LOADER  CARD ID VA000001  DIST. OF 3/01
+! 3/01  PAGE NUMBER 335" (round glyphs in numeric fields read 0).  The
+! heading row's LOCATION field is BLANK (line 1 is a remark banner).
+!
+! THE PAGE.  51 lines; every line number prints a "*" after it.  A "*"
+! in the LOCATION column on lines 2 and 5 (no location) and after the
+! LOCATION on lines 26 and 45.  No TAIL.
+!   line  1      remark banner "---------- DEBUGGER -----".
+!   line  2      PUNFUL.
+!   lines 3-4    two (CC*)DD(BU,,12) cards at 236464.31 and 236474.65
+!                (the deck's "B HED, REP, 22$DUMP, LOAD,," header card
+!                images) -- see below.
+!   lines 5-7    PUNORG, PUNID,22$DUMP, RESEQ.
+!   line  8      SLC,YMPBUF prints 234424.00.
+!   lines 9-51   code, contiguous from 234424.00 (YDBBEG) to 234456.00
+!                (line 51, B,PE4, a half word; next location 234456.40),
+!                then blank paper.  Remark-only lines 12, 17, 33
+!                (blank), 34.
+!
+! JOIN.  This page opens a new program: its card serials restart at
+! VA000001, and the header still prints the PREVIOUS PUNID (22LOADER),
+! as p.320's header printed 11D11MCP while setting 22LOADER.  Line 8's
+! SLC,YMPBUF goes to 234424.00: like the loader (p.320 line 10), the
+! debugger is assembled to overlay the YMPBUF buffer, so this page's
+! words 234424.00-234456.00 occupy THE SAME ADDRESSES as p.320's
+! loader code (merge note for the coordinator).  The deck states
+! 236464.31 hard (an SLC stand-in) for line 3; it presumably continues
+! the previous page's counter (p.334, not read).  p.336 should open at
+! 234456.40 = line 51's next location (line 28's BBZ target PSC prints
+! 234456.40) with serial VA000052.
+!
+! >>> LINES 3-4'S (CC*)DD ARE NOT HANDED TO THE ASSEMBLER. <<<
+! strap_asm refuses entry mode CC (as printed pp.15, 99, 256, 320
+! found).  Each card is kept as a comment; the deck carries TWO
+! stand-ins that are not printed cards: "SLC, (8)236464.31" (line 3's
+! printed location) and "SLC, (8)236474.65" (line 4's).  Line 3's span
+! is 236464.31 -> 236474.65 = 8 words + (65-31 octal = 28) bits = 540
+! bits = 45 twelve-bit characters, exactly p.320 line 2's span for the
+! same card shape ("B", blanks, "HED, REP, 22$DUMP, LOAD,,", blanks to
+! the "*").  Line 4's length is not fixed by the page (the next located
+! card is an SLC).  The bits from 236464.31 are therefore NOT written
+! into the image by this deck.  The cards are unlabeled.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 6 "PUNID,22$CUMP" = 22$DUMP: line 3 prints "22$DUMP" with a
+!     plain D; worn stem.
+!   * "PC4" (line 11) = PD4: landed p.293 line 17 defines PD4; binary
+!     232574.10 = p.293's !SYM PD4 232574.00.
+!   * "PCB1"/"PDB1" (lines 14, 15, 19, 21) = PDB1: label line 21 at
+!     234433.40; every reference prints 234433.74 (= .40).
+!   * "PCNOUT"/"PONCUT" (lines 35, 49, 50) = PONOUT (landed p.293 line
+!     42; binary 232632.2x = PONOUT+2.0).
+!   * "PHOLCB" (line 43) = PHOLDB: C22-6728 "turns the hold bit on
+!     (PHOLDB)"; p.294 stand-in at 234663.40, which line 43 prints.
+!   * "PDUN"/"PDUM" (line 30): M with a worn right stroke; C22-6728 has
+!     no PDUN; written PDUM.
+!   * lines 39, 47 "B,D MCP" / "BE,CMCP" = DMCP (landed 32.0; 000040.x).
+!   * line 41 ",P C DEF2" = PCDEF2 (landed p.137 SYN,10.0; 000012.00).
+!   * line 35 label "P E1" and line 39 "P E2" written PE1, PE2 (blank
+!     in a name, as p.294 writes "P DB EX" = PDBEX); C22-6728 "at PE3".
+!   * hex bytes "C0"/"CO"/"0C" on B/BE/Z rows = 00 (octal fields of
+!     the same rows print 0 open; lesson 6).  "C2" on line 18 is C2.
+!   * remark line 10 "TOK" transcribed as printed (likely "TO K").
+!
+! EXTERNALS.  PNSLIN, PONOUT, PCW5, PD4 (landed p.293), GDELK, PDUMK,
+! PHDK, PSTK, PSICK, PDKLS, PEBKS, PHOLDS, PINCS (landed p.292, copied
+! in their defining SYN form), DMCP, DWS, DHOLD, DRET, PCDEF2, SICBU,
+! SPRIMR, SPRIME (landed; forms as p.294 writes them), YMPBUF (p.319,
+! form as p.320).  PH, PDKL, PSC, PDUM, PSTR, PEBK, PHOLDB: not landed;
+! values from this page's binary (half word only; PHOLDB BIT-EXACT).
+!
+! CARD SERIALS.  VA000001 .. VA000051, one per line, none shared or
+! skipped.
+
+YMPBUF  SYN(BU), (8)234424.0         ! p.319 line 14 "YMPBUF DRZ(BU),1088" at 234424.00; SLC line 8 prints 234424.00
+SICBU   SYN, (8)215361.0             ! landed (p.116 VF); LV line 9 215361.04
+PD4     SYN, (8)232574.0             ! landed p.293 line 17 (!SYM 232574.00); B line 11 232574.10
+PNSLIN  SYN(BU,64), (8)232613.0      ! landed p.293 line 41 DRZ(BU,64),(13) at 232613.00
+PONOUT  SYN(BU,64), (8)232630.0      ! landed p.293 line 42 DRZ(BU,64),(13) at 232630.00
+PCW5    SYN, (8)232650.0             ! landed p.293 line 48 CW at 232650.00; ,PCW5 line 42 232650.00
+GDELK   SYN,0.44                     ! landed p.292 line 7, as defined there
+PDUMK   SYN,0.46                     ! landed p.292 line 9
+PHDK    SYN,0.47                     ! landed p.292 line 10
+PSTK    SYN,0.48                     ! landed p.292 line 11
+PSICK   SYN,0.16                     ! landed p.292 line 12
+PDKLS   SYN,2.16                     ! landed p.292 line 13
+PEBKS   SYN,2.17                     ! landed p.292 line 14
+PHOLDS  SYN,2.16                     ! landed p.292 line 20
+PINCS   SYN,2.17                     ! landed p.292 line 21
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; lines 39, 47
+DWS     SYN, 1.33                    ! landed p.104; ,DWS line 40 000001.41
+PCDEF2  SYN, 10.0                    ! landed p.137; ,PCDEF2 line 41 000012.00
+DHOLD   SYN, 65.32                   ! landed p.105 line 34; ,DHOLD line 46 000101.40
+DRET    SYN, 33.0                    ! landed p.105; ,DRET line 48 000041.00
+SPRIMR  SYN, (8)215571.0             ! landed p.118 line 49; SIC line 44 215571.00
+SPRIME  SYN, (8)215570.0             ! landed p.118 line 48; BD line 45 215570.04
+PSTR    SYN, (8)234656.40            ! not landed; BZB line 20 / BBZ line 32 234656.74, half word only
+PEBK    SYN, (8)234535.40            ! not landed; BBZ line 22 234535.74, half word only
+PH      SYN, (8)234502.0             ! not landed; BBZ line 24 234502.34, half word only
+PDKL    SYN, (8)234507.0             ! not landed; BBZ line 26 234507.34, half word only
+PSC     SYN, (8)234456.40            ! not landed (p.336's first word?); BBZ line 28 234456.74, half word only
+PDUM    SYN, (8)234556.40            ! not landed; BBZ line 30 234556.74, half word only
+PHOLDB  SYN, (8)234663.40            ! not landed; CM1111 line 43 234663.40, BIT-EXACT (as p.294)
+
+! line  1  - ---------- DEBUGGER -------------------------------------------
+        PUNFUL                                               ! line  2
+        SLC, (8)236464.31            ! STAND-IN: line 3's printed location -- see header
+!       (CC*)DD(BU,,12),B            HED, REP, 22$DUMP, LOAD,,          *   ! line  3  NOT ASSEMBLED (entry mode CC refused)
+        SLC, (8)236474.65            ! STAND-IN: line 4's printed location -- see header
+!       (CC*)DD(BU,,12),                              22$DUMP*              ! line  4  NOT ASSEMBLED (entry mode CC refused)
+        PUNORG                                               ! line  5
+        PUNID,22$DUMP                                        ! line  6
+        RESEQ                                                ! line  7
+        SLC,YMPBUF                                           ! line  8
+YDBBEG  LV,$2,SICBU                                          ! line  9
+        LVI,$12,$+1.0                                        ! line 10  - TOK DISPLAY IC
+        B,PD4                                                ! line 11
+! line 12  -        -ANY DEBUGGING ACTIONS DEFINED
+        CT0011(BU,5),PNSLIN+GDELK                            ! line 13  -IS ANY OF THE 5 KEYS ON
+        BZRZ,PDB1                                            ! line 14
+        BB,PNSLIN+PSICK,PDB1                                 ! line 15
+        CT1100(BU,2),PNSLIN+PDKLS,0                          ! line 16  -ARE BOTH ENTER FROM BINARY
+! line 17  -              - KEYS AND DISPLAY ON BINARY KEY LITES SET
+        BRZ,PINC                                             ! line 18  -YES  TURN ON INCOMP COMBO LITE
+        BB,PNSLIN+PDKLS,PDB1                                 ! line 19  -ANY OF SWITCHES ON
+        BZB,PNSLIN+PEBKS,PSTR                                ! line 20  - NONE ON
+PDB1    LVI,$14,$+.32                                        ! line 21
+        BBZ,PNSLIN+PEBKS,PEBK                                ! line 22  -ENTER FROM BINARY KEYS
+        LVI,$14,$+.32                                        ! line 23
+        BBZ,PNSLIN+PHDK,PH                                   ! line 24  -HOLD KEY ON
+        LVI,$14,$+.32                                        ! line 25
+        BBZ,PNSLIN+PDKLS,PDKL                                ! line 26  -DISPLAY ON BINARY KEY LITES
+        LVI,$14,$+.32                                        ! line 27
+        BBZ,PNSLIN+PSICK,PSC                                 ! line 28  -SET IC
+        LVI,$14,$+.32                                        ! line 29
+        BBZ,PNSLIN+PDUMK,PDUM                                ! line 30  -DUMP
+        LVI,$14,$+.32                                        ! line 31
+        BBZ,PNSLIN+PSTK,PSTR                                 ! line 32  -START
+! line 33  -
+! line 34  -        -NO MORE CNSL REQUESTS AND START KEY NOT ON
+PE1     Z,PONOUT+2.0                                         ! line 35
+        CM1111(BU,1),PONOUT+PHOLDS                           ! line 36  -TURN ON HOLD LITE
+PE4     LX,$2,PNSLIN                                         ! line 37  -KEY SETTINGS
+        SX,$2,PONOUT                                         ! line 38  -LEAVE NUM DISPLAY ALONE
+PE2     B,DMCP                                               ! line 39
+        ,DWS                                                 ! line 40
+        ,PCDEF2                                              ! line 41
+        ,PCW5                                                ! line 42
+PE3     CM1111(BU,1),PHOLDB                                  ! line 43  -HOLD BIT ON
+        SIC,SPRIMR                                           ! line 44
+        BD,SPRIME                                            ! line 45
+        ,DHOLD                                               ! line 46
+        BE,DMCP                                              ! line 47
+        ,DRET                                                ! line 48
+PINC    Z,PONOUT+2.0                                         ! line 49
+        CM1111(BU,1),PONOUT+PINCS,0                          ! line 50
+        B,PE4                                                ! line 51
+
+!SYM YDBBEG 234424.00
+!SYM PDB1   234433.40
+!SYM PE1    234444.40
+!SYM PE4    234446.00
+!SYM PE2    234447.00
+!SYM PE3    234451.00
+!SYM PINC   234454.40
+!CHECK 234424.00 | 215361.04 30 | line 9 YDBBEG LV,$2,SICBU
+!CHECK 234424.40 | 234425.71 01 | line 10 LVI,$12,$+1.0
+!CHECK 234425.00 | 232574.10 00 | line 11 B,PD4 (printed "PC4")
+!CHECK 234425.40 | 232613.54 80 005000.07 70 | line 13 CT0011(BU,5),PNSLIN+GDELK (printed "P NSLIN+G DELK")
+!CHECK 234426.40 | 234433.74 C0 | line 14 BZRZ,PDB1 (printed "PCB1")
+!CHECK 234427.00 | 232613.20 80 234433.74 02 | line 15 BB,PNSLIN+PSICK,PDB1
+!CHECK 234430.00 | 232615.20 80 002000.31 70 | line 16 CT1100(BU,2),PNSLIN+PDKLS,0
+!CHECK 234431.00 | 234454.74 C2 | line 18 BRZ,PINC
+!CHECK 234431.40 | 232615.20 80 234433.74 02 | line 19 BB,PNSLIN+PDKLS,PDB1 (printed "PCB1")
+!CHECK 234432.40 | 232615.21 80 234656.74 00 | line 20 BZB,PNSLIN+PEBKS,PSTR (h2 byte prints "0C" = 00)
+!CHECK 234433.40 | 234434.35 01 | line 21 PDB1 LVI,$14,$+.32 (label printed "PCB1")
+!CHECK 234434.00 | 232615.21 80 234535.74 06 | line 22 BBZ,PNSLIN+PEBKS,PEBK
+!CHECK 234435.00 | 234435.75 01 | line 23 LVI,$14,$+.32
+!CHECK 234435.40 | 232613.57 80 234502.34 06 | line 24 BBZ,PNSLIN+PHDK,PH
+!CHECK 234436.40 | 234437.35 01 | line 25 LVI,$14,$+.32
+!CHECK 234437.00 | 232615.20 80 234507.34 06 | line 26 BBZ,PNSLIN+PDKLS,PDKL (a "*" prints after the location)
+!CHECK 234440.00 | 234440.75 01 | line 27 LVI,$14,$+.32
+!CHECK 234440.40 | 232613.20 80 234456.74 06 | line 28 BBZ,PNSLIN+PSICK,PSC
+!CHECK 234441.40 | 234442.35 01 | line 29 LVI,$14,$+.32
+!CHECK 234442.00 | 232613.56 80 234556.74 06 | line 30 BBZ,PNSLIN+PDUMK,PDUM
+!CHECK 234443.00 | 234443.75 01 | line 31 LVI,$14,$+.32
+!CHECK 234443.40 | 232613.60 80 234656.74 06 | line 32 BBZ,PNSLIN+PSTK,PSTR
+!CHECK 234444.40 | 232632.22 00 | line 35 PE1 Z,PONOUT+2.0 (label printed "P E1", "PCNCUT"; byte prints "C0" = 00)
+!CHECK 234445.00 | 232632.20 80 001000.36 F0 | line 36 CM1111(BU,1),PONOUT+PHOLDS
+!CHECK 234446.00 | 232613.04 10 | line 37 PE4 LX,$2,PNSLIN
+!CHECK 234446.40 | 232630.05 10 | line 38 SX,$2,PONOUT
+!CHECK 234447.00 | 000040.10 00 | line 39 PE2 B,DMCP (printed "P E2", "B,D MCP"; byte prints "C0" = 00)
+!CHECK 234447.40 | 000001.41 80 | line 40 ,DWS (printed ",D W S")
+!CHECK 234450.00 | 000012.00 80 | line 41 ,PCDEF2 (printed ",P C DEF2")
+!CHECK 234450.40 | 232650.00 80 | line 42 ,PCW5 (printed ",P CW5")
+!CHECK 234451.00 | 234663.40 80 001000.36 F0 | line 43 PE3 CM1111(BU,1),PHOLDB (printed "PHOLCB")
+!CHECK 234452.00 | 215571.00 80 | line 44 SIC,SPRIMR (printed "SIC, S PRIMR")
+!CHECK 234452.40 | 215570.04 00 | line 45 BD,SPRIME (a "*" prints after the location)
+!CHECK 234453.00 | 000101.40 80 | line 46 ,DHOLD (printed ",D HOLC")
+!CHECK 234453.40 | 000040.00 00 | line 47 BE,DMCP (printed "BE,CMCP"; "C00040.CC 00" = 000040.00 00)
+!CHECK 234454.00 | 000041.00 80 | line 48 ,DRET (printed ", D RET")
+!CHECK 234454.40 | 232632.22 00 | line 49 PINC Z,PONOUT+2.0 (printed "PCNOUT"; byte prints "C0" = 00)
+!CHECK 234455.00 | 232632.21 80 001000.36 F0 | line 50 CM1111(BU,1),PONOUT+PINCS,0 (printed "PONCUT")
+!CHECK 234456.00 | 234446.10 00 | line 51 B,PE4 (byte prints "C0" = 00)

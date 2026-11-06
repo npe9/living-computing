@@ -6753,6 +6753,22 @@ run "the LOADER's relocating binary-card loop (A RBCD1 .. A RBCD7), relocation b
 run "the LOADER's relocatable binary card routines -- the tail of the field loop (ARBCD8, ARBCDA, printed p.326" python3 verify_mcp_page.py 326
 run "the LOADER's relocation-segment tail (ARNRM5, ARNRM3 library branch, ARNRM4) and the opening, printed p.327" python3 verify_mcp_page.py 327
 run "the octal-card loader's body (AOCTAL): pick up octal/hex characters into AADD, bounds-check, printed p.328" python3 verify_mcp_page.py 328
+run "the end of the P-card routine (APCARD: store the NOP / patched half word, APCRD5 branch, printed p.330" python3 verify_mcp_page.py 330
+run "the loader's error entries (AERR3 .. AERR7, the common exit AERRB), the normal return, printed p.331" python3 verify_mcp_page.py 331
+run "the loader's RESUME LOAD routine (YRESL1 .. YRESL2), the read-one-card path (YRLCR, printed p.332" python3 verify_mcp_page.py 332
+run "the loader's RESUME LOAD / end-of-job tail (YRLLOG .. YLREST) and the set-up of the load, printed p.333" python3 verify_mcp_page.py 333
+run "the LOADER's reject exits (YSUKFX, YLERR, YAERR2, YAERR1, YLERR2 .. YLJL), the reject, printed p.334" python3 verify_mcp_page.py 334
+run "the opening of the DEBUGGER deck (PUNID 22\$DUMP): its punch controls and two (CC*) header, printed p.335" python3 verify_mcp_page.py 335
+run "the debugger's set-instruction-counter request (PSC .. PSC1: convert the key address, printed p.336" python3 verify_mcp_page.py 336
+run "the \$DUMP console debugging package's PDKL (display a requested location on the binary, printed p.337" python3 verify_mcp_page.py 337
+run "the debugging aids' 'enter from binary keys' routine PEBK (store N bits from the keys at, printed p.338" python3 verify_mcp_page.py 338
+run "the console debugger's dump request (PDUM): obtain the initial and end addresses through, printed p.339" python3 verify_mcp_page.py 339
+run "\$DUMP's message build (expand initial/end address to 8-bit bytes into PONOUT, PMES1.., printed p.340" python3 verify_mcp_page.py 340
+run "the console debugger's address-conversion subroutine PA1 (PA1 .. PA04), preceded by the, printed p.341" python3 verify_mcp_page.py 341
+run "the head of the DUMP program (PUNID 22\$DUMP): APUML6, the entry AWDUMP that moves the, printed p.342" python3 verify_mcp_page.py 342
+run "the \$DUMP pump (APUMP5 .. APANEL): test the dump bounds against SPPLB/SMARK, branch to, printed p.343" python3 verify_mcp_page.py 343
+run "\$DUMP's panel dump, first panel line: index-register fields (IT, UB, LB, LZC, AOC, FT), printed p.344" python3 verify_mcp_page.py 344
+run "the \$DUMP program's panel dump: convert \$MR / \$IA-style panel fields to octal through the, printed p.345" python3 verify_mcp_page.py 345
 
 # >>> pp.185-192 FOUND A WRONG ANSWER IN THE VFL IMMEDIATE, and the
 # page caught it by writing ONE immediate at TWO LENGTHS. <<<
@@ -6772,7 +6788,7 @@ run "the octal-card loader's body (AOCTAL): pick up octal/hex characters into AA
 # Also: the SYN path never stripped blanks the instruction path does
 # ("B,K IO IND" assembled, "E IO IND SYN,K IO IND" did not), found
 # by printed p.189 printing both on one page.
-run "MCP's body merges, holds every page's rows and accounts for every word, printed pp.99-328" python3 check_mcp_body_image.py
+run "MCP's body merges, holds every page's rows and accounts for every word, resident pages plus each overlay (LOADER, \$DUMP), printed pp.99-345" python3 check_mcp_body_image.py
 run "a printed trailing '-' is the comment mark, not a minus, C28-6129 PDF p.5" python3 check_comment_mark.py
 run "instruction and index-word names carry a dds, C22-6531 printed pp.10, 19" python3 check_instruction_label_dds.py
 run "\$OP assembles as OP and PRND is a listing control, C28-6129 printed pp.10, 36" python3 check_dollar_op.py

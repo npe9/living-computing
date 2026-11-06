@@ -1,0 +1,151 @@
+! mcp_bootstrap_p338.strap -- MCP printed page 338: the debugging aids'
+! "enter from binary keys" routine PEBK (store N bits from the keys at
+! the requested address, PEBK1/PEBK2) and the head of the dump request
+! routine PDUM (range from the limit card), lines 1-47.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.88, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$DUMP  CARD ID VA000140  DIST. OF 3/01
+!  3/01  PAGE NUMBER 338"; the heading row's LOCATION field is blank.
+!
+! THE PAGE.  47 lines; every line number prints a "*" after it.  "*"
+! after the LOCATION on lines 12 and 32.  Remark cards: lines 1, 29
+! (rules), 2 "(ENTER FROM BINARY KEYS", 30 "-DUMP"; remark-field-only
+! cards 24 ("-SCANNING", continuing line 23's remark) and 40 ("-OBTAIN
+! RANGE FROM LIMIT CARD"); line 28 is a blank card.  No TAIL card.
+! Located rows run contiguous from 234535.40 (line 3) to 234571.40
+! (line 47, a full word; next location 234572.40), then blank paper.
+!
+! JOIN.  p.337 (no scratch deck; tools/page_sheet.py 337) ends with a
+! B at 234535.00 (a half word): contiguous with line 3.  p.339's sheet
+! opens at 234572.40 (B,PDUM5-1.0) and defines PDUM9 = 234573.00, which
+! agrees with line 37's BZRZ,PDUM9 binary 234573.34: contiguous.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * PA02 (line 3 "SIC,PAO2"): the drum prints 0 and O alike open;
+!     C22-6728 PDF p.210 (typeset) prints "PA02." with the narrow oval
+!     of the digit, the width of the 2 beside it.  Written PA02.
+!   * PERR1 (lines 10, 12, 16, 39): the last glyph is a 1 (C22-6728
+!     p.210 "PERR1"; Vision read "PERRI").
+!   * "CMOCOO" / "CMOC00" (lines 19, 47) = CM0000; "CTOO11" (line 31)
+!     = CT0011 (connective digits).
+!   * line 35 "PNSLIN+1.C": the open round is 0; the binary 232614.00
+!     is PNSLIN+1.0.
+!   * octal / hex fields with an open round read 0 ("CO" = C0 kept on
+!     BZRZ rows -- BZRZ assembles C0; "DO", "FO" = D0, F0).
+!   * line 37's remark "-NC-BY PASS" written "-NO-BY PASS" (O open).
+!
+! EXTERNALS.  PNSLIN, PENTBK (p.293), PFPS (p.292), SPPLB/SPPUB/SLRBU
+! (p.116, as p.223 writes them) are landed (forms copied).  The rest
+! come from pages not landed; values from this page's binary (each
+! comment says how much it fixes).
+!
+! CARD SERIALS.  VA000140 .. VA000185.  Shared serials: lines 3-4
+! (VA000142), 28-29 (VA000167).  VA000166 is not printed.
+
+PNSLIN  SYN(BU,64), (8)232613.0      ! landed p.293 line 41 DRZ(BU,64),(13)
+PENTBK  SYN(BU,64,8), (8)232611.0    ! landed p.293 line 37 DD(BU,64,8)
+PFPS    SYN,2.13                     ! landed p.292 line 17
+SLRBU   SYN, (8)215324.0             ! landed p.116 line 21
+SPPUB   SYN, SLRBU                   ! landed p.116 line 22
+SPPLB   SYN, SLRBU+.32               ! landed p.116 line 23
+PA02    SYN, (8)234677.40            ! not landed; SIC line 3 234677.40, BIT-EXACT
+PA1     SYN, (8)234666.0             ! not landed; B line 4 234666.10, half word only
+PERR1   SYN, (8)234664.0             ! not landed; BAE line 10 234664.36, BZRZ line 39 .34, half word only
+PE1     SYN, (8)234444.40            ! not landed; LVI line 23 PE1-1.0 = 234443.75, half word only
+PSC3    SYN, (8)234462.40            ! not landed; B line 25 234462.50, half word only
+PINC    SYN, (8)234454.40            ! not landed; BZXL lines 34, 36 234454.72, half word only
+PDUM9   SYN, (8)234573.0             ! p.339 line 2 (not landed); BZRZ line 37 234573.34, half word only
+
+        SLC, (8)234535.40
+! line  1  - -----------------------------------------------
+! line  2  - (ENTER FROM BINARY KEYS
+PEBK    SIC,PA02                                             ! line  3
+        B,PA1                                                ! line  4
+        LV,$3,$R                                             ! line  5  -PUT STORAGE ADDR IN $3
+        L(BU,8),PNSLIN+1.56,0                                ! line  6  -LOAD N
+        KI(BU,8),(2)11111111,0                               ! line  7
+        BAE,PEBK1                                            ! line  8  -TO INSERT N=64
+        KFI(BU,4),(2)1111,4                                  ! line  9
+        BAE,PERR1                                            ! line 10
+        KFI(BU,4),(2)1111                                    ! line 11
+        BAE,PERR1                                            ! line 12
+        KFI(BU,8),0                                          ! line 13
+        BAE,PEBK1                                            ! line 14
+        KFI(BU,8),(16)64                                     ! line 15
+        BAH,PERR1                                            ! line 16
+        LCV(DU,8,4),$R+0.56,119                              ! line 17  -LOAD N INTO VF TO EFFECT LENGTH
+        LV,$2,$L                                             ! line 18
+        CM0000(BU,3),$2                                      ! line 19
+PEBK2   L(BU,64),PNSLIN,0                                    ! line 20
+        ST(BU,0,8),0($3),0($2)                               ! line 21  -STORE N BINARY BITS
+        LX,$2,PENTBK                                         ! line 22
+        LVI,$14,PE1-1.0                                      ! line 23  -NO MORE SCANNING
+! line 24                     -SCANNING
+        B,PSC3                                               ! line 25
+PEBK1   LVI,$2,0                                             ! line 26  -SET M=64 I.E. LENGHT = 0
+        B,PEBK2                                              ! line 27
+! line 28  (blank card)
+! line 29  - -----------------------------------------------
+! line 30  - -DUMP
+PDUM    CT0011(BU,3),PNSLIN+PFPS                             ! line 31
+        LV,$2,7.32                                           ! line 32
+        KVI,$2,1.0                                           ! line 33
+        BZXL,PINC                                            ! line 34
+        CT1100(BU,32),PNSLIN+1.0                             ! line 35
+        BZXL,PINC                                            ! line 36
+        BZRZ,PDUM9                                           ! line 37  -NO-BY PASS
+        CT1100(BU,32),PNSLIN+1.32,0                          ! line 38  -RIGHT ADDR. BLANK.
+        BZRZ,PERR1                                           ! line 39
+! line 40                     -OBTAIN RANGE FROM LIMIT CARD
+        LV,$12,SPPLB                                         ! line 41
+        LV,$13,SPPUB                                         ! line 42
+        L(DU,21,3),$12,4                                     ! line 43  -
+        ST(BU,32),PNSLIN+1.0                                 ! line 44  -
+        L(DU,21,3),$13,4                                     ! line 45  -
+        ST(BU,32),PNSLIN+1.32                                ! line 46  -
+        CM0000(BU,1),PNSLIN+2.11                             ! line 47  -
+
+!SYM PEBK   234535.40
+!SYM PEBK2  234552.00
+!SYM PEBK1  234555.40
+!SYM PDUM   234556.40
+!CHECK 234535.40 | 234677.40 80 | line 3 PEBK SIC,PA02 (prints PAO2)
+!CHECK 234536.00 | 234666.10 00 | line 4 B,PA1
+!CHECK 234536.40 | 000011.06 30 | line 5 LV,$3,$R
+!CHECK 234537.00 | 232614.70 80 010000.20 50 | line 6 L(BU,8),PNSLIN+1.56,0
+!CHECK 234540.00 | 776000.00 80 410000.21 10 | line 7 KI(BU,8),(2)11111111,0
+!CHECK 234541.00 | 234555.76 C2 | line 8 BAE,PEBK1
+!CHECK 234541.40 | 740000.00 80 404002.23 10 | line 9 KFI(BU,4),(2)1111,4
+!CHECK 234542.40 | 234664.36 C2 | line 10 BAE,PERR1
+!CHECK 234543.00 | 740000.00 80 404000.23 10 | line 11 KFI(BU,4),(2)1111
+!CHECK 234544.00 | 234664.36 C2 | line 12 BAE,PERR1 ("*" after location)
+!CHECK 234544.40 | 000000.00 80 410000.23 10 | line 13 KFI(BU,8),0
+!CHECK 234545.40 | 234555.76 C2 | line 14 BAE,PEBK1
+!CHECK 234546.00 | 310000.00 80 410000.23 10 | line 15 KFI(BU,8),(16)64
+!CHECK 234547.00 | 234664.37 42 | line 16 BAH,PERR1
+!CHECK 234547.40 | 000011.70 80 010473.64 30 | line 17 LCV(DU,8,4),$R+0.56,119
+!CHECK 234550.40 | 000010.04 30 | line 18 LV,$2,$L
+!CHECK 234551.00 | 000022.00 80 003000.00 F0 | line 19 CM0000(BU,3),$2 (prints CMOCOO)
+!CHECK 234552.00 | 232613.00 80 000000.20 50 | line 20 PEBK2 L(BU,64),PNSLIN,0
+!CHECK 234553.00 | 000000.00 83 000000.20 D2 | line 21 ST(BU,0,8),0($3),0($2)
+!CHECK 234554.00 | 232611.04 10 | line 22 LX,$2,PENTBK
+!CHECK 234554.40 | 234443.75 01 | line 23 LVI,$14,PE1-1.0
+!CHECK 234555.00 | 234462.50 00 | line 25 B,PSC3
+!CHECK 234555.40 | 000000.05 01 | line 26 PEBK1 LVI,$2,0
+!CHECK 234556.00 | 234552.10 00 | line 27 B,PEBK2
+!CHECK 234556.40 | 232615.15 80 003000.07 70 | line 31 PDUM CT0011(BU,3),PNSLIN+PFPS (prints CTOO11)
+!CHECK 234557.40 | 000007.44 30 | line 32 LV,$2,7.32 ("*" after location)
+!CHECK 234560.00 | 000001.05 04 | line 33 KVI,$2,1.0
+!CHECK 234560.40 | 234454.72 40 | line 34 BZXL,PINC
+!CHECK 234561.00 | 232614.00 80 040000.31 70 | line 35 CT1100(BU,32),PNSLIN+1.0 (prints 1.C)
+!CHECK 234562.00 | 234454.72 40 | line 36 BZXL,PINC
+!CHECK 234562.40 | 234573.34 C0 | line 37 BZRZ,PDUM9
+!CHECK 234563.00 | 232614.40 80 040000.31 70 | line 38 CT1100(BU,32),PNSLIN+1.32,0
+!CHECK 234564.00 | 234664.34 C0 | line 39 BZRZ,PERR1
+!CHECK 234564.40 | 215324.70 30 | line 41 LV,$12,SPPLB
+!CHECK 234565.00 | 215324.32 30 | line 42 LV,$13,SPPUB
+!CHECK 234565.40 | 000034.00 80 025302.24 50 | line 43 L(DU,21,3),$12,4
+!CHECK 234566.40 | 232614.00 80 040000.20 D0 | line 44 ST(BU,32),PNSLIN+1.0
+!CHECK 234567.40 | 000035.00 80 025302.24 50 | line 45 L(DU,21,3),$13,4
+!CHECK 234570.40 | 232614.40 80 040000.20 D0 | line 46 ST(BU,32),PNSLIN+1.32
+!CHECK 234571.40 | 232615.13 80 001000.00 F0 | line 47 CM0000(BU,1),PNSLIN+2.11 (prints CMOC00)

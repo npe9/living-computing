@@ -1,0 +1,179 @@
+! mcp_bootstrap_p342.strap -- MCP printed page 342: the head of the DUMP
+! program (PUNID 22$DUMP): APUML6, the entry AWDUMP that moves the
+! boundary registers and SICBU into ABUFF, the bounds test of the
+! dump request against SPPLB/SPPUB (ADMP1), and the set-up of the
+! begin/end addresses ADMPBG/ADMPND, lines 1-36.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.92, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$DUMP  CARD
+! ID VB000001  DIST. OF 3/01  3/01  PAGE NUMBER 342"; the heading row's
+! LOCATION field is BLANK -- line 1 is a remark banner.
+!
+! THE PAGE.  36 lines; every line number prints a "*" after it.  Line 1
+! is a remark ("- ---------- DUMP -----...").  Located rows run
+! contiguous from 234704.00 (line 2, B,$, a half word) to 234732.00
+! (line 36, BB, a full word; next location 234733.00), then blank paper.
+! "*" after the LOCATION on lines 11 and 30.  The span lies inside
+! p.319's YMPBUF (234424.00, 1088 words): the overlaid area.
+!
+! JOIN.  p.341 (no deck; tools/page_sheet.py 341) ends with B,PA04 at
+! 234703.40 (a half word): contiguous with line 2.  p.343's sheet opens
+! at 234733.00: contiguous with line 36.  Landed p.269 stands AWDUMP in
+! at 234704.40 (BE,AWDUMP) -- this page's line 3, an independent witness.
+! A new PUNID (22$DUMP) and card-ID series (VB) begin on this page.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 11's label prints "ADMP1" with D's stem thin (900 dpi shows
+!     the stem): the ADMP family (ADMPBG, ADMPND, ADMPPR on this page).
+!     NOTE: a distinct ACMP1 exists (p.351 BB,AFLPTI,ACMP1 -> 235366.40;
+!     C22-6728-1 "used by ACMP1"), not this label (234713.00).
+!   * lines 20, 26, 34, 35, 36 "ADMPBG/ADMPND/ADMPPR" print D worn
+!     ("ACMPBG", "ACMPND"); written D (the family; p.343's ADMPPR label).
+!   * "CM0C00" (line 19) = CM0000; "$C" (lines 23, 28) = $0 -- the
+!     binaries (234723.41 / 000000.41) carry J=0.
+!   * line 28's h1 hex prints "C5": the same open round; the statement
+!     is line 22's V+I,$0,.32, which prints "05".  Read 05.
+!   * octal fields with an open round read 0 ("215361.CC", "234717.CC").
+!   * line 2's label APUML6: the 6 is closed at 900 dpi; C22-6728-1
+!     names APUML6.
+!
+! EXTERNALS.  SLRBU, SPPUB, SPPLB, SICBU are landed p.116 (forms copied
+! from the landed stand-ins); PDUMPT is landed p.319 DD(BU,45).  AUNERR
+! (p.348 line 33, a CM: full word) and ADMPPR (p.343 line 15, KV: half
+! word) are on pages not yet landed; ABUFF, ASPUBI, ADMPBG, ADMPND are
+! defined on pages not yet read; values from this page's binary (each
+! comment says how much it fixes).
+!
+! CARD SERIALS.  VB000001 .. VB000036, one per line, none shared or
+! skipped.
+!
+! TAIL/UNTAIL: no TAIL card on this page.
+
+SLRBU   SYN, (8)215324.0             ! landed p.116 line 21; TI line 4 215324.00
+SPPUB   SYN, SLRBU                   ! landed p.116 line 22; KV line 14 215324.00
+SPPLB   SYN, SLRBU+.32               ! landed p.116 line 23; KV line 12 215324.40
+SICBU   SYN, (8)215361.0             ! landed (p.116 VF); TI line 6 215361.00
+PDUMPT  SYN(BU,45), (8)234417.00     ! landed p.319 line 6 DD(BU,45); BB lines 11, 36 234417.04
+ABUFF   SYN, (8)236044.0             ! not landed; TI lines 3-6 236044/047/067/104, word only
+ASPUBI  SYN, (8)236147.02            ! not landed; CM0000 line 7 236147.02, BIT-EXACT
+AUNERR  SYN(BU,64,8), (8)235235.0    ! p.348 line 33 CM (full word) label (not landed); BXL line 13 235235.32, half word only
+ADMPBG  SYN, (8)236425.0             ! not landed; SVA line 20 236425.03, LV line 34 236425.32, half word only
+ADMPND  SYN, (8)236162.0             ! not landed; SVA line 26 236162.03, LV line 35 236162.04, half word only
+ADMPPR  SYN(BU,32,8), (8)234744.40   ! p.343 line 15 KV (half word) label (not landed); BB line 36 234744.74, half word only
+
+        SLC, (8)234704.0
+! line  1  - ---------- DUMP --------------------------------------------
+APUML6  B,$                                                  ! line  2
+AWDUMP  TI,3,0.,ABUFF                                        ! line  3
+        TI,16,SLRBU,ABUFF+3.                                 ! line  4
+        TI,13,SLRBU+16.,ABUFF+19.                            ! line  5
+        TI,1,SICBU,ABUFF+32.                                 ! line  6
+        CM0000(BU,2),ASPUBI                                  ! line  7
+        Z,$0                                                 ! line  8
+        LV,$0,PDUMPT+3.                                      ! line  9
+        SVA,$0,APUMP9                                        ! line 10
+ADMP1   BB,PDUMPT.4,APUMP8                                   ! line 11
+        KV,$0,SPPLB                                          ! line 12
+        BXL,AUNERR                                           ! line 13
+        KV,$0,SPPUB                                          ! line 14
+        BXH,AUNERR                                           ! line 15
+APUMP8  TI,15,ABUFF+17.,$1                                   ! line 16
+        BD,$.32                                              ! line 17
+APUMP9  LVE,$1,$                                             ! line 18
+        CM0000(BU,9),$1.16                                   ! line 19
+        SVA,$1,ADMPBG                                        ! line 20
+        TI,1,ABUFF+17.,$1                                    ! line 21
+        V+I,$0,.32                                           ! line 22
+        SVA,$0,$.32                                          ! line 23
+        LVE,$1,$                                             ! line 24
+        V+I,$1,1.                                            ! line 25
+        SVA,$1,ADMPND                                        ! line 26
+        TI,1,ABUFF+17.,$1                                    ! line 27
+        V+I,$0,.32                                           ! line 28
+        SVA,$0,$.32                                          ! line 29
+        LVE,$12,$                                            ! line 30
+        BUSAZ,$.32                                           ! line 31
+        BADZ,$.32                                            ! line 32
+        BE,$.32                                              ! line 33
+        LV,$13,ADMPBG                                        ! line 34
+        LV,$2,ADMPND                                         ! line 35
+        BB,PDUMPT.4,ADMPPR                                   ! line 36
+
+! THE PRINTED LISTING
+!   1*                                   - ---------- DUMP ----------...      VB000001
+!   2*  234704.00    234704.10 00                    APUML6 B,$               VB000002
+!   3*  234704.40    000000.00 80 236044.06 A0       AWDUMP TI,3,0.,ABUFF     VB000003
+!   4*  234705.40    215324.00 80 236047.00 A0       TI,16,SLRBU,ABUFF+3.     VB000004
+!   5*  234706.40    215344.00 80 236067.32 A0       TI,13,SLRBU+16.,ABUFF+19. VB000005
+!   6*  234707.40    215361.00 80 236104.02 A0       TI,1,SICBU,ABUFF+32.     VB000006
+!   7*  234710.40    236147.02 80 002000.00 F0       CM0000(BU,2),ASPUBI      VB000007
+!   8*  234711.40    000020.22 00                    Z,$0                     VB000008
+!   9*  234712.00    234422.00 30                    LV,$0,PDUMPT+3.          VB000009
+!  10*  234712.40    234717.41 D0                    SVA,$0,APUMP9            VB000010
+!  11*  234713.00 *  234417.04 80 234716.34 02       ADMP1 BB,PDUMPT.4,APUMP8 VB000011
+!  12*  234714.00    215324.40 90                    KV,$0,SPPLB              VB000012
+!  13*  234714.40    235235.32 42                    BXL,AUNERR               VB000013
+!  14*  234715.00    215324.00 90                    KV,$0,SPPUB              VB000014
+!  15*  234715.40    235235.33 42                    BXH,AUNERR               VB000015
+!  16*  234716.00    236065.00 80 000021.36 A0       APUMP8 TI,15,ABUFF+17.,$1 VB000016
+!  17*  234717.00    234717.44 00                    BD,$.32                  VB000017
+!  18*  234717.40    234717.43 B0                    APUMP9 LVE,$1,$          VB000018
+!  19*  234720.00    000021.20 80 011000.00 F0       CM0000(BU,9),$1.16       VB000019
+!  20*  234721.00    236425.03 D0                    SVA,$1,ADMPBG            VB000020
+!  21*  234721.40    236065.00 80 000021.02 A0       TI,1,ABUFF+17.,$1        VB000021
+!  22*  234722.40    000000.41 05                    V+I,$0,.32               VB000022
+!  23*  234723.00    234723.41 D0                    SVA,$0,$.32              VB000023
+!  24*  234723.40    234723.43 B0                    LVE,$1,$                 VB000024
+!  25*  234724.00    000001.03 05                    V+I,$1,1.                VB000025
+!  26*  234724.40    236162.03 D0                    SVA,$1,ADMPND            VB000026
+!  27*  234725.00    236065.00 80 000021.02 A0       TI,1,ABUFF+17.,$1        VB000027
+!  28*  234726.00    000000.41 05                    V+I,$0,.32               VB000028
+!  29*  234726.40    234727.01 D0                    SVA,$0,$.32              VB000029
+!  30*  234727.00 *  234727.31 B0                    LVE,$12,$                VB000030
+!  31*  234727.40    234730.10 C6                    BUSAZ,$.32               VB000031
+!  32*  234730.00    234730.50 46                    BADZ,$.32                VB000032
+!  33*  234730.40    234731.00 00                    BE,$.32                  VB000033
+!  34*  234731.00    236425.32 30                    LV,$13,ADMPBG            VB000034
+!  35*  234731.40    236162.04 30                    LV,$2,ADMPND             VB000035
+!  36*  234732.00    234417.04 80 234744.74 02       BB,PDUMPT.4,ADMPPR       VB000036
+
+!SYM APUML6 234704.00
+!SYM AWDUMP 234704.40
+!SYM ADMP1  234713.00
+!SYM APUMP8 234716.00
+!SYM APUMP9 234717.40
+!CHECK 234704.00 | 234704.10 00 | line 2 APUML6 B,$
+!CHECK 234704.40 | 000000.00 80 236044.06 A0 | line 3 AWDUMP TI,3,0.,ABUFF (h2 hex prints "AO")
+!CHECK 234705.40 | 215324.00 80 236047.00 A0 | line 4 TI,16,SLRBU,ABUFF+3.
+!CHECK 234706.40 | 215344.00 80 236067.32 A0 | line 5 TI,13,SLRBU+16.,ABUFF+19.
+!CHECK 234707.40 | 215361.00 80 236104.02 A0 | line 6 TI,1,SICBU,ABUFF+32. (h1 prints "215361.CC")
+!CHECK 234710.40 | 236147.02 80 002000.00 F0 | line 7 CM0000(BU,2),ASPUBI (h2 prints "FO")
+!CHECK 234711.40 | 000020.22 00 | line 8 Z,$0
+!CHECK 234712.00 | 234422.00 30 | line 9 LV,$0,PDUMPT+3.
+!CHECK 234712.40 | 234717.41 D0 | line 10 SVA,$0,APUMP9
+!CHECK 234713.00 | 234417.04 80 234716.34 02 | line 11 ADMP1 BB,PDUMPT.4,APUMP8 (a "*" prints after the location)
+!CHECK 234714.00 | 215324.40 90 | line 12 KV,$0,SPPLB
+!CHECK 234714.40 | 235235.32 42 | line 13 BXL,AUNERR
+!CHECK 234715.00 | 215324.00 90 | line 14 KV,$0,SPPUB
+!CHECK 234715.40 | 235235.33 42 | line 15 BXH,AUNERR
+!CHECK 234716.00 | 236065.00 80 000021.36 A0 | line 16 APUMP8 TI,15,ABUFF+17.,$1
+!CHECK 234717.00 | 234717.44 00 | line 17 BD,$.32
+!CHECK 234717.40 | 234717.43 B0 | line 18 APUMP9 LVE,$1,$
+!CHECK 234720.00 | 000021.20 80 011000.00 F0 | line 19 CM0000(BU,9),$1.16 (printed "CM0C00")
+!CHECK 234721.00 | 236425.03 D0 | line 20 SVA,$1,ADMPBG
+!CHECK 234721.40 | 236065.00 80 000021.02 A0 | line 21 TI,1,ABUFF+17.,$1
+!CHECK 234722.40 | 000000.41 05 | line 22 V+I,$0,.32
+!CHECK 234723.00 | 234723.41 D0 | line 23 SVA,$0,$.32 (printed "$C")
+!CHECK 234723.40 | 234723.43 B0 | line 24 LVE,$1,$
+!CHECK 234724.00 | 000001.03 05 | line 25 V+I,$1,1.
+!CHECK 234724.40 | 236162.03 D0 | line 26 SVA,$1,ADMPND
+!CHECK 234725.00 | 236065.00 80 000021.02 A0 | line 27 TI,1,ABUFF+17.,$1
+!CHECK 234726.00 | 000000.41 05 | line 28 V+I,$0,.32 (printed "$C"; h1 hex prints "C5", an open round: 05, as line 22)
+!CHECK 234726.40 | 234727.01 D0 | line 29 SVA,$0,$.32
+!CHECK 234727.00 | 234727.31 B0 | line 30 LVE,$12,$ (a "*" prints after the location)
+!CHECK 234727.40 | 234730.10 C6 | line 31 BUSAZ,$.32
+!CHECK 234730.00 | 234730.50 46 | line 32 BADZ,$.32
+!CHECK 234730.40 | 234731.00 00 | line 33 BE,$.32
+!CHECK 234731.00 | 236425.32 30 | line 34 LV,$13,ADMPBG
+!CHECK 234731.40 | 236162.04 30 | line 35 LV,$2,ADMPND
+!CHECK 234732.00 | 234417.04 80 234744.74 02 | line 36 BB,PDUMPT.4,ADMPPR

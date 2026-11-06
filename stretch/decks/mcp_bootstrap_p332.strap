@@ -1,0 +1,201 @@
+! mcp_bootstrap_p332.strap -- MCP printed page 332: the loader's RESUME
+! LOAD routine (YRESL1 .. YRESL2), the read-one-card path (YRLCR,
+! YRDISK, YCOMDK) with its D FETCH call and parameter words, the
+! card-loaded exit (YLOAD .. B,ALOADR), and the YLJSLT/YLBRA/YBCENC
+! switches, lines 1-56.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.82, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22LOADER  CARD ID TB000001  DIST. OF 3/01
+! 3/01  PAGE NUMBER 332".  The heading row's LOCATION field is BLANK
+! (line 1 is a remark banner).
+!
+! THE PAGE.  56 lines; every line number prints a "*" after it.  Line 1
+! is a remark ("-" in the NAME column, then the banner "RESUME LOAD").
+! Located rows run contiguous from 235262.00 (line 2) to 235323.00
+! (line 56, SX, a half word; next location 235323.40), then blank
+! paper.  Line 32 (CNOP) prints no location (235306.00 is already a
+! full word); line 43's CNOP prints 235313.40 000000.30 00 (a NOP pad).
+! "*" after the LOCATION on lines 16, 35 and 56.  Line 50's LOCATION is
+! blotted by an ink spot ("235317?00"); it lies between 235316.40 and
+! 235317.40, so 235317.00 (the !CHECK reads it so).
+!
+! JOIN.  p.331 not landed and no scratch neighbour deck: contiguity
+! with it is NOT established; the origin is line 2's 235262.00.  Landed
+! p.269 (EXT line 56) stands YRESL1 in at 235262.0, and p.327 stands
+! YRLDTA in at 235307.0 -- both agree with this page's definitions.
+! p.333 should open at 235323.40 with serial TB000057.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * YCOMDK: the label (line 31) prints "YCCMDK" open, but line 28's
+!     operand "BZXCZ,YCOMDK" prints a CLOSED O.  Written YCOMDK.
+!   * YLOAD / YLOADA: labels (lines 42, 45) and line 18's operand print
+!     "YLCAD", "YLCADA" open; line 26 "B,YLOAD" and line 42 "LVI,15,
+!     YLOADA" print closed O's.  Written YLOAD, YLOADA.
+!   * KSILO (lines 3-4, printed "KSILC"/"KSILO" open): landed spelling
+!     (p.171 DR(BU,64)); +1.19 and +2. assemble to the printed 220452.23
+!     and 220453.00.
+!   * ABSSID (line 5, printed "ABSSIC"): landed p.291 spelling; D worn.
+!   * YRDISK, YRLDTA, YDFRDA, YDFCS, DFETCH: D printed with a worn stem
+!     ("YRCISK", "YRLCTA", "YCFRDA", "YCFCS", ",CFETCH").  Spellings
+!     as landed (YRLDTA p.327, YDFCS p.274, DFETCH p.105); YRDISK and
+!     YDFRDA are this page's labels, used here with the same glyph.
+!   * hex bytes and octal fields with an open round read 0 ("CO" = 00 on
+!     B rows lines 20, 33, 41; "CCCC" octal fields = 0000; "5C" = 50).
+!   * line 51 "VF,C": an octal field prints CC0000.00+; the operand is
+!     the digit 0 (as line 49's VF,0).
+!
+! EXTERNALS.  Landed forms copied (sources on each card).  YARSL is
+! defined on p.333 (scratch neighbour: L(BU,18), so a full-word
+! instruction label, 235340.00 there; BAE here prints 235340.36).  The rest,
+! YLERR, YLERR2, YSUKFX are on pages not landed; values from this
+! page's binary (each comment says how much it fixes).
+!
+! CARD SERIALS.  TB000001 .. TB000056, one per line (line N prints
+! TB0000NN), none skipped or shared.  A new deck letter (TB) begins on
+! this page with serial 1, matching the header CARD ID; p.328 ended at
+! TA000448 (where the TA deck ends, on pp.329-331, is not established).
+
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label
+SCORG   SYN(BU,1), SCOMRG+0.03       ! landed p.103 line 13; BB line 2 215001.03
+KSILO   SYN(BU,64), (8)220451.0      ! landed p.171 DR(BU,64),(K QUANT); BZB line 3 KSILO+1.19 220452.23
+ABSSID  SYN, (8)232542.0             ! p.291 line 8 (A*)DD(BU,48,6); as p.271 writes it; KF line 5
+YLLSAV  SYN(N), (8)231426.0          ! landed p.274 line 15 DR(N),(1); TI line 7 231426.00
+YDFCS   SYN(BU), (8)231427.0         ! landed p.274 line 16 DR(BU),(1); TI line 8 231427.00
+YBCBU   SYN(BU), (8)231462.0         ! p.274 line 19 DR(BU),(15), as p.291's stand-in writes it
+SREADS  SYN(BU), (8)215467.0         ! landed p.116 line 36 "SREADS XW,0" (XW label); LX line 9 215467.32
+YRLTT   SYN(BU,6), (8)232555.0       ! landed p.291 line 45 DD(BU,6),(8)04; BZB line 10 YRLTT+2.50 232557.62
+SBAPP   SYN, (8)215005.0             ! landed p.103 line 35 "S BAPP VF,0"; LC line 13
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B lines 20, 33 000040.10
+DSCR    SYN, 68.32                   ! landed p.105 line 40 "D SCR"; line 21 000104.40
+DFETCH  SYN, 66.32                   ! landed p.105 line 36 "D FETCH"; line 34 000102.40
+ALOADR  SYN(BU,64,8), (8)234424.0    ! landed p.320 line 11 BZBZ (full word) label; B line 44 234424.10
+REJJOB  SYN, (8)230364.0             ! landed decks; BBZ line 54 REJJOB+.60 = 230364.74, BIT-EXACT
+YARSL   SYN(BU,64,8), (8)235340.0    ! p.333 line 22 L(BU,18) (full word; scratch neighbour, not landed); BAE line 6 235340.36
+YLERR   SYN, (8)235346.40            ! not landed; B lines 25, 41 235346.50, half word only
+YLERR2  SYN, (8)235356.0             ! not landed; B line 48 235356.10, half word only
+YSUKFX  SYN, (8)235345.40            ! not landed; BBZ line 54 second half 235345.74, half word only
+
+        SLC, (8)235262.00
+! line  1  - ------------------ RESUME LOAD ------------------------------
+YRESL1  BB,SCORG,YRESL2                                      ! line  2
+        BZB,KSILO+1.19,YRESL2                                ! line  3
+        L(BU,18),KSILO+2.                                    ! line  4
+        KF(BU,18),ABSSID                                     ! line  5  printed "ABSSIC"
+        BAE,YARSL                                            ! line  6
+YRESL2  TI,1,YLLSAV,YRLLL                                    ! line  7
+        TI,1,YDFCS,YRLDTA                                    ! line  8
+        LX,$13,SREADS                                        ! line  9  -SET READ SOURCE
+        BZB,YRLTT+2.50,$+1.32                                ! line 10
+        Z,$13                                                ! line 11
+        BZB,YRLLL+.25,YRLCR                                  ! line 12
+        LC,$1,SBAPP                                          ! line 13  -CLEAR PP MEMORY
+        LVI,$1,(8)41.                                        ! line 14
+        C-I,$1,(8)41.                                        ! line 15
+        Z,($1)                                               ! line 16
+        CB+,$1,$-.32                                         ! line 17
+        BZB,SCORG,YLOAD                                      ! line 18  printed "YLCAD"
+YRLCR   BB,$13.25,YRDISK                                     ! line 19
+        B,DMCP                                               ! line 20
+        ,DSCR                                                ! line 21
+        ,YBCBU                                               ! line 22
+        ,1.0                                                 ! line 23
+        ,0                                                   ! line 24
+        B,YLERR                                              ! line 25
+        B,YLOAD                                              ! line 26
+YRDISK  V+IC,13,15.                                          ! line 27
+        BZXCZ,YCOMDK                                         ! line 28  -IF AT END-OF-ARC, ADD TWO WORDS
+        V+I,$13,2.0                                          ! line 29
+        LCI,$13,34.0                                         ! line 30  -RESET END-OF-ARC COUNTER.
+YCOMDK  SVA,$13,YDFRDA                                       ! line 31  printed "YCCMDK"
+        CNOP                                                 ! line 32  (no location printed)
+        B,DMCP                                               ! line 33
+        ,DFETCH                                              ! line 34
+YRLDTA  DR(N),(1)                                            ! line 35
+YDFRDA  ,0                                                   ! line 36
+        ,YBCBU                                               ! line 37
+        ,15.                                                 ! line 38
+        ,0                                                   ! line 39
+        NOP                                                  ! line 40  -FORGET ERROR RETURN.
+        B,YLERR                                              ! line 41
+YLOAD   LVI,15,YLOADA                                        ! line 42  printed "YLCAD"
+        CNOP                                                 ! line 43
+        B,ALOADR                                             ! line 44
+YLOADA  VF,YBCBU                                             ! line 45  printed "YLCADA"
+YRLLL   ,0                                                   ! line 46
+        ,0                                                   ! line 47
+        B,YLERR2                                             ! line 48
+YLJSLT  VF,0                                                 ! line 49
+        B,YBCENC                                             ! line 50
+YLBRA   VF,0                                                 ! line 51
+        B,YRLCR                                              ! line 52  -NORMAL RETURN READ ONE MORE CARD.
+YBCENC  LV,$14,YLBRA                                         ! line 53
+        BBZ,REJJOB+.60,YSUKFX                                ! line 54
+        BB,YRLTT+2.50,$+1.32                                 ! line 55
+        SX,$13,SREADS                                        ! line 56
+
+!SYM YRESL1 235262.00
+!SYM YRESL2 235266.40
+!SYM YRLCR  235277.00
+!SYM YRDISK 235303.40
+!SYM YCOMDK 235305.40
+!SYM YRLDTA 235307.00
+!SYM YDFRDA 235310.00
+!SYM YLOAD  235313.00
+!SYM YLOADA 235314.40
+!SYM YRLLL  235315.00
+!SYM YLJSLT 235316.40
+!SYM YLBRA  235317.40
+!SYM YBCENC 235320.40
+!CHECK 235262.00 | 215001.03 80 235266.74 02 | line 2 YRESL1 BB,SCORG,YRESL2
+!CHECK 235263.00 | 220452.23 80 235266.74 00 | line 3 BZB,KSILO+1.19,YRESL2 (printed "KSILC")
+!CHECK 235264.00 | 220453.00 80 022000.20 50 | line 4 L(BU,18),KSILO+2. (h2 byte prints "5C")
+!CHECK 235265.00 | 232542.00 80 022000.23 10 | line 5 KF(BU,18),ABSSID (printed "ABSSIC")
+!CHECK 235266.00 | 235340.36 C2 | line 6 BAE,YARSL
+!CHECK 235266.40 | 231426.00 80 235315.02 A0 | line 7 YRESL2 TI,1,YLLSAV,YRLLL
+!CHECK 235267.40 | 231427.00 80 235307.02 A0 | line 8 TI,1,YDFCS,YRLDTA (printed "YCFCS")
+!CHECK 235270.40 | 215467.32 10 | line 9 LX,$13,SREADS
+!CHECK 235271.00 | 232557.62 80 235272.74 00 | line 10 BZB,YRLTT+2.50,$+1.32
+!CHECK 235272.00 | 000035.22 00 | line 11 Z,$13
+!CHECK 235272.40 | 235315.31 80 235277.34 00 | line 12 BZB,YRLLL+.25,YRLCR (h2 byte prints "CC" = 00)
+!CHECK 235273.40 | 215005.02 50 | line 13 LC,$1,SBAPP
+!CHECK 235274.00 | 000041.03 01 | line 14 LVI,$1,(8)41.
+!CHECK 235274.40 | 000041.03 08 | line 15 C-I,$1,(8)41.
+!CHECK 235275.00 | 000000.22 01 | line 16 Z,($1) (a "*" prints after the location)
+!CHECK 235275.40 | 235275.03 48 | line 17 CB+,$1,$-.32
+!CHECK 235276.00 | 215001.03 80 235313.34 00 | line 18 BZB,SCORG,YLOAD (printed "YLCAD")
+!CHECK 235277.00 | 000035.31 80 235303.74 02 | line 19 YRLCR BB,$13.25,YRDISK
+!CHECK 235300.00 | 000040.10 00 | line 20 B,DMCP (byte prints "CO")
+!CHECK 235300.40 | 000104.40 80 | line 21 ,DSCR
+!CHECK 235301.00 | 231462.00 80 | line 22 ,YBCBU
+!CHECK 235301.40 | 000001.00 80 | line 23 ,1.0
+!CHECK 235302.00 | 000000.00 80 | line 24 ,0
+!CHECK 235302.40 | 235346.50 00 | line 25 B,YLERR
+!CHECK 235303.00 | 235313.10 00 | line 26 B,YLOAD
+!CHECK 235303.40 | 000017.33 06 | line 27 YRDISK V+IC,13,15. (label printed "YRCISK")
+!CHECK 235304.00 | 235305.70 40 | line 28 BZXCZ,YCOMDK
+!CHECK 235304.40 | 000002.33 05 | line 29 V+I,$13,2.0
+!CHECK 235305.00 | 000042.33 02 | line 30 LCI,$13,34.0
+!CHECK 235305.40 | 235310.33 D0 | line 31 YCOMDK SVA,$13,YDFRDA (label printed "YCCMDK")
+!CHECK 235306.00 | 000040.10 00 | line 33 B,DMCP
+!CHECK 235306.40 | 000102.40 80 | line 34 ,DFETCH
+!CHECK 235310.00 | 000000.00 80 | line 36 YDFRDA ,0
+!CHECK 235310.40 | 231462.00 80 | line 37 ,YBCBU
+!CHECK 235311.00 | 000017.00 80 | line 38 ,15.
+!CHECK 235311.40 | 000000.00 80 | line 39 ,0
+!CHECK 235312.00 | 000000.30 00 | line 40 NOP
+!CHECK 235312.40 | 235346.50 00 | line 41 B,YLERR (byte prints "CO")
+!CHECK 235313.00 | 235314.77 01 | line 42 YLOAD LVI,15,YLOADA (label printed "YLCAD")
+!CHECK 235313.40 | 000000.30 00 | line 43 CNOP
+!CHECK 235314.00 | 234424.10 00 | line 44 B,ALOADR
+!CHECK 235314.40 | 231462.00+ | line 45 YLOADA VF,YBCBU (label printed "YLCADA")
+!CHECK 235315.00 | 000000.00 80 | line 46 YRLLL ,0
+!CHECK 235315.40 | 000000.00 80 | line 47 ,0
+!CHECK 235316.00 | 235356.10 00 | line 48 B,YLERR2
+!CHECK 235316.40 | 000000.00+ | line 49 YLJSLT VF,0
+!CHECK 235317.00 | 235320.50 00 | line 50 B,YBCENC (location blotted)
+!CHECK 235317.40 | 000000.00+ | line 51 YLBRA VF,0 (printed "VF,C")
+!CHECK 235320.00 | 235277.10 00 | line 52 B,YRLCR
+!CHECK 235320.40 | 235317.74 30 | line 53 YBCENC LV,$14,YLBRA
+!CHECK 235321.00 | 230364.74 80 235345.74 06 | line 54 BBZ,REJJOB+.60,YSUKFX
+!CHECK 235322.00 | 232557.62 80 235323.74 02 | line 55 BB,YRLTT+2.50,$+1.32
+!CHECK 235323.00 | 215467.33 10 | line 56 SX,$13,SREADS (a "*" prints after the location)

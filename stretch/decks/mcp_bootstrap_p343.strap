@@ -1,0 +1,175 @@
+! mcp_bootstrap_p343.strap -- MCP printed page 343: the $DUMP pump
+! (APUMP5 .. APANEL): test the dump bounds against SPPLB/SMARK, branch
+! to ADLWER, set up the print buffer (APCOL1, AMNMBF), write it
+! (AWRITE), and the panel line routine (APANEL: "PANEL LINE 1"), lines
+! 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.93, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$DUMP  CARD
+! ID VB000038  DIST. OF 3/01  3/01  PAGE NUMBER 343"; the heading row's
+! LOCATION field is 234733, line 1's word.
+!
+! THE PAGE.  50 lines; every line number prints a "*" after it.  One
+! remark card (line 42, "- PANEL LINE 1"); no TAIL card on this page.
+! Located rows run contiguous from 234733.00 (line 1) to 234771.40
+! (line 50, V+I, a half word; next location 234772.00), then blank
+! paper.  "*" after the LOCATION on lines 11, 30 and 50.
+!
+! JOIN.  p.342 and p.344 are not landed and have no scratch deck yet;
+! line 1's location equals the heading-row LOCATION 234733 and the card
+! ID VB000038 is line 1's serial.  p.344 should open at 234772.00 with
+! serial VB000084.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 6 "CMOC00" = CM0000 (connective digits); its h2 prints
+!     "011000.CC F0" = .00 (the drum prints 0 open).
+!   * lines 16 and 22 "ACLWER" = ADLWER: the D prints with its stem
+!     worn; lines 4 and 11 print it plainly D.  Line 7 "ACMPBG" =
+!     ADMPBG and line 15's label "ADMPPR" read the same way (D worn;
+!     line 9's BZXH,ADMPPR and line 14's ADMPND print the D plainly).
+!   * line 31 APCOL1: the O is closed, the last glyph a flagged 1 (not
+!     the barred I of ASPLBI); C22-6728 OCR reads "APCOLI", the ink
+!     here says 1.
+!   * line 40 AFORMT, line 41 AMNTOP: the O prints open ("AFCRMT",
+!     "AMNTCP"); C22-6728 names AFORMT ("a B,AFORMT-.32") and AMNTOP
+!     (the print buffer).  "NCP" = NOP.
+!   * line 26 ALSRQ: the Q's tail prints.
+!   * octal fields with an open round read 0.
+!
+! EXTERNALS.  SLRBU/SPPLB and SMARK are landed (p.116, p.103), forms
+! copied from landed stand-ins.  Every other external is not landed;
+! values from this page's binary (each comment says how much it fixes).
+!
+! CARD SERIALS.  VB000038 .. VB000083.  Shared serials: lines 32-33
+! (VB000069), 35-36 (VB000071), 38-39 (VB000073), 46-47 (VB000080) --
+! each a SIC,x / B,y pair.  None skipped.
+
+SLRBU   SYN, (8)215324.0             ! landed p.116 line 21
+SPPLB   SYN, SLRBU+.32               ! landed p.116 line 23
+SMARK   SYN, (8)215012.40            ! landed; p.103 line 46 VF (form of p.293's stand-in)
+ASPLBI  SYN, (8)236147.03            ! not landed; BZB1 line 3 / BB line 11 236147.03, BIT-EXACT
+ASPUBI  SYN, (8)236147.02            ! not landed; BB line 4 / BZB1 line 10 236147.02, BIT-EXACT
+ADLWER  SYN, (8)235231.0             ! not landed; BB line 4 h2 235231.34, half word only
+ADMPBG  SYN, (8)236425.0             ! not landed; SVA line 7 236425.33, half word only
+ADMPND  SYN, (8)236162.0             ! not landed; SVA line 14 236162.05, half word only
+ALSRQ   SYN, (8)235221.40            ! not landed; BZB line 26 h2 235221.74, half word only
+APUML7  SYN, (8)235226.0             ! not landed; LVI line 27 235226.11, half word only
+APUML6  SYN, (8)234704.0             ! not landed; SVA line 28 234704.11, half word only
+APUMP9  SYN, (8)234717.40            ! not landed; SVA line 30 234717.41, half word only
+APCOL1  SYN, (8)236105.0             ! not landed; LVI line 31 236105.35, half word only
+AINTLB  SYN, (8)235210.40            ! not landed; SIC line 32 235210.40, half word only
+AINITL  SYN, (8)235205.40            ! not landed; B line 33 235205.50, half word only
+AMNMBF  SYN, (8)236126.0             ! not landed; LVI line 34 236126.35, half word only
+AWRITB  SYN, (8)235327.40            ! not landed; SIC line 38 235327.40, half word only
+AWRITE  SYN, (8)235325.40            ! not landed; B line 39 235325.50, half word only
+AFORMT  SYN, (8)235175.40            ! not landed; NOP line 40 AFORMT-.32 = 235175.30, half word only
+AMNTOP  SYN, (8)236161.40            ! not landed; LV line 41 236161.74, half word only
+ABUFF   SYN, (8)236044.0             ! not landed; LV line 45 ABUFF+32. = 236104.32, half word only
+ALCRFB  SYN, (8)235373.0             ! not landed; SIC line 46 235373.00, half word only
+ALCRF   SYN, (8)235370.0             ! not landed; B line 47 235370.10, half word only
+
+        SLC, (8)234733.00
+        KV,$13,SPPLB                                         ! line  1
+        BZXL,APUMP5                                          ! line  2
+        BZB1,ASPLBI,$+2.                                     ! line  3
+        BB,ASPUBI,ADLWER                                     ! line  4
+        LV,$13,SPPLB                                         ! line  5
+        CM0000(BU,9),$13.16                                  ! line  6
+        SVA,$13,ADMPBG                                       ! line  7
+APUMP5  KV,$2,SMARK                                          ! line  8
+        BZXH,ADMPPR                                          ! line  9
+        BZB1,ASPUBI,$+2.                                     ! line 10
+        BB,ASPLBI,ADLWER                                     ! line 11
+        LV,$2,SMARK                                          ! line 12
+        V+I,$2,1.                                            ! line 13
+        SVA,$2,ADMPND                                        ! line 14
+ADMPPR  KV,$2,$13                                            ! line 15
+        BZXH,ADLWER                                          ! line 16
+        BZBZ,$12.18,$+2.                                     ! line 17
+        CM0000(BU,1),APANEL.19                               ! line 18  -SUPPRESS PANEL
+        KVI,$12,2.                                           ! line 19
+        BZXH,$+1.32                                          ! line 20
+        KVI,$12,15.                                          ! line 21
+        BZXE,ADLWER                                          ! line 22
+        L(BU,4),$12.14,-19                                   ! line 23
+        LV,$12,$L                                            ! line 24
+APUMP6  LV,$1,$0                                             ! line 25
+        BZB,.24($1),ALSRQ                                    ! line 26
+        LVI,$4,APUML7                                        ! line 27
+        SVA,$4,APUML6                                        ! line 28
+        V+I,$0,.32                                           ! line 29
+        SVA,$0,APUMP9                                        ! line 30
+        LVI,$14,APCOL1                                       ! line 31
+        SIC,AINTLB                                           ! line 32
+        B,AINITL                                             ! line 33
+        LVI,$14,AMNMBF                                       ! line 34
+        SIC,AINTLB                                           ! line 35
+        B,AINITL                                             ! line 36
+        LVI,$11,17.                                          ! line 37
+        SIC,AWRITB                                           ! line 38
+        B,AWRITE                                             ! line 39
+APANEL  NOP,AFORMT-.32                                       ! line 40
+        LV,$14,AMNTOP                                        ! line 41
+! line 42  - PANEL LINE 1
+        LFI(BU,16),(8)021463                                 ! line 43  -LC
+        SF(BU,16)(V+I),.24($14)                              ! line 44
+        LV,$13,ABUFF+32.                                     ! line 45
+        SIC,ALCRFB                                           ! line 46
+        B,ALCRF                                              ! line 47
+        LFI(BU,8),(8)73,8                                    ! line 48  -.
+        SF(BU,16),-.16($14)                                  ! line 49
+        V+I,$14,.32                                          ! line 50
+
+!SYM APUMP5 234740.00
+!SYM ADMPPR 234744.40
+!SYM APUMP6 234753.00
+!SYM APANEL 234763.00
+!CHECK 234733.00 | 215324.72 90 | line 1 KV,$13,SPPLB
+!CHECK 234733.40 | 234740.32 40 | line 2 BZXL,APUMP5
+!CHECK 234734.00 | 236147.03 80 234736.34 0C | line 3 BZB1,ASPLBI,$+2.
+!CHECK 234735.00 | 236147.02 80 235231.34 02 | line 4 BB,ASPUBI,ADLWER
+!CHECK 234736.00 | 215324.72 30 | line 5 LV,$13,SPPLB
+!CHECK 234736.40 | 000035.20 80 011000.00 F0 | line 6 CM0000(BU,9),$13.16 (printed "CMOC00"; h2 prints "011000.CC")
+!CHECK 234737.40 | 236425.33 D0 | line 7 SVA,$13,ADMPBG
+!CHECK 234740.00 | 215012.44 90 | line 8 APUMP5 KV,$2,SMARK
+!CHECK 234740.40 | 234744.73 40 | line 9 BZXH,ADMPPR
+!CHECK 234741.00 | 236147.02 80 234743.34 0C | line 10 BZB1,ASPUBI,$+2.
+!CHECK 234742.00 | 236147.03 80 235231.34 02 | line 11 BB,ASPLBI,ADLWER (a "*" prints after the location)
+!CHECK 234743.00 | 215012.44 30 | line 12 LV,$2,SMARK
+!CHECK 234743.40 | 000001.05 05 | line 13 V+I,$2,1.
+!CHECK 234744.00 | 236162.05 D0 | line 14 SVA,$2,ADMPND
+!CHECK 234744.40 | 000035.04 90 | line 15 ADMPPR KV,$2,$13
+!CHECK 234745.00 | 235231.33 40 | line 16 BZXH,ADLWER (printed "ACLWER")
+!CHECK 234745.40 | 000034.22 80 234747.74 04 | line 17 BZBZ,$12.18,$+2.
+!CHECK 234746.40 | 234763.23 80 001000.00 F0 | line 18 CM0000(BU,1),APANEL.19
+!CHECK 234747.40 | 000002.31 04 | line 19 KVI,$12,2.
+!CHECK 234750.00 | 234751.73 40 | line 20 BZXH,$+1.32
+!CHECK 234750.40 | 000017.31 04 | line 21 KVI,$12,15.
+!CHECK 234751.00 | 235231.32 C0 | line 22 BZXE,ADLWER (printed "ACLWER")
+!CHECK 234751.40 | 000034.16 80 004066.60 50 | line 23 L(BU,4),$12.14,-19
+!CHECK 234752.40 | 000010.30 30 | line 24 LV,$12,$L
+!CHECK 234753.00 | 000020.02 30 | line 25 APUMP6 LV,$1,$0
+!CHECK 234753.40 | 000000.30 81 235221.74 00 | line 26 BZB,.24($1),ALSRQ
+!CHECK 234754.40 | 235226.11 01 | line 27 LVI,$4,APUML7
+!CHECK 234755.00 | 234704.11 D0 | line 28 SVA,$4,APUML6
+!CHECK 234755.40 | 000000.41 05 | line 29 V+I,$0,.32
+!CHECK 234756.00 | 234717.41 D0 | line 30 SVA,$0,APUMP9 (a "*" prints after the location)
+!CHECK 234756.40 | 236105.35 01 | line 31 LVI,$14,APCOL1
+!CHECK 234757.00 | 235210.40 80 | line 32 SIC,AINTLB
+!CHECK 234757.40 | 235205.50 00 | line 33 B,AINITL
+!CHECK 234760.00 | 236126.35 01 | line 34 LVI,$14,AMNMBF
+!CHECK 234760.40 | 235210.40 80 | line 35 SIC,AINTLB
+!CHECK 234761.00 | 235205.50 00 | line 36 B,AINITL
+!CHECK 234761.40 | 000021.27 01 | line 37 LVI,$11,17.
+!CHECK 234762.00 | 235327.40 80 | line 38 SIC,AWRITB
+!CHECK 234762.40 | 235325.50 00 | line 39 B,AWRITE
+!CHECK 234763.00 | 235175.30 00 | line 40 APANEL NOP,AFORMT-.32 (printed "NCP,AFCRMT-.32")
+!CHECK 234763.40 | 236161.74 30 | line 41 LV,$14,AMNTOP (printed "AMNTCP")
+!CHECK 234764.00 | 106314.00 80 420000.06 70 | line 43 LFI(BU,16),(8)021463
+!CHECK 234765.00 | 000000.30 8E 120000.12 F0 | line 44 SF(BU,16)(V+I),.24($14)
+!CHECK 234766.00 | 236104.32 30 | line 45 LV,$13,ABUFF+32.
+!CHECK 234766.40 | 235373.00 80 | line 46 SIC,ALCRFB
+!CHECK 234767.00 | 235370.10 00 | line 47 B,ALCRF
+!CHECK 234767.40 | 166000.00 80 410004.06 70 | line 48 LFI(BU,8),(8)73,8
+!CHECK 234770.40 | 777777.60 8E 020000.12 F0 | line 49 SF(BU,16),-.16($14)
+!CHECK 234771.40 | 000000.75 05 | line 50 V+I,$14,.32 (a "*" prints after the location)

@@ -1,0 +1,149 @@
+! mcp_bootstrap_p336.strap -- MCP printed page 336: the debugger's
+! set-instruction-counter request (PSC .. PSC1: convert the key address,
+! insert it in the SIC word, log it) and PH, the HOLD-light routine,
+! lines 1-46.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.86, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22$DUMP  CARD ID VA000053  DIST. OF 3/01
+!  3/01  PAGE NUMBER 336"; the heading row's LOCATION field is BLANK
+! (line 1 is a banner remark).
+!
+! THE PAGE.  46 lines, every line number prints a "*" after it.  Lines
+! 1-2, 5, 16, 18, 20, 26, 34-36, 41 are remark cards.  Located rows run
+! contiguous from 234456.40 (line 3) to 234506.40 (line 46, B, a half
+! word; next location 234507.00), then blank paper.  "*" after the
+! LOCATION on lines 15 and 33.  No TAIL card.
+!
+! JOIN.  p.335 (no deck; tools/page_sheet.py 335) ends with B,PE4 at
+! 234456.00 (a half word): contiguous with line 3.  p.337 (sheet) opens
+! P DKL at 234507.00: contiguous with line 46.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 3 "SIC,PA02": the third glyph prints open.  Written PA02,
+!     digit zero: C22-6728-1 PDF p.221 Table 8 (PA1 "Requestor from
+!     PA02.") sets it as a narrow oval, the width of the 2, not a round
+!     letter O; the original C22-6728 PDF p.210 sets the same narrow
+!     glyph (its OCR reads "PAO2"; the -1 OCR reads "PA02").  The same
+!     table names PA1, PSC, PSC3, SICBU and PH.  No landed deck spells it.
+!   * "PCNOUT" (lines 10, 37, 40) = PONOUT: lines 7, 12, 24, 25, 38
+!     print it with closed O's; landed p.293 line 42 defines PONOUT.
+!   * line 6 "SIC BU" = SICBU (blanks ignored; landed p.116 VF).
+!   * line 21 "POAS" = POAS (landed p.292 line 15 SYN,2.11).
+!   * line 29 ", P C CEF2" = PCDEF2 (D with its stem worn; line 44
+!     prints DEF2 plainly; binary 000012.00 = PCDEF2 10.0).
+!   * line 45 ",PChW5" = PCW5 (binary 232650.00 = p.293 line 48).
+!   * line 31 hex "CE" = 0E: B,1.0($14)'s I field is 14 and the byte's
+!     high nibble is 0 as on line 46, which prints "0E" plainly.
+!   * octal / hex fields with an open round read 0 throughout.
+!
+! EXTERNALS.  From landed decks (forms copied), except PA02 and PA1
+! (not landed; values from this page's binary).
+!
+! CARD SERIALS.  VA000053 .. VA000097.  Lines 3 and 4 BOTH print
+! VA000055, so line N prints VA0000(52+N) through line 3 and
+! VA0000(51+N) from line 4 to line 46 (VA000097).
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B lines 27, 42 000040.10
+DWS     SYN, 1.33                    ! landed p.104; ,DWS lines 28, 43 000001.41
+PCDEF2  SYN, 10.0                    ! landed p.137; ,PCDEF2 lines 29, 44 000012.00
+SICBU   SYN, (8)215361.0             ! landed (p.116 VF); ST line 6 215361.00
+SLRBU   SYN, (8)215324.0             ! landed p.116 line 21; Z line 8 215334.22
+POAS    SYN,2.11                     ! landed p.292 line 15, as defined there
+PHOLDS  SYN,2.16                     ! landed p.292 line 20, as defined there; CM1111 line 38 232632.20
+PSETIC  SYN(BU,64,8), (8)232607.0    ! landed p.293 line 35 DD(BU,64,8); LX line 9 232607.04
+PNSLIN  SYN(BU,64), (8)232613.0      ! landed p.293 line 41 DRZ(BU,64),(13); LX line 39 232613.04
+PONOUT  SYN(BU,64), (8)232630.0      ! landed p.293 line 42 DRZ(BU,64),(13); SX line 40 232630.05
+PCW4    SYN, (8)232647.0             ! landed p.293 line 47 CW; ,PCW4 line 30 232647.00
+PCW5    SYN, (8)232650.0             ! landed p.293 line 48 CW; ,PCW5 line 45 232650.00
+PA02    SYN, (8)234677.40            ! not landed; SIC line 3 234677.40, BIT-EXACT
+PA1     SYN, (8)234666.0             ! not landed; B line 4 234666.10, half word only
+
+        SLC, (8)234456.40
+! line  1  - ---------------------------------------------------------
+! line  2  -           -SET INSTRUCTION COUNTER
+PSC     SIC,PA02                                             ! line  3
+        B,PA1                                                ! line  4  -OBTAIN NEW BINARY ADDRESS IN ADDRESS PORTION
+! line  5  -OF $R. $L=0.
+        ST(BU,24),SICBU,40                                   ! line  6  -NO INSERT IC FOR MAINSTREAM RETURN
+        ST(BU,24),PONOUT+6.0,40                              ! line  7
+        Z,SLRBU+8.0                                          ! line  8
+        LX,$2,PSETIC                                         ! line  9  -SET UP NMEMONIC SET IC
+PSC3    SX,$2,PONOUT+3.0                                     ! line 10
+        L(BU,32),PNSLIN+1.0,0                                ! line 11
+        ST(BU,32),PONOUT+1.0                                 ! line 12  -LFT NUMERIC SWITCHES
+PSC5    LVI,$2,49152.                                        ! line 13  -2 14 + 2 15
+        SV,$2,10.0                                           ! line 14  -SET ZERO BITS = 0011
+        ST(DU,48,8),$L,8                                     ! line 15  -EXPAND 1ST 6 4 BIT DEC CHARACTERS TO
+! line 16                    -8 BIT BYTES WITH ZERO BITS = 001
+        CI0011(BU,8),(2)00111010,72                          ! line 17  -INSERT 1 ZERO BIT + 7 BITS OF
+! line 18                    -PERIOD.
+        ST(DU,16,8),$L+0.56,0                                ! line 19  -EXPAND 2 DECIMAL CHARACTERS TO 8 BIT
+! line 20                    -BYTES
+        BZB,PNSLIN+POAS,PSC1                                 ! line 21  -TO INSERT (0)
+        +I(BU,24),(8)04514623,32                             ! line 22  -INSERT 0 BIT + 23 BITS OF (D)
+PSC2    CI0011(BU,9),(8)776,23                               ! line 23  -INSERT 24TH BIT OF) + END CODE
+        CM0101(BU,64),PONOUT+4.0,63                          ! line 24
+        CM0101(BU,40),PONOUT+5.0,23                          ! line 25
+! line 26  -
+        B,DMCP                                               ! line 27  -LOG MESSAGE
+        ,DWS                                                 ! line 28
+        ,PCDEF2                                              ! line 29
+        ,PCW4                                                ! line 30
+        B,1.0($14)                                           ! line 31
+PSC1    +I(BU,24),(8)04522223,32                             ! line 32  -INSERT 0 BIT + 23BITS OF (0)
+        B,PSC2                                               ! line 33
+! line 34  -
+! line 35  - ---------------------------------------------------------
+! line 36  -           -HOLD
+PH      Z,PONOUT+2.0                                         ! line 37
+        CM1111(BU,1),PONOUT+PHOLDS                           ! line 38  -TURN ON HOLD LITE
+        LX,$2,PNSLIN                                         ! line 39  -DISPLAY KEY SETTINGS
+        SX,$2,PONOUT                                         ! line 40  -LEAVE NUM DISPLAY ALONE
+! line 41  -
+        B,DMCP                                               ! line 42  -TURN ON HOLD LITE
+        ,DWS                                                 ! line 43
+        ,PCDEF2                                              ! line 44
+        ,PCW5                                                ! line 45
+        B,1.0($14)                                           ! line 46
+
+!SYM PSC    234456.40
+!SYM PSC3   234462.40
+!SYM PSC5   234465.00
+!SYM PSC2   234473.00
+!SYM PSC1   234500.40
+!SYM PH     234502.00
+!CHECK 234456.40 | 234677.40 80 | line 3 P SC SIC,PA02
+!CHECK 234457.00 | 234666.10 00 | line 4 B,PA1
+!CHECK 234457.40 | 215361.00 80 030024.20 D0 | line 6 ST(BU,24), SIC BU, 40
+!CHECK 234460.40 | 232636.00 80 030024.20 D0 | line 7 ST(BU,24),PONOUT+6.0,40
+!CHECK 234461.40 | 215334.22 00 | line 8 Z,SLRBU+8.0
+!CHECK 234462.00 | 232607.04 10 | line 9 LX,$2,PSETIC
+!CHECK 234462.40 | 232633.05 10 | line 10 P SC3 SX,$2,PCNOUT+3.0 (= PONOUT)
+!CHECK 234463.00 | 232614.00 80 040000.20 50 | line 11 L(BU,32), PNSLIN+1.0,0
+!CHECK 234464.00 | 232631.00 80 040000.20 D0 | line 12 ST(BU,32),PONOUT+1.0
+!CHECK 234465.00 | 140000.05 01 | line 13 P SC5 LVI,$2,49152.
+!CHECK 234465.40 | 000012.05 30 | line 14 SV,$2,10.0
+!CHECK 234466.00 | 000010.00 80 060004.24 D0 | line 15 ST(DU,48,8),$L,8 (a "*" prints after the location)
+!CHECK 234467.00 | 164000.00 80 410044.06 70 | line 17 CI0011(BU,8),(2)00111010,72
+!CHECK 234470.00 | 000010.70 80 020000.24 D0 | line 19 ST(DU,16,8),$L+0.56,0
+!CHECK 234471.00 | 232615.13 80 234500.74 00 | line 21 BZB,PNSLIN+POAS,PSC1
+!CHECK 234472.00 | 045146.23 80 430020.20 10 | line 22 +I(BU,24),(8)04514623,32
+!CHECK 234473.00 | 776000.00 80 411013.46 70 | line 23 P SC2 CI0011(BU,9),(8)776,23
+!CHECK 234474.00 | 232634.00 80 000037.52 F0 | line 24 CM0101(BU,64),PONOUT+4.0,63
+!CHECK 234475.00 | 232635.00 80 050013.52 F0 | line 25 CM0101(BU,40),PONOUT+5.0,23
+!CHECK 234476.00 | 000040.10 00 | line 27 B,DMCP
+!CHECK 234476.40 | 000001.41 80 | line 28 , D W S
+!CHECK 234477.00 | 000012.00 80 | line 29 , P C CEF2 (D worn)
+!CHECK 234477.40 | 232647.00 80 | line 30 ,P CW4
+!CHECK 234500.00 | 000001.10 0E | line 31 B,1.0($14) (hex prints "CE": open 0)
+!CHECK 234500.40 | 045222.23 80 430020.20 10 | line 32 P SC1 +I(BU,24),(8)04522223,32
+!CHECK 234501.40 | 234473.10 00 | line 33 B,PSC2 (a "*" prints after the location)
+!CHECK 234502.00 | 232632.22 00 | line 37 P H Z,PCNOUT+2.0
+!CHECK 234502.40 | 232632.20 80 001000.36 F0 | line 38 CM1111(BU,1),PONOUT+PHOLDS
+!CHECK 234503.40 | 232613.04 10 | line 39 LX,$2,PNSLIN
+!CHECK 234504.00 | 232630.05 10 | line 40 SX,$2,PCNOUT
+!CHECK 234504.40 | 000040.10 00 | line 42 B,DMCP
+!CHECK 234505.00 | 000001.41 80 | line 43 , D W S
+!CHECK 234505.40 | 000012.00 80 | line 44 , P C DEF2
+!CHECK 234506.00 | 232650.00 80 | line 45 ,PCW5
+!CHECK 234506.40 | 000001.10 0E | line 46 B, 1.0($14)

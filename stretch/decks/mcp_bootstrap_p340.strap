@@ -1,0 +1,156 @@
+! mcp_bootstrap_p340.strap -- MCP printed page 340: $DUMP's message
+! build (expand initial/end address to 8-bit bytes into PONOUT, PMES1..
+! PMES3), the format entries PFP / POHS / PXW, PSTR (turn off the hold
+! lite), PHOLDB and PERR1, lines 1-47.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.90, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$DUMP  CARD
+! ID VA000236  DIST. OF 3/01  3/01  PAGE NUMBER 340"; the heading row's
+! LOCATION field is BLANK (line 1 is a remark card).
+!
+! THE PAGE.  47 lines; every line number prints a "*" after it.  A "*"
+! after the LOCATION on lines 9 and 23.  Remark-only cards: lines 1, 2,
+! 4, 6, 11, 34, 35, 36.  No TAIL card.  Located rows run contiguous
+! from 234631.00 (line 3) to 234664.00 (line 47, Z, a half word; next
+! location 234664.40), then blank paper.  Line 46 CNOP at 234664.00
+! (already a word boundary) emits nothing.
+!
+! JOIN.  p.339 (no scratch deck; tools/page_sheet.py 339) ends with
+! ST(DU,48,8),$L,8 at 234630.00, a full word: contiguous with line 3's
+! 234631.00.  p.339 also places PDUM1 (line 21, 234611.00), PDUDAT
+! (line 41, 234624.40), and its BB,...,PFP / POHS / PXW (234652.34,
+! 234653.74, 234655.34) and BAE/BXH/BZRZ,PERR1 (234664.3x) land on this
+! page's lines 25, 28, 31 and 47 -- independent witnesses.
+!
+! CARD SERIALS.  VA000236 .. VA000282, one per line, none shared or
+! skipped.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "ST(CU,16,8)" / "ST(CU,48,8)" (lines 5, 17) = ST(DU,...): D with
+!     a worn stem; line 19 prints ST(DU,16,8) plainly, and the h2
+!     bytes print "DC" = D0 (p.339 line 50, the same card, prints D0).
+!   * line 28's label "P CHS" = POHS: landed p.292 defines POHSS ("P CH
+!     SS", -OCTAL HEX WITH SUPPRESSION) and p.339 line 19 prints
+!     BB,PNSLIN+POHSS,POHS to 234653.74 = this row's 234653.40; C22-6728
+!     names POHS.  Remark "-O-H" (octal-hex).
+!   * "P DUM1" (lines 27, 30, 33) and "PERR1" (line 47): last glyph has
+!     the flag of a 1 (compared at 900 dpi with LVI's serifed I); the
+!     PDUM5..PDUM9 family on p.339 agrees.
+!   * "PCNOUT" / "PONCUT" = PONOUT (landed p.293); "PCUDAT" = PDUDAT;
+!     "PHOLDS"/"PHOLDB" read with open O's; "CM0C00"/"CMOCCO" = CM0000;
+!     "(2)0011101C" = (2)00111010 (lines 3, 18).
+!   * octal/hex fields with an open round read 0 ("FO" = F0, "CO" =
+!     00, "000017.C1 C1" = 000017.01 01 on line 28).
+!   * line 1's remark prints "-ADD2" (kept as printed).
+!
+! EXTERNALS.  Landed forms copied; PDUDAT and PDUM1 are p.339's labels
+! (not landed), values from this page's binary, half word only.
+
+PNSLIN  SYN(BU,64), (8)232613.0      ! landed p.293 line 41 DRZ(BU,64),(13)
+POAS    SYN,2.11                     ! landed p.292 line 15, as defined there
+PONOUT  SYN(BU,64), (8)232630.0      ! landed p.293 line 42 DRZ(BU,64),(13)
+PHOLDS  SYN,2.16                     ! landed p.292 line 20, as defined there
+PDUDAT  SYN(BU,32,8), (8)234624.40   ! p.339 line 41 half-word instruction label (not landed); SVA lines 26,29,32 234625.41, half word only
+PDUM1   SYN(BU,64,8), (8)234611.0    ! p.339 line 21 CM0000 (full word) label (not landed); B lines 27,30,33 234612.10, half word only
+PCW5    SYN, (8)232650.0             ! landed p.293 line 48 CW,PONOUT,3,$
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"
+DWS     SYN, 1.33                    ! landed p.104
+PCDEF2  SYN, 10.0                    ! landed p.137
+DRET    SYN, 33.0                    ! landed p.105
+
+        SLC, (8)234631.00
+! line  1  -ADD2
+! line  2  -TO 8BIT BYTES. BITS 0-47 OF $L
+        CI0011(BU,8),(2)00111010,72                          ! line  3  -INSERT 1 ZERO BIT 8 7BITS OF
+! line  4  -PERIOD
+        ST(DU,16,8),$L+0.56,0                                ! line  5  -EXPAND THE 2 4 BIT DEC BIT ADDR
+! line  6  -TO 8 BIT BYTES
+        BZB,PNSLIN+POAS,PMES2                                ! line  7  -TO INSERT (0)
+        +I(BU,24),(8)04514623,32                             ! line  8  -INSERT 0 BIT + 23 BITS OF (D)
+PMES3   CI0011(BU,9),(8)776,23                               ! line  9  -INSERT 24TH BIT OF ) + END CODE
+        CM0000(BU,8),PONOUT+5.08,0                           ! line 10  -INSERT SPACE BETWEEN INITIAL
+! line 11  -ADDR + END ADDR
+        CM0101(BU,64),PONOUT+5.16,63                         ! line 12  -INSERT END ADDR-
+        CM0101(BU,40),PONOUT+6.16,23                         ! line 13  -XXXXXX.XX(D) END CODE
+        L(BU,32),PNSLIN+1.0,0                                ! line 14  -PUT INITIAL ADDR IN $R
+        LVI,$2,49152.                                        ! line 15
+        SV,$2,10.0                                           ! line 16  -SET ZONE BITS=0011
+        ST(DU,48,8),$L,8                                     ! line 17  -EXPAND BIT 6 4 BIT CHAR OF INITIAL ADDR
+        CI0011(BU,8),(2)00111010,72                          ! line 18  -PUT 1 ZERO BIT + 7 BITS OF PERIOD
+        ST(DU,16,8),$L+0.56,0                                ! line 19  -FIND CHAR=0 OF PREVIOUS LOAD UNITS
+        CM0101(BU,64),PONOUT+4.0,63                          ! line 20  -INSERT INITIAL ADDR-
+        CM0101(BU,8),PONOUT+5.0,55                           ! line 21  -XXXXXX.XX
+PMES1   B,0                                                  ! line 22
+PMES2   +I(BU,24),(8)04522223,32                             ! line 23
+        B,PMES3                                              ! line 24
+PFP     LVI,$0,1.0                                           ! line 25  - FL PT FORMAT
+        SVA,$0,PDUDAT+1.0                                    ! line 26  -
+        B,PDUM1+1.0                                          ! line 27
+POHS    LVI,$0,15.0                                          ! line 28  -O-H WITH MNEMONIC SUPPRESSION FORMAT
+        SVA,$0,PDUDAT+1.0                                    ! line 29  -
+        B,PDUM1+1.0                                          ! line 30
+PXW     LVI,$0,2.0                                           ! line 31  - XW FRMAT
+        SVA,$0,PDUDAT+1.0                                    ! line 32  -
+        B,PDUM1+1.0                                          ! line 33
+! line 34  -
+! line 35  - ----------------------------------------------------------
+! line 36  -START
+PSTR    CM0000(BU,1),PONOUT+PHOLDS                           ! line 37  -TURN OFF HOLD LITE
+        B,DMCP                                               ! line 38
+        ,DWS                                                 ! line 39
+        ,PCDEF2                                              ! line 40
+        ,PCW5                                                ! line 41
+        CM0000(BU,1),PHOLDB                                  ! line 42  -TURN OFF HOLD BIT
+        B,DMCP                                               ! line 43
+        ,DRET                                                ! line 44
+PHOLDB  VF,0.0                                               ! line 45
+        CNOP,                                                ! line 46
+PERR1   Z,PONOUT+2.0                                         ! line 47
+
+!SYM PMES3  234635.00
+!SYM PMES1  234650.00
+!SYM PMES2  234650.40
+!SYM PFP    234652.00
+!SYM POHS   234653.40
+!SYM PXW    234655.00
+!SYM PSTR   234656.40
+!SYM PHOLDB 234663.40
+!SYM PERR1  234664.00
+!CHECK 234631.00 | 164000.00 80 410044.06 70 | line 3 CI0011(BU,8),(2)00111010,72 (printed "(2)0011101C")
+!CHECK 234632.00 | 000010.70 80 020000.24 D0 | line 5 ST(DU,16,8),$L+0.56,0 (printed "ST(CU"; h2 byte prints "DC")
+!CHECK 234633.00 | 232615.13 80 234650.74 00 | line 7 BZB,PNSLIN+POAS,PMES2
+!CHECK 234634.00 | 045146.23 80 430020.20 10 | line 8 +I(BU,24),(8)04514623,32
+!CHECK 234635.00 | 776000.00 80 411013.46 70 | line 9 PMES3 CI0011(BU,9),(8)776,23 (a "*" prints after the location)
+!CHECK 234636.00 | 232635.10 80 010000.00 F0 | line 10 CM0000(BU,8),PONOUT+5.08,0 (printed "PONCUT")
+!CHECK 234637.00 | 232635.20 80 000037.52 F0 | line 12 CM0101(BU,64),PONOUT+5.16,63
+!CHECK 234640.00 | 232636.20 80 050013.52 F0 | line 13 CM0101(BU,40),PONOUT+6.16,23
+!CHECK 234641.00 | 232614.00 80 040000.20 50 | line 14 L(BU,32),PNSLIN+1.0,0
+!CHECK 234642.00 | 140000.05 01 | line 15 LVI,$2,49152.
+!CHECK 234642.40 | 000012.05 30 | line 16 SV,$2,10.0
+!CHECK 234643.00 | 000010.00 80 060004.24 D0 | line 17 ST(DU,48,8),$L,8 (printed "ST(CU"; h2 byte prints "DC")
+!CHECK 234644.00 | 164000.00 80 410044.06 70 | line 18 CI0011(BU,8),(2)00111010,72 (printed "CI0C11", "(2)0011101C")
+!CHECK 234645.00 | 000010.70 80 020000.24 D0 | line 19 ST(DU,16,8),$L+0.56,0
+!CHECK 234646.00 | 232634.00 80 000037.52 F0 | line 20 CM0101(BU,64),PONOUT+4.0,63
+!CHECK 234647.00 | 232635.00 80 010033.52 F0 | line 21 CM0101(BU,8),PONOUT+5.0,55
+!CHECK 234650.00 | 000000.10 00 | line 22 PMES1 B,0
+!CHECK 234650.40 | 045222.23 80 430020.20 10 | line 23 PMES2 +I(BU,24),(8)04522223,32 (a "*" prints after the location)
+!CHECK 234651.40 | 234635.10 00 | line 24 B,PMES3 (byte prints "C0")
+!CHECK 234652.00 | 000001.01 01 | line 25 PFP LVI,$0,1.0
+!CHECK 234652.40 | 234625.41 D0 | line 26 SVA,$0,PDUDAT+1.0
+!CHECK 234653.00 | 234612.10 00 | line 27 B,PDUM1+1.0
+!CHECK 234653.40 | 000017.01 01 | line 28 POHS LVI,$0,15.0 (prints "000017.C1 C1"; label printed "P CHS")
+!CHECK 234654.00 | 234625.41 D0 | line 29 SVA,$0,PDUDAT+1.0
+!CHECK 234654.40 | 234612.10 00 | line 30 B,PDUM1+1.0
+!CHECK 234655.00 | 000002.01 01 | line 31 PXW LVI,$0,2.0
+!CHECK 234655.40 | 234625.41 D0 | line 32 SVA,$0,PDUDAT+1.0
+!CHECK 234656.00 | 234612.10 00 | line 33 B,PDUM1+1.0
+!CHECK 234656.40 | 232632.20 80 001000.00 F0 | line 37 PSTR CM0000(BU,1),PONOUT+PHOLDS (h2 prints "001000.CC")
+!CHECK 234657.40 | 000040.10 00 | line 38 B,DMCP
+!CHECK 234660.00 | 000001.41 80 | line 39 ,DWS
+!CHECK 234660.40 | 000012.00 80 | line 40 ,PCDEF2 (prints "000012.CC")
+!CHECK 234661.00 | 232650.00 80 | line 41 ,PCW5
+!CHECK 234661.40 | 234663.40 80 001000.00 F0 | line 42 CM0000(BU,1),PHOLDB (printed "CMOCCO")
+!CHECK 234662.40 | 000040.10 00 | line 43 B,DMCP (byte prints "C0")
+!CHECK 234663.00 | 000041.00 80 | line 44 ,DRET
+!CHECK 234663.40 | 000000.00+ | line 45 PHOLDB VF,0.0
+!CHECK 234664.00 | 232632.22 00 | line 47 PERR1 Z,PONOUT+2.0 (byte prints "C0")

@@ -1,0 +1,184 @@
+! mcp_bootstrap_p330.strap -- MCP printed page 330: the end of the
+! P-card routine (APCARD: store the NOP / patched half word, APCRD5
+! branch back, APCRND turn off the P-card indicator and store the
+! branch to the program, update AHIWD/ALDTC), the D-card routine
+! (ADCARD .. ADCRD2: the dump calling sequence), and the loader's error
+! entries AERR1, AERRA, AERR2, AERR4, AERR8; lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.80 (printed p.329 is missing from
+! the scan, so the offset is 250 from here on), read at 400 dpi,
+! doubtful glyphs at 900 dpi.  Header, READ: "TIME CLOCK 00054041
+! PUNID 22LOADER  CARD ID TA000500  DIST. OF 3/01  3/01  PAGE NUMBER
+! 330"; the heading row's LOCATION field is 235154, line 1's word.
+!
+! THE PAGE.  50 lines; every line number prints a "*" after it.  No
+! remark cards, no TAIL card.  Located rows run contiguous from
+! 235154.00 (line 1) to 235221.00 (line 50, B, a half word; next
+! location 235221.40), then blank paper.  "*" after the LOCATION on
+! lines 1, 16, 33 and 47.
+!
+! JOIN.  p.328 ends at 235111.40 (next 235112.00, TA000448); p.329,
+! NOT IN THE SCAN, covered 235112.00-235153.40 (TA000449-499), and
+! this page opens at 235154.00 with TA000500: contiguous with p.329's
+! span.  p.331 should open at 235221.40 (AERR3, which p.320 / p.322
+! place at 235221.40) with serial TA000550.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "CMOCOO" (lines 11, 24) = CM0000, as p.328 writes it; their h2
+!     "001000.CC FO" = 001000.00 F0 (the open round in an octal field).
+!   * "ACCTLA" / "ACCTLP" / "ACCTL3" = AOCTLA / AOCTLP / AOCTL3 (landed
+!     pp.327, 328; C22-6728 AOCTLA).  "AHIWD", "ALDTC", "ANORMR",
+!     "AOPT24" likewise as landed.
+!   * D with its stem worn: APCRD4/APCRD5, APCRDI, ADCRDI, ADCARD,
+!     ADCRD1/ADCRD2.  APCRDI (232543.06) and
+!     ADCRDI (232543.10) are landed p.291's SYN,ALL.6 / ALL.8 and the
+!     binaries are those bits; ADCARD is C22-6728's D-card routine
+!     (and p.320's B,ADCARD prints 235172.10 = line 20 here).
+!   * line 11's label prints six glyphs "APCRND" (last a worn D).
+!     C22-6728 says ANORMR "returns control to APCRDND" (seven
+!     letters); the page's spelling is kept.
+!   * line 16's remark prints "ALDCTC" (as read); remark text only.
+!
+! EXTERNALS.  AOPT24, AHIWD, AHGHWD, ALDCTR/ALDTC, ALL/APCRDI/ADCRDI,
+! YBCBU/ALDBF copied from landed decks (forms as they write them);
+! AOCTLA (p.327), AOCTLP, AOCTL3 (p.328) are landed labels; ANORMR and
+! AERR5B as p.327 / p.328 stand them in.  APNOP, APBRCH, ABDMP, ADFWA
+! (later pages, not landed) BIT-EXACT from this page's LF/L address
+! fields; APCRD4 (p.329, not in the scan) half word only.
+!
+! CARD SERIALS.  TA000500 .. TA000549, one per line, none shared, none
+! skipped.
+
+AOPT24  SYN(B,25,1), (8)232545.40    ! landed p.291 line 24 VF,.24
+ALDCTR  SYN(N), (8)232552.0          ! p.291 line 34 DRZ(N),1
+ALDTC   SYN,ALDCTR.32                ! landed p.291 line 35 SYN,ALDCTR.32 (ALDCTR DRZ(N))
+AHGHWD  SYN(BU,32), (8)232553.40     ! landed p.291 line 37 DRZ(BU,32),1
+AHIWD   SYN(BU,32), (8)232554.0      ! landed p.291 line 38 DRZ(BU,32),1
+ALL     SYN(N), (8)232543.0          ! landed p.291 line 9 DRZ(N),1 (form as p.327)
+APCRDI  SYN,ALL.6                    ! landed p.291 line 14 -P CARD INDICATOR; CM0000 line 11 232543.06
+ADCRDI  SYN,ALL.8                    ! landed p.291 line 16; CM1111 line 23 232543.10
+YBCBU   SYN(BU), (8)231462.0         ! p.274 line 19 DR(BU),(15), as p.291's stand-in writes it
+ALDBF   SYN,YBCBU                    ! landed p.291 line 33 SYN,YBCBU; LF line 42 ALDBF.24 = 231462.30
+AOCTLA  SYN(BU,32,8), (8)235037.40   ! landed p.327 line 36 LVI (half word); B line 25 235037.50
+AOCTLP  SYN(BU,32,8), (8)235062.0    ! landed p.328 line 13 NOP (half word); CM lines 9, 24, 38 AOCTLP.19 = 235062.23
+AOCTL3  SYN(BU,32,8), (8)235062.40   ! landed p.328 line 14 KV (half word); B line 39 235062.50
+ANORMR  SYN, (8)235233.0             ! not landed; CM1111 line 12 ANORMR+.19 = 235233.23, BIT-EXACT
+AERR5B  SYN, (8)235226.40            ! not landed; BXE line 22 235226.72, BXH line 28, half word only
+APCRD4  SYN, (8)235150.40            ! p.329 (not in the scan); B lines 5, 10 235150.50, line 37 APCRD4+1. 235151.50, half word only
+APNOP   SYN, (8)235237.40            ! not landed; LF line 2 235237.40, BIT-EXACT
+APBRCH  SYN, (8)235237.0             ! not landed; LF lines 13, 34 235237.00, BIT-EXACT
+ABDMP   SYN, (8)235240.0             ! not landed; L line 29 235240.00, BIT-EXACT
+ADFWA   SYN, (8)235241.0             ! not landed; LF line 31 235241.00, BIT-EXACT
+
+        SLC, (8)235154.0
+        LF(BU,32),($4),64                                    ! line  1  -PICK UP OTHER HLF OF INSTR
+        LF(BU,32),APNOP                                      ! line  2
+        SF(BU,32)(V+I),.32($4)                               ! line  3  -STORE NOP
+        SF(BU,32)(V+I),.32($3),64                            ! line  4  -STORE HLF WD IN PATCH AREA
+        B,APCRD4                                             ! line  5
+APCRD5  V-I,$3,.32                                           ! line  6  -PICK UP BRANCH BACK TO PROGRAM
+        LV,$4,0($3)                                          ! line  7  -SAVE AND DECREMENT $3 BY A HLF WD
+        V+,1,AOPT24                                          ! line  8
+        CM1111(BU,1),AOCTLP.19                               ! line  9  -RESET TO NOP
+        B,APCRD4                                             ! line 10
+APCRND  CM0000(BU,1),APCRDI                                  ! line 11  -TURN OFF P CARD INDICATOR
+        CM1111(BU,1),ANORMR+.19                              ! line 12  -SET TO NOP
+        LF(BU,32),APBRCH                                     ! line 13  -STORE BRANCH TO PROGRAM-
+        SF(BU,32),($3)                                       ! line 14  -IN PATCH AREA
+        SVA,$4,($3)                                          ! line 15
+        V+I,$3,.32                                           ! line 16  -UPDATE HIWD AND ALDCTC
+        SVA,$3,AHIWD                                         ! line 17
+        SVA,$3,ALDTC                                         ! line 18
+        B,ANORMR                                             ! line 19
+ADCARD  LV,3,AHIWD                                           ! line 20
+        KVI,3,0                                              ! line 21
+        BXE,AERR5B                                           ! line 22
+        CM1111(BU,1),ADCRDI                                  ! line 23
+        CM0000(BU,1),AOCTLP.19                               ! line 24
+        B,AOCTLA                                             ! line 25
+ADCRD1  V+I,$3,2.                                            ! line 26
+        KV,$3,AHGHWD                                         ! line 27
+        BXH,AERR5B                                           ! line 28
+        L(BU,64),ABDMP                                       ! line 29
+        ST(BU,64),-2.($3)                                    ! line 30
+        LF(BU,32),ADFWA                                      ! line 31
+        SF(BU,32),-1.($3)                                    ! line 32
+        SVA,$3,-1.($3)                                       ! line 33
+        LF(BU,32),APBRCH                                     ! line 34
+        SF(BU,32),-.32($3)                                   ! line 35
+        SVA,$4,-.32($3)                                      ! line 36
+        B,APCRD4+1.                                          ! line 37
+ADCRD2  CM1111(BU,1),AOCTLP.19                               ! line 38
+        B,AOCTL3                                             ! line 39
+AERR1   LFI(BU,5),1                                          ! line 40  -CHECK SUM ERROR
+AERRA   SF(BU,5),2.13($15)                                   ! line 41
+        LF(BU,12),ALDBF.24                                   ! line 42
+        SF(BU,12),2.($15)                                    ! line 43
+        B,1.32($15)                                          ! line 44
+AERR2   LFI(BU,5),2                                          ! line 45  -SEQ. NO. OR IDD ERROR
+        B,AERRA                                              ! line 46
+AERR4   LFI(BU,5),4                                          ! line 47  -ILLEGAL NON BSS FUNCTION
+        B,AERRA                                              ! line 48
+AERR8   LFI(BU,5),8                                          ! line 49  -NO ORIGIN CARD
+        B,AERRA                                              ! line 50
+
+!SYM APCRD5 235160.40
+!SYM APCRND 235163.40
+!SYM ADCARD 235172.00
+!SYM ADCRD1 235176.00
+!SYM ADCRD2 235207.00
+!SYM AERR1  235210.40
+!SYM AERRA  235211.40
+!SYM AERR2  235215.00
+!SYM AERR4  235216.40
+!SYM AERR8  235220.00
+!CHECK 235154.00 | 000000.00 84 040040.06 70 | line 1 LF(BU,32),($4),64
+!CHECK 235155.00 | 235237.40 80 040000.06 70 | line 2 LF(BU,32),APNOP
+!CHECK 235156.00 | 000000.40 84 140000.12 F0 | line 3 SF(BU,32)(V+I),.32($4)
+!CHECK 235157.00 | 000000.40 83 140040.12 F0 | line 4 SF(BU,32)(V+I),.32($3),64
+!CHECK 235160.00 | 235150.50 00 | line 5 B,APCRD4
+!CHECK 235160.40 | 000000.47 0D | line 6 APCRD5 V-I,$3,.32
+!CHECK 235161.00 | 000000.10 33 | line 7 LV,$4,0($3)
+!CHECK 235161.40 | 232545.42 B0 | line 8 V+,1,AOPT24
+!CHECK 235162.00 | 235062.23 80 001000.36 F0 | line 9 CM1111(BU,1),AOCTLP.19
+!CHECK 235163.00 | 235150.50 00 | line 10 B,APCRD4
+!CHECK 235163.40 | 232543.06 80 001000.00 F0 | line 11 APCRND CM0000(BU,1),APCRDI (printed "CMOCOO"; h2 prints "001000.CC FO")
+!CHECK 235164.40 | 235233.23 80 001000.36 F0 | line 12 CM1111(BU,1),ANORMR+.19
+!CHECK 235165.40 | 235237.00 80 040000.06 70 | line 13 LF(BU,32),APBRCH (the remark's trailing "-" is remark text)
+!CHECK 235166.40 | 000000.00 83 040000.12 F0 | line 14 SF(BU,32),($3)
+!CHECK 235167.40 | 000000.11 D3 | line 15 SVA,$4,($3)
+!CHECK 235170.00 | 000000.47 05 | line 16 V+I,$3,.32 (a "*" prints after the location)
+!CHECK 235170.40 | 232554.07 D0 | line 17 SVA,$3,AHIWD
+!CHECK 235171.00 | 232552.47 D0 | line 18 SVA,$3,ALDTC
+!CHECK 235171.40 | 235233.10 00 | line 19 B,ANORMR
+!CHECK 235172.00 | 232554.06 30 | line 20 ADCARD LV,3,AHIWD
+!CHECK 235172.40 | 000000.07 04 | line 21 KVI,3,0
+!CHECK 235173.00 | 235226.72 C2 | line 22 BXE,AERR5B
+!CHECK 235173.40 | 232543.10 80 001000.36 F0 | line 23 CM1111(BU,1),ADCRDI (printed "ADCRDI" with an open D)
+!CHECK 235174.40 | 235062.23 80 001000.00 F0 | line 24 CM0000(BU,1),AOCTLP.19 (printed "CMOCOO"; h2 "001000.CC" = .00)
+!CHECK 235175.40 | 235037.50 00 | line 25 B,AOCTLA (printed "ACCTLA")
+!CHECK 235176.00 | 000002.07 05 | line 26 ADCRD1 V+I,$3,2.
+!CHECK 235176.40 | 232553.46 90 | line 27 KV,$3,AHGHWD
+!CHECK 235177.00 | 235226.73 42 | line 28 BXH,AERR5B
+!CHECK 235177.40 | 235240.00 80 000000.20 50 | line 29 L(BU,64),ABDMP
+!CHECK 235200.40 | 777776.00 83 000000.20 D0 | line 30 ST(BU,64),-2.($3)
+!CHECK 235201.40 | 235241.00 80 040000.06 70 | line 31 LF(BU,32),ADFWA
+!CHECK 235202.40 | 777777.00 83 040000.12 F0 | line 32 SF(BU,32),-1.($3)
+!CHECK 235203.40 | 777777.07 D3 | line 33 SVA,$3,-1.($3) (a "*" prints after the location)
+!CHECK 235204.00 | 235237.00 80 040000.06 70 | line 34 LF(BU,32),APBRCH
+!CHECK 235205.00 | 777777.40 83 040000.12 F0 | line 35 SF(BU,32),-.32($3)
+!CHECK 235206.00 | 777777.51 D3 | line 36 SVA,$4,-.32($3)
+!CHECK 235206.40 | 235151.50 00 | line 37 B,APCRD4+1.
+!CHECK 235207.00 | 235062.23 80 001000.36 F0 | line 38 ADCRD2 CM1111(BU,1),AOCTLP.19
+!CHECK 235210.00 | 235062.50 00 | line 39 B,AOCTL3
+!CHECK 235210.40 | 020000.00 80 405000.06 70 | line 40 AERR1 LFI(BU,5),1
+!CHECK 235211.40 | 000002.15 8F 005000.12 F0 | line 41 AERRA SF(BU,5),2.13($15)
+!CHECK 235212.40 | 231462.30 80 014000.06 70 | line 42 LF(BU,12),ALDBF.24
+!CHECK 235213.40 | 000002.00 8F 014000.12 F0 | line 43 SF(BU,12),2.($15)
+!CHECK 235214.40 | 000001.50 0F | line 44 B,1.32($15)
+!CHECK 235215.00 | 040000.00 80 405000.06 70 | line 45 AERR2 LFI(BU,5),2
+!CHECK 235216.00 | 235211.50 00 | line 46 B,AERRA
+!CHECK 235216.40 | 100000.00 80 405000.06 70 | line 47 AERR4 LFI(BU,5),4 (a "*" prints after the location)
+!CHECK 235217.40 | 235211.50 00 | line 48 B,AERRA
+!CHECK 235220.00 | 200000.00 80 405000.06 70 | line 49 AERR8 LFI(BU,5),8
+!CHECK 235221.00 | 235211.50 00 | line 50 B,AERRA

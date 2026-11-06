@@ -1,0 +1,99 @@
+! mcp_bootstrap_p341.strap -- MCP printed page 341: the console
+! debugger's address-conversion subroutine PA1 (PA1 .. PA04), preceded
+! by the tail of the error routine (incorrect-address light), lines 1-23.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.91, read at 400 dpi, doubtful glyphs
+! enlarged.  Header, READ: "TIME CLOCK 00054041  PUNID 22$DUMP  CARD ID
+! VA000284  DIST. OF 3/01  3/01  PAGE NUMBER 341"; the heading row's
+! LOCATION field is 234664, line 1's word.  NOTE THE PUNID: 22$DUMP.
+!
+! THE PAGE.  23 lines; every line number prints a "*" after it.  Lines
+! 3-5 are remark cards (a lone "-", a dashed rule, "-SUBROUTINE PA1").
+! Located rows run contiguous from 234664.40 (line 1) to 234703.40
+! (line 23, B, a half word; next location 234704.00), then blank paper.
+! "*" after the LOCATION on lines 1 and 19.  No TAIL card.
+!
+! JOIN.  p.340 (no scratch deck; tools/page_sheet.py 340) ends with
+! line 47 PERR1 at 234664.00, a half word: contiguous with line 1, and
+! the PERR1 that BAE/BZAL/BZRZ here branch to.  p.342 (page_sheet) opens
+! at 234704.00: contiguous.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 1 "PONCUT" = PONOUT (landed p.293 line 42; open O).
+!   * the PA0n family: name column prints "P A01", "PAC2", "PAC3",
+!     "PA04"; statements print PA01, PA03, PA04.  Written with digit 0:
+!     C22-6728 PDF p.210 typesets "PA02." with the narrow digit oval,
+!     and PA01/PA04 print closed here.  PAC2/PAC3 are open rounds.
+!   * line 19 "ST(CU,8,1)" = ST(DU,8,1): D with its stem worn; lines
+!     13, 14, 22 print DU and the binary is the decimal-unsigned form.
+!   * line 9/17/20 "PERRI" (sheet) = PERR1 (ink prints 1; C22-6728 PERR1).
+!   * hex bytes printed with an open round where the statement can only
+!     assemble 0 are read 0 (lines 1, 2, 6, 12, 21, 23; see !CHECKs).
+!
+! EXTERNALS.  PONOUT, PNSLIN, PK1 (p.293 DRZ/XW), PIASS, POAS (p.292
+! SYN), PINVAD (p.293 SYN,SMARK) are landed; forms copied.  PE4 and
+! PERR1 are not landed (PERR1 is p.340 line 47); values from this
+! page's binary, half word only.
+!
+! CARD SERIALS.  VA000284 .. VA000306, one per line, none skipped.
+
+PONOUT  SYN(BU,64), (8)232630.0      ! landed p.293 line 42 DRZ(BU,64),(13)
+PNSLIN  SYN(BU,64), (8)232613.0      ! landed p.293 line 41 DRZ(BU,64),(13)
+PIASS   SYN,2.18                     ! landed p.292 line 22 SYN,2.18
+POAS    SYN,2.11                     ! landed p.292 line 15 SYN,2.11
+PK1     SYN(BU), (8)232605.0         ! landed p.293 line 32 XW,14.32,8,PK1
+SMARK   SYN, (8)215012.40            ! landed p.103 line 46 VF
+PINVAD  SYN,SMARK                    ! landed p.293 line 31 SYN,SMARK
+PE4     SYN, (8)234446.0             ! not landed; B line 2 234446.10, half word only
+PERR1   SYN(BU,32,8), (8)234664.0    ! p.340 line 47 (not landed); BAE line 9 234664.36, half word only
+
+        SLC, (8)234664.40
+        CM1111(BU,1),PONOUT+PIASS                            ! line  1  -INCOM. ADDR. LIGHT ON
+        B,PE4                                                ! line  2  -
+! line  3  -
+! line  4  - ------------------------------------------------
+! line  5  - -SUBROUTINE PA1
+PA1     L(BU,32),PNSLIN+1.0,1                                ! line  6  -LOAD FROM LEFT NUMERICAL SWITCHES
+        LX,$2,PK1                                            ! line  7
+PA01    KI(BU,4),(2)1111,0($2)                               ! line  8  - CHECK DIGITWISE FOR BLANKS
+        BAE,PERR1                                            ! line  9
+        V-I,$2,2.0                                           ! line 10  -SUBTRACT 4 FROM OFFSET
+        CBR,$2,PA01                                          ! line 11
+        BZB,PNSLIN+POAS,PA03                                 ! line 12  -OCTAL SWITCH ON
+        LTRCV(DU,8,4),$R+0.55                                ! line 13  -CONVERT BIT ADDR TO $TR
+        LCV(DU,24,4),$R+0.31,46                              ! line 14  -CONVERT WORD ADDR TO $R
+        +(BU,7,8),$TR+0.53,40                                ! line 15  -WORD ADDR + BIT ADDR
+PA04    K(BU,24,8),PINVAD,40                                 ! line 16  -IS ADDR INVALID
+        BZAL,PERR1                                           ! line 17
+PA02    B,0                                                  ! line 18  -LINK OUT
+PA03    ST(DU,8,1),$L,4                                      ! line 19  -ANY LEAD BIT = 1
+        BZRZ,PERR1                                           ! line 20
+        L(BU,32),PNSLIN+1.0,0                                ! line 21
+        ST(DU,24,3),$R,0                                     ! line 22  -REMOVE LEAD BIT FROM EACH DEC CHAR
+        B,PA04                                               ! line 23
+
+!SYM PA1    234666.00
+!SYM PA01   234667.40
+!SYM PA04   234676.00
+!SYM PA02   234677.40
+!SYM PA03   234700.00
+!CHECK 234664.40 | 232632.22 80 001000.36 F0 | line 1 CM1111(BU,1),PONOUT+PIASS (h2 byte prints "FC" = F0; printed "PONCUT")
+!CHECK 234665.40 | 234446.10 00 | line 2 B,PE4 (byte prints "C0" = 00)
+!CHECK 234666.00 | 232614.00 80 040000.60 50 | line 6 PA1 L(BU,32),PNSLIN+1.0,1 (h2 byte prints "5C" = 50)
+!CHECK 234667.00 | 232605.04 10 | line 7 LX,$2,PK1
+!CHECK 234667.40 | 740000.00 80 404000.21 12 | line 8 PA01 KI(BU,4),(2)1111,0($2) (label printed "P A01")
+!CHECK 234670.40 | 234664.36 C2 | line 9 BAE,PERR1
+!CHECK 234671.00 | 000002.05 0D | line 10 V-I,$2,2.0
+!CHECK 234671.40 | 234667.44 4C | line 11 CBR,$2,PA01
+!CHECK 234672.00 | 232615.13 80 234700.34 00 | line 12 BZB,PNSLIN+POAS,PA03 (h2 byte prints "0C" = 00)
+!CHECK 234673.00 | 000011.67 80 010400.26 30 | line 13 LTRCV(DU,8,4),$R+0.55
+!CHECK 234674.00 | 000011.37 80 030427.24 30 | line 14 LCV(DU,24,4),$R+0.31,46
+!CHECK 234675.00 | 000017.65 80 007024.20 10 | line 15 +(BU,7,8),$TR+0.53,40
+!CHECK 234676.00 | 215012.40 80 030024.21 10 | line 16 PA04 K(BU,24,8),PINVAD,40
+!CHECK 234677.00 | 234664.36 40 | line 17 BZAL,PERR1
+!CHECK 234677.40 | 000000.10 00 | line 18 PA02 B,0 (label printed "PAC2")
+!CHECK 234700.00 | 000010.00 80 010102.24 D0 | line 19 PA03 ST(DU,8,1),$L,4 (label printed "PAC3"; mode printed "CU")
+!CHECK 234701.00 | 234664.34 C0 | line 20 BZRZ,PERR1
+!CHECK 234701.40 | 232614.00 80 040000.20 50 | line 21 L(BU,32),PNSLIN+1.0,0 (h2 byte prints "5C" = 50)
+!CHECK 234702.40 | 000011.00 80 030300.24 D0 | line 22 ST(DU,24,3),$R,0
+!CHECK 234703.40 | 234676.10 00 | line 23 B,PA04 (byte prints "C0" = 00)
