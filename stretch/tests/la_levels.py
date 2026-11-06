@@ -28,6 +28,13 @@ for m in ("+", "L", "LWF", "+MG", "D+", "DL", "DLWF", "D+MG",
     FP[m] = 1                      # op + opnd
 FP["E+I"] = 1
 FP["SHF"] = 1                      # op + count
+# E-I and SHFL/SHFR are E+I and SHF spelled with the sign modifiers
+# (strap_asm.strip_fp_sign; Reference Manual p.102 for SHF's direction).
+# A sign modifier changes no level (see M-1 below), so they cost what
+# E+I and SHF cost.  MCP printed p.356 line 42 "E-I,48", p.357 line 29
+# "SHFR,4", p.371 line 17 "SHFL,2".
+for m in ("E-I", "SHFL", "SHFR"):
+    FP[m] = 1
 for m in ("ST", "SLO", "SRD", "SRT"):
     FP[m] = 1                      # store
 for m in ("M+", "M+MG"):
@@ -408,10 +415,15 @@ def main():
     # 18 ("CI0011(BU,8),(2)00111010,72"): the $DUMP's message build,
     # another immediate connective written with the "I" infix, so it
     # joins for the same reason CI0001 and CI0111 did.
+    # "CTI0010" and "CTI0101" joined on 2026-11-06 with printed p.364
+    # lines 5, 7 and 12 (the SCOMD mode-bit tests), more immediate
+    # connectives with the "I" infix.  "D*" joined the same day with
+    # printed p.357 line 22 and p.359 line 29 "D*(N),AFL10...": the
+    # $DUMP's floating conversion; sheet 3 gives it no count (above).
     check("page_silent_mnemonics_in_mcp",
           sorted(notgiven),
           ["*I", "*I+", "+I", "-I", "/I", "CI0001", "CI0011", "CI0111", "CTI0001",
-           "CTI0110", "KFI", "KI", "LFI", "LI", "SWAPI", "T", "TB",
+           "CTI0010", "CTI0101", "CTI0110", "D*", "KFI", "KI", "LFI", "LI", "SWAPI", "T", "TB",
            "TBI", "TI"])
 
     if fails:

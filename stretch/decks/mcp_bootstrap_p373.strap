@@ -1,0 +1,204 @@
+! mcp_bootstrap_p373.strap -- MCP printed page 373: the SYSTEM COMMAND
+! package (PUNID 22SCOMD), the delete test and the MULTI-CHANNEL ONLY
+! REQUEST unit scan (Z MULCH .. Z QUES4, the SPL message call, Z MCP MC).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.123, read at 400 dpi, names at 900
+! dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22SCOMD  CARD ID
+! WA000593  DIST. OF 3/01  3/01  PAGE NUMBER 373"; the heading row's
+! LOCATION field is 235221, line 1's word.
+!
+! THE PAGE.  48 lines; every line number prints a "*".  A "*" prints
+! after the LOCATION on lines 20 and 39.  No TAIL.  Still SCOMD: same
+! PUNID, card series WA, no SLC.  Contiguous from 235221.00 to
+! 235254.00 (line 48, a half word; next 235254.40), then blank paper.
+!   lines  1-3   K,Z DELET,12 / BZAE,Z MNERX / B,Z OWNER.
+!   lines  4-5   remark cards ("-" in NAME; banner on 5).
+!   lines  6-20  Z MULCH: the unit scan over the requested channel.
+!   lines 10,18  remark-only cards (remark continuations).
+!   lines 21-46  Z DONE, Z SET PP, Z QUS 11, Z QUES4 (SIC,ZSPLP9 /
+!                BD,ZSPLPR / ,Z SPL 01 / CF,5.0 message call;
+!                ,D ABEOJ / BE,D MCP / ,D COMM / VF,Z QUZ 49 / CF,5.0),
+!                Z MCP MC.
+!   lines 47-48  SIC,Z SCAN9 / B,Z CH SCN.
+! JOIN: scratch p.372 ends with a full-word BB1 at 235220.00 (next
+! 235221.00) and scratch p.374 opens at 235254.40: contiguous both
+! ways.  p.374's header prints CARD ID WA000641, so WA000640 prints on
+! neither page (and WA000639 prints twice here).
+!
+! >>> CARD SERIALS. <<<  WA000593 .. WA000639, one per line, EXCEPT
+! lines 47 and 48 BOTH print WA000639 (read at 400 dpi, plain ink).
+! Recorded, not explained (p.197 has the same shape).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 3 "B,ZCWNER" = ZOWNER: open round, English OWNER (S OWNER on
+!     line 15 prints the same glyph); no ZCWNER anywhere.
+!   * line 19 "Z MAIN D", line 23 "Z PP CHD": D (worn stem possible);
+!     C22-6728 typesets ZMAIND (10x) and ZPPCHD (3x).
+!   * line 35 ",Z SPL 01": the round before 1 is open; written as the
+!     DIGIT (numbered name, no typeset witness; the octal fields print
+!     0 open too).  ZSPL01 occurs nowhere else -- coordinator: check
+!     the page that defines 235260.00.
+!   * line 9 "ZQUS11": a pen stroke crosses the first 1; C22-6728
+!     typesets ZQUS11, and line 25 labels "Z QUS 11".
+!   * line 42 "Z QUZ 49": Q with its tail at 900 dpi (sheet read GUZ).
+!   * line 40 "BE,C MCP" = DMCP (worn D; landed DMCP SYN,32.0, binary
+!     000040.00).
+!   * remarks: "CN" (lines 12, 26) is ON with an open O; written ON.
+!   * line 34's hex byte prints "CO" and is 00 (BD, no index; the
+!     octal fields print 0 open; lesson 6).  Lines 2, 14, 16 print C0
+!     and assemble C0.
+!
+! NEIGHBOURS (scratch pp.365-376, not landed) DEFINE most SCOMD
+! externals; the stand-ins copy their dds/form (see each card).  The
+! K/KF second half 044606 (length 36, byte 6) agrees with p.376's
+! (AX)DD(BU,36,6) for ZDELET/ZDELTM.
+!
+! LINES 12 AND 26: AN INDICATOR SYSTEM SYMBOL'S DDS.  CM1111,Z ASU IN and
+! CM1111,Z OP TST carry NO dds, and print 001000.36 F0 -- exactly line
+! 23's explicit CM1111(BU,1).  Their defining cards (p.376 lines 17,
+! 18) are SYN,$PG5 / SYN,$PG6, and C28-6129 printed p.11 gives every
+! indicator-bit system symbol "mode BU, byte size 8 and a field length
+! equal to the length of the particular ... bit": (BU,1,8).  Until
+! 2026-11-06 strap_asm gave it none and assembled length 0.
+!
+! >>> SPELLING CONFLICTS FOR THE COORDINATOR. <<<
+!   * ZOPTST: line 26 prints "Z OP TST" (remark "SET OP CODE TEST");
+!     C22-6728 typesets ZOPTST (2x).  p.376 line 18 writes "ZCPTST
+!     SYN,$PG6" (remark "CP CODE TEST") -- an open O read as C there.
+!   * ZSPL01: p.374 (the defining page) spells ZSPL01; p.375 writes
+!     ZSPLC1 ("C vs O unsettled").  This page follows p.374.
+!
+! EXTERNALS.  Resident (landed): SOWNER, SUNASG, SUNITK (p.99), ZSPLP9,
+! ZSPLPR (p.212), SPRIMR, SPRIME, DABEOJ, DMCP, DCOMM.  SCOMD symbols:
+! forms from the scratch neighbours' defining cards, addresses checked
+! against this page's binary.
+
+SOWNER  SYN(BU,1), 0.32              ! landed p.99 line 30 -PRIORITY LEVEL
+SUNASG  SYN(BU,1), 0.29              ! landed p.99 line 27 -UNIT ASSIGNMENT
+SUNITK  SYN(BU,4), 0.59              ! landed p.99 line 40 -UNIT COUNT
+ZSPLP9  SYN, (8)224052.0             ! landed p.212 line 12
+ZSPLPR  SYN, (8)224046.40            ! landed p.212 line 5
+SPRIMR  SYN, (8)215571.0             ! landed p.118 line 49
+SPRIME  SYN, (8)215570.0             ! landed p.118 line 48
+DABEOJ  SYN, 68.0                    ! landed p.105 line 39 "D ABEOJ"
+DMCP    SYN, 32.0                    ! landed p.108 line 5
+DCOMM   SYN, 35.32                   ! landed p.105 line 23
+ZSCAN9  SYN(BU,32,8), (8)235143.40  ! p.371 line 29 "ZSCAN9 B,0.0" (scratch, not landed; p.298 stand-in same address); SIC line 47 BIT-EXACT
+ZCHSCN  SYN(BU,32,8), (8)235071.0   ! p.370 line 14 "ZCHSCN LVI,..." (scratch, not landed); B line 48 235071.10
+ZREQUN  SYN,$6                       ! p.376 line 8 (scratch, not landed); I nibble 6 on lines 9, 15, 46
+ZREQCH  SYN,$8                       ! p.376 line 10 (scratch, not landed); I nibble 8 on lines 6, 7
+ZDELET  SYN(BU,36,6), (8)235372.0    ! p.376 line 2 "ZDELET (AX)DD(BU,36,6),DELETEX" (scratch, not landed); K line 1 235372.00
+ZDELTM  SYN(BU,36,6), (8)235372.44   ! p.376 line 3 "ZDELTM (AX)DD(BU,36,6),DELETMX" (scratch, not landed); KF line 27 235372.44
+ZMNERX  SYN(BU,64,8), (8)235365.40  ! p.375 line 48 "ZMNERX CM0000,..." (scratch, not landed); BZAE lines 2, 14
+ZOWNER  SYN(BU,64,8), (8)235066.40  ! p.370 line 7 "ZOWNER BZB,..." (scratch, not landed); B line 3 235066.50 (printed "ZCWNER")
+ZASUIN  SYN,$PG5                     ! p.376 line 17 (scratch, not landed); CM1111 line 12 000013.56
+ZPPCHD  SYN,$PG2                     ! p.376 line 15 (scratch, not landed); CM1111 line 23 000013.53
+ZOPTST  SYN,$PG6                     ! p.376 line 18 spells it "ZCPTST" -- see header; CM1111 line 26 000013.57
+ZMAIND  SYN(BU,64,8), (8)235341.0   ! p.375 line 20 "ZMAIND KF,..." (scratch, not landed); BZPG5 line 19
+ZEXITX  SYN(BU,32,8), (8)234633.0   ! p.365 line 9 "ZEXITX LWF(U),..." (scratch, not landed); B line 22 234633.10
+ZEREX1  SYN(BU,32,8), (8)234631.0   ! p.365 line 5 "ZEREX1 LX,12,ZEX1" (scratch, not landed); B line 31 234631.10
+ZSPL01  SYN(BU,64,8), (8)235260.0   ! p.374 line 8 "ZSPL01 (A*)DD(BU,64,8),..." (scratch, not landed); line 35 BIT-EXACT
+ZQUZ49  SYN(BU), (8)235265.0        ! p.374 line 10 "ZQUZ49 (IQS*)DD(BU),..." (scratch, not landed); VF line 42 235265.00+
+
+        SLC, (8)235221.00
+        K,ZDELET,12                                          ! line  1
+        BZAE,ZMNERX                                          ! line  2  - IF NOT DELETE,TO ERROR CHK
+        B,ZOWNER                                             ! line  3  printed "ZCWNER"
+! line  4  -
+! line  5  - ****** MULTI-CHANNEL ONLY REQUEST ******
+ZMULCH  LV,ZREQUN,0.0(ZREQCH)                                ! line  6  -GET UNIT ST TBL BASE ADDR
+        LF,SUNITK(ZREQCH),-18                                ! line  7  -UNIT COUNT FOR CHANNEL
+        LC,ZREQUN,$L                                         ! line  8
+ZQUES1  BB1,SUNASG(ZREQUN),ZQUS11                            ! line  9  -BRANCH IF NOT ASSIGNED TO TEST
+! line 10  -IF ALL UNITS ON CHAN UNASN
+        BPG5,$+1.32                                          ! line 11  -ASSN UNIT INDIC ON
+        CM1111,ZASUIN                                        ! line 12  -SET ASSN UNIT IND ON
+        KF,ZDELET,12                                         ! line 13
+        BZAE,ZMNERX                                          ! line 14  -IF NOT DELETE, TO ERROR CHK
+        BB,SOWNER(ZREQUN),ZMCPMC                             ! line 15  -BR IF REQ MULTI-CH UNIT IS MCP
+        BZPG2,ZSETPP                                         ! line 16  -CH ONLY DEL OF MUL CH FOR PP
+ZQUES2  CB+,ZREQUN,ZQUES1                                    ! line 17  -ANY MORE UNITS TO BE EXAMINED
+! line 18  -ON REQUESTED CHANNEL
+        BZPG5,ZMAIND                                         ! line 19
+        BPG2,ZQUES4                                          ! line 20  -BRANCH IF ANY PP UNITS ON CHAN
+ZDONE   LVI,12,5.0                                           ! line 21
+        B,ZEXITX                                             ! line 22
+ZSETPP  CM1111(BU,1),ZPPCHD                                  ! line 23  -SET PP UNIT SWITCH FOR PRIME
+        B,ZQUES2                                             ! line 24
+ZQUS11  BPG6,ZQUES2                                          ! line 25  -IF OP TESTED, LOOK FOR MORE UNS
+        CM1111,ZOPTST                                        ! line 26  -SET OP CODE TEST IND ON
+        KF,ZDELTM,12                                         ! line 27
+        BAE,ZQUES2                                           ! line 28
+        KF,ZDELET,12                                         ! line 29
+        BAE,ZQUES2                                           ! line 30
+        B,ZEREX1                                             ! line 31
+ZQUES4  BPG3,ZDONE                                           ! line 32  -BRANCH IF ABEOJ,JC4 PRIMED
+        SIC,ZSPLP9                                           ! line 33
+        BD,ZSPLPR                                            ! line 34
+        ,ZSPL01                                              ! line 35  printed "Z SPL 01" (open 0)
+        CF,5.0                                               ! line 36
+        SIC,SPRIMR                                           ! line 37
+        BD,SPRIME                                            ! line 38
+        ,DABEOJ                                              ! line 39
+        BE,DMCP                                              ! line 40  printed "D MCP" (worn D)
+        ,DCOMM                                               ! line 41
+        VF,ZQUZ49                                            ! line 42
+        CF,5.0                                               ! line 43
+        B,ZDONE                                              ! line 44
+ZMCPMC  LX,2,$R                                              ! line 45  -SAVE OP CODE IN ACC
+        CM1111(BU,1),SUNASG(ZREQUN)                          ! line 46  -SET UNIT UNASSIGNED
+        SIC,ZSCAN9                                           ! line 47
+        B,ZCHSCN                                             ! line 48  -GO TO SCAN FOR NEW MCP UNIT
+
+!SYM ZMULCH 235223.00
+!SYM ZQUES1 235225.00
+!SYM ZQUES2 235232.40
+!SYM ZDONE  235234.00
+!SYM ZSETPP 235235.00
+!SYM ZQUS11 235236.40
+!SYM ZQUES4 235243.40
+!SYM ZMCPMC 235252.00
+!CHECK 235221.00 | 235372.00 80 044606.21 10 | line 1 K,Z DELET,12
+!CHECK 235222.00 | 235365.76 C0 | line 2 BZAE,Z MNERX
+!CHECK 235222.40 | 235066.50 00 | line 3 B,ZCWNER as printed
+!CHECK 235223.00 | 000000.14 38 | line 6 Z MULCH LV,Z REQ UN,0.0(Z REQ CH)
+!CHECK 235223.40 | 000000.73 88 004067.06 70 | line 7 LF,S UNIT K(Z REQ CH),-18
+!CHECK 235224.40 | 000010.14 50 | line 8 LC,Z REQ UN,$L
+!CHECK 235225.00 | 000000.35 86 235236.74 0E | line 9 ZQUES1 BB1,SUNASG(ZREQUN),ZQUS11
+!CHECK 235226.00 | 235227.67 42 | line 11 BPG5,$+1.32
+!CHECK 235226.40 | 000013.56 80 001000.36 F0 | line 12 CM1111,Z ASU IN
+!CHECK 235227.40 | 235372.00 80 044606.23 10 | line 13 KF,Z DELET,12
+!CHECK 235230.40 | 235365.76 C0 | line 14 BZAE,Z MNERX
+!CHECK 235231.00 | 000000.40 86 235252.34 02 | line 15 BB,S OWNER(Z REQ UN),Z MCP MC
+!CHECK 235232.00 | 235235.25 C0 | line 16 BZPG2,Z SET PP
+!CHECK 235232.40 | 235225.15 48 | line 17 Z QUES 2 CB+,Z REQ UN,Z QUES1
+!CHECK 235233.00 | 235341.27 40 | line 19 BZPG5,Z MAIN D
+!CHECK 235233.40 | 235243.65 C2 | line 20 BPG2,Z QUES 4 (a "*" prints after the location)
+!CHECK 235234.00 | 000005.31 01 | line 21 Z DONE LVI,12,5.0
+!CHECK 235234.40 | 234633.10 00 | line 22 B,Z EXITX
+!CHECK 235235.00 | 000013.53 80 001000.36 F0 | line 23 Z SET PP CM1111(BU,1),Z PP CHD
+!CHECK 235236.00 | 235232.50 00 | line 24 B,Z QUES 2
+!CHECK 235236.40 | 235232.67 C2 | line 25 Z QUS 11 BPG6,Z QUES 2
+!CHECK 235237.00 | 000013.57 80 001000.36 F0 | line 26 CM1111,Z OP TST
+!CHECK 235240.00 | 235372.44 80 044606.23 10 | line 27 KF,Z DELT M,12
+!CHECK 235241.00 | 235232.76 C2 | line 28 BAE,Z QUES 2
+!CHECK 235241.40 | 235372.00 80 044606.23 10 | line 29 KF,Z DELET,12
+!CHECK 235242.40 | 235232.76 C2 | line 30 BAE,Z QUES 2
+!CHECK 235243.00 | 234631.10 00 | line 31 B,Z ER EX1
+!CHECK 235243.40 | 235234.26 42 | line 32 Z QUES4 BPG3,Z DONE
+!CHECK 235244.00 | 224052.00 80 | line 33 SIC,Z SPL P9
+!CHECK 235244.40 | 224046.44 00 | line 34 BD,Z SPL PR (byte prints "CO")
+!CHECK 235245.00 | 235260.00 80 | line 35 ,Z SPL 01
+!CHECK 235245.40 | 000005 | line 36 CF,5.0
+!CHECK 235246.00 | 215571.00 80 | line 37 SIC,S PRIM R
+!CHECK 235246.40 | 215570.04 00 | line 38 BD,S PRIME
+!CHECK 235247.00 | 000104.00 80 | line 39 ,D ABEOJ (a "*" prints after the location)
+!CHECK 235247.40 | 000040.00 00 | line 40 BE,D MCP (printed "C MCP")
+!CHECK 235250.00 | 000043.40 80 | line 41 ,D COMM
+!CHECK 235250.40 | 235265.00+ | line 42 VF,Z QUZ 49
+!CHECK 235251.00 | 000005 | line 43 CF,5.0
+!CHECK 235251.40 | 235234.10 00 | line 44 B,Z DONE
+!CHECK 235252.00 | 000011.04 10 | line 45 Z MCP MC LX,2,$R
+!CHECK 235252.40 | 000000.35 86 001000.36 F0 | line 46 CM1111(BU,1),S UN ASG(Z REQ UN)
+!CHECK 235253.40 | 235143.40 80 | line 47 SIC,Z SCAN9
+!CHECK 235254.00 | 235071.10 00 | line 48 B,Z CH SCN

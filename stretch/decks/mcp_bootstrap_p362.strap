@@ -1,0 +1,215 @@
+! mcp_bootstrap_p362.strap -- MCP printed page 362: the SYSTEM COMMAND
+! package (PUNID 22SCOMD) continued: the entry JCOMD -- save the index
+! registers, fetch message length/address and source code, build the
+! mode mask JXMSK from SYSMOD and the source code (a multiway branch at
+! ZTSTSR), then ZCMCRD tests the first field for COMD, ZLOKUP / ZLOOK4
+! look the command up in JLIST and branch through JTABL; ZBKBCD moves
+! broken fields to JFLDB; ZIQS calls SIQSA6 to convert to IQS.
+! Lines 1-54.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.112, read at 400 dpi, names at 900
+! dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22SCOMD  CARD ID
+! WA000041  DIST. OF 3/01  3/01  PAGE NUMBER 362".  The heading row's
+! LOCATION field is BLANK (line 1 is a remark card, as the rule says).
+!
+! THE PAGE.  54 lines; every line number prints a "*".  "*" after the
+! LOCATION on lines 17 and 39.  No TAIL, no SLC, no new PUNID: still
+! SCOMD, card series WA.
+!   lines 1-3    remark cards (banner "*****SYSTEM COMMAND ROUTINE*****"
+!                on 2; 1 and 3 blank).
+!   lines 4-54   code, contiguous 234443.00 .. 234476.40 (line 54, a
+!                half word; next 234477.00).
+!
+! JOIN.  p.361 ends JTABL at 234442.40, next 234443.00: this page's
+! line 4 prints 234443.00 -- contiguous.  p.363's line 1 (Vision) is
+! "ZBCD KCI,14,80.0" at 234477.00, the address this page's B,ZBCD
+! (line 30) prints -- contiguous.  CARD ID WA000041 follows p.361's
+! last serial WA000039, so WA000040 prints on neither page.
+!
+! CARD SERIALS.  WA000041 .. WA000087 over 54 lines: SEVEN serials are
+! printed twice, each on a V+I / B pair: lines 14-15 (WA000054), 16-17
+! (55), 18-19 (56), 23-24 (60), 25-26 (61), 27-28 (62), 29-30 (63).
+! None skipped.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 4 label "J CDMD" = JCOMD (worn D stems; p.269's stand-in and
+!     C22-6728-1 "JCOMD (Figure 56)").
+!   * line 28 "B,Z IGS" (a G-like glyph at 900 dpi) = ZIQS: the B prints
+!     234472.50, line 46's ZIQS (234472.40) + .10; line 46 prints IQS
+!     with a Q tail; C22-6728-1 Fig. 56 "CONVERT IQS"; no ZIGS anywhere.
+!   * line 48 "BD,SIQSA6" (Vision SIGSAG): landed p.259 SIQSA6, printed
+!     230506.04 = 230506.00 + BD bits.
+!   * line 11 "SYSMCD" (open O) = SYSMOD (landed p.103; 215001.10).
+!   * "MCDE" (line 11 remark), "J CF"/"J CV" on p.363 = JOF/JOV: O open.
+!   * lines 13, 22 "0.0", "-1.0": open rounds in octal-only context.
+!   * line 24 prints "234471.1C CO" = 234471.10 00 (open 0s in an
+!     octal field and the byte; B,ZBKBCD can only give .10 00, as line
+!     26 prints; lesson 6).  Lines 21 (BZXE) and 33 (BZAE) print a real
+!     C0, which the statements assemble to.
+!   * p.363's "DRZ,(12)" (JFLDB) has no dds: strap_asm raises IndexError
+!     on it (statement_size, parse_dds of an empty mods list) -- the
+!     stand-in here is a plain SYN.
+!
+! EXTERNALS.  SYSMOD (p.103), SIQSA6 (p.259), PMCPBF (p.137), JCODE /
+! JFRST / JSIZE (p.295), JLIST / JTABL (p.361, SCOMD).  ZEREX1 is on
+! no page read yet (plain SYN from this page's binary).  Everything else
+! is defined on p.363 (being transcribed in parallel, not landed): the
+! stand-ins copy p.363's DEFINING form as I read it off p.363's image
+! (PDF p.113, lines 29-53) -- the SYN-defined index names and mode-mask
+! bits are written exactly as p.363 prints them (no split guessed: e.g.
+! JOV+JON prints 000240 = 32+128); the storage labels carry p.363's
+! dds at p.363's printed locations.  The p.363 instruction labels
+! (ZBCD, ZBCD9, ZMODER, JERRX, Vision reading of p.363) and ZBRKAD (a
+! VF) are cross-checked against this page's binary, half word only.
+
+SYSMOD  SYN(BU,2), (8)215001.10      ! landed p.103 line 18 SYN(BU,2),SCOMRG+.8; L line 11 prints 215001.10
+SIQSA6  SYN(BU,64,8), (8)230506.0    ! landed p.259 line 6 TI (full word) at 230506.00; BD line 48 230506.04
+PMCPBF  SYN, (8)216775.0             ! landed p.137 line 22 DR(BU,64),(13); VF line 49 PMCPBF+3.0 = 217000.00
+JCODE   SYN(BU,32,8), (8)232720.0    ! landed p.295 line 26 ",0" at 232720.00 (half word); LX line 8 232720.06
+JFRST   SYN(BU,32,8), (8)232720.40   ! landed p.295 line 27 ",0" at 232720.40; LV line 6 232720.74
+JSIZE   SYN(BU,32,8), (8)232721.0    ! landed p.295 line 28 ",0" at 232721.00; LC line 5 232721.34
+JX1     SYN,$X1                      ! p.363 line 36 (not landed), as printed there; LX line 37 j=1
+JX2     SYN,$X2                      ! p.363 line 37; LVI line 38 j=2
+ZSORCE  SYN,$3                       ! p.363 line 38 (prints 000023.00); LX line 8 j=3
+ZSMODE  SYN,$X4                      ! p.363 line 39; LV line 12 j=4
+JXMSK   SYN,$X13                     ! p.363 line 40 -MODE MASK INDEX; LVI line 7 j=13
+JOP     SYN,2.0                      ! p.363 line 44 -OPERATOR IS SOURCE
+JSR     SYN,4.0                      ! p.363 line 45 -SPOOL READER
+JJ1     SYN,8.0                      ! p.363 line 46 -JOB CONTROL I
+JJ4     SYN,16.0                     ! p.363 line 47 -JOB CONTROL IV
+JOV     SYN,32.0                     ! p.363 line 48 "J CV" -OVER-LAPPED
+JNV     SYN,64.0                     ! p.363 line 49 -NOT OVER-LAPPED
+JON     SYN,128.0                    ! p.363 line 50 -ON LINE
+JOF     SYN,256.0                    ! p.363 line 51 "J CF" -OFF-LINE
+ZIPL    SYN,512.0                    ! p.363 line 52 -IPL IS THE SOURCE
+JCN     SYN,1024.0                   ! p.363 line 53 -CONSOLE
+ZBCD    SYN(BU,32,8), (8)234477.0    ! p.363 line 1 KCI at 234477.00 (Vision); B line 30 234477.10, half word only
+ZBCD9   SYN(BU,32,8), (8)234501.40   ! p.363 line 6 SC at 234501.40 (Vision); BE line 54 234501.40
+ZBRKAD  SYN(B,25,1), (8)234503.0     ! p.363 line 9 VF at 234503.00 (Vision); SV line 53 234503.35
+ZMODER  SYN(BU,32,8), (8)234507.0    ! p.363 line 17 LX at 234507.00 (Vision); BZXE line 21 234507.32
+JERRX   SYN(BU,32,8), (8)234517.0    ! p.363 line 22 LX at 234517.00 (Vision); BXH line 10 234517.33
+ZMAIN1  SYN(BU,48,6), (8)234527.0    ! p.363 line 29 (A*)DD(BU,48,6),COMD at 234527.00; L(U) line 31 234527.40
+JSTLR   SYN(BU,64), (8)234530.0      ! p.363 line 31 DR(BU,64),(16) at 234530.00; TI line 4 234530.00
+JCBUF   SYN(BU,6), (8)234550.0       ! p.363 line 32 DR(BU,6),(80) at 234550.00; VF line 51 234550.00+
+JFLDB   SYN, (8)234560.0             ! p.363 line 33 DRZ,(12) at 234560.00; KF line 32 234560.00
+JJX1    SYN(BU), (8)234574.0         ! p.363 line 34 XW,0.0,12 at 234574.00; LX line 37 234574.02
+JFLDC   SYN(BU,18), (8)234575.0      ! p.363 line 35 CF,0 at 234575.00; SC line 34 234575.35
+JLIST   SYN(BU,48,6), (8)234424.0            ! p.361 line 13 (A*)DD(BU,48,6) at 234424.00; LVI line 38 234424.05
+ZEREX1  SYN, (8)234631.0             ! not landed (not on p.363); B line 43 234631.10, half word only
+JTABL   SYN(BU,32,8), (8)234435.0    ! p.361 line 28 B at 234435.00; BAE line 41 234435.36
+
+        SLC, (8)234443.0             ! p.361 ends 234442.40; line 4 prints 234443.00
+! line  1  -
+! line  2  -     *****SYSTEM COMMAND ROUTINE*****
+! line  3  -
+JCOMD   TI,16,$X0,JSTLR                                      ! line  4  -SAVE INDEX REGISTERS
+        LC,14,JSIZE                                          ! line  5  -GET MESSAGE LENGTH
+        LV,14,JFRST                                          ! line  6  -GET ADDR OF MESSAGE
+        LVI,JXMSK,0.0                                        ! line  7  -SET MASK TO ZERO
+        LX,ZSORCE,JCODE                                      ! line  8  -GET SOURCE CODE
+        KVI,ZSORCE,4.0                                       ! line  9
+        BXH,JERRX                                            ! line 10  -BRANCH IF SOURCE CODE IN ERROR
+        L(BU,2),SYSMOD,-18                                   ! line 11  -GET SYSTEM MODE BITS
+        LV,ZSMODE,$L                                         ! line 12
+        BR,0.0(ZSMODE)                                       ! line 13
+        V+I,JXMSK,JOV+JON                                    ! line 14
+        B,ZTSTSR                                             ! line 15
+        V+I,JXMSK,JOV+JOF                                    ! line 16
+        B,ZTSTSR                                             ! line 17 *
+        V+I,JXMSK,JNV+JON                                    ! line 18
+        B,ZTSTSR                                             ! line 19
+        V+I,JXMSK,JNV+JOF                                    ! line 20
+        BZXE,ZMODER                                          ! line 21  -BRANCH TO ERR IF IPL NOT SOURCE
+ZTSTSR  BR,-1.0(ZSORCE)                                      ! line 22
+        V+I,JXMSK,JJ1+JSR                                    ! line 23
+        B,ZBKBCD                                             ! line 24
+        V+I,JXMSK,JJ4+JSR                                    ! line 25
+        B,ZBKBCD                                             ! line 26
+        V+I,JXMSK,JCN+JOP                                    ! line 27
+        B,ZIQS                                               ! line 28  printed "Z IGS"
+        V+I,JXMSK,ZIPL                                       ! line 29
+        B,ZBCD                                               ! line 30
+ZCMCRD  L(U),ZMAIN1                                          ! line 31
+        KF(BU,48,6),JFLDB,-48                                ! line 32
+        BZAE,ZEREX1                                          ! line 33
+ZLOKUP  SC,14,JFLDC                                          ! line 34
+        KCI,14,2.0                                           ! line 35
+        BXL,ZEREX1                                           ! line 36  -NO COMMAND FIELDS
+        LX,JX1,JJX1                                          ! line 37
+        LVI,JX2,JLIST                                        ! line 38
+        L(U),JFLDB+1.0                                       ! line 39 *  -CALL OP FIELD
+ZLOOK4  KF(V+I)(BU,48,6),.48(JX2),80                         ! line 40
+        BAE,JTABL(JX1)                                       ! line 41
+        CBH,JX1,ZLOOK4                                       ! line 42
+        B,ZEREX1                                             ! line 43
+ZBKBCD  T,$14,0.0($14),JFLDB                                 ! line 44  -MOVE BROKEN FIELDS TO BUFFER
+        B,ZLOKUP                                             ! line 45
+ZIQS    SC,14,ZIQSCT                                         ! line 46
+        LVI,15,$+1.0                                         ! line 47
+        BD,SIQSA6                                            ! line 48
+        VF,PMCPBF+3.0                                        ! line 49
+ZIQSCT  CF,0.0                                               ! line 50
+        VF,JCBUF                                             ! line 51
+        LVI,14,JCBUF                                         ! line 52
+        SV,14,ZBRKAD                                         ! line 53
+        BE,ZBCD9                                             ! line 54
+
+!SYM JCOMD  234443.00
+!SYM ZTSTSR 234455.00
+!SYM ZCMCRD 234461.40
+!SYM ZLOKUP 234463.40
+!SYM ZLOOK4 234466.40
+!SYM ZBKBCD 234471.00
+!SYM ZIQS   234472.40
+!SYM ZIQSCT 234474.40
+!CHECK 234443.00 | 000020.00 80 234530.00 A0 | line 4 J COMD TI,16,$X0,JSTLR
+!CHECK 234444.00 | 232721.34 50 | line 5 LC,14,JSIZE
+!CHECK 234444.40 | 232720.74 30 | line 6 LV,14,JFRST
+!CHECK 234445.00 | 000000.33 01 | line 7 LVI,JXMSK,0.0
+!CHECK 234445.40 | 232720.06 10 | line 8 LX,ZSORCE,JCODE
+!CHECK 234446.00 | 000004.07 04 | line 9 KVI,ZSORCE,4.0
+!CHECK 234446.40 | 234517.33 42 | line 10 BXH,JERRX
+!CHECK 234447.00 | 215001.10 80 002067.20 50 | line 11 L(BU,2),SYSMOD,-18
+!CHECK 234450.00 | 000010.10 30 | line 12 LV,ZSMODE,$L
+!CHECK 234450.40 | 000000.14 04 | line 13 BR,0.0(ZSMODE)
+!CHECK 234451.00 | 000240.33 05 | line 14 V+I,JXMSK,JOV+JON
+!CHECK 234451.40 | 234455.10 00 | line 15 B,ZTSTSR
+!CHECK 234452.00 | 000440.33 05 | line 16 V+I,JXMSK,JOV+JOF
+!CHECK 234452.40 | 234455.10 00 | line 17 B,ZTSTSR (a "*" prints after the location)
+!CHECK 234453.00 | 000300.33 05 | line 18 V+I,JXMSK,JNV+JON
+!CHECK 234453.40 | 234455.10 00 | line 19 B,ZTSTSR
+!CHECK 234454.00 | 000500.33 05 | line 20 V+I,JXMSK,JNV+JOF
+!CHECK 234454.40 | 234507.32 C0 | line 21 BZXE,ZMODER
+!CHECK 234455.00 | 777777.14 03 | line 22 Z TST SR BR,-1.0(ZSORCE)
+!CHECK 234455.40 | 000014.33 05 | line 23 V+I,JXMSK,JJ1+JSR
+!CHECK 234456.00 | 234471.10 00 | line 24 B,ZBKBCD (prints "234471.1C CO": open 0s)
+!CHECK 234456.40 | 000024.33 05 | line 25 V+I,JXMSK,JJ4+JSR
+!CHECK 234457.00 | 234471.10 00 | line 26 B,ZBKBCD
+!CHECK 234457.40 | 002002.33 05 | line 27 V+I,JXMSK,JCN+JOP
+!CHECK 234460.00 | 234472.50 00 | line 28 B,ZIQS (printed "Z IGS")
+!CHECK 234460.40 | 001000.33 05 | line 29 V+I,JXMSK,ZIPL
+!CHECK 234461.00 | 234477.10 00 | line 30 B,ZBCD
+!CHECK 234461.40 | 234527.40 60 | line 31 Z CM CRD L(U),ZMAIN1
+!CHECK 234462.00 | 234560.00 80 060650.23 10 | line 32 KF(BU,48,6),JFLDB,-48
+!CHECK 234463.00 | 234631.36 C0 | line 33 BZAE,ZEREX1
+!CHECK 234463.40 | 234575.35 50 | line 34 Z LOK UP SC,14,JFLDC
+!CHECK 234464.00 | 000002.35 0A | line 35 KCI,14,2.0
+!CHECK 234464.40 | 234631.32 42 | line 36 BXL,ZEREX1
+!CHECK 234465.00 | 234574.02 10 | line 37 LX,JX1,JJX1
+!CHECK 234465.40 | 234424.05 01 | line 38 LVI,JX2,JLIST
+!CHECK 234466.00 | 234561.40 60 | line 39 L(U),JFLDB+1.0 (a "*" prints after the location)
+!CHECK 234466.40 | 000000.60 82 160650.23 10 | line 40 Z LOCK 4 KF(V+I)(BU,48,6),.48(JX2),80
+!CHECK 234467.40 | 234435.36 C3 | line 41 BAE,JTABL(JX1)
+!CHECK 234470.00 | 234466.42 C8 | line 42 CBH,JX1,ZLOOK4
+!CHECK 234470.40 | 234631.10 00 | line 43 B,ZEREX1
+!CHECK 234471.00 | 000000.00 8E 234560.34 20 | line 44 Z BK BCD T,$14,0.0($14),JFLDB
+!CHECK 234472.00 | 234463.50 00 | line 45 B,ZLOKUP
+!CHECK 234472.40 | 234474.75 50 | line 46 Z IQS SC,14,ZIQSCT
+!CHECK 234473.00 | 234474.37 01 | line 47 LVI,15,$+1.0
+!CHECK 234473.40 | 230506.04 00 | line 48 BD,SIQSA6
+!CHECK 234474.00 | 217000.00+ | line 49 VF,PMCPBF+3.0
+!CHECK 234474.40 | 000000 | line 50 Z IQS CT CF,0.0
+!CHECK 234475.00 | 234550.00+ | line 51 VF,JCBUF
+!CHECK 234475.40 | 234550.35 01 | line 52 LVI,14,JCBUF
+!CHECK 234476.00 | 234503.35 30 | line 53 SV,14,ZBRKAD
+!CHECK 234476.40 | 234501.40 00 | line 54 BE,ZBCD9

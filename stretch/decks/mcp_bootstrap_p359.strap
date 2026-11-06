@@ -1,0 +1,220 @@
+! mcp_bootstrap_p359.strap -- MCP printed page 359: the $DUMP program's
+! constants and tables: the panel index word APNLW5, the bit-position
+! VFs APT8..A3PT40, AHOTP/AMNTOP/ADMPND, the power-of-two XWs ABDEC,
+! 6-bit codes AL48/AL40/AL24, digit masks AKON9/AKON1/AKONZ, the
+! floating scale routine ADBLMP/ADLDVD with its power-of-ten table
+! AFL10, and the dump's alphabetic literals (AXMAGE .. ATR16), lines
+! 1-56.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.109, read at 400 dpi, names and
+! doubtful glyphs at 900 dpi.  Header, READ: "TIME CLOCK 00054041
+! PUNID 22$DUMP  CARD ID VB000791  DIST. OF 3/01  3/01  PAGE NUMBER
+! 359"; the heading row's LOCATION field is 236154, line 1's word.
+!
+! >>> STILL THE $DUMP (PUNID 22$DUMP, card series VB...).  No new
+! PUNID, no SLC on the page.  Nothing here is taken from the LOADER
+! overlay (pp.320-334).  No TAIL.
+!
+! THE PAGE.  56 lines; every line number prints a "*".  "*" after the
+! LOCATION on lines 13, 26, 40, 55.  Remark on line 29 (-REDUCE X BY
+! 10 TO THE N POWER).  Line 45's CNOP prints no location and no binary
+! (AXMAGE ends at 236215.60; the half-word fill is too short for a
+! NOP).  Located rows contiguous from 236154.00 (line 1) to 236231.00
+! (line 56, ATR16, 5 characters = 40 bits; next 236231.50).
+!
+! JOIN.  p.358 (scratch neighbour) ends with APNLW4 XW at 236153.00, a
+! full word: next 236154.00 = line 1.  p.360 (scratch neighbour)
+! opens with SLC,(8)236231.50, AMASK (A*)DD at 236231.50 = this page's
+! next location: contiguous.
+!
+! FLOATING DD.  Lines 33-39 ("AFL10 DD(N),1.E1,...,1.E64") and line 43
+! ("A1E14 DD(BU,48),1.E14") assemble as printed, bit for bit
+! (C28-6129 printed pp.18-19, 27-29; the fraction is truncated, which
+! is witnessed by THIS page's lines 38-40 -- see strap_asm's
+! _dd_normalized).  Lines 40-42's card ("DD(N),1.E128,1.E512,
+! 9.99999E615", one card, VB000817) is NOT handed to the assembler:
+! 1.E512 and 9.99999E615 lie outside the floating range C28-6129
+! printed p.27 states (10^-308 .. 10^308), both print the same
+! exponent 3246+, and no cited rule gives those words.  The card is a
+! comment with an SLC to line 43's printed location; words 236211.00-
+! 236213.00 are not in the image, and their printed binaries are
+! recorded at the end, unchecked.
+!
+! ENTRY-MODE DATA (alpha, 8-bit bytes; the character after A in "(A8)"
+! / "(A*)" is the terminator).  Blanks counted on a 40.07 px/char
+! grid at 400 dpi and confirmed at 900 dpi, and every count agrees
+! with the next printed location:
+!   line 44 AXMAGE: 8 X's (64 bits).
+!   line 46 APLC: "-" + 7 blanks; line 47 APXW: 7 blanks + "."; line
+!     48 ABLNK: 8 blanks; line 49 APFL: 2 blanks, ".", 5 blanks (each
+!     64 bits, 236216.00 .. 236222.00).  Line 46's speck mid-field at
+!     900 dpi is far smaller than the periods of lines 47/49 and sits
+!     between character cells (3.4 cells past the "-"; the periods sit
+!     on cell centres, 7.1 and 2.1): not a character.
+!   line 50 ALLCN "ALL CONTAIN" (11 chars, 88 bits -> 236223.30).
+!   line 55 AMCMDE "IO, NOT AUTO-STACKING MODE" + 6 blanks (32 chars,
+!     256 bits, 236225.00 -> 236231.00), under a printed (BU,8).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 10 "AHCTP": third glyph open; written AHOTP, the spelling of
+!     the p.348/p.349 neighbours (who saw it closed, "rounded both
+!     sides") at the same 236161 word.  An open glyph says nothing.
+!   * line 11 "AMNTCP": written AMNTOP, landed pp.343-344's spelling.
+!   * line 12 "ACMPND": the second glyph has a worn straight stem;
+!     written ADMPND, landed pp.342-344's spelling at 236162.
+!   * line 12 "VF,C": the binary is 000000.00+; an open round is 0.
+!   * line 52 "AACC": third glyph rounder than the final C at 900 dpi; written AAOC
+!     (landed p.344's spelling, 236223.60); datum "AOC" likewise.
+!   * line 25 "(16)C909...": first digit open, binary 0044... = 0x09: 0.
+!   * line 27 "(16)0FCF0F...": binary 0074170360741703607417 =
+!     0x0F0F0F0F0F0F0F0F: the open C is 0.
+!   * lines 47-48 print "DC(BU)" for DD(BU) (worn D).
+!   * octal open rounds read 0 ("CCCCCC.00+" = 000000.00+).
+!
+! EXTERNALS.  ABUFF, APCOL1, AMNMBF are DRZ(N)s on p.358 (scratch, not
+! landed); plain SYN stand-ins, the form landed pp.342-345 use, at the
+! words p.358 prints (lines 1, 10, 11 assemble as printed either way).
+!
+! CARD SERIALS.  VB000791 .. VB000831, none skipped.  Shared: lines
+! 13-20 all print VB000803 (line 21 is VB000804); lines 33-39 VB000816
+! (one DD(N) card), lines 40-42 VB000817.
+
+ABUFF   SYN,    (8)236044.0          ! p.358 line 35 DRZ(N),33 (not landed); XW line 1 ABUFF+16. = 236064.00, word only
+APCOL1  SYN,    (8)236105.0          ! p.358 line 36 DRZ(N),17 (not landed); VF line 10 APCOL1.08 = 236105.10, word only
+AMNMBF  SYN,    (8)236126.0          ! p.358 line 37 DRZ(N),17 (not landed); VF line 11 AMNMBF.08 = 236126.10, word only
+
+        SLC, (8)236154.00
+APNLW5  XW,ABUFF+16.,4                                       ! line  1
+APT8    VF,.8                                                ! line  2
+APT16   VF,.16                                               ! line  3
+APT24   VF,.24                                               ! line  4
+APT40   VF,.40                                               ! line  5
+APT48   VF,.48                                               ! line  6
+A1PT8   VF,1.8                                               ! line  7
+A1PT16  VF,1.16                                              ! line  8
+A3PT40  VF,3.40                                              ! line  9
+AHOTP   VF,APCOL1.08                                         ! line 10  printed "AHCTP"
+AMNTOP  VF,AMNMBF.08                                         ! line 11  printed "AMNTCP"
+ADMPND  VF,0                                                 ! line 12  printed "ACMPND  VF,C"
+ABDEC   XW,1.                                                ! line 13
+        XW,2.                                                ! line 14
+        XW,4.                                                ! line 15
+        XW,8.                                                ! line 16
+        XW,16.                                               ! line 17
+        XW,32.                                               ! line 18
+        XW,64.                                               ! line 19
+        XW,128.                                              ! line 20
+        XW,512.                                              ! line 21
+AL48    (2)DD(BU,6),110000                                   ! line 22
+AL40    (2)DD(BU,6),101000                                   ! line 23
+AL24    DD(BU,6),(8)30                                       ! line 24
+AKON9   DD(BU,64,4),(16)0909090909090909                     ! line 25
+AKON1   DD(BU,64,4),(16)0101010101010101                     ! line 26
+AKONZ   DD(BU,64),(16)0F0F0F0F0F0F0F0F                       ! line 27  printed "0FCF0F..."
+        CNOP                                                 ! line 28
+ADBLMP  D*(N),AFL10+8.($3)                                   ! line 29  -REDUCE X BY 10 TO THE N POWER
+        NOP                                                  ! line 30
+ADLDVD  D/(N),AFL10+8.($3)                                   ! line 31
+        NOP                                                  ! line 32
+AFL10   DD(N),1.E1,1.E2,1.E4,1.E8,1.E16,1.E32,1.E64             ! lines 33-39  -10 TO THE 2 TO THE N
+!       DD(N),1.E128,1.E512,9.99999E615                        ! lines 40-42  NOT ASSEMBLED -- see header
+        SLC, (8)236214.00            ! STAND-IN: lines 40-42's three DD(N) words 236211.00-236213.00; line 43 printed at 236214.00
+A1E14   DD(BU,48),1.E14                                        ! line 43
+AXMAGE  (A*)DD(BU),XXXXXXXX*                                 ! line 44
+        CNOP,                                                ! line 45
+APLC    (A8)DD(BU),-       8                                 ! line 46
+APXW    (A8)DD(BU),       .8                                 ! line 47  printed "DC"
+ABLNK   (A8)DD(BU),        8                                 ! line 48  printed "DC"
+APFL    (A8)DD(BU),  .     8                                 ! line 49
+ALLCN   (A8)DD(BU),ALL CONTAIN8                              ! line 50
+ALZC    (A*)DD(BU),LZC*                                      ! line 51
+AAOC    (A*)DD(BU),AOC*                                      ! line 52  printed "AACC"
+AIND    (A*)DD(BU),IND*                                      ! line 53
+        CNOP,                                                ! line 54
+AMCMDE  (A*)DD(BU,8),IO, NOT AUTO-STACKING MODE      *       ! line 55
+ATR16   (A*)DD(BU),TR-16*                                    ! line 56
+
+! ---- symbols the page defines, at the locations it prints ----
+!SYM APNLW5 236154.00
+!SYM APT8   236155.00
+!SYM APT16  236155.40
+!SYM APT24  236156.00
+!SYM APT40  236156.40
+!SYM APT48  236157.00
+!SYM A1PT8  236157.40
+!SYM A1PT16 236160.00
+!SYM A3PT40 236160.40
+!SYM AHOTP  236161.00
+!SYM AMNTOP 236161.40
+!SYM ADMPND 236162.00
+!SYM ABDEC  236163.00
+!SYM AL48   236174.00
+!SYM AL40   236174.06
+!SYM AL24   236174.14
+!SYM AKON9  236174.22
+!SYM AKON1  236175.22
+!SYM AKONZ  236176.22
+!SYM ADBLMP 236200.00
+!SYM ADLDVD 236201.00
+!SYM AFL10  236202.00
+!SYM A1E14  236214.00
+!SYM AXMAGE 236214.60
+!SYM APLC   236216.00
+!SYM APXW   236217.00
+!SYM ABLNK  236220.00
+!SYM APFL   236221.00
+!SYM ALLCN  236222.00
+!SYM ALZC   236223.30
+!SYM AAOC   236223.60
+!SYM AIND   236224.10
+!SYM AMCMDE 236225.00
+!SYM ATR16  236231.00
+
+! ---- every row that prints a binary ----
+!CHECK 236154.00 | 236064.00+ 000 000004 000000 | line 1 APNLW5 XW,ABUFF+16.,4
+!CHECK 236155.00 | 000000.10+ | line 2 APT8 VF,.8
+!CHECK 236155.40 | 000000.20+ | line 3 APT16 VF,.16
+!CHECK 236156.00 | 000000.30+ | line 4 APT24 VF,.24
+!CHECK 236156.40 | 000000.50+ | line 5 APT40 VF,.40
+!CHECK 236157.00 | 000000.60+ | line 6 APT48 VF,.48
+!CHECK 236157.40 | 000001.10+ | line 7 A1PT8 VF,1.8
+!CHECK 236160.00 | 000001.20+ | line 8 A1PT16 VF,1.16
+!CHECK 236160.40 | 000003.50+ | line 9 A3PT40 VF,3.40
+!CHECK 236161.00 | 236105.10+ | line 10 AHOTP VF,APCOL1.08 (printed "AHCTP")
+!CHECK 236161.40 | 236126.10+ | line 11 AMNTOP VF,AMNMBF.08 (printed "AMNTCP")
+!CHECK 236162.00 | 000000.00+ | line 12 ADMPND VF,0 (printed "ACMPND VF,C")
+!CHECK 236163.00 | 000001.00+ 000 000000 000000 | line 13 ABDEC XW,1.
+!CHECK 236164.00 | 000002.00+ 000 000000 000000 | line 14 XW,2.
+!CHECK 236165.00 | 000004.00+ 000 000000 000000 | line 15 XW,4.
+!CHECK 236166.00 | 000010.00+ 000 000000 000000 | line 16 XW,8.
+!CHECK 236167.00 | 000020.00+ 000 000000 000000 | line 17 XW,16.
+!CHECK 236170.00 | 000040.00+ 000 000000 000000 | line 18 XW,32.
+!CHECK 236171.00 | 000100.00+ 000 000000 000000 | line 19 XW,64.
+!CHECK 236172.00 | 000200.00+ 000 000000 000000 | line 20 XW,128.
+!CHECK 236173.00 | 001000.00+ 000 000000 000000 | line 21 XW,512.
+!CHECK 236174.00 | 60 | line 22 AL48 (2)DD(BU,6),110000 | 6
+!CHECK 236174.06 | 50 | line 23 AL40 (2)DD(BU,6),101000 | 6
+!CHECK 236174.14 | 30 | line 24 AL24 DD(BU,6),(8)30 | 6
+!CHECK 236174.22 | 0044110220441102204411 | line 25 AKON9 DD(BU,64,4),(16)0909090909090909 | 64
+!CHECK 236175.22 | 0004010020040100200401 | line 26 AKON1 DD(BU,64,4),(16)0101010101010101 | 64
+!CHECK 236176.22 | 0074170360741703607417 | line 27 AKONZ DD(BU,64),(16)0F0F0F0F0F0F0F0F (printed "0FCF...") | 64
+!CHECK 236177.40 | 000000.30 00 | line 28 CNOP
+!CHECK 236200.00 | 236212.05 A3 | line 29 ADBLMP D*(N),AFL10+8.($3)
+!CHECK 236200.40 | 000000.30 00 | line 30 NOP
+!CHECK 236201.00 | 236212.05 E3 | line 31 ADLDVD D/(N),AFL10+8.($3)
+!CHECK 236201.40 | 000000.30 00 | line 32 NOP
+!CHECK 236224.40 | 000000.30 00 | line 54 CNOP,
+!CHECK 236202.00 | 0002120000000000000000 | line 33 1.E1 (printed "0004+ 5000000000000000 +000": EF+EM, ES, fraction, S TUV -- C28-6129 printed p.18) | 64
+!CHECK 236203.00 | 0003544000000000000000 | line 34 1.E2 (printed "0007+ 6200000000000000 +000": EF+EM, ES, fraction, S TUV -- C28-6129 printed p.18) | 64
+!CHECK 236204.00 | 0007116100000000000000 | line 35 1.E4 (printed "0016+ 4704000000000000 +000": EF+EM, ES, fraction, S TUV -- C28-6129 printed p.18) | 64
+!CHECK 236205.00 | 0015537274100000000000 | line 36 1.E8 (printed "0033+ 5753604000000000 +000": EF+EM, ES, fraction, S TUV -- C28-6129 printed p.18) | 64
+!CHECK 236206.00 | 0033107033623374040000 | line 37 1.E16 (printed "0066+ 4341571157602000 +000": EF+EM, ES, fraction, S TUV -- C28-6129 printed p.18) | 64
+!CHECK 236207.00 | 0065516705533240533400 | line 38 1.E32 (printed "0153+ 4734265552025560 +000": EF+EM, ES, fraction, S TUV -- C28-6129 printed p.18) | 64
+!CHECK 236210.00 | 0152541170076447776360 | line 39 1.E64 (printed "0325+ 6047403722377717 +000": EF+EM, ES, fraction, S TUV -- C28-6129 printed p.18) | 64
+!CHECK 236214.00 | 2657142036440000 | line 43 A1E14 DD(BU,48),1.E14 | 48
+!
+! NOT CHECKED (lines 40-42's card is not assembled; see header).  The
+! printed binaries:
+!   236211.00 | 0652+ 4473510762300351 +000 | line 40 1.E128
+!   236212.00 | 3246+ 0000000000000000 +000 | line 41 1.E512
+!   236213.00 | 3246+ 7364320000000000 +000 | line 42 9.99999E615

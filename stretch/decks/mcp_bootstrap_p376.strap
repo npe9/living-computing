@@ -1,0 +1,190 @@
+! mcp_bootstrap_p376.strap -- MCP printed page 376: SYSTEM COMMAND package
+! (PUNID 22SCOMD): the DELETE/ADD/ALL command words, the Z-prefixed
+! index-register and program-indicator SYNs, and the BYPASS command
+! (Z BYPAS .. Z BZ 1), lines 1-47.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.126, read at 400 dpi, 900 dpi for
+! doubtful glyphs.  Header, READ: "TIME CLOCK 00054041  PUNID 22SCOMD
+! CARD ID WA000744  DIST. OF 3/01  3/01  PAGE NUMBER 376"; the heading
+! row's LOCATION field is 235371, line 1's word.  No TAIL.  Still SCOMD
+! (no new PUNID, card series WA, no SLC).
+!
+! THE PAGE.  47 lines; every line number prints a "*".
+!   line  1      CNOP at 235371.40 (prints a NOP half word 000000.30 00).
+!   lines 2-3    Z DELET, Z DELT M: (AX)DD(BU,36,6), 235372.00 and
+!                235372.44; no binary printed (no !CHECK).
+!   lines 4-5    Z ADD, Z ALL: (AX)DDI(BU,18,6) at "000000.00+",
+!                printing +00616464 / +00614343, BU,22 ,06 -- see below.
+!   lines 6-18   thirteen SYNs to index registers ($X3, $X4, $6..$10;
+!                BU,100,10) and program indicators ($PG0..$PG3, $PG5,
+!                $PG6 = 000013.51 .. 000013.57; BU,01 ,10).
+!   lines 19-21  remark cards ("-" in NAME), banner on 20.
+!   lines 22-47  code 235373.40 .. 235414.00 (a half word; next
+!                235414.40 = p.361's ZONLIN), line 33 a remark card.
+!                Line 3's 36-bit word ends at 235373.10; line 22's SX
+!                (a half word) starts at the next half word, 235373.40.
+! JOIN.  p.375 (Vision reading) ends with line 52 B,Z ER EX2 at
+! 235371.00, a half word; line 1's 235371.40 continues it.  p.375 line
+! 50 KF,Z DELT M,12 prints 235372.44 = this page's ZDELTM.  The next
+! page should open at 235414.40 (p.361's JTABL branches to ZONLIN there).
+!
+! >>> LINES 4-5'S DDI ARE NOT HANDED TO THE ASSEMBLER. <<<  strap_asm
+! refuses DDI.  Each card is kept as a comment, with a stand-in
+! "SYN(BU,18,6), (8)616464" / "(8)614343" carrying the printed value;
+! nothing on this page references ZADD or ZALL.  They are NOT the
+! printed cards.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 27 "JCP+JOF+JOV" = JOP+JOF+JOV: p.363 line 44 prints "J OP
+!     SYN,2.0" with a CLOSED O, and 2.0+256.0+32.0 = 290 = 0o442, the
+!     printed 000442.00.  No JCP anywhere.
+!   * line 31 "JNV+JCN+JJ4" = JNV+JON+JJ4: the printed 000320.00 = 208 =
+!     64+128+16, and p.363 line 50 "J ON SYN,128.0".  p.363 line 53's
+!     JCN is 1024.0 and would print 002120.00.  Open O read as C.
+!   * "JOV"/"JOF" print the O open; written O (p.363 "J CV"/"J CF" =
+!     32.0/256.0, the sums require them; p.377 Vision reads JOV/JOF).
+!   * line 4 "Z ADD (AX)CDI(...),ADCX": D worn to C; the printed value
+!     +00616464 has its 2nd and 3rd characters equal (64 64 = D D), and
+!     line 5's ALL = 61 43 43.  Written ZADD, DDI, ADD.
+!   * lines 2-3 "Z CELT M ... CELETMX": D worn; ZDELTM (p.375 KF).
+!   * line 37 "CMOCOC" = CM0000; "SYSMOD" O open.
+!   * line 40 ",SKCM" = ,SKOM (open O), as pp.265/266: 000117.40.
+!   * line 39 "B,D MCP" = DMCP; its hex prints "CO", and line 47's "CO",
+!     are 00 (the B rows' octal fields print 0 open; lesson 6).
+!   * lines 24/26/28/30/32 hex "C2" is a TRUE C2 (BRZ's byte; assembles).
+!   * lines 26, 46 "JNOPX": the O is CLOSED at 900 dpi (Vision read
+!     JNCPX on p.365).
+!   * line 32 prints a "*" after the LOCATION.  Line 38's remark prints
+!     "SEY" (for SET), kept as printed.
+!
+! EXTERNALS.  Resident: SCOMRG, SYSMOD, STRANB, SPPBT1 (p.103), DMCP
+! (p.108), SKOM (p.106) -- landed forms.  SCOMD symbols, not landed:
+! the J mode-mask bits and JXMSK are DEFINED on printed p.363 (lines
+! 40, 44-52: J XMSK SYN,$X13; J OP 2.0 .. Z IPL 512.0), read off
+! p.363's image (PDF p.113) and copied in their defining form; every
+! sum on this page agrees.  ZEREX2, ZEXITX (p.365 lines 7, 9, half-word
+! instructions -> (BU,32,8)) and JNOPX (p.365 line 18 "SYN,$", plain)
+! take their values from this page's B/BRZ/BBZ binaries, half word only.
+!
+! CARD SERIALS.  WA000744 .. WA000790, one per line, none shared or
+! skipped.
+
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label (as p.128/p.142/p.153)
+SYSMOD  SYN(BU,2), SCOMRG+.8         ! landed p.103 line 18; CM line 37 215001.11 (+.1)
+STRANB  SYN(BU,1), SCOMRG+.10        ! landed p.103 line 19; CM/BBZ lines 35, 46 215001.12
+SPPBT1  SYN(BU,1), SCOMRG+.13        ! landed p.103 line 22; CM line 38 215001.15
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 39 000040.10
+SKOM    SYN, 79.32                   ! landed p.106 "S KOM"; line 40 000117.40 (printed "SKCM")
+JXMSK   SYN,$X13                     ! p.363 line 40 "J XMSK SYN,$X13" (not landed); SX line 22
+JOP     SYN,2.0                      ! p.363 line 44 "J OP" (not landed)
+JSR     SYN,4.0                      ! p.363 line 45 (not landed)
+JJ1     SYN,8.0                      ! p.363 line 46 (not landed)
+JJ4     SYN,16.0                     ! p.363 line 47 (not landed)
+JOV     SYN,32.0                     ! p.363 line 48 "J CV" (not landed)
+JNV     SYN,64.0                     ! p.363 line 49 (not landed)
+JON     SYN,128.0                    ! p.363 line 50 (not landed)
+JOF     SYN,256.0                    ! p.363 line 51 "J CF" (not landed)
+ZIPL    SYN,512.0                    ! p.363 line 52 "Z IPL" (not landed)
+ZEREX2  SYN(BU,32,8), (8)234632.0    ! p.365 line 7 LX (not landed); B lines 34, 47 234632.10, half word only
+ZEXITX  SYN(BU,32,8), (8)234633.0    ! p.365 line 9 LWF (not landed); B line 45 234633.10, half word only
+JNOPX   SYN, (8)234637.0             ! p.365 line 18 "SYN,$" (not landed); BRZ line 26 234637.34, half word only
+ZADD    SYN(BU,18,6), (8)616464      ! STAND-IN for line 4's DDI -- see header
+ZALL    SYN(BU,18,6), (8)614343      ! STAND-IN for line 5's DDI -- see header
+
+        SLC, (8)235371.40
+        CNOP                                                 ! line  1
+ZDELET  (AX)DD(BU,36,6),DELETEX                              ! line  2
+ZDELTM  (AX)DD(BU,36,6),DELETMX                              ! line  3  printed "Z CELT M ... CELETMX"
+! ZADD  (AX)DDI(BU,18,6),ADDX                                ! line  4  printed "ADC"/"CDI" -- NOT ASSEMBLED (DDI refused)
+! ZALL  (AX)DDI(BU,18,6),ALLX                                ! line  5  NOT ASSEMBLED (DDI refused)
+ZCHNNM  SYN,$X3                                              ! line  6
+ZUNTNM  SYN,$X4                                              ! line  7
+ZREQUN  SYN,$6                                               ! line  8  -REQUESTED UNIT ST ENTRY ADDR
+ZNEWCH  SYN,$7                                               ! line  9  -NEW CHAN STATUS ENTRY ADDR
+ZREQCH  SYN,$8                                               ! line 10  -REQUESTED CH STAT ENTRY ADDR
+ZNEWUN  SYN,$9                                               ! line 11  -NEW UNIT STS ENTRY ADDR
+ZUNITA  SYN,$10                                              ! line 12  -REQUESTED UNIT AREA ADDR
+ZSCNP2  SYN,$PG0                                             ! line 13  -INDIN FOR SEC PASS SCAN
+ZINDCH  SYN,$PG1                                             ! line 14  -IND FOR CHAN ONLY REQUEST
+ZPPCHD  SYN,$PG2                                             ! line 15  -IND FOR PP UNITS ON CH ONLY DEL
+ZPRABJ  SYN,$PG3                                             ! line 16  -IND FOR ABEOJ PRIMED
+ZASUIN  SYN,$PG5                                             ! line 17  -IND FOR ASS UNIT ON CH ONLY
+ZOPTST  SYN,$PG6                                             ! line 18  -IND FOR CP CODE TEST OF UNASSN  (printed "ZCPTST": open O; p.373 prints "Z OP TST" -SET OP CODE TEST, and C22-6728 sets ZOPTST)
+! line 19  -
+! line 20  -          ******   BYPASS COMMAND   ******
+! line 21  -
+ZBYPAS  SX,JXMSK,$L                                          ! line 22
+        CTI0010(BU,18),JSR+JJ1+JOV,-18                       ! line 23
+        BRZ,ZBA1Y                                            ! line 24
+        CTI0010(BU,18),JSR+JJ4+JOV,-18                       ! line 25
+        BRZ,JNOPX                                            ! line 26
+        CTI0010(BU,18),JOP+JOF+JOV,-18                       ! line 27  printed "JCP+JCF"
+        BRZ,ZBA1                                             ! line 28
+        CTI0010(BU,18),ZIPL+JOF+JNV,-18                      ! line 29
+        BRZ,ZBA1X                                            ! line 30  -TO SET MODE
+        CTI0010(BU,18),JNV+JON+JJ4,-18                       ! line 31  printed "JCN"
+        BRZ,ZBZ1                                             ! line 32  -BYPASS ERROR  ("*" after the location)
+! line 33  -  ***** ADD INSTRUCTIONS FOR PROCESSING THE T AND D FIELDS ***
+        B,ZEREX2                                             ! line 34
+ZBA1Y   CM1111,STRANB                                        ! line 35
+        B,ZBA1                                               ! line 36
+ZBA1X   CM0000(BU,1),SYSMOD+.1                               ! line 37  -SET BYPASS FROM IPL MODE
+        CM1111(BU,2),SPPBT1                                  ! line 38  -SEY SWITCHES FOR BYPASS FIRST
+ZBA1    B,DMCP                                               ! line 39
+        ,SKOM                                                ! line 40  printed "SKCM"
+        ,2.0                                                 ! line 41
+ZBA2    VF,0.0                                               ! line 42  -T FIELD
+ZBA3    VF,0.0                                               ! line 43  -D FIELD
+        LVI,12,6.0                                           ! line 44
+        B,ZEXITX                                             ! line 45
+ZBZ1    BBZ,STRANB,JNOPX                                     ! line 46
+        B,ZEREX2                                             ! line 47
+
+!SYM ZDELET 235372.00
+!SYM ZDELTM 235372.44
+!SYM ZCHNNM 000023.00
+!SYM ZUNTNM 000024.00
+!SYM ZREQUN 000026.00
+!SYM ZNEWCH 000027.00
+!SYM ZREQCH 000030.00
+!SYM ZNEWUN 000031.00
+!SYM ZUNITA 000032.00
+!SYM ZSCNP2 000013.51
+!SYM ZINDCH 000013.52
+!SYM ZPPCHD 000013.53
+!SYM ZPRABJ 000013.54
+!SYM ZASUIN 000013.56
+!SYM ZOPTST 000013.57
+!SYM ZBYPAS 235373.40
+!SYM ZBA1Y  235404.00
+!SYM ZBA1X  235405.40
+!SYM ZBA1   235407.40
+!SYM ZBA2   235411.00
+!SYM ZBA3   235411.40
+!SYM ZBZ1   235413.00
+!CHECK 235371.40 | 000000.30 00 | line 1 CNOP
+!CHECK 235373.40 | 000010.33 10 | line 22 Z BYPAS SX,JX MSK,$L
+!CHECK 235374.00 | 000054.00 80 422067.05 70 | line 23 CTI0010(BU,18),JSR+JJ1+JOV,-18
+!CHECK 235375.00 | 235404.34 C2 | line 24 BRZ,Z BA1Y
+!CHECK 235375.40 | 000064.00 80 422067.05 70 | line 25 CTI0010(BU,18),JSR+JJ4+JOV,-18
+!CHECK 235376.40 | 234637.34 C2 | line 26 BRZ,JNOPX
+!CHECK 235377.00 | 000442.00 80 422067.05 70 | line 27 CTI0010(BU,18),JCP+JCF+JOV,-18 as printed (JOP: open O)
+!CHECK 235400.00 | 235407.74 C2 | line 28 BRZ,Z BA1
+!CHECK 235400.40 | 001500.00 80 422067.05 70 | line 29 CTI0010(BU,18),ZIPL+JOF+JNV,-18
+!CHECK 235401.40 | 235405.74 C2 | line 30 BRZ,Z BA1X
+!CHECK 235402.00 | 000320.00 80 422067.05 70 | line 31 CTI0010(BU,18),JNV+JCN+JJ4,-18 as printed (JON: open O)
+!CHECK 235403.00 | 235413.34 C2 | line 32 BRZ,Z BZ1 (a "*" after the location)
+!CHECK 235403.40 | 234632.10 00 | line 34 B,Z ER EX2
+!CHECK 235404.00 | 215001.12 80 001000.36 F0 | line 35 ZBA1 Y CM1111,S TRAN B
+!CHECK 235405.00 | 235407.50 00 | line 36 B,Z BA1
+!CHECK 235405.40 | 215001.11 80 001000.00 F0 | line 37 Z BA1 X CM0000(BU,1),SYSMOD+.1 (printed "CMOCOC")
+!CHECK 235406.40 | 215001.15 80 002000.36 F0 | line 38 CM1111(BU,2),SPPBT1
+!CHECK 235407.40 | 000040.10 00 | line 39 Z BA1 B,D MCP (hex prints "CO")
+!CHECK 235410.00 | 000117.40 80 | line 40 ,SKOM (printed "SKCM")
+!CHECK 235410.40 | 000002.00 80 | line 41 ,2.0
+!CHECK 235411.00 | 000000.00+ | line 42 Z BA2 VF,0.0
+!CHECK 235411.40 | 000000.00+ | line 43 Z BA3 VF,0.0
+!CHECK 235412.00 | 000006.31 01 | line 44 LVI,12,6.0
+!CHECK 235412.40 | 234633.10 00 | line 45 B,ZEXITX
+!CHECK 235413.00 | 215001.12 80 234637.34 06 | line 46 Z BZ 1 BBZ,STRANB,JNOPX
+!CHECK 235414.00 | 234632.10 00 | line 47 B,Z ER EX2 (hex prints "CO")

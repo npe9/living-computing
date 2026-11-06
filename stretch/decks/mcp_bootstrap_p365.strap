@@ -1,0 +1,154 @@
+! mcp_bootstrap_p365.strap -- MCP printed page 365: the SYSTEM COMMAND
+! package's COMMAND EXIT ROUTINE (Z ER EX1/Z ER EX2 error exits, Z EXITX
+! command-accepted exit, Z EXIT and the normal-return entry J NCPX /
+! J FINX), its two error messages and the command-name list Z LIST.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.115, read at 400 dpi, data rows and
+! doubtful glyphs at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID
+! 22SCOMD  CARD ID WA000192  DIST. OF 3/01  3/01  PAGE NUMBER 365".  The
+! heading row's LOCATION field is BLANK.
+!
+! THE PAGE.  47 lines, every line number prints a "*"; "*" after the
+! LOCATION on lines 15, 35 and 44.  No TAIL; still PUNID 22SCOMD, card
+! series WA, no SLC printed.
+!   lines  1-3   remarks: banner "*****COMMAND EXIT ROUTINE*****" on 2.
+!   lines  4-15  code, 234630.40 .. 234635.40, then J ERZ DRZ(BU,64),1
+!                at 234636.00 (prints 000001.00).
+!   lines 16-17  remarks: "ENTRY FOR NORMAL RETURN" on 17.
+!   lines 18-21  J NCPX SYN,$ (234637.00+ "+00000000 NULL"), J FINX
+!                TI and the BE,D MCP / ,D RET pair.
+!   lines 22-33  three VF/CF pairs and the two (IQS*) error messages.
+!   lines 34-47  Z LIST X (one 32-character message) and Z LIST, eleven
+!                one-word (IQS*) command names, 234656.00 .. 234670.00.
+! The page ends with line 47's word at 234670.00 (next 234671.00 = JOUTP,
+! p.361's JTABL target, so p.366 should open there).
+! JOIN: line 4's CNOP at 234630.40 continues p.364 (not landed; the
+! coordinator checks p.364's last location).
+!
+! DATA BLANKS (entry mode, no binary printed): counted on a 39.8 px
+! (400 dpi) character ruler and each confirmed by the next card's
+! LOCATION and by the CF word counts: line 29 = 16 characters (2 words;
+! CF,2.0), line 30 = 32 (4 words; CF,4.0), line 35 = 9 blanks +
+! "COMMAND ACCEPTED." + 6 blanks = 32 (4 words; CF,4.0; the CNOP then
+! advances nothing), lines 37-47 = 8 characters each, right-justified.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "DC(BU)" on lines 29, 30, 35, 37-42, 44, 46, 47 = DD (D with its
+!     stem worn; lines 43 and 45 print DD plainly).
+!   * line 37 "OUTPLT" = OUTPUT: at 900 dpi both U's print a faint
+!     dotted right stem (worn U, not L); p.361's JLIST names OUTPUT.
+!   * line 46 "ABECJ" = ABEOJ (open O), as p.361's JLIST line 23 and the
+!     landed ,DABEOJ (p.333).  Lines 38-39 "EOF"/"EOJ", 42 "IOCHANGE",
+!     47 "COMMENT" also print the O open.
+!   * line 5 "Z ER EXI"/"ZEXI" read as ZEREX1 / ZEX1: line 23 defines
+!     Z EX1 at 234641.00, which line 5's binary 234641.30 addresses;
+!     C22-6728 names ZEREX1, ZEREX2, ZEXITX, JHARD, JNCPX, JFINX.
+!   * line 23 "Z EX 11", line 26 "Z EX 21": blanks in a name, = ZEX11,
+!     ZEX21 (lines 29, 30 define them at the printed 234643.00/234645.00).
+!   * hex bytes "CO"/"C0" (lines 4, 6, 8, 13, 20) = 00: the octal fields
+!     of the same rows print 0 open (lesson 6).  Line 4's "C0" is CNOP's.
+!   * line 27 prints a small raised tick after "CF,4.0" -- paper/ink
+!     speck, not a "." (it sits above the baseline).
+!   * line 40's raised tick before REWIND is a speck (8 characters with
+!     two blanks fits the LOCATIONs).
+!
+! EXTERNALS.  JHARD, JSTLR: not landed; from this page's binary (B prints
+! the address + .10, half word only; TI's first address, word).  DMCP,
+! DCOMM, DRET: landed p.105/p.108.  $X0 is the system symbol (index
+! register 0, 16.0 -- TI prints 000020.00).
+!
+! CARD SERIALS.  WA000192 .. WA000238, one per line, none shared or
+! skipped.
+
+JHARD   SYN, (8)234575.40            ! not landed; B lines 6, 8 print 234575.50, half word only
+JSTLR   SYN, (8)234530.0             ! not landed; TI line 19 prints 234530.00
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; BE lines 13, 20 000040.00
+DCOMM   SYN, 35.32                   ! landed p.105 line 23; line 14 000043.40
+DRET    SYN, 33.0                    ! landed p.105; line 21 000041.00
+
+        SLC, (8)234630.40
+! line  1  -
+! line  2  -         *****COMMAND EXIT ROUTINE*****
+! line  3  -
+        CNOP                                                 ! line  4
+ZEREX1  LX,12,ZEX1                                           ! line  5
+        B,JHARD                                              ! line  6
+ZEREX2  LX,12,ZEX2                                           ! line  7
+        B,JHARD                                              ! line  8
+ZEXITX  LWF(U),ZLIST($12)                                    ! line  9
+        LX,12,ZLISTC                                         ! line 10
+        ST(U),ZLISTX                                         ! line 11
+ZEXIT   SX,12,JERZ                                           ! line 12
+        BE,DMCP                                              ! line 13
+        ,DCOMM                                               ! line 14
+JERZ    DRZ(BU,64),1                                         ! line 15
+! line 16  -
+! line 17  -         ENTRY FOR NORMAL RETURN
+JNOPX   SYN,$                                                ! line 18  (printed "JNCPX": open O; pp.366-376 print it, lines 26/46 of p.376 closed, and C22-6728 sets JNOPX)
+JFINX   TI,16,JSTLR,$X0                                      ! line 19  -RESTORE INDEX REGISTERS
+        BE,DMCP                                              ! line 20
+        ,DRET                                                ! line 21
+        CNOP                                                 ! line 22
+ZEX1    VF,ZEX11                                             ! line 23
+        CF,2.0                                               ! line 24
+        CNOP                                                 ! line 25
+ZEX2    VF,ZEX21                                             ! line 26
+        CF,4.0                                               ! line 27
+        CNOP                                                 ! line 28
+ZEX11   (IQS*)DD(BU),ILLEGAL COMMAND *                       ! line 29
+ZEX21   (IQS*)DD(BU),LEGAL COMMAND, ILLEGAL SITUATION*       ! line 30
+        CNOP                                                 ! line 31
+ZLISTC  VF,ZLISTX                                            ! line 32
+        CF,4.0                                               ! line 33
+        CNOP                                                 ! line 34
+ZLISTX  (IQS*)DD(BU),         COMMAND ACCEPTED.      *       ! line 35
+        CNOP                                                 ! line 36
+ZLIST   (IQS*)DD(BU),  OUTPUT*                               ! line 37  printed "OUTPLT" (worn U)
+        (IQS*)DD(BU),     EOF*                               ! line 38
+        (IQS*)DD(BU),     EOJ*                               ! line 39
+        (IQS*)DD(BU),  REWIND*                               ! line 40
+        (IQS*)DD(BU),  REJECT*                               ! line 41
+        (IQS*)DD(BU),IOCHANGE*                               ! line 42
+        (IQS*)DD(BU),  BYPASS*                               ! line 43
+        (IQS*)DD(BU),  ONLINE*                               ! line 44
+        (IQS*)DD(BU), OFFLINE*                               ! line 45
+        (IQS*)DD(BU),   ABEOJ*                               ! line 46  printed "ABECJ" (open O)
+        (IQS*)DD(BU), COMMENT*                               ! line 47
+
+! line 18 prints "234637.00+  +00000000  NULL  JNCPX SYN,$" (no word).
+! line 15 prints 000001.00 (the DRZ count), not a word -- no !CHECK.
+
+!SYM ZEREX1 234631.00
+!SYM ZEREX2 234632.00
+!SYM ZEXITX 234633.00
+!SYM ZEXIT  234634.40
+!SYM JERZ   234636.00
+!SYM JNOPX  234637.00
+!SYM JFINX  234637.00
+!SYM ZEX1   234641.00
+!SYM ZEX2   234642.00
+!SYM ZEX11  234643.00
+!SYM ZEX21  234645.00
+!SYM ZLISTC 234651.00
+!SYM ZLISTX 234652.00
+!SYM ZLIST  234656.00
+!CHECK 234630.40 | 000000.30 00 | line 4 CNOP (hex prints "C0" = 00, lesson 6)
+!CHECK 234631.00 | 234641.30 10 | line 5 Z ER EX1 LX,12,ZEX1
+!CHECK 234631.40 | 234575.50 00 | line 6 B,J HARD (hex prints "C0")
+!CHECK 234632.00 | 234642.30 10 | line 7 Z ER EX2 LX,12,ZEX2
+!CHECK 234632.40 | 234575.50 00 | line 8 B,J HARD
+!CHECK 234633.00 | 234656.42 6C | line 9 Z EXITX LWF(U),Z LIST($12)
+!CHECK 234633.40 | 234651.30 10 | line 10 LX,12,Z LISTC
+!CHECK 234634.00 | 234652.40 E0 | line 11 ST(U),Z LISTX
+!CHECK 234634.40 | 234636.31 10 | line 12 Z EXIT SX,12,J ERZ
+!CHECK 234635.00 | 000040.00 00 | line 13 BE,D MCP
+!CHECK 234635.40 | 000043.40 80 | line 14 ,D COMM
+!CHECK 234637.00 | 234530.00 80 000020.00 A0 | line 19 J FINX TI,16,JSTLR,$X0
+!CHECK 234640.00 | 000040.00 00 | line 20 BE,D MCP (hex prints "C0" = 00)
+!CHECK 234640.40 | 000041.00 80 | line 21 ,D RET
+!CHECK 234641.00 | 234643.00+ | line 23 Z EX1 VF,Z EX 11
+!CHECK 234641.40 | 000002 | line 24 CF,2.0 (prints "CC0002")
+!CHECK 234642.00 | 234645.00+ | line 26 Z EX2 VF,Z EX 21
+!CHECK 234642.40 | 000004 | line 27 CF,4.0 (prints "CC0004")
+!CHECK 234651.00 | 234652.00+ | line 32 Z LISTC VF,Z LISTX
+!CHECK 234651.40 | 000004 | line 33 CF,4.0

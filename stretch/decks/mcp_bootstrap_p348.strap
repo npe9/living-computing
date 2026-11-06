@@ -1,0 +1,187 @@
+! mcp_bootstrap_p348.strap -- MCP printed page 348: the $DUMP program's
+! AINITL (initialise the print image by TI), the AINTLB/AFTRMB link
+! words, AFTRMT (format the 3-wide panel field through AOCTLB/AOCTLC,
+! APNLP5 loop of 2), ALSRQ / APUMP1 (the panel-dump request decision:
+! CM tests of APANEL.19 and ANORMP.19, B,DMCP ,DRET), APUML7, ADLWER,
+! APUMP7, AUNERR, and ANDXWD (index-word print: TI APXW, ANDX3, ANDX2),
+! lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.98, read at 400 dpi, names at 900
+! dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$DUMP  CARD ID
+! VB000264  DIST. OF 3/01  3/01  PAGE NUMBER 348"; the heading row's
+! LOCATION field is 235205, line 1's word.
+!
+! $DUMP OVERLAY (PUNID 22$DUMP, card IDs VB...), the same program as
+! pp.335-347; no new PUNID, no SLC to a new origin.  No TAIL.
+!
+! THE PAGE.  50 lines; every line number prints a "*".  "*" after the
+! LOCATION on lines 13, 29, 45.  No remarks, no remark cards.  Located
+! rows contiguous from 235205.40 (line 1) to 235251.00 (line 50, LCI, a
+! half word; next 235251.40), then blank paper.
+!
+! JOIN.  p.347 (tools/page_sheet.py 347) ends with B,AOCTLH at
+! 235205.00, a half word: next 235205.40 = line 1.  p.349's sheet opens
+! with ANDX1 at 235251.40: contiguous.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "ACCTLC" (lines 8, 13): second glyph open; the SICs on lines 7
+!     and 12 print AOCTLB and pp.343-345 spell the pair AOCTLB/AOCTLC:
+!     written AOCTLC.
+!   * "ANCXWD" (line 36 NAME): the third glyph prints without a stem
+!     at 900 dpi; the ANDX- family on this page (ANDX3, ANDX2, ANDX5,
+!     B,ANDX1 with a plain D) and C22-6728 (typeset "ANDXWD") settle
+!     it: written ANDXWD.  "ANCX3"/"ANCX2" read the same way: ANDX3,
+!     ANDX2.
+!   * "ADLWER" (line 28): kept D as p.343 spells it (BB ... ADLWER).
+!   * "ALSRQ" (lines 17, 35): tail of the Q prints; p.343 spells ALSRQ.
+!   * octal / hex fields with an open round read 0 ("CO", "FO", "DO",
+!     ".CC" = .00).  Lines 17 and 42 print LVI's byte "C1" with an
+!     open round; LVI can only assemble 01, which line 36 prints with
+!     a closed 0 (900 dpi): 01.
+!
+! EXTERNALS.  Landed instruction labels (p.342: APUML6, APUMP9, ADMP1;
+! p.343: APUMP6, APANEL) carry the dds of their defining card's length.
+! The rest are not landed; values from this page's binary.
+!
+! CARD SERIALS.  VB000264 .. VB000307.  Shared serials, every one a
+! pair of half words: lines 7-8 (270), 12-13 (274), 22-23 (283), 42-43
+! (302), 44-45 (303), 48-49 (306).  None skipped.
+
+AOCTLB  SYN, (8)235376.40            ! not landed; SIC lines 7,12 235376.40, BIT-EXACT
+AOCTLC  SYN, (8)235373.40            ! not landed; B lines 8,13 235373.50, half word only (printed "ACCTLC")
+ABUFF   SYN, (8)236044.0             ! not landed; TI line 20 ABUFF+15. = 236063.00, word only
+APLC    SYN, (8)236216.0             ! not landed; TI line 1 236216.00, word only
+ABLNK   SYN, (8)236220.0             ! not landed; TI line 2 236220.00, word only
+APXW    SYN, (8)236217.0             ! not landed; TI lines 37-40 236217.00, word only
+APUML6  SYN(BU,32,8), (8)234704.00   ! landed p.342 line 2 (B,$)
+APUMP6  SYN(BU,32,8), (8)234753.00   ! landed p.343 line 25 (LV)
+APUMP9  SYN(BU,32,8), (8)234717.40   ! landed p.342 line 18 (LVE)
+ADMP1   SYN(BU,64,8), (8)234713.00   ! landed p.342 line 11 (BB)
+APANEL  SYN(BU,32,8), (8)234763.00   ! landed p.343 line 40 (NOP)
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"
+DRET    SYN, 33.0                    ! landed p.105
+ANORMP  SYN, (8)235174.40            ! not landed; CM lines 28,31,33 ANORMP.19 = 235174.63, BIT-EXACT
+APCOL1  SYN, (8)236105.0             ! not landed; LVI line 36 236105.35, half word only
+ANDX5   SYN, (8)235274.40            ! not landed; NOP line 41 235274.70, half word only
+AWDCMP  SYN, (8)235330.0             ! not landed; B line 43 235330.10, half word only
+ANDX1   SYN, (8)235251.40            ! not landed (p.349 line 1); B line 45 235251.50, half word only
+AHOTP   SYN, (8)236161.0             ! not landed; LV line 46 236161.34, half word only
+ALCRFB  SYN, (8)235373.0             ! not landed; SIC line 48 235373.00, half word only
+ALCRF   SYN, (8)235370.0             ! not landed; B line 49 235370.10, half word only
+
+        SLC, (8)235205.40
+AINITL  TI,1,APLC,($14)                                      ! line  1
+        TI,1,ABLNK,1.($14)                                   ! line  2
+        TI,15,1.($14),2.($14)                                ! line  3
+AINTLB  B,$                                                  ! line  4
+AFTRMT  L(BU,1)(V+I),.1($1),40                               ! line  5
+        LF(BU,15,3)(V+I),.15($1)                             ! line  6
+        SIC,AOCTLB                                           ! line  7
+        B,AOCTLC                                             ! line  8
+        SF(BU,48)(V+I),.48($14)                              ! line  9
+        LCI,$1,2                                             ! line 10
+APNLP5  LF(BU,24,3)(V+I),.24($1)                             ! line 11
+        SIC,AOCTLB                                           ! line 12
+        B,AOCTLC                                             ! line 13
+        ST(BU,64)(V+I),1.($14)                               ! line 14
+        CB,$1,APNLP5                                         ! line 15
+AFTRMB  B,$                                                  ! line 16
+ALSRQ   LVI,$4,APUMP1                                        ! line 17
+        SVA,$4,APUML6                                        ! line 18
+        B,APUMP6+2.32                                        ! line 19
+APUMP1  TI,16,ABUFF+15.,$0                                   ! line 20
+        CM1111(BU,1),APANEL.19                               ! line 21
+        B,DMCP                                               ! line 22
+        ,DRET                                                ! line 23
+APUML7  LV,$0,APUMP9                                         ! line 24
+        CM0000(BU,6),$0.19                                   ! line 25
+        CM1111(BU,1),APANEL.19                               ! line 26
+        B,ADMP1                                              ! line 27
+ADLWER  CM0000(BU,1),ANORMP.19                               ! line 28
+        CM1111(BU,1),APANEL.19                               ! line 29
+        B,APUMP6                                             ! line 30
+APUMP7  CM1111(BU,1),ANORMP.19                               ! line 31
+        B,APUML6                                             ! line 32
+AUNERR  CM0000(BU,1),ANORMP.19                               ! line 33
+        CM1111(BU,1),APANEL.19                               ! line 34
+        B,ALSRQ                                              ! line 35
+ANDXWD  LVI,$14,APCOL1                                       ! line 36
+        TI,1,APXW,1.($14)                                    ! line 37
+        TI,1,APXW,5.($14)                                    ! line 38
+        TI,1,APXW,9.($14)                                    ! line 39
+        TI,1,APXW,13.($14)                                   ! line 40
+ANDX3   NOP,ANDX5                                            ! line 41
+ANDX2   LVI,$15,$+1.                                         ! line 42
+        B,AWDCMP                                             ! line 43
+        LCI,$13,1                                            ! line 44
+        B,ANDX1                                              ! line 45
+        LV,$14,AHOTP                                         ! line 46
+        CM0000(BU,19),$11                                    ! line 47
+        SIC,ALCRFB                                           ! line 48
+        B,ALCRF                                              ! line 49
+        LCI,$13,4                                            ! line 50
+
+!SYM AINITL 235205.40
+!SYM AINTLB 235210.40
+!SYM AFTRMT 235211.00
+!SYM APNLP5 235215.40
+!SYM AFTRMB 235221.00
+!SYM ALSRQ  235221.40
+!SYM APUMP1 235223.00
+!SYM APUML7 235226.00
+!SYM ADLWER 235231.00
+!SYM APUMP7 235233.40
+!SYM AUNERR 235235.00
+!SYM ANDXWD 235237.40
+!SYM ANDX3  235244.00
+!SYM ANDX2  235244.40
+!CHECK 235205.40 | 236216.00 80 000000.02 AE | line 1 AINITL TI,1,APLC,($14)
+!CHECK 235206.40 | 236220.00 80 000001.02 AE | line 2 TI,1,ABLNK,1.($14)
+!CHECK 235207.40 | 000001.00 8E 000002.36 AE | line 3 TI,15,1.($14),2.($14)
+!CHECK 235210.40 | 235210.50 00 | line 4 AINTLB B,$
+!CHECK 235211.00 | 000000.01 81 101024.20 50 | line 5 AFTRMT L(BU,1)(V+I),.1($1),40
+!CHECK 235212.00 | 000000.17 81 117300.06 70 | line 6 LF(BU,15,3)(V+I),.15($1)
+!CHECK 235213.00 | 235376.40 80 | line 7 SIC,AOCTLB
+!CHECK 235213.40 | 235373.50 00 | line 8 B,AOCTLC (printed "ACCTLC")
+!CHECK 235214.00 | 000000.60 8E 160000.12 F0 | line 9 SF(BU,48)(V+I),.48($14)
+!CHECK 235215.00 | 000002.03 02 | line 10 LCI,$1,2
+!CHECK 235215.40 | 000000.30 81 130300.06 70 | line 11 APNLP5 LF(BU,24,3)(V+I),.24($1)
+!CHECK 235216.40 | 235376.40 80 | line 12 SIC,AOCTLB
+!CHECK 235217.00 | 235373.50 00 | line 13 B,AOCTLC (printed "ACCTLC")
+!CHECK 235217.40 | 000001.00 8E 100000.20 D0 | line 14 ST(BU,64)(V+I),1.($14)
+!CHECK 235220.40 | 235215.42 48 | line 15 CB,$1,APNLP5
+!CHECK 235221.00 | 235221.10 00 | line 16 AFTRMB B,$
+!CHECK 235221.40 | 235223.11 01 | line 17 ALSRQ LVI,$4,APUMP1 (byte prints "C1", open round; LVI's byte is 01, closed on line 36)
+!CHECK 235222.00 | 234704.11 D0 | line 18 SVA,$4,APUML6
+!CHECK 235222.40 | 234755.50 00 | line 19 B,APUMP6+2.32
+!CHECK 235223.00 | 236063.00 80 000020.00 A0 | line 20 APUMP1 TI,16,ABUFF+15.,$0
+!CHECK 235224.00 | 234763.23 80 001000.36 F0 | line 21 CM1111(BU,1),APANEL.19
+!CHECK 235225.00 | 000040.10 00 | line 22 B,DMCP
+!CHECK 235225.40 | 000041.00 80 | line 23 ,DRET
+!CHECK 235226.00 | 234717.40 30 | line 24 APUML7 LV,$0,APUMP9
+!CHECK 235226.40 | 000020.23 80 006000.00 F0 | line 25 CM0000(BU,6),$0.19
+!CHECK 235227.40 | 234763.23 80 001000.36 F0 | line 26 CM1111(BU,1),APANEL.19
+!CHECK 235230.40 | 234713.10 00 | line 27 B,ADMP1
+!CHECK 235231.00 | 235174.63 80 001000.00 F0 | line 28 ADLWER CM0000(BU,1),ANORMP.19
+!CHECK 235232.00 | 234763.23 80 001000.36 F0 | line 29 CM1111(BU,1),APANEL.19
+!CHECK 235233.00 | 234753.10 00 | line 30 B,APUMP6
+!CHECK 235233.40 | 235174.63 80 001000.36 F0 | line 31 APUMP7 CM1111(BU,1),ANORMP.19
+!CHECK 235234.40 | 234704.10 00 | line 32 B,APUML6
+!CHECK 235235.00 | 235174.63 80 001000.00 F0 | line 33 AUNERR CM0000(BU,1),ANORMP.19
+!CHECK 235236.00 | 234763.23 80 001000.36 F0 | line 34 CM1111(BU,1),APANEL.19
+!CHECK 235237.00 | 235221.50 00 | line 35 B,ALSRQ
+!CHECK 235237.40 | 236105.35 01 | line 36 ANDXWD LVI,$14,APCOL1 (printed "ANCXWD")
+!CHECK 235240.00 | 236217.00 80 000001.02 AE | line 37 TI,1,APXW,1.($14)
+!CHECK 235241.00 | 236217.00 80 000005.02 AE | line 38 TI,1,APXW,5.($14)
+!CHECK 235242.00 | 236217.00 80 000011.02 AE | line 39 TI,1,APXW,9.($14)
+!CHECK 235243.00 | 236217.00 80 000015.02 AE | line 40 TI,1,APXW,13.($14)
+!CHECK 235244.00 | 235274.70 00 | line 41 ANDX3 NOP,ANDX5
+!CHECK 235244.40 | 235245.77 01 | line 42 ANDX2 LVI,$15,$+1. (byte prints "C1", open round)
+!CHECK 235245.00 | 235330.10 00 | line 43 B,AWDCMP
+!CHECK 235245.40 | 000001.33 02 | line 44 LCI,$13,1
+!CHECK 235246.00 | 235251.50 00 | line 45 B,ANDX1
+!CHECK 235246.40 | 236161.34 30 | line 46 LV,$14,AHOTP
+!CHECK 235247.00 | 000033.00 80 023000.00 F0 | line 47 CM0000(BU,19),$11
+!CHECK 235250.00 | 235373.00 80 | line 48 SIC,ALCRFB
+!CHECK 235250.40 | 235370.10 00 | line 49 B,ALCRF
+!CHECK 235251.00 | 000004.33 02 | line 50 LCI,$13,4

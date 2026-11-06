@@ -1,0 +1,181 @@
+! mcp_bootstrap_p357.strap -- MCP printed page 357: the $DUMP program's
+! floating-point output conversion: fit the exponent between powers of
+! ten (AFL10 table), scale, and convert the integral part and fraction
+! through the AOCTLB/AOCTLC subroutine into the print image via $14,
+! lines 1-49.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.107, read at 400 dpi, names at 900
+! dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$DUMP  CARD ID
+! VB000696  DIST. OF 3/01  3/01  PAGE NUMBER 357"; the heading row's
+! LOCATION field is 235744, line 1's word.
+!
+! THE PAGE.  49 lines; every line number prints a "*".  "*" after the
+! LOCATION (error/warning flag) on lines 6, 24, 40.  Line 16 is a CNOP
+! with no location (the counter is already on a full word, 235757.00).
+! Located rows contiguous from 235744.00 (line 1) to 236006.00 (line
+! 49, a full word; next 236007.00), then blank paper.  No TAIL.  Still
+! PUNID 22$DUMP; no SLC on the page.
+!
+! JOIN.  p.356 is not landed; its finding-aid sheet (tools/page_sheet.py
+! 356) ends with ACPLUS CM1111,AFRACI at 235743.00, a full word: next
+! 235744.00 = line 1, contiguous.  p.358's sheet opens at 236007.00 =
+! after line 49: contiguous.  (Sheets, not landed decks.)
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 1 "LVI,$0,C": the last glyph is an open round, while the
+!     "$0" in the same statement prints closed.  Settled by the printed
+!     value, 000000.01 01 = value 0 (LVI's .01 is the op bit, J=$0),
+!     and by the absence of any symbol C in any landed MCP deck.
+!     Written 0.
+!   * lines 23, 41 "BPGO", "BPGCZ": the indicator is PG0 (digit zero;
+!     strap/opcodes.py's indicator table has PG0-PG6, no PGO).  Written
+!     BPG0, BPG0Z.
+!   * "ACUT", "ACUT2", "ACUT2A", "ACUT3", "ACUT6" (names, lines 14, 20,
+!     23): open second glyph; the family is AOUT- (OUT), written AOUT.
+!     No page defines these spellings elsewhere.  Line 23's target
+!     prints "AOUT2A" (Vision's "AGUTZA"), line 36's name "ACUT2A".
+!   * "ACCTLC" (lines 34, 39, 48): written AOCTLC as p.344/p.345 do.
+!   * line 6 "CMOCOO(BU,1)": connective bits, written CM0000 (binary
+!     001000.00 F0).
+!   * "ADLCVD" (line 9): 4th glyph a worn D, written ADLDVD.
+!   * hex bytes with an open round read 0 (F0, D0, A0, B0, E0, 00).
+!   * line 26's byte prints "DC": the round is open exactly as the 0s of
+!     the same field's 004472.60; the statement has no second index, so
+!     the low nibble is 0.  Written D0 (lesson: B rows' "C0").
+!   * line 42's byte "50." -- the "." is a speck.
+!
+! Line 44 prints "CV(BU,48)" with no address field at all, and IBM
+! compiled address 0 (000000.00 80).  A null major field is legal
+! (C28-6129 printed p.4); written as printed.
+!
+! Line 29 "SHFR,4" prints 001000.37 20 (ink clear at 900 dpi): the bare
+! integer is the shift count, 4 << 7 in the word field (C28-6129 printed
+! p.33, category 4).  Until 2026-11-06 strap_asm compiled it as word 4.
+!
+! EXTERNALS.  None is defined by a landed deck; values from this page's
+! binary, as each comment says.  AOCTLB/AOCTLC copied from p.345.
+!
+! CARD SERIALS.  VB000696 .. VB000740.  Shared serials: 33-34 (727),
+! 38-39 (731), 47-48 (739), each a SIC/B pair; and lines 17-18 (712),
+! "ATAH NOP" / "NOP" -- NOT a SIC/B pair, recorded, not explained.
+! None skipped.
+
+AOCTLB  SYN, (8)235376.40            ! not landed; SIC lines 33,38,47 235376.40, BIT-EXACT
+AOCTLC  SYN, (8)235373.40            ! not landed; B lines 34,39,48 235373.50, half word only (printed "ACCTLC")
+AFXW1   SYN(BU), (8)236424.0         ! not landed; LX line 2 236424.06, index word
+AALL15  SYN(BU,1), (8)236015.03      ! not landed; CM line 6 / BB line 20 236015.03, BIT-EXACT
+ADBLMP  SYN, (8)236200.0             ! not landed; TI line 7 236200.00, word only
+ADLDVD  SYN, (8)236201.0             ! not landed; TI line 9 236201.00, word only
+AFL10   SYN, (8)236202.0             ! not landed; KF line 10 AFL10+8. 236212.00, D* line 22 236202.05, word only
+ABDEC   SYN, (8)236163.0             ! not landed; V+ line 21 236163.00, half word only
+ATEMPD  SYN, (8)236043.0             ! not landed; ST line 31 236043.00, BIT-EXACT
+A1E14   SYN, (8)236214.0             ! not landed; * line 43 236214.00, BIT-EXACT
+AZFRTN  SYN, (8)236034.0             ! not landed; BPG0Z line 41 236034.24, half word only
+
+        SLC, (8)235744.00
+        LVI,$0,0                                             ! line  1  (printed "C", see header)
+        LX,$3,AFXW1                                          ! line  2
+        KF(BU,11),0,-11                                      ! line  3
+        BAE,$+1.32                                           ! line  4
+        BZB,$L.11,ATEXP-1.                                   ! line  5
+        CM0000(BU,1),AALL15                                  ! line  6  * flag
+        TI,1,ADBLMP,ATAH                                     ! line  7
+        B,ATEXP                                              ! line  8
+        TI,1,ADLDVD,ATAH                                     ! line  9
+ATEXP   KF(BU,11,8),AFL10+8.($3),-11                         ! line 10  -FIT EXPNT OF X BETWEEN N
+        KFR(BU,11,8),AFL10+9.($3),-11                        ! line 11  -AND N+1 POWERS OF 10 IN
+        BAE,AGO                                              ! line 12  -BINARY
+        CB-,$3,ATEXP                                         ! line 13
+        B,AOUT                                               ! line 14  -HAVE ALL RANGES BEEN TESTED
+AGO     V+,$0,ABDEC+8.($3)                                   ! line 15  -ADD N TO VALUE OF EXPNT
+        CNOP                                                 ! line 16
+ATAH    NOP                                                  ! line 17
+        NOP                                                  ! line 18
+        B,ATEXP                                              ! line 19
+AOUT    BB,AALL15,AOUT2.-.32                                 ! line 20
+        V+,$0,ABDEC                                          ! line 21  -SCALE EXPNT AND CREATE INTEGRAL
+        D*(N),AFL10                                          ! line 22  -PART WHEN EXPNT NEGATIVE
+        BPG0,AOUT2A                                          ! line 23  -SKIP FRACTION CONVERSION
+AOUT2   CT0101(BU,4,4),0,116                                 ! line 24  -TEST FOR ZERO INTEGER  * flag
+        BRZZ,$+1.32                                          ! line 25
+        ST(BU,4,4),$3.07,-11                                 ! line 26  -RETAIN EXPNT M
+        SRD(N),ATEMPD                                        ! line 27
+        DL(N),ATEMPD                                         ! line 28
+        SHFR,4                                               ! line 29  -CREATE 4 BIT SPARE DIGIT FOR RESULT
+        SHF,0($3)                                            ! line 30  -SHIFT M BITS INTO RESULT CHARACTER
+        ST(BU,48,8),ATEMPD,-64                               ! line 31  -RETAIN FRACTION
+        LF(BU,4),$L.12                                       ! line 32
+        SIC,AOCTLB                                           ! line 33
+        B,AOCTLC                                             ! line 34
+        SF(BU,8),.64($14)                                    ! line 35  -STORE 1ST CHAR AS INTEGER
+AOUT2A  LTRCV(BU,18,8),$0                                    ! line 36  -N IN DEC TO TRANSIT REG
+AOUT3   LF(BU,12,4),$TR.48                                   ! line 37
+        SIC,AOCTLB                                           ! line 38
+        B,AOCTLC                                             ! line 39
+        SF(BU,24,8),.24($14)                                 ! line 40  * flag
+AOUT6   BPG0Z,AZFRTN                                         ! line 41
+        L(BU,48,8),ATEMPD                                    ! line 42
+        *(BU,48),A1E14                                       ! line 43
+        CV(BU,48)                                            ! line 44
+        ST(DU,56,4),ATEMPD                                   ! line 45
+        LF(DU,32),ATEMPD                                     ! line 46
+        SIC,AOCTLB                                           ! line 47
+        B,AOCTLC                                             ! line 48
+        ST(BU,64),1.16($14)                                  ! line 49
+
+!SYM ATEXP 235753.00
+!SYM AGO 235756.40
+!SYM ATAH 235757.00
+!SYM AOUT 235760.40
+!SYM AOUT2 235763.00
+!SYM AOUT2A 235773.40
+!SYM AOUT3 235774.40
+!SYM AOUT6 235777.40
+!CHECK 235744.00 | 000000.01 01 | line 1 LVI,$0,0 (printed "C")
+!CHECK 235744.40 | 236424.06 10 | line 2 LX,$3,AFXW1
+!CHECK 235745.00 | 000000.00 80 013072.63 10 | line 3 KF(BU,11),0,-11
+!CHECK 235746.00 | 235747.76 C2 | line 4 BAE,$+1.32
+!CHECK 235746.40 | 000010.13 80 235752.34 00 | line 5 BZB,$L.11,ATEXP-1.
+!CHECK 235747.40 | 236015.03 80 001000.00 F0 | line 6 CM0000(BU,1),AALL15
+!CHECK 235750.40 | 236200.00 80 235757.02 A0 | line 7 TI,1,ADBLMP,ATAH
+!CHECK 235751.40 | 235753.10 00 | line 8 B,ATEXP
+!CHECK 235752.00 | 236201.00 80 235757.02 A0 | line 9 TI,1,ADLDVD,ATAH
+!CHECK 235753.00 | 236212.00 83 013072.63 10 | line 10 ATEXP KF(BU,11,8),AFL10+8.($3),-11
+!CHECK 235754.00 | 236213.00 83 013072.63 50 | line 11 KFR(BU,11,8),AFL10+9.($3),-11
+!CHECK 235755.00 | 235756.76 C2 | line 12 BAE,AGO
+!CHECK 235755.40 | 235753.07 C8 | line 13 CB-,$3,ATEXP
+!CHECK 235756.00 | 235760.50 00 | line 14 B,AOUT (printed "ACUT")
+!CHECK 235756.40 | 236173.00 B3 | line 15 AGO V+,$0,ABDEC+8.($3)
+!CHECK 235757.00 | 000000.30 00 | line 17 ATAH NOP
+!CHECK 235757.40 | 000000.30 00 | line 18 NOP
+!CHECK 235760.00 | 235753.10 00 | line 19 B,ATEXP
+!CHECK 235760.40 | 236015.03 80 235762.74 02 | line 20 AOUT BB,AALL15,AOUT2.-.32
+!CHECK 235761.40 | 236163.00 B0 | line 21 V+,$0,ABDEC
+!CHECK 235762.00 | 236202.05 A0 | line 22 D*(N),AFL10
+!CHECK 235762.40 | 235773.64 C2 | line 23 BPG0,AOUT2A
+!CHECK 235763.00 | 000000.00 80 004472.13 70 | line 24 AOUT2 CT0101(BU,4,4),0,116
+!CHECK 235764.00 | 235765.74 C6 | line 25 BRZZ,$+1.32
+!CHECK 235764.40 | 000023.07 80 004472.60 D0 | line 26 ST(BU,4,4),$3.07,-11 (h2 prints "DC", open round; i2=0, no second index)
+!CHECK 235765.40 | 236043.02 E0 | line 27 SRD(N),ATEMPD
+!CHECK 235766.00 | 236043.04 60 | line 28 DL(N),ATEMPD
+!CHECK 235766.40 | 001000.37 20 | line 29 SHFR,4
+!CHECK 235767.00 | 000000.07 23 | line 30 SHF,0($3)
+!CHECK 235767.40 | 236043.00 80 060040.20 D0 | line 31 ST(BU,48,8),ATEMPD,-64
+!CHECK 235770.40 | 000010.14 80 004000.06 70 | line 32 LF(BU,4),$L.12
+!CHECK 235771.40 | 235376.40 80 | line 33 SIC,AOCTLB
+!CHECK 235772.00 | 235373.50 00 | line 34 B,AOCTLC (printed "ACCTLC")
+!CHECK 235772.40 | 000001.00 8E 010000.12 F0 | line 35 SF(BU,8),.64($14)
+!CHECK 235773.40 | 000020.00 80 022000.22 30 | line 36 AOUT2A LTRCV(BU,18,8),$0
+!CHECK 235774.40 | 000017.60 80 014400.06 70 | line 37 AOUT3 LF(BU,12,4),$TR.48
+!CHECK 235775.40 | 235376.40 80 | line 38 SIC,AOCTLB
+!CHECK 235776.00 | 235373.50 00 | line 39 B,AOCTLC (printed "AOCTLC")
+!CHECK 235776.40 | 000000.30 8E 030000.12 F0 | line 40 SF(BU,24,8),.24($14)
+!CHECK 235777.40 | 236034.24 C6 | line 41 AOUT6 BPG0Z,AZFRTN
+!CHECK 236000.00 | 236043.00 80 060000.20 50 | line 42 L(BU,48,8),ATEMPD
+!CHECK 236001.00 | 236214.00 80 060000.21 90 | line 43 *(BU,48),A1E14
+!CHECK 236002.00 | 000000.00 80 060000.21 B0 | line 44 CV(BU,48)
+!CHECK 236003.00 | 236043.00 80 070400.24 D0 | line 45 ST(DU,56,4),ATEMPD
+!CHECK 236004.00 | 236043.00 80 040400.06 70 | line 46 LF(DU,32),ATEMPD
+!CHECK 236005.00 | 235376.40 80 | line 47 SIC,AOCTLB
+!CHECK 236005.40 | 235373.50 00 | line 48 B,AOCTLC (printed "ACCTLC")
+!CHECK 236006.00 | 000001.20 8E 000000.20 D0 | line 49 ST(BU,64),1.16($14)

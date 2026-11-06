@@ -1,0 +1,177 @@
+! mcp_bootstrap_p372.strap -- MCP printed page 372: SYSTEM COMMAND
+! package (PUNID 22SCOMD), the I/O-change unit scan tail (Z PREST ..
+! Z REMOV, Z NOTFD and its messages) and the channel-only request
+! (Z CH ONY .. Z CHON2), lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.122, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 0CC54C41  PUNID 22SCOMD  CARD ID WA000543  DIST. OF 3/C1
+!  3/01  PAGE NUMBER 372"; the heading row's LOCATION field is 235161,
+! line 1's word.  Every line number prints a "*"; "*" after the
+! LOCATION on lines 11, 27, 49.  No TAIL.  Still SCOMD (no new PUNID,
+! card series WA, no SLC printed).
+!
+! THE PAGE.  Contiguous from 235161.40 to 235220.40 (line 49, a full-
+! word BB1; next 235221.00).
+!   lines 12, 33, 45  blank remark cards ("-" in NAME).
+!   lines 17, 43, 48, 50  remark-only continuation cards.
+!   lines 34, 46  banners.
+!   lines 25-32  (IQS*)DD(BU) messages, 8 bits a character.  The blanks
+!     are DATA; each count measured by character pitch (40.07 px at
+!     400 dpi) from the "(" and checked against the next LOCATION:
+!     line 25 " NO REPLACEMENT FOR DELETED MCP UNIT.   " = 40 chars ->
+!     235204.00 exactly (the CNOP then emits nothing); line 27 8, line
+!     28 14, line 29 3, line 30 5, line 31 3, line 32 " .     " 7 chars
+!     (-> 235211.00; the page fixes only 4..7, the pitch says 7).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "(IQS*)DC(BU)" / "CC(BU)" on lines 25, 28, 29, 32 = DD (D worn to
+!     C; lines 27, 30, 31 print DD).
+!   * line 18 "BE,C MCP" = BE,DMCP (binary 000040.00 = DMCP 32.0).
+!   * line 22 "LV,9,C.C" = 0.0 (octal field 000000.22 prints 0 the same).
+!   * line 40 "B,Z ACT CN" = ZACTON: open O; C22-6728 typesets ZACTON
+!     ("control is returned to the next test at ZACTON").
+!   * line 35 label "Z CH CNY" = ZCHONY (open O, the CHON2/CHON3 family).
+!   * line 42 "Z ER EX1" = ZEREX1 (the ZEREX1/ZEREX2 family, C22-6728).
+!   * line 49 "Z MAIN D" = ZMAIND (C22-6728).
+!   * line 18 label "Z NCTFD" = ZNOTFD (line 13 prints BPGOZ,Z NOT FD).
+!   * line 13 "BPGOZ" = BPG0Z, the DIGIT: the indicator is PG0 (opcodes.py
+!     INDICATOR_BITS, PG0 = bit 41 = 000013.51, the very bit line 14
+!     sets as Z SCN P2); strap_asm refuses BPGOZ as an unknown mnemonic.
+!   * hex bytes printed "CC"/"C0"/"0C" on the B rows = 00 (lesson 6;
+!     the octal fields of the same rows print 0 open).
+!
+! CARD SERIALS.  WA000543 .. WA000591; WA000557 prints on BOTH lines 15
+! and 16, so 50 lines carry 49 serials.  Recorded, not explained.
+!
+! EXTERNALS.  Resident (pp.99-319): SMULTI SCHOP SSEL SCHAVL SUNASG
+! (p.99), DMCP DCOMM (p.108/p.105).  ZCHSCN, ZSCAN9 as p.298's stand-ins.
+! All others are SCOMD symbols no landed page defines: values from this
+! page's binary.  Index registers (ZNEWCH $7, ZREQCH $8, ZREQUN $6,
+! ZUNITA $10) from the I fields / J fields of lines 2, 39, 10, 47 and
+! 36.  ZINDCH/ZSCNP2/ZPRABJ are the PG indicator bits 000013.5x (the CM
+! address field is the full bit address: BIT-EXACT).
+
+SMULTI  SYN(BU,1), 0.27              ! landed p.99
+SCHOP   SYN(BU,1), 0.26              ! landed p.99
+SSEL    SYN(BU,1), 0.39              ! landed p.99
+SCHAVL  SYN(BU,1), 0.25              ! landed p.99
+SUNASG  SYN(BU,1), 0.29              ! landed p.99
+DMCP    SYN, 32.0                    ! landed p.108
+DCOMM   SYN, 35.32                   ! landed p.105
+ZCHSCN  SYN, (8)235071.0             ! as p.298; NOP line 16 235071.30, half word only
+ZSCAN9  SYN, (8)235143.40            ! as p.298 (BIT-EXACT there); B line 23 235143.50
+ZPRABJ  SYN, (8)13.54                ! not landed; CM line 1 000013.54, BIT-EXACT (PG3)
+ZSCNP2  SYN, (8)13.51                ! not landed; CM line 14 000013.51, BIT-EXACT
+ZINDCH  SYN, (8)13.52                ! not landed; CM line 35 000013.52, BIT-EXACT (PG1)
+ZNEWCH  SYN, $7                      ! not landed; I field of lines 2-4, 7 (byte 87)
+ZREQCH  SYN, $8                      ! not landed; I field line 39/42/44 (88); LV line 47 000030
+ZREQUN  SYN, $6                      ! not landed; I field line 10 (36); J of LX line 36 / LV line 47
+ZUNITA  SYN, $10                     ! not landed; J of LV line 10 (.24 = 2x10)
+ZSETAS  SYN, (8)235112.40            ! not landed; BZB line 3 235112.74, half word only
+ZASSGN  SYN, (8)235122.40            ! not landed; B line 11 235122.50, half word only
+ZACTON  SYN, (8)235053.40            ! not landed; B line 40 235053.50, half word only (printed "ACT CN")
+ZADDCH  SYN, (8)235324.0             ! not landed; BAE line 41 235324.36, half word only
+ZEREX1  SYN, (8)234631.0             ! not landed; BB1 line 42 234631.34, half word only
+ZMULCH  SYN, (8)235223.0             ! not landed; BB line 44 235223.34, half word only
+ZMAIND  SYN, (8)235341.0             ! not landed; BB1 line 49 235341.34, half word only
+
+        SLC, (8)235161.40
+        CM1111(BU,1),ZPRABJ                                  ! line  1  -SET ABEOJ PRIME SWITCH
+ZPREST  BZB,SMULTI(ZNEWCH),ZSCHTS                            ! line  2  -BR IF SINGLE UNIT CHANNEL
+ZTESTU  BZB,SCHOP(ZNEWCH),ZSETAS                             ! line  3  -BRANCH IF NOT OPERATING
+        BB,SSEL(ZNEWCH),ZSETAS                               ! line  4  -BRANCH IF NOT SELECTED
+        BE,$+.32                                             ! line  5
+        BD,ZTESTU                                            ! line  6
+ZSCHTS  BZB,SCHOP(ZNEWCH),$+2.0                              ! line  7
+        BE,$+.32                                             ! line  8
+        BD,ZSCHTS                                            ! line  9
+        LV,ZUNITA,0.0(ZREQUN)                                ! line 10
+        B,ZASSGN                                             ! line 11
+! line 12  -
+ZREMOV  BPG0Z,ZNOTFD                                         ! line 13  printed "BPGOZ"
+        CM1111(BU,1),ZSCNP2                                  ! line 14  -SET SECOND PASS SCAN SWITCH
+ZRMV1   SIC,ZRMV1+0.53                                       ! line 15
+        NOP,ZCHSCN($6)                                       ! line 16  -SELF RESETTING SWITCH
+! line 17  -FOR NO UNITS FOUND ON FIRST PASS
+ZNOTFD  BE,DMCP                                              ! line 18  printed "C MCP"
+        ,DCOMM                                               ! line 19
+        VF,ZNTFD9                                            ! line 20
+        CF,5.0                                               ! line 21
+        LV,9,0.0                                             ! line 22  printed "C.C"
+        B,ZSCAN9                                             ! line 23
+        CNOP                                                 ! line 24
+ZNTFD9  (IQS*)DD(BU), NO REPLACEMENT FOR DELETED MCP UNIT.   * ! line 25  printed "DC"
+        CNOP                                                 ! line 26
+ZSCMSG  (IQS*)DD(BU), CHANGE *                               ! line 27
+ZSMSG1  (IQS*)DD(BU),MCP UNIT FROM *                         ! line 28  printed "DC"
+ZSMSG2  (IQS*)DD(BU),  -*                                    ! line 29  printed "CC"
+ZSMSG3  (IQS*)DD(BU),  TO *                                  ! line 30
+ZSMSG4  (IQS*)DD(BU),  -*                                    ! line 31
+ZSMSG5  (IQS*)DD(BU), .     *                                ! line 32  printed "CC"
+! line 33  -
+! line 34  -****** CHANNEL ONLY REQUEST ******
+ZCHONY  CM1111(BU,1),ZINDCH                                  ! line 35  -SET CHAN ONLY SWITCH
+        LX,ZREQUN,$Z                                         ! line 36
+ZCHON3  BE,$+.32                                             ! line 37
+        BD,$+.32                                             ! line 38
+        BB,SCHOP(ZREQCH),ZCHON3                              ! line 39
+        B,ZACTON                                             ! line 40  -BRANCH TO TEST OP CODE
+ZCHON2  BAE,ZADDCH                                           ! line 41  -BRANCH TO ADD CHANNEL
+        BB1,SCHAVL(ZREQCH),ZEREX1                            ! line 42  -BRANCH IF UNAVAILABLE
+! line 43  -IF AVAILABLE,MAKE UNAVAILABLE
+        BB,SMULTI(ZREQCH),ZMULCH                             ! line 44  -TEST IF MULTI UNIT CHAN
+! line 45  -
+! line 46  -****** SINGLE UNIT CHANNEL ONLY REQUEST ******
+        LV,ZREQUN,ZREQCH                                     ! line 47  -UNIT AND CHAN ST SAME FOR
+! line 48  -SINGLE UNIT CHAN
+        BB1,SUNASG(ZREQUN),ZMAIND                            ! line 49  -BR IF NOT ASSGN TO MAIN DEL
+! line 50  -SET UNIT UNASSIGNED IF ASSIGND
+
+!SYM ZPREST 235162.40
+!SYM ZTESTU 235163.40
+!SYM ZSCHTS 235166.40
+!SYM ZREMOV 235171.40
+!SYM ZRMV1  235173.00
+!SYM ZNOTFD 235174.00
+!SYM ZNTFD9 235177.00
+!SYM ZSCMSG 235204.00
+!SYM ZSMSG1 235205.00
+!SYM ZSMSG2 235206.60
+!SYM ZSMSG3 235207.10
+!SYM ZSMSG4 235207.60
+!SYM ZSMSG5 235210.10
+!SYM ZCHONY 235211.00
+!SYM ZCHON3 235212.40
+!SYM ZCHON2 235215.00
+!CHECK 235161.40 | 000013.54 80 001000.36 F0 | line 1 CM1111(BU,1),Z PR ABJ
+!CHECK 235162.40 | 000000.33 87 235166.74 00 | line 2 Z PREST BZB,S MULTI(Z NEW CH),Z SCH TS (byte prints "CC")
+!CHECK 235163.40 | 000000.32 87 235112.74 00 | line 3 Z TEST U BZB,S CHOP(Z NEW CH),Z SET AS (byte prints "0C")
+!CHECK 235164.40 | 000000.47 87 235112.74 02 | line 4 BB,S SEL(Z NEW CH),Z SET AS
+!CHECK 235165.40 | 235166.00 00 | line 5 BE,$+.32
+!CHECK 235166.00 | 235163.44 00 | line 6 BD,Z TEST U (byte prints "C0")
+!CHECK 235166.40 | 000000.32 87 235170.74 00 | line 7 Z SCH TS BZB,S CHOP(Z NEW CH),$+2.0 (byte prints "0C")
+!CHECK 235167.40 | 235170.00 00 | line 8 BE,$+.32
+!CHECK 235170.00 | 235166.44 00 | line 9 BD,Z SCH TS
+!CHECK 235170.40 | 000000.24 36 | line 10 LV,Z UNIT A,0.0(Z REQ UN)
+!CHECK 235171.00 | 235122.50 00 | line 11 B,Z ASSGN (byte prints "C0")
+!CHECK 235171.40 | 235174.24 C6 | line 13 Z REMOV BPGOZ,Z NOT FD
+!CHECK 235172.00 | 000013.51 80 001000.36 F0 | line 14 CM1111(BU,1),Z SCN P2 (byte prints "FC")
+!CHECK 235173.00 | 235173.65 80 | line 15 Z RMV 1 SIC,Z RMV1+0.53
+!CHECK 235173.40 | 235071.30 06 | line 16 NOP,Z CH SCN($6)
+!CHECK 235174.00 | 000040.00 00 | line 18 Z NOTFD BE,D MCP (printed "C MCP")
+!CHECK 235174.40 | 000043.40 80 | line 19 ,D COMM
+!CHECK 235175.00 | 235177.00+ | line 20 VF,Z NTFD 9
+!CHECK 235175.40 | 000005 | line 21 CF,5.0 (prints "CCC005")
+!CHECK 235176.00 | 000000.22 30 | line 22 LV,9,C.C
+!CHECK 235176.40 | 235143.50 00 | line 23 B,Z SCAN9
+!CHECK 235211.00 | 000013.52 80 001000.36 F0 | line 35 Z CH ONY CM1111(BU,1),Z IND CH
+!CHECK 235212.00 | 000000.14 10 | line 36 LX,Z REQ UN,$Z
+!CHECK 235212.40 | 235213.00 00 | line 37 Z CHON3 BE,$+.32
+!CHECK 235213.00 | 235213.44 00 | line 38 BD,$+.32
+!CHECK 235213.40 | 000000.32 88 235212.74 02 | line 39 BB,S CHOP(Z REQ CH),Z CHON3
+!CHECK 235214.40 | 235053.50 00 | line 40 B,Z ACT CN (= ZACTON)
+!CHECK 235215.00 | 235324.36 C2 | line 41 Z CHON2 BAE,Z ADD CH
+!CHECK 235215.40 | 000000.31 88 234631.34 0E | line 42 BB1,S CH AVL(Z REQ CH),Z ER EX1
+!CHECK 235216.40 | 000000.33 88 235223.34 02 | line 44 BB,S MULTI(Z REQ CH),Z MULCH
+!CHECK 235217.40 | 000030.14 30 | line 47 LV,Z REQ UN,Z REQ CH
+!CHECK 235220.00 | 000000.35 86 235341.34 0E | line 49 BB1,S UN ASG(Z REQ UN),Z MAIN D

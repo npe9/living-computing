@@ -16731,3 +16731,47 @@ listing_truth 318 pages / 11,790 lines.
     past p.345.
   NEXT: printed p.346 on (PDF = printed - 250); extend FILL_ONLY["$DUMP"]
   as pages land.
+
+
+pp.346-377 LANDED (2026-11-06): batches 11 and 12, run as two parallel
+fan-outs of 16.  32 decks: the rest of the $DUMP (pp.346-360) and the
+SYSTEM COMMAND package SCOMD (PUNID 22SCOMD, pp.361-377), the third
+Y MPBUF overlay.  listing_truth 350 pages / 13,125 lines.
+  * THREE OVERLAYS.  check_mcp_body_image merges LOADER (pp.320-334),
+    $DUMP (pp.335-360) and SCOMD (pp.361-377) each with the resident
+    pp.99-319; every row of all three holds (11,046 / 1,362 / 837 rows
+    + symbols).  FILL_ONLY pins the DR/DRZ areas of p.358, p.363, p.365
+    and p.371, p.359 lines 40-42, and the words past each overlay's end.
+  * SEVEN ASSEMBLER RULES, each cited and each witnessed by a printed row
+    (tests/check_listing_field_rules.py, tests/check_dd_float.py):
+    - a bare integer in SHF/E+-I is a signed 11-bit count (C28-6129
+      printed p.33, category 4): p.356 "E-I,48" 014000.57, p.357
+      "SHFR,4" 001000.37;
+    - E-I, E+AI, E-AI default to U, read off the sign-stripped family
+      (printed p.46);
+    - a null VFL address is 0 (printed p.4): p.357 "CV(BU,48)";
+    - an alphabetic entry mode's terminator is any character (printed
+      p.29): p.360 "(A()";
+    - floating DD literals within the printed p.27 range; the fraction
+      TRUNCATES -- witnessed by p.359 lines 38-40, not stated in the
+      manual;
+    - a DR/DRZ with no dds is DR(N), and N and U align to a word
+      (printed pp.17-18): p.363 "J FLD B DRZ,(12)";
+    - indicator-bit system symbols carry (BU,1,8), directly and through
+      a SYN (printed p.11): p.373 "CM1111,Z ASU IN".  Class 3 only.
+  * Census: E-I/SHFL/SHFR cost what E+I/SHF cost (sign modifiers);
+    CTI0010, CTI0101 and D* joined the page-silent list.
+  * Spellings settled: AMNEM0 (p.351 defines it), JNOPX, ZOG5, ZSPL01,
+    ZOPTST, AFXW1 (a flagged 1 in the ink).  SCOMD's mode-bit SYNs take
+    p.363's forms (JOP SYN,2.0 ... JCN SYN,1024.0, JXMSK SYN,$X13).
+  OPEN: p.359 lines 40-42 (1.E512, 9.99999E615) exceed the printed p.27
+    range and are refused; the card is a comment plus an SLC.  System-
+    symbol dds for classes 1-2 cited, not implemented.  DD(U) half done.
+    CC entry mode and DDI still stood in (p.361 CC, p.376 DDI ZADD/ZALL).
+    p.360 line 29's wedge; RGOING open O; ZLOPO letter O (C22-6728).
+    Card-serial gaps WA000040, WA000142, WA000640, VB000169.  The
+    pau_shfr12 / F212 decks' "encoded operand" comments predate the
+    count rule.
+  NEXT: printed p.378 on.  SCOMD ends on p.381 line 3; p.381 line 5 is
+    PUNID,22$EOJ and line 7 SLC,YPPMEM (020000.00): a fourth program,
+    not in Y MPBUF, which needs its own image region.

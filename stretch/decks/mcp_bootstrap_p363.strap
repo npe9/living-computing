@@ -1,0 +1,172 @@
+! mcp_bootstrap_p363.strap -- MCP printed page 363: SYSTEM COMMAND
+! package (PUNID 22SCOMD), the BCD break-out tail (Z BCD .. Z BCD9),
+! two error exits (Z MODER, J ERRX) and their messages, then the
+! package's storage (J STLR, JC BUF, J FLD B, J JX1, J FLDC) and its
+! index and mode-mask SYNs, lines 1-53.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.113, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22SCOMD  CARD
+! ID WA000089  DIST. OF 3/01  3/01  PAGE NUMBER 363"; the heading row's
+! LOCATION field is 234477, line 1's word.  No TAIL.  Still SCOMD: no
+! new PUNID, card series WA continues, no SLC.
+!
+! THE PAGE.  Code and data contiguous 234477.00 .. 234575.00 (line 35,
+! CF, a half word; next 234575.40 = J HARD, the B target on lines 18
+! and 23, presumably p.364's line 1).  Lines 36-53 are SYNs (no
+! storage).  Lines 19, 24, 28, 30 CNOP; 27 and 41-43 remark cards.
+! Line 6, 21, 31, 33 print "*" after the LOCATION; line 33 prints "33**".
+!
+! CARD SERIALS.  WA000089 .. WA000141, one per line, none shared or
+! skipped.  p.364 should open at WA000142.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 29 "Z MAIN 1 (A*)DD(BU,48,6),COMD    *": the datum is COMD
+!     plus 4 blanks (8 characters, measured on a 40.1 px character
+!     grid at 400 dpi: * sits in column 25, D in 20).  O prints closed.
+!   * lines 48, 51 "J CV", "J CF" written JOV, JOF: open round; the
+!     remarks read -OVER-LAPPED and -OFF-LINE, and they pair with J NV
+!     (-NOT OVER-LAPPED) and J ON (-ON LINE).  The glyph is the same
+!     open round as J OP / J ON's O at 900 dpi; not settled by ink.
+!   * line 16 "B,Z CMCRD" written ZCMCRD as printed: both rounds open,
+!     no closed glyph anywhere for it; no page defines it yet (p.362).
+!   * line 35 "J FLDC": final glyph a plain open C beside a closed D.
+!   * lines 9-12, 34 operands printed "C" ("VF,C", "CF,C", "XW,C.0,12")
+!     = 0; lines 35 prints "CF,0" plainly; binaries print 0.
+!   * "(IQS*)DC(BU)" (lines 20, 21, 25, 26) = DD, worn D.
+!   * line 21 "COMMAMD" is DATA and is written as printed (900 dpi:
+!     M A M D).
+!   * line 38 prints "SYN,$3" (no X), lines 36-37, 39-40 "$Xn": as printed.
+!
+! MESSAGE LENGTHS (entry mode blanks are data), each fixed by the next
+! LOCATION: line 20 17 characters (no leading blank), 234510.00 ->
+! 234512.10; line 21 39 with its leading blank -> 234517.00; line 25 34
+! -> 234524.20; line 26 22 -> 234527.00.
+!
+! Line 33 "J FLD B DRZ,(12)" has NO data description.  C28-6129 printed
+! p.18: "If no dds is given, the symbol appearing in the name field is
+! assigned the normalized floating point use mode", and a floating
+! use mode forces a full word: the counter stood at 234557.40 (JC BUF
+! ends there) and the page prints the DRZ at 234560.00, 000014.00 = 12
+! words.  Written as printed.  (Until 2026-11-06 strap_asm crashed on
+! a DRZ with no dds.)
+!
+! EXTERNALS.  JSIZE (p.295 ",0", BU,32,8), SBRK8 (p.263 SX), QBRK8
+! (p.264 SWAPI): copied from their defining pages.  ZCMCRD and JHARD
+! are not landed: values from this page's binary (B prints .10 more),
+! half word only, plain SYN.
+
+JSIZE   SYN(BU,32,8), (8)232721.0    ! p.295 line 28 "JSIZE ,0"; SC line 4 232721.35
+SBRK8   SYN(BU,32,8), (8)230672.0    ! p.263 line 10 SX; BD line 8 230672.04
+QBRK8   SYN(BU,64,8), (8)230726.0    ! p.264 line 8 SWAPI; BD line 13 230726.04
+ZCMCRD  SYN, (8)234461.40            ! not landed (p.362?); B line 16 234461.50, half word only
+JHARD   SYN, (8)234575.40            ! not landed (p.364?); B lines 18, 23 234575.50, half word only
+
+        SLC, (8)234477.00
+ZBCD    KCI,14,80.0                                          ! line  1  -BCD FORMAT
+        BZXH,$+1.32                                          ! line  2
+        LCI,14,80.0                                          ! line  3
+        SC,14,JSIZE                                          ! line  4
+        SV,14,ZBRKAD                                         ! line  5
+ZBCD9   SC,14,JBRKC                                          ! line  6  -TO BREAK SETUP   printed "TC"
+        LVI,15,$+1.0                                         ! line  7
+        BD,SBRK8                                             ! line  8
+ZBRKAD  VF,0                                                 ! line  9  printed "VF,C"
+JBRKC   CF,0                                                 ! line 10  printed "CF,C"
+        VF,JFLDB                                             ! line 11
+        CF,0                                                 ! line 12  printed "CF,C"
+        BD,QBRK8                                             ! line 13
+        BE,$+.32                                             ! line 14
+        LC,14,JBRKC+1.0                                      ! line 15
+        B,ZCMCRD                                             ! line 16
+ZMODER  LX,12,ZEREX3                                         ! line 17
+        B,JHARD                                              ! line 18
+        CNOP                                                 ! line 19
+ZEREX3  (IQS*)DD(BU),IPL MODE ERROR IN*                      ! line 20
+        (IQS*)DD(BU), COMMAMD REQUEST. SYSTEM CONTAMINATION.*  ! line 21
+JERRX   LX,12,ZEREX4                                         ! line 22
+        B,JHARD                                              ! line 23
+        CNOP                                                 ! line 24
+ZEREX4  (IQS*)DD(BU), SOURCE CODE FOR COMMAND IN ERROR.*     ! line 25
+        (IQS*)DD(BU), SYSTEM CONTAMINATION.*                 ! line 26
+! line 27  -     *****STORAGE AND PARAMETERS*****
+        CNOP                                                 ! line 28
+ZMAIN1  (A*)DD(BU,48,6),COMD    *                            ! line 29
+        CNOP                                                 ! line 30
+JSTLR   DR(BU,64),(16)                                       ! line 31  -STORAGE FOR INDEX REGISTERS
+JCBUF   DR(BU,6),(80)                                        ! line 32
+JFLDB   DRZ,(12)                                             ! line 33  -BROKEN OUT FIELD BUFFER
+JJX1    XW,0.0,12                                            ! line 34  -NUMBER OF COMMANDS   printed "XW,C.0,12"
+JFLDC   CF,0                                                 ! line 35  -COUNT OF BROKEN OUT FIELDS
+JX1     SYN,$X1                                              ! line 36
+JX2     SYN,$X2                                              ! line 37
+ZSORCE  SYN,$3                                               ! line 38
+ZSMODE  SYN,$X4                                              ! line 39
+JXMSK   SYN,$X13                                             ! line 40  -MODE MASK INDEX
+! line 41  -
+! line 42  -     *****DEFINITION OF MODE MASK BITS*****
+! line 43  -
+JOP     SYN,2.0                                              ! line 44  -OPERATOR IS SOURCE
+JSR     SYN,4.0                                              ! line 45  -SPOOL READER
+JJ1     SYN,8.0                                              ! line 46  -JOB CONTROL I
+JJ4     SYN,16.0                                             ! line 47  -JOB CONTROL IV
+JOV     SYN,32.0                                             ! line 48  -OVER-LAPPED   printed "J CV"
+JNV     SYN,64.0                                             ! line 49  -NOT OVER-LAPPED
+JON     SYN,128.0                                            ! line 50  -ON LINE
+JOF     SYN,256.0                                            ! line 51  -OFF-LINE   printed "J CF"
+ZIPL    SYN,512.0                                            ! line 52  -IPL IS THE SOURCE
+JCN     SYN,1024.0                                           ! line 53  -CONSOLE
+
+!SYM ZBCD   234477.00
+!SYM ZBCD9  234501.40
+!SYM ZBRKAD 234503.00
+!SYM JBRKC  234503.40
+!SYM ZMODER 234507.00
+!SYM ZEREX3 234510.00
+!SYM JERRX  234517.00
+!SYM ZEREX4 234520.00
+!SYM ZMAIN1 234527.00
+!SYM JSTLR  234530.00
+!SYM JCBUF  234550.00
+!SYM JFLDB  234560.00
+!SYM JJX1   234574.00
+!SYM JFLDC  234575.00
+!SYM JX1    000021.00
+!SYM JX2    000022.00
+!SYM ZSORCE 000023.00
+!SYM ZSMODE 000024.00
+!SYM JXMSK  000035.00
+!SYM JOP    000002.00
+!SYM JSR    000004.00
+!SYM JJ1    000010.00
+!SYM JJ4    000020.00
+!SYM JOV    000040.00
+!SYM JNV    000100.00
+!SYM JON    000200.00
+!SYM JOF    000400.00
+!SYM ZIPL   001000.00
+!SYM JCN    002000.00
+!CHECK 234477.00 | 000120.35 0A | line 1 ZBCD KCI,14,80.0
+!CHECK 234477.40 | 234501.33 40 | line 2 BZXH,$+1.32
+!CHECK 234500.00 | 000120.35 02 | line 3 LCI,14,80.0
+!CHECK 234500.40 | 232721.35 50 | line 4 SC,14,JSIZE
+!CHECK 234501.00 | 234503.35 30 | line 5 SV,14,ZBRKAD
+!CHECK 234501.40 | 234503.75 50 | line 6 ZBCD9 SC,14,JBRKC
+!CHECK 234502.00 | 234503.37 01 | line 7 LVI,15,$+1.0
+!CHECK 234502.40 | 230672.04 00 | line 8 BD,SBRK8 (byte prints open "C0" = 00)
+!CHECK 234503.00 | 000000.00+ | line 9 ZBRKAD VF,0
+!CHECK 234503.40 | 000000 | line 10 JBRKC CF,0
+!CHECK 234504.00 | 234560.00+ | line 11 VF,JFLDB
+!CHECK 234504.40 | 000000 | line 12 CF,0
+!CHECK 234505.00 | 230726.04 00 | line 13 BD,QBRK8
+!CHECK 234505.40 | 234506.00 00 | line 14 BE,$+.32
+!CHECK 234506.00 | 234504.74 50 | line 15 LC,14,JBRKC+1.0
+!CHECK 234506.40 | 234461.50 00 | line 16 B,ZCMCRD (byte prints open "C0" = 00)
+!CHECK 234507.00 | 234510.30 10 | line 17 ZMODER LX,12,ZEREX3
+!CHECK 234507.40 | 234575.50 00 | line 18 B,JHARD (byte prints open "C0" = 00)
+!CHECK 234517.00 | 234520.30 10 | line 22 JERRX LX,12,ZEREX4
+!CHECK 234517.40 | 234575.50 00 | line 23 B,JHARD
+! line 31 JSTLR DR(BU,64),(16) prints 000020.00 (16 words reserved; no bits, no !CHECK)
+! line 32 JCBUF DR(BU,6),(80) prints 000007.40 (480 bits reserved; no bits, no !CHECK)
+! line 33 JFLDB DRZ,(12) prints 000014.00 at 234560.00 -- UNCHECKED (stand-in)
+!CHECK 234574.00 | 000000.00+ 000 000014 000000 | line 34 JJX1 XW,0.0,12
+!CHECK 234575.00 | 000000 | line 35 JFLDC CF,0

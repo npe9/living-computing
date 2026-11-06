@@ -1,0 +1,179 @@
+! mcp_bootstrap_p358.strap -- MCP printed page 358: the $DUMP program's
+! floating-point field formatter tail (exponent / fraction sign
+! characters stored via $14, AUP loop, AZFRTN), then the $DUMP's
+! working storage: ATEMPD, ABUFF, APCOL1, AMNMBF, the one-bit flags
+! AHLFWD..ACTLBT, and the panel index words APNLW1-APNLW4, lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.108, read at 400 dpi, names and
+! doubtful glyphs at 900 dpi.  Header, READ: "TIME CLOCK 00054041
+! PUNID 22$DUMP  CARD ID VB000742  DIST. OF 3/01  3/01  PAGE NUMBER
+! 358"; the heading row's LOCATION field is 236007, line 1's word.
+!
+! >>> STILL THE $DUMP (PUNID 22$DUMP, card series VB...).  No new
+! PUNID, no SLC on the page.  The LOADER (pp.320-334) is an overlay at
+! overlapping addresses; nothing here is taken from it.  No TAIL.
+!
+! THE PAGE.  50 lines; every line number prints a "*".  "*" after the
+! LOCATION on lines 5, 17, 32, 34.  Remarks on lines 36 (-USE AS
+! LOADER BUFFER) and 45 (-USED FOR COMPUTING $MR).  Located rows
+! contiguous from 236007.00 (line 1) to 236153.00 (line 50, XW, a full
+! word; next 236154.00).  Lines 43-44 are SYNs (print "+00000000
+! BU,01 ,10", no counter move); lines 34-42, 45 DRZs print their
+! reservation size, no !CHECK (printed p.317 convention); lines 39, 46
+! DD(BU,1),0 print "0" left of NAME.
+!
+! JOIN.  p.357 (tools/page_sheet.py 357, not landed) ends with
+! ST(BU,64),1.16($14) at 236006.00, a full word: next 236007.00 =
+! line 1.  p.359 (sheet) opens at 236154.00 (APNLW5 XW): contiguous.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 1 "LF(DU,24,4)": the mode's first glyph has the straight
+!     left stem and squared corners of the D in ATEMPD on the same
+!     card (900 dpi); written DU as printed, not BU.
+!   * line 3 "ACCTLC": written AOCTLC, the family of AOCTLB on line 2
+!     (as decks/mcp_bootstrap_p345.strap).
+!   * line 23 "ACMPND": the second glyph has a straight left stem like
+!     the final D (900 dpi), and the landed stand-in ADMPND
+!     (pp.342-344) is at the same 236162 word: written ADMPND.
+!   * lines 22, 45 APNLI, line 25/39 AFLPTI, line 43 AFRACI, lines
+!     40-41 ASPUBI/ASPLBI: final glyph is the letter I (serifs top and
+!     bottom, no flag), unlike the digit 1 in APCOL1, AFLP1, APNLW1
+!     on the same page (flag).  ASPUBI/ASPLBI as landed pp.342-344.
+!   * line 36 APCOL1: C open, O closed, final digit 1 with flag; as
+!     landed p.344's stand-in.
+!   * line 46 ACTLBT: second glyph open, same as the C in AFRACI;
+!     kept C (no closed glyph anywhere says O).
+!   * octal/hex open rounds read 0 ("FO" = F0, "CO" = 00, ".CC" = .00).
+!
+! EXTERNALS.  None is defined by a landed deck (the $DUMP pages from
+! p.346 on are not landed); values from this page's binary, or copied
+! from the pp.342-345 $DUMP stand-ins.
+!
+! CARD SERIALS.  VB000742 .. VB000789.  Shared serials, each a SIC/B
+! pair: lines 2-3 (743), 20-21 (760).  None skipped.
+
+AOCTLB  SYN, (8)235376.40            ! not landed; SIC line 2 235376.40, BIT-EXACT
+AOCTLC  SYN, (8)235373.40            ! not landed; B line 3 235373.50, half word only (printed "ACCTLC")
+AL24    SYN, (8)236174.14            ! not landed; * line 13 236174.14, BIT-EXACT
+AFLGTB  SYN, (8)236421.0             ! not landed; LF line 15 236421.00 ($1), BIT-EXACT
+ACNVER  SYN, (8)235726.0             ! not landed; CB+ line 19 235726.33, half word only
+AWRITB  SYN, (8)235327.40            ! not landed; SIC line 20 235327.40, BIT-EXACT
+AWRITE  SYN, (8)235325.40            ! not landed; B line 21 235325.50, half word only
+APNL4   SYN, (8)235116.0             ! not landed; BBZ line 22 h2 235116.34, half word only
+ADMPND  SYN, (8)236162.0             ! not landed; KV line 23 236162.32, half word only (printed "ACMPND")
+AFLP1   SYN, (8)235721.0             ! not landed; BXL line 24 235721.32, half word only
+APUML6  SYN, (8)234704.0             ! not landed; B line 26 234704.10, half word only
+AXMAGE  SYN, (8)236214.60            ! not landed; L/LF lines 29, 31 236214.60, BIT-EXACT
+
+        SLC, (8)236007.00
+        LF(DU,24,4),ATEMPD.32                                ! line  1
+        SIC,AOCTLB                                           ! line  2
+        B,AOCTLC                                             ! line  3
+        SF(BU,48),2.16($14)                                  ! line  4
+AUP     BZBZ,AEXPF,$+3.                                      ! line  5
+        LFI(BU,8),(8)66                                      ! line  6
+        SF(BU,8),.16($14)                                    ! line  7
+AEXPS   LFI(BU,8),(8)60                                      ! line  8
+        SF(BU,8),.8($14)                                     ! line  9
+AFRACS  LFI(BU,8),(8)60                                      ! line 10
+        SF(BU,8),.56($14)                                    ! line 11
+        L(BU,3),.61($13),40                                  ! line 12
+        *(BU,6),AL24,20                                      ! line 13
+        LV,$1,$R                                             ! line 14
+        LF(BU,24),AFLGTB($1)                                 ! line 15
+        SF(BU,24),3.8($14)                                   ! line 16
+        CM1111(BU,1),AALL15                                  ! line 17
+        V+I,$14,4.                                           ! line 18
+        CB+,$13,ACNVER                                       ! line 19
+        SIC,AWRITB                                           ! line 20
+        B,AWRITE                                             ! line 21
+        BBZ,APNLI,APNL4                                      ! line 22
+        KV,$13,ADMPND                                        ! line 23
+        BXL,AFLP1                                            ! line 24
+        CM0000(BU,1),AFLPTI                                  ! line 25
+        B,APUML6                                             ! line 26
+AZFRTN  LFI(BU,8),(8)12                                      ! line 27
+        SF(BU,8),1.($14)                                     ! line 28
+        L(BU,64),AXMAGE                                      ! line 29
+        ST(BU,64),1.16($14)                                  ! line 30
+        LF(BU,48),AXMAGE                                     ! line 31
+        SF(BU,48),2.16($14)                                  ! line 32
+        B,AUP                                                ! line 33
+ATEMPD  DRZ(N),1                                             ! line 34
+ABUFF   DRZ(N),33                                            ! line 35
+APCOL1  DRZ(N),17                                            ! line 36  -USE AS LOADER BUFFER
+AMNMBF  DRZ(N),17                                            ! line 37
+AHLFWD  DRZ(BU,1),1                                          ! line 38
+AFLPTI  DD(BU,1),0                                           ! line 39
+ASPUBI  DRZ(BU,1),1                                          ! line 40
+ASPLBI  DRZ(BU,1),1                                          ! line 41
+AEXPF   DRZ(BU,1),1                                          ! line 42
+AFRACI  SYN(BU,1),AFRACS.3                                   ! line 43
+AALL15  SYN(BU,1),AEXPS.3                                    ! line 44
+APNLI   DRZ(BU,1),1                                          ! line 45  -USED FOR COMPUTING $MR
+ACTLBT  DD(BU,1),0                                           ! line 46
+APNLW1  XW,ABUFF+8.,5                                        ! line 47
+APNLW2  XW,ABUFF+11.,2                                       ! line 48
+APNLW3  XW,ABUFF+12.20,3                                     ! line 49
+APNLW4  XW,ABUFF+15.,16                                      ! line 50
+
+!SYM AUP 236012.00
+!SYM AEXPS 236015.00
+!SYM AFRACS 236017.00
+!SYM AZFRTN 236034.00
+!SYM ATEMPD 236043.00
+!SYM ABUFF 236044.00
+!SYM APCOL1 236105.00
+!SYM AMNMBF 236126.00
+!SYM AHLFWD 236147.00
+!SYM AFLPTI 236147.01
+!SYM ASPUBI 236147.02
+!SYM ASPLBI 236147.03
+!SYM AEXPF 236147.04
+!SYM AFRACI 236017.03
+!SYM AALL15 236015.03
+!SYM APNLI 236147.05
+!SYM ACTLBT 236147.06
+!SYM APNLW1 236150.00
+!SYM APNLW2 236151.00
+!SYM APNLW3 236152.00
+!SYM APNLW4 236153.00
+!CHECK 236007.00 | 236043.40 80 030400.06 70 | line 1 LF(DU,24,4),ATEMPD.32
+!CHECK 236010.00 | 235376.40 80 | line 2 SIC,AOCTLB
+!CHECK 236010.40 | 235373.50 00 | line 3 B,AOCTLC (printed "ACCTLC")
+!CHECK 236011.00 | 000002.20 8E 060000.12 F0 | line 4 SF(BU,48),2.16($14) (h2 prints "FO")
+!CHECK 236012.00 | 236147.04 80 236015.34 04 | line 5 AUP BZBZ,AEXPF,$+3.
+!CHECK 236013.00 | 154000.00 80 410000.06 70 | line 6 LFI(BU,8),(8)66
+!CHECK 236014.00 | 000000.20 8E 010000.12 F0 | line 7 SF(BU,8),.16($14)
+!CHECK 236015.00 | 140000.00 80 410000.06 70 | line 8 AEXPS LFI(BU,8),(8)60
+!CHECK 236016.00 | 000000.10 8E 010000.12 F0 | line 9 SF(BU,8),.8($14)
+!CHECK 236017.00 | 140000.00 80 410000.06 70 | line 10 AFRACS LFI(BU,8),(8)60
+!CHECK 236020.00 | 000000.70 8E 010000.12 F0 | line 11 SF(BU,8),.56($14)
+!CHECK 236021.00 | 000000.75 8D 003024.20 50 | line 12 L(BU,3),.61($13),40
+!CHECK 236022.00 | 236174.14 80 006012.21 90 | line 13 *(BU,6),AL24,20
+!CHECK 236023.00 | 000011.02 30 | line 14 LV,$1,$R
+!CHECK 236023.40 | 236421.00 81 030000.06 70 | line 15 LF(BU,24),AFLGTB($1)
+!CHECK 236024.40 | 000003.10 8E 030000.12 F0 | line 16 SF(BU,24),3.8($14)
+!CHECK 236025.40 | 236015.03 80 001000.36 F0 | line 17 CM1111(BU,1),AALL15
+!CHECK 236026.40 | 000004.35 05 | line 18 V+I,$14,4.
+!CHECK 236027.00 | 235726.33 48 | line 19 CB+,$13,ACNVER
+!CHECK 236027.40 | 235327.40 80 | line 20 SIC,AWRITB
+!CHECK 236030.00 | 235325.50 00 | line 21 B,AWRITE
+!CHECK 236030.40 | 236147.05 80 235116.34 06 | line 22 BBZ,APNLI,APNL4
+!CHECK 236031.40 | 236162.32 90 | line 23 KV,$13,ADMPND (printed "ACMPND")
+!CHECK 236032.00 | 235721.32 42 | line 24 BXL,AFLP1
+!CHECK 236032.40 | 236147.01 80 001000.00 F0 | line 25 CM0000(BU,1),AFLPTI
+!CHECK 236033.40 | 234704.10 00 | line 26 B,APUML6
+!CHECK 236034.00 | 024000.00 80 410000.06 70 | line 27 AZFRTN LFI(BU,8),(8)12
+!CHECK 236035.00 | 000001.00 8E 010000.12 F0 | line 28 SF(BU,8),1.($14)
+!CHECK 236036.00 | 236214.60 80 000000.20 50 | line 29 L(BU,64),AXMAGE
+!CHECK 236037.00 | 000001.20 8E 000000.20 D0 | line 30 ST(BU,64),1.16($14)
+!CHECK 236040.00 | 236214.60 80 060000.06 70 | line 31 LF(BU,48),AXMAGE
+!CHECK 236041.00 | 000002.20 8E 060000.12 F0 | line 32 SF(BU,48),2.16($14)
+!CHECK 236042.00 | 236012.10 00 | line 33 B,AUP
+!CHECK 236147.01 | 0 | line 39 AFLPTI DD(BU,1),0 | 1
+!CHECK 236147.06 | 0 | line 46 ACTLBT DD(BU,1),0 (datum printed "C") | 1
+!CHECK 236150.00 | 236054.00+ 000 000005 000000 | line 47 APNLW1 XW,ABUFF+8.,5
+!CHECK 236151.00 | 236057.00+ 000 000002 000000 | line 48 APNLW2 XW,ABUFF+11.,2
+!CHECK 236152.00 | 236060.24+ 000 000003 000000 | line 49 APNLW3 XW,ABUFF+12.20,3
+!CHECK 236153.00 | 236063.00+ 000 000020 000000 | line 50 APNLW4 XW,ABUFF+15.,16

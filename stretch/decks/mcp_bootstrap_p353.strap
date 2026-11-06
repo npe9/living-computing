@@ -1,0 +1,155 @@
+! mcp_bootstrap_p353.strap -- MCP printed page 353: the $DUMP program's
+! character-class dispatch: load one-byte codes (B, D, U, BLANK, I, ...)
+! by bit tests on $13 / $1, store them through $14, return via ARETRN;
+! ADIRCT / AIMMED / AIMMD1-2 / AMNUS / ANEG / AMPYA / AMPY1A, lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.103, read at 400 dpi, names at 900
+! dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$DUMP  CARD ID
+! VB000498  DIST. OF 3/01  3/01  PAGE NUMBER 353"; the heading row's
+! LOCATION field is 235475, line 1's word.  Still PUNID 22$DUMP, VB
+! card series: the page does not leave the $DUMP.  No SLC printed.
+!
+! THE PAGE.  50 lines; every line number prints a "*".  "*" after the
+! LOCATION on lines 11, 24, 37.  No remark cards.  Remarks on lines 2
+! (-CHNGE. + TO -), 3 (-)), 5 (-B), 7 (-D), 9 (-U), 11 (-BLANK), 20
+! (-I), 23 (-B), 25 (-D), 27 (-U), 29 (-BLANK).  Located rows contiguous
+! from 235475.40 (line 1) to 235550.40 (line 50, LFI, a full word; next
+! 235551.40), then blank paper.  No TAIL.
+!
+! JOIN.  p.352 (tools/page_sheet.py 352) ends with LF(BU,32) at
+! 235474.40, a full word: next 235475.40 = line 1.  p.354 (sheet) opens
+! at 235551.40: contiguous.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "ANVLDO" (line 17): the last glyph is a closed round, 71 px wide at
+!     900 dpi against 65-67 px for the digit 0 and 68 px for the letter
+!     O ("TO", line 2) on this page -- width does not settle it.  No deck
+!     and no C22-6728 text names it; written with the letter O as Vision
+!     reads it.  ANVLD0 is the look-alike to watch for in p.351-352.
+!   * AINTC1, AIMMD1, AMPY1A: last/fifth glyph carries the 1's flag at
+!     900 dpi (I prints with two serifs, as in ACONNI and (V+I)).
+!   * octal / hex fields with an open round read 0 ("8C"/"0C" = 00 etc.).
+!
+! EXTERNALS.  None is defined by a landed deck (p.346-352 not landed);
+! values from this page's binary.  B addresses less B's .10, and BB/BZB
+! addresses less the .34 the op adds, give the half word only.
+!
+! CARD SERIALS.  VB000498 .. VB000547, one per line, none shared or
+! skipped.
+
+ARETRN  SYN, (8)235377.0             ! not landed; B line 13 235377.10, half word only
+ACONNI  SYN, (8)235554.40            ! not landed (p.354); BB line 19 235554.74, half word only
+ANVLDO  SYN, (8)235425.0             ! not landed; BZB line 17 235425.34, half word only
+AINTC1  SYN, (8)235462.0             ! not landed; BB line 33 235462.34, B line 43 235462.10, half word only
+AMPY2A  SYN, (8)235552.0             ! not landed (p.354 sheet: AMPY2A 235552.00); BB line 47 235552.34, half word only
+
+        SLC, (8)235475.40
+        BZB,0($13),$+2.                                      ! line  1
+        LFI(BU,8),(8)40,40                                   ! line  2  -CHNGE. + TO -
+        LFI(BU,8),(8)74,16                                   ! line  3  -)
+        BB,.21($13),$+2.32                                   ! line  4
+        LFI(BU,8),(8)62,8                                    ! line  5  -B
+        B,$+1.32                                             ! line  6
+        LFI(BU,8),(8)64,8                                    ! line  7  -D
+        BZB,.19($13),$+2.32                                  ! line  8
+        LFI(BU,8),(8)24                                      ! line  9  -U
+        B,$+1.32                                             ! line 10
+        LFI(BU,8),(8)20                                      ! line 11  -BLANK
+        ST(BU,64),.24($14)                                   ! line 12
+        B,ARETRN                                             ! line 13
+ADIRCT  BB,.36($1),ACONNI+1.                                 ! line 14
+        LFI(BU,8),(8)20,8                                    ! line 15
+        B,AIMMD1                                             ! line 16
+AIMMED  BZB,.39($1),ANVLDO                                   ! line 17
+        BB,.35($1),AMPY1A                                    ! line 18
+        BB,.36($1),ACONNI                                    ! line 19
+        LFI(BU,8),(8)71,8                                    ! line 20  -I
+AIMMD1  SF(BU,48)(V+I),.48($14),8                            ! line 21
+AIMMD2  BB,.21($13),$+2.32                                   ! line 22
+        LFI(BU,8),(8)62,8                                    ! line 23  -B
+        B,$+1.32                                             ! line 24
+        LFI(BU,8),(8)64,8                                    ! line 25  -D
+        BZB,.19($13),$+2.32                                  ! line 26
+        LFI(BU,8),(8)24                                      ! line 27  -U
+        B,$+1.32                                             ! line 28
+        LFI(BU,8),(8)20                                      ! line 29  -BLANK
+        SF(BU,16),0($14)                                     ! line 30
+        B,ARETRN                                             ! line 31
+AMNUS   BB,.38($1),ANEG                                      ! line 32
+        BB,.36($1),AINTC1                                    ! line 33
+        LF(BU,4),.23($13),64                                 ! line 34
+        KFI(BU,4),0,64                                       ! line 35
+        BAE,$+2.                                             ! line 36
+        LFI(BU,8),(8)40,40                                   ! line 37
+        B,AINTC1-1.                                          ! line 38
+        LFI(BU,8),(8)40,48                                   ! line 39
+        B,AINTC1-1.                                          ! line 40
+ANEG    BB,.35($1),AMPYA                                     ! line 41
+        LFI(BU,8),(8)45,16                                   ! line 42
+        B,AINTC1                                             ! line 43
+AMPYA   SF(BU,8),$R.24,40                                    ! line 44
+        LFI(BU,8),(8)45,40                                   ! line 45
+        B,AINTC1-1.                                          ! line 46
+AMPY1A  BB,.20($13),AMPY2A                                   ! line 47
+        SF(BU,8),$R.24,40                                    ! line 48
+        LFI(BU,8),(8)71,40                                   ! line 49
+        LFI(BU,8),(8)71,40                                   ! line 50
+
+!SYM ADIRCT 235511.00
+!SYM AIMMED 235513.40
+!SYM AIMMD1 235517.40
+!SYM AIMMD2 235520.40
+!SYM AMNUS 235531.00
+!SYM ANEG 235540.40
+!SYM AMPYA 235543.00
+!SYM AMPY1A 235545.40
+!CHECK 235475.40 | 000000.00 8D 235477.74 00 | line 1 BZB,0($13),$+2.
+!CHECK 235476.40 | 100000.00 80 410024.06 70 | line 2 LFI(BU,8),(8)40,40
+!CHECK 235477.40 | 170000.00 80 410010.06 70 | line 3 LFI(BU,8),(8)74,16
+!CHECK 235500.40 | 000000.25 8D 235503.34 02 | line 4 BB,.21($13),$+2.32
+!CHECK 235501.40 | 144000.00 80 410004.06 70 | line 5 LFI(BU,8),(8)62,8
+!CHECK 235502.40 | 235504.10 00 | line 6 B,$+1.32
+!CHECK 235503.00 | 150000.00 80 410004.06 70 | line 7 LFI(BU,8),(8)64,8
+!CHECK 235504.00 | 000000.23 8D 235506.74 00 | line 8 BZB,.19($13),$+2.32 (h2 prints "0C", open round)
+!CHECK 235505.00 | 050000.00 80 410000.06 70 | line 9 LFI(BU,8),(8)24
+!CHECK 235506.00 | 235507.50 00 | line 10 B,$+1.32
+!CHECK 235506.40 | 040000.00 80 410000.06 70 | line 11 LFI(BU,8),(8)20
+!CHECK 235507.40 | 000000.30 8E 000000.20 D0 | line 12 ST(BU,64),.24($14) (h2 prints "DO")
+!CHECK 235510.40 | 235377.10 00 | line 13 B,ARETRN
+!CHECK 235511.00 | 000000.44 81 235555.74 02 | line 14 ADIRCT BB,.36($1),ACONNI+1.
+!CHECK 235512.00 | 040000.00 80 410004.06 70 | line 15 LFI(BU,8),(8)20,8
+!CHECK 235513.00 | 235517.50 00 | line 16 B,AIMMD1
+!CHECK 235513.40 | 000000.47 81 235425.34 00 | line 17 AIMMED BZB,.39($1),ANVLDO
+!CHECK 235514.40 | 000000.43 81 235545.74 02 | line 18 BB,.35($1),AMPY1A
+!CHECK 235515.40 | 000000.44 81 235554.74 02 | line 19 BB,.36($1),ACONNI
+!CHECK 235516.40 | 162000.00 80 410004.06 70 | line 20 LFI(BU,8),(8)71,8
+!CHECK 235517.40 | 000000.60 8E 160004.12 F0 | line 21 AIMMD1 SF(BU,48)(V+I),.48($14),8
+!CHECK 235520.40 | 000000.25 8D 235523.34 02 | line 22 AIMMD2 BB,.21($13),$+2.32
+!CHECK 235521.40 | 144000.00 80 410004.06 70 | line 23 LFI(BU,8),(8)62,8
+!CHECK 235522.40 | 235524.10 00 | line 24 B,$+1.32
+!CHECK 235523.00 | 150000.00 80 410004.06 70 | line 25 LFI(BU,8),(8)64,8
+!CHECK 235524.00 | 000000.23 8D 235526.74 00 | line 26 BZB,.19($13),$+2.32
+!CHECK 235525.00 | 050000.00 80 410000.06 70 | line 27 LFI(BU,8),(8)24
+!CHECK 235526.00 | 235527.50 00 | line 28 B,$+1.32
+!CHECK 235526.40 | 040000.00 80 410000.06 70 | line 29 LFI(BU,8),(8)20
+!CHECK 235527.40 | 000000.00 8E 020000.12 F0 | line 30 SF(BU,16),0($14)
+!CHECK 235530.40 | 235377.10 00 | line 31 B,ARETRN
+!CHECK 235531.00 | 000000.46 81 235540.74 02 | line 32 AMNUS BB,.38($1),ANEG
+!CHECK 235532.00 | 000000.44 81 235462.34 02 | line 33 BB,.36($1),AINTC1
+!CHECK 235533.00 | 000000.27 8D 004040.06 70 | line 34 LF(BU,4),.23($13),64
+!CHECK 235534.00 | 000000.00 80 404040.23 10 | line 35 KFI(BU,4),0,64
+!CHECK 235535.00 | 235537.36 C2 | line 36 BAE,$+2.
+!CHECK 235535.40 | 100000.00 80 410024.06 70 | line 37 LFI(BU,8),(8)40,40
+!CHECK 235536.40 | 235461.10 00 | line 38 B,AINTC1-1.
+!CHECK 235537.00 | 100000.00 80 410030.06 70 | line 39 LFI(BU,8),(8)40,48
+!CHECK 235540.00 | 235461.10 00 | line 40 B,AINTC1-1.
+!CHECK 235540.40 | 000000.43 81 235543.34 02 | line 41 ANEG BB,.35($1),AMPYA
+!CHECK 235541.40 | 112000.00 80 410010.06 70 | line 42 LFI(BU,8),(8)45,16
+!CHECK 235542.40 | 235462.10 00 | line 43 B,AINTC1
+!CHECK 235543.00 | 000011.30 80 010024.12 F0 | line 44 AMPYA SF(BU,8),$R.24,40
+!CHECK 235544.00 | 112000.00 80 410024.06 70 | line 45 LFI(BU,8),(8)45,40
+!CHECK 235545.00 | 235461.10 00 | line 46 B,AINTC1-1.
+!CHECK 235545.40 | 000000.24 8D 235552.34 02 | line 47 AMPY1A BB,.20($13),AMPY2A
+!CHECK 235546.40 | 000011.30 80 010024.12 F0 | line 48 SF(BU,8),$R.24,40
+!CHECK 235547.40 | 162000.00 80 410024.06 70 | line 49 LFI(BU,8),(8)71,40
+!CHECK 235550.40 | 162000.00 80 410024.06 70 | line 50 LFI(BU,8),(8)71,40

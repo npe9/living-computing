@@ -1,0 +1,180 @@
+! mcp_bootstrap_p371.strap -- MCP printed page 371: SYSTEM COMMAND
+! package (PUNID 22SCOMD), the I/O-change unit reassignment (RGOING,
+! Z ASSGN, Z LOD LP), the channel/unit message fill, the scan exits
+! Z SCAN 7/9/8 and the start of the second-pass test Z TST PP.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.121, read at 400 dpi (900 dpi for
+! doubtful glyphs).  Header, READ: "TIME CLOCK 00054041  PUNID 22SCOMD
+! CARD ID WA000492  DIST. OF 3/01  3/01  PAGE NUMBER 371".  The heading
+! row's LOCATION field prints 235117 (line 1's word, 235117.40).
+!
+! THE PAGE.  50 lines, every line number prints a "*".  Contiguous from
+! 235117.40 (line 1) to 235160.40 (line 50, a full-word CM; next
+! 235161.40).  "*" after the LOCATION on lines 9, 27 and 45.  Line 47
+! is a remark continuation (no location).  Still SCOMD: no PUNID,
+! card-series or origin change; no TAIL.
+!
+! JOIN.  p.370 is not landed (parallel batch); this deck states the
+! origin hard.  p.298 (resident) already refers to Z LOD LP at
+! 235127.40 and Z SCAN 9 at 235143.40: this page defines both there.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 1 label "RGCING": third glyph an open round (O or C on this
+!     drum); written RGOING (word-like; no RGCING/RGOING anywhere else).
+!   * line 11 "Z LCD LP" = ZLODLP (open O, worn-stem D; p.298's spelling,
+!     C22-6728 p.107 typesets ZLODLP).
+!   * CMOCOO / CMOOOO (lines 1, 5, 6) = CM0000.
+!   * line 36 "Z SPL01": open second-last glyph; digit 0 by the numbered
+!     family (nothing typeset names it).
+!   * lines 23, 39 "BE,C MCP"/"BE,D MCP", 24, 33, 40 ",D COMM"/",D ABEOJ"
+!     = DMCP, DCOMM, DABEOJ.
+!   * hex bytes printed "CO"/"0C"/"FC"/"DC" read 00/F0/D0 (the octal
+!     fields of the same rows print 0 open; lesson 6).
+!
+! EXTERNALS.  S-fields copy p.99/p.101; D-names p.105/p.108; SPRIME/
+! SPRIMR p.118; ZASN51 p.298; ZCHNNM/ZUNTNM copy p.298's stand-ins.
+! ZNEWUN/ZUNITA are index registers: the I nibble of every CM/SV/LCV
+! (9 and A) and SV's J field (.25 = 2*10+1) -> $9, $10, from this page.
+!
+! CARD SERIALS.  WA000492 .. WA000541, one per line, none shared or
+! skipped.
+
+SDISPO  SYN(BU,1), 0.27              ! p.99 line 25
+STATI   SYN(BU,1), 0.26              ! p.99 line 23
+SFILEK  SYN(BU,12), 7.38             ! p.101 line 25 -FILE COUNT
+SRD     SYN(BU,1), 0.57              ! p.99 line 45 -READ
+SVER    SYN(BU,1), 0.40              ! p.99 line 32 -VERIFY FILE STATUS
+SOWNER  SYN(BU,1), 0.32              ! p.99 line 30
+SCHANN  SYN(BU,7), 0.12              ! p.101 line 5 -CHANNEL NUMBER
+SUNITN  SYN(BU,3), 0.47              ! p.101 line 6 -UNIT NUMBER
+SUUNAS  SYN(BU,1), 1.62              ! p.101 line 9; CM line 48 000001.76
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; BE lines 23, 39 000040.00
+DCOMM   SYN, 35.32                   ! landed p.105 line 23; lines 24, 40 000043.40
+DABEOJ  SYN, 68.0                    ! landed p.105 "D ABEOJ"; line 33 000104.00
+SPRIMR  SYN, (8)215571.0             ! landed p.118 line 49; SIC line 31 215571.00
+SPRIME  SYN, (8)215570.0             ! landed p.118 line 48; BD line 32 215570.04
+ZSPLP9  SYN, (8)224052.0             ! landed; SIC line 34 224052.00
+ZSPLPR  SYN, (8)224046.40            ! landed; BD line 35 224046.44
+ZASN51  SYN(BU,32,8), (8)233024.40   ! p.298 line 22 (BXVZ, half word); NOP line 11 233024.70
+ZCHNNM  SYN, $3                      ! as p.298; SX line 16 J field .07 = 2*3+1
+ZUNTNM  SYN, $4                      ! as p.298; SX line 13 .11 = 2*4+1, SV line 19
+ZNEWUN  SYN, $9                      ! no page defines; I nibble 9 on lines 1-2, 5-7, 10, 46, this page's binary only
+ZUNITA  SYN, $10                     ! no page defines; I nibble A on lines 4, 12, 15, 16, 19, 21, 48; SV line 10 J .25
+ZSMSG2  SYN, (8)235206.60            ! not landed; ST line 14 ZSMSG2-.1 = 235206.57, BIT-EXACT
+ZSMSG3  SYN, (8)235207.10            ! not landed; ST line 20 ZSMSG3-.1 = 235207.07, BIT-EXACT
+ZSMSG4  SYN, (8)235207.60            ! not landed; ST line 22 ZSMSG4-.1 = 235207.57, BIT-EXACT
+ZSMSG5  SYN, (8)235210.10            ! not landed; ST line 18 ZSMSG5-.1 = 235210.07, BIT-EXACT
+ZSCMSG  SYN, (8)235204.0             ! not landed; VF line 25 235204.00+
+ZSPL01  SYN, (8)235260.0             ! not landed; null op line 36 235260.00
+ZQUZ49  SYN, (8)235265.0             ! not landed; VF line 41 235265.00+
+ZTSTUN  SYN, (8)235107.0             ! not landed; BB line 46 235107.34, half word only
+ZPREST  SYN, (8)235162.40            ! not landed; BPG3 line 49 235162.66, half word only
+
+        SLC, (8)235117.40
+RGOING  CM0000,SDISPO(ZNEWUN)                                ! line  1  (printed "RGCING", "CMOCOO")
+        CM1111,STATI(ZNEWUN)                                 ! line  2
+        LVNI,5,0.0                                           ! line  3  -SET FILE COUNT TO -0.
+        SV,5,SFILEK(ZUNITA)                                  ! line  4
+ZASSGN  CM0000(BU,7),SRD(ZNEWUN)                             ! line  5  -CLEAR TABLES  (printed "CMOCOO")
+        CM0000(BU,8),SVER+.1(ZNEWUN)                         ! line  6
+        CM1111,SOWNER(ZNEWUN)                                ! line  7  -SET UNIT OWNERSHIP TO MCP
+        Z,$SB                                                ! line  8
+        CM1111(BU,2),$SB+.2                                  ! line  9  -SET ZONE BITS FOR IQS STORE  (location prints "*")
+        SV,ZUNITA,0.0(ZNEWUN)                                ! line 10  -SET UNIT A ADDR INTO NEW UST
+ZLODLP  NOP,ZASN51                                           ! line 11  -BRANCH FOR SPECIAL ASSIGNMENT  (printed "Z LCD LP")
+        LCV,SCHANN(ZUNITA),68                                ! line 12  -GET OLD CHANNEL NUMBER
+        SX,ZUNTNM,$R                                         ! line 13  -GET NEW UNIT NUMBER
+        ST(DU,16,8),ZSMSG2-.1,68                             ! line 14  -STORE OLD CHANNEL NUMBER
+        L(U),0.0(ZUNITA)                                     ! line 15  -GET OLD UNIT NUMBER
+        SX,ZCHNNM,SCHANN(ZUNITA)                             ! line 16  -SET NEW CHN NUM IN UNIT A.
+        SHFL,2                                               ! line 17
+        ST(DU,8,8),ZSMSG5-.1,48                              ! line 18
+        SV,ZUNTNM,SUNITN(ZUNITA)                             ! line 19  -SET NEW UNIT NUM IN UNIT A.
+        ST(DU,8,8),ZSMSG3-.1,-48                             ! line 20
+        LCV,SCHANN(ZUNITA)                                   ! line 21  -GET NEW CHANNEL NUMBER
+        ST(DU,16,8),ZSMSG4-.1                                ! line 22  -STORE NEW CHANNEL NUMBER
+        BE,DMCP                                              ! line 23  (printed "C MCP")
+        ,DCOMM                                               ! line 24
+        VF,ZSCMSG                                            ! line 25
+        CF,5.                                                ! line 26
+ZSCAN7  SIC,$+0.53                                           ! line 27  (location prints "*")
+        NOP,ZSCAN8($6)                                       ! line 28
+ZSCAN9  B,0.0                                                ! line 29  -BRANCH BACK TO USER
+ZSCAN8  TI,1,$IND,ZSTIND                                     ! line 30
+        SIC,SPRIMR                                           ! line 31
+        BD,SPRIME                                            ! line 32
+        ,DABEOJ                                              ! line 33
+        SIC,ZSPLP9                                           ! line 34
+        BD,ZSPLPR                                            ! line 35
+        ,ZSPL01                                              ! line 36
+        ,5.                                                  ! line 37
+        BE,$+.32                                             ! line 38
+        BE,DMCP                                              ! line 39
+        ,DCOMM                                               ! line 40
+        VF,ZQUZ49                                            ! line 41
+        CF,5.                                                ! line 42
+        TI,1,ZSTIND,$IND                                     ! line 43
+        B,ZSCAN9                                             ! line 44
+ZSTIND  DRZ(N),(1)                                           ! line 45  (location prints "*")
+ZTSTPP  BB,SOWNER(ZNEWUN),ZTSTUN                             ! line 46  -SECOND PASS SCAN - BRANCH
+! line 47                                                      -IF MCP TO TEST FOR OTHER UNITS
+        CM1111,SUUNAS(ZUNITA)                                ! line 48
+        BPG3,ZPREST                                          ! line 49
+        CM1111(BU,1),ZSCAN7+0.53                             ! line 50
+
+!SYM RGOING 235117.40
+!SYM ZASSGN 235122.40
+!SYM ZLODLP 235127.40
+!SYM ZSCAN7 235142.40
+!SYM ZSCAN9 235143.40
+!SYM ZSCAN8 235144.00
+!SYM ZSTIND 235155.00
+!SYM ZTSTPP 235156.00
+!CHECK 235117.40 | 000000.33 89 001000.00 F0 | line 1 RGOING CM0000,SDISPO(ZNEWUN) (byte prints "FC")
+!CHECK 235120.40 | 000000.32 89 001000.36 F0 | line 2 CM1111,STATI(ZNEWUN)
+!CHECK 235121.40 | 000000.13 09 | line 3 LVNI,5,0.0
+!CHECK 235122.00 | 000007.53 3A | line 4 SV,5,SFILEK(ZUNITA)
+!CHECK 235122.40 | 000000.71 89 007000.00 F0 | line 5 ZASSGN CM0000(BU,7),SRD(ZNEWUN)
+!CHECK 235123.40 | 000000.51 89 010000.00 F0 | line 6 CM0000(BU,8),SVER+.1(ZNEWUN)
+!CHECK 235124.40 | 000000.40 89 001000.36 F0 | line 7 CM1111,SOWNER(ZNEWUN)
+!CHECK 235125.40 | 000012.22 00 | line 8 Z,$SB
+!CHECK 235126.00 | 000012.02 80 002000.36 F0 | line 9 CM1111(BU,2),$SB+.2
+!CHECK 235127.00 | 000000.25 39 | line 10 SV,ZUNITA,0.0(ZNEWUN)
+!CHECK 235127.40 | 233024.70 00 | line 11 ZLODLP NOP,ZASN51
+!CHECK 235130.00 | 000000.14 8A 007042.20 30 | line 12 LCV,SCHANN(ZUNITA),68
+!CHECK 235131.00 | 000011.11 10 | line 13 SX,ZUNTNM,$R
+!CHECK 235131.40 | 235206.57 80 020042.24 D0 | line 14 ST(DU,16,8),ZSMSG2-.1,68
+!CHECK 235132.40 | 000000.40 6A | line 15 L(U),0.0(ZUNITA)
+!CHECK 235133.00 | 000000.07 1A | line 16 SX,ZCHNNM,SCHANN(ZUNITA)
+!CHECK 235133.40 | 000400.27 20 | line 17 SHFL,2
+!CHECK 235134.00 | 235210.07 80 010030.24 D0 | line 18 ST(DU,8,8),ZSMSG5-.1,48
+!CHECK 235135.00 | 000000.51 3A | line 19 SV,ZUNTNM,SUNITN(ZUNITA)
+!CHECK 235135.40 | 235207.07 80 010050.24 D0 | line 20 ST(DU,8,8),ZSMSG3-.1,-48
+!CHECK 235136.40 | 000000.14 8A 007000.20 30 | line 21 LCV,SCHANN(ZUNITA)
+!CHECK 235137.40 | 235207.57 80 020000.24 D0 | line 22 ST(DU,16,8),ZSMSG4-.1
+!CHECK 235140.40 | 000040.00 00 | line 23 BE,DMCP
+!CHECK 235141.00 | 000043.40 80 | line 24 ,DCOMM
+!CHECK 235141.40 | 235204.00+ | line 25 VF,ZSCMSG
+!CHECK 235142.00 | 000005 | line 26 CF,5.
+!CHECK 235142.40 | 235143.25 80 | line 27 ZSCAN7 SIC,$+0.53
+!CHECK 235143.00 | 235144.30 06 | line 28 NOP,ZSCAN8($6)
+!CHECK 235143.40 | 000000.10 00 | line 29 ZSCAN9 B,0.0
+!CHECK 235144.00 | 000013.00 80 235155.02 A0 | line 30 ZSCAN8 TI,1,$IND,ZSTIND
+!CHECK 235145.00 | 215571.00 80 | line 31 SIC,SPRIMR
+!CHECK 235145.40 | 215570.04 00 | line 32 BD,SPRIME
+!CHECK 235146.00 | 000104.00 80 | line 33 ,DABEOJ
+!CHECK 235146.40 | 224052.00 80 | line 34 SIC,ZSPLP9
+!CHECK 235147.00 | 224046.44 00 | line 35 BD,ZSPLPR
+!CHECK 235147.40 | 235260.00 80 | line 36 ,ZSPL01
+!CHECK 235150.00 | 000005.00 80 | line 37 ,5.
+!CHECK 235150.40 | 235151.00 00 | line 38 BE,$+.32
+!CHECK 235151.00 | 000040.00 00 | line 39 BE,DMCP
+!CHECK 235151.40 | 000043.40 80 | line 40 ,DCOMM
+!CHECK 235152.00 | 235265.00+ | line 41 VF,ZQUZ49
+!CHECK 235152.40 | 000005 | line 42 CF,5.
+!CHECK 235153.00 | 235155.00 80 000013.02 A0 | line 43 TI,1,ZSTIND,$IND
+!CHECK 235154.00 | 235143.50 00 | line 44 B,ZSCAN9
+!CHECK 235156.00 | 000000.40 89 235107.34 02 | line 46 ZTSTPP BB,SOWNER(ZNEWUN),ZTSTUN
+!CHECK 235157.00 | 000001.76 8A 001000.36 F0 | line 48 CM1111,SUUNAS(ZUNITA)
+!CHECK 235160.00 | 235162.66 42 | line 49 BPG3,ZPREST
+!CHECK 235160.40 | 235143.25 80 001000.36 F0 | line 50 CM1111(BU,1),ZSCAN7+0.53

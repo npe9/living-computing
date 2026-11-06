@@ -6769,6 +6769,38 @@ run "the head of the DUMP program (PUNID 22\$DUMP): APUML6, the entry AWDUMP tha
 run "the \$DUMP pump (APUMP5 .. APANEL): test the dump bounds against SPPLB/SMARK, branch to, printed p.343" python3 verify_mcp_page.py 343
 run "\$DUMP's panel dump, first panel line: index-register fields (IT, UB, LB, LZC, AOC, FT), printed p.344" python3 verify_mcp_page.py 344
 run "the \$DUMP program's panel dump: convert \$MR / \$IA-style panel fields to octal through the, printed p.345" python3 verify_mcp_page.py 345
+run "the \$DUMP program's panel dump, continued: the end of the 3rd panel line (APNLP4 loop, printed p.346" python3 verify_mcp_page.py 346
+run "the \$DUMP program's panel dump, continued: write the panel's lines (AINTLB/AINITL, printed p.347" python3 verify_mcp_page.py 347
+run "the \$DUMP program's AINITL (initialise the print image by TI), the AINTLB/AFTRMB link, printed p.348" python3 verify_mcp_page.py 348
+run "the \$DUMP program's octal/hex field conversion: the ANDX1 loop (3-bit fields through, printed p.349" python3 verify_mcp_page.py 349
+run "the \$DUMP program's hex/mnemonic tail of the octal-hex line (ADHEX/AOCTLJ loops), the, printed p.350" python3 verify_mcp_page.py 350
+run "the \$DUMP program's floating-point / mnemonic part: the end of the octal store loop, printed p.351" python3 verify_mcp_page.py 351
+run "the \$DUMP program's instruction decoder: store a branch-table entry (ABRTBL/ABRBTB) or, printed p.352" python3 verify_mcp_page.py 352
+run "the \$DUMP program's character-class dispatch: load one-byte codes (B, D, U, BLANK, I, printed p.353" python3 verify_mcp_page.py 353
+run "the \$DUMP program's mnemonic / floating-point print subroutines: the immediate-operand, printed p.354" python3 verify_mcp_page.py 354
+run "the \$DUMP program's floating-point / index-field edit: AFMPY (sign and exponent-flag, printed p.355" python3 verify_mcp_page.py 355
+run "the \$DUMP program's field converters: the tail of a 48-bit field store, AMISC (3-bit, printed p.356" python3 verify_mcp_page.py 356
+run "the \$DUMP program's floating-point output conversion: fit the exponent between powers, printed p.357" python3 verify_mcp_page.py 357
+run "the \$DUMP program's floating-point field formatter tail (exponent / fraction sign, printed p.358" python3 verify_mcp_page.py 358
+run "the \$DUMP program's constants and tables: the panel index word APNLW5, the bit-position, printed p.359" python3 verify_mcp_page.py 359
+run "the \$DUMP program's character tables -- the hex-digit table AHXTB, the instruction, printed p.360" python3 verify_mcp_page.py 360
+run "the opening of the SYSTEM COMMAND package (PUNID 22SCOMD): its punch controls and two, printed p.361" python3 verify_mcp_page.py 361
+run "the SYSTEM COMMAND package (PUNID 22SCOMD) continued: the entry JCOMD -- save the index, printed p.362" python3 verify_mcp_page.py 362
+run "SYSTEM COMMAND package (PUNID 22SCOMD), the BCD break-out tail (Z BCD .. Z BCD9), two, printed p.363" python3 verify_mcp_page.py 363
+run "SYSTEM COMMAND package (PUNID 22SCOMD), the COMMAND HARD COPY MAKER (J HARD .. Z MS, printed p.364" python3 verify_mcp_page.py 364
+run "the SYSTEM COMMAND package's COMMAND EXIT ROUTINE (Z ER EX1/Z ER EX2 error exits, Z, printed p.365" python3 verify_mcp_page.py 365
+run "the SYSTEM COMMAND package (PUNID 22SCOMD), the OUTPUT COMMAND sub-package (JOUTP, printed p.366" python3 verify_mcp_page.py 366
+run "the SYSTEM COMMAND package's EOJ command sub-package (J EOJ .. Z EOJ99) and its ABEOJ, printed p.367" python3 verify_mcp_page.py 367
+run "SYSTEM COMMAND package (PUNID 22SCOMD): the REWIND command (Z REWCD, Z REWOK), the, printed p.368" python3 verify_mcp_page.py 368
+run "inside the SYSTEM COMMAND package (PUNID 22SCOMD): the tail of the character-convert, printed p.369" python3 verify_mcp_page.py 369
+run "SYSTEM COMMAND package (PUNID 22SCOMD), the IOCHANGE unit/channel request tail and the, printed p.370" python3 verify_mcp_page.py 370
+run "SYSTEM COMMAND package (PUNID 22SCOMD), the I/O-change unit reassignment (RGOING, Z, printed p.371" python3 verify_mcp_page.py 371
+run "SYSTEM COMMAND package (PUNID 22SCOMD), the I/O-change unit scan tail (Z PREST .. Z, printed p.372" python3 verify_mcp_page.py 372
+run "the SYSTEM COMMAND package (PUNID 22SCOMD), the delete test and the MULTI-CHANNEL ONLY, printed p.373" python3 verify_mcp_page.py 373
+run "SYSTEM COMMAND package (PUNID 22SCOMD), the IOCHANGE routine: the tail of the, printed p.374" python3 verify_mcp_page.py 374
+run "SYSTEM COMMAND package (PUNID 22SCOMD), the IOCHANGE command's DISK SECTION (ZDSKCH, printed p.375" python3 verify_mcp_page.py 375
+run "SYSTEM COMMAND package (PUNID 22SCOMD): the DELETE/ADD/ALL command words, the, printed p.376" python3 verify_mcp_page.py 376
+run "the SYSTEM COMMAND package's ONLINE command (Z ONLIN, lines 1-34) and the opening of, printed p.377" python3 verify_mcp_page.py 377
 
 # >>> pp.185-192 FOUND A WRONG ANSWER IN THE VFL IMMEDIATE, and the
 # page caught it by writing ONE immediate at TWO LENGTHS. <<<
@@ -6788,11 +6820,13 @@ run "the \$DUMP program's panel dump: convert \$MR / \$IA-style panel fields to 
 # Also: the SYN path never stripped blanks the instruction path does
 # ("B,K IO IND" assembled, "E IO IND SYN,K IO IND" did not), found
 # by printed p.189 printing both on one page.
-run "MCP's body merges, holds every page's rows and accounts for every word, resident pages plus each overlay (LOADER, \$DUMP), printed pp.99-345" python3 check_mcp_body_image.py
+run "MCP's body merges, holds every page's rows and accounts for every word, resident pages plus each overlay (LOADER, \$DUMP, SCOMD), printed pp.99-377" python3 check_mcp_body_image.py
 run "a printed trailing '-' is the comment mark, not a minus, C28-6129 PDF p.5" python3 check_comment_mark.py
 run "instruction and index-word names carry a dds, C22-6531 printed pp.10, 19" python3 check_instruction_label_dds.py
 run "\$OP assembles as OP and PRND is a listing control, C28-6129 printed pp.10, 36" python3 check_dollar_op.py
 run "a SYN to an expression takes its final symbol's dds; a CNOP fills inside a DRZ, C22-6531 printed pp.11, 31" python3 check_syn_expr_and_cnop.py
+run "a bare shift/E+-I integer is a count, E-I is unnormalized, a null VFL address is 0, any A-mode terminator, a dds-less DR is DR(N), an indicator symbol is (BU,1,8), C28-6129 printed pp.4, 11, 18, 29, 33, 46" python3 check_listing_field_rules.py
+run "floating-point DD literals in range, truncated (MCP printed p.359), C28-6129 printed pp.18-19, 27-29" python3 check_dd_float.py
 run "the equipment dispatch, printed p.160" python3 verify_mcp_page.py 160
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
 run "the program status table, printed p.109" python3 verify_mcp_page.py 109

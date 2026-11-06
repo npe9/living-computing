@@ -1,0 +1,155 @@
+! mcp_bootstrap_p364.strap -- MCP printed page 364: SYSTEM COMMAND
+! package (PUNID 22SCOMD), the COMMAND HARD COPY MAKER (J HARD .. Z MS IPL).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.114, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22SCOMD  CARD ID WA000143  DIST. OF 3/01
+!  3/01  PAGE NUMBER 364"; the heading row's LOCATION field is blank.
+! Card serials WA000143 .. WA000190, one per line, none skipped.
+!
+! THE PAGE.  48 lines, contiguous from 234575.40 to 234627.00 + 96 bits
+! (next 234630.40), then blank paper.  Still SCOMD: same PUNID, same
+! WA card series, no SLC on the page.
+!   lines  1-3   remarks: the "*****COMMAND HARD COPY MAKER*****" banner.
+!   lines  4-46  code.  Line 47 CNOP (emits nothing: 234627.00 is on a
+!                word boundary).  Line 48 Z MS IPL (A*)DD(BU,96,6),
+!                16 six-bit characters, no binary printed.
+! p.363 is in progress in parallel; the SLC below states line 4's
+! printed location hard.
+!
+! >>> GLYPHS SETTLED BY OTHER THAN PLAIN INK. <<<
+!   * "CTIC010" (lines 5, 7) and "CTIC101" (line 12) are CTI0010 and
+!     CTI0101: the connective's four digits with 0 printed open, as
+!     landed p.303 line 32 "CTIC001" = CTI0001.  Line 12's "0.C" is 0.0.
+!   * "J FLCB" (lines 30, 34) is JFLDB, D with a worn stem: line 39
+!     prints J FLDB plainly, all three assemble 234560, and C22-6728
+!     names JFLDB.
+!   * ",DCCMM" (line 33) is DCOMM (landed p.105; 000043.40 = 35.32).
+!   * Hex/octal "C" for 0 throughout (234634.5C, 000000.CC ...): open 0.
+!   * Line 48's leading blanks (3) by pixel pitch: comma at x=3310,
+!     "I" at 3471, pitch 40.2 px = 4 columns; 3 + 13 = 16 characters
+!     = 96/6, and "*" falls 13 columns after "I".
+!
+! >>> EXTERNALS FROM THIS PAGE'S BINARY ONLY. <<<  JXMSK ($13, from
+! SX line 4's .33 10, BIT-EXACT: every other $n was tried), JSR (4) and
+! JCN ((8)2000) as the CTI (BU,18) immediates of lines 5, 7, JCBUF,
+! JFLDB, JFLDC (BIT-EXACT from VF/L rows), ZEXIT (B, half word only).
+!
+! Lines 18 and 40 print a "*" after the LOCATION; line 6 prints a lone
+! "." in the second-half-word field.  Recorded, not explained.
+
+JXMSK   SYN,$X13                     ! not landed (SCOMD); SX line 4 000011.33 10, BIT-EXACT ($0-$15 tried)  [p.363 defines it SYN,$X13; was SYN, $13]
+JSR     SYN,4.0                      ! not landed; CTI0010(BU,18) line 5 immediate 000004.00, BIT-EXACT  [p.363 defines it SYN,4.0; was SYN, 4]
+JCN     SYN,1024.0                   ! not landed; CTI0010(BU,18) line 7 immediate 002000.00, BIT-EXACT  [p.363 defines it SYN,1024.0; was SYN, (8)2000]
+JFRST   SYN(BU,32,8), (8)232720.40   ! landed p.295 line 27 "J FRST ,0" (a half-word instruction label: (BU,32,8), C22-6531 printed p.10)
+JSIZE   SYN(BU,32,8), (8)232721.0    ! landed p.295 line 28 "J SIZE ,0"
+JCBUF   SYN, (8)234550.0             ! not landed (SCOMD p.362/363); VF line 28 prints 234550.00+, BIT-EXACT
+JFLDB   SYN, (8)234560.0             ! not landed (SCOMD); VF lines 30, 34 print 234560.00+, BIT-EXACT
+JFLDC   SYN, (8)234575.0             ! not landed (SCOMD); L(BU,18) line 43 h1 234575.00, BIT-EXACT
+ZEXIT   SYN, (8)234634.40            ! not landed (SCOMD, a later page); B line 36 234634.50, half word only
+SA6IQS  SYN, (8)230567.40            ! landed p.260 line 7 "SA6IQS TI,..."; BD line 27 230567.44
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 32 000040.10
+DCOMM   SYN, 35.32                   ! landed p.105 line 23; null op line 33 000043.40 (printed "DCCMM")
+
+        SLC, (8)234575.40
+! -                                                                       ! line  1
+! -          *****COMMAND HARD COPY MAKER*****                            ! line  2
+! -                                                                       ! line  3
+JHARD   SX,JXMSK,$R                                          ! line  4  -SET MODE MASK
+        CTI0010(BU,18),JSR,46                                ! line  5  printed "CTIC010"
+        BRZ,ZSRHRD                                           ! line  6
+        CTI0010(BU,18),JCN,46                                ! line  7  printed "CTIC010"
+        BRZ,JHAXT                                            ! line  8  -CONSOLE - NO HARD COPY
+        LV,15,JFRST                                          ! line  9  -IPL IS THE SOURCE
+        L(BU,18),JSIZE,43                                    ! line 10  -DIVIDE NUM OF CHARS. BY 8
+        LC,15,$R                                             ! line 11  -NUMBER OF WORDS INTO CF
+        CTI0101(BU,3),0.0,43                                 ! line 12  -TEST REMAINDER (printed "CTIC101", "0.C")
+        BRZ,ZTRIPL                                           ! line 13
+        C+I,15,1.                                            ! line 14
+ZTRIPL  T,$15,0.0($15),JCBUF                                 ! line 15
+        SC,15,$15                                            ! line 16
+        LWF(U),ZMSIPL                                        ! line 17
+        ST(U),JCBUF($15)                                     ! line 18  (a "*" prints after the location)
+        LWF(U),ZMSIPL+1.0                                    ! line 19
+        ST(U),JCBUF+1.0($15)                                 ! line 20
+        LV,15,JSIZE                                          ! line 21  -GET NUMBER OF CHARACTERS
+        V+I,15,16.0                                          ! line 22
+        C+I,15,2                                             ! line 23
+ZHARDC  SV,15,JHAR5                                          ! line 24
+        SC,15,JHAR6                                          ! line 25
+        LVI,15,$+1.0                                         ! line 26  -CONVERT TO IQS FROM A6
+        BD,SA6IQS                                            ! line 27
+        VF,JCBUF                                             ! line 28
+JHAR5   CF,0.0                                               ! line 29  -NUMBER OF CHARACTERS
+        VF,JFLDB                                             ! line 30  printed "J FLCB"
+        BE,$+.32                                             ! line 31
+JHAR7   B,DMCP                                               ! line 32
+        ,DCOMM                                               ! line 33  printed ",DCCMM"
+        VF,JFLDB                                             ! line 34  -BUFFER FOR IQS CONVERSION (printed "J FLCB")
+JHAR6   CF,0.0                                               ! line 35  -NUMBER OF WORDS
+JHAXT   B,ZEXIT                                              ! line 36  -EXIT
+ZSRHRD  LC,14,JFLDC                                          ! line 37  -NUMBER OF FIELDS OR WORDS
+        LVI,14,JCBUF                                         ! line 38
+        LVI,15,JFLDB                                         ! line 39
+ZPACKF  L(V+I)(BU,48,6),1.0($15)                             ! line 40  (a "*" prints after the location)
+        ST(V+IC)(BU,48,6),0.48($14)                          ! line 41
+        BZXCZ,ZPACKF                                         ! line 42
+        L(BU,18),JFLDC,49                                    ! line 43  -FIELD COUNT * 8 EQUALS
+        LC,15,JFLDC                                          ! line 44  -NUMBER OF CHARACTERS
+        LV,15,$R                                             ! line 45
+        B,ZHARDC                                             ! line 46
+        CNOP                                                 ! line 47
+ZMSIPL  (A*)DD(BU,96,6),   IPL IS SOURCE*                    ! line 48
+
+!SYM JHARD  234575.40
+!SYM ZTRIPL 234605.00
+!SYM ZHARDC 234612.00
+!SYM JHAR5  234614.40
+!SYM JHAR7  234616.00
+!SYM JHAR6  234617.40
+!SYM JHAXT  234620.00
+!SYM ZSRHRD 234620.40
+!SYM ZPACKF 234622.00
+!SYM ZMSIPL 234627.00
+!CHECK 234575.40 | 000011.33 10 | line 4 J HARD SX,JXMSK,$R
+!CHECK 234576.00 | 000004.00 80 422027.05 70 | line 5 CTIC010(BU,18),JSR,46
+!CHECK 234577.00 | 234620.74 C2 | line 6 BRZ,Z SR HRD (a "." prints in the second-half-word field)
+!CHECK 234577.40 | 002000.00 80 422027.05 70 | line 7 CTIC010(BU,18),JCN,46
+!CHECK 234600.40 | 234620.34 C2 | line 8 BRZ,J HAXT
+!CHECK 234601.00 | 232720.76 30 | line 9 LV,15,J FRST
+!CHECK 234601.40 | 232721.00 80 022025.60 50 | line 10 L(BU,18),J SIZE,43
+!CHECK 234602.40 | 000011.36 50 | line 11 LC,15,$R
+!CHECK 234603.00 | 000000.00 80 403025.53 70 | line 12 CTIC101(BU,3),0.C,43
+!CHECK 234604.00 | 234605.34 C2 | line 13 BRZ,Z TR IPL
+!CHECK 234604.40 | 000001.37 00 | line 14 C+I,15,1.
+!CHECK 234605.00 | 000000.00 8F 234550.36 20 | line 15 Z TR IPL T,$15,0.0($15),JC BUF
+!CHECK 234606.00 | 000037.37 50 | line 16 SC,15,$15
+!CHECK 234606.40 | 234627.42 60 | line 17 LWF(U),Z MS IPL
+!CHECK 234607.00 | 234550.40 EF | line 18 ST(U),JC BUF($15)
+!CHECK 234607.40 | 234630.42 60 | line 19 LWF(U),Z MS IPL+1.0
+!CHECK 234610.00 | 234551.40 EF | line 20 ST(U),JCBUF+1.0($15)
+!CHECK 234610.40 | 232721.36 30 | line 21 LV,15,J SIZE
+!CHECK 234611.00 | 000020.37 05 | line 22 V+I,15,16.0
+!CHECK 234611.40 | 000002.37 00 | line 23 C+I,15,2
+!CHECK 234612.00 | 234614.77 30 | line 24 Z HARD C SV,15,J HAR5
+!CHECK 234612.40 | 234617.77 50 | line 25 SC,15,J HAR 6
+!CHECK 234613.00 | 234614.37 01 | line 26 LVI,15,$+1.0
+!CHECK 234613.40 | 230567.44 00 | line 27 BD,SA6IQS
+!CHECK 234614.00 | 234550.00+ | line 28 VF,JC BUF
+!CHECK 234614.40 | 000000 | line 29 J HAR 5 CF,0.0
+!CHECK 234615.00 | 234560.00+ | line 30 VF,J FLCB (D worn to C)
+!CHECK 234615.40 | 234616.00 00 | line 31 BE,$+.32
+!CHECK 234616.00 | 000040.10 00 | line 32 J HAR 7 B,DMCP
+!CHECK 234616.40 | 000043.40 80 | line 33 ,DCCMM (O printed open)
+!CHECK 234617.00 | 234560.00+ | line 34 VF,J FLCB (D worn to C)
+!CHECK 234617.40 | 000000 | line 35 J HAR 6 CF,0.0
+!CHECK 234620.00 | 234634.50 00 | line 36 J HAXT B,Z EXIT
+!CHECK 234620.40 | 234575.34 50 | line 37 Z SR HRD LC,14,J FLDC
+!CHECK 234621.00 | 234550.35 01 | line 38 LVI,14,JC BUF
+!CHECK 234621.40 | 234560.37 01 | line 39 LVI,15,J FLDB
+!CHECK 234622.00 | 000001.00 8F 160600.20 50 | line 40 Z PACK F L(V+I)(BU,48,6),1.0($15)
+!CHECK 234623.00 | 000000.60 8E 260600.20 D0 | line 41 ST(V+IC)(BU,48,6),0.48($14)
+!CHECK 234624.00 | 234622.30 40 | line 42 BZXCZ,Z PACK F
+!CHECK 234624.40 | 234575.00 80 022030.60 50 | line 43 L(BU,18),J FLDC,49
+!CHECK 234625.40 | 234575.36 50 | line 44 LC,15,J FLDC
+!CHECK 234626.00 | 000011.36 30 | line 45 LV,15,$R
+!CHECK 234626.40 | 234612.10 00 | line 46 B,Z HARD C

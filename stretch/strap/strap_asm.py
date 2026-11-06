@@ -1090,7 +1090,18 @@ def parse_statement_text(text, lineno=None):
     """
     text = text.strip()
     entry = None
-    if text.startswith('('):
+    # AN ALPHABETIC MODE'S TERMINATOR IS ANY ONE CHARACTER, a paren
+    # included.  C28-6129 printed p.29 (PDF p.33): "(Az)DD(BU, FL,
+    # BS), alphabetic information to "z"", and likewise (IQSz), (Pz),
+    # (CCz).  MCP printed p.360 lines 38-47 choose "(" because their
+    # data hold "*" -- "(A()DD(BU),..." -- and the parenthesis count
+    # below never closes on that.  So the alphabetic modes are matched
+    # first as mode letters, exactly one character, and ")" before the
+    # operation.
+    m = re.match(r"\((A|IQS|P|CC)(.)\)(?=[A-Za-z])", text)
+    if m:
+        entry, text = text[1:m.end() - 1], text[m.end():]
+    elif text.startswith('('):
         depth, j = 0, 0
         for j, c in enumerate(text):
             if c == '(':
@@ -2031,6 +2042,8 @@ def inherited_dds(stmt, symtab):
     # The address resolved correctly the whole time -- only the length
     # was lost -- so nothing but a !CHECK on that row could see it.
     stripped = base.strip()
+    if system_symbol_dds(stripped):
+        return system_symbol_dds(stripped)
     if _BLANKED_SYMBOL.match(stripped):
         closed = stripped.replace(' ', '').upper()
         dds = getattr(symtab, 'sym_dds', {}).get(closed)
@@ -2050,6 +2063,29 @@ def inherited_dds(stmt, symtab):
     if not names:
         return None
     return getattr(symtab, 'sym_dds', {}).get(names[-1])
+
+
+def system_symbol_dds(text):
+    """The dds STRAP attaches to an indicator-bit system symbol, or None.
+
+    C28-6129 printed pp.10-11 (PDF pp.14-15): "STRAP assigns a dds to
+    every system symbol", and "All the system symbols in classes 1, 2,
+    and 3 are bit addresses and are assigned standard data
+    descriptions with mode BU, byte size 8 and a field length equal to
+    the length of the particular register or bit."  Class 3 is the
+    indicator bits, so each is (BU,1,8).  MCP printed p.373 lines 12
+    and 26 print "CM1111,Z ASU IN" and "CM1111,Z OP TST" -- p.376's
+    "SYN,$PG5" and "SYN,$PG6", no dds written -- with length 1,
+    001000.36 F0, as line 23's explicit CM1111(BU,1) prints.
+
+    Only class 3 is implemented: classes 1 (index registers, 64 bits)
+    and 2 (the special registers) are the same sentence, but no listing
+    row yet depends on them and attaching them could move rows that
+    pass today."""
+    t = text.strip().upper()
+    if t.startswith('$') and t[1:] in INDICATOR_BITS:
+        return 'BU,1,8'
+    return None
 
 
 def is_half_word_branch(op):
@@ -2317,7 +2353,20 @@ def statement_size(stmt, symtab=None):
             # character is already stripped by parse_statement_text
             # and "is not compiled" (C28-6129 printed p.16).
             return 0, len(stmt.fields[0]) * entry_byte_size(stmt, symtab)
-        return 0, dds_length_bits(stmt.mods, stmt.lineno, symtab) * max(1, len(stmt.fields))
+        # >>> A FLOATING DD ALIGNS TO A FULL WORD. <<<  C28-6129
+        # printed p.28 (PDF p.32): "STRAP does the necessary
+        # bookkeeping to insure that floating point data entries are
+        # always compiled at addressable full words; the location
+        # counter is rounded up to the nearest full word, if
+        # necessary, in order to accomplish this."  MCP printed p.359
+        # line 33 (AFL10 DD(N), at 236202.00 after a NOP at .40) does
+        # not need it, but a floating word anywhere else would.  (This
+        # is also the sentence the DRZ(N) rule below was fitted
+        # without; DR is not changed here.)
+        _fmode = parse_dds(stmt.mods[0], stmt.lineno)[0] \
+            if stmt.mods and stmt.mods[0].strip() else None
+        return (64 if _fmode in ('N', 'U') else 0), \
+            dds_length_bits(stmt.mods, stmt.lineno, symtab) * max(1, len(stmt.fields))
     if op in ('DR', 'DRZ'):
         # DATA RESERVATION.  "DR(dds),(n)" sets aside n items of the
         # dds's field length and initialises none of them -- C28-6129
@@ -2362,8 +2411,22 @@ def statement_size(stmt, symtab=None):
         # p.87 verifies 6 of 6.  What would settle it properly is
         # C22-6531's own sentence, the way the VF rounding rule below
         # was settled, or a second page using DRZ(N).
+        #
+        # >>> SETTLED 2026-11-06 BY C28-6129 printed pp.17-18 (PDF
+        # pp.21-22), the DR entry: "When either one of the floating
+        # point use modes is given in the data description, the
+        # floating point data block being reserved is forced to begin
+        # at a full word address", and "If no dds is given, the symbol
+        # appearing in the name field is assigned the normalized
+        # floating point use mode by STRAP."  So N and U align, and a
+        # DR/DRZ with no dds IS a DR(N): MCP printed p.363 line 33
+        # "J FLD B DRZ,(12)" prints a twelve-word reservation at
+        # 234560.00, rounded up from 234557.40.  (Without a dds this
+        # used to crash on stmt.mods[0].)
+        if not stmt.mods or not stmt.mods[0].strip():
+            stmt.mods = ['N'] + list(stmt.mods[1:])
         _mode, _len, _ = parse_dds(stmt.mods[0], stmt.lineno)
-        return (64 if _mode == 'N' else 0), \
+        return (64 if _mode in ('N', 'U') else 0), \
             dds_length_bits(stmt.mods, stmt.lineno, symtab) * dr_count(stmt, symtab)
     if op == 'VF':
         # >>> VF IS TWENTY-FIVE BITS, NOT A WHOLE HALF WORD, and the
@@ -2838,6 +2901,11 @@ def resolve_syns(syn_stmts, symtab, final):
                     and re.fullmatch(r"[A-Za-z][A-Za-z0-9 ]*", body)
                     and body.upper() in symtab.sym_dds):
                 symtab.sym_dds[up] = symtab.sym_dds[body.upper()]
+            # ... and a SYN to an indicator-bit system symbol takes the
+            # (BU,1,8) STRAP attaches to it (system_symbol_dds).
+            elif (body and hasattr(symtab, 'sym_dds')
+                    and system_symbol_dds(body)):
+                symtab.sym_dds[up] = system_symbol_dds(body)
             # >>> AND A SYN TO AN EXPRESSION INHERITS ITS FINAL SYMBOL'S.
             # <<<  The same exact substitution, applied to C22-6531
             # printed p.11's rule that an expression takes the data
@@ -3316,12 +3384,16 @@ def emit_statement(stmt, symtab, image):
         # rather than by a second code path.  A field that carries
         # its own prefix keeps it.
         rad = entry_radix(stmt)
+        # The use mode picks the conversion: N is a floating word
+        # (_dd_normalized, C28-6129 printed p.28).
+        dmode = parse_dds(stmt.mods[0], stmt.lineno)[0] \
+            if stmt.mods and stmt.mods[0].strip() else None
         pos = loc
         for f in stmt.fields:
             t = f.strip()
             if rad is not None and t[:1].isdigit():
                 t = "(%d)%s" % (rad, t)
-            image.deposit(pos, length, parse_dd_literal(t, stmt.lineno))
+            image.deposit(pos, length, parse_dd_literal(t, stmt.lineno, dmode))
             pos += length
         return
 
@@ -4117,8 +4189,14 @@ def emit_statement(stmt, symtab, image):
         bs_field = (MODE_DEFAULT_BS[mode] if bs_expr is None
                     else eval_expr(bs_expr, symtab, 0, lineno=stmt.lineno)) & 0x7
 
+        # A NULL ADDRESS FIELD IS LEGAL.  C28-6129 printed p.4 (PDF
+        # p.8): "A major field may be null even if other non-null
+        # fields follow", and its right-to-left drop-out of a VFL
+        # statement ends at "OP (dds), A".  MCP printed p.357 line 44
+        # prints CV(BU,48) with no address at all as address 000000.00
+        # -- a null address compiles zero.
         if not stmt.fields or not stmt.fields[0].strip():
-            raise AssemblerError(f"{op} needs an address field", stmt.lineno)
+            stmt.fields = ["0"] + list(stmt.fields[1:])
         base, paren = split_field_trailing_paren(stmt.fields[0])
         if immediate:
             # THE OPERAND FIELD'S UNIT IS NOT ONE BIT.  Reference
@@ -4203,7 +4281,16 @@ def emit_statement(stmt, symtab, image):
         if stmt.mods and stmt.mods[0].strip():
             fp_mode = stmt.mods[0].split(',')[0].strip().upper()
         else:
-            fp_mode = 'U' if base_op in ('E+', 'E+I') else 'N'
+            # The default belongs to the FAMILY, so it is read off the
+            # base with any sign modifier stripped.  C28-6129 printed
+            # p.46 (PDF p.50) gives it for all four of E+I, E-I, E+AI,
+            # E-AI: "The unnormalized mode is given unless overruled by
+            # dds = (N)", and for E+, E-, E+A, E-A likewise.  Testing
+            # base_op alone gave E-I the normalized default; MCP printed
+            # p.356 line 42 prints E-I,48 as 014000.57 60 -- bit 18,
+            # the unnormalized bit, set.
+            _fam = (strip_fp_sign(base_op) or (base_op,))[0]
+            fp_mode = 'U' if _fam in ('E+', 'E+I') else 'N'
         unnorm = 1 if fp_mode == 'U' else 0
         # Sign modifiers (N/A/NA suffix): A -> absSign, N -> invSign.
         fp_base, absSign, invSign = base_op, 0, 0
@@ -4212,7 +4299,8 @@ def emit_statement(stmt, symtab, image):
             fp_base, absSign, invSign = sm
         base, paren = split_field_trailing_paren(stmt.fields[0])
         idx = eval_reg(paren, symtab, stmt.lineno)
-        if fp_base == "E+I" and base.strip()[:1] in "+-":
+        if fp_base in ("E+I", "SHF") and (base.strip()[:1] in "+-"
+                                          or base.strip().isdigit()):
             # ADD IMMEDIATE TO EXPONENT takes its addend as a SIGNED
             # EXPONENT when written with an explicit sign, which is how
             # jb_af1c F213-X spells it ("E+I%U,+2047", "E+I%U,-1791").
@@ -4228,10 +4316,24 @@ def emit_statement(stmt, symtab, image):
             # and ES 1, printed 677700.  Verified against all five
             # immediates F213XA prints.
             #
-            # Without a sign the field stays an ordinary effective
-            # address, which is how fp_exp_shift.strap writes it
-            # ("E+I(N), 128.0" for +1); the two forms are told apart by
-            # the sign alone, exactly as the listing tells them apart.
+            # A bare INTEGER is the same count.  C28-6129 printed p.33
+            # (PDF p.37), the address-environment table, category 4:
+            # "Signed 11-Bit Address ... of shift and Add Immediate to
+            # Exponent instructions ... Integer counts number of bits in
+            # shift or number of bits to be added to exponent of
+            # floating point word" -- the leftmost 13 bits of the
+            # 24-bit field are truncated, so the integer's unit bit is
+            # address bit 10, exactly where the signed form above puts
+            # it.  MCP printed p.356 line 42 prints E-I,48 as 014000.57
+            # (48 << 7 in the word field) and p.357 line 29 prints
+            # SHFR,4 as 001000.37; F212 prints SHFL(U),1 as 200.67.
+            # SHF takes the same field (its direction is bit 11 under
+            # the sign modifiers, Reference Manual p.102).
+            #
+            # A BIT ADDRESS (a period, or a symbol) stays an ordinary
+            # effective address, which is how fp_exp_shift.strap writes
+            # it ("E+I(N), 128.0" for +1) and how the F212 decks write
+            # their shifts ("SHFL(U), 128.0").
             v = eval_expr(base.strip().lstrip("+"), symtab, loc, lineno=stmt.lineno)
             mag = abs(v)
             addr18 = (((1 if mag > 1023 else 0) << 17)
@@ -4279,13 +4381,146 @@ def emit_statement(stmt, symtab, image):
 # the radix too -- and both print as a single 8-bit datum (375, 376).
 _DD_RADIX_LITERAL = re.compile(r'^\((\d+)\)\s*([0-9A-Za-z][0-9A-Za-z\s]*)$')
 
-def parse_dd_literal(field, lineno=None):
+# A DECIMAL NUMBER WITH A POINT AND/OR AN E SUFFIX.  C28-6129 printed
+# p.27 (PDF p.31), "The Form of Data Entries in DD Statements": the two
+# basic formats are the integer ("982104") and the decimal fraction
+# ("-982104.2"); "The suffix letter E is used for this purpose ...  to
+# multiply the number that precedes it by the power of 10 expressed by
+# the number that follows it.  This number is always interpreted as a
+# decimal integer ...  The presence of E automatically implies that
+# the entry is written in the decimal radix."  The manual writes blanks
+# inside the entry ("54.73 E 4 S 10", printed p.28), so blanks are
+# squeezed out before matching.  The S (sign byte, octal) and X
+# (machine exponent, decimal) suffixes of printed pp.27-28 are taken
+# only for the N use mode; see _dd_normalized.
+_DD_DECIMAL = re.compile(
+    r'^([+-]?)(\d*)(?:\.(\d*))?(?:E([+-]?\d+))?((?:[SX][+-]?\d+)*)$')
+
+
+def _dd_decimal_value(field, lineno=None):
+    """(sign, exact Fraction value >= 0, suffix text), or None if
+    `field` is not a decimal entry.  Exact: no binary float is used."""
+    from fractions import Fraction
+    m = _DD_DECIMAL.match("".join(field.split()).upper())
+    if not m or not (m.group(2) or m.group(3)):
+        return None
+    sign, ip, fp, ex, suffix = m.groups()
+    v = Fraction(int((ip or "") + (fp or "") or "0"), 10 ** len(fp or ""))
+    if ex is not None:
+        v *= Fraction(10) ** int(ex)
+    return sign, v, suffix
+
+
+def _dd_normalized(field, lineno=None):
+    """One DD(N) data entry as its 64-bit floating word.
+
+    C28-6129 printed p.28 (PDF p.32), "Normalized Floating Point":
+    "Name DD(N), +xx..xx.x..xxE+yyySn  The number is converted to a
+    normalized floating binary number consisting of an 11-bit signed
+    exponent, a 48-bit fraction, and a 4-bit sign byte.  If no sign
+    byte has been entered by means of an S, the sign preceding the
+    number is used with the flag bits set to zero.  If a different
+    binary exponent is desired, it can be entered following an X".
+
+    THE WORD.  Reference Manual 22-6530-2 printed p.78 (PDF p.81),
+    "Data Format": bit 0 is the exponent flag EF, bits 1-10 the
+    exponent magnitude EM, bit 11 the exponent sign ES; printed p.79
+    (PDF p.82): bits 12-59 the fraction magnitude F, "a 1, in bit
+    position 12, has the numerical value of one-half", bit 60 the
+    fraction sign S, bits 61-63 the data flags T, U, V, and "The four
+    bits S, T, U, and V are treated as the sign byte".  The listing
+    prints the word as "exponent, exponent sign, fraction, fraction
+    sign and data flags" (C28-6129 printed p.18, PDF p.22): "0004+
+    5000000000000000 +000" is EF and EM as eleven bits in four octal
+    digits, ES, sixteen octal fraction digits, then S and TUV.  The
+    manual's own Figure 3 (printed p.19) prints "DOG DD(N),28671X7,
+    183007S7" as "0007+ 6777700000000000 +000" and "0022+
+    5453370000000000 +TUV", which is exactly this layout with X and S.
+
+    NORMALIZED: 1/2 <= F < 1 and F x 2^exponent is the number.
+
+    >>> THE FRACTION IS TRUNCATED, AND THAT IS FITTED TO MCP PRINTED
+    p.359, NOT READ FROM C28-6129. <<<  The manual says only that the
+    entry "is always converted to a 48-bit fraction" (printed p.27)
+    and nothing of rounding.  The exact value truncated to 48 bits
+    reproduces all eight in-range rows of p.359 lines 33-40; rounding
+    to nearest puts lines 38, 39 and 40 (1.E32, 1.E64, 1.E128) one
+    unit high and is refuted by them.  1.E1 .. 1.E16 are exact in 48
+    bits and cannot tell.  What would settle it is a sentence in
+    C28-6129, or more listed constants whose dropped bits begin with
+    a 1 (1.E32's do; all three deciding rows are inexact).
+
+    >>> OUT OF RANGE IS REFUSED. <<<  printed p.27: "the only decimal
+    quantities that can be expressed in 7030 floating point format
+    must lie within the range 10^-308 to 10^308" -- the N range,
+    exponent +1023 through -1023 (Reference Manual printed p.79).  MCP
+    printed p.359 lines 41 and 42 (1.E512, 9.99999E615) lie outside
+    it and print "3246+ 0000000000000000 +000" and "3246+
+    7364320000000000 +000": EF set with EM 678, the same exponent for
+    two different numbers.  Their exact exponents are 1701 and 2047;
+    EF with the low ten bits (the E+I idiom above) would print 3245
+    and 3777.  No cited rule gives the printed words, so none is
+    invented here and those two entries stay unassembled.
+
+    Arithmetic between entries (printed p.27), the system symbols $PI
+    etc. (printed p.28) and a zero entry (no listed example) are not
+    implemented and are refused."""
+    dec = _dd_decimal_value(field, lineno)
+    if dec is None:
+        raise AssemblerError(f"cannot parse DD(N) literal {field!r} (only "
+                             f"[sign]digits[.digits][E exp][S oct][X exp] "
+                             f"is supported -- C28-6129 printed p.28)", lineno)
+    sign, v, suffix = dec
+    sbyte = 8 if sign == '-' else 0      # S is the 8 of the STUV byte
+    xexp = None
+    for kind, num in re.findall(r'([SX])([+-]?\d+)', suffix):
+        if kind == 'S':
+            # printed p.27 "SIGN BYTE ENTRY": "Any integer that follows
+            # the S is interpreted by STRAP as an octal integer ...
+            # inserted by means of a logical OR into any previously
+            # calculated sign byte"; the N sign byte is four bits, STUV,
+            # so S10 is a minus sign and S7 is TUV (Figure 3, p.19).
+            sbyte |= int(num, 8) & 0xF
+        else:
+            # printed p.27 "EXPONENT ENTRY": "The number following the
+            # X is interpreted by STRAP as a decimal integer and is ...
+            # compiled as the machine exponent ...  It overrules and
+            # replaces the exponent computed by STRAP".
+            xexp = int(num, 10)
+    if v == 0:
+        raise AssemblerError(f"DD(N) literal {field!r} is zero, which is "
+                             f"not implemented (no listed example)", lineno)
+    e = 0
+    while v >= 1:
+        v /= 2
+        e += 1
+    while v * 2 < 1:
+        v *= 2
+        e -= 1
+    frac = (v.numerator << 48) // v.denominator    # truncated: see above
+    if not -1023 <= e <= 1023:
+        raise AssemblerError(
+            f"DD(N) literal {field!r} needs binary exponent {e}, outside "
+            f"+-1023 (C28-6129 printed p.27: 10^-308 to 10^308; Reference "
+            f"Manual printed p.79); MCP printed p.359 lines 41-42 print "
+            f"such entries with words no cited rule gives", lineno)
+    if xexp is not None:
+        if not -1023 <= xexp <= 1023:
+            raise AssemblerError(f"X exponent {xexp} outside +-1023", lineno)
+        e = xexp
+    return ((abs(e) << 53) | ((1 if e < 0 else 0) << 52)
+            | (frac << 4) | sbyte)
+
+
+def parse_dd_literal(field, lineno=None, mode=None):
     field = field.strip()
     if not field:
         # "DD(BU,32),,,,,," (MCP printed p.213 line 52): six null
         # fields, six words of zeros -- C22-6531 printed p.7, "a null
         # field is always compiled as a zero".
         return 0
+    if mode == 'N':
+        return _dd_normalized(field, lineno)
     m = _DD_RADIX_LITERAL.match(field)
     if m:
         radix, digits = int(m.group(1)), "".join(m.group(2).split())
@@ -4293,8 +4528,25 @@ def parse_dd_literal(field, lineno=None):
     try:
         return int(field, 10)
     except ValueError:
-        raise AssemblerError(f"cannot parse DD literal {field!r} "
-                              f"(only decimal and (radix)digits are supported)", lineno)
+        pass
+    # A FIXED-POINT ENTRY WRITTEN WITH A POINT OR E.  C28-6129 printed
+    # p.29 (PDF p.33), Binary Signed VFL: "If a number has no entry
+    # mode at all, it must be a decimal integer, but may in this case
+    # be written with the aid of the E notation", and "A decimal
+    # fraction must have a controlling (Fn) entry mode"; Binary
+    # Unsigned: "Numerical entry is exactly the same as in binary
+    # signed data except that no sign byte is formed".  So "1.E14"
+    # is the integer 10^14 -- MCP printed p.359 line 43, "A1E14
+    # DD(BU,48),1.E14", prints 2657142036440000, which is 10^14 in
+    # octal.  A value that is not an integer is refused ((Fn) is not
+    # implemented), and so is an S or X suffix here.
+    dec = _dd_decimal_value(field, lineno)
+    if dec is not None and not dec[2] and dec[1].denominator == 1:
+        sign, v, _ = dec
+        return -int(v) if sign == '-' else int(v)
+    raise AssemblerError(f"cannot parse DD literal {field!r} "
+                          f"(only decimal, decimal-with-E integers and "
+                          f"(radix)digits are supported)", lineno)
 
 
 # ---------------------------------------------------------------------

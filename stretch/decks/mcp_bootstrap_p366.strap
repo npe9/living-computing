@@ -1,0 +1,187 @@
+! mcp_bootstrap_p366.strap -- MCP printed page 366: the SYSTEM COMMAND
+! package (PUNID 22SCOMD), the OUTPUT COMMAND sub-package (JOUTP,
+! JXOTP) and the EOF COMMAND sub-package (JEOF, ZEOF1/2/3/10/19,
+! JDOIT), lines 1-49.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.116, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22SCOMD  CARD ID WA000240  DIST. OF 3/01
+! 3/01  PAGE NUMBER 366".  The heading row's LOCATION field is BLANK
+! (line 1 is a remark card).
+!
+! THE PAGE.  49 lines; every line number prints a "*".  "*" after the
+! LOCATION on lines 20 and 39.  No TAIL.  Still SCOMD: no PUNID, card
+! series or SLC change.
+!   lines 1-3    remarks (banner on 2, "OUTPUT COMMAND SUB-PACKAGE").
+!   lines 4-15   JOUTP .. B,ZEXITX, 234671.00 .. 234700.00.
+!   lines 16-18  remarks (banner on 17, "EOF COMMAND SUB-PACKAGE").
+!   lines 19-49  JEOF .. B,ZEOF10, 234700.40 .. 234721.40 (a half
+!                word; next 234722.00), then blank paper.
+!
+! JOIN.  Line 4 JOUTP prints 234671.00, exactly where p.361's B,JOUTP
+! (234671.10) points; p.365's last line (Z LIST table) ends at
+! 234670.00 + one word = 234671.00, so the counter is contiguous with
+! p.365 (sheet reading; p.365 is not landed, hence the hard SLC).
+! p.367 (JEOJ, B target 234722.10 on p.361) should open at 234722.00.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "CTIC010"/"CTIOO10"/"CTIC01C" (lines 5,7,9,20,22,24,26) = CTI0010
+!     (connective 0010; the round glyphs are digits; the 0010 printing
+!     with two closed 0s on lines 20, 24).
+!   * "J CUTP" (line 4) = JOUTP: p.361 B,JOUTP; C22-6728 "JOUTP".
+!   * "JXCTP" (line 6) = JXOTP (line 8, label line 12; same binary
+!     234676.74 C2 on 6 and 8).
+!   * "JCP" (line 7) = JOP; "JCV" (line 24) = JOV; "JOF" (line 20):
+!     p.363 lines 44-51 define J OP 2.0, J SR 4.0, J J1 8.0, J J4 16.0,
+!     J CV(=OV, "-OVER-LAPPED") 32.0, J NV 64.0, J ON 128.0,
+!     J CF(=OF, "-OFF-LINE") 256.0; p.362 prints JOV/JOF/JOP; the
+!     binaries 000002.00 (JOP) and 000254.00 (JSR+JJ1+JON+JOV = 4+8+
+!     128+32 = 172) confirm.  p.363's deck may spell these; coordinator
+!     cross-check.
+!   * "J EOF"/"Z EOF.."/"Z ECF.." (EOF prints O open throughout):
+!     written EOF (the "EOF COMMAND" banner, p.361's JEOF, C22-6728
+!     ZEOF10/ZEOF19).
+!   * "J DC IT" (line 34), "J DOIT" (40, 48) = JDOIT (C22-6728 JDOIT).
+!   * ",S CUT PT" (13) = SOUTPT; ",SLCG4" (30) = SLOG4; ",SKCM" (35) =
+!     SKOM (as p.265 writes it; landed p.106 "S KOM" 79.32 = 117.40);
+!     ",S LOG 1" (43) = SLOG1 -- all resident, binaries agree.
+!   * "NOP,YJCDBU" (32): YJCDBU (C22-6728-1 typesets YJCDBU).
+!   * "Z ER EX2" (27, 37) = ZEREX2; "JNOP X" (46) = JNOPX.
+!   * hex bytes "C0"/"0C"-as-C0 on B/NOP rows (lines 11, 31, 39,
+!     42, 47) = 00 (lesson 6).
+!
+! EXTERNALS.  Resident (landed): DMCP p.108, SOUTPT/SLOG4/SLOG1/SKOM
+! p.106, YBCBU p.274, YC1CA p.265.  SCOMD, not landed (forms copied
+! from the defining cards as read on printed pp.363 and 365):
+! JXMSK (p.363 l.40 "SYN,$X13"), JOP JSR JJ1 JJ4 JOV JNV JON JOF
+! (p.363 ll.44-51), ZEREX2 ZEXITX JNOPX JFINX (p.365 ll.7, 9, 18, 19).
+! YJCDBU: not landed anywhere; value from this page's NOP (line 32),
+! half word only, plain SYN.
+!
+! CARD SERIALS.  WA000240 .. WA000288, one per line, none shared or
+! skipped.
+
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B lines 12, 29, 34, 42 000040.10
+SOUTPT  SYN, 77.0                    ! landed p.106; line 13 000115.00
+SLOG4   SYN, 80.32                   ! landed p.106; line 30 000120.40 (printed "SLCG4")
+SLOG1   SYN, 81.32                   ! landed p.106; line 43 000121.40 (printed "S LOG 1")
+SKOM    SYN, 79.32                   ! landed p.106 "S KOM"; line 35 000117.40 (printed "SKCM")
+YBCBU   SYN(BU), (8)231462.0         ! p.274 line 19 DR(BU),(15), as p.291's stand-in writes it
+YC1CA   SYN(BU,32,8), (8)230765.0    ! landed p.265 line 30 "YC1CA ,0" (a half-word instruction) at 230765.00
+YJCDBU  SYN, (8)020707.0             ! not landed; NOP line 32 020707.30, half word only
+JXMSK   SYN, $X13                    ! p.363 line 40 "J XMSK SYN,$X13" (prints 000035.00) -- not landed
+JOP     SYN, 2.0                     ! p.363 line 44 "J OP SYN,2.0" -- not landed
+JSR     SYN, 4.0                     ! p.363 line 45 "J SR SYN,4.0" -- not landed
+JJ1     SYN, 8.0                     ! p.363 line 46 "J J1 SYN,8.0" -- not landed
+JJ4     SYN, 16.0                    ! p.363 line 47 "J J4 SYN,16.0" -- not landed
+JOV     SYN, 32.0                    ! p.363 line 48 "J CV SYN,32.0 -OVER-LAPPED" -- not landed
+JNV     SYN, 64.0                    ! p.363 line 49 "J NV SYN,64.0" -- not landed
+JON     SYN, 128.0                   ! p.363 line 50 "J ON SYN,128.0" -- not landed
+JOF     SYN, 256.0                   ! p.363 line 51 "J CF SYN,256.0 -OFF-LINE" -- not landed
+ZEREX2  SYN(BU,32,8), (8)234632.0    ! p.365 line 7 "Z ER EX2 LX,12,ZEX2" at 234632.00 -- not landed; B line 11 234632.10
+ZEXITX  SYN(BU,32,8), (8)234633.0    ! p.365 line 9 "Z EXITX LWF(U),..." at 234633.00 -- not landed; B line 15 234633.10
+JNOPX   SYN, (8)234637.0             ! p.365 line 18 "JNOPX SYN,$" at 234637.00 -- not landed; LVI line 28 234637.31
+JFINX   SYN(BU,64,8), (8)234637.0    ! p.365 line 19 "J FINX TI,16,JSTLR,$X0" (full word) at 234637.00 -- not landed
+
+        SLC, (8)234671.0             ! line 4's printed location (contiguous with p.365)
+! line  1  -
+! line  2  -     *****OUTPUT COMMAND SUB-PACKAGE*****
+! line  3  -
+JOUTP   SX,JXMSK,$R                                          ! line  4  printed "J CUTP"
+        CTI0010(BU,18),JSR+JJ4,46                            ! line  5
+        BRZ,JXOTP                                            ! line  6  printed "JXCTP"  -GO TO EXECUTE
+        CTI0010(BU,18),JOP,46                                ! line  7  printed "JCP"
+        BRZ,JXOTP                                            ! line  8
+        CTI0010(BU,18),JSR+JJ1+JOV,46                        ! line  9
+        BRZ,JFINX                                            ! line 10
+        B,ZEREX2                                             ! line 11
+JXOTP   B,DMCP                                               ! line 12  printed "B,D MCP"
+        ,SOUTPT                                              ! line 13  printed ",S CUT PT"
+        LVI,12,0.0                                           ! line 14
+        B,ZEXITX                                             ! line 15
+! line 16  -
+! line 17  -     *****EOF COMMAND SUB-PACKAGE*****
+! line 18  -
+JEOF    SX,JXMSK,$R                                          ! line 19
+        CTI0010(BU,18),JSR+JJ1+JOF,46                        ! line 20  ("*" after the location)
+        BRZ,ZEOF1                                            ! line 21
+        CTI0010(BU,18),JSR+JJ4+JNV,46                        ! line 22
+        BRZ,ZEOF2                                            ! line 23
+        CTI0010(BU,18),JSR+JJ1+JON+JOV,46                    ! line 24  printed "JCV"
+        BRZ,ZEOF3                                            ! line 25
+        CTI0010(BU,18),JSR+JJ4+JOV,46                        ! line 26
+        BZRZ,ZEREX2                                          ! line 27
+        LVI,12,JNOPX                                         ! line 28
+ZEOF10  B,DMCP                                               ! line 29
+        ,SLOG4                                               ! line 30  printed ",SLCG4"
+        NOP,YBCBU                                            ! line 31  -HOLLERITH FIRST WORD ADDRESS
+        NOP,YJCDBU                                           ! line 32  -A8 FIRST WORD ADDRESS
+        B,0.0($12)                                           ! line 33
+JDOIT   B,DMCP                                               ! line 34  printed "J DC IT", "B,D MCP"
+        ,SKOM                                                ! line 35  printed ",SKCM"
+        ,1.0                                                 ! line 36
+        B,ZEREX2                                             ! line 37
+        LVI,12,1.0                                           ! line 38
+        B,ZEXITX                                             ! line 39  ("*" after the location)
+ZEOF3   LVI,12,JDOIT                                         ! line 40
+ZEOF19  LV,2,YC1CA                                           ! line 41
+        B,DMCP                                               ! line 42
+        ,SLOG1                                               ! line 43
+        NOP,0.0($2)                                          ! line 44
+        B,0.0($12)                                           ! line 45
+ZEOF1   LVI,12,JNOPX                                         ! line 46  printed "JNOP X"
+        B,ZEOF19                                             ! line 47
+ZEOF2   LVI,12,JDOIT                                         ! line 48
+        B,ZEOF10                                             ! line 49
+
+!SYM JOUTP  234671.00
+!SYM JXOTP  234676.40
+!SYM JEOF   234700.40
+!SYM ZEOF10 234707.40
+!SYM JDOIT  234712.00
+!SYM ZEOF3  234715.00
+!SYM ZEOF19 234715.40
+!SYM ZEOF1  234720.00
+!SYM ZEOF2  234721.00
+!CHECK 234671.00 | 000011.33 10 | line  4 JOUTP SX,JXMSK,$R
+!CHECK 234671.40 | 000024.00 80 422027.05 70 | line  5 CTI0010(BU,18),JSR+JJ4,46
+!CHECK 234672.40 | 234676.74 C2 | line  6 BRZ,JXOTP (printed "JXCTP")
+!CHECK 234673.00 | 000002.00 80 422027.05 70 | line  7 CTI0010(BU,18),JOP,46 (printed "JCP")
+!CHECK 234674.00 | 234676.74 C2 | line  8 BRZ,JXOTP
+!CHECK 234674.40 | 000054.00 80 422027.05 70 | line  9 CTI0010(BU,18),JSR+JJ1+JOV,46
+!CHECK 234675.40 | 234637.34 C2 | line 10 BRZ,JFINX
+!CHECK 234676.00 | 234632.10 00 | line 11 B,ZEREX2 (byte prints "C0")
+!CHECK 234676.40 | 000040.10 00 | line 12 JXOTP B,DMCP
+!CHECK 234677.00 | 000115.00 80 | line 13 ,SOUTPT
+!CHECK 234677.40 | 000000.31 01 | line 14 LVI,12,0.0
+!CHECK 234700.00 | 234633.10 00 | line 15 B,ZEXITX
+!CHECK 234700.40 | 000011.33 10 | line 19 JEOF SX,JXMSK,$R
+!CHECK 234701.00 | 000414.00 80 422027.05 70 | line 20 CTI0010(BU,18),JSR+JJ1+JOF,46
+!CHECK 234702.00 | 234720.34 C2 | line 21 BRZ,ZEOF1
+!CHECK 234702.40 | 000124.00 80 422027.05 70 | line 22 CTI0010(BU,18),JSR+JJ4+JNV,46
+!CHECK 234703.40 | 234721.34 C2 | line 23 BRZ,ZEOF2
+!CHECK 234704.00 | 000254.00 80 422027.05 70 | line 24 CTI0010(BU,18),JSR+JJ1+JON+JOV,46 (printed "JCV")
+!CHECK 234705.00 | 234715.34 C2 | line 25 BRZ,ZEOF3
+!CHECK 234705.40 | 000064.00 80 422027.05 70 | line 26 CTI0010(BU,18),JSR+JJ4+JOV,46
+!CHECK 234706.40 | 234632.34 C0 | line 27 BZRZ,ZEREX2 (a real C0: BZRZ, unlike BRZ C2)
+!CHECK 234707.00 | 234637.31 01 | line 28 LVI,12,JNOPX
+!CHECK 234707.40 | 000040.10 00 | line 29 ZEOF10 B,DMCP
+!CHECK 234710.00 | 000120.40 80 | line 30 ,SLOG4
+!CHECK 234710.40 | 231462.30 00 | line 31 NOP,YBCBU (byte prints "C0")
+!CHECK 234711.00 | 020707.30 00 | line 32 NOP,YJCDBU
+!CHECK 234711.40 | 000000.10 0C | line 33 B,0.0($12)
+!CHECK 234712.00 | 000040.10 00 | line 34 JDOIT B,DMCP
+!CHECK 234712.40 | 000117.40 80 | line 35 ,SKOM
+!CHECK 234713.00 | 000001.00 80 | line 36 ,1.0
+!CHECK 234713.40 | 234632.10 00 | line 37 B,ZEREX2
+!CHECK 234714.00 | 000001.31 01 | line 38 LVI,12,1.0
+!CHECK 234714.40 | 234633.10 00 | line 39 B,ZEXITX (byte prints "C0")
+!CHECK 234715.00 | 234712.31 01 | line 40 ZEOF3 LVI,12,JDOIT
+!CHECK 234715.40 | 230765.04 30 | line 41 ZEOF19 LV,2,YC1CA
+!CHECK 234716.00 | 000040.10 00 | line 42 B,DMCP (byte prints "C0")
+!CHECK 234716.40 | 000121.40 80 | line 43 ,SLOG1
+!CHECK 234717.00 | 000000.30 02 | line 44 NOP,0.0($2)
+!CHECK 234717.40 | 000000.10 0C | line 45 B,0.0($12)
+!CHECK 234720.00 | 234637.31 01 | line 46 ZEOF1 LVI,12,JNOPX
+!CHECK 234720.40 | 234715.50 00 | line 47 B,ZEOF19 (byte prints "C0")
+!CHECK 234721.00 | 234712.31 01 | line 48 ZEOF2 LVI,12,JDOIT
+!CHECK 234721.40 | 234707.50 00 | line 49 B,ZEOF10

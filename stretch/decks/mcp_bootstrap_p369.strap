@@ -1,0 +1,208 @@
+! mcp_bootstrap_p369.strap -- MCP printed page 369: inside the SYSTEM
+! COMMAND package (PUNID 22SCOMD): the tail of the character-convert
+! routine (Z END 1 .. Z END), Z CG 5, Z XW CV, the I/O CHANGE command
+! entry Z IOCH (operator/mode tests, then Z COMP C: channel number
+! legality), and the UNIT AND CHANNEL REQUEST section (Z JOE, Z ACTON,
+! R BYPTT), lines 1-52.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.119, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22SCOMD  CARD ID WA000387  DIST. OF 3/01
+!  3/01  PAGE NUMBER 369"; the heading row's LOCATION field is 235015,
+! line 1's word (docs/transcription_workflow.md step 1).
+!
+! THE PAGE.  Contiguous from 235015.40 (line 1) to 235062.00 (line 52,
+! a half word; next 235062.40), then blank paper.  Every line number
+! prints a "*"; a "*" after the LOCATION on lines 7, 22 and 42.  No
+! SLC, no TAIL, no change of PUNID or card series.
+!   line  31     remark card ("-" in NAME, blank).
+!   line  32     remark banner "-****** UNIT AND CHANNEL REQUEST ******".
+!   line   7     Z XW CV XW,$L,3.0 prints 000010.00+ 000 000003 000000.
+!
+! EXTERNALS (every one checked against landed decks and staging):
+!   resident (landed p.99 / p.103, forms copied): SXCHAN, SCHANK (p.103
+!     "SCHANK SYN(BU,18), SXCHAN+.28" in its DEFINING form), SUNITK,
+!     SCHOP, SMULTI, SSEL, SMOUNT, SCNFCG (stand-in form as the landed
+!     decks write it).
+!   SCOMD, NOT LANDED, values READ OFF THE DEFINING PAGES' INK (printed
+!     p.363 PDF p.113 lines 33-50; printed p.376 PDF p.126 lines 4-13):
+!     JFLDB  "J FLD B DRZ,(12)" at 234560.00          (p.363 line 33)
+!     JXMSK  "J XMSK SYN,$X13"  prints 000035.00+     (p.363 line 40)
+!     JOP 2.0, JSR 4.0, JJ1 8.0, JJ4 16.0, JOV 32.0, JNV 64.0,
+!     JON 128.0  ("J OP" .. "J ON" SYN,n.0, p.363 lines 44-50)
+!     ZADD, ZALL "(AX)DDI(BU,18,6),ADDX / ALLX" print +00616464 /
+!       +00614343 BU,22,06 (p.376 lines 4-5): DDI is not implemented,
+!       stood in as SYN(BU,18,6), integer, as p.226's VD15.
+!     ZREQUN "Z REQ UN SYN,$6", ZREQCH "Z REQ CH SYN,$8" (p.376
+!       lines 8, 10).
+!     $PG0 is a system symbol ("Z SCN P2 SYN,$PG0" prints 000013.51+
+!       on p.376 line 13); this page's "$PGO" (line 18) is $PG0.
+!   SCOMD, NOT LANDED, value from THIS PAGE'S BINARY only (plain SYN):
+!     ZEREX1, ZEREX2, JNOPX, ZCONVC, ZDSKCH, ZCHONY, ZCHON2, RMOVE.
+!   ZIOCH is DEFINED here (line 8, 235023.00) -- p.361's stand-in
+!   "ZIOCH SYN,(8)235023.0" agrees.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 8 label prints "ZICCH": ZIOCH (p.361 line 33 B,ZIOCH prints
+!     235023.10, this card's own location; open O).
+!   * line 16 "JCP" = JOP: p.363 line 44 defines "J OP SYN,2.0
+!     -OPERATOR", the remark here is "-TEST IF OPERATOR SOURCE", and the
+!     binary 000002.00 is 2.0.  No JCP anywhere.
+!   * line 18 "$PGO" = $PG0 (system pseudo-op symbol; binary 000013.51
+!     is $PG0's address per p.376 line 13).
+!   * line 42 "Z ACT ON" = ZACTON (line 45's label); line 22 "Z COMP C"
+!     = ZCOMPC; "Z REQ CH"/"ZREQ CH"/"Z REQ UN" = ZREQCH/ZREQUN;
+!     "SMCUNT" (line 46) = SMOUNT (p.99; open O).
+!   * CTIC010/CTICO10 on lines 10-16 = CTI0010 (connective digits).
+!   * hex byte printed "CO" on line 5 (B,$) = 00 (B assembles 00); the
+!     "C0" on the BZRZ rows (lines 17, 47) is a real C0 and "C2" on
+!     BRZ/BAE rows a real C2 (the statements assemble them).
+!
+! CARD SERIALS.  WA000387 .. WA000436; WA000406 prints on BOTH lines 20
+! and 21, WA000419 on BOTH lines 34 and 35 (52 lines, 50 serials).
+! Recorded, not explained.
+
+SXCHAN  SYN(BU), (8)215002.0         ! landed p.103 line 28 "SXCHAN XW,0"; LX line 24 215002.20
+SCHANK  SYN(BU,18), SXCHAN+.28       ! landed p.103 line 29 (defining form); K line 22 215002.34
+SUNITK  SYN(BU,4), 0.59              ! landed p.99 line 40; K line 36 000000.73
+SCHOP   SYN(BU,1), 0.26              ! landed p.99 line 22; BZB line 42 .32
+SMULTI  SYN(BU,1), 0.27              ! landed p.99 line 24; BZB lines 43, 45 .33
+SSEL    SYN(BU,1), 0.39              ! landed p.99 line 32; BZB line 44 .47
+SMOUNT  SYN(BU,1), 0.51              ! landed p.99 line 42; C0011 line 46 .63 (printed "SMCUNT")
+SCNFCG  SYN(BU,1), (8)215001.02      ! landed p.103 line 12 SYN(BU,1),SCOMRG+.2; CM1111 line 51 215001.02
+JFLDB   SYN, (8)234560.0             ! not landed; p.363 line 33 "J FLD B DRZ,(12)" at 234560.00
+JXMSK   SYN, $X13                    ! not landed; p.363 line 40 "J XMSK SYN,$X13" 000035.00+
+JOP     SYN, 2.0                     ! not landed; p.363 line 44 "J OP SYN,2.0" (printed "JCP" here)
+JSR     SYN, 4.0                     ! not landed; p.363 line 45
+JJ1     SYN, 8.0                     ! not landed; p.363 line 46
+JJ4     SYN, 16.0                    ! not landed; p.363 line 47
+JOV     SYN, 32.0                    ! not landed; p.363 line 48 "J CV" (open O)
+JNV     SYN, 64.0                    ! not landed; p.363 line 49
+JON     SYN, 128.0                   ! not landed; p.363 line 50
+ZADD    SYN(BU,18,6), (8)616464      ! not landed; p.376 line 4 (AX)DDI(BU,18,6),ADDX +00616464 -- DDI stand-in as p.226 VD15
+ZALL    SYN(BU,18,6), (8)614343      ! not landed; p.376 line 5 (AX)DDI(BU,18,6),ALLX +00614343 -- DDI stand-in
+ZREQUN  SYN, $6                      ! not landed; p.376 line 8 "Z REQ UN SYN,$6"
+ZREQCH  SYN, $8                      ! not landed; p.376 line 10 "Z REQ CH SYN,$8"
+ZEREX1  SYN, (8)234631.0             ! not landed; B line 6 234631.10, half word only
+ZEREX2  SYN, (8)234632.0             ! not landed; BZRZ line 17 234632.34, half word only
+JNOPX   SYN, (8)234637.0             ! not landed; BRZ line 13 234637.34, half word only
+ZCONVC  SYN, (8)235004.0             ! not landed; B line 21 235004.10, half word only
+ZDSKCH  SYN, (8)235325.40            ! not landed; BZAH line 27 235325.77, half word only
+ZCHONY  SYN, (8)235211.0             ! not landed; BAE line 30 235211.36, half word only
+ZCHON2  SYN, (8)235215.0             ! not landed; BPG1 line 52 235215.25, half word only
+RMOVE   SYN, (8)235115.0             ! not landed; CM line 8 235115.23 = RMOVE.19, half word only
+
+        SLC, (8)235015.40
+ZEND1   BXCZ,ZEND2                                           ! line  1
+        LCV(DU,6,6),-.12($5),46                              ! line  2  -CONVERT ONE CHARACTER
+        B,ZEND                                               ! line  3
+ZEND2   LCV(DU,12,6),-.18($5),46                             ! line  4  -CONVERT TWO CHARACTERS
+ZEND    B,$                                                  ! line  5  -RETURN
+ZOG5    B,ZEREX1                                             ! line  6  (printed "Z CG 5": open O; p.368 lines 36-39 print ZOG closed)
+ZXWCV   XW,$L,3.0                                            ! line  7
+ZIOCH   CM1111(BU,1),RMOVE.19                                ! line  8  printed "ZICCH"
+        SX,JXMSK,$L                                          ! line  9
+        CTI0010(BU,18),JSR+JNV,-18                           ! line 10
+        BRZ,ZTSTC1                                           ! line 11  -BRANCH IF YES TO ACTION
+        CTI0010(BU,18),JSR+JJ4+JOV,-18                       ! line 12
+        BRZ,JNOPX                                            ! line 13
+        CTI0010(BU,18),JSR+JJ1+JON+JOV,-18                   ! line 14
+        BRZ,ZTSTC1                                           ! line 15  -BRANCH IF YES TO ACTION
+        CTI0010(BU,18),JOP,-18                               ! line 16  -TEST IF OPERATOR SOURCE  printed "JCP"
+        BZRZ,ZEREX2                                          ! line 17
+ZTSTC1  CM0000(BU,6),$PG0                                    ! line 18  -INITIALIZE SWITCHES  printed "$PGO"
+        LVI,5,JFLDB+2.0                                      ! line 19
+        SIC,ZEND                                             ! line 20
+        B,ZCONVC                                             ! line 21
+ZCOMPC  K(BU,18),SCHANK,46                                   ! line 22  -COMPARE MAX BASIC EXCH CHAN
+        BZAL,ZEREX1                                          ! line 23
+        LX,ZREQCH,SXCHAN                                     ! line 24  -GET BINARY CHANNEL NUMBER
+        V+,ZREQCH,$R                                         ! line 25
+        KI(BU,18),31.0,46                                    ! line 26  -COMPARE WITH MAX DISK CHAN
+        BZAH,ZDSKCH                                          ! line 27  -BRANCH IF DISK CHAN
+        LI(BU,18),ZALL                                       ! line 28
+        KF(BU,18),JFLDB+3.0                                  ! line 29
+        BAE,ZCHONY                                           ! line 30
+! line 31  -
+! line 32  -****** UNIT AND CHANNEL REQUEST ******
+        LVI,5,JFLDB+3.0                                      ! line 33
+        SIC,ZEND                                             ! line 34
+        B,ZCONVC                                             ! line 35  -GET UNIT NUMBER
+        K(BU,4),SUNITK(ZREQCH),46                            ! line 36  -IS UNIT NUMBER LEGAL FOR CHANNEL
+        BZAL,ZEREX1                                          ! line 37
+        LV,ZREQUN,0.0(ZREQCH)                                ! line 38  -GET UNIT STATUS ADDR
+        V+,ZREQUN,$R                                         ! line 39
+ZJOE    BE,$+.32                                             ! line 40
+        BD,$+.32                                             ! line 41
+        BZB,SCHOP(ZREQCH),ZACTON                             ! line 42  -BRANCH IF NOT OPERATING
+        BZB,SMULTI(ZREQCH),ZJOE                              ! line 43  -OPER.,BR IF SINGLE
+        BZB,SSEL(ZREQUN),ZJOE                                ! line 44
+ZACTON  BZB,SMULTI(ZREQCH),RBYPTT                            ! line 45
+        C0011(BU,3),SMOUNT(ZREQUN)                           ! line 46  printed "SMCUNT"
+        BZRZ,RBYPTT                                          ! line 47
+        CM0000(BU,1),RMOVE.19                                ! line 48
+RBYPTT  L(BU,48),JFLDB+4.0                                   ! line 49
+        KI(BU,18,6),ZADD,30                                  ! line 50  -IS IT ADD
+        CM1111,SCNFCG                                        ! line 51  -SET IOASSN BIT
+        BPG1,ZCHON2                                          ! line 52  -BRANCH IF CHAN ONLY REQUEST
+
+!SYM ZEND1  235015.40
+!SYM ZEND2  235017.40
+!SYM ZEND   235020.40
+!SYM ZOG5   235021.00
+!SYM ZXWCV  235022.00
+!SYM ZIOCH  235023.00
+!SYM ZTSTC1 235032.40
+!SYM ZCOMPC 235035.00
+!SYM ZJOE   235047.40
+!SYM ZACTON 235053.40
+!SYM RBYPTT 235057.00
+!CHECK 235015.40 | 235017.70 42 | line 1 Z END 1 BXCZ,Z END 2
+!CHECK 235016.00 | 777777.64 85 006627.24 30 | line 2 LCV(DU,6,6),-.12($5),46
+!CHECK 235017.00 | 235020.50 00 | line 3 B,Z END
+!CHECK 235017.40 | 777777.56 85 014627.24 30 | line 4 Z END 2 LCV(DU,12,6),-.18($5),46 (byte prints "3C")
+!CHECK 235020.40 | 235020.50 00 | line 5 Z END B,$ (byte prints "CO")
+!CHECK 235021.00 | 234631.10 00 | line 6 Z CG 5 B,Z ER EX1
+!CHECK 235022.00 | 000010.00+ 000 000003 000000 | line 7 Z XW CV XW,$L,3.0
+!CHECK 235023.00 | 235115.23 80 001000.36 F0 | line 8 ZIOCH CM1111(BU,1),RMOVE.19 (printed "ZICCH")
+!CHECK 235024.00 | 000010.33 10 | line 9 SX,JXMSK,$L
+!CHECK 235024.40 | 000104.00 80 422067.05 70 | line 10 CTI0010(BU,18),JSR+JNV,-18
+!CHECK 235025.40 | 235032.74 C2 | line 11 BRZ,Z TST C1
+!CHECK 235026.00 | 000064.00 80 422067.05 70 | line 12 CTI0010(BU,18),JSR+JJ4+JOV,-18
+!CHECK 235027.00 | 234637.34 C2 | line 13 BRZ,JNOPX
+!CHECK 235027.40 | 000254.00 80 422067.05 70 | line 14 CTI0010(BU,18),JSR+JJ1+JON+JOV,-18
+!CHECK 235030.40 | 235032.74 C2 | line 15 BRZ,Z TST C1
+!CHECK 235031.00 | 000002.00 80 422067.05 70 | line 16 CTI0010(BU,18),JCP,-18 (JCP = JOP)
+!CHECK 235032.00 | 234632.34 C0 | line 17 BZRZ,Z ER EX2
+!CHECK 235032.40 | 000013.51 80 006000.00 F0 | line 18 Z TST C1 CM0000(BU,6),$PG0 (printed "$PGO")
+!CHECK 235033.40 | 234562.13 01 | line 19 LVI,5,J FLDB+2.0
+!CHECK 235034.00 | 235020.40 80 | line 20 SIC,Z END
+!CHECK 235034.40 | 235004.10 00 | line 21 B,Z CONV C
+!CHECK 235035.00 | 215002.34 80 022027.21 10 | line 22 Z COMP C K(BU,18),S CHAN K,46
+!CHECK 235036.00 | 234631.36 40 | line 23 BZAL,ZEREX1
+!CHECK 235036.40 | 215002.20 10 | line 24 LX,Z REQ CH,S XCHAN
+!CHECK 235037.00 | 000011.20 B0 | line 25 V+,Z REQ CH,$R
+!CHECK 235037.40 | 000037.00 80 422027.21 10 | line 26 KI(BU,18),31.0,46
+!CHECK 235040.40 | 235325.77 40 | line 27 BZAH,Z DSKCH
+!CHECK 235041.00 | 614343.00 80 422000.20 50 | line 28 LI(BU,18),Z ALL
+!CHECK 235042.00 | 234563.00 80 022000.23 10 | line 29 KF(BU,18),J FLDB+3.0
+!CHECK 235043.00 | 235211.36 C2 | line 30 BAE,Z CHONY
+!CHECK 235043.40 | 234563.13 01 | line 33 LVI,5,J FLDB+3.0
+!CHECK 235044.00 | 235020.40 80 | line 34 SIC,Z END
+!CHECK 235044.40 | 235004.10 00 | line 35 B,Z CONV C
+!CHECK 235045.00 | 000000.73 88 004027.21 10 | line 36 K(BU,4),S UNIT K(ZREQCH),46
+!CHECK 235046.00 | 234631.36 40 | line 37 BZAL,Z ER EX1
+!CHECK 235046.40 | 000000.14 38 | line 38 LV,Z REQ UN,0.0(Z REQ CH)
+!CHECK 235047.00 | 000011.14 B0 | line 39 V+,Z REQUN,$R
+!CHECK 235047.40 | 235050.00 00 | line 40 Z JOE BE,$+.32
+!CHECK 235050.00 | 235050.44 00 | line 41 BD,$+.32
+!CHECK 235050.40 | 000000.32 88 235053.74 00 | line 42 BZB,S CHOP(Z REQ CH),Z ACT ON
+!CHECK 235051.40 | 000000.33 88 235047.74 00 | line 43 BZB,S MULTI(ZREQ CH),Z JOE
+!CHECK 235052.40 | 000000.47 86 235047.74 00 | line 44 BZB,S SEL(Z REQ UN),Z JOE
+!CHECK 235053.40 | 000000.33 88 235057.34 00 | line 45 ZACTON BZB,SMULTI(ZREQCH),RBYPTT
+!CHECK 235054.40 | 000000.63 86 003000.06 70 | line 46 C0011(BU,3),SMOUNT(ZREQUN) (printed "SMCUNT")
+!CHECK 235055.40 | 235057.34 C0 | line 47 BZRZ,RBYPTT
+!CHECK 235056.00 | 235115.23 80 001000.00 F0 | line 48 CM0000(BU,1),RMOVE.19
+!CHECK 235057.00 | 234564.00 80 060000.20 50 | line 49 RBYPTT L(BU,48),JFLDB+4.0
+!CHECK 235060.00 | 616464.00 80 422617.21 10 | line 50 KI(BU,18,6),Z ADD,30
+!CHECK 235061.00 | 215001.02 80 001000.36 F0 | line 51 CM1111,S CNF CG
+!CHECK 235062.00 | 235215.25 42 | line 52 BPG1,Z CHON2

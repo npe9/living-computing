@@ -87,6 +87,12 @@ overlay_fill_is_exactly_the_known_words, MEASURED 2026-11-06:
     written_words made every word in the image    FAIL both (0, 582) and
                                                   (0, 784)
 
+  re-measured 2026-11-06 with three overlays (through printed p.377):
+    control                                       PASS, all three images
+    written_words made every word in the image    FAIL all three: LOADER
+                                                  (0, 582), $DUMP (0, 133),
+                                                  SCOMD (0, 589)
+
 THE END TARGET IS A PLACEHOLDER.  build() always appends "END, <sym>",
 and MCP's body entry point has not been established, so SDISP is
 passed to make it assemble and nothing here depends on it.  Finding
@@ -104,19 +110,21 @@ import mcp_image                                          # noqa: E402
 import verify_mcp_page                                    # noqa: E402
 from listing_oracle import check_rows                     # noqa: E402
 
-FIRST, LAST = 99, 345
+FIRST, LAST = 99, 377
 
-# >>> THE BODY IS ONE RESIDENT PART AND TWO OVERLAYS. <<<  printed
+# >>> THE BODY IS ONE RESIDENT PART AND THREE OVERLAYS. <<<  printed
 # p.319 line 14 reserves "Y MPBUF DRZ(BU),1088 -RESERVE ROOM FOR
-# OVERLAID AREA", and two programs are assembled INTO it: the JOB
+# OVERLAID AREA", and three programs are assembled INTO it: the JOB
 # CONTROL BINARY LOADER (PUNID 22LOADER, printed p.320 line 10
-# "SLC,YMPBUF") and the debugger/$DUMP (PUNID 22$DUMP, printed p.335
-# line 8 "SLC,YMPBUF", the same 234424.00).  They occupy the same
+# "SLC,YMPBUF"), the debugger/$DUMP (PUNID 22$DUMP, printed p.335
+# line 8 "SLC,YMPBUF", the same 234424.00) and the SYSTEM COMMAND
+# package (PUNID 22SCOMD, card series WA, printed p.361 line 7
+# "SLC,YMPBUF").  They occupy the same
 # words, so no one image holds both: merging them refused at once on
 # words p.320 and p.335 both write.  Each overlay is merged with the
 # resident pages it runs beside, and each image is checked whole.
 RESIDENT = (99, 319)
-OVERLAYS = (("LOADER", 320, 334), ("$DUMP", 335, LAST))
+OVERLAYS = (("LOADER", 320, 334), ("$DUMP", 335, 360), ("SCOMD", 361, LAST))
 
 
 def _pages(a, b):
@@ -150,6 +158,7 @@ RESIDENT_SKIP_HOLES = {
 OVERLAY_SKIP_HOLES = {
     "LOADER": set(),
     "$DUMP": set(),
+    "SCOMD": set(),
 }
 
 # >>> INSIDE THE OVERLAID AREA A LOST PAGE IS NOT A HOLE. <<<  Y MPBUF
@@ -177,11 +186,40 @@ FILL_ONLY = {
         # past p.334's Z FINIS VF at 236464.00: the end of Y MPBUF,
         # which the LOADER does not use.
         | _span(0o236465, 0o236523)),
-    # The $DUMP overlay is landed through printed p.345 (235103.40);
-    # everything after is pages not yet transcribed.  This shrinks as
-    # they land.
-    "$DUMP": _span(0o235104, 0o236523),
+    "$DUMP": (
+        # printed p.358 lines 34-37, the dump's four DRZ(N) work areas
+        # ATEMPD 236043, ABUFF 236044, APCOL1 236105, AMNMBF 236126,
+        # ending where AHLFWD's flag word prints at 236147.
+        _span(0o236043, 0o236146)
+        # printed p.359 lines 40-42, one card "DD(N),1.E128,1.E512,
+        # 9.99999E615": 1.E512 and 9.99999E615 lie outside the range
+        # C28-6129 printed p.27 gives and print one exponent for two
+        # numbers, so the card is not assembled (the deck SLCs past).
+        | _span(0o236211, 0o236213)
+        # past printed p.360's last VF at 236425.00 -- p.361's header
+        # cards at 236425.31 belong to the SCOMD image -- the end of
+        # Y MPBUF, which the $DUMP does not use.
+        | _span(0o236426, 0o236523)),
+    "SCOMD": (
+        # printed p.363 lines 31-32, "J STLR DR(BU,64),(16)" and
+        # "J C BUF DR(BU,6),(80)": reservations, not zeroed.
+        _span(0o234530, 0o234556)
+        # printed p.363 line 33, "J FLD B DRZ,(12)" -- a DR(N), twelve
+        # words from 234560.00.
+        | _span(0o234560, 0o234573)
+        # printed p.365 line 15, "J ERZ DRZ(BU,64),1".
+        | {0o234636}
+        # printed p.371 line 45, "Z ST IND DRZ(N),(1)".
+        | {0o235155}
+        # SCOMD is landed through printed p.377 (235453.40); everything
+        # after is pages not yet transcribed.  This shrinks as they land.
+        | _span(0o235454, 0o236523)),
 }
+
+# A floor on the rows each image checks, so an image that silently
+# lost its pages cannot pass on an empty check.  The first image
+# checks every resident row; an overlay checks its own pages.
+ROWS_FLOOR = {"LOADER": 7000, "$DUMP": 1000, "SCOMD": 600}
 
 
 def main():
@@ -195,7 +233,7 @@ def main():
         print(f"{'PASS' if ok else 'FAIL'} {name} = {got}"
               f"{'' if ok else f' expected {want}'}")
 
-    check("body_page_count", len(body_pages()), 243)
+    check("body_page_count", len(body_pages()), 275)
     resident = _pages(*RESIDENT)
     for name, a, b in OVERLAYS:
         print(f"--- {name}: resident pp.{RESIDENT[0]}-{RESIDENT[1]} + pp.{a}-{b} ---")
@@ -253,7 +291,7 @@ def check_image(check_, name, pages, row_pages, expected_skip_holes, fill_only):
     check("every_page_row_holds_in_image", row_fails, 0)
     # The first image carries the resident pages' 7,000-odd rows; an
     # overlay's own pages carry a few hundred.
-    check("image_rows_checked", rows_total >= (7000 if row_pages is pages else 400), True)
+    check("image_rows_checked", rows_total >= ROWS_FLOOR[name], True)
 
     words = sorted(prog.words)
     check("origin_is_the_MCP_body", oct(words[0]), oct(0o215000))

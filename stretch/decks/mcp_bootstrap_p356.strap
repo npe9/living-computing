@@ -1,0 +1,178 @@
+! mcp_bootstrap_p356.strap -- MCP printed page 356: the $DUMP program's
+! field converters: the tail of a 48-bit field store, AMISC (3-bit
+! field through the AMISTB table), ATRNST (6-bit field scaled by AL48
+! through ATRNTB, then two hex digits through AHXTB), AFLPNT (floating
+! point word print: APFL flags, AWDCMP, ACNVER through ALCRF, noisy
+! mode, the exponent / fraction tests ALOOP2 / ALOOP4 / ACPLUS),
+! lines 1-48.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.106, read at 400 dpi, doubtful
+! statements at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID
+! 22$DUMP  CARD ID VB000649  DIST. OF 3/01  3/01  PAGE NUMBER 356";
+! the heading row's LOCATION field is 235675, line 1's word.
+!
+! Still the $DUMP (PUNID 22$DUMP, card IDs VB...); no SLC, no new
+! origin, no TAIL.
+!
+! THE PAGE.  48 lines; every line number prints a "*".  A "*" after the
+! LOCATION on lines 11, 24, 40; line 42 prints "42**235736.00" (a second
+! "*" between the line number and the location).  Remarks on lines 12
+! ("-,"), 33, 40, 41, 42.  Located rows contiguous 235675.40 (line 1) to
+! 235743.00 (line 48, a full word; next 235744.00), then blank paper.
+!
+! JOIN.  p.355 (tools/page_sheet.py 355) ends with LF(BU,8),AHXTB($1)
+! at 235674.40, a full word: next 235675.40 = line 1.  p.357 opens at
+! 235744.00: contiguous both ways.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "ALCOP2" / "ALCOP4" (NAME, lines 39 and 45): the NAME column
+!     prints both rounds open; the statements on lines 39 and 43 print
+!     "ALOOP4" with both rounds CLOSED (900 dpi), so the family is
+!     ALOOP-: written ALOOP2, ALOOP4.
+!   * "CMOCOO" (lines 29, 34, 46): the connective's four-bit mnemonic
+!     field is digits; written CM0000 (its partner CM1111 is on the same
+!     page).
+!   * line 41's operation prints its first glyph worn ("C1111"); no "M".
+!     Written C1111 as printed; the assembled last byte (70, not CM's
+!     F0) decides between the two.
+!   * "$PGC" (line 40): the last glyph is an open round; the program
+!     indicators are the digit family PG0..PG6 (bits 41-47) and the row
+!     prints 000013.51, indicator word 11 bit 41 = PG0: written $PG0.
+!   * octal / hex fields with an open round read 0 ("FO" = F0, "8O" = 80).
+!
+! Line 42, "E-I,48" (plain ink, 900 dpi), prints 014000.57 60: the bare
+! integer is a count in the signed 11-bit field (C28-6129 printed p.33,
+! category 4) and E-I defaults to unnormalized (printed p.46).  Until
+! 2026-11-06 strap_asm assembled it 000060.17.
+!
+! EXTERNALS.  None is defined by a landed deck except APCOL1, ALCRFB and
+! ALCRF (p.343 stand-ins, copied).  The others are defined on pages not
+! yet landed (Vision reading: AWDCMP p.350 line 20, ARETRN p.351 line
+! 24, AFLPTI / AEXPF / AFRACI p.358, AL48 / APFL p.359); their data
+! descriptions are copied from those readings and their values from
+! this page's binary.
+!
+! CARD SERIALS.  VB000649 .. VB000694.  Shared serials: lines 26-27
+! (VB000674, LCI/B pair) and 30-31 (VB000677, SIC/B pair).  None skipped.
+
+ARETRN  SYN(BU,32,8), (8)235377.0    ! p.351 l.24 (V+I, half word); B line 2 235377.10, half word only
+AMISTB  SYN, (8)236242.10            ! not landed; LF line 5 236242.10 ($1 in the byte), BIT-EXACT
+AL48    SYN(BU,6), (8)236174.00      ! p.359 l.22 DD(BU,6); * line 9 236174.00, BIT-EXACT
+ATRNTB  SYN, (8)236234.10            ! not landed; L line 11 236234.10, BIT-EXACT
+AHXTB   SYN, (8)236232.10            ! not landed; LF line 15 236232.10, BIT-EXACT
+APCOL1  SYN, (8)236105.0             ! as p.343; LVI line 18 236105.35, half word only
+APFL    SYN, (8)236221.00            ! p.359 l.49 (A8)DD(BU); TI line 19 236221.00, BIT-EXACT
+AFLPTI  SYN(BU,1), (8)236147.01      ! p.358 l.39 DD(BU,1); CM1111 line 23 236147.01, BIT-EXACT
+AWDCMP  SYN(BU,64,8), (8)235330.0    ! p.350 l.20 (L, full word); B line 25 235330.10, half word only
+AHOTP   SYN, (8)236161.0             ! not landed; LV line 28 236161.34, half word only
+ALCRFB  SYN, (8)235373.0             ! as p.343; SIC line 30 235373.00
+ALCRF   SYN, (8)235370.0             ! as p.343; B line 31 235370.10, half word only
+AEXPF   SYN(BU,1), (8)236147.04      ! p.358 l.42 DRZ(BU,1); CM1111 line 36 236147.04, BIT-EXACT
+AFRACI  SYN(BU,1), (8)236017.03      ! p.358 l.43 SYN(BU,1),AFRACS.3; CM0000 line 46 236017.03, BIT-EXACT
+
+        SLC, (8)235675.40
+        SF(BU,48),($14)                                      ! line  1
+        B,ARETRN                                             ! line  2
+AMISC   L(BU,3),.19($13),-19                                 ! line  3
+        LV,$1,$L                                             ! line  4
+        LF(BU,32),AMISTB($1)                                 ! line  5
+        SF(BU,32),($14)                                      ! line  6
+        B,ARETRN                                             ! line  7
+ATRNST  L(BU,3),.23($13),40                                  ! line  8
+        *(BU,6),AL48,20                                      ! line  9
+        LV,$1,$R                                             ! line 10
+        L(BU,48),ATRNTB($1),16                               ! line 11
+        LFI(BU,8),(8)33,8                                    ! line 12  -,
+        LF(BU,4),.19($13),-21                                ! line 13
+        LV,$1,$L                                             ! line 14
+        LF(BU,8),AHXTB($1)                                   ! line 15
+        ST(BU,64),($14)                                      ! line 16
+        B,ARETRN                                             ! line 17
+AFLPNT  LVI,$14,APCOL1                                       ! line 18
+        TI,1,APFL,2.($14)                                    ! line 19
+        TI,1,APFL,6.($14)                                    ! line 20
+        TI,1,APFL,10.($14)                                   ! line 21
+        TI,1,APFL,14.($14)                                   ! line 22
+        CM1111(BU,1),AFLPTI                                  ! line 23
+AFLP1   LVI,$15,$+1.                                         ! line 24
+        B,AWDCMP                                             ! line 25
+        LCI,$13,1                                            ! line 26
+        B,ACNVER                                             ! line 27
+        LV,$14,AHOTP                                         ! line 28
+        CM0000(BU,19),$11                                    ! line 29
+        SIC,ALCRFB                                           ! line 30
+        B,ALCRF                                              ! line 31
+        LCI,$13,4                                            ! line 32
+ACNVER  CM1111(BU,1),$IND.63                                 ! line 33  -SET NOISY MODE
+        CM0000(BU,8),.16($14)                                ! line 34
+        BZB,0($13),$+2.                                      ! line 35
+        CM1111(BU,1),AEXPF                                   ! line 36
+        DL(N),0($13)                                         ! line 37
+        BBZ,$L,$+1.                                          ! line 38
+ALOOP2  BZRZ,ALOOP4                                          ! line 39
+        CM1111(BU,1),$PG0                                    ! line 40  -INDICATE X FOR FRACTION
+        C1111(BU,1),$L.12                                    ! line 41  -ASSUME EXISTENCE OF BIT 49
+        E-I,48                                               ! line 42  -ADJUST EXPNT AS IF NORMALIZED
+        BZBZ,$L,ALOOP4                                       ! line 43
+        CM1111(BU,1),AEXPF                                   ! line 44
+ALOOP4  BZBZ,10.04,ACPLUS                                    ! line 45
+        CM0000,AFRACI                                        ! line 46
+        B,ACPLUS+1.                                          ! line 47
+ACPLUS  CM1111,AFRACI                                        ! line 48
+
+!SYM AMISC 235677.00
+!SYM ATRNST 235703.00
+!SYM AFLPNT 235713.40
+!SYM AFLP1 235721.00
+!SYM ACNVER 235726.00
+!SYM ALOOP2 235733.40
+!SYM ALOOP4 235740.40
+!SYM ACPLUS 235743.00
+!CHECK 235675.40 | 000000.00 8E 060000.12 F0 | line 1 SF(BU,48),($14) (h2 prints "FO")
+!CHECK 235676.40 | 235377.10 00 | line 2 B,ARETRN
+!CHECK 235677.00 | 000000.23 8D 003066.60 50 | line 3 AMISC L(BU,3),.19($13),-19
+!CHECK 235700.00 | 000010.02 30 | line 4 LV,$1,$L
+!CHECK 235700.40 | 236242.10 81 040000.06 70 | line 5 LF(BU,32),AMISTB($1)
+!CHECK 235701.40 | 000000.00 8E 040000.12 F0 | line 6 SF(BU,32),($14)
+!CHECK 235702.40 | 235377.10 00 | line 7 B,ARETRN
+!CHECK 235703.00 | 000000.27 8D 003024.20 50 | line 8 ATRNST L(BU,3),.23($13),40
+!CHECK 235704.00 | 236174.00 80 006012.21 90 | line 9 *(BU,6),AL48,20
+!CHECK 235705.00 | 000011.02 30 | line 10 LV,$1,$R
+!CHECK 235705.40 | 236234.10 81 060010.20 50 | line 11 L(BU,48),ATRNTB($1),16
+!CHECK 235706.40 | 066000.00 80 410004.06 70 | line 12 LFI(BU,8),(8)33,8
+!CHECK 235707.40 | 000000.23 8D 004065.46 70 | line 13 LF(BU,4),.19($13),-21
+!CHECK 235710.40 | 000010.02 30 | line 14 LV,$1,$L
+!CHECK 235711.00 | 236232.10 81 010000.06 70 | line 15 LF(BU,8),AHXTB($1)
+!CHECK 235712.00 | 000000.00 8E 000000.20 D0 | line 16 ST(BU,64),($14)
+!CHECK 235713.00 | 235377.10 00 | line 17 B,ARETRN
+!CHECK 235713.40 | 236105.35 01 | line 18 AFLPNT LVI,$14,APCOL1
+!CHECK 235714.00 | 236221.00 80 000002.02 AE | line 19 TI,1,APFL,2.($14)
+!CHECK 235715.00 | 236221.00 80 000006.02 AE | line 20 TI,1,APFL,6.($14)
+!CHECK 235716.00 | 236221.00 80 000012.02 AE | line 21 TI,1,APFL,10.($14)
+!CHECK 235717.00 | 236221.00 80 000016.02 AE | line 22 TI,1,APFL,14.($14)
+!CHECK 235720.00 | 236147.01 80 001000.36 F0 | line 23 CM1111(BU,1),AFLPTI
+!CHECK 235721.00 | 235722.37 01 | line 24 AFLP1 LVI,$15,$+1.
+!CHECK 235721.40 | 235330.10 00 | line 25 B,AWDCMP
+!CHECK 235722.00 | 000001.33 02 | line 26 LCI,$13,1
+!CHECK 235722.40 | 235726.10 00 | line 27 B,ACNVER
+!CHECK 235723.00 | 236161.34 30 | line 28 LV,$14,AHOTP
+!CHECK 235723.40 | 000033.00 80 023000.00 F0 | line 29 CM0000(BU,19),$11 (printed "CMOCOO")
+!CHECK 235724.40 | 235373.00 80 | line 30 SIC,ALCRFB
+!CHECK 235725.00 | 235370.10 00 | line 31 B,ALCRF
+!CHECK 235725.40 | 000004.33 02 | line 32 LCI,$13,4
+!CHECK 235726.00 | 000013.77 80 001000.36 F0 | line 33 ACNVER CM1111(BU,1),$IND.63
+!CHECK 235727.00 | 000000.20 8E 010000.00 F0 | line 34 CM0000(BU,8),.16($14) (printed "CMOCOO")
+!CHECK 235730.00 | 000000.00 8D 235732.34 00 | line 35 BZB,0($13),$+2.
+!CHECK 235731.00 | 236147.04 80 001000.36 F0 | line 36 CM1111(BU,1),AEXPF
+!CHECK 235732.00 | 000000.04 6D | line 37 DL(N),0($13)
+!CHECK 235732.40 | 000010.00 80 235733.74 06 | line 38 BBZ,$L,$+1.
+!CHECK 235733.40 | 235740.74 C0 | line 39 ALOOP2 BZRZ,ALOOP4 (NAME prints "ALCOP2")
+!CHECK 235734.00 | 000013.51 80 001000.36 F0 | line 40 CM1111(BU,1),$PG0 (printed "$PGC")
+!CHECK 235735.00 | 000010.14 80 001000.36 70 | line 41 C1111(BU,1),$L.12
+!CHECK 235736.00 | 014000.57 60 | line 42 E-I,48
+!CHECK 235736.40 | 000010.00 80 235740.74 04 | line 43 BZBZ,$L,ALOOP4
+!CHECK 235737.40 | 236147.04 80 001000.36 F0 | line 44 CM1111(BU,1),AEXPF
+!CHECK 235740.40 | 000012.04 80 235743.34 04 | line 45 ALOOP4 BZBZ,10.04,ACPLUS (NAME prints "ALCOP4")
+!CHECK 235741.40 | 236017.03 80 001000.00 F0 | line 46 CM0000,AFRACI (printed "CMOCOO")
+!CHECK 235742.40 | 235744.10 00 | line 47 B,ACPLUS+1.
+!CHECK 235743.00 | 236017.03 80 001000.36 F0 | line 48 ACPLUS CM1111,AFRACI

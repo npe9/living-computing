@@ -1,0 +1,197 @@
+! mcp_bootstrap_p370.strap -- MCP printed page 370: SYSTEM COMMAND
+! package (PUNID 22SCOMD), the IOCHANGE unit/channel request tail and
+! the common scan for a new unit (Z CH SCN, C22-6728 Figure 53).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.120, read at 400 dpi, doubtful
+! glyphs at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID
+! 22SCOMD  CARD ID WA000438  DIST. OF 3/01  3/01  PAGE NUMBER 370".
+! The heading row's LOCATION field is BLANK.  No TAIL.
+!
+! THE PAGE.  53 lines; every line number prints a "*".  Contiguous
+! 235062.40 .. 235116.40 (line 53, a full-word CM; next 235117.40,
+! which is RGOING, line 51's NOP target -- p.371 should open there).
+! Card serials WA000438 .. WA000490, one per line, none missing.
+! "*" after the LOCATION on lines 4, 26 and 48 (recorded, not explained).
+!   lines 1,8,12,13,25,40,41,44-46  remark cards ("-" in NAME).
+!   lines 2-11   the tail of the unit request (ZADDUN/ZMAIND/ZABEOJ).
+!   lines 14-39  ZCHSCN: the channel/unit scan (ZLOPO, ZLOP1, ZOKEQP,
+!                ZMULUN, ZIGZAG, ZTSTUN).
+!   lines 42-53  ZAVLUN, ZSETAS, RMOVE.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 42 prints "BPGC": the op is BPG0 (program indicator PG0 =
+!     41).  The binary 235156.24 C2 puts indicator 101001 = 41 in bits
+!     19-24; this drum prints 0 open.  Written BPG0.
+!   * line 2 "Z ACD UN" = ZADDUN: D with a worn stem; C22-6728 PDF
+!     p.106 typesets ZADDUN, and the remark is "-BRANCH TO ADD UNIT".
+!   * ZLOPO (line 20 NAME "Z LOP 0", line 23 "ZLOPO"): letter O.
+!     C22-6728 PDF p.106 typesets "ZLOPO" twice at 900 dpi with the
+!     last glyph as wide as the O before it (the digit 0 of the page
+!     number "106" is a narrow oval) -- lesson 3 over the ZLOP0/ZLOP1
+!     family rule.  ZLOP1: line 22's NAME prints "ZLCP1" (open O);
+!     lines 26 and 39 print "LOP 1", typeset ZLOP1.
+!   * lines 15, 18, 33, 38, 47: "0.C", "32.C", "0.O", "C.C" -- open 0.
+!   * line 17's op is LF (sheet read LE): plain at 400 dpi; assembles.
+!   * line 30's hex prints "C0" and is 00 (lesson 6; B makes 00 there).
+!   * names with blanks ("Z CH SCN", "S UN AVL", "Z NEW CH" ...) are
+!     written without blanks.  ZOKEQP, ZIGZAG, ZTSTUN, ZAVLUN, ZMULUN,
+!     ZSETAS, ZTSTPP, ZEREX1, ZMAIND, ZABEOJ, ZDONE, ZREMOV, ZCHSCN
+!     all occur typeset in C22-6728.
+!   * Printed as is, though C22-6728's prose names differ: line 6
+!     "Z MNER9" (prose: ZMNERX), line 34 "Z RMV1" (prose: ZREMV1, the
+!     switch "set at ZREMV1"); the ink of both is plain at 900 dpi, and
+!     p.375 (ZMNER9 at 235363.00, ZMNERX at 235365.40) and p.372 (ZRMV1)
+!     define them with these spellings.
+!   * RMOVE (line 51 NAME), RGOING ("RGCING" at 400 dpi, O at 900).
+!
+! INDEX REGISTERS: ZREQUN $6, ZNEWCH $7, ZREQCH $8, ZNEWUN $9, ZUNITA
+! $10, read off this page's binary and in agreement with p.376's (scratch)
+! SYN,$n cards; ZCHNNM $3 and ZUNTNM $4 agree with p.298's stand-ins.
+!
+! JOINS (scratch neighbours): p.369 ends with line 52 BPG1 at 235062.00
+! (a half word), so line 2's 235062.40 continues it.  p.371 opens with
+! SLC 235117.40 = RGOING, line 51's NOP target.  Neighbours define
+! ZEREX1 (p.365), ZADDUN (p.374), ZMAIND/ZMNER9/ZABEOJ (p.375), ZDONE
+! (p.373), ZRMV1/ZREMOV (p.372), ZASSGN/ZTSTPP/RGOING (p.371), ZDELET
+! (p.376) at the addresses the stand-ins below carry.
+
+SOWNER  SYN(BU,1), 0.32              ! landed; p.99 line 30
+SUNAVL  SYN(BU,1), 0.28              ! landed; p.99 line 26 -UNIT AVAILABILITY
+SUNASG  SYN(BU,1), 0.29              ! landed; p.99 line 27 -UNIT ASSIGNMENT
+SEQUIP  SYN(BU,4), 0.52              ! landed; p.99 line 38 -EQUIPMENT
+SCHAVL  SYN(BU,1), 0.25              ! landed; p.99 line 21 -CHANNEL AVAILABILITY
+SMULTI  SYN(BU,1), 0.27              ! landed; p.99 line 24 -MULTI-UNIT CHAN
+SUNITK  SYN(BU,4), 0.59              ! landed; p.99 line 40
+SMOUNT  SYN(BU,1), 0.51              ! landed; p.99 line 42
+SVER    SYN(BU,1), 0.40              ! landed; p.99 line 32 -VERIFY FILE STATUS
+SXCHAN  SYN(BU), (8)215002.0         ! landed p.103 line 28 "SXCHAN XW,0" (form as p.289); LX line 16 215002.16
+ZCHNNM  SYN, $3                      ! as p.298's stand-in (no page defines); LVI line 14, V+I line 22 agree, J=3
+ZUNTNM  SYN, $4                      ! as p.298's stand-in (no page defines); LVI lines 15/38, V+I line 36 agree, J=4
+ZSCAN9  SYN, (8)235143.40            ! as p.298's stand-in; SIC line 9 235143.40, BIT-EXACT
+ZREQUN  SYN, $6                      ! p.376 line 8 SYN,$6 (scratch, not landed); BB1 lines 3-4, BZB line 7 index 6, agrees
+ZREQCH  SYN, $8                      ! p.376 line 10 SYN,$8 (scratch, not landed); LF line 17, BB line 27, L(U) line 47 index 8, agrees
+ZNEWCH  SYN, $7                      ! p.376 line 9 SYN,$7 (scratch, not landed); KF line 20, LX line 16 J=7, LV line 29 address 000027 ($7), agrees
+ZNEWUN  SYN, $9                      ! p.376 line 11 SYN,$9 (scratch, not landed); LCI/LV/LC J=9, BZB/BZBZ/CM index 9, agrees
+ZUNITA  SYN, $10                     ! p.376 line 12 SYN,$10 (scratch, not landed); LV line 48 J=10, agrees
+ZADDUN  SYN, (8)235272.0             ! not landed; BAE line 2 235272.36, half word only (printed "Z ACD UN"); p.374 line 13 defines it
+ZEREX1  SYN, (8)234631.0             ! not landed; BB1 line 3 234631.34, half word only
+ZMAIND  SYN, (8)235341.0             ! not landed; BB1 line 4 235341.34, half word only
+ZDELET  SYN(BU,36,6), (8)235372.0    ! p.376 line 2 "ZDELET (AX)DD(BU,36,6),DELETEX" (scratch, not landed; form as p.373/p.375); K line 5 235372.00, BIT-EXACT
+ZMNER9  SYN, (8)235363.0             ! not landed; BZAE line 6 235363.36, half word only
+ZABEOJ  SYN, (8)235347.40            ! not landed; BZB line 7 235347.74, half word only
+ZDONE   SYN, (8)235234.0             ! not landed; B line 11 235234.10, half word only
+ZREMOV  SYN, (8)235171.40            ! not landed; B line 24 235171.50, half word only
+ZRMV1   SYN, (8)235173.0             ! not landed; CM line 34 ZRMV1+0.53 = 235173.65, BIT-EXACT
+ZTSTPP  SYN, (8)235156.0             ! not landed; BPG0 line 42 235156.24, half word only
+ZASSGN  SYN, (8)235122.40            ! not landed; BZAE line 50 235122.76, half word only
+RGOING  SYN, (8)235117.40            ! not landed; NOP line 51 235117.70, half word only (= this page's next location)
+
+        SLC, (8)235062.40
+! line  1  -****** UNIT AND CHANNEL REQUEST ******
+        BAE,ZADDUN                                           ! line  2  -BRANCH TO ADD UNIT   printed "Z ACD UN"
+        BB1,SUNAVL(ZREQUN),ZEREX1                            ! line  3  -BRANCH IF UNAVAILABLE
+        BB1,SUNASG(ZREQUN),ZMAIND                            ! line  4
+        K(BU,36,6),ZDELET,12                                 ! line  5
+        BZAE,ZMNER9                                          ! line  6  -IF NOT DELETE, TO MAIN. ERROR
+ZOWNER  BZB,SOWNER(ZREQUN),ZABEOJ                            ! line  7  -TO ABEOJ IF PP UNIT
+! line  8  -DO NOT TRY TO REASSIGN
+        SIC,ZSCAN9                                           ! line  9
+        B,ZCHSCN                                             ! line 10
+        B,ZDONE                                              ! line 11  -UNIT FOUND FOR MCP
+! line 12  -
+! line 13  -****** COMMOM SCAN FOR NEW UNIT ******
+ZCHSCN  LVI,ZCHNNM,16.0                                      ! line 14
+        LVI,ZUNTNM,0.0                                       ! line 15
+        LX,ZNEWCH,SXCHAN                                     ! line 16  -GET BASE ADDR AND NO. OF CHNS.
+        LF,SEQUIP(ZREQCH)                                    ! line 17  -GET EQUIP TYPE FOR NEW UNIT
+        C-I,ZNEWCH,32.0                                      ! line 18
+        V+I,ZNEWCH,32.0                                      ! line 19
+ZLOPO   KF,SEQUIP(ZNEWCH)                                    ! line 20
+        BAE,ZOKEQP                                           ! line 21
+ZLOP1   V+I,ZCHNNM,.32                                       ! line 22   printed "ZLCP1"
+        CB+,ZNEWCH,ZLOPO                                     ! line 23
+        B,ZREMOV                                             ! line 24  -SET SWITCH TO REMOVE PP IF UNIT
+! line 25  -NOT FOUND ON FIRST PASS
+ZOKEQP  BB,SCHAVL(ZNEWCH),ZLOP1                              ! line 26  -IF CH NOT AVAIL,TRY ANOTHER CH
+        BB,SMULTI(ZREQCH),ZMULUN                             ! line 27
+        LCI,ZNEWUN,1.                                        ! line 28  -UNIT COUNT FOR SINGLE UNIT CHAN.
+        LV,ZNEWUN,ZNEWCH                                     ! line 29  -GET CHAN. STAT ADDR
+        B,ZIGZAG                                             ! line 30
+ZMULUN  LF,SUNITK(ZNEWCH),-18                                ! line 31
+        LC,ZNEWUN,$L                                         ! line 32  -UNIT COUNT ON MULTI-CHANNEL
+        LV,ZNEWUN,0.0(ZNEWCH)                                ! line 33  -GET UNIT STATUS BASE ADDR
+ZIGZAG  CM1111(BU,1),ZRMV1+0.53                              ! line 34  -SET NO UNITS SWITCH
+        BZB,SUNAVL(ZNEWUN),ZAVLUN                            ! line 35  -BR IF AVAILABLE
+ZTSTUN  V+I,ZUNTNM,1.0                                       ! line 36  -UPDATE NEW UNIT NUMBER
+        CB+,ZNEWUN,ZIGZAG+1.0                                ! line 37  -LOOP IF MORE UNITS ON CHANNEL
+        LVI,ZUNTNM,0.0                                       ! line 38  -CLEAR NEW UNIT NUMBER
+        B,ZLOP1                                              ! line 39  -NO - BACK TO CONTINUE CH TEST
+! line 40  -
+! line 41  -****** CHANNEL AND UNIT ARE AVAILABLE ******
+ZAVLUN  BPG0,ZTSTPP                                          ! line 42  -BRANCH IF SECOND PASS   printed "BPGC"
+        BZBZ,SUNASG(ZNEWUN),ZTSTUN                           ! line 43  -IF ASSIGNED UNIT,TO TEST FOR
+! line 44  -MORE UNITS ON CHAN. IF NOT ASSGN,
+! line 45  -TO FOUND ON FIRST PASS SCAN.
+! line 46  -SET UNIT ASSIGNED IF UNASSNGED
+ZSETAS  L(U),0.0(ZREQCH)                                     ! line 47
+        LV,ZUNITA,0(ZREQUN)                                  ! line 48  -GET REQ. UA ADD.
+        KFI(BU,4),(8)10,-56                                  ! line 49  -TAPE EQUIP TEST
+        BZAE,ZASSGN                                          ! line 50  -BRANCH IF NOT TAPE
+RMOVE   NOP,RGOING                                           ! line 51
+        CM1111(BU,1),SMOUNT(ZNEWUN)                          ! line 52
+        CM1111(BU,1),SVER(ZNEWUN)                            ! line 53
+
+!SYM ZOWNER 235066.40
+!SYM ZCHSCN 235071.00
+!SYM ZLOPO  235074.40
+!SYM ZLOP1  235076.00
+!SYM ZOKEQP 235077.40
+!SYM ZMULUN 235103.00
+!SYM ZIGZAG 235105.00
+!SYM ZTSTUN 235107.00
+!SYM ZAVLUN 235111.00
+!SYM ZSETAS 235112.40
+!SYM RMOVE  235115.00
+!CHECK 235062.40 | 235272.36 C2 | line 2 BAE,Z ACD UN
+!CHECK 235063.00 | 000000.34 86 234631.34 0E | line 3 BB1,S UN AVL(Z REQ UN),ZEREX1
+!CHECK 235064.00 | 000000.35 86 235341.34 0E | line 4 BB1,S UN ASG(Z REQ UN),Z MAIN D
+!CHECK 235065.00 | 235372.00 80 044606.21 10 | line 5 K(BU,36,6),Z DELET,12
+!CHECK 235066.00 | 235363.36 C0 | line 6 BZAE,Z MNER9
+!CHECK 235066.40 | 000000.40 86 235347.74 00 | line 7 ZOWNER BZB,SOWNER(ZREQUN),ZABEOJ
+!CHECK 235067.40 | 235143.40 80 | line 9 SIC,Z SCAN 9
+!CHECK 235070.00 | 235071.10 00 | line 10 B,Z CH SCN
+!CHECK 235070.40 | 235234.10 00 | line 11 B,Z DONE
+!CHECK 235071.00 | 000020.07 01 | line 14 Z CH SCN LVI,Z CHN NM,16.0
+!CHECK 235071.40 | 000000.11 01 | line 15 LVI,Z UNT NM,0.0
+!CHECK 235072.00 | 215002.16 10 | line 16 LX,Z NEW CH,S X CHAN
+!CHECK 235072.40 | 000000.64 88 004000.06 70 | line 17 LF,S EQUIP(Z REQ CH)
+!CHECK 235073.40 | 000040.17 08 | line 18 C-I,Z NEW CH,32.0
+!CHECK 235074.00 | 000040.17 05 | line 19 V+I,Z NEW CH,32.0
+!CHECK 235074.40 | 000000.64 87 004000.23 10 | line 20 Z LOP O KF,S EQUIP(Z NEW CH)
+!CHECK 235075.40 | 235077.76 C2 | line 21 BAE,Z OK EQP
+!CHECK 235076.00 | 000000.47 05 | line 22 ZLCP1 V+I,ZCHNNM,.32
+!CHECK 235076.40 | 235074.57 48 | line 23 CB+,ZNEWCH,ZLOPO
+!CHECK 235077.00 | 235171.50 00 | line 24 B,Z REMOV
+!CHECK 235077.40 | 000000.31 87 235076.34 02 | line 26 Z OK EQP BB,S CH AVL(Z NEW CH),Z LOP 1
+!CHECK 235100.40 | 000000.33 88 235103.34 02 | line 27 BB,S MULTI(Z REQ CH),Z MUL UN
+!CHECK 235101.40 | 000001.23 02 | line 28 LCI,Z NEW UN,1.
+!CHECK 235102.00 | 000027.22 30 | line 29 LV,Z NEW UN,Z NEW CH
+!CHECK 235102.40 | 235105.10 00 | line 30 B,Z IG ZAG (hex prints "C0": open 0, B can only make 00; lesson 6)
+!CHECK 235103.00 | 000000.73 87 004067.06 70 | line 31 Z MUL UN LF,S UNIT K(Z NEW CH),-18
+!CHECK 235104.00 | 000010.22 50 | line 32 LC,Z NEW UN,$L
+!CHECK 235104.40 | 000000.22 37 | line 33 LV,Z NEW UN,0.0(Z NEW CH)
+!CHECK 235105.00 | 235173.65 80 001000.36 F0 | line 34 Z IG ZAG CM1111(BU,1),Z RMV1+0.53
+!CHECK 235106.00 | 000000.34 89 235111.34 00 | line 35 BZB,S UN AVL(Z NEW UN),Z AVL UN
+!CHECK 235107.00 | 000001.11 05 | line 36 Z TST UN V+I,Z UNT NM,1.0
+!CHECK 235107.40 | 235106.23 48 | line 37 CB+,ZNEWUN,ZIGZAG+1.0
+!CHECK 235110.00 | 000000.11 01 | line 38 LVI,Z UNT NM,0.0
+!CHECK 235110.40 | 235076.10 00 | line 39 B,Z LOP 1
+!CHECK 235111.00 | 235156.24 C2 | line 42 Z AVL UN BPGC,Z TSTPP
+!CHECK 235111.40 | 000000.35 89 235107.34 04 | line 43 BZBZ,S UN ASG(Z NEW UN),Z TST UN
+!CHECK 235112.40 | 000000.40 68 | line 47 Z SET AS L(U),0.0(Z REQ CH)
+!CHECK 235113.00 | 000000.24 36 | line 48 LV,ZUNITA,0(ZREQUN)
+!CHECK 235113.40 | 400000.00 80 404044.23 10 | line 49 KFI(BU,4),(8)10,-56
+!CHECK 235114.40 | 235122.76 C0 | line 50 BZAE,ZASSGN
+!CHECK 235115.00 | 235117.70 00 | line 51 RMOVE NOP,RGOING
+!CHECK 235115.40 | 000000.63 89 001000.36 F0 | line 52 CM1111(BU,1),S MOUNT(Z NEW UN)
+!CHECK 235116.40 | 000000.50 89 001000.36 F0 | line 53 CM1111(BU,1),S VER(Z NEW UN)

@@ -1,0 +1,156 @@
+! mcp_bootstrap_p361.strap -- MCP printed page 361: the opening of the
+! SYSTEM COMMAND package (PUNID 22SCOMD): its punch controls and two
+! (CC*) header cards, the table of system-command names JLIST (12
+! six-character-coded words, OUTPUT .. COMMENT) and the parallel
+! branch table JTABL (12 B's to the command routines), lines 1-39.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.111, read at 400 dpi, names at 900
+! dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$CUMP  CARD ID
+! WA000001  DIST. OF 3/01  3/01  PAGE NUMBER 361" (the header prints
+! the PREVIOUS PUNID, 22$DUMP with a worn D, as p.335's printed
+! 22LOADER).  The heading row's LOCATION field is BLANK.
+!
+! >>> A NEW PROGRAM: THE PAGE LEAVES THE $DUMP. <<<  Line 5 sets
+! PUNID,22SCOMD; card serials restart at WA000001 (the $DUMP ran
+! VA.../VB...); line 7 SLC,YMPBUF goes to 234424.00, the SAME origin
+! as the LOADER (p.320) and the $DUMP (p.335): the command package is
+! a third overlay of the YMPBUF buffer.  Its words 234424.00-234442.40
+! occupy THE SAME ADDRESSES as p.335's $DUMP code (merge note).
+!
+! THE PAGE.  39 lines; every line number prints a "*".  "*" in the
+! LOCATION column on lines 1 and 4 (no location); "*" after the
+! LOCATION on line 32.  No TAIL.
+!   line  1      PUNFUL.
+!   lines 2-3    two (CC*)DD(BU,,12) cards at 236425.31 and 236435.65
+!                (the deck's "B HED, REP, 22SCOMD, LOAD,," header card
+!                images) -- see below.
+!   lines 4-6    PUNORG, PUNID,22SCOMD, RESEQ.
+!   line  7      SLC,YMPBUF prints 234424.00.
+!   lines 8-12   remark cards ("-" in NAME): rules of dashes on 9 and
+!                11 (their length not counted), banner on 10, 8 and 12
+!                blank.
+!   lines 13-24  JLIST: twelve (A*)DD(BU,48,6) words, 48 bits apart,
+!                234424.00 .. 234434.20 (next 234435.00); every value
+!                is 8 characters before the "*" (aligned at 900 dpi).
+!   lines 25-27  remark cards (banner on 26).
+!   lines 28-39  JTABL: twelve B's, contiguous 234435.00 .. 234442.40
+!                (line 39, a half word; next 234443.00), then blank
+!                paper.
+!
+! JOIN.  p.360 is the $DUMP (another program); this page's location
+! counter does not continue it.  The deck states 236425.31 hard (an SLC
+! stand-in) for line 2.  p.362 (header PUNID 22SCOMD, CARD ID
+! WA000041) should open at 234443.00; its first serial is WA000041,
+! so WA000040 does not print on either page (coordinator: check p.362
+! line 1).
+!
+! >>> LINES 2-3'S (CC*)DD ARE NOT HANDED TO THE ASSEMBLER. <<<
+! strap_asm refuses entry mode CC (as pp.15, 99, 256, 320, 335 found).
+! Each card is kept as a comment; the deck carries TWO stand-ins that
+! are not printed cards: "SLC, (8)236425.31" and "SLC, (8)236435.65"
+! (the printed locations).  Line 2's span 236425.31 -> 236435.65 = 8
+! words + 28 bits = 540 bits = 45 twelve-bit characters, exactly
+! p.335 line 3's span for the same card shape.  Line 3's length is not
+! fixed by the page (the next located card is an SLC).  The cards are
+! unlabeled; their bits are NOT written into the image by this deck.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "22SCOMD" (lines 3, 5; line 2 prints "22SCCMD", open second
+!     round): the third glyph is a plain S at 900 dpi, not the "$" the
+!     header prints for 22$CUMP; p.362's header prints "22SCOMD", and
+!     C22-6728's OCR reads "22SCOMD Command package" / "SCOMD System
+!     Commands".  Written 22SCOMD as printed (the routine is $COMD).
+!     Line 2's "SCCMD" written SCOMD (open O; lines 3 and 5 print it).
+!   * line 28 "B,JCUTP" = JOUTP (open O): C22-6728 names JOUTP; no
+!     JCUTP anywhere.  The speck after it is paper.
+!   * line 29 "B,J EOF" = JEOF; lines 31-38 "Z REW CD", "Z REJCT",
+!     "Z IO CH", "Z BYPAS", "Z ONLIN", "Z OFFLN", "Z TCC", "Z ABEND"
+!     written without blanks (blank in a name, as p.335 PE1).  ZREWCD:
+!     C22-6728-1 typesets ZREWCD (D).  ZIOCH, ZREJCT, ZONLIN, ZOFFLN,
+!     ZTCC, ZABEND, JEOF, JEOJ, VVCOMJ all occur typeset in C22-6728.
+!     ZBYPAS occurs nowhere else; written as printed.
+!   * labels "J LIST" (line 13), "J TABL" (line 28) = JLIST, JTABL.
+!   * (A*) text: "EOJ", "IOCHANGE", "ABEOJ", "COMMENT" print the O open
+!     (sheet reads CCMMENT); written with O (English words / C22-6728
+!     command names "COMD, OUTPUT", "BYPASS").
+!   * hex bytes "CO"/"0C" on the B rows (lines 28, 29, 34, 35, 36) = 00
+!     (the octal fields of the same rows print 0 open; lesson 6).
+!
+! EXTERNALS.  YMPBUF (p.319, form as p.320/p.335).  JOUTP, JEOF, JEOJ,
+! ZREWCD, ZREJCT, ZIOCH, ZBYPAS, ZONLIN, ZOFFLN, ZTCC, ZABEND, VVCOMJ:
+! not landed (later $COMD pages); values from this page's binary, B's
+! printed address less B's .10, half word only.  Plain SYN, no dds.
+!
+! CARD SERIALS.  WA000001 .. WA000039, one per line, none shared or
+! skipped.
+
+YMPBUF  SYN(BU), (8)234424.0         ! p.319 line 14 "YMPBUF DRZ(BU),1088" at 234424.00; SLC line 7 prints 234424.00
+JOUTP   SYN, (8)234671.0             ! not landed; B line 28 234671.10, half word only (printed "JCUTP")
+JEOF    SYN, (8)234700.40            ! not landed; B line 29 234700.50, half word only
+JEOJ    SYN, (8)234722.0             ! not landed; B line 30 234722.10, half word only
+ZREWCD  SYN, (8)234766.0             ! not landed; B line 31 234766.10, half word only
+ZREJCT  SYN, (8)234774.40            ! not landed; B line 32 234774.50, half word only
+ZIOCH   SYN, (8)235023.0             ! not landed; B line 33 235023.10, half word only
+ZBYPAS  SYN, (8)235373.40            ! not landed; B line 34 235373.50, half word only
+ZONLIN  SYN, (8)235414.40            ! not landed; B line 35 235414.50, half word only
+ZOFFLN  SYN, (8)235440.0             ! not landed; B line 36 235440.10, half word only
+ZTCC    SYN, (8)235473.40            ! not landed; B line 37 235473.50, half word only
+ZABEND  SYN, (8)234744.0             ! not landed; B line 38 234744.10, half word only
+VVCOMJ  SYN, (8)235540.40            ! not landed; B line 39 235540.50, half word only
+
+        PUNFUL                                               ! line  1
+        SLC, (8)236425.31            ! STAND-IN: line 2's printed location -- see header
+!       (CC*)DD(BU,,12),B            HED, REP, 22SCOMD, LOAD,,          *   ! line  2  printed "22SCCMD" -- NOT ASSEMBLED (entry mode CC refused)
+        SLC, (8)236435.65            ! STAND-IN: line 3's printed location -- see header
+!       (CC*)DD(BU,,12),                              22SCOMD*              ! line  3  NOT ASSEMBLED (entry mode CC refused)
+        PUNORG                                               ! line  4
+        PUNID,22SCOMD                                        ! line  5
+        RESEQ                                                ! line  6
+        SLC,YMPBUF                                           ! line  7
+! line  8  -
+! line  9  - ------------------------------------------------------------
+! line 10  -     *****TABLE OF SYSTEM COMMANDS*****
+! line 11  - ------------------------------------------------------------
+! line 12  -
+JLIST   (A*)DD(BU,48,6),OUTPUT  *                            ! line 13  -CHANGE SPOOL OUTPUT TAPE
+        (A*)DD(BU,48,6),EOF     *                            ! line 14  -END OF FILE,NEXT JOB WHEN CS
+        (A*)DD(BU,48,6),EOJ     *                            ! line 15  -END OF JOB
+        (A*)DD(BU,48,6),REWIND  *                            ! line 16  -TERMINATE WRITE TAPE
+        (A*)DD(BU,48,6),REJECT  *                            ! line 17  -REJECT JOB IN JC1 PHASE
+        (A*)DD(BU,48,6),IOCHANGE*                            ! line 18  -I/O CONFIGURATION CHANGE
+        (A*)DD(BU,48,6),BYPASS  *                            ! line 19  -NEXT JOB NOT OVERLAPPED
+        (A*)DD(BU,48,6),ONLINE  *                            ! line 20  -RESUME ON LINE OVERLAPPED MODE
+        (A*)DD(BU,48,6),OFFLINE *                            ! line 21  -RESUME OFF LINE OVERLAPPED MODE
+        (A*)DD(BU,48,6),CLOCK   *                            ! line 22  -TIME CONSTANT COMMAND
+        (A*)DD(BU,48,6),ABEOJ   *                            ! line 23
+        (A*)DD(BU,48,6),COMMENT *                            ! line 24
+! line 25  -
+! line 26  -     *****TABLE OF BRANCHES CORRESPONDING TO ABOVE COMMANDS*****
+! line 27  -
+JTABL   B,JOUTP                                              ! line 28   printed "JCUTP"
+        B,JEOF                                               ! line 29
+        B,JEOJ                                               ! line 30
+        B,ZREWCD                                             ! line 31
+        B,ZREJCT                                             ! line 32
+        B,ZIOCH                                              ! line 33
+        B,ZBYPAS                                             ! line 34
+        B,ZONLIN                                             ! line 35
+        B,ZOFFLN                                             ! line 36
+        B,ZTCC                                               ! line 37
+        B,ZABEND                                             ! line 38
+        B,VVCOMJ                                             ! line 39
+
+!SYM JLIST 234424.00
+!SYM JTABL 234435.00
+!CHECK 234435.00 | 234671.10 00 | line 28 JTABL B,JOUTP (printed "JCUTP"; byte prints "CO")
+!CHECK 234435.40 | 234700.50 00 | line 29 B,JEOF (byte prints "CO")
+!CHECK 234436.00 | 234722.10 00 | line 30 B,JEOJ
+!CHECK 234436.40 | 234766.10 00 | line 31 B,ZREWCD
+!CHECK 234437.00 | 234774.50 00 | line 32 B,ZREJCT
+!CHECK 234437.40 | 235023.10 00 | line 33 B,ZIOCH
+!CHECK 234440.00 | 235373.50 00 | line 34 B,ZBYPAS (byte prints "CO")
+!CHECK 234440.40 | 235414.50 00 | line 35 B,ZONLIN (byte prints "CO")
+!CHECK 234441.00 | 235440.10 00 | line 36 B,ZOFFLN (byte prints "CO")
+!CHECK 234441.40 | 235473.50 00 | line 37 B,ZTCC
+!CHECK 234442.00 | 234744.10 00 | line 38 B,ZABEND
+!CHECK 234442.40 | 235540.50 00 | line 39 B,VVCOMJ

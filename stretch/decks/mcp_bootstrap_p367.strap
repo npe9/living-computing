@@ -1,0 +1,180 @@
+! mcp_bootstrap_p367.strap -- MCP printed page 367: the SYSTEM COMMAND
+! package's EOJ command sub-package (J EOJ .. Z EOJ99) and its ABEOJ
+! command (Z ABEND .. Z ABJ99), lines 1-52.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.117, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22SCOMD  CARD ID WA000290  DIST. OF 3/01
+!  3/01  PAGE NUMBER 367"; the heading row's LOCATION field is BLANK.
+!
+! THE PAGE.  52 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 12, 26 and 47.  Still PUNID 22SCOMD, card series WA,
+! no SLC, no TAIL.  Contiguous 234722.00 .. 234765.40 (line 52's DD
+! ends at 234766.00, ZREWCD's printed address on p.361).
+!   lines  1-3   remark cards (banner on 2).
+!   lines  4-24  J EOJ: SX,JXMSK,$R; CT tests of the command source/mode
+!                word; J EOJX; Z EOJX's SIC/BD to Z SPLPR and S PRIME
+!                with in-line parameter words (lines 17-18, 21).
+!   lines 25-26  CNOP; Z EOJ99 (A*)DD(BU), 32 characters 234740.00 ->
+!                234744.00 (the "*" terminator measured at column 32
+!                after the comma: 27 printed characters + 5 blanks).
+!   lines 27-30  remark cards (banner on 29).
+!   lines 31-50  Z ABEND: the same shape (Z AEOJX, Z AEOJZ).
+!   lines 51-52  CNOP; Z ABJ99 (A*)DD(BU), 40 characters (36 printed + 4
+!                blanks, "*" at column 40) 234761.00 -> 234766.00.
+! JOIN.  p.361's JTABL prints B,JEOJ = 234722.10 and B,ZABEND =
+! 234744.10: lines 4 and 31 sit exactly there.  p.366 should end at
+! 234722.00 (p.361 JEOF 234700.40 .. ); p.368 should open at 234766.00
+! (Z REW CD, p.361 B,ZREWCD 234766.10).  No SLC: the deck states the
+! origin hard.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * the drum prints O open throughout: "J ECJ", "JECJX", "Z ECJX",
+!     "Z ECJ 99", "Z ECJ99", "ZAECJX", "Z AECJZ", ",DECJ", ",DABECJ",
+!     "YECJS", "J NCPX"/"JNCPX", "JCP", "JCV", "JCN" written with O
+!     (JEOJ is p.361's spelling; DEOJ/DABEOJ/YEOJS landed; JNOPX is
+!     C22-6728's; the J-bits JOP/JOV/JON print the same open round as
+!     in p.366/p.368's sheet reads).
+!   * "CTIC010"/"CTI0010": the connective 0010 (digits; binary agrees).
+!   * line 11 "B,Z ER EX2" = ZEREX2 (blank in a name; line 12 prints it).
+!   * line 18 ",4.C" and line 45 ",5.C" = 4.0, 5.0 (open 0; binary
+!     000004.00, 000005.00).
+!   * hex "C0"/"CO" bytes (lines 11, 38) = 00 (lesson 6).
+!
+! EXTERNALS (all SCOMD-local ones are not landed; values from this
+! page's binary or the neighbours' printed binaries):
+!   JXMSK: SX's J field prints .33 = 2J+1, J = 13 -> SYN,$13 (index).
+!   JOP=2 (this page, line 5 000002.00); JSR=4 (p.364 line 5 CTI,JSR
+!   prints 000004.00); JJ4=16 (p.366 line 5 JSR+JJ4 = 000024.00);
+!   JOV=32 (JSR+JJ4+JOV = 000064.00); JJ1=8 (p.366 line 9 JSR+JJ1+JOV =
+!   000054.00); JON=128 (JSR+JJ1+JOV+JON = 000254.00).  Each value is
+!   pinned by a printed single-symbol or one-new-symbol sum; NONE is
+!   from a defining card.  Plain integer SYN, no dds.
+!
+! CARD SERIALS.  WA000290 .. WA000339: lines 42 and 43 BOTH print
+! WA000331, lines 46 and 47 BOTH print WA000334.  Recorded.
+
+JXMSK   SYN,$X13                     ! not landed; SX lines 4, 31 print .33 = 2*13+1  [p.363 defines it SYN,$X13; was SYN, $13]
+JOP     SYN,2.0                      ! not landed; CTI line 5 000002.00  [p.363 defines it SYN,2.0; was SYN, 2]
+JSR     SYN,4.0                      ! not landed; p.364 line 5 CTI,JSR 000004.00  [p.363 defines it SYN,4.0; was SYN, 4]
+JJ1     SYN,8.0                      ! not landed; p.366 line 9 JSR+JJ1+JOV 000054.00  [p.363 defines it SYN,8.0; was SYN, 8]
+JJ4     SYN,16.0                     ! not landed; p.366 line 5 JSR+JJ4 000024.00  [p.363 defines it SYN,16.0; was SYN, 16]
+JOV     SYN,32.0                     ! not landed; line 9 JSR+JJ4+JOV 000064.00  [p.363 defines it SYN,32.0; was SYN, 32]
+JON     SYN,128.0                    ! not landed; line 7 JSR+JJ1+JOV+JON 000254.00  [p.363 defines it SYN,128.0; was SYN, 128]
+JNOPX   SYN, (8)234637.0             ! not landed; BRZ line 10 234637.34, half word only
+ZEREX2  SYN, (8)234632.0             ! not landed; B line 11 234632.10, half word only
+ZEXITX  SYN, (8)234633.0             ! not landed; BE line 24 234633.00, half word only
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label
+SJBUSY  SYN(BU,1), SCOMRG.18         ! landed p.103 line 27; BZB line 12 215001.22
+SYSMOD  SYN(BU,2), SCOMRG+.8         ! landed p.103 line 18; BB line 13 215001.10
+YTSTR   SYN, (8)231133.0             ! landed p.268 line 41; BB line 14 231133.00
+ZSPLP9  SYN, (8)224052.0             ! landed p.212 line 12; SIC line 15
+ZSPLPR  SYN, (8)224046.40            ! landed p.212 line 5; BD line 16 224046.44
+SPRIMR  SYN, (8)215571.0             ! landed p.118 line 49; SIC line 19
+SPRIME  SYN, (8)215570.0             ! landed p.118 line 48; BD line 20 215570.04
+DEOJ    SYN, 65.0                    ! landed p.105 "D EOJ"; line 21 000101.00
+DABEOJ  SYN, 68.0                    ! landed p.105 "D ABEOJ"; line 48 000104.00
+YEOJS   SYN(BU,1), (8)231501.01      ! landed p.274 line 21 DD(BU,1),(2)0
+
+        SLC, (8)234722.0
+! line  1  -
+! line  2  -        *****EOJ COMMAND SUB-PACKAGE*****
+! line  3  -
+JEOJ    SX,JXMSK,$R                                          ! line  4
+        CTI0010(BU,18),JOP,46                                ! line  5
+        BRZ,JEOJX                                            ! line  6  -GO TO EXECUTE
+        CTI0010(BU,18),JSR+JJ1+JOV+JON,46                    ! line  7
+        BRZ,JEOJX                                            ! line  8
+        CTI0010(BU,18),JSR+JJ4+JOV,46                        ! line  9
+        BRZ,JNOPX                                            ! line 10
+        B,ZEREX2                                             ! line 11
+JEOJX   BZB,SJBUSY,ZEREX2                                    ! line 12
+        BB,SYSMOD,ZEOJX                                      ! line 13
+        BB,YTSTR,ZEREX2                                      ! line 14
+ZEOJX   SIC,ZSPLP9                                           ! line 15
+        BD,ZSPLPR                                            ! line 16
+        ,ZEOJ99                                              ! line 17
+        ,4.0                                                 ! line 18
+        SIC,SPRIMR                                           ! line 19
+        BD,SPRIME                                            ! line 20
+        ,DEOJ                                                ! line 21
+        LVI,12,2.0                                           ! line 22
+        CM1111(BU,1),YEOJS                                   ! line 23
+        BE,ZEXITX                                            ! line 24
+        CNOP                                                 ! line 25
+ZEOJ99  (A*)DD(BU),LEOJ REQUESTED BY OPERATOR.     *         ! line 26
+! line 27  -
+! line 28  -
+! line 29  -             ****  ABEOJ COMMAND ****
+! line 30  -
+ZABEND  SX,JXMSK,$R                                          ! line 31
+        CTI0010(BU,18),JOP,46                                ! line 32
+        BRZ,ZAEOJX                                           ! line 33
+        CTI0010(BU,18),JSR+JJ1+JOV+JON,46                    ! line 34
+        BRZ,ZAEOJX                                           ! line 35
+        CTI0010(BU,18),JSR+JJ4+JOV,46                        ! line 36
+        BRZ,JNOPX                                            ! line 37
+        B,ZEREX2                                             ! line 38
+ZAEOJX  BZB,SJBUSY,ZEREX2                                    ! line 39
+        BB,SYSMOD,ZAEOJZ                                     ! line 40
+        BB,YTSTR,ZEREX2                                      ! line 41
+ZAEOJZ  SIC,ZSPLP9                                           ! line 42
+        BD,ZSPLPR                                            ! line 43
+        ,ZABJ99                                              ! line 44
+        ,5.0                                                 ! line 45
+        SIC,SPRIMR                                           ! line 46
+        BD,SPRIME                                            ! line 47
+        ,DABEOJ                                              ! line 48
+        LVI,12,9.0                                           ! line 49
+        BE,ZEXITX                                            ! line 50
+        CNOP                                                 ! line 51
+ZABJ99  (A*)DD(BU),LABNORMAL EOJ REQUESTED BY OPERATOR.    * ! line 52
+
+!SYM JEOJ   234722.00
+!SYM JEOJX  234727.40
+!SYM ZEOJX  234732.40
+!SYM ZEOJ99 234740.00
+!SYM ZABEND 234744.00
+!SYM ZAEOJX 234751.40
+!SYM ZAEOJZ 234754.40
+!SYM ZABJ99 234761.00
+!CHECK 234722.00 | 000011.33 10 | line 4 J EOJ SX,JXMSK,$R (printed "J ECJ")
+!CHECK 234722.40 | 000002.00 80 422027.05 70 | line 5 CTI0010(BU,18),JOP,46 (printed "CTIC010", "JCP")
+!CHECK 234723.40 | 234727.74 C2 | line 6 BRZ,JEOJX
+!CHECK 234724.00 | 000254.00 80 422027.05 70 | line 7 CTI0010(BU,18),JSR+JJ1+JOV+JON,46
+!CHECK 234725.00 | 234727.74 C2 | line 8 BRZ,J EOJ X
+!CHECK 234725.40 | 000064.00 80 422027.05 70 | line 9 CTI0010(BU,18),JSR+JJ4+JOV,46
+!CHECK 234726.40 | 234637.34 C2 | line 10 BRZ,J NOPX
+!CHECK 234727.00 | 234632.10 00 | line 11 B,Z ER EX2 (byte prints "C0")
+!CHECK 234727.40 | 215001.22 80 234632.34 00 | line 12 JEOJX BZB,SJBUSY,Z EREX2
+!CHECK 234730.40 | 215001.10 80 234732.74 02 | line 13 BB,SYSMOD,Z EOJX
+!CHECK 234731.40 | 231133.00 80 234632.34 02 | line 14 BB,YTSTR,Z EREX2
+!CHECK 234732.40 | 224052.00 80 | line 15 Z EOJX SIC,Z SPL P9
+!CHECK 234733.00 | 224046.44 00 | line 16 BD,Z SPL PR
+!CHECK 234733.40 | 234740.00 80 | line 17 ,Z EOJ 99
+!CHECK 234734.00 | 000004.00 80 | line 18 ,4.0 (printed ",4.C")
+!CHECK 234734.40 | 215571.00 80 | line 19 SIC,S PRIM R
+!CHECK 234735.00 | 215570.04 00 | line 20 BD,S PRIME
+!CHECK 234735.40 | 000101.00 80 | line 21 ,DEOJ
+!CHECK 234736.00 | 000002.31 01 | line 22 LVI,12,2.0
+!CHECK 234736.40 | 231501.01 80 001000.36 F0 | line 23 CM1111(BU,1),YEOJS
+!CHECK 234737.40 | 234633.00 00 | line 24 BE,Z EXIT X
+!CHECK 234744.00 | 000011.33 10 | line 31 Z ABEND SX,JXMSK,$R
+!CHECK 234744.40 | 000002.00 80 422027.05 70 | line 32 CTI0010(BU,18),JOP,46
+!CHECK 234745.40 | 234751.74 C2 | line 33 BRZ,ZAEOJX
+!CHECK 234746.00 | 000254.00 80 422027.05 70 | line 34 CTI0010(BU,18),JSR+JJ1+JOV+JON,46
+!CHECK 234747.00 | 234751.74 C2 | line 35 BRZ,ZAEOJX
+!CHECK 234747.40 | 000064.00 80 422027.05 70 | line 36 CTI0010(BU,18),JSR+JJ4+JOV,46
+!CHECK 234750.40 | 234637.34 C2 | line 37 BRZ,JNOPX
+!CHECK 234751.00 | 234632.10 00 | line 38 B,Z EREX2 (byte prints "C0")
+!CHECK 234751.40 | 215001.22 80 234632.34 00 | line 39 ZAEOJX BZB,SJBUSY,Z EREX2
+!CHECK 234752.40 | 215001.10 80 234754.74 02 | line 40 BB,SYSMOD,Z AEOJZ
+!CHECK 234753.40 | 231133.00 80 234632.34 02 | line 41 BB,YTSTR,Z EREX2
+!CHECK 234754.40 | 224052.00 80 | line 42 ZAEOJZ SIC,Z SPLP9
+!CHECK 234755.00 | 224046.44 00 | line 43 BD,Z SPLPR
+!CHECK 234755.40 | 234761.00 80 | line 44 ,Z ABJ99
+!CHECK 234756.00 | 000005.00 80 | line 45 ,5.0 (printed ",5.C")
+!CHECK 234756.40 | 215571.00 80 | line 46 SIC,SPRIMR
+!CHECK 234757.00 | 215570.04 00 | line 47 BD,SPRIME
+!CHECK 234757.40 | 000104.00 80 | line 48 ,DABEOJ
+!CHECK 234760.00 | 000011.31 01 | line 49 LVI,12,9.0
+!CHECK 234760.40 | 234633.00 00 | line 50 BE,Z EXITX

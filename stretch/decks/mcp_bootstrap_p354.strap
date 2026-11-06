@@ -1,0 +1,185 @@
+! mcp_bootstrap_p354.strap -- MCP printed page 354: the $DUMP program's
+! mnemonic / floating-point print subroutines: the immediate-operand
+! tail (B,AIMMD1), the connective field (ACONNI/ACONN/ACONNP, the
+! 4-bit connective converted through AOCTLB/AOCTLC), and the floating
+! point entry AFLPT (AFLPT1/AFLPT2, AUNORM, AFLMIN/AFLMN1, AFLNEG),
+! lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.104, read at 400 dpi, names at 900
+! dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$DUMP  CARD ID
+! VB000549  DIST. OF 3/01  3/01  PAGE NUMBER 354"; the heading row's
+! LOCATION field is 235551, line 1's word.
+!
+! THE PAGE.  50 lines; every line number prints a "*".  "*" after the
+! LOCATION on lines 1, 16, 29, 43.  No remark cards.  Remarks in the
+! remark field on lines 30 ("-N") and 32 ("-U"; a pencil stroke on the
+! paper just left of it, not print).  Located rows contiguous from
+! 235551.40 (line 1, B, a half word) to 235622.00 (line 50, B, a half
+! word; next 235622.40), then blank paper.  No TAIL.  Still PUNID
+! 22$DUMP, card series VB: the page does not leave the $DUMP.
+!
+! JOIN.  p.353 (tools/page_sheet.py 353) ends with LFI(BU,8),(8)71,40 at
+! 235550.40, a full word: next 235551.40 = line 1.  p.355 (sheet) opens
+! at 235622.40 (AFMPY SF(BU,16),...): contiguous with line 50.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * ACONNI / ACONN / ACONNP (labels lines 5, 12, 14) and AUNORM
+!     (label line 32, operand line 29): the round after C/N prints
+!     open (squarer than the C before it at 900 dpi); written O --
+!     this drum prints O open (CONN = connective, UNORM = unnormalized);
+!     p.352/353's sheets read "BAE,ACONN", "BB,...,ACONNP",
+!     "ACONNI+1." (asm-confirmed rows there).
+!     Not landed; no spelling elsewhere in decks/ or C22-6728.
+!   * "ACCTLC" (lines 9, 16): written AOCTLC, the spelling landed pp.344
+!     and 345 use (SIC,AOCTLB prints a closed O on lines 8, 15).
+!   * AL40 (line 20): the second glyph is a bare stroke, no top bar (I)
+!     and no flag (1); the foot is lost with the whole line's bottom
+!     edge (BU, 6 lose theirs too).  Read L: p.351's sheet reads a
+!     sibling "AL24" (236174.14) in the same *(BU,6),AL..,20 form.
+!   * AIMMD1 (lines 1, 4): line 1 prints D closed; line 4 prints it
+!     worn ("AIMMC1"); same binary.  p.353's sheet: "AIMMD1" label.
+!   * AINTC3 (line 13): the C is open with no stem at 900 dpi; kept C
+!     (p.352's sheet label "AINTC3", siblings AINTC1).
+!   * AFLPT1, AFLMN1: final glyph has the 1's flag (not I); ACONNI's
+!     final glyph has I's top and bottom bars.
+!     NOTE: a distinct AFLPTI exists (p.351 BB,AFLPTI,ACMP1 -> 236147.01;
+!     C22-6728-1 lists "AFLPTI:" among the flag bits), not this label
+!     (235574.00).
+!   * octal / hex fields with an open round read 0 ("FO" = F0, "DO" =
+!     D0, line 36's byte "CO" = 00, line 41's "200000.C0" = .00);
+!     line 41's operand "(2)C1000" = (2)01000, line 35's "C($14)" =
+!     0($14) (binaries 200000.00 and 000000.00).
+!
+! EXTERNALS.  None is defined by a landed deck; values from this page's
+! binary (the defining pages, pp.350-353, are being transcribed now).
+! AOCTLB/AOCTLC copy pp.344-345's stand-ins exactly.  The rest are
+! plain SYNs (rule: no dds for a symbol no landed page defines).
+! SIC addresses are BIT-EXACT; B addresses less B's .10 give the half
+! word only; BB targets less .34 are bit-exact.
+!
+! CARD SERIALS.  VB000549 .. VB000596.  Shared serials, each a SIC/B
+! pair: lines 8-9 (556), 15-16 (562).  None skipped.
+
+AIMMD1  SYN, (8)235517.40            ! not landed; B lines 1, 4 235517.50, half word only
+AOCTLB  SYN, (8)235376.40            ! not landed; SIC lines 8, 15 235376.40, BIT-EXACT
+AOCTLC  SYN, (8)235373.40            ! not landed; B lines 9, 16 235373.50, half word only (printed "ACCTLC")
+ARETRN  SYN, (8)235377.0             ! not landed; B lines 11, 18, 36 235377.10, half word only
+AINTC3  SYN, (8)235455.0             ! not landed; B line 13 235455.10, half word only
+AL40    SYN, (8)236174.06            ! not landed; *(BU,6) line 20 236174.06, BIT-EXACT
+AFLTBL  SYN, (8)236336.0             ! not landed; V+I line 22 236336.03, word only
+AFLABS  SYN, (8)235625.0             ! not landed; BB line 26 235625.34, BIT-EXACT
+AFMPY   SYN, (8)235622.40            ! not landed (p.355 line 1); BB lines 47, 48 235622.74, BIT-EXACT
+
+        SLC, (8)235551.40
+        B,AIMMD1                                             ! line  1
+AMPY2A  SF(BU,8),$R.32,32                                    ! line  2
+        LFI(BU,8),(8)71,32                                   ! line  3
+        B,AIMMD1                                             ! line  4
+ACONNI  LFI(BU,8),(8)71,40                                   ! line  5
+        SF(BU,24)(V+I),.24($14),40                           ! line  6
+        LF(BU,4,1),.19($13)                                  ! line  7
+        SIC,AOCTLB                                           ! line  8
+        B,AOCTLC                                             ! line  9
+        SF(BU,32,8)(V+I),.32($14)                            ! line 10
+        B,ARETRN                                             ! line 11
+ACONN   L(BU,5),.23($13),40                                  ! line 12
+        B,AINTC3                                             ! line 13
+ACONNP  LF(BU,4,1),.19($13)                                  ! line 14
+        SIC,AOCTLB                                           ! line 15
+        B,AOCTLC                                             ! line 16
+        SF(BU,32)(V+I),.32($14)                              ! line 17
+        B,ARETRN                                             ! line 18
+AFLPT   L(BU,5),.21($13),40                                  ! line 19
+        *(BU,6),AL40,20                                      ! line 20
+        LV,$1,$R                                             ! line 21
+        V+I,$1,AFLTBL                                        ! line 22
+        L(BU,32),($1),32                                     ! line 23
+        BB,.20($13),AFLMIN                                   ! line 24
+AFLPT1  LFI(BU,8),(8)20,24                                   ! line 25
+        BB,.19($13),AFLABS                                   ! line 26
+        LFI(BU,8),(8)20,16                                   ! line 27
+AFLPT2  LFI(BU,8),(8)34,8                                    ! line 28
+        BB,.18($13),AUNORM                                   ! line 29
+        LFI(BU,8),(8)45                                      ! line 30  -N
+        B,$+1.32                                             ! line 31
+AUNORM  LFI(BU,8),(8)24                                      ! line 32  -U
+        ST(BU,64)(V+I),1.($14)                               ! line 33
+        LFI(BU,8),(8)74                                      ! line 34
+        SF(BU,8),0($14)                                      ! line 35
+        B,ARETRN                                             ! line 36
+AFLMIN  BB,.39($1),AFLNEG                                    ! line 37
+        LF(BU,5),.21($13)                                    ! line 38
+        KFI(BU,5),0                                          ! line 39
+        BAE,AFLMN1                                           ! line 40
+        KFI(BU,5),(2)01000                                   ! line 41
+        BAE,AFLMN1                                           ! line 42
+        LFI(BU,8),(8)40,48                                   ! line 43
+        B,AFLPT1                                             ! line 44
+AFLMN1  LFI(BU,8),(8)40,56                                   ! line 45
+        B,AFLPT1                                             ! line 46
+AFLNEG  BB,.36($1),AFMPY                                     ! line 47
+        BB,.37($1),AFMPY                                     ! line 48
+        LFI(BU,8),(8)45,24                                   ! line 49
+        B,AFLPT1+1.                                          ! line 50
+
+!SYM AMPY2A 235552.00
+!SYM ACONNI 235554.40
+!SYM ACONN 235562.00
+!SYM ACONNP 235563.40
+!SYM AFLPT 235567.00
+!SYM AFLPT1 235574.00
+!SYM AFLPT2 235577.00
+!SYM AUNORM 235602.40
+!SYM AFLMIN 235607.00
+!SYM AFLMN1 235615.40
+!SYM AFLNEG 235617.00
+!CHECK 235551.40 | 235517.50 00 | line 1 B,AIMMD1 (byte prints "CO", read 00)
+!CHECK 235552.00 | 000011.40 80 010020.12 F0 | line 2 AMPY2A SF(BU,8),$R.32,32
+!CHECK 235553.00 | 162000.00 80 410020.06 70 | line 3 LFI(BU,8),(8)71,32
+!CHECK 235554.00 | 235517.50 00 | line 4 B,AIMMD1
+!CHECK 235554.40 | 162000.00 80 410024.06 70 | line 5 ACONNI LFI(BU,8),(8)71,40 (label prints "ACCNNI")
+!CHECK 235555.40 | 000000.30 8E 130024.12 F0 | line 6 SF(BU,24)(V+I),.24($14),40
+!CHECK 235556.40 | 000000.23 8D 004100.06 70 | line 7 LF(BU,4,1),.19($13)
+!CHECK 235557.40 | 235376.40 80 | line 8 SIC,AOCTLB
+!CHECK 235560.00 | 235373.50 00 | line 9 B,AOCTLC (printed "ACCTLC")
+!CHECK 235560.40 | 000000.40 8E 140000.12 F0 | line 10 SF(BU,32,8)(V+I),.32($14)
+!CHECK 235561.40 | 235377.10 00 | line 11 B,ARETRN
+!CHECK 235562.00 | 000000.27 8D 005024.20 50 | line 12 ACONN L(BU,5),.23($13),40 (label prints "ACCNN")
+!CHECK 235563.00 | 235455.10 00 | line 13 B,AINTC3
+!CHECK 235563.40 | 000000.23 8D 004100.06 70 | line 14 ACONNP LF(BU,4,1),.19($13) (label prints "ACCNNP")
+!CHECK 235564.40 | 235376.40 80 | line 15 SIC,AOCTLB
+!CHECK 235565.00 | 235373.50 00 | line 16 B,AOCTLC (printed "ACCTLC")
+!CHECK 235565.40 | 000000.40 8E 140000.12 F0 | line 17 SF(BU,32)(V+I),.32($14)
+!CHECK 235566.40 | 235377.10 00 | line 18 B,ARETRN
+!CHECK 235567.00 | 000000.25 8D 005024.20 50 | line 19 AFLPT L(BU,5),.21($13),40
+!CHECK 235570.00 | 236174.06 80 006012.21 90 | line 20 *(BU,6),AL40,20
+!CHECK 235571.00 | 000011.02 30 | line 21 LV,$1,$R
+!CHECK 235571.40 | 236336.03 05 | line 22 V+I,$1,AFLTBL
+!CHECK 235572.00 | 000000.00 81 040020.20 50 | line 23 L(BU,32),($1),32
+!CHECK 235573.00 | 000000.24 8D 235607.34 02 | line 24 BB,.20($13),AFLMIN
+!CHECK 235574.00 | 040000.00 80 410014.06 70 | line 25 AFLPT1 LFI(BU,8),(8)20,24
+!CHECK 235575.00 | 000000.23 8D 235625.34 02 | line 26 BB,.19($13),AFLABS
+!CHECK 235576.00 | 040000.00 80 410010.06 70 | line 27 LFI(BU,8),(8)20,16
+!CHECK 235577.00 | 070000.00 80 410004.06 70 | line 28 AFLPT2 LFI(BU,8),(8)34,8
+!CHECK 235600.00 | 000000.22 8D 235602.74 02 | line 29 BB,.18($13),AUNORM (prints "AUNCRM")
+!CHECK 235601.00 | 112000.00 80 410000.06 70 | line 30 LFI(BU,8),(8)45
+!CHECK 235602.00 | 235603.50 00 | line 31 B,$+1.32
+!CHECK 235602.40 | 050000.00 80 410000.06 70 | line 32 AUNORM LFI(BU,8),(8)24 (label prints "AUNCRM")
+!CHECK 235603.40 | 000001.00 8E 100000.20 D0 | line 33 ST(BU,64)(V+I),1.($14)
+!CHECK 235604.40 | 170000.00 80 410000.06 70 | line 34 LFI(BU,8),(8)74
+!CHECK 235605.40 | 000000.00 8E 010000.12 F0 | line 35 SF(BU,8),0($14) (h2 prints "FO"; operand prints "C", read 0)
+!CHECK 235606.40 | 235377.10 00 | line 36 B,ARETRN (byte prints "CO", read 00)
+!CHECK 235607.00 | 000000.47 81 235617.34 02 | line 37 AFLMIN BB,.39($1),AFLNEG
+!CHECK 235610.00 | 000000.25 8D 005000.06 70 | line 38 LF(BU,5),.21($13)
+!CHECK 235611.00 | 000000.00 80 405000.23 10 | line 39 KFI(BU,5),0
+!CHECK 235612.00 | 235615.76 C2 | line 40 BAE,AFLMN1
+!CHECK 235612.40 | 200000.00 80 405000.23 10 | line 41 KFI(BU,5),(2)01000 (octal prints "200000.C0", read .00; statement prints "(2)C1000", read 01000)
+!CHECK 235613.40 | 235615.76 C2 | line 42 BAE,AFLMN1
+!CHECK 235614.00 | 100000.00 80 410030.06 70 | line 43 LFI(BU,8),(8)40,48
+!CHECK 235615.00 | 235574.10 00 | line 44 B,AFLPT1
+!CHECK 235615.40 | 100000.00 80 410034.06 70 | line 45 AFLMN1 LFI(BU,8),(8)40,56
+!CHECK 235616.40 | 235574.10 00 | line 46 B,AFLPT1
+!CHECK 235617.00 | 000000.44 81 235622.74 02 | line 47 AFLNEG BB,.36($1),AFMPY
+!CHECK 235620.00 | 000000.45 81 235622.74 02 | line 48 BB,.37($1),AFMPY
+!CHECK 235621.00 | 112000.00 80 410014.06 70 | line 49 LFI(BU,8),(8)45,24
+!CHECK 235622.00 | 235575.10 00 | line 50 B,AFLPT1+1.

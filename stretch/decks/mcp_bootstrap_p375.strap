@@ -1,0 +1,188 @@
+! mcp_bootstrap_p375.strap -- MCP printed page 375: SYSTEM COMMAND
+! package (PUNID 22SCOMD), the IOCHANGE command's DISK SECTION
+! (ZDSKCH, ZDLDSK, ZADDSK), the MAINTENANCE DELETE SECTION (ZMAIND,
+! ZABEOJ, the message ZABJ1) and the opening of the IOCHANGE ERROR
+! ROUTINES (ZMNER9, ZMNERX, ZMNERR), lines 1-52.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.125, read at 400 dpi, doubtful
+! glyphs at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID
+! 22SCOMD  CARD ID WA000691  DIST. OF 3/01  3/01  PAGE NUMBER 375".
+! The heading row's LOCATION field is BLANK (line 1 is a remark card).
+!
+! THE PAGE.  52 lines; every line number prints a "*".  A "*" prints
+! after the LOCATION on lines 17, 38 and 50 (as p.361 line 32).  No
+! TAIL, no SLC, no change of PUNID or card series: still SCOMD.
+!   lines 1-2    remarks (2: "******* DISK SECTION ******").
+!   lines 3-17   ZDSKCH .. B,Z9500, 235325.40 .. 235340.40.
+!   lines 18-19  remarks (19: "****** MAINTENANCE DELETE SECTION ****").
+!   lines 20-41  ZMAIND .. the (IQS*) message ZABJ1 at 235356.00 (5
+!                words, 40 characters; next located line 45 at
+!                235363.00).
+!   lines 42-44  remarks (43: "****** IOCHANGE ERROR ROUTINES *******").
+!   lines 45-52  ZMNER9 .. B,ZEREX2 (line 52, a half word at
+!                235371.00; next 235371.40), then blank paper.
+!
+! JOIN.  First location 235325.40 (line 3); p.374 is not landed, so
+! the join backward is unchecked.  p.376 should open at 235371.40.
+! The deck states 235325.40 hard.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 5 "Z ACC" (both rounds open, squared at 900 dpi) = ZADD: the
+!     KFI(BU,18,6) immediate prints 616464.00, BCD 61 64 64 = "ADD";
+!     C22-6728 names ZADDCH/ZADDUN for "the ADD code".
+!   * line 3/4 "J FLDB" = JFLDB (C22-6728 typesets JFLDB).
+!   * line 23 "Z DCNE" = ZDONE (lines 13, 21, 39 print it closed).
+!   * lines 24, 46, 48 "CMOCOO" = CM0000 (lines 25, 26, 45, 49 print
+!     CM0000; the octal fields print 0 open).
+!   * line 45 label "Z MN ER9": a plain 9 at 900 dpi.  C22-6728's
+!     flowchart OCR reads "ZMNERD"/"ZMNERO" -- OCR of a chart, not
+!     typeset text; written ZMNER9 as printed.
+!   * line 30 ",Z SPL C1": the round is open with no stem at 900 dpi
+!     (C or O -- this drum prints O open); no ZSPLC1/ZSPLO1 anywhere in
+!     decks/ or C22-6728.  Written ZSPLC1 as printed -- UNSETTLED
+!     C vs O; the defining SCOMD page must be checked.
+!   * hex bytes printed "CO" (lines 17, 40, 47, 51) = 00 / C0 as the
+!     statement assembles (lesson 6); noted per !CHECK.
+!
+! EXTERNALS.  Resident: SCOMRG/SCNFCG (p.103, forms as p.297),
+! SCHAVL/SUNAVL/SUNASG (p.99), ZSPLP9/ZSPLPR (p.212), SPRIMR/SPRIME
+! (p.118), DABEOJ/DCOMM (p.105), DMCP (p.108).  SCOMD, not landed --
+! values from this page's binary: JFLDB, ZEREX1, ZEREX2, ZDONE, ZADD,
+! ZSPLC1 (plain SYN), ZDELET/ZDELTM (SYN(BU,36,6): line 20/22's KF
+! with no dds print the same 044606.23 10 as line 7's explicit
+! KF(BU,36,6)), ZREQCH = $8, ZREQUN = $6 (index nibbles 88/86).
+!
+! CARD SERIALS.  WA000691 .. WA000742, one per line, none shared or
+! skipped.
+
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label
+SCNFCG  SYN(BU,1), SCOMRG+.2         ! landed p.103 line 12; CM1111 line 12 215001.02
+SCHAVL  SYN(BU,1), 0.25              ! p.99 line 21 -CHANNEL AVAILABILITY
+SUNAVL  SYN(BU,1), 0.28              ! p.99 line 26 -UNIT AVAILABILITY
+SUNASG  SYN(BU,1), 0.29              ! p.99 line 27 -UNIT ASSIGNMENT
+ZSPLP9  SYN, (8)224052.0             ! landed p.212 line 12; SIC line 28
+ZSPLPR  SYN, (8)224046.40            ! landed p.212 line 5; BD line 29 224046.44
+SPRIMR  SYN, (8)215571.0             ! landed p.118 line 49; SIC line 32 215571.00
+SPRIME  SYN, (8)215570.0             ! landed p.118 line 48; BD line 33 215570.04
+DABEOJ  SYN, 68.0                    ! landed p.105 "D ABEOJ"; line 34 000104.00
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; BE line 35 000040.00
+DCOMM   SYN, 35.32                   ! landed p.105 line 23; line 36 000043.40
+JFLDB   SYN, (8)234560.0             ! not landed; BZB line 3 JFLDB+3.1 = 234563.01, L line 4 JFLDB+4.0 = 234564.00
+ZEREX1  SYN, (8)234631.0             ! not landed; B line 11 234631.10, half word only
+ZEREX2  SYN, (8)234632.0             ! not landed; B line 52 234632.10, half word only
+ZDONE   SYN, (8)235234.0             ! not landed; B line 13 235234.10, half word only
+ZSPL01  SYN, (8)235260.0             ! not landed; null op line 30 235260.00 (C vs O unsettled)  (printed "Z SPL C1": the same word 235260 that p.374 defines as ZSPL01)
+ZADD    SYN(BU,18,6), (8)616464      ! not landed; KFI immediate line 5 616464.00 = BCD "ADD" (printed "Z ACC")  [p.376 line 4 is its DDI card; its stand-in form]
+ZDELET  SYN(BU,36,6), (8)235372.0    ! not landed; KF line 7 235372.00; line 20 KF (no dds) prints the (BU,36,6) binary
+ZDELTM  SYN(BU,36,6), (8)235372.44   ! not landed; KF lines 9, 22, 50 235372.44, BIT-EXACT
+ZREQCH  SYN,$8                       ! not landed; index nibble 8 (lines 14, 16, 25, 48 byte 88)
+ZREQUN  SYN,$6                       ! not landed; index nibble 6 (lines 26, 45, 46 byte 86)
+
+        SLC, (8)235325.40
+! line  1  -
+! line  2  -        ******* DISK SECTION ******
+ZDSKCH  BZB,JFLDB+3.1,ZEREX1                                 ! line  3
+        L(BU,48),JFLDB+4.0                                   ! line  4
+        KFI(BU,18,6),ZADD,30                                 ! line  5  printed "Z ACC"
+        BAE,ZADDSK                                           ! line  6
+        KF(BU,36,6),ZDELET,12                                ! line  7
+        BAE,ZDLDSK                                           ! line  8
+        KF(BU,36,6),ZDELTM,12                                ! line  9
+        BAE,ZDLDSK                                           ! line 10
+        B,ZEREX1                                             ! line 11
+Z9500   CM1111,SCNFCG                                        ! line 12
+        B,ZDONE                                              ! line 13
+ZDLDSK  BB1,SCHAVL(ZREQCH),ZEREX1                            ! line 14  -BRANCH IF UNAVAILABLE
+        B,Z9500                                              ! line 15
+ZADDSK  BZBZ,SCHAVL(ZREQCH),ZEREX1                           ! line 16
+        B,Z9500                                              ! line 17
+! line 18  -
+! line 19  -        ****** MAINTENANCE DELETE SECTION ****
+ZMAIND  KF,ZDELET,12                                         ! line 20
+        BAE,ZDONE                                            ! line 21
+        KF,ZDELTM,12                                         ! line 22
+        BAE,ZDONE                                            ! line 23  printed "Z DCNE"
+        CM0000,SCNFCG                                        ! line 24  -RESET THE CHANGE BIT  (printed "CMOCOO")
+        CM0000,SCHAVL(ZREQCH)                                ! line 25  -MAKE CHN AND UNIT AVAIL AGAIN
+        CM0000,SUNAVL(ZREQUN)                                ! line 26
+        B,ZEREX1                                             ! line 27
+ZABEOJ  SIC,ZSPLP9                                           ! line 28
+        BD,ZSPLPR                                            ! line 29
+        ,ZSPL01                                              ! line 30  (printed "Z SPL C1": the same word 235260 that p.374 defines as ZSPL01)
+        CF,5.                                                ! line 31
+        SIC,SPRIMR                                           ! line 32
+        BD,SPRIME                                            ! line 33
+        ,DABEOJ                                              ! line 34
+        BE,DMCP                                              ! line 35
+        ,DCOMM                                               ! line 36
+        VF,ZABJ1                                             ! line 37
+        CF,5.                                                ! line 38
+        B,ZDONE                                              ! line 39
+        CNOP                                                 ! line 40
+ZABJ1   (IQS*)DD(BU),P.P. UNIT DOWN AND DELETED. ABEOJ TO PP.*   ! line 41
+! line 42  -
+! line 43  -        ****** IOCHANGE ERROR ROUTINES *******
+! line 44  -
+ZMNER9  CM0000,SUNAVL(ZREQUN)                                ! line 45  -SET UNIT AVAIL
+        CM0000,SUNASG(ZREQUN)                                ! line 46  -SET UNIT ASSIGNED  (printed "CMOCOO")
+        B,ZMNERR                                             ! line 47
+ZMNERX  CM0000,SCHAVL(ZREQCH)                                ! line 48  -SET CHAN AVAIL AGAIN  (printed "CMOCOO")
+ZMNERR  CM0000,SCNFCG                                        ! line 49  -RESET CONFIG CHANGE BIT
+        KF,ZDELTM,12                                         ! line 50
+        BZAE,ZEREX1                                          ! line 51
+        B,ZEREX2                                             ! line 52
+
+!SYM ZDSKCH 235325.40
+!SYM Z9500 235334.40
+!SYM ZDLDSK 235336.00
+!SYM ZADDSK 235337.40
+!SYM ZMAIND 235341.00
+!SYM ZABEOJ 235347.40
+!SYM ZABJ1 235356.00
+!SYM ZMNER9 235363.00
+!SYM ZMNERX 235365.40
+!SYM ZMNERR 235366.40
+!CHECK 235325.40 | 234563.01 80 234631.34 00 | line 3 ZDSKCH BZB,JFLDB+3.1,ZEREX1
+!CHECK 235326.40 | 234564.00 80 060000.20 50 | line 4 L(BU,48),JFLDB+4.0
+!CHECK 235327.40 | 616464.00 80 422617.23 10 | line 5 KFI(BU,18,6),ZADD,30
+!CHECK 235330.40 | 235337.76 C2 | line 6 BAE,ZADDSK
+!CHECK 235331.00 | 235372.00 80 044606.23 10 | line 7 KF(BU,36,6),ZDELET,12
+!CHECK 235332.00 | 235336.36 C2 | line 8 BAE,ZDLDSK
+!CHECK 235332.40 | 235372.44 80 044606.23 10 | line 9 KF(BU,36,6),ZDELTM,12
+!CHECK 235333.40 | 235336.36 C2 | line 10 BAE,ZDLDSK
+!CHECK 235334.00 | 234631.10 00 | line 11 B,ZEREX1
+!CHECK 235334.40 | 215001.02 80 001000.36 F0 | line 12 Z9500 CM1111,SCNFCG
+!CHECK 235335.40 | 235234.10 00 | line 13 B,ZDONE
+!CHECK 235336.00 | 000000.31 88 234631.34 0E | line 14 ZDLDSK BB1,SCHAVL(ZREQCH),ZEREX1
+!CHECK 235337.00 | 235334.50 00 | line 15 B,Z9500
+!CHECK 235337.40 | 000000.31 88 234631.34 04 | line 16 ZADDSK BZBZ,SCHAVL(ZREQCH),ZEREX1
+!CHECK 235340.40 | 235334.50 00 | line 17 B,Z9500 (byte prints "CO")
+!CHECK 235341.00 | 235372.00 80 044606.23 10 | line 20 ZMAIND KF,ZDELET,12
+!CHECK 235342.00 | 235234.36 C2 | line 21 BAE,ZDONE
+!CHECK 235342.40 | 235372.44 80 044606.23 10 | line 22 KF,ZDELTM,12
+!CHECK 235343.40 | 235234.36 C2 | line 23 BAE,ZDONE
+!CHECK 235344.00 | 215001.02 80 001000.00 F0 | line 24 CM0000,SCNFCG
+!CHECK 235345.00 | 000000.31 88 001000.00 F0 | line 25 CM0000,SCHAVL(ZREQCH)
+!CHECK 235346.00 | 000000.34 86 001000.00 F0 | line 26 CM0000,SUNAVL(ZREQUN)
+!CHECK 235347.00 | 234631.10 00 | line 27 B,ZEREX1
+!CHECK 235347.40 | 224052.00 80 | line 28 ZABEOJ SIC,ZSPLP9
+!CHECK 235350.00 | 224046.44 00 | line 29 BD,ZSPLPR
+!CHECK 235350.40 | 235260.00 80 | line 30 ,ZSPL01  [(printed "Z SPL C1": the same word 235260 that p.374 defines as ZSPL01)]
+!CHECK 235351.00 | 000005 | line 31 CF,5.
+!CHECK 235351.40 | 215571.00 80 | line 32 SIC,SPRIMR
+!CHECK 235352.00 | 215570.04 00 | line 33 BD,SPRIME
+!CHECK 235352.40 | 000104.00 80 | line 34 ,DABEOJ
+!CHECK 235353.00 | 000040.00 00 | line 35 BE,DMCP
+!CHECK 235353.40 | 000043.40 80 | line 36 ,DCOMM
+!CHECK 235354.00 | 235356.00+ | line 37 VF,ZABJ1
+!CHECK 235354.40 | 000005 | line 38 CF,5.
+!CHECK 235355.00 | 235234.10 00 | line 39 B,ZDONE
+!CHECK 235355.40 | 000000.30 00 | line 40 CNOP (byte prints "CO")
+!CHECK 235363.00 | 000000.34 86 001000.00 F0 | line 45 ZMNER9 CM0000,SUNAVL(ZREQUN)
+!CHECK 235364.00 | 000000.35 86 001000.00 F0 | line 46 CM0000,SUNASG(ZREQUN)
+!CHECK 235365.00 | 235366.50 00 | line 47 B,ZMNERR (byte prints "CO")
+!CHECK 235365.40 | 000000.31 88 001000.00 F0 | line 48 ZMNERX CM0000,SCHAVL(ZREQCH)
+!CHECK 235366.40 | 215001.02 80 001000.00 F0 | line 49 ZMNERR CM0000,SCNFCG
+!CHECK 235367.40 | 235372.44 80 044606.23 10 | line 50 KF,ZDELTM,12
+!CHECK 235370.40 | 234631.36 C0 | line 51 BZAE,ZEREX1 (byte prints "CO" = C0)
+!CHECK 235371.00 | 234632.10 00 | line 52 B,ZEREX2

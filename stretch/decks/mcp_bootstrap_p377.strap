@@ -1,0 +1,195 @@
+! mcp_bootstrap_p377.strap -- MCP printed page 377: the SYSTEM COMMAND
+! package's ONLINE command (Z ONLIN, lines 1-34) and the opening of the
+! OFFLINE command (Z OFFLN, lines 35-54).
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.127, read at 400 dpi, names at 900
+! dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22SCOMD  CARD ID
+! WA000792  DIST. OF 3/01  3/01  PAGE NUMBER 377"; the heading row's
+! LOCATION field is BLANK (line 1 is a remark).
+!
+! THE PAGE.  54 lines, every line number prints a "*"; a "*" after the
+! LOCATION on lines 7, 23 and 45.  Contiguous 235414.40 .. 235453.40
+! (line 54, a half word; next 235454.00).  Still SCOMD: no PUNID, no
+! SLC, card series WA throughout.  No TAIL.
+!   lines  1-3   remarks (banner "****** ONLINE COMMAND ******" on 2).
+!   lines  4-34  Z ONLIN: mode-mask tests (CTI0010 + BRZ), Z ON 01Y,
+!                Z ON 01X, Z ON 001 (B,D MCP / ,SKOM / ,0.0 calling
+!                sequence), Z OFF02 (two ZASN01 linkages), Z OFF01 B,$.
+!   lines 35-37  remarks (banner "****** OFFLINE COMMAND ******" on 36).
+!   lines 38-54  Z OFFLN .. Z OFF09 .. Z OFF1X B,DMCP / ,SKCM.
+!
+! JOIN.  p.376 (Vision reading) ends with B,Z ER EX2 at 235414.00, a
+! half word, so line 4's 235414.40 continues it; p.361's B,ZONLIN
+! prints 235414.50.  p.378 (Vision reading) opens at 235454.00 = line
+! 54's 235453.40 + one half word.
+!
+! >>> THE MODE-MASK BITS ARE p.363'S, NOT LANDED. <<<  JOP .. ZIPL and
+! JXMSK are defined on printed p.363 (being transcribed in parallel);
+! the stand-ins copy p.363's printed SYNs as the Vision reading gives
+! them (J OP SYN,2.0 .. Z IPL SYN,512.0; J XMSK SYN,$X13).  This page
+! prints only SUMS of them, and every sum agrees: JSR+JJ1+JOF+JOV =
+! 4+8+256+32 = 0o454; JSR+JJ4+JOV = 0o64; JSR+JNV+JON = 0o304;
+! JOP+JOF+JOV = 0o442; ZIPL+JNV+JOF = 0o1500; JSR+JJ1+JON+JOV = 0o254.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "CTICO1O" / "CTIC010" = CTI0010 (open rounds are 0 in a
+!     connective code; landed decks spell CTI0110, CTI0001).
+!   * "CMOCOO", "CMOCOO(BU,2)" = CM0000 (lines 16, 17, 33, 48).
+!   * names written without blanks: Z CNLIN = ZONLIN (p.361's spelling,
+!     C22-6728 typesets ZONLIN), Z OFFLN = ZOFFLN, J X MSK = JXMSK, J NOPX
+!     = JNOPX (C22-6728), Z ER EX2 = ZEREX2, Z CCM 90 = ZCOM90 (landed,
+!     p.297), Z ASN 01 = ZASN01 (landed), S TRAN B = STRANB, ,SKCM = SKOM
+!     (landed p.106 "S KOM"), J CF/J OF = JOF, J CV/J OV = JOV.
+!   * ZON001, ZON01X, ZON01Y, ZOFF01, ZOFF02, ZOFF09, ZOFF1X: digit 0
+!     after the ZON/ZOFF stem (numbered family; this drum prints both
+!     0 and O open or closed at random -- line 16 prints "CMOCOO").
+!     C22-6728-1 PDF p.111 typesets ZON001 and ZOFF09 with narrow
+!     digits, but ZONO1X (twice), ZONO1Y and once ZOFFO2 with a WIDE
+!     letter O -- and the same page typesets ZOFF02 narrow, so the
+!     typesetter is inconsistent in this family; the family rule
+!     decides.  ZON01X/ZON01Y are a judgment (coordinator: note).
+!   * hex bytes "C0"/"0C"/"CO" on B rows = 00 (lesson 6; the octal
+!     fields of the same rows print 0 open).
+!
+! CARD SERIALS.  WA000792 .. WA000841, one per line, except four
+! shared: WA000810 (lines 19, 20), WA000817 (27, 28), WA000819 (30,
+! 31), WA000838 (50, 51) -- each a SIC/B linkage pair.  Recorded.
+
+SCOMRG  SYN, (8)215001.0             ! landed p.103 label
+STRANB  SYN(BU,1), SCOMRG+.10        ! landed p.103 line 19; CM lines 16, 48 215001.12
+SYSMOD  SYN(BU,2), SCOMRG+.8         ! landed p.103 line 18; CM line 17 215001.10
+SPPBT1  SYN(BU,1), SCOMRG+.13        ! landed p.103 line 22; lines 33, 49 215001.15
+SPPBT2  SYN(BU,1), SCOMRG+.14        ! landed p.103 line 23; BZBZ line 18 215001.16
+SPPBT3  SYN(BU,1), SCOMRG+.15        ! landed p.103 line 24; CM line 52 215001.17
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B lines 21, 53 000040.10
+SKOM    SYN, 79.32                   ! landed p.106 "S KOM"; lines 22, 54 000117.40 (printed "SKCM")
+VWTP    SYN, (8)6.0                  ! landed p.103 (p.100 card); VF line 29 000006.00+
+VRTP    SYN, (8)4.0                  ! landed p.103 (p.100 card); VF line 32 000004.00+
+ZCOM90  SYN(BU,32,8), (8)232762.0    ! landed p.297 line 27 "ZCOM90 B,$"; SIC lines 27, 30 232762.00
+ZASN01  SYN(BU,32,8), (8)232746.0    ! landed p.297 "ZASN01 SIC,ZCOM99"; B lines 28, 31 232746.10, half word only
+JXMSK   SYN, $X13                    ! not landed; p.363 line 40 "J XMSK SYN,$X13 -MODE MASK INDEX"; SX lines 4, 38 .33 10
+JOP     SYN, 2.0                     ! not landed; p.363 line 44 "J OP SYN,2.0"
+JSR     SYN, 4.0                     ! not landed; p.363 line 45 "J SR SYN,4.0"
+JJ1     SYN, 8.0                     ! not landed; p.363 line 46 "J J1 SYN,8.0"
+JJ4     SYN, 16.0                    ! not landed; p.363 line 47 "J J4 SYN,16.0"
+JOV     SYN, 32.0                    ! not landed; p.363 line 48 "J CV SYN,32.0"
+JNV     SYN, 64.0                    ! not landed; p.363 line 49 "J NV SYN,64.0"
+JON     SYN, 128.0                   ! not landed; p.363 line 50 "J ON SYN,128.0"
+JOF     SYN, 256.0                   ! not landed; p.363 line 51 "J CF SYN,256.0"
+ZIPL    SYN, 512.0                   ! not landed; p.363 line 52 "Z IPL SYN,512.0"
+JNOPX   SYN, (8)234637.0             ! not landed; p.365 line 18 "JNCPX SYN,$"; BRZ lines 8, 40 234637.34
+ZEREX2  SYN(BU,32,8), (8)234632.0    ! not landed; p.365 line 7 "Z ER EX2 LX,12,..."; B lines 15, 47 234632.10, half word only
+ZEXITX  SYN(BU,32,8), (8)234633.0    ! not landed; p.365 line 9 "Z EXITX LWF(U),..."; B line 25 234633.10, half word only
+
+        SLC, (8)235414.40
+! line  1  -
+! line  2  -          ****** ONLINE COMMAND ******
+! line  3  -
+ZONLIN  SX,JXMSK,$L                                          ! line  4  printed "Z CNLIN", "JX MSK"
+        CTI0010(BU,18),JSR+JJ1+JOF+JOV,-18                   ! line  5  printed "CTICO1O"
+        BRZ,ZON001                                           ! line  6  -OK
+        CTI0010(BU,18),JSR+JJ4+JOV,-18                       ! line  7  (location carries *)
+        BRZ,JNOPX                                            ! line  8
+        CTI0010(BU,18),JSR+JNV+JON,-18                       ! line  9
+        BRZ,ZON01Y                                           ! line 10
+        CTI0010(BU,18),JOP+JOF+JOV,-18                       ! line 11
+        BRZ,ZON001                                           ! line 12
+        CTI0010(BU,18),ZIPL+JNV+JOF,-18                      ! line 13
+        BRZ,ZON01X                                           ! line 14
+        B,ZEREX2                                             ! line 15
+ZON01Y  CM0000,STRANB                                        ! line 16  -RESET MODE CHANGE BIT  printed "ZCNO1Y CMOCOO,S TRAN B"
+ZON01X  CM0000(BU,2),SYSMOD                                  ! line 17  -SET MODE TO ONLINE OVERLAPPED
+        BZBZ,SPPBT2,ZON001                                   ! line 18  -ASSIGN TAPES IF NEVER ASSIGNED
+        SIC,ZOFF01                                           ! line 19
+        B,ZOFF02                                             ! line 20
+ZON001  B,DMCP                                               ! line 21  printed "B,D MCP"
+        ,SKOM                                                ! line 22  printed "SKCM"
+        ,0.0                                                 ! line 23  (location carries *)
+        LVI,12,7.0                                           ! line 24
+        B,ZEXITX                                             ! line 25
+! line 26  -
+ZOFF02  SIC,ZCOM90                                           ! line 27  printed "Z CCM 90"
+        B,ZASN01                                             ! line 28
+        VF,VWTP                                              ! line 29
+        SIC,ZCOM90                                           ! line 30  printed "Z CCM 90"
+        B,ZASN01                                             ! line 31
+        VF,VRTP                                              ! line 32
+        CM0000(BU,2),SPPBT1                                  ! line 33
+ZOFF01  B,$                                                  ! line 34  -RETURN  printed "Z CFF 01"
+! line 35  -
+! line 36  -          ****** OFFLINE COMMAND ******
+! line 37  -
+ZOFFLN  SX,JXMSK,$L                                          ! line 38
+        CTI0010(BU,18),JSR+JJ4+JOV,-18                       ! line 39
+        BRZ,JNOPX                                            ! line 40
+        CTI0010(BU,18),JSR+JNV+JON,-18                       ! line 41
+        BRZ,ZOFF09                                           ! line 42
+        CTI0010(BU,18),JSR+JJ1+JON+JOV,-18                   ! line 43
+        BRZ,ZOFF1X                                           ! line 44
+        CTI0010(BU,18),ZIPL+JOF+JNV,-18                      ! line 45  (location carries *)
+        BRZ,ZOFF1X                                           ! line 46
+        B,ZEREX2                                             ! line 47
+ZOFF09  CM0000(BU,1),STRANB                                  ! line 48  printed "ZCFF09"
+        BZBZ,SPPBT1,ZOFF1X                                   ! line 49
+        SIC,ZOFF01                                           ! line 50
+        B,ZOFF02                                             ! line 51
+        CM1111,SPPBT3                                        ! line 52
+ZOFF1X  B,DMCP                                               ! line 53  printed "Z CFF1X"
+        ,SKOM                                                ! line 54  printed "SKCM"
+
+!SYM ZONLIN 235414.40
+!SYM ZON01Y 235425.00
+!SYM ZON01X 235426.00
+!SYM ZON001 235431.00
+!SYM ZOFF02 235433.40
+!SYM ZOFF01 235437.40
+!SYM ZOFFLN 235440.00
+!SYM ZOFF09 235447.00
+!SYM ZOFF1X 235453.00
+!CHECK 235414.40 | 000010.33 10 | line 4 Z ONLIN SX,JXMSK,$L
+!CHECK 235415.00 | 000454.00 80 422067.05 70 | line 5 CTI0010(BU,18),JSR+JJ1+JOF+JOV,-18
+!CHECK 235416.00 | 235431.34 C2 | line 6 BRZ,Z ON 001
+!CHECK 235416.40 | 000064.00 80 422067.05 70 | line 7 CTI0010(BU,18),JSR+JJ4+JOV,-18
+!CHECK 235417.40 | 234637.34 C2 | line 8 BRZ,J NOPX
+!CHECK 235420.00 | 000304.00 80 422067.05 70 | line 9 CTI0010(BU,18),JSR+JNV+JON,-18
+!CHECK 235421.00 | 235425.34 C2 | line 10 BRZ,Z ON 01Y
+!CHECK 235421.40 | 000442.00 80 422067.05 70 | line 11 CTI0010(BU,18),JOP+JOF+JOV,-18
+!CHECK 235422.40 | 235431.34 C2 | line 12 BRZ,Z ON 001
+!CHECK 235423.00 | 001500.00 80 422067.05 70 | line 13 CTI0010(BU,18),ZIPL+JNV+JOF,-18
+!CHECK 235424.00 | 235426.34 C2 | line 14 BRZ,Z ON 01X
+!CHECK 235424.40 | 234632.10 00 | line 15 B,Z ER EX2
+!CHECK 235425.00 | 215001.12 80 001000.00 F0 | line 16 Z ON 01Y CM0000,S TRAN B
+!CHECK 235426.00 | 215001.10 80 002000.00 F0 | line 17 Z ON 01X CM0000(BU,2),SYSMOD
+!CHECK 235427.00 | 215001.16 80 235431.34 04 | line 18 BZBZ,SPPBT2,Z ON 001
+!CHECK 235430.00 | 235437.40 80 | line 19 SIC,Z OFF01
+!CHECK 235430.40 | 235433.50 00 | line 20 B,Z OFF 02 (byte prints "C0")
+!CHECK 235431.00 | 000040.10 00 | line 21 Z ON 001 B,D MCP
+!CHECK 235431.40 | 000117.40 80 | line 22 ,SKCM
+!CHECK 235432.00 | 000000.00 80 | line 23 ,0.0
+!CHECK 235432.40 | 000007.31 01 | line 24 LVI,12,7.0
+!CHECK 235433.00 | 234633.10 00 | line 25 B,ZEXITX
+!CHECK 235433.40 | 232762.00 80 | line 27 Z OFF02 SIC,Z CCM 90
+!CHECK 235434.00 | 232746.10 00 | line 28 B,Z ASN 01
+!CHECK 235434.40 | 000006.00+ | line 29 VF,VWTP
+!CHECK 235435.00 | 232762.00 80 | line 30 SIC,Z CCM 90
+!CHECK 235435.40 | 232746.10 00 | line 31 B,Z ASN 01
+!CHECK 235436.00 | 000004.00+ | line 32 VF,VRTP
+!CHECK 235436.40 | 215001.15 80 002000.00 F0 | line 33 CM0000(BU,2),SPPBT1
+!CHECK 235437.40 | 235437.50 00 | line 34 Z OFF 01 B,$
+!CHECK 235440.00 | 000010.33 10 | line 38 Z OFFLN SX,JX MSK,$L
+!CHECK 235440.40 | 000064.00 80 422067.05 70 | line 39 CTI0010(BU,18),JSR+JJ4+JOV,-18
+!CHECK 235441.40 | 234637.34 C2 | line 40 BRZ,JNOPX
+!CHECK 235442.00 | 000304.00 80 422067.05 70 | line 41 CTI0010(BU,18),JSR+JNV+JON,-18
+!CHECK 235443.00 | 235447.34 C2 | line 42 BRZ,Z OFF 09
+!CHECK 235443.40 | 000254.00 80 422067.05 70 | line 43 CTI0010(BU,18),JSR+JJ1+JON+JOV,-18
+!CHECK 235444.40 | 235453.34 C2 | line 44 BRZ,Z OFF1X
+!CHECK 235445.00 | 001500.00 80 422067.05 70 | line 45 CTI0010(BU,18),ZIPL+JOF+JNV,-18
+!CHECK 235446.00 | 235453.34 C2 | line 46 BRZ,Z OFF 1X
+!CHECK 235446.40 | 234632.10 00 | line 47 B,Z ER EX2
+!CHECK 235447.00 | 215001.12 80 001000.00 F0 | line 48 Z OFF09 CM0000(BU,1),STRANB
+!CHECK 235450.00 | 215001.15 80 235453.34 04 | line 49 BZBZ,SPPBT1,ZOFF1X
+!CHECK 235451.00 | 235437.40 80 | line 50 SIC,Z OFF 01
+!CHECK 235451.40 | 235433.50 00 | line 51 B,Z OFF 02 (byte prints "C0")
+!CHECK 235452.00 | 215001.17 80 001000.36 F0 | line 52 CM1111,SPPBT3
+!CHECK 235453.00 | 000040.10 00 | line 53 Z OFF1X B,DMCP
+!CHECK 235453.40 | 000117.40 80 | line 54 ,SKCM

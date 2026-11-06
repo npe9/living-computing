@@ -1,0 +1,183 @@
+! mcp_bootstrap_p346.strap -- MCP printed page 346: the $DUMP program's
+! panel dump, continued: the end of the 3rd panel line (APNLP4 loop of
+! 2 through AOCTLB/AOCTLC), $MR set up and converted through ACNVER,
+! the 4th panel line (APNL4: mask, APNLW3 loop APNLP6, a 40-bit field,
+! APNLW4 hex loop APNLP7 through AHXTB), the SIO-mode R/S letter and 3
+! blanks, then AWRITB/AWRITE, lines 1-51.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.96, read at 400 dpi, doubtful glyphs
+! at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$DUMP  CARD
+! ID VB000170  DIST. OF 3/01  3/01  PAGE NUMBER 346"; the heading row's
+! LOCATION field is 235104, line 1's word.
+!
+! STILL THE $DUMP OVERLAY (PUNID 22$DUMP, card IDs VB...), no new SLC,
+! no new card series.  No TAIL.
+!
+! THE PAGE.  51 lines; every line number prints a "*".  "*" after the
+! LOCATION on lines 11, 28, 42.  Line 16 is a remark card ("-" in the
+! NAME column, "PANEL 4TH LINE").  Remarks on lines 9 (-SET UP $MR),
+! 13 (-MR), 42 (-SIO MODE), 43 (-R), 45 (-S), 48 (-3 BLANKS).  Located
+! rows contiguous from 235104.00 (line 1) to 235150.40 (line 51, B, a
+! half word; next 235151.00).
+!
+! JOIN.  p.345 ends with CB at 235103.40 (half word): next 235104.00 =
+! line 1, contiguous.  p.347 (tools/page_sheet.py 347) opens at
+! 235151.00 = 235150.40 + a half word: contiguous.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "ACCTLC" (lines 5, 26, 31) = AOCTLC, as p.345 settled it; the SIC
+!     lines print AOCTLB with a closed O.  Line 30 prints "ACCTLB" with
+!     the O open there: AOCTLB (lines 4, 25 close it).
+!   * line 47 "$+3.C": the last glyph is an open round; "$+3.0" -- the
+!     printed branch address 235150.(00) = $+3 words; a symbol C has no
+!     place there.  Digit 0.
+!   * line 48 "(16)1C1010": the second digit prints open; hex C would
+!     assemble 070100.20, the ink prints 040100.20 = (16)101010.  Digit 0.
+!   * line 22 "A3PT40": the last glyph is an open round, read digit 0
+!     with its sibling APT8 (line 1, a numbered family); nothing typeset
+!     settles it.  No page defines it.
+!   * line 11 "APNLI": the last glyph has the symmetric serifs of I, not
+!     the flagged 1 of the "1111" in the same statement.
+!   * octal / hex fields with an open round read 0 ("FC" = F0, "DO" = D0).
+!
+! EXTERNALS.  None is defined by a landed deck; AOCTLB/C, AINTLB,
+! AINITL, AWRITB, AWRITE, ABUFF, AMNMBF copied from p.345's stand-ins;
+! SPROGS, SSIO, SAS from p.109's forms.  The rest from this page's
+! binary: VFL addresses are BIT-EXACT; B/V+/LX addresses give the half
+! word only; TI addresses the word only.
+!
+! CARD SERIALS.  VB000170 .. VB000215.  VB000169 never prints: p.345's
+! last card is VB000168 and this page's header and line 1 read VB000170.
+! Shared serials, every one a SIC/B pair: lines 4-5 (173), 18-19 (186),
+! 25-26 (192), 30-31 (196), 50-51 (215).  Line 16's remark card is
+! VB000184.
+
+AOCTLB  SYN, (8)235376.40            ! not landed; p.345 stand-in; SIC lines 4,25,30 235376.40, BIT-EXACT
+AOCTLC  SYN, (8)235373.40            ! not landed; p.345 stand-in; B lines 5,26,31 235373.50, half word only
+ABUFF   SYN, (8)236044.0             ! not landed; LVI line 10 ABUFF+4. = 236050.33, word only
+AMNMBF  SYN, (8)236126.0             ! not landed; LVI line 17 236126.35, TI line 41 AMNMBF+13. 236143, word only
+AINTLB  SYN, (8)235210.40            ! not landed; SIC line 18 235210.40, BIT-EXACT
+AINITL  SYN, (8)235205.40            ! not landed; B line 19 235205.50, half word only
+AWRITB  SYN, (8)235327.40            ! not landed; SIC line 50 235327.40, BIT-EXACT
+AWRITE  SYN, (8)235325.40            ! not landed; B line 51 235325.50, half word only
+APT8    SYN, (8)236155.0             ! not landed; V+ line 1 236155.34, half word only
+APNLI   SYN(BU,1), (8)236147.05      ! not landed; CM1111 line 11 236147.05 BIT-EXACT; no-dds connective prints length 1 BU (001000.36, = CM1111(BU,1) on p.332); dds INFERRED from this binary only: a plain SYN assembles 000000.36 and fails
+ACNVER  SYN, (8)235726.0             ! not landed; B line 15 235726.10, half word only
+AMASK   SYN, (8)236231.50            ! not landed; LF(BU,32) line 20 236231.50, BIT-EXACT
+A3PT40  SYN, (8)236160.40            ! not landed; V+ line 22 236160.74, half word only
+APNLW3  SYN(BU), (8)236152.0         ! not landed; LX line 23 236152.02, index word
+ATR16   SYN, (8)236231.0             ! not landed; LF(BU,40) line 33 236231.00, BIT-EXACT
+APNLW4  SYN(BU), (8)236153.0         ! not landed; LX line 35 236153.02, index word
+AHXTB   SYN, (8)236232.10            ! not landed; LF(BU,8) line 38 236232.10, BIT-EXACT
+AMCMDE  SYN, (8)236225.0             ! not landed; TI line 41 236225.00, word only
+SPROGS  SYN, (8)215021.0             ! landed p.109 line 7 -PROGRAM STATUS TABLE
+SSIO    SYN(BU,1), .61               ! landed p.109 line 10 -SUPPRESSED MODE STATUS
+SAS     SYN(BU,1), .25               ! landed p.109 line 8 -AUTO STACK STATUS
+
+        SLC, (8)235104.00
+        V+,$14,APT8                                          ! line  1
+        LCI,$1,2                                             ! line  2
+APNLP4  LF(BU,8,1)(V+I),.8($1)                               ! line  3
+        SIC,AOCTLB                                           ! line  4
+        B,AOCTLC                                             ! line  5
+        ST(BU,64)(V+I),1.($14)                               ! line  6
+        CB,$1,APNLP4                                         ! line  7
+        V+I,$14,.32                                          ! line  8
+        Z,$13                                                ! line  9  -SET UP $MR
+        LVI,$13,ABUFF+4.                                     ! line 10
+        CM1111,APNLI                                         ! line 11
+        LCI,$13,1                                            ! line 12
+        LFI(BU,16),(16)2429                                  ! line 13  -MR
+        SF(BU,16)(V+I),.32($14)                              ! line 14
+        B,ACNVER                                             ! line 15
+! -     PANEL 4TH LINE                                         ! line 16
+APNL4   LVI,$14,AMNMBF                                       ! line 17
+        SIC,AINTLB                                           ! line 18
+        B,AINITL                                             ! line 19
+        LF(BU,32),AMASK                                      ! line 20
+        SF(BU,32),.24($14)                                   ! line 21
+        V+,$14,A3PT40                                        ! line 22
+        LX,$1,APNLW3                                         ! line 23
+        LF(BU,8,1)(V+I),.8($1)                               ! line 24
+APNLP6  SIC,AOCTLB                                           ! line 25
+        B,AOCTLC                                             ! line 26
+        ST(BU,64)(V+I),1.($14)                               ! line 27
+        CB,1,APNLP6-1.                                       ! line 28
+        LF(BU,4,1),($1)                                      ! line 29
+        SIC,AOCTLB                                           ! line 30
+        B,AOCTLC                                             ! line 31
+        SF(BU,32)(V+I),3.($14)                               ! line 32
+        LF(BU,40),ATR16                                      ! line 33
+        SF(BU,40)(V+I),.48($14)                              ! line 34
+        LX,$1,APNLW4                                         ! line 35
+APNLP7  L(BU,4)(V+I),.4($1),-21                              ! line 36
+        LV,$13,$L                                            ! line 37
+        LF(BU,8),AHXTB($13)                                  ! line 38
+        SF(BU,8)(V+I),.8($14)                                ! line 39
+        CB,$1,APNLP7                                         ! line 40
+        TI,4,AMCMDE,AMNMBF+13.                               ! line 41
+        BB,SPROGS+SSIO,$+2.32                                ! line 42  -SIO MODE
+        LFI(BU,8),(16)29                                     ! line 43  -R
+        B,$+1.32                                             ! line 44
+        LFI(BU,8),(16)12                                     ! line 45  -S
+        SF(BU,8),.32($14)                                    ! line 46
+        BZB,SAS+SPROGS,$+3.0                                 ! line 47
+        LFI(BU,24),(16)101010                                ! line 48  -3 BLANKS
+        SF(BU,24),.72($14)                                   ! line 49
+        SIC,AWRITB                                           ! line 50
+        B,AWRITE                                             ! line 51
+
+!SYM APNLP4 235105.00
+!SYM APNL4 235116.00
+!SYM APNLP6 235123.40
+!SYM APNLP7 235133.40
+!CHECK 235104.00 | 236155.34 B0 | line 1 V+,$14,APT8
+!CHECK 235104.40 | 000002.03 02 | line 2 LCI,$1,2
+!CHECK 235105.00 | 000000.10 81 110100.06 70 | line 3 APNLP4 LF(BU,8,1)(V+I),.8($1)
+!CHECK 235106.00 | 235376.40 80 | line 4 SIC,AOCTLB
+!CHECK 235106.40 | 235373.50 00 | line 5 B,AOCTLC (printed "ACCTLC")
+!CHECK 235107.00 | 000001.00 8E 100000.20 D0 | line 6 ST(BU,64)(V+I),1.($14) (h2 prints "DO")
+!CHECK 235110.00 | 235105.02 48 | line 7 CB,$1,APNLP4
+!CHECK 235110.40 | 000000.75 05 | line 8 V+I,$14,.32
+!CHECK 235111.00 | 000035.22 00 | line 9 Z,$13
+!CHECK 235111.40 | 236050.33 01 | line 10 LVI,$13,ABUFF+4.
+!CHECK 235112.00 | 236147.05 80 001000.36 F0 | line 11 CM1111,APNLI
+!CHECK 235113.00 | 000001.33 02 | line 12 LCI,$13,1
+!CHECK 235113.40 | 110244.00 80 420000.06 70 | line 13 LFI(BU,16),(16)2429
+!CHECK 235114.40 | 000000.40 8E 120000.12 F0 | line 14 SF(BU,16)(V+I),.32($14)
+!CHECK 235115.40 | 235726.10 00 | line 15 B,ACNVER
+!CHECK 235116.00 | 236126.35 01 | line 17 APNL4 LVI,$14,AMNMBF
+!CHECK 235116.40 | 235210.40 80 | line 18 SIC,AINTLB
+!CHECK 235117.00 | 235205.50 00 | line 19 B,AINITL
+!CHECK 235117.40 | 236231.50 80 040000.06 70 | line 20 LF(BU,32),AMASK
+!CHECK 235120.40 | 000000.30 8E 040000.12 F0 | line 21 SF(BU,32),.24($14)
+!CHECK 235121.40 | 236160.74 B0 | line 22 V+,$14,A3PT40
+!CHECK 235122.00 | 236152.02 10 | line 23 LX,$1,APNLW3
+!CHECK 235122.40 | 000000.10 81 110100.06 70 | line 24 LF(BU,8,1)(V+I),.8($1)
+!CHECK 235123.40 | 235376.40 80 | line 25 APNLP6 SIC,AOCTLB
+!CHECK 235124.00 | 235373.50 00 | line 26 B,AOCTLC (printed "ACCTLC")
+!CHECK 235124.40 | 000001.00 8E 100000.20 D0 | line 27 ST(BU,64)(V+I),1.($14)
+!CHECK 235125.40 | 235122.42 48 | line 28 CB,1,APNLP6-1.
+!CHECK 235126.00 | 000000.00 81 004100.06 70 | line 29 LF(BU,4,1),($1)
+!CHECK 235127.00 | 235376.40 80 | line 30 SIC,AOCTLB (printed "ACCTLB")
+!CHECK 235127.40 | 235373.50 00 | line 31 B,AOCTLC (printed "ACCTLC")
+!CHECK 235130.00 | 000003.00 8E 140000.12 F0 | line 32 SF(BU,32)(V+I),3.($14) (h2 prints "FC")
+!CHECK 235131.00 | 236231.00 80 050000.06 70 | line 33 LF(BU,40),ATR16
+!CHECK 235132.00 | 000000.60 8E 150000.12 F0 | line 34 SF(BU,40)(V+I),.48($14)
+!CHECK 235133.00 | 236153.02 10 | line 35 LX,$1,APNLW4
+!CHECK 235133.40 | 000000.04 81 104065.60 50 | line 36 APNLP7 L(BU,4)(V+I),.4($1),-21
+!CHECK 235134.40 | 000010.32 30 | line 37 LV,$13,$L
+!CHECK 235135.00 | 236232.10 8D 010000.06 70 | line 38 LF(BU,8),AHXTB($13)
+!CHECK 235136.00 | 000000.10 8E 110000.12 F0 | line 39 SF(BU,8)(V+I),.8($14)
+!CHECK 235137.00 | 235133.42 48 | line 40 CB,$1,APNLP7
+!CHECK 235137.40 | 236225.00 80 236143.10 A0 | line 41 TI,4,AMCMDE,AMNMBF+13.
+!CHECK 235140.40 | 215021.75 80 235143.34 02 | line 42 BB,SPROGS+SSIO,$+2.32
+!CHECK 235141.40 | 122000.00 80 410000.06 70 | line 43 LFI(BU,8),(16)29
+!CHECK 235142.40 | 235144.10 00 | line 44 B,$+1.32
+!CHECK 235143.00 | 044000.00 80 410000.06 70 | line 45 LFI(BU,8),(16)12
+!CHECK 235144.00 | 000000.40 8E 010000.12 F0 | line 46 SF(BU,8),.32($14)
+!CHECK 235145.00 | 215021.31 80 235150.34 00 | line 47 BZB,SAS+SPROGS,$+3.0 (printed "$+3.C")
+!CHECK 235146.00 | 040100.20 80 430000.06 70 | line 48 LFI(BU,24),(16)101010 (printed "1C1010")
+!CHECK 235147.00 | 000001.10 8E 030000.12 F0 | line 49 SF(BU,24),.72($14)
+!CHECK 235150.00 | 235327.40 80 | line 50 SIC,AWRITB
+!CHECK 235150.40 | 235325.50 00 | line 51 B,AWRITE

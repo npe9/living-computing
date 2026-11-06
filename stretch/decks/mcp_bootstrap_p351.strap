@@ -1,0 +1,204 @@
+! mcp_bootstrap_p351.strap -- MCP printed page 351: the $DUMP program's
+! floating-point / mnemonic part: the end of the octal store loop (APT8,
+! ALLCN), the AFLPTI/ACMP1 test and TI's into AMNMBF, the octal
+! conversion subroutine ALCRF / ALCRFB, AOCTLC (+(DU,64,4),AKON9 ...)
+! and its link AOCTLB, ARETRN, then the mnemonic decode AMNEM0/AMNEM1
+! (BB tests on bits .22-.27 of $13 to ADIRX, AFLPT, ABRCH, AFULL2,
+! AIMNDX, AMISC) and AUNCNB.  Lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.101, read at 400 dpi, names at 900
+! dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$DUMP  CARD ID
+! VB000399  DIST. OF 3/01  3/01  PAGE NUMBER 351"; the heading row's
+! LOCATION field is 235354, line 1's word.
+!
+! >>> $DUMP OVERLAY (PUNID 22$DUMP, card IDs VB...), assembled at the
+! LOADER's addresses; no LOADER symbol is used here.  No TAIL.
+!
+! THE PAGE.  50 lines; every line number prints a "*".  "*" after the
+! LOCATION on lines 13, 30, 46.  No remarks.  Located rows contiguous
+! from 235354.00 (line 1) to 235421.00 (line 50, a full word; next
+! 235422.00), then blank paper.
+!
+! JOIN.  p.350 (tools/page_sheet.py 350) ends with SF(BU,16),-.16($14)
+! at 235353.00, a full word: next 235354.00 = line 1.  p.352 opens at
+! 235422.00: contiguous both ways.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "ACCTLB" / "AOCTLC" (lines 16, 17, 20, 23): the O prints open on
+!     16, 17, 23 and closed on 20 (900 dpi); written AOCTLB / AOCTLC as
+!     decks p.344-345 spell them.  The AOCTLB/AOCTLC addresses here
+!     (235376.40 / 235373.40) are the ones p.345's stand-ins carry.
+!   * line 29 "ADOHND": glyph 2 has a straight left stem with square
+!     corners, the same shape as every D on the page (ADHMN, AHLFWD,
+!     ADIRX, AIMNDX, ANVLDO at 900 dpi), not the round-backed C of
+!     AOCTLC; glyph 3 is CLOSED with rounded corners on both sides: O.
+!     Written ADOHND.  No page or C22-6728 names it.
+!   * line 30 label "AMNEMO": the last glyph is round and wide, which
+!     says nothing on this drum (0 and O both print so); the label is
+!     the first of a numbered pair with line 39's AMNEM1, so the family
+!     rule gives digit 0: written AMNEM0.  No landed page names it;
+!     NOTE the parallel p.350 deck's stand-in spells it AMNEMO (BXE
+!     line 9): one of the two must change before the merge.
+!   * line 48 "ANVLDO": kept the letter O (no numbered family).
+!   * line 38 "SV,$14,$C": the open round is index register 0: $0
+!     (line 25 prints SV,$0,$14; binary 000020.35 30).
+!   * line 37 "A1PT8": glyph 2 has the 1's flag (same as "1" in $13):
+!     digit 1.
+!   * line 22 "AKONZ": the Z matches BBZ's Z on line 39: letter Z.
+!   * octal / hex fields with an open round read 0 ("CC" = 00 on line 9,
+!     "FC" = F0, "CO" = 00 on B rows, ".CC" = .00).
+!   * ACMP1 (lines 7, 13): round-backed C, as C22-6728-1 spells it
+!     ("used by ACMP1"); distinct from p.342's ADMP1.
+!
+! EXTERNALS.  Where a parallel-batch page (pp.350-358, scratch) DEFINES
+! the symbol, the stand-in carries that card's dds and the address it
+! prints (all agree with this page's binary).  Landed $DUMP stand-ins (pp.343-345) copied for AMNMBF,
+! AWRITB, AWRITE, AINTLB, AINITL, AMNTOP.  The rest are defined by no
+! landed deck; values from this page's binary.  VFL / TI / BB first
+! addresses are BIT-EXACT; branch-target and V+ addresses less their
+! op bits give the half word only.  ADHMN assumes the printed .19 is
+! the whole bit offset (the only split CM0000's 235320.63 allows).
+!
+! CARD SERIALS.  VB000399 .. VB000445.  Shared serials: lines 16-17
+! (414, SIC/B), 27-28 (424, SIC/B), 31-32 (427, SIC/B).  None skipped.
+
+APT8    SYN, (8)236155.0             ! not landed; V+ line 1 236155.34, half word only
+ALLCN   SYN, (8)236222.00            ! not landed; L line 2 236222.00, BIT-EXACT
+AFLPTI  SYN(BU,1), (8)236147.01      ! p.358 l.39 DD(BU,1), not landed; BB line 7 236147.01, BIT-EXACT
+APXW    SYN, (8)236217.00            ! not landed; TI lines 8, 11 236217.00, BIT-EXACT
+AMNMBF  SYN, (8)236126.0             ! not landed; copied from p.343-345 (LVI line 30 236126.35)
+ACTLBT  SYN(BU,1), (8)236147.06      ! p.358 l.46 DD(BU,1), not landed; BZB line 9 236147.06, BIT-EXACT
+ADHMN   SYN(BU,32,8), (8)235320.40   ! p.350 l.7 NOP label, not landed; CM0000 line 10 ADHMN.19 = 235320.63, less .19
+APFL    SYN, (8)236221.00            ! not landed; TI line 13 236221.00, BIT-EXACT
+AKON9   SYN, (8)236174.22            ! not landed; + line 20 236174.22, BIT-EXACT
+AKON1   SYN, (8)236175.22            ! not landed; + line 21 236175.22, BIT-EXACT
+AKONZ   SYN, (8)236176.22            ! not landed; C0001 line 22 236176.22, BIT-EXACT
+AWRITB  SYN, (8)235327.40            ! not landed; copied from p.343-345 (SIC line 27)
+AWRITE  SYN, (8)235325.40            ! not landed; copied from p.343-345 (B line 28)
+ADOHND  SYN(BU,32,8), (8)235322.00   ! p.350 l.10 KV label, not landed; B line 29 235322.10, half word only (printed "ADOHND")
+AINTLB  SYN, (8)235210.40            ! not landed; copied from p.343-345 (SIC line 31)
+AINITL  SYN, (8)235205.40            ! not landed; copied from p.343-345 (B line 32)
+AMNTOP  SYN, (8)236161.40            ! not landed; copied from p.343 (LV line 33 236161.74)
+A1PT8   SYN, (8)236157.40            ! not landed; V+ line 37 236157.74, half word only
+AHLFWD  SYN(BU,1), (8)236147.00      ! p.358 l.38 DRZ(BU,1), not landed; BBZ line 39 236147.00, BIT-EXACT
+AFULL   SYN(BU,64,8), (8)235427.40   ! p.352 l.8 BB label, not landed; BBZ line 39 235427.74, half word only
+ADIRX   SYN(BU,64,8), (8)235667.40   ! p.355 l.44 L label, not landed; BB line 40 235667.74, half word only
+AFLPT   SYN(BU,64,8), (8)235567.00   ! p.354 l.19 L label, not landed; BB line 41 235567.34, half word only
+ABRCH   SYN(BU,64,8), (8)235643.40   ! p.355 l.21 BZB label, not landed; BB line 42 235643.74, half word only
+AFULL2  SYN(BU,64,8), (8)235436.40   ! p.352 l.16 BB label, not landed; BB line 43 235436.74, half word only
+AIMNDX  SYN(BU,64,8), (8)235636.40   ! p.355 l.15 L label, not landed; BB line 44 235636.74, half word only
+AMISC   SYN(BU,64,8), (8)235677.00   ! p.356 l.3 L label, not landed; BB line 45 235677.34, half word only
+ANVLDO  SYN(BU,64,8), (8)235425.00   ! p.352 l.5 LF label, not landed; BAE line 48 235425.36, half word only
+AL24    SYN, (8)236174.14            ! not landed; * line 50 236174.14, BIT-EXACT
+
+        SLC, (8)235354.00
+        V+,$14,APT8                                          ! line  1
+        L(BU,64,8),ALLCN                                     ! line  2
+        ST(BU,64,8)(V+I),1.($14)                             ! line  3
+        LF(BU,24,8),ALLCN+1.                                 ! line  4
+        SF(BU,24)(V+I),1.24($14)                             ! line  5
+        V-I,$13,.32                                          ! line  6
+        BB,AFLPTI,ACMP1                                      ! line  7
+        TI,1,APXW,AMNMBF+5.                                  ! line  8
+        BZB,ACTLBT,$+3.                                      ! line  9
+        CM0000(BU,1),ADHMN.19                                ! line 10
+        TI,1,APXW,AMNMBF+7.                                  ! line 11
+        B,0($15)                                             ! line 12
+ACMP1   TI,1,APFL,AMNMBF+6.                                  ! line 13
+        B,0($15)                                             ! line 14
+ALCRF   LF(BU,21,3),$13                                      ! line 15
+        SIC,AOCTLB                                           ! line 16
+        B,AOCTLC                                             ! line 17
+        SF(BU,48)(V+I),1.($14),8                             ! line 18
+ALCRFB  B,$                                                  ! line 19
+AOCTLC  +(DU,64,4),AKON9                                     ! line 20
+        +(BU,64,8),AKON1                                     ! line 21
+        C0001(BU,64),AKONZ                                   ! line 22
+AOCTLB  B,$                                                  ! line 23
+ARETRN  V+I,$0,2.                                            ! line 24
+        SV,$0,$14                                            ! line 25
+        CBH,$13,AMNEM1                                       ! line 26
+        SIC,AWRITB                                           ! line 27
+        B,AWRITE                                             ! line 28
+        B,ADOHND                                             ! line 29
+AMNEM0  LVI,$14,AMNMBF                                       ! line 30
+        SIC,AINTLB                                           ! line 31
+        B,AINITL                                             ! line 32
+        LV,$14,AMNTOP                                        ! line 33
+        LVI,$11,17.                                          ! line 34
+        V-I,$13,4.                                           ! line 35
+        LCI,$13,8                                            ! line 36
+        V+,$14,A1PT8                                         ! line 37
+        SV,$14,$0                                            ! line 38
+AMNEM1  BBZ,AHLFWD,AFULL                                     ! line 39
+        BB,.27($13),ADIRX                                    ! line 40
+        BB,.26($13),AFLPT                                    ! line 41
+        BB,.25($13),ABRCH                                    ! line 42
+        BB,.24($13),AFULL2                                   ! line 43
+        BB,.23($13),AIMNDX                                   ! line 44
+        BB,.22($13),AMISC                                    ! line 45
+        LF(BU,3),.19($13)                                    ! line 46
+        KFI(BU,3),7                                          ! line 47
+        BAE,ANVLDO                                           ! line 48
+AUNCNB  L(BU,3),.19($13),40                                  ! line 49
+        *(BU,6),AL24,20                                      ! line 50
+
+!SYM ACMP1  235366.40
+!SYM ALCRF  235370.00
+!SYM ALCRFB 235373.00
+!SYM AOCTLC 235373.40
+!SYM AOCTLB 235376.40
+!SYM ARETRN 235377.00
+!SYM AMNEM0 235402.00
+!SYM AMNEM1 235406.40
+!SYM AUNCNB 235420.00
+!CHECK 235354.00 | 236155.34 B0 | line 1 V+,$14,APT8
+!CHECK 235354.40 | 236222.00 80 000000.20 50 | line 2 L(BU,64,8),ALLCN
+!CHECK 235355.40 | 000001.00 8E 100000.20 D0 | line 3 ST(BU,64,8)(V+I),1.($14) (h2 prints "DO")
+!CHECK 235356.40 | 236223.00 80 030000.06 70 | line 4 LF(BU,24,8),ALLCN+1.
+!CHECK 235357.40 | 000001.30 8E 130000.12 F0 | line 5 SF(BU,24)(V+I),1.24($14) (h2 prints "FO")
+!CHECK 235360.40 | 000000.73 0D | line 6 V-I,$13,.32
+!CHECK 235361.00 | 236147.01 80 235366.74 02 | line 7 BB,AFLPTI,ACMP1
+!CHECK 235362.00 | 236217.00 80 236133.02 A0 | line 8 TI,1,APXW,AMNMBF+5.
+!CHECK 235363.00 | 236147.06 80 235366.34 00 | line 9 BZB,ACTLBT,$+3. (h2 prints "CC", open rounds)
+!CHECK 235364.00 | 235320.63 80 001000.00 F0 | line 10 CM0000(BU,1),ADHMN.19 (prints ".CC FC")
+!CHECK 235365.00 | 236217.00 80 236135.02 A0 | line 11 TI,1,APXW,AMNMBF+7.
+!CHECK 235366.00 | 000000.10 0F | line 12 B,0($15)
+!CHECK 235366.40 | 236221.00 80 236134.02 A0 | line 13 ACMP1 TI,1,APFL,AMNMBF+6. (a "*" prints after the location)
+!CHECK 235367.40 | 000000.10 0F | line 14 B,0($15)
+!CHECK 235370.00 | 000035.00 80 025300.06 70 | line 15 ALCRF LF(BU,21,3),$13
+!CHECK 235371.00 | 235376.40 80 | line 16 SIC,AOCTLB (printed "ACCTLB")
+!CHECK 235371.40 | 235373.50 00 | line 17 B,AOCTLC (printed "ACCTLC"; byte "CO")
+!CHECK 235372.00 | 000001.00 8E 160004.12 F0 | line 18 SF(BU,48)(V+I),1.($14),8
+!CHECK 235373.00 | 235373.10 00 | line 19 ALCRFB B,$
+!CHECK 235373.40 | 236174.22 80 000400.24 10 | line 20 AOCTLC +(DU,64,4),AKON9
+!CHECK 235374.40 | 236175.22 80 000000.20 10 | line 21 +(BU,64,8),AKON1
+!CHECK 235375.40 | 236176.22 80 000000.02 70 | line 22 C0001(BU,64),AKONZ
+!CHECK 235376.40 | 235376.50 00 | line 23 AOCTLB B,$ (printed "ACCTLB")
+!CHECK 235377.00 | 000002.01 05 | line 24 ARETRN V+I,$0,2.
+!CHECK 235377.40 | 000036.01 30 | line 25 SV,$0,$14
+!CHECK 235400.00 | 235406.72 C8 | line 26 CBH,$13,AMNEM1
+!CHECK 235400.40 | 235327.40 80 | line 27 SIC,AWRITB
+!CHECK 235401.00 | 235325.50 00 | line 28 B,AWRITE
+!CHECK 235401.40 | 235322.10 00 | line 29 B,ADOHND (byte prints "CO")
+!CHECK 235402.00 | 236126.35 01 | line 30 AMNEM0 LVI,$14,AMNMBF (printed "AMNEMO"; a "*" prints after the location)
+!CHECK 235402.40 | 235210.40 80 | line 31 SIC,AINTLB
+!CHECK 235403.00 | 235205.50 00 | line 32 B,AINITL (byte prints "CO")
+!CHECK 235403.40 | 236161.74 30 | line 33 LV,$14,AMNTOP
+!CHECK 235404.00 | 000021.27 01 | line 34 LVI,$11,17.
+!CHECK 235404.40 | 000004.33 0D | line 35 V-I,$13,4.
+!CHECK 235405.00 | 000010.33 02 | line 36 LCI,$13,8
+!CHECK 235405.40 | 236157.74 B0 | line 37 V+,$14,A1PT8
+!CHECK 235406.00 | 000020.35 30 | line 38 SV,$14,$0 (printed "$C")
+!CHECK 235406.40 | 236147.00 80 235427.74 06 | line 39 AMNEM1 BBZ,AHLFWD,AFULL
+!CHECK 235407.40 | 000000.33 8D 235667.74 02 | line 40 BB,.27($13),ADIRX
+!CHECK 235410.40 | 000000.32 8D 235567.34 02 | line 41 BB,.26($13),AFLPT
+!CHECK 235411.40 | 000000.31 8D 235643.74 02 | line 42 BB,.25($13),ABRCH
+!CHECK 235412.40 | 000000.30 8D 235436.74 02 | line 43 BB,.24($13),AFULL2
+!CHECK 235413.40 | 000000.27 8D 235636.74 02 | line 44 BB,.23($13),AIMNDX
+!CHECK 235414.40 | 000000.26 8D 235677.34 02 | line 45 BB,.22($13),AMISC
+!CHECK 235415.40 | 000000.23 8D 003000.06 70 | line 46 LF(BU,3),.19($13) (a "*" prints after the location)
+!CHECK 235416.40 | 700000.00 80 403000.23 10 | line 47 KFI(BU,3),7
+!CHECK 235417.40 | 235425.36 C2 | line 48 BAE,ANVLDO
+!CHECK 235420.00 | 000000.23 8D 003024.20 50 | line 49 AUNCNB L(BU,3),.19($13),40
+!CHECK 235421.00 | 236174.14 80 006012.21 90 | line 50 *(BU,6),AL24,20

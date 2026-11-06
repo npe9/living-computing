@@ -1,0 +1,174 @@
+! mcp_bootstrap_p374.strap -- MCP printed page 374: SYSTEM COMMAND
+! package (PUNID 22SCOMD), the IOCHANGE routine: the tail of the
+! channel-operating test (Z PETE), two "ABNORMAL EOJ" messages, the
+! ADD UNIT SECTION (Z ADD UN .. Z TYPR5), the four equipment-type words
+! (Z NO TYP .. Z PU TYP), and the opening of the ADD CHANNEL SECTION.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.124, read at 400 dpi, names at 900
+! dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22SCOMD  CARD ID
+! WA000641  DIST. OF 3/01  3/01  PAGE NUMBER 374"; the heading row's
+! LOCATION field is 235254, line 1's word.
+!
+! THE PAGE.  49 lines, contiguous 235254.40 .. 235325.00 (line 49, a
+! half word; next 235325.40), then blank paper.  Every line number
+! prints a "*"; a "*" also prints after the LOCATION on lines 8, 17,
+! 32 and 49.  No TAIL, no SLC, no PUNID change: still SCOMD.
+!   lines  1-6   code (BXVZ, SX, Z PETE's BE/BD, BB, B).
+!   lines  7-10  CNOP, Z SPL01 (A*)DD(BU,64,8) 40 characters (5 words),
+!                CNOP (emits nothing), Z QUZ49 (IQS*)DD(BU) 40 chars.
+!   lines 11-12  remark cards ("-" in NAME); banner on 12.
+!   lines 13-41  ADD UNIT SECTION code.
+!   lines 42-45  four (A*)DD(BU,48,6) words, 8 characters each before
+!                the "*" (the blanks are data: each span is 48 bits).
+!   lines 46-47  remark cards; banner on 47.
+!   lines 48-49  Z ADD CH.
+! JOIN: p.373 is being transcribed in parallel; this deck states its
+! origin hard.  p.375 should open at 235325.40.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 17 "B,ZCONE" written ZDONE: D worn to C (line 10 prints its
+!     own "DD" as "DC" in the same column); C22-6728 names ZDONE (5x),
+!     no ZCONE anywhere.  External, not landed -- coordinator: check
+!     the defining page.
+!   * line 22 "Z RC TYP" = ZRDTYP: defined on line 43, and line 22's
+!     binary 235321.60 is that address.
+!   * line 10 label "Z QUZ49" (Vision read GUZ49/CUZ49): the glyph has
+!     Q's tail at 900 dpi, as in Z NX QUZ (line 27).  Not referenced.
+!   * line 8 label "Z SPL01": digit 0/1 (numbered); not referenced.
+!   * line 1 "J NOP X" = JNOPX (C22-6728, 36x).  line 18 "JFLDB"
+!     (C22-6728: "an area JFLDB").  line 6 "Z QUES 2" = ZQUES2.
+!   * "CMOC00" / "CMOCOO" (lines 15-16) = CM0000 (connective mask; open
+!     0s).  Text "ECJ", "ABNCRMAL" = EOJ, ABNORMAL (English; open O).
+!   * hex bytes printed "CO" on the B rows 17 and 26 = 00 (B can only
+!     assemble 0 there; lesson 6); line 30's "FC" = F0 (lines 25, 35
+!     print F0 for the same statement).  The BZAE rows' "C0" (23, 28,
+!     33) and BAE's "C2" (21) are REAL C's: the statement assembles them.
+!
+! EXTERNALS.  SCHOP, SMULTI, SVER, SRD, SEQUIP, SCHAVL, SUNAVL: landed
+! p.99 forms.  ZREQUN/ZREQCH: index registers $6/$8 from this page's
+! binary (low nibble of the index byte; LV,ZREQUN,ZREQCH addresses
+! word 000030 = $8).  JNOPX, ZQUES2, ZDONE, ZEREX1, JFLDB: not landed
+! (other SCOMD pages); values from this page's binary, half word only.
+!
+! CARD SERIALS.  WA000641 .. WA000689, one per line, none shared or
+! skipped (line 34's prints a stray "," after it).
+
+SCHOP   SYN(BU,1), 0.26              ! landed p.99 -CHAN OPERATING; BB line 5 .32
+SMULTI  SYN(BU,1), 0.27              ! landed p.99 line 24 -MULTI-UNIT CHAN; BZB line 14 .33
+SVER    SYN(BU,1), 0.40              ! landed p.99 line 32 -VERIFY FILE STATUS; line 15 .50
+SRD     SYN(BU,1), 0.57              ! landed p.99 line 45 -READ; line 16 .71
+SEQUIP  SYN(BU,4), 0.52              ! landed p.99 line 38 -EQUIPMENT; lines 25/30/35 .64
+SCHAVL  SYN(BU,1), 0.25              ! landed p.99 line 21 -CHANNEL AVAILABILITY; lines 37/48 .31
+SUNAVL  SYN(BU,1), 0.28              ! landed p.99 line 26 -UNIT AVAILABILITY; lines 13/40 .34
+ZREQUN  SYN, $6                      ! not landed; index byte 86 (lines 13, 15, 16, 40), BIT-EXACT
+ZREQCH  SYN, $8                      ! not landed; index byte 88 (lines 5, 14, 25), LV line 19 000030
+JNOPX   SYN, (8)234637.0             ! not landed; BXVZ line 1 234637.31, half word only
+ZQUES2  SYN, (8)235232.40            ! not landed; B line 6 235232.50, half word only
+ZDONE   SYN, (8)235234.0             ! not landed; B line 17 235234.10, half word only (printed "ZCONE")
+ZEREX1  SYN, (8)234631.0             ! not landed; B lines 38/41 234631.10, half word only
+JFLDB   SYN, (8)234560.0             ! not landed; L line 18 JFLDB+5.0 = 234565.00
+
+        SLC, (8)235254.40
+        BXVZ,JNOPX                                           ! line  1  -NOTHING MORE AVAILABLE
+        SX,2,$R                                              ! line  2  -RESTORE RT ACC
+ZPETE   BE,$+.32                                             ! line  3
+        BD,$+.32                                             ! line  4
+        BB,SCHOP(ZREQCH),ZPETE                               ! line  5
+        B,ZQUES2                                             ! line  6
+        CNOP                                                 ! line  7
+ZSPL01  (A*)DD(BU,64,8),LABNORMAL EOJ TO P.P. MCP NEEDS CHANNEL.* ! line  8
+        CNOP                                                 ! line  9
+ZQUZ49  (IQS*)DD(BU),ABNORMAL EOJ TO P.P.  MCP NEEDS CHANNEL.* ! line 10  printed "DC(BU)", "ABNCRMAL ECJ"
+! line 11  -
+! line 12  -              ********   ADD UNIT SECTION   *******
+ZADDUN  BZBZ,SUNAVL(ZREQUN),ZEREX1                           ! line 13
+        BZB,SMULTI(ZREQCH),ZINSRT                            ! line 14  -BRANCH IF SINGLE UNIT FOR TYPE
+ZFINI4  CM0000(BU,9),SVER(ZREQUN)                            ! line 15  -CLEAR STATUS TABLE
+        CM0000(BU,7),SRD(ZREQUN)                             ! line 16
+        B,ZDONE                                              ! line 17  printed "ZCONE"
+ZINSRT  L(BU,48),JFLDB+5.0                                   ! line 18
+        LV,ZREQUN,ZREQCH                                     ! line 19
+        KF(BU,48,6),ZNOTYP                                   ! line 20
+        BAE,ZFINI4                                           ! line 21
+        KF(BU,48,6),ZRDTYP                                   ! line 22  printed "Z RC TYP"
+        BZAE,ZNXQUZ                                          ! line 23
+        LFI(BU,3),(2)011                                     ! line 24  -READER - 3
+        SF(BU,3),SEQUIP(ZREQCH)                              ! line 25
+        B,ZFINI4                                             ! line 26
+ZNXQUZ  KF(BU,48,6),ZPRTYP                                   ! line 27
+        BZAE,ZNXTQZ                                          ! line 28
+        LFI(BU,3),(2)100                                     ! line 29  -PRINTER - 4
+        SF(BU,3),SEQUIP(ZREQCH)                              ! line 30
+        B,ZFINI4                                             ! line 31
+ZNXTQZ  KF(BU,48,6),ZPUTYP                                   ! line 32
+        BZAE,ZTYPER                                          ! line 33  -ERROR IN TYPE
+        LFI(BU,3),(2)101                                     ! line 34  -PUNCH - 5
+        SF(BU,3),SEQUIP(ZREQCH)                              ! line 35
+        B,ZFINI4                                             ! line 36
+ZCHTPE  CM1111,SCHAVL(ZREQCH)                                ! line 37
+        B,ZEREX1                                             ! line 38
+ZTYPER  BPG1,ZCHTPE                                          ! line 39
+        CM1111,SUNAVL(ZREQUN)                                ! line 40
+ZTYPR5  B,ZEREX1                                             ! line 41
+ZNOTYP  (A*)DD(BU,48,6),        *                            ! line 42
+ZRDTYP  (A*)DD(BU,48,6),READER  *                            ! line 43
+ZPRTYP  (A*)DD(BU,48,6),PRINTER *                            ! line 44
+ZPUTYP  (A*)DD(BU,48,6),PUNCH   *                            ! line 45
+! line 46  -
+! line 47  -              ******   ADD CHANNEL SECTION   ******
+ZADDCH  BZBZ,SCHAVL(ZREQCH),ZEREX1                           ! line 48
+        B,ZADDUN+1.0                                         ! line 49
+
+!SYM ZPETE  235255.40
+!SYM ZSPL01 235260.00
+!SYM ZQUZ49 235265.00
+!SYM ZADDUN 235272.00
+!SYM ZFINI4 235274.00
+!SYM ZINSRT 235276.40
+!SYM ZNXQUZ 235305.40
+!SYM ZNXTQZ 235311.40
+!SYM ZCHTPE 235315.40
+!SYM ZTYPER 235317.00
+!SYM ZTYPR5 235320.40
+!SYM ZNOTYP 235321.00
+!SYM ZRDTYP 235321.60
+!SYM ZPRTYP 235322.40
+!SYM ZPUTYP 235323.20
+!SYM ZADDCH 235324.00
+!CHECK 235254.40 | 234637.31 42 | line 1 BXVZ,J NOP X
+!CHECK 235255.00 | 000011.05 10 | line 2 SX,2,$R
+!CHECK 235255.40 | 235256.00 00 | line 3 Z PETE BE,$+.32
+!CHECK 235256.00 | 235256.44 00 | line 4 BD,$+.32
+!CHECK 235256.40 | 000000.32 88 235255.74 02 | line 5 BB,S CHOP(Z REQ CH),Z PETE
+!CHECK 235257.40 | 235232.50 00 | line 6 B,Z QUES 2
+!CHECK 235272.00 | 000000.34 86 234631.34 04 | line 13 Z ADD UN BZBZ,S UN AVL(Z REQ UN),Z ER EX1
+!CHECK 235273.00 | 000000.33 88 235276.74 00 | line 14 BZB,S MULTI(Z REQ CH),Z INSRT
+!CHECK 235274.00 | 000000.50 86 011000.00 F0 | line 15 ZFINI4 CM0000(BU,9),SVER(ZREQUN) printed "CMOC00"
+!CHECK 235275.00 | 000000.71 86 007000.00 F0 | line 16 CM0000(BU,7),S RD(Z REQ UN) printed "CMOCOO", "S RC"
+!CHECK 235276.00 | 235234.10 00 | line 17 B,ZCONE as printed = ZDONE (byte prints "CO")
+!CHECK 235276.40 | 234565.00 80 060000.20 50 | line 18 ZINSRT L(BU,48),JFLDB+5.0
+!CHECK 235277.40 | 000030.14 30 | line 19 LV,ZREQUN,ZREQCH
+!CHECK 235300.00 | 235321.00 80 060600.23 10 | line 20 KF(BU,48,6),ZNOTYP
+!CHECK 235301.00 | 235274.36 C2 | line 21 BAE,Z FINI4
+!CHECK 235301.40 | 235321.60 80 060600.23 10 | line 22 KF(BU,48,6),Z RC TYP as printed
+!CHECK 235302.40 | 235305.76 C0 | line 23 BZAE,Z NX QUZ
+!CHECK 235303.00 | 300000.00 80 403000.06 70 | line 24 LFI(BU,3),(2)011
+!CHECK 235304.00 | 000000.64 88 003000.12 F0 | line 25 SF(BU,3),S EQUIP(Z REQ CH)
+!CHECK 235305.00 | 235274.10 00 | line 26 B,Z FINI 4 (byte prints "CO")
+!CHECK 235305.40 | 235322.40 80 060600.23 10 | line 27 Z NX QUZ KF(BU,48,6),Z PR TYP
+!CHECK 235306.40 | 235311.76 C0 | line 28 BZAE,Z NXT QZ
+!CHECK 235307.00 | 400000.00 80 403000.06 70 | line 29 LFI(BU,3),(2)100
+!CHECK 235310.00 | 000000.64 88 003000.12 F0 | line 30 SF(BU,3),S EQUIP(Z REQ CH) (byte prints "FC")
+!CHECK 235311.00 | 235274.10 00 | line 31 B,ZFINI4
+!CHECK 235311.40 | 235323.20 80 060600.23 10 | line 32 Z NXT QZ KF(BU,48,6),Z PU TYP
+!CHECK 235312.40 | 235317.36 C0 | line 33 BZAE,Z TYP ER
+!CHECK 235313.00 | 500000.00 80 403000.06 70 | line 34 LFI(BU,3),(2)101
+!CHECK 235314.00 | 000000.64 88 003000.12 F0 | line 35 SF(BU,3),S EQUIP(Z REQ CH)
+!CHECK 235315.00 | 235274.10 00 | line 36 B,ZFINI4
+!CHECK 235315.40 | 000000.31 88 001000.36 F0 | line 37 Z CHTPE CM1111,S CH AVL(Z REQ CH)
+!CHECK 235316.40 | 234631.10 00 | line 38 B,Z ER EX1
+!CHECK 235317.00 | 235315.65 42 | line 39 Z TYPER BPG1,Z CHTPE
+!CHECK 235317.40 | 000000.34 86 001000.36 F0 | line 40 CM1111,S UNAVL(Z REQ UN)
+!CHECK 235320.40 | 234631.10 00 | line 41 Z TYPR5 B,Z ER EX1
+!CHECK 235324.00 | 000000.31 88 234631.34 04 | line 48 Z ADD CH BZBZ,S CH AVL(Z REQ CH),Z ER EX1
+!CHECK 235325.00 | 235273.10 00 | line 49 B,Z ADD UN+1.0

@@ -1,0 +1,181 @@
+! mcp_bootstrap_p352.strap -- MCP printed page 352: the $DUMP program's
+! instruction decoder: store a branch-table entry (ABRTBL/ABRBTB) or
+! the AERROR text through $14 and return (ARETRN); AFULL tests the
+! op-code bits (.20-.59 of $13) for integer/connective, transmit,
+! SIC/CB/BIND, error and I/O forms; AINTC0 forms the integer-arith
+! operand codes (KFI, BAE ACONN/ADIRCT/AIMMED, *(BU,6),AL40 index into
+! AOPTBL), lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.102, read at 400 dpi, doubtful
+! names upscaled 4x.  Header, READ: "TIME CLOCK 00054041  PUNID
+! 22$DUMP  CARD ID VB000447  DIST. OF 3/01  3/01  PAGE NUMBER 352";
+! the heading row's LOCATION field is 235422, line 1's word.
+!
+! Still the $DUMP overlay (PUNID 22$DUMP, card IDs VB...), no SLC,
+! no new card series.  No TAIL.
+!
+! THE PAGE.  50 lines; every line number prints a "*".  "*" after the
+! LOCATION on lines 9, 22, 36, 49.  Remarks on lines 16 (-INT. OR
+! CONN.), 17 (-TRANSMIT), 18 (-SIC, CB OR BIND), 19 (-SIC,ERROR), 20
+! (-INPUT-OUTPUT), 23 (-BB), 24 (-SIC,UNCONDITIONAL BRANCH, printed
+! "UNCONDITICNAL"), 27 (-AHLFWD ALWAYS EQUALS ZERO), 49 ("-(").  No
+! remark-only card.  Located rows contiguous from 235422.00 (line 1)
+! to 235474.40 (line 50, LF, a full word; next 235475.40), then blank
+! paper.
+!
+! JOIN.  p.351 (tools/page_sheet.py 351) ends with *(BU,6),AL24,20 at
+! 235421.00, a full word: next 235422.00 = line 1.  p.353's sheet
+! opens at 235475.40: contiguous.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "AINTCC" (label line 28, BB operand line 8): the last glyph
+!     prints open both times, like the C before it.  The routine's
+!     other entries print AINTC1 (line 38), AINTC2 (line 46), AINTC3
+!     (line 32): the numbered family, so written AINTC0 (digit).  No
+!     landed page or C22-6728 names it.
+!   * "ASICCP" (BB operand line 18) is line 24's label, which prints
+!     its fifth glyph CLOSED (ASICOP); line 8's binary 235446.34 is
+!     ASICOP's 235446.00.  Written ASICOP.
+!   * ANVLDO ("invalid op"): the last glyph prints open throughout;
+!     the letter O: p.353 (scratch deck, line 17) prints it with a
+!     CLOSED round, and the mnemonic is "invalid op".
+!   * octal / hex fields with an open round read 0 ("FO" = F0, "7C" =
+!     70, "700C00.CC" = 700000.00 on line 22, "0C" = 0C on line 27 is
+!     a real C: BZB1's op byte).
+!
+! EXTERNALS.  None is defined by a landed deck; values from this
+! page's binary.  LF/BZB1 operand addresses are BIT-EXACT; B/BB/BAE
+! branch addresses give the half word only (B adds .10, BB .34, BAE
+! .36); V+I gives the word only.
+!
+! CARD SERIALS.  VB000447 .. VB000496, one per line, none shared,
+! none skipped.
+
+ABRTBL  SYN, (8)236250.50            ! not landed; LF line 2 236250.50, BIT-EXACT
+ARETRN  SYN, (8)235377.0             ! not landed; B line 4 235377.10, half word only
+AERROR  SYN, (8)236420.30            ! not landed; LF line 5 236420.30, BIT-EXACT
+ATRNST  SYN, (8)235703.0             ! not landed; BB line 9 235703.34, half word only
+ABRBTB  SYN, (8)236244.50            ! not landed; LF line 13 236244.50, BIT-EXACT
+ASIC    SYN, (8)236420.00            ! not landed; LF line 24 236420.00, BIT-EXACT
+AHLFWD  SYN, (8)236147.00            ! not landed; BZB1 line 27 236147.00, BIT-EXACT
+ACONN   SYN, (8)235562.0             ! not landed; BAE line 30 235562.36, half word only
+AL40    SYN, (8)236174.06            ! not landed; * line 32 236174.06, BIT-EXACT
+AOPTBL  SYN, (8)236362.0             ! not landed; V+I line 34 236362.03, word only
+AMNUS   SYN, (8)235531.0             ! not landed; BB line 36 235531.34, half word only
+ADIRCT  SYN, (8)235511.0             ! not landed; BAE line 40 235511.36, half word only
+AIMMED  SYN, (8)235513.40            ! not landed; BAE line 42 235513.76, half word only
+ACONNP  SYN, (8)235563.40            ! not landed; BB line 45 235563.74, half word only
+AIMNTB  SYN, (8)236406.0             ! not landed; LF line 50 2.32+AIMNTB = 236410.40, word only
+
+        SLC, (8)235422.00
+        LV,$1,$R                                             ! line  1
+        LF(BU,24),ABRTBL($1)                                 ! line  2
+        SF(BU,24),($14)                                      ! line  3
+        B,ARETRN                                             ! line  4
+ANVLDO  LF(BU,40),AERROR                                     ! line  5
+        SF(BU,40),0($14)                                     ! line  6
+        B,ARETRN                                             ! line  7
+AFULL   BB,.27($13),AINTC0                                   ! line  8  (printed "AINTCC")
+        BB,.26($13),ATRNST                                   ! line  9
+        BB,.23($13),ANVLDO                                   ! line 10
+ABRBT   L(BU,3),.28($13),-19                                 ! line 11
+        LV,$1,$L                                             ! line 12
+        LF(BU,32),ABRBTB($1)                                 ! line 13
+        SF(BU,32),($14)                                      ! line 14
+        B,ARETRN                                             ! line 15
+AFULL2  BB,.59($13),AFULL4                                   ! line 16  -INT. OR CONN.
+        BB,.58($13),AFULL4                                   ! line 17  -TRANSMIT
+        BB,.57($13),ASICOP                                   ! line 18  -SIC, CB OR BIND (printed "ASICCP")
+        BB,.56($13),ANVLDO                                   ! line 19  -SIC,ERROR
+        BB,.55($13),AFULL4                                   ! line 20  -INPUT-OUTPUT
+        LF(BU,3),.51($13)                                    ! line 21
+        KFI(BU,3),7                                          ! line 22
+        BAE,AFULL4                                           ! line 23  -BB
+ASICOP  LF(BU,24),ASIC                                       ! line 24  -SIC,UNCONDITIONAL BRANCH
+        SF(BU,24),0($14)                                     ! line 25
+        B,ARETRN                                             ! line 26
+AFULL4  BZB1,AHLFWD,ARETRN                                   ! line 27  -AHLFWD ALWAYS EQUALS ZERO
+AINTC0  LF(BU,3),.25($13)                                    ! line 28  (printed "AINTCC")
+        KFI(BU,3),7                                          ! line 29
+        BAE,ACONN                                            ! line 30
+        L(BU,5),.22($13),40                                  ! line 31
+AINTC3  *(BU,6),AL40,20                                      ! line 32
+        LV,$1,$R                                             ! line 33
+        V+I,$1,AOPTBL                                        ! line 34
+        LF(BU,32),($1),24                                    ! line 35
+        BB,.20($13),AMNUS                                    ! line 36
+        LFI(BU,8),(8)20,16                                   ! line 37
+AINTC1  LF(BU,3),0($13),-64                                  ! line 38
+        KFI(BU,3),0,64                                       ! line 39
+        BAE,ADIRCT                                           ! line 40
+        KFI(BU,3),4,64                                       ! line 41
+        BAE,AIMMED                                           ! line 42
+        BB,.37($1),ANVLDO                                    ! line 43
+        SF(BU,40),-.16($14),16                               ! line 44
+        BB,.36($1),ACONNP                                    ! line 45
+AINTC2  L(BU,2),.1($13),40                                   ! line 46
+        *(BU,6),AL40,20                                      ! line 47
+        LV,$2,$R                                             ! line 48
+        LI(BU,8),(8)34,56                                    ! line 49  -(
+        LF(BU,32),2.32+AIMNTB($2),24                         ! line 50
+
+!SYM ANVLDO 235425.00
+!SYM AFULL 235427.40
+!SYM ABRBT 235432.40
+!SYM AFULL2 235436.40
+!SYM ASICOP 235446.00
+!SYM AFULL4 235450.40
+!SYM AINTC0 235451.40
+!SYM AINTC3 235455.00
+!SYM AINTC1 235462.00
+!SYM AINTC2 235471.00
+!CHECK 235422.00 | 000011.02 30 | line 1 LV,$1,$R
+!CHECK 235422.40 | 236250.50 81 030000.06 70 | line 2 LF(BU,24),ABRTBL($1)
+!CHECK 235423.40 | 000000.00 8E 030000.12 F0 | line 3 SF(BU,24),($14) (h2 prints "FO")
+!CHECK 235424.40 | 235377.10 00 | line 4 B,ARETRN
+!CHECK 235425.00 | 236420.30 80 050000.06 70 | line 5 ANVLDO LF(BU,40),AERROR
+!CHECK 235426.00 | 000000.00 8E 050000.12 F0 | line 6 SF(BU,40),0($14) (h2 prints "FO")
+!CHECK 235427.00 | 235377.10 00 | line 7 B,ARETRN
+!CHECK 235427.40 | 000000.33 8D 235451.74 02 | line 8 AFULL BB,.27($13),AINTC0
+!CHECK 235430.40 | 000000.32 8D 235703.34 02 | line 9 BB,.26($13),ATRNST
+!CHECK 235431.40 | 000000.27 8D 235425.34 02 | line 10 BB,.23($13),ANVLDO
+!CHECK 235432.40 | 000000.34 8D 003066.60 50 | line 11 ABRBT L(BU,3),.28($13),-19
+!CHECK 235433.40 | 000010.02 30 | line 12 LV,$1,$L
+!CHECK 235434.00 | 236244.50 81 040000.06 70 | line 13 LF(BU,32),ABRBTB($1)
+!CHECK 235435.00 | 000000.00 8E 040000.12 F0 | line 14 SF(BU,32),($14)
+!CHECK 235436.00 | 235377.10 00 | line 15 B,ARETRN
+!CHECK 235436.40 | 000000.73 8D 235450.74 02 | line 16 AFULL2 BB,.59($13),AFULL4
+!CHECK 235437.40 | 000000.72 8D 235450.74 02 | line 17 BB,.58($13),AFULL4
+!CHECK 235440.40 | 000000.71 8D 235446.34 02 | line 18 BB,.57($13),ASICOP
+!CHECK 235441.40 | 000000.70 8D 235425.34 02 | line 19 BB,.56($13),ANVLDO
+!CHECK 235442.40 | 000000.67 8D 235450.74 02 | line 20 BB,.55($13),AFULL4
+!CHECK 235443.40 | 000000.63 8D 003000.06 70 | line 21 LF(BU,3),.51($13)
+!CHECK 235444.40 | 700000.00 80 403000.23 10 | line 22 KFI(BU,3),7 (h1 prints "700C00.CC", open rounds)
+!CHECK 235445.40 | 235450.76 C2 | line 23 BAE,AFULL4
+!CHECK 235446.00 | 236420.00 80 030000.06 70 | line 24 ASICOP LF(BU,24),ASIC
+!CHECK 235447.00 | 000000.00 8E 030000.12 F0 | line 25 SF(BU,24),0($14)
+!CHECK 235450.00 | 235377.10 00 | line 26 B,ARETRN
+!CHECK 235450.40 | 236147.00 80 235377.34 0C | line 27 AFULL4 BZB1,AHLFWD,ARETRN
+!CHECK 235451.40 | 000000.31 8D 003000.06 70 | line 28 AINTC0 LF(BU,3),.25($13) (h2 prints "7C")
+!CHECK 235452.40 | 700000.00 80 403000.23 10 | line 29 KFI(BU,3),7
+!CHECK 235453.40 | 235562.36 C2 | line 30 BAE,ACONN
+!CHECK 235454.00 | 000000.26 8D 005024.20 50 | line 31 L(BU,5),.22($13),40
+!CHECK 235455.00 | 236174.06 80 006012.21 90 | line 32 AINTC3 *(BU,6),AL40,20
+!CHECK 235456.00 | 000011.02 30 | line 33 LV,$1,$R
+!CHECK 235456.40 | 236362.03 05 | line 34 V+I,$1,AOPTBL
+!CHECK 235457.00 | 000000.00 81 040014.06 70 | line 35 LF(BU,32),($1),24
+!CHECK 235460.00 | 000000.24 8D 235531.34 02 | line 36 BB,.20($13),AMNUS
+!CHECK 235461.00 | 040000.00 80 410010.06 70 | line 37 LFI(BU,8),(8)20,16
+!CHECK 235462.00 | 000000.00 8D 003040.06 70 | line 38 AINTC1 LF(BU,3),0($13),-64
+!CHECK 235463.00 | 000000.00 80 403040.23 10 | line 39 KFI(BU,3),0,64
+!CHECK 235464.00 | 235511.36 C2 | line 40 BAE,ADIRCT
+!CHECK 235464.40 | 400000.00 80 403040.23 10 | line 41 KFI(BU,3),4,64
+!CHECK 235465.40 | 235513.76 C2 | line 42 BAE,AIMMED
+!CHECK 235466.00 | 000000.45 81 235425.34 02 | line 43 BB,.37($1),ANVLDO
+!CHECK 235467.00 | 777777.60 8E 050010.12 F0 | line 44 SF(BU,40),-.16($14),16
+!CHECK 235470.00 | 000000.44 81 235563.74 02 | line 45 BB,.36($1),ACONNP
+!CHECK 235471.00 | 000000.01 8D 002024.20 50 | line 46 AINTC2 L(BU,2),.1($13),40
+!CHECK 235472.00 | 236174.06 80 006012.21 90 | line 47 *(BU,6),AL40,20
+!CHECK 235473.00 | 000011.04 30 | line 48 LV,$2,$R
+!CHECK 235473.40 | 070000.00 80 410034.20 50 | line 49 LI(BU,8),(8)34,56
+!CHECK 235474.40 | 236410.40 82 040014.06 70 | line 50 LF(BU,32),2.32+AIMNTB($2),24

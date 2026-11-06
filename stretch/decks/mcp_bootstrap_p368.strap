@@ -1,0 +1,168 @@
+! mcp_bootstrap_p368.strap -- MCP printed page 368: SYSTEM COMMAND
+! package (PUNID 22SCOMD): the REWIND command (Z REWCD, Z REWOK), the
+! REJECT command (Z REJCT, Z REJ1), and the opening of the IOCHANGE
+! package's character conversion (Z CONVC, Z OG1, Z OG2), lines 1-45.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.118, read at 400 dpi.  Header, READ:
+! "TIME CLOCK 00054041  PUNID 22SCOMD  CARD ID WA000341  DIST. OF 3/01
+!  3/01  PAGE NUMBER 368".  The heading row's LOCATION field is BLANK
+! (line 1 is a remark card).
+!
+! THE PAGE.  45 lines, every line number prints a "*".  Contiguous from
+! 234766.00 (line 4) to 235015.00 (line 45, a half word; next 235015.40,
+! which is p.369 line 1 "Z END 1").  Line 4's 234766.00 is p.361's
+! JTABL target for ZREWCD (B prints 234766.10) and line 18's 234774.40
+! its target for ZREJCT (234774.50).  "*" after the LOCATION on lines 11
+! and 34.  No TAIL.  The page stays in SCOMD.
+!   lines  1-3   remarks (banner "REWIND COMMAND" on 2).
+!   lines  4-14  Z REWCD .. B,ZEXITX.
+!   lines 15-17  remarks (banner "REJECT COMMAND" on 16).
+!   lines 18-28  Z REJCT .. B,ZEXITX.
+!   lines 29-31  remarks (banner "IOCHANGE PACKAGE" on 30).
+!   lines 32-45  Z CONVC .. B,Z END.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "JCV", "JCN" (lines 5, 7, 21, 23) = JOV, JON: p.363 lines 48, 50
+!     define "J CV SYN,32.0 -OVER-LAPPED" and "J ON SYN,128.0 -ON LINE";
+!     the sums assemble to the printed immediates.
+!   * "J NCP X" (line 8), "JNCPX" (24) = JNOPX (C22-6728 typesets JNOPX).
+!   * "J ECJX" (line 20) = JEOJX (p.367 line 12 defines "JECJX", the EOJ
+!     routine's exit; BRZ prints 234727.74 = 234727.40 + BRZ's bits).
+!   * ",SKCM" (line 11) = SKOM (landed p.106 "S KOM", 79.32 =
+!     000117.40), as pp.3xx decks write it.
+!   * "B,D MCP" (line 10) prints a closed-stem D: DMCP, landed p.108.
+!   * "Z OG 2", "Z OG 5", "Z OG 1" (lines 36, 37, 39) print a CLOSED O;
+!     the label cards "ZCG 1" (35), "ZCG 2" (42) and the reference
+!     "B,ZCG 1" (41) print it open.  A closed glyph is evidence of O
+!     (ink dropout opens, never closes), so the deck spells ZOG1, ZOG2,
+!     ZOG5.  p.369 line 6 prints the ZOG5 label "Z CG 5", open
+!     (coordinator: p.369's deck must spell it ZOG5 too).
+!   * "Z XWCV" (line 34): written ZXWCV as printed (C open on both this
+!     page and p.369 line 7's defining "Z XW CV XW,$L,3.0"; no closed
+!     glyph anywhere).
+!   * "CTIC010"/"CTIO010" = CTI0010 (open 0); "CMOCOO" (line 40) =
+!     CM0000 (the connective's four code digits; landed decks write
+!     CM0000).
+!   * hex bytes "CO" on lines 39 and 43 (B-class rows) = C0: the
+!     assembled byte; byte "OA" on line 42 = 0A.
+!
+! EXTERNALS.  The J mode-mask symbols are p.363 lines 40, 44-50 (not
+! landed), copied in their DEFINING form.  ZEREX2, ZEXITX, JNOPX are
+! p.365 lines 7, 9, 18; JEOJX p.367 line 12; ZOG5, ZXWCV, ZEND, ZEND1
+! p.369 lines 6, 7, 5, 1 -- none landed; values read off those pages'
+! LOCATION columns and agreeing with this page's binaries.  JRETA is
+! landed p.295 line 23 (VF).
+!
+! CARD SERIALS.  WA000341 .. WA000385, one per line, none shared or
+! skipped.
+
+JXMSK   SYN,$X13                     ! p.363 line 40 "J XMSK SYN,$X13" -MODE MASK INDEX (prints 000035.00)
+JOP     SYN,2.0                      ! p.363 line 44 "J OP" -OPERATOR IS SOURCE
+JSR     SYN,4.0                      ! p.363 line 45 "J SR" -SPOOL READER
+JJ1     SYN,8.0                      ! p.363 line 46 "J J1" -JOB CONTROL I
+JJ4     SYN,16.0                     ! p.363 line 47 "J J4" -JOB CONTROL IV
+JOV     SYN,32.0                     ! p.363 line 48 "J CV" (open O) -OVER-LAPPED
+JNV     SYN,64.0                     ! p.363 line 49 "J NV" -NOT OVER-LAPPED
+JON     SYN,128.0                    ! p.363 line 50 "J ON" -ON LINE
+JNOPX   SYN, (8)234637.0             ! p.365 line 18 "JNOPX SYN,$" at 234637.00; BRZ line 8 234637.34
+ZEREX2  SYN(BU,32,8), (8)234632.0    ! p.365 line 7 "Z ER EX2 LX,12,ZEXZ"; B line 9 234632.10
+ZEXITX  SYN(BU,32,8), (8)234633.0    ! p.365 line 9 "Z EXITX LWF(U),..."; B line 14 234633.10
+JEOJX   SYN(BU,64,8), (8)234727.40   ! p.367 line 12 "JECJX BZB,SJBUSY,Z EREXZ" (full word); BRZ line 20 234727.74
+DMCP    SYN, 32.0                    ! landed p.108 "D MCP SYN,32.0"; B line 10 000040.10
+SKOM    SYN, 79.32                   ! landed p.106 "S KOM"; line 11 000117.40 (printed "SKCM")
+JRETA   SYN(B,25,1), (8)232716.40    ! landed p.295 line 23 "JRETA VF,0"; M-1 line 26 232716.40
+ZXWCV   SYN(BU), (8)235022.0         ! p.369 line 7 "Z XW CV XW,$L,3.0"; LX line 34 235022.12
+ZOG5    SYN(BU,32,8), (8)235021.0    ! p.369 line 6 "Z CG 5 B,Z ER EX1"; BXCZ line 37 235021.30
+ZEND1   SYN(BU,32,8), (8)235015.40   ! p.369 line 1 "Z END 1 BXCZ,Z END 2"; BZXE line 43 235015.72
+ZEND    SYN(BU,32,8), (8)235020.40   ! p.369 line 5 "Z END B,$"; B line 45 235020.50
+
+        SLC, (8)234766.0
+! line  1  -
+! line  2  -   ************REWIND COMMAND************
+! line  3  -
+ZREWCD  SX,JXMSK,$L                                          ! line  4  -INPUT SPOOL REWIND COMMAND
+        CTI0010(BU,18),JSR+JJ1+JOV+JON,-18                   ! line  5   printed "CTIC010", "JCN"
+        BRZ,ZREWOK                                           ! line  6
+        CTI0010(BU,18),JSR+JJ4+JOV,-18                       ! line  7   printed "JCV"
+        BRZ,JNOPX                                            ! line  8  -NORMAL EXIT   printed "J NCP X"
+        B,ZEREX2                                             ! line  9
+ZREWOK  B,DMCP                                               ! line 10
+        ,SKOM                                                ! line 11   printed ",SKCM"; "*" after the location
+        ,2.32                                                ! line 12
+        LVI,12,3.0                                           ! line 13
+        B,ZEXITX                                             ! line 14
+! line 15  -
+! line 16  -   ************REJECT COMMAND************
+! line 17  -
+ZREJCT  SX,JXMSK,$L                                          ! line 18  -REJECT COMMAND
+        CTI0010(BU,18),JOP+JNV,-18                           ! line 19  -BYPASS,OPER SOURCE  - GIVE EOJ
+        BRZ,JEOJX                                            ! line 20   printed "J ECJX"
+        CTI0010(BU,18),JSR+JOV+JJ1,-18                       ! line 21
+        BRZ,ZREJ1                                            ! line 22
+        CTI0010(BU,18),JSR+JOV+JJ4,-18                       ! line 23  -NOT RELEVENT
+        BRZ,JNOPX                                            ! line 24
+        B,ZEREX2                                             ! line 25
+ZREJ1   M-1(BU,19,1),JRETA                                   ! line 26  -SET ERROR RETURN ADDRESS
+        LVI,12,4.0                                           ! line 27
+        B,ZEXITX                                             ! line 28
+! line 29  -
+! line 30  -   *****IOCHANGE PACKAGE*****
+! line 31  -
+ZCONVC  L(BU,64),0.0($5),64                                  ! line 32
+        LFI(BU,12),(8)2012                                   ! line 33
+        LX,5,ZXWCV                                           ! line 34   "*" after the location
+ZOG1    KF(V+IC)(BU,6),0.6($5),6                             ! line 35  -TEST FOR BCD BLANK (8) 20   printed "ZCG 1"
+        BAE,ZOG2                                             ! line 36  -BRANCH IF BLANK
+        BXCZ,ZOG5                                            ! line 37  -BR IF 3RD CHAR NOT BL TO ERROR
+        KF(BU,6),-.6($5)                                     ! line 38  -TEST FOR BCD ZERO (8) 12
+        BZAE,ZOG1                                            ! line 39  -BRANCH IF  NOT ZERO
+        CM0000(BU,6),-.6($5)                                 ! line 40   printed "CMOCOO"
+        B,ZOG1                                               ! line 41   printed "ZCG 1"
+ZOG2    KCI,5,2.0                                            ! line 42   printed "ZCG 2"
+        BZXE,ZEND1                                           ! line 43
+        Z,$R                                                 ! line 44
+        B,ZEND                                               ! line 45
+
+!SYM ZREWCD 234766.00
+!SYM ZREWOK 234772.00
+!SYM ZREJCT 234774.40
+!SYM ZREJ1  235002.00
+!SYM ZCONVC 235004.00
+!SYM ZOG1   235006.40
+!SYM ZOG2   235013.40
+!CHECK 234766.00 | 000010.33 10 | line 4 Z REW CD SX,JXMSK,$L
+!CHECK 234766.40 | 000254.00 80 422067.05 70 | line 5 CTI0010(BU,18),JSR+JJ1+JOV+JON,-18
+!CHECK 234767.40 | 234772.34 C2 | line 6 BRZ,Z REW OK
+!CHECK 234770.00 | 000064.00 80 422067.05 70 | line 7 CTI0010(BU,18),JSR+JJ4+JOV,-18
+!CHECK 234771.00 | 234637.34 C2 | line 8 BRZ,J NOP X
+!CHECK 234771.40 | 234632.10 00 | line 9 B,Z ER EX2
+!CHECK 234772.00 | 000040.10 00 | line 10 Z REW OK B,D MCP
+!CHECK 234772.40 | 000117.40 80 | line 11 ,SKOM (printed "SKCM")
+!CHECK 234773.00 | 000002.40 80 | line 12 ,2.32
+!CHECK 234773.40 | 000003.31 01 | line 13 LVI,12,3.0
+!CHECK 234774.00 | 234633.10 00 | line 14 B,Z EXIT X
+!CHECK 234774.40 | 000010.33 10 | line 18 Z REJCT SX,JXMSK,$L
+!CHECK 234775.00 | 000102.00 80 422067.05 70 | line 19 CTI0010(BU,18),JOP+JNV,-18
+!CHECK 234776.00 | 234727.74 C2 | line 20 BRZ,J EOJX (printed "ECJX")
+!CHECK 234776.40 | 000054.00 80 422067.05 70 | line 21 CTI0010(BU,18),JSR+JOV+JJ1,-18
+!CHECK 234777.40 | 235002.34 C2 | line 22 BRZ,Z REJ 1
+!CHECK 235000.00 | 000064.00 80 422067.05 70 | line 23 CTI0010(BU,18),JSR+JOV+JJ4,-18
+!CHECK 235001.00 | 234637.34 C2 | line 24 BRZ,JNOPX
+!CHECK 235001.40 | 234632.10 00 | line 25 B,Z ER EX2
+!CHECK 235002.00 | 232716.40 80 023100.32 B0 | line 26 Z REJ 1 M-1(BU,19,1),J RETA
+!CHECK 235003.00 | 000004.31 01 | line 27 LVI,12,4.0
+!CHECK 235003.40 | 234633.10 00 | line 28 B,ZEXITX
+!CHECK 235004.00 | 000000.00 85 000040.20 50 | line 32 Z CONV C L(BU,64),0.0($5),64
+!CHECK 235005.00 | 201200.00 80 414000.06 70 | line 33 LFI(BU,12),(8)2012
+!CHECK 235006.00 | 235022.12 10 | line 34 LX,5,Z XWCV
+!CHECK 235006.40 | 000000.06 85 206003.23 10 | line 35 ZOG1 KF(V+IC)(BU,6),0.6($5),6
+!CHECK 235007.40 | 235013.76 C2 | line 36 BAE,ZOG 2
+!CHECK 235010.00 | 235021.30 42 | line 37 BXCZ,ZOG 5
+!CHECK 235010.40 | 777777.72 85 006000.23 10 | line 38 KF(BU,6),-.6($5)
+!CHECK 235011.40 | 235006.76 C0 | line 39 BZAE,ZOG 1 (byte prints "CO")
+!CHECK 235012.00 | 777777.72 85 006000.00 F0 | line 40 CM0000(BU,6),-.6($5) (printed "CMOCOO")
+!CHECK 235013.00 | 235006.50 00 | line 41 B,ZCG 1
+!CHECK 235013.40 | 000002.13 0A | line 42 ZOG2 KCI,5,2.0
+!CHECK 235014.00 | 235015.72 C0 | line 43 BZXE,Z END 1 (byte prints "CO")
+!CHECK 235014.40 | 000011.22 00 | line 44 Z,$R
+!CHECK 235015.00 | 235020.50 00 | line 45 B,Z END

@@ -1,0 +1,166 @@
+! mcp_bootstrap_p355.strap -- MCP printed page 355: the $DUMP program's
+! floating-point / index-field edit: AFMPY (sign and exponent-flag
+! characters into the print image via $R, branching to AFLPT1/AFLPT2),
+! AIMNDX (an AL40 multiply indexing AIMNTB), ABRCH/ABRIND/ABINDF/ABND1
+! (branch and index flags from $13, AINDCR, back to ARETRN), and
+! ADIRX/ADIRX2 (direction field through ADRNDX and AHXTB), lines 1-50.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.105, read at 400 dpi (crops upscaled
+! 2x-4x for names).  Header, READ: "TIME CLOCK 00054041  PUNID 22$DUMP
+! CARD ID VB000598  DIST. OF 3/01  3/01  PAGE NUMBER 355"; the heading
+! row's LOCATION field is 235622, line 1's word.
+!
+! STILL THE $DUMP (PUNID 22$DUMP, VB... series).  No new SLC, no TAIL.
+!
+! THE PAGE.  50 lines; every line number prints a "*".  "*" after the
+! LOCATION on lines 6, 20, 34, 47.  Remarks on lines 32 (-B) and 41
+! (-Z).  Located rows contiguous from 235622.40 (line 1) to 235674.40
+! (line 50, LF, a full word; next 235675.40), then blank paper.
+!
+! JOIN.  p.354 (tools/page_sheet.py 354) ends with B,AFLPT1+1. at
+! 235622.00, a half word: next 235622.40 = line 1.  p.356 opens at
+! 235675.40: contiguous both ways.
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * "ACIRX2" (lines 20, 29 B targets; line 47's label also prints the
+!     second glyph stemless): line 44's ADIRX prints a clear D, and the
+!     B rows assemble 235672.10 = line 47's own location, so the
+!     symbol is the ADIRX family: written ADIRX2.
+!   * AFLPT1 (line 3): last glyph has the top-left flag of a 1 and no
+!     I serif (compared with LFI's I on line 2, 4x crop); family with
+!     AFLPT2.
+!   * ABND1 (lines 36, 43): last glyph flagged, a 1.  AHXTB (line 50):
+!     flat-backed B, not 8.
+!   * octal / hex fields with an open round read 0 ("FO" = F0, "CO" =
+!     00, ".CC" = .00).
+!
+! EXTERNALS.  None is defined by a landed deck; values from this page's
+! binary.  VFL addresses are BIT-EXACT; B targets (less B's .10) and
+! LVI addresses (less the J field) give the half word only.
+!
+! CARD SERIALS.  VB000598 .. VB000647, one per line, none shared or
+! skipped.
+
+AFLPT1  SYN, (8)235574.0             ! not landed; B line 3 235574.10, half word only
+AFLPT2  SYN, (8)235577.0             ! not landed; B line 7 235577.10 (line 11 AFLPT2-1. 235576.10), half word only
+AL40    SYN, (8)236174.06            ! not landed; * line 16 236174.06, BIT-EXACT
+AIMNTB  SYN, (8)236406.0             ! not landed; L line 18 236406.00, BIT-EXACT
+ANXBR   SYN, (8)236264.0             ! not landed; LVI line 22 236264.03, half word only
+AINDCR  SYN, (8)236276.0             ! not landed; LF line 33 236276.00, BIT-EXACT
+ARETRN  SYN, (8)235377.0             ! not landed; B line 39 235377.10, half word only
+ADRNDX  SYN, (8)236254.0             ! not landed; L line 46 236254.00, BIT-EXACT
+AHXTB   SYN, (8)236232.10            ! not landed; LF line 50 236232.10, BIT-EXACT
+
+        SLC, (8)235622.40
+AFMPY   SF(BU,16),$R.16,40                                   ! line  1
+        LFI(BU,8),(8)45,48                                   ! line  2
+        B,AFLPT1                                             ! line  3
+AFLABS  BB,.38($1),AFLEI                                     ! line  4
+        BB,.36($1),AFMPYA                                    ! line  5
+        LFI(BU,8),(8)61,16                                   ! line  6
+        B,AFLPT2                                             ! line  7
+AFMPYA  BB,.20($13),AFLEI                                    ! line  8
+        SF(BU,8),$R.16,48                                    ! line  9
+        LFI(BU,8),(8)61,48                                   ! line 10
+        B,AFLPT2-1.                                          ! line 11
+AFLEI   SF(BU,8),$R.24,40                                    ! line 12
+        LFI(BU,8),(8)61,40                                   ! line 13
+        B,AFLPT2-1.                                          ! line 14
+AIMNDX  L(BU,4),.28($13),40                                  ! line 15
+        *(BU,6),AL40,20                                      ! line 16
+        LV,$1,$R                                             ! line 17
+        L(BU,40),AIMNTB($1),16                               ! line 18
+        SF(BU,8)(V+I),.8($14),48                             ! line 19
+        B,ADIRX2                                             ! line 20  (printed "ACIRX2")
+ABRCH   BZB,.28($13),ABRIND                                  ! line 21
+        LVI,$1,ANXBR                                         ! line 22
+        L(BU,2),.29($13),40                                  ! line 23
+        LF(BU,2),.23($13),42                                 ! line 24
+        *(BU,6),AL40,20                                      ! line 25
+        V+,$1,$R                                             ! line 26
+        L(BU,40),0($1),16                                    ! line 27
+        SF(BU,8)(V+I),.8($14),48                             ! line 28
+        B,ADIRX2                                             ! line 29  (printed "ACIRX2")
+ABRIND  L(BU,6),.19($13),-19                                 ! line 30
+        LV,$1,$L                                             ! line 31
+        LI(BU,8),(8)62,32                                    ! line 32  -B
+        LF(BU,32),AINDCR($1)                                 ! line 33
+        BZB,.30($13),ABINDF                                  ! line 34
+        SF(BU,40)(V+I),.40($14)                              ! line 35
+ABND1   BZB,.29($13),ARETRN                                  ! line 36
+        LFI(BU,8),(8)31                                      ! line 37
+        SF(BU,8),($14)                                       ! line 38
+        B,ARETRN                                             ! line 39
+ABINDF  SF(BU,8),$R.16,32                                    ! line 40
+        LFI(BU,8),(8)31,32                                   ! line 41  -Z
+        SF(BU,48)(V+I),.48($14)                              ! line 42
+        B,ABND1                                              ! line 43
+ADIRX   L(BU,4),.23($13),-19                                 ! line 44
+        LV,$1,$L                                             ! line 45
+        L(BU,32),ADRNDX($1),16                               ! line 46
+ADIRX2  LFI(BU,8),(8)33,8                                    ! line 47
+        LF(BU,4),.19($13),-21                                ! line 48
+        LV,$1,$L                                             ! line 49
+        LF(BU,8),AHXTB($1)                                   ! line 50
+
+!SYM AFMPY 235622.40
+!SYM AFLABS 235625.00
+!SYM AFMPYA 235630.40
+!SYM AFLEI 235634.00
+!SYM AIMNDX 235636.40
+!SYM ABRCH 235643.40
+!SYM ABRIND 235653.00
+!SYM ABND1 235660.40
+!SYM ABINDF 235664.00
+!SYM ADIRX 235667.40
+!SYM ADIRX2 235672.00
+!CHECK 235622.40 | 000011.20 80 020024.12 F0 | line 1 AFMPY SF(BU,16),$R.16,40
+!CHECK 235623.40 | 112000.00 80 410030.06 70 | line 2 LFI(BU,8),(8)45,48
+!CHECK 235624.40 | 235574.10 00 | line 3 B,AFLPT1
+!CHECK 235625.00 | 000000.46 81 235634.34 02 | line 4 AFLABS BB,.38($1),AFLEI
+!CHECK 235626.00 | 000000.44 81 235630.74 02 | line 5 BB,.36($1),AFMPYA
+!CHECK 235627.00 | 142000.00 80 410010.06 70 | line 6 LFI(BU,8),(8)61,16
+!CHECK 235630.00 | 235577.10 00 | line 7 B,AFLPT2
+!CHECK 235630.40 | 000000.24 8D 235634.34 02 | line 8 AFMPYA BB,.20($13),AFLEI
+!CHECK 235631.40 | 000011.20 80 010030.12 F0 | line 9 SF(BU,8),$R.16,48
+!CHECK 235632.40 | 142000.00 80 410030.06 70 | line 10 LFI(BU,8),(8)61,48
+!CHECK 235633.40 | 235576.10 00 | line 11 B,AFLPT2-1.
+!CHECK 235634.00 | 000011.30 80 010024.12 F0 | line 12 AFLEI SF(BU,8),$R.24,40
+!CHECK 235635.00 | 142000.00 80 410024.06 70 | line 13 LFI(BU,8),(8)61,40
+!CHECK 235636.00 | 235576.10 00 | line 14 B,AFLPT2-1.
+!CHECK 235636.40 | 000000.34 8D 004024.20 50 | line 15 AIMNDX L(BU,4),.28($13),40
+!CHECK 235637.40 | 236174.06 80 006012.21 90 | line 16 *(BU,6),AL40,20
+!CHECK 235640.40 | 000011.02 30 | line 17 LV,$1,$R
+!CHECK 235641.00 | 236406.00 81 050010.20 50 | line 18 L(BU,40),AIMNTB($1),16
+!CHECK 235642.00 | 000000.10 8E 110030.12 F0 | line 19 SF(BU,8)(V+I),.8($14),48
+!CHECK 235643.00 | 235672.10 00 | line 20 B,ADIRX2 (printed "ACIRX2")
+!CHECK 235643.40 | 000000.34 8D 235653.34 00 | line 21 ABRCH BZB,.28($13),ABRIND
+!CHECK 235644.40 | 236264.03 01 | line 22 LVI,$1,ANXBR
+!CHECK 235645.00 | 000000.35 8D 002024.20 50 | line 23 L(BU,2),.29($13),40
+!CHECK 235646.00 | 000000.27 8D 002025.06 70 | line 24 LF(BU,2),.23($13),42
+!CHECK 235647.00 | 236174.06 80 006012.21 90 | line 25 *(BU,6),AL40,20
+!CHECK 235650.00 | 000011.02 B0 | line 26 V+,$1,$R
+!CHECK 235650.40 | 000000.00 81 050010.20 50 | line 27 L(BU,40),0($1),16
+!CHECK 235651.40 | 000000.10 8E 110030.12 F0 | line 28 SF(BU,8)(V+I),.8($14),48
+!CHECK 235652.40 | 235672.10 00 | line 29 B,ADIRX2 (printed "ACIRX2")
+!CHECK 235653.00 | 000000.23 8D 006066.60 50 | line 30 ABRIND L(BU,6),.19($13),-19
+!CHECK 235654.00 | 000010.02 30 | line 31 LV,$1,$L
+!CHECK 235654.40 | 144000.00 80 410020.20 50 | line 32 LI(BU,8),(8)62,32
+!CHECK 235655.40 | 236276.00 81 040000.06 70 | line 33 LF(BU,32),AINDCR($1)
+!CHECK 235656.40 | 000000.36 8D 235664.34 00 | line 34 BZB,.30($13),ABINDF
+!CHECK 235657.40 | 000000.50 8E 150000.12 F0 | line 35 SF(BU,40)(V+I),.40($14)
+!CHECK 235660.40 | 000000.35 8D 235377.34 00 | line 36 ABND1 BZB,.29($13),ARETRN
+!CHECK 235661.40 | 062000.00 80 410000.06 70 | line 37 LFI(BU,8),(8)31
+!CHECK 235662.40 | 000000.00 8E 010000.12 F0 | line 38 SF(BU,8),($14)
+!CHECK 235663.40 | 235377.10 00 | line 39 B,ARETRN
+!CHECK 235664.00 | 000011.20 80 010020.12 F0 | line 40 ABINDF SF(BU,8),$R.16,32
+!CHECK 235665.00 | 062000.00 80 410020.06 70 | line 41 LFI(BU,8),(8)31,32
+!CHECK 235666.00 | 000000.60 8E 160000.12 F0 | line 42 SF(BU,48)(V+I),.48($14)
+!CHECK 235667.00 | 235660.50 00 | line 43 B,ABND1
+!CHECK 235667.40 | 000000.27 8D 004066.60 50 | line 44 ADIRX L(BU,4),.23($13),-19
+!CHECK 235670.40 | 000010.02 30 | line 45 LV,$1,$L
+!CHECK 235671.00 | 236254.00 81 040010.20 50 | line 46 L(BU,32),ADRNDX($1),16
+!CHECK 235672.00 | 066000.00 80 410004.06 70 | line 47 ADIRX2 LFI(BU,8),(8)33,8
+!CHECK 235673.00 | 000000.23 8D 004065.46 70 | line 48 LF(BU,4),.19($13),-21
+!CHECK 235674.00 | 000010.02 30 | line 49 LV,$1,$L
+!CHECK 235674.40 | 236232.10 81 010000.06 70 | line 50 LF(BU,8),AHXTB($1)

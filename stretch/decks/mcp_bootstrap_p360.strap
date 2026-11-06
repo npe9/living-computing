@@ -1,0 +1,169 @@
+! mcp_bootstrap_p360.strap -- MCP printed page 360: the $DUMP program's
+! character tables -- the hex-digit table AHXTB, the instruction
+! mnemonic tables (ATRNTB .. AIMNTB), the indicator-name table
+! AINDCR, the floating-point mnemonic tables AFLTBL/AOPTBL, the
+! T/U/V flag table AFLGTB, and the words AFXW1 and ADMPBG; lines 1-55.
+!
+! docs/MCP_Mar63_250-445.pdf PDF p.110, read at 400 dpi, doubtful
+! glyphs at 900 dpi.  Header, READ: "TIME CLOCK 00054041  PUNID 22$DUMP
+!  CARD ID VB000832  DIST. OF 3/01  3/01  PAGE NUMBER 360"; the heading
+! row's LOCATION field is 236231, line 1's word.
+!
+! THE PAGE.  55 lines; every line number prints a "*".  "*" after the
+! LOCATION on lines 18, 23, 26, 29, 32, 35, 39, 41, 45, 49, 53.  Lines
+! 25, 28, 37 are CNOPs that print no location and no binary (the
+! counter is already on a full word); lines 22, 42, 48 are CNOPs that
+! print 000000.30 00.  No remarks.  No TAIL.  Located rows contiguous
+! from 236231.50 (line 1) to 236425.00 (line 55, VF; next 236425.31).
+!
+! (A*)DD / (A()DD CHARACTER DATA.  Thirty-one rows are entry-mode A
+! character strings at eight bits a character (the location column
+! confirms: MASK, four characters, 236231.50 -> 236232.10).  They print
+! no binary, so no !CHECK; their LENGTHS are checked by the next
+! labelled row's !SYM.  Every blank run was counted on a fixed 39.8 px
+! (400 dpi) character grid laid on the statement column (per-glyph
+! centres within 0.2 of a cell) and agrees with the printed location
+! sequence: every row's length equals the next location's distance,
+! or, before a CNOP, rounds up to the CNOP's printed half word (lines
+! 21: 21 characters -> 236253.20, CNOP at .40; 41: 35 -> 236361.30,
+! CNOP at .40; 47: 35 -> 236405.30, CNOP at .40).  The WHOLE sequence
+! was also assembler-checked: a scratch copy with the six "(A()" rows
+! (below) rewritten "(A*)...*" and the stand-ins removed -- the same
+! bits, since the datum is cut at its LAST terminator -- passes every
+! !SYM and the CNOP checks at 236361.40 and 236405.40.  The copy was
+! discarded; this deck keeps the printed form.  Corroboration: each
+! AFLTBL/AOPTBL row ends with a flag digit that joins the next row's
+! first entry (1|+MG, 1|D+, 1|D+MG, 3|ST, 7|LWF, 9|KF), which holds
+! only if every count is exact.  Six rows (38-41, 45,
+! 47) print the entry mode "(A()": the end-of-statement character is
+! "(" because their data contain "*" (C28-6129 printed p.16, the
+! programmer's choice of terminator), and each ends with "(".
+!
+! JOIN.  p.359 (PDF p.109) ends with line 56, ATR16 (A*)DD(BU),TR-16*
+! at 236231.00, five characters: next 236231.50 = line 1.  p.361 (PDF
+! p.111) opens line 2 at 236425.31 (PUNFUL, (CC*)DD, card series
+! WA000001, still PUNID 22$DUMP): contiguous with line 55's VF (25
+! bits).
+!
+! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
+!   * line 29, statement column 30 (data column 20, the 4th character
+!     of the "TS" cell, between "TS" and "CPUSEKJ"): a small low wedge,
+!     14x22 px at 400 dpi, at the baseline in its own cell.  Set beside
+!     this row's LOCATION period at 900 dpi it is NOT that glyph (the
+!     period is a solid round dot, 27x29 px, standing higher) nor the
+!     comma (16x33, tailed).  Written BLANK ("TS  ", as every other
+!     4-character indicator cell).  A one-byte judgment nothing checks
+!     (the row prints no binary; the length is 48 either way) --
+!     REPORTED.  If it is a partial strike, the byte is "." not blank.
+!   * line 40 "-CL": the C has the straight left side of this drum's
+!     worn D (cf. line 30 "DS" vs "CS"); line 41 prints "-DLWF" plainly:
+!     written "-DL".  Line 47 "TDCV" kept as read (D with stem).
+!   * line 30 "EOP", "OP"; line 35 "MOP"; line 40 "1SLO": the open
+!     rounded-rectangle glyph is this drum's O (C prints round): O.
+!   * line 53 "UVT", "TUV": the U's (columns 21, 33) print with a worn
+!     right stem, like L; the row is an eight-entry 3-character table
+!     of the T/U/V flag combinations ("   ","  V"," U "," UV","T  ",
+!     "T V","TU ","TUV"), so U.
+!   * lines 54, 55 "XW,C,9" and "VF,C": open round = digit 0; both
+!     assemble to the printed zero value fields.
+!   * labels: line 23 prints "ACRNCX" (both D's worn; = ADRNDX, as
+!     scratch p.355 spells it), line 29 "AINCCR" read AINDCR (4th glyph
+!     the worn D, 5th a round C; scratch p.355 AINDCR), line 43
+!     "ACPTBL" = AOPTBL (open O; scratch p.352 AOPTBL), line 55 ADMPBG
+!     (D worn; landed pp.342-343 ADMPBG).
+!   * line 34 "PG0": digit 0, with its numbered family PG1-PG6.
+!   * line 20 "BZB1BB1", lines 38-47 leading "1": digit 1 (flagged, no
+!     top serif), not I.
+!
+! ENTRY MODE "(A()".  Lines 38, 39, 40, 41, 45, 47 print "(A()DD(BU),...":
+! the end-of-statement character is "(" because their data hold "*".
+! C28-6129 printed p.29: "(Az)DD ... alphabetic information to "z"" --
+! z is any one character.  Until 2026-11-06 strap_asm's prefix scan
+! counted parentheses and refused these cards.
+!
+! EXTERNALS.  None: the page references no symbol it does not define.
+!
+! CARD SERIALS.  VB000832 .. VB000871.  Lines 2-17 share VB000833 (one
+! (8)DD card compiling sixteen bytes); every other line has its own
+! serial.  None skipped.
+
+        SLC, (8)236231.50
+AMASK   (A*)DD(BU),MASK* ! line  1
+AHXTB   (8)DD(BU,8),12,1,2,3,4,5,6,7,10,11,61,62,63,64,65,66 ! line  2  (rows lines 2-17)
+ATRNTB  (A*)DD(BU),T     SWAP  TI    SWAPI TB    SWAPB TBI   SWAPBI* ! line 18
+AMISTB  (A*)DD(BU),R   RCZ EX  EXICZ   * ! line 19
+ABRBTB  (A*)DD(BU),BZB BB  BZBZBBZ BZBNBBN BZB1BB1 * ! line 20
+ABRTBL  (A*)DD(BU),BE BD B  BR BEW   NOP* ! line 21
+        CNOP ! line 22
+ADRNDX  (A*)DD(BU),LX  LV  LC  LR  KV  V+  V+C V+CRSX  SV  SC  * ! line 23
+        (A*)DD(BU),SR  KC  LVE SVA RNX * ! line 24
+        CNOP ! line 25
+ANXBR   (A*)DD(BU),CB   CBZ  CBR  CBRZ CBH  CBZH CBRH CBRZHCB+  * ! line 26
+        (A*)DD(BU),CBZ+ CBR+ CBRZ+CB-  CBZ- CBR- CBRZ-* ! line 27
+        CNOP ! line 28
+AINDCR  (A*)DD(BU),MK  IK  IJ  EK  TS  CPUSEKJ UNRJCBJ EPGKUK  EE  * ! line 29  (stray mark in data col 20: written blank, see header)
+        (A*)DD(BU),EOP CS      OP  AD  USA EXE DS  DF  IF  LC  PF  * ! line 30
+        (A*)DD(BU),ZD  * ! line 31
+        (A*)DD(BU),IR  LS  PSH XPFPXPO XPH XPL XPU ZM  RU  TF  UF  * ! line 32
+        (A*)DD(BU),VF  * ! line 33
+        (A*)DD(BU),XF  BTR DTR PG0 PG1 PG2 PG3 PG4 PG5 PG6 XCZ * ! line 34
+        (A*)DD(BU),XVLZXVZ XVGZXL  XE  XH  MOP RLZ RZ  RGZ RN  * ! line 35
+        (A*)DD(BU),AL  AE  AH  NM  * ! line 36
+        CNOP ! line 37
+AFLTBL  (A()DD(BU),+   -L   1M+  -ST  1K   1KR  1*   1/   1( ! line 38
+        (A()DD(BU),+MG -LWF 1M+MG-SRD 1KMG 1KMGR1*+  9R/  1( ! line 39
+        (A()DD(BU),D+  -DL  1LFT 1SLO 1F+  -E+  -D*  1D/  1( ! line 40  (printed "-CL", D worn)
+        (A()DD(BU),D+MG-DLWF1     SRT 5SHF 1E+I 2STM 1( ! line 41
+        CNOP ! line 42
+AOPTBL  (A*)DD(BU),+   1LCV 7L   3     M+  -LFT 3* ! line 43
+        (A*)DD(BU),ST  2C   9K   3KE  3KR  3     * ! line 44
+        (A()DD(BU),*   3CV  6/   3CM  9+MG 1LTRC7( ! line 45
+        (A*)DD(BU),LWF 3     M+MG-M+1 -SRD 2CT  9* ! line 46
+        (A()DD(BU),KF  3KFE 3KFR 3     *+  TDCV 6LTRS3( ! line 47
+        CNOP ! line 48
+AIMNTB  (A*)DD(BU),C+I  LVI  LCI  LRI  KVI  V+I  V+IC V+ICRC-I  LVNI * ! line 49
+        (A*)DD(BU),KCI  LVS  KVNI V-I  V-IC V-ICR* ! line 50
+ASIC    (A*)DD(BU),SIC* ! line 51
+AERROR  (A*)DD(BU),ERROR* ! line 52
+AFLGTB  (A*)DD(BU),     V U  UVT  T VTU TUV* ! line 53  (U at cols 21, 33 prints worn)
+AFXW1   XW,0,9 ! line 54  (printed "XW,C,9": open 0; the label ends in a flagged 1, as p.357 line 2 prints it)
+ADMPBG  VF,0 ! line 55  (printed "VF,C": open 0)
+
+!SYM AMASK 236231.50
+!SYM AHXTB 236232.10
+!SYM ATRNTB 236234.10
+!SYM AMISTB 236242.10
+!SYM ABRBTB 236244.50
+!SYM ABRTBL 236250.50
+!SYM ADRNDX 236254.00
+!SYM ANXBR 236264.00
+!SYM AINDCR 236276.00
+!SYM AFLTBL 236336.00
+!SYM AOPTBL 236362.00
+!SYM AIMNTB 236406.00
+!SYM ASIC 236420.00
+!SYM AERROR 236420.30
+!SYM AFLGTB 236421.00
+!SYM AFXW1 236424.00
+!SYM ADMPBG 236425.00
+!CHECK 236232.10 | 012 | line 2 AHXTB (8)DD(BU,8) value 012 | 8
+!CHECK 236232.20 | 001 | line 3 AHXTB (8)DD(BU,8) value 001 | 8
+!CHECK 236232.30 | 002 | line 4 AHXTB (8)DD(BU,8) value 002 | 8
+!CHECK 236232.40 | 003 | line 5 AHXTB (8)DD(BU,8) value 003 | 8
+!CHECK 236232.50 | 004 | line 6 AHXTB (8)DD(BU,8) value 004 | 8
+!CHECK 236232.60 | 005 | line 7 AHXTB (8)DD(BU,8) value 005 | 8
+!CHECK 236232.70 | 006 | line 8 AHXTB (8)DD(BU,8) value 006 | 8
+!CHECK 236233.00 | 007 | line 9 AHXTB (8)DD(BU,8) value 007 | 8
+!CHECK 236233.10 | 010 | line 10 AHXTB (8)DD(BU,8) value 010 | 8
+!CHECK 236233.20 | 011 | line 11 AHXTB (8)DD(BU,8) value 011 | 8
+!CHECK 236233.30 | 061 | line 12 AHXTB (8)DD(BU,8) value 061 | 8
+!CHECK 236233.40 | 062 | line 13 AHXTB (8)DD(BU,8) value 062 | 8
+!CHECK 236233.50 | 063 | line 14 AHXTB (8)DD(BU,8) value 063 | 8
+!CHECK 236233.60 | 064 | line 15 AHXTB (8)DD(BU,8) value 064 | 8
+!CHECK 236233.70 | 065 | line 16 AHXTB (8)DD(BU,8) value 065 | 8
+!CHECK 236234.00 | 066 | line 17 AHXTB (8)DD(BU,8) value 066 | 8
+!CHECK 236253.40 | 000000.30 00 | line 22 CNOP
+!CHECK 236361.40 | 000000.30 00 | line 42 CNOP
+!CHECK 236405.40 | 000000.30 00 | line 48 CNOP
+!CHECK 236424.00 | 000000.00+ 000 000011 000000 | line 54 AFXW1 XW,0,9 (printed "XW,C,9", open 0)
+!CHECK 236425.00 | 000000.00+ | line 55 ADMPBG VF,0 (printed "VF,C", open 0)
