@@ -1826,3 +1826,56 @@ This refines, and partly corrects, the "second image" wording in
 `tests/run_tests.sh`: the ORIGIN change at printed p.99 line 11
 (`SLC,(8)215000.`) and the TAIL SCOPE change at printed p.98 line 37
 are two separate facts that happen to fall one page apart.
+
+### PAST T MOVE THE FIXTURE'S MCP ADDRESS IS FALSIFIED, 2026-11-06
+
+An exploratory run of the boot test with both tape units available
+was let continue past T MOVE (step cap 40,000,000). **It halted at
+PC 0 after 6,149,303 steps**, its last non-zero half-word address
+5631 (005377.40). No interruption was taken. MOVE's `B,TMREJB` at
+005376 went to 005377, and **005377 no longer held MOVE's code**.
+Its check read `0x4400000000` where the assembled word is
+`0x258200801ef0`, and 005376 read `0x2c8801000000104`.
+
+A store watch (a temporary `$display` in `StretchStorage.bsv`,
+since reverted) caught the writer: printed p.19's move of the status
+tables into upper storage, at half-words 1009 and 1018-1021
+(000770.40, 000775-000776), at t≈60.2M. Those rows place the tables
+just below `$13`. Printed p.19 line 32 is `SV,$8,$13` "TEMPORARILY
+SAVE BASE OF MCP", and `$8` is printed p.15's `LVE,$8,X BUFER($9)`
+"address MCP goes to". So `$13` is the fixture's own choice,
+`prosa.MCP_DEST_WORD = X IN END − 14` = 005450, and the tables grew
+down into MOVE.
+
+**That choice cannot be repaired by a different offset.** The body is
+assembled absolute at 215000 (printed p.99 line 11
+`SLC,(8)215000.`). And the body's own first word, printed p.103's
+`SMCP VF,SMCP` with `SCOMSZ VF,SENDCM-SMCP` at .40, assembles to
+`4680000000038000`. That is bit for bit what
+`prosa.comm_descriptor(0o215000, 14)` builds. **The descriptor p.15
+reads is IBM's first word of the body**, so the MCP block in the
+record is the resident image itself, and `$8` is 215000.
+
+**And the cards go with the IPL program, not after MCP.** C22-6728-1
+PDF p.97 (printed p.96): the master IPL tape's second file holds the
+type areas 11A11DIC, 11B11IND, **11C11IPL** and **11D11MCP** in that
+order, and "The control cards are included with the initializing
+program". Printed p.4's first TRANSMIT moves the IPL type area to
+X BS END, and the IPL image is exactly X IN END − X BS END = 2469
+words long. So cards that follow the image in the same type area,
+counted in X11, land at X IN END, where printed p.17 hunts for them.
+
+Capacity: printed p.14's 39 control words read about 39 × 512 words
+into X BUFER (011406.00). The resident body spans 215000-236523
+(9,044 words, Y MPBUF's DRZ included). Dictionary, IPL, cards and
+body fit, and the buffer stays far below 215000.
+
+Two side findings from the same run:
+- **OP set at 004553.40.** This is printed p.78 `CM0101,TREELX`, a
+  64-bit connective field that crosses a word
+  (`conn/CM-crossing-field`, len 64 off 40). It also happens in the
+  ASSIGN run. Nothing interrupts on it yet, which is why it is
+  invisible.
+- **Four `vflIntOp/unimplemented-code` sites after T MOVE.** They
+  have no addresses, because OP was already set and the `OP site`
+  display prints no PC. Add one at the next core rebuild.
