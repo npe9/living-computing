@@ -245,6 +245,7 @@ package StretchIO;
 import StretchTypes::*;
 import Vector::*;
 `ifdef HOST_TAPE
+import StretchDiskSourceFile::*;   // the full-size disk, same reason
 import StretchTapeSourceFile::*;   // Bluesim-only; see the selection
                                     // below for why this is `ifdef'd
 `endif
@@ -485,7 +486,7 @@ interface StretchIO;
   method ActionValue#(Word64) diskReadResp();
   method Action writeDiskWord(DiskIndex i, Word64 v);
   method Word64 peekDiskWord(DiskIndex i);   // testbench only
-  method DiskIndex diskCapacity();
+  method DiskPos diskCapacity();
   method ArcAddr arcAddr();
   method Action setArcAddr(ArcAddr a);
 
@@ -555,6 +556,13 @@ interface StretchIO;
   // Exchange").
   method ControlWord readChanCW(WordAddr ch);
   method Action writeChanCW(WordAddr ch, ControlWord cw);
+  // THE STATUS REPORT'S CLEAR.  Reference Manual printed p.118: when the
+  // indicators and the channel address are set up, "the corresponding
+  // status bits in the control word are reset to zero".  A separate
+  // method because the report is made by a rule of its own
+  // (StretchCore's rl_io_report), which must not conflict with the
+  // instruction that may write a control word in the same clock.
+  method Action clearStatus(WordAddr ch);
 endinterface
 
 module mkStretchIO(StretchIO);
@@ -581,11 +589,18 @@ module mkStretchIO(StretchIO);
 `endif
   Reg#(TapePos) tapePosReg <- mkReg(0);
   Reg#(DevicePos) readerPosReg <- mkReg(0);
-  // The disk.  Only the small source exists so far; a host-file or
-  // SD-backed one goes here behind the same `ifdef shape the tape
-  // uses, for the same reason (an `import "BDPI"` has no Verilog back
-  // end, so it must not be in a hierarchy a bitstream elaborates).
+  // The disk, chosen the same way and for the same reason (an
+  // `import "BDPI"` has no Verilog back end, so it must not be in a
+  // hierarchy a bitstream elaborates).  The host builds get a full
+  // 353, 2^21 words, because MCP's IPL writes 12,288 words to it and
+  // the two-arc source ran that WRITE off the end of the volume
+  // (StretchDiskSourceFile.bsv's header).  Everything else keeps the
+  // two arcs the disk unit tests are written against.
+`ifdef HOST_TAPE
+  DiskSource    disk       <- mkDiskSourceFile;
+`else
   DiskSource    disk       <- mkDiskSourceSmall;
+`endif
   // The arc address register, printed p.161.  Zero at power-on: the
   // manual does not say, and MCP LOCATEs before its first transfer
   // anyway (printed p.15 line 26), so nothing observable depends on
@@ -614,6 +629,40 @@ module mkStretchIO(StretchIO);
   Reg#(ControlWord) tapeCW    <- mkReg(cwReset);
   Reg#(ControlWord) diskCW    <- mkReg(cwReset);
   Reg#(ControlWord) consoleCW <- mkReg(cwReset);
+  // THE CONTROL WORDS HAVE ONE WRITER, commitCW, fed by two wires: an
+  // instruction's or a transfer's writeChanCW, and the status report's
+  // clearStatus.  Two rules writing the registers directly would
+  // conflict, and the report would lose every clock the instruction
+  // stream wanted the registers -- which is nearly every clock.
+  //
+  // WHEN BOTH ARRIVE FOR ONE CHANNEL IN ONE CLOCK, THE CLEAR IS APPLIED
+  // LAST.  The report was decided on the control word as it stood at the
+  // start of the clock, so its bits are the ones being cleared; a write
+  // in the same clock was computed from that same word and carries them
+  // too.  Applying the write last would report them twice.  On the real
+  // machine the case cannot arise: p.118 rejects every instruction to a
+  // channel whose status bits are waiting, with CBJ, which this model
+  // does not yet do (bsv/README.md).
+  RWire#(Tuple2#(WordAddr, ControlWord)) cwW  <- mkRWire;
+  RWire#(WordAddr)                       clrW <- mkRWire;
+
+  (* fire_when_enabled, no_implicit_conditions *)
+  rule commitCW;
+    function ControlWord next(DeviceKind d, ControlWord v);
+      ControlWord r = v;
+      if (cwW.wget matches tagged Valid {.ch, .cw} &&& kindOf(ch) == d)
+        r = cw;
+      if (clrW.wget matches tagged Valid .ch &&& kindOf(ch) == d) begin
+        r.epgk = 0; r.uk = 0; r.ee = 0; r.eop = 0; r.cs = 0;
+      end
+      return r;
+    endfunction
+    readerCW  <= next(DevReader,  readerCW);
+    printerCW <= next(DevPrinter, printerCW);
+    tapeCW    <= next(DevTape,    tapeCW);
+    diskCW    <= next(DevDisk,    diskCW);
+    consoleCW <= next(DevConsole, consoleCW);
+  endrule
 
   method Bool isReader(WordAddr ch) = (kindOf(ch) == DevReader);
   method Bool isPrinter(WordAddr ch) = (kindOf(ch) == DevPrinter);
@@ -667,7 +716,7 @@ module mkStretchIO(StretchIO);
     disk.write(i, v);
   endmethod
   method Word64 peekDiskWord(DiskIndex i) = disk.peek(i);
-  method DiskIndex diskCapacity() = disk.capacity();
+  method DiskPos diskCapacity() = disk.capacity();
   method ArcAddr arcAddr() = arcReg;
   method Action setArcAddr(ArcAddr a);
     arcReg <= a;
@@ -706,14 +755,10 @@ module mkStretchIO(StretchIO);
     endcase
   endmethod
   method Action writeChanCW(WordAddr ch, ControlWord cw);
-    case (kindOf(ch))
-      DevReader:  readerCW  <= cw;
-      DevPrinter: printerCW <= cw;
-      DevTape:    tapeCW    <= cw;
-      DevDisk:    diskCW    <= cw;
-      DevConsole: consoleCW <= cw;
-      default:    noAction;
-    endcase
+    cwW.wset(tuple2(ch, cw));
+  endmethod
+  method Action clearStatus(WordAddr ch);
+    clrW.wset(ch);
   endmethod
 endmodule
 

@@ -1496,6 +1496,13 @@ run "PAST T MOVE: MOVE intact, IPL stops in XERR29 (spool IODs 4-6)" ./run_mcp_a
 # removed (lveChainTarget always Invalid) -- every console text and
 # testbench check still passes, and only that OP line fails, which is
 # why it is checked.
+# UPDATED 2026-11-07 again: the exchange now makes status reports, the
+# host build has a full-size disk, and the run ends where MCP goes idle,
+# BEW,$ at 222046.00 (half-word 149580, printed p.198 line 47), pinned
+# by pc_check.  The wrapper also requires no channel-0 EE and exactly
+# two channel-0 EOP reports.  MEASURED INJECTION: host build back on the
+# two-arc disk -- only those two fail; PC=149580 still passes (MCP's EE
+# path ends at the same BEW,$).
 run "MCP's OWN IOD DECK (p.1): IPL completes and MCP is entered" ./run_mcp_p1deck_test.sh \
     "DATE OF IPL TAPE" "REEL NUMBER OUTPT" \
     "READER IS INPUT SOURCE ON CHANNEL 32"
@@ -2189,6 +2196,29 @@ run "CM ACROSS A WORD BOUNDARY -- MCP's p.78 SF(BU,40,8),TREELX" ./run_program.s
 #                                        fetch later, from TRAP)
 #   SIC's BD leaves the system enabled   FAIL step cap, entries, PC
 #   SIC stores its own fall-through      FAIL saved_ic (005026.00)
+# >>> THE EXCHANGE'S INPUT-OUTPUT STATUS REPORT, 2026-11-07. <<<
+# Reference Manual printed p.118 (read in the ink): a terminated
+# channel's EPGK/UK/EE/EOP/CS become indicators as a group, its address
+# goes to CA (word 5, bits 12-18, printed p.119), and the control-word
+# bits clear -- only when the five indicators are zero and the system is
+# enabled.  MCP's disk LOCATE (printed p.159) waited forever without it.
+# Expected values derived from packControlWord's layout (unit ready
+# bit 18, EOP bit 22) and 33<<45 for CA before the first run.
+# MEASURED INJECTIONS (StretchCore/StretchStorage, each restored, cmp-ed):
+#   never promote (rule guard False)   FAILS after1 ca1 held2 after2 ca2
+#                                      count PC (hangs in WAIT)
+#   promote while disabled (no irqEn)  FAILS held1 ca1 held2 ca2
+#   control word not cleared           FAILS after1 after2 count PC
+#   CA one bit off (<<44)              FAILS ca1 ca2
+#   no guard on the interruption entry FAILS ca1 ca2 (CA reset to zero
+#     (!intPC, !armInterrupt dropped)    between SIC/BD's entry and the
+#                                        handler's read)
+#   control                            all PASS
+run "I/O STATUS REPORT: control-word status -> indicators, CA, interrupt" ./run_program.sh ../decks/io_status_report.strap StretchIoStatusTb \
+    "held1:322=0x0000220000000000" "after1:323=0x0000200000000000" "ca1:324=0x0004200000000000" \
+    "held2:325=0x0000220000000000" "after2:326=0x0000200000000000" "ca2:327=0x0004200000000000" \
+    "count:328=0x0000800000000000" "PC=432"
+
 run "MCP's ENTRY: BE into a protected word, SIC/BD interrupt entry" ./run_program.sh ../decks/be_sic_interrupt_entry.strap StretchBeSicTb "PC=4250" \
     "saved_ic:2368=149155349377587200" "entries:2369=35184372088832"
 

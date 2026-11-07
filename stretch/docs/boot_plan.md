@@ -2164,3 +2164,39 @@ when the five indicators are all zero and the system is enabled, and
 it clears the bits in the control word. Until then, instructions to
 that channel are rejected with CBJ. If several channels are waiting,
 a scanner orders them.
+
+### THE STATUS REPORT IS MADE, AND MCP GOES IDLE, 2026-11-07
+
+Implemented as above (rule rl_io_report in StretchCore.bsv; the
+indicators and CA in StretchStorage.bsv; the control word cleared in
+StretchIO.bsv), tested by decks/io_status_report.strap with five
+measured injections. The two documented gaps are CBJ while a report
+waits and the scanner's reset to the last-addressed channel.
+
+**THE FIRST REPORT MCP RECEIVED WAS A MODEL ARTIFACT.** With the
+report in place, the P1 run got End Exception on channel 0 as soon as
+MCP enabled, took the owner's EE exit (p.318 line 15) and fell idle.
+The EE came from rl_io's "runs out of material" arm: IPL's disk WRITE
+reached word 1024 of the two-arc disk source with 11,264 words still to
+go (measured). That is 12,288 words in all, 24 arcs: PROSA_ARCS = 23
+rounded up to whole tracks of eight, as printed p.28 lines 24-26 do. A
+353 holds 2^21 words (Reference Manual printed p.157). So the host
+builds now carry a full-size disk in host memory
+(bsv/StretchDiskSourceFile.bsv, host_tape.c's host_disk_*), and the
+EE is gone.
+
+**WHERE IT GOES NOW.** The disk LOCATE (p.159 lines 41-46) reports
+EOP, then a second channel-0 operation does too. Both go through
+p.177's IOD routine, and the second request is not yet attributed.
+MCP then reaches `BEW,$` at 222046.00 (half-word 149580, printed
+p.198 line 47) in K UNSTC, with the request queue empty, at step
+6,737,977. That is enable-and-wait: MCP is up and has nothing to do.
+The P1 test pins that PC. The PC alone does not discriminate, because
+the EE run ended at the same BEW,$, so the wrapper checks for no
+channel-0 EE and exactly two channel-0 EOP reports. Measured: putting
+the host build back on the two-arc disk fails exactly those two
+checks.
+
+**NEXT:** give the idle MCP work. That means an operator action, such
+as a Channel Signal from the reader or from a tape being readied, and
+then attributing the second disk operation.

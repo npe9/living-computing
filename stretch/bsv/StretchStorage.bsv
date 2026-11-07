@@ -159,6 +159,19 @@ interface StretchStorage;
   // read into the rule predicate, which then conflicts with the same
   // rule writing it.
   method Bool irqEnabled();
+  // THE INPUT-OUTPUT STATUS REPORT, Reference Manual printed p.118
+  // ("Setting up of Input-Output Indicators", read in the ink).
+  // ioReportReady is the page's two conditions: "1. The five
+  // input-output status indicators (EPGK, UK, EE, EOP, and CS) in the
+  // indicator register have previously been reset to zero ... 2. The
+  // interruption system is currently enabled."  ioStatus either makes a
+  // report -- Valid {EPGK,UK,EE,EOP,CS} and the channel -- setting the
+  // indicators "as a group at one time" and the channel address
+  // register with them, or (Invalid) resets the channel address
+  // register, which p.119 says happens when "the system is in a
+  // condition to accept the next set of input-output indicators".
+  method Bool ioReportReady();
+  method Action ioStatus(Maybe#(Tuple2#(Bit#(5), Bit#(7))) r);
   method Action setIrqEnabled(Bool e);
 
   // THE ADDRESS BOUNDARY REGISTERS, word 3, read as one word.  p.31:
@@ -320,6 +333,9 @@ module mkStretchStorage(StretchStorage);
   Reg#(Word64) intervalTimerAndClock <- mkConfigReg(0);
   RWire#(Bit#(28)) timerW <- mkRWire;   // word 1 IBM bits 0-27 stored this clock
   RWire#(Word64)   indW   <- mkRWire;   // setIndicatorBits' value this clock
+  RWire#(Maybe#(Tuple2#(Bit#(5), Bit#(7)))) ioW <- mkRWire; // ioStatus this clock
+  // EPGK..CS, indicators 9-13: IBM bits 9-13 are model bits 54-50.
+  Word64 ioStatusMask = 64'h1F << (63 - 13);
   // THE OSCILLATOR PULSE IS A PulseWireOR, AND THAT IS NOT A STYLE CHOICE.
   // oscillatorPulse() is part of this interface, so at mkStretchCore's
   // synthesized boundary it is also an EXPORTED method (`mem_oscillatorPulse`)
@@ -563,7 +579,30 @@ module mkStretchStorage(StretchStorage);
     // answer a single committing rule can give.
     Bit#(6) tsIndex = 63 - ind_TS;
     if (tsFired) ind[tsIndex] = 1;
+    // AN INPUT-OUTPUT STATUS REPORT IS OR-ED ON TOP TOO, for TS's reason:
+    // the exchange is independent of the instruction being executed.
+    // EPGK..CS are indicators 9-13, consecutive, in p.113's order.
+    if (ioW.wget matches tagged Valid (tagged Valid {.s, .ch})) begin
+      ind[63 - ind_EPGK] = ind[63 - ind_EPGK] | s[4];
+      ind[63 - ind_UK]   = ind[63 - ind_UK]   | s[3];
+      ind[63 - ind_EE]   = ind[63 - ind_EE]   | s[2];
+      ind[63 - ind_EOP]  = ind[63 - ind_EOP]  | s[1];
+      ind[63 - ind_CS]   = ind[63 - ind_CS]   | s[0];
+    end
     indicators <= ind;
+  endrule
+
+  // THE CHANNEL ADDRESS REGISTER'S ONE WRITER.  Printed p.119: "The
+  // register has word address 5 and corresponds to bit positions 12
+  // through 18" -- model bits 51:45 -- and the program can only read it
+  // (writeWord's addrChannelAddress arm is a no-op).
+  (* fire_when_enabled, no_implicit_conditions *)
+  rule commitChannelAddress;
+    if (ioW.wget matches tagged Valid .r)
+      case (r) matches
+        tagged Valid {.s, .ch}: channelAddress <= zeroExtend(ch) << 45;
+        tagged Invalid:         channelAddress <= 0;
+      endcase
   endrule
 
   // The one rule that moves requests to the bus and responses back.
@@ -912,6 +951,11 @@ module mkStretchStorage(StretchStorage);
   endmethod
 
   method Bool irqEnabled() = irqEn;
+  method Bool ioReportReady() =
+    irqEn && (indicators & ioStatusMask) == 0;
+  method Action ioStatus(Maybe#(Tuple2#(Bit#(5), Bit#(7))) r);
+    ioW.wset(r);
+  endmethod
   method Word64 readBoundaries() = boundaryReg;
   method Word64 readMask() = mask;
   method Maybe#(Tuple2#(Bit#(6), WordAddr)) interruptDue() = intDueReg;

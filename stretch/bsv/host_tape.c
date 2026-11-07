@@ -52,3 +52,28 @@ void     host_tape_write_word(uint32_t i, uint64_t d)
                                         separate commit, as in
                                         host_disk_commit() */
 }
+
+/* THE DISK, for mkDiskSourceFile (StretchDiskSourceFile.bsv).  It lives
+   here rather than in a host_disk.c so that every build that already
+   links host_tape.c gets it with no change to its link line.  A full
+   353, 2^21 words (Reference Manual printed p.157), zero at power-on
+   as mkDiskSourceSmall's registers are; 16 MB of host memory. */
+#define DISK_WORDS (1u << 21)
+static uint64_t *g_disk;
+
+static void disk_init(void)
+{
+    if (!g_disk) g_disk = calloc(DISK_WORDS, sizeof(uint64_t));
+}
+
+uint64_t host_disk_read_word(uint32_t i)
+{
+    disk_init();
+    return i < DISK_WORDS ? g_disk[i] : 0;
+}
+
+void host_disk_write_word(uint32_t i, uint64_t d)
+{
+    disk_init();
+    if (i < DISK_WORDS) g_disk[i] = d;
+}

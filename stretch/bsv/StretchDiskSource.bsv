@@ -92,8 +92,10 @@ interface DiskSource;
   method Word64 peek(DiskIndex i);
 
   // How many words this source holds.  The transfer FSM tests devIdx
-  // against it, so it has to come from the implementation.
-  method DiskIndex capacity();
+  // against it, so it has to come from the implementation.  A DiskPos,
+  // one bit wider than an index, because a full 353 holds 2^21 words
+  // and DiskIndex cannot say 2^21.
+  method DiskPos capacity();
 endinterface
 
 module mkDiskSourceSmall(DiskSource);
@@ -135,7 +137,7 @@ module mkDiskSourceSmall(DiskSource);
     return (i < fromInteger(valueOf(DiskWordsSmall))) ? img[idx] : 64'd0;
   endmethod
 
-  method DiskIndex capacity() = fromInteger(valueOf(DiskWordsSmall));
+  method DiskPos capacity() = fromInteger(valueOf(DiskWordsSmall));
 endmodule
 
 endpackage

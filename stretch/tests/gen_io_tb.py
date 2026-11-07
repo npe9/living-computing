@@ -165,8 +165,21 @@ def main():
         # flag 0 (XF off).  Nothing after it touches index indicators.
         # This is therefore the suite's one witness that LVI sets its
         # result indicators -- it pins XCZ and XVGZ, and XF only as clear.
+        #
+        # AND EOP, SINCE 2026-11-07, BY THE MANUAL AND NOT BY FITTING.
+        # The program ends in BEW,$, which ENABLES.  At that moment the
+        # reader's control word still holds EOP from the SKIP RD -- CCWE
+        # above pins it, bit 41 -- and Reference Manual printed p.118
+        # says a terminated operation's status "is set up as a group" in
+        # the indicators once indicators 9-13 are all zero and the
+        # system is enabled.  So the exchange reports channel 32 and EOP
+        # (indicator 12) goes on.  The run's log shows that report
+        # ("I/O status report, channel 32 ... = 00010"), and this check
+        # failed with exactly EOP extra the first time the report was
+        # made.  The printer's control word is clear by then (CCWF), so
+        # it makes no report.
         ("UNRJ_indicator", "11",
-         _ind("UNRJ") | _ind("XCZ") | _ind("XVGZ")),
+         _ind("UNRJ") | _ind("XCZ") | _ind("XVGZ") | _ind("EOP")),
     ]
     printer_checks = [
         ("PRINTER0", 0, 111),

@@ -27,6 +27,28 @@ if grep -q "OP SET by the instruction at half-word 147495$" "$LOG"; then
   echo "FAIL p159_chained_lve_refused: OP set by the LVE at 220023.40"
   status=1
 fi
+# THE DISK'S TWO REPORTS, and no End Exception.  MCP's IPL writes 24
+# arcs to the disk; a disk too small for them ends that WRITE with EE,
+# MCP receives the EE when it first enables, and its error path reaches
+# the same BEW,$ the testbench's pc_check pins -- so the PC cannot tell
+# the two runs apart, and these lines can.  The first EOP is printed
+# p.159's LOCATE (lines 41-46, K DISK); both pass through p.177's IOD
+# routine, and which request the second is has not been attributed.
+#
+# MEASURED 2026-11-07: with the host build put back on mkDiskSourceSmall
+# (StretchIO.bsv), exactly p1_disk_end_exception and p1_disk_eop_reports
+# ("0 channel-0 EOP reports") fail; the testbench's own checks, PC and
+# last-PC = 149580 included, all PASS.  The control passes everything.
+REP="StretchCore: I/O status report, channel 0, EPGK UK EE EOP CS ="
+if grep -q "$REP 00100$" "$LOG"; then
+  echo "FAIL p1_disk_end_exception: channel 0 reported EE"
+  status=1
+fi
+n=$(grep -c "$REP 00010$" "$LOG" || true)
+if [ "$n" != 2 ]; then
+  echo "FAIL p1_disk_eop_reports: $n channel-0 EOP reports, expected 2"
+  status=1
+fi
 PYTHONPATH="$TESTS_DIR/../strap" python3 "$TESTS_DIR/check_console_text.py" "$LOG" "$@" || status=$?
 rm -f "$LOG"
 exit $status

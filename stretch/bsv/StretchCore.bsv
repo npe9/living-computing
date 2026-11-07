@@ -14,6 +14,7 @@ import StretchStorage::*;
 import StretchMemory::*;   // installed(): the address-invalid bound,
                             // which rl_xmit needs per word
 import StretchIO::*;
+import ConfigReg::*;
 import StretchDiskSource::*;  // DiskIndex / ArcAddr / arcWords, for the
                                // disk arms of rl_io
 import StretchTapeSource::*;  // TapeWords/TapeIndex and the TapeSource
@@ -103,11 +104,21 @@ module mkStretchCore(StretchCore);
   LookAhead    la   <- mkLookAhead(st);
   // The harness's clock enable and the halt flag it polls (see the
   // rules section below for the contract).
-  Reg#(Bool) running   <- mkReg(False);   // the run latch; see `start`/`stop`
+  // A ConfigReg for ioPending's reason: every rule's guard reads it, and
+  // as a plain Reg that ordered all of them before `start`, which with
+  // rl_io_report among them made start/iplStart in one harness rule a
+  // G0004.  The value read is the start-of-clock latch either way.
+  Reg#(Bool) running   <- mkConfigReg(False);   // the run latch; see `start`/`stop`
   Reg#(Bool) haltedReg <- mkReg(False);
   Reg#(HWordAddr) pcReg <- mkReg(0);
   Reg#(Maybe#(Tuple2#(Bit#(4), IndexWord))) pendingIdxWrite <- mkReg(tagged Invalid);
-  Reg#(Maybe#(IoXfer)) ioPending <- mkReg(tagged Invalid);
+  // A ConfigReg so that rl_io_report's read of it is not ordered against
+  // iplStart, which writes it: the read is the start-of-clock value
+  // either way, which is all the report asks ("has the operation
+  // terminated?").  Made with `running` below while removing a G0004
+  // between start and iplStart; `running` was the one that cleared it,
+  // and whether this one alone was also needed was not measured.
+  Reg#(Maybe#(IoXfer)) ioPending <- mkConfigReg(tagged Invalid);
   // A MULTI-WORD TRANSMIT still to drain, the memory-to-memory
   // sibling of ioPending.  Reference Manual printed p.30 and
   // StretchTypes.bsv's XmitXfer; serviced by rl_xmit below.
@@ -216,6 +227,7 @@ module mkStretchCore(StretchCore);
   // at the refill rather than read back at the end, because by then
   // the exchange's copy has walked its dataAddr past the program.
   Reg#(Bool)     iplActive <- mkReg(False);
+  Reg#(UInt#(3)) ioScan    <- mkReg(0);   // rl_io_report's scanner
   Reg#(WordAddr) iplEntry  <- mkReg(0);
 
   // (An instruction waiting on an operand read is held by the E-box
@@ -1203,6 +1215,68 @@ module mkStretchCore(StretchCore);
   // is the part that belongs to the instruction unit -- turn that
   // indicator off, point the fetch stream at the routine, and stop the
   // instruction counter.
+  // THE EXCHANGE'S STATUS REPORT, Reference Manual printed p.118, read in
+  // the ink: "When an operation concerning an external unit has been
+  // terminated and at least one of these five status bits in the control
+  // word is on, the exchange attempts to set up the corresponding
+  // indicator or indicators and thus cause an interruption of the
+  // program.  All of the status indicators for a particular channel are
+  // set up as a group at one time.  At the same time, the address of the
+  // channel causing the interruption is entered into the channel address
+  // register."  StretchStorage.ioReportReady is the page's two
+  // conditions; this rule is the scanner.
+  //
+  // MCP NEEDS IT.  Its disk request (printed p.159 lines 41-46) marks
+  // channel 0 operating and issues LOCATE; only the receptor, K GATE
+  // (printed p.123 line 6), clears the mark, and only an EOP
+  // interruption reaches K GATE.  Without this rule MCP retried the
+  // request 16,255 times (docs/boot_plan.md).
+  //
+  // ONE CHANNEL PER CLOCK, ascending and wrapping -- p.118: "subsequent
+  // priorities are assigned in the order of ascending channel addresses,
+  // looping around to the lowest address once the highest address of the
+  // installation is reached".  The installation is the five channels
+  // StretchIO has.  NOT MODELLED: "when an input-output instruction is
+  // issued, the scanner is set to the channel to which the instruction
+  // is addressed" -- it orders reports only when two channels wait at
+  // once -- and p.119's few-cycle delay behind data transfers.
+  //
+  // NOT WHILE AN INTERRUPTION IS BEING ENTERED.  rl_interrupt turns the
+  // indicator off a clock before the table word runs, and MCP's table
+  // word is SIC / BD (printed p.110 lines 25-34), so for that clock and
+  // the next the indicators are clear and the system still enabled.
+  // p.118's condition 2 exists "to prevent the destruction of the
+  // contents of the channel address register ... before the subroutine
+  // ... has had time to interrogate the channel address register"; the
+  // hardware meets it by the table word disabling before anything else
+  // runs, and this guard is that.
+  rule rl_io_report (st.ioReportReady() && !isValid(intPC) && !armInterrupt);
+    WordAddr ch = case (ioScan)
+                    0: chanDisk;
+                    1: chanReader;
+                    2: chanPrinter;
+                    3: chanTape;
+                    default: chanConsole;
+                  endcase;
+    ControlWord cw = ioDev.readChanCW(ch);
+    Bit#(5) s = {cw.epgk, cw.uk, cw.ee, cw.eop, cw.cs};
+    // "has been terminated": a transfer still under way reports later,
+    // at its own end (p.118: the indicators "can be turned on ... only
+    // after termination of the current operation").
+    Bool inFlight = case (ioPending) matches
+                      tagged Valid .x: (x.ch == ch);
+                      default: False;
+                    endcase;
+    if (s != 0 && !inFlight) begin
+      ioDev.clearStatus(ch);
+      st.ioStatus(tagged Valid tuple2(s, truncate(ch)));
+      $display("StretchCore: I/O status report, channel %0d, EPGK UK EE EOP CS = %b", ch, s);
+    end else begin
+      st.ioStatus(tagged Invalid);   // p.119: ready, so CA reads zero
+      ioScan <= (ioScan == 4) ? 0 : ioScan + 1;
+    end
+  endrule
+
   rule rl_interrupt (running && armInterrupt);
     let {n, eia} = validValue(intDue);
 

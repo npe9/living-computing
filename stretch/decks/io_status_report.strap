@@ -1,0 +1,122 @@
+! io_status_report.strap -- the exchange's input-output status report:
+! a control word's status bits become indicators, interrupt, and name
+! the channel in the channel address register.
+!
+! WHY IT EXISTS, AND WHO ASKED FOR IT.  MCP did.  Its disk request
+! (printed p.159 lines 41-46) marks channel 0 operating and issues
+! LOCATE; only the receptor, K GATE (printed p.123 line 6), clears the
+! mark, and only an EOP interruption reaches K GATE.  Until 2026-11-07
+! the model wrote status bits into control words and never promoted
+! them, so MCP retried the request 16,255 times (docs/boot_plan.md).
+!
+! WHAT THE MANUAL SAYS, Reference Manual printed p.118, "Setting up of
+! Input-Output Indicators", read in the ink:
+!   - when an operation has terminated and any of EPGK, UK, EE, EOP, CS
+!     is on in the control word, "the exchange attempts to set up the
+!     corresponding indicator or indicators and thus cause an
+!     interruption of the program.  All of the status indicators for a
+!     particular channel are set up as a group at one time.  At the
+!     same time, the address of the channel causing the interruption is
+!     entered into the channel address register";
+!   - only if the five indicators are all zero AND "the interruption
+!     system is currently enabled"; otherwise "the status bits remain
+!     set in the control word";
+!   - "If both conditions are met, the indicators and the channel
+!     address are set up, and the corresponding status bits in the
+!     control word are reset to zero."
+! Printed p.119: the channel address register "has word address 5 and
+! corresponds to bit positions 12 through 18".  Printed p.121: RELEASE
+! turns EOP on at once, so no device has to run for a report to exist.
+!
+! WHAT EACH CHECK ESTABLISHES (the printer, channel 33, throughout)
+!   held1    after REL, DISABLED: the control word still holds EOP --
+!            unit ready (bit 18) and EOP (bit 22).
+!   after1   in the handler: EOP is gone from the control word, unit
+!            ready is left.
+!   ca1      in the handler: word 5 holds 33 in bits 12-18.
+!   held2    a second REL inside the handler, which runs DISABLED (the
+!            table word is SIC / BD): held again.
+!   after2 / ca2  the second report, delivered when the handler
+!            re-enables, exactly as the first.
+!   count    the handler ran TWICE: once per report, no more.
+!   PC=PASS  reached only after both reports.
+!
+! INJECTIONS: measured, and tests/run_tests.sh records them beside its
+! entry.
+!
+! NOT TESTED HERE: condition 1 (a report held while an earlier set's
+! indicator is still on), and the scanner's order between two channels
+! waiting at once.
+
+        SLC, (8)300.0
+START   BD,  $+.32                   ! disabled, as after a reset
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X1,  33                ! the printer's channel (value 33<<5)
+        LVI, $X5,  0
+        REL, 0($X1), 0               ! EOP into channel 33's control word
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        CCW, 0($X1), HELD1           ! disabled: still in the control word
+        BE,  $+.32                   ! enabled: the report arrives
+WAIT    KVI, $X5,  2.0
+        BXL, WAIT                    ! until the handler has run twice
+        BD,  $+.32
+        SX,  $X5,  CNT
+        B,   PASS
+
+HANDLER V+I, $X5,  1.0               ! count the entries
+        LX,  $X6,  5.0               ! the channel address register
+        KVI, $X5,  1.0
+        BXH, SECOND
+        SX,  $X6,  CA1
+        CCW, 0($X1), AFTER1
+        REL, 0($X1), 0               ! a second report, made disabled
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        CCW, 0($X1), HELD2
+        L(BU,64), SAVE               ! return through a COPY: the second
+        ST(BU,64), SAVE1             !   report interrupts at once, and
+        BE,  SAVE1                   !   SIC rewrites SAVE as it does
+SECOND  SX,  $X6,  CA2
+        CCW, 0($X1), AFTER2
+        BE,  SAVE
+BAD     B,   $                       ! hang: a report for the wrong reason
+PASS    BEW, $
+        CNOP
+
+        SLC, (8)500.0
+SAVE    B,   0                       ! SIC stores the counter here
+        CNOP
+SAVE1   DD(BU,64), 0                 ! the first entry's return
+HELD1   DD(BU,64), 0
+AFTER1  DD(BU,64), 0
+CA1     DD(BU,64), 0
+HELD2   DD(BU,64), 0
+AFTER2  DD(BU,64), 0
+CA2     DD(BU,64), 0
+CNT     DD(BU,64), 0
+
+! The interruption table.  EPGK, UK, EE, EOP, CS are indicators 9-13.
+        SLC, (8)600.0
+TBL     DD(BU,64), 0
+        SLC, (8)611.0
+        B,   BAD                     ! 9  EPGK
+        CNOP
+        B,   BAD                     ! 10 UK
+        CNOP
+        B,   BAD                     ! 11 EE
+        CNOP
+        SIC, SAVE                    ! 12 EOP
+        BD,  HANDLER
+        B,   BAD                     ! 13 CS
+        CNOP
+        END, START

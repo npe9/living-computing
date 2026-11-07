@@ -289,17 +289,22 @@ def main():
                         ("mcp_p1deck_no_ipl_error",
                          str(prog.symtab["XERRAD"] // 64), 0)],
                        step_cap=40000000,
-                       # 220025.00 is printed p.159 line 10, two
-                       # instructions after line 8's "LVE,0,K IOD RN-.32"
-                       # at 220023.40, whose target (p.177 line 15) is
-                       # itself an LVE: a CHAIN (decks/lve_chain_usa.strap).
-                       # Line 9 uses the LVE's $0.  The stop is two
-                       # instructions on, not one, because the counter
-                       # reaches 220024.00 before a refused LVE's OP
-                       # interruption is taken (measured).  Past here MCP
-                       # waits forever for the disk LOC's status report,
-                       # which the model never makes (docs/boot_plan.md).
-                       stop_at_pc=0o220025 * 2,
+                       # THE RUN ENDS WHERE MCP CHOOSES TO WAIT: 222046.00,
+                       # half-word 149580, printed p.198 line 47, "BEW,$"
+                       # in K UNSTC -- enable and wait, with the request
+                       # queue empty.  Before the exchange reported I/O
+                       # status this run had to be stopped at 220025.00
+                       # (p.159 line 10), because MCP waited forever for
+                       # the disk LOCATE's report.  Now both of channel
+                       # 0's reports arrive (EOP) and MCP goes idle.
+                       #
+                       # THE PC ALONE DOES NOT DISCRIMINATE.  With the
+                       # two-arc disk, IPL's WRITE ran off the volume and
+                       # MCP took the EE error path to the SAME BEW,$
+                       # (measured).  run_mcp_p1deck_test.sh reads the
+                       # core's report lines to tell the two apart.
+                       pc_check=149580,
+                       pc_trail_check=149580,
                        pc_trail=True,
                        console_dump=128,
                        ipl=True))

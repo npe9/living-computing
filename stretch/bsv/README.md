@@ -776,9 +776,16 @@ no real device timing -- **and for the disk, "no timing" is a bigger
 departure than it is for the others**: printed pp.161-162 give a
 three-point seek model, a rotational distribution and 8 µs per word,
 all of which a functionally-correct program cannot see but a
-cycle-accurate one must have (docs/disk_subsystem.md §4). There is
-also still no CPU-indicator-register or Channel-Address-register
-propagation of I/O status.
+cycle-accurate one must have (docs/disk_subsystem.md §4). I/O status
+IS now promoted to the indicator register and the channel address
+register (Reference Manual printed p.118; rule rl_io_report,
+decks/io_status_report.strap), with two documented gaps: an
+instruction addressed to a channel whose report is still waiting is
+not rejected with CBJ, and the scanner is not reset to the
+last-addressed channel -- it simply walks 0, 32, 33, 34, 35 in
+ascending order. The host builds (-D HOST_TAPE) carry a full 353,
+2^21 words (StretchDiskSourceFile.bsv); every other build keeps the
+two-arc source.
 
 ## Toolchain
 
@@ -1174,12 +1181,10 @@ of these).
    anything else in this list, see `StretchIO.bsv` "INSTRUCTIONS");
    chaining and multiple-block operation (currently decoded into the
    control word but ignored by the transfer FSM — every RD/W is a
-   single block against a device's one fixed image); propagating
-   EOP/EPGK/UK/EE/CS into the CPU's own indicator register and the
-   Channel Address register (word 5) — needed before a BI- or
-   SIC-based wait loop (like real DCP source uses) can observe I/O
-   completion, since this model currently exposes status only via
-   `CCW`; and, if real device content larger than `DeviceWords` (32)
+   single block against a device's one fixed image); CBJ for an
+   instruction to a channel whose status report is still waiting
+   (printed p.118 -- the report itself is now made, see the paragraph
+   on the Exchange above); and, if real device content larger than `DeviceWords` (32)
    or `TapeWords` (16) is ever needed, `StretchIO`'s Vector-based
    device images have the same elaboration-cost ceiling as item 8
    above.
