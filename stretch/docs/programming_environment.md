@@ -15,17 +15,38 @@ whose software survives only on paper, and what is in the way.
 | FORTRAN IV | manual only; no compiler source | `C22-6751_7030_FORTRAN_IV_May63.pdf` |
 | a machine-readable system tape | **none survives** | `archival_inventory.md` "Holdings now complete" |
 
-So "the full programming environment" is, in order:
+**The target is IBM's environment, not a substitute for it.** The
+owner, 2026-11-07: "the goal is to replicate the environment in the best
+fidelity that we can", and then: "Even if you can't find all the
+documentation, it's fine to recreate to the best of your ability." So
+each piece goes through three steps:
 
-1. **MCP accepting and running jobs**: the operator readies the card
-   reader, MCP's input program reads a JOB deck, and the loader loads
-   the binary cards and runs the program, with output on the printer.
-2. **Binary decks made by this project's own assembler**
-   (`strap/strap_asm.py`, which reproduces IBM's assembled words
-   bit-exact on every transcribed page) until a STRAP II listing is
-   found. Then STRAP II itself can run under MCP as a processor.
-3. **FORTRAN** only if a compiler listing turns up. The CHM requests
-   in `archival_inventory.md` are where to look.
+1. **Find it.** That means IBM's own listing or deck, in an archive.
+   `archival_inventory.md` lists what has been searched, what needs a
+   request, and the requests ranked by value.
+2. **If it is lost, reconstruct IBM's piece.** Write 7030 code to the
+   IBM documentation that describes it: its internal structure, tables,
+   formats and messages, cited by page. A reconstruction is labelled
+   with the word RECONSTRUCTION in its header, and its sources and
+   every guess are listed there. When an original turns up, it replaces
+   the reconstruction, and the difference is recorded.
+3. **Project tools are scaffolding only.** `strap/strap_asm.py`
+   assembles the transcribed listings and the reconstructions until a
+   STRAP II runs under MCP. It is never the environment's assembler.
+
+| piece | plan | primary sources for a reconstruction |
+|---|---|---|
+| MCP | the original, transcribed | the March 1963 listing |
+| PROSA, MCP's system library on disk | **reconstruct** what the listing does not hold | C22-6728-1 (formats), DISK FETCH pp.311-318, C22-6678-1 |
+| MCP Loader / BSS processor | find; else reconstruct | C28-6379-0 |
+| STRAP II | find; else reconstruct as a 7030 program run under MCP | C22-6729 (internals), C28-6129 (language) |
+| FORTRAN IV | find; else reconstruct last, and the largest | C22-6751; the AWRE S1/S2 trail in `thirdparty_software/` |
+| the system tape | rebuilt from the pieces above, in the layout MCP's IPL reads | `mcp_tape_manufacture.md` |
+
+How deep each reconstruction can go depends on how much its IBM guide
+gives (C22-6729's account of STRAP II's passes and tables, for
+example). That is assessed in the ink, one piece at a time, before
+any code is written.
 
 ## The road, in order
 
@@ -53,7 +74,8 @@ per card in no-ECC mode and 13 in ECC mode (printed p.140), and
 `StretchCardTb` already pins the column-major packing.
 
 **E4. A first job.** The JOB, TYPE and LIM cards, then a binary deck
-from `strap_asm.py` for a program that prints a line, through MCP's
+for a program that prints a line (assembled by `strap_asm.py` as
+scaffolding until STRAP II runs), through MCP's
 loader (C28-6379), with output on the printer. Card formats come from
 C22-6678-1 and C22-6728-1, cited by page.
 
@@ -61,7 +83,13 @@ C22-6678-1 and C22-6728-1, cited by page.
 the disk and core after one IPL (disk plan step D2, extended to core)
 would let job tests start from the idle loop.
 
-**E6. On the ULX3S.** The same jobs, with the disk in SDRAM (disk plan
+**E6. STRAP II under MCP**, found or reconstructed (see the table),
+assembling a source deck into the binary E4 loads. Then E4's
+scaffolding deck is replaced by STRAP II's own output.
+
+**E7. FORTRAN IV**, the same way, after STRAP II.
+
+**E8. On the ULX3S.** The same jobs, with the disk in SDRAM (disk plan
 D3-D4) and the reader fed from the SD card.
 
 ## Verification
