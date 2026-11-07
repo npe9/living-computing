@@ -1674,6 +1674,33 @@ One roster was not checked: the DCP's own test-ID schedule inside
 programs and may name more.
 
 
+## Computer History Museum: 20 scans fetched, and what still needs a request (2026-11-07)
+
+**The CHM text archive holds scanned Stretch engineering papers that
+bitsavers does not**, mostly the Kolsky papers (X3021.2005). They are
+reached by URL pattern, not from the catalog pages. Twenty are now in
+`docs/chm/`, and `docs/chm/README.md` gives catalog number, box-folder
+and pages for each. The first one read in the ink, T. C. Chen's
+7 Sep 1961 memo on the multiplier register (102634375), settles which
+machines have $MR and STM (K-2 and later, not K-1). It also gives
+per-class look-ahead occupancy on K-1 against improved machines, and
+LFT / LMR / *+ times. All of that bears on MCP's STM probes and on G1.
+
+**What still needs a CHM request**, ranked for this project:
+1. Lowell Wood (LRL) collection X2462.2002, record 102698893: the VFL
+   diagnostic JB AV1C (SMFV-1C) and the timing programs KA AT1 RAWSPEED,
+   KA BT1 MEMTIM and JA AT1 BASICTIM. These are the three programs this
+   file already asks for first, plus a third timing oracle.
+2. Same collection, 102698896 and 102698897: the PAU diagnostics KC AF2
+   and KC AF2B, and the SAU diagnostic KC AV2B (1964). These are the
+   first E-box unit diagnostics found anywhere, and they bear directly
+   on the SAU/PAU box rewrite.
+3. Same collection, 102698889-91: diagnostic program reference manuals
+   1-32, CE Manuals of Instruction and Installation Manuals I-III. These
+   are the likeliest home of CE logic and timing.
+4. FIC 102633186, "Stretch Manual of Operation - Preliminary", May 1958,
+   317 pp; and 102633187 (MCP preliminary reference, listed above).
+
 ## Third-party Stretch software (non-IBM): documentation trail
 
 The languages/systems built for Stretch installations outside IBM --
