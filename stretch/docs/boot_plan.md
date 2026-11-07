@@ -2200,3 +2200,56 @@ checks.
 **NEXT:** give the idle MCP work. That means an operator action, such
 as a Channel Signal from the reader or from a tape being readied, and
 then attributing the second disk operation.
+
+### WHY MCP IS IDLE: THE BYPASS TRANSITION STOPS INSIDE ITS DISK FETCH, 2026-11-07
+
+Two scratch experiments, both decoded against every transcribed
+!CHECK row. Neither is committed as a test yet.
+
+**1. PRESSING THE READER'S START KEY DOES NOT HELP, and the manual says
+why.** Printed p.141 (PDF p.144), read in the ink: "Cards are loaded
+and depression of the start key causes ready and channel signal
+conditions to be set ... Channel signal should be recognized by the
+program as a signal to copy control word. If the reader is ready ...
+reading of the file begins." With channel 32's control word given
+unit-ready and CS while MCP idled, the report was made (CS = 00001).
+MCP took it through K STORE, K SINGL, K GATE, K INT TY, RSKBND,
+K CANCL and K C SIGL (p.124 line 38) to the reader owner's CS exit
+(p.214 line 21). V RDCSS (p.215 line 36) is `B,V RTN`, with bit .19
+as V CSAW, a "channel signal seen" flag. MCP returned to idle 3,438
+steps later, read nothing and typed nothing. The reader's owner is the
+INPUT PROGRAM, and C22-6728-1 ("The Initial Start of the Input
+Program") says it "starts when the command package issues one of the
+transition commands to it"; in bypass mode VBSTRT "starts up the card
+reader". The deck's MCPP card says BYPASS (strap/prosa.py MCPP_MODE).
+
+**2. THE TRANSITION IS UNDER WAY AND STOPS IN A DISK FETCH.** The full
+trace from IPL's exit to the idle:
+- p.118 M TC goes to p.295 line 30 `YXCOMD LX,1,Y XW CMD`, the command
+  package entry, and then to p.269 `YMPFCH`, which requests `,DFETCH`.
+- DISK FETCH (p.311 C FETCH, p.317 C NDX F) LOCATEs (p.159, the first
+  channel-0 report) and then READs the dictionary's first arc (p.151
+  K GO `RD,0.0($14),0`, the SECOND channel-0 report, now attributed).
+- The read protocol is p.317 lines 14-32: `CREAD` sets ADSKRD (read in
+  progress), requests `,D RD`, and returns through `CRDBR` (set by
+  `SIC,CRDBR`) to `BB,ADSKRD,$` (line 32), which spins until the
+  read-complete exit clears ADSKRD.
+- The read's EOP goes through K GATE and K INT TY to p.124 line 35
+  `BE,5.0($1)`, then p.318 line 19 `CM0000(BU,1),A DSK RD` (the clear),
+  then C XIT `B,C MCP / ,D RET`.
+- **Then C RETN (p.140) takes the empty-queue path to K UNSTC, not
+  M D RET**, so the spin at p.317 line 32 is never resumed. The
+  dictionary search, the command program and the input program never
+  run.
+
+**THE FRONTIER is that resume.** On the first pass after IPL, C RETN
+line 8 `BZBZ,S AS($9),M D RET` did branch. After the fetch it does not.
+Candidates, unranked:
+- a model fault in how the interrupted IC is saved or restored around
+  the wait;
+- the harness: `BB,ADSKRD,$` and `B,$` are self-branches, and
+  `isHalt` treats any self-branch that does not count as a halt;
+- an S AS / queue bookkeeping fault upstream.
+
+Read p.140-142 and S AS's setters before changing anything.
+
