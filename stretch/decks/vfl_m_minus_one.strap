@@ -1,0 +1,51 @@
+! vfl_m_minus_one.strap -- M-1: ADD ONE TO MEMORY with the negative sign
+! modifier, which adds MINUS one.
+!
+! WHY IT EXISTS.  MCP's receptor counts stacked interrupts up with
+! "M+1(BU,18),S Q K($9)" (printed p.123 line 30) and down with
+! "M-1(BU,18),S Q K($9)  -REDUCE Q K" (printed p.198 line 25).  The two
+! assemble to words that differ only in bit 52, the negative sign
+! modifier (both rows are checked bit-exact by the p.123 and p.198
+! verifiers).  Until 2026-11-07 the model ignored that bit for M+1 and
+! ADDED one on M-1.  MCP's queue count then rose on every unstack, and
+! after IPL MCP waited forever in K UNSTC on an empty queue
+! (docs/boot_plan.md, "M-1 ADDED ONE").
+!
+! THE SEMANTICS, Reference Manual printed p.62-63, read in the ink:
+! "A plus or minus one is algebraically added to the addressed storage
+! field."  Negative Sign: "This modifier specifies the sign of the one
+! to be added.  If the modifier is zero, a plus one is algebraically
+! added to the storage operand; if it is one, a minus one is added."
+!
+! EVERY EXPECTATION IS DERIVED (vfl_m_plus_one.strap's header gives the
+! field-position rule: a field at bit A, length L, is w[63-A:64-A-L]):
+!   FQ   (BU,18) at .32, MCP's own field: 3 -> 2, i.e. w[31:14] = 2,
+!        the word is 2<<14 = 32768
+!   F64  (BU,64): 1000 -> 999
+!   F16  (BU,16) on a 16-bit datum: 256 -> 255, borrowing out of the
+!        low byte; the field is w[63:48], so the word is 255<<48
+!   FUP  (BU,64): M+1 then M-1 -> 7, unchanged: MCP's count discipline
+!
+! NOT CHECKED: an unsigned field going below zero.  Printed p.62 says
+! Lost Carry is "also turned on if the result of an unsigned operation
+! is negative.  In such a case, the magnitude of the result is stored",
+! and MCP never does it; it is a separate test when something needs it.
+!
+! INJECTION, MEASURED: see the entry in tests/run_tests.sh.
+
+        SLC, (8)200.0
+START   M-1(BU,18), FQ+.32
+        M-1(BU,64), F64
+        M-1(BU,16), F16
+        M+1(BU,64), FUP
+        M-1(BU,64), FUP
+        BEW, $
+        CNOP
+
+        SLC, (8)300.0
+FQ      DD(BU,64), 49152          ! 3 in the 18-bit field at .32 (3<<14)
+F64     DD(BU,64), 1000
+F16     DD(BU,16), 256             ! a 16-bit datum, seen by a 16-bit field
+        SLC, (8)303.0
+FUP     DD(BU,64), 7
+        END, START

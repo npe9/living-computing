@@ -30,9 +30,15 @@ So "the full programming environment" is, in order:
 ## The road, in order
 
 **E1. Let MCP finish its bypass-mode start.** After IPL, MCP's command
-package fetches from the disk and stops (`boot_plan.md`, "WHY MCP IS
-IDLE"). Until the fetch's waiting requester resumes, no input program
-runs and no card is ever read. This is the current frontier.
+package asks DISK FETCH for a type area. Since the M-1 fix
+(`boot_plan.md`, "M-1 ADDED ONE") the fetch runs to completion, and it
+answers "TYPE NOT IN INDEX" (printed p.312 line 13). The PROSA on the
+synthesized system tape (`strap/prosa.py`) is a fixture whose
+dictionary and index hold only what the IPL rows pin. **The current
+frontier is a faithful PROSA**: the type areas MCP's listing contains,
+in the dictionary/index format DISK FETCH searches (C22-6728-1;
+printed pp.311-318). Until then no transition command is issued, the
+input program never starts, and no card is read.
 
 **E2. Operator actions in the harness.** For example, the reader's
 START key (unit ready + CS, RefMan printed p.141) and the console's

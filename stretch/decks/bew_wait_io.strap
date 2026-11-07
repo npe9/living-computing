@@ -1,0 +1,55 @@
+! bew_wait_io.strap -- BEW,$ is a WAIT when an interruption is owed.
+!
+! WHY IT EXISTS.  The harness used to stop every run at the first
+! self-branch.  MCP waits for I/O with BEW,$ (printed p.198 line 47,
+! p.269 line 30), and a harness that stops there cannot run an operating
+! system.  StretchCore.bsv's idle() is halted() AND nothing can wake
+! the machine: the interruption system is disabled, or no transfer is in
+! flight, no control word holds status still to be reported (printed
+! p.118), and no interruption is being taken.  tests/gen_tb.py's WAITIO
+! stops on idle() instead of halted().
+!
+! THE PROGRAM.  It runs disabled, puts EOP into the printer's control
+! word with RELEASE (printed p.121: RELEASE turns EOP on at once), and
+! then waits with BEW,$, which enables.  The exchange reports, the EOP
+! interruption is taken, and the handler halts DISABLED at PASS (BD,$),
+! which nothing can wake.
+!
+! CHECKS: PC=PASS, and CNT=1 (the handler ran once).  Measured: run
+! without WAITIO, the run stops at the BEW,$ (PC=WAIT) and CNT=0.  See
+! the entry in tests/run_tests.sh.
+
+        SLC, (8)300.0
+START   BD,  $+.32
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X1,  33                ! the printer's channel (33<<5)
+        LVI, $X5,  0
+        REL, 0($X1), 0               ! EOP into channel 33's control word
+WAIT    BEW, $                       ! enables, and waits for the report
+        CNOP
+
+HANDLER V+I, $X5,  1.0
+        SX,  $X5,  CNT
+PASS    BD,  $                       ! disabled: a halt nothing can wake
+        CNOP
+
+        SLC, (8)500.0
+SAVE    B,   0
+        CNOP
+CNT     DD(BU,64), 0
+
+        SLC, (8)600.0
+TBL     DD(BU,64), 0
+        SLC, (8)611.0
+        B,   $                       ! 9  EPGK
+        CNOP
+        B,   $                       ! 10 UK
+        CNOP
+        B,   $                       ! 11 EE
+        CNOP
+        SIC, SAVE                    ! 12 EOP
+        BD,  HANDLER
+        B,   $                       ! 13 CS
+        CNOP
+        END, START

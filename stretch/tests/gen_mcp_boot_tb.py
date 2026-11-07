@@ -289,22 +289,26 @@ def main():
                         ("mcp_p1deck_no_ipl_error",
                          str(prog.symtab["XERRAD"] // 64), 0)],
                        step_cap=40000000,
-                       # THE RUN ENDS WHERE MCP CHOOSES TO WAIT: 222046.00,
-                       # half-word 149580, printed p.198 line 47, "BEW,$"
-                       # in K UNSTC -- enable and wait, with the request
-                       # queue empty.  Before the exchange reported I/O
-                       # status this run had to be stopped at 220025.00
-                       # (p.159 line 10), because MCP waited forever for
-                       # the disk LOCATE's report.  Now both of channel
-                       # 0's reports arrive (EOP) and MCP goes idle.
+                       # THE RUN ENDS WHERE MCP WAITS FOR A PROGRAM IT
+                       # CANNOT FIND: 234606.00, half-word 156886, printed
+                       # p.269 line 30 "BEW,$" in Y MP FCH, the command
+                       # package's fetch.  After IPL, MCP's bypass-mode
+                       # start (p.295 line 30 Y XCOMD) asks DISK FETCH for
+                       # a type area.  DISK FETCH LOCATEs and READs (the
+                       # two channel-0 reports), searches, and p.312 line
+                       # 13 "BXVZ,C URD -TYPE NOT IN INDEX" fires: the
+                       # fixture PROSA (strap/prosa.py) carries no such
+                       # type area.  Y MP FCH then waits with nothing to
+                       # wake it (docs/boot_plan.md, "M-1 ADDED ONE").
                        #
-                       # THE PC ALONE DOES NOT DISCRIMINATE.  With the
-                       # two-arc disk, IPL's WRITE ran off the volume and
-                       # MCP took the EE error path to the SAME BEW,$
-                       # (measured).  run_mcp_p1deck_test.sh reads the
-                       # core's report lines to tell the two apart.
-                       pc_check=149580,
-                       pc_trail_check=149580,
+                       # BEFORE 2026-11-07 the run ended at 222046.00 in
+                       # K UNSTC, because the model's M-1 added one and
+                       # MCP's interrupt-queue count never came down.
+                       # wait_for_io makes the bench stop on idle(), so a
+                       # BEW,$ that is waiting on I/O keeps running.
+                       pc_check=156886,
+                       pc_trail_check=156886,
+                       wait_for_io=True,
                        pc_trail=True,
                        console_dump=128,
                        ipl=True))

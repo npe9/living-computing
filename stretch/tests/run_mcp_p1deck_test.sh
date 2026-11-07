@@ -31,22 +31,27 @@ fi
 # arcs to the disk; a disk too small for them ends that WRITE with EE,
 # MCP receives the EE when it first enables, and its error path reaches
 # the same BEW,$ the testbench's pc_check pins -- so the PC cannot tell
-# the two runs apart, and these lines can.  The first EOP is printed
-# p.159's LOCATE (lines 41-46, K DISK); both pass through p.177's IOD
-# routine, and which request the second is has not been attributed.
+# the two runs apart, and these lines can.  The four EOPs are DISK
+# FETCH's (printed pp.311-318), all through p.177's IOD routine: LOCATE
+# and READ of the dictionary's first arc (p.317 lines 23-31), then LOCATE
+# and READ of the index arc (lines 35-43).  The second pair needs MCP's
+# interrupt queue to unstack correctly, which needed M-1 to subtract
+# (decks/vfl_m_minus_one.strap); before that fix there were two.
 #
-# MEASURED 2026-11-07: with the host build put back on mkDiskSourceSmall
-# (StretchIO.bsv), exactly p1_disk_end_exception and p1_disk_eop_reports
-# ("0 channel-0 EOP reports") fail; the testbench's own checks, PC and
-# last-PC = 149580 included, all PASS.  The control passes everything.
+# MEASURED 2026-11-07 (the end was then 149580, K UNSTC): with the host
+# build put back on mkDiskSourceSmall (StretchIO.bsv), exactly
+# p1_disk_end_exception and p1_disk_eop_reports ("0 channel-0 EOP
+# reports") failed, while the testbench's PC checks PASSED -- MCP's EE path
+# ended at the same BEW,$.  The end is now 156886 (gen_mcp_boot_tb.py), so
+# re-measured below in run_tests.sh's entry.
 REP="StretchCore: I/O status report, channel 0, EPGK UK EE EOP CS ="
 if grep -q "$REP 00100$" "$LOG"; then
   echo "FAIL p1_disk_end_exception: channel 0 reported EE"
   status=1
 fi
 n=$(grep -c "$REP 00010$" "$LOG" || true)
-if [ "$n" != 2 ]; then
-  echo "FAIL p1_disk_eop_reports: $n channel-0 EOP reports, expected 2"
+if [ "$n" != 4 ]; then
+  echo "FAIL p1_disk_eop_reports: $n channel-0 EOP reports, expected 4"
   status=1
 fi
 PYTHONPATH="$TESTS_DIR/../strap" python3 "$TESTS_DIR/check_console_text.py" "$LOG" "$@" || status=$?

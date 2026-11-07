@@ -1503,6 +1503,15 @@ run "PAST T MOVE: MOVE intact, IPL stops in XERR29 (spool IODs 4-6)" ./run_mcp_a
 # two channel-0 EOP reports.  MEASURED INJECTION: host build back on the
 # two-arc disk -- only those two fail; PC=149580 still passes (MCP's EE
 # path ends at the same BEW,$).
+# UPDATED 2026-11-07 a third time: with M-1 subtracting and the bench
+# stopping on idle(), MCP's bypass start runs DISK FETCH to completion --
+# four channel-0 EOPs (dictionary LOCATE/READ, index LOCATE/READ) -- finds
+# "TYPE NOT IN INDEX" (printed p.312 line 13) in the fixture PROSA, and
+# waits at p.269 line 30, half-word 156886, pinned by pc_check.
+# MEASURED INJECTIONS against this wrapper: the pre-fix M-1 ends at
+# 149580 (both PC checks fail) with 2 EOP reports (p1_disk_eop_reports
+# fails); the host build on the two-arc disk reports EE and no EOPs
+# (both wrapper checks fail) and ends at PC 0.
 run "MCP's OWN IOD DECK (p.1): IPL completes and MCP is entered" ./run_mcp_p1deck_test.sh \
     "DATE OF IPL TAPE" "REEL NUMBER OUTPT" \
     "READER IS INPUT SOURCE ON CHANNEL 32"
@@ -2435,6 +2444,27 @@ run "MCP's IPL bootstrap, printed p.2, bit-exact (MCP_Mar63 PDF p.9)" python3 ve
 #     to Memory  abc101011", and BU gives a=1 b=0 c=0.
 #
 # docs/listing_typography.md 11 now carries the B/8 case.
+
+run "M-1, Add One to Memory with the negative sign modifier: adds MINUS one" ./run_program.sh ../decks/vfl_m_minus_one.strap StretchMMinusOneTb \
+    "fq_mcp_field_3_to_2:192=32768" "f64_1000_to_999:193=999" \
+    "f16_borrow_256_to_255:194=71776119061217280" "fup_plus_then_minus:195=7" "PC=266"
+# MCP FOUND THIS ONE, 2026-11-07.  Its receptor counts stacked interrupts
+# down with "M-1(BU,18),S Q K($9) -REDUCE Q K" (printed p.198 line 25),
+# and the model ignored the negative sign modifier on M+1, so M-1 ADDED
+# one.  After IPL, MCP's queue count read 2 over an empty queue and
+# K UNSTC waited forever.  Reference Manual printed p.62-63 (read in the
+# ink): "if it is one, a minus one is added".  MEASURED INJECTION, the
+# pre-fix StretchExecute.bsv: all four data checks fail, each one added
+# instead of subtracted (32768 -> 65536, 999 -> 1001, 255<<48 ->
+# 257<<48, 7 -> 9).  PC passes.
+
+# BEW,$ IS A WAIT WHEN AN INTERRUPTION IS OWED.  WAITIO makes the bench
+# stop on core.idle() (StretchCore.bsv): halted AND nothing can wake it.
+# MEASURED: without WAITIO the run stops at the BEW,$ (PC=391) with
+# cnt=0; with idle() missing its "control word holds status" term, the
+# same two checks fail.  The control passes both.
+run "BEW,\$ waits for an owed I/O interruption (core.idle(), WAITIO)" ./run_program.sh ../decks/bew_wait_io.strap StretchBewWaitTb WAITIO \
+    "cnt:321=0x0000400000000000" "PC=394"
 
 run "M+MG, Add Magnitude to Memory -- the seventh VFL integer arm" ./run_program.sh ../decks/m_plus_mg.strap StretchMPlusMgTb \
     "PC=2064" \

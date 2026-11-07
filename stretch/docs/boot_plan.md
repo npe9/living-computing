@@ -2253,3 +2253,45 @@ Candidates, unranked:
 
 Read p.140-142 and S AS's setters before changing anything.
 
+### M-1 ADDED ONE: THE RESUME WAS A MODEL FAULT, AND THE FETCH NOW RUNS, 2026-11-07
+
+**FOUND by dumping MCP's own tables at the idle** (core octal
+215000-215500, a scratch testbench). S PROG S's MCP entry (215022) had
+S Q K = 2, while the 128-slot queue S QUE (215420) was empty. C RETN's
+"interrupts stacked" branch therefore went to K UNSTC, which found
+nothing and waited. C22-6728-1's "Type 77 error" names this exact
+state ("an interrupt was not found in the queue when the queue count was
+non-zero").
+
+**THE CAUSE.** K Q IN counts up with "M+1(BU,18),S Q K($9)" (p.123 line
+30). Z PACK counts down with "M-1(BU,18),S Q K($9) -REDUCE Q K" (p.198
+line 25). The two words differ only in bit 52, the negative sign
+modifier, and the model's M+1 arm built its addend as +1 whatever that
+bit said. Reference Manual printed p.62-63, read in the ink: "A plus or
+minus one is algebraically added ... if it is one, a minus one is
+added." Fixed in StretchExecute.bsv and tested by
+decks/vfl_m_minus_one.strap.
+
+**THE HARNESS HALF.** MCP waits for I/O with BEW,$, and the bench used
+to stop at every self-branch. StretchCore.bsv now has idle() (halted
+and nothing can wake it), and the P1 bench stops on that
+(gen_tb.py wait_for_io / WAITIO; decks/bew_wait_io.strap).
+
+**WHERE IT GOES NOW.** The fetch resumes and completes:
+- four channel-0 operations: the dictionary's LOCATE and READ, then the
+  index arc's LOCATE and READ (p.317 lines 23-44);
+- the index search, X SQ SCH (p.316);
+- then p.312 line 13 "BXVZ,C URD -TYPE NOT IN INDEX". The type area the
+  command package asked for is not in the PROSA index, because PROSA
+  is a fixture (strap/prosa.py) whose dictionary and index carry only
+  what the transcribed IPL rows pin.
+- Y MP FCH then waits at p.269 line 30, half-word 156886, with nothing
+  to wake it.
+
+**NEXT: a faithful PROSA.** The system library on the master tape (the
+type areas: command package, input program, loader, and so on), with
+the dictionary and index DISK FETCH searches, built from the transcribed
+listing and documented in C22-6728-1. Until MCP can fetch its command
+package, no transition command is issued, the input program never
+starts, and no card is read (docs/programming_environment.md E1).
+

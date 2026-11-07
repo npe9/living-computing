@@ -73,6 +73,15 @@ interface StretchCore;
   method Action start();
   method Action stop();
   method Bool   halted();    // the last clock's instruction branched to itself
+  // HALTED AND NOTHING CAN WAKE IT.  A BEW,$ with the interruption
+  // system enabled is a WAIT, not a stop: an I/O transfer in flight,
+  // a control word holding status the exchange will report (printed
+  // p.118), or an interruption being taken will move the counter.
+  // MCP waits exactly this way (printed p.198 line 47, p.269 line 30).
+  // halted() stays the old predicate for every program that ends in
+  // BEW,$ and means it; a harness that has to run an operating system
+  // stops on idle() instead.
+  method Bool   idle();
   method HWordAddr getPC();
   method Action setPC(HWordAddr a);
   // Press INITIAL PROGRAM LOAD and let a unit raise a channel signal:
@@ -408,6 +417,17 @@ module mkStretchCore(StretchCore);
   // assumed, as with rl_io's ordering above.
   Bool busyXfer    = isValid(ioPending) || isValid(xmitPending)
                      || st.storeTailPending();
+  // A REPORT IS STILL OWED on some channel: a control word holds a
+  // status bit the exchange has not yet promoted (printed p.118).
+  // Read by idle() only.
+  function Bool cwHasStatus(WordAddr ch);
+    ControlWord c = ioDev.readChanCW(ch);
+    return {c.epgk, c.uk, c.ee, c.eop, c.cs} != 0;
+  endfunction
+  Bool statusWaiting = cwHasStatus(chanDisk) || cwHasStatus(chanReader)
+                    || cwHasStatus(chanPrinter) || cwHasStatus(chanTape)
+                    || cwHasStatus(chanConsole);
+
   // >>> THE GATE IS `running` ALONE, AND `!haltedReg` IS DELIBERATELY
   // NOT IN IT. <<<  The first version of this gate was
   // `running && !haltedReg`, to stop a halted machine in the same clock
@@ -1493,6 +1513,8 @@ module mkStretchCore(StretchCore);
     running <= False;
   endmethod
   method Bool halted() = haltedReg;
+  method Bool idle() = haltedReg && !(st.irqEnabled() &&
+                         (isValid(ioPending) || statusWaiting || armInterrupt || isValid(intPC)));
 
   method HWordAddr getPC() = pcReg;
   method Action setPC(HWordAddr a);

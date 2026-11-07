@@ -3318,8 +3318,19 @@ function ActionValue#(VflOutcome)
               WordAddr w0 = baWord(ea);
               Bit#(6) off = baBit(ea);
               SM128 acc = readAcc(st);
+              // M+1's addend is +1 or -1: Reference Manual printed
+              // p.62-63, read in the ink, "A plus or minus one is
+              // algebraically added to the addressed storage field",
+              // and the negative sign modifier "specifies the sign of
+              // the one to be added ... if it is one, a minus one is
+              // added".  STRAP spells that M-1.  This was {sign: 0}
+              // until 2026-11-07, so MCP's p.198 line 25
+              // "M-1(BU,18),S Q K($9) -REDUCE Q K" ADDED one, and the
+              // interrupt queue count rose on every unstack until
+              // K UNSTC waited forever on an empty queue
+              // (docs/boot_plan.md, "M-1 ADDED ONE").
               SM128 accSh = addOne
-                ? SM128 { sign: 0, mag: 1 }                       // M+1
+                ? SM128 { sign: vi.m.invert, mag: 1 }             // M+1 / M-1
                 : magnitude
                 ? SM128 { sign: vi.m.invert, mag: acc.mag >> offSh } // M+MG
                 : SM128 { sign: acc.sign ^ vi.m.invert,            // M+
@@ -3361,16 +3372,12 @@ function ActionValue#(VflOutcome)
               // moment a spelling arrived.  docs/NEXT.md carries the
               // spelling as its own item.
               //
-              // M+1'S ADDEND IS LEFT ALONE.  p.57's table is about
-              // "the accumulator sign", and M+1's addend is the
-              // constant one rather than an accumulator field, so
-              // the modifier has nothing to act on there and its
-              // arm above still builds sign 0.  Its STORAGE operand
-              // does follow the rule below, because that half of the
-              // table is about the class -- "if the result is placed
-              // in storage" -- and M+1 is a to-memory operation.  If
-              // M+1's own definition says otherwise it will want
-              // separating; I have not read it.
+              // M+1'S ADDEND TAKES THE MODIFIER: its own definition
+              // (printed p.63, "Negative Sign. This modifier specifies
+              // the sign of the one to be added") was read on
+              // 2026-11-07 and settles what this comment used to leave
+              // open.  The STORAGE operand follows the class rule below,
+              // as for every to-memory operation.
               Bit#(1) opndInvert = 0;
               if (!vflNeedsRefill) begin
                 if (prefetchCount >= 1) begin

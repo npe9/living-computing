@@ -24,7 +24,7 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              pc_check=None, cycle_bound=None, cycle_window=None,
              ipl=False, pc_trail=False,
              pc_trail_check=None, op_trail=False,
-             max_steps_check=None, stop_at_pc=None):
+             max_steps_check=None, stop_at_pc=None, wait_for_io=False):
     """checks: list of (label:str, word_addr_expr:str, expected:int).
 
     reader_image: optional list of ints -- words to pre-load into the
@@ -241,9 +241,14 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append("  endrule")
     lines.append("")
 
+    # wait_for_io: stop on core.idle() rather than core.halted(), so a
+    # BEW,$ that is waiting for an interruption keeps running until
+    # nothing can wake it (StretchCore.bsv idle()).  For harnesses that
+    # run an operating system; every other program keeps halted().
+    halt_pred = "core.idle()" if wait_for_io else "core.halted()"
     run_phase += 1
     stop_guard = " && !stoppedAtPc" if stop_at_pc is not None else ""
-    lines.append(f"  rule run (phase == {run_phase} && !core.halted() && stepCount < {step_cap}{stop_guard});")
+    lines.append(f"  rule run (phase == {run_phase} && !{halt_pred} && stepCount < {step_cap}{stop_guard});")
     if stop_at_pc is not None:
         lines.append(f"    if (core.getPC() == {stop_at_pc}) stoppedAtPc <= True;")
     if pc_trail:
@@ -281,16 +286,16 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append("  endrule")
     lines.append("")
     stop_or = " || stoppedAtPc" if stop_at_pc is not None else ""
-    lines.append(f"  rule afterRun (phase == {run_phase} && (core.halted() || stepCount == {step_cap}{stop_or}));")
+    lines.append(f"  rule afterRun (phase == {run_phase} && ({halt_pred} || stepCount == {step_cap}{stop_or}));")
     if stop_at_pc is not None:
         # A DELIBERATE STOP IS NOT A FAILURE, but it must announce
         # itself: every check below reads MID-EXECUTION state, and a
         # reader who does not know that will misread all of them.
         lines.append("    if (stoppedAtPc)")
         lines.append(f'      $display("STOPPED DELIBERATELY at half-word {stop_at_pc} after %0d steps -- the checks below read MID-EXECUTION state", stepCount);')
-        lines.append("    else if (!core.halted()) begin")
+        lines.append(f"    else if (!{halt_pred}) begin")
     else:
-        lines.append(f"    if (!core.halted()) begin")
+        lines.append(f"    if (!{halt_pred}) begin")
     lines.append(f"      $display(\"FAIL: step cap ({step_cap}) reached without halting -- checks below run against mid-execution state\");")
     lines.append(f"      fails <= fails + 1;")
     lines.append(f"    end")
@@ -528,6 +533,9 @@ if __name__ == '__main__':
     #                             "CYCLES=120+-3"; the unicode plus-minus is
     #                             accepted as well.  Use this and not the
     #                             bound for anything judging overlap
+    #   WAITIO                 -- stop when the core is IDLE (halted and
+    #                             nothing can interrupt it), not merely
+    #                             halted: a BEW,$ waiting on I/O runs on
     #   PC=EXPECTED            -- check the instruction counter (a 19-bit
     #                             half-word address) where the program
     #                             halted; see the pccheck rule above
@@ -566,8 +574,12 @@ if __name__ == '__main__':
     # for that, not for the flat 3 every floating-point instruction
     # used to cost.
     step_cap = 30000
+    wait_for_io = False
     for spec in sys.argv[3:]:
-        if spec.startswith('PC='):
+        if spec == 'WAITIO':
+            # stop on core.idle(), not core.halted(): see generate()
+            wait_for_io = True
+        elif spec.startswith('PC='):
             pc_check = int(spec[3:], 0)
         elif spec.startswith('STEPS='):
             step_cap = int(spec[6:], 0)
@@ -603,4 +615,4 @@ if __name__ == '__main__':
                     printer_checks=printer_checks, tape_image=tape_image,
                     tape_checks=tape_checks, pc_check=pc_check,
                     cycle_bound=cycle_bound,
-                    cycle_window=cycle_window))
+                    cycle_window=cycle_window, wait_for_io=wait_for_io))
