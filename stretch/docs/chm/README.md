@@ -88,13 +88,13 @@ press material. Titles are the CHM catalog's unless a line says
       tapes (Spool Output, Alternate Spool Output, Spool Read, and
       Spool Write/Scan).
     - X22-6798-0 STRAP program sheet = 102633946 (the form number is
-      printed on it).
+      printed on it);
+    - X22-6533 Reference Card and A22-6552 Physical Planning Manual,
+      already in `docs/` (from bitsavers).
   - **Still not held:**
     - D22-6513 General Information Manual (102634357 is a 1960
       edition, probably the same);
     - **J28-6128 SMAC Bulletin** (102634361 is only its errata sheet);
-    - X22-6533 Reference Card;
-    - A22-6552 Physical Planning Manual;
     - the "Specifications Notebook (for Programs)", from Dept. 271,
       "available on a limited basis";
     - the card stock A26425 and A36259.

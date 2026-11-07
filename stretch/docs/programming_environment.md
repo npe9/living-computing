@@ -61,6 +61,20 @@ in the dictionary/index format DISK FETCH searches (C22-6728-1;
 printed pp.311-318). Until then no transition command is issued, the
 input program never starts, and no card is read.
 
+What that means precisely (2026-11-07). The code is not what is missing:
+the overlay type areas are already transcribed. Their PUNID statements
+open 22LOADER on printed p.320, 22$DUMP on p.335, 22SCOMD on p.361 and
+22$EOJ on p.381 (`decks/mcp_bootstrap_p*.strap`). What is missing:
+- **The type areas 11A11DIC and 11B11IND.** C22-6728-1 printed p.96
+  names them as the first two type areas of the master tape's second
+  file, ahead of 11C11IPL and 11D11MCP. Their contents were made by
+  IBM's system build, not assembled from the listing, so no listing of
+  them exists. They are **reconstructed**: their format comes from
+  C22-6728-1 and from the code that reads them, DISK FETCH (pp.311-318)
+  and X SQ SCH (p.316).
+- **The overlay type areas, placed in PROSA after 11D11MCP**, with
+  index entries pointing at them.
+
 **E2. Operator actions in the harness.** For example, the reader's
 START key (unit ready + CS, RefMan printed p.141) and the console's
 SIGNAL. This also needs `BEW,$` with a deliverable interruption to stop

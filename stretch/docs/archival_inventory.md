@@ -1701,6 +1701,76 @@ LFT / LMR / *+ times. All of that bears on MCP's STM probes and on G1.
 4. FIC 102633186, "Stretch Manual of Operation - Preliminary", May 1958,
    317 pp; and 102633187 (MCP preliminary reference, listed above).
 
+## Outside CHM and bitsavers: a survey, 2026-11-07
+
+The goal is fidelity: IBM's own software, found or else reconstructed
+from IBM's documents (`docs/programming_environment.md`). The search
+asked one question: **does a listing of STRAP II, IBM's 7030 FORTRAN,
+the MCP loader, or the 704/709 simulators (named in J22-6532, CHM
+102634122) survive anywhere?** No such listing was found in any
+archive. Al Kossow wrote on cctalk in July 2015 that "the only
+software that survives are diagnostic listings". He also wrote that
+he "gave up trying to get the software from the person who saved the
+Livermore Stretch"; the post does not name that person.
+
+Where an item was fetched and read here, it says so. **Everything else
+is a delegated search's report, not yet re-checked.**
+
+**Fetched: DTIC reports with real 7030 programs, now in `docs/dtic/`.**
+Nine reports from MITRE and NWL Dahlgren, 1964-68. They include:
+- MCP job decks (class-B IOD/REEL cards; `T SUBTYPE,FORTRAN,LMAP,...`);
+- FORTRAN IV sources;
+- a STRAP II routine run under MCP (AD0685715).
+
+These are the first examples this repo holds of how users actually
+submitted work to MCP. They are the source for step E4's first job.
+
+**UK National Archives, Kew (AWRE). Open, not digitised; copies can be
+ordered through Discovery:**
+- ES 10/803, "Provisional specification for Stretch fortran: source
+  language S1", 1961 (Glennie's S1);
+- ES 4/995, "Manual for the S2 and S3 dialects of Fortran 2", 1968;
+- ES 10/794, "Speed of Stretch computer program", 1961;
+- ES 10/1020, STRETCH Users' Conference, Washington, Feb 1963;
+- AB 16/2928-2929 and AB 42/48 (AWRE's Stretch, 1959-65).
+
+**NARA RG 457 (NSA), Harvest material, scanned at fpgacpu.ca/harvest.**
+This is mostly on the 7950 side. It includes:
+- "Initial Harvest Control Program", 1960;
+- "Diagnostic Library 7950", 1959;
+- "Hi Speed Memory Timing", 1959;
+- "SIGMA Instruction Execution Times", 1959.
+
+The last two may serve as timing citations for the shared Stretch
+core. More file units can be ordered from NARA.
+
+**LASL reports on OSTI, catalogue only:**
+- LAMS-2607 "The IVY System" (1961);
+- LADC-5173 COLASL (1962);
+- Mader's Stretch codes: GMX-2-R-63-1 and LA-DC-6595.
+
+These can be requested from the LANL Research Library.
+
+**Bodleian, Strachey papers.** MS. Eng. misc. b. 264/C.95,
+"Miscellaneous reports and memoranda re I.B.M. Stretch Computer".
+
+**Not found online. These are named in the DTIC reports:**
+- MITRE's "7030 Facility Manual" (Aug 1965);
+- MITRE TM-67, "The STAPP System" (Fagan);
+- MITRE's LISP 1.5 for the 7030. The MITRE machine later went to
+  BYU, whose L. Tom Perry Special Collections is the place to ask.
+
+**Not reachable by the search:**
+- IBM Corporate Archives (no online catalogue);
+- HathiTrust (Cloudflare);
+- Google Books (quota);
+- CBI (its site returned 403).
+
+The IBM Archives is the most likely holder of STRAP II and FORTRAN
+listings. A request should name the form numbers C22-6729 (the STRAP II
+internals) and C22-6751 (FORTRAN IV), and ask for any program listing
+or system tape behind them.
+
 ## Third-party Stretch software (non-IBM): documentation trail
 
 The languages/systems built for Stretch installations outside IBM --
