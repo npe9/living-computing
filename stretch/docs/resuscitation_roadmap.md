@@ -304,7 +304,7 @@ Scanning those four listings for the instructions this model refuses:
 
 | instruction | occurrences in the four benchmarks | evidence | model status |
 |---|---|---|---|
-| `LVE` | **7** | 5 read from the page image at PDF p.12 | **implemented 2026-10-17** (one level; a chain sets OP). RefMan printed p.29, driven by `decks/lve_indirect.strap` and witnessed by MCP printed p.3 line 10 |
+| `LVE` | **7** | 5 read from the page image at PDF p.12 | **implemented 2026-10-17** (one level); chains and p.29's 1 ms `USA` end 2026-11-06 (`decks/lve_chain_usa.strap`). RefMan printed p.29, driven by `decks/lve_indirect.strap` and witnessed by MCP printed p.3 line 10 |
 | `SVA` | **8** | 2 read from the image at PDF p.12 | **implemented** — this row said "partially (indicator fold only)" and was stale; `StretchExecute`'s `dixop_SVA` arm does the address replacement in full, width from `svaReplaceAddr` |
 | `LCV` (radix conversion) | **6** | 3 read from the image at PDF p.33 | not implemented |
 | `ST(DU,…)` decimal VFL | **7** | 4 read from the image at PDF p.33 | not implemented |

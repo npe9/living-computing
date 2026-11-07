@@ -111,11 +111,16 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   search stopped at the overview.  MCP's bootstrap (printed p.3 line
   10, `LVE,15,X1 CCW`) is what forced the question again, and
   `decks/lve_indirect.strap` now exercises all three address
-  widths plus the target's index field, the target's ignored `J`, and
-  the chain refusal.  A CHAIN IS STILL NOT IMPLEMENTED: p.29 makes it
-  an iteration with a time bound and this E-box runs one instruction
-  per step, so a target that is itself an `LVE` sets `OP` rather than
-  being silently truncated to one level.
+  widths plus the target's index field and the target's ignored `J`.
+  CHAINS, as of 2026-11-06: when the target is itself an `LVE`, the
+  E-box's `resume()` forms that LVE's effective address and reads
+  again, one level per read, keeping the original `J`; once 3334
+  clocks (p.29's millisecond at 0.3 us) have passed since dispatch it
+  stores the last address formed and turns on `USA`.  MCP's body chains
+  this way (printed p.159 line 8 onto p.177 line 15, an LVE whose
+  address line 11's SVA fills from the IOD).  `decks/lve_chain_usa.strap`
+  tests both.  An EXECUTE
+  chain still has no `USA` bound.
 - **Connectives** — all sixteen logical functions (`C`/`CM`/`CT`,
   Figure 20, p.75-77), with the same direct/immediate/progressive
   addressing as VFL arithmetic above, **and p.75's byte-size

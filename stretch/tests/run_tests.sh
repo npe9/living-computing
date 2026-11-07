@@ -1489,6 +1489,13 @@ run "PAST T MOVE: MOVE intact, IPL stops in XERR29 (spool IODs 4-6)" ./run_mcp_a
 # below) MCP is entered through its IF trap and types no error; the run
 # now ends at location 4.0 (docs/boot_plan.md).  NOTHING HERE PINS THAT
 # STOP YET -- the console text is what is checked.
+# UPDATED 2026-11-07: with the $L hazard and LVE chains fixed, the run
+# stops DELIBERATELY at 220025.00 (printed p.159 line 10), and the
+# wrapper fails on any failed testbench check and on an OP set by p.159
+# line 8's chained LVE at 220023.40.  MEASURED INJECTION: chain shape
+# removed (lveChainTarget always Invalid) -- every console text and
+# testbench check still passes, and only that OP line fails, which is
+# why it is checked.
 run "MCP's OWN IOD DECK (p.1): IPL completes and MCP is entered" ./run_mcp_p1deck_test.sh \
     "DATE OF IPL TAPE" "REEL NUMBER OUTPT" \
     "READER IS INPUT SOURCE ON CHANNEL 32"
@@ -8418,10 +8425,10 @@ run "BB branch-if-off variants (BZB1, BZBN, BZBZ)" ./run_program.sh ../decks/bb_
 # program".  That is a floor, not a ceiling: see the caveat above.
 
 run "LVE, Load Value Effective -- indirect addressing, three address widths" ./run_program.sh ../decks/lve_indirect.strap StretchLveTb \
-    "lve_full_and_half:1294=0x0143400001434000" \
-    "lve_fp_and_indexed:1295=0x0143400001c34000" \
-    "lve_target_j_ignored:1296=0x0143400000000000" \
-    "PC=2594"
+    "lve_full_and_half:1292=0x0142c0000142c000" \
+    "lve_fp_and_indexed:1293=0x0142c00001c2c000" \
+    "lve_target_j_ignored:1294=0x0142c00000000000" \
+    "PC=2590"
 # MCP's bootstrap pinned LVE's ENCODING (printed p.3 line 10 assembles
 # bit-for-bit); this pins its EXECUTION, and the two are separately
 # earned.  Reference Manual printed p.29: the effective address names a
@@ -8439,11 +8446,48 @@ run "LVE, Load Value Effective -- indirect addressing, three address widths" ./r
 # jb_ax3a printed p.140's six-case table -- exercised here in the LVE
 # direction rather than the SVA one.
 #
-# A CHAIN IS REFUSED OUT LOUD.  p.29 makes a chained LVE an iteration
-# with a one-millisecond bound and indicator USA; this E-box runs one
-# instruction per step with no inner loop, so a target that is itself
-# an LVE sets OP rather than being silently truncated to one level.
-# The program checks that too.
+# A CHAIN IS NO LONGER REFUSED (2026-11-06).  The chain block and its
+# target left this program for lve_chain_usa.strap below, so the
+# targets and results moved down two words: DATUM is now 001303.00
+# (bit (16)142C0), XOFF still adds (8)1000.0, and the three answers and
+# PASS were re-derived from the listing, not read off a run.
+
+run "LVE chains, and p.29's one-millisecond end with USA -- MCP waits on it" ./run_program.sh ../decks/lve_chain_usa.strap StretchLveChainTb \
+    "chain_and_index:1292=0x0142c0000143c000" \
+    "loop_final_ea:1293=0x0142400000000000" \
+    "later_j_untouched:1294=0" \
+    "CYCLES=3571+-237" \
+    "PC=2590"
+# MCP printed p.159 line 8, "LVE,0,K IOD RN-.32", names printed p.177
+# line 15, itself an LVE whose address p.177 line 11's SVA fills from
+# the IOD -- a chain by construction -- and p.177 lines 17-18 clear USA
+# and AD after it (Reference Manual printed p.29 for the chain and its
+# bound).  The model refused every chained LVE with OP, and MCP's body
+# stopped at 220023.40 on it.
+#
+#   chain_and_index  R1 = DATUM through two LVEs; R2 = PASS only if the
+#                    intermediate LVE's own I field ($X3 = 1.0) is used.
+#   loop_final_ea    R3 = LOOP (bit (16)14240): the original J gets the
+#                    final effective address.  R4 = 0: LOOP's own J.
+#   later_j_untouched  R5/R6: the J fields of C1, C2 and D1.
+#   CYCLES           the window's LOWER edge is 3334 clocks, p.29's
+#                    millisecond at the model's 0.3 us; the program
+#                    cannot pass in less.  The upper edge is slack.
+#   PC=PASS          reached only by BUSAZ with USA ON after the loop,
+#                    and only if USA was OFF after the chains that end.
+#
+# MEASURED INJECTIONS (StretchExecute.bsv, each restored and cmp-ed):
+#   lveLimit = 0                FAILS chain_and_index, loop_final_ea,
+#                               cycles (131), PC (2572 = BAD)
+#   chain ignores the target's I field   FAILS chain_and_index
+#                               (R2 = DATUM)
+#   time-out does not set USA   FAILS PC (2572 = BAD)
+#   chain step keeps J 5, not the original's   FAILS chain_and_index,
+#                               loop_final_ea
+#   control                     all PASS
+# Not decided by this program: whether "the final effective address" of
+# a chain of two or more is the location last read or the address last
+# formed.  A one-word loop gives the same answer either way.
 
 run "OP and AD indicators (both polarities)" ./run_program.sh ../decks/op_ad_indicators.strap StretchOpAdIndTb \
     "PC=2462"          # 002317.00; hand-written, not a listing fact

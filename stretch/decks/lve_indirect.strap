@@ -66,13 +66,10 @@ START   LVE, $X1, T24
         SV,  $X1, RJ
         SV,  $X7, RJ7
 
-! ---- a CHAIN is refused out loud -----------------------------------
-! p.29 makes a chained LVE an iteration with a one-millisecond bound
-! and indicator USA.  This E-box runs one instruction per step with no
-! inner loop, so StretchExecute refuses rather than silently
-! truncating to one level -- see its own comment.  OP must come on.
-        LVE, $X1, TLVE
-        BZB, $OP, $                ! hang up if OP is off
+! ---- a CHAIN is decks/lve_chain_usa.strap's ------------------------
+! Until 2026-11-06 a chained LVE was refused here with OP.  The model
+! now follows the chain and ends a loop after p.29's millisecond, and
+! that program tests both.
         B,   PASS
 
 ! ---- the targets ---------------------------------------------------
@@ -82,7 +79,6 @@ T19     B,   DATUM                 ! unconditional branch: 19 bits
 T18     L(N), DATUM                ! floating point: 18 bits
 TIDX    L(BU,8), DATUM($X3)        ! full word, modified by $X3
 TJ      LV,  $X7, DATUM            ! direct index: 19 bits, J = 7
-TLVE    LVE, $X7, DATUM            ! itself an LVE: a chain
 
 XOFF    XW,  (8)1000.0, 0, 0, 0    ! the index value TIDX adds
 DATUM   DD(BU,64,8), 0

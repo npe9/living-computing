@@ -6807,7 +6807,9 @@ A width bug is off by 32× or 64×, not by a little.
 **A chain is refused out loud.** p.29 makes a chained LVE an
 iteration with a time bound; this E-box runs one instruction per step
 with no inner loop, so a target that is itself an `LVE` sets OP
-rather than being silently truncated to one level.
+rather than being silently truncated to one level.  *(Superseded
+2026-11-06: MCP's body chains LVEs -- see
+`decks/lve_chain_usa.strap` and bsv/README.md.)*
 
 **And a test can encode the absence of a feature as its premise.**
 `op_ad_indicators.strap` demonstrated "Operation Code Invalid works"

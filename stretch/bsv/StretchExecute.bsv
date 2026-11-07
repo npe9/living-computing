@@ -524,6 +524,22 @@ function HWordAddr effAddr19(StretchStorage st, HWordAddr raw, Bit#(4) idx);
   end
 endfunction
 
+// WHERE AN LVE CHAIN GOES NEXT: when the half-word an LVE `dx` reads
+// (from `w`, the word it fetched) is itself an LVE, that LVE's
+// effective address; otherwise Invalid.  An LVE is a direct index
+// instruction, half length, with a 19-bit half-word address -- the
+// "everything else" case of the LVE arm's width rule, printed p.29 /
+// jb_ax3a printed p.140 -- extended with low-order zeros and indexed
+// by its own I field (printed p.21).
+function Maybe#(BitAddr) lveChainTarget(StretchStorage st, DixInstr dx, Word64 w);
+  HWordAddr ea = effAddr19(st, dx.addr, dx.idx);
+  Bit#(32)  h  = (ea[0] == 0) ? w[63:32] : w[31:0];
+  if (instrLen(h) != Full && h[8:4] == dixop_LVE)
+    return tagged Valid effAddr24(st, {h[31:13], 5'b0}, h[3:0]);
+  else
+    return tagged Invalid;
+endfunction
+
 function WordAddr effAddr18(StretchStorage st, WordAddr raw, Bit#(4) idx);
   if (idx == 0)
     return raw;
@@ -628,12 +644,19 @@ endfunction
 //   bails for a read (see the function's tail), and every level of a
 //   multi-level EX is exactly such a call, so an intermediate level's
 //   alarm would otherwise be lost.
+//
+// `lveTimedOut` -- not a subject fact, but carried here for the same
+//   reason `ifSig` is: it is decided by mkEBox, which alone sees time
+//   pass across the levels of a LOAD VALUE EFFECTIVE chain, and only
+//   the LVE arm acts on it.  resume()'s chain shape has the story.
 typedef struct {
   Bool under;
   Bool ifSig;
+  Bool lveTimedOut;
 } ExSubject deriving (Bits, Eq, FShow);
 
-ExSubject notSubject = ExSubject { under: False, ifSig: False };
+ExSubject notSubject = ExSubject { under: False, ifSig: False,
+                                   lveTimedOut: False };
 
 // WHAT AN EXIC IN FLIGHT HAS TO REMEMBER, and every field is here
 // because mkEBox cannot recompute it later.
@@ -4291,7 +4314,8 @@ typedef struct {
 
 function ActionValue#(IndexOutcome)
     dirIndexOp(StretchStorage st, DixInstr di_,
-               Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0);
+               Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0,
+               Bool lveTimedOut);
   actionvalue
     Maybe#(WordAddr) needsRead = tagged Invalid;
     Bool doIdxWrite = False;
@@ -4552,19 +4576,14 @@ function ActionValue#(IndexOutcome)
             Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
             Bit#(5) hcode = h[8:4];
             Bool targetIsLve = (instrLen(h) != Full) && (hcode == dixop_LVE);
-            if (targetIsLve)
-              // A CHAIN IS A LOOP, AND THIS E-BOX CANNOT RUN ONE.
-              // p.29 is explicit that LVE "extends the indirect
-              // addressing to another level" and "is always
-              // executed", terminating after one millisecond with
-              // indicator USA if the chain never ends.  That is an
-              // iteration with a time bound, and this model executes
-              // one instruction per step with no inner loop, so a
-              // chained LVE is refused out loud rather than silently
-              // truncated to one level.  It needs the multi-cycle
-              // E-box docs/microarchitecture_plan.md already calls
-              // for; MCP uses one level and no deck in this corpus
-              // uses more.
+            if (targetIsLve && !lveTimedOut)
+              // A CHAINED TARGET NEVER REACHES HERE UNTIMED: mkEBox's
+              // resume() follows the chain itself ("LVE CHAIN" there)
+              // and calls execute() with a chained target only once a
+              // millisecond has passed.  If one does arrive, the
+              // operation is refused out loud rather than silently
+              // truncated to one level, as it was before the chain
+              // existed.
               ind = setOpInvalid(ind);
             else begin
               BitAddr a = (instrLen(h) == Full) ? h[31:8]
@@ -4596,6 +4615,20 @@ function ActionValue#(IndexOutcome)
                                               spare:x.spare,
                                               count:x.count, refill:x.refill};
               ind = setIndexResultIndicatorsF(ind, idxWriteVal);
+              // THE TIME-OUT, printed p.29: "the LOAD VALUE EFFECTIVE
+              // operation will be terminated, if still active, after one
+              // millisecond and indicator USA, unended sequence of
+              // addresses, will be turned on.  At time of termination,
+              // the final effective address is placed in the index
+              // register specified by the J field of the original
+              // instruction."  `fea` is the last effective address the
+              // chain formed -- that of the LVE just read.  WHICH
+              // address "final" means is not settled by the page: the
+              // location being read and the address computed from it
+              // differ for a chain of two or more, and agree for a
+              // one-word loop; decks/lve_chain_usa.strap tests only
+              // the latter, so the choice is untested.
+              if (targetIsLve) ind = setBit(ind, ind_USA, 1);
             end
           end else
             needsRead = tagged Valid ea[18:1];
@@ -5497,7 +5530,8 @@ function ActionValue#(ExecDispatch)
       // Direct index arithmetic (p.22-23).
       // -----------------------------------------------------------
       tagged DirIndex .di_: begin
-        IndexOutcome xo <- dirIndexOp(st, di_, prefetch, prefetchCount, ind);
+        IndexOutcome xo <- dirIndexOp(st, di_, prefetch, prefetchCount, ind,
+                                      ex.lveTimedOut);
         needsRead   = xo.needsRead;
         doIdxWrite  = xo.doIdxWrite;
         idxWriteReg = xo.idxWriteReg;
@@ -6802,6 +6836,7 @@ typedef struct {
   // Invalid and builds its own, and an EX that is the subject of an
   // EXIC is an ordinary EX with `exic` Invalid.
   Maybe#(ExicCtx) exic;
+  Bit#(32)     t0;         // mkEBox's `clock` when start() took it
 } HeldOp deriving (Bits, Eq, FShow);
 
 interface EBox;
@@ -6856,6 +6891,18 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // as they are blocked while a read is outstanding.
   Reg#(Bool)               subjReady     <- mkReg(False);
 
+  // A FREE-RUNNING CLOCK, for the one rule in the machine that is
+  // stated in TIME: printed p.29's one-millisecond bound on a LOAD
+  // VALUE EFFECTIVE chain.  1 ms is lveLimit clocks of this model's
+  // 0.3 us (StretchMemory.bsv's clock).  Wrap-around is harmless: only
+  // differences of it are taken.
+  Reg#(Bit#(32))           clock         <- mkReg(0);
+  Bit#(32)                 lveLimit      = 3334;   // 3334 x 0.3 us >= 1 ms
+
+  rule rl_clock;
+    clock <= clock + 1;
+  endrule
+
   method ActionValue#(Maybe#(ExecDone))
       start(HWordAddr pc, InstrLen len, DecodedInstr di,
             Vector#(2, Word64) pf, Bit#(2) cnt, ExecOwner o, Maybe#(HWordAddr) intIC);
@@ -6870,7 +6917,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
         st.readWordReq(a);
         held <= tagged Valid HeldOp{pc: pc, len: len, di: di,
                                     intIC: intIC, ex: notSubject,
-                                    exic: tagged Invalid};
+                                    exic: tagged Invalid, t0: clock};
         prefetch <= pf;
         prefetchCount <= cnt;
         owner <= o;
@@ -6996,7 +7043,8 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
           // no-opped anything below 32.  EX needs a different argument
           // for the same guard and its arm gives one.)
           rex = ExSubject { under: True,
-                            ifSig: h.ex.ifSig || ifViolates(st, c.sa[18:1]) };
+                            ifSig: h.ex.ifSig || ifViolates(st, c.sa[18:1]),
+                            lveTimedOut: False };
           // The subject starts with an EMPTY prefetch: the words
           // collected so far were the pseudo-IC and the subject-
           // instruction fetch, not the subject's operand.
@@ -7079,11 +7127,51 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
           // carve-out; execute()'s own comment says why that is the right
           // predicate and not the same rule.
           rex  = ExSubject { under: True,
-                             ifSig: h.ex.ifSig || ifViolates(st, sa[18:1]) };
+                             ifSig: h.ex.ifSig || ifViolates(st, sa[18:1]),
+                             lveTimedOut: False };
           // The subject starts with an EMPTY prefetch: the words collected
           // so far were the subject-instruction fetch, not its operand.
           rpf  = replicate(0);
           rcnt = 0;
+        end
+      end else if (h.di matches tagged DirIndex .dx &&& dx.code == dixop_LVE
+                   &&& lveChainTarget(st, dx, pf[0]) matches tagged Valid .nea)
+      begin
+        // LVE CHAIN.  Printed p.29: the operation "which extends the
+        // indirect addressing to another level, is always executed" --
+        // the half-word just read is itself an LVE, so its effective
+        // address is formed and the half-word THERE is read, until it
+        // is not an LVE; "the index register in which the final
+        // effective address is to be stored is specified by the index
+        // field J of the original LOAD VALUE EFFECTIVE instruction.
+        // The fields J of all subsequent instructions encountered in
+        // the operation are ignored."  So the held instruction becomes
+        // an LVE of the new address with the ORIGINAL J and no index
+        // (the index was spent forming `nea`), and reads again: one
+        // level per read, the same loop shape as the EX swap above.
+        //
+        // AND IT ENDS IN TIME.  p.29: chains can "form a loop. As a
+        // result, the computer cannot finish its operation and no
+        // interruption is accepted. ... the LOAD VALUE EFFECTIVE
+        // operation will be terminated, if still active, after one
+        // millisecond".  `held` stays Valid throughout, so busy()
+        // blocks the interruption arm exactly as p.29 says.  Once
+        // lveLimit clocks have passed since start(), execute() runs
+        // with lveTimedOut and the LVE arm stores and turns on USA.
+        // MCP DEPENDS ON THE CHAIN: printed p.159 line 8 is
+        // "LVE,0,K IOD RN-.32", whose target, printed p.177 line 15,
+        // is itself an LVE -- its address filled from the IOD by
+        // p.177 line 11's SVA -- and p.177 lines 17-18 clear USA and
+        // AD after it whatever the chain did.
+        if (clock - h.t0 >= lveLimit)
+          rex = ExSubject { under: h.ex.under, ifSig: h.ex.ifSig,
+                            lveTimedOut: True };
+        else begin
+          rdi  = tagged DirIndex DixInstr{ addr: nea[23:5], j: dx.j,
+                                           code: dixop_LVE, idx: 0 };
+          rpf  = replicate(0);
+          rcnt = 0;
+          defer = True; more = True; moreAddr = nea[23:6];
         end
       end else if (exicPsicAddr(st, h.di) matches tagged Valid .pw) begin
         // SHAPE 4.  THE PSEUDO-INSTRUCTION COUNTER has arrived, for an
@@ -7101,7 +7189,8 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
       if (stepWrite matches tagged Valid .t) st.writeWord(tpl_1(t), tpl_2(t));
       if (more) st.readWordReq(moreAddr);
       held <= tagged Valid HeldOp{pc: rpc, len: rlen, di: rdi,
-                                  intIC: h.intIC, ex: rex, exic: rexic};
+                                  intIC: h.intIC, ex: rex, exic: rexic,
+                                  t0: h.t0};
       prefetch <= rpf;
       prefetchCount <= rcnt;
       return tagged Invalid;
@@ -7115,7 +7204,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
         // exactly what was already there.
         held <= tagged Valid HeldOp{pc: rpc, len: rlen, di: rdi,
                                     intIC: h.intIC, ex: rex,
-                                    exic: rexic};
+                                    exic: rexic, t0: h.t0};
         prefetch <= rpf;
         prefetchCount <= rcnt;
         return tagged Invalid;

@@ -2100,3 +2100,44 @@ and SIC already did (`decks/lv_reads_acc_after_l.strap`).
 **WHERE IT STOPS NOW.** Past the copy, MCP types "OP INTERRUPT AT
 ABOVE LOCATION". OP was set at half-word 147495 (220023.40).
 
+That is printed p.159 line 8, `LVE,0,K IOD RN-.32`, and its target,
+printed p.177 line 15, is itself an LVE: its address is filled from
+the IOD by p.177 line 11's SVA. The model refused every chained LVE
+with OP.
+
+**FIXED: LVE CHAINS AND THEIR MILLISECOND** (2026-11-07). Reference
+Manual printed p.29, read in the ink: an LVE "which extends the
+indirect addressing to another level, is always executed". The final
+effective address goes to the J of the *original* instruction. A loop
+"will be terminated, if still active, after one millisecond and
+indicator USA ... will be turned on". The E-box's `resume()` now
+follows the chain one read at a time. After 3334 clocks (1 ms at the
+model's 0.3 µs) it stores the last address formed and turns on USA.
+`decks/lve_chain_usa.strap` tests this with four measured injections.
+p.177 lines 17-18 (`BUSAZ,$+.32`, `BADZ,$+.32`) are half-length
+branches to the next instruction. They only clear USA and AD.
+
+**HOW THE P1-DECK RUN PINS IT.** MCP runs p.159 disabled, so a refused
+LVE leaves OP as a pending indicator. The counter still passes
+220024.00 and 220025.00, and the console text is the same. Measured
+with the chain shape removed: both stops are reached, and every check
+passes, except the core's own "OP SET by the instruction at half-word
+147495". So `tests/run_mcp_p1deck_test.sh` fails on that line, and the
+run stops deliberately at 220025.00 (p.159 line 10). The wrapper also
+now fails on any failed testbench check. Before this, only the console
+text counted.
+
+**WHERE IT GOES NOW: "UNIT NOT AVAILABLE", OVER AND OVER.** No error is
+typed. Run past that stop, MCP loops through K FRONT (printed p.177),
+16,255 times by step 32.5M, about 1,600 clocks a pass. The MOUNT test
+at line 41 passes. The pass leaves at line 46,
+`BB,S UN AVL($11),Z E1`: bit 28 of the unit's UST is set. Z E1 is
+printed p.182 line 17, `LVI,14,S UN NAV -UNIT NOT AVAILABLE`, and the
+request is then retried. **NEXT:** find which unit $11 names and what
+set its availability bit. p.374 line 40 sets it in the system
+commands. The IPL tables, or a unit that never answers, are the other
+candidates. Note that the console reads "MOUNT - REEL NUMBER OUTPT ON
+CHANNEL 34 UNIT 0" and "... UNIT 1", and the model never makes a
+tape unit go from not-ready to ready. That transition is what raises
+Channel Signal (docs/tape_unit_contract.md item 36, boot_plan M1 item
+7).

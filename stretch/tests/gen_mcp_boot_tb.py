@@ -289,6 +289,17 @@ def main():
                         ("mcp_p1deck_no_ipl_error",
                          str(prog.symtab["XERRAD"] // 64), 0)],
                        step_cap=40000000,
+                       # 220025.00 is printed p.159 line 10, two
+                       # instructions after line 8's "LVE,0,K IOD RN-.32"
+                       # at 220023.40, whose target (p.177 line 15) is
+                       # itself an LVE: a CHAIN (decks/lve_chain_usa.strap).
+                       # Line 9 uses the LVE's $0.  The stop is two
+                       # instructions on, not one, because the counter
+                       # reaches 220024.00 before a refused LVE's OP
+                       # interruption is taken (measured).  Past here MCP
+                       # loops through p.177 line 46's "unit not
+                       # available" exit (docs/boot_plan.md).
+                       stop_at_pc=0o220025 * 2,
                        pc_trail=True,
                        console_dump=128,
                        ipl=True))

@@ -14,6 +14,19 @@ PROSA_IOD_DECK=P1 STRETCH_TAPE="${TMPDIR:-/tmp}/mcp.p1deck.tape" \
   || { cat "$LOG"; rm -f "$LOG"; exit 1; }
 grep -v '^CONSOLE ' "$LOG" | tail -12
 status=0
+# The testbench's own checks count too: a run that reports a FAILED check
+# fails here, whatever MCP typed.
+if grep -q "TEST(S) FAILED" "$LOG"; then status=1; fi
+# Printed p.159 line 8, "LVE,0,K IOD RN-.32" at 220023.40 (half-word
+# 147495), is a CHAINED LVE.  MCP runs it disabled, so a model that
+# refuses the chain does not divert the counter: the OP waits as an
+# indicator, and the run reaches the same stop with the same console.
+# The core's own "OP SET" line is what tells the two apart (measured,
+# docs/boot_plan.md).
+if grep -q "OP SET by the instruction at half-word 147495$" "$LOG"; then
+  echo "FAIL p159_chained_lve_refused: OP set by the LVE at 220023.40"
+  status=1
+fi
 PYTHONPATH="$TESTS_DIR/../strap" python3 "$TESTS_DIR/check_console_text.py" "$LOG" "$@" || status=$?
 rm -f "$LOG"
 exit $status

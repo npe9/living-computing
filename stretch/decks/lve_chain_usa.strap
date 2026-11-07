@@ -1,0 +1,87 @@
+! lve_chain_usa.strap -- LOAD VALUE EFFECTIVE through a chain of LVEs,
+! and the one-millisecond end of a chain that never ends.
+!
+! WHY IT EXISTS, AND WHO ASKED FOR IT.  MCP did.  Printed p.159 line 8
+! is "LVE,0,K IOD RN-.32", and the half-word it names is printed p.177
+! line 15, assembled "LVE,0,$" -- an LVE.  So MCP's LVE is a CHAIN by
+! construction.  Its address is not really "$": p.177 lines 9 and 11
+! ("SVA,2,K IOD RN" / "SVA,2,K IOD RN-.32") write an IOD parameter's
+! address into lines 16 and 15 before they run, so the chain goes on
+! into the user's IOD, and p.177 lines 17-18 ("BUSAZ,$+.32",
+! "BADZ,$+.32", half-length branches to the next instruction) clear USA
+! and AD whatever the chain did.  Until 2026-11-06 the model refused
+! every chained LVE with OP (decks/lve_indirect.strap said so), and
+! MCP's body stopped there: "OP INTERRUPT" at 220023.40.
+!
+! WHAT THE MANUAL SAYS, Reference Manual printed p.29, read in ink:
+!   - LVE, "which extends the indirect addressing to another level, is
+!     always executed";
+!   - "The index register in which the final effective address is to
+!     be stored is specified by the index field J of the original LOAD
+!     VALUE EFFECTIVE instruction.  The fields J of all subsequent
+!     instructions encountered in the operation are ignored.";
+!   - a loop is terminated "if still active, after one millisecond and
+!     indicator USA, unended sequence of addresses, will be turned on.
+!     At time of termination, the final effective address is placed in
+!     the index register specified by the J field of the original
+!     instruction."
+!
+! WHAT EACH BLOCK ESTABLISHES
+!   A  Two levels that end: START's LVE reads C1 (an LVE), which names
+!      C2 (an LVE), which names T (B,DATUM).  $X1 := DATUM.  The J
+!      fields of C1 and C2 name $X6 and $X7, which must stay zero.
+!   B  An intermediate LVE's OWN index is honoured: D1 is
+!      LVE,$X7,D2-1.0($X3) with $X3 = 1.0, so the chain reaches D2
+!      (B,PASS) only if D1's I field is applied.  $X2 := PASS.  Without
+!      the index it reaches T (B,DATUM) instead, a different answer.
+!   C  USA is OFF after chains that end (BUSAZ to BAD).
+!   D  A one-word loop: LOOP is "LVE,$X5,$".  The original's J is $X4,
+!      so $X4 := LOOP's address and USA comes on; $X5 must stay zero.
+!      With a one-word loop the "final effective address" is LOOP
+!      whichever way the phrase is read -- the location last read, or
+!      the address last formed -- so this does not decide between them.
+!
+! INJECTIONS: measured, and tests/run_tests.sh records them beside its
+! entry.
+
+        SLC, (8)2400.0
+
+! ---- A. two levels that end ----------------------------------------
+START   LVE, $X1, C1
+        SV,  $X1, R1
+
+! ---- B. an intermediate LVE's own index ----------------------------
+        LX,  $X3, XOFF
+        LVE, $X2, D1
+        SV,  $X2, R2
+
+! ---- C. no USA from a chain that ends ------------------------------
+        BUSAZ, BAD
+
+! ---- D. a one-word loop ---------------------------------------------
+        LVE, $X4, LOOP
+        SV,  $X4, R3
+        SV,  $X5, R4                 ! LOOP's own J: must be untouched
+        SV,  $X6, R5                 ! C1's J
+        SV,  $X7, R6                 ! C2's and D1's J
+        BUSAZ, PASS                  ! USA must be ON
+BAD     B,   $
+
+! ---- the chains -------------------------------------------------------
+C1      LVE, $X6, C2
+C2      LVE, $X7, T
+T       B,   DATUM
+D1      LVE, $X7, D2-1.0($X3)
+D2      B,   PASS
+LOOP    LVE, $X5, $
+
+XOFF    XW,  1.0, 0, 0, 0            ! D1's index value
+DATUM   DD(BU,64,8), 0
+R1      VF,  0
+R2      VF,  0
+R3      VF,  0
+R4      VF,  0
+R5      VF,  0
+R6      VF,  0
+PASS    BEW, $
+        END, START
