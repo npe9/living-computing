@@ -13440,6 +13440,16 @@ run "Input-Output (tape)" ./run_tape_test.sh StretchIoTapeTb
 # cost was io_reader_printer.strap's unit-not-ready test, which used
 # to mean "channel 0, nothing there" and now says channel 31.
 run "THE DISK: LOCATE, arcs, the zero-filled tail, and flags discarded" ./run_disk_test.sh StretchIoDiskTb
+# THE SAME DECK ON A DISK THAT REFUSES WRITES THREE CLOCKS IN FOUR
+# (-D DISK_WRITE_STALL, StretchDiskSource.bsv canWrite).  The ULX3S disk
+# will be SDRAM behind a write buffer (docs/disk_subsystem.md, "the
+# ULX3S disk"), which cannot take a word every clock, so rl_io must wait
+# on canWrite() instead of posting.  MEASURED 2026-11-07, rl_io's wait
+# arm removed: DISK_arc0_word0, DISK_arc0_word2, DISK_arc1_word0,
+# DISK_arc1_word1 and DISK_seop_reread fail (the words read back are
+# 0), the source logs 1,154 lost writes, and the wrapper's
+# disk_write_lost fails.  The control passes all 18 checks.
+run "THE DISK, with write back-pressure: nothing is lost while the source refuses" ./run_disk_stall_test.sh StretchIoDiskStallTb
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --

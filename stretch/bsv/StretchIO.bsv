@@ -484,6 +484,7 @@ interface StretchIO;
   method Action diskReadReq(DiskIndex i);
   method Bool diskRespReady();
   method ActionValue#(Word64) diskReadResp();
+  method Bool diskCanWrite();
   method Action writeDiskWord(DiskIndex i, Word64 v);
   method Word64 peekDiskWord(DiskIndex i);   // testbench only
   method DiskPos diskCapacity();
@@ -712,6 +713,7 @@ module mkStretchIO(StretchIO);
     let v <- disk.readResp();
     return v;
   endmethod
+  method Bool diskCanWrite() = disk.canWrite();
   method Action writeDiskWord(DiskIndex i, Word64 v);
     disk.write(i, v);
   endmethod

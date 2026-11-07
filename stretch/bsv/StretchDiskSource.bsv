@@ -84,8 +84,14 @@ interface DiskSource;
   method Bool respReady();
   method ActionValue#(Word64) readResp();
 
-  // Posted, not acknowledged -- the same simplification TapeSource
-  // makes, and the same first thing an SD-backed source must revisit.
+  // Posted, but only when canWrite() says so.  A source backed by
+  // SDRAM or a card cannot take a word every clock, and the caller
+  // must wait rather than lose it.  An EXPLICIT Bool rather than an
+  // implicit guard on write, for the reason this file's header gives:
+  // bsc would lift a guard into the predicate of rl_io, the one rule
+  // that moves every device's words, and stop the tape and the reader
+  // with it.  rl_io polls it exactly as it polls st.writeReady().
+  method Bool canWrite();
   method Action write(DiskIndex i, Word64 v);
 
   // Testbench only.
@@ -109,6 +115,19 @@ module mkDiskSourceSmall(DiskSource);
   // three would fail here identically.
   Reg#(Maybe#(Word64)) resp[2] <- mkCReg(2, tagged Invalid);
 
+`ifdef DISK_WRITE_STALL
+  // A TEST MODE, for tests/run_disk_stall_test.sh: the source accepts a
+  // write on one clock in four, and a write offered on any other clock
+  // is LOST, as a full SDRAM write buffer would lose it.  A caller that
+  // honours canWrite() loses nothing; one that ignores it shows up as
+  // missing words on the platter.
+  Reg#(Bit#(2)) stall <- mkReg(0);
+  rule rl_stall; stall <= stall + 1; endrule
+  Bool ok = (stall == 0);
+`else
+  Bool ok = True;
+`endif
+
   // POWER-ON CONTENTS ARE ZERO, which is this model's choice and not
   // the manual's: printed p.157 says nothing about what an unwritten
   // arc reads back.  mkReg(0) is also what makes the choice free --
@@ -127,9 +146,14 @@ module mkDiskSourceSmall(DiskSource);
     return v;
   endmethod
 
+
+  method Bool canWrite() = ok;
+
   method Action write(DiskIndex i, Word64 v);
     Bit#(TLog#(DiskWordsSmall)) idx = truncate(i);
-    if (i < fromInteger(valueOf(DiskWordsSmall))) img[idx] <= v;
+    if (!ok)
+      $display("StretchDiskSource: WRITE LOST at disk word %0d (canWrite was False)", i);
+    else if (i < fromInteger(valueOf(DiskWordsSmall))) img[idx] <= v;
   endmethod
 
   method Word64 peek(DiskIndex i);

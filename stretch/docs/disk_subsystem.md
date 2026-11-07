@@ -1540,6 +1540,40 @@ tape.
 
 ---
 
+## 9b. THE BACKING STORE, 2026-11-07: three sources behind one interface
+
+The plan is in the owner-approved disk plan (simulated and ULX3S),
+summarised here so the repository stands on its own.
+
+| source | where | size | for |
+|---|---|---|---|
+| `mkDiskSourceSmall` | flip-flops | two arcs, 1,024 words | the disk unit tests and today's bitstream |
+| `mkDiskSourceFile` | host memory (`host_tape.c` `host_disk_*`), `-D HOST_TAPE` | 2^21 words | every MCP run in Bluesim |
+| `mkDiskSourceSdram` (planned) | a 16 MiB region of the ULX3S SDRAM | 2^21 words | the board, and Bluesim against the SDRAM model |
+
+**WHY THE HOST BUILDS NEEDED THE FULL SIZE.** IPL's disk WRITE is 24 arcs.
+On two arcs it ran off the end of the volume, and MCP received End
+Exception when it first enabled (docs/boot_plan.md, "THE STATUS REPORT IS
+MADE").
+
+**THE ULX3S DISK IS SDRAM, NOT THE SD CARD.** The SD core on this machine
+reads only (docs/tape_data_path.md §8 item 7), and MCP writes the disk
+heavily. MCP also needs no persistence: it cold-starts from tape and
+writes its system onto the disk at every IPL (§10). The 32 MB part holds
+16 MiB of disk above the core-storage granules (docs/sdram_local.md
+§7.4). A 4096-bit written-arc bitmap in block RAM makes unwritten arcs
+read zero without clearing 16 MB at power-on, which is the same choice
+the other two sources make. SD load and save come later, for persistence
+only.
+
+**WRITE BACK-PRESSURE, BUILT.** An SDRAM write buffer cannot take a word
+every clock, so `DiskSource` has `canWrite()`. It is an explicit Bool
+rather than a guard, for the lifted-predicate reason in
+StretchDiskSource.bsv's header. rl_io waits on it. Tested by
+tests/run_disk_stall_test.sh, which runs io_disk.strap with the source
+refusing three clocks in four; the injection is recorded in
+run_tests.sh.
+
 ## 10. Summary for the build plan
 
 - **The disk can be modelled from what is here.** pp.157–162 is a complete

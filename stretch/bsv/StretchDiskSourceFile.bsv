@@ -50,6 +50,8 @@ module mkDiskSourceFile(DiskSource);
     return v;
   endmethod
 
+  method Bool canWrite() = True;   // host memory never refuses
+
   method Action write(DiskIndex i, Word64 v);
     host_disk_write_word(zeroExtend(i), v);
   endmethod

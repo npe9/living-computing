@@ -698,6 +698,13 @@ module mkStretchCore(StretchCore);
     end else if (x.isWrite && !x.zeroFill && !st.responseReady()) begin
       // W-direction: the memory read is in flight; wait for it.
       noAction;
+    end else if (kind == DevDisk && x.isWrite && !ioDev.diskCanWrite()) begin
+      // W-direction disk: the source cannot take a word this clock
+      // (an SDRAM or card back end; StretchDiskSource.bsv canWrite).
+      // Wait with the word in hand rather than lose it: the memory
+      // response stays in its register until the arm below collects
+      // it.  The zero-fill tail waits the same way.
+      noAction;
     end else if (kind == DevDisk && !x.isWrite && !ioDiskReqIssued) begin
       // RD-direction disk, first visit to this word.  Same two-arm
       // request/wait shape as the tape below, and for the same
