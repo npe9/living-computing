@@ -2127,17 +2127,40 @@ run stops deliberately at 220025.00 (p.159 line 10). The wrapper also
 now fails on any failed testbench check. Before this, only the console
 text counted.
 
-**WHERE IT GOES NOW: "UNIT NOT AVAILABLE", OVER AND OVER.** No error is
-typed. Run past that stop, MCP loops through K FRONT (printed p.177),
-16,255 times by step 32.5M, about 1,600 clocks a pass. The MOUNT test
-at line 41 passes. The pass leaves at line 46,
-`BB,S UN AVL($11),Z E1`: bit 28 of the unit's UST is set. Z E1 is
-printed p.182 line 17, `LVI,14,S UN NAV -UNIT NOT AVAILABLE`, and the
-request is then retried. **NEXT:** find which unit $11 names and what
-set its availability bit. p.374 line 40 sets it in the system
-commands. The IPL tables, or a unit that never answers, are the other
-candidates. Note that the console reads "MOUNT - REEL NUMBER OUTPT ON
-CHANNEL 34 UNIT 0" and "... UNIT 1", and the model never makes a
-tape unit go from not-ready to ready. That transition is what raises
-Channel Signal (docs/tape_unit_contract.md item 36, boot_plan M1 item
-7).
+**WHERE IT GOES NOW: THE DISK'S LOCATE NEVER REPORTS.** *(An earlier
+version of this paragraph, in commit 6fb24fc, said the pass left at
+line 46 for "unit not available". That was wrong: the 220731.00 seen
+between line 45 and K NO GO is a fetch transient lasting 6 steps, not an
+execution, and the UST word at 214770 has bit 28 clear.)* No error is
+typed. Run past that stop, MCP loops through K FRONT (printed p.177)
+16,255 times by step 32.5M. A PC-change trace of the first two passes
+(steps 6,613,800-6,640,000, decoded against every transcribed !CHECK
+row) shows the mechanism:
+
+1. Pass 1 is a disk request. p.159 line 24 `BXE,K DISK` runs, line 41
+   `CM1111(BU,1),S CH OP($10)` marks channel 0 operating, and K SLECT
+   (line 33) issues `LOC,0.0($14),0`. M IO REJ (p.185 lines 9-11)
+   finds no reject. K SUPP (p.128) then rewrites its `BE,$` to return
+   to the requester.
+2. The requester is printed p.317's CREAD, which goes straight back
+   through `B,D MCP` / `,D RD`. On pass 2, p.177 line 45
+   `BZRZ,K NO GO` finds the channel still operating, and p.179 sends
+   the request to K CHOP N (p.180), which goes back to K SUPP.
+   Passes 2 onward repeat this.
+3. S CH OP is cleared only by the receptor, K GATE (p.123 line 6,
+   `CM0000(BU,1),SCHOP($10)`), which runs when a channel's status
+   report interrupts. **The model never makes a status report.** The
+   disk LOC's EOP is written into channel 0's control word, and
+   nothing promotes it to the indicator register (bsv/README.md
+   already lists "propagating EOP/EPGK/UK/EE/CS into the CPU's own
+   indicator register and the Channel Address register" as a gap).
+
+**NEXT: the input-output status report**, Reference Manual printed
+p.118 "Setting up of Input-Output Indicators", read in the ink. When
+an operation has terminated and a control word holds any of EPGK, UK,
+EE, EOP or CS, the exchange sets those indicators as a group and puts
+the channel address into CA (word 5, bits 12-18). It does this only
+when the five indicators are all zero and the system is enabled, and
+it clears the bits in the control word. Until then, instructions to
+that channel are rejected with CBJ. If several channels are waiting,
+a scanner orders them.

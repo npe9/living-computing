@@ -297,8 +297,8 @@ def main():
                        # instructions on, not one, because the counter
                        # reaches 220024.00 before a refused LVE's OP
                        # interruption is taken (measured).  Past here MCP
-                       # loops through p.177 line 46's "unit not
-                       # available" exit (docs/boot_plan.md).
+                       # waits forever for the disk LOC's status report,
+                       # which the model never makes (docs/boot_plan.md).
                        stop_at_pc=0o220025 * 2,
                        pc_trail=True,
                        console_dump=128,
