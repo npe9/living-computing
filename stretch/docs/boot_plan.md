@@ -2075,7 +2075,8 @@ listing runs on both kinds. Without $MR, MCP takes the "FOR LASL LRL"
 path, so nothing here forces the K-2 register yet. The FP LFT/*+ in
 the model use $FT, which is the K-1 behaviour.
 
-**WHERE IT STOPS NOW.** No error is typed. The run ends at location
+**WHERE IT STOPPED NEXT** *(found and fixed the same day, see the
+end of this section)*. No error is typed. The run ends at location
 4.0 after 6.6M steps, reached from 232722.00. That word is printed
 p.295 line 30, `YXCOMD LX,1,Y XW CMD`, and it is **overwritten**:
 storage holds `0014008000010000` there, and `00FBC00000030000` at
@@ -2083,4 +2084,19 @@ storage holds `0014008000010000` there, and `00FBC00000030000` at
 as its table of exits. **NEXT:** find what writes 232722-232723. That
 starts with what MCP does with an IOD's exit address, and whether it
 writes at exit-1.
+
+**FOUND: A LOOK-AHEAD RACE ON $L.** A write-watch on 232722 caught
+printed p.142 lines 11-13 (M UP 5A). That is a progressive copy of
+32-bit fields to `.32($2)`, with $2 = 232715.00, J TENT (the tentacle,
+printed p.295 line 7). It copied 66 half-words. The length comes from
+printed p.141 line 50, `L(BU,4),0.0($2),-19`, J TENT's 4-bit 5, and
+p.142 line 1, `LV,$0,$L`. The model ran the LV **before** the VFL L
+had loaded the accumulator. The direct-index hold asked only whether a
+pending level fetches or stores the LV's operand word, and an L writes
+the accumulator, not a storage word. The LV read the old accumulator
+(33.0). Direct-index instructions now hold on `eboxRegister` the way Z
+and SIC already did (`decks/lv_reads_acc_after_l.strap`).
+
+**WHERE IT STOPS NOW.** Past the copy, MCP types "OP INTERRUPT AT
+ABOVE LOCATION". OP was set at half-word 147495 (220023.40).
 

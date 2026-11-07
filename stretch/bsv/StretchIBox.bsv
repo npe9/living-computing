@@ -251,7 +251,20 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
     tagged DirIndex .x: begin
       HWordAddr ea = effAddr19(st, x.addr, x.idx);
       Bool refillWord = (x.code == dixop_V_PLUS_CR) && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill)); // V+CR
-      h = levelHolds(lv, ea[18:1]) || refillWord;
+      // >>> AND AN E-BOX REGISTER OPERAND WAITS FOR THE LEVELS,
+      // 2026-11-06, READ OR STORE. <<<  A pending level does not name
+      // the accumulator, factor or indicator words it will WRITE (its
+      // storeAddr is a storage word, and L/+/LFT have none), so
+      // levelHolds cannot see "LV,$0,$L" reading the accumulator a
+      // VFL L ahead of it has not loaded yet.  MCP printed p.141 line
+      // 50 / p.142 line 1 are exactly that: "L(BU,4),0.0($2),-19"
+      // then "LV,$0,$L" -- the tentacle's length, 5.  The model let the
+      // LV run first, read the previous accumulator (33.0), and the
+      // copy loop on lines 11-13 ran 66 half-words over YXCOMD and
+      // JCFIX (printed p.295).  Z and SIC already hold on
+      // eboxRegister; the direct-index operations (LV/LX/LC/LR,
+      // their stores, V+ ...) now do too.
+      h = levelHolds(lv, ea[18:1]) || refillWord || eboxRegister(ea[18:1]);
     end
     tagged ImmIndex .x:
       h = (x.code == 4'b0111 || x.code == 4'b1111)                          // V+ICR / V-ICR

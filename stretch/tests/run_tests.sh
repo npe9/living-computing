@@ -2185,6 +2185,16 @@ run "CM ACROSS A WORD BOUNDARY -- MCP's p.78 SF(BU,40,8),TREELX" ./run_program.s
 run "MCP's ENTRY: BE into a protected word, SIC/BD interrupt entry" ./run_program.sh ../decks/be_sic_interrupt_entry.strap StretchBeSicTb "PC=4250" \
     "saved_ic:2368=149155349377587200" "entries:2369=35184372088832"
 
+# >>> AN INDEX INSTRUCTION READING $L WAITS FOR THE VFL LOAD AHEAD OF
+# IT, 2026-11-06. <<<  MCP printed p.141 line 50 / p.142 line 1,
+# "L(BU,4),0.0($2),-19" then "LV,$0,$L": the model ran the LV first,
+# read the old accumulator, and MCP's copy loop overwrote YXCOMD and
+# JCFIX.  MEASURED INJECTION: the direct-index hold without
+# eboxRegister -> FAIL lv_sees_new_acc and lx_sees_new_acc (both read
+# OLD, (8)0001...).
+run "LV/LX of \$L after a VFL L -- MCP's p.141-142 tentacle length" ./run_program.sh ../decks/lv_reads_acc_after_l.strap StretchLvAccTb "PC=400" \
+    "lv_sees_new_acc:259=188025284442718208" "lx_sees_new_acc:260=188025284442718208"
+
 run "LFT and *+ (VFL) -- MCP's MOVE lays out its tables with them" ./run_program.sh ../decks/vfl_load_factor.strap StretchVflLoadFactorTb "PC=2094" \
     "lft_ft_value:1060=320" "lft_acc_untouched:1061=5" "mul_add_offset_0:1062=1100" \
     "mul_add_immediate:1063=1140" "mul_add_offset_46:1064=7036874417767400" \

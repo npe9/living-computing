@@ -1,0 +1,56 @@
+! lv_reads_acc_after_l.strap -- an index instruction that reads the
+! accumulator must wait for the VFL LOAD ahead of it.
+!
+! WHY IT EXISTS, AND WHO ASKED FOR IT.  MCP printed p.141 line 50 and
+! printed p.142 line 1 are
+!
+!       L(BU,4),0.0($2),-19       the tentacle's length into $L
+!       LV,$0,$L                  ... and out into $0
+!
+! An L goes to the look-ahead and waits for its operand; LV is an
+! I-box instruction.  The model's hold test asked whether a pending
+! level FETCHES or STORES the LV's operand word -- and an L does
+! neither to word 8: it writes the accumulator.  So the LV ran first,
+! read the PREVIOUS accumulator (33.0 instead of 2.32) and MCP's copy
+! loop (printed p.142 lines 11-13) ran 66 half-words over YXCOMD and
+! JCFIX (printed p.295).  The program means the two in order; the
+! fix holds a direct-index instruction whose operand is an E-box
+! register (words 7-15) until the levels drain, as Z and SIC already
+! were.
+!
+! OFFSET 64 PUTS THE WORD IN $L.  The offset places the field's
+! low-order end that many bits from the accumulator's right end -- MCP's
+! own "-19" (109) puts the tentacle length's low bit at $L bit 18 --
+! so at offset 64 a 64-bit field is exactly $L.
+!
+! THE SHAPE IS MCP'S: a VFL L whose operand must be fetched, the LV
+! straight after it, and the old accumulator holding something else.
+!
+!   T1  LV,$X1,$L after L of (8)1234000 -- the NEW accumulator's
+!       value field.  SV stores it back as a value field.
+!   T2  the same with LX, which loads the whole index word from $L.
+!
+! INJECTIONS: measured, and tests/run_tests.sh records them beside its
+! entry.
+
+        SLC, (8)300.0
+START   L(BU,64), OLD, 64
+        ST(BU,64), TRASH             ! settle: the accumulator is OLD
+        L(BU,64), NEW, 64
+        LV,  $X1, $L                 ! must see NEW, not OLD
+        SV,  $X1, T1
+        L(BU,64), OLD, 64
+        ST(BU,64), TRASH
+        L(BU,64), NEW, 64
+        LX,  $X2, $L                 ! whole word, same hazard
+        SX,  $X2, T2
+PASS    BEW, $
+        CNOP
+
+        SLC, (8)400.0
+OLD     DD(BU,64), (8)0001000000000000000000
+NEW     DD(BU,64), (8)0012340000000000000000
+TRASH   DD(BU,64), 0
+T1      DD(BU,64), 0
+T2      DD(BU,64), 0
+        END, START
