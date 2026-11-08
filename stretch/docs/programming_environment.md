@@ -75,6 +75,13 @@ open 22LOADER on printed p.320, 22$DUMP on p.335, 22SCOMD on p.361 and
 - **The overlay type areas, placed in PROSA after 11D11MCP**, with
   index entries pointing at them.
 
+**Done, 2026-11-07:** `strap/prosa_dict.py` builds both type areas
+(RECONSTRUCTION, sources in its header), and PROSA now carries all eight
+type areas the listing holds. MCP fetches 22SCOMD and enters J COMD.
+The command package then echoes the IPL program's `COMD,CLOCK` and
+loops typing `//////`. That loop is the new frontier (`boot_plan.md`,
+"THE COMMAND PACKAGE RUNS").
+
 **E2. Operator actions in the harness.** For example, the reader's
 START key (unit ready + CS, RefMan printed p.141) and the console's
 SIGNAL. This also needs `BEW,$` with a deliverable interruption to stop

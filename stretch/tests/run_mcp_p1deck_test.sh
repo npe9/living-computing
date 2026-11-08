@@ -38,6 +38,13 @@ fi
 # interrupt queue to unstack correctly, which needed M-1 to subtract
 # (decks/vfl_m_minus_one.strap); before that fix there were two.
 #
+# EIGHT SINCE 2026-11-07, when PROSA gained its reconstructed dictionary
+# and index (strap/prosa_dict.py) and DISK FETCH stopped answering
+# "TYPE NOT IN INDEX".  The fetch of 22SCOMD adds four more: LOCATE and
+# READ of the dictionary arc for type 22 (p.312 lines 17-26), then
+# LOCATE and READ of the type area (p.312 line 51 on).  The run now
+# stops at J COMD, the command package's entry (gen_mcp_boot_tb.py).
+#
 # MEASURED 2026-11-07 (the end was then 149580, K UNSTC): with the host
 # build put back on mkDiskSourceSmall (StretchIO.bsv), exactly
 # p1_disk_end_exception and p1_disk_eop_reports ("0 channel-0 EOP
@@ -50,8 +57,8 @@ if grep -q "$REP 00100$" "$LOG"; then
   status=1
 fi
 n=$(grep -c "$REP 00010$" "$LOG" || true)
-if [ "$n" != 4 ]; then
-  echo "FAIL p1_disk_eop_reports: $n channel-0 EOP reports, expected 4"
+if [ "$n" != 8 ]; then
+  echo "FAIL p1_disk_eop_reports: $n channel-0 EOP reports, expected 8"
   status=1
 fi
 PYTHONPATH="$TESTS_DIR/../strap" python3 "$TESTS_DIR/check_console_text.py" "$LOG" "$@" || status=$?

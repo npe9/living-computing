@@ -637,10 +637,16 @@ module mkStretchCore(StretchCore);
       // something had to be chosen and this says so.
       : (kind == DevConsole && !x.isWrite)
           ? fromInteger(valueOf(ConsoleSwitchWords))
-      // and the WRITE walks the console's own paper, ConsoleWords of
-      // it (StretchIO.bsv, "THE CONSOLE'S PAPER").
+      // and the WRITE never runs out.  A 7152 typewriter's paper is
+      // continuous, so a console write never ends in End Exception
+      // for lack of paper.  Until 2026-11-07 it ended at ConsoleWords,
+      // a chosen model buffer, and MCP's acknowledgement of
+      // COMD,CLOCK hit that end and retried 13,457 times
+      // (docs/boot_plan.md, "THE COMMAND PACKAGE RUNS").  Every typed
+      // word now goes to the log as it is typed (CONSOLE_TYPED below);
+      // consoleImg keeps the last ConsoleWords of them, wrapping.
       : (kind == DevConsole)
-          ? fromInteger(valueOf(ConsoleWords))
+          ? '1
       : fromInteger(valueOf(DeviceWords));
     if (ioRefillIssued) begin
       // A CHAINED CONTROL WORD IS IN FLIGHT.  This arm is first in the
@@ -825,6 +831,7 @@ module mkStretchCore(StretchCore);
           if (kind == DevConsole) begin
             ioDev.writeConsoleWord(truncate(x.devIdx), v);
             ioDev.setConsolePos(truncate(x.devIdx + 1));
+            $display("CONSOLE_TYPED %016h", v);
           end else
             ioDev.writePrinterWord(di, v);
         end else if (kind == DevConsole) begin

@@ -1512,9 +1512,25 @@ run "PAST T MOVE: MOVE intact, IPL stops in XERR29 (spool IODs 4-6)" ./run_mcp_a
 # 149580 (both PC checks fail) with 2 EOP reports (p1_disk_eop_reports
 # fails); the host build on the two-arc disk reports EE and no EOPs
 # (both wrapper checks fail) and ends at PC 0.
+# UPDATED 2026-11-07 a fourth time: PROSA carries the RECONSTRUCTED
+# dictionary and index (strap/prosa_dict.py) and the overlay type areas.
+# DISK FETCH finds 22SCOMD (eight channel-0 EOPs), Y MP FCH loads it into
+# Y MPBUF, and the bench stops DELIBERATELY at J COMD, half-word 160326,
+# checking the first, middle and last words of the type area against
+# printed pp.361-380's image.  MEASURED INJECTION, the whole wrapper:
+# the dictionary entry renamed 22SCOMX -- MCP finds type 22 in the index,
+# not the area in the dictionary, and idles at 156886 again; exactly
+# scomd_first_word_at_ympbuf, scomd_middle_word, scomd_last_word and
+# p1_disk_eop_reports ("5 channel-0 EOP reports") fail.
 run "MCP's OWN IOD DECK (p.1): IPL completes and MCP is entered" ./run_mcp_p1deck_test.sh \
     "DATE OF IPL TAPE" "REEL NUMBER OUTPT" \
     "READER IS INPUT SOURCE ON CHANNEL 32"
+# THE RECONSTRUCTED PROSA DICTIONARY AND INDEX (strap/prosa_dict.py),
+# decoded back out of the tape record against C22-6728 printed p.164.
+# Observed injections are in the test's header: WORD field shifted,
+# zero tail tagged, names in the wrong character set, p.329's gap
+# zeroed -- each fails its named checks and nothing else.
+run "PROSA dictionary and index, reconstructed from C22-6728 p.164" python3 check_prosa_dict.py
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<
 #

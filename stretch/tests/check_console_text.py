@@ -25,9 +25,15 @@ IQS_CHAR = {code: ch for ch, code in charsets.IQS.items()}
 
 
 def console_text(log):
-    words = {}
-    for m in re.finditer(r"^CONSOLE (\d+) ([0-9a-f]{16})$", log, re.M):
-        words[int(m.group(1))] = int(m.group(2), 16)
+    # The core logs every word as it is typed (StretchCore.bsv,
+    # CONSOLE_TYPED), which is the whole paper; the end-of-run CONSOLE
+    # dump is only the last ConsoleWords of it, since the buffer wraps.
+    typed = [int(h, 16) for h in
+             re.findall(r"^CONSOLE_TYPED ([0-9a-f]{16})$", log, re.M)]
+    words = dict(enumerate(typed))
+    if not typed:
+        for m in re.finditer(r"^CONSOLE (\d+) ([0-9a-f]{16})$", log, re.M):
+            words[int(m.group(1))] = int(m.group(2), 16)
     out = []
     for i in range(max(words) + 1 if words else 0):
         w = words.get(i, 0)

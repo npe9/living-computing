@@ -2295,3 +2295,63 @@ listing and documented in C22-6728-1. Until MCP can fetch its command
 package, no transition command is issued, the input program never
 starts, and no card is read (docs/programming_environment.md E1).
 
+
+### THE COMMAND PACKAGE RUNS: PROSA'S DICTIONARY AND INDEX, RECONSTRUCTED, 2026-11-07
+
+**WHAT WAS BUILT.** `strap/prosa_dict.py` is a RECONSTRUCTION of the
+type areas 11A11DIC and 11B11IND. IBM's UPDATE-30 made them, so no
+listing of them exists. The formats are read in the ink from C22-6728
+(the -0 edition) printed p.164. The March 1963 code is the -0 scheme;
+the -1 edition's p.178 describes a later "short dictionary". The code
+that reads the tables fixes the rest:
+- p.317's `CW,CINDEX,40,0` reads the index from the start of an arc, so
+  the dictionary fills whole arcs and the index is 40 words;
+- p.316's X SQ SCH compares all 40 index words, and p.312's C RODE stops
+  on a zero WORD, so unused index words are zero.
+
+PROSA now carries every type area the listing holds: DIC, IND, IPL,
+MCP, then 22SCOMD, 22LOADER, 22$DUMP and 22$EOJ (33 arcs, was 22).
+`tests/check_prosa_dict.py` decodes the tables back out of the tape
+record, field by field from the printed figure.
+
+**WHAT IT DID.**
+- DISK FETCH finds 22SCOMD: eight channel-0 operations, where there
+  were four, and no "TYPE NOT IN INDEX".
+- Y MP FCH loads the type area into Y MPBUF and MCP enters J COMD. The
+  P1 bench now stops there, and checks that the first, middle and last
+  words at Y MPBUF are printed pp.361-380's image.
+- MCP then types the IPL program's own command, `COMD,CLOCK,00,00,01,
+  00/00/00`. C22-6678-1 printed p.39: "The console, system input, or
+  IPL program can be the source of this command"; the zeros are the
+  console's binary keys, which are zero at power-on.
+
+**A MODEL ARTIFACT REMOVED ON THE WAY.** The console's "paper" was a
+256-word buffer whose end gave End Exception. MCP's typing outgrew it
+and retried 13,457 times. A 7152 does not run out of paper, so console
+writes no longer end, and every word is logged as it is typed
+(`CONSOLE_TYPED`, read by tests/check_console_text.py).
+
+**THE TWO OP SETS IN THE LOG ARE EXPECTED.** Half-words 145014 and
+145300 are printed p.117 line 7 and p.122 line 7, `BE,STLR+1.32(.26,2)
+111101 -STM(U),STLR+1.0 - SAVE $MR`, each followed by `BOPZ,$.32 -FOR
+LASL LRL`. STM does not exist on X-1 or K-1 (Chen, CHM 102634375), so
+MCP probes for it on every interruption and clears OP.
+
+**THE NEW FRONTIER.** After the CLOCK echo, MCP types a five-word
+message holding `//////` forever: the message's first word is
+0x262626262626128a, and four blank words follow. The PC trail ends at
+half-word 159071 (233257.40), in the resident body. This is not yet
+explained. Candidates, unranked:
+- the command scanner running off the end of the IPL-built card image,
+  which holds 0x26 bytes after the date;
+- SCOMD's two trailer cards (printed p.381 lines 2-3), which are CC
+  entry-mode data that strap_asm does not assemble, so they are zero in
+  the type area;
+- a model fault.
+
+Read the CLOCK processor in SCOMD (printed pp.361-380) before changing
+anything.
+
+**THE LOADER HAS A HOLE.** Printed p.329 is missing from the scan. Its
+34 words in 22LOADER carry a 0x6A6A tag. The loader must not be run
+(step E4) until that page is found.

@@ -283,31 +283,36 @@ def main():
         assert prosa.IOD_DECK == "P1", prosa.IOD_DECK
         prosa.set_tape_units(prosa.TAPE_UNITS_P1_DECK)
         write_tape(src)
+        # >>> THE RUN NOW STOPS WHERE MCP ENTERS ITS COMMAND PACKAGE,
+        # FETCHED FROM THE RECONSTRUCTED PROSA (2026-11-07). <<<  After
+        # IPL, MCP's bypass-mode start (p.295 line 30 Y XCOMD) has
+        # Y MP FCH (printed p.269) $FETCH type area 22SCOMD into Y MPBUF
+        # and branch to J COMD (p.269 line 47, "BE,JCOMD").  With
+        # strap/prosa_dict.py's dictionary and index, DISK FETCH finds
+        # it.  The stop is J COMD's first instruction, and the three
+        # word checks prove the type area that arrived is printed
+        # pp.361-380's image: its first, middle and last words.
+        #
+        # BEFORE: the run ended at half-word 156886, printed p.269 line
+        # 30's BEW,$, after p.312 line 13 "TYPE NOT IN INDEX" (the
+        # fixture PROSA had no such type area); before that, at
+        # 222046.00 in K UNSTC, because the model's M-1 added one.
+        import prosa_dict
+        scomd, _ = prosa_dict.overlay_image(361, 380, prosa_dict.YMPBUF)
+        jcomd = prosa_dict.overlay_program(361, 380).symtab["JCOMD"]
+        assert jcomd % 32 == 0, oct(jcomd)
+        mid = len(scomd) // 2
         print(generate(module_name, prog,
                        [("mcp_p1deck_move_code_intact_005377", str(0o5377),
                          prosa.MCP_IPL_WORDS[_image_index("005377")]),
                         ("mcp_p1deck_no_ipl_error",
-                         str(prog.symtab["XERRAD"] // 64), 0)],
+                         str(prog.symtab["XERRAD"] // 64), 0),
+                        ("scomd_first_word_at_ympbuf", str(prosa_dict.YMPBUF), scomd[0]),
+                        ("scomd_middle_word", str(prosa_dict.YMPBUF + mid), scomd[mid]),
+                        ("scomd_last_word", str(prosa_dict.YMPBUF + len(scomd) - 1),
+                         scomd[-1])],
                        step_cap=40000000,
-                       # THE RUN ENDS WHERE MCP WAITS FOR A PROGRAM IT
-                       # CANNOT FIND: 234606.00, half-word 156886, printed
-                       # p.269 line 30 "BEW,$" in Y MP FCH, the command
-                       # package's fetch.  After IPL, MCP's bypass-mode
-                       # start (p.295 line 30 Y XCOMD) asks DISK FETCH for
-                       # a type area.  DISK FETCH LOCATEs and READs (the
-                       # two channel-0 reports), searches, and p.312 line
-                       # 13 "BXVZ,C URD -TYPE NOT IN INDEX" fires: the
-                       # fixture PROSA (strap/prosa.py) carries no such
-                       # type area.  Y MP FCH then waits with nothing to
-                       # wake it (docs/boot_plan.md, "M-1 ADDED ONE").
-                       #
-                       # BEFORE 2026-11-07 the run ended at 222046.00 in
-                       # K UNSTC, because the model's M-1 added one and
-                       # MCP's interrupt-queue count never came down.
-                       # wait_for_io makes the bench stop on idle(), so a
-                       # BEW,$ that is waiting on I/O keeps running.
-                       pc_check=156886,
-                       pc_trail_check=156886,
+                       stop_at_pc=jcomd // 32,
                        wait_for_io=True,
                        pc_trail=True,
                        console_dump=128,

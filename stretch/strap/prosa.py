@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
 """prosa.py -- a PROSA record for MCP's bootstrap to read off the tape.
 
->>> THIS IS A FIXTURE.  ITS SHAPE IS DERIVED; ITS CONTENTS ARE
->>> CHOSEN.  READ THE TWO SECTIONS BELOW BEFORE BELIEVING ANY NUMBER
->>> THAT COMES OUT OF A RUN THAT USED IT. <<<
+>>> STATUS, 2026-11-07: NO LONGER A FIXTURE IN ITS DICTIONARY.  The
+>>> record's type areas are now the listing's own (IPL, MCP, and the
+>>> overlays 22SCOMD, 22LOADER, 22$DUMP, 22$EOJ), and the dictionary
+>>> and index are a RECONSTRUCTION from C22-6728 printed p.164 and the
+>>> code that reads them -- strap/prosa_dict.py, whose header lists
+>>> every choice.  What is still CHOSEN here: the IOCD/IOD card deck
+>>> (see below), the filler tags in the slack past the last area, and
+>>> the record's layout beyond what the bootstrap's arithmetic fixes.
+>>> The sections below are the history of how the shape was derived;
+>>> "WHAT IS CHOSEN" and "WHEN TO DELETE" describe the fixture as it
+>>> was before the reconstruction. <<<
 
 MCP's real PROSA is the resident supervisor, and it lives in the
 pages of `docs/MCP_Mar63_*.pdf` that are not transcribed -- which, as
@@ -116,6 +124,7 @@ import os
 
 import iocd
 import mcp_image
+import prosa_dict
 
 # The record's own geometry.  Printed p.14's control words read it in
 # 513-word chunks with a 512-word STRIDE, and `tape_words()` below is
@@ -144,9 +153,13 @@ CHUNK_COUNT  = 513            # printed p.14, every control word
 CHUNK_STRIDE = 512            # printed p.14, line 5 minus line 4
 DICT_AT = (1, 3, 5, 7)        # derived: see section 1
 
-# Chosen sizes, in words.
-WORDS_BEFORE_MCP_A = 3        # X12, "GET DICTIONARY"
-WORDS_BEFORE_MCP_B = 5        # X14, "GET INDEX"
+# The dictionary's and the index's sizes, in words.  NO LONGER CHOSEN
+# (2026-11-07): they are the RECONSTRUCTED 11A11DIC and 11B11IND type
+# areas of strap/prosa_dict.py.  The dictionary is one whole arc and the
+# index is forty words, both DERIVED from printed p.317's reads (see
+# that file).  Until then these were 3 and 5, chosen.
+WORDS_BEFORE_MCP_A = prosa_dict.ARC_WORDS      # X12, "GET DICTIONARY"
+WORDS_BEFORE_MCP_B = prosa_dict.INDEX_WORDS    # X14, "GET INDEX"
 
 # Where MCP's own words start inside the record, which is what
 # LVS computes: the sum of the two "preceding" sizes.
@@ -613,7 +626,19 @@ MCP_SIZE_WORDS = len(MCP_BODY)        # X10, "GET MCP SIZE"
 # on the master tape is "an image of an arc of PROSA on the disk"
 # (C22-6728-1 printed p.229, PDF p.228), and printed p.16 line 29 counts the arcs it
 # writes as words / 512, so a short last record is not counted.
-RECORD_WORDS = -(-(COMM_AT + MCP_SIZE_WORDS + 4) // CHUNK_STRIDE) * CHUNK_STRIDE
+#
+# >>> PROSA NOW CARRIES EVERY TYPE AREA THE LISTING HOLDS (2026-11-07):
+# the reconstructed dictionary and index, the IPL, MCP, and after MCP
+# the four overlays 22LOADER, 22$DUMP, 22SCOMD and 22$EOJ, so that
+# DISK FETCH can find what the command package asks for.  The layout
+# is strap/prosa_dict.py's, and it must agree with the offsets this
+# file has always derived from the bootstrap's own arithmetic. <<<
+PROSA_WORDS, PROSA_LAYOUT = prosa_dict.build(IPL_AREA_WORDS, MCP_SIZE_WORDS)
+assert PROSA_LAYOUT["11A11DIC"] == (0, WORDS_BEFORE_MCP_A)
+assert PROSA_LAYOUT["11B11IND"] == (WORDS_BEFORE_MCP_A, WORDS_BEFORE_MCP_B)
+assert PROSA_LAYOUT["11C11IPL"] == (MCP_AT, IPL_AREA_WORDS)
+assert PROSA_LAYOUT["11D11MCP"] == (COMM_AT, MCP_SIZE_WORDS)
+RECORD_WORDS = -(-(len(PROSA_WORDS) + 4) // CHUNK_STRIDE) * CHUNK_STRIDE
 PROSA_ARCS = RECORD_WORDS // CHUNK_STRIDE
 
 # >>> XUPDAT IS PUNCHED BY THE TAPE'S MAKER, NOT BY THE ASSEMBLER. <<<
@@ -672,10 +697,18 @@ def record():
     control word is `CW(CDSC),0+X BUFER,513,$+1.0`.
     """
     words = [body_word(i) for i in range(RECORD_WORDS)]
+    # The reconstructed dictionary, index and overlay type areas
+    # (strap/prosa_dict.py); None marks the IPL and MCP areas, filled
+    # below.  Filler tags survive only in the slack past the last area.
+    for i, w in enumerate(PROSA_WORDS):
+        if w is not None:
+            words[i] = w
+    # printed p.4 lines 19-27 read the dictionary's word 2 of entries
+    # 0-3 as index words; their count fields are the four sizes.
     sizes = (WORDS_BEFORE_MCP_A, WORDS_BEFORE_MCP_B,
              IPL_AREA_WORDS, MCP_SIZE_WORDS)
     for offset, n in zip(DICT_AT, sizes):
-        words[offset] = index_word(count=n)
+        assert (words[offset] >> 18) & 0x3FFFF == n, (offset, n)
     # MCP's own image, at the offset the dictionary names.
     words[MCP_AT:MCP_AT + IPL_WORDS] = MCP_IPL_WORDS
     # The 11D11MCP type area, at the offset printed p.15 line 17's
