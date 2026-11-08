@@ -374,3 +374,15 @@ partway through, so this list is incomplete.)
 - The "Development Improvement Package" (DIP), described as a
   mid-program overhaul of look-ahead "the manuals were never updated to
   include" (same page). This is a hardware variant to keep.
+
+## The whole index fetched, 2026-11-08
+
+Every PDF in `kolsky_index_2025.tsv` that was not already held was fetched from
+`archive.computerhistory.org/resources/text/IBM/Stretch/pdfs/<folder>/<id>.pdf`, one at a time, one
+second apart: **803 fetched, 6 refused with HTTP 404**. The 404s are 102634118 and 102634128
+(folder 05-10), 102634283 (06-11), and 102634316, 102634317 and 102634318 (06-22). They are listed
+in CHM's index but not served at that path. They are to be asked for, not guessed at. Naming follows
+the rule above: `<id>.pdf` when an ID appears once in the index, and `<id>_<folder>.pdf` for each copy
+of an ID that the index lists under two folders. For 102635070-088, which the index lists under both 05-08 and 06-05, the 05-08 copy is the catalogued one (byte-identical to the `<id>.pdf` files already held), so it is kept as `<id>.pdf` and the 06-05 copy as `<id>_06-05.pdf`. This directory now holds 943 PDFs. None of
+the newly fetched files has been read yet. Reading them, and recording what each one changes, is
+ongoing work under `reconstruction_plan.md`.
