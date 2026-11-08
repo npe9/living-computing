@@ -1817,3 +1817,12 @@ details in `chm/README.md` (last three sections) and
   and later CHM's catalog refused automated page fetches. Neither was
   worked around. The remaining CHM catalog enumeration needs a person,
   or CHM's permission.
+
+### CHM 102633945 transcribed, 2026-11-07
+
+The one known page of a STRAP assembler's own code: `decks/strap2_chm102633945.strap`,
+checked by `tests/verify_strap2_chm102633945.py` (40 checks: 8 labels, 32 printed rows). It was
+read in the ink at 600 dpi. Every row agrees with `strap_asm.py`, including STN with mode B, CM0000,
+BRZ and BXVLZ. Two listing marks were found: "CV" after the location of exactly the four
+statements with a negative offset, and one "*" (B,MORVAL). Neither meaning is established. The page
+names no version, so "STRAP II" is inferred from context, not read.

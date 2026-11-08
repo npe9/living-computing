@@ -1,0 +1,103 @@
+! strap2_chm102633945.strap -- CHM 102633945 (folder 03-02), "Annotated
+! partial program listing", one page.  Read in the ink at 600 dpi,
+! 2026-11-07.
+!
+! WHAT THIS PAGE IS.  A page of an assembler's own code, printed by a
+! 7030 STRAP assembler.  Someone has annotated it in pencil for teaching:
+! "Name", "Symbolic Instruction", "Comments", "Left Half", "Right Half",
+! "Octal", "Hex", "Instruction Counter (Octal)".  The comments show what
+! the code does.  It works out the size of a DR/DRZ reservation:
+! "TEST FOR DR OR DRZ", "TEST IF PROD OF DIMEN *FL FORMED", "MULTIPLY
+! BY PROD OF DIMEN", "FIELD LENGTH OF 64", "TRY TO GET L VALUE".  The
+! ZI.../ZO... fields indexed by $3 and $5 are entries of the symbol and
+! statement units.  docs/reconstruction_plan.md S-1 takes it as the only
+! surviving lines of STRAP II.  NOT ESTABLISHED: the page carries no
+! title, date or version, so which STRAP (II, or an earlier version) is
+! inferred, not read.
+!
+! WHAT IS NOT ON THE PAGE, AND IS GIVEN HERE BY SYN.  The symbols the
+! page uses but does not define: KZ, MORVAL and KEAA (branch targets),
+! and the unit fields.  Each value below is read from the machine code
+! the page prints for it, NOT from any other source.  A field's data
+! description (BU,n) is read from the length its plain L prints; the
+! one-bit fields are the targets of BZB:
+!     KZ 201.0 (B,KZ prints 201.10 00), MORVAL 65.0, KEAA 160.0;
+!     ZIFBSF 1.35, ZIFFLF 1.33, ZIFALL 2.31, ZODR 0.54, ZOEXT 0.57;
+!     ZIDDSB 2.73 (BU,4), ZIDDSF 2.65 (BU,6), ZINFLD 2.40 (BU,18),
+!     ZIOTPT 4.00 (BU,24).
+! So the rows check the assembler's ENCODING of each operation and each
+! modifier (BZB, BRZ, BXVLZ, BB, LX, SIC, *, ST, STN(B,...), CM0000,
+! negative offsets), not the field values, which come from the page.
+!
+! THE LISTING'S OWN FORM, kept for the reconstruction:
+!   - two columns for each instruction: the left half-word in octal W.B
+!     and its last byte in hex, then the right half-word the same way.
+!     Leading zeros of the left half are suppressed ("2.65 83").  The
+!     third column is the location.
+!   - "CV" follows the location on four lines, 000256.00, 000257.00,
+!     000274.00 and 000275.00.  These are exactly the four statements
+!     with a NEGATIVE offset (-18, -24, -24, -30).  That is what the
+!     marks coincide with; their meaning is not read anywhere.
+!   - "*" follows 000265.00 (B,MORVAL), and that statement's text is
+!     set further right than its neighbours.  Meaning not established.
+!     Compare the "*" after some locations on C22-6678-1 p.48
+!     (decks/mcpref_example2.strap).
+!   - the page's first statement is cut at the top.  The last line,
+!     000277.40 "LI(B?,7),7  -TRY TO GET L VALUE", is too faint to
+!     transcribe and is left as a comment.
+!
+! INK READINGS THAT NEEDED 600 DPI.
+!   - 000250.40 B,KFNA: the third digit of 25?.10 is faint and lies
+!     under the pencilled "Octal"; it reads 2 or 3.  The page's own
+!     location column puts KFNA at 000253.00, so it is 3.
+!   - 000254.40: the last byte is D0, the same as 000257.00's ST.  It
+!     looks like 50 at 220 dpi.
+!   - STN(B,25) is printed with mode B, not BU, at 000271.00 and
+!     000275.00.  The code (.10, not .30) confirms it.
+
+        SLC, (8)246.40
+KZ      SYN, (8)201.0
+MORVAL  SYN, (8)65.0
+KEAA    SYN, (8)160.0
+ZIFBSF  SYN(BU,1), (8)1.35
+ZIDDSB  SYN(BU,4), (8)2.73
+ZIFFLF  SYN(BU,1), (8)1.33
+ZIDDSF  SYN(BU,6), (8)2.65
+ZINFLD  SYN(BU,18), (8)2.40
+ZIOTPT  SYN(BU,24), (8)4.00
+ZODR    SYN(BU,1), (8)0.54
+ZIFALL  SYN(BU,1), (8)2.31
+ZOEXT   SYN(BU,1), (8)0.57
+        BZB,ZIFBSF($3),KZ              ! TEST IF BYTE SIZE FILLED
+        L,ZIDDSB($3)
+        B,KFNA
+KFN     BZB,ZIFFLF($3),KZ              ! TEST IF FL FILLED
+        L,ZIDDSF($3)                   ! LOAD FL
+KFNA    BRZ,KF1                        ! TEST FOR FL OF 64
+        *(BU,18),ZINFLD($3)            ! FORM PROD
+        ST(BU,24),ZIOTPT($3),20
+        B,KZ
+KF1     L,ZINFLD($3),-18               ! FIELD LENGTH OF 64
+        ST(BU,24),ZIOTPT($3),-24
+        B,KZ
+KFA     BZB,ZODR($5),KFP               ! TEST FOR DR OR DRZ
+        LX,$9,ZIOTPT($3)               ! DIMENSION REF ADDR
+        BXVLZ,KZ                       ! TEST IF PROD OF DIMEN *FL FORMED
+        BB,.05($9),KFA1                ! ZIOTPT HAS DIMEN REF ADDR TEST IF PRO
+        L(BU,24),$9                    ! DIM REF ADDR IN LO-ORDER OF SR
+        SIC,$15
+        B,MORVAL
+        LX,$9,ZIOTPT($3)               ! RESTORE$9  PROD COMPLETE EXIT
+        B,KFA2                         ! CANT FORM PROD OF DIMENSIONS
+KFA1    L,ZIDDSF($3)                   ! DIMEN PROD COMPLETE-LOAD FL
+        BRZ,KFA3                       ! TEST FOR FL OF 64
+        *(BU,24),.06($9)               ! MULTIPLY BY PROD OF DIMEN
+        STN(B,25),ZIOTPT($3),20        ! STORE NEGATIVE
+        B,KZ
+KFA2    CM0000,ZIFALL($3)              ! TUN OFF IND
+        B,KZ
+KFA3    L(BU,24),.06($9),-24           ! LOAD DIMEN +BCD
+        STN(B,25),ZIOTPT($3),-30       ! ADD 6 LO ORDER ZEROS FOR *64 ST
+        B,KZ
+KFP     BZB,ZOEXT($5),KEAA             ! TEST IF EXT- NORMAL INSERTION
+!       LI(B?,7),7                     ! TRY TO GET L VALUE  (000277.40, too faint)

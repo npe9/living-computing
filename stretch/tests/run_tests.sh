@@ -1541,6 +1541,16 @@ run "PROSA dictionary and index, reconstructed from C22-6728 p.164" python3 chec
 #   MCP_PSEUDO_OPS COMM 35.32 -> 35.33:   FAIL 000135.00 only
 # Control: all pass before and after.
 run "STRAP II's own listing of MCP Ref. Example 2 (C22-6678-1 p.48)" python3 verify_mcpref_example2_listing.py
+# A PAGE OF A STRAP ASSEMBLER'S OWN CODE: CHM 102633945, read in the ink
+# at 600 dpi.  40 checks: 8 labels, 32 printed rows.  Observed injections
+# (strap/opcodes.py, restored from a copy checked with cmp, __pycache__
+# cleared on both sides):
+#   INDICATOR_BITS RZ 57 -> 56:         FAIL 000253.00, 000267.40 only
+#   INDICATOR_BITS XVLZ 49->50:       FAIL 000262.00 only
+#   CONNECTIVE_SUFFIX CM -> 00111:   FAIL 000272.40 only
+#   MODE_BITS B (0,0) -> (1,0):      FAIL 000271.00, 000275.00 only
+# Control: all pass before and after.
+run "A page of STRAP's own code (CHM 102633945)" python3 verify_strap2_chm102633945.py
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<
 #

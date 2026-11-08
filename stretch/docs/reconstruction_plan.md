@@ -43,7 +43,7 @@ checked in the ink for this plan:
 |---|---|
 | R23-9732 §3.11 is the SAU's trigger-level flow diagrams, with an ALD page in every box | PDF 256, Fig. 3.11.2 "VFL ADD 1 TO MEMORY", dated 1/1/63 |
 | §3.11 has never been used | grep of the repo. The only hit is a generic "CE 3.11.x" in `microarchitecture_plan.md` l.88. The `NEXT.md` hits are `exchange_and_io.md` §3.11, a different document |
-| a page of STRAP II's own code survives | CHM 102633945: about 30 lines of Pass-2 code with left/right half-words, locations 000246.40-000277.40, `ZI...($3)` unit fields |
+| a page of STRAP II's own code survives | CHM 102633945: 33 statements of the DR/DRZ size computation, locations 000246.40-000277.40, `ZI...($3)`/`ZO...($5)` unit fields. **Transcribed 2026-11-07** (`decks/strap2_chm102633945.strap`, `tests/verify_strap2_chm102633945.py`, 40 checks, all agree with the scaffold) |
 | look-ahead forwarding "is removed from K-2 and subsequent machines" | CHM 102634374 p.2 (Chen to Campbell, 28 Aug 1961) |
 | a per-instruction table of I-box, look-ahead, LAAR, SAU and PAU use exists | CHM 102633951 p.1 (T.C.C., Oct 1960) |
 | MCP, STRAP II, FORTRAN and SMAC I each had an Analysis Guide ("one of a set of four") | C22-6728-1 printed p.7 |
@@ -150,7 +150,7 @@ Perf Char and R23-9732.
 | **M-4 Restart** (33RESTRT) | none | C22-6728-1 pp.102-106, Figs 52-55 (I); C22-6678-1 p.31 (S) | most | the code. It also documents a **later MCP** than the listing: YSICADD, YIPLREQ and YARPBRP occur nowhere in the March 1963 listing | transcribe Figs 52-55; write 33RESTRT against the listed MCP's symbols, saying where it assumes hooks the listing lacks | its messages and options (C22-6678-1) |
 | **M-5 loader card classes** | the TA/TB code | C22-6678-1 p.13 (18 classes, in the ink); N22-0085 (14, OCR only); C28-6379 App. A | full | which list the March 1963 loader takes | list the column-1 codes TA decodes; diff against both | the listing |
 | **L-1 BSS processor and segmentation** | none | C28-6379-0 pp.7-13, App. A (S); C22-6751 App. D | partial (external) | internals | find first: it travels with FORTRAN | DTIC decks |
-| **S-1 STRAP II** | none; `strap_asm.py` is scaffolding | **C22-6729** (I, deep: passes, COMREC, unit and symbol formats p.190, cards p.187, errors pp.176-179, App. G deck); C28-6129 (S); **C22-6678-1 printed p.48 (L): a genuine STRAP II listing of a problem program, "VERSION 03/15/64", transcribed and checked (`decks/mcpref_example2.strap`)**; C22-6678-1 App. A printed p.42 (the MCP pseudo-op entries of STRAP II's system-symbol table) | **most**, behaviourally | the code; the BOPSER opcode-table contents; GETFLD's syntax-matrix cells (pp.83-84 give only the legends); absolute card formats (C28-6129 pp.22-23) | **transcribe CHM 102633945 now**: the only known lines of STRAP II, checkable with `listing_oracle.py`. Then a STRAP II in C22-6729's phase structure (Pass 1, UITER, 2a, iteration, 2b), first host-side, then as a 7030 program under MCP | the MCP listing's code columns (they are STRAP II's output); 102633945; the error numbers |
+| **S-1 STRAP II** | none; `strap_asm.py` is scaffolding | **C22-6729** (I, deep: passes, COMREC, unit and symbol formats p.190, cards p.187, errors pp.176-179, App. G deck); C28-6129 (S); **C22-6678-1 printed p.48 (L): a genuine STRAP II listing of a problem program, "VERSION 03/15/64", transcribed and checked (`decks/mcpref_example2.strap`)**; C22-6678-1 App. A printed p.42 (the MCP pseudo-op entries of STRAP II's system-symbol table) | **most**, behaviourally | the code; the BOPSER opcode-table contents; GETFLD's syntax-matrix cells (pp.83-84 give only the legends); absolute card formats (C28-6129 pp.22-23) | CHM 102633945 transcribed and checked (2026-11-07). Then a STRAP II in C22-6729's phase structure (Pass 1, UITER, 2a, iteration, 2b), first host-side, then as a 7030 program under MCP | the MCP listing's code columns (they are STRAP II's output); 102633945; the error numbers |
 | **S-2 SMAC I** (macro language) | none | **J28-6128, "SMAC Language Processor" bulletin, June 1961, 14 pp (CHM 102634360; held 2026-11-07, see `chm/README.md`)**. It is a full functional description: the statement and card format; the one-pass processor (shell, branch table, subroutines, generators); generators as logic plus skeletons; all 13 Generator Language operations (MBGEN, MEXIT, MBSKL, MEGEN, MMVPT, MOUT, MGETL, MKPEQ, MKPNEQ, MKCEQ, MKCNEQ, MOUTF, MOUTV) with worked examples; skeleton syntax `/n/`, `/Q/`, `//`; index-register rules; branch-table entries. Its errata: CHM 102634361, which renames MKPEQ to MKPEQI and the others likewise. Also: the MCP macros and their expansions (C22-6678-1 p.14 and the pseudo-op pages); a real SMAC program (C22-6678-1 p.47); the generator libraries (C22-6728-1 pp.239-242) | **most: the language and the generator language are specified.** Missing: the code, the branch table's addresses, and the generator library's contents | the SMAC Analysis Guide | implement J28-6128 as written, with the errata applied (both spellings kept); write the MCP macros as SMAC generators in its own Generator Language | p.47 expands to text that p.48's STRAP II rules assemble; the bulletin's own worked examples (MADD, MADMY with N = 3, 4, 0) |
 | **F-1 FORTRAN IV compiler** | none | C22-6751 (S + object ABI); C22-6729 p.7 (the chain FORTRAN → PH3 → PH2-1/2/3 → PH1 SMAC → STRAP II, under an LPC) | **outline** | every phase's internals; the generator libraries; the FORTRAN Analysis Guide (named on C22-6728-1 p.7, not held) | fix the object ABI (C22-6751 ch.13, App. A/C) and rule on D-2; then a translator that emits STRAP II source, as IBM's did | DTIC decks' printed output (AD0685715 App. III) |
 | **F-2 FORTRAN I/O library** | none | C22-6751 Part II; MCP's IOCS (in the listing) | partial | internals | STRAP subprograms on MCP's I/O, with Program/CDC cards | DTIC outputs |
@@ -178,7 +178,7 @@ Each item names its target and the step that consumes it.
    as a table in the plan.
 3. **R23-9732 §3.3 PAU flows, PDF 120-147**, paired with §3.8.
    Target: `mkFBox`.
-4. **CHM 102633945.** Target: S-1. One page, transcribe now.
+4. **CHM 102633945.** Target: S-1. DONE 2026-11-07: every printed row agrees with the scaffold; the page marks negative-offset statements "CV".
 5. **Perf Char Vol2 printed p.97 (PDF 104), the floating-point
    environmental test.** It measures a subject op inside 1-8-deep
    backgrounds, which is direct overlap data. Method on pp.95-96.
@@ -264,7 +264,7 @@ continue alongside. The host-side language work does not wait for
 them, but running the processors **under MCP** (E2-E4) does.
 
 1. **Oracles.** C22-6678-1 p.48 (done: `verify_mcpref_example2_listing.py`).
-   Then CHM 102633945, then a printed-format spec of the STRAP II
+   Then CHM 102633945 (done: `verify_strap2_chm102633945.py`), then a printed-format spec of the STRAP II
    listing from p.48 and C28-6129 pp.18-23.
 2. **How the chain is wired under MCP.** MCP's TYPE/COMPILGO code
    (printed p.266 and around it) names the processors it fetches. That
