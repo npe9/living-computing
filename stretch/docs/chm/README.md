@@ -114,10 +114,38 @@ press material. Titles are the CHM catalog's unless a line says
   specification and a "Primitive Supervisor": a binary loader with
   origin, flow, branch and dump cards, an interrupt table and debugging
   macros. That is the pre-MCP environment.
-- **102632618** is catalogued "Computer memos, 1960-61", but its first
-  pages are the **Revised Manual, Harvest System, 13 Nov 1957**: stream
-  indexing and the streaming mode of the 7950. That is outside the 7030
-  scope; it is kept as a citation.
+- **102632618**: the 05-16 copy is the catalogued item, Kolsky's
+  one-page cover letter "Computer Memos, 1960-61" (10 Jan 1964, read in
+  the ink). The 136-page file in folder 06-22, kept as
+  `102632618_06-22.pdf`, is the **Revised Manual, Harvest System, 13 Nov
+  1957**: stream indexing and the streaming mode of the 7950. That is
+  outside the 7030 scope; it is kept as a citation.
+
+### One catalog ID, two folders (found 2026-11-07)
+
+The CHM server can hold **the same catalog number in more than one
+box-folder, with a different document in each.** The first sweep took
+the first folder that answered, which was sometimes the wrong one.
+A HEAD scan of every fetched ID across boxes 02-10 and 15 (folders
+01-29) found eight such IDs. For each, the copy whose first page
+matches the catalog title is now `<id>.pdf`. The other copy is kept as
+`<id>_<folder>.pdf`:
+
+| file | what it really is (first page read) |
+|---|---|
+| 102635071_06-05 | Dunwell to Palmer, "Stretch Proposal to AEC, Los Alamos", 12 Sep 1955 |
+| 102635077_06-05 | Kolsky, "Some statistics on a 701 hydrodynamics code", Feb 1956 |
+| 102635078_06-05 | Carlson, "A Basic Instruction Logic for Electronic Computers", LASL T-1-101, 14 Feb 1956 |
+| 102635079_06-05 | Edwards to Houg, "Project Stretch Requirements for the RAM", 20 Feb 1956 |
+| 102635081_06-05 | Hammer, "Theoretical Possibilities of Automatic Computers", 1956 |
+| 102635087_06-05 | Lawless to Haddad, "Next Generation of Computers" meeting, 25 Jun 1956 |
+| 102635088_06-05 | Hawk to Pendery, "Bigger and Better Machines", 9 Jul 1956 |
+| 102632618_06-22 | Revised Manual, Harvest System, 13 Nov 1957 |
+
+The 06-05 files are 1955-56 Stretch-origin papers. They are worth
+keeping as history, but no catalog row names them. **Rule for future
+fetches:** check a fetched file's first page against its catalog title
+before filing it.
 
 ### Software: programming systems, STRAP, MCP, FORTRAN
 
@@ -238,20 +266,25 @@ press material. Titles are the CHM catalog's unless a line says
 
 ### Multiprogramming (MCP's design ancestry)
 
+Corrected 2026-11-07: these are the 05-08 copies.  See "One catalog ID,
+two folders" below.  Each first page was read from its text layer, and
+each title matches the catalog.
+
 | catalog | box-folder | pp | date | catalog title |
 |---|---|---|---|---|
-| 102635071 | 06-05 | 2 | 1957-05-21 | Computer operation - multi-program control |
-| 102635078 | 06-05 | 8 | 1958-01-02 | Multiprogram control - signals from the operator to the supervisory program |
-| 102635079 | 06-05 | 2 | 1958-05-08 | Multiprogram control - CPU attention switching |
-| 102635081 | 06-05 | 3 | 1958-09-30 | Some conventions for the unshared subroutines capable of operating in the supervised mode |
-| 102635087 | 06-05 | 3 | 1960-04-29 | Multiprogram scheduling |
-| 102635088 | 06-05 | 2 | 1960-05-12 | Multiprogramming Stretch : feasibility considerations |
-| 102635077 | 06-05 | 3 | 1957-12-17 | Automatic protection and relocation scheme |
+| 102635071 | 05-08 | 3 | 1957-05-21 | Computer operation - multi-program control |
+| 102635077 | 05-08 | 6 | 1957-12-17 | Automatic protection and relocation scheme |
+| 102635078 | 05-08 | 5 | 1958-01-02 | Multiprogram control - signals from the operator to the supervisory program |
+| 102635079 | 05-08 | 3 | 1958-05-08 | Multiprogram control - CPU attention switching |
+| 102635081 | 05-08 | 5 | 1958-09-30 | Some conventions for the unshared subroutines capable of operating in the supervised mode |
+| 102635087 | 05-08 | 28 | 1960-04-29 | Multiprogram scheduling (E. F. Codd, **TR 00.716**) |
+| 102635088 | 05-08 | 14 | 1960-05-12 | Multiprogramming Stretch: feasibility considerations (Codd, Lowry et al., TR 00.719; the same report as `../TR00.719_Stretch_Multiprogramming_May60.pdf`) |
 
 ### Other
 
 | catalog | box-folder | pp | date | catalog title |
 |---|---|---|---|---|
-| 102632618 | 06-22 | 136 | 1964-01-10 | Computer memos, 1960-61 |
+| 102632618 | 05-16 | 1 | 1964-01-10 | Computer memos, 1960-61 (Kolsky's cover letter to M. K. Haynes; the memos it enclosed are not in this file) |
+| 102632618_06-22 | 06-22 | 136 | 1957-11-13 | (same ID, other folder) Revised Manual, Harvest System |
 | 102634173 | 05-14 | 14 | 1960-10-27 | Meeting on Stretch and Super Stretch plans, Poughkeepsie |
 | 102634174 | 05-14 | 9 | 1960-10-20 | Meeting with Livermore at research center |

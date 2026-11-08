@@ -393,7 +393,16 @@ and bus arbitration and must not absorb this by name similarity.
 
 ## Audit 4 of 4: `C22-6729`, Buchholz, and the two early papers
 
-### `C22-6729` carries a COMPLETE FORMAL GRAMMAR of STRAP II's expression language
+### `C22-6729` carries a complete ENCODING of STRAP II's expression language
+
+> CORRECTED 2026-11-07 (`reconstruction_plan.md`; printed p.198 re-read in
+> the ink). The original heading said "COMPLETE FORMAL GRAMMAR", which
+> overstates the source. Appendix C is the bit encoding of an expression
+> STRAP II has already parsed. It is not a grammar. The eight 3-bit operator
+> codes on p.198 (`.+ .L .R U- * / + -`) use the whole field, so there is
+> no `**`. Which forms are legal (GETFLD's syntax matrix, printed pp.83-84)
+> is described, but its cells are never printed, so the grammar must be
+> derived and the derivation marked as such.
 
 Appendix C, printed pp.197-201, is the bit-level encoding of what STRAP
 II actually parsed: an operator is nine bits -- a 1-bit exists flag, a

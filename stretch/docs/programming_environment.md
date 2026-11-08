@@ -43,6 +43,10 @@ each piece goes through three steps:
 | FORTRAN IV | find; else reconstruct last, and the largest | C22-6751; the AWRE S1/S2 trail in `thirdparty_software/` |
 | the system tape | rebuilt from the pieces above, in the layout MCP's IPL reads | `mcp_tape_manufacture.md` |
 
+**The whole-corpus audit and plan is `reconstruction_plan.md`.** It
+lists every IBM piece, its sources, how completely it can be rebuilt,
+and the order of work.
+
 How deep each reconstruction can go depends on how much its IBM guide
 gives (C22-6729's account of STRAP II's passes and tables, for
 example). That is assessed in the ink, one piece at a time, before

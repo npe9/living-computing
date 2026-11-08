@@ -210,7 +210,7 @@ catalog	box-folder	KB	date	title
 102632615	06-21	174	1959-07-09	Stretch project review : meeting or contact report
 102632616	06-22	13442	1982-01	Fastest in its time
 102632617	06-22	243	1965-02-10	Some ideas concerning software strategy
-102632618	06-22	6953	1964-01-10	Computer memos, 1960-61
+102632618	05-16	6953	1964-01-10	Computer memos, 1960-61
 102632638	06-20	112	1957-03-29	Call on Knolls Lab. G.E., March 28, 1957
 102632639	06-20	9874	1959-07-01	Stretch proposal to General Electric
 102633929	03-01	1003	1959-09	IBM 7090 Data Processing System : general information
@@ -430,24 +430,24 @@ catalog	box-folder	KB	date	title
 102635068	06-04	152	1959-06-18	AEC Stretch contract amendment : meeting or contact report
 102635069	06-04	165	1960	Appendix A
 102635070	06-05	116	1957-05-20	General technique for searching tables with a non-uniform interval
-102635071	06-05	159	1957-05-21	Computer operation - multi-program control
+102635071	05-08	159	1957-05-21	Computer operation - multi-program control
 102635072	06-05	105	1958-05-23	Table searching
 102635073	06-05	571	1955-09-20	IBM meeting concerning announcement of new machine : 1st Stretch discussion
 102635074	06-05	159	1955-11-24	Project Stretch
 102635075	06-05	155	1955-12-16	AEC formal proposal
 102635076	06-05	460	1956-01-31	Project Stretch requirements of the RAM supplement 1
-102635077	06-05	174	1957-12-17	Automatic protection and relocation scheme
-102635078	06-05	780	1958-01-02	Multiprogram control - signals from the operator to the supervisory program
-102635079	06-05	229	1958-05-08	Multiprogram control - CPU attention switching
+102635077	05-08	174	1957-12-17	Automatic protection and relocation scheme
+102635078	05-08	780	1958-01-02	Multiprogram control - signals from the operator to the supervisory program
+102635079	05-08	229	1958-05-08	Multiprogram control - CPU attention switching
 102635080	06-05	691	1958-06-03	With respect to the SP issuing all I/Os
-102635081	06-05	415	1958-09-30	Some conventions for the unshared subroutines capable of operating in the supervised mode
+102635081	05-08	415	1958-09-30	Some conventions for the unshared subroutines capable of operating in the supervised mode
 102635082	06-05	220	1958-12-01	Method of multiplexing computers
 102635083	06-05	2577	1959-02-13	Method of multiplexing computers
 102635084	06-05	381	1959-04-13	Multiprogramming - Codd
 102635085	06-05	153	1959-03-19	Pilot data processor
 102635086	06-05	210	1959-05-27	Stem : meeting or contact report
-102635087	06-05	229	1960-04-29	Multiprogram scheduling
-102635088	06-05	361	1960-05-12	Multiprogramming Stretch : feasibility considerations
+102635087	05-08	229	1960-04-29	Multiprogram scheduling
+102635088	05-08	361	1960-05-12	Multiprogramming Stretch : feasibility considerations
 102635100	09-06	46	1958-02-06	Sigma timing simulator studies
 102635101	09-06	1628	1958-02-06	First report on results of Sigma timing simulator program
 102635102	09-06	41	1958-02-14	Sigma timing simulator studies
