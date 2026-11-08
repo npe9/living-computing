@@ -1783,3 +1783,37 @@ Provenance summary: IVY/COLASL in Lazarus, LA-6943-H (LASL, 1978); AWRE
 S1/S2 in Ron Bell's BCS Fortran-jubilee article (Glennie's Stretch
 FORTRAN); MATHLAB in Engelman's 1965 FJCC paper (the LISP-based MITRE
 system).
+
+## Online search, second pass, 2026-11-07
+
+The owner asked for "a more complete search online". Findings, with
+details in `chm/README.md` (last three sections) and
+`reconstruction_plan.md` §5:
+
+- **J28-6128, the SMAC Language Processor bulletin, is held.** It is
+  CHM 102634360, the file the owner had placed in `docs/`. It is the
+  full functional description of SMAC and its Generator Language.
+  The earlier sweep listed it as missing because the file had not been
+  read.
+- **CHM's master index of the Kolsky collection** survives in the
+  Wayback Machine. It lists 948 PDFs, and 819 of them are not yet
+  fetched. It is saved as `chm/kolsky_index_2025.tsv`. The earlier
+  "484 online" was a lower bound from a folder-guessing probe.
+- **bitsavers' 7030 tree** (read through the trailing-edge mirror;
+  bitsavers.org refuses scripted requests) holds nothing that this repo
+  lacks.
+- **CHM physical holdings without scans**, worth a scan request: the
+  7101 logic-diagram volumes (Lowell Wood collection), the 7612 logic
+  volume, 27 diagnostic reference manuals, and the Nov 1961 MCP
+  Preliminary Reference Manual.
+- **Named but not found:** C22-6719 "7030 Timing Guide" (1962);
+  A22-6530-1; documentation of the "Development Improvement Package".
+- **Searched with no result:** OSTI (LASL/LRL reports on Stretch
+  software), HathiTrust, archive.org, the CBI finding aids (only a
+  third-party note of box numbers in the Computer Product Manuals
+  Collection), and the Smithsonian. **No STRAP II listing and no
+  FORTRAN IV compiler listing was found anywhere online.**
+- **Not tried, by policy:** CHM's media store refuses direct requests,
+  and later CHM's catalog refused automated page fetches. Neither was
+  worked around. The remaining CHM catalog enumeration needs a person,
+  or CHM's permission.

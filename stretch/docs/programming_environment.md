@@ -108,6 +108,11 @@ C22-6678-1 and C22-6728-1, cited by page.
 the disk and core after one IPL (disk plan step D2, extended to core)
 would let job tests start from the idle loop.
 
+**Order changed by the owner, 2026-11-07:** SMAC I and STRAP II first,
+as best-effort reconstructions; then FORTRAN IV on top of both
+(`reconstruction_plan.md` §7). The host-side work does not wait for
+E1-E5. Running the processors under MCP does.
+
 **E6. STRAP II under MCP**, found or reconstructed (see the table),
 assembling a source deck into the binary E4 loads. Then E4's
 scaffolding deck is replaced by STRAP II's own output.

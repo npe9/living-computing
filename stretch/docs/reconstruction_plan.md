@@ -49,11 +49,18 @@ checked in the ink for this plan:
 | MCP, STRAP II, FORTRAN and SMAC I each had an Analysis Guide ("one of a set of four") | C22-6728-1 printed p.7 |
 | C22-6729 App. C is an expression *encoding*, not a grammar | C22-6729 printed p.198. `source_audit.md` is corrected |
 | the seven "multiprogramming memos" first filed were the wrong documents | first pages of both folders' copies (§6) |
+| C22-6678-1 printed p.48 is genuine STRAP II output (VERSION 03/15/64) for a problem program, and p.47 is a SMAC source program | both pages at 110-220 dpi; p.48 transcribed with its code column |
+| C22-6678-1 App. A, printed p.42, lists 77 MCP pseudo-op codes | the page at 100 dpi |
 
 Depth key: **L** listing with machine code; **I** internals (data flow,
 sequencing, tables); **S** programmer-visible spec; **M** mention.
 
-## 1. Two decisions the documents force
+## 1. Where the documents fork
+
+**The owner's rule, 2026-11-07: "we should do everything and preserve
+every option, the goal is to capture history."** So a fork in the
+record is never settled by discarding a branch. Each historical variant
+stays buildable and selectable, and is labelled with its source.
 
 **D-1. Which 7030?** Chen's 1961 memos, read in the ink, split the
 machines:
@@ -72,19 +79,35 @@ documents $MR hardware: Fig. 3.3.15 "Load Multiplier Register" and
 timing charts 3.8.12/3.8.14 (OCR captions). So the cycle-level
 documentation describes a K-2-class machine.
 
-**Proposed: the cycle-accurate target is a K-2-class 7030**, the machine
-R23-9732 documents. X-1/K-1 behaviour stays reachable as a build option
-where a document gives it. Until the owner rules otherwise, this is a
-recorded assumption. Nothing in the model changes for it yet. It
-matters first when the E-box rewrite reaches the PAU's multiply path
-and the look-ahead's forwarding logic. MCP runs on both kinds: it probes
-for STM, and C22-6728-1 printed p.277 says why.
+**Both machines are kept, as build options.** One option is X-1/K-1:
+forwarding, no $MR, and the "probably unsuccessful" guess. The other
+is K-2 and later: no forwarding, $MR (LMR, STM, `*+`), and the K-2
+guess. Each difference is a named switch, cited to Chen's page. The
+model today is the X-1/K-1 setting of all three. The K-2 setting is
+added when the E-box rewrite reaches the PAU's multiply path and the
+look-ahead's forwarding logic, using R23-9732's $MR flows. MCP runs on
+both kinds: it probes for STM, and C22-6728-1 printed p.277 says why.
+
+**A third variant is named, not documented: the "Development
+Improvement Package" (DIP).** Eric Smith's Stretch page (Wayback,
+2025-08-25) says it was "primarily an overhaul of lookahead to improve
+performance", installed midway through the program, and that "the
+manuals were never updated to include DIP". Chen's K-2 changes may be
+the same thing. Look for it in the 7101 logic volumes (§5 item 7). Kept
+as a named option until documented.
+
+**The same rule applies to the software's two dates.** The listing is
+the March 1963 MCP. C22-6678-1 (June 1964) describes a later one, and
+its STRAP II example prints "VERSION 03/15/64". Where the two differ,
+both are kept: for example, `strap/opcodes.py` holds the 1963 listing's
+pseudo-op codes and Appendix A's 1964 codes as two tables.
 
 **D-2. FORTRAN's calling sequence.** C22-6751 printed p.31 gives
 `SIC,$X15; B,name` with `VF` argument words. That manual's own App. C
 example, and AD0642331 pp.58-59 (OCR only), give `LVI,$15,$+1; B,name`.
-This must be ruled on from the page images before any library routine
-is written (§3, F-3).
+Both are read in the ink before any library routine is written (§3,
+F-3). If both are genuine, both are supported. The two forms leave the
+same return address in $X15.
 
 ## 2. Hardware: the cycle-accurate 7030
 
@@ -127,8 +150,8 @@ Perf Char and R23-9732.
 | **M-4 Restart** (33RESTRT) | none | C22-6728-1 pp.102-106, Figs 52-55 (I); C22-6678-1 p.31 (S) | most | the code. It also documents a **later MCP** than the listing: YSICADD, YIPLREQ and YARPBRP occur nowhere in the March 1963 listing | transcribe Figs 52-55; write 33RESTRT against the listed MCP's symbols, saying where it assumes hooks the listing lacks | its messages and options (C22-6678-1) |
 | **M-5 loader card classes** | the TA/TB code | C22-6678-1 p.13 (18 classes, in the ink); N22-0085 (14, OCR only); C28-6379 App. A | full | which list the March 1963 loader takes | list the column-1 codes TA decodes; diff against both | the listing |
 | **L-1 BSS processor and segmentation** | none | C28-6379-0 pp.7-13, App. A (S); C22-6751 App. D | partial (external) | internals | find first: it travels with FORTRAN | DTIC decks |
-| **S-1 STRAP II** | none; `strap_asm.py` is scaffolding | **C22-6729** (I, deep: passes, COMREC, unit and symbol formats p.190, cards p.187, errors pp.176-179, App. G deck); C28-6129 (S) | **most**, behaviourally | the code; the BOPSER opcode-table contents; GETFLD's syntax-matrix cells (pp.83-84 give only the legends); absolute card formats (C28-6129 pp.22-23) | **transcribe CHM 102633945 now**: the only known lines of STRAP II, checkable with `listing_oracle.py`. Then a STRAP II in C22-6729's phase structure (Pass 1, UITER, 2a, iteration, 2b), first host-side, then as a 7030 program under MCP | the MCP listing's code columns (they are STRAP II's output); 102633945; the error numbers |
-| **S-2 SMAC I** (macro language) | none | J22-6532 (M); errata 102634361 (M: a ≥11-page "SMAC Language Processor" manual existed); C22-6678-1 MCP macros | outline: the MCP-macro expansion only | the language manual J28-6128; the SMAC Analysis Guide | the MCP-macro expander, fixed by C22-6678-1 | macro call sites in the MCP listing |
+| **S-1 STRAP II** | none; `strap_asm.py` is scaffolding | **C22-6729** (I, deep: passes, COMREC, unit and symbol formats p.190, cards p.187, errors pp.176-179, App. G deck); C28-6129 (S); **C22-6678-1 printed p.48 (L): a genuine STRAP II listing of a problem program, "VERSION 03/15/64", transcribed and checked (`decks/mcpref_example2.strap`)**; C22-6678-1 App. A printed p.42 (the MCP pseudo-op entries of STRAP II's system-symbol table) | **most**, behaviourally | the code; the BOPSER opcode-table contents; GETFLD's syntax-matrix cells (pp.83-84 give only the legends); absolute card formats (C28-6129 pp.22-23) | **transcribe CHM 102633945 now**: the only known lines of STRAP II, checkable with `listing_oracle.py`. Then a STRAP II in C22-6729's phase structure (Pass 1, UITER, 2a, iteration, 2b), first host-side, then as a 7030 program under MCP | the MCP listing's code columns (they are STRAP II's output); 102633945; the error numbers |
+| **S-2 SMAC I** (macro language) | none | **J28-6128, "SMAC Language Processor" bulletin, June 1961, 14 pp (CHM 102634360; held 2026-11-07, see `chm/README.md`)**. It is a full functional description: the statement and card format; the one-pass processor (shell, branch table, subroutines, generators); generators as logic plus skeletons; all 13 Generator Language operations (MBGEN, MEXIT, MBSKL, MEGEN, MMVPT, MOUT, MGETL, MKPEQ, MKPNEQ, MKCEQ, MKCNEQ, MOUTF, MOUTV) with worked examples; skeleton syntax `/n/`, `/Q/`, `//`; index-register rules; branch-table entries. Its errata: CHM 102634361, which renames MKPEQ to MKPEQI and the others likewise. Also: the MCP macros and their expansions (C22-6678-1 p.14 and the pseudo-op pages); a real SMAC program (C22-6678-1 p.47); the generator libraries (C22-6728-1 pp.239-242) | **most: the language and the generator language are specified.** Missing: the code, the branch table's addresses, and the generator library's contents | the SMAC Analysis Guide | implement J28-6128 as written, with the errata applied (both spellings kept); write the MCP macros as SMAC generators in its own Generator Language | p.47 expands to text that p.48's STRAP II rules assemble; the bulletin's own worked examples (MADD, MADMY with N = 3, 4, 0) |
 | **F-1 FORTRAN IV compiler** | none | C22-6751 (S + object ABI); C22-6729 p.7 (the chain FORTRAN → PH3 → PH2-1/2/3 → PH1 SMAC → STRAP II, under an LPC) | **outline** | every phase's internals; the generator libraries; the FORTRAN Analysis Guide (named on C22-6728-1 p.7, not held) | fix the object ABI (C22-6751 ch.13, App. A/C) and rule on D-2; then a translator that emits STRAP II source, as IBM's did | DTIC decks' printed output (AD0685715 App. III) |
 | **F-2 FORTRAN I/O library** | none | C22-6751 Part II; MCP's IOCS (in the listing) | partial | internals | STRAP subprograms on MCP's I/O, with Program/CDC cards | DTIC outputs |
 | **F-3 math library** | none | C22-6578 §4.9-4.11 (source); CHM 102633965 (its typescript ancestor); 102633957 (conventions) | partial | the library's names and argument checks | transcribe 4.9-4.11; wrap in the ABI after D-2 | AD0685715 numbers |
@@ -184,8 +207,8 @@ search record.
 1. **Printed p.329 of the MCP listing.** A second copy of the March
    1963 listing anywhere.
 2. **The FORTRAN and SMAC I Programming Systems Analysis Guides**
-   (C22-6728-1 p.7), the **SMAC Language Processor** manual (CHM
-   102634361) and **J28-6128**.
+   (C22-6728-1 p.7). (J28-6128, the SMAC Language Processor bulletin,
+   is FOUND: CHM 102634360.)
 3. **A STRAP II listing.** 102633945 proves one was printed.
 4. **The FORTRAN IV compiler and BSS processor**, as listings or
    decks. Trails: NWL (the DTIC decks' site), AWRE
@@ -195,6 +218,18 @@ search record.
    (Livermore)", KA SS1 SEVA. CHM 102634364 describes SEVA but is not
    the program.
 6. **A CE manual for the 729 and the 353/7612.**
+7. **Not scanned, but held by CHM**: request scans (`chm/README.md`,
+   "Not scanned"). These include the **7101 logic-diagram volumes**
+   (Lowell Wood collection), the 7612 logic volume, 27 diagnostic
+   reference manuals, and the **November 1961 MCP Preliminary Reference
+   Manual**.
+8. **Named, not found**: C22-6719 "7030 Timing Guide" (1962);
+   A22-6530-1 (the 1960 Reference Manual).
+9. **Non-IBM 7030 software, to find, never to stand in for IBM's**:
+   AWRE's FORTRAN S1/S2/S3 (Glennie; S2 had the first dynamic arrays);
+   Livermore's own FORTRAN and operating system (Norman Hardy's STIPIC,
+   per the Harry Nelson interview); Purdue's FORTRAN IV (1965); TREET
+   (NBS, 1967); HOPS and ALPHA on Harvest.
 
 ## 6. Corrections made by this audit
 
@@ -218,23 +253,40 @@ search record.
 
 ## 7. The order of work
 
-This keeps AGENTS.md's order: Phase A (MCP runs), then G1-G5. The
-mandated idiomatic rewrite runs alongside, as it already does.
+**The owner's order, 2026-11-07:** "use that to implement a best effort
+reimplementation of the translation and a best effort strap ii. Once we
+have both of those implement fortran on top of that." So the language
+chain leads: SMAC I and STRAP II, then FORTRAN IV on top of both, as
+IBM built it (C22-6729 p.7: FORTRAN → SMAC II → SMAC I → STRAP II).
+Everything else in this plan is still done; "do everything". The
+hardware track (the mandated E-box rewrite) and MCP's `//////` loop
+continue alongside. The host-side language work does not wait for
+them, but running the processors **under MCP** (E2-E4) does.
 
-1. **E1 frontier: MCP's `//////` loop** (`boot_plan.md`). That is the
-   MCP-runs goal, now. Then E2-E5 of `programming_environment.md`.
-2. **Transcribe CHM 102633945** and check it with the oracle. It is
-   small, and it is the only STRAP II code there is.
-3. **SAU from §3.11**, as the next E-box box (`mkSAU`). Extract
-   102633951 into `microarchitecture_plan.md` §1c first. Record D-1 in
-   §1a.
-4. **The UPDATE-30 spec (M-3)**, so PROSA becomes IBM's format
-   end to end.
-5. **S-1 STRAP II**, phase by phase from C22-6729, host-side first.
-   Test it against the MCP listing's code columns.
-6. PAU §3.3 with §3.8 (G5 item 4); then bm6a and bb6b; then §3.1/§3.2.
-7. M-4 Restart, M-5 loader classes, P-1 1401 formats, F-1..F-3 after
-   D-2.
+1. **Oracles.** C22-6678-1 p.48 (done: `verify_mcpref_example2_listing.py`).
+   Then CHM 102633945, then a printed-format spec of the STRAP II
+   listing from p.48 and C28-6129 pp.18-23.
+2. **How the chain is wired under MCP.** MCP's TYPE/COMPILGO code
+   (printed p.266 and around it) names the processors it fetches. That
+   fixes their PROSA type-area names and entry convention. C22-6729
+   p.180, the coprocessor hook, and p.7, the request chain, say how
+   SMAC hands text to STRAP II.
+3. **S-2 SMAC I.** First the MCP macros, exactly. Then user generators
+   in a reconstructed definition language.
+4. **S-1 STRAP II**, phase by phase from C22-6729: Pass 1, UITER, 2a,
+   iteration, 2b, with COMREC, unit and symbol formats, cards, errors
+   and listing. It is written host-side first, as an executable
+   specification, and is NOT `strap_asm.py` restructured, which stays
+   scaffolding. Then it is written as a 7030 program assembled by the
+   host-side one. Completeness is checked by self-hosting: the 7030
+   STRAP II assembles its own source to the same bits.
+5. **F-1..F-3 FORTRAN IV** on top: its phases (PH3 syntax, PH2-1..3
+   data glean, expansion and indexing, which is SMAC II) emitting SMAC
+   I, through STRAP II, to the BSS loader.
+6. Alongside: E1's `//////` loop and E2-E5; SAU from §3.11 (extract
+   102633951 into `microarchitecture_plan.md` §1c first); the UPDATE-30
+   spec (M-3); PAU §3.3 with §3.8; bm6a and bb6b; §3.1/§3.2; M-4
+   Restart; M-5 loader classes; P-1 1401 formats.
 
 Each step follows AGENTS.md: a page read in the ink behind every
 format, a test with a measured injection, the suite green, one

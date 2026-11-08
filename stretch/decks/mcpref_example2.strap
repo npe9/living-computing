@@ -1,0 +1,116 @@
+! mcpref_example2.strap -- C22-6678-1 (IBM 7030 MCP Reference Manual,
+! June 1964), APPENDIX C, "PROGRAMMING EXAMPLE 2: CARD-TO-TAPE
+! ROUTINE", Figure 5, printed p.48 = PDF p.48, read in the ink at
+! 220 dpi, 2026-11-07.
+!
+! WHAT THIS PAGE IS.  A GENUINE STRAP II ASSEMBLY LISTING, printed by
+! the system under MCP: its header reads
+!     JOB,PPNAME
+!     TIME 14/27/18,  DATE 04/13/64,     VERSION    03/15/64
+!     B       TYPE,COMPILGO,STRAP,NOPUNCH
+! and every statement carries its location and the machine code STRAP
+! II assembled for it.  It is one of only two printed specimens of
+! STRAP II's OUTPUT held by this project whose source is a problem
+! program rather than MCP itself (the other: CHM 102633945, a page of
+! STRAP II's own code).  docs/reconstruction_plan.md, S-1, uses it as
+! the oracle for the reconstructed STRAP II's LISTING FORMAT; this deck
+! and tests/verify_mcpref_example2_listing.py use it now as an encoding
+! oracle for the scaffolding assembler (strap/strap_asm.py).
+!
+! THE LISTING'S OWN FORM, kept here because a reconstruction must print
+! it, and strap_asm does not read it:
+!   - each statement ends in an apostrophe, the STRAP II end-of-
+!     statement mark ("B,$MCP'", ",$SCR'");
+!   - the listing numbers lines per page ("1*" .. "44*", then "1*" ..
+!     "25*" on the second listing page), each followed by "*";
+!   - a second "*" follows the LOCATION on five lines: 000054.00 (CW),
+!     000056.00 (BUF1), 000131.00 (EPGK), 000142.00 (MESG) and 000145.00
+!     (END).  Its meaning is NOT established here; it is not every label
+!     (START, EOJ, BUF2, EXIT and UK carry none).  To be read from
+!     C28-6129 printed pp.18-21 (the listing description).
+!   - line 1 is the problem program's IOD card, listed in place:
+!         B RON     IOD,TAPE,EXIT,,,ODD,HD,CSAVE
+!                   PRNS
+!     It defines the IOD name RON.  The code column shows RON assembled
+!     as 1.0 (",RON'" is 000001.00 80): the first IOD's reference
+!     number.  strap_asm reads no IOD cards, so RON is given here by
+!     SYN; the rows that use RON check only that value, not how STRAP
+!     II derived it.
+!   - DR(N) lines print the reservation's SIZE in W.B (000017.00 for
+!     15 words), END prints the transfer address (000041.00), and the
+!     (IQS*) message line prints no code.
+!
+! TRANSCRIPTION.  Statement text verbatim, apostrophes dropped.  The
+! comments on the right of the page are kept as "!" comments.
+! The origin, 000041.00, is the page's first location: the program was
+! assembled starting just above $MCP (location 32 = 40 octal).
+
+        SLC, (8)41.0
+RON     SYN, 1.0                       ! line 1's IOD name; see above
+START   B,$MCP
+        ,$SCR                          ! SYSTEM INPUT
+        LVE,,CW+1.0
+        ,1.0
+        ,0
+        B,EOJ                          ! NO MORE CARDS
+        B,$MCP
+        ,$WAIT
+        ,RON                           ! TAKE INTERRUPTS
+        SWAPI,1,CW,CW+1.0              ! SWITCH BUFFERS
+        B,$MCP
+        ,$WS
+        ,RON
+        ,CW
+        B,START
+EOJ     B,$MCP
+        ,$WEFS
+        ,RON                           ! ASSUME SUCCESS ON $WEF
+        B,$MCP
+        ,$EOJ
+CW      CW,BUF1,15
+        CW,BUF2,15
+BUF1    DR(N),15
+BUF2    DR(N),15
+EXIT    DR(N),2
+        B,UK
+        NOP                            ! UK OR EPGK
+        B,$MCP
+        ,$EOJ                          ! EE, TAPE FILLED
+        B,$MCP
+        ,$ABEOJ                        ! CS NOT EXPECTED
+        B,$MCP
+        ,$RET                          ! EOP
+UK      BB,EXIT+1.09,EPGK              ! TEST FOR UK OR EPGK
+        B,$MCP
+        ,$BSPS
+        ,RON                           ! UK
+        B,$MCP
+        ,$ERGS
+        B,$MCP
+        ,$W                            ! $W EOP GIVES $RET AND
+        ,RON                           ! CONTROL GOES TO MAINSTREAM
+        ,CW                            ! AT WAIT
+        B,$MCP
+        ,$WAIT
+        ,RON
+EPGK    B,$MCP
+        ,$UNLDS
+        ,RON                           ! REEL FILE PROTECTED
+        B,$MCP
+        ,$IODEF
+        ,RON
+        ,MESG                          ! IDENTIFY THE UNIT
+        B,$MCP
+        ,$COMM
+        ,MESG
+        ,3.0                           ! TELL OPERATOR TO INSERT RING
+        B,$MCP
+        ,$W
+        ,RON
+        ,CW
+        B,$MCP
+        ,$WAIT
+        ,RON
+MESG    DR(N),1                        ! CH XX UNY FILLED IN BY IODEF
+        (IQS*)DD(BU), REQUIRES A RING*
+        END,START

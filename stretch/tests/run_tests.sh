@@ -1531,6 +1531,16 @@ run "MCP's OWN IOD DECK (p.1): IPL completes and MCP is entered" ./run_mcp_p1dec
 # zero tail tagged, names in the wrong character set, p.329's gap
 # zeroed -- each fails its named checks and nothing else.
 run "PROSA dictionary and index, reconstructed from C22-6728 p.164" python3 check_prosa_dict.py
+# GENUINE STRAP II OUTPUT FOR A PROBLEM PROGRAM: C22-6678-1 printed p.48,
+# "PROGRAMMING EXAMPLE 2", VERSION 03/15/64, read in the ink.  The
+# 70 checks: 9 symbols, 60 printed rows, and the pinned LVE row.
+# Observed injections (strap/opcodes.py, restored from a copy checked
+# with cmp, __pycache__ cleared on both sides):
+#   MCP_PSEUDO_OPS_1964 WEFS 7.33 -> 7.32: FAIL 000051.40 only
+#   DIR_INDEX_CODES LVE 11011 -> 11000:   FAIL the pinned 000042.00 only
+#   MCP_PSEUDO_OPS COMM 35.32 -> 35.33:   FAIL 000135.00 only
+# Control: all pass before and after.
+run "STRAP II's own listing of MCP Ref. Example 2 (C22-6678-1 p.48)" python3 verify_mcpref_example2_listing.py
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<
 #

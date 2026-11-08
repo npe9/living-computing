@@ -237,7 +237,7 @@ from opcodes import (
     IMM_INDEX_CODES, UNCOND_BRANCH_CODES, MISC_CODES, INDICATOR_BITS,
     MODE_BITS, MODE_DEFAULT_BS, PROGRESSIVE_SECONDARY_OP, CONNECTIVE_SUFFIX,
     VFL_INT_WRITTEN_MINUS,
-    IO_OP, CB_CODES, IMM_INDEX_COUNT_OPS, SYSTEM_SYMBOLS, MCP_PSEUDO_OPS, BB_CODES,
+    IO_OP, CB_CODES, IMM_INDEX_COUNT_OPS, SYSTEM_SYMBOLS, MCP_PSEUDO_OPS, MCP_PSEUDO_OPS_1964, BB_CODES,
     TRANSMIT_CODES,
 )
 
@@ -759,6 +759,12 @@ def eval_system_symbol(name, loc_bits, reg_context, lineno=None):
         # STRAP system symbol table (N28-1081, bound into C28-6129, page
         # 8); the values are MCP's own printed table (opcodes.py).
         w, b = MCP_PSEUDO_OPS[up]
+        return w * 64 + b
+    if up in MCP_PSEUDO_OPS_1964:
+        # A code the March 1963 listing does not print, but C22-6678-1
+        # Appendix A (printed p.42, June 1964) lists: e.g. $WEFS, $BSPS
+        # and $UNLDS in the manual's own example (printed p.48).
+        w, b = MCP_PSEUDO_OPS_1964[up]
         return w * 64 + b
     raise AssemblerError(f"unsupported system symbol ${name!r}", lineno)
 

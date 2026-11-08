@@ -465,6 +465,48 @@ MCP_PSEUDO_OPS = {
     "MCP":   (32, 0),  # printed p.108 line 5
 }
 
+# ---------------------------------------------------------------------
+# THE SAME PSEUDO-OPERATIONS AS THE JUNE 1964 MANUAL LISTS THEM.
+#
+# C22-6678-1, APPENDIX A, "MCP PSEUDO-OPERATION CODES", printed p.42,
+# read in the ink 2026-11-07: "the following list specifies mnemonic and
+# absolute codes for MCP pseudo-operations that are available for use by
+# the problem program.  All have DDS of (BU, 24)."
+#
+# KEPT SEPARATE FROM MCP_PSEUDO_OPS ON PURPOSE.  That table is the March
+# 1963 listing's own.  This one is a later system (the manual's example
+# listing on printed p.48 is "VERSION 03/15/64"), and it adds codes the
+# 1963 listing does not print ($GONG, $HD, $EVEN, $ECC, $ATID, $RAM,
+# $STRG, $FIXUP, $STLR, $ABEX, $EDUMP, $SPU ...).  The 1963 listing's
+# $TIN 4.32 and $TINS 4.33 have no entry here.  Both tables are kept,
+# so either system can be assembled for (docs/reconstruction_plan.md:
+# preserve every variant).  Where both define a name they agree; this
+# is checked by tests/verify_mcpref_example2_listing.py.
+MCP_PSEUDO_OPS_1964 = {
+    "RD": (1, 0), "RDS": (1, 1), "W": (1, 32), "WS": (1, 33),
+    "CCW": (2, 0), "REL": (2, 32), "RELS": (2, 33),
+    "LOC": (3, 0), "LOCS": (3, 1), "FC": (3, 32), "FCS": (3, 33),
+    "TIF": (4, 0), "TIFS": (4, 1), "ERG": (5, 0), "ERGS": (5, 1),
+    "SP": (5, 32), "SPS": (5, 33), "BSP": (6, 0), "BSPS": (6, 1),
+    "SPFL": (6, 32), "SPFLS": (6, 33), "BSFL": (7, 0), "BSFLS": (7, 1),
+    "WEF": (7, 32), "WEFS": (7, 33), "REW": (8, 0), "REWS": (8, 1),
+    "UNLD": (8, 32), "UNLDS": (8, 33), "RLF": (9, 0), "RLFS": (9, 1),
+    "RLN": (9, 32), "RLNS": (9, 33), "KLN": (10, 0), "KLNS": (10, 1),
+    "FREE": (10, 32),
+    "GONG": (11, 0), "GONGS": (11, 1), "WAIT": (11, 32), "CHEX": (12, 0),
+    "IODEF": (13, 0), "HD": (14, 0), "HDS": (14, 1), "LD": (14, 32),
+    "LDS": (14, 33), "EVEN": (15, 0), "EVENS": (15, 1), "ODD": (15, 32),
+    "ODDS": (15, 33), "ECC": (16, 0), "ECCS": (16, 1), "NOECC": (16, 32),
+    "NOECCS": (16, 33), "ATID": (17, 0),
+    "SIO": (32, 0), "RIO": (32, 32), "RET": (33, 0), "RAM": (33, 32),
+    "STRG": (34, 0), "FECRG": (34, 32), "TIME": (35, 0), "COMM": (35, 32),
+    "SIT": (36, 0), "FIXUP": (36, 32), "STLR": (37, 0), "FELR": (37, 32),
+    "ABEX": (38, 0), "DUMP": (64, 0), "EDUMP": (64, 32), "EOJ": (65, 0),
+    "HOLD": (65, 32), "RESLD": (66, 0), "FETCH": (66, 32), "SPU": (67, 0),
+    "SPR": (67, 32), "ABEOJ": (68, 0), "SCR": (68, 32),
+}
+
+
 INDICATOR_BITS = {
     "MK": 0, "IK": 1, "IJ": 2, "EK": 3, "TS": 4, "CPUS": 5, "EKJ": 6,
     "UNRJ": 7, "CBJ": 8, "EPGK": 9, "UK": 10, "EE": 11, "EOP": 12,
