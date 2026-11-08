@@ -1,0 +1,650 @@
+! smac7030_shell.strap -- RECONSTRUCTION of SMAC's processor shell, branch
+! table and the Generator Language subroutines behind MBGEN, MEXIT, MOUTF
+! and MOUTV, written as a 7030 program.
+!
+! >>> A RECONSTRUCTION.  IBM's SMAC was a 7030 program and no listing of it
+! >>> is known.  This code is written here, to the language of J28-6128
+! >>> (CHM 102634360) and its errata.  docs/smac_7030.md records every
+! >>> convention with its page, or marks it CHOSEN.  The reference for its
+! >>> output is strap/smac.py, card for card. <<<
+!
+! REGISTERS.  X1 the running generator's base (p.3, p.13 item 2).  X2 the
+! branch table (p.2, p.13 item 3).  X15 linkage from a generator (p.13
+! item 4).  X3-X8 are this program's working registers; X9-X14 are never
+! touched, because p.13 item 6 gives them to generator logic.
+!
+! Links between the routines below are memory cells ("SIC,cell"), so that
+! no index register has to survive a call.  RefMan printed p.41: SIC and
+! the branch after it are one instruction; what it stores is the address
+! after the branch.
+!
+! WHAT THIS VERSION DOES NOT DO, AND HOW IT FAILS.  Each of these halts
+! with a code in QERR, at HALTE.  None passes silently:
+!    1 a continuation card ("*" in column 1) on a SMAC statement
+!    2 a skeleton statement that is itself a SMAC statement (inner macro)
+!    3 /Q/ in a skeleton
+!    4 a lone "/" in a skeleton (smac.py's CHOSEN C4)
+!    5 /n/ beyond the subject's parameters (smac.py's CHOSEN C3)
+!    6 a skeleton field overflows its columns
+!    7 MOUTV's N is not a whole number (p.11)
+!    8 MOUTF has no skeleton for this many arguments (p.7)
+! The MMVPT, MOUT, MGETL and compare statements have no subroutine yet:
+! the generator compiler refuses them (strap/smac7030_build.py).
+!
+        SLC, (8)2000.0
+START   LVI, $2, BT
+!
+! ======== the shell: one card at a time (p.2) ========================
+MNEXT   LX, $3, QINP
+        KCI, $3, 0
+        BXE, DONE
+        SV, $3, CURC
+        C-I, $3, 1
+        V+I, $3, 10.0
+        SX, $3, QINP
+! a card blank in all 80 columns is dropped, as smac.py's read_blocks does
+        LV, $4, CURC
+        LCI, $5, 10
+MBLK    L(BU,64)(V+I), 1.0($4)
+        K(BU,64), ZERO
+        BZAE, MCOL1
+        CB, $5, MBLK
+        B, MNEXT
+!
+! column 1: C28-6129 p.2-3, J28-6128 p.1
+MCOL1   LV, $3, CURC
+        LI(BU,8), 0
+        ST(BU,8), STAR
+        L(BU,8), 0($3)
+        KI(BU,8), 0
+        BAE, MTAG
+        KI(BU,8), (8)44
+        BZAE, MCOMM
+        LI(BU,8), 1
+        ST(BU,8), STAR
+        L(BU,8), LAST
+        KI(BU,8), 2
+        BZAE, MSTAR1
+        LI(BU,24), 1
+        B, ERROR
+MSTAR1  KI(BU,8), 1
+        BAE, MCOPYK
+! the tag field: an apostrophe first makes the card a comment (C28-6129 p.2)
+MTAG    LV, $3, CURC
+        L(BU,8)(V+I), .8($3)
+        LCI, $4, 8
+MTAG1   L(BU,8)(V+I), .8($3)
+        KI(BU,8), 0
+        BZAE, MTAG2
+        CB, $4, MTAG1
+        B, MFIND
+MTAG2   KI(BU,8), (8)52
+        BAE, MCOMM
+!
+! the operation: the first field of columns 10-72
+MFIND   L(BU,24), CURC
+        +(BU,24), C72
+        ST(BU,24), TMPV
+        SIC, FOLK
+        B, FINDOP
+        L(BU,24), GENA
+        KI(BU,24), 0
+        BAE, MSTRAP
+! a SMAC statement
+        L(BU,8), STAR
+        KI(BU,8), 0
+        BAE, MSCAN
+        LI(BU,24), 1
+        B, ERROR
+!
+! the parameters: column 1, tag, operation, each argument (p.3)
+MSCAN   LVI, $7, PTAB
+        LVI, $5, 0
+        SX, $5, 0($7)
+        V+I, $7, 1.0
+        LV, $3, CURC
+        L(BU,8)(V+I), .8($3)
+        LCI, $4, 8
+        LCI, $6, 0
+        LI(BU,1), 0
+        ST(BU,1), ONLY1
+        SIC, FILK
+        B, FIELDS
+        LCI, $4, 63
+        LCI, $6, 1
+        SIC, FILK
+        B, FIELDS
+        SV, $7, TMPV
+        L(BU,18), TMPV
+        -(BU,18), PTABW
+        ST(BU,24), QCOUNT($2)
+! "MOP," with nothing after the comma has no argument (smac.py's args == [""])
+        KI(BU,24), 4
+        BZAE, MGO
+        LC, $5, PTAB+3.0
+        KCI, $5, 0
+        BZXE, MGO
+        LI(BU,24), 3
+        ST(BU,24), QCOUNT($2)
+MGO     LV, $1, GENA
+        B, 0($1)
+!
+! MEXIT comes back here
+SEXIT   LI(BU,8), 2
+        ST(BU,8), LAST
+        B, MNEXT
+!
+MCOMM   LI(BU,8), 0
+        ST(BU,8), LAST
+        B, MCOPYK
+MSTRAP  LI(BU,8), 1
+        ST(BU,8), LAST
+!
+! a card that is not a SMAC statement goes to STRAP exactly as punched
+MCOPYK  LV, $4, CURC
+        LV, $5, QOUTP
+        LCI, $6, 10
+MCOPY1  L(BU,64)(V+I), 1.0($4)
+        ST(BU,64)(V+I), 1.0($5)
+        CB, $6, MCOPY1
+        SV, $5, QOUTP
+        M+1(BU,24), OUTCNT
+        B, MNEXT
+!
+! ======== FIELDS: split a run of columns into parameters ============
+! In: $3 first character, $4 count of columns, C($6) 1 to split at commas
+! and stop at an apostrophe, 0 to take the whole run as one field.
+! $7 the next PTAB entry.  ONLY1 set stops after the first field.
+! Each entry is an index word: V the first non-blank character, C the
+! length to the last non-blank.  Commas inside parentheses do not split.
+! V($6) is the parenthesis depth, in units of 1.0.
+FIELDS  LVI, $5, 0
+        LCI, $5, 0
+        LVI, $6, 0
+F1      SV, $3, FCUR
+        L(BU,8)(V+I), .8($3)
+        KCI, $6, 0
+        BXE, FBODY
+        KI(BU,8), (8)52
+        BAE, FEND
+        KI(BU,8), (8)50
+        BZAE, F2
+        KVI, $6, 0
+        BXE, FCOMMA
+        B, FBODY
+F2      KI(BU,8), (8)45
+        BZAE, F3
+        V+I, $6, 1.0
+        B, FBODY
+F3      KI(BU,8), (8)47
+        BZAE, FBODY
+        V-I, $6, 1.0
+FBODY   KVI, $5, 0
+        BXE, FNS
+        C+I, $5, 1
+        KI(BU,8), 0
+        BAE, FNEXT
+        SC, $5, FLEN
+        B, FNEXT
+FNS     KI(BU,8), 0
+        BAE, FNEXT
+        LV, $5, FCUR
+        LCI, $5, 1
+        SC, $5, FLEN
+FNEXT   CB, $4, F1
+FEND    SIC, FPLK
+        B, FPUT
+        LV, $8, FILK
+        B, 0($8)
+FCOMMA  SIC, FPLK
+        B, FPUT
+        L(BU,1), ONLY1
+        KI(BU,1), 1
+        BZAE, FC1
+        LV, $8, FILK
+        B, 0($8)
+FC1     LVI, $5, 0
+        LCI, $5, 0
+        B, FNEXT
+! close the current field
+FPUT    KVI, $5, 0
+        BXE, FP1
+        LC, $5, FLEN
+FP1     SX, $5, 0($7)
+        V+I, $7, 1.0
+        LV, $8, FPLK
+        B, 0($8)
+!
+! ======== FINDOP: is the first field an operation in the table? ======
+! In: TMPV the first column.  Out: GENA the generator's address, or 0.
+FINDOP  LV, $3, TMPV
+        LCI, $4, 63
+        LCI, $6, 1
+        LVI, $7, KFLD
+        LI(BU,1), 1
+        ST(BU,1), ONLY1
+        SIC, FILK
+        B, FIELDS
+        L(BU,24), ZERO
+        ST(BU,24), GENA
+        LX, $3, KFLD
+        KCI, $3, 0
+        BXE, FOEND
+        KCI, $3, 9
+        BXH, FOEND
+! the key: nine characters, blank filled
+        L(BU,64), ZERO
+        ST(BU,64), KEY
+        ST(BU,64), KEY+1.0
+        LVI, $4, KEY
+FO1     L(BU,8)(V+I), .8($3)
+        ST(BU,8)(V+I), .8($4)
+        CB, $3, FO1
+        LX, $5, OPTX
+FO2     L(BU,64), KEY
+        K(BU,64), 0($5)
+        BZAE, FO3
+        L(BU,8), KEY+1.0
+        K(BU,8), 1.32($5)
+        BZAE, FO3
+        L(BU,24), 1.0($5)
+        ST(BU,24), GENA
+        B, FOEND
+FO3     V+I, $5, 2.0
+        CB, $5, FO2
+FOEND   LV, $8, FOLK
+        B, 0($8)
+!
+! ======== the Generator Language subroutines ========================
+! MBGEN, p.4: QPT1 at the first parameter.  In: nothing after the call.
+SBGEN   LI(BU,24), 1
+        ST(BU,24), QPT1($2)
+        B, 0($15)
+!
+! MOUTF, pp.7-9.  Args: number of pairs, then (skeleton, n) half-words.
+SOUTF   L(BU,24), 0($15)
+        ST(BU,24), MFCT
+        V+I, $15, .32
+        LI(BU,24), 0
+        ST(BU,24), MFDONE
+OF1     L(BU,24), MFCT
+        KI(BU,24), 0
+        BAE, OF9
+        -(BU,24), C1
+        ST(BU,24), MFCT
+        L(BU,24), MFDONE
+        KI(BU,24), 0
+        BZAE, OF2
+        L(BU,24), QCOUNT($2)
+        -(BU,24), C3
+        K(BU,24), .32($15)
+        BZAE, OF2
+        L(BU,24), 0($15)
+        ST(BU,24), SKADR
+        LI(BU,24), 1
+        ST(BU,24), BASE
+        ST(BU,24), MFDONE
+        SIC, PSLK
+        B, PUTSKL
+OF2     V+I, $15, 1.0
+        B, OF1
+OF9     L(BU,24), MFDONE
+        KI(BU,24), 0
+        BZAE, OF10
+        LI(BU,24), 8
+        B, ERROR
+OF10    B, 0($15)
+!
+! MOUTV, pp.9-11.  Args: number of sets, then (M, skeleton, K) half-words.
+! M = NFLAG is the bulletin's N.
+SOUTV   L(BU,24), 0($15)
+        ST(BU,24), MVCT
+        ST(BU,24), MVCT2
+        V+I, $15, .32
+        SV, $15, MVSET
+        LI(BU,24), 0
+        ST(BU,24), MVREST
+        ST(BU,24), MVNK
+! first walk: the sum of Mj*Kj over the sets that are not N
+        LV, $7, MVSET
+OV1     L(BU,24), MVCT
+        KI(BU,24), 0
+        BAE, OV2
+        -(BU,24), C1
+        ST(BU,24), MVCT
+        L(BU,24), 0($7)
+        K(BU,24), NFLAGC
+        BZAE, OV1A
+        L(BU,24), 1.0($7)
+        ST(BU,24), MVNK
+        B, OV1B
+! RefMan printed p.68: the product goes to the cleared accumulator at
+! offset 20, wherever the operand came from.
+OV1A    *(BU,24), 1.0($7)
+        ST(BU,24), TMPV, 20
+        L(BU,24), TMPV
+        +(BU,24), MVREST
+        ST(BU,24), MVREST
+OV1B    V+I, $7, 1.32
+        B, OV1
+! N = [(parameters-3) - sum] / K (p.11, errata)
+OV2     SV, $7, MVEND
+        L(BU,24), MVNK
+        KI(BU,24), 0
+        BAE, OV4
+        L(BU,24), QCOUNT($2)
+        -(BU,24), C3
+        K(BU,24), MVREST
+        BAL, OVBAD
+        -(BU,24), MVREST
+        ST(BU,24), MVNUM
+        LI(BU,24), 0
+        ST(BU,24), MVN
+OV3     L(BU,24), MVNUM
+        KI(BU,24), 0
+        BAE, OV4
+        K(BU,24), MVNK
+        BAL, OVBAD
+        -(BU,24), MVNK
+        ST(BU,24), MVNUM
+        M+1(BU,24), MVN
+        B, OV3
+OVBAD   LI(BU,24), 7
+        B, ERROR
+! second walk: put the skeletons out.  The first set's pointer is column
+! one; set i+1's is column one moved over L = 3 + sum(j<=i) Mj*Kj (p.10).
+OV4     LI(BU,24), 1
+        ST(BU,24), BASE
+OV5     L(BU,24), MVCT2
+        KI(BU,24), 0
+        BAE, OV9
+        -(BU,24), C1
+        ST(BU,24), MVCT2
+        LV, $7, MVSET
+        L(BU,24), 0($7)
+        K(BU,24), NFLAGC
+        BZAE, OV5A
+        L(BU,24), MVN
+OV5A    ST(BU,24), MVM
+        L(BU,24), .32($7)
+        ST(BU,24), SKADR
+OV6     L(BU,24), MVM
+        KI(BU,24), 0
+        BAE, OV7
+        -(BU,24), C1
+        ST(BU,24), MVM
+        SIC, PSLK
+        B, PUTSKL
+        LV, $7, MVSET
+        L(BU,24), BASE
+        +(BU,24), 1.0($7)
+        ST(BU,24), BASE
+        B, OV6
+! the next set starts past the operation and everything moved so far.
+! The base for set 2 is 4 + M1*K1 where the running BASE after set 1 is
+! 1 + M1*K1; only set 1 starts at column one, so add 3 once.
+OV7     V+I, $7, 1.32
+        SV, $7, MVSET
+        L(BU,24), MVFRST
+        KI(BU,24), 0
+        BZAE, OV5
+        L(BU,24), BASE
+        +(BU,24), C3
+        ST(BU,24), BASE
+        LI(BU,24), 1
+        ST(BU,24), MVFRST
+        B, OV5
+OV9     LI(BU,24), 0
+        ST(BU,24), MVFRST
+        LV, $15, MVEND
+        B, 0($15)
+!
+! ======== PUTSKL: one skeleton, at the parameter pointer BASE ========
+! In: SKADR the skeleton, relative to X1.  A skeleton is a word holding
+! its count of cards, then 80-column IQS card images (CHOSEN).
+PUTSKL  LV, $3, SKADR
+        V+, $3, $X1
+        L(BU,24), 0($3)
+        ST(BU,24), SKCT
+        V+I, $3, 1.0
+        SV, $3, SKP
+PS1     L(BU,24), SKCT
+        KI(BU,24), 0
+        BAE, PS9
+        -(BU,24), C1
+        ST(BU,24), SKCT
+! a clean output card: all blanks
+        LV, $5, QOUTP
+        LCI, $6, 10
+        L(BU,64), ZERO
+PS2     ST(BU,64)(V+I), 1.0($5)
+        CB, $6, PS2
+! column 1
+        LV, $3, SKP
+        LCI, $3, 1
+        LV, $5, QOUTP
+        LCI, $5, 1
+        LI(BU,8), 0
+        ST(BU,8), CMODE
+        SIC, SBLK
+        B, SUBST
+! columns 2-9, the tag
+        LCI, $3, 8
+        L(BU,24), QOUTP
+        +(BU,24), C8
+        ST(BU,24), TMPV
+        LV, $5, TMPV
+        LCI, $5, 8
+        SIC, SBLK
+        B, SUBST
+! columns 10-72.  After an apostrophe nothing is substituted: smac.py
+! substitutes the statement and appends the comment.
+        LCI, $3, 63
+        L(BU,24), QOUTP
+        +(BU,24), C72
+        ST(BU,24), TMPV
+        LV, $5, TMPV
+        LCI, $5, 63
+        LI(BU,8), 1
+        ST(BU,8), CMODE
+        SIC, SBLK
+        B, SUBST
+! an expansion that is itself a SMAC statement is an inner macro (p.13)
+        L(BU,24), QOUTP
+        +(BU,24), C72
+        ST(BU,24), TMPV
+        SIC, FOLK
+        B, FINDOP
+        L(BU,24), GENA
+        KI(BU,24), 0
+        BAE, PS3
+        LI(BU,24), 2
+        B, ERROR
+PS3     LV, $5, QOUTP
+        V+I, $5, 10.0
+        SV, $5, QOUTP
+        M+1(BU,24), OUTCNT
+        LV, $3, SKP
+        V+I, $3, 10.0
+        SV, $3, SKP
+        B, PS1
+PS9     LV, $8, PSLK
+        B, 0($8)
+!
+! ======== SUBST: copy a field, substituting (p.12) ===================
+! In: $3 source, C($3) its columns; $5 destination, C($5) its columns;
+! CMODE 0 substitute, 1 substitute until an apostrophe, 2 verbatim.
+SUBST   L(BU,8)(V+I), .8($3)
+        ST(BU,8), CH
+        L(BU,8), CMODE
+        KI(BU,8), 2
+        BAE, SB8
+        KI(BU,8), 1
+        BZAE, SB1
+        L(BU,8), CH
+        KI(BU,8), (8)52
+        BZAE, SB1
+        LI(BU,8), 2
+        ST(BU,8), CMODE
+        B, SB8
+SB1     L(BU,8), CH
+        KI(BU,8), (8)46
+        BZAE, SB8
+! a slash.  The next character decides.
+        KCI, $3, 1
+        BXE, SBLONE
+        C-I, $3, 1
+        L(BU,8)(V+I), .8($3)
+        ST(BU,8), CH
+        KI(BU,8), (8)46
+        BAE, SB8
+        KI(BU,8), (8)115
+        BZAE, SB2
+        LI(BU,24), 3
+        B, ERROR
+! /n/: digits, then a slash.  The 89 set's digits are 011dddd0, so the
+! digit's value is the four bits at offset 3 (strap/charsets.py).
+SB2     LI(BU,16), 0
+        ST(BU,16), NVAL
+SB3     L(BU,8), CH
+        KI(BU,8), (8)140
+        BAL, SBLONE
+        KI(BU,8), (8)162
+        BAH, SBLONE
+        BB, CH+.7, SBLONE
+        L(BU,16), NVAL
+        *(BU,16), TEN
+        ST(BU,16), NVAL, 20
+        L(BU,16), NVAL
+        +(BU,4), CH+.3
+        ST(BU,16), NVAL
+        KCI, $3, 1
+        BXE, SBLONE
+        C-I, $3, 1
+        L(BU,8)(V+I), .8($3)
+        ST(BU,8), CH
+        KI(BU,8), (8)46
+        BZAE, SB3
+! parameter number BASE + n - 1
+        L(BU,24), BASE
+        +(BU,16), NVAL
+        -(BU,24), C1
+        KI(BU,24), 0
+        BAE, SBFAR
+        K(BU,24), QCOUNT($2)
+        BAH, SBFAR
+        ST(BU,18), PIDX
+        LV, $6, PIDX
+        LX, $6, PTM1($6)
+        KCI, $6, 0
+        BXE, SB9
+SB6     L(BU,8)(V+I), .8($6)
+        ST(BU,8), CH
+        SIC, EMLK
+        B, EMIT
+        CB, $6, SB6
+        B, SB9
+SB8     SIC, EMLK
+        B, EMIT
+SB9     CB, $3, SUBST
+        LV, $8, SBLK
+        B, 0($8)
+SBLONE  LI(BU,24), 4
+        B, ERROR
+SBFAR   LI(BU,24), 5
+        B, ERROR
+!
+! EMIT: CH to the destination.  Blanks past the field's end are dropped.
+EMIT    KCI, $5, 0
+        BXE, EM1
+        L(BU,8), CH
+        ST(BU,8)(V+I), .8($5)
+        C-I, $5, 1
+EM9     LV, $8, EMLK
+        B, 0($8)
+EM1     L(BU,8), CH
+        KI(BU,8), 0
+        BAE, EM9
+        LI(BU,24), 6
+!
+! ======== stopping =================================================
+ERROR   ST(BU,24), QERR($2)
+HALTE   BEW, $
+DONE    BEW, $
+!
+! ======== the branch table (p.2).  Every reference is ($2). ==========
+        CNOP
+BT      B, SEXIT
+        B, SBGEN
+        B, SOUTF
+        B, SOUTV
+        CNOP
+BTCOUNT DD(BU,64), 0
+BTPT1   DD(BU,64), 0
+BTERR   DD(BU,64), 0
+QEXIT   SYN, 0.0
+QBGEN   SYN, .32
+QOUTF   SYN, 1.0
+QOUTV   SYN, 1.32
+QCOUNT  SYN, BTCOUNT-BT
+QPT1    SYN, BTPT1-BT
+QERR    SYN, BTERR-BT
+!
+! ======== working storage ===========================================
+! Core outside the image reads back 0xAA on the model, so every cell is
+! given a value.
+        CNOP
+C1      DD(BU,24), 1
+        CNOP
+C3      DD(BU,24), 3
+        CNOP
+C8      DD(BU,24), 8
+        CNOP
+C72     DD(BU,24), 72
+        CNOP
+TEN     DD(BU,16), 10
+        CNOP
+NFLAGC  , (8)777777.0
+        CNOP
+PTABW   , PTAB
+        CNOP
+ZERO    DD(BU,64), 0
+CURC    DD(BU,64), 0
+TMPV    DD(BU,64), 0
+STAR    DD(BU,64), 0
+LAST    DD(BU,64), 0
+GENA    DD(BU,64), 0
+ONLY1   DD(BU,64), 0
+FCUR    DD(BU,64), 0
+FLEN    DD(BU,64), 0
+KFLD    DD(BU,64), 0
+KEY     DD(BU,64), 0
+KEY2    DD(BU,64), 0
+MFCT    DD(BU,64), 0
+MFDONE  DD(BU,64), 0
+MVCT    DD(BU,64), 0
+MVCT2   DD(BU,64), 0
+MVSET   DD(BU,64), 0
+MVREST  DD(BU,64), 0
+MVNK    DD(BU,64), 0
+MVEND   DD(BU,64), 0
+MVNUM   DD(BU,64), 0
+MVN     DD(BU,64), 0
+MVM     DD(BU,64), 0
+MVFRST  DD(BU,64), 0
+BASE    DD(BU,64), 0
+SKADR   DD(BU,64), 0
+SKCT    DD(BU,64), 0
+SKP     DD(BU,64), 0
+CMODE   DD(BU,64), 0
+CH      DD(BU,64), 0
+NVAL    DD(BU,64), 0
+PIDX    DD(BU,64), 0
+FOLK    DD(BU,64), 0
+FILK    DD(BU,64), 0
+FPLK    DD(BU,64), 0
+PSLK    DD(BU,64), 0
+SBLK    DD(BU,64), 0
+EMLK    DD(BU,64), 0
+PTM1    SYN, PTAB-1.0
+PTAB    DRZ(BU,64), 72

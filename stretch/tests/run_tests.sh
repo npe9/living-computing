@@ -1575,6 +1575,18 @@ run "SMAC I against its bulletin's examples (J28-6128 + errata)" python3 check_s
 #     already in canonical columns.
 # Control: all pass before and after.
 run "SMAC on C22-6678-1 p.47, assembled against p.48's code" python3 check_smac_mcpref_example1.py
+# THE 7030 SMAC, ON THE MODEL (decks/smac7030_shell.strap,
+# docs/smac_7030.md), against strap/smac.py card for card and against the
+# bulletin's printed cards.  Injections in the shell, observed 2026-11-08:
+#   MOUTV's +3 past the operation lost: FAIL A, B and C card compares
+#   parentheses not counted: FAIL C compare only (85 cards, ",(A")
+#   "MEOJ," keeps one null argument: FAIL C compare only
+#   /n/ upper bound not checked: FAIL D code 5 only
+#   a blank card not dropped: FAIL C compare only
+#   the comment substituted too: FAIL C QERR (4) and C compare
+#   the product read at offset 0, not 20: FAIL B QERR (7) and B compare
+# Control: all pass before and after; the deck restored and checked by cmp.
+run "The 7030 SMAC on the model, against smac.py" python3 check_smac7030.py
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<
 #

@@ -20,7 +20,7 @@ from strap_asm import assemble, AssemblerError
 def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              console_switches=None,
              printer_checks=None, tape_image=None, tape_checks=None,
-             console_checks=None, console_dump=0, mem_dump=None,
+             console_checks=None, console_dump=0, mem_dump=None, fast_load=None,
              pc_check=None, cycle_bound=None, cycle_window=None,
              ipl=False, pc_trail=False,
              pc_trail_check=None, op_trail=False,
@@ -79,6 +79,8 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append("import StretchStorage::*;")
     lines.append("import StretchIO::*;")
     lines.append("import StretchCore::*;")
+    if fast_load:
+        lines.append("import RegFile::*;")
     lines.append("")
     lines.append("(* synthesize *)")
     lines.append(f"module mk{module_name}(Empty);")
@@ -177,7 +179,22 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     # With ipl=True there is nothing to load, and an empty `case` is a
     # bsc error (P0075, "Case statement with no clauses"), so the rule
     # is omitted rather than emitted empty.
-    if n_load:
+    if n_load and fast_load:
+        # FASTLOAD: bsc's time on the `case` below grows steeply with its
+        # size (a 2,200-word image was still compiling after ten minutes,
+        # 2026-11-08), so a large image is read from a hex file into a
+        # RegFile at elaboration instead, and one rule copies it to core.
+        with open(fast_load, "w") as img:
+            for addr, val in words:
+                img.write(f"{(addr << 64) | val:024x}\n")
+        lines.append(f'  RegFile#(Bit#(32), Bit#(96)) image <- mkRegFileLoad("{fast_load}", 0, {n_load - 1});')
+        lines.append(f"  rule load (phase < {n_load} && core.mem.writeReady());")
+        lines.append("    let e = image.sub(phase);")
+        lines.append("    core.mem.writeWord(truncate(e[95:64]), e[63:0]);")
+        lines.append("    phase <= phase + 1;")
+        lines.append("  endrule")
+        lines.append("")
+    elif n_load:
         lines.append(f"  rule load (phase < {n_load} && core.mem.writeReady());")
         lines.append("    case (phase)")
         for i, (addr, val) in enumerate(words):
@@ -559,6 +576,8 @@ if __name__ == '__main__':
     #   WAITIO                 -- stop when the core is IDLE (halted and
     #                             nothing can interrupt it), not merely
     #                             halted: a BEW,$ waiting on I/O runs on
+    #   FASTLOAD=PATH          -- write the image to PATH and load it from
+    #                             there, for an image too big for a `case`
     #   DUMP=FIRST,COUNT       -- after the run, display COUNT words of
     #                             core from word FIRST as MEMDUMP lines
     #   PC=EXPECTED            -- check the instruction counter (a 19-bit
@@ -601,6 +620,7 @@ if __name__ == '__main__':
     step_cap = 30000
     wait_for_io = False
     mem_dump = None
+    fast_load = None
     for spec in sys.argv[3:]:
         if spec == 'WAITIO':
             # stop on core.idle(), not core.halted(): see generate()
@@ -620,6 +640,8 @@ if __name__ == '__main__':
                     + repr(spec))
             n, t = body.split('+-', 1)
             cycle_window = (int(n, 0), int(t, 0))
+        elif spec.startswith('FASTLOAD='):
+            fast_load = spec[9:]
         elif spec.startswith('DUMP='):
             a0, n0 = spec[5:].split(',')
             mem_dump = (int(a0, 0), int(n0, 0))
@@ -645,4 +667,4 @@ if __name__ == '__main__':
                     tape_checks=tape_checks, pc_check=pc_check,
                     cycle_bound=cycle_bound,
                     cycle_window=cycle_window, wait_for_io=wait_for_io,
-                    mem_dump=mem_dump))
+                    mem_dump=mem_dump, fast_load=fast_load))

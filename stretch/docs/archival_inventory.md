@@ -1827,6 +1827,14 @@ BRZ and BXVLZ. Two listing marks were found: "CV" after the location of exactly 
 statements with a negative offset, and one "*" (B,MORVAL). Neither meaning is established. The page
 names no version, so "STRAP II" is inferred from context, not read.
 
+### SMAC I begun as a 7030 program, 2026-11-08
+
+`decks/smac7030_shell.strap` is a RECONSTRUCTION, written here: the shell,
+branch table, MBGEN, MEXIT, MOUTF, MOUTV and skeleton substitution, as a
+7030 program. On the model it reproduces `strap/smac.py`'s output for
+C22-6678-1 p.47, card for card (`tests/check_smac7030.py`). IBM's code for
+SMAC is still not known to survive. `docs/smac_7030.md` lists what is left.
+
 ### SMAC I reconstructed host-side, 2026-11-08
 
 `strap/smac.py` implements J28-6128 (CHM 102634360) with its errata (CHM 102634361), both read in
