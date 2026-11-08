@@ -19,8 +19,11 @@
 !
 ! THE LISTING'S OWN FORM, kept here because a reconstruction must print
 ! it, and strap_asm does not read it:
-!   - each statement ends in an apostrophe, the STRAP II end-of-
-!     statement mark ("B,$MCP'", ",$SCR'");
+!   - each statement is followed by an apostrophe ("B,$MCP'", ",$SCR'").
+!     The apostrophe (8-4 punch) BEGINS A COMMENT in STRAP II (C28-6129
+!     printed p.2, read in the ink); ";" separates statements.  So the
+!     mark on a line with no remark opens an empty comment.  (Corrected
+!     2026-11-08: this header first called it an end-of-statement mark.)
 !   - the listing numbers lines per page ("1*" .. "44*", then "1*" ..
 !     "25*" on the second listing page), each followed by "*";
 !   - a second "*" follows the LOCATION on five lines: 000054.00 (CW),

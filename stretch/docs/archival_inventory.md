@@ -1826,3 +1826,17 @@ read in the ink at 600 dpi. Every row agrees with `strap_asm.py`, including STN 
 BRZ and BXVLZ. Two listing marks were found: "CV" after the location of exactly the four
 statements with a negative offset, and one "*" (B,MORVAL). Neither meaning is established. The page
 names no version, so "STRAP II" is inferred from context, not read.
+
+### SMAC I reconstructed host-side, 2026-11-08
+
+`strap/smac.py` implements J28-6128 (CHM 102634360) with its errata (CHM 102634361), both read in
+the ink. `strap/smac_mcp.py` is the MCP macro library, written in SMAC's Generator Language from
+C22-6678-1's printed expansions; those are transcribed in `docs/mcp_macros.md`. The tests are the
+bulletin's own examples, and C22-6678-1 p.47 (IBM's printed SMAC program, now
+`decks/mcpref_example1.smac`), expanded and assembled to match p.48's STRAP II code. Findings:
+- the errata corrects p.4's "MOUTY" to MOUTV, and says QCOUNT is a value field;
+- MEND (p.47) appears in no manual held, and is treated as SMAC's end statement (CHOSEN);
+- in `(AX)DD(BU,48,6),TTAAAAAAX`, the X is the entry mode's end-of-statement character
+  (C28-6129 printed p.16);
+- C28-6129 printed p.2: the apostrophe begins a comment. The p.48 deck header called it a statement
+  terminator and has been corrected.

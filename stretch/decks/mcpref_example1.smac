@@ -1,0 +1,69 @@
+! mcpref_example1.smac -- C22-6678-1 (IBM 7030 MCP Reference Manual,
+! June 1964), APPENDIX C, Figure 4, "PROGRAMMING EXAMPLE 1: BUFFERED
+! TAPE INPUT", printed p.47 = PDF p.47.  A SMAC SOURCE PROGRAM (its TYPE
+! card reads COMPILGO,SMAC), card images in IBM's columns: column 1
+! the class (B, T: MCP control cards), columns 2-9 the name, 10-72 the
+! statement; the apostrophe begins a comment (C28-6129 printed p.2).
+!
+! Transcribed at 600 dpi (columns measured) and checked line by line
+! against a 250 dpi render, 2026-11-08.  Lines starting "!" are this
+! header and are not cards; tests/check_smac_mcpref_example1.py strips
+! them.
+!
+! READINGS TO KNOW.  O and 0 print alike: zeros only in "N,0" (twice)
+! and "MESG2+2.0".  The name field prints "MESG 1" and "MESG 2" with a
+! blank in column 6 while the statements refer to MESG1, MESG2: kept as
+! printed.  SUEJEAN on the IOD card starts in column 3, not 2: kept.
+! MEND appears in no manual held; see strap/smac_mcp.py.
+B        JOB, ANYID
+B        TYPE,COMPILGO,SMAC
+T        SUBTYPE,A1
+B SUEJEANIOD,TAPE,EXIT,,,ODD,HD
+B        REEL,PLB12345
+ INIT    LX,$1,BSTRY'        UK RETRY COUNTER
+ READ    MRD,SUEJEAN,CW1'
+         B,WAIT'
+ START   LVI,$2,15.
+ '  *************************************************
+ '  ANY COMPUTATION TO BE DONE WOULD BE INSERTED HERE
+ '  *************************************************
+         BZB,EXIT+1.11,WAIT' TEST EE BIT
+         MEOJ'               IF ON GIVE EOJ
+ WAIT    MWAIT,SUEJEAN'
+         BB,EXIT+1.9,EPGK'   TEST FOR EPGK
+         BBZ,EXIT+1.10,UKFIX'TEST FOR UK
+         R,$1'               RESET COUNTER
+         SWAPI,1,CW1,CW2'    SWITCH BUFFERS
+         MRD,SUEJEAN,CW1'    INITIATE READ
+         B,START'
+ UKFIX   BZB,EXIT+1.12,UNITBAD' NOT UK-EOP, UNIT FAILURE
+         MBSP,SUEJEAN'       BACKSPACE AND WAIT
+         MWAIT,SUEJEAN'
+         BB,EXIT+1.9,EPGK'
+         BBZ,EXIT+1.10,UNITBAD'
+         CB,$1,READ'         TRY READ AGAIN
+         MCOMM,MESG1,3.'     QUIT ON THIRD TRY
+         MABEOJ'
+ UNITBAD MIODEF,SUEJEAN,MESG2+2.0'
+         MCOMM,MESG2,4.'
+         MABEOJ'
+ EPGK    MCOMM,MESG3,5.'
+         MABEOJ'
+ CW1     CW,BUFFER1,N,0'     CW FOR BUFFER ONE
+ CW2     CW,BUFFER2,N,0'     CW FOR BUFFER TWO
+ BUFFER1 DR(BU),N'
+ BUFFER2 DR(BU),N'
+         CNOP'
+ MESG 1  (IQS*)DD(BU), DATA ERROR UNCORRECTIBLE*'
+         CNOP'
+ MESG 2  (IQSX)DD(BU),****OPERATOR****CH UN IS DOWNX'
+         CNOP'
+ MESG3   (IQS*)DD(BU), THIS PROGRAM HAS BEEN CONTAMINATED.*'
+ BSTRY   XW,,3,$'
+ EXIT    DR(N),2'            TABLE OF EXITS
+         MRET'
+         MRET'
+         MRET'
+         MRET'
+ N       SYN,1'
+         MEND,INIT'

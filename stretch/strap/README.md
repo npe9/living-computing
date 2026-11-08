@@ -49,6 +49,8 @@ finding about the hardware model, not a hypothetical one.
 | `decks/` | Assembled test programs (see below). |
 | `run_tests.sh` | The whole regression suite in one step (pure-Python assembler tests first, then every program below on the model). |
 | `test_syn.py`, `test_slc.py` | Pure-Python tests of the `SYN` and `SLC` pseudo-ops against `assemble()` directly. |
+| `smac.py` | RECONSTRUCTION of SMAC I (J28-6128 + errata), the host-side executable specification: card blocks, the thirteen Generator Language statements, skeleton substitution. `python3 smac.py deck.smac` expands a deck with the MCP library. |
+| `smac_mcp.py` | RECONSTRUCTION of SMAC's MCP macro library, in SMAC's Generator Language, from C22-6678-1's printed expansions (`../docs/mcp_macros.md`). |
 | `listing_oracle.py` | Compares assembled words against the machine code a historical listing prints beside each source line (the print format is decoded in its docstring). |
 | `verify_ibox1_listing.py` | Assembles I-Box 1's WEN2/WEN/VEN verbatim at their listed addresses and compares every half-word to the machine code printed in the 1961 listing (`../docs/ja_ax1a_ibox-1.pdf` p.51). |
 | `ibox1_expected.py` | Derives a verbatim I-Box 1 transcription's expected final state (halt PC and every rewritten `BD,$` hang, given as HANG:NEXT pairs from the listing's own comments) from the assembled program, for `run_tests.sh`. |

@@ -11,9 +11,33 @@
 ! BY PROD OF DIMEN", "FIELD LENGTH OF 64", "TRY TO GET L VALUE".  The
 ! ZI.../ZO... fields indexed by $3 and $5 are entries of the symbol and
 ! statement units.  docs/reconstruction_plan.md S-1 takes it as the only
-! surviving lines of STRAP II.  NOT ESTABLISHED: the page carries no
-! title, date or version, so which STRAP (II, or an earlier version) is
-! inferred, not read.
+! surviving lines of STRAP II.  The page carries no title, date or
+! version, but C22-6729 (the STRAP II Systems Analysis Guide), read in
+! the ink 2026-11-08, identifies it:
+!   - printed p.27: in Pass 2, MQR's DR processing keeps "the location
+!     of the basic portion of the vle dimension entry in the unit ... in
+!     Ziotpt"; "When the final product is available ... it is put as a
+!     negative number into the value field of Ziotpt"; "The Zifall
+!     indicator is turned off to indicate to Pass 2 that there are coded
+!     expressions ... not yet evaluated"; a null dds is (N,64,4).  Here:
+!     LX,$9,ZIOTPT -DIMENSION REF ADDR; STN ... ZIOTPT -STORE NEGATIVE;
+!     CM0000,ZIFALL -TURN OFF IND after -CANT FORM PROD; -FIELD LENGTH
+!     OF 64.  p.12: the current unit's address is in $3 in Pass 2.
+!   - printed p.96, Chart CB "STRAP II" MIOD, boxes 14 and 19: TURN
+!     OFF / TURN ON ZIFALL INDICATOR.
+!   - printed p.189, Figure 20, the unit's fixed format: ZIFFLF bit 27
+!     and ZIFBSF bit 29 of the ZILCFD word, ZIFALL bit 25 and ZINFLD
+!     bits 32-49 ("Number of Fields") of the ZILPMS word, ZIDDS from bit
+!     50.  The page's values (1.33, 1.35, 2.31, 2.40(BU,18), DDS fields
+!     at 2.65 and 2.73) agree bit for bit with ZIADAB as word 0.
+!   - printed p.191, Figure 22: an evaluated dimension entry's
+!     evaluation indicator follows a 20-bit header and a 5-bit field,
+!     i.e. bit 5 of the basic portion: the page's BB,.05($9).
+!   >>> ONE DISAGREEMENT, NOT SETTLED: Figure 20's rows put ZIOTPT in
+!   word 5 (after ZICDID and ZIOPX); this page addresses it as word 4
+!   (4.00).  Either the page predates a word of the unit, or the
+!   figure's rows are not in word order.  (p.184's added word, ZICOMM,
+!   is the LAST fixed word, so it is not the explanation.) <<<
 !
 ! WHAT IS NOT ON THE PAGE, AND IS GIVEN HERE BY SYN.  The symbols the
 ! page uses but does not define: KZ, MORVAL and KEAA (branch targets),

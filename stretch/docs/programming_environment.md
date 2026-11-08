@@ -39,6 +39,7 @@ each piece goes through three steps:
 | MCP | the original, transcribed | the March 1963 listing |
 | PROSA, MCP's system library on disk | **reconstruct** what the listing does not hold | C22-6728-1 (formats), DISK FETCH pp.311-318, C22-6678-1 |
 | MCP Loader / BSS processor | find; else reconstruct | C28-6379-0 |
+| SMAC I, the macro processor | **reconstructed host-side** (`strap/smac.py`, `strap/smac_mcp.py`); a 7030 version follows STRAP II | J28-6128 + errata; C22-6678-1 pp.14-28, 43-46 (`mcp_macros.md`) |
 | STRAP II | find; else reconstruct as a 7030 program run under MCP | C22-6729 (internals), C28-6129 (language) |
 | FORTRAN IV | find; else reconstruct last, and the largest | C22-6751; the AWRE S1/S2 trail in `thirdparty_software/` |
 | the system tape | rebuilt from the pieces above, in the layout MCP's IPL reads | `mcp_tape_manufacture.md` |

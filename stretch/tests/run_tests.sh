@@ -1551,6 +1551,30 @@ run "STRAP II's own listing of MCP Ref. Example 2 (C22-6678-1 p.48)" python3 ver
 #   MODE_BITS B (0,0) -> (1,0):      FAIL 000271.00, 000275.00 only
 # Control: all pass before and after.
 run "A page of STRAP's own code (CHM 102633945)" python3 verify_strap2_chm102633945.py
+# SMAC I, RECONSTRUCTED (strap/smac.py), against every worked example in
+# its bulletin J28-6128 and the errata sheet.  Observed injections
+# (strap/smac.py, restored from a copy checked with cmp, __pycache__
+# cleared on both sides):
+#   MOUTV set base 1+3+moved -> 1+2+moved: FAIL p.10 three sets, p.10 and
+#     p.11 MOUTV with N, p.12 MADMY 1-3 only (6); p.9's single set passes
+#   MKP compares a prefix, not the whole parameter: FAIL p.7 MKPEQI 5 FG
+#     and MKPNEQI 5 FG only
+#   /Q/ tag without its Q: FAIL the p.12 /Q/ check only
+# Control: all pass before and after.
+run "SMAC I against its bulletin's examples (J28-6128 + errata)" python3 check_smac_bulletin.py
+# SMAC + its MCP macro library (strap/smac_mcp.py) on C22-6678-1 p.47,
+# IBM's printed SMAC program; assembled, against p.48's STRAP II code.
+# 50 checks.  Observed injections (same procedure):
+#   MOUTV set base as above: FAIL B for every macro with arguments (9),
+#     D's MABEX, and C ("does not assemble: undefined symbol 'MRD'")
+#   smac_mcp $SCR skeleton loses ",0." (M.): FAIL D MSCR only
+#   control cards re-rendered instead of copied: FAIL A, and every B row
+#     after it (the altered card falls out of A's list into B's walk)
+#   NOT DETECTABLE HERE, recorded: re-rendering STRAP cards instead of
+#     copying them changes nothing, since every STRAP card on p.47 is
+#     already in canonical columns.
+# Control: all pass before and after.
+run "SMAC on C22-6678-1 p.47, assembled against p.48's code" python3 check_smac_mcpref_example1.py
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<
 #
