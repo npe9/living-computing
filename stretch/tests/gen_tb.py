@@ -20,7 +20,7 @@ from strap_asm import assemble, AssemblerError
 def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              console_switches=None,
              printer_checks=None, tape_image=None, tape_checks=None,
-             console_checks=None, console_dump=0,
+             console_checks=None, console_dump=0, mem_dump=None,
              pc_check=None, cycle_bound=None, cycle_window=None,
              ipl=False, pc_trail=False,
              pc_trail_check=None, op_trail=False,
@@ -140,6 +140,8 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append("  Reg#(HWordAddr) opTrailLastPc <- mkReg(0);")
         lines.append("  Reg#(Bit#(32)) opTrailCount <- mkReg(0);")
     lines.append("  Reg#(Bit#(32)) fails <- mkReg(0);")
+    if mem_dump:
+        lines.append("  Reg#(Bit#(32)) dumpI <- mkReg(0);")
     lines.append("")
     lines.append("  function Action check(String label, Word64 got, Word64 expected) =")
     lines.append("    action")
@@ -398,7 +400,28 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     # diagnostic block can be run with its own pass/fail mechanism
     # intact: pass = halted at the block's end, fail = halted at the
     # offending hang, distinguishable by PC alone.
-    pccheck_phase = tcheck_phase0 + len(tape_checks)
+    # MEMORY DUMP -- `mem_dump` = (first word, count): every word in the
+    # range is DISPLAYED, not checked, as "MEMDUMP <word> <hex>" lines,
+    # for a test whose expected memory is too large for one rule per
+    # word (the 7030 SMAC's output cards, docs/smac_7030.md).  One
+    # request/response pair of rules, looping on a counter.
+    dump_phase = tcheck_phase0 + len(tape_checks)
+    if mem_dump:
+        d_start, d_count = mem_dump
+        lines.append(f"  rule dumpReq (phase == {dump_phase});")
+        lines.append(f"    core.mem.readWordReq(fromInteger({d_start}) + truncate(dumpI));")
+        lines.append(f"    phase <= {dump_phase + 1};")
+        lines.append("  endrule")
+        lines.append("")
+        lines.append(f"  rule dumpResp (phase == {dump_phase + 1} && core.mem.responseReady());")
+        lines.append("    let dv <- core.mem.readWordResp();")
+        lines.append(f'    $display("MEMDUMP %0d %016h", {d_start} + dumpI, dv);')
+        lines.append("    dumpI <= dumpI + 1;")
+        lines.append(f"    phase <= (dumpI + 1 < {d_count}) ? {dump_phase} : {dump_phase + 2};")
+        lines.append("  endrule")
+        lines.append("")
+        dump_phase += 2
+    pccheck_phase = dump_phase
     # Cycle bound ("CYCLES<=N"): the run rule fires once per clock, so
     # stepCount at halt is the program's cycle count on this model
     # (one step() = one clock of the microarchitecture model, docs/
@@ -536,6 +559,8 @@ if __name__ == '__main__':
     #   WAITIO                 -- stop when the core is IDLE (halted and
     #                             nothing can interrupt it), not merely
     #                             halted: a BEW,$ waiting on I/O runs on
+    #   DUMP=FIRST,COUNT       -- after the run, display COUNT words of
+    #                             core from word FIRST as MEMDUMP lines
     #   PC=EXPECTED            -- check the instruction counter (a 19-bit
     #                             half-word address) where the program
     #                             halted; see the pccheck rule above
@@ -575,6 +600,7 @@ if __name__ == '__main__':
     # used to cost.
     step_cap = 30000
     wait_for_io = False
+    mem_dump = None
     for spec in sys.argv[3:]:
         if spec == 'WAITIO':
             # stop on core.idle(), not core.halted(): see generate()
@@ -594,6 +620,9 @@ if __name__ == '__main__':
                     + repr(spec))
             n, t = body.split('+-', 1)
             cycle_window = (int(n, 0), int(t, 0))
+        elif spec.startswith('DUMP='):
+            a0, n0 = spec[5:].split(',')
+            mem_dump = (int(a0, 0), int(n0, 0))
         elif spec.startswith('R='):
             reader_image = [int(x, 0) for x in spec[2:].split(',') if x]
         elif spec.startswith('T='):
@@ -615,4 +644,5 @@ if __name__ == '__main__':
                     printer_checks=printer_checks, tape_image=tape_image,
                     tape_checks=tape_checks, pc_check=pc_check,
                     cycle_bound=cycle_bound,
-                    cycle_window=cycle_window, wait_for_io=wait_for_io))
+                    cycle_window=cycle_window, wait_for_io=wait_for_io,
+                    mem_dump=mem_dump))
