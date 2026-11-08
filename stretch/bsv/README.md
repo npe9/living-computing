@@ -564,6 +564,24 @@ in Figure 6 has a `DecodedInstr` constructor and is field-extracted
 correctly even where unexecuted, so the decoder is honest about what
 it recognizes independent of what the datapath implements.
 
+### An index read waits for a pending progressive write (fixed 2026-11-08)
+
+Reference Manual printed p.21: progressive indexing "is executed in two
+parts", the second writing the index register back. E-box-class instructions
+already waited for that, but an I-box instruction could run ahead of it and
+read the old value. The 7030 SMAC (`../decks/smac7030_shell.strap`) found this:
+its frame-restore loop `ST(BU,64)(V+I),1.0($3)`, `KVI,$3,LIMIT`, `BXL,LOOP`
+copied one word too many, over the operation table. `iboxHazard`
+(`StretchIBox.bsv`) now holds an I-box instruction that names such a register,
+as an operand, as the register modifying its address, or as a storage word
+(16-31). Its R/RCZ test also read the wrong register's refill field, the one
+that modifies the address and not the operand's; that is fixed too.
+
+Test: `../decks/index_after_progressive.strap`. Its header records which cases
+fail with the interlock off (KVI, V+I, CB, an indicator branch and a count
+branch through X1, LX and Z of the register as storage) and which do not, so
+the arms for those are not yet shown to be needed.
+
 ### Documented simplifications (deliberate, not oversights)
 
 - **Sign-magnitude sign-bit position within a byte**: the manual gives

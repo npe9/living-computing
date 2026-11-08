@@ -1830,10 +1830,14 @@ names no version, so "STRAP II" is inferred from context, not read.
 ### SMAC I begun as a 7030 program, 2026-11-08
 
 `decks/smac7030_shell.strap` is a RECONSTRUCTION, written here: the shell,
-branch table, MBGEN, MEXIT, MOUTF, MOUTV and skeleton substitution, as a
-7030 program. On the model it reproduces `strap/smac.py`'s output for
-C22-6678-1 p.47, card for card (`tests/check_smac7030.py`). IBM's code for
-SMAC is still not known to survive. `docs/smac_7030.md` lists what is left.
+branch table and every Generator Language subroutine, with `/Q/`, inner
+macros and continuation cards, as a 7030 program. On the model it reproduces
+`strap/smac.py`'s output for C22-6678-1 p.47 and an edge-case deck, card for
+card, and the bulletin's worked examples as written out by hand; it also
+runs generators with STRAP statements in their logic, which `smac.py` cannot
+(`tests/check_smac7030.py`). A Python stand-in still compiles the generators.
+IBM's code for SMAC is still not known to survive. `docs/smac_7030.md` lists
+what is left.
 
 ### SMAC I reconstructed host-side, 2026-11-08
 

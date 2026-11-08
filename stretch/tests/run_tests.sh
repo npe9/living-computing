@@ -1575,16 +1575,32 @@ run "SMAC I against its bulletin's examples (J28-6128 + errata)" python3 check_s
 #     already in canonical columns.
 # Control: all pass before and after.
 run "SMAC on C22-6678-1 p.47, assembled against p.48's code" python3 check_smac_mcpref_example1.py
+# AN INDEX READ AFTER A PENDING PROGRESSIVE WRITE, found by the 7030 SMAC.
+# Hand-written from RefMan printed p.21.  Injections and the cases they do
+# not reach are in the deck's header.
+run "An index read after a pending progressive write" ./run_program.sh ../decks/index_after_progressive.strap StretchIdxProgTb D1a:1088=0x1111111111111111 D1b:1089=0x1111111111111111 D1end:1090=0xeeee D2:1091=0x1111111111111111 R2:1121=0x111000000000000 D3:1092=0x1111111111111111 R3:1122=0x111800000000000 M4:1116=0x0 D5:1093=0x1111111111111111 R5:1123=0x7777 D6a:1095=0x1111111111111111 D6b:1096=0x0 D7a:1097=0x1111111111111111 D7b:1098=0x10740000000bbbb M8:1117=0x0 M9:1118=0x0 R10:1119=0x117000000000000 D10:1114=0x1111111111111111 R11:1120=0x116800000000000 D11:1115=0x1111111111111111 R12:1111=0x111000000000000 R13:1112=0x115800000000000 D13:1109=0x1111111111111111 R14:1113=0x0 D14:1110=0x1111111111111111 PC=2168
 # THE 7030 SMAC, ON THE MODEL (decks/smac7030_shell.strap,
 # docs/smac_7030.md), against strap/smac.py card for card and against the
-# bulletin's printed cards.  Injections in the shell, observed 2026-11-08:
-#   MOUTV's +3 past the operation lost: FAIL A, B and C card compares
-#   parentheses not counted: FAIL C compare only (85 cards, ",(A")
+# bulletin's printed cards.  Injections in the shell, observed 2026-11-08
+# on the full language (the compare named is the only other failure):
+#   MOUTV's N loses the -3: FAIL A, B, C, each QERR 5 and its compare
+#   parentheses not counted: FAIL C compare only (",(A")
 #   "MEOJ," keeps one null argument: FAIL C compare only
 #   /n/ upper bound not checked: FAIL D code 5 only
-#   a blank card not dropped: FAIL C compare only
 #   the comment substituted too: FAIL C QERR (4) and C compare
-#   the product read at offset 0, not 20: FAIL B QERR (7) and B compare
+#   MOUTV's product read at offset 0, not 20: FAIL B QERR (7) and B compare
+#   /Q/ tens digit not stepped: FAIL C compare only (BQ0001, want BQ0011)
+#   continuation text not appended: FAIL C compare and D code 11
+#   continuation limit 9 -> 10: FAIL D code 14 only
+#   POPF leaves X9: FAIL F compare only (X9LOST)
+#   POPF restores only the first word: FAIL C compare only
+#   the usage bit never set: FAIL F compare only (FIRST, want AGAIN)
+#   QINBIT never one: FAIL F compare only (TOP, want INNER)
+#   MGETL's product read at offset 0: FAIL F compare only (LITBAD); this
+#     passed everything until the MNUM case was added for it
+#   a longer parameter not unequal: FAIL B compare only
+#   MKPNEQ takes MKPEQ's sense: FAIL B compare only
+#   MMVPT does not check QCN: FAIL D code 10 only
 # Control: all pass before and after; the deck restored and checked by cmp.
 run "The 7030 SMAC on the model, against smac.py" python3 check_smac7030.py
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN

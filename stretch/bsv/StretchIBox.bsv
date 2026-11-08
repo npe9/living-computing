@@ -243,6 +243,34 @@ function Bool indexIndicator(Bit#(6) n) =
   (n == ind_XF || n == ind_XCZ || n == ind_XVLZ || n == ind_XVZ || n == ind_XVGZ
    || n == ind_XL || n == ind_XE || n == ind_XH);
 
+// >>> AN INDEX REGISTER A PENDING PROGRESSIVE LEVEL WILL WRITE, 2026-11-08. <<<
+// Reference Manual printed p.21: progressive indexing "is executed in two
+// parts", and the second writes the index register back.  Nothing stopped
+// an I-box instruction running ahead of that write and reading the old
+// value.  Found by the 7030 SMAC (decks/smac7030_shell.strap): in
+// "ST(BU,64)(V+I),1.0($3)", "KVI,$3,LIMIT", "BXL,LOOP" the compare saw the
+// value before the store's, so the loop copied one word too many.  The
+// program is sequential on paper and must be so here.  Test:
+// decks/index_after_progressive.strap.
+function Bool progressiveWrites(Vector#(4, LaLevel) lv, Bit#(4) j);
+  Bool r = False;
+  for (Integer k = 0; k < 4; k = k + 1)
+    if (lv[k].valid) begin
+      case (lv[k].di) matches
+        tagged VflInt .v: if (v.a.p != 0 && v.a.p != 4 && v.a.i1 == j) r = True;
+        tagged Connective .c: if (c.a.p != 0 && c.a.p != 4 && c.a.i1 == j) r = True;
+        default: r = r;
+      endcase
+    end
+  return r;
+endfunction
+
+// The same, for an operand addressed as storage: index registers are words
+// 16-31 (jb_ax4b p.58: "R,$X15" assembles to address 037, word 31).
+function Bool progressiveWord(Vector#(4, LaLevel) lv, WordAddr w);
+  return (w >> 4) == 1 && progressiveWrites(lv, w[3:0]);
+endfunction
+
 function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, Vector#(4, LaLevel) lv);
   Bool pending = False;
   for (Integer k = 0; k < 4; k = k + 1) if (lv[k].valid) pending = True;
@@ -264,14 +292,18 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
       // JCFIX (printed p.295).  Z and SIC already hold on
       // eboxRegister; the direct-index operations (LV/LX/LC/LR,
       // their stores, V+ ...) now do too.
-      h = levelHolds(lv, ea[18:1]) || refillWord || eboxRegister(ea[18:1]);
+      h = levelHolds(lv, ea[18:1]) || refillWord || eboxRegister(ea[18:1])
+          || progressiveWrites(lv, x.j) || progressiveWrites(lv, x.idx)
+          || progressiveWord(lv, ea[18:1]);
     end
     tagged ImmIndex .x:
-      h = (x.code == 4'b0111 || x.code == 4'b1111)                          // V+ICR / V-ICR
-          && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill));
+      h = ((x.code == 4'b0111 || x.code == 4'b1111)                         // V+ICR / V-ICR
+           && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill)))
+          || progressiveWrites(lv, x.j);
     tagged CountBranch .x:
-      h = (x.refill == 1) && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill));
-    tagged BranchInd .x: h = !indexIndicator(x.indNum);
+      h = ((x.refill == 1) && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill)))
+          || progressiveWrites(lv, x.j) || (x.idx == 1 && progressiveWrites(lv, 1));
+    tagged BranchInd .x: h = !indexIndicator(x.indNum) || (x.idx == 1 && progressiveWrites(lv, 1));
     tagged BranchOrMisc .x: begin
       // Unconditional branches drain the levels first: a halt (a
       // branch to itself) must not be reported while E-box work is
@@ -281,10 +313,21 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
       if (!x.misc) h = (x.code != 3'b110);
       else if (x.code == 3'b100) begin                                       // Z
         WordAddr zw = baWord(effAddr24(st, {x.addr, 5'b0}, x.idx));
-        h = levelHolds(lv, zw) || eboxRegister(zw);
+        h = levelHolds(lv, zw) || eboxRegister(zw) || progressiveWrites(lv, x.idx)
+            || progressiveWord(lv, zw);
       end
-      else if (x.code == 3'b000 || x.code == 3'b001)                         // R / RCZ
-        h = levelHolds(lv, zeroExtend(st.readIndex(x.idx).refill));
+      else if (x.code == 3'b000 || x.code == 3'b001) begin                   // R / RCZ
+        // The operand is the index word AT THE EFFECTIVE ADDRESS (Ref.
+        // Manual p.26; the R arm in StretchExecute.bsv), and x.idx only
+        // modifies that address.  This test used to read x.idx's refill
+        // field, so a store to the real refill word could be overtaken.
+        // Fixed 2026-11-08.  An operand that is a storage word has a
+        // refill field not visible here without a fetch: drain.
+        WordAddr rw = baWord(effAddr24(st, {x.addr, 5'b0}, x.idx));
+        h = (rw >> 4) != 1 || levelHolds(lv, rw)
+            || levelHolds(lv, zeroExtend(st.readIndex(rw[3:0]).refill))
+            || progressiveWrites(lv, x.idx) || progressiveWord(lv, rw);
+      end
       // EX/EXIC: drain the levels first, unconditionally.  BOTH ARE
       // IMPLEMENTED (EX 2026-09-25, EXIC 2026-09-29) and for both this
       // is a real requirement rather than the "anything not listed"
@@ -301,7 +344,8 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
     end
     tagged Sic .x: begin
       BitAddr ea = effAddr24(st, x.addr, x.idx);
-      h = levelHolds(lv, ea[23:6]) || eboxRegister(ea[23:6])
+      h = levelHolds(lv, ea[23:6]) || eboxRegister(ea[23:6]) || progressiveWrites(lv, x.idx)
+          || progressiveWord(lv, ea[23:6])
           || iboxHazard(st, guessPending, decodeHalfWord(x.inner), lv);
     end
     default: h = True;

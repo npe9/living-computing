@@ -1,0 +1,187 @@
+! index_after_progressive.strap -- an I-box instruction that reads an index
+! register straight after a progressive VFL instruction names it.
+!
+! Reference Manual printed p.21: progressive indexing "is executed in two
+! parts", the second writing the index register back.  The model let
+! index-class instructions run ahead of that write.  Found 2026-11-08 by
+! the 7030 SMAC's frame-restore loop (decks/smac7030_shell.strap), which
+! copied one word past its region and overwrote the operation table.
+!
+! WEAKER STANDARD, STATED: hand-written from p.21 and the sequential
+! programming model, not transcribed.  The expected values are worked out
+! by hand from that model.
+!
+! A failing branch case stores a mark and carries on, so that one failure
+! does not hide the cases after it.  Each case comes after a progressive LOAD on another register ($4), which
+! keeps the store still pending when the next instruction is prepared.
+!
+! OBSERVED, 2026-11-08 (bsv/StretchIBox.bsv, restored from a copy checked
+! with cmp):
+!   progressiveWrites always False: FAIL D1end (T1), D3 (T3), M4 (T4), M8
+!     (T8), M9 (T9), R13 (T13), R14 and D14 (T14) only
+!   the R test reads x.idx's refill, as it did: FAIL R12 (T12) only
+! NOT SHOWN TO DISCRIMINATE: T2 (SV), T5 (LX through the register), T6 (Z
+! through it), T7 (SIC through it), T10 (V+) and T11 (R) pass with the
+! interlock off, because on this model those instructions do not get ahead
+! of the write here.  They stay as guards, since the sequential model
+! requires the same result, and the interlock's arms for them are unproven.
+!
+        SLC, (8)2000.0
+START   LVI, $4, SRC
+! ---- T1: ST(V+I), KVI, BXL, the shape that found it.  Two words, not three.
+        LVI, $3, D1
+L1      LVI, $4, SRC
+        L(BU,64)(V+I), 1.0($4)
+        ST(BU,64)(V+I), 1.0($3)
+        KVI, $3, D1END
+        BXL, L1
+! ---- T2: SV of the register (DirIndex, j). ------------------------------
+        LVI, $3, D2
+        LVI, $4, SRC
+        L(BU,64)(V+I), 1.0($4)
+        ST(BU,64)(V+I), 1.0($3)
+        SV, $3, R2
+! ---- T3: V+I of the register (ImmIndex, j).  Neither addition is lost. --
+        LVI, $3, D3
+        LVI, $4, SRC
+        L(BU,64)(V+I), 1.0($4)
+        ST(BU,64)(V+I), 1.0($3)
+        V+I, $3, 1.0
+        SV, $3, R3
+! ---- T4: CB of the register (CountBranch, j).  Count 2, down to 1 by the
+! ---- progressive form, down to 0 by the CB, which so falls through. -----
+        LVI, $3, SRC
+        LCI, $3, 2
+        LVI, $4, SRC
+        L(BU,64)(V+I), 1.0($4)
+        L(BU,64)(V+IC), 1.0($3)
+        CB, $3, T4BAD
+        B, T5
+T4BAD   LVI, $7, 4
+        SV, $7, M4
+! ---- T5: LX through the register (DirIndex, idx). -----------------------
+T5      LVI, $3, D5
+        LVI, $4, SRC
+        L(BU,64)(V+I), 1.0($4)
+        ST(BU,64)(V+I), 1.0($3)
+        LX, $5, 0($3)
+        SX, $5, R5
+! ---- T6: Z through the register (BranchOrMisc Z, idx). -------------------
+        LVI, $3, D6
+        LVI, $4, SRC
+        L(BU,64)(V+I), 1.0($4)
+        ST(BU,64)(V+I), 1.0($3)
+        Z, 0($3)
+! ---- T7: SIC through the register (Sic, idx).  The word the store left
+! ---- must be the one kept; the SIC lands in the word after it. -----------
+        LVI, $3, D7
+        LVI, $4, SRC
+        L(BU,64)(V+I), 1.0($4)
+        ST(BU,64)(V+I), 1.0($3)
+        SIC, 0($3)
+        B, T8
+! ---- T8: an index-indicator branch whose address is modified by $1
+! ---- (BranchInd, idx).  $1 walks from the mark's branch to the good one. -
+T8      LVI, $6, 0
+        KVI, $6, 0
+        LVI, $1, TBL
+        LVI, $4, SRC
+        L(BU,64)(V+I), 1.0($4)
+        L(BU,64)(V+I), 1.0($1)
+        BXE, 0($1)
+        B, T8BAD
+T8BAD   LVI, $7, 8
+        SV, $7, M8
+! ---- T9: a count branch whose address is modified by $1 (CountBranch, idx).
+T9      LVI, $1, TB2
+        LCI, $6, 2
+        LVI, $4, SRC
+        L(BU,64)(V+I), 1.0($4)
+        L(BU,64)(V+I), 1.0($1)
+        CB, $6, 0($1)
+        B, T9BAD
+T9BAD   LVI, $7, 9
+        SV, $7, M9
+! ---- T10: V+ of the register from a word (DirIndex, j). ------------------
+T10     LVI, $3, D10
+        LVI, $4, SRC
+        L(BU,64)(V+I), 1.0($4)
+        ST(BU,64)(V+I), 1.0($3)
+        V+, $3, ONEW
+        SV, $3, R10
+! ---- T11: R on the register (BranchOrMisc R, operand).  The refill word's
+! ---- value is what stays; the progressive addition came before it. -------
+        LX, $3, IW11
+        LVI, $4, SRC
+        L(BU,64)(V+I), 1.0($4)
+        ST(BU,64)(V+I), 1.0($3)
+        R, $X3
+        SV, $3, R11
+! ---- T12: R after an ordinary store to its refill word.  Not progressive:
+! ---- the old R test read the wrong register's refill field. --------------
+        LX, $3, IW12
+        L(BU,64), NEW12
+        ST(BU,64), TG12
+        R, $X3
+        SV, $3, R12
+! ---- T13: LX of the register, addressed as storage (DirIndex, operand). --
+        LVI, $3, D13
+        LVI, $4, SRC
+        L(BU,64)(V+I), 1.0($4)
+        ST(BU,64)(V+I), 1.0($3)
+        LX, $5, $X3
+        SV, $5, R13
+! ---- T14: Z of the register, addressed as storage (Z, operand).  The zero
+! ---- comes after the progressive addition, so zero stays. ----------------
+        LVI, $3, D14
+        LVI, $4, SRC
+        L(BU,64)(V+I), 1.0($4)
+        ST(BU,64)(V+I), 1.0($3)
+        Z, $X3
+        SV, $3, R14
+PASS    BEW, $
+        CNOP
+SRC     DD(BU,64), (16)1111111111111111
+        DD(BU,64), (16)2222222222222222
+        DD(BU,64), (16)3333333333333333
+D1      DD(BU,64), 0
+        DD(BU,64), 0
+D1END   DD(BU,64), (16)eeee
+D2      DD(BU,64), 0
+D3      DD(BU,64), 0
+D5      DD(BU,64), 0
+        DD(BU,64), (16)7777
+D6      DD(BU,64), (16)cccc
+        DD(BU,64), (16)dddd
+D7      DD(BU,64), (16)aaaa
+        DD(BU,64), (16)bbbb
+TBL     B, T8BAD
+        CNOP
+        B, T9
+        CNOP
+TB2     B, T9BAD
+        CNOP
+        B, T10
+        CNOP
+ONEW    XW, 1.0, 0, 0
+IW11    XW, D11, 0, TG11
+TG11    XW, D10, 0, 0
+IW12    XW, D2, 0, TG12
+TG12    XW, D2, 0, 0
+NEW12   XW, D3, 0, 0
+D13     DD(BU,64), 0
+D14     DD(BU,64), 0
+R12     DD(BU,64), 0
+R13     DD(BU,64), 0
+R14     DD(BU,64), 0
+D10     DD(BU,64), 0
+D11     DD(BU,64), 0
+M4      DD(BU,64), 0
+M8      DD(BU,64), 0
+M9      DD(BU,64), 0
+R10     DD(BU,64), 0
+R11     DD(BU,64), 0
+R2      DD(BU,64), 0
+R3      DD(BU,64), 0
+R5      DD(BU,64), 0
+        END, START
