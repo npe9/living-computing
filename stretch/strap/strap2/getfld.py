@@ -29,6 +29,7 @@ class Getfld:
         self.sysym = sysym      # name -> (value, dds) or None; CPLTSY's BOPSER
         self.tail = tail        # TAILOR's prefix, or None
         self.radix = 0          # Gfsrad: 8 bits, zero means 10 (p.70)
+        self.gp_radix = 0       # a DD's radix for its g.p. values (C28 p.30 c)
 
     # -- the top: a field and its g.p. chain ----------------------------------
     def field(self, nogp=False, have_first=False):
@@ -52,10 +53,19 @@ class Getfld:
         else:
             self._sum(x)
             self._subscripts(x)
+        self.gp_chain(x, nogp)
+        if g.ch is not None and g.ch not in END_FIELD:
+            raise FieldError(67, f"INAPPROPRIATE CHARACTER {g.ch!r}")
+        return x
+
+    def gp_chain(self, x, nogp=False):
+        """Each (.n) with its value after the field in x, Box 37 on."""
+        g = self.g
         x_end = x
         while g.ch == "(" and self._peek_gp():
             if nogp:
                 raise FieldError(108, "G.P. NOT ALLOWED: this statement produces no binary output (C28-6129 printed p.26)")
+            self.radix = self.gp_radix
             n = self._gp_number()
             if g.ch is None or g.ch in END_FIELD:
                 raise FieldError(66, f"parenthetical integer entry (.{n}) has no value after it (C28-6129 printed p.25)")
@@ -64,9 +74,6 @@ class Getfld:
             self._subscripts(inner)
             x_end.gp = (n, inner)
             x_end = inner
-        if g.ch is not None and g.ch not in END_FIELD:
-            raise FieldError(67, f"INAPPROPRIATE CHARACTER {g.ch!r}")
-        return x
 
     def _closes_field(self):
         """Does the parenthesis here close with nothing after it in the field?"""
@@ -87,19 +94,34 @@ class Getfld:
                                      (card[col] == "(" and card[col + 1:col + 2] == "."))
 
     def _peek_gp(self):
-        """Is '(' here the start of (.n)?  Look past blanks without consuming."""
+        """Is '(' here the start of (.n), or of C28-6129 p.30's (r,.n)?  Look past
+        blanks without consuming."""
         g = self.g
         col = g.col
         card = g.card
-        while card is not None and col < 72:
-            if card[col] != " ":
-                return card[col] == "."
+        while card is not None and col < 72 and card[col] in " 0123456789":
             col += 1
-        return False
+        if card is None or col >= 72:
+            return False
+        if card[col] == ".":
+            return True
+        if card[col] != ",":
+            return False
+        col += 1
+        while col < 72 and card[col] == " ":
+            col += 1
+        return col < 72 and card[col] == "."
 
     def _gp_number(self):
         g = self.g
-        g.next()                # '.'
+        g.next()                # '.', or the digit of (r,.n)
+        if g.ch in DIGIT:
+            r = 0
+            while g.ch in DIGIT:
+                r = r * 10 + int(g.ch)
+                g.next()
+            self.radix = r
+            g.next()            # ','
         g.next()
         n = 0
         while g.ch in DIGIT:

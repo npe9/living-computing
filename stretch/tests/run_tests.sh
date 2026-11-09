@@ -1628,6 +1628,7 @@ run "The 7030 SMAC on the model, against smac.py" python3 check_smac7030.py
 # counts, and compares its image with strap_asm's for every deck.
 run "STRAP II GETFLD against C22-6729's printed coded expressions" python3 check_strap2_coded.py
 run "STRAP II origin, location counters, tails, unit bits, UITER rules, by hand" python3 check_strap2.py
+run "STRAP II numeric DD (MQDD, MQDNUM, DNUM, Fig. 26) against C28-6129's examples and p.359" python3 check_strap2_dd.py
 run "STRAP II against the listing oracles and strap_asm's images" python3 check_strap2_oracles.py
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<

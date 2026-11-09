@@ -17,6 +17,7 @@ from .optable import lookup, ENTRIES, dds13, DEFAULT_BS, MODE_CODE
 from .symtab import (SymbolTable, KIND_LABEL, KIND_SYN, KIND_UNDEF)
 from .unit import *             # noqa: F401,F403
 from .value import Value
+from .dnum import Number, Dbl, Scan, store_entry
 
 SECONDARY = set(optable._a.PROGRESSIVE_SECONDARY_OP) | set(optable._a.CW_SECONDARY) | {"SEOP"}
 MODES = set(MODE_CODE)
@@ -499,10 +500,8 @@ class Pass1:
     def _mqdd(self, unit, e):
         """MQDD, MQDALF [98-103].
 
-        An alphabetic DD is converted here, as p.102 says.  A numeric DD keeps
-        each field's text in the unit for OUTPUT, and Fig. 26's double precision
-        form with MQDNUM and DNUM are still to be written: the host's conversion
-        is strap_asm's parse_dd_literal, verified against the listings.
+        An alphabetic DD is converted here, as p.102 says, and a numeric DD to
+        Fig. 26's double precision form, as p.26 says.
         """
         g = self.g
         u = self.units
@@ -561,33 +560,99 @@ class Pass1:
         u.put(unit, DD_LOC, (self.bcfldx - 8 * len(text)))
 
     def _numeric(self, unit):
+        """MQDD's loop [98-100], MQDNUM and DNUM (dnum.py): each field to Fig. 26."""
         g = self.g
         u = self.units
         u.put(unit, DD_NUMERIC, 1)
-        rad = self.entry_mode.strip() if self.entry_mode else ""
-        fields = []
-        while g.ch == ",":
-            text, depth = "", 0
-            c = g.next()
-            while c is not None and not (depth == 0 and c in ",;'"):
-                if c == "(":
-                    depth += 1
-                elif c == ")":
-                    depth -= 1
-                text += c
-                c = g.next()
-            fields.append(text)
-        if rad:
-            fields = [("(%s)%s" % (rad, t)) if t[:1].isdigit() else t for t in fields]
-        joined = "\x01".join(fields)
+        op_fn, op_radix = self._op_entry()
         p = self.bcfldx
         u.put(unit, DD_LOC, p)
-        for ch in joined:
-            self.mem.put(p, 8, ord(ch) & 255)
-            p += 8
+        n = 0
+        while True:
+            if g.ch == ",":
+                g.next()
+            elif n:
+                break
+            n += 1
+            p = self._numeric_field(p, op_fn, op_radix, g.ch == ",")
+            if g.ch == ",":
+                self.mem.put(p - 1, 1, 1)       # e: the format repeats
+            elif g.ch is not None and g.ch not in ";'":
+                raise FieldError(67, f"INAPPROPRIATE CHARACTER {g.ch!r} IN A DD")
+            else:
+                break
         self.bcfldx = p
-        u.put(unit, ZILPMS, len(joined))
-        u.put(unit, ZINFLD, max(1, len(fields)))
+        u.put(unit, ZINFLD, n)
+
+    def _op_entry(self):
+        m = (self.entry_mode or "").strip().upper()
+        if not m:
+            return None, 0
+        if m[0] == "F" and m[1:].isdigit():
+            return int(m[1:]), 0
+        if m.isdigit():
+            return None, int(m)
+        raise FieldError(45, f"ENTRY MODE {m} ON A NUMERIC DD")
+
+    def _numeric_field(self, p, fn, radix, _more):
+        """Boxes 6-29: entry mode, number, S and X in either order, then g.p."""
+        g = self.g
+        gf = self.getfld
+        chain = Expr()
+        chain.null = True
+        if g.ch == "(" and not gf._peek_gp():
+            # 14 MQDEMB: a field's own entry mode overrules the operation's.
+            got = self._field_entry()
+            if got is not None:
+                fn, radix = got
+        value = Number(Dbl())
+        if g.ch is not None and g.ch not in ",;'(":
+            value = Scan(g, radix).expression()
+        elif g.ch == "(" and not gf._peek_gp():
+            value = Scan(g, radix).expression()
+        sbits = xexp = None
+        while g.ch is not None and g.ch.upper() in ("S", "X"):
+            if g.ch.upper() == "S":
+                g.next()
+                v = 0
+                while g.ch is not None and g.ch in "01234567":
+                    v = v * 8 + int(g.ch)
+                    g.next()
+                # p.27: inserted by a logical OR.
+                sbits = (sbits or 0) | v
+            else:
+                g.next()
+                x = Scan(g, 10)._unary()
+                xexp = int(x.v.exact())
+        gf.gp_radix = radix
+        gf.gp_chain(chain)
+        gf.gp_radix = 0
+        # encode(): "1111 0" for the null head, then the chain with its final 0.
+        bits = encode(chain)[5:]
+        return store_entry(self.mem, p, fn, value, sbits, xexp, bits, False)
+
+    def _field_entry(self):
+        """'(F7)' or '(8)': the entry mode, or None if this parenthesis opens an
+        expression.  Decided by looking ahead, as GETFLD's radix prefix is."""
+        g = self.g
+        card, col = g.card, g.col
+        text = ""
+        while card is not None and col < 72 and card[col] != ")":
+            text += card[col]
+            col += 1
+        t = text.replace(" ", "").upper()
+        fn = None
+        radix = 0
+        if t[:1] == "F" and t[1:].isdigit():
+            fn = int(t[1:])
+        elif t.isdigit():
+            radix = int(t)
+        else:
+            return None
+        while g.ch != ")":
+            g.next()
+        g.next()
+        return fn, radix
 
     def _mx(self, unit):
         """MX [128-129]: three fields L, LP, N with no g.p., ZIFP2 on, ZIFALL off.

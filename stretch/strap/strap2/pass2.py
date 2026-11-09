@@ -17,6 +17,7 @@ from .optable import ENTRIES, lookup, dds13, dds_parts, DEFAULT_BS, MODE_NAME
 from .symtab import KIND_LABEL, KIND_SYN, KIND_UNDEF, KIND_SPECIAL, FUNCTION
 from .unit import *             # noqa: F401,F403
 from .value import V
+from .dnum import final, load_entry, DnumError
 
 ABS_START = 0o41 * 64           # p.33: 41 octal, or 0 in PUNREL mode
 
@@ -288,8 +289,37 @@ class Pass2:
         try:
             self.abs += self.dd_length(unit, False)
         except Unresolved:
-            # 14J: a new relative symbolic counter.
-            raise _a.AssemblerError("DD whose length rests on a later symbol: not yet")
+            self._dd_later(unit)
+
+    def _dd_later(self, unit):
+        """14J [34]: a new relative symbolic counter.  The length is the count
+        times the f.l. (numeric) or the b.s. (alphabetic), which is the one
+        coded expression the special symbol has to keep."""
+        u = self.units
+        p = unit + FIXED_BITS
+        fl_at = bs_at = None
+        if u.get(unit, ZIFSFL):
+            fl_at = p
+            p = self.val.read_field(self.mem, p).next
+        if u.get(unit, ZIFSBS):
+            bs_at = p
+        at = fl_at if u.get(unit, DD_NUMERIC) else bs_at
+        if at is None:
+            # What is unknown does not touch the length: the b.s. of a numeric DD.
+            mode, fl, bs = dds_parts(u.get(unit, ZIDDS))
+            self.abs += u.get(unit, ZINFLD) * (fl or 64 if u.get(unit, DD_NUMERIC) else bs or 8)
+            return
+        v = self.val.read_field(self.mem, at)
+        if v.avail:
+            self.abs += u.get(unit, ZINFLD) * (v.total or 64)
+            return
+        f = self.st.special()
+        self.st.put(f, "ZABS", self.abs)
+        self.st.put(f, "ZSYM", self.sym)
+        self.st.put(f, "ZDIMX", addr_copy(self, at, v.next))
+        self.st.put(f, "ZDIMN", 1)
+        self.st.put(f, "ZFLM", u.get(unit, ZINFLD))
+        self.abs, self.sym = 0, f
 
     def _dr_dims(self, unit):
         """The dimension fields after any symbolic dds, and how many."""
@@ -700,22 +730,11 @@ class Pass2:
         u = self.units
         mode, fl, bs = self.dd_dds(unit)
         loc = u.get(unit, DD_LOC)
+        if u.get(unit, DD_NUMERIC):
+            self._numeric_b(unit, at, mode, fl or 64, bs, loc)
+            return
         n = u.get(unit, ZILPMS)
         text = "".join(chr(self.mem.get(loc + 8 * k, 8)) for k in range(n))
-        if u.get(unit, DD_NUMERIC):
-            length = fl or 64
-            pos = at
-            fields = text.split("\x01") if text else [""]
-            lit_mode = mode if u.get(unit, ZIFDDS) else None
-            for t in fields:
-                t, gps = _a.split_parenthetical_entries(t)
-                self.image.deposit(pos, length, _a.parse_dd_literal(t, None, lit_mode))
-                # C28-6129 printed p.25: ORed into the data entry field.
-                for bit, expr in gps:
-                    self.image.or_into(pos, bit + 1, _a.parse_dd_literal(expr))
-                pos += length
-            self.running = pos
-            return
         tag = u.get(unit, ZIOTPT) & 3
         from charsets import ENTRY_MODES
         table = ENTRY_MODES[{0: "A", 1: "IQS", 2: "CC", 3: "P"}[tag]]
@@ -726,6 +745,28 @@ class Pass2:
                 raise _a.AssemblerError(f"character {ch!r} is not in the character set (Reference Manual printed p.166)")
             self.image.deposit(pos, width, table[ch])
             pos += width
+        self.running = pos
+
+    def _numeric_b(self, unit, at, mode, fl, bs, p):
+        """OUTPUT's numeric DD [26, 158-159]: each Fig. 26 entry to its final
+        bits, then each g.p. ORed in (C28-6129 printed p.25)."""
+        pos = at
+        # C28-6129 p.30 d: "DD(BU, 12(.2)7, 8)": a g.p. on the field length is
+        # ORed into every field.
+        every = []
+        if self.units.get(unit, ZIFSFL):
+            every = self.val.read_field(self.mem, unit + FIXED_BITS).gps
+        while True:
+            fn, num, sbits, xexp, gps, more, p = load_entry(self.mem, p, self.val.read_chain)
+            try:
+                self.image.deposit(pos, fl, final(mode, fl, bs, num, fn, sbits or None, xexp))
+            except DnumError as err:
+                self.msg.add(err.number, str(err), unit)
+            for bit, value in every + gps:
+                self.image.or_into(pos, bit + 1, value)
+            pos += fl
+            if not more:
+                break
         self.running = pos
 
     def dr_b(self, unit, at, name):

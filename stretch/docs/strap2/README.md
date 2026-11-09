@@ -29,8 +29,8 @@ A disagreement between these files is a reason to go back to the page.
 Fig. 20's bits, with GETFLD's coded expressions (App. C) inside them; UITER and
 Pass 2a keep the two location counters and resolve the cascade of special
 symbols; Pass 2b decodes each unit and fills in the word. It is not `strap_asm`
-restructured, but it borrows `opcodes.py`, `strap_asm`'s `enc_*` encoders and its
-numeric DD literal parser as leaf facts. Measured 2026-11-09:
+restructured, but it borrows `opcodes.py` and `strap_asm`'s `enc_*` encoders as
+leaf facts. Measured 2026-11-09:
 
 | check | result |
 |---|---|
@@ -43,12 +43,37 @@ The known difference: `strap_asm` puts a NOP in a half word rounded over before
 a DR(N) or DRZ(N), and p.33 makes only a CNOP a NOP. strap2 follows the guide. No
 listing prints those halves, so no oracle can decide.
 
-**Not yet written:** Fig. 26's numeric DD (MQDD, MQDNUM, DNUM); a DD length
-resting on a later symbol; DDI; IOD and REEL (MIOD, NMCP); the MIBA and MBSPEC
+**Not yet written:** DDI; IOD and REEL (MIOD, NMCP); the MIBA and MBSPEC
 corrections; the coprocessor; DUPLI; relocation; subscripts with dimensions; the
 system symbols' register-length dds; MULTI's equal-value test; and OUTPUT's
 listing, to be compared with C22-6678-1 p.48 and CHM 102633945. An unwritten path
 refuses loudly.
+
+**Numeric DD** (`dnum.py`, `tests/check_strap2_dd.py`): each field goes to Fig. 26
+p.193 in Pass 1, with MQDNUM's and DNUM's 96-bit truncating arithmetic, and OUTPUT
+makes the word from the dds, by C28-6129 pp.27-30. The test runs that manual's
+examples, Fig. 3 p.19 as printed, and MCP p.359's powers of ten.
+
+**A decision no page can check.** The charts make `1.0` come out low. DNUM's box 36
+raises the radix to the running exponent, box 38 multiplies (p.109), a negative power
+is an inversion (p.111 box 13), and the inverse truncates. So `1.0` is 10 x (1/10
+truncated), which is one unit below 1 in 48 bits; `.5` and `17.5` likewise. OUTPUT
+does not round: p.359's 1.E32 shows that. Against this, IBM's own examples write
+`DD(N), 0.5` and `DD(N), 1.0` (C22-6578; Performance Characteristics Vol. 2), which
+suggests programmers trusted them, but no page prints such a word in binary. strap2
+follows the charts, and `strap_asm`, using the exact value, gives exactly 1. A
+printed word for any fraction would settle it.
+
+**CHOSEN for numeric DD:** one bit `m` after Fig. 26's sign byte for the number's own
+sign, since the figure has no place for it; MQLL4 as an exact quotient truncated at 96
+bits rather than p.111's three steps; a quotient counts as a fraction unless whole;
+the system constants as 96-bit truncations; `$INF` refused.
+
+**A lead, not a result: MCP p.359 lines 41-42.** 1.E512 and 9.99999E615 both print
+exponent `3246+`, which is 1702 as eleven bits: twice 851, the exponent of 10**256. So
+the 10**512 table entry seems to keep the square's exponent, unnormalized, with the
+exponent flag set. The fractions (zero, and `736432...`) remain unexplained, and strap2
+still refuses both.
 
 **What building it found:**
 

@@ -216,7 +216,11 @@ class Value:
             p = self._normal(mem, p, v)
         else:
             raise ValueError("prefix %o" % prefix)
-        # 4A: the g.p. chain.
+        v.next = self._gp_chain(mem, p, v)
+        return v
+
+    def _gp_chain(self, mem, p, v):
+        """4A: the g.p. chain and its final 0; the bit after."""
         while mem.get(p, 1):
             n = mem.get(p + 1, 6)
             p += 7
@@ -230,8 +234,16 @@ class Value:
             if not inner.avail:
                 v.avail = False
             v.gps.append((n, inner.total))
-        v.next = p + 1
-        return v
+        return p + 1
+
+    def read_chain(self, mem, p):
+        """For Fig. 26: ([(n, value)], the bit after).  Fig. 26's d is the chain's
+        first bit."""
+        v = V()
+        p = self._gp_chain(mem, p, v)
+        if not v.avail:
+            raise ValueError("g.p. value unavailable")
+        return v.gps, p
 
     @staticmethod
     def _skip_ones(mem, p):
