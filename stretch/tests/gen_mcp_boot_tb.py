@@ -292,7 +292,7 @@ def main():
         print(generate(module_name, prog,
                        [("mcp_start_no_ipl_error",
                          str(prog.symtab["XERRAD"] // 64), 0)],
-                       step_cap=12000000,
+                       step_cap=40000000,
                        wait_for_io=True,
                        pc_trail=True,
                        console_dump=128,

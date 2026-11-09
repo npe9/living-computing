@@ -2421,8 +2421,9 @@ run "a guessed branch's target is the one computed at the guess" ./run_program.s
 # THE DECIMAL UNSIGNED STORE, Reference Manual printed p.63, for MCP's $TIME
 # (printed p.300 line 33).  Observed injections, each on the rebuilt model,
 # restored from a saved copy checked with cmp:
-#   zones not taken from the sign byte register: exactly A, B, E, F, G, I.
-#   offset's two low-order bits not ignored:     exactly G.
+#   zones not taken from the sign byte register: exactly A, B, E, F, G, I, L.
+#   offset's two low-order bits not ignored:     exactly G (measured before
+#     cases L and M were added; neither has an offset).
 #   PF on for the high bits of the byte taking part: exactly PF_case_M_off.
 #   zones read as data by the result indicators: exactly RZ_case_L_on.
 run "decimal unsigned store: digits, zones, partial bytes, offset, indicators" ./run_program.sh ../decks/vfl_st_decimal.strap StretchStDecimalTb \

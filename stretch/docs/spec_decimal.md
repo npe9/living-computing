@@ -110,6 +110,10 @@ change.
 
 ### Where the model refuses today
 
+(As of 2026-10-25.  The gate has since also come to pass CV, LTRCV and
+`ST(DU)`, and its line numbers have moved: see `radixConv` and
+`decimalStoreU` in `StretchExecute.bsv`.)
+
 `bsv/StretchExecute.bsv` ll.2245-2253, inside `vflIntOp`:
 
 ```
