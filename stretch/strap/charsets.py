@@ -75,9 +75,21 @@ different strength each:
          digits, 0-zone / and S-Z, 11-zone - and J-R, 12-zone + and
          A-I), the values come out canonical at every spot checked,
          it is uppercase-only, and only bits 2-7 are significant,
-         which matches p.16's mode-A rule verbatim.  CAVEAT KEPT:
-         internal BCD and 7-track tape BCD differ in a position or
-         two, notably BLANK, and this grid puts BLANK at 0o00.
+         which matches p.16's mode-A rule verbatim.
+         BLANK IS 0o20, NOT THE GRID'S 0o00 (corrected 2026-11-08).  The
+         grid puts BLANK at 0o00, and C28-6129 printed p.16 says mode A
+         is "the 6-bit IBM tape BCD format".  Three witnesses say what
+         that means for blank: C22-6678-1 printed p.56, Appendix F, BCD
+         column, blank 20; MCP printed p.260 lines 32-38's table GRADA,
+         indexed by a 6-bit BCD code, with the blank in position 16 (read
+         in the ink, line 34 "/// /STUVWXYZ"); and MCP printed p.368
+         line 33, "LFI(BU,12),(8)2012 ... TEST FOR BCD BLANK", blank then
+         zero.  With blank at 0o00, MCP's break-out routine padded
+         fields with a code its CLOCK processor does not take for blank,
+         and C22-6678-1's "COMD,CLOCK" was rejected as ILLEGAL COMMAND
+         (docs/boot_plan.md).  APPENDIX F STILL DIFFERS on the comma and
+         the 8-4 quote (it prints ' 33 and , 14; this table and GRADA
+         have , 33 and ' 14); GRADA is MCP's own, so it decides here.
 
   IQS -> the 89 Character Set, via a two-document chain.  Reference
          Manual printed p.153 says the console keyboard's set
@@ -112,7 +124,7 @@ in a table of their own rather than fought into IQS.
 # Only bits 2-7 are significant; bits 0-1 are zero throughout.
 # ---------------------------------------------------------------------
 A = {
-       ' ': 0o000,   # col 0000 row 0000
+       ' ': 0o020,   # NOT the grid's col 0000 row 0000: see the docstring
        '1': 0o001,   # col 0000 row 0001
        '2': 0o002,   # col 0000 row 0010
        '3': 0o003,   # col 0000 row 0011
