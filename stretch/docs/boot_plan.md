@@ -2337,8 +2337,9 @@ writes no longer end, and every word is logged as it is typed
 LASL LRL`. STM does not exist on X-1 or K-1 (Chen, CHM 102634375), so
 MCP probes for it on every interruption and clears OP.
 
-**THE NEW FRONTIER.** After the CLOCK echo, MCP types a five-word
-message holding `//////` forever: the message's first word is
+**THE NEW FRONTIER (ANSWERED below, "THE START RUNS TO THE READER": a
+model fault, the WRITE's end address).** After the CLOCK echo, MCP types
+a five-word message holding `//////` forever: the message's first word is
 0x262626262626128a, and four blank words follow. The PC trail ends at
 half-word 159071 (233257.40), in the resident body. This is not yet
 explained. Candidates, unranked:
@@ -2355,3 +2356,95 @@ anything.
 **THE LOADER HAS A HOLE.** Printed p.329 is missing from the scan. Its
 34 words in 22LOADER carry a 0x6A6A tag. The loader must not be run
 (step E4) until that page is found.
+
+### THE START RUNS TO THE READER, 2026-11-08
+
+**WHERE IT STOPS NOW.** MCP finishes its bypass-mode start. In order, the
+console types `TIME AFTER CALIBRATION 00:00:01`, `BYPASS COMMAND
+ACCEPTED.`, `PRESENT JOB REJECTED - NO JOB CARD.` and `SERVICE THE CARD
+READER`. The input program has READ the reader on channel 32, once. JC4
+then polls for a job card, for good. `tests/run_mcp_start_test.sh` runs
+this and stops at the 200th arrival at the poll, 8,238,421 steps in.
+
+**THE STOP IS MCP'S OWN WAIT, NOT A LOOP IN THE MODEL.** Hypothesis
+written first: either MCP waits, or an interruption is being redelivered.
+A PC trail over 20,000 steps at step 8M decided it. The period is 6418
+steps, it does no I/O, and it is this printed code:
+- p.381 lines 44-47, YC4B2: JC4 primes itself again;
+- p.381 lines 48-56 and p.382 lines 1-3: back through MCP to WSYSCA;
+- p.391 line 31, `BZB,SJ1FUL,ZJOBC1`: the J1 buffer is not full, so
+- p.391 lines 37-42, ZJOBC1: prime JC4, `B,DMCP`, `,SDRET`.
+
+SJ1FUL is set at p.268 line 18. C22-6678-1 describes the message: "The
+system expects more cards and will not reference the reader until the
+system gets the channel signal from the reader." So what comes next is
+road items E2 (the reader's START, unit ready + CS) and E3 (a deck).
+
+**THE ONE FIXTURE IN THE ANSWER.** The model's reader holds an empty image
+and answers a READ with EE EOP (report 00110). A real empty hopper is not
+ready: C22-6678-1 has `$OPTR READY CHXX UNY` for that. So `PRESENT JOB
+REJECTED - NO JOB CARD.` comes from the fixture. It should go when the
+reader has a deck. This has not been run.
+
+**WHAT WAS FETCHED.** DISK FETCH found 22SCOMD and 22$EOJ. Nothing on this
+path asks for 22LOADER or 22$DUMP, so those two are still unexercised.
+
+**FOUR MODEL FAULTS, IN THE ORDER MCP FOUND THEM.** Each
+hypothesis was written down with the run that would kill it before any
+instrumenting. Each row of the table is a whole run, so a row also holds
+every fault below it.
+
+| run | fixed by then | what MCP did |
+|---|---|---|
+| s0 | nothing | `COMD,CLOCK,...`, then `//////` forever |
+| s1 | WRITE's end address | `LEGAL COMMAND, ILLEGAL SITUATION`, `ONLINE COMMAND ACCEPTED`, `SERVICE THE CARD READER` |
+| s3 | + guessed branch's target | `ILLEGAL COMMAND` for CLOCK, `BYPASS COMMAND ACCEPTED.`, `SERVICE THE CARD READER` |
+| s4 | + STRAP's blank | CLOCK reaches `$TIME`; OP at half-word 158899; `MCP ERROR` |
+| s5 | + decimal unsigned store | the start above |
+
+1. **A terminated WRITE's channel word.** Reference Manual printed p.124
+   (PDF 127), read in the ink: a WRITE terminated by End Exception leaves
+   the data word address at A_n+2. The model left A_n, deliberately, and
+   its header said so. MCP's commentator (printed p.309 line 2, `V-I,JXTEM,
+   2.0 -REDUCE CW BY 2`) relies on the +2, so it came out two words short
+   and retyped five words for ever: the three of SLITES (JSCWD1) and two of
+   stack. `StretchCore.bsv` `writeEndLead`; the I/O, tape and disk
+   benches now expect +2. A WRITE ended by RELEASE keeps its address (p.124:
+   "these rules do not hold"), and a CCW during a WRITE is still unbuffered.
+2. **A wrongly guessed branch recomputed its target.** Printed p.362 lines
+   37-43, the command lookup, is `BAE,JTABL(JX1)` followed by `CBH,JX1,
+   ZLOOK4`. The CBH overtook the BAE, and the recovery read JX1 after it had
+   stepped, so every command dispatched one entry high: CLOCK to ZABEND,
+   BYPASS to ZONLIN. Recovery now goes to the address computed at the guess.
+   Recorded in the code: whether the branch is taken is still decided from a
+   recomputed address, and that residual case has not been reached.
+   `decks/la_guess_target_index.strap`.
+3. **STRAP's mode A blank was 0, and it is 0o20.** QBLNK in the listing is a
+   mode A blank, and ZCONVC (printed p.368 line 33) tests 0o20, so the CLOCK
+   operands were refused. C28-6129 printed p.16 calls mode A "the 6-bit IBM
+   tape BCD format", and Appendix F's column and GRADA (printed p.260 lines
+   32-38) both say 0o20. `strap/charsets.py`, pinned by
+   `verify_c22_6678_appendix_f.py`. Punching a blank is still no punches.
+4. **Decimal unsigned store was refused.** Printed p.300 line 33,
+   `ST(DU,63,8),0.0($1)`, stores the time as digits. The census of MCP's
+   non-radix decimal is ST(DU) at 17 sites (pp.297, 300, 336, 339, 340, 341,
+   357, 371), L(DU) 4, LF(DU) 2, +(DU) 2. Only ST(DU) is built, because it is
+   the only one the start reaches, and it has no arithmetic in it. Reference
+   Manual printed p.63. `decks/vfl_st_decimal.strap`. The 63-bit field at
+   8-bit bytes is the source's own confirmation of the zone reading: zone
+   0011 shifted one bit gives 0x60+2n, exactly the IQS digits.
+
+The `//////` still appears in s1 and s3: the command echo on an error hard
+copy prints an A6 of zero that way, which is MCP's behaviour and not a fifth
+fault.
+
+**STILL REFUSED, ON PURPOSE.** Signed decimal store, and the rest of decimal
+arithmetic. L(DU), LF(DU) and +(DU) are on no path the start reaches; the
+first of them reached will stop with a loud OP.
+
+**NOT CHANGED.** The binary VFL store's arm sets no MOP, PF or result
+indicator, though printed p.63 gives it all three. Measured with a scratch
+deck: after `L(BU,24,8)` of 123456 and `ST(BU,8,8)`, MOP and PF are off. RGZ
+was on, but the LOAD had already set it, so that says nothing about the store.
+Nothing on the start's path was seen to depend on it, and it is left for the
+instruction-set work. The decimal path sets them.

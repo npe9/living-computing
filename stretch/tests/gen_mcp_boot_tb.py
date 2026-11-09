@@ -279,6 +279,27 @@ def main():
     #   p.1's four "PULL" cards kept       XERR22 "INCORRECT CARD TYPE
     #   (PROSA_IOD_DECK=P1_UNPULLED, iocd  WITHIN IODS" (printed p.8
     #   widened to punch them)             line 14), X ERR AD 001441.40
+    # >>> PAST J COMD: THE BYPASS-MODE START (road item E1). <<<  The same
+    # machine and tape as P1DeckTb, not stopped at J COMD.  It stops at the
+    # 200th arrival at ZJOBC1, printed p.391 line 37, half-word 16925
+    # (20416.40), in the type area 22$EOJ: JC4 comes back there every 6418
+    # steps while it polls SJ1FUL for a job card (docs/boot_plan.md).
+    # tests/check_mcp_start.py reads what happened on the way.
+    if module_name.endswith("McpStartTb"):
+        assert prosa.IOD_DECK == "P1", prosa.IOD_DECK
+        prosa.set_tape_units(prosa.TAPE_UNITS_P1_DECK)
+        write_tape(src)
+        print(generate(module_name, prog,
+                       [("mcp_start_no_ipl_error",
+                         str(prog.symtab["XERRAD"] // 64), 0)],
+                       step_cap=12000000,
+                       wait_for_io=True,
+                       pc_trail=True,
+                       console_dump=128,
+                       ipl=True,
+                       stop_at_pc=16925,
+                       stop_at_pc_hits=200))
+        return
     if module_name.endswith("P1DeckTb"):
         assert prosa.IOD_DECK == "P1", prosa.IOD_DECK
         prosa.set_tape_units(prosa.TAPE_UNITS_P1_DECK)

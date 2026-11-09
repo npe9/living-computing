@@ -1525,6 +1525,10 @@ run "PAST T MOVE: MOVE intact, IPL stops in XERR29 (spool IODs 4-6)" ./run_mcp_a
 run "MCP's OWN IOD DECK (p.1): IPL completes and MCP is entered" ./run_mcp_p1deck_test.sh \
     "DATE OF IPL TAPE" "REEL NUMBER OUTPT" \
     "READER IS INPUT SOURCE ON CHANNEL 32"
+# ROAD ITEM E1: MCP FINISHES ITS BYPASS-MODE START.  CLOCK and BYPASS are
+# accepted, the reader is READ once, and JC4 polls for a job card.  The
+# measured failure sets are in the checker's header.
+run "MCP's bypass-mode start runs to the reader and polls for a job card" ./run_mcp_start_test.sh
 # THE RECONSTRUCTED PROSA DICTIONARY AND INDEX (strap/prosa_dict.py),
 # decoded back out of the tape record against C22-6728 printed p.164.
 # Observed injections are in the test's header: WORD field shifted,

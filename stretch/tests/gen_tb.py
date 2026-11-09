@@ -24,7 +24,8 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              pc_check=None, cycle_bound=None, cycle_window=None,
              ipl=False, pc_trail=False,
              pc_trail_check=None, op_trail=False,
-             max_steps_check=None, stop_at_pc=None, wait_for_io=False):
+             max_steps_check=None, stop_at_pc=None, wait_for_io=False,
+             stop_at_pc_hits=1):
     """checks: list of (label:str, word_addr_expr:str, expected:int).
 
     reader_image: optional list of ints -- words to pre-load into the
@@ -87,6 +88,9 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append("  StretchCore core <- mkStretchCore;")
     lines.append("  Reg#(Bit#(32)) phase <- mkReg(0);")
     lines.append("  Reg#(Bit#(32)) stepCount <- mkReg(0);")
+    if stop_at_pc is not None and stop_at_pc_hits != 1:
+        lines.append("  Reg#(Bit#(32)) stopHits <- mkReg(0);")
+        lines.append("  Reg#(HWordAddr) stopLastPc <- mkReg(0);")
     if stop_at_pc is not None:
         # >>> STOP ON A PROGRAM CONDITION, NOT ON A STEP NUMBER. <<<
         #
@@ -268,8 +272,17 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     run_phase += 1
     stop_guard = " && !stoppedAtPc" if stop_at_pc is not None else ""
     lines.append(f"  rule run (phase == {run_phase} && !{halt_pred} && stepCount < {step_cap}{stop_guard});")
-    if stop_at_pc is not None:
+    if stop_at_pc is not None and stop_at_pc_hits == 1:
         lines.append(f"    if (core.getPC() == {stop_at_pc}) stoppedAtPc <= True;")
+    elif stop_at_pc is not None:
+        # The Nth ARRIVAL at the half-word, for a place a polling loop
+        # keeps coming back to: the run stops well inside the loop, and
+        # having got there N times is itself the evidence of the loop.
+        lines.append("    stopLastPc <= core.getPC();")
+        lines.append(f"    if (core.getPC() == {stop_at_pc} && stopLastPc != {stop_at_pc}) begin")
+        lines.append("      stopHits <= stopHits + 1;")
+        lines.append(f"      if (stopHits + 1 == {stop_at_pc_hits}) stoppedAtPc <= True;")
+        lines.append("    end")
     if pc_trail:
         lines.append("    pcTrail0 <= core.getPC();")
         lines.append("    if (core.getPC() != 0) lastNonZeroPc <= core.getPC();")

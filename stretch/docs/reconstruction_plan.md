@@ -288,7 +288,7 @@ them, but running the processors **under MCP** (E2-E4) does.
 5. **F-1..F-3 FORTRAN IV** on top: its phases (PH3 syntax, PH2-1..3
    data glean, expansion and indexing, which is SMAC II) emitting SMAC
    I, through STRAP II, to the BSS loader.
-6. Alongside: E1's `//////` loop and E2-E5; SAU from §3.11 (extract
+6. Alongside: E2-E5 (E1 is done, `boot_plan.md`); SAU from §3.11 (extract
    102633951 into `microarchitecture_plan.md` §1c first); the UPDATE-30
    spec (M-3); PAU §3.3 with §3.8; bm6a and bb6b; §3.1/§3.2; M-4
    Restart; M-5 loader classes; P-1 1401 formats.
