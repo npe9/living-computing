@@ -55,7 +55,7 @@ class Pass2:
         self.end_pc = None
         self.hilo = []
         self.undef_at = None
-        self.listing = []
+        self.printed = {}       # what OUTPUT prints for a unit, listing.py
 
     # ---------------------------------------------------------------------------
     def run(self):
@@ -652,6 +652,7 @@ class Pass2:
                 self.image.skips.append((self.running, v.total - self.running))
             if v.total < 0:
                 raise _a.AssemblerError(f"SLC operand evaluates to {v.total} bits, negative (C22-6531 p.32)")
+            self.printed[unit] = ("SLC", v.total)
             self.running = v.total
             return pending
         if name == "END":
@@ -663,6 +664,7 @@ class Pass2:
                 if t % 32:
                     raise _a.AssemblerError("END target is not half-word aligned")
                 self.end_pc = t // 32
+            self.printed[unit] = ("END", at, None if v is None or v.nullf else v.total)
             return pending
         if name == "CNOP":
             return self.cnop_b(unit, at, pending)
@@ -686,6 +688,7 @@ class Pass2:
         word = u.get(unit, ZIOTPT)
         self._check_unavailable(unit)
         self.deposit(at, e, word)
+        self.printed[unit] = ("INSTR", at, e.length, e.name)
         self.running = at + e.length
         return pending
 
@@ -745,6 +748,7 @@ class Pass2:
                 raise _a.AssemblerError(f"character {ch!r} is not in the character set (Reference Manual printed p.166)")
             self.image.deposit(pos, width, table[ch])
             pos += width
+        self.printed[unit] = ("ALPHA", at)
         self.running = pos
 
     def _numeric_b(self, unit, at, mode, fl, bs, p):
@@ -767,6 +771,7 @@ class Pass2:
             pos += fl
             if not more:
                 break
+        self.printed[unit] = ("NUM", at, mode, fl, bs, (pos - at) // fl)
         self.running = pos
 
     def dr_b(self, unit, at, name):
@@ -781,6 +786,7 @@ class Pass2:
             width = fl or 64
             for k in range(size // width):
                 self.image.reserve_zero(at + k * width, width)
+        self.printed[unit] = ("DR", at, size)
         self.running = at + size
 
     def ext_b(self, unit, pending):
@@ -808,6 +814,7 @@ class Pass2:
         for bit in range(i, i + count):
             field = (field << 1) | ((word >> (63 - bit)) & 1 if bit < 64 else 0)
         self.image.deposit(at, count, field)
+        self.printed[ext_unit] = ("EXT", at, count)
         self.running = at + count
 
 

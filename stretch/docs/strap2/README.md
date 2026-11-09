@@ -43,11 +43,23 @@ The known difference: `strap_asm` puts a NOP in a half word rounded over before
 a DR(N) or DRZ(N), and p.33 makes only a CNOP a NOP. strap2 follows the guide. No
 listing prints those halves, so no oracle can decide.
 
-**Not yet written:** DDI; IOD and REEL (MIOD, NMCP); the MIBA and MBSPEC
-corrections; the coprocessor; DUPLI; relocation; subscripts with dimensions; the
-system symbols' register-length dds; MULTI's equal-value test; and OUTPUT's
-listing, to be compared with C22-6678-1 p.48 and CHM 102633945. An unwritten path
-refuses loudly.
+**Not yet written:** DDI; NMCP's card image and all punching, so a REEL or IOD
+compiles but no deck comes out; the MIBA and MBSPEC corrections; the coprocessor;
+DUPLI; relocation; subscripts with dimensions; the system symbols' register-length
+dds; MULTI's equal-value test; and the listing's symbol lists, error flags, paging
+and error messages (C28-6129 pp.20-21). An unwritten path refuses loudly.
+
+**The listing** (`listing.py`, `tests/check_strap2_listing.py`) matches both printed
+STRAP II listings field for field: C28-6129 Fig. 3 p.19, all 24 lines and both memory
+bounds, and C22-6678-1 p.48, 69 lines, from its own IOD and PRNS cards. The print
+positions are CHOSEN. Left unreproduced because no page explains them: the second `*`
+after the location on five of p.48's lines, and the blank line after Fig. 3's line 13.
+One row is pinned against the page: p.48 line 5 prints `LVE,,CW+1.0` as `...01 80`,
+where the pocket card and MCP's own listing give `B0`
+(`tests/verify_mcpref_example2_listing.py`).
+
+**IOD** (Pass 1's MIOD, pp.96-97). The name's value, the reference number as a word
+address, is DERIVED from one print, p.48's `,RON` = `000001.00 80`; no page states it.
 
 **Numeric DD** (`dnum.py`, `tests/check_strap2_dd.py`): each field goes to Fig. 26
 p.193 in Pass 1, with MQDNUM's and DNUM's 96-bit truncating arithmetic, and OUTPUT

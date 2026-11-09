@@ -50,6 +50,7 @@ class OpEntry:
         self.fills = []         # (routine, count) as on p.144
         self.kind = None
         self.pseudo = False
+        self.mcp = False
         self.dds_needed = False
         self.immediate = False
         self.ambiguous = False

@@ -95,11 +95,12 @@ class Getcha:
         # p.79: the name may continue on following continuation cards.
         k = self.i
         while not self.comment_block and k < len(self.cards) and self.cards[k][:1] == "*":
-            more = self.cards[k].ljust(80)[1:9].rstrip()
-            if not more:
+            more = self.cards[k].ljust(80)[1:9]
+            if not more.strip():
                 break
-            self.name += more
+            self.name += more       # embedded blanks kept, as above
             k += 1
+        self.name = self.name.rstrip()
         self.col = STMT_FIRST
         return True
 
@@ -137,6 +138,7 @@ class Getcha:
                     self.card = self.cards[self.i].ljust(80)
                     self.i += 1
                     self.col = STMT_FIRST
+                    self.bsyst.append("\n")    # CHOSEN: each card is a line, listing.py
                     continue
                 # p.78 item 6: end of block, the false semicolon.
                 self.fblend = True

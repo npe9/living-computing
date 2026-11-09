@@ -97,6 +97,7 @@ class Pass1:
         self.unit = unit
         self.fields = 0
         self.entry_mode = None
+        self.print_names = getattr(self, "print_names", {})
         self.ext2 = getattr(self, "ext_pending", False)
         self.ext_pending = False
         return unit
@@ -144,6 +145,9 @@ class Pass1:
             return self._illegal(unit, op)
         u.put(unit, ZIOPX, entry.index)
         self._store_dds(unit)
+        if entry.mcp:           # Boxes 30A-32 [23, 97]
+            return self._miod(unit, entry)
+        self.fiod = True        # "should not be any more MCP-type" [97]
         if entry.pseudo:
             return self._pseudo(unit, entry)
         # Box 34 MEA
@@ -283,6 +287,7 @@ class Pass1:
             u.put(unit, ZIFNME, 1)
             self.check_digit = (self.check_digit + 1) % 10
             u.put(unit, ZINAME, self.check_digit)
+            self.print_names[unit] = (g.name, self._tail_on(g.symbol))
             self._form_symbol(unit, entry)
         self.first_of_block = False
         u.intout(unit, end)     # Box 57
@@ -296,7 +301,7 @@ class Pass1:
         st = self.st
         u = self.units
         name = self._tail_on(g.symbol)
-        kind = KIND_SYN if entry.name == "SYN" else KIND_LABEL
+        kind = KIND_SYN if entry.name in ("SYN", "IOD") else KIND_LABEL
         f, there = st.addord(name, kind)
         if there:
             f = self._multi(name, f, unit, kind)
@@ -392,6 +397,48 @@ class Pass1:
         return self._wind_up(unit, e)
 
     # -- Box 63 ff., the pseudo-operations [26-27] -------------------------------
+    def _miod(self, unit, e):
+        """MIOD [96-97].  The type field is spaced over, erased as p.97 says;
+        for an IOD the exit address is encoded; the reference number goes in
+        Zilpms; and the name goes in the symbol table.  Zifp2 off, Zifall on, so
+        that NMCP and not DECODE has the unit, as the text says; charts 11 and
+        14 print the opposite, and p.97's reason decides.
+
+        DERIVED: the name's value is the reference number as a word address.
+        C22-6678-1 p.48 line 11 prints ",RON" as 000001.00 80 for the first IOD.
+        No page says it; that is the one print."""
+        g = self.g
+        u = self.units
+        if getattr(self, "fiod", False):
+            self.msg.add(102, "ILLEGAL SEQ. OF MCP CARDS", unit, fatal=False)
+        u.put(unit, ZIFP2, 0)
+        u.put(unit, ZIFALL, 1)
+        if e.name == "REEL":
+            if g.named:
+                self.msg.add(105, "REEL CARD DOESNT NEED NAME", unit, fatal=False)
+            return self._wind_up(unit, e)
+        if not g.named:
+            self.msg.add(103, "IOD CARD SHOULD HAVE NAME", unit)
+        n = 0
+        if g.ch == ",":
+            self.getfld.field()     # the type, encoded and not kept
+        if g.ch == ",":
+            x = self.getfld.field()
+            if not x.null:
+                s = encode(x)
+                self.mem.put_str(self.bcfldx, s)
+                self.bcfldx += len(s)
+                n = 1
+            else:
+                self.msg.add(143, "EXIT ADDR IS NULL", unit, fatal=False)
+        else:
+            self.msg.add(104, "I/O TBL OF EXITS ADDR NULL", unit, fatal=False)
+        u.put(unit, ZINFLD, n)
+        self.iod_refs = getattr(self, "iod_refs", 0) + 1
+        u.put(unit, ZILPMS, self.iod_refs)
+        self.syn_expr = self.st.store_coded(encode(_word_field(self.iod_refs)))
+        return self._wind_up(unit, e)
+
     def _pseudo(self, unit, e):
         u = self.units
         name = e.name
@@ -769,6 +816,13 @@ def _abs_field(n):
     from .coded import Datum
     x = Expr()
     x.data.append(Datum("abs", n))
+    return x
+
+
+def _word_field(n):
+    """n., a word address, as GETFLD codes it (Box 58)."""
+    x = _abs_field(n)
+    x.ops.append((".L", 1))
     return x
 
 
