@@ -8309,7 +8309,7 @@ run "SWAP: the exchange, and the overlap that tells it from a copy" ./run_progra
     "B2_0:2188=0x9" "B2_1:2189=0x12" "B2_2:2190=0x1B" \
     "A3:2191=0x9249249249249249" "B3:2192=0x3F" \
     "OV_0:2193=0x2" "OV_1:2194=0x3" "OV_2:2195=0x1" \
-    "A5:2196=0x5" "B5:2197=0x6"
+    "A5:2196=0x6" "B5:2197=0x5"
 # >>> FORWARD SWAP IS BUILT, 2026-10-23, and it was the last unbuilt
 # arm with a caller MCP is about to reach. <<<
 #
@@ -8368,6 +8368,10 @@ run "SWAP: the exchange, and the overlap that tells it from a copy" ./run_progra
 # by no deck in this corpus -- so building them would be
 # manual-derived with nothing to check against.  rl_xmit's sign
 # handling would carry them unchanged the day one turns up.
+#
+# THAT DAY WAS 2026-11-08, AND "WRITTEN BY NO DECK" WAS TRUE ONLY OF THE
+# DECKS: C22-6578 printed p.5 prints SWAPBI.  Block 5 now asserts the
+# exchange.  A5/B5 used to read 5 and 6; see the Problem 1.2 entry below.
 
 run "TRANSMIT: what is honoured, and what is refused out loud" ./run_program.sh ../decks/transmit_scope.strap StretchTransmitScopeTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/transmit_scope.strap").read()).symtab["PASS"]//32)')" \
@@ -13097,6 +13101,46 @@ run "I-Box 5 routine 1268 test 2, ON THE MODEL (the deck's own logic)" ./run_pro
 # So the run is a regression guard today and becomes a real oracle when
 # the look-ahead's LAAR forwarding replaces the ordering rule --
 # StretchStorage.bsv's own comment says that is stage 3.
+
+# 1.2 AND 1.3: BACKWARD SWAP, BUILT FOR THESE.  It had been refused on the
+# claim that nothing in the corpus encodes one; printed p.5 does.
+#
+# INJECTIONS, MEASURED, each compiled from a private copy of bsv/, so the
+# worktree's source was never edited and nothing needed reverting.  CONTROL:
+# the clean model, 1.2 passes 31 of 31 and 1.3 passes 60 of 60.
+#
+# (i) The refusal put back (the model as it stood before this change):
+#     1.2 FAILS 15 of 31: M1_SWAPBI_{DOG0,DOG1,CAT0,CAT1},
+#     SWAPB_{DOG0,DOG1,CAT0,CAT1}, J16_{DOG,CAT}_{first,last}, OV_{0,1,2}.
+#     Every forward check stands.
+#     1.3 FAILS 13 of 60: N4_{0,1,2,3}, N9K6_{0..8}.  Methods 1-4 stand.
+#
+# (ii) "backward: False", so a backward swap steps UP:
+#     1.2 FAILS 13 of 31: M1_SWAPBI_{DOG0,CAT0,guard},
+#     SWAPB_{DOG0,CAT0,guard}, J16_DOG_first, J16_CAT_{guard,first},
+#     OV_{0,1,2,guard}.  The guards are what catch it.
+#     1.3 FAILS 17 of 60: N4_{0,2,guard}, N9K6_{0..8,guard}, and
+#     RM_{0,1,2,guard}, which is N9K6 running off its end into the next area.
+run "C22-6578 Problem 1.2 -- SWAPI, SWAPBI and eight LX/SX" ./run_program.sh ../decks/problem_1_2.strap StretchP12Tb "PC=2019" \
+    "M1_SWAPI_DOG0:1100=13" "M1_SWAPI_DOG1:1101=14" "M1_SWAPI_CAT0:1102=11" "M1_SWAPI_CAT1:1103=12" "M1_SWAPI_guard:1104=99" \
+    "M1_SWAPBI_DOG0:1105=23" "M1_SWAPBI_DOG1:1106=24" "M1_SWAPBI_CAT0:1107=21" "M1_SWAPBI_CAT1:1108=22" "M1_SWAPBI_guard:1109=99" \
+    "M2_DOG0:1110=0x5555555555555555" "M2_DOG1:1111=0xA72EE0A72EE0A72E" "M2_CAT0:1112=0xFFFFFFFFFFFFFFFF" "M2_CAT1:1113=0xAAAAAAAAAAAAAAAA" "M2_guard:1114=99" \
+    "SWAPB_DOG0:1115=43" "SWAPB_DOG1:1116=44" "SWAPB_CAT0:1117=41" "SWAPB_CAT1:1118=42" "SWAPB_guard:1119=99" \
+    "J16_DOG_guard:1130=98" "J16_DOG_first:1131=301" "J16_DOG_last:1146=316" \
+    "J16_CAT_guard:1150=98" "J16_CAT_first:1151=201" "J16_CAT_last:1166=216" \
+    "OV_0:1170=3" "OV_1:1171=1" "OV_2:1172=2" "OV_guard:1173=99"
+
+# 1.3 prints its answer: nine letters, written here as 1-9.  N9K6's address
+# is worked out by hand, because the printed SWAPBI line has one address
+# where the instruction has two; the deck's header has the working.
+run "C22-6578 Problem 1.3 -- DEFGHIABC, four methods and comment (a)" ./run_program.sh ../decks/problem_1_3.strap StretchP13Tb "PC=2024" \
+    "M1_0:1100=4" "M1_1:1101=5" "M1_2:1102=6" "M1_3:1103=7" "M1_4:1104=8" "M1_5:1105=9" "M1_6:1106=1" "M1_7:1107=2" "M1_8:1108=3" "M1_guard:1109=99" \
+    "M2_0:1110=4" "M2_1:1111=5" "M2_2:1112=6" "M2_3:1113=7" "M2_4:1114=8" "M2_5:1115=9" "M2_6:1116=1" "M2_7:1117=2" "M2_8:1118=3" "M2_guard:1119=99" \
+    "M3_0:1120=4" "M3_1:1121=5" "M3_2:1122=6" "M3_3:1123=7" "M3_4:1124=8" "M3_5:1125=9" "M3_6:1126=1" "M3_7:1127=2" "M3_8:1128=3" "M3_guard:1129=99" \
+    "M4_0:1130=4" "M4_1:1131=5" "M4_2:1132=6" "M4_3:1133=7" "M4_4:1134=8" "M4_5:1135=9" "M4_6:1136=1" "M4_7:1137=2" "M4_8:1138=3" "M4_guard:1139=99" \
+    "N4_0:1140=3" "N4_1:1141=4" "N4_2:1142=1" "N4_3:1143=2" "N4_guard:1144=99" \
+    "N9K6_0:1150=7" "N9K6_1:1151=8" "N9K6_2:1152=9" "N9K6_3:1153=1" "N9K6_4:1154=2" "N9K6_5:1155=3" "N9K6_6:1156=4" "N9K6_7:1157=5" "N9K6_8:1158=6" "N9K6_guard:1159=99" \
+    "RM_0:1160=2" "RM_1:1161=3" "RM_2:1162=1" "RM_guard:1163=99"
 
 # -- 2. Problem 2.1: Cyclic Bit Shifting --
 run "Problem 2.1" ./run_program.sh ../decks/problem_2_1.strap StretchProblem21Tb \
