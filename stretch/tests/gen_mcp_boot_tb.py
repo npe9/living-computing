@@ -763,8 +763,12 @@ def main():
          str(sym("XBSEND") + _image_index("002327")), _sca6_word(0)),
         ("mcp_ucbf1_1",
          str(sym("XBSEND") + _image_index("002327") + 1), _sca6_word(1)),
+        # 0xe66d104104100000 is "IOD" and five blanks in 6-bit mode A, the
+        # low sixteen bits zero.  It was 0xe66d000000000000 while
+        # strap/charsets.py gave blank the grid's 0o00, because SCA6's table
+        # is assembled in mode A.  Blank is 0o20 (charsets.py's docstring).
         ("mcp_ucbf2_0",
-         str(sym("XBSEND") + _image_index("002337")), 0xe66d000000000000),
+         str(sym("XBSEND") + _image_index("002337")), 0xe66d104104100000),
 
         # >>> THE ONE SWAP MCP EXECUTES, OBSERVED IN STORAGE. <<<
         #
