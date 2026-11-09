@@ -1236,8 +1236,16 @@ module mkStretchCore(StretchCore);
       guessPending <= False;
       if (taken) begin
         // Wrong guess: cancel every younger level, recover next clock.
+        // THE TARGET IS THE ONE COMPUTED AT THE GUESS, not o.next: the
+        // E-box has just recomputed the address from the index registers
+        // as they are now, and the instruction unit may have changed them
+        // running ahead (MCP printed p.362 lines 41-42, "BAE,JTABL(JX1)"
+        // then "CBH,JX1,ZLOOK4"; decks/la_guess_target_index.strap).
+        // `taken` above is still read off that recomputed address, so a
+        // recomputed address equal to the fall-through would read as not
+        // taken.  No program is known to do that.
         la.cancelAll();
-        recover <= tagged Valid o.next;
+        recover <= tagged Valid h.target;
       end else
         la.retireHead();
       ebn = 2 * 6;   // Blosk fig.10: decode + five execution cycles

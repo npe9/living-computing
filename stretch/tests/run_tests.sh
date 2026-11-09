@@ -2383,6 +2383,20 @@ run "PROGRESSIVE INDEXING WITH X0 is OP (RefMan printed p.21)" ./run_program.sh 
 # the store LANDS, and the machine never halts, hanging on the
 # `BZOP, $` self-branch at half-word 392 until the step cap.
 
+# A WRONGLY GUESSED BRANCH GOES WHERE ITS ADDRESS SAID AT THE GUESS.  MCP
+# found this: printed p.362 lines 37-43's lookup dispatched every command
+# one entry high, because CBH overtook BAE and recovery read the index after
+# it had stepped.  CASE 1 copies that lookup.
+# Observed injection (rl_recover back on the recomputed address, measured on
+# the model before the fix): exactly case1_entry2 (1003.0, one entry high)
+# and case2_target_old_index (2002.0) fail; case2_index_restored, case3_guard
+# and PC pass.
+run "a guessed branch's target is the one computed at the guess" ./run_program.sh ../decks/la_guess_target_index.strap StretchGuessTargetTb \
+    "case1_entry2:264=70509481666019328" \
+    "case2_target_old_index:265=140807857099505664" \
+    "case2_index_restored:266=35184372088832" \
+    "case3_guard:267=211176601277169664" \
+    "PC=304"
 run "DECIMAL VFL is refused by THIS MODEL, not by the machine" ./run_program.sh ../decks/vfl_decimal_refused.strap StretchVflDecRefTb \
     "PC=393" \
     "CYCLES=142+-0" \
