@@ -1,0 +1,169 @@
+! C22-6578 PROBLEM 1.1, "TRANSMITTAL OF TWO FULL WORDS", printed p.5
+! (PDF 6), read in the ink at 110 dpi.
+!
+!   "Copy the contents of full words located in DOG, DOG +1.0 into
+!   full words located in CAT, CAT + 1.0 respectively."
+!
+! Every printed method is here, on its own pair of areas, because they
+! all have to leave the same thing.  The printed DOG and CAT are
+! renamed per block (DOG1, CAT1, ...); nothing else about the printed
+! statements changes.  The book prints no numbers, so THE EXPECTED
+! VALUES ARE THE PROBLEM STATEMENT APPLIED TO THIS DECK'S OWN DATA: a
+! receiving word holds the sending word, and the guard word after each
+! receiving area still holds what it held.
+!
+! COMMENTS THE PAGE MAKES CHECKABLE, and which block checks each:
+!   M1(a) "If 16 words are to be transmitted the J fields could be
+!         filled by either 16 or 0"                     -- blocks 3, 4
+!   M1(b) overlap: "use TBI if CAT > DOG; use TI if CAT < DOG"
+!                                                       -- blocks 5, 6
+!   M2    LCI, $1, 2.0 / T, $1, DOG, CAT                -- block 7
+!   M3    LX/SX, which works because "the two 'unused' bits ... of
+!         each index register have been made available for this"
+!                                                       -- block 8
+!   M3(b) "floating point (unnormalized) LWF-store.  The latter is
+!         efficient but may turn on the $XPFP indicator.  Further a
+!         'minus zero' exponent will be changed into a 'plus zero'
+!         exponent."                                    -- blocks 9-11
+!
+! M3(a) PRINTS "(bits 27 and 28)".  The index word's spare bits are 26
+! and 27 by Problem 1.5's own comment ("bits 25, 26, 27 ... only bit
+! 25 (XF)").  Block 8's source word is all ones, so whichever the page
+! meant, a dropped bit shows.
+!
+! >>> BLOCK 11 IS AN UNRESOLVED CONFLICT BETWEEN TWO IBM DOCUMENTS. <<<
+! This page says an unnormalized LWF-store changes a minus zero exponent
+! to plus zero.  Reference Manual printed p.83, read in the ink, says
+! the opposite, twice over: "a minus 0 exponent is loaded into the
+! accumulator" by an unnormalized "LOAD WITH FLAG" specifying no sign
+! modification, and "A minus 0 exponent can be stored by an unnormalized
+! FLOATING POINT STORE which specifies no sign modification."  The model
+! follows the Reference Manual, which is the machine's specification and
+! says it in a passage ABOUT this case, and the word comes back with its
+! exponent sign still on.  The run_tests.sh check is labelled as the
+! MANUAL'S value, not this page's: 0x001012345678ABCD where this page
+! would have 0x000012345678ABCD.  A grep of docs/ocr for the phrase
+! found no third witness; jb_af1c has no OCR and was NOT swept, so that
+! is where one might be.  docs/source_audit.md carries it as open.
+!
+! NOT RUN: M2(b), "a zero count field means the maximum count
+! possible" -- 262,144 words is the whole of core and would overwrite
+! this program.
+
+        SLC, 1000.0
+
+! --- 1. Method 1, TI -----------------------------------------------
+START   TI, 2, DOG1, CAT1
+! --- 2. Method 1, TBI ----------------------------------------------
+        TBI, 2, DOG2 +1.0, CAT2 + 1.0
+! --- 3. M1(a), a J field of 16 -------------------------------------
+        TI, 16, W16, C16A
+! --- 4. M1(a), a J field of 0 --------------------------------------
+        TI, 0, W16, C16B
+! --- 5. M1(b), overlap with CAT > DOG: TBI -------------------------
+        TBI, 3, OVU +2.0, OVU +3.0
+! --- 6. M1(b), overlap with CAT < DOG: TI --------------------------
+        TI, 3, OVL +1.0, OVL
+! --- 7. Method 2 ---------------------------------------------------
+        LCI, $1, 2.0
+        T, $1, DOG3, CAT3
+! --- 8. Method 3 ---------------------------------------------------
+        LX, $1, DOG4
+        SX, $1, CAT4
+        LX, $1, DOG4 + 1.0
+        SX, $1, CAT4 + 1.0
+! --- 9. M3(b), an ordinary word goes through unchanged and XPFP stays
+! off ---------------------------------------------------------------
+        LWF(U), F1
+        ST(U), G1
+        BZXPFP, END9
+        Z, FLAG9
+END9    NOP
+! --- 10. M3(b), the exponent flag on, positive: "may turn on $XPFP" -
+        LWF(U), F2
+        ST(U), G2
+        BXPFP, END10
+        Z, FLAG10
+END10   NOP
+! --- 11. M3(b), "minus zero" exponent; see the header's conflict -----
+        LWF(U), F3
+        ST(U), G3
+HALT    BEW, $
+
+        SLC, 1100.0
+DOG1    DD(BU,64,8), (8)1234567012345670123456
+        DD(BU,64,8), (8)0765432107654321076543
+CAT1    DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 99
+DOG2    DD(BU,64,8), (8)1111222233334444555566
+        DD(BU,64,8), (8)0666655554444333322221
+CAT2    DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 99
+
+        SLC, 1110.0
+W16     DD(BU,64,8), 101
+        DD(BU,64,8), 102
+        DD(BU,64,8), 103
+        DD(BU,64,8), 104
+        DD(BU,64,8), 105
+        DD(BU,64,8), 106
+        DD(BU,64,8), 107
+        DD(BU,64,8), 108
+        DD(BU,64,8), 109
+        DD(BU,64,8), 110
+        DD(BU,64,8), 111
+        DD(BU,64,8), 112
+        DD(BU,64,8), 113
+        DD(BU,64,8), 114
+        DD(BU,64,8), 115
+        DD(BU,64,8), 116
+        DD(BU,64,8), 117
+        SLC, 1130.0
+C16A    DRZ(BU,64,8), 16
+        DD(BU,64,8), 99
+C16B    DRZ(BU,64,8), 16
+        DD(BU,64,8), 99
+
+        SLC, 1170.0
+OVU     DD(BU,64,8), 1
+        DD(BU,64,8), 2
+        DD(BU,64,8), 3
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+OVL     DD(BU,64,8), 0
+        DD(BU,64,8), 1
+        DD(BU,64,8), 2
+        DD(BU,64,8), 3
+
+        SLC, 1180.0
+DOG3    DD(BU,64,8), (8)0123012301230123012301
+        DD(BU,64,8), (8)1032103210321032103210
+CAT3    DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 99
+DOG4    DD(BU,64,8), (8)1777777777777777777777
+        DD(BU,64,8), (8)1252525252525252525252
+CAT4    DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 99
+
+! Floating-point words: bit 0 exponent flag, bits 1-10 exponent, bit 11
+! exponent sign, bits 12-59 fraction, bit 60 sign, bits 61-63 flags.
+! The fraction is deliberately unnormalized and the flags are nonzero.
+!   F1: exponent +5, exponent flag off.
+!   F2: F1 with the exponent flag on.
+!   F3: exponent magnitude 0, exponent sign MINUS.
+        SLC, 1190.0
+F1      DD(BU,64,8), (16)00A012345678ABCD
+F2      DD(BU,64,8), (16)80A012345678ABCD
+F3      DD(BU,64,8), (16)001012345678ABCD
+G1      DD(BU,64,8), 0
+G2      DD(BU,64,8), 0
+G3      DD(BU,64,8), 0
+FLAG9   DD(BU,64,8), 7
+FLAG10  DD(BU,64,8), 7
+
+        END, START

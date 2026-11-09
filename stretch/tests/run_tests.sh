@@ -13102,6 +13102,31 @@ run "I-Box 5 routine 1268 test 2, ON THE MODEL (the deck's own logic)" ./run_pro
 # the look-ahead's LAAR forwarding replaces the ordering rule --
 # StretchStorage.bsv's own comment says that is stage 3.
 
+# >>> C22-6578 CHAPTER 1, THE WORKED EXAMPLES NOT YET RUN, 2026-11-08 (G2.1). <<<
+# Problems 1.1-1.5 and 1.7-1.9, read in the ink, every printed method.
+# The book prints programs and not numbers, except 1.3's "DEFGHIABC", so
+# each expectation is the problem statement applied to the deck's own data,
+# and each receiving area has a guard word.  Each deck's header says what
+# was added to the printed text.
+
+# 1.1, every method.  THE LAST CHECK IS THE REFERENCE MANUAL'S VALUE AND
+# NOT THIS PAGE'S, which is why its label says so.  Printed p.5 says a
+# minus-zero exponent "will be changed into a 'plus zero' exponent" by an
+# unnormalized LWF-store; Reference Manual printed p.83 says it is loaded
+# and stored.  An open conflict: see the deck and docs/source_audit.md.
+run "C22-6578 Problem 1.1 -- every way to move two words" ./run_program.sh ../decks/problem_1_1.strap StretchP11Tb "PC=2031" \
+    "M1_TI_0:1102=0xA72EE0A72EE0A72E" "M1_TI_1:1103=0x7D63447D63447D63" "M1_TI_guard:1104=0x63" \
+    "M1_TBI_0:1107=0x925249B6E492DB76" "M1_TBI_1:1108=0x6DB5B6C9236DA491" "M1_TBI_guard:1109=0x63" \
+    "J16_first:1130=0x65" "J16_last:1145=0x74" "J16_guard:1146=0x63" \
+    "J0_first:1147=0x65" "J0_last:1162=0x74" "J0_guard:1163=0x63" \
+    "OVU_0:1170=1" "OVU_1:1171=1" "OVU_2:1172=2" "OVU_3:1173=3" \
+    "OVL_0:1176=1" "OVL_1:1177=2" "OVL_2:1178=3" "OVL_3:1179=3" \
+    "M2_0:1182=0x14C14C14C14C14C1" "M2_1:1183=0x8688688688688688" "M2_guard:1184=0x63" \
+    "M3_0_all_ones:1187=0xFFFFFFFFFFFFFFFF" "M3_1:1188=0xAAAAAAAAAAAAAAAA" "M3_guard:1189=0x63" \
+    "LWF_plain:1193=0x00A012345678ABCD" "XPFP_stays_off:1196=7" \
+    "LWF_eflag:1194=0x80A012345678ABCD" "XPFP_turned_on:1197=7" \
+    "LWF_minus_zero_exp_REFMAN_p83:1195=0x001012345678ABCD"
+
 # 1.2 AND 1.3: BACKWARD SWAP, BUILT FOR THESE.  It had been refused on the
 # claim that nothing in the corpus encodes one; printed p.5 does.
 #
@@ -13141,6 +13166,64 @@ run "C22-6578 Problem 1.3 -- DEFGHIABC, four methods and comment (a)" ./run_prog
     "N4_0:1140=3" "N4_1:1141=4" "N4_2:1142=1" "N4_3:1143=2" "N4_guard:1144=99" \
     "N9K6_0:1150=7" "N9K6_1:1151=8" "N9K6_2:1152=9" "N9K6_3:1153=1" "N9K6_4:1154=2" "N9K6_5:1155=3" "N9K6_6:1156=4" "N9K6_7:1157=5" "N9K6_8:1158=6" "N9K6_guard:1159=99" \
     "RM_0:1160=2" "RM_1:1161=3" "RM_2:1162=1" "RM_guard:1163=99"
+
+# 1.4: passed against the model as it stood.  The final index words are
+# the page's own comment (a), that the refill field tells you the source.
+run "C22-6578 Problem 1.4 -- 25 words zeroed, three methods" ./run_program.sh ../decks/problem_1_4.strap StretchP14Tb "PC=2021" \
+    "M1_final_x3:1100=0x64000000003EB" "M2_final_x3:1101=0x12C0000000003EF" \
+    "M1_guardL:1110=7" "M1_first:1111=0" "M1_mid:1123=0" "M1_last:1135=0" "M1_guardR:1136=7" \
+    "M2_guardL:1200=7" "M2_first:1201=0" "M2_mid:1213=0" "M2_last:1225=0" "M2_guardR:1226=7" \
+    "M3_guardL:1300=7" "M3_first:1301=0" "M3_12th:1312=0" "M3_13th:1313=0" "M3_14th:1314=0" "M3_last:1325=0" "M3_guardR:1326=7"
+
+# 1.5: passed against the model as it stood.
+#
+# ONE INJECTION, MEASURED, for Method 2's comment (b), "the setting of the
+# index flag indicator is done PRIOR to the refill".  evalBranch's CB arm
+# setting the indicators from x2 instead of x1, compiled from a private copy:
+# Methods 2-4 FAIL 3 of 42, exactly M2_CHICK_{first,2nd,last}: the loop stops
+# when LINK3A is refilled, and no CHICK word is zeroed.  Method 1's deck has no
+# flag in its chain and passes 16 of 16 under the same injection, the control.
+run "C22-6578 Problem 1.5 Method 1 -- chain indexing, a whole printed program" ./run_program.sh ../decks/problem_1_5_method1.strap StretchP15M1Tb "PC=2005" \
+    "x1_count_zero:17=0" "x2_refilled:18=0x138C000008C03ED" \
+    "DOG_guardL:1200=7" "DOG_first:1201=0" "DOG_last:1225=0" "DOG_guardR:1226=7" \
+    "CAT_guardL:1230=7" "CAT_first:1231=0" "CAT_last:1246=0" "CAT_guardR:1247=7" \
+    "CHICK_guardL:1250=7" "CHICK_first:1251=0" "CHICK_2nd:1252=0" "CHICK_last:1285=0" "CHICK_guardR:1286=7"
+
+run "C22-6578 Problem 1.5 Methods 2-4 -- the index flag, transmit, refill" ./run_program.sh ../decks/problem_1_5.strap StretchP15Tb "PC=2092" \
+    "M2_x2_refilled:1150=0x138C040008C03ED" \
+    "M2_DOG_guardL:1300=7" "M2_DOG_first:1301=0" "M2_DOG_last:1325=0" "M2_DOG_guardR:1326=7" \
+    "M2_CAT_guardL:1327=7" "M2_CAT_first:1328=0" "M2_CAT_last:1343=0" "M2_CAT_guardR:1344=7" \
+    "M2_CHICK_guardL:1345=7" "M2_CHICK_first:1346=0" "M2_CHICK_2nd:1347=0" "M2_CHICK_last:1380=0" "M2_CHICK_guardR:1381=7" \
+    "M3_DOG_guardL:1400=7" "M3_DOG_first:1401=0" "M3_DOG_last:1425=0" "M3_DOG_guardR:1426=7" \
+    "M3_CAT_guardL:1427=7" "M3_CAT_first:1428=0" "M3_CAT_last:1443=0" "M3_CAT_guardR:1444=7" \
+    "M3_CHICK_guardL:1445=7" "M3_CHICK_first:1446=0" "M3_CHICK_last:1480=0" "M3_CHICK_guardR:1481=7" \
+    "M4_x2:1151=0x640418" \
+    "M4_DOG_guardL:1200=7" "M4_DOG_first:1201=0" "M4_DOG_last:1225=0" "M4_DOG_guardR:1226=7" \
+    "M4_CAT_guardL:1230=7" "M4_CAT_first:1231=0" "M4_CAT_last:1246=0" "M4_CAT_guardR:1247=7" \
+    "M4_CHICK_guardL:1250=7" "M4_CHICK_first:1251=0" "M4_CHICK_last:1285=0" "M4_CHICK_guardR:1286=7" \
+    "M4a_XW2_is_XW2A:1047=0x640418" "M4a_XW2A_unchanged:1048=0x640418"
+
+# 1.7, the free instruction, printed as one line, and comment (d)'s three
+# claims about SIC.  Passed against the model as it stood.  It was named in
+# docs/source_audit.md as the runner-up target because the interruption
+# mechanism was manual-derived only; this is its first independent witness.
+run "C22-6578 Problem 1.7 -- SIC / BR,0 in the interruption table" ./run_program.sh ../decks/problem_1_7.strap StretchP17Tb "PC=2218" STEPS=2000000 \
+    "saved_ic_first_19_bits:2000=0x113FFFFFFFFFFFF" \
+    "count_ran_out:1201=0x200000000000" \
+    "ts_off:1202=7" "sic_not_taken:1203=5" \
+    "sic_self:1107=0x0114E08001150800" "anywh:1204=0"
+
+# 1.8, RENAME simulated in nine printed statements.  RNX itself is still
+# refused.  x2_during is the page's comment (a), SR right-appending zeros.
+run "C22-6578 Problem 1.8 -- RNX simulated" ./run_program.sh ../decks/problem_1_8.strap StretchP18Tb "PC=2012" \
+    "old_name:1105=0x00014000002C04D2" "x0:16=0x0000C000001C0454" "x1:17=0x00024000004C11D7" \
+    "x2:18=0x0001C00000340929" "x3:19=0x0000800000440D80" \
+    "x2_saved:1007=0x0001C00000340929" "x2_during:1104=0x0114400000340929"
+
+# 1.9, both methods, the page's own N = 100 and LOC = 32768.0.  EVERY element
+# is compared: the verifier takes a DUMP and prints how many words it read.
+run "C22-6578 Problem 1.9 Method 1 -- 100 x 100 transpose" python3 verify_problem_1_9.py 1
+run "C22-6578 Problem 1.9 Method 2 -- 100 x 100 transpose" python3 verify_problem_1_9.py 2
 
 # -- 2. Problem 2.1: Cyclic Bit Shifting --
 run "Problem 2.1" ./run_program.sh ../decks/problem_2_1.strap StretchProblem21Tb \

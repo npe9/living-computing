@@ -1,0 +1,80 @@
+! C22-6578 PROBLEM 1.8, "SIMULATION OF RENAME INSTRUCTION", printed
+! p.10 (PDF 11), read in the ink.
+!
+!   "Create the effect of the instruction RNX, $1, DOG ($3).  Do not
+!   simulate the indicator settings."
+!
+! The nine printed statements below are exact.  What the deck adds is
+! the set-up before RNAME and the data.
+!
+! THE EFFECT BEING SIMULATED is Reference Manual printed p.27, Rename:
+! "The index word in the index register specified by the field J is
+! stored in the location addressed by the refill field of X0.  The
+! refill field of X0 is then replaced by bits 0-17 of the effective
+! address.  The remaining bits of X0 remain unchanged.  Next, the index
+! word specified by J is replaced by the word in core storage addressed
+! by the new refill field of X0."
+!
+! So with $0's refill = OLDNAM, $1 = X1V, $3 = 2.0, and DOG + 2.0 = NEW:
+!
+!   old_name   OLDNAM holds $1's old contents
+!   x0         $0 unchanged but for the refill field = DOG + 2.0
+!   x1         $1 = NEW
+!   x2         $2 = what it was: "save" / "restore"
+!   x3         $3 = what it was
+!
+! THE COMMENT IS THE INTERESTING PART, and it is why $2 is used at all:
+! "It would seem that the SR instruction could be altered such that
+! the refill field of $0 is stored directly into the address field of
+! STOX, and the use of $2 would be avoided.  This is not possible
+! because in the SR operation of the refill field concerned is right
+! appended by zero bits to create a 25 bit value field.  The latter is
+! then stored.  The STOX instruction would be seriously altered if a
+! direct SR operation is used."
+!
+! THAT IS CHECKED DIRECTLY: printed "SR, $0, 18.0" writes the word that
+! IS $2.  x2_during, an SX of $2 immediately after that SR, must show
+! bits 0-17 = OLDNAM and bits 18-24 = 0, and bits 25-63 of $2 untouched.
+!
+! "LR, $0, 17.0" reads the value field of $1, which the LVE has just
+! made the effective address: Reference Manual printed p.24, LR takes
+! "bits 0-17 of the half-word specified".
+!
+! WHAT THE STATEMENTS DEPEND ON, by page: SR p.24; SX p.24; LVE p.29
+! ("LVE, $1, LOX" loads $1's value with the effective address of the
+! instruction at LOX, without executing it).
+!
+! THE SX AT x2_during IS NOT PRINTED, and it is the deck's only
+! insertion between the printed statements.  It adds a half word and
+! touches nothing the program reads.
+
+        SLC, 1000.0
+START   LX, $0, X0INIT
+        LX, $1, X1INIT
+        LX, $2, X2INIT
+        LX, $3, X3INIT
+
+RNAME   SX, $2, X2
+        SR, $0, 18.0
+        SX, $2, DURING
+STOX    SX, $1, 0($2)
+        LX, $2, X2
+        LVE, $1, LOX
+        LR, $0, 17.0
+LOX     LX, $1, DOG($3)
+HALT    BEW, $
+X2      XW, 0
+
+        SLC, 1100.0
+X0INIT  XW, 3.0, 7, OLDNAM
+X1INIT  XW, 5.0, 11, 1234
+X2INIT  XW, 7.0, 13, 2345
+X3INIT  XW, 2.0, 17, 3456
+DURING  DD(BU,64,8), 0
+OLDNAM  DD(BU,64,8), 0
+DOG     DD(BU,64,8), 1
+        DD(BU,64,8), 2
+NEW     XW, 9.0, 19, 4567
+        DD(BU,64,8), 4
+
+        END, START

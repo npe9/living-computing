@@ -566,6 +566,13 @@ problem headings survive OCR in `C22-6578` with visible gaps, so ~45
 exist and ~40 remain.** This is the highest-yield-per-hour work on
 record here and it needs no new infrastructure.
 
+*Counted again 2026-11-08 (the 2026-10-29 re-census below has the method):
+`C22-6578` has 44 problems; **eleven have run, 33 remain.** Chapter 1 is
+finished; the next in book order is Problem 2.3.  The batch just run, 1.1,
+1.2, 1.3, 1.4, 1.5, 1.7, 1.8 and 1.9, found **no wrong result in anything
+the model executed**, and that is the measured yield: see "G2.1, THE FIRST
+BATCH" below.*
+
 **G2.2 Buchholz Appendix B** adds six more worked programs, independent
 of `C22-6578`.
 
@@ -1737,6 +1744,50 @@ one.
    mechanically observable: the conf table at 1962-1964; `S COM RG`
    (word 1129) bits .8/.9 for A3's mode; the MCPP card's arrival at
    2990; and the IOD card's columns 63-72.
+
+# >>>>>> G2.1, THE FIRST BATCH, 2026-11-08: EIGHT EXAMPLES, CHAPTER 1 FINISHED <<<<<<
+
+Problems 1.1-1.5 and 1.7-1.9, read in the ink, every printed method run:
+`decks/problem_1_{1,2,3,4,5,7,8}.strap`, `problem_1_5_method1.strap`,
+`problem_1_9_method{1,2}.strap`.
+
+**What it found:**
+
+* **One unbuilt arm, now built: backward `SWAP`.** `SWAPB`/`SWAPBI` were
+  refused out loud (OP), so no result was silently wrong.  It is 1.2's
+  printed statement, and it fell to one line.
+* **No wrong result anywhere else.** 1.4, 1.5, 1.7, 1.8 and 1.9 passed
+  against the model as it stood, including 1.7's free-instruction entry,
+  which this section's 2026-10-29 note called the runner-up target, and
+  10,000 words of 1.9 compared one by one.  So the table's `C22-6578` row
+  becomes **1 / 4 on bugs, plus 1 / 8 on a refused arm.** The earlier
+  conclusion that this document is the lowest-yielding of the three stands
+  and is now stronger.
+
+**Open, and not decided here:**
+
+1. **An IBM document conflict about the exponent's minus zero.**
+   `C22-6578` printed p.5, Problem 1.1 Method 3 comment (b): an
+   unnormalized LWF-store changes a "minus zero" exponent to "plus zero".
+   Reference Manual printed p.83: the unnormalized `LWF` loads it and "A
+   minus 0 exponent can be stored by an unnormalized FLOATING POINT
+   STORE which specifies no sign modification."  The model follows the
+   manual.  **The check pins the manual's value and says so in its label;
+   the printed claim was not changed to agree, it is recorded as
+   contradicted.** A grep of `docs/ocr/` found no third witness; `jb_af1c`
+   is the unswept place that might hold one.
+2. **`C22-6578` printed p.6, Problem 1.3 comment (a)'s `SWAPBI` line cannot
+   be run as printed**: "SWAPBI, K, DOG + N-K-1" has one address where the
+   instruction has two, and the address is wrong unless N = 2K.  The deck
+   runs N = 4, K = 2, where it is right, and N = 9, K = 6 with the address
+   worked out by hand, DOG + K-1, and labelled as not printed.
+3. **`RNX` stays refused.** Problem 1.8 simulates it and passes, so the
+   page gives a sequence to compare against, but the arm writes two index
+   registers and a store, with the no-op range and the AD/DS/DF clauses of
+   printed p.27.  Not small; `jb_ax4b` routine 1244 is its test plan.
+4. Not run, each for a stated reason in its deck: 1.1 Method 2 comment (b)
+   (a zero count overwrites all of core) and 1.7 comment (c) (needs a second
+   interruption inside the two-instruction window).
 
 # >>>>>> G2 RE-CENSUSED, 2026-10-29: THE POOL G2.1 SIZES IS THE LOWEST-YIELDING <<<<<<
 
