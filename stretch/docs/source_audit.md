@@ -553,6 +553,13 @@ clock** where "one phase" is ambiguous by a factor of two. *Cycle
 accuracy is denominated in this unit and it is currently three
 different units.*
 
+**G1.0 answered for the CPU, 2026-11-08: `clock_unit.md`.** One model clock
+is one A-or-B pulse slot, 0.3 µs, and A+B is the 0.6 µs control cycle, so the
+model's unit needs no change. Fig 2.10.1's 600 NSEC was checked in the ink by a
+second reader. The period is nominal, since no page read prints the frequency;
+memory, Exchange, disk and the timer are off this grid; Table 6's 11.2 µs fits
+no outcome and stays open.
+
 **G1.1 Finish M2 properly**: a level is a PART of an instruction, which
 needs the kind field (done), a level carrying only its own part, and an
 E-box consuming a sequence instead of one whole `di`. The reverted
