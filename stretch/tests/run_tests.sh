@@ -1602,6 +1602,23 @@ run "An index read after a pending progressive write" ./run_program.sh ../decks/
 #   MKPNEQ takes MKPEQ's sense: FAIL B compare only
 #   MMVPT does not check QCN: FAIL D code 10 only
 # Control: all pass before and after; the deck restored and checked by cmp.
+# PART H, SMAC compiling generators: injections observed 2026-11-08 with part H
+# alone run, since parts A-G do not read the special library.  Each is in
+# decks/smac_special_library.smac unless it says otherwise.
+#   MBSKL's count not stepped: every H1-H3 generator differs; H4 code 22
+#   MBSKL loses the second 40 columns: every H1-H3 generator differs (short)
+#   MBSKL does not stop at MEGEN: H1 QERR 22; H2, H3 QERR 16; H4 codes 18, 22
+#   MOUT's count off by one: every generator using MOUT differs (8 of 10 in H1)
+#   MOUTV's N flag wrong: only generators using N (MOUT, MOUTF in H1; MRD,
+#     MABEX, MEOJ, MADD, MADMY, MOUTER in H2)
+#   a compare's hex table wrong: H2 MC0, MC2, MC6 only
+#   MMVPT never takes QCN: H3 MSEL only
+#   MOUTF's limit gone: H4 sixteen pairs only
+#   an apostrophe comment kept as skeleton text: H2 MCOMNT only; this passed
+#     everything until MCOMNT was added for it
+#   a column 1 comment rejected as a continuation: H2 QERR 17, MCOMNT's run
+#   (shell) QPARM off by one: MMVPT, MOUTV, compares; H4 codes 16, 21
+# Control: part H passes before and after; decks checked by cmp.
 run "The 7030 SMAC on the model, against smac.py" python3 check_smac7030.py
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<

@@ -50,7 +50,7 @@ finding about the hardware model, not a hypothetical one.
 | `run_tests.sh` | The whole regression suite in one step (pure-Python assembler tests first, then every program below on the model). |
 | `test_syn.py`, `test_slc.py` | Pure-Python tests of the `SYN` and `SLC` pseudo-ops against `assemble()` directly. |
 | `smac.py` | RECONSTRUCTION of SMAC I (J28-6128 + errata), the host-side executable specification: card blocks, the thirteen Generator Language statements, skeleton substitution. `python3 smac.py deck.smac` expands a deck with the MCP library. |
-| `smac7030_build.py` | SCAFFOLDING for the 7030 SMAC (`../decks/smac7030_shell.strap`, `../docs/smac_7030.md`): compiles generators to relocatable images and builds a loadable deck. Stands in for J28-6128 p.3's special library and p.2's library updating program. |
+| `smac7030_build.py` | SCAFFOLDING for the 7030 SMAC (`../decks/smac7030_shell.strap`, `../docs/smac_7030.md`): compiles generators to relocatable images and builds a loadable deck. Stands in for p.2's library updating program, and compiles p.3's special library (`../decks/smac_special_library.smac`) the first time, after which SMAC can compile it itself. |
 | `smac_mcp.py` | RECONSTRUCTION of SMAC's MCP macro library, in SMAC's Generator Language, from C22-6678-1's printed expansions (`../docs/mcp_macros.md`). |
 | `listing_oracle.py` | Compares assembled words against the machine code a historical listing prints beside each source line (the print format is decoded in its docstring). |
 | `verify_ibox1_listing.py` | Assembles I-Box 1's WEN2/WEN/VEN verbatim at their listed addresses and compares every half-word to the machine code printed in the 1961 listing (`../docs/ja_ax1a_ibox-1.pdf` p.51). |

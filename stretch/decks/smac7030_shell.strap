@@ -43,6 +43,8 @@
 !
         SLC, (8)2000.0
 START   LVI, $2, BT
+        LX, $3, QINP0
+        SX, $3, QINP
 !
 ! ======== the shell: one statement at a time (p.2) ===================
 MNEXT   LX, $3, QINP
@@ -632,6 +634,28 @@ GL9     L(BU,24), GLV
 GLBAD   LI(BU,24), 15
         B, ERROR
 !
+! Three services for generators with STRAP in their logic, which the special
+! library needs (J28-6128 p.3; docs/smac_7030.md).  The bulletin says entry to
+! all subroutines and buffers is through the branch table (p.2), but does not
+! list its entries past those named on p.13, so these are CHOSEN.
+! QPARM.  Args: pointer, parameter.  $9 returns that parameter's index word.
+SPARM   L(BU,24), 0($15)
+        SIC, GPLK
+        B, GPTR
+        +(BU,24), .32($15)
+        -(BU,24), C1
+        SIC, PMLK
+        B, PARM
+        SX, $6, TMPX
+        LX, $9, TMPX
+        B, 1.0($15)
+! QPUTC.  The card at V($9) goes out as it stands: no substitution, no lookup.
+SPUTC   SV, $9, COPYF
+        SIC, CPLK
+        B, COPYC
+        B, 0($15)
+! QFAIL (the shell's ERROR): the code in the accumulator, QERRBIT, a halt.
+!
 ! The compares, pp.6-7, with the errata's names.  Args: pointer, parameter,
 ! count of characters, target, then eight characters in two half-words.
 SKPEQ   LI(BU,8), 0
@@ -1042,6 +1066,9 @@ BT      B, SEXIT
         B, SKPNE
         B, SKCEQ
         B, SKCNE
+        B, SPARM
+        B, SPUTC
+        B, ERROR
         CNOP
 BTBITS  DD(BU,64), 0
 BTERR   DD(BU,64), 0
@@ -1056,6 +1083,10 @@ QKPEQ   SYN, 3.32
 QKPNE   SYN, 4.0
 QKCEQ   SYN, 4.32
 QKCNE   SYN, 5.0
+QPARM   SYN, 5.32
+QPUTC   SYN, 6.0
+QFAIL   SYN, 6.32
+QINPT   SYN, QINP-BT
 QDBUGB  SYN, BTBITS-BT+.0
 QMIBIT  SYN, BTBITS-BT+.1
 QCIBIT  SYN, BTBITS-BT+.2
@@ -1076,6 +1107,9 @@ QGUB    SYN, BTGUB-BT
 ! ======== working storage ===========================================
 ! Core outside the image reads back 0xAA on the model, so every cell is
 ! given a value.
+        CNOP
+QINP    DD(BU,64), 0
+TMPX    DD(BU,64), 0
         CNOP
 C1      DD(BU,24), 1
         CNOP
