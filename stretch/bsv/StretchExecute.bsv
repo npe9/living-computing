@@ -1024,6 +1024,14 @@ function Word64 setResultIndicatorsF(Word64 ind, SM128 v);
   return i4;
 endfunction
 
+// Data flags, printed p.59: "set according to the data flag bits, if any,
+// of the storage operand", and off if none were obtained from storage.
+function Word64 setDataFlagsF(Word64 ind, Bit#(3) f);
+  Word64 i1 = setBit(ind, ind_TF, f[2]);
+  Word64 i2 = setBit(i1,  ind_UF, f[1]);
+  return setBit(i2, ind_VF, f[0]);
+endfunction
+
 function Word64 setAccCmpIndicatorsF(Word64 ind, Cmp3 c);
   Word64 i1 = setBit(ind, ind_AL, pack(c == CmpLow));
   Word64 i2 = setBit(i1,  ind_AE, pack(c == CmpEqual));
@@ -2589,7 +2597,7 @@ function ActionValue#(VflOutcome)
         // operand read: that call's `ind` is discarded (execute()
         // returns entry values when needsRead is Valid), and the
         // resuming call reaches this line again with the same `ea`.
-        Bool vflFetchType = (vi.code == 6'b000101)    // L
+        Bool vflFetchType = (vi.code == 6'b000101 || vi.code == 6'b100101)    // L, LWF
                          || (vi.code == 6'b000001)    // + , -
                          || (vi.code == 6'b010001)    // K
                          || (vi.code == 6'b001011)    // LFT
@@ -2628,7 +2636,7 @@ function ActionValue#(VflOutcome)
           // suppressed: deliberately nothing at all
         end else begin
         case (vi.code)
-          6'b000101: begin // L (Load) -- first arm converted to the
+          6'b000101, 6'b100101: begin // L (Load), LWF -- first arm converted to the
             // prefetch/bail-out staging (docs/phase2_arm_inventory.md).
             // Every other arm below still calls readField/readHW/
             // maybeRefill directly (the OLD, still-synchronous
@@ -2659,7 +2667,13 @@ function ActionValue#(VflOutcome)
             if (!isValid(needsRead)) begin
               SM128 sm = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               SM128 shifted = SM128 { sign: sm.sign, mag: sm.mag << offSh };
-              writeAcc(st, shifted);
+              // Printed p.57: LOAD WITH FLAG places the flag bits in the
+              // three rightmost bits of the sign byte register, and LOAD
+              // sets those three positions to zero.
+              Bit#(3) flags = immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign);
+              writeAccFlags(st, shifted, (vi.code == 6'b100101) ? flags : 0);
+              ind = setDataFlagsF(ind, flags);
+              ind = setBit(ind, ind_MOP, 0);
               ind = setResultIndicatorsF(ind, shifted);
             end
           end
@@ -2740,11 +2754,24 @@ function ActionValue#(VflOutcome)
               Bit#(64) decField = decStoreField(decAcc, bsz, st.readAccSign()[63:56]);
               Bool decStore = (vi.m.decimal == 1);
               Bit#(64) packedField = decStore ? decField
-                : smToField(SM128{sign:fsign, mag:shifted.mag}, len_, bsz, vi.m.unsign);
+                : smToField(SM128{sign:fsign, mag:shifted.mag}, len_, bsz, vi.m.unsign,
+                            storeSignByte(st.readAccSign()[63:56], bsz));
               // The indicators of printed p.63, set where the store is
               // done.  The sign, as modified by the negative sign
-              // modifier, counts "whether it is stored or not".  Only the
-              // decimal path: see bsv/README.md on the binary store.
+              // modifier, counts "whether it is stored or not".
+              //
+              // Binary: "any one-bit in the accumulator to the left of the
+              // last bit position stored" for PF, and the data field stored
+              // leaves out a signed field's sign byte.
+              function Word64 binStoreInd(Word64 i0);
+                Bit#(8) w8 = (vi.m.unsign == 1) ? zeroExtend(len_)
+                  : ((len_ > zeroExtend(bsz)) ? zeroExtend(len_) - zeroExtend(bsz) : 0);
+                Bit#(128) above = shifted.mag >> w8;
+                Bit#(128) stored = shifted.mag & ~(above << w8);
+                Word64 i1 = setResultIndicatorsF(i0, SM128{sign:fsign, mag:stored});
+                Word64 i2 = setBit(i1, ind_MOP, 1);
+                return (above != 0) ? setBit(i2, ind_PF, 1) : i2;
+              endfunction
               function Word64 decStoreInd(Word64 i0);
                 Bit#(64) lenMask = (len_ == 64) ? '1 : ((64'd1 << len_) - 1);
                 Bit#(64) stored = decField & decStoreNumeric(bsz) & lenMask;
@@ -2774,7 +2801,7 @@ function ActionValue#(VflOutcome)
                                           len_, packedField);
                     st.writeWord(w0, tpl_1(np));
                     st.writeWordTail(w0 + 1, tpl_2(np));
-                    if (decStore) ind = decStoreInd(ind);
+                    ind = decStore ? decStoreInd(ind) : binStoreInd(ind);
                   end
                   vflReadsUsed = 2;
                 end else if (prefetchCount == 1)
@@ -2792,7 +2819,7 @@ function ActionValue#(VflOutcome)
                   if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
                   else begin
                     st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
-                    if (decStore) ind = decStoreInd(ind);
+                    ind = decStore ? decStoreInd(ind) : binStoreInd(ind);
                   end
                   vflReadsUsed = 1;
                 end else
@@ -2815,7 +2842,7 @@ function ActionValue#(VflOutcome)
                   if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
                   else begin
                     st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
-                    if (decStore) ind = decStoreInd(ind);
+                    ind = decStore ? decStoreInd(ind) : binStoreInd(ind);
                   end
                   vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
                   ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
@@ -2906,6 +2933,8 @@ function ActionValue#(VflOutcome)
             end
             if (!isValid(needsRead)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
+              ind = setBit(ind, ind_MOP, 0);
               SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
               SM128 acc = readAcc(st);
               // "assumed positive for purposes of the addition itself"
@@ -3017,6 +3046,8 @@ function ActionValue#(VflOutcome)
             end
             if (!isValid(needsRead)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
+              ind = setBit(ind, ind_MOP, 0);
               SM128 acc = readAcc(st);
               // "the accumulator field specified by the offset"
               Bit#(128) accOp = acc.mag >> offSh;
@@ -3094,6 +3125,8 @@ function ActionValue#(VflOutcome)
             end
             if (!isValid(needsRead)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
+              ind = setBit(ind, ind_MOP, 0);
               if (vi.code == 6'b001011) begin
                 if ((opnd.mag >> 60) != 0) ind = setBit(ind, ind_PF, 1);
                 Bit#(60) num = truncate(opnd.mag);
@@ -3215,6 +3248,8 @@ function ActionValue#(VflOutcome)
             end
             if (!isValid(needsRead)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
+              ind = setBit(ind, ind_MOP, 0);
               SM128 acc = readAcc(st);
               // "the entire accumulator contents TO THE LEFT OF the
               // offset ... positions to the right of the offset are
@@ -3413,11 +3448,13 @@ function ActionValue#(VflOutcome)
                 if (prefetchCount >= 1) begin
                   Bit#(64) raw = extractFieldBits(prefetch[0], 0, off, len_);
                   SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, opndInvert);
+                  ind = setDataFlagsF(ind, fieldFlags(raw, bsz, vi.m.unsign));
+                  ind = setBit(ind, ind_MOP, 1);
                   SM128 sum = smAdd(opnd, accSh);
                   SM128 stored = magToMemory(magnitude, sum, opnd);
                   if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
                   else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_,
-                                                    smToField(stored, len_, bsz, vi.m.unsign)));
+                                                    smToField(stored, len_, bsz, vi.m.unsign, raw)));
                   // "set according to the FINAL RESULT STORED"
                   // (p.62's Arithmetic Result line), which for M+MG
                   // is not always the sum.
@@ -3438,11 +3475,13 @@ function ActionValue#(VflOutcome)
                 if (prefetchCount >= 2) begin
                   Bit#(64) raw = extractFieldBits(prefetch[0], 0, off, len_);
                   SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, opndInvert);
+                  ind = setDataFlagsF(ind, fieldFlags(raw, bsz, vi.m.unsign));
+                  ind = setBit(ind, ind_MOP, 1);
                   SM128 sum = smAdd(opnd, accSh);
                   SM128 stored = magToMemory(magnitude, sum, opnd);
                   if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
                   else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_,
-                                                    smToField(stored, len_, bsz, vi.m.unsign)));
+                                                    smToField(stored, len_, bsz, vi.m.unsign, raw)));
                   vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
                   ind = setResultIndicatorsF(ind, stored);
                   ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
@@ -3516,6 +3555,8 @@ function ActionValue#(VflOutcome)
             end
             if (!isValid(needsRead)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
+              ind = setBit(ind, ind_MOP, 0);
               SM128 acc = readAcc(st);
               Cmp3 c = CmpEqual;
               if (fieldCmp) begin

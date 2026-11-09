@@ -10,17 +10,12 @@
 // unlike the index-word value field's own internal encoding (also
 // sign+magnitude, see StretchTypes.indexValue).
 //
-// SCOPE / SIMPLIFICATION (see bsv/README.md "Scope" for the full
-// statement): the manual defines the sign as occupying a specific bit
-// position *within* the sign byte for the accumulator sign byte
-// register ("the sign of the accumulator operand is contained in the
-// fifth bit position from the left in the accumulator sign byte
-// register", p.~103) but does not give an equally explicit bit-within-
-// byte rule for general storage fields in the excerpted text. This
-// implementation uses the most-significant bit of the byte-size-wide
-// sign byte as the sign, uniformly for storage fields and for the
-// accumulator (modeled as a flat 128-bit sign-magnitude register, see
-// below) -- a documented simplification, not a transcription.
+// THE SIGN BYTE OF A STORAGE FIELD, R23-9694 printed p.100's table: S,
+// ST, STU, STUV, then zones to the left of S for byte sizes 5-8.  So the
+// sign bit of a right-justified field is bit min(byteSize,4)-1, and it
+// lines up with position 4 of the accumulator sign byte register.  Until
+// 2026-11-09 this file used the byte's top bit, a zone bit for byte sizes
+// above four, and called that a simplification; signFieldIdx is the fix.
 //
 // The accumulator (words 8/9, "Left Half"/"Right Half") is modeled here
 // as a single conceptual 128-bit sign-magnitude value: sign = bit 0 of
@@ -264,6 +259,21 @@ endfunction
 // Extract (sign, magnitude) from a right-justified `len_`-bit field per
 // the a (unsigned) / b (invert) VFL modifiers and the byte-size sign
 // byte convention documented above.
+function Bit#(4) signFieldIdx(Bit#(4) byteSize) = (byteSize > 4) ? 3 : (byteSize - 1);
+
+// The data flag bits T, U and V of a field, for the indicators (printed
+// p.57, p.59).  A sign byte of size n holds the first n-1 of them, by
+// p.100's table; flags not obtained from storage read as off.
+function Bit#(3) fieldFlags(Bit#(64) raw, Bit#(4) byteSize, Bit#(1) unsign);
+  if (unsign == 1) return 0;
+  else case (byteSize)
+    1: return 0;
+    2: return {raw[0], 2'b00};
+    3: return {raw[1:0], 1'b0};
+    default: return raw[2:0];
+  endcase
+endfunction
+
 function SM128 fieldToSM(Bit#(64) raw, Bit#(7) len_, Bit#(4) byteSize,
                           Bit#(1) unsign, Bit#(1) invert);
   if (unsign == 1)
@@ -290,7 +300,7 @@ function SM128 fieldToSM(Bit#(64) raw, Bit#(7) len_, Bit#(4) byteSize,
     // wrong the moment the bootstrap reached that page.
     return SM128 { sign: invert, mag: zeroExtend(raw) };
   else begin
-    Bit#(1) s = raw[byteSize - 1];
+    Bit#(1) s = raw[signFieldIdx(byteSize)];
     Bit#(64) mag = raw >> byteSize;
     Bit#(1) finalSign = (invert == 1) ? ~s : s;
     return SM128 { sign: finalSign, mag: zeroExtend(mag) };
@@ -379,14 +389,30 @@ endfunction
 
 // Pack a sign-magnitude value back into a right-justified `len_`-bit
 // field with the given byte size (signed) or none (unsigned).
-function Bit#(64) smToField(SM128 v, Bit#(7) len_, Bit#(4) byteSize, Bit#(1) unsign);
+//
+// `oldByte` holds what goes around the sign bit, right-justified in the
+// sign byte's own bits: a store's comes from storeSignByte, and a
+// to-memory operation passes the operand's raw field, because printed p.58
+// says only STORE and STORE ROUNDED replace flags and zones.
+function Bit#(64) smToField(SM128 v, Bit#(7) len_, Bit#(4) byteSize, Bit#(1) unsign, Bit#(64) oldByte);
   if (unsign == 1)
     return truncate(v.mag);
   else begin
     Bit#(64) mag = truncate(v.mag);
-    Bit#(64) signByte = zeroExtend(v.sign) << (byteSize - 1);
+    Bit#(64) byteMask = (64'd1 << byteSize) - 1;
+    Bit#(64) signByte = oldByte & byteMask;
+    signByte[signFieldIdx(byteSize)] = v.sign;
     return (mag << byteSize) | signByte;
   end
+endfunction
+
+// What a signed STORE puts in the sign byte, printed p.63: "the data flag
+// bits and zone bits that are in the accumulator sign byte register", as
+// many as the byte size holds, p.100's table.  S is register position 4,
+// which is sb[3] here (IBM bit 7 at sb[0]).  The caller replaces S itself.
+function Bit#(64) storeSignByte(Bit#(8) sb, Bit#(4) byteSize);
+  Bit#(64) r = zeroExtend(sb);
+  return (byteSize < 4) ? (r >> (4 - byteSize)) : r;
 endfunction
 
 endpackage

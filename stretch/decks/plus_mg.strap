@@ -125,8 +125,8 @@ THREE   DD(BU,64,8), 3
 TWO     DD(BU,64,8), 2
 BIG     DD(BU,64,8), 255
 ! -5 as a signed binary field, byte size 8: magnitude 5 in bits 0-55,
-! sign in the leading position of the 8-bit sign byte -- (5<<8)|(1<<7).
-NEG5    DD(BU,64,8), (8)2600
+! sign at position 4 of the 8-bit sign byte (R23-9694 p.100) -- (5<<8)|(1<<3).
+NEG5    DD(BU,64,8), (8)2410
 
 T1      DD(BU,64,8), 0
 T2      DD(BU,64,8), 0

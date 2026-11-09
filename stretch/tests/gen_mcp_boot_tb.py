@@ -1410,8 +1410,17 @@ def main():
          # corroboration is in the check above: S YPRCH now holds 33,
          # the printer's channel, which that check's own comment had
          # recorded as unexplained when it held 35.
+         #
+         # >>> PF AND MOP, 2026-11-09. <<<  The binary ST set neither until
+         # decks/vfl_sign_byte.strap.  Reference Manual printed p.63: PF "if
+         # there is any one-bit in the accumulator to the left of the last
+         # bit position stored", and MOP on.  Measured with a temporary trace:
+         # 242 binary stores in this run have such bits, the first at 215640
+         # (ST of 19 bits) and most in the converter's ST(BU,6,6) at 232700
+         # on, whose accumulator keeps a table entry's high bits.  So MCP ran
+         # with PF on, and no later check moved.
          _ind("AE") | _ind("RGZ") | _ind("XE")
-         | _ind("XVGZ")),
+         | _ind("XVGZ") | _ind("PF") | _ind("MOP")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP

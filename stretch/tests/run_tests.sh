@@ -1632,6 +1632,8 @@ run "The 7030 SMAC on the model, against smac.py" python3 check_smac7030.py
 # counts, and compares its image with strap_asm's for every deck.
 run "STRAP II GETFLD against C22-6729's printed coded expressions" python3 check_strap2_coded.py
 run "STRAP II origin, location counters, tails, unit bits, UITER rules, by hand" python3 check_strap2.py
+# Injections and their observed failures are in the test's own header.
+run "STRAP II listing against C28-6129 Fig. 3 and C22-6678-1 p.48, and MIOD" python3 check_strap2_listing.py
 run "STRAP II numeric DD (MQDD, MQDNUM, DNUM, Fig. 26) against C28-6129's examples and p.359" python3 check_strap2_dd.py
 run "STRAP II against the listing oracles and strap_asm's images" python3 check_strap2_oracles.py
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
@@ -2461,6 +2463,51 @@ run "decimal unsigned store: digits, zones, partial bytes, offset, indicators" .
     "M_partial_high_byte:285=0xBFFFFFFFFFFFFFFF" \
     "RZ_case_L_on:286=0x400000000000" \
     "PF_case_M_off:287=0"
+# The sign byte of a binary VFL field: R23-9694 p.100, Reference Manual pp.57-59, 63.
+# MEASURED INJECTIONS 2026-11-09, each against this deck alone, control all pass:
+#   sign read at the byte's top bit: TA TB T_C TD TE TG TH TL TN RLZA RGZI RLZI RGZJ.
+#   ST ignores the register's flags and zones: TB T_C TE TG TL.
+#   M+ does not keep the operand's byte: exactly TN.
+#   L keeps the register's flags: TL.
+#   LWF does not place the flags: TB T_C TE TG.
+#   L sets no TF, UF, VF: UFA VFA UFP VFP.
+#   binary ST sets no PF: PFJ PFL PFM.  No MOP: exactly MOPA.
+#   result indicators see the whole accumulator: exactly RZM.
+run "binary VFL sign byte: position, flags, zones, ST's indicators, LWF, M+" ./run_program.sh ../decks/vfl_sign_byte.strap StretchSignByteTb \
+    "TA:517=0x0508FFFFFFFFFFFF" \
+    "TB:518=0x050BFFFFFFFFFFFF" \
+    "T_C:519=0x053BFFFFFFFFFFFF" \
+    "TD:520=0x05BFFFFFFFFFFFFF" \
+    "TE:521=0x17BFFFFFFFFFFFFF" \
+    "TG:522=0x5BFFFFFFFFFFFFFF" \
+    "TH:523=0x5FFFFFFFFFFFFFFF" \
+    "TI:524=0x05FFFFFFFFFFFFFF" \
+    "TJ:525=0x7FFFFFFFFFFFFFFF" \
+    "TK:526=0xBFFFFFFFFFFFFFFF" \
+    "TL:527=0x4C3FFFFFFFFFFFFF" \
+    "TM:528=0x3FFFFFFFFFFFFFFF" \
+    "TN_keeps_operand_byte:516=0x02C3FFFFFFFFFFFF" \
+    "MOPL:529=0" \
+    "TFA:530=0" \
+    "UFA:531=0x400000000000" \
+    "VFA:532=0x400000000000" \
+    "RLZA:533=0x400000000000" \
+    "MOPA:534=0x400000000000" \
+    "RGZI:535=0x400000000000" \
+    "RLZI:536=0" \
+    "PFJ:537=0x400000000000" \
+    "RGZJ:538=0x400000000000" \
+    "PFK:539=0" \
+    "PFL:540=0x400000000000" \
+    "RZM:541=0x400000000000" \
+    "PFM:542=0x400000000000" \
+    "TFN:543=0" \
+    "UFN:544=0x400000000000" \
+    "VFN:545=0x400000000000" \
+    "MOPN:546=0x400000000000" \
+    "TFP:547=0" \
+    "UFP:548=0" \
+    "VFP:549=0"
 # CYCLES was 142 while this deck stored ST(DU,32,8).  The signed store it now
 # stores charges two fewer: x is the field length less the byte size in a
 # signed operation (StretchTiming.bsv, Perf. Char. Vol. 1 printed p.3-10).
@@ -2639,8 +2686,8 @@ run "M+MG, Add Magnitude to Memory -- the seventh VFL integer arm" ./run_program
     "PC=2064" \
     "mg_t1:1043=105" \
     "mg_t2_acc_sign_ignored:1044=105" \
-    "mg_t3_forced_zero:1045=0x80" \
-    "mg_t4_same_sign:1046=0x280"
+    "mg_t3_forced_zero:1045=0x08" \
+    "mg_t4_same_sign:1046=0x208"
 # MCP PRODUCED THIS GAP TOO, and it produced it VISIBLY.  The
 # bootstrap's error routine (printed p.5 lines 12-17) folds the
 # failing instruction's address into the message it prints on the
@@ -2672,8 +2719,8 @@ run "M+MG, Add Magnitude to Memory -- the seventh VFL integer arm" ./run_program
 
 run "Figure 14 -- IBM's own sign-modifier example, and the N suffix" ./run_program.sh ../decks/fig14_sign_modifiers.strap StretchFig14Tb \
     "PC=2062" \
-    "fig14_note1_a_minus_b:1774=0xaaaaaaaaaa00c880" \
-    "fig14_notes234:1775=0xc80000c88000c8"
+    "fig14_note1_a_minus_b:1774=0xaaaaaaaaaa00c808" \
+    "fig14_notes234:1775=0xc80000c80800c8"
 # Reference Manual printed p.64, Figure 14 "Sign Modifier Example",
 # transcribed statement for statement at IBM's own addresses: form
 # A-B, |A-B|, -|A-B| and A(bar)-B and store them consecutively.  All
@@ -4168,7 +4215,7 @@ run "+MG, Add to Magnitude -- Reference Manual Figure 12" ./run_program.sh ../de
     "pmg_fig12_larger_is_x:1065=100" \
     "pmg_fig12_forced_zero:1066=0" \
     "pmg_fig12_larger_is_y:1067=100" \
-    "pmg_sign_byte_unchanged:1068=0x880" \
+    "pmg_sign_byte_unchanged:1068=0x808" \
     "pmg_clamp_clears_entire_acc:1069=0" \
     "pmg_positive_keeps_low_byte:1070=767"
 # ADD TO MAGNITUDE, the VFL form (abc100001), the to-accumulator twin

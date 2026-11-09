@@ -270,6 +270,8 @@ because the extra width is zone bits stacked above S, not below it.
 > Nothing in the suite can catch it: every `LCV` MCP writes is
 > **unsigned** (`DU`/`BU`), so `signed_` is false and the expression
 > is never evaluated. Flagged, not fixed — the suite is running.
+> (`LCV`, `CV` and `LTRCV` read `signIdx` correctly since then, and on
+> 2026-11-09 `fieldToSM` and `smToField` followed; see `bsv/README.md`.)
 
 ### 1d. Invalid digit codes — THE MANUAL IS SILENT, AND THAT SILENCE IS LOAD-BEARING
 

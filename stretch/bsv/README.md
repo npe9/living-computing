@@ -419,6 +419,9 @@ NOT        LFT(11) KE(19) KR(21) CV(27) /(29) LTRCV(35)
            LWF(37) SRD(45) KFE(51) KFR(53) *+(57) DCV(59) LTRS(61)
 ```
 
+(A census of that date. `LWF` executes since 2026-11-09, and later entries in
+this file record others.)
+
 **`*` MOVED ACROSS ON 2026-10-25** and the census above already
 reflects it: eleven of twenty-four. `decks/vfl_multiply.strap` is the
 check and `docs/vfl_arith_spec.md` is the sourcing.
@@ -593,11 +596,16 @@ the arms for those are not yet shown to be needed.
 
 ### Documented simplifications (deliberate, not oversights)
 
-- **Sign-magnitude sign-bit position within a byte**: the manual gives
-  an exact bit position for the *accumulator* sign byte ("fifth bit
-  position from the left") but this implementation uses the byte's
-  MSB uniformly for both the accumulator and general storage fields —
-  see StretchALU.bsv header.
+- ~~**Sign-magnitude sign-bit position within a byte**~~ **FIXED
+  2026-11-09.** This used the byte's top bit, which above byte size four
+  is a zone bit. R23-9694 printed p.100's table puts S at bit
+  min(byteSize,4)-1 of a field. The same change made binary `ST` store the
+  register's flags and zones and set MOP, PF and the result indicators by the
+  data field stored (printed p.63); made `L` clear the flag positions and
+  built `LWF` (printed p.57); made the operand-reading arms set TF, UF and VF
+  (printed p.59) and `M+` keep the operand's flags and zones (printed p.58)
+  and set MOP. `decks/vfl_sign_byte.strap` is the test. The `*+`, `/` and KF
+  arms get the flags by p.59's general sentence, with no case of their own.
 - **Byte-size (`BS`) field encoding**: no explicit 3-bit-code table was
   located in the excerpted manual text; `0` is treated as meaning 8
   (mirroring the `LENGTH` field's own "0 means 64" convention), values

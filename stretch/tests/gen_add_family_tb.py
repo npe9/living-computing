@@ -123,8 +123,9 @@ LOST_CARRY = [(10, 2), (10, 6), (11, 0), (11, 4)]
 
 
 def enc(mag, neg):
-    """A 16-bit signed field: magnitude over an 8-bit sign byte."""
-    return (mag << 8) | (0x80 if neg else 0)
+    """A 16-bit signed field: magnitude over an 8-bit sign byte, whose sign
+    bit is position 4, value 0x08 (R23-9694 printed p.100's table)."""
+    return (mag << 8) | (0x08 if neg else 0)
 
 
 def cell_expected(text):

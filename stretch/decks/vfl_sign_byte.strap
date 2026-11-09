@@ -1,0 +1,208 @@
+! vfl_sign_byte.strap -- the sign byte of a binary VFL field: where its sign
+! is, who keeps its flags and zones, and what a binary store indicates.
+!
+! THE SOURCES, read in the ink.
+!   R23-9694 printed p.100's table (transcribed in docs/spec_decimal.md):
+!     1 S, 2 ST, 3 STU, 4 STUV, 5 ZSTUV ... 8 ZZZZSTUV; "the sign bit always
+!     occupies position 4 in the register".
+!   Reference Manual printed p.57: LWF "places the flag bits into the three
+!     rightmost bits of the accumulator sign byte register"; LOAD "sets these
+!     three bit positions to zero".
+!   Printed p.58: operations placing a signed result in storage, except ST and
+!     SRD, "do not alter the original flag bits or zone bits".
+!   Printed p.59: TF, UF, VF "set according to the data flag bits, if any, of
+!     the storage operand"; off "if the corresponding data flags are not
+!     obtained from storage".  MOP on for a result placed in storage, "All
+!     other integer arithmetic operations turn this indicator off".
+!   Printed p.63: a signed ST "always stores sign bytes with the data flag bits
+!     and zone bits that are in the accumulator sign byte register".  PF "if
+!     there is any one-bit in the accumulator to the left of the last bit
+!     position stored".  RLZ, RZ, RGZ, RN "according to the data field stored".
+!
+! THE CASES, every expectation derived by hand.  Targets start all ones.
+!   F0B is 05 0B: magnitude 5, byte 0000 1011, so S=1 T=0 U=1 V=1.
+!   F80 is 05 80: magnitude 5, byte 1000 0000, a ZONE bit with S=0: positive.
+!       The model read this as negative until this deck.
+!   A   L(B,16,8),F0B then ST(B,16,8): flags cleared by L, S kept: 05 08.
+!       UF and VF on, TF off, RLZ on, MOP off after the L, on after the ST.
+!   B   LWF(B,16,8),F0B then ST(B,16,8): flags kept: 05 0B.
+!   C   then zones 0011 put in the register: ST(B,16,8): 05 3B.
+!   D   ST(B,10,2): data 0000 0101, byte S T = 1 0: 05 then 10 and ones: 05 BF.
+!   E   ST(B,12,6): data 000101, byte low six of 0011 1011 = 111011,
+!       0001 0111 1011 and ones: 17 BF.
+!   G   ST(B,7,3): data 0101, byte S T U = 1 0 1: 0101 1011 with the one: 5B.
+!   H   ST(B,5,1): data 0101, byte S = 1, and ones: 0101 1111 = 5F.
+!   I   L(B,16,8),F80 then ST(BU,8,8): positive by RGZ, RLZ off: 05 and ones.
+!   J   ST(BU,2,8) of 5 (101): low two bits 01 and ones: 7F.  PF on, RGZ on.
+!   K   BPFZ, ST(BU,3,8) of 5: 101 and ones: BF.  PF off.
+!   L   BPFZ, ST(B,10,8) of 5: data two bits 01, S=0, byte is the register's
+!       (zones 0011, flags 000): 01 00110000 = 0100 1100 00 and ones: 4C 3F.
+!       PF on.
+!   M   L(BU,16,8),F4 (the number 4), ST(BU,2,8): 00 and ones: 3F.  RZ on by the
+!       data field stored, and PF on.
+!   N   L(B,16,8),F05 (+5), M+(B,16,8),TN where TN is 03 CB (S=1, zones 1100,
+!       U and V): -3 + 5 = +2: 02 C3: the operand's flags and zones, not the
+!       register's.  UF and VF on, TF off, MOP on.
+!   P   L(BU,16,8),F0B then a flag check: unsigned has no flags, all off.
+!
+! MEASURED INJECTION: see the entry in tests/run_tests.sh.
+
+        SLC, (8)300.0
+START   Z,$SB
+        L(B,16,8),F0B
+        LVI,$2,0.0
+        BZMOP,$+.64
+        LVI,$2,1.0
+        SV,$2,MOPL
+        LVI,$2,0.0
+        BZTF,$+.64
+        LVI,$2,1.0
+        SV,$2,TFA
+        LVI,$2,0.0
+        BZUF,$+.64
+        LVI,$2,1.0
+        SV,$2,UFA
+        LVI,$2,0.0
+        BZVF,$+.64
+        LVI,$2,1.0
+        SV,$2,VFA
+        LVI,$2,0.0
+        BZRLZ,$+.64
+        LVI,$2,1.0
+        SV,$2,RLZA
+        ST(B,16,8),TA
+        LVI,$2,0.0
+        BZMOP,$+.64
+        LVI,$2,1.0
+        SV,$2,MOPA
+        LWF(B,16,8),F0B
+        ST(B,16,8),TB
+        CM1111(BU,2),$SB+.2
+        ST(B,16,8),TC
+        ST(B,10,2),TD
+        ST(B,12,6),TE
+        ST(B,7,3),TG
+        ST(B,5,1),TH
+        L(B,16,8),F80
+        LVI,$2,0.0
+        BZRGZ,$+.64
+        LVI,$2,1.0
+        SV,$2,RGZI
+        LVI,$2,0.0
+        BZRLZ,$+.64
+        LVI,$2,1.0
+        SV,$2,RLZI
+        ST(BU,8,8),TI
+        BPFZ,$+.32
+        ST(BU,2,8),TJ
+        LVI,$2,0.0
+        BZPF,$+.64
+        LVI,$2,1.0
+        SV,$2,PFJ
+        LVI,$2,0.0
+        BZRGZ,$+.64
+        LVI,$2,1.0
+        SV,$2,RGZJ
+        BPFZ,$+.32
+        ST(BU,3,8),TK
+        LVI,$2,0.0
+        BZPF,$+.64
+        LVI,$2,1.0
+        SV,$2,PFK
+        BPFZ,$+.32
+        ST(B,10,8),TL
+        LVI,$2,0.0
+        BZPF,$+.64
+        LVI,$2,1.0
+        SV,$2,PFL
+        L(BU,16,8),F4
+        BPFZ,$+.32
+        ST(BU,2,8),TM
+        LVI,$2,0.0
+        BZRZ,$+.64
+        LVI,$2,1.0
+        SV,$2,RZM
+        LVI,$2,0.0
+        BZPF,$+.64
+        LVI,$2,1.0
+        SV,$2,PFM
+        L(B,16,8),F05
+        M+(B,16,8),TN
+        LVI,$2,0.0
+        BZTF,$+.64
+        LVI,$2,1.0
+        SV,$2,TFN
+        LVI,$2,0.0
+        BZUF,$+.64
+        LVI,$2,1.0
+        SV,$2,UFN
+        LVI,$2,0.0
+        BZVF,$+.64
+        LVI,$2,1.0
+        SV,$2,VFN
+        LVI,$2,0.0
+        BZMOP,$+.64
+        LVI,$2,1.0
+        SV,$2,MOPN
+        L(BU,16,8),F0B
+        LVI,$2,0.0
+        BZTF,$+.64
+        LVI,$2,1.0
+        SV,$2,TFP
+        LVI,$2,0.0
+        BZUF,$+.64
+        LVI,$2,1.0
+        SV,$2,UFP
+        LVI,$2,0.0
+        BZVF,$+.64
+        LVI,$2,1.0
+        SV,$2,VFP
+DONE    BEW,$
+        CNOP
+
+        SLC, (8)1000.0
+        SLC, (8)1000.0
+F0B     DD(BU,16),(16)050B
+        SLC, (8)1001.0
+F80     DD(BU,16),(16)0580
+        SLC, (8)1002.0
+F05     DD(BU,16),(16)0500
+        SLC, (8)1003.0
+F4      DD(BU,16),(16)0400
+        SLC, (8)1004.0
+TN      DD(BU,64),(16)03CBFFFFFFFFFFFF
+        SLC, (8)1005.0
+TA      DD(BU,64),(8)1777777777777777777777
+TB      DD(BU,64),(8)1777777777777777777777
+TC      DD(BU,64),(8)1777777777777777777777
+TD      DD(BU,64),(8)1777777777777777777777
+TE      DD(BU,64),(8)1777777777777777777777
+TG      DD(BU,64),(8)1777777777777777777777
+TH      DD(BU,64),(8)1777777777777777777777
+TI      DD(BU,64),(8)1777777777777777777777
+TJ      DD(BU,64),(8)1777777777777777777777
+TK      DD(BU,64),(8)1777777777777777777777
+TL      DD(BU,64),(8)1777777777777777777777
+TM      DD(BU,64),(8)1777777777777777777777
+MOPL    DD(BU,64),0
+TFA     DD(BU,64),0
+UFA     DD(BU,64),0
+VFA     DD(BU,64),0
+RLZA    DD(BU,64),0
+MOPA    DD(BU,64),0
+RGZI    DD(BU,64),0
+RLZI    DD(BU,64),0
+PFJ     DD(BU,64),0
+RGZJ    DD(BU,64),0
+PFK     DD(BU,64),0
+PFL     DD(BU,64),0
+RZM     DD(BU,64),0
+PFM     DD(BU,64),0
+TFN     DD(BU,64),0
+UFN     DD(BU,64),0
+VFN     DD(BU,64),0
+MOPN    DD(BU,64),0
+TFP     DD(BU,64),0
+UFP     DD(BU,64),0
+VFP     DD(BU,64),0
+        END, START

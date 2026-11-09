@@ -143,11 +143,11 @@ ACC3    DD(BU,64,8), (8)443212636115275
 ! The same value with accumulator bit 48 also set: KF must not see it.
 ACC4    DD(BU,64,8), (8)10443212636115274
 ! -0x123456789ABC as a signed 56-bit field, byte size 8, sitting at
-! bits 8-63 of the word: (V<<8) | (1<<7).
-NEG1    DD(BU,64,8), (8)221505317046536200
+! bits 8-63 of the word: (V<<8) | (1<<3), R23-9694 p.100.
+NEG1    DD(BU,64,8), (8)221505317046536010
 ACC6    DD(BU,64,8), 100
-! -100 as a signed 56-bit field at bits 8-63: (100<<8) | (1<<7).
-FS      DD(BU,64,8), (8)62200
+! -100 as a signed 56-bit field at bits 8-63: (100<<8) | (1<<3).
+FS      DD(BU,64,8), (8)62010
 
 T1      DD(BU,64,8), 0
 T2      DD(BU,64,8), 0

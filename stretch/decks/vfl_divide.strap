@@ -186,10 +186,10 @@ DSR     DD(BU,64,8), 60
 ZERO    DD(BU,64,8), 0
 BIG49   DD(BU,64,8), 281474976710656   ! 2**48: 49 bits, low 48 zero
 ONES    DD(BU,64,8), (16)FFFFF
-! A signed field with byte size 8 is (magnitude << 8) | (sign << 7),
+! A signed field with byte size 8 is (magnitude << 8) | (sign << 3),
 ! which is how decks/plus_mg.strap writes its negative constant.
-NEGDVD  DD(BU,64,8), 256000128         ! -(1000000)
-NEGDSR  DD(BU,64,8), 15488             ! -(60)
+NEGDVD  DD(BU,64,8), 256000008         ! -(1000000)
+NEGDSR  DD(BU,64,8), 15368             ! -(60)
 CDVD    DD(BU,64,8), 78815628        ! 0xABCDEF * 7 + 3
 CROSS   DD(BU,64,8), (16)AB
 CROSS2  DD(BU,64,8), (16)CDEF000000000000
