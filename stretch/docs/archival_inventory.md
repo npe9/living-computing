@@ -1835,8 +1835,10 @@ macros and continuation cards, as a 7030 program. On the model it reproduces
 `strap/smac.py`'s output for C22-6678-1 p.47 and an edge-case deck, card for
 card, and the bulletin's worked examples as written out by hand; it also
 runs generators with STRAP statements in their logic, which `smac.py` cannot
-(`tests/check_smac7030.py`). A Python stand-in still compiles the generators.
-IBM's code for SMAC is still not known to survive. `docs/smac_7030.md` lists
+(`tests/check_smac7030.py`). With `decks/smac_special_library.smac`, a
+reconstruction of p.3's special library tape, it compiles generators too, and
+reproduces that library from its own source. IBM's code for SMAC and its
+library tape are still not known to survive. `docs/smac_7030.md` lists
 what is left.
 
 ### SMAC I reconstructed host-side, 2026-11-08

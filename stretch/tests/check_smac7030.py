@@ -28,6 +28,15 @@ on the Bluespec model, against strap/smac.py, card for card.
      (p.13 item 6); and a SMAC statement in logic (p.12).  smac.py cannot
      run these, so the expected cards are written by hand.
   G. The /Q/ counter carries: from Q0099, the next is Q0100.
+  H. SMAC compiling generators (J28-6128 p.3, docs/smac_7030.md step 5), using
+     the special library decks/smac_special_library.smac, on the model.  The
+     Python stand-in compiles that library once.  With it SMAC then compiles
+     (H1) the special library's own source, which must reproduce word for
+     word the library it is running, and (H2, H3) every generator above,
+     each of which must assemble to the stand-in's image, word for word.
+     H4 is the special library's failure paths.  A generator whose source
+     has a continuation card in a skeleton halts with 17, a limit of this
+     version.
 
 A byte outside the IQS table in an output card fails the case.  Core
 outside the image reads back 0xAA on the model, so that is a diagnosis.
@@ -49,6 +58,17 @@ import smac                                                  # noqa: E402
 import smac_mcp                                              # noqa: E402
 import smac7030_build as build                               # noqa: E402
 
+# Each library keeps its generators' source, for part H.
+_library_add = smac.Library.add
+
+
+def _add_keeping_source(self, ops, text):
+    self.__dict__.setdefault("sources", []).append((list(ops), text))
+    return _library_add(self, ops, text)
+
+
+smac.Library.add = _add_keeping_source
+
 fails = 0
 INV = {v: k for k, v in charsets.IQS.items()}
 BSV = os.path.join(HERE, "..", "bsv")
@@ -68,6 +88,9 @@ def deck(*rows):
     return "\n".join(card(*r) if isinstance(r, tuple) else card("", r) for r in rows)
 
 
+STEPS = {f"StretchSmac7030H2{k}Tb": 400000000 for k in "abcd"}
+
+
 def run_7030(module, lib, cards, n_out, tmp, uniq_start=None):
     """Returns (halt name, QERR, output cards or None, messages)."""
     ops = list(lib.gens)
@@ -78,7 +101,7 @@ def run_7030(module, lib, cards, n_out, tmp, uniq_start=None):
         fh.write(text)
     first = f["outcnt_word"]
     args = [os.path.join(HERE, "run_program.sh"), path, module,
-            f"DUMP={first},{1 + n_out * 10}", "STEPS=30000000",
+            f"DUMP={first},{1 + n_out * 10}", f"STEPS={STEPS.get(module, 30000000)}",
             f"FASTLOAD={os.path.join(tmp, module + '.hex')}"]
     # A check against 0 prints QERR's value whichever way it comes out; the
     # value is read from that line, and a nonzero one is judged by the case.
@@ -308,6 +331,122 @@ F_WANT = [card("", "L,X"), card("", "FIRST"), card("", "AGAIN"), card("", "L,A")
 
 G_LIB = smac.Library()
 G_LIB.add(["MTG"], deck("MBGEN", "MOUTF,SK,0", "MEXIT", ("SK", "MBSKL"), ("A/Q/", "NOP"), "MEGEN"))
+# For part H: comment cards in a skeleton are not skeleton statements.
+G_LIB.add(["MCOMNT"], deck("MBGEN", "MOUTF,SK,0", "MEXIT", ("SK", "MBSKL"), ("'NOTE", "A NOTE"),
+                           "L,A", ("", "A COLUMN 1 NOTE", "C"), "ST,B", "MEGEN"))
+
+
+# ---- H: SMAC compiles generators ---------------------------------------
+SPECIAL, SPECIAL_GROUPS = build.special_library()
+
+
+def source_cards(lib, skip=()):
+    """Every generator's source cards once, and the Generator for each."""
+    cards, gens = [], []
+    for ops, text in lib.sources:
+        if ops[0] in skip:
+            continue
+        cards += [c.rstrip() for c in text.splitlines() if c.strip()]
+        gens.append(lib.gens[ops[0]])
+    return cards, gens
+
+
+def special_plus(lib):
+    both = smac.Library()
+    both.gens.update(SPECIAL.gens)
+    both.gens.update(lib.gens)
+    return both
+
+
+def compare_images(label, res, gens, lib_of):
+    h, qe, got, note = res
+    result(h == "HALT" and qe == 0, f"{label}: ends with QERR {qe} ({h})")
+    if got is None or note or qe != 0:
+        result(False, f"{label}: no output to compare ({note})")
+        return
+    q = build.shell_symbols()
+    texts = build.split_compiled(got)
+    result(len(texts) == len(gens), f"{label}: {len(gens)} generators out, got {len(texts)}")
+    same = 0
+    for g, t in zip(gens, texts):
+        a = build.link_generator(t)
+        b = build.link_generator(build.compile_generator(g, q, lib_of(g)))
+        if a == b:
+            same += 1
+        else:
+            where = next((i for i in range(min(len(a), len(b))) if a[i] != b[i]), "length")
+            result(False, f"{label}: {g.ops} differs at word {where} ({len(a)}, {len(b)} words)")
+    result(same == len(gens), f"{label}: {same} of {len(gens)} generators word for word")
+
+
+def sp(*rows):
+    return [card(*r) if isinstance(r, tuple) else card("", r) for r in rows]
+
+
+H_ERRORS = [
+    ("16 MBSKL has no tag", 16, sp("MBGEN", "MEXIT", "MBSKL", "L,A", "MEGEN")),
+    ("16 no MEGEN follows", 16, sp("MBGEN", "MEXIT", ("SK", "MBSKL"), "L,A")),
+    ("17 a continuation in a skeleton", 17,
+     sp("MBGEN", "MEXIT", ("SK", "MBSKL"), "L,A,") + ["*        B"] + sp("MEGEN")),
+    ("18 every end mark in the text", 18, sp("MBGEN", "MEXIT", ("SK", "MBSKL"), 'L,?"&:=', "MEGEN")),
+    ("19 MOUTF with an odd argument", 19, sp("MBGEN", "MOUTF,SK", "MEXIT", "MEGEN")),
+    ("19 MOUTF with sixteen pairs", 19,
+     sp("MBGEN", "MOUTF" + ",S,1" * 12 + ",") + ["*        " + ",".join(["S,1"] * 4)] + sp("MEXIT", "MEGEN")),
+    ("19 MOUTV not in threes", 19, sp("MBGEN", "MOUTV,1,SK", "MEXIT", "MEGEN")),
+    ("20 MOUTV with two N", 20, sp("MBGEN", "MOUTV,N,S,1,N,S,1", "MEXIT", "MEGEN")),
+    ("21 nine characters in a compare", 21, sp("MBGEN", "MKPEQI,QPT1,1,NINECHARS,T", "MEXIT", "MEGEN")),
+    ("22 a skeleton of 100 statements", 22,
+     sp("MBGEN", "MEXIT", ("SK", "MBSKL")) + sp(*["NOP"] * 100) + sp("MEGEN")),
+]
+
+
+# 74 of the MCP library's 78 generators are p.14's rule with another operation
+# name, so the suite compiles these six, one of each shape.  SMAC7030_FULL=1
+# compiles all 78: measured 2026-11-08, 78 of 78 word for word, 73 minutes.
+MCP_SHAPES = ("MRD", "MEOJ", "MSCR", "MFETCH", "MABEX", "MEND")
+H = {}
+
+
+def h_jobs():
+    """The part H jobs.  The cards out are at most the stand-in's lines,
+    doubled for the two DD cards each skeleton statement becomes."""
+    q = build.shell_symbols()
+
+    def room(gens, lib):
+        return 5 + sum(2 * build.compile_generator(g, q, lib).count("\n") for g in gens)
+
+    jobs = {}
+    h1 = [c for _, cs in SPECIAL_GROUPS for c in cs]
+    H["1"] = [SPECIAL.gens[n[0]] for n, _ in SPECIAL_GROUPS]
+    jobs["H1"] = ("StretchSmac7030H1Tb", SPECIAL, h1, room(H["1"], SPECIAL))
+    skip = ()
+    if not os.environ.get("SMAC7030_FULL"):
+        skip = tuple(op for op in MCP.gens if op not in MCP_SHAPES)
+    H["2"] = {}
+    for key, lib, sk in (("a", MCP, skip), ("b", BUL, ()), ("c", EDGE_LIB, tuple(MCP.gens)),
+                         ("d", G_LIB, ())):
+        c, g = source_cards(lib, sk)
+        H["2"][key] = (g, lib)
+        jobs["H2" + key] = (f"StretchSmac7030H2{key}Tb", SPECIAL, c, room(g, lib))
+    h3c, H["3"] = source_cards(F_LIB)
+    jobs["H3"] = ("StretchSmac7030H3Tb", special_plus(F_LIB), h3c, room(H["3"], F_LIB))
+    for i, (name, code, cards) in enumerate(H_ERRORS):
+        jobs[f"H4{i}"] = (f"StretchSmac7030H4x{i}Tb", SPECIAL, cards, 200)
+    return jobs
+
+
+def h_checks(res):
+    compare_images("H1: SMAC compiles its special library, against itself",
+                   res["H1"], H["1"], lambda g: SPECIAL)
+    for key, what in (("a", "the MCP library"), ("b", "the bulletin's"), ("c", "the edge cases'"),
+                      ("d", "the /Q/ case's")):
+        g, lib = H["2"][key]
+        compare_images(f"H2: {what} generators against the stand-in", res["H2" + key], g,
+                       lambda _, one=lib: one)
+    compare_images("H3: generators with STRAP in logic", res["H3"], H["3"], lambda g: F_LIB)
+    for i, (name, code, cards) in enumerate(H_ERRORS):
+        h, qe, got, note = res[f"H4{i}"]
+        result(h == "HALT" and qe == code, f"H4: {name} halts with code {code} (got {qe}, {h})")
 
 
 def compare(label, got, want, note):
@@ -365,6 +504,8 @@ def main():
                     small.gens[op] = lib.gens[op]
             jobs[f"D{code}"] = (f"StretchSmac7030D{code}Tb", small, cards, 5, tmp, start)
 
+        jobs.update(h_jobs())
+
         def go(j):
             return run_7030(*j) if len(j) == 6 else run_7030(*j, tmp)
         with ThreadPoolExecutor(4) as ex:
@@ -384,6 +525,8 @@ def main():
         h, qe, got, note = res["G"]
         compare("G: /Q/ carries from Q0099", got,
                 [card("AQ0100", "NOP"), card("AQ0101", "NOP")], note)
+
+        h_checks(res)
 
         for name, code, lib, cards, raises, start in ERRORS:
             h, qe, got, note = res[f"D{code}"]

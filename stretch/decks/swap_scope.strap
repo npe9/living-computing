@@ -41,11 +41,10 @@
 ! and block 1 reproduces an IBM test that states its own failure
 ! message.
 !
-! WHAT IS STILL REFUSED: BACKWARD swap, block 5.  SWAPB and SWAPBI are
-! CARD-ONLY -- named on pocket card X22-6533 and written by no deck in
-! this corpus (tests/verify_ax4b_1246_modifiers_listing.py says so) --
-! so building them would be manual-derived with nothing to check
-! against.  rl_xmit's sign handling would carry them unchanged.
+! BLOCK 5 USED TO ASSERT THAT BACKWARD SWAP SETS OP, on the grounds that
+! SWAPB and SWAPBI were card-only.  They are not: C22-6578 printed p.5
+! Problem 1.2 prints SWAPBI, and it was built on 2026-11-08 against
+! decks/problem_1_2.strap.  Block 5 now asserts the exchange.
 
         SLC, (8)4200.0
 
@@ -79,10 +78,11 @@ START   SWAPI, 1, A1, B1
 ! 1 1 1 for the first pair and never see the 2 at all.
         SWAPI, 2, OV, OV+1.0
 
-! ---- 5. BACKWARD SWAP IS STILL REFUSED ----------------------------
+! ---- 5. BACKWARD SWAP EXECUTES, one word (it was refused to 2026-11) -
+! decks/problem_1_2.strap is where its direction is checked.
         SWAPB, 1, A5, B5
-        BZOP,  $                    ! hang if OP did NOT come on
-        BOPZ,  $+.32                ! clear OP and fall through
+        BOP,   $                    ! hang if OP DID come on
+        BOPZ,  $+.32                ! same size as before: addresses hold
 HALT    BEW,   $
 
 ! ---- the data ------------------------------------------------------

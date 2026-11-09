@@ -1,0 +1,595 @@
+! smac_special_library.smac -- RECONSTRUCTION of J28-6128 p.3's "special
+! library tape": the generators of the Generator Language statements, written
+! in Generator Language with STRAP in their logic, "called in only when
+! generators are being compiled".
+!
+! >>> A RECONSTRUCTION.  No copy of the tape is known.  What each statement
+! >>> does is J28-6128 pp.4-11; the code that does it is written here. <<<
+! docs/smac_7030.md records the conventions and strap/smac7030_build.py reads
+! this file.  "!!OP name ..." opens a generator under the names listed.
+! "!!SYNS" stands for one SYN card per branch-table symbol (p.5), written by
+! the build from the shell's own table, as a library tape built for that
+! shell would hold them.
+!
+! Bit addresses into a skeleton: a skeleton named S is one word of count, then
+! ten words per card, so column c (from 0) of card k is word 1 + 10k + c/8.
+! A generator that stores into its own skeleton is p.13 item 6's free logic.
+!
+! Failure codes after the shell's 15, through QFAIL:
+!   16 MBSKL: no tag, or no MEGEN follows
+!   17 MBSKL: a continuation card in a skeleton (not done in this version)
+!   18 MBSKL: every end mark occurs in the text
+!   19 MOUTF or MOUTV: the wrong number of arguments (pp.7, 10)
+!   20 MOUTV: more than one M is N (p.10)
+!   21 a compare's characters are not one to eight (p.6)
+!   22 a count passes 99, or a skeleton passes 99 statements
+!
+!!OP MBGEN
+         MBGEN
+         MOUT,QPT1,SK
+         MEXIT
+SK       MBSKL
+         SLC, 0.0
+         DD(BU,64), 0
+         SIC, $15
+         B, QBGEN($2)
+         MEGEN
+!!OP MEXIT
+         MBGEN
+         MOUT,QPT1,SK
+         MEXIT
+SK       MBSKL
+/2/      B, QEXIT($2)
+         MEGEN
+!!OP MEGEN
+         MBGEN
+         MOUT,QPT1,SK
+         MEXIT
+SK       MBSKL
+!!SYNS
+         END, 0.0
+         MEGEN
+!!OP MGETL
+         MBGEN
+         MOUT,QPT1,SK
+         MEXIT
+SK       MBSKL
+/2/      SIC, $15
+         B, QGETL($2)
+         , /4/
+         , /5/
+         MEGEN
+!!OP MMVPT
+         MBGEN
+         MKPEQI,QPT1,5,QCN,ISQ
+         MOUT,QPT1,SKN
+         MEXIT
+ISQ      MOUT,QPT1,SKQ
+         MEXIT
+SKN      MBSKL
+/2/      SIC, $15
+         B, QMVPT($2)
+         , /4/
+         , /5/
+         , /6/
+SKQ      MBSKL
+/2/      SIC, $15
+         B, QMVPT($2)
+         , /4/
+         , (8)777777.0
+         , /6/
+         MEGEN
+!!OP MOUT
+         MBGEN
+         L(BU,24), QCOUNT($2)
+         -(BU,24), C4($1)
+         ST(BU,24), WK($1)
+         K(BU,24), C100($1)
+         BZAL, BIG($1)
+         LI(BU,8), (8)140
+         ST(BU,8), DT($1)
+DG1      L(BU,24), WK($1)
+         K(BU,24), C10($1)
+         BAL, DG2($1)
+         -(BU,24), C10($1)
+         ST(BU,24), WK($1)
+         L(BU,8), DT($1)
+         +(BU,8), C2B($1)
+         ST(BU,8), DT($1)
+         B, DG1($1)
+DG2      L(BU,8), WK+.16($1)
+         +(BU,8), WK+.16($1)
+         +(BU,8), C140($1)
+         ST(BU,8), SKH+32.32($1)
+         L(BU,8), DT($1)
+         ST(BU,8), SKH+32.24($1)
+         MOUTV,1,SKH,1,N,SKN,1
+         MEXIT
+BIG      LI(BU,24), 22
+         B, QFAIL($2)
+         CNOP
+WK       DD(BU,24), 0
+         CNOP
+C4       DD(BU,24), 4
+         CNOP
+C10      DD(BU,24), 10
+         CNOP
+C100     DD(BU,24), 100
+         CNOP
+DT       DD(BU,8), 0
+         CNOP
+C2B      DD(BU,8), 2
+         CNOP
+C140     DD(BU,8), (8)140
+         CNOP
+SKH      MBSKL
+/2/      SIC, $15
+         B, QOUT($2)
+         , /4/
+         , 00
+SKN      MBSKL
+         , /1/
+         MEGEN
+!!OP MOUTF
+         MBGEN
+         L(BU,24), QCOUNT($2)
+         -(BU,24), C3($1)
+         ST(BU,24), TOT($1)
+         LI(BU,24), 0
+         ST(BU,24), WK($1)
+F1       L(BU,24), TOT($1)
+         KI(BU,24), 0
+         BAE, F2($1)
+         K(BU,24), C2($1)
+         BAL, BAD($1)
+         -(BU,24), C2($1)
+         ST(BU,24), TOT($1)
+         L(BU,24), WK($1)
+         +(BU,24), C1($1)
+         ST(BU,24), WK($1)
+         B, F1($1)
+F2       L(BU,24), WK($1)
+         K(BU,24), C16($1)
+         BZAL, BAD($1)
+         LI(BU,8), (8)140
+         ST(BU,8), DT($1)
+DG1      L(BU,24), WK($1)
+         K(BU,24), C10($1)
+         BAL, DG2($1)
+         -(BU,24), C10($1)
+         ST(BU,24), WK($1)
+         L(BU,8), DT($1)
+         +(BU,8), C2B($1)
+         ST(BU,8), DT($1)
+         B, DG1($1)
+DG2      L(BU,8), WK+.16($1)
+         +(BU,8), WK+.16($1)
+         +(BU,8), C140($1)
+         ST(BU,8), SKH+22.32($1)
+         L(BU,8), DT($1)
+         ST(BU,8), SKH+22.24($1)
+         MOUTV,1,SKH,0,N,SKP,1
+         MEXIT
+BAD      LI(BU,24), 19
+         B, QFAIL($2)
+         CNOP
+TOT      DD(BU,24), 0
+         CNOP
+WK       DD(BU,24), 0
+         CNOP
+C1       DD(BU,24), 1
+         CNOP
+C2       DD(BU,24), 2
+         CNOP
+C3       DD(BU,24), 3
+         CNOP
+C10      DD(BU,24), 10
+         CNOP
+C16      DD(BU,24), 16
+         CNOP
+DT       DD(BU,8), 0
+         CNOP
+C2B      DD(BU,8), 2
+         CNOP
+C140     DD(BU,8), (8)140
+         CNOP
+SKH      MBSKL
+/2/      SIC, $15
+         B, QOUTF($2)
+         , 00
+SKP      MBSKL
+         , /1/
+         MEGEN
+!!OP MOUTV
+         MBGEN
+         L(BU,24), QCOUNT($2)
+         -(BU,24), C3($1)
+         ST(BU,24), TOT($1)
+         LI(BU,24), 0
+         ST(BU,24), WK($1)
+         ST(BU,24), NN($1)
+V1       L(BU,24), TOT($1)
+         KI(BU,24), 0
+         BAE, V2($1)
+         K(BU,24), C3($1)
+         BAL, BAD($1)
+         -(BU,24), C3($1)
+         ST(BU,24), TOT($1)
+         L(BU,24), WK($1)
+         +(BU,24), C1($1)
+         ST(BU,24), WK($1)
+         B, V1($1)
+V2       L(BU,24), WK($1)
+         ST(BU,24), NSET($1)
+         K(BU,24), C100($1)
+         BZAL, BIG($1)
+         LI(BU,8), (8)140
+         ST(BU,8), DT($1)
+DG1      L(BU,24), WK($1)
+         K(BU,24), C10($1)
+         BAL, DG2($1)
+         -(BU,24), C10($1)
+         ST(BU,24), WK($1)
+         L(BU,8), DT($1)
+         +(BU,8), C2B($1)
+         ST(BU,8), DT($1)
+         B, DG1($1)
+DG2      L(BU,8), WK+.16($1)
+         +(BU,8), WK+.16($1)
+         +(BU,8), C140($1)
+         ST(BU,8), SKH+22.32($1)
+         L(BU,8), DT($1)
+         ST(BU,8), SKH+22.24($1)
+         MOUT,QPT1,SKH
+         MMVPT,QPT1,3,QPT2
+V3       L(BU,24), NSET($1)
+         KI(BU,24), 0
+         BAE, VEND($1)
+         -(BU,24), C1($1)
+         ST(BU,24), NSET($1)
+         MKPEQI,QPT2,1,N,VN
+         MOUT,QPT2,SKS
+         B, V4($1)
+VN       L(BU,24), NN($1)
+         KI(BU,24), 0
+         BZAE, TWON($1)
+         LI(BU,24), 1
+         ST(BU,24), NN($1)
+         MOUT,QPT2,SKN
+V4       MMVPT,QPT2,3,QPT2
+         B, V3($1)
+VEND     MEXIT
+BAD      LI(BU,24), 19
+         B, QFAIL($2)
+TWON     LI(BU,24), 20
+         B, QFAIL($2)
+BIG      LI(BU,24), 22
+         B, QFAIL($2)
+         CNOP
+TOT      DD(BU,24), 0
+         CNOP
+WK       DD(BU,24), 0
+         CNOP
+NN       DD(BU,24), 0
+         CNOP
+NSET     DD(BU,24), 0
+         CNOP
+C1       DD(BU,24), 1
+         CNOP
+C3       DD(BU,24), 3
+         CNOP
+C10      DD(BU,24), 10
+         CNOP
+C100     DD(BU,24), 100
+         CNOP
+DT       DD(BU,8), 0
+         CNOP
+C2B      DD(BU,8), 2
+         CNOP
+C140     DD(BU,8), (8)140
+         CNOP
+SKH      MBSKL
+/2/      SIC, $15
+         B, QOUTV($2)
+         , 00
+SKS      MBSKL
+         , /1/
+         , /2/
+         , /3/
+SKN      MBSKL
+         , (8)777777.0
+         , /2/
+         , /3/
+         MEGEN
+!!OP MKPEQ MKPEQI MKPNEQ MKPNEQI MKCEQ MKCEQI MKCNEQ MKCNEQI
+         MBGEN
+         MKCEQI,QPT1,3,MKPE,H1
+         MKCEQI,QPT1,3,MKPN,H2
+         MKCEQI,QPT1,3,MKCE,H3
+         MOUT,QPT1,SK4
+         B, T($1)
+H1       MOUT,QPT1,SK1
+         B, T($1)
+H2       MOUT,QPT1,SK2
+         B, T($1)
+H3       MOUT,QPT1,SK3
+T        SIC, $15
+         B, QPARM($2)
+         , QPT1
+         , 6
+         KCI, $9, 0
+         BXE, BAD($1)
+         KCI, $9, 8
+         BXH, BAD($1)
+         SC, $9, CW($1)
+         L(BU,18), CW($1)
+         ST(BU,24), WK($1)
+         L(BU,8), WK+.16($1)
+         +(BU,8), WK+.16($1)
+         +(BU,8), C140($1)
+         ST(BU,8), SKT+22.32($1)
+! the characters, blank filled, as the hexadecimal of two half-words
+         L(BU,64), ZERO($1)
+         ST(BU,64), W8($1)
+         LVI, $10, W8
+         V+, $10, $X1
+CP       L(BU,8)(V+I), .8($9)
+         ST(BU,8)(V+I), .8($10)
+         CB, $9, CP($1)
+         LVI, $10, W8
+         V+, $10, $X1
+         LVI, $12, SKT+44.0
+         V+, $12, $X1
+         LCI, $13, 2
+HX0      LCI, $10, 8
+HX1      L(BU,4)(V+I), .4($10)
+         ST(BU,24), TMP($1)
+         L(BU,24), TMP($1)
+         +(BU,24), TMP($1)
+         ST(BU,24), TMP($1)
+         L(BU,24), TMP($1)
+         +(BU,24), TMP($1)
+         ST(BU,24), TMP($1)
+         L(BU,24), TMP($1)
+         +(BU,24), TMP($1)
+         ST(BU,24), TMP($1)
+         LV, $11, TMP($1)
+         V+I, $11, TAB
+         V+, $11, $X1
+         L(BU,8), 0($11)
+         ST(BU,8)(V+I), .8($12)
+         CB, $10, HX1($1)
+         V+I, $12, 9.0
+         CB, $13, HX0($1)
+         MOUT,QPT1,SKT
+         MEXIT
+BAD      LI(BU,24), 21
+         B, QFAIL($2)
+         CNOP
+ZERO     DD(BU,64), 0
+W8       DD(BU,64), 0
+CW       DD(BU,64), 0
+WK       DD(BU,64), 0
+TMP      DD(BU,64), 0
+         CNOP
+C140     DD(BU,8), (8)140
+         CNOP
+TAB      (IQS*)DD(BU,128,8),0123456789ABCDEF*
+         CNOP
+SK1      MBSKL
+/2/      SIC, $15
+         B, QKPEQ($2)
+SK2      MBSKL
+/2/      SIC, $15
+         B, QKPNE($2)
+SK3      MBSKL
+/2/      SIC, $15
+         B, QKCEQ($2)
+SK4      MBSKL
+/2/      SIC, $15
+         B, QKCNE($2)
+SKT      MBSKL
+         , /4/
+         , /5/
+         , 00
+         , /7/
+         DD(BU,32), (16)00000000
+         DD(BU,32), (16)00000000
+         MEGEN
+!!OP MBSKL
+         MBGEN
+! p.4: the statements which follow, up to another MBSKL or MEGEN, go into
+! "STRAP Data Definition statement with IQS entry mode".  They are text here:
+! nothing in them is substituted or looked up.  $10 walks the cards.
+         SIC, $15
+         B, QPARM($2)
+         , QPT1
+         , 2
+         KCI, $9, 0
+         BXE, NOEND($1)
+! first the count, which comes before the text
+         LX, $10, QINPT($2)
+         LI(BU,24), 0
+         ST(BU,24), NCT($1)
+S1       KCI, $10, 0
+         BXE, NOEND($1)
+         SIC, CLLK($1)
+         B, CLASS($1)
+         L(BU,8), CLS($1)
+         KI(BU,8), 2
+         BAE, S3($1)
+         KI(BU,8), 0
+         BAE, S2($1)
+         L(BU,24), NCT($1)
+         +(BU,24), C1($1)
+         ST(BU,24), NCT($1)
+S2       V+I, $10, 10.0
+         C-I, $10, 1
+         B, S1($1)
+S3       L(BU,24), NCT($1)
+         ST(BU,24), WK($1)
+         K(BU,24), C100($1)
+         BZAL, BIG($1)
+         LI(BU,8), (8)140
+         ST(BU,8), DT($1)
+DG1      L(BU,24), WK($1)
+         K(BU,24), C10($1)
+         BAL, DG2($1)
+         -(BU,24), C10($1)
+         ST(BU,24), WK($1)
+         L(BU,8), DT($1)
+         +(BU,8), C2B($1)
+         ST(BU,8), DT($1)
+         B, DG1($1)
+DG2      L(BU,8), WK+.16($1)
+         +(BU,8), WK+.16($1)
+         +(BU,8), C140($1)
+         ST(BU,8), SKA+13.48($1)
+         L(BU,8), DT($1)
+         ST(BU,8), SKA+13.40($1)
+         MOUT,QPT1,SKA
+! now the text
+         LX, $10, QINPT($2)
+E1       SIC, CLLK($1)
+         B, CLASS($1)
+         L(BU,8), CLS($1)
+         KI(BU,8), 2
+         BAE, E9($1)
+         KI(BU,8), 0
+         BAE, E2($1)
+         SV, $10, TMP($1)
+         LV, $9, TMP($1)
+         SIC, PTLK($1)
+         B, PUT40($1)
+         L(BU,24), TMP($1)
+         +(BU,24), C320($1)
+         ST(BU,24), TMP($1)
+         LV, $9, TMP($1)
+         SIC, PTLK($1)
+         B, PUT40($1)
+E2       V+I, $10, 10.0
+         C-I, $10, 1
+         B, E1($1)
+E9       SX, $10, QINPT($2)
+         MEXIT
+! ---- CLASS: the card at $10.  CLS 0 no statement, 1 a statement, 2 MBSKL or
+! ---- MEGEN.  A comment card or a blank one is no statement, as in smac.py.
+CLASS    LI(BU,8), 0
+         ST(BU,8), CLS($1)
+         SV, $10, TMP2($1)
+         LV, $11, TMP2($1)
+         LCI, $11, 10
+CL1      L(BU,64)(V+I), 1.0($11)
+         K(BU,64), ZERO($1)
+         BZAE, CL2($1)
+         CB, $11, CL1($1)
+         B, CL9($1)
+CL2      L(BU,8), 0($10)
+         KI(BU,8), 0
+         BAE, CL3($1)
+         KI(BU,8), (8)44
+         BZAE, CL9($1)
+         LI(BU,24), 17
+         B, QFAIL($2)
+CL3      L(BU,8), .8($10)
+         KI(BU,8), (8)52
+         BAE, CL9($1)
+         L(BU,40), 1.8($10)
+         K(BU,40), KMB($1)
+         BAE, CL5($1)
+         L(BU,40), 1.8($10)
+         K(BU,40), KME($1)
+         BAE, CL5($1)
+CL4      LI(BU,8), 1
+         ST(BU,8), CLS($1)
+         B, CL9($1)
+CL5      L(BU,8), 1.48($10)
+         KI(BU,8), 0
+         BAE, CL6($1)
+         KI(BU,8), (8)50
+         BAE, CL6($1)
+         KI(BU,8), (8)52
+         BZAE, CL4($1)
+CL6      LI(BU,8), 2
+         ST(BU,8), CLS($1)
+CL9      LV, $14, CLLK($1)
+         B, 0($14)
+! ---- PUT40: forty characters from $9, as one DD card. ---------------------
+PUT40    LVI, $12, BUF+3.32
+         V+, $12, $X1
+         LCI, $9, 40
+P1       L(BU,8)(V+I), .8($9)
+         ST(BU,8)(V+I), .8($12)
+         CB, $9, P1($1)
+         LVI, $9, MKS
+         V+, $9, $X1
+         LCI, $9, 5
+P2       L(BU,8)(V+I), .8($9)
+         ST(BU,8), CAND($1)
+         LVI, $11, BUF+3.32
+         V+, $11, $X1
+         LCI, $11, 40
+P3       L(BU,8)(V+I), .8($11)
+         K(BU,8), CAND($1)
+         BAE, P4($1)
+         CB, $11, P3($1)
+         L(BU,8), CAND($1)
+         ST(BU,8), BUF+1.40($1)
+         ST(BU,8), BUF+8.32($1)
+         LVI, $9, BUF
+         V+, $9, $X1
+         SIC, $15
+         B, QPUTC($2)
+         LV, $14, PTLK($1)
+         B, 0($14)
+P4       CB, $9, P2($1)
+         LI(BU,24), 18
+         B, QFAIL($2)
+NOEND    LI(BU,24), 16
+         B, QFAIL($2)
+BIG      LI(BU,24), 22
+         B, QFAIL($2)
+         CNOP
+CLLK     DD(BU,64), 0
+PTLK     DD(BU,64), 0
+TMP      DD(BU,64), 0
+TMP2     DD(BU,64), 0
+ZERO     DD(BU,64), 0
+         CNOP
+NCT      DD(BU,24), 0
+         CNOP
+WK       DD(BU,24), 0
+         CNOP
+C1       DD(BU,24), 1
+         CNOP
+C10      DD(BU,24), 10
+         CNOP
+C100     DD(BU,24), 100
+         CNOP
+C320     DD(BU,24), 320
+         CNOP
+CLS      DD(BU,8), 0
+         CNOP
+CAND     DD(BU,8), 0
+         CNOP
+DT       DD(BU,8), 0
+         CNOP
+C2B      DD(BU,8), 2
+         CNOP
+C140     DD(BU,8), (8)140
+         CNOP
+KMB      (IQS*)DD(BU,40,8),MBSKL*
+         CNOP
+KME      (IQS*)DD(BU,40,8),MEGEN*
+         CNOP
+! the end marks, ?"&:= in IQS: every one of them cannot be in one literal
+MKS      DD(BU,40), (16)772b207523
+         CNOP
+BUF      (IQS*)DD(BU,320,8),         (IQS?)DD(BU,320,8),            *
+         (IQS*)DD(BU,320,8),                            ?           *
+         CNOP
+SKA      MBSKL
+         CNOP
+/2/      DD(BU,24), 000
+         CNOP
+         MEGEN

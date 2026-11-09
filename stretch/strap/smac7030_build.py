@@ -26,11 +26,13 @@ import smac                                         # noqa: E402
 import strap_asm                                    # noqa: E402
 
 SHELL = os.path.join(HERE, "..", "decks", "smac7030_shell.strap")
+SPECIAL = os.path.join(HERE, "..", "decks", "smac_special_library.smac")
 NFLAG = "(8)777777.0"
 Q_SYMBOLS = ("QEXIT", "QBGEN", "QOUTF", "QOUTV", "QMVPT", "QOUT", "QGETL",
              "QKPEQ", "QKPNE", "QKCEQ", "QKCNE", "QDBUGB", "QMIBIT", "QCIBIT",
              "QMACBIT", "QINBIT", "QERRBIT", "QERR", "QCOUNT", "QPT1", "QPT2",
-             "QPT3", "QPT4", "QPT5", "QLIT", "QCN", "QGUB")
+             "QPT3", "QPT4", "QPT5", "QLIT", "QCN", "QGUB",
+             "QPARM", "QPUTC", "QFAIL", "QINPT")
 POINTERS = ("QPT1", "QPT2", "QPT3", "QPT4", "QPT5")
 COMPARES = {"MKPEQ": "QKPEQ", "MKPEQI": "QKPEQ", "MKPNEQ": "QKPNE", "MKPNEQI": "QKPNE",
             "MKCEQ": "QKCEQ", "MKCEQI": "QKCEQ", "MKCNEQ": "QKCNE", "MKCNEQI": "QKCNE"}
@@ -54,6 +56,9 @@ def iqs_text(text, width):
 
 
 def iqs_card(text):
+    text = text.ljust(80)
+    if all(m in text for m in MARKS):       # no mark is free: the words themselves
+        return "\n".join(f"        DD(BU,64), (16){w:x}" for w in card_words(text))
     return "        " + iqs_text(text, 80)
 
 
@@ -165,6 +170,58 @@ def link_generator(text):
     return [words.get(i, 0) for i in range(max(words) + 1)]
 
 
+def shell_symbols():
+    """The branch table's symbols, from the shell as it stands."""
+    stub = ("OPTX    DD(BU,64), 0\nQINP0   DD(BU,64), 0\nQOUTP   DD(BU,64), 0\n"
+            "FP      DD(BU,64), 0\nOUTCNT  DD(BU,64), 0\n        END, START\n")
+    sym = strap_asm.assemble(open(SHELL).read() + stub).symtab
+    return {k: sym[k] for k in Q_SYMBOLS}
+
+
+def special_library():
+    """decks/smac_special_library.smac -> (Library, [(names, source cards)]).
+    p.3's special library tape, as source.  The stand-in above compiles it the
+    first time, and after that SMAC can compile it (tests/check_smac7030.py)."""
+    q = shell_symbols()
+    syns = [" " + f"{k:<8}SYN, {fmt_bits(q[k])}" for k in Q_SYMBOLS]
+    lib, groups, names, cards = smac.Library(), [], None, []
+
+    def close():
+        if names:
+            lib.add(names, "\n".join(cards))
+            groups.append((names, cards))
+
+    for line in open(SPECIAL).read().splitlines():
+        if line.startswith("!!OP"):
+            close()
+            names, cards = line.split()[1:], []
+        elif line.startswith("!!SYNS"):
+            cards += syns
+        elif not line.startswith("!"):
+            cards.append((" " + line[:9].strip().ljust(8) + line[9:]).rstrip())
+    close()
+    return lib, groups
+
+
+def split_compiled(cards):
+    """SMAC's output cards -> one STRAP text per generator, ending at each END.
+    A statement that opens with (IQS..) is text, apostrophes and all, so it is
+    not sent through smac.to_scaffold's comment split."""
+    texts, cur = [], []
+    for img in cards:
+        c = smac.Card.parse(img)
+        if c.var.startswith("(IQS"):
+            cur.append(c.tag.ljust(8) + c.var.rstrip())
+            continue
+        cur.append(smac.to_scaffold([img]).rstrip("\n"))
+        if smac.split_args(smac.split_comment(c.var)[0].strip())[0] == "END":
+            texts.append("\n".join(cur) + "\n")
+            cur = []
+    if cur:
+        raise BuildError(f"cards after the last END: {cur[:3]}")
+    return texts
+
+
 def build(library, ops, cards, out_cards, uniq_start=None):
     """The whole deck.  Returns (deck text, dict of the build's facts).
     uniq_start sets the /Q/ counter's four digits, so a test can reach its
@@ -174,7 +231,7 @@ def build(library, ops, cards, out_cards, uniq_start=None):
         if shell.count("Q0000?") != 1:
             raise BuildError("the shell's /Q/ counter has moved")
         shell = shell.replace("Q0000?", f"Q{uniq_start}?")
-    stub = ("OPTX    DD(BU,64), 0\nQINP    DD(BU,64), 0\nQOUTP   DD(BU,64), 0\n"
+    stub = ("OPTX    DD(BU,64), 0\nQINP0   DD(BU,64), 0\nQOUTP   DD(BU,64), 0\n"
             "FP      DD(BU,64), 0\nOUTCNT  DD(BU,64), 0\n        END, START\n")
     sym = strap_asm.assemble(shell + stub).symtab
     q = {k: sym[k] for k in Q_SYMBOLS}
@@ -197,7 +254,7 @@ def build(library, ops, cards, out_cards, uniq_start=None):
                  f"        , LIB+{offs[seen[id(library.gens[op])]]}.0",
                  "        " + iqs_text(name[8], 4)]
     tail += ["        CNOP", f"OPTX    XW, OPTAB, {len(ops)}, 0",
-             f"QINP    XW, INBUF, {len(cards)}, 0",
+             f"QINP0   XW, INBUF, {len(cards)}, 0",
              "QOUTP   XW, OUTBUF, 0, 0", "FP      XW, STACK, 0, 0",
              "LIB     SYN, $"]
     image = [w for im in images for w in im]

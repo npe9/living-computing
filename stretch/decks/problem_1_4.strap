@@ -1,0 +1,145 @@
+! C22-6578 PROBLEM 1.4, "REPLACEMENT OF FULL WORDS BY ZEROS", printed
+! p.7 (PDF 8), read in the ink.
+!
+!   "Replace the contents of full words DOG through DOG + 24.0 with
+!   zeros."
+!
+! Three methods, each on its own 25 words with a guard word either
+! side: the 25th word zeroed and the 26th not is the whole test.
+!
+! ONE CHANGE TO THE PRINTED TEXT, marked in place.  Each method ends in
+! its own halt -- "B BEW, B" and "BEW, $" -- and a deck has one halt,
+! so a printed halt that is not the last is replaced by a branch to the
+! next method, with an SX of the index word in front of it so its
+! final state can be read.
+!
+! THE INDEX WORD'S FINAL STATE IS THE PAGE'S OWN POINT.  Method 1
+! comment (a): "The address field of the BEW instructions and the
+! refill field of the index word are being used for identification
+! purposes ... one can examine the refill field of $3 to find out the
+! source of the index information."  Reference Manual printed p.26:
+! CB+ adds ONE to the value in bit position 17, "increment, count and
+! refill operations are independent of the success of the branch", and
+! CB (no R) does not refill.  So after M1, $3 = 25.0, count 0, refill
+! XW3.  After M2, $3 = DOG2 - 1.0 (the value stepped below the area),
+! count 0, refill XW3A, flag and sign clear.
+!
+! Method 2's "CB-, $3, $-0.32" is itself part of the test: a half-word
+! back from the CB- is the Z, and comment (a) spells out that a half
+! word inserted between them would break it.
+
+        SLC, 1000.0
+
+! --- Method 1 ------------------------------------------------------
+START   LX, $3, XW3
+A       Z, DOG1($3)
+        CB+, $3, A
+B       SX, $3, FIN1
+        B, M2
+XW3     XW, 0.0, 25, XW3
+
+! --- Method 2 ------------------------------------------------------
+M2      LX, $3, XW3A
+        Z, 0($3)
+        CB-, $3, $-0.32
+        SX, $3, FIN2
+        B, M3
+XW3A    XW, DOG2 + 24.0, 25, $
+
+! --- Method 3 ------------------------------------------------------
+M3      Z, DOG3
+        TI, 12, DOG3, DOG3 + 1.0
+        TI, 12, DOG3, DOG3 + 13.0
+HALT    BEW, $
+
+        SLC, 1100.0
+FIN1    DD(BU,64,8), 0
+FIN2    DD(BU,64,8), 0
+
+! Three areas of sevens: a guard, the 25 words, a guard.
+        SLC, 1110.0
+        DD(BU,64,8), 7
+DOG1    DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        SLC, 1200.0
+        DD(BU,64,8), 7
+DOG2    DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        SLC, 1300.0
+        DD(BU,64,8), 7
+DOG3    DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+
+        END, START

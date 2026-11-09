@@ -252,6 +252,12 @@ def check_op(op):
     """p.1: "up to nine alphabetic characters the first of which is M and
     none of which are Q".  The bulletin's own examples (pp.8-9) use
     MOP1-MOP4, so digits after the M are accepted, as the examples do."""
+    # p.1 forbids Q in an operation, yet p.4 and the errata print MKPEQ, MKPNEQ,
+    # MKCEQ and MKCNEQ.  The printed Generator Language names are taken as they
+    # stand: those statements alone are exempt, and a generator for one can only
+    # be written on the special library (p.3; decks/smac_special_library.smac).
+    if op in GL_OPS:
+        return
     if not (1 <= len(op) <= 9 and op.isalnum() and op[0] == "M" and "Q" not in op):
         raise SmacError(f"{op!r} is not a SMAC operation (p.1: up to nine "
                         "characters, the first M, none Q)")

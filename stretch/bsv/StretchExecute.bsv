@@ -35,9 +35,10 @@
 //                           default and sets OP.  This is the one
 //                           entry on the original list still true as
 //                           written.
-//   backward SWAP        -- `t.swap == 1 && t.backward == 1` is refused
-//                           at the Transmit arm.  SWAPB/SWAPBI are
-//                           card-only; forward SWAP executes.
+//   backward SWAP        -- BUILT 2026-11-08; C22-6578 printed p.5
+//                           Problem 1.2 prints SWAPBI.  This entry said
+//                           "card-only" and that was false.  Three items
+//                           are left.
 //
 // Everything else named above is built, with its arm: radix conversion
 // (LCV, CV, LTRCV), interrupts (StretchCore's rl_interrupt), EXIC,
@@ -6302,15 +6303,20 @@ function ActionValue#(ExecDispatch)
         // pattern in the destination, swaps one word, and fails with
         // "-SWAP FAILS TO ALTER ORIGINAL WD / -AND THEREFORE ACTS
         // LIKE TRANSMIT" if the source is still zero.
-        if (t.swap == 1 && t.backward == 1)
-          ind = setOpInvalid(ind);
-        else if (t.swap == 1) begin
+        //
+        // >>> BACKWARD SWAP IS BUILT, 2026-11-08: THE REFUSAL ABOVE WAS
+        // WRONG ABOUT THE CORPUS. <<<  C22-6578 prints it: printed p.5
+        // Problem 1.2 Method 1, "SWAPBI, 2, DOG + 1.0, CAT + 1.0".  The
+        // instruction's addresses are the LAST word of each area and
+        // rl_xmit steps both down, exactly as for TB (p.30); nothing
+        // else differs.  decks/problem_1_2.strap and problem_1_3.strap.
+        if (t.swap == 1) begin
           WordAddr srcBase = baWord(effAddr24(st, t.addr1, t.i1));
           WordAddr dstBase = (effAddr19(st, t.addr2, t.i2))[18:1];
           xmitStart = tagged Valid XmitXfer {
             src: srcBase, dst: dstBase,
             remaining: xmitCount,
-            backward: False, swap: True };
+            backward: (t.backward == 1), swap: True };
         end else begin
           // Prefetch/bail-out shape: reads srcBase, writes the SAME
           // value verbatim to dstBase once available -- a dependent
