@@ -1,0 +1,62 @@
+! C22-6578 PROBLEM 1.9, METHOD 1, "TRANSPOSITION OF A SQUARE MATRIX WITH
+! FULL WORD ELEMENTS", printed pp.10-11 (PDF 11-12), read in the ink.
+!
+!   "An N x N matrix has full word elements and is stored row-wise
+!   beginning at LOC.  Create the transpose of this matrix and store it
+!   in the same area."
+!
+!   "Method 1.  Interchange rows and columns starting from the north
+!   and west borders of the matrix."
+!
+! TPOSE ONWARD IS EXACTLY AS PRINTED, with the page's own N = 100.0 and
+! LOC = 32768.0 ('if 100 x 100 matrix, 'if matrix starts at 32768.0) and
+! its packed lines ("LX, $2, XW2; SX, $2, XW22"), which comment (b)
+! recommends.  A label named SWAPI beside the instruction SWAPI is the
+! page's too.
+!
+! THE PAGE GIVES NO DATA, so INIT fills the matrix: "SX, $4, 0($4)"
+! stores the index word in the location it addresses, so every element
+! is distinct and is computed by nothing but a CB+, with value = its own
+! word address and count = the number of elements left.  INIT is the
+! deck's and it runs before TPOSE.  LOC - 1.0 and LOC + 10000.0 are
+! guards holding seven.
+!
+! AN ADDRESS-FIELD RULE THIS DEPENDS ON: "XW, LOC + 1., N-1, XW22" has
+! to assemble to a COUNT of 99 from N = 100.0, and "V+ICR, $3, N" has
+! to add 100.0.  C22-6578 A4.8.1 (printed p.63): for immediate index
+! arithmetic an integer belongs to "the size of the field in question".
+! The 1 in N-1 is an integer of the count field, so N-1 = 99.0.
+!
+! THE WHOLE MATRIX IS CHECKED, not a sample, by
+! tests/verify_problem_1_9.py against a DUMP of all 10,002 words.
+
+        SLC, 1000.0
+INIT    LX, $4, XW4
+        SX, $4, 0($4)
+        CB+, $4, $-0.32
+
+TPOSE   LX, $2, XW2; SX, $2, XW22
+        LX, $3, XW3; SX, $3, XW33
+SWAPI   SWAPI, 1, 0($2), 0($3)
+        V+ICR, $3, N
+        CBR+, $2, SWAPI
+        V+IC, $2, N+1.; SX, $2, XW22
+        V+IC, $3, N+1.; SX, $3, XW33
+        BZXCZ, SWAPI
+HALT    BEW, $
+XW2     XW, LOC + 1., N-1, XW22
+XW3     XW, LOC + N, N-1, XW33
+XW22    XW, 0
+XW33    XW, 0
+N       SYN, 100.0
+LOC     SYN, 32768.0
+XW4     XW, LOC, 10000, 0
+
+! The guards.  They are written here because unwritten core is not zero
+! here: under Bluesim it reads 0xAAAAAAAAAAAAAAAA, measured in a DUMP.
+        SLC, LOC - 1.0
+        DD(BU,64,8), 7
+        SLC, LOC + 10000.0
+        DD(BU,64,8), 7
+
+        END, INIT

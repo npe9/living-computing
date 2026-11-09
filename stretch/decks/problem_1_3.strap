@@ -1,0 +1,148 @@
+! C22-6578 PROBLEM 1.3, "CYCLIC PERMUTATION OF A GROUP OF FULL WORDS",
+! printed p.6 (PDF 7), read in the ink.
+!
+!   "Given quantities A, B, C, D, E, F, G, H, I, in full words DOG
+!   through DOG + 8.0.  Cyclically permute the information such that
+!   the new contents will be in the sequence DEFGHIABC."
+!
+! THE PAGE PRINTS ITS ANSWER as nine letters, and this is an oracle in
+! the strict sense: 1..9 stand for A..I, so every method below must end
+! 4 5 6 7 8 9 1 2 3, and the intermediate states it prints in its
+! notes ('DEFGHIGHI, 'place GHIDEFABC) are what the methods depend on.
+!
+!   Method 1.  TI, 3, DOG, 17.0        'store A,B,C, in $1,$2,$3
+!              TI, 6, DOG + 3.0, DOG   'DEFGHIGHI
+!              TI, 3, 17.0, DOG + 6.0  'DEFGHIABC
+!
+!   Method 2.  SWAPI, 8, DOG, DOG + 1.0, three times
+!   Method 3.  SWAPI, 3, DOG, DOG + 6.0   'place GHIDEFABC
+!              SWAPI, 3, DOG, DOG + 3.0   'complete the permutation
+!   Method 4.  SWAPI, 6, DOG, DOG + 3.0
+!
+! Method 1's TI to and from 17.0 moves words through the index
+! register file by ordinary storage address (word 16+n is $n).
+!
+! COMMENT (a), and the deck tests it two ways:
+!
+!   "In order to permute N consecutive full words (say DOG through
+!   DOG + N-1), cyclically left K places, if K is a divisor of N, the
+!   single instruction SWAPI, N-K, DOG, DOG + K is adequate.  If on the
+!   other hand N-K is a divisor of N, the situation is equivalent to
+!   that of cyclically permuting right N-K places, and a backward swap
+!   may be used: SWAPBI, K, DOG + N-K-1     'N-K divides N"
+!
+! >>> THE PRINTED SWAPBI LINE CANNOT BE RUN AS IT STANDS. <<<  It has
+! one address where the instruction needs two, and its first address
+! is wrong for general N.  Worked by hand, N = 9, K = 6: a right
+! permutation by 3 is six exchanges of words three apart, ending at
+! (DOG, DOG+3), so it must START at (DOG+5, DOG+8), i.e. DOG + K-1 and
+! DOG + N-1.  The printed DOG + N-K-1 is DOG+2.  The two agree only
+! when N = 2K, so:
+!
+!   Block 5  N = 4, K = 2: SWAPBI, 2, DOG + 1.0, DOG + 3.0.  The left
+!            address IS the printed expression; the right one, which
+!            the page does not print, is DOG + N-1.
+!   Block 6  N = 9, K = 6: SWAPBI, 6, DOG + 5.0, DOG + 8.0.  NOT the
+!            printed expression.  What the printed sentence says the
+!            instruction achieves, cyclic left 6, GHIABCDEF.
+!
+! Also block 7, the Reference Manual's own example of the forward form,
+! printed p.31: 112, 113, 114 hold a, b, c, and "SWAPI, 2, 112.0,
+! 113.0" leaves b, c, a.  Its addresses are moved; its effect is not.
+!
+! MEASURED, against a control of 60 of 60.  SWAPB refused: N4_{0,1,2,3} and
+! N9K6_{0..8} fail, 13 of 60, and the four printed methods stand.  Backward
+! stepping up: N4_{0,2,guard}, N9K6_{0..8,guard} and RM_{0,1,2,guard} fail, 17
+! of 60; RM only because N9K6 runs off the end of its area into RM's.
+
+        SLC, 1000.0
+
+! --- 1. Method 1 ---------------------------------------------------
+START   TI, 3, DOG1, 17.0
+        TI, 6, DOG1 + 3.0, DOG1
+        TI, 3, 17.0, DOG1 + 6.0
+! --- 2. Method 2 ---------------------------------------------------
+        SWAPI, 8, DOG2, DOG2 + 1.0
+        SWAPI, 8, DOG2, DOG2 + 1.0
+        SWAPI, 8, DOG2, DOG2 + 1.0
+! --- 3. Method 3 ---------------------------------------------------
+        SWAPI, 3, DOG3, DOG3 + 6.0
+        SWAPI, 3, DOG3, DOG3 + 3.0
+! --- 4. Method 4 ---------------------------------------------------
+        SWAPI, 6, DOG4, DOG4 + 3.0
+! --- 5. Comment (a), N = 4, K = 2 ----------------------------------
+        SWAPBI, 2, DOG5 + 1.0, DOG5 + 3.0
+! --- 6. Comment (a), N = 9, K = 6 ----------------------------------
+        SWAPBI, 6, DOG6 + 5.0, DOG6 + 8.0
+! --- 7. The Reference Manual's rotation, printed p.31 --------------
+        SWAPI, 2, RM, RM + 1.0
+HALT    BEW, $
+
+        SLC, 1100.0
+DOG1    DD(BU,64,8), 1
+        DD(BU,64,8), 2
+        DD(BU,64,8), 3
+        DD(BU,64,8), 4
+        DD(BU,64,8), 5
+        DD(BU,64,8), 6
+        DD(BU,64,8), 7
+        DD(BU,64,8), 8
+        DD(BU,64,8), 9
+        DD(BU,64,8), 99
+        SLC, 1110.0
+DOG2    DD(BU,64,8), 1
+        DD(BU,64,8), 2
+        DD(BU,64,8), 3
+        DD(BU,64,8), 4
+        DD(BU,64,8), 5
+        DD(BU,64,8), 6
+        DD(BU,64,8), 7
+        DD(BU,64,8), 8
+        DD(BU,64,8), 9
+        DD(BU,64,8), 99
+        SLC, 1120.0
+DOG3    DD(BU,64,8), 1
+        DD(BU,64,8), 2
+        DD(BU,64,8), 3
+        DD(BU,64,8), 4
+        DD(BU,64,8), 5
+        DD(BU,64,8), 6
+        DD(BU,64,8), 7
+        DD(BU,64,8), 8
+        DD(BU,64,8), 9
+        DD(BU,64,8), 99
+        SLC, 1130.0
+DOG4    DD(BU,64,8), 1
+        DD(BU,64,8), 2
+        DD(BU,64,8), 3
+        DD(BU,64,8), 4
+        DD(BU,64,8), 5
+        DD(BU,64,8), 6
+        DD(BU,64,8), 7
+        DD(BU,64,8), 8
+        DD(BU,64,8), 9
+        DD(BU,64,8), 99
+        SLC, 1140.0
+DOG5    DD(BU,64,8), 1
+        DD(BU,64,8), 2
+        DD(BU,64,8), 3
+        DD(BU,64,8), 4
+        DD(BU,64,8), 99
+        SLC, 1150.0
+DOG6    DD(BU,64,8), 1
+        DD(BU,64,8), 2
+        DD(BU,64,8), 3
+        DD(BU,64,8), 4
+        DD(BU,64,8), 5
+        DD(BU,64,8), 6
+        DD(BU,64,8), 7
+        DD(BU,64,8), 8
+        DD(BU,64,8), 9
+        DD(BU,64,8), 99
+        SLC, 1160.0
+RM      DD(BU,64,8), 1
+        DD(BU,64,8), 2
+        DD(BU,64,8), 3
+        DD(BU,64,8), 99
+
+        END, START

@@ -1,0 +1,222 @@
+! C22-6578 PROBLEM 1.5, METHODS 2, 3 AND 4, printed pp.8-9 (PDF 9-10),
+! read in the ink.  Method 1 has its own deck because it is the page's
+! example of a whole program; see problem_1_5_method1.strap.
+!
+!   "Replace the following full words by zeros: DOG through DOG + 24.0,
+!   CAT through CAT + 15.0.  CHICK through CHICK + 34.0"
+!
+! THE THREE METHODS RUN ON THREE COPIES OF THE DATA.  The deck resets
+! the areas between methods with a TI from a block of sevens, because
+! each method's result is "all zeros" and a method that did nothing
+! would otherwise inherit the previous method's answer.  The reset is
+! the deck's, not the page's; so is the branch that replaces each
+! printed "BEW, $" but the last.
+!
+! METHOD 2 COMMENTS.  "(a) ... The number in the fourth subfield in
+! LINK 3A concerns the setting of bits 25, 26, 27 of the index word.
+! The number 4 means that only bit 25 (XF) is a 1.  (b) Remember that
+! the setting of the index flag indicator is done PRIOR to the refill."
+! Reference Manual printed p.27 says the same.  Comment (b) IS the
+! test: the CBR+ that refills $2 from LINK 3A must look at the OUTGOING
+! word, whose flag is off, so BZXF returns to the Z and CHICK is
+! zeroed.  MEASURED: setting XF from the refilled word instead fails
+! exactly M2_CHICK_first, M2_CHICK_2nd and M2_CHICK_last, the loop having
+! stopped before CHICK, and nothing else (39 of 42 still pass).
+!
+! METHOD 4 COMMENT (a): "The refill instruction operand is not limited
+! to index registers.  It is possible for example to write R, XW2 and
+! after its execution XW2 will have the same contents as XW2A."
+! Block M4A does exactly that, on a copy.
+!
+! THE PAGE PRINTS "LINK 1" WITH A BLANK.  C22-6531 printed p.8: "Blanks
+! have no meaning in any field except to indicate the spacing desired
+! on the printed output listing."  Written here closed up, as every MCP
+! deck writes its V RCW-style symbols.
+
+        SLC, 1000.0
+
+! --- Method 2 ------------------------------------------------------
+START   LX, $2, LINK1
+        Z, 0($2)
+        CBR+, $2, $-0.32
+        BZXF, $-1.0
+        SX, $2, FIN2
+        B, CKM2
+LINK1   XW, DOG, 25, LINK2
+LINK2   XW, CAT, 16, LINK3A
+LINK3A  XW, CHICK, 35, $, 4
+
+! What Method 2 left, moved aside word by word before the next reset:
+! the first, last and guard words of each area are what the checks
+! read.
+CKM2    TI, 16, DOG - 1.0, S2A
+        TI, 11, DOG + 15.0, S2A + 16.0
+        TI, 16, CAT - 1.0, S2B
+        TI, 2, CAT + 15.0, S2B + 16.0
+        TI, 16, CHICK - 1.0, S2C
+        TI, 16, CHICK + 15.0, S2C + 16.0
+        TI, 5, CHICK + 31.0, S2C + 32.0
+        TI, 16, SEVENS, DOG - 1.0
+        TI, 11, SEVENS, DOG + 15.0
+        TI, 16, SEVENS, CAT - 1.0
+        TI, 2, SEVENS, CAT + 15.0
+        TI, 16, SEVENS, CHICK - 1.0
+        TI, 16, SEVENS, CHICK + 15.0
+        TI, 5, SEVENS, CHICK + 31.0
+
+! --- Method 3 ------------------------------------------------------
+        Z, DOG
+        TI, 12, DOG, DOG + 1.0
+        TI, 12, DOG, DOG + 13.0
+        TI, 16, DOG, CAT
+        TI, 12, DOG, CHICK
+        TI, 12, DOG, CHICK + 12.0
+        TI, 11, DOG, CHICK + 24.0
+
+        TI, 16, DOG - 1.0, S3A
+        TI, 11, DOG + 15.0, S3A + 16.0
+        TI, 16, CAT - 1.0, S3B
+        TI, 2, CAT + 15.0, S3B + 16.0
+        TI, 16, CHICK - 1.0, S3C
+        TI, 16, CHICK + 15.0, S3C + 16.0
+        TI, 5, CHICK + 31.0, S3C + 32.0
+        TI, 16, SEVENS, DOG - 1.0
+        TI, 11, SEVENS, DOG + 15.0
+        TI, 16, SEVENS, CAT - 1.0
+        TI, 2, SEVENS, CAT + 15.0
+        TI, 16, SEVENS, CHICK - 1.0
+        TI, 16, SEVENS, CHICK + 15.0
+        TI, 5, SEVENS, CHICK + 31.0
+
+! --- Method 4 ------------------------------------------------------
+        LX, $2, XW2
+        Z, CHICK
+        T, $2, CHICK, CHICK + 1.0
+        R, $2
+        T, $2, CHICK, DOG
+        TI, 16, CHICK, CAT
+        SX, $2, FIN4
+! --- Method 4 comment (a), on XW2 itself ----------------------------
+        R, XW2
+HALT    BEW, $
+XW2     XW, 0.0, 34, XW2A
+XW2A    XW, 0.0, 25, $
+
+        SLC, 1150.0
+FIN2    DD(BU,64,8), 0
+FIN4    DD(BU,64,8), 0
+SEVENS  DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+
+! DOG, CAT, CHICK: a guard either side of each, all sevens.
+        SLC, 1200.0
+        DD(BU,64,8), 7
+DOG     DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        SLC, 1230.0
+        DD(BU,64,8), 7
+CAT     DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        SLC, 1250.0
+        DD(BU,64,8), 7
+CHICK   DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+
+! Where each method's results are moved to be read.
+        SLC, 1300.0
+S2A     DRZ(BU,64,8), 27
+S2B     DRZ(BU,64,8), 18
+S2C     DRZ(BU,64,8), 37
+        SLC, 1400.0
+S3A     DRZ(BU,64,8), 27
+S3B     DRZ(BU,64,8), 18
+S3C     DRZ(BU,64,8), 37
+
+        END, START

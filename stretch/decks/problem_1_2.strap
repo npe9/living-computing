@@ -1,0 +1,134 @@
+! C22-6578 PROBLEM 1.2, "INTERCHANGE OF TWO WORD-PAIRS", printed
+! pp.5-6 (PDF 6-7), read in the ink.
+!
+!   "Interchange the contents of full words DOG, DOG + 1.0 with full
+!   words CAT, CAT + 1.0."
+!
+!   Method 1.  Use immediate swap instructions.
+!       SWAPI, 2, DOG, CAT
+!           or
+!       SWAPBI, 2, DOG + 1.0, CAT + 1.0
+!
+!   Method 2.  Use index instructions.  [the eight LX/SX below]
+!
+!   Comments: "(b) The J field in swap instructions is treated in
+!   exactly the same way as in transmit instructions."
+!       -- so blocks 4 and 5 do what Problem 1.1 says of transmit: a
+!       count from an index register, and J = 16.
+!
+! The book prints no numbers.  THE EXPECTED VALUES ARE THE PROBLEM
+! STATEMENT APPLIED TO THIS DECK'S DATA.  The printed DOG and CAT are
+! renamed per block, nothing else.
+!
+! >>> SWAPBI IS THIS DECK'S REASON FOR EXISTING. <<<  Until this deck
+! the model refused it (OP), on the grounds that nothing in the corpus
+! encoded one; this page does.  Block 2 is the printed statement.
+! Block 6 is the only block that can see the DIRECTION: three words
+! overlapped by one, as swap_scope's block 4 does for the forward form.
+!
+!   start            1  2  3
+!   after word 1     1  3  2      (exchanges OV+1 and OV+2)
+!   after word 0     3  1  2      (exchanges OV   and OV+1)
+!
+! A backward form that stepped UP would touch OV+2/OV+3 and leave the
+! guard word changed.
+!
+! MEASURED, against a control of 31 of 31.  Refused as it used to be, 15
+! checks fail: M1_SWAPBI_{DOG0,DOG1,CAT0,CAT1}, SWAPB_{DOG0,DOG1,CAT0,CAT1},
+! J16_{DOG,CAT}_{first,last}, OV_{0,1,2}.  Stepping up instead of down, 13
+! fail: M1_SWAPBI_{DOG0,CAT0,guard}, SWAPB_{DOG0,CAT0,guard}, J16_DOG_first,
+! J16_CAT_{guard,first}, OV_{0,1,2,guard}.
+
+        SLC, 1000.0
+
+! --- 1. Method 1, SWAPI --------------------------------------------
+START   SWAPI, 2, DOG1, CAT1
+! --- 2. Method 1, SWAPBI -------------------------------------------
+        SWAPBI, 2, DOG2 + 1.0, CAT2 + 1.0
+! --- 3. Method 2 (DOG3, CAT3) --------------------------------------
+        LX, $0, DOG3
+        LX, $1, DOG3 + 1.0
+        LX, $2, CAT3
+        LX, $3, CAT3 + 1.0
+        SX, $0, CAT3
+        SX, $1, CAT3 + 1.0
+        SX, $2, DOG3
+        SX, $3, DOG3 + 1.0
+! --- 4. Comment (b): a count from an index register, backward ------
+        LCI, $4, 2.0
+        SWAPB, $4, DOG4 + 1.0, CAT4 + 1.0
+! --- 5. Comment (b): J = 16 means sixteen, backward ----------------
+        SWAPBI, 16, DOG5 + 15.0, CAT5 + 15.0
+! --- 6. The overlap, which is what shows the direction -------------
+        SWAPBI, 2, OV + 1.0, OV + 2.0
+HALT    BEW, $
+
+        SLC, 1100.0
+DOG1    DD(BU,64,8), 11
+        DD(BU,64,8), 12
+CAT1    DD(BU,64,8), 13
+        DD(BU,64,8), 14
+        DD(BU,64,8), 99
+DOG2    DD(BU,64,8), 21
+        DD(BU,64,8), 22
+CAT2    DD(BU,64,8), 23
+        DD(BU,64,8), 24
+        DD(BU,64,8), 99
+! Method 2 goes through the index registers, so its data has every bit
+! of the word in play, spare bits included.
+DOG3    DD(BU,64,8), (8)1777777777777777777777
+        DD(BU,64,8), (8)1252525252525252525252
+CAT3    DD(BU,64,8), (8)0525252525252525252525
+        DD(BU,64,8), (8)1234567012345670123456
+        DD(BU,64,8), 99
+DOG4    DD(BU,64,8), 41
+        DD(BU,64,8), 42
+CAT4    DD(BU,64,8), 43
+        DD(BU,64,8), 44
+        DD(BU,64,8), 99
+
+        SLC, 1130.0
+        DD(BU,64,8), 98
+DOG5    DD(BU,64,8), 201
+        DD(BU,64,8), 202
+        DD(BU,64,8), 203
+        DD(BU,64,8), 204
+        DD(BU,64,8), 205
+        DD(BU,64,8), 206
+        DD(BU,64,8), 207
+        DD(BU,64,8), 208
+        DD(BU,64,8), 209
+        DD(BU,64,8), 210
+        DD(BU,64,8), 211
+        DD(BU,64,8), 212
+        DD(BU,64,8), 213
+        DD(BU,64,8), 214
+        DD(BU,64,8), 215
+        DD(BU,64,8), 216
+
+        SLC, 1150.0
+        DD(BU,64,8), 98
+CAT5    DD(BU,64,8), 301
+        DD(BU,64,8), 302
+        DD(BU,64,8), 303
+        DD(BU,64,8), 304
+        DD(BU,64,8), 305
+        DD(BU,64,8), 306
+        DD(BU,64,8), 307
+        DD(BU,64,8), 308
+        DD(BU,64,8), 309
+        DD(BU,64,8), 310
+        DD(BU,64,8), 311
+        DD(BU,64,8), 312
+        DD(BU,64,8), 313
+        DD(BU,64,8), 314
+        DD(BU,64,8), 315
+        DD(BU,64,8), 316
+
+        SLC, 1170.0
+OV      DD(BU,64,8), 1
+        DD(BU,64,8), 2
+        DD(BU,64,8), 3
+        DD(BU,64,8), 99
+
+        END, START

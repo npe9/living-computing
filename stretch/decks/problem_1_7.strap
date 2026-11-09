@@ -1,0 +1,97 @@
+! C22-6578 PROBLEM 1.7, "INTERRUPTION MEASURE", printed pp.9-10 (PDF
+! 10-11), read in the ink.
+!
+!   "$IA contains the address 1000.0.  It is desired that when a $TS
+!   interruption occurs the instruction counter contents should be
+!   stored in the first 19 bits of location 2000.0 and the main program
+!   is to be continued.  Write a code to effect this."
+!
+!   Method 1.  SLC, 1000.0 + 4.0
+!       TSFIX  SIC, 2000.0; BR, 0
+!
+! The two printed statements are the deck's TSFIX, as printed, on one
+! line.  The MAIN PROGRAM IS THE DECK'S; the page only says there is
+! one.  It loads $IA, sets the interval timer to ONE (word 1 bits 0-18,
+! Reference Manual printed p.34), enables, and counts down in a
+! CB-to-itself until the timer has certainly gone off, then runs to the
+! end.
+!
+! WHAT THE PAGE STATES, AND WHICH CHECK TESTS IT:
+!
+!  saved_ic    "stored in the first 19 bits of location 2000.0".  The
+!              word starts holding a pattern in bits 19-63, which must
+!              survive.  The counter stored is the CB's own address:
+!              comment (b), "The instruction counter is not changed
+!              during the execution of the free instruction".  The CB
+!              branches to itself, so it is the next instruction to run.
+!  count_ran   "the main program is to be continued": BR, 0, "branch
+!              relative to zero", comment (b).  $4's count reached zero
+!              and the code after the wait ran (PC=HALT).
+!  ts_off      Reference Manual printed p.48: the indicator that
+!              interrupted is turned off on entry.  BTS must not branch
+!              after the wait.
+!
+!  COMMENT (d), run as a plain main-line program, because it makes three
+!  separate claims about SIC:
+!
+!    "The SIC action is not performed unless the ensuing branch is
+!    successful"                                    -- sic_not_taken
+!    "...and even then it is performed AFTER the execution of the
+!    branch.  Instructions such as SIC, $+ 0.32; B, ANYWH will lead to
+!    a branch to ANYWH if the branch is executed.  The instruction
+!    counter will not have time to alter the branch address before
+!    execution."                                    -- sic_self, anywh
+!
+!  sic_self stores the counter in the B's own address field and must
+!  still go to ANYWH.  anywh records that it arrived.
+!
+!  NOT TESTED: comment (c), "The interrupt system is not disabled during
+!  the execution of the free instruction" -- that needs a second
+!  interruption to arrive during the two-instruction window.
+
+        SLC, 1000.0 + 4.0
+TSFIX   SIC, 2000.0; BR, 0
+
+        SLC, 1100.0
+START   BD, $+.32
+        LVI, $13, 1000.0
+        SV, $13, $IA
+        LX, $4, ONE
+        SV, $4, 1.0
+        BE, $+.32
+        LCI, $4, 16000
+WAIT    CB, $4, $
+        SX, $4, FIN4
+        BZTS, TSCLR
+        Z, TSOFF
+TSCLR   NOP
+
+! --- comment (d) ---------------------------------------------------
+! NOT TAKEN.  XF is off here, so BXF does not branch and the SIC must
+! store nothing.
+        SIC, SNOT
+        BXF, BAD
+! TAKEN, into its own branch address.  Word-aligned so the check can
+! name the word: SICW holds this SIC in its left half and the B in its
+! right half.
+        CNOP
+SICW    SIC, $+0.32
+SELF    B, ANYWH
+        B, BAD
+ANYWH   Z, ARRIVED
+HALT    BEW, $
+BAD     B, BAD
+        CNOP
+
+        SLC, 1200.0
+ONE     XW, (8).40, 0, 0
+FIN4    DD(BU,64,8), 0
+TSOFF   DD(BU,64,8), 7
+SNOT    DD(BU,64,8), 5
+ARRIVED DD(BU,64,8), 7
+
+! The page's location.  Bits 19-63 hold a pattern that must survive.
+        SLC, 2000.0
+        DD(BU,64,8), (16)00001FFFFFFFFFFF
+
+        END, START

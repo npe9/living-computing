@@ -1,0 +1,126 @@
+! C22-6578 PROBLEM 1.5, METHOD 1, "Use chain indexing", printed p.8
+! (PDF 9), read in the ink, EXACTLY AS PRINTED including the PRNID,
+! PUNID, SLC and END that comment (a) says "should be included in every
+! program intended for assembly."
+!
+!   "Replace the following full words by zeros: DOG through DOG + 24.0,
+!   CAT through CAT + 15.0.  CHICK through CHICK + 34.0"
+!
+! The page does not place DOG, CAT and CHICK; the data below does, and
+! adding it is the only change.  Comment (b): "a simple demonstration
+! of the utility of the automatic refill feature".
+!
+! WHY "CB, $1, $-1.0" RETURNS TO THE Z: Z, CBR+ and CB are half words
+! and the Z is on a word boundary: $-1.0 from the CB is the Z.
+! Reference Manual printed p.27, CBR "is identical to COUNT AND BRANCH,
+! except that in addition the index word specified by J is refilled if
+! the count reached zero."  LINK 3's refill is "$", itself.
+!
+! Final state: $2 refilled from LINK 3 = CHICK, 35, LINK 3; $1 count 0.
+!
+! THE PAGE PRINTS "LINK 1" WITH A BLANK.  C22-6531 printed p.8: "Blanks
+! have no meaning in any field except to indicate the spacing desired
+! on the printed output listing."  Written here closed up, as every MCP
+! deck writes its V RCW-style symbols.
+
+        PRNID, JOE BLOWE, DEPT. 333
+        PUNID, J. BLOWE
+        SLC, 1000.0
+        LCI, $1, 3.0
+        LX, $2, LINK1
+        Z, 0($2)
+        CBR+, $2, $-0.32
+        CB, $1, $-1.0
+HALT    BEW, $
+LINK1   XW, DOG, 25, LINK2
+LINK2   XW, CAT, 16, LINK3
+LINK3   XW, CHICK, 35, $
+
+! DOG, CAT, CHICK: a guard either side of each, all sevens.
+        SLC, 1200.0
+        DD(BU,64,8), 7
+DOG     DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        SLC, 1230.0
+        DD(BU,64,8), 7
+CAT     DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        SLC, 1250.0
+        DD(BU,64,8), 7
+CHICK   DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+        DD(BU,64,8), 7
+
+        END, 1000.0

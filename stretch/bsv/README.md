@@ -98,7 +98,8 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   indicators per p.24 (loads from the loaded word, stores from the
   unchanged one; `KV`/`KC` set the comparison indicators instead) —
   the load/store ops only gained this when I-Box 1's SIC-B,ZIND group
-  tested them, see `strap/README.md` "Gotchas" item 17. Not implemented: `RNX`.
+  tested them, see `strap/README.md` "Gotchas" item 17. Not implemented: `RNX`
+  (`decks/problem_1_8.strap` runs IBM's own simulation of it, C22-6578 p.10).
   `SVA` is implemented.  **`LVE` WAS IMPLEMENTED 2026-10-17** and the
   reason it had been open is worth keeping: this note used to say
   "p.20 describes it only as enabling indirect addressing... and this
@@ -402,8 +403,8 @@ another, which is what a two-way interchange is for.
 Decimal-mode VFL (`c=1`), radix conversion (`CV`, `DCV`,
 `LTRCV`), the compare variants `KE`/`KFE`/`KFR`, `LTRS`, `RNX`,
 Input-Output's `LOC` **on an Exchange channel** (the disk form is
-executed — see above) and most of `CTL`, and Transmit's **BACKWARD
-`SWAP`** only (`SWAPB`/`SWAPBI`).
+executed — see above) and most of `CTL`. **Transmit's BACKWARD `SWAP`
+LEFT THIS LIST ON 2026-11-08** (see below).
 
 **AND THE VFL INTEGER LIST WAS WRONG IN BOTH DIRECTIONS, 2026-10-25.**
 An exact census -- every `6'b......` arm in `vflIntOp` against
@@ -498,6 +499,13 @@ carry them unchanged the day one turns up.
 > blocked. It is one of the four items left on StretchExecute's scope
 > list, and the cheapest of them. Found 2026-10-29 by a census of the
 > worked examples; verified at the OCR before this note was written.
+>
+> **BUILT 2026-11-08, `SWAPB`/`SWAPBI` execute.** The arm passes the
+> direction to `rl_xmit`, whose stepping already honoured it. Checked by
+> `decks/problem_1_2.strap` (the printed statement, the direct-count and
+> J = 16 forms comment (b) implies, and an overlap that shows the
+> direction) and `decks/problem_1_3.strap` (comment (a)'s rule, N = 4 and
+> N = 9). Those two decks are the injection record: see `tests/run_tests.sh`.
 
 **WHAT CHECKS THE FORWARD FORMS:** `decks/swap_scope.strap`, five
 blocks, every expected value computed from Reference Manual printed
