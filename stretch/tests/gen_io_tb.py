@@ -103,14 +103,12 @@ def main():
 
     # Expected results, derived from Reference Manual p.124's own
     # control-word-update rules -- READ: dataAddr=A_i+N, count=C_i-N;
-    # this model's WRITE deviates from the manual's A_i+N+2 (no
-    # double-buffer to reproduce -- see StretchIO.bsv) and instead also
-    # uses A_i+N, count=C_i-N.
+    # WRITE: dataAddr=A_i+N+2, count=C_i-N.
     exp_ccwa = pack_cw(dataAddr=dest + 3, unitReady=1, eop=1, count=0)
-    exp_ccwb = pack_cw(dataAddr=src + 2, unitReady=1, eop=1, count=0)
+    exp_ccwb = pack_cw(dataAddr=src + 2 + 2, unitReady=1, eop=1, count=0)
     # Wrong-unit RD given to the printer (p.113): the printer's CW as of
     # CCWB (already eop=1), with epgk added.
-    exp_ccwc = pack_cw(dataAddr=src + 2, unitReady=1, epgk=1, eop=1, count=0)
+    exp_ccwc = pack_cw(dataAddr=src + 2 + 2, unitReady=1, epgk=1, eop=1, count=0)
     # REL on the reader channel: same as CCWA -- REL resets only
     # epgk/uk/ee/cs/seop (already 0) and sets eop (already 1);
     # dataAddr/count/refill/chain/multiple/skip are untouched.
@@ -128,7 +126,7 @@ def main():
     # ever given at the completion of a RELEASE SEOP"). If REL's SEOP
     # flag were ignored (the bug this test was added to catch), eop
     # would come out 1 here instead of 0.
-    exp_ccwf = pack_cw(dataAddr=src + 1, unitReady=1, eop=0, seop=0, count=0)
+    exp_ccwf = pack_cw(dataAddr=src + 1 + 2, unitReady=1, eop=0, seop=0, count=0)
 
     checks = [
         ("DEST0", str(dest), READER_IMAGE[0]),

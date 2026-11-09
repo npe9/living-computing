@@ -235,9 +235,9 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   channel 34; an operator's console, channel 35) — see
   `StretchIO.bsv`'s file header for the full scope statement:
   synchronous single-block transfer (no real CPU/IO overlap, no
-  interrupt propagation), the documented deviation from the manual's
-  WRITE "+2" control-word rule (this model has no double-buffer to
-  reproduce it with), and — now that the External Units chapter
+  interrupt propagation), the manual's WRITE "+2" control-word rule at
+  termination only (this model has no double-buffer, so a CCW during a
+  WRITE reads the unbuffered address), and — now that the External Units chapter
   (pp.129-149) has been read — `CTL` executing only against the tape
   channel and only two of its documented function codes (REWIND,
   BACKSPACE BLOCK, p.132); every other tape function code (SPACE

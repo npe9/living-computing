@@ -593,7 +593,7 @@ Two numbers worth putting side by side:
 | rate | one byte / 16 µs ⇒ **128 µs per 64-bit word** | one word per `step()` = **0.3 µs**, i.e. **~427× too fast** |
 | overlap with the CPU | *"fully overlapped"*, core cycles *"sandwiched between computing operations"* | none: every other core rule is gated on `!isValid(ioPending)` (`bsv/StretchCore.bsv:245–324`) |
 | channels | 8 minimum, up to 32, each to one control unit which may front several units | 3 fixed, one device each, no control-unit layer |
-| buffering | Exchange Storage + buffer register + byte↔word shifting | none (which is why the WRITE "+2" rule is deliberately not reproduced — `bsv/StretchIO.bsv:165–180`) |
+| buffering | Exchange Storage + buffer register + byte↔word shifting | none (the WRITE "+2" rule is reproduced at termination only — `bsv/StretchIO.bsv`'s header) |
 
 **That table is the Exchange layer.** It is not an extension of
 `StretchIO.bsv`; it replaces it. A byte-serial, asynchronous,

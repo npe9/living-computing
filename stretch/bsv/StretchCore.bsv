@@ -229,6 +229,15 @@ module mkStretchCore(StretchCore);
   // rule it needs a request/wait/collect staging flag of its own.
   Reg#(Bool) ioRefillIssued <- mkReg(False);
 
+  // A TERMINATED WRITE LEAVES THE DATA WORD ADDRESS TWO PAST THE NEXT
+  // WORD.  Reference Manual printed p.124's table: WRITE, "A_n+2", where
+  // A_n = 1 + the address of the last word written.  It comes from the
+  // Exchange's two-word buffer, and MCP's commentator depends on it:
+  // printed p.309 line 2, "V-I,JXTEM,2.0 -REDUCE CW BY 2".  This model
+  // moves one word at a time, so only the state a program can see after
+  // the operation ends is reproduced (StretchIO.bsv's header).
+  WordAddr writeEndLead = 2;
+
   // ---- INITIAL PROGRAM LOAD (Reference Manual printed p.126) -------
   // iplActive is set by iplStart() and cleared when the load
   // completes.  iplEntry holds the data word address of the REFILLED
@@ -702,6 +711,7 @@ module mkStretchCore(StretchCore);
       // ABOVE the request arms, so the flag is False whenever a word
       // begins, and a word that reaches here has not been requested.
       ControlWord cw = ioDev.readChanCW(x.ch);
+      if (x.isWrite) cw.dataAddr = cw.dataAddr + writeEndLead;
       cw.ee = 1;
       if (!x.suppressEop) cw.eop = 1;
       cw.seop = 0;   // completion: see rl_io's other terminal arm
@@ -929,6 +939,7 @@ module mkStretchCore(StretchCore);
         // Nothing is read from core during it and the control word is
         // not touched again, so a COPY CONTROL WORD afterwards shows
         // the data the program asked for and not the fill.
+        cw.dataAddr = cw.dataAddr + writeEndLead;
         ioDev.writeChanCW(x.ch, cw);
         ioPending <= tagged Valid IoXfer {
           ch: x.ch, isWrite: True, memAddr: x.memAddr,
@@ -967,6 +978,7 @@ module mkStretchCore(StretchCore);
           untilMark: x.untilMark, zeroFill: x.zeroFill };
       end else if (rem1 == 0) begin
         if (!x.suppressEop) cw.eop = 1;
+        if (x.isWrite && !x.zeroFill) cw.dataAddr = cw.dataAddr + writeEndLead;
         // THE ARC ADDRESS REGISTER, printed p.161: "Associated with
         // each disk is an arc address register.  As successive arcs
         // are used, this register is increased by one for each arc."

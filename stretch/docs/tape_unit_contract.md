@@ -408,7 +408,7 @@ A driver that polls will hang if any of these is missing.
 | Not distinguishing 136 from 137 | **Survives for IPL**, breaks for KA UL1-style use, which relies on UNLOAD leaving the reel unmounted (§3.4 item 5). Cheap to add a one-bit `unloaded` state. |
 | Synchronous whole-block transfer | **Survives.** Nothing in the IPL or initialization path requires CPU/IO overlap; the real drivers poll (rule 37). |
 | Reject vs. status-bit split (UNRJ for an uninstalled channel, EPGK for a wrong-op) | **Survives**, and is exactly right for tape (rules 29, 35). |
-| `W`'s "+2" quirk deliberately not reproduced | **Survives** for IPL; note that a driver doing `CCW` after a `W` and arithmetic on the count will see a 2-word discrepancy versus a real machine. |
+| `W`'s "+2" (printed p.124) | **Reproduced at termination since 2026-11-08**, because MCP's commentator needs it (`boot_plan.md`). A `CCW` during a `W` still reads the unbuffered address. |
 
 ### 2.2 What must change
 

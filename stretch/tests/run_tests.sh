@@ -13279,10 +13279,8 @@ run "XW refill" ./run_program.sh ../decks/xw_refill.strap StretchXwRefillTb \
 # index register rather than a literal specifically to exercise the
 # channel-address field's own index arithmetic (Reference Manual
 # p.111). Expected control-word values are derived in gen_io_tb.py
-# from the manual's own p.124 control-word-update rules (with one
-# documented, deliberate deviation: this model's WRITE does not
-# reproduce the real Exchange's "+2" double-buffering quirk -- see
-# StretchIO.bsv). Not a Reference Manual worked example -- this
+# from the manual's own p.124 control-word-update rules, including
+# WRITE's A_n + 2. Not a Reference Manual worked example -- this
 # project's first purpose-written program for a feature the manual
 # doesn't happen to walk through an instance of.
 run "The opcode table against the manual's own COMPLETE OPERATION AND MODIFIER LIST" python3 verify_refman_p168_opcodes.py
