@@ -1132,6 +1132,11 @@ because they *do not do decimal* — they trap.
    the same two sentences on the same two pages. Figure 19's first
    instruction is the regression test for the first of them.
 
+**A decimal UNSIGNED store was built on 2026-11-08**, outside this plan,
+because MCP's `$TIME` reaches it (`boot_plan.md`; `decks/vfl_st_decimal.strap`;
+`StretchALU.bsv` `decStoreField`). Figure 19's `ST(D,54,6)` above is signed
+and stays unbuilt.
+
 **Everything else decimal stays refused**, and the comment at
 `StretchExecute.bsv` l.2186 should then say what section 2 found: that
 what remains is eleven operations needing a BCD adder, three that trap

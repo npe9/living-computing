@@ -399,8 +399,9 @@ another, which is what a two-way interchange is for.
 ### Decoded but not executed (sets indicator 15, OP, and no-ops —
 ### matches real-machine behavior for a suppressed instruction)
 
-Decimal-mode VFL (`c=1`), radix conversion (`CV`, `DCV`,
-`LTRCV`), the compare variants `KE`/`KFE`/`KFR`, `LTRS`, `RNX`,
+Decimal-mode VFL (`c=1`) except the unsigned store (`ST(DU)`, built
+2026-11-08 for MCP's `$TIME`, `decks/vfl_st_decimal.strap`), radix
+conversion (`CV`, `DCV`, `LTRCV`), the compare variants `KE`/`KFE`/`KFR`, `LTRS`, `RNX`,
 Input-Output's `LOC` **on an Exchange channel** (the disk form is
 executed — see above) and most of `CTL`, and Transmit's **BACKWARD
 `SWAP`** only (`SWAPB`/`SWAPBI`).

@@ -17,6 +17,10 @@
 ! the original field is decimal" -- so refusing them was refusing the
 ! operation's normal case.  See StretchExecute's `radixConv`.
 !
+! A DECIMAL UNSIGNED STORE IS NOT REFUSED since 2026-11-08: MCP's $TIME
+! needs it (decks/vfl_st_decimal.strap).  This deck stored ST(DU,32,8)
+! until then, and now stores the signed form.
+!
 ! WHY IT NEEDED A DECK: it is one of the six causes of
 ! StretchIBox's prepareExec.completesWithoutFetch, and a census of which
 ! causes the corpus reaches (docs/ebox_roadmap.md) found this one and
@@ -30,7 +34,7 @@
 START   L(BU,32,8), DATA1
         ST(BU,32,8), TA+.48          ! legal: binary unsigned
         BOP, $                       ! hang if OP came on: that one is legal
-        ST(DU,32,8), TB+.48          ! DECIMAL, and not a radix conversion
+        ST(D,32,8), TB+.48           ! DECIMAL, SIGNED, not a radix conversion
         BZOP, $                      ! hang if OP did NOT come on
         B, PASS
 PASS    BEW, $

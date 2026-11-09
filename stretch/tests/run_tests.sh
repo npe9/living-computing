@@ -2397,9 +2397,44 @@ run "a guessed branch's target is the one computed at the guess" ./run_program.s
     "case2_index_restored:266=35184372088832" \
     "case3_guard:267=211176601277169664" \
     "PC=304"
+# THE DECIMAL UNSIGNED STORE, Reference Manual printed p.63, for MCP's $TIME
+# (printed p.300 line 33).  Observed injections, each on the rebuilt model,
+# restored from a saved copy checked with cmp:
+#   zones not taken from the sign byte register: exactly A, B, E, F, G, I.
+#   offset's two low-order bits not ignored:     exactly G.
+#   PF on for the high bits of the byte taking part: exactly PF_case_M_off.
+#   zones read as data by the result indicators: exactly RZ_case_L_on.
+run "decimal unsigned store: digits, zones, partial bytes, offset, indicators" ./run_program.sh ../decks/vfl_st_decimal.strap StretchStDecimalTb \
+    "A_digits_456:264=0x343536FFFFFFFFFF" \
+    "B_six_digits:265=0x313233343536FFFF" \
+    "C_bytesize4:266=0x3456FFFFFFFFFFFF" \
+    "D_bytesize2:267=0x1BFFFFFFFFFFFFFF" \
+    "E_63_8_shape:268=0x6DFFFFFFFFFFFFFF" \
+    "F_offset8:269=0x34FFFFFFFFFFFFFF" \
+    "G_offset9:270=0x34FFFFFFFFFFFFFF" \
+    "H_zero:271=0x0FFFFFFFFFFFFFFF" \
+    "I_bytesize6_zones:272=0xDBFFFFFFFFFFFFFF" \
+    "J_short_field:273=0x6FFFFFFFFFFFFFFF" \
+    "K_digit0:274=0x0FFFFFFFFFFFFFFF" \
+    "PF_case_A_on:275=0x400000000000" \
+    "PF_case_B_off:276=0" \
+    "MOP_case_B_on:277=0x400000000000" \
+    "RGZ_case_B_on:278=0x400000000000" \
+    "PF_case_E_on:279=0x400000000000" \
+    "RZ_case_H_on:280=0x400000000000" \
+    "PF_case_H_off:281=0" \
+    "RZ_case_K_on:282=0x400000000000" \
+    "PF_case_K_on:283=0x400000000000" \
+    "L_zero_zoned:284=0x30FFFFFFFFFFFFFF" \
+    "M_partial_high_byte:285=0xBFFFFFFFFFFFFFFF" \
+    "RZ_case_L_on:286=0x400000000000" \
+    "PF_case_M_off:287=0"
+# CYCLES was 142 while this deck stored ST(DU,32,8).  The signed store it now
+# stores charges two fewer: x is the field length less the byte size in a
+# signed operation (StretchTiming.bsv, Perf. Char. Vol. 1 printed p.3-10).
 run "DECIMAL VFL is refused by THIS MODEL, not by the machine" ./run_program.sh ../decks/vfl_decimal_refused.strap StretchVflDecRefTb \
     "PC=393" \
-    "CYCLES=142+-0" \
+    "CYCLES=140+-0" \
     "control_head:264=18446744073709490740" \
     "control_tail:265=6231011559443791871" \
     "refused_head:272=18446744073709551615" \

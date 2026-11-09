@@ -297,6 +297,86 @@ function SM128 fieldToSM(Bit#(64) raw, Bit#(7) len_, Bit#(4) byteSize,
   end
 endfunction
 
+// THE FIELD A DECIMAL UNSIGNED STORE WRITES.  Reference Manual printed
+// p.63 (PDF 66), read in the ink: "In a decimal STORE, the byte size
+// refers to the size of each byte in the storage field ... Each 4-bit byte
+// of the accumulator replaces the four low-order bits of each byte of the
+// storage field ... If the specified byte size is greater than four, the
+// remaining high-order bits of each byte are replaced by the corresponding
+// zone bits in the accumulator sign byte register.  If the specified byte
+// size is less than four, only the low-order bits from each accumulator
+// byte replace each byte in the storage field."
+//
+// `acc` is the accumulator, integral 4-bit bytes (printed p.58), already
+// shifted by the offset.  `sb` is the sign byte register with IBM bit 7 at
+// sb[0], so a byte's position j, counted from its low end, takes sb[j]:
+// its zone positions line up with the register's.  The result is
+// right-justified and its caller keeps the low len_ bits: "only part of
+// the high-order digit is stored".  The byte size is static in each
+// case arm, so this elaborates to wires and an 8-way mux.
+function Bit#(64) decStoreFieldOf(Integer b, Bit#(128) acc, Bit#(8) sb);
+  Bit#(64) out = 0;
+  for (Integer i = 0; i < 64; i = i + 1) begin
+    Integer k = div(i, b);
+    Integer j = mod(i, b);
+    if (j >= 4)          out[i] = sb[j];
+    else if (4*k+j < 128) out[i] = acc[4*k+j];
+  end
+  return out;
+endfunction
+
+function Bit#(64) decStoreField(Bit#(128) acc, Bit#(4) byteSize, Bit#(8) sb);
+  case (byteSize)
+    1: return decStoreFieldOf(1, acc, sb);
+    2: return decStoreFieldOf(2, acc, sb);
+    3: return decStoreFieldOf(3, acc, sb);
+    4: return decStoreFieldOf(4, acc, sb);
+    5: return decStoreFieldOf(5, acc, sb);
+    6: return decStoreFieldOf(6, acc, sb);
+    7: return decStoreFieldOf(7, acc, sb);
+    default: return decStoreFieldOf(8, acc, sb);
+  endcase
+endfunction
+
+// Which bits of that field are numeric, not zone: the "data field stored"
+// that sets the result indicators (printed p.63), with the zones excluded.
+function Bit#(64) decStoreNumericOf(Integer b);
+  Bit#(64) out = 0;
+  for (Integer i = 0; i < 64; i = i + 1)
+    if (mod(i, b) < 4) out[i] = 1;
+  return out;
+endfunction
+
+function Bit#(64) decStoreNumeric(Bit#(4) byteSize);
+  case (byteSize)
+    1: return decStoreNumericOf(1);
+    2: return decStoreNumericOf(2);
+    3: return decStoreNumericOf(3);
+    4: return decStoreNumericOf(4);
+    5: return decStoreNumericOf(5);
+    6: return decStoreNumericOf(6);
+    7: return decStoreNumericOf(7);
+    default: return decStoreNumericOf(8);
+  endcase
+endfunction
+
+// PF, printed p.63: "turned on if there is a non-zero byte to the left of
+// the high-order byte stored ... If all accumulator bytes to the left of
+// the entire high-order accumulator byte taking part in the operation are
+// zero, the partial field indicator is not turned on even if the
+// high-order bits of the high-order byte that were not stored are
+// non-zero."  Digit k takes part if any of its byte falls in the field,
+// which is k*byteSize < len_.
+function Bool decStorePF(Bit#(128) acc, Bit#(4) byteSize, Bit#(7) len_);
+  Bool pf = False;
+  for (Integer k = 0; k < 32; k = k + 1) begin
+    UInt#(9) at = fromInteger(k) * unpack(zeroExtend(byteSize));
+    Bit#(4) digit = acc[4*k+3:4*k];
+    if (at >= unpack(zeroExtend(len_)) && digit != 0) pf = True;
+  end
+  return pf;
+endfunction
+
 // Pack a sign-magnitude value back into a right-justified `len_`-bit
 // field with the given byte size (signed) or none (unsigned).
 function Bit#(64) smToField(SM128 v, Bit#(7) len_, Bit#(4) byteSize, Bit#(1) unsign);
