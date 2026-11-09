@@ -116,10 +116,11 @@
 !     transcription and so that a future multi-program assembly has
 !     something to find.
 !
-! (3) LINE 6'S "$B,Q GO$A" IS WRITTEN "B, QGO".  Both halves are
-!     covered above: the "$A" is the tail form and drops out with
-!     the tail, the "$" on the operation is unexplained, and the
-!     compiled row is checked either way.
+! (3) LINE 6'S "$B,Q GO$A" IS WRITTEN AS PRINTED (until 2026-11-09 this
+!     deck wrote "B, QGO", which only assembles if TAIL is inert).  The
+!     "$A" is the tail form, level 1 overridden for this symbol alone.  The
+!     "$" on the operation is "suppress e.m.": C22-6729 p.25 and Fig. 20's
+!     bit p, a $ before the instruction.
 !
 ! (4) A TRANSMIT'S COUNT IS WRITTEN WITHOUT ITS "$" where the count
 !     is a register.  Lines 10 and 53 are "TI,6,..." and
@@ -148,21 +149,22 @@
 
         SLC, (8)2422.0
 
-QSAV    SYN, (8)2472.0
-QFLD    SYN, (8)2456.0
-Q       SYN, (8)2465.0
-QTB     SYN, (8)2500.0
 
         SLC, (8)2422.0
 
 ! ---- the two entries ----------------------------------------------
 SCA6    Z, $R                       ! line 5  -SET UP FOR A-6
                                      !           CONVERSION
-        B, QGO                      ! line 6  -- listing "$B,Q GO$A",
-                                     !           see note (3)
+        $B, QGO$A                   ! line 6, as printed: see note (3)
 SCA8    LI(BU,24), 1.32, 40         ! line 8  -SETUP FOR A-8 TYPE
                                      !           CONVERSION
         TAIL, A                     ! line 9  -- see note (2)
+
+! The stand-ins above, under the tail, since the listing defines them under it.
+QSAV    SYN, (8)2472.0
+QFLD    SYN, (8)2456.0
+Q       SYN, (8)2465.0
+QTB     SYN, (8)2500.0
 
 ! ---- the shared prologue ------------------------------------------
 QGO     TI, 6, $1, QSAV             ! line 10 -SAVE THE INDICES
@@ -214,7 +216,7 @@ QCHK    CB, $4, QP                  ! line 52
 QFIN    SWAPI, 6, QSAV, $1          ! line 53 -RESTORE INDEXES
         B, 1.32($15)                ! line 54 -AND RETURN
 
-        END, SCA6
+        END, SCA6$                  ! ours, not printed; the $ takes off tail A
 
 ! ---------------------------------------------------------------
 ! AND THREE LISTING MARKS, the bare "*" after the location that

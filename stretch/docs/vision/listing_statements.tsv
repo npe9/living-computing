@@ -10385,7 +10385,7 @@ vol	pdf	printed	line	status	statement	assembled
 2	12	261	2	draft	HCLLERITHTOBCDCONVERSION	
 2	12	261	5	draft	SIC,$	
 2	12	261	6	asm-confirmed	Z,$R	000011.22 00
-2	12	261	7	draft	$B,QGO$A	
+2	12	261	7	asm-confirmed	$B,QGO$A	230624.10 00
 2	12	261	9	asm-confirmed	LI(BU,24),1.32,40	000001.40 80 430024.20 50
 2	12	261	10	draft	TAILLA	
 2	12	261	11	draft	LVE„4„O(B(51	

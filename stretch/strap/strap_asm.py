@@ -487,6 +487,9 @@ _TERM_NUM = re.compile(r'\d+')
 _TERM_NUM16 = re.compile(r'[0-9A-F]+')
 _TERM_RADIX = re.compile(r'\((\d+)\)(?=[\dA-F.])')
 
+_WRITTEN_TAIL = re.compile(r'(?<![$A-Za-z0-9])([A-Za-z][A-Za-z0-9 ]*)\$[A-Za-z0-9$]*')
+
+
 def _is_radix_digit(ch, radix):
     """Is `ch` a digit of `radix`?  Used to decide whether a blank
     inside a radix literal is GROUPING (MCP prints "(2)1111 1110")
@@ -498,7 +501,11 @@ def _is_radix_digit(ch, radix):
 
 
 def tokenize_expr(s, lineno=None):
-    s = s.strip()
+    # A TAIL WRITTEN ON A SYMBOL, "Q GO$A" (MCP printed p.43 line 6,
+    # p.261 line 7).  C28-6129 printed p.37 says what it is; TAIL is
+    # inert here (see LISTING_CONTROL), so the written tail is too.
+    # strap/strap2 does the real mangling, and these rows are why it has to.
+    s = _WRITTEN_TAIL.sub(r'\1', s.strip())
     i, n = 0, len(s)
     sign = 1
     tokens = []

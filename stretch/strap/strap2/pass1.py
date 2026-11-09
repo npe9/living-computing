@@ -1,0 +1,714 @@
+"""pass1.py -- MAIN and its pseudo-operation routines, C22-6729 pp.14-27, 79-134.
+
+One statement, one trip round the chart (AA-AE), one unit written.  Box numbers
+in the comments are the chart's.
+
+Not yet here, each refused loudly by the check at the end of the module's
+tests: MIBA's and MBSPEC's corrections, the coprocessor, DUPLI, the relocation
+pseudo-ops' effects.  A numeric DD keeps its text for OUTPUT, not Fig. 26's
+double precision form: see mqdd().
+"""
+from .bits import BitMem
+from .cards import Getcha
+from .coded import encode, Expr
+from .getfld import Getfld, FieldError, ALNUM
+from . import optable
+from .optable import lookup, ENTRIES, dds13, DEFAULT_BS, MODE_CODE
+from .symtab import (SymbolTable, KIND_LABEL, KIND_SYN, KIND_UNDEF)
+from .unit import *             # noqa: F401,F403
+from .value import Value
+
+SECONDARY = set(optable._a.PROGRESSIVE_SECONDARY_OP) | set(optable._a.CW_SECONDARY) | {"SEOP"}
+MODES = set(MODE_CODE)
+
+
+class Messages:
+    """ERR's list, keyed by unit (pp.37-39), kept to print in Pass 2b."""
+
+    def __init__(self):
+        self.items = []
+
+    def add(self, number, text, unit=0, fatal=True):
+        self.items.append((number, text, unit, fatal))
+
+
+class Pass1:
+    def __init__(self, cards):
+        self.g = Getcha(cards)
+        self.units = Units(BitMem())
+        self.mem = self.units.mem
+        self.st = SymbolTable()
+        self.msg = Messages()
+        self.val = Value(self.st, self.msg)
+        self.tails = {}         # TAILOR: text -> number, p.125
+        self.levels = [0] * 11  # 1..10
+        self.getfld = Getfld(self.g, self._sysym, self._tail_on)
+        self.block_named = False
+        self.first_of_block = True
+        self.block_symbol_done = False
+        self.check_digit = 0
+        self.named_of = {}
+
+    def _sysym(self, name):
+        return optable.system_symbol(name)
+
+    # -- TAILOR, pp.74-75, 123-125 ------------------------------------------------
+    def _tail_number(self, text):
+        if text not in self.tails:
+            self.tails[text] = len(self.tails) + 1
+        return self.tails[text]
+
+    def _tail_on(self, text, written=None):
+        levels = list(self.levels)
+        for k, t in enumerate(written or (), 1):
+            levels[k] = self._tail_number(t) if t else 0
+        n = max((i for i, v in enumerate(levels) if v), default=0)
+        if not n:
+            return text
+        return text + "*" + "".join(_level_char(levels[i]) for i in range(1, n + 1))
+
+    # -- the chart ----------------------------------------------------------------
+    def run(self):
+        g = self.g
+        while True:
+            unit = self._box2()
+            if g.fblend:        # Boxes 3-4
+                g.fblena, g.fblend = True, False
+                self.first_of_block = True
+                g.card = None
+            g.bsyst = []
+            c = g.next()        # Box 5
+            if c is None:
+                self._end_of_file(unit)
+                return self
+            ended = self._statement(unit, c)
+            if ended:
+                return self
+
+    def _box2(self):
+        """MAIN, initialize [19-20]: round Ibuffw, zero the fixed format."""
+        unit = (self.units.ibuffw + 63) // 64 * 64
+        for off in range(0, FIXED_BITS, 64):
+            self.mem.put(unit + off, 64, 0)
+        self.units.put(unit, ZIFALL, 1)
+        self.getfld.radix = 0
+        self.bcfldx = unit + FIXED_BITS
+        self.unit = unit
+        self.fields = 0
+        self.entry_mode = None
+        self.ext2 = getattr(self, "ext_pending", False)
+        self.ext_pending = False
+        return unit
+
+    def _statement(self, unit, c):
+        g = self.g
+        u = self.units
+        u.put(unit, ZICDID, _card_id(g.card_id))
+        if self.ext2:
+            u.put(unit, ZIEXT2, 1)
+        if c == "'":            # Box 7: a comment, first thing in the block
+            return self._comment(unit, g.named and self.first_of_block)
+        if c == ";":            # Boxes 9H-9G
+            if not g.fblend and not self.first_of_block:
+                return self._make_drz(unit)
+            if g.fblend and not g.fblena:
+                # A false ';': a real one already ended the block.  No unit.
+                return False
+            return self._comment(unit, g.named)
+        if c == "$":            # p.25: suppress, before the instruction
+            u.put(unit, ZISUPP, 1)
+            c = g.next()
+        if c == "(":            # Box 11
+            self._entry_mode()
+            c = g.ch
+        # Boxes 12-15: the operation, up to eight characters.
+        op = ""
+        while c is not None and c not in ",;'(":
+            op += c.upper()
+            c = g.next()
+        if len(op) > 8:
+            return self._illegal(unit, op)
+        self.op = op
+        self.modifiers = []
+        self.mode = None
+        self.fl_expr = self.bs_expr = None
+        self.pmode = None
+        if op == "EXT":
+            return self._mx(unit)
+        while g.ch == "(":      # Boxes 24-26
+            self._modifier(unit)
+            g.next() if False else None
+        entry = lookup(op, self.mode if self.mode in MODES else None, tuple(self.modifiers))
+        if entry is None:
+            return self._illegal(unit, op)
+        u.put(unit, ZIOPX, entry.index)
+        self._store_dds(unit)
+        if entry.pseudo:
+            return self._pseudo(unit, entry)
+        # Box 34 MEA
+        u.put(unit, ZILBO, entry.length)
+        u.put(unit, ZIFBO, 1)
+        u.put(unit, ZIFP2, 1)
+        u.put(unit, ZIOTPT, entry.skeleton)
+        self._collect_fields(unit, entry)
+        return self._wind_up(unit, entry)
+
+    # -- Box 11, the entry mode [21] ---------------------------------------------
+    def _entry_mode(self):
+        g = self.g
+        text = ""
+        g.gcaz = True
+        c = g.next()
+        while c is not None and (c != ")" or not text):
+            text += c
+            c = g.next()
+        g.gcaz = False
+        g.next()
+        self.entry_mode = text
+
+    # -- Boxes 24-26: secondary op, or dds ---------------------------------------
+    def _modifier(self, unit):
+        g = self.g
+        g.next()
+        tok = ""
+        while g.ch is not None and g.ch not in ",)":
+            tok += g.ch.upper()
+            g.next()
+        if tok in SECONDARY or (self.op == "CW" and tok):
+            self.modifiers.append(tok)
+            if g.ch != ")":
+                raise FieldError(33, "NOT CLOSED BY PAREN")
+            g.next()
+            return
+        if tok == "P":          # p.23: P-mode, a symbol's dds taken over
+            x = self.getfld.field()
+            self.pmode = encode(x)
+            if g.ch != ")":
+                raise FieldError(33, "NOT CLOSED BY PAREN")
+            g.next()
+            return
+        if tok and tok not in MODES:
+            raise FieldError(91, f"MODE {tok}")
+        self.mode = tok or None
+        if g.ch == ",":
+            x = self.getfld.field()
+            if not x.null:
+                self.fl_expr = x
+            if g.ch == ",":
+                x = self.getfld.field()
+                if not x.null:
+                    self.bs_expr = x
+        if g.ch != ")":
+            raise FieldError(33, "NOT CLOSED BY PAREN")
+        g.next()
+
+    def _store_dds(self, unit):
+        """p.23: VALUE each dds expression now if it can be done, else keep it
+        first in the coded area and leave the symbolic indicator on."""
+        u = self.units
+        if self.mode is None and self.fl_expr is None and self.bs_expr is None and not self.pmode:
+            return
+        fl, bs = 0, None
+        for which, x in (("fl", self.fl_expr), ("bs", self.bs_expr)):
+            if x is None:
+                continue
+            s = encode(x)
+            self.mem.put_str(self.bcfldx, s)
+            v = self.val.read_field(self.mem, self.bcfldx)
+            if v.avail and not v.gps:
+                if which == "fl":
+                    fl = v.total
+                    u.put(unit, ZIFFLF, 1)
+                else:
+                    bs = v.total
+                    u.put(unit, ZIFBSF, 1)
+            else:
+                self.bcfldx += len(s)
+                u.put(unit, ZIFSFL if which == "fl" else ZIFSBS, 1)
+        mode = self.mode or "BU"
+        if bs is None:
+            bs = DEFAULT_BS[mode]
+        u.put(unit, ZIDDS, dds13(mode, fl, bs))
+        self.raw_fl = fl
+        u.put(unit, ZIFDSF, 1)
+        if self.mode is not None or self.fl_expr is not None or self.bs_expr is not None:
+            u.put(unit, ZIFDDS, 1)
+        if self.pmode:
+            u.put(unit, ZIFPMN, 1)
+            u.put(unit, ZILPMS, len(self.pmode))
+            self.mem.put_str(self.bcfldx, self.pmode)
+            self.bcfldx += len(self.pmode)
+
+    # -- Boxes 35-37: the address fields -----------------------------------------
+    def _collect_fields(self, unit, entry):
+        g = self.g
+        u = self.units
+        limit = sum(n for _r, n in entry.fills)
+        n = 0
+        while g.ch == ",":
+            x = self.getfld.field()
+            s = encode(x)
+            self.mem.put_str(self.bcfldx, s)
+            self.bcfldx += len(s)
+            n += 1
+            if n > limit:
+                raise FieldError(40, "EXTRA FIELDS")
+        u.put(unit, ZINFLD, n)
+        u.put(unit, ZIFALL, 0)
+
+    # -- Box 38 onward: the wind-up ----------------------------------------------
+    def _wind_up(self, unit, entry):
+        g = self.g
+        u = self.units
+        while g.ch is not None and g.ch != ";":     # Box 38 MEDAF
+            g.next()
+        if g.ch is None:
+            g.ch = ";"
+            g.fblend = True
+        end_coded = self.bcfldx
+        # Box 39-44: the print image at a full word.
+        text = "".join(g.bsyst).rstrip()
+        if text.endswith(";"):
+            text = text[:-1].rstrip()
+        u.put(unit, ZILCFD, end_coded - unit - FIXED_BITS)
+        start = (end_coded + 63) // 64 * 64
+        image_at = start
+        for k, ch in enumerate(text):
+            self.mem.put(start + 8 * k, 8, ord(ch) & 255)
+        u.put(unit, ZILSST, len(text))
+        end = start + 8 * len(text)
+        # Boxes 40-49
+        if self.first_of_block and g.named:
+            u.put(unit, ZIFNME, 1)
+            self.check_digit = (self.check_digit + 1) % 10
+            u.put(unit, ZINAME, self.check_digit)
+            self._form_symbol(unit, entry)
+        self.first_of_block = False
+        u.intout(unit, end)     # Box 57
+        self.image_at = image_at
+        return entry.name == "END"
+
+    def _form_symbol(self, unit, entry):
+        """Boxes 45-53.  CHOSEN: entered here, on the block's first unit.  The
+        chart waits for the last unit, which nothing downstream can tell."""
+        g = self.g
+        st = self.st
+        u = self.units
+        name = self._tail_on(g.symbol)
+        kind = KIND_SYN if entry.name == "SYN" else KIND_LABEL
+        f, there = st.addord(name, kind)
+        if there:
+            f = self._multi(name, f, unit, kind)
+            if f is None:
+                return
+        st.put(f, "ZKIND", kind)
+        st.put(f, "ZST1", 0)
+        st.put(f, "ZSTCNT", self.check_digit)
+        if kind == KIND_SYN:
+            st.put(f, "ZEXPR", self.syn_expr)
+        self.named_of[unit] = f
+        u.put(unit, ZIADSY, 0)
+        # Box 49: what carries over from unit to entry [13, 25].
+        if u.get(unit, ZIFDSF):
+            st.put(f, "ZDDS", u.get(unit, ZIDDS))
+            st.put(f, "ZST3", 1)
+            p = unit + FIXED_BITS
+            if u.get(unit, ZIFSFL):
+                v = self.val.read_field(self.mem, p)
+                st.put(f, "ZFLX", self._copy_coded(p, v.next))
+                p = v.next
+            if u.get(unit, ZIFSBS):
+                v = self.val.read_field(self.mem, p)
+                st.put(f, "ZBSX", self._copy_coded(p, v.next))
+        elif entry.name in optable.FIXED_DATA:
+            # strap_asm._INDEX_WORD_DDS, from C28-6129 p.18 ff.
+            d = {"XW": dds13("BU", 0, 8), "VF": dds13("B", 25, 1),
+                 "CF": dds13("BU", 18, 8), "RF": dds13("BU", 18, 8)}.get(entry.name)
+            if d is not None:
+                st.put(f, "ZDDS", d)
+                st.put(f, "ZST3", 1)
+        elif entry.kind in ("instr", "fp", "vfl", "conn", "io"):
+            st.put(f, "ZDDS", dds13("BU", entry.length, 8))
+            st.put(f, "ZST3", 1)
+
+    def _copy_coded(self, start, end):
+        s = self.mem.get_str(start, end - start)
+        return self.st.store_coded(s)
+
+    def _multi(self, name, f, unit, kind):
+        """MULTI [126-127].  Legal needs both SYN with equal values, which is
+        tested when they are evaluated; CHOSEN that a SYN repeated over a SYN
+        takes the new vle at once and flags Zst22."""
+        st = self.st
+        if st.get(f, "ZKIND") == KIND_UNDEF:
+            return f
+        if st.get(f, "ZKIND") == KIND_SYN and kind == KIND_SYN:
+            nf = st.replace(name, KIND_SYN)
+            st.put(nf, "ZST22", 1)
+            return nf
+        st.put(f, "ZST23", 1)
+        self.msg.add(21, f"SYMBOL MULTIPLY DEFINED {name}", unit)
+        return None
+
+    # -- Boxes 9H, 7: comment and DRZ(N),1 --------------------------------------
+    def _comment(self, unit, named):
+        g = self.g
+        while g.ch is not None and g.ch != ";":
+            g.next()
+        if named:
+            return self._make_drz(unit)
+        e = lookup("PRNOR")     # the comment unit: prints, does nothing
+        self.units.put(unit, ZIOPX, e.index)
+        self.units.put(unit, ZIFALL, 1)
+        self.op = "COMMENT"
+        return self._wind_up(unit, e)
+
+    def _make_drz(self, unit):
+        """p.21: a name on nothing is DRZ(N),1 for the unit."""
+        g = self.g
+        e = lookup("DRZ")
+        self.units.put(unit, ZIOPX, e.index)
+        self.units.put(unit, ZIDDS, dds13("N", 0, 4))
+        self.units.put(unit, ZIFDSF, 1)
+        self.units.put(unit, ZIFDDS, 1)
+        self.units.put(unit, ZIFP2, 1)
+        self.units.put(unit, ZIFBO, 1)
+        s = encode(_abs_field(1))
+        self.mem.put_str(self.bcfldx, s)
+        self.bcfldx += len(s)
+        self.units.put(unit, ZINFLD, 1)
+        self.units.put(unit, ZIFALL, 0)
+        self.op = "DRZ"
+        return self._wind_up(unit, e)
+
+    def _illegal(self, unit, op):
+        """Boxes 19-22: the unit becomes SIC,$15; BE,0 and the error is given.
+        CHOSEN: the host keeps the message and stops the deck being used."""
+        self.msg.add(1, f"ILLEGAL OP CODE {op}", unit)
+        e = lookup("PRNOR")
+        self.units.put(unit, ZIOPX, e.index)
+        self.op = "COMMENT"
+        return self._wind_up(unit, e)
+
+    # -- Box 63 ff., the pseudo-operations [26-27] -------------------------------
+    def _pseudo(self, unit, e):
+        u = self.units
+        name = e.name
+        if name in ("DD", "DDI"):
+            self._mqdd(unit, e)
+        elif name in ("DR", "DRZ"):
+            self._mqr(unit, e)
+        elif name == "SYN":
+            self._mqs(unit, e)
+        elif name in ("SLC", "SLCR", "END"):
+            self._mql(unit, e)
+        elif name == "TAIL":
+            self._mqtail(unit)
+        elif name == "UNTAIL":
+            self._mqt(unit)
+        elif name == "CNOP":
+            u.put(unit, ZIFP2, 0)
+        elif name == "LINK":
+            self._mqlink(unit)
+            return self._wind_up(unit, ENTRIES[u.get(unit, ZIOPX)])
+        return self._wind_up(unit, e)
+
+    def _one_field(self, unit, nogp=False):
+        g = self.g
+        n = 0
+        while g.ch == ",":
+            x = self.getfld.field(nogp=nogp)
+            s = encode(x)
+            self.mem.put_str(self.bcfldx, s)
+            self.bcfldx += len(s)
+            n += 1
+        self.units.put(unit, ZINFLD, n)
+        return n
+
+    def _mql(self, unit, e):
+        """MQL: Pass 2 indicators, and the field encoded [27]."""
+        self._one_field(unit, nogp=True)
+        self.units.put(unit, ZIFALL, 0)
+
+    def _mqr(self, unit, e):
+        """MQR, MDIMRF [116-120]: null dds gets N,64,4, error 46 (p.27)."""
+        u = self.units
+        g = self.g
+        if not u.get(unit, ZIFDSF):
+            u.put(unit, ZIDDS, dds13("N", 0, 4))
+            u.put(unit, ZIFDSF, 1)
+        u.put(unit, ZIFBO, 1)
+        u.put(unit, ZIFP2, 1)
+        u.put(unit, ZIFALL, 0)
+        n = 0
+        if g.ch == ",":
+            g.next()
+            parens = g.ch == "(" and self._dim_parens()
+            have = True
+            if parens:
+                g.next()
+            while True:
+                x = self.getfld.field(nogp=True, have_first=have)
+                have = False
+                s = encode(x)
+                self.mem.put_str(self.bcfldx, s)
+                self.bcfldx += len(s)
+                n += 1
+                if not (parens and g.ch == ","):
+                    break
+            if parens:
+                if g.ch != ")":
+                    raise FieldError(54, "DIMENSION NOT CLOSED")
+                g.next()
+        u.put(unit, ZINFLD, n)
+
+    def _dim_parens(self):
+        """Is this '(' the whole dimension list, closed at the field's end?  A
+        field like (A+1)*2 is an expression, and (8)10 a radix."""
+        g = self.g
+        card, col, depth = g.card, g.col, 1
+        while card is not None and col < 72:
+            c = card[col]
+            col += 1
+            if c == "(":
+                depth += 1
+            elif c == ")":
+                depth -= 1
+                if depth == 0:
+                    break
+        while card is not None and col < 72 and card[col] == " ":
+            col += 1
+        return card is not None and (col >= 72 or card[col] in ",;'")
+
+    def _mqs(self, unit, e):
+        """MQS [121-122]: the dds and the address go to the symbol's vle."""
+        g = self.g
+        u = self.units
+        self.syn_expr = 0
+        if not g.named:
+            self.msg.add(43, "SYN HAS NO NAME", unit)
+        if g.ch == ",":
+            x = self.getfld.field(nogp=True)
+            self.syn_expr = self.st.store_coded(encode(x))
+        else:
+            self.msg.add(44, "SYN HAS NO ADDRESS", unit)
+            self.syn_expr = self.st.store_coded(encode(_abs_field(0)))
+        u.put(unit, ZIFP2, 0)
+        u.put(unit, ZIFALL, 0)
+
+    def _mqdd(self, unit, e):
+        """MQDD, MQDALF [98-103].
+
+        An alphabetic DD is converted here, as p.102 says.  A numeric DD keeps
+        each field's text in the unit for OUTPUT, and Fig. 26's double precision
+        form with MQDNUM and DNUM are still to be written: the host's conversion
+        is strap_asm's parse_dd_literal, verified against the listings.
+        """
+        g = self.g
+        u = self.units
+        u.put(unit, ZIFP2, 1)
+        u.put(unit, ZIFBO, 1)
+        u.put(unit, ZIFDD, 1)
+        u.put(unit, ZIFALL, 0)
+        if not u.get(unit, ZIFDSF):
+            mode = "BU" if self._is_alpha() else "N"
+            u.put(unit, ZIDDS, dds13(mode, 0, DEFAULT_BS[mode]))
+            u.put(unit, ZIFDSF, 1)
+            if not self._is_alpha():
+                self.msg.add(42, "STRAP ASSIGNED DDS", unit, fatal=False)
+        u.put(unit, DD_LOC, self.bcfldx // 1)
+        if self._is_alpha():
+            self._mqdalf(unit)
+        else:
+            self._numeric(unit)
+
+    def _is_alpha(self):
+        m = self.entry_mode
+        return bool(m) and not m.strip().isdigit() and m[:-1].strip().upper() in ("A", "IQS", "CC", "P")
+
+    def _mqdalf(self, unit):
+        g = self.g
+        u = self.units
+        mode = self.entry_mode[:-1].strip().upper()
+        term = self.entry_mode[-1]
+        if g.ch != ",":
+            raise FieldError(84, "ALPHABETIC DD HAS NO FIELD")
+        g.gcaz = True
+        text = ""
+        c = g.next()
+        while c is not None and c != term:
+            if g.fblend and c == ";":
+                break
+            text += c
+            c = g.next()
+        g.gcaz = False
+        if c == term:
+            g.next()
+        else:
+            raise FieldError(85, "ENTRY-MODE DATUM NOT TERMINATED")
+        # Text in A8 or CC is 8 or 12 bits a character; kept as ASCII host codes
+        # until OUTPUT converts it by the mode's table (charsets.py).
+        p = self.bcfldx
+        for ch in text:
+            self.mem.put(p, 8, ord(ch) & 255)
+            p += 8
+        self.bcfldx = p
+        u.put(unit, ZINFLD, len(text))
+        u.put(unit, ZILPMS, len(text))
+        self.alpha_mode = mode
+        u.put(unit, DD_CC, 1 if mode == "CC" else 0)
+        u.put(unit, ZIOTPT, u.get(unit, ZIOTPT) | _mode_tag(mode))
+        u.put(unit, DD_LOC, (self.bcfldx - 8 * len(text)))
+
+    def _numeric(self, unit):
+        g = self.g
+        u = self.units
+        u.put(unit, DD_NUMERIC, 1)
+        rad = self.entry_mode.strip() if self.entry_mode else ""
+        fields = []
+        while g.ch == ",":
+            text, depth = "", 0
+            c = g.next()
+            while c is not None and not (depth == 0 and c in ",;'"):
+                if c == "(":
+                    depth += 1
+                elif c == ")":
+                    depth -= 1
+                text += c
+                c = g.next()
+            fields.append(text)
+        if rad:
+            fields = [("(%s)%s" % (rad, t)) if t[:1].isdigit() else t for t in fields]
+        joined = "\x01".join(fields)
+        p = self.bcfldx
+        u.put(unit, DD_LOC, p)
+        for ch in joined:
+            self.mem.put(p, 8, ord(ch) & 255)
+            p += 8
+        self.bcfldx = p
+        u.put(unit, ZILPMS, len(joined))
+        u.put(unit, ZINFLD, max(1, len(fields)))
+
+    def _mx(self, unit):
+        """MX [128-129]: three fields L, LP, N with no g.p., ZIFP2 on, ZIFALL off.
+        Printed both as EXT(I,J,N) and EXT,(I,J,N) (strap_asm._ext_params)."""
+        g = self.g
+        u = self.units
+        e = lookup("EXT")
+        u.put(unit, ZIOPX, e.index)
+        u.put(unit, ZIFP2, 1)
+        u.put(unit, ZIFALL, 0)
+        u.put(unit, ZIFBO, 1)
+        if g.ch == ",":
+            g.next()
+        if g.ch != "(":
+            raise FieldError(107, "EXT HAS NO PARAMETERS")
+        n = 0
+        while True:
+            x = self.getfld.field(nogp=True)
+            s = encode(x)
+            self.mem.put_str(self.bcfldx, s)
+            self.bcfldx += len(s)
+            n += 1
+            if g.ch != ",":
+                break
+        if g.ch != ")":
+            raise FieldError(107, "EXT NOT CLOSED")
+        g.next()
+        u.put(unit, ZINFLD, n)
+        self.ext_pending = True
+        return self._wind_up(unit, e)
+
+    def _mqlink(self, unit):
+        """MQLINK [32]: the unit becomes LVI,15,$+2."""
+        u = self.units
+        e = lookup("LVI")
+        u.put(unit, ZIOPX, e.index)
+        u.put(unit, ZILBO, e.length)
+        u.put(unit, ZIFBO, 1)
+        u.put(unit, ZIFP2, 1)
+        u.put(unit, ZIFALL, 0)
+        u.put(unit, ZIOTPT, e.skeleton)
+        g2 = Getcha([(" " * 9 + ",15,$+2").ljust(72)])
+        g2.next()
+        keep = self.getfld.g
+        self.getfld.g = g2
+        n = 0
+        while g2.ch == ",":
+            s = encode(self.getfld.field())
+            self.mem.put_str(self.bcfldx, s)
+            self.bcfldx += len(s)
+            n += 1
+        self.getfld.g = keep
+        u.put(unit, ZINFLD, n)
+
+    # -- TAIL and UNTAIL [123-125] ----------------------------------------------
+    def _mqtail(self, unit):
+        g = self.g
+        level = 1
+        c = g.next() if g.ch == "," else g.ch
+        if c == "(":
+            digits = ""
+            c = g.next()
+            while c is not None and c in "0123456789":
+                digits += c
+                c = g.next()
+            if c != ")":
+                raise FieldError(61, "TAIL LEVEL NOT CLOSED")
+            c = g.next()
+            level = int(digits or "1")
+        text = ""
+        while c is not None and c in ALNUM:
+            text += c.upper()
+            c = g.next()
+        if not text:
+            self.msg.add(59, "TAIL HAS NO SYMBOL", unit)
+            return
+        self.levels[min(level, 10)] = self._tail_number(text)
+
+    def _mqt(self, unit):
+        g = self.g
+        c = g.next() if g.ch == "," else g.ch
+        level = 1
+        if c == "(":
+            digits = ""
+            c = g.next()
+            while c is not None and c in "0123456789":
+                digits += c
+                c = g.next()
+            level = int(digits or "1")
+            if c == ")":
+                g.next()
+        if level == 10:
+            self.levels = [0] * 11
+        elif level == 9:
+            for i in range(1, 10):
+                self.levels[i] = 0
+        else:
+            self.levels[level % 8 or 8] = 0
+
+    def _end_of_file(self, unit):
+        """No END card.  STRAP II needs one; decks in this project may stop."""
+        self.no_end = True
+
+
+def _level_char(n):
+    return "%02d" % n
+
+
+def _mode_tag(mode):
+    return {"A": 0, "IQS": 1, "CC": 2, "P": 3}[mode]
+
+
+def _abs_field(n):
+    from .coded import Datum
+    x = Expr()
+    x.data.append(Datum("abs", n))
+    return x
+
+
+def _card_id(text):
+    v = 0
+    for ch in (text or "").ljust(8)[:8]:
+        v = (v << 8) | (ord(ch) & 255)
+    return v

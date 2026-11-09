@@ -1620,6 +1620,15 @@ run "An index read after a pending progressive write" ./run_program.sh ../decks/
 #   (shell) QPARM off by one: MMVPT, MOUTV, compares; H4 codes 16, 21
 # Control: part H passes before and after; decks checked by cmp.
 run "The 7030 SMAC on the model, against smac.py" python3 check_smac7030.py
+
+# STRAP II, RECONSTRUCTED host-side (strap/strap2, docs/strap2/), NOT
+# strap_asm restructured.  Its measured injections are in each test's header.
+# The first test is GETFLD against the guide's only printed bits, Figs. 28-29;
+# the third runs the verify_*.py rows and the MCP pages on strap2, with pinned
+# counts, and compares its image with strap_asm's for every deck.
+run "STRAP II GETFLD against C22-6729's printed coded expressions" python3 check_strap2_coded.py
+run "STRAP II origin, location counters, tails, unit bits, UITER rules, by hand" python3 check_strap2.py
+run "STRAP II against the listing oracles and strap_asm's images" python3 check_strap2_oracles.py
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<
 #

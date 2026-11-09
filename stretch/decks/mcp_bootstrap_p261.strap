@@ -51,15 +51,15 @@
 ! CARD SERIALS.  Right-hand serials PC000001 .. PC000048, one per line,
 ! none shared or skipped.  A new deck ("PC") starts here.
 
-QFIN    SYN(BU,64,8), (8)230653.40   ! p.262 (not landed); p.43 QFIN is SWAPI; BXCZ line 14 230653.70, BIT-EXACT
-QOK     SYN(BU,32,8), (8)230646.40   ! p.262 (not landed); p.43 "Q CK LVE"; B lines 37/42 230646.50, BIT-EXACT
-QTB     SYN, (8)230670.0             ! p.262/later (not landed); LV line 26 230670.04, half word only
 
         SLC, (8)230622.0             ! line  5  printed "SLC,$" at 230622.00 *
 SCA6    Z,$R                                                 ! line  6  -SET UP FOR A-6 CONVERSION
-        B,QGO                                                ! line  7  printed "$B,QGC$A"
+        $B,QGO$A                                             ! line  7  printed "$B,QGC$A"
 SCA8    LI(BU,24),1.32,40                                    ! line  9  -SETUP FOR A-8 TYPE CONVERSION
         TAIL,A                                               ! line 10
+QFIN    SYN(BU,64,8), (8)230653.40   ! p.262 (not landed); p.43 QFIN is SWAPI; BXCZ line 14 230653.70, BIT-EXACT
+QOK     SYN(BU,32,8), (8)230646.40   ! p.262 (not landed); p.43 "Q CK LVE"; B lines 37/42 230646.50, BIT-EXACT
+QTB     SYN, (8)230670.0             ! p.262/later (not landed); LV line 26 230670.04, half word only
 QGO     LVE,4,0($15)                                         ! line 11
         LV,$1,$R                                             ! line 12
         LC,$4,.32($15)                                       ! line 13

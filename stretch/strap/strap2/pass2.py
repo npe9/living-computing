@@ -1,0 +1,780 @@
+"""pass2.py -- UITER, NPS2, DECODE, INSERT and OUTPUT's binary, C22-6729 pp.28-36,
+135-172.  The phases run as p.28 draws them:
+
+    UITER -> Pass 2a -> UITER -> Pass 2b
+
+Pass 2a assigns location counters and tries to assemble.  Pass 2b finishes the
+values and writes the binary.  Python's recursion stands in for UITER's Utab,
+whose mechanics the guide does not give (pass2.md section 3).
+
+CHOSEN, the guide's gap 2: Pass 2b starts its counter where 2a did and runs it
+again, using the length each unit now has, so box 27's check has something to
+check.  On a disagreement 2a's setting wins and message 6 is given (p.36).
+"""
+import strap_asm as _a
+from . import optable
+from .optable import ENTRIES, lookup, dds13, dds_parts, DEFAULT_BS, MODE_NAME
+from .symtab import KIND_LABEL, KIND_SYN, KIND_UNDEF, KIND_SPECIAL, FUNCTION
+from .unit import *             # noqa: F401,F403
+from .value import V
+
+ABS_START = 0o41 * 64           # p.33: 41 octal, or 0 in PUNREL mode
+
+
+class Unresolved(Exception):
+    pass
+
+
+def _fit(v, width):
+    return v & ((1 << width) - 1)
+
+
+def put(word, pos, width, value):
+    """Field at bits pos..pos+width-1 of the 64-bit ZIOTPT."""
+    shift = 64 - pos - width
+    return (word & ~(((1 << width) - 1) << shift)) | (_fit(value, width) << shift)
+
+
+def _orbits(word, pos, width, value):
+    shift = 64 - pos - width
+    return word | (_fit(value, width) << shift)
+
+
+class Pass2:
+    def __init__(self, p1, origin_bits=None):
+        self.p1 = p1
+        self.units = p1.units
+        self.mem = p1.units.mem
+        self.st = p1.st
+        self.val = p1.val
+        self.msg = p1.msg
+        self.origin = ABS_START if origin_bits is None else origin_bits
+        self.np2ind = False
+        self.image = _a.Image()
+        self.end_pc = None
+        self.hilo = []
+        self.undef_at = None
+        self.listing = []
+
+    # ---------------------------------------------------------------------------
+    def run(self):
+        self.uiter(first=True)
+        self.pass_a()
+        self.uiter(first=False)
+        self.pass_b()
+        return self
+
+    # -- UITER, chart GB p.136 ----------------------------------------------------
+    def uiter(self, first):
+        st = self.st
+        self.val.vcundf = True      # pp.32-33
+        self.val.have_counters = False
+        if not first:
+            # Uhl and undefined symbols: special symbols first, since the bounds
+            # stand on them; then every undefined symbol at the next full word
+            # above the upper limit, in the order encountered (p.205, C28 p.20).
+            top = self.origin
+            for absc, symc in self.hilo:
+                at = self.val.counter_value(absc, symc)
+                if at is not None:
+                    top = max(top, at)
+            self.upper = (top + 63) // 64 * 64
+            at = self.upper
+            for name, f in list(st.dictionary.items()):
+                if st.get(f, "ZKIND") == KIND_UNDEF and not st.get(f, "ZST26"):
+                    st.put(f, "ZST1", 1)
+                    st.put(f, "ZDDS", dds13("N", 0, 4))
+                    st.put(f, "ZST3", 1)
+                    self.val._enter(f, at, 0, 0, 0)
+                    at += 64
+                    self.msg.add(11, f"UNDEFINED SYMBOL {name}", 0)
+        for name, f in list(st.dictionary.items()):
+            if st.get(f, "ZST0"):
+                continue
+            got = self.val.symbol_value(f)
+            if got is None:
+                if not first and st.get(f, "ZKIND") != KIND_UNDEF:
+                    self.msg.add(7, f"NO VALUE FOR {name}", 0)   # MACHER
+                continue
+            st.put(f, "ZST0", 1)
+
+    # -- Pass 2a, chart FA-FD ------------------------------------------------------
+    def pass_a(self):
+        self.np2ind = True
+        self.val.vcundf = True
+        self.abs, self.sym = self.origin, 0
+        self.hilo.append((self.abs, self.sym))
+        self.val.have_counters = True
+        for unit in self.units.intin():
+            self.unit_a(unit)
+        self.hilo.append((self.abs, self.sym))
+
+    def _set_dollar(self):
+        self.val.abs, self.val.sym = self.abs, self.sym
+
+    def _entry(self, unit):
+        return ENTRIES[self.units.get(unit, ZIOPX)]
+
+    def _round_a(self, unit, e):
+        """Boxes 12A-12B [33]."""
+        unit_bits = self.rounding(unit, e)
+        if not unit_bits:
+            return
+        if not self.sym:
+            self.abs = (self.abs + unit_bits - 1) // unit_bits * unit_bits
+            return
+        r = self.st.get(self.sym, "ZROUND")
+        have = 64 if r == 2 else 32 if r == 1 else 0
+        if have >= unit_bits:
+            self.abs = (self.abs + unit_bits - 1) // unit_bits * unit_bits
+            return
+        f = self.st.special()
+        self.st.put(f, "ZABS", self.abs)
+        self.st.put(f, "ZSYM", self.sym)
+        self.st.put(f, "ZROUND", 2 if unit_bits == 64 else 1)
+        self.abs, self.sym = 0, f
+
+    def rounding(self, unit, e):
+        u = self.units
+        if u.get(unit, ZIEXT2):
+            return 0
+        if e.name in ("DD", "DDI", "DR", "DRZ"):
+            if u.get(unit, ZIFDSF):
+                mode, _f, _b = dds_parts(u.get(unit, ZIDDS))
+                if mode in ("N", "U"):
+                    return 64
+            return 0
+        if e.name == "CNOP":
+            return 64
+        if e.pseudo:
+            return 0
+        return e.align
+
+    def unit_a(self, unit):
+        u = self.units
+        st = self.st
+        e = self._entry(unit)
+        self._round_a(unit, e)
+        self._set_dollar()              # Box 13
+        f = self.p1_named(unit)
+        name = e.name
+        if name == "SYN":
+            # NSYN: its $ is the counter here; try once more now.
+            if f:
+                st.put(f, "ZABS", self.abs)
+                st.put(f, "ZSYM", self.sym)
+                st.put(f, "ZCTR", 1)
+                self.val.symbol_value(f)
+            return
+        # Boxes 14F, 17: the counters go in the unit and its symbol.
+        u.put(unit, ZIADAB, self.abs & ((1 << 25) - 1))
+        self.mem.put_signed(unit + ZIADSY[0], ZIADSY[1], 0)
+        self.store_sym(unit)
+        if f:
+            st.put(f, "ZABS", self.abs)
+            st.put(f, "ZSYM", self.sym)
+            st.put(f, "ZCTR", 1)
+        if name == "SLC" or name == "SLCR":
+            self.nslc(unit, e)
+            return
+        if name == "END":
+            # p.19: 2a scans every expression so all undefined symbols are entered.
+            if u.get(unit, ZINFLD):
+                self.val.read_field(self.mem, unit + FIXED_BITS)
+            self.hilo.append((self.abs, self.sym))
+            return
+        if name == "CNOP":
+            self.cnop_a(unit)
+            return
+        if e.pseudo and name not in ("DD", "DDI", "DR", "DRZ", "EXT"):
+            return
+        # Boxes 14A-14K
+        if name == "EXT":
+            self.decode_ext_a(unit)
+            return
+        if u.get(unit, ZIEXT2):
+            return
+        if name in ("DD", "DDI"):
+            self.advance_dd(unit)
+            return
+        if name in ("DR", "DRZ"):
+            self.advance_dr(unit)
+            return
+        self.decode(unit, final=False)
+        self.abs += ENTRIES[u.get(unit, ZIOPX)].length
+
+    def p1_named(self, unit):
+        if not self.units.get(unit, ZIFNME):
+            return 0
+        # p.33 "compute and save the location of the function"; Fig. 20 has no
+        # field for it and p.13 matches units to entries by order.  CHOSEN: a
+        # host map from Pass 1, which the 7030 version replaces with that scan.
+        return self.p1.named_of.get(unit, 0)
+
+    def store_sym(self, unit):
+        """ZIADSY: CHOSEN, the special symbol's function address, which 2b needs."""
+        self.units.put(unit, ZIADSY, self.sym)
+
+    def nslc(self, unit, e):
+        """NSLC [34-35]: adjust both counters; an entry for hi-lo."""
+        addr = unit + FIXED_BITS
+        v = self.val.read_field(self.mem, addr)
+        if v.avail:
+            self.abs, self.sym = v.total, 0
+        else:
+            f = self.st.special()
+            self.st.put(f, "ZEXPR", addr_copy(self, addr, v.next))
+            self.abs, self.sym = 0, f
+        if e.name == "SLC":
+            self.hilo.append((self.abs, self.sym))
+
+    def cnop_a(self, unit):
+        pass
+
+    def decode_ext_a(self, unit):
+        i, j, count = self.ext_params(unit)
+        if count is None:
+            raise Unresolved("EXT parameters are not known in Pass 2a")
+        self.abs += count
+
+    def ext_params(self, unit):
+        addr = unit + FIXED_BITS
+        vals = []
+        for _k in range(self.units.get(unit, ZINFLD)):
+            v = self.val.read_field(self.mem, addr)
+            addr = v.next
+            vals.append(None if v.nullf else v.total)
+        vals += [None] * (3 - len(vals))
+        i, j, n = vals[:3]
+        given = sum(x is not None for x in (i, j, n))
+        if given < 2:
+            raise _a.AssemblerError("EXT needs any TWO of I, J and COUNT (C28-6129 printed p.19)")
+        if n is None:
+            n = j - i + 1
+        elif i is None:
+            i = j - n + 1
+        elif j is None:
+            j = i + n - 1
+        return i, j, n
+
+    def dd_length(self, unit, final):
+        """KFNA [140]: field length x number of fields."""
+        u = self.units
+        if u.get(unit, DD_NUMERIC):
+            mode, fl, bs = self.dd_dds(unit)
+            return (fl or 64) * u.get(unit, ZINFLD)
+        mode, fl, bs = self.dd_dds(unit)
+        return u.get(unit, ZINFLD) * (bs or 8)
+
+    def dd_dds(self, unit):
+        """Evaluate a symbolic f.l. or b.s. kept first in the coded area."""
+        u = self.units
+        mode, fl, bs = dds_parts(u.get(unit, ZIDDS))
+        p = unit + FIXED_BITS
+        if u.get(unit, ZIFSFL):
+            v = self.val.read_field(self.mem, p)
+            p = v.next
+            if not v.avail:
+                raise Unresolved("symbolic field length")
+            fl = v.total & 63
+        if u.get(unit, ZIFSBS):
+            v = self.val.read_field(self.mem, p)
+            if not v.avail:
+                raise Unresolved("symbolic byte size")
+            bs = v.total & 15
+        return mode, fl, bs
+
+    def advance_dd(self, unit):
+        try:
+            self.abs += self.dd_length(unit, False)
+        except Unresolved:
+            # 14J: a new relative symbolic counter.
+            raise _a.AssemblerError("DD whose length rests on a later symbol: not yet")
+
+    def _dr_dims(self, unit):
+        """The dimension fields after any symbolic dds, and how many."""
+        u = self.units
+        p = unit + FIXED_BITS
+        for flag in (ZIFSFL, ZIFSBS):
+            if u.get(unit, flag):
+                p = self.val.read_field(self.mem, p).next
+        return p, u.get(unit, ZINFLD)
+
+    def dr_size(self, unit):
+        mode, fl, bs = self.dd_dds(unit)
+        p, n = self._dr_dims(unit)
+        size = fl or 64
+        for _k in range(n):
+            v = self.val.read_field(self.mem, p)
+            p = v.next
+            if not v.avail:
+                return None
+            if v.total < 1:
+                raise _a.AssemblerError(f"DR dimension {v.total} is not positive")
+            size *= v.total
+        return size
+
+    def advance_dr(self, unit):
+        size = self.dr_size(unit)
+        if size is not None:
+            self.abs += size
+            return
+        # 14J: the dimension needs a symbol Pass 2a does not yet have.
+        mode, fl, bs = self.dd_dds(unit)
+        p, n = self._dr_dims(unit)
+        end = p
+        for _k in range(n):
+            end = self.val.read_field(self.mem, end).next
+        f = self.st.special()
+        self.st.put(f, "ZABS", self.abs)
+        self.st.put(f, "ZSYM", self.sym)
+        self.st.put(f, "ZDIMX", addr_copy(self, p, end))
+        self.st.put(f, "ZDIMN", n)
+        self.st.put(f, "ZFLM", fl or 64)
+        self.abs, self.sym = 0, f
+
+    # -- DECODE, chart DC p.139 ----------------------------------------------------
+    def decode(self, unit, final):
+        u = self.units
+        e = ENTRIES[u.get(unit, ZIOPX)]
+        p = unit + FIXED_BITS
+        fields = []
+        n = u.get(unit, ZINFLD)
+        dds = None
+        explicit = u.get(unit, ZIFDSF)
+        if explicit:
+            mode, fl, bs = self.dd_dds(unit) if self._dds_known(unit) else dds_parts(u.get(unit, ZIDDS))
+            for flag in (ZIFSFL, ZIFSBS):
+                if u.get(unit, flag):
+                    p = self.val.read_field(self.mem, p).next
+            dds = (mode, fl, bs)
+        if u.get(unit, ZIFPMN):
+            v = self.val.read_field(self.mem, p)
+            p = v.next
+            if v.dds is not None:
+                m, fl, bs = dds_parts(v.dds)
+                dds = (m, fl, bs)
+        for _k in range(n):
+            v = self.val.read_field(self.mem, p)
+            p = v.next
+            fields.append(v)
+        # Box 5: the convention dds, after the symbol's own (implicit, p.205).
+        if e.dds_needed or e.ambiguous:
+            e, dds = self._establish(unit, e, dds, fields, explicit)
+        word = e.skeleton
+        word = self._fill(unit, e, word, fields, dds, final)
+        for v in fields:
+            for bit, value in v.gps:
+                # C28-6129 printed p.25: counted from the statement's bit zero.
+                if final and bit + 1 > e.length:
+                    raise _a.AssemblerError(f"parenthetical integer entry (.{bit}) needs {bit + 1} bits but this statement compiles only {e.length} (C28-6129 printed p.25)")
+                if final and abs(value) >= 1 << 24:
+                    raise _a.AssemblerError(f"parenthetical integer entry (.{bit}) evaluates to {value}, more than the 24 significant bits the entry converts (C28-6129 printed p.25)")
+                word = _orbits(word, 0, bit + 1, value)
+        u.put(unit, ZIOPX, e.index)
+        u.put(unit, ZILBO, e.length if e.length < 128 else 0)
+        u.put(unit, ZIOTPT, word)
+        self.unavailable = [v for v in fields if not v.avail]
+        return e
+
+    def _dds_known(self, unit):
+        try:
+            self.dd_dds(unit)
+            return True
+        except Unresolved:
+            return False
+
+    def _establish(self, unit, e, dds, fields, explicit):
+        implicit = False
+        if dds is None and fields and fields[0].dds is not None:
+            dds = dds_parts(fields[0].dds)
+            implicit = True
+        # p.24: two or more fields on an ambiguous op makes it VFL.
+        if e.ambiguous and dds is not None and dds[0] in ("N", "U") and len(fields) < 2:
+            e = lookup(e.written_op, dds[0], ())
+            return e, dds
+        if e.ambiguous and explicit:
+            e = lookup(e.written_op, dds[0], ())
+        if e.is_conn and implicit and dds[0] in ("N", "U"):
+            dds = ("BU", 0, 4)
+        if e.kind == "fp":
+            return e, dds
+        if dds is None:
+            dds = ("BU", 0, 8)     # p.140: (BU,64,8); immediate (BU,24,8) below
+            if e.immediate:
+                dds = ("BU", 0, 8)
+        if dds[0] in ("N", "U") and not e.is_conn:
+            if implicit:
+                dds = ("BU", 0, 8)
+                self.msg.add(91, "MODE INCONSISTENT WITH OP", unit, fatal=False)
+            else:
+                raise _a.AssemblerError(f"mode {dds[0]} on the VFL op {e.written_op}")
+        if not e.is_conn and getattr(e, "explicit_mode", None) != dds[0]:
+            e = lookup(e.written_op, dds[0], self._secondaries(e))
+        return e, dds
+
+    def _secondaries(self, e):
+        p = getattr(e, "progressive", None)
+        if p is None:
+            return ()
+        names = {v: k for k, v in _a.PROGRESSIVE_SECONDARY_OP.items()}
+        return (names[p],)
+
+    # -- INSERT, p.144 --------------------------------------------------------------
+    def _fill(self, unit, e, word, fields, dds, final):
+        limit = sum(n for _r, n in e.fills)
+        if e.kind in ("vfl", "conn"):
+            word = put(word, 35, 6, dds[1])
+            word = put(word, 41, 3, dds[2])
+        vals = list(fields)
+        if e.kind == "io":
+            if e.fixed_code is not None:
+                vals = vals + [_literal(e.fixed_code)]
+            elif e.rel and len(vals) == 1:
+                vals = vals + [_literal(0)]
+        k = 0
+        for routine, count in e.fills:
+            fn = getattr(self, "i_" + routine)
+            if count == 1:
+                if k < len(vals):
+                    word = fn(word, vals[k], e, dds)
+                else:
+                    word = fn(word, _literal(0), e, dds)
+                k += 1
+            else:
+                for v in vals[k:]:
+                    word = fn(word, v, e, dds)
+                k = len(vals)
+        return word
+
+    # Absolute values from Sinb, Sini, Sinx, by the address's function (p.144).
+    @staticmethod
+    def _a18(v):
+        return (v.B >> 6) + v.I
+
+    @staticmethod
+    def _a19(v):
+        return (v.B >> 5) + v.I
+
+    @staticmethod
+    def _a24(v):
+        return v.B + v.I
+
+    @staticmethod
+    def _idx(word, v, pos=28):
+        return put(word, pos, 4, v.X) if v.xq else word
+
+    def i_S18A(self, word, v, e, dds):
+        return self._idx(put(word, 0, 18, self._a18(v)), v)
+
+    def i_S19IA(self, word, v, e, dds):
+        return self._idx(put(word, 0, 19, self._a19(v)), v)
+
+    def i_S18X(self, word, v, e, dds):
+        # p.24 of the Reference Manual: LX and SX use bits 0-17 of the effective
+        # address, so an integer counts words in this 19-bit field.
+        return self._idx(put(word, 0, 19, (v.B >> 5) + (v.I << 1)), v)
+
+    def i_S19KF(self, word, v, e, dds):
+        word = put(word, 0, 19, self._a19(v))
+        return put(word, 31, 1, v.X) if v.xq else word
+
+    def i_S24A(self, word, v, e, dds):
+        return self._idx(put(word, 0, 24, self._a24(v)), v)
+
+    i_SSIC24 = i_S24A
+
+    def i_S19BBK(self, word, v, e, dds):
+        word = put(word, 32, 19, self._a19(v))
+        return put(word, 63, 1, v.X) if v.xq else word
+
+    def i_SOFF(self, word, v, e, dds):
+        word = put(word, 44, 7, self._a24(v))
+        return self._idx(word, v, 60)
+
+    def i_SJFLD(self, word, v, e, dds):
+        return put(word, 19, 4, (v.B >> 6) + v.I)
+
+    def i_STJFLD(self, word, v, e, dds):
+        return put(word, 51, 4, (v.B >> 6) + v.I)
+
+    i_STTI = i_S24A
+
+    def i_STT19A(self, word, v, e, dds):
+        word = put(word, 32, 19, self._a19(v))
+        return self._idx(word, v, 60)
+
+    def i_SIM19(self, word, v, e, dds):
+        return put(word, 0, 19, self._a19(v))
+
+    def i_SIMC(self, word, v, e, dds):
+        return put(word, 0, 19, self._a18(v) << 1)
+
+    def i_SBIT(self, word, v, e, dds):
+        n = ((v.B >> 6) + v.I) & 15
+        return word | (1 << (63 - n))
+
+    def i_SIMAD(self, word, v, e, dds):
+        # p.144, and the Reference Manual p.56's left-justified immediate.
+        length = dds[1] or 64
+        if v.B and not v.I:
+            a = v.B
+        elif length <= 24:
+            a = ((v.B >> (24 - length)) + v.I) << (24 - length)
+        else:
+            value = v.B + v.I
+            low = length - 24
+            if value & ((1 << low) - 1):
+                raise _a.AssemblerError(
+                    f"immediate value {value} has nonzero bits below a "
+                    f"{length}-bit field's top 24 (Reference Manual p.56)")
+            a = value >> low
+        return self._idx(put(word, 0, 24, a), v)
+
+    def i_SXP10(self, word, v, e, dds):
+        if v.B:
+            word = put(word, 0, 18, self._a18(v))
+        else:
+            mag = abs(v.I)
+            word = put(word, 0, 18, ((1 if mag > 1023 else 0) << 17) |
+                       ((mag & 0x3FF) << 7) | ((1 if v.I < 0 else 0) << 6))
+        return self._idx(word, v)
+
+    def i_SCHAN(self, word, v, e, dds):
+        return self._idx(put(word, 0, 24, self._a24(v)), v)
+
+    def i_SIOA(self, word, v, e, dds):
+        if e.code_field:
+            a = (v.B >> 6) + v.I
+        else:
+            a = (v.B + v.I) >> 6
+        word = put(word, 32, 18, a)
+        return self._idx(word, v, 60)
+
+    def i_S24SNI(self, word, v, e, dds):
+        t = v.B + v.I
+        word = put(word, 0, 24, abs(t))
+        word = put(word, 24, 1, 1 if t < 0 else 0)
+        return word
+
+    def i_SFLGS(self, word, v, e, dds):
+        return put(word, 25, 3, v.B + v.I)
+
+    def i_S18CF(self, word, v, e, dds):
+        return put(word, 28, 18, self._a18(v))
+
+    def i_S18RF(self, word, v, e, dds):
+        return put(word, 46, 18, self._a18(v))
+
+    def i_SCW(self, word, v, e, dds):
+        return put(word, 0, 18, self._a18(v))
+
+    def i_S18W(self, word, v, e, dds):
+        return put(word, 0, 18, self._a18(v))
+
+    def i_SVF(self, word, v, e, dds):
+        t = v.B + v.I
+        word = put(word, 0, 24, abs(t))
+        return put(word, 24, 1, 1 if t < 0 else 0)
+
+    def i_SINDMK(self, word, v, e, dds):
+        bit = (v.B & 63) if v.B >= 11 * 64 and v.B < 12 * 64 else v.B + v.I
+        if not 0 <= bit <= 63:
+            raise _a.AssemblerError(f"INDMK bit {bit} is outside a word's bits 0-63 (C28-6129 printed p.19)")
+        if word >> (63 - bit) & 1:
+            self.msg.add(121, "BIT ADDRESSED TWICE IN LVS OR INDMK", 0)
+        return word | (1 << (63 - bit))
+
+    # -- Pass 2b ---------------------------------------------------------------------
+    def pass_b(self):
+        self.np2ind = False
+        self.val.vcundf = False
+        self.abs, self.sym = self.origin, 0
+        self.running = self.origin
+        self.val.have_counters = True
+        pending = None
+        for unit in self.units.intin():
+            pending = self.unit_b(unit, pending)
+        return self
+
+    def location_2a(self, unit):
+        u = self.units
+        absc = self.mem.get(unit + ZIADAB[0], ZIADAB[1])
+        symc = u.get(unit, ZIADSY)
+        return self.val.counter_value(absc, symc), absc, symc
+
+    def unit_b(self, unit, pending):
+        u = self.units
+        e = self._entry(unit)
+        name = e.name
+        if name == "SYN":
+            return pending
+        at, absc, symc = self.location_2a(unit)
+        if at is None:
+            self.msg.add(7, "NO LOCATION IN PASS 2B", unit)
+            return pending
+        self.val.abs, self.val.sym = absc, symc
+        if name in ("SLC", "SLCR"):
+            v = self.val.read_field(self.mem, unit + FIXED_BITS)
+            if not v.avail:
+                self.msg.add(11, "UNDEFINED IN ADDRESS", unit)
+            if name == "SLC" and v.total > self.running:
+                self.image.skips.append((self.running, v.total - self.running))
+            if v.total < 0:
+                raise _a.AssemblerError(f"SLC operand evaluates to {v.total} bits, negative (C22-6531 p.32)")
+            self.running = v.total
+            return pending
+        if name == "END":
+            v = self.val.read_field(self.mem, unit + FIXED_BITS) if u.get(unit, ZINFLD) else None
+            if v is not None and not v.avail:
+                self.msg.add(11, "UNDEFINED IN ADDRESS", unit)
+            if v is not None and not v.nullf:
+                t = v.total
+                if t % 32:
+                    raise _a.AssemblerError("END target is not half-word aligned")
+                self.end_pc = t // 32
+            return pending
+        if name == "CNOP":
+            return self.cnop_b(unit, at, pending)
+        if name == "EXT":
+            i, j, n = self.ext_params(unit)
+            return (unit, at, i, n)
+        if u.get(unit, ZIEXT2):
+            self.ext_b(unit, pending)
+            return None
+        if e.pseudo and name not in ("DD", "DDI", "DR", "DRZ"):
+            return pending
+        if name in ("DD", "DDI"):
+            self.dd_b(unit, at)
+            return pending
+        if name in ("DR", "DRZ"):
+            self.dr_b(unit, at, name)
+            return pending
+        # Instructions and index words
+        e = self.decode(unit, final=True)
+        self._gap(at, e)
+        word = u.get(unit, ZIOTPT)
+        self._check_unavailable(unit)
+        self.deposit(at, e, word)
+        self.running = at + e.length
+        return pending
+
+    def _check_unavailable(self, unit):
+        if self.unavailable:
+            self.msg.add(11, "UNDEFINED IN ADDRESS", unit)
+
+    def _gap(self, at, e):
+        """strap_asm's gap rule: rounding before an instruction fills with zeros
+        to a half word and NOPs beyond (p.33 box 12E makes a CNOP a NOP)."""
+        if at == self.running or e.kind in ("data",):
+            return
+        self._fill_gap(self.running, at)
+
+    def _fill_gap(self, start, at):
+        size = at - start
+        if size <= 0:
+            return
+        pad = (-start) % 32
+        if pad:
+            self.image.deposit(start, min(pad, size), 0)
+            start += pad
+            size -= pad
+        for off in range(0, max(size, 0), 32):
+            self.image.deposit_half((start + off) // 32,
+                                    lookup("NOP").skeleton >> 32)
+
+    def cnop_b(self, unit, at, pending):
+        self._fill_gap(self.running, at)
+        self.running = at
+        return pending
+
+    def deposit(self, at, e, word):
+        if e.length == 64:
+            self.image.deposit_word_instr(at, word) if at % 32 == 0 else self.image.deposit(at, 64, word)
+        elif e.length == 32:
+            self.image.deposit_half(at // 32, word >> 32)
+        else:
+            self.image.deposit(at, e.length, word >> (64 - e.length))
+
+    def dd_b(self, unit, at):
+        u = self.units
+        mode, fl, bs = self.dd_dds(unit)
+        loc = u.get(unit, DD_LOC)
+        n = u.get(unit, ZILPMS)
+        text = "".join(chr(self.mem.get(loc + 8 * k, 8)) for k in range(n))
+        if u.get(unit, DD_NUMERIC):
+            length = fl or 64
+            pos = at
+            fields = text.split("\x01") if text else [""]
+            lit_mode = mode if u.get(unit, ZIFDDS) else None
+            for t in fields:
+                t, gps = _a.split_parenthetical_entries(t)
+                self.image.deposit(pos, length, _a.parse_dd_literal(t, None, lit_mode))
+                # C28-6129 printed p.25: ORed into the data entry field.
+                for bit, expr in gps:
+                    self.image.or_into(pos, bit + 1, _a.parse_dd_literal(expr))
+                pos += length
+            self.running = pos
+            return
+        tag = u.get(unit, ZIOTPT) & 3
+        from charsets import ENTRY_MODES
+        table = ENTRY_MODES[{0: "A", 1: "IQS", 2: "CC", 3: "P"}[tag]]
+        pos = at
+        width = bs or 8
+        for ch in text:
+            if ch not in table:
+                raise _a.AssemblerError(f"character {ch!r} is not in the character set (Reference Manual printed p.166)")
+            self.image.deposit(pos, width, table[ch])
+            pos += width
+        self.running = pos
+
+    def dr_b(self, unit, at, name):
+        size = self.dr_size(unit)
+        if size is None:
+            self.msg.add(7, "DR DIMENSION NOT EVALUATED", unit)
+            return
+        if name == "DR":
+            self.image.reserve(at, size)
+        else:
+            mode, fl, bs = self.dd_dds(unit)
+            width = fl or 64
+            for k in range(size // width):
+                self.image.reserve_zero(at + k * width, width)
+        self.running = at + size
+
+    def ext_b(self, unit, pending):
+        """Chart OP boxes 3, 4: construct the requested extract from the second
+        unit, compiled apart.  Its $ is 0, as strap_asm found the listings need."""
+        ext_unit, at, i, count = pending
+        keep = (self.image, self.val.abs, self.val.sym, self.running)
+        scratch = _a.Image()
+        self.image = scratch
+        self.val.abs, self.val.sym = 0, 0
+        self.running = 0
+        try:
+            e = self._entry(unit)
+            if e.name in ("DD", "DDI"):
+                self.dd_b(unit, 0)
+            elif e.pseudo:
+                self.msg.add(122, "EXTRACT FROM A PSEUDO OP", unit, fatal=False)
+            else:
+                e = self.decode(unit, final=True)
+                self.deposit(0, e, self.units.get(unit, ZIOTPT))
+        finally:
+            self.image, self.val.abs, self.val.sym, self.running = keep
+        word = scratch.words.get(0, 0)
+        field = 0
+        for bit in range(i, i + count):
+            field = (field << 1) | ((word >> (63 - bit)) & 1 if bit < 64 else 0)
+        self.image.deposit(at, count, field)
+        self.running = at + count
+
+
+def _literal(n):
+    v = V()
+    v.I = n
+    return v
+
+
+def addr_copy(p2, start, end):
+    return p2.st.store_coded(p2.mem.get_str(start, end - start))
