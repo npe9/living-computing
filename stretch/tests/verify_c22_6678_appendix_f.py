@@ -165,6 +165,21 @@ def main():
     check("bcd_codes_fit_six_bits",
           [c for c, _, b, _ in APPENDIX_F if b is not None and b > 0o77], [])
 
+    # ---- 3a. STRAP's mode A is this column, blank included --------
+    # charsets.A is the assembler's mode A table.  C28-6129 printed p.16
+    # calls mode A "the 6-bit IBM tape BCD format"; this column is the
+    # table of it.  MEASURED INJECTION (in memory, charsets.A patched before
+    # this file ran, no file edited): A[' '] back to 0o00 fails this check
+    # alone, with ' ' added to the list.
+    # Two rows differ and are named here, not hidden: Appendix F's comma
+    # and quote are exchanged against MCP's own table (charsets.py's
+    # docstring), and ; and : are absent from one side or the other.
+    import charsets
+    differ = sorted(c for c, _, b, _ in APPENDIX_F
+                    if charsets.A.get(c) != b)
+    check("mode_a_differs_from_bcd_column_only_at",
+          differ, sorted(["'", ",", ";", ":"]))
+
     # ---- 4. the one value this whole page was opened for -----------
     # p.17 line 30 compares 48 bits against X IOCD.  Four columns of
     # Appendix F's punches, packed by the bit order the Reference

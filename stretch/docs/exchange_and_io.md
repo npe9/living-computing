@@ -543,8 +543,9 @@ right:
 
 ### 3.5 The two-word write buffer and the terminal control-word values
 
-Reference Manual p.124. This is the "+2 quirk" the model deliberately
-does not reproduce; here is the complete rule, which is actually a
+Reference Manual p.124. The model reproduces the "+2" at termination
+since 2026-11-08 (MCP's commentator needs it, `boot_plan.md`), and not
+during a transfer. Here is the complete rule, which is actually a
 *three*-way distinction:
 
 > "In order to insure continuous data transmission, each exchange

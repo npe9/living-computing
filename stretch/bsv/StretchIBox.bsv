@@ -136,8 +136,11 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
       // anything else with the decimal modifier sets OP.
       Bool radixConv = (v.code == 6'b000011) || (v.code == 6'b011011)
                     || (v.code == 6'b100011);
+      // So is a decimal UNSIGNED store, since 2026-11-08 (execute()'s
+      // decimalStoreU; RefMan printed p.63).
+      Bool decimalStoreU = (v.code == 6'b001101) && (v.m.unsign == 1);
       Bit#(7) len_ = effLength(v.a.length);
-      Bool done = (v.m.decimal == 1 && !radixConv)      // decimal refusal
+      Bool done = (v.m.decimal == 1 && !radixConv && !decimalStoreU) // decimal refusal
                || (prog && v.a.i1 == 0)                  // progressive, no index
                || (mPlus && fieldCrosses(ea, len_))      // M+ cannot cross
                || dfSuppresses(st, w)                    // DF, mask-dependent

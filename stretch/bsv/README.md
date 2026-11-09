@@ -236,9 +236,9 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   channel 34; an operator's console, channel 35) — see
   `StretchIO.bsv`'s file header for the full scope statement:
   synchronous single-block transfer (no real CPU/IO overlap, no
-  interrupt propagation), the documented deviation from the manual's
-  WRITE "+2" control-word rule (this model has no double-buffer to
-  reproduce it with), and — now that the External Units chapter
+  interrupt propagation), the manual's WRITE "+2" control-word rule at
+  termination only (this model has no double-buffer, so a CCW during a
+  WRITE reads the unbuffered address), and — now that the External Units chapter
   (pp.129-149) has been read — `CTL` executing only against the tape
   channel and only two of its documented function codes (REWIND,
   BACKSPACE BLOCK, p.132); every other tape function code (SPACE
@@ -400,8 +400,9 @@ another, which is what a two-way interchange is for.
 ### Decoded but not executed (sets indicator 15, OP, and no-ops —
 ### matches real-machine behavior for a suppressed instruction)
 
-Decimal-mode VFL (`c=1`), radix conversion (`CV`, `DCV`,
-`LTRCV`), the compare variants `KE`/`KFE`/`KFR`, `LTRS`, `RNX`,
+Decimal-mode VFL (`c=1`) except the unsigned store (`ST(DU)`, built
+2026-11-08 for MCP's `$TIME`, `decks/vfl_st_decimal.strap`), radix
+conversion (`CV`, `DCV`, `LTRCV`), the compare variants `KE`/`KFE`/`KFR`, `LTRS`, `RNX`,
 Input-Output's `LOC` **on an Exchange channel** (the disk form is
 executed — see above) and most of `CTL`. **Transmit's BACKWARD `SWAP`
 LEFT THIS LIST ON 2026-11-08** (see below).

@@ -29,10 +29,8 @@
 ! Not a Reference Manual worked example -- this project's first
 ! purpose-written program for a feature the manual doesn't happen to
 ! walk through a worked instance of. Verified against the manual's own
-! stated control-word-update rules (p.124) instead, with the documented
-! WRITE "+2" deviation (StretchIO.bsv's file header: this model has no
-! double-buffering, so a completed WRITE here leaves the control word's
-! data address at A_i+N, not the real hardware's A_i+N+2).
+! stated control-word-update rules (p.124) instead: a completed WRITE
+! leaves the control word's data address at A_i+N+2.
 !
 ! CHANNEL ADDRESSES are written as pre-scaled literals, not the plain
 ! channel numbers 32/33 -- the Reference Manual (p.111) places the

@@ -2494,7 +2494,12 @@ function ActionValue#(VflOutcome)
       Bool radixConv = (vi.code == 6'b000011)     // LCV
                     || (vi.code == 6'b011011)     // CV
                     || (vi.code == 6'b100011);    // LTRCV
-      if (vi.m.decimal == 1 && !radixConv)
+      // A DECIMAL UNSIGNED STORE IS BUILT, since 2026-11-08, because MCP's
+      // $TIME needs it (printed p.300 line 33, "ST(DU,63,8),0.0($1)",
+      // reached from the CLOCK command).  It is the one piece of decimal
+      // with no arithmetic in it.  A signed decimal store stays refused.
+      Bool decimalStoreU = (vi.code == 6'b001101) && (vi.m.unsign == 1);
+      if (vi.m.decimal == 1 && !radixConv && !decimalStoreU)
         ind = setOpInvalid(ind);
       // >>> PROGRESSIVE INDEXING WITH X0 IS OP, AND THAT IS PRINTED,
       // not inferred -- cited 2026-10-29, having been an uncited
@@ -2729,7 +2734,24 @@ function ActionValue#(VflOutcome)
               SM128 acc = readAcc(st);
               SM128 shifted = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
               Bit#(1) fsign = (vi.m.invert == 1) ? ~shifted.sign : shifted.sign;
-              Bit#(64) packedField = smToField(SM128{sign:fsign, mag:shifted.mag}, len_, bsz, vi.m.unsign);
+              // A decimal offset is limited to digit positions by ignoring
+              // its two low-order bits (printed p.57).
+              Bit#(128) decAcc = truncate(acc.mag >> (offSh & 8'hFC));
+              Bit#(64) decField = decStoreField(decAcc, bsz, st.readAccSign()[63:56]);
+              Bool decStore = (vi.m.decimal == 1);
+              Bit#(64) packedField = decStore ? decField
+                : smToField(SM128{sign:fsign, mag:shifted.mag}, len_, bsz, vi.m.unsign);
+              // The indicators of printed p.63, set where the store is
+              // done.  The sign, as modified by the negative sign
+              // modifier, counts "whether it is stored or not".  Only the
+              // decimal path: see bsv/README.md on the binary store.
+              function Word64 decStoreInd(Word64 i0);
+                Bit#(64) lenMask = (len_ == 64) ? '1 : ((64'd1 << len_) - 1);
+                Bit#(64) stored = decField & decStoreNumeric(bsz) & lenMask;
+                Word64 i1 = setResultIndicatorsF(i0, SM128{sign:fsign, mag:zeroExtend(stored)});
+                Word64 i2 = setBit(i1, ind_MOP, 1);
+                return decStorePF(decAcc, bsz, len_) ? setBit(i2, ind_PF, 1) : i2;
+              endfunction
               WordAddr w0 = stW0;
               Bit#(6) off = baBit(ea);
               if (stCrosses) begin
@@ -2752,6 +2774,7 @@ function ActionValue#(VflOutcome)
                                           len_, packedField);
                     st.writeWord(w0, tpl_1(np));
                     st.writeWordTail(w0 + 1, tpl_2(np));
+                    if (decStore) ind = decStoreInd(ind);
                   end
                   vflReadsUsed = 2;
                 end else if (prefetchCount == 1)
@@ -2767,7 +2790,10 @@ function ActionValue#(VflOutcome)
               else if (!vflNeedsRefill) begin
                 if (prefetchCount >= 1) begin
                   if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
-                  else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
+                  else begin
+                    st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
+                    if (decStore) ind = decStoreInd(ind);
+                  end
                   vflReadsUsed = 1;
                 end else
                   needsRead = tagged Valid w0;
@@ -2787,7 +2813,10 @@ function ActionValue#(VflOutcome)
                 ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);
                 if (prefetchCount >= 2) begin
                   if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
-                  else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
+                  else begin
+                    st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
+                    if (decStore) ind = decStoreInd(ind);
+                  end
                   vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
                   ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
                 end else if (prefetchCount == 1)

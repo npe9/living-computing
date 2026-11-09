@@ -171,9 +171,8 @@ what's original.
   "derive the expected result with a small script mirroring the
   hardware's own packing logic" approach Figure 7 above already uses.
   Verified against the Reference Manual's own control-word-update rules
-  (p.124), with one documented, deliberate deviation (this model's
-  `WRITE` doesn't reproduce the real Exchange's "+2" double-buffering
-  quirk — see `StretchIO.bsv`). The channel-address field's own unit
+  (p.124), including `WRITE`'s "+2" at termination (see
+  `StretchIO.bsv`). The channel-address field's own unit
   quirk (the 7-bit channel number sits at instruction bits 12-18, not
   the field's low-order bits, so a literal channel number must be
   written pre-scaled by `<<5`) was caught and confirmed load-bearing by

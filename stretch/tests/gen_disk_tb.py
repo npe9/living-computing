@@ -97,8 +97,9 @@ def main():
     # dataAddr advanced by the count and the count at zero.  eop is 1
     # because none of the four is a SEOP form; unitReady carries
     # through from the control word the program supplied.
-    exp_ccwA = pack_cw(dataAddr=src1 + 3, eop=1, count=0)
-    exp_ccwB = pack_cw(dataAddr=src2 + 2, eop=1, count=0)
+    exp_ccwA = pack_cw(dataAddr=src1 + 3 + 2,   # WRITE: printed p.124, A_n + 2
+                        eop=1, count=0)
+    exp_ccwB = pack_cw(dataAddr=src2 + 2 + 2, eop=1, count=0)
     exp_ccwC = pack_cw(dataAddr=dest1 + 5, eop=1, count=0)
     exp_ccwD = pack_cw(dataAddr=dest2 + 4, eop=1, count=0)
     # ---- steps 6-7: the LOCATE arm's own copy of the SEOP rule ----

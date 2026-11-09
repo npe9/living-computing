@@ -264,7 +264,7 @@ class Value:
                 p += 7
                 text = "".join(self.chars.get(mem.get(p + 8 * k, 8), "\0") for k in range(n))
                 p += 8 * n
-                if text == "$  ":   # the lone $, Fig. 14 p.76
+                if text == "$\0\0":   # the lone $, Fig. 14 p.76
                     at = self.dollar()
                     ok = at is not None
                     b = at or 0

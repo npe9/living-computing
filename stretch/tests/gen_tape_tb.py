@@ -116,13 +116,14 @@ def main():
     # position: 0 -> 4
     exp_ccwB = pack_cw(dataAddr=block2 + 4, unitReady=1, eop=1, count=0)
     # position: 4 -> 8
-    exp_ccwC = pack_cw(dataAddr=src_addr + 2, unitReady=1, eop=1, count=0)
+    # A WRITE: Reference Manual printed p.124's A_n + 2.
+    exp_ccwC = pack_cw(dataAddr=src_addr + 2 + 2, unitReady=1, eop=1, count=0)
     # position: 8 -> 10
     # REWIND touches only eop (already 1 from CCWC) -- dataAddr/count
     # are NOT control-word-address fields for CTL, so they carry
     # forward unchanged from whatever RD/W last set them to. The real
     # proof REWIND worked is BLOCK3's content below, not this CW.
-    exp_ccwD = pack_cw(dataAddr=src_addr + 2, unitReady=1, eop=1, count=0)
+    exp_ccwD = pack_cw(dataAddr=src_addr + 2 + 2, unitReady=1, eop=1, count=0)
     # position: 10 -> 0 (REWIND)
     exp_ccwE = pack_cw(dataAddr=block3 + 2, unitReady=1, eop=1, count=0)
     # position: 0 -> 2

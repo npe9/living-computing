@@ -1,0 +1,169 @@
+! vfl_st_decimal.strap -- the decimal UNSIGNED store, the one piece of
+! decimal with no arithmetic in it.
+!
+! WHY IT EXISTS.  MCP's clock routine stores the time as digits with
+! printed p.300 line 33, ST(DU,63,8),0.0($1), and the CLOCK command in the
+! IPL program's prime reaches it (docs/boot_plan.md).  The model refused
+! every decimal store with OP until 2026-11-08.  A signed decimal store is
+! still refused, loud (decks/vfl_decimal_refused.strap).
+!
+! THE SOURCE.  Reference Manual printed p.63 (PDF 66), read in the ink:
+!   "Each 4-bit byte of the accumulator replaces the four low-order bits
+!   of each byte of the storage field ...  If the specified byte size is
+!   greater than four, the remaining high-order bits of each byte are
+!   replaced by the corresponding zone bits in the accumulator sign byte
+!   register.  If the specified byte size is less than four, only the
+!   low-order bits from each accumulator byte replace each byte ...
+!   only part of the high-order digit is stored so that only the addressed
+!   field is replaced in storage."
+! PF: "a non-zero byte to the left of the high-order byte stored", and not
+! for high-order bits of the high-order byte itself.  MOP is turned on.
+! RLZ, RZ, RGZ, RN "are set according to the data field stored".
+! Printed p.57: a decimal offset ignores its two low-order bits.
+!
+! THE CASES, every expectation derived by hand.  The accumulator holds
+! the digits 1 2 3 4 5 6 (the 4-bit bytes of printed p.58), and the sign
+! byte register's zones are 0011 (IBM bits 2,3, by p.300 line 21's own
+! CM1111(BU,2),$SB+.2).  Targets start all ones.
+!   CASE B  ST(DU,48,8): six bytes, all digits: 31 32 33 34 35 36 FFFF.
+!           PF stays off.  MOP on.  RGZ on: non-zero, sign plus.
+!   CASE H  ST(DU,4,4) of a zero accumulator: 0FFF...  RZ on, PF stays off.
+!   CASE A  ST(DU,24,8): three bytes, digits 4,5,6: 34 35 36 FF...  PF on:
+!           1,2,3 are to its left.
+!   CASE C  ST(DU,16,4): byte size 4, no zone: 3456 FFFF...
+!   CASE D  ST(DU,6,2): byte size 2, the low two bits of each digit.
+!           6=0110->10, 5=0101->01, 4=0100->00: 000110, then the word's
+!           ones: 00011011 = 1B FF...
+!   CASE E  ST(DU,7,8): a field not a multiple of the byte size, the p.300
+!           shape.  One byte, its high bit not stored: 0110110 (low seven
+!           of 00110110), then the word's next bit stays one: 01101101 =
+!           6D FF...  PF on: 5 is left of the byte taking part.
+!   CASE F  ST(DU,8,8),TF,8: an offset of 8 skips two digits: 34 FF...
+!   CASE G  ST(DU,8,8),TG,9: offset 9 ignores its low two bits: 34 again.
+!   CASE I  ST(DU,6,6): a six-bit byte takes the two zone bits next to the
+!           digit, 11: 110110, then ones: 11011011 = DB FF...
+!   CASE J  ST(DU,4,8): a field shorter than a byte takes the digit's low
+!           four bits: 6, then ones: 6F FF...  PF on: 5 is left of it.
+!   CASE K  ST(DU,4,4),TK,0 of the digits 7 0 (accumulator 70): only the 0
+!           is stored, and 7 is left of it.  RZ on, by the data field
+!           stored, and PF on.  The result indicators do not see the 7.
+!   CASE L  ST(DU,8,8) of a zero accumulator: 30 FF...  RZ on: the zone is
+!           not data.
+!   CASE M  ST(DU,2,4) of the digit 6 alone: the low two bits, 10, then the
+!           word's ones: 10111111 = BF FF...  PF stays off: only the
+!           high-order bits of the byte taking part were not stored, the
+!           sentence on p.63 that says so.
+!
+! PF is a permanent indicator (it is turned on, never off, by a store), so
+! the cases expecting it off run first, and BPFZ clears it between.
+!
+! MEASURED INJECTION: see the entry in tests/run_tests.sh.
+
+        SLC, (8)300.0
+START   Z,$SB
+        CM1111(BU,2),$SB+.2
+        BPFZ,$+.32
+        L(BU,24,8),DIGITS
+        ST(DU,48,8),TB
+        LVI,$2,0.0
+        BZPF,$+.64
+        LVI,$2,1.0
+        SV,$2,PFB
+        LVI,$2,0.0
+        BZMOP,$+.64
+        LVI,$2,1.0
+        SV,$2,MOPB
+        LVI,$2,0.0
+        BZRGZ,$+.64
+        LVI,$2,1.0
+        SV,$2,RGZB
+        L(BU,24,8),ZERO
+        ST(DU,4,4),TH
+        LVI,$2,0.0
+        BZRZ,$+.64
+        LVI,$2,1.0
+        SV,$2,RZH
+        LVI,$2,0.0
+        BZPF,$+.64
+        LVI,$2,1.0
+        SV,$2,PFH
+        L(BU,24,8),DIGITS
+        ST(DU,24,8),TA
+        LVI,$2,0.0
+        BZPF,$+.64
+        LVI,$2,1.0
+        SV,$2,PFA
+        BPFZ,$+.32
+        ST(DU,16,4),TC
+        ST(DU,6,2),TD
+        BPFZ,$+.32
+        ST(DU,7,8),TE
+        LVI,$2,0.0
+        BZPF,$+.64
+        LVI,$2,1.0
+        SV,$2,PFE
+        ST(DU,8,8),TF,8
+        ST(DU,8,8),TG,9
+        ST(DU,6,6),TI
+        ST(DU,4,8),TJ
+        L(BU,24,8),D70
+        BPFZ,$+.32
+        ST(DU,4,4),TK
+        LVI,$2,0.0
+        BZRZ,$+.64
+        LVI,$2,1.0
+        SV,$2,RZK
+        LVI,$2,0.0
+        BZPF,$+.64
+        LVI,$2,1.0
+        SV,$2,PFK
+        L(BU,24,8),D6
+        BPFZ,$+.32
+        ST(DU,2,4),TM
+        LVI,$2,0.0
+        BZPF,$+.64
+        LVI,$2,1.0
+        SV,$2,PFM
+        L(BU,24,8),ZERO
+        ST(DU,8,8),TL
+        LVI,$2,0.0
+        BZRZ,$+.64
+        LVI,$2,1.0
+        SV,$2,RZL
+DONE    BEW,$
+        CNOP
+
+        SLC, (8)400.0
+DIGITS  DD(BU,24),(16)123456
+        SLC, (8)401.0
+ZERO    DD(BU,24),0
+        SLC, (8)402.0
+D70     DD(BU,24),(16)70
+        SLC, (8)403.0
+D6      DD(BU,24),(16)6
+        SLC, (8)410.0
+TA      DD(BU,64),(8)1777777777777777777777
+TB      DD(BU,64),(8)1777777777777777777777
+TC      DD(BU,64),(8)1777777777777777777777
+TD      DD(BU,64),(8)1777777777777777777777
+TE      DD(BU,64),(8)1777777777777777777777
+TF      DD(BU,64),(8)1777777777777777777777
+TG      DD(BU,64),(8)1777777777777777777777
+TH      DD(BU,64),(8)1777777777777777777777
+TI      DD(BU,64),(8)1777777777777777777777
+TJ      DD(BU,64),(8)1777777777777777777777
+TK      DD(BU,64),(8)1777777777777777777777
+PFA     DD(BU,64),0
+PFB     DD(BU,64),0
+MOPB    DD(BU,64),0
+RGZB    DD(BU,64),0
+PFE     DD(BU,64),0
+RZH     DD(BU,64),0
+PFH     DD(BU,64),0
+RZK     DD(BU,64),0
+PFK     DD(BU,64),0
+TL      DD(BU,64),(8)1777777777777777777777
+TM      DD(BU,64),(8)1777777777777777777777
+RZL     DD(BU,64),0
+PFM     DD(BU,64),0
+        END, START

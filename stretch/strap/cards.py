@@ -192,6 +192,8 @@ def punches_from_grid(ch):
         raise ValueError(
             f"{ch!r} is not in the 48 character set (Reference Manual "
             f"printed p.166)")
+    if up == " ":
+        return set()    # the grid's col 0000 row 0000; BCD_48 holds tape BCD's 0o20
     code = BCD_48[up]
     zone = _ZONE[code >> 4]
     row = code & 0xF

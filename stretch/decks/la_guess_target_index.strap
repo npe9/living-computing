@@ -1,0 +1,104 @@
+! la_guess_target_index.strap -- a wrongly guessed branch goes where its
+! address said WHEN IT WAS DECODED, not where the registers say later.
+!
+! WHY IT EXISTS.  The instruction unit guesses a branch on an arithmetic
+! indicator not taken and runs on (docs/microarchitecture_plan.md stage
+! 3c).  The model computed the branch's effective address at the guess,
+! kept it unused, and on a wrong guess computed it again from the index
+! registers as they then were, before rl_recover restored them.  If an
+! I-box instruction behind the branch had changed the branch's index, the
+! branch went to the wrong place.
+!
+! MCP FOUND THIS, 2026-11-08.  The command package's lookup (printed
+! p.362 lines 37-43, copied in CASE 1) is:
+!     LX,JX1,JJX1
+!     LVI,JX2,JLIST
+!     L(U),JFLDB+1.0
+!     ZLOOK4 KF(V+I)(BU,48,6),.48(JX2),80
+!            BAE,JTABL(JX1)
+!            CBH,JX1,ZLOOK4
+! CBH overtook BAE and stepped JX1, so every command dispatched one entry
+! high: CLOCK went to ZABEND ("LEGAL COMMAND, ILLEGAL SITUATION") and
+! BYPASS to ZONLIN ("ONLINE COMMAND ACCEPTED").  docs/boot_plan.md.
+!
+! THE CASES, every expectation derived by hand:
+!   CASE 1  the lookup finds C, entry 2 of A,B,C,D.  TABLE1's third
+!           branch runs, and RES1's value is 1002.0.
+!   CASE 2  a BRZ with index X1 = .32, taken, with a V+I,$1,.32 behind
+!           it.  (An indicator branch's I field is one bit: only $1 can
+!           index it, StretchTypes.bsv.)  TABLE2+.32 runs: RES2's value is 2001.0.  The recovery
+!           undoes the V+I: RES2X's value is .32.
+!   CASE 3  the same with a DIFFERENT index changed behind the branch, a
+!           guard: it should pass with or without the fix.  RES3's value
+!           is 3001.0.
+!
+! MEASURED INJECTION: see the entry in tests/run_tests.sh.
+
+        SLC, (8)200.0
+START   LX,$1,XW1
+        LVI,$2,LIST
+        L(U),KEY
+LOOP    KF(V+I)(BU,48,6),.48($2),80
+        BAE,TABLE1($1)
+        CBH,$1,LOOP
+        B,FAIL
+TABLE1  B,E0
+        B,E1
+        B,E2
+        B,E3
+E0      LVI,$4,1000.0
+        B,C1END
+E1      LVI,$4,1001.0
+        B,C1END
+E2      LVI,$4,1002.0
+        B,C1END
+E3      LVI,$4,1003.0
+C1END   SV,$4,RES1
+        LVI,$1,.32
+        L(BU,64,8),ZEROW
+        BRZ,TABLE2($1)
+        V+I,$1,.32
+        B,FAIL
+TABLE2  B,F0
+        B,F1
+        B,F2
+F0      LVI,$5,2000.0
+        B,C2END
+F1      LVI,$5,2001.0
+        B,C2END
+F2      LVI,$5,2002.0
+C2END   SV,$5,RES2
+        SV,$1,RES2X
+        LVI,$1,.32
+        L(BU,64,8),ZEROW
+        BRZ,TABLE3($1)
+        V+I,$7,.32
+        B,FAIL
+TABLE3  B,G0
+        B,G1
+G0      LVI,$8,3000.0
+        B,C3END
+G1      LVI,$8,3001.0
+C3END   SV,$8,RES3
+DONE    BEW,$
+FAIL    LVI,$9,99.0
+        SV,$9,RES1
+        BEW,$
+        CNOP
+
+        SLC, (8)400.0
+XW1     XW,0.0,4
+ZEROW   DD(BU,64),0
+KEY     (A*)DD(BU,48,6),CCCCCCCC*
+        CNOP
+LIST    (A*)DD(BU,48,6),AAAAAAAA*
+        (A*)DD(BU,48,6),BBBBBBBB*
+        (A*)DD(BU,48,6),CCCCCCCC*
+        (A*)DD(BU,48,6),DDDDDDDD*
+        CNOP
+        SLC, (8)410.0
+RES1    DD(BU,64),0
+RES2    DD(BU,64),0
+RES2X   DD(BU,64),0
+RES3    DD(BU,64),0
+        END, START

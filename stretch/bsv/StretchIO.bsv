@@ -192,18 +192,18 @@
 // milestone) suppresses EOP on REWIND/BACKSPACE BLOCK exactly as it
 // does on RD/W/REL.
 //
-// WRITE's "+2" QUIRK, DELIBERATELY NOT REPRODUCED: p.124's table says a
-// terminated WRITE leaves the control word's data word address at
-// A_i + N + 2 (not A_i + N, as for READ) because the real Exchange
-// double-buffers two words ahead of what's actually been sent to the
-// unit. This model has no such buffer -- it moves one word per cycle
-// with no lookahead -- so reproducing "+2" would mean faking a hardware
-// behavior this implementation doesn't have, rather than honestly
-// simplifying it. WRITE here leaves the data word address at A_i + N,
-// the same rule as READ. Documented here and at this file's one call
-// site (StretchExecute.bsv's IoOp case) so a test checking a copied
-// control word after a WRITE doesn't mysteriously come up 2 short of
-// the manual's own worked value.
+// WRITE's "+2": p.124's table says a terminated WRITE leaves the control
+// word's data word address at A_i + N + 2 (not A_i + N, as for READ)
+// because the real Exchange double-buffers two words ahead of what's
+// actually been sent to the unit. MCP's commentator depends on it
+// (printed p.309 line 2, "V-I,JXTEM,2.0 -REDUCE CW BY 2"): until
+// 2026-11-08 this model left A_i + N, calling the rule a quirk, and MCP
+// rewrote its last two stack words on the console forever.
+// StretchCore's rl_io now leaves A_i + N + 2 at termination (writeEndLead).
+// STILL A DEVIATION: this model has no exchange buffer, so a CCW DURING a
+// WRITE reads the unbuffered address, not p.124's "two words ahead", and
+// a WRITE ended by RELEASE keeps its address rather than p.124's "these
+// rules do not hold".
 //
 // WHAT REJECTS VS. WHAT SETS A STATUS BIT (p.111-113, "Input-Output
 // Reject Indicators" / "Input-Output Status Indicators"): addressing a

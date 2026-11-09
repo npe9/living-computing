@@ -83,9 +83,20 @@ open 22LOADER on printed p.320, 22$DUMP on p.335, 22SCOMD on p.361 and
 **Done, 2026-11-07:** `strap/prosa_dict.py` builds both type areas
 (RECONSTRUCTION, sources in its header), and PROSA now carries all eight
 type areas the listing holds. MCP fetches 22SCOMD and enters J COMD.
-The command package then echoes the IPL program's `COMD,CLOCK` and
-loops typing `//////`. That loop is the new frontier (`boot_plan.md`,
-"THE COMMAND PACKAGE RUNS").
+The command package then echoed the IPL program's `COMD,CLOCK` and
+looped typing `//////` (`boot_plan.md`, "THE COMMAND PACKAGE RUNS").
+
+**E1 is done, 2026-11-08.** That loop was a model fault, and three more
+stood behind it (`boot_plan.md`, "THE START RUNS TO THE READER"). MCP now
+accepts CLOCK and BYPASS, types the time, READs the reader, types `SERVICE
+THE CARD READER`, and JC4 polls SJ1FUL for a job card (printed p.391 line
+31). `tests/run_mcp_start_test.sh`. That poll is the point where the machine
+needs an operator and a deck, so the frontier is now E2 and E3.
+
+Two limits on that. The model's empty reader answers with EE where a real
+empty hopper is not ready, so `PRESENT JOB REJECTED - NO JOB CARD.` is the
+fixture's. And DISK FETCH has only found 22SCOMD and 22$EOJ on this path;
+22LOADER and 22$DUMP wait for a job.
 
 **E2. Operator actions in the harness.** For example, the reader's
 START key (unit ready + CS, RefMan printed p.141) and the console's
