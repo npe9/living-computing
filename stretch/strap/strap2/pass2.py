@@ -18,6 +18,7 @@ from .symtab import KIND_LABEL, KIND_SYN, KIND_UNDEF, KIND_SPECIAL, FUNCTION
 from .unit import *             # noqa: F401,F403
 from .value import V, F_UNDEF, F_QUEST, F_MULTI, F_PSEUDO, F_CONTAG
 from .dnum import final, load_entry, DnumError
+from .punch import Punch
 
 ABS_START = 0o41 * 64           # p.33: 41 octal, or 0 in PUNREL mode
 
@@ -66,6 +67,7 @@ class Pass2:
         self.hilo = []
         self.undef_at = None
         self.printed = {}       # what OUTPUT prints for a unit, listing.py
+        self.punch = Punch(edition)     # OUTPUT's binary cards, punch.py
         self.spnus = False      # NSPRES, p.35: SPNUS seen
         self.val.multi_ref = F_CONTAG if edition == "N28-1081" else F_MULTI
 
@@ -675,8 +677,10 @@ class Pass2:
         self.running = self.origin
         self.val.have_counters = True
         pending = None
+        unit = 0
         for unit in self.units.intin():
             pending = self.unit_b(unit, pending)
+        self.punch.finish(unit)
         return self
 
     # -- NUNDSY, charts EG and EH pp.170-171, text p.172 ----------------------------
@@ -729,10 +733,15 @@ class Pass2:
 
     def comrec_errors(self):
         """The communication record's error bits STRAP II sets (C22-6729 p.8;
-        N28-1081 page 7): 41 for symbols in error, 42 for the serious messages,
-        43 for any message.  CHOSEN: a legal multiple (QUEST) does not set 41,
-        since C28-6129 p.20 calls it legal; p.8 names "multiply-defined" and
-        N28-1081 "multiply defined" without saying which."""
+        N28-1081 page 7): 41 for symbols in error, 42 for p.8's list, 43 for any
+        message.  p.8's list for 42 is, in order, the conditions of messages 1-7
+        (pp.176), so 42 is messages 1-7 (DERIVED), plus "symbolic statement too
+        long", an I-O message with no number that strap2 never gives.  Not the
+        serious messages (1-28, or 1-18 in the update), and not the host's
+        `fatal`, which only decides what assemble(strict=True) refuses.  CHOSEN:
+        a legal multiple (QUEST) does not set 41, since C28-6129 p.20 calls it
+        legal; p.8 names "multiply-defined" and N28-1081 "multiply defined"
+        without saying which."""
         st = self.st
         bits = set()
         for name, f in st.dictionary.items():
@@ -741,9 +750,9 @@ class Pass2:
             if (st.get(f, "ZST1") or st.get(f, "ZST23") or st.get(f, "ZST4")
                     or st.get(f, "ZSTCTG")):
                 bits.add(41)
-        for _number, _text, _unit, fatal in self.msg.items:
+        for number, _text, _unit, _fatal in self.msg.items:
             bits.add(43)
-            if fatal:
+            if 1 <= number <= 7:
                 bits.add(42)
         return bits
 
@@ -758,9 +767,47 @@ class Pass2:
         a symbol defined through an undefined one is only complete, and so only
         contagious, after the second UITER."""
         self.val.flags = 0
+        before = self.running
         pending = self._unit_b(unit, pending)
         self._or_flags(unit)
+        self._punch_unit(unit, before)
         return pending
+
+    def _punch_unit(self, unit, before):
+        """OUTPUT's punch buffer (punch.py): what this unit put out, in order."""
+        pu = self.punch
+        e = self._entry(unit)
+        printed = self.printed.get(unit)
+        kind = printed[0] if printed else None
+        if pu.unwritten:
+            return
+        if e.mcp:
+            pu.mcp += 1
+            return
+        if e.name in ("PUNFUL", "PUNORG", "PUNREL", "TLB"):
+            # Not written: the assembly goes on, and the deck says it is short.
+            pu.unwritten = e.name
+            return
+        if kind == "SLC":
+            pu.slc(unit)
+        elif kind == "END":
+            pu.end(unit, printed[2])
+        elif kind == "DR":
+            pu.reserve(unit, printed[1], printed[2], e.name == "DRZ", before)
+        elif self.running != before:
+            start = before
+            if kind in ("INSTR", "NUM", "ALPHA") and printed[1] < before:
+                start = printed[1]
+            n = self.running - start
+            if n > 0:
+                pu.data(unit, start, n, self._image_bits(start, n))
+
+    def _image_bits(self, at, n):
+        v = 0
+        words = self.image.words
+        for k in range(at, at + n):
+            v = (v << 1) | ((words.get(k // 64, 0) >> (63 - k % 64)) & 1)
+        return v
 
     def _unit_b(self, unit, pending):
         u = self.units

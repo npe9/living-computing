@@ -43,8 +43,9 @@ The known difference: `strap_asm` puts a NOP in a half word rounded over before
 a DR(N) or DRZ(N), and p.33 makes only a CNOP a NOP. strap2 follows the guide. No
 listing prints those halves, so no oracle can decide.
 
-**Not yet written:** DDI; NMCP's card image and all punching, so a REEL or IOD
-compiles but no deck comes out; the MIBA and MBSPEC corrections; the coprocessor;
+**Not yet written:** DDI; NMCP's card image (IOD and REEL cards), the GO and LIM
+cards, PUNFUL, PUNORG, PUNREL, TLB, the relocatable cards and PUNID's
+identification columns; the MIBA and MBSPEC corrections; the coprocessor;
 DUPLI; relocation; subscripts with dimensions; the system symbols' register-length
 dds; PRNTALL's whole-table print; `$INF` (N28-1081 page 20 adds it, 12, infinity);
 the listing's page headings after the first; the field number in an error record
@@ -72,10 +73,23 @@ p.74), the same program in the 1963 form, all 25 lines, its NULL, bounds and hea
 C22-6678-1 p.48 (1964), 69 lines, from its own IOD and PRNS cards. `form=`, `mark=` and
 `quote=` select the line mark, comment mark, heading and lower bound, which changed at
 different times. The print positions are CHOSEN. Left unreproduced: the blank line after
-Fig. 3's line 13; Appendix E line 13's `-` in the NAME column; and the second `*` after
-the location on p.48's and Appendix E's lines. The update says that `*` marks a line with
-an error; in both prints it falls exactly where OUTPUT must punch a binary card
-(`pass2.md` section 12), to be tested once punching is written.
+Fig. 3's line 13; Appendix E line 13's `-` in the NAME column; and p.48's second `*` on
+line 2 (PRNS).
+
+**The binary deck and the second `*`** (`punch.py`, `tests/check_strap2_punch.py`).
+OUTPUT puts each unit's binary in the punch buffer and punches absolute origin, flow and
+branch cards by C28-6129 pp.22-23 and the update's errata (736 bits on an origin card,
+800 on a flow card, END with no address to 41.8) and chart OV for DR and DRZ. The column
+and row convention and the check sum are MCP's loader's, as `../bss_loader_spec.md`
+reads them; no loader path has run yet. Every deck in `decks/` but five (four PUNFUL,
+one PUNORG, not written) punches a deck which, decoded from the columns and loaded,
+gives its assembled image bit for bit, 725 of them. The punch events reproduce the
+second `*` the 1963 and 1964 prints show after the location: Appendix E's lines 17, 19,
+23 and 25, and p.48's CW, BUF1, EPGK, MESG and END, every marked located line in both,
+and no other. The update's text says that `*` marks a line with an error; the prints say
+a punched card (DERIVED). Both are kept, `star="punch"` and `star="error"`. p.48's mark
+on line 2, after the IOD card, is the one the punch does not place: the IOD card is
+listed and punched at its own unit (chart OP boxes 15, 16).
 One row is pinned against the page: p.48 line 5 prints `LVE,,CW+1.0` as `...01 80`,
 where the pocket card and MCP's own listing give `B0`
 (`tests/verify_mcpref_example2_listing.py`).
@@ -92,7 +106,9 @@ and the circular after the statements, and gives message 131 for a legal multipl
 Messages 11 and 21, which strap2 had invented, are gone: the guide's list (pp.176-179)
 and the update's revised Appendix D (N28-1081 pp.13-15) have 11 as SPARE and 21 in
 a spare block (20-28 in the guide, 19-28 in the update). (The 1961 Appendix D, C28 p.54, numbers differently: there 11
-is ASSEMBLY ERROR and 21 an improper first character, the later 29.) `assemble(strict=True)` now refuses what would set COMREC 7.41 or 7.42 (p.8).
+is ASSEMBLY ERROR and 21 an improper first character, the later 29.) `assemble(strict=True)` refuses every message the host marks fatal, and COMREC
+7.41 (p.8). COMREC 7.42 is p.8's list, which is messages 1-7 in order (DERIVED):
+not the serious messages, and not the host's fatal.
 **No surviving listing prints a flag or a list**, and MCP's listing predates the
 update (`../NEXT.md`), so this is checked against text and charts only.
 

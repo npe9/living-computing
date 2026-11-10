@@ -25,12 +25,14 @@ MEASURED INJECTIONS, 2026-11-09, PYTHONDONTWRITEBYTECODE=1, control all passing:
   host's text printed, not the table's:  A2, B1
   update's list ignored (guide's used):  B1
   error list after the seconds:          C1
-  no extra '*' in the 1963 form:         D1
-  extra '*' in the 1961 form too:        D2
+  no extra '*' with star="error":        D1
+  extra '*' with no star too:            D2
   serious bounds swapped:                F1, F2
   91 recorded in 2a as well:             A1, A2, A4
   121 recorded in 2a as well:            G1
   121 with no unit:                      G1
+  7.42 from the host's fatal:            H2
+  7.42 never set:                        H1
 """
 import os
 import sys
@@ -100,11 +102,12 @@ ix = {k: next(i for i, t in enumerate(text) if t.startswith(k))
 check("C1 lists, errors, seconds",
       ix["SYMBOLS DEFINED BUT NOT USED"] < ix["PAGE "] < ix["    THIS ASSEMBLY"], True)
 
-# D. The extra '*' (N28-1081 page 13), on each line an error references.
-t63 = listing(mark="*", quote="-", form="1963").text().splitlines()
-check("D1 1963: '**' on exactly the lines errors reference",
+# D. The extra '*' as N28-1081 page 13 states it (star="error"), on each line an
+# error references.
+t63 = listing(mark="*", quote="-", form="1963", star="error").text().splitlines()
+check("D1 star=error: '**' on exactly the lines errors reference",
       [t[:4] for t in t63 if t[2:4] == "**"], [" 2**", " 3**", " 4**"])
-check("D2 1961: none", [t for t in text if t[2:4] == "-*"], [])
+check("D2 no star: none", [t for t in text if t[2:4] == "-*"], [])
 
 # E. A clean deck prints no error list.
 clean = compile_cards([card("", "SLC,64."), card("", "B,0"), card("", "END,0")])
@@ -121,6 +124,13 @@ check("F4 a spare prints SPARE", message(21, "N28-1081"), "SPARE  21")
 twice = compile_cards([card("", "SLC,64."), card("", "INDMK,3,3"), card("", "END,0")])
 tl = listing_of(twice, twice.p1.print_names)
 check("G1 121 once, on line 2", tl.records, [(1, 2, 0, 121)])
+
+# H. COMREC 7.42 (p.8): messages 1-7, not the serious list nor the host's fatal.
+check("H1 the deck's 1 sets 42", 42 in p2.comrec_errors(), True)
+syn = compile_cards([card("", "SLC,64."), card("", "SYN"), card("", "END,0")])
+check("H2 43 and 44 alone do not", (sorted(m[0] for m in syn.msg.items),
+                                     42 in syn.comrec_errors(), 43 in syn.comrec_errors()),
+      ([43, 44], False, True))
 
 print("errprt: FAILED" if fails else "errprt: all passed")
 sys.exit(1 if fails else 0)

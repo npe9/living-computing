@@ -1098,9 +1098,18 @@ Read at 220 dpi, with C28 p.19 Fig. 3 (1963) alongside.
     FOX, ZEBRA, SOME OTHER LONG NAME) and 25 (END); none on any instruction, DD, XW or SYN. Every starred line in both prints is one at which OUTPUT must punch:
     a DR with data in the buffer (p.158 boxes 6-13: BUF1, MESG, FOX, ZEBRA, SOME OTHER LONG NAME), END's final card (OP15), or a card filled: 736 information bits, 23
     half-words (C28 p.22, and the errata's "0 to 736"), and CW at 000054.00 and EPGK at 000131.00 are each the 23rd half-word from a card's start (41.00, 116.00).
-    The unstarred DRs, BUF2 and EXIT, follow a DR with nothing between (box 8: "the DR length can be added to the previous DR length"). Line 2's PRNS follows the
-    IOD card, which is punched (MCP cards). The earlier rejection of the card reading, "116 to 131 is only 18 half-words", miscounted: it is 22 half-words, so 131.00 is
-    the 23rd. Testable once OPPUN is written; it must give exactly these ten lines.
+    The unstarred DRs, BUF2 and EXIT, follow a DR with nothing between (box 8: "the DR length can be added to the previous DR length"). The earlier rejection of
+    the card reading, "116 to 131 is only 18 half-words", miscounted: it is 22 half-words, so 131.00 is the 23rd. A flow card holds 25 half-words (C28 p.23,
+    columns 5.4-71.11): the flow card from 131.40 is cut by MESG's DR before it fills.
+    Chart OV p.155 (read in the ink) refines the event: a DR after data, with no DR in process, sets the card to "skip after loading" (boxes 10, 12, 13) and
+    does not punch; the punch comes at the next DR (boxes 6, 7, 5) or when the card fills. So BUF2 physically punches the card BUF1 closed. The mark follows
+    the line at which a card is CLOSED (full; a DR attached; END), not the punch.
+    **Not placed by this reading: line 2 (PRNS).** Chart OP lists and punches an IOD card at its own unit (boxes 16, 15), which is line 1; Appendix E's line 2,
+    also PRNS, has no mark. Unless NMCPA1's GO and LIM cards (p.148), made on Pass 2b's first unit, close there, it is unexplained.
+    **Tested, 2026-11-09** (`strap/strap2/punch.py`, `tests/check_strap2_listing.py`): the punch, written from C28 pp.22-23, the errata and chart OV,
+    punches on exactly those nine lines and no other in both listings. On the events, one correction to the above: a DR after data punches at once (the card
+    takes the skip after loading and goes out), or Appendix E's XW at 112.00 would have to punch the card FOX closed, and line 18 has no mark. So BUF1 punches
+    and BUF2 adds its length to the next card's skip (box 8).
 - Apostrophe after each statement: guide silent here. Deck's header reads it as C28 p.2's comment mark.
 - STRAP II's own heading is printed in N28-1081's Appendix E: `TIME CLOCK`, `PUNID`, `CARD ID`, `DIST. OF 3/01`, `3/01`, `PAGE NUMBER 1`, then `LINE LOCATION
   BINARY OUTPUT NAME STATEMENT ... LOCATION 000100`, the slots p.165 lists. So p.48's JOB/TIME/DATE/VERSION block above is MCP's, and the figure cropped STRAP's heading

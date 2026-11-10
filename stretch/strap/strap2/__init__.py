@@ -40,8 +40,10 @@ def assemble(source, origin_bits=None, strict=True):
     flagged as an error, which the shim needs in place of reading a listing."""
     p2 = compile_cards(deck_cards(source), origin_bits)
     if strict:
-        # What would reject a COMPILGO's GO phase: COMREC 7.41 or 7.42 (p.8,
-        # N28-1081 page 7).
+        # What would reject a COMPILGO's GO phase is COMREC 7.41 or 7.42 (p.8,
+        # N28-1081 page 7).  This refuses more: every message the host marks
+        # fatal (a host rule, CHOSEN: strap_asm's oracles expect an error to stop
+        # the assembly), then 7.41.  7.42 is messages 1-7, all fatal here.
         for number, text, _unit, fatal in p2.msg.items:
             if fatal:
                 raise StrapError(f"message {number}: {text}")

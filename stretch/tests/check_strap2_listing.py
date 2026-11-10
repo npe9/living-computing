@@ -159,8 +159,9 @@ APPE_CARDS = [
 
 # Every field as printed.  NOT REPRODUCED, and so not compared: line 13's '-' in
 # the NAME column (a continuation card's columns 2-9 continue the name, p.79, so
-# no card gives it), and the second '*' after the location on lines 17, 19, 23
-# and 25 (docs/strap2/pass2.md section 12).  Line 16's exponent prints C022 on a
+# no card gives it).  The second '*' after the location, on lines 17, 19, 23 and
+# 25, is compared as the lines at which OUTPUT punches a card (punch.py, DERIVED;
+# docs/strap2/pass2.md section 12).  Line 16's exponent prints C022 on a
 # chain whose 0 is open, as every 0 on the page is.
 APPE = [
     (1, "000100.00", "", "", "SLC,64. -"),
@@ -261,19 +262,21 @@ def run_appe():
     p2 = compile_cards(APPE_CARDS)
     fatal = [m for m in p2.msg.items if m[3]]
     check("App. E assembles with no error", fatal, [])
-    lst = listing_of(p2, p2.p1.print_names, mark="*", quote="-", form="1963")
+    lst = listing_of(p2, p2.p1.print_names, mark="*", quote="-", form="1963", star="punch")
     check("App. E line count", len(lst.lines), len(APPE))
     for ln, want in zip(lst.lines, APPE):
         n, a, b, name, s = ln.fields()
         check(f"App. E line {want[0]}", (n, a, b, name, squeeze(s)), want)
     check("App. E line 3 prints NULL", lst.lines[2].dds, "NULL")
+    check("App. E: the second '*' on the lines that punch a card",
+          [ln.number for ln in lst.lines if ln.punched], [17, 19, 23, 25])
     low, high = lst.bounds()
     check("App. E LOWER MEMORY BOUND", loc(low), "000100.00")
     check("App. E UPPER MEMORY BOUND", loc(high), "000115.00")
     text = lst.text("00005162", 0)
     for frag in ("TIME CLOCK 00005162", "PAGE NUMBER 1", "LOCATION 000100",
                  "LINE LOCATION BINARY OUTPUT NAME STATEMENT",
-                 "000100.00 LOWER MEMORY BOUND", " 1* 000100.00"):
+                 "000100.00 LOWER MEMORY BOUND", " 1* 000100.00", "17* 000111.00 *"):
         check(f"App. E prints {frag!r}", frag in squeeze(text) or frag in text, True)
     return lst
 
@@ -286,7 +289,10 @@ def run_p48():
     cards = ["BRON      IOD,TAPE,EXIT,,,ODD,HD,CSAVE", card("", "PRNS")]
     p2 = compile_cards(cards + deck_cards("\n".join(kept)))
     check("p.48 assembles with no error", [m for m in p2.msg.items if m[3]], [])
-    lst = listing_of(p2, p2.p1.print_names, mark="*")
+    lst = listing_of(p2, p2.p1.print_names, mark="*", star="punch")
+    check("p.48: the second '*' on the located lines that punch a card",
+          [ln.location for ln in lst.lines if ln.punched],
+          ["000054.00", "000056.00", "000131.00", "000142.00", "000145.00"])
     check("p.48 line 1", lst.lines[0].fields()[1:4] , ("", "", "RON"))
     check("p.48 line 2", lst.lines[1].fields()[1:], ("", "", "", "PRNS"))
     lines = lst.lines[2:]

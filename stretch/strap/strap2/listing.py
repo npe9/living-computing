@@ -64,13 +64,17 @@ page and line of the last line its statement occupies (C28-6129 p.20), Fig. 6's
 page, line, field and number; ERRPRT sorts them into page and line sequence and
 prints them after the symbol lists, before the seconds.  A message with no unit
 (MACHER's, p.173) takes page and line 0 and sorts first.  The text is the
-number's own, from `errtab`, in the list `errors=` names.  The 1963 form also
-prints an extra '*' after the line number and its '*' on every line an error
-references (N28-1081 page 13).  CHOSEN: the error line's layout, PAGE, LINE and
-FIELD with the message; and no limit on the list, so the message for errors
-not listed, p.158 box 35, is never printed.  The second '*' after the LOCATION
-on the printed 1963 and 1964 listings is another mark (docs/strap2/pass2.md
-section 12) and is not printed.
+number's own, from `errtab`, in the list `errors=` names.  CHOSEN: the error
+line's layout, PAGE, LINE and FIELD with the message; and no limit on the list,
+so the message for errors not listed, p.158 box 35, is never printed.
+
+The second '*'.  N28-1081 page 13 says "an extra asterisk is printed following
+the line number and asterisk on all lines containing an error"; the 1963 and
+1964 prints show it after the LOCATION, and on exactly the lines at which
+OUTPUT punches a card (punch.py; docs/strap2/pass2.md section 12; DERIVED).
+Both are kept: `star="punch"` prints it after the location of a unit that
+punched a card, as the prints do; `star="error"` prints it after the line mark
+on each line an error references, as the text says.  None prints neither.
 """
 from .unit import ZILCFD, ZILSST, FIXED_BITS, ZIFLAGS
 from .value import flag_names
@@ -135,6 +139,7 @@ class Line:
         self.dds = ""
         self.page = None
         self.error = False
+        self.punched = False
         self.number = None
 
     def fields(self):
@@ -143,9 +148,13 @@ class Line:
 
 class Listing:
     def __init__(self, p2, names, mark="-", lines_per_page=None, quote=None, form="1961",
-                 errors="C22-6729"):
+                 errors="C22-6729", star=None):
         if form not in ("1961", "1963"):
             raise ValueError(f"no printed form {form!r}")
+        if star not in (None, "punch", "error"):
+            raise ValueError(f"star {star!r}: None, 'punch' or 'error'")
+        self.star = star
+        self.punched_units = {u for u, _ in p2.punch.events}
         message(1, errors)
         self.p2, self.names, self.mark, self.form = p2, names, mark, form
         self.errors = errors
@@ -190,6 +199,7 @@ class Listing:
         printed = p2.printed.get(unit)
         name, symbol = self.names.get(unit, ("", ""))
         stmt = self.statement_lines(unit)
+        mark_from = len(self.lines)
         flags = flag_names(p2.units.get(unit, ZIFLAGS))
         if flags:
             self.add(Line(flags=flags))
@@ -249,6 +259,10 @@ class Listing:
         for ln in extra:
             self.add(ln)
         self.last_of[unit] = self.lines[-1]
+        if unit in self.punched_units:
+            located = [ln for ln in self.lines[mark_from:] if ln.location]
+            if located:
+                located[0].punched = True
 
     def bounds(self):
         im = self.p2.image
@@ -311,9 +325,10 @@ class Listing:
                 out.append(" " * LOC + " ".join(ln.flags))
                 continue
             head = f"{ln.number:2d}{self.mark}"
-            if ln.error and self.form == "1963":
+            if ln.error and self.star == "error":
                 head += "*"
-            s = (head.ljust(LOC) if len(head) < LOC else head + " ") + ln.location.ljust(BIN - LOC)
+            where = ln.location + (" *" if ln.punched and self.star == "punch" else "")
+            s = (head.ljust(LOC) if len(head) < LOC else head + " ") + where.ljust(BIN - LOC)
             if ln.right:
                 s += ln.binary.rjust(40 - BIN).ljust(NAME - BIN)
             elif ln.dds:
@@ -344,5 +359,5 @@ class Listing:
 
 
 def listing_of(p2, names, mark="-", lines_per_page=None, quote=None, form="1961",
-               errors="C22-6729"):
-    return Listing(p2, names, mark, lines_per_page, quote, form, errors).build()
+               errors="C22-6729", star=None):
+    return Listing(p2, names, mark, lines_per_page, quote, form, errors, star).build()

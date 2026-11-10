@@ -1636,6 +1636,7 @@ run "STRAP II origin, location counters, tails, unit bits, UITER rules, by hand"
 run "STRAP II listing against C28-6129 Fig. 3 and C22-6678-1 p.48, and MIOD" python3 check_strap2_listing.py
 run "STRAP II error flags, MULTI and NUNDSY, from C28-6129 pp.20-21, N28-1081 p.7 and C22-6729" python3 check_strap2_flags.py
 run "STRAP II error list: ERRNUM and ERRPRT, C22-6729 pp.37-39, 158, 176-179 and N28-1081 pp.13-15" python3 check_strap2_errprt.py
+run "STRAP II binary deck: origin, flow and branch cards, C28-6129 pp.22-23 and errata, chart OV; every deck loads to its image" python3 check_strap2_punch.py
 run "STRAP II numeric DD (MQDD, MQDNUM, DNUM, Fig. 26) against C28-6129's examples and p.359" python3 check_strap2_dd.py
 run "STRAP II against the listing oracles and strap_asm's images" python3 check_strap2_oracles.py
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
