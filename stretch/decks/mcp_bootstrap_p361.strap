@@ -51,7 +51,8 @@
 ! now take CC (C28-6129 p.16: each character its card column's
 ! punches, App. F p.56; the bit order row 12 high is DERIVED).  ONE
 ! stand-in stays: "SLC, (8)236425.31", the counter the page before leaves
-! (the JOIN above), since this deck is assembled alone.
+! (the JOIN above), since this deck is assembled alone.  It stands
+! BEFORE the PUNFUL, so it is not the chart OS "1ST SLC" under PUNFUL.
 !
 ! THE COLUMNS.  Line 2's printed span 236425.31 -> 236435.65 is 540
 ! bits = 45 twelve-bit characters, and with line 3 the two make
@@ -117,8 +118,8 @@ ZTCC    SYN, (8)235473.40            ! not landed; B line 37 235473.50, half wor
 ZABEND  SYN, (8)234744.0             ! not landed; B line 38 234744.10, half word only
 VVCOMJ  SYN, (8)235540.40            ! not landed; B line 39 235540.50, half word only
 
-        PUNFUL                                               ! line  1
         SLC, (8)236425.31            ! STAND-IN for the counter the page before leaves: this line's printed location -- see header
+        PUNFUL                                               ! line  1
         (CC*)DD(BU,,12),B        HED, REP, 22SCOMD, LOAD,,           *   ! line  2 printed "22SCCMD"
         (CC*)DD(BU,,12),                           22SCOMD*   ! line  3
         PUNORG                                               ! line  4

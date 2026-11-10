@@ -39,24 +39,30 @@
 ! ---------------------------------------------------------------
 ! SUBSTITUTIONS AND OMISSIONS
 ! ---------------------------------------------------------------
-! (1) LINES 9 AND 10 ARE NOT TRANSCRIBED, and this is an ASSEMBLER
-!     LIMITATION, not a reading.  Both are
-!     "(CC*)DD(BU,,12),<card image>" -- line 9's datum begins
-!     "B      HED, REP, 11D11MCP, LOAD," and line 10's is an
-!     11D11MCP trailer.  strap_asm.entry_table raises "entry mode
-!     'CC' is not implemented ... CC's 12-bit card code is tabulated
-!     in no document read so far".  Printed p.15's deck already set
-!     this precedent and for the same reason, and it costs nothing
-!     here: the two card images occupy 005466.00 to 005476.34 and
-!     line 11's SLC moves the counter to 215000.00 regardless, and
-!     no symbol on this page depends on either.
+! (1) LINES 7-10 ARE TRANSCRIBED SINCE 2026-11-10: PRNS, PUNFUL and the
+!     two "(CC*)DD(BU,,12)" header cards, "B        HED, REP, 11D11MCP,
+!     LOAD,," and the 11D11MCP card, at 005466.00 and 005476.34.  They
+!     were left out while strap_asm refused entry mode CC.
+!     Their blanks are MEASURED in the ink (PDF 106 at 300 dpi, the
+!     print's fixed pitch of 30 px per cell): "B" in cell 16, "HED" from
+!     cell 25, the "*" in cell 61; the second's name from cell 43 and its
+!     "*" in 51.  So 8 blanks after the B, 27 before the name: MCP's
+!     control-card form (C22-6678-1 pp.7-10), the name in columns
+!     73-80.  The 45 characters of the first are also fixed by the
+!     printed locations.  tests/check_strap2_punch.py A4-A7.
+!     Under PUNFUL they are punched as one full card and NOT loaded
+!     (C28-6129 pp.23, 36).  ONE STAND-IN: "SLC, (8)5466.0" before them,
+!     X IN END, the counter p.98 leaves (p.98 ends with UNTAIL, not END:
+!     one assembly).  Line 11's SLC then comes under PUNFUL, the chart OS
+!     "1ST SLC" (C22-6729 p.152): it stores the counter and punches no
+!     zeros -- which is what fixes "1ST" as first since PUNFUL (see
+!     strap/strap2/punch.py slc).
 !
-! (2) LINES 1-8 AND 15-18 COMPILE NOTHING AND ARE NOT TRANSCRIBED:
+! (2) LINES 1-6 AND 15-18 COMPILE NOTHING AND ARE NOT TRANSCRIBED:
 !     1-6 are the title block (IBM 7030 MASTER CONTROL PROGRAM /
 !     INTERNATIONAL BUSINESS MACHINES CORP. / DEPT. 271, BLDG. 705 /
-!     POUGHKEEPSIE,N.Y. / MARCH 15, 1963), 7 is PRNS, 8 is PUNFUL,
-!     and 15-18 are the asterisk box around the heading.  The deck
-!     starts at the SLC, as printed p.15's does.
+!     POUGHKEEPSIE,N.Y. / MARCH 15, 1963), and 15-18 are the asterisk
+!     box around the heading.
 !
 ! (3) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
 !     p.2.  The NAME column prints "S UN A A", "S CH AVL", "S CH OP",
@@ -167,6 +173,11 @@
 ! 10 carry a SECOND asterisk, in the location column, which is the
 ! familiar one.  No asterisk changes a compiled bit.
 
+        SLC, (8)5466.0              ! STAND-IN: X IN END, the counter p.98 leaves (one assembly, no END); line 9 prints 005466.00
+        PRNS                        ! line  7
+        PUNFUL                      ! line  8
+        (CC*)DD(BU,,12),B        HED, REP, 11D11MCP, LOAD,,          *   ! line  9  005466.00
+        (CC*)DD(BU,,12),                           11D11MCP*   ! line 10  005476.34
         SLC, (8)215000.0            ! line 11 -80K
 
         PUNORG                      ! line 12

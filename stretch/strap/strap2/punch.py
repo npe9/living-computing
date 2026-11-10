@@ -118,6 +118,7 @@ class Punch:
         self.noseq = False      # NOSEQ, until RESEQ
         self.punorg = False     # PUNORG, until PUNNOR
         self.punful = False     # PUNFUL, until PUNNOR, PUNORG or PUNREL
+        self.full_slc = False   # PUNFUL: an SLC has been seen (chart OS "1ST SLC")
         self.full_at = None     # PUNFUL: the bit the next full-card bit is
         self.full_bits, self.full_value, self.full_origin = 0, 0, None
         self.count = 0          # the sequence number of the last card
@@ -289,13 +290,22 @@ class Punch:
 
     def slc(self, unit, value=None):
         """Chart OS (C22-6729 p.152): with PUNFUL off an SLC forces an origin
-        card.  With PUNFUL on: the first SLC stores the new value; one equal to
+        card.  With PUNFUL on: the first SLC (since PUNFUL; see below) stores the new value,
+        whatever was punched before it; one equal to
         the counter does nothing; one above it has the difference processed as
         a DRZ in PUNFUL mode; one below turns on the low-SLC indicator and keeps
         the counter for comparison.  NOT WRITTEN: what OUTPUT does after a low
         SLC (no chart page shows the comparison); the deck stops there."""
         if self.punful and value is not None:
-            if self.full_at is None:
+            if not self.full_slc:
+                # "1ST SLC" is asked before any comparison.  The chart names no
+                # scope; READ as first since PUNFUL was turned on, because MCP
+                # printed p.99 needs it: pp.2-98 and p.99 are one assembly
+                # (p.98 ends with UNTAIL, not END, and p.99 line 9 opens at
+                # 005466.00 = X IN END), SLCs on pp.2 and 15 come before it,
+                # and an assembly-wide "first" would punch line 11's jump from
+                # 005476.34 to 215000.00 as some 14,000 full cards of zeros.
+                self.full_slc = True
                 self.full_at = value
             elif value < self.full_at:
                 self.unwritten = "PUNFUL low SLC"
@@ -334,6 +344,7 @@ class Punch:
         self.suppressed = False
         self.punful = True
         self.full_at = None
+        self.full_slc = False   # chart OS "1ST SLC"
 
     def _end_full(self, unit):
         self._punch(unit)

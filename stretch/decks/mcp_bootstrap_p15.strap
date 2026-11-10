@@ -11,16 +11,25 @@
 ! THE PAGE IS TWO THINGS AND ONLY THE SECOND ASSEMBLES
 ! ---------------------------------------------------------------
 ! Lines 1-6 are punch control -- PUNFUL, two (CC*)DD card images
-! (the "HED,REP,11C11IPL,LOAD,," header card and an 11C11IPL
-! trailer), PUNORG, "PUNID,11C11IPL" and RESEQ.  They change what
-! STRAP punches, not what it assembles, which is why printed
-! pp.3-15 and pp.16+ are ONE assembly punching TWO decks (see
-! mcp_bootstrap_p13.strap's header).  The two card images DO move
-! the location counter -- the listing prints 000621.00 for line 2
-! and 000631.34 for line 3 -- and line 7, "SLC,X BS END", puts it
-! straight back to 000621.00, so the card images are overlaid by
-! the code that follows and nothing of them survives.  This deck
-! starts at the SLC for that reason.
+! ("B        HED,REP,11C11IPL,LOAD,," and the 11C11IPL card), PUNORG,
+! "PUNID,11C11IPL" and RESEQ.  They change what STRAP punches, not
+! what it loads, which is why printed pp.3-15 and pp.16+ are ONE
+! assembly punching TWO decks (see mcp_bootstrap_p13.strap's header).
+! The card images move the location counter -- the listing prints
+! 000621.00 for line 2 and 000631.34 for line 3 -- and line 7, "SLC,X
+! BS END", puts it straight back to 000621.00: the code that follows
+! is assembled over them.  Under PUNFUL they are punched as one full
+! card and NOT loaded (C28-6129 pp.23, 36), so nothing of them is in
+! the image.  TRANSCRIBED SINCE 2026-11-10 (left out while strap_asm
+! refused entry mode CC), behind ONE STAND-IN, "SLC, (8)621.0": the
+! counter printed p.14 leaves.
+! Their blanks are MEASURED in the ink (PDF 22 at 300 dpi, the
+! print's fixed pitch of 30 px per cell): "B" in cell 16, "HED" from
+! cell 25, the "*" in cell 61; the second's name from cell 43 and its
+! "*" in 51.  So 8 blanks after the B, 27 before the name: MCP's
+! control-card form (C22-6678-1 pp.7-10), the name in columns
+! 73-80.  The 45 characters of the first are also fixed by the
+! printed locations.  tests/check_strap2_punch.py A4-A7.
 !
 ! Line 14's CNOP is a no-op here: 000621.00 is already a word
 ! boundary.  It is transcribed as the listing prints it.
@@ -99,6 +108,13 @@ XERROR  SYN, (8)133.0
 SMCP    SYN, (8)2150.0     ! read off line 21's binary output
 SROOF   SYN, (8)2162.0     ! read off line 23's binary output
 
+        SLC, (8)621.0      ! STAND-IN: the counter printed p.14 leaves (X BS END); line 2 prints 000621.00
+        PUNFUL             ! line  1
+        (CC*)DD(BU,,12),B        HED,REP,11C11IPL,LOAD,,             *   ! line  2  000621.00
+        (CC*)DD(BU,,12),                           11C11IPL*   ! line  3  000631.34
+        PUNORG             ! line  4
+        PUNID,11C11IPL     ! line  5
+        RESEQ              ! line  6
         SLC, (8)621.0      ! line 7  "SLC,X BS END"
         CNOP               ! line 14 -- already on a word boundary
 

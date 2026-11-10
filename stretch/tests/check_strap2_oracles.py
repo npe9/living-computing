@@ -16,9 +16,10 @@ Injections, measured 2026-11-09, each reverted from a saved copy and compared
   XW refill taken as 24 bits      121
   .L not counted in words         377
   a 19-bit integer scaled         35
-Measured 2026-11-10: strap2.assemble leaving the PUNFUL full cards in its
-loaded image fails the image comparison on exactly mcp_bootstrap_p320, p335,
-p361 and p381 (9 words each, the HED control cards).
+Measured 2026-11-10: STRAP II assembling what is under PUNFUL into its image
+(pass2.unit_b's scratch image removed) fails the image comparison on
+mcp_bootstrap_p99, p320, p335, p361 and p381 (the HED control cards), and
+pp.2 and 15 refuse outright: their program is assembled over those bits.
 """
 import glob
 import os

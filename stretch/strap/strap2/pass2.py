@@ -68,6 +68,7 @@ class Pass2:
         self.undef_at = None
         self.printed = {}       # what OUTPUT prints for a unit, listing.py
         self.punch = Punch(edition)     # OUTPUT's binary cards, punch.py
+        self._full_image = None         # PUNFUL's bits: punched, not loaded
         self.spnus = False      # NSPRES, p.35: SPNUS seen
         self.val.multi_ref = F_CONTAG if edition == "N28-1081" else F_MULTI
 
@@ -779,9 +780,25 @@ class Pass2:
         contagious, after the second UITER."""
         self.val.flags = 0
         before = self.running
-        pending = self._unit_b(unit, pending)
-        self._or_flags(unit)
-        self._punch_unit(unit, before)
+        # WHAT IS ASSEMBLED UNDER PUNFUL IS NOT LOADED (C28-6129 pp.23, 36): it
+        # goes on full cards.  Its bits are kept in a scratch image the punch
+        # reads, so code assembled over them later (MCP printed pp.2, 15: the
+        # header DDs at 000041.00 and 000621.00, overlaid by the program) is
+        # not an overlap.  The SLC skips stay the real image's.
+        loaded = self.image
+        if self.punch.punful:
+            if self._full_image is None:
+                self._full_image = _a.Image()
+                self._full_image.skips = loaded.skips
+            self.image = self._full_image
+        else:
+            self._full_image = None
+        try:
+            pending = self._unit_b(unit, pending)
+            self._or_flags(unit)
+            self._punch_unit(unit, before)
+        finally:
+            self.image = loaded
         return pending
 
     def _punch_unit(self, unit, before):

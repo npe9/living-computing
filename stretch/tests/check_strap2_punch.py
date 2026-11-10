@@ -86,8 +86,8 @@ MEASURED 2026-11-10 for F (A-E passing in each but where named):
   G  PUNFUL (chart OR p.151, OS p.152, OV boxes 1-2 p.158; C28-6129 pp.23, 36)
      and entry mode CC (C28-6129 p.16; App. F p.56), read in the ink 2026-11-10.
      A's decoder skips a card whose column 1 is not a binary card's, as MCP's
-     loader cannot load a PUNFUL card (C28 p.23); A4 checks each such card's 80
-     columns against the image.  MEASURED (A-F passing but where named):
+     loader cannot load a PUNFUL card (C28 p.23); A5 reads each such card.
+     MEASURED (A-F passing but where named):
   CC rows reversed (row 9 high):           G1, G4
   a full card numbered like a binary card: G2
   no 84:                                   G3
@@ -100,14 +100,24 @@ MEASURED 2026-11-10 for F (A-E passing in each but where named):
   no 127:                                  G5
   a low SLC accepted:                      G6
   PUNFUL does not end NOPUN:               G7
-  A5-A7: the four decks' (CC*)DD header statements, assembled since
-     2026-11-10 (they were comments behind SLC stand-ins).  MEASURED:
+  A4-A7: MCP's seven PUNFUL header cards (printed pp.2, 15, 99, 320, 335, 361,
+     381), assembled since 2026-11-10 (they were comments or omitted).  The
+     A-column entries above were measured when A4 still loaded each full card
+     into memory and compared it with the image; since STRAP II keeps PUNFUL
+     data out of its image, A4 counts full cards and A5 reads them.  MEASURED
+     for the four overlay decks:
   the decks as they were (stand-ins):      A5, A7
   p.320 line 2 one column short:           A5, A7
   strap_asm loads what is under PUNFUL:    A6 (check_mcp_body_image also
                                            fails $DUMP, SCOMD and $EOJ;
                                            LOADER's card is past Y MPBUF)
   CC rows reversed (row 9 high):           A5, G1, G4
+  and for all seven:
+  pp.2, 15, 99 as they were (omitted):     A4, A5, A7
+  STRAP II puts PUNFUL data in its image:  A1, A2, A4, A5 (pp.2 and 15 then
+                                           refuse: the program overlays them)
+  "1ST SLC" read as "no data yet":         A4 (p.99 punches its SLC's jump
+                                           as full cards), G8
 """
 import glob
 import os
@@ -220,10 +230,11 @@ def one(path):
     inv = {hollerith.column_bits(ch): ch for ch in " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.()*/$=+-'"}
     for c, cols in zip(p2.punch.cards, images):
         if c.kind == "full":
-            # A PUNFUL card is not loaded; its 80 columns are the image's bits.
+            # A PUNFUL card is not loaded (C28-6129 p.23), and since 2026-11-10
+            # STRAP II keeps what it assembles under PUNFUL out of its image
+            # (pass2.unit_b), so the decoded cards and the image agree without
+            # it.  A5 checks what the card says.
             full.append("".join(inv.get(x, "?") for x in cols))
-            for k in range(960):
-                mem[c.origin + k] = (cols[k // 12] >> (11 - k % 12)) & 1
     diff = image_differences(p2, mem)
     want = None if p2.end_pc is None else p2.end_pc * 32
     if bad or diff or (want is not None and branch != want):
@@ -246,40 +257,51 @@ if __name__ == "__main__":
     check("A1 decks whose cards load to their image", counts.get("same", 0), 730)
     check("A2 none differ", counts.get("differs", 0), 0)
     check("A3 none stops", sorted(unwritten), [])
-    check("A4 the four MCP decks with PUNFUL open with one full card each, the image's bits",
-          sorted((b, len(t)) for b, t in fulls),
-          [("mcp_bootstrap_p320.strap", 1), ("mcp_bootstrap_p335.strap", 1),
-           ("mcp_bootstrap_p361.strap", 1), ("mcp_bootstrap_p381.strap", 1)])
-    # Each is the "B HED, REP, <name>, LOAD,," control card (C22-6678-1 pp.7-10:
-    # B in column 1, the statement from column 10, the ID in 73-80), from the
-    # decks' own (CC*)DD statements (printed pp.320, 335, 361, 381), whose blanks
-    # were measured in the ink (the decks' headers).
-    hed = lambda nm: ("B" + " " * 8 + f"HED, REP, {nm}, LOAD,,").ljust(72) + nm.ljust(8)
-    check("A5 and reads back as the deck's HED control card",
-          sorted((b, t[0]) for b, t in fulls),
-          [("mcp_bootstrap_p320.strap", hed("22LOADER")), ("mcp_bootstrap_p335.strap", hed("22$DUMP")),
-           ("mcp_bootstrap_p361.strap", hed("22SCOMD")), ("mcp_bootstrap_p381.strap", hed("22$EOJ"))])
+    # MCP's seven PUNFUL header cards: the BSP, IPL and MCP decks' (printed pp.2,
+    # 15, 99) and the four overlays' (pp.320, 335, 361, 381).  Each is the "B HED,
+    # REP, <name>, LOAD,," control card (C22-6678-1 pp.7-10: B in column 1, the
+    # statement from column 10, the ID in 73-80), from the decks' own (CC*)DD
+    # statements, whose blanks were measured in the ink (the decks' headers).
+    # pp.2 and 15 print no blank after the commas.
+    names = {"p2": ("11E11BSP", False), "p15": ("11C11IPL", False), "p99": ("11D11MCP", True),
+             "p320": ("22LOADER", True), "p335": ("22$DUMP", True), "p361": ("22SCOMD", True),
+             "p381": ("22$EOJ", True)}
+    deck = lambda pg: f"mcp_bootstrap_{pg}.strap"
+    check("A4 the seven MCP decks with PUNFUL open with one full card each",
+          sorted((b, len(t)) for b, t in fulls), sorted((deck(pg), 1) for pg in names))
 
-    # The old assembler (strap_asm, scaffolding) on the same four decks: what
-    # is assembled under PUNFUL moves the counter and loads nothing.  The
-    # first header DD's printed location opens the 960 bits looked at; the
-    # second's printed location is where 45 columns of the first end.
-    spans, locs, printed = [], [], {
-        "p320": (0o236524 * 64, 0o236534 * 64 + 0o34), "p335": (0o236464 * 64 + 0o31, 0o236474 * 64 + 0o65),
-        "p361": (0o236425 * 64 + 0o31, 0o236435 * 64 + 0o65), "p381": (0o235570 * 64 + 0o10, 0o235600 * 64 + 0o44)}
+    def hed(nm, sp):
+        text = f"HED, REP, {nm}, LOAD,," if sp else f"HED,REP,{nm},LOAD,,"
+        return ("B" + " " * 8 + text).ljust(72) + nm.ljust(8)
+    check("A5 and reads back as the deck's HED control card",
+          sorted((b, t[0]) for b, t in fulls), sorted((deck(pg), hed(*v)) for pg, v in names.items()))
+
+    # The old assembler (strap_asm, scaffolding) on the same decks: what is
+    # assembled under PUNFUL moves the counter and loads nothing, and the two
+    # header DDs sit at their printed locations (the second is where 45
+    # columns of the first end).  On pp.2 and 15 the program is assembled over
+    # those addresses afterwards, so A6 looks at pp.99 and the overlays only.
+    printed = {"p2": (0o41 * 64, 0o51 * 64 + 0o34), "p15": (0o621 * 64, 0o631 * 64 + 0o34),
+               "p99": (0o5466 * 64, 0o5476 * 64 + 0o34),
+               "p320": (0o236524 * 64, 0o236534 * 64 + 0o34), "p335": (0o236464 * 64 + 0o31, 0o236474 * 64 + 0o65),
+               "p361": (0o236425 * 64 + 0o31, 0o236435 * 64 + 0o65), "p381": (0o235570 * 64 + 0o10, 0o235600 * 64 + 0o44)}
+    spans, locs = [], []
     real_iter = strap_asm.iter_statements
     for pg, (a, b) in printed.items():
         seen = []
         strap_asm.iter_statements = lambda src: seen.extend(real_iter(src)) or seen
         try:
-            prog = strap_asm.assemble(open(os.path.join(HERE, "..", "decks", f"mcp_bootstrap_{pg}.strap")).read())
+            prog = strap_asm.assemble(open(os.path.join(HERE, "..", "decks", deck(pg))).read())
         finally:
             strap_asm.iter_statements = real_iter
-        hit = [w for w in prog.written_words if a // 64 <= w < (a + 960 + 63) // 64]
-        spans.append((pg, hit))
+        if pg not in ("p2", "p15"):
+            spans.append((pg, [w for w in prog.written_words if a // 64 <= w < (a + 960 + 63) // 64]))
         locs.append((pg, [s.addr for s in seen if s.op.upper() == "DD" and (s.entry or "").startswith("CC")]))
-    check("A6 strap_asm loads no word of the four header cards", spans, [(pg, []) for pg in printed])
+    check("A6 strap_asm loads no word of the header cards", spans,
+          [(pg, []) for pg in printed if pg not in ("p2", "p15")])
     check("A7 and puts them at their printed locations", locs, [(pg, list(ab)) for pg, ab in printed.items()])
+
+    # B. Appendix E's deck, field by field.
     sys.path.insert(0, HERE)
     src = open(os.path.join(HERE, "check_strap2_listing.py")).read()
     ns = {}
@@ -491,6 +513,14 @@ if __name__ == "__main__":
                          card("", "SLC,64."), card("", "(CC*)DD(BU,,12),B*"), card("", "END,0")])
     check("G6 an SLC below the counter under PUNFUL is not written", low.punch.unwritten,
           "PUNFUL low SLC")
+    # MCP printed p.99 lines 8-12: PUNFUL, the two header DDs, then SLC,(8)215000.
+    # and only then PUNORG.  Chart OS asks "1ST SLC" first: the SLC stores the
+    # counter and punches no zeros.
+    p99 = compile_cards([card("", "SLC,64."), card("", "PUNFUL"),
+                         card("", "(CC*)DD(BU,,12),A*"), card("", "SLC,(8)215000."),
+                         card("", "PUNORG"), card("", "B,0"), card("", "END,0")])
+    check("G8 the first SLC under PUNFUL after data stores the counter: one full card, no zeros",
+          [c.kind for c in p99.punch.cards], ["full", "origin", "branch"])
     nf = compile_cards([card("", "SLC,64."), card("", "NOPUN"), card("", "PUNFUL"),
                         card("", "(CC*)DD(BU,,12),A*"), card("", "END,0")])
     check("G7 PUNFUL ends a NOPUN (errata page 19)", [c.kind for c in nf.punch.cards],

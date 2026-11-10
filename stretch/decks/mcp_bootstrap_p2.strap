@@ -27,12 +27,23 @@
 !     where fifteen of them are checked.  So XIPLBS, XBSEND, XWSR,
 !     XCLIND, XSROOF.
 !
-! (2) THE LISTING-CONTROL PSEUDO-OPS OF LINES 3-9 ARE OMITTED, not
-!     translated: PUNFUL, PUNORG, PUNID, RESEQ, PRNS.  strap_asm.py
-!     accepts them (LISTING_CONTROL) and they emit nothing, so their
-!     presence or absence cannot move a bit.  They are left out
-!     because this file is the bootstrap, not the deck that punched
-!     it.
+! (2) LINES 3-9 ARE TRANSCRIBED SINCE 2026-11-10: PUNFUL, the two
+!     "(CC*)DD(BU,,12)" header cards ("B        HED,REP,11E11BSP,LOAD,,"
+!     at 000041.00 and the 11E11BSP card at 000051.34), PUNORG,
+!     PUNID,11E11BSP, RESEQ and PRNS.  They were omitted while strap_asm
+!     refused entry mode CC.
+!     Their blanks are MEASURED in the ink (PDF 9 at 300 dpi, the
+!     print's fixed pitch of 30 px per cell): "B" in cell 16, "HED" from
+!     cell 25, the "*" in cell 61; the second's name from cell 43 and its
+!     "*" in 51.  So 8 blanks after the B, 27 before the name: MCP's
+!     control-card form (C22-6678-1 pp.7-10), the name in columns
+!     73-80.  The 45 characters of the first are also fixed by the
+!     printed locations.  tests/check_strap2_punch.py A4-A7.
+!     Under PUNFUL the cards are punched as one full card and NOT loaded
+!     (C28-6129 pp.23, 36); line 15's SLC goes back to 000040.00 and the
+!     bootstrap is assembled over them.  ONE STAND-IN: "SLC, (8)41.0",
+!     STRAP II's own starting counter, 41 octal (C22-6729 p.33), which
+!     line 4's 000041.00 prints; strap_asm starts at 40.00.
 !
 ! (3) LINE 10's "TAIL,(2)G" IS OMITTED.  C28-6129 printed p.37: TAIL
 !     "appends the symbol that appears in its address field as a tail
@@ -89,6 +100,14 @@ XWSR    SYN, (8)547.0      ! p.13: "X WS R  XW,0.0,29,XW IND"
 XSROOF  SYN, (8)546.0      ! p.13: "X S ROOF  XW,0  -TEMP STORE FOR SIZE"
 XBSEND  SYN, (8)621.0      ! p.14: "X BS END  SYN,$"
 
+        SLC, (8)41.0       ! STAND-IN: STRAP II's starting counter, 41 octal (C22-6729 p.33); line 4 prints 000041.00
+        PUNFUL             ! line  3
+        (CC*)DD(BU,,12),B        HED,REP,11E11BSP,LOAD,,             *   ! line  4  000041.00
+        (CC*)DD(BU,,12),                           11E11BSP*   ! line  5  000051.34
+        PUNORG             ! line  6
+        PUNID,11E11BSP     ! line  7
+        RESEQ              ! line  8
+        PRNS               ! line  9
         SLC, (8)40.0       ! line 15
 
 ! ---- the IPL control word the hardware refills from location 4 ----
