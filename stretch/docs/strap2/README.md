@@ -46,9 +46,24 @@ listing prints those halves, so no oracle can decide.
 **Not yet written:** DDI; NMCP's card image and all punching, so a REEL or IOD
 compiles but no deck comes out; the MIBA and MBSPEC corrections; the coprocessor;
 DUPLI; relocation; subscripts with dimensions; the system symbols' register-length
-dds; PRNTALL's whole-table print; and the listing's paging and its error messages
-(ERRPRT, ERRNUM: the messages are kept, not printed). An unwritten path refuses
-loudly.
+dds; PRNTALL's whole-table print; `$INF` (N28-1081 page 20 adds it, 12, infinity);
+the listing's page headings after the first; the field number in an error record
+(always 0); and the Correction card's typewriter copy of serious messages. An
+unwritten path refuses loudly.
+
+**The error list** (`errtab.py`, `listing.py`, `tests/check_strap2_errprt.py`).
+ERRNUM gives each message the page and line of its statement's last line (C28-6129
+p.20), and ERRPRT prints them in page and line order after the symbol lists, before
+the seconds (guide pp.37-39, p.158 box 35). The words are the number's own, from
+either surviving list, `errors=`: the guide's pp.176-179 (1-148, serious 1-28) or the
+update's revised Appendix D, N28-1081 pp.13-15 (1-150, serious 1-18); they differ in
+wording at 24 numbers. The host's own message text stays on `p2.msg` for
+`StrapError`. The 1963 form also prints an extra `*` after the line number on every
+line an error references (N28-1081 page 13). Building it found messages 91 and 121
+recorded twice, by Pass 2a and 2b, and 121 recorded with no unit; both now come once,
+from 2b, against their statement. CHOSEN: the error line's layout; no limit on the
+list. `formats.md` had message 60 as "TAIL NOT CLOSED"; the ink (p.177) has "TAIL
+LEVEL NOT CLOSED", as the update does.
 
 **The listing** (`listing.py`, `tests/check_strap2_listing.py`) matches all three printed
 STRAP II listings field for field: C28-6129 Fig. 3 p.19 (1961), all 24 lines and both

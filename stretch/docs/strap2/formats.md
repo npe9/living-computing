@@ -978,7 +978,7 @@ the message's own words: no page but p.176ff states an error number.
 | 57 | OUTPUT | PSEUDO LOC. CTR. TOO HIGH | |
 | 58 | MQTAIL | UNTAIL LEVEL MORE THAN TAIL | |
 | 59 | MQTAIL | NULL TAIL | |
-| 60 | MQTAIL | TAIL NOT CLOSED BY RIGHT PAREN | |
+| 60 | MQTAIL | TAIL LEVEL NOT CLOSED BY RIGHT PAREN | |
 | 61 | MQTAIL | ILLEGAL TAIL LEVEL CHARACTER | |
 | 62 | MQTAIL | ILLEGAL CHARACTER IN TAIL | |
 | 63 | CPLTNM | DIGIT INCORRECT FOR RADIX | Digit equals or exceeds the radix; the digit is still used (p.71) |

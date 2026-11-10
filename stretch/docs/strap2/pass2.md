@@ -807,6 +807,9 @@ Five lists of 32-bit entries: Pass 1, UITER 1, Pass 2a, UITER 2, Pass 2b (p.37).
   (p.39). Final form, Fig. 6: page 12, line 8, field 4, number 8.
 - `ERRPRT`: once at the very end, merges the five lists (p.37), sorts into page and line sequence, lists
   via OPLIST, then a message of the number not listed because the buffer was exceeded (p.158 box 35).
+- Implemented in `strap/strap2/listing.py` (`errnum`, `errprt`) and `errtab.py`; N28-1081 page 13 adds that
+  the list prints "in sequence by page and line number" and that each line containing an error gets an extra
+  `*` after the line number and its `*`.
 
 An error references the last line of the statement's binary output (C28 p.20).
 

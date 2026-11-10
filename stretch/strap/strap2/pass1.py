@@ -28,9 +28,14 @@ class Messages:
 
     def __init__(self):
         self.items = []
+        self.fields = []
 
-    def add(self, number, text, unit=0, fatal=True):
+    def add(self, number, text, unit=0, fatal=True, field=0):
+        """`text` is the host's detail, for StrapError; the listing prints the
+        number's own message from errtab.  `field`, Fig. 3's 4-bit field
+        number (p.38), is not yet counted by the passes: 0 (CHOSEN)."""
         self.items.append((number, text, unit, fatal))
+        self.fields.append(field)
 
 
 class Pass1:

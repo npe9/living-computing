@@ -57,11 +57,24 @@ p.20; the guide puts the lists at the end, p.157, where the manual says the
 beginning; N28-1081's errata, page 18, correct the manual to "end").  Chart EG prints a header before the undefined symbols
 only when the whole table is printed (boxes 6B, 7), so there is none here.
 CHOSEN: the other three headers' words, from the manual's descriptions; a name
-and its address separated by two blanks.  ERRPRT is not yet written: the
-messages are on p2.msg, unprinted.
+and its address separated by two blanks.
+
+ERRNUM and ERRPRT (guide pp.37-39, p.158 box 35).  Each message is given the
+page and line of the last line its statement occupies (C28-6129 p.20), Fig. 6's
+page, line, field and number; ERRPRT sorts them into page and line sequence and
+prints them after the symbol lists, before the seconds.  A message with no unit
+(MACHER's, p.173) takes page and line 0 and sorts first.  The text is the
+number's own, from `errtab`, in the list `errors=` names.  The 1963 form also
+prints an extra '*' after the line number and its '*' on every line an error
+references (N28-1081 page 13).  CHOSEN: the error line's layout, PAGE, LINE and
+FIELD with the message; and no limit on the list, so the message for errors
+not listed, p.158 box 35, is never printed.  The second '*' after the LOCATION
+on the printed 1963 and 1964 listings is another mark (docs/strap2/pass2.md
+section 12) and is not printed.
 """
 from .unit import ZILCFD, ZILSST, FIXED_BITS, ZIFLAGS
 from .value import flag_names
+from .errtab import message
 
 LOC, BIN, NAME, STMT = 4, 17, 47, 56    # CHOSEN: print positions, measured
 
@@ -120,6 +133,8 @@ class Line:
         self.statement, self.right = statement, right
         self.flags = flags
         self.dds = ""
+        self.page = None
+        self.error = False
         self.number = None
 
     def fields(self):
@@ -127,10 +142,14 @@ class Line:
 
 
 class Listing:
-    def __init__(self, p2, names, mark="-", lines_per_page=None, quote=None, form="1961"):
+    def __init__(self, p2, names, mark="-", lines_per_page=None, quote=None, form="1961",
+                 errors="C22-6729"):
         if form not in ("1961", "1963"):
             raise ValueError(f"no printed form {form!r}")
+        message(1, errors)
         self.p2, self.names, self.mark, self.form = p2, names, mark, form
+        self.errors = errors
+        self.last_of = {}
         self.quote = quote if quote is not None else ("-" if mark == "-" else "'")
         self.per_page = lines_per_page
         self.lines = []
@@ -229,6 +248,7 @@ class Listing:
                 self.add(Line(statement=t))
         for ln in extra:
             self.add(ln)
+        self.last_of[unit] = self.lines[-1]
 
     def bounds(self):
         im = self.p2.image
@@ -244,15 +264,32 @@ class Listing:
         p2 = self.p2
         for unit in p2.units.intin():
             self.unit(unit)
-        n = 0
+        n, page = 0, 1
         for ln in self.lines:
             if ln.flags:
                 continue
             n += 1
             if self.per_page and n > self.per_page:
-                n = 1
-            ln.number = n
+                n, page = 1, page + 1
+            ln.number, ln.page = n, page
+        self.records = self.errnum()
         return self
+
+    def errnum(self):
+        """Fig. 6's records, (page, line, field, number), in ERRPRT's order."""
+        msg = self.p2.msg
+        out = []
+        for k, (number, _text, unit, _fatal) in enumerate(msg.items):
+            ln = self.last_of.get(unit)
+            if ln is not None:
+                ln.error = True
+            field = msg.fields[k] if k < len(msg.fields) else 0
+            out.append((ln.page if ln else 0, ln.number if ln else 0, field, number))
+        return sorted(out, key=lambda r: (r[0], r[1]))
+
+    def errprt(self):
+        return [f"PAGE {p:3d}  LINE {n:2d}  FIELD {f:2d}  {message(m, self.errors)}"
+                for p, n, f, m in self.records]
 
     def text(self, clock="", seconds=0):
         out = []
@@ -273,7 +310,10 @@ class Listing:
             if ln.flags:
                 out.append(" " * LOC + " ".join(ln.flags))
                 continue
-            s = f"{ln.number:2d}{self.mark}".ljust(LOC) + ln.location.ljust(BIN - LOC)
+            head = f"{ln.number:2d}{self.mark}"
+            if ln.error and self.form == "1963":
+                head += "*"
+            s = (head.ljust(LOC) if len(head) < LOC else head + " ") + ln.location.ljust(BIN - LOC)
             if ln.right:
                 s += ln.binary.rjust(40 - BIN).ljust(NAME - BIN)
             elif ln.dds:
@@ -286,6 +326,7 @@ class Listing:
                 s += ln.name.ljust(STMT - NAME) + ln.statement
             out.append(s.rstrip())
         out += self.symbol_lists()
+        out += self.errprt()
         out.append(" " * 4 + "THIS ASSEMBLY REQUIRED" + " " * 7 + f"{seconds:08d} SECONDS")
         return "\n".join(out) + "\n"
 
@@ -302,5 +343,6 @@ class Listing:
         return out
 
 
-def listing_of(p2, names, mark="-", lines_per_page=None, quote=None, form="1961"):
-    return Listing(p2, names, mark, lines_per_page, quote, form).build()
+def listing_of(p2, names, mark="-", lines_per_page=None, quote=None, form="1961",
+               errors="C22-6729"):
+    return Listing(p2, names, mark, lines_per_page, quote, form, errors).build()

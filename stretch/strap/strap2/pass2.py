@@ -439,7 +439,7 @@ class Pass2:
             fields.append(v)
         # Box 5: the convention dds, after the symbol's own (implicit, p.205).
         if e.dds_needed or e.ambiguous:
-            e, dds = self._establish(unit, e, dds, fields, explicit)
+            e, dds = self._establish(unit, e, dds, fields, explicit, final)
         word = e.skeleton
         word = self._fill(unit, e, word, fields, dds, final)
         for v in fields:
@@ -463,7 +463,7 @@ class Pass2:
         except Unresolved:
             return False
 
-    def _establish(self, unit, e, dds, fields, explicit):
+    def _establish(self, unit, e, dds, fields, explicit, final=True):
         implicit = False
         if dds is None and fields and fields[0].dds is not None:
             dds = dds_parts(fields[0].dds)
@@ -485,7 +485,8 @@ class Pass2:
         if dds[0] in ("N", "U") and not e.is_conn:
             if implicit:
                 dds = ("BU", 0, 8)
-                self.msg.add(91, "MODE INCONSISTENT WITH OP", unit, fatal=False)
+                if final:   # DECODE runs in 2a and 2b; the message once, from 2b
+                    self.msg.add(91, "MODE INCONSISTENT WITH OP", unit, fatal=False)
             else:
                 raise _a.AssemblerError(f"mode {dds[0]} on the VFL op {e.written_op}")
         if not e.is_conn and getattr(e, "explicit_mode", None) != dds[0]:
@@ -501,6 +502,7 @@ class Pass2:
 
     # -- INSERT, p.144 --------------------------------------------------------------
     def _fill(self, unit, e, word, fields, dds, final):
+        self.filling = (unit, final)    # for an inserter's message
         limit = sum(n for _r, n in e.fills)
         if e.kind in ("vfl", "conn"):
             word = put(word, 35, 6, dds[1])
@@ -660,8 +662,9 @@ class Pass2:
         bit = (v.B & 63) if v.B >= 11 * 64 and v.B < 12 * 64 else v.B + v.I
         if not 0 <= bit <= 63:
             raise _a.AssemblerError(f"INDMK bit {bit} is outside a word's bits 0-63 (C28-6129 printed p.19)")
-        if word >> (63 - bit) & 1:
-            self.msg.add(121, "BIT ADDRESSED TWICE IN LVS OR INDMK", 0)
+        unit, final = getattr(self, "filling", (0, True))
+        if word >> (63 - bit) & 1 and final:
+            self.msg.add(121, "BIT ADDRESSED TWICE IN LVS OR INDMK", unit)
         return word | (1 << (63 - bit))
 
     # -- Pass 2b ---------------------------------------------------------------------
