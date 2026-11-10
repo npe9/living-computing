@@ -18,7 +18,7 @@ What is checked, and how strong each oracle is:
   C  what each event does to the deck: a full origin card, then flow cards; DRs
      in a row adding up; a DRZ zeroing; a DR after a DRZ punched apart; END
      with no address, by both editions.
-  D  PUNFUL is not written: the assembly goes on and `images` refuses.
+  D  PUNREL is not written: the assembly goes on and `images` refuses.
   E  the MCP cards, C22-6678-1 pp.7-10 read in the ink: GO and LIM first (guide
      p.157 boxes 15-16), the IOD of p.48 reproduced with its reference number and
      exit word, a REEL as submitted, the card code by hand from App. F p.56, and
@@ -83,6 +83,23 @@ MEASURED 2026-11-10 for F (A-E passing in each but where named):
   PUNORG keeps the card in process:        F17
   the count advanced under NOSEQ:          none, and none can: only RESEQ ends
                                            NOSEQ, and RESEQ clears the count
+  G  PUNFUL (chart OR p.151, OS p.152, OV boxes 1-2 p.158; C28-6129 pp.23, 36)
+     and entry mode CC (C28-6129 p.16; App. F p.56), read in the ink 2026-11-10.
+     A's decoder skips a card whose column 1 is not a binary card's, as MCP's
+     loader cannot load a PUNFUL card (C28 p.23); A4 checks each such card's 80
+     columns against the image.  MEASURED (A-F passing but where named):
+  CC rows reversed (row 9 high):           G1, G4
+  a full card numbered like a binary card: G2
+  no 84:                                   G3
+  no 79:                                   G3
+  an SLC above the counter adds no zeros:  A4, G4
+  a DR under PUNFUL adds no zeros:         G4
+  PUNNOR does not end PUNFUL:              G4
+  PUNORG does not end PUNFUL:              A1, A3, A4, G2
+  a short full card dropped:               A4, G1, G2, G4, G5, G7
+  no 127:                                  G5
+  a low SLC accepted:                      G6
+  PUNFUL does not end NOPUN:               G7
 """
 import glob
 import os
@@ -134,15 +151,16 @@ def decode_and_load(images):
     """The loader's absolute path, from the columns.  Returns the bits loaded,
     the branch address, and a list of complaints (class, sequence, check sum)."""
     mem, at, branch, bad = {}, None, None, []
-    for seq, cols in enumerate(images, 1):
+    seq = 0
+    for cols in images:
+        kind = {0o7: "origin", 0o5: "flow", 0o15: "branch"}.get(cols[0] & 0o17)
+        if cols[0] >> 4 or kind is None:
+            continue        # not a binary card: a PUNFUL card, for MCP to read
+        seq += 1
         if field(cols, 24, 12) != seq:
             bad.append(f"card {seq}: sequence {field(cols, 24, 12)}")
         if cols[3] != checksum(cols):
             bad.append(f"card {seq}: check sum")
-        kind = {0o7: "origin", 0o5: "flow", 0o15: "branch"}.get(cols[0] & 0o17)
-        if cols[0] >> 4 or kind is None:
-            bad.append(f"card {seq}: column 1 {cols[0]:04o}")
-            continue
         if kind == "branch":
             branch = field(cols, 60, 24)
             continue
@@ -187,29 +205,40 @@ def one(path):
         return base, "not assembled", ""
     if p2.punch.unwritten:
         return base, "unwritten", p2.punch.unwritten
-    mem, branch, bad = decode_and_load(p2.punch.images(clock=0o1234))
+    images = p2.punch.images(clock=0o1234)
+    mem, branch, bad = decode_and_load(images)
+    full = 0
+    for c, cols in zip(p2.punch.cards, images):
+        if c.kind == "full":
+            # A PUNFUL card is not loaded; its 80 columns are the image's bits.
+            full += 1
+            for k in range(960):
+                mem[c.origin + k] = (cols[k // 12] >> (11 - k % 12)) & 1
     diff = image_differences(p2, mem)
     want = None if p2.end_pc is None else p2.end_pc * 32
     if bad or diff or (want is not None and branch != want):
         return base, "differs", f"{bad[:2]} {diff} bits, branch {branch} want {want}"
-    return base, "same", ""
+    return base, "same", full
 
 
 # A. Every deck.
 if __name__ == "__main__":
-    counts, unwritten = {}, []
+    counts, unwritten, fulls = {}, [], []
     with ProcessPoolExecutor() as ex:
         for base, how, detail in ex.map(one, sorted(glob.glob(os.path.join(HERE, "..", "decks", "*.strap")))):
             counts[how] = counts.get(how, 0) + 1
+            if how == "same" and detail:
+                fulls.append((base, detail))
             if how == "differs":
                 print(f"   {base}: {detail}")
             if how == "unwritten":
                 unwritten.append((base, detail))
-    check("A1 decks whose cards load to their image", counts.get("same", 0), 726)
+    check("A1 decks whose cards load to their image", counts.get("same", 0), 730)
     check("A2 none differ", counts.get("differs", 0), 0)
-    check("A3 the four that stop at PUNFUL", sorted(unwritten),
-          [("mcp_bootstrap_p320.strap", "PUNFUL"), ("mcp_bootstrap_p335.strap", "PUNFUL"),
-           ("mcp_bootstrap_p361.strap", "PUNFUL"), ("mcp_bootstrap_p381.strap", "PUNFUL")])
+    check("A3 none stops", sorted(unwritten), [])
+    check("A4 the four MCP decks with PUNFUL open with one full card each, the image's bits",
+          sorted(fulls), [("mcp_bootstrap_p320.strap", 1), ("mcp_bootstrap_p335.strap", 1),
+                          ("mcp_bootstrap_p361.strap", 1), ("mcp_bootstrap_p381.strap", 1)])
 
     # B. Appendix E's deck, field by field.
     sys.path.insert(0, HERE)
@@ -254,13 +283,13 @@ if __name__ == "__main__":
           [(64, 64, True, True), (32, 64, False, False)])
 
     # D. Not written.
-    pf = compile_cards([card("", "SLC,64."), card("", "B,0"), card("", "PUNFUL"),
+    pf = compile_cards([card("", "SLC,64."), card("", "B,0"), card("", "PUNREL"),
                         card("", "B,0"), card("", "END,0")])
     try:
         pf.punch.images()
-        check("D1 PUNFUL: images refuse", "accepted", "PunchError")
+        check("D1 PUNREL: images refuse", "accepted", "PunchError")
     except PunchError:
-        check("D1 PUNFUL: images refuse", "PunchError", "PunchError")
+        check("D1 PUNREL: images refuse", "PunchError", "PunchError")
 
     # E. The MCP cards (C22-6678-1 pp.7-10): GO, LIM, then IOD and REEL as
     # submitted at their units, then the binary cards, numbered from 1.
@@ -384,6 +413,49 @@ if __name__ == "__main__":
                          card("", "END,0")])
     check("F17 PUNORG punches the card in process (chart OR p.151)",
           [(c.kind, c.nbits) for c in pf2.punch.cards], [("origin", 32), ("origin", 32), ("branch", 0)])
+
+    # G. PUNFUL and the CC entry mode: MCP's header cards (printed p.320 lines 1-3).
+    import cards as hollerith
+    inv = {hollerith.column_bits(ch): ch for ch in " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.()*/$=+-'"}
+    d1 = ("B" + " " * 8 + "HED, REP, 22LOADER, LOAD,,").ljust(45)
+    hdr = compile_cards([card("", "PUNFUL"), card("", "SLC,(8)100.0"),
+                         card("", "(CC*)DD(BU,,12)," + d1 + "*"),
+                         card("", "(CC*)DD(BU,,12)," + " " * 27 + "22LOADER*"),
+                         card("", "PUNORG"), card("", "PUNID,22LOADER"), card("", "RESEQ"),
+                         card("", "SLC,(8)200.0"), card("", "B,0"), card("", "END,0")])
+    hi = hdr.punch.images()
+    check("G1 the full card reads back as the control card it spells (CC: the column "
+          "as read, row 12 high; DERIVED)",
+          "".join(inv.get(x, "?") for x in hi[0]),
+          "B        HED, REP, 22LOADER, LOAD,,                                     22LOADER")
+    check("G2 then an origin card numbered 1 with the new ID, and the branch",
+          [(c.kind, c.seq, c.ident) for c in hdr.punch.cards],
+          [("full", 0, None), ("origin", 1, "22LOADER"), ("branch", 2, "22LOADER")])
+    bad = compile_cards([card("", "SLC,64."), card("", "(CC*)DD(BU,,8),AB:*"), card("", "END,0")])
+    check("G3 CC: 84 without byte size 12, 79 for ':' (no punches in App. F)",
+          sorted(m[0] for m in bad.msg.items), [79, 84])
+    gaps = compile_cards([card("", "PUNFUL"), card("", "SLC,64."), card("", "(CC*)DD(BU,,12),A*"),
+                          card("", "SLC,64.24"), card("", "(CC*)DD(BU,,12),B*"),
+                          card("", "DR(BU,12),1"), card("", "(CC*)DD(BU,,12),C*"),
+                          card("", "PUNNOR"), card("", "B,0"), card("", "END,0")])
+    gc = gaps.punch.cards
+    check("G4 an SLC above the counter and a DR are zeros on the card; PUNNOR punches the "
+          "short card filled out with zeros and ends PUNFUL",
+          ([hollerith.column_bits(ch) for ch in "A B C"] + [0] * 75
+           == gaps.punch.images()[0], [c.kind for c in gc]),
+          (True, ["full", "origin", "branch"]))
+    pid = compile_cards([card("", "PUNFUL"), card("", "SLC,64."), card("", "PUNID,X"),
+                         card("", "(CC*)DD(BU,,12),A*"), card("", "PUNNOR"), card("", "END,0")])
+    check("G5 PUNID under PUNFUL: 127, ignored",
+          ([m[0] for m in pid.msg.items], [c.ident for c in pid.punch.cards]), ([127], [None, None]))
+    low = compile_cards([card("", "PUNFUL"), card("", "SLC,128."), card("", "(CC*)DD(BU,,12),A*"),
+                         card("", "SLC,64."), card("", "(CC*)DD(BU,,12),B*"), card("", "END,0")])
+    check("G6 an SLC below the counter under PUNFUL is not written", low.punch.unwritten,
+          "PUNFUL low SLC")
+    nf = compile_cards([card("", "SLC,64."), card("", "NOPUN"), card("", "PUNFUL"),
+                        card("", "(CC*)DD(BU,,12),A*"), card("", "END,0")])
+    check("G7 PUNFUL ends a NOPUN (errata page 19)", [c.kind for c in nf.punch.cards],
+          ["full", "branch"])
 
     print("punch: FAILED" if fails else "punch: all passed")
     sys.exit(1 if fails else 0)

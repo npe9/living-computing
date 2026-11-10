@@ -70,14 +70,14 @@ how a continued one is reproduced);
 the TYPE card's options are not copied; a gap in the location counter
 between units goes on the card as the image holds it, not as a new origin; a
 DR's skip starts where the last data ended, so it covers its own rounding.
-NOT WRITTEN: PUNFUL, PUNREL and the relocatable cards.  The
+NOT WRITTEN: PUNREL and the relocatable cards; a low SLC under PUNFUL.  The
 assembly goes on; the punch stops at the first, `unwritten` names it, and
 `images` refuses.
 `mcp` counts the IOD and REEL units.  `images` is the binary cards alone;
 `deck` and `deck_images` the whole deck in order.
 """
 
-ORIGIN_BITS, FLOW_BITS = 736, 800
+ORIGIN_BITS, FLOW_BITS, FULL_BITS = 736, 800, 960
 ORIGIN_DATA, FLOW_DATA = 12 * 9 + 8, 12 * 4 + 4      # 10.8 and 5.4: card bits
 DEFAULT_BRANCH = 0o41 * 64
 
@@ -117,6 +117,9 @@ class Punch:
         self.relative = False   # after an SLCR, until an SLC
         self.noseq = False      # NOSEQ, until RESEQ
         self.punorg = False     # PUNORG, until PUNNOR
+        self.punful = False     # PUNFUL, until PUNNOR, PUNORG or PUNREL
+        self.full_at = None     # PUNFUL: the bit the next full-card bit is
+        self.full_bits, self.full_value, self.full_origin = 0, 0, None
         self.count = 0          # the sequence number of the last card
         self._clear()
         self.flow_next = False
@@ -136,6 +139,13 @@ class Punch:
     def _emit(self, unit, card):
         if card.kind == "origin" and self.first_origin is None:
             self.first_origin = card.origin
+        if card.kind == "full":
+            # C28-6129 p.36: "without checksum, first word address,
+            # identification, and so on".  CHOSEN: no sequence count either.
+            card.seq = 0
+            self.cards.append(card)
+            self.events.append((unit, len(self.cards) - 1))
+            return
         card.ident = self.ident
         if self.noseq:
             card.seq = 0
@@ -148,7 +158,15 @@ class Punch:
     def _punch(self, unit, after=0, zero=False):
         """Punch what the buffer holds, with `after` bits skipped or zeroed after
         loading.  A short flow card becomes an origin card (p.23); more than an
-        origin card holds goes on two (chart OV box 4)."""
+        origin card holds goes on two (chart OV box 4).  In PUNFUL mode, the
+        full card in process (CHOSEN: a short one is filled out with zeros)."""
+        if self.punful:
+            if self.full_bits:
+                n = FULL_BITS - self.full_bits
+                self._emit(unit, Card("full", self.full_origin, FULL_BITS,
+                                      self.full_value << n))
+                self.full_bits, self.full_value, self.full_origin = 0, 0, None
+            return
         if not self.nbits and not self.skip and not after:
             return
         full = self._is_flow() and self.nbits == FLOW_BITS and not after
@@ -175,8 +193,38 @@ class Punch:
         self.flow_next = full
         self._clear()
 
+    def _full(self, unit, at, nbits, value):
+        """PUNFUL: 80 columns of column binary, nothing else (C28-6129 pp.23,
+        36).  Bits go on in order; a full card goes out at once."""
+        if self.full_at is None:
+            self.full_at = at
+        if at < self.full_at:
+            raise PunchError(f"PUNFUL: data at {at:o} below the counter {self.full_at:o}")
+        if at > self.full_at:
+            # CHOSEN: a gap the counter left (rounding) goes on the card as
+            # zeros, as chart OS does with an SLC above the counter.
+            self._full_bits(unit, at - self.full_at, 0)
+        self._full_bits(unit, nbits, value)
+
+    def _full_bits(self, unit, nbits, value):
+        while nbits:
+            if not self.full_bits:
+                self.full_origin = self.full_at
+            take = min(FULL_BITS - self.full_bits, nbits)
+            rest = nbits - take
+            self.full_value = (self.full_value << take) | (value >> rest)
+            self.full_bits += take
+            value &= (1 << rest) - 1
+            nbits = rest
+            self.full_at += take
+            if self.full_bits == FULL_BITS:
+                self._punch(unit)
+
     def data(self, unit, at, nbits, value):
         if nbits <= 0:
+            return
+        if self.punful:
+            self._full(unit, at, nbits, value)
             return
         if self.start is None:
             if self.skip:
@@ -210,6 +258,12 @@ class Punch:
     def reserve(self, unit, at, size, zero, running):
         """A DR (zero False) or DRZ: chart OV."""
         end = at + size
+        if self.punful:
+            # Boxes 1-2, p.158: "blank words and/or cards must be punched
+            # equivalent to the DR length."
+            start = self.full_at if self.full_at is not None else at
+            self._full(unit, start, max(0, end - start), 0)
+            return
         if self.nbits and self.skip:
             # The card already skips before loading and cannot skip after as
             # well (CHOSEN): it goes out, and this DR starts the next card's skip.
@@ -233,8 +287,21 @@ class Punch:
             self.skip, self.zero = end - self.skip_at, zero
         self.flow_next = False
 
-    def slc(self, unit):
-        """Chart OS: with PUNFUL off an SLC forces an origin card."""
+    def slc(self, unit, value=None):
+        """Chart OS (C22-6729 p.152): with PUNFUL off an SLC forces an origin
+        card.  With PUNFUL on: the first SLC stores the new value; one equal to
+        the counter does nothing; one above it has the difference processed as
+        a DRZ in PUNFUL mode; one below turns on the low-SLC indicator and keeps
+        the counter for comparison.  NOT WRITTEN: what OUTPUT does after a low
+        SLC (no chart page shows the comparison); the deck stops there."""
+        if self.punful and value is not None:
+            if self.full_at is None:
+                self.full_at = value
+            elif value < self.full_at:
+                self.unwritten = "PUNFUL low SLC"
+            elif value > self.full_at:
+                self._full(unit, self.full_at, value - self.full_at, 0)
+            return
         self._punch(unit)
         self._clear()
         self.flow_next = False
@@ -259,6 +326,20 @@ class Punch:
         self.flow_next = False
         self.ident = ident
 
+    def punful_(self, unit):
+        """Chart OR, PUNFUL: punch the card in the existing mode, turn on the
+        PUNFUL indicator.  It ends a NOPUN (N28-1081 errata page 19)."""
+        self._punch(unit)
+        self._new_origin()
+        self.suppressed = False
+        self.punful = True
+        self.full_at = None
+
+    def _end_full(self, unit):
+        self._punch(unit)
+        self.punful = False
+        self.full_at = None
+
     def nopun(self, unit):
         """Chart OR, NOPUN: punch the card, turn on the NOPUN indicator."""
         self._punch(unit)
@@ -267,8 +348,8 @@ class Punch:
 
     def punnor(self, unit):
         """Chart OR, PUNNOR: punch the card, turn on the origin card indicator;
-        ends a NOPUN (N28-1081 errata, page 19)."""
-        self._punch(unit)
+        ends a NOPUN (N28-1081 errata, page 19), and a PUNFUL (C28-6129 p.36)."""
+        self._end_full(unit)
         self._new_origin()
         self.suppressed = False
         self.punorg = False
@@ -278,7 +359,7 @@ class Punch:
         origin and PUNORG indicators: every card after is an origin card
         (C28-6129 p.36).  Like any punch pseudo-op it ends a NOPUN (N28-1081
         errata page 19).  CHOSEN: PUNNOR ends it ("restores normal punching")."""
-        self._punch(unit)
+        self._end_full(unit)
         self._new_origin()
         self.suppressed = False
         self.punorg = True
@@ -351,6 +432,8 @@ class Punch:
         return out
 
     def _encode(self, c, seq, clock):
+        if c.kind == "full":
+            return [(c.value >> (12 * (79 - i))) & 0xFFF for i in range(80)]
         bits = [0] * 960
 
         def put(at, n, v):

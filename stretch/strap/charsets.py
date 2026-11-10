@@ -105,7 +105,9 @@ different strength each:
          Manual grids are 8-bit.  The twelve bits ARE the card rows
          (12, 11, 0, 1-9), so what is wanted is a documented bit
          order, not a lookup table.  Unchecked candidates: C22-6729,
-         C22-6531, C22-6678-1.
+         C22-6531, C22-6678-1.  STRAP II (strap/strap2/pass2.py
+         `_cc_b`) now converts CC from App. F's punches (strap/cards.py),
+         the bit order DERIVED as the column as read, row 12 high.
 
   N   -> not an entry mode at all.  It is the floating-point
          *normalized* use mode (C28-6129 printed p.15).

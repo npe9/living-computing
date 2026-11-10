@@ -799,6 +799,12 @@ class Pass2:
             except PunchError as x:
                 pu.unwritten = f"{e.name}: {x}"
             return
+        if e.name == "PUNID" and pu.punful:
+            self.msg.add(127, "PUNID IN PUNFUL SEQUENCE -- STATE. IGNORED", unit, fatal=False)
+            return
+        if e.name == "PUNFUL":
+            pu.punful_(unit)
+            return
         if e.name == "PUNID":
             p = self.units.get(unit, ZIOTPT)
             if p:                   # message 55 left no ID
@@ -835,12 +841,12 @@ class Pass2:
         if kind == "TLB":
             pu.tlb(unit, printed[2])
             return
-        if e.name in ("PUNFUL", "PUNREL"):
+        if e.name == "PUNREL":
             # Not written: the assembly goes on, and the deck says it is short.
             pu.unwritten = e.name
             return
         if kind == "SLC":
-            pu.slc(unit)
+            pu.slc(unit, printed[1])
         elif kind == "END":
             pu.end(unit, printed[2])
         elif kind == "DR":
@@ -999,15 +1005,44 @@ class Pass2:
         n = u.get(unit, ZILPMS)
         text = "".join(chr(self.mem.get(loc + 8 * k, 8)) for k in range(n))
         tag = u.get(unit, ZIOTPT) & 3
+        pos = at
+        if tag == 2:
+            self._cc_b(unit, at, bs, text)
+            return
         from charsets import ENTRY_MODES
         table = ENTRY_MODES[{0: "A", 1: "IQS", 2: "CC", 3: "P"}[tag]]
-        pos = at
         width = bs or 8
         for ch in text:
             if ch not in table:
                 raise _a.AssemblerError(f"character {ch!r} is not in the character set (Reference Manual printed p.166)")
             self.image.deposit(pos, width, table[ch])
             pos += width
+        self.printed[unit] = ("ALPHA", at)
+        self.running = pos
+
+    def _cc_b(self, unit, at, bs, text):
+        """Entry mode CC (C28-6129 p.16, PDF 20): each character "converted to
+        12-bit bytes, where each byte reflects the multiple punch actually read
+        in the appropriate card column".  The punches are C22-6678-1 App. F
+        p.56's (strap/cards.py).  DERIVED: the byte's bit order is the column as
+        the reader delivers it, row 12 high, then 11, 0, 1-9, the order MCP's
+        loader reads a binary card in (docs/bss_loader_spec.md); it is what
+        makes MCP's PUNFUL header cards (printed pp.320, 335, 361, 381) read
+        back as the control cards they spell.  Message 84 without byte size 12
+        (CHOSEN: 12 is used anyway); 79 for a character App. F does not give
+        punches for (CHOSEN: punched blank)."""
+        import cards as hollerith
+        if bs != 12:
+            self.msg.add(84, "CC ENTRY MODE WITHOUT BS 12", unit)
+        pos = at
+        for ch in text:
+            try:
+                v = hollerith.column_bits(ch)
+            except ValueError:
+                self.msg.add(79, f"INCORRECT CARD CODE CHAR. {ch!r}", unit)
+                v = 0
+            self.image.deposit(pos, 12, v)
+            pos += 12
         self.printed[unit] = ("ALPHA", at)
         self.running = pos
 
