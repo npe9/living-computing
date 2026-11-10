@@ -1503,9 +1503,10 @@ class _CardCodeTable:
     punches as a 12-bit byte (C28-6129 printed p.16, PDF 20: "converted
     to 12-bit bytes, where each byte reflects the multiple punch actually
     read in the appropriate card column").  The punches are C22-6678-1
-    App. F p.56's (strap/cards.py).  DERIVED: the bit order, row 12 high,
-    then 11, 0, 1-9 -- the column as read, the same choice STRAP II's
-    pass2._cc_b makes."""
+    App. F p.56's (strap/cards.py).  The bit order, row 12 high, then
+    11, 0, 1-9, is the column as read: MCP's loader table ATBL (printed
+    p.331 lines 24-38) compares column 1 with 4200 for B, 2010 for O
+    (tests/check_strap2_punch.py G9).  STRAP II's pass2._cc_b agrees."""
 
     def __contains__(self, ch):
         import cards as hollerith

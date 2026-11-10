@@ -40,7 +40,8 @@
 ! measured), with two SLC stand-ins at their printed
 ! locations, because strap_asm refused entry mode CC.  Both assemblers
 ! now take CC (C28-6129 p.16: each character its card column's
-! punches, App. F p.56; the bit order row 12 high is DERIVED).  ONE
+! punches, App. F p.56; the bit order row 12 high is
+! ATBL's, printed p.331).  ONE
 ! stand-in stays: "SLC, (8)236524.00", the counter the page before leaves
 ! (the JOIN above), since this deck is assembled alone.  It stands
 ! BEFORE the PUNFUL, so it is not the chart OS "1ST SLC" under PUNFUL.

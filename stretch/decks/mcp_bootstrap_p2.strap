@@ -43,7 +43,9 @@
 !     (C28-6129 pp.23, 36); line 15's SLC goes back to 000040.00 and the
 !     bootstrap is assembled over them.  ONE STAND-IN: "SLC, (8)41.0",
 !     STRAP II's own starting counter, 41 octal (C22-6729 p.33), which
-!     line 4's 000041.00 prints; strap_asm starts at 40.00.
+!     line 4's 000041.00 prints; strap_asm starts at 40.00.  A9 strips
+!     the stand-in and compiles with STRAP II's own start: the card is
+!     at 000041.00, as printed.
 !
 ! (3) LINE 10's "TAIL,(2)G" IS OMITTED.  C28-6129 printed p.37: TAIL
 !     "appends the symbol that appears in its address field as a tail

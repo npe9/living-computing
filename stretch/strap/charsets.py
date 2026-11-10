@@ -107,7 +107,7 @@ different strength each:
          order, not a lookup table.  Unchecked candidates: C22-6729,
          C22-6531, C22-6678-1.  STRAP II (strap/strap2/pass2.py
          `_cc_b`) now converts CC from App. F's punches (strap/cards.py),
-         the bit order DERIVED as the column as read, row 12 high, and
+         the bit order the column as read, row 12 high (MCP's ATBL, p.331), and
          strap_asm.entry_table does the same (_CardCodeTable).
 
   N   -> not an entry mode at all.  It is the floating-point

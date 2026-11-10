@@ -36,7 +36,8 @@
 ! a comment behind two stand-ins (RDLEOF SYN and SLC,(8)230415.40)
 ! while strap_asm refused entry mode CC.  Both assemblers now convert CC
 ! (C28-6129 p.16: each character its card column's punches, App. F
-! p.56; the bit order row 12 high is DERIVED).  Unlike the PUNFUL header
+! p.56; the bit order row 12 high is
+! ATBL's, printed p.331).  Unlike the PUNFUL header
 ! cards of pp.2, 15, 99 and 320-381, THIS ONE IS LOADED: no PUNFUL is in
 ! force, so its 264 bits are in the MCP image at 230411.00-230415.10
 ! (they were zeros before).  The 22 characters are MEASURED in the ink

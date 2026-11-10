@@ -1041,9 +1041,11 @@ class Pass2:
         """Entry mode CC (C28-6129 p.16, PDF 20): each character "converted to
         12-bit bytes, where each byte reflects the multiple punch actually read
         in the appropriate card column".  The punches are C22-6678-1 App. F
-        p.56's (strap/cards.py).  DERIVED: the byte's bit order is the column as
-        the reader delivers it, row 12 high, then 11, 0, 1-9, the order MCP's
-        loader reads a binary card in (docs/bss_loader_spec.md); it is what
+        p.56's (strap/cards.py).  The byte's bit order is the column as the
+        reader delivers it, row 12 high, then 11, 0, 1-9: READ in MCP's own
+        loader, whose card-type table ATBL (printed p.331 lines 24-38) compares
+        column 1 as read with 4200 for B, 2010 for O, 1300 for 0-2-3 and so on
+        (tests/check_strap2_punch.py G9).  It is also what
         makes MCP's PUNFUL header cards (printed pp.320, 335, 361, 381) read
         back as the control cards they spell.  Message 84 without byte size 12
         (CHOSEN: 12 is used anyway); 79 for a character App. F does not give

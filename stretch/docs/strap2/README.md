@@ -124,8 +124,9 @@ out with zeros (CHOSEN). A PUNID under PUNFUL gets message 127 and is ignored. A
 is NOT WRITTEN: chart OS keeps the counter "for comparison" and no page shows the
 comparison. Entry mode CC converts each character to the 12-bit column App. F punches
 for it (C28-6129 p.16), with 84 for a byte size other than 12 and 79 for a character with
-no punches. DERIVED: the byte's bit order is the column as the reader delivers it, row 12
-high. Two `(CC*)DD(BU,,12)` statements of 45 and 35 characters, as MCP printed p.320
+no punches. The byte's bit order is the column as the reader delivers it, row 12 high: read
+in MCP's loader, whose card-type table ATBL (printed p.331 lines 24-38) compares column 1
+with 4200 for B, 2010 for O and 1300 for 0-2-3 (G9). Two `(CC*)DD(BU,,12)` statements of 45 and 35 characters, as MCP printed p.320
 lines 2-3 give them, then punch one full card that reads back as
 `B        HED, REP, 22LOADER, LOAD,,` with `22LOADER` in columns 73-80: an MCP control
 card. All 730 decks in `decks/` now punch; each binary deck loads to its image bit for bit,

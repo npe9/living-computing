@@ -118,6 +118,12 @@ MEASURED 2026-11-10 for F (A-E passing in each but where named):
                                            refuse: the program overlays them)
   "1ST SLC" read as "no data yet":         A4 (p.99 punches its SLC's jump
                                            as full cards), G8
+  G9: CC's row order against MCP's ATBL (printed p.331), 2026-11-10.
+  row order reversed in strap/cards.py:    E4, F3, G9 (A5, A8 and G1 decode
+                                           with the same table, so only G9
+                                           ties the order to IBM)
+  A9: p.2 without its SLC stand-in, STRAP II's own origin (2026-11-10).
+  start at 40 octal, not 41:               A9, E2, E3
   A8: p.256 line 34, a (CC*)DD that IS loaded (no PUNFUL), since 2026-11-10.
   the deck as it was (stand-ins):          A8 (both assemblers)
   strap_asm's CC rows reversed:            A8 (strap_asm only)
@@ -303,6 +309,14 @@ if __name__ == "__main__":
     check("A6 strap_asm loads no word of the header cards", spans,
           [(pg, []) for pg in printed if pg not in ("p2", "p15")])
     check("A7 and puts them at their printed locations", locs, [(pg, list(ab)) for pg, ab in printed.items()])
+    # p.2 line 4 prints 000041.00 with no SLC before it: STRAP II's own starting
+    # counter, 41 octal (C22-6729 p.33).  Without the deck's stand-in and with
+    # STRAP II's default origin the full card starts there.
+    src = "".join(ln for ln in open(os.path.join(HERE, "..", "decks", deck("p2")))
+                  if not ln.lstrip().startswith("SLC, (8)41.0"))
+    bare = compile_cards(deck_cards(src))
+    check("A9 p.2 without its stand-in: the header card at 000041.00, STRAP II's own start",
+          [(c.kind, c.origin) for c in bare.punch.cards if c.kind == "full"], [("full", 0o41 * 64)])
     # p.256 line 34 is a (CC*)DD NOT under PUNFUL: a card image that IS loaded,
     # at 230411.00 (RDLEOF), 22 columns measured in the ink.
     import cards as hollerith
@@ -503,7 +517,7 @@ if __name__ == "__main__":
                          card("", "SLC,(8)200.0"), card("", "B,0"), card("", "END,0")])
     hi = hdr.punch.images()
     check("G1 the full card reads back as the control card it spells (CC: the column "
-          "as read, row 12 high; DERIVED)",
+          "as read, row 12 high; ATBL p.331, G9)",
           "".join(inv.get(x, "?") for x in hi[0]),
           "B        HED, REP, 22LOADER, LOAD,,                                     22LOADER")
     check("G2 then an origin card numbered 1 with the new ID, and the branch",
@@ -538,6 +552,22 @@ if __name__ == "__main__":
                          card("", "PUNORG"), card("", "B,0"), card("", "END,0")])
     check("G8 the first SLC under PUNFUL after data stores the counter: one full card, no zeros",
           [c.kind for c in p99.punch.cards], ["full", "origin", "branch"])
+    # The row order, read in IBM's own code: the MCP loader's card-type table
+    # ATBL (printed p.331 lines 24-38, verified against the printed binary)
+    # compares column 1 as read with these 12-bit codes.  Each is the column of
+    # the punches its comment names, row 12 high (C28-6379 p.4 for the digits).
+    atbl = {"B": 0o4200, "C": 0o4100, "D": 0o4040, "P": 0o2004, "O": 0o2010, "T": 0o1100}
+    rows = "12 11 0 1 2 3 4 5 6 7 8 9".split()
+    col = lambda punches: sum(1 << (11 - rows.index(r)) for r in punches.split(","))
+    sets = {"7,8,9": 0o0007, "7,9": 0o0005, "5,6,7,8,9": 0o0037, "6,7,8,9": 0o0017,
+            "5,7,9": 0o0025, "5,7,8,9": 0o0027, "5,6,7,9": 0o0035, "6,7,9": 0o0015,
+            "0,2,3": 0o1300}
+    p331 = "\n".join(ln for ln in open(os.path.join(HERE, "..", "decks", "mcp_bootstrap_p331.strap"))
+                     if not ln.startswith("!"))
+    printed = sorted(int(v, 8) for v in __import__("re").findall(r"DD\(BU,12\),\(8\)(\d{4})", p331))
+    check("G9 CC's row order is ATBL's (printed p.331): column_bits and the punch sets give its 15 codes",
+          sorted([hollerith.column_bits(ch) for ch in atbl] + [col(k) for k in sets]),
+          printed)
     nf = compile_cards([card("", "SLC,64."), card("", "NOPUN"), card("", "PUNFUL"),
                         card("", "(CC*)DD(BU,,12),A*"), card("", "END,0")])
     check("G7 PUNFUL ends a NOPUN (errata page 19)", [c.kind for c in nf.punch.cards],
