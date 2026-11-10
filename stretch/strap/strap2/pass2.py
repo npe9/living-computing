@@ -810,7 +810,18 @@ class Pass2:
         if e.name == "PUNNOR":
             pu.punnor(unit)
             return
-        if pu.suppressed:
+        if e.name == "SLCR":
+            # Guide p.36: "If OUTPUT receives a unit of an SLCR, OUTPUT stops
+            # punching cards until the next SLC unit is encountered" (chart OT
+            # p.153 draws nothing for it); C28-6129 p.39: none of the statements
+            # after appear in the binary output.  CHOSEN: the card in process
+            # goes out first, as at every other stop.
+            pu.slc(unit)
+            pu.relative = True
+            return
+        if e.name == "SLC":
+            pu.relative = False
+        if pu.suppressed or pu.relative:
             return
         if kind == "TLB":
             pu.tlb(unit, printed[2])

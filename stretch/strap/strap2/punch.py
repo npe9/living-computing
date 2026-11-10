@@ -53,7 +53,8 @@ and the next card is an origin card; the deck goes on (C28-6129 p.39, PDF 43).
 NOPUN punches the card and suppresses punching until PUNNOR (C28-6129 p.37,
 PDF 41, and N28-1081's errata page 19: any punch pseudo-op ends it); PUNNOR
 punches the card and starts an origin card (p.36, PDF 40).  All read in the
-ink 2026-11-10.  NOT WRITTEN: SLCR's stop on punching until an SLC (p.39).
+ink 2026-11-10.  An SLCR stops punching until the next SLC (guide p.36,
+C28-6129 p.39); chart OT p.153 draws nothing for it.
 
 CHOSEN: column 2 is the low 12 bits of the clock given; a reproduced card's
 columns 73-80 are blank (its card ID is not kept); under NOPUN nothing is
@@ -108,6 +109,7 @@ class Punch:
         self.first_origin = None
         self.ident = None       # PUNID's eight characters, columns 73-80
         self.suppressed = False # NOPUN
+        self.relative = False   # after an SLCR, until an SLC
         self._clear()
         self.flow_next = False
         self.next_at = None     # where a flow card would load

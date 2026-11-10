@@ -70,6 +70,9 @@ MEASURED 2026-11-10 for F (A-E passing in each but where named):
   MPUNID without Gcaz:                     F2, F3
   no message 55:                           F7
   TLB with no address to the first origin: F6
+  SLCR does not stop punching:             F11
+  SLC does not restore punching:           F11
+  SLCR keeps the card in process:          F12
 """
 import glob
 import os
@@ -337,6 +340,15 @@ if __name__ == "__main__":
     check("F10 after TLB, an origin card, even after a full one",
           [(c.kind, c.nbits) for c in full.punch.cards],
           [("origin", 736), ("branch", 0), ("origin", 736), ("origin", 64), ("branch", 0)])
+
+    rel = compile_cards([card("", "SLC,64."), card("", "B,0"), card("", "SLCR,0"),
+                         card("P", "DD(BU,24,8),0"), card("", "B,0"), card("", "SLC,128."),
+                         card("", "B,P"), card("", "END,0")])
+    check("F11 SLCR: the card goes out, nothing until the next SLC (guide p.36)",
+          [(c.kind, c.origin // 32, c.nbits) for c in rel.punch.cards if c.kind != "branch"],
+          [("origin", 0o200, 32), ("origin", 0o400, 32)])
+    check("F12 the card in process is punched at the SLCR's own unit (CHOSEN)",
+          rel.punch.events[0][0], list(rel.units.intin())[2])
 
     print("punch: FAILED" if fails else "punch: all passed")
     sys.exit(1 if fails else 0)

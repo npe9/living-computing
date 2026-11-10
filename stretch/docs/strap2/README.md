@@ -110,8 +110,8 @@ punches the card in process and every later binary card carries the ID in column
 73-80, outside the check sum. TLB prints its address, punches an origin card and a
 branch card (41.8 with no address), and the deck goes on with an origin card. NOPUN
 suppresses punching until PUNNOR (errata page 19). CHOSEN: nothing at all is punched
-under NOPUN, END's branch card included. Not yet: SLCR's stop on punching until the
-next SLC (C28-6129 p.39); today an SLCR's code is punched.
+under NOPUN, END's branch card included. An SLCR punches the card in process and stops
+punching until the next SLC (guide p.36, C28-6129 p.39; chart OT p.153 draws nothing).
 One row is pinned against the page: p.48 line 5 prints `LVE,,CW+1.0` as `...01 80`,
 where the pocket card and MCP's own listing give `B0`
 (`tests/verify_mcpref_example2_listing.py`).
