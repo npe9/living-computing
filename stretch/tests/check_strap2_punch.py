@@ -77,6 +77,10 @@ MEASURED 2026-11-10 for F (A-E passing in each but where named):
   NOSEQ ignored:                           F13, F14
   RESEQ does not clear the count:          F13
   RESEQ leaves NOSEQ on:                   F13
+  PUNORG ignored:                          F15
+  PUNNOR does not end PUNORG:              F15
+  PUNORG does not end NOPUN:               F16
+  PUNORG keeps the card in process:        F17
   the count advanced under NOSEQ:          none, and none can: only RESEQ ends
                                            NOSEQ, and RESEQ clears the count
 """
@@ -201,12 +205,11 @@ if __name__ == "__main__":
                 print(f"   {base}: {detail}")
             if how == "unwritten":
                 unwritten.append((base, detail))
-    check("A1 decks whose cards load to their image", counts.get("same", 0), 725)
+    check("A1 decks whose cards load to their image", counts.get("same", 0), 726)
     check("A2 none differ", counts.get("differs", 0), 0)
-    check("A3 the five that stop at PUNFUL or PUNORG", sorted(unwritten),
+    check("A3 the four that stop at PUNFUL", sorted(unwritten),
           [("mcp_bootstrap_p320.strap", "PUNFUL"), ("mcp_bootstrap_p335.strap", "PUNFUL"),
-           ("mcp_bootstrap_p361.strap", "PUNFUL"), ("mcp_bootstrap_p381.strap", "PUNFUL"),
-           ("mcp_bootstrap_p99.strap", "PUNORG")])
+           ("mcp_bootstrap_p361.strap", "PUNFUL"), ("mcp_bootstrap_p381.strap", "PUNFUL")])
 
     # B. Appendix E's deck, field by field.
     sys.path.insert(0, HERE)
@@ -365,6 +368,22 @@ if __name__ == "__main__":
            for c in si],
           [(0o7, 64, 1), (0o7, 32, 0), (0o7, 32, 1), (0o15, None, 2)])
     check("F14 the check sum still holds on each", [c[3] == checksum(c) for c in si], [True] * 4)
+
+    po = compile_cards([card("", "SLC,64."), card("", "PUNORG")] + [card("", "B,0")] * 60
+                       + [card("", "PUNNOR")] + [card("", "B,0")] * 60 + [card("", "END,0")])
+    check("F15 PUNORG: every card an origin card; PUNNOR: flow cards again (C28-6129 p.36)",
+          [(c.kind, c.nbits) for c in po.punch.cards],
+          [("origin", 736), ("origin", 736), ("origin", 448),
+           ("origin", 736), ("flow", 800), ("origin", 384), ("branch", 0)])
+    pn = compile_cards([card("", "SLC,64."), card("", "NOPUN"), card("", "B,0"), card("", "PUNORG"),
+                        card("", "B,0"), card("", "END,0")])
+    check("F16 PUNORG ends a NOPUN (N28-1081 errata page 19)",
+          [(c.kind, c.origin // 32) for c in pn.punch.cards if c.kind != "branch"],
+          [("origin", 0o201)])
+    pf2 = compile_cards([card("", "SLC,64."), card("", "B,0"), card("", "PUNORG"), card("", "B,0"),
+                         card("", "END,0")])
+    check("F17 PUNORG punches the card in process (chart OR p.151)",
+          [(c.kind, c.nbits) for c in pf2.punch.cards], [("origin", 32), ("origin", 32), ("branch", 0)])
 
     print("punch: FAILED" if fails else "punch: all passed")
     sys.exit(1 if fails else 0)

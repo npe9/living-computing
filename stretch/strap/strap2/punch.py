@@ -70,7 +70,7 @@ how a continued one is reproduced);
 the TYPE card's options are not copied; a gap in the location counter
 between units goes on the card as the image holds it, not as a new origin; a
 DR's skip starts where the last data ended, so it covers its own rounding.
-NOT WRITTEN: PUNFUL, PUNORG, PUNREL and the relocatable cards.  The
+NOT WRITTEN: PUNFUL, PUNREL and the relocatable cards.  The
 assembly goes on; the punch stops at the first, `unwritten` names it, and
 `images` refuses.
 `mcp` counts the IOD and REEL units.  `images` is the binary cards alone;
@@ -116,6 +116,7 @@ class Punch:
         self.suppressed = False # NOPUN
         self.relative = False   # after an SLCR, until an SLC
         self.noseq = False      # NOSEQ, until RESEQ
+        self.punorg = False     # PUNORG, until PUNNOR
         self.count = 0          # the sequence number of the last card
         self._clear()
         self.flow_next = False
@@ -127,7 +128,7 @@ class Punch:
 
     # -- the buffer --------------------------------------------------------------
     def _is_flow(self):
-        return self.flow_next and not self.skip
+        return self.flow_next and not self.skip and not self.punorg
 
     def _capacity(self):
         return FLOW_BITS if self._is_flow() else ORIGIN_BITS
@@ -270,6 +271,17 @@ class Punch:
         self._punch(unit)
         self._new_origin()
         self.suppressed = False
+        self.punorg = False
+
+    def punorg_(self, unit):
+        """Chart OR, PUNORG: punch the card in the existing mode, turn on the
+        origin and PUNORG indicators: every card after is an origin card
+        (C28-6129 p.36).  Like any punch pseudo-op it ends a NOPUN (N28-1081
+        errata page 19).  CHOSEN: PUNNOR ends it ("restores normal punching")."""
+        self._punch(unit)
+        self._new_origin()
+        self.suppressed = False
+        self.punorg = True
 
     def tlb(self, unit, address):
         """Chart OR, TLB: punch an origin card and a branch card, turn on the

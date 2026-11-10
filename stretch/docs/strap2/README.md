@@ -43,7 +43,7 @@ The known difference: `strap_asm` puts a NOP in a half word rounded over before
 a DR(N) or DRZ(N), and p.33 makes only a CNOP a NOP. strap2 follows the guide. No
 listing prints those halves, so no oracle can decide.
 
-**Not yet written:** DDI; PUNFUL, PUNORG, PUNREL, the relocatable cards; the MIBA and MBSPEC corrections; the coprocessor;
+**Not yet written:** DDI; PUNFUL, PUNREL, the relocatable cards; the MIBA and MBSPEC corrections; the coprocessor;
 DUPLI; relocation; subscripts with dimensions; the system symbols' register-length
 dds; PRNTALL's whole-table print; `$INF` (N28-1081 page 20 adds it, 12, infinity);
 the listing's page headings after the first; the field number in an error record
@@ -79,9 +79,9 @@ OUTPUT puts each unit's binary in the punch buffer and punches absolute origin, 
 branch cards by C28-6129 pp.22-23 and the update's errata (736 bits on an origin card,
 800 on a flow card, END with no address to 41.8) and chart OV for DR and DRZ. The column
 and row convention and the check sum are MCP's loader's, as `../bss_loader_spec.md`
-reads them; no loader path has run yet. Every deck in `decks/` but five (four PUNFUL,
-one PUNORG, not written) punches a deck which, decoded from the columns and loaded,
-gives its assembled image bit for bit, 725 of them. The punch events reproduce the
+reads them; no loader path has run yet. Every deck in `decks/` but four (PUNFUL, not
+written) punches a deck which, decoded from the columns and loaded,
+gives its assembled image bit for bit, 726 of them. The punch events reproduce the
 second `*` the 1963 and 1964 prints show after the location: Appendix E's lines 17, 19,
 23 and 25, and p.48's CW, BUF1, EPGK, MESG and END, every marked located line in both,
 and no other. The update's text says that `*` marks a line with an error; the prints say
@@ -113,6 +113,9 @@ under NOPUN, END's branch card included. An SLCR punches the card in process and
 punching until the next SLC (guide p.36, C28-6129 p.39; chart OT p.153 draws nothing).
 NOSEQ and RESEQ (chart OU p.154, N28-1081 page 2) punch the card in process; NOSEQ
 leaves the sequence column blank thereafter, RESEQ starts the count again at 1.
+PUNORG (chart OR, C28-6129 p.36) punches the card in process and makes every card after
+an origin card until PUNNOR (CHOSEN: PUNNOR "restores normal punching"); it ends a NOPUN.
+`mcp_bootstrap_p99.strap`, which has one, now punches and loads to its image: 726 decks.
 One row is pinned against the page: p.48 line 5 prints `LVE,,CW+1.0` as `...01 80`,
 where the pocket card and MCP's own listing give `B0`
 (`tests/verify_mcpref_example2_listing.py`).

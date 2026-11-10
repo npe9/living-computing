@@ -810,6 +810,9 @@ class Pass2:
         if e.name == "PUNNOR":
             pu.punnor(unit)
             return
+        if e.name == "PUNORG":
+            pu.punorg_(unit)
+            return
         if e.name == "NOSEQ":
             pu.noseq_(unit)
             return
@@ -832,7 +835,7 @@ class Pass2:
         if kind == "TLB":
             pu.tlb(unit, printed[2])
             return
-        if e.name in ("PUNFUL", "PUNORG", "PUNREL"):
+        if e.name in ("PUNFUL", "PUNREL"):
             # Not written: the assembly goes on, and the deck says it is short.
             pu.unwritten = e.name
             return
