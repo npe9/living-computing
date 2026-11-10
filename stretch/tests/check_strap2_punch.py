@@ -19,6 +19,11 @@ What is checked, and how strong each oracle is:
      in a row adding up; a DRZ zeroing; a DR after a DRZ punched apart; END
      with no address, by both editions.
   D  PUNFUL is not written: the assembly goes on and `images` refuses.
+  E  the MCP cards, C22-6678-1 pp.7-10 read in the ink: GO and LIM first (guide
+     p.157 boxes 15-16), the IOD of p.48 reproduced with its reference number and
+     exit word, a REEL as submitted, the card code by hand from App. F p.56, and
+     binary sequence numbers counting binary cards alone.  LIM's bounds for p.48
+     are DERIVED (no print of p.48's deck survives).
 The card-close lines against the two printed listings are in
 check_strap2_listing.py (DERIVED: the prints' second '*').
 
@@ -38,6 +43,16 @@ saved copy and compared; control all passing here and in check_strap2_listing.py
   no punch after the last unit:            A1, A2
   a gap in the counter starts a new card:  C1 | p.48 marks
   the mark on the last line, not located:  | both pages' marks
+MEASURED 2026-11-10, the same way, for E (A-D passing in each):
+  IOD exit in bits, not words:             E3, E6
+  no GO card:                              E1, E2, E8
+  LIM n1 from the default origin 41:       E7
+  undefined symbols' words not in n2:      E7
+  sequence numbers count control cards:    E5
+  control cards after all the binary:      E1, E4, E5, E8
+  reference number 3 decimal digits:       E3, E4, E6
+  name not reproduced:                     E3
+  an IOD past column 62 accepted:          E9
 """
 import glob
 import os
@@ -217,6 +232,48 @@ if __name__ == "__main__":
         check("D1 PUNFUL: images refuse", "accepted", "PunchError")
     except PunchError:
         check("D1 PUNFUL: images refuse", "PunchError", "PunchError")
+
+    # E. The MCP cards (C22-6678-1 pp.7-10): GO, LIM, then IOD and REEL as
+    # submitted at their units, then the binary cards, numbered from 1.
+    src = open(os.path.join(HERE, "..", "decks", "mcpref_example2.strap")).read()
+    kept = [s for s in src.splitlines()
+            if not s.startswith("        SLC, (8)41.0") and not s.startswith("RON     SYN")]
+    p48 = compile_cards(["BRON      IOD,TAPE,EXIT,,,ODD,HD,CSAVE", card("", "PRNS")]
+                        + deck_cards("\n".join(kept)))
+    deck = p48.punch.deck()
+    check("E1 p.48: GO, LIM, the IOD, then binary",
+          [h for h, _ in deck[:4]], ["text", "text", "text", "binary"])
+    check("E2 GO and LIM: B in 1, from 10; p.48 runs 41 to the word after 144",
+          [c for _, c in deck[:2]], ["B         TYPE,GO", "B         LIM,000041,000145"])
+    iod = next((c for h, c in deck if h == "text" and c.startswith("BRON")), "").ljust(80)
+    check("E3 the IOD as submitted, reference 0001 in 63-66, EXIT's word 000114 in 67-72",
+          (iod[:62].rstrip(), iod[62:66], iod[66:72], iod[72:].strip()),
+          ("BRON      IOD,TAPE,EXIT,,,ODD,HD,CSAVE", "0001", "000114", ""))
+    im = p48.punch.deck_images(clock=0o1234)
+    k = next(i for i, (h, _) in enumerate(deck) if h == "binary")
+    # Hollerith by hand from App. F p.56: B is 12-2, rows 12 and 2; 0 is row 0
+    # alone; 1 is row 1; blank is none.  Row 12 high, then 11, 0, 1 ... 9.
+    check("E4 the IOD card in the card code: B, 0, 1, blank",
+          (im[k - 1][0], im[k - 1][62], im[k - 1][65], im[k - 1][79]), (0o4200, 0o1000, 0o400, 0))
+    check("E5 binary cards numbered from 1 after the three",
+          [field(c, 24, 12) for c in im[k:]], list(range(1, len(im) - k + 1)))
+    m2 = compile_cards(["BX        IOD,TAPE,EXIT", "BY        IOD,DISK,EXIT",
+                        "B         REEL,ABC,DEF", card("", "SLC,64."), card("EXIT", "B,0"),
+                        card("", "B,Q"), card("", "END,0")])
+    t = [c for h, c in m2.punch.deck() if h == "text"]
+    check("E6 the second IOD is 0002; REEL has nothing past its statement",
+          [x.ljust(80)[62:72] for x in t if "IOD" in x] + [x for x in t if "REEL" in x],
+          ["0001000100", "0002000100", "B         REEL,ABC,DEF"])
+    check("E7 LIM from the first origin; an undefined symbol's word counted",
+          [x for x in t if "LIM," in x], ["B         LIM,000100,000102"])
+
+    late = compile_cards([card("", "SLC,64."), card("EXIT", "B,0"), "B         REEL,ABC",
+                          card("", "B,0"), card("", "END,0")])
+    check("E8 a REEL after code goes out at its unit, ahead of the card still filling (CHOSEN)",
+          [h if h == "binary" else c[10:14] for h, c in late.punch.deck()],
+          ["TYPE", "LIM,", "REEL", "binary", "binary"])
+    big = compile_cards(["BX       IOD,TAPE,EXIT," + "A" * 40, card("EXIT", "B,0"), card("", "END,0")])
+    check("E9 an IOD past column 62 is not written", (big.punch.unwritten or "").startswith("IOD"), True)
 
     print("punch: FAILED" if fails else "punch: all passed")
     sys.exit(1 if fails else 0)

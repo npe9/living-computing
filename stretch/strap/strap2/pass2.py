@@ -18,7 +18,7 @@ from .symtab import KIND_LABEL, KIND_SYN, KIND_UNDEF, KIND_SPECIAL, FUNCTION
 from .unit import *             # noqa: F401,F403
 from .value import V, F_UNDEF, F_QUEST, F_MULTI, F_PSEUDO, F_CONTAG
 from .dnum import final, load_entry, DnumError
-from .punch import Punch
+from .punch import Punch, PunchError
 
 ABS_START = 0o41 * 64           # p.33: 41 octal, or 0 in PUNREL mode
 
@@ -103,6 +103,7 @@ class Pass2:
                     st.put(f, "ZST3", 1)
                     self.val._enter(f, at, 0, 0, 0)
                     at += 64
+            self.top_word = at // 64
         for name, f in list(st.dictionary.items()):
             if st.get(f, "ZST0"):
                 continue
@@ -681,6 +682,12 @@ class Pass2:
         for unit in self.units.intin():
             pending = self.unit_b(unit, pending)
         self.punch.finish(unit)
+        # LIM (C22-6678-1 p.8): n1 the word holding the lowest bit loaded or
+        # reserved (the first origin card's origin), n2 the word after the
+        # highest, the undefined symbols' words counted (CHOSEN).
+        starts = [c.origin for c in self.punch.cards if c.kind == "origin"]
+        high = getattr(self, "top_word", self.upper // 64)
+        self.punch.lim = (min(starts) // 64 if starts else high, high)
         return self
 
     # -- NUNDSY, charts EG and EH pp.170-171, text p.172 ----------------------------
@@ -783,6 +790,10 @@ class Pass2:
             return
         if e.mcp:
             pu.mcp += 1
+            try:
+                pu.text_card(unit, self.mcp_card(unit, e))
+            except PunchError as x:
+                pu.unwritten = f"{e.name}: {x}"
             return
         if e.name in ("PUNFUL", "PUNORG", "PUNREL", "TLB"):
             # Not written: the assembly goes on, and the deck says it is short.
@@ -801,6 +812,31 @@ class Pass2:
             n = self.running - start
             if n > 0:
                 pu.data(unit, start, n, self._image_bits(start, n))
+
+    def statement_text(self, unit):
+        """The statement as Pass 1 kept it (Zilsst bytes after the coded fields)."""
+        u = self.units
+        start = (unit + FIXED_BITS + u.get(unit, ZILCFD) + 63) // 64 * 64
+        return "".join(chr(self.mem.get(start + 8 * k, 8)) for k in range(u.get(unit, ZILSST)))
+
+    def mcp_card(self, unit, e):
+        """An IOD or REEL card as submitted (C22-6678-1 pp.9-10): B, the name in
+        2-9, the statement in 10-62; an IOD's reference number and exit word
+        address in 63-66 and 67-72, octal.  CHOSEN: a null exit punches 000000,
+        and an exit not on a full word punches the word holding it."""
+        name = (self.p1.print_names.get(unit, ("",))[0] or "")
+        lines = [t.rstrip() for t in self.statement_text(unit).split("\n") if t.strip()]
+        if len(name) > 8 or len(lines) != 1 or len(lines[0]) > 53:
+            raise PunchError(f"{e.name} card does not fit columns 2-62: {name!r} {lines!r}")
+        text = "B" + name.ljust(8) + lines[0].ljust(53)
+        if e.name == "IOD":
+            u = self.units
+            exit_ = 0
+            if u.get(unit, ZINFLD):
+                v = self.val.read_field(self.mem, unit + FIXED_BITS)
+                exit_ = v.total // 64 if v.avail else 0
+            text += f"{u.get(unit, ZILPMS) & 0o7777:04o}{exit_ & 0o777777:06o}"
+        return text.rstrip()
 
     def _image_bits(self, at, n):
         v = 0

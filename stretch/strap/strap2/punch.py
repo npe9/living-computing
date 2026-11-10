@@ -34,15 +34,30 @@ skip before loading.  `events` records each punch against the unit that caused
 it, which is what the listing's second '*' after the location seems to mark
 (docs/strap2/pass2.md section 12, DERIVED).
 
+MCP control cards (C22-6678-1 pp.7-11, read in the ink): Hollerith, in the
+card code of Appendix F p.56 (strap/cards.py).  The deck starts with NMCPA1's
+two (guide p.148, p.157 boxes 15-16): `B` in column 1 and `TYPE,GO` from column
+10; then `LIM,n1,n2`, six-digit octal, n1 the word holding the lowest bit used,
+n2 the word after the highest (p.8).  An IOD card is reproduced as submitted,
+with the reference number in columns 63-66 as four octal digits and the exit's
+word address in 67-72 as six (p.9); a REEL card as submitted, 63-80 blank
+(p.10).  Both go out at their own unit, before any binary card after them.
+Binary cards alone carry sequence numbers.
+
 CHOSEN: column 2 is the low 12 bits of the clock given; columns 73-80 are
-blank (PUNID's identification is not written); a gap in the location counter
+blank (PUNID's identification is not written, and the card ID of a reproduced
+card is not kept); LIM's n2 counts the undefined symbols' words above the
+program, and n1 is the first origin card's origin; an IOD or REEL statement
+must fit columns 10-62 on one card, or the deck refuses (the guide does not say
+how a continued one is reproduced);
+the TYPE card's options are not copied; a gap in the location counter
 between units goes on the card as the image holds it, not as a new origin; a
 DR's skip starts where the last data ended, so it covers its own rounding.
 NOT WRITTEN: PUNFUL, PUNORG, PUNREL and the relocatable cards; TLB.  The
 assembly goes on; the punch stops at the first, `unwritten` names it, and
 `images` refuses.
-MCP control cards (IOD, REEL) and the GO and LIM cards are not punched here;
-`mcp` counts the units skipped so a caller can refuse an incomplete deck.
+`mcp` counts the IOD and REEL units.  `images` is the binary cards alone;
+`deck` and `deck_images` the whole deck in order.
 """
 
 ORIGIN_BITS, FLOW_BITS = 736, 800
@@ -73,6 +88,8 @@ class Punch:
         self.cards = []
         self.events = []        # (unit, card index)
         self.mcp = 0
+        self.control = []       # (binary cards before it, text), in deck order
+        self.lim = None
         self.unwritten = None   # the first pseudo-op whose cards are not written
         self.edition = edition
         self.first_origin = None
@@ -199,6 +216,10 @@ class Punch:
                        else (self.first_origin or 0))
         self._emit(unit, Card("branch", address=address))
 
+    def text_card(self, unit, text):
+        """An MCP card, punched at its unit (chart OP boxes 15, 16)."""
+        self.control.append((len(self.cards), text))
+
     def finish(self, unit):
         """After the last unit.  STRAP II's deck ends at END; a deck without one
         (a transcribed page) has its last card punched here, and no branch card
@@ -207,36 +228,66 @@ class Punch:
 
     # -- card images -------------------------------------------------------------
     def images(self, clock=0):
-        """Each card as 80 twelve-bit columns, row 0 the high bit."""
+        """Each binary card as 80 twelve-bit columns, row 0 the high bit."""
         if self.unwritten:
             raise PunchError(f"{self.unwritten}: its cards are not written, so the deck stops there")
-        out = []
-        for seq, c in enumerate(self.cards, 1):
-            bits = [0] * 960
+        return [self._encode(c, seq, clock) for seq, c in enumerate(self.cards, 1)]
 
-            def put(at, n, v):
-                for k in range(n):
-                    bits[at + k] = (v >> (n - 1 - k)) & 1
-            row = {"origin": (9, 10, 11), "flow": (9, 11), "branch": (8, 9, 11)}[c.kind]
-            for r in row:
-                bits[r] = 1
-            put(12, 12, clock & 0xFFF)
-            put(24, 12, seq & 0xFFF)
-            if c.kind == "origin":
-                put(48, 1, int(c.zero))
-                put(49, 1, int(c.after))
-                put(50, 10, c.nbits)
-                put(60, 24, c.origin)
-                put(84, 24, c.skip)
-                put(ORIGIN_DATA, c.nbits, c.value)
-            elif c.kind == "flow":
-                put(FLOW_DATA, c.nbits, c.value)
-            else:
-                put(60, 24, c.address)
-            cols = [int("".join(map(str, bits[12 * i:12 * i + 12])), 2) for i in range(80)]
-            cols[3] = checksum(cols)
-            out.append(cols)
+    def deck(self):
+        """The whole deck in order: ("text", card) or ("binary", Card)."""
+        if self.unwritten:
+            raise PunchError(f"{self.unwritten}: its cards are not written, so the deck stops there")
+        out = [("text", "B         TYPE,GO")]
+        if self.lim is not None:
+            out.append(("text", f"B         LIM,{self.lim[0]:06o},{self.lim[1]:06o}"))
+        k = 0
+        for at, text in self.control + [(len(self.cards), None)]:
+            while k < at:
+                out.append(("binary", self.cards[k]))
+                k += 1
+            if text is not None:
+                if len(text) > 80:
+                    raise PunchError(f"control card longer than 80 columns: {text!r}")
+                out.append(("text", text))
         return out
+
+    def deck_images(self, clock=0):
+        """The whole deck as columns: control cards in the card code."""
+        import cards as hollerith          # strap/cards.py, Appendix F
+        out, seq = [], 0
+        for how, c in self.deck():
+            if how == "text":
+                out.append([hollerith.column_bits(ch) for ch in c.ljust(80)])
+            else:
+                seq += 1
+                out.append(self._encode(c, seq, clock))
+        return out
+
+    def _encode(self, c, seq, clock):
+        bits = [0] * 960
+
+        def put(at, n, v):
+            for k in range(n):
+                bits[at + k] = (v >> (n - 1 - k)) & 1
+        row = {"origin": (9, 10, 11), "flow": (9, 11), "branch": (8, 9, 11)}[c.kind]
+        for r in row:
+            bits[r] = 1
+        put(12, 12, clock & 0xFFF)
+        put(24, 12, seq & 0xFFF)
+        if c.kind == "origin":
+            put(48, 1, int(c.zero))
+            put(49, 1, int(c.after))
+            put(50, 10, c.nbits)
+            put(60, 24, c.origin)
+            put(84, 24, c.skip)
+            put(ORIGIN_DATA, c.nbits, c.value)
+        elif c.kind == "flow":
+            put(FLOW_DATA, c.nbits, c.value)
+        else:
+            put(60, 24, c.address)
+        cols = [int("".join(map(str, bits[12 * i:12 * i + 12])), 2) for i in range(80)]
+        cols[3] = checksum(cols)
+        return cols
 
 
 def checksum(cols):

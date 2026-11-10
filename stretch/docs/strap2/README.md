@@ -43,8 +43,7 @@ The known difference: `strap_asm` puts a NOP in a half word rounded over before
 a DR(N) or DRZ(N), and p.33 makes only a CNOP a NOP. strap2 follows the guide. No
 listing prints those halves, so no oracle can decide.
 
-**Not yet written:** DDI; NMCP's card image (IOD and REEL cards), the GO and LIM
-cards, PUNFUL, PUNORG, PUNREL, TLB, the relocatable cards and PUNID's
+**Not yet written:** DDI; PUNFUL, PUNORG, PUNREL, TLB, the relocatable cards and PUNID's
 identification columns; the MIBA and MBSPEC corrections; the coprocessor;
 DUPLI; relocation; subscripts with dimensions; the system symbols' register-length
 dds; PRNTALL's whole-table print; `$INF` (N28-1081 page 20 adds it, 12, infinity);
@@ -90,6 +89,19 @@ and no other. The update's text says that `*` marks a line with an error; the pr
 a punched card (DERIVED). Both are kept, `star="punch"` and `star="error"`. p.48's mark
 on line 2, after the IOD card, is the one the punch does not place: the IOD card is
 listed and punched at its own unit (chart OP boxes 15, 16).
+
+**The MCP cards** (`punch.py` `deck`, `deck_images`; `check_strap2_punch.py` E). The deck
+opens with NMCPA1's `TYPE,GO` and `LIM,n1,n2` cards (C22-6678-1 pp.7-8; guide p.157
+boxes 15-16), `B` in column 1 and the text from column 10, in the card code of App. F
+p.56. An IOD card is reproduced as submitted with its reference number in columns
+63-66 and its exit table's word address in 67-72, octal (p.9): p.48's goes out as
+`...0001000114`, EXIT being word 114. A REEL card is reproduced with 63-80 blank (p.10).
+Each goes out at its own unit, ahead of a binary card still filling. Binary cards alone
+are sequence-numbered. CHOSEN, and in `punch.py`'s header: n1 is the first origin
+card's origin, n2 the word after the highest, counting the undefined symbols' words;
+a null exit punches 000000; a statement that does not fit columns 10-62 on one card
+stops the deck as PUNFUL does; columns 73-80 blank; the TYPE card's options not copied.
+p.48's LIM (000041, 000145) is DERIVED: no print of that deck's cards survives.
 One row is pinned against the page: p.48 line 5 prints `LVE,,CW+1.0` as `...01 80`,
 where the pocket card and MCP's own listing give `B0`
 (`tests/verify_mcpref_example2_listing.py`).
