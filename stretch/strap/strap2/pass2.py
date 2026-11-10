@@ -810,6 +810,12 @@ class Pass2:
         if e.name == "PUNNOR":
             pu.punnor(unit)
             return
+        if e.name == "NOSEQ":
+            pu.noseq_(unit)
+            return
+        if e.name == "RESEQ":
+            pu.reseq(unit)
+            return
         if e.name == "SLCR":
             # Guide p.36: "If OUTPUT receives a unit of an SLCR, OUTPUT stops
             # punching cards until the next SLC unit is encountered" (chart OT

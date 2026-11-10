@@ -42,7 +42,11 @@ n2 the word after the highest (p.8).  An IOD card is reproduced as submitted,
 with the reference number in columns 63-66 as four octal digits and the exit's
 word address in 67-72 as six (p.9); a REEL card as submitted, 63-80 blank
 (p.10).  Both go out at their own unit, before any binary card after them.
-Binary cards alone carry sequence numbers.
+Binary cards alone carry sequence numbers.  NOSEQ and RESEQ (chart OU p.154,
+N28-1081 page 2, read in the ink) punch the card in process; after NOSEQ the
+sequence column is left blank, and after RESEQ the count starts again at 1.
+Whether a card under NOSEQ advances the count cannot show: only RESEQ ends
+NOSEQ, and RESEQ clears it.
 
 Chart OR (C22-6729 p.151): PUNID punches the card in process, then stores the
 ID, which every binary card after carries in columns 73-80 in the card code
@@ -66,7 +70,7 @@ how a continued one is reproduced);
 the TYPE card's options are not copied; a gap in the location counter
 between units goes on the card as the image holds it, not as a new origin; a
 DR's skip starts where the last data ended, so it covers its own rounding.
-NOT WRITTEN: PUNFUL, PUNORG, PUNREL and the relocatable cards; NOSEQ, RESEQ.  The
+NOT WRITTEN: PUNFUL, PUNORG, PUNREL and the relocatable cards.  The
 assembly goes on; the punch stops at the first, `unwritten` names it, and
 `images` refuses.
 `mcp` counts the IOD and REEL units.  `images` is the binary cards alone;
@@ -88,6 +92,7 @@ class Card:
         self.kind, self.origin, self.nbits, self.value = kind, origin, nbits, value
         self.skip, self.zero, self.after, self.address = skip, zero, after, address
         self.ident = None
+        self.seq = 0
 
     def __repr__(self):
         if self.kind == "branch":
@@ -110,6 +115,8 @@ class Punch:
         self.ident = None       # PUNID's eight characters, columns 73-80
         self.suppressed = False # NOPUN
         self.relative = False   # after an SLCR, until an SLC
+        self.noseq = False      # NOSEQ, until RESEQ
+        self.count = 0          # the sequence number of the last card
         self._clear()
         self.flow_next = False
         self.next_at = None     # where a flow card would load
@@ -129,6 +136,11 @@ class Punch:
         if card.kind == "origin" and self.first_origin is None:
             self.first_origin = card.origin
         card.ident = self.ident
+        if self.noseq:
+            card.seq = 0
+        else:
+            self.count += 1
+            card.seq = self.count
         self.cards.append(card)
         self.events.append((unit, len(self.cards) - 1))
 
@@ -265,6 +277,21 @@ class Punch:
         self.end(unit, address)
         self._new_origin()
 
+    def noseq_(self, unit):
+        """Chart OU (C22-6729 p.154), NOSEQ: punch the card in the existing mode,
+        turn on the bit to prevent punching sequence numbers."""
+        self._punch(unit)
+        self.flow_next = False
+        self.noseq = True
+
+    def reseq(self, unit):
+        """Chart OU, RESEQ: punch the card, turn the bit off, clear the sequence
+        number field: the next card is 1 (N28-1081 page 2)."""
+        self._punch(unit)
+        self.flow_next = False
+        self.noseq = False
+        self.count = 0
+
     def text_card(self, unit, text):
         """An MCP card, punched at its unit (chart OP boxes 15, 16)."""
         self.control.append((len(self.cards), text))
@@ -280,7 +307,7 @@ class Punch:
         """Each binary card as 80 twelve-bit columns, row 0 the high bit."""
         if self.unwritten:
             raise PunchError(f"{self.unwritten}: its cards are not written, so the deck stops there")
-        return [self._encode(c, seq, clock) for seq, c in enumerate(self.cards, 1)]
+        return [self._encode(c, c.seq, clock) for c in self.cards]
 
     def deck(self):
         """The whole deck in order: ("text", card) or ("binary", Card)."""
@@ -303,13 +330,12 @@ class Punch:
     def deck_images(self, clock=0):
         """The whole deck as columns: control cards in the card code."""
         import cards as hollerith          # strap/cards.py, Appendix F
-        out, seq = [], 0
+        out = []
         for how, c in self.deck():
             if how == "text":
                 out.append([hollerith.column_bits(ch) for ch in c.ljust(80)])
             else:
-                seq += 1
-                out.append(self._encode(c, seq, clock))
+                out.append(self._encode(c, c.seq, clock))
         return out
 
     def _encode(self, c, seq, clock):

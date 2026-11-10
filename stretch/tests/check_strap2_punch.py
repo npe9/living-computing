@@ -73,6 +73,12 @@ MEASURED 2026-11-10 for F (A-E passing in each but where named):
   SLCR does not stop punching:             F11
   SLC does not restore punching:           F11
   SLCR keeps the card in process:          F12
+  NOSEQ does not punch the card in process: F13, F14
+  NOSEQ ignored:                           F13, F14
+  RESEQ does not clear the count:          F13
+  RESEQ leaves NOSEQ on:                   F13
+  the count advanced under NOSEQ:          none, and none can: only RESEQ ends
+                                           NOSEQ, and RESEQ clears the count
 """
 import glob
 import os
@@ -349,6 +355,16 @@ if __name__ == "__main__":
           [("origin", 0o200, 32), ("origin", 0o400, 32)])
     check("F12 the card in process is punched at the SLCR's own unit (CHOSEN)",
           rel.punch.events[0][0], list(rel.units.intin())[2])
+
+    sq = compile_cards([card("", "SLC,64."), card("", "B,0"), card("", "B,0"), card("", "NOSEQ"),
+                        card("", "B,0"), card("", "RESEQ"), card("", "B,0"), card("", "END,0")])
+    si = sq.punch.images(clock=0)
+    check("F13 NOSEQ punches the card and leaves column 3 blank; RESEQ punches and "
+          "starts again at 1 (chart OU p.154)",
+          [(field(c, 0, 12), field(c, 50, 10) if c[0] == 0o7 else None, field(c, 24, 12))
+           for c in si],
+          [(0o7, 64, 1), (0o7, 32, 0), (0o7, 32, 1), (0o15, None, 2)])
+    check("F14 the check sum still holds on each", [c[3] == checksum(c) for c in si], [True] * 4)
 
     print("punch: FAILED" if fails else "punch: all passed")
     sys.exit(1 if fails else 0)

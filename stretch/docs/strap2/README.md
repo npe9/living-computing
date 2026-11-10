@@ -43,8 +43,7 @@ The known difference: `strap_asm` puts a NOP in a half word rounded over before
 a DR(N) or DRZ(N), and p.33 makes only a CNOP a NOP. strap2 follows the guide. No
 listing prints those halves, so no oracle can decide.
 
-**Not yet written:** DDI; PUNFUL, PUNORG, PUNREL, the relocatable cards, NOSEQ and
-RESEQ; the MIBA and MBSPEC corrections; the coprocessor;
+**Not yet written:** DDI; PUNFUL, PUNORG, PUNREL, the relocatable cards; the MIBA and MBSPEC corrections; the coprocessor;
 DUPLI; relocation; subscripts with dimensions; the system symbols' register-length
 dds; PRNTALL's whole-table print; `$INF` (N28-1081 page 20 adds it, 12, infinity);
 the listing's page headings after the first; the field number in an error record
@@ -112,6 +111,8 @@ branch card (41.8 with no address), and the deck goes on with an origin card. NO
 suppresses punching until PUNNOR (errata page 19). CHOSEN: nothing at all is punched
 under NOPUN, END's branch card included. An SLCR punches the card in process and stops
 punching until the next SLC (guide p.36, C28-6129 p.39; chart OT p.153 draws nothing).
+NOSEQ and RESEQ (chart OU p.154, N28-1081 page 2) punch the card in process; NOSEQ
+leaves the sequence column blank thereafter, RESEQ starts the count again at 1.
 One row is pinned against the page: p.48 line 5 prints `LVE,,CW+1.0` as `...01 80`,
 where the pocket card and MCP's own listing give `B0`
 (`tests/verify_mcpref_example2_listing.py`).
