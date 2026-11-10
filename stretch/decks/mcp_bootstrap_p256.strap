@@ -32,14 +32,20 @@
 !     and line 35's half-word LX lands at 230415.40 as printed.  ("COMD"
 !     as printed: the fourth glyph has the D's straight stem.)
 !
-! >>> LINE 34'S (CC*)DD IS NOT HANDED TO THE ASSEMBLER. <<<  strap_asm
-! refuses entry mode CC ("CC's 12-bit card code is tabulated in no
-! document read so far"), as printed pp.15 and 99 found.  The card is
-! kept as a comment; the deck carries TWO stand-ins that are not
-! printed cards: "RDLEOF SYN, (8)230411.0" (line 34's printed
-! location) and "SLC, (8)230415.40" (line 35's printed location).  The
-! 264 bits 230411.00..230415.10 are therefore NOT written into the
-! image by this deck.
+! >>> LINE 34'S (CC*)DD IS ASSEMBLED (2026-11-10). <<<  It used to be
+! a comment behind two stand-ins (RDLEOF SYN and SLC,(8)230415.40)
+! while strap_asm refused entry mode CC.  Both assemblers now convert CC
+! (C28-6129 p.16: each character its card column's punches, App. F
+! p.56; the bit order row 12 high is DERIVED).  Unlike the PUNFUL header
+! cards of pp.2, 15, 99 and 320-381, THIS ONE IS LOADED: no PUNFUL is in
+! force, so its 264 bits are in the MCP image at 230411.00-230415.10
+! (they were zeros before).  The 22 characters are MEASURED in the ink
+! (PDF 7 at 300 dpi, the print's fixed pitch of 30 px per cell): "B" in
+! cell 16, cells 17-24 blank, "COMD,OFFLINE," in 25-37, the "*" in 38.
+! Line 35's printed 230415.40 allows 21-24 characters; the ink says 22.
+! It is a card image of the operator command "COMD,OFFLINE," (B in
+! column 1, the statement from column 10: C22-6678-1 pp.7-10).
+! tests/check_strap2_punch.py A8 reads it back out of strap_asm's image.
 !
 ! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
 !   * lines 4, 23 ",DICDEF" = DIODEF (open O): landed p.105/p.179
@@ -149,9 +155,7 @@ REDUMP  B,DMCP                                               ! line 22
         CNOP,                                                ! line 31
 RSMGSP  (IQS*)DD(BU,8), STRIP           BEFORE REUSING *     ! line 32
         CNOP                                                 ! line 33
-! RDLEOF  (CC*)DD(BU,,12),B        COMD,OFFLINE,*            ! line 34   printed "RDLECF" -- NOT ASSEMBLED (entry mode CC refused) -- see header
-RDLEOF  SYN, (8)230411.0             ! STAND-IN for line 34's (CC*)DD -- see header
-        SLC, (8)230415.40            ! STAND-IN: line 34's 22 x 12 = 264 bits end at 230415.10; line 35 LX printed at 230415.40
+RDLEOF  (CC*)DD(BU,,12),B        COMD,OFFLINE,*               ! line 34   printed "RDLECF" -- see header
 RPQUES  LX,VP,VPD                                            ! line 35   printed "RPCUES"
         KVI,VU,VWT                                           ! line 36
         BZXE,RKSTOT                                          ! line 37

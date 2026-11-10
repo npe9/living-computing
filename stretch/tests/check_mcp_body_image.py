@@ -156,21 +156,19 @@ def body_pages():
 
 
 # The SLC-covered holes each image must show, pinned by VALUE (see
-# the note in check_image).  Thirteen are printed p.112's five SLC
+# the note in check_image).  All thirteen are printed p.112's five SLC
 # cards (SIPT+4.0, +9.0, +18.0, +20.0, +22.0), the "PARALLEL IO
-# INTERRUPT SLOTS" its own line 11 names; four are printed p.256's CC
-# stand-in ("RDLEOF (CC*)DD(BU,,12),B  COMD, OFFLINE,": 22 twelve-bit
-# characters, 264 bits from 230411.00 to 230415.10, which strap_asm
-# refuses, so the deck SLCs to line 35's printed 230415.40 and these
-# four words are its DATA, not a lost row -- they leave this list when
-# CC entry mode is implemented).
+# INTERRUPT SLOTS" its own line 11 names.  Four more, 230411-230414,
+# were printed p.256's CC stand-in until 2026-11-10, when strap_asm took
+# entry mode CC and line 34 ("RDLEOF (CC*)DD(BU,,12),B        COMD,
+# OFFLINE,", 264 bits from 230411.00) was assembled: they are its data
+# now, and this check failed on all four images with them still pinned.
 RESIDENT_SKIP_HOLES = {
     0o215104, 0o215105, 0o215106,
     0o215110, 0o215111, 0o215112, 0o215113,
     0o215121, 0o215122, 0o215123, 0o215124,
     0o215126,
     0o215130,
-    0o230411, 0o230412, 0o230413, 0o230414,
 }
 OVERLAY_SKIP_HOLES = {
     "LOADER": set(),

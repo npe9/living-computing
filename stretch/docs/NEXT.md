@@ -16628,7 +16628,8 @@ listing_truth 245 pages / 9,027 lines.
   * QCK is QOK (p.43 and p.262): p.261 line 32 prints a closed O.
   * p.256 line 34's (CC*)DD is stood in by an SLC (entry mode CC is not
     implemented); its four data words 230411-230414 are pinned as known
-    holes until it is.
+    holes until it is.  (2026-11-10: CC is implemented and line 34 is
+    assembled; the four words are its data and are no longer pinned.)
   * Two scorers read volume 1 only: statement_repair (floor_label fell
     to 62.2% as pp.250-265's labels scored against an empty reading;
     70.4% with both volumes) and statement_confirm (a volume-2 row got

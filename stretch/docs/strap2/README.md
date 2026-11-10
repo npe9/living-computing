@@ -145,8 +145,12 @@ Chart OS asks "1ST SLC" before any comparison and names no scope. It is read as 
 first SLC since PUNFUL: p.99 continues the assembly of pp.2-98 (p.98 ends with
 `UNTAIL`, not `END`), so its line 11 `SLC,(8)215000.` follows SLCs on pp.2 and 15.
 Under PUNFUL, after the two header DDs, an assembly-wide reading would punch the jump
-from 005476.34 as some 14,000 full cards of zeros (G8). Still omitted: p.256 line 34's
-`(CC*)DD`, which is loaded data, not under PUNFUL.
+from 005476.34 as some 14,000 full cards of zeros (G8).
+
+p.256 line 34, `RDLEOF (CC*)DD(BU,,12),B        COMD,OFFLINE,*`, is the one CC
+statement not under PUNFUL. It is a card image MCP keeps in storage, and since
+2026-11-10 it is assembled. Its 264 bits are in the MCP image at 230411.00, where they
+were zeros before; the 22 characters are measured in the ink (A8).
 One row is pinned against the page: p.48 line 5 prints `LVE,,CW+1.0` as `...01 80`,
 where the pocket card and MCP's own listing give `B0`
 (`tests/verify_mcpref_example2_listing.py`).

@@ -118,6 +118,9 @@ MEASURED 2026-11-10 for F (A-E passing in each but where named):
                                            refuse: the program overlays them)
   "1ST SLC" read as "no data yet":         A4 (p.99 punches its SLC's jump
                                            as full cards), G8
+  A8: p.256 line 34, a (CC*)DD that IS loaded (no PUNFUL), since 2026-11-10.
+  the deck as it was (stand-ins):          A8 (both assemblers)
+  strap_asm's CC rows reversed:            A8 (strap_asm only)
 """
 import glob
 import os
@@ -300,6 +303,20 @@ if __name__ == "__main__":
     check("A6 strap_asm loads no word of the header cards", spans,
           [(pg, []) for pg in printed if pg not in ("p2", "p15")])
     check("A7 and puts them at their printed locations", locs, [(pg, list(ab)) for pg, ab in printed.items()])
+    # p.256 line 34 is a (CC*)DD NOT under PUNFUL: a card image that IS loaded,
+    # at 230411.00 (RDLEOF), 22 columns measured in the ink.
+    import cards as hollerith
+    inv = {hollerith.column_bits(ch): ch for ch in " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.()*/$=+-'"}
+    for img in (strap_asm.assemble(open(os.path.join(HERE, "..", "decks", deck("p256"))).read()),
+                compile_cards(deck_cards(open(os.path.join(HERE, "..", "decks", deck("p256"))).read()),
+                              strap_asm.DEFAULT_ORIGIN_BITS).image):
+        bits = 0
+        for w in range(0o230411, 0o230416):
+            bits = (bits << 64) | img.words.get(w, 0)
+        cols = [(bits >> (320 - 12 * (k + 1))) & 0o7777 for k in range(22)]
+        gap = (bits >> (320 - 288)) & ((1 << 24) - 1)     # 230415.10 to .40, before line 35
+        check(f"A8 p.256 line 34 loads as the card 'B        COMD,OFFLINE,' ({type(img).__name__})",
+              ("".join(inv.get(c, "?") for c in cols), gap), ("B        COMD,OFFLINE,", 0))
 
     # B. Appendix E's deck, field by field.
     sys.path.insert(0, HERE)
