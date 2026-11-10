@@ -24,6 +24,12 @@ What is checked, and how strong each oracle is:
      exit word, a REEL as submitted, the card code by hand from App. F p.56, and
      binary sequence numbers counting binary cards alone.  LIM's bounds for p.48
      are DERIVED (no print of p.48's deck survives).
+  F  chart OR (C22-6729 p.151), read in the ink 2026-11-10, with C28-6129
+     pp.13, 36-37, 39 (PDF 17, 40-41, 43) and N28-1081's errata page 19 (NOPUN ends at
+     any punch pseudo-op): PUNID punches the card in process and stores the ID
+     (MPUNID, guide p.27: blanks significant, padded to eight) for columns 73-80;
+     TLB an origin card and a branch card, the next card an origin card; NOPUN
+     suppresses until PUNNOR.
 The card-close lines against the two printed listings are in
 check_strap2_listing.py (DERIVED: the prints' second '*').
 
@@ -53,6 +59,17 @@ MEASURED 2026-11-10, the same way, for E (A-D passing in each):
   reference number 3 decimal digits:       E3, E4, E6
   name not reproduced:                     E3
   an IOD past column 62 accepted:          E9
+MEASURED 2026-11-10 for F (A-E passing in each but where named):
+  PUNID does not punch the card in process: F9
+  TLB leaves the origin indicator off:     F10
+  NOPUN does not suppress:                 F1, F2
+  PUNNOR does not end NOPUN:               F1, F2
+  ID inside the check sum:                 A1, A2 (problem_1_5_method1 has a PUNID), F4
+  ID in columns 72-79:                     F3
+  TLB address not printed:                 F5
+  MPUNID without Gcaz:                     F2, F3
+  no message 55:                           F7
+  TLB with no address to the first origin: F6
 """
 import glob
 import os
@@ -274,6 +291,52 @@ if __name__ == "__main__":
           ["TYPE", "LIM,", "REEL", "binary", "binary"])
     big = compile_cards(["BX       IOD,TAPE,EXIT," + "A" * 40, card("EXIT", "B,0"), card("", "END,0")])
     check("E9 an IOD past column 62 is not written", (big.punch.unwritten or "").startswith("IOD"), True)
+
+    # F. Chart OR (C22-6729 p.151): PUNID, TLB, NOPUN, PUNNOR.
+    from strap2.listing import listing_of
+    f = compile_cards([card("", "PUNID,AB CD"), card("", "SLC,64."), card("A", "B,0"),
+                       card("", "TLB,A"), card("", "B,0"), card("", "NOPUN"), card("", "B,0"),
+                       card("", "PUNNOR"), card("", "PUNID,XY"), card("", "B,0"),
+                       card("", "END,A")])
+    fc = f.punch.cards
+    check("F1 the cards: origin, TLB's branch, origin (not flow), NOPUN's B,0 not "
+          "punched, origin after PUNNOR, END's branch",
+          [(c.kind, c.origin // 32 if c.kind != "branch" else c.address // 32) for c in fc],
+          [("origin", 0o200), ("branch", 0o200), ("origin", 0o201), ("origin", 0o203),
+           ("branch", 0o200)])
+    check("F2 the ID on each card: PUNID punches the card in process first",
+          [c.ident for c in fc], ["AB CD   "] * 3 + ["XY      "] * 2)
+    fi = f.punch.images(clock=0)
+    # By hand from App. F p.56: A 12-1, B 12-2, C 12-3, D 12-4; row 12 high.
+    check("F3 columns 73-80 in the card code", fi[0][72:80],
+          [0o4400, 0o4200, 0, 0o4100, 0o4040, 0, 0, 0])
+    mem, branch, bad = decode_and_load(fi)
+    check("F4 the ID is outside the check sum", bad, [])
+    fl = listing_of(f, f.p1.print_names)
+    check("F5 the TLB line prints its address (chart OR: store TLB address in print line)",
+          [(ln.location, ln.binary) for ln in fl.lines if ln.statement == "TLB,A"],
+          [("000100.40", "000100.00")])
+    t0 = compile_cards([card("", "SLC,64."), card("", "B,0"), card("", "SLC,128."), card("", "B,0"),
+                        card("", "TLB"), card("", "B,0"), card("", "END,0")])
+    check("F6 TLB with no address goes to 41.8 (N28-1081 errata), not the first origin",
+          [c.address for c in t0.punch.cards if c.kind == "branch"], [0o41 * 64, 0])
+    nc = compile_cards([card("", "PUNID"), card("", "SLC,64."), card("", "B,0"), card("", "END,0")])
+    check("F7 PUNID with no comma: 55, and no ID",
+          ([m[0] for m in nc.msg.items], [c.ident for c in nc.punch.cards]), ([55], [None, None]))
+    lp = compile_cards([card("", "PUNID,ABCDEFGHIJ"), card("", "SLC,64."), card("", "B,0"),
+                        card("", "END,0")])
+    check("F8 eight characters kept", lp.punch.cards[0].ident, "ABCDEFGH")
+
+    fl2 = compile_cards([card("", "PUNID,P"), card("", "SLC,64."), card("", "B,0"),
+                         card("", "PUNID,Q"), card("", "B,0"), card("", "END,0")])
+    check("F9 a PUNID between contiguous data: two cards, each with its own ID",
+          [(c.kind, c.nbits, (c.ident or "").strip()) for c in fl2.punch.cards],
+          [("origin", 32, "P"), ("origin", 32, "Q"), ("branch", 0, "Q")])
+    full = compile_cards([card("", "SLC,64.")] + [card("", "B,0")] * 23
+                         + [card("", "TLB,0")] + [card("", "B,0")] * 25 + [card("", "END,0")])
+    check("F10 after TLB, an origin card, even after a full one",
+          [(c.kind, c.nbits) for c in full.punch.cards],
+          [("origin", 736), ("branch", 0), ("origin", 736), ("origin", 64), ("branch", 0)])
 
     print("punch: FAILED" if fails else "punch: all passed")
     sys.exit(1 if fails else 0)

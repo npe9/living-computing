@@ -44,16 +44,28 @@ word address in 67-72 as six (p.9); a REEL card as submitted, 63-80 blank
 (p.10).  Both go out at their own unit, before any binary card after them.
 Binary cards alone carry sequence numbers.
 
-CHOSEN: column 2 is the low 12 bits of the clock given; columns 73-80 are
-blank (PUNID's identification is not written, and the card ID of a reproduced
-card is not kept); LIM's n2 counts the undefined symbols' words above the
+Chart OR (C22-6729 p.151): PUNID punches the card in process, then stores the
+ID, which every binary card after carries in columns 73-80 in the card code
+(C28-6129 p.13, PDF 17: "columns 73-80 of every binary card"; N28-1081 page 6
+says the same of the update's relocatable formats); outside the check sum.
+TLB punches an origin card and a branch card (to 41.8 with no address, as END)
+and the next card is an origin card; the deck goes on (C28-6129 p.39, PDF 43).
+NOPUN punches the card and suppresses punching until PUNNOR (C28-6129 p.37,
+PDF 41, and N28-1081's errata page 19: any punch pseudo-op ends it); PUNNOR
+punches the card and starts an origin card (p.36, PDF 40).  All read in the
+ink 2026-11-10.  NOT WRITTEN: SLCR's stop on punching until an SLC (p.39).
+
+CHOSEN: column 2 is the low 12 bits of the clock given; a reproduced card's
+columns 73-80 are blank (its card ID is not kept); under NOPUN nothing is
+punched, END's branch card included ("binary output suppressed", N28-1081
+page 9); LIM's n2 counts the undefined symbols' words above the
 program, and n1 is the first origin card's origin; an IOD or REEL statement
 must fit columns 10-62 on one card, or the deck refuses (the guide does not say
 how a continued one is reproduced);
 the TYPE card's options are not copied; a gap in the location counter
 between units goes on the card as the image holds it, not as a new origin; a
 DR's skip starts where the last data ended, so it covers its own rounding.
-NOT WRITTEN: PUNFUL, PUNORG, PUNREL and the relocatable cards; TLB.  The
+NOT WRITTEN: PUNFUL, PUNORG, PUNREL and the relocatable cards; NOSEQ, RESEQ.  The
 assembly goes on; the punch stops at the first, `unwritten` names it, and
 `images` refuses.
 `mcp` counts the IOD and REEL units.  `images` is the binary cards alone;
@@ -74,6 +86,7 @@ class Card:
                  after=False, address=0):
         self.kind, self.origin, self.nbits, self.value = kind, origin, nbits, value
         self.skip, self.zero, self.after, self.address = skip, zero, after, address
+        self.ident = None
 
     def __repr__(self):
         if self.kind == "branch":
@@ -93,6 +106,8 @@ class Punch:
         self.unwritten = None   # the first pseudo-op whose cards are not written
         self.edition = edition
         self.first_origin = None
+        self.ident = None       # PUNID's eight characters, columns 73-80
+        self.suppressed = False # NOPUN
         self._clear()
         self.flow_next = False
         self.next_at = None     # where a flow card would load
@@ -111,6 +126,7 @@ class Punch:
     def _emit(self, unit, card):
         if card.kind == "origin" and self.first_origin is None:
             self.first_origin = card.origin
+        card.ident = self.ident
         self.cards.append(card)
         self.events.append((unit, len(self.cards) - 1))
 
@@ -216,6 +232,37 @@ class Punch:
                        else (self.first_origin or 0))
         self._emit(unit, Card("branch", address=address))
 
+    def _new_origin(self):
+        """Chart OR: "turn on origin card indicator": the next card is an origin card."""
+        self._clear()
+        self.flow_next = False
+        self.next_at = None
+
+    def punid(self, unit, ident):
+        """Chart OR, PUNID: punch the card in the existing mode, store the new ID."""
+        self._punch(unit)
+        self.flow_next = False
+        self.ident = ident
+
+    def nopun(self, unit):
+        """Chart OR, NOPUN: punch the card, turn on the NOPUN indicator."""
+        self._punch(unit)
+        self._new_origin()
+        self.suppressed = True
+
+    def punnor(self, unit):
+        """Chart OR, PUNNOR: punch the card, turn on the origin card indicator;
+        ends a NOPUN (N28-1081 errata, page 19)."""
+        self._punch(unit)
+        self._new_origin()
+        self.suppressed = False
+
+    def tlb(self, unit, address):
+        """Chart OR, TLB: punch an origin card and a branch card, turn on the
+        origin card indicator.  The assembly and the deck go on (C28-6129 p.39)."""
+        self.end(unit, address)
+        self._new_origin()
+
     def text_card(self, unit, text):
         """An MCP card, punched at its unit (chart OP boxes 15, 16)."""
         self.control.append((len(self.cards), text))
@@ -285,6 +332,10 @@ class Punch:
             put(FLOW_DATA, c.nbits, c.value)
         else:
             put(60, 24, c.address)
+        if c.ident is not None:
+            import cards as hollerith          # strap/cards.py, Appendix F
+            for k, ch in enumerate(c.ident):
+                put(12 * (72 + k), 12, hollerith.column_bits(ch))
         cols = [int("".join(map(str, bits[12 * i:12 * i + 12])), 2) for i in range(80)]
         cols[3] = checksum(cols)
         return cols

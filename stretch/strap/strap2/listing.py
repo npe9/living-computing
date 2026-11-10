@@ -212,7 +212,7 @@ class Listing:
             kind = printed[0]
             if kind == "SLC":
                 first.location = loc(printed[1])
-            elif kind == "END":
+            elif kind in ("END", "TLB"):
                 first.location = loc(printed[1])
                 if printed[2] is not None:
                     first.binary = loc(printed[2])

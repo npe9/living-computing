@@ -43,8 +43,8 @@ The known difference: `strap_asm` puts a NOP in a half word rounded over before
 a DR(N) or DRZ(N), and p.33 makes only a CNOP a NOP. strap2 follows the guide. No
 listing prints those halves, so no oracle can decide.
 
-**Not yet written:** DDI; PUNFUL, PUNORG, PUNREL, TLB, the relocatable cards and PUNID's
-identification columns; the MIBA and MBSPEC corrections; the coprocessor;
+**Not yet written:** DDI; PUNFUL, PUNORG, PUNREL, the relocatable cards, NOSEQ and
+RESEQ; the MIBA and MBSPEC corrections; the coprocessor;
 DUPLI; relocation; subscripts with dimensions; the system symbols' register-length
 dds; PRNTALL's whole-table print; `$INF` (N28-1081 page 20 adds it, 12, infinity);
 the listing's page headings after the first; the field number in an error record
@@ -102,6 +102,16 @@ card's origin, n2 the word after the highest, counting the undefined symbols' wo
 a null exit punches 000000; a statement that does not fit columns 10-62 on one card
 stops the deck as PUNFUL does; columns 73-80 blank; the TYPE card's options not copied.
 p.48's LIM (000041, 000145) is DERIVED: no print of that deck's cards survives.
+
+**PUNID, TLB, NOPUN, PUNNOR** (chart OR, C22-6729 p.151; C28-6129 pp.13, 36-37, 39;
+`check_strap2_punch.py` F).
+MPUNID keeps the ID's first eight characters, blanks significant (guide p.27); OUTPUT
+punches the card in process and every later binary card carries the ID in columns
+73-80, outside the check sum. TLB prints its address, punches an origin card and a
+branch card (41.8 with no address), and the deck goes on with an origin card. NOPUN
+suppresses punching until PUNNOR (errata page 19). CHOSEN: nothing at all is punched
+under NOPUN, END's branch card included. Not yet: SLCR's stop on punching until the
+next SLC (C28-6129 p.39); today an SLCR's code is punched.
 One row is pinned against the page: p.48 line 5 prints `LVE,,CW+1.0` as `...01 80`,
 where the pocket card and MCP's own listing give `B0`
 (`tests/verify_mcpref_example2_listing.py`).

@@ -234,6 +234,10 @@ class Pass2:
                 self.val.read_field(self.mem, unit + FIXED_BITS)
             self.hilo.append((self.abs, self.sym))
             return
+        if name == "TLB":
+            if u.get(unit, ZINFLD):
+                self.val.read_field(self.mem, unit + FIXED_BITS)
+            return
         if name == "CNOP":
             self.cnop_a(unit)
             return
@@ -795,7 +799,23 @@ class Pass2:
             except PunchError as x:
                 pu.unwritten = f"{e.name}: {x}"
             return
-        if e.name in ("PUNFUL", "PUNORG", "PUNREL", "TLB"):
+        if e.name == "PUNID":
+            p = self.units.get(unit, ZIOTPT)
+            if p:                   # message 55 left no ID
+                pu.punid(unit, "".join(chr(self.mem.get(p + 8 * k, 8)) for k in range(8)))
+            return
+        if e.name == "NOPUN":
+            pu.nopun(unit)
+            return
+        if e.name == "PUNNOR":
+            pu.punnor(unit)
+            return
+        if pu.suppressed:
+            return
+        if kind == "TLB":
+            pu.tlb(unit, printed[2])
+            return
+        if e.name in ("PUNFUL", "PUNORG", "PUNREL"):
             # Not written: the assembly goes on, and the deck says it is short.
             pu.unwritten = e.name
             return
@@ -877,6 +897,14 @@ class Pass2:
                     raise _a.AssemblerError("END target is not half-word aligned")
                 self.end_pc = t // 32
             self.printed[unit] = ("END", at, None if v is None or v.nullf else v.total)
+            return pending
+        if name == "TLB":
+            # C28-6129 p.39: like END, but the assembly goes on.  Chart OR: the
+            # address goes in the print line.
+            v = self.val.read_field(self.mem, unit + FIXED_BITS) if u.get(unit, ZINFLD) else None
+            if v is not None and not v.avail:
+                self.msg.add(7, "ASSEMBLY ERROR", unit)
+            self.printed[unit] = ("TLB", at, None if v is None or v.nullf else v.total)
             return pending
         if name == "CNOP":
             return self.cnop_b(unit, at, pending)

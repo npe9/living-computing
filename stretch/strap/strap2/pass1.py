@@ -484,8 +484,10 @@ class Pass1:
             self._mqr(unit, e)
         elif name == "SYN":
             self._mqs(unit, e)
-        elif name in ("SLC", "SLCR", "END"):
+        elif name in ("SLC", "SLCR", "END", "TLB"):
             self._mql(unit, e)
+        elif name == "PUNID":
+            self._mpunid(unit)
         elif name == "TAIL":
             self._mqtail(unit)
         elif name == "UNTAIL":
@@ -496,6 +498,31 @@ class Pass1:
             self._mqlink(unit)
             return self._wind_up(unit, ENTRIES[u.get(unit, ZIOPX)])
         return self._wind_up(unit, e)
+
+    def _mpunid(self, unit):
+        """MPUNID (C22-6729 p.27): the ID's characters from GETCHA with Gcaz on,
+        blanks significant, padded with blanks to eight, kept in the unit's work
+        area with Ziotpt's value field pointing at them for OUTPUT.  C28-6129
+        p.13 (PDF 17): "the first 8 characters following the comma".  No comma:
+        message 55.  CHOSEN: characters past the eighth are dropped."""
+        g = self.g
+        u = self.units
+        if g.ch != ",":
+            self.msg.add(55, "NO COMMA AFTER PUNID", unit, fatal=False)
+            return
+        g.gcaz = True
+        text = ""
+        c = g.next()
+        while c is not None and c != ";":
+            text += c
+            c = g.next()
+        g.gcaz = False
+        ident = text[:8].ljust(8)
+        p = self.bcfldx
+        for k, ch in enumerate(ident):
+            self.mem.put(p + 8 * k, 8, ord(ch) & 255)
+        self.bcfldx += 64
+        u.put(unit, ZIOTPT, p)
 
     def _one_field(self, unit, nogp=False):
         g = self.g
