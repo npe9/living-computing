@@ -998,7 +998,7 @@ OQAA 4 Onpge? no: 7 line count exceeded? no: 8 Odbsp? 9 count+2; 10 double; 11 s
 
 Page heading (p.165): initial time clock, card ID columns 73-80, ID from most recent PRNID, page number, location counter
 (within a word) at page start, column titles. First-time heading adds program boundaries (p.157 box 6). Heading text:
-**UNSPECIFIED** in guide. C28 p.19 Fig. 3 prints `TIME CLOCK`, `PAGE`, `LOCATION`, `BINARY OUTPUT`, `NAME`, `STATEMENT`, `... LOWER
+**UNSPECIFIED** in guide; printed in N28-1081's Appendix E, section 12. C28 p.19 Fig. 3 prints `TIME CLOCK`, `PAGE`, `LOCATION`, `BINARY OUTPUT`, `NAME`, `STATEMENT`, `... LOWER
 MEMORY BOUND`, `... UPPER MEMORY BOUND`, `THIS ASSEMBLY REQUIRED nn SECONDS`.
 
 ### 11.4 OPLIST, chart OL p.166, p.167
@@ -1088,10 +1088,20 @@ Read at 220 dpi, with C28 p.19 Fig. 3 (1963) alongside.
 **Differ, or the guide is silent**
 
 - Line mark: 1963 `n-`, 1964 `n*`. Guide silent.
-- The second `*` after location: 000054.00, 000056.00, 000131.00, 000142.00, 000145.00, and alone on line 2. **UNSPECIFIED**. Neither document explains it. Tested and
-  rejected: labelled statement (START has none; END no label); box 12B rounding (EPGK at 000131.00 follows 000130.40); forward-referenced label (UK and EOJ have none); new-card start at
-  23 half-words, C28 p.22 (116 to 131 is only 18 half-words). Line 2 has no location and also bears it. Do not implement until found.
+- The second `*` after location: 000054.00, 000056.00, 000131.00, 000142.00, 000145.00, and alone on line 2. Two readings, both recorded, neither implemented:
+  - **The text.** N28-1081's revised Appendix D (page 13, C28 PDF p.71, read in the ink): "On the listing itself an extra asterisk is printed following the line number
+    and asterisk on all lines containing an error." Both prints put it after the location, not the line number. No page says which errors these lines carry.
+  - **The prints: a binary card is punched at the line** (DERIVED). The second specimen is N28-1081's Appendix E (page 16, PDF p.74): `*` on lines 17, 19, 23 (the three DRs:
+    FOX, ZEBRA, SOME OTHER LONG NAME) and 25 (END); none on any instruction, DD, XW or SYN. Every starred line in both prints is one at which OUTPUT must punch:
+    a DR with data in the buffer (p.158 boxes 6-13: BUF1, MESG, FOX, ZEBRA, SOME OTHER LONG NAME), END's final card (OP15), or a card filled: 736 information bits, 23
+    half-words (C28 p.22, and the errata's "0 to 736"), and CW at 000054.00 and EPGK at 000131.00 are each the 23rd half-word from a card's start (41.00, 116.00).
+    The unstarred DRs, BUF2 and EXIT, follow a DR with nothing between (box 8: "the DR length can be added to the previous DR length"). Line 2's PRNS follows the
+    IOD card, which is punched (MCP cards). The earlier rejection of the card reading, "116 to 131 is only 18 half-words", miscounted: it is 22 half-words, so 131.00 is
+    the 23rd. Testable once OPPUN is written; it must give exactly these ten lines.
 - Apostrophe after each statement: guide silent here. Deck's header reads it as C28 p.2's comment mark.
+- STRAP II's own heading is printed in N28-1081's Appendix E: `TIME CLOCK`, `PUNID`, `CARD ID`, `DIST. OF 3/01`, `3/01`, `PAGE NUMBER 1`, then `LINE LOCATION
+  BINARY OUTPUT NAME STATEMENT ... LOCATION 000100`, the slots p.165 lists. So p.48's JOB/TIME/DATE/VERSION block above is MCP's, and the figure cropped STRAP's heading
+  (DERIVED). strap2 prints TIME CLOCK, PAGE NUMBER, the titles and LOCATION; the sources of PUNID, CARD ID and the two `3/01` fields are not stated.
 - Not visible on the figure as printed: `TIME CLOCK`/`PAGE` header form, column headings, LOWER/UPPER MEMORY BOUND, `REQUIRED nn SECONDS`, `THE END`. Figure may be cropped. Printed instead above:
   `JOB,PPNAME`; `TIME 14/27/18, DATE 04/13/64, VERSION 03/15/64`; `B TYPE,COMPILGO,STRAP,NOPUNCH`. p.165 has no version or date. Whether STRAP II or MCP prints that block: **UNSPECIFIED**.
 - CW line format `000056.00+ 000 000017 000000` agrees with C28 p.18 "index word" form. Guide does not say.
@@ -1139,8 +1149,10 @@ Page sweep basis: every page below was read in the ink. Sweeps for names used `d
 23. Unit counter at NPS2: zero (p.33); "set to one at the start of each pass" (p.173).
 24. `SPNUS` (pp.31, 35, 172) vs `SPUNS` (p.36). Chart labels the routine `NSPRES`.
 25. Boxes 22, 23 of DECODE say "GETFLD goes to VALUE" (p.140), chart VALUE (p.139); GETFLD is Pass 1.
-26. Contradictory multiples: first definition stands (p.127, C28 p.21 MULTI), yet C28 p.21's CONTAG example (`A SYN,1000.0; A SYN,500.0`) says 500.0. strap2 pins the first (`tests/check_strap2_flags.py` E3).
+26. Contradictory multiples: first definition stands (p.127, C28 p.21 MULTI), yet C28 p.21's CONTAG example (`A SYN,1000.0; A SYN,500.0`) says 500.0. strap2 pins the first (`tests/check_strap2_flags.py` E3). **RESOLVED** by N28-1081's errata (page 18, C28 PDF p.76, read in the ink): "page 21 - column 2 - line 5: not value 500.0 but value 1000.0".
 28. C28 p.20's QUEST example is a label then a SYN of the same value; chart RE (p.126) boxes 1 and 12 make any repeat that is not SYN over SYN contradictory. strap2 follows the chart (test B9).
 29. N28-1081 page 7 (C28-6129 PDF p.65, April 1963) supersedes C28 p.21 on MULTI: the flag precedes both definitions, and a reference to the symbol gets CONTAG where p.21 (5) gives MULTI. Both are kept, as `Pass2(edition=)`.
+31. Lists at the start or the end: C28 p.20 says the beginning, the guide the end. **RESOLVED** by N28-1081's errata (page 18): "page 20 - column 1 - line 35: not beginning of the listing but end of the listing".
+32. The lower memory bound: C28 p.20 makes it the word before the first used, and Fig. 3 prints 000077.00; Appendix E (1963), the same program, prints 000100.00, the first word used. The errata leave p.20 standing. `Listing(form=)` keeps both.
 30. Chart EG box 6B prints a header for the undefined list only when printing all symbols (box 7); the normal undefined list has none, as read.
 27. Lists and errors: guide at the end (p.37, p.150); C28 p.20 at the start. Guide is the later and governs.

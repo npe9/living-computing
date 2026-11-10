@@ -1501,7 +1501,13 @@ All from `bitsavers.org/pdf/ibm/7030/`:
 - `mcp/C28-6379-0_MCP_Loader.pdf` -- Loader and BSS Processor
 - `diag/7030_SystemTestPrograms_Aug61.pdf` -- acceptance test index
 - `C28-6129_STRAP-II_with_update_Apr63.pdf` -- STRAP-II language
-  reference manual (checked, confirmed NOT the assembly listing)
+  reference manual (checked, confirmed NOT the assembly listing).
+  Its bound-in update N28-1081 (April 15, 1963, PDF pp.58-78) holds a
+  THIRD printed STRAP II listing, Appendix E (page 16, PDF p.74), Fig.
+  3's program in the 1963 form: transcribed 2026-11-09 into
+  `tests/check_strap2_listing.py`, all 25 lines matched by strap2. Also
+  there: the revised error list (pp.13-15, numbers 1-150), errata
+  (pp.17-20) and `$INF` (p.20).
 - `diag/ja_ax1a_ibox-1.pdf` -- I-Box test 1 (unconditional branch,
   direct/immediate index arithmetic, index branching, SIC)
 - `diag/jb_ax2a_ibox-2.pdf` -- I-Box test 2 (store zero, compare

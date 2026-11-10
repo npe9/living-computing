@@ -50,11 +50,17 @@ dds; PRNTALL's whole-table print; and the listing's paging and its error message
 (ERRPRT, ERRNUM: the messages are kept, not printed). An unwritten path refuses
 loudly.
 
-**The listing** (`listing.py`, `tests/check_strap2_listing.py`) matches both printed
-STRAP II listings field for field: C28-6129 Fig. 3 p.19, all 24 lines and both memory
-bounds, and C22-6678-1 p.48, 69 lines, from its own IOD and PRNS cards. The print
-positions are CHOSEN. Left unreproduced because no page explains them: the second `*`
-after the location on five of p.48's lines, and the blank line after Fig. 3's line 13.
+**The listing** (`listing.py`, `tests/check_strap2_listing.py`) matches all three printed
+STRAP II listings field for field: C28-6129 Fig. 3 p.19 (1961), all 24 lines and both
+memory bounds; N28-1081's Appendix E (the April 1963 update bound into C28-6129, PDF
+p.74), the same program in the 1963 form, all 25 lines, its NULL, bounds and heading; and
+C22-6678-1 p.48 (1964), 69 lines, from its own IOD and PRNS cards. `form=`, `mark=` and
+`quote=` select the line mark, comment mark, heading and lower bound, which changed at
+different times. The print positions are CHOSEN. Left unreproduced: the blank line after
+Fig. 3's line 13; Appendix E line 13's `-` in the NAME column; and the second `*` after
+the location on p.48's and Appendix E's lines. The update says that `*` marks a line with
+an error; in both prints it falls exactly where OUTPUT must punch a binary card
+(`pass2.md` section 12), to be tested once punching is written.
 One row is pinned against the page: p.48 line 5 prints `LVE,,CW+1.0` as `...01 80`,
 where the pocket card and MCP's own listing give `B0`
 (`tests/verify_mcpref_example2_listing.py`).
@@ -82,7 +88,8 @@ Three disagreements, each run or pinned in the test:
 - **p.20's QUEST example** is a label and a SYN. Chart RE boxes 1 and 12 allow only
   two SYNs, so strap2 says MULTI.
 - **p.21 (5) gives A the second value**, 500.0; p.21 (3) and the guide p.127 keep
-  the first. Pinned to the first.
+  the first. Pinned to the first, and the update's errata (page 18) confirm it:
+  "not value 500.0 but value 1000.0".
 
 CHOSEN: the flag bits' order; a flag line unnumbered, at the location column; QUEST
 on every definition and PSEUDO on the base's; both vles of a multiple marked, the

@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-"""check_strap2_listing.py -- OUTPUT's listing against the two printed STRAP II
+"""check_strap2_listing.py -- OUTPUT's listing against the three printed STRAP II
 listings this project holds, line for line.
 
   Fig. 3, C28-6129 printed p.19 (PDF 23), read in the ink.  The cards are written
   out from the listing's right half.  Line 18's location prints 000113.0 on the
   page; the listing's own neighbours make it 000113.00, and the test expects that.
+  Appendix E of N28-1081, the April 1963 update bound into C28-6129 (page 16 of
+  20, C28 PDF p.74), read in the ink at 300 dpi: the same program in the 1963
+  form, with '*' line marks, '-' comment marks, NULL beside the SYN, the 1963
+  heading and the first used word as the lower bound.
   Fig. 5, C22-6678-1 printed p.48, read in the ink.  The source is
   decks/mcpref_example2.strap with its two stand-ins replaced by the page's own
   IOD and PRNS cards, so RON is the first IOD's reference number and not a SYN.
@@ -31,6 +35,12 @@ a result here once).  Failing checks, control all passing:
   MCP order unchecked: "after an instruction".
   type field kept as the exit: "no exit", "null exit".
   no 103, 104, 105 or 143: the matching check alone.
+Appendix E, measured 2026-11-09, control all passing:
+  comment mark tied to the line mark: App. E lines 1-12, 14, 15, 17-20, 25 (19).
+  NULL never printed: "line 3 prints NULL".
+  lower bound by the 1961 rule: LOWER, twice.
+  the 1961 heading: PAGE NUMBER, LOCATION 000100 and the column titles.
+  heading LOCATION from the page's last line: LOCATION 000100.
 """
 import os
 import re
@@ -113,6 +123,74 @@ FIG3 = [
     (24, "000114.14", "000100.00", "", "END,ABLE"),
 ]
 
+# N28-1081 (the April 1963 update to C28-6129), page 16 of 20, "APPENDIX E -
+# Revised Output Listing", C28 PDF p.74, read in the ink at 300 dpi.  Fig. 3's
+# program re-run: a PRNS card added, the DR counts written without parentheses,
+# and an apostrophe (printed '-') after each statement.  The spacing of the cards
+# is copied from the print; the comparison squeezes blanks.
+APPE_CARDS = [
+    card("", "SLC,64.     '"),
+    card("", "PRNS '"),
+    card("NEXT", "SYN,(8)17777.0  '"),
+    card("ABLE", "LX,7,INDEX   '" + " " * 18 + "LOAD INDEX"),
+    card("", "L(BU),BAKER  '"),
+    card("CHARLIE", "ST(BU,4)(V+IC),.8($7) '"),
+    card("", "BZXCZ,CHARLIE '"),
+    card("", "L(N),DOG '"),
+    card("", "+(N),DOG+1. '"),
+    card("", "ST(N),FOX '"),
+    card("", "L(BU,24),SOME VERY LONG NAME '"),
+    card("", "ST(BU,24),SOME OTHER LONG NAME'   TESTING LONG COMMENTS THAT"),
+    "*" + " " * 8 + "WILL CARRY OVER TO THE NEXT LINE",
+    card("", "B,NEXT '"),
+    card("DOG", "DD(N),28671X7,183007S7 '"),
+    card("FOX", "DR(BU),1'"),
+    card("INDEX", "XW,ZEBRA,4'"),
+    card("ZEBRA", "DR(BU,4),4'"),
+    card("BAKER", "(8)DD(BU,12),5703 '"),
+    card("SOME VER", ""),
+    "*Y LONG N",
+    "*AME     DD(BU,24),28671",
+    card("SOME OTH", ""),
+    "*ER LONG ",
+    "*NAME    DR(BU,24),1",
+    card("", "END,ABLE '"),
+]
+
+# Every field as printed.  NOT REPRODUCED, and so not compared: line 13's '-' in
+# the NAME column (a continuation card's columns 2-9 continue the name, p.79, so
+# no card gives it), and the second '*' after the location on lines 17, 19, 23
+# and 25 (docs/strap2/pass2.md section 12).  Line 16's exponent prints C022 on a
+# chain whose 0 is open, as every 0 on the page is.
+APPE = [
+    (1, "000100.00", "", "", "SLC,64. -"),
+    (2, "", "", "", "PRNS -"),
+    (3, "017777.00+", "+00000000", "NEXT", "SYN,(8)17777.0 -"),
+    (4, "000100.00", "000112.16 10", "ABLE", "LX,7,INDEX - LOAD INDEX"),
+    (5, "000100.40", "000113.20 80 000000.20 50", "", "L(BU),BAKER -"),
+    (6, "000101.40", "000000.10 87 204000.20 D0", "CHARLIE", "ST(BU,4)(V+IC),.8($7) -"),
+    (7, "000102.40", "000101.70 40", "", "BZXCZ,CHARLIE -"),
+    (8, "000103.00", "000107.00 60", "", "L(N),DOG -"),
+    (9, "000103.40", "000110.00 20", "", "+(N),DOG+1. -"),
+    (10, "000104.00", "000111.00 E0", "", "ST(N),FOX -"),
+    (11, "000104.40", "000113.34 80 030000.20 50", "", "L(BU,24),SOME VERY LONG NAME -"),
+    (12, "000105.40", "000113.64 80 030000.20 D0", "",
+     "ST(BU,24),SOME OTHER LONG NAME- TESTING LONG COMMENTS THAT"),
+    (13, "", "", "", "WILL CARRY OVER TO THE NEXT LINE"),
+    (14, "000106.40", "017777.10 00", "", "B,NEXT -"),
+    (15, "000107.00", "0007+ 6777700000000000 +000", "DOG", "DD(N),28671X7,183007S7 -"),
+    (16, "000110.00", "0022+ 5453370000000000 +TUV", "", ""),
+    (17, "000111.00", "000001.00", "FOX", "DR(BU),1-"),
+    (18, "000112.00", "000113.00+ 000 000004 000000", "INDEX", "XW,ZEBRA,4-"),
+    (19, "000113.00", "000000.20", "ZEBRA", "DR(BU,4),4-"),
+    (20, "000113.20", "5703", "BAKER", "(8)DD(BU,12),5703 -"),
+    (21, "000113.34", "00067777", "SOME VERY LONG NAME", ""),
+    (22, "", "", "", "DD(BU,24),28671"),
+    (23, "000113.64", "000000.30", "SOME OTHER LONG NAME", ""),
+    (24, "", "", "", "DR(BU,24),1"),
+    (25, "000114.14", "000100.00", "", "END,ABLE -"),
+]
+
 # p.48, location, binary, name, from line 3 of the first page.
 P48 = [
     ("000041.00", "000040.10 00", "START"), ("000041.40", "000104.40 80", ""),
@@ -179,6 +257,27 @@ def run_fig3():
     return lst
 
 
+def run_appe():
+    p2 = compile_cards(APPE_CARDS)
+    fatal = [m for m in p2.msg.items if m[3]]
+    check("App. E assembles with no error", fatal, [])
+    lst = listing_of(p2, p2.p1.print_names, mark="*", quote="-", form="1963")
+    check("App. E line count", len(lst.lines), len(APPE))
+    for ln, want in zip(lst.lines, APPE):
+        n, a, b, name, s = ln.fields()
+        check(f"App. E line {want[0]}", (n, a, b, name, squeeze(s)), want)
+    check("App. E line 3 prints NULL", lst.lines[2].dds, "NULL")
+    low, high = lst.bounds()
+    check("App. E LOWER MEMORY BOUND", loc(low), "000100.00")
+    check("App. E UPPER MEMORY BOUND", loc(high), "000115.00")
+    text = lst.text("00005162", 0)
+    for frag in ("TIME CLOCK 00005162", "PAGE NUMBER 1", "LOCATION 000100",
+                 "LINE LOCATION BINARY OUTPUT NAME STATEMENT",
+                 "000100.00 LOWER MEMORY BOUND", " 1* 000100.00"):
+        check(f"App. E prints {frag!r}", frag in squeeze(text) or frag in text, True)
+    return lst
+
+
 def run_p48():
     # Lines 1 and 2 as printed, for the deck's stand-ins: its SLC, and RON's SYN.
     src = open(os.path.join(HERE, "..", "decks", "mcpref_example2.strap")).read()
@@ -226,6 +325,7 @@ def run_iod():
 
 
 run_fig3()
+run_appe()
 run_p48()
 run_iod()
 print("listing: FAILED" if fails else "listing: all passed")
