@@ -100,6 +100,14 @@ MEASURED 2026-11-10 for F (A-E passing in each but where named):
   no 127:                                  G5
   a low SLC accepted:                      G6
   PUNFUL does not end NOPUN:               G7
+  A5-A7: the four decks' (CC*)DD header statements, assembled since
+     2026-11-10 (they were comments behind SLC stand-ins).  MEASURED:
+  the decks as they were (stand-ins):      A5, A7
+  p.320 line 2 one column short:           A5, A7
+  strap_asm loads what is under PUNFUL:    A6 (check_mcp_body_image also
+                                           fails $DUMP, SCOMD and $EOJ;
+                                           LOADER's card is past Y MPBUF)
+  CC rows reversed (row 9 high):           A5, G1, G4
 """
 import glob
 import os
@@ -207,18 +215,20 @@ def one(path):
         return base, "unwritten", p2.punch.unwritten
     images = p2.punch.images(clock=0o1234)
     mem, branch, bad = decode_and_load(images)
-    full = 0
+    full = []
+    import cards as hollerith
+    inv = {hollerith.column_bits(ch): ch for ch in " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.()*/$=+-'"}
     for c, cols in zip(p2.punch.cards, images):
         if c.kind == "full":
             # A PUNFUL card is not loaded; its 80 columns are the image's bits.
-            full += 1
+            full.append("".join(inv.get(x, "?") for x in cols))
             for k in range(960):
                 mem[c.origin + k] = (cols[k // 12] >> (11 - k % 12)) & 1
     diff = image_differences(p2, mem)
     want = None if p2.end_pc is None else p2.end_pc * 32
     if bad or diff or (want is not None and branch != want):
         return base, "differs", f"{bad[:2]} {diff} bits, branch {branch} want {want}"
-    return base, "same", full
+    return base, "same", tuple(full)
 
 
 # A. Every deck.
@@ -237,10 +247,39 @@ if __name__ == "__main__":
     check("A2 none differ", counts.get("differs", 0), 0)
     check("A3 none stops", sorted(unwritten), [])
     check("A4 the four MCP decks with PUNFUL open with one full card each, the image's bits",
-          sorted(fulls), [("mcp_bootstrap_p320.strap", 1), ("mcp_bootstrap_p335.strap", 1),
-                          ("mcp_bootstrap_p361.strap", 1), ("mcp_bootstrap_p381.strap", 1)])
+          sorted((b, len(t)) for b, t in fulls),
+          [("mcp_bootstrap_p320.strap", 1), ("mcp_bootstrap_p335.strap", 1),
+           ("mcp_bootstrap_p361.strap", 1), ("mcp_bootstrap_p381.strap", 1)])
+    # Each is the "B HED, REP, <name>, LOAD,," control card (C22-6678-1 pp.7-10:
+    # B in column 1, the statement from column 10, the ID in 73-80), from the
+    # decks' own (CC*)DD statements (printed pp.320, 335, 361, 381), whose blanks
+    # were measured in the ink (the decks' headers).
+    hed = lambda nm: ("B" + " " * 8 + f"HED, REP, {nm}, LOAD,,").ljust(72) + nm.ljust(8)
+    check("A5 and reads back as the deck's HED control card",
+          sorted((b, t[0]) for b, t in fulls),
+          [("mcp_bootstrap_p320.strap", hed("22LOADER")), ("mcp_bootstrap_p335.strap", hed("22$DUMP")),
+           ("mcp_bootstrap_p361.strap", hed("22SCOMD")), ("mcp_bootstrap_p381.strap", hed("22$EOJ"))])
 
-    # B. Appendix E's deck, field by field.
+    # The old assembler (strap_asm, scaffolding) on the same four decks: what
+    # is assembled under PUNFUL moves the counter and loads nothing.  The
+    # first header DD's printed location opens the 960 bits looked at; the
+    # second's printed location is where 45 columns of the first end.
+    spans, locs, printed = [], [], {
+        "p320": (0o236524 * 64, 0o236534 * 64 + 0o34), "p335": (0o236464 * 64 + 0o31, 0o236474 * 64 + 0o65),
+        "p361": (0o236425 * 64 + 0o31, 0o236435 * 64 + 0o65), "p381": (0o235570 * 64 + 0o10, 0o235600 * 64 + 0o44)}
+    real_iter = strap_asm.iter_statements
+    for pg, (a, b) in printed.items():
+        seen = []
+        strap_asm.iter_statements = lambda src: seen.extend(real_iter(src)) or seen
+        try:
+            prog = strap_asm.assemble(open(os.path.join(HERE, "..", "decks", f"mcp_bootstrap_{pg}.strap")).read())
+        finally:
+            strap_asm.iter_statements = real_iter
+        hit = [w for w in prog.written_words if a // 64 <= w < (a + 960 + 63) // 64]
+        spans.append((pg, hit))
+        locs.append((pg, [s.addr for s in seen if s.op.upper() == "DD" and (s.entry or "").startswith("CC")]))
+    check("A6 strap_asm loads no word of the four header cards", spans, [(pg, []) for pg in printed])
+    check("A7 and puts them at their printed locations", locs, [(pg, list(ab)) for pg, ab in printed.items()])
     sys.path.insert(0, HERE)
     src = open(os.path.join(HERE, "check_strap2_listing.py")).read()
     ns = {}

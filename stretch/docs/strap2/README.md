@@ -130,8 +130,16 @@ lines 2-3 give them, then punch one full card that reads back as
 `B        HED, REP, 22LOADER, LOAD,,` with `22LOADER` in columns 73-80: an MCP control
 card. All 730 decks in `decks/` now punch; each binary deck loads to its image bit for bit,
 and the four MCP decks with PUNFUL open with one full card that matches the image.
-Their header DDs are still SLC stand-ins (the old assembler refused CC), so today their
-full card is blank.
+Since 2026-11-10 those decks carry their real header DDs (they were comments behind SLC
+stand-ins while the old assembler refused CC), so each full card reads back as its HED
+control card (A5), and the second DD lands at its printed location (A7). The blanks
+between the words were measured in the ink at the listing's fixed pitch (8 after the
+`B`, 27 before the name), which is MCP's control-card form (C22-6678-1 pp.7-10). The old
+assembler now converts CC the same way and keeps what is assembled under PUNFUL out of
+its loaded image (A6), and `strap2.assemble` masks each full card's 960 bits out of the
+image it returns: the MCP image is unchanged. Still omitted for the same old reason: the
+PUNFUL header cards of printed pp.2, 15 and 99, and p.256 line 34's `(CC*)DD`, which is
+loaded data, not under PUNFUL.
 One row is pinned against the page: p.48 line 5 prints `LVE,,CW+1.0` as `...01 80`,
 where the pocket card and MCP's own listing give `B0`
 (`tests/verify_mcpref_example2_listing.py`).

@@ -63,9 +63,21 @@ def assemble(source, origin_bits=None, strict=True):
             symtab[name] = v
             if "*" in name:
                 symtab.setdefault(name.split("*")[0], v)
-    prog = _a.AssembledProgram(p2.image.words, symtab, p2.end_pc,
+    # THE LOADED IMAGE.  A full card (PUNFUL) is punched from the assembly
+    # image's bits but never loaded (C28-6129 pp.23, 36), so its 960 bits are
+    # taken out here, as strap_asm keeps them out (MCP printed pp.320, 335,
+    # 361, 381: the HED control cards).
+    words, written = dict(p2.image.words), dict(p2.image._written)
+    for c in p2.punch.cards:
+        if c.kind == "full":
+            for k in range(c.origin, c.origin + 960):
+                bit = 1 << (63 - k % 64)
+                for d in (words, written):
+                    if k // 64 in d:
+                        d[k // 64] &= ~bit
+    prog = _a.AssembledProgram(words, symtab, p2.end_pc,
                                p2.image.reservations, p2.image.skips)
     prog.diagnostics = list(p2.image.diagnostics)
-    prog.written_words = frozenset(w for w, m in p2.image._written.items() if m)
+    prog.written_words = frozenset(w for w, m in written.items() if m)
     prog.messages = list(p2.msg.items)
     return prog

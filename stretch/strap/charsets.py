@@ -107,7 +107,8 @@ different strength each:
          order, not a lookup table.  Unchecked candidates: C22-6729,
          C22-6531, C22-6678-1.  STRAP II (strap/strap2/pass2.py
          `_cc_b`) now converts CC from App. F's punches (strap/cards.py),
-         the bit order DERIVED as the column as read, row 12 high.
+         the bit order DERIVED as the column as read, row 12 high, and
+         strap_asm.entry_table does the same (_CardCodeTable).
 
   N   -> not an entry mode at all.  It is the floating-point
          *normalized* use mode (C28-6129 printed p.15).
@@ -271,8 +272,8 @@ IQS_ITALIC_DIGITS = {
     '5': 0o153, '6': 0o155, '7': 0o157, '8': 0o161, '9': 0o163,
 }
 
-# STRAP entry modes this assembler can convert, by name.  CC is
-# deliberately absent: see the module docstring.
+# STRAP entry modes this assembler can convert, by name.  CC is not a
+# table: see the module docstring and strap_asm._CardCodeTable.
 ENTRY_MODES = {
     'A':   A,
     'IQS': IQS,

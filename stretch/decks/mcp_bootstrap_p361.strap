@@ -44,15 +44,34 @@
 ! so WA000040 does not print on either page (coordinator: check p.362
 ! line 1).
 !
-! >>> LINES 2-3'S (CC*)DD ARE NOT HANDED TO THE ASSEMBLER. <<<
-! strap_asm refuses entry mode CC (as pp.15, 99, 256, 320, 335 found).
-! Each card is kept as a comment; the deck carries TWO stand-ins that
-! are not printed cards: "SLC, (8)236425.31" and "SLC, (8)236435.65"
-! (the printed locations).  Line 2's span 236425.31 -> 236435.65 = 8
-! words + 28 bits = 540 bits = 45 twelve-bit characters, exactly
-! p.335 line 3's span for the same card shape.  Line 3's length is not
-! fixed by the page (the next located card is an SLC).  The cards are
-! unlabeled; their bits are NOT written into the image by this deck.
+! >>> LINES 2-3'S (CC*)DD ARE ASSEMBLED (2026-11-10). <<<
+! They used to be comments (their blanks then typed 12 and 30, not
+! measured), with two SLC stand-ins at their printed
+! locations, because strap_asm refused entry mode CC.  Both assemblers
+! now take CC (C28-6129 p.16: each character its card column's
+! punches, App. F p.56; the bit order row 12 high is DERIVED).  ONE
+! stand-in stays: "SLC, (8)236425.31", the counter the page before leaves
+! (the JOIN above), since this deck is assembled alone.
+!
+! THE COLUMNS.  Line 2's printed span 236425.31 -> 236435.65 is 540
+! bits = 45 twelve-bit characters, and with line 3 the two make
+! one 80-column card under PUNFUL.  The blanks are MEASURED in the ink
+! (PDF 111 at 300 dpi, the fixed print pitch 29.95 px per cell from the
+! statement column): "B" in cell 16, "HED" from cell 25, the "*" in
+! cell 61; the second card's name from cell 43.  That is 8 blanks after
+! the B and 27 before the name, and it is MCP's control-card form
+! (C22-6678-1 pp.7-10): "B" in column 1, "HED, REP, 22SCOMD, LOAD,," from
+! column 10, the name in columns 73-80 (the ID field; the PUNID,22SCOMD after
+! PUNORG punches the same ID on the binary cards).  Line 2
+! is 45 characters, line 3 34; the card's last 1 column(s)
+! are PUNFUL's zero fill.  tests/check_strap2_punch.py A5 reads the
+! card back; A7 checks line 3 lands at 236435.65.
+!
+! NOT LOADED.  PUNFUL punches full cards and the loader cannot load one
+! (C28-6129 pp.23, 36), so the loaded image does not hold these bits:
+! strap_asm emits them into a scratch image (A6 checks).  STRAP II
+! keeps them in its assembly image and punches them as the full card,
+! which A1's decoder, like MCP's loader, does not load.
 !
 ! GLYPHS SETTLED BY OTHER THAN PLAIN INK:
 !   * "22SCOMD" (lines 3, 5; line 2 prints "22SCCMD", open second
@@ -99,10 +118,9 @@ ZABEND  SYN, (8)234744.0             ! not landed; B line 38 234744.10, half wor
 VVCOMJ  SYN, (8)235540.40            ! not landed; B line 39 235540.50, half word only
 
         PUNFUL                                               ! line  1
-        SLC, (8)236425.31            ! STAND-IN: line 2's printed location -- see header
-!       (CC*)DD(BU,,12),B            HED, REP, 22SCOMD, LOAD,,          *   ! line  2  printed "22SCCMD" -- NOT ASSEMBLED (entry mode CC refused)
-        SLC, (8)236435.65            ! STAND-IN: line 3's printed location -- see header
-!       (CC*)DD(BU,,12),                              22SCOMD*              ! line  3  NOT ASSEMBLED (entry mode CC refused)
+        SLC, (8)236425.31            ! STAND-IN for the counter the page before leaves: this line's printed location -- see header
+        (CC*)DD(BU,,12),B        HED, REP, 22SCOMD, LOAD,,           *   ! line  2 printed "22SCCMD"
+        (CC*)DD(BU,,12),                           22SCOMD*   ! line  3
         PUNORG                                               ! line  4
         PUNID,22SCOMD                                        ! line  5
         RESEQ                                                ! line  6

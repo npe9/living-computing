@@ -16,6 +16,9 @@ Injections, measured 2026-11-09, each reverted from a saved copy and compared
   XW refill taken as 24 bits      121
   .L not counted in words         377
   a 19-bit integer scaled         35
+Measured 2026-11-10: strap2.assemble leaving the PUNFUL full cards in its
+loaded image fails the image comparison on exactly mcp_bootstrap_p320, p335,
+p361 and p381 (9 words each, the HED control cards).
 """
 import glob
 import os

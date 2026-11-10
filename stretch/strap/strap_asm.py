@@ -1498,14 +1498,38 @@ def entry_byte_size(stmt, symtab=None):
     return bs
 
 
+class _CardCodeTable:
+    """Entry mode CC as a lookup: each character is its card column's
+    punches as a 12-bit byte (C28-6129 printed p.16, PDF 20: "converted
+    to 12-bit bytes, where each byte reflects the multiple punch actually
+    read in the appropriate card column").  The punches are C22-6678-1
+    App. F p.56's (strap/cards.py).  DERIVED: the bit order, row 12 high,
+    then 11, 0, 1-9 -- the column as read, the same choice STRAP II's
+    pass2._cc_b makes."""
+
+    def __contains__(self, ch):
+        import cards as hollerith
+        try:
+            hollerith.column_bits(ch)
+        except ValueError:
+            return False
+        return True
+
+    def __getitem__(self, ch):
+        import cards as hollerith
+        return hollerith.column_bits(ch)
+
+
 def entry_table(stmt):
     name = entry_mode_name(stmt)
+    if name == 'CC':
+        return _CardCodeTable()
     if name not in ENTRY_MODES:
         raise AssemblerError(
             f"entry mode {name!r} is not implemented.  Reference Manual "
             f"printed p.166 gives A (the 48 Character Set) and IQS (the "
-            f"89 Character Set); CC's 12-bit card code is tabulated in no "
-            f"document read so far, and P (ECS 120) is untranscribed -- "
+            f"89 Character Set), CC is the card's punches (C28-6129 "
+            f"printed p.16), and P (ECS 120) is untranscribed -- "
             f"see strap/charsets.py", stmt.lineno)
     return ENTRY_MODES[name]
 
@@ -3230,9 +3254,24 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
     image = Image()
     image.skips = slc_skips
     end_pc = None
+    # >>> WHAT IS ASSEMBLED UNDER PUNFUL IS NOT LOADED. <<<
+    # C28-6129 printed p.36 (PDF 40): PUNFUL punches FULL cards, and
+    # printed p.23 (PDF 27): the loader cannot load one.  MCP printed
+    # pp.320, 335, 361 and 381 assemble their "(CC*)DD(BU,,12)" header
+    # cards under PUNFUL: those bits are a control card, not storage.
+    # So they move the counter (pass 1) and are emitted into a scratch
+    # image here.  PUNNOR, PUNORG, PUNREL and END end PUNFUL (C22-6729
+    # chart OR, p.151); TLB is not modelled by this assembler.
+    punful = None
     for stmt in statements:
-        emit_statement(stmt, symtab, image)
-        apply_parenthetical_entries(stmt, symtab, image)
+        up_op = stmt.op.upper()
+        if up_op == 'PUNFUL':
+            punful = Image()
+        elif up_op in ('PUNNOR', 'PUNORG', 'PUNREL', 'END'):
+            punful = None
+        into = image if punful is None else punful
+        emit_statement(stmt, symtab, into)
+        apply_parenthetical_entries(stmt, symtab, into)
         if stmt.op.upper() == 'END' and stmt.fields and stmt.fields[0].strip():
             target_bits = eval_expr(stmt.fields[0], symtab, stmt.addr, lineno=stmt.lineno)
             if target_bits % 32 != 0:
