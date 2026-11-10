@@ -35,8 +35,23 @@ with '-'; p.48 (1964) marks line numbers with '*' and comments with an apostroph
 `mark` selects.  NOT REPRODUCED: the second '*' after the location on five of
 p.48's lines, unexplained by any page (docs/strap2/pass2.md section 12), and the
 blank line after Fig. 3 line 13, likewise.
+
+The error flags (C28-6129 pp.20-21, N28-1081 page 7, guide p.157 box 2) print on
+the line immediately preceding the statement's first line.  CHOSEN: that line
+has no line number, holds every flag the unit has in the manual's order, and
+starts at the location column.
+
+The symbol lists (NUNDSY, charts EG, EH pp.170-172) follow the statements,
+then the error messages (ERRPRT), then the seconds, the last item (C28-6129
+p.20; the guide puts the lists at the end, p.157, where the manual says the
+beginning, and governs).  Chart EG prints a header before the undefined symbols
+only when the whole table is printed (boxes 6B, 7), so there is none here.
+CHOSEN: the other three headers' words, from the manual's descriptions; a name
+and its address separated by two blanks.  ERRPRT is not yet written: the
+messages are on p2.msg, unprinted.
 """
-from .unit import ZILCFD, ZILSST, FIXED_BITS
+from .unit import ZILCFD, ZILSST, FIXED_BITS, ZIFLAGS
+from .value import flag_names
 
 LOC, BIN, NAME, STMT = 4, 17, 47, 56    # CHOSEN: print positions, measured
 
@@ -83,10 +98,17 @@ def field_form(value, width, mode, bs):
     return f"{value:0{(width + 2) // 3}o}"
 
 
+HEADERS = {"unused": "SYMBOLS DEFINED BUT NOT USED",
+           "multiple": "MULTIPLY DEFINED SYMBOLS",
+           "circular": "CIRCULARLY DEFINED SYMBOLS"}
+
+
 class Line:
-    def __init__(self, location="", binary="", name="", statement="", right=False):
+    def __init__(self, location="", binary="", name="", statement="", right=False,
+                 flags=None):
         self.location, self.binary, self.name = location, binary, name
         self.statement, self.right = statement, right
+        self.flags = flags
         self.number = None
 
     def fields(self):
@@ -115,9 +137,11 @@ class Listing:
             text = text.replace("'", "-")
         return [t.rstrip() for t in text.split("\n") if t.strip()] or [""]
 
-    def syn(self, name):
+    def syn(self, unit, name):
+        """The value the SYN's own definition gave, which for a contradictory
+        multiple is not the one the dictionary holds."""
         st = self.p2.st
-        f = st.dictionary.get(name)
+        f = self.p2.p1_named(unit) or st.dictionary.get(name)
         if f is None:
             return "", ""
         b, i = st.get(f, "ZVALB"), st.get(f, "ZVALI")
@@ -133,9 +157,12 @@ class Listing:
         printed = p2.printed.get(unit)
         name, symbol = self.names.get(unit, ("", ""))
         stmt = self.statement_lines(unit)
+        flags = flag_names(p2.units.get(unit, ZIFLAGS))
+        if flags:
+            self.add(Line(flags=flags))
         first = Line(name=name)
         if e.name == "SYN":
-            first.location, first.binary = self.syn(symbol)
+            first.location, first.binary = self.syn(unit, symbol)
             first.right = True
         extra = []
         if printed is not None:
@@ -204,6 +231,8 @@ class Listing:
             self.unit(unit)
         n = 0
         for ln in self.lines:
+            if ln.flags:
+                continue
             n += 1
             if self.per_page and n > self.per_page:
                 n = 1
@@ -220,6 +249,9 @@ class Listing:
             out.append(f"{loc(b[0])} LOWER MEMORY BOUND")
             out.append(f"{loc(b[1])} UPPER MEMORY BOUND")
         for ln in self.lines:
+            if ln.flags:
+                out.append(" " * LOC + " ".join(ln.flags))
+                continue
             s = f"{ln.number:2d}{self.mark}".ljust(LOC) + ln.location.ljust(BIN - LOC)
             if ln.right:
                 s += ln.binary.rjust(40 - BIN).ljust(NAME - BIN)
@@ -230,8 +262,21 @@ class Listing:
             else:
                 s += ln.name.ljust(STMT - NAME) + ln.statement
             out.append(s.rstrip())
+        out += self.symbol_lists()
         out.append(" " * 4 + "THIS ASSEMBLY REQUIRED" + " " * 7 + f"{seconds:08d} SECONDS")
         return "\n".join(out) + "\n"
+
+    def symbol_lists(self):
+        lists = self.p2.lists
+        out = []
+        for name, at in lists["undefined"]:
+            out.append(f"{name}  {loc(at)}")
+        for key in ("unused", "multiple", "circular"):
+            if lists[key]:
+                out.append(HEADERS[key])
+                for name, at in lists[key]:
+                    out.append(name if at is None else f"{name}  {loc(at)}")
+        return out
 
 
 def listing_of(p2, names, mark="-", lines_per_page=None):

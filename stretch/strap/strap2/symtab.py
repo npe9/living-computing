@@ -42,8 +42,13 @@ FUNCTION = {
     "ZDIMX": (269, 25),         # dimension fields: their number at ZDIMN
     "ZDIMN": (294, 5),
     "ZFLM": (299, 25),          # special symbol: multiplier of the dimensions
+    # The guide names no bit for "contagiously defined" (p.25, p.32), so it
+    # takes the unnamed bit 5.  ZOLDF: MULTI's legal case, the vle it replaced,
+    # whose index still holds (p.127, chart RE boxes 20-22).
+    "ZSTCTG": (5, 1),
+    "ZOLDF": (324, 25),
 }
-FUNCTION_BITS = 324
+FUNCTION_BITS = 349
 KIND_LABEL, KIND_SYN, KIND_UNDEF, KIND_SPECIAL = 0, 1, 2, 3
 SIGNED = {"ZVALB", "ZVALI", "ZABS"}
 
@@ -55,6 +60,8 @@ class SymbolTable:
         self.dictionary = {}    # argument -> function address
         self.first_vle = self.next
         self.count_y = 0
+        self.vles = []          # every function, in the order ANEXT meets them
+        self.name_of = {}       # function -> name, RSERCH's answer
 
     def _vle(self, ident, name, room=0):
         """ADDUNO's allocation, header included.  Returns the function address."""
@@ -69,7 +76,10 @@ class SymbolTable:
         if rest:
             m.put_str(at + 32, a8_bits(rest))
         self.next = at + total
-        return at + 32 + 8 * len(rest)
+        f = at + 32 + 8 * len(rest)
+        self.vles.append(f)
+        self.name_of[f] = name
+        return f
 
     def search(self, name):
         return self.dictionary.get(name)
@@ -88,6 +98,13 @@ class SymbolTable:
         """MULTI's legal case: a new vle, and the dictionary repointed (p.127)."""
         f = self._vle(S, name)
         self.dictionary[name] = f
+        self.put(f, "ZKIND", kind)
+        return f
+
+    def orphan(self, name, kind):
+        """MULTI's contradictory case: a basic vle, dictionary unchanged (p.127,
+        chart RE boxes 2-3)."""
+        f = self._vle(S, name)
         self.put(f, "ZKIND", kind)
         return f
 

@@ -16,7 +16,7 @@ from . import optable
 from .optable import ENTRIES, lookup, dds13, dds_parts, DEFAULT_BS, MODE_NAME
 from .symtab import KIND_LABEL, KIND_SYN, KIND_UNDEF, KIND_SPECIAL, FUNCTION
 from .unit import *             # noqa: F401,F403
-from .value import V
+from .value import V, F_UNDEF, F_QUEST, F_MULTI, F_PSEUDO, F_CONTAG
 from .dnum import final, load_entry, DnumError
 
 ABS_START = 0o41 * 64           # p.33: 41 octal, or 0 in PUNREL mode
@@ -41,8 +41,18 @@ def _orbits(word, pos, width, value):
     return word | (_fit(value, width) << shift)
 
 
+# Which reading of the multiply-defined flags to follow.  C28-6129 (1963) pp.20-21:
+# MULTI on the line before the second definition, and MULTI before a statement
+# referring to the symbol (its example (5)).  N28-1081 page 7 (April 1963): MULTI
+# before both definitions, CONTAG before an instruction referring to it.
+EDITIONS = ("N28-1081", "C28-6129")
+
+
 class Pass2:
-    def __init__(self, p1, origin_bits=None):
+    def __init__(self, p1, origin_bits=None, edition="N28-1081"):
+        if edition not in EDITIONS:
+            raise ValueError(f"edition {edition!r}: one of {EDITIONS}")
+        self.edition = edition
         self.p1 = p1
         self.units = p1.units
         self.mem = p1.units.mem
@@ -56,6 +66,8 @@ class Pass2:
         self.hilo = []
         self.undef_at = None
         self.printed = {}       # what OUTPUT prints for a unit, listing.py
+        self.spnus = False      # NSPRES, p.35: SPNUS seen
+        self.val.multi_ref = F_CONTAG if edition == "N28-1081" else F_MULTI
 
     # ---------------------------------------------------------------------------
     def run(self):
@@ -63,6 +75,7 @@ class Pass2:
         self.pass_a()
         self.uiter(first=False)
         self.pass_b()
+        self.lists = self.nundsy()      # OUTPUT's end, p.157
         return self
 
     # -- UITER, chart GB p.136 ----------------------------------------------------
@@ -88,7 +101,6 @@ class Pass2:
                     st.put(f, "ZST3", 1)
                     self.val._enter(f, at, 0, 0, 0)
                     at += 64
-                    self.msg.add(11, f"UNDEFINED SYMBOL {name}", 0)
         for name, f in list(st.dictionary.items()):
             if st.get(f, "ZST0"):
                 continue
@@ -152,6 +164,38 @@ class Pass2:
         return e.align
 
     def unit_a(self, unit):
+        """Box 54, p.25: the error flags VALUE met are ORed into the unit."""
+        self.val.flags = 0
+        self._unit_a(unit)
+        self._or_flags(unit)
+
+    def _or_flags(self, unit):
+        bits = self.val.flags | self.definition_flags(unit)
+        self.val.flags = 0
+        if bits:
+            u = self.units
+            u.put(unit, ZIFLAGS, u.get(unit, ZIFLAGS) | bits)
+
+    def definition_flags(self, unit):
+        """The flags on a statement that defines an erroneous symbol: C28-6129
+        p.20 (2) and (3), N28-1081 page 7.  CHOSEN: QUEST on every definition,
+        as p.20's "the statement that contains the symbol"; PSEUDO on the base
+        of a circular chain, which UITER found (p.32)."""
+        f = self.p1_named(unit)
+        if not f:
+            return 0
+        st = self.st
+        bits = 0
+        if st.get(f, "ZST23"):
+            if self.edition == "N28-1081" or st.dictionary.get(st.name_of[f]) != f:
+                bits |= F_MULTI
+        if st.get(f, "ZST22"):
+            bits |= F_QUEST
+        if st.get(f, "ZST4"):
+            bits |= F_PSEUDO
+        return bits
+
+    def _unit_a(self, unit):
         u = self.units
         st = self.st
         e = self._entry(unit)
@@ -166,6 +210,9 @@ class Pass2:
                 st.put(f, "ZSYM", self.sym)
                 st.put(f, "ZCTR", 1)
                 self.val.symbol_value(f)
+                if st.get(f, "ZEXPR"):
+                    # its own expression, for the flags of the symbols in it
+                    self.val.read_field(st.mem, st.get(f, "ZEXPR"))
             return
         # Boxes 14F, 17: the counters go in the unit and its symbol.
         u.put(unit, ZIADAB, self.abs & ((1 << 25) - 1))
@@ -187,6 +234,8 @@ class Pass2:
         if name == "CNOP":
             self.cnop_a(unit)
             return
+        if name == "SPNUS":
+            self.spnus = True       # NSPRES, p.35
         if e.pseudo and name not in ("DD", "DDI", "DR", "DRZ", "EXT"):
             return
         # Boxes 14A-14K
@@ -627,6 +676,74 @@ class Pass2:
             pending = self.unit_b(unit, pending)
         return self
 
+    # -- NUNDSY, charts EG and EH pp.170-171, text p.172 ----------------------------
+    def nundsy(self):
+        """The symbol lists OUTPUT ends with.  One iteration of the vles (ANEXT):
+        an undefined symbol is listed at once with its address; the unused, the
+        multiply defined with contradictions and the circular are stacked and
+        listed after, the unused with addresses and the others by name only.  A
+        legal multiple gets message 131 instead (box 13).  Only the first 50
+        characters of a name print (p.172).  SPNUS suppresses the unused list
+        (box 10A).
+
+        CHOSEN: a symbol counts as used if the vle the dictionary holds was
+        referenced, since a later definition's vle is never looked up; and a
+        name with two vles is listed and given 131 once."""
+        st = self.st
+        lists = {"undefined": [], "unused": [], "multiple": [], "circular": []}
+        seen = set()
+
+        def address(f):
+            got = self.val.symbol_value(f)
+            return None if got is None else got[0] + got[1]
+
+        for f in st.vles:
+            name = st.name_of.get(f, "")
+            kind = st.get(f, "ZKIND")
+            if not name or name.startswith("\xff") or kind == KIND_SPECIAL:
+                continue
+            short = name[:50]
+            if st.get(f, "ZST1"):                               # box 4
+                lists["undefined"].append((short, address(f)))  # boxes 8, 9
+                continue
+            if (not self.spnus and kind != KIND_UNDEF          # boxes 10A, 10B
+                    and st.dictionary.get(name) == f and not st.get(f, "ZST24")):
+                lists["unused"].append((short, address(f)))     # box 11
+            if st.get(f, "ZST22"):                              # box 12
+                if ("q", name) not in seen:
+                    seen.add(("q", name))
+                    self.msg.add(131, f"MULT. DEFINED SYM WITH NO CONTRADICTION {short}",
+                                 0, fatal=False)
+                continue
+            if st.get(f, "ZST23"):                              # box 14
+                if ("m", name) not in seen:
+                    seen.add(("m", name))
+                    lists["multiple"].append((short, None))
+                continue
+            if st.get(f, "ZST4"):                               # box 16
+                lists["circular"].append((short, None))
+        return lists
+
+    def comrec_errors(self):
+        """The communication record's error bits STRAP II sets (C22-6729 p.8;
+        N28-1081 page 7): 41 for symbols in error, 42 for the serious messages,
+        43 for any message.  CHOSEN: a legal multiple (QUEST) does not set 41,
+        since C28-6129 p.20 calls it legal; p.8 names "multiply-defined" and
+        N28-1081 "multiply defined" without saying which."""
+        st = self.st
+        bits = set()
+        for name, f in st.dictionary.items():
+            if name.startswith("\xff"):
+                continue
+            if (st.get(f, "ZST1") or st.get(f, "ZST23") or st.get(f, "ZST4")
+                    or st.get(f, "ZSTCTG")):
+                bits.add(41)
+        for _number, _text, _unit, fatal in self.msg.items:
+            bits.add(43)
+            if fatal:
+                bits.add(42)
+        return bits
+
     def location_2a(self, unit):
         u = self.units
         absc = self.mem.get(unit + ZIADAB[0], ZIADAB[1])
@@ -634,6 +751,15 @@ class Pass2:
         return self.val.counter_value(absc, symc), absc, symc
 
     def unit_b(self, unit, pending):
+        """CHOSEN: the flags are ORed again in 2b.  p.25 names Pass 1 and 2a, but
+        a symbol defined through an undefined one is only complete, and so only
+        contagious, after the second UITER."""
+        self.val.flags = 0
+        pending = self._unit_b(unit, pending)
+        self._or_flags(unit)
+        return pending
+
+    def _unit_b(self, unit, pending):
         u = self.units
         e = self._entry(unit)
         name = e.name
@@ -647,7 +773,7 @@ class Pass2:
         if name in ("SLC", "SLCR"):
             v = self.val.read_field(self.mem, unit + FIXED_BITS)
             if not v.avail:
-                self.msg.add(11, "UNDEFINED IN ADDRESS", unit)
+                self.msg.add(7, "ASSEMBLY ERROR", unit)
             if name == "SLC" and v.total > self.running:
                 self.image.skips.append((self.running, v.total - self.running))
             if v.total < 0:
@@ -658,7 +784,7 @@ class Pass2:
         if name == "END":
             v = self.val.read_field(self.mem, unit + FIXED_BITS) if u.get(unit, ZINFLD) else None
             if v is not None and not v.avail:
-                self.msg.add(11, "UNDEFINED IN ADDRESS", unit)
+                self.msg.add(7, "ASSEMBLY ERROR", unit)
             if v is not None and not v.nullf:
                 t = v.total
                 if t % 32:
@@ -694,7 +820,7 @@ class Pass2:
 
     def _check_unavailable(self, unit):
         if self.unavailable:
-            self.msg.add(11, "UNDEFINED IN ADDRESS", unit)
+            self.msg.add(7, "ASSEMBLY ERROR", unit)
 
     def _gap(self, at, e):
         """strap_asm's gap rule: rounding before an instruction fills with zeros

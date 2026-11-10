@@ -21,14 +21,15 @@ class StrapError(_a.AssemblerError):
     pass
 
 
-def compile_cards(cards, origin_bits=None):
-    """All three phases.  Returns the Pass2 object, with its messages."""
+def compile_cards(cards, origin_bits=None, edition="N28-1081"):
+    """All three phases.  Returns the Pass2 object, with its messages.  edition
+    selects the flags' reading, pass2.EDITIONS."""
     p1 = Pass1(cards)
     try:
         p1.run()
     except FieldError as x:
         raise StrapError(f"message {x}, near card {p1.g.i}: {p1.g.card!r}")
-    p2 = Pass2(p1, origin_bits)
+    p2 = Pass2(p1, origin_bits, edition)
     p2.run()
     return p2
 
@@ -39,9 +40,18 @@ def assemble(source, origin_bits=None, strict=True):
     flagged as an error, which the shim needs in place of reading a listing."""
     p2 = compile_cards(deck_cards(source), origin_bits)
     if strict:
+        # What would reject a COMPILGO's GO phase: COMREC 7.41 or 7.42 (p.8,
+        # N28-1081 page 7).
         for number, text, _unit, fatal in p2.msg.items:
             if fatal:
                 raise StrapError(f"message {number}: {text}")
+        if 41 in p2.comrec_errors():
+            bad = {k: [n for n, _ in v] for k, v in p2.lists.items() if v and k != "unused"}
+            st = p2.st
+            ctg = [n for n, f in st.dictionary.items() if st.get(f, "ZSTCTG")]
+            if ctg:
+                bad["contagious"] = ctg
+            raise StrapError(f"symbols in error (COMREC 7.41): {bad}")
     symtab = _a.SymTab()
     st = p2.st
     for name in st.sorted_names():

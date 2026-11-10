@@ -22,6 +22,16 @@ from .symtab import KIND_LABEL, KIND_SYN, KIND_UNDEF, KIND_SPECIAL
 
 A8_TO_CHAR = None
 
+# The five symbol error flags, Fig. 20's ZIOPX bits 25-29 (p.25), named as
+# C28-6129 pp.20-21 prints them.  CHOSEN: their order in the five bits, which
+# is the manual's order, UNDEF in bit 25 (pass2.md contradiction 16).
+FLAG_NAMES = ("UNDEF", "QUEST", "MULTI", "PSEUDO", "CONTAG")
+F_UNDEF, F_QUEST, F_MULTI, F_PSEUDO, F_CONTAG = 16, 8, 4, 2, 1
+
+
+def flag_names(bits):
+    return [n for k, n in enumerate(FLAG_NAMES) if bits & (16 >> k)]
+
 
 def _chars():
     from .a8 import A8
@@ -56,6 +66,12 @@ class Value:
         self.st = st
         self.msg = messages
         self.vcundf = False     # p.57: may make an undefined entry
+        # p.25: VALUE "informs the using program" of the error symbols in an
+        # expression.  The caller clears this and reads it after.
+        self.flags = 0
+        # The flag a reference to a symbol multiply defined with contradictions
+        # gives: MULTI in C28-6129 p.21's example (5), CONTAG in N28-1081 p.7.
+        self.multi_ref = F_CONTAG
         self.abs = 0            # $4
         self.sym = 0            # $6
         self.have_counters = False
@@ -96,6 +112,7 @@ class Value:
             st.put(f, "ZST4", 1)
             return self._enter(f, 0, 0, 0, 0)
         st.put(f, "ZST17", 1)
+        saved, self.flags = self.flags, 0
         try:
             if kind == KIND_SYN:
                 got = self._syn(f)
@@ -103,9 +120,30 @@ class Value:
                 got = self._special(f)
         finally:
             st.put(f, "ZST17", 0)
+            inner, self.flags = self.flags, saved
+        if got is not None and inner and kind == KIND_SYN:
+            # p.32: UITER marks a symbol defined in terms of an error symbol
+            # as it completes the entry; C28-6129 p.21 (5).
+            st.put(f, "ZSTCTG", 1)
         if st.get(f, "ZST26"):      # circular, zero already given
             return (st.get(f, "ZVALB"), st.get(f, "ZVALI"), st.get(f, "ZX"), st.get(f, "ZXQ"))
         return got
+
+    def symbol_flags(self, f):
+        """The flags a reference to the symbol at f raises (p.25, C28 pp.20-21)."""
+        st = self.st
+        bits = 0
+        if st.get(f, "ZKIND") == KIND_UNDEF or st.get(f, "ZST1"):
+            bits |= F_UNDEF
+        if st.get(f, "ZST22"):
+            bits |= F_QUEST
+        if st.get(f, "ZST23"):
+            bits |= self.multi_ref
+        if st.get(f, "ZST4"):
+            bits |= F_PSEUDO
+        if st.get(f, "ZSTCTG"):
+            bits |= F_CONTAG
+        return bits
 
     def _enter(self, f, b, i, x, xq):
         st = self.st
@@ -134,7 +172,14 @@ class Value:
             # p.31 of C22-6531: dds transferred to A, as is the classification.
             st.put(f, "ZDDS", v.dds)
             st.put(f, "ZST3", 1)
-        return self._enter(f, v.B, v.I, v.X, 1 if v.xq else 0)
+        x, xq = v.X, v.xq
+        old = st.get(f, "ZOLDF")
+        if old:
+            # Chart RE boxes 20-22: an index the earlier definition gave holds.
+            o = self.symbol_value(old)
+            if o is not None and o[3]:
+                x, xq = o[2], True
+        return self._enter(f, v.B, v.I, x, 1 if xq else 0)
 
     def _special(self, f):
         """p.34: the sum of the current symbolic counter and the absolute one,
@@ -271,6 +316,8 @@ class Value:
                 else:
                     f = self.lookup_or_enter(text)
                     got = None if f is None else self.symbol_value(f)
+                    if f is not None:
+                        self.flags |= self.symbol_flags(f)
                     if got is None:
                         ok = False
                     else:

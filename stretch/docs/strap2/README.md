@@ -46,8 +46,9 @@ listing prints those halves, so no oracle can decide.
 **Not yet written:** DDI; NMCP's card image and all punching, so a REEL or IOD
 compiles but no deck comes out; the MIBA and MBSPEC corrections; the coprocessor;
 DUPLI; relocation; subscripts with dimensions; the system symbols' register-length
-dds; MULTI's equal-value test; and the listing's symbol lists, error flags, paging
-and error messages (C28-6129 pp.20-21). An unwritten path refuses loudly.
+dds; PRNTALL's whole-table print; and the listing's paging and its error messages
+(ERRPRT, ERRNUM: the messages are kept, not printed). An unwritten path refuses
+loudly.
 
 **The listing** (`listing.py`, `tests/check_strap2_listing.py`) matches both printed
 STRAP II listings field for field: C28-6129 Fig. 3 p.19, all 24 lines and both memory
@@ -57,6 +58,38 @@ after the location on five of p.48's lines, and the blank line after Fig. 3's li
 One row is pinned against the page: p.48 line 5 prints `LVE,,CW+1.0` as `...01 80`,
 where the pocket card and MCP's own listing give `B0`
 (`tests/verify_mcpref_example2_listing.py`).
+
+**Error flags, MULTI and the symbol lists** (`tests/check_strap2_flags.py`), from
+C28-6129 pp.20-21, its April 1963 update N28-1081 page 7 (PDF p.65), and the guide's
+p.25, p.32, chart RE pp.126-127 and charts EG-EH pp.170-172, all read in the ink.
+VALUE reports the error symbols it meets, which are ORed into Fig. 20's five flag
+bits in Pass 2a and again in 2b, and print as UNDEF, QUEST, MULTI, PSEUDO or CONTAG
+on an unnumbered line before the statement. MULTI decides in Pass 1 as chart RE
+does: a repeat is legal only for two SYNs of equal value, and then keeps the old
+dds and index. NUNDSY lists the undefined, the unused, the contradictory multiples
+and the circular after the statements, and gives message 131 for a legal multiple.
+Messages 11 and 21, which strap2 had invented, are gone: the guide's list (pp.176-179)
+and the update's revised Appendix D (N28-1081 pp.13-15) have 11 as SPARE and 21 in
+a spare block (20-28 in the guide, 19-28 in the update). (The 1961 Appendix D, C28 p.54, numbers differently: there 11
+is ASSEMBLY ERROR and 21 an improper first character, the later 29.) `assemble(strict=True)` now refuses what would set COMREC 7.41 or 7.42 (p.8).
+**No surviving listing prints a flag or a list**, and MCP's listing predates the
+update (`../NEXT.md`), so this is checked against text and charts only.
+
+Three disagreements, each run or pinned in the test:
+- **Which edition.** C28-6129 puts MULTI before the second definition and before a
+  statement referring to the symbol; N28-1081 puts MULTI before both definitions and
+  CONTAG before the reference. `edition=` selects; the update is the default.
+- **p.20's QUEST example** is a label and a SYN. Chart RE boxes 1 and 12 allow only
+  two SYNs, so strap2 says MULTI.
+- **p.21 (5) gives A the second value**, 500.0; p.21 (3) and the guide p.127 keep
+  the first. Pinned to the first.
+
+CHOSEN: the flag bits' order; a flag line unnumbered, at the location column; QUEST
+on every definition and PSEUDO on the base's; both vles of a multiple marked, the
+name listed once; the used test on the dictionary's vle; box 13's equality as the
+same coded expression or equal known bit addresses; COMREC 7.41 not set by a legal
+multiple; the list headers' words; the contagious bit (Zst5). Chart EG prints a
+header before the undefined symbols only when PRNTALL is on, so none prints.
 
 **IOD** (Pass 1's MIOD, pp.96-97). The name's value, the reference number as a word
 address, is DERIVED from one print, p.48's `,RON` = `000001.00 80`; no page states it.

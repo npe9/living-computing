@@ -49,6 +49,8 @@ class Pass1:
         self.block_symbol_done = False
         self.check_digit = 0
         self.named_of = {}
+        self.legal_old = {}     # MULTI's legal case: new vle -> the old one
+        self.def_units = {}     # name -> the units that define it, in order
 
     def _sysym(self, name):
         return optable.system_symbol(name)
@@ -305,8 +307,7 @@ class Pass1:
         f, there = st.addord(name, kind)
         if there:
             f = self._multi(name, f, unit, kind)
-            if f is None:
-                return
+        self.def_units.setdefault(name, []).append(unit)
         st.put(f, "ZKIND", kind)
         st.put(f, "ZST1", 0)
         st.put(f, "ZSTCNT", self.check_digit)
@@ -336,25 +337,55 @@ class Pass1:
         elif entry.kind in ("instr", "fp", "vfl", "conn", "io"):
             st.put(f, "ZDDS", dds13("BU", entry.length, 8))
             st.put(f, "ZST3", 1)
+        old = self.legal_old.get(f)
+        if old and st.get(old, "ZST3"):
+            # Chart RE boxes 14, 16: an earlier dds cannot be overruled (p.127).
+            for k in ("ZDDS", "ZFLX", "ZBSX", "ZST3"):
+                st.put(f, k, st.get(old, k))
 
     def _copy_coded(self, start, end):
         s = self.mem.get_str(start, end - start)
         return self.st.store_coded(s)
 
     def _multi(self, name, f, unit, kind):
-        """MULTI [126-127].  Legal needs both SYN with equal values, which is
-        tested when they are evaluated; CHOSEN that a SYN repeated over a SYN
-        takes the new vle at once and flags Zst22."""
+        """MULTI, chart RE p.126 and text p.127.  Legal only when the new and the
+        old definitions are both SYN (boxes 1, 12) with equal values (box 13):
+        then a new vle, the dictionary repointed, and the old dds and index
+        holding (boxes 14-23).  Otherwise contradictory: a basic vle for this
+        definition, the dictionary unchanged, so the first stands (box 2-3).
+
+        CHOSEN: both vles carry the mark, so a reference finds it whichever the
+        dictionary holds, and NUNDSY names the symbol once.  Box 13 runs in Pass
+        1, where a value may not be known yet: the values are equal when the
+        two coded expressions are the same, or when both are known and their
+        bit addresses agree (p.127's A SYN,32.0 and A SYN(BU,32),32.0($2))."""
         st = self.st
         if st.get(f, "ZKIND") == KIND_UNDEF:
             return f
-        if st.get(f, "ZKIND") == KIND_SYN and kind == KIND_SYN:
+        if kind == KIND_SYN and st.get(f, "ZKIND") == KIND_SYN and self._values_equal(f):
             nf = st.replace(name, KIND_SYN)
             st.put(nf, "ZST22", 1)
+            st.put(f, "ZST22", 1)
+            st.put(nf, "ZOLDF", f)
+            self.legal_old[nf] = f
             return nf
         st.put(f, "ZST23", 1)
-        self.msg.add(21, f"SYMBOL MULTIPLY DEFINED {name}", unit)
-        return None
+        nf = st.orphan(name, kind)
+        st.put(nf, "ZST23", 1)
+        return nf
+
+    def _values_equal(self, old):
+        st = self.st
+        a, b = st.get(old, "ZEXPR"), self.syn_expr
+        if not a or not b:
+            return False
+        saved = self.val.flags
+        va = self.val.read_field(st.mem, a)
+        vb = self.val.read_field(st.mem, b)
+        self.val.flags = saved
+        if st.mem.get_str(a, va.next - a) == st.mem.get_str(b, vb.next - b):
+            return True
+        return va.avail and vb.avail and va.total == vb.total
 
     # -- Boxes 9H, 7: comment and DRZ(N),1 --------------------------------------
     def _comment(self, unit, named):

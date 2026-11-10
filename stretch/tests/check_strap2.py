@@ -12,7 +12,7 @@ Injections, measured 2026-11-09, each reverted from a saved copy and compared:
   no zero for a circular symbol   a KeyError at part E
   implicit floating lost          only F1, F2
   the two-field VFL rule lost     only F4
-  undefined symbols half apart    only G2
+  undefined symbols half apart    only G2, G3 (G3 re-measured 2026-11-09)
 """
 import os
 import sys
@@ -153,7 +153,9 @@ except strap_asm.AssemblerError:
 p = strap2.assemble(src, strict=False)
 check("G2 pseudo-defined: next full word above the upper limit, in order",
       (p.symtab["U1"], p.symtab["U2"]), (W(0o103), W(0o104)))
-check("G3 message 11 is on the list", [m[0] for m in p.messages].count(11), 2)
+p2 = strap2.compile_cards(deck_cards(src))
+check("G3 NUNDSY lists both, at their addresses (chart EG boxes 4, 8, 9)",
+      p2.lists["undefined"], [("U1", W(0o103)), ("U2", W(0o104))])
 
 # ---- H. Fig. 20 p.189: the unit, read back as bits.
 p2 = strap2.compile_cards(deck_cards(

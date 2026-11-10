@@ -1139,5 +1139,8 @@ Page sweep basis: every page below was read in the ink. Sweeps for names used `d
 23. Unit counter at NPS2: zero (p.33); "set to one at the start of each pass" (p.173).
 24. `SPNUS` (pp.31, 35, 172) vs `SPUNS` (p.36). Chart labels the routine `NSPRES`.
 25. Boxes 22, 23 of DECODE say "GETFLD goes to VALUE" (p.140), chart VALUE (p.139); GETFLD is Pass 1.
-26. Contradictory multiples: first definition stands (p.127, C28 p.21 MULTI), yet C28 p.21's CONTAG example (`A SYN,1000.0; A SYN,500.0`) says 500.0.
+26. Contradictory multiples: first definition stands (p.127, C28 p.21 MULTI), yet C28 p.21's CONTAG example (`A SYN,1000.0; A SYN,500.0`) says 500.0. strap2 pins the first (`tests/check_strap2_flags.py` E3).
+28. C28 p.20's QUEST example is a label then a SYN of the same value; chart RE (p.126) boxes 1 and 12 make any repeat that is not SYN over SYN contradictory. strap2 follows the chart (test B9).
+29. N28-1081 page 7 (C28-6129 PDF p.65, April 1963) supersedes C28 p.21 on MULTI: the flag precedes both definitions, and a reference to the symbol gets CONTAG where p.21 (5) gives MULTI. Both are kept, as `Pass2(edition=)`.
+30. Chart EG box 6B prints a header for the undefined list only when printing all symbols (box 7); the normal undefined list has none, as read.
 27. Lists and errors: guide at the end (p.37, p.150); C28 p.20 at the start. Guide is the later and governs.
