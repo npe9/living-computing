@@ -43,8 +43,18 @@ The known difference: `strap_asm` puts a NOP in a half word rounded over before
 a DR(N) or DRZ(N), and p.33 makes only a CNOP a NOP. strap2 follows the guide. No
 listing prints those halves, so no oracle can decide.
 
-**Not yet written:** DDI; PUNREL, the relocatable cards; a low SLC under PUNFUL; the MIBA and MBSPEC corrections; the coprocessor;
-DUPLI; relocation; subscripts with dimensions; the system symbols' register-length
+**PUNREL, stage 1, is written:** PUNREL from the start of the program sets the
+counter to 0 (p.33) and punches relocatable data and instruction cards
+(6729 pp.187-188) and ORIGIN's O card; more than one location-counter symbol in
+a field is message 123, and here the deck then stops (CHOSEN: the message
+says only that it "may cause trouble in relocation", so `END-START` refuses); ORIGIN outside PUNREL is message 136.
+MCP's own loader relocates such a deck to the absolute program
+(`tests/gen_loader_deck_tb.py rel`). Under PUNREL, END punches no branch card
+(CHOSEN).
+
+**Not yet written:** DDI; PUNREL after absolute output; PUNFPC/ENTER,
+PUNCDC/COMBLOCK, FEND, SLCRCOM and common; a low SLC under PUNFUL; the MIBA and MBSPEC corrections; the coprocessor;
+DUPLI; subscripts with dimensions; the system symbols' register-length
 dds; PRNTALL's whole-table print; `$INF` (N28-1081 page 20 adds it, 12, infinity);
 the listing's page headings after the first; the field number in an error record
 (always 0); and the Correction card's typewriter copy of serious messages. An

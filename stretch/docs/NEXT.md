@@ -23,6 +23,16 @@ accumulate.
 
 
 
+## PUNREL STAGE 2 AND 3 -- next, 2026-11-11
+
+Stage 1 is written and runs on MCP's loader (docs/strap2/README.md). Next,
+in order: PUNFPC/ENTER and PUNCDC/COMBLOCK (6729 p.186, the transfer-vector
+and common cards), FEND, then SLCRCOM and blank common (N28-1081 page 3,
+read in the ink), with p.184's example program and Fig. 17 as a fixture.
+Open alongside: the LIM card under PUNREL is punched as computed and means
+nothing to a relocated load -- the guide does not say whether PUNREL
+punches one; and PUNREL after absolute output, refused.
+
 ## A FIELD LENGTH OVER 64 IS ACCEPTED SILENTLY -- open, found 2026-11-11
 
 `DD(BU,72),(8)040002001000010000400004` assembles, in strap_asm and in

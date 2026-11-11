@@ -760,8 +760,17 @@ Run on the model, 2026-11-11 (`tests/gen_loader_deck_tb.py`, in the
 suite): the origin, flow, zero, partial-word and branch paths, the
 sequence test and `ACHSM` load a six-card absolute deck strap/strap2
 punched, through the calling sequence of p.332 lines 42-52, and core
-equals STRAP II's image. Relocatable, FORTRAN, C, P and D cards have
-not yet run.
+equals STRAP II's image. The same day, PUNREL stage 1: a deck
+strap/strap2 punched in PUNREL mode with ORIGIN,(8)120000.0 (an O card,
+relocatable data and instruction cards) loads to exactly the program
+assembled absolute at 120000 (mode `rel`, 44 checks). A scratch probe of
+hand-built cards first confirmed the reading of §4.5-4.6: the O card sets
+`ALDCTR` (and found the model ignoring a VFL second index, RefMan p.21,
+now fixed); a base-0 data card loads at `ALDCTR` plus its origin, data
+from column 11; an instruction card's data starts at column 9, its count
+in column 5's low 10 bits; code `1000` relocates the left 18 bits of a
+half-word, `1010` the right 18; `ALDCTR` is unchanged by a data card.
+FORTRAN, C, P and D cards, a nonzero base and common have not yet run.
 
 ### 7.2 Printed p.329: lost, inside the loader
 

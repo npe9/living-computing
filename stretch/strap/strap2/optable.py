@@ -31,7 +31,7 @@ PSEUDO = {
     "PUNFUL", "PUNORG", "PUNNOR", "PUNID", "PRNS", "PRND", "NOPRNT", "SPNUS",
     "PRNID", "RESEQ", "NOSEQ", "SEM", "REM", "SKIP", "NOPUN", "PRNOR", "PUNALL",
     "PRNTALL", "TLB", "DUPLI", "PUNSYM", "PUNREL", "PUNFPC", "COMBLOCK", "ENTER",
-    "SLCRCOM",
+    "SLCRCOM", "ORIGIN",
     # Those with work to do.
     "DD", "DDI", "DR", "DRZ", "SYN", "SLC", "SLCR", "END", "EXT", "CNOP",
     "TAIL", "UNTAIL", "LINK", "IOD", "REEL",

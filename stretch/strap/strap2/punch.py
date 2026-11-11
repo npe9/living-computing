@@ -71,15 +71,33 @@ how a continued one is reproduced);
 the TYPE card's options are not copied; a gap in the location counter
 between units goes on the card as the image holds it, not as a new origin; a
 DR's skip starts where the last data ended, so it covers its own rounding.
-NOT WRITTEN: PUNREL and the relocatable cards; a low SLC under PUNFUL.  The
-assembly goes on; the punch stops at the first, `unwritten` names it, and
-`images` refuses.
+PUNREL (stage 1): from the start of the program, the relocatable data and
+instruction cards (6729 pp.187-188) and ORIGIN's O card; MCP's own loader
+loads such a deck (tests/gen_loader_deck_tb.py rel).  CHOSEN under PUNREL:
+END punches no branch card (N28-1081 page 3 says so for FORTRAN's END; the
+loader does not relocate a branch card's address, p.323); the LIM card's
+two half-words are punched as computed, and mean nothing to a relocated
+load.  The relocation codes are the ones MCP's loader reads (p.324 l.30 -
+p.325): 1000 relocates a half-word's left 18 bits, 1010 its right 18.  What
+VALUE's Sinrl1/Sinrl2 mean is UNSPECIFIED (docs/bss_loader_spec.md 9); the
+code counts location-counter symbols instead (value.py symbol_lc).
+NOT WRITTEN: a field with more than one location-counter symbol (message
+123; what IBM punched for it is UNSPECIFIED); PUNREL after absolute output; PUNFPC/ENTER, PUNCDC/COMBLOCK,
+FEND, SLCRCOM; a relocatable value in a field with no relocation position;
+a low SLC under PUNFUL.  The assembly goes on; the punch stops at the first,
+`unwritten` names it, and `images` refuses.
 `mcp` counts the IOD and REEL units.  `images` is the binary cards alone;
 `deck` and `deck_images` the whole deck in order.
 """
 
 ORIGIN_BITS, FLOW_BITS, FULL_BITS = 736, 800, 960
 ORIGIN_DATA, FLOW_DATA = 12 * 9 + 8, 12 * 4 + 4      # 10.8 and 5.4: card bits
+# PUNREL's cards, C22-6729 pp.187-188 (read in the ink 2026-11-11), the columns
+# as MCP's loader reads them (bss_loader_spec.md 4.5, 4.6; printed pp.324-326):
+# a relocatable data card loads 11.0-71.11, a relocatable instruction card's
+# instructions and then their relocation bits fill 9.0-71.11.
+RDATA_BITS, RDATA_DATA = 12 * 61, 12 * 10
+RINSTR_ROOM, RINSTR_DATA = 12 * 63, 12 * 8
 DEFAULT_BRANCH = 0o41 * 64
 
 
@@ -126,6 +144,12 @@ class Punch:
         self._clear()
         self.flow_next = False
         self.next_at = None     # where a flow card would load
+        self.rel = False        # PUNREL: relocatable cards
+        self._ri_clear()
+
+    def _ri_clear(self):
+        self.ri_start, self.ri_bits, self.ri_value = None, 0, 0
+        self.ri_reloc = {}      # half-word of the card -> "L" or "R"
 
     def _clear(self):
         self.start, self.nbits, self.value = None, 0, 0
@@ -133,12 +157,18 @@ class Punch:
 
     # -- the buffer --------------------------------------------------------------
     def _is_flow(self):
-        return self.flow_next and not self.skip and not self.punorg
+        # PUNREL: every relocatable data card carries its own origin; there is
+        # no relocatable flow card (C22-6729 pp.187-188 list none).
+        return self.flow_next and not self.skip and not self.punorg and not self.rel
 
     def _capacity(self):
+        if self.rel:
+            return RDATA_BITS
         return FLOW_BITS if self._is_flow() else ORIGIN_BITS
 
     def _emit(self, unit, card):
+        if self.rel and card.kind == "origin":
+            card.kind = "rdata"
         if card.kind == "origin" and self.first_origin is None:
             self.first_origin = card.origin
         if card.kind == "full":
@@ -162,6 +192,8 @@ class Punch:
         loading.  A short flow card becomes an origin card (p.23); more than an
         origin card holds goes on two (chart OV box 4).  In PUNFUL mode, the
         full card in process (CHOSEN: a short one is filled out with zeros)."""
+        if self.rel and self.ri_bits:
+            self._punch_ri(unit)
         if self.punful:
             if self.full_bits:
                 n = FULL_BITS - self.full_bits
@@ -171,6 +203,8 @@ class Punch:
             return
         if not self.nbits and not self.skip and not after:
             return
+        if self.rel and self.nbits > RDATA_BITS:
+            raise PunchError("a relocatable data card holds 732 bits")
         full = self._is_flow() and self.nbits == FLOW_BITS and not after
         if full:
             self._emit(unit, Card("flow", self.start, self.nbits, self.value))
@@ -257,8 +291,94 @@ class Punch:
                 if nbits:
                     self.start = end
 
+    # -- PUNREL ------------------------------------------------------------------
+    def punrel_(self, unit):
+        """PUNREL (C22-6729 p.186; C28-6129, N28-1081 page 2): the card in
+        process goes out, and relocatable cards follow.  It ends a PUNFUL
+        (chart OR, see `punful`)."""
+        self._end_full(unit)
+        self._new_origin()
+        self.suppressed = False
+        self.rel = True
+
+    def origin_card(self, unit, at):
+        """ORIGIN,N (C22-6729 p.183): the special origin card, column 1 O and
+        "xxxxxx.0" in columns 2-9 (p.188), which the loader reads as six octal
+        digits into its origin counter (printed p.323 l.45 - p.324 l.11).  It
+        goes out between the binary cards, after the one in process.  CHOSEN:
+        a location below a full word gives its word; columns 72-80 are blank."""
+        self._punch(unit)
+        self._new_origin()
+        self.control.append((len(self.cards), "O%06o.0" % (at // 64)))
+
+    def rel_data(self, unit, at, nbits, value, instr, reloc):
+        """One unit's binary in PUNREL mode.  Instructions, XW, CW, VF, CF, RF
+        go on relocatable instruction cards with their relocation bits; DD's
+        and DR's on relocatable data cards, which carry none (C22-6729 p.188:
+        "instructions, XW's, CF's, and RF's only (i.e., no DD's or DR's)")."""
+        if not instr:
+            if reloc:
+                self.unwritten = self.unwritten or "a relocatable value on a data card"
+                return
+            if self.ri_bits:
+                self._punch_ri(unit)
+            self.data(unit, at, nbits, value)
+            return
+        if self.nbits or self.skip:
+            self._punch(unit)
+            self.flow_next = False
+        if self.ri_bits and at != self.ri_start + self.ri_bits:
+            self._punch_ri(unit)
+        if not self.ri_bits:
+            if at % 32:
+                self.unwritten = self.unwritten or f"a relocatable instruction card at {at:o}, not on a half-word"
+                return
+            self.ri_start = at
+        new = dict(self.ri_reloc)
+        for b, side in reloc:
+            half, off = divmod(b - self.ri_start, 32)
+            if off != {"L": 0, "R": 14}[side] or new.get(half, side) != side:
+                self.unwritten = self.unwritten or f"a relocatable field at {b:o} that no relocation bits reach"
+                return
+            new[half] = side
+        if self._ri_room(self.ri_bits + nbits, new) > RINSTR_ROOM:
+            self._punch_ri(unit)
+            self.ri_start = at
+            new = {}
+            for b, side in reloc:
+                new[(b - at) // 32] = side
+        self.ri_value = (self.ri_value << nbits) | value
+        self.ri_bits += nbits
+        self.ri_reloc = new
+
+    @staticmethod
+    def _ri_codes(nbits, reloc):
+        """One set per half-word, a short last one included (the loader's
+        ARBCD7, printed p.325 lines 43-53): 0, or 1x00 / 1x10 (x reserved, 0)."""
+        out = ""
+        for h in range((nbits + 31) // 32):
+            side = reloc.get(h)
+            out += "0" if side is None else ("1000" if side == "L" else "1010")
+        return out
+
+    def _ri_room(self, nbits, reloc):
+        return nbits + len(self._ri_codes(nbits, reloc))
+
+    def _punch_ri(self, unit):
+        if not self.ri_bits:
+            return
+        c = Card("rinstr", self.ri_start, self.ri_bits, self.ri_value)
+        c.codes = self._ri_codes(self.ri_bits, self.ri_reloc)
+        end = self.ri_start + self.ri_bits
+        self._ri_clear()
+        self._emit(unit, c)
+        self.next_at = end
+        self.flow_next = False
+
     def reserve(self, unit, at, size, zero, running):
         """A DR (zero False) or DRZ: chart OV."""
+        if self.rel and self.ri_bits:
+            self._punch_ri(unit)
         end = at + size
         if self.punful:
             # Boxes 1-2, p.158: "blank words and/or cards must be punched
@@ -320,6 +440,13 @@ class Punch:
 
     def end(self, unit, address):
         self._punch(unit)
+        if self.rel:
+            # CHOSEN: in PUNREL mode END punches no branch card.  The branch
+            # card's address is not relocated by the loader (printed p.323
+            # lines 26-35), and N28-1081 page 3: "If END is specified, no
+            # branch card will be punched" (said of a FORTRAN program, whose
+            # FEND punches the FORTRAN branch card).
+            return
         if address is None:
             address = (DEFAULT_BRANCH if self.edition == "N28-1081"
                        else (self.first_origin or 0))
@@ -451,12 +578,30 @@ class Punch:
         def put(at, n, v):
             for k in range(n):
                 bits[at + k] = (v >> (n - 1 - k)) & 1
-        row = {"origin": (9, 10, 11), "flow": (9, 11), "branch": (8, 9, 11)}[c.kind]
+        # Column 1's bits: bit b is row 12, 11, 0, 1, ..., 9 for b = 0..11,
+        # so digit row d is bit d + 2 (C28-6129's "1.9" is bit 9, row 7).
+        row = {"origin": (9, 10, 11), "flow": (9, 11), "branch": (8, 9, 11),
+               "rdata": (8, 9, 10, 11),         # 6,7,8,9 punches (6729 p.187)
+               "rinstr": (7, 9, 11)}[c.kind]    # 5,7,9 punches (6729 p.188)
         for r in row:
             bits[r] = 1
         put(12, 12, clock & 0xFFF)
         put(24, 12, seq & 0xFFF)
-        if c.kind == "origin":
+        if c.kind == "rdata":
+            put(48, 1, int(c.zero))
+            put(49, 1, int(c.after))
+            put(50, 10, c.nbits)
+            put(60, 24, c.origin)
+            put(84, 24, c.skip)
+            put(108, 12, 0)                 # loading base 0: the program
+            put(RDATA_DATA, c.nbits, c.value)
+        elif c.kind == "rinstr":
+            put(48, 12, c.nbits)            # "excluding the relocation bits"
+            put(60, 24, c.origin)
+            put(RINSTR_DATA, c.nbits, c.value)
+            for k, ch in enumerate(c.codes):
+                bits[RINSTR_DATA + c.nbits + k] = int(ch)
+        elif c.kind == "origin":
             put(48, 1, int(c.zero))
             put(49, 1, int(c.after))
             put(50, 10, c.nbits)

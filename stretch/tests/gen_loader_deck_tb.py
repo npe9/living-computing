@@ -59,6 +59,25 @@ cmp:
     new-job bit missed bit .25, the bounds stayed zero, and card 1 took
     code 5, TRIED TO LOAD OUTSIDE LIMITS.
 
+MODE "rel" (argv[2]): the same driver on a PUNREL deck (REL_BODY), with
+ORIGIN,(8)120000.0, so MCP's loader relocates every word by 120000 octal.
+Its expected image is the same body assembled absolute at SLC,(8)120000.0:
+a relocatable deck loaded at X must equal the program assembled at X.  The
+body has a B,START and an XW,A,3,START (left and right relocation), an
+LVI,$3,5 (none), DRs and a DRZ.  No branch-address check: under PUNREL END
+punches no branch card (CHOSEN, strap/strap2/punch.py).
+FIRST RUN, 2026-11-11: 44 checks pass, PC at DONE, 40,231 cycles.
+MEASURED INJECTIONS, restored by copy and cmp:
+  - relocation codes one half-word late (reloc.get(h-1)): 8 fail
+    (loaded_120014-17, 120020-22, 120026).
+  - every relocated field coded left ("1000"): 1 fails, loaded_120020,
+    the XW (its right half not relocated, its left half doubled).
+  - the card's bit count including the codes: 18 fail (120014-120035).
+  - data card data from column 9, not 11: 35 fail, all data words plus
+    zeroed_120041/42, loaded_120043, no_error_card_4 and the PC.
+  - no relocation recorded (pass2): 18 fail, exactly the instruction words
+    120014-120035.
+
 ITS OWN BUILD DIRECTORIES (build-loader, simbuild-loader): built in the
 shared bsv/build without -show-schedule, it left mkStretchCore up to date
 with no .sched, and the smoke test's schedule check then failed.
@@ -98,18 +117,46 @@ SOURCE = [
 ]
 
 
+# THE RELOCATABLE DECK (mode rel).  The same body is assembled twice: in
+# PUNREL mode with an ORIGIN card for 120000, punched, and loaded by MCP's
+# loader; and absolute at 120000, which is what core must then hold.
+REL_BODY = [
+] + ["%-8sDD(BU,64),(8)%o" % ("A" if k == 0 else "", 0o1111111111111111 * (k + 1) & ((1 << 63) - 1))
+     for k in range(12)] + [
+    "START   L,A",
+    "        ST,TAB+2.0",
+    "        B,NEXT",
+    "NEXT    LVI,$2,TAB",
+    "        LVI,$3,5",
+    "PTR     SYN,TAB+1.0",
+    "        LVI,$4,PTR",
+    "X       XW,A,3,START",
+    "        L(BU,24),TAB.24",
+] + ["        B,START"] * 24 + [
+    "TAB     DR(BU,64),3",
+    "Z       DRZ(BU,64),2",
+    "C       DD(BU,64),(8)4444",
+    "        END,START",
+]
+REL_SOURCE = ["        PUNREL", "        ORIGIN,(8)120000.0"] + REL_BODY
+REL_ABSOLUTE = ["        SLC,(8)120000.0"] + REL_BODY
+
+
 def card(name, stmt):
     return " " + name.ljust(8) + stmt
 
 
-def deck():
+def compile_lines(lines):
     cards = []
-    for ln in SOURCE:
+    for ln in lines:
         parts = ln.split(None, 1) if not ln.startswith("        ") else ["", ln.strip()]
         name, stmt = (parts[0], parts[1]) if len(parts) == 2 else ("", parts[0])
         cards.append(card(name, stmt))
-    p2 = compile_cards(cards)
-    return p2
+    return compile_cards(cards)
+
+
+def deck():
+    return compile_lines(SOURCE)
 
 
 def card_words(cols):
@@ -121,17 +168,33 @@ def card_words(cols):
 
 def main():
     module = sys.argv[1]
+    mode = sys.argv[2] if len(sys.argv) > 2 else ""
+    if mode not in ("", "rel"):
+        raise SystemExit("mode: none or rel, not %r" % mode)
     pages = [(mcp_image.DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
              for n in range(99, 335)
              if n not in mcp_image.NO_DECK_PAGES | mcp_image.MISSING_PAGES]
     image, _src, _d, _e = mcp_image.build(False, pages, end_at="SDISP")
     S = image.symtab
 
-    p2 = deck()
-    if p2.punch.unwritten:
-        raise SystemExit("the punch did not write the deck: %s" % p2.punch.unwritten)
-    imgs = p2.punch.images(clock=0o1234)
-    kinds = [c.kind for c in p2.punch.cards]
+    if mode == "rel":
+        p2 = compile_lines(REL_SOURCE)
+        if p2.punch.unwritten:
+            raise SystemExit("the punch did not write the deck: %s" % p2.punch.unwritten)
+        if p2.msg.items:
+            raise SystemExit("messages: %s" % p2.msg.items)
+        # The whole deck: TYPE and LIM (B cards, a normal return, printed
+        # p.320 line 27), the O card, the binary cards.
+        imgs = p2.punch.deck_images(clock=0o1234)
+        kinds = [how if how == "text" else c.kind for how, c in p2.punch.deck()]
+        expect = compile_lines(REL_ABSOLUTE)
+    else:
+        p2 = deck()
+        if p2.punch.unwritten:
+            raise SystemExit("the punch did not write the deck: %s" % p2.punch.unwritten)
+        imgs = p2.punch.images(clock=0o1234)
+        kinds = [c.kind for c in p2.punch.cards]
+        expect = p2
 
     drv = ["        SLC,(8)%o.0" % DRIVER_AT,
            "ALOADR  SYN,(8)%o.%02o" % (S["ALOADR"] // 64, S["ALOADR"] % 64),
@@ -173,7 +236,7 @@ def main():
     # does not punch must come through the load unchanged.  Without it
     # those bits are Bluesim's power-on pattern, which says nothing.
     SENTINEL = 0x5555555555555555
-    im = p2.image
+    im = expect.image
     touched = sorted(set(w for w, m in im._written.items() if m)
                      | set(w for w, m in im._fill.items() if m))
     checks = []
@@ -187,16 +250,17 @@ def main():
         exp = (im.words.get(w, 0) & wr) | (SENTINEL & ~(wr | fl) & full)
         kind = "loaded" if wr == full else "zeroed" if fl == full else "partial"
         checks.append(("%s_%o" % (kind, w), str(w), exp))
-    last = len(imgs) - 1
-    ba = d.symtab["BA%d" % last]
-    # VF,A is the half word at BA: "VF,A half-word branch address" (6728-0 p.80).
-    # The loader returns the END card's address through the calling
-    # sequence: SV,$1,3.($15), printed p.321 line 21 (p.323 for the
-    # branch card), a 24-bit value field three words past A, i.e. BA.
-    addr = p2.punch.cards[-1].address
-    sh = 64 - ba % 64 - 24
-    want = (d.words[ba // 64] & ~(0xffffff << sh)) | (addr << sh)
-    checks.append(("branch_address_returned", str(ba // 64), want))
+    if mode != "rel":
+        last = len(imgs) - 1
+        ba = d.symtab["BA%d" % last]
+        # VF,A is the half word at BA: "VF,A half-word branch address" (6728-0
+        # p.80).  The loader returns the END card's address through the
+        # calling sequence: SV,$1,3.($15), printed p.321 line 21 (p.323 for
+        # the branch card), a 24-bit value field three words past A, i.e. BA.
+        addr = p2.punch.cards[-1].address
+        sh = 64 - ba % 64 - 24
+        want = (d.words[ba // 64] & ~(0xffffff << sh)) | (addr << sh)
+        checks.append(("branch_address_returned", str(ba // 64), want))
     sys.stderr.write("cards: %s\n" % kinds)
     sys.stderr.write("checks: %d\n" % len(checks))
     # D, the error word (bits 0-11 the card's sequence, 13-17 the code,

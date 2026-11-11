@@ -69,17 +69,39 @@ class Pass2:
         self.printed = {}       # what OUTPUT prints for a unit, listing.py
         self.punch = Punch(edition)     # OUTPUT's binary cards, punch.py
         self._full_image = None         # PUNFUL's bits: punched, not loaded
+        self.rel = False        # PUNREL mode (p.33), set by _punrel_scan
+        self.reloc = {}         # unit -> [(bit in its binary, "L" or "R")]
         self.spnus = False      # NSPRES, p.35: SPNUS seen
         self.val.multi_ref = F_CONTAG if edition == "N28-1081" else F_MULTI
 
     # ---------------------------------------------------------------------------
     def run(self):
+        self._punrel_scan()
         self.uiter(first=True)
         self.pass_a()
         self.uiter(first=False)
         self.pass_b()
         self.lists = self.nundsy()      # OUTPUT's end, p.157
         return self
+
+    def _punrel_scan(self):
+        """PUNREL mode from the start (p.33: the location counter starts at 41
+        octal, "or 0 in PUNREL mode").  CHOSEN: the mode holds when PUNREL comes
+        before any statement that takes a location; a PUNREL after one is the
+        mixed absolute and relocatable deck C28-6129 allows (N28-1081 page 2)
+        and this does not write: _punch_unit refuses it."""
+        for unit in self.units.intin():
+            e = self._entry(unit)
+            if e.name == "PUNREL":
+                self.rel = True
+                break
+            if not e.pseudo or e.name in ("DD", "DDI", "DR", "DRZ", "SLC", "SLCR",
+                                          "CNOP", "END", "TLB", "EXT"):
+                break
+        if self.rel:
+            if self.origin == ABS_START:
+                self.origin = 0
+            self.val.count_lc = True
 
     # -- UITER, chart GB p.136 ----------------------------------------------------
     def uiter(self, first):
@@ -423,6 +445,8 @@ class Pass2:
     # -- DECODE, chart DC p.139 ----------------------------------------------------
     def decode(self, unit, final):
         u = self.units
+        if final:
+            self.reloc.pop(unit, None)
         e = ENTRIES[u.get(unit, ZIOPX)]
         p = unit + FIXED_BITS
         fields = []
@@ -527,14 +551,50 @@ class Pass2:
             if count == 1:
                 if k < len(vals):
                     word = fn(word, vals[k], e, dds)
+                    self._reloc_field(routine, vals[k])
                 else:
                     word = fn(word, _literal(0), e, dds)
                 k += 1
             else:
                 for v in vals[k:]:
                     word = fn(word, v, e, dds)
+                    self._reloc_field(routine, v)
                 k = len(vals)
         return word
+
+    # Where each inserter puts an address that relocation can reach: the first
+    # 18 bits of a half-word ("L", address) or its last 18 ("R", refill), the
+    # relocation bits' two choices (C22-6729 p.188; the loader, printed p.325
+    # lines 9-16).  Any other field cannot carry relocation bits.
+    RELOC_AT = {
+        "S18A": (0, "L"), "S19IA": (0, "L"), "S18X": (0, "L"), "S19KF": (0, "L"),
+        "S24A": (0, "L"), "SSIC24": (0, "L"), "STTI": (0, "L"), "SIM19": (0, "L"),
+        "SIMC": (0, "L"), "SIMAD": (0, "L"), "SXP10": (0, "L"), "SCHAN": (0, "L"),
+        "S24SNI": (0, "L"), "SCW": (0, "L"), "S18W": (0, "L"), "SVF": (0, "L"),
+        "S19BBK": (32, "L"), "STT19A": (32, "L"), "SIOA": (32, "L"),
+        "S18RF": (46, "R"),
+    }
+
+    def _reloc_field(self, routine, v):
+        """INSERT's relocation check (C22-6729 p.185; bss_loader_spec.md 9): in
+        PUNREL mode a field whose value counts a location-counter-dependent
+        symbol is relocated.  More than one is message 123 (6729 p.178; 121 in
+        C28-6129 Appendix p.55), and since what VALUE then returns is
+        UNSPECIFIED, the deck stops there."""
+        if not self.rel or not v.lc:
+            return
+        unit, final = getattr(self, "filling", (0, True))
+        if not final:
+            return
+        if v.lc > 1:
+            self.msg.add(123, "MORE THAN 1 LOC. CTR. DEP. SYMBOL", unit, fatal=False)
+            self.punch.unwritten = self.punch.unwritten or "relocation of more than 1 location counter symbol"
+            return
+        at = self.RELOC_AT.get(routine)
+        if at is None:
+            self.punch.unwritten = self.punch.unwritten or f"a relocatable value in the {routine} field"
+            return
+        self.reloc.setdefault(unit, []).append(at)
 
     # Absolute values from Sinb, Sini, Sinx, by the address's function (p.144).
     @staticmethod
@@ -859,8 +919,24 @@ class Pass2:
             pu.tlb(unit, printed[2])
             return
         if e.name == "PUNREL":
-            # Not written: the assembly goes on, and the deck says it is short.
-            pu.unwritten = e.name
+            if self.rel and not pu.cards and not pu.rel:
+                pu.punrel_(unit)
+            else:
+                # Not written: a PUNREL after absolute output (_punrel_scan).
+                pu.unwritten = "PUNREL after absolute output"
+            return
+        if e.name == "ORIGIN":
+            # C22-6729 p.183, "To produce special origin card for the loader".
+            # Pass 2 "does not accept relocation pseudo-ops if it is not in
+            # PUNREL mode" (p.186): message 136.
+            if not pu.rel:
+                self.msg.add(136, "RELOCATABLE PSEUDO-OP., NOT IN PUNREL MODE", unit, fatal=False)
+                return
+            v = self.val.read_field(self.mem, unit + FIXED_BITS)
+            if not v.avail:
+                self.msg.add(7, "ASSEMBLY ERROR", unit)
+                return
+            pu.origin_card(unit, v.total)
             return
         if kind == "SLC":
             pu.slc(unit, printed[1])
@@ -874,7 +950,13 @@ class Pass2:
                 start = printed[1]
             n = self.running - start
             if n > 0:
-                pu.data(unit, start, n, self._image_bits(start, n))
+                if pu.rel:
+                    at = printed[1]
+                    pu.rel_data(unit, start, n, self._image_bits(start, n),
+                                kind == "INSTR",
+                                [(at + b, side) for b, side in self.reloc.get(unit, ())])
+                else:
+                    pu.data(unit, start, n, self._image_bits(start, n))
 
     def statement_text(self, unit):
         """The statement as Pass 1 kept it (Zilsst bytes after the coded fields)."""

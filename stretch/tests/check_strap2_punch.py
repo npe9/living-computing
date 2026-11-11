@@ -18,7 +18,22 @@ What is checked, and how strong each oracle is:
   C  what each event does to the deck: a full origin card, then flow cards; DRs
      in a row adding up; a DRZ zeroing; a DR after a DRZ punched apart; END
      with no address, by both editions.
-  D  PUNREL is not written: the assembly goes on and `images` refuses.
+  D  PUNREL after absolute output is not written: the assembly goes on and
+     `images` refuses.  PUNREL from the start is written (R).
+  R  PUNREL stage 1: relocatable data and instruction cards, ORIGIN's O
+     card, message 123, message 136.  Measured injections, 2026-11-11, each
+     failing exactly the check named and nothing else:
+       message 123 never raised (lc > 9)            -> R6
+       ORIGIN accepted outside PUNREL (no 136)      -> R7
+       instruction card column 1 without row 9      -> R3
+       every relocated field coded left ("1000")    -> R4
+       PUNREL leaves the counter at 41 octal         -> R1, R3
+       END punches a branch card under PUNREL       -> R2
+       the O card without its ".0"                  -> R2
+       data card data from column 9                 -> R5
+       data card column 1 without row 9             -> R5
+       branch-on-bit address coded at bit 0, not 32 -> R8
+     The loader run (gen_loader_deck_tb.py rel) is the end-to-end check.
   E  the MCP cards, C22-6678-1 pp.7-10 read in the ink: GO and LIM first (guide
      p.157 boxes 15-16), the IOD of p.48 reproduced with its reference number and
      exit word, a REEL as submitted, the card code by hand from App. F p.56, and
@@ -374,14 +389,53 @@ if __name__ == "__main__":
           [(c.nbits, c.skip, c.zero, c.after) for c in z.punch.cards if c.kind != "branch"],
           [(64, 64, True, True), (32, 64, False, False)])
 
-    # D. Not written.
+    # D. Not written: a PUNREL after absolute output.
     pf = compile_cards([card("", "SLC,64."), card("", "B,0"), card("", "PUNREL"),
                         card("", "B,0"), card("", "END,0")])
     try:
         pf.punch.images()
-        check("D1 PUNREL: images refuse", "accepted", "PunchError")
+        check("D1 PUNREL after absolute output: images refuse", "accepted", "PunchError")
     except PunchError:
-        check("D1 PUNREL: images refuse", "PunchError", "PunchError")
+        check("D1 PUNREL after absolute output: images refuse", "PunchError", "PunchError")
+
+    # R. PUNREL from the start: C22-6729 pp.183-188 and p.33, read in the
+    # ink; the loader that reads these cards runs in tests/gen_loader_deck_tb.py
+    # (mode rel).  Column 1 decoded here from the columns.
+    rel = compile_cards([card("", "PUNREL"), card("", "ORIGIN,(8)120000.0"),
+                         card("A", "DD(BU,64),5"), card("S", "B,S"),
+                         card("", "LVI,$3,5"), card("X", "XW,A,3,S"),
+                         card("", "END,S")])
+    rd = rel.punch.deck()
+    check("R1 PUNREL: the counter starts at 0 (p.33), so A is word 0 and S word 1",
+          (rel.val.symbol_value(rel.st.search("A"))[0], rel.val.symbol_value(rel.st.search("S"))[0]),
+          (0, 64))
+    check("R2 ORIGIN's card is O and xxxxxx.0 (p.188), after the control cards; END punches no branch card",
+          [(how, c if how == "text" else c.kind) for how, c in rd][2:],
+          [("text", "O120000.0"), ("binary", "rdata"), ("binary", "rinstr")])
+    ri = [c for c in rel.punch.cards if c.kind == "rinstr"][0]
+    cols = rel.punch._encode(ri, 2, 0)
+    check("R3 relocatable instruction card: column 1 is 5,7,9; 5 the bit count; 6-7 the origin",
+          (cols[0], field(cols, 48, 12), field(cols, 60, 24)), (0o0025, 128, 64))
+    check("R4 its relocation bits follow the data: B,S relocated, LVI,$3,5 not, XW left and right",
+          "".join(str(field(cols, 96 + 128 + k, 1)) for k in range(len(ri.codes))),
+          "1000" + "0" + "1000" + "1010")
+    rdc = [c for c in rel.punch.cards if c.kind == "rdata"][0]
+    cols = rel.punch._encode(rdc, 1, 0)
+    check("R5 relocatable data card: column 1 is 6,7,8,9; 10 the base, 0; data from 11 (p.187)",
+          (cols[0], field(cols, 50, 10), cols[9], field(cols, 120, 64)), (0o0017, 64, 0, 5))
+    two = compile_cards([card("", "PUNREL"), card("A", "DD(BU,64),5"),
+                         card("B", "DD(BU,64),6"), card("", "LVI,$3,A+B"),
+                         card("", "END,0")])
+    check("R6 two location-counter symbols in one field: message 123 (6729 p.178); the deck stops (CHOSEN, here)",
+          ([n for n, *_ in two.msg.items], bool(two.punch.unwritten)), ([123], True))
+    nr = compile_cards([card("", "SLC,64."), card("", "ORIGIN,64."), card("", "B,0"),
+                        card("", "END,0")])
+    check("R7 ORIGIN outside PUNREL mode: message 136, no O card (6729 pp.178, 186)",
+          ([n for n, *_ in nr.msg.items], [t for _, t in nr.punch.control]), ([136], []))
+    bb = compile_cards([card("", "PUNREL"), card("A", "DD(BU,64),5"),
+                        card("S", "BZB,A.0,S"), card("", "END,S")])
+    check("R8 a branch on bit relocates both half-words: its bit address, and its branch address at bit 32",
+          [c.codes for c in bb.punch.cards if c.kind == "rinstr"], ["1000" + "1000"])
 
     # E. The MCP cards (C22-6678-1 pp.7-10): GO, LIM, then IOD and REEL as
     # submitted at their units, then the binary cards, numbered from 1.

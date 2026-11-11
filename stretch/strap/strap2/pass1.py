@@ -484,7 +484,7 @@ class Pass1:
             self._mqr(unit, e)
         elif name == "SYN":
             self._mqs(unit, e)
-        elif name in ("SLC", "SLCR", "END", "TLB"):
+        elif name in ("SLC", "SLCR", "END", "TLB", "ORIGIN"):
             self._mql(unit, e)
         elif name == "PUNID":
             self._mpunid(unit)

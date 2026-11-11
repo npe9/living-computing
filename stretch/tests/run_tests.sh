@@ -13850,10 +13850,13 @@ run "THE DISK, with write back-pressure: nothing is lost while the source refuse
 # (48 checks fail each); flow data one column late fails exactly the 26
 # flow-card words.  The control passes all 54.
 run "MCP's binary loader (pp.320-334) loads a deck STRAP II punched" ./run_loader_deck.sh StretchLoaderDeckTb
+# The same loader on a PUNREL deck: relocated by 120000 octal, it must equal the
+# program assembled at 120000.  Injections in gen_loader_deck_tb.py's header.
+run "MCP's binary loader relocates a PUNREL deck STRAP II punched" ./run_loader_deck.sh StretchLoaderRelTb rel
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
-rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchXmitTb.bsv "$BSV_DIR"/StretchLvsTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv "$BSV_DIR"/StretchLoaderDeckTb.bsv
+rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchXmitTb.bsv "$BSV_DIR"/StretchLvsTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv "$BSV_DIR"/StretchLoaderDeckTb.bsv "$BSV_DIR"/StretchLoaderRelTb.bsv
 rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 

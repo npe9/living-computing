@@ -39,7 +39,8 @@ def _chars():
 
 
 class V:
-    __slots__ = ("B", "I", "X", "xq", "avail", "dds", "sym", "gps", "next", "dims", "nullf")
+    __slots__ = ("B", "I", "X", "xq", "avail", "dds", "sym", "gps", "next", "dims", "nullf",
+                 "lc")
 
     def __init__(self):
         self.B = 0
@@ -53,6 +54,10 @@ class V:
         self.next = 0
         self.dims = None
         self.nullf = False
+        # Location-counter-dependent symbols in the expression, counted
+        # (bss_loader_spec.md 9): error 123's "more than one location
+        # counter symbol" counts them, so they are counted, not netted.
+        self.lc = 0
 
     @property
     def total(self):
@@ -76,6 +81,9 @@ class Value:
         self.sym = 0            # $6
         self.have_counters = False
         self.chars = _chars()
+        self.count_lc = False   # PUNREL mode turns the count on (pass2)
+        self._lc = {}           # f -> location-counter symbols in its value
+        self._lc_busy = set()
 
     # -- the location counter ---------------------------------------------------
     def counter_value(self, absc, symc):
@@ -144,6 +152,34 @@ class Value:
         if st.get(f, "ZSTCTG"):
             bits |= F_CONTAG
         return bits
+
+    def symbol_lc(self, f):
+        """How many location-counter-dependent symbols the symbol at f stands
+        for: a label or a special (location-counter) symbol is one (C22-6729
+        p.185, Zst36 "0-if location counter dependent"); a SYN, what its own
+        expression counts; an undefined symbol, none.  CHOSEN: the count of a
+        circular SYN is zero, as its value is (p.32)."""
+        if f in self._lc:
+            return self._lc[f]
+        st = self.st
+        kind = st.get(f, "ZKIND")
+        if kind in (KIND_LABEL, KIND_SPECIAL):
+            return 1
+        if kind != KIND_SYN or f in self._lc_busy:
+            return 0
+        self._lc_busy.add(f)
+        saved = (self.abs, self.sym, self.have_counters, self.flags)
+        self.have_counters = bool(st.get(f, "ZCTR"))
+        self.abs, self.sym = st.get(f, "ZABS"), st.get(f, "ZSYM")
+        try:
+            v = self.read_field(st.mem, st.get(f, "ZEXPR"))
+            n = v.lc
+        finally:
+            self.abs, self.sym, self.have_counters, self.flags = saved
+            self._lc_busy.discard(f)
+        if v.avail:
+            self._lc[f] = n
+        return n
 
     def _enter(self, f, b, i, x, xq):
         st = self.st
@@ -313,6 +349,7 @@ class Value:
                     at = self.dollar()
                     ok = at is not None
                     b = at or 0
+                    v.lc += 1
                 else:
                     f = self.lookup_or_enter(text)
                     got = None if f is None else self.symbol_value(f)
@@ -328,6 +365,8 @@ class Value:
                         d = self.symbol_dds(f)
                         v.dds = d
                         v.sym = f
+                        if self.count_lc:
+                            v.lc += self.symbol_lc(f)
             elif kind == 0b10:      # absolute
                 i = mem.get(p, 24)
                 p += 24
