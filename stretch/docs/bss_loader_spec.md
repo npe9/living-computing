@@ -756,6 +756,13 @@ EXTERNAL; overlay of named commons.
 | resume load, `YARSL`, reject messages | pp.332-334 |
 | BSS hooks elsewhere | p.271 (chain rewrite), p.389, p.397 (`YBSSID`, `YTSP`) |
 
+Run on the model, 2026-11-11 (`tests/gen_loader_deck_tb.py`, in the
+suite): the origin, flow, zero, partial-word and branch paths, the
+sequence test and `ACHSM` load a six-card absolute deck strap/strap2
+punched, through the calling sequence of p.332 lines 42-52, and core
+equals STRAP II's image. Relocatable, FORTRAN, C, P and D cards have
+not yet run.
+
 ### 7.2 Printed p.329: lost, inside the loader
 
 Span 235112.00-235153.40, 34 words, serials TA000449-499. Labels fixed
@@ -900,11 +907,46 @@ Segmented jobs, each prefixed ERROR -:
 
 - Named commons are numbered from 1; blank is 0 (6729 pp.185-186). Blank
   common takes only DR, no DRZ (6729 p.187). STRAP punches no card for a
-  blank-common address (6129, OCR only: section 7 of its pseudo-op text,
-  PDF p.61, not read in the ink).
+  blank-common address: "To insure that no data will be loaded into
+  blank common, STRAP does not punch an output card where the address
+  field is left blank following an SLCRCOM" (N28-1081 page 3, C28-6129
+  PDF p.61, read in the ink 2026-11-11). Same page, FEND: "If END is
+  specified, no branch card will be punched", said of a FORTRAN program
+  or subprogram.
 - Unit formats behind this: 6729 pp.184-185 (Figures 17-19): `ZICOMM`, bits
   24-26 and 56-58, `Sinrl1`, `Sinrl2`, `Sinua`.
 - Worked programs: 6729 p.184; 6751 pp.34-35; C28 p.15 (two).
+- **Which addresses relocate** (read in the ink 2026-11-11: 6729
+  pp.56, 178, 183-188; 6129 Appendix p.55, PDF 58). Each symbol table
+  entry carries `Zst35` (1 once location-counter dependence is decided),
+  `Zst36` (0 if location-counter dependent, 1 if not) and
+  `Zstcom`/`Zstcon` (relocate as an upper address relative to common
+  `Zstcon`, 0 being blank common); a symbol defined after `SLCRCOM` gets
+  `Zstcom` = 1 and the common's number (6729 p.185). The one printed
+  symbol rule, p.185: "When both Zstl3 [so printed; Zst35 meant] is on
+  and Zst36 is off, it is necessary to look at Zstcom. If Zstcom is zero,
+  the address is to be relocated as a lower address; if on, ... as an
+  upper address relative to the common whose number is given in Zstcon."
+  So a decided, location-counter-dependent symbol with `Zstcom` 0 is
+  program-relative: stage 1's case.
+- VALUE returns `Sinrl1` and `Sinrl2`, each (BU,1), "relocation
+  indicators", footnoted "See Section on relocation ops" (6729 p.56), and
+  in its third output word `Sincom` and `Sinua` (p.185, Figure 18).
+  INSERT, in Pass 2, reads them, and on `Sinrl1` = 1, `Sinrl2` = 0,
+  `Sinua` = 1 puts the common number at `ZICOMM` (p.185); the relocation
+  section gives no other case. **How VALUE combines terms is not
+  printed.** The one rule in print is an error: "MORE THAN 1 LOC. CTR.
+  DEP. SYMBOL", detected by INSERT, number 123 in 6729 p.178 and 121 in
+  6129 Appendix p.55, "Address field contains more than one location
+  counter symbol which may cause trouble in relocation". So: no
+  location-counter-dependent symbol, absolute; one, relocatable; more
+  than one, flagged. **UNSPECIFIED: what `Sinrl1`/`Sinrl2` mean.** Two
+  readings fit INSERT's test, and both are kept: (a) `Sinrl1` = one or
+  more location-counter-dependent symbols, `Sinrl2` = more than one; (b)
+  they mirror the unit's bits 24 and 25 (relocate; address or refill
+  field), which fits `ZICOMM` being "for the address from an address
+  field" (p.184). The code carries a count of location-counter-dependent
+  symbols, which error 123's text grounds, and names neither bit.
 
 Transfer-vector convention: "beginning in cell 1 of the program"; A8 names;
 calls by `SIC,$X15 ; B,name` (6751 p.31).

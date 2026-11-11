@@ -1,0 +1,217 @@
+#!/usr/bin/env python3
+"""gen_loader_deck_tb.py -- MCP's own loader loads a deck STRAP II punched.
+
+The JOB CONTROL BINARY LOADER (printed pp.320-334, transcribed, p.329 lost
+from the scan) is IBM's code for reading the binary cards STRAP II punches.
+This runs it, on the model, on a deck strap/strap2 punched, and checks that
+core holds what STRAP II assembled.  It is the first IBM check of the card
+format the punch writes: column 1's class, the sequence number in column 3,
+the check sum in column 4 (ACHSM, printed p.322 l.48 - p.323 l.13), the
+origin/flow/branch layout, and a zero after loading (a DRZ after data).
+NOT EXERCISED: a DR, and a skip or zero before loading.
+
+THE IMAGE: the LOADER overlay as check_mcp_body_image builds it, resident
+pp.99-319 and pp.320-334, by strap/mcp_image.py.
+
+THE DRIVER (scaffolding, assembled by strap_asm): for each card, fifteen
+TI,1 into YBCBU (the model transmits one word per instruction), then the
+calling sequence resume load itself uses, printed p.332 lines 42-52:
+
+    LVI,15,A ; B,ALOADR
+    A  VF,YBCBU        FWA
+       ,L              lower limit; bit .25 = new job (p.333 line 25)
+       ,U              upper limit
+       B,ERR           error return
+       VF,0            D: sequence number and error code
+       B,DONE          branch return
+       VF,0            A: the branch address
+    (normal return: the next card)
+
+L and U are plain half-word addresses, as at YRLLL (p.332 lines 46-47);
+ALOADR reads 18 bits of each (p.320 lines 15-18).  The new-job bit, .25 of
+L, is tested BZBZ,.57($15) (p.320 line 11) and cleared by that test, so the
+driver sets it once, before the first card, with CM1111(BU,1) as ALOADR sets
+its own indicators (p.320 line 14).  ERR loops on itself, so an error
+return runs out the step cap and the PC check fails.
+
+THE CHECKS.  Every word the deck touches starts as a sentinel, 5555...;
+each must then hold STRAP II's bits where the deck wrote, zero where a DRZ
+filled, and the sentinel elsewhere (the half word after GO's B,GO: the
+loader stores a partial word and leaves the rest).  The END card's address
+must come back in VF,A (SV,$1,3.($15), p.321 line 21).  Each card's D must
+be untouched: the loader writes it only on the error return, so a failure
+names IBM's code (docs/bss_loader_spec.md 8.1).
+
+FIRST RUN, 2026-11-11: 54 checks pass, PC at DONE, 30,232 cycles.
+
+MEASURED INJECTIONS, in strap/strap2/punch.py, each restored by copy and
+cmp:
+  - check sum without the end-around fold (s & 0xFFF): every check fails
+    (48), PC at ERR; card 1's D = 0x00104000, sequence 1, code 1, CHECK
+    SUM ERROR.
+  - sequence numbers from 0: the same 48 fail; card 1's D = 0x00008000,
+    sequence 0, code 2, SEQUENCE ERROR.
+  - flow-card data one column late (FLOW_DATA + 12): exactly the 26 words
+    the two flow cards carry fail (loaded_120013 .. loaded_120044), the
+    check sum agreeing with the shifted data; nothing else (re-measured on
+    the final generator, the six no_error checks passing).
+  - (control, during bring-up) the driver's L punched as DD(BU,32): the
+    new-job bit missed bit .25, the bounds stayed zero, and card 1 took
+    code 5, TRIED TO LOAD OUTSIDE LIMITS.
+
+ITS OWN BUILD DIRECTORIES (build-loader, simbuild-loader): built in the
+shared bsv/build without -show-schedule, it left mkStretchCore up to date
+with no .sched, and the smoke test's schedule check then failed.
+
+THE IMAGE IS LOADED FROM A FILE (gen_tb's fast_load): the LOADER image as
+an inline case made bsc's code generation run nineteen hours without
+finishing (2026-11-10); from a RegFile it compiles in about a minute.
+
+"""
+import os
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+STRETCH = os.environ.get("STRETCH", os.path.join(HERE, ".."))
+sys.path.insert(0, os.path.join(STRETCH, "strap"))
+sys.path.insert(0, os.path.join(STRETCH, "tests"))
+
+import mcp_image                                   # noqa: E402
+from strap_asm import assemble                     # noqa: E402
+from strap2 import compile_cards                   # noqa: E402
+from gen_tb import generate                        # noqa: E402
+
+DRIVER_AT = 0o100000        # words: free in the LOADER image (nothing below 215000)
+LOW, HIGH = 0o110000, 0o130000
+
+# The deck under test, in STRAP II.  Absolute, at 120000: forty full words
+# (more than one origin card's 23 half-words, so flow cards follow), a DRZ
+# (zeros the loader must write), more data, and an END with a branch address.
+SOURCE = [
+    "        SLC,(8)120000.0",
+] + [f"        DD(BU,64),(8){(0o1010101010101010 * (k + 1)) & 0o1777777777777777777777:o}"
+     for k in range(40)] + [
+    "        DRZ(BU,64),3",
+    "Z1      DD(BU,64),(8)7777777700000000",
+    "GO      B,GO",
+    "        END,GO",
+]
+
+
+def card(name, stmt):
+    return " " + name.ljust(8) + stmt
+
+
+def deck():
+    cards = []
+    for ln in SOURCE:
+        parts = ln.split(None, 1) if not ln.startswith("        ") else ["", ln.strip()]
+        name, stmt = (parts[0], parts[1]) if len(parts) == 2 else ("", parts[0])
+        cards.append(card(name, stmt))
+    p2 = compile_cards(cards)
+    return p2
+
+
+def card_words(cols):
+    bits = 0
+    for c in cols:
+        bits = (bits << 12) | (c & 0o7777)
+    return [(bits >> (64 * (14 - i))) & ((1 << 64) - 1) for i in range(15)]
+
+
+def main():
+    module = sys.argv[1]
+    pages = [(mcp_image.DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
+             for n in range(99, 335)
+             if n not in mcp_image.NO_DECK_PAGES | mcp_image.MISSING_PAGES]
+    image, _src, _d, _e = mcp_image.build(False, pages, end_at="SDISP")
+    S = image.symtab
+
+    p2 = deck()
+    if p2.punch.unwritten:
+        raise SystemExit("the punch did not write the deck: %s" % p2.punch.unwritten)
+    imgs = p2.punch.images(clock=0o1234)
+    kinds = [c.kind for c in p2.punch.cards]
+
+    drv = ["        SLC,(8)%o.0" % DRIVER_AT,
+           "ALOADR  SYN,(8)%o.%02o" % (S["ALOADR"] // 64, S["ALOADR"] % 64),
+           "YBCBU   SYN,(8)%o.%02o" % (S["YBCBU"] // 64, S["YBCBU"] % 64),
+           "LOWLIM  SYN,(8)%o.0" % LOW,
+           "HIGHLIM SYN,(8)%o.0" % HIGH,
+           # The new-job bit, .25 of L: tested BZBZ,.57($15) (p.320
+           # line 11), set the way ALOADR sets its own (p.320 line 14).
+           "START   CM1111(BU,1),A0+.57"]
+    for k in range(len(imgs)):
+        for w in range(15):
+            drv.append("        TI,1,C%d+%d.0,YBCBU+%d.0" % (k, w, w))
+        drv += ["        LVI,$15,A%d" % k,
+                "        B,ALOADR",
+                "A%d      VF,YBCBU" % k,
+                "        ,LOWLIM",
+                "        ,HIGHLIM",
+                "        B,ERR",
+                "D%d      VF,0" % k,
+                "        B,DONE",
+                "BA%d     VF,0" % k]
+    drv += ["        B,DONE", "ERR     B,ERR", "DONE    B,DONE"]
+    for k, cols in enumerate(imgs):
+        drv.append("        CNOP")
+        for w, v in enumerate(card_words(cols)):
+            drv.append(("C%d" % k if w == 0 else "").ljust(8) + "DD(BU,64),(8)%o" % v)
+    drv.append("        END,START")
+    d = assemble("\n".join(drv) + "\n")
+
+    words = dict(image.words)
+    for w, v in d.words.items():
+        if w in words:
+            raise SystemExit("driver overlaps the image at %o" % w)
+        words[w] = v
+    image.words = words
+    image.end_pc = d.end_pc
+
+    # Every word the deck touches starts as SENTINEL, so a bit the deck
+    # does not punch must come through the load unchanged.  Without it
+    # those bits are Bluesim's power-on pattern, which says nothing.
+    SENTINEL = 0x5555555555555555
+    im = p2.image
+    touched = sorted(set(w for w, m in im._written.items() if m)
+                     | set(w for w, m in im._fill.items() if m))
+    checks = []
+    full = (1 << 64) - 1
+    for w in touched:
+        if w in words:
+            raise SystemExit("the deck overlaps the image at %o" % w)
+        words[w] = SENTINEL
+        wr = im._written.get(w, 0)
+        fl = im._fill.get(w, 0) & ~wr
+        exp = (im.words.get(w, 0) & wr) | (SENTINEL & ~(wr | fl) & full)
+        kind = "loaded" if wr == full else "zeroed" if fl == full else "partial"
+        checks.append(("%s_%o" % (kind, w), str(w), exp))
+    last = len(imgs) - 1
+    ba = d.symtab["BA%d" % last]
+    # VF,A is the half word at BA: "VF,A half-word branch address" (6728-0 p.80).
+    # The loader returns the END card's address through the calling
+    # sequence: SV,$1,3.($15), printed p.321 line 21 (p.323 for the
+    # branch card), a 24-bit value field three words past A, i.e. BA.
+    addr = p2.punch.cards[-1].address
+    sh = 64 - ba % 64 - 24
+    want = (d.words[ba // 64] & ~(0xffffff << sh)) | (addr << sh)
+    checks.append(("branch_address_returned", str(ba // 64), want))
+    sys.stderr.write("cards: %s\n" % kinds)
+    sys.stderr.write("checks: %d\n" % len(checks))
+    # D, the error word (bits 0-11 the card's sequence, 13-17 the code,
+    # 6728-0 p.80), is written only on the error return, so each card's D
+    # must still hold the driver's VF,0.  On a failure this names IBM's
+    # error code (docs/bss_loader_spec.md 8.1).
+    for k in range(len(imgs)):
+        dk = d.symtab["D%d" % k]
+        checks.append(("no_error_card_%d" % (k + 1), str(dk // 64), d.words[dk // 64]))
+    print(generate(module, image, checks,
+                   pc_check=d.symtab["DONE"] // 32,
+                   cycle_bound=20000000, step_cap=2000000,
+                   fast_load=os.path.join(os.path.abspath(STRETCH), "bsv", "build-loader",
+                                          module + ".hex")))
+
+
+if __name__ == "__main__":
+    main()

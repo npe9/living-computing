@@ -13825,9 +13825,21 @@ run "THE DISK: LOCATE, arcs, the zero-filled tail, and flags discarded" ./run_di
 # disk_write_lost fails.  The control passes all 18 checks.
 run "THE DISK, with write back-pressure: nothing is lost while the source refuses" ./run_disk_stall_test.sh StretchIoDiskStallTb
 
+# MCP'S OWN LOADER READS STRAP II'S CARDS.  The JOB CONTROL BINARY LOADER
+# (printed pp.320-334, transcribed) loads a six-card absolute deck that
+# strap/strap2 punched -- origin, two flow, two more origin, branch --
+# and core must equal STRAP II's image bit for bit, with VF,A returning
+# the END address and no card taking the error return.  The first IBM
+# check of the punch's column 1, sequence and check sum.  MEASURED
+# 2026-11-11 (gen_loader_deck_tb.py's header): the check sum without its
+# fold stops card 1 with code 1, sequence numbers from 0 with code 2
+# (48 checks fail each); flow data one column late fails exactly the 26
+# flow-card words.  The control passes all 54.
+run "MCP's binary loader (pp.320-334) loads a deck STRAP II punched" ./run_loader_deck.sh StretchLoaderDeckTb
+
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
-rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchXmitTb.bsv "$BSV_DIR"/StretchLvsTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv
+rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchXmitTb.bsv "$BSV_DIR"/StretchLvsTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv "$BSV_DIR"/StretchLoaderDeckTb.bsv
 rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 

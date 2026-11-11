@@ -21,7 +21,8 @@ Sources, read in the ink:
   docs/bss_loader_spec.md, from MCP's own loader (listing printed pp.320-334):
     column c, row r is bit 12(c-1)+r of the card; the check sum as ACHSM reads
     (sum of the 12-bit columns 1-3 and 5-71, folded end-around), AS READ there,
-    not yet run.
+    and run: MCP's transcribed loader loads an absolute deck from this punch on
+    the model, sequence and check sum accepted (tests/gen_loader_deck_tb.py).
 
 What this models, and the order it follows.  Each unit's binary goes into the
 punch buffer as it is output; a card is punched when it is full (736 bits for

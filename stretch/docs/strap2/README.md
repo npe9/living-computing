@@ -79,7 +79,11 @@ OUTPUT puts each unit's binary in the punch buffer and punches absolute origin, 
 branch cards by C28-6129 pp.22-23 and the update's errata (736 bits on an origin card,
 800 on a flow card, END with no address to 41.8) and chart OV for DR and DRZ. The column
 and row convention and the check sum are MCP's loader's, as `../bss_loader_spec.md`
-reads them; no loader path has run yet. Every deck in `decks/` punches a deck which, decoded from the columns and loaded,
+reads them, and MCP's own loader has now read them: `tests/gen_loader_deck_tb.py` runs
+the transcribed JOB CONTROL BINARY LOADER (printed pp.320-334) on the model over a
+six-card absolute deck STRAP II punched (origin, flow, flow, origin, origin, branch),
+and core equals the image bit for bit with no card taking the error return; a check
+sum without its fold draws IBM's code 1, sequence numbers from 0 code 2. Every deck in `decks/` punches a deck which, decoded from the columns and loaded,
 gives its assembled image bit for bit, 730 of them. The punch events reproduce the
 second `*` the 1963 and 1964 prints show after the location: Appendix E's lines 17, 19,
 23 and 25, and p.48's CW, BUF1, EPGK, MESG and END, every marked located line in both,
