@@ -18,6 +18,8 @@ build-*/
 *_sim.so
 *_sim.h
 *_sim.o
+# host_tape.c's object, rebuilt by every Bluesim run that links it
+stretch/bsv/host_tape.o
 
 # Generated testbenches (see stretch/strap/run_program.sh, gen_tb.py) --
 # ignore any Stretch*Tb.bsv in bsv/ EXCEPT the hand-written StretchTb.bsv
