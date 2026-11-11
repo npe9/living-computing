@@ -1,0 +1,52 @@
+! THE SECOND INDEX OF A VFL INSTRUCTION MODIFIES ITS OFFSET -- MCP's own
+! octal conversion, run on the model.
+!
+! Reference Manual printed p.21 (PDF 24), read in the ink 2026-11-11:
+!
+!   "In the variable field instructions, the 19 bits which form the
+!   length, byte size, and offset field are indexed as a single field.
+!   Carries between parts of this field, if present, are not
+!   suppressed."  "The index field I in the second half of the
+!   instruction may be used to modify bits 35-50 of the instruction.
+!   On doing this, bit position 3 of the index word is aligned with bit
+!   position 35 of the instruction; the three high-order bits of the
+!   index word are ignored."
+!
+! THE LOOP IS MCP'S.  Its JOB CONTROL BINARY LOADER converts an O card's
+! six Hollerith digits this way (printed p.323 lines 46-50 and p.324
+! lines 1-3, ALDADJ .. ALDA5): CT0011 sets the left-zeros count to the
+! digit's row, LF(BU,3) moves its low three bits into the accumulator at
+! the offset $2 gives, and $2 steps down by 1.32 -- three, in bits 3-18.
+! From 30.32 the offsets are 61, 58, 55, 52, 49, 46, and SF(BU,18) at
+! offset 46 takes the six digits.  Here the digits are 1 2 0 3 4 7, one
+! column each, 12 bits, row 12 high (Appendix F), as on the card.
+!
+! FOUND BY THE LOADER, NOT BY READING: until 2026-11-11 the model decoded
+! bits 60-63 into VflAddr.i2 and nothing read them, so every digit landed
+! at offset 0 and the O card's origin came out zero -- TRIED TO LOAD
+! OUTSIDE LIMITS on MCP's own loader (scratch probe of PUNREL stage 1).
+!
+! Checks: $3 (word 19) holds 120347 in its value field; $2 (word 18)
+! ends at 21.32.  Not exercised: a carry across the length, byte-size
+! and offset parts, and a negative index (the sign rule is CHOSEN in
+! StretchExecute.bsv's vflSecondIndex).
+        SLC, (8)300.0
+START   LX,$1,DXW
+        LVI,$2,30.32
+LOOP    CT0011(BU,8)(V+I),.12($1)
+        LF(BU,3),$LZC.4,($2)
+        V-I,$2,1.32
+        CB,$1,LOOP
+        Z,$3
+        SF(BU,18),$3,46
+        BEW,$
+        CNOP
+        SLC, (8)400.0
+DXW     XW,BUF.2,6
+BUF     DD(BU,12),(8)0400                ! 1
+        DD(BU,12),(8)0200                ! 2
+        DD(BU,12),(8)1000                ! 0
+        DD(BU,12),(8)0100                ! 3
+        DD(BU,12),(8)0040                ! 4
+        DD(BU,12),(8)0004                ! 7
+        END,START

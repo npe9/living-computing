@@ -93,6 +93,15 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   (2/3, 6/7) and refilling on count zero (3, 7) — verified end to end
   against the manual's own Figure 7 worked example, see
   `../strap/README.md`.
+- **The second index of a VFL or connective instruction** (bits 60-63)
+  modifies its length, byte size and offset as one field, index bits
+  3-18 aligned with bits 35-50, read before any progressive update
+  (Reference Manual printed p.21; `vflSecondIndex` in
+  `StretchExecute.bsv`, also applied in `StretchIBox`'s `prepareExec`).
+  Decoded and dropped until 2026-11-11, when MCP's binary loader's
+  O-card conversion (printed p.323 lines 46-50) found it;
+  `decks/vfl_second_index.strap` runs that loop. CHOSEN: a negative
+  index subtracts, as for an address.
 - **Direct index arithmetic** — `LX LV LC LR SX SV SC SR V+ V+C V+CR
   KV KC` (pp.22-23), all setting the index flag and index result
   indicators per p.24 (loads from the loaded word, stores from the

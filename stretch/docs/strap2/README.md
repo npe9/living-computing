@@ -84,7 +84,7 @@ the transcribed JOB CONTROL BINARY LOADER (printed pp.320-334) on the model over
 six-card absolute deck STRAP II punched (origin, flow, flow, origin, origin, branch),
 and core equals the image bit for bit with no card taking the error return; a check
 sum without its fold draws IBM's code 1, sequence numbers from 0 code 2. Every deck in `decks/` punches a deck which, decoded from the columns and loaded,
-gives its assembled image bit for bit, 730 of them. The punch events reproduce the
+gives its assembled image bit for bit, 731 of them. The punch events reproduce the
 second `*` the 1963 and 1964 prints show after the location: Appendix E's lines 17, 19,
 23 and 25, and p.48's CW, BUF1, EPGK, MESG and END, every marked located line in both,
 and no other. The update's text says that `*` marks a line with an error; the prints say
@@ -133,7 +133,7 @@ in MCP's loader, whose card-type table ATBL (printed p.331 lines 24-38) compares
 with 4200 for B, 2010 for O and 1300 for 0-2-3 (G9). Two `(CC*)DD(BU,,12)` statements of 45 and 35 characters, as MCP printed p.320
 lines 2-3 give them, then punch one full card that reads back as
 `B        HED, REP, 22LOADER, LOAD,,` with `22LOADER` in columns 73-80: an MCP control
-card. All 730 decks in `decks/` now punch; each binary deck loads to its image bit for bit,
+card. All 731 decks in `decks/` now punch; each binary deck loads to its image bit for bit,
 and the four MCP decks with PUNFUL open with one full card that matches the image.
 Since 2026-11-10 MCP's seven PUNFUL header cards are assembled from their real DDs: the
 BSP, IPL and MCP decks' (printed pp.2, 15, 99) and the four overlays' (pp.320, 335, 361,

@@ -139,7 +139,9 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
       // So is a decimal UNSIGNED store, since 2026-11-08 (execute()'s
       // decimalStoreU; RefMan printed p.63).
       Bool decimalStoreU = (v.code == 6'b001101) && (v.m.unsign == 1);
-      Bit#(7) len_ = effLength(v.a.length);
+      // The length as the second index leaves it (vflSecondIndex,
+      // RefMan printed p.21), as execute() sees it.
+      Bit#(7) len_ = effLength(vflSecondIndex(st, v.a).length);
       Bool done = (v.m.decimal == 1 && !radixConv && !decimalStoreU) // decimal refusal
                || (prog && v.a.i1 == 0)                  // progressive, no index
                || (mPlus && fieldCrosses(ea, len_))      // M+ cannot cross
@@ -155,7 +157,7 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
       BitAddr ea = prog ? st.readIndex(c.a.i1).addr
                         : effAddr24(st, c.a.addr, c.a.i1);
       WordAddr w = ea[23:6];
-      Bit#(7) len_ = effLength(c.a.length);
+      Bit#(7) len_ = effLength(vflSecondIndex(st, c.a).length);
       Bool done = (prog && c.a.i1 == 0)
                // CM crossing into a register word, which execute()
                // still refuses (its "CM MAY CROSS" note).

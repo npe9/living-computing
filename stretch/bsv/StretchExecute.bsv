@@ -485,6 +485,48 @@ function BitAddr effAddr24(StretchStorage st, BitAddr raw, Bit#(4) idx);
   end
 endfunction
 
+// THE SECOND INDEX OF A VFL INSTRUCTION (IBM bits 60-63) MODIFIES ITS
+// LENGTH, BYTE SIZE AND OFFSET.  Reference Manual printed p.21 (PDF 24),
+// read in the ink 2026-11-11: "In the variable field instructions, the
+// 19 bits which form the length, byte size, and offset field are
+// indexed as a single field.  Carries between parts of this field, if
+// present, are not suppressed." And: "The index field I in the second
+// half of the instruction may be used to modify bits 35-50 of the
+// instruction.  On doing this, bit position 3 of the index word is
+// aligned with bit position 35 of the instruction; the three high-order
+// bits of the index word are ignored.  If the same index register is
+// specified in both halves of an instruction while using progressive
+// indexing, the value of the index register before modification will
+// be used in indexing the second half of the instruction."
+//
+// So index bits 3-18 (addr[20:5]) add to {length, bs, offset} as one
+// sixteen-bit field.  The register is read here, before the arm runs,
+// so a progressive update of the same register cannot reach it.
+// CHOSEN: the sign, bit 24, makes the addition a subtraction, as it
+// does for an address (p.20); the page does not say.
+//
+// IT WAS DECODED AND DROPPED until this function: VflAddr.i2 was
+// filled in and nothing read it, so an indexed length or offset ran as
+// the unindexed one, silently.  MCP's loader found it -- printed p.323
+// lines 47-50 convert an O card's six octal digits with
+// "LF(BU,3),$LZC.4,($2)", $2 stepping the offset down by three, and
+// p.324 line 3 stores the 18 bits at offset 46.
+function VflAddr vflSecondIndex(StretchStorage st, VflAddr a);
+  if (a.i2 == 0)
+    return a;
+  else begin
+    IndexWord x = st.readIndex(a.i2);
+    Bit#(16) f = {a.length, a.bs, a.offset};
+    Bit#(16) d = x.addr[20:5];
+    Bit#(16) r = (x.sign == 1) ? (f - d) : (f + d);
+    VflAddr b = a;
+    b.length = r[15:10];
+    b.bs     = r[9:7];
+    b.offset = r[6:0];
+    return b;
+  end
+endfunction
+
 // THE ADDITION HAPPENS IN THE 24-BIT BIT-ADDRESS DOMAIN, always.
 // Reference Manual p.20-21: "The value field of the index is
 // interpreted as a signed 24-bit field.  The address part of the
@@ -5598,7 +5640,9 @@ function ActionValue#(ExecDispatch)
       // register here).
       // -----------------------------------------------------------
       tagged VflInt .vi: begin
-        VflOutcome vo <- vflIntOp(st, vi, prefetch, prefetchCount, ind);
+        VflInstr vi2 = vi;
+        vi2.a = vflSecondIndex(st, vi.a);
+        VflOutcome vo <- vflIntOp(st, vi2, prefetch, prefetchCount, ind);
         needsRead  = vo.needsRead;
         vflPending = vo.vflPending;
         ind        = vo.ind;
@@ -6431,7 +6475,9 @@ function ActionValue#(ExecDispatch)
       // this file (PF isn't implemented for VflInt either). Not
       // exercised by any program yet with BS!=8.
       tagged Connective .cn: begin
-        VflOutcome co <- connectiveOp(st, cn, prefetch, prefetchCount, ind, pc);
+        ConnInstr cn2 = cn;
+        cn2.a = vflSecondIndex(st, cn.a);
+        VflOutcome co <- connectiveOp(st, cn2, prefetch, prefetchCount, ind, pc);
         needsRead  = co.needsRead;
         vflPending = co.vflPending;
         ind        = co.ind;

@@ -2419,6 +2419,20 @@ run "PROGRESSIVE INDEXING WITH X0 is OP (RefMan printed p.21)" ./run_program.sh 
 # the store LANDS, and the machine never halts, hanging on the
 # `BZOP, $` self-branch at half-word 392 until the step cap.
 
+# THE SECOND INDEX OF A VFL INSTRUCTION (bits 60-63) MODIFIES ITS
+# LENGTH, BYTE SIZE AND OFFSET, index bits 3-18 aligned with bits 35-50
+# (Reference Manual printed p.21, PDF 24, in the ink).  Decoded and
+# dropped until 2026-11-11; MCP's binary loader found it, converting an
+# O card's digits with LF(BU,3),$LZC.4,($2) (printed p.323 lines 46-50),
+# and the deck runs that loop.  MEASURED 2026-11-11, vflSecondIndex made
+# to return the instruction unchanged: x3 fails (0, the zero origin the
+# loader saw), x2, cycles and PC pass.
+run "THE SECOND INDEX modifies a VFL offset: MCP's octal conversion (RefMan p.21)" ./run_program.sh ../decks/vfl_second_index.strap StretchVflSecondIdxTb \
+    "PC=395" \
+    "CYCLES=434+-0" \
+    "x3:19=2898558941422157824" \
+    "x2:18=1512927999819776"
+
 # A WRONGLY GUESSED BRANCH GOES WHERE ITS ADDRESS SAID AT THE GUESS.  MCP
 # found this: printed p.362 lines 37-43's lookup dispatched every command
 # one entry high, because CBH overtook BAE and recovery read the index after
