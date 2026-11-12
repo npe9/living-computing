@@ -485,7 +485,7 @@ class Pass1:
         elif name == "SYN":
             self._mqs(unit, e)
         elif name in ("SLC", "SLCR", "END", "TLB", "ORIGIN", "PUNFPC", "ENTER",
-                      "COMBLOCK"):
+                      "COMBLOCK", "SLCRCOM"):
             self._mql(unit, e)
         elif name == "PUNID":
             self._mpunid(unit)

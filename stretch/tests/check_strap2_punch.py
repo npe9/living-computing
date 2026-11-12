@@ -44,9 +44,19 @@ What is checked, and how strong each oracle is:
        continuation card keeps the sizes            -> R13
        message 138 not raised                       -> R14
        FEND outside PUNREL ends nothing             -> R15
-       SLCRCOM accepted silently                    -> R16
        a zero DR dimension refused (as before)      -> the assembly raises
      NOT EXERCISED: message 139 (a card's name field is eight columns).
+  R16-R21, PUNREL stage 3 (SLCRCOM, common relocation), measured 2026-11-11:
+       blank common's data punched                  -> R16
+       data card loading base always 0              -> R16
+       SLCRCOM does not reset the counter           -> R16
+       blank common's code 1 a 0 (no 1 0 tail)      -> R17, R18
+       no region carried by VALUE                   -> R17, R18
+       i one bit wider than the count's length      -> R18
+       SLCRCOM of a non-COMBLOCK name accepted      -> R19
+       an instruction in a named common punched     -> R20
+       SLCRCOM accepted outside PUNREL (no 136)     -> R21
+       commons assembled into the program's image   -> the assembly raises
      The loader run (gen_loader_deck_tb.py rel) is the end-to-end check.
   E  the MCP cards, C22-6678-1 pp.7-10 read in the ink: GO and LIM first (guide
      p.157 boxes 15-16), the IOD of p.48 reproduced with its reference number and
@@ -493,8 +503,52 @@ if __name__ == "__main__":
     ab2 = compile_cards([card("", "PUNFPC,1,0"), card("", "B,0"), card("", "FEND")])
     check("R15 PUNFPC and FEND outside PUNREL mode: message 136 each, FEND ends as END does (p.186)",
           ([n for n, *_ in ab2.msg.items], [c.kind for c in ab2.punch.cards]), ([136, 136], ["origin", "branch"]))
-    sc = compile_cards([card("", "PUNREL"), card("", "B,0"), card("", "SLCRCOM"), card("", "FEND")])
-    check("R16 SLCRCOM is not yet written: the deck refuses", sc.punch.unwritten, "SLCRCOM")
+    # R16-R21, PUNREL stage 3: SLCRCOM and common relocation.  p.184's example
+    # program as printed (6729 p.184, read in the ink 2026-11-11).  Its
+    # "INPUT bbb*" is eight characters, the b's blanks and * the (A*)
+    # terminator, so no blank follows the comma on the card.  Its
+    # "DD(BU), 1.0" draws message 45 here (docs/NEXT.md, open).
+    p184 = compile_cards([card(a, b) for a, b in [
+        ("", "PUNFPC, LAST, COMLAST"), ("KRUM", "ENTER, START"), ("", "PUNCDC"),
+        ("BLOCK1", "COMBLOCK, 100"), ("", "PUNREL"), ("", "SLC, 0.0"),
+        ("", "DD(BU), 1.0"), ("INPUT", "(A*)DD(BU, 64, 8),INPUT   *"),
+        ("XSAV", "DR(BU), (15)"), ("START", "TI, 15, $X1, XSAV"), ("", "SIC, $X15"),
+        ("", "B, INPUT"), ("", ", A; , A"), ("", ", B; , B"), ("", "LX, $X14, XW1"),
+        ("", "SIC, $X15; B, $MCP"), ("", ", $EOJ"), ("A", "DD(N), (10)"),
+        ("LAST", "SYN, $"), ("", "SLCRCOM"), ("B", "DD(N), (10)"),
+        ("COMLAST", "DR(N), 0"), ("", "SLCRCOM, BLOCK1"), ("C", "DD(N), (100)"),
+        ("", "FEND")]])
+    pc = p184.punch.cards
+    check("R16 p.184's example: program size 24 words, blank common 1 (COMLAST); "
+          "no card for blank common's B; C on a data card at 0 with loading base 1",
+          (pc[0].size, pc[0].common, [(c.kind, getattr(c, "base", None), c.origin) for c in pc[4:]]),
+          (24, 1, [("rdata", 0, 0o2700), ("rdata", 1, 0), ("fbranch", None, 0)]))
+    check("R17 its relocation bits: XSAV, INPUT and A as lower addresses (1000); "
+          "B as an upper address in blank common (10010, 6729 p.188)",
+          [c.codes for c in pc if c.kind == "rinstr"],
+          ["0" + "1000" + "0" + "1000" + "1000" + "1000" + "10010" + "10010" + "0000"])
+    nc = compile_cards([card("", "PUNCDC"), card("BL1", "COMBLOCK,1"),
+                        card("BL2", "COMBLOCK,1"), card("BL3", "COMBLOCK,1"),
+                        card("", "PUNREL"), card("", "L,X"), card("", "LVI,$2,X"),
+                        card("", "XW,0,1,Z"), card("", "SLCRCOM,BL2"),
+                        card("X", "DD(BU,64),7"), card("", "SLCRCOM"),
+                        card("Z", "DR(BU,64),1"), card("", "FEND")])
+    check("R18 named common 2 of three: 10011 then i in two bits, 10 (the count's "
+          "bit length, printed p.324 ll.20-23), for L's and LVI's addresses (full-word "
+          "instructions); blank common on XW's right: 10110",
+          ([c.codes for c in nc.punch.cards if c.kind == "rinstr"], nc.punch.unwritten),
+          (["10011" + "10" + "0" + "10011" + "10" + "0" + "0" + "10110"], None))
+    bad = compile_cards([card("", "PUNREL"), card("Q", "B,0"), card("", "SLCRCOM,Q"),
+                         card("", "FEND")])
+    check("R19 SLCRCOM of a name that is not a COMBLOCK's: the deck refuses",
+          bad.punch.unwritten, "SLCRCOM of a name that is not a COMBLOCK's")
+    ins = compile_cards([card("", "PUNCDC"), card("BL1", "COMBLOCK,1"), card("", "PUNREL"),
+                         card("", "SLCRCOM,BL1"), card("", "B,0"), card("", "FEND")])
+    check("R20 an instruction in a named common is not written: the deck refuses",
+          (ins.punch.unwritten or "")[:28], "an instruction after SLCRCOM")
+    ab3 = compile_cards([card("", "SLC,64."), card("", "SLCRCOM"), card("", "B,0"), card("", "END")])
+    check("R21 SLCRCOM outside PUNREL mode: message 136",
+          [n for n, *_ in ab3.msg.items], [136])
     check("R8 a branch on bit relocates both half-words: its bit address, and its branch address at bit 32",
           [c.codes for c in bb.punch.cards if c.kind == "rinstr"], ["1000" + "1000"])
 

@@ -64,8 +64,18 @@ their mode are 138 and 137. A zero DR dimension is accepted: p.184 writes
 three cards, as its ATBL and AFPCRD say it must
 (`tests/gen_loader_deck_tb.py fortran`).
 
-**Not yet written:** DDI; PUNREL after absolute output; SLCRCOM and common (it
-refuses); a COMBLOCK without a name (p.186 gives a message with no number);
+**PUNREL, stage 3, is written:** SLCRCOM sets the counter to zero in a common
+(6729 p.187): blank common when its field is blank, else the named common the
+COMBLOCK numbered. Data in a named common goes on relocatable data cards with
+the common's number as loading base; in blank common nothing is punched
+(N28-1081 page 3). A reference to a common's symbol is relocated as an upper
+address: `1 x a 1 0` blank, `1 x a 1 1 i` named, i as wide as the count of
+named commons (6729 p.188; the loader, printed pp.324-325). p.184's example
+program assembles (`check_strap2_punch.py` R16-R17). An SLC leaves the common
+(CHOSEN).
+
+**Not yet written:** DDI; PUNREL after absolute output; an instruction in a
+named common; a COMBLOCK without a name (p.186 gives a message with no number);
 a low SLC under PUNFUL; the MIBA and MBSPEC corrections; the coprocessor;
 DUPLI; subscripts with dimensions; the system symbols' register-length
 dds; PRNTALL's whole-table print; `$INF` (N28-1081 page 20 adds it, 12, infinity);

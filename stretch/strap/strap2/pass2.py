@@ -70,6 +70,12 @@ class Pass2:
         self.punch = Punch(edition)     # OUTPUT's binary cards, punch.py
         self._full_image = None         # PUNFUL's bits: punched, not loaded
         self.rel = False        # PUNREL mode (p.33), set by _punrel_scan
+        self.region = None      # SLCRCOM's common: None the program, 0 blank, k named
+        self.unit_region = {}   # unit -> its region, from Pass 2a
+        self.slcrcom_reg = {}   # SLCRCOM unit -> the region it sets
+        self.comblocks = {}     # COMBLOCK unit -> its common number
+        self.common_images = {} # region -> what is assembled in that common
+        self.common_of = {}     # COMBLOCK name's f -> its common number
         self.reloc = {}         # unit -> [(bit in its binary, "L" or "R")]
         self.spnus = False      # NSPRES, p.35: SPNUS seen
         self.val.multi_ref = F_CONTAG if edition == "N28-1081" else F_MULTI
@@ -79,6 +85,7 @@ class Pass2:
         self._punrel_scan()
         self.uiter(first=True)
         self.pass_a()
+        self.punch.ncommon = len(self.comblocks)
         self.uiter(first=False)
         self.pass_b()
         self.lists = self.nundsy()      # OUTPUT's end, p.157
@@ -148,8 +155,20 @@ class Pass2:
             self.unit_a(unit)
         self.hilo.append((self.abs, self.sym))
 
+    def slcrcom_region(self, unit):
+        """SLCRCOM's common: 0 blank, k named; "bad" if not a common."""
+        if not self.units.get(unit, ZINFLD):
+            return 0
+        v = self.val.read_field(self.mem, unit + FIXED_BITS)
+        if v.nullf:
+            return 0
+        if v.sym is not None:
+            return self.common_of.get(v.sym, "bad")
+        return v.I if v.avail and 0 < v.I <= len(self.comblocks) else "bad"
+
     def _set_dollar(self):
         self.val.abs, self.val.sym = self.abs, self.sym
+        self.val.cur_region = self.region
 
     def _entry(self, unit):
         return ENTRIES[self.units.get(unit, ZIOPX)]
@@ -229,6 +248,15 @@ class Pass2:
         self._set_dollar()              # Box 13
         f = self.p1_named(unit)
         name = e.name
+        self.unit_region[unit] = self.region
+        if f:
+            self.val.region[f] = self.region
+        if name == "COMBLOCK":
+            # Named commons are numbered from 1 in order (6729 pp.185-186;
+            # 6751 p.30: "the original ordering ... be preserved").
+            k = self.comblocks.setdefault(unit, len(self.comblocks) + 1)
+            if f:
+                self.common_of[f] = k
         if name == "SYN":
             # NSYN: its $ is the counter here; try once more now.
             if f:
@@ -250,6 +278,16 @@ class Pass2:
             st.put(f, "ZCTR", 1)
         if name == "SLC" or name == "SLCR":
             self.nslc(unit, e)
+            self.region = None      # CHOSEN: an SLC leaves the common
+            return
+        if name == "SLCRCOM":
+            # 6729 p.187: Pass 1 marks the symbols that follow relative to
+            # the common; "Pass 2's job is to set the location counter to
+            # zero."  A blank field is blank common, #0; a name, the common
+            # number in its COMBLOCK entry; CHOSEN: an integer, that number.
+            self.region = self.slcrcom_region(unit)
+            self.slcrcom_reg[unit] = self.region
+            self.abs, self.sym = 0, 0
             return
         if name in ("END", "FEND"):
             # p.19: 2a scans every expression so all undefined symbols are entered.
@@ -597,7 +635,7 @@ class Pass2:
         if at is None:
             self.punch.unwritten = self.punch.unwritten or f"a relocatable value in the {routine} field"
             return
-        self.reloc.setdefault(unit, []).append(at)
+        self.reloc.setdefault(unit, []).append(at + (v.reg,))
 
     # Absolute values from Sinb, Sini, Sinx, by the address's function (p.144).
     @staticmethod
@@ -849,7 +887,12 @@ class Pass2:
         # header DDs at 000041.00 and 000621.00, overlaid by the program) is
         # not an overlap.  The SLC skips stay the real image's.
         loaded = self.image
-        if self.punch.punful:
+        reg = self.unit_region.get(unit)
+        if reg is not None:
+            # After SLCRCOM the counter starts again at zero in the common
+            # (6729 p.187): its data is a separate space, not the program's.
+            self.image = self.common_images.setdefault(reg, _a.Image())
+        elif self.punch.punful:
             if self._full_image is None:
                 self._full_image = _a.Image()
                 self._full_image.skips = loaded.skips
@@ -887,8 +930,10 @@ class Pass2:
             self._relocation_op(unit, e, printed)
             return
         if e.name == "SLCRCOM":
-            # Not written (PUNREL stage 3): the counter relative to a common.
-            pu.unwritten = pu.unwritten or "SLCRCOM"
+            if not self.rel:
+                self.msg.add(136, "RELOCATABLE PSEUDO-OP., NOT IN PUNREL MODE", unit, fatal=False)
+                return
+            pu.slcrcom(unit, self.slcrcom_reg.get(unit))
             return
         if e.name == "PUNID" and pu.punful:
             self.msg.add(127, "PUNID IN PUNFUL SEQUENCE -- STATE. IGNORED", unit, fatal=False)
@@ -959,7 +1004,7 @@ class Pass2:
                     at = printed[1]
                     pu.rel_data(unit, start, n, self._image_bits(start, n),
                                 kind == "INSTR",
-                                [(at + b, side) for b, side in self.reloc.get(unit, ())])
+                                [(at + b, side, reg) for b, side, reg in self.reloc.get(unit, ())])
                 else:
                     pu.data(unit, start, n, self._image_bits(start, n))
 
@@ -1078,6 +1123,11 @@ class Pass2:
             self.msg.add(7, "NO LOCATION IN PASS 2B", unit)
             return pending
         self.val.abs, self.val.sym = absc, symc
+        self.val.cur_region = self.unit_region.get(unit)
+        if name == "SLCRCOM":
+            self.printed[unit] = ("SLCRCOM", 0)
+            self.running = 0
+            return pending
         if name in ("SLC", "SLCR"):
             v = self.val.read_field(self.mem, unit + FIXED_BITS)
             if not v.avail:

@@ -23,13 +23,11 @@ accumulate.
 
 
 
-## PUNREL STAGE 3 -- next, 2026-11-11
+## A FORTRAN DECK THROUGH MCP'S LOADER -- next, 2026-11-11
 
-Stages 1 and 2 are written (docs/strap2/README.md). Next: SLCRCOM and
-common relocation (codes 10..10 and 10..11i, 6729 p.188; N28-1081 page 3's
-no card for a blank-common address), with p.184's example program as a
-fixture. A loader run of a FORTRAN deck needs what the lost BSS processor
-leaves: KSILO+2 holding BSS and the relocation table at KSILO+9.32
+PUNREL stages 1-3 are written (docs/strap2/README.md); p.184's example
+assembles. A loader run of a FORTRAN deck, with its commons relocated,
+needs what the lost BSS processor leaves: KSILO+2 holding BSS and the relocation table at KSILO+9.32
 (bss_loader_spec.md 5.4); build that as labelled scaffolding. Open from
 p.184's example: its `DD(BU), 1.0` (length of the transfer vector) draws
 message 45 here (a decimal fraction in BU without an (Fn) entry mode,

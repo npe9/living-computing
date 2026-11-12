@@ -81,9 +81,15 @@ load.  The relocation codes are the ones MCP's loader reads (p.324 l.30 -
 p.325): 1000 relocates a half-word's left 18 bits, 1010 its right 18.  What
 VALUE's Sinrl1/Sinrl2 mean is UNSPECIFIED (docs/bss_loader_spec.md 9); the
 code counts location-counter symbols instead (value.py symbol_lc).
+SLCRCOM (stage 3): data after it goes on relocatable data cards whose
+loading base is the common's number; in blank common nothing is punched
+(N28-1081 page 3).  A reference to a symbol defined in a common is relocated
+as an upper address relative to it (6729 pp.185, 188).  CHOSEN: an SLC
+leaves the common.
 NOT WRITTEN: a field with more than one location-counter symbol (message
-123; what IBM punched for it is UNSPECIFIED); PUNREL after absolute output; SLCRCOM; a COMBLOCK
-without a name; a relocatable value in a field with no relocation position;
+123; what IBM punched for it is UNSPECIFIED); PUNREL after absolute output;
+an instruction in a named common (the instruction card has no loading
+base); SLCRCOM of a name not a COMBLOCK's; a COMBLOCK without a name; a relocatable value in a field with no relocation position;
 a low SLC under PUNFUL.  The assembly goes on; the punch stops at the first,
 `unwritten` names it, and `images` refuses.
 `mcp` counts the IOD and REEL units.  `images` is the binary cards alone;
@@ -151,6 +157,8 @@ class Punch:
         self.rel = False        # PUNREL: relocatable cards
         self._ri_clear()
         self.group = None       # PUNFPC or PUNCDC mode: the card being filled
+        self.region = None      # after SLCRCOM: 0 blank common, k named common k
+        self.ncommon = 0        # named commons (COMBLOCKs), for the i field's width
 
     def _ri_clear(self):
         self.ri_start, self.ri_bits, self.ri_value = None, 0, 0
@@ -174,6 +182,7 @@ class Punch:
     def _emit(self, unit, card):
         if self.rel and card.kind == "origin":
             card.kind = "rdata"
+            card.base = self.region or 0
         if card.kind == "origin" and self.first_origin is None:
             self.first_origin = card.origin
         if card.kind == "full":
@@ -351,6 +360,29 @@ class Punch:
         self._new_origin()
         self._emit(unit, Card("fbranch"))
 
+    def slcrcom(self, unit, region):
+        """SLCRCOM,B (C22-6729 p.187; N28-1081 page 3): the card in process
+        goes out; the data that follows is relative to common B, whose number
+        goes in the relocatable data card's loading base (column 10).  "To
+        insure that no data will be loaded into blank common, STRAP does not
+        punch an output card where the address field is left blank following
+        an SLCRCOM": nothing is punched in blank common."""
+        self._punch(unit)
+        self._new_origin()
+        if region == "bad":
+            self.unwritten = self.unwritten or "SLCRCOM of a name that is not a COMBLOCK's"
+        self.region = region
+
+    def _in_common(self, unit, what):
+        """True if this output is not punched: in blank common, or (not
+        written) an instruction in a common."""
+        if self.region == 0:
+            return True
+        if self.region is not None and what == "instr":
+            self.unwritten = self.unwritten or "an instruction after SLCRCOM (the relocatable instruction card has no loading base)"
+            return True
+        return False
+
     def origin_card(self, unit, at):
         """ORIGIN,N (C22-6729 p.183): the special origin card, column 1 O and
         "xxxxxx.0" in columns 2-9 (p.188), which the loader reads as six octal
@@ -366,6 +398,8 @@ class Punch:
         go on relocatable instruction cards with their relocation bits; DD's
         and DR's on relocatable data cards, which carry none (C22-6729 p.188:
         "instructions, XW's, CF's, and RF's only (i.e., no DD's or DR's)")."""
+        if self._in_common(unit, "instr" if instr else "data"):
+            return
         if not instr:
             if reloc:
                 self.unwritten = self.unwritten or "a relocatable value on a data card"
@@ -385,30 +419,45 @@ class Punch:
                 return
             self.ri_start = at
         new = dict(self.ri_reloc)
-        for b, side in reloc:
+        for b, side, reg in reloc:
             half, off = divmod(b - self.ri_start, 32)
-            if off != {"L": 0, "R": 14}[side] or new.get(half, side) != side:
+            if off != {"L": 0, "R": 14}[side] or new.get(half, (side, reg)) != (side, reg):
                 self.unwritten = self.unwritten or f"a relocatable field at {b:o} that no relocation bits reach"
                 return
-            new[half] = side
+            new[half] = (side, reg)
         if self._ri_room(self.ri_bits + nbits, new) > RINSTR_ROOM:
             self._punch_ri(unit)
             self.ri_start = at
             new = {}
-            for b, side in reloc:
-                new[(b - at) // 32] = side
+            for b, side, reg in reloc:
+                new[(b - at) // 32] = (side, reg)
         self.ri_value = (self.ri_value << nbits) | value
         self.ri_bits += nbits
         self.ri_reloc = new
 
-    @staticmethod
-    def _ri_codes(nbits, reloc):
+    def _ri_codes(self, nbits, reloc):
         """One set per half-word, a short last one included (the loader's
-        ARBCD7, printed p.325 lines 43-53): 0, or 1x00 / 1x10 (x reserved, 0)."""
+        ARBCD7, printed p.325 lines 43-53), as the loader reads them (printed
+        p.325 lines 5-33; 6729 p.188; bss_loader_spec.md 4.5): 0; 1 x a 0,
+        lower address, the program; 1 x a 1 0, upper address, blank common;
+        1 x a 1 1 i, upper address, named common i, i as wide as the count of
+        named commons.  x is reserved, 0; a is 0 for the left 18 bits, 1 for
+        the right 18."""
         out = ""
+        w = self.ncommon.bit_length()
         for h in range((nbits + 31) // 32):
-            side = reloc.get(h)
-            out += "0" if side is None else ("1000" if side == "L" else "1010")
+            got = reloc.get(h)
+            if got is None:
+                out += "0"
+                continue
+            side, reg = got
+            out += "10" + ("0" if side == "L" else "1")
+            if reg is None:
+                out += "0"
+            elif reg == 0:
+                out += "10"
+            else:
+                out += "11" + format(reg, "0%db" % w)
         return out
 
     def _ri_room(self, nbits, reloc):
@@ -427,6 +476,8 @@ class Punch:
 
     def reserve(self, unit, at, size, zero, running):
         """A DR (zero False) or DRZ: chart OV."""
+        if self.rel and self._in_common(unit, "data"):
+            return
         if self.rel and self.ri_bits:
             self._punch_ri(unit)
         end = at + size
@@ -467,6 +518,7 @@ class Punch:
         a DRZ in PUNFUL mode; one below turns on the low-SLC indicator and keeps
         the counter for comparison.  NOT WRITTEN: what OUTPUT does after a low
         SLC (no chart page shows the comparison); the deck stops there."""
+        self.region = None      # CHOSEN: an SLC leaves the common
         if self.punful and value is not None:
             if not self.full_slc:
                 # "1ST SLC" is asked before any comparison.  The chart names no
@@ -646,7 +698,7 @@ class Punch:
             put(50, 10, c.nbits)
             put(60, 24, c.origin)
             put(84, 24, c.skip)
-            put(108, 12, 0)                 # loading base 0: the program
+            put(108, 12, getattr(c, "base", 0))     # 0 the program, k common k
             put(RDATA_DATA, c.nbits, c.value)
         elif c.kind == "rinstr":
             put(48, 12, c.nbits)            # "excluding the relocation bits"

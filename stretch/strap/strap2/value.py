@@ -40,7 +40,7 @@ def _chars():
 
 class V:
     __slots__ = ("B", "I", "X", "xq", "avail", "dds", "sym", "gps", "next", "dims", "nullf",
-                 "lc")
+                 "lc", "reg")
 
     def __init__(self):
         self.B = 0
@@ -58,6 +58,9 @@ class V:
         # (bss_loader_spec.md 9): error 123's "more than one location
         # counter symbol" counts them, so they are counted, not netted.
         self.lc = 0
+        # The region of the counted symbol (C22-6729 p.185, Zstcom/Zstcon):
+        # None the program, 0 blank common, k named common k.
+        self.reg = None
 
     @property
     def total(self):
@@ -84,6 +87,9 @@ class Value:
         self.count_lc = False   # PUNREL mode turns the count on (pass2)
         self._lc = {}           # f -> location-counter symbols in its value
         self._lc_busy = set()
+        self.region = {}        # f -> its region, set by Pass 2a (SLCRCOM)
+        self.cur_region = None  # the region $ is in
+        self._reg = {}          # f (a SYN) -> the region of what it counts
 
     # -- the location counter ---------------------------------------------------
     def counter_value(self, absc, symc):
@@ -168,18 +174,29 @@ class Value:
         if kind != KIND_SYN or f in self._lc_busy:
             return 0
         self._lc_busy.add(f)
-        saved = (self.abs, self.sym, self.have_counters, self.flags)
+        saved = (self.abs, self.sym, self.have_counters, self.flags, self.cur_region)
         self.have_counters = bool(st.get(f, "ZCTR"))
         self.abs, self.sym = st.get(f, "ZABS"), st.get(f, "ZSYM")
+        self.cur_region = self.region.get(f)
         try:
             v = self.read_field(st.mem, st.get(f, "ZEXPR"))
             n = v.lc
         finally:
-            self.abs, self.sym, self.have_counters, self.flags = saved
+            self.abs, self.sym, self.have_counters, self.flags, self.cur_region = saved
             self._lc_busy.discard(f)
         if v.avail:
             self._lc[f] = n
+            self._reg[f] = v.reg
         return n
+
+    def symbol_region(self, f):
+        """The region a location-counter-dependent symbol is relative to: a
+        label's is where it was defined (after SLCRCOM, a common's); a SYN's,
+        that of the symbol it counts."""
+        if self.st.get(f, "ZKIND") in (KIND_LABEL, KIND_SPECIAL):
+            return self.region.get(f)
+        self.symbol_lc(f)
+        return self._reg.get(f)
 
     def _enter(self, f, b, i, x, xq):
         st = self.st
@@ -350,6 +367,7 @@ class Value:
                     ok = at is not None
                     b = at or 0
                     v.lc += 1
+                    v.reg = self.cur_region
                 else:
                     f = self.lookup_or_enter(text)
                     got = None if f is None else self.symbol_value(f)
@@ -366,7 +384,10 @@ class Value:
                         v.dds = d
                         v.sym = f
                         if self.count_lc:
-                            v.lc += self.symbol_lc(f)
+                            k = self.symbol_lc(f)
+                            if k:
+                                v.lc += k
+                                v.reg = self.symbol_region(f)
             elif kind == 0b10:      # absolute
                 i = mem.get(p, 24)
                 p += 24
