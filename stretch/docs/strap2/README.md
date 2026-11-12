@@ -92,6 +92,16 @@ before error 56 (p.75), and to a secondary op whose first character is in
 p.22's block of legal secondary first characters (C, S, V), before error 91.
 `tests/check_strap2_mbspec.py`.
 
+Secondary ops by class (C22-6729 pp.22-23, Fig. 24 p.192, read in the ink
+2026-11-12). The secondary table is searched under a code from the primary
+op: 001 VFL, 020 SEOP, 100 CW. So `+(BU,3)(SEOP)` and `CW(V+I)` are message 2,
+and two secondaries are message 4. Before this, a secondary the op could not
+take was dropped silently. CHOSEN: a CTL function op takes CTL's SEOP (MCP's
+printed `REW(SEOP)`, p.165 line 11, is CTL(SEOP) in its machine code); a
+floating op with a progressive secondary is message 2 (p.23's "establishes
+the op as a variable field type op" might instead give a mode error).
+`tests/check_strap2_secondary.py`.
+
 **Not yet written:** PUNREL after absolute output; an instruction in a
 named common; a COMBLOCK without a name (p.186 gives a message with no number);
 a low SLC under PUNFUL; the coprocessor;

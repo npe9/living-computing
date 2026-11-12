@@ -153,17 +153,25 @@ class Pass1:
             self._modifier(unit)
             g.next() if False else None
         mode = self.mode if self.mode in MODES else None
-        entry = lookup(op, mode, tuple(self.modifiers))
-        if entry is None:       # Box 17 not found: MIBA, then MBSPEC [22, 92-95]
+        # Boxes 17-22 [22]: the primary op alone, then its secondary (24-26).
+        base = lookup(op, mode, ())
+        if base is None:        # Box 17 not found: MIBA, then MBSPEC [22, 92-95]
             for test in optable.mbspec(op):
-                entry = lookup(test, mode, tuple(self.modifiers))
-                if entry is not None:
+                base = lookup(test, mode, ())
+                if base is not None:
                     # p.93 box 10: a successful search with Llbts.8 on gives
                     # the error message.  N28-1081 p.13: only 1-18 are serious,
                     # so the assembly goes on with the changed op.
                     self.msg.add(129, f"OP {op} CHANGED INTO {test}", unit, fatal=False)
                     op = self.op = test
                     break
+        if base is None:
+            return self._illegal(unit, op)
+        if len(self.modifiers) > 1:
+            return self._illegal(unit, op, 4, "MORE THAN ONE SECONDARY OP")
+        if self.modifiers and self.modifiers[0] not in self._secondaries_of(op, base):
+            return self._illegal(unit, op, 2, f"ILLEGAL SECONDARY OP {op}({self.modifiers[0]})")
+        entry = lookup(op, mode, tuple(self.modifiers))
         if entry is None:
             return self._illegal(unit, op)
         u.put(unit, ZIOPX, entry.index)
@@ -477,10 +485,35 @@ class Pass1:
         self.op = "DRZ"
         return self._wind_up(unit, e)
 
-    def _illegal(self, unit, op):
+    def _secondaries_of(self, op, base):
+        """The secondaries the op's class allows.  p.22-23: the secondary op
+        table's argument is a code "obtained from the current op index"
+        followed by the secondary's characters; Fig. 24 (p.192, read in the
+        ink 2026-11-12): 001 a secondary op in a VFL instruction, 020 a SEOP,
+        100 a secondary op in CW, 000 none.  p.23's examples: +(BU,3)(SEOP)
+        looks up 1SEOP and CW(V+I) 4V+I, neither in the table.  CHOSEN: an
+        I/O op has the SEOP code when the Reference Manual gives it a SEOP
+        form (opcodes.IO_OP's xSEOP), and a CTL function op has CTL's -- MCP
+        prints REW(SEOP), UNLOAD(SEOP), SPFL(SEOP) and GONG(SEOP), and
+        printed p.165 line 11's machine-code column is CTL(SEOP)'s.  The class
+        is that of the entry with the mode written, so L(N)(V+I) is a
+        floating op's: none."""
+        if base.kind in ("vfl", "conn"):
+            return set(optable._a.PROGRESSIVE_SECONDARY_OP)
+        if base.kind == "io":
+            under = "CTL" if op in optable._a.IO_FUNCTION_OPS else op
+            if under in optable._a.IO_BASE_OPS and under + "SEOP" in optable.IO_OP:
+                return {"SEOP"}
+        if op == "CW":
+            return set(optable._a.CW_SECONDARY)
+        return set()
+
+    def _illegal(self, unit, op, number=1, text=None):
         """Boxes 19-22: the unit becomes SIC,$15; BE,0 and the error is given.
-        CHOSEN: the host keeps the message and stops the deck being used."""
-        self.msg.add(1, f"ILLEGAL OP CODE {op}", unit)
+        CHOSEN: the host keeps the message and stops the deck being used.
+        Messages 2 and 4 (p.176) take the same treatment: what the unit
+        became is not printed (CHOSEN)."""
+        self.msg.add(number, text or f"ILLEGAL OP CODE {op}", unit)
         e = lookup("PRNOR")
         self.units.put(unit, ZIOPX, e.index)
         self.op = "COMMENT"
