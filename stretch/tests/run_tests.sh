@@ -1640,6 +1640,7 @@ run "STRAP II binary deck: origin, flow and branch cards, C28-6129 pp.22-23 and 
 run "STRAP II numeric DD (MQDD, MQDNUM, DNUM, Fig. 26) against C28-6129's examples and p.359" python3 check_strap2_dd.py
 run "STRAP II MBSPEC: an illegal op's 0/O 1/I 2/Z 5/S help, message 129 (C22-6729 pp.92-95)" python3 check_strap2_mbspec.py
 run "STRAP II secondary ops by their op's class, messages 2 and 4 (C22-6729 pp.22-23, Fig. 24)" python3 check_strap2_secondary.py
+run "STRAP II DUPLI / REPEAT: the next X cards Y more times, names dropped (N28-1081 page 1; C22-6729 p.27)" python3 check_strap2_dupli.py
 run "STRAP II against the listing oracles and strap_asm's images" python3 check_strap2_oracles.py
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<

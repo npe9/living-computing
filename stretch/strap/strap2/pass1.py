@@ -4,8 +4,7 @@ One statement, one trip round the chart (AA-AE), one unit written.  Box numbers
 in the comments are the chart's.
 
 Not yet here, each refused loudly by the check at the end of the module's
-tests: MIBA's and MBSPEC's corrections, the coprocessor, DUPLI, the relocation
-pseudo-ops' effects.  A numeric DD keeps its text for OUTPUT, not Fig. 26's
+tests: the coprocessor, and what is listed in docs/strap2/README.md.  A numeric DD keeps its text for OUTPUT, not Fig. 26's
 double precision form: see mqdd().
 """
 from .bits import BitMem
@@ -576,6 +575,8 @@ class Pass1:
             self._mql(unit, e)
         elif name == "PUNID":
             self._mpunid(unit)
+        elif name in ("DUPLI", "REPEAT"):
+            self._mdup(unit)
         elif name == "TAIL":
             self._mqtail(unit)
         elif name == "UNTAIL":
@@ -586,6 +587,28 @@ class Pass1:
             self._mqlink(unit)
             return self._wind_up(unit, ENTRIES[u.get(unit, ZIOPX)])
         return self._wind_up(unit, e)
+
+    def _mdup(self, unit):
+        """MDUP (C22-6729 p.27): DUPLI, X, Y -- "repeat the next X cards Y
+        times" (N28-1081 page 1, read in the ink 2026-11-12); REPEAT is its
+        alternate mnemonic.  "X and Y must both be absolute numbers."  MDUP
+        saves n and d and turns on Xsp3; XINPUT does the rest (cards.py
+        duplicate).  Fails loud, no message number being printed for it: X or
+        Y not a written integer, or fewer than X cards left."""
+        g = self.g
+        vals = []
+        while g.ch == ",":
+            x = self.getfld.field()
+            ok = (not x.null and not x.ops and x.gp is None and len(x.data) == 1
+                  and x.data[0].kind == "abs")
+            vals.append(x.data[0].value if ok else None)
+        if len(vals) != 2 or None in vals:
+            raise optable._a.AssemblerError(
+                "DUPLI needs X and Y, both absolute numbers (N28-1081 page 1)")
+        n, d = vals
+        if n and d and not g.duplicate(n, d):
+            raise optable._a.AssemblerError(
+                f"DUPLI,{n},{d}: fewer than {n} cards follow (N28-1081 page 1)")
 
     def _mpunid(self, unit):
         """MPUNID (C22-6729 p.27): the ID's characters from GETCHA with Gcaz on,

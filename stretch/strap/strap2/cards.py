@@ -118,6 +118,37 @@ class Getcha:
         self.name = self.name.rstrip()
         self.named = bool(self.name.strip())
 
+    def duplicate(self, n, d):
+        """XINPUT's duplicating mode, for DUPLI (C22-6729 p.27, read in the ink
+        2026-11-12): XINPUT "will stack each of the next n card images ...
+        before giving each of these n card images to GETCHA.  After XINPUT has
+        stacked n card images, then GETCHA gets the next n times d card images
+        from its own duplicating block rather than from the regular input
+        source."  So each card is read d + 1 times.  N28-1081 page 1: "X refers
+        to card images, not individual instructions"; a name on a duplicated
+        card "will not be included in the duplicated cards; however, a comment
+        character in the name field will be included".
+        CHOSEN: the n cards start at the next initial card (a continuation of
+        the DUPLI card's own block is not one of them); a continuation card in
+        the n loses columns 2-9 too, since they continue the name (p.79); a
+        card with the comment character (the quote, p.79) in column 1 or in
+        the name field is copied whole.  False when fewer than n cards are
+        left."""
+        k = self.i
+        while k < len(self.cards) and self.cards[k][:1] == "*":
+            k += 1
+        block = self.cards[k:k + n]
+        if len(block) < n:
+            return False
+
+        def unnamed(card):
+            c = card.ljust(80)
+            if c[0] == "'" or "'" in c[1:9]:
+                return card
+            return c[0] + " " * 8 + c[9:]
+        self.cards[k + n:k + n] = [unnamed(c) for c in block] * d
+        return True
+
     @property
     def symbol(self):
         """p.205: a symbol is the name without its blanks."""

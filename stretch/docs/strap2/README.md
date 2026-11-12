@@ -102,10 +102,19 @@ floating op with a progressive secondary is message 2 (p.23's "establishes
 the op as a variable field type op" might instead give a mode error).
 `tests/check_strap2_secondary.py`.
 
+DUPLI and REPEAT (N28-1081 page 1; C22-6729 p.27, MDUP and XINPUT; read in the
+ink 2026-11-12). `DUPLI, X, Y` gives the next X card images Y more times: XINPUT
+passes them on as it stacks them, then gives n*d from its duplicating block, so
+each card is read Y + 1 times. A name is dropped from the copies; a card with
+the comment character in the name field is copied whole. X and Y not written
+integers, or fewer than X cards left: refused (no message number is printed).
+CHOSEN: the X cards start at the next initial card. Before this, DUPLI was
+accepted and did nothing. `tests/check_strap2_dupli.py`.
+
 **Not yet written:** PUNREL after absolute output; an instruction in a
 named common; a COMBLOCK without a name (p.186 gives a message with no number);
 a low SLC under PUNFUL; the coprocessor;
-DUPLI; subscripts with dimensions; the system symbols' register-length
+subscripts with dimensions; the system symbols' register-length
 dds; PRNTALL's whole-table print; `$INF` (N28-1081 page 20 adds it, 12, infinity);
 the listing's page headings after the first; the field number in an error record
 (always 0); and the Correction card's typewriter copy of serious messages. An

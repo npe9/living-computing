@@ -30,7 +30,7 @@ PSEUDO = {
     # Listing and punch control: wind-up only in Pass 2a (p.34).
     "PUNFUL", "PUNORG", "PUNNOR", "PUNID", "PRNS", "PRND", "NOPRNT", "SPNUS",
     "PRNID", "RESEQ", "NOSEQ", "SEM", "REM", "SKIP", "NOPUN", "PRNOR", "PUNALL",
-    "PRNTALL", "TLB", "DUPLI", "PUNSYM", "PUNREL", "PUNFPC", "COMBLOCK", "ENTER",
+    "PRNTALL", "TLB", "DUPLI", "REPEAT", "PUNSYM", "PUNREL", "PUNFPC", "COMBLOCK", "ENTER",
     "SLCRCOM", "ORIGIN", "PUNCDC", "FEND",      # the last two: 6729 p.183
     # Those with work to do.
     "DD", "DDI", "DR", "DRZ", "SYN", "SLC", "SLCR", "END", "EXT", "CNOP",
