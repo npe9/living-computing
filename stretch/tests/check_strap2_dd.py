@@ -47,6 +47,15 @@ Measured 2026-11-12, pass1.py, restored by copy and cmp:
   floating point accepted          only the refusal check
   the whole change undone (DDI     every DDI check but "LI, IDATA", which
     assembled as a DD)             the old code passes by coincidence
+  KAMMS (pass2.py dd_dds), measured 2026-11-12, PYTHONDONTWRITEBYTECODE=1:
+  message 87 never given           "DD(BU,L)" and "DD(BU,LB)"
+  message 88 never given           only "DD(BU,64,K)"
+  MAIN's 36 given in place of 87   "DD(BU,L)" and "DD(BU,LB)"
+  bit style not tested             only "DD(BU,LB)"
+  CC's exemption lost              only "(CC*)DD(BU,,K12)" (88, shown 0o130)
+  88 does not refuse the deck      only "DD(BU,64,K)"
+  87 given at each evaluation      "DD(BU,L)" and "DD(BU,LB)" (87 twice: the
+                                   dds is evaluated in 2a and again in 2b)
 """
 import os
 import sys
@@ -282,6 +291,29 @@ got = msgs("DD(BU,.40),5")
 check("DD(BU,.40): message 38, and the combined value, 40 bits, is the length (B at 100.40)",
       got[:2], ([38], 0o100 * 64 + 40))
 check("DD(BU,64,.8): message 38 for a bit-style byte size", msgs("DD(BU,64,.8),5")[0], [38])
+
+# KAMMS (C22-6729 p.137 boxes 20, 29, read in the ink 2026-11-12): a SYMBOLIC
+# field length or byte size is tested in DECODE, not MAIN -- messages 87, THE
+# FL IS GREATER THAN 64, and 88, BYTE SIZE GREATER THAN 8 (p.177).
+def kmsgs(dd):
+    r = strap2.compile_cards(["         SLC,(8)100.0", " A       " + dd,
+                              " B       DD(BU,8),1", " L       SYN,72", " L64     SYN,64",
+                              " K       SYN,9", " K8      SYN,8", " K12     SYN,12",
+                              " LB      SYN,.40", "         END"])
+    return [n for n, *_ in r.msg.items], r.val.symbol_value(r.st.search("B"))[0], r.punch.unwritten
+
+
+got = kmsgs("DD(BU,L),5")
+check("DD(BU,L), L 72: message 87 (DECODE), the length truncated to 8",
+      got[:2], ([87], 0o100 * 64 + 8))
+check("DD(BU,L64): no message", kmsgs("DD(BU,L64),5")[0], [])
+got = kmsgs("DD(BU,64,K),5")
+check("DD(BU,64,K), K 9: message 88, and the deck refuses", (got[0], bool(got[2])), ([88], True))
+check("DD(BU,64,K8): no message", kmsgs("DD(BU,64,K8),5")[0], [])
+check("DD(BU,LB), LB .40: bit style, message 87 once, the combined 40 bits kept",
+      kmsgs("DD(BU,LB),5")[:2], ([87], 0o100 * 64 + 40))
+check("(CC*)DD(BU,,K12), K12 12: no message 88 (CC implies 12)",
+      kmsgs("(CC*)DD(BU,,K12),AB*")[0], [])
 
 # -- DDI: C28-6129 printed pp.16-17, read in the ink 2026-11-12 -------------
 # "IDATA DDI(DU, 4, 4), 4 / LI, IDATA": the symbol table holds ...0100; LI's

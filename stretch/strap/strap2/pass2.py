@@ -80,6 +80,7 @@ class Pass2:
         self.reloc = {}         # unit -> [(bit in its binary, "L" or "R")]
         self.spnus = False      # NSPRES, p.35: SPNUS seen
         self.prntall = False    # PRNTALL seen anywhere (N28-1081 page 2)
+        self.kamms = set()      # ("fl"|"bs", unit) given 87/88 once (dd_dds)
         self.val.multi_ref = F_CONTAG if edition == "N28-1081" else F_MULTI
 
     # ---------------------------------------------------------------------------
@@ -462,11 +463,33 @@ class Pass2:
             p = v.next
             if not v.avail:
                 raise Unresolved("symbolic field length")
+            if (v.B or v.total > 64) and ("fl", unit) not in self.kamms:
+                # KAMMS in DECODE (C22-6729 p.137 box 20, read in the ink
+                # 2026-11-12): "not more than 64 bits and not in bit style.
+                # An illegal condition causes both an error message to be
+                # given and the field length to be truncated.  (Bit and
+                # integer values are combined.)"  Message 87, DECODE, THE FL
+                # IS GREATER THAN 64 (p.177) -- not MAIN's 36, which a number
+                # written in the dds gets in Pass 1.  Truncated as 36 is.
+                self.kamms.add(("fl", unit))
+                self.msg.add(87, "THE FL IS GREATER THAN 64", unit, fatal=False)
             fl = v.total & 63
         if u.get(unit, ZIFSBS):
             v = self.val.read_field(self.mem, p)
             if not v.avail:
                 raise Unresolved("symbolic byte size")
+            cc = ENTRIES[u.get(unit, ZIOPX)].name == "DD" and u.get(unit, DD_CC)
+            if (v.B or v.total > (12 if cc else 8)) and ("bs", unit) not in self.kamms:
+                # p.137 box 29, the same test for the byte size: message 88,
+                # DECODE, BYTE SIZE GREATER THAN 8 (p.177).  As for MAIN's 37:
+                # the truncation is not printed, so the deck refuses; and CC
+                # entry mode's byte size 12 is not over (C28-6129 p.30; p.177's
+                # 84, CC ENTRY MODE WITHOUT BS 12).
+                self.kamms.add(("bs", unit))
+                self.msg.add(88, "BYTE SIZE GREATER THAN 8", unit, fatal=False)
+                self.punch.unwritten = self.punch.unwritten or (
+                    "a symbolic byte size over 8 (message 88): its truncation is "
+                    "not printed (C22-6729 p.137 box 29)")
             bs = v.total & 15
         return mode, fl, bs
 
