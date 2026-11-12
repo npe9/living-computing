@@ -230,6 +230,16 @@ class Pass1:
             if v.avail and not v.gps:
                 if which == "fl":
                     fl = v.total
+                    if fl > 64:
+                        # C22-6729 p.176: MAIN's message 36, "FIELD LENGTH
+                        # GREATER THAN 64"; p.137 box 20, the same test for a
+                        # symbolic one: "an error message to be given and the
+                        # field length to be truncated".  READ: truncated as
+                        # C28-6129 p.33 uses the word, the high-order bits
+                        # dropped from the dds's six-bit field (0 for 64), so
+                        # 72 is 8.  The width is not printed for this case.
+                        self.msg.add(36, "FIELD LENGTH GREATER THAN 64", unit, fatal=False)
+                        fl &= 63
                     u.put(unit, ZIFFLF, 1)
                 else:
                     bs = v.total

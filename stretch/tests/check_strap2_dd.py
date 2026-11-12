@@ -23,6 +23,12 @@ Injections, measured 2026-11-09 in a copy of the tree, each reverted and compare
   the DD's radix not on its g.p.   only p.30 c
   the field length's g.p. lost     only p.30 d
   a later length forgets its count the assembler refuses at that row
+Measured 2026-11-12, pass1.py, restored by copy and cmp:
+  message 36 never given           only "DD(BU,72): message 36" (the
+                                   length is still 8: the dds's six-bit
+                                   field truncated it before message 36
+                                   was written)
+  a long length clamped to 64      only "the length truncated to 8"
 """
 import os
 import sys
@@ -228,6 +234,21 @@ F       DD(BU,8),0
         END,(8)100.0
 """)
 check("alphabetic: two characters at a later b.s.", p.symtab["B"], 0o100 * 64 + 16)
+
+# -- A field length over 64: C22-6729 p.176 (message 36, MAIN) and p.137 box
+# 20, "an error message to be given and the field length to be truncated",
+# read in the ink 2026-11-12.  READ: truncated in the dds's six-bit field
+# (0 for 64), the high bits dropped as C28-6129 p.33 uses the word: 72 is 8.
+r = strap2.compile_cards(["         SLC,(8)100.0",
+                          " A       DD(BU,72),(8)040002001000010000400004",
+                          " B       DD(BU,64),1", "         END"])
+check("DD(BU,72): message 36, FIELD LENGTH GREATER THAN 64",
+      [n for n, *_ in r.msg.items], [36])
+check("DD(BU,72): the length truncated to 8, so B starts at 100.08 and A holds 004",
+      (r.val.symbol_value(r.st.search("B"))[0], r.image.words[0o100] >> 56),
+      (0o100 * 64 + 8, 0o004))
+r = strap2.compile_cards(["         SLC,(8)100.0", " A       DD(BU,64),1", "         END"])
+check("DD(BU,64): no message", [n for n, *_ in r.msg.items], [])
 
 print("ALL CHECKS PASSED" if not fails else f"{fails} FAILED")
 sys.exit(1 if fails else 0)

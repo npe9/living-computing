@@ -41,20 +41,15 @@ Open alongside: the LIM card under PUNREL is punched as computed and means
 nothing to a relocated load -- the guide does not say whether PUNREL
 punches one; and PUNREL after absolute output, refused.
 
-## A FIELD LENGTH OVER 64 IS ACCEPTED SILENTLY -- open, found 2026-11-11
+## A FIELD LENGTH OVER 64 -- closed 2026-11-12
 
-`DD(BU,72),(8)040002001000010000400004` assembles, in strap_asm and in
-strap2 alike, to one word holding 1<<61 and no message. STRAP II tests
-the length: C22-6729 p.137 box 20 (between-passes phase, read in the
-ink), "Branch to Kamms procedure in DECODE to test whether the field
-length was properly specified, i.e., to see if it is not more than 64
-bits and not in bit style. An illegal condition causes both an error
-message to be given and the field length to be truncated." The message:
-36, MAIN, FIELD LENGTH GREATER THAN 64 (6729 OCR p.176, not yet read in
-the ink), and 97, DEC 59, "A field length greater than 64 has been
-specified" (6129 Appendix p.55, in the ink). UNSPECIFIED: what the
-length is truncated to. Found writing `decks/vfl_second_index.strap`,
-which now spells its buffer as six DD(BU,12) columns.
+strap2 now gives message 36, FIELD LENGTH GREATER THAN 64 (C22-6729
+p.176, MAIN, read in the ink), and the length is truncated (p.137 box 20)
+in the dds's six-bit field: 72 becomes 8 (READ from C28-6129 p.33's use
+of "truncated"; the width is not printed for this case).  Checked in
+tests/check_strap2_dd.py.  strap_asm (scaffolding) still gives no message.
+Open: message 37 (byte size over 8) and 38 (a bit-style number in a dds)
+are not written.
 
 ## I DROPPED A CONNECTIVE'S OFFSET FIELD THIS SESSION -- fixed same day
 
