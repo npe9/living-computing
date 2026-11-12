@@ -770,7 +770,10 @@ now fixed); a base-0 data card loads at `ALDCTR` plus its origin, data
 from column 11; an instruction card's data starts at column 9, its count
 in column 5's low 10 bits; code `1000` relocates the left 18 bits of a
 half-word, `1010` the right 18; `ALDCTR` is unchanged by a data card.
-FORTRAN, C, P and D cards, a nonzero base and common have not yet run.
+The FORTRAN program, common definition and FORTRAN branch cards STRAP II
+punches each return code 4 outside a BSS job (mode `fortran`), as `ATBL`
+and `AFPCRD` predict. Loading them needs BSS's table (5.4). C, P and D
+cards, a nonzero base and common have not yet run.
 
 ### 7.2 Printed p.329: lost, inside the loader
 

@@ -33,6 +33,20 @@ What is checked, and how strong each oracle is:
        data card data from column 9                 -> R5
        data card column 1 without row 9             -> R5
        branch-on-bit address coded at bit 0, not 32 -> R8
+  R9-R16, PUNREL stage 2 (PUNFPC/ENTER, PUNCDC/COMBLOCK, FEND; SLCRCOM refused),
+     measured 2026-11-11, each restored by copy and cmp:
+       statements do not end PUNFPC/PUNCDC mode     -> R9, R11
+       program card column 1 without row 9          -> R10
+       sizes rounded down, not up                   -> R10, R11
+       ENTER's address in bits/32, integers as bits -> R10
+       common size punched 19 bits wide             -> R11
+       FORTRAN branch card column 1 without row 8   -> R12
+       continuation card keeps the sizes            -> R13
+       message 138 not raised                       -> R14
+       FEND outside PUNREL ends nothing             -> R15
+       SLCRCOM accepted silently                    -> R16
+       a zero DR dimension refused (as before)      -> the assembly raises
+     NOT EXERCISED: message 139 (a card's name field is eight columns).
      The loader run (gen_loader_deck_tb.py rel) is the end-to-end check.
   E  the MCP cards, C22-6678-1 pp.7-10 read in the ink: GO and LIM first (guide
      p.157 boxes 15-16), the IOD of p.48 reproduced with its reference number and
@@ -434,6 +448,53 @@ if __name__ == "__main__":
           ([n for n, *_ in nr.msg.items], [t for _, t in nr.punch.control]), ([136], []))
     bb = compile_cards([card("", "PUNREL"), card("A", "DD(BU,64),5"),
                         card("S", "BZB,A.0,S"), card("", "END,S")])
+    # R9-R16: PUNFPC/ENTER, PUNCDC/COMBLOCK, FEND (6729 pp.183-188, N28-1081
+    # page 3), as p.184's example orders them: before PUNREL.
+    fp = compile_cards([card("", "PUNFPC,LAST,CL"), card("KRUM", "ENTER,START"),
+                        card("", "ENTER,START+1"), card("", "PUNCDC"),
+                        card("BLOCK1", "COMBLOCK,100"), card("BL2", "COMBLOCK,1.1"),
+                        card("", "PUNREL"), card("A", "DD(BU,64),5"),
+                        card("START", "B,START"), card("LAST", "SYN,$"),
+                        card("CL", "DR(N),0"), card("", "FEND")])
+    kinds = [c.kind for c in fp.punch.cards]
+    check("R9 the deck: FORTRAN program card, common definition card, the program, FORTRAN branch card",
+          (kinds[:2], kinds[-1], fp.punch.unwritten), (["fprog", "comdef"], "fbranch", None))
+    from strap2.a8 import a8
+    def a8w(s):
+        v = 0
+        for ch in s.ljust(8):
+            v = (v << 8) | a8(ch)
+        return v
+    cols = fp.punch._encode(fp.punch.cards[0], 1, 0)
+    check("R10 FORTRAN program card: column 1 is 5,6,7,9; size and blank common in words "
+          "(an integer counts words, a part word rounds up); entries at 9.0 and 16.0 (p.188)",
+          (cols[0], field(cols, 60, 18), field(cols, 78, 18), field(cols, 96, 64),
+           field(cols, 160, 19), field(cols, 180, 64), field(cols, 244, 19)),
+          (0o0035, 2, 2, a8w("KRUM"), 2, a8w(""), 3))
+    cols = fp.punch._encode(fp.punch.cards[1], 2, 0)
+    check("R11 common definition card: column 1 is 5,7,8,9; names at 9.0 and 16.0, sizes 18 bits (p.187)",
+          (cols[0], field(cols, 96, 64), field(cols, 160, 18), field(cols, 180, 64), field(cols, 244, 18)),
+          (0o0027, a8w("BLOCK1"), 100, a8w("BL2"), 2))
+    cols = fp.punch._encode(fp.punch.cards[-1], 9, 0)
+    check("R12 FORTRAN branch card: column 1 is 5,6,7,8,9; 5.0-71.11 not used (p.187)",
+          (cols[0], sum(cols[4:71])), (0o0037, 0))
+    ten = compile_cards([card("", "PUNFPC,10,0")] +
+                        [card("E%d" % k, "ENTER,%d" % k) for k in range(10)] +
+                        [card("", "PUNREL"), card("", "B,0"), card("", "FEND")])
+    f2 = [c for c in ten.punch.cards if c.kind == "fprog"]
+    c2 = ten.punch._encode(f2[1], 2, 0)
+    check("R13 a tenth ENTER: a second program card, sizes blank (N28-1081 page 3)",
+          (len(f2), [len(c.entries) for c in f2], field(c2, 60, 36), field(c2, 96, 64)),
+          (2, [9, 1], 0, a8w("E9")))
+    bad = compile_cards([card("", "PUNREL"), card("X", "ENTER,0"), card("Y", "COMBLOCK,1"),
+                         card("", "FEND")])
+    check("R14 ENTER outside PUNFPC mode 138, COMBLOCK outside PUNCDC 137 (6729 p.178)",
+          [n for n, *_ in bad.msg.items], [138, 137])
+    ab2 = compile_cards([card("", "PUNFPC,1,0"), card("", "B,0"), card("", "FEND")])
+    check("R15 PUNFPC and FEND outside PUNREL mode: message 136 each, FEND ends as END does (p.186)",
+          ([n for n, *_ in ab2.msg.items], [c.kind for c in ab2.punch.cards]), ([136, 136], ["origin", "branch"]))
+    sc = compile_cards([card("", "PUNREL"), card("", "B,0"), card("", "SLCRCOM"), card("", "FEND")])
+    check("R16 SLCRCOM is not yet written: the deck refuses", sc.punch.unwritten, "SLCRCOM")
     check("R8 a branch on bit relocates both half-words: its bit address, and its branch address at bit 32",
           [c.codes for c in bb.punch.cards if c.kind == "rinstr"], ["1000" + "1000"])
 

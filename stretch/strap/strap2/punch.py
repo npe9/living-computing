@@ -82,8 +82,8 @@ p.325): 1000 relocates a half-word's left 18 bits, 1010 its right 18.  What
 VALUE's Sinrl1/Sinrl2 mean is UNSPECIFIED (docs/bss_loader_spec.md 9); the
 code counts location-counter symbols instead (value.py symbol_lc).
 NOT WRITTEN: a field with more than one location-counter symbol (message
-123; what IBM punched for it is UNSPECIFIED); PUNREL after absolute output; PUNFPC/ENTER, PUNCDC/COMBLOCK,
-FEND, SLCRCOM; a relocatable value in a field with no relocation position;
+123; what IBM punched for it is UNSPECIFIED); PUNREL after absolute output; SLCRCOM; a COMBLOCK
+without a name; a relocatable value in a field with no relocation position;
 a low SLC under PUNFUL.  The assembly goes on; the punch stops at the first,
 `unwritten` names it, and `images` refuses.
 `mcp` counts the IOD and REEL units.  `images` is the binary cards alone;
@@ -98,6 +98,10 @@ ORIGIN_DATA, FLOW_DATA = 12 * 9 + 8, 12 * 4 + 4      # 10.8 and 5.4: card bits
 # instructions and then their relocation bits fill 9.0-71.11.
 RDATA_BITS, RDATA_DATA = 12 * 61, 12 * 10
 RINSTR_ROOM, RINSTR_DATA = 12 * 63, 12 * 8
+# The FORTRAN program and common definition cards (6729 pp.187-188): nine
+# entries a card from 9.0, seven columns each -- an A8 name (64 bits) and an
+# entry address (19 bits) or a common size (18 bits).
+ENTRY_AT, ENTRY_STEP, PER_CARD = 12 * 8, 12 * 7, 9
 DEFAULT_BRANCH = 0o41 * 64
 
 
@@ -146,6 +150,7 @@ class Punch:
         self.next_at = None     # where a flow card would load
         self.rel = False        # PUNREL: relocatable cards
         self._ri_clear()
+        self.group = None       # PUNFPC or PUNCDC mode: the card being filled
 
     def _ri_clear(self):
         self.ri_start, self.ri_bits, self.ri_value = None, 0, 0
@@ -300,6 +305,51 @@ class Punch:
         self._new_origin()
         self.suppressed = False
         self.rel = True
+
+    # -- PUNFPC / ENTER, PUNCDC / COMBLOCK, FEND (C22-6729 pp.183, 186-188) -----
+    def group_start(self, unit, kind, size=None, common=None):
+        """PUNFPC ("fprog") or PUNCDC ("comdef"): OUTPUT "goes into PUNFPC
+        mode and sets up the format" (p.186).  The card in process goes out
+        first (CHOSEN, as at ORIGIN)."""
+        self.group_end(unit)
+        self._punch(unit)
+        self._new_origin()
+        c = Card(kind)
+        c.size, c.common, c.entries = size, common, []
+        self.group = c
+
+    def group_add(self, unit, kind, name, value):
+        """An ENTER or COMBLOCK: False if not in its mode (messages 138, 137).
+        "When either a non-ENTER statement is encountered or the card is
+        full, the Fortran Program Card is punched.  Additional Fortran Cards
+        are in the same format except that the program size and amount of
+        blank common used fields are blank" (p.186)."""
+        if self.group is None or self.group.kind != kind:
+            return False
+        if len(self.group.entries) == PER_CARD:
+            more = Card(kind)
+            more.size, more.common, more.entries = None, None, []
+            self._emit(unit, self.group)
+            self.group = more
+        self.group.entries.append((name, value))
+        return True
+
+    def group_end(self, unit):
+        """A statement other than ENTER or COMBLOCK leaves the mode and punches
+        the card -- the first one even with no entries (a PUNFPC with no
+        ENTER is a data subprogram, bss_loader_spec.md 6.3)."""
+        if self.group is not None:
+            c, self.group = self.group, None
+            self._emit(unit, c)
+
+    def fend(self, unit):
+        """FEND (N28-1081 page 3): "Either END or FEND may terminate a FORTRAN
+        program or subprogram.  If FEND is used, STRAP will produce a FORTRAN
+        branch card."  5.0-71.11 not used (6729 p.187)."""
+        self.group_end(unit)
+        self._punch(unit)
+        self._new_origin()
+        self._emit(unit, Card("fbranch"))
 
     def origin_card(self, unit, at):
         """ORIGIN,N (C22-6729 p.183): the special origin card, column 1 O and
@@ -582,7 +632,10 @@ class Punch:
         # so digit row d is bit d + 2 (C28-6129's "1.9" is bit 9, row 7).
         row = {"origin": (9, 10, 11), "flow": (9, 11), "branch": (8, 9, 11),
                "rdata": (8, 9, 10, 11),         # 6,7,8,9 punches (6729 p.187)
-               "rinstr": (7, 9, 11)}[c.kind]    # 5,7,9 punches (6729 p.188)
+               "rinstr": (7, 9, 11),            # 5,7,9 punches (6729 p.188)
+               "fprog": (7, 8, 9, 11),          # 5,6,7,9 (p.188)
+               "comdef": (7, 9, 10, 11),        # 5,7,8,9 (p.187)
+               "fbranch": (7, 8, 9, 10, 11)}[c.kind]   # 5,6,7,8,9 (p.187)
         for r in row:
             bits[r] = 1
         put(12, 12, clock & 0xFFF)
@@ -610,6 +663,19 @@ class Punch:
             put(ORIGIN_DATA, c.nbits, c.value)
         elif c.kind == "flow":
             put(FLOW_DATA, c.nbits, c.value)
+        elif c.kind in ("fprog", "comdef"):
+            from .a8 import a8
+            if c.kind == "fprog" and c.size is not None:
+                put(60, 18, c.size)         # 6.0-7.5, program size
+                put(78, 18, c.common)       # 7.6-8.11, blank common
+            for k, (name, value) in enumerate(c.entries):
+                at = ENTRY_AT + ENTRY_STEP * k
+                for j, ch in enumerate(name.ljust(8)[:8]):
+                    put(at + 8 * j, 8, a8(ch))
+                # 14.4-15.10 entry address (19 bits); 14.4-15.9 size (18)
+                put(at + 64, 19 if c.kind == "fprog" else 18, value)
+        elif c.kind == "fbranch":
+            pass
         else:
             put(60, 24, c.address)
         if c.ident is not None:

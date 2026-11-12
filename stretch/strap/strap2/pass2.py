@@ -251,7 +251,7 @@ class Pass2:
         if name == "SLC" or name == "SLCR":
             self.nslc(unit, e)
             return
-        if name == "END":
+        if name in ("END", "FEND"):
             # p.19: 2a scans every expression so all undefined symbols are entered.
             if u.get(unit, ZINFLD):
                 self.val.read_field(self.mem, unit + FIXED_BITS)
@@ -418,8 +418,11 @@ class Pass2:
             p = v.next
             if not v.avail:
                 return None
-            if v.total < 1:
-                raise _a.AssemblerError(f"DR dimension {v.total} is not positive")
+            # A zero dimension reserves nothing: IBM's own example writes
+            # "COMLAST DR(N), 0" to name the end of blank common (C22-6729
+            # p.184, read in the ink 2026-11-11).
+            if v.total < 0:
+                raise _a.AssemblerError(f"DR dimension {v.total} is negative")
             size *= v.total
         return size
 
@@ -876,6 +879,17 @@ class Pass2:
             except PunchError as x:
                 pu.unwritten = f"{e.name}: {x}"
             return
+        # PUNFPC / PUNCDC mode ends at any other statement (C22-6729 p.186).
+        if pu.group is not None and (pu.group.kind, e.name) not in (
+                ("fprog", "ENTER"), ("comdef", "COMBLOCK")):
+            pu.group_end(unit)
+        if e.name in self.RELOC_OPS:
+            self._relocation_op(unit, e, printed)
+            return
+        if e.name == "SLCRCOM":
+            # Not written (PUNREL stage 3): the counter relative to a common.
+            pu.unwritten = pu.unwritten or "SLCRCOM"
+            return
         if e.name == "PUNID" and pu.punful:
             self.msg.add(127, "PUNID IN PUNFUL SEQUENCE -- STATE. IGNORED", unit, fatal=False)
             return
@@ -919,24 +933,15 @@ class Pass2:
             pu.tlb(unit, printed[2])
             return
         if e.name == "PUNREL":
-            if self.rel and not pu.cards and not pu.rel:
+            if pu.rel:
+                return
+            # PUNFPC and PUNCDC may come first (p.184's example): Pass 1's
+            # Punrel bit, not the order, puts OUTPUT in PUNREL mode (p.186).
+            if self.rel and all(c.kind in ("fprog", "comdef") for c in pu.cards):
                 pu.punrel_(unit)
             else:
                 # Not written: a PUNREL after absolute output (_punrel_scan).
                 pu.unwritten = "PUNREL after absolute output"
-            return
-        if e.name == "ORIGIN":
-            # C22-6729 p.183, "To produce special origin card for the loader".
-            # Pass 2 "does not accept relocation pseudo-ops if it is not in
-            # PUNREL mode" (p.186): message 136.
-            if not pu.rel:
-                self.msg.add(136, "RELOCATABLE PSEUDO-OP., NOT IN PUNREL MODE", unit, fatal=False)
-                return
-            v = self.val.read_field(self.mem, unit + FIXED_BITS)
-            if not v.avail:
-                self.msg.add(7, "ASSEMBLY ERROR", unit)
-                return
-            pu.origin_card(unit, v.total)
             return
         if kind == "SLC":
             pu.slc(unit, printed[1])
@@ -957,6 +962,78 @@ class Pass2:
                                 [(at + b, side) for b, side in self.reloc.get(unit, ())])
                 else:
                     pu.data(unit, start, n, self._image_bits(start, n))
+
+    RELOC_OPS = ("ORIGIN", "PUNFPC", "ENTER", "PUNCDC", "COMBLOCK", "FEND")
+
+    def _relocation_op(self, unit, e, printed):
+        """The relocation pseudo-ops but PUNREL and SLCRCOM (C22-6729 pp.183,
+        186-188; N28-1081 page 3, all read in the ink 2026-11-11).  Pass 2
+        "does not accept relocation pseudo-ops if it is not in PUNREL mode"
+        (p.186): message 136, and nothing punched (CHOSEN: a FEND then ends
+        the assembly as an END would, with END's branch card)."""
+        pu = self.punch
+        name = e.name
+        if not self.rel:
+            self.msg.add(136, "RELOCATABLE PSEUDO-OP., NOT IN PUNREL MODE", unit, fatal=False)
+            if name == "FEND":
+                pu.end(unit, printed[2] if printed else None)
+            return
+        if name == "FEND":
+            pu.fend(unit)
+            return
+        if name == "PUNCDC":
+            pu.group_start(unit, "comdef")
+            return
+        fields = []
+        p = unit + FIXED_BITS
+        for _ in range(self.units.get(unit, ZINFLD)):
+            v = self.val.read_field(self.mem, p)
+            if not v.avail:
+                self.msg.add(7, "ASSEMBLY ERROR", unit)
+                return
+            fields.append(None if v.nullf else v)
+            p = v.next
+
+        def words(k):
+            # An 18-bit field: an integer counts full words, a bit address
+            # is in bits (C28-6129 p.33).  N28-1081 page 3: "If either is not
+            # a full word, STRAP will round it up to the next higher full
+            # word."  CHOSEN for COMBLOCK's size too.
+            v = fields[k] if k < len(fields) else None
+            if v is None:
+                return 0
+            return (((v.B + 63) >> 6) + v.I) & 0o777777
+        if name == "ORIGIN":
+            if not fields or fields[0] is None:
+                self.msg.add(7, "ASSEMBLY ERROR", unit)
+                return
+            pu.origin_card(unit, fields[0].total)
+            return
+        if name == "PUNFPC":
+            pu.group_start(unit, "fprog", words(0), words(1))
+            return
+        label = self.p1.print_names.get(unit, ("",))[0] or ""
+        if len(label) > 8:
+            # CHOSEN: the first eight characters are punched.  NOT EXERCISED:
+            # a card's name field is columns 2-9, so no test reaches this.
+            self.msg.add(139, "NAME LONGER THAN 8 CH. ON COMBLOCK OR ENTER", unit, fatal=False)
+        if name == "ENTER":
+            # The entry address, a nineteen-bit field (p.186): an integer
+            # counts half-words (C28-6129 p.33).  CHOSEN: a point inside a
+            # half-word gives its half-word.
+            v = fields[0] if fields else None
+            at = self._a19(v) if v is not None else 0
+            if not pu.group_add(unit, "fprog", label[:8], at & 0o1777777):
+                self.msg.add(138, "ENTER STATEMENT, NOT IN PUNFPC MODE", unit, fatal=False)
+            return
+        # COMBLOCK.  "If the statement does not have a name, an error message
+        # is given, and the address field is still encoded" (p.186); the
+        # message's number is not printed, so the deck stops here.
+        if not label:
+            pu.unwritten = pu.unwritten or "a COMBLOCK without a name (p.186: an error message, its number not printed)"
+            return
+        if not pu.group_add(unit, "comdef", label[:8], words(0)):
+            self.msg.add(137, "COMBLOCK STATEMENT WHEN NOT IN PUNCDC MODE", unit, fatal=False)
 
     def statement_text(self, unit):
         """The statement as Pass 1 kept it (Zilsst bytes after the coded fields)."""
@@ -1012,7 +1089,7 @@ class Pass2:
             self.printed[unit] = ("SLC", v.total)
             self.running = v.total
             return pending
-        if name == "END":
+        if name in ("END", "FEND"):
             v = self.val.read_field(self.mem, unit + FIXED_BITS) if u.get(unit, ZINFLD) else None
             if v is not None and not v.avail:
                 self.msg.add(7, "ASSEMBLY ERROR", unit)

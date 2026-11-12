@@ -299,7 +299,7 @@ class Pass1:
         self.first_of_block = False
         u.intout(unit, end)     # Box 57
         self.image_at = image_at
-        return entry.name == "END"
+        return entry.name in ("END", "FEND")     # FEND: N28-1081 page 3
 
     def _form_symbol(self, unit, entry):
         """Boxes 45-53.  CHOSEN: entered here, on the block's first unit.  The
@@ -484,7 +484,8 @@ class Pass1:
             self._mqr(unit, e)
         elif name == "SYN":
             self._mqs(unit, e)
-        elif name in ("SLC", "SLCR", "END", "TLB", "ORIGIN"):
+        elif name in ("SLC", "SLCR", "END", "TLB", "ORIGIN", "PUNFPC", "ENTER",
+                      "COMBLOCK"):
             self._mql(unit, e)
         elif name == "PUNID":
             self._mpunid(unit)

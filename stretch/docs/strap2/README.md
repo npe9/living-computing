@@ -52,8 +52,21 @@ MCP's own loader relocates such a deck to the absolute program
 (`tests/gen_loader_deck_tb.py rel`). Under PUNREL, END punches no branch card
 (CHOSEN).
 
-**Not yet written:** DDI; PUNREL after absolute output; PUNFPC/ENTER,
-PUNCDC/COMBLOCK, FEND, SLCRCOM and common; a low SLC under PUNFUL; the MIBA and MBSPEC corrections; the coprocessor;
+**PUNREL, stage 2, is written:** PUNFPC/ENTER punch the FORTRAN program card,
+PUNCDC/COMBLOCK the common definition card (6729 pp.186-188), nine entries a
+card and continuation cards after; FEND ends the program with the FORTRAN
+branch card (N28-1081 page 3). They may precede PUNREL, as in p.184's
+example. Sizes are 18-bit fields, so an integer counts words and a part word
+rounds up; ENTER's point is a half-word address. Outside PUNREL each is
+message 136 (FEND then ends as END does, CHOSEN); ENTER and COMBLOCK out of
+their mode are 138 and 137. A zero DR dimension is accepted: p.184 writes
+`COMLAST DR(N), 0`. MCP's loader, outside a BSS job, returns code 4 for all
+three cards, as its ATBL and AFPCRD say it must
+(`tests/gen_loader_deck_tb.py fortran`).
+
+**Not yet written:** DDI; PUNREL after absolute output; SLCRCOM and common (it
+refuses); a COMBLOCK without a name (p.186 gives a message with no number);
+a low SLC under PUNFUL; the MIBA and MBSPEC corrections; the coprocessor;
 DUPLI; subscripts with dimensions; the system symbols' register-length
 dds; PRNTALL's whole-table print; `$INF` (N28-1081 page 20 adds it, 12, infinity);
 the listing's page headings after the first; the field number in an error record

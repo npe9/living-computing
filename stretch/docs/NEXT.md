@@ -23,12 +23,18 @@ accumulate.
 
 
 
-## PUNREL STAGE 2 AND 3 -- next, 2026-11-11
+## PUNREL STAGE 3 -- next, 2026-11-11
 
-Stage 1 is written and runs on MCP's loader (docs/strap2/README.md). Next,
-in order: PUNFPC/ENTER and PUNCDC/COMBLOCK (6729 p.186, the transfer-vector
-and common cards), FEND, then SLCRCOM and blank common (N28-1081 page 3,
-read in the ink), with p.184's example program and Fig. 17 as a fixture.
+Stages 1 and 2 are written (docs/strap2/README.md). Next: SLCRCOM and
+common relocation (codes 10..10 and 10..11i, 6729 p.188; N28-1081 page 3's
+no card for a blank-common address), with p.184's example program as a
+fixture. A loader run of a FORTRAN deck needs what the lost BSS processor
+leaves: KSILO+2 holding BSS and the relocation table at KSILO+9.32
+(bss_loader_spec.md 5.4); build that as labelled scaffolding. Open from
+p.184's example: its `DD(BU), 1.0` (length of the transfer vector) draws
+message 45 here (a decimal fraction in BU without an (Fn) entry mode,
+C28-6129 p.29) -- read what STRAP II made of it. A FORTRAN deck's first
+control card is still `B TYPE,GO`; BSS's type card is not settled.
 Open alongside: the LIM card under PUNREL is punched as computed and means
 nothing to a relocated load -- the guide does not say whether PUNREL
 punches one; and PUNREL after absolute output, refused.

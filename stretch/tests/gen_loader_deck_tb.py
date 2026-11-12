@@ -78,6 +78,20 @@ MEASURED INJECTIONS, restored by copy and cmp:
   - no relocation recorded (pass2): 18 fail, exactly the instruction words
     120014-120035.
 
+MODE "fortran" (argv[2]): the FORTRAN program, common definition and
+FORTRAN branch cards STRAP II punches for FORTRAN_SOURCE, each fed as the
+first card of a new job.  Outside BSS, MCP's loader must return each with
+code 4, ILLEGAL NON-BSS FUNCTION: ATBL (printed p.331) sends all three
+classes to AFPCRD, which finds no BSS at KSILO+2 (p.324 lines 12-15).  The
+error return goes on to the next card; a normal return fails the PC check.
+FIRST RUN, 2026-11-11: 3 checks pass, PC at DONE, 3,303 cycles.
+MEASURED, in strap/strap2/punch.py, restored by copy and cmp:
+  - the program card's column 1 as 5,6,7: code4_fprog fails, D holding
+    sequence 0 and code 3, ILLEGAL TYPE OF CARD; the other two pass.
+  - LIMIT, measured: the common card punched with the branch card's class
+    (5,6,7,8,9) passes -- outside BSS the loader does not tell the three
+    apart.  check_strap2_punch.py R10-R12 pin each class.
+
 ITS OWN BUILD DIRECTORIES (build-loader, simbuild-loader): built in the
 shared bsv/build without -show-schedule, it left mkStretchCore up to date
 with no .sched, and the smoke test's schedule check then failed.
@@ -141,6 +155,21 @@ REL_BODY = [
 REL_SOURCE = ["        PUNREL", "        ORIGIN,(8)120000.0"] + REL_BODY
 REL_ABSOLUTE = ["        SLC,(8)120000.0"] + REL_BODY
 
+# THE FORTRAN CARDS (mode fortran): the FORTRAN program, common definition
+# and FORTRAN branch cards, in p.184's order.  Outside a BSS job each must take
+# AFPCRD (ATBL, printed p.331) and the error return with code 4, ILLEGAL
+# NON-BSS FUNCTION (printed p.324 lines 12-15: KSILO+2 does not hold BSS).
+FORTRAN_SOURCE = [
+    "        PUNFPC,LAST,0",
+    "KRUM    ENTER,START",
+    "        PUNCDC",
+    "BLOCK1  COMBLOCK,100",
+    "        PUNREL",
+    "START   B,START",
+    "LAST    SYN,$",
+    "        FEND",
+]
+
 
 def card(name, stmt):
     return " " + name.ljust(8) + stmt
@@ -169,15 +198,24 @@ def card_words(cols):
 def main():
     module = sys.argv[1]
     mode = sys.argv[2] if len(sys.argv) > 2 else ""
-    if mode not in ("", "rel"):
-        raise SystemExit("mode: none or rel, not %r" % mode)
+    if mode not in ("", "rel", "fortran"):
+        raise SystemExit("mode: none, rel or fortran, not %r" % mode)
     pages = [(mcp_image.DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
              for n in range(99, 335)
              if n not in mcp_image.NO_DECK_PAGES | mcp_image.MISSING_PAGES]
     image, _src, _d, _e = mcp_image.build(False, pages, end_at="SDISP")
     S = image.symtab
 
-    if mode == "rel":
+    if mode == "fortran":
+        p2 = compile_lines(FORTRAN_SOURCE)
+        if p2.punch.unwritten or p2.msg.items:
+            raise SystemExit("the punch: %s %s" % (p2.punch.unwritten, p2.msg.items))
+        fc = [c for c in p2.punch.cards if c.kind in ("fprog", "comdef", "fbranch")]
+        # Each the first card of its own job: sequence 1.
+        imgs = [p2.punch._encode(c, 1, 0o1234) for c in fc]
+        kinds = [c.kind for c in fc]
+        expect = None
+    elif mode == "rel":
         p2 = compile_lines(REL_SOURCE)
         if p2.punch.unwritten:
             raise SystemExit("the punch did not write the deck: %s" % p2.punch.unwritten)
@@ -205,6 +243,8 @@ def main():
            # line 11), set the way ALOADR sets its own (p.320 line 14).
            "START   CM1111(BU,1),A0+.57"]
     for k in range(len(imgs)):
+        if mode == "fortran" and k:
+            drv.append("        CM1111(BU,1),A%d+.57" % k)     # a new job each card
         for w in range(15):
             drv.append("        TI,1,C%d+%d.0,YBCBU+%d.0" % (k, w, w))
         drv += ["        LVI,$15,A%d" % k,
@@ -212,10 +252,13 @@ def main():
                 "A%d      VF,YBCBU" % k,
                 "        ,LOWLIM",
                 "        ,HIGHLIM",
-                "        B,ERR",
+                "        B,E%d" % k if mode == "fortran" else "        B,ERR",
                 "D%d      VF,0" % k,
                 "        B,DONE",
                 "BA%d     VF,0" % k]
+        if mode == "fortran":
+            drv.append("        B,ERR")         # a normal return is wrong here
+            drv.append("E%d      NOP" % k)       # the error return: next card
     drv += ["        B,DONE", "ERR     B,ERR", "DONE    B,DONE"]
     for k, cols in enumerate(imgs):
         drv.append("        CNOP")
@@ -236,10 +279,23 @@ def main():
     # does not punch must come through the load unchanged.  Without it
     # those bits are Bluesim's power-on pattern, which says nothing.
     SENTINEL = 0x5555555555555555
+    checks = []
+    if mode == "fortran":
+        # D: bits 0-11 the sequence, 13-17 the code (6728-0 p.80), a VF.
+        for k in range(len(imgs)):
+            dk = d.symtab["D%d" % k]
+            sh = 64 - dk % 64 - 32
+            want = (d.words[dk // 64] & ~(0xffffffff << sh)) | (((1 << 20) | (4 << 14)) << sh)
+            checks.append(("code4_%s" % kinds[k], str(dk // 64), want))
+        sys.stderr.write("cards: %s\n" % kinds)
+        print(generate(module, image, checks, pc_check=d.symtab["DONE"] // 32,
+                       cycle_bound=20000000, step_cap=2000000,
+                       fast_load=os.path.join(os.path.abspath(STRETCH), "bsv", "build-loader",
+                                              module + ".hex")))
+        return
     im = expect.image
     touched = sorted(set(w for w, m in im._written.items() if m)
                      | set(w for w, m in im._fill.items() if m))
-    checks = []
     full = (1 << 64) - 1
     for w in touched:
         if w in words:
