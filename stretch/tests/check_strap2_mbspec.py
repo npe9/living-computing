@@ -25,6 +25,14 @@ control all passing:
   the last character lowest        the order check
   one substitution at a time only  51C, the order check
   message 129 serious (fatal)      the assemble() check
+System symbols (getfld.py, CPLTSY boxes 32-41, p.75: "If MBSPEC altered it:
+error 129"), measured 2026-11-12 the same way:
+  MBSPEC not called for $          $E0P, $C0MM (each refused with 56)
+  129 not given for $              $E0P, $C0MM
+Secondary ops (pass1.py _modifier, p.22 boxes 24-26), the same way:
+  MBSPEC not called for a secondary  (V+1), RD(SE0P) (each refused with 91)
+  p.22's first-character block       (5EOP) only (it becomes SEOP, 129)
+    not tested
 """
 import os
 import sys
@@ -45,7 +53,10 @@ def check(label, got, want):
 
 
 def one(op, addr="5"):
-    r = strap2.compile_cards(["         SLC,(8)100.0", f"         {op},{addr}", "         END"])
+    try:
+        r = strap2.compile_cards(["         SLC,(8)100.0", f"         {op},{addr}", "         END"])
+    except strap2.StrapError as x:
+        return str(x).split(":")[0], None
     return [n for n, *_ in r.msg.items], r.image.words.get(0o100, 0)
 
 
@@ -66,6 +77,28 @@ try:
 except strap2.StrapError:
     went = "refused"
 check("message 129 is not serious (N28-1081 p.13): the deck assembles", went, "assembled")
+
+# CPLTSY, p.75 boxes 32-41: a system symbol not found goes to MBSPEC; no help
+# is error 56; an altered one is error 129.
+def sysym(name):
+    try:
+        r = strap2.compile_cards(["         SLC,(8)100.0", f"         L,${name}", "         END"])
+    except strap2.StrapError as x:
+        return str(x).split(":")[0], None
+    return [n for n, *_ in r.msg.items], r.image.words.get(0o100, 0)
+
+
+for bad, good in (("E0P", "EOP"), ("C0MM", "COMM")):
+    check(f"${bad} is ${good}, with message 129", sysym(bad), ([129], sysym(good)[1]))
+check("$QQQ: no help, message 56", sysym("QQQ")[0], "message 56")
+check("$X5: a register, no message", sysym("X5")[0], [])
+# Boxes 24-26 [22]: a secondary op, "MBSPEC may help".
+check("+(BU,3)(V+1) is (V+I), with message 129",
+      one("+(BU,3)(V+1)", "100.0"), ([129], one("+(BU,3)(V+I)", "100.0")[1]))
+check("RD(SE0P) is RD(SEOP), with message 129",
+      one("RD(SE0P)", "$X2,200"), ([129], one("RD(SEOP)", "$X2,200")[1]))
+check("+(BU,3)(5EOP): 5 is no secondary's first character (p.22), so no help: 91",
+      one("+(BU,3)(5EOP)", "100.0")[0], "message 91")
 
 print("ALL CHECKS PASSED" if not fails else f"{fails} FAILED")
 sys.exit(1 if fails else 0)

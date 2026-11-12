@@ -17,6 +17,9 @@ DIGIT = set("0123456789")
 ALNUM = ALPHA | DIGIT
 
 
+from .optable import mbspec      # noqa: E402
+
+
 class FieldError(Exception):
     def __init__(self, number, text):
         super().__init__(f"{number}: {text}")
@@ -24,10 +27,11 @@ class FieldError(Exception):
 
 
 class Getfld:
-    def __init__(self, g, sysym, tail=None):
+    def __init__(self, g, sysym, tail=None, changed=None):
         self.g = g
         self.sysym = sysym      # name -> (value, dds) or None; CPLTSY's BOPSER
         self.tail = tail        # TAILOR's prefix, or None
+        self.changed = changed  # (written, used): MBSPEC changed a system symbol
         self.radix = 0          # Gfsrad: 8 bits, zero means 10 (p.70)
         self.gp_radix = 0       # a DD's radix for its g.p. values (C28 p.30 c)
 
@@ -317,6 +321,15 @@ class Getfld:
                 x.ops.append(("+", first + 1))
                 return
             found = self.sysym(text)
+            if found is None:
+                # Boxes 32-41 [75]: not found, MBSPEC [92-93]; no help, 56;
+                # MBSPEC altered it, 129 (p.178).
+                for test in mbspec(text):
+                    found = self.sysym(test)
+                    if found is not None:
+                        if self.changed:
+                            self.changed(text, test)
+                        break
             if found is None:
                 raise FieldError(56, f"NONEXISTENT SYSTEM SYMBOL ${text}")
             x.data.append(Datum("sys", found[0], found[1]))

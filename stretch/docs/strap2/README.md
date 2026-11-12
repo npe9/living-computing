@@ -87,11 +87,14 @@ substituted, in p.93's order (SXXXXXXX, XSXXXXXX, SSXXXXXX, ...: a binary count,
 first character lowest). The first legal one is used and message 129 is given;
 it is not serious (N28-1081 p.13), so the deck assembles. CHOSEN: the first
 character is tried too, as p.93's list shows, though box 2's text says "the
-second or any subsequent". `tests/check_strap2_mbspec.py`.
+second or any subsequent". The same help is given to a `$` system symbol
+before error 56 (p.75), and to a secondary op whose first character is in
+p.22's block of legal secondary first characters (C, S, V), before error 91.
+`tests/check_strap2_mbspec.py`.
 
 **Not yet written:** PUNREL after absolute output; an instruction in a
 named common; a COMBLOCK without a name (p.186 gives a message with no number);
-a low SLC under PUNFUL; MBSPEC on a secondary op or a system symbol; the coprocessor;
+a low SLC under PUNFUL; the coprocessor;
 DUPLI; subscripts with dimensions; the system symbols' register-length
 dds; PRNTALL's whole-table print; `$INF` (N28-1081 page 20 adds it, 12, infinity);
 the listing's page headings after the first; the field number in an error record

@@ -21,6 +21,7 @@ from .dnum import Number, Dbl, Scan, store_entry
 
 SECONDARY = set(optable._a.PROGRESSIVE_SECONDARY_OP) | set(optable._a.CW_SECONDARY) | {"SEOP"}
 MODES = set(MODE_CODE)
+SECONDARY_FIRST = {s[0] for s in SECONDARY}    # p.22's question character block
 
 
 class Messages:
@@ -48,7 +49,7 @@ class Pass1:
         self.val = Value(self.st, self.msg)
         self.tails = {}         # TAILOR: text -> number, p.125
         self.levels = [0] * 11  # 1..10
-        self.getfld = Getfld(self.g, self._sysym, self._tail_on)
+        self.getfld = Getfld(self.g, self._sysym, self._tail_on, self._sysym_changed)
         self.block_named = False
         self.first_of_block = True
         self.block_symbol_done = False
@@ -59,6 +60,10 @@ class Pass1:
 
     def _sysym(self, name):
         return optable.system_symbol(name)
+
+    def _sysym_changed(self, written, used):
+        """C22-6729 p.75 box 41: MBSPEC altered a system symbol, error 129."""
+        self.msg.add(129, f"SS ${written} CHANGED INTO ${used}", self.unit, fatal=False)
 
     # -- TAILOR, pp.74-75, 123-125 ------------------------------------------------
     def _tail_number(self, text):
@@ -197,6 +202,16 @@ class Pass1:
         while g.ch is not None and g.ch not in ",)":
             tok += g.ch.upper()
             g.next()
+        if tok[:1] in SECONDARY_FIRST and tok not in SECONDARY and tok not in MODES:
+            # Boxes 24-26 [22]: when "the character after the ( is one of ...
+            # the legal first characters for a secondary op", MAIN looks the
+            # rest up in the secondary op table: "Once again MBSPEC may be
+            # called upon to help."  Altered: error 129 (p.178, OP OR SS).
+            for test in optable.mbspec(tok):
+                if test in SECONDARY:
+                    self.msg.add(129, f"SECONDARY OP {tok} CHANGED INTO {test}", unit, fatal=False)
+                    tok = test
+                    break
         if tok in SECONDARY or (self.op == "CW" and tok):
             self.modifiers.append(tok)
             if g.ch != ")":
