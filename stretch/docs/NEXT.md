@@ -23,11 +23,14 @@ accumulate.
 
 
 
-## A FORTRAN DECK THROUGH MCP'S LOADER -- next, 2026-11-11
+## THE SUBPROGRAM END ON MCP'S LOADER -- next, 2026-11-12
 
-PUNREL stages 1-3 are written (docs/strap2/README.md); p.184's example
-assembles. A loader run of a FORTRAN deck, with its commons relocated,
-needs what the lost BSS processor leaves: KSILO+2 holding BSS and the relocation table at KSILO+9.32
+A FORTRAN deck with commons now loads as a BSS job on a reconstructed
+BSS table (tests/gen_loader_deck_tb.py bss). Next: an exact card count,
+so ARNRM2 runs -- the transfer vector moved to origin + 1.0, SRNXAD zero,
+the branch address from KSILO+10 (bss_loader_spec.md 5.4; printed
+pp.326-327, near the lost p.329). Earlier note, kept: a loader run needs
+what the lost BSS processor leaves: KSILO+2 holding BSS and the relocation table at KSILO+9.32
 (bss_loader_spec.md 5.4); build that as labelled scaffolding. Open from
 p.184's example: its `DD(BU), 1.0` (length of the transfer vector) draws
 message 45 here (a decimal fraction in BU without an (Fn) entry mode,

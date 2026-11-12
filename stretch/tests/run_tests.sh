@@ -13856,10 +13856,13 @@ run "MCP's binary loader relocates a PUNREL deck STRAP II punched" ./run_loader_
 # Its FORTRAN program, common definition and FORTRAN branch cards: code 4 outside
 # BSS, as ATBL and AFPCRD say.  Injections in gen_loader_deck_tb.py's header.
 run "MCP's binary loader takes STRAP II's FORTRAN cards as BSS-only (code 4)" ./run_loader_deck.sh StretchLoaderFortTb fortran
+# A FORTRAN subprogram with named and blank commons, as a BSS job (the BSS
+# processor's table reconstructed).  Injections in gen_loader_deck_tb.py's header.
+run "MCP's binary loader loads a STRAP II FORTRAN deck, commons relocated" ./run_loader_deck.sh StretchLoaderBssTb bss
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
-rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchXmitTb.bsv "$BSV_DIR"/StretchLvsTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv "$BSV_DIR"/StretchLoaderDeckTb.bsv "$BSV_DIR"/StretchLoaderRelTb.bsv "$BSV_DIR"/StretchLoaderFortTb.bsv
+rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchXmitTb.bsv "$BSV_DIR"/StretchLvsTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv "$BSV_DIR"/StretchLoaderDeckTb.bsv "$BSV_DIR"/StretchLoaderRelTb.bsv "$BSV_DIR"/StretchLoaderFortTb.bsv "$BSV_DIR"/StretchLoaderBssTb.bsv
 rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 

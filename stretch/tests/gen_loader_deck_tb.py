@@ -92,6 +92,27 @@ MEASURED, in strap/strap2/punch.py, restored by copy and cmp:
     (5,6,7,8,9) passes -- outside BSS the loader does not tell the three
     apart.  check_strap2_punch.py R10-R12 pin each class.
 
+MODE "bss" (argv[2]): a FORTRAN subprogram STRAP II punched -- program
+card, common definition card, relocatable instruction and data cards,
+three named commons and blank common, FORTRAN branch card -- loaded as a
+BSS job, with the BSS processor's table RECONSTRUCTED by the driver (see
+BSS_SOURCE's comment).  Core must equal what the same program assembled
+absolute, the program at 120000 and each common at its table origin, loads
+through the absolute path (strap2.punch.load).
+FIRST RUN, 2026-11-12: 10 checks pass, PC at DONE, 31,707 cycles; the run
+before that, comparing with the image's written mask, failed only the half
+word the punch rounds over before XW (zeros on the card, the oracle's
+sentinel), which is why the oracle is the absolute deck's load.
+MEASURED, restored by copy and cmp:
+  - i one bit wider (punch.py): 5 fail, the instruction words 120000-120004
+    (every relocation after the first named-common code is misread).
+  - blank common's code without its 1 0 tail: 1 fails, loaded_120002 (XW).
+  - data card loading base always 0: 6 fail, the commons' data landing on
+    the program (120000-01) and the four common words left sentinel.
+  - CONTROL, in the reconstructed table only: the named commons' origins
+    rotated -- 7 fail, every reference to and word of a named common.  So
+    the loader reads the planted table, as pp.324-326 were read.
+
 ITS OWN BUILD DIRECTORIES (build-loader, simbuild-loader): built in the
 shared bsv/build without -show-schedule, it left mkStretchCore up to date
 with no .sched, and the smoke test's schedule check then failed.
@@ -170,6 +191,44 @@ FORTRAN_SOURCE = [
     "        FEND",
 ]
 
+# THE BSS DECK (mode bss): a FORTRAN subprogram with three named commons and
+# blank common, loaded as a BSS job.  RECONSTRUCTION, scaffolding for the
+# lost BSS processor (C28-6379 pp.7-14; nothing of it in the listing): the
+# driver plants what the loader reads from it (bss_loader_spec.md 5.4, from
+# printed pp.324-326 as read) -- KSILO+2 holding BSS (ABSSID's 18 bits, p.324
+# lines 13-15), KSILO+9's value field the blank common origin (p.325 line 23),
+# KSILO+9.32 the relocation table's address (p.324 line 17), and the table:
+# word 0 bits 28-45 the card count, bit 63 0 (not library); word 1's value
+# field the program origin (line 18); word 2 bits 0-18 the number of named
+# commons (line 20); the half-word at 2.0 + k.32 named common k's origin
+# (p.325 lines 25-31, p.326 lines 18-25).  CHOSEN: the card count is larger
+# than the deck, so the subprogram-end path (ARNRM2, p.326 l.44 on, near the
+# lost p.329) is not run.
+BSS_BODY = [
+    "START   L,X2",
+    "        LVI,$2,Y",
+    "        XW,X3,2,Z",
+    "        L,A",
+    "        B,START",
+    "A       DD(BU,64),(8)7070",
+    "LAST    SYN,$",
+]
+BSS_COMMONS = [("", 0o121300, ["Z       DR(BU,64),2", "CL      SYN,$"]),
+               ("BL1", 0o121000, ["Y       DD(BU,64),(8)1111"]),
+               ("BL2", 0o121100, ["X2      DD(BU,64),(8)2222", "        DD(BU,64),(8)2223"]),
+               ("BL3", 0o121200, ["X3      DD(BU,64),(8)3333"])]
+BSS_SOURCE = (["        PUNFPC,LAST,CL", "KRUM    ENTER,START", "        PUNCDC",
+               "BL1     COMBLOCK,1", "BL2     COMBLOCK,2", "BL3     COMBLOCK,1",
+               "        PUNREL"] + BSS_BODY
+              + sum([["        SLCRCOM,%s" % n] + body for n, _a, body in BSS_COMMONS], [])
+              + ["        FEND"])
+# The program at 120000 and each common at its origin, assembled absolute:
+# what core must hold after the load.
+BSS_ABSOLUTE = (["        SLC,(8)120000.0"] + BSS_BODY
+                + sum([["        SLC,(8)%o.0" % at] + body for _n, at, body in BSS_COMMONS], [])
+                + ["        END,START"])
+BSS_TABLE = 0o107000
+
 
 def card(name, stmt):
     return " " + name.ljust(8) + stmt
@@ -198,8 +257,8 @@ def card_words(cols):
 def main():
     module = sys.argv[1]
     mode = sys.argv[2] if len(sys.argv) > 2 else ""
-    if mode not in ("", "rel", "fortran"):
-        raise SystemExit("mode: none, rel or fortran, not %r" % mode)
+    if mode not in ("", "rel", "fortran", "bss"):
+        raise SystemExit("mode: none, rel, fortran or bss, not %r" % mode)
     pages = [(mcp_image.DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
              for n in range(99, 335)
              if n not in mcp_image.NO_DECK_PAGES | mcp_image.MISSING_PAGES]
@@ -215,6 +274,13 @@ def main():
         imgs = [p2.punch._encode(c, 1, 0o1234) for c in fc]
         kinds = [c.kind for c in fc]
         expect = None
+    elif mode == "bss":
+        p2 = compile_lines(BSS_SOURCE)
+        if p2.punch.unwritten:
+            raise SystemExit("the punch did not write the deck: %s" % p2.punch.unwritten)
+        imgs = p2.punch.deck_images(clock=0o1234)
+        kinds = [how if how == "text" else c.kind for how, c in p2.punch.deck()]
+        expect = compile_lines(BSS_ABSOLUTE)
     elif mode == "rel":
         p2 = compile_lines(REL_SOURCE)
         if p2.punch.unwritten:
@@ -274,6 +340,20 @@ def main():
         words[w] = v
     image.words = words
     image.end_pc = d.end_pc
+    if mode == "bss":
+        ks = S["KSILO"] // 64
+        words[ks + 2] = image.words[S["ABSSID"] // 64]
+        words[ks + 9] = ((0o121300 * 64) << 40) | ((BSS_TABLE * 64) << 8)
+        t = {0: 0o7777 << (63 - 45),                   # the card count
+             1: (0o120000 * 64) << 40,                 # the program origin
+             2: (3 << 45)}                             # three named commons
+        for k, (_n, at, _b) in enumerate(BSS_COMMONS[1:], 1):
+            w, half = divmod(2 * 2 + k, 2)
+            t[w] = t.get(w, 0) | ((at * 64) << (40 - 32 * half))
+        for w, v in t.items():
+            if BSS_TABLE + w in words:
+                raise SystemExit("the table overlaps the image")
+            words[BSS_TABLE + w] = v
 
     # Every word the deck touches starts as SENTINEL, so a bit the deck
     # does not punch must come through the load unchanged.  Without it
@@ -294,6 +374,19 @@ def main():
                                               module + ".hex")))
         return
     im = expect.image
+    if mode == "bss":
+        # What the absolute assembly's own deck loads (punch.load, the
+        # absolute path that mode "" runs on IBM's loader): the punch puts a
+        # half-word rounded over before a full-word instruction on the card as
+        # zeros, which the image's written mask leaves out.
+        from strap2.punch import load as abs_load
+        mem, _b = abs_load(expect.punch.cards)
+        im = type("Loaded", (), {})()
+        im._written, im._fill, im.words = {}, {}, {}
+        for b, bit in mem.items():
+            w, k = divmod(b, 64)
+            im._written[w] = im._written.get(w, 0) | (1 << (63 - k))
+            im.words[w] = im.words.get(w, 0) | (bit << (63 - k))
     touched = sorted(set(w for w, m in im._written.items() if m)
                      | set(w for w, m in im._fill.items() if m))
     full = (1 << 64) - 1
@@ -306,7 +399,7 @@ def main():
         exp = (im.words.get(w, 0) & wr) | (SENTINEL & ~(wr | fl) & full)
         kind = "loaded" if wr == full else "zeroed" if fl == full else "partial"
         checks.append(("%s_%o" % (kind, w), str(w), exp))
-    if mode != "rel":
+    if mode not in ("rel", "bss"):
         last = len(imgs) - 1
         ba = d.symtab["BA%d" % last]
         # VF,A is the half word at BA: "VF,A half-word branch address" (6728-0
