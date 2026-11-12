@@ -75,6 +75,7 @@ class Pass2:
         self.slcrcom_reg = {}   # SLCRCOM unit -> the region it sets
         self.comblocks = {}     # COMBLOCK unit -> its common number
         self.common_images = {} # region -> what is assembled in that common
+        self.ddi_values = {}    # DDI unit -> its 24-bit value (ddi_a)
         self.common_of = {}     # COMBLOCK name's f -> its common number
         self.reloc = {}         # unit -> [(bit in its binary, "L" or "R")]
         self.spnus = False      # NSPRES, p.35: SPNUS seen
@@ -199,7 +200,7 @@ class Pass2:
         u = self.units
         if u.get(unit, ZIEXT2):
             return 0
-        if e.name in ("DD", "DDI", "DR", "DRZ"):
+        if e.name in ("DD", "DR", "DRZ"):
             if u.get(unit, ZIFDSF):
                 mode, _f, _b = dds_parts(u.get(unit, ZIDDS))
                 if mode in ("N", "U"):
@@ -315,7 +316,10 @@ class Pass2:
             return
         if u.get(unit, ZIEXT2):
             return
-        if name in ("DD", "DDI"):
+        if name == "DDI":
+            self.ddi_a(unit, f)
+            return
+        if name == "DD":
             self.advance_dd(unit)
             return
         if name in ("DR", "DRZ"):
@@ -323,6 +327,64 @@ class Pass2:
             return
         self.decode(unit, final=False)
         self.abs += ENTRIES[u.get(unit, ZIOPX)].length
+
+    def ddi_a(self, unit, f):
+        """DDI (C28-6129 printed pp.16-17, read in the ink 2026-11-12; C22-6729
+        p.34): "purely definitive in character; it compiles no space or binary
+        output in storage."  The datum is converted "according to the use mode"
+        -- "always converted to binary, never to decimal" -- and "inserted,
+        right justified, in a 24 bit field in the STRAP symbol table", high
+        bits lost; "the field length specified in the dds is ignored at this
+        point".  The name keeps the dds, a null field length being 24.  An
+        immediate instruction then takes the dds's length from the right end
+        (INSERT, as for any symbol with a dds).
+        Fails loud: a floating-point use mode ("not acceptable", no message
+        number printed); a negative datum (the pages show none); a datum
+        VALUE cannot convert yet (message 132, CANNOT EVALUATE DDI)."""
+        u = self.units
+        pu = self.punch
+        if not f:
+            return
+        mode, fl, bs = dds_parts(u.get(unit, ZIDDS)) if u.get(unit, ZIFDSF) else ("BU", 0, 8)
+        if mode not in ("B", "BU", "D", "DU"):
+            pu.unwritten = pu.unwritten or (
+                f"a DDI in use mode {mode} (C28-6129 p.17: floating point modes are "
+                "not acceptable; the message is not printed)")
+            return
+        text = self.statement_text(unit)
+        datum = text.split(")", 1)[1] if ")" in text.split(",", 1)[0] else text
+        if "-" in datum.split(",", 1)[-1]:
+            pu.unwritten = pu.unwritten or "a negative DDI datum (C28-6129 pp.16-17 show none)"
+            return
+        keep_dds, keep_flag = u.get(unit, ZIDDS), u.get(unit, ZIFDSF)
+        keep = (self.image, self.val.abs, self.val.sym, getattr(self, "running", None))
+        scratch = _a.Image()
+        self.image = scratch
+        self.val.abs, self.val.sym, self.running = 0, 0, 0
+        u.put(unit, ZIDDS, dds13("BU", 24, bs))
+        u.put(unit, ZIFDSF, 1)
+        try:
+            self.dd_b(unit, 0)
+            ok = True
+        except (Unresolved, _a.AssemblerError):
+            ok = False
+        finally:
+            self.image, self.val.abs, self.val.sym, running = keep
+            if running is None:
+                del self.running            # Pass 2a: 2b sets it
+            else:
+                self.running = running
+            u.put(unit, ZIDDS, keep_dds)
+            u.put(unit, ZIFDSF, keep_flag)
+        if not ok:
+            self.msg.add(132, "CANNOT EVALUATE DDI", unit, fatal=False)
+            pu.unwritten = pu.unwritten or "a DDI that cannot be evaluated (message 132)"
+            return
+        value = scratch.words.get(0, 0) >> 40
+        self.val._enter(f, 0, value, 0, False)
+        self.val._lc[f] = 0                 # an integer: never relocated
+        self.st.put(f, "ZDDS", dds13(mode, fl or 24, bs))
+        self.ddi_values[unit] = value
 
     def p1_named(self, unit):
         if not self.units.get(unit, ZIFNME):
@@ -710,6 +772,16 @@ class Pass2:
     def i_SIMAD(self, word, v, e, dds):
         # p.144, and the Reference Manual p.56's left-justified immediate.
         length = dds[1] or 64
+        bs = dds[2] or 8
+        if dds[0] in ("B", "D") and not v.B and length <= 24 and bs < length:
+            # A signed use mode: the magnitude, then a sign byte of BS bits,
+            # as a signed VFL field is (C28-6129 p.29: the sign bit is S1,
+            # S2, S4 for BS 1-3, S10 -- octal, the 8 bit -- for BS 4 and up).
+            # C28-6129 p.17's example: LI(D, 8, 4), -IDATA with IDATA 4
+            # compiles 0100 1000 left justified.
+            sign = (8 if bs >= 4 else 1 << (bs - 1)) if v.I < 0 else 0
+            field = ((abs(v.I) << bs) | sign) & ((1 << length) - 1)
+            return self._idx(put(word, 0, 24, field << (24 - length)), v)
         if v.B and not v.I:
             a = v.B
         elif length <= 24:
@@ -1119,7 +1191,7 @@ class Pass2:
         u = self.units
         e = self._entry(unit)
         name = e.name
-        if name == "SYN":
+        if name in ("SYN", "DDI"):
             return pending
         at, absc, symc = self.location_2a(unit)
         if at is None:

@@ -38,6 +38,15 @@ Measured 2026-11-12, pass1.py, restored by copy and cmp:
   a bit-style length's bits dropped only "DD(BU,.40)" (with 1.0 the integer
                                    part 0 encodes 64 and nothing failed, so
                                    the check uses .40)
+  DDI (pass2.py ddi_a, i_SIMAD), measured 2026-11-12:
+  the DDI's count not zeroed       only the PUNREL check
+  a DDI that takes space           both LI checks, the space check, the
+                                   signed check, the PUNREL check
+  a signed immediate in two's      only "LI(D, 8, 4), -IDATA"
+    complement
+  floating point accepted          only the refusal check
+  the whole change undone (DDI     every DDI check but "LI, IDATA", which
+    assembled as a DD)             the old code passes by coincidence
 """
 import os
 import sys
@@ -273,6 +282,31 @@ got = msgs("DD(BU,.40),5")
 check("DD(BU,.40): message 38, and the combined value, 40 bits, is the length (B at 100.40)",
       got[:2], ([38], 0o100 * 64 + 40))
 check("DD(BU,64,.8): message 38 for a bit-style byte size", msgs("DD(BU,64,.8),5")[0], [38])
+
+# -- DDI: C28-6129 printed pp.16-17, read in the ink 2026-11-12 -------------
+# "IDATA DDI(DU, 4, 4), 4 / LI, IDATA": the symbol table holds ...0100; LI's
+# address field 0100 then zeros; LI(DU, 8, 4) gives 00000100...; LI(D, 8, 4),
+# -IDATA gives 01001000....  "purely definitive ... no space or binary output".
+def ddi(*body):
+    r = strap2.compile_cards(["         SLC,(8)100.0", " IDATA   DDI(DU, 4, 4), 4"]
+                             + list(body) + ["         END"])
+    return r, r.image.words.get(0o100, 0) >> 40
+r, a = ddi("         LI, IDATA")
+check("p.17: the symbol table holds 4, right justified in 24 bits",
+      r.val.symbol_value(r.st.search("IDATA"))[:2], (0, 4))
+check("p.17: LI, IDATA compiles 0100 left justified", a, 0b0100 << 20)
+check("p.17: DDI compiles no space: LI is the only word, at 100",
+      sorted(r.image.words), [0o100])
+check("p.17: LI(DU, 8, 4), IDATA compiles 00000100", ddi("         LI(DU, 8, 4), IDATA")[1], 0b00000100 << 16)
+check("p.17: LI(D, 8, 4), -IDATA compiles 01001000 (magnitude, then the sign byte)",
+      ddi("         LI(D, 8, 4), -IDATA")[1], 0b01001000 << 16)
+r = strap2.compile_cards(["         PUNREL", " K       DDI(BU,24), (8)7777", "         LI,K",
+                          "         END"])
+check("a DDI's value is an integer: under PUNREL it is not relocated",
+      [c.codes for c in r.punch.cards if c.kind == "rinstr"], ["00"])
+r = strap2.compile_cards(["         SLC,(8)100.0", " F       DDI(N), 5", "         END"])
+check("p.17: a floating point use mode is not acceptable: the deck refuses",
+      bool(r.punch.unwritten), True)
 
 print("ALL CHECKS PASSED" if not fails else f"{fails} FAILED")
 sys.exit(1 if fails else 0)

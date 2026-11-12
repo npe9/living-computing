@@ -74,7 +74,14 @@ named commons (6729 p.188; the loader, printed pp.324-325). p.184's example
 program assembles (`check_strap2_punch.py` R16-R17). An SLC leaves the common
 (CHOSEN).
 
-**Not yet written:** DDI; PUNREL after absolute output; an instruction in a
+**DDI is written** (C28-6129 pp.16-17): no space; the datum converted to
+binary, right-justified in 24 bits in the symbol table, the dds kept (a null
+length 24); an immediate instruction takes the length from the right end,
+left-justified. A signed use mode in an immediate field is the magnitude and a
+sign byte (p.17's `LI(D, 8, 4), -IDATA` = 01001000). Refused: floating-point
+modes, a negative datum (the pages show none), message 132.
+
+**Not yet written:** PUNREL after absolute output; an instruction in a
 named common; a COMBLOCK without a name (p.186 gives a message with no number);
 a low SLC under PUNFUL; the MIBA and MBSPEC corrections; the coprocessor;
 DUPLI; subscripts with dimensions; the system symbols' register-length
