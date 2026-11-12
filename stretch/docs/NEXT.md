@@ -41,6 +41,16 @@ Open alongside: the LIM card under PUNREL is punched as computed and means
 nothing to a relocated load -- the guide does not say whether PUNREL
 punches one; and PUNREL after absolute output, refused.
 
+## AFTER FORTRAN IV: SCIENTIFIC WORKLOADS -- planned 2026-11-12
+
+The owner's addition: run period scientific FORTRAN on the model. The
+workloads are a shock tube, neutron diffusion, Monte Carlo transport, EOS
+tables, N-body and dense linear algebra. The full form runs a 1962 job end to
+end under MCP. Plan, dependencies and rules: docs/scientific_workloads.md.
+It starts after FORTRAN IV compiles. First, before writing any program,
+search for surviving 7030 programs from the laboratories. The cross-machine
+comparison is research only.
+
 ## A FIELD LENGTH OVER 64 -- closed 2026-11-12
 
 strap2 now gives message 36, FIELD LENGTH GREATER THAN 64 (C22-6729
