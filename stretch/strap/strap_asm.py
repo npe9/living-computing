@@ -287,6 +287,17 @@ IO_FUNCTION_OPS = {
     # data-description mode 'SEOP'" because REW was not here and
     # "(SEOP)" fell through to the dds parser.
     'REW':  0o136,   # Rewind, IBM 729 IV; Reference Manual p.132
+    # UNLOAD joined on 2026-11-12.  Its second leg is NOT verbatim: C28-6129
+    # Appendix B says "UNLOAD Unload", and the Reference Manual p.132 table
+    # says "137 | Rewind and Unload".  What admits it is the third leg, which
+    # is stronger than a listing's usage: MCP printed p.196 line 36 is STRAP
+    # II's OWN output for the statement "K FIRE UNLOAD(SEOP),0.0($14)", and
+    # its machine-code column prints 000000.00 8E 000137.15 00 -- IBM's
+    # assembler encoding this mnemonic as code 137 under CTL(SEOP).  That is
+    # an encoding read from the assembler, not a meaning inferred from use
+    # (AGENTS.md rule 4).  The other Appendix B names stay out until a listing
+    # prints one.
+    'UNLOAD': 0o137,  # Unload, IBM 729 IV; MCP printed p.196 line 36
 }
 
 # A NOTE ON 0o177, because the collision is real and deliberate.  The

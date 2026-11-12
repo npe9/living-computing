@@ -209,6 +209,12 @@ two is unknown and is the thread to pull.
 > standard is unchanged: Appendix B's name plus the p.132 table plus a
 > listing that prints the code.
 >
+> **UNLOAD joined 2026-11-12** (0o137). Its p.132 name is not verbatim
+> ("Rewind and Unload"), but its listing leg is STRAP II's own encoding
+> of the mnemonic: MCP printed p.196 line 36 is `K FIRE
+> UNLOAD(SEOP),0.0($14)` with machine code `000000.00 8E 000137.15 00`.
+> The p.196 deck now writes the printed form. Seventeen remain absent.
+>
 > **AND IT SETTLED printed p.156's control code retroactively.** The
 > p.132 table in `docs/exchange_and_io.md` reads "117 | Write Tape
 > Mark (writes the standard tape mark 0001111)", so p.156's

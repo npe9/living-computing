@@ -303,6 +303,10 @@
 !     table gives as "Rewind and Unload".  See THE UNLOAD PROBLEM.
 !
 ! ---------------------------------------------------------------
+! >>> THE UNLOAD PROBLEM -- RESOLVED 2026-11-12: the deck now writes
+! >>> the printed UNLOAD(SEOP),0.0($14).  This row's machine-code column is
+! >>> STRAP II's own encoding of the mnemonic, so it admitted UNLOAD = 0o137
+! >>> (strap_asm.py IO_FUNCTION_OPS).  The history below is kept. <<<
 ! >>> THE UNLOAD PROBLEM -- A SUBSTITUTION, LABELLED LOUDLY <<<
 ! ---------------------------------------------------------------
 ! LINE 36 PRINTS:
@@ -636,7 +640,7 @@ KUNLD1  BZB,.26($8),$+1.32           ! line 27   printed "K UNLD1"; -TEST IF PRO
 ! >>> mnemonic").  The CTL form below compiles the printed word
 ! >>> exactly; see THE UNLOAD PROBLEM above.  printed p.165 did the
 ! >>> same for REW before REW was admitted.
-KFIRE   CTL(SEOP),0.0($14),(8)137.   ! line 36   printed "K FIRE UNLOAD(SEOP),0.0($14)"
+KFIRE   UNLOAD(SEOP),0.0($14)        ! line 36   as printed (UNLOAD admitted 2026-11-12)
         LVI,1,$+1.0                  ! line 37   one card with line 38
         B,MIOREJ                     ! line 38   printed "M IO REJ"
         SIC,KEOPR                    ! line 39   printed "K EOP R"; one card with line 40
@@ -748,7 +752,7 @@ KNEWTP  B,KSUPP                      ! line 48   printed "K NEW TP"
 !CHECK 221754.40 | 000000.30 00 | line 33 CNOP -- the counter is at .40 here, so the CNOP EMITS a half word and prints one; printed p.192 line 14 is the opposite case, a CNOP at a word boundary that prints nothing at all
 !CHECK 221755.00 | 221756.00 10 | line 34 LX,0,$+1.0 -- $+1.0 from 221755.00 is 221756.00; 0o00 is 2J for J=0 and the byte is the bare LX opcode, NOT 1C -- line 35 is the indexed case
 !CHECK 221755.40 | 000004.01 1C | line 35 SX,0,S IO INS($12) -- the landed SIOINS at 4.0; 0o01 is 2J+1 for J=0, which is the store bit, and byte 1C is the same 10 as line 34 OR the $12 index
-!CHECK 221756.00 | 000000.00 8E 000137.15 00 | line 36 K FIRE -- THE PAGE PRINTS "UNLOAD(SEOP),0.0($14)" AND strap_asm REFUSES IT; the deck writes CTL(SEOP),0.0($14),(8)137. which compiles this exact word.  8E's low nibble is the $14 index, .15 is the CTLSEOP code, 0o137 is the Rewind-and-Unload control code of Reference Manual p.132.  See THE UNLOAD PROBLEM
+!CHECK 221756.00 | 000000.00 8E 000137.15 00 | line 36 K FIRE UNLOAD(SEOP),0.0($14) -- AS PRINTED since 2026-11-12, when this row admitted UNLOAD = 0o137 (strap_asm.IO_FUNCTION_OPS); until then the deck wrote CTL(SEOP),0.0($14),(8)137., which compiles the same word.  8E's low nibble is the $14 index, .15 is the CTLSEOP code, 0o137 is the Rewind-and-Unload control code of Reference Manual p.132.  See THE UNLOAD PROBLEM
 !CHECK 221757.00 | 221760.03 01 | line 37 LVI,1,$+1.0 -- $+1.0 from 221757.00 is 221760.00; 0o03 is 2J+1 for J=1
 !CHECK 221757.40 | 221261.10 00 | line 38 B,M IO REJ -- the landed MIOREJ at 221261.0; bit offset unobservable
 !CHECK 221760.00 | 221354.40 80 | line 39 SIC,K EOP R -- a SIC reads every bit, so this CHECKS the landed KEOPR at 221354.40
