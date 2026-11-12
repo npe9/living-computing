@@ -35,7 +35,21 @@ processor leaves: KSILO+2 holding BSS and the relocation table at KSILO+9.32
 (bss_loader_spec.md 5.4); build that as labelled scaffolding. Open from
 p.184's example: its `DD(BU), 1.0` (length of the transfer vector) draws
 message 45 here (a decimal fraction in BU without an (Fn) entry mode,
-C28-6129 p.29) -- read what STRAP II made of it. A FORTRAN deck's first
+C28-6129 p.29) -- read what STRAP II made of it.  Read 2026-11-12, in the
+ink: C22-6729 draws no such test.  MQDD/MQDNUM/DNUM (pp.98-113) keep every
+datum as a float and give no fraction message, and OUTPUT (pp.158-159)
+says only "Fixed point: sign byte separate".  So message 45 rests on
+C28-6129 p.29 alone ("A decimal fraction must have a controlling (Fn) entry
+mode"; BU's numerical entry is "exactly the same", p.29).  Strap2 counts a
+written point as a fraction, so `1.0` draws it and `1` does not.
+None of the readings gives the loader what it wants: 6751 p.31 says "the first
+18 bits of cell zero must contain an integer" (bss_loader_spec.md C10).
+  - The integer 1 in BU's implied 64 bits sits at bit 63.
+  - An unnormalized float does not hold 1 in bits 0-17 either.
+  - Only an address 1.0, placed "in the first part of the 64-bit field" as
+    p.30 example b places SAM + 4, holds 1 in bits 0-17.  That is a candidate,
+    not a finding: p.30 places an address that way only after a (.n) entry.
+Left as message 45 until a source decides. A FORTRAN deck's first
 control card is still `B TYPE,GO`; BSS's type card is not settled.
 Open alongside: the LIM card under PUNREL is punched as computed and means
 nothing to a relocated load -- the guide does not say whether PUNREL
