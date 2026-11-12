@@ -48,8 +48,15 @@ p.176, MAIN, read in the ink), and the length is truncated (p.137 box 20)
 in the dds's six-bit field: 72 becomes 8 (READ from C28-6129 p.33's use
 of "truncated"; the width is not printed for this case).  Checked in
 tests/check_strap2_dd.py.  strap_asm (scaffolding) still gives no message.
-Open: message 37 (byte size over 8) and 38 (a bit-style number in a dds)
-are not written.
+Messages 37 (byte size over 8) and 38 (a bit-style number in a dds) are
+written too (same page). 38 uses the combined value (p.137: "Bit and
+integer values are combined"). After 37 the deck refuses: box 29's
+truncation is not printed, and 9-15 fit the four-bit byte-size field.
+In CC entry mode a byte size up to 12 takes no message 37 (C28-6129
+p.30: CC implies BS = 12; MCP writes (CC*)DD(BU,,12)): READ, found when
+the first version refused six MCP decks.
+NOT WRITTEN: box 20/29's between-passes test of a symbolic length or byte
+size.
 
 ## I DROPPED A CONNECTIVE'S OFFSET FIELD THIS SESSION -- fixed same day
 

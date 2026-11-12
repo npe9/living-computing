@@ -86,6 +86,9 @@ class Pass2:
         self.uiter(first=True)
         self.pass_a()
         self.punch.ncommon = len(self.comblocks)
+        if any(n == 37 for n, *_ in self.msg.items):
+            self.punch.unwritten = ("a byte size over 8 (message 37): its truncation "
+                                    "is not printed (C22-6729 p.137 box 29)")
         self.uiter(first=False)
         self.pass_b()
         self.lists = self.nundsy()      # OUTPUT's end, p.157

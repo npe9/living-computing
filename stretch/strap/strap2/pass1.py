@@ -228,6 +228,11 @@ class Pass1:
             self.mem.put_str(self.bcfldx, s)
             v = self.val.read_field(self.mem, self.bcfldx)
             if v.avail and not v.gps:
+                if v.B:
+                    # C22-6729 p.176, MAIN's message 38, "BIT STYLE NO. IN
+                    # DDS"; p.137 boxes 20, 29: "(Bit and integer values are
+                    # combined.)" -- the combined value is used.
+                    self.msg.add(38, "BIT STYLE NO. IN DDS", unit, fatal=False)
                 if which == "fl":
                     fl = v.total
                     if fl > 64:
@@ -243,6 +248,19 @@ class Pass1:
                     u.put(unit, ZIFFLF, 1)
                 else:
                     bs = v.total
+                    cc = (self.entry_mode or "").strip().upper()[:2] == "CC"
+                    # C28-6129 p.30: "If the byte size is omitted in entry mode
+                    # CC, BS = 12 is implied" -- the card code's twelve rows,
+                    # so 12 is a byte size CC takes (MCP pp.2, 15, 99, 256 ...
+                    # write (CC*)DD(BU,,12)).  READ: message 37 is for others.
+                    if bs > (12 if cc else 8):
+                        # p.176, message 37, "BYTE SIZE GREATER THAN 8"; p.137
+                        # box 29: "an error message and the byte size to be
+                        # truncated".  UNSPECIFIED: to what -- 9 to 15 fit the
+                        # dds's four-bit field (Fig. 29 p.201, 8 as 1000), so
+                        # the field does not decide it.  Pass 2 refuses the
+                        # deck (pass2.run).
+                        self.msg.add(37, "BYTE SIZE GREATER THAN 8", unit, fatal=False)
                     u.put(unit, ZIFBSF, 1)
             else:
                 self.bcfldx += len(s)

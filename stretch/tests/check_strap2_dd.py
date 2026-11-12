@@ -29,6 +29,15 @@ Measured 2026-11-12, pass1.py, restored by copy and cmp:
                                    field truncated it before message 36
                                    was written)
   a long length clamped to 64      only "the length truncated to 8"
+  message 37 from 10, not 9        only "DD(BU,64,9)"
+  message 37 does not stop the deck only "DD(BU,64,9)"
+  message 38 never given           "DD(BU,.40)" and "DD(BU,64,.8)"
+  37's CC exemption removed        only "(CC*)DD(BU,,12)" (and, in the
+                                   suite, every MCP page with a CC DD
+                                   refuses its deck -- how it was found)
+  a bit-style length's bits dropped only "DD(BU,.40)" (with 1.0 the integer
+                                   part 0 encodes 64 and nothing failed, so
+                                   the check uses .40)
 """
 import os
 import sys
@@ -249,6 +258,21 @@ check("DD(BU,72): the length truncated to 8, so B starts at 100.08 and A holds 0
       (0o100 * 64 + 8, 0o004))
 r = strap2.compile_cards(["         SLC,(8)100.0", " A       DD(BU,64),1", "         END"])
 check("DD(BU,64): no message", [n for n, *_ in r.msg.items], [])
+# Messages 37 and 38 (p.176; p.137 boxes 20, 29, read in the ink 2026-11-12).
+def msgs(dd):
+    r = strap2.compile_cards(["         SLC,(8)100.0", " A       " + dd,
+                              " B       DD(BU,8),1", "         END"])
+    return [n for n, *_ in r.msg.items], r.val.symbol_value(r.st.search("B"))[0], r.punch.unwritten
+got = msgs("DD(BU,64,9),5")
+check("DD(BU,64,9): message 37, and the deck refuses (the truncation is not printed)",
+      (got[0], bool(got[2])), ([37], True))
+check("DD(BU,64,8): no message", msgs("DD(BU,64,8),5")[0], [])
+check("(CC*)DD(BU,,12): no message 37 -- p.30, CC implies BS = 12 (MCP p.2 line 4 writes it)",
+      37 in msgs("(CC*)DD(BU,,12),AB*")[0], False)
+got = msgs("DD(BU,.40),5")
+check("DD(BU,.40): message 38, and the combined value, 40 bits, is the length (B at 100.40)",
+      got[:2], ([38], 0o100 * 64 + 40))
+check("DD(BU,64,.8): message 38 for a bit-style byte size", msgs("DD(BU,64,.8),5")[0], [38])
 
 print("ALL CHECKS PASSED" if not fails else f"{fails} FAILED")
 sys.exit(1 if fails else 0)
