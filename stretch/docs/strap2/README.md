@@ -118,11 +118,25 @@ which it was defined, after the undefined, unused, multiple and circular lists
 words, "ALL SYMBOLS" (box 7 prints none); every vle, so a name defined twice
 prints at both definitions. `tests/check_strap2_prntall.py`.
 
+Array subscripts (C28-6129 printed p.40, read in the ink 2026-11-12). A named
+`DR(dds),(L,L',...)` carries its dimensions; `A(q,q',...)` is A + FL x (q + q'L
++ q''LL' + ...), zero-based; a last entry in bit style is the index (`A(1)(I)`,
+"I must be a bit address"; MCP printed p.334's `YLJM1($9)` on a `DRZ(BU),(4)`
+prints index 9 and no offset); a SYN of an element carries the dimensions
+along (p.40's `B SYN,A(5,5)` reproduces). Before this every entry was taken as
+an index. Refused: messages 71 and 75-77 (p.177), whose recoveries the guide
+does not draw. `tests/check_strap2_subscripts.py`.
+
+A symbolic field length or byte size is tested by DECODE's KAMMS (C22-6729
+p.137 boxes 20, 29): message 87 (FL over 64 or bit style, truncated as 36 is)
+and 88 (BS over 8 or bit style; the deck refuses, as for 37), p.177. Checked
+in `tests/check_strap2_dd.py`.
+
 **Not yet written:** PUNREL after absolute output; an instruction in a
 named common; a COMBLOCK without a name (p.186 gives a message with no number);
-a low SLC under PUNFUL; the coprocessor;
-subscripts with dimensions; the system symbols' register-length
-dds; `$INF` (N28-1081 page 20 adds it, 12, infinity);
+a low SLC under PUNFUL; the coprocessor; the system symbols' register-length
+dds; `$INF` (N28-1081 page 20 adds it, 12, infinity; no page prints its word);
+subscript messages 71 and 75-77;
 the listing's page headings after the first; the field number in an error record
 (always 0); and the Correction card's typewriter copy of serious messages. An
 unwritten path refuses loudly.

@@ -18,6 +18,8 @@ so that undefined entries are made (p.19), and the caller decides.
 from .a8 import a8_bits
 from .coded import OP_NAME
 from .optable import dds_parts
+from .optable import _a as _asm
+AssemblerError = _asm.AssemblerError
 from .symtab import KIND_LABEL, KIND_SYN, KIND_UNDEF, KIND_SPECIAL
 
 A8_TO_CHAR = None
@@ -80,6 +82,7 @@ class Value:
         # The flag a reference to a symbol multiply defined with contradictions
         # gives: MULTI in C28-6129 p.21's example (5), CONTAG in N28-1081 p.7.
         self.multi_ref = F_CONTAG
+        self.syn_dims = {}      # SYN function -> (fl, dims), C28-6129 p.40
         self.abs = 0            # $4
         self.sym = 0            # $6
         self.have_counters = False
@@ -225,6 +228,11 @@ class Value:
             # p.31 of C22-6531: dds transferred to A, as is the classification.
             st.put(f, "ZDDS", v.dds)
             st.put(f, "ZST3", 1)
+        if v.dims is not None:
+            # C28-6129 printed p.40: "SYN must be used to define a symbol as an
+            # interior element of a multidimensional array and have the
+            # dimensional addressing properties carried along."
+            self.syn_dims[f] = v.dims
         x, xq = v.X, v.xq
         old = st.get(f, "ZOLDF")
         if old:
@@ -264,6 +272,31 @@ class Value:
             unit = 32 if r == 1 else 64
             at = (at + unit - 1) // unit * unit
         return self._enter(f, at, 0, 0, 0)
+
+    def array_of(self, f):
+        """(field length, [L, L', ...]) for a symbol with dimensions, None for
+        one without, False while a dimension is not yet known.  C28-6129
+        printed p.40: "A DR(dds), (L, L', L'', ..., L^r)" attaches the dds and
+        the dimensions to A; a SYN of such a symbol carries them along."""
+        st = self.st
+        if st.get(f, "ZKIND") == KIND_SPECIAL:
+            return None
+        n = st.get(f, "ZDIMN")
+        if not n:
+            if st.get(f, "ZKIND") == KIND_SYN and f not in self.syn_dims:
+                self.symbol_value(f)
+            return self.syn_dims.get(f)
+        dims, addr = [], st.get(f, "ZDIMX")
+        for _k in range(n):
+            v = self.read_field(st.mem, addr)
+            if not v.avail:
+                return False
+            dims.append(v.total)
+            addr = v.next
+        d = self.symbol_dds(f)
+        if d is None:
+            return False
+        return (dds_parts(d)[1] or 64), dims
 
     def symbol_dds(self, f):
         """The dds a symbol carries, or None."""
@@ -357,6 +390,7 @@ class Value:
             p += 2
             b = i = 0
             ok = True
+            f = None                # the symbol, if this datum names one
             if kind == 0b00:        # symbolic
                 n = mem.get(p, 7)
                 p += 7
@@ -403,16 +437,59 @@ class Value:
             else:
                 raise ValueError("sub-expression datum")
             # 2E: S/X, each a coded expression without 4A.
+            subs = []
             while mem.get(p, 1):
                 p += 4
                 sub = V()
                 p = self._normal(mem, p, sub)
+                subs.append(sub)
+            p += 1
+            array = self.array_of(f) if kind == 0b00 and f is not None else None
+            if array is False:
+                ok = False
+            elif array is not None and not data and not mem.get(p, 1):
+                v.dims = array      # the field's only datum: a SYN carries it
+            if array and subs and not subs[-1].avail:
+                ok = False      # index or subscript: decided once it is known
+            elif array:
+                # C28-6129 printed p.40: "Address of A(q, q', q'', ...) =
+                # Address of A(0, 0, 0, ...) + FL x (q + q'L + q''LL' + ...)";
+                # "A(1)(I) where I must be a bit address" applies index
+                # register I to the second element.  The encoding keeps no
+                # parentheses between them (formats.md 5.2).  What decides is
+                # how the entry is written: a last entry in bit style is the
+                # index, the integers are subscripts.  Evidence in the ink:
+                # MCP printed p.334 line 35, YLJM1 DRZ(BU),(4) referenced as
+                # YLJM1($9), prints 235410.00 89; printed p.129 line 2,
+                # KCSREG($11) on a DRZ(BU,64),1, prints 216312.00 8B; and
+                # p.177's messages 71 SUBSCRIPT WRITTEN AS BIT and 75 1 SUBS.
+                # TOO MANY, LAST USED AS INDEX.  NOT WRITTEN, refused: 71 and
+                # 75-77, whose recoveries the guide does not draw.
+                fl, dims = array
+                index = [subs.pop()] if subs and subs[-1].B else []
+                if subs and len(subs) != len(dims):
+                    raise AssemblerError(
+                        f"{len(subs)} subscripts on an array of {len(dims)} dimensions: "
+                        "messages 75-77 are not written (C22-6729 p.177)")
+                offset, scale = 0, fl
+                for k, sub in enumerate(subs):
+                    if not sub.avail:
+                        ok = False
+                    elif sub.B:
+                        raise AssemblerError(
+                            "a subscript written as a bit address: message 71 is not "
+                            "written (C22-6729 p.177)")
+                    else:
+                        offset += sub.I * scale
+                    scale *= dims[k]
+                b += offset
+                subs = index
+            for sub in subs:
                 if not sub.avail:
                     ok = False
                     continue
                 v.xq = True
                 v.X = (sub.B >> 6) & 15 if sub.B else sub.I & 15
-            p += 1
             data.append([b, i, ok])
         p += 1
         # The operators, in the order performed.

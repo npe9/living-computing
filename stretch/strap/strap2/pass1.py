@@ -403,6 +403,19 @@ class Pass1:
         elif entry.kind in ("instr", "fp", "vfl", "conn", "io"):
             st.put(f, "ZDDS", dds13("BU", entry.length, 8))
             st.put(f, "ZST3", 1)
+        if entry.name in ("DR", "DRZ") and u.get(unit, ZINFLD):
+            # C28-6129 printed p.40 (read in the ink 2026-11-12): the dds and
+            # the dimensions are attached to the name, so that A(q, q', ...)
+            # addresses an element (value.py array_of).
+            p = unit + FIXED_BITS
+            for flag in (ZIFSFL, ZIFSBS):
+                if u.get(unit, flag):
+                    p = self.val.read_field(self.mem, p).next
+            end = p
+            for _k in range(u.get(unit, ZINFLD)):
+                end = self.val.read_field(self.mem, end).next
+            st.put(f, "ZDIMX", self._copy_coded(p, end))
+            st.put(f, "ZDIMN", u.get(unit, ZINFLD))
         old = self.legal_old.get(f)
         if old and st.get(old, "ZST3"):
             # Chart RE boxes 14, 16: an earlier dds cannot be overruled (p.127).
