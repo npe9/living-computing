@@ -81,9 +81,17 @@ left-justified. A signed use mode in an immediate field is the magnitude and a
 sign byte (p.17's `LI(D, 8, 4), -IDATA` = 01001000). Refused: floating-point
 modes, a negative datum (the pages show none), message 132.
 
+MBSPEC (C22-6729 pp.92-95, read in the ink 2026-11-12). An op that neither
+BOPSER nor MIBA finds is retried with the option characters 0/O, 1/I, 2/Z, 5/S
+substituted, in p.93's order (SXXXXXXX, XSXXXXXX, SSXXXXXX, ...: a binary count,
+first character lowest). The first legal one is used and message 129 is given;
+it is not serious (N28-1081 p.13), so the deck assembles. CHOSEN: the first
+character is tried too, as p.93's list shows, though box 2's text says "the
+second or any subsequent". `tests/check_strap2_mbspec.py`.
+
 **Not yet written:** PUNREL after absolute output; an instruction in a
 named common; a COMBLOCK without a name (p.186 gives a message with no number);
-a low SLC under PUNFUL; the MIBA and MBSPEC corrections; the coprocessor;
+a low SLC under PUNFUL; MBSPEC on a secondary op or a system symbol; the coprocessor;
 DUPLI; subscripts with dimensions; the system symbols' register-length
 dds; PRNTALL's whole-table print; `$INF` (N28-1081 page 20 adds it, 12, infinity);
 the listing's page headings after the first; the field number in an error record

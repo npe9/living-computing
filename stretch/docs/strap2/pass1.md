@@ -585,6 +585,7 @@ positions, low position first [92]. Any substitution sets `Llbts.8` and exits he
 successful search with `Llbts.8` on, the user gives error 129 [93].
 
 The list on p.93 shows position 1 can be substituted though Box 2 says from second; see 8.
+strap2 (2026-11-12) follows the list: position 1 is tried (`optable.mbspec`); primary ops only.
 
 ### 3.10 MIBA [94-95]
 

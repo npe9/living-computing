@@ -265,3 +265,31 @@ def system_symbol(name):
             w, b = table[name]
             return w * 64 + b, bu
     return None
+
+
+# MBSPEC (C22-6729 pp.92-93, chart BL, read in the ink 2026-11-12).  The
+# possible error characters: "a 0 was punched for an O, a 1 for an I, a 2 for
+# a Z, a 5 for an S, or vice versa" (p.93 box 2).
+MBSPEC_PAIRS = {"0": "O", "O": "0", "1": "I", "I": "1",
+                "2": "Z", "Z": "2", "5": "S", "S": "5"}
+
+
+def mbspec(word):
+    """MBSPEC's test words for an illegal op or system symbol, in the order it
+    gives them.  Eight control indicators, one per character (0 original, 1
+    substituted), stepped like a binary counter, the first character lowest
+    (chart BL: box 3, an original character is substituted and MBSPEC exits
+    possible-help; boxes 11-15, a substituted one is restored and the next is
+    tried; boxes 16-19, a character not in the set is passed over).  p.93 box 6
+    prints the order: SXXXXXXX, XSXXXXXX, SSXXXXXX, XXSXXXXX.  When every
+    possible character has been restored MBSPEC exits no-further-help.
+    CHOSEN: the first character is tried too, as box 6's list shows, though box
+    2's text says "the second or any subsequent character" (no op begins with
+    a digit, so only a digit punched first for O, I, Z or S tells them apart)."""
+    at = [i for i, c in enumerate(word[:8]) if c in MBSPEC_PAIRS]
+    for n in range(1, 1 << len(at)):
+        w = list(word)
+        for k, i in enumerate(at):
+            if n >> k & 1:
+                w[i] = MBSPEC_PAIRS[w[i]]
+        yield "".join(w)

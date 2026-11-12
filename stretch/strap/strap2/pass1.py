@@ -147,7 +147,18 @@ class Pass1:
         while g.ch == "(":      # Boxes 24-26
             self._modifier(unit)
             g.next() if False else None
-        entry = lookup(op, self.mode if self.mode in MODES else None, tuple(self.modifiers))
+        mode = self.mode if self.mode in MODES else None
+        entry = lookup(op, mode, tuple(self.modifiers))
+        if entry is None:       # Box 17 not found: MIBA, then MBSPEC [22, 92-95]
+            for test in optable.mbspec(op):
+                entry = lookup(test, mode, tuple(self.modifiers))
+                if entry is not None:
+                    # p.93 box 10: a successful search with Llbts.8 on gives
+                    # the error message.  N28-1081 p.13: only 1-18 are serious,
+                    # so the assembly goes on with the changed op.
+                    self.msg.add(129, f"OP {op} CHANGED INTO {test}", unit, fatal=False)
+                    op = self.op = test
+                    break
         if entry is None:
             return self._illegal(unit, op)
         u.put(unit, ZIOPX, entry.index)
