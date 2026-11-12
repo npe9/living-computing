@@ -111,11 +111,18 @@ integers, or fewer than X cards left: refused (no message number is printed).
 CHOSEN: the X cards start at the next initial card. Before this, DUPLI was
 accepted and did nothing. `tests/check_strap2_dupli.py`.
 
+PRNTALL (N28-1081 page 2; C22-6729 charts EG, EH pp.170-171; read in the ink
+2026-11-12). Specified anywhere, it prints every symbol with the address at
+which it was defined, after the undefined, unused, multiple and circular lists
+(box 30A re-enters NUNDSY with the PRNTALL switch on). CHOSEN: the header's
+words, "ALL SYMBOLS" (box 7 prints none); every vle, so a name defined twice
+prints at both definitions. `tests/check_strap2_prntall.py`.
+
 **Not yet written:** PUNREL after absolute output; an instruction in a
 named common; a COMBLOCK without a name (p.186 gives a message with no number);
 a low SLC under PUNFUL; the coprocessor;
 subscripts with dimensions; the system symbols' register-length
-dds; PRNTALL's whole-table print; `$INF` (N28-1081 page 20 adds it, 12, infinity);
+dds; `$INF` (N28-1081 page 20 adds it, 12, infinity);
 the listing's page headings after the first; the field number in an error record
 (always 0); and the Correction card's typewriter copy of serious messages. An
 unwritten path refuses loudly.

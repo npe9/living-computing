@@ -55,7 +55,8 @@ The symbol lists (NUNDSY, charts EG, EH pp.170-172) follow the statements,
 then the error messages (ERRPRT), then the seconds, the last item (C28-6129
 p.20; the guide puts the lists at the end, p.157, where the manual says the
 beginning; N28-1081's errata, page 18, correct the manual to "end").  Chart EG prints a header before the undefined symbols
-only when the whole table is printed (boxes 6B, 7), so there is none here.
+only when the whole table is printed (boxes 6B, 7): under PRNTALL, after the
+other lists (chart EH 30A-30C).
 CHOSEN: the other three headers' words, from the manual's descriptions; a name
 and its address separated by two blanks.
 
@@ -127,7 +128,8 @@ def field_form(value, width, mode, bs):
 
 HEADERS = {"unused": "SYMBOLS DEFINED BUT NOT USED",
            "multiple": "MULTIPLY DEFINED SYMBOLS",
-           "circular": "CIRCULARLY DEFINED SYMBOLS"}
+           "circular": "CIRCULARLY DEFINED SYMBOLS",
+           "all": "ALL SYMBOLS"}     # CHOSEN: chart EG box 7 prints no words
 
 
 class Line:
@@ -355,6 +357,10 @@ class Listing:
                 out.append(HEADERS[key])
                 for name, at in lists[key]:
                     out.append(name if at is None else f"{name}  {loc(at)}")
+        if lists.get("all"):        # PRNTALL: chart EH 30A-30C, after the rest
+            out.append(HEADERS["all"])
+            for name, at in lists["all"]:
+                out.append(name if at is None else f"{name}  {loc(at)}")
         return out
 
 

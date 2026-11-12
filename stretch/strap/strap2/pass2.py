@@ -79,6 +79,7 @@ class Pass2:
         self.common_of = {}     # COMBLOCK name's f -> its common number
         self.reloc = {}         # unit -> [(bit in its binary, "L" or "R")]
         self.spnus = False      # NSPRES, p.35: SPNUS seen
+        self.prntall = False    # PRNTALL seen anywhere (N28-1081 page 2)
         self.val.multi_ref = F_CONTAG if edition == "N28-1081" else F_MULTI
 
     # ---------------------------------------------------------------------------
@@ -308,6 +309,8 @@ class Pass2:
             return
         if name == "SPNUS":
             self.spnus = True       # NSPRES, p.35
+        if name == "PRNTALL":
+            self.prntall = True     # chart EH box 30A asks it at the end
         if e.pseudo and name not in ("DD", "DDI", "DR", "DRZ", "EXT"):
             return
         # Boxes 14A-14K
@@ -917,6 +920,21 @@ class Pass2:
                 continue
             if st.get(f, "ZST4"):                               # box 16
                 lists["circular"].append((short, None))
+        # Chart EH boxes 30A-30C: PRNTALL specified, the switch goes on and
+        # NUNDSY is entered again; that pass prints chart EG box 7's header
+        # once, then each vle with its address (boxes 8-9), and box 18A skips
+        # the three stacked lists.  N28-1081 page 2 (read in the ink
+        # 2026-11-12): "a list of all symbols will be printed at the end of
+        # the program, with the address at which they were defined."
+        # CHOSEN: every vle, so a name defined twice prints twice, each with
+        # the address of that definition; in vle order, as ANEXT walks them.
+        if self.prntall:
+            lists["all"] = []
+            for f in st.vles:
+                name = st.name_of.get(f, "")
+                if not name or name.startswith("\xff") or st.get(f, "ZKIND") == KIND_SPECIAL:
+                    continue
+                lists["all"].append((name[:50], address(f)))
         return lists
 
     def comrec_errors(self):
