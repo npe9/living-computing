@@ -112,6 +112,17 @@ MEASURED, restored by copy and cmp:
   - CONTROL, in the reconstructed table only: the named commons' origins
     rotated -- 7 fail, every reference to and word of a named common.  So
     the loader reads the planted table, as pp.324-326 were read.
+THE SUBPROGRAM END, 2026-11-12: the exact card count runs ARNRM2; 13
+checks pass, 36,707 cycles: the vector over the A8 name at 120001, the
+branch address from KSILO+10 through the branch return (the last card's
+normal return goes to ERR).  MEASURED, in the reconstructed table:
+  - count one high: vector_120001, branch_address_from_KSILO10 and the PC
+    fail (the last card returns normally).
+  - count one low: branch_address_from_KSILO10 fails alone (the card
+    before ends the job; the FORTRAN branch card carries no data).
+  - the vector put at word 5: vector_120001 reads Bluesim's 0xAAAA... from
+    word 4, so the loader takes table + 3.0 + n.32 with n = 3 as word 4.
+  - vector length 0: vector_120001 fails, the A8 name left in place.
 
 ITS OWN BUILD DIRECTORIES (build-loader, simbuild-loader): built in the
 shared bsv/build without -show-schedule, it left mkStretchCore up to date
@@ -201,10 +212,19 @@ FORTRAN_SOURCE = [
 # word 0 bits 28-45 the card count, bit 63 0 (not library); word 1's value
 # field the program origin (line 18); word 2 bits 0-18 the number of named
 # commons (line 20); the half-word at 2.0 + k.32 named common k's origin
-# (p.325 lines 25-31, p.326 lines 18-25).  CHOSEN: the card count is larger
-# than the deck, so the subprogram-end path (ARNRM2, p.326 l.44 on, near the
-# lost p.329) is not run.
+# (p.325 lines 25-31, p.326 lines 18-25).  The card count is the deck's
+# binary cards from the program card on, so the last, the FORTRAN branch
+# card, takes the count to zero and runs ARNRM2 (printed p.326 l.46 - p.327
+# l.30): word 1 is an index word whose count is the transfer vector's length
+# and refill the next table (0: none); the vector, at table + 3.0 + n.32 (n
+# named commons; the transmit takes the word), goes to origin + 1.0; the
+# branch address is KSILO+10's value field, returned through the branch
+# return.  The body begins as a FORTRAN subprogram does (p.184): the vector's
+# length, then its A8 name, which the transmitted vector overwrites.
+BSS_TV = 0o0123456701234567012345
 BSS_BODY = [
+    "        DD(BU,64),1",
+    "        (A*)DD(BU,64,8),INPUT   *",
     "START   L,X2",
     "        LVI,$2,Y",
     "        XW,X3,2,Z",
@@ -322,6 +342,8 @@ def main():
                 "D%d      VF,0" % k,
                 "        B,DONE",
                 "BA%d     VF,0" % k]
+        if mode == "bss" and k == len(imgs) - 1:
+            drv.append("        B,ERR")         # the last card must branch-return
         if mode == "fortran":
             drv.append("        B,ERR")         # a normal return is wrong here
             drv.append("E%d      NOP" % k)       # the error return: next card
@@ -344,9 +366,13 @@ def main():
         ks = S["KSILO"] // 64
         words[ks + 2] = image.words[S["ABSSID"] // 64]
         words[ks + 9] = ((0o121300 * 64) << 40) | ((BSS_TABLE * 64) << 8)
-        t = {0: 0o7777 << (63 - 45),                   # the card count
-             1: (0o120000 * 64) << 40,                 # the program origin
-             2: (3 << 45)}                             # three named commons
+        ncards = sum(1 for how, _c in p2.punch.deck() if how == "binary")
+        t = {0: ncards << (63 - 45),                   # the card count
+             1: ((0o120000 * 64) << 40) | (1 << 18),   # origin; vector length 1; refill 0
+             2: (3 << 45),                             # three named commons
+             (3 * 64 + 3 * 32) // 64: BSS_TV}          # the transfer vector
+        bss_start = expect.val.symbol_value(expect.st.search("START"))[0]
+        words[ks + 10] = bss_start << 40
         for k, (_n, at, _b) in enumerate(BSS_COMMONS[1:], 1):
             w, half = divmod(2 * 2 + k, 2)
             t[w] = t.get(w, 0) | ((at * 64) << (40 - 32 * half))
@@ -398,7 +424,14 @@ def main():
         fl = im._fill.get(w, 0) & ~wr
         exp = (im.words.get(w, 0) & wr) | (SENTINEL & ~(wr | fl) & full)
         kind = "loaded" if wr == full else "zeroed" if fl == full else "partial"
+        if mode == "bss" and w == 0o120001:
+            exp, kind = BSS_TV, "vector"     # ARNRM2 transmits the vector over the A8 name
         checks.append(("%s_%o" % (kind, w), str(w), exp))
+    if mode == "bss":
+        ba = d.symtab["BA%d" % (len(imgs) - 1)]
+        sh = 64 - ba % 64 - 24
+        want = (d.words[ba // 64] & ~(0xffffff << sh)) | (bss_start << sh)
+        checks.append(("branch_address_from_KSILO10", str(ba // 64), want))
     if mode not in ("rel", "bss"):
         last = len(imgs) - 1
         ba = d.symtab["BA%d" % last]

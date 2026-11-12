@@ -23,14 +23,15 @@ accumulate.
 
 
 
-## THE SUBPROGRAM END ON MCP'S LOADER -- next, 2026-11-12
+## BSS ON MCP'S LOADER -- done to the subprogram end, 2026-11-12
 
-A FORTRAN deck with commons now loads as a BSS job on a reconstructed
-BSS table (tests/gen_loader_deck_tb.py bss). Next: an exact card count,
-so ARNRM2 runs -- the transfer vector moved to origin + 1.0, SRNXAD zero,
-the branch address from KSILO+10 (bss_loader_spec.md 5.4; printed
-pp.326-327, near the lost p.329). Earlier note, kept: a loader run needs
-what the lost BSS processor leaves: KSILO+2 holding BSS and the relocation table at KSILO+9.32
+A FORTRAN deck with commons loads as a BSS job on a reconstructed BSS
+table, through ARNRM2's transfer vector and branch return
+(tests/gen_loader_deck_tb.py bss). Not run: a second subprogram
+(SRNXAD nonzero: the TWS read, AREADS, printed p.327 lines 11-22, and
+the library read) -- that needs the disk and the lost BSS processor's
+TWS layout. Earlier note, kept: a loader run needs what the lost BSS
+processor leaves: KSILO+2 holding BSS and the relocation table at KSILO+9.32
 (bss_loader_spec.md 5.4); build that as labelled scaffolding. Open from
 p.184's example: its `DD(BU), 1.0` (length of the transfer vector) draws
 message 45 here (a decimal fraction in BU without an (Fn) entry mode,

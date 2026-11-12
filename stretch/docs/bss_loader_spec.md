@@ -780,9 +780,12 @@ from the count of named commons, `1 x a 1 0` and `1 x a 1 1 i` codes, and
 data cards with a nonzero loading base all ran as read. Rotating the
 table's common origins moves every common word and reference, so the
 offsets read for `table + 2.0 + i × .32` and `KSILO+9.` are the ones the
-code uses. Not yet run: the subprogram end (`ARNRM2`, the transfer
-vector, `SRNXAD`), whose count the driver sets out of reach; C, P and D
-cards.
+code uses. With the exact card count (same day) the subprogram end ran
+too: `ARNRM2` transmitted a one-word transfer vector from table + 3.0 +
+3 half-words (the transmit takes word 4) to origin + 1.0, over the A8
+name the data card loaded, and with `SRNXAD` zero returned `KSILO+10`'s
+address through the branch return. Not yet run: a next table
+(`SRNXAD` nonzero, the TWS or library read), C, P and D cards.
 
 ### 7.2 Printed p.329: lost, inside the loader
 
