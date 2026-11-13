@@ -1,0 +1,50 @@
+! strap2_7030_gfdrive.strap -- the TEST DRIVER for GETFLD in
+! decks/strap2_7030.strap, NOT part of the reconstruction.
+! tests/check_strap2_7030_getfld.py assembles it after the deck (and its
+! input cards), with END, START.  Standing in for MAIN, it calls GETFLD on
+! every field of every card block, each field's coded expression at the
+! next full word of OUTF, and records each field's first bit and the bit
+! after it in OUTL, two words a field.
+START   SIC, XINLK
+        B, XINPUT
+! a card block: its first character, then GETFLD with Gfchar on
+GD0     SIC, GETCHZ
+        B, GETCHA
+        L(BU,1), FEOF
+        KI(BU,1), 1
+        BAE, DONE
+        LI(BU,1), 1
+        ST(BU,1), GFCHAR
+GD1     LV, $9, GDP
+        SV, $9, BCFLDX
+        LV, $9, GDLP
+        L(BU,24), GDP
+        ST(BU,24)(V+I), 1.0($9)
+        SV, $9, GDLP
+        SIC, GETFLZ
+        B, GETFLD
+        LV, $9, GDLP
+        L(BU,24), BCFLDX
+        ST(BU,24)(V+I), 1.0($9)
+        SV, $9, GDLP
+        M+1(BU,24), OUTN
+! the next field at the word after this one's last
+        L(BU,18), BCFLDX
+        ST(BU,18), GDP
+        M+1(BU,18), GDP
+        SV, $3, GDT
+        L(BU,8), GDT+.16
+        KI(BU,8), (8)33
+        BZAE, GD0
+        LI(BU,1), 0
+        ST(BU,1), GFCHAR
+        B, GD1
+DONE    BEW, $
+!
+        CNOP
+GDT     DD(BU,64), 0
+OUTN    DD(BU,64), 0
+GDP     XW, OUTF, 0, 0
+GDLP    XW, OUTL, 0, 0
+OUTL    DRZ(BU,64), 200
+OUTF    DRZ(BU,64), 800

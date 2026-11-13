@@ -8,6 +8,7 @@
 ! >>> host-side STRAP II, strap/strap2/. <<<
 !
 ! STEP 1 (docs/strap2_7030.md "The order of work"): XINPUT and GETCHA.
+! STEP 2 begun: GETFLD (see below).
 ! MAIN is not written yet.  The test's driver (tests/strap2_7030_drive.strap,
 ! NOT part of this reconstruction) is assembled after this deck and stands in
 ! for MAIN: it calls GETCHA to the end of the input and records what GETCHA
@@ -38,6 +39,20 @@
 !    1 COMREC word 8's code is not 5, IQS (only IQS input is written)
 !    2 a name longer than 64 characters (CHOSEN size of NAMEB; strap2 has no
 !      limit)
+!    9 a form GETFLD does not write yet (step 2's sub-slices b-d: a
+!      parenthesis, a $ or system symbol, a tail)
+!  100+n STRAP II message n, until the error routine is written (p.176-178):
+!      149 a symbol over 128 characters, 163 a digit too large for the
+!      radix (p.71: the digit is still used; here it halts), 166 SYNTAX
+!      ERROR, 167 INAPPROPRIATE CHARACTER, 168 a number over 24 bits
+!
+! STEP 2, sub-slice a (docs/strap2_7030.md): GETFLD (Charts BI-BK
+! pp.80-82) over numbers (CPLTNM, Chart BD p.70, in floating point as Box 1
+! says), programmer symbols without tails (CPLTSY, Chart BE p.72), and the
+! operators + - * / . and unary minus.  REGISTERS: GETFLD's coded
+! expression pointer is $2 (p.84 Box 1, p.85 Boxes 34-38: "$2 is spaced");
+! p.175 gives $2 to RNX, so GETFLD saves it on entry and restores it on
+! exit, as p.175 asks of any register other than $7, $8 and $9.
 !
         SLC, (8)2000.0
 !
@@ -89,6 +104,18 @@ IQSA8   SYN, $
         DD(BU,64), (16)0000000000000000
         DD(BU,64), (16)0000000000000000
         DD(BU,64), (16)0000000000000000
+! CHVAL: an A8 character's value as a digit (0-9, A-Z 10-35), one byte per
+! A8 code; 63 is not alphameric.  CPLTNM's Box 3 and GETFLD's Boxes 7-8.
+! Generated from strap2/a8.py, 2026-11-13.
+CHVAL   SYN, $
+        DD(BU,64), (16)3F01020304050607
+        DD(BU,64), (16)0809003F3F3F3F3F
+        DD(BU,64), (16)3F3F1C1D1E1F2021
+        DD(BU,64), (16)22233F3F3F3F3F3F
+        DD(BU,64), (16)3F13141516171819
+        DD(BU,64), (16)1A1B3F3F3F3F3F3F
+        DD(BU,64), (16)3F0A0B0C0D0E0F10
+        DD(BU,64), (16)11123F3F3F3F3F3F
 !
 ! ======== SECTION A1: Pass 1's constants and work areas (p.174) =======
 GCEND   SYN, GCCARD+9.0
@@ -115,6 +142,50 @@ NAMEL   DD(BU,64), 0
 NAMET   DD(BU,64), 0
 NAMEB   DRZ(BU,64), 8
 GCCARD  DRZ(BU,64), 10
+! GETFLD (p.83 LINKAGE): BCFLDX's value is the coded expression's first
+! bit, a full word, and on exit its next bit; BCFXTX the first bit after the
+! buffer (not tested yet); GFCHAR bit 0 on if $3 already holds the field's
+! first character.  GFSRAD, the radix (p.70), zero means 10.
+BCFLDX  XW, 0, 0, 0
+BCFXTX  XW, 0, 0, 0
+GFCHAR  DD(BU,64), 0
+GFSRAD  DD(BU,64), 0
+GETFLZ  DD(BU,64), 0
+CPLTNZ  DD(BU,64), 0
+CPLTSZ  DD(BU,64), 0
+GFPLK   DD(BU,64), 0
+GFELK   DD(BU,64), 0
+GFSAV2  DD(BU,64), 0
+GFC     DD(BU,64), 0
+GFP0    DD(BU,64), 0
+GFFRST  DD(BU,64), 0
+GFN     DD(BU,64), 0
+GFNUM   DD(BU,64), 0
+GFSN    DD(BU,64), 0
+GFOPN   DD(BU,64), 0
+GFNEW   DD(BU,64), 0
+GFOP    DD(BU,64), 0
+GFOPP   XW, GFOPS, 0, 0
+CHXT    DD(BU,64), 0
+STX     DD(BU,64), 0
+! the operator stack, 16 bits an entry (precedence at .5, code at .8,
+! datum number at .11), and the operators put, 9 bits each (p.198 3A-3C)
+GFSTK   DRZ(BU,64), 8
+GFOPS   DRZ(BU,64), 6
+! CPLTNM: PR, the partial result, and the radix and a digit in floating
+! point (Box 1, Box 3): exponent 48 (bits 1-10), the value at the low end
+! of the fraction (bits 12-59; RefMan printed pp.78-79).  CPZ48, exponent 48
+! and fraction 0, aligns PR to an integer (Box 9).
+CPPR    DD(BU,64), 0
+CPZERO  DD(BU,64), 0
+CPRADF  DD(BU,64), (16)0600000000000000
+CPDIGF  DD(BU,64), (16)0600000000000000
+CPZ48   DD(BU,64), (16)0600000000000000
+CPWRK   DD(BU,64), 0
+CPLV    DD(BU,64), 0
+! CPLTSY: BSYMBX's value is where the symbol goes (p.74); CPLEN its length
+BSYMBX  XW, 0, 0, 0
+CPLEN   DD(BU,64), 0
 !
 ! ======== SECTION 1: subroutines unique to Pass 1 (p.174) ==============
 !
@@ -339,6 +410,372 @@ GCN2    ST(BU,18), NTMP+.3
         ST(BU,18), NAMET
 GCN3    CB, $8, GCN1
         LV, $8, GCNLK
+        B, 0($8)
+!
+! GETFLD (Charts BI-BK pp.80-82, text pp.83-86): one field's coded
+! expression (Appendix C p.198) at BCFLDX.  Call SIC,GETFLZ; B,GETFLD (p.83).
+! The data go in as they are read; each operator waits on GFSTK until one
+! of no higher priority comes (p.198: .+ .L .R U- * / + -, the points bound
+! at once), and is put, with its datum number, in GFOPS; GFZA puts them
+! after the data (Boxes 43, 60).  Sub-slice a: no parenthesis, $, g.p.
+GETFLD  SX, $2, GFSAV2
+        LV, $2, BCFLDX
+        LI(BU,8), 0
+        ST(BU,8), GFN
+        ST(BU,8), GFSN
+        ST(BU,8), GFSRAD
+        LI(BU,18), 0
+        ST(BU,18), GFOPN
+        LI(BU,64), 0
+        ST(BU,64), GFNEW
+        ST(BU,64), GFOP
+        LVI, $9, GFOPS
+        SV, $9, GFOPP
+        LI(BU,1), 1
+        ST(BU,1), GFFRST
+! Boxes 3-4: the first character, unless the user has it (Gfchar)
+        L(BU,1), GFCHAR
+        KI(BU,1), 1
+        BAE, GF1
+        SIC, GETCHZ
+        B, GETCHA
+! Boxes 31, 34-35: nothing before the end of the field, the null prefix
+GF1     SV, $3, GFC
+        L(BU,8), GFC+.16
+        KI(BU,8), (8)33
+        BAE, GFNULL
+        KI(BU,8), (8)35
+        BAE, GFNULL
+        KI(BU,8), (8)14
+        BAE, GFNULL
+        KI(BU,8), (8)74
+        BAE, GFNULL
+! the prefix: 1A, and 1B type 000 (p.198)
+        LI(BU,4), 8
+        ST(BU,4)(V+I), .4($2)
+! a datum is expected: a leading plus does nothing; a minus is unary
+GFE     SV, $3, GFC
+        L(BU,8), GFC+.16
+        KI(BU,8), (8)60
+        BZAE, GFE1
+        L(BU,1), GFFRST
+        KI(BU,1), 1
+        BZAE, GFSYN
+        LI(BU,1), 0
+        ST(BU,1), GFFRST
+        SIC, GETCHZ
+        B, GETCHA
+        B, GFE
+GFE1    LI(BU,1), 0
+        ST(BU,1), GFFRST
+        L(BU,8), GFC+.16
+        KI(BU,8), (8)40
+        BZAE, GFD
+        LI(BU,3), 3
+        ST(BU,3), GFNEW+.53
+        LI(BU,3), 4
+        ST(BU,3), GFNEW+.56
+        L(BU,8), GFN
+        ST(BU,5), GFNEW+.59
+        SIC, GFELK
+        B, GFPUSH
+        SIC, GETCHZ
+        B, GETCHA
+! a datum, perhaps with a point (p.198: a.b .+, a. .L, .b .R)
+GFD     SV, $3, GFC
+        L(BU,8), GFC+.16
+        KI(BU,8), (8)73
+        BZAE, GFD1
+        L(BU,8), GFN
+        ST(BU,8), GFNUM
+        SIC, GETCHZ
+        B, GETCHA
+        SIC, GFPLK
+        B, GFPRIM
+        LI(BU,3), 5
+        B, GFD4
+GFD1    SIC, GFPLK
+        B, GFPRIM
+        SV, $3, GFC
+        L(BU,8), GFC+.16
+        KI(BU,8), (8)73
+        BZAE, GFA
+        L(BU,8), GFN
+        ST(BU,8), GFNUM
+        SIC, GETCHZ
+        B, GETCHA
+        SV, $3, GFC
+        L(BU,8), GFC+.16
+        ST(BU,8), CHXT+.13
+        LV, $9, CHXT
+        L(BU,8), CHVAL($9)
+        KI(BU,8), 36
+        BAL, GFD2
+        LI(BU,3), 6
+        B, GFD4
+GFD2    SIC, GFPLK
+        B, GFPRIM
+        LI(BU,3), 7
+! the point's operator, put at once: no operator outranks it
+GFD4    ST(BU,3), GFOP+.56
+        L(BU,8), GFNUM
+        ST(BU,5), GFOP+.59
+        SIC, GFELK
+        B, GFPUT
+! after a datum: a binary operator, or the end of the field
+GFA     SV, $3, GFC
+        L(BU,8), GFC+.16
+        LI(BU,3), 1
+        ST(BU,3), GFNEW+.53
+        LI(BU,3), 1
+        ST(BU,3), GFNEW+.56
+        L(BU,8), GFC+.16
+        KI(BU,8), (8)60
+        BAE, GFA2
+        LI(BU,3), 0
+        ST(BU,3), GFNEW+.56
+        L(BU,8), GFC+.16
+        KI(BU,8), (8)40
+        BAE, GFA2
+        LI(BU,3), 2
+        ST(BU,3), GFNEW+.53
+        LI(BU,3), 3
+        ST(BU,3), GFNEW+.56
+        L(BU,8), GFC+.16
+        KI(BU,8), (8)54
+        BAE, GFA2
+        LI(BU,3), 2
+        ST(BU,3), GFNEW+.56
+        L(BU,8), GFC+.16
+        KI(BU,8), (8)21
+        BAE, GFA2
+        B, GFEND
+! put each waiting operator of no lower priority, then this one waits
+GFA2    L(BU,8), GFN
+        ST(BU,5), GFNEW+.59
+GFA3    L(BU,8), GFSN
+        KI(BU,8), 0
+        BAE, GFA4
+        SIC, GFELK
+        B, GFTOP
+        L(BU,3), GFOP+.53
+        K(BU,3), GFNEW+.53
+        BAL, GFA4
+        M-1(BU,8), GFSN
+        SIC, GFELK
+        B, GFPUT
+        B, GFA3
+GFA4    SIC, GFELK
+        B, GFPUSH
+        SIC, GETCHZ
+        B, GETCHA
+        B, GFE
+! the end of the field: every waiting operator is put
+GFEND   L(BU,8), GFSN
+        KI(BU,8), 0
+        BAE, GFEN2
+        SIC, GFELK
+        B, GFTOP
+        M-1(BU,8), GFSN
+        SIC, GFELK
+        B, GFPUT
+        B, GFEND
+GFEN2   SV, $3, GFC
+        L(BU,8), GFC+.16
+        KI(BU,8), (8)33
+        BAE, GFZA
+        KI(BU,8), (8)35
+        BAE, GFZA
+        KI(BU,8), (8)14
+        BAE, GFZA
+        KI(BU,8), (8)74
+        BAE, GFZA
+        LI(BU,24), 167
+        B, ERROR
+! GFZA (Boxes 43, 60): the end of the data, the operators, no more
+! operators, and no g.p. (Box 46: "the bit at the end ... set to zero")
+GFZA    LI(BU,1), 0
+        ST(BU,1)(V+I), .1($2)
+        L(BU,18), GFOPN
+        KI(BU,18), 0
+        BAE, GFZ2
+        LVI, $9, GFOPS
+        LC, $8, GFOPN
+GFZ1    L(BU,9)(V+I), .9($9)
+        ST(BU,9)(V+I), .9($2)
+        CB, $8, GFZ1
+GFZ2    LI(BU,2), 0
+        ST(BU,2)(V+I), .2($2)
+GFX     SV, $2, BCFLDX
+        LX, $2, GFSAV2
+        LV, $8, GETFLZ
+        B, 0($8)
+GFNULL  LI(BU,6), (8)74
+        ST(BU,6)(V+I), .6($2)
+        B, GFX
+GFSYN   LI(BU,24), 166
+        B, ERROR
+!
+! GFPRIM: a number (Boxes 8, 16-17) or a programmer symbol (Boxes 7, 15,
+! 25-27), into the coded expression with the end of its datum (2E, 0)
+GFPRIM  SV, $3, GFC
+        L(BU,8), GFC+.16
+        ST(BU,8), CHXT+.13
+        LV, $9, CHXT
+        L(BU,8), CHVAL($9)
+        KI(BU,8), 10
+        BAL, GFPN
+        KI(BU,8), 36
+        BAL, GFPS
+        L(BU,8), GFC+.16
+        KI(BU,8), (8)53
+        BAE, GFNW
+        KI(BU,8), (8)34
+        BAE, GFNW
+        B, GFSYN
+GFNW    LI(BU,24), 9
+        B, ERROR
+GFPN    SIC, CPLTNZ
+        B, CPLTNM
+        LI(BU,3), 6
+        ST(BU,3)(V+I), .3($2)
+        L(BU,24), CPLV
+        ST(BU,24)(V+I), .24($2)
+        B, GFPE
+! Box 15: ten bits left for the prefix and length; CPLTSY puts the symbol
+GFPS    SV, $2, GFP0
+        LI(BU,10), 0
+        ST(BU,10)(V+I), .10($2)
+        SV, $2, BSYMBX
+        SIC, CPLTSZ
+        B, CPLTSY
+        LV, $2, BSYMBX
+        LV, $9, GFP0
+        LI(BU,3), 4
+        ST(BU,3)(V+I), .3($9)
+        L(BU,8), CPLEN
+        ST(BU,7)(V+I), .7($9)
+GFPE    LI(BU,1), 0
+        ST(BU,1)(V+I), .1($2)
+        M+1(BU,8), GFN
+        LV, $8, GFPLK
+        B, 0($8)
+!
+! GFPUSH: GFNEW onto the operator stack.  GFTOP: the top entry, GFSN's
+! less one, to GFOP (the caller lowers GFSN to take it off).  GFPUT: GFOP's
+! operator into GFOPS, 1, code, datum number (p.198 3A-3C).
+GFPUSH  L(BU,8), GFSN
+        ST(BU,8), STX+.12
+        LV, $9, STX
+        L(BU,16), GFNEW+.48
+        ST(BU,16), GFSTK($9)
+        M+1(BU,8), GFSN
+        LV, $8, GFELK
+        B, 0($8)
+GFTOP   L(BU,8), GFSN
+        ST(BU,8), STX+.12
+        LV, $9, STX
+        L(BU,16), GFSTK-.16($9)
+        ST(BU,16), GFOP+.48
+        LV, $8, GFELK
+        B, 0($8)
+GFPUT   LV, $9, GFOPP
+        LI(BU,1), 1
+        ST(BU,1)(V+I), .1($9)
+        L(BU,8), GFOP+.56
+        ST(BU,8)(V+I), .8($9)
+        SV, $9, GFOPP
+        M+1(BU,18), GFOPN
+        LV, $8, GFELK
+        B, 0($8)
+!
+! CPLTNM (Chart BD p.70, p.71).  $3 holds the first digit; the radix is
+! GFSRAD.  PR := PR x radix + digit in floating point (Boxes 1-8), while
+! the character is alphameric.  CHOSEN: while PR's fraction is zero, PR is
+! the digit itself: a zero fraction's exponent grows by 48 at each normalized
+! multiply, so after 007's second 0 the 7 was aligned away (found on the
+! model); the guide's Box 6 draws only PR x radix + digit.  A digit not
+! less than the radix is message
+! 63 (p.71: still used; here a halt).  Box 9: PR aligned to exponent 48
+! by an unnormalized add puts the integer at the low end of the fraction;
+! CPLV gets its 24 bits (Fig. 12; over 24 bits: 168, as strap2).  The
+! floating stores are written ST(U): a bare ST takes its mode from the
+! symbol's dds, DD(BU,64) here, and stores as VFL (found on the model).
+CPLTNM  L(BU,8), GFSRAD
+        KI(BU,8), 0
+        BZAE, CPN1
+        LI(BU,8), 10
+CPN1    ST(BU,8), CPRADF+.52
+        L(N), CPZERO
+        ST(U), CPPR
+CPN3    SV, $3, GFC
+        L(BU,8), GFC+.16
+        ST(BU,8), CHXT+.13
+        LV, $9, CHXT
+        L(BU,8), CHVAL($9)
+        KI(BU,8), 36
+        BZAL, CPN9
+        K(BU,8), CPRADF+.52
+        BAL, CPN6
+        LI(BU,24), 163
+        B, ERROR
+CPN6    ST(BU,8), CPDIGF+.52
+        L(BU,48), CPPR+.12
+        KI(BU,48), 0
+        BZAE, CPN7
+        L(N), CPDIGF
+        B, CPN8
+CPN7    L(N), CPPR
+        *(N), CPRADF
+        +(N), CPDIGF
+CPN8    ST(U), CPPR
+        SIC, GETCHZ
+        B, GETCHA
+        B, CPN3
+CPN9    L(U), CPPR
+        +(U), CPZ48
+        ST(U), CPWRK
+        L(BU,24), CPWRK+.12
+        KI(BU,24), 0
+        BAE, CPN10
+        LI(BU,24), 168
+        B, ERROR
+CPN10   L(BU,24), CPWRK+.36
+        ST(BU,24), CPLV
+        LV, $8, CPLTNZ
+        B, 0($8)
+!
+! CPLTSY (Chart BE p.72, pp.74-75), a programmer symbol: each alphameric
+! character to BSYMBX (Boxes 2-9), at most 128 (Box 3, message 49).  A
+! tail ($ after the symbol, Box 15) is not written yet.
+CPLTSY  LI(BU,8), 0
+        ST(BU,8), CPLEN
+CPS2    L(BU,8), CPLEN
+        KI(BU,8), 128
+        BZAE, CPS3
+        LI(BU,24), 149
+        B, ERROR
+CPS3    M+1(BU,8), CPLEN
+        SV, $3, GFC
+        L(BU,8), GFC+.16
+        LV, $9, BSYMBX
+        ST(BU,8)(V+I), .8($9)
+        SV, $9, BSYMBX
+        SIC, GETCHZ
+        B, GETCHA
+        SV, $3, GFC
+        L(BU,8), GFC+.16
+        ST(BU,8), CHXT+.13
+        LV, $9, CHXT
+        L(BU,8), CHVAL($9)
+        KI(BU,8), 36
+        BAL, CPS2
+        L(BU,8), GFC+.16
+        KI(BU,8), (8)53
+        BZAE, CPS9
+        LI(BU,24), 9
+        B, ERROR
+CPS9    LV, $8, CPLTSZ
         B, 0($8)
 !
 ! ======== STAND-INS FOR MCP (CHOSEN, docs/strap2_7030.md) ==============
