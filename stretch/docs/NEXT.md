@@ -55,6 +55,21 @@ Open alongside: the LIM card under PUNREL is punched as computed and means
 nothing to a relocated load -- the guide does not say whether PUNREL
 punches one; and PUNREL after absolute output, refused.
 
+## AN INTEGER IN PARENTHESES ON A PLAIN SYMBOL -- open, 2026-11-12
+
+strap2 takes `L,JOE(3)`, where JOE has no dimensions, as index register 3, as it
+always has.  C22-6729 p.177's messages say STRAP II did not: 72 CANT SUBSCRIPT
+CONSTANT, TRY INDEX (`L,100(3)`); 74 CANNOT SUBSCRIPT SYMBOL WITH NO DDS; and
+p.40's "A(1)(I) where I must be a bit address".  So an integer entry was a
+subscript wherever it stood.  Not settled:
+  - what a symbol with a dds and no dimensions makes of a subscript (a
+    one-dimensional stride of FL is a guess);
+  - what 72 and 74 assemble.
+No deck in decks/ writes an integer index (searched 2026-11-12: symbols and
+constants; the only hits are UNTAIL's tail level), so refusing it would cost
+no deck.  Decide from a printed example, not from the messages alone.  Array
+subscripts and 75-77: tests/check_strap2_subscripts.py.
+
 ## AFTER FORTRAN IV: SCIENTIFIC WORKLOADS -- planned 2026-11-12
 
 The owner's addition: run period scientific FORTRAN on the model. The
