@@ -13,6 +13,7 @@ SUB-SLICE a: numbers (CPLTNM, floating point), programmer symbols, + - * /,
 unary minus, and the points.  SUB-SLICE b: parentheses; Fig. 28 p.200's
 printed bits are checked before the host comparison.  SUB-SLICE c: `$` and
 the system symbols (BOPSER, MBSPEC as notes), Fig. 29 p.201's printed bits.
+SUB-SLICE d: the g.p. and the radix.
 The test's driver (tests/strap2_7030_gfdrive.strap, NOT part of the reconstruction) calls GETFLD on every field of every
 card block, each at a fresh word, and records each field's first bit and
 the bit after it.  The host reads the same cards with Getcha and Getfld.
@@ -78,6 +79,30 @@ cmp, control all passing); fields 56-57 Fig. 29, then 58 $, 59 A+$, 60 $X2,
 (Each "ERRC 0" set also fails "every field equals strap2's".  MBSPEC never
 restores measured NOTHING until $51T was added: $XO and $1ND are found on
 the counter's first step, $51T -> SIT only on its third, through a carry.)
+SUB-SLICE d, g.p. and radix, MEASURED 2026-11-13 (restored by copy and cmp,
+control all passing); fields 72 (8)17, 73 (16)10, 74 (8)7+A(.12)9,
+75 A(.3)5, 76 (.3)5, 77 -(.3)5, 78 A+(.3)5, 79 A.(.3)5, 80 A(.3,8)17,
+81 A(8,.3)17, 82 A(.3)(.4)5, 83 A(.3)B(.12)C+1, 84 A(.3)+5, 85 A(.3,B),
+86 A.(8)17, 87 A.(8)(B+1), 88 (8)(.3)5, 89 2*(8)17+1, 90 ((8)17)5,
+91 (8).5, 92 X(B)(.6)7:
+  a g.p.'s items' operators not spent   74, 75, 78-84, 92
+  n and r in the current radix          74
+  the decimal times 8, not 10           73, 74, 83
+  (r,.n) read as (.n,r)                 ERRC 0 (a 163 halt), field count
+  r not the value's radix               80, 81; the 163 halt for A(.3,8)9
+  no data before a g.p. not null        76, 77, 88
+  a value's null taken as the field's   82
+  a g.p. allowed in parentheses         the 166 halt for (A(.3)5)
+  after a point's radix a ( keeps .L    87
+  a radix after a point as at a start   86, 87
+  a radix at a datum's start not one    ERRC 0, field count; the 163 halt
+                                        for (8)19
+(Each field set also fails "every field equals strap2's".  The first
+"(r,.n)" injection swapped one store of two and measured NOTHING: r kept
+the previous field's 8; it was redone swapping both.  "A g.p. with no value
+accepted" measured NOTHING: the end of the field where a value's datum is
+expected is already GFE's 166, so the check was dead and was removed, then
+the control and the redone injection re-run on the deck without it.)
 """
 import os
 import re
@@ -131,6 +156,9 @@ CARDS = [
     card(" ", "", "Q(((R+S)*T)-(U/V),W),-(((A)))"),
     card(" ", "", "PEACHES CREAM OF WHEAT +7.(3-6*18)($X2+3.0), MILK-CREAM ($X3+7)"),
     card(" ", "", "$,A+$,$X2,$15,$CPU,$IND,$X2+3,A($X3),$XO,$1ND,-$,$.4,($X2),$51T"),
+    card(" ", "", "(8)17,(16)10,(8)7+A(.12)9,A(.3)5,(.3)5,-(.3)5,A+(.3)5,A.(.3)5"),
+    card(" ", "", "A(.3,8)17,A(8,.3)17,A(.3)(.4)5,A(.3)B(.12)C+1,A(.3)+5,A(.3,B)"),
+    card(" ", "", "A.(8)17,A.(8)(B+1),(8)(.3)5,2*(8)17+1,((8)17)5,(8).5,X(B)(.6)7"),
 ]
 FIG29 = 56      # Fig. 29 p.201: its two fields' printed bits
 FIG28 = 11      # Fig. 28 p.200: its printed bits, before the host comparison
@@ -254,7 +282,7 @@ def run(cards, tmp, whole=False):
 
 def main():
     want = host(CARDS)
-    check("control: the host encodes all 72 fields", len(want), 72)
+    check("control: the host encodes all 93 fields", len(want), 93)
     check("control: the host's Fig. 29 is the printed one", want[FIG29:FIG29 + 2], fig29_printed())
     check("control: the host's MBSPEC changes $XO, $1ND, $51T (129)", CHANGED,
           [("XO", "X0"), ("1ND", "IND"), ("51T", "SIT")])
@@ -271,8 +299,10 @@ def main():
              ("166, an empty parenthesis (the host's 66)", "()", 166, 66),
              ("166, an empty item (the host's 66)", "(A,)", 166, 66),
              ("167, a parenthesis not closed (the host's 67)", "(A", 167, 67),
-             ("9, a radix: not written yet", "(8)17", 9, None),
-             ("9, a g.p.: not written yet", "A(.3)5", 9, None),
+             ("166, a g.p. with no value (the host's 66)", "A(.3)", 166, 66),
+             ("166, a g.p. inside parentheses (the host's 66)", "(A(.3)5)", 166, 66),
+             ("163, a g.p.'s value in its radix r (the host's 63)", "A(.3,8)9", 163, 63),
+             ("163, a digit too large for a radix prefix (the host's 63)", "(8)19", 163, 63),
              ("10, parentheses deeper than 7", "((((((((A))))))))", 10, None),
              ("156, a system symbol not found (the host's 56)", "$QQQ", 156, 56),
              ("156, a system symbol of 9 characters (the host's 56)", "$ABCDEFGHI", 156, 56),

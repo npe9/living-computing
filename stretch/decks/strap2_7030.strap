@@ -39,8 +39,7 @@
 !    1 COMREC word 8's code is not 5, IQS (only IQS input is written)
 !    2 a name longer than 64 characters (CHOSEN size of NAMEB; strap2 has no
 !      limit)
-!    9 a form GETFLD does not write yet (a tail, step 4's TAILOR; a g.p.
-!      or a radix, step 2's sub-slice d)
+!    9 a form GETFLD does not write yet (a tail, step 4's TAILOR)
 !   10 GETFLD's work areas full: parentheses deeper than 7, more than 8
 !      items in one, an item over its 2048-bit slot (CHOSEN sizes)
 !  100+n STRAP II message n, until the error routine is written (p.176-178):
@@ -601,6 +600,15 @@ SYSTBX  XW, SYSTAB, 0, 0
 GFIDP   DD(BU,64), 0
 GFDEP   DD(BU,64), 0
 GFCK    DD(BU,64), 0
+! sub-slice d: a g.p. met (GFGP), its n and r (r 0: none, radix 10), an
+! inner expression (GFINR: its null is not the field's), the expression's
+! prefix address (GFXS), GFINI's link
+GFGP    DD(BU,64), 0
+GFGPN   DD(BU,64), 0
+GFGPR   DD(BU,64), 0
+GFINR   DD(BU,64), 0
+GFXS    DD(BU,64), 0
+GFGLK   DD(BU,64), 0
 GFCN    DD(BU,64), 0
 GFCI    DD(BU,64), 0
 GFPARN  DD(BU,64), 0
@@ -663,6 +671,11 @@ CPDIGF  DD(BU,64), (16)0600000000000000
 CPZ48   DD(BU,64), (16)0600000000000000
 CPWRK   DD(BU,64), 0
 CPLV    DD(BU,64), 0
+! the digits as written, in decimal (a radix, a g.p.'s n and r): .0, 24 bits
+CPDEC   DD(BU,64), 0
+CPDE2   DD(BU,64), 0
+CPDE4   DD(BU,64), 0
+CPDD    DD(BU,64), 0
 ! CPLTSY: BSYMBX's value is where the symbol goes (p.74); CPLEN its length
 BSYMBX  XW, 0, 0, 0
 CPLEN   DD(BU,64), 0
@@ -906,20 +919,10 @@ GETFLD  SX, $2, GFSAV2
         ST(BU,8), GFSN
         ST(BU,8), GFSRAD
         ST(BU,8), GFDEP
-        LI(BU,64), 0
-        LV, $9, GFCTXX
-        LCI, $8, 16
-GFI0    ST(BU,64)(V+I), 1.0($9)
-        CB, $8, GFI0
-        LI(BU,18), 0
-        ST(BU,18), GFOPN
-        LI(BU,64), 0
-        ST(BU,64), GFNEW
-        ST(BU,64), GFOP
-        LVI, $9, GFOPS
-        SV, $9, GFOPP
-        LI(BU,1), 1
-        ST(BU,1), GFFRST
+        LI(BU,1), 0
+        ST(BU,1), GFINR
+        SIC, GFGLK
+        B, GFINI
 ! Boxes 3-4: the first character, unless the user has it (Gfchar)
         L(BU,1), GFCHAR
         KI(BU,1), 1
@@ -938,6 +941,7 @@ GF1     SV, $3, GFC
         KI(BU,8), (8)74
         BAE, GFNULL
 ! the prefix: 1A, and 1B type 000 (p.198)
+        SV, $2, GFXS
         LI(BU,4), 8
         ST(BU,4)(V+I), .4($2)
 ! a datum is expected (S-codes B, O, p.83): a leading plus does nothing; a
@@ -1036,7 +1040,7 @@ GFA5    L(BU,8), GFC+.16
         SIC, GETCHZ
         B, GETCHA
 ! a datum follows the point: an alphameric character, $ or (
-        SV, $3, GFC
+GFA6    SV, $3, GFC
         L(BU,8), GFC+.16
         ST(BU,8), CHXT+.13
         LV, $9, CHXT
@@ -1114,7 +1118,10 @@ GFEND   L(BU,8), GFSN
 GFEN1   L(BU,8), GFDEP
         KI(BU,8), 0
         BZAE, GFITEM
-GFEN2   SV, $3, GFC
+GFEN2   L(BU,1), GFGP
+        KI(BU,1), 1
+        BAE, GFZA
+        SV, $3, GFC
         L(BU,8), GFC+.16
         KI(BU,8), (8)33
         BAE, GFZA
@@ -1127,8 +1134,24 @@ GFEN2   SV, $3, GFC
         LI(BU,24), 167
         B, ERROR
 ! GFZA (Boxes 43, 60): the end of the data, the operators, no more
-! operators, and no g.p. (Box 46: "the bit at the end ... set to zero")
-GFZA    SIC, GFZLK
+! operators, and no g.p. (Box 46: "the bit at the end ... set to zero").
+! After a g.p. (Boxes 37-38): 1, n in 6 bits, then its value, an expression
+! of its own in the radix r (zero: 10); a field with no data before its
+! g.p. is null (as strap2: "(.3)5"), a value with none is not.
+GFZA    L(BU,1), GFGP
+        KI(BU,1), 1
+        BZAE, GFZA0
+        L(BU,1), GFINR
+        KI(BU,1), 1
+        BAE, GFZA0
+        L(BU,8), GFN
+        KI(BU,8), 0
+        BZAE, GFZA0
+        LV, $2, GFXS
+        LI(BU,5), (8)36
+        ST(BU,5)(V+I), .5($2)
+        B, GFGPT
+GFZA0   SIC, GFZLK
         B, GFLZC
         LI(BU,1), 0
         ST(BU,1)(V+I), .1($2)
@@ -1140,11 +1163,49 @@ GFZA    SIC, GFZLK
 GFZ1    L(BU,9)(V+I), .9($9)
         ST(BU,9)(V+I), .9($2)
         CB, $8, GFZ1
-GFZ2    LI(BU,2), 0
+GFZ2    L(BU,1), GFGP
+        KI(BU,1), 1
+        BAE, GFZ3
+        LI(BU,2), 0
         ST(BU,2)(V+I), .2($2)
 GFX     SV, $2, BCFLDX
         LX, $2, GFSAV2
         LV, $8, GETFLZ
+        B, 0($8)
+GFZ3    LI(BU,1), 0
+        ST(BU,1)(V+I), .1($2)
+GFGPT   LI(BU,1), 1
+        ST(BU,1)(V+I), .1($2)
+        L(BU,8), GFGPN
+        ST(BU,6)(V+I), .6($2)
+        L(BU,8), GFGPR
+        ST(BU,8), GFSRAD
+        LI(BU,1), 1
+        ST(BU,1), GFINR
+        SIC, GFGLK
+        B, GFINI
+        LI(BU,4), 8
+        ST(BU,4)(V+I), .4($2)
+! no value (the end of the field) is GFE's: a datum expected, 166
+        B, GFE
+! GFINI: an expression's state empty, at GETFLD and for a g.p.'s value
+GFINI   LI(BU,64), 0
+        LV, $9, GFCTXX
+        LCI, $8, 16
+GFI0    ST(BU,64)(V+I), 1.0($9)
+        CB, $8, GFI0
+        LI(BU,18), 0
+        ST(BU,18), GFOPN
+        LI(BU,64), 0
+        ST(BU,64), GFNEW
+        ST(BU,64), GFOP
+        LVI, $9, GFOPS
+        SV, $9, GFOPP
+        LI(BU,1), 1
+        ST(BU,1), GFFRST
+        LI(BU,1), 0
+        ST(BU,1), GFGP
+        LV, $8, GFGLK
         B, 0($8)
 GFNULL  LI(BU,6), (8)74
         ST(BU,6)(V+I), .6($2)
@@ -1167,8 +1228,6 @@ GFPRIM  SV, $3, GFC
         KI(BU,8), (8)53
         BAE, GFPD
         B, GFSYN
-GFNW    LI(BU,24), 9
-        B, ERROR
 GFPN    SIC, CPLTNZ
         B, CPLTNM
         SIC, GFZLK
@@ -1337,6 +1396,8 @@ GFIT3   L(BU,8), GFDEP
         ST(BU,8), 3.8($9)
         LI(BU,2), 0
         ST(BU,2), 3.16($9)
+        L(BU,24), CPDEC
+        ST(BU,24), 3.24($9)
         L(BU,8), GFN
         KI(BU,8), 1
         BZAE, GFIT5
@@ -1368,9 +1429,12 @@ GFIT5   M+1(BU,8), GFNIT
         B, GETCHA
         B, GFIS
 !
-! GFCLOS: the ')' (Boxes 56-83, p.85).  A .n item is a g.p. (Boxes 64-70)
-! and a lone absolute datum where no S/X may stand a radix (Boxes 79-81,
-! 74): both sub-slice d, halt 9.  Otherwise, with the outer context back:
+! GFCLOS: the ')' (Boxes 56-83, p.85).  (.n), (.n,r) and (r,.n) are a g.p.
+! (Boxes 64-70; C28-6129 p.25, p.30), at any depth but the outer one's
+! must be 0 (p.207; 166 as strap2's 66); its value follows the field's
+! operators (GFZA).  A lone absolute datum where no S/X may stand is a
+! radix (Boxes 79-81, 74), read as written in decimal, as strap2.  An
+! item .n otherwise is an ordinary item.  Otherwise, with the outer context back:
 ! after a datum or its point, S/X of that datum (Boxes 56, 60, 62); at a
 ! datum's start, one item with an operator joins the outer expression
 ! (Boxes 76-78, CHOSEN: an operator makes it arithmetic), and anything
@@ -1383,28 +1447,116 @@ GFCLOS  L(BU,8), GFKND
         ST(BU,8), GFIDP
         LI(BU,8), 0
         ST(BU,8), GFCI
-GFCL1   SIC, GFILK
+        SIC, GFILK
         B, GFIADR
-        L(BU,1), 3.17($9)
-        KI(BU,1), 1
-        BAE, GFNW
-        M+1(BU,8), GFCI
-        L(BU,8), GFCI
-        K(BU,8), GFCN
-        BZAE, GFCL1
-        L(BU,8), GFCK
-        KI(BU,8), 1
-        BAE, GFCL2
         L(BU,8), GFCN
         KI(BU,8), 1
-        BZAE, GFCL2
+        BZAE, GFCG2
+! one item: (.n) a g.p.; lone, not after a datum, a radix
+        L(BU,1), 3.17($9)
+        KI(BU,1), 1
+        BZAE, GFCR0
+        L(BU,24), 3.24($9)
+        ST(BU,8), GFGPN
         LI(BU,8), 0
-        ST(BU,8), GFCI
+        ST(BU,8), GFGPR
+        B, GFCGP
+GFCR0   L(BU,8), GFCK
+        KI(BU,8), 1
+        BAE, GFCL2
+        L(BU,1), 3.16($9)
+        KI(BU,1), 1
+        BZAE, GFCL2
+        L(BU,24), 3.24($9)
+        ST(BU,8), GFSRAD
+        B, GFCRX
+! two items: (.n,r) or (r,.n)
+GFCG2   KI(BU,8), 2
+        BZAE, GFCL2
+        L(BU,1), 3.17($9)
+        KI(BU,1), 1
+        BZAE, GFCG3
+        L(BU,24), 3.24($9)
+        ST(BU,8), GFGPN
+        M+1(BU,8), GFCI
         SIC, GFILK
         B, GFIADR
         L(BU,1), 3.16($9)
         KI(BU,1), 1
-        BAE, GFNW
+        BZAE, GFCL2
+        L(BU,24), 3.24($9)
+        ST(BU,8), GFGPR
+        B, GFCGP
+GFCG3   L(BU,1), 3.16($9)
+        KI(BU,1), 1
+        BZAE, GFCL2
+        L(BU,24), 3.24($9)
+        ST(BU,8), GFGPR
+        M+1(BU,8), GFCI
+        SIC, GFILK
+        B, GFIADR
+        L(BU,1), 3.17($9)
+        KI(BU,1), 1
+        BZAE, GFCL2
+        L(BU,24), 3.24($9)
+        ST(BU,8), GFGPN
+! a g.p.: its items' operators spent (GFOPS back to the first item's
+! start), the outer context back, at depth 0 only; the field's operators
+! are put and its value read (GFEND, GFZA); after a point the .L stays
+GFCGP   LI(BU,8), 0
+        ST(BU,8), GFCI
+        SIC, GFILK
+        B, GFIADR
+        L(BU,24), 2.0($9)
+        ST(BU,24), GFOPP
+        L(BU,18), 2.24($9)
+        ST(BU,18), GFOPN
+        M-1(BU,8), GFDEP
+        L(BU,8), GFDEP
+        ST(BU,8), STXF+.6
+        SIC, GFSLK
+        B, GFREST
+        LV, $2, GFR2
+        L(BU,8), GFDEP
+        KI(BU,8), 0
+        BZAE, GFSYN
+        LI(BU,1), 1
+        ST(BU,1), GFGP
+        SIC, GETCHZ
+        B, GETCHA
+        B, GFEND
+! a radix: its item's operators spent, the outer context back; at a datum's start the datum follows
+! (a point, a parenthesis or a primary, GFE2); after a point, the datum
+! the point joins, a parenthesis there at a datum's start, the .L to be .+
+GFCRX   LI(BU,8), 0
+        ST(BU,8), GFCI
+        SIC, GFILK
+        B, GFIADR
+        L(BU,24), 2.0($9)
+        ST(BU,24), GFOPP
+        L(BU,18), 2.24($9)
+        ST(BU,18), GFOPN
+        M-1(BU,8), GFDEP
+        L(BU,8), GFDEP
+        ST(BU,8), STXF+.6
+        SIC, GFSLK
+        B, GFREST
+        LV, $2, GFR2
+        SIC, GETCHZ
+        B, GETCHA
+        SV, $3, GFC
+        L(BU,8), GFCK
+        KI(BU,8), 2
+        BAE, GFCR2
+        B, GFE2
+GFCR2   SV, $3, GFC
+        L(BU,8), GFC+.16
+        KI(BU,8), (8)34
+        BZAE, GFA6
+        LI(BU,1), 1
+        ST(BU,1), GFDOTL
+        LI(BU,8), 0
+        B, GFOPEN
 GFCL2   M-1(BU,8), GFDEP
         L(BU,8), GFDEP
         ST(BU,8), STXF+.6
@@ -1523,7 +1675,17 @@ GFSB3   LI(BU,1), 0
         LV, $9, STX
         LI(BU,3), 7
         ST(BU,3), GFSTK-.8($9)
-GFCX    LI(BU,1), 0
+GFCX    L(BU,1), GFDOTL
+        KI(BU,1), 1
+        BZAE, GFCX1
+        LI(BU,1), 0
+        ST(BU,1), GFDOTL
+        L(BU,8), GFSN
+        ST(BU,8), STX+.12
+        LV, $9, STX
+        LI(BU,3), 7
+        ST(BU,3), GFSTK-.8($9)
+GFCX1   LI(BU,1), 0
         ST(BU,1), GFUN
         SIC, GETCHZ
         B, GETCHA
@@ -1781,6 +1943,8 @@ CPLTNM  L(BU,8), GFSRAD
 CPN1    ST(BU,8), CPRADF+.52
         L(N), CPZERO
         ST(U), CPPR
+        LI(BU,24), 0
+        ST(BU,24), CPDEC
 CPN3    SV, $3, GFC
         L(BU,8), GFC+.16
         ST(BU,8), CHXT+.13
@@ -1793,6 +1957,16 @@ CPN3    SV, $3, GFC
         LI(BU,24), 163
         B, ERROR
 CPN6    ST(BU,8), CPDIGF+.52
+        ST(BU,8), CPDD+.16
+        L(BU,24), CPDEC
+        +(BU,24), CPDEC
+        ST(BU,24), CPDE2
+        +(BU,24), CPDE2
+        ST(BU,24), CPDE4
+        +(BU,24), CPDE4
+        +(BU,24), CPDE2
+        +(BU,24), CPDD
+        ST(BU,24), CPDEC
         L(BU,48), CPPR+.12
         KI(BU,48), 0
         BZAE, CPN7
