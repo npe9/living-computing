@@ -1625,6 +1625,12 @@ run "An index read after a pending progressive write" ./run_program.sh ../decks/
 # Control: part H passes before and after; decks checked by cmp.
 run "The 7030 SMAC on the model, against smac.py" python3 check_smac7030.py
 
+# THE 7030 STRAP II, ON THE MODEL (decks/strap2_7030.strap, docs/strap2_7030.md),
+# assembled by the host STRAP II and loaded from its own binary deck
+# (gen_tb.py ASM=strap2), against strap/strap2 phase by phase.  Step 1: XINPUT
+# and GETCHA.  Injections in the test's header.
+run "The 7030 STRAP II on the model: GETCHA against strap2's Getcha" python3 check_strap2_7030.py
+
 # STRAP II, RECONSTRUCTED host-side (strap/strap2, docs/strap2/), NOT
 # strap_asm restructured.  Its measured injections are in each test's header.
 # The first test is GETFLD against the guide's only printed bits, Figs. 28-29;

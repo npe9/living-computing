@@ -1,0 +1,348 @@
+! strap2_7030.strap -- RECONSTRUCTION of STRAP II as a 7030 program.
+!
+! >>> A RECONSTRUCTION.  IBM's STRAP II was a 7030 program; one page of its
+! >>> code survives (CHM 102633945, decks/strap2_chm102633945.strap).  This
+! >>> code is written here to C22-6729 (the STRAP II Systems Analysis Guide),
+! >>> read in the ink.  docs/strap2_7030.md records every convention with
+! >>> its page, or marks it CHOSEN.  The reference for its behaviour is the
+! >>> host-side STRAP II, strap/strap2/. <<<
+!
+! STEP 1 (docs/strap2_7030.md "The order of work"): XINPUT and GETCHA.
+! MAIN is not written yet; DRIVE stands in for it, calls GETCHA to the end
+! of the input, and records what GETCHA gives: every character, and at each
+! end of a card block the block's name.  tests/check_strap2_7030.py runs it
+! on the model against strap2's Getcha.
+!
+! REGISTERS (p.175, both passes).  Only $7, $8 and $9 are free.  In Pass 1
+! $3 is the A8 character from GETCHA, $13 belongs to INTOUT (XINPUT here, the
+! input routine, CHOSEN) and $14 to GETCHA.  $15 is general linkage; GETCHA's
+! own is SIC,GETCHZ (p.79).  Links are memory cells, "SIC,cell", read back
+! with LV,$8,cell; B,0($8), as in decks/smac7030_shell.strap.
+!
+! CHARACTERS.  The input is IQS, COMREC code 5 (p.8); XINPUT converts each
+! card to A8, STRAP II's internal code (p.175: "A8 character from GETCHA";
+! strap/strap2/a8.py: the 48 set of RefMan printed p.166 in eight bits, and
+! the internal false semicolon 0o35).  A8 used below: blank 0o20, quote
+! (the comment character, p.79) 0o14, asterisk 0o54, semicolon 0o35.  In a
+! VFL immediate an integer is the value: KI(BU,8),(8)54.  An index immediate
+! (LVI) is a half-word address, so a character reaches $3 by GCPUT and an
+! address with a bit part by LV from an XW.
+!
+! THE FAILURES.  Each halts at HALTE with a code in ERRC:
+!    1 COMREC word 8's code is not 5, IQS (only IQS input is written)
+!    2 a name longer than 64 characters (CHOSEN limit of NAMEB)
+!
+        SLC, (8)2000.0
+!
+! ======== DRIVE: the stand-in for MAIN (step 1 only) ==================
+START   L(BU,3), COMREC+8.25
+        KI(BU,3), 5
+        BAE, DRV0
+        LI(BU,24), 1
+        B, ERROR
+DRV0    SIC, XINLK
+        B, XINPUT
+DRV1    SIC, GETCHZ
+        B, GETCHA
+        L(BU,1), FEOF
+        KI(BU,1), 1
+        BAE, DONE
+! the character, $3's value field, to the output
+        SV, $3, GCTMP
+        LV, $9, OUTP
+        L(BU,8), GCTMP+.16
+        ST(BU,8)(V+I), .8($9)
+        SV, $9, OUTP
+        M+1(BU,24), OUTN
+        L(BU,1), FEND
+        KI(BU,1), 1
+        BZAE, DRV1
+! the false semicolon: the block's name, then a semicolon, to NAMS
+        LV, $9, NAMSP
+        L(BU,18), NAMET
+        KI(BU,18), 0
+        BAE, DRV3
+        LVI, $8, NAMEB
+        LC, $7, NAMET
+DRV2    L(BU,8)(V+I), .8($8)
+        ST(BU,8)(V+I), .8($9)
+        CB, $7, DRV2
+DRV3    LI(BU,8), (8)35
+        ST(BU,8)(V+I), .8($9)
+        SV, $9, NAMSP
+        B, DRV1
+!
+! ======== XINPUT: the next card image, converted (p.77 boxes 4, 36) ====
+! The input block is INX's: value the next card, count the cards left, ten
+! words each.  The card goes to GCNEXT in A8; HAVEN is 1 if there was one.
+XINPUT  LI(BU,1), 0
+        ST(BU,1), HAVEN
+        LX, $13, INX
+        KCI, $13, 0
+        BXE, XIN9
+        LVI, $7, GCNEXT
+        LCI, $8, 80
+XIN1    L(BU,8)(V+I), .8($13)
+        ST(BU,8), XTMP+.13
+        LV, $9, XTMP
+        L(BU,8), IQSA8($9)
+        ST(BU,8)(V+I), .8($7)
+        CB, $8, XIN1
+        LX, $13, INX
+        C-I, $13, 1
+        V+I, $13, 10.0
+        SX, $13, INX
+        LI(BU,1), 1
+        ST(BU,1), HAVEN
+XIN9    LV, $8, XINLK
+        B, 0($8)
+!
+! ======== GETCHA (Charts BG, BH pp.77-78; p.79) =======================
+! One character to $3 per call.  Blanks are skipped (Gcaz off; p.102's
+! Gcaz, blanks significant, is not written yet).  At the end of a card
+! block, the false semicolon with FEND on (p.79 item 5); at the end of the
+! input, FEOF on (CHOSEN: the stand-in stops there; MAIN stops at END).
+! $14's value field is the next column of GCCARD.
+GETCHA  LI(BU,1), 0
+        ST(BU,1), FEND
+        L(BU,1), GCOPEN
+        KI(BU,1), 1
+        BAE, GC10
+! no card block open: open the next one (box 3: GETCHA's initial entry)
+        L(BU,1), HAVEN
+        KI(BU,1), 1
+        BAE, GC2
+        LI(BU,1), 1
+        ST(BU,1), FEOF
+        B, GCX
+GC2     SIC, GCOLK
+        B, GCOPN
+        LI(BU,1), 1
+        ST(BU,1), GCOPEN
+        LI(BU,18), 0
+        ST(BU,18), NAMEL
+        ST(BU,18), NAMET
+        ST(BU,1), GCCOM
+        ST(BU,1), NAMEND
+! column 1 (box 10): the comment character makes the card block a comment
+        L(BU,8), GCCARD
+        KI(BU,8), (8)14
+        BAE, GC5
+! columns 2-9 (boxes 14-16): a comment character there makes the block a
+! comment (p.79); otherwise they are the name
+        LV, $7, KNAME
+        LCI, $8, 8
+GC3     L(BU,8)(V+I), .8($7)
+        KI(BU,8), (8)14
+        BAE, GC5
+        CB, $8, GC3
+        SIC, GCNLK
+        B, GCNAME
+! CHOSEN, as strap2's Getcha: the initial card's name loses its trailing
+! blanks before a continuation card adds to it (p.79 does not say)
+        L(BU,18), NAMET
+        ST(BU,18), NAMEL
+        LV, $14, KSTMT
+        B, GC10
+GC5     LI(BU,1), 1
+        ST(BU,1), GCCOM
+        LI(BU,18), 0
+        ST(BU,18), NAMEL
+        ST(BU,18), NAMET
+        LVI, $14, GCEND
+        LI(BU,8), (8)14
+        SIC, GCPLK
+        B, GCPUT
+        B, GCX
+! the statement field, columns 10-72 (box 22)
+GC10    KVI, $14, GCEND
+        BXL, GC20
+! the end of the statement field (box 32): a continuation card (box 37)?
+        L(BU,1), HAVEN
+        KI(BU,1), 1
+        BZAE, GC15
+        L(BU,8), GCNEXT
+        KI(BU,8), (8)54
+        BZAE, GC15
+        SIC, GCOLK
+        B, GCOPN
+! in a comment block its characters are not given to MAIN (p.79: "without
+! giving them out to main flow through $3")
+        L(BU,1), GCCOM
+        KI(BU,1), 1
+        BAE, GC14
+! its columns 2-9 continue the name (p.79), until one is blank
+        L(BU,1), NAMEND
+        KI(BU,1), 1
+        BAE, GC12
+        LV, $7, KNAME
+        LCI, $8, 8
+GC11    L(BU,8)(V+I), .8($7)
+        KI(BU,8), (8)20
+        BZAE, GC13
+        CB, $8, GC11
+        LI(BU,1), 1
+        ST(BU,1), NAMEND
+        B, GC12
+GC13    SIC, GCNLK
+        B, GCNAME
+GC12    LV, $14, KSTMT
+        B, GC10
+GC14    LVI, $14, GCEND
+        B, GC10
+! the end of the card block (box 38): the false semicolon
+GC15    LI(BU,1), 1
+        ST(BU,1), FEND
+        LI(BU,1), 0
+        ST(BU,1), GCOPEN
+        LI(BU,8), (8)35
+        SIC, GCPLK
+        B, GCPUT
+        B, GCX
+GC20    L(BU,8)(V+I), .8($14)
+        KI(BU,8), (8)20
+        BAE, GC10
+        SIC, GCPLK
+        B, GCPUT
+GCX     LV, $8, GETCHZ
+        B, 0($8)
+!
+! GCPUT: the accumulator's byte to $3's value field
+GCPUT   ST(BU,8), GCTMP+.16
+        LV, $3, GCTMP
+        LV, $8, GCPLK
+        B, 0($8)
+!
+! GCOPN: GCNEXT becomes GCCARD, and XINPUT reads the next
+GCOPN   LVI, $7, GCNEXT
+        LVI, $9, GCCARD
+        LCI, $8, 10
+GCO1    L(BU,64)(V+I), 1.0($7)
+        ST(BU,64)(V+I), 1.0($9)
+        CB, $8, GCO1
+        SIC, XINLK
+        B, XINPUT
+        LV, $8, GCOLK
+        B, 0($8)
+!
+! GCNAME: columns 2-9 of GCCARD to the name buffer (box 20); NAMET is the
+! length to the last character that is not blank (strap2: rstrip)
+GCNAME  LV, $7, KNAME
+        LCI, $8, 8
+GCN1    L(BU,18), NAMEL
+        KI(BU,18), 64
+        BZAE, GCN2
+        LI(BU,24), 2
+        B, ERROR
+GCN2    ST(BU,18), NTMP+.3
+        LV, $9, NTMP
+        L(BU,8)(V+I), .8($7)
+        ST(BU,8), NAMEB($9)
+        M+1(BU,18), NAMEL
+        KI(BU,8), (8)20
+        BAE, GCN3
+        L(BU,18), NAMEL
+        ST(BU,18), NAMET
+GCN3    CB, $8, GCN1
+        LV, $8, GCNLK
+        B, 0($8)
+!
+ERROR   ST(BU,24), ERRC
+HALTE   BEW, $
+DONE    BEW, $
+!
+! ======== data ========================================================
+        CNOP
+GCEND   SYN, GCCARD+9.0
+! LVI loads a half-word address (the bits below .32 are dropped;
+! card_reader.strap), so an address with a bit part is loaded with LV from
+! an index word:
+KNAME   XW, GCCARD+.8, 0, 0
+KSTMT   XW, GCCARD+1.8, 0, 0
+GETCHZ  DD(BU,64), 0
+XINLK   DD(BU,64), 0
+GCOLK   DD(BU,64), 0
+GCNLK   DD(BU,64), 0
+GCPLK   DD(BU,64), 0
+GCTMP   DD(BU,64), 0
+XTMP    DD(BU,64), 0
+NTMP    DD(BU,64), 0
+ERRC    DD(BU,64), 0
+FEND    DD(BU,64), 0
+FEOF    DD(BU,64), 0
+GCOPEN  DD(BU,64), 0
+GCCOM   DD(BU,64), 0
+HAVEN   DD(BU,64), 0
+NAMEND  DD(BU,64), 0
+NAMEL   DD(BU,64), 0
+NAMET   DD(BU,64), 0
+NAMEB   DRZ(BU,64), 8
+GCCARD  DRZ(BU,64), 10
+GCNEXT  DRZ(BU,64), 10
+!
+! IQSA8: IQS code (strap/charsets.py IQS) to A8 (strap/strap2/a8.py), one
+! byte per IQS code; a code with no A8 character is 0, as a8() gives.
+! Generated from those two tables, 2026-11-12.
+IQSA8   SYN, $
+        DD(BU,64), (16)1000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)00302B0B2C1C113C
+        DD(BU,64), (16)1B1D0C0031313232
+        DD(BU,64), (16)3333343435353636
+        DD(BU,64), (16)3737383839392121
+        DD(BU,64), (16)2222232324242525
+        DD(BU,64), (16)2626272728282929
+        DD(BU,64), (16)1212131314141515
+        DD(BU,64), (16)1616171718181919
+        DD(BU,64), (16)0A00010002000300
+        DD(BU,64), (16)0400050006000700
+        DD(BU,64), (16)080009003B1A2000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+!
+! COMREC (pp.8-10): word 8, the input file; its code, bits 8.25-8.27, is 5,
+! IQS.  CHOSEN: set here, standing for the pre-processor (p.8: "This word
+! must always be set up by the pre-processor").  The other words wait for
+! the disk.
+COMREC  DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), (16)0000005000000000
+        DRZ(BU,64), 16
+!
+! DRIVE's output (step 1 only): the characters, one byte each, and the
+! names, each ended by a semicolon.  CHOSEN sizes.
+OUTN    DD(BU,64), 0
+OUTP    XW, OUTB, 0, 0
+NAMSP   XW, NAMS, 0, 0
+OUTB    DRZ(BU,64), 500
+NAMS    DRZ(BU,64), 100
+!
+! The input block (CHOSEN, docs/strap2_7030.md): INX's value is the next
+! card, its count the cards left; the cards follow INB, ten words each, in
+! IQS.  tests/check_strap2_7030.py sets the count and puts the cards here.
+INX     XW, INB, 0, 0
+INB     SYN, $
+        END, START

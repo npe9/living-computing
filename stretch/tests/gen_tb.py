@@ -17,6 +17,34 @@ import sys
 from strap_asm import assemble, AssemblerError
 
 
+def strap2_program(src):
+    """ASM=strap2: the program as the host STRAP II (strap/strap2) assembles
+    it, loaded from its own binary deck by the loader's absolute path
+    (check_strap2_punch.decode_and_load, written apart from punch.py).  Any
+    message, unwritten path or card complaint refuses: a program loaded this
+    way must assemble clean.  Unloaded bits of a word are 0."""
+    import types
+    import strap_asm
+    from strap2 import compile_cards, StrapError
+    from strap2.cards import deck_cards
+    from check_strap2_punch import decode_and_load
+    try:
+        p2 = compile_cards(deck_cards(src), strap_asm.DEFAULT_ORIGIN_BITS)
+    except (StrapError, AssemblerError) as e:
+        raise AssemblerError(f"strap2: {e}")
+    if p2.msg.items:
+        raise AssemblerError(f"strap2 messages: {[m[:2] for m in p2.msg.items][:5]}")
+    if p2.punch.unwritten:
+        raise AssemblerError(f"strap2: {p2.punch.unwritten}")
+    mem, branch, bad = decode_and_load(p2.punch.images(clock=0))
+    if bad:
+        raise AssemblerError(f"strap2 deck: {bad[:3]}")
+    words = {}
+    for k, v in mem.items():
+        words[k // 64] = words.get(k // 64, 0) | (v << (63 - k % 64))
+    return types.SimpleNamespace(words=words, end_pc=None if branch is None else branch // 32)
+
+
 def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              console_switches=None,
              printer_checks=None, tape_image=None, tape_checks=None,
@@ -609,7 +637,7 @@ if __name__ == '__main__':
     with open(sys.argv[1]) as f:
         src = f.read()
     try:
-        prog = assemble(src)
+        prog = strap2_program(src) if "ASM=strap2" in sys.argv[3:] else assemble(src)
     except AssemblerError as e:
         print(f"error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -635,7 +663,9 @@ if __name__ == '__main__':
     mem_dump = None
     fast_load = None
     for spec in sys.argv[3:]:
-        if spec == 'WAITIO':
+        if spec == 'ASM=strap2':
+            continue
+        elif spec == 'WAITIO':
             # stop on core.idle(), not core.halted(): see generate()
             wait_for_io = True
         elif spec.startswith('PC='):
