@@ -1630,7 +1630,7 @@ run "The 7030 SMAC on the model, against smac.py" python3 check_smac7030.py
 # (gen_tb.py ASM=strap2), against strap/strap2 phase by phase.  Step 1: XINPUT
 # and GETCHA.  Injections in the test's header.
 run "The 7030 STRAP II on the model: GETCHA against strap2's Getcha" python3 check_strap2_7030.py
-run "The 7030 STRAP II on the model: GETFLD against strap2's coded expressions (step 2a)" python3 check_strap2_7030_getfld.py
+run "The 7030 STRAP II on the model: GETFLD against strap2's coded expressions and Fig. 28 (steps 2a-b)" python3 check_strap2_7030_getfld.py
 
 # STRAP II, RECONSTRUCTED host-side (strap/strap2, docs/strap2/), NOT
 # strap_asm restructured.  Its measured injections are in each test's header.

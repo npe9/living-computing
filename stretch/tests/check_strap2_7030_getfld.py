@@ -10,7 +10,8 @@ encode() (coded.py), docs/strap2_7030.md step 2.
 >>> parentheses, so they wait for sub-slice b (Fig. 29 also for c). <<<
 
 SUB-SLICE a: numbers (CPLTNM, floating point), programmer symbols, + - * /,
-unary minus, and the points.  The test's driver (tests/strap2_7030_gfdrive.
+unary minus, and the points.  SUB-SLICE b: parentheses; Fig. 28 p.200's
+printed bits are checked before the host comparison.  The test's driver (tests/strap2_7030_gfdrive.
 strap, NOT part of the reconstruction) calls GETFLD on every field of every
 card block, each at a fresh word, and records each field's first bit and
 the bit after it.  The host reads the same cards with Getcha and Getfld.
@@ -40,6 +41,24 @@ cells GFNUM and GFD went; a point now waits on GFSTK, priority 4):
                                         datum, so it is the top entry when
                                         the next operator comes, and any
                                         priority from 2 up puts it first
+SUB-SLICE b, parentheses, MEASURED 2026-11-13 (restored by copy and cmp,
+control all passing); fields 36 Fig. 28, 37 T(2,1), 38 T(2,1)(A),
+39 A*(B+C), 40 -(A+B)*C, 41 (A), 42 (A)(3), 43 (A+B)(3), 44 ((A)),
+45 .(A+B), 46 (A,B), 47 A(B(C(D))), 48 7.(3-6*18)(A+3.0), 49 X(A+B,C*D),
+50 ((A+B)*(C-D))/E, 51 (A).B, 52 A.(B)(C), 53 the 58-character subscript,
+54 Q(((R+S)*T)-(U/V),W), 55 -(((A))):
+  no zero datum                         41, 42, 44, 46, 51, 55
+  never arithmetic                      Fig. 28; 36, 39, 40, 43, 45, 50, 54
+  spliced operators not renumbered      39, 50, 54
+  end bit not held open                 Fig. 28; every field 36-55
+  S/X operators not copied              48, 49, 54
+  after a point .L kept                 48, 52
+  GFOPS not rewound after S/X           48, 49, 54
+  15 context words restored             54
+  no whole-word copy                    Fig. 28; 36, 47, 48, 50, 53, 54, 55
+  S/X makes a datum lone                ERRC 0 (a radix halt), field count
+  depth limit 8                         the depth-over-7 halt
+  after a datum taken as a start        37, 38; ERRC 0, field count
 (A first form of the point-number injection added a zero field, changed
 nothing and measured nothing; it was rewritten as M+1/M-1 and re-run.)
 """
@@ -86,8 +105,34 @@ CARDS = [
     card("*", "", "A*2"),
     card(" ", "", ""),
     card(" ", "", "(((JOE - 1)/4.)*4+1)."),
+    card(" ", "", "T(2,1),T(2,1)(A),A*(B+C),-(A+B)*C,(A),(A)(3),(A+B)(3)"),
+    card(" ", "", "((A)),.(A+B),(A,B),A(B(C(D))),7.(3-6*18)(A+3.0)"),
+    card(" ", "", "X(A+B,C*D),((A+B)*(C-D))/E,(A).B,A.(B)(C)"),
+    card(" ", "", "A(PEACHESCREAMOFWHEATANDMILKANDHONEYANDSUGARANDTOASTANDJAM)"),
+    card(" ", "", "Q(((R+S)*T)-(U/V),W),-(((A)))"),
 ]
-FIG28 = 11      # Fig. 28 p.200, needs parentheses (sub-slice b)
+FIG28 = 11      # Fig. 28 p.200: its printed bits, before the host comparison
+
+
+def a8sym(t):
+    from strap2.a8 import a8_bits
+    from strap2.bits import field
+    return "100" + field(len(t), 7) + a8_bits(t)
+
+
+def fig28_printed():
+    """As tests/check_strap2_coded.py writes Fig. 28, p.200, read in the ink."""
+    from strap2.bits import field
+
+    def abs24(n):
+        return "110" + field(n, 24)
+
+    def op(code, n):
+        return "1" + code + field(n, 5)
+    return ("1000" + a8sym("JOE") + "0" + abs24(1) + "0" + abs24(4) + "0" +
+            abs24(4) + "0" + abs24(1) + "0" + "0" +
+            op("000", 1) + op("110", 3) + op("010", 2) + op("011", 3) +
+            op("001", 4) + op("110", 5) + "0" + "0")
 
 
 def deck_text(cards):
@@ -159,8 +204,9 @@ def run(cards, tmp, whole=False):
 
 
 def main():
-    want = host(CARDS[:FIG28])
-    check("control: the host encodes all 36 fields", len(want), 36)
+    want = host(CARDS)
+    check("control: the host encodes all 56 fields", len(want), 56)
+    check("control: the host's Fig. 28 is the printed one", want[36], fig28_printed())
     halts = [("163, a digit too large for the radix (the host's 63)", "19A", 163, 63),
              ("166, a plus after an operator (the host's 66)", "A++B", 166, 66),
              ("167, a character that ends no field (the host's 67)", "7$", 167, 67),
@@ -170,10 +216,15 @@ def main():
              ("167, a second point in one datum (the host's 67)", "2.3.4", 167, 67),
              ("166, a second unary minus (the host's 66)", "--2", 166, 66),
              ("166, a second point before a datum (the host's 66)", "..2", 166, 66),
-             ("9, a parenthesis: not written yet", "(A)", 9, None),
+             ("166, an empty parenthesis (the host's 66)", "()", 166, 66),
+             ("166, an empty item (the host's 66)", "(A,)", 166, 66),
+             ("167, a parenthesis not closed (the host's 67)", "(A", 167, 67),
+             ("9, a radix: not written yet", "(8)17", 9, None),
+             ("9, a g.p.: not written yet", "A(.3)5", 9, None),
+             ("10, parentheses deeper than 7", "((((((((A))))))))", 10, None),
              ("9, a $: not written yet", "$X2", 9, None)]
     with tempfile.TemporaryDirectory() as tmp:
-        got, out = run(CARDS[:FIG28], tmp)
+        got, out = run(CARDS, tmp)
         for label, stmt, errc, msg in halts:
             if isinstance(stmt, list):
                 cs = [card(" ", "", stmt[0])] + [card("*", "", t) for t in stmt[1:]]
@@ -187,6 +238,8 @@ def main():
         print("FAIL the 7030 GETFLD did not run to its halt:\n" + out)
         return 1
     check("ERRC is 0 (no failure halt)", got["errc"], 0)
+    check("Fig. 28 p.200: the 7030 GETFLD gives the printed bits",
+          got["fields"][36] if len(got["fields"]) > 36 else None, fig28_printed())
     check(f"the number of fields ({len(want)})", len(got["fields"]), len(want))
     for k, (g, w) in enumerate(zip(got["fields"], want)):
         if g != w:
