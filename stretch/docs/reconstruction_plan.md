@@ -287,6 +287,7 @@ them, but running the processors **under MCP** (E2-E4) does.
    STRAP II assembles its own source to the same bits.
    Host-side first milestone DONE 2026-11-09 (`strap/strap2/`,
    `docs/strap2/README.md` for its reach and what is not yet written).
+   The 7030 version's design: `docs/strap2_7030.md` (2026-11-12).
 5. **F-1..F-3 FORTRAN IV** on top: its phases (PH3 syntax, PH2-1..3
    data glean, expansion and indexing, which is SMAC II) emitting SMAC
    I, through STRAP II, to the BSS loader.
