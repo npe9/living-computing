@@ -3,7 +3,7 @@
 ! tests/check_strap2_7030_getfld.py assembles it after the deck (and its
 ! input cards), with END, START.  Standing in for MAIN, it calls GETFLD on
 ! every field of every card block, each field's coded expression at the
-! next full word of OUTF, and records each field's first bit and the bit
+! next full word of OUTF, its buffer 64 words (Bcfxtx), and records each field's first bit and the bit
 ! after it in OUTL, two words a field.
 START   SIC, XINLK
         B, XINPUT
@@ -17,6 +17,8 @@ GD0     SIC, GETCHZ
         ST(BU,1), GFCHAR
 GD1     LV, $9, GDP
         SV, $9, BCFLDX
+        V+, $9, GDLIM
+        SV, $9, BCFXTX
         LV, $9, GDLP
         L(BU,24), GDP
         ST(BU,24)(V+I), 1.0($9)
@@ -46,5 +48,7 @@ GDT     DD(BU,64), 0
 OUTN    DD(BU,64), 0
 GDP     XW, OUTF, 0, 0
 GDLP    XW, OUTL, 0, 0
-OUTL    DRZ(BU,64), 200
+! each field's buffer: 64 words (Bcfxtx), so a longer field halts 11
+GDLIM   XW, 64.0, 0, 0
+OUTL    DRZ(BU,64), 400
 OUTF    DRZ(BU,64), 800

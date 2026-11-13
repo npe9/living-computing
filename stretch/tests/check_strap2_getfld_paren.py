@@ -35,6 +35,11 @@ PYTHONDONTWRITEBYTECODE=1, control all passing before and after:
   a lone datum is arithmetic             the ($1) control, (A)
   a system symbol is an absolute datum   the ($1) control
 (The split g.p. passes under the old host too: _peek_gp needed only the '.'.)
+
+A.(8)(.3)5, 2026-11-13: the host gave .+ numbered 1, a datum that is not
+there (A is datum 0), where A.(.3)5 gives .L 0; _dotted now keeps .L when a
+g.p. follows a point's radix.  MEASURED: the previous _dotted fails that
+check and nothing else.
 """
 import os
 import sys
@@ -90,6 +95,21 @@ check("a radix split across a continuation card, (8 / )17",
       printed(stmt("L,(8").ljust(72), cont(")17")), "000000.17 80")
 check("a g.p. split across a continuation card, .55(.6 / 3)21",
       printed(stmt("XW,.55(.6").ljust(72), cont("3)21")), printed(stmt("XW,.55(.63)21")))
+
+
+def coded(text):
+    """One field's coded expression from the host's GETFLD."""
+    from strap2.cards import Getcha
+    from strap2.coded import encode
+    from strap2.getfld import Getfld
+    from strap2.optable import system_symbol
+    g = Getcha([(" " + " " * 8 + text).ljust(80)])
+    g.next()
+    return encode(Getfld(g, system_symbol).field(have_first=True))
+
+
+check("A.(8)(.3)5: a g.p. after a point's radix keeps .L, as A.(.3)5 (no datum 1)",
+      coded("A.(8)(.3)5"), coded("A.(.3)5"))
 
 print("ALL CHECKS PASSED" if not fails else f"{fails} FAILED")
 sys.exit(1 if fails else 0)

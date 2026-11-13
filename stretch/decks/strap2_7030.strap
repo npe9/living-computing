@@ -42,6 +42,8 @@
 !    9 a form GETFLD does not write yet (a tail, step 4's TAILOR)
 !   10 GETFLD's work areas full: parentheses deeper than 7, more than 8
 !      items in one, an item over its 2048-bit slot (CHOSEN sizes)
+!   11 the coded expression past Bcfxtx (Box 55 GFLONG "CHECK FOR ROOM IN
+!      BUFFER", p.81; what GFLONG does then is not written up: CHOSEN, a halt)
 !  100+n STRAP II message n, until the error routine is written (p.176-178):
 !      149 a symbol over 128 characters, 156 a system symbol not found
 !      (MBSPEC's 129 is a note: NOTEC, NOTEL), 163 a digit too large for the
@@ -609,6 +611,9 @@ GFGPR   DD(BU,64), 0
 GFINR   DD(BU,64), 0
 GFXS    DD(BU,64), 0
 GFGLK   DD(BU,64), 0
+! GFLIM: Bcfxtx rounded down to a full word (p.83); GFLONG's link
+GFLIM   DD(BU,64), 0
+GFLLK   DD(BU,64), 0
 GFCN    DD(BU,64), 0
 GFCI    DD(BU,64), 0
 GFPARN  DD(BU,64), 0
@@ -915,6 +920,10 @@ GCN3    CB, $8, GCN1
 ! system symbols.  Not yet: g.p. and radix (sub-slice d).
 GETFLD  SX, $2, GFSAV2
         LV, $2, BCFLDX
+        L(BU,24), BCFXTX
+        ST(BU,24), GFLIM
+        LI(BU,6), 0
+        ST(BU,6), GFLIM+.18
         LI(BU,8), 0
         ST(BU,8), GFSN
         ST(BU,8), GFSRAD
@@ -990,6 +999,8 @@ GFE4    ST(BU,3), GFNEW+.56
         ST(BU,5), GFNEW+.59
         SIC, GFELK
         B, GFPUSH
+        SIC, GFLLK
+        B, GFLONG
         SIC, GETCHZ
         B, GETCHA
         B, GFE
@@ -1037,6 +1048,8 @@ GFA5    L(BU,8), GFC+.16
         ST(BU,5), GFNEW+.59
         SIC, GFELK
         B, GFPUSH
+        SIC, GFLLK
+        B, GFLONG
         SIC, GETCHZ
         B, GETCHA
 ! a datum follows the point: an alphameric character, $ or (
@@ -1102,6 +1115,8 @@ GFA4    LI(BU,1), 0
         ST(BU,1), GFPT
         SIC, GFELK
         B, GFPUSH
+        SIC, GFLLK
+        B, GFLONG
         SIC, GETCHZ
         B, GETCHA
         B, GFE
@@ -1168,7 +1183,9 @@ GFZ2    L(BU,1), GFGP
         BAE, GFZ3
         LI(BU,2), 0
         ST(BU,2)(V+I), .2($2)
-GFX     SV, $2, BCFLDX
+GFX     SIC, GFLLK
+        B, GFLONG
+        SV, $2, BCFLDX
         LX, $2, GFSAV2
         LV, $8, GETFLZ
         B, 0($8)
@@ -1188,6 +1205,19 @@ GFGPT   LI(BU,1), 1
         ST(BU,4)(V+I), .4($2)
 ! no value (the end of the field) is GFE's: a datum expected, 166
         B, GFE
+! GFLONG (Box 55): room in the buffer, $2 not past GFLIM.  Inside a
+! parenthesis $2 is in GFSCR, whose slots have their own bound (10).
+GFLONG  L(BU,8), GFDEP
+        KI(BU,8), 0
+        BZAE, GFLN1
+        SV, $2, GFT
+        L(BU,24), GFT
+        K(BU,24), GFLIM
+        BAH, GFLN2
+GFLN1   LV, $8, GFLLK
+        B, 0($8)
+GFLN2   LI(BU,24), 11
+        B, ERROR
 ! GFINI: an expression's state empty, at GETFLD and for a g.p.'s value
 GFINI   LI(BU,64), 0
         LV, $9, GFCTXX

@@ -103,6 +103,23 @@ the previous field's 8; it was redone swapping both.  "A g.p. with no value
 accepted" measured NOTHING: the end of the field where a value's datum is
 expected is already GFE's 166, so the check was dead and was removed, then
 the control and the redone injection re-run on the deck without it.)
+Field 93 A.(8)(.3)5, MEASURED 2026-11-13: the host gave .+ 1 there (fixed,
+check_strap2_getfld_paren.py); the 7030 program gives .L 0, as for A.(.3)5.
+  a g.p. after a point's radix makes .L .+   93
+Bcfxtx (Box 55 GFLONG), MEASURED 2026-11-13; the driver gives each field
+64 words, a 3998-bit field passes and a 4498-bit one halts 11:
+  GFLONG never halts                    the 11 halt
+  no check at the field's end (GFX)     the 11 halt
+  the limit taken from Bcfldx           every field: ERRC 0, Figs. 28-29,
+                                        NOTEC, field count, five halts
+  no check after an operator (Box 55)   NOTHING: the exit check halts 11
+                                        all the same; Box 55 only halts
+                                        sooner, and is kept as the chart
+                                        draws it
+  checked inside parentheses too        NOTHING: GFSCR lies below the
+                                        driver's OUTF, so a scratch address
+                                        never compares high; kept, since
+                                        MAIN's buffer may lie below GFSCR
 """
 import os
 import re
@@ -159,6 +176,7 @@ CARDS = [
     card(" ", "", "(8)17,(16)10,(8)7+A(.12)9,A(.3)5,(.3)5,-(.3)5,A+(.3)5,A.(.3)5"),
     card(" ", "", "A(.3,8)17,A(8,.3)17,A(.3)(.4)5,A(.3)B(.12)C+1,A(.3)+5,A(.3,B)"),
     card(" ", "", "A.(8)17,A.(8)(B+1),(8)(.3)5,2*(8)17+1,((8)17)5,(8).5,X(B)(.6)7"),
+    card(" ", "", "A.(8)(.3)5"),
 ]
 FIG29 = 56      # Fig. 29 p.201: its two fields' printed bits
 FIG28 = 11      # Fig. 28 p.200: its printed bits, before the host comparison
@@ -282,7 +300,7 @@ def run(cards, tmp, whole=False):
 
 def main():
     want = host(CARDS)
-    check("control: the host encodes all 93 fields", len(want), 93)
+    check("control: the host encodes all 94 fields", len(want), 94)
     check("control: the host's Fig. 29 is the printed one", want[FIG29:FIG29 + 2], fig29_printed())
     check("control: the host's MBSPEC changes $XO, $1ND, $51T (129)", CHANGED,
           [("XO", "X0"), ("1ND", "IND"), ("51T", "SIT")])
@@ -306,7 +324,11 @@ def main():
              ("10, parentheses deeper than 7", "((((((((A))))))))", 10, None),
              ("156, a system symbol not found (the host's 56)", "$QQQ", 156, 56),
              ("156, a system symbol of 9 characters (the host's 56)", "$ABCDEFGHI", 156, 56),
-             ("9, a tail: TAILOR is step 4", "A$B", 9, None)]
+             ("9, a tail: TAILOR is step 4", "A$B", 9, None),
+             ("0, control: 3998 bits in a 4096-bit buffer (Bcfxtx)",
+              [c * 60 + "+" for c in "ABCDEFG"] + ["K" * 60], 0, None),
+             ("11, 4498 bits past a 4096-bit buffer (Bcfxtx, Box 55)",
+              [c * 60 + "+" for c in "ABCDEFGH"] + ["K" * 60], 11, None)]
     with tempfile.TemporaryDirectory() as tmp:
         got, out = run(CARDS, tmp)
         for label, stmt, errc, msg in halts:

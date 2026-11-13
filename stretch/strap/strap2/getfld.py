@@ -313,8 +313,16 @@ class Getfld:
                     return
                 if got == "subs":
                     self._after_datum(x)
-                elif self._datum(x) is None:
-                    self._primary(x)
+                else:
+                    # a radix: the datum the point joins follows, unless a
+                    # g.p. stands there (A.(8)(.3)5), which keeps .L as
+                    # A.(.3)5 does; .+ would number a datum that is not there
+                    got = self._datum(x)
+                    if got == "gp":
+                        x.ops.append((".L", number))
+                        return
+                    if got is None:
+                        self._primary(x)
                 x.ops.append((".+", number))
             elif g.ch is not None and (g.ch in ALNUM or g.ch == "$"):
                 self._primary(x)
