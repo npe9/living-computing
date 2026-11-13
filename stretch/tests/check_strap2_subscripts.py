@@ -25,25 +25,34 @@ the integers are subscripts.  In the ink: MCP printed p.334 line 35,
 YLJM1($9) on YLJM1 DRZ(BU),(4), prints 235410.00 89, and printed p.129 line 2,
 KCSREG($11) on a DRZ(BU,64),1, prints 216312.00 8B (both decks' !CHECKs);
 C22-6729 p.177's 71 SUBSCRIPT WRITTEN AS BIT and 75 1 SUBS. TOO MANY, LAST
-USED AS INDEX.  NOT WRITTEN, refused: messages 71 and 75-77, whose recoveries
-the guide does not draw.  (A first draft let the count decide; it refused
+USED AS INDEX.  A wrong count takes the recovery p.177's text names: 75 the
+last used as the index, 76 the extras ignored, 77 the others taken 0; none is
+serious (p.176; N28-1081 page 13), each given once per statement.  NOT
+WRITTEN, refused: message 71, whose recovery is not printed.  (A first draft let the count decide; it refused
 both MCP decks, caught by the suite.)
 
-MEASURED INJECTIONS, 2026-11-12, value.py / pass1.py restored by copy and
-cmp, PYTHONDONTWRITEBYTECODE=1, control all 16 passing, observed:
-  every entry an index (the old      13: all but T(0,0), W($4) and p.40's
+MEASURED INJECTIONS, 2026-11-12, value.py / pass1.py / pass2.py restored by
+copy and cmp, PYTHONDONTWRITEBYTECODE=1, control all 20 passing, observed:
+  every entry an index (the old      17: all but T(0,0), W($4) and p.40's
     behaviour)                       A(0,0) pair
-  a DR's dimensions not attached     the same 13
+  a DR's dimensions not attached     the same 17
   a SYN does not carry them          U(1,1) and the three p.40 B(...) checks
-  the dimensions reversed (row-      T(2,1), T(2,3), T(2,1)($3), U, U(1,1),
-    major)                           B, A(9,19)
-  a word stride, not FL              T(2,1), T(2,3), T(2,1)($3), U, U(1,1),
-                                     W(2), W(1)($4)
-  each dimension one less            T(2,1), T(2,3), T(2,1)($3), U, U(1,1),
-                                     B, A(9,19)
-  a bit-style entry not the index    T(2,1)($3), W(1)($4), W($4), T(2,$1)
-  the count decides (n+1 integers    only T(2,1,3)
-    make the last the index)
+  the dimensions reversed            T(2,1), T(2,3), T(2,1)($3), U, U(1,1),
+                                     T(2,1,3), T(2,1,3,4), T(2,1,3)($4), and
+                                     p.40's B and A(9,19)
+  each dimension one less            the same 10
+  a word stride, not FL              13: the T, U and W checks with a nonzero
+                                     offset, and B SYN,T(1)
+  a bit-style entry not the index    T(2,1)($3), W(1)($4), W($4),
+                                     T(2,1,3)($4), T(2,$1)
+  75 not given / its last entry      only T(2,1,3), each
+    not the index
+  76 not given / extras kept as      T(2,1,3,4) and T(2,1,3)($4), each
+    the index
+  77 not given                       T(2,$1), T(1), B SYN,T(1)
+  VALUE's notes never given, or      the six message checks, each
+    given at each evaluation
+  notes not cleared in unit_a        only B SYN,T(1)
 """
 import os
 import sys
@@ -64,7 +73,8 @@ def check(label, got, want):
 
 
 HEAD = ["         SLC,(8)100.0", " T       DR(BU,16),(3,4)", " U       SYN,T(1,1)",
-        " V       DR(N),10", " W       DR(BU,8),5"]
+        " V       DR(N),10", " W       DR(BU,8),5",
+        " BB      SYN,1.32"]
 
 
 def printed(stmt):
@@ -75,7 +85,8 @@ def printed(stmt):
         return "refused: " + str(x).split(":")[0]
     lines = listing_of(r, r.p1.print_names).text("0", 1).splitlines()
     line = next(ln for ln in lines if ln.rstrip().endswith(stmt))
-    return " ".join(line.split()[2:4])
+    got = " ".join(line.split()[2:4])
+    return got + "".join(f" +{n}" for n, *_ in r.msg.items)
 
 
 check("L,T(0,0): the first element is T", printed("L,T(0,0)"), "000100.00 80")
@@ -88,12 +99,15 @@ check("L,W(2): one dimension, 8-bit fields", printed("L,W(2)"), "000115.20 80")
 check("L,W(1)($4): p.40's A(1)(I)", printed("L,W(1)($4)"), "000115.10 84")
 check("L,W($4): a lone bit-style entry is the index (MCP p.334 YLJM1($9))",
       printed("L,W($4)"), "000115.00 84")
-check("L,T(2,1,3): one integer too many, refused (75 not written)",
-      printed("L,T(2,1,3)"), "refused: 3 subscripts on an array of 2 dimensions")
-check("L,T(2,$1): the bit-style last entry is the index, too few subscripts left, refused",
-      printed("L,T(2,$1)"), "refused: 1 subscripts on an array of 2 dimensions")
-check("L,T(1): too few subscripts, refused (77 not written)",
-      printed("L,T(1)"), "refused: 1 subscripts on an array of 2 dimensions")
+check("L,T(2,1,3): message 75, the last used as the index",
+      printed("L,T(2,1,3)"), "000101.20 83 +75")
+check("L,T(2,1,3,4): message 76, the extras ignored", printed("L,T(2,1,3,4)"), "000101.20 80 +76")
+check("L,T(2,1,3)($4): message 76, the index kept", printed("L,T(2,1,3)($4)"), "000101.20 84 +76")
+check("L,T(2,$1): the bit-style entry is the index; 77, the other taken 0",
+      printed("L,T(2,$1)"), "000100.40 81 +77")
+check("L,T(BB,2), BB 1.32: a bit-style subscript, refused (71 not written)",
+      printed("L,T(BB,2)"), "refused: a subscript written as a bit address")
+check("L,T(1): message 77, the others taken 0", printed("L,T(1)"), "000100.20 80 +77")
 
 r = strap2.compile_cards(["         SLC,(8)100.0", " A       DR(N),(10,20)", " B       SYN,A(5,5)",
                           " P       SYN,A(0,0)", " Q       SYN,B(-5,-5)", " R       SYN,A(1,0)",
@@ -108,6 +122,11 @@ def at(n):
 check("p.40: B SYN,A(5,5) is A + 5 + 5 x 10 words", at("B"), oct(0o100 + 55))
 check("p.40: A(0,0) and B(-5,-5) are one storage", (at("P"), at("Q")), (oct(0o100),) * 2)
 check("p.40: A(1,0) and B(-4,-5)", (at("R"), at("S")), (oct(0o101),) * 2)
+r77 = strap2.compile_cards(["         SLC,(8)100.0", " T       DR(BU,16),(3,4)", " B       SYN,T(1)",
+                            "         END"])
+check("B SYN,T(1): message 77 on the SYN, B is T + 16",
+      ([n for n, *_ in r77.msg.items], oct(r77.val.symbol_value(r77.st.search("B"))[0])),
+      ([77], oct(0o100 * 64 + 16)))
 check("p.40: A(9,19), the last element, and B(4,14)", (at("X"), at("Y")), (oct(0o100 + 199),) * 2)
 
 print("ALL CHECKS PASSED" if not fails else f"{fails} FAILED")

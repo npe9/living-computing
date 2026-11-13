@@ -81,6 +81,7 @@ class Pass2:
         self.spnus = False      # NSPRES, p.35: SPNUS seen
         self.prntall = False    # PRNTALL seen anywhere (N28-1081 page 2)
         self.kamms = set()      # ("fl"|"bs", unit) given 87/88 once (dd_dds)
+        self.noted = set()      # (number, unit) of VALUE's notes, given once
         self.val.multi_ref = F_CONTAG if edition == "N28-1081" else F_MULTI
 
     # ---------------------------------------------------------------------------
@@ -217,12 +218,19 @@ class Pass2:
     def unit_a(self, unit):
         """Box 54, p.25: the error flags VALUE met are ORed into the unit."""
         self.val.flags = 0
+        self.val.notes = []
         self._unit_a(unit)
         self._or_flags(unit)
 
     def _or_flags(self, unit):
         bits = self.val.flags | self.definition_flags(unit)
         self.val.flags = 0
+        for number, text in self.val.notes:
+            # Once per unit, though the unit is evaluated in 2a and 2b.
+            if (number, unit) not in self.noted:
+                self.noted.add((number, unit))
+                self.msg.add(number, text, unit, fatal=False)
+        self.val.notes = []
         if bits:
             u = self.units
             u.put(unit, ZIFLAGS, u.get(unit, ZIFLAGS) | bits)
@@ -996,6 +1004,7 @@ class Pass2:
         a symbol defined through an undefined one is only complete, and so only
         contagious, after the second UITER."""
         self.val.flags = 0
+        self.val.notes = []
         before = self.running
         # WHAT IS ASSEMBLED UNDER PUNFUL IS NOT LOADED (C28-6129 pp.23, 36): it
         # goes on full cards.  Its bits are kept in a scratch image the punch

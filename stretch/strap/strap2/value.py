@@ -83,6 +83,9 @@ class Value:
         # gives: MULTI in C28-6129 p.21's example (5), CONTAG in N28-1081 p.7.
         self.multi_ref = F_CONTAG
         self.syn_dims = {}      # SYN function -> (fl, dims), C28-6129 p.40
+        # Messages an evaluation meets, (number, text), read and cleared by the
+        # using program as the flags are (pass2 _or_flags).
+        self.notes = []
         self.abs = 0            # $4
         self.sym = 0            # $6
         self.have_counters = False
@@ -463,14 +466,21 @@ class Value:
                 # YLJM1($9), prints 235410.00 89; printed p.129 line 2,
                 # KCSREG($11) on a DRZ(BU,64),1, prints 216312.00 8B; and
                 # p.177's messages 71 SUBSCRIPT WRITTEN AS BIT and 75 1 SUBS.
-                # TOO MANY, LAST USED AS INDEX.  NOT WRITTEN, refused: 71 and
-                # 75-77, whose recoveries the guide does not draw.
+                # TOO MANY, LAST USED AS INDEX.  A wrong count is recovered as
+                # p.177's texts say (75 1 SUBS. TOO MANY, LAST USED AS INDEX;
+                # 76 TOO MANY SUBSCRIPTS, EXTRA IGNORED; 77 TOO FEW SUBSCRIPTS,
+                # OTHERS TAKEN 0), none serious (p.176, N28-1081 page 13).
+                # NOT WRITTEN, refused: 71, whose recovery is not printed.
                 fl, dims = array
                 index = [subs.pop()] if subs and subs[-1].B else []
-                if subs and len(subs) != len(dims):
-                    raise AssemblerError(
-                        f"{len(subs)} subscripts on an array of {len(dims)} dimensions: "
-                        "messages 75-77 are not written (C22-6729 p.177)")
+                if len(subs) == len(dims) + 1 and not index:
+                    self.notes.append((75, "1 SUBS. TOO MANY, LAST USED AS INDEX"))
+                    index = [subs.pop()]
+                elif len(subs) > len(dims):
+                    self.notes.append((76, "TOO MANY SUBSCRIPTS, EXTRA IGNORED"))
+                    subs = subs[:len(dims)]
+                elif 0 < len(subs) < len(dims):
+                    self.notes.append((77, "TOO FEW SUBSCRIPTS, OTHERS TAKEN 0"))
                 offset, scale = 0, fl
                 for k, sub in enumerate(subs):
                     if not sub.avail:

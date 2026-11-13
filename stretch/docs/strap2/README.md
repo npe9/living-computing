@@ -124,8 +124,9 @@ Array subscripts (C28-6129 printed p.40, read in the ink 2026-11-12). A named
 "I must be a bit address"; MCP printed p.334's `YLJM1($9)` on a `DRZ(BU),(4)`
 prints index 9 and no offset); a SYN of an element carries the dimensions
 along (p.40's `B SYN,A(5,5)` reproduces). Before this every entry was taken as
-an index. Refused: messages 71 and 75-77 (p.177), whose recoveries the guide
-does not draw. `tests/check_strap2_subscripts.py`.
+an index. A wrong count takes the recovery p.177's text names (75 last used as
+index, 76 extras ignored, 77 others taken 0), once per statement. Refused:
+message 71, whose recovery is not printed. `tests/check_strap2_subscripts.py`.
 
 A symbolic field length or byte size is tested by DECODE's KAMMS (C22-6729
 p.137 boxes 20, 29): message 87 (FL over 64 or bit style, truncated as 36 is)
@@ -136,7 +137,7 @@ in `tests/check_strap2_dd.py`.
 named common; a COMBLOCK without a name (p.186 gives a message with no number);
 a low SLC under PUNFUL; the coprocessor; the system symbols' register-length
 dds; `$INF` (N28-1081 page 20 adds it, 12, infinity; no page prints its word);
-subscript messages 71 and 75-77;
+subscript message 71;
 the listing's page headings after the first; the field number in an error record
 (always 0); and the Correction card's typewriter copy of serious messages. An
 unwritten path refuses loudly.
