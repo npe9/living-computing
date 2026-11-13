@@ -39,12 +39,13 @@
 !    1 COMREC word 8's code is not 5, IQS (only IQS input is written)
 !    2 a name longer than 64 characters (CHOSEN size of NAMEB; strap2 has no
 !      limit)
-!    9 a form GETFLD does not write yet (step 2's sub-slices c-d: a $ or
-!      system symbol, a tail, a g.p., a radix)
+!    9 a form GETFLD does not write yet (a tail, step 4's TAILOR; a g.p.
+!      or a radix, step 2's sub-slice d)
 !   10 GETFLD's work areas full: parentheses deeper than 7, more than 8
 !      items in one, an item over its 2048-bit slot (CHOSEN sizes)
 !  100+n STRAP II message n, until the error routine is written (p.176-178):
-!      149 a symbol over 128 characters, 163 a digit too large for the
+!      149 a symbol over 128 characters, 156 a system symbol not found
+!      (MBSPEC's 129 is a note: NOTEC, NOTEL), 163 a digit too large for the
 !      radix (p.71: the digit is still used; here it halts), 166 SYNTAX
 !      ERROR, 167 INAPPROPRIATE CHARACTER, 168 a number over 24 bits
 !
@@ -66,6 +67,10 @@ HALTE   BEW, $
 ! ======== areas, the messages (p.174) ==================================
         CNOP
 ERRC    DD(BU,64), 0
+! NOTEC, NOTEL: messages that are notes (not halts), counted, the last
+! one's number kept, until the error routine is written (CHOSEN)
+NOTEC   DD(BU,64), 0
+NOTEL   DD(BU,64), 0
 XINLK   DD(BU,64), 0
 XTMP    DD(BU,64), 0
 HAVEN   DD(BU,64), 0
@@ -118,6 +123,410 @@ CHVAL   SYN, $
         DD(BU,64), (16)1A1B3F3F3F3F3F3F
         DD(BU,64), (16)3F0A0B0C0D0E0F10
         DD(BU,64), (16)11123F3F3F3F3F3F
+! SYSTAB: STRAP II's system symbols for BOPSER (Box 32), 193 entries of two
+! words, sorted: the name in A8, eight characters blank-filled, then the
+! value (.0, 24 bits) and dds (.24, 13 bits).  CHOSEN: generated from the
+! host's optable.system_symbol (2026-11-13); the guide does not print the
+! table (docs/strap2/pass1.md gap 1).
+SYSTAB  SYN, $
+        DD(BU,64), (16)0101101010101010   ! 11
+        DD(BU,64), (16)0006C0A040000000
+        DD(BU,64), (16)0102101010101010   ! 12
+        DD(BU,64), (16)000700A040000000
+        DD(BU,64), (16)0103101010101010   ! 13
+        DD(BU,64), (16)000740A040000000
+        DD(BU,64), (16)0104101010101010   ! 14
+        DD(BU,64), (16)000780A040000000
+        DD(BU,64), (16)0105101010101010   ! 15
+        DD(BU,64), (16)0007C0A040000000
+        DD(BU,64), (16)010A101010101010   ! 10
+        DD(BU,64), (16)000680A040000000
+        DD(BU,64), (16)0110101010101010   ! 1
+        DD(BU,64), (16)000440A040000000
+        DD(BU,64), (16)0210101010101010   ! 2
+        DD(BU,64), (16)000480A040000000
+        DD(BU,64), (16)0310101010101010   ! 3
+        DD(BU,64), (16)0004C0A040000000
+        DD(BU,64), (16)0410101010101010   ! 4
+        DD(BU,64), (16)000500A040000000
+        DD(BU,64), (16)0510101010101010   ! 5
+        DD(BU,64), (16)000540A040000000
+        DD(BU,64), (16)0610101010101010   ! 6
+        DD(BU,64), (16)000580A040000000
+        DD(BU,64), (16)0710101010101010   ! 7
+        DD(BU,64), (16)0005C0A040000000
+        DD(BU,64), (16)0810101010101010   ! 8
+        DD(BU,64), (16)000600A040000000
+        DD(BU,64), (16)0910101010101010   ! 9
+        DD(BU,64), (16)000640A040000000
+        DD(BU,64), (16)0A10101010101010   ! 0
+        DD(BU,64), (16)000400A040000000
+        DD(BU,64), (16)1213232910101010   ! STLR
+        DD(BU,64), (16)000940A040000000
+        DD(BU,64), (16)1213293710101010   ! STRG
+        DD(BU,64), (16)000880A040000000
+        DD(BU,64), (16)1227101010101010   ! SP
+        DD(BU,64), (16)000160A040000000
+        DD(BU,64), (16)1227121010101010   ! SPS
+        DD(BU,64), (16)000161A040000000
+        DD(BU,64), (16)1227141010101010   ! SPU
+        DD(BU,64), (16)0010C0A040000000
+        DD(BU,64), (16)1227291010101010   ! SPR
+        DD(BU,64), (16)0010E0A040000000
+        DD(BU,64), (16)1227362310101010   ! SPFL
+        DD(BU,64), (16)0001A0A040000000
+        DD(BU,64), (16)1227362312101010   ! SPFLS
+        DD(BU,64), (16)0001A1A040000000
+        DD(BU,64), (16)1232101010101010   ! SB
+        DD(BU,64), (16)000280A040000000
+        DD(BU,64), (16)1233291010101010   ! SCR
+        DD(BU,64), (16)001120A040000000
+        DD(BU,64), (16)1239131010101010   ! SIT
+        DD(BU,64), (16)000900A040000000
+        DD(BU,64), (16)1239261010101010   ! SIO
+        DD(BU,64), (16)000800A040000000
+        DD(BU,64), (16)1312101010101010   ! TS
+        DD(BU,64), (16)0002C4A0C0000000
+        DD(BU,64), (16)1329101010101010   ! TR
+        DD(BU,64), (16)0003C0A040000000
+        DD(BU,64), (16)1333101010101010   ! TC
+        DD(BU,64), (16)00005CA040000000
+        DD(BU,64), (16)1336101010101010   ! TF
+        DD(BU,64), (16)0002E3A0C0000000
+        DD(BU,64), (16)1339243510101010   ! TIME
+        DD(BU,64), (16)0008C0A040000000
+        DD(BU,64), (16)1339361010101010   ! TIF
+        DD(BU,64), (16)000100A040000000
+        DD(BU,64), (16)1339361210101010   ! TIFS
+        DD(BU,64), (16)000101A040000000
+        DD(BU,64), (16)1412311010101010   ! USA
+        DD(BU,64), (16)0002D1A0C0000000
+        DD(BU,64), (16)1422101010101010   ! UK
+        DD(BU,64), (16)0002CAA0C0000000
+        DD(BU,64), (16)1425233410101010   ! UNLD
+        DD(BU,64), (16)000220A040000000
+        DD(BU,64), (16)1425233412101010   ! UNLDS
+        DD(BU,64), (16)000221A040000000
+        DD(BU,64), (16)1425292110101010   ! UNRJ
+        DD(BU,64), (16)0002C7A0C0000000
+        DD(BU,64), (16)1432101010101010   ! UB
+        DD(BU,64), (16)0000C0A040000000
+        DD(BU,64), (16)1436101010101010   ! UF
+        DD(BU,64), (16)0002E4A0C0000000
+        DD(BU,64), (16)1536101010101010   ! VF
+        DD(BU,64), (16)0002E5A0C0000000
+        DD(BU,64), (16)1610101010101010   ! W
+        DD(BU,64), (16)000060A040000000
+        DD(BU,64), (16)1612101010101010   ! WS
+        DD(BU,64), (16)000061A040000000
+        DD(BU,64), (16)1631391310101010   ! WAIT
+        DD(BU,64), (16)0002E0A040000000
+        DD(BU,64), (16)1635361010101010   ! WEF
+        DD(BU,64), (16)0001E0A040000000
+        DD(BU,64), (16)1635361210101010   ! WEFS
+        DD(BU,64), (16)0001E1A040000000
+        DD(BU,64), (16)1701011010101010   ! X11
+        DD(BU,64), (16)0006C0A040000000
+        DD(BU,64), (16)1701021010101010   ! X12
+        DD(BU,64), (16)000700A040000000
+        DD(BU,64), (16)1701031010101010   ! X13
+        DD(BU,64), (16)000740A040000000
+        DD(BU,64), (16)1701041010101010   ! X14
+        DD(BU,64), (16)000780A040000000
+        DD(BU,64), (16)1701051010101010   ! X15
+        DD(BU,64), (16)0007C0A040000000
+        DD(BU,64), (16)17010A1010101010   ! X10
+        DD(BU,64), (16)000680A040000000
+        DD(BU,64), (16)1701101010101010   ! X1
+        DD(BU,64), (16)000440A040000000
+        DD(BU,64), (16)1702101010101010   ! X2
+        DD(BU,64), (16)000480A040000000
+        DD(BU,64), (16)1703101010101010   ! X3
+        DD(BU,64), (16)0004C0A040000000
+        DD(BU,64), (16)1704101010101010   ! X4
+        DD(BU,64), (16)000500A040000000
+        DD(BU,64), (16)1705101010101010   ! X5
+        DD(BU,64), (16)000540A040000000
+        DD(BU,64), (16)1706101010101010   ! X6
+        DD(BU,64), (16)000580A040000000
+        DD(BU,64), (16)1707101010101010   ! X7
+        DD(BU,64), (16)0005C0A040000000
+        DD(BU,64), (16)1708101010101010   ! X8
+        DD(BU,64), (16)000600A040000000
+        DD(BU,64), (16)1709101010101010   ! X9
+        DD(BU,64), (16)000640A040000000
+        DD(BU,64), (16)170A101010101010   ! X0
+        DD(BU,64), (16)000400A040000000
+        DD(BU,64), (16)1715191010101010   ! XVZ
+        DD(BU,64), (16)0002F2A0C0000000
+        DD(BU,64), (16)1715231910101010   ! XVLZ
+        DD(BU,64), (16)0002F1A0C0000000
+        DD(BU,64), (16)1715371910101010   ! XVGZ
+        DD(BU,64), (16)0002F3A0C0000000
+        DD(BU,64), (16)1723101010101010   ! XL
+        DD(BU,64), (16)0002F4A0C0000000
+        DD(BU,64), (16)1727141010101010   ! XPU
+        DD(BU,64), (16)0002E0A0C0000000
+        DD(BU,64), (16)1727231010101010   ! XPL
+        DD(BU,64), (16)0002DFA0C0000000
+        DD(BU,64), (16)1727261010101010   ! XPO
+        DD(BU,64), (16)0002DDA0C0000000
+        DD(BU,64), (16)1727362710101010   ! XPFP
+        DD(BU,64), (16)0002DCA0C0000000
+        DD(BU,64), (16)1727381010101010   ! XPH
+        DD(BU,64), (16)0002DEA0C0000000
+        DD(BU,64), (16)1733191010101010   ! XCZ
+        DD(BU,64), (16)0002F0A0C0000000
+        DD(BU,64), (16)1735101010101010   ! XE
+        DD(BU,64), (16)0002F5A0C0000000
+        DD(BU,64), (16)1736101010101010   ! XF
+        DD(BU,64), (16)0002E6A0C0000000
+        DD(BU,64), (16)1738101010101010   ! XH
+        DD(BU,64), (16)0002F6A0C0000000
+        DD(BU,64), (16)1910101010101010   ! Z
+        DD(BU,64), (16)000000A040000000
+        DD(BU,64), (16)1924101010101010   ! ZM
+        DD(BU,64), (16)0002E1A0C0000000
+        DD(BU,64), (16)1934101010101010   ! ZD
+        DD(BU,64), (16)0002D8A0C0000000
+        DD(BU,64), (16)2223251010101010   ! KLN
+        DD(BU,64), (16)000280A040000000
+        DD(BU,64), (16)2223251210101010   ! KLNS
+        DD(BU,64), (16)000281A040000000
+        DD(BU,64), (16)2310101010101010   ! L
+        DD(BU,64), (16)000200A040000000
+        DD(BU,64), (16)2312101010101010   ! LS
+        DD(BU,64), (16)0002DAA0C0000000
+        DD(BU,64), (16)2319331010101010   ! LZC
+        DD(BU,64), (16)0001D1A040000000
+        DD(BU,64), (16)2326331010101010   ! LOC
+        DD(BU,64), (16)0000C0A040000000
+        DD(BU,64), (16)2326331210101010   ! LOCS
+        DD(BU,64), (16)0000C1A040000000
+        DD(BU,64), (16)2332101010101010   ! LB
+        DD(BU,64), (16)0000E0A040000000
+        DD(BU,64), (16)2333101010101010   ! LC
+        DD(BU,64), (16)0002D6A0C0000000
+        DD(BU,64), (16)2334101010101010   ! LD
+        DD(BU,64), (16)0003A0A040000000
+        DD(BU,64), (16)2334121010101010   ! LDS
+        DD(BU,64), (16)0003A1A040000000
+        DD(BU,64), (16)2422101010101010   ! MK
+        DD(BU,64), (16)0002C0A0C0000000
+        DD(BU,64), (16)2426271010101010   ! MOP
+        DD(BU,64), (16)0002F7A0C0000000
+        DD(BU,64), (16)2431122210101010   ! MASK
+        DD(BU,64), (16)000300A040000000
+        DD(BU,64), (16)2432101010101010   ! MB
+        DD(BU,64), (16)000100A040000000
+        DD(BU,64), (16)2433271010101010   ! MCP
+        DD(BU,64), (16)000800A040000000
+        DD(BU,64), (16)2524101010101010   ! NM
+        DD(BU,64), (16)0002FFA0C0000000
+        DD(BU,64), (16)2526353333101010   ! NOECC
+        DD(BU,64), (16)000420A040000000
+        DD(BU,64), (16)2526353333121010   ! NOECCS
+        DD(BU,64), (16)000421A040000000
+        DD(BU,64), (16)2627101010101010   ! OP
+        DD(BU,64), (16)0002CFA0C0000000
+        DD(BU,64), (16)2634341010101010   ! ODD
+        DD(BU,64), (16)0003E0A040000000
+        DD(BU,64), (16)2634341210101010   ! ODDS
+        DD(BU,64), (16)0003E1A040000000
+        DD(BU,64), (16)2712381010101010   ! PSH
+        DD(BU,64), (16)0002DBA0C0000000
+        DD(BU,64), (16)2736101010101010   ! PF
+        DD(BU,64), (16)0002D7A0C0000000
+        DD(BU,64), (16)2737011010101010   ! PG1
+        DD(BU,64), (16)0002EAA0C0000000
+        DD(BU,64), (16)2737021010101010   ! PG2
+        DD(BU,64), (16)0002EBA0C0000000
+        DD(BU,64), (16)2737031010101010   ! PG3
+        DD(BU,64), (16)0002ECA0C0000000
+        DD(BU,64), (16)2737041010101010   ! PG4
+        DD(BU,64), (16)0002EDA0C0000000
+        DD(BU,64), (16)2737051010101010   ! PG5
+        DD(BU,64), (16)0002EEA0C0000000
+        DD(BU,64), (16)2737061010101010   ! PG6
+        DD(BU,64), (16)0002EFA0C0000000
+        DD(BU,64), (16)27370A1010101010   ! PG0
+        DD(BU,64), (16)0002E9A0C0000000
+        DD(BU,64), (16)2910101010101010   ! R
+        DD(BU,64), (16)000240A040000000
+        DD(BU,64), (16)2914101010101010   ! RU
+        DD(BU,64), (16)0002E2A0C0000000
+        DD(BU,64), (16)2919101010101010   ! RZ
+        DD(BU,64), (16)0002F9A0C0000000
+        DD(BU,64), (16)2923191010101010   ! RLZ
+        DD(BU,64), (16)0002F8A0C0000000
+        DD(BU,64), (16)2923251010101010   ! RLN
+        DD(BU,64), (16)000260A040000000
+        DD(BU,64), (16)2923251210101010   ! RLNS
+        DD(BU,64), (16)000261A040000000
+        DD(BU,64), (16)2923361010101010   ! RLF
+        DD(BU,64), (16)000240A040000000
+        DD(BU,64), (16)2923361210101010   ! RLFS
+        DD(BU,64), (16)000241A040000000
+        DD(BU,64), (16)2924101010101010   ! RM
+        DD(BU,64), (16)000340A040000000
+        DD(BU,64), (16)2925101010101010   ! RN
+        DD(BU,64), (16)0002FBA0C0000000
+        DD(BU,64), (16)2931241010101010   ! RAM
+        DD(BU,64), (16)000860A040000000
+        DD(BU,64), (16)2934101010101010   ! RD
+        DD(BU,64), (16)000040A040000000
+        DD(BU,64), (16)2934121010101010   ! RDS
+        DD(BU,64), (16)000041A040000000
+        DD(BU,64), (16)2935122334101010   ! RESLD
+        DD(BU,64), (16)001080A040000000
+        DD(BU,64), (16)2935131010101010   ! RET
+        DD(BU,64), (16)000840A040000000
+        DD(BU,64), (16)2935161010101010   ! REW
+        DD(BU,64), (16)000200A040000000
+        DD(BU,64), (16)2935161210101010   ! REWS
+        DD(BU,64), (16)000201A040000000
+        DD(BU,64), (16)2935231010101010   ! REL
+        DD(BU,64), (16)0000A0A040000000
+        DD(BU,64), (16)2935231210101010   ! RELS
+        DD(BU,64), (16)0000A1A040000000
+        DD(BU,64), (16)2937191010101010   ! RGZ
+        DD(BU,64), (16)0002FAA0C0000000
+        DD(BU,64), (16)2939261010101010   ! RIO
+        DD(BU,64), (16)000820A040000000
+        DD(BU,64), (16)3113393410101010   ! ATID
+        DD(BU,64), (16)000440A040000000
+        DD(BU,64), (16)3123101010101010   ! AL
+        DD(BU,64), (16)0002FCA0C0000000
+        DD(BU,64), (16)3126331010101010   ! AOC
+        DD(BU,64), (16)0001ECA040000000
+        DD(BU,64), (16)3132351710101010   ! ABEX
+        DD(BU,64), (16)000980A040000000
+        DD(BU,64), (16)3132352621101010   ! ABEOJ
+        DD(BU,64), (16)001100A040000000
+        DD(BU,64), (16)3134101010101010   ! AD
+        DD(BU,64), (16)0002D0A0C0000000
+        DD(BU,64), (16)3135101010101010   ! AE
+        DD(BU,64), (16)0002FDA0C0000000
+        DD(BU,64), (16)3138101010101010   ! AH
+        DD(BU,64), (16)0002FEA0C0000000
+        DD(BU,64), (16)3212271010101010   ! BSP
+        DD(BU,64), (16)000180A040000000
+        DD(BU,64), (16)3212271210101010   ! BSPS
+        DD(BU,64), (16)000181A040000000
+        DD(BU,64), (16)3212362310101010   ! BSFL
+        DD(BU,64), (16)0001C0A040000000
+        DD(BU,64), (16)3212362312101010   ! BSFLS
+        DD(BU,64), (16)0001C1A040000000
+        DD(BU,64), (16)3213291010101010   ! BTR
+        DD(BU,64), (16)0002E7A0C0000000
+        DD(BU,64), (16)3233101010101010   ! BC
+        DD(BU,64), (16)0000F9A040000000
+        DD(BU,64), (16)3312101010101010   ! CS
+        DD(BU,64), (16)0002CDA0C0000000
+        DD(BU,64), (16)3326242410101010   ! COMM
+        DD(BU,64), (16)0008E0A040000000
+        DD(BU,64), (16)3327141010101010   ! CPU
+        DD(BU,64), (16)0002C5A0C0000000
+        DD(BU,64), (16)3327141210101010   ! CPUS
+        DD(BU,64), (16)0002C5A0C0000000
+        DD(BU,64), (16)3331101010101010   ! CA
+        DD(BU,64), (16)00014CA040000000
+        DD(BU,64), (16)3332211010101010   ! CBJ
+        DD(BU,64), (16)0002C8A0C0000000
+        DD(BU,64), (16)3333161010101010   ! CCW
+        DD(BU,64), (16)000080A040000000
+        DD(BU,64), (16)3338351710101010   ! CHEX
+        DD(BU,64), (16)000300A040000000
+        DD(BU,64), (16)3412101010101010   ! DS
+        DD(BU,64), (16)0002D3A0C0000000
+        DD(BU,64), (16)3413291010101010   ! DTR
+        DD(BU,64), (16)0002E8A0C0000000
+        DD(BU,64), (16)3414242710101010   ! DUMP
+        DD(BU,64), (16)001000A040000000
+        DD(BU,64), (16)3436101010101010   ! DF
+        DD(BU,64), (16)0002D4A0C0000000
+        DD(BU,64), (16)3515352510101010   ! EVEN
+        DD(BU,64), (16)0003C0A040000000
+        DD(BU,64), (16)3515352512101010   ! EVENS
+        DD(BU,64), (16)0003C1A040000000
+        DD(BU,64), (16)3517351010101010   ! EXE
+        DD(BU,64), (16)0002D2A0C0000000
+        DD(BU,64), (16)3522101010101010   ! EK
+        DD(BU,64), (16)0002C3A0C0000000
+        DD(BU,64), (16)3522211010101010   ! EKJ
+        DD(BU,64), (16)0002C6A0C0000000
+        DD(BU,64), (16)3526211010101010   ! EOJ
+        DD(BU,64), (16)001040A040000000
+        DD(BU,64), (16)3526271010101010   ! EOP
+        DD(BU,64), (16)0002CCA0C0000000
+        DD(BU,64), (16)3527372210101010   ! EPGK
+        DD(BU,64), (16)0002C9A0C0000000
+        DD(BU,64), (16)3529371010101010   ! ERG
+        DD(BU,64), (16)000140A040000000
+        DD(BU,64), (16)3529371210101010   ! ERGS
+        DD(BU,64), (16)000141A040000000
+        DD(BU,64), (16)3533331010101010   ! ECC
+        DD(BU,64), (16)000400A040000000
+        DD(BU,64), (16)3533331210101010   ! ECCS
+        DD(BU,64), (16)000401A040000000
+        DD(BU,64), (16)3534142427101010   ! EDUMP
+        DD(BU,64), (16)001020A040000000
+        DD(BU,64), (16)3535101010101010   ! EE
+        DD(BU,64), (16)0002CBA0C0000000
+        DD(BU,64), (16)3613101010101010   ! FT
+        DD(BU,64), (16)000380A040000000
+        DD(BU,64), (16)3629353510101010   ! FREE
+        DD(BU,64), (16)0002A0A040000000
+        DD(BU,64), (16)3633101010101010   ! FC
+        DD(BU,64), (16)0000E0A040000000
+        DD(BU,64), (16)3633121010101010   ! FCS
+        DD(BU,64), (16)0000E1A040000000
+        DD(BU,64), (16)3635133338101010   ! FETCH
+        DD(BU,64), (16)0010A0A040000000
+        DD(BU,64), (16)3635232910101010   ! FELR
+        DD(BU,64), (16)000960A040000000
+        DD(BU,64), (16)3635332937101010   ! FECRG
+        DD(BU,64), (16)0008A0A040000000
+        DD(BU,64), (16)3639171427101010   ! FIXUP
+        DD(BU,64), (16)000920A040000000
+        DD(BU,64), (16)3726253710101010   ! GONG
+        DD(BU,64), (16)0002C0A040000000
+        DD(BU,64), (16)3726253712101010   ! GONGS
+        DD(BU,64), (16)0002C1A040000000
+        DD(BU,64), (16)3826233410101010   ! HOLD
+        DD(BU,64), (16)001060A040000000
+        DD(BU,64), (16)3834101010101010   ! HD
+        DD(BU,64), (16)000380A040000000
+        DD(BU,64), (16)3834121010101010   ! HDS
+        DD(BU,64), (16)000381A040000000
+        DD(BU,64), (16)3913101010101010   ! IT
+        DD(BU,64), (16)000040A040000000
+        DD(BU,64), (16)3921101010101010   ! IJ
+        DD(BU,64), (16)0002C2A0C0000000
+        DD(BU,64), (16)3922101010101010   ! IK
+        DD(BU,64), (16)0002C1A0C0000000
+        DD(BU,64), (16)3925341010101010   ! IND
+        DD(BU,64), (16)0002C0A040000000
+        DD(BU,64), (16)3926343536101010   ! IODEF
+        DD(BU,64), (16)000340A040000000
+        DD(BU,64), (16)3929101010101010   ! IR
+        DD(BU,64), (16)0002D9A0C0000000
+        DD(BU,64), (16)3931101010101010   ! IA
+        DD(BU,64), (16)000080A040000000
+        DD(BU,64), (16)3936101010101010   ! IF
+        DD(BU,64), (16)0002D5A0C0000000
+SYSTN   DD(BU,64), 193
+! MBPAIR: MBSPEC's pairs (p.93 box 2: 0/O, 1/I, 2/Z, 5/S), the partner's
+! A8 code for each A8 code, 0 for none.  Generated from optable.MBSPEC_PAIRS.
+MBPAIR  SYN, $
+        DD(BU,64), (16)0039190000120000
+        DD(BU,64), (16)0000260000000000
+        DD(BU,64), (16)0000050000000000
+        DD(BU,64), (16)0002000000000000
+        DD(BU,64), (16)0000000000000A00
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0000000000000000
+        DD(BU,64), (16)0001000000000000
 !
 ! ======== SECTION A1: Pass 1's constants and work areas (p.174) =======
 GCEND   SYN, GCCARD+9.0
@@ -170,6 +579,25 @@ STX     DD(BU,64), 0
 STXD    DD(BU,64), 0
 STXK    DD(BU,64), 0
 STXF    DD(BU,64), 0
+STXB    DD(BU,64), 0
+STXC    DD(BU,64), 0
+STXP    DD(BU,64), 0
+GFKEY   DD(BU,64), 0
+GFBLNK  DD(BU,64), (16)1010101010101010
+GFSNL   DD(BU,64), 0
+GFSVV   DD(BU,64), 0
+GFFND   DD(BU,64), 0
+GFLO    DD(BU,64), 0
+GFHI    DD(BU,64), 0
+GFMID   DD(BU,64), 0
+GFMDV   DD(BU,64), 0
+GFMF    DD(BU,64), 0
+GFMPOS  DD(BU,64), 0
+GFMK    DD(BU,64), 0
+GFMI    DD(BU,64), 0
+GFMJ    DD(BU,64), 0
+GFBLK   DD(BU,64), 0
+SYSTBX  XW, SYSTAB, 0, 0
 GFIDP   DD(BU,64), 0
 GFDEP   DD(BU,64), 0
 GFCK    DD(BU,64), 0
@@ -469,7 +897,9 @@ GCN3    CB, $8, GCN1
 ! The data go in as they are read; each operator waits on GFSTK until one
 ! of no higher priority comes (p.198: .+ .L .R U- * / + -), and is put,
 ! with its datum number, in GFOPS; GFZA puts them after the data (Boxes 43,
-! 60).  Sub-slice a: no parenthesis, $, g.p.
+! 60).  Sub-slice b: parentheses, built in a scratch slot per depth and
+! placed at the ')' (docs/strap2_7030.md, CHOSEN).  Sub-slice c: $ and the
+! system symbols.  Not yet: g.p. and radix (sub-slice d).
 GETFLD  SX, $2, GFSAV2
         LV, $2, BCFLDX
         LI(BU,8), 0
@@ -735,9 +1165,7 @@ GFPRIM  SV, $3, GFC
         BAL, GFPS
         L(BU,8), GFC+.16
         KI(BU,8), (8)53
-        BAE, GFNW
-        KI(BU,8), (8)34
-        BAE, GFNW
+        BAE, GFPD
         B, GFSYN
 GFNW    LI(BU,24), 9
         B, ERROR
@@ -1151,6 +1579,187 @@ GFCP3   L(BU,1)(V+I), .1($9)
         ST(BU,1)(V+I), .1($2)
         CB, $8, GFCP3
 GFCP4   LV, $8, GFCLK
+        B, 0($8)
+!
+! GFPD: a $ (Boxes 15, 22-29; CPLTSY Boxes 1, 5-13, 32-41, pp.74-76).  The
+! name, at most 8 characters (p.74), blank-filled in GFKEY; none is $ alone
+! (Fig. 14); BOPSER finds it in SYSTAB; else MBSPEC (Box 33), and a name it
+! finds is message 129, a note (p.178); still none is 56 (halt 156).
+GFPD    SIC, GETCHZ
+        B, GETCHA
+        L(BU,64), GFBLNK
+        ST(BU,64), GFKEY
+        LI(BU,8), 0
+        ST(BU,8), GFSNL
+GFPD1   SV, $3, GFC
+        L(BU,8), GFC+.16
+        ST(BU,8), CHXT+.13
+        LV, $9, CHXT
+        L(BU,8), CHVAL($9)
+        KI(BU,8), 36
+        BZAL, GFPD2
+        L(BU,8), GFSNL
+        KI(BU,8), 8
+        BZAL, GFPD3
+        ST(BU,8), STXC+.13
+        LV, $9, STXC
+        L(BU,8), GFC+.16
+        ST(BU,8), GFKEY($9)
+GFPD3   M+1(BU,8), GFSNL
+        SIC, GETCHZ
+        B, GETCHA
+        B, GFPD1
+GFPD2   L(BU,8), GFSNL
+        KI(BU,8), 0
+        BAE, GFDOL
+        KI(BU,8), 8
+        BAH, GFNF
+        SIC, GFBLK
+        B, BOPSER
+        L(BU,1), GFFND
+        KI(BU,1), 1
+        BAE, GFSYS
+! MBSPEC (Chart BL, pp.92-93): a control indicator for each character of
+! the pairs 0/O, 1/I, 2/Z, 5/S, stepped like a binary counter, the first
+! character lowest; each step changes one character to its partner or back
+        LI(BU,64), 0
+        ST(BU,64), GFMF
+        LI(BU,8), 0
+        ST(BU,8), GFMK
+        ST(BU,8), GFMI
+GFMS1   L(BU,8), GFMI
+        ST(BU,8), STXC+.13
+        LV, $9, STXC
+        L(BU,8), GFKEY($9)
+        ST(BU,8), CHXT+.13
+        LV, $9, CHXT
+        L(BU,8), MBPAIR($9)
+        KI(BU,8), 0
+        BAE, GFMS2
+        L(BU,8), GFMK
+        ST(BU,8), STXC+.13
+        LV, $9, STXC
+        L(BU,8), GFMI
+        ST(BU,8), GFMPOS($9)
+        M+1(BU,8), GFMK
+GFMS2   M+1(BU,8), GFMI
+        L(BU,8), GFMI
+        KI(BU,8), 8
+        BZAE, GFMS1
+GFMB1   LI(BU,8), 0
+        ST(BU,8), GFMJ
+GFMB2   L(BU,8), GFMJ
+        K(BU,8), GFMK
+        BAE, GFNF
+        ST(BU,8), STXC+.13
+        LV, $9, STXC
+        L(BU,8), GFMPOS($9)
+        ST(BU,8), STXP+.13
+        LV, $7, STXP
+        L(BU,8), GFKEY($7)
+        ST(BU,8), CHXT+.13
+        LV, $8, CHXT
+        L(BU,8), MBPAIR($8)
+        ST(BU,8), GFKEY($7)
+        L(BU,8), GFMF($9)
+        KI(BU,8), 0
+        BAE, GFMB3
+        LI(BU,8), 0
+        ST(BU,8), GFMF($9)
+        M+1(BU,8), GFMJ
+        B, GFMB2
+GFMB3   LI(BU,8), 1
+        ST(BU,8), GFMF($9)
+        SIC, GFBLK
+        B, BOPSER
+        L(BU,1), GFFND
+        KI(BU,1), 1
+        BZAE, GFMB1
+        M+1(BU,24), NOTEC
+        LI(BU,24), 129
+        ST(BU,24), NOTEL
+! Boxes 22-24: prefix 11100, value, dds (Fig. 13)
+GFSYS   SIC, GFZLK
+        B, GFLZC
+        LI(BU,5), (8)34
+        ST(BU,5)(V+I), .5($2)
+        L(BU,24), GFSVV
+        ST(BU,24)(V+I), .24($2)
+        L(BU,13), GFSVV+.24
+        ST(BU,13)(V+I), .13($2)
+        LI(BU,1), 0
+        ST(BU,1), GFLKA
+        B, GFPE
+GFNF    LI(BU,24), 156
+        B, ERROR
+! Boxes 28-29, Fig. 14 p.76: $ alone is the symbol $ and two zero bytes,
+! then an absolute zero, with .L and + put at once (p.24: "the coded $ is
+! datum $00 ... and an absolute datum of 24 zeros, operator .L and plus").
+! CHOSEN as strap2: the length field 3, where Fig. 14 shows 0.
+GFDOL   SIC, GFZLK
+        B, GFLZC
+        LI(BU,10), (8)1003
+        ST(BU,10)(V+I), .10($2)
+        LI(BU,8), (8)53
+        ST(BU,8)(V+I), .8($2)
+        LI(BU,17), 0
+        ST(BU,17)(V+I), .17($2)
+        LI(BU,3), 6
+        ST(BU,3)(V+I), .3($2)
+        LI(BU,24), 0
+        ST(BU,24)(V+I), .24($2)
+        M+1(BU,8), GFN
+        M+1(BU,8), GFN
+        LI(BU,3), 6
+        ST(BU,3), GFOP+.56
+        L(BU,8), GFN
+        ST(BU,5), GFOP+.59
+        SIC, GFELK
+        B, GFPUT
+        M-1(BU,8), GFN
+        LI(BU,3), 1
+        ST(BU,3), GFOP+.56
+        L(BU,8), GFN
+        ST(BU,5), GFOP+.59
+        SIC, GFELK
+        B, GFPUT
+        LI(BU,1), 1
+        ST(BU,1), GFLKA
+        B, GFPE
+!
+! BOPSER (Box 32): GFKEY in SYSTAB by binary search; GFFND, GFSVV
+BOPSER  LI(BU,8), 0
+        ST(BU,8), GFLO
+        ST(BU,1), GFFND
+        L(BU,8), SYSTN+.56
+        ST(BU,8), GFHI
+BOP1    L(BU,8), GFLO
+        K(BU,8), GFHI
+        BZAL, BOPX
+        L(BU,8), GFLO
+        +(BU,8), GFHI
+        ST(BU,9), GFMID
+        L(BU,8), GFMID
+        ST(BU,8), GFMDV
+        ST(BU,8), STXB+.9
+        LV, $9, SYSTBX
+        V+, $9, STXB
+        L(BU,64), GFKEY
+        K(BU,64), 0($9)
+        BAE, BOP3
+        BAL, BOP2
+        L(BU,8), GFMDV
+        ST(BU,8), GFLO
+        M+1(BU,8), GFLO
+        B, BOP1
+BOP2    L(BU,8), GFMDV
+        ST(BU,8), GFHI
+        B, BOP1
+BOP3    L(BU,64), 1.0($9)
+        ST(BU,64), GFSVV
+        LI(BU,1), 1
+        ST(BU,1), GFFND
+BOPX    LV, $8, GFBLK
         B, 0($8)
 !
 ! CPLTNM (Chart BD p.70, p.71).  $3 holds the first digit; the radix is

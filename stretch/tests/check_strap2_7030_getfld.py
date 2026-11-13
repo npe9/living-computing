@@ -6,13 +6,14 @@ encode() (coded.py), docs/strap2_7030.md step 2.
 
 >>> Both are RECONSTRUCTIONS of IBM's STRAP II; agreement shows the 7030
 >>> program implements the host's specification.  The printed bits of
->>> Figs. 28-29 bind the host (check_strap2_coded.py); both need
->>> parentheses, so they wait for sub-slice b (Fig. 29 also for c). <<<
+>>> Figs. 28-29 bind the host (check_strap2_coded.py) and, since sub-slices
+>>> b and c, the 7030 program too. <<<
 
 SUB-SLICE a: numbers (CPLTNM, floating point), programmer symbols, + - * /,
 unary minus, and the points.  SUB-SLICE b: parentheses; Fig. 28 p.200's
-printed bits are checked before the host comparison.  The test's driver (tests/strap2_7030_gfdrive.
-strap, NOT part of the reconstruction) calls GETFLD on every field of every
+printed bits are checked before the host comparison.  SUB-SLICE c: `$` and
+the system symbols (BOPSER, MBSPEC as notes), Fig. 29 p.201's printed bits.
+The test's driver (tests/strap2_7030_gfdrive.strap, NOT part of the reconstruction) calls GETFLD on every field of every
 card block, each at a fresh word, and records each field's first bit and
 the bit after it.  The host reads the same cards with Getcha and Getfld.
 
@@ -61,6 +62,22 @@ control all passing); fields 36 Fig. 28, 37 T(2,1), 38 T(2,1)(A),
   after a datum taken as a start        37, 38; ERRC 0, field count
 (A first form of the point-number injection added a zero field, changed
 nothing and measured nothing; it was rewritten as M+1/M-1 and re-run.)
+SUB-SLICE c, $ and system symbols, MEASURED 2026-11-13 (restored by copy and
+cmp, control all passing); fields 56-57 Fig. 29, then 58 $, 59 A+$, 60 $X2,
+61 $15, 62 $CPU, 63 $IND, 64 $X2+3, 65 A($X3), 66 $XO, 67 $1ND, 68 -$,
+69 $.4, 70 ($X2), 71 $51T:
+  BOPSER's compare reversed             ERRC 0, Fig. 29, NOTEC, field count
+  the key zero-filled                   ERRC 0, Fig. 29, NOTEC, field count
+  no dds                                Fig. 29; 56, 57, 60-67, 70, 71
+  Fig. 14's + before .L                 58, 59, 68, 69
+  $ alone's length 0 (Fig. 14 drawn)    58, 59, 68, 69
+  no MBSPEC                             ERRC 0, NOTEC, field count
+  MBSPEC never restores                 ERRC 0, NOTEC, field count
+  129 not counted                       NOTEC only
+  a system datum absolute               ERRC 0, NOTEC, field count
+(Each "ERRC 0" set also fails "every field equals strap2's".  MBSPEC never
+restores measured NOTHING until $51T was added: $XO and $1ND are found on
+the counter's first step, $51T -> SIT only on its third, through a carry.)
 """
 import os
 import re
@@ -76,6 +93,7 @@ import strap2                                       # noqa: E402
 from strap2.cards import Getcha, deck_cards         # noqa: E402
 from strap2.coded import encode                     # noqa: E402
 from strap2.getfld import Getfld, FieldError        # noqa: E402
+from strap2.optable import system_symbol           # noqa: E402
 from check_strap2_7030 import card, iqs_words, BSV  # noqa: E402
 
 DECK = os.path.join(HERE, "..", "decks", "strap2_7030.strap")
@@ -83,6 +101,7 @@ DRIVE = os.path.join(HERE, "strap2_7030_gfdrive.strap")
 MODULE = "StretchStrap2x7030GfTb"
 STEPS = 60000000
 fails = 0
+CHANGED = []    # the host's MBSPEC alterations, message 129 (p.178)
 
 
 def check(label, got, want):
@@ -110,7 +129,10 @@ CARDS = [
     card(" ", "", "X(A+B,C*D),((A+B)*(C-D))/E,(A).B,A.(B)(C)"),
     card(" ", "", "A(PEACHESCREAMOFWHEATANDMILKANDHONEYANDSUGARANDTOASTANDJAM)"),
     card(" ", "", "Q(((R+S)*T)-(U/V),W),-(((A)))"),
+    card(" ", "", "PEACHES CREAM OF WHEAT +7.(3-6*18)($X2+3.0), MILK-CREAM ($X3+7)"),
+    card(" ", "", "$,A+$,$X2,$15,$CPU,$IND,$X2+3,A($X3),$XO,$1ND,-$,$.4,($X2),$51T"),
 ]
+FIG29 = 56      # Fig. 29 p.201: its two fields' printed bits
 FIG28 = 11      # Fig. 28 p.200: its printed bits, before the host comparison
 
 
@@ -135,6 +157,31 @@ def fig28_printed():
             op("001", 4) + op("110", 5) + "0" + "0")
 
 
+def fig29_printed():
+    """As tests/check_strap2_coded.py writes Fig. 29, p.201, read in the ink."""
+    from strap2.bits import field
+
+    def abs24(n):
+        return "110" + field(n, 24)
+
+    def op(code, n):
+        return "1" + code + field(n, 5)
+    sysd = "1010000001000"
+    a = ("1000" + a8sym("PEACHESCREAMOFWHEAT") + "0" + abs24(7) +
+         "1000" + abs24(3) + "0" + abs24(6) + "0" + abs24(18) + "0" + "0" +
+         op("011", 2) + op("000", 1) + "0" +
+         "1000" + "11100" + field(18 * 64, 24) + sysd + "0" +
+         abs24(3) + "0" + abs24(0) + "0" + "0" +
+         op("111", 2) + op("001", 1) + "0" +
+         "0" + "0" +
+         op("111", 2) + op("001", 1) + "0" + "0")
+    b = ("1000" + a8sym("MILK") + "0" + a8sym("CREAM") +
+         "1000" + "11100" + field(19 * 64, 24) + sysd + "0" +
+         abs24(7) + "0" + "0" + op("001", 1) + "0" +
+         "0" + "0" + op("000", 1) + "0" + "0")
+    return [a, b]
+
+
 def deck_text(cards):
     src = open(DECK).read()
     rows = []
@@ -148,7 +195,7 @@ def deck_text(cards):
 def host(cards):
     """Each field's coded expression, as strap2 makes it, or 'refused n'."""
     g = Getcha(cards)
-    f = Getfld(g, lambda name: None)
+    f = Getfld(g, system_symbol, changed=lambda written, used: CHANGED.append((written, used)))
     out = []
     g.next()
     have = True
@@ -179,7 +226,7 @@ def run(cards, tmp, whole=False):
     args = [os.path.join(HERE, "run_program.sh"), path, MODULE, "ASM=strap2",
             f"DUMP={first},{last - first}", f"STEPS={STEPS}", f"CYCLES<={STEPS}",
             f"FASTLOAD={os.path.join(tmp, MODULE + '.hex')}",
-            f"ERRC:{word('ERRC')}=0x0"]
+            f"ERRC:{word('ERRC')}=0x0", f"NOTEC:{word('NOTEC')}=0x0"]
     r = subprocess.run(args, capture_output=True, text=True, cwd=HERE)
     for name in os.listdir(BSV):            # by exact name, never a glob
         if name in (MODULE + ".bsv", MODULE + "_sim", MODULE + "_sim.so"):
@@ -190,6 +237,7 @@ def run(cards, tmp, whole=False):
     mem = {int(a): int(v, 16) for a, v in re.findall(r"MEMDUMP (\d+) ([0-9a-f]+)", out)}
     m = re.search(r"cycles = (\d+)", out)
     errc = re.search(r"(PASS|FAIL) ERRC = (\d+)", out)
+    notec = re.search(r"(PASS|FAIL) NOTEC = (\d+)", out)
 
     def bits(a, b):
         return "".join(format(mem[w], "064b") for w in range(a // 64, (b + 63) // 64))[a % 64:a % 64 + b - a]
@@ -200,12 +248,16 @@ def run(cards, tmp, whole=False):
         b = mem[word("OUTL") + 2 * k + 1] >> 40
         fields.append(bits(a, b))
     return {"fields": fields, "steps": int(m.group(1)) if m else None,
-            "errc": int(errc.group(2)) >> 40 if errc else None}, out
+            "errc": int(errc.group(2)) >> 40 if errc else None,
+            "notes": int(notec.group(2)) >> 40 if notec else None}, out
 
 
 def main():
     want = host(CARDS)
-    check("control: the host encodes all 56 fields", len(want), 56)
+    check("control: the host encodes all 72 fields", len(want), 72)
+    check("control: the host's Fig. 29 is the printed one", want[FIG29:FIG29 + 2], fig29_printed())
+    check("control: the host's MBSPEC changes $XO, $1ND, $51T (129)", CHANGED,
+          [("XO", "X0"), ("1ND", "IND"), ("51T", "SIT")])
     check("control: the host's Fig. 28 is the printed one", want[36], fig28_printed())
     halts = [("163, a digit too large for the radix (the host's 63)", "19A", 163, 63),
              ("166, a plus after an operator (the host's 66)", "A++B", 166, 66),
@@ -222,7 +274,9 @@ def main():
              ("9, a radix: not written yet", "(8)17", 9, None),
              ("9, a g.p.: not written yet", "A(.3)5", 9, None),
              ("10, parentheses deeper than 7", "((((((((A))))))))", 10, None),
-             ("9, a $: not written yet", "$X2", 9, None)]
+             ("156, a system symbol not found (the host's 56)", "$QQQ", 156, 56),
+             ("156, a system symbol of 9 characters (the host's 56)", "$ABCDEFGHI", 156, 56),
+             ("9, a tail: TAILOR is step 4", "A$B", 9, None)]
     with tempfile.TemporaryDirectory() as tmp:
         got, out = run(CARDS, tmp)
         for label, stmt, errc, msg in halts:
@@ -240,6 +294,9 @@ def main():
     check("ERRC is 0 (no failure halt)", got["errc"], 0)
     check("Fig. 28 p.200: the 7030 GETFLD gives the printed bits",
           got["fields"][36] if len(got["fields"]) > 36 else None, fig28_printed())
+    check("Fig. 29 p.201: the 7030 GETFLD gives the printed bits",
+          got["fields"][FIG29:FIG29 + 2], fig29_printed())
+    check("message 129 three times, as notes (NOTEC)", got["notes"], 3)
     check(f"the number of fields ({len(want)})", len(got["fields"]), len(want))
     for k, (g, w) in enumerate(zip(got["fields"], want)):
         if g != w:
