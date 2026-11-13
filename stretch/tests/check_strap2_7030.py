@@ -15,7 +15,8 @@ strap2 punches (gen_tb.py ASM=strap2), not from the scaffolding assembler.
 
 The run prints the model's steps, so the cost of a card is on record
 (docs/strap2_7030.md asks for it before the next step): 274,565 steps for the
-15 cards, about 18,300 a card, DRIVE and the load included; 8 s of Bluesim.
+15 cards, about 18,300 a card, DRIVE and the load included; 8 s of Bluesim
+on a quiet machine.  Now 21 cards, 356,935 steps.
 
 FOUND BY THIS TEST, fixed in strap2/cards.py: the host gave MAIN the characters
 of a comment block after its first character, against p.79 (a quote in the
@@ -23,20 +24,31 @@ name field gave the card's statement; every comment block gave its
 continuation cards).  The p.79 checks below test the host alone.
 
 MEASURED INJECTIONS, 2026-11-12, restored by copy and cmp, control all
-passing before and after, observed:
-  blanks not skipped                    the characters
-  column-1 comment not tested           the characters
-  name-field comment not tested         the characters and the names
-  continuation mark wrong (+ for *)     the characters and the names
-  IQS to A8 one byte off                the characters and the names
-  a blank name field does not end it    the names
-  initial name keeps trailing blanks    the names
-  a comment block's continuation given  the characters
-  trailing blanks counted in the name   the names
-  host: name-field comment gives the    the columns 2-9 p.79 check, and the
-    card's statement                    characters
-  host: a comment block's continuation  both p.79 checks, and the characters
+passing before and after, observed ("chars", "names": the two comparisons):
+  blanks not skipped                    chars
+  column-1 comment not tested           chars
+  name-field comment not tested         chars, names
+  continuation mark wrong (+ for *)     chars, names, ERRC 2
+  IQS to A8 one byte off                chars, names, ERRC 2
+  a blank name field does not end it    names
+  initial name keeps trailing blanks    names
+  a comment block's continuation given  chars
+  trailing blanks counted in the name   names
+  continuation quote not seen           chars, names
+  GCCMC not set (comment does not hold) chars
+  later statement fields given after it chars
+  COMREC's code not tested              ERRC 1
+  no name limit                         ERRC 2
+  host: name-field comment gives the    the columns 2-9 p.79 check, chars
+    card's statement
+  host: a comment block's continuation  both p.79 checks, chars
     given
+  host: a continuation's quote kept in  the continuation p.79 check, names
+    the name
+  host: a continuation's comment not    chars
+    seen
+(One host injection first left an if with no body, a syntax error that
+measured nothing; it was rewritten as valid code and re-run.)
 """
 import os
 import re
@@ -55,6 +67,7 @@ from strap2.cards import Getcha, deck_cards         # noqa: E402
 
 BSV = os.path.join(HERE, "..", "bsv")
 DECK = os.path.join(HERE, "..", "decks", "strap2_7030.strap")
+DRIVE = os.path.join(HERE, "strap2_7030_drive.strap")     # the test's, not STRAP II's
 MODULE = "StretchStrap2x7030Tb"
 STEPS = 40000000
 fails = 0
@@ -86,7 +99,13 @@ CARDS = [
     card(" ", "", ""),                                   # an empty card
     card(" ", "N  M", "B, N M"),                         # embedded blanks kept
     card(" ", "Z", "".join("X" for _ in range(63))),     # a full statement field
-    card("*", "", "Y"),                                  # the last card continues
+    card("*", "", "Y"),                                  # it continues
+    card(" ", "CM", "L,A"),                              # p.79: a comment from a
+    card("*", "XY'Z", "NOT GIVEN"),                      #   continuation's name field;
+    card("*", "TAIL", "NOR THIS"),                       #   the name goes on
+    card(" ", "Q", "B,1"),                               # a quote in column 2 of a
+    card("*", "'", "NOT GIVEN"),                         #   continuation ends the name
+    card("*", "MORE", "X"),                              #   too
 ]
 
 
@@ -95,13 +114,16 @@ def iqs_words(c):
     return [int.from_bytes(bytes(v[k:k + 8]), "big") for k in range(0, 80, 8)]
 
 
-def deck_text(cards):
+def deck_text(cards, code=5):
+    """The deck, its input cards after INB, then the test's driver."""
     src = open(DECK).read()
     rows = []
     for c in cards:
         rows += [f"        DD(BU,64), (16){w:016X}" for w in iqs_words(c)]
     src = src.replace("INX     XW, INB, 0, 0\n", f"INX     XW, INB, {len(cards)}, 0\n", 1)
-    return src.replace("        END, START\n", "\n".join(rows) + "\n        END, START\n", 1)
+    src = src.replace("(16)0000005000000000", f"(16){code << 36:016X}", 1)
+    assert src.endswith("        END\n")
+    return src[:-len("        END\n")] + "\n".join(rows) + "\n" + open(DRIVE).read() + "        END, START\n"
 
 
 def host(cards):
@@ -117,8 +139,8 @@ def host(cards):
             names.append([a8(x) for x in g.name.rstrip()])
 
 
-def run(cards, tmp):
-    text = deck_text(cards)
+def run(cards, tmp, code=5):
+    text = deck_text(cards, code)
     p2 = strap2.compile_cards(deck_cards(text), strap_asm.DEFAULT_ORIGIN_BITS)
 
     def word(n):
@@ -157,12 +179,12 @@ def run(cards, tmp):
         else:
             cur.append(b)
     return {"chars": chars, "names": names, "steps": steps,
-            "errc": errc.group(2) if errc else None}, out
+            "errc": str(int(errc.group(2)) >> 40) if errc else None}, out
 
 
 def main():
     want_chars, want_names = host(CARDS)
-    check("control: the host sees the 10 card blocks", len(want_names), 10)
+    check("control: the host sees the 12 card blocks", len(want_names), 12)
     # p.79, read in the ink 2026-11-12: a comment started in the first nine
     # columns gives MAIN the comment character, then nothing more of the block
     # ("without giving them out to main flow through $3"), then the end of the
@@ -171,8 +193,18 @@ def main():
                          ("columns 2-9", [card(" ", "AB'C", "NOT GIVEN"), card("*", "X", "NOR THIS")])):
         check(f"host, p.79: a comment in {label} gives the quote, then the false semicolon",
               host(block)[0], [0o14, 0o35])
+    check("host, p.79: a continuation's comment keeps the name before it, and later names",
+          [bytes(n) for n in want_names[10:]], [bytes(a8(c) for c in "CMXYTAIL"), bytes([a8("Q")])])
     with tempfile.TemporaryDirectory() as tmp:
         got, out = run(CARDS, tmp)
+        bad_code, _ = run(CARDS[:2], tmp, code=3)
+        long_name, _ = run([card(" ", "NAMEPART", "B,1")] + [card("*", "NAMEPART", "")] * 8, tmp)
+    # The failure halts (the deck's header).  strap2 has neither: it reads
+    # characters, not a coded input, and its name has no length limit.
+    check("ERRC 1: COMREC's input code 3 (A8) is not written, halts before a character",
+          (bad_code and bad_code["errc"], bad_code and len(bad_code["chars"])), ("1", 0))
+    check("ERRC 2: a name of 72 characters is past NAMEB's 64 (a CHOSEN size)",
+          long_name and long_name["errc"], "2")
     if got is None:
         print("FAIL the 7030 STRAP II did not run to its halt:\n" + out)
         return 1

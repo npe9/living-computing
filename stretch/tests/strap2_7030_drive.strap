@@ -1,0 +1,45 @@
+! strap2_7030_drive.strap -- the TEST DRIVER for decks/strap2_7030.strap, NOT
+! part of the reconstruction.  tests/check_strap2_7030.py assembles it after
+! the deck (and its input cards), with END, START.  It stands in for MAIN:
+! it calls GETCHA to the end of the input and records what GETCHA gives,
+! every character, and at each false semicolon the card block's name.
+START   SIC, XINLK
+        B, XINPUT
+DRV1    SIC, GETCHZ
+        B, GETCHA
+        L(BU,1), FEOF
+        KI(BU,1), 1
+        BAE, DONE
+! the character, $3's value field, to the output
+        SV, $3, DRTMP
+        LV, $9, OUTP
+        L(BU,8), DRTMP+.16
+        ST(BU,8)(V+I), .8($9)
+        SV, $9, OUTP
+        M+1(BU,24), OUTN
+        L(BU,1), FEND
+        KI(BU,1), 1
+        BZAE, DRV1
+! the false semicolon: the block's name, then a semicolon, to NAMS
+        LV, $9, NAMSP
+        L(BU,18), NAMET
+        KI(BU,18), 0
+        BAE, DRV3
+        LVI, $8, NAMEB
+        LC, $7, NAMET
+DRV2    L(BU,8)(V+I), .8($8)
+        ST(BU,8)(V+I), .8($9)
+        CB, $7, DRV2
+DRV3    LI(BU,8), (8)35
+        ST(BU,8)(V+I), .8($9)
+        SV, $9, NAMSP
+        B, DRV1
+DONE    BEW, $
+!
+        CNOP
+DRTMP   DD(BU,64), 0
+OUTN    DD(BU,64), 0
+OUTP    XW, OUTB, 0, 0
+NAMSP   XW, NAMS, 0, 0
+OUTB    DRZ(BU,64), 500
+NAMS    DRZ(BU,64), 100
