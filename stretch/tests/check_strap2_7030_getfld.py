@@ -6,8 +6,8 @@ encode() (coded.py), docs/strap2_7030.md step 2.
 
 >>> Both are RECONSTRUCTIONS of IBM's STRAP II; agreement shows the 7030
 >>> program implements the host's specification.  The printed bits of
->>> Figs. 28-29 bind the host (check_strap2_coded.py); Fig. 28 is here too,
->>> and Fig. 29 needs sub-slices b-c. <<<
+>>> Figs. 28-29 bind the host (check_strap2_coded.py); both need
+>>> parentheses, so they wait for sub-slice b (Fig. 29 also for c). <<<
 
 SUB-SLICE a: numbers (CPLTNM, floating point), programmer symbols, + - * /,
 unary minus, and the points.  The test's driver (tests/strap2_7030_gfdrive.
@@ -30,6 +30,16 @@ control all passing before and after; fields by number, CARDS in order
   a leading plus not skipped            ERRC 0, the number of fields
   the operators not put (GFZA)          every field with an operator (21)
   no 24-bit limit                       the ERRC 168 halt
+RE-MEASURED 2026-11-13 after the points became stack operators (the
+cells GFNUM and GFD went; a point now waits on GFSTK, priority 4):
+  a.b coded .L (no Box 59)              fields 6, 11, 12, 13, 32
+  a point's number one too high         fields 6, 7, 8, 11, 12, 13, 32
+  two unary minuses allowed             the --2 halt
+  two points in a datum allowed         the 2.3.4 halt
+  a point ranks with * /                NOTHING: a point is pushed after its
+                                        datum, so it is the top entry when
+                                        the next operator comes, and any
+                                        priority from 2 up puts it first
 (A first form of the point-number injection added a zero field, changed
 nothing and measured nothing; it was rewritten as M+1/M-1 and re-run.)
 """
@@ -157,6 +167,9 @@ def main():
              ("168, a number over 24 bits (the host's 68)", "16777216", 168, 68),
              ("149, a symbol over 128 characters (the host's 49)",
               ["A" * 63, "A" * 63, "A" * 3], 149, 49),
+             ("167, a second point in one datum (the host's 67)", "2.3.4", 167, 67),
+             ("166, a second unary minus (the host's 66)", "--2", 166, 66),
+             ("166, a second point before a datum (the host's 66)", "..2", 166, 66),
              ("9, a parenthesis: not written yet", "(A)", 9, None),
              ("9, a $: not written yet", "$X2", 9, None)]
     with tempfile.TemporaryDirectory() as tmp:

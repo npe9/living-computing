@@ -160,7 +160,10 @@ GFC     DD(BU,64), 0
 GFP0    DD(BU,64), 0
 GFFRST  DD(BU,64), 0
 GFN     DD(BU,64), 0
-GFNUM   DD(BU,64), 0
+GFFLR   DD(BU,64), 0
+GFUN    DD(BU,64), 0
+GFPT    DD(BU,64), 0
+GFDOTL  DD(BU,64), 0
 GFSN    DD(BU,64), 0
 GFOPN   DD(BU,64), 0
 GFNEW   DD(BU,64), 0
@@ -415,9 +418,9 @@ GCN3    CB, $8, GCN1
 ! GETFLD (Charts BI-BK pp.80-82, text pp.83-86): one field's coded
 ! expression (Appendix C p.198) at BCFLDX.  Call SIC,GETFLZ; B,GETFLD (p.83).
 ! The data go in as they are read; each operator waits on GFSTK until one
-! of no higher priority comes (p.198: .+ .L .R U- * / + -, the points bound
-! at once), and is put, with its datum number, in GFOPS; GFZA puts them
-! after the data (Boxes 43, 60).  Sub-slice a: no parenthesis, $, g.p.
+! of no higher priority comes (p.198: .+ .L .R U- * / + -), and is put,
+! with its datum number, in GFOPS; GFZA puts them after the data (Boxes 43,
+! 60).  Sub-slice a: no parenthesis, $, g.p.
 GETFLD  SX, $2, GFSAV2
         LV, $2, BCFLDX
         LI(BU,8), 0
@@ -431,6 +434,12 @@ GETFLD  SX, $2, GFSAV2
         ST(BU,64), GFOP
         LVI, $9, GFOPS
         SV, $9, GFOPP
+        LI(BU,8), 0
+        ST(BU,8), GFFLR
+        LI(BU,1), 0
+        ST(BU,1), GFUN
+        ST(BU,1), GFPT
+        ST(BU,1), GFDOTL
         LI(BU,1), 1
         ST(BU,1), GFFRST
 ! Boxes 3-4: the first character, unless the user has it (Gfchar)
@@ -453,7 +462,10 @@ GF1     SV, $3, GFC
 ! the prefix: 1A, and 1B type 000 (p.198)
         LI(BU,4), 8
         ST(BU,4)(V+I), .4($2)
-! a datum is expected: a leading plus does nothing; a minus is unary
+! a datum is expected (S-codes B, O, p.83): a leading plus does nothing; a
+! minus is unary, once (U-); a point with no datum before it waits as .R.
+! A point is an operator of the top priority (p.198), so it waits on GFSTK
+! like the others, and the datum after it is put first.
 GFE     SV, $3, GFC
         L(BU,8), GFC+.16
         KI(BU,8), (8)60
@@ -470,10 +482,64 @@ GFE1    LI(BU,1), 0
         ST(BU,1), GFFRST
         L(BU,8), GFC+.16
         KI(BU,8), (8)40
-        BZAE, GFD
+        BZAE, GFE2
+        L(BU,1), GFUN
+        KI(BU,1), 1
+        BAE, GFSYN
+        LI(BU,1), 1
+        ST(BU,1), GFUN
         LI(BU,3), 3
         ST(BU,3), GFNEW+.53
         LI(BU,3), 4
+        B, GFE4
+GFE2    L(BU,8), GFC+.16
+        KI(BU,8), (8)73
+        BZAE, GFE3
+        L(BU,1), GFPT
+        KI(BU,1), 1
+        BAE, GFSYN
+        LI(BU,1), 1
+        ST(BU,1), GFPT
+        LI(BU,3), 4
+        ST(BU,3), GFNEW+.53
+        LI(BU,3), 5
+GFE4    ST(BU,3), GFNEW+.56
+        L(BU,8), GFN
+        ST(BU,5), GFNEW+.59
+        SIC, GFELK
+        B, GFPUSH
+        SIC, GETCHZ
+        B, GETCHA
+        B, GFE
+GFE3    SIC, GFPLK
+        B, GFPRIM
+        LI(BU,1), 0
+        ST(BU,1), GFUN
+! Boxes 58-59: a datum after "a." makes its .L a .+
+        L(BU,1), GFDOTL
+        KI(BU,1), 1
+        BZAE, GFA
+        LI(BU,1), 0
+        ST(BU,1), GFDOTL
+        L(BU,8), GFSN
+        ST(BU,8), STX+.12
+        LV, $9, STX
+        LI(BU,3), 7
+        ST(BU,3), GFSTK-.8($9)
+! after a datum (S-code S, p.83): a point (one to a datum: a second ends
+! the field, 167 as strap2's 67), a binary operator, or the end
+GFA     SV, $3, GFC
+        L(BU,8), GFC+.16
+        KI(BU,8), (8)73
+        BZAE, GFA1
+        L(BU,1), GFPT
+        KI(BU,1), 1
+        BAE, GFEND
+        LI(BU,1), 1
+        ST(BU,1), GFPT
+        LI(BU,3), 4
+        ST(BU,3), GFNEW+.53
+        LI(BU,3), 6
         ST(BU,3), GFNEW+.56
         L(BU,8), GFN
         ST(BU,5), GFNEW+.59
@@ -481,51 +547,23 @@ GFE1    LI(BU,1), 0
         B, GFPUSH
         SIC, GETCHZ
         B, GETCHA
-! a datum, perhaps with a point (p.198: a.b .+, a. .L, .b .R)
-GFD     SV, $3, GFC
-        L(BU,8), GFC+.16
-        KI(BU,8), (8)73
-        BZAE, GFD1
-        L(BU,8), GFN
-        ST(BU,8), GFNUM
-        SIC, GETCHZ
-        B, GETCHA
-        SIC, GFPLK
-        B, GFPRIM
-        LI(BU,3), 5
-        B, GFD4
-GFD1    SIC, GFPLK
-        B, GFPRIM
-        SV, $3, GFC
-        L(BU,8), GFC+.16
-        KI(BU,8), (8)73
-        BZAE, GFA
-        L(BU,8), GFN
-        ST(BU,8), GFNUM
-        SIC, GETCHZ
-        B, GETCHA
+! a datum follows the point: an alphameric character, $ or (
         SV, $3, GFC
         L(BU,8), GFC+.16
         ST(BU,8), CHXT+.13
         LV, $9, CHXT
         L(BU,8), CHVAL($9)
         KI(BU,8), 36
-        BAL, GFD2
-        LI(BU,3), 6
-        B, GFD4
-GFD2    SIC, GFPLK
-        B, GFPRIM
-        LI(BU,3), 7
-! the point's operator, put at once: no operator outranks it
-GFD4    ST(BU,3), GFOP+.56
-        L(BU,8), GFNUM
-        ST(BU,5), GFOP+.59
-        SIC, GFELK
-        B, GFPUT
-! after a datum: a binary operator, or the end of the field
-GFA     SV, $3, GFC
+        BAL, GFA0
         L(BU,8), GFC+.16
-        LI(BU,3), 1
+        KI(BU,8), (8)53
+        BAE, GFA0
+        KI(BU,8), (8)34
+        BZAE, GFA
+GFA0    LI(BU,1), 1
+        ST(BU,1), GFDOTL
+        B, GFE3
+GFA1    LI(BU,3), 1
         ST(BU,3), GFNEW+.53
         LI(BU,3), 1
         ST(BU,3), GFNEW+.56
@@ -550,11 +588,12 @@ GFA     SV, $3, GFC
         KI(BU,8), (8)21
         BAE, GFA2
         B, GFEND
-! put each waiting operator of no lower priority, then this one waits
+! put each waiting operator of no lower priority, down to this expression's
+! floor GFFLR, then this one waits
 GFA2    L(BU,8), GFN
         ST(BU,5), GFNEW+.59
 GFA3    L(BU,8), GFSN
-        KI(BU,8), 0
+        K(BU,8), GFFLR
         BAE, GFA4
         SIC, GFELK
         B, GFTOP
@@ -565,14 +604,16 @@ GFA3    L(BU,8), GFSN
         SIC, GFELK
         B, GFPUT
         B, GFA3
-GFA4    SIC, GFELK
+GFA4    LI(BU,1), 0
+        ST(BU,1), GFPT
+        SIC, GFELK
         B, GFPUSH
         SIC, GETCHZ
         B, GETCHA
         B, GFE
 ! the end of the field: every waiting operator is put
 GFEND   L(BU,8), GFSN
-        KI(BU,8), 0
+        K(BU,8), GFFLR
         BAE, GFEN2
         SIC, GFELK
         B, GFTOP
