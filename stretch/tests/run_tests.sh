@@ -1649,6 +1649,7 @@ run "STRAP II secondary ops by their op's class, messages 2 and 4 (C22-6729 pp.2
 run "STRAP II DUPLI / REPEAT: the next X cards Y more times, names dropped (N28-1081 page 1; C22-6729 p.27)" python3 check_strap2_dupli.py
 run "STRAP II PRNTALL: every symbol and its address after the lists (N28-1081 page 2; C22-6729 charts EG, EH)" python3 check_strap2_prntall.py
 run "STRAP II array subscripts on a DR symbol, FL x (q + q'L + ...), C28-6129 printed p.40" python3 check_strap2_subscripts.py
+run "STRAP II GETFLD: a parenthesis classified at its closing parenthesis, C22-6729 Chart BK p.82" python3 check_strap2_getfld_paren.py
 run "STRAP II against the listing oracles and strap_asm's images" python3 check_strap2_oracles.py
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<

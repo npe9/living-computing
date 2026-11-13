@@ -138,6 +138,15 @@ an index. A wrong count takes the recovery p.177's text names (75 last used as
 index, 76 extras ignored, 77 others taken 0), once per statement. Refused:
 message 71, whose recovery is not printed. `tests/check_strap2_subscripts.py`.
 
+GETFLD classifies a parenthesis at its `)` (C22-6729 Chart BK p.82, text p.85,
+read in the ink 2026-11-13): a g.p. `(.n)`, a datum's S/X, a radix (one
+absolute datum where no subscript is allowed), arithmetic (an operator
+inside, CHOSEN for Box 76), or S/X on a zero datum. It reads nothing past the
+`)`. Before this the host looked ahead on the card for a digit after a radix,
+so `(8)A` was refused and a prefix split over a continuation card failed;
+`(16)A0` is now the symbol A0, Box 7 being tested before Box 8. All 70,126
+coded fields of the 734 decks are unchanged. `tests/check_strap2_getfld_paren.py`.
+
 A symbolic field length or byte size is tested by DECODE's KAMMS (C22-6729
 p.137 boxes 20, 29): message 87 (FL over 64 or bit style, truncated as 36 is)
 and 88 (BS over 8 or bit style; the deck refuses, as for 37), p.177. Checked

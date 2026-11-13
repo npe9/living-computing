@@ -55,6 +55,16 @@ Open alongside: the LIM card under PUNREL is punched as computed and means
 nothing to a relocated load -- the guide does not say whether PUNREL
 punches one; and PUNREL after absolute output, refused.
 
+## A DIGIT TOO LARGE FOR ITS RADIX -- open, 2026-11-13
+
+C22-6729 p.71, CPLTNM Boxes 3-8, read in the ink: "If the digit equals or
+exceeds the radix, an error message is executed, but the digit is still used
+in the computation of the numeric datum."  strap2 (`getfld.py` `_cpltnm`)
+raises FieldError 63 instead, refusing the field.  The fix is to give 63 as a
+note (as 75-77 are, `Value.notes`) and go on with the digit.  Before changing
+it: read whether p.176-177 class 63 as serious (the listing flag), and test
+`(8)19` both ways.  The 7030 CPLTNM (step 2) will do what p.71 says.
+
 ## AN INTEGER IN PARENTHESES ON A PLAIN SYMBOL -- open, 2026-11-12
 
 strap2 takes `L,JOE(3)`, where JOE has no dimensions, as index register 3, as it
