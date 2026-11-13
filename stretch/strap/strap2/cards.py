@@ -96,6 +96,11 @@ class Getcha:
         k = self.i
         while not self.comment_block and k < len(self.cards) and self.cards[k][:1] == "*":
             more = self.cards[k].ljust(80)[1:9]
+            # p.79: "A comment character appearing in columns 2-9 of a
+            # continuation card causes the remaining characters on the card
+            # to be treated as a comment.  The name may be continued on the
+            # following continuation cards of that card block."
+            more = more.split("'", 1)[0]
             if not more.strip():
                 break
             self.name += more       # embedded blanks kept, as above
@@ -171,6 +176,17 @@ class Getcha:
                     self.i += 1
                     self.col = STMT_FIRST
                     self.bsyst.append("\n")    # CHOSEN: each card is a line, listing.py
+                    if not self.comment_block and "'" in self.card[1:9]:
+                        # p.79: a quote in columns 2-9 of a continuation card
+                        # starts a comment there.  MAIN gets the quote ("with
+                        # the comment character in $3 as usual"); the rest of
+                        # the card, and the statement fields of the later
+                        # continuation cards, go to the buffer only.
+                        self.comment_block = True
+                        self.bsyst.extend(self.card[STMT_FIRST:STMT_LAST])
+                        self.col = STMT_LAST
+                        self.ch = "'"
+                        return self.ch
                     if self.comment_block:
                         # p.79, read in the ink 2026-11-12: after a comment
                         # started in the first nine columns, "GETCHA will put

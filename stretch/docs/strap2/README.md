@@ -123,7 +123,10 @@ its card block until the false semicolon (C22-6729 p.79, read in the ink
 2026-11-12: "without giving them out to main flow through $3"). Before this a
 quote in the name field gave MAIN the card's statement, and every comment block
 gave its continuation cards. Found by the 7030 GETCHA,
-`tests/check_strap2_7030.py`.
+`tests/check_strap2_7030.py`. A quote in columns 2-9 of a continuation card
+starts a comment there (p.79): MAIN gets the quote, the name keeps the
+columns before it and the later continuation cards' names, and the later
+statement fields are comment.
 
 Array subscripts (C28-6129 printed p.40, read in the ink 2026-11-12). A named
 `DR(dds),(L,L',...)` carries its dimensions; `A(q,q',...)` is A + FL x (q + q'L
