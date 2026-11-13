@@ -133,6 +133,10 @@ class Value:
             return self._enter(f, 0, 0, 0, 0)
         st.put(f, "ZST17", 1)
         saved, self.flags = self.flags, 0
+        # A message the definition meets (75-77) belongs to the defining
+        # statement, which gives it when it evaluates its own field; here,
+        # reached from a reference, it is dropped.
+        saved_notes, self.notes = self.notes, []
         try:
             if kind == KIND_SYN:
                 got = self._syn(f)
@@ -141,6 +145,7 @@ class Value:
         finally:
             st.put(f, "ZST17", 0)
             inner, self.flags = self.flags, saved
+            self.notes = saved_notes
         if got is not None and inner and kind == KIND_SYN:
             # p.32: UITER marks a symbol defined in terms of an error symbol
             # as it completes the entry; C28-6129 p.21 (5).

@@ -32,10 +32,10 @@ WRITTEN, refused: message 71, whose recovery is not printed.  (A first draft let
 both MCP decks, caught by the suite.)
 
 MEASURED INJECTIONS, 2026-11-12, value.py / pass1.py / pass2.py restored by
-copy and cmp, PYTHONDONTWRITEBYTECODE=1, control all 20 passing, observed:
-  every entry an index (the old      17: all but T(0,0), W($4) and p.40's
+copy and cmp, PYTHONDONTWRITEBYTECODE=1, control all 22 passing, observed:
+  every entry an index (the old      19: all but T(0,0), W($4) and p.40's
     behaviour)                       A(0,0) pair
-  a DR's dimensions not attached     the same 17
+  a DR's dimensions not attached     the same 19
   a SYN does not carry them          U(1,1) and the three p.40 B(...) checks
   the dimensions reversed            T(2,1), T(2,3), T(2,1)($3), U, U(1,1),
                                      T(2,1,3), T(2,1,3,4), T(2,1,3)($4), and
@@ -49,10 +49,17 @@ copy and cmp, PYTHONDONTWRITEBYTECODE=1, control all 20 passing, observed:
     not the index
   76 not given / extras kept as      T(2,1,3,4) and T(2,1,3)($4), each
     the index
-  77 not given                       T(2,$1), T(1), B SYN,T(1)
-  VALUE's notes never given, or      the six message checks, each
-    given at each evaluation
-  notes not cleared in unit_a        only B SYN,T(1)
+  77 not given                       T(2,$1), T(1), B SYN,T(1), and both
+                                     line checks
+  VALUE's notes never given          the eight message checks
+  notes given at each evaluation     T(2,1,3), T(2,1,3,4), T(2,1,3)($4),
+                                     T(2,$1), T(1)
+  a referenced SYN's notes kept      only "L,B before B SYN,T(1)" (77 printed
+                                     on L,B's line too: found by review
+                                     of the first commit, bf14a7d)
+  notes not cleared in unit_a        UNDETECTED: with a referenced SYN's
+                                     notes dropped, none is left over; the
+                                     clear is kept as hygiene
 """
 import os
 import sys
@@ -127,6 +134,17 @@ r77 = strap2.compile_cards(["         SLC,(8)100.0", " T       DR(BU,16),(3,4)",
 check("B SYN,T(1): message 77 on the SYN, B is T + 16",
       ([n for n, *_ in r77.msg.items], oct(r77.val.symbol_value(r77.st.search("B"))[0])),
       ([77], oct(0o100 * 64 + 16)))
+def lines77(cards):
+    r = strap2.compile_cards(["         SLC,(8)100.0", " T       DR(BU,16),(3,4)"] + cards
+                             + ["         END"])
+    text = listing_of(r, r.p1.print_names).text("0", 1)
+    return [ln.split()[3] for ln in text.splitlines() if ln.rstrip().endswith(" 77")]
+
+
+check("L,B before B SYN,T(1): 77 on the SYN's line only (line 4)",
+      lines77(["         L,B", " B       SYN,T(1)"]), ["4"])
+check("L,B after B SYN,T(1): 77 on the SYN's line only (line 3)",
+      lines77([" B       SYN,T(1)", "         L,B"]), ["3"])
 check("p.40: A(9,19), the last element, and B(4,14)", (at("X"), at("Y")), (oct(0o100 + 199),) * 2)
 
 print("ALL CHECKS PASSED" if not fails else f"{fails} FAILED")
