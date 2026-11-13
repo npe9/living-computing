@@ -101,7 +101,8 @@ class Getcha:
             self.name += more       # embedded blanks kept, as above
             k += 1
         self.name = self.name.rstrip()
-        self.col = STMT_FIRST
+        if not self.comment_block:
+            self.col = STMT_FIRST
         return True
 
     def _read_name(self):
@@ -170,6 +171,15 @@ class Getcha:
                     self.i += 1
                     self.col = STMT_FIRST
                     self.bsyst.append("\n")    # CHOSEN: each card is a line, listing.py
+                    if self.comment_block:
+                        # p.79, read in the ink 2026-11-12: after a comment
+                        # started in the first nine columns, "GETCHA will put
+                        # all the remaining characters of this type of comment
+                        # into the collection buffer for the statement
+                        # characters without giving them out to main flow
+                        # through $3", then the usual end of card block.
+                        self.bsyst.extend(self.card[STMT_FIRST:STMT_LAST])
+                        self.col = STMT_LAST
                     continue
                 # p.78 item 6: end of block, the false semicolon.
                 self.fblend = True
