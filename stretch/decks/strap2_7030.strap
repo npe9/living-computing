@@ -44,6 +44,8 @@
 !      items in one, an item over its 2048-bit slot (CHOSEN sizes)
 !   11 the coded expression past Bcfxtx (Box 55 GFLONG "CHECK FOR ROOM IN
 !      BUFFER", p.81; what GFLONG does then is not written up: CHOSEN, a halt)
+!   12 TABMAN: TEC 1 (a compare the guide does not describe), or an argument
+!      longer than the table's AL (p.44's third form, step 3c)
 !  100+n STRAP II message n, until the error routine is written (p.176-178):
 !      149 a symbol over 128 characters, 156 a system symbol not found
 !      (MBSPEC's 129 is a note: NOTEC, NOTEL), 163 a digit too large for the
@@ -63,6 +65,372 @@
 ! ======== SECTION 0: subroutines common to Pass 1 and Pass 2 (p.174) ===
 ERROR   ST(BU,24), ERRC
 HALTE   BEW, $
+!
+! TABMAN (pp.40-53, Chart RA p.43): SEARCH, ADDORD, ADDUNO.  Entered with
+! LVI,15,$+1.0; B,<routine> and the calling sequence after the B (p.47-49):
+!   SEARCH: ,tbl ,arg(I) ,al(I); B,not found; normal (found)
+!   ADDORD: ,tbl ,arg(I) ,al(I) ,funct(I) ,fl(I); B,already there; B,error;
+!           normal
+!   ADDUNO: ,tbl ,arg(I) ,al(I) ,funct(I) ,fl(I); normal
+! Each parameter is read with LVE, its effective address: arg and funct are
+! locations, al and fl lengths in bits (an index register's value, as
+! 0($n)).  CHOSEN: I is none of $5-$6, which TABMAN loads while reading.
+! The exits follow strap2/tabman.py (Gap 11: ADDORD's normal at 3.32).
+! CHOSEN: the search is linear for every table; Box 7's binary search for
+! an ordered table of seven or more gives the same answer (the first entry
+! not below the argument) in fewer steps, and is not written yet.
+! CHOSEN: TABMAN moves bits with its own TBMOV, not MOVE's linkage, which
+! would take $15.
+SEARCH  SX, $7, TBSAV+7.0
+        LI(BU,8), 0
+        B, TBHK
+ADDORD  SX, $7, TBSAV+7.0
+        LI(BU,8), 1
+        B, TBHK
+ADDUNO  SX, $7, TBSAV+7.0
+        LI(BU,8), 2
+! Boxes 1-3: $0-$7 saved, Azzc and Azzb zero, the control block to $5
+TBHK    ST(BU,8), TBRTN
+        SX, $0, TBSAV
+        SX, $1, TBSAV+1.0
+        SX, $2, TBSAV+2.0
+        SX, $3, TBSAV+3.0
+        SX, $4, TBSAV+4.0
+        SX, $5, TBSAV+5.0
+        SX, $6, TBSAV+6.0
+        LI(BU,1), 0
+        ST(BU,1), AZZC
+        ST(BU,1), AZZB
+        LVE, $5, 0($15)
+        LVE, $6, .32($15)
+        SV, $6, TBARG
+        LVE, $6, 1.0($15)
+        SV, $6, TBAL
+        L(BU,8), TBRTN
+        KI(BU,8), 0
+        BAE, TBS
+        LVE, $6, 1.32($15)
+        SV, $6, TBFN
+        LVE, $6, 2.0($15)
+        SV, $6, TBFL
+        L(BU,8), TBRTN
+        KI(BU,8), 1
+        BAE, TBAO
+! ADDUNO (p.49): Box 10's +3.0, the exit one half word back: normal 2.32
+        SIC, TBULK
+        B, TBUNO
+        V+I, $15, 2.32
+        B, TBX
+! ADDORD (p.48): an unordered table, ADDUNO and the error exit (3.0)
+TBAO    LI(BU,1), 1
+        ST(BU,1), AZZC
+        L(BU,1), 2.57($5)
+        KI(BU,1), 1
+        BZAE, TBAO1
+        SIC, TBULK
+        B, TBUNO
+        V+I, $15, 3.0
+        B, TBX
+TBAO1   SIC, TBSLK
+        B, TBSRCH
+        L(BU,1), TBHIT
+        KI(BU,1), 1
+        BZAE, TBAO2
+! found: Boxes 14, 32-33, already there (2.32)
+        V+I, $15, 2.32
+        B, TBX
+! not found: the table moved up one entry at the index words' place, the
+! entry put there (Boxes 9, 27-31); normal (3.32, Gap 11)
+TBAO2   L(BU,24), TBP
+        ST(BU,24), TBMF
+        +(BU,16), 3.0($5)
+        ST(BU,24), TBMT
+        L(BU,24), 2.32($5)
+        +(BU,16), 3.0($5)
+        ST(BU,24), TBQ
+        -(BU,24), TBP
+        ST(BU,24), TBMN
+        SIC, TBMLK
+        B, TBMOV
+        L(BU,24), TBQ
+        ST(BU,24), 2.32($5)
+        SIC, TBELK
+        B, TBENT
+        V+I, $15, 3.32
+        B, TBX
+! SEARCH (p.47): found 2.0, not found 1.32
+TBS     SIC, TBSLK
+        B, TBSRCH
+        L(BU,1), TBHIT
+        KI(BU,1), 1
+        BZAE, TBS1
+        V+I, $15, 2.0
+        B, TBX
+TBS1    V+I, $15, 1.32
+! Box 31: $0-$7 restored, the exit
+TBX     LX, $0, TBSAV
+        LX, $1, TBSAV+1.0
+        LX, $2, TBSAV+2.0
+        LX, $3, TBSAV+3.0
+        LX, $4, TBSAV+4.0
+        LX, $5, TBSAV+5.0
+        LX, $6, TBSAV+6.0
+        LX, $7, TBSAV+7.0
+        B, 0($15)
+!
+! TBSRCH (Boxes 4, 7, 11): TBHIT 1 and the index words at the entry, or
+! TBHIT 0 and the index words at the first entry not below the argument
+! (ordered) or after the table (unordered, or none).  TBP the place.
+! Box 4 Acompi: the compares' field length set to the argument's.
+TBSRCH  L(BU,1), 2.62($5)
+        KI(BU,1), 1
+        BAE, TBTEC
+        L(BU,24), TBAL
+        K(BU,16), 3.16($5)
+        BAH, TBTEC
+        ST(BU,6), TBCL1+.35
+        ST(BU,6), TBCK1+.35
+        ST(BU,6), TBCL2+.35
+        ST(BU,6), TBCK2+.35
+        LV, $6, TBARG
+        L(BU,24), 2.0($5)
+        ST(BU,24), TBP
+        L(BU,1), 2.57($5)
+        KI(BU,1), 1
+        BAE, TBSU
+! ordered: stop at the first entry not below the argument
+TBSO    L(BU,24), TBP
+        K(BU,24), 2.32($5)
+        BAH, TBSAF
+        LV, $4, TBP
+TBCL1   L(BU,64), .2($4)
+TBCK1   K(BU,64), 0($6)
+        BAE, TBSEQ
+        BAH, TBSAT
+        L(BU,24), TBP
+        +(BU,16), 3.0($5)
+        ST(BU,24), TBP
+        B, TBSO
+! unordered: stop at the first equal argument
+TBSU    L(BU,24), TBP
+        K(BU,24), 2.32($5)
+        BAH, TBSAF
+        LV, $4, TBP
+TBCL2   L(BU,64), .2($4)
+TBCK2   K(BU,64), 0($6)
+        BAE, TBSEQ
+        L(BU,24), TBP
+        +(BU,16), 3.0($5)
+        ST(BU,24), TBP
+        B, TBSU
+! Box 11: a deleted entry is a miss (ordered: the index words stay there)
+TBSEQ   L(BU,1), 0($4)
+        KI(BU,1), 1
+        BZAE, TBSFD
+        L(BU,1), 2.57($5)
+        KI(BU,1), 1
+        BAE, TBSAF
+        B, TBSAT
+! Boxes 14, 18-26: found; DX the entry, FX its function
+TBSFD   LI(BU,1), 1
+        ST(BU,1), TBHIT
+        L(BU,24), TBP
+        ST(BU,24), 1.0($5)
+        SIC, TBFLK
+        B, TBFAD
+        ST(BU,24), 0.0($5)
+        B, TBSRX
+TBSAF   L(BU,24), 2.32($5)
+        +(BU,16), 3.0($5)
+        ST(BU,24), TBP
+TBSAT   LI(BU,1), 0
+        ST(BU,1), TBHIT
+        L(BU,24), TBP
+        ST(BU,24), 1.0($5)
+        ST(BU,24), 0.0($5)
+TBSRX   LV, $3, TBSLK
+        B, 0($3)
+TBTEC   LI(BU,24), 12
+        B, ERROR
+!
+! TBFAD: the function address of the entry at TBP into the accumulator.
+! A vle (bit 1): Agetv, its signed address in the function field, + 32.
+TBFAD   L(BU,24), TBP
+        +(BU,16), 3.16($5)
+        +(BU,24), TBTWO
+        ST(BU,24), TBQ
+        LV, $4, TBP
+        L(BU,1), .1($4)
+        KI(BU,1), 1
+        BAE, TBFA1
+        L(BU,24), TBQ
+        B, TBFA2
+TBFA1   L(BU,16), 3.32($5)
+        ST(BU,6), TBFA3+.35
+        LV, $4, TBQ
+TBFA3   L(BU,64), 0($4)
+        +(BU,24), TBV32
+TBFA2   LV, $3, TBFLK
+        B, 0($3)
+!
+! TBUNO, ADDUNO's body (Boxes 13, 19, 22, 24, 27-31): the last entry, if
+! deleted, is replaced; else the entry goes after it and LW moves on.
+TBUNO   L(BU,24), 2.32($5)
+        ST(BU,24), TBP
+        K(BU,24), 2.0($5)
+        BAL, TBUN1
+        LV, $4, TBP
+        L(BU,1), 0($4)
+        KI(BU,1), 1
+        BAE, TBUN2
+TBUN1   L(BU,24), TBP
+        +(BU,16), 3.0($5)
+        ST(BU,24), TBP
+        ST(BU,24), 2.32($5)
+TBUN2   SIC, TBELK
+        B, TBENT
+        LI(BU,1), 1
+        ST(BU,1), 2.57($5)
+        LV, $3, TBULK
+        B, 0($3)
+!
+! TBENT (Box 30 AENTER): the entry at TBP, zeroed; the argument, al bits;
+! the function, or (fl over ADDL, p.44) a vle at Auvtab with Fig. 22's head
+! and the vle's address in the function field; N one more; DX, FX.
+TBENT   L(BU,16), 3.0($5)
+        ST(BU,24), TBK
+        LV, $4, TBP
+TBEN1   LI(BU,32), 0
+        ST(BU,32), 0($4)
+        V+I, $4, .32
+        L(BU,24), TBK
+        -(BU,24), TBV32
+        ST(BU,24), TBK
+        KI(BU,24), 0
+        BZAE, TBEN1
+        L(BU,24), TBARG
+        ST(BU,24), TBMF
+        L(BU,24), TBP
+        +(BU,24), TBTWO
+        ST(BU,24), TBMT
+        +(BU,16), 3.16($5)
+        ST(BU,24), TBQ
+        L(BU,24), TBAL
+        ST(BU,24), TBMN
+        SIC, TBMLK
+        B, TBMOV
+        L(BU,24), TBFN
+        ST(BU,24), TBMF
+        L(BU,24), TBFL
+        ST(BU,24), TBMN
+        K(BU,16), 3.32($5)
+        BAH, TBEN2
+        L(BU,24), TBQ
+        ST(BU,24), TBMT
+        SIC, TBMLK
+        B, TBMOV
+        B, TBEN3
+TBEN2   LV, $4, AUVTAB
+        LI(BU,32), 0
+        ST(BU,32), 0($4)
+        L(BU,24), TBFL
+        +(BU,24), TBV32
+        ST(BU,13), .1($4)
+        L(BU,6), 2.25($5)
+        ST(BU,6), .14($4)
+        SV, $4, TBK
+        L(BU,24), TBK
+        +(BU,24), TBV32
+        ST(BU,24), TBMT
+        SIC, TBMLK
+        B, TBMOV
+        L(BU,24), TBK
+        +(BU,24), TBV32
+        +(BU,24), TBFL
+        ST(BU,24), AUVTAB
+        L(BU,16), 3.32($5)
+        ST(BU,6), TBEN4+.35
+        LV, $4, TBQ
+        L(BU,24), TBK
+TBEN4   ST(BU,64), 0($4)
+        LV, $4, TBP
+        LI(BU,1), 1
+        ST(BU,1), .1($4)
+TBEN3   M+1(BU,16), 3.48($5)
+        L(BU,24), TBP
+        ST(BU,24), 1.0($5)
+        SIC, TBFLK
+        B, TBFAD
+        ST(BU,24), 0.0($5)
+        LV, $3, TBELK
+        B, 0($3)
+!
+! TBMOV: TBMN bits from TBMF to TBMT, at most 64 a step, backward when the
+! destination is higher (p.41: "forward ... or backward"), so an overlap
+! is safe.  The steps' field lengths are set in TBML, TBMS.
+TBMOV   L(BU,24), TBMN
+        KI(BU,24), 0
+        BAE, TBMVX
+        ST(BU,24), TBMK
+        L(BU,24), TBMT
+        K(BU,24), TBMF
+        BAE, TBMVX
+        BAH, TBMB
+! forward
+TBMF1   L(BU,24), TBMK
+        KI(BU,24), 64
+        BZAH, TBMF2
+        LI(BU,24), 64
+TBMF2   ST(BU,24), TBMC
+        ST(BU,6), TBML+.35
+        ST(BU,6), TBMS+.35
+        LV, $6, TBMF
+        LV, $7, TBMT
+TBML    L(BU,64), 0($6)
+TBMS    ST(BU,64), 0($7)
+        L(BU,24), TBMF
+        +(BU,24), TBMC
+        ST(BU,24), TBMF
+        L(BU,24), TBMT
+        +(BU,24), TBMC
+        ST(BU,24), TBMT
+        L(BU,24), TBMK
+        -(BU,24), TBMC
+        ST(BU,24), TBMK
+        KI(BU,24), 0
+        BZAE, TBMF1
+        B, TBMVX
+! backward: from the end
+TBMB    L(BU,24), TBMF
+        +(BU,24), TBMK
+        ST(BU,24), TBMF
+        L(BU,24), TBMT
+        +(BU,24), TBMK
+        ST(BU,24), TBMT
+TBMB1   L(BU,24), TBMK
+        KI(BU,24), 64
+        BZAH, TBMB2
+        LI(BU,24), 64
+TBMB2   ST(BU,24), TBMC
+        ST(BU,6), TBMBL+.35
+        ST(BU,6), TBMBS+.35
+        L(BU,24), TBMF
+        -(BU,24), TBMC
+        ST(BU,24), TBMF
+        L(BU,24), TBMT
+        -(BU,24), TBMC
+        ST(BU,24), TBMT
+        LV, $6, TBMF
+        LV, $7, TBMT
+TBMBL   L(BU,64), 0($6)
+TBMBS   ST(BU,64), 0($7)
+        L(BU,24), TBMK
+        -(BU,24), TBMC
+        ST(BU,24), TBMK
+        KI(BU,24), 0
+        BZAE, TBMB1
+TBMVX   LV, $3, TBMLK
+        B, 0($3)
 !
 ! ======== SECTION A0: common constants and work areas, the I-O work
 ! ======== areas, the messages (p.174) ==================================
@@ -528,6 +896,37 @@ MBPAIR  SYN, $
         DD(BU,64), (16)0000000000000000
         DD(BU,64), (16)0000000000000000
         DD(BU,64), (16)0001000000000000
+!
+! TABMAN's cells: $0-$7 saved; the routine; Azzc, Azzb (p.45); the
+! parameters; the entry place TBP and work cells; TBMOV's; the links.
+! AUVTAB: the universal control block (p.45), Auvtab .0 (24), Auvbot .32
+! (24), then Autcb .0 (18), Aunt .32 (18); CHOSEN layout (tabman.py).
+TBSAV   DRZ(BU,64), 8
+AUVTAB  DD(BU,64), 0
+        DD(BU,64), 0
+TBRTN   DD(BU,64), 0
+AZZC    DD(BU,64), 0
+AZZB    DD(BU,64), 0
+TBARG   DD(BU,64), 0
+TBAL    DD(BU,64), 0
+TBFN    DD(BU,64), 0
+TBFL    DD(BU,64), 0
+TBP     DD(BU,64), 0
+TBQ     DD(BU,64), 0
+TBK     DD(BU,64), 0
+TBHIT   DD(BU,64), 0
+TBMF    DD(BU,64), 0
+TBMT    DD(BU,64), 0
+TBMN    DD(BU,64), 0
+TBMK    DD(BU,64), 0
+TBMC    DD(BU,64), 0
+TBSLK   DD(BU,64), 0
+TBFLK   DD(BU,64), 0
+TBULK   DD(BU,64), 0
+TBELK   DD(BU,64), 0
+TBMLK   DD(BU,64), 0
+TBTWO   DD(BU,64), (16)0000020000000000
+TBV32   DD(BU,64), (16)0000200000000000
 !
 ! ======== SECTION A1: Pass 1's constants and work areas (p.174) =======
 GCEND   SYN, GCCARD+9.0
