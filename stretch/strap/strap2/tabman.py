@@ -56,8 +56,13 @@ calling sequence's first parameter (tbl), where $15 points on entry
 SEARCH's not-found index words (p.47): an ordered table gives the location
 of the entry with the next higher argument (after the table if none), an
 unordered one the location after the table.  CHOSEN: both FX and DX hold
-that location.  A deleted match is a miss (Box 11).  Linear or binary
-(p.45 Box 7) give the same answer; the host does not distinguish them.
+that location.  The search stops at the first equal argument, and Box 11
+then asks whether it is deleted: a deleted one is a miss, though a later
+undeleted equal argument may stand after it.  An ordered table's search,
+linear or binary (p.45 Box 7) alike, finds the first entry not below the
+argument; a miss leaves the index words there, so ADDORD puts a new entry
+before a deleted equal one (CHOSEN: p.47 says only "the next higher").  An
+unordered table's linear search finds the first equal argument.
 """
 from .bits import BitMem
 
@@ -175,16 +180,21 @@ class Tabman:
         self._compare_setup(cb, al)
         ordered = self.get(cb, "TO") == 0
         after = self.get(cb, "LW") + self.get(cb, "EL")
-        higher = None
-        for e in self.entries(cb):
-            a = self.argument(cb, e, al)
-            if a == arg and not self.deleted(e):
-                self.index(cb, "DX", e)
-                self.index(cb, "FX", self.function_address(cb, e))
-                return "found"
-            if ordered and higher is None and a > arg:
-                higher = e
-        loc = higher if (ordered and higher is not None) else after
+        if ordered:
+            # the first entry not below the argument, by a linear or a
+            # binary search alike (Box 7)
+            at = next((e for e in self.entries(cb)
+                       if self.argument(cb, e, al) >= arg), None)
+            hit = at is not None and self.argument(cb, at, al) == arg
+        else:
+            at = next((e for e in self.entries(cb)
+                       if self.argument(cb, e, al) == arg), None)
+            hit = at is not None
+        if hit and not self.deleted(at):            # Boxes 11, 14
+            self.index(cb, "DX", at)
+            self.index(cb, "FX", self.function_address(cb, at))
+            return "found"
+        loc = at if (ordered and at is not None) else after
         self.index(cb, "DX", loc)
         self.index(cb, "FX", loc)
         return "not found"

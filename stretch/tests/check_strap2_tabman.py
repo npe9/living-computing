@@ -7,23 +7,22 @@ DX 1.0, FW 2.0, ID 2.25, LW 2.32, TO 2.57, TM 2.58, TEC 2.62, EL 3.0, AL 3.16,
 ADDL 3.32, N 3.48), not through tabman.py's own field table, so a misreading
 shared by the two would not pass.  Each check names the page it rests on.
 
-MEASURED INJECTIONS into tabman.py, 2026-11-13, restored by copy and cmp,
-PYTHONDONTWRITEBYTECODE=1, control all passing (checks by their first words):
-  a deleted match found                 SEARCH deleted, ADDORD deleted, the
-                                        new one after the deleted one
-  ADDUNO never replaces a deleted last  ADDUNO replaced, LW unchanged, ADDUNO
-                                        otherwise
-  ADDORD on an unordered table: normal  ADDORD unordered
-  not found, ordered: after the table   9 checks: ADDORD order, DX, SEARCH 70,
-                                        next higher, the deleted one
-  ANEXT ignores Afirst                  ANEXT restarts
-  RSERCH's index not advanced           RSERCH with an index
-  EL not rounded to a half word         15 checks, EL at 3.0 first
-  ADDORD inserts without moving up      12 checks
-  the function field holds the          the vle's signed address, FX Agetv,
-    function's address                  RSERCH x3
-  ADDUNO leaves TO                      ADDUNO marks an ordered table
-  ANEXT takes a deleted vle             ANEXT deleted
+MEASURED INJECTIONS into tabman.py, 2026-11-13 (re-measured after SEARCH
+became chart-literal), restored by copy and cmp, PYTHONDONTWRITEBYTECODE=1,
+control all passing; the number of failing checks, then the first:
+  a deleted match found                     4: SEARCH deleted, ADDORD ...
+  an unordered search skips deleted equals  1: unordered first equal
+  ADDUNO never replaces a deleted last      3: ADDUNO replaced, LW, ...
+  ADDORD on an unordered table: normal      1: ADDORD unordered
+  not found, ordered: after the table       11: ADDORD order, DX, ...
+  ANEXT ignores Afirst                      1: ANEXT restarts
+  RSERCH's index not advanced               1: RSERCH with an index
+  EL not rounded to a half word             16: EL at 3.0, ...
+  ADDORD inserts without moving the table   13
+  the function field holds the function's   5: the vle's signed address,
+    address                                    FX Agetv, RSERCH x3
+  ADDUNO leaves TO                          1: ADDUNO marks ordered
+  ANEXT takes a deleted vle                 1: ANEXT deleted
 """
 import os
 import sys
@@ -107,8 +106,16 @@ check("a deleted entry: bit 0 of the entry, N one less", (t.mem.get(FW + 64, 1),
 check("SEARCH: a deleted match is a miss (Box 11)", t.search(CB, 50, 32), "not found")
 check("ADDORD: a deleted equal argument does not stop a new one",
       t.addord(CB, 50, 32, 7, 6), "normal")
-check("  the new one stands after the deleted one", args(t),
-      [(30, 0), (50, 1), (50, 0), (70, 0), (90, 0)])
+check("  the new one stands before the deleted one (the index words' place)", args(t),
+      [(30, 0), (50, 0), (50, 1), (70, 0), (90, 0)])
+check("  and SEARCH now finds the new one", (t.search(CB, 50, 32), fig8(t, "DX")),
+      ("found", FW + 64))
+x = table(ordered=False)
+for a in (4, 6, 4):
+    x.adduno(CB, a, 32, a, 6)
+x.delete(CB, FW)
+check("unordered: the first equal argument deleted is a miss, though a later "
+      "one is not (Boxes 7, 11)", x.search(CB, 4, 32), "not found")
 
 # ADDUNO (p.49)
 u = table(ordered=False)
