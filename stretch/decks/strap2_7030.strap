@@ -46,6 +46,7 @@
 !      BUFFER", p.81; what GFLONG does then is not written up: CHOSEN, a halt)
 !   12 TABMAN: TEC 1 (a compare the guide does not describe), or an argument
 !      longer than AL whose rest is not whole characters (Fig. 22's 8n)
+!      or a vle for a table whose ADDL cannot hold its address (p.44: 25 bits)
 !  100+n STRAP II message n, until the error routine is written (p.176-178):
 !      149 a symbol over 128 characters, 156 a system symbol not found
 !      (MBSPEC's 129 is a note: NOTEC, NOTEL), 163 a digit too large for the
@@ -116,12 +117,21 @@ TBHK    ST(BU,8), TBRTN
         K(BU,16), 3.16($5)
         BAH, TBHK1
         ST(BU,24), TBDL
-        LI(BU,24), 0
+        K(BU,16), 3.16($5)
+        BZAE, TBHK3
+        LI(BU,1), 1
+        ST(BU,1), TBRC
+        B, TBHK4
+TBHK3   LI(BU,1), 0
+        ST(BU,1), TBRC
+TBHK4   LI(BU,24), 0
         ST(BU,24), TBR
         B, TBHK2
 ! p.44's third form: al over AL.  The dictionary takes the first AL bits,
 ! the vle the rest (TBR bits, whole characters: Fig. 22's 8n).
-TBHK1   L(BU,16), 3.16($5)
+TBHK1   LI(BU,1), 1
+        ST(BU,1), TBRC
+        L(BU,16), 3.16($5)
         ST(BU,24), TBDL
         L(BU,24), TBAL
         -(BU,16), 3.16($5)
@@ -299,12 +309,24 @@ TBSO    L(BU,24), TBP
         LV, $4, TBP
 TBCL1   L(BU,64), .2($4)
 TBCK1   K(BU,64), 0($6)
-        BAE, TBSEQ
+        BAE, TBSOE
         BAH, TBSAT
-        L(BU,24), TBP
+TBSON   L(BU,24), TBP
         +(BU,16), 3.0($5)
         ST(BU,24), TBP
         B, TBSO
+! the dictionary parts equal: the rests decide (al not under AL)
+TBSOE   L(BU,1), TBRC
+        KI(BU,1), 1
+        BZAE, TBSEQ
+        SIC, TBRLK
+        B, TBRCMP
+        L(BU,2), TBRV
+        KI(BU,2), 0
+        BAE, TBSEQ
+        KI(BU,2), 1
+        BAE, TBSAT
+        B, TBSON
 ! unordered: stop at the first equal argument
 TBSU    L(BU,24), TBP
         K(BU,24), 2.32($5)
@@ -312,11 +334,20 @@ TBSU    L(BU,24), TBP
         LV, $4, TBP
 TBCL2   L(BU,64), .2($4)
 TBCK2   K(BU,64), 0($6)
-        BAE, TBSEQ
-        L(BU,24), TBP
+        BAE, TBSUE
+TBSUN   L(BU,24), TBP
         +(BU,16), 3.0($5)
         ST(BU,24), TBP
         B, TBSU
+TBSUE   L(BU,1), TBRC
+        KI(BU,1), 1
+        BZAE, TBSEQ
+        SIC, TBRLK
+        B, TBRCMP
+        L(BU,2), TBRV
+        KI(BU,2), 0
+        BAE, TBSEQ
+        B, TBSUN
 ! Box 11: a deleted entry is a miss (ordered: the index words stay there)
 TBSEQ   L(BU,1), 0($4)
         KI(BU,1), 1
@@ -346,6 +377,86 @@ TBSRX   LV, $3, TBSLK
         B, 0($3)
 TBTEC   LI(BU,24), 12
         B, ERROR
+!
+! TBRCMP: the rest of the entry at TBP (in its vle, Fig. 22's 8n bits; none
+! without a vle) against the given rest (TBR bits after TBARG + TBDL), as
+! bit strings, a shorter one before a longer it begins.  TBRV: 0 equal, 1
+! the entry's higher, 2 lower.  CHOSEN (tabman.py): C28-6129 p.37's unique
+! tails.  $4 and $6 are kept.
+TBRCMP  LI(BU,24), 0
+        ST(BU,24), TBEN
+        L(BU,1), .1($4)
+        KI(BU,1), 1
+        BZAE, TBRC1
+        L(BU,24), TBP
+        +(BU,16), 3.16($5)
+        +(BU,24), TBTWO
+        ST(BU,24), TBRQ
+        L(BU,16), 3.32($5)
+        ST(BU,6), TBRC2+.35
+        LV, $7, TBRQ
+TBRC2   L(BU,64), 0($7)
+        ST(BU,24), TBRQ
+        +(BU,24), TBV32
+        ST(BU,24), TBEA
+        LV, $7, TBRQ
+        L(BU,12), .20($7)
+        ST(BU,24), TBEN
+        +(BU,24), TBEN
+        ST(BU,24), TBEN
+        +(BU,24), TBEN
+        ST(BU,24), TBEN
+        +(BU,24), TBEN
+        ST(BU,24), TBEN
+TBRC1   L(BU,24), TBARG
+        +(BU,24), TBDL
+        ST(BU,24), TBGA
+        L(BU,24), TBR
+        ST(BU,24), TBGN
+TBRC3   L(BU,24), TBEN
+        K(BU,24), TBGN
+        BZAH, TBRC4
+        L(BU,24), TBGN
+TBRC4   KI(BU,24), 64
+        BZAH, TBRC5
+        LI(BU,24), 64
+TBRC5   ST(BU,24), TBRK
+        KI(BU,24), 0
+        BZAE, TBRC6
+        L(BU,24), TBEN
+        K(BU,24), TBGN
+        BAE, TBRCE
+        BAH, TBRCH
+        B, TBRCL
+TBRC6   ST(BU,6), TBRL+.35
+        ST(BU,6), TBRK2+.35
+        LV, $7, TBEA
+        LV, $2, TBGA
+TBRL    L(BU,64), 0($7)
+TBRK2   K(BU,64), 0($2)
+        BAH, TBRCH
+        BZAE, TBRCL
+        L(BU,24), TBEA
+        +(BU,24), TBRK
+        ST(BU,24), TBEA
+        L(BU,24), TBGA
+        +(BU,24), TBRK
+        ST(BU,24), TBGA
+        L(BU,24), TBEN
+        -(BU,24), TBRK
+        ST(BU,24), TBEN
+        L(BU,24), TBGN
+        -(BU,24), TBRK
+        ST(BU,24), TBGN
+        B, TBRC3
+TBRCE   LI(BU,2), 0
+        B, TBRCX
+TBRCH   LI(BU,2), 1
+        B, TBRCX
+TBRCL   LI(BU,2), 2
+TBRCX   ST(BU,2), TBRV
+        LV, $3, TBRLK
+        B, 0($3)
 !
 ! TBFAD: the function address of the entry at TBP into the accumulator.
 ! A vle (bit 1): Agetv, its signed address in the function field, + 32.
@@ -437,7 +548,10 @@ TBEN1   LI(BU,32), 0
         SIC, TBMLK
         B, TBMOV
         B, TBEN3
-TBEN2   LV, $4, AUVTAB
+TBEN2   L(BU,16), 3.32($5)
+        KI(BU,16), 25
+        BAL, TBTEC
+        LV, $4, AUVTAB
         LI(BU,32), 0
         ST(BU,32), 0($4)
         L(BU,24), TBFL
@@ -1039,6 +1153,15 @@ TBDL    DD(BU,64), 0
 TBR     DD(BU,64), 0
 TBVA    DD(BU,64), 0
 TBN8    DD(BU,64), 0
+TBRC    DD(BU,64), 0
+TBRV    DD(BU,64), 0
+TBRQ    DD(BU,64), 0
+TBEA    DD(BU,64), 0
+TBEN    DD(BU,64), 0
+TBGA    DD(BU,64), 0
+TBGN    DD(BU,64), 0
+TBRK    DD(BU,64), 0
+TBRLK   DD(BU,64), 0
 TBFN    DD(BU,64), 0
 TBFL    DD(BU,64), 0
 TBP     DD(BU,64), 0

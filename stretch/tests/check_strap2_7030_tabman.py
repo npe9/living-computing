@@ -69,6 +69,18 @@ the same way:
   whole characters not checked              1: halt 12 (al 36)
   the vle length without the rest           5: calls 70-72 (ANEXT), the
                                                vle area
+The remainder compare and the ADDL refusal (step 3c, the calls after 72:
+AFIRST and six ANEXTs, 72- and 136-bit rests in order, SEARCH variants, and
+ADDUNO/SEARCH on table 7; table 2's vle now halts 12), MEASURED 2026-11-14,
+the same way (the counts above were measured before these calls were added):
+  TBRC never set (a prefix compare always)  33: calls 61-63 ...
+  TBRCMP always equal                       35: calls 61-63 ...
+  a rest that begins the other comes after  8: calls 64, 74-77 ...
+  the entry's rest length 4n, not 8n        20: calls 60, 74, 75 ...
+  an entry's vle never read (rest empty)    19: calls 60, 64, 74 ...
+  the entry's rest address not advanced     2: call 77 (the 136-bit SEARCH)
+  ordered: a higher rest is not a stop      9: calls 64, 74-77 ...
+  ADDL under 25 not refused                 1: halt 12 (table 2's vle)
 """
 import os
 import re
@@ -102,11 +114,12 @@ def check(label, got, want):
 # the tables: (AL, ADDL, ordered, ID)
 TABLES = {1: (32, 6, True, 0o22), 2: (32, 6, False, 0o23),
           3: (32, 25, True, 0o30), 4: (32, 6, True, 0o24),
-          5: (64, 25, True, 0o31), 6: (32, 6, True, 0o32)}
+          5: (64, 25, True, 0o31), 6: (32, 6, True, 0o32),
+          7: (32, 25, False, 0o33)}
 # table 5 is the symbol table's shape (Fig. 21: 64, 25; EL 96, so entries at
 # half words); its arguments and functions sit above the tables, so TBMOV
 # also runs forward.  Table 6 has TEC 1, for the halt-12 run only.
-TWORDS = 16             # each table's area, words
+TWORDS = 32             # each table's area, words
 VWORDS = 32             # the vle area
 
 # the calls: (routine, table, argument, function, fl); ("DEL", table, n): the
@@ -143,7 +156,21 @@ CALLS = [
     ("SEARCH", 5, 0x2122232425262728),
     ("RSERCH", 5, 0x41424344), ("RSERCH", 5, 0x21222324),
     ("AFIRST",), ("ANEXT", 0o31), ("ANEXT", 0o31), ("ANEXT", 0o31), ("ANEXT", 0o31),
-    ("ANEXT", 0o31),
+    ("ANEXT", 0o31), ("ANEXT", 0o31),
+    # the rest compare (TBRCMP): a rest that begins another comes first; the
+    # dictionary part alone; a rest of 72 bits (two steps); higher rests
+    ("ADDORD", 5, (0x4142434445464748 << 8) | 0x2A, 16, 25, 72),
+    ("SEARCH", 5, 0x4142434445464748, 64),
+    ("ADDORD", 5, (0x4142434445464748 << 72) | 0x2A3132333435363738, 17, 25, 136),
+    ("SEARCH", 5, (0x4142434445464748 << 72) | 0x2A3132333435363738, 136),
+    ("SEARCH", 5, (0x4142434445464748 << 72) | 0x2A3132333435363739, 136),
+    ("SEARCH", 5, (0x4142434445464748 << 16) | 0x2A31, 80),
+    ("SEARCH", 5, (0x4142434445464748 << 16) | 0x2A30, 80),
+    ("ADDUNO", 7, (0x41424344 << 16) | 0x2A31, 21, 6, 48),
+    ("ADDUNO", 7, (0x41424344 << 8) | 0x2A, 22, 6, 40),
+    ("SEARCH", 7, (0x41424344 << 16) | 0x2A32, 48),
+    ("SEARCH", 7, (0x41424344 << 8) | 0x2A, 40),
+    ("SEARCH", 7, (0x41424344 << 16) | 0x2A31, 48),
 ]
 # a call's al: SEARCH (r, n, arg[, al]); ADDORD, ADDUNO (r, n, arg, f, fl[, al])
 
@@ -288,10 +315,11 @@ def driver(addr, initial, dels, calls=None):
         al = al_of(c)
         fl = c[4] if c[0] != "SEARCH" else 0
         d = late if c[1] == 5 else L
-        a128 = c[2] << (128 - al)
-        d += [f"ARG{i}    DD(BU,64), (16){(c[2] << (64 - al)) if al <= 64 else a128 >> 64:016X}"]
-        if al > 64:                 # a third-form argument: its rest in the next word
-            d += [f"        DD(BU,64), (16){a128 & ((1 << 64) - 1):016X}"]
+        nw = -(-al // 64)           # a third-form argument: its rest in the next words
+        a = c[2] << (64 * nw - al)
+        ws = [(a >> (64 * (nw - 1 - j))) & ((1 << 64) - 1) for j in range(nw)]
+        d += [f"ARG{i}    DD(BU,64), (16){ws[0]:016X}"] + \
+             [f"        DD(BU,64), (16){w:016X}" for w in ws[1:]]
         d += [
               f"FN{i}     DD(BU,64), (16){(c[3] << (64 - fl)) if 0 < fl <= 64 else (c[3] << (128 - fl)) >> 64 if fl else 0:016X}"]
         if fl > 64:                 # a two-word function: TBMOV's forward loop steps twice
@@ -398,6 +426,8 @@ def main():
         k += 1
     for n in TABLES:
         a = addr[f"TBLA{n}"] // 64
+        check(f"table {n} ends inside its area",
+              t.get(addr[f"TCB{n}"], "LW") + t.get(addr[f"TCB{n}"], "EL") <= (a + TWORDS) * 64, True)
         check(f"table {n}'s entries, bit for bit", [f"{mem.get(a + w, 0):016X}" for w in range(TWORDS)],
               [f"{t.mem.get((a + w) * 64, 64):016X}" for w in range(TWORDS)])
     a = addr["VLEA"] // 64
@@ -406,6 +436,8 @@ def main():
           [f"{t.mem.get((a + w) * 64, 64):016X}" for w in range(VWORDS)])
     check("halt 12: TEC 1, a compare the guide does not describe",
           halt_run([("SEARCH", 6, 1)]), 12)
+    check("halt 12: a vle for a table whose ADDL (6) cannot hold its address",
+          halt_run([("ADDUNO", 2, (0x41424344 << 8) | 0x2A, 1, 6, 40)]), 12)
     check("halt 12: a rest that is not whole characters (al 36, AL 32; Fig. 22's 8n)",
           halt_run([("SEARCH", 1, 1, 36)]), 12)
     m = re.search(r"cycles = (\d+)", out)

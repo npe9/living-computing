@@ -42,10 +42,13 @@ An entry (Fig. 21 p.190): bit 0 deleted, bit 1 a vle exists, the argument
 The compare (Box 4 Acompi: "sets the field length ... for the size of the
 argument"): the first min(al, AL) bits of the table's argument against the
 given argument's first min(al, AL) bits, unsigned.  A third-form argument is
-compared on its dictionary part only: Chart RA p.43 has no box that compares
-a remainder (SEARCH, Box 7, compares; Boxes 23-25 only step over the vle).
-So two arguments equal in their first AL bits are the same entry, and ADDORD
-gives "already there" (OPEN: the guide never says so in words).  TEC is
+compared on its dictionary part, then on its rest.  CHOSEN: Chart RA p.43
+draws no remainder compare (SEARCH is one box, 7, and p.47 says only "a
+common routine which compares"), but C28-6129 p.37 promises that a tail
+makes "each of his symbols ... uniquely defined", and a seven-character name's
+three-character tail (p.75 Box 31) lies past its eighth character.  The rests
+are ordered as bit strings, a shorter one before a longer it begins.  An
+argument shorter than AL is compared on its al bits alone, rests ignored.  TEC is
 Fig. 8's "type of compare", meaning UNSPECIFIED: TEC 0 is this compare, TEC
 1 is refused (fail loud).
 
@@ -181,30 +184,43 @@ class Tabman:
         return e + 2 + al
 
     def _compare_setup(self, cb, arg, al):
-        """The dictionary part of the given argument, and its length."""
+        """The given argument as SEARCH compares it: (its dictionary part, the
+        compare's length, its rest as a bit string, or None when al < AL and
+        only al bits are compared)."""
         if self.get(cb, "TEC"):
             raise TabmanError("TEC 1: a type of compare the guide does not describe")
         a = self.get(cb, "AL")
-        if al <= a:
-            return arg, al
+        if al < a:
+            return arg, al, None
         if (al - a) % 8:
             raise TabmanError("a remainder of the argument that is not whole characters")
-        return arg >> (al - a), a
+        r = al - a
+        return arg >> r, a, format(arg & ((1 << r) - 1), "0%db" % r) if r else ""
+
+    def rest(self, cb, e):
+        """The rest of an entry's argument, in its vle (Fig. 22: 8n bits)."""
+        if not self.mem.get(e + 1, 1):
+            return ""
+        v = self.mem.get_signed(e + 2 + self.get(cb, "AL"), self.get(cb, "ADDL"))
+        return self.mem.get_str(v + 32, 8 * self.mem.get(v + 20, 12))
+
+    def _key(self, cb, e, cl, with_rest):
+        return (self.argument(cb, e, cl), self.rest(cb, e) if with_rest else "")
 
     # -- SEARCH (p.47) ---------------------------------------------------------
     def search(self, cb, arg, al):
-        arg, al = self._compare_setup(cb, arg, al)
+        d, cl, r = self._compare_setup(cb, arg, al)
+        given = (d, r or "")
+        key = lambda e: self._key(cb, e, cl, r is not None)
         ordered = self.get(cb, "TO") == 0
         after = self.get(cb, "LW") + self.get(cb, "EL")
         if ordered:
             # the first entry not below the argument, by a linear or a
             # binary search alike (Box 7)
-            at = next((e for e in self.entries(cb)
-                       if self.argument(cb, e, al) >= arg), None)
-            hit = at is not None and self.argument(cb, at, al) == arg
+            at = next((e for e in self.entries(cb) if key(e) >= given), None)
+            hit = at is not None and key(at) == given
         else:
-            at = next((e for e in self.entries(cb)
-                       if self.argument(cb, e, al) == arg), None)
+            at = next((e for e in self.entries(cb) if key(e) == given), None)
             hit = at is not None
         if hit and not self.deleted(at):            # Boxes 11, 14
             self.index(cb, "DX", at)
@@ -223,6 +239,8 @@ class Tabman:
         self.mem.put(at, 2, 0)
         self.mem.put(at + 2, a, (arg >> rest) << (a - al + rest))
         if fl > addl or rest:
+            if addl < 25:
+                raise TabmanError("a vle's address needs 25 bits of function (p.44)")
             v = self.auvtab
             self.mem.put(v, 1, 0)
             self.mem.put(v + 1, 13, (32 + rest + fl) % (1 << 13))

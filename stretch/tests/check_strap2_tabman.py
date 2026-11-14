@@ -23,14 +23,23 @@ control all passing; the number of failing checks, then the first:
     address                                    FX Agetv, RSERCH x3
   ADDUNO leaves TO                          1: ADDUNO marks ordered
   ANEXT takes a deleted vle                 1: ANEXT deleted
-p.44's third form (step 3c), MEASURED 2026-11-13 the same way:
+p.44's third form (step 3c), MEASURED 2026-11-13 the same way, and
+re-measured 2026-11-14 after the remainder compare (CHOSEN) and the ADDL
+refusal were added:
   Agetv without the rest                    3: FX, SEARCH, RSERCH
-  n in bits, not characters                 4: the vle head, FX, ...
-  the function in the dictionary when       8: the vle bit, the vle, the
+  n in bits, not characters                 5: the vle head, FX, each found
+  the function in the dictionary when       12: the vle bit, the vle, the
     it fits                                    rest, FX, ...
   the vle length without the rest           2: the vle head, ANEXT
-  the dictionary keeps the low AL bits      5: the dictionary part, ...
-  the search compares the low AL bits       3: the two SEARCHes, ADDORD
+  the dictionary keeps the low AL bits      5: the dictionary part, ADDORD
+                                               of it, each found, ...
+  the search compares the low AL bits       4: SEARCH, the prefix order,
+                                               each found, ...
+  the rests not compared                    6: SEARCH, ADDORD of it, the
+                                               prefix order, each found, ...
+  a rest that begins the other comes after  3: the prefix order, each
+                                               found, RSERCH
+  ADDL under 25 not refused                 1: the ADDL refusal
 """
 import os
 import sys
@@ -212,13 +221,23 @@ check("  Auvtab past the vle", s.auvtab, bottom + 86)
 check("third form: SEARCH of the same argument: found, FX the function",
       (s.search(CB, (0x41424344 << 48) | 0x454647482A31, 80), fig8(s, "FX")),
       ("found", bottom + 80))
-check("third form: a different rest is the same entry (Chart RA has no "
-      "remainder compare; OPEN)",
-      s.search(CB, (0x41424344 << 16) | 0x5A5A, 48), "found")
-check("  and ADDORD of it is 'already there'",
-      s.addord(CB, (0x41424344 << 16) | 0x5A5A, 48, 1, 6), "already there")
+check("third form: a different rest is a different entry (CHOSEN, "
+      "C28-6129 p.37: a tail makes a symbol unique)",
+      s.search(CB, (0x41424344 << 16) | 0x5A5A, 48), "not found")
+check("  ADDORD of it: normal, after the first (rest 0100... below 0101...)",
+      (s.addord(CB, (0x41424344 << 16) | 0x5A5A, 48, 1, 6), fig8(s, "DX")),
+      ("normal", FW + 64))
+check("  a rest that begins the other's comes before it",
+      (s.addord(CB, (0x41424344 << 8) | 0x45, 40, 2, 6), fig8(s, "DX")), ("normal", FW))
+check("  each is found where it stands",
+      [(s.search(CB, x, n), fig8(s, "DX")) for x, n in
+       (((0x41424344 << 48) | 0x454647482A31, 80), ((0x41424344 << 16) | 0x5A5A, 48),
+        ((0x41424344 << 8) | 0x45, 40))],
+      [("found", FW + 64), ("found", FW + 128), ("found", FW)])
+check("  and the dictionary part alone, al = AL, is none of them",
+      s.search(CB, 0x41424344, 32), "not found")
 check("third form: RSERCH finds the entry by its function address",
-      (s.rserch(CB, bottom + 80)[0], fig8(s, "DX")), ("found", FW))
+      (s.rserch(CB, bottom + 80)[0], fig8(s, "DX")), ("found", FW + 64))
 check("third form: ANEXT steps over the rest by the vle's length",
       (s.anext(IND), s.anextx, s.anexta), ("normal", bottom, bottom + 86))
 try:
@@ -227,6 +246,13 @@ try:
 except T.TabmanError:
     got = "refused"
 check("third form: a rest that is not whole characters is refused", got, "refused")
+try:
+    table(addl=6).addord(CB, (0x41424344 << 8) | 0x45, 40, 1, 6)
+    got = "accepted"
+except T.TabmanError:
+    got = "refused"
+check("third form: no vle where ADDL cannot hold its address (p.44: 25 bits)",
+      got, "refused")
 
 # the exits, in bits from tbl (p.46: B,-1($15) one half word back)
 check("exits: SEARCH found at 2.0, not found at 1.32 (p.47)",
