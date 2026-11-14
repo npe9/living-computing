@@ -45,7 +45,7 @@
 !   11 the coded expression past Bcfxtx (Box 55 GFLONG "CHECK FOR ROOM IN
 !      BUFFER", p.81; what GFLONG does then is not written up: CHOSEN, a halt)
 !   12 TABMAN: TEC 1 (a compare the guide does not describe), or an argument
-!      longer than the table's AL (p.44's third form, step 3c)
+!      longer than AL whose rest is not whole characters (Fig. 22's 8n)
 !  100+n STRAP II message n, until the error routine is written (p.176-178):
 !      149 a symbol over 128 characters, 156 a system symbol not found
 !      (MBSPEC's 129 is a note: NOTEC, NOTEL), 163 a digit too large for the
@@ -112,7 +112,25 @@ TBHK    ST(BU,8), TBRTN
         BAE, TBRS
         LVE, $6, 1.0($15)
         SV, $6, TBAL
-        L(BU,8), TBRTN
+        L(BU,24), TBAL
+        K(BU,16), 3.16($5)
+        BAH, TBHK1
+        ST(BU,24), TBDL
+        LI(BU,24), 0
+        ST(BU,24), TBR
+        B, TBHK2
+! p.44's third form: al over AL.  The dictionary takes the first AL bits,
+! the vle the rest (TBR bits, whole characters: Fig. 22's 8n).
+TBHK1   L(BU,16), 3.16($5)
+        ST(BU,24), TBDL
+        L(BU,24), TBAL
+        -(BU,16), 3.16($5)
+        ST(BU,24), TBR
+        L(BU,3), TBR+.21
+        KI(BU,3), 0
+        BAE, TBHK2
+        B, TBTEC
+TBHK2   L(BU,8), TBRTN
         KI(BU,8), 0
         BAE, TBS
         LVE, $6, 1.32($15)
@@ -263,9 +281,7 @@ AN7     LX, $2, ANSAV
 TBSRCH  L(BU,1), 2.62($5)
         KI(BU,1), 1
         BAE, TBTEC
-        L(BU,24), TBAL
-        K(BU,16), 3.16($5)
-        BAH, TBTEC
+        L(BU,24), TBDL
         ST(BU,6), TBCL1+.35
         ST(BU,6), TBCK1+.35
         ST(BU,6), TBCL2+.35
@@ -347,6 +363,16 @@ TBFA1   L(BU,16), 3.32($5)
         ST(BU,6), TBFA3+.35
         LV, $4, TBQ
 TBFA3   L(BU,64), 0($4)
+        ST(BU,24), TBVA
+        LV, $4, TBVA
+        L(BU,12), .20($4)
+        ST(BU,24), TBN8
+        +(BU,24), TBN8
+        ST(BU,24), TBN8
+        +(BU,24), TBN8
+        ST(BU,24), TBN8
+        +(BU,24), TBN8
+        +(BU,24), TBVA
         +(BU,24), TBV32
 TBFA2   LV, $3, TBFLK
         B, 0($3)
@@ -393,7 +419,7 @@ TBEN1   LI(BU,32), 0
         ST(BU,24), TBMT
         +(BU,16), 3.16($5)
         ST(BU,24), TBQ
-        L(BU,24), TBAL
+        L(BU,24), TBDL
         ST(BU,24), TBMN
         SIC, TBMLK
         B, TBMOV
@@ -402,6 +428,9 @@ TBEN1   LI(BU,32), 0
         L(BU,24), TBFL
         ST(BU,24), TBMN
         K(BU,16), 3.32($5)
+        BAH, TBEN2
+        L(BU,24), TBR
+        KI(BU,24), 0
         BAH, TBEN2
         L(BU,24), TBQ
         ST(BU,24), TBMT
@@ -413,17 +442,36 @@ TBEN2   LV, $4, AUVTAB
         ST(BU,32), 0($4)
         L(BU,24), TBFL
         +(BU,24), TBV32
+        +(BU,24), TBR
         ST(BU,13), .1($4)
         L(BU,6), 2.25($5)
         ST(BU,6), .14($4)
+        L(BU,21), TBR
+        ST(BU,12), .20($4)
         SV, $4, TBK
+        L(BU,24), TBARG
+        +(BU,24), TBDL
+        ST(BU,24), TBMF
         L(BU,24), TBK
         +(BU,24), TBV32
+        ST(BU,24), TBMT
+        L(BU,24), TBR
+        ST(BU,24), TBMN
+        SIC, TBMLK
+        B, TBMOV
+        L(BU,24), TBFN
+        ST(BU,24), TBMF
+        L(BU,24), TBFL
+        ST(BU,24), TBMN
+        L(BU,24), TBK
+        +(BU,24), TBV32
+        +(BU,24), TBR
         ST(BU,24), TBMT
         SIC, TBMLK
         B, TBMOV
         L(BU,24), TBK
         +(BU,24), TBV32
+        +(BU,24), TBR
         +(BU,24), TBFL
         ST(BU,24), AUVTAB
         L(BU,16), 3.32($5)
@@ -987,6 +1035,10 @@ AZZC    DD(BU,64), 0
 AZZB    DD(BU,64), 0
 TBARG   DD(BU,64), 0
 TBAL    DD(BU,64), 0
+TBDL    DD(BU,64), 0
+TBR     DD(BU,64), 0
+TBVA    DD(BU,64), 0
+TBN8    DD(BU,64), 0
 TBFN    DD(BU,64), 0
 TBFL    DD(BU,64), 0
 TBP     DD(BU,64), 0

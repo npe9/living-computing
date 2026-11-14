@@ -57,6 +57,18 @@ way (the counts above were measured before these calls were added):
                                             no forward move in TABMAN
                                             overlaps its destination, so
                                             either direction copies it.
+p.44's third form (step 3c, calls 58-72 on table 5), MEASURED 2026-11-13,
+the same way:
+  compare length al, not the dictionary     17: calls 59-62 ... (it measured
+    part (al mod 64 in the 6-bit field)        NOTHING until call 58, "AB"
+                                               then 0, was added)
+  Agetv without the rest                    10: calls 59-62 ...
+  n not written                             11: calls 59-62 ...
+  the rest not moved                        1: the vle area
+  a rest makes no vle                       16: calls 59-62 ...
+  whole characters not checked              1: halt 12 (al 36)
+  the vle length without the rest           5: calls 70-72 (ANEXT), the
+                                               vle area
 """
 import os
 import re
@@ -121,6 +133,17 @@ CALLS = [
     ("ADDORD", 5, 0x44, 12, 25, 8), ("SEARCH", 5, 0x8000000000000000),
     ("ADDORD", 5, 0x6000000000000000, (1 << 99) | 0x5A5A5A5A5A5A5A5A5, 100),
     ("SEARCH", 5, 0x6000000000000000),
+    # p.44's third form (step 3c): ABCDEFGH and two more characters, al 80
+    ("ADDORD", 5, 0x4142000000000000, 15, 25),     # "AB": a 16-bit compare would hit it
+    ("ADDORD", 5, (0x4142434445464748 << 16) | 0x2A31, 13, 25, 80),
+    ("SEARCH", 5, (0x4142434445464748 << 16) | 0x2A31, 80),
+    ("SEARCH", 5, (0x4142434445464748 << 8) | 0x5A, 72),
+    ("ADDORD", 5, (0x4142434445464748 << 8) | 0x5A, 14, 25, 72),
+    ("ADDORD", 5, (0x2122232425262728 << 24) | 0x313233, (1 << 39) | 5, 40, 88),
+    ("SEARCH", 5, 0x2122232425262728),
+    ("RSERCH", 5, 0x41424344), ("RSERCH", 5, 0x21222324),
+    ("AFIRST",), ("ANEXT", 0o31), ("ANEXT", 0o31), ("ANEXT", 0o31), ("ANEXT", 0o31),
+    ("ANEXT", 0o31),
 ]
 # a call's al: SEARCH (r, n, arg[, al]); ADDORD, ADDUNO (r, n, arg, f, fl[, al])
 
@@ -265,7 +288,11 @@ def driver(addr, initial, dels, calls=None):
         al = al_of(c)
         fl = c[4] if c[0] != "SEARCH" else 0
         d = late if c[1] == 5 else L
-        d += [f"ARG{i}    DD(BU,64), (16){c[2] << (64 - al):016X}",
+        a128 = c[2] << (128 - al)
+        d += [f"ARG{i}    DD(BU,64), (16){(c[2] << (64 - al)) if al <= 64 else a128 >> 64:016X}"]
+        if al > 64:                 # a third-form argument: its rest in the next word
+            d += [f"        DD(BU,64), (16){a128 & ((1 << 64) - 1):016X}"]
+        d += [
               f"FN{i}     DD(BU,64), (16){(c[3] << (64 - fl)) if 0 < fl <= 64 else (c[3] << (128 - fl)) >> 64 if fl else 0:016X}"]
         if fl > 64:                 # a two-word function: TBMOV's forward loop steps twice
             d += [f"        DD(BU,64), (16){(c[3] << (128 - fl)) & ((1 << 64) - 1):016X}"]
@@ -379,8 +406,8 @@ def main():
           [f"{t.mem.get((a + w) * 64, 64):016X}" for w in range(VWORDS)])
     check("halt 12: TEC 1, a compare the guide does not describe",
           halt_run([("SEARCH", 6, 1)]), 12)
-    check("halt 12: an argument longer than AL (p.44's third form, step 3c)",
-          halt_run([("SEARCH", 1, 1, 40)]), 12)
+    check("halt 12: a rest that is not whole characters (al 36, AL 32; Fig. 22's 8n)",
+          halt_run([("SEARCH", 1, 1, 36)]), 12)
     m = re.search(r"cycles = (\d+)", out)
     print(f"INFO model steps: {m.group(1) if m else '?'}")
     print("ALL CHECKS PASSED" if not fails else f"{fails} FAILED")
