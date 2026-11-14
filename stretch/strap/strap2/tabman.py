@@ -29,15 +29,25 @@ An entry (Fig. 21 p.190): bit 0 deleted, bit 1 a vle exists, the argument
   The vle is TABMAN's (p.44): when the function is longer than ADDL, it goes
   to a vle at Auvtab with Fig. 22's head (deleted, 13-bit length, the
   table's ID in A6, a 12-bit remainder length of 0), and the dictionary's
-  function field holds the vle's signed address, with the vle bit 1.  Agetv:
-  the function address is the vle's address + 32 (no remainder).  An
-  argument split into a vle remainder (p.44's third form, the symbol
-  table's) is step 3c's, and is refused here.
+  function field holds the vle's signed address, with the vle bit 1.
+  p.44's third form, an argument longer than AL: the dictionary holds its
+  first AL bits, and the vle holds the rest of the argument, then the
+  function (p.44: "remainder of argument plus the function in vle
+  portion"), whatever the function's length.  Fig. 22 p.191, read in the
+  ink: the rest is "8n" bits, its 12-bit length field n.  CHOSEN: n counts
+  characters, as `symtab.py` already counts them, so the rest must be whole
+  8-bit characters (anything else is refused).  Agetv (Boxes 23, 25): the
+  function address is the vle's address + 32 + 8n.
 
 The compare (Box 4 Acompi: "sets the field length ... for the size of the
-argument"): the first al bits of the table's argument against the given
-al bits, unsigned.  TEC is Fig. 8's "type of compare", meaning UNSPECIFIED:
-TEC 0 is this compare, TEC 1 is refused (fail loud).
+argument"): the first min(al, AL) bits of the table's argument against the
+given argument's first min(al, AL) bits, unsigned.  A third-form argument is
+compared on its dictionary part only: Chart RA p.43 has no box that compares
+a remainder (SEARCH, Box 7, compares; Boxes 23-25 only step over the vle).
+So two arguments equal in their first AL bits are the same entry, and ADDORD
+gives "already there" (OPEN: the guide never says so in words).  TEC is
+Fig. 8's "type of compare", meaning UNSPECIFIED: TEC 0 is this compare, TEC
+1 is refused (fail loud).
 
 The exits are named, and EXITS gives each one's location relative to the
 calling sequence's first parameter (tbl), where $15 points on entry
@@ -166,18 +176,24 @@ class Tabman:
         """Boxes 20-25: Agetv for a vle, else the function field."""
         al = self.get(cb, "AL")
         if self.mem.get(e + 1, 1):
-            return self.mem.get_signed(e + 2 + al, self.get(cb, "ADDL")) + 32
+            v = self.mem.get_signed(e + 2 + al, self.get(cb, "ADDL"))
+            return v + 32 + 8 * self.mem.get(v + 20, 12)
         return e + 2 + al
 
-    def _compare_setup(self, cb, al):
+    def _compare_setup(self, cb, arg, al):
+        """The dictionary part of the given argument, and its length."""
         if self.get(cb, "TEC"):
             raise TabmanError("TEC 1: a type of compare the guide does not describe")
-        if al > self.get(cb, "AL"):
-            raise TabmanError("an argument split into a vle (p.44's third form) is step 3c's")
+        a = self.get(cb, "AL")
+        if al <= a:
+            return arg, al
+        if (al - a) % 8:
+            raise TabmanError("a remainder of the argument that is not whole characters")
+        return arg >> (al - a), a
 
     # -- SEARCH (p.47) ---------------------------------------------------------
     def search(self, cb, arg, al):
-        self._compare_setup(cb, al)
+        arg, al = self._compare_setup(cb, arg, al)
         ordered = self.get(cb, "TO") == 0
         after = self.get(cb, "LW") + self.get(cb, "EL")
         if ordered:
@@ -203,16 +219,19 @@ class Tabman:
     def _enter(self, cb, at, arg, al, funct, fl):
         addl = self.get(cb, "ADDL")
         a = self.get(cb, "AL")
+        rest = max(al - a, 0)
         self.mem.put(at, 2, 0)
-        self.mem.put(at + 2, a, arg << (a - al))
-        if fl > addl:
+        self.mem.put(at + 2, a, (arg >> rest) << (a - al + rest))
+        if fl > addl or rest:
             v = self.auvtab
             self.mem.put(v, 1, 0)
-            self.mem.put(v + 1, 13, (32 + fl) % (1 << 13))
+            self.mem.put(v + 1, 13, (32 + rest + fl) % (1 << 13))
             self.mem.put(v + 14, 6, self.get(cb, "ID"))
-            self.mem.put(v + 20, 12, 0)
-            self.mem.put(v + 32, fl, funct)
-            self.auvtab = v + 32 + fl
+            self.mem.put(v + 20, 12, rest // 8)
+            if rest:
+                self.mem.put(v + 32, rest, arg & ((1 << rest) - 1))
+            self.mem.put(v + 32 + rest, fl, funct)
+            self.auvtab = v + 32 + rest + fl
             self.mem.put(at + 1, 1, 1)
             self.mem.put_signed(at + 2 + a, addl, v)
         else:
@@ -220,7 +239,7 @@ class Tabman:
 
     # -- ADDUNO (p.49) ---------------------------------------------------------
     def adduno(self, cb, arg, al, funct, fl):
-        self._compare_setup(cb, al)
+        self._compare_setup(cb, arg, al)
         last = self.get(cb, "LW")
         if last >= self.get(cb, "FW") and self.deleted(last):
             at = last                       # Boxes 19, 28: replace it

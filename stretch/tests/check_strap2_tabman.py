@@ -23,6 +23,14 @@ control all passing; the number of failing checks, then the first:
     address                                    FX Agetv, RSERCH x3
   ADDUNO leaves TO                          1: ADDUNO marks ordered
   ANEXT takes a deleted vle                 1: ANEXT deleted
+p.44's third form (step 3c), MEASURED 2026-11-13 the same way:
+  Agetv without the rest                    3: FX, SEARCH, RSERCH
+  n in bits, not characters                 4: the vle head, FX, ...
+  the function in the dictionary when       8: the vle bit, the vle, the
+    it fits                                    rest, FX, ...
+  the vle length without the rest           2: the vle head, ANEXT
+  the dictionary keeps the low AL bits      5: the dictionary part, ...
+  the search compares the low AL bits       3: the two SEARCHes, ADDORD
 """
 import os
 import sys
@@ -184,6 +192,41 @@ dest = 64 * 300
 got = v.rserch(CB, bottom + 32, dest)
 check("RSERCH with an index: the entry moved there, the value one entry on (p.53)",
       (got, v.mem.get(dest + 2, 32)), (("found", dest + 64), 11))
+
+# p.44's third form: an argument longer than AL (Fig. 21: the first eight
+# characters in the dictionary; Fig. 22: the rest, 8n bits, its length n)
+s = table(addl=25)
+bottom = s.auvbot
+check("third form: ADDORD of an 80-bit argument into AL 32: normal",
+      s.addord(CB, (0x41424344 << 48) | 0x454647482A31, 80, 0b110, 6), "normal")
+check("  the dictionary holds its first AL bits", s.mem.get(FW + 2, 32), 0x41424344)
+check("  the vle bit on, though the function fits ADDL (p.44: remainder plus function)",
+      s.mem.get(FW + 1, 1), 1)
+check("  the vle: length 32+48+6, ID, n = 6 characters (Fig. 22)",
+      (s.mem.get(bottom + 1, 13), s.mem.get(bottom + 14, 6), s.mem.get(bottom + 20, 12)),
+      (86, IND, 6))
+check("  the rest of the argument, then the function",
+      (s.mem.get(bottom + 32, 48), s.mem.get(bottom + 80, 6)), (0x454647482A31, 0b110))
+check("  FX: Agetv past the head and the rest (Boxes 23, 25)", fig8(s, "FX"), bottom + 80)
+check("  Auvtab past the vle", s.auvtab, bottom + 86)
+check("third form: SEARCH of the same argument: found, FX the function",
+      (s.search(CB, (0x41424344 << 48) | 0x454647482A31, 80), fig8(s, "FX")),
+      ("found", bottom + 80))
+check("third form: a different rest is the same entry (Chart RA has no "
+      "remainder compare; OPEN)",
+      s.search(CB, (0x41424344 << 16) | 0x5A5A, 48), "found")
+check("  and ADDORD of it is 'already there'",
+      s.addord(CB, (0x41424344 << 16) | 0x5A5A, 48, 1, 6), "already there")
+check("third form: RSERCH finds the entry by its function address",
+      (s.rserch(CB, bottom + 80)[0], fig8(s, "DX")), ("found", FW))
+check("third form: ANEXT steps over the rest by the vle's length",
+      (s.anext(IND), s.anextx, s.anexta), ("normal", bottom, bottom + 86))
+try:
+    s.search(CB, 1, 36)
+    got = "accepted"
+except T.TabmanError:
+    got = "refused"
+check("third form: a rest that is not whole characters is refused", got, "refused")
 
 # the exits, in bits from tbl (p.46: B,-1($15) one half word back)
 check("exits: SEARCH found at 2.0, not found at 1.32 (p.47)",
