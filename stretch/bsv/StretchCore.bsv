@@ -465,7 +465,22 @@ module mkStretchCore(StretchCore);
   Bool armResume   = !armRecover && !busyXfer && !isValid(pendingIdxWrite) && resumeReady;
   // (A branch level has no operand and is removed as soon as it is the
   // head with the E-box free, i.e. once every earlier level has retired.)
-  Bool headReady   = la.count() != 0 && ebusy == 0 && !ebox.busyFor(OwnerLA)
+  // >>> THE E-BOX MUST BE FREE OF AN I-BOX INSTRUCTION TOO, 2026-11-14. <<<
+  // This used to test only `!ebox.busyFor(OwnerLA)`.  An I-box
+  // instruction run ahead down a guessed branch's fall-through (an LV
+  // reading its index word) can still be waiting on its read when the
+  // branch level reaches the head.  Removed then, a wrong guess's
+  // `recover` set the counter to the target, and on the next clock
+  // rl_exec_resume finished the LV and committed ITS next address over
+  // it, so the fall-through ran as if the guess had been right -- and
+  // the LV's index write landed after the snapshot was restored.
+  // decks/strap2_7030.strap's TBMOV backward loop ("KI(BU,24),0;
+  // BZAE,TBMB1" then TBMVX "LV,$3,TBMLK; B,0($3)") lost its second step
+  // that way whenever the LV's read was slow enough
+  // (tests/check_strap2_7030_tabman.py, found by a memory trace).  A
+  // held I-box instruction also cannot share the box with a level that
+  // needs an operand: start() would overwrite `held`.
+  Bool headReady   = la.count() != 0 && ebusy == 0 && !ebox.busy()
                      && (!isValid(la.headLevel().da) || isValid(la.headLevel().data));
   Bool armRemove   = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
                      && !resumeReady && headReady;

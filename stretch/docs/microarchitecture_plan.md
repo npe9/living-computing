@@ -6282,6 +6282,22 @@ correct instruction counter value is also shipped back to the I-box."
   and charge the recovery time (Blosk fig.10: the branch's own five
   cycles; plus the refetch).
 
+- **Fixed 2026-11-14: the branch level waits for the E-box to be
+  free of an I-box instruction too.** `headReady` tested only
+  `!ebox.busyFor(OwnerLA)`. An I-box instruction on the fall-through
+  (an LV reading its index word) could still be held in the E-box
+  waiting on its read when the branch level reached the head. On a
+  wrong guess `rl_recover` set the counter to the target, and on the
+  next clock `rl_exec_resume` finished the LV and committed the LV's
+  next address over it. The LV's index write also landed after the
+  snapshot was restored. Found by the 7030 STRAP II's TABMAN (TBMOV's
+  backward loop, `KI 0; BZAE` back, then `LV,$3; B,0($3)`) losing a
+  step at some code alignments, diagnosed with a memory and branch
+  trace. Now `headReady` requires `!ebox.busy()`. Test:
+  `decks/la_guess_ibox_inflight.strap` runs four copies of that loop
+  at different timings. With the old test exactly one (CNT3) fails,
+  so the four timings are needed.
+
 Cost model: the branch level's four-level load is charged as the
 branch's I-box time (6 cycles); a wrong guess adds a Y refill. The
 interrupt system, when it arrives, uses the same recovery path

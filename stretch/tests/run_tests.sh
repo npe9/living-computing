@@ -2462,6 +2462,17 @@ run "a guessed branch's target is the one computed at the guess" ./run_program.s
     "case2_index_restored:266=35184372088832" \
     "case3_guard:267=211176601277169664" \
     "PC=304"
+# A WRONG GUESS IS NOT UNDONE BY A HELD I-BOX INSTRUCTION (found 2026-11-14
+# by the 7030 STRAP II's TABMAN; the deck header explains it).  Four copies
+# of TBMOV's loop shape (KI 0; BZAE back; LV,$3; B,0($3)) at different
+# timings; each must count 3.  MEASURED INJECTION (headReady back to
+# !ebox.busyFor(OwnerLA), the model before the fix): exactly cnt3 fails
+# (1, the loop left after one pass); cnt1, cnt2 and cnt4 pass.
+run "a wrong guess is undone while an I-box read is in flight" ./run_program.sh ../decks/la_guess_ibox_inflight.strap StretchGuessInflightTb \
+    "cnt1:272=0x0003000000000000" \
+    "cnt2:273=0x0003000000000000" \
+    "cnt3:274=0x0003000000000000" \
+    "cnt4:275=0x0003000000000000"
 # THE DECIMAL UNSIGNED STORE, Reference Manual printed p.63, for MCP's $TIME
 # (printed p.300 line 33).  Observed injections, each on the rebuilt model,
 # restored from a saved copy checked with cmp:

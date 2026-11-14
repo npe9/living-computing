@@ -1,0 +1,93 @@
+! la_guess_ibox_inflight.strap -- a wrong guess is not undone by an I-box
+! instruction that was still waiting on its read when the branch resolved.
+!
+! WHY IT EXISTS.  The instruction unit guesses a branch on an arithmetic
+! indicator not taken and runs on (docs/microarchitecture_plan.md stage
+! 3c).  An I-box instruction on the fall-through path that reads storage
+! (here LV, its index word) is held in the E-box until the read answers.
+! The model let the branch level leave the look-ahead while that LV was
+! held.  On a wrong guess rl_recover set the counter to the target, and on
+! the next clock rl_exec_resume finished the LV and committed its own next
+! address over the target, so the fall-through ran as if the guess had
+! been right.
+!
+! FOUND 2026-11-14 by the 7030 STRAP II's TABMAN (decks/strap2_7030.strap,
+! TBMOV's backward loop: "KI(BU,24),0; BZAE,TBMB1" then "LV,$3,TBMLK;
+! B,0($3)"), which lost a loop step whenever the LV's read was slow enough,
+! that is, at some code alignments and not others.  This deck repeats that
+! loop shape: count down K from 3, close with KI 0 and BZAE, and leave by
+! LV,$3 and B,0($3).  Whether the LV is still in flight when the branch
+! resolves is timing, so the four loops differ only in 0-3 extra E-box
+! loads at the top.
+!
+! EXPECTED, derived by hand: every loop runs three times, so CNT1-CNT4 are
+! each 3 (in bits 0-15), and the program ends at DONE.
+!
+! MEASURED INJECTION (headReady's !ebox.busy() put back to the old
+! !ebox.busyFor(OwnerLA)): exactly CNT3 fails, 1 instead of 3; CNT1, CNT2
+! and CNT4 pass.  So only one of the four timings exposes the bug, which is
+! why there are four.
+
+        SLC, (8)200.0
+START   NOP
+LOOP1   M+1(BU,16), CNT1
+        L(BU,24), K1
+        -(BU,24), ONE
+        ST(BU,24), K1
+        KI(BU,24), 0
+        BZAE, LOOP1
+        LV, $3, RET1
+        B, 0($3)
+END1    NOP
+LOOP2   M+1(BU,16), CNT2
+        L(BU,24), ONE
+        L(BU,24), K2
+        -(BU,24), ONE
+        ST(BU,24), K2
+        KI(BU,24), 0
+        BZAE, LOOP2
+        LV, $3, RET2
+        B, 0($3)
+END2    NOP
+LOOP3   M+1(BU,16), CNT3
+        L(BU,24), ONE
+        L(BU,24), ONE
+        L(BU,24), K3
+        -(BU,24), ONE
+        ST(BU,24), K3
+        KI(BU,24), 0
+        BZAE, LOOP3
+        LV, $3, RET3
+        B, 0($3)
+END3    NOP
+LOOP4   M+1(BU,16), CNT4
+        L(BU,24), ONE
+        L(BU,24), ONE
+        L(BU,24), ONE
+        L(BU,24), K4
+        -(BU,24), ONE
+        ST(BU,24), K4
+        KI(BU,24), 0
+        BZAE, LOOP4
+        LV, $3, RET4
+        B, 0($3)
+END4    NOP
+DONE    BEW,$
+        CNOP
+
+        SLC, (8)400.0
+ONE     DD(BU,64), (16)0000010000000000
+K1      DD(BU,64), (16)0000030000000000
+K2      DD(BU,64), (16)0000030000000000
+K3      DD(BU,64), (16)0000030000000000
+K4      DD(BU,64), (16)0000030000000000
+RET1    XW, END1, 0, 0
+RET2    XW, END2, 0, 0
+RET3    XW, END3, 0, 0
+RET4    XW, END4, 0, 0
+        SLC, (8)420.0
+CNT1    DD(BU,64), 0
+CNT2    DD(BU,64), 0
+CNT3    DD(BU,64), 0
+CNT4    DD(BU,64), 0
+        END, START
