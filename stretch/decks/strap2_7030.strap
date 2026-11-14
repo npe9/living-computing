@@ -89,6 +89,9 @@ ADDORD  SX, $7, TBSAV+7.0
         B, TBHK
 ADDUNO  SX, $7, TBSAV+7.0
         LI(BU,8), 2
+        B, TBHK
+RSERCH  SX, $7, TBSAV+7.0
+        LI(BU,8), 3
 ! Boxes 1-3: $0-$7 saved, Azzc and Azzb zero, the control block to $5
 TBHK    ST(BU,8), TBRTN
         SX, $0, TBSAV
@@ -104,6 +107,9 @@ TBHK    ST(BU,8), TBRTN
         LVE, $5, 0($15)
         LVE, $6, .32($15)
         SV, $6, TBARG
+        L(BU,8), TBRTN
+        KI(BU,8), 3
+        BAE, TBRS
         LVE, $6, 1.0($15)
         SV, $6, TBAL
         L(BU,8), TBRTN
@@ -158,6 +164,35 @@ TBAO2   L(BU,24), TBP
         B, TBENT
         V+I, $15, 3.32
         B, TBX
+! RSERCH (pp.52-53, Chart RW): the entry whose function address is the
+! given one.  CHOSEN linkage (none is printed): ,tbl ,addr(I); not found
+! (1.0, Box 6's +1.32); normal, found (1.32, Box 10's +2.0).  The address is
+! the effective address.  OPEN: the move to "the location specified in the
+! value field of the index register" (Boxes 9, 11-12) is not written; with
+! the address itself through I, the two readings collide.
+TBRS    LI(BU,1), 1
+        ST(BU,1), AZZS
+        L(BU,24), 2.0($5)
+        ST(BU,24), TBP
+TBRS1   L(BU,24), TBP
+        K(BU,24), 2.32($5)
+        BAH, TBRS3
+        SIC, TBFLK
+        B, TBFAD
+        K(BU,24), TBARG
+        BAE, TBRS2
+        L(BU,24), TBP
+        +(BU,16), 3.0($5)
+        ST(BU,24), TBP
+        B, TBRS1
+TBRS2   L(BU,24), TBP
+        ST(BU,24), 1.0($5)
+        L(BU,24), TBARG
+        ST(BU,24), 0.0($5)
+        V+I, $15, 1.32
+        B, TBX
+TBRS3   V+I, $15, 1.0
+        B, TBX
 ! SEARCH (p.47): found 2.0, not found 1.32
 TBS     SIC, TBSLK
         B, TBSRCH
@@ -177,6 +212,49 @@ TBX     LX, $0, TBSAV
         LX, $6, TBSAV+6.0
         LX, $7, TBSAV+7.0
         B, 0($15)
+!
+! ANEXT (pp.50-51, Chart RB): the next undeleted vle with the ID in bits
+! 18-23 of the calling sequence's first half word, from the vle table's
+! bottom while Afirst is on (the test turns it off), else from Anexta.
+!   LVI,15,$+1.0; B,ANEXT; ID; no more (two half words); normal
+! Box 1: only $2 is saved.  Found: its location in Anextx, the next in
+! Anexta (Boxes 8-9).
+ANEXT   SX, $2, ANSAV
+        L(BU,6), .18($15)
+        ST(BU,6), ANID
+        L(BU,1), AFIRST
+        KI(BU,1), 1
+        BZAE, AN4
+        LI(BU,1), 0
+        ST(BU,1), AFIRST
+        L(BU,24), AUVTAB+.32
+        ST(BU,24), ANT
+        LV, $2, ANT
+        B, AN5
+AN4     LV, $2, ANEXTA
+AN5     SV, $2, ANT
+        L(BU,24), ANT
+        K(BU,24), AUVTAB
+        BZAL, AN7
+        L(BU,6), .14($2)
+        K(BU,6), ANID
+        BZAE, AN6
+        L(BU,1), 0($2)
+        KI(BU,1), 1
+        BAE, AN6
+        SV, $2, ANEXTX
+        L(BU,13), .1($2)
+        +(BU,24), ANT
+        ST(BU,24), ANEXTA
+        LX, $2, ANSAV
+        B, 1.32($15)
+AN6     L(BU,13), .1($2)
+        +(BU,24), ANT
+        ST(BU,24), ANT
+        LV, $2, ANT
+        B, AN5
+AN7     LX, $2, ANSAV
+        B, .32($15)
 !
 ! TBSRCH (Boxes 4, 7, 11): TBHIT 1 and the index words at the entry, or
 ! TBHIT 0 and the index words at the first entry not below the argument
@@ -925,6 +1003,15 @@ TBFLK   DD(BU,64), 0
 TBULK   DD(BU,64), 0
 TBELK   DD(BU,64), 0
 TBMLK   DD(BU,64), 0
+! ANEXT's: Afirst (on at the start, p.51), Anextx and Anexta (index
+! words), the ID, $2 saved, a work cell.  RSERCH's Azzs (p.53).
+AFIRST  DD(BU,64), (16)8000000000000000
+ANEXTX  XW, 0, 0, 0
+ANEXTA  XW, 0, 0, 0
+ANID    DD(BU,64), 0
+ANSAV   DD(BU,64), 0
+ANT     DD(BU,64), 0
+AZZS    DD(BU,64), 0
 TBTWO   DD(BU,64), (16)0000020000000000
 TBV32   DD(BU,64), (16)0000200000000000
 !

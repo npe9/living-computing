@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """check_strap2_7030_tabman.py -- the 7030 TABMAN (decks/strap2_7030.strap,
-SEARCH, ADDORD, ADDUNO), assembled by the host STRAP II and run on the
+SEARCH, ADDORD, ADDUNO, ANEXT, RSERCH), assembled by the host STRAP II and run on the
 Bluespec model, against the host TABMAN (strap/strap2/tabman.py),
 docs/strap2_7030.md step 3b.
 
@@ -31,6 +31,17 @@ control all passing; the number of failing checks, then the first calls:
   the vle's ID not written                  1: the vle area
 (The unordered deleted-miss injection measured NOTHING until call 19,
 SEARCH T2 7 after its deletion, was added.)
+ANEXT and RSERCH (3b-ii), MEASURED 2026-11-13, the same way:
+  ANEXT ignores Afirst                      the run never halts (Anexta 0:
+                                            the scan starts at bit 0)
+  ANEXT takes a deleted vle                 2: call 41
+  ANEXT ignores the ID                      2: call 37 (ID 18, no vles)
+  ANEXT reads the ID at bits 24-29          13: calls 32-41
+  ANEXT's no more at the normal return      3: calls 34, 37, 41
+  Anexta not past the found vle             9
+  ANEXT's $2 not restored when found        4: calls 32, 33, 36, 40
+  RSERCH found at the not-found return      3: calls 42, 43, 45
+  RSERCH leaves DX                          2: calls 42, 45
 """
 import os
 import re
@@ -81,8 +92,13 @@ CALLS = [
     ("ADDORD", 3, 11, 0b101, 40), ("ADDORD", 3, 12, 3, 40), ("ADDORD", 3, 5, 4, 6),
     ("SEARCH", 3, 12), ("SEARCH", 3, 5),
     ("ADDORD", 4, 5, 5, 6), ("ADDUNO", 4, 2, 2, 6), ("SEARCH", 4, 2),
+    ("ANEXT", 0o30), ("ANEXT", 0o30), ("ANEXT", 0o30), ("AFIRST",), ("ANEXT", 0o30),
+    ("ANEXT", 0o22), ("VDEL", 1), ("AFIRST",), ("ANEXT", 0o30), ("ANEXT", 0o30),
+    ("RSERCH", 3, 12), ("RSERCH", 3, 5), ("RSERCH", 3, None), ("RSERCH", 1, 90),
 ]
-CODES = {"found": 1, "not found": 2, "normal": 3, "already there": 4, "error": 5}
+CODES = {"found": 1, "not found": 2, "normal": 3, "already there": 4, "error": 5,
+         "no more": 6}
+SPECIAL = ("DEL", "AFIRST", "VDEL")      # driver actions, not TABMAN calls
 
 
 def wb(bits):
@@ -100,7 +116,27 @@ def host(addr):
     log = []
     dels = {}
     for c in CALLS:
+        if c[0] == "AFIRST":
+            t.afirst = True
+            log.append(None)
+            continue
+        if c[0] == "VDEL":
+            v = vles(t)[c[1]]
+            dels[len(log)] = v
+            t.mem.put(v, 1, 1)
+            log.append(None)
+            continue
+        if c[0] == "ANEXT":
+            ex = t.anext(c[1])
+            log.append((ex, [t.anextx << 40, t.anexta << 40, 0, 0]))
+            continue
         cb = addr[f"TCB{c[1]}"]
+        if c[0] == "RSERCH":
+            fa = faddr(t, cb, c[2])
+            ex = t.rserch(cb, fa)[0]
+            dels[len(log)] = fa
+            log.append((ex, [t.mem.get(cb + 64 * w, 64) for w in range(4)]))
+            continue
         if c[0] == "DEL":
             e = t.entries(cb)[c[2]]
             dels[len(log)] = e
@@ -118,38 +154,78 @@ def host(addr):
     return initial, log, dels, t
 
 
+def vles(t):
+    """The vle locations, bottom up."""
+    out, p = [], t.auvbot
+    while p < t.auvtab:
+        out.append(p)
+        p += t.mem.get(p + 1, 13)
+    return out
+
+
+def faddr(t, cb, arg):
+    """The function address of the entry with this argument; 1 for none."""
+    if arg is None:
+        return 1
+    e = next(e for e in t.entries(cb) if t.argument(cb, e, 32) == arg)
+    return t.function_address(cb, e)
+
+
 def driver(addr, initial, dels):
     L = ["START   L(BU,24), VLEX", "        ST(BU,24), AUVTAB", "        ST(BU,24), AUVTAB+.32"]
     k = 0
     for i, c in enumerate(CALLS):
-        n = c[1]
+        n = c[1] if len(c) > 1 else 0
+        if c[0] == "AFIRST":
+            L += ["        LI(BU,1), 1", "        ST(BU,1), AFIRST"]
+            continue
+        if c[0] == "VDEL":
+            L += ["        LI(BU,1), 1", f"        ST(BU,1), VLEA+{wb(dels[i] - addr['VLEA'])}"]
+            continue
         if c[0] == "DEL":
             e = dels[i] - addr[f"TBLA{n}"]
             L += ["        LI(BU,1), 1", f"        ST(BU,1), TBLA{n}+{wb(e)}",
                   f"        M-1(BU,16), TCB{n}+3.48"]
             continue
         L += [f"        LVI, ${r}, {100 + r}.0" for r in range(1, 8)]
-        L += [f"        LV, $10, AL{n}", f"        LV, $11, FL{i}",
-              "        LVI, $15, $+1.0", f"        B, {c[0]}",
-              f"        , TCB{n}", f"        , ARG{i}", "        , 0($10)"]
-        if c[0] != "SEARCH":
+        if c[0] == "ANEXT":
+            L += ["        LVI, $15, $+1.0", "        B, ANEXT",
+                  f"        DD(BU,32), (16){c[1] << 8:08X}",
+                  f"        B, E{i}M", f"        B, E{i}M", f"        B, E{i}R"]
+        elif c[0] == "RSERCH":
+            L += [f"        LV, $12, RA{i}", "        LVI, $15, $+1.0", "        B, RSERCH",
+                  f"        , TCB{n}", "        , 0($12)", f"        B, E{i}N", f"        B, E{i}F"]
+        else:
+            L += [f"        LV, $10, AL{n}", f"        LV, $11, FL{i}",
+                  "        LVI, $15, $+1.0", f"        B, {c[0]}",
+                  f"        , TCB{n}", f"        , ARG{i}", "        , 0($10)"]
+        if c[0] in ("ANEXT", "RSERCH"):
+            pass
+        elif c[0] != "SEARCH":
             L += [f"        , FN{i}", "        , 0($11)"]
-        if c[0] == "SEARCH":
+        if c[0] in ("ANEXT", "RSERCH"):
+            pass
+        elif c[0] == "SEARCH":
             L += [f"        B, E{i}N", f"        B, E{i}F"]
         elif c[0] == "ADDORD":
             L += [f"        B, E{i}A", f"        B, E{i}E", f"        B, E{i}R"]
         else:
             L += [f"        B, E{i}R"]
-        for lab, code in (("F", 1), ("N", 2), ("R", 3), ("A", 4), ("E", 5)):
+        for lab, code in (("F", 1), ("N", 2), ("R", 3), ("A", 4), ("E", 5), ("M", 6)):
             L += [f"E{i}{lab}    LI(BU,8), {code}", f"        B, E{i}X"]
         L += [f"E{i}X    ST(BU,8), LOG+{k}.0"]
-        L += [x for w in range(4) for x in (f"        L(BU,64), TCB{n}+{w}.0",
+        src = ["ANEXTX", "ANEXTA", "ZERO", "ZERO"] if c[0] == "ANEXT" else \
+            [f"TCB{n}+{w}.0" for w in range(4)]
+        L += [x for w in range(4) for x in (f"        L(BU,64), {src[w]}",
                                             f"        ST(BU,64), SNAP+{4 * k + w}.0")]
         L += [f"        SX, ${r}, REG+{8 * k + r}.0" for r in range(1, 8)]
         k += 1
     L += ["DONE    BEW, $", "        CNOP"]
     for i, c in enumerate(CALLS):
-        if c[0] == "DEL":
+        if c[0] in SPECIAL or c[0] == "ANEXT":
+            continue
+        if c[0] == "RSERCH":
+            L += [f"RA{i}    XW, {wb(dels[i])}, 0, 0"]
             continue
         al = TABLES[c[1]][0]
         L += [f"ARG{i}    DD(BU,64), (16){c[2] << (64 - al):016X}"]
@@ -160,7 +236,7 @@ def driver(addr, initial, dels):
         L += [f"AL{n}     XW, {wb(al)}, 0, 0"]
         L += [f"TCB{n}    DD(BU,64), (16){initial[n][0]:016X}"] + \
              [f"        DD(BU,64), (16){initial[n][w]:016X}" for w in (1, 2, 3)]
-    L += ["VLEX    XW, VLEA, 0, 0", f"LOG     DRZ(BU,64), {k}", f"SNAP    DRZ(BU,64), {4 * k}",
+    L += ["ZERO    DD(BU,64), 0", "VLEX    XW, VLEA, 0, 0", f"LOG     DRZ(BU,64), {k}", f"SNAP    DRZ(BU,64), {4 * k}",
           f"REG     DRZ(BU,64), {8 * k}"]
     L += [f"TBLA{n}   DRZ(BU,64), {TWORDS}" for n in TABLES]
     L += [f"VLEA    DRZ(BU,64), {VWORDS}"]
@@ -191,7 +267,8 @@ def main():
     addr = assemble(text_of(driver({n: 0 for n in
                                     ["AUVTAB", "VLEA"] + [f"TCB{m}" for m in TABLES] +
                                     [f"TBLA{m}" for m in TABLES]}, zero,
-                                   {i: 0 for i, c in enumerate(CALLS) if c[0] == "DEL"})
+                                   {i: 0 for i, c in enumerate(CALLS)
+                                    if c[0] in ("DEL", "VDEL", "RSERCH")})
                             ))
     # (the first assembly only finds the addresses; DEL offsets are 0 there)
     initial, log, dels, t = host(addr)
@@ -224,14 +301,14 @@ def main():
     check("ERRC is 0 (no failure halt)", int(errc.group(2)) >> 40 if errc else None, 0)
     k = 0
     for i, c in enumerate(CALLS):
-        if c[0] == "DEL":
+        if c[0] in SPECIAL:
             continue
         ex, cbw = log[i]
         lw, sw = addr["LOG"] // 64 + k, addr["SNAP"] // 64 + 4 * k
         got_ex = mem.get(lw, 0) >> 56
         got_cb = [mem.get(sw + w, 0) for w in range(4)]
         regs = [mem.get(addr["REG"] // 64 + 8 * k + r, 0) >> 40 for r in range(1, 8)]
-        name = f"call {i} {c[0]} T{c[1]} {c[2]}"
+        name = f"call {i} " + " ".join(str(x) for x in c[:3])
         check(f"{name}: the exit ({ex})", got_ex, CODES[ex])
         check(f"{name}: the control block, Fig. 8", [f"{w:016X}" for w in got_cb],
               [f"{w:016X}" for w in cbw])
