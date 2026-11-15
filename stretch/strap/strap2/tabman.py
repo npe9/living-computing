@@ -2,8 +2,8 @@
 
 >>> A RECONSTRUCTION to the guide's text and charts (Charts RA p.43, RB p.50,
 >>> RW p.52; MOVE pp.40-42), read in the ink 2026-11-13.  The host's symbol
->>> table does not use it yet (docs/strap2_7030.md step 3c); this is the
->>> specification the 7030 TABMAN (step 3b) is tested against. <<<
+>>> table is built on it (symtab.py, docs/strap2_7030.md step 3c), and it is
+>>> the specification the 7030 TABMAN (step 3b) is tested against. <<<
 
 Storage is a BitMem, so every field is at the bit address the guide gives.
 
@@ -73,10 +73,12 @@ that location.  The search stops at the first equal argument, and Box 11
 then asks whether it is deleted: a deleted one is a miss, though a later
 undeleted equal argument may stand after it.  An ordered table's search,
 linear or binary (p.45 Box 7) alike, finds the first entry not below the
-argument; a miss leaves the index words there, so ADDORD puts a new entry
+argument (the host bisects, Box 7's binary search); a miss leaves the index words there, so ADDORD puts a new entry
 before a deleted equal one (CHOSEN: p.47 says only "the next higher").  An
 unordered table's linear search finds the first equal argument.
 """
+import bisect
+
 from .bits import BitMem
 
 # bit offsets from tbl: n.32 is n*64 + 32
@@ -217,7 +219,9 @@ class Tabman:
         if ordered:
             # the first entry not below the argument, by a linear or a
             # binary search alike (Box 7)
-            at = next((e for e in self.entries(cb) if key(e) >= given), None)
+            es = self.entries(cb)
+            i = bisect.bisect_left(es, given, key=key)
+            at = es[i] if i < len(es) else None
             hit = at is not None and key(at) == given
         else:
             at = next((e for e in self.entries(cb) if key(e) == given), None)
@@ -241,19 +245,32 @@ class Tabman:
         if fl > addl or rest:
             if addl < 25:
                 raise TabmanError("a vle's address needs 25 bits of function (p.44)")
-            v = self.auvtab
-            self.mem.put(v, 1, 0)
-            self.mem.put(v + 1, 13, (32 + rest + fl) % (1 << 13))
-            self.mem.put(v + 14, 6, self.get(cb, "ID"))
-            self.mem.put(v + 20, 12, rest // 8)
-            if rest:
-                self.mem.put(v + 32, rest, arg & ((1 << rest) - 1))
-            self.mem.put(v + 32 + rest, fl, funct)
-            self.auvtab = v + 32 + rest + fl
+            v = self.new_vle(self.get(cb, "ID"), rest, arg & ((1 << rest) - 1), funct, fl)
             self.mem.put(at + 1, 1, 1)
             self.mem.put_signed(at + 2 + a, addl, v)
         else:
             self.mem.put(at + 2 + a, addl, funct << (addl - fl))
+
+    def new_vle(self, ident, rest, rest_value, funct, fl):
+        """The vle half of Box 30 AENTER, at Auvtab: Fig. 22's head, the rest
+        of the argument (rest bits), then the function.  Returns the vle's
+        address.  Not a routine of the guide's: ADDUNO and ADDORD do this
+        inside Box 30, but MULTI (p.127) makes vles no new entry points at, so
+        the host's symbol table calls it too.  A vle longer than the 13-bit
+        length field holds is refused, never wrapped."""
+        total = 32 + rest + fl
+        if total >= 1 << 13:
+            raise TabmanError(f"a vle of {total} bits: Fig. 22's length field has 13")
+        v = self.auvtab
+        self.mem.put(v, 1, 0)
+        self.mem.put(v + 1, 13, total)
+        self.mem.put(v + 14, 6, ident)
+        self.mem.put(v + 20, 12, rest // 8)
+        if rest:
+            self.mem.put(v + 32, rest, rest_value)
+        self.mem.put(v + 32 + rest, fl, funct)
+        self.auvtab = v + total
+        return v
 
     # -- ADDUNO (p.49) ---------------------------------------------------------
     def adduno(self, cb, arg, al, funct, fl):

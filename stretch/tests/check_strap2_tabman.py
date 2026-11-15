@@ -40,6 +40,19 @@ refusal were added:
   a rest that begins the other comes after  3: the prefix order, each
                                                found, RSERCH
   ADDL under 25 not refused                 1: the ADDL refusal
+The symbol table on TABMAN (step 3c-ii, symtab.py), MEASURED 2026-11-15 the
+same way, into symtab.py or tabman.py:
+  no zero fill (al the name's own length)   3: AB and ABC, the argument, the
+                                               shorter rest first (and 183
+                                               corpus assemblies crash)
+  an unknown character maps to 0            1: the A8 refusal
+  the special's first character 0           2: the special, the order
+  the special's vle keeps ID S              1: the special
+  replace leaves the dictionary at the      1: MULTI's legal case
+    old vle
+  ADDORD after ADDUNO not refused           1: the p.49 refusal
+  a long vle wraps (tabman.py)              1: the 13-bit refusal
+  binary search: the last entry not above   19: ADDORD order, SEARCH, ...
 """
 import os
 import sys
@@ -273,6 +286,58 @@ try:
 except T.TabmanError:
     got = "refused"
 check("TEC 1, a compare the guide does not describe, is refused", got, "refused")
+
+# -- the symbol table on TABMAN (symtab.py, step 3c-ii) ---------------------
+from strap2 import symtab as Y         # noqa: E402
+from strap2.a8 import A8               # noqa: E402
+
+
+def a8(text):
+    v = 0
+    for c in text:
+        v = (v << 8) | A8[c]
+    return v
+
+
+def refused(fn):
+    try:
+        fn()
+        return "accepted"
+    except (Y.SymbolError, T.TabmanError):
+        return "refused"
+
+
+st = Y.SymbolTable()
+fa, _ = st.addord("ABC")
+fb, _ = st.addord("AB")
+check("symtab: AB and ABC are two symbols; A is neither (the zero fill)",
+      (st.search("AB"), st.search("ABC"), st.search("A"), fa != fb), (fb, fa, None, True))
+check("symtab: the argument is the A8 characters, zero filled to 64 (Fig. 21)",
+      [st.t.argument(Y.CB, e, 64) for e in st.t.entries(Y.CB)],
+      [a8("AB") << 48, a8("ABC") << 40])
+long = "ABCDEFGH*1X"
+fl1, _ = st.addord(long)
+check("symtab: a name over 8 characters is found; its first 8 alone are not",
+      (st.search(long), st.search("ABCDEFGH")), (fl1, None))
+f8, _ = st.addord("ABCDEFGH")
+check("symtab: the first 8 alone enter before it (a shorter rest first)",
+      [st.name_at(e) for e in st.t.entries(Y.CB)], ["AB", "ABC", "ABCDEFGH", long])
+fl2 = st.replace(long, Y.KIND_SYN)
+check("symtab: MULTI's legal case repoints the long name to its new vle (p.127)",
+      (st.search(long), fl2 != fl1, st.search("ABCDEFGH")), (fl2, True, f8))
+g = st.special()
+check("symtab: a special symbol: 2^8-1, n, the fill (Fig. 21); its vle ID Y (Fig. 22)",
+      (st.t.argument(Y.CB, st.t.entries(Y.CB)[-1], 64), st.mem.get(g - 32 + 14, 6)),
+      (((0xFF << 16) | 1) << 40, Y.A6_ID["Y"]))
+keys = [(st.t.argument(Y.CB, e, 64), st.t.rest(Y.CB, e)) for e in st.t.entries(Y.CB)]
+check("symtab: ADDUNO kept the table in order, the special last (p.13)",
+      (keys == sorted(keys), st.t.get(Y.CB, "TO")), (True, 1))
+check("symtab: ADDORD after ADDUNO marked the table unordered is refused (p.49)",
+      refused(lambda: st.addord("ZZ")), "refused")
+check("symtab: a name with a character that has no A8 code is refused",
+      refused(lambda: Y.SymbolTable().addord("A_B")), "refused")
+check("a vle longer than Fig. 22's 13-bit length field is refused",
+      refused(lambda: T.new().new_vle(0o22, 0, 0, 0, 8200)), "refused")
 
 print("ALL CHECKS PASSED" if not fails else f"{fails} FAILED")
 sys.exit(1 if fails else 0)

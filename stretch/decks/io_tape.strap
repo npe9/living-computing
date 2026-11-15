@@ -170,7 +170,7 @@ CTLW2   DD(BU,64), 0        !patched: dataAddr=BLOCK2, count=4
 CTLW3   DD(BU,64), 0        !patched: dataAddr=SRC, count=2
 CTLW4   DD(BU,64), 0        !patched: dataAddr=BLOCK3, count=2
 CTLW5   DD(BU,64), 0        !patched: dataAddr=BLOCK4, count=1
-CTLW6   DD(BU,64), 0        !patched: dataAddr=DEST_EE, count=20
+CTLW6   DD(BU,64), 0        !patched: dataAddr=DESTEE, count=20
 CTLW7   DD(BU,64), 0        !patched: dataAddr=BLOCK5, count=1
 CTLW8   DD(BU,64), 0        !patched: dataAddr=BLOCK6, count=1
 CTLW9   DD(BU,64), 0        !patched: dataAddr=BLOCK7, count=20
@@ -204,6 +204,6 @@ CCWQ    DD(BU,64), 0
 CHBLK1  DD(BU,64), 0        !the one word CTLWA's count allows
 CHBLK2  DD(BU,64), 0,0,0    !the three CTLWB takes after the refill
 SRC     DD(BU,64), 999,888
-DEST_EE DD(BU,64), 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+DESTEE  DD(BU,64), 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
         END, START

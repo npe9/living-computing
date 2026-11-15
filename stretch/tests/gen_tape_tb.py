@@ -77,7 +77,7 @@ def main():
     block3 = word_addr(prog, "BLOCK3")
     block4 = word_addr(prog, "BLOCK4")
     src_addr = word_addr(prog, "SRC")
-    dest_ee = word_addr(prog, "DEST_EE")
+    dest_ee = word_addr(prog, "DESTEE")
     ctlw = {n: word_addr(prog, f"CTLW{n}") for n in range(1, 10)}
     ccw = {c: word_addr(prog, f"CCW{c}") for c in "ABCDEFGHIJKLMNOPQ"}
     ctlwA = word_addr(prog, "CTLWA")
