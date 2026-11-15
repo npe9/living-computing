@@ -3621,6 +3621,11 @@ def secondary_error(op, mods, kind=None):
             or m.strip().upper() in CW_SECONDARY]
     if not secs:
         return None
+    # An IBM spelling (+NMG, *N+) is classified as the spelling it means:
+    # before this, "+NMG(BU,8)(V+I)" classified as nothing and was refused
+    # here, while the host's op table took it (found 2026-11-15 by
+    # tests/check_strap2_secondary.py's sweep).
+    op, mods = ibm_spelling(op, mods)
     if len(secs) > 1:
         return f"more than one secondary op ({', '.join(secs)})"
     sec = secs[0]

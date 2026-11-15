@@ -29,6 +29,20 @@ all passing:
                                    check_strap2_mbspec's RD(SE0P)
   CW given V+I too                 only CW(V+I) (message 1: the CW table
                                    itself refuses it)
+
+THE SWEEP (2026-11-15): every name of the 7030 op table with V+I, SEOP and
+CR, 1413 statements, against the abc of its op index (optab7030).  It found
+117 immediate ops giving message 1 for a progressive secondary where the
+7030 gives 2 (the op index says none: no field P), SU(SEOP) refused though
+SU is LOC, and +NMG / *N+ given no secondaries in the 7030 table because
+strap_asm.secondary_error did not respell IBM's spellings.
+MEASURED INJECTIONS for the sweep, 2026-11-15 (pass1.py, strap_asm.py
+restored by copy and cmp; control passing; run with check_secondary_ops.py
+and check_strap2_7030_optab.py):
+  immediates given VFL's secondaries again   only the sweep
+  SU not respelled in pass1                  only the sweep
+  secondary_error not respelling              the sweep, and the op-table
+                                             test's block_fresh and decode
 """
 import os
 import sys
@@ -67,6 +81,34 @@ check("RD(SEOP): legal", one("RD(SEOP),$X2,200")[0], [])
 check("CW(CR): legal", one("CW(CR),100.0")[0], [])
 check("REW(SEOP): a CTL function op takes CTL's SEOP (MCP p.165 line 11)",
       one("REW(SEOP),0.0($14)")[0], [])
+
+# The sweep: every name of the 7030 table (tests/printed_ops.optab_names)
+# with one secondary of each family, against the abc its op index carries
+# (strap2/optab7030.secondary_code, Fig. 24 p.192): message 2 exactly when
+# the family is not the op's.  EXT is left out: its parentheses are its
+# parameters (C28-6129 printed p.19), not a secondary.  CHOSEN: an
+# ambiguous op written with no dds takes p.7's floating half, which has no
+# field P, so +N(V+I), M+N(V+I) and M+NMG(V+I) are message 2 although the
+# table's one entry for the name carries the VFL half's 001.
+sys.path.insert(0, HERE)
+import printed_ops                                  # noqa: E402
+from strap2 import optab7030 as O                   # noqa: E402
+
+AMBIG_NO_DDS = {"+N", "M+N", "M+NMG"}
+REP = {O.ABC["VFL"]: "V+I", O.ABC["SEOP"]: "SEOP", O.ABC["CW"]: "CR"}
+bad, n = [], 0
+for name in printed_ops.optab_names():
+    if name == "EXT":
+        continue
+    code = O.secondary_code(name)
+    for fam, sec in REP.items():
+        msgs = one(f"{name}({sec}),100.0")[0]
+        want2 = fam != code or (sec == "V+I" and name in AMBIG_NO_DDS)
+        n += 1
+        if (msgs == [2]) != want2 or (not want2 and 2 in msgs):
+            bad.append((name, sec, msgs, code))
+check(f"sweep: message 2 exactly when the op index's abc refuses the family ({n} statements)",
+      bad[:12], [])
 
 print("ALL CHECKS PASSED" if not fails else f"{fails} FAILED")
 sys.exit(1 if fails else 0)

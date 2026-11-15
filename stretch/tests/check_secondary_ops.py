@@ -43,6 +43,16 @@ with the secondary dropped, and lookup() took any secondary on any op.
                   assembles and looks up: CW(CDSC) and the rest, RD(SEOP),
                   GONG(SEOP), GONGSEOP, SUSEOP, L(V+I), CT0011(V+I)
 
+  ibm_spelling_family  C28-6129's printed spellings (+NMG, *N+, M+NMG,
+                  SU; strap_asm.IBM_SPELLING) take their op's secondary and
+                  assemble to the host spelling's word.  A CONTROL only:
+                  strap_asm's own path respells before the guard, so
+                  removing secondary_error's new respelling fails nothing
+                  here (measured 2026-11-15); the bug it fixes reached only
+                  the 7030 op table, through optab7030.secondary_code,
+                  where check_strap2_secondary.py's sweep and
+                  check_strap2_7030_optab.py catch it.
+
 MEASURED INJECTIONS, 2026-11-15 (each on a copy, reverted by cmp; control
 passes before and after):
     the immediate refusal removed           FAIL refused_imm, optable
@@ -162,6 +172,15 @@ GOODL = [("CW", None, ("CDSC",)), ("RD", None, ("SEOP",)), ("GONG", None, ("SEOP
          ("CT0011", "BU", ("V+I",)), ("REW", None, ("SEOP",))]
 bad += [(op, m, s) for op, m, s in GOODL if optable.lookup(op, m, s) is None]
 check("legal_family: the corpus's families still assemble and look up", not bad, str(bad))
+
+SPELL = [("+NMG(V+I)(BU,8),100", "+MGN(V+I)(BU,8),100"),
+         ("*N+(V+I)(BU,8),100", "*+N(V+I)(BU,8),100"),
+         ("M+NMG(V-IC)(BU,8),100", "M+MGN(V-IC)(BU,8),100"),
+         ("SU(SEOP),1,100", "LOC(SEOP),1,100")]
+bad = [(p, assemble(p)) for p, q in SPELL
+       if isinstance(assemble(p), str) or assemble(p) != assemble(q)]
+bad += [(p, assemble(q)) for p, q in SPELL if isinstance(assemble(q), str)]
+check("ibm_spelling_family: a printed spelling takes its op's secondaries", not bad, str(bad))
 
 if failures:
     print(f"*** {len(failures)} CHECK(S) FAILED ***")

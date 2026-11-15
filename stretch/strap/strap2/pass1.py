@@ -12,6 +12,7 @@ from .cards import Getcha
 from .coded import encode, Expr
 from .getfld import Getfld, FieldError, ALNUM
 from . import optable
+from . import optab7030
 from .optable import lookup, ENTRIES, dds13, DEFAULT_BS, MODE_CODE
 from .symtab import (SymbolTable, KIND_LABEL, KIND_SYN, KIND_UNDEF)
 from .unit import *             # noqa: F401,F403
@@ -515,8 +516,14 @@ class Pass1:
         is that of the entry with the mode written, so L(N)(V+I) is a
         floating op's: none."""
         if base.kind in ("vfl", "conn"):
+            # An immediate op has no field P for one (Reference Manual
+            # printed p.21), so its op index has abc 000, and LI(V+IC) is
+            # message 2 as on the 7030, not message 1 (optab7030).
+            if optab7030.secondary_code(op) != optab7030.ABC["VFL"]:
+                return set()
             return set(optable._a.PROGRESSIVE_SECONDARY_OP)
         if base.kind == "io":
+            op = optable._a.IBM_SPELLING.get(op, op)    # SU is LOC (C28-6129 p.53)
             under = "CTL" if op in optable._a.IO_FUNCTION_OPS else op
             if under in optable._a.IO_BASE_OPS and under + "SEOP" in optable.IO_OP:
                 return {"SEOP"}
