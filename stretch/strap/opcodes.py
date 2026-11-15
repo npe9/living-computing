@@ -108,6 +108,10 @@ VFL_INT_WRITTEN_MINUS = {
     "-MG": "+MG",
     "M-1": "M+1",
     "M-":  "M+",
+    # C28-6129 Appendix A p.44 "V M-MG 3 Subtract Magnitude from Memory",
+    # Appendix C p.49 "M-MG R=m-a": M+MG with the invert bit, as -MG is
+    # +MG with it.
+    "M-MG": "M+MG",
 }
 
 # ---------------------------------------------------------------------

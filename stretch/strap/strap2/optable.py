@@ -98,6 +98,7 @@ def _fixed(name, secondary=()):
 
 def lookup(op, mode=None, secondary=()):
     """BOPSER and MIBA together: the entry for op, or None if illegal."""
+    op, secondary = _a.ibm_spelling(op, list(secondary))
     key = (op, mode, tuple(secondary))
     if key not in _cache:
         _cache[key] = _build(op, mode, list(secondary))
@@ -212,6 +213,7 @@ def _vfl_or_fp(op, mode, secondary):
             fp_base, abss, inv = sm
         if fp_base not in FP_CODES:
             return None
+        inv |= invert            # a bare "-": "+" with N (strap_asm's FP note)
         family = (sm or (base,))[0]
         if mode:
             u = 1 if mode == "U" else 0

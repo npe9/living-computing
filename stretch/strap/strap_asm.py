@@ -1234,6 +1234,8 @@ def parse_statement_text(text, lineno=None):
     if op and op.startswith('$') and len(op) > 1 and (op[1].isalpha()
                                                       or op[1] in '+-*/'):
         op = op[1:]
+    if op:
+        op, mods = ibm_spelling(op, mods)
     # `entry` rather than None: it is None for an ordinary statement
     # anyway, and a NUMERIC entry mode reaches here (see the note
     # above) and must keep its radix for entry_radix to find.
@@ -1568,6 +1570,49 @@ def entry_table(stmt):
 # Compare E+I / E+AI / E-I / E-AI in strip_fp_sign, the family whose
 # modifier letters already sit inside the mnemonic.  Only spellings a
 # PAGE actually prints belong here; "*I+" has two witnesses.
+# IBM'S PRINTED SPELLINGS OF OPERATIONS THIS ASSEMBLER WRITES ANOTHER WAY.
+#
+# C28-6129 (the STRAP-II Reference Manual) prints its whole operation set:
+# Appendix A pp.44-45, Appendix C pp.47-53 (every modified form written
+# out), and the April 1963 newsletter N28-1081 bound into it; the guide
+# C22-6729 prints its own Appendix B on pp.195-196.  This assembler's
+# grammar puts the sign modifiers after the operation ("*+A", "+MGN");
+# IBM puts them where Appendix C prints them ("*A+", "+NMG").  Each row
+# below is a printed spelling and the spelling here that assembles to
+# the same bits; tests/check_ibm_spellings.py assembles both.
+#   *A+ *N+ *NA+   C28-6129 p.48 (FP), p.44 "V *N+"; *NI+ p.49 note 1
+#   +NMG D+NMG M+NMG   N28-1081 p.12
+#   CBZR and its + - H   p.51 "CBRZ or CBZR", p.44
+#   SU    p.53 "LOC = SU", p.44 "Select Unit (same as Locate)"
+#   NOPRINT, PUNSYN   the guide's App. B p.195 ("PUNSYN(or PUNSYM)");
+#         PRNNOR   N28-1081 p.9.  The guide's text writes NOPRNT and
+#         PRNOR, which is what this assembler has.
+# And an I-O operation with SEOP written into its name, "SPFLSEOP": the
+# guide's App. B p.196 and N28-1081 pp.10-11 print these as operations of
+# their own (eight characters at most, App. B footnote 2), where MCP writes
+# SPFL(SEOP).  Both mean the operation with the SEOP secondary.
+# The 7030 STRAP II's table holds each printed spelling as its own entry
+# (MBSPEC, p.93, swaps only keypunch-confusable characters).
+IBM_SPELLING = {
+    "*A+": "*+A", "*N+": "*+N", "*NA+": "*+NA", "*NI+": "*+NI",
+    "+NMG": "+MGN", "D+NMG": "D+MGN", "M+NMG": "M+MGN",
+    "CBZR": "CBRZ", "CBZR+": "CBRZ+", "CBZR-": "CBRZ-", "CBZRH": "CBRZH",
+    "SU": "LOC",
+    "NOPRINT": "NOPRNT", "PUNSYN": "PUNSYM", "PRNNOR": "PRNOR",
+}
+
+
+def ibm_spelling(op, mods):
+    """(op, mods) with a printed IBM spelling rewritten to this file's."""
+    u = op.upper()
+    if u.endswith("SEOP") and len(u) > 4:
+        base = IBM_SPELLING.get(u[:-4], u[:-4])
+        if (base in IO_FUNCTION_OPS or base in ("LOC", "REW")) \
+                and "SEOP" not in [m.strip().upper() for m in mods]:
+            return base, list(mods) + ["SEOP"]
+    return IBM_SPELLING.get(u, op), mods
+
+
 VFL_INFIX_IMMEDIATE = {
     "*I+": "*+I",
 }
@@ -1697,6 +1742,12 @@ def strip_fp_sign(op):
         return ("SRT", 0, 1)
     if op == "SNRTA":
         return ("SRT", 1, 1)
+    # "-A", C28-6129 Appendix C p.47 "-A  a-|m| -> a", is the same
+    # shape with the bare operation: "+" with both modifiers, as M-A,
+    # D-A, E-A and F-A are their "+" forms with both.  No listing
+    # prints it yet; the rule is the family's, measured six times above.
+    if op == "-A":
+        return ("+", 1, 1)
     if op == "M-":
         return ("M+", 0, 1)
     if op == "M-A":
@@ -1910,6 +1961,13 @@ def classify_vfl_or_fp(stmt):
     if base_op == '-I':
         base_op, invert, immediate = VFL_INT_MINUS_BASE, 1, True
     if base_op not in VFL_INT_CODES and base_op.endswith('I') and base_op[:-1] in VFL_INT_CODES:
+        base_op, immediate = base_op[:-1], True
+    # -MGI and M-MGI: C28-6129 Appendix A prints V -MG and V M-MG with
+    # footnote 3, "may be suffixed by the letter 'I' to invoke immediate
+    # addressing".  The I comes off here; the written-minus rewrite in
+    # the VFL branch below then makes them +MG and M+MG with the invert
+    # bit.  Only the two MG forms: M-1 and M- carry no footnote 3.
+    if base_op in ('-MGI', 'M-MGI'):
         base_op, immediate = base_op[:-1], True
 
     has_dds = bool(dds_mods) and dds_mods[0].strip() != ''
@@ -4396,6 +4454,17 @@ def emit_statement(stmt, symtab, image):
         sm = strip_fp_sign(base_op)
         if sm is not None:
             fp_base, absSign, invSign = sm
+        # >>> A BARE "-" IS "+" WITH THE INVERT BIT, IN FLOATING POINT
+        # TOO. <<<  classify_vfl_or_fp turns "-" into base "+" with
+        # invert=1, and until 2026-11-15 only the VFL branch used it:
+        # "-(N),X" assembled to exactly "+(N),X", wrong output and no
+        # error.  C28-6129 Appendix C p.47 gives FP "- a-m -> a" beside
+        # "+ a+m -> a", and the N modifier negates the storage operand,
+        # so "-" is "+N" -- as M-, D-, F- and E- are their "+" forms
+        # with N (strip_fp_sign, each measured on jb_af1c).  No listing
+        # in the corpus prints a bare FP subtract, which is how it hid.
+        # Found by tests/check_ibm_spellings.py's controls.
+        invSign |= invert
         base, paren = split_field_trailing_paren(stmt.fields[0])
         idx = eval_reg(paren, symtab, stmt.lineno)
         if fp_base in ("E+I", "SHF") and (base.strip()[:1] in "+-"

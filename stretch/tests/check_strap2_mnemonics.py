@@ -37,15 +37,17 @@ except the blank null op (C28-6129 p.6), CBRZ+ CBRZ- CBRZH
 decks use (*+A *+N *+NA in fp_arith_f216b.strap, whose listing prints *A *N
 *NA; +MGN and M+MGN in add_family_signs.strap).
 
-INJECTIONS, measured 2026-11-15 (control: nothing fails, before and after;
-each reverted from a saved copy and checked with cmp):
+INJECTIONS, re-measured 2026-11-15 after the host took IBM's spellings
+(control: nothing fails, before and after; each reverted from a saved
+copy and checked with cmp):
   a p.44 row dropped (F KMGR)        -> 1: the C28-6129 vs C22-6531 check
   a footnote misread (V KR 4 -> -)   -> 1: the same
   optable.py drops PRNOR             -> 2: "every printed name the host
-                                        refuses is bucketed ['PRNOR']" and the
+                                        refuses is bucketed ['PRNNOR', ...]"
+                                        (N28-1081's spelling of it) and the
                                         guide's App. B check
-  optable.py gains NOPRINT           -> 1: "every REFUSED name is still
-                                        refused ['NOPRINT']"
+  strap_asm's IBM_SPELLING loses     -> 2: the same two checks, ['NOPRINT']
+    NOPRINT
   an App. C row dropped (FP KMGRNA)  -> 1: the row count check
 A dropped row that another witness also prints (KMGR is in App. C) is caught
 only by the row checks, which is why they are there.
@@ -119,16 +121,16 @@ for g, m, n in ROWS_G:
     add(m, "G:" + g)
 
 
-def kind_of(srcs):
-    for s in sorted(srcs):
+def kinds_of(srcs):
+    """The types a name is printed as: V (VFL or connective), F (floating
+    point), S (secondary), or - (anything else).  A name printed both ways
+    (L, +, *, ...) must be accepted both ways."""
+    out = set()
+    for s in srcs:
         g = s.split(":")[1]
-        if g in VFLISH:
-            return "V"
-        if g in FPISH:
-            return "F"
-        if g == "SECONDARY":
-            return "S"
-    return "-"
+        out.add("V" if g in VFLISH else "F" if g in FPISH else
+                "S" if g == "SECONDARY" else "-")
+    return out
 
 
 def look(op, mode=None, sec=()):
@@ -143,12 +145,13 @@ def accepted(name, kind):
         return look("RD", None, ("SEOP",)) is not None
     if kind == "S":
         return any(look(p, None, (name,)) for p in ("CW", "RD", "W"))
-    ctx = [(None, ())]
     if kind == "V":
-        ctx = [("BU", ()), (None, ())]
+        e = look(name, "BU")
+        return e is not None and e.kind in ("vfl", "conn")
     if kind == "F":
-        ctx = [("N", ()), (None, ())]
-    return any(look(name, m, s) for m, s in ctx)
+        e = look(name, "N")
+        return e is not None and e.kind == "fp"
+    return look(name) is not None
 
 
 def host_names():
@@ -178,31 +181,23 @@ def host_names():
 
 
 REFUSED = {
-    # The same operation in another spelling, which the host does accept.
-    # IBM's spelling is the one that goes in the 7030 table once the host
-    # takes it; the host's spelling stays only where a listing prints it.
-    "ORDER": {
-        "*A+", "*N+", "*NA+", "*NI+",           # host: *+A *+N *+NA *+NI
-        "+NMG", "-NMG", "D+NMG", "D-NMG",       # host: +MGN ... (N after MG)
-        "M+NMG", "M-NMG",
-        "CBZR", "CBZR+", "CBZR-", "CBZRH",      # p.51 "CBRZ or CBZR"
-        "SU", "SUSEOP",                         # p.53 "LOC = SU"
-        "BSSEOP", "BSFLSEOP", "ECCSEOP", "ERGSEOP", "EVENSEOP", "GONGSEOP",
-        "HDSEOP", "LDSEOP", "ODDSEOP", "RLFSEOP", "RLNSEOP", "SPSEOP",
-        "SPFLSEOP", "WEFSEOP", "REWSEOP",       # host: op(SEOP)
-    },
-    # A pseudo-operation's other spelling: guide App. B prints NOPRINT and
-    # "PUNSYN (or PUNSYM)", its text (pp.27, 34, 36) NOPRNT; N28-1081 prints
-    # PRNNOR where the guide prints PRNOR.  The host has NOPRNT, PUNSYM, PRNOR.
-    "PSEUDO_SPELLING": {"NOPRINT", "PUNSYN", "PRNNOR"},
-    # A sign or immediate form whose encoding the Reference Manual fixes and
-    # the host lacks: the host takes "+N" but not "-N", "+A" but not "-A".
-    "SIGN_GAP": {"-A", "-N", "-NA", "D-N", "D-NA", "E-N", "E-NA", "F-N",
-                 "F-NA", "M-N", "M-NA", "-MGI", "M-MGI"},
+    # (Until 2026-11-15 three more buckets were here -- ORDER, the same
+    # operation in IBM's spelling where the host wrote another, *A+ CBZR SU
+    # SPFLSEOP ...; PSEUDO_SPELLING, NOPRINT PUNSYN PRNNOR; and SIGN_GAP,
+    # -A M-MG -MGI M-MGI.  strap_asm's IBM_SPELLING and its sign rules now
+    # take them; tests/check_ibm_spellings.py assembles each both ways.)
+    # N28-1081 p.12's FP "double negatives".  "-" is already "+" with the
+    # one invert-sign bit set (jb_af1c), and no page read says whether STRAP
+    # cancels a second N or keeps one: no bits until a listing prints one.
+    # -NMG D-NMG M-NMG likewise: -MG is +MG with the invert bit (the host's
+    # VFL -MG and +MGN have one skeleton).
+    "DOUBLE_NEGATIVE": {"-N", "-NA", "D-N", "D-NA", "E-N", "E-NA", "F-N",
+                        "F-NA", "M-N", "M-NA", "-NMG", "D-NMG", "M-NMG"},
     # Printed on N28-1081 p.12 and read as printed, meaning not settled:
     # "LNFI, LWFNI" under Load with Flag Bits (LWFI?), "M+N1, M-N1" under
-    # Add One to Memory.
-    "UNREAD": {"LNFI", "M+N1", "M-N1"},
+    # Add One to Memory, and VFL "+MGA" under Add to Magnitude (VFL has no
+    # absolute-sign modifier; FP +MGA is accepted).
+    "UNREAD": {"LNFI", "M+N1", "M-N1", "+MGA"},
     # No machine code in any witness yet (docs/mcp_tape_manufacture.md's
     # two-witness rule): the I-O function family, and N28-1081's "New
     # Instruction" Store/Load Multiply Register.  Lead for STM: MCP printed
@@ -210,6 +205,9 @@ REFUSED = {
     "CODE_UNKNOWN": {"BS", "BSFL", "ECC", "ERG", "EVEN", "HD", "KLN", "LD",
                      "NOECC", "ODD", "ODDECC", "ODDNEC", "RLF", "RLN",
                      "RWDUNL", "SP", "TILF", "WEF", "CRDRUN", "CRDRUNSEOP",
+                     "BSSEOP", "BSFLSEOP", "ECCSEOP", "ERGSEOP", "EVENSEOP",
+                     "HDSEOP", "LDSEOP", "ODDSEOP", "RLFSEOP", "RLNSEOP",
+                     "SPSEOP", "WEFSEOP",
                      "STM", "STMA", "STMN", "STMNA", "LMR", "LMRA", "LMRI",
                      "LMRN", "LMRNA", "LMRNI"},
 }
@@ -267,7 +265,8 @@ check(not any(n in printed for n in allext),
       "no EXTRA name is printed")
 
 # 3. Printed -> host.
-refused = {n for n, s in printed.items() if not accepted(n, kind_of(s))}
+refused = {n for n, s in printed.items()
+           if not all(accepted(n, k) for k in kinds_of(s))}
 unclassified = sorted(refused - set(allref))
 stale = sorted(set(allref) - refused)
 check(not unclassified, "every printed name the host refuses is bucketed %s" % unclassified)
@@ -285,8 +284,8 @@ check(not stale, "every EXTRA name is still accepted %s" % stale)
 #    table of operations holds these, so the 7030 table must.
 guide = {m for g, m, n in ROWS_G if g != "SECONDARY"}
 gmiss = sorted(n for n in guide if n in refused)
-check(set(gmiss) <= REFUSED["CODE_UNKNOWN"] | REFUSED["ORDER"] | REFUSED["PSEUDO_SPELLING"],
-      "the guide's App. B misses only code-unknown, order and spelling names (%d)" % len(gmiss))
+check(set(gmiss) <= REFUSED["CODE_UNKNOWN"],
+      "the guide's App. B misses only names with no known code (%d)" % len(gmiss))
 
 print()
 print("printed %d, host %d, agree %d; refused %d, extra %d" % (

@@ -1657,6 +1657,7 @@ run "STRAP II vle table (host): every deck's walks by its lengths, expressions i
 run "The 7030 STRAP II on the model: TABMAN SEARCH, ADDORD, ADDUNO, ANEXT, RSERCH against the host TABMAN (step 3b)" python3 check_strap2_7030_tabman.py
 run "The 7030 STRAP II on the model: BOPSER on SYSTAB, every name and 30 misses, against strap2/bopser.py (step 4a)" python3 check_strap2_7030_bopser.py
 run "STRAP II mnemonics: IBM's printed operation set (C28-6129 Apps. A, C; N28-1081; the guide's App. B) against the host table, both ways" python3 check_strap2_mnemonics.py
+run "STRAP II takes IBM's spellings (*A+, +NMG, CBZR, SU, xxxSEOP, -A, NOPRINT; App. C pp.47-53, N28-1081) and FP \"-\" keeps its sign" python3 check_ibm_spellings.py
 run "STRAP II against the listing oracles and strap_asm's images" python3 check_strap2_oracles.py
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<
