@@ -1840,6 +1840,43 @@ def strip_fp_sign(op):
 
 
 def classify_vfl_or_fp(stmt):
+    """_classify_vfl_or_fp, with the combinations no instruction
+    word can hold refused by name.  Each assembled, without an error, to
+    a word that dropped half of what was written.
+
+    Reference Manual printed p.21, read in the ink 2026-11-15: "In
+    variable-field-length instructions, the field P, bits 32-34, is
+    available to specify the choice between address modification and
+    progressive indexing.  The codes 0 and 4 in the field P indicate
+    standard address modification.  The codes 1-3 and 5-7 indicate
+    progressive indexing", and code 4 is the immediate mode.  So:
+      - a floating-point (half-word) instruction has no field P, and
+        "+(V+I)(N)" assembled to exactly the word of "+(N)" (refused by
+        secondary_error, below, with every other misplaced secondary);
+      - immediate addressing and a progressive secondary share the one
+        field, and "LI(V+IC)(BU,8),5" packed 5 as an immediate operand
+        under P = 2;
+      - a connective under an explicit N or U dds was refused only at
+        emit time ("unknown VFL mode"), so the STRAP II host's op table
+        accepted it.  (An N or U INHERITED from the operand symbol is a
+        different case, witnessed on MCP printed p.267; it is untouched.)
+    """
+    r = _classify_vfl_or_fp(stmt)
+    kind, base_op, invert, immediate, p_progressive, dds_mods, conn = r
+    if p_progressive is not None and immediate:
+        raise AssemblerError(
+            f"{stmt.op}: immediate addressing and a progressive-indexing "
+            f"secondary op (Reference Manual printed p.21: both are codes "
+            f"of the one field P)", stmt.lineno)
+    if (kind == 'CONN' and dds_mods and dds_mods[0].strip()
+            and dds_mods[0].split(',')[0].strip().upper() in ('N', 'U')):
+        raise AssemblerError(
+            f"{stmt.op}: a connective with a floating-point data "
+            f"description", stmt.lineno)
+    return r
+
+
+def _classify_vfl_or_fp(stmt):
     """Returns ('VFL'|'FP'|'CONN'|None, base_op, invert, immediate,
     p_progressive, dds_mods, conn).
 
@@ -2456,6 +2493,9 @@ def statement_size(stmt, symtab=None):
         # operation, whose sizing is dispatched further down.
         return 0, 0
     op = stmt.op.upper()
+    _se = secondary_error(op, stmt.mods)
+    if _se is not None:
+        raise AssemblerError(f"{stmt.op}: {_se}", stmt.lineno)
     if op == '':
     # >>> A NULL OPERATION FIELD.  C22-6531 printed p.7, under the
     # twelve symbolic instruction formats:
@@ -3491,6 +3531,60 @@ def apply_parenthetical_entries(stmt, symtab, image):
         # is compiled as the complement, re 2**(n+1), of the magnitude
         # of the number."  Masking is both of those.
         image.or_into(stmt.addr, n + 1, val & ((1 << (n + 1)) - 1))
+
+
+def secondary_error(op, mods, kind=None):
+    """The secondary operation written on a statement, checked against the
+    operation it is written on.  Returns None, or the reason it is
+    illegal.  kind is classify_vfl_or_fp's kind when the caller has it.
+
+    C22-6729 printed p.22, read in the ink 2026-11-15: an entry in the
+    secondary op table "contains a special leading 8-bit byte code number
+    to identify the type of instruction which may have this secondary op
+    ... Thus the cases, such as -- + (BU, 3) (SEOP) and CW (V + I) -- are
+    illegal, although in each instance the primary op does allow a
+    secondary op."  Three families of secondary op exist, each for one
+    family of operation, and nothing else takes one:
+      V+I V+IC V+ICR V-I V-IC V-ICR   VFL and connective operations only
+                                      (Reference Manual printed p.21,
+                                      field P "in variable-field-length
+                                      instructions")
+      SEOP                            the I-O operations with an SEOP
+                                      form (N28-1081's I-O rows; the
+                                      host's IO_OP)
+      CR CCR CD CDSC SCR SCCR SCD     CW only (N28-1081's secondaries,
+      SCDSC                           C22-6729 Fig. 24 p.192: "100 for a
+                                      secondary op in the CW instruction")
+    and one statement takes at most one (STRAP II message 4, "MORE THAN
+    ONE SECONDARY OP", C22-6729 p.178).  MEASURED 2026-11-15: before
+    this, "B(CCR)", "XW(CD)", "LX(SEOP)", "RD(CCR)" and "RD(V+I)" each
+    assembled, without an error, to the word with the secondary dropped,
+    and the STRAP II host's op table took any secondary on any op.  The
+    corpus writes every secondary on an op of its own family.
+    """
+    secs = [m.strip().upper() for m in mods
+            if m.strip().upper() in PROGRESSIVE_SECONDARY_OP
+            or m.strip().upper() == 'SEOP'
+            or m.strip().upper() in CW_SECONDARY]
+    if not secs:
+        return None
+    if len(secs) > 1:
+        return f"more than one secondary op ({', '.join(secs)})"
+    sec = secs[0]
+    if sec in CW_SECONDARY:
+        return None if op == 'CW' else f"{sec} is a secondary op of CW only"
+    if sec == 'SEOP':
+        ok = op in IO_FUNCTION_OPS or (op in IO_BASE_OPS and op + 'SEOP' in IO_OP)
+        return None if ok else f"{op} has no SEOP form"
+    if kind is None:
+        try:
+            kind = _classify_vfl_or_fp(
+                type('S', (), {'op': op, 'mods': list(mods), 'lineno': None})())[0]
+        except AssemblerError:
+            kind = None
+    if kind in ('VFL', 'CONN'):
+        return None
+    return f"{sec} is a secondary op of VFL and connective operations only"
 
 
 def emit_statement(stmt, symtab, image):

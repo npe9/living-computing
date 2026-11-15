@@ -101,7 +101,10 @@ def lookup(op, mode=None, secondary=()):
     op, secondary = _a.ibm_spelling(op, list(secondary))
     key = (op, mode, tuple(secondary))
     if key not in _cache:
-        _cache[key] = _build(op, mode, list(secondary))
+        # A secondary on an op that does not take it is illegal (message
+        # 2 or 4); strap_asm.secondary_error is the one rule for both.
+        bad = _a.secondary_error(op.upper(), ([mode] if mode else []) + list(secondary))
+        _cache[key] = None if bad else _build(op, mode, list(secondary))
     return _cache[key]
 
 
