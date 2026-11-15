@@ -31,9 +31,22 @@ characters keeps the rest there (p.44's third form).
   Placement, CHOSEN: the vle table builds up from bit 64 as before; the
   universal block, the control block and the dictionary sit at 2^23, and
   the vle table may not reach them.
-  Coded expressions (store_coded) are still blocks with no vle head, taken
-  from the same Auvtab, so ANEXT cannot step over them: OPEN, Fig. 22 gives
-  the function as "231 minimum", which suggests they belong inside it.
+  Coded expressions live in vles, so the vle table walks by its length
+  fields from Auvbot to Auvtab (step 3c-iii, 2026-11-15).  p.13 (read in
+  the ink): the vle "contains ... information about the symbol such as its
+  data description, and its value or the coded expression of the value of
+  the symbol", and a special symbol's coded expression "built up in the
+  vle"; Fig. 22 gives the function as "231 minimum".  So a symbol's
+  coded expressions (value, symbolic f.l. and b.s.) follow its fixed
+  function fields, in its own vle (extend), and ZEXPR, ZFLX and ZBSX point
+  inside it.  CHOSEN: the vle grows while its card block is processed,
+  which needs it to be the last vle; anything else is refused.  Dimension
+  fields are a D vle of their own (p.13: "any dimension entry made in
+  addition to its corresponding regular symbol table entry for a name on
+  a DR, DRZ, or SYN"; Fig. 22's "evaluated dimension entry": 5 bits, an
+  evaluation indicator, the products).  CHOSEN: before evaluation the
+  5 bits hold the number of dimensions, the indicator is 0, and the
+  dimension fields' coded expressions follow from bit 32.
   The host still keeps st.vles (ANEXT's order) and name_of (RSERCH's
   answer) beside the table.
 """
@@ -174,8 +187,9 @@ class SymbolTable:
         codes += [int(rest[i:i + 8], 2) for i in range(0, len(rest), 8)]
         return "".join(_CHAR[c] for c in codes)
 
-    def _made(self, f, name, kind):
+    def _made(self, f, name, kind, v):
         self._check_room()
+        self._last = (v, f)
         self.vles.append(f)
         self.name_of[f] = name
         self.put(f, "ZKIND", kind)
@@ -196,10 +210,11 @@ class SymbolTable:
             raise SymbolError("ADDORD on the symbol table after ADDUNO marked it "
                               "unordered (p.49)")
         arg, al = argument(name)
+        v = self.t.auvtab
         got = self.t.addord(CB, arg, al, 0, FUNCTION_BITS)
         if got == "already there":
             return self._fx(), True
-        return self._made(self._fx(), name, kind), False
+        return self._made(self._fx(), name, kind, v), False
 
     def _vle(self, name):
         """A vle with no new dictionary entry: the name's rest, then the
@@ -217,12 +232,13 @@ class SymbolTable:
         e = self.mem.get(CB + 64, 24)                       # DX
         v, f = self._vle(name)
         self.mem.put_signed(e + 2 + DICT_AL, DICT_ADDL, v)
-        return self._made(f, name, kind)
+        return self._made(f, name, kind, v)
 
     def orphan(self, name, kind):
         """MULTI's contradictory case: a basic vle, dictionary unchanged (p.127,
         chart RE boxes 2-3)."""
-        return self._made(self._vle(name)[1], name, kind)
+        v, f = self._vle(name)
+        return self._made(f, name, kind, v)
 
     def special(self):
         """A new special symbol, ADDUNO, unordered (p.13, Fig. 21).
@@ -234,18 +250,50 @@ class SymbolTable:
         if self.count_y >= 1 << 16:
             raise SymbolError("more special symbols than Fig. 21's 16-bit n")
         name = "\xff" + chr(self.count_y >> 8) + chr(self.count_y & 255)
+        v = self.t.auvtab
         self.t.adduno(CB, ((0xFF << 16) | self.count_y) << 40, DICT_AL, 0, FUNCTION_BITS)
         f = self._fx()
-        self.mem.put(f - 32 + 14, 6, A6_ID[Y])              # Fig. 22: Y
-        return self._made(f, name, KIND_SPECIAL)
+        self.mem.put(v + 14, 6, A6_ID[Y])                   # Fig. 22: Y
+        return self._made(f, name, KIND_SPECIAL, v)
 
-    def store_coded(self, s):
-        """A coded expression placed further out in the vle table."""
+    def extend(self, f, bits):
+        """A coded expression appended to the function of the vle just made
+        (the header).  Returns its address."""
+        v, last = getattr(self, "_last", (None, None))
+        if last != f or v + self.mem.get(v + 1, 13) != self.t.auvtab:
+            raise SymbolError("a coded expression for a vle that is not the last one")
+        total = self.mem.get(v + 1, 13) + len(bits)
+        if total >= 1 << 13:
+            raise SymbolError(f"a vle of {total} bits: Fig. 22's length field has 13")
         at = self.t.auvtab
-        self.mem.put_str(at, s)
-        self.t.auvtab = at + len(s)
+        self.mem.put_str(at, bits)
+        self.mem.put(v + 1, 13, total)
+        self.t.auvtab = at + len(bits)
         self._check_room()
         return at
+
+    def dimension(self, bits, n):
+        """A D vle holding n dimension fields' coded expressions (the header).
+        Returns the address of the first."""
+        v = self.t.new_vle(A6_ID[D], 0, 0, int(bits, 2) if bits else 0, len(bits))
+        self.mem.put(v + 20, 5, n)
+        self.mem.put(v + 25, 1, 0)                          # not yet evaluated
+        self._check_room()
+        return v + 32
+
+    def walk(self):
+        """The vle table by its length fields, Auvbot to Auvtab, as ANEXT
+        steps: [(address, ID)].  Refuses a table that does not walk."""
+        out, p = [], self.t.auvbot
+        while p < self.t.auvtab:
+            length = self.mem.get(p + 1, 13)
+            if length < 32:
+                raise SymbolError(f"the vle table does not walk: length {length} at {p}")
+            out.append((p, self.mem.get(p + 14, 6)))
+            p += length
+        if p != self.t.auvtab:
+            raise SymbolError("the vle table walks past Auvtab")
+        return out
 
     def get(self, f, name):
         off, w = FUNCTION[name]

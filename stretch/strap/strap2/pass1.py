@@ -378,7 +378,7 @@ class Pass1:
         st.put(f, "ZST1", 0)
         st.put(f, "ZSTCNT", self.check_digit)
         if kind == KIND_SYN:
-            st.put(f, "ZEXPR", self.syn_expr)
+            st.put(f, "ZEXPR", st.extend(f, self.syn_expr) if self.syn_expr else 0)
         self.named_of[unit] = f
         u.put(unit, ZIADSY, 0)
         # Box 49: what carries over from unit to entry [13, 25].
@@ -388,11 +388,11 @@ class Pass1:
             p = unit + FIXED_BITS
             if u.get(unit, ZIFSFL):
                 v = self.val.read_field(self.mem, p)
-                st.put(f, "ZFLX", self._copy_coded(p, v.next))
+                st.put(f, "ZFLX", st.extend(f, self._coded(p, v.next)))
                 p = v.next
             if u.get(unit, ZIFSBS):
                 v = self.val.read_field(self.mem, p)
-                st.put(f, "ZBSX", self._copy_coded(p, v.next))
+                st.put(f, "ZBSX", st.extend(f, self._coded(p, v.next)))
         elif entry.name in optable.FIXED_DATA:
             # strap_asm._INDEX_WORD_DDS, from C28-6129 p.18 ff.
             d = {"XW": dds13("BU", 0, 8), "VF": dds13("B", 25, 1),
@@ -414,7 +414,7 @@ class Pass1:
             end = p
             for _k in range(u.get(unit, ZINFLD)):
                 end = self.val.read_field(self.mem, end).next
-            st.put(f, "ZDIMX", self._copy_coded(p, end))
+            st.put(f, "ZDIMX", st.dimension(self._coded(p, end), u.get(unit, ZINFLD)))
             st.put(f, "ZDIMN", u.get(unit, ZINFLD))
         old = self.legal_old.get(f)
         if old and st.get(old, "ZST3"):
@@ -422,9 +422,9 @@ class Pass1:
             for k in ("ZDDS", "ZFLX", "ZBSX", "ZST3"):
                 st.put(f, k, st.get(old, k))
 
-    def _copy_coded(self, start, end):
-        s = self.mem.get_str(start, end - start)
-        return self.st.store_coded(s)
+    def _coded(self, start, end):
+        """A coded expression's bits, for the symbol table to place."""
+        return self.mem.get_str(start, end - start)
 
     def _multi(self, name, f, unit, kind):
         """MULTI, chart RE p.126 and text p.127.  Legal only when the new and the
@@ -455,14 +455,18 @@ class Pass1:
 
     def _values_equal(self, old):
         st = self.st
-        a, b = st.get(old, "ZEXPR"), self.syn_expr
-        if not a or not b:
+        a, bits = st.get(old, "ZEXPR"), self.syn_expr
+        if not a or not bits:
             return False
+        # The new expression is not in the table yet (its vle comes after
+        # this test), so it is read from a scratch copy.
+        scratch = BitMem()
+        scratch.put_str(64, bits)
         saved = self.val.flags
         va = self.val.read_field(st.mem, a)
-        vb = self.val.read_field(st.mem, b)
+        vb = self.val.read_field(scratch, 64)
         self.val.flags = saved
-        if st.mem.get_str(a, va.next - a) == st.mem.get_str(b, vb.next - b):
+        if st.mem.get_str(a, va.next - a) == bits[:vb.next - 64]:
             return True
         return va.avail and vb.avail and va.total == vb.total
 
@@ -571,7 +575,7 @@ class Pass1:
         u.put(unit, ZINFLD, n)
         self.iod_refs = getattr(self, "iod_refs", 0) + 1
         u.put(unit, ZILPMS, self.iod_refs)
-        self.syn_expr = self.st.store_coded(encode(_word_field(self.iod_refs)))
+        self.syn_expr = encode(_word_field(self.iod_refs))
         return self._wind_up(unit, e)
 
     def _pseudo(self, unit, e):
@@ -719,15 +723,15 @@ class Pass1:
         """MQS [121-122]: the dds and the address go to the symbol's vle."""
         g = self.g
         u = self.units
-        self.syn_expr = 0
+        self.syn_expr = ""
         if not g.named:
             self.msg.add(43, "SYN HAS NO NAME", unit)
         if g.ch == ",":
             x = self.getfld.field(nogp=True)
-            self.syn_expr = self.st.store_coded(encode(x))
+            self.syn_expr = encode(x)
         else:
             self.msg.add(44, "SYN HAS NO ADDRESS", unit)
-            self.syn_expr = self.st.store_coded(encode(_abs_field(0)))
+            self.syn_expr = encode(_abs_field(0))
         u.put(unit, ZIFP2, 0)
         u.put(unit, ZIFALL, 0)
 

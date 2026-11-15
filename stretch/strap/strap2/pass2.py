@@ -422,7 +422,7 @@ class Pass2:
             self.abs, self.sym = v.total, 0
         else:
             f = self.st.special()
-            self.st.put(f, "ZEXPR", addr_copy(self, addr, v.next))
+            self.st.put(f, "ZEXPR", self.st.extend(f, coded(self, addr, v.next)))
             self.abs, self.sym = 0, f
         if e.name == "SLC":
             self.hilo.append((self.abs, self.sym))
@@ -536,7 +536,7 @@ class Pass2:
         f = self.st.special()
         self.st.put(f, "ZABS", self.abs)
         self.st.put(f, "ZSYM", self.sym)
-        self.st.put(f, "ZDIMX", addr_copy(self, at, v.next))
+        self.st.put(f, "ZDIMX", self.st.dimension(coded(self, at, v.next), 1))
         self.st.put(f, "ZDIMN", 1)
         self.st.put(f, "ZFLM", u.get(unit, ZINFLD))
         self.abs, self.sym = 0, f
@@ -581,7 +581,7 @@ class Pass2:
         f = self.st.special()
         self.st.put(f, "ZABS", self.abs)
         self.st.put(f, "ZSYM", self.sym)
-        self.st.put(f, "ZDIMX", addr_copy(self, p, end))
+        self.st.put(f, "ZDIMX", self.st.dimension(coded(self, p, end), n))
         self.st.put(f, "ZDIMN", n)
         self.st.put(f, "ZFLM", fl or 64)
         self.abs, self.sym = 0, f
@@ -1476,5 +1476,6 @@ def _literal(n):
     return v
 
 
-def addr_copy(p2, start, end):
-    return p2.st.store_coded(p2.mem.get_str(start, end - start))
+def coded(p2, start, end):
+    """A coded expression's bits, for the symbol table to place."""
+    return p2.mem.get_str(start, end - start)
