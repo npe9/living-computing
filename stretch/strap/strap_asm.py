@@ -1973,7 +1973,50 @@ def classify_vfl_or_fp(stmt):
     has_dds = bool(dds_mods) and dds_mods[0].strip() != ''
     if has_dds:
         mode = dds_mods[0].split(',')[0].strip().upper()
+        # >>> AN OPERATION AND A DATA DESCRIPTION THAT DISAGREE: REFUSED,
+        # NOT GUESSED. <<<  C28-6129 printed p.7: "Cases can arise from
+        # programmer errors in which a data description and an operation
+        # are not mutually consistent (when the operation mnemonic
+        # specifies a floating point operation and the use mode in the
+        # data description is binary unsigned, for example).  In this
+        # case the operation overrules."  So SRT(BU) is a floating-point
+        # SRT -- but the page does not say what goes in its
+        # normalized/unnormalized bit, and two readings are live:
+        #   (a) the op's no-dds default (normalized; unnormalized for E,
+        #       E+I -- C22-6729 p.140 Box 5), as if no dds were written;
+        #   (b) the dds's own d bit (C22-6729 Fig. 25 p.193: d = 0 for
+        #       "unnormalized or unsigned", 1 for "normalized or
+        #       signed"), which makes BU and DU unnormalized.
+        # They differ exactly on BU and DU.  DECODE's message 91, "MODE
+        # INCONSISTENT WITH OP" (p.178), is the likely flag, but the
+        # guide never says where it is raised.  No printed row is a
+        # witness: the two "DL(BU," rows in the listing reading (MCP
+        # printed p.188 line 8, p.368 line 32) are "K IO IND L(BU,2)"
+        # and "Z CONV C L(BU,64)" in the ink -- a name ending in D.
+        # Before this check both directions raised a bare KeyError.
+        _fp_only = (base_op not in VFL_INT_CODES and
+                    (base_op in FP_CODES or
+                     (strip_fp_sign(base_op) is not None and
+                      strip_fp_sign(base_op)[0] not in VFL_INT_CODES)))
+        _vfl_only = (base_op in VFL_INT_CODES and base_op not in FP_CODES
+                     and strip_fp_sign(base_op) is None)
+        if mode in MODE_BITS and _fp_only:
+            raise AssemblerError(
+                f"{op}({mode}...): a floating-point operation with a VFL "
+                f"data description; C28-6129 p.7 says the operation "
+                f"overrules but not what is compiled -- write (N) or (U)",
+                stmt.lineno)
+        if mode in ('N', 'U') and _vfl_only:
+            raise AssemblerError(
+                f"{op}({mode}): a VFL operation with a floating-point "
+                f"data description; C28-6129 p.7 says the operation "
+                f"overrules but not what is compiled -- write a VFL dds",
+                stmt.lineno)
         if mode in ('N', 'U'):
+            # An op that is neither falls through to the caller's
+            # "unknown mnemonic" (it raised KeyError here before).
+            if base_op not in FP_CODES and strip_fp_sign(base_op) is None:
+                return None, base_op, invert, immediate, p_progressive, dds_mods, None
             return 'FP', base_op, invert, immediate, p_progressive, dds_mods, None
         if mode in MODE_BITS:
             # THE N AND NI SUFFIXES, C22-6531 Appendix A footnote 4,
@@ -2033,6 +2076,8 @@ def classify_vfl_or_fp(stmt):
             # VFL_INT_WRITTEN_MINUS.
             if base_op in VFL_INT_WRITTEN_MINUS:
                 base_op, invert = VFL_INT_WRITTEN_MINUS[base_op], 1
+            if base_op not in VFL_INT_CODES:     # unknown: the caller says so
+                return None, base_op, invert, immediate, p_progressive, dds_mods, None
             return 'VFL', base_op, invert, immediate, p_progressive, dds_mods, None
         raise AssemblerError(f"unknown data-description mode {mode!r}", stmt.lineno)
 
