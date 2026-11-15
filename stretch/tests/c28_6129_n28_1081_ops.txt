@@ -1,0 +1,194 @@
+# IBM Technical Newsletter N28-1081 (April 15, 1963), the update bound into
+# C28-6129 (PDF pp.59-78), read in the ink at 200 dpi on 2026-11-15.
+#   Its pages 9-11 (PDF 67-69): "REVISED APPENDIX B - Pseudo-Operation List.
+#   The following information should replace Appendix B: Additional
+#   Instructions and Pseudo-Ops Accepted as STRAP II PRIMARY OPERATIONS".
+#   Its page 12 (PDF 70): "ADDITIONS TO APPENDIX C - Instruction Mnemonics".
+#   Its page 20 (PDF 78), errata: printed p.43 gains "$ INF 12 (infinity)";
+#   p.46 (the old Appendix B) "is not up to date"; Appendix C likewise.
+# Columns: Group, Mnemonic, Name (- where the page gives none).
+# Groups: PSEUDO, GENERAL ("General Instructions"), MCP ("MCP Instructions"),
+# IO ("Input-Output Instructions: OP, A7(I) where A7(I) represents a channel
+# address and the unit affected is the last unit selected by a LOC
+# instruction"), IOSEOP (the indented xxxSEOP rows under each IO name),
+# SECONDARY ("SECONDARY OPERATIONS"), and from page 12: ADDFP, ADDVFL, ADDIO,
+# NEWINSTR, each row one mnemonic of the "include" column.
+# Page 12 prints the connectives as CIX1X2X3X4 and CTIX1X2X3X4; written here as
+# CI#### and CTI#### (four binary digits).  Its I-O rows are printed
+# "CRDRUN (SEOP)" and "REW (SEOP)", kept as printed.
+# --- page 9
+PSEUDO	COMBLOCK	Common Block Definition
+PSEUDO	CNOP	Conditional No Operation
+PSEUDO	DDI	Data Definition Immediate
+PSEUDO	DR	Data Reservation
+PSEUDO	DRZ	Data Reservation and Set to Zero
+PSEUDO	DUPLI	Duplicate Input
+PSEUDO	END	End
+PSEUDO	ENTER	Define Entry Point
+PSEUDO	EXT	Extract
+PSEUDO	FEND	FORTRAN End
+PSEUDO	LINK	Link
+PSEUDO	NOPRNT	No Printing of Listing
+PSEUDO	NOPUN	Binary Output Suppressed, Both Cards and Disk
+PSEUDO	NOSEQ	No Sequence Number to be Punched in Binary Card(s)
+PSEUDO	ORIGIN	Origin
+PSEUDO	PRND	Print Double-Spaced
+PSEUDO	PRNID	Print ID
+PSEUDO	PRNNOR	Print Normally
+PSEUDO	PRNS	Print Single-Spaced
+PSEUDO	PRNTALL	Print All Symbol(s) Used in Program
+PSEUDO	PUNALL	Punch SYN Card(s) for All Symbol(s)
+PSEUDO	PUNCDC	Punch Common Definition Card
+PSEUDO	PUNFPC	Punch FORTRAN Program Card
+PSEUDO	PUNFUL	Punch Full Binary Card(s)
+PSEUDO	PUNID	Punch ID in Binary Card(s)
+PSEUDO	PUNNOR	Punch Normally
+PSEUDO	PUNORG	Punch Origin Binary Card(s)
+PSEUDO	PUNREL	Punch Relocatable Binary Card(s)
+PSEUDO	PUNSYM	Punch Syn Symbolic Card(s)
+PSEUDO	REM	Restore Error Message
+PSEUDO	REPEAT	Duplicate Input
+PSEUDO	RESEQ	Restore Punching Sequence Number in Binary Card(s)
+PSEUDO	SEM	Suppress Error Message
+PSEUDO	SKIP	Skip paper
+PSEUDO	SLC	Set Location Counter
+PSEUDO	SLCR	Set Location Counter Relative
+PSEUDO	SLCRCOM	Set Location Counter Relative to Common
+PSEUDO	SPNUS	Suppress Printing Not Used Symbol List
+PSEUDO	SYN	Synonym
+# --- page 10
+PSEUDO	TAIL	Tail
+PSEUDO	TLB	Terminate Loading and Branch
+PSEUDO	UNTAIL	Untail
+GENERAL	CF	Count Field
+GENERAL	CW	Control Word
+GENERAL	DD	Data Definition
+GENERAL	INDMK	Indicator Mask
+GENERAL	RF	Refill Field
+GENERAL	VF	Value Field
+GENERAL	XW	Index Word
+MCP	IOD	-
+MCP	REEL	-
+IO	BS	Backspace
+IOSEOP	BSSEOP	Backspace, Suppress End of Operation Interrupt
+IO	BSFL	Backspace File
+IOSEOP	BSFLSEOP	-
+IO	ECC	ECC (and odd parity for tape)
+IOSEOP	ECCSEOP	-
+IO	ERG	Erase Gap
+IOSEOP	ERGSEOP	-
+IO	EVEN	Even Parity No ECC (tape only)
+IOSEOP	EVENSEOP	-
+IO	GONG	Sound Gong
+IOSEOP	GONGSEOP	-
+IO	HD	High Density
+IOSEOP	HDSEOP	-
+IO	KLN	Check Light On
+IO	LD	Low Density
+IOSEOP	LDSEOP	-
+IO	NOECC	No ECC, EVEN Parity (tape only)
+IO	ODD	Odd Parity, No ECC
+IOSEOP	ODDSEOP	-
+IO	ODDECC	Odd Parity, ECC
+IO	ODDNEC	Odd Parity, No ECC
+IO	RLF	Reserved Light Off
+IOSEOP	RLFSEOP	-
+IO	RLN	Reserved Light On
+IOSEOP	RLNSEOP	-
+IO	RWDUNL	Rewind and Unload
+# --- page 11
+IO	SP	Space
+IOSEOP	SPSEOP	-
+IO	SPFL	Space File
+IOSEOP	SPFLSEOP	-
+IO	TILF	Tape Indicator Light Off
+IO	UNLOAD	Unload
+IO	WEF	Write End-of-File
+IOSEOP	WEFSEOP	-
+SECONDARY	CCR	Chain Counts within Record
+SECONDARY	CD	Count Disregarding Record
+SECONDARY	CDSC	Count Disregarding Record, Skip, and Chain
+SECONDARY	CR	Count within Record
+SECONDARY	SCCR	Skip, Chain Counts within Record
+SECONDARY	SCR	Skip
+SECONDARY	SCD	Skip, Count Disregarding Record
+SECONDARY	SCDSC	Skip, Count Disregarding Record, Skip, and Chain
+# --- page 12, Floating Point
+ADDFP	+N	Add
+ADDFP	-N	Add
+ADDFP	+NA	Add
+ADDFP	-NA	Add
+ADDFP	-A	Add
+ADDFP	M+N	Add to Memory
+ADDFP	M-N	Add to Memory
+ADDFP	M+NA	Add to Memory
+ADDFP	M-NA	Add to Memory
+ADDFP	F+N	Add to Fraction
+ADDFP	F-N	Add to Fraction
+ADDFP	F+NA	Add to Fraction
+ADDFP	F-NA	Add to Fraction
+ADDFP	E+N	Add to Exponent
+ADDFP	E-N	Add to Exponent
+ADDFP	E+NA	Add to Exponent
+ADDFP	E-NA	Add to Exponent
+ADDFP	D+N	Double Add
+ADDFP	D-N	Double Add
+ADDFP	D+NA	Double Add
+ADDFP	D-NA	Double Add
+ADDFP	D+NMG	Double Add to Magnitude
+ADDFP	D-NMG	Double Add to Magnitude
+ADDFP	M+NMG	Add Magnitude to Memory
+ADDFP	M-NMG	Add Magnitude to Memory
+# --- page 12, Variable Field Length
+ADDVFL	+I	Add
+ADDVFL	+NMG	Add to Magnitude
+ADDVFL	-NMG	Add to Magnitude
+ADDVFL	+MGA	Add to Magnitude
+ADDVFL	+MGI	Add to Magnitude
+ADDVFL	*I	Multiply
+ADDVFL	*NI	Multiply
+ADDVFL	/I	Divide
+ADDVFL	/NI	Divide
+ADDVFL	LI	Load
+ADDVFL	LNI	Load
+ADDVFL	LNFI	Load with Flag Bits
+ADDVFL	LWFNI	Load with Flag Bits
+ADDVFL	LFTI	Load Factor
+ADDVFL	LFTNI	Load Factor
+ADDVFL	LTRSI	Load Transit and Set
+ADDVFL	LTRSNI	Load Transit and Set
+ADDVFL	M+N1	Add One to Memory
+ADDVFL	M-N1	Add One to Memory
+ADDVFL	KI	Compare
+ADDVFL	KNI	Compare
+ADDVFL	KRI	Compare for Range
+ADDVFL	KRNI	Compare for Range
+ADDVFL	KEI	Compare If Equal
+ADDVFL	KENI	Compare If Equal
+ADDVFL	KFI	Compare Field
+ADDVFL	KFNI	Compare Field
+ADDVFL	KFRI	Compare Field for Range
+ADDVFL	KFRNI	Compare Field for Range
+ADDVFL	KFEI	Compare Field If Equal
+ADDVFL	KFENI	Compare Field If Equal
+ADDVFL	CI####	Connect to Accumulator
+ADDVFL	CTI####	Connect for Test
+ADDVFL	LFI	Pseudo-Connectives
+ADDVFL	LCVI	Load Converted
+ADDVFL	LCVNI	Load Converted
+ADDVFL	LTRCVI	Load Transit Converted
+ADDVFL	LTRCVNI	Load Transit Converted
+# --- page 12, Input-Output
+ADDIO	CRDRUN (SEOP)	Card Runout
+ADDIO	REW (SEOP)	Rewind
+# --- page 12, New Instruction
+NEWINSTR	STM	Store Multiply Register
+NEWINSTR	STMN	Store Multiply Register
+NEWINSTR	STMNA	Store Multiply Register
+NEWINSTR	STMA	Store Multiply Register
+NEWINSTR	LMR	Load Multiply Register
+NEWINSTR	LMRN	Load Multiply Register
+NEWINSTR	LMRNA	Load Multiply Register
+NEWINSTR	LMRNI	Load Multiply Register
+NEWINSTR	LMRA	Load Multiply Register
+NEWINSTR	LMRI	Load Multiply Register

@@ -1,0 +1,289 @@
+# C28-6129 Appendix C, "SYMBOLIC DESCRIPTIONS AND MNEMONICS FOR IBM 7030",
+# printed pp.47-53 (PDF 50-56), read in the ink at 200 dpi on 2026-11-15.
+# Every mnemonic the pages write out, in printed order, one per row.
+# Columns: Section (FP, VFL, CONN, INDEX, CB, BRANCH, BB, BIND, TRANSMIT,
+# MISC, IO), Mnemonic, Immediate ("I" where the row carries VFL's "(I)",
+# "Operations which can have an immediate operand are followed by (I),
+# except for *+"; - otherwise), Printed page.
+# The page's own words on the forms (p.47): "A specific title for each
+# mnemonic is not given in cases where the mnemonic is derived from the basic
+# operation by changing the sign and absolute modifiers."
+# Transcription notes:
+#  - p.49 prints the VFL Multiply Factor and Add pair as "*+" and "*N"; the
+#    second is written *N+ here (its symbolic description is -m.($FT)+a, and
+#    p.44 lists V *N+ "Multiply Negative and Add").  Its note 1: "Write: *I+
+#    and *NI+ for an immediate operand"; those two rows follow it, marked -
+#    because they are already the immediate spelling.
+#  - p.50 prints the connectives as Cx1x2x3x4, CMx1x2x3x4, CTx1x2x3x4 and the
+#    immediates CIx1x2x3x4, CTIx1x2x3x4: written C####, CM####, CT####,
+#    CI####, CTI####.  "LF = C0011", "SF = CM0101".
+#  - p.51 prints "CBRZ or CBZR"; both rows are here.  Its note: "the value
+#    field of J may be modified by placing +, -, or H after the above
+#    mnemonics" (CB+ CB- CBH are its example; the suffixed forms are not
+#    rows here).
+#  - p.51 BB/BZB "may have a suffix, Z, 1, or N"; the eight forms it prints
+#    are rows.  BIND and BZIND: "IND" is replaced by an indicator mnemonic
+#    (p.52 lists them) and a Z suffix may follow; MIBA's family, not rows.
+#  - p.53 "LOC(SEOP) RD(SEOP) W(SEOP) REL(SEOP) CTL(SEOP) SU(SEOP)" are
+#    written LOCSEOP etc. (the newsletter's own spelling of the same form).
+# --- p.47, FLOATING POINT OPERATIONS
+FP	+	-	47
+FP	-	-	47
+FP	+A	-	47
+FP	-A	-	47
+FP	M+	-	47
+FP	M-	-	47
+FP	M+A	-	47
+FP	M-A	-	47
+FP	F+	-	47
+FP	F-	-	47
+FP	F+A	-	47
+FP	F-A	-	47
+FP	E+	-	47
+FP	E-	-	47
+FP	E+A	-	47
+FP	E-A	-	47
+FP	E+I	-	47
+FP	E-I	-	47
+FP	E+AI	-	47
+FP	E-AI	-	47
+FP	SHF	-	47
+FP	SHFN	-	47
+FP	SHFA	-	47
+FP	SHFNA	-	47
+FP	SHFL	-	47
+FP	SHFR	-	47
+FP	D+	-	47
+FP	D-	-	47
+FP	D+A	-	47
+FP	D-A	-	47
+FP	+MG	-	47
+FP	-MG	-	47
+FP	+MGA	-	47
+FP	-MGA	-	47
+FP	D+MG	-	47
+FP	D-MG	-	47
+FP	D+MGA	-	47
+FP	D-MGA	-	47
+FP	M+MG	-	47
+FP	M-MG	-	47
+FP	M+MGA	-	47
+FP	M-MGA	-	47
+FP	*	-	47
+FP	*N	-	47
+FP	*A	-	47
+FP	*NA	-	47
+FP	D*	-	47
+FP	D*N	-	47
+FP	D*A	-	47
+FP	D*NA	-	47
+# --- p.48
+FP	*+	-	48
+FP	*N+	-	48
+FP	*A+	-	48
+FP	*NA+	-	48
+FP	/	-	48
+FP	/N	-	48
+FP	/A	-	48
+FP	/NA	-	48
+FP	R/	-	48
+FP	R/N	-	48
+FP	R/A	-	48
+FP	R/NA	-	48
+FP	D/	-	48
+FP	D/N	-	48
+FP	D/A	-	48
+FP	D/NA	-	48
+FP	SRT	-	48
+FP	SNRT	-	48
+FP	SRTA	-	48
+FP	SNRTA	-	48
+FP	L	-	48
+FP	LN	-	48
+FP	LA	-	48
+FP	LNA	-	48
+FP	DL	-	48
+FP	DLN	-	48
+FP	DLA	-	48
+FP	DLNA	-	48
+FP	LWF	-	48
+FP	LWFN	-	48
+FP	LWFA	-	48
+FP	LWFNA	-	48
+FP	DLWF	-	48
+FP	DLWFN	-	48
+FP	DLWFA	-	48
+FP	DLWFNA	-	48
+FP	LFT	-	48
+FP	LFTN	-	48
+FP	LFTA	-	48
+FP	LFTNA	-	48
+FP	ST	-	48
+FP	STN	-	48
+FP	STA	-	48
+FP	STNA	-	48
+FP	SRD	-	48
+FP	SRDN	-	48
+FP	SRDA	-	48
+FP	SRDNA	-	48
+FP	SLO	-	48
+FP	SLON	-	48
+FP	SLOA	-	48
+FP	SLONA	-	48
+FP	K	-	48
+FP	KN	-	48
+FP	KA	-	48
+FP	KNA	-	48
+FP	KR	-	48
+FP	KRN	-	48
+FP	KRA	-	48
+FP	KRNA	-	48
+FP	KMG	-	48
+FP	KMGN	-	48
+FP	KMGA	-	48
+FP	KMGNA	-	48
+FP	KMGR	-	48
+FP	KMGRN	-	48
+FP	KMGRA	-	48
+FP	KMGRNA	-	48
+# --- p.49, VARIABLE FIELD LENGTH OPERATIONS, Integer Operations
+VFL	+	I	49
+VFL	-	I	49
+VFL	M+	-	49
+VFL	M-	-	49
+VFL	+MG	I	49
+VFL	-MG	I	49
+VFL	M+MG	-	49
+VFL	M-MG	-	49
+VFL	*	I	49
+VFL	*N	I	49
+VFL	*+	-	49
+VFL	*N+	-	49
+VFL	*I+	-	49
+VFL	*NI+	-	49
+VFL	/	I	49
+VFL	/N	I	49
+VFL	L	I	49
+VFL	LN	I	49
+VFL	LWF	I	49
+VFL	LWFN	I	49
+VFL	LFT	I	49
+VFL	LFTN	I	49
+VFL	LTRS	I	49
+VFL	LTRSN	I	49
+VFL	ST	-	49
+VFL	STN	-	49
+VFL	SRD	-	49
+VFL	SRDN	-	49
+VFL	M+1	-	49
+VFL	M-1	-	49
+VFL	K	I	49
+VFL	KN	I	49
+VFL	KR	I	49
+VFL	KRN	I	49
+VFL	KE	I	49
+VFL	KEN	I	49
+VFL	KF	I	49
+VFL	KFN	I	49
+# --- p.50
+VFL	KFR	I	50
+VFL	KFRN	I	50
+VFL	KFE	I	50
+VFL	KFEN	I	50
+CONN	C####	-	50
+CONN	CM####	-	50
+CONN	CT####	-	50
+CONN	LF	-	50
+CONN	SF	-	50
+CONN	CI####	-	50
+CONN	CTI####	-	50
+CONN	LFI	-	50
+VFL	CV	-	50
+VFL	CVN	-	50
+VFL	DCV	-	50
+VFL	DCVN	-	50
+VFL	LCV	I	50
+VFL	LCVN	I	50
+VFL	LTRCV	I	50
+VFL	LTRCVN	I	50
+# --- p.51, INDEXING OPERATIONS
+INDEX	LX	-	51
+INDEX	LV	-	51
+INDEX	LC	-	51
+INDEX	LR	-	51
+INDEX	SX	-	51
+INDEX	SV	-	51
+INDEX	SC	-	51
+INDEX	SR	-	51
+INDEX	V+	-	51
+INDEX	V+C	-	51
+INDEX	V+CR	-	51
+INDEX	SVA	-	51
+INDEX	LVE	-	51
+INDEX	KV	-	51
+INDEX	KC	-	51
+INDEX	RNX	-	51
+INDEX	LVS	-	51
+INDEX	LVNI	-	51
+INDEX	LVI	-	51
+INDEX	LCI	-	51
+INDEX	LRI	-	51
+INDEX	V+I	-	51
+INDEX	V-I	-	51
+INDEX	V+IC	-	51
+INDEX	V-IC	-	51
+INDEX	V+ICR	-	51
+INDEX	V-ICR	-	51
+INDEX	C+I	-	51
+INDEX	C-I	-	51
+INDEX	KVI	-	51
+INDEX	KVNI	-	51
+INDEX	KCI	-	51
+CB	CB	-	51
+CB	CBR	-	51
+CB	CBZ	-	51
+CB	CBRZ	-	51
+CB	CBZR	-	51
+BRANCH	B	-	51
+BRANCH	BR	-	51
+BRANCH	BE	-	51
+BRANCH	BD	-	51
+BRANCH	BEW	-	51
+BRANCH	NOP	-	51
+BB	BB	-	51
+BB	BZB	-	51
+BB	BBZ	-	51
+BB	BZBZ	-	51
+BB	BB1	-	51
+BB	BZB1	-	51
+BB	BBN	-	51
+BB	BZBN	-	51
+# --- p.52, TRANSMIT OPERATIONS
+TRANSMIT	T	-	52
+TRANSMIT	TI	-	52
+TRANSMIT	TB	-	52
+TRANSMIT	TBI	-	52
+TRANSMIT	SWAP	-	52
+TRANSMIT	SWAPI	-	52
+# --- p.53
+TRANSMIT	SWAPB	-	53
+TRANSMIT	SWAPBI	-	53
+MISC	SIC	-	53
+MISC	R	-	53
+MISC	RCZ	-	53
+MISC	EX	-	53
+MISC	EXIC	-	53
+MISC	Z	-	53
+IO	LOC	-	53
+IO	SU	-	53
+IO	RD	-	53
+IO	W	-	53
+IO	REL	-	53
+IO	CCW	-	53
+IO	LOCSEOP	-	53
+IO	RDSEOP	-	53
+IO	WSEOP	-	53
+IO	RELSEOP	-	53
+IO	CTLSEOP	-	53
+IO	SUSEOP	-	53
+IO	CTL	-	53

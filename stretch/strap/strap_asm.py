@@ -1657,6 +1657,10 @@ def classify_connective(op):
 # the accumulator with C (result to accumulator); STORE FIELD moves
 # the accumulator into memory with CM (result to storage).  Same
 # datapath, the other projection, and the other half of the table.
+#
+# BOTH ARE PRINTED, found 2026-11-15: C28-6129 Appendix C printed p.50,
+# "Pseudo-Connectives ... LF = C0011  SF = CM0101" -- a second witness
+# for each recovered value, and they agree.
 CONNECTIVE_ALIASES = {
     'LF': ('C',  0b0011),
     'SF': ('CM', 0b0101),

@@ -1,0 +1,121 @@
+# C22-6729 (7030 STRAP II Systems Analysis Guide) Appendix B, "ADDITIONAL
+# INSTRUCTIONS AND PSEUDO-OPS ACCEPTED BY STRAP II", printed pp.195-196
+# (PDF = printed), read in the ink at 200 dpi on 2026-11-15.  THE PROGRAM'S
+# OWN LIST: the strongest witness of what its table of operations holds.
+# Its footnotes, verbatim:
+#   1 Additional is used in the sense that the instructions and pseudo-ops are
+#     not specified in the IBM-7030 Reference Manual.
+#   2 An operation mnemonic cannot exceed 8 characters in length.
+#   3 [on "Pseudo-Ops"] These pseudo-ops are in each of STRAP II's three-digit
+#     select pseudo-op tables.
+#   4 [on CNOP and EXT] With the exception of the EXT and CNOP instructions,
+#     STRAP II considers an instruction to be a pseudo-op if it does not
+#     produce binary output.
+# Columns: Group, Mnemonic, Name (- where none is printed).  Groups as printed:
+# PSEUDO, GENERAL, MCP, IO ("Input-Output Instructions: OP, A7(I) where A7(I)
+# represents a channel address and the unit affected is the last unit
+# selected by an LOC instruction"), IOSEOP (the indented rows), SECONDARY.
+# Printed "PUNSYN(or PUNSYM)" is two rows here.  The page prints the pseudo-ops
+# and the I-O instructions in two columns; read down the left column, then the
+# right.  It differs from N28-1081's revision (tests/c28_6129_n28_1081_ops.txt)
+# in: NOPRINT (bulletin NOPRNT), PRNOR (PRNNOR), PUNSYN as well as PUNSYM, TLB
+# also among the I-O instructions, and no WEF, WEFSEOP, CRDRUN or REWSEOP.
+# --- printed p.195, Pseudo-Ops, left column
+PSEUDO	COMBLOCK	Common Block Definition
+PSEUDO	CNOP	Conditional No Operation
+PSEUDO	DDI	Data Definition Immediate
+PSEUDO	DR	Data Reservation
+PSEUDO	DRZ	Data Reservation and Set to Zero
+PSEUDO	DUPLI	Duplicate
+PSEUDO	END	End
+PSEUDO	ENTER	Define Entry Point
+PSEUDO	EXT	Extract
+PSEUDO	FEND	FORTRAN End
+PSEUDO	LINK	Link
+PSEUDO	NOPRINT	No Printing of Listing
+PSEUDO	NOPUN	No Punching of Binary Output
+PSEUDO	NOSEQ	No Sequence Number to be Punched in Binary Card(s)
+PSEUDO	ORIGIN	Origin
+PSEUDO	PRND	Print double-Spaced
+PSEUDO	PRNID	Print ID
+PSEUDO	PRNOR	Print Normally
+PSEUDO	PRNS	Print Single-spaced
+PSEUDO	PRNTALL	Print All Symbol(s) Used in Program
+PSEUDO	PUNALL	Punch SYN Card(s) for All Symbol(s)
+PSEUDO	PUNCDC	Punch Common Definition Card
+# --- printed p.195, Pseudo-Ops, right column
+PSEUDO	PUNFPC	Punch FORTRAN Program Card
+PSEUDO	PUNFUL	Punch Full Binary Card(s)
+PSEUDO	PUNID	Punch ID in Binary Card(s)
+PSEUDO	PUNNOR	Punch Normally
+PSEUDO	PUNORG	Punch Origin Binary Card(s)
+PSEUDO	PUNREL	Punch Relocatable Binary
+PSEUDO	PUNSYN	Punch Syn Symbolic Card(s)
+PSEUDO	PUNSYM	Punch Syn Symbolic Card(s)
+PSEUDO	REM	Restore Error Message
+PSEUDO	RESEQ	Restore Punching Sequence Number in Binary Card(s) with one
+PSEUDO	SEM	Suppress Error Message
+PSEUDO	SKIP	Skip Paper
+PSEUDO	SLC	Set Location Counter
+PSEUDO	SLCR	Set Location Counter Relative
+PSEUDO	SLCRCOM	Set Location Counter Relative to Common
+PSEUDO	SPNUS	Suppress Printing Not Used Symbol List
+PSEUDO	SYN	Synonym
+PSEUDO	TAIL	Tail
+PSEUDO	TLB	Terminate Loading and Branch
+PSEUDO	UNTAIL	Untail
+# --- printed p.195, General Instructions and MCP Instructions
+GENERAL	CF	Count Field
+GENERAL	CW	Control Word
+GENERAL	DD	Data Definition
+GENERAL	INDMK	Indicator Mask
+GENERAL	RF	Refill Field
+GENERAL	VF	Value Field
+GENERAL	XW	Index Word
+MCP	IOD	-
+MCP	REEL	-
+# --- printed p.196, Input-Output Instructions, left column
+IO	BS	Backspace
+IOSEOP	BSSEOP	Backspace, Suppress End of Operation Interrupt
+IO	BSFL	Backspace File
+IOSEOP	BSFLSEOP	-
+IO	ECC	ECC (and odd parity for tape)
+IOSEOP	ECCSEOP	-
+IO	ERG	Erase Gap
+IOSEOP	ERGSEOP	-
+IO	EVEN	Even Parity, No ECC (tape only)
+IOSEOP	EVENSEOP	-
+IO	GONG	Sound Gong
+IOSEOP	GONGSEOP	-
+IO	HD	High Density
+IOSEOP	HDSEOP	-
+IO	KLN	Check Light On
+IO	LD	Low Density
+IOSEOP	LDSEOP	-
+# --- printed p.196, Input-Output Instructions, right column
+IO	NOECC	No ECC, EVEN Parity (tape only)
+IO	ODD	Odd Parity, No ECC
+IOSEOP	ODDSEOP	-
+IO	ODDECC	Odd Parity, ECC
+IO	ODDNEC	Odd Parity, No ECC
+IO	RLF	Reserved Light Off
+IOSEOP	RLFSEOP	-
+IO	RLN	Reserved Light On
+IOSEOP	RLNSEOP	-
+IO	RWDUNL	Rewind and Unload
+IO	SP	Space
+IOSEOP	SPSEOP	-
+IO	SPFL	Space File
+IOSEOP	SPFLSEOP	-
+IO	TLB	Terminate Loading and Branch
+IO	TILF	Tape Indicator Light Off
+IO	UNLOAD	Unload
+# --- printed p.196, Secondary Operations
+SECONDARY	CCR	Chain Counts within Record
+SECONDARY	CD	Count Disregarding Record
+SECONDARY	CDSC	Count Disregarding Record, Skip, and Chain
+SECONDARY	CR	Count within Record
+SECONDARY	SCCR	Skip, Chain Counts within Record
+SECONDARY	SCR	Skip
+SECONDARY	SCD	Skip, Count Disregarding Record
+SECONDARY	SCDSC	Skip, Count Disregarding Record, Skip, and Chain

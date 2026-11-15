@@ -1,0 +1,174 @@
+# C22-6531 (7030 Symbolic Assembly Program / Simulator, 1960) Appendix A,
+# "ALPHABETIC LIST OF OPERATIONS", printed pp.57-58 (PDF pp.58-59), read in
+# the ink at 200 dpi on 2026-11-15.  Every row, in printed order.
+# Columns: Type, Mnemonic, Footnote (- for blank), Name.
+# The mnemonic is written WITHOUT the blanks the typist put around + and -
+# ("M + MG" is printed; STRAP writes M+MG).  Nothing else is changed.
+# Type legend (printed p.56): V VFL, F floating point, I index, C count and
+# branch, M branches and miscellaneous, B branch on bit, T transmits,
+# E I-O select or control word.  Footnotes: docs/c22_6531_appendix_a.md.
+# This is STRAP-1's list.  STRAP II's (C22-6729) is not printed anywhere
+# found; the differences are reported, not assumed away.
+# --- printed p.57, left column
+V	+	3	Add
+F	+	6	Add
+V	+MG	3	Add to Magnitude
+F	+MG	6	Add to Magnitude
+V	-	3	Subtract
+F	-	6	Subtract
+V	-MG	3	Subtract from Magnitude
+F	-MG	6	Subtract from Magnitude
+V	*	4	Multiply
+F	*	7	Multiply
+V	*+	-	Multiply and Add
+F	*+	-	Multiply and Add
+F	*A+	-	Multiply Absolute and Add
+V	*I+	-	Multiply Immediate and Add
+V	*N+	-	Multiply Negative and Add
+F	*N+	-	Multiply Negative and Add
+F	*NA+	-	Multiply Negative Absolute and Add
+V	*NI+	-	Multiply Negative Immediate and Add
+V	/	4	Divide
+F	/	7	Divide
+M	B	-	Branch
+B	BB	-	Branch on Bit
+B	BB1	-	Branch on Bit and Set to One
+B	BBN	-	Branch on Bit and Negate
+B	BBZ	-	Branch on Bit and Zero
+M	BD	-	Branch Disabled
+M	BE	-	Branch Enabled
+M	BEW	-	Branch Enabled and Wait
+M	BR	-	Branch Relative
+B	BZB	-	Branch on Zero Bit
+B	BZB1	-	Branch on Zero Bit and Set to One
+B	BZBN	-	Branch on Zero Bit and Negate
+B	BZBZ	-	Branch on Zero Bit and Zero
+V	C	10	Connect
+I	C+1	-	Add Immediate to Count
+I	C-1	-	Subtract Immediate from Count
+C	CB	8	Count and Branch
+C	CBR	8	Count, Branch, and Refill
+C	CBZ	8	Count and Branch on Zero Count
+C	CBZR	8	Count, Branch on Zero Count, and Refill
+E	CCW	-	Copy Control Word
+V	CM	10	Connect to Memory
+V	CT	10	Connect for Test
+E	CTL	-	Control
+V	CV	5	Convert
+F	D+	6	Add Double
+F	D+MG	6	Add Double to Magnitude
+F	D-	6	Subtract Double
+F	D-MG	6	Subtract Double from Magnitude
+V	DCV	5	Convert Double
+F	DL	7	Load Double
+F	DLWF	7	Load Double with Flag
+F	D*	7	Multiply Double
+F	D/	7	Divide Double
+F	E+	6	Add to Exponent
+F	E+AI	-	Add Absolute Immediate to Exponent
+F	E+I	-	Add Immediate to Exponent
+F	E-	6	Subtract From Exponent
+F	E-AI	-	Subtract Absolute Immediate from Exponent
+F	E-I	-	Subtract Immediate from Exponent
+M	EX	-	Execute
+M	EXIC	-	Execute Indirect and Count
+F	F+	6	Add to Fraction
+F	F-	6	Subtract from Fraction
+V	K	4	Compare
+F	K	7	Compare
+# --- printed p.57, right column
+I	KC	-	Compare Count
+I	KCI	-	Compare Count Immediate
+V	KE	4	Compare If Equal
+V	KF	4	Compare Field
+V	KFE	4	Compare Field If Equal
+V	KFR	4	Compare Field for Range
+E	KLN	-	Check Light On
+F	KMG	7	Compare Magnitude
+F	KMGR	7	Compare Magnitude for Range
+V	KR	4	Compare for Range
+F	KR	7	Compare for Range
+I	KV	-	Compare Value
+I	KVI	-	Compare Value Immediate
+I	KVNI	-	Compare Value Negative Immediate
+V	L	4	Load
+F	L	7	Load
+I	LC	-	Load Count
+I	LCI	-	Load Count Immediate
+V	LCV	4	Load Converted
+V	LF	-	Load Field
+V	LFT	4	Load Factor
+F	LFT	7	Load Factor
+E	LOC	-	Locate (same as Select Unit)
+I	LR	-	Load Refill
+I	LRI	-	Load Refill Immediate
+I	LV	-	Load Value
+I	LVE	-	Load Value Effective
+I	LVI	-	Load Value Immediate
+I	LVNI	-	Load Value Negative Immediate
+I	LVS	-	Load Value with Sum
+I	LX	-	Load Index
+V	LTRCV	4	Load Transit Converted
+V	LTRS	4	Load Transit and Set
+V	LWF	4	Load with Flag
+F	LWF	7	Load with Flag
+V	M+	3	Add to Memory
+F	M+	6	Add to Memory
+V	M+1	-	Add One to Memory
+F	M+A	-	Add to Absolute Memory
+V	M+MG	3	Add Magnitude to Memory
+F	M+MG	6	Add Magnitude to Memory
+V	M-	-	Subtract from Memory
+F	M-	-	Subtract from Memory
+V	M-1	-	Subtract One from Memory
+F	M-A	-	Subtract from Absolute Memory
+V	M-MG	3	Subtract Magnitude from Memory
+F	M-MG	6	Subtract Magnitude from Memory
+M	NOP	-	No Operation
+M	R	-	Refill
+M	RCZ	-	Refill on Count Zero
+E	RD	-	Read
+E	REL	-	Release
+E	REW	-	Rewind
+I	RNX	-	Rename
+F	R/	-	Reciprocal Divide
+I	SC	-	Store Count
+E	SEOP	11	Suppress End of Operation
+V	SF	-	Store Field
+F	SHF	7	Shift Fraction
+F	SHFL	-	Shift Fraction Left (same as SHFA)
+F	SHFR	-	Shift Fraction Right (same as SHFNA)
+M	SIC	-	Store Instruction Counter If
+F	SLO	7	Store Low Order
+F	SNRT	6	Store Negative Root
+I	SR	-	Store Refill
+V	SRD	5	Store Rounded
+F	SRD	7	Store Rounded
+# --- printed p.58
+F	SRT	6	Store Root
+V	ST	5	Store
+F	ST	7	Store
+E	SU	-	Select Unit (same as Locate)
+I	SV	-	Store Value
+I	SVA	-	Store Value in Address
+T	SWAP	-	Swap
+T	SWAPI	-	Swap Immediate
+T	SWAPB	-	Swap Backward
+T	SWAPBI	-	Swap Backward Immediate
+I	SX	-	Store Index
+T	T	-	Transmit
+T	TI	-	Transmit Immediate
+T	TB	-	Transmit Backward
+T	TBI	-	Transmit Backward Immediate
+I	V+	-	Add to Value
+I	V+I	9	Add Immediate to Value
+I	V+C	-	Add to Value and Count
+I	V+CR	-	Add to Value, Count, and Refill
+I	V+IC	9	Add Immediate to Value and Count
+I	V+ICR	9	Add Immediate to Value, Count, and Refill
+I	V-I	9	Subtract Immediate from Value
+I	V-IC	9	Subtract Immediate from Value and Count
+I	V-ICR	9	Subtract Immediate From Value, Count, and Refill
+E	W	-	Write
+E	WEF	-	Write End-of-File
+M	Z	-	Store Zero

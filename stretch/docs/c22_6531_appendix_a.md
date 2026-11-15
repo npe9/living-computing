@@ -107,6 +107,20 @@ this assembler for the original reason — the number would be a guess
 — but the claim about the manual was wrong and has been corrected in
 place.
 
+(SF went in on 2026-10-23, recovered as CM0101 from MCP printed p.39
+line 52's bits; see `strap_asm.py`'s CONNECTIVE_ALIASES note.)
+
+**2026-11-15: BOTH NUMBERS ARE PRINTED.** C28-6129 (the STRAP-II
+Reference Manual) Appendix C, printed p.50, "Pseudo-Connectives":
+"LF (Load Field) LF = C0011, SF (Store Field) SF = CM0101". Both
+values this project recovered from listing bits (LF from MCP p.5, SF
+from MCP p.39) now have a second, independent witness that agrees.
+
+**This list is now transcribed** (`tests/c22_6531_appendix_a_ops.txt`).
+STRAP II's own list, C28-6129 printed pp.44-45, has the same 160 rows
+(`tests/c28_6129_appendix_a_ops.txt`) except C+I/C-I and VFL M+'s
+footnote.
+
 **THE TABLE IS INCOMPLETE ABOUT `LF`, AND THAT IS WORTH KNOWING
 BEFORE ANYONE USES IT AS AN ORACLE.** `LF`'s and `SF`'s footnote
 columns are BLANK, where `C`, `CM` and `CT` all carry 10 — and the
