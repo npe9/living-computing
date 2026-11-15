@@ -126,6 +126,9 @@ class Pass2:
             # Uhl and undefined symbols: special symbols first, since the bounds
             # stand on them; then every undefined symbol at the next full word
             # above the upper limit, in the order encountered (p.205, C28 p.20).
+            # Both walks here are UITER's ANEXT over the vles (chart GB box 7),
+            # not the dictionary, so a multiply defined name's earlier vle is
+            # evaluated too (docs/strap2_7030.md step 3c).
             top = self.origin
             for absc, symc in self.hilo:
                 at = self.val.counter_value(absc, symc)
@@ -133,7 +136,7 @@ class Pass2:
                     top = max(top, at)
             self.upper = (top + 63) // 64 * 64
             at = self.upper
-            for name, f in list(st.dictionary.items()):
+            for f in list(st.vles):
                 if st.get(f, "ZKIND") == KIND_UNDEF and not st.get(f, "ZST26"):
                     st.put(f, "ZST1", 1)
                     st.put(f, "ZDDS", dds13("N", 0, 4))
@@ -141,7 +144,8 @@ class Pass2:
                     self.val._enter(f, at, 0, 0, 0)
                     at += 64
             self.top_word = at // 64
-        for name, f in list(st.dictionary.items()):
+        for f in list(st.vles):
+            name = st.name_of.get(f, "")
             if st.get(f, "ZST0"):
                 continue
             got = self.val.symbol_value(f)
