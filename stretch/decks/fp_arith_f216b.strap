@@ -22,7 +22,7 @@
 ! What is NOT blind is whether the addition adds or subtracts.  Same
 ! signs carry out of the 96-bit sum and set LOST CARRY; opposite signs
 ! subtract and do not.  B7 is DLN FPK62 (accumulator negative) with
-! *+N FPK80 (product negative), so the two agree, the carry happens,
+! *N+ FPK80 (product negative), so the two agree, the carry happens,
 ! and the listing says so in its own comment: "PRODUCES LOST CARRY".
 !
 ! BUT B7 CANNOT CATCH A MODIFIER FAULT EITHER, and the reason is worth
@@ -47,13 +47,12 @@
 ! flagged range -> the effective address's exponent" rule either.  That
 ! gap, opened in F216A, stays open through the whole of F216.
 !
-! SPELLING NOTE.  The listing writes these as "*A", "*N" and "*NA".
-! Those exact mnemonics already mean MULTIPLY with the same modifiers
-! in F214B, where "*N" prints .51 (opcode 0011010); here they print
-! .53 (opcode 0111010), MULTIPLY AND ADD.  The source language is
-! ambiguous and only context resolves it, so this transcription writes
-! the unambiguous "*+N" / "*+A" / "*+NA", which assemble to the
-! listing's printed words exactly and leave F214B's spelling alone.
+! SPELLING, READ AGAIN IN THE INK 2026-11-15 (jb_af1c PDF p.149): the
+! listing prints "*A+%U%", "*N+%U%" and "*NA+%U%" -- C28-6129 Appendix C
+! printed p.47's spellings of MULTIPLY AND ADD with the sign modifiers.
+! An earlier note here read them as "*A", "*N", "*NA" (MULTIPLY, .51)
+! and wrote the host-order "*+A" etc. instead; the trailing "+" is on
+! the page.  Now written as printed; the words are unchanged (.53).
 !
 ! DL(U) zeroes accumulator bits 60-107, and unlike F216A this block
 ! does not fill them, so the accumulator fraction is {constant, 0}.
@@ -88,21 +87,21 @@ F216B1  DL(U),  FPK60
 ! F216B2  - MS 0, ACS 0, N 0, A 1
         DL(U),  FPK60
         LFT(U), FPK52
-        *+A(U), FPK80
+        *A+(U), FPK80
         BZB, $SB+.4, $+2.0                ! test sign bit + 0
         SIC, SEN
         B, SERS
 ! F216B3  - MS 0, ACS 0, A 0, N 1
         DL(U),  FPK62
         LFT(U), FPK52
-        *+N(U), FPK80
+        *N+(U), FPK80
         BZB, $SB+.4, $+2.0                ! test sign bit + 0
         SIC, SEN
         B, SERS
 ! F216B4  - MS 0, ACS 0, N 1, A 1
         DL(U),  FPK62
         LFT(U), FPK52
-        *+NA(U), FPK80
+        *NA+(U), FPK80
         BZB, $SB+.4, $+2.0                ! test sign bit + 0
         SIC, SEN
         B, SERS
@@ -116,14 +115,14 @@ F216B1  DL(U),  FPK60
 ! F216B6  - MS 0, N 0, ACS 1, A 1
         DLN(U), FPK62
         LFT(U), FPK52
-        *+A(U), FPK80
+        *A+(U), FPK80
         BB, $SB+.4, $+2.0                 ! test sign bit + 1
         SIC, SEN
         B, SERS
 ! F216B7  - MS 0, A 0, ACS 1, N 1  -- PRODUCES LOST CARRY
         DLN(U), FPK62
         LFT(U), FPK52
-        *+N(U), FPK80
+        *N+(U), FPK80
         SIC, SEN
         BZLC, SERS                           ! error if LC off
         BB, $SB+.4, $+2.0                 ! test sign bit + 1
@@ -132,7 +131,7 @@ F216B1  DL(U),  FPK60
 ! F216B8  - MS 0, ACS 1, N 1, A 1
         DLN(U), FPK62
         LFT(U), FPK52
-        *+NA(U), FPK80
+        *NA+(U), FPK80
         BB, $SB+.4, $+2.0                 ! test sign bit + 1
         SIC, SEN
         B, SERS
@@ -146,21 +145,21 @@ F216B1  DL(U),  FPK60
 ! F216B10 - MS 1, A 1, ACS 0, N 0
         DL(U),  FPK62
         LFT(U), FPK52
-        *+A(U), FPK86
+        *A+(U), FPK86
         BZB, $SB+.4, $+2.0                ! test sign bit + 0
         SIC, SEN
         B, SERS
 ! F216B11 - MS 1, N 1, ACS 0, A 0
         DL(U),  FPK62
         LFT(U), FPK52
-        *+N(U), FPK86
+        *N+(U), FPK86
         BZB, $SB+.4, $+2.0                ! test sign bit + 0
         SIC, SEN
         B, SERS
 ! F216B12 - MS 1, N 1, A 1, ACS 0
         DL(U),  FPK62
         LFT(U), FPK52
-        *+NA(U), FPK86
+        *NA+(U), FPK86
         BZB, $SB+.4, $+2.0                ! test sign bit + 0
         SIC, SEN
         B, SERS
@@ -174,21 +173,21 @@ F216B1  DL(U),  FPK60
 ! F216B14 - MS 1, ACS 1, A 1, N 0
         DLN(U), FPK62
         LFT(U), FPK52
-        *+A(U), FPK86
+        *A+(U), FPK86
         BB, $SB+.4, $+2.0                 ! test sign bit + 1
         SIC, SEN
         B, SERS
 ! F216B15 - MS 1, ACS 1, N 1, A 0
         DLN(U), FPK62
         LFT(U), FPK52
-        *+N(U), FPK86
+        *N+(U), FPK86
         BB, $SB+.4, $+2.0                 ! test sign bit + 1
         SIC, SEN
         B, SERS
 ! F216B16 - MS 1, ACS 1, N 1, A 1
         DLN(U), FPK62
         LFT(U), FPK52
-        *+NA(U), FPK86
+        *NA+(U), FPK86
         BB, $SB+.4, $+2.0                 ! test sign bit + 1
         SIC, SEN
         B, SERS

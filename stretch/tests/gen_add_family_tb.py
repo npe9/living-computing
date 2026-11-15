@@ -38,9 +38,13 @@ cell.  This page has 128.
 sixteen rows are to-memory operations with the negative sign modifier,
 and until the suffix was built (C22-6531 Appendix A footnote 4,
 witnessed by Reference Manual Figure 14) there was no way to spell
-`M+N` or `M+MGN` at all -- the written-minus forms `M-` and `M-MG`
-are deliberately absent from VFL_INT_WRITTEN_MINUS for want of a
-source.  The table could not have been run a commit earlier.
+them at all.  RESPELLED 2026-11-15 to IBM's printed VFL spellings: the
+page names operations, not mnemonics, and C28-6129 Appendix A prints the
+VFL negative forms as the written-minus `-`, `-MG`, `M-` and `M-MG`
+(the host's `+N` and `M+N` are printed only as floating-point spellings,
+and `+MGN`/`M+MGN` not at all).  Each assembles to exactly the word the
+old spelling did (checked for (B,16,8) and (BU,8,8)), so the deck's
+binary is unchanged.
 
 WHAT IS NOT CHECKED, and the page marks them so it is worth saying:
 the FOUR cells carrying `*` turn on the LOST CARRY indicator, and the
@@ -95,21 +99,21 @@ COLUMNS = [(3, 5), (5, 3), (3, -5), (5, -3), (-3, 5), (-5, 3), (-3, -5), (-5, -3
 # one way and the two to-memory N rows are not a special case.
 ROWS = [
     ("Add",                        "+",      False, ["8+","8+","2-","2+","2+","2-","8-","8-"]),
-    ("Add, N",                     "+N",     False, ["2+","2-","8-","8-","8+","8+","2-","2+"]),
+    ("Add, N",                     "-",      False, ["2+","2-","8-","8-","8+","8+","2-","2+"]),
     ("Add, U",                     "+",      False, ["8+","8+","2-","2+","8+","8+","2-","2+"]),
-    ("Add, U,N",                   "+N",     False, ["2+","2-","8-","8-","2+","2-","8-","8-"]),
+    ("Add, U,N",                   "-",      False, ["2+","2-","8-","8-","2+","2-","8-","8-"]),
     ("Add to Magnitude",           "+MG",    False, ["8+","8+","8-","8-","2+","0+","2-","0-"]),
-    ("Add to Magnitude, N",        "+MGN",   False, ["2+","0+","2-","0-","8+","8+","8-","8-"]),
+    ("Add to Magnitude, N",        "-MG",    False, ["2+","0+","2-","0-","8+","8+","8-","8-"]),
     ("Add to Magnitude, U",        "+MG",    False, ["8+","8+","8-","8-","8+","8+","8-","8-"]),
-    ("Add to Magnitude, U,N",      "+MGN",   False, ["2+","0+","2-","0-","2+","0+","2-","0-"]),
+    ("Add to Magnitude, U,N",      "-MG",    False, ["2+","0+","2-","0-","2+","0+","2-","0-"]),
     ("Add to Memory",              "M+",     True,  ["8+","8+","2-","2+","2+","2-","8-","8-"]),
-    ("Add to Memory, N",           "M+N",    True,  ["2-","2+","8+","8+","8-","8-","2+","2-"]),
+    ("Add to Memory, N",           "M-",     True,  ["2-","2+","8+","8+","8-","8-","2+","2-"]),
     ("Add to Memory, U",           "M+",     True,  ["8+","8+","2+","2+","8-","8-","2-","2-"]),
-    ("Add to Memory, U,N",         "M+N",    True,  ["2+","2+","8+","8+","2-","2-","8-","8-"]),
+    ("Add to Memory, U,N",         "M-",     True,  ["2+","2+","8+","8+","2-","2-","8-","8-"]),
     ("Add Magnitude to Memory",    "M+MG",   True,  ["8+","8+","8+","8+","0-","2-","0-","2-"]),
-    ("Add Magnitude to Memory, N", "M+MGN",  True,  ["0+","2+","0+","2+","8-","8-","8-","8-"]),
+    ("Add Magnitude to Memory, N", "M-MG",   True,  ["0+","2+","0+","2+","8-","8-","8-","8-"]),
     ("Add Magnitude to Memory, U", "M+MG",   True,  ["8+","8+","8+","8+","8-","8-","8-","8-"]),
-    ("Add Magnitude to Memory, U,N","M+MGN", True,  ["0+","2+","0+","2+","0-","2-","0-","2-"]),
+    ("Add Magnitude to Memory, U,N","M-MG",  True,  ["0+","2+","0+","2+","0-","2-","0-","2-"]),
 ]
 
 # Rows 2, 3, 6, 7, 10, 11, 14, 15 (0-based) are the unsigned ones --

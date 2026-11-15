@@ -32,10 +32,13 @@ is no longer true.
 
 MEASURED 2026-11-15: the corpus's 509 lookups (op, mode, secondaries) use
 365 names.  Outside the branch-on-indicator family every one is printed,
-except the blank null op (C28-6129 p.6), CBRZ+ CBRZ- CBRZH
-(LISTING_WITNESSED), and five HOST_ORDER spellings that only project-written
-decks use (*+A *+N *+NA in fp_arith_f216b.strap, whose listing prints *A *N
-*NA; +MGN and M+MGN in add_family_signs.strap).
+except the blank null op (C28-6129 p.6) and CBRZ+ CBRZ- CBRZH
+(LISTING_WITNESSED).  Five HOST_ORDER spellings were used by two decks
+until 2026-11-15: fp_arith_f216b.strap now writes its listing's "*A+",
+"*N+", "*NA+" (jb_af1c PDF p.149, read again in the ink: an earlier note
+had dropped the trailing "+"), and add_family_signs.strap the printed
+written-minus VFL forms "-MG" and "M-MG" (and "-", "M-" for the FP-only
+"+N", "M+N"), every word unchanged.
 
 INJECTIONS, re-measured 2026-11-15 after the host took IBM's spellings
 (control: nothing fails, before and after; each reverted from a saved
