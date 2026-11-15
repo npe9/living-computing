@@ -737,6 +737,8 @@ CHVAL   SYN, $
 ! value (.0, 24 bits) and dds (.24, 13 bits).  CHOSEN: generated from the
 ! host's optable.system_symbol (2026-11-13); the guide does not print the
 ! table (docs/strap2/pass1.md gap 1).
+SYSCB   XW, GFKEY, 128, 193
+        DRZ(BU,64), 8
 SYSTAB  SYN, $
         DD(BU,64), (16)0101101010101010   ! 11
         DD(BU,64), (16)0006C0A040000000
@@ -1124,7 +1126,6 @@ SYSTAB  SYN, $
         DD(BU,64), (16)000080A040000000
         DD(BU,64), (16)3936101010101010   ! IF
         DD(BU,64), (16)0002D5A0C0000000
-SYSTN   DD(BU,64), 193
 ! MBPAIR: MBSPEC's pairs (p.93 box 2: 0/O, 1/I, 2/Z, 5/S), the partner's
 ! A8 code for each A8 code, 0 for none.  Generated from optable.MBSPEC_PAIRS.
 MBPAIR  SYN, $
@@ -1241,25 +1242,42 @@ STX     DD(BU,64), 0
 STXD    DD(BU,64), 0
 STXK    DD(BU,64), 0
 STXF    DD(BU,64), 0
-STXB    DD(BU,64), 0
 STXC    DD(BU,64), 0
 STXP    DD(BU,64), 0
 GFKEY   DD(BU,64), 0
 GFBLNK  DD(BU,64), (16)1010101010101010
 GFSNL   DD(BU,64), 0
 GFSVV   DD(BU,64), 0
-GFFND   DD(BU,64), 0
-GFLO    DD(BU,64), 0
-GFHI    DD(BU,64), 0
-GFMID   DD(BU,64), 0
-GFMDV   DD(BU,64), 0
 GFMF    DD(BU,64), 0
 GFMPOS  DD(BU,64), 0
 GFMK    DD(BU,64), 0
 GFMI    DD(BU,64), 0
 GFMJ    DD(BU,64), 0
 GFBLK   DD(BU,64), 0
-SYSTBX  XW, SYSTAB, 0, 0
+! BOPSER's cells (24-bit values at .0 unless shown); LLXW is p.67's Llxw
+LLXW    DD(BU,64), 0
+BPCB    DD(BU,64), 0
+BPNE    DD(BU,64), 0
+BPEL    DD(BU,64), 0
+BPN     DD(BU,64), 0
+BPP     DD(BU,64), 0
+BPC     DD(BU,64), 0
+BPIB    DD(BU,64), 0
+BPDB    DD(BU,64), 0
+BPTB    DD(BU,64), 0
+BPI     DD(BU,64), 0
+BPD     DD(BU,64), 0
+BPK     DD(BU,64), 0
+BPQ     DD(BU,64), 0
+BPPRD   DD(BU,64), 0
+BPAT    DD(BU,64), 0
+BPCNT   DD(BU,64), 0
+BPFST   DD(BU,64), 0
+BPDIR   DD(BU,64), 0
+BPTST   DD(BU,64), 0
+BPZLK   DD(BU,64), 0
+BP32    DD(BU,64), (16)0000200000000000
+BP64    DD(BU,64), (16)0000400000000000
 GFIDP   DD(BU,64), 0
 GFDEP   DD(BU,64), 0
 GFCK    DD(BU,64), 0
@@ -2467,15 +2485,15 @@ GFPD2   L(BU,8), GFSNL
         BAE, GFDOL
         KI(BU,8), 8
         BAH, GFNF
-        SIC, GFBLK
+        SIC, $15
         B, BOPSER
-        L(BU,1), GFFND
-        KI(BU,1), 1
-        BAE, GFSYS
+        , SYSCB
+        B, GFMS0
+        B, GFSVL
 ! MBSPEC (Chart BL, pp.92-93): a control indicator for each character of
 ! the pairs 0/O, 1/I, 2/Z, 5/S, stepped like a binary counter, the first
 ! character lowest; each step changes one character to its partner or back
-        LI(BU,64), 0
+GFMS0   LI(BU,64), 0
         ST(BU,64), GFMF
         LI(BU,8), 0
         ST(BU,8), GFMK
@@ -2523,14 +2541,17 @@ GFMB2   L(BU,8), GFMJ
         B, GFMB2
 GFMB3   LI(BU,8), 1
         ST(BU,8), GFMF($9)
-        SIC, GFBLK
+        SIC, $15
         B, BOPSER
-        L(BU,1), GFFND
-        KI(BU,1), 1
-        BZAE, GFMB1
+        , SYSCB
+        B, GFMB1
         M+1(BU,24), NOTEC
         LI(BU,24), 129
         ST(BU,24), NOTEL
+! the found entry's value word, by LLXW
+GFSVL   LV, $9, LLXW
+        L(BU,64), 0($9)
+        ST(BU,64), GFSVV
 ! Boxes 22-24: prefix 11100, value, dds (Fig. 13)
 GFSYS   SIC, GFZLK
         B, GFLZC
@@ -2580,40 +2601,175 @@ GFDOL   SIC, GFZLK
         ST(BU,1), GFLKA
         B, GFPE
 !
-! BOPSER (Box 32): GFKEY in SYSTAB by binary search; GFFND, GFSVV
-BOPSER  LI(BU,8), 0
-        ST(BU,8), GFLO
-        ST(BU,1), GFFND
-        L(BU,8), SYSTN+.56
-        ST(BU,8), GFHI
-BOP1    L(BU,8), GFLO
-        K(BU,8), GFHI
-        BZAL, BOPX
-        L(BU,8), GFLO
-        +(BU,8), GFHI
-        ST(BU,9), GFMID
-        L(BU,8), GFMID
-        ST(BU,8), GFMDV
-        ST(BU,8), STXB+.9
-        LV, $9, SYSTBX
-        V+, $9, STXB
-        L(BU,64), GFKEY
-        K(BU,64), 0($9)
-        BAE, BOP3
-        BAL, BOP2
-        L(BU,8), GFMDV
-        ST(BU,8), GFLO
-        M+1(BU,8), GFLO
-        B, BOP1
-BOP2    L(BU,8), GFMDV
-        ST(BU,8), GFHI
-        B, BOP1
-BOP3    L(BU,64), 1.0($9)
-        ST(BU,64), GFSVV
+! BOPSER (Charts BA, BB pp.65-66; p.67 and Figure 11), to
+! strap/strap2/bopser.py:  SIC,$15; B,BOPSER; ,cb(I); B,not found; normal
+! (found), with the found entry's function address in LLXW's value field.
+! The control block (Figure 11) is an index word's shape: the test word's
+! address, the entry length (count field), the number of entries (refill
+! field); then N words of pairs, N = 18 - LZC of the number of entries
+! (CHOSEN; p.67's ceiling(log2) misses an entry of a power-of-two table),
+! N half words of increments then N of decrements (CHOSEN), and the table
+! (CHOSEN).  $7 the increment list, $8 the entry tested, $9 the decrement
+! list (Box 1).  The pairs are Knuth's uniform binary search deltas.
+BOPSER  LVE, $8, 0($15)
+        SV, $8, BPCB
+        L(BU,18), .46($8)
+        ST(BU,24), BPNE
+        KI(BU,24), 0
+        BAE, BPNF
+        L(BU,18), .28($8)
+        ST(BU,24), BPEL
+! Box 3: N, the compares at most, 18 - LZC
+        LI(BU,24), 0
+        ST(BU,24), BPN
+        LI(BU,24), 1
+        ST(BU,24), BPP
+BPN1    L(BU,24), BPP
+        K(BU,24), BPNE
+        BAH, BPN2
+        M+1(BU,24), BPN
+        L(BU,24), BPP
+        +(BU,24), BPP
+        ST(BU,24), BPP
+        B, BPN1
+! the lists and the table: cb + 64, cb + 64 + 32N, cb + 64(1 + N)
+BPN2    L(BU,24), BPCB
+        +(BU,24), BP64
+        ST(BU,24), BPIB
+        ST(BU,24), BPDB
+        ST(BU,24), BPTB
+        L(BU,24), BPN
+        ST(BU,24), BPC
+BPN3    L(BU,24), BPC
+        KI(BU,24), 0
+        BAE, BPN4
+        L(BU,24), BPDB
+        +(BU,24), BP32
+        ST(BU,24), BPDB
+        L(BU,24), BPTB
+        +(BU,24), BP64
+        ST(BU,24), BPTB
+        M-1(BU,24), BPC
+        B, BPN3
+! Boxes 4-6: the pairs, unless BOPSER's indicator says they are made
+BPN4    L(BU,1), .26($8)
+        KI(BU,1), 1
+        BAE, BPS
+! LLNEW (Chart BB): the count, halved; an odd count increased by one,
+! before the first halving it needs, after the others
+        L(BU,24), BPNE
+        ST(BU,24), BPC
         LI(BU,1), 1
-        ST(BU,1), GFFND
-BOPX    LV, $8, GFBLK
-        B, 0($8)
+        ST(BU,1), BPFST
+        LI(BU,24), 0
+        ST(BU,24), BPK
+        L(BU,24), BPIB
+        ST(BU,24), BPI
+        L(BU,24), BPDB
+        ST(BU,24), BPD
+BPL1    L(BU,24), BPK
+        K(BU,24), BPN
+        BAE, BPL4
+        L(BU,1), BPC+.23
+        KI(BU,1), 1
+        BZAE, BPL3
+        L(BU,1), BPFST
+        KI(BU,1), 1
+        BZAE, BPL2
+        LI(BU,1), 0
+        ST(BU,1), BPFST
+        M+1(BU,24), BPC
+        SIC, BPZLK
+        B, LLZERO
+        B, BPL1
+BPL2    SIC, BPZLK
+        B, LLZERO
+        M+1(BU,24), BPC
+        B, BPL1
+BPL3    SIC, BPZLK
+        B, LLZERO
+        B, BPL1
+BPL4    LI(BU,1), 1
+        ST(BU,1), .26($8)
+! Box 7: the first entry tested, (table - length) + the first increment
+BPS     LV, $9, 0($8)
+        L(BU,64), 0($9)
+        ST(BU,64), BPTST
+        LV, $7, BPIB
+        LV, $9, BPDB
+        L(BU,24), BPTB
+        -(BU,24), BPEL
+        +(BU,24), 0($7)
+        ST(BU,24), BPAT
+        L(BU,24), BPN
+        ST(BU,24), BPCNT
+! Boxes 8-15
+BPS1    LV, $8, BPAT
+        L(BU,64), BPTST
+        K(BU,64), 0($8)
+        BAE, BPFD
+        BAH, BPS2
+        LI(BU,1), 1
+        ST(BU,1), BPDIR
+        B, BPS3
+BPS2    LI(BU,1), 0
+        ST(BU,1), BPDIR
+BPS3    M-1(BU,24), BPCNT
+        L(BU,24), BPCNT
+        KI(BU,24), 0
+        BAE, BPNF
+        V+I, $7, 0.32
+        V+I, $9, 0.32
+        L(BU,1), BPDIR
+        KI(BU,1), 1
+        BAE, BPS4
+        L(BU,24), BPAT
+        +(BU,24), 0($7)
+        ST(BU,24), BPAT
+        B, BPS1
+BPS4    L(BU,24), BPAT
+        -(BU,24), 0($9)
+        ST(BU,24), BPAT
+        B, BPS1
+! Boxes 16-17: found, the function's address in LLXW
+BPFD    L(BU,24), BPAT
+        +(BU,24), BP64
+        ST(BU,24), LLXW
+        B, 1.0($15)
+BPNF    B, 0.32($15)
+! LLZERO (Chart BB): halve the count; (half x entry length) as the next
+! increment, its negative as the next decrement; step both lists
+LLZERO  L(BU,23), BPC
+        ST(BU,24), BPC
+        LI(BU,24), 0
+        ST(BU,24), BPPRD
+        ST(BU,24), BPQ
+BPZ1    L(BU,24), BPQ
+        K(BU,24), BPC
+        BAE, BPZ2
+        L(BU,24), BPPRD
+        +(BU,24), BPEL
+        ST(BU,24), BPPRD
+        M+1(BU,24), BPQ
+        B, BPZ1
+BPZ2    LV, $7, BPI
+        LV, $9, BPD
+        L(BU,24), BPPRD
+        ST(BU,24), 0($7)
+        ST(BU,24), 0($9)
+        LI(BU,8), 0
+        ST(BU,8), .24($7)
+        LI(BU,8), 128
+        ST(BU,8), .24($9)
+        L(BU,24), BPI
+        +(BU,24), BP32
+        ST(BU,24), BPI
+        L(BU,24), BPD
+        +(BU,24), BP32
+        ST(BU,24), BPD
+        M+1(BU,24), BPK
+        LV, $7, BPZLK
+        B, 0($7)
 !
 ! CPLTNM (Chart BD p.70, p.71).  $3 holds the first digit; the radix is
 ! GFSRAD.  PR := PR x radix + digit in floating point (Boxes 1-8), while

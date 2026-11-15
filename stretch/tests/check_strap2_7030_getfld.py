@@ -14,6 +14,10 @@ unary minus, and the points.  SUB-SLICE b: parentheses; Fig. 28 p.200's
 printed bits are checked before the host comparison.  SUB-SLICE c: `$` and
 the system symbols (BOPSER, MBSPEC as notes), Fig. 29 p.201's printed bits.
 SUB-SLICE d: the g.p. and the radix.
+STEP 4a: BOPSER to Charts BA/BB (p.67's linkage, SYSCB); SYSCB's nine words
+after the run are checked against strap/strap2/bopser.py (measured: the
+first-odd, the decrement-sign and the indicator injections each fail that
+check alone; tests/check_strap2_7030_bopser.py tests BOPSER itself).
 The test's driver (tests/strap2_7030_gfdrive.strap, NOT part of the reconstruction) calls GETFLD on every field of every
 card block, each at a fresh word, and records each field's first bit and
 the bit after it.  The host reads the same cards with Getcha and Getfld.
@@ -259,6 +263,23 @@ def host(cards):
     return out
 
 
+def syscb_words(p2, cb):
+    """SYSCB after a search, as strap/strap2/bopser.py makes it: Figure 11's
+    first word with BOPSER's indicator on, then the pairs (Knuth's deltas x
+    128, increments then decrements, CHOSEN half-word layout)."""
+    from strap2 import bopser
+    from strap2.bits import BitMem
+    m = BitMem()
+    m.put(0, 64, p2.image.words.get(cb, 0))
+    entries = m.get(46, 18)
+    n = 18 - bopser.lzc18(entries)
+    m.put(26, 1, 1)
+    for k, h in enumerate(bopser.pairs(entries)):
+        bopser._put_index(m, 64 + 32 * k, h * m.get(28, 18))
+        bopser._put_index(m, 64 + 32 * (n + k), -h * m.get(28, 18))
+    return [m.get(64 * k, 64) for k in range(1 + n)]
+
+
 def run(cards, tmp, whole=False):
     text = deck_text(cards)
     p2 = strap2.compile_cards(deck_cards(text), strap_asm.DEFAULT_ORIGIN_BITS)
@@ -273,6 +294,8 @@ def run(cards, tmp, whole=False):
             f"DUMP={first},{last - first}", f"STEPS={STEPS}", f"CYCLES<={STEPS}",
             f"FASTLOAD={os.path.join(tmp, MODULE + '.hex')}",
             f"ERRC:{word('ERRC')}=0x0", f"NOTEC:{word('NOTEC')}=0x0"]
+    cb = word("SYSCB")
+    args += [f"SYSCB{k}:{cb + k}=0x{w:x}" for k, w in enumerate(syscb_words(p2, cb))]
     r = subprocess.run(args, capture_output=True, text=True, cwd=HERE)
     for name in os.listdir(BSV):            # by exact name, never a glob
         if name in (MODULE + ".bsv", MODULE + "_sim", MODULE + "_sim.so"):
@@ -294,6 +317,7 @@ def run(cards, tmp, whole=False):
         b = mem[word("OUTL") + 2 * k + 1] >> 40
         fields.append(bits(a, b))
     return {"fields": fields, "steps": int(m.group(1)) if m else None,
+            "syscb": len(re.findall(r"^PASS SYSCB\d", out, re.M)),
             "errc": int(errc.group(2)) >> 40 if errc else None,
             "notes": int(notec.group(2)) >> 40 if notec else None}, out
 
@@ -344,6 +368,8 @@ def main():
         print("FAIL the 7030 GETFLD did not run to its halt:\n" + out)
         return 1
     check("ERRC is 0 (no failure halt)", got["errc"], 0)
+    check("SYSCB after the run is bopser.py's: Figure 11's word, BOPSER's "
+          "indicator, the 8 pair words (pp.65-67; step 4a)", got["syscb"], 9)
     check("Fig. 28 p.200: the 7030 GETFLD gives the printed bits",
           got["fields"][36] if len(got["fields"]) > 36 else None, fig28_printed())
     check("Fig. 29 p.201: the 7030 GETFLD gives the printed bits",
