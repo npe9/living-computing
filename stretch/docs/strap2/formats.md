@@ -1448,10 +1448,10 @@ Note that the text of p.26 says the same.
 
 - **C1.** p.11 "bits 00-18" for last arc against 0-17 for the arc number everywhere.
 - **C2.** p.22 op-question location "first 18 bits of the function part" against Fig. 23
-  "bits 0-23" (p.192).
+  "bits 0-23" (p.192). RESOLVED 2026-11-15 (DERIVED, strap2/optab7030.py): bits 0-17 of every primary skeleton are zero and 18-23 are used by 168, so the location is 18 bits, in 0-17.
 - **C3.** p.9 "word 8 must always be set up by the pre-processor" against p.131: STRAP II
   sets word 8 when first in chain. p.9 itself says first in chain means System Input.
-- **C4.** Fig. 24 abc code `020` is not a 3-bit value; [printed]. Probably 010.
+- **C4.** Fig. 24 abc code `020` is not a 3-bit value; [printed]. Probably 010. CHOSEN 010 in strap2/optab7030.py.
 - **C5.** Items 2A-2B (p.198) list only absolute and symbolic, against p.197's sub-expression
   `101` and long-prefix `111`. Fig. 29 uses `11100`.
 - **C6.** p.159's "standard 120 bits" per DD field against Fig. 26: a + 12 + 96 + 8 + b +
@@ -1467,7 +1467,7 @@ Note that the text of p.26 says the same.
   n is 16 bits and the rest 40 zeros (DERIVED).
 - **C10.** Fig. 23 captions "Two Word Format" over three rows. If the location row is a part
   of the skeleton word, it overlaps the skeleton; if separate, the entry is three words.
-  Fig. 11 and p.22 do not settle it. Non-ambiguous and ambiguous rows both have it.
+  Fig. 11 and p.22 do not settle it. Non-ambiguous and ambiguous rows both have it. RESOLVED 2026-11-15 with C2: two words; the location is ORed into the skeleton word's bits 0-17.
 - **C11.** Tail mark: asterisk (p.125) against `$`-character (p.75). p.125 also says up to
   ten levels and "n mod(8)" on a level over eight (Box 38).
 - **C12.** p.204 lists the priority: 1st `+ -`, 2nd `* /`, 3rd `**` as "descending order of

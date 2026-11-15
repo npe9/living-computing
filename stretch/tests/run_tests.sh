@@ -1656,6 +1656,7 @@ run "STRAP II BOPSER (host): Knuth's uniform binary search, Figure 11's control 
 run "STRAP II vle table (host): every deck's walks by its lengths, expressions in their own vles, C22-6729 p.13, Fig. 22" python3 check_strap2_vletable.py
 run "The 7030 STRAP II on the model: TABMAN SEARCH, ADDORD, ADDUNO, ANEXT, RSERCH against the host TABMAN (step 3b)" python3 check_strap2_7030_tabman.py
 run "The 7030 STRAP II on the model: BOPSER on SYSTAB, every name and 30 misses, against strap2/bopser.py (step 4a)" python3 check_strap2_7030_bopser.py
+run "The 7030 STRAP II on the model: the generated operation tables (Figs. 23, 24 p.192), decoded and searched by BOPSER (step 4a-iii)" python3 check_strap2_7030_optab.py
 run "STRAP II mnemonics: IBM's printed operation set (C28-6129 Apps. A, C; N28-1081; the guide's App. B) against the host table, both ways" python3 check_strap2_mnemonics.py
 run "STRAP II takes IBM's spellings (*A+, +NMG, CBZR, SU, xxxSEOP, -A, NOPRINT; App. C pp.47-53, N28-1081) and FP \"-\" keeps its sign" python3 check_ibm_spellings.py
 run "An op and a dds that disagree are refused, not guessed (C28-6129 printed p.7, \"the operation overrules\")" python3 check_op_dds_overrule.py

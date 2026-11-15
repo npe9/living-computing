@@ -68,93 +68,11 @@ import strap_asm as A               # noqa: E402
 from strap2 import optable as T     # noqa: E402
 
 # ---------------------------------------------------------------- witnesses
-
-
-def rows(name):
-    with open(os.path.join(HERE, name)) as f:
-        return [l.split("\t") for l in f.read().splitlines()
-                if l and not l.startswith("#")]
-
-
-def four(x):
-    return [x.replace("####", format(v, "04b")) for v in range(16)] if "####" in x else [x]
-
-
-# Appendix A footnotes (p.45): the suffixes each one licenses.
-SUFFIX = {"3": ["I"], "4": ["I", "N", "NI"], "5": ["N"], "6": ["A"],
-          "7": ["N", "A", "NA"], "8": ["+", "-", "H"]}
-VFLISH = ("V", "VFL", "ADDVFL", "CONN")
-FPISH = ("F", "FP", "ADDFP")
-
-printed = {}        # name -> set of "source:group"
-
-
-def add(name, src):
-    for n in four(name):
-        printed.setdefault(n, set()).add(src)
-
-
-ROWS_A = rows("c28_6129_appendix_a_ops.txt")
-ROWS_C = rows("c28_6129_appendix_c_ops.txt")
-ROWS_N = rows("c28_6129_n28_1081_ops.txt")
-ROWS_G = rows("c22_6729_appendix_b_ops.txt")
-ROWS_1 = rows("c22_6531_appendix_a_ops.txt")
-
-for t, m, f, n in ROWS_A:
-    if f == "10":                       # C, CM, CT: a family, not an op
-        add(m + "####", "A:" + t)
-        add(m + "####I", "A:" + t)
-        continue
-    add(m, "A:" + t)
-    for s in SUFFIX.get(f, []):
-        add(m + s, "A" + f + ":" + t)
-for sec, m, imm, page in ROWS_C:
-    add(m, "C:" + sec)
-    if imm == "I":
-        add(m + "I", "CI:" + sec)
-for g, m, n in ROWS_N:
-    # "CRDRUN (SEOP)" and "REW (SEOP)": the op, written with SEOP allowed.
-    if m.endswith(" (SEOP)"):
-        b = m[:-len(" (SEOP)")]
-        add(b, "N:" + g)
-        add(b + "SEOP", "N:" + g)
-        continue
-    add(m, "N:" + g)
-for g, m, n in ROWS_G:
-    add(m, "G:" + g)
-
-
-def kinds_of(srcs):
-    """The types a name is printed as: V (VFL or connective), F (floating
-    point), S (secondary), or - (anything else).  A name printed both ways
-    (L, +, *, ...) must be accepted both ways."""
-    out = set()
-    for s in srcs:
-        g = s.split(":")[1]
-        out.add("V" if g in VFLISH else "F" if g in FPISH else
-                "S" if g == "SECONDARY" else "-")
-    return out
-
-
-def look(op, mode=None, sec=()):
-    try:
-        return T.lookup(op, mode, sec)
-    except Exception:
-        return None
-
-
-def accepted(name, kind):
-    if name == "SEOP":
-        return look("RD", None, ("SEOP",)) is not None
-    if kind == "S":
-        return any(look(p, None, (name,)) for p in ("CW", "RD", "W"))
-    if kind == "V":
-        e = look(name, "BU")
-        return e is not None and e.kind in ("vfl", "conn")
-    if kind == "F":
-        e = look(name, "N")
-        return e is not None and e.kind == "fp"
-    return look(name) is not None
+# The printed set is built in printed_ops.py (shared with the 7030 op-table
+# generator and its check).
+from printed_ops import (rows, four, SUFFIX, VFLISH, FPISH, printed, add,   # noqa: E402,F401
+                         ROWS_A, ROWS_C, ROWS_N, ROWS_G, ROWS_1, kinds_of, look,
+                         accepted, LISTING_WITNESSED)
 
 
 def host_names():
@@ -224,7 +142,7 @@ EXTRA = {
     # A suffix on a printed name that IBM's lists do print elsewhere: the CB
     # suffixes on CBRZ (p.51 "CBRZ or CBZR"; MCP printed p.360 line 26 prints
     # CBRZH, CBRZ+, CBRZ-).
-    "LISTING_WITNESSED": {"CBRZ+", "CBRZ-", "CBRZH"},
+    "LISTING_WITNESSED": set(LISTING_WITNESSED),
     # An immediate form no list allows: CV, DCV (footnote 5: N only), ST and
     # SRD (footnote 5), VFL M+ and M+1 (STRAP II p.44 prints VFL M+ with no
     # footnote; STRAP-1's p.57 gave it 3).
