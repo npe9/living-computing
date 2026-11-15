@@ -1661,6 +1661,7 @@ run "STRAP II takes IBM's spellings (*A+, +NMG, CBZR, SU, xxxSEOP, -A, NOPRINT; 
 run "An op and a dds that disagree are refused, not guessed (C28-6129 printed p.7, \"the operation overrules\")" python3 check_op_dds_overrule.py
 run "Secondary ops only on their own family, field P one code (C22-6729 printed p.22; Reference Manual printed p.21)" python3 check_secondary_ops.py
 run "STRAP II step 4a-ii: every op-table entry is its primary entry under one rule (5,547 entries over the printed set)" python3 check_strap2_op_reconstruction.py
+run "No dds anywhere: C28-6129 printed p.7's three cases over the printed op set (and no immediate I on an FP op)" python3 check_no_dds_cases.py
 run "STRAP II against the listing oracles and strap_asm's images" python3 check_strap2_oracles.py
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<

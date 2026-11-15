@@ -194,8 +194,11 @@ def _vfl_or_fp(op, mode, secondary):
         progressive = p
         pfield = p if p is not None else (4 if immediate else 0)
         fills = [("SIMAD" if immediate else "S24A", 1), ("SOFF", 1)]
+        # +NMG is printed VFL only (strap_asm.NO_DDS_VFL_ONLY), though its
+        # base +MG is ambiguous: its entry is not Fig. 23's ambiguous one.
         ambiguous = (kind == "VFL" and not mode and not secondary and not immediate
-                     and base in VFL_INT_CODES and base in FP_CODES)
+                     and base in VFL_INT_CODES and base in FP_CODES
+                     and op not in _a.NO_DDS_VFL_ONLY)
         if kind == "CONN":
             suffix_name, value = conn
             sk = _a.enc_connective(0, 0, pfield, 0, 0, 0, value,

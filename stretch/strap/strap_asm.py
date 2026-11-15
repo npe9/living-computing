@@ -1839,6 +1839,15 @@ def strip_fp_sign(op):
     return None
 
 
+# The signed forms printed as both a VFL and a floating-point spelling
+# (case 1 above), in the host's spelling, and "+NMG" (case 2).
+NO_DDS_AMBIGUOUS = frozenset({
+    "*N", "*+N", "-MG", "/N", "KN", "KRN", "LFTN", "LN", "LWFN", "M-",
+    "M-MG", "SRDN", "STN"})
+NO_DDS_VFL_ONLY = frozenset({"+MGN"})
+NO_DDS_VFL_FORMS = NO_DDS_AMBIGUOUS | NO_DDS_VFL_ONLY
+
+
 def classify_vfl_or_fp(stmt):
     """_classify_vfl_or_fp, with the combinations no instruction
     word can hold refused by name.  Each assembled, without an error, to
@@ -1863,6 +1872,15 @@ def classify_vfl_or_fp(stmt):
     """
     r = _classify_vfl_or_fp(stmt)
     kind, base_op, invert, immediate, p_progressive, dds_mods, conn = r
+    if kind == 'FP' and immediate:
+        # "+I(N),100" compiled to exactly the word of "+(N),100": the I
+        # suffix is VFL immediate addressing (App. A footnotes 3-4; field
+        # P code 4, Reference Manual printed p.21), which a floating-point
+        # instruction cannot hold.  E+I is a floating-point op of its own
+        # and never reaches here with immediate set.
+        raise AssemblerError(
+            f"{stmt.op}: immediate addressing on a floating-point "
+            f"operation (the I suffix is VFL only)", stmt.lineno)
     if p_progressive is not None and immediate:
         raise AssemblerError(
             f"{stmt.op}: immediate addressing and a progressive-indexing "
@@ -2141,6 +2159,27 @@ def _classify_vfl_or_fp(stmt):
         if _wm in VFL_INT_CODES and _wm not in FP_CODES:
             base_op, invert = _wm, 1
 
+    # >>> NO DDS ON A SIGNED FORM PRINTED BOTH WAYS: VFL, AS FOR "+". <<<
+    # C28-6129 printed p.7 (and the guide, C22-6729 p.140 Box 5, read in
+    # the ink 2026-11-15) gives three cases where no dds can be found:
+    # "1. The operation symbol can stand for either VFL or floating point
+    # operations (+, -, *, /).  The operation is compiled as a VFL
+    # operation with the data description (BU, 64, 8).  2. ... VFL
+    # operation only ... (BU, 64, 8) ... 3. ... only a floating point
+    # operation (-A, or *NA) ... normalized".  The names below are each
+    # printed BOTH as a VFL spelling (App. A footnotes 3-5, App. C's VFL
+    # section) and as a floating-point one (footnote 7, App. C's FP
+    # section) -- tests/check_strap2_mnemonics.py's printed set says so
+    # -- so they are case 1; and "+NMG" (host "+MGN") is printed VFL only
+    # (N28-1081), case 2.  The host compiled all fourteen as floating
+    # point.  No deck writes one bare, so nothing printed is moved.
+    if base_op in NO_DDS_VFL_FORMS:
+        _sec = [m for m in stmt.mods if m.strip().upper() in PROGRESSIVE_SECONDARY_OP]
+        _v = _classify_vfl_or_fp(type('S', (), {
+            'op': stmt.op, 'mods': ['BU'] + _sec, 'lineno': stmt.lineno})())
+        if _v[0] == 'VFL':
+            return ('VFL', _v[1], _v[2], _v[3], p_progressive, dds_mods, None)
+
     in_vfl, in_fp = base_op in VFL_INT_CODES, base_op in FP_CODES
     if not in_vfl and not in_fp and strip_fp_sign(base_op) is not None:
         return 'FP', base_op, invert, immediate, p_progressive, dds_mods, None
@@ -2152,6 +2191,20 @@ def _classify_vfl_or_fp(stmt):
         # C22-6531 p.9, case 1: ambiguous op with no dds assembles as
         # VFL with data description (BU, 64, 8).
         return 'VFL', base_op, invert, immediate, p_progressive, dds_mods, None
+    # Case 2 for the VFL N and NI suffixes (App. A footnotes 4-5): with no
+    # dds, CVN, KFN, LNI, *NI and twenty more printed VFL-only spellings
+    # had no reading at all, because the suffix strip lives in the dds
+    # branch above.  They have no floating-point reading, so the VFL one
+    # is the only one: (BU, 64, 8), or (BU, 24, 8) when immediate.
+    if not has_dds:
+        _sec = [m for m in stmt.mods if m.strip().upper() in PROGRESSIVE_SECONDARY_OP]
+        try:
+            _v = _classify_vfl_or_fp(type('S', (), {
+                'op': stmt.op, 'mods': ['BU'] + _sec, 'lineno': stmt.lineno})())
+        except AssemblerError:
+            _v = (None,)
+        if _v[0] == 'VFL':
+            return ('VFL', _v[1], _v[2], _v[3], p_progressive, dds_mods, None)
     return None, base_op, invert, immediate, p_progressive, dds_mods, None
 
 
@@ -4347,7 +4400,10 @@ def emit_statement(stmt, symtab, image):
         if (not (dds_mods and dds_mods[0].strip()) and dds_text
                 and _FLOAT_DDS.match(dds_text)):
             dds_text = 'BU,,4'
-        mode, length_expr, bs_expr = (('BU', None, None) if not dds_text
+        # No dds at all: (BU, 64, 8), or (BU, 24, 8) for an immediate
+        # (C28-6129 printed p.7 case 2; C22-6729 p.140 Box 5 rule 3).
+        mode, length_expr, bs_expr = (('BU', '24' if immediate else None, None)
+                                      if not dds_text
                                       else parse_dds(dds_text, stmt.lineno))
         if mode not in MODE_BITS:
             raise AssemblerError(f"unknown VFL mode {mode!r}", stmt.lineno)
@@ -4476,7 +4532,10 @@ def emit_statement(stmt, symtab, image):
                 f"VFL operation on a symbol defined ({dds_text}): what "
                 f"STRAP compiles is not in C22-6531/C28-6129 and no MCP "
                 f"row witnesses it yet; write the dds out", stmt.lineno)
-        mode, length_expr, bs_expr = (('BU', None, None) if not dds_text
+        # No dds at all: (BU, 64, 8), or (BU, 24, 8) for an immediate
+        # (C28-6129 printed p.7 case 2; C22-6729 p.140 Box 5 rule 3).
+        mode, length_expr, bs_expr = (('BU', '24' if immediate else None, None)
+                                      if not dds_text
                                       else parse_dds(dds_text, stmt.lineno))
         if mode not in MODE_BITS:
             raise AssemblerError(f"unknown VFL mode {mode!r}", stmt.lineno)
