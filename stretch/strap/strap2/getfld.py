@@ -46,16 +46,26 @@ def _point_n(e):
 
 
 def _decimal(e):
-    """The digits as written, read in decimal: a radix, and a g.p.'s n and r."""
-    return int(e.data[0].text)
+    """The digits as written, read in decimal: a radix, and a g.p.'s n and r.
+    CHOSEN: a letter, which CPLTNM uses and does not refuse (p.71), counts
+    here as it does there, A = 10 up; the guide does not say how the decimal
+    reading takes one.  The 7030 CPLTNM's CPDEC does the same."""
+    v = 0
+    for c in e.data[0].text:
+        v = v * 10 + int(c, 36)
+    return v
 
 
 class Getfld:
-    def __init__(self, g, sysym, tail=None, changed=None):
+    def __init__(self, g, sysym, tail=None, changed=None, note=None):
         self.g = g
         self.sysym = sysym      # name -> (value, dds) or None; CPLTSY's BOPSER
         self.tail = tail        # TAILOR's prefix, or None
         self.changed = changed  # (written, used): MBSPEC changed a system symbol
+        # A message that does not refuse the field (CPLTNM's 63, p.71), as
+        # (number, text): passed to the using program's note(), and kept here.
+        self.note = note
+        self.notes = []
         self.radix = 0          # Gfsrad: 8 bits, zero means 10 (p.70)
         self.gp_radix = 0       # a DD's radix for its g.p. values (C28 p.30 c)
         self.pending = None     # a (.n) met, its value not yet read: (n, r)
@@ -352,7 +362,14 @@ class Getfld:
 
     # -- CPLTNM ---------------------------------------------------------------
     def _cpltnm(self):
-        """p.70: loop while alphameric.  A digit too large is error 63, used."""
+        """Chart BD p.70: loop while alphameric.  p.71, Boxes 3-8: "If the
+        digit equals or exceeds the radix, an error message is executed, but
+        the digit is still used in the computation of the numeric datum."  The
+        message is 63 DIGIT INCORRECT FOR RADIX (p.177, logic area CPLTNM),
+        given as a note; (8)19 is 1 x 8 + 9 = 17.  CHOSEN: once for each such
+        digit, as the loop is drawn; and a letter past F ("a radix as high as
+        16 where the letters A-F represent the values 10-15", p.71) goes on as
+        G = 16 up, which the page does not say."""
         g = self.g
         radix = self.radix or 10
         v = 0
@@ -361,7 +378,10 @@ class Getfld:
             self.number_text += g.ch
             d = int(g.ch, 36)
             if d >= radix:
-                raise FieldError(63, f"DIGIT INCORRECT {g.ch!r} IN RADIX {radix}")
+                item = (63, f"DIGIT INCORRECT {g.ch!r} IN RADIX {radix}")
+                self.notes.append(item)
+                if self.note:
+                    self.note(*item)
             v = v * radix + d
             g.next()
         if v >= 1 << 24:

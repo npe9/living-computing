@@ -147,6 +147,19 @@ so `(8)A` was refused and a prefix split over a continuation card failed;
 `(16)A0` is now the symbol A0, Box 7 being tested before Box 8. All 70,126
 coded fields of the 734 decks are unchanged. `tests/check_strap2_getfld_paren.py`.
 
+A digit too large for its radix is used, with message 63 (2026-11-15).
+C22-6729 p.71, CPLTNM Boxes 3-8: "If the digit equals or exceeds the radix,
+an error message is executed, but the digit is still used in the computation
+of the numeric datum." So `(8)19` is 1 x 8 + 9 = 17 and prints DIGIT INCORRECT
+FOR RADIX 63 (p.177) against its line; 63 is not among the serious messages
+(1-28 by p.176's footnote, 1-18 by N28-1081 page 13) and does not stop the
+strict shim. Before this the host refused the field. CHOSEN where the pages
+are silent: the message once for each such digit; a letter past F used as
+G = 16 up; a radix or a g.p.'s n written with a letter read in decimal with
+the letter's value (`(1A)` is radix 20). A numeric DD's own number is DNUM's
+and still refuses with 47. The 7030 deck's CPLTNM does the same (it halted, 163, until
+2026-11-15). `tests/check_strap2_coded.py`.
+
 A symbolic field length or byte size is tested by DECODE's KAMMS (C22-6729
 p.137 boxes 20, 29): message 87 (FL over 64 or bit style, truncated as 36 is)
 and 88 (BS over 8 or bit style; the deck refuses, as for 37), p.177. Checked

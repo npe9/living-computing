@@ -124,6 +124,17 @@ Bcfxtx (Box 55 GFLONG), MEASURED 2026-11-13; the driver gives each field
                                         driver's OUTF, so a scratch address
                                         never compares high; kept, since
                                         MAIN's buffer may lie below GFSCR
+
+>>> MESSAGE 63, 2026-11-15.  C22-6729 p.71, CPLTNM Boxes 3-8 (read in the
+>>> ink): "If the digit equals or exceeds the radix, an error message is
+>>> executed, but the digit is still used in the computation of the numeric
+>>> datum."  Host and deck both give 63 as a note and code the field; the
+>>> three rows 19A, A(.3,8)9 and (8)19 compare the deck's field and its
+>>> NOTEC with the host's.  (The deck halted, ERRC 163, until this date; the
+>>> injection lines above that mention "the 163 halt" were measured before.)
+>>> MEASURED on the deck, restored by copy and cmp, control 50 passing:
+>>>   the digit not reloaded after the note   FAIL those three rows only
+>>>   63 not counted in NOTEC                 FAIL those three rows only <<<
 """
 import os
 import re
@@ -148,6 +159,7 @@ MODULE = "StretchStrap2x7030GfTb"
 STEPS = 60000000
 fails = 0
 CHANGED = []    # the host's MBSPEC alterations, message 129 (p.178)
+NOTES = []      # the host's GETFLD notes: CPLTNM's 63 (p.71)
 
 
 def check(label, got, want):
@@ -245,7 +257,8 @@ def deck_text(cards):
 def host(cards):
     """Each field's coded expression, as strap2 makes it, or 'refused n'."""
     g = Getcha(cards)
-    f = Getfld(g, system_symbol, changed=lambda written, used: CHANGED.append((written, used)))
+    f = Getfld(g, system_symbol, changed=lambda written, used: CHANGED.append((written, used)),
+               note=lambda number, text: NOTES.append(number))
     out = []
     g.next()
     have = True
@@ -329,7 +342,8 @@ def main():
     check("control: the host's MBSPEC changes $XO, $1ND, $51T (129)", CHANGED,
           [("XO", "X0"), ("1ND", "IND"), ("51T", "SIT")])
     check("control: the host's Fig. 28 is the printed one", want[36], fig28_printed())
-    halts = [("163, a digit too large for the radix (the host's 63)", "19A", 163, 63),
+    check("control: the host gives no 63 on the 94 fields", NOTES, [])
+    halts = [("a digit too large for the radix", "19A", 0, "note 63"),
              ("166, a plus after an operator (the host's 66)", "A++B", 166, 66),
              ("167, a character that ends no field (the host's 67)", "7$", 167, 67),
              ("168, a number over 24 bits (the host's 68)", "16777216", 168, 68),
@@ -343,8 +357,8 @@ def main():
              ("167, a parenthesis not closed (the host's 67)", "(A", 167, 67),
              ("166, a g.p. with no value (the host's 66)", "A(.3)", 166, 66),
              ("166, a g.p. inside parentheses (the host's 66)", "(A(.3)5)", 166, 66),
-             ("163, a g.p.'s value in its radix r (the host's 63)", "A(.3,8)9", 163, 63),
-             ("163, a digit too large for a radix prefix (the host's 63)", "(8)19", 163, 63),
+             ("a g.p.'s value in its radix r", "A(.3,8)9", 0, "note 63"),
+             ("a digit too large for a radix prefix", "(8)19", 0, "note 63"),
              ("10, parentheses deeper than 7", "((((((((A))))))))", 10, None),
              ("156, a system symbol not found (the host's 56)", "$QQQ", 156, 56),
              ("156, a system symbol of 9 characters (the host's 56)", "$ABCDEFGHI", 156, 56),
@@ -361,6 +375,15 @@ def main():
             else:
                 cs = [card(" ", "", stmt)]
             h, _ = run(cs, tmp)
+            if msg == "note 63":
+                # p.71: 63 is a note and the digit is used, on both
+                del NOTES[:]
+                w = host(cs)
+                check(f"63 as a note, the field coded as the host's: {label}",
+                      h and (h["errc"], h["notes"], h["fields"]), (0, len(NOTES), w))
+                check("  and the host gives 63 once and does not refuse",
+                      (list(NOTES), w[-1][:7] == "refused"), ([63], False))
+                continue
             check(f"ERRC {label}", h and h["errc"], errc)
             if msg is not None:
                 check(f"  and the host refuses it, {msg}", host(cs)[-1], f"refused {msg}")
