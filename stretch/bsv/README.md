@@ -603,7 +603,7 @@ fail with the interlock off (KVI, V+I, CB, an indicator branch and a count
 branch through X1, LX and Z of the register as storage) and which do not, so
 the arms for those are not yet shown to be needed.
 
-### An index write waits for a pending level indexed by it (fixed 2026-11-15)
+### A look-ahead level carries the I-box's indexing (2026-11-15)
 
 A look-ahead level's operand and store addresses are derived when it is loaded,
 and the store-close-to-fetch waits compare against them. But the E-box
@@ -613,19 +613,56 @@ moved the level's operand. The 7030 STRAP II MAIN test's driver (step 4b-i)
 found this: `ST(BU,64),9.0($9)` was loaded as a level, `V+I,$9,11.0` ran ahead
 of it, and the store landed in the next record. It showed only for layouts that
 kept the store pending, and the first diagnosis (a stale index after an LV) was
-wrong; a store and read trace in storage settled it. `iboxHazard` now holds an
-index write (direct-index loads and adds on J, immediate index, count and
-branch, and stores to words 16-31 by SX/SV/SC/SR/SVA, Z, R/RCZ and SIC) while a
-pending level is indexed by that register (`levelIndexedBy`). `rl_prepare` holds
-a new level indexed by register j while a pending level stores into word 16+j
-(`indexStorePending`).
+wrong; a store and read trace in storage settled it.
 
-This is a conservative stall, not a measured time. On the real machine the
-level carries the address the I-box computed, so the index arithmetic would not
-wait (`../docs/microarchitecture_plan.md` §1a). Test:
-`../decks/index_after_level.strap`. Its header records which cases fail with
-each interlock off (the V+I shape and an overtaken floating store; the E-box
-sibling) and which do not (LV, SV into $X3, SIC), so those arms are guards only.
+The first fix, the same day, was a stall: `iboxHazard` held an index write while
+a pending level was indexed by that register (`levelIndexedBy`). That stall is
+gone. The level now carries what the I-box's indexing produced (`LaCarry` in
+`StretchTypes.bsv`: the effective address, and a VFL instruction's length, byte
+size and offset after the second index). `rl_prepare` reads the index registers
+once (`carryIndex`), derives `da` and `storeAddr` from the instruction as
+carried, and `rl_au_remove` hands the E-box that instruction with its index
+fields cleared (`carriedInstr`), so `execute()` indexes nothing and is not
+edited. This is the machine's arrangement: a level holds an operation code, the
+operand, indicators and an instruction counter, and no address or index field
+(Buchholz section 15.3, printed pp.238-240; 7101 CE manual R23-9732 Fig. 3.2.2,
+PDF 93). An I-box index write behind a level therefore runs without waiting.
+
+Three things are left as they were, each for a stated reason:
+
+- **Progressive indexing still reads its register in the E-box.** The
+  instruction reads and writes that register in two parts, and
+  `progressiveWrites` and `progressivePending` already hold it still. Its
+  second index is carried like any other.
+- **An immediate VFL address is carried unindexed**, because `execute()` takes
+  the immediate operand from the address field and never from the effective
+  address. Whether the 7030 indexes an immediate address was not checked here.
+- **The level's decoded instruction is kept beside the carried values.** The
+  timing functions read it, and `eboxClocks` must not see a length the second
+  index has changed; that would move times for a reason no table gives.
+
+One wait remains, and it is a real dependence: a level that stores into index
+word 16+j, followed by a level indexed by j. The later address does not exist
+until the earlier level has executed, so `rl_prepare` holds the later level
+(`indexStorePending`, `levelStoresIndex`). It is not a measured time. A store
+whose field crosses into an index word needs no second test, because
+`execute()` refuses a crossing store below word 32 (measured, see
+`levelStoresIndex`).
+
+**Found while proving this, and NOT fixed here (open):** an I-box index
+instruction does not wait for a pending level that stores into that index
+register. `LVI,$3,0` / `L(BU,64),XW1` / `ST(BU,64),$X3` / `V+I,$3,1.0` /
+`SV,$3,R1` (with a slow level ahead) leaves R1 = 64 where the sequential model
+gives 0x100 + 64: the V+I and SV run ahead of the store. It fails identically on
+commit 3204601, so it predates this change; `iboxHazard` compares a direct-index
+instruction's operand word with the levels' store words, but not the register
+J it reads or writes. The likely fix is `levelHolds(lv, 16 + j)` on those arms,
+the I-box sibling of `indexStorePending`.
+
+Test: `../decks/index_after_level.strap`, 43 words, the halt PC and a cycle
+count. Its header records the measured injections: the E-box re-indexing fails
+the V+I cases and the overtaken floating store, the missing wait fails the
+E-box sibling, and the old stall put back fails only the cycle count.
 
 ### Documented simplifications (deliberate, not oversights)
 
