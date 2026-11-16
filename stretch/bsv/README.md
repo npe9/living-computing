@@ -603,7 +603,7 @@ fail with the interlock off (KVI, V+I, CB, an indicator branch and a count
 branch through X1, LX and Z of the register as storage) and which do not, so
 the arms for those are not yet shown to be needed.
 
-### An index write waits for a pending level indexed by it (fixed 2026-11-15)
+### A look-ahead level carries the I-box's indexing (2026-11-15)
 
 A look-ahead level's operand and store addresses are derived when it is loaded,
 and the store-close-to-fetch waits compare against them. But the E-box
@@ -613,19 +613,77 @@ moved the level's operand. The 7030 STRAP II MAIN test's driver (step 4b-i)
 found this: `ST(BU,64),9.0($9)` was loaded as a level, `V+I,$9,11.0` ran ahead
 of it, and the store landed in the next record. It showed only for layouts that
 kept the store pending, and the first diagnosis (a stale index after an LV) was
-wrong; a store and read trace in storage settled it. `iboxHazard` now holds an
-index write (direct-index loads and adds on J, immediate index, count and
-branch, and stores to words 16-31 by SX/SV/SC/SR/SVA, Z, R/RCZ and SIC) while a
-pending level is indexed by that register (`levelIndexedBy`). `rl_prepare` holds
-a new level indexed by register j while a pending level stores into word 16+j
-(`indexStorePending`).
+wrong; a store and read trace in storage settled it.
 
-This is a conservative stall, not a measured time. On the real machine the
-level carries the address the I-box computed, so the index arithmetic would not
-wait (`../docs/microarchitecture_plan.md` §1a). Test:
-`../decks/index_after_level.strap`. Its header records which cases fail with
-each interlock off (the V+I shape and an overtaken floating store; the E-box
-sibling) and which do not (LV, SV into $X3, SIC), so those arms are guards only.
+The first fix, the same day, was a stall: `iboxHazard` held an index write while
+a pending level was indexed by that register (`levelIndexedBy`). That stall is
+gone. The level now carries what the I-box's indexing produced (`LaCarry` in
+`StretchTypes.bsv`: the effective address, and a VFL instruction's length, byte
+size and offset after the second index). `rl_prepare` reads the index registers
+once (`carryIndex`), derives `da` and `storeAddr` from the instruction as
+carried, and `rl_au_remove` hands the E-box that instruction with its index
+fields cleared (`carriedInstr`), so `execute()` indexes nothing and is not
+edited. This is the machine's arrangement: a level holds an operation code, the
+operand, indicators and an instruction counter, and no address or index field
+(Buchholz section 15.3, printed pp.238-240; 7101 CE manual R23-9732 Fig. 3.2.2,
+PDF 93). An I-box index write behind a level therefore runs without waiting.
+
+Three things are left as they were, each for a stated reason:
+
+- **Progressive indexing still reads its register in the E-box.** The
+  instruction reads and writes that register in two parts, and
+  `progressiveWrites` and `progressivePending` already hold it still. Its
+  second index is carried like any other.
+- **An immediate VFL address is carried unindexed**, because `execute()` takes
+  the immediate operand from the address field and never from the effective
+  address. Whether the 7030 indexes an immediate address was not checked here.
+- **The level's decoded instruction is kept beside the carried values.** The
+  timing functions read it, and `eboxClocks` must not see a length the second
+  index has changed; that would move times for a reason no table gives.
+
+**The store wait (2026-11-16).** The other direction is a level that stores into
+an index register, and the model handled it badly. A new level indexed by j
+waited for a pending level storing word 16+j (`indexStorePending`), but an I-box
+index instruction did not wait at all: `ST(BU,64),$X3` then `V+I,$3,1.0` read
+the old $3. This failed the same way on commit 3204601, so it predates this
+work. A probe written for this change found it, and so did a reading of the 7101
+I-unit flow diagrams.
+
+Those diagrams draw the 7030's mechanism, keyed on the store's own address and
+nothing else (R23-9732, I UNIT FLOW DIAGRAMS; all three read in the page
+images for this change):
+
+- Fig. 3.1.20, "ZL FP3 TRIGGER" (PDF 84, printed 1-41/1-42), under "FPL 4 E TGR
+  ON": "ZOAR EQ 11 + 12 + 16 - 31 (28.42.51.1)" -> "TON STORE WAIT TGR", "BLOCK
+  STORE WAIT TGR TOF", "TON I RCY REQ TGR (28.42.72.1)".
+- Fig. 3.1.13 sheet 3, "ZR FP TRIGGERS" (PDF 77, printed 1-27/1-28), from
+  "FPR4E": "ZOAR EQ 11 +12 + 16 - 31 (28.42.51.1)" -> "TON STORE WAIT TGR",
+  "TON IRCY REQ TGR (28.42.72.1)".
+- Fig. 3.1.24, "WBC TRIGGER" (PDF 88, printed 1-49/1-50), for VFL: "W EQ 11 +
+  12 + 16 - 31 (28.11.55.1)" -> "VFL CL 2 . VFL 5E" -> "VFL 5 CL 2 COND STORE
+  WAIT (28.21.71.1)", and the same from "ZL 11 + 12 + 16 - 31".
+
+So `storeWait` (`StretchIBox.bsv`) is True while any pending level stores into
+word 11, 12 or 16-31, and `rl_prepare` then prepares nothing until that level
+retires: no I-box instruction and no new level. It replaces `indexStorePending`.
+The pages draw only the trigger's turn-on. Three things are the model's
+choice: that STORE WAIT holds all preparation (no box takes it as a
+condition), that the store's retirement releases it, and that the I-unit
+recovery costs nothing. It is a conservative wait, not a measured time. A field crossing into word
+16-31 from word 15 is refused by `execute()`, so the store's first word is
+enough.
+
+Test: `../decks/index_after_index_store.strap` (V+I and SV of $3 behind a
+pending `ST(BU,64),$X3`). Its header records the measured injection. Two parts of
+the rule are not shown to be needed by any test: its breadth (a wait only for
+instructions that use register j would pass every case), and words 11 and 12,
+which are in it because the pages print them (a direct-index read of either word already waits
+through `levelHolds`).
+
+Test: `../decks/index_after_level.strap`, 43 words, the halt PC and a cycle
+count. Its header records the measured injections: the E-box re-indexing fails
+the V+I cases and the overtaken floating store, the missing wait fails the
+E-box sibling, and the old stall put back fails only the cycle count.
 
 ### Documented simplifications (deliberate, not oversights)
 

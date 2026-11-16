@@ -191,6 +191,81 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
   endcase
 endfunction
 
+// >>> THE I-BOX'S INDEXING, DONE ONCE AND CARRIED IN THE LEVEL. <<<
+// (2026-11-15; the type and its source are at LaCarry, StretchTypes.)
+//
+// `carryIndex` reads the index registers -- the ONLY read of them made
+// on behalf of a look-ahead level, except a progressive instruction's
+// own register (below).  `carriedInstr` is pure: it substitutes what
+// was carried and clears the index fields, so execute()'s effAddr24 /
+// effAddr18 / vflSecondIndex all take their `index 0` early return and
+// the E-box re-indexes nothing.  rl_prepare derives `da` and
+// `storeAddr` from the carried instruction too (prepareExec above), so
+// the address a level waits on and the address it executes at are one
+// derivation and cannot disagree.
+//
+// `p` HAS THREE STATES HERE AS EVERYWHERE (see prepareExec):
+//
+//   p == 0  ordinary.  The effective address replaces the address
+//           field and i1 is cleared.
+//   p == 4  IMMEDIATE.  The address field is the operand
+//           (execute()'s immediateOperand reads vi.a.addr / cn.a.addr,
+//           never `ea`), and this model does not index it, so it is
+//           carried unchanged and i1 is left alone: `ea` is dead in
+//           both VFL arms when immediate, whatever i1 says.
+//   else    PROGRESSIVE.  The address field is the INCREMENT and i1
+//           names the register execute() reads AND writes in two parts
+//           (Ref. Manual printed p.21).  Both are left alone: that
+//           register is held still by progressiveWrites (no I-box
+//           instruction touches it) and progressivePending (no level
+//           is loaded behind it), so the live read is the load-time
+//           value.
+//
+// THE SECOND INDEX IS CARRIED FOR ALL THREE, progressive included:
+// p.21 has it modify length, byte size and offset, "the value of the
+// index register before modification" when both halves name one
+// register, and nothing but this holds a progressive level's i2 still.
+function LaCarry carryIndex(StretchStorage st, DecodedInstr d);
+  case (d) matches
+    tagged VflInt .v: begin
+      VflAddr b = vflSecondIndex(st, v.a);
+      return LaCarry { addr: (v.a.p == 0) ? effAddr24(st, v.a.addr, v.a.i1) : v.a.addr,
+                       lbo:  {b.length, b.bs, b.offset} };
+    end
+    tagged Connective .c: begin
+      VflAddr b = vflSecondIndex(st, c.a);
+      return LaCarry { addr: (c.a.p == 0) ? effAddr24(st, c.a.addr, c.a.i1) : c.a.addr,
+                       lbo:  {b.length, b.bs, b.offset} };
+    end
+    tagged Fp .f: return LaCarry { addr: {effAddr18(st, f.addr, f.idx), 6'b0}, lbo: 0 };
+    default:      return LaCarry { addr: 0, lbo: 0 };
+  endcase
+endfunction
+
+function VflAddr carriedVflAddr(VflAddr a, LaCarry c);
+  VflAddr b = a;
+  b.addr   = c.addr;
+  if (a.p == 0) b.i1 = 0;
+  b.length = c.lbo[15:10];
+  b.bs     = c.lbo[9:7];
+  b.offset = c.lbo[6:0];
+  b.i2     = 0;
+  return b;
+endfunction
+
+function DecodedInstr carriedInstr(DecodedInstr d, LaCarry c);
+  case (d) matches
+    tagged VflInt .v:
+      return tagged VflInt VflInstr { a: carriedVflAddr(v.a, c), m: v.m, code: v.code };
+    tagged Connective .cn:
+      return tagged Connective ConnInstr { a: carriedVflAddr(cn.a, c), conn: cn.conn, suffix: cn.suffix };
+    tagged Fp .f:
+      return tagged Fp { addr: c.addr[23:6], unnorm: f.unnorm, absSign: f.absSign,
+                         invSign: f.invSign, code: f.code, idx: 0 };
+    default: return d;
+  endcase
+endfunction
+
 function Maybe#(WordAddr) operandTarget(StretchStorage st, DecodedInstr d) =
   prepareExec(st, d).operandAddr;
 
@@ -276,64 +351,70 @@ function Bool progressiveWord(Vector#(4, LaLevel) lv, WordAddr w);
   return (w >> 4) == 1 && progressiveWrites(lv, w[3:0]);
 endfunction
 
-// >>> AN INDEX REGISTER A PENDING LEVEL ADDRESSES THROUGH, 2026-11-15. <<<
-// A look-ahead level's operand and store addresses (`da`, `storeAddr`)
-// are derived at LOAD time, and the store-close-to-fetch waits and
-// levelHolds above compare against them -- but the E-box re-derives the
-// effective address from the decoded instruction and the CURRENT index
-// registers when the level is dispatched.  The two agree only if no
-// index register a pending level is modified by changes in between, and
-// nothing enforced that: an I-box instruction writing the register ran
-// ahead of the level and moved its operand.  Found by the 7030 STRAP II
-// MAIN test's driver (step 4b-i): "ST(BU,64),9.0($9)" loaded as a level
-// with da = word 0x42f, then "V+I,$9,11.0" ran ahead of it, and the
-// store landed at 0x43a, the NEXT record's word -- so every record
-// showed its predecessor's value, and only for layouts where the
-// store's level was still pending when the V+I was prepared.  The
-// invariant restored here: no index register a pending level addresses
-// through changes between that level's load and its dispatch.
+// >>> NO INDEX WAIT FOR A LEVEL; A STORE WAIT FOR AN INDEX STORE. <<<
+// (2026-11-15/16.)  A look-ahead level's operand and store addresses
+// (`da`, `storeAddr`) are derived at LOAD time, and the store-close-to-
+// fetch waits and levelHolds above compare against them.  The E-box used
+// to re-derive the effective address from the CURRENT index registers
+// when the level was dispatched, and nothing kept the two in step: an
+// I-box instruction writing the register ran ahead of the level and
+// moved its operand.  Found by the 7030 STRAP II MAIN test's driver
+// (step 4b-i): "ST(BU,64),9.0($9)" loaded as a level with da = word
+// 0x42f, then "V+I,$9,11.0" ran ahead of it, and the store landed at
+// 0x43a, the NEXT record's word.
 //
-// A ZERO INDEX FIELD MEANS NO INDEXING, so register 0 never matches.
-// THIS IS A CONSERVATIVE STALL, NOT A MEASURED ONE.  The real I-box
-// computes the effective address during preparation and the level
-// carries it, so the index arithmetic would not wait; the model waits
-// instead of carrying it (bsv/README.md, microarchitecture_plan.md §1a).
-// Test: decks/index_after_level.strap.
-function Bool usesIndex(DecodedInstr d, Bit#(4) j);
-  Bool r = False;
-  if (j != 0)
-    case (d) matches
-      tagged VflInt .v:     r = v.a.i1 == j || v.a.i2 == j;
-      tagged Connective .c: r = c.a.i1 == j || c.a.i2 == j;
-      tagged Fp .f:         r = f.idx == j;
-      default:              r = False;
-    endcase
-  return r;
-endfunction
+// THE FIRST FIX WAS A STALL (commit 3204601, levelIndexedBy in
+// iboxHazard): an index write waited while a pending level was indexed
+// by that register.  IT IS GONE.  The level now carries the I-box's
+// indexing (carryIndex / carriedInstr above; LaCarry in StretchTypes)
+// and the E-box indexes nothing, which is the machine's arrangement: a
+// level has no address or index field (Buchholz §15.3, printed
+// pp.238-240; R23-9732 Fig. 3.2.2, PDF 93), and the I unit forms the
+// effective address in its MOD Z sequencers before the level-load steps
+// send it to memory (R23-9732 Figs 3.1.10, 3.1.15, 3.1.20, PDF 72, 79,
+// 84).  So an I-box index write behind a level runs without waiting.
+//
+// >>> THE STORE WAIT. <<<  What remains is the other direction: a level
+// that STORES into an index register (or the indicator or mask word).
+// R23-9732, I UNIT FLOW DIAGRAMS, draws it at the store step of
+// preparation, on the store's OWN address and nothing else: Fig. 3.1.20
+// (PDF 84), "ZOAR EQ 11 + 12 + 16 - 31" -> "TON STORE WAIT TGR",
+// "TON I RCY REQ TGR"; the same hexagon in Fig. 3.1.13 sheet 3 (PDF 77)
+// for the right half-word floating store, and for VFL, Fig. 3.1.24
+// (PDF 88), "W EQ 11 + 12 + 16 - 31" -> "VFL CL 2 . VFL 5E" ->
+// "VFL 5 CL 2 COND STORE WAIT".  No box compares it with a later
+// instruction's index field.  So `storeWait` is True while ANY pending
+// level stores into word 11, 12 or 16-31, and rl_prepare then prepares
+// nothing -- no I-box instruction, no new level -- until that level has
+// retired.
+//
+// THREE THINGS ARE NOT ON THOSE PAGES AND ARE THE MODEL'S CHOICE: what
+// STORE WAIT blocks (here, all preparation; the pages draw only its
+// turn-on, and no box takes it as a condition), what releases it (here,
+// the storing level's retirement, when its value is in the register),
+// and how long the "I RCY" recovery takes (not charged).  A conservative
+// wait, not a measured time.  (All three figures read in the page
+// images: PDF 77, printed 1-27/1-28; PDF 84, 1-41/1-42; PDF 88,
+// 1-49/1-50.)
+//
+// It replaces two narrower things.  `indexStorePending` (a new level
+// indexed by j waited for a level storing word 16+j) is subsumed.  And it
+// closes a hole neither stall covered: an I-box instruction on register j
+// did not wait for a pending level storing word 16+j, so "ST(BU,64),$X3"
+// then "V+I,$3,1.0" read the old $3 (decks/index_after_index_store.strap).
+//
+// A field crossing INTO word 16-31 from word 15 is refused (OP) by
+// execute() -- its "(stW0 + 1) < 32" test -- so `storeAddr`, the first
+// word, is enough.  If that refusal is ever lifted, test the second word.
+function Bool storeWaitWord(WordAddr w) = (w == 11 || w == 12 || (w >= 16 && w <= 31));
 
-function Bool levelIndexedBy(Vector#(4, LaLevel) lv, Bit#(4) j);
+function Bool storeWait(Vector#(4, LaLevel) lv);
   Bool r = False;
   for (Integer k = 0; k < 4; k = k + 1)
-    if (lv[k].valid && usesIndex(lv[k].di, j)) r = True;
+    if (lv[k].valid &&& lv[k].storeAddr matches tagged Valid .sa &&& storeWaitWord(sa))
+      r = True;
   return r;
 endfunction
-
-// The same, for a STORE into storage word w: words 16-31 are the index
-// registers (see progressiveWord).
-function Bool levelIndexedByWord(Vector#(4, LaLevel) lv, WordAddr w);
-  return (w >> 4) == 1 && levelIndexedBy(lv, w[3:0]);
-endfunction
-
-// The direct-index operations that write register J (Ref. Manual
-// pp.26-29): the loads, the adds, LVE and RNX.  SX/SV/SC/SR/SVA store
-// to storage instead, and KV/KC only compare.
-function Bool dixWritesJ(Bit#(5) code) =
-  code == dixop_LX || code == dixop_LV || code == dixop_LC || code == dixop_LR
-  || code == dixop_V_PLUS || code == dixop_V_PLUS_C || code == dixop_V_PLUS_CR
-  || code == dixop_LVE || code == dixop_RNX;
-function Bool dixStores(Bit#(5) code) =
-  code == dixop_SX || code == dixop_SV || code == dixop_SC || code == dixop_SR
-  || code == dixop_SVA;
 
 function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, Vector#(4, LaLevel) lv);
   Bool pending = False;
@@ -358,18 +439,15 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
       // their stores, V+ ...) now do too.
       h = levelHolds(lv, ea[18:1]) || refillWord || eboxRegister(ea[18:1])
           || progressiveWrites(lv, x.j) || progressiveWrites(lv, x.idx)
-          || progressiveWord(lv, ea[18:1])
-          || (dixWritesJ(x.code) && levelIndexedBy(lv, x.j))
-          || (dixStores(x.code) && levelIndexedByWord(lv, ea[18:1]));
+          || progressiveWord(lv, ea[18:1]);
     end
     tagged ImmIndex .x:
       h = ((x.code == 4'b0111 || x.code == 4'b1111)                         // V+ICR / V-ICR
            && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill)))
-          || progressiveWrites(lv, x.j) || levelIndexedBy(lv, x.j);
+          || progressiveWrites(lv, x.j);
     tagged CountBranch .x:
       h = ((x.refill == 1) && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill)))
-          || progressiveWrites(lv, x.j) || (x.idx == 1 && progressiveWrites(lv, 1))
-          || levelIndexedBy(lv, x.j);
+          || progressiveWrites(lv, x.j) || (x.idx == 1 && progressiveWrites(lv, 1));
     tagged BranchInd .x: h = !indexIndicator(x.indNum) || (x.idx == 1 && progressiveWrites(lv, 1));
     tagged BranchOrMisc .x: begin
       // Unconditional branches drain the levels first: a halt (a
@@ -381,7 +459,7 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
       else if (x.code == 3'b100) begin                                       // Z
         WordAddr zw = baWord(effAddr24(st, {x.addr, 5'b0}, x.idx));
         h = levelHolds(lv, zw) || eboxRegister(zw) || progressiveWrites(lv, x.idx)
-            || progressiveWord(lv, zw) || levelIndexedByWord(lv, zw);
+            || progressiveWord(lv, zw);
       end
       else if (x.code == 3'b000 || x.code == 3'b001) begin                   // R / RCZ
         // The operand is the index word AT THE EFFECTIVE ADDRESS (Ref.
@@ -393,8 +471,7 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
         WordAddr rw = baWord(effAddr24(st, {x.addr, 5'b0}, x.idx));
         h = (rw >> 4) != 1 || levelHolds(lv, rw)
             || levelHolds(lv, zeroExtend(st.readIndex(rw[3:0]).refill))
-            || progressiveWrites(lv, x.idx) || progressiveWord(lv, rw)
-            || levelIndexedByWord(lv, rw);
+            || progressiveWrites(lv, x.idx) || progressiveWord(lv, rw);
       end
       // EX/EXIC: drain the levels first, unconditionally.  BOTH ARE
       // IMPLEMENTED (EX 2026-09-25, EXIC 2026-09-29) and for both this
@@ -413,7 +490,7 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
     tagged Sic .x: begin
       BitAddr ea = effAddr24(st, x.addr, x.idx);
       h = levelHolds(lv, ea[23:6]) || eboxRegister(ea[23:6]) || progressiveWrites(lv, x.idx)
-          || progressiveWord(lv, ea[23:6]) || levelIndexedByWord(lv, ea[23:6])
+          || progressiveWord(lv, ea[23:6])
           || iboxHazard(st, guessPending, decodeHalfWord(x.inner), lv);
     end
     default: h = True;

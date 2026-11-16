@@ -1218,7 +1218,10 @@ module mkStretchCore(StretchCore);
         $display("StretchCore: SWAP started at half-word %0d, %0d words", pc, xs.remaining);
       if (fromLA) begin
         // A look-ahead level's instruction finished: retire it.
-        ebn = eboxClocks(di);
+        // Timed off the level's instruction AS DECODED, as rl_au_remove
+        // times it: the box holds the carried one, whose length the
+        // second index may have changed.
+        ebn = eboxClocks(la.headLevel().di);
         la.retireHead();
       end else begin
         commitNext(pc, len, o.next);
@@ -1242,7 +1245,12 @@ module mkStretchCore(StretchCore);
     Vector#(2, Word64) pf = replicate(0);
     Bit#(2) cnt = 0;
     if (h.data matches tagged Valid .d) begin pf[0] = d; cnt = 1; end
-    let r <- ebox.start(h.pc, h.len, h.di, pf, cnt, OwnerLA, tagged Invalid);
+    // THE INSTRUCTION AS THE LEVEL CARRIES IT: the indexing the I-box
+    // did when the level was loaded, not a second indexing against the
+    // registers as they are now (LaCarry, StretchTypes; Buchholz §15.3).
+    // A branch level is not an E-box class and comes back unchanged.
+    DecodedInstr xdi = carriedInstr(h.di, h.carry);
+    let r <- ebox.start(h.pc, h.len, xdi, pf, cnt, OwnerLA, tagged Invalid);
     if (h.branch) begin
       // The guessed branch, now with final indicators (a branch never
       // waits on an operand, so the result is here).
@@ -1420,6 +1428,11 @@ module mkStretchCore(StretchCore);
       ibusy <= ibusy - 1;   // previous instruction's time budget still running
     else if (!st.writeReady())
       noAction;   // a storing instruction could find the queue full: wait
+    else if (storeWait(nl))
+      // STORE WAIT (R23-9732 Figs 3.1.13, 3.1.20, 3.1.24; StretchIBox's
+      // storeWait): a pending level stores into an index register, the
+      // indicators or the mask, and nothing is prepared until it has.
+      noAction;
     else if (prepared matches tagged Valid {.len, .di}
              &&& isEboxClass(di) &&& isValid(intPC)) begin
       // NOT IMPLEMENTED, and loud about it.  An interruption
@@ -1436,23 +1449,19 @@ module mkStretchCore(StretchCore);
       commitNext(pc, len, pc + ((len == Full) ? 2 : 1));
     end
     else if (prepared matches tagged Valid {.len, .di} &&& isEboxClass(di)) begin
-      // >>> AND A LEVEL STORING INTO AN INDEX REGISTER THIS ONE IS
-      // INDEXED BY, 2026-11-15. <<<  The sibling of iboxHazard's
-      // levelIndexedBy (StretchIBox.bsv): prepareExec below derives this
-      // level's addresses from the index registers NOW, so a pending
-      // level that will store into word 16+j (a VFL ST to $Xj) must
-      // retire first, or the new level's `da` is computed from the old
-      // index.  Conservative, like the progressive wait beside it.
-      Bool indexStorePending = False;
-      for (Integer k = 0; k < 4; k = k + 1)
-        if (nl[k].valid &&& nl[k].storeAddr matches tagged Valid .sa
-            &&& (sa >> 4) == 1 &&& usesIndex(di, sa[3:0]))
-          indexStorePending = True;
-      if (la.count() < 4 && !progressivePending && !indexStorePending) begin
+      if (la.count() < 4 && !progressivePending) begin
         // ONE derivation of this instruction's addresses, used for both
         // the operand read below and the level's storeAddr further
         // down -- see StretchIBox's prepareExec.
-        let prep = prepareExec(st, di);
+        //
+        // AND IT IS DERIVED FROM THE INSTRUCTION AS THE LEVEL WILL
+        // CARRY IT, 2026-11-15: the index registers are read here, once
+        // (carryIndex), and the E-box is later handed this same
+        // instruction with its index fields cleared (rl_au_remove), so
+        // `da`, `storeAddr` and the address executed at are one
+        // derivation.  See LaCarry in StretchTypes.
+        LaCarry carry = carryIndex(st, di);
+        let prep = prepareExec(st, carriedInstr(di, carry));
         Maybe#(WordAddr) da = tagged Invalid;
         if (fetchesOperand(di) && !prep.completesWithoutFetch)
           da = prep.operandAddr;
@@ -1523,7 +1532,8 @@ module mkStretchCore(StretchCore);
           end
           la.load(LaLevel{valid: True, kind: Whole, di: di, pc: pc, len: len, da: da,
                           data: tagged Invalid, fetchIssued: False, waitFor: wf,
-                          branch: False, target: 0, storeAddr: prep.storeAddr});
+                          branch: False, target: 0, storeAddr: prep.storeAddr,
+                          carry: carry});
           pcReg <= pc + ((len == Full) ? 2 : 1);
           ibusy <= 2 * iboxCycles(di, False);   // its preparation time
         end
@@ -1538,7 +1548,7 @@ module mkStretchCore(StretchCore);
         la.load(LaLevel{valid: True, kind: Whole, di: di, pc: pc, len: len, da: tagged Invalid,
                         data: tagged Invalid, fetchIssued: False, waitFor: tagged Invalid,
                         branch: True, target: effAddr19(st, bi.addr, {3'b0, bi.idx}),
-                        storeAddr: tagged Invalid});
+                        storeAddr: tagged Invalid, carry: LaCarry{addr: 0, lbo: 0}});
         xSnap <= st.snapshotIndex();
         indSnap <= st.readIndicators();
         guessPending <= True;

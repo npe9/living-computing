@@ -730,6 +730,38 @@ typedef enum {
   LaNoop     // Table A-2 "NOOP"      -- indicator transfer only
 } LaKind deriving (Bits, Eq, FShow);
 
+// >>> WHAT A LEVEL CARRIES OF THE I-BOX'S INDEXING, 2026-11-15. <<<
+// Buchholz, "Planning a Computer System", §15.3 (printed pp.238-240,
+// PDF 263-265): a look-ahead level holds a partially decoded operation
+// code, the OPERAND, fifteen indicators and an instruction counter.
+// There is no index field in it and no index register is reachable
+// from it: the instruction unit did the indexing, initiated the operand
+// request itself (§15.5, printed p.241) and put a store's address in
+// the look-ahead address register (§15.4, printed p.240).  The
+// arithmetic unit never indexes.
+//
+// This model's level holds the whole decoded instruction (`di`) and
+// hands it to execute(), which forms the effective address from the
+// instruction's index fields.  So that the E-box sees the indexing as
+// the I-box did it WHEN THE LEVEL WAS LOADED -- the same clock `da` and
+// `storeAddr` were derived -- the level carries the two results of that
+// indexing, and the instruction is dispatched with them substituted and
+// its index fields cleared (StretchIBox's carryIndex / carriedInstr):
+//
+//   addr -- the effective address (24 bits; for floating point the
+//           18-bit word address, low six bits zero).  For an immediate
+//           or progressive VFL instruction it is the instruction's own
+//           address field unchanged -- see carryIndex for why.
+//   lbo  -- a VFL instruction's length, byte size and offset after the
+//           second index (Ref. Manual printed p.21); zero otherwise.
+//
+// `di` stays as decoded: the timing functions and the interlocks read
+// it, and neither may see an indexed length.
+typedef struct {
+  BitAddr  addr;
+  Bit#(16) lbo;
+} LaCarry deriving (Bits, Eq, FShow);
+
 typedef struct {
   Bool             valid;
   LaKind           kind;        // `Whole` everywhere today -- see LaKind
@@ -745,6 +777,8 @@ typedef struct {
   Maybe#(WordAddr) storeAddr;   // the word this E-box level stores to (ST/M+),
                                 // so a younger load of that word waits for it
                                 // (store-close-to-fetch, plan stage 3a note)
+  LaCarry          carry;       // what the I-box's indexing produced for
+                                // this instruction -- see LaCarry
 } LaLevel deriving (Bits, Eq, FShow);
 
 endpackage
