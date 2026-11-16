@@ -4799,6 +4799,102 @@ def _dd_decimal_value(field, lineno=None):
     return sign, v, suffix
 
 
+_D96 = 96
+
+
+def _d96_of(n):
+    """A positive integer as STRAP II's double-precision floating number:
+    (exp, f), value f/2^96 * 2^exp, 2^95 <= f < 2^96, truncated."""
+    size = n.bit_length()
+    return size, (n << (_D96 - size) if size <= _D96 else n >> (size - _D96))
+
+
+def _d96_norm(exp, f):
+    size = f.bit_length()
+    if size > _D96:
+        return exp + size - _D96, f >> (size - _D96)
+    return exp - (_D96 - size), f << (_D96 - size)
+
+
+def _d96_add(a, b):
+    """Positive operands; the exact sum truncated to 96 bits."""
+    if a[0] < b[0]:
+        a, b = b, a
+    shift = a[0] - b[0]
+    if shift > _D96 + 2:
+        return a
+    return _d96_norm(a[0] - shift, (a[1] << shift) + b[1])
+
+
+def _d96_mul(a, b):
+    """MQ2: the upper 96 bits of the product."""
+    return _d96_norm(a[0] + b[0] - _D96, a[1] * b[1])
+
+
+def _d96_inv(b):
+    """MQ3, 1/B: the quotient truncated to 96 bits."""
+    return _d96_norm(1 - b[0] - 2, (1 << (_D96 - 1 + _D96 + 2)) // b[1])
+
+
+def _d96_pow10(n):
+    """MQDDPP (C22-6729 p.111): the entries 10**(2**k) by squaring, the
+    product of those n's bits select, and for n < 0 (box 12) MQ3's
+    inverse of that product (box 13)."""
+    entry, out, m = _d96_of(10), _d96_of(1), abs(n)
+    while m:
+        if m & 1:
+            out = _d96_mul(out, entry)
+        m >>= 1
+        if m:
+            entry = _d96_mul(entry, entry)
+    return _d96_inv(out) if n < 0 else out
+
+
+def _dnum_96(ip, fp, ex):
+    """DNUM, C22-6729 printed pp.108-110, for a decimal DD(N) entry with
+    integer digits `ip`, fraction digits `fp` and E exponent `ex`; returns
+    (binary exponent, 48-bit fraction).
+
+    Read in the page images:
+      p.108 box 13 "PREVIOUS RESULTS(P.R.) TIMES RADIX+NO. BECOMES NEW
+            P.R."; box 14 "HAS THERE BEEN A POINT YET (A ON)" -> box 18
+            "REDUCE THE RUNNING EXPONENT BY ONE".  Every digit after the
+            point counts, a trailing 0 too: "1.0" is P.R. 10, running
+            exponent -1.
+      p.109 box 31 "ADD SPECIFIED EXPONENT TO RUNNING EXPONENT"; DNADJ
+            box 36-38: "RAISE THE RADIX TO POWER OF EXP." (MQ4) and
+            "MULTIPLY THIS BY THE PREVIOUS RESULT" (MQ2).
+      p.111 box 12 "NEGATIVE EXPONENT ON THIS DD" -> box 13 "MQ3 DD
+            PRECISION ARITHMETIC - INVERSION".
+      Reference Manual printed p.81: "After the shift, the result
+            fraction is truncated to 48 or 96 bits" -- the machine the
+            MQ routines run on truncates.
+    So `1.0` is 10 x (1/10 truncated), which is below 1, and the word is
+    the truncation of that (OUTPUT truncates: MCP printed p.359 lines
+    38-40, 1.E32/1.E64/1.E128, print the truncated fraction where
+    rounding would end in ...561, ...720, ...352).  1.0 assembles as
+    000FFFFFFFFFFFF0, not 0028000000000000.
+
+    CHOSEN, since p.112 says MQ1, MQ2 and MQ3 "are simple enough not to
+    warrant flow charts": each step is exact-then-truncated to 96 bits.
+    Any truncating MQ3 gives a quotient below 1/10 and so the same word
+    for "1.0"; only an MQ3 that rounded up could make it 1.
+    """
+    pr = None
+    for d in ip + fp:
+        nd = _d96_of(int(d)) if int(d) else None
+        if pr is None:
+            pr = nd
+        else:
+            pr = _d96_mul(pr, _d96_of(10))
+            if nd is not None:
+                pr = _d96_add(pr, nd)
+    scale = ex - len(fp)
+    if scale:
+        pr = _d96_mul(pr, _d96_pow10(scale))
+    return pr[0], pr[1] >> (_D96 - 48)
+
+
 def _dd_normalized(field, lineno=None):
     """One DD(N) data entry as its 64-bit floating word.
 
@@ -4837,6 +4933,14 @@ def _dd_normalized(field, lineno=None):
     bits and cannot tell.  What would settle it is a sentence in
     C28-6129, or more listed constants whose dropped bits begin with
     a 1 (1.E32's do; all three deciding rows are inexact).
+
+    >>> AND IT IS THE TRUNCATION OF STRAP II's 96-BIT CHAIN, NOT OF THE
+    EXACT VALUE (2026-11-16; _dnum_96). <<<  Up to then this function
+    truncated the exact value, so `DD(N), 1.0` gave 0028000000000000.
+    C22-6729 pp.108-111 compute "1.0" as 10 x (1/10), the inverse
+    truncated, so STRAP II gives 000FFFFFFFFFFFF0; `.5` and `2.5` are
+    likewise one unit low.  An entry with no net negative decimal
+    scale (every p.359 row) is unchanged.
 
     >>> OUT OF RANGE IS REFUSED. <<<  printed p.27: "the only decimal
     quantities that can be expressed in 7030 floating point format
@@ -4878,14 +4982,9 @@ def _dd_normalized(field, lineno=None):
     if v == 0:
         raise AssemblerError(f"DD(N) literal {field!r} is zero, which is "
                              f"not implemented (no listed example)", lineno)
-    e = 0
-    while v >= 1:
-        v /= 2
-        e += 1
-    while v * 2 < 1:
-        v *= 2
-        e -= 1
-    frac = (v.numerator << 48) // v.denominator    # truncated: see above
+    m = _DD_DECIMAL.match("".join(field.split()).upper())
+    e, frac = _dnum_96(m.group(2) or "", m.group(3) or "",
+                       int(m.group(4)) if m.group(4) is not None else 0)
     if not -1023 <= e <= 1023:
         raise AssemblerError(
             f"DD(N) literal {field!r} needs binary exponent {e}, outside "

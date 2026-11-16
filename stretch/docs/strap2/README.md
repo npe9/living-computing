@@ -37,7 +37,7 @@ leaf facts. Measured 2026-11-09:
 | `tests/check_strap2_coded.py` | Figs. 28 and 29 pp.200-201, bit for bit (208, 447 and 196 bits) |
 | `tests/check_strap2.py` | what the guide says and `strap_asm` does not do, by hand |
 | listing oracles run on strap2 (`check_strap2_oracles.py`) | 273 of 273 `verify_*.py`; 351 of 351 MCP pages |
-| image of every deck against `strap_asm`'s | 719 the same; 7 with the known difference below; 1 both refuse |
+| image of every deck against `strap_asm`'s | 757 the same; 10 with the known difference below (7 MCP pages, 3 C22-6578 decks); 2 `strap_asm`'s decimal-mode DD; 22 `strap_asm` refuses; 1 both refuse (2026-11-16) |
 
 The known difference: `strap_asm` puts a NOP in a half word rounded over before
 a DR(N) or DRZ(N), and p.33 makes only a CNOP a NOP. strap2 follows the guide. No
@@ -334,8 +334,10 @@ truncated), which is one unit below 1 in 48 bits; `.5` and `17.5` likewise. OUTP
 does not round: p.359's 1.E32 shows that. Against this, IBM's own examples write
 `DD(N), 0.5` and `DD(N), 1.0` (C22-6578; Performance Characteristics Vol. 2), which
 suggests programmers trusted them, but no page prints such a word in binary. strap2
-follows the charts, and `strap_asm`, using the exact value, gives exactly 1. A
-printed word for any fraction would settle it.
+follows the charts, and since 2026-11-16 so does `strap_asm` (`_dnum_96`, written
+apart from `dnum.py`; it used to truncate the exact value and give exactly 1). A
+printed word for any entry with a net negative decimal scale would settle it
+(docs/NEXT.md, "DD(N) 1.0 IS 1 - 2^-48 UNDER STRAP II").
 
 **CHOSEN for numeric DD:** one bit `m` after Fig. 26's sign byte for the number's own
 sign, since the figure has no place for it; MQLL4 as an exact quotient truncated at 96

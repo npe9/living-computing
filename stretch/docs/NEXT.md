@@ -24,27 +24,107 @@ accumulate.
 
 
 
-## DD(N) 1.0 IS 1 - 2^-48 UNDER STRAP II, AND A VFL STORE TO $AL -- open, 2026-11-16
+## DD(N) 1.0 IS 1 - 2^-48 UNDER STRAP II, AND A VFL STORE TO $AL -- settled, 2026-11-16
 
 Two differences between strap2 and strap_asm, found when the C22-6578
-chapter 3-4 decks reached `check_strap2_oracles.py`. Both are allowed
-there by name, marked OPEN; neither is settled.
+chapter 3-4 decks reached `check_strap2_oracles.py`.  Both settled; the
+first was strap_asm's, the second was not about `$AL` at all.
 
-1. **Numeric DD.** strap2 assembles `DD(N), 1.0` as `000FFFFFFFFFFFF0`
-(1 - 2^-48, exponent 0) and `-2.5` as `0049FFFFFFFFFFF8`; strap_asm gives
-the exact `0028000000000000` and `004A000000000008`. strap2's `dnum.py`
-reconstructs C22-6729 pp.104-113 and truncates at every step, so
-10 x (10^-1 truncated) falls just short of 1. Not yet read: whether
-OUTPUT's final conversion (pp.26, 158-159) rounds the 96-bit value to
-the word. Decks: problem_4_10..13, repro_fp_operand_location8. The
-chapter 4 decks run under strap2, so their bounds were met with these
-constants.
+**1. Numeric DD: STRAP II gives 1 - 2^-48 for `DD(N), 1.0`, and
+strap_asm now does too.**  Read in the page images:
 
-2. **VFL store to `$AL`.** In problem_3_vfl_store_to_indicators (word 36)
-and problem_3_9_method1_equal/greater (word 39), strap_asm sets 0x1800 in
-the instruction's low half and strap2 does not. These decks run under
-strap2, so chapter 3's "a VFL store into the indicators is dropped"
-(model item 6) rests on strap2's encoding until this is settled.
+* C22-6729 p.108 (DNUM chart CD) box 13 "PREVIOUS RESULTS(P.R.) TIMES
+  RADIX+NO. BECOMES NEW P.R.", box 14 "HAS THERE BEEN A POINT YET (A
+  ON)" -> box 18 "REDUCE THE RUNNING EXPONENT BY ONE": the 0 of `1.0`
+  counts, so `1.0` is P.R. 10, running exponent -1.
+* p.109 (chart CE) box 31 "ADD SPECIFIED EXPONENT TO RUNNING EXPONENT";
+  DNADJ boxes 36-38: "SET THE EXPONENT TO A DOUBLE PRECISION VALUE",
+  "RAISE THE RADIX TO POWER OF EXP." (MQ4), "MULTIPLY THIS BY THE
+  PREVIOUS RESULT" (MQ2).
+* p.111 (chart CI) box 12 "NEGATIVE EXPONENT ON THIS DD" -> box 13 "MQ3
+  DD PRECISION ARITHMETIC - INVERSION".
+* p.112: "MQ1, MQ2, and MQ3 are simple enough not to warrant flow
+  charts"; Figure 16 (MQLL4) drops terms ("ignore").
+* Reference Manual printed p.81: "After the shift, the result fraction
+  is truncated to 48 or 96 bits"; rounding is STORE ROUNDED's, "adding
+  1 to the 49th bit".
+* OUTPUT: p.26 ("OUTPUT must always adjust the binary output in the unit
+  of numeric DD to the specified mode"), pp.158-159 and chart OW p.156
+  (boxes 1-12) say nothing of rounding.  **MCP printed p.359 lines 38-40
+  decide it: 1.E32, 1.E64, 1.E128 print 4734265552025560,
+  6047403722377717, 4473510762300351, the truncation; rounding gives
+  ...561, ...720, ...352** (dropped bit 49 is a one in all three, and
+  the 96-bit chain is far closer than that).  OUTPUT truncates.
+* C28-6129 printed pp.26-30 print no DD(N) word with a decimal fraction;
+  p.27: "both the E specification and the position of the decimal point
+  affect the computation of the exponent".
+
+So `1.0` = 10 x (1/10 truncated) < 1, and its word is 000FFFFFFFFFFFF0;
+`-2.5` is 0049FFFFFFFFFFF8, `.5` 003FFFFFFFFFFFF0, `2.0` 002FFFFFFFFFFFF0.
+strap2's `dnum.py` already did this.  strap_asm truncated the EXACT
+value; it now runs the same chain, written independently
+(`strap_asm._dnum_96`), and `tests/check_dd_float.py` pins the three
+words, worked by hand, with `1X0` as an exact control.
+
+**What is inference, not ink:** that MQ2 and MQ3 truncate.  No page
+charts them.  Any MQ3 whose quotient is below 1/10 gives the same word;
+only an MQ3 that rounded up would make `1.0` exact.  **What would
+overturn it:** a printed STRAP II word for any entry with a net negative
+decimal scale (`1.0`, `.5`, `2.5`, `3E-5`), or an `(Fn)` B/BU DD with a
+decimal fraction.  Searched 2026-11-16: the MCP listing (only p.359 has
+a DD(N); every row is a positive power), C28-6129, C22-6531, C22-6578,
+Performance Characteristics Vol. 2, R23-9695, C22-6751; and a tesseract
+pass over the ja_/jb_/ka_ diagnostic listings (STRAP-1 output, which
+would be a weaker witness): 1,459 pages, no DD(N) with a decimal
+fraction found.  That OCR is poor (`DD(` seldom survives), so it is a
+finding aid that came up empty, not a proof of absence.
+
+Effect: `problem_4_10..13` and `repro_fp_operand_location8` now
+assemble the same under both (strap2_compare: 757 the same).
+`verify_problem_4_fp.py` assembles with strap_asm, so the chapter 4
+decks ran on the exact words until now (the old note here said
+otherwise); all thirteen run lines were re-run under the chain.  Eleven
+pass as registered.  4.13's two exact words were worked by hand on an
+exact 1.0 and are now worked on the printed `DD(N), 1.0` as STRAP II
+makes it (003FFFFFFFFFFFF8 and 003FFFFFFFFFFFF0; ANS still within 3.11
+and 3.04 units).  4.9m1's `.125` becomes one unit below 1/8 and meets
+the location-8 store fault as `.1` does, so the passing case is now
+written `1X-2` (exactly 1/8) and `.125` is registered --known-wrong.
+The chapter 4 decimal substitutes ("truncated to 48 bits" in the
+chapter 4 entry below) now go through the chain too; no bound moved
+past its limit.  `repro_fp_operand_location8` now writes its halves
+`1X0`, exactly 1/2, so its expected words stand (re-run: pass).
+
+**2. `ST(BU, 3), $AL` is not where the two differ.**  `$AL` is the
+indicator bit 60 of word 11: C28-6129 printed p.10, "Each system symbol,
+when prefaced with a dollar sign and placed in a programmer symbolized
+field, will represent the correct bit position in word 11 of the
+indicator named"; pocket card X22-6533-1, Indicator List "60 AL 0 T,C
+Accumulator Low", Special Storage Assignment "11,c Indicators" with "c
+= Bit positions 0-19 are read only".  Both assemblers compile the store
+0002FC80018010D0, which is, by the Reference Manual printed p.56 format
+(and Fig. 6, p.18): address bits 0-23 = 764 = 11.60; 24-27 1000; I 0;
+P 000; length (35-40) 3; BS (41-43) 000 = 8; offset 0; bit 51 = 1
+(unsigned), 52 = 0, 53 = 0 (binary); op (54-59) 001101, "ST Store
+abc001101" on the pocket card; I 0.  An IBM listing witnesses the
+operand form: MCP printed p.356 (MCP_Mar63_250-445.pdf PDF p.106), line
+33 `CM1111(BU,1),$IND.63` prints `000013.77 80 001000.36 F0` and line
+40 `CM1111(BU,1),$PGC` (=$PG0) prints `000013.51 80 001000.36 F0` --
+11.63 and 11.41, a VFL to-memory operation on an indicator bit.
+
+The 0x1800 is the half word after `BEW, $`, rounded over before the
+`DR` that follows (`R`; `A1` in 3.9): strap_asm's NOP pad, the known
+difference of `docs/strap2/README.md` that the seven MCP pages in
+`check_strap2_oracles.py` KNOWN already carry.  The three decks are
+moved under that comment.
+
+**So chapter 3's item 6 is a model fault, not an assembler artifact.**
+The deck run under both assemblers gives R = 0 (2026-11-16, ASM=strap2
+and the default), as do the 3.9 equal/greater decks' held-back indicator
+words under strap_asm (AL/AE/AH bits absent, the same as under strap2),
+and
+MCP's own $DUMP relies on such stores (p.356 line 33 sets noisy mode
+with a connective into $IND.63).
 
 ## `strap_asm` REFUSES A BLANK AFTER A RADIX SPECIFIER, `(2) 10` -- open, 2026-11-15
 

@@ -49,12 +49,6 @@ KNOWN = {"mcp_bootstrap_p131.strap", "mcp_bootstrap_p210.strap",
          # pp.28-29 says decimal digits, and strap2 gives them (NEXT.md,
          # "DD in decimal mode").  The difference is strap_asm's bug.
          "problem_2_8.strap", "repro_dd_decimal_mode.strap",
-         # OPEN, 2026-11-16 (NEXT.md "DD(N) 1.0 IS 1 - 2^-48 UNDER STRAP II"):
-         # strap2's numeric DD truncates at every step (dnum.py, C22-6729
-         # pp.104-113), so DD(N) 1.0 gives .FFF...F x 2^0; strap_asm rounds.
-         # Whether IBM's OUTPUT (pp.158-159) rounds is not yet read.
-         "problem_4_10.strap", "problem_4_11.strap", "problem_4_12.strap",
-         "problem_4_13.strap", "repro_fp_operand_location8.strap",
          # OPEN, 2026-11-16 (same NEXT.md entry): a VFL store to $AL; strap_asm
          # sets 0x1800 in the instruction's low half and strap2 does not.
          "problem_3_9_method1_equal.strap", "problem_3_9_method1_greater.strap",

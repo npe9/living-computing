@@ -178,8 +178,9 @@ def p4_13(sym, src=None):
             return h * tot
         return g
 
-    exact = [('P_minus_half_b_minus_a', 'LEGQ8P', 0x0008000000000008),
-             ('Q_half_b_plus_a', 'LEGQ8Q', 0x0008000000000000),
+    # b is the printed DD(N), 1.0: one unit below 1 under STRAP II (deck header)
+    exact = [('P_minus_half_b_minus_a', 'LEGQ8P', 0x003FFFFFFFFFFFF8),
+             ('Q_half_b_plus_a', 'LEGQ8Q', 0x003FFFFFFFFFFFF0),
              ('x2_restored', 'addrIndex(2)', 0),
              ('x15_restored', 'addrIndex(15)', x15),
              ('LEGQ82_saved_x2', 'LEGQ82', 0),

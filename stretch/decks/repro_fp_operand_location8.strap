@@ -17,6 +17,12 @@
 !   PROD = 0038 0000 0000 0008, -1/4.   OBSERVED 2026-11-16.
 ! The control, +1/2 squared, is right either way, 0038 0000 0000 0000.
 !
+! The halves are written "1X0" (1 = .5 x 2**1, X replacing the exponent
+! with 0; C28-6129 printed p.27), which is exactly 1/2.  ".5" is not:
+! STRAP II's DNUM makes it 5 x (1/10 truncated), one unit below 1/2 in
+! 48 bits (C22-6729 pp.108-111; docs/NEXT.md, "DD(N) 1.0 IS 1 - 2^-48
+! UNDER STRAP II"), and both assemblers now say so.  Changed 2026-11-16.
+!
 ! Found by C22-6578 Problem 4.10, printed p.44, "*(N), $L  'Z**2", which
 ! squares a negative Z whenever x's fraction is below 1/sqrt2
 ! (decks/problem_4_10.strap).
@@ -28,8 +34,8 @@ START   DL(N), MHALF
         *(N), $L
         ST(U), CTRL
 HALT    BEW, $
-MHALF   DD(N), -.5
-PHALF   DD(N), .5
+MHALF   DD(N), -1X0
+PHALF   DD(N), 1X0
 PROD    DD(BU,64,8), 7
 CTRL    DD(BU,64,8), 7
         END, START

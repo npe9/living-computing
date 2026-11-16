@@ -83,8 +83,15 @@
 !   exact, by hand
 !     the halt   the BEW after "ST(U), ANS", MAIN + 5.32, not the error
 !                BEW at MAIN + 4.0.
-!     LEGQ8P     -(1 - 0)/2 = -1/2 = 0008 0000 0000 0008.
-!     LEGQ8Q     (1 + 0)/2  =  1/2 = 0008 0000 0000 0000.
+!     LEGQ8P     -(b - 0)/2, b the printed "DD(N), 1.0".  STRAP II makes
+!                that 10 x (1/10 truncated) = .FFFFFFFFFFFF x 2**0, one
+!                unit below 1 (C22-6729 pp.108-111; docs/NEXT.md "DD(N)
+!                1.0 IS 1 - 2^-48"); E-I halves it exactly and SRD has
+!                no bit 49 to round: .FFFFFFFFFFFF x 2**-1, negative =
+!                003F FFFF FFFF FFF8.
+!     LEGQ8Q     (b + 0)/2 = 003F FFFF FFFF FFF0.
+!                (Until 2026-11-16 the deck ran on an exact 1.0 and these
+!                were 0008 0000 0000 0008 and 0008 0000 0000 0000.)
 !     $2         0, as it was: LEGQ8 "restored during exit".
 !     $15        MAIN + 1.0 in the value field, as MAIN's LVI left it.
 !     LEGQ82, LEGQ8F   the saved $2 and $15, the same two words.
