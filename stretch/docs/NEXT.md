@@ -17628,6 +17628,14 @@ does what the page's instructions say, and the trace and the model
 agree.  A program using this method needs x_1 y_1 = 0, or a first pass
 of its own.
 
+### Problem 4.4, printed pp.37-38: a dense vector is not handled
+
+`decks/problem_4_4.strap`.  With every image bit one, `$3`'s count is 0
+when END is reached: `Z, SVEC($3)` stores past the vector and `CB+`
+counts 0 to 2**18 - 1 (Reference Manual printed p.43) and goes on
+zeroing storage.  Not run; the verifier asserts the data is not dense.
+Nothing to build.
+
 ## G2.1 CHAPTER 4: LOCATION 8 AS A FLOATING-POINT OPERAND TAKES THE WRONG SIGN -- 2026-11-16
 
 **FIXED 2026-11-16, both directions; ONE PART WAS MISDIAGNOSED.**

@@ -11,6 +11,7 @@ defines, worked here and not by the model.
     4.5     decks/problem_4_5.strap           sparse scalar product, N = 40
     4.5n37  decks/problem_4_5.strap           the same deck, N = 37
     4.5k0   decks/problem_4_5.strap           x_1 y_1 non-zero, as printed
+    4.4     decks/problem_4_4.strap           compression of a sparse vector
 
 THE DECK AND ITS ASSEMBLER ARE NAMED ON THE RUN LINE, as run_program.sh's
 are: the decks are assembled by the host STRAP II (they hold "N*N", which
@@ -387,6 +388,44 @@ def spec_4_5(sym, words, corrected, N):
 
 
 # ---------------------------------------------------------------------------
+# 4.4, printed pp.37-38, and 4.3, printed p.37: worked from the statement
+# and the data.  Their loops are short and straight; what each leaves in
+# the index registers, location 7 and the accumulator is worked here.
+# ---------------------------------------------------------------------------
+
+def spec_4_4(sym, words, corrected, N=24):
+    w = lambda s: s // 64                       # noqa: E731
+    img = words[w(sym['BIMAGE'])]
+    SV = w(sym['SVEC'])
+    bits = [(img >> (63 - i)) & 1 for i in range(N + 1)]
+    # the statement: the words whose image bit is one, in order, then zeros
+    kept = [words[SV + i] for i in range(N) if bits[i]]
+    m = len(kept)
+    assert 0 < m < N, "a dense vector runs END's CB+ from count 0 (deck header)"
+    out = kept + [0] * (N - m)
+    exact = [("SVEC%02d" % i, SV + i, out[i]) for i in range(N)]
+    # $1: N + 1 one-bit steps by (V+IC), count N + 1 to 0, no refill (p.21)
+    exact += [("x1", 17, xword(sym['BIMAGE'] + N + 1, 0, w(sym['XW1'])))]
+    # $2: LVNI -1.0, then V+I 1.0 after each of the N connects that do not
+    # end; count and refill as reset (0), which LVNI does not touch (p.25)
+    exact += [("x2", 18, xword((N - 1) * 64, 0, 0))]
+    # $3: m steps by V+IC from 0.0, then N - m by CB+, count N to 0
+    exact += [("x3", 19, xword(N * 64, 0, w(sym['XW3'])))]
+    # location 7: the last connect, the (N+1)th, over image bit N (p.76)
+    exact += [("w7_lzc_aoc", 7, ((1 - bits[N]) << (63 - 23)) | (bits[N] << (63 - 50)))]
+    # the accumulator: the last LWF(U) put that word's bits 0-59 in bits
+    # 0-59 (p.88, bits 60-127 unchanged from reset), its sign in sign-byte
+    # bit 4 and its flags in bits 5-7 (p.89); each connect put one image
+    # bit at bit 127 (offset 0), the last one image bit N (p.76)
+    last = kept[-1]
+    exact += [("acc_left", 8, last & ~0xF), ("acc_right", 9, bits[N]),
+              ("sign_byte", 10, (last & 0xF) << 56)]
+    note = "statement: %d of %d components kept, at %s" % (
+        m, N, [i for i in range(N) if bits[i]])
+    return exact, note
+
+
+# ---------------------------------------------------------------------------
 
 CORRECTIONS = {
     # printed p.41: $2 counts 7 and is used eight times a block
@@ -403,7 +442,8 @@ DECKS = {'4.7m1': ('problem_4_7_method1.strap', 'StretchP47M1Tb'),
          '4.8': ('problem_4_8.strap', 'StretchP48Tb'),
          '4.5': ('problem_4_5.strap', 'StretchP45Tb'),
          '4.5n37': ('problem_4_5.strap', 'StretchP45N37Tb'),
-         '4.5k0': ('problem_4_5.strap', 'StretchP45K0Tb')}
+         '4.5k0': ('problem_4_5.strap', 'StretchP45K0Tb'),
+         '4.4': ('problem_4_4.strap', 'StretchP44Tb')}
 # A run of a deck under a different N, or other data, the page allows:
 # applied BEFORE the expected words are worked, so they follow it (unlike
 # --sub, which is an injection the expectation does not follow).
@@ -498,7 +538,8 @@ def spec_4_8(sym, words, corrected):
 SPECS = {'4.7m1': spec_4_7m1, '4.7m2': spec_4_7m2, '4.8': spec_4_8,
          '4.5': lambda s, w, c: spec_4_5(s, w, c, 40),
          '4.5n37': lambda s, w, c: spec_4_5(s, w, c, 37),
-         '4.5k0': lambda s, w, c: spec_4_5(s, w, c, 40)}
+         '4.5k0': lambda s, w, c: spec_4_5(s, w, c, 40),
+         '4.4': spec_4_4}
 
 
 def main():

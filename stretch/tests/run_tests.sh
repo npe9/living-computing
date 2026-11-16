@@ -14196,6 +14196,12 @@ run "C22-6578 Problem 4.5 -- sparse scalar product by field-length indexing, N =
 run "C22-6578 Problem 4.5 -- sparse scalar product by field-length indexing, N = 37" python3 verify_problem_4_matrix.py 4.5n37 ../decks/problem_4_5.strap ASM=strap2
 run "C22-6578 Problem 4.5 -- x_1 y_1 non-zero: length 0 is 64, as printed (not the scalar product)" python3 verify_problem_4_matrix.py 4.5k0 ../decks/problem_4_5.strap ASM=strap2
 
+# 4.4, printed pp.37-38: a sparse vector compressed in place by its bit image,
+# one bit at a time by C0011(BU,1)(V+IC) and RZ, LWF(U)/ST(U) moving each
+# kept word whole (flags and unnormalized fractions in the data), STORE ZERO
+# over the rest.  Worked from the statement.  Passed as the model stood.
+run "C22-6578 Problem 4.4 -- compression of a sparse vector by its bit image" python3 verify_problem_4_matrix.py 4.4 ../decks/problem_4_4.strap ASM=strap2
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

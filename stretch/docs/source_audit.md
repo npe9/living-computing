@@ -2317,15 +2317,28 @@ from sentinels.
   matches the trace word for word, the crossing CONNECT TO MEMORY
   included.  No correction supplied.
 
+### 4.4 compression of a sparse vector, printed pp.37-38 -- `decks/problem_4_4.strap` -- PASSES as the model stood
+
+`tests/verify_problem_4_matrix.py 4.4`, 33 checks and the PC: the 24
+SVEC words, $1-$3, location 7, words 8-10, guards, worked from the
+statement.  One image bit at a time by `C0011(BU,1)(V+IC),0.01($1)` and
+RZ; `LWF(U)`/`ST(U)` move each kept word whole -- the data has the three
+flags in several combinations and two unnormalized fractions, so a
+plain `L` (flags to zero, p.88) would show; `STORE ZERO` (p.31) and `CB+`
+over the rest.  `END` as a location-field label assembles under strap2.
+**No model finding, no printed erratum.**  Unexcluded case, not run: a
+dense vector leaves `$3`'s count 0 at END, so `CB+` counts it to 2**18-1
+and Z stores past the vector.
+
 ## Where Chapter 4 stands, 2026-11-16
 
 Run, newest last: 4.11, 4.12, 4.13, 4.10, 4.9 Method 1, 4.6 (three
-methods), 4.7 (two), 4.8, 4.5.  **Two model bugs, one cause (location 8 as a
+methods), 4.7 (two), 4.8, 4.5, 4.4.  **Two model bugs, one cause (location 8 as a
 floating-point operand and as a store), both FIXED 2026-11-16; the
 "lost" 4.9 store was the VFL SRD, see above; four assembler refusals,
-nine printed errata, and one unexcluded case (4.5, k1 = 0).**  Not
-reached: 4.9 Method 2, 4.4, 4.3, 4.2 (decimal VFL, refused), 4.1 (VFL
-square root).  The note that the second
+nine printed errata, and two unexcluded cases (4.5 with k1 = 0, 4.4
+with a dense vector).**  Not reached: 4.9 Method 2, 4.3, 4.2 (decimal
+VFL, refused), 4.1 (VFL square root).  The note that the second
 I field is "decoded and read NOWHERE" (above, "(b)") is out of date:
 `vflSecondIndex` (`StretchExecute.bsv`) indexes length, byte size and
 offset as one field, and 4.6 Methods 2-3 and 4.7 Method 2 ran on it
