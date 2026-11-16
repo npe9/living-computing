@@ -85,7 +85,7 @@ ValueError there once the digit was no longer refused.  Not touched: a
 numeric DD's own number is DNUM's (p.71: "GETFLD does not collect the numeric
 characters in the statement field of a numeric DD") and still refuses, 47.
 
-Checks: `tests/check_strap2_coded.py`, 20 new, 38 in all; nine measured
+Checks: `tests/check_strap2_coded.py`, 16 new (22 before), 38 in all; nine measured
 injections in its header (the old refusal fails 12).
 
 **OPEN: the 7030 deck (`decks/strap2_7030.strap`, CPLTNM) still halts, ERRC
@@ -185,9 +185,10 @@ datum" as S/X first, CHOSEN.
 
 **NOT CHANGED, AND WHY.**  The one printed example fixes a radix, not what
 `L,JOE(3)` assembles, and prints no bits; it contradicts the reading of
-Boxes 79-81 that `_paren` and the 7030 deck's GETFLD share, so following it
-is a change to GETFLD's classification in both, to be made against Chart BK
-p.82 in the ink, not here.  Still not settled, and no page read says:
+Boxes 79-81 that the host's `_paren` follows (measured on the host only; the
+7030 deck's GETFLD was written to agree with the host but was NOT run on this
+line), so following it is a change to GETFLD's classification, to be made
+against Chart BK p.82 in the ink, not here.  Still not settled, and no page read says:
   - what 72 and 74 assemble (the address without the subscript is a guess);
   - what a symbol with a dds and no dimensions makes of a subscript: 74's
     test is "NO DDS" ("does not have a data description"), not "no

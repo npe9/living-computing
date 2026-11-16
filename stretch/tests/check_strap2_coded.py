@@ -12,7 +12,7 @@ Injections, measured 2026-11-09, each reverted from a saved copy and compared:
   a unary minus's operator number +1 only "-7 is U- on datum 1", "A*-2 is U- after 1"
   A8 J wrong in a8.py                only "A8 J as printed"
 
-CPLTNM, A DIGIT TOO LARGE FOR ITS RADIX (the last 20 checks, 2026-11-15).
+CPLTNM, A DIGIT TOO LARGE FOR ITS RADIX (the last 16 checks, 2026-11-15).
 C22-6729 p.71, Boxes 3-8, read in the ink: "If the digit equals or exceeds the
 radix, an error message is executed, but the digit is still used in the
 computation of the numeric datum."  p.177: "63  CPLTNM  DIGIT INCORRECT FOR
