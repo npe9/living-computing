@@ -1,0 +1,1957 @@
+# IBM 7030 Performance Characteristics, Volume 2 (March 8, 1961) -- the
+# per-instruction timing atlas, transcribed.
+#
+#   docs/7030_Performance_Characteristics_Vol2_Mar61.pdf, PDF pages 37-189.
+#   33 of the 139 table pages are transcribed here; the #KIND lines below say
+#   which, and which remain.
+#   Reader: tests/atlas_oracle.py (load_atlas).  Self-check:
+#   tests/check_atlas_data.py.  Prose: docs/atlas_oracle.md.
+#
+# EVERY CELL BELOW WAS READ FROM THE PAGE IMAGE (pdftoppm -r 300 -gray,
+# viewed at half size, doubtful cells re-viewed as a full-resolution crop),
+# on 2026-11-15.  Nothing was taken from docs/ocr/ or from the PDF's text
+# layer.  The sheets mirror the printed pages: one line per printed row,
+# cells in printed column order, so a re-reader can lay a sheet beside its
+# page.
+#
+# UNIT.  Every number is MICROSECONDS PER INSTRUCTION, as printed.  PDF 37-38
+# (printed 34, 34A): GENER times a thousand copies of one instruction closed
+# by a count branch and run ten times, and "the measured elapsed time is
+# multiplied by 100 to produce the execution time for 1 million
+# instructions; the seconds now indicate integer micro-seconds".  "The last
+# digit in each number may be in error by one unit."  One model clock is
+# 0.3 us (docs/clock_unit.md), so cycles = us / 0.3.
+#
+# GRAMMAR.  Fields are separated by TABs.
+#   PAGE  pdf=N  printed=N  class=C     starts a page; printed is the page's
+#                                       own footer/header number, as read
+#   HEAD  text                          the printed heading, verbatim
+#   INSTR mnemonic                      the instruction the page times
+#   COND  key=value ...                 the heading's conditions, normalised
+#   COLS  key ...                       every printed column, left to right
+#   SHOWN key ...                       the columns the rows below list; a
+#                                       printed column not listed here is
+#                                       BLANK ON EVERY ROW of the page
+#   BLOCK caption                       a captioned group of rows ("-" for a
+#                                       group the page prints no caption for)
+#   NOTE  text                          a remark, attached to the page
+#   TALLY rule exact near far           the redundancy cross-check counts
+#                                       observed for this page (see
+#                                       check_atlas_data.py).  Most "far"
+#                                       pairs differ for real; they were
+#                                       reviewed as grouped lists and any
+#                                       that broke its page's pattern was
+#                                       re-read on the image (the NOTEs
+#                                       name those cells)
+#   SUM   n total                       count and sum of the page's numeric
+#                                       cells, a guard on the FILE (not on
+#                                       the reading)
+#   anything else                       a data row: label, then one cell per
+#                                       SHOWN column
+# CELLS.
+#   4.20      a printed number, kept as the printed string
+#   -         the cell is blank on the page
+#   *24*      the page prints an indicator number in asterisks instead of a
+#             time (PDF 113-114: an indicator came on and invalidates it)
+#   4.20?     an uncertain reading; the page's NOTE says what the doubt is
+#   ~         ink present, not legible
+#   a trailing !PF etc. on a row is a printed margin mark
+#
+# PAGE NUMBERS.  Cite by PDF page.  On the landscape atlas pages
+# printed = PDF - 7 (PDF 120 prints 113; PDF 109 prints 102).
+#
+# COLUMN KEYS, with the printed headings they stand for.
+#  class=VFL  (group NO INDEXING then group INDEXING, five columns each)
+#    ni_ext ni_ext_wbx ni_ibox ni_int ni_int_wbx
+#    ix_ext ix_ext_wbx ix_ibox ix_int ix_int_wbx
+#      = EXTERNL OPERAND | EXTERNL WB XOVR | I-BOX OPERAND | INTERNL OPERAND |
+#        INTERNL WB XOVR
+#  class=FP   (group NO INDEXING then group INDEXING, three columns each)
+#    ni_int ni_ext ni_ibox ix_int ix_ext ix_ibox
+#      = INTERNAL OPERAND | EXTERNAL OPERAND | I-BOX OPERAND
+#  class=IBOX (PDF 109)
+#    ext_direct ext_effective int_direct int_effective idx_direct
+#    idx_effective immediate
+#      = "EXTERNAL OPERAND**INTERNAL OPERAND ** INDEX OPERAND**IMMEDIATE" over
+#        "DIRECT EFFECTIVE DIRECT EFFECTIVE DIRECT EFFECTIVE"
+#  class=BRANCH (PDF 112)
+#    succ_consec unsucc_consec succ_noncon unsucc_noncon   (NO INDEXING)
+#    ix_succ_consec ix_unsucc_consec ix_succ_noncon ix_unsucc_noncon
+#                                                (BRANCH ADDRESS INDEX)
+#      = SUCCES CONSEC | UNSUCC CONSEC | SUCCES NONCON | UNSUCC NONCON
+#  class=TRANSMIT (PDF 106, 107)
+#    ext_ext ext_int ext_ibox int_int int_ext int_ibox ibox_ibox ibox_ext
+#    ibox_int   = EXTERNAL TO EXTERNAL | EXTERNAL TO INTERNAL | ... as keyed
+#  class=ENV (PDF 104)
+#    quoted one two three four five six seven eight
+#      = the figure in the row's caption, then ONE ... EIGHT
+#  class=IBOX2 (PDF 110): keys given on the page's own COLS lines
+#  PDF 138, 139 (CV, DCV) head the first column of each group ACCUM. OPERAND:
+#    ni_accum, ix_accum
+#
+# THE AUTHORS' OWN FLAGS (docs/atlas_reading_guide.md has the quotations):
+#  * "indexing" columns index by a register CONTAINING ZERO (PDF 113);
+#  * "forwarding" means IDENTICAL OPERAND ADDRESS (PDF 41, 115);
+#  * "to memory" pages are WORST CASE, LAAR queuing (PDF 41);
+#  * divide pages divide by one and then by ZERO (PDF 41, 113-115);
+#  * floating-point sequences drift: 1 + 1 + 1 ... ten thousand times (PDF 40).
+
+# COVERAGE.  One #KIND line for every PDF page 37-189: page or range, status,
+# kind, and the page's heading as read from the image.  status is
+#   transcribed   a sheet for it is in this file
+#   other         not a table of instruction times (prose, a flow chart, a dump)
+#   remaining     an atlas page of times NOT yet transcribed; its heading was
+#                 read from the image to index it, its figures were not
+# check_atlas_data.py requires these to be total and to agree with the sheets.
+#KIND	37-39	other	text	preface; INSTRUCTION SEQUENCE GENERATION AND TIMING (GENER) and its flow chart; printed 34, 34A, 34B
+#KIND	40-41	other	text	FLOATING POINT TIMING method and commentary; printed 34C, 34D
+#KIND	42	remaining	FP	FLOATING POINT + OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	43	remaining	FP	FLOATING POINT D+ OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	44	remaining	FP	FLOATING POINT K OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	45	remaining	FP	FLOATING POINT KMG OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	46	remaining	FP	FLOATING POINT +MG OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	47	remaining	FP	FLOATING POINT D+MG OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	48	remaining	FP	FLOATING POINT ST OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	49	remaining	FP	FLOATING POINT SLO OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	50	remaining	FP	FLOATING POINT SRD OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	51	remaining	FP	FLOATING POINT SRT OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	52	remaining	FP	FLOATING POINT * OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	53	remaining	FP	FLOATING POINT D* OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	54	remaining	FP	FLOATING POINT / OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	55	remaining	FP	FLOATING POINT D/ OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	56	remaining	FP	FLOATING POINT R/ OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	57	remaining	FP	FLOATING POINT *+ OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	58	remaining	FP	FLOATING POINT KR OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	59	remaining	FP	FLOATING POINT KR OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	60	remaining	FP	FLOATING POINT KMGR OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	61	remaining	FP	FLOATING POINT KMGR OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	62	remaining	FP	FLOATING POINT F+ OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	63	remaining	FP	FLOATING POINT E+ OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	64	remaining	FP	FLOATING POINT L OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	65	remaining	FP	FLOATING POINT LWF OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	66	remaining	FP	FLOATING POINT DL OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	67	remaining	FP	FLOATING POINT DLWF OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	68	remaining	FP	FLOATING POINT LFT OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	69	remaining	FP	FLOATING POINT M+ OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	70	remaining	FP	FLOATING POINT M+MG OPERATION. WITHOUT FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	71	remaining	FP	FLOATING POINT E+I
+#KIND	72	remaining	FP	FLOATING POINT SHF
+#KIND	73	remaining	FP	FLOATING POINT + OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	74	remaining	FP	FLOATING POINT D+ OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	75	remaining	FP	FLOATING POINT K OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	76	remaining	FP	FLOATING POINT KMG OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	77	remaining	FP	FLOATING POINT +MG OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	78	remaining	FP	FLOATING POINT D+MG OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	79	remaining	FP	FLOATING POINT ST OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	80	remaining	FP	FLOATING POINT SLO OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	81	remaining	FP	FLOATING POINT SRD OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	82	remaining	FP	FLOATING POINT SRT OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	83	remaining	FP	FLOATING POINT * OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	84	remaining	FP	FLOATING POINT D* OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	85	remaining	FP	FLOATING POINT / OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	86	remaining	FP	FLOATING POINT D/ OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	87	remaining	FP	FLOATING POINT R/ OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	88	remaining	FP	FLOATING POINT *+ OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	89	remaining	FP	FLOATING POINT KR OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	90	remaining	FP	FLOATING POINT KR OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	91	remaining	FP	FLOATING POINT KMGR OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	92	remaining	FP	FLOATING POINT KMGR OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	93	remaining	FP	FLOATING POINT F+ OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	94	remaining	FP	FLOATING POINT E+ OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	95	remaining	FP	FLOATING POINT L OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	96	remaining	FP	FLOATING POINT LWF OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	97	remaining	FP	FLOATING POINT DL OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	98	remaining	FP	FLOATING POINT DLWF OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	99	remaining	FP	FLOATING POINT LFT OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	100	remaining	FP	FLOATING POINT M+ OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	101	remaining	FP	FLOATING POINT M+MG OPERATION. WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS
+#KIND	102-103	other	text	ENVIRONMENTAL TIMING method; printed 95, 96
+#KIND	104	transcribed	ENV	FLOATING POINT ENVIRONMENTAL TEST (group averages, not instruction times)
+#KIND	105	other	text	COMMENTARY ON TRANSMIT INSTRUCTION; printed 98
+#KIND	106	transcribed	TRANSMIT	TRANSMITI
+#KIND	107	transcribed	TRANSMIT	TRANSMIT
+#KIND	108	other	text	COMMENTARY ON INDEX ARITHMETIC INSTRUCTIONS; printed 101
+#KIND	109	transcribed	IBOX	I-BOX INSTRUCTIONS
+#KIND	110	transcribed	IBOX2	I-BOX INSTRUCTIONS: LVS, LVE, SVA
+#KIND	111	other	text	BRANCH INSTRUCTIONS commentary; printed 104
+#KIND	112	transcribed	BRANCH	BRANCHING CB BIND
+#KIND	113-115	other	text	VFL TIMING method; COMMENTARY ON VFL INSTRUCTIONS; printed 106-108
+#KIND	116	transcribed	VFL	VFL INSTRUCTION +, NO FORWARDING, DIRECT ADDRESSING
+#KIND	117	transcribed	VFL	VFL INSTRUCTION M+, NO FORWARDING, DIRECT ADDRESSING
+#KIND	118	transcribed	VFL	VFL INSTRUCTION +MG, NO FORWARDING, DIRECT ADDRESSING
+#KIND	119	transcribed	VFL	VFL INSTRUCTION M+MG, NO FORWARDING, DIRECT ADDRESSING
+#KIND	120	transcribed	VFL	VFL INSTRUCTION L, NO FORWARDING, DIRECT ADDRESSING
+#KIND	121	transcribed	VFL	VFL INSTRUCTION LWF, NO FORWARDING, DIRECT ADDRESSING
+#KIND	122	transcribed	VFL	VFL INSTRUCTION LFT, NO FORWARDING, DIRECT ADDRESSING
+#KIND	123	transcribed	VFL	VFL INSTRUCTION LTRS, NO FORWARDING, DIRECT ADDRESSING
+#KIND	124	transcribed	VFL	VFL INSTRUCTION ST, NO FORWARDING, DIRECT ADDRESSING
+#KIND	125	transcribed	VFL	VFL INSTRUCTION SRD, NO FORWARDING, DIRECT ADDRESSING
+#KIND	126	transcribed	VFL	VFL INSTRUCTION M+1, NO FORWARDING, DIRECT ADDRESSING
+#KIND	127	transcribed	VFL	VFL INSTRUCTION K, NO FORWARDING, DIRECT ADDRESSING
+#KIND	128	transcribed	VFL	VFL INSTRUCTION KR, NO FORWARDING, DIRECT ADDRESSING
+#KIND	129	transcribed	VFL	VFL INSTRUCTION KE, NO FORWARDING, DIRECT ADDRESSING
+#KIND	130	transcribed	VFL	VFL INSTRUCTION KF, NO FORWARDING, DIRECT ADDRESSING
+#KIND	131	transcribed	VFL	VFL INSTRUCTION KFR, NO FORWARDING, DIRECT ADDRESSING
+#KIND	132	transcribed	VFL	VFL INSTRUCTION KFE, NO FORWARDING, DIRECT ADDRESSING
+#KIND	133	transcribed	VFL	VFL INSTRUCTION *, NO FORWARDING, DIRECT ADDRESSING
+#KIND	134	transcribed	VFL	VFL INSTRUCTION /, NO FORWARDING, DIRECT ADDRESSING
+#KIND	135	transcribed	VFL	VFL INSTRUCTION *+, NO FORWARDING, DIRECT ADDRESSING
+#KIND	136	transcribed	VFL	VFL INSTRUCTION LCV, NO FORWARDING, DIRECT ADDRESSING
+#KIND	137	transcribed	VFL	VFL INSTRUCTION LTRCV, NO FORWARDING, DIRECT ADDRESSING
+#KIND	138	transcribed	VFL	VFL INSTRUCTION CV, NO FORWARDING, DIRECT ADDRESSING
+#KIND	139	transcribed	VFL	VFL INSTRUCTION DCV, NO FORWARDING, DIRECT ADDRESSING
+#KIND	140	transcribed	VFL	VFL INSTRUCTION C0011, NO FORWARDING, DIRECT ADDRESSING
+#KIND	141	transcribed	VFL	VFL INSTRUCTION CM0101, NO FORWARDING, DIRECT ADDRESSING
+#KIND	142	transcribed	VFL	VFL INSTRUCTION CT0111, NO FORWARDING, DIRECT ADDRESSING
+#KIND	143	remaining	VFL	VFL INSTRUCTION +, FORWARDING, DIRECT ADDRESSING
+#KIND	144	remaining	VFL	VFL INSTRUCTION M+, FORWARDING, DIRECT ADDRESSING
+#KIND	145	remaining	VFL	VFL INSTRUCTION +MG, FORWARDING, DIRECT ADDRESSING (the instruction name in the heading is smudged; +MG by its place in the order)
+#KIND	146	remaining	VFL	VFL INSTRUCTION M+MG, FORWARDING, DIRECT ADDRESSING
+#KIND	147	remaining	VFL	VFL INSTRUCTION L, FORWARDING, DIRECT ADDRESSING
+#KIND	148	remaining	VFL	VFL INSTRUCTION LWF, FORWARDING, DIRECT ADDRESSING
+#KIND	149	remaining	VFL	VFL INSTRUCTION LFT, FORWARDING, DIRECT ADDRESSING
+#KIND	150	remaining	VFL	VFL INSTRUCTION LTRS, FORWARDING, DIRECT ADDRESSING
+#KIND	151	remaining	VFL	VFL INSTRUCTION ST, FORWARDING, DIRECT ADDRESSING
+#KIND	152	remaining	VFL	VFL INSTRUCTION SRD, FORWARDING, DIRECT ADDRESSING
+#KIND	153	remaining	VFL	VFL INSTRUCTION M+1, FORWARDING, DIRECT ADDRESSING
+#KIND	154	remaining	VFL	VFL INSTRUCTION K, FORWARDING, DIRECT ADDRESSING
+#KIND	155	remaining	VFL	VFL INSTRUCTION KR, FORWARDING, DIRECT ADDRESSING
+#KIND	156	remaining	VFL	VFL INSTRUCTION KE, FORWARDING, DIRECT ADDRESSING
+#KIND	157	remaining	VFL	VFL INSTRUCTION KF, FORWARDING, DIRECT ADDRESSING
+#KIND	158	remaining	VFL	VFL INSTRUCTION KFR, FORWARDING, DIRECT ADDRESSING
+#KIND	159	remaining	VFL	VFL INSTRUCTION KFE, FORWARDING, DIRECT ADDRESSING
+#KIND	160	remaining	VFL	VFL INSTRUCTION *, FORWARDING, DIRECT ADDRESSING
+#KIND	161	remaining	VFL	VFL INSTRUCTION /, FORWARDING, DIRECT ADDRESSING
+#KIND	162	remaining	VFL	VFL INSTRUCTION *+, FORWARDING, DIRECT ADDRESSING
+#KIND	163	remaining	VFL	VFL INSTRUCTION LCV, FORWARDING, DIRECT ADDRESSING
+#KIND	164	remaining	VFL	VFL INSTRUCTION LTRCV, FORWARDING, DIRECT ADDRESSING
+#KIND	165	remaining	VFL	VFL INSTRUCTION CV, FORWARDING, DIRECT ADDRESSING
+#KIND	166	remaining	VFL	VFL INSTRUCTION DCV, FORWARDING, DIRECT ADDRESSING
+#KIND	167	remaining	VFL	VFL INSTRUCTION C0011, FORWARDING, DIRECT ADDRESSING
+#KIND	168	remaining	VFL	VFL INSTRUCTION CM0101, FORWARDING, DIRECT ADDRESSING
+#KIND	169	remaining	VFL	VFL INSTRUCTION CT0111, FORWARDING, DIRECT ADDRESSING
+#KIND	170	other	dump	TIMING TEST: a listing of octal words (C and P cards), no times; printed 163
+#KIND	171	remaining	VFL	VFL INSTRUCTION +I, IMMEDIATE ADDRESSING
+#KIND	172	remaining	VFL	VFL INSTRUCTION +MGI, IMMEDIATE ADDRESSING
+#KIND	173	remaining	VFL	VFL INSTRUCTION LI, IMMEDIATE ADDRESSING
+#KIND	174	remaining	VFL	VFL INSTRUCTION LWFI, IMMEDIATE ADDRESSING
+#KIND	175	remaining	VFL	VFL INSTRUCTION LFTI, IMMEDIATE ADDRESSING
+#KIND	176	remaining	VFL	VFL INSTRUCTION LTRSI, IMMEDIATE ADDRESSING
+#KIND	177	remaining	VFL	VFL INSTRUCTION KI, IMMEDIATE ADDRESSING
+#KIND	178	remaining	VFL	VFL INSTRUCTION KRI, IMMEDIATE ADDRESSING
+#KIND	179	remaining	VFL	VFL INSTRUCTION KEI, IMMEDIATE ADDRESSING
+#KIND	180	remaining	VFL	VFL INSTRUCTION KFI, IMMEDIATE ADDRESSING
+#KIND	181	remaining	VFL	VFL INSTRUCTION KFRI, IMMEDIATE ADDRESSING
+#KIND	182	remaining	VFL	VFL INSTRUCTION KFEI, IMMEDIATE ADDRESSING
+#KIND	183	remaining	VFL	VFL INSTRUCTION *I, IMMEDIATE ADDRESSING
+#KIND	184	remaining	VFL	VFL INSTRUCTION /I, IMMEDIATE ADDRESSING
+#KIND	185	remaining	VFL	VFL INSTRUCTION *I+, IMMEDIATE ADDRESSING
+#KIND	186	remaining	VFL	VFL INSTRUCTION LCVI, IMMEDIATE ADDRESSING
+#KIND	187	remaining	VFL	VFL INSTRUCTION LTRCVI, IMMEDIATE ADDRESSING
+#KIND	188	remaining	VFL	VFL INSTRUCTION CI0011, IMMEDIATE ADDRESSING
+#KIND	189	remaining	VFL	VFL INSTRUCTION CTI0111, IMMEDIATE ADDRESSING
+
+PAGE	pdf=104	printed=97	class=ENV
+HEAD	FLOATING POINT ENVIRONMENTAL TEST
+COLS	quoted	one	two	three	four	five	six	seven	eight
+SHOWN	quoted	one	two	three	four	five	six	seven	eight
+NOTE	A different kind of table (PDF 102-103, printed 95-96): each figure is the AVERAGE instruction time of a group made of one subject instruction (the row) followed by n environment instructions (the column, ONE to EIGHT), all on the same external operand.  The subject's own time is to be computed, t_A = (n+1) t_AV - n t_B, with an error bound of (2n+1) x 0.01 us.  The columns are NOT times of the row's instruction.
+NOTE	The column 'quoted' is the figure each row prints in its caption, e.g. "LX (5.73 IN A LX ENVIRONMENT)": the instruction's time in a sequence of itself, quoted from the instruction's own page.  check_atlas_data.py compares the index-arithmetic ones with PDF 109.
+NOTE	The two block captions are printed with a gap where the environment's time belongs and the figure is written in by hand: "FOLLOWED BY +(U) OPS AT 2.41 EACH" and "FOLLOWED BY *(U) OPS AT 2.71 [mu]s EACH".  PDF 102 prints the same two figures in type ("2.41 us for +(u) (according to p. 66) and close to 2.71 for *(u) (according to p. 76)").  The block captions below carry the handwritten figures.
+NOTE	Every cell was re-read on a full-resolution crop of the eight figure columns.
+BLOCK	FOLLOWED BY +(U) OPS AT 2.41 EACH
+ST(U)	4.82	2.51	2.01	1.73	2.21	2.21	2.28	2.26	2.31
+SRD(U)	5.10	2.56	2.04	1.81	1.93	2.20	2.28	2.25	2.31
+SLO(U)	9.59	4.80	3.21	2.55	2.76	2.70	2.66	2.63	2.61
+L(U)	1.34	3.00	2.50	3.16	3.00	2.91	2.83	2.78	2.74
+DL(U)	1.41	3.15	2.61	3.16	3.00	2.91	2.83	2.78	2.74
+LFT(U)	4.35	2.56	2.32	2.26	2.02	2.46	2.44	2.48	2.44
+LX	5.73	3.31	3.12	2.86	2.83	2.71	2.71	2.63	2.64
+SX	3.46	2.11	2.41	2.11	2.47	2.51	2.49	2.48	2.47
+LV	5.42	3.02	2.96	2.71	2.74	2.61	2.64	2.56	2.59
+SV	7.81	4.21	3.21	2.72	3.07	3.01	2.92	2.86	2.81
+LC	5.42	3.01	2.96	2.71	2.74	2.61	2.64	2.56	2.59
+SC	7.81	4.21	3.22	2.72	3.07	3.01	2.92	2.86	2.81
+LR	5.42	3.01	2.96	2.71	2.74	2.61	2.64	2.56	2.59
+SR	7.81	4.21	3.22	2.72	3.07	3.01	2.92	2.86	2.81
+KV	5.27	3.01	2.96	2.71	2.74	2.61	2.64	2.56	2.59
+KC	5.27	3.01	2.96	2.71	2.74	2.61	2.64	2.56	2.59
+V+	5.27	3.01	2.96	2.71	2.74	2.61	2.64	2.56	2.59
+V+C	5.27	3.01	2.96	2.71	2.74	2.61	2.64	2.56	2.59
+V+CR	5.27	3.01	2.96	2.71	2.74	2.61	2.64	2.56	2.59
+LVI	3.32	2.11	2.41	2.26	2.41	2.31	2.41	2.33	2.41
+V+I	3.31	2.11	2.41	2.26	2.41	2.31	2.41	2.33	2.41
+V+IC	3.92	2.41	2.61	2.41	2.53	2.41	2.49	2.41	2.48
+V+ICR	3.92	2.41	2.61	2.41	2.53	2.41	2.49	2.41	2.48
+KVI	3.32	2.11	2.41	2.26	2.41	2.31	2.41	2.33	2.41
+KCI	3.32	2.11	2.41	2.26	2.41	2.31	2.41	2.33	2.41
+BLOCK	FOLLOWED BY *(U) OPS AT 2.71 EACH
+ST(U)	4.82	2.84	2.36	2.25	2.34	2.40	2.53	2.48	2.57
+SRD(U)	5.10	2.83	2.41	2.33	2.40	2.45	2.53	2.52	2.57
+SLO(U)	9.59	4.80	3.71	3.45	3.30	3.20	3.13	3.07	3.04
+L(U)	1.34	1.80	2.41	2.55	2.53	2.60	2.58	2.63	2.61
+DL(U)	1.41	1.95	2.41	2.55	2.53	2.61	2.58	2.63	2.61
+LFT(U)	4.35	2.89	2.51	2.48	2.46	2.61	2.71	2.63	2.71
+LX	5.73	3.31	3.12	2.86	2.83	2.81	2.79	2.78	2.78
+SX	3.46	2.41	2.41	2.47	2.52	2.61	2.62	2.63	2.64
+LV	5.42	3.01	2.96	2.71	2.74	2.71	2.73	2.71	2.73
+SV	7.81	4.21	3.22	2.72	3.19	3.11	3.05	3.01	2.98
+LC	5.42	3.01	2.96	2.71	2.74	2.71	2.73	2.71	2.73
+SC	7.81	4.21	3.22	2.72	3.19	3.11	3.05	3.01	2.98
+LR	5.42	3.01	2.96	2.71	2.74	2.71	2.73	2.71	2.73
+SR	7.81	4.21	3.21	2.72	3.19	3.11	3.05	3.01	2.98
+KV	5.27	3.01	2.96	2.71	2.74	2.71	2.73	2.71	2.73
+KC	5.27	3.02	2.96	2.71	2.74	2.71	2.73	2.71	2.73
+V+	5.27	3.01	2.96	2.71	2.74	2.71	2.73	2.71	2.73
+V+C	5.27	3.01	2.96	2.71	2.74	2.71	2.73	2.71	2.73
+V+CR	5.27	3.01	2.96	2.71	2.74	2.71	2.73	2.71	2.73
+LVI	3.32	2.25	2.41	2.48	2.53	2.55	2.58	2.59	2.61
+V+I	3.31	2.25	2.41	2.48	2.53	2.55	2.58	2.59	2.61
+V+IC	3.92	2.41	2.61	2.48	2.59	2.56	2.62	2.59	2.64
+V+ICR	3.92	2.41	2.61	2.48	2.59	2.56	2.62	2.59	2.64
+KVI	3.32	2.25	2.41	2.48	2.53	2.55	2.58	2.59	2.61
+KCI	3.32	2.25	2.41	2.48	2.53	2.55	2.58	2.59	2.61
+TALLY	quoted	32	6	0
+TALLY	rows	176	4	0
+SUM	450	1322.33
+
+PAGE	pdf=106	printed=99	class=TRANSMIT
+HEAD	TRANSMITI
+INSTR	TI
+COLS	ext_ext	ext_int	ext_ibox	int_int	int_ext	int_ibox	ibox_ibox	ibox_ext	ibox_int
+SHOWN	ext_ext	ext_int	ext_ibox	int_int	int_ext	int_ibox	ibox_ibox	ibox_ext	ibox_int
+NOTE	The heading is one word, TRANSMITI; PDF 107's is TRANSMIT.  Reading it as TRANSMIT IMMEDIATE (count in the instruction) is an INFERENCE: PDF 105's commentary does not name the two pages, and INSTR TI rests on it.
+NOTE	Only the first row label, 1WD, is printed cleanly.  The others are printed as garbage ("D", "823 1", "* 1") and the labels 3WD ... 15WD are written in by hand above them.  The row labels from 3WD down are that handwriting.
+NOTE	int_int and int_ext do not grow with the word count on this page (14.47 at 1, 3 and 5 words) where PDF 107's do.  Read as printed; not explained by the commentary.
+BLOCK	-
+1WD	13.84	13.85	13.28	14.47	14.47	13.28	13.28	13.85	13.85
+3WD	19.89	19.90	21.69	14.47	14.47	13.28	13.28	13.85	13.85
+5WD	25.94	25.94	30.16	14.46	14.47	13.28	13.28	13.85	13.85
+7WD	31.97	-	38.58	-	-	-	13.27	13.85	-
+9WD	37.99	-	47.00	-	-	-	13.27	13.85	-
+11WD	43.99	-	55.46	-	-	-	13.27	13.85	-
+13WD	50.04	-	63.87	-	-	-	-	13.85	-
+15WD	56.07	-	-	-	-	-	-	-	-
+SUM	43	954.26
+
+PAGE	pdf=107	printed=100	class=TRANSMIT
+HEAD	TRANSMIT
+INSTR	T
+COLS	ext_ext	ext_int	ext_ibox	int_int	int_ext	int_ibox	ibox_ibox	ibox_ext	ibox_int
+SHOWN	ext_ext	ext_int	ext_ibox	int_int	int_ext	int_ibox	ibox_ibox	ibox_ext	ibox_int
+BLOCK	-
+1WD	14.47	14.48	13.85	15.04	15.06	13.87	13.85	14.48	14.47
+3WD	20.48	20.48	22.32	28.30	28.32	24.72	22.31	20.48	20.48
+5WD	26.51	26.52	30.74	41.52	41.52	35.55	30.74	26.51	26.51
+7WD	32.56	-	39.16	-	-	-	39.16	32.56	-
+9WD	38.58	-	47.61	-	-	-	47.62	38.58	-
+11WD	44.63	-	56.05	-	-	-	56.05	44.63	-
+13WD	50.68	-	64.46	-	-	-	-	50.65	-
+15WD	56.66	-	-	-	-	-	-	-	-
+50WD	162.15	-	-	-	-	-	-	-	-
+100WD	312.88	-	-	-	-	-	-	-	-
+SUM	45	1838.25
+
+PAGE	pdf=109	printed=102	class=IBOX
+HEAD	I-BOX INSTRUCTIONS
+COLS	ext_direct	ext_effective	int_direct	int_effective	idx_direct	idx_effective	immediate
+SHOWN	ext_direct	ext_effective	int_direct	int_effective	idx_direct	idx_effective	immediate
+NOTE	The page prints TWO rows labelled V+CR, two labelled V-ICR and two labelled RCZ, with nothing to tell them apart.  PDF 108: "Conditional refill operations were tested for both conditions."  The row labels here carry #1 and #2 in printed order; which is the refill-taken case is not printed.
+BLOCK	-
+LX	5.73	6.33	6.93	7.53	5.72	6.33	-
+LV	5.42	5.87	5.88	6.48	5.27	5.87	3.31
+LC	5.42	5.87	5.88	6.48	5.27	5.87	3.31
+LR	5.42	5.87	5.88	6.48	5.27	5.87	3.31
+SX	3.46	3.61	3.01	3.31	5.12	5.73	-
+SV	7.81	7.82	7.83	7.83	6.33	6.93	-
+SC	7.81	7.82	7.83	7.83	6.33	6.93	-
+SR	7.81	7.82	7.83	7.83	6.33	6.93	-
+V+	5.27	5.87	5.87	6.48	5.27	5.87	3.31
+V+C	5.27	5.87	5.87	6.48	5.87	6.48	3.92
+V+CR#1	5.27	5.88	5.88	6.48	5.88	6.48	3.92
+V+CR#2	9.34	9.94	9.94	10.54	9.94	10.54	8.13
+KV	5.27	5.87	5.87	6.48	5.27	5.87	3.31
+KC	5.27	5.87	5.87	6.48	5.27	5.87	3.31
+LVNI	-	-	-	-	-	-	3.31
+V-I	-	-	-	-	-	-	3.31
+V-IC	-	-	-	-	-	-	3.92
+V-ICR#1	-	-	-	-	-	-	3.92
+V-ICR#2	-	-	-	-	-	-	8.13
+C+I	-	-	-	-	-	-	3.31
+C-I	-	-	-	-	-	-	3.31
+KVNI	-	-	-	-	-	-	3.31
+R	11.42	11.43	10.83	10.84	7.68	8.29	-
+RCZ#1	5.27	5.87	5.87	6.48	4.07	4.67	-
+RCZ#2	11.42	11.43	10.83	10.84	7.68	8.29	-
+RNX	12.96	13.56	-	-	-	-	-
+TALLY	rows	50	0	0
+SUM	121	784.75
+
+PAGE	pdf=110	printed=103	class=IBOX2
+HEAD	I-BOX INSTRUCTIONS
+NOTE	Three small tables on one page.  LVS has its own column heads; LVE and SVA share the six DIRECT/EFFECTIVE heads of PDF 109 without the EXTERNAL/INTERNAL/INDEX line above them, so the ext_/int_/idx_ keys here are carried over from PDF 109 by position and are NOT printed on this page.
+INSTR	LVS
+COLS	clear_vf	jeq_1xr	jeq_5xr	jeq_10xr	jeq_15xr	jne_1xr	jne_5xr	jne_10xr	jne_14xr
+SHOWN	clear_vf	jeq_1xr	jeq_5xr	jeq_10xr	jeq_15xr	jne_1xr	jne_5xr	jne_10xr	jne_14xr
+NOTE	LVS column heads verbatim: CLEAR VF, then "J FIELD EQUAL TO INDEX OPERAND" over 1XR 5XR 10XR 15XR, then "J FIELD NOT EQUAL TO INDEX OPERAND" over 1XR 5XR 10XR 14XR.
+BLOCK	LVS
+LVS	6.48	6.48	13.71	22.75	31.78	8.29	15.52	24.55	31.78
+INSTR	LVE
+COLS	ext_direct	ext_effective	int_direct	int_effective	idx_direct	idx_effective
+SHOWN	ext_direct	ext_effective	int_direct	int_effective	idx_direct	idx_effective
+BLOCK	LVE
+18BITS	8.89	9.04	9.49	9.49	7.68	7.68
+19BITS	8.89	9.04	9.49	9.49	7.68	7.68
+24BITS	8.89	9.04	9.49	9.49	7.68	7.68
+INSTR	SVA
+BLOCK	SVA
+18BITS	7.81	7.82	7.82	7.83	6.33	6.93
+19BITS	7.81	7.82	7.82	7.83	6.33	6.93
+24BITS	7.81	7.82	7.82	7.83	6.33	6.93
+TALLY	rows	24	0	0
+SUM	45	451.77
+
+PAGE	pdf=112	printed=105	class=BRANCH
+HEAD	BRANCHING CB BIND | NO FORWARDING | DIRECT ADDRESSING | INSTRUCTION AT FULL WORD ADDR
+COND	forwarding=no	addressing=direct
+COLS	succ_consec	unsucc_consec	succ_noncon	unsucc_noncon	ix_succ_consec	ix_unsucc_consec	ix_succ_noncon	ix_unsucc_noncon
+SHOWN	succ_consec	unsucc_consec	succ_noncon	unsucc_noncon	ix_succ_consec	ix_unsucc_consec	ix_succ_noncon	ix_unsucc_noncon
+NOTE	The four BRANCH ADDRESS INDEX columns are faintly printed: the upper strokes of most 5s, 8s and 7s have dropped out.  Every cell there was read on a full-resolution crop; each agrees with at least one cleanly printed cell in its own column or its twin column.  ix_unsucc_consec of BXL BZXL (2.86) is the faintest cell on the page; its twin ix_unsucc_noncon is clean.
+BLOCK	-
+CB CBZ	4.82	4.52	4.82	4.52	5.12	5.12	5.12	5.12
+CB+ CBZ+	4.82	4.52	4.82	4.52	5.12	5.12	5.12	5.12
+CB- CBZ-	4.82	4.52	4.82	4.52	5.12	5.12	5.12	5.12
+CBH CBZH	4.82	4.52	4.82	4.52	5.12	5.12	5.12	5.12
+CBR	11.14	4.52	11.14	4.52	11.44	5.12	11.44	5.12
+CBR+	11.14	4.52	11.14	4.52	11.44	5.12	11.44	5.12
+CBR-	11.14	4.52	11.14	4.52	11.44	5.12	11.44	5.12
+CBRH	11.14	4.52	11.14	4.52	11.44	5.12	11.44	5.12
+BLOCK	BIND / I-BOX IND
+BXL BZXL	4.52	2.26	4.52	2.26	4.67	2.86	4.67	2.86
+BLOCK	ARITH RESULT IND
+BAL BZAL	19.78	7.20	19.78	7.20	20.08	7.21	20.08	7.21
+TALLY	noncon	40	0	0
+SUM	80	551.56
+
+PAGE	pdf=120	printed=113	class=VFL
+HEAD	VFL INSTRUCTION L | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	L
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+BLOCK	-
+(BU,1,8)	4.20	-	4.20	4.82	-	4.22
+(BU,8,8)	4.20	6.32	4.20	4.82	6.77	4.22
+(BU,16,8)	4.80	6.32	4.80	4.82	6.77	4.80
+(BU,32,8)	6.00	7.21	6.00	6.00	7.21	6.00
+(BU,48,8)	7.20	8.40	7.20	7.20	8.40	7.20
+(BU,64,8)	8.40	9.60	8.40	8.40	9.60	8.40
+(B,1,1)	4.20	-	4.20	4.82	-	4.22
+(B,8,1)	4.80	6.32	4.80	4.82	6.77	4.80
+(B,16,1)	5.40	6.62	5.40	5.40	6.92	5.40
+(B,32,1)	6.60	7.80	6.60	6.60	7.80	6.60
+(B,48,1)	7.80	9.00	7.80	7.80	9.00	7.80
+(B,64,1)	9.00	10.20	9.00	9.00	10.20	9.00
+(DU,4,4)	4.20	-	4.20	4.82	-	4.22
+(DU,8,4)	4.80	6.32	4.80	4.82	6.77	4.80
+(DU,16,4)	6.00	7.21	6.00	6.00	7.21	6.00
+(DU,32,4)	8.40	9.60	8.40	8.40	9.60	8.40
+(DU,48,4)	10.80	12.01	10.80	10.80	12.01	10.80
+(DU,64,4)	13.20	14.40	13.20	13.20	14.40	13.20
+(D,4,4)	4.20	-	4.20	4.82	-	4.22
+(D,8,4)	4.80	6.32	4.80	4.82	6.77	4.80
+(D,16,4)	6.00	7.21	6.00	6.00	7.21	6.00
+(D,32,4)	8.40	9.60	8.40	8.40	9.60	8.40
+(D,48,4)	10.80	12.01	10.80	10.80	12.01	10.80
+(D,64,4)	13.20	14.40	13.20	13.20	14.40	13.20
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	4.20	-	4.20	4.82	-	4.22
+(BU,8,8)	4.20	6.32	4.20	4.82	6.77	4.22
+(BU,16,8)	4.80	6.32	4.80	4.82	6.77	4.80
+(BU,32,8)	6.00	7.21	6.00	6.00	7.21	6.00
+(BU,48,8)	7.20	8.40	7.20	7.20	8.40	7.20
+(BU,64,8)	8.40	9.60	8.40	8.40	9.60	8.40
+(B,1,1)	4.20	-	4.20	4.82	-	4.22
+(B,8,1)	4.80	6.32	4.80	4.82	6.77	4.80
+(B,16,1)	5.40	6.62	5.40	5.40	6.92	5.40
+(B,32,1)	6.60	7.80	6.60	6.60	7.80	6.60
+(B,48,1)	7.80	9.00	7.80	7.80	9.00	7.80
+(B,64,1)	9.00	10.20	9.00	9.00	10.20	9.00
+(DU,4,4)	4.20	-	4.20	4.82	-	4.22
+(DU,8,4)	4.80	6.32	4.80	4.82	6.77	4.80
+(DU,16,4)	6.00	7.21	6.00	6.00	7.21	6.00
+(DU,32,4)	8.40	9.60	8.40	8.40	9.60	8.40
+(DU,48,4)	10.80	12.01	10.80	10.80	12.01	10.80
+(DU,64,4)	13.20	14.41	13.20	13.20	14.40	13.20
+(D,4,4)	4.20	-	4.20	4.82	-	4.22
+(D,8,4)	4.80	6.32	4.80	4.82	6.77	4.80
+(D,16,4)	6.00	7.21	6.00	6.00	7.21	6.00
+(D,32,4)	8.40	9.60	8.40	8.40	9.60	8.40
+(D,48,4)	10.80	12.01	10.80	10.80	12.01	10.80
+(D,64,4)	13.20	14.41	13.20	13.20	14.40	13.20
+TALLY	ibox	78	0	18
+TALLY	invert	134	2	0
+SUM	272	2058.36
+
+PAGE	pdf=116	printed=109	class=VFL
+HEAD	VFL INSTRUCTION + | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	+
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+BLOCK	-
+(BU,1,8)	4.20	-	4.20	4.82	-	4.22
+(BU,8,8)	4.36	6.32	4.36	4.82	6.77	4.36
+(BU,16,8)	4.96	6.40	4.96	4.96	6.81	4.96
+(BU,32,8)	6.16	7.36	6.16	6.16	7.37	6.16
+(BU,48,8)	7.36	8.56	7.36	7.36	8.56	7.36
+(BU,64,8)	8.56	9.76	8.56	8.56	9.76	8.56
+(B,1,1)	4.20	-	4.20	4.82	-	4.22
+(B,8,1)	4.80	6.41	4.80	4.82	6.82	4.80
+(B,16,1)	5.40	6.78	5.40	5.40	6.92	5.40
+(B,32,1)	6.60	7.98	6.60	6.60	7.98	6.60
+(B,48,1)	7.80	9.16	7.80	7.80	9.16	7.80
+(B,64,1)	9.00	10.36	9.00	9.00	10.36	9.00
+(DU,4,4)	4.47	-	4.47	4.82	-	4.47
+(DU,8,4)	5.09	6.47	5.09	5.09	6.84	5.09
+(DU,16,4)	6.30	7.50	6.30	6.30	7.51	6.30
+(DU,32,4)	8.70	9.90	8.70	8.70	9.90	8.70
+(DU,48,4)	11.10	12.30	11.10	11.10	12.30	11.10
+(DU,64,4)	13.50	14.70	13.50	13.50	14.70	13.50
+(D,4,4)	4.20	-	4.20	4.82	-	4.22
+(D,8,4)	4.80	6.45	4.80	4.82	6.83	4.80
+(D,16,4)	6.00	7.50	6.00	6.00	7.51	6.00
+(D,32,4)	8.40	9.90	8.40	8.40	9.90	8.40
+(D,48,4)	10.80	12.30	10.80	10.80	12.30	10.80
+(D,64,4)	13.20	14.70	13.20	13.20	14.70	13.20
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	4.20	-	4.20	4.82	-	4.22
+(BU,8,8)	4.36	6.32	4.36	4.82	6.77	4.36
+(BU,16,8)	4.96	6.40	4.96	4.96	6.81	4.96
+(BU,32,8)	6.16	7.36	6.16	6.16	7.37	6.16
+(BU,48,8)	7.36	8.56	7.36	7.36	8.56	7.36
+(BU,64,8)	8.56	9.76	8.56	8.56	9.76	8.56
+(B,1,1)	4.20	-	4.20	4.82	-	4.22
+(B,8,1)	7.20	6.41	7.20	7.20	6.81	7.20
+(B,16,1)	7.80	6.78	7.80	7.80	6.92	7.80
+(B,32,1)	10.20	7.98	10.20	10.20	7.98	10.20
+(B,48,1)	12.60	9.16	12.60	12.60	9.17	12.60
+(B,64,1)	15.01	10.36	15.00	15.00	10.36	15.00
+(DU,4,4)	4.47	-	4.47	4.82	-	4.47
+(DU,8,4)	5.09	6.47	5.09	5.09	6.84	5.09
+(DU,16,4)	6.30	7.50	6.30	6.30	7.51	6.30
+(DU,32,4)	8.70	9.90	8.70	8.70	9.90	8.70
+(DU,48,4)	11.10	12.30	11.10	11.10	12.30	11.10
+(DU,64,4)	13.50	14.70	13.50	13.50	14.70	13.50
+(D,4,4)	4.20	-	4.20	4.82	-	4.22
+(D,8,4)	7.20	6.46	7.20	7.20	6.83	7.20
+(D,16,4)	9.00	7.50	9.00	9.00	7.51	9.00
+(D,32,4)	13.80	9.90	13.80	13.80	9.90	13.80
+(D,48,4)	18.61	12.30	18.61	18.61	12.30	18.61
+(D,64,4)	23.41	14.70	23.41	23.41	14.70	23.41
+TALLY	ibox	83	1	12
+TALLY	invert	93	3	40
+SUM	272	2284.90
+
+PAGE	pdf=117	printed=110	class=VFL
+HEAD	VFL INSTRUCTION M+ | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	M+
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+NOTE	The rows (B,1,1) and (D,4,4), in both blocks, carry a printed PF at the right margin.  PDF 113-114 (printed 106-107): a partial field; the page's times for those rows are printed all the same.
+BLOCK	-
+(BU,1,8)	6.63	-	10.88	6.92	-	11.48
+(BU,8,8)	6.63	15.96	10.88	6.92	15.97	11.48
+(BU,16,8)	6.93	16.56	11.48	7.23	16.57	12.09
+(BU,32,8)	7.84	17.76	12.69	7.84	17.77	13.30
+(BU,48,8)	9.02	18.97	13.90	9.03	18.98	14.51
+(BU,64,8)	9.61	19.57	14.51	9.62	19.58	15.11
+(B,1,1)	6.63	-	10.88	6.93	-	11.48	!PF
+(B,8,1)	6.93	16.56	11.48	7.23	16.57	12.09
+(B,16,1)	7.23	17.16	12.09	7.53	17.17	12.69
+(B,32,1)	8.42	18.36	13.29	8.44	18.38	13.90
+(B,48,1)	9.61	19.57	14.51	9.62	19.58	15.11
+(B,64,1)	10.80	20.78	15.72	10.81	20.79	16.32
+(DU,4,4)	6.63	-	10.88	6.92	-	11.48
+(DU,8,4)	6.93	16.56	11.48	7.23	16.57	12.09
+(DU,16,4)	7.84	17.77	12.69	7.84	17.77	13.29
+(DU,32,4)	10.21	20.17	15.11	10.22	20.18	15.72
+(DU,48,4)	12.60	22.58	17.53	12.60	22.59	18.13
+(DU,64,4)	14.40	24.39	19.34	14.40	24.40	19.94
+(D,4,4)	6.63	-	10.88	6.93	-	11.48	!PF
+(D,8,4)	6.93	16.56	11.48	7.23	16.57	12.09
+(D,16,4)	7.84	17.76	12.69	7.84	17.77	13.29
+(D,32,4)	10.21	20.17	15.11	10.22	20.19	15.72
+(D,48,4)	12.60	22.58	17.53	12.60	22.59	18.13
+(D,64,4)	15.01	24.99	19.94	15.00	25.00	20.55
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	7.23	-	12.09	7.53	-	12.69
+(BU,8,8)	7.23	17.16	12.09	7.53	17.17	12.69
+(BU,16,8)	8.42	18.36	13.30	8.44	18.38	13.90
+(BU,32,8)	10.80	20.78	15.72	10.81	20.79	16.32
+(BU,48,8)	13.20	23.18	18.13	13.20	23.20	18.74
+(BU,64,8)	12.31	22.95	17.22	12.31	22.97	17.83
+(B,1,1)	6.63	-	10.88	6.92	-	11.48	!PF
+(B,8,1)	6.93	16.56	11.49	7.23	16.57	12.09
+(B,16,1)	7.23	17.16	12.09	7.53	17.17	12.69
+(B,32,1)	8.43	18.36	13.30	8.44	18.38	13.90
+(B,48,1)	9.62	19.57	14.51	9.62	19.58	15.11
+(B,64,1)	10.80	20.78	15.71	10.81	20.79	16.32
+(DU,4,4)	7.23	-	12.09	7.53	-	12.69
+(DU,8,4)	8.42	18.36	13.30	8.44	18.38	13.90
+(DU,16,4)	10.80	20.77	15.72	10.81	20.79	16.32
+(DU,32,4)	15.60	25.59	20.55	15.61	25.60	21.15
+(DU,48,4)	20.40	30.41	25.38	20.40	30.43	25.98
+(DU,64,4)	19.51	30.78	24.48	19.51	30.80	25.08
+(D,4,4)	6.63	-	10.88	6.93	-	11.48	!PF
+(D,8,4)	6.93	16.56	11.48	7.23	16.57	12.09
+(D,16,4)	7.84	17.77	12.69	7.84	17.77	13.30
+(D,32,4)	10.21	20.17	15.11	10.22	20.19	15.71
+(D,48,4)	12.60	22.58	17.53	12.60	22.59	18.13
+(D,64,4)	15.01	24.99	19.95	15.01	25.01	20.55
+TALLY	ibox	0	0	96
+TALLY	invert	56	12	68
+SUM	272	3963.78
+
+PAGE	pdf=118	printed=111	class=VFL
+HEAD	VFL INSTRUCTION +MG | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	+MG
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+BLOCK	-
+(BU,1,8)	4.20	-	4.20	4.82	-	4.22
+(BU,8,8)	4.36	6.32	4.36	4.82	6.77	4.36
+(BU,16,8)	4.96	6.40	4.96	4.96	6.81	4.96
+(BU,32,8)	6.16	7.37	6.16	6.16	7.37	6.16
+(BU,48,8)	7.36	8.56	7.36	7.36	8.56	7.36
+(BU,64,8)	8.56	9.76	8.56	8.56	9.76	8.56
+(B,1,1)	4.20	-	4.20	4.82	-	4.22
+(B,8,1)	4.96	6.39	4.96	4.96	6.81	4.96
+(B,16,1)	5.56	6.78	5.56	5.56	6.92	5.56
+(B,32,1)	6.76	7.96	6.76	6.76	7.96	6.76
+(B,48,1)	7.96	9.17	7.96	7.96	9.16	7.96
+(B,64,1)	9.16	10.36	9.16	9.16	10.36	9.16
+(DU,4,4)	4.47	-	4.47	4.82	-	4.47
+(DU,8,4)	5.09	6.47	5.09	5.09	6.84	5.09
+(DU,16,4)	6.30	7.50	6.30	6.30	7.51	6.30
+(DU,32,4)	8.70	9.90	8.70	8.70	9.90	8.70
+(DU,48,4)	11.10	12.30	11.10	11.10	12.30	11.10
+(DU,64,4)	13.50	14.70	13.50	13.50	14.70	13.50
+(D,4,4)	4.20	-	4.20	4.82	-	4.22
+(D,8,4)	5.07	6.46	5.07	5.07	6.83	5.07
+(D,16,4)	6.30	7.50	6.30	6.30	7.51	6.30
+(D,32,4)	8.70	9.90	8.69	8.70	9.90	8.70
+(D,48,4)	11.10	12.30	11.10	11.10	12.30	11.10
+(D,64,4)	13.50	14.70	13.50	13.50	14.70	13.50
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	4.20	-	4.20	4.82	-	4.22
+(BU,8,8)	4.36	6.32	4.36	4.82	6.77	4.36
+(BU,16,8)	4.96	6.40	4.96	4.96	6.81	4.96
+(BU,32,8)	6.16	7.37	6.16	6.16	7.37	6.16
+(BU,48,8)	7.36	8.56	7.36	7.36	8.56	7.36
+(BU,64,8)	9.00	10.20	9.00	9.00	10.20	9.00
+(B,1,1)	4.20	-	4.20	4.82	-	4.22
+(B,8,1)	4.96	6.40	4.96	4.96	6.81	4.96
+(B,16,1)	5.56	6.78	5.56	5.56	6.92	5.56
+(B,32,1)	6.76	7.96	6.76	6.76	7.96	6.76
+(B,48,1)	7.96	9.17	7.96	7.96	9.16	7.96
+(B,64,1)	9.60	10.50	9.60	9.60	10.50	9.60
+(DU,4,4)	4.47	-	4.47	4.82	-	4.47
+(DU,8,4)	5.09	6.47	5.09	5.09	6.84	5.09
+(DU,16,4)	6.30	7.50	6.30	6.30	7.51	6.30
+(DU,32,4)	8.70	9.90	8.70	8.70	9.90	8.70
+(DU,48,4)	11.10	12.30	11.10	11.10	12.30	11.10
+(DU,64,4)	13.80	*01*	13.80	13.80	*01*	13.80
+(D,4,4)	4.20	-	4.20	4.82	-	4.22
+(D,8,4)	5.07	6.46	5.07	5.07	6.83	5.07
+(D,16,4)	6.30	7.50	6.30	6.30	7.51	6.30
+(D,32,4)	8.70	9.90	8.70	8.70	9.90	8.70
+(D,48,4)	11.10	12.30	11.10	11.10	12.30	11.10
+(D,64,4)	13.80	14.71	13.80	13.80	14.70	13.80
+TALLY	ibox	85	1	10
+TALLY	invert	111	3	20
+SUM	270	2088.53
+
+PAGE	pdf=119	printed=112	class=VFL
+HEAD	VFL INSTRUCTION M+MG | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	M+MG
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+BLOCK	-
+(BU,1,8)	6.63	-	10.88	6.92	-	11.48
+(BU,8,8)	6.63	15.95	10.88	6.92	15.97	11.48
+(BU,16,8)	6.93	16.56	11.48	7.23	16.57	12.09
+(BU,32,8)	7.84	17.77	12.69	7.84	17.77	13.29
+(BU,48,8)	9.02	18.97	13.90	9.03	18.98	14.51
+(BU,64,8)	9.61	19.57	14.51	9.62	19.58	15.11
+(B,1,1)	6.63	-	10.88	6.92	-	11.48
+(B,8,1)	6.93	16.56	11.48	7.23	16.57	12.09
+(B,16,1)	7.23	17.16	12.09	7.53	17.17	12.69
+(B,32,1)	8.42	18.36	13.30	8.44	18.37	13.90
+(B,48,1)	9.61	20.77	14.50	9.62	20.79	15.11
+(B,64,1)	10.80	22.28	15.72	10.81	22.29	16.32
+(DU,4,4)	6.63	-	10.88	6.93	-	11.48
+(DU,8,4)	6.93	16.56	11.48	7.23	16.57	12.09
+(DU,16,4)	7.84	17.77	12.69	7.84	17.77	13.29
+(DU,32,4)	10.21	20.17	15.11	10.22	20.18	15.72
+(DU,48,4)	12.60	22.58	17.53	12.60	22.59	18.13
+(DU,64,4)	14.40	24.39	19.34	14.40	24.40	19.94
+(D,4,4)	6.63	-	10.88	6.92	-	11.48
+(D,8,4)	6.93	16.56	11.48	7.23	16.57	12.09
+(D,16,4)	7.84	17.77	12.69	7.84	17.77	13.29
+(D,32,4)	10.21	20.17	15.11	10.21	20.18	15.72
+(D,48,4)	12.60	22.58	17.53	12.60	22.59	18.13
+(D,64,4)	15.00	24.99	19.94	15.01	25.00	20.55
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	7.23	-	12.09	7.53	-	12.69
+(BU,8,8)	7.23	17.16	12.09	7.53	17.17	12.69
+(BU,16,8)	8.42	18.36	13.29	8.44	18.37	13.90
+(BU,32,8)	10.80	20.78	15.72	10.81	20.79	16.31
+(BU,48,8)	13.20	23.18	18.13	13.20	23.20	18.74
+(BU,64,8)	15.00	24.99	19.94	15.00	25.00	20.55
+(B,1,1)	7.23	-	12.09	7.53	-	12.69
+(B,8,1)	8.42	18.36	13.29	8.44	18.37	13.90
+(B,16,1)	9.61	19.57	14.51	9.62	19.58	15.11
+(B,32,1)	12.00	21.98	16.92	12.01	21.99	17.53
+(B,48,1)	14.40	24.39	19.34	14.41	24.40	19.94
+(B,64,1)	16.80	26.79	21.76	16.80	26.81	22.36
+(DU,4,4)	7.23	-	12.09	7.53	-	12.69
+(DU,8,4)	8.42	18.36	13.30	8.44	18.37	13.90
+(DU,16,4)	10.80	20.77	15.72	10.81	20.79	16.32
+(DU,32,4)	15.61	25.59	20.55	15.61	25.61	21.15
+(DU,48,4)	20.40	30.41	25.38	20.40	30.43	25.98
+(DU,64,4)	24.60	34.62	29.61	24.60	34.64	30.21
+(D,4,4)	7.23	-	12.09	7.53	-	12.69
+(D,8,4)	8.42	18.36	13.29	8.44	18.37	13.90
+(D,16,4)	10.80	20.77	15.72	10.81	20.79	16.32
+(D,32,4)	15.61	25.59	20.55	15.60	25.61	21.15
+(D,48,4)	20.40	30.41	25.38	20.40	30.43	25.98
+(D,64,4)	25.21	35.22	30.22	25.21	35.25	30.82
+TALLY	ibox	0	0	96
+TALLY	invert	0	0	136
+SUM	272	4298.83
+
+PAGE	pdf=121	printed=114	class=VFL
+HEAD	VFL INSTRUCTION LWF | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	LWF
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+BLOCK	-
+(BU,1,8)	4.20	-	4.20	4.82	-	4.22
+(BU,8,8)	4.20	6.32	4.20	4.82	6.77	4.22
+(BU,16,8)	4.80	6.32	4.80	4.82	6.77	4.80
+(BU,32,8)	6.00	7.21	6.00	6.00	7.21	6.00
+(BU,48,8)	7.20	8.40	7.20	7.20	8.40	7.20
+(BU,64,8)	8.40	9.60	8.40	8.40	9.60	8.40
+(B,1,1)	4.20	-	4.20	4.82	-	4.22
+(B,8,1)	4.80	6.32	4.80	4.82	6.77	4.80
+(B,16,1)	5.40	6.62	5.40	5.40	6.92	5.40
+(B,32,1)	6.60	7.80	6.60	6.60	7.80	6.60
+(B,48,1)	7.80	9.00	7.80	7.80	9.00	7.80
+(B,64,1)	9.00	10.20	9.00	9.00	10.20	9.00
+(DU,4,4)	4.20	-	4.20	4.82	-	4.22
+(DU,8,4)	4.80	6.32	4.80	4.82	6.77	4.80
+(DU,16,4)	6.00	7.21	6.00	6.00	7.21	6.00
+(DU,32,4)	8.40	9.60	8.40	8.40	9.60	8.40
+(DU,48,4)	10.80	12.01	10.80	10.80	12.01	10.80
+(DU,64,4)	13.20	14.40	13.20	13.20	14.40	13.20
+(D,4,4)	4.20	-	4.20	4.82	-	4.22
+(D,8,4)	4.80	6.32	4.80	4.82	6.77	4.80
+(D,16,4)	6.00	7.21	6.00	6.00	7.21	6.00
+(D,32,4)	8.40	9.60	8.40	8.40	9.60	8.40
+(D,48,4)	10.80	12.01	10.80	10.80	12.01	10.80
+(D,64,4)	13.20	14.40	13.20	13.20	14.40	13.20
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	4.20	-	4.20	4.82	-	4.22
+(BU,8,8)	4.20	6.32	4.20	4.82	6.77	4.22
+(BU,16,8)	4.80	6.32	4.80	4.82	6.77	4.80
+(BU,32,8)	6.00	7.21	6.00	6.00	7.21	6.00
+(BU,48,8)	7.20	8.40	7.20	7.20	8.40	7.20
+(BU,64,8)	8.40	9.60	8.40	8.40	9.60	8.40
+(B,1,1)	4.20	-	4.20	4.82	-	4.22
+(B,8,1)	4.80	6.32	4.80	4.82	6.77	4.80
+(B,16,1)	5.40	6.62	5.40	5.40	6.92	5.40
+(B,32,1)	6.60	7.80	6.60	6.60	7.80	6.60
+(B,48,1)	7.80	9.00	7.80	7.80	9.00	7.80
+(B,64,1)	9.00	10.20	9.00	9.00	10.20	9.00
+(DU,4,4)	4.20	-	4.20	4.82	-	4.22
+(DU,8,4)	4.80	6.32	4.80	4.82	6.77	4.80
+(DU,16,4)	6.00	7.21	6.00	6.00	7.21	6.00
+(DU,32,4)	8.40	9.60	8.40	8.40	9.60	8.40
+(DU,48,4)	10.80	12.01	10.80	10.80	12.01	10.80
+(DU,64,4)	13.20	14.40	13.20	13.20	14.40	13.20
+(D,4,4)	4.20	-	4.20	4.82	-	4.22
+(D,8,4)	4.80	6.32	4.80	4.82	6.77	4.80
+(D,16,4)	6.00	7.21	6.00	6.00	7.21	6.00
+(D,32,4)	8.40	9.60	8.40	8.40	9.60	8.40
+(D,48,4)	10.80	12.01	10.80	10.80	12.01	10.80
+(D,64,4)	13.20	14.41	13.20	13.20	14.40	13.20
+TALLY	ibox	78	0	18
+TALLY	invert	135	1	0
+SUM	272	2058.35
+
+PAGE	pdf=122	printed=115	class=VFL
+HEAD	VFL INSTRUCTION LFT | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	LFT
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+NOTE	The (BU,64,8) and (B,64,1) rows print *01* in every column of both blocks: PDF 113-114 (printed 106-107), an instruction check reject, "caused by machine errors in handling a partial field condition".  No time is printed for them.
+BLOCK	-
+(BU,1,8)	13.20	-	13.20	13.20	-	13.20
+(BU,8,8)	13.20	14.41	13.20	13.20	14.41	13.20
+(BU,16,8)	13.20	14.41	13.20	13.20	14.41	13.20
+(BU,32,8)	13.20	14.41	13.20	13.20	14.41	13.20
+(BU,48,8)	13.20	14.41	13.20	13.20	14.41	13.20
+(BU,64,8)	*01*	*01*	*01*	*01*	*01*	*01*
+(B,1,1)	13.20	-	13.20	13.20	-	13.20
+(B,8,1)	13.20	14.41	13.20	13.20	14.41	13.20
+(B,16,1)	13.20	14.41	13.20	13.20	14.41	13.20
+(B,32,1)	13.20	14.41	13.20	13.20	14.41	13.20
+(B,48,1)	13.20	14.41	13.20	13.20	14.41	13.20
+(B,64,1)	*01*	*01*	*01*	*01*	*01*	*01*
+(DU,4,4)	19.81	-	19.81	19.81	-	19.81
+(DU,8,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(DU,16,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(DU,32,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(DU,48,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(DU,64,4)	24.60	25.81	24.61	24.61	25.81	24.61
+(D,4,4)	19.81	-	19.81	19.81	-	19.81
+(D,8,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(D,16,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(D,32,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(D,48,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(D,64,4)	24.60	25.81	24.61	24.61	25.81	24.61
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	13.20	-	13.20	13.20	-	13.20
+(BU,8,8)	13.20	14.41	13.20	13.20	14.41	13.20
+(BU,16,8)	13.20	14.41	13.20	13.20	14.41	13.20
+(BU,32,8)	13.20	14.41	13.20	13.20	14.41	13.20
+(BU,48,8)	13.20	14.41	13.20	13.20	14.41	13.20
+(BU,64,8)	*01*	*01*	*01*	*01*	*01*	*01*
+(B,1,1)	13.20	-	13.20	13.20	-	13.20
+(B,8,1)	13.20	14.41	13.20	13.20	14.41	13.20
+(B,16,1)	13.20	14.41	13.20	13.20	14.41	13.20
+(B,32,1)	13.20	14.41	13.20	13.20	14.41	13.20
+(B,48,1)	13.20	14.41	13.20	13.20	14.41	13.20
+(B,64,1)	*01*	*01*	*01*	*01*	*01*	*01*
+(DU,4,4)	19.81	-	19.81	19.81	-	19.81
+(DU,8,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(DU,16,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(DU,32,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(DU,48,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(DU,64,4)	24.61	25.81	24.61	24.61	25.81	24.61
+(D,4,4)	19.81	-	19.81	19.81	-	19.81
+(D,8,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(D,16,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(D,32,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(D,48,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(D,64,4)	24.60	25.81	24.61	24.61	25.81	24.61
+TALLY	ibox	85	3	0
+TALLY	invert	123	1	0
+SUM	248	4374.45
+
+PAGE	pdf=123	printed=116	class=VFL
+HEAD	VFL INSTRUCTION LTRS | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	LTRS
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+NOTE	The (BU,64,8) and (B,64,1) rows print *01* in every column of both blocks, as on PDF 122 (LFT): an instruction check reject, PDF 113-114.
+BLOCK	-
+(BU,1,8)	13.20	-	13.20	13.20	-	13.20
+(BU,8,8)	13.20	14.41	13.20	13.20	14.41	13.20
+(BU,16,8)	13.20	14.41	13.20	13.20	14.41	13.20
+(BU,32,8)	13.20	14.41	13.20	13.20	14.41	13.20
+(BU,48,8)	13.20	14.41	13.20	13.20	14.41	13.20
+(BU,64,8)	*01*	*01*	*01*	*01*	*01*	*01*
+(B,1,1)	13.20	-	13.20	13.20	-	13.20
+(B,8,1)	13.20	14.41	13.20	13.20	14.41	13.20
+(B,16,1)	13.20	14.41	13.20	13.20	14.41	13.20
+(B,32,1)	13.20	14.41	13.20	13.20	14.41	13.20
+(B,48,1)	13.20	14.41	13.20	13.20	14.41	13.20
+(B,64,1)	*01*	*01*	*01*	*01*	*01*	*01*
+(DU,4,4)	19.81	-	19.81	19.81	-	19.81
+(DU,8,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(DU,16,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(DU,32,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(DU,48,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(DU,64,4)	24.60	25.81	24.61	24.60	25.81	24.61
+(D,4,4)	19.81	-	19.81	19.81	-	19.81
+(D,8,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(D,16,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(D,32,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(D,48,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(D,64,4)	24.60	25.81	24.61	24.61	25.81	24.61
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	13.20	-	13.20	13.20	-	13.20
+(BU,8,8)	13.20	14.41	13.20	13.20	14.41	13.20
+(BU,16,8)	13.20	14.41	13.20	13.20	14.41	13.20
+(BU,32,8)	13.20	14.41	13.20	13.20	14.41	13.20
+(BU,48,8)	13.20	14.41	13.20	13.20	14.41	13.20
+(BU,64,8)	*01*	*01*	*01*	*01*	*01*	*01*
+(B,1,1)	13.20	-	13.20	13.20	-	13.20
+(B,8,1)	13.20	14.41	13.20	13.20	14.41	13.20
+(B,16,1)	13.20	14.41	13.20	13.20	14.41	13.20
+(B,32,1)	13.20	14.41	13.20	13.20	14.41	13.20
+(B,48,1)	13.20	14.41	13.20	13.20	14.41	13.20
+(B,64,1)	*01*	*01*	*01*	*01*	*01*	*01*
+(DU,4,4)	19.81	-	19.81	19.81	-	19.81
+(DU,8,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(DU,16,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(DU,32,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(DU,48,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(DU,64,4)	24.60	25.81	24.61	24.61	25.81	24.61
+(D,4,4)	19.81	-	19.81	19.81	-	19.81
+(D,8,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(D,16,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(D,32,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(D,48,4)	19.81	21.01	19.81	19.81	21.01	19.81
+(D,64,4)	24.60	25.81	24.61	24.61	25.81	24.61
+TALLY	ibox	83	5	0
+TALLY	invert	123	1	0
+SUM	248	4374.43
+
+PAGE	pdf=124	printed=117	class=VFL
+HEAD	VFL INSTRUCTION ST | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	ST
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+BLOCK	-
+(BU,1,8)	6.63	-	10.88	6.92	-	11.48
+(BU,8,8)	6.63	15.95	10.88	6.92	15.97	11.48
+(BU,16,8)	6.93	16.56	11.48	7.23	16.57	12.09
+(BU,32,8)	7.84	17.77	12.69	7.84	17.77	13.29
+(BU,48,8)	9.02	18.97	13.90	9.03	18.98	14.51
+(BU,64,8)	9.61	19.57	14.51	9.62	19.58	15.11
+(B,1,1)	6.63	-	10.88	6.92	-	11.48
+(B,8,1)	6.93	16.56	11.48	7.23	16.57	12.09
+(B,16,1)	7.23	17.16	12.09	7.53	17.17	12.69
+(B,32,1)	8.42	18.36	13.30	8.44	18.37	13.90
+(B,48,1)	9.62	19.57	14.50	9.62	19.58	15.11
+(B,64,1)	10.80	20.77	15.72	10.81	20.79	16.32
+(DU,4,4)	6.63	-	10.88	6.92	-	11.48
+(DU,8,4)	6.93	16.56	11.48	7.23	16.57	12.09
+(DU,16,4)	7.84	17.76	12.69	7.84	17.77	13.29
+(DU,32,4)	10.21	20.17	15.11	10.22	20.18	15.72
+(DU,48,4)	12.60	22.58	17.53	12.60	22.59	18.13
+(DU,64,4)	14.41	24.39	19.34	14.41	24.40	19.94
+(D,4,4)	6.63	-	10.88	6.92	-	11.48
+(D,8,4)	6.93	16.56	11.48	7.23	16.57	12.09
+(D,16,4)	7.84	17.76	12.69	7.84	17.77	13.29
+(D,32,4)	10.21	20.17	15.11	10.22	20.18	15.71
+(D,48,4)	12.60	22.58	17.53	12.60	22.59	18.13
+(D,64,4)	15.00	24.99	19.94	15.00	25.00	20.55
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	6.63	-	10.88	6.92	-	11.48
+(BU,8,8)	6.63	15.96	10.88	6.92	15.97	11.48
+(BU,16,8)	6.93	16.56	11.48	7.23	16.57	12.09
+(BU,32,8)	7.84	17.77	12.69	7.84	17.77	13.29
+(BU,48,8)	9.02	18.97	13.90	9.03	18.98	14.51
+(BU,64,8)	9.61	19.57	14.51	9.62	19.58	15.11
+(B,1,1)	6.63	-	10.88	6.92	-	11.48
+(B,8,1)	6.93	16.56	11.48	7.23	16.57	12.09
+(B,16,1)	7.23	17.16	12.09	7.53	17.17	12.69
+(B,32,1)	8.42	18.36	13.29	8.44	18.37	13.90
+(B,48,1)	9.61	19.57	14.51	9.62	19.58	15.11
+(B,64,1)	10.80	20.77	15.72	10.81	20.79	16.32
+(DU,4,4)	6.63	-	10.88	6.92	-	11.48
+(DU,8,4)	6.93	16.56	11.48	7.23	16.57	12.09
+(DU,16,4)	7.84	17.77	12.69	7.84	17.77	13.30
+(DU,32,4)	10.21	20.17	15.11	10.22	20.18	15.71
+(DU,48,4)	12.60	22.58	17.53	12.60	22.59	18.13
+(DU,64,4)	14.40	24.39	19.34	14.40	24.40	19.94
+(D,4,4)	6.63	-	10.88	6.92	-	11.48
+(D,8,4)	6.93	16.56	11.48	7.23	16.57	12.09
+(D,16,4)	7.84	17.77	12.69	7.84	17.77	13.30
+(D,32,4)	10.21	20.17	15.11	10.22	20.18	15.71
+(D,48,4)	12.60	22.58	17.53	12.60	22.59	18.13
+(D,64,4)	15.00	24.99	19.94	15.00	25.00	20.55
+TALLY	ibox	0	0	96
+TALLY	invert	125	11	0
+SUM	272	3738.83
+
+PAGE	pdf=125	printed=118	class=VFL
+HEAD	VFL INSTRUCTION SRD | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	SRD
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+BLOCK	-
+(BU,1,8)	6.63	-	10.88	6.93	-	11.48
+(BU,8,8)	6.63	15.95	10.88	6.92	15.97	11.48
+(BU,16,8)	6.93	16.56	11.48	7.23	16.57	12.09
+(BU,32,8)	7.84	17.77	12.69	7.84	17.77	13.29
+(BU,48,8)	9.02	18.97	13.90	9.03	18.98	14.51
+(BU,64,8)	9.61	19.57	14.51	9.62	19.58	15.11
+(B,1,1)	6.63	-	10.88	6.92	-	11.48
+(B,8,1)	6.93	16.56	11.48	7.23	16.57	12.09
+(B,16,1)	7.23	17.16	12.09	7.53	17.17	12.69
+(B,32,1)	8.42	18.36	13.30	8.44	18.37	13.90
+(B,48,1)	9.61	19.57	14.51	9.62	19.58	15.11
+(B,64,1)	10.80	20.77	15.72	10.81	20.79	16.32
+(DU,4,4)	6.63	-	10.88	6.92	-	11.48
+(DU,8,4)	6.93	16.56	11.48	7.23	16.57	12.09
+(DU,16,4)	7.84	17.77	12.69	7.84	17.77	13.30
+(DU,32,4)	10.21	20.17	15.11	10.22	20.18	15.72
+(DU,48,4)	12.60	22.58	17.53	12.60	22.59	18.13
+(DU,64,4)	14.40	24.39	19.34	14.40	24.40	19.94
+(D,4,4)	6.63	-	10.88	6.93	-	11.48
+(D,8,4)	6.93	16.56	11.48	7.23	16.57	12.09
+(D,16,4)	7.84	17.77	12.69	7.84	17.77	13.29
+(D,32,4)	10.21	20.17	15.11	10.22	20.18	15.71
+(D,48,4)	12.60	22.58	17.53	12.60	22.59	18.13
+(D,64,4)	15.00	24.99	19.94	15.01	25.00	20.55
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	6.63	-	10.88	6.92	-	11.48
+(BU,8,8)	6.63	15.96	10.88	6.92	15.97	11.48
+(BU,16,8)	6.93	16.56	11.48	7.23	16.57	12.09
+(BU,32,8)	7.84	17.77	12.69	7.84	17.77	13.29
+(BU,48,8)	9.02	18.96	13.90	9.03	18.98	14.50
+(BU,64,8)	9.61	19.57	14.50	9.62	19.58	15.11
+(B,1,1)	6.63	-	10.88	6.92	-	11.48
+(B,8,1)	6.93	16.56	11.48	7.23	16.57	12.09
+(B,16,1)	7.23	17.16	12.09	7.53	17.17	12.69
+(B,32,1)	8.42	18.36	13.29	8.44	18.37	13.90
+(B,48,1)	9.61	19.57	14.51	9.62	19.58	15.11
+(B,64,1)	10.80	20.77	15.72	10.81	20.79	16.32
+(DU,4,4)	6.63	-	10.88	6.92	-	11.48
+(DU,8,4)	6.93	16.56	11.48	7.23	16.57	12.09
+(DU,16,4)	7.84	17.77	12.69	7.84	17.77	13.29
+(DU,32,4)	10.21	20.17	15.11	10.22	20.18	15.71
+(DU,48,4)	12.60	22.58	17.53	12.60	22.59	18.13
+(DU,64,4)	14.40	24.39	19.34	14.40	24.40	19.94
+(D,4,4)	6.63	-	10.88	6.92	-	11.48
+(D,8,4)	6.93	16.56	11.48	7.23	16.57	12.09
+(D,16,4)	7.84	17.76	12.69	7.84	17.77	13.29
+(D,32,4)	10.21	20.17	15.11	10.22	20.18	15.71
+(D,48,4)	12.60	22.58	17.53	12.60	22.59	18.13
+(D,64,4)	15.00	24.99	19.94	15.00	25.00	20.55
+TALLY	ibox	0	0	96
+TALLY	invert	125	11	0
+SUM	272	3738.81
+
+PAGE	pdf=126	printed=119	class=VFL
+HEAD	VFL INSTRUCTION M+1 | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	M+1
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+NOTE	A pencil stroke runs down the INDEXING / EXTERNL OPERAND column from (B,16,1) to (DU,16,4), through the last digit of each figure.  Read on a full-resolution crop: the (B,...) figures are legible under it.  (DU,4,4) and (DU,8,4) are the two the stroke covers most; they are read 6.63 and 6.66, which is also what their sister rows print ((BU,1,8), (B,1,1), (D,4,4) are 6.63; (DU,16,4)-(DU,64,4) are 6.66), and are flagged because the last digit rests on that.
+NOTE	(D,4,4) in the INVERT SIGN block prints *01* (instruction check reject, PDF 113-114) in all four of its columns.
+BLOCK	-
+(BU,1,8)	6.33	-	10.27	6.63	-	10.88
+(BU,8,8)	6.33	15.35	10.27	6.63	15.36	10.88
+(BU,16,8)	6.33	15.36	10.28	6.63	15.37	10.88
+(BU,32,8)	6.33	15.35	10.28	6.63	15.37	10.88
+(BU,48,8)	6.33	15.35	10.28	6.63	15.37	10.88
+(BU,64,8)	6.33	15.35	10.28	6.63	15.37	10.88
+(B,1,1)	6.33	-	10.27	6.63	-	10.88
+(B,8,1)	6.63	15.95	10.88	6.92	15.97	11.48
+(B,16,1)	6.63	15.96	10.88	6.93	15.97	11.49
+(B,32,1)	6.63	15.96	10.88	6.93	15.97	11.49
+(B,48,1)	6.63	15.96	10.88	6.93	15.97	11.49
+(B,64,1)	6.63	15.96	10.88	6.93	15.97	11.49
+(DU,4,4)	6.33	-	10.27	6.63?	-	10.88
+(DU,8,4)	6.36	15.42	10.34	6.66?	15.42	10.94
+(DU,16,4)	6.36	15.42	10.34	6.66	15.43	10.94
+(DU,32,4)	6.36	15.42	10.34	6.66	15.43	10.94
+(DU,48,4)	6.36	15.42	10.34	6.66	15.43	10.94
+(DU,64,4)	6.36	15.42	10.34	6.66	15.43	10.94
+(D,4,4)	6.33	-	10.27	6.63	-	10.88
+(D,8,4)	6.63	15.95	10.88	6.92	15.97	11.48
+(D,16,4)	6.66	16.02	10.94	6.96	16.03	11.55
+(D,32,4)	6.66	16.02	10.94	6.96	16.03	11.55
+(D,48,4)	6.66	16.02	10.94	6.96	16.03	11.55
+(D,64,4)	6.66	16.02	10.94	6.96	16.03	11.55
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	6.63	-	10.88	6.93	-	11.48
+(BU,8,8)	6.62	15.94	10.86	6.92	15.95	11.47
+(BU,16,8)	6.63	15.95	10.88	6.92	15.97	11.48
+(BU,32,8)	7.23	17.16	12.09	7.53	17.17	12.69
+(BU,48,8)	8.42	18.36	13.30	8.44	18.37	13.90
+(BU,64,8)	9.61	19.57	14.51	9.62	19.58	15.11
+(B,1,1)	6.93	-	11.48	7.23	-	12.09
+(B,8,1)	6.63	15.96	10.88	6.92	15.97	11.48
+(B,16,1)	6.93	16.56	11.48	7.23	16.57	12.09
+(B,32,1)	7.84	17.77	12.69	7.84	17.77	13.29
+(B,48,1)	9.02	18.97	13.90	9.03	18.98	14.50
+(B,64,1)	10.21	20.17	15.11	10.22	20.18	15.71
+(DU,4,4)	6.63	-	10.88	6.92	-	11.48
+(DU,8,4)	7.22	16.84	11.77	7.38	16.85	12.37
+(DU,16,4)	7.23	17.16	12.09	7.53	17.17	12.69
+(DU,32,4)	9.61	19.57	14.51	9.62	19.58	15.11
+(DU,48,4)	12.00	21.98	16.92	12.01	21.99	17.53
+(DU,64,4)	14.40	24.39	19.34	14.40	24.40	19.94
+(D,4,4)	*01*	-	*01*	*01*	-	*01*
+(D,8,4)	6.63	15.96	10.88	6.92	15.97	11.48
+(D,16,4)	6.76	16.22	11.15	7.06	16.24	11.75
+(D,32,4)	9.61	19.57	14.51	9.62	19.58	15.11
+(D,48,4)	12.01	21.98	16.92	12.01	21.99	17.53
+(D,64,4)	14.40	22.29	19.34	14.40	22.31	19.94
+TALLY	ibox	0	0	94
+TALLY	invert	10	2	120
+SUM	268	3239.56
+
+PAGE	pdf=127	printed=120	class=VFL
+HEAD	VFL INSTRUCTION K | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	K
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+NOTE	Three cells break their column's pattern and were re-read on a full-resolution crop; all three are as printed: (D,64,4) EXTERNL WB XOVR is 11.85 in the first block, LESS than (D,48,4)'s 11.41 (both groups); in the INVERT SIGN block (DU,48,4) WB XOVR is 6.32 among 6.17s, and (D,64,4) WB XOVR is 8.41 and 8.72 among 6.32s and 6.77s.
+BLOCK	-
+(BU,1,8)	3.61	-	3.61	4.82	-	4.22
+(BU,8,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,16,8)	4.20	6.32	4.20	4.82	6.77	4.22
+(BU,32,8)	5.40	6.62	5.40	5.40	6.92	5.40
+(BU,48,8)	6.60	7.80	6.60	6.60	7.80	6.60
+(BU,64,8)	7.20	8.40	7.20	7.20	8.40	7.20
+(B,1,1)	3.61	-	3.61	4.82	-	4.22
+(B,8,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,16,1)	4.80	6.47	4.80	4.82	6.77	4.80
+(B,32,1)	6.00	7.21	6.00	6.00	7.22	6.00
+(B,48,1)	7.20	8.40	7.20	7.20	8.40	7.20
+(B,64,1)	8.40	9.60	8.40	8.40	9.60	8.40
+(DU,4,4)	3.61	-	3.61	4.82	-	4.22
+(DU,8,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(DU,16,4)	5.40	6.62	5.40	5.40	6.92	5.40
+(DU,32,4)	7.80	9.00	7.80	7.80	9.00	7.80
+(DU,48,4)	10.20	11.40	10.20	10.20	11.40	10.20
+(DU,64,4)	12.01	13.20	12.01	12.01	13.20	12.01
+(D,4,4)	3.61	-	3.61	4.82	-	4.22
+(D,8,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,16,4)	5.40	6.62	5.40	5.40	6.92	5.40
+(D,32,4)	7.80	9.00	7.80	7.80	9.00	7.80
+(D,48,4)	10.20	11.41	10.20	10.20	11.40	10.20
+(D,64,4)	12.60	11.85	12.60	12.60	11.85	12.60
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	4.20	-	4.20	4.82	-	4.22
+(BU,8,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,16,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,32,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,48,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,64,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(B,1,1)	4.20	-	4.20	4.82	-	4.22
+(B,8,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,16,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,32,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,48,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,64,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(DU,4,4)	3.61	-	3.61	4.82	-	4.22
+(DU,8,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,16,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,32,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,48,4)	3.61	6.32	3.61	4.82	6.77	4.22
+(DU,64,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(D,4,4)	4.20	-	4.20	4.82	-	4.22
+(D,8,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,16,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,32,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,48,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,64,4)	4.20	8.41	4.20	4.82	8.72	4.22
+TALLY	ibox	62	0	34
+TALLY	invert	36	0	100
+SUM	272	1622.89
+
+PAGE	pdf=128	printed=121	class=VFL
+HEAD	VFL INSTRUCTION KR | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	KR
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+NOTE	The same three pattern-breaking WB XOVR cells as PDF 127 (K) are printed here: (D,64,4) 11.85 in the first block; (DU,48,4) 6.32 and (D,64,4) 8.41 / 8.72 in the INVERT SIGN block.
+BLOCK	-
+(BU,1,8)	3.61	-	3.61	4.82	-	4.22
+(BU,8,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,16,8)	4.20	6.32	4.20	4.82	6.77	4.22
+(BU,32,8)	5.40	6.62	5.40	5.40	6.92	5.40
+(BU,48,8)	6.60	7.80	6.60	6.60	7.81	6.60
+(BU,64,8)	7.20	8.40	7.20	7.20	8.40	7.20
+(B,1,1)	3.61	-	3.61	4.82	-	4.22
+(B,8,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,16,1)	4.80	6.47	4.80	4.82	6.77	4.80
+(B,32,1)	6.00	7.21	6.00	6.00	7.22	6.00
+(B,48,1)	7.20	8.40	7.20	7.20	8.40	7.20
+(B,64,1)	8.40	9.60	8.40	8.40	9.60	8.40
+(DU,4,4)	3.61	-	3.61	4.82	-	4.22
+(DU,8,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(DU,16,4)	5.40	6.62	5.40	5.40	6.92	5.40
+(DU,32,4)	7.80	9.00	7.80	7.80	9.00	7.80
+(DU,48,4)	10.20	11.41	10.20	10.20	11.40	10.20
+(DU,64,4)	12.01	13.20	12.01	12.01	13.20	12.01
+(D,4,4)	3.61	-	3.61	4.82	-	4.22
+(D,8,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,16,4)	5.40	6.62	5.40	5.40	6.92	5.40
+(D,32,4)	7.80	9.00	7.80	7.80	9.00	7.80
+(D,48,4)	10.20	11.40	10.20	10.20	11.41	10.20
+(D,64,4)	12.60	11.85	12.60	12.60	11.85	12.60
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	4.20	-	4.20	4.82	-	4.22
+(BU,8,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,16,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,32,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,48,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,64,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(B,1,1)	4.20	-	4.20	4.82	-	4.22
+(B,8,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,16,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,32,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,48,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,64,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(DU,4,4)	3.61	-	3.61	4.82	-	4.22
+(DU,8,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,16,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,32,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,48,4)	3.61	6.32	3.61	4.82	6.77	4.22
+(DU,64,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(D,4,4)	4.20	-	4.20	4.82	-	4.22
+(D,8,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,16,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,32,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,48,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,64,4)	4.20	8.41	4.20	4.82	8.72	4.22
+TALLY	ibox	62	0	34
+TALLY	invert	36	0	100
+SUM	272	1622.91
+
+PAGE	pdf=129	printed=122	class=VFL
+HEAD	VFL INSTRUCTION KE | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	KE
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+NOTE	The same three pattern-breaking WB XOVR cells as PDF 127 (K) and PDF 128 (KR) are printed here; the page agrees with PDF 128 cell for cell: (D,64,4) 11.85 in the first block; (DU,48,4) 6.32 and (D,64,4) 8.41 / 8.72 in the INVERT SIGN block.
+BLOCK	-
+(BU,1,8)	3.61	-	3.61	4.82	-	4.22
+(BU,8,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,16,8)	4.20	6.32	4.20	4.82	6.77	4.22
+(BU,32,8)	5.40	6.62	5.40	5.40	6.92	5.40
+(BU,48,8)	6.60	7.80	6.60	6.60	7.81	6.60
+(BU,64,8)	7.20	8.40	7.20	7.20	8.40	7.20
+(B,1,1)	3.61	-	3.61	4.82	-	4.22
+(B,8,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,16,1)	4.80	6.47	4.80	4.82	6.77	4.80
+(B,32,1)	6.00	7.21	6.00	6.00	7.22	6.00
+(B,48,1)	7.20	8.40	7.20	7.20	8.40	7.20
+(B,64,1)	8.40	9.60	8.40	8.40	9.60	8.40
+(DU,4,4)	3.61	-	3.61	4.82	-	4.22
+(DU,8,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(DU,16,4)	5.40	6.62	5.40	5.40	6.92	5.40
+(DU,32,4)	7.80	9.00	7.80	7.80	9.00	7.80
+(DU,48,4)	10.20	11.41	10.20	10.20	11.40	10.20
+(DU,64,4)	12.01	13.20	12.01	12.01	13.20	12.01
+(D,4,4)	3.61	-	3.61	4.82	-	4.22
+(D,8,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,16,4)	5.40	6.62	5.40	5.40	6.92	5.40
+(D,32,4)	7.80	9.00	7.80	7.80	9.00	7.80
+(D,48,4)	10.20	11.40	10.20	10.20	11.41	10.20
+(D,64,4)	12.60	11.85	12.60	12.60	11.85	12.60
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	4.20	-	4.20	4.82	-	4.22
+(BU,8,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,16,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,32,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,48,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,64,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(B,1,1)	4.20	-	4.20	4.82	-	4.22
+(B,8,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,16,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,32,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,48,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,64,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(DU,4,4)	3.61	-	3.61	4.82	-	4.22
+(DU,8,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,16,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,32,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,48,4)	3.61	6.32	3.61	4.82	6.77	4.22
+(DU,64,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(D,4,4)	4.20	-	4.20	4.82	-	4.22
+(D,8,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,16,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,32,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,48,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,64,4)	4.20	8.41	4.20	4.82	8.72	4.22
+TALLY	ibox	62	0	34
+TALLY	invert	36	0	100
+SUM	272	1622.91
+
+PAGE	pdf=130	printed=123	class=VFL
+HEAD	VFL INSTRUCTION KF | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	KF
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+NOTE	Pattern-breaking WB XOVR cells, as printed: (D,64,4) 11.41 in the first block (less than (D,48,4)'s 10.80 plus a step); (DU,48,4) 6.32 and (D,64,4) 8.27 / 8.57 in the INVERT SIGN block.
+BLOCK	-
+(BU,1,8)	3.61	-	3.61	4.82	-	4.22
+(BU,8,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,16,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,32,8)	4.80	6.47	4.80	4.82	6.77	4.80
+(BU,48,8)	6.00	7.21	6.00	6.00	7.22	6.00
+(BU,64,8)	7.20	8.40	7.20	7.20	8.40	7.20
+(B,1,1)	3.61	-	3.61	4.82	-	4.22
+(B,8,1)	3.61	6.17	3.61	4.82	6.77	4.22
+(B,16,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,32,1)	5.40	6.62	5.40	5.40	6.92	5.40
+(B,48,1)	6.60	7.80	6.60	6.60	7.81	6.60
+(B,64,1)	7.80	9.00	7.80	7.80	9.00	7.80
+(DU,4,4)	3.61	-	3.61	4.82	-	4.22
+(DU,8,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,16,4)	4.80	6.47	4.80	4.82	6.77	4.80
+(DU,32,4)	7.20	8.40	7.20	7.20	8.40	7.20
+(DU,48,4)	9.60	10.80	9.60	9.60	10.80	9.60
+(DU,64,4)	12.01	13.20	12.01	12.01	13.20	12.01
+(D,4,4)	3.61	-	3.61	4.82	-	4.22
+(D,8,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(D,16,4)	4.80	6.47	4.80	4.82	6.77	4.80
+(D,32,4)	7.20	8.40	7.20	7.20	8.40	7.20
+(D,48,4)	9.60	10.80	9.60	9.60	10.80	9.60
+(D,64,4)	12.01	11.41	12.01	12.01	11.41	12.01
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	3.61	-	3.61	4.82	-	4.22
+(BU,8,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,16,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,32,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,48,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,64,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(B,1,1)	3.61	-	3.61	4.82	-	4.22
+(B,8,1)	3.61	6.17	3.61	4.82	6.77	4.22
+(B,16,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,32,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,48,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,64,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(DU,4,4)	3.61	-	3.61	4.82	-	4.22
+(DU,8,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,16,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,32,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,48,4)	3.61	6.32	3.61	4.82	6.77	4.22
+(DU,64,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(D,4,4)	3.61	-	3.61	4.82	-	4.22
+(D,8,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(D,16,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,32,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,48,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,64,4)	4.20	8.27	4.20	4.82	8.57	4.22
+TALLY	ibox	59	0	37
+TALLY	invert	58	0	78
+SUM	272	1569.41
+
+PAGE	pdf=131	printed=124	class=VFL
+HEAD	VFL INSTRUCTION KFR | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	KFR
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+NOTE	Pattern-breaking WB XOVR cells, as printed and as on PDF 130 (KF): (D,64,4) 11.40 in the first block; (DU,48,4) 6.32 and (D,64,4) 8.27 / 8.57 in the INVERT SIGN block.
+BLOCK	-
+(BU,1,8)	3.61	-	3.61	4.82	-	4.22
+(BU,8,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,16,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,32,8)	4.80	6.47	4.80	4.82	6.77	4.80
+(BU,48,8)	6.00	7.21	6.00	6.00	7.22	6.00
+(BU,64,8)	7.20	8.40	7.20	7.20	8.40	7.20
+(B,1,1)	3.61	-	3.61	4.82	-	4.22
+(B,8,1)	3.61	6.17	3.61	4.82	6.77	4.22
+(B,16,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,32,1)	5.40	6.62	5.40	5.40	6.92	5.40
+(B,48,1)	6.60	7.80	6.60	6.60	7.81	6.60
+(B,64,1)	7.80	9.00	7.80	7.80	9.00	7.80
+(DU,4,4)	3.61	-	3.61	4.82	-	4.22
+(DU,8,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,16,4)	4.80	6.47	4.80	4.82	6.77	4.80
+(DU,32,4)	7.20	8.40	7.20	7.20	8.40	7.20
+(DU,48,4)	9.60	10.80	9.60	9.60	10.80	9.60
+(DU,64,4)	12.01	13.20	12.01	12.01	13.20	12.00
+(D,4,4)	3.61	-	3.61	4.82	-	4.22
+(D,8,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(D,16,4)	4.80	6.47	4.80	4.82	6.77	4.80
+(D,32,4)	7.20	8.40	7.20	7.20	8.40	7.20
+(D,48,4)	9.60	10.80	9.60	9.60	10.80	9.60
+(D,64,4)	12.01	11.40	12.01	12.01	11.40	12.00
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	3.61	-	3.61	4.82	-	4.22
+(BU,8,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,16,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,32,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,48,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,64,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(B,1,1)	3.61	-	3.61	4.82	-	4.22
+(B,8,1)	3.61	6.17	3.61	4.82	6.77	4.22
+(B,16,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,32,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,48,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,64,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(DU,4,4)	3.61	-	3.61	4.82	-	4.22
+(DU,8,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,16,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,32,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,48,4)	3.61	6.32	3.61	4.82	6.77	4.22
+(DU,64,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(D,4,4)	3.61	-	3.61	4.82	-	4.22
+(D,8,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(D,16,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,32,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,48,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,64,4)	4.20	8.27	4.20	4.82	8.57	4.22
+TALLY	ibox	57	2	37
+TALLY	invert	58	0	78
+SUM	272	1569.37
+
+PAGE	pdf=132	printed=125	class=VFL
+HEAD	VFL INSTRUCTION KFE | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	KFE
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+NOTE	The INDEXING group is faintly printed and was re-read on a full-resolution crop.  Pattern-breaking WB XOVR cells, as printed: (D,64,4) 11.41 / 11.40 in the first block; (DU,48,4) 6.32 and (D,64,4) 8.28 / 8.57 in the INVERT SIGN block.
+BLOCK	-
+(BU,1,8)	3.61	-	3.61	4.82	-	4.22
+(BU,8,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,16,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,32,8)	4.80	6.47	4.80	4.82	6.77	4.80
+(BU,48,8)	6.00	7.21	6.00	6.00	7.22	6.00
+(BU,64,8)	7.20	8.40	7.20	7.20	8.40	7.20
+(B,1,1)	3.61	-	3.61	4.82	-	4.22
+(B,8,1)	3.61	6.17	3.61	4.82	6.77	4.22
+(B,16,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,32,1)	5.40	6.62	5.40	5.40	6.92	5.40
+(B,48,1)	6.60	7.80	6.60	6.60	7.80	6.60
+(B,64,1)	7.80	9.00	7.80	7.80	9.00	7.80
+(DU,4,4)	3.61	-	3.61	4.82	-	4.22
+(DU,8,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,16,4)	4.80	6.47	4.80	4.82	6.77	4.80
+(DU,32,4)	7.20	8.40	7.20	7.20	8.40	7.20
+(DU,48,4)	9.60	10.80	9.60	9.60	10.80	9.60
+(DU,64,4)	12.01	13.20	12.01	12.01	13.20	12.01
+(D,4,4)	3.61	-	3.61	4.82	-	4.22
+(D,8,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(D,16,4)	4.80	6.47	4.80	4.82	6.77	4.80
+(D,32,4)	7.20	8.40	7.20	7.20	8.40	7.20
+(D,48,4)	9.60	10.80	9.60	9.60	10.80	9.60
+(D,64,4)	12.01	11.41	12.01	12.01	11.40	12.01
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	3.61	-	3.61	4.82	-	4.22
+(BU,8,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,16,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,32,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,48,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,64,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(B,1,1)	3.61	-	3.61	4.82	-	4.22
+(B,8,1)	3.61	6.17	3.61	4.82	6.77	4.22
+(B,16,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,32,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,48,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(B,64,1)	4.20	6.32	4.20	4.82	6.77	4.22
+(DU,4,4)	3.61	-	3.61	4.82	-	4.22
+(DU,8,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,16,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,32,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(DU,48,4)	3.61	6.32	3.61	4.82	6.77	4.22
+(DU,64,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(D,4,4)	3.61	-	3.61	4.82	-	4.22
+(D,8,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(D,16,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,32,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,48,4)	4.20	6.32	4.20	4.82	6.77	4.22
+(D,64,4)	4.20	8.28	4.20	4.82	8.57	4.22
+TALLY	ibox	59	0	37
+TALLY	invert	58	0	78
+SUM	272	1569.40
+
+PAGE	pdf=133	printed=126	class=VFL
+HEAD	VFL INSTRUCTION * | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	*
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+NOTE	The page prints the twelve binary rows only; there are no (DU,...) or (D,...) rows.  PF is printed at the right margin of (BU,1,8), (BU,8,8) and (B,1,1) in both blocks.  PDF 113: for multiply "the accumulator and factor registers initially contained the standard operand and the memory operand was +1".
+BLOCK	-
+(BU,1,8)	10.80	-	10.80	10.80	-	10.80	!PF
+(BU,8,8)	10.80	12.01	10.80	10.80	12.01	10.80	!PF
+(BU,16,8)	10.80	12.01	10.80	10.80	12.01	10.80
+(BU,32,8)	10.80	12.01	10.80	10.80	12.01	10.80
+(BU,48,8)	10.80	12.01	10.80	10.80	12.01	10.80
+(BU,64,8)	11.40	12.60	11.40	11.40	12.60	11.40
+(B,1,1)	11.40	-	11.40	11.40	-	11.41	!PF
+(B,8,1)	11.40	12.60	11.40	11.40	12.60	11.40
+(B,16,1)	11.40	12.60	11.40	11.40	12.60	11.40
+(B,32,1)	11.40	12.60	11.40	11.40	12.60	11.40
+(B,48,1)	11.40	12.60	11.40	11.40	12.60	11.40
+(B,64,1)	12.01	13.20	12.01	12.00	13.20	12.01
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	10.80	-	10.80	10.80	-	10.80	!PF
+(BU,8,8)	10.80	12.01	10.80	10.80	12.01	10.80	!PF
+(BU,16,8)	10.80	12.01	10.80	10.80	12.01	10.80
+(BU,32,8)	10.80	12.01	10.80	10.80	12.01	10.80
+(BU,48,8)	10.80	12.00	10.80	10.80	12.01	10.80
+(BU,64,8)	11.40	12.60	11.41	11.40	12.60	11.40
+(B,1,1)	11.41	-	11.40	11.40	-	11.41	!PF
+(B,8,1)	11.40	12.60	11.40	11.40	12.60	11.40
+(B,16,1)	11.40	12.60	11.40	11.40	12.60	11.40
+(B,32,1)	11.40	12.60	11.40	11.40	12.60	11.40
+(B,48,1)	11.40	12.60	11.40	11.40	12.60	11.40
+(B,64,1)	12.01	13.20	12.01	12.00	13.20	12.00
+TALLY	ibox	43	5	0
+TALLY	invert	64	4	0
+SUM	136	1572.24
+
+PAGE	pdf=134	printed=127	class=VFL
+HEAD	VFL INSTRUCTION / | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	/
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+NOTE	The twelve binary rows only.  PF is printed at the right margin of (BU,1,8), (BU,8,8) and (B,1,1) in both blocks.  *24* is printed where a time would be in 28 cells: PDF 114 (printed 107), "For divide, *24* shows a zero divide condition", and PDF 115 note 8, "The error marks on divide instructions (pp. 127, 154, 177) are due the use of a zero divider".
+NOTE	THE AUTHORS DISOWN THIS PAGE AS A DIVIDE TIMING: the memory operand is +1 (PDF 113) and PDF 41 says "The present measurements for /, D/ and R/ do not give a realistic timing".  Every last digit was re-read on a full-resolution crop because they vary cell to cell.
+BLOCK	-
+(BU,1,8)	*24*	-	*24*	*24*	-	*24*	!PF
+(BU,8,8)	*24*	*24*	*24*	*24*	*24*	*24*	!PF
+(BU,16,8)	22.21	*24*	22.21	22.21	*24*	22.21
+(BU,32,8)	24.61	*24*	24.61	24.61	*24*	24.61
+(BU,48,8)	27.62	25.21	27.62	27.61	25.21	27.62
+(BU,64,8)	28.81	26.41	28.81	28.81	26.41	28.81
+(B,1,1)	*24*	-	*24*	*24*	-	*24*	!PF
+(B,8,1)	35.42	*24*	35.41	35.41	*24*	35.41
+(B,16,1)	36.61	*24*	36.61	36.61	*24*	36.61
+(B,32,1)	39.62	24.01	39.62	39.62	24.01	39.62
+(B,48,1)	42.01	27.01	42.01	42.01	27.01	42.01
+(B,64,1)	43.22	28.21	43.21	43.21	28.21	43.22
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	*24*	-	*24*	*24*	-	*24*	!PF
+(BU,8,8)	*24*	*24*	*24*	*24*	*24*	*24*	!PF
+(BU,16,8)	22.21	*24*	22.21	22.21	*24*	22.21
+(BU,32,8)	24.61	*24*	24.61	24.61	*24*	24.61
+(BU,48,8)	27.62	25.21	27.61	27.62	25.21	27.61
+(BU,64,8)	28.81	26.41	28.81	28.81	26.41	28.81
+(B,1,1)	*24*	-	*24*	*24*	-	*24*	!PF
+(B,8,1)	35.41	*24*	35.41	35.41	*24*	35.41
+(B,16,1)	36.62	*24*	36.61	36.61	*24*	36.61
+(B,32,1)	39.62	24.01	39.62	39.62	24.01	39.62
+(B,48,1)	42.02	27.01	42.01	42.01	27.01	42.02
+(B,64,1)	43.22	28.22	43.21	43.22	28.21	43.22
+TALLY	ibox	26	10	0
+TALLY	invert	37	9	0
+SUM	92	2924.35
+
+PAGE	pdf=135	printed=128	class=VFL
+HEAD	VFL INSTRUCTION *+ | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	*+
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+NOTE	The twelve binary rows only.  PF at the right margin of (BU,1,8), (BU,8,8) and (B,1,1) in both blocks.  *01* (instruction check reject) is printed in the WB XOVR columns of five INVERT SIGN rows.
+NOTE	In the INVERT SIGN block the INDEXING / EXTERNL OPERAND column fades out over its last five rows.  (B,8,1) 18.01 and (B,16,1) 18.00 are legible on a full-resolution crop.  (B,32,1), (B,48,1) and (B,64,1) are not securely legible in their last one or two digits: the ink is consistent with 18.00, 18.61 and 19.81, and the last two are also what every other cell of their rows prints.  All three are flagged.
+BLOCK	-
+(BU,1,8)	13.80	-	13.80	13.80	-	13.80	!PF
+(BU,8,8)	13.80	15.00	13.80	13.80	15.00	13.80	!PF
+(BU,16,8)	18.01	18.16	18.01	18.01	18.16	18.01
+(BU,32,8)	18.01	18.15	18.00	18.00	18.16	18.01
+(BU,48,8)	18.61	22.21	18.61	18.61	22.21	18.61
+(BU,64,8)	19.81	23.41	19.81	19.81	23.41	19.81
+(B,1,1)	14.41	-	14.40	14.40	-	14.41	!PF
+(B,8,1)	18.01	15.61	18.01	18.01	15.61	18.01
+(B,16,1)	18.01	15.61	18.01	18.01	15.61	18.01
+(B,32,1)	18.01	21.61	18.01	18.01	21.60	18.01
+(B,48,1)	18.61	22.21	18.61	18.61	22.21	18.61
+(B,64,1)	19.81	23.41	19.81	19.81	23.41	19.81
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	13.80	-	13.80	13.80	-	13.80	!PF
+(BU,8,8)	13.80	*01*	13.80	13.80	*01*	13.80	!PF
+(BU,16,8)	18.01	*01*	18.01	18.01	*01*	18.01
+(BU,32,8)	18.01	*01*	18.01	18.01	*01*	18.01
+(BU,48,8)	18.61	22.21	18.61	18.61	22.21	18.61
+(BU,64,8)	19.81	23.41	19.81	19.81	23.41	19.81
+(B,1,1)	14.41	-	14.41	14.40	-	14.41	!PF
+(B,8,1)	18.01	*01*	18.01	18.01	*01*	18.01
+(B,16,1)	18.01	*01*	18.01	18.00	*01*	18.01
+(B,32,1)	18.01	21.61	18.01	18.00?	21.61	18.01
+(B,48,1)	18.61	22.21	18.61	18.61?	22.21	18.61
+(B,64,1)	19.81	23.41	19.81	19.81?	23.41	19.81
+TALLY	ibox	41	7	0
+TALLY	invert	52	6	0
+SUM	126	2287.59
+
+PAGE	pdf=136	printed=129	class=VFL
+HEAD	VFL INSTRUCTION LCV | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	LCV
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+BLOCK	-
+(BU,1,8)	6.00	-	6.00	6.00	-	6.00
+(BU,8,8)	11.40	12.60	11.40	11.40	12.60	11.40
+(BU,16,8)	17.40	18.61	17.40	17.40	18.61	17.40
+(BU,32,8)	28.21	29.41	28.21	28.21	29.41	28.21
+(BU,48,8)	39.02	40.22	39.01	39.01	40.22	39.01
+(BU,64,8)	50.42	51.62	50.42	50.42	51.62	50.42
+(B,1,1)	4.20	-	4.20	4.82	-	4.22
+(B,8,1)	11.40	12.60	11.40	11.40	12.60	11.40
+(B,16,1)	16.80	18.00	16.80	16.80	18.00	16.80
+(B,32,1)	28.21	29.41	28.21	28.21	29.41	28.21
+(B,48,1)	39.02	40.22	39.01	39.01	40.22	39.01
+(B,64,1)	50.42	51.62	50.42	50.42	51.62	50.42
+(DU,4,4)	23.41	-	23.41	23.41	-	23.41
+(DU,8,4)	24.61	25.81	24.61	24.61	25.81	24.61
+(DU,16,4)	26.41	27.61	26.41	26.41	27.61	26.41
+(DU,32,4)	30.01	31.21	30.01	30.01	31.21	30.01
+(DU,48,4)	33.01	34.21	33.01	33.01	34.21	33.01
+(DU,64,4)	36.62	37.81	36.61	36.61	37.81	36.62
+(D,4,4)	22.21	-	22.21	22.21	-	22.21
+(D,8,4)	23.41	24.61	23.41	23.41	24.61	23.41
+(D,16,4)	25.21	26.41	25.21	25.21	26.41	25.21
+(D,32,4)	28.21	29.41	28.21	28.21	29.41	28.21
+(D,48,4)	31.81	33.01	31.81	31.81	33.01	31.81
+(D,64,4)	35.41	36.61	35.41	35.41	36.61	35.41
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	6.00	-	6.00	6.00	-	6.00
+(BU,8,8)	11.40	12.60	11.40	11.40	12.60	11.40
+(BU,16,8)	17.40	18.61	17.40	17.40	18.61	17.40
+(BU,32,8)	28.21	29.41	28.21	28.21	29.41	28.21
+(BU,48,8)	39.01	40.22	39.01	39.01	40.22	39.01
+(BU,64,8)	50.42	51.62	50.42	50.42	51.62	50.42
+(B,1,1)	4.20	-	4.20	4.82	-	4.22
+(B,8,1)	11.41	12.60	11.40	11.40	12.60	11.40
+(B,16,1)	16.80	18.01	16.80	16.80	18.00	16.80
+(B,32,1)	28.21	29.41	28.21	28.21	29.41	28.21
+(B,48,1)	39.01	40.22	39.01	39.01	40.22	39.01
+(B,64,1)	50.42	51.62	50.42	50.42	51.62	50.42
+(DU,4,4)	23.41	-	23.41	23.41	-	23.41
+(DU,8,4)	24.60	25.81	24.61	24.61	25.81	24.61
+(DU,16,4)	26.41	27.61	26.41	26.41	27.61	26.41
+(DU,32,4)	30.01	31.21	30.01	30.01	31.21	30.01
+(DU,48,4)	33.01	34.21	33.01	33.01	34.21	33.01
+(DU,64,4)	36.61	37.81	36.62	36.62	37.81	36.62
+(D,4,4)	22.21	-	22.21	22.21	-	22.21
+(D,8,4)	23.41	24.61	23.41	23.41	24.61	23.41
+(D,16,4)	25.21	26.41	25.21	25.21	26.41	25.21
+(D,32,4)	28.21	29.41	28.21	28.21	29.41	28.21
+(D,48,4)	31.81	33.01	31.81	31.81	33.01	31.81
+(D,64,4)	35.41	36.61	35.41	35.41	36.61	35.41
+TALLY	ibox	87	7	2
+TALLY	invert	128	8	0
+SUM	272	7587.80
+
+PAGE	pdf=137	printed=130	class=VFL
+HEAD	VFL INSTRUCTION LTRCV | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	LTRCV
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+BLOCK	-
+(BU,1,8)	7.84	-	7.22	8.03	-	7.22
+(BU,8,8)	11.41	12.60	11.40	11.41	12.61	11.40
+(BU,16,8)	16.20	17.41	16.20	16.20	17.41	16.20
+(BU,32,8)	25.81	27.01	25.81	25.81	27.01	25.81
+(BU,48,8)	39.62	40.81	39.62	39.62	40.81	39.62
+(BU,64,8)	51.02	52.22	51.02	51.02	52.22	51.02
+(B,1,1)	7.43	-	6.62	7.75	-	6.73
+(B,8,1)	11.41	12.60	11.40	11.41	12.61	11.40
+(B,16,1)	16.20	17.41	16.20	16.20	17.41	16.20
+(B,32,1)	25.81	27.01	25.81	25.81	27.01	25.81
+(B,48,1)	39.61	40.81	39.62	39.62	40.81	39.62
+(B,64,1)	51.02	52.22	51.02	51.02	52.22	51.02
+(DU,4,4)	30.61	-	30.61	30.61	-	30.61
+(DU,8,4)	30.61	31.81	30.61	30.61	31.81	30.61
+(DU,16,4)	30.61	31.82	30.61	30.61	31.81	30.61
+(DU,32,4)	30.61	31.81	30.61	30.61	31.81	30.61
+(DU,48,4)	30.61	31.82	30.61	30.61	31.81	30.61
+(DU,64,4)	35.41	36.61	35.41	35.41	36.61	35.41
+(D,4,4)	30.61	-	30.61	30.61	-	30.61
+(D,8,4)	30.61	31.81	30.61	30.61	31.81	30.61
+(D,16,4)	30.61	31.82	30.61	30.61	31.81	30.61
+(D,32,4)	30.61	31.81	30.61	30.61	31.81	30.61
+(D,48,4)	30.61	31.81	30.61	30.61	31.81	30.61
+(D,64,4)	35.41	36.61	35.41	35.41	36.61	35.41
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	7.84	-	7.22	8.03	-	7.22
+(BU,8,8)	11.41	12.60	11.40	11.41	12.61	11.40
+(BU,16,8)	16.20	17.41	16.20	16.20	17.41	16.20
+(BU,32,8)	25.81	27.01	25.81	25.81	27.01	25.81
+(BU,48,8)	39.62	40.81	39.62	39.62	40.81	39.62
+(BU,64,8)	51.02	52.22	51.02	51.02	52.22	51.02
+(B,1,1)	7.43	-	6.62	7.75	-	6.73
+(B,8,1)	11.41	12.60	11.40	11.41	12.61	11.40
+(B,16,1)	16.20	17.41	16.20	16.20	17.41	16.20
+(B,32,1)	25.81	27.01	25.81	25.81	27.01	25.81
+(B,48,1)	39.62	40.81	39.62	39.62	40.81	39.62
+(B,64,1)	51.02	52.22	51.02	51.02	52.22	51.02
+(DU,4,4)	30.61	-	30.61	30.61	-	30.61
+(DU,8,4)	30.61	31.81	30.61	30.61	31.81	30.61
+(DU,16,4)	30.61	31.82	30.61	30.61	31.81	30.61
+(DU,32,4)	30.61	31.81	30.61	30.61	31.81	30.61
+(DU,48,4)	30.61	31.82	30.61	30.61	31.81	30.61
+(DU,64,4)	35.42	36.61	35.41	35.41	36.61	35.41
+(D,4,4)	30.61	-	30.61	30.61	-	30.61
+(D,8,4)	30.61	31.82	30.61	30.61	31.81	30.61
+(D,16,4)	30.61	31.81	30.61	30.61	31.81	30.61
+(D,32,4)	30.61	31.82	30.61	30.61	31.81	30.61
+(D,48,4)	30.61	31.81	30.61	30.61	31.81	30.61
+(D,64,4)	35.42	36.61	35.41	35.42	36.61	35.41
+TALLY	ibox	76	12	8
+TALLY	invert	129	7	0
+SUM	272	7949.25
+
+PAGE	pdf=138	printed=131	class=VFL
+HEAD	VFL INSTRUCTION CV | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	CV
+COND	forwarding=no	addressing=direct
+COLS	ni_accum	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_accum	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_accum	ix_accum
+NOTE	On this page the first column of each group is headed ACCUM. OPERAND, not EXTERNL OPERAND; the other four heads of each group are as on every VFL page and their columns are blank.  PDF 113: "for convert (CV) and convert double (DCV) the accumulator was originally +1 at offset 20".
+NOTE	A pencil mark crosses the INDEXING figures of (BU,48,8) and (BU,64,8) in the INVERT SIGN block; both read 6.00 under it.
+BLOCK	-
+(BU,1,8)	6.00	6.00
+(BU,8,8)	6.00	6.00
+(BU,16,8)	6.00	6.00
+(BU,32,8)	6.00	6.00
+(BU,48,8)	6.00	6.00
+(BU,64,8)	6.00	6.00
+(B,1,1)	6.00	6.00
+(B,8,1)	6.00	6.00
+(B,16,1)	6.00	6.00
+(B,32,1)	6.00	6.00
+(B,48,1)	6.00	6.00
+(B,64,1)	6.00	6.00
+(DU,4,4)	22.14	22.14
+(DU,8,4)	22.14	22.14
+(DU,16,4)	22.14	22.14
+(DU,32,4)	22.14	22.14
+(DU,48,4)	22.14	22.14
+(DU,64,4)	22.14	22.14
+(D,4,4)	22.14	22.14
+(D,8,4)	22.14	22.14
+(D,16,4)	22.14	22.14
+(D,32,4)	22.14	22.14
+(D,48,4)	22.14	22.14
+(D,64,4)	22.14	22.14
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	6.00	6.00
+(BU,8,8)	6.00	6.00
+(BU,16,8)	6.00	6.00
+(BU,32,8)	6.00	6.00
+(BU,48,8)	6.00	6.00
+(BU,64,8)	6.00	6.00
+(B,1,1)	6.00	6.00
+(B,8,1)	6.00	6.00
+(B,16,1)	6.00	6.00
+(B,32,1)	6.00	6.00
+(B,48,1)	6.00	6.00
+(B,64,1)	6.00	6.00
+(DU,4,4)	22.14	22.14
+(DU,8,4)	22.14	22.14
+(DU,16,4)	22.14	22.14
+(DU,32,4)	22.14	22.14
+(DU,48,4)	22.14	22.14
+(DU,64,4)	22.14	22.14
+(D,4,4)	22.14	22.14
+(D,8,4)	22.14	22.14
+(D,16,4)	22.14	22.14
+(D,32,4)	22.14	22.14
+(D,48,4)	22.14	22.14
+(D,64,4)	22.14	22.14
+TALLY	invert	48	0	0
+SUM	96	1350.72
+
+PAGE	pdf=139	printed=132	class=VFL
+HEAD	VFL INSTRUCTION DCV | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	DCV
+COND	forwarding=no	addressing=direct
+COLS	ni_accum	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_accum	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_accum	ix_accum
+NOTE	As on PDF 138 (CV), the first column of each group is headed ACCUM. OPERAND and the other columns are blank.
+BLOCK	-
+(BU,1,8)	6.00	6.00
+(BU,8,8)	6.00	6.00
+(BU,16,8)	6.00	6.00
+(BU,32,8)	6.00	6.00
+(BU,48,8)	6.00	6.00
+(BU,64,8)	6.00	6.00
+(B,1,1)	6.00	6.00
+(B,8,1)	6.00	6.00
+(B,16,1)	6.00	6.00
+(B,32,1)	6.00	6.00
+(B,48,1)	6.00	6.00
+(B,64,1)	6.00	6.00
+(DU,4,4)	5.40	5.40
+(DU,8,4)	5.40	5.40
+(DU,16,4)	5.40	5.40
+(DU,32,4)	5.40	5.40
+(DU,48,4)	5.40	5.40
+(DU,64,4)	5.40	5.40
+(D,4,4)	5.40	5.40
+(D,8,4)	5.40	5.40
+(D,16,4)	5.40	5.40
+(D,32,4)	5.40	5.40
+(D,48,4)	5.40	5.40
+(D,64,4)	5.40	5.40
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	6.00	6.00
+(BU,8,8)	6.00	6.00
+(BU,16,8)	6.00	6.00
+(BU,32,8)	6.00	6.00
+(BU,48,8)	6.00	6.00
+(BU,64,8)	6.00	6.00
+(B,1,1)	6.00	6.00
+(B,8,1)	6.00	6.00
+(B,16,1)	6.00	6.00
+(B,32,1)	6.00	6.00
+(B,48,1)	6.00	6.00
+(B,64,1)	6.00	6.00
+(DU,4,4)	5.40	5.40
+(DU,8,4)	5.40	5.40
+(DU,16,4)	5.40	5.40
+(DU,32,4)	5.40	5.40
+(DU,48,4)	5.40	5.40
+(DU,64,4)	5.40	5.40
+(D,4,4)	5.40	5.40
+(D,8,4)	5.40	5.40
+(D,16,4)	5.40	5.40
+(D,32,4)	5.40	5.40
+(D,48,4)	5.40	5.40
+(D,64,4)	5.40	5.40
+TALLY	invert	48	0	0
+SUM	96	547.20
+
+PAGE	pdf=140	printed=133	class=VFL
+HEAD	VFL INSTRUCTION C0011 | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	C0011
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+NOTE	The heading prints the connective as C0011, without parentheses.  One block of 35 rows that vary the BYTE SIZE at each field length; there is no INVERT SIGN block.  The page prints no row for (BU,48,1), (BU,48,2), (BU,64,1), (BU,64,2) or (BU,64,3).
+BLOCK	-
+(BU,8,1)	8.40	9.60	8.40	8.40	9.60	8.40
+(BU,8,2)	6.00	7.21	6.00	6.00	7.21	6.00
+(BU,8,3)	5.40	6.62	5.40	5.40	6.92	5.40
+(BU,8,4)	4.80	6.32	4.80	4.82	6.77	4.80
+(BU,8,5)	4.80	6.32	4.80	4.82	6.77	4.80
+(BU,8,6)	4.80	6.32	4.80	4.82	6.77	4.80
+(BU,8,7)	4.80	6.32	4.80	4.82	6.77	4.80
+(BU,8,8)	4.20	6.32	4.20	4.82	6.77	4.22
+(BU,16,1)	13.20	14.40	13.20	13.20	14.40	13.20
+(BU,16,2)	8.40	9.60	8.40	8.40	9.60	8.40
+(BU,16,3)	7.20	8.40	7.20	7.20	8.40	7.20
+(BU,16,4)	6.00	7.21	6.00	6.00	7.21	6.00
+(BU,16,5)	6.00	7.21	6.00	6.00	7.21	6.00
+(BU,16,6)	5.40	6.62	5.40	5.40	6.92	5.40
+(BU,16,7)	5.40	6.62	5.40	5.40	6.92	5.40
+(BU,16,8)	4.80	6.32	4.80	4.82	6.77	4.80
+(BU,32,1)	13.20	14.41	13.20	13.20	14.40	13.20
+(BU,32,2)	13.20	14.41	13.20	13.20	14.40	13.20
+(BU,32,3)	10.20	11.40	10.20	10.20	11.41	10.20
+(BU,32,4)	8.40	9.60	8.40	8.40	9.60	8.40
+(BU,32,5)	7.80	9.00	7.80	7.80	9.00	7.80
+(BU,32,6)	7.20	8.40	7.20	7.20	8.40	7.20
+(BU,32,7)	6.60	7.80	6.60	6.60	7.80	6.60
+(BU,32,8)	6.00	7.21	6.00	6.00	7.21	6.00
+(BU,48,3)	13.20	14.41	13.20	13.20	14.40	13.20
+(BU,48,4)	10.80	12.01	10.80	10.80	12.01	10.80
+(BU,48,5)	9.60	10.80	9.60	9.60	10.80	9.60
+(BU,48,6)	8.40	9.60	8.40	8.40	9.60	8.40
+(BU,48,7)	7.80	9.00	7.80	7.80	9.00	7.80
+(BU,48,8)	7.20	8.40	7.20	7.20	8.40	7.20
+(BU,64,4)	13.20	14.41	13.20	13.20	14.40	13.20
+(BU,64,5)	11.40	12.60	11.40	11.40	12.60	11.40
+(BU,64,6)	10.20	11.40	10.20	10.20	11.40	10.20
+(BU,64,7)	9.60	10.80	9.60	9.60	10.80	9.60
+(BU,64,8)	8.40	9.60	8.40	8.40	9.60	8.40
+TALLY	ibox	64	0	6
+SUM	210	1785.65
+
+PAGE	pdf=141	printed=134	class=VFL
+HEAD	VFL INSTRUCTION CM0101 | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	CM0101
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+NOTE	The heading prints the connective as CM0101.  One block, the same 35 rows as PDF 140.  Unlike PDF 140 the (BU,32,1) row is NOT level with (BU,32,2): 24.01 against 14.40.
+BLOCK	-
+(BU,8,1)	9.61	19.57	14.51	9.62	19.58	15.11
+(BU,8,2)	7.23	17.16	12.09	7.53	17.17	12.69
+(BU,8,3)	6.93	16.56	11.48	7.23	16.57	12.09
+(BU,8,4)	6.63	15.95	10.88	6.92	15.97	11.48
+(BU,8,5)	6.63	15.95	10.88	6.92	15.97	11.48
+(BU,8,6)	6.63	15.95	10.88	6.92	15.97	11.48
+(BU,8,7)	6.63	15.96	10.88	6.92	15.97	11.48
+(BU,8,8)	6.33	15.35	10.27	6.63	15.36	10.88
+(BU,16,1)	14.40	24.39	19.34	14.41	24.40	19.94
+(BU,16,2)	9.61	19.57	14.51	9.62	19.58	15.11
+(BU,16,3)	8.42	18.36	13.29	8.44	18.37	13.90
+(BU,16,4)	7.23	17.16	12.09	7.53	17.17	12.69
+(BU,16,5)	7.23	17.16	12.09	7.53	17.17	12.69
+(BU,16,6)	6.93	16.56	11.48	7.23	16.57	12.09
+(BU,16,7)	6.93	16.56	11.48	7.23	16.57	12.09
+(BU,16,8)	6.63	15.96	10.88	6.92	15.97	11.48
+(BU,32,1)	24.01	34.02	29.01	24.01	34.04	29.61
+(BU,32,2)	14.40	24.39	19.34	14.41	24.40	19.94
+(BU,32,3)	11.40	21.38	16.32	11.40	21.39	16.92
+(BU,32,4)	9.62	19.57	14.50	9.62	19.58	15.11
+(BU,32,5)	9.02	18.96	13.90	9.03	18.98	14.50
+(BU,32,6)	8.42	18.36	13.29	8.44	18.37	13.90
+(BU,32,7)	7.84	17.76	12.69	7.84	17.77	13.29
+(BU,32,8)	7.23	17.16	12.09	7.53	17.17	12.69
+(BU,48,3)	14.41	24.39	19.34	14.40	24.40	19.94
+(BU,48,4)	12.01	21.98	16.92	12.01	21.99	17.53
+(BU,48,5)	10.80	20.77	15.72	10.81	20.79	16.31
+(BU,48,6)	9.61	19.57	14.51	9.62	19.58	15.11
+(BU,48,7)	9.02	18.97	13.90	9.03	18.98	14.50
+(BU,48,8)	8.42	18.36	13.29	8.44	18.37	13.90
+(BU,64,4)	14.41	24.39	19.34	14.40	24.40	19.94
+(BU,64,5)	12.60	22.58	17.53	12.60	22.59	18.13
+(BU,64,6)	11.40	21.38	16.32	11.40	21.39	16.92
+(BU,64,7)	10.80	20.77	15.72	10.81	20.79	16.32
+(BU,64,8)	9.61	19.57	14.50	9.62	19.58	15.11
+TALLY	ibox	0	0	70
+SUM	210	3079.08
+
+PAGE	pdf=142	printed=135	class=VFL
+HEAD	VFL INSTRUCTION CT0111 | NO FORWARDING | DIRECT ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	CT0111
+COND	forwarding=no	addressing=direct
+COLS	ni_ext	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_ext	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_ext	ni_ext_wbx	ni_ibox	ix_ext	ix_ext_wbx	ix_ibox
+NOTE	The heading prints the connective as CT0111.  One block, the same 35 rows as PDF 140.  The INDEXING group is faintly printed and was re-read on a full-resolution crop.
+BLOCK	-
+(BU,8,1)	7.20	8.40	7.20	7.20	8.40	7.20
+(BU,8,2)	4.80	6.47	4.80	4.82	6.77	4.80
+(BU,8,3)	4.20	6.32	4.20	4.82	6.77	4.22
+(BU,8,4)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,8,5)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,8,6)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,8,7)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,8,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,16,1)	12.01	13.20	12.01	12.01	13.20	12.00
+(BU,16,2)	7.20	8.40	7.20	7.20	8.40	7.20
+(BU,16,3)	6.00	7.21	6.00	6.00	7.22	6.00
+(BU,16,4)	4.80	6.47	4.80	4.82	6.77	4.80
+(BU,16,5)	4.80	6.47	4.80	4.82	6.77	4.80
+(BU,16,6)	4.20	6.32	4.20	4.82	6.77	4.22
+(BU,16,7)	4.20	6.32	4.20	4.82	6.77	4.22
+(BU,16,8)	3.61	6.17	3.61	4.82	6.77	4.22
+(BU,32,1)	12.01	13.20	12.01	12.01	13.20	12.00
+(BU,32,2)	12.01	13.20	12.01	12.01	13.20	12.01
+(BU,32,3)	9.00	10.20	9.00	9.00	10.20	9.00
+(BU,32,4)	7.20	8.40	7.20	7.20	8.40	7.20
+(BU,32,5)	6.60	7.80	6.60	6.60	7.80	6.60
+(BU,32,6)	6.00	7.21	6.00	6.00	7.22	6.00
+(BU,32,7)	5.40	6.62	5.40	5.40	6.92	5.40
+(BU,32,8)	4.80	6.47	4.80	4.82	6.77	4.80
+(BU,48,3)	12.01	13.20	12.01	12.01	13.20	12.01
+(BU,48,4)	9.60	10.80	9.60	9.60	10.80	9.60
+(BU,48,5)	8.40	9.60	8.40	8.40	9.60	8.40
+(BU,48,6)	7.20	8.40	7.20	7.20	8.40	7.20
+(BU,48,7)	6.60	7.80	6.60	6.60	7.81	6.60
+(BU,48,8)	6.00	7.21	6.00	6.00	7.22	6.00
+(BU,64,4)	12.01	13.20	12.01	12.01	13.20	12.01
+(BU,64,5)	10.20	11.40	10.20	10.20	11.41	10.20
+(BU,64,6)	9.00	10.20	9.00	9.00	10.20	9.00
+(BU,64,7)	8.40	9.60	8.40	8.40	9.60	8.40
+(BU,64,8)	7.20	8.40	7.20	7.20	8.40	7.20
+TALLY	ibox	55	2	13
+SUM	210	1573.26

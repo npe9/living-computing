@@ -1664,6 +1664,16 @@ run "STRAP II mnemonics: IBM's printed operation set (C28-6129 Apps. A, C; N28-1
 run "STRAP II takes IBM's spellings (*A+, +NMG, CBZR, SU, xxxSEOP, -A, NOPRINT; App. C pp.47-53, N28-1081) and FP \"-\" keeps its sign" python3 check_ibm_spellings.py
 run "An op and a dds that disagree are refused, not guessed (C28-6129 printed p.7, \"the operation overrules\")" python3 check_op_dds_overrule.py
 run "Secondary ops only on their own family, field P one code (C22-6729 printed p.22; Reference Manual printed p.21)" python3 check_secondary_ops.py
+# THE ATLAS'S DATA FILE, NOT THE ATLAS ORACLE.  Perf. Char. Vol. 2's
+# per-instruction timing atlas is transcribed in perf_char_vol2_atlas.txt
+# (33 of its 139 table pages so far).  This is the fast self-check of that
+# file: it parses, its coverage list is total, the page's own redundancy
+# counts are the recorded ones, and the five pages perf_char_timing.py had
+# already transcribed agree cell for cell.  The slow thing -- running the
+# cases on the model and reporting the residual -- is atlas_oracle.py, a
+# MEASUREMENT that never fails on a residual and is deliberately NOT run
+# here (docs/atlas_oracle.md).  Injections in check_atlas_data.py's header.
+run "Perf. Char. Vol. 2 atlas transcription: parse, coverage, redundancy tallies, second reading (data only; the oracle is not run here)" python3 check_atlas_data.py
 run "STRAP II step 4a-ii: every op-table entry is its primary entry under one rule (5,547 entries over the printed set)" python3 check_strap2_op_reconstruction.py
 run "No dds anywhere: C28-6129 printed p.7's three cases over the printed op set (and no immediate I on an FP op)" python3 check_no_dds_cases.py
 run "STRAP II against the listing oracles and strap_asm's images" python3 check_strap2_oracles.py
