@@ -51,6 +51,19 @@ the field. (Floating-point `SRD` is a different arm and is built.)
   SRD" line in `run_tests.sh`.
 * Not tested by either: decimal `SRD` (adds five), and `LC`.
 
+### Table B.6 as printed does not transpose -- the BOOK's error, nothing to build
+
+Recorded here so nobody chases it in the model. Table B.6 line 101.32,
+`CONNECT 0011 (V + I) (VBU, 1, 1), N.0 (X1), 63 (X3)`, has byte size 1.
+The book's own sec. 7.14 (printed pp.90-91) and Reference Manual printed
+p.75 both say a byte smaller than eight is filled out to eight bits
+before it meets the accumulator, so each step writes `0000000b` over
+eight accumulator bits and erases the seven bits the previous steps
+placed. `(VBU, 1, 8)` is what the program needs. The model follows the
+sources in both cases; `tests/verify_buchholz_b6.py printed` and
+`corrected` are both registered and both pass. Deck:
+`decks/buchholz_b6_bit_matrix_transpose.strap`.
+
 ## BSS ON MCP'S LOADER -- done to the subprogram end, 2026-11-12
 
 A FORTRAN deck with commons loads as a BSS job on a reconstructed BSS

@@ -13525,6 +13525,25 @@ run "Buchholz B.5 -- editing a typed message" ./run_program.sh ../decks/buchholz
     "guard_lo:399=0xFFFFFFFFFFFFFFFF" "x1:17=0x0000C80000000000" "x2:18=0x0000E00000000000" \
     "x3:19=0x00640000000C00C9" "control_word:201=0x00640000000C00C9" "acc_left:8=0x8080808080808080"
 
+# B.6, printed pp.303-304.  Progressive indexing on a connective with an
+# INDEXED OFFSET ("63 (X3)", the second I field), V-ICR on the offset index,
+# ST(V+IC), LCI, V+C with a negative VALUE; n = 2, a 128-by-128 bit matrix,
+# every one of its 256 output words compared.
+#
+# >>> THE TABLE AS PRINTED DOES NOT TRANSPOSE, AND THE FAULT IS THE BOOK'S. <<<
+# Line 101.32 is "CONNECT 0011 (V + I) (VBU, 1, 1)".  A byte size of 1 makes
+# each step replace EIGHT accumulator bits (0000000b), by the book's own
+# sec. 7.14 (printed pp.90-91) and Reference Manual printed p.75; stepping
+# the offset from 63 down to 0, each step's seven zeros erase the seven bits
+# before it, and every stored word ends up holding its last bit only.  The
+# model does exactly what the two sources say.  With (VBU, 1, 8) the same
+# program transposes the matrix.  Both are run: "printed" checks the one bit
+# per word that the printed line must leave, "corrected" the transpose.
+# Nothing here is a model or assembler fault.  The deck's header has the
+# argument and the two observed injections.
+run "Buchholz B.6 -- bit matrix AS PRINTED: (VBU,1,1) leaves one bit per word" python3 verify_buchholz_b6.py printed
+run "Buchholz B.6 -- bit matrix with (VBU,1,8): the 128 x 128 transpose" python3 verify_buchholz_b6.py corrected
+
 # ============== end of the Buchholz Appendix B group ==================
 
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
