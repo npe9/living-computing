@@ -1777,6 +1777,83 @@ listings. A request should name the form numbers C22-6729 (the STRAP II
 internals) and C22-6751 (FORTRAN IV), and ask for any program listing
 or system tape behind them.
 
+## Software census, second pass, 2026-11-16
+
+A delegated search. An item below is marked **read** only where its
+file was downloaded and the quoted sentence found in its text (OCR
+text layer, not page images); the rest are catalogue records. Full
+notes: `reading_notes/7030_software_census.md` and the second-pass
+notes summarised here.
+
+**What IBM shipped, as one customer listed it** (read). NWL Dahlgren,
+*Digital Computer Newsletter* 16(2), April 1964: IBM's package
+"includes a FORTRAN compiler, STRETCH Assembly Program (STRAP), STRETCH
+Macro Language Processor (SMAC), Input-Output Control Subroutine (IOCS),
+and Master Control Program (MCP)". NWL added a segmented loader, a
+sort-merge, a post-mortem dump, IOCS extensions and a 1401 I/O package
+(Technical Memoranda K-22/62, K-73/63, and a "7030 Sort-Merge Program"
+memo; not found online).
+
+**A second MCP-compatible operating system** (read: CHM Stretch
+Reunion transcripts, 2002, public .doc files at
+`archive.computerhistory.org/resources/text/IBM/Stretch/transcripts/`).
+IBM Research's multiprogrammed MCP (Markstein, Doherty, Havender,
+Staheli, Harry) "would run every program that the regular MCP would
+run" (Doherty, 102636420). Markstein (102636405): "Walter I believe has
+donated a listing of that operating system to the museum." **This is
+the best lead found for a surviving system listing**; its CHM catalogue
+number is not known. Doherty also: "I worked on Stretch MCP, the Master
+Control Program, on the dispatcher and the command processor."
+
+**CHM, add to the request list:**
+- 102663031: includes an "IBM 7030 FORTRAN IV Library Subroutines,
+  System Bulletin" (form number not given; J22-6757 is a guess);
+- 102724621: Manual for the S2 language (Knock and Thomas, Aug 1964,
+  75 pp, in the Knuth papers);
+- Doherty's listing of the Research multiprogrammed MCP;
+- the unread reunion transcripts 102636410 (Brooks, Grover, Kolsky,
+  Bloch; Grover managed the programming group) and 102636419, and the
+  reunion book "Wasn't That a Time" (Knutsen, 2002).
+
+**The compiler's design** (read). F. E. Allen, IBM JRD 25(5), 1981,
+pp.535-548, the only published internal account of the Stretch-Harvest
+compiler: "The system was not a success; compilation time was
+unacceptable." Her final report on it went to NSA (NARA RG 457 is the
+place to ask).
+
+**A production disk** (read). Carlson and Voorhees, "Use of the Disc
+File on STRETCH" (LASL, 1964): MCP, STRAP II, COLASL, IVY, FORTRAN IV
+and LASL's library take "Approximately 260,000 words" of disk, in
+512-word arcs chained by label words.
+
+**LASL on OSTI**, replacing "catalogue only" above:
+- catalogue only, no full text: LAMS-2607 IVY (270 pp; OSTI 4836832),
+  LADC-5173 COLASL (70 pp; OSTI 4776020), TID-18571 = GMX-2-R-63-1
+  STRETCH SIN (OSTI 4726990);
+- full text, read: LA-DC-6595 STRETCH TDF (OSTI 4020692); LA-3704
+  FORTRAN BKW (OSTI 4307185), whose STRETCH BKW predecessor "was
+  written in machine language for the IBM 7030";
+- **three FORTRAN IV user decks under `T SUBTYPE,FORTRAN` cards**, full
+  text, read: NECKLACE LA-3115-MS (OSTI 4007901), LA-3416 (OSTI
+  4533051), HOTFLO LA-3428 (OSTI 4536365). These are test inputs for a
+  reconstructed FORTRAN IV, not yet transcribed.
+- Lazarus, LA-6943-H, is readable on archive.org
+  (`ComputingatLASLinthe1940sand1950s`): "The MCP for the 7030 was
+  designed by LASL and IBM and was written by IBM"; "STRAP-1
+  (implemented by LASL in 1958)".
+
+**Kew.** ES 4/995 is probably AWRE report O-59/67, the March 1968 S2/S3
+manual (NASA accession N68-28215), so NTRS/NTIS may hold a copy
+(catalogue, not checked).
+
+**Negative results.** BETA: no source found beyond one uncited
+Wikipedia sentence. No *Computer Journal* paper on S1/S2 (Crossref).
+No 7030 software paper in IBM Systems Journal 1962-67 or IBM JRD
+1957-67 by title. No machine-readable 7030 material on bitsavers or in
+the SHARE catalogues. BYU's "SOS" rewrite: the Wikipedia sentence
+traces to one uncited 2023 edit, so it is UNVERIFIED; BYU retired the
+machine in September 1980 (CHM timeline).
+
 ## Third-party Stretch software (non-IBM): documentation trail
 
 The languages/systems built for Stretch installations outside IBM --

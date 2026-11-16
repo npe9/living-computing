@@ -15,6 +15,16 @@ whose software survives only on paper, and what is in the way.
 | FORTRAN IV | manual only; no compiler source | `C22-6751_7030_FORTRAN_IV_May63.pdf` |
 | a machine-readable system tape | **none survives** | `archival_inventory.md` "Holdings now complete" |
 
+What IBM shipped, as a customer listed it in 1964: "a FORTRAN
+compiler, STRETCH Assembly Program (STRAP), STRETCH Macro Language
+Processor (SMAC), Input-Output Control Subroutine (IOCS), and Master
+Control Program (MCP)" (NWL Dahlgren, *Digital Computer Newsletter*
+16(2)). No sort/merge came with it. The likeliest surviving system
+listing is IBM Research's multiprogrammed MCP, said in 2002 to have
+been given to CHM; three LASL FORTRAN IV user decks on OSTI are ready
+test inputs for a reconstructed compiler. Both are in
+`archival_inventory.md`, "Software census, second pass".
+
 **The target is IBM's environment, not a substitute for it.** The
 owner, 2026-11-07: "the goal is to replicate the environment in the best
 fidelity that we can", and then: "Even if you can't find all the
