@@ -129,6 +129,63 @@ OVERLAYS = (("22LOADER", 320, 334, YMPBUF),
 LOADER_GAP = set(range(0o235112, 0o235153 + 1))
 
 
+# THE PROCESSOR CHAIN'S TYPE-AREA NAMES (docs/reading_notes/fortran_bss_plan.md
+# R0.5), read in the ink 2026-11-16.  ONLY NAMES, NOT AREAS: the listing fixes
+# these names but not one word of the areas they name, so none of them is in
+# build()'s record.  What the listing does NOT settle -- the type-area names
+# of the LPC, the SMAC/FORTRAN processor, STRAP II and the BSS processor --
+# is recorded in the plan, not invented here.
+#
+#   * "PC" (printed p.396 l.29, "YCCIN (AX)DDI(BU,12,6),PCX", its value
+#     printed "+00004763"): the job's processor-control type area is "PC" and
+#     the first six characters of the TYPE card's third field (printed p.395
+#     ll.47-49: L(BU,48),YUCBF2+2.0 / LFI(BU,12),YCCIN,48 /
+#     ST(BU,48),YDFCTA,12, then B,DMCP / ,DFETCH with YDFCTA as the name).
+#     The six characters follow from the VFL offset as the Reference Manual
+#     defines it, printed p.56 (read in the ink): "the number of bits by
+#     which the right end of the accumulator operand is offset from the
+#     right end of the accumulator"; LFI's printed byte size is 8 (p.395
+#     l.48, "414030.06"), so "PC" is flat.  Run on the model as printed:
+#     tests/gen_loader_deck_tb.py pcname.
+#   * that field is FORTRAN (printed p.274 l.13, YFORTR) for a COMPILE or
+#     COMPILGO FORTRAN job; for a GO,FORTRAN job p.271 ll.46-50 ("INTERPRET
+#     GO, AS CMPILGO,... AND FORTRAN AS BSS") replace it with ABSSID's 48
+#     bits (printed p.291 l.8, "(A*)DD(BU,48,6),BSS *"; the five characters
+#     after BSS are strap_asm's blank fill, since no listing prints A-mode
+#     bits).
+#   * "))))))))" (printed p.397 l.19 YTWSTA, p.291 l.30 ATWSTA): the TWS type
+#     area that holds the compiled problem program, which resume load reads
+#     (p.396 l.50 "LOAD TYPE AREA FOR COMPILED P.P.") and the loader names
+#     for a subprogram BSS left on TWS (p.327 ll.20-21).
+#   * "LB" (printed p.291 l.29 ALB, "(A*)DD(BU,12,6),LB*"): the type of a
+#     library routine's area, its other 36 bits taken from the relocation
+#     table (p.327 ll.23-25).  How a FORTRAN name becomes those 36 bits is
+#     UNSPECIFIED (bss_loader_spec.md G7).
+#   * the 18-bit key "BSS" (printed p.397 l.10 YBSSID, value printed
+#     "+00622222"): the first chain entry, KSILO+2, must begin with it for
+#     the BSS path (p.396 l.56 - p.397 l.2; the loader's p.324 ll.13-15 and
+#     p.332 ll.4-5, the latter from the transcription).  Its remaining 30
+#     bits are the PC area's content, which
+#     no listing prints.
+PC_TYPE = "PC"
+TWS_AREA = "))))))))"
+LIBRARY_TYPE = "LB"
+BSS_KEY = "BSS"
+# printed DDI values, the only A-mode bits a listing prints
+PRINTED_DDI = {"PC": 0o4763, "BSS": 0o622222}
+
+
+def pc_area(field3):
+    """The processor-control type-area name for a TYPE card's third field
+    (an 8-character field as UNCODE breaks it out), printed p.395 ll.47-49."""
+    assert len(field3) == 8, repr(field3)
+    return PC_TYPE + field3[:6]
+
+
+PC_AREAS = {"COMPILE or COMPILGO, FORTRAN": pc_area("FORTRAN "),
+            "GO, FORTRAN (rewritten as BSS, p.271)": pc_area("BSS     ")}
+
+
 def a6(name):
     """An eight-character type-area name as a 48-bit A6 code."""
     assert len(name) == 8, repr(name)

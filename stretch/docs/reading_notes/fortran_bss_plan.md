@@ -464,6 +464,80 @@ All are under `http://www.bitsavers.org/pdf/ibm/7090/` unless another location i
   - Read L pp.266-274 (job control, the TYPE card; p.271 is already transcribed) for the chain table, the processor type-area names and the entry convention.
   - Add PROSA type areas for the LPC, the SMAC/FORTRAN processor, STRAP II and BSS (`prosa_dict.py` has none today).
   - Oracle: the listing's own name constants (e.g. `YFORTR (AX)DD(BU,48,6),FORTRAN` p.274, `ABSSID`).
+  - **STATUS 2026-11-16: READ; names recorded; no area added.** The record is below.
+
+#### R0.5, as read in the ink (2026-11-16)
+
+**Where the listing is.** `docs/MCP_Mar63_250-445.pdf`. For printed pages 250-328 the PDF page is the printed page minus 249: p.266 is PDF 17 and p.274 is PDF 25. From p.330 on it is minus 250, because p.329 is missing from the scan: p.395 is PDF 145. Viewed as 150-200 dpi images this session:
+- pp.267, 268, 270, 271, 272, 273, 274, 395 and 396 in full;
+- p.266 ll.10-30, p.269 ll.9-54 and p.397 ll.1-23;
+- for R1 and the names, p.291 ll.6-31, p.324 ll.10-29, p.326 ll.37-45, p.327 ll.1-28, p.332 ll.27-42 and p.334 ll.1-19.
+
+Cited from the transcription only, and not re-read: p.103 (`SJCTWS`), p.384 (`YC4B5`) and p.386 (`WJC4G`). The transcriptions in `decks/mcp_bootstrap_p*.strap` were the finding aid.
+
+**The plan's premise was wrong about where the chain is.**
+- Pp.266-274 are JOB CONTROL PHASE 1 and UNCODE ("UNCODE SUBROUTINE TO DECIPHER SYSTEM CARDS", p.270 ll.24-25). They decode the TYPE card. They hold no chain table.
+- The chain is in the `$EOJ` overlay (PUNID `22$EOJ`), at pp.395-397, under the banner "THE COMPILE AND GO SUB ROUTINES" (p.395 l.25).
+
+**1. The TYPE card (pp.266-274).**
+- UNCODE turns the card into 6-bit BCD: "CONVERT CARDS TO 6-BIYT BCD" (p.270 l.34, so printed), `BD,SCA6`.
+- It breaks the card into 8-character fields at `YUCBF2`: "BREAK CARD INTO FIELDS" (p.270 l.39), `BD,SBRK8`.
+- It hands the fields back: "TRANSMIT BROKEN OUT / CARD TO REQUESTED AREA" (p.273 ll.35-36).
+- `YTOPGO` (p.271 l.23, "GO - SET COUNT FIELD TO PROPER / VALUE + GO TO NORMAL RETURN") compares field 2 with `YGOMK` "GO", `YCOMMK` "COMPILE", `YCNGMK` "COMPILGO" and `YUPDAT` (p.271 ll.25-32; the constants are p.273 l.44 and p.274 ll.6, 8, 12).
+- For GO, `YBSSGO` (p.271 ll.43-50) makes the job a compile-and-go job with BSS as its processor: `L(BU,48),YUCBF2+2.` "-INTERPRET GO, AS CMPILGO,..." / `KF(BU,48),YFORTR` "-AND FORTRAN AS BSS" / `BZAE,YTOPCG` / `LF(BU,48),ABSSID` / `SF(BU,48),YUCBF2+2.`
+- `YFORTR` is `(AX)DD(BU,48,6),FORTRAN X` (p.274 l.13). `ABSSID` is `(A*)DD(BU,48,6),BSS *` (p.291 l.8; that page was not re-read this session).
+- `YC1TC BB,.41+Y1UCXW,YC1SCN` carries the remark "- BRANCH IF A COMPILE JOB" (p.266 l.26).
+
+**2. The processor-control type area (p.395).**
+- `YCOJB1` (p.395 ll.44-56) forms the name and fetches it: `L(BU,48),YUCBF2+2.0` / `LFI(BU,12),YCCIN,48` / `ST(BU,48),YDFCTA,12` / `B,DMCP` / `,DFETCH` / `YDFCTA DR(BU),(1)` / `,0` / `LVE, ,SJCTWS` / `,0` / `YCIODC ,0`.
+- `YCCIN` is `(AX)DDI(BU,12,6),PCX`, its value printed `+00004763` (p.396 l.29).
+- Reading the VFL offset from the accumulator's right end gives the name as **"PC" followed by the first six characters of the TYPE card's third field**:
+  - field 3 sits in accumulator bits 80-127;
+  - "PC" sits at 68-79;
+  - the store takes the 48 bits that end 12 from the right, bits 68-115.
+  - The offset reading is from the Reference Manual, printed p.56 (PDF 59), read in the ink: "The *offset field*, bits 44 through 50, specifies the number of bits by which the right end of the accumulator operand is offset from the right end of the accumulator."
+  - `LFI` is a connective. At byte size 6 it would spread "PC" into two 8-bit bytes (p.75, as quoted in `bsv/StretchVFL.bsv`). Its printed second half-word, `414030.06` (p.395 l.48), has a byte-size field of 000, which means 8, so "PC" sits flat at bits 68-79. This was checked by assembling the line with strap_asm and comparing it with the printed binary.
+  - **Run on the model** (`gen_loader_deck_tb.py pcname`): the three statements as printed give `PCFORTRA` and `PCBSS   `. Written with byte size 6 instead of the printed 8, both names come out wrong. The loader's own name-building (`LB` + 36 bits, p.327 ll.23-25) was also run, in R1's `bsslib` mode.
+- **DERIVED:** a COMPILE or COMPILGO FORTRAN job fetches **`PCFORTRA`**. A GO,FORTRAN job fetches **`PCBSS   `** (the last three characters are strap_asm's blank fill of `ABSSID`; no listing prints A-mode bits).
+- The fetched area goes into `SJCTWS`, "TWS FOR JC" (p.103 l.55).
+- This 12-bit type + 36-bit area form agrees with `YMPFCH`, MCP's own overlay fetcher (p.269 ll.13-25, "SPECIAL PACKAGE TO PULL MCP PROGRAMS FROM THE DISK"): `(AX)DD(BU,12,6),22X` followed by a 36-bit area such as `$DUMP`, `SCOMD`, `$EOJ` (ll.45, 48, 54).
+
+**3. The chain table: the PC area's content, in KSILO (p.396 ll.3-28).**
+- The PC area's first card is the chain. `BD,SCA6` on 80 columns from `SJCTWS` carries the remark "-CONVERT COMPILER NAMES TO BCD." (ll.4-7).
+- `B,SBRK8` from column 2 (`YUCBF1+.6`, `CF,71.`) into `YUCBF2`, with the field count kept in `YPCCT`: "-BREAK OUT CARD" (ll.8-13).
+- Then:
+  - `Z,KSILO` / `SC,$15,KSILO`: KSILO's count field is the number of compilers;
+  - `LI(BU,18),4096.` / `-(BU,18),SSYRFT` / `ST(BU,18),KSILO+1.0` "-TELL COMPILERS HOW BIG TWS IS.";
+  - `T,$15,YUCBF2,KSILO+2.0`: the compiler names, one per word, from **KSILO+2.0** on (ll.16-22).
+- **So the chain table is KSILO+2.0 onward, one 48-bit type-area name per word, copied from the PC area's first card.** The listing does not print the card.
+- The area may hold more cards than that one. P.396 ll.23-28 go on: `CM1111(BU,1),YCIDBT` "-SET READ SOURCE BIT" / `LV,$13,SJCTWS` / `V+I,$13,15.0` / `LC,$13,YCIODC` / `B,YC4B5`, which is p.384 l.24's "READ 1 CARD FROM SOURCE" (from the transcription, not re-read), with the source just past that card. What further cards the area holds is not printed.
+
+**4. Stepping the chain and the entry convention (p.396 ll.30-56, p.397 ll.1-15).**
+- `YC4INT` steps it:
+  - `LV,$14,KSILO+.32` / `V+I,$14,1.0` / `KV,$14,KSILO` "-HAS LAST COMPILER RUN" / "-IS THIS THE LAST COMPILER" / `CM1111(BU,1),KSILO+.25` "-SET FLAG" / `SV,$14,KSILO+.32` "-UPDATE COMPILER POINTER" (ll.32-38);
+  - then `L(BU,48),KSILO+1.0($14)` / `ST(BU,48),YDFCS` "-COMPILER TYPE AREA INTO SFETCH" / `LX,$13,YDKCRS` / `B,WJC4G` (ll.39-42).
+- **Entry convention: each compiler is a binary deck stored as a type area, loaded by MCP's own loader.**
+  - `YDFCS` (p.274 l.16) is the type area that resume load reads cards from: `TI,1,YDFCS,YRLDTA` then `B,DMCP / ,DFETCH / YRLDTA` (p.332 ll.8, 33-35), 15 words per card and 34 cards per arc (p.332 ll.27-30).
+  - `WJC4G` (p.386 l.8) sets the loader limits and calls resume load (`,DRESLD`, p.386 l.25).
+  - So a compiler is entered the way any binary deck is: by its branch card, through the loader's branch return.
+  - This last step is my reading of pp.332 and 386, which I read in the deck, not re-read in the ink.
+- After the last compiler, `YLASTC` (ll.47-56): `L(BU,48),YTWSTA-` "LOAD TYPE AREA FOR COMPILED P.P." / `ST(BU,48),YDFCS` / "COMPUTE NUMBER OF TWS ARCS LEFT." / "-SET READ SOURCE TO P.P." / `LF(BU,18),KSILO+2.` "-CHECK FOR BSS LOADER".
+  - p.397 continues: `KFI,YBSSID` / `BZAE,YBB` / `LX,$14,KSILO+8.` "-TAKE P.+. LIMITS FROM KSILO" / ... `CM1111(BU,1),YTSP` "-SET UP FOR SPEC. BSS CASE" (ll.1-9).
+  - `YBSSID (AX)DDI(BU,18,6),BSSX` prints `+00622222` (l.10). `YTWSTA (AX)DD(BU,48,6),))))))))X` (l.19).
+
+**What this settles, and what it does not.**
+- *Settled names:*
+  - `PCFORTRA` and `PCBSS   ` (the PC areas);
+  - `))))))))` (the compiled program on TWS; also the loader's `ATWSTA`, p.291 l.30);
+  - the `LB` type of a library routine (`ALB`, p.291 l.29);
+  - the 18-bit key `BSS`, with which KSILO+2.0 must begin for the BSS path.
+  - These are now constants in `strap/prosa_dict.py` (`PC_TYPE`, `TWS_AREA`, `LIBRARY_TYPE`, `BSS_KEY`, `pc_area`), checked by `check_prosa_dict.py` against the two printed DDI values.
+- ***Not settled, and not invented:***
+  - the type-area names of the LPC, the SMAC/FORTRAN processor, STRAP II and the BSS processor;
+  - the PC areas' card content, i.e. the chain itself.
+  - For BSS, only the first three characters are fixed.
+  - **So no type area for any of the four processors is added to `prosa_dict.py`.** An area needs its words, and the listing gives none.
+- **A tension, recorded and not resolved.** C22-6729 p.7 prints the FORTRAN IV chain as "LPC, STRAP, LPC, BSS". If that were the PC card, KSILO+2.0 would begin with the LPC's name, and the loader's BSS test (p.324 ll.13-15, p.332 ll.4-5, p.396 l.56) would fail for a COMPILGO FORTRAN job. Either the LPC rewrites KSILO, or C22-6729's chain is not the PC card's, or that chain belongs to a later MCP. The March 1963 listing plainly supports one BSS case: GO,FORTRAN, whose PC area `PCBSS` must list a BSS-prefixed name first.
 - **R0.6 STRAP II as a 7030 program (E6).** It is at step 3b (TABMAN) per `docs/strap2_7030.md`. Every "under MCP" step from R2b onward that assembles anything needs it, and R5f needs it outright. Until then the host STRAP II (`strap/strap2/`) is scaffolding.
 
 ### R1. Close the loader's remaining paths with driver-built tables (small; test only)

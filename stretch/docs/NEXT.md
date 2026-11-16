@@ -271,6 +271,18 @@ Open alongside: the LIM card under PUNREL is punched as computed and means
 nothing to a relocated load -- the guide does not say whether PUNREL
 punches one; and PUNREL after absolute output, refused.
 
+## HOW MCP REACHES THE PROCESSOR CHAIN -- read, 2026-11-16 (plan R0.5)
+
+Not on pp.266-274 (those decode the TYPE card; GO,FORTRAN is rewritten
+COMPILGO,BSS, p.271 ll.43-50) but in $EOJ, pp.395-397: the job's
+processor-control type area "PC" + the third field's first six
+characters (PCFORTRA; PCBSS for GO) is fetched, its first card broken into
+compiler type-area names at KSILO+2.0 on, each loaded by resume load as a
+binary deck (YDFCS), then "))))))))", the compiled program.  The names
+of the LPC, FORTRAN, STRAP II and BSS processors are the PC card's
+content, which no listing prints: not invented, not in prosa_dict.  The
+record is in the plan's R0.5.
+
 ## A DIGIT TOO LARGE FOR ITS RADIX -- closed 2026-11-15, host and 7030 deck
 
 C22-6729 p.71, CPLTNM Boxes 3-8, read in the ink: "If the digit equals or

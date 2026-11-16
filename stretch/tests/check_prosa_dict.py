@@ -36,6 +36,12 @@ WHAT EACH CHECK ESTABLISHES
         234424, and it is 613 words (to VDUB at 235570).
   loader_gap_is_page_329      exactly 34 words of 22LOADER carry the
         gap tag, the words of the missing printed p.329.
+  chain_keys_match_printed_ddi  the A-code values of "PC" and "BSS"
+        equal the two printed DDI values (p.396 l.29, p.397 l.10).
+  chain_pc_areas      the processor-control area names p.395 ll.47-49
+        form for a FORTRAN and a GO,FORTRAN job.
+  chain_names_not_in_record  none of the chain's names, nor any PC or
+        LB area, is in the record: the listing gives no word of them.
 
 INJECTIONS, MEASURED 2026-11-07, each by editing strap/prosa_dict.py
 and reverting from a saved copy checked with cmp.  Observed:
@@ -49,6 +55,11 @@ and reverting from a saved copy checked with cmp.  Observed:
         entry") and loader_gap_is_page_329 ("no 22LOADER entry")
   the p.329 gap filled with zeros instead of GAP_TAG
         FAIL loader_gap_is_page_329 = 0, and nothing else
+  MEASURED 2026-11-16, the processor chain's names (plan R0.5):
+  pc_area taking field3[2:] in place of the first six characters
+        FAIL chain_pc_areas = ['PCRTRAN ', 'PCS     '], and nothing else
+  PRINTED_DDI's PC written with its two characters swapped (6347)
+        FAIL chain_keys_match_printed_ddi, and nothing else
   NOT DISCRIMINATING, and recorded so: shifting the index's ARC field
   (arc << 21) passes, because every dictionary entry is on arc 0 and
   a shifted zero is zero.  The P1 boot (run_mcp_p1deck_test.sh) is
@@ -158,6 +169,19 @@ def main():
         start = lo["arc"] * 512 + lo["word"]
         tagged = sum((w >> 48) == 0x6A6A for w in rec[start:start + lo["size"]])
         check("loader_gap_is_page_329", tagged, 34)
+
+    # THE PROCESSOR CHAIN'S NAMES (prosa_dict.PC_TYPE ..; plan R0.5).  The
+    # two DDIs print their values, the only A-mode bits a listing prints:
+    # p.396 l.29 "+00004763" (PC), p.397 l.10 "+00622222" (BSS).  The
+    # names are names only: none may be in the record, since the listing
+    # gives none of their words.
+    got = {t: prosa_dict.a6(t.ljust(8)) >> (6 * (8 - len(t))) for t in prosa_dict.PRINTED_DDI}
+    check("chain_keys_match_printed_ddi", got, prosa_dict.PRINTED_DDI)
+    check("chain_pc_areas", sorted(prosa_dict.PC_AREAS.values()), ["PCBSS   ", "PCFORTRA"])
+    names = {e["name"] for e in entries}
+    check("chain_names_not_in_record",
+          sorted(n for n in list(prosa_dict.PC_AREAS.values()) + [prosa_dict.TWS_AREA]
+                 if n in names) + sorted(n for n in names if n[:2] in ("PC", "LB")), [])
 
     print("\n%s" % ("ALL TESTS PASSED" if not fails else f"{fails} TEST(S) FAILED"))
     return 1 if fails else 0

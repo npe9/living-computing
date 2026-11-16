@@ -426,11 +426,59 @@ def card_words(cols):
     return [(bits >> (64 * (14 - i))) & ((1 << 64) - 1) for i in range(15)]
 
 
+def pcname(module):
+    """Mode pcname (plan R0.5): printed p.395 ll.47-49, the $EOJ's naming of
+    the processor-control type area, run on the model as printed:
+    L(BU,48),YUCBF2+2.0 / LFI(BU,12),YCCIN,48 / ST(BU,48),YDFCTA,12, with
+    YCCIN the printed DDI's value (p.396 l.29, +00004763) and the third
+    field FORTRAN (YFORTR, p.274 l.13) or BSS (ABSSID, p.291 l.8, as
+    p.271 ll.46-50 put it there for a GO job).  YDFCTA must then hold
+    "PCFORTRA" / "PCBSS   " (prosa_dict.pc_area) in bits 0-47, its other 16
+    bits untouched.
+    FIRST RUN, 2026-11-16: 2 checks pass, 110 cycles.  MEASURED, restored by
+    copy and cmp: LFI written (BU,12,6), byte size 6 where p.395 l.48's
+    printed binary has 000 (8): both fail, bits 0-7 0x73 not 0x9F (the
+    connective spreads P and C into eight-bit bytes, so the name is
+    shifted)."""
+    import prosa_dict
+    SENT = 0x5555555555555555
+    src = ["        SLC,(8)%o.0" % DRIVER_AT,
+           "YCCIN   SYN(BU,12,6),(8)4763",
+           "START   L(BU,48),F1+2.0",
+           "        LFI(BU,12),YCCIN,48",
+           "        ST(BU,48),T1,12",
+           "        L(BU,48),F2+2.0",
+           "        LFI(BU,12),YCCIN,48",
+           "        ST(BU,48),T2,12",
+           "DONE    B,DONE",
+           "        CNOP",
+           "T1      DD(BU,64),(8)%o" % SENT,
+           "T2      DD(BU,64),(8)%o" % SENT,
+           "F1      DR(BU,64),2",
+           "        CNOP",
+           "        (AX)DD(BU,48,6),FORTRAN X",
+           "        CNOP",
+           "F2      DR(BU,64),2",
+           "        (A*)DD(BU,48,6),BSS     *",
+           "        END,START"]
+    d = assemble("\n".join(src) + "\n")
+    checks = []
+    for lab, f3 in (("T1", "FORTRAN "), ("T2", "BSS     ")):
+        want = (prosa_dict.a6(prosa_dict.pc_area(f3)) << 16) | (SENT & 0xFFFF)
+        checks.append(("pc_area_%s" % f3.strip(), str(d.symtab[lab] // 64), want))
+    print(generate(module, d, checks, pc_check=d.symtab["DONE"] // 32,
+                   cycle_bound=100000, step_cap=10000,
+                   fast_load=os.path.join(os.path.abspath(STRETCH), "bsv", "build-loader",
+                                          module + ".hex")))
+
+
 def main():
     module = sys.argv[1]
     mode = sys.argv[2] if len(sys.argv) > 2 else ""
-    if mode not in ("", "rel", "fortran", "bss", "bss2", "bsslib"):
-        raise SystemExit("mode: none, rel, fortran, bss, bss2 or bsslib, not %r" % mode)
+    if mode not in ("", "rel", "fortran", "bss", "bss2", "bsslib", "pcname"):
+        raise SystemExit("mode: none, rel, fortran, bss, bss2, bsslib or pcname, not %r" % mode)
+    if mode == "pcname":
+        return pcname(module)
     two = mode in ("bss2", "bsslib")
     pages = [(mcp_image.DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
              for n in range(99, 335)
