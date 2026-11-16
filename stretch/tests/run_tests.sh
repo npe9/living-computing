@@ -14797,6 +14797,10 @@ run "MCP's binary loader chains to a library entry, LB + 36-bit name" ./run_load
 # ll.47-49 run as printed: "PC" + the TYPE card's third field's first six
 # characters (PCFORTRA, PCBSS).  Injection in gen_loader_deck_tb.py pcname().
 run "\$EOJ names the processor-control area PCFORTRA / PCBSS (p.395)" ./run_loader_deck.sh StretchLoaderPcNameTb pcname
+# R0.3: printed p.329 is missing from the scan; decks/mcp_p329_reconstruction.
+# strap is a RECONSTRUCTION (not IBM's code) fixed to the addresses and labels
+# the landed pages cite.  Its fit; injections in the check's header.
+run "Reconstructed p.329 fits the hole: 34 words, cited labels, landed pages unchanged" python3 check_p329_reconstruction.py
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
