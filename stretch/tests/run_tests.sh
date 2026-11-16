@@ -13512,6 +13512,19 @@ run "Buchholz B.4 -- 25 decimal numbers to a normalized FLP vector" ./run_progra
     "f21:420=0x0058000000000000" "f22:421=0x0078000000000000" "f23:422=0x007E000000000000" "f24:423=0x007A000000000000" \
     "f25:424=0x007C000000000000" "root_sum_squares:204=0x01DC34FC00000000" "x1:17=0x0050DC00000000C9" "x2:18=0x00064000000000CA"
 
+# B.5, printed pp.301-303.  The connectives: CI0011 with byte size 1 (each
+# bit of the immediate spread to a byte), C0011, CM0101 across word
+# boundaries, CT0001 against the accumulator's own left half, CT1001, CM0000;
+# the left-zeros count added to two index values ("V+, $1, 7.17", which
+# assembles as 7.0 -- deck header), BRZ/BZRZ, LC from the word part of an
+# index value, BXCZ.  Passed against the model as it stood.  The walk through
+# the loop is in the deck's header; note (13)'s error stop is one of its
+# three observed injections.
+run "Buchholz B.5 -- editing a typed message" ./run_program.sh ../decks/buchholz_b5_edit_message.strap StretchBuchB5Tb "PC=224" \
+    "o0:400=0x4142434445464748" "o1:401=0x494A4B4C4D4E4F50" "o2:402=0x5152535455000000" "o3:403=0x00000000FFFFFFFF" \
+    "guard_lo:399=0xFFFFFFFFFFFFFFFF" "x1:17=0x0000C80000000000" "x2:18=0x0000E00000000000" \
+    "x3:19=0x00640000000C00C9" "control_word:201=0x00640000000C00C9" "acc_left:8=0x8080808080808080"
+
 # ============== end of the Buchholz Appendix B group ==================
 
 # -- 4. Reference Manual Figure 7: Progressive Indexing --

@@ -1,0 +1,260 @@
+! Buchholz (ed.), "Planning a Computer System" (1962), APPENDIX B,
+! B.5 "Editing a Typed Message (Table B.5)", text printed p.301 (PDF
+! 326), table printed p.302 (PDF 327), notes continued on printed p.303
+! (PDF 328), read from the page images.  Notation: pp.292-294.
+!
+!   "A message, which has been entered on a typewriter like the one on
+!   the 7030 console, is edited to delete control characters which
+!   appear in the coded message whenever a control key (such as
+!   carriage return) is struck.  Deletion here means removing the
+!   control character and closing the gap (not just replacing the
+!   character with a blank).  The number of control characters is not
+!   known in advance, and the length of the edited message must be
+!   determined by looking for an END code.  The input message is stored
+!   in memory starting at address 300.0, and the block of edited output
+!   data is to be stored at address 400.0.  For subsequent input-output
+!   operations it is necessary to fill any unused portion of the last
+!   word of the block with 0 bits.  A control word for use with
+!   read-write instructions, containing in the count field the number
+!   of words in the output block, is to be made up and stored at 201.0.
+!     In the 8-bit code used with the typewriter, all control bytes
+!   (other than blank) are distinguished from data by a 1 bit in the
+!   high-order position.  The program shown tests this bit in eight
+!   characters at a time.  The left-zeros count is used to locate the
+!   control byte (or the leftmost control byte if there are several
+!   among the eight).  The control byte is then tested for the END
+!   code, which is 1111 1110.  Advantage is taken of the coincidence
+!   that the complement of this code is a single 1 bit, which, by a
+!   suitable offset, serves as the mask to isolate the high-order bit
+!   in the previous test for all control characters."
+!
+! TABLE B.5 AS PRINTED, with the STRAP statement beside each line:
+!
+!   100.0   LOAD INDEX, X1, 0.0                      Start  LX, $1, 0.0
+!   100.32  LOAD INDEX, X2, 0.0                             LX, $2, 0.0
+!   101.0   CONNECT IMMEDIATE 0011 (VBU, 9, 1), (2) 1 1111 1111, 63
+!                                              (1)   CI0011(BU,9,1), (2)111111111, 63
+!   102.0   CONNECT 0011 (VBU, 64, 8), 300.0 (X1)        (2)   C0011(BU,64,8), 300.0($1)
+!   103.0   CONNECT TO MEMORY 0101 (VBU, 64, 8), 400.0 (X2)
+!                                              (3)   CM0101(BU,64,8), 400.0($2)
+!   104.0   CONNECT FOR TEST 0001 (VBU, 64, 8), 8.0      (4)   CT0001(BU,64,8), 8.0
+!   105.0   ADD TO VALUE, X1, 7.17                              V+, $1, 7.17
+!   105.32  ADD TO VALUE, X2, 7.17                       (5)   V+, $2, 7.17
+!   106.0   BRANCH RZ, 102.0                             (6)   BRZ, 102.0
+!   106.32  CONNECT FOR TEST 1001 (VBU, 8, 8), 300.0 (X1), 71
+!                                              (7)   CT1001(BU,8,8), 300.0($1), 71
+!   107.32  ADD TO VALUE, X1, 200.0                      (8)   V+, $1, 200.0
+!   108.0   BRANCH RZ (F), 102.0                         (9)   BZRZ, 102.0
+!   108.32  CONNECT TO MEMORY 0000 (VBU, 56, 8), 400.0 (X2)
+!                                              (10)  CM0000(BU,56,8), 400.0($2)
+!   109.32  ADD TO VALUE, X2, 200.32                     (11)  V+, $2, 200.32
+!   110.0   LOAD INDEX, X3, 201.0                               LX, $3, 201.0
+!   110.32  LOAD COUNT, X3, 18.0                         (12)  LC, $3, 18.0
+!   111.0   STORE INDEX, X3, 201.0                              SX, $3, 201.0
+!   111.32  BRANCH XCZ, 112.32                           (13)  BXCZ, 112.32
+!   112.0   BRANCH ENABLED AND WAIT, 112.0               Stop  BEW, 112.0
+!   112.32  BRANCH ENABLED AND WAIT, 112.32              Error BEW, 112.32
+!
+!   200.0   VALUE, 0.08                                        VF, 0.08
+!   200.32  VALUE, 0.56                                        VF, 0.56
+!   201.0   INDEX, 400.0, 0, 201.0                             XW, 400.0, 0, 201.0
+!
+!   Notes: (1) The operand, specified by immediate addressing, is the
+!         9-bit field 1 1111 1111.  Specifying a byte size of 1 causes
+!         each 1 to be expanded to an 8-bit byte 0000 0001.  The full
+!         operand, therefore, consists of nine such bytes.  The
+!         connective 0011 and the offset of 63 then cause the left half
+!         accumulator to be filled with the pattern 1000 0000 1000 0000
+!         ....  (The final 1, which spills into the right half, is not
+!         used.)
+!     (2) 64 bits (eight bytes) of input data are placed into the right
+!         half accumulator.
+!     (3) These 64 bits are tentatively stored in the output area.
+!     (4) The data field is anded with the test pattern in the left
+!         half accumulator.  The left-zeros count register contains
+!         either 64 or the position of the first "control byte" with a
+!         high-order 1 bit.
+!     (5) The left-zeros count is added to both the input and output
+!         indexes.
+!     (6) Branch if the result zero indicator is on, i.e., if there is
+!         no control byte.
+!     (7) A 0000 0001 byte from the test pattern is matched against the
+!         control byte; if the control byte is an END code, all result
+!         bits are 0.
+!     (8) In any case, skip the control byte in the input data by
+!         adding 0.08 to the index value.
+!     (9) Branch to the beginning of the loop if the result zero
+!         indicator is off after the last test (not END), thus starting
+!         with the 64 bits following the control byte, which may
+!         include several bytes transferred previously but which now
+!         must be offset by one byte.  (Multiple control bytes in a
+!         64-bit field will be taken care of one at a time.)
+!     (10) Enough 0s are inserted to fill the last word of the block.
+!     (11) The output index value is rounded up to the next full-word
+!         address.
+!     (12) The index value from x2 is transferred to the count field of
+!         the control word being made up in x3, dropping the
+!         bit-address portion and leaving only the number of full words
+!         in the block.
+!     (13) Test for a zero index count, which could result from an END
+!         code in the first data byte and be interpreted as a word
+!         count of 2**18 at the output.
+!
+! THE MAPPINGS, by page of the book's Appendix A.4:
+!   CONNECT (C), CONNECT TO MEMORY (CM), CONNECT FOR TEST (CT) p.281;
+!   the 4-bit connective code follows the operation (printed p.294) and
+!   is defined p.281-282: its four bits are the result for (m, a) =
+!   00, 01, 10, 11.  So 0011 is m, 0101 is a, 0001 is m AND a, 1001 is
+!   m EQUIVALENT a, 0000 is zero -- and Reference Manual 22-6530-2
+!   Figure 20 (printed p.76, PDF 79) prints the same table.  Immediate
+!   addressing for connectives, p.282: CI.  "VBU binary unsigned (the
+!   only one which applies to connectives)", p.294.
+!   ADD TO VALUE (V+) p.283; LOAD COUNT (LC), STORE INDEX (SX) p.282.
+!   "BRANCH IND" is BRANCH ON INDICATOR (BIND, p.284) with the
+!   indicator's abbreviation from A.5: BRANCH RZ is BRZ, BRANCH XCZ is
+!   BXCZ.  "(F)" is "branch if indicator off" (printed p.293): STRAP
+!   writes that with a Z after the B, BZRZ.  (The book's own mode
+!   symbol Z means something else, "set indicator to 0 after test",
+!   and is not used in this table.)
+!   VALUE is "signed index value" (p.294), STRAP's VF.
+!
+! THREE READINGS THAT ARE NOT STRAIGHTFORWARD:
+!
+!   "ADD TO VALUE, X1, 7.17".  7.17 is the left-zeros count's address
+!   in A.3 (printed p.276: "7.17, 7 bits, LZC").  But the address of
+!   an index-arithmetic instruction is 19 bits, a word and a half-word
+!   bit, and cannot hold ".17".  The operand of V+ is "bits 0-24 of the
+!   half-word specified by bits 0-18 of the effective address"
+!   (Reference Manual printed p.23-24, Load Value and the operations
+!   after it), and Reference Manual printed p.76 says why that works:
+!   "The position of the left-zeros counter in the first half word of
+!   location 7 is such that it corresponds to that part of an index
+!   value field which indexes the bit address of an instruction."  So
+!   the instruction's address is 7.0, the value field read is 7.0-7.23
+!   with the count in its low seven bits, and the book's "7.17" names
+!   the register rather than the bits of the address.  The statement is
+!   assembled AS PRINTED; the assembler drops the 17 and the assembled
+!   address is 7.0.
+!
+!   "LOAD COUNT, X3, 18.0" loads x3's count from the FIRST 18 BITS of
+!   word 18 (x2) -- the word part of x2's value -- not from x2's count
+!   field: Reference Manual printed p.24 (PDF 27), "The count field,
+!   bits 28-45, of the index word specified by J is replaced by bits
+!   0-17 of the half-word specified by bits 0-18 of the effective
+!   address."  That is note (12).
+!
+!   Note (13) relies on LOAD COUNT (and STORE INDEX after it) setting
+!   the index count zero indicator: Reference Manual printed pp.22-23,
+!   Index Indicators -- the index result indicators are set by any
+!   index operation that specifies an index in J, comparisons excepted.
+!
+! AND ONE THING THE PAGE DOES NOT MENTION: statement 101.0's nine
+! bytes end at accumulator bit 64 and so begin seven bits to the left
+! of the accumulator.  Reference Manual printed p.76: "Partial Field
+! (PF).  This indicator is turned on if the storage field attempts to
+! combine with bits beyond the left end of the accumulator ... the
+! storage operand is combined with the accumulator operand up to the
+! left end of the accumulator; higher-order bits in the storage operand
+! are dropped."  The bits dropped are zeros and the pattern is right.
+! PF is not checked here.
+!
+! THE DATA IS THE DECK'S.  The message at 300.0, one byte per two hex
+! places; 8D, 90 and 91 are control bytes, FE is END:
+!
+!     41 42 43 8D 44 45 46 47 | 48 49 4A 4B 4C 4D 4E 4F |
+!     50 90 91 51 52 53 54 55 | FE 00 ...
+!
+!   It has a control byte in the first eight, a window of eight with
+!   none (the left-zeros count of 64), two control bytes side by side,
+!   and an END that leaves the output five bytes into a word.  The
+!   output area 399.0-404.0 starts as all ones.
+!
+! EXPECTED, DERIVED BY HAND by walking the loop (x1 and x2 in bytes):
+!
+!     window at x1   stored at x2   LZC   then
+!     0   41..47     0             24    x1=3, x2=3; 8D not END; x1=4
+!     4   44..4B     3             64    x1=12, x2=11
+!     12  4C..51     11            40    x1=17, x2=16; 90 not END; x1=18
+!     18  91..00     16             0    x1=18, x2=16; 91 not END; x1=19
+!     19  51..00     16            40    x1=24, x2=21; FE is END; x1=25
+!
+!   o0   400.0 = (16)4142434445464748
+!   o1   401.0 = (16)494A4B4C4D4E4F50
+!   o2   402.0 = (16)5152535455000000 -- the FE that was tentatively
+!        stored at byte 21 and the two bytes after it are zeroed by
+!        statement 108.32, 56 bits from byte 21.
+!   o3   403.0 = (16)00000000FFFFFFFF -- those 56 bits run four bytes
+!        into the next word; the rest of it was never written.
+!   guard_lo  399.0 still all ones.
+!   x1   25 bytes = 200 bits = 3.08: (16)0000C80000000000
+!   x2   21 bytes = 2.40, plus 0.56 = 3.32: (16)0000E00000000000
+!   x3 and the control word at 201.0: value 400.0, count 3 (the word
+!        part of 3.32), refill 201: (16)00640000000C00C9
+!   acc_left   word 8 still holds note (1)'s pattern,
+!        (16)8080808080808080.
+!   PC   the Stop at 112.0, half-word 224 -- not the Error at 112.32.
+!
+! PASSED AGAINST THE MODEL AS IT STOOD: 11 of 11.
+!
+! INJECTIONS, DATA SIDE, OBSERVED (private copies of this deck):
+!
+!   NOTE (13)'S OWN CASE: the first byte changed from 41 to FE, an END
+!   in the first data byte.  By hand: LZC 0, END found at once, 56 zero
+!   bits at 400.0, x2 = 0.56, count 0, and BRANCH XCZ goes to the Error
+!   stop at 112.32, half-word 225.  OBSERVED: FAILS 9 of 11 -- the PC
+!   (225, the Error stop), o0 ((16)0000000000000047: seven zeroed
+!   bytes and the tentatively stored eighth), o1, o2 and o3 (never
+!   written, still all ones), x1 (0.08), x2 (0.56), x3 and the control
+!   word (count 0).  The guard and acc_left stand.
+!
+!   The control byte 8D changed to 0D, so it is data:  FAILS 5 of 11
+!   -- o0, o1, o2, o3 (the text is one byte longer and the zero fill
+!   moves one byte on) and x2 (3.40).  x3 and the control word still
+!   say three words, which is right: 22 bytes is still three words.
+!
+!   The data byte 44 changed to 45:  FAILS 1 of 11, exactly o0.
+
+        SLC, 100.0
+START   LX, $1, 0.0                               ! Start
+        LX, $2, 0.0
+        CI0011(BU,9,1), (2)111111111, 63          ! (1)
+        C0011(BU,64,8), 300.0($1)                 ! (2)
+        CM0101(BU,64,8), 400.0($2)                ! (3)
+        CT0001(BU,64,8), 8.0                      ! (4)
+        V+, $1, 7.17
+        V+, $2, 7.17                              ! (5)
+        BRZ, 102.0                                ! (6)
+        CT1001(BU,8,8), 300.0($1), 71             ! (7)
+        V+, $1, 200.0                             ! (8)
+        BZRZ, 102.0                               ! (9)
+        CM0000(BU,56,8), 400.0($2)                ! (10)
+        V+, $2, 200.32                            ! (11)
+        LX, $3, 201.0
+        LC, $3, 18.0                              ! (12)
+        SX, $3, 201.0
+        BXCZ, 112.32                              ! (13)
+        BEW, 112.0                                ! Stop
+        BEW, 112.32                               ! Error
+
+        SLC, 200.0
+        VF, 0.08                                  ! VALUE, 0.08
+        SLC, 200.32
+        VF, 0.56                                  ! VALUE, 0.56
+        SLC, 201.0
+        XW, 400.0, 0, 201.0                       ! INDEX, 400.0, 0, 201.0
+
+        SLC, 300.0                                ! the message
+        DD(BU,64,8), (16)4142438D44454647
+        DD(BU,64,8), (16)48494A4B4C4D4E4F
+        DD(BU,64,8), (16)5090915152535455
+        DD(BU,64,8), (16)FE00000000000000
+
+        SLC, 399.0                                ! guard, then the output area
+        DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+
+        END, START
