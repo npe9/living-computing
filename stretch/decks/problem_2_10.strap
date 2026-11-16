@@ -1,0 +1,100 @@
+! C22-6578 PROBLEM 2.10, "FETCH (p,q)TH ELEMENT OF RECTANGULAR MATRIX",
+! printed p.22 (PDF 23), read in the ink.
+!
+!   "Given a matrix A of size M x N (M rows and N columns), stored
+!   row-wise in consecutive full words beginning with A11 in location
+!   MTRIX.  Given also are binary integers p, q in the leading 18 bits
+!   of $1 and $2.  Put the element Apq in $R."
+!
+! THE PRINTED STATEMENTS are LOCATE through VF, run twice (the second
+! copy is LOCAT2).  The deck's additions, all marked: the loads of $1
+! and $2; four statements between the copies that keep the first
+! answer; one BEW, $ for the two; the matrix.  ' comments are !'.
+!
+! ONE PRINTED STATEMENT IS NOT RUN AS PRINTED: "ENN DD(BU, 18), N  'N
+! is assumed defined elsewhere".  A symbol in a DD's data field is
+! refused by strap_asm AND by the host STRAP II (message 66, SYNTAX
+! ERROR AT 'N' IN A DD), so this is the page's shorthand and not an
+! assembler finding.  The deck writes the number, 5.
+!
+! EXPECTED VALUES ARE HAND-DERIVED from the problem statement and the
+! page's comment (a), "The element Apq is ... in MTRIX-1+(p-1)N+q",
+! not from the model.  M = 4, N = 5, MTRIX = 1200.0, and element
+! (i, j) holds A000 0000 0000 0i0j.
+!
+!   p = 3, q = 4:  (3-1)*5 + 4 - 1 = 13, so $3 = 1213.0 (value field
+!                  012F40) and $R = A000000000000304.
+!   p = 1, q = 1:  0*5 + 1 - 1 = 0, $3 = 1200.0 (012C00), $R = ...0101,
+!                  $1 is left holding p-1 = 0, and $L is zero because
+!                  the last L(BU, 64) clears the whole accumulator.
+!
+! WHY (Reference Manual printed pages): *(BU, 18) puts the product
+! "into the cleared accumulator at offset 20" (p.68) -- comment (b) --
+! and "ST(BU, 25), $3, 20-7" takes 25 bits from offset 13, so the
+! product's last bit lands in bit 17 of $3, the word part of the value
+! field, with a zero in the sign.  18.0 is $2 and VF is MTRIX-1.0; V+
+! adds the addressed value field to $3's.
+!
+! MEASURED, against a control of 7 of 7: q given as 5 for 4 in the
+! first run.  OBSERVED 2 fail: A34_in_R_kept, which becomes ...0305,
+! and X3_for_A34, one word higher (012F80).  The second run and the PC
+! pass.
+
+        SLC, 1000.0
+! --- the deck's: p = 3, q = 4 ---------------------------------------
+START   LX, $1, XP1
+        LX, $2, XQ1
+! --- AS PRINTED ------------------------------------------------------
+LOCATE  V-I, $1, 1.0                    !'p-1 generated
+        L(BU, 18), 17.0                 !'$1
+        *(BU, 18), ENN                  !'result has 20 offset
+        ST(BU, 25), $3, 20-7            !'(p-1)*N
+        V+, $3, 18.0                    !'(p-1)*N+q
+        V+, $3, VF
+        L(BU, 64), 0($3)
+! --- the deck's: keep $R and $3, then p = 1, q = 1 ------------------
+        ST(BU, 64), RES1
+        SX, $3, X3A
+        LX, $1, XP2
+        LX, $2, XQ2
+! --- AS PRINTED, again -----------------------------------------------
+LOCAT2  V-I, $1, 1.0
+        L(BU, 18), 17.0
+        *(BU, 18), ENN
+        ST(BU, 25), $3, 20-7
+        V+, $3, 18.0
+        V+, $3, VF
+        L(BU, 64), 0($3)
+HALT    BEW, $
+ENN     DD(BU, 18), 5                   !'N is assumed defined elsewhere
+VF      VF, MTRIX-1.0
+XP1     XW, 3.0, 0, 0
+XQ1     XW, 4.0, 0, 0
+XP2     XW, 1.0, 0, 0
+XQ2     XW, 1.0, 0, 0
+
+        SLC, 1100.0
+RES1    DD(BU,64,8), 0
+X3A     DD(BU,64,8), 0
+        SLC, 1200.0
+MTRIX   DD(BU,64,8), (16)A000000000000101
+        DD(BU,64,8), (16)A000000000000102
+        DD(BU,64,8), (16)A000000000000103
+        DD(BU,64,8), (16)A000000000000104
+        DD(BU,64,8), (16)A000000000000105
+        DD(BU,64,8), (16)A000000000000201
+        DD(BU,64,8), (16)A000000000000202
+        DD(BU,64,8), (16)A000000000000203
+        DD(BU,64,8), (16)A000000000000204
+        DD(BU,64,8), (16)A000000000000205
+        DD(BU,64,8), (16)A000000000000301
+        DD(BU,64,8), (16)A000000000000302
+        DD(BU,64,8), (16)A000000000000303
+        DD(BU,64,8), (16)A000000000000304
+        DD(BU,64,8), (16)A000000000000305
+        DD(BU,64,8), (16)A000000000000401
+        DD(BU,64,8), (16)A000000000000402
+        DD(BU,64,8), (16)A000000000000403
+        DD(BU,64,8), (16)A000000000000404
+        DD(BU,64,8), (16)A000000000000405
+        END, START

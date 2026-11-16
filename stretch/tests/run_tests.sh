@@ -13594,6 +13594,12 @@ run "C22-6578 Problem 2.9 -- effective address from the bits; hand traces" ./run
 # 2.9's statement TEST is printed "(2) 10,4", with a blank strap_asm refuses
 # and the host STRAP II ignores.  One of the three checks PINS the refusal.
 run "strap_asm refuses the blank in (2) 10, STRAP II ignores it (C22-6578 printed p.21)" python3 check_radix_blank.py
+# 2.10: element (p,q) of a 4 x 5 matrix, twice (3,4 and 1,1).  VFL multiply,
+# the product stored into an index register's value field, two V+.
+run "C22-6578 Problem 2.10 -- fetch the (p,q)th element" ./run_program.sh ../decks/problem_2_10.strap StretchP210Tb "PC=2029" \
+    "A34_in_R_kept:1100=0xA000000000000304" "X3_for_A34:1101=0x012F400000000000" \
+    "A11_in_R:9=0xA000000000000101" "L_cleared:8=0" "X3_for_A11:19=0x012C000000000000" \
+    "X1_p_minus_1:17=0"
 # -- end of 3d --
 
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
