@@ -2505,3 +2505,123 @@ in isolation. A 4× gap is not closed by guesswork.
   and no measurement here substitutes for that.
 
 ---
+
+## 10. Where the logic actually is, and the box plan that removes it (2026-11-15)
+
+§9 ended at "the design is 4.3x too big and it is combinational logic".
+This section says WHICH logic, measured per function, and what Flute does
+in the same place. Flute was read from the local ULX3S port
+(`~/src/ulx3s-experiments/flute-ulx3s/Flute/src_Core/CPU/`), which runs
+on an 85F at 32 MHz.
+
+### 10.1 Operator census of the generated Verilog
+
+`bsc -verilog -g mkStretchCore` at commit ca0b746: 190,968 lines, 3 min
+to generate. Counted by a script over the `assign` statements (operator
+sites, by the width of the result):
+
+| operator | sites | largest groups |
+|---|---|---|
+| add / subtract | 2,020 | 349 at 128 bits, 572 at 49, 151 at 96 |
+| multiply | 343 (335 by a constant) | 132 at 256 bits, 104 at 192 |
+| divide / modulo | 107 (96 by the constant ten, 9 + 2 variable) | 101 at 96 bits |
+| variable shift | 513 | 264 at 64 bits, 86 at 96, 51 at 128 |
+| compare | 1,610 | 282 at 49 bits |
+
+Flute has ONE adder in its ALU, one shifter box, one multiplier and one
+iterative divider. The 335 constant multiplies and 96 constant divides
+are `bcdToBinary` and `binaryToBcd` (`StretchALU.bsv`), unrolled, at
+three call sites each; 619 of the adders are the divide-by-ten
+remainder chains.
+
+### 10.2 One instance of each, synthesised alone
+
+Each function wrapped between input and output registers, `yosys
+synth_ecp5 -noabc9` (the wrappers are scratch, not in the repo; the
+recipe is one `mkW(f)` module per function):
+
+| function, one instance | LUT4 | CCU2C | MULT18X18D | call sites in `execute()` |
+|---|---|---|---|---|
+| `smAdd`, 128-bit sign-magnitude add | 513 | 192 | 0 | 10 |
+| 128-bit variable left shift | 1,381 | 0 | 0 | (513 shift sites in all) |
+| `extractFieldBits` | 1,609 | 36 | 0 | 21 |
+| 96 x 96 multiply | 1,049 | 156 | 21 | 2 |
+| `bcdToBinary` | 2,570 | 336 | 33 | 3 |
+| **96-bit variable divide and remainder** | **118,755** | **22,896** | 0 | 1 (`StretchExecute.bsv` VFL divide: `dvd / dsrSafe`, `dvd % dsrSafe`) |
+| `binaryToBcd` (24 divides by ten) | did not finish synthesis in 25 minutes | | | 3 |
+
+**One combinational 96-bit divider is about 165,000 TRELLIS_COMB
+(118,755 + 2 x 22,896), twice an 85F by itself.** That is most of §9's
+overrun in one statement pair. The FP divide box that would replace its
+floating sibling, `mkFpDivBox` (`StretchDivBox.bsv`), exists and is
+tested standalone, but nothing in `StretchExecute.bsv` or
+`StretchCore.bsv` instantiates it.
+
+Not measured: the whole core after any of the changes below. These are
+per-instance numbers; yosys merges some duplicates and not others, so
+the per-site products are an estimate, not a result.
+
+### 10.3 What Flute does in the same places
+
+| Flute | interface | how it is small |
+|---|---|---|
+| `Shifter_Box.bsv`, 113 lines | `req(right, v1, v2)`, `valid`, `word` | shifts one step a clock in a register |
+| `RISCV_MBox.bsv` + `IntMulDiv.bsv` | `req(f3, v1, v2)`, `valid`, `word` | multiply in DSP blocks over 2-3 clocks; divide iteratively |
+| `FBox_Top.bsv` / `FBox_Core.bsv` | `req`, `valid`, `word` | a multi-cycle state machine |
+| `CPU_Stage2.bsv` | | issues `req` once, reports BUSY while `!valid`, then takes `word` |
+
+The 7030's own arithmetic units were multi-cycle (the serial SAU by
+byte, the parallel PAU by reduction cycle), so each box below is also a
+cycle-accuracy step (G1/M1), and its cycle count has a source: the
+7101 manual's PAU/SAU charts and Perf. Char.'s tables.
+
+### 10.4 How a box plugs into the E-box that exists
+
+`execute()` already has the shape Flute's stage has, for storage reads:
+it returns `NeedOperand a`, `mkEBox.start` issues the read and HOLDS the
+instruction, and `resume` re-runs `execute()` with the word in
+`prefetch`. A box is the same bail with a different resource:
+
+1. `execute()` gains a result `NeedBox req` and an argument
+   `Maybe#(BoxRsp) boxResult`. An arm that needs a divide returns
+   `NeedBox(Divide{dvd, dsr})` when `boxResult` is Invalid, and uses the
+   quotient when it is Valid. No arithmetic operator for it remains in
+   `execute()`.
+2. `mkEBox` instantiates each box ONCE, issues `box.req` on `NeedBox`,
+   holds the instruction exactly as it does for a read, and
+   `canResume()` becomes "the read answered or the box is valid".
+3. The core is unchanged: it already waits on `canResume()`.
+4. Timing: today `eboxClocks` charges a budget after a one-clock
+   execution. While a box takes real clocks the budget for that
+   instruction is reduced by the clocks the box took (so the suite's
+   CYCLES bounds do not move), until the box's own count is sourced and
+   replaces the budget.
+
+Behaviour is unchanged at each step, so the regression suite is the
+oracle, one box per commit.
+
+### 10.5 The order, by measured size
+
+1. **VFL divide** -> an iterative divider box (restoring, a few quotient
+   bits a clock). Removes ~165k COMB. Reuse `mkFpDivBox`'s datapath for
+   the 96-bit case, and wire the FP divide to the box in the same step.
+2. **`binaryToBcd` / `bcdToBinary`** -> one decimal box, a digit a clock
+   (double-dabble one way, multiply-by-ten-and-add the other). Removes
+   the 335 constant multiplies, 96 constant divides and the 33 + 33
+   multiplier blocks at three sites each. The real SAU was serial by
+   byte, so this is also the faithful shape.
+3. **Multiply** (VFL 96 x 96 and FP) -> one multiplier box on the DSP
+   blocks, 2-3 clocks, as `RISCV_MBox` does.
+4. **Field extract / insert and the shifts** -> one shifter box (21 + 6
+   field sites and the accumulator shifts share it). At ~1,500 LUT4 a
+   site this is the largest remaining term after 1-3.
+5. **Sign-magnitude add / compare** -> one 128-bit adder shared through
+   the same request path (10 + 5 sites).
+6. Then re-measure the whole core. Only then decide about the register
+   files (§9.9) and the index adders (572 at 49 bits: the effective-
+   address additions repeated per arm; `prepareExec` could hand the
+   address in once).
+
+After step 1 alone the whole-core synthesis should terminate in
+reasonable time, which makes every later step measurable; that is the
+first acceptance test.
