@@ -49,7 +49,8 @@ class Pass1:
         self.val = Value(self.st, self.msg)
         self.tails = {}         # TAILOR: text -> number, p.125
         self.levels = [0] * 11  # 1..10
-        self.getfld = Getfld(self.g, self._sysym, self._tail_on, self._sysym_changed)
+        self.getfld = Getfld(self.g, self._sysym, self._tail_on, self._sysym_changed,
+                             note=self._getfld_note)
         self.block_named = False
         self.first_of_block = True
         self.block_symbol_done = False
@@ -64,6 +65,11 @@ class Pass1:
     def _sysym_changed(self, written, used):
         """C22-6729 p.75 box 41: MBSPEC altered a system symbol, error 129."""
         self.msg.add(129, f"SS ${written} CHANGED INTO ${used}", self.unit, fatal=False)
+
+    def _getfld_note(self, number, text):
+        """A message GETFLD's routines give and go on from: CPLTNM's 63, p.71
+        ("an error message is executed, but the digit is still used")."""
+        self.msg.add(number, text, self.unit, fatal=False)
 
     # -- TAILOR, pp.74-75, 123-125 ------------------------------------------------
     def _tail_number(self, text):

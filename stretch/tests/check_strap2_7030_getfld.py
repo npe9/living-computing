@@ -124,6 +124,18 @@ Bcfxtx (Box 55 GFLONG), MEASURED 2026-11-13; the driver gives each field
                                         driver's OUTF, so a scratch address
                                         never compares high; kept, since
                                         MAIN's buffer may lie below GFSCR
+
+>>> A KNOWN DIVERGENCE, 2026-11-15: MESSAGE 63.  C22-6729 p.71, CPLTNM Boxes
+>>> 3-8: "If the digit equals or exceeds the radix, an error message is
+>>> executed, but the digit is still used in the computation of the numeric
+>>> datum."  The host does that since 2026-11-15 (63 as a note, the field
+>>> coded: check_strap2_coded.py).  The 7030 deck's CPLTNM still HALTS, ERRC
+>>> 163 (its own comment: "p.71: still used; here a halt").  So the three
+>>> rows 19A, A(.3,8)9 and (8)19 no longer compare the two: each checks the
+>>> deck's halt as measured, and that the host gives 63 and does not refuse.
+>>> They become ordinary field comparisons when the deck's CPLTNM gives 63
+>>> as a note (as GFMB3 gives 129: M+1 NOTEC, the number to NOTEL), reloads
+>>> the digit and falls into CPN6. <<<
 """
 import os
 import re
@@ -148,6 +160,7 @@ MODULE = "StretchStrap2x7030GfTb"
 STEPS = 60000000
 fails = 0
 CHANGED = []    # the host's MBSPEC alterations, message 129 (p.178)
+NOTES = []      # the host's GETFLD notes: CPLTNM's 63 (p.71)
 
 
 def check(label, got, want):
@@ -245,7 +258,8 @@ def deck_text(cards):
 def host(cards):
     """Each field's coded expression, as strap2 makes it, or 'refused n'."""
     g = Getcha(cards)
-    f = Getfld(g, system_symbol, changed=lambda written, used: CHANGED.append((written, used)))
+    f = Getfld(g, system_symbol, changed=lambda written, used: CHANGED.append((written, used)),
+               note=lambda number, text: NOTES.append(number))
     out = []
     g.next()
     have = True
@@ -329,7 +343,10 @@ def main():
     check("control: the host's MBSPEC changes $XO, $1ND, $51T (129)", CHANGED,
           [("XO", "X0"), ("1ND", "IND"), ("51T", "SIT")])
     check("control: the host's Fig. 28 is the printed one", want[36], fig28_printed())
-    halts = [("163, a digit too large for the radix (the host's 63)", "19A", 163, 63),
+    check("control: the host gives no 63 on the 94 fields", NOTES, [])
+    # "note 63": the deck halts 163 where the host, as p.71 says, gives 63
+    # and uses the digit -- the known divergence in the header.
+    halts = [("163, a digit too large for the radix (the host: a note)", "19A", 163, "note 63"),
              ("166, a plus after an operator (the host's 66)", "A++B", 166, 66),
              ("167, a character that ends no field (the host's 67)", "7$", 167, 67),
              ("168, a number over 24 bits (the host's 68)", "16777216", 168, 68),
@@ -343,8 +360,8 @@ def main():
              ("167, a parenthesis not closed (the host's 67)", "(A", 167, 67),
              ("166, a g.p. with no value (the host's 66)", "A(.3)", 166, 66),
              ("166, a g.p. inside parentheses (the host's 66)", "(A(.3)5)", 166, 66),
-             ("163, a g.p.'s value in its radix r (the host's 63)", "A(.3,8)9", 163, 63),
-             ("163, a digit too large for a radix prefix (the host's 63)", "(8)19", 163, 63),
+             ("163, a g.p.'s value in its radix r (the host: a note)", "A(.3,8)9", 163, "note 63"),
+             ("163, a digit too large for a radix prefix (the host: a note)", "(8)19", 163, "note 63"),
              ("10, parentheses deeper than 7", "((((((((A))))))))", 10, None),
              ("156, a system symbol not found (the host's 56)", "$QQQ", 156, 56),
              ("156, a system symbol of 9 characters (the host's 56)", "$ABCDEFGHI", 156, 56),
@@ -362,7 +379,13 @@ def main():
                 cs = [card(" ", "", stmt)]
             h, _ = run(cs, tmp)
             check(f"ERRC {label}", h and h["errc"], errc)
-            if msg is not None:
+            if msg == "note 63":
+                del NOTES[:]
+                w = host(cs)
+                check("  and the host gives 63 and codes the field (p.71; THE DECK "
+                      "DOES NOT YET)", (list(NOTES), len(w), w[-1][:7] == "refused"),
+                      ([63], 1, False))
+            elif msg is not None:
                 check(f"  and the host refuses it, {msg}", host(cs)[-1], f"refused {msg}")
     if got is None:
         print("FAIL the 7030 GETFLD did not run to its halt:\n" + out)

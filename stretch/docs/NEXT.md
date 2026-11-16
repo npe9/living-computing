@@ -55,15 +55,50 @@ Open alongside: the LIM card under PUNREL is punched as computed and means
 nothing to a relocated load -- the guide does not say whether PUNREL
 punches one; and PUNREL after absolute output, refused.
 
-## A DIGIT TOO LARGE FOR ITS RADIX -- open, 2026-11-13
+## A DIGIT TOO LARGE FOR ITS RADIX -- host closed 2026-11-15; the 7030 deck still halts
 
 C22-6729 p.71, CPLTNM Boxes 3-8, read in the ink: "If the digit equals or
 exceeds the radix, an error message is executed, but the digit is still used
-in the computation of the numeric datum."  strap2 (`getfld.py` `_cpltnm`)
-raises FieldError 63 instead, refusing the field.  The fix is to give 63 as a
-note (as 75-77 are, `Value.notes`) and go on with the digit.  Before changing
-it: read whether p.176-177 class 63 as serious (the listing flag), and test
-`(8)19` both ways.  The 7030 CPLTNM (step 2) will do what p.71 says.
+in the computation of the numeric datum."  The message is p.177's "63 CPLTNM
+DIGIT INCORRECT FOR RADIX 63".
+
+**The host does it now.**  strap2 (`getfld.py` `_cpltnm`) gave FieldError 63
+and refused the field; it now gives 63 as a note and goes on with the digit:
+`L,(8)19` assembles address 21 octal (1 x 8 + 9 = 17) and the listing prints
+"DIGIT INCORRECT FOR RADIX  63" against its line.  GETFLD has no VALUE, so
+the note does not go through `Value.notes` as 75-77 do: `Getfld` takes a
+`note` hook (as `changed` carries MBSPEC's 129) and Pass 1 adds the message,
+not fatal.
+
+**Is 63 serious?  No page says so.**  pp.176-177 class nothing by a word:
+the only mark is p.176's footnote, "Error Messages numbered 1-28 can be made
+to appear on the console typewriter by the use of a Correction card."
+N28-1081 page 13 (C28-6129 PDF 71): "Messages 1-18 are considered as serious
+error messages by STRAP".  63 is in neither set.
+
+CHOSEN, the pages are silent: 63 once for each such digit, as the loop is
+drawn; a letter past F ("a radix as high as 16 where the letters A-F
+represent the values 10-15", p.71) is used as G = 16 up; and a radix or a
+g.p.'s n written with a letter is read in decimal with the letter's value
+(`(1A)` is radix 20, as the deck's CPDEC makes it) -- `int()` raised a bare
+ValueError there once the digit was no longer refused.  Not touched: a
+numeric DD's own number is DNUM's (p.71: "GETFLD does not collect the numeric
+characters in the statement field of a numeric DD") and still refuses, 47.
+
+Checks: `tests/check_strap2_coded.py`, 20 new, 38 in all; nine measured
+injections in its header (the old refusal fails 12).
+
+**OPEN: the 7030 deck (`decks/strap2_7030.strap`, CPLTNM) still halts, ERRC
+163** -- its own comment says "p.71: still used; here a halt".  Measured
+2026-11-15 on the model: `check_strap2_7030_getfld.py` as it stood, against
+the changed host, fails exactly its three "and the host refuses it, 63" rows
+(19A, A(.3,8)9, (8)19; 46 pass); those rows now check the deck's halt and
+the host's note separately (50 pass), with the divergence in the test's
+header.  `check_strap2_7030.py` is unaffected (9 pass).  What the deck needs
+is written out in `docs/strap2_7030.md` (step 2, sub-slice d): in place of
+`LI(BU,24), 163 / B, ERROR`, count the note as GFMB3 does for 129, reload
+the digit from CHVAL($9), fall into CPN6; then move the three rows into
+CARDS and raise the NOTEC count.
 
 ## AN INTEGER IN PARENTHESES ON A PLAIN SYMBOL -- open, 2026-11-12
 
