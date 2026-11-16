@@ -1,0 +1,84 @@
+! C22-6578 PROBLEM 3.6, "SCALAR PRODUCT OF VECTORS", printed p.30 (PDF
+! 31), read in the ink.
+!
+!   "Find the following vector scalar product (a,b) = SUM(k = 0..16)
+!   a(k) b(k) where a(k) is in A+K, b(k) in B+K, K = 0.0(1.0)16.0.  Put
+!   the result in C."
+!
+!   Method 1.  Use LFT, *+.
+!               LX, $3, SXTEEN
+!               L(U), A
+!               D*(N), B
+!       LOFT    LFT(N), A($3)
+!               *+(N), B($3)
+!               CB+, $3, LOFT
+!               SRD(N), C
+!               BEW, $
+!       SXTEEN  XW, 1.0, 16, $
+!
+! The nine printed statements are the deck's first nine, as printed.
+! (The page leaves the first unnamed; the deck names it START so that
+! END has somewhere to point.)  A, B and C are the deck's.
+!
+! ASSEMBLED WITH ASM=strap2, as the rest of Chapter 3 is.
+!
+! WHAT THE PAGE CLAIMS, comment (a): "The *+ operation yields a
+! double-precision result."  The data is chosen so that a
+! single-precision sum, a truncating store, and a rounding store give
+! three different words.
+!
+! DATA.  a(0) = b(0) = 2**40 + 1;  a(1) = b(1) = 2**16;
+!        a(k) = k, b(k) = (-1)**k k for k = 2..16.
+!
+! THE EXPECTED VALUES ARE HAND-DERIVED:
+!   a(0) b(0) = 2**80 + 2**41 + 1         (D*, 96 bits: Ref. Man. p.97)
+!   a(1) b(1) = 2**32
+!   k = 2..16:  4 - 9 + 16 - 25 + ... + 256
+!             = (4 + 16 + ... + 256) - (9 + 25 + ... + 225)
+!             = 816 - 679 = 137
+!   (a,b) = 2**80 + 2**41 + 2**32 + 138, an 81-bit integer.  Every
+!   partial sum is an integer of at most 81 bits, the 96-bit fraction
+!   holds it whole (MULTIPLY AND ADD, printed p.98: the 96-bit product
+!   "remains unnormalized throughout the addition", then "an addition is
+!   performed similar to that described in ADD DOUBLE"), so nothing is
+!   lost before the store.
+!   SRD(N), C (printed p.96): exponent 81; the 48 fraction bits are the
+!   integer's bits 80-33, 800000000100 (2**80 and 2**41); the 49th bit
+!   is the integer's bit 32, a one; "adding one to the fraction in the
+!   accumulator in bit position 60" carries into the 48th:
+!   800000000101.
+!       C = exponent 81 (0A2), fraction 800000000101:  0A28000000001010
+!   A truncating store would leave ...1000; a single-precision sum
+!   would have lost the 2**32 and everything under it on the way.
+!
+!   acc_left: word 8 is accumulator bits 0-63 -- the exponent, the 48
+!   unrounded bits and the first four of the low half, whose leading bit
+!   is that same bit 32:                               0A28000000001008
+!   FT: the factor register, word 14, holds the last LFT(N) operand,
+!   a(16) = 16 = .1 x 2**5 (comment (b): "$FT is a bona fide memory
+!   location"):                                        00A8000000000000
+!
+! tests/problem_3_expected.py (p36) gives the same three words.
+!
+! INJECTION, OBSERVED 2026-11-15 (data side, on a copy of the deck, the
+! deck itself untouched): b(1) changed from 65536 to 65535, so the
+! second product is 2**32 - 2**16, bit 32 of the sum is a zero and the
+! store rounds down.  FAIL C (got 0a28000000001000) and acc_left (got
+! 0a28000000001007); FT and the PC passed.
+
+START   LX, $3, SXTEEN
+        L(U), A
+        D*(N), B
+LOFT    LFT(N), A($3)
+        *+(N), B($3)
+        CB+, $3, LOFT
+        SRD(N), C
+        BEW, $
+SXTEEN  XW, 1.0, 16, $
+! --- the deck's data ------------------------------------------------
+A       DD(N), 1099511627777, 65536, 2, 3, 4, 5, 6, 7, 8, 9
+        DD(N), 10, 11, 12, 13, 14, 15, 16
+B       DD(N), 1099511627777, 65536, 2, -3, 4, -5, 6, -7, 8, -9
+        DD(N), 10, -11, 12, -13, 14, -15, 16
+C       DR(N), (1)
+        END, START

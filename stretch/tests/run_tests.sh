@@ -13507,6 +13507,14 @@ run "C22-6578 Problem 3.5 -- continued fraction, R/N and bare operations" ./run_
     "TEMP_x_squared:51=0x0009DE9E64DF22D0" "TEMP1:52=0x005DBC095777A6E8" \
     "X_as_assembled:47=0x000C90FDAA221680" "TWO_as_assembled:49=0x002FFFFFFFFFFFF0"
 
+# 3.6, seventeen products summed in the 96-bit accumulator by LFT and *+
+# and stored once with SRD.  The sum is 2**80 + 2**41 + 2**32 + 138:
+# single precision, a truncating store and a rounding store give three
+# different words, and C is the rounded one.
+run "C22-6578 Problem 3.6 -- scalar product, LFT / *+ / SRD" ./run_program.sh ../decks/problem_3_6.strap StretchP36Tb ASM=strap2 "PC=71" \
+    "C_rounded:71=0x0A28000000001010" "acc_left_unrounded:8=0x0A28000000001008" \
+    "FT_last_factor:14=0x00A8000000000000"
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

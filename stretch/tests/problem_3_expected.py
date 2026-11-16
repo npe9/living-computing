@@ -602,6 +602,16 @@ def decks(which):
             print(f"  {name}:")
             print(f"    ANS {h(ans)} = {float(value(ans)):.16f}   TEMP {h(temp)} = {float(value(temp)):.16f}")
             print(f"    XK {h(xk)} = {float(value(xk)):.16f}   word 8 {h(a.word8())}")
+    if which in ('36', 'all'):
+        av = [2 ** 40 + 1, 2 ** 16] + list(range(2, 17))
+        bv = [2 ** 40 + 1, 2 ** 16] + [(-1) ** k * k for k in range(2, 17)]
+        total = sum(x * y for x, y in zip(av, bv))
+        c, a = p36([fl(x) for x in av], [fl(x) for x in bv])
+        print(f"problem_3_6  (a, b) = {total} = 2**80 + 2**41 + 2**32 + {total - 2**80 - 2**41 - 2**32}")
+        print(f"  C {h(c)}   word 8 {h(a.word8())}   $FT {h(a.ft)}   low half {a.lo:012X}")
+        bv[1] -= 1
+        c, a = p36([fl(x) for x in av], [fl(x) for x in bv])
+        print(f"  with b(1) = 65535: C {h(c)}")
 
 
 if __name__ == '__main__':
