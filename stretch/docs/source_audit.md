@@ -2167,7 +2167,8 @@ it, read e**-x from the program and from 4.13).
 program: MAIN, the 8-point Legendre-Gauss subroutine LEGQ8, the
 integrand SUBR and EXP, about a hundred printed statements, assembled
 together.  ANS = 2.72454650263143, 2.11 units from the rule worked from
-the page.  Adds: **a `SIC, SUBR; NOP` word used as data, read by `LVE`
+the page (2.72454650263141, 3.11 units, since 2026-11-16, when the printed
+`DD(N), 1.0` is assembled as STRAP II makes it, one unit below 1).  Adds: **a `SIC, SUBR; NOP` word used as data, read by `LVE`
 and stored by `SVA` into two branches (self-modification, both words
 read back)**, `LFT` with `*N+` and `*+`, `SRD`, `SLO` with a sum kept in
 two words, `D-`, `E-I(U)`, `*N`, and three levels of `$15` linkage.
@@ -2206,11 +2207,13 @@ and back -- all right.  A fourth printed erratum: sqrt2 printed
 ### 4.9 cosine, Method 1, printed pp.42-43 -- `decks/problem_4_9_method1.strap` -- BOTH LOCATION-8 BUGS
 
 `tests/verify_problem_4_fp.py 4.9m1:<x>`, six arguments run, four
-registered.  `D*(N), $L` squares a negative A to -A**2 (the operand bug of
+registered (five since 2026-11-16: `1X-2` and `.125`).  `D*(N), $L` squares a negative A to -A**2 (the operand bug of
 4.10), and `SRDN,$L` -- a STORE into location 8 -- is lost, leaving the
 accumulator's own bits 60-63 where p.96 stores the sign and flags (second
 reproducer `decks/repro_fp_store_location8.strap`).  Only x = .125
-passes, and by luck.  Erratum: the statement says "Create 2 pi x" for
+passes, and by luck -- and since 2026-11-16 only when written `1X-2`,
+exactly 1/8: `.125` as STRAP II assembles it is one unit low and fails
+like .1 (registered --known-wrong; NEXT.md "DD(N) 1.0 IS 1 - 2^-48").  Erratum: the statement says "Create 2 pi x" for
 "cos 2 pi x".  Method 2 (printed p.43) is NOT run: it has the same
 `D*(N), $L` and `SRDN, $L`, so it adds no independent evidence until
 those are fixed, and its `E+I, (U), 1` is refused by strap_asm as printed

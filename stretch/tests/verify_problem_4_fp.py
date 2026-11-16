@@ -168,7 +168,11 @@ def p4_13(sym, src=None):
     def rule(e):
         # s * sum of w (f(t + s z) + f(t - s z)), a = 0 and b = 1 so s = t
         # = 1/2 exactly; the nodes and weights are the words AS ASSEMBLED
-        # from the page's fifteen-digit decimals, erratum and all.
+        # from the page's fifteen-digit decimals, erratum and all.  NOT as
+        # assembled: b.  The printed "DD(N), 1.0" is one unit below 1 under
+        # STRAP II (P and Q above), so s = t = 1/2 - 2**-49 in the program;
+        # the rule keeps the problem's interval [0, 1], and that unit is
+        # inside the bound (3.11 units measured 2026-11-16, 2.11 on b = 1).
         def g(img):
             h = D('0.5')
             tot = D(0)

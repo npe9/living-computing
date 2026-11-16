@@ -37,7 +37,7 @@ leaf facts. Measured 2026-11-09:
 | `tests/check_strap2_coded.py` | Figs. 28 and 29 pp.200-201, bit for bit (208, 447 and 196 bits) |
 | `tests/check_strap2.py` | what the guide says and `strap_asm` does not do, by hand |
 | listing oracles run on strap2 (`check_strap2_oracles.py`) | 273 of 273 `verify_*.py`; 351 of 351 MCP pages |
-| image of every deck against `strap_asm`'s | 757 the same; 10 with the known difference below (7 MCP pages, 3 C22-6578 decks); 2 `strap_asm`'s decimal-mode DD; 22 `strap_asm` refuses; 1 both refuse (2026-11-16) |
+| image of every deck against `strap_asm`'s | 758 the same; 10 with the known difference below (7 MCP pages, 3 C22-6578 decks); 2 `strap_asm`'s decimal-mode DD; 22 `strap_asm` refuses; 1 both refuse (2026-11-16) |
 
 The known difference: `strap_asm` puts a NOP in a half word rounded over before
 a DR(N) or DRZ(N), and p.33 makes only a CNOP a NOP. strap2 follows the guide. No

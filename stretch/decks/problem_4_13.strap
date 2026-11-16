@@ -77,7 +77,8 @@
 !             fraction of G with EXP taken as 2**(x * RLN2), and within
 !             16 of G with a true e**x.  Every argument is between 0 and
 !             1, so EXP's 1.39 |x| is under a unit and a half per call,
-!             and 4.12 measured one f at 2.3 units; eight of them, each
+!             and 4.12 measured one f at 2.3 units (1.3 since
+!             2026-11-16); eight of them, each
 !             weighted by under .19, into a double-length sum.
 !             THE LOW BITS ARE NOT PINNED.
 !   exact, by hand
@@ -106,6 +107,10 @@
 ! 2 within-bound checks pass, ANS = 004A E5EF 84B4 EEC0 =
 ! 2.72454650263143, off 2.11 units from the program's number and 2.04
 ! from the rule's.
+! RE-MEASURED 2026-11-16, with the deck's decimal constants now assembled through STRAP II's DNUM chain (docs/NEXT.md "DD(N) 1.0 IS 1 - 2^-48 UNDER STRAP II"):
+!   ANS = 004A E5EF 84B4 EEB0 = 2.72454650263141, off 3.11 and 3.04 units;
+!   P, Q as above.  The injections below were not re-run (their P/Q words
+!   are the exact-1.0 ones).
 !
 !   the upper limit 1.0 -> 2.0
 !       FAILED: P and Q (0028..08 and 0028..00, -1 and 1) and both ANS

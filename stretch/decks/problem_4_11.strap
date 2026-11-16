@@ -144,6 +144,9 @@
 ! were off .41, .29, 1.64, .62, .53 and 1.75 units, the loose six 1.29,
 ! 1.85, 4.61, .62, 613 and 847 (x = -709.5 and 709: the 1.39 |x| above,
 ! measured).
+! RE-MEASURED 2026-11-16, with the deck's decimal constants now assembled through STRAP II's DNUM chain (docs/NEXT.md "DD(N) 1.0 IS 1 - 2^-48 UNDER STRAP II"):
+!   all checks pass; tight six .73, .09, 1.64, .62, .19, 1.75, loose six
+!   1.61, 2.23, 4.61, .62, 614, 847.  The injections below were not re-run.
 !
 !   E11 exponent 10 for 11, "(8)00054..." -> "(8)00050..."
 !       FAILED: all ten within checks on R1 R2 R3 R5 R8 (R1 = 2e, twice

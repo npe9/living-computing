@@ -71,8 +71,11 @@ charts them.  Any MQ3 whose quotient is below 1/10 gives the same word;
 only an MQ3 that rounded up would make `1.0` exact.  **What would
 overturn it:** a printed STRAP II word for any entry with a net negative
 decimal scale (`1.0`, `.5`, `2.5`, `3E-5`), or an `(Fn)` B/BU DD with a
-decimal fraction.  Searched 2026-11-16: the MCP listing (only p.359 has
-a DD(N); every row is a positive power), C28-6129, C22-6531, C22-6578,
+decimal fraction.  Searched 2026-11-16: the MCP listing, by the printed
+floating form rather than the statement (a sign-byte token `+000`/`+TUV`
+or an exponent token `nnnn+` in docs/vision/all/*.vis.tsv, all 451
+pages): p.359 is the only page that prints a floating DD (the other hits
+are SYN rows), and all its rows are positive powers; C28-6129, C22-6531, C22-6578,
 Performance Characteristics Vol. 2, R23-9695, C22-6751; and a tesseract
 pass over the ja_/jb_/ka_ diagnostic listings (STRAP-1 output, which
 would be a weaker witness): 1,459 pages, no DD(N) with a decimal
@@ -80,7 +83,7 @@ fraction found.  That OCR is poor (`DD(` seldom survives), so it is a
 finding aid that came up empty, not a proof of absence.
 
 Effect: `problem_4_10..13` and `repro_fp_operand_location8` now
-assemble the same under both (strap2_compare: 757 the same).
+assemble the same under both (strap2_compare: 757 the same; 758 with repro_cm_indicator_bit).
 `verify_problem_4_fp.py` assembles with strap_asm, so the chapter 4
 decks ran on the exact words until now (the old note here said
 otherwise); all thirteen run lines were re-run under the chain.  Eleven
@@ -106,7 +109,11 @@ Accumulator Low", Special Storage Assignment "11,c Indicators" with "c
 (and Fig. 6, p.18): address bits 0-23 = 764 = 11.60; 24-27 1000; I 0;
 P 000; length (35-40) 3; BS (41-43) 000 = 8; offset 0; bit 51 = 1
 (unsigned), 52 = 0, 53 = 0 (binary); op (54-59) 001101, "ST Store
-abc001101" on the pocket card; I 0.  An IBM listing witnesses the
+abc001101" on the pocket card (INTEGER ARITHMETIC panel, pcard-2; "a =
+1, data unsigned", "c = 0, binary operation"); I 0.  BS 000 for 8: the
+same listing's p.356 line 33 `CM1111(BU,1)`, byte size left to the
+default 8 (C28-6129 printed p.29), prints second half `001000.36`, BS
+field 000.  An IBM listing witnesses the
 operand form: MCP printed p.356 (MCP_Mar63_250-445.pdf PDF p.106), line
 33 `CM1111(BU,1),$IND.63` prints `000013.77 80 001000.36 F0` and line
 40 `CM1111(BU,1),$PGC` (=$PG0) prints `000013.51 80 001000.36 F0` --
@@ -123,8 +130,10 @@ The deck run under both assemblers gives R = 0 (2026-11-16, ASM=strap2
 and the default), as do the 3.9 equal/greater decks' held-back indicator
 words under strap_asm (AL/AE/AH bits absent, the same as under strap2),
 and
-MCP's own $DUMP relies on such stores (p.356 line 33 sets noisy mode
-with a connective into $IND.63).
+the drop covers p.356's own form: `decks/repro_cm_indicator_bit.strap`,
+`CM1111(BU,1),$IND.63` and `BEW, $`, ends with word 11 = 0000000000000120 (MOP and RGZ, no NM)
+on the model, 2026-11-16.  So MCP's $DUMP line 33 ("-SET NOISY MODE")
+would be lost on the model as it stands.
 
 ## `strap_asm` REFUSES A BLANK AFTER A RADIX SPECIFIER, `(2) 10` -- open, 2026-11-15
 
@@ -17440,7 +17449,8 @@ the instruction's single indicator write.
 compile `ST(BU, 3), $AL` as 0002FC80018010D0 (11.60), and the deck gives
 R = 0 under either; the one word they differ in is the NOP pad before
 `R DR(N)`.  MCP printed p.356 lines 33 and 40 write indicator bits with
-a VFL connective (`$IND.63`, `$PG0`), so MCP's $DUMP needs this too.
+a VFL connective (`$IND.63`, `$PG0`), and a probe of line 33 on the model
+loses it the same way (word 11 without NM; `decks/repro_cm_indicator_bit.strap`), so $DUMP needs the fix too.
 See "DD(N) 1.0 IS 1 - 2^-48 UNDER STRAP II, AND A VFL STORE TO $AL".
 
 ## G2.1 CHAPTER 4: WHAT THE ASSEMBLER REFUSES IN A DD(N) -- 2026-11-15
