@@ -2657,18 +2657,19 @@ run "DECIMAL ADD/LOAD/STORE: p.60's examples, LC, PF, zones, +MG, M+ family, sig
 # subtraction and testing the result").  C1-C4 are printed p.66's FIGURE 15,
 # both programs as printed; the rest hand-derived in the deck's header from
 # pp.65-67.  Every expectation was written before the first run, which
-# passed all 18.  MEASURED INJECTIONS (deck header): decimal compare given
-# the binary answer fails C2, C4, C9; KR's AH-off guard removed fails C15;
+# passed all 18 (C18, C19 added after, below).  MEASURED INJECTIONS (deck header): decimal compare given
+# the binary answer fails C2, C4, C9, C18, C19; KR's AH-off guard removed fails C15;
 # KE/KFE's AE-off guard removed fails C2, C12.
 run "DECIMAL COMPARE + KE/KFE/KR/KFR: Figure 15 as printed, signs, -0 = +0, offset, range (pp.65-67, G2.3)" ./run_program.sh ../decks/vfl_decimal_compare.strap StretchVflDecCmpTb \
-    "PC=2141" \
+    "PC=2161" \
     "C1_fig15_KE_AL:1700=0x28" "C2_fig15_KE_skipped:1701=0x22" \
     "C3_fig15_BZAE_AL:1702=0x28" "C4_fig15_BZAE_AH:1703=0x22" \
     "C5_K_offset:1704=0x4" "C6_K_unlike:1705=0x2" "C7_K_both_neg:1706=0x2" \
     "C8_K_neg_zero:1707=0x4" "C9_K_off9:1708=0x4" \
     "C10_KF_pos_assumed:1709=0x4" "C11_KFE_done:1710=0x8" "C12_KFE_skipped:1711=0x8" \
     "C13_KR_in_range:1712=0x4" "C14_KR_high:1713=0x2" "C15_KR_AH_off:1714=0x8" \
-    "C16_bin_KR:1715=0x4" "C17_bin_KE:1716=0x8"
+    "C16_bin_KR:1715=0x4" "C17_bin_KE:1716=0x8" \
+    "C18_KE_performed_zoned:1717=0x22" "C19_KR_performed_zoned:1718=0x2"
 # CYCLES was 142 while this deck stored ST(DU,32,8).  The signed store it now
 # stores charges two fewer: x is the field length less the byte size in a
 # signed operation (StretchTiming.bsv, Perf. Char. Vol. 1 printed p.3-10).

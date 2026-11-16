@@ -56,6 +56,14 @@
 !       indicators are not changed" -> AL.
 ! B1 BINARY KR, the same shape: acc 5, K 1 -> AH, KR 9 -> AE.
 ! B2 BINARY KE with AE on: acc 5, K 5 -> AE, KE 6 -> AL.
+! C18, C19 (added after review): a KE and a KR that ARE performed, in
+!    six-bit zoned bytes, where a binary compare of the zoned field would
+!    say "low" and the decimal one does not -- so a conditional compare
+!    that kept a binary answer, or read its condition from one, fails:
+!    C18 Figure 15's halves swapped: high parts equal (AE), then KE with
+!       accumulator 12399 against 12345 -> AH; with RGZ from the L, 0x22.
+!    C19 950 in six-bit bytes: K 100 -> AH; KR 900, 950 >= 900 -> AH left
+!       on: 0x2.
 !
 ! MEASURED INJECTIONS, 2026-11-16, each in a separate copy of bsv/ (diffed
 ! against the worktree first: StretchExecute.bsv alone differs), rebuilt:
@@ -63,7 +71,9 @@
 !      "if (False && ...)"): FAILS C2 and C4 (0x28: Figure 15's pair B
 !      comes out low, the zone bits deciding it) and C9 (0x8: offset 9
 !      used as 9, not 8).  The other decimal cases happen to order the
-!      same either way.
+!      same either way.  Re-run after C18 and C19 were added: FAILS C2,
+!      C4, C9, C18 (0x28) and C19 (0x8), 15 pass -- the two conditional
+!      compares that are performed now see the decimal answer too.
 !   2. KR's AH-off guard removed: FAILS C15 alone (0xC, AE turned on over
 !      AL).
 !   3. KE/KFE's AE-off guard removed (always performed): FAILED C2 alone
@@ -154,6 +164,18 @@ END2    TI, 1, $IND, C4
         K(BU,8,8), B5
         KE(BU,8,8), B6
         TI, 1, $IND, C17
+! --- conditional compares PERFORMED where binary and decimal disagree
+        Z, $IND
+        L(DU,60,6), MA, 0
+        K(DU,60,6), NN, 0
+        L(DU,30,6), NN+.60, 0
+        KE(DU,30,6), MA+.60, 0
+        TI, 1, $IND, C18
+        L(DU,18,6), Z950
+        Z, $IND
+        K(DU,18,6), Z100
+        KR(DU,18,6), Z900
+        TI, 1, $IND, C19
 HALT    BEW, $
 
         SLC, 1500.0
@@ -183,6 +205,9 @@ B1      DD(BU,64), (16)0100000000000000
 B5      DD(BU,64), (16)0500000000000000
 B6      DD(BU,64), (16)0600000000000000
 B9      DD(BU,64), (16)0900000000000000
+Z950    DD(BU,64), (16)E75C000000000000
+Z100    DD(BU,64), (16)C70C000000000000
+Z900    DD(BU,64), (16)E70C000000000000
 
         SLC, 1700.0
 C1      DD(BU,64), 0
@@ -202,4 +227,6 @@ C14     DD(BU,64), 0
 C15     DD(BU,64), 0
 C16     DD(BU,64), 0
 C17     DD(BU,64), 0
+C18     DD(BU,64), 0
+C19     DD(BU,64), 0
         END, START
