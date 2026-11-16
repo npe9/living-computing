@@ -2096,3 +2096,122 @@ Both sets are kept as comments in `tests/run_tests.sh` next to their
 decks.
 
 Chapter 4 ("Special Problems", printed p.35 on) has not been started.
+
+# >>>>>> G2.1, CHAPTER 4, 2026-11-15: THE LAST CHAPTER, FROM ITS LAST PROBLEM BACKWARDS <<<<<<
+
+`C22-6578`'s contents page (PDF 4) lists four chapters and eight
+appendices: 1 Instruction Arithmetic Unit Instructions (1.1-1.9),
+2 Variable Field Length Instructions (2.1-2.12), 3 Floating-Point
+Arithmetic (3.1-3.10), 4 Special Problems (4.1-4.13).  There is no
+Chapter 5, so this batch is Chapter 4 taken from 4.13 towards 4.1.
+The counts above are not edited; this section adds to them.
+
+**4.11 was built first because 4.12 and 4.13 both call it** ("Assume
+the existence of the previous exp (x) program", printed p.46).
+
+**How a floating result is checked here, and what that does not pin.**
+There is no independent bit-exact model of the 7030's double-length
+arithmetic in the project, so a result word is compared with the real
+number the page defines, within a bound derived from the printed
+program, not with a word (`tests/verify_problem_4_fp.py`).  The
+measured floor is in each deck: 4.11 catches a coefficient wrong by one
+part in 1E10 and passes one wrong by one part in 1E13.
+
+**Assembler refusals the chapter runs into**, each with a reproducer and
+held by `tests/check_problem_4_dd_refusals.py` (8 checks): arithmetic in
+a DD(N) entry, `$N`/`$PI`, a zero DD(N), and `*` in an address (the last
+is G3.1).  `docs/NEXT.md`, "G2.1 CHAPTER 4: WHAT THE ASSEMBLER REFUSES
+IN A DD(N)".  The decks run on marked substitutes.
+
+## The problems, in the order run
+
+### 4.11 EXP, printed pp.45-46 -- `decks/problem_4_11.strap` -- PASSES as the model stood
+
+11 exact checks and the PC, 12 within-bound checks
+(`tests/verify_problem_4_fp.py 4.11`).  Exercises `KMG`, `D*`, `D+`
+normalized and unnormalized, a signed VFL `ST` out of a floating
+accumulator, `SHFL`, `*`, `E+`, `LA(U)` on `$L`, and two connectives on
+the accumulator's exponent bits, in one printed subroutine.  **No wrong
+result.**  Three printed errata (a factorial with a zero too many, a
+missing comma, an offset one short of the bit its comment names) and one
+unstated loss of accuracy (1.39 |x| units, 847 measured at x = 709), all
+in the deck's header and in `NEXT.md`.
+
+### 4.12 transcendental function, printed pp.46-47 -- `decks/problem_4_12.strap` -- PASSES as the model stood
+
+2 exact checks and the PC, 6 within-bound checks
+(`tests/verify_problem_4_fp.py 4.12`).  f(pi) = 2x e**(e**-x) /
+sqrt(1 - e**-x) = 6.7071807483152..., read from `$L` and `$SB` where
+the printed `BEW` leaves it: 2.31 units from the program's own number,
+2.14 from the page's.  Adds to 4.11: `LN`, `E+I(U)`, `+`, **`SRT(N), $L`
+-- STORE ROOT whose storage operand is the accumulator's left half** --
+and `R/`.  **No wrong result.**  The page's comment (d), that it and EXP
+assemble together with "no multiply defined symbol", holds.  One
+uncertain reading, in the typeset formula only (an e with a bar over
+it, read e**-x from the program and from 4.13).
+
+### 4.13 numerical integration, printed pp.47-51 -- `decks/problem_4_13.strap` -- PASSES as the model stood
+
+9 exact checks and the PC, 2 within-bound checks
+(`tests/verify_problem_4_fp.py 4.13`).  The book's last and largest
+program: MAIN, the 8-point Legendre-Gauss subroutine LEGQ8, the
+integrand SUBR and EXP, about a hundred printed statements, assembled
+together.  ANS = 2.72454650263143, 2.11 units from the rule worked from
+the page.  Adds: **a `SIC, SUBR; NOP` word used as data, read by `LVE`
+and stored by `SVA` into two branches (self-modification, both words
+read back)**, `LFT` with `*N+` and `*+`, `SRD`, `SLO` with a sum kept in
+two words, `D-`, `E-I(U)`, `*N`, and three levels of `$15` linkage.
+**No wrong result.**
+
+* **A misprint in the ink**: `LEGQ8X`'s fourth abscissa is printed
+  `.18343 46434 95650`; the Legendre-Gauss node is `.18343 46424 95650`.
+  Run as printed.  It is worth 5.3E-11 in the answer and the check
+  follows it (the expected value is computed from the nodes as
+  assembled); correcting it moves the model's ANS and the expected value
+  together.
+* **`SRD` is built.**  "G2.3 The arms still refused" above lists it; it
+  ran here.  `bsv/README.md` already says so.
+* What is checked is the 8-point RULE, 2.724546, not the integral,
+  2.723620: the integrand goes as sqrt(x) at 0.
+
+### 4.10 natural logarithm, printed pp.44-45 -- `decks/problem_4_10.strap` -- A MODEL BUG
+
+Run at six arguments (`tests/verify_problem_4_fp.py 4.10:<x>`), 2 exact
+checks and the PC plus 4 within-bound checks each.  **x = .75, 3, 1E6
+pass; x = 2.5, .001, 1E-300 fail the three series checks and nothing
+else.**  Cause, decided from the Reference Manual: location 8 addressed as
+a floating-point operand must carry `$SB` bits 4-7 as its sign (printed
+p.37); the model uses word 8's bits 60-63, so `*(N), $L` squares a
+negative Z to -Z**2.  Reproducer `decks/repro_fp_operand_location8.strap`;
+`docs/NEXT.md` "LOCATION 8 AS A FLOATING-POINT OPERAND".  The three
+failing runs are registered `--known-wrong` (they pass only while exactly
+those checks fail).  **It is the first wrong result in anything the
+model executed from `C22-6578` since the table above's one bug find,
+through the nine problems of Chapter 1 ("G2.1, THE FIRST BATCH") and
+4.11-4.13.**  Also exercises `F+`/`F-` (add to fraction), `/`,
+`L(B,12,1)` and `-I(BU,1)` turning a floating exponent into a VFL integer
+and back -- all right.  A fourth printed erratum: sqrt2 printed
+1.41421356205080.
+
+### 4.9 cosine, Method 1, printed pp.42-43 -- `decks/problem_4_9_method1.strap` -- BOTH LOCATION-8 BUGS
+
+`tests/verify_problem_4_fp.py 4.9m1:<x>`, six arguments run, four
+registered.  `D*(N), $L` squares a negative A to -A**2 (the operand bug of
+4.10), and `SRDN,$L` -- a STORE into location 8 -- is lost, leaving the
+accumulator's own bits 60-63 where p.96 stores the sign and flags (second
+reproducer `decks/repro_fp_store_location8.strap`).  Only x = .125
+passes, and by luck.  Erratum: the statement says "Create 2 pi x" for
+"cos 2 pi x".  Method 2 (printed p.43) is NOT run: it has the same
+`D*(N), $L` and `SRDN, $L`, so it adds no independent evidence until
+those are fixed, and its `E+I, (U), 1` is refused by strap_asm as printed
+("undefined symbol U") -- read in the ink but not decided.
+
+## Where Chapter 4 stands, 2026-11-16
+
+Run, newest last: 4.11, 4.12, 4.13, 4.10, 4.9 Method 1.  **Two model bugs,
+one cause (location 8 as a floating-point operand and as a store),
+four assembler refusals, six printed errata.**  Not reached: 4.9
+Method 2, 4.8 (needs `N*N` in an address; substitutable), 4.7, 4.6
+(bit-matrix transposes, all connectives, exact checks), 4.5 (the `i2`
+field, decoded and read nowhere), 4.4, 4.3, 4.2 (decimal VFL, refused),
+4.1 (VFL square root).

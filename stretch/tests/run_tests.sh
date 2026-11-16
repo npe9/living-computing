@@ -13967,6 +13967,64 @@ run "C22-6578 Problem 3.9 Method 2 -- less, through DPSUB" ./run_program.sh ../d
 run "C22-6578 Problem 3.10 -- integer part of log2 N" ./run_program.sh ../decks/problem_3_10.strap StretchP310Tb ASM=strap2 "PC=87" \
     "A_value:48=0x0000C025A5A5A5A5" "B_value:49=0x0000C0A5A5A5A5A5" "x1_last:17=0x00024025A5A5A5A5"
 
+# >>> C22-6578 CHAPTER 4, "SPECIAL PROBLEMS", WORKED FROM THE LAST PROBLEM
+# BACKWARDS (G2.1).  The book has four chapters, so this is its last. <<<
+# The floating-point problems are checked against the number the page asks
+# for, within a bound each deck derives, by verify_problem_4_fp.py; exact
+# words (error returns, index registers, the halt PC) go through gen_tb.
+# docs/source_audit.md "G2.1, CHAPTER 4" has the status of each.
+
+# What the chapter prints and strap_asm refuses, held as refusals: DD(N)
+# arithmetic, $N/$PI, a zero DD(N), and "*" in an address.  The problem
+# decks carry marked substitutes; this fails on purpose when one is built.
+run "C22-6578 Chapter 4 -- the DD(N) forms and N*N strap_asm refuses, as refusals" python3 check_problem_4_dd_refusals.py
+
+# 4.11, EXP, printed p.46: twenty instructions as printed, six arguments on
+# the normal return and two on the error return.  Passed against the model
+# as it stood.  Three printed errata in the deck's header.
+run "C22-6578 Problem 4.11 -- EXP, the exponential subroutine" python3 verify_problem_4_fp.py 4.11
+
+# 4.10, LNX, printed pp.44-45, one argument per run.  Fraction >= 1/sqrt2:
+# passes.  Fraction < 1/sqrt2: KNOWN WRONG -- the model reads location 8 as
+# an FP operand with word 8's bits 60-63 as its sign, where Reference Manual
+# printed p.37 says the sign byte's bits 4-7, so "*(N), $L" gives -Z**2.
+# These three runs pass only while exactly the three series checks fail;
+# when the model is fixed they fail, and --known-wrong comes off.
+run "C22-6578 Problem 4.10 -- LNX, ln .75" python3 verify_problem_4_fp.py 4.10:.75
+run "C22-6578 Problem 4.10 -- LNX, ln 3" python3 verify_problem_4_fp.py 4.10:3.0
+run "C22-6578 Problem 4.10 -- LNX, ln 1E6" python3 verify_problem_4_fp.py 4.10:1.0E6
+run "C22-6578 Problem 4.10 -- LNX, ln 2.5, KNOWN WRONG (location 8, p.37)" python3 verify_problem_4_fp.py 4.10:2.5 --known-wrong TEMP2_ln_F_over_q,ACC_as_programmed,ACC_page_as_printed
+run "C22-6578 Problem 4.10 -- LNX, ln .001, KNOWN WRONG (location 8, p.37)" python3 verify_problem_4_fp.py 4.10:.001 --known-wrong TEMP2_ln_F_over_q,ACC_as_programmed,ACC_page_as_printed
+run "C22-6578 Problem 4.10 -- LNX, ln 1E-300, KNOWN WRONG (location 8, p.37)" python3 verify_problem_4_fp.py 4.10:1.0E-300 --known-wrong TEMP2_ln_F_over_q,ACC_as_programmed,ACC_page_as_printed
+# The reproducer, pinned at the model's WRONG word so it cannot drift: p.37
+# wants PROD = 0x0038000000000000 (+1/4).  Flip the check when it is fixed.
+run "C22-6578 Problem 4.9 Method 1 -- COSF, cos(2 pi .125)" python3 verify_problem_4_fp.py 4.9m1:.125
+run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .03, KNOWN WRONG (store to location 8, p.96)" python3 verify_problem_4_fp.py 4.9m1:.03 --known-wrong W8_sign_byte_plus_no_flags
+run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .1, KNOWN WRONG (store to location 8, p.96)" python3 verify_problem_4_fp.py 4.9m1:.1 --known-wrong W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
+run "C22-6578 Problem 4.9 Method 1 -- COSF, x = -.1, KNOWN WRONG (location 8, pp.37 and 96)" python3 verify_problem_4_fp.py 4.9m1:-.1 --known-wrong TEMP_A_squared,W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
+# The store reproducer, pinned at the model's WRONG words: after SRDN,$L of
+# .6 squared, p.96 wants word 8 = 0x003B851EB851EB78 (rounding carries into
+# bit 59, so a store that only redirected its sign byte would still differ),
+# and $SB not left untouched.  Flip both checks when it is fixed.
+run "store to location 8: SRDN,\$L is lost, KNOWN WRONG (p.96)" ./run_program.sh ../decks/repro_fp_store_location8.strap StretchReproSt8Tb "PC=68" \
+    "W8_KNOWN_WRONG_p96_wants_003B851EB851EB78:8=0x003B851EB851EB6E" \
+    "SB_KNOWN_unchanged_by_the_lost_store:10=0"
+run "location 8 as an FP operand: -1/2 squared, KNOWN WRONG (p.37 says +1/4)" ./run_program.sh ../decks/repro_fp_operand_location8.strap StretchReproLoc8Tb "PC=70" \
+    "PROD_KNOWN_WRONG_p37_wants_0038000000000000:38=0x0038000000000008" \
+    "CTRL_plus_quarter:39=0x0038000000000000"
+
+# 4.12, printed pp.46-47: f(pi) = 2x e**(e**-x) / sqrt(1 - e**-x), two calls
+# of EXP, "SRT(N), $L" into the accumulator itself and R/.  The answer is
+# read from $L and $SB, where the printed BEW leaves it.  Passed as stood.
+run "C22-6578 Problem 4.12 -- f(pi) through EXP twice, SRT into \$L, R/" python3 verify_problem_4_fp.py 4.12
+
+# 4.13, printed pp.49-50, the last problem in the book: MAIN, the 8-point
+# Legendre-Gauss subroutine LEGQ8, the integrand SUBR and EXP, assembled
+# together as the page says.  LEGQ8 patches its own two branches by LVE/SVA
+# from a SIC word used as data; LFT, *N+, *+, SRD, SLO.  Passed as stood.
+# One abscissa is misprinted in its ninth digit and is run as printed.
+run "C22-6578 Problem 4.13 -- LEGQ8, numerical integration, four printed pieces" python3 verify_problem_4_fp.py 4.13
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

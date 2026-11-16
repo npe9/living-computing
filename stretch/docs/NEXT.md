@@ -17332,3 +17332,142 @@ it (accumulator bits 125-127, which DL and D+ leave unchanged, Reference
 Manual pp.95-96), and tests/run_tests.sh carries the expected indicator
 words as comments, to be restored when a store to word 11 merges into
 the instruction's single indicator write.
+
+## G2.1 CHAPTER 4: WHAT THE ASSEMBLER REFUSES IN A DD(N) -- 2026-11-15
+
+`C22-6578` Chapter 4 ("Special Problems", printed pp.35-51) was worked
+from its last problem backwards.  Every floating-point problem in it
+writes constants `strap_asm.py` refuses.  None is a wrong word: each is
+refused out loud, and `_dd_normalized`'s docstring already lists three
+of the four as unbuilt.  What is new is that there are now PRINTED
+PROGRAMS that need them, a reproducer for each, and a check holding the
+refusals (`tests/check_problem_4_dd_refusals.py`, 8 checks, registered).
+
+| refused | reproducer | printed in Chapter 4 | authority |
+|---|---|---|---|
+| arithmetic in a DD(N) entry, `1/720` | `decks/repro_dd_n_expression.strap` | 4.9 `1/16*1/15`; 4.10 `1/1.41421356205080`, `1/17`; 4.11 `1/3628800` (pp.43-46) | C28-6129 printed pp.27-28: "Arithmetic expressions ... are permitted in all DD statements regardless of the use mode" |
+| `$N`, `$PI` | `decks/repro_dd_n_math_constant.strap` | `2*$PI` p.43, `$NX47` p.45, `1024*$N`, `1/$N`, `$NX-11` p.46, `$PI` p.47 | C28-6129 printed p.11, "Symbols For Mathematical Constants" |
+| a zero DD(N), `0X11` | `decks/repro_dd_n_zero.strap` | `0X11` p.46; `0.0` pp.49-50; `0` p.42 | p.46's use of it as `D+(U), E11` fixes the word: zero fraction, exponent +11 |
+| `*` in an address, `N*N-1.0` | `decks/repro_address_multiply.strap` | 4.8 `V-ICR,$3,N*N-1.0` p.42; 4.6 Method 3 `SF(BU,N*N,N)` p.40 | already G3.1; the page says "STRAP II will do it properly" |
+
+**What building them needs that the pages do not give:** to how many
+bits STRAP carries DD arithmetic, and whether the result is truncated or
+rounded.  `$PI` can tell: its 48-bit fraction is `C90FDAA22168` and the
+next byte is `C2`, so a rounding STRAP prints `...1690` where a
+truncating one prints `...1680`.  `$N` cannot (next byte `79`).  No
+listing in the corpus prints either.
+
+**The problem decks run anyway**, on substitutes: each printed card is
+kept as a `! printed:` comment above a decimal literal of the same
+number, truncated to 48 bits.  When an entry here is built, replace the
+substitute with the printed card and delete the reproducer's row from
+the check.
+
+### Problem 4.11 (EXP), printed p.46: passes, and three things are wrong in the ink
+
+`decks/problem_4_11.strap`, `tests/verify_problem_4_fp.py 4.11`.  The
+model computes what the printed program computes to within 1.75 units
+of the 48-bit fraction over six arguments from -709.5 to 709, and both
+error returns are bit-exact against words worked by hand.
+
+1. `CONST`'s first entry is printed `1/13076743680000`; 15! is
+   `1307674368000`.  One zero too many.  Run as printed; the term is
+   under one unit either way.
+2. `C1111(BU,1) $L, 127` has no comma after the data description.
+3. `C0011(BU,1),10.4,128-11`, commented "exponent sign", sets
+   accumulator bit 10, the low bit of the exponent magnitude; the sign
+   is bit 11 (offset 128-12).  Run as printed; `x = -800` returns
+   exponent 11 where `x = +800` returns 10, and the check pins both.
+
+And one thing the page does not say: **`RLN2` is one word, so the
+result is wrong by up to 1.39 |x| units** -- 847 measured at x = 709,
+the low ten bits.  It is the program's arithmetic, not the model's: the
+same result is within 1.75 units of `2**(x * RLN2)`.
+
+### Problem 4.12, printed p.47, and 4.13, printed pp.49-50: both pass; one misprinted constant
+
+`decks/problem_4_12.strap`, `decks/problem_4_13.strap`.  No model or
+assembler finding beyond the DD(N) refusals above (4.12's `DD(N), $PI`,
+4.13's two `DD(N), 0.0`).  In the ink:
+
+* 4.13 `LEGQ8X`, printed p.50: the fourth abscissa `.18343 46434 95650`
+  should be `.18343 46424 95650`.  Run as printed.
+* 4.12's typeset formula, printed p.46, has an e with a bar over it for
+  the inner exponent; read e**-x from the program.
+
+## G2.1 CHAPTER 4: LOCATION 8 AS A FLOATING-POINT OPERAND TAKES THE WRONG SIGN -- 2026-11-16
+
+**A model bug, found by C22-6578 Problem 4.10 (printed p.44, "*(N), $L
+'Z**2").**  Reference Manual printed p.37 (PDF 40), "Accumulator and Sign
+Byte Register":
+
+> When location 8, the left half of the accumulator, is explicitly
+> addressed as the operand in a floating point operation, a word is
+> obtained that consists of bits 0-59 of the accumulator followed by bits
+> 4-7 of the accumulator sign byte, thus forming a proper floating point
+> word.
+
+The model returns word 8 as it stands, so the operand's sign and flags
+are accumulator bits 60-63 (double-length fraction bits), not `$SB` bits
+4-7.  No case in `StretchStorage.bsv` / `StretchExecute.bsv` names it.
+
+* **Reproducer:** `decks/repro_fp_operand_location8.strap`.  `DL(N)` of
+  -1/2, `*(N), $L`: p.37 gives +1/4, `0038 0000 0000 0000`; the model
+  gives `0038 0000 0000 0008`, -1/4.  The +1/2 control is right.
+  Registered pinned at the wrong word, labelled; flip it when fixed.
+* **4.10:** for x with fraction below 1/sqrt2, Z < 0 and the series is
+  summed in -Z**2; the model's values match that series to a few parts in
+  1E14 at x = 2.5, .001 and 1E-300.  Fraction above 1/sqrt2: passes.
+  Registered with `--known-wrong` on the three series checks.
+* **What else touches it, not re-examined:** 4.11's `LA(U), $L` (the
+  absolute modifier hides a wrong sign; the flag bits would differ only if
+  bits 61-63 of word 8 were nonzero) and 4.12/4.13's `SRT(N), $L`, a
+  STORE to location 8.  p.37 speaks of a word "obtained"; what a store
+  to location 8 does with its bits 60-63 is not stated on that page and
+  is OPEN.
+* **The fix belongs in the FP operand fetch**, not in `*`: every FP op
+  that reads its storage operand (`L`, `+`, `*`, `/`, `K`, ...) should
+  see bits 0-59 of word 8 and `$SB` bits 4-7 when the effective address
+  is word 8.  `*(N), $L` is the one printed case.
+
+### Problem 4.10 (LNX), printed pp.44-45: one more erratum
+
+`Q DD(N), 1/1.41421356205080` and `QQ DD(N), 2/1.41421356205080`, read at
+400 dpi: sqrt2 is 1.41421356237310.  Run as printed; every result is low
+by 2.279E-10, measured as ACC - ln x on all three passing arguments.
+
+### Second part: a STORE to location 8 is lost (found by Problem 4.9) -- 2026-11-16
+
+Reference Manual printed p.96, Store Rounded: the rounded fraction goes
+to storage bits 12-59, "The sign of the accumulator, as changed by the
+sign modifiers, is placed in storage bit 60.  The accumulator flag bits
+are placed in storage bits 61-63.  The entire accumulator and its sign
+byte register remain unchanged throughout the operation unless used as
+the effective address."  C22-6578 printed p.43 (4.9) ends COSF with
+`SRDN,$L` and printed p.43 Method 2 the same; 4.12/4.13 use `SRT(N), $L`.
+
+* **Reproducer:** `decks/repro_fp_store_location8.strap`.  s*s double
+  length (s = .6 as assembled), `SRDN, $L`.  Accumulator bits 60-63 are
+  `1110`, so rounding carries into bit 59: p.96 gives word 8 =
+  `003B 851E B851 EB78`.  The model leaves `003B 851E B851 EB6E` --
+  bits 0-59 UNROUNDED -- and `$SB` = 0, unchanged.  So the store did not
+  happen by either reading of p.96; it is not a sign byte sent to `$SB`
+  instead of word 8.  (The first version used 1/9, whose rounding does
+  not carry, and could not tell those apart; a review caught it.)
+  Registered pinned at both wrong words, labelled.
+* The likely mechanism, NOT verified in the model source: the store is
+  written to word 8 and then the FP commit writes the unchanged
+  accumulator left half over it (`StretchExecute.bsv` commitFp,
+  "commitFp sends accLeft to word 8").  Confirming that is the fixer's
+  job, not this worklist's.
+* **OPEN, from the pages:** whether such a store also sets `$SB` from
+  storage bits 60-63.  p.96's "unless used as the effective address"
+  says the accumulator and `$SB` CAN change; it does not say how.  4.9
+  relies on the answer reading +cos "in the accumulator", which needs
+  `$SB` to change too.  The checks pin word 8 only.
+* **The loss is SRD's, not every store's.**  4.12 and 4.13 store
+  `SRT(N), $L` into location 8 and then `R/` divides by the accumulator:
+  had that store been lost, 4.12's answer would be u/(1 - t) = 6.857, not
+  the u/sqrt(1 - t) = 6.7072 that passed within 2.3 units.  So SRT's
+  store to word 8 takes effect in the model and SRD's does not.  Whether
+  SRT then leaves bits 60-63 as p.95 stores them was not checked.

@@ -1,0 +1,156 @@
+! C22-6578 PROBLEM 4.12, "TRANSCENDENTAL FUNCTION EVALUATION", printed
+! pp.46-47 (PDF 47-48), Method 1, read in the ink at 300 dpi.
+!
+!   "Assume the existence of the previous exp (x) program.  Compute
+!   f(x) = 2x e**(e**-x) / sqrt(1 - e**-x)  for x = pi  and put the
+!   answer in the accumulator as a floating-point number."
+!
+! UNCERTAIN READING, in the formula only: the inner exponent is typeset
+! as an e with a short bar over it and a raised x.  It is read as
+! e**-x because the program computes that (LN(N), EKS before the first
+! call) and because Problem 4.13 prints the same integrand with a plain
+! "-x" and its SUBR is commented "2*X*e**e**-X" (printed pp.47, 50).
+!
+! THE SEVENTEEN PRINTED STATEMENTS FROM "LN(N), EKS" TO WON ARE EXACT,
+! but for EKS, whose "DD(N), $PI" this assembler refuses
+! (decks/repro_dd_n_math_constant.strap); it is pi to twenty-seven
+! digits, which assembles to the 48-bit truncation 004C 90FD AA22 1680.
+! EXP is printed p.46 again, copied from decks/problem_4_11.strap with
+! that deck's substitutes and its three errata as printed; the page's
+! comment (d): "The present program requires the EXP subroutine, and
+! therefore is usually assembled together with the latter.  Fortunately
+! there is no multiply defined symbol to produce difficulties and no
+! conflict in the use of special registers and $14, $15."  THAT CLAIM IS
+! CHECKED BY ASSEMBLING THEM TOGETHER: this deck has no symbol defined
+! twice.
+!
+! WHAT IT DOES, by the Reference Manual:
+!   LN(N), EKS        -x.
+!   LVI / B, EXP      $15 = the word holding "B, ERR; NOP"; EXP returns
+!                     to 1.0($15), RTURN, or to 0.0($15) on error.
+!   ST(U), TEMP       t = e**-x.
+!   (EXP again)       e**t.
+!   *(N), EKS         x e**t.
+!   E+I(U), 1         one added to the exponent: 2x e**t (printed p.102).
+!   ST(U), TEMP+1
+!   LN(U), TEMP / +(N), WON     1 - t.
+!   SRT(N), $L        STORE ROOT with the accumulator's own left half as
+!                     its storage operand: "the result is placed in bit
+!                     positions 0-59 of the storage location specified"
+!                     (printed p.95), and that location is word 8.
+!   R/(N), TEMP+1     reciprocal divide: the operand divided BY the
+!                     accumulator (printed p.94).
+!   BEW, $            the answer is in the accumulator.
+!
+! THE ANSWER IS READ WHERE THE PAGE LEAVES IT: word 8, $L, exponent and
+! fraction, with the sign from $SB (word 10 bit 4).  Nothing is added
+! after the printed BEW.
+!
+! EXPECTED RESULTS ARE WORKED FROM THE PROBLEM STATEMENT, NOT THE
+! MODEL, by tests/verify_problem_4_fp.py 4.12, in sixty-digit decimal
+! arithmetic from EKS as assembled:
+!
+!   t  = e**-x                  TEMP        = .04321391826377...
+!   u  = 2x e**t                TEMP+1.0    = 6.5606...
+!   f  = u / sqrt(1 - t)        accumulator = 6.7071...
+!
+! each twice, as in 4.11: within 4 units of the 48-bit fraction of the
+! number the program computes (EXP's 2**(x * RLN2) for e**x, RLN2 as
+! assembled), and within 16 units of the page's number.  The 16 is
+! 4.11's 8 + 2|x| at x = pi, and it is t that carries it: 1.39 pi = 4.4
+! units of t.  That same error is .043/.957 as large in 1 - t and
+! twenty times smaller again in e**t, so u and f are barely moved.
+! THE LOW BITS ARE NOT PINNED.
+!
+! Exact, by hand:
+!   the halt     the first BEW, "normal exit", not ERR.
+!   $15          value = the second LVI's own address + 1.0 = 1004.0,
+!                bit address 64256, in bits 0-23; the rest of $15 was
+!                zero and LVI does not touch it (printed p.24).
+!   $14          value 14.0, count 0, refill XW14: 4.11's, twice over.
+!
+! OBSERVED INJECTIONS, 2026-11-15, each
+!   python3 tests/verify_problem_4_fp.py 4.12 --sub OLD NEW
+! with one data card changed.  Control: 2 exact checks and the PC pass,
+! 6 within-bound checks pass; t, u, f were off .29, 1.47 and 2.31 units
+! from the program's numbers and 3.13, 1.37 and 2.14 from the page's.
+!
+!   EKS pi -> 800
+!       FAILED everything but nothing unexpectedly: the halt is ERR
+!       (PC 2018 for 2017), $15 is the FIRST call's (00FA 6000..), $14
+!       is 0 because EXP left by EXIT1 before its LX, and the
+!       accumulator is 816C 8000 0000 0000 -- the word 4.11's header
+!       works by hand for x = -800.  TEMP was never written.
+!   WON 1.0 -> 1.00000000001
+!       FAILED: both accumulator checks, off 1234 units, and only those.
+!   EXP's "1/2", ".5" -> ".50000000001"
+!       FAILED: all six within checks (t off 383 units, u 22, f 33).
+!   WON 1.0 -> 1.00000000000001 (one part in 1E14)
+!       SURVIVED.  ALL CHECKS PASSED.  The floor again: f moves by half
+!       of that, under two units.
+
+        SLC, 1000.0
+START   LN(N), EKS
+        LVI, $15, $+1.0; B, EXP
+        B, ERR; NOP
+RTURN   ST(U), TEMP
+        LVI, $15, $+1.0; B, EXP
+        B, ERR; NOP
+        *(N), EKS
+        E+I(U), 1
+        ST(U), TEMP+1
+        LN(U), TEMP
+        +(N), WON
+        SRT(N), $L
+        R/(N), TEMP+1
+        BEW, $                          !normal exit
+ERR     BEW, $                          !error exit
+! printed: EKS DD(N), $PI
+EKS     DD(N), 3.14159265358979323846264338
+TEMP    DR(N), (2)
+WON     DD(N), 1.0
+
+! ---- printed p.46, Method 1 ----
+        SLC, 1200.0
+EXP     KMG(N), KOMP
+        BAH,EXIT1
+        D*(N), RLN2                     !1/LN2
+        D+(U), E11
+        ST(B,12,1), TEMEX, 128-12-11    !I as exponent
+        SHFL,11
+        *(N), LN2X                      !LN2X-11
+        LX, $14, XW14
+        ST(U), TEMPF
+        D*(N), CONST($14)
+DPLUS   D+(N), CONST+1.0($14)
+        D*(N), TEMPF
+        CB+, $14, DPLUS
+        D+(N), CONST($14)
+        E+(N), TEMEX
+        B, 1.0($15)                     !normal return
+EXIT1   C0011(BU,1),10.4,128-11         !exponent sign
+        LA(U), $L                       !remove sign
+        C1111(BU,1), $L, 127            !insert exponent flag
+        B, 0.0($15)
+! printed: KOMP DD(N), 1024*$N
+KOMP    DD(N), 709.7827128933839968432456924
+! printed: RLN2 DD(N), 1/$N
+RLN2    DD(N), 1.442695040888963407359924681
+! printed: E11 DD(N), 0X11
+E11     DD(BU,64,8), (8)0005400000000000000000
+! printed: LN2X DD(N), $NX-11
+LN2X    DD(N), .6931471805599453094172321215X-11
+XW14    XW,0,14,$
+! printed: CONST DD(N), 1/13076743680000,1/87178291200
+CONST   DD(N), 7.647163731819816475901131986E-14, 1.147074559772972471385169798E-11
+! printed: DD(N), 1/6227020800, 1/479001600, 1/39916800
+        DD(N), 1.605904383682161459939237717E-10, 2.087675698786809897921009032E-9, 2.505210838544171877505210839E-8
+! printed: DD(N), 1/3628800, 1/362880, 1/40320, 1/5040, 1/720
+        DD(N), 2.755731922398589065255731922E-7, 2.755731922398589065255731922E-6, 2.480158730158730158730158730E-5, 1.984126984126984126984126984E-4, 1.388888888888888888888888889E-3
+! printed: DD(N), 1/120, 1/24, 1/6, 1/2, 1
+        DD(N), 8.333333333333333333333333333E-3, 4.166666666666666666666666667E-2, 1.666666666666666666666666667E-1, .5, 1
+TEMEX   DR(N), (1)
+TEMPF   DR(N), (1)
+
+
+        END, START
