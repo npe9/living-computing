@@ -137,7 +137,9 @@ sets `BLUESPECDIR` and `PATH` itself.
   TRANSMIT into 18.0 (PDF 105: the I-box operands are in "$2 through
   $14") overwrote it, and two cases never halted. It is now $X15. The
   352 other cases re-run with that change gave identical model
-  figures.
+  figures. The other 25 pages of the table below come from the full
+  run with $X14 and were not re-run, because nothing in those bodies
+  writes an index register above $X5.
 
 ### What is assumed, because the volume does not print it
 
@@ -155,6 +157,9 @@ The report echoes this list in its header:
   - I-box operands rotate over $X0-$X3 (PDF 114).
 - **I-box page.** External operands are at 10000₈ and 50000₈. Internal
   operands are 7.0, 8.0 and 9.0.
+- **Transmit.** The I-box block is 18.0 ($X2 up) for both source and
+  destination, so ibox_ibox transmits onto itself. The count is in
+  $X1.
 - **Branch success.** Each copy branches to the next copy. The
   condition is set once in the set-up and stays set.
 
@@ -241,21 +246,40 @@ VFL pages 116-142, by column:
    (BU,8/32/48/64,8). The 7030 does not behave this way:
    - `/` (BU,64,8) is 96 clocks against the model's 25.
    - LCV and LTRCV (BU,64,8) are 168-170 clocks against 25.
-   - M+ is 8-11 clocks over L at every field.
+   - M+ is printed 4-8 clocks over L at every field.
 
    The largest residuals in the whole atlas (−145 clocks) are this one
    fact. Divide, the conversions, `*+`, the M+ family and LFT/LTRS
    account for most of the aggregate −18.9 mean.
-   `bsv/StretchTiming.bsv`'s VflInt arm says its formula was measured
-   against this same M+ page (PDF 117, printed 110) "to a mean error of
-   0.28 µs". In GENER's throughput setting the model does not reproduce
-   that: M+ ni_ext sits at −7 to −11 clocks on every row. That claim
-   needs re-examination with this oracle.
+
+   **Checked against the probe and against the source.**
+   - The probe: the assembled copies differ in the operation field, for
+     example L …1050, M+ …1090, `/` …11d0, LCV …1030 and ST …10d0 at
+     (BU,64,8). The invert-sign XOR lands on the modifier: …1850 for
+     the inverted L.
+   - The source: `bsv/StretchTiming.bsv`'s `eboxClocks` `VflInt` arm
+     (line 181 onward) computes `8 + 2 * bytes` (line 208) from the
+     field alone, with no per-operation case. The budget is
+     `2 * iboxCycles + eboxClocks` (line 267), and `iboxCycles` gives
+     VflInt a flat 6 or 7 (line 98). So the source charges every VFL
+     operation alike, and the measurement shows the same thing.
+   - The VflInt comment's "0.28 µs" against this same M+ page
+     (PDF 117, printed 110) was the budget's figure. For M+ (BU,8,8)
+     the budget is 2·6 + 10 = 22 clocks, which is the printed 22.1.
+     Back to back in GENER's sequence the model measures 14. The
+     budget is right but is overlapped away. The oracle measures the
+     throughput the page measured, and there M+ sits 7-11 clocks low
+     on every row. Why the budget does not survive in sequence is not
+     diagnosed here.
 2. **Transmit is missing a fixed cost of about 30 clocks.** T and TI
    are low by roughly 30 clocks at one word. The external-to-external
    per-word slope roughly matches (about 10 clocks a word in both). To
    and from the I-box, the model moves a word in about 2 clocks where
-   the 7030 takes about 14 (T ibox_ibox 11WD: 35 against 187).
+   the 7030 takes about 14 (T ibox_ibox 11WD: 35 against 187). That
+   last figure rests on an assumption: the generator's I-box block is
+   18.0 for both source and destination, so ibox_ibox transmits a block
+   onto itself. PDF 105 says only that the index operands were in
+   $2-$14, and no self-test checks the transmit generator.
 3. **Comparison with an inverted sign.** The 7030 ends early (K…
    INVERT (DU,64,4) prints 3.61 µs, 12 clocks); the model runs the
    whole field (41 clocks). This gives the only large *positive*

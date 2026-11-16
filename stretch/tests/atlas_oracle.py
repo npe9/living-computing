@@ -91,6 +91,8 @@ ASSUMPTIONS = [
     "WB XOVR columns: field starts FL//2 bits before a word boundary",
     "INDEXING columns: indexed by $X5, which holds zero (a half-word "
     "branch by $X1, its one-bit K field's only choice)",
+    "TRANSMIT: the I-box block is 18.0 for source and destination "
+    "(ibox_ibox transmits onto itself); external 10000.0 -> 50000.0 (octal)",
     "branch SUCCESS columns: each copy branches to the next copy, a "
     "half-word on; the condition is set once in the set-up and stays",
     "INVERT SIGN blocks: VFL invert-sign modifier bit XORed into the word",
